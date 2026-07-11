@@ -1,0 +1,202 @@
+{
+ "body": {
+  "male": [
+   "_"
+  ],
+  "female": [
+   "_"
+  ],
+  "child": [
+   "_"
+  ],
+  "muscular": [
+   "_"
+  ]
+ },
+ "head": {
+  "male": [
+   "_"
+  ],
+  "female": [
+   "_"
+  ],
+  "child": [
+   "_"
+  ],
+  "male_elderly": [
+   "_"
+  ],
+  "female_elderly": [
+   "_"
+  ],
+  "male_gaunt": [
+   "_"
+  ],
+  "male_plump": [
+   "_"
+  ]
+ },
+ "hair": {
+  "braid": {
+   "adult": [
+    "_"
+   ]
+  },
+  "ponytail": {
+   "adult": [
+    "_"
+   ]
+  },
+  "shoulderr": {
+   "adult": [
+    "_"
+   ]
+  },
+  "bunches": {
+   "adult": [
+    "_"
+   ]
+  },
+  "wavy": {
+   "adult": [
+    "_"
+   ]
+  }
+ },
+ "top": {
+  "longsleeve": {
+   "male": [
+    "_"
+   ],
+   "female": [
+    "_"
+   ],
+   "teen": [
+    "_"
+   ]
+  },
+  "shortsleeve": {
+   "male": [
+    "_"
+   ],
+   "female": [
+    "_"
+   ],
+   "teen": [
+    "_"
+   ]
+  },
+  "sleeveless": {
+   "male": [
+    "black",
+    "blue",
+    "bluegray",
+    "brown",
+    "charcoal"
+   ],
+   "female": [
+    "black",
+    "blue",
+    "bluegray",
+    "brown",
+    "charcoal"
+   ]
+  }
+ },
+ "legs": {
+  "pants": {
+   "male": [
+    "_"
+   ],
+   "female": [
+    "_red",
+    "black",
+    "blue",
+    "bluegray",
+    "brown"
+   ],
+   "child": [
+    "black",
+    "blue",
+    "brown",
+    "darkblue",
+    "green"
+   ],
+   "thin": [
+    "_"
+   ]
+  },
+  "skirt": {
+   "male": [
+    "_"
+   ],
+   "thin": [
+    "_"
+   ]
+  },
+  "pantaloons": {
+   "male": [
+    "_"
+   ],
+   "thin": [
+    "_"
+   ]
+  }
+ },
+ "feet": {
+  "male": [
+   "_"
+  ],
+  "thin": [
+   "_"
+  ]
+ },
+ "apron": {
+  "apron": {
+   "male": [
+    "black",
+    "blue",
+    "bluegray",
+    "brown",
+    "charcoal",
+    "forest"
+   ],
+   "female": [
+    "black",
+    "blue",
+    "bluegray",
+    "brown",
+    "charcoal",
+    "forest"
+   ]
+  },
+  "apron_full": {
+   "female": [
+    "black",
+    "blue",
+    "bluegray",
+    "brown",
+    "charcoal",
+    "forest"
+   ]
+  },
+  "apron_half": {
+   "female": [
+    "black",
+    "blue",
+    "bluegray",
+    "brown",
+    "charcoal",
+    "forest"
+   ]
+  },
+  "overalls": {
+   "male": [
+    "_"
+   ],
+   "female": [
+    "_"
+   ]
+  }
+ }
+}

@@ -1,0 +1,212 @@
+{
+ "body": {
+  "body/child": [
+   ""
+  ],
+  "body/female": [
+   ""
+  ],
+  "body/male": [
+   ""
+  ],
+  "body/muscular": [
+   ""
+  ]
+ },
+ "head": {
+  "head/child": [
+   ""
+  ],
+  "head/female": [
+   ""
+  ],
+  "head/female_elderly": [
+   ""
+  ],
+  "head/male": [
+   ""
+  ],
+  "head/male_elderly": [
+   ""
+  ],
+  "head/male_gaunt": [
+   ""
+  ],
+  "head/male_plump": [
+   ""
+  ]
+ },
+ "top": {
+  "top/longsleeve/female": [
+   ""
+  ],
+  "top/longsleeve/male": [
+   ""
+  ],
+  "top/longsleeve/teen": [
+   ""
+  ],
+  "top/shortsleeve/female": [
+   ""
+  ],
+  "top/shortsleeve/male": [
+   ""
+  ],
+  "top/shortsleeve/teen": [
+   ""
+  ],
+  "top/sleeveless/female": [
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal"
+  ],
+  "top/sleeveless/male": [
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal"
+  ]
+ },
+ "legs": {
+  "legs/pantaloons/male": [
+   ""
+  ],
+  "legs/pantaloons/thin": [
+   ""
+  ],
+  "legs/pants/child": [
+   "black",
+   "blue",
+   "brown",
+   "darkblue",
+   "green"
+  ],
+  "legs/pants/female": [
+   "_red",
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal"
+  ],
+  "legs/pants/male": [
+   "",
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal",
+   "forest"
+  ],
+  "legs/pants/thin": [
+   ""
+  ],
+  "legs/skirt/male": [
+   ""
+  ],
+  "legs/skirt/thin": [
+   ""
+  ]
+ },
+ "feet": {
+  "feet/male": [
+   ""
+  ],
+  "feet/shoes/male": [
+   "",
+   "black",
+   "blue",
+   "bluegray",
+   "brass",
+   "bronze",
+   "brown"
+  ],
+  "feet/shoes/thin": [
+   "",
+   "black",
+   "blue",
+   "bluegray",
+   "brass",
+   "bronze",
+   "brown"
+  ],
+  "feet/thin": [
+   ""
+  ]
+ },
+ "apron": {
+  "apron/apron/female": [
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal",
+   "forest"
+  ],
+  "apron/apron/male": [
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal",
+   "forest"
+  ],
+  "apron/apron_full/female": [
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal",
+   "forest"
+  ],
+  "apron/apron_half/female": [
+   "black",
+   "blue",
+   "bluegray",
+   "brown",
+   "charcoal",
+   "forest"
+  ],
+  "apron/overalls/female": [
+   ""
+  ],
+  "apron/overalls/male": [
+   ""
+  ]
+ },
+ "hair": {
+  "hair/braid/adult/bg": [
+   ""
+  ],
+  "hair/braid/adult/fg": [
+   ""
+  ],
+  "hair/bunches/adult/bg": [
+   ""
+  ],
+  "hair/bunches/adult/fg": [
+   ""
+  ],
+  "hair/ponytail/adult/bg": [
+   ""
+  ],
+  "hair/ponytail/adult/fg": [
+   ""
+  ],
+  "hair/shoulderr/adult/bg": [
+   ""
+  ],
+  "hair/shoulderr/adult/fg": [
+   ""
+  ],
+  "hair/wavy/adult/bg": [
+   ""
+  ],
+  "hair/wavy/adult/fg": [
+   ""
+  ]
+ }
+}

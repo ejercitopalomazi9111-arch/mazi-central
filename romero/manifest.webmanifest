@@ -1,0 +1,15 @@
+{
+  "name": "Hoja de Romero",
+  "short_name": "Romero",
+  "description": "Sandbox de cocina y campo en el Valle Caldo. Cero dificultad, puro chill.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14100c",
+  "theme_color": "#14100c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
