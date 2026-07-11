@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Comando - LifeConnect</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #0f172a; 
+            color: white; 
+            padding: 20px;
+        }
+        .header { 
+            background: #dc2626; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .emergency-card { 
+            background: #1e293b; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 15px;
+            border-left: 4px solid #dc2626;
+        }
+        .patient-name { font-size: 24px; font-weight: bold; color: #fca5a5; }
+        .info-row { margin: 8px 0; font-size: 16px; }
+        .location { color: #94a3b8; font-size: 14px; }
+        .btn-assign { 
+            background: #10b981; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-assign:hover { background: #059669; }
+        #map { 
+            height: 300px; 
+            background: #334155; 
+            border-radius: 10px; 
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏥 Centro de Comando</h1>
+        <p>Sistema de Recepción de Emergencias</p>
+    </div>
+
+    <div id="emergencies-container">
+        <p style="color: #64748b; text-align: center; padding: 40px;">Esperando emergencias...</p>
+    </div>
+
+    <script>
+        const WS_URL = 'wss://purifier-purging-footsie.ngrok-free.app';
+        const ws = new WebSocket(WS_URL);
+        
+        ws.onopen = () => {
+            console.log('Conectado al servidor');
+        };
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Recibido:', data);
+            
+            if (data.type === 'EMERGENCY_REPORT' || data.type === 'NEW_EMERGENCY') {
+                showEmergency(data.payload || data);
+            }
+        };
+        
+        function showEmergency(emergency) {
+            const container = document.getElementById('emergencies-container');
+            const card = document.createElement('div');
+            card.className = 'emergency-card';
+            card.innerHTML = `
+                <div class="patient-name">🚨 ${emergency.patientName || 'Paciente'}</div>
+                <div class="info-row"><strong>Edad:</strong> ${emergency.age} años</div>
+                <div class="info-row"><strong>Tipo:</strong> ${emergency.typeName || emergency.type}</div>
+                <div class="info-row"><strong>Teléfono:</strong> ${emergency.phone}</div>
+                <div class="info-row"><strong>Descripción:</strong> ${emergency.description}</div>
+                <div class="location">📍 Ubicación: ${emergency.lat}, ${emergency.lng}</div>
+                <div id="map">Mapa de Google Maps aquí<br>(${emergency.lat}, ${emergency.lng})</div>
+                <button class="btn-assign" onclick="assignAmbulance('${emergency.patientName}')">
+                    🚑 Asignar Ambulancia
+                </button>
+            `;
+            
+            // Sonido de alerta
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVantu6tlHAU2k9n1unEiBC13yO/eizEIHWq+8+OZSA0PVantu6tlHAU2k9n1');
+            audio.play().catch(e => console.log('Audio no permitido'));
+            
+            container.insertBefore(card, container.firstChild);
+        }
+        
+        function assignAmbulance(patientName) {
+            alert(`Ambulancia asignada a: ${patientName}`);
+            // Aquí enviarías de vuelta al servidor la confirmación
+            ws.send(JSON.stringify({
+                type: 'EMERGENCY_ASSIGNED',
+                payload: {
+                    patientName: patientName,
+                    ambulanceId: 'AMB-' + Math.floor(Math.random() * 100),
+                    eta: Math.floor(Math.random() * 10) + 5,
+                    distance: (Math.random() * 5 + 1).toFixed(1)
+                }
+            }));
+        }
+    </script>
+</body>
+</html>

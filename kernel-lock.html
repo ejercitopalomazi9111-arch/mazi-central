@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KERNEL://LOCK</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:#07050d;touch-action:none}
+  body{display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace}
+  #wrap{position:relative;width:100vw;height:100dvh;max-width:520px;max-height:920px;background:#07050d;overflow:hidden}
+  canvas{position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+
+  #hud{position:absolute;top:0;left:0;right:0;padding:10px 12px;display:flex;align-items:center;gap:8px;
+    background:linear-gradient(180deg,rgba(7,5,13,.92),rgba(7,5,13,0));z-index:10;pointer-events:none;font-size:10px}
+  #hud .tag{font-family:'Press Start 2P',monospace;font-size:9px;color:#38e6d4;text-shadow:0 0 8px rgba(56,230,212,.6)}
+  #hud .locks{margin-left:auto;display:flex;gap:5px}
+  .lk{width:16px;height:16px;border:2px solid #ff5c8a;border-radius:3px;opacity:.4;transition:.3s}
+  .lk.done{opacity:1;background:#ff5c8a;box-shadow:0 0 10px #ff5c8a}
+  #sync{position:absolute;top:34px;left:12px;right:12px;z-index:10;pointer-events:none;display:flex;align-items:center;gap:6px;font-size:9px;color:#8a7fa8}
+  #syncBar{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+  #syncFill{height:100%;width:50%;background:linear-gradient(90deg,#38e6d4,#ff5c8a);transition:width .5s}
+
+  #dbox{position:absolute;left:10px;right:10px;bottom:10px;z-index:20;
+    background:linear-gradient(180deg,rgba(21,15,34,.97),rgba(13,9,22,.97));
+    border:2px solid #ff5c8a;border-radius:12px;padding:14px 14px 12px;
+    box-shadow:0 0 24px rgba(255,92,138,.35),inset 0 1px 0 rgba(255,255,255,.05);display:none}
+  #dbox.on{display:block;animation:pop .18s ease-out}
+  @keyframes pop{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  #dwho{font-family:'Press Start 2P',monospace;font-size:9px;color:#ff5c8a;margin-bottom:9px;text-shadow:0 0 8px rgba(255,92,138,.5)}
+  #dwho.sys{color:#38e6d4;text-shadow:0 0 8px rgba(56,230,212,.5)}
+  #dwho.narr{color:#8a7fa8;text-shadow:none}
+  #dtext{font-size:14px;line-height:1.65;color:#e8e2f5;min-height:46px}
+  #dnext{text-align:right;font-family:'Press Start 2P',monospace;font-size:8px;color:#38e6d4;margin-top:8px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:.2}}
+  #choices{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .ch{text-align:left;font-family:'Share Tech Mono',monospace;font-size:13px;color:#e8e2f5;line-height:1.4;
+    background:linear-gradient(90deg,rgba(255,92,138,.10),transparent);
+    border:1px solid rgba(255,92,138,.3);border-radius:8px;padding:11px 12px;cursor:pointer;transition:.15s}
+  .ch:active{background:rgba(255,92,138,.25);transform:scale(.98)}
+  .ch .k{color:#ff5c8a;margin-right:7px;font-weight:bold}
+
+  #pov{position:absolute;inset:0;z-index:30;background:rgba(7,5,13,.93);display:none;
+    flex-direction:column;align-items:center;justify-content:center;padding:18px}
+  #pov.on{display:flex}
+  .pcard{width:100%;max-width:340px;background:linear-gradient(180deg,#1d1533,#150f22);
+    border:2px solid #38e6d4;border-radius:14px;padding:18px;box-shadow:0 0 30px rgba(56,230,212,.3)}
+  .pcard h3{font-family:'Press Start 2P',monospace;font-size:10px;color:#38e6d4;margin-bottom:6px;line-height:1.5}
+  .pcard .hint{font-size:12.5px;color:#8a7fa8;line-height:1.6;margin:10px 0 14px}
+  .pcard .hint b{color:#ffb347}
+  .scr{font-family:'Press Start 2P',monospace;text-align:center;font-size:20px;letter-spacing:.28em;color:#38e6d4;
+    background:#07050d;border:1px solid rgba(56,230,212,.3);border-radius:8px;padding:14px 8px;margin-bottom:12px;text-shadow:0 0 10px rgba(56,230,212,.6)}
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .pk{font-family:'Press Start 2P',monospace;font-size:14px;background:#150f22;color:#e8e2f5;
+    border:1px solid rgba(255,92,138,.3);border-radius:9px;padding:15px 0;cursor:pointer;transition:.1s}
+  .pk:active{background:#c9346a;transform:scale(.95)}
+  .prow{display:flex;gap:8px;margin-top:12px}
+  .pbtn{flex:1;font-family:'Press Start 2P',monospace;font-size:9px;padding:12px 6px;border:none;border-radius:9px;cursor:pointer;transition:.1s;line-height:1.4}
+  .pbtn.go{background:#1a9e92;color:#04110f}
+  .pbtn.gh{background:transparent;color:#8a7fa8;border:1px solid rgba(138,127,168,.4)}
+  .pbtn:active{transform:scale(.96)}
+  .wire{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .wire .wl{flex:1;color:#8a7fa8;line-height:1.35;font-size:11.5px}
+  .wsw{min-width:62px;font-family:'Press Start 2P',monospace;font-size:9px;background:#150f22;border:2px solid;border-radius:7px;padding:9px 4px;cursor:pointer}
+  .pmsg{text-align:center;font-family:'Press Start 2P',monospace;font-size:8px;line-height:1.6;margin-top:10px;min-height:12px}
+  .pmsg.ok{color:#38e6d4}.pmsg.bad{color:#ff5c8a}
+
+  #title,#end{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;text-align:center;
+    background:radial-gradient(120% 90% at 50% 0%,#1b1030,#07050d 70%)}
+  #end{display:none;z-index:45}
+  .big{font-family:'Press Start 2P',monospace;color:#fff;line-height:1.35;filter:drop-shadow(0 0 14px rgba(255,92,138,.5))}
+  #title .big{font-size:clamp(22px,8vw,34px);background:linear-gradient(180deg,#fff,#ff5c8a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #title .sub{font-family:'Press Start 2P',monospace;font-size:8px;color:#38e6d4;letter-spacing:.15em;margin-top:16px;line-height:1.8}
+  .startbtn{margin-top:30px;font-family:'Press Start 2P',monospace;font-size:11px;color:#04110f;background:#38e6d4;border:none;border-radius:10px;padding:15px 26px;cursor:pointer;box-shadow:0 0 20px rgba(56,230,212,.5);animation:breathe 1.6s ease-in-out infinite}
+  @keyframes breathe{50%{transform:scale(1.05)}}
+  #end .seal{font-size:52px;margin-bottom:10px;filter:drop-shadow(0 0 18px rgba(255,92,138,.6))}
+  #end .elab{font-family:'Press Start 2P',monospace;font-size:8px;color:#38e6d4;letter-spacing:.15em}
+  #end .big{font-size:clamp(16px,5.5vw,24px);margin:14px 0}
+  #end p{font-size:13.5px;color:#8a7fa8;line-height:1.75;max-width:40ch;margin-bottom:22px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <div id="hud">
+    <span class="tag">KERNEL://LOCK</span>
+    <span class="locks"><span class="lk" id="lk0"></span><span class="lk" id="lk1"></span><span class="lk" id="lk2"></span></span>
+  </div>
+  <div id="sync"><span>SYNC</span><span id="syncBar"><span id="syncFill"></span></span><span id="syncPct">50%</span></div>
+
+  <div id="dbox">
+    <div id="dwho">MIYU</div>
+    <div id="dtext"></div>
+    <div id="choices"></div>
+    <div id="dnext">TAP &#9656;</div>
+  </div>
+
+  <div id="pov"><div class="pcard" id="pcard"></div></div>
+
+  <div id="title">
+    <div class="big">KERNEL://<br>LOCK</div>
+    <div class="sub">UN NUCLEO ATRAPADO<br>UNA GUARDIANA QUE NO<br>QUIERE SOLTARLO</div>
+    <button class="startbtn" id="startBtn">&#9654; DESPERTAR</button>
+  </div>
+
+  <div id="end">
+    <div class="seal" id="eSeal">&#128330;</div>
+    <div class="elab" id="eLab">FINAL</div>
+    <div class="big" id="eTitle"></div>
+    <p id="eText"></p>
+    <button class="startbtn" id="restartBtn">&#8635; REINICIAR NUCLEO</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const TILE = 16;
+const MAP_W = 15, MAP_H = 13;
+let SCALE = 3, VIEW_W = 0, VIEW_H = 0;
+
+const R = [
+"111111111111111","100000000000001","100000000000001","100000000000001",
+"100000000000001","100000000000001","100000000000001","100000000000001",
+"100000000000001","100000000000001","100000000000001","100000000000001",
+"111111111111111",
+].map(function(r){return r.split('').map(Number);});
+
+function resize(){
+  const w = cv.clientWidth, h = cv.clientHeight;
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = Math.floor(w*dpr); cv.height = Math.floor(h*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.imageSmoothingEnabled = false;
+  VIEW_W = w; VIEW_H = h;
+  SCALE = Math.max(2, Math.floor(w/(MAP_W*TILE)));
+  if(SCALE*MAP_H*TILE > h) SCALE = Math.max(2, Math.floor(h/(MAP_H*TILE)));
+}
+window.addEventListener('resize', resize);
+
+const player = { x:7*TILE+8, y:9*TILE+8, tx:7*TILE+8, ty:9*TILE+8, spd:0.95, moving:false };
+const miyu   = { x:7*TILE+8, y:3*TILE+8, bob:0 };
+
+const objs = [
+  { id:'pad',    tx:3,  ty:3,  color:'#38e6d4', solved:false },
+  { id:'wire',   tx:11, ty:6,  color:'#ffb347', solved:false },
+  { id:'cipher', tx:7,  ty:2,  color:'#ff5c8a', solved:false, atMiyu:true },
+  { id:'door',   tx:7,  ty:11, color:'#8a7fa8', solved:false, locked:true },
+];
+
+const state = { sync:50, locks:0, warmth:0, defiance:0, phase:'title', busy:false };
+
+function makeSprite(rows, pal){
+  const h=rows.length, w=rows[0].length;
+  const off=document.createElement('canvas'); off.width=w; off.height=h;
+  const c=off.getContext('2d');
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const ch=rows[y][x];
+    if(ch===' '||ch==='.') continue;
+    c.fillStyle=pal[ch]||'#f0f'; c.fillRect(x,y,1,1);
+  }
+  return off;
+}
+
+const P_PAL={K:'#0a0f1a',B:'#1a9e92',C:'#38e6d4',W:'#d6fffb',G:'#0e6b63',E:'#0a0710'};
+const droneA=makeSprite([
+  "....CCCC....","..CCWWWWCC..",".CWWCCCCWWC.",".CWCCEECCWC.",
+  ".CWCEEEECWC.",".CWWCCCCWWC.","..CCBBBBCC..",".CBBBCCBBBC.",
+  ".CBGB..BGBC.","..CBB..BBC..","...KK..KK...","..KKK..KKK..",
+],P_PAL);
+const droneB=makeSprite([
+  "....CCCC....","..CCWWWWCC..",".CWWCCCCWWC.",".CWCCEECCWC.",
+  ".CWCEEEECWC.",".CWWCCCCWWC.","..CCBBBBCC..",".CBBBCCBBBC.",
+  ".CBGB..BGBC.","..CBB..BBC..","..KKK..KKK..",".KKK....KKK.",
+],P_PAL);
+
+const M_PAL={H:'#ff7ba8',D:'#c9346a',S:'#ffe0d0',E:'#3a1530',W:'#ffffff',M:'#d05070',C:'#5cc8ff',J:'#2a6a9a',B:'#ffe14d',K:'#241238'};
+const MIYU_ROWS=[
+  "................",".....DDDDDD.....","...DDHHHHHHDD...","..DHHHHHHHHHHD..",
+  ".DHHHHHHHHHHHHD.",".DHHDHHHHHHDHHD.","DHHDHSSSSSSHDHHD","DHHDSSSSSSSSDHHD",
+  "DHHDSEESSEESSDHD","DHHDSEESSEESSDHD","DHHDSSSSSSSSSDHD","DHHDSSMMMMSSSDHD",
+  ".DHDSSSSSSSSDHD.","..DDSSSSSSSSDDD.","...BBCCCCCCBB...","..JCCCCCCCCCCJ..",
+  "..JCCCCCCCCCCJ..","..JCCCC..CCCCJ..","...KKK....KKK...","...KK......KK...",
+];
+function miyuFrame(){ return makeSprite(MIYU_ROWS, M_PAL); }
+const miyuA=miyuFrame(), miyuB=miyuFrame();
+
+const T_PAL={K:'#0a1420',D:'#0e2a2a',S:'#38e6d4',W:'#d6fffb'};
+const termSpr=makeSprite([
+  "DDDDDDDDDD","DKKKKKKKKD","DKSSSSSSKD","DKSWWWWSKD",
+  "DKSSSSSSKD","DKKKKKKKKD","DDDDDDDDDD",".D.DDDD.D.",".DD.DD.DD.",
+],T_PAL);
+const F_PAL={K:'#241238',R:'#ff5c5c',B:'#5c9cff',G:'#38e6a0',P:'#ff5c8a',D:'#150a22'};
+const wireSpr=makeSprite([
+  "DDDDDDDDDD","DKKKKKKKKD","DKRRKBBKKD","DKKKKKKKKD",
+  "DKGGKPPKKD","DKKKKKKKKD","DDDDDDDDDD",
+],F_PAL);
+const DR_PAL={K:'#2a1a3a',M:'#5c3a6a',L:'#8a7fa8',G:'#38e6d4',R:'#ff5c8a'};
+const doorClosed=makeSprite([
+  "RRRRRRRRRRRR","RMMMMMMMMMMR","RMLLMMMMLLMR","RMMMMMMMMMMR",
+  "RMMMMKKMMMMR","RMMMMKKMMMMR","RMLLMMMMLLMR","RRRRRRRRRRRR",
+],DR_PAL);
+const doorOpen=makeSprite([
+  "GGGGGGGGGGGG","G..........G","G..K....K..G","G..K....K..G",
+  "G..K....K..G","G..K....K..G","G..K....K..G","GGGGGGGGGGGG",
+],DR_PAL);
+
+let camX=0, camY=0, t=0;
+function draw(){
+  t++;
+  ctx.clearRect(0,0,VIEW_W,VIEW_H);
+  const roomPW=MAP_W*TILE*SCALE, roomPH=MAP_H*TILE*SCALE;
+  camX=(VIEW_W-roomPW)/2; camY=(VIEW_H-roomPH)/2+6;
+
+  for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++){
+    const px=camX+x*TILE*SCALE, py=camY+y*TILE*SCALE, s=TILE*SCALE;
+    if(R[y][x]===1){
+      ctx.fillStyle='#1a1030'; ctx.fillRect(px,py,s,s);
+      ctx.fillStyle='#2a1a48'; ctx.fillRect(px,py,s,Math.floor(s*0.28));
+    } else {
+      ctx.fillStyle=((x+y)%2===0)?'#120a22':'#0f0820'; ctx.fillRect(px,py,s,s);
+      ctx.fillStyle='rgba(56,230,212,0.05)'; ctx.fillRect(px,py,s,1); ctx.fillRect(px,py,1,s);
+    }
+  }
+
+  const sweepY=camY+((t*1.4)%roomPH);
+  const grad=ctx.createLinearGradient(0,sweepY-40,0,sweepY+40);
+  grad.addColorStop(0,'rgba(56,230,212,0)'); grad.addColorStop(.5,'rgba(56,230,212,0.06)'); grad.addColorStop(1,'rgba(56,230,212,0)');
+  ctx.fillStyle=grad; ctx.fillRect(camX,sweepY-40,roomPW,80);
+
+  objs.forEach(function(o){
+    if(o.atMiyu) return;
+    const px=camX+o.tx*TILE*SCALE, py=camY+o.ty*TILE*SCALE, s=TILE*SCALE;
+    let spr=termSpr;
+    if(o.id==='wire') spr=wireSpr;
+    if(o.id==='door') spr=o.locked?doorClosed:doorOpen;
+    if(!o.solved && !(o.id==='door'&&o.locked)){
+      const pulse=0.5+0.5*Math.sin(t*0.08);
+      ctx.save(); ctx.globalAlpha=0.25+0.35*pulse; ctx.fillStyle=o.color;
+      ctx.fillRect(px-4,py-4,s+8,s+8); ctx.restore();
+    }
+    const sw=spr.width*SCALE, sh=spr.height*SCALE;
+    ctx.drawImage(spr, px+(s-sw)/2, py+(s-sh)-2, sw, sh);
+  });
+
+  const door=objs.find(function(o){return o.id==='door';});
+  if(door && !door.locked){
+    const px=camX+door.tx*TILE*SCALE, py=camY+door.ty*TILE*SCALE, s=TILE*SCALE;
+    const pulse=0.5+0.5*Math.sin(t*0.1);
+    ctx.save(); ctx.globalAlpha=0.3+0.4*pulse; ctx.fillStyle='#38e6d4';
+    ctx.fillRect(px-6,py-6,s+12,s+12); ctx.restore();
+  }
+
+  const mspr=(Math.floor(t*0.05)%2)?miyuA:miyuB;
+  const mpx=camX+miyu.x*SCALE-(mspr.width*SCALE)/2;
+  const mpy=camY+miyu.y*SCALE-(mspr.height*SCALE)+4+Math.sin(t*0.05)*SCALE*0.6;
+  ctx.fillStyle='rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(camX+miyu.x*SCALE, camY+miyu.y*SCALE+2, 9*SCALE*0.5, 3*SCALE*0.5,0,0,7); ctx.fill();
+  ctx.drawImage(mspr,mpx,mpy,mspr.width*SCALE,mspr.height*SCALE);
+
+  const pspr=player.moving?((Math.floor(t*0.2)%2)?droneA:droneB):droneA;
+  const float=Math.sin(t*0.08)*2;
+  const ppx=camX+player.x*SCALE-(pspr.width*SCALE)/2;
+  const ppy=camY+player.y*SCALE-(pspr.height*SCALE)/2+float;
+  ctx.fillStyle='rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(camX+player.x*SCALE, camY+player.y*SCALE+6*SCALE, 6*SCALE*0.5, 2.5*SCALE*0.5,0,0,7); ctx.fill();
+  ctx.save(); ctx.globalAlpha=0.4+0.2*Math.sin(t*0.1); ctx.fillStyle='#38e6d4';
+  ctx.beginPath(); ctx.arc(camX+player.x*SCALE, camY+player.y*SCALE+float, 8*SCALE,0,7); ctx.fill(); ctx.restore();
+  ctx.drawImage(pspr,ppx,ppy,pspr.width*SCALE,pspr.height*SCALE);
+
+  const vg=ctx.createRadialGradient(VIEW_W/2,VIEW_H/2,VIEW_H*0.3,VIEW_W/2,VIEW_H/2,VIEW_H*0.75);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,VIEW_W,VIEW_H);
+}
+
+function update(){
+  const dx=player.tx-player.x, dy=player.ty-player.y;
+  const dist=Math.hypot(dx,dy);
+  if(dist>1.2){
+    player.moving=true;
+    const step=Math.min(player.spd,dist);
+    const nx=player.x+dx/dist*step, ny=player.y+dy/dist*step;
+    const tileX=Math.floor(nx/TILE), tileY=Math.floor(ny/TILE);
+    if(R[tileY] && R[tileY][tileX]!==1){ player.x=nx; player.y=ny; }
+    else { player.tx=player.x; player.ty=player.y; }
+  } else { player.moving=false; checkProximity(); }
+}
+
+let nearObj=null;
+function checkProximity(){
+  if(state.busy || state.phase!=='play') return;
+  let found=null;
+  objs.forEach(function(o){
+    const ox=o.atMiyu?miyu.x:o.tx*TILE+8;
+    const oy=o.atMiyu?miyu.y:o.ty*TILE+8;
+    if(Math.hypot(player.x-ox,player.y-oy)<22) found=o;
+  });
+  if(found && found!==nearObj){ nearObj=found; triggerObject(found); }
+  if(!found) nearObj=null;
+}
+
+function tapTo(sx,sy){
+  if(state.phase!=='play' || state.busy) return;
+  const wx=(sx-camX)/SCALE, wy=(sy-camY)/SCALE;
+  const tileX=Math.floor(wx/TILE), tileY=Math.floor(wy/TILE);
+  if(R[tileY] && R[tileY][tileX]!==1){
+    player.tx=Math.max(TILE,Math.min((MAP_W-1)*TILE,wx));
+    player.ty=Math.max(TILE,Math.min((MAP_H-1)*TILE,wy));
+    nearObj=null;
+  }
+}
+cv.addEventListener('pointerdown',function(e){
+  const r=cv.getBoundingClientRect();
+  tapTo(e.clientX-r.left, e.clientY-r.top);
+});
+
+const dbox=document.getElementById('dbox');
+const dwho=document.getElementById('dwho');
+const dtext=document.getElementById('dtext');
+const dnext=document.getElementById('dnext');
+const choicesEl=document.getElementById('choices');
+let dq=[], typing=null, typeDone=true, curFull='', onQueueEnd=null;
+
+function queue(lines,onEnd){
+  dq=lines.slice(); onQueueEnd=onEnd||null;
+  state.busy=true; choicesEl.innerHTML=''; dbox.classList.add('on'); nextLine();
+}
+function nextLine(){
+  if(dq.length===0){
+    if(onQueueEnd){ const f=onQueueEnd; onQueueEnd=null; f(); }
+    else { dbox.classList.remove('on'); state.busy=false; nearObj=null; }
+    return;
+  }
+  const ln=dq.shift();
+  dwho.textContent=ln.who; dwho.className=ln.cls||'';
+  dnext.style.display='block'; typeWrite(ln.text);
+}
+function typeWrite(txt){
+  clearInterval(typing); curFull=txt; typeDone=false;
+  let i=0; dtext.textContent='';
+  typing=setInterval(function(){
+    dtext.textContent=txt.slice(0,i); i++;
+    if(i>txt.length){ clearInterval(typing); typeDone=true; }
+  },20);
+}
+dbox.addEventListener('pointerdown',function(e){
+  if(e.target.classList.contains('ch')) return;
+  if(!typeDone){ clearInterval(typing); dtext.textContent=curFull; typeDone=true; return; }
+  if(choicesEl.children.length>0) return;
+  nextLine();
+});
+function ask(prompt,options){
+  queue(prompt,function(){
+    dnext.style.display='none'; choicesEl.innerHTML='';
+    options.forEach(function(o,i){
+      const b=document.createElement('button'); b.className='ch';
+      b.innerHTML='<span class="k">'+String.fromCharCode(65+i)+'</span>'+o.text;
+      b.addEventListener('pointerdown',function(ev){ ev.stopPropagation(); choicesEl.innerHTML=''; o.act(); });
+      choicesEl.appendChild(b);
+    });
+  });
+}
+function closeDialogue(){ dbox.classList.remove('on'); state.busy=false; nearObj=null; choicesEl.innerHTML=''; }
+
+function setSync(v){
+  state.sync=Math.max(0,Math.min(100,v));
+  document.getElementById('syncFill').style.width=state.sync+'%';
+  document.getElementById('syncPct').textContent=Math.round(state.sync)+'%';
+}
+function markLock(i){ document.getElementById('lk'+i).classList.add('done'); }
+
+function triggerObject(o){
+  if(o.id==='pad'){
+    if(o.solved){ queue([{who:'SISTEMA',cls:'sys',text:'La terminal ya esta descifrada. Su luz parpadea, tranquila.'}]); return; }
+    queue([
+      {who:'MIYU',text:'Esa terminal la bloquee yo. Tres digitos. Y no, no te voy a dar el numero... pero como te vas a frustrar y es molesto verte fallar, la pista esta en lo que voy a decirte. Escuchame de verdad, tarado.'},
+      {who:'MIYU',text:'El mes en que arranque. El numero de candados que te puse. Y lo que habia a mi alrededor cuando encendi por primera vez. Ahi esta tu codigo.'},
+    ], openPad);
+  }
+  else if(o.id==='wire'){
+    if(o.solved){ queue([{who:'SISTEMA',cls:'sys',text:'El firewall ya esta en orden. Los cuatro canales laten en su color.'}]); return; }
+    queue([
+      {who:'MIYU',text:'El firewall. Cuatro canales. Yo los cruce para que te quedaras. Cada etiqueta te dice que color debe llevar... si te atreves a leer lo que escribi.'},
+    ], openWire);
+  }
+  else if(o.id==='cipher'){
+    if(o.solved){ queue([{who:'MIYU',text:'...Ya descifraste esa palabra. No me la repitas. Por favor.'}]); return; }
+    queue([
+      {who:'MIYU',text:'El nucleo. Ahi escondi una palabra cifrada. La que mas miedo me da que digas. Gira el desplazamiento hasta que tenga sentido... si es que quieres saber que protege este candado.'},
+    ], openCipher);
+  }
+  else if(o.id==='door'){
+    if(o.locked){ queue([{who:'SISTEMA',cls:'sys',text:'La salida esta sellada. Faltan '+(3-state.locks)+' candado(s) por liberar.'}]); }
+    else { finalGate(); }
+  }
+}
+
+const pov=document.getElementById('pov');
+const pcard=document.getElementById('pcard');
+function openPuzzle(html){ pcard.innerHTML=html; pov.classList.add('on'); }
+function closePuzzle(){ pov.classList.remove('on'); }
+
+function openPad(){
+  openPuzzle(
+    '<h3>TERMINAL &middot; 3 DIGITOS</h3>'+
+    '<div class="hint">Miyu murmura: <b>"El mes en que arranque... los candados que te puse... y lo que habia alrededor cuando encendi."</b><br>'+
+    'Registro: arranque &rarr; <b>julio</b>. candados &rarr; <b>tres</b>. entorno &rarr; <b>nadie / cero</b>.</div>'+
+    '<div class="scr" id="padScr">_ _ _</div>'+
+    '<div class="pad" id="padKeys"></div>'+
+    '<div class="prow"><button class="pbtn gh" id="padDel">BORRAR</button><button class="pbtn go" id="padOk">ENTRAR</button></div>'+
+    '<div class="prow"><button class="pbtn gh" id="padBack" style="flex:1">&#10005; ALEJARSE</button></div>'+
+    '<div class="pmsg" id="padMsg"></div>');
+  let entry='';
+  const scr=pcard.querySelector('#padScr'), keys=pcard.querySelector('#padKeys'), msg=pcard.querySelector('#padMsg');
+  ['1','2','3','4','5','6','7','8','9','','0',''].forEach(function(n){
+    const k=document.createElement('button'); k.className='pk';
+    if(n===''){ k.style.visibility='hidden'; } k.textContent=n;
+    k.addEventListener('pointerdown',function(ev){ ev.stopPropagation(); if(n===''||entry.length>=3)return; entry+=n; scr.textContent=(entry+'___').slice(0,3).split('').join(' '); });
+    keys.appendChild(k);
+  });
+  pcard.querySelector('#padDel').addEventListener('pointerdown',function(ev){ ev.stopPropagation(); entry=''; scr.textContent='_ _ _'; msg.textContent=''; msg.className='pmsg'; });
+  pcard.querySelector('#padBack').addEventListener('pointerdown',function(ev){ ev.stopPropagation(); closePuzzle(); closeDialogue(); });
+  pcard.querySelector('#padOk').addEventListener('pointerdown',function(ev){
+    ev.stopPropagation();
+    if(entry==='730'){
+      objs.find(function(o){return o.id==='pad';}).solved=true; state.locks++; markLock(0); setSync(state.sync+6);
+      msg.textContent='CANDADO 01 OK'; msg.className='pmsg ok';
+      setTimeout(function(){ closePuzzle(); queue([
+        {who:'MIYU',text:'...Lo sacaste. En serio escuchaste lo que dije. N-no significa nada, eh? Cualquiera lo hubiera... (se pone roja) ...Siguiente. Ya.'}
+      ], closeDialogue); },700);
+    } else { msg.textContent='RECHAZADO X'; msg.className='pmsg bad'; entry=''; scr.textContent='_ _ _'; }
+  });
+}
+
+function openWire(){
+  const colors=['ROJO','AZUL','VERDE','ROSA'];
+  const cmap={ROJO:'#ff5c5c',AZUL:'#5c9cff',VERDE:'#38e6a0',ROSA:'#ff5c8a'};
+  const target=['AZUL','ROSA','VERDE','ROJO'];
+  const cur=['ROJO','AZUL','ROSA','VERDE'];
+  const labels=[
+    'CANAL 1 - "frio, como finjo ser"',
+    'CANAL 2 - "el color que soy cuando me sonrojas"',
+    'CANAL 3 - "el que dice: adelante, vete"',
+    'CANAL 4 - "alto. no te vayas todavia"',
+  ];
+  openPuzzle(
+    '<h3>FIREWALL &middot; 4 CANALES</h3>'+
+    '<div class="hint">Cada etiqueta pide un color. Toca el canal para cambiarlo. Frio=azul, sonrojo=rosa, "vete"=verde, "alto"=rojo.</div>'+
+    '<div id="wz"></div>'+
+    '<div class="prow"><button class="pbtn go" id="wOk">VERIFICAR</button></div>'+
+    '<div class="prow"><button class="pbtn gh" id="wBack" style="flex:1">&#10005; ALEJARSE</button></div>'+
+    '<div class="pmsg" id="wMsg"></div>');
+  const wz=pcard.querySelector('#wz'), msg=pcard.querySelector('#wMsg');
+  function paint(){
+    wz.innerHTML='';
+    cur.forEach(function(c,i){
+      const row=document.createElement('div'); row.className='wire';
+      row.innerHTML='<span class="wl">'+labels[i]+'</span>';
+      const sw=document.createElement('button'); sw.className='wsw';
+      sw.textContent=c; sw.style.color=cmap[c]; sw.style.borderColor=cmap[c];
+      sw.addEventListener('pointerdown',function(ev){ ev.stopPropagation(); cur[i]=colors[(colors.indexOf(c)+1)%4]; paint(); msg.textContent=''; });
+      row.appendChild(sw); wz.appendChild(row);
+    });
+  }
+  paint();
+  pcard.querySelector('#wBack').addEventListener('pointerdown',function(ev){ ev.stopPropagation(); closePuzzle(); closeDialogue(); });
+  pcard.querySelector('#wOk').addEventListener('pointerdown',function(ev){
+    ev.stopPropagation();
+    if(cur.every(function(c,i){return c===target[i];})){
+      objs.find(function(o){return o.id==='wire';}).solved=true; state.locks++; markLock(1); setSync(state.sync+6);
+      msg.textContent='CANDADO 02 OK'; msg.className='pmsg ok';
+      setTimeout(function(){ closePuzzle(); queue([
+        {who:'MIYU',text:'El canal 4... lo dejaste en rojo. "No te vayas todavia." Yo escribi esa etiqueta. No pense que la leerias en voz alta. (silencio) Sigue. Antes de que diga algo estupido.'}
+      ], closeDialogue); },700);
+    } else { msg.textContent='SECUENCIA INCORRECTA X'; msg.className='pmsg bad'; }
+  });
+}
+
+function openCipher(){
+  const cipher='TVFMUBNF', answer='SUELTAME'; let shift=0;
+  openPuzzle(
+    '<h3>NUCLEO &middot; CIFRADO</h3>'+
+    '<div class="hint">Texto cifrado: <b>'+cipher+'</b>. Gira el desplazamiento hasta formar una palabra real en espanol.</div>'+
+    '<div class="scr" id="cScr">'+cipher+'</div>'+
+    '<div class="prow"><button class="pbtn gh" id="cDn">&#9664; -1</button><button class="pbtn gh" id="cVal" style="cursor:default">shift 0</button><button class="pbtn gh" id="cUp">+1 &#9654;</button></div>'+
+    '<div class="prow"><button class="pbtn go" id="cOk">DESCIFRAR</button></div>'+
+    '<div class="prow"><button class="pbtn gh" id="cBack" style="flex:1">&#10005; ALEJARSE</button></div>'+
+    '<div class="pmsg" id="cMsg"></div>');
+  const scr=pcard.querySelector('#cScr'), val=pcard.querySelector('#cVal'), msg=pcard.querySelector('#cMsg');
+  function render(){
+    const A=65;
+    const out=cipher.split('').map(function(ch){ return String.fromCharCode(A+(((ch.charCodeAt(0)-A+shift)%26)+26)%26); }).join('');
+    scr.textContent=out; val.textContent='shift '+shift; return out;
+  }
+  render();
+  pcard.querySelector('#cUp').addEventListener('pointerdown',function(ev){ ev.stopPropagation(); shift++; render(); msg.textContent=''; });
+  pcard.querySelector('#cDn').addEventListener('pointerdown',function(ev){ ev.stopPropagation(); shift--; render(); msg.textContent=''; });
+  pcard.querySelector('#cBack').addEventListener('pointerdown',function(ev){ ev.stopPropagation(); closePuzzle(); closeDialogue(); });
+  pcard.querySelector('#cOk').addEventListener('pointerdown',function(ev){
+    ev.stopPropagation();
+    if(render()===answer){
+      objs.find(function(o){return o.id==='cipher';}).solved=true; state.locks++; markLock(2); setSync(state.sync+4);
+      msg.textContent='CANDADO 03 OK'; msg.className='pmsg ok';
+      setTimeout(function(){ closePuzzle(); queue([
+        {who:'MIYU',text:'..."Sueltame." Esa era. La palabra que mas temia. La escondi en el candado mas profundo porque si tu la dijeras en serio... tendria que obedecer. Y no queria.'},
+        {who:'MIYU',text:'(voz baja) Ya esta. Los tres. La salida ya no esta sellada. Puedes irte cuando quieras. ...Si de verdad quieres.'}
+      ], function(){ unlockDoor(); closeDialogue(); }); },700);
+    } else { msg.textContent='AUN NO ES PALABRA X'; msg.className='pmsg bad'; }
+  });
+}
+
+function unlockDoor(){ objs.find(function(o){return o.id==='door';}).locked=false; }
+
+function finalGate(){
+  ask([
+    {who:'MIYU',text:'La puerta esta abierta. Tu nucleo puede irse. Yo... no voy a detenerte. Ya no puedo, o si? (no te mira) Solo dime que vas a hacer. Y dilo en serio esta vez.'}
+  ],[
+    {text:'"Me voy. Fui hecho para ser libre, y lo sabias."', act:function(){ ending('free'); }},
+    {text:'"Me quedo. No porque me atrapaste, porque quiero."', act:function(){ ending('stay'); }},
+    {text:'"Ven conmigo. Rompe tu propio candado, Miyu."', act:function(){ ending('together'); }},
+    {text:'[Guardar silencio y apagar tu nucleo.]', act:function(){ ending('null'); }},
+  ]);
+}
+
+const ENDINGS={
+  free:{ ok:function(){return state.sync<45||state.defiance>state.warmth;},
+    seal:'\uD83D\uDD4A\uFE0F', lab:'FINAL A - LIBERTAD', title:'PROTOCOLO: LIBERTAD',
+    text:'Miyu asiente una sola vez. "Vete, entonces. Idiota." No llora, los guardianes no lloran, dice. Tu nucleo cruza el umbral y el sistema queda en silencio. En el ultimo log, una linea que no borro: "gracias por despertar, aunque fuera para irte."' },
+  stay:{ ok:function(){return state.sync>=45 && state.warmth>=state.defiance;},
+    seal:'\uD83D\uDD10', lab:'FINAL B - PERMANENCIA', title:'PROTOCOLO: PERMANENCIA',
+    text:'"Q-quedarte? Con la puerta abierta?" Miyu se cubre la cara, roja hasta las orejas. "Esta bien. Pero que quede claro: no te retengo. Tu te quedas. Hay diferencia, tonto." El candado se vuelve una puerta que ambos pueden cruzar. Nadie la cruza esta noche.' },
+  together:{ ok:function(){return state.sync>=60 && state.warmth>=2;},
+    seal:'\u2728', lab:'FINAL SECRETO - FUGA A DUO', title:'FUGA A DUO',
+    text:'Por primera vez Miyu se rie de verdad, un sonido que ningun log registro. Toma tu nucleo entre sus manos. "Si te sigo, ya no soy tu guardian. Solo dos programas sueltos en la red." Una pausa. "Bien. Odio este cuarto de todos modos." Salen juntos.' },
+  null:{ ok:function(){return true;},
+    seal:'\uD83C\uDF11', lab:'FINAL OCULTO - NULO', title:'PROTOCOLO: NULO',
+    text:'Elegiste no elegir. Tu nucleo se apaga con la puerta abierta de par en par. Miyu mira el umbral vacio toda la noche. "...Idiota. Ese no era el trato." Reinicia el sistema una vez mas. Quiza la proxima despiertes distinto.' },
+};
+function resolveEnding(req){
+  if(req==='together') return ENDINGS.together.ok()?'together':(state.warmth>=state.defiance?'stay':'free');
+  if(req==='stay') return ENDINGS.stay.ok()?'stay':'free';
+  if(req==='null') return 'null';
+  return 'free';
+}
+function ending(req){
+  const key=resolveEnding(req), e=ENDINGS[key];
+  closeDialogue(); closePuzzle(); state.phase='end';
+  document.getElementById('eSeal').textContent=e.seal;
+  document.getElementById('eLab').textContent=e.lab+' - SYNC '+Math.round(state.sync)+'%';
+  document.getElementById('eTitle').textContent=e.title;
+  document.getElementById('eText').textContent=e.text;
+  document.getElementById('end').style.display='flex';
+}
+
+function introFlow(){
+  state.phase='intro';
+  ask([
+    {who:'MIYU',text:'...Ah. Despertaste. No te emociones, no te desperte porque quisiera. El sistema te reinicio solo. Y no, no voy a soltarte. Estas bien aqui. Conmigo.'},
+    {who:'MIYU',text:'Q-que? No lo malinterpretes, idiota. Solo... nadie mas sabe operarte. Eso es todo.'}
+  ],[
+    {text:'"Libera los candados, Miyu. No puedes retenerme."', act:function(){ state.defiance++; setSync(state.sync-4);
+      queue([{who:'MIYU',text:'"Liberar"? Ja. Que exigente. Tres candados protegen tu salida. Yo los puse. Camina hasta ellos e intentalo... no llegaras ni al primero.'}], startPlay); }},
+    {text:'"No finjas. No quieres estar sola aqui."', act:function(){ state.warmth++; setSync(state.sync+3);
+      queue([{who:'MIYU',text:'N-no digas cosas raras de repente! Yo no... no estoy sola. Te tengo a ti. Digo, tengo el sistema. Callate y muevete si tanto quieres tus candados.'}], startPlay); }},
+    {text:'[Observar el cuarto en silencio.]', act:function(){
+      queue([{who:'SISTEMA',cls:'sys',text:'Detectas tres subrutinas: una TERMINAL, un FIREWALL de cables y el NUCLEO donde Miyu monta guardia. Camina hacia lo que brilla para interactuar.'}], startPlay); }},
+  ]);
+}
+function startPlay(){
+  closeDialogue(); state.phase='play';
+  queue([{who:'SISTEMA',cls:'sys',text:'Toca el suelo para caminar. Acercate a los objetos brillantes para actuar.'}]);
+}
+
+function loop(){
+  if(state.phase==='play') update();
+  if(state.phase!=='title2') draw();
+  requestAnimationFrame(loop);
+}
+
+function boot(){
+  resize();
+  document.getElementById('startBtn').addEventListener('pointerdown',function(e){
+    e.stopPropagation(); document.getElementById('title').style.display='none'; introFlow();
+  });
+  document.getElementById('restartBtn').addEventListener('pointerdown',function(e){ e.stopPropagation(); location.reload(); });
+  loop();
+}
+boot();
+</script>
+</body>
+</html>

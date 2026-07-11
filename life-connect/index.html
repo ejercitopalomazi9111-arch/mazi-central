@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#DC2626">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#DC2626">
+    <meta name="description" content="LifeConnect Pro - Asistente de emergencias médicas con IA">
+    <title>LifeConnect Pro - Emergencias Médicas</title>
+    
+    <!-- Preconnect para performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://maps.googleapis.com">
+    <link rel="preconnect" href="https://api.elevenlabs.io">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- PANTALLA 0: SPLASH / CARGA INICIAL -->
+<div id="screen-splash" class="screen active">
+    <div class="splash-content">
+        <div class="splash-logo">🚑</div>
+        <div class="splash-title">LifeConnect</div>
+        <div class="splash-tagline">Sistema de Emergencias Médicas</div>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <div class="splash-hint">Cargando recursos de voz...</div>
+    </div>
+</div>
+
+<!-- PANTALLA 1: INICIO / MENU PRINCIPAL -->
+<div id="screen-home" class="screen">
+    <header class="main-header animate-fade-in">
+        <div class="brand">
+            <div class="logo-icon animate-pulse-slow">🚑</div>
+            <div class="brand-text">
+                <h1>LifeConnect</h1>
+                <span class="status-badge">
+                    <span class="pulse-dot"></span>
+                    Sistema Activo
+                </span>
+            </div>
+        </div>
+        <nav class="header-nav">
+            <button class="nav-btn" onclick="showHistory()" title="Historial de emergencias">
+                <i class="fas fa-history"></i>
+                <span class="nav-badge" id="history-count">0</span>
+            </button>
+            <button class="nav-btn" onclick="toggleSettings()" title="Configuración">
+                <i class="fas fa-cog"></i>
+            </button>
+        </nav>
+    </header>
+
+    <main class="home-container">
+        <div class="hero-section animate-fade-in">
+            <h2 class="hero-title">¿Necesitas ayuda médica?</h2>
+            <p class="hero-subtitle">Selecciona el tipo de atención que requieres</p>
+        </div>
+
+        <!-- BOTÓN PRINCIPAL: EMERGENCIA REAL -->
+        <div class="emergency-section animate-pop-in" style="animation-delay: 0.2s">
+            <button class="btn-emergency-main" onclick="selectEmergencyType()">
+                <div class="emergency-glow"></div>
+                <div class="emergency-content">
+                    <span class="emergency-icon">🚨</span>
+                    <span class="emergency-text">EMERGENCIA REAL</span>
+                    <span class="emergency-sub">Necesito una ambulancia ahora</span>
+                </div>
+                <div class="pulse-rings">
+                    <span></span>
+                    <span></span>
+                </div>
+            </button>
+            
+            <div class="emergency-features">
+                <span><i class="fas fa-bolt"></i> Respuesta inmediata</span>
+                <span><i class="fas fa-map-marker-alt"></i> GPS activo</span>
+                <span><i class="fas fa-heartbeat"></i> RCP guiado</span>
+            </div>
+        </div>
+
+        <!-- BOTÓN SECUNDARIO: REPORTE / URGENCIA -->
+        <div class="report-section animate-pop-in" style="animation-delay: 0.4s">
+            <button class="btn-report-main" onclick="selectReportType()">
+                <div class="report-content">
+                    <span class="report-icon">📝</span>
+                    <div class="report-text">
+                        <span class="title">Hacer un Reporte</span>
+                        <span class="subtitle">Accidente menor • Consulta • Prevención</span>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+        </div>
+
+        <!-- ACCESOS DIRECTOS -->
+        <div class="quick-access-grid animate-pop-in" style="animation-delay: 0.6s">
+            <button class="access-card" onclick="showHospitalsNearby()">
+                <div class="access-icon">🏥</div>
+                <span>Hospitales Cerca</span>
+            </button>
+            <button class="access-card" onclick="showFirstAidGuide()">
+                <div class="access-icon">📖</div>
+                <span>Primeros Auxilios</span>
+            </button>
+            <button class="access-card" onclick="call911Direct()">
+                <div class="access-icon">📞</div>
+                <span>Llamar 911</span>
+            </button>
+            <button class="access-card" onclick="showMedicalProfile()">
+                <div class="access-icon">👤</div>
+                <span>Mi Ficha</span>
+            </button>
+        </div>
+
+        <!-- BARRA DE PERFIL (Condicional) -->
+        <div id="profile-widget" class="profile-widget hidden">
+            <div class="widget-content" onclick="editMedicalProfile()">
+                <div class="widget-avatar">👤</div>
+                <div class="widget-info">
+                    <span class="widget-name" id="widget-user-name">Usuario</span>
+                    <span class="widget-status">Ficha médica activa • Toca para editar</span>
+                </div>
+                <i class="fas fa-pencil-alt widget-edit"></i>
+            </div>
+        </div>
+
+        <div id="profile-prompt" class="profile-prompt">
+            <div class="prompt-content" onclick="showMedicalProfile()">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Configure su ficha médica para emergencias más rápidas</span>
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </div>
+    </main>
+
+    <footer class="home-footer">
+        <div class="safety-tips">
+            <i class="fas fa-shield-alt"></i>
+            <span>En emergencias, mantenga la calma y siga las instrucciones</span>
+        </div>
+    </footer>
+</div>
+
+<!-- PANTALLA 2: SELECCIÓN DE TIPO DE EMERGENCIA -->
+<div id="screen-emergency-types" class="screen">
+    <header class="screen-header animate-slide-down">
+        <button class="btn-back" onclick="backHome()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>¿Qué está pasando?</h2>
+        <div class="header-spacer"></div>
+    </header>
+
+    <div class="emergency-types-container">
+        <div class="types-intro animate-fade-in">
+            <p>Seleccione la opción que mejor describa la situación actual:</p>
+        </div>
+
+        <div class="emergency-types-grid">
+            <!-- Cardíaco -->
+            <button class="type-card emergency-card-heart animate-slide-right" onclick="showGuideOrEmergency('heart')" style="animation-delay: 0.1s">
+                <div class="type-icon">💔</div>
+                <div class="type-content">
+                    <h3>Se desmayó o no respira</h3>
+                    <p>La persona no responde, no respira o no tiene pulso</p>
+                    <div class="type-tags">
+                        <span class="tag">RCP</span>
+                        <span class="tag">Urgente</span>
+                    </div>
+                </div>
+                <div class="type-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+
+            <!-- Sangrado -->
+            <button class="type-card emergency-card-bleeding animate-slide-right" onclick="showGuideOrEmergency('bleeding')" style="animation-delay: 0.15s">
+                <div class="type-icon">🩸</div>
+                <div class="type-content">
+                    <h3>Sangra mucho</h3>
+                    <p>Sangrado fuerte que no para, heridas profundas</p>
+                    <div class="type-tags">
+                        <span class="tag">Hemorragia</span>
+                        <span class="tag">Presión</span>
+                    </div>
+                </div>
+                <div class="type-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+
+            <!-- Respiratorio -->
+            <button class="type-card emergency-card-breathing animate-slide-right" onclick="showGuideOrEmergency('breathing')" style="animation-delay: 0.2s">
+                <div class="type-icon">😮‍💨</div>
+                <div class="type-content">
+                    <h3>No puede respirar</h3>
+                    <p>Sofoco, asma grave, reacción alérgica, ahogo</p>
+                    <div class="type-tags">
+                        <span class="tag">Asma</span>
+                        <span class="tag">Alergia</span>
+                    </div>
+                </div>
+                <div class="type-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+
+            <!-- Trauma -->
+            <button class="type-card emergency-card-fall animate-slide-right" onclick="showGuideOrEmergency('fall')" style="animation-delay: 0.25s">
+                <div class="type-icon">🦴</div>
+                <div class="type-content">
+                    <h3>Se cayó y no se mueve</h3>
+                    <p>Accidente, golpe fuerte, posible fractura</p>
+                    <div class="type-tags">
+                        <span class="tag">No mover</span>
+                        <span class="tag">Inmovilizar</span>
+                    </div>
+                </div>
+                <div class="type-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+
+            <!-- Intoxicación -->
+            <button class="type-card emergency-card-poison animate-slide-right" onclick="showGuideOrEmergency('poison')" style="animation-delay: 0.3s">
+                <div class="type-icon">⚠️</div>
+                <div class="type-content">
+                    <h3>Se intoxicó o picó</h3>
+                    <p>Comió algo malo, picadura de insecto, quemadura</p>
+                    <div class="type-tags">
+                        <span class="tag">Veneno</span>
+                        <span class="tag">Quemadura</span>
+                    </div>
+                </div>
+                <div class="type-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+
+            <!-- Otro -->
+            <button class="type-card emergency-card-other animate-slide-right" onclick="showGuideOrEmergency('other')" style="animation-delay: 0.35s">
+                <div class="type-icon">🆘</div>
+                <div class="type-content">
+                    <h3>Otra emergencia grave</h3>
+                    <p>Dolor extremo, convulsiones, situación no listada</p>
+                    <div class="type-tags">
+                        <span class="tag">General</span>
+                    </div>
+                </div>
+                <div class="type-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </button>
+        </div>
+
+        <div class="types-footer animate-fade-in" style="animation-delay: 0.5s">
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <span>Si no está seguro, seleccione "Otra emergencia" y describa lo que ve</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CONFIRMAR EMERGENCIA REAL -->
+<div id="modal-confirm-emergency" class="modal hidden">
+    <div class="modal-overlay" onclick="closeConfirmModal()"></div>
+    <div class="modal-container animate-pop-in">
+        <div class="modal-header">
+            <div class="modal-icon">⚠️</div>
+            <h3>¿Esto está pasando ahora mismo?</h3>
+            <p id="confirm-description">Verifique antes de continuar</p>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-confirm-yes" onclick="confirmRealEmergency()">
+                <div class="btn-content">
+                    <span class="btn-icon">🚨</span>
+                    <div class="btn-text">
+                        <strong>SÍ, es una emergencia real</strong>
+                        <small>Enviar ambulancia inmediatamente</small>
+                    </div>
+                </div>
+            </button>
+
+            <button class="btn-confirm-no" onclick="showOnlyGuide()">
+                <div class="btn-content">
+                    <span class="btn-icon">📖</span>
+                    <div class="btn-text">
+                        <strong>No, solo quiero ver la guía</strong>
+                        <small>Modo práctica / Aprender qué hacer</small>
+                    </div>
+                </div>
+            </button>
+
+            <button class="btn-confirm-cancel" onclick="closeConfirmModal()">
+                <i class="fas fa-arrow-left"></i>
+                <span>Regresar</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 3: GUÍA DE EMERGENCIA CON ASISTENTE DE VOZ -->
+<div id="screen-guide" class="screen">
+    <header class="guide-header animate-slide-down">
+        <button class="btn-back" onclick="backToTypes()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        
+        <div class="voice-controls">
+            <div id="voice-indicator" class="voice-status hidden">
+                <div class="voice-waves">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span class="voice-text">Hablando...</span>
+            </div>
+            
+            <button id="btn-replay-instructions" class="btn-replay hidden" onclick="replayInstructions()">
+                <i class="fas fa-redo"></i>
+                <span>Repetir instrucciones</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="guide-container">
+        <div class="guide-header-info animate-fade-in">
+            <span class="emergency-badge">EMERGENCIA ACTIVA</span>
+            <h1 id="guide-title">Título de la emergencia</h1>
+            <p id="guide-subtitle" class="guide-subtitle">Siga las instrucciones paso a paso</p>
+        </div>
+
+        <div class="steps-container" id="steps-list">
+            <!-- Pasos generados dinámicamente -->
+        </div>
+
+        <div class="timer-section hidden" id="timer-panel">
+            <div class="timer-display">
+                <span class="timer-label">Tiempo transcurrido</span>
+                <span class="timer-value" id="elapsed-time">00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="guide-actions animate-slide-up">
+        <button class="btn-action-primary" onclick="call911()">
+            <i class="fas fa-phone-alt"></i>
+            <span>LLAMAR 911</span>
+        </button>
+        
+        <div class="secondary-actions-row">
+            <button class="btn-action-secondary" onclick="showHospitalsNearby()">
+                <i class="fas fa-hospital"></i>
+                <span>Hospitales</span>
+            </button>
+            <button class="btn-action-secondary" onclick="shareLocation()">
+                <i class="fas fa-share-alt"></i>
+                <span>Compartir</span>
+            </button>
+            <button class="btn-action-secondary" onclick="markAsResolved()">
+                <i class="fas fa-check"></i>
+                <span>Resuelto</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Overlay de metrónomo (solo para RCP) -->
+    <div id="metronome-overlay" class="metronome-overlay hidden">
+        <div class="metronome-container">
+            <div class="metronome-display">
+                <div id="metronome-circle" class="metronome-circle"></div>
+                <div class="metronome-info">
+                    <span class="bpm">110 BPM</span>
+                    <span class="compression-count">
+                        Compresiones: <span id="compression-number">0</span>/30
+                    </span>
+                </div>
+            </div>
+            <button class="btn-metronome-toggle" id="btn-toggle-metronome" onclick="toggleMetronome()">
+                <i class="fas fa-play"></i>
+                <span>Iniciar compresiones</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 4: SELECCIÓN RÁPIDA DE PERFIL (Si tiene ficha guardada) -->
+<div id="screen-quick-profile" class="screen">
+    <header class="screen-header animate-slide-down">
+        <button class="btn-back" onclick="backToTypes()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Confirmar paciente</h2>
+    </header>
+
+    <div class="quick-profile-container">
+        <div class="profile-preview-card animate-pop-in">
+            <div class="profile-avatar-large">👤</div>
+            <div class="profile-preview-info">
+                <h3 id="quick-profile-name">Nombre del usuario</h3>
+                <p id="quick-profile-details">Edad • Tipo de sangre</p>
+                <div class="profile-conditions" id="quick-profile-conditions">
+                    <!-- Condiciones dinámicas -->
+                </div>
+            </div>
+        </div>
+
+        <div class="question-section animate-fade-in">
+            <h3>¿Esta emergencia es para usted?</h3>
+            <p class="question-hint">Usaremos su ficha médica guardada para enviar información relevante a la ambulancia</p>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-yes" onclick="confirmUseProfile()">
+                <i class="fas fa-check"></i>
+                <span>SÍ, soy yo</span>
+                <small>Enviar mis datos médicos</small>
+            </button>
+
+            <button class="btn-no" onclick="selectOtherPerson()">
+                <i class="fas fa-user-friends"></i>
+                <span>No, es otra persona</span>
+                <small>Describir al paciente</small>
+            </button>
+
+            <button class="btn-edit" onclick="editBeforeSend()">
+                <i class="fas fa-edit"></i>
+                <span>Editar mis datos primero</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 5: DESCRIPCIÓN RÁPIDA (Para otra persona) -->
+<div id="screen-describe-other" class="screen">
+    <header class="screen-header animate-slide-down">
+        <button class="btn-back" onclick="backFromDescribe()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Describir al paciente</h2>
+    </header>
+
+    <div class="form-container">
+        <div class="alert-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Información visible</strong>
+                <p>Solo describa lo que puede ver sin tocar al paciente</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="other-description">¿Qué ve? <span class="required">*</span></label>
+            <input type="text" id="other-description" placeholder="Ej: Hombre de unos 50 años, camisa azul, inconsciente">
+            <span class="hint">Edad aproximada, sexo, ropa, estado de conciencia</span>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group half">
+                <label for="other-age">Edad aproximada</label>
+                <input type="number" id="other-age" placeholder="Ej: 45">
+            </div>
+            <div class="form-group half">
+                <label for="other-conscious">¿Está consciente?</label>
+                <select id="other-conscious">
+                    <option value="yes">Sí, responde</option>
+                    <option value="no">No, inconsciente</option>
+                    <option value="partial">Parcialmente</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="other-alerts">¿Alertas médicas visibles?</label>
+            <input type="text" id="other-alerts" placeholder="Ej: Pulsera médica, collar de alergia, etc.">
+        </div>
+
+        <div class="form-actions">
+            <button class="btn-primary" onclick="sendEmergencyOther()">
+                <i class="fas fa-paper-plane"></i>
+                <span>Enviar emergencia ahora</span>
+            </button>
+            <button class="btn-text" onclick="backFromDescribe()">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 6: FORMULARIO MÉDICO COMPLETO -->
+<div id="screen-medical-form" class="screen">
+    <header class="screen-header animate-slide-down">
+        <button class="btn-text" onclick="skipMedicalForm()" id="btn-skip-medical">
+            Omitir por ahora →
+        </button>
+        <h2 id="medical-form-title">Mi Ficha Médica</h2>
+    </header>
+
+    <div class="form-container scrollable">
+        <div class="info-box info-save">
+            <i class="fas fa-shield-alt"></i>
+            <div>
+                <strong>Información segura</strong>
+                <p>Se guarda solo en su dispositivo. Se usará automáticamente en emergencias.</p>
+            </div>
+        </div>
+
+        <section class="form-section">
+            <h3><i class="fas fa-user"></i> Datos personales</h3>
+            
+            <div class="form-group">
+                <label for="med-name">Nombre completo <span class="required">*</span></label>
+                <input type="text" id="med-name" placeholder="Como aparece en su INE">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group half">
+                    <label for="med-age">Edad <span class="required">*</span></label>
+                    <input type="number" id="med-age" placeholder="Ej: 34">
+                </div>
+                <div class="form-group half">
+                    <label for="med-gender">Sexo</label>
+                    <select id="med-gender">
+                        <option value="">Seleccione</option>
+                        <option value="masculino">Masculino</option>
+                        <option value="femenino">Femenino</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h3><i class="fas fa-tint"></i> Información médica crítica</h3>
+            
+            <div class="form-group">
+                <label>Tipo de sangre <span class="required">*</span></label>
+                <div class="blood-type-grid">
+                    <button type="button" class="blood-btn" data-value="A+">A+</button>
+                    <button type="button" class="blood-btn" data-value="A-">A-</button>
+                    <button type="button" class="blood-btn" data-value="B+">B+</button>
+                    <button type="button" class="blood-btn" data-value="B-">B-</button>
+                    <button type="button" class="blood-btn" data-value="O+">O+</button>
+                    <button type="button" class="blood-btn" data-value="O-">O-</button>
+                    <button type="button" class="blood-btn" data-value="AB+">AB+</button>
+                    <button type="button" class="blood-btn" data-value="AB-">AB-</button>
+                    <button type="button" class="blood-btn" data-value="desconocido">No sé</button>
+                </div>
+                <input type="hidden" id="med-blood" required>
+            </div>
+
+            <div class="form-group">
+                <label for="med-allergies">Alergias graves (medicamentos, alimentos, otros)</label>
+                <textarea id="med-allergies" rows="2" placeholder="Ej: Penicilina, sulfa, yodo, mariscos, abejas..."></textarea>
+                <span class="hint">Separe con comas</span>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h3><i class="fas fa-heartbeat"></i> Condiciones médicas</h3>
+            <div class="conditions-grid">
+                <label class="condition-item">
+                    <input type="checkbox" value="diabetes">
+                    <span>Diabetes</span>
+                </label>
+                <label class="condition-item">
+                    <input type="checkbox" value="hipertension">
+                    <span>Hipertensión</span>
+                </label>
+                <label class="condition-item">
+                    <input type="checkbox" value="cardiaco">
+                    <span>Problemas cardíacos</span>
+                </label>
+                <label class="condition-item">
+                    <input type="checkbox" value="asma">
+                    <span>Asma/EPOC</span>
+                </label>
+                <label class="condition-item">
+                    <input type="checkbox" value="epilepsia">
+                    <span>Epilepsia</span>
+                </label>
+                <label class="condition-item">
+                    <input type="checkbox" value="renal">
+                    <span>Insuficiencia renal</span>
+                </label>
+                <label class="condition-item">
+                    <input type="checkbox" value="embarazo">
+                    <span>Embarazo</span>
+                </label>
+                <label class="condition-item">
+                    <input type="checkbox" value="marcapasos">
+                    <span>Marcapasos</span>
+                </label>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h3><i class="fas fa-pills"></i> Medicación actual</h3>
+            <div class="form-group">
+                <label for="med-medications">Medicamentos que toma regularmente</label>
+                <textarea id="med-medications" rows="3" placeholder="Ej: Metformina 500mg, Losartán 50mg, Insulina..."></textarea>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h3><i class="fas fa-address-book"></i> Contacto de emergencia</h3>
+            <div class="form-group">
+                <label for="med-contact-name">Nombre del contacto <span class="required">*</span></label>
+                <input type="text" id="med-contact-name" placeholder="Familiar cercano">
+            </div>
+            <div class="form-group">
+                <label for="med-contact-phone">Teléfono <span class="required">*</span></label>
+                <input type="tel" id="med-contact-phone" placeholder="10 dígitos">
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h3><i class="fas fa-hospital"></i> Seguro médico</h3>
+            <div class="form-group">
+                <label for="med-insurance">Aseguradora / Institución</label>
+                <select id="med-insurance">
+                    <option value="">Seleccione...</option>
+                    <option value="imss">IMSS</option>
+                    <option value="issste">ISSSTE</option>
+                    <option value="insabi">INSABI</option>
+                    <option value="sedena">SEDENA</option>
+                    <option value="pemex">PEMEX</option>
+                    <option value="privado">Seguro privado</option>
+                    <option value="otro">Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="med-policy">Número de póliza / NSS</label>
+                <input type="text" id="med-policy" placeholder="Opcional">
+            </div>
+        </section>
+
+        <div class="form-actions-sticky">
+            <button class="btn-primary btn-save-profile" onclick="saveMedicalData()">
+                <i class="fas fa-save"></i>
+                <span>Guardar ficha médica</span>
+            </button>
+            <button class="btn-text" onclick="skipMedicalForm()">
+                No guardar ahora
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 7: EMERGENCIA ACTIVA CON CENTRO DE COMANDO -->
+<div id="screen-active-emergency" class="screen emergency-mode">
+    <div class="command-center-header">
+        <div class="live-status">
+            <span class="live-dot"></span>
+            <span class="live-text">EMERGENCIA EN CURSO</span>
+        </div>
+        <div class="case-info">
+            <span class="case-label">Caso:</span>
+            <span class="case-number" id="active-case-number">--</span>
+        </div>
+    </div>
+
+    <div class="command-center-body">
+        <!-- Mapa del centro de comando (iframe de tu sistema) -->
+        <div class="map-command-wrapper">
+            <div id="command-map-container" class="map-container">
+                <!-- Aquí cargarías tu iframe del centro de comando -->
+                <div class="map-placeholder">
+                    <div class="map-loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Conectando con centro de comando...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Overlay de información de ambulancia -->
+            <div class="ambulance-info-overlay">
+                <div class="ambulance-card">
+                    <div class="ambulance-icon">🚑</div>
+                    <div class="ambulance-details">
+                        <span class="amb-label">Unidad asignada</span>
+                        <span class="amb-id" id="ambulance-id">AMB-42</span>
+                    </div>
+                </div>
+                
+                <div class="eta-info">
+                    <span class="eta-label">Llegada estimada</span>
+                    <span class="eta-time" id="eta-time">8 min</span>
+                    <span class="eta-distance" id="eta-distance">2.3 km</span>
+                </div>
+                
+                <div class="ambulance-progress">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="ambulance-progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de datos del paciente -->
+        <div class="patient-data-panel">
+            <div class="panel-header">
+                <h4><i class="fas fa-id-card"></i> Datos del paciente</h4>
+                <button class="btn-toggle-panel" onclick="togglePatientPanel()">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div class="panel-content" id="patient-panel-content">
+                <div class="patient-quick-info" id="patient-quick-info">
+                    <!-- Info dinámica -->
+                </div>
+                <div class="patient-full-data" id="patient-full-data" style="display: none;">
+                    <!-- Ficha completa -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones de emergencia -->
+        <div class="emergency-actions-bar">
+            <button class="action-btn-large call" onclick="call911()">
+                <i class="fas fa-phone-alt"></i>
+                <span>Llamar 911</span>
+            </button>
+            
+            <div class="actions-row">
+                <button class="action-btn" onclick="speakPatientStatus()">
+                    <i class="fas fa-volume-up"></i>
+                    <span>Informar al paciente</span>
+                </button>
+                <button class="action-btn" onclick="shareLocationCommand()">
+                    <i class="fas fa-share-location"></i>
+                    <span>Compartir ubicación</span>
+                </button>
+                <button class="action-btn" onclick="showCommandDetails()">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Detalles</span>
+                </button>
+            </div>
+            
+            <button class="btn-resolve-case" onclick="resolveCase()">
+                <i class="fas fa-check-circle"></i>
+                <span>Marcar como atendido</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 8: HOSPITALES CERCANOS (Google Maps Real) -->
+<div id="screen-hospitals" class="screen">
+    <header class="screen-header">
+        <button class="btn-back" onclick="backFromHospitals()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Hospitales Cercanos</h2>
+        <button class="btn-refresh" onclick="refreshHospitals()">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </header>
+
+    <div class="hospitals-container">
+        <div id="hospitals-map" class="hospitals-map"></div>
+        
+        <div class="hospitals-list-section">
+            <div class="location-status" id="location-status">
+                <i class="fas fa-location-arrow"></i>
+                <span>Obteniendo ubicación precisa...</span>
+            </div>
+            
+            <div class="hospitals-list" id="hospitals-list">
+                <!-- Hospitales generados dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 9: HISTORIAL DE EMERGENCIAS -->
+<div id="screen-history" class="screen">
+    <header class="screen-header">
+        <button class="btn-back" onclick="backHome()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Historial de Emergencias</h2>
+        <button class="btn-filter" onclick="filterHistory()">
+            <i class="fas fa-filter"></i>
+        </button>
+    </header>
+
+    <div class="history-container">
+        <div class="history-stats" id="history-stats">
+            <div class="stat-card">
+                <span class="stat-number" id="total-emergencies">0</span>
+                <span class="stat-label">Total</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="resolved-emergencies">0</span>
+                <span class="stat-label">Resueltos</span>
+            </div>
+        </div>
+
+        <div class="history-list" id="history-list">
+            <!-- Items dinámicos -->
+        </div>
+
+        <div class="empty-state" id="history-empty">
+            <div class="empty-icon">📋</div>
+            <h3>No hay emergencias registradas</h3>
+            <p>Las emergencias que complete aparecerán aquí</p>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 10: REPORTE FRAP SENCILLO -->
+<div id="screen-report" class="screen">
+    <header class="screen-header">
+        <button class="btn-back" onclick="backHome()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Reporte de Incidente</h2>
+    </header>
+
+    <div class="report-container">
+        <div class="report-intro">
+            <i class="fas fa-clipboard-list"></i>
+            <p>Use este formulario para incidentes que <strong>NO</strong> requieren ambulancia inmediata</p>
+        </div>
+
+        <div class="frap-form">
+            <div class="form-group">
+                <label>¿Qué pasó?</label>
+                <input type="text" id="report-what" placeholder="Breve descripción del incidente">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>¿Cuándo?</label>
+                    <input type="datetime-local" id="report-when">
+                </div>
+                <div class="form-group">
+                    <label>¿Dónde?</label>
+                    <input type="text" id="report-where" placeholder="Ubicación">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>¿Involucrados?</label>
+                <input type="text" id="report-who" placeholder="Cantidad y tipo de personas afectadas">
+            </div>
+
+            <div class="form-group">
+                <label>Descripción detallada</label>
+                <textarea id="report-details" rows="4" placeholder="Describa lo sucedido..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Acciones tomadas</label>
+                <textarea id="report-actions" rows="2" placeholder="¿Qué se hizo en el momento?"></textarea>
+            </div>
+
+            <button class="btn-submit-report" onclick="submitReport()">
+                <i class="fas fa-paper-plane"></i>
+                Enviar Reporte
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- PANTALLA 11: GUÍA DE PRIMEROS AUXILIOS (VERSIÓN FINAL) -->
+<div id="screen-first-aid" class="screen">
+    <style>
+        /* CSS Específico para esta pantalla - Inline para evitar caché */
+        #screen-first-aid {
+            background: #0B0F19 !important;
+        }
+        
+        #screen-first-aid .header {
+            display: flex;
+            align-items: center;
+            padding: 20px 24px;
+            background: rgba(11, 15, 25, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        #screen-first-aid .header h2 {
+            flex: 1;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #F8FAFC;
+            margin: 0;
+        }
+        
+        #screen-first-aid .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        /* Buscador */
+        .aid-search {
+            position: relative;
+            margin-bottom: 24px;
+            background: #151925;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .aid-search i {
+            color: #64748B;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        
+        .aid-search input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 16px 0;
+            color: #F8FAFC;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .aid-search input::placeholder {
+            color: #64748B;
+        }
+        
+        /* Grid de tarjetas */
+        .topics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        
+        /* Tarjeta individual */
+        .topic-card {
+            background: #151925;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .topic-card:hover {
+            background: #1E2330;
+            transform: translateX(8px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #DC2626;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .topic-card:hover::before {
+            opacity: 1;
+        }
+        
+        /* Icono */
+        .topic-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+            transition: transform 0.3s;
+        }
+        
+        .topic-card:hover .topic-icon {
+            transform: scale(1.1);
+        }
+        
+        .icon-red { background: rgba(220, 38, 38, 0.2); }
+        .icon-orange { background: rgba(217, 119, 6, 0.2); }
+        .icon-blue { background: rgba(37, 99, 235, 0.2); }
+        .icon-purple { background: rgba(139, 92, 246, 0.2); }
+        .icon-green { background: rgba(5, 150, 105, 0.2); }
+        .icon-yellow { background: rgba(245, 158, 11, 0.2); }
+        
+        /* Info */
+        .topic-info {
+            flex: 1;
+        }
+        
+        .topic-info h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 17px;
+            font-weight: 600;
+            color: #F8FAFC;
+            margin: 0 0 4px 0;
+        }
+        
+        .topic-info p {
+            font-size: 14px;
+            color: #94A3B8;
+            margin: 0;
+        }
+        
+        /* Flecha */
+        .topic-arrow {
+            color: #64748B;
+            font-size: 18px;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .topic-card:hover .topic-arrow {
+            opacity: 1;
+            color: #DC2626;
+            transform: translateX(5px);
+        }
+        
+        /* Consejos */
+        .tips-box {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            margin-top: 10px;
+        }
+        
+        .tips-box h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            color: #F8FAFC;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tips-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .tips-box li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #CBD5E1;
+            margin-bottom: 12px;
+        }
+        
+        .tips-box li i {
+            color: #10B981;
+        }
+    </style>
+
+    <div class="header">
+        <button class="btn-back" onclick="backHome()" style="width: 40px; height: 40px; background: #1E2330; border: none; border-radius: 12px; color: white; margin-right: 16px; cursor: pointer;">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Primeros Auxilios</h2>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <div class="content">
+        <!-- Buscador -->
+        <div class="aid-search">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Buscar tema..." onkeyup="filterTopics(this.value)">
+        </div>
+
+        <!-- Grid de temas -->
+        <div class="topics-grid" id="topics-container">
+            <div class="topic-card" onclick="showAidDetail('cpr')">
+                <div class="topic-icon icon-red">🫀</div>
+                <div class="topic-info">
+                    <h3>Reanimación CPR</h3>
+                    <p>Paro cardíaco, compresiones, desfibrilador</p>
+                </div>
+                <i class="fas fa-chevron-right topic-arrow"></i>
+            </div>
+
+            <div class="topic-card" onclick="showAidDetail('bleeding')">
+                <div class="topic-icon icon-orange">🩸</div>
+                <div class="topic-info">
+                    <h3>Hemorragias</h3>
+                    <p>Sangrado grave, heridas, torniquetes</p>
+                </div>
+                <i class="fas fa-chevron-right topic-arrow"></i>
+            </div>
+
+            <div class="topic-card" onclick="showAidDetail('choking')">
+                <div class="topic-icon icon-blue">🗣️</div>
+                <div class="topic-info">
+                    <h3>Atragantamiento</h3>
+                    <p>Obstrucción vías aéreas, Heimlich</p>
+                </div>
+                <i class="fas fa-chevron-right topic-arrow"></i>
+            </div>
+
+            <div class="topic-card" onclick="showAidDetail('burns')">
+                <div class="topic-icon icon-yellow">🔥</div>
+                <div class="topic-info">
+                    <h3>Quemaduras</h3>
+                    <p>Primeros auxilios térmicos</p>
+                </div>
+                <i class="fas fa-chevron-right topic-arrow"></i>
+            </div>
+
+            <div class="topic-card" onclick="showAidDetail('fractures')">
+                <div class="topic-icon icon-purple">🦴</div>
+                <div class="topic-info">
+                    <h3>Fracturas</h3>
+                    <p>Huesos rotos, inmovilización</p>
+                </div>
+                <i class="fas fa-chevron-right topic-arrow"></i>
+            </div>
+
+            <div class="topic-card" onclick="showAidDetail('cuts')">
+                <div class="topic-icon icon-green">🩹</div>
+                <div class="topic-info">
+                    <h3>Cortes y Heridas</h3>
+                    <p>Suturas, vendajes, desinfección</p>
+                </div>
+                <i class="fas fa-chevron-right topic-arrow"></i>
+            </div>
+        </div>
+
+        <!-- Consejos -->
+        <div class="tips-box">
+            <h3><i class="fas fa-star" style="color: #FCD34D;"></i> Reglas de Oro</h3>
+            <ul>
+                <li><i class="fas fa-check-circle"></i> Mantén la calma siempre</li>
+                <li><i class="fas fa-check-circle"></i> Llama al 911 antes de actuar si es grave</li>
+                <li><i class="fas fa-check-circle"></i> No muevas al herido si sospechas fractura</li>
+                <li><i class="fas fa-check-circle"></i> Asegura la zona antes de atender</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Función de filtro local
+        function filterTopics(query) {
+            const cards = document.querySelectorAll('.topic-card');
+            const lower = query.toLowerCase();
+            
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(lower) ? 'flex' : 'none';
+            });
+        }
+    </script>
+</div>
+
+
+
+
+<!-- MODAL: DETALLE DE HISTORIAL -->
+<div id="modal-history-detail" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('modal-history-detail')"></div>
+    <div class="modal-container modal-large">
+        <header>
+            <h3>Detalle de Emergencia</h3>
+            <button class="btn-close" onclick="closeModal('modal-history-detail')">
+                <i class="fas fa-times"></i>
+            </button>
+        </header>
+        <div class="modal-body" id="history-detail-content">
+            <!-- Contenido dinámico -->
+        </div>
+        <footer>
+            <button class="btn-secondary" onclick="closeModal('modal-history-detail')">Cerrar</button>
+            <button class="btn-primary" onclick="shareHistoryItem()">
+                <i class="fas fa-share"></i> Compartir
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- MODAL: RESOLVER EMERGENCIA -->
+<div id="modal-resolve" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('modal-resolve')"></div>
+    <div class="modal-container">
+        <header>
+            <h3>¿Cómo terminó la emergencia?</h3>
+        </header>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Resultado final</label>
+                <select id="resolve-outcome" class="select-large">
+                    <option value="">Seleccione...</option>
+                    <option value="resolved">✓ Atendido en sitio / Resuelto</option>
+                    <option value="hospital">🏥 Trasladado a hospital</option>
+                    <option value="false">⊙ Falsa alarma</option>
+                    <option value="other">Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notas adicionales</label>
+                <textarea id="resolve-notes" placeholder="¿Qué pasó específicamente?"></textarea>
+            </div>
+        </div>
+        <footer>
+            <button class="btn-text" onclick="closeModal('modal-resolve')">Cancelar</button>
+            <button class="btn-primary" onclick="saveResolution()">Guardar en historial</button>
+        </footer>
+    </div>
+</div>
+
+<!-- MODAL: CONFIGURACIÓN -->
+<div id="modal-settings" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('modal-settings')"></div>
+    <div class="modal-container">
+        <header>
+            <h3>Configuración</h3>
+            <button class="btn-close" onclick="closeModal('modal-settings')">
+                <i class="fas fa-times"></i>
+            </button>
+        </header>
+        <div class="modal-body">
+            <div class="setting-item">
+                <span>Volumen del asistente de voz</span>
+                <input type="range" min="0" max="100" value="80" id="voice-volume">
+            </div>
+            <div class="setting-item">
+                <span>Tamaño de texto</span>
+                <select id="text-size">
+                    <option value="normal">Normal</option>
+                    <option value="large">Grande</option>
+                </select>
+            </div>
+            <div class="setting-item danger">
+                <button class="btn-danger-text" onclick="clearAllData()">
+                    <i class="fas fa-trash"></i> Borrar todos mis datos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST NOTIFICATIONS -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- CARGANDO OVERLAY -->
+<div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-content">
+        <div class="spinner-large"></div>
+        <p id="loading-text">Procesando...</p>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="app.js"></script>
+<!-- Indicador de estado de conexión -->
+<div id="connection-status" class="connection-indicator hidden">
+  <span class="status-dot"></span>
+  <span class="status-text">Sin conexión</span>
+</div>
+
+<style>
+.connection-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #DC2626;
+  color: white;
+  padding: 8px;
+  text-align: center;
+  z-index: 9999;
+  transition: transform 0.3s;
+  transform: translateY(-100%);
+}
+
+.connection-indicator.visible {
+  transform: translateY(0);
+}
+
+.connection-indicator.online {
+  background: #10B981;
+}
+</style>
+
+<script>
+// Mostrar/ocultar indicador de conexión
+function updateConnectionStatus() {
+  const indicator = document.getElementById('connection-status');
+  if (!indicator) return;
+  
+  if (!navigator.onLine) {
+    indicator.classList.remove('hidden', 'online');
+    indicator.classList.add('visible');
+    indicator.querySelector('.status-text').textContent = 'Modo offline - Funcionando sin internet';
+  } else {
+    indicator.classList.add('online');
+    indicator.querySelector('.status-text').textContent = 'Conectado';
+    setTimeout(() => {
+      indicator.classList.remove('visible');
+    }, 2000);
+  }
+}
+
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+</script>
+
+</body>
+</html>

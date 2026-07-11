@@ -1,0 +1,347 @@
+<title>Grupo Mazi — Central</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ink: #0E1311;
+    --surface: #161F1B;
+    --surface-2: #1D2823;
+    --line: #2C3A33;
+    --bone: #E8E6DF;
+    --dim: #8C9A92;
+    --brass: #D69A2D;
+    --live: #4FB286;
+    --idle: #6B7B73;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ink: #EDEBE4; --surface: #FBFAF7; --surface-2: #F2F0E9; --line: #D6D2C6;
+      --bone: #17201C; --dim: #5E6B63; --brass: #A06F0E; --live: #2C7D57; --idle: #97A099;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #0E1311; --surface: #161F1B; --surface-2: #1D2823; --line: #2C3A33;
+    --bone: #E8E6DF; --dim: #8C9A92; --brass: #D69A2D; --live: #4FB286; --idle: #6B7B73;
+  }
+  :root[data-theme="light"] {
+    --ink: #EDEBE4; --surface: #FBFAF7; --surface-2: #F2F0E9; --line: #D6D2C6;
+    --bone: #17201C; --dim: #5E6B63; --brass: #A06F0E; --live: #2C7D57; --idle: #97A099;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--bone);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 660px; margin: 0 auto; padding: 26px 16px 60px; }
+
+  header {
+    display: flex; flex-direction: column; gap: 10px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--brass);
+    margin-bottom: 28px;
+  }
+  .mark { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  h1 {
+    margin: 0;
+    font-size: clamp(30px, 9vw, 44px);
+    font-weight: 800; letter-spacing: -0.03em; line-height: 1;
+    text-transform: uppercase;
+  }
+  h1 .mazi { color: var(--brass); }
+  .tag {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--dim); font-weight: 600;
+  }
+  .creed { font-size: 14px; color: var(--dim); max-width: 46ch; margin: 0; }
+  .creed b { color: var(--bone); font-weight: 600; }
+
+  section { margin-bottom: 32px; }
+  .sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  h2 {
+    margin: 0; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--bone);
+  }
+  .count { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .rule { flex: 1; height: 1px; background: var(--line); }
+
+  .list { display: flex; flex-direction: column; gap: 8px; }
+
+  a.card {
+    display: flex; align-items: center; gap: 13px;
+    padding: 14px 15px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--live);
+    border-radius: 3px;
+    text-decoration: none; color: inherit;
+    transition: background .15s ease, border-color .15s ease, transform .12s ease;
+  }
+  a.card:hover, a.card:focus-visible {
+    background: var(--surface-2);
+    border-left-color: var(--brass);
+    outline: none;
+    transform: translateX(2px);
+  }
+  a.card:focus-visible { box-shadow: 0 0 0 2px var(--brass); }
+  .card .body { flex: 1; min-width: 0; }
+  .card .name { font-weight: 650; font-size: 15.5px; letter-spacing: -0.01em; margin-bottom: 2px; }
+  .card .what { font-size: 12.5px; color: var(--dim); line-height: 1.35; }
+  .card .go { color: var(--dim); font-size: 18px; flex-shrink: 0; }
+  a.card:hover .go { color: var(--brass); }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live); flex-shrink: 0; }
+  .card.repo { border-left-color: var(--brass); }
+  .card.repo .dot { background: var(--brass); }
+
+  .note {
+    padding: 13px 15px;
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: 3px;
+    font-size: 12.5px; color: var(--dim); line-height: 1.55;
+  }
+  .note b { color: var(--bone); font-weight: 600; }
+  .note code {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 11.5px; color: var(--brass);
+    background: var(--surface-2);
+    padding: 1px 5px; border-radius: 2px;
+  }
+
+  footer {
+    margin-top: 38px; padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--dim);
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="mark">
+      <h1>Grupo <span class="mazi">Mazi</span></h1>
+      <span class="tag">Central</span>
+    </div>
+    <p class="creed">Si no existe la herramienta, <b>se construye la herramienta.</b></p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <span class="dot"></span>
+      <h2>Juegos</h2>
+      <span class="rule"></span>
+      <span class="count">4</span>
+    </div>
+    <div class="list">
+      <a class="card" href="https://ejercitopalomazi9111-arch.github.io/torre-infinita/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Torre Infinita</span>
+          <span class="what">Roguelike Pokémon · 9111 pisos · Phaser 3</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="kernel-lock.html">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">KERNEL://LOCK</span>
+          <span class="what">Escape room · eres una IA atrapada por Miyu · 4 finales</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="hoja-de-romero.html">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Hoja de Romero</span>
+          <span class="what">Sandbox de cocina y campo · cero dificultad, todo manual</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="inkwell.html">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">INKWELL</span>
+          <span class="what">Lector de webtoons · capítulos infinitos · 5 series</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="dot"></span>
+      <h2>Emergencias</h2>
+      <span class="rule"></span>
+      <span class="count">2</span>
+    </div>
+    <div class="list">
+      <a class="card" href="vitallink/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">VitalLink</span>
+          <span class="what">Centro de comando · interfaz (el backend corre aparte)</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="life-connect/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Life-Connect</span>
+          <span class="what">Reporte civil de emergencias · el par de VitalLink</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="dot"></span>
+      <h2>Rembrandt</h2>
+      <span class="rule"></span>
+      <span class="count">3</span>
+    </div>
+    <div class="list">
+      <a class="card" href="https://guanajuato-trip.netlify.app/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Viaje a Guanajuato</span>
+          <span class="what">Crónica interactiva · video, audio, galería, i18n</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="evaluaciones/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Evaluaciones</span>
+          <span class="what">Versión offline · corre sin internet</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="manzanilla/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Manzanilla</span>
+          <span class="what">Sitio estático</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="dot"></span>
+      <h2>Publicado en Netlify</h2>
+      <span class="rule"></span>
+      <span class="count">5</span>
+    </div>
+    <div class="list">
+      <a class="card" href="https://inscripcion-geraldmed-curso.netlify.app/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Inscripción GeraldMed</span>
+          <span class="what">Registro del curso · 4 jul</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="https://luz-del-conocimiento-louvre.netlify.app/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Luz del Conocimiento — Louvre</span>
+          <span class="what">Pirámide impresa en 3D · bitácora del proceso</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="https://our-magical-trip.netlify.app/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Our Magical Trip</span>
+          <span class="what">Versión hermana del viaje · 2 jun</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="https://velvety-parfait-5345b5.netlify.app/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Velvety Parfait</span>
+          <span class="what">Iteración previa del viaje · 27 may</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card" href="https://venerable-bombolone-d2df4e.netlify.app/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Venerable Bombolone</span>
+          <span class="what">Primer prototipo del viaje · 25 may</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="dot" style="background: var(--brass)"></span>
+      <h2>Código y respaldo</h2>
+      <span class="rule"></span>
+      <span class="count">4</span>
+    </div>
+    <div class="list">
+      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch/palomazi">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">palomazi <span style="color:var(--dim);font-weight:400">· privado</span></span>
+          <span class="what">El respaldo completo: proyectos, skills, memoria, bitácora, setup.ps1</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch/torre-infinita">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">torre-infinita</span>
+          <span class="what">La obra maestra · Phaser 3 + Vite</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch/VitalLink">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">VitalLink</span>
+          <span class="what">Centro de comando · Node + backend</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch?tab=repositories">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Todos mis repos</span>
+          <span class="what">El perfil completo en GitHub</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="note">
+      <b>¿PC nueva?</b> Dile a Claude Code:<br><br>
+      <code>Clona github.com/ejercitopalomazi9111-arch/palomazi y corre setup.ps1</code><br><br>
+      De ahí salen las skills, la memoria, el CLAUDE.md y todos los proyectos.
+    </div>
+  </section>
+
+  <footer>
+    <span>Grupo Mazi</span>
+    <span>10 jul 2026</span>
+  </footer>
+
+</div>

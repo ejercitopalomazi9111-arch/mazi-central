@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#3a2e1f">
+<title>La Manzanilla — Investigación / Chamomile Research</title>
+<style>
+  :root{
+    --bg:#f7f4ec; --paper:#fffdf8; --ink:#2b2b2b; --soft:#6b6357;
+    --brown:#3a2e1f; --gold:#b48a3a; --line:#e3dccb; --green:#5b6e3a;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:Arial, Helvetica, "Segoe UI", sans-serif;
+    font-size:17px; line-height:1.7; -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:820px; margin:0 auto; padding:0 18px 80px;}
+  header.cover{
+    background:linear-gradient(160deg,#3a2e1f 0%,#52432c 60%,#6a5638 100%);
+    color:#f7f1e3; text-align:center; padding:46px 20px 40px; margin-bottom:18px;
+    border-bottom:5px solid var(--gold);
+  }
+  .flower{font-size:48px; line-height:1; margin-bottom:6px}
+  header.cover .inst{letter-spacing:3px; font-size:13px; text-transform:uppercase; color:#e6cf9b; margin-bottom:14px}
+  header.cover h1{margin:6px 0 2px; font-size:30px; font-weight:700}
+  header.cover .sci{font-style:italic; color:#e6cf9b; font-size:17px; margin-bottom:14px}
+  .meta{font-size:13px; color:#d9cead; line-height:1.55}
+  .langbar{
+    position:sticky; top:0; z-index:10; display:flex; gap:8px; justify-content:center;
+    background:var(--bg); padding:12px 0; border-bottom:1px solid var(--line); margin-bottom:8px;
+  }
+  .langbar button{
+    font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
+    border:1.5px solid var(--brown); background:transparent; color:var(--brown);
+    padding:8px 20px; border-radius:30px; transition:.2s;
+  }
+  .langbar button.active{background:var(--brown); color:#fff}
+  .langbar button:hover{background:var(--gold); border-color:var(--gold); color:#fff}
+  section{
+    background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    padding:22px 24px; margin:16px 0; box-shadow:0 2px 10px rgba(58,46,31,.05);
+  }
+  h2{
+    color:var(--brown); font-size:21px; margin:0 0 12px; padding-bottom:8px;
+    border-bottom:2px solid var(--gold); display:flex; align-items:center; gap:10px;
+  }
+  h2 .num{
+    background:var(--gold); color:#fff; font-size:14px; width:30px; height:30px;
+    border-radius:50%; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  h3{color:var(--green); font-size:16px; margin:18px 0 4px}
+  p{margin:6px 0; text-align:justify; text-justify:inter-word}
+  ul{margin:6px 0 6px; padding-left:20px}
+  li{margin:5px 0; text-align:justify}
+  table{width:100%; border-collapse:collapse; margin:10px 0; font-size:15px}
+  th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top}
+  th{background:#efe7d4; color:var(--brown)}
+  .term{font-weight:700; color:var(--brown)}
+  .stage{
+    border-left:4px solid var(--green); background:#f3f5ec; padding:8px 12px; margin:8px 0; border-radius:0 8px 8px 0;
+  }
+  .stage b{color:var(--green)}
+  footer{text-align:center; color:var(--soft); font-size:13px; margin-top:30px; padding-top:18px; border-top:1px solid var(--line)}
+  .es .en-only{display:none}
+  .en .es-only{display:none}
+  .badge{display:inline-block; background:#efe7d4; color:var(--brown); border-radius:6px; padding:2px 8px; font-size:13px; margin:2px 4px 2px 0}
+  .ill{display:block; max-width:100%; height:auto; margin:14px auto 6px}
+  .ill.sm{max-width:280px}
+  .ill.md{max-width:420px}
+  .ill.full{width:100%}
+  .cap{text-align:center; font-size:13px; color:var(--soft); font-style:italic; margin:0 0 6px}
+  .hero-ill{display:block; margin:0 auto; max-width:170px}
+  .banner{width:100%; border-radius:12px; margin:10px 0; display:block}
+</style>
+</head>
+<body class="es">
+<header class="cover">
+  <img src="img/hero_flower.png" alt="Flor de manzanilla" class="hero-ill">
+  <div class="inst">Instituto Rembrandt</div>
+  <h1><span class="es-only">La Manzanilla</span><span class="en-only">Chamomile</span></h1>
+  <div class="sci">Matricaria chamomilla L.</div>
+  <div class="meta">
+    <span class="es-only">Investigación botánica · Composición, propiedades y cuidados<br>Documento bilingüe (Español / English)</span>
+    <span class="en-only">Botanical research · Composition, properties &amp; care<br>Bilingual document (Spanish / English)</span>
+  </div>
+</header>
+
+<div class="langbar">
+  <button id="btn-es" class="active" onclick="setLang('es')">Español</button>
+  <button id="btn-en" onclick="setLang('en')">English</button>
+</div>
+
+<div class="wrap">
+
+  <img src="img/field.png" alt="Campo de manzanilla" class="banner">
+
+  <!-- 1. NOMBRE CIENTÍFICO -->
+  <section>
+    <h2><span class="num">1</span><span class="es-only">Nombre científico y clasificación</span><span class="en-only">Scientific name &amp; classification</span></h2>
+    <img src="img/plant_full.png" alt="Planta completa de manzanilla" class="ill sm">
+    <p class="cap"><span class="es-only">Planta de <i>Matricaria chamomilla</i>: tallos ramificados, hojas pinnadas y cabezuelas.</span><span class="en-only"><i>Matricaria chamomilla</i> plant: branched stems, pinnate leaves and flower heads.</span></p>
+    <img src="img/anatomy.png" alt="Anatomía de la flor" class="ill md">
+    <p class="cap"><span class="es-only">Anatomía de la cabezuela (rasgo distintivo: receptáculo hueco y cónico).</span><span class="en-only">Flower-head anatomy (key trait: hollow, conical receptacle).</span></p>
+    <div class="es-only">
+      <p>La <span class="term">manzanilla común</span> o <span class="term">manzanilla alemana</span> es la especie <span class="term">Matricaria chamomilla</span> L. (sinónimos aceptados: <i>Matricaria recutita</i> y <i>Chamomilla recutita</i>). Es una planta herbácea anual perteneciente a la familia <span class="term">Asteraceae</span> (compuestas). No debe confundirse con la <span class="term">manzanilla romana</span> (<i>Chamaemelum nobile</i>, antes <i>Anthemis nobilis</i>), que es perenne.</p>
+      <table>
+        <tr><th>Categoría</th><th>Clasificación</th></tr>
+        <tr><td>Reino</td><td>Plantae</td></tr>
+        <tr><td>División</td><td>Magnoliophyta (angiospermas)</td></tr>
+        <tr><td>Clase</td><td>Magnoliopsida (dicotiledóneas)</td></tr>
+        <tr><td>Orden</td><td>Asterales</td></tr>
+        <tr><td>Familia</td><td>Asteraceae</td></tr>
+        <tr><td>Género</td><td><i>Matricaria</i></td></tr>
+        <tr><td>Especie</td><td><i>M. chamomilla</i> L.</td></tr>
+      </table>
+      <p>Carácter distintivo: el receptáculo floral es <span class="term">hueco y cónico</span>, lo que separa a la manzanilla alemana de plantas parecidas.</p>
+    </div>
+    <div class="en-only">
+      <p><span class="term">Common chamomile</span> or <span class="term">German chamomile</span> is the species <span class="term">Matricaria chamomilla</span> L. (accepted synonyms: <i>Matricaria recutita</i> and <i>Chamomilla recutita</i>). It is an <span class="term">annual herbaceous</span> plant of the <span class="term">Asteraceae</span> (daisy) family. It should not be confused with <span class="term">Roman chamomile</span> (<i>Chamaemelum nobile</i>, formerly <i>Anthemis nobilis</i>), which is perennial.</p>
+      <table>
+        <tr><th>Rank</th><th>Classification</th></tr>
+        <tr><td>Kingdom</td><td>Plantae</td></tr>
+        <tr><td>Division</td><td>Magnoliophyta (angiosperms)</td></tr>
+        <tr><td>Class</td><td>Magnoliopsida (dicots)</td></tr>
+        <tr><td>Order</td><td>Asterales</td></tr>
+        <tr><td>Family</td><td>Asteraceae</td></tr>
+        <tr><td>Genus</td><td><i>Matricaria</i></td></tr>
+        <tr><td>Species</td><td><i>M. chamomilla</i> L.</td></tr>
+      </table>
+      <p>Distinctive trait: the flower receptacle is <span class="term">hollow and conical</span>, which separates German chamomile from look-alike plants.</p>
+    </div>
+  </section>
+
+  <!-- 2. COMPOSICIÓN QUÍMICA -->
+  <section>
+    <h2><span class="num">2</span><span class="es-only">Composición química</span><span class="en-only">Chemical composition</span></h2>
+    <img src="img/chemistry.png" alt="Composición química" class="ill md">
+    <p class="cap"><span class="es-only">Principios activos: aceite esencial y compuestos clave.</span><span class="en-only">Active principles: essential oil and key compounds.</span></p>
+    <div class="es-only">
+      <p>La actividad de la manzanilla se debe a un conjunto de compuestos concentrados sobre todo en las <span class="term">flores</span>. El más característico es su <span class="term">aceite esencial</span> (0.24 % – 1.9 % del peso seco de la flor), de color azul.</p>
+      <h3>Aceite esencial (terpenoides)</h3>
+      <ul>
+        <li><span class="term">(−)-α-Bisabolol</span> y sus óxidos A y B — principal agente antiinflamatorio y cicatrizante.</li>
+        <li><span class="term">Camazuleno</span> — responsable del color azul del aceite; se forma a partir de la <span class="term">matricina</span> durante la destilación al vapor.</li>
+        <li><span class="term">Matricina</span> (sesquiterpeno precursor del camazuleno).</li>
+        <li><span class="term">Farneseno</span> y <span class="term">β-farneseno</span>.</li>
+        <li><span class="term">Espiroéteres</span> (cis/trans-en-in-dicicloéter) — actividad antiespasmódica.</li>
+      </ul>
+      <h3>Flavonoides</h3>
+      <ul>
+        <li><span class="term">Apigenina</span> y apigenina-7-O-glucósido — sedante suave (afinidad por receptores GABA<sub>A</sub>/benzodiazepínicos) y antiinflamatorio.</li>
+        <li><span class="term">Luteolina, quercetina, patuletina</span>.</li>
+      </ul>
+      <h3>Otros compuestos</h3>
+      <ul>
+        <li><span class="term">Cumarinas</span>: umbeliferona y herniarina.</li>
+        <li><span class="term">Ácidos fenólicos</span>: cafeico y clorogénico (antioxidantes).</li>
+        <li><span class="term">Mucílagos y polisacáridos</span> (efecto demulcente/suavizante).</li>
+      </ul>
+    </div>
+    <div class="en-only">
+      <p>Chamomile's activity comes from a set of compounds concentrated mainly in the <span class="term">flower heads</span>. The most characteristic is its blue <span class="term">essential oil</span> (0.24 % – 1.9 % of the dry flower weight).</p>
+      <h3>Essential oil (terpenoids)</h3>
+      <ul>
+        <li><span class="term">(−)-α-Bisabolol</span> and its A and B oxides — main anti-inflammatory and wound-healing agent.</li>
+        <li><span class="term">Chamazulene</span> — gives the oil its blue color; formed from <span class="term">matricin</span> during steam distillation.</li>
+        <li><span class="term">Matricin</span> (sesquiterpene, precursor of chamazulene).</li>
+        <li><span class="term">Farnesene</span> and <span class="term">β-farnesene</span>.</li>
+        <li><span class="term">Spiroethers</span> (cis/trans-en-yne-dicycloether) — antispasmodic activity.</li>
+      </ul>
+      <h3>Flavonoids</h3>
+      <ul>
+        <li><span class="term">Apigenin</span> and apigenin-7-O-glucoside — mild sedative (affinity for GABA<sub>A</sub>/benzodiazepine receptors) and anti-inflammatory.</li>
+        <li><span class="term">Luteolin, quercetin, patuletin</span>.</li>
+      </ul>
+      <h3>Other compounds</h3>
+      <ul>
+        <li><span class="term">Coumarins</span>: umbelliferone and herniarin.</li>
+        <li><span class="term">Phenolic acids</span>: caffeic and chlorogenic (antioxidants).</li>
+        <li><span class="term">Mucilage and polysaccharides</span> (demulcent/soothing effect).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3. ETAPAS DE CRECIMIENTO -->
+  <section>
+    <h2><span class="num">3</span><span class="es-only">Etapas de crecimiento</span><span class="en-only">Growth stages</span></h2>
+    <img src="img/growth_stages.png" alt="Etapas de crecimiento" class="ill full">
+    <p class="cap"><span class="es-only">Las 6 etapas, de la semilla a la floración.</span><span class="en-only">The 6 stages, from seed to bloom.</span></p>
+    <div class="es-only">
+      <p>La manzanilla alemana es <span class="term">anual</span>: completa su ciclo en una temporada (aprox. 60–110 días de la siembra a la cosecha).</p>
+      <div class="stage"><b>1. Germinación (3–14 días).</b> La semilla necesita <b>luz</b> para germinar, por eso se siembra en la superficie sin enterrar. Temperatura ideal 10–20 °C.</div>
+      <div class="stage"><b>2. Plántula / roseta basal.</b> Aparecen las primeras hojas finamente divididas (pinnadas) formando una roseta a ras de suelo.</div>
+      <div class="stage"><b>3. Crecimiento vegetativo y ramificación.</b> El tallo se alarga y se ramifica; la planta alcanza 15–60 cm de altura.</div>
+      <div class="stage"><b>4. Botón floral.</b> Se forman los capítulos (cabezuelas) aún cerrados sobre el receptáculo cónico hueco.</div>
+      <div class="stage"><b>5. Floración plena (cosecha).</b> Lígulas blancas hacia abajo y disco amarillo abierto. Es el momento óptimo de recolección por máxima concentración de aceite.</div>
+      <div class="stage"><b>6. Fructificación y senescencia.</b> Se forman los aquenios (semillas); la planta seca y dispersa la semilla.</div>
+    </div>
+    <div class="en-only">
+      <p>German chamomile is an <span class="term">annual</span>: it completes its cycle in one season (about 60–110 days from sowing to harvest).</p>
+      <div class="stage"><b>1. Germination (3–14 days).</b> The seed needs <b>light</b> to germinate, so it is surface-sown and not buried. Ideal temperature 10–20 °C.</div>
+      <div class="stage"><b>2. Seedling / basal rosette.</b> First finely divided (pinnate) leaves appear, forming a ground-level rosette.</div>
+      <div class="stage"><b>3. Vegetative growth &amp; branching.</b> The stem elongates and branches; the plant reaches 15–60 cm tall.</div>
+      <div class="stage"><b>4. Bud stage.</b> Flower heads form, still closed, over the hollow conical receptacle.</div>
+      <div class="stage"><b>5. Full bloom (harvest).</b> White ray florets bend downward and the yellow disc opens. This is the optimal harvest time due to peak oil content.</div>
+      <div class="stage"><b>6. Fruiting &amp; senescence.</b> Achenes (seeds) form; the plant dries and disperses seed.</div>
+    </div>
+  </section>
+
+  <!-- 4. PROPIEDADES Y USOS -->
+  <section>
+    <h2><span class="num">4</span><span class="es-only">Propiedades y usos benéficos</span><span class="en-only">Properties &amp; beneficial uses</span></h2>
+    <img src="img/uses.png" alt="Usos benéficos" class="ill md">
+    <p class="cap"><span class="es-only">Principales aplicaciones de la manzanilla.</span><span class="en-only">Main applications of chamomile.</span></p>
+    <div class="es-only">
+      <table>
+        <tr><th>Propiedad</th><th>Compuesto responsable</th><th>Aplicación</th></tr>
+        <tr><td>Antiinflamatoria</td><td>α-bisabolol, camazuleno, apigenina</td><td>Inflamaciones de piel y mucosas</td></tr>
+        <tr><td>Antiespasmódica / digestiva</td><td>Espiroéteres, flavonoides</td><td>Cólicos, gases, malestar estomacal</td></tr>
+        <tr><td>Sedante suave / ansiolítica</td><td>Apigenina</td><td>Ayuda a conciliar el sueño, calma nervios</td></tr>
+        <tr><td>Cicatrizante</td><td>α-bisabolol, mucílagos</td><td>Heridas leves, irritaciones</td></tr>
+        <tr><td>Antimicrobiana</td><td>Aceite esencial</td><td>Enjuagues bucales, antiséptico suave</td></tr>
+        <tr><td>Antioxidante</td><td>Ácidos fenólicos, flavonoides</td><td>Protección celular</td></tr>
+      </table>
+      <h3>Formas de uso</h3>
+      <ul>
+        <li><span class="term">Infusión (té):</span> la más común; flores secas en agua caliente para digestión y relajación.</li>
+        <li><span class="term">Uso tópico:</span> compresas, cremas y lociones para piel irritada.</li>
+        <li><span class="term">Vapores e inhalaciones:</span> alivio de vías respiratorias.</li>
+        <li><span class="term">Cosmética:</span> champús y productos para aclarar y suavizar el cabello.</li>
+        <li><span class="term">Enjuague bucal y ocular tradicional</span> (siempre con preparación adecuada).</li>
+      </ul>
+      <p><b>Precaución:</b> personas alérgicas a las Asteraceae (ambrosía, crisantemo, caléndula) pueden reaccionar. No sustituye tratamiento médico.</p>
+    </div>
+    <div class="en-only">
+      <table>
+        <tr><th>Property</th><th>Responsible compound</th><th>Application</th></tr>
+        <tr><td>Anti-inflammatory</td><td>α-bisabolol, chamazulene, apigenin</td><td>Skin and mucous inflammation</td></tr>
+        <tr><td>Antispasmodic / digestive</td><td>Spiroethers, flavonoids</td><td>Cramps, gas, upset stomach</td></tr>
+        <tr><td>Mild sedative / anxiolytic</td><td>Apigenin</td><td>Helps sleep, calms nerves</td></tr>
+        <tr><td>Wound-healing</td><td>α-bisabolol, mucilage</td><td>Minor wounds, irritation</td></tr>
+        <tr><td>Antimicrobial</td><td>Essential oil</td><td>Mouth rinses, mild antiseptic</td></tr>
+        <tr><td>Antioxidant</td><td>Phenolic acids, flavonoids</td><td>Cell protection</td></tr>
+      </table>
+      <h3>Forms of use</h3>
+      <ul>
+        <li><span class="term">Infusion (tea):</span> the most common; dried flowers in hot water for digestion and relaxation.</li>
+        <li><span class="term">Topical use:</span> compresses, creams and lotions for irritated skin.</li>
+        <li><span class="term">Steam &amp; inhalation:</span> relief for the respiratory tract.</li>
+        <li><span class="term">Cosmetics:</span> shampoos and products to lighten and soften hair.</li>
+        <li><span class="term">Traditional mouth and eye rinse</span> (always with proper preparation).</li>
+      </ul>
+      <p><b>Caution:</b> people allergic to Asteraceae (ragweed, chrysanthemum, marigold) may react. It does not replace medical treatment.</p>
+    </div>
+  </section>
+
+  <!-- 5. CUIDADOS Y ESPECIFICACIONES -->
+  <section>
+    <h2><span class="num">5</span><span class="es-only">Cuidados, cultivo y especificaciones</span><span class="en-only">Care, cultivation &amp; specifications</span></h2>
+    <img src="img/care.png" alt="Cuidados de cultivo" class="ill md">
+    <p class="cap"><span class="es-only">Requisitos básicos de cultivo.</span><span class="en-only">Basic cultivation requirements.</span></p>
+    <div class="es-only">
+      <h3>Cuidados de cultivo</h3>
+      <ul>
+        <li><span class="term">Luz:</span> pleno sol (mínimo 6 h diarias).</li>
+        <li><span class="term">Suelo:</span> bien drenado, ligero (franco-arenoso); pH 5.6–7.5.</li>
+        <li><span class="term">Riego:</span> moderado; tolera sequía una vez establecida. Evitar encharcamiento.</li>
+        <li><span class="term">Siembra:</span> semillas en superficie (necesitan luz), separación 15–20 cm.</li>
+        <li><span class="term">Fertilización:</span> mínima; el exceso de nitrógeno reduce el aceite esencial.</li>
+        <li><span class="term">Cosecha:</span> recolectar las cabezuelas totalmente abiertas, por la mañana tras secarse el rocío.</li>
+        <li><span class="term">Clima:</span> templado; resistente al frío ligero.</li>
+      </ul>
+      <h3>Especificaciones botánicas</h3>
+      <table>
+        <tr><th>Característica</th><th>Valor</th></tr>
+        <tr><td>Ciclo de vida</td><td>Anual</td></tr>
+        <tr><td>Altura</td><td>15–60 cm</td></tr>
+        <tr><td>Diámetro de la flor</td><td>1.5–2.5 cm</td></tr>
+        <tr><td>Flor</td><td>Lígulas blancas + disco amarillo; receptáculo hueco cónico</td></tr>
+        <tr><td>Hojas</td><td>Alternas, finamente divididas (bi/tripinnadas)</td></tr>
+        <tr><td>Aroma</td><td>Dulce, similar a manzana ("chamai-melon" = manzana de tierra)</td></tr>
+        <tr><td>Floración</td><td>Primavera–verano</td></tr>
+        <tr><td>Propagación</td><td>Por semilla</td></tr>
+        <tr><td>Origen</td><td>Europa y Asia occidental; naturalizada en todo el mundo</td></tr>
+      </table>
+    </div>
+    <div class="en-only">
+      <h3>Cultivation care</h3>
+      <ul>
+        <li><span class="term">Light:</span> full sun (at least 6 h daily).</li>
+        <li><span class="term">Soil:</span> well-drained, light (sandy loam); pH 5.6–7.5.</li>
+        <li><span class="term">Water:</span> moderate; drought-tolerant once established. Avoid waterlogging.</li>
+        <li><span class="term">Sowing:</span> surface-sow seeds (they need light), 15–20 cm spacing.</li>
+        <li><span class="term">Fertilizing:</span> minimal; excess nitrogen lowers essential-oil content.</li>
+        <li><span class="term">Harvest:</span> pick fully open flower heads in the morning after the dew dries.</li>
+        <li><span class="term">Climate:</span> temperate; tolerates light frost.</li>
+      </ul>
+      <h3>Botanical specifications</h3>
+      <table>
+        <tr><th>Feature</th><th>Value</th></tr>
+        <tr><td>Life cycle</td><td>Annual</td></tr>
+        <tr><td>Height</td><td>15–60 cm</td></tr>
+        <tr><td>Flower diameter</td><td>1.5–2.5 cm</td></tr>
+        <tr><td>Flower</td><td>White ray florets + yellow disc; hollow conical receptacle</td></tr>
+        <tr><td>Leaves</td><td>Alternate, finely divided (bi/tripinnate)</td></tr>
+        <tr><td>Scent</td><td>Sweet, apple-like ("chamai-melon" = ground apple)</td></tr>
+        <tr><td>Bloom</td><td>Spring–summer</td></tr>
+        <tr><td>Propagation</td><td>By seed</td></tr>
+        <tr><td>Origin</td><td>Europe &amp; western Asia; naturalized worldwide</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- CRÉDITOS -->
+  <section>
+    <h2><span class="num">★</span><span class="es-only">Créditos del equipo</span><span class="en-only">Team credits</span></h2>
+    <div class="es-only">
+      <ul>
+        <li><span class="term">Carlos Eduardo Gutiérrez Guevara</span> — desarrolló todo lo digital (documento, versión web y código QR) e investigó la <b>Composición química</b>.</li>
+        <li><span class="term">Marco Olvera</span> — investigó los <b>Cuidados</b>, cultivo y especificaciones, y las <b>Etapas de crecimiento</b>.</li>
+        <li><span class="term">Erick Zagoya</span> — investigó los <b>Beneficios</b> (propiedades y usos) y el <b>Nombre científico</b> y clasificación.</li>
+      </ul>
+      <p style="text-align:center;color:var(--soft);font-style:italic">El resto de la investigación se repartió equitativamente entre los tres integrantes.</p>
+    </div>
+    <div class="en-only">
+      <ul>
+        <li><span class="term">Carlos Eduardo Gutiérrez Guevara</span> — developed all the digital work (document, web version and QR code) and researched the <b>Chemical composition</b>.</li>
+        <li><span class="term">Marco Olvera</span> — researched <b>Care</b>, cultivation &amp; specifications, and the <b>Growth stages</b>.</li>
+        <li><span class="term">Erick Zagoya</span> — researched the beneficial <b>Properties &amp; uses</b>, and the <b>Scientific name</b> &amp; classification.</li>
+      </ul>
+      <p style="text-align:center;color:var(--soft);font-style:italic">The remaining research was shared equally among the three members.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span class="es-only">Instituto Rembrandt · Investigación botánica · La Manzanilla (<i>Matricaria chamomilla</i> L.) · 2026</span>
+    <span class="en-only">Instituto Rembrandt · Botanical research · Chamomile (<i>Matricaria chamomilla</i> L.) · 2026</span>
+  </footer>
+</div>
+
+<script>
+  function setLang(l){
+    document.body.className = l;
+    document.documentElement.lang = (l==='es')?'es':'en';
+    document.getElementById('btn-es').classList.toggle('active', l==='es');
+    document.getElementById('btn-en').classList.toggle('active', l==='en');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+</script>
+</body>
+</html>

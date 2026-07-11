@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <title>Vitalink App Móvil</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { 
+            background: #0f172a; 
+            color: white; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header { 
+            background: #1a1a2e; 
+            padding: 20px; 
+            text-align: center;
+            border-bottom: 3px solid #e94560;
+        }
+        h1 { color: #e94560; font-size: 28px; margin-bottom: 5px; }
+        .subtitle { color: #94a3b8; font-size: 14px; }
+        
+        .status-bar { 
+            padding: 15px; 
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .connected { background: rgba(5, 150, 105, 0.2); color: #34d399; }
+        .disconnected { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .connecting { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .big-button {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #dc2626);
+            border: 5px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 40px rgba(233, 69, 96, 0.5);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .big-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.3);
+        }
+        
+        .big-button:disabled {
+            background: #475569;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .big-button.sent {
+            background: linear-gradient(135deg, #059669, #10b981);
+            animation: pulse 0.5s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .info-text {
+            margin-top: 30px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .emergency-form {
+            width: 100%;
+            max-width: 400px;
+            background: #16213e;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .btn-secondary {
+            width: 100%;
+            padding: 15px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚑 Vitalink</h1>
+        <div class="subtitle">App Móvil EMS</div>
+    </div>
+    
+    <div id="status-bar" class="status-bar connecting">
+        Conectando...
+    </div>
+    
+    <div class="main-content">
+        <!-- Formulario de emergencia (opcional) -->
+        <div class="emergency-form" id="form-section">
+            <div class="form-group">
+                <label>Tipo de Emergencia</label>
+                <select id="emg-type">
+                    <option value="cardiac">Cardíaca</option>
+                    <option value="trauma">Trauma</option>
+                    <option value="respiratory">Respiratoria</option>
+                    <option value="other">Otra</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre del Paciente</label>
+                <input type="text" id="p-name" placeholder="Ej: Juan Pérez">
+            </div>
+            
+            <div class="form-group">
+                <label>Edad</label>
+                <input type="number" id="p-age" placeholder="Ej: 45">
+            </div>
+            
+            <button class="btn-secondary" onclick="sendEmergency()">
+                🚨 Enviar Emergencia
+            </button>
+        </div>
+        
+        <!-- Botón principal de prueba -->
+        <button id="main-btn" class="big-button" disabled onclick="sendLinqueados()">
+            <span style="font-size: 40px;">📱</span>
+            <span>Linqueados<br>bro</span>
+        </button>
+        
+        <div class="info-text">
+            Conectado a:<br>
+            <span style="color: #e94560;">purifier-purging-footsie.ngrok-free.dev</span>
+            <br><br>
+            Presiona el botón rojo para enviar<br>
+            el mensaje al Centro de Comando
+        </div>
+    </div>
+
+    <script>
+        // 🌐 CONFIGURACIÓN - Misma URL que tu web principal
+        const WS_URL = 'wss://purifier-purging-footsie.ngrok-free.dev';
+        
+        let ws = null;
+        const statusBar = document.getElementById('status-bar');
+        const mainBtn = document.getElementById('main-btn');
+
+        function updateStatus(state, text) {
+            statusBar.className = 'status-bar ' + state;
+            statusBar.textContent = text;
+        }
+
+        function connect() {
+            updateStatus('connecting', 'Conectando...');
+            
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = () => {
+                updateStatus('connected', '🟢 Conectado al Centro');
+                mainBtn.disabled = false;
+                console.log('✅ Conectado');
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'TEST_CONFIRMED') {
+                    // El servidor confirmó recepción
+                    console.log('Confirmado por servidor');
+                }
+            };
+            
+            ws.onerror = (err) => {
+                updateStatus('disconnected', '❌ Error de conexión');
+                mainBtn.disabled = true;
+                console.error('Error:', err);
+            };
+            
+            ws.onclose = () => {
+                updateStatus('disconnected', '🔴 Reconectando...');
+                mainBtn.disabled = true;
+                setTimeout(connect, 3000);
+            };
+        }
+
+        function sendLinqueados() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('No hay conexión');
+                return;
+            }
+
+            const message = {
+                type: 'TEST_FROM_MOBILE',
+                payload: {
+                    message: 'Linqueados bro',
+                    device: 'AppMovilWeb',
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+            
+            // Efecto visual
+            mainBtn.classList.add('sent');
+            mainBtn.innerHTML = '<span style="font-size: 50px;">✅</span><span>Enviado!</span>';
+            
+            setTimeout(() => {
+                mainBtn.classList.remove('sent');
+                mainBtn.innerHTML = '<span style="font-size: 40px;">📱</span><span>Linqueados<br>bro</span>';
+            }, 1500);
+        }
+
+        function sendEmergency() {
+            const name = document.getElementById('p-name').value.trim();
+            const age = document.getElementById('p-age').value;
+            const type = document.getElementById('emg-type').value;
+            
+            if (!name || !age) {
+                alert('Completa nombre y edad');
+                return;
+            }
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('No hay conexión');
+                return;
+            }
+            
+            ws.send(JSON.stringify({
+                type: 'EMERGENCY_REPORT',
+                payload: {
+                    patientName: name,
+                    age: parseInt(age),
+                    typeId: type,
+                    timestamp: new Date().toISOString()
+                }
+            }));
+            
+            alert('🚨 Emergencia enviada al Centro de Mando');
+            
+            // Limpiar
+            document.getElementById('p-name').value = '';
+            document.getElementById('p-age').value = '';
+        }
+
+        // Iniciar conexión
+        connect();
+        
+        // Reconectar si cambia de pestaña (visibilidad)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && ws.readyState !== WebSocket.OPEN) {
+                connect();
+            }
+        });
+    </script>
+</body>
+</html>

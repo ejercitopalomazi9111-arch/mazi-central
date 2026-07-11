@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>INKWELL — Lector Infinito</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Inter:wght@400;500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0f0d13; --bg2:#17141d; --card:#1d1a25; --ink:#ece7f2; --dim:#9a92ab;
+    --line:rgba(255,255,255,.08); --accent:#c94f7a;
+  }
+  html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif}
+  body{display:flex;justify-content:center}
+  #app{width:100%;max-width:560px;min-height:100dvh;background:var(--bg);position:relative;overflow-x:hidden}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:14px 16px;
+    background:linear-gradient(180deg,var(--bg) 60%,transparent);backdrop-filter:blur(8px)}
+  .topbar .logo{font-family:'Fraunces',serif;font-weight:900;font-size:20px;letter-spacing:-.02em}
+  .topbar .logo span{color:var(--accent)}
+  .topbar .spacer{flex:1}
+  .iconbtn{width:38px;height:38px;border-radius:10px;background:var(--card);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font-size:16px}
+  .iconbtn:active{transform:scale(.94)}
+
+  /* ---------- library ---------- */
+  .lib-hero{padding:8px 16px 18px}
+  .lib-hero h1{font-family:'Fraunces',serif;font-weight:900;font-size:28px;line-height:1.05;letter-spacing:-.02em}
+  .lib-hero p{color:var(--dim);font-size:13.5px;margin-top:8px;line-height:1.5}
+  .section-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:6px 16px 10px}
+
+  .series-list{display:flex;flex-direction:column;gap:12px;padding:0 16px 24px}
+  .scard{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+  .scard:active{transform:scale(.985)}
+  .scard .cover{width:88px;height:118px;border-radius:11px;flex-shrink:0;position:relative;overflow:hidden;background:#000}
+  .scard .cover canvas{width:100%;height:100%;display:block}
+  .scard .meta{flex:1;min-width:0;display:flex;flex-direction:column}
+  .scard .genre{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+  .scard .stit{font-family:'Fraunces',serif;font-weight:700;font-size:17px;line-height:1.12;margin-bottom:6px}
+  .scard .hook{font-size:12.5px;color:var(--dim);line-height:1.45;flex:1;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .scard .foot{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11px;color:var(--dim)}
+  .scard .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.06)}
+  .scard .cont{color:var(--accent);font-weight:700}
+
+  /* ---------- reader ---------- */
+  #reader{display:none;flex-direction:column;min-height:100dvh}
+  #reader.on{display:flex}
+  .rhead{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:12px 16px;
+    background:linear-gradient(180deg,var(--bg) 70%,transparent);backdrop-filter:blur(8px)}
+  .rhead .rtitle{flex:1;min-width:0}
+  .rhead .rtitle .t{font-family:'Fraunces',serif;font-weight:600;font-size:15px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rhead .rtitle .c{font-size:11px;color:var(--dim);margin-top:2px}
+
+  .chapter{padding:10px 0 40px}
+  .ch-title{font-family:'Fraunces',serif;font-weight:900;font-size:22px;text-align:center;padding:24px 24px 6px;line-height:1.15}
+  .ch-arc{text-align:center;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);padding-bottom:20px}
+  .para{font-size:16.5px;line-height:1.72;padding:10px 24px;color:#e4dced;font-family:'Inter',serif}
+  .para.first::first-letter{font-family:'Fraunces',serif;font-weight:900;font-size:2.6em;float:left;line-height:.8;padding:6px 8px 0 0;color:var(--accent)}
+  .dialogue{padding:10px 24px}
+  .dialogue .line{font-size:16.5px;line-height:1.7;color:#f0e9f5;padding:3px 0;padding-left:14px;border-left:2px solid var(--line)}
+  .illus{margin:20px 0;position:relative}
+  .illus canvas{width:100%;display:block}
+  .illus .cap{position:absolute;bottom:8px;left:12px;font-size:10px;color:rgba(255,255,255,.4);font-style:italic}
+
+  .ch-nav{display:flex;gap:10px;padding:24px 16px 8px}
+  .navbtn{flex:1;padding:15px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    font-family:'Inter';font-weight:700;font-size:14px;cursor:pointer;transition:.14s}
+  .navbtn:active{transform:scale(.97)}
+  .navbtn.prim{background:var(--accent);border-color:transparent;color:#fff}
+  .navbtn:disabled{opacity:.35}
+
+  .jump{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 16px 30px;color:var(--dim);font-size:12px}
+  .jump input{width:80px;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px 10px;font-family:inherit;text-align:center}
+  .jump button{background:var(--card);border:1px solid var(--line);color:var(--accent);border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer}
+
+  .fade-in{animation:fade .4s ease-out}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fade-in{animation:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- LIBRARY -->
+  <div id="library">
+    <div class="topbar">
+      <div class="logo">INK<span>WELL</span></div>
+      <div class="spacer"></div>
+      <div class="iconbtn" id="shuffleBtn" title="Sorpréndeme">🎲</div>
+    </div>
+    <div class="lib-hero">
+      <h1>Historias que<br>nunca se acaban.</h1>
+      <p>Cada serie genera capítulos sin fin. Sigue leyendo donde lo dejaste — siempre hay más.</p>
+    </div>
+    <div class="section-label">Series disponibles</div>
+    <div class="series-list" id="seriesList"></div>
+  </div>
+
+  <!-- READER -->
+  <div id="reader">
+    <div class="rhead">
+      <div class="iconbtn" id="backBtn">←</div>
+      <div class="rtitle">
+        <div class="t" id="rSeriesTitle"></div>
+        <div class="c" id="rChapInfo"></div>
+      </div>
+    </div>
+    <div class="chapter" id="chapterBody"></div>
+    <div class="ch-nav">
+      <button class="navbtn" id="prevBtn">← Anterior</button>
+      <button class="navbtn prim" id="nextBtn">Siguiente →</button>
+    </div>
+    <div class="jump">
+      Ir al capítulo <input type="number" id="jumpInput" min="1" value="1"> <button id="jumpBtn">Ir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   MOTOR DE HISTORIAS — estilo Webtoon
+   Genera capítulos largos, coherentes, con arcos y personajes.
+   No usa API: todo local, con plantillas ricas + gramática de
+   escenas para que no suene robótico.
+   ============================================================ */
+
+// ---------- utilidades de azar con semilla (para reproducibilidad) ----------
+function makeRNG(seed){
+  let s = seed>>>0;
+  return function(){ s = (s*1664525 + 1013904223)>>>0; return s/4294967296; };
+}
+function pickR(rng, arr){ return arr[Math.floor(rng()*arr.length)]; }
+function chance(rng, p){ return rng()<p; }
+function shuffleR(rng, arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// ---------- bancos de nombres ----------
+const NAMES_M = ['Ryen','Kael','Ashvin','Dorian','Cael','Ren','Lucan','Ivo','Sael','Theon','Adrian','Vale','Kilian','Soren','Nox','Ashen','Ruel','Damon','Ezren','Halden'];
+const NAMES_F = ['Seraphina','Ariadne','Lysa','Ravenna','Elara','Isolde','Yuna','Mira','Selene','Noemi','Adelia','Rosalind','Ilvana','Ophelia','Cressa','Liora','Vesna','Anwen','Solenne','Dahlia'];
+const NAMES_SUR = ['Vahl','Ashford','Cross','Draven','Lorne','Vex','Ravencourt','Sol','Nightbloom','Ironhart','Fell','Blackwood','Marrow','Vane','Thorne','Wyrde','Ember','Voss','Cael','Ardent'];
+const TITLES = ['duque','duquesa','príncipe','princesa','emperador','emperatriz','marqués','condesa','archimago','general','regente','heredero','villana','tirano'];
+
+// ---------- catálogo de series (arquetipos webtoon) ----------
+const SERIES_DEFS = [
+  {
+    id:'reina', title:'Serás Mi Reina', genre:'Romance · Fantasía · Regresión',
+    hook:'Ejecutada por el hombre que amaba, la villana despierta tres años en el pasado — esta vez, el trono será suyo, y él le rogará.',
+    tone:'romance-venganza', accent:'#c94f7a', bg:'#1a0f18',
+    leadF:'Seraphina', leadM:'Ashvin', place:'el Imperio de Valennor',
+  },
+  {
+    id:'omnisciente', title:'El Lector Omnisciente', genre:'Acción · Sistema · Apocalipsis',
+    hook:'La novela que solo él terminó de leer se vuelve realidad. Conoce cada muerte, cada jefe, cada secreto... hasta que la trama empieza a cambiar.',
+    tone:'sistema-accion', accent:'#3aa0e6', bg:'#0d1420',
+    leadM:'Ren', leadF:'Yuna', place:'una Seúl devorada por escenarios',
+  },
+  {
+    id:'trono', title:'Tu Trono, el Precio Será Tu Todo', genre:'Fantasía Oscura · Corte · Venganza',
+    hook:'Le arrebataron el nombre, la familia y la corona. Regresa como una desconocida para cobrar cada deuda — con intereses.',
+    tone:'venganza-corte', accent:'#b8862a', bg:'#161208',
+    leadF:'Ravenna', leadM:'Dorian', place:'la corte de Sombra y Ceniza',
+  },
+  {
+    id:'recluso', title:'Recluso Absoluto', genre:'Murim · Artes Marciales · Regresión',
+    hook:'El demonio más temido del Murim muere solo y traicionado. Renace como el discípulo más débil de la secta que lo despreció.',
+    tone:'murim', accent:'#4ea672', bg:'#0d1712',
+    leadM:'Kael', leadF:'Mira', place:'las Nueve Sectas del Río Sangriento',
+  },
+  {
+    id:'todos', title:'Todos la Quieren', genre:'Romance · Comedia · Harem inverso',
+    hook:'Se metió en el cuerpo de la extra destinada a morir en el capítulo tres. Ahora los cinco protagonistas no la dejan en paz — y ella solo quiere sobrevivir.',
+    tone:'romance-comedia', accent:'#e08a3a', bg:'#1a1410',
+    leadF:'Elara', leadM:'Lucan', place:'la Academia Imperial de Astería',
+  },
+];
+
+// ---------- construcción del elenco de una serie ----------
+function buildCast(def, rng){
+  const cast = {};
+  cast.heroine = def.leadF ? {name:def.leadF, role:'protagonista', sur:pickR(rng,NAMES_SUR)} : null;
+  cast.hero = def.leadM ? {name:def.leadM, role:'protagonista', sur:pickR(rng,NAMES_SUR)} : null;
+  // antagonist
+  cast.rival = {name:pickR(rng, chance(rng,.5)?NAMES_M:NAMES_F), role:'rival', sur:pickR(rng,NAMES_SUR)};
+  cast.mentor = {name:pickR(rng, chance(rng,.5)?NAMES_M:NAMES_F), role:'mentor', sur:pickR(rng,NAMES_SUR)};
+  cast.shadow = {name:pickR(rng, NAMES_M), role:'enigma', sur:pickR(rng,NAMES_SUR)};
+  cast.friend = {name:pickR(rng, NAMES_F), role:'aliada', sur:pickR(rng,NAMES_SUR)};
+  // supporting pool
+  cast.pool = [];
+  for(let i=0;i<8;i++) cast.pool.push({name:pickR(rng, chance(rng,.5)?NAMES_M:NAMES_F), sur:pickR(rng,NAMES_SUR)});
+  return cast;
+}
+
+// ---------- estructura de arcos (para dar nudos a lo largo de miles de caps) ----------
+const ARC_TEMPLATES = {
+  'romance-venganza': ['El Regreso','La Primera Advertencia','El Baile de las Máscaras','La Deuda de Sangre','El Aliado Inesperado','La Traición Anunciada','La Corona Rota','El Precio del Amor','La Villana Sonríe','El Juicio Final'],
+  'sistema-accion': ['El Escenario Cero','La Grieta','El Primer Jefe','La Compañía','El Constelación','El Escenario Oculto','La Muerte Escrita','El Cambio de Trama','El Rey de los Muros','El Final que Nadie Leyó'],
+  'venganza-corte': ['La Desconocida','El Salón de los Cuervos','La Máscara de Ceniza','El Pacto','La Corte Tiembla','El Nombre Robado','La Reina de Nada','El Cuchillo Dorado','La Verdad Enterrada','La Deuda Cobrada'],
+  'murim': ['El Discípulo Débil','La Técnica Prohibida','El Torneo de las Sectas','La Sangre del Demonio','El Maestro Ciego','La Montaña de Espadas','El Voto Roto','El Regreso del Terror','Las Nueve Heridas','El Cielo Partido'],
+  'romance-comedia': ['La Extra','El Guion Roto','Los Cinco Idiotas','La Ruta de la Muerte','El Malentendido','El Festival','La Confesión Torpe','El Villano Adorable','El Final Alternativo','Felices... ¿para siempre?'],
+};
+
+// ---------- fragmentos narrativos por tono (estilo Webtoon: directo, corto, con golpe) ----------
+const BEATS = {
+  open: [
+    'El aire olía a $sensa cuando $HER abrió los ojos.',
+    'No era un sueño. Otra vez estaba aquí, en $PLACE.',
+    '$HER contó hasta tres antes de mirar. La escena no había cambiado.',
+    'La primera vez que $HER vio a $HIM, supo que uno de los dos no saldría vivo.',
+    'Todos en $PLACE hablaban de lo mismo esa mañana. Y $HER era el centro del rumor.',
+    'La campana sonó doce veces. En $PLACE, eso nunca era buena señal.',
+    '$HER despertó con el sabor del $sensa en la boca y una certeza clavada en el pecho: hoy alguien iba a morir.',
+    'Dicen que en $PLACE los muertos no descansan. $HER estaba a punto de comprobarlo.',
+    'Tres cartas sobre la mesa. Tres nombres. Uno de ellos, el suyo.',
+    'El día que todo cambió empezó, como todos, con $HER fingiendo que no le importaba.',
+    'Había una regla en $PLACE: nunca mires atrás. $HER acababa de romperla.',
+    'La nieve caía sobre $PLACE como si quisiera enterrarlo todo. Ojalá lo hiciera.',
+  ],
+  tension: [
+    '—No deberías estar aquí —dijo $HIM, sin levantar la voz. Eso era lo que lo hacía peligroso.',
+    '$RIVAL sonrió de esa forma que $HER había aprendido a temer.',
+    'Algo estaba mal. $HER lo sentía en la nuca, como una mano fría.',
+    'El salón entero se quedó en silencio cuando $HER cruzó la puerta.',
+    '—¿Crees que no lo sé? —$HER dio un paso al frente—. Sé exactamente quién eres.',
+    'Nadie se movió. El aire pesaba como plomo mojado.',
+    '$RIVAL dejó la copa sobre la mesa. El sonido retumbó como una sentencia.',
+    '—Cuidado con lo que deseas en $PLACE —susurró alguien—. Aquí los deseos muerden.',
+    'Las manos de $HER no temblaban. Eso, más que nada, asustó a $RIVAL.',
+    '$HIM la observaba desde el otro extremo del salón. No apartó la mirada. Ella tampoco.',
+    'Había demasiada calma. La clase de calma que precede a un cuchillo.',
+  ],
+  reveal: [
+    'Y entonces lo entendió: $SHADOW nunca había estado de su lado.',
+    'La carta llevaba un solo nombre. Un nombre que $HER creía muerto.',
+    'No era una coincidencia. Nada de esto lo era.',
+    '$HIM extendió la mano. En ella, el anillo que $HER había perdido tres años atrás.',
+    'La profecía no hablaba de $HIM. Hablaba de $HER.',
+    'El sello de la carta era el del propio $RIVAL. Imposible. Y sin embargo, ahí estaba.',
+    '—Tú lo sabías —dijo $HER, y su voz apenas fue un hilo—. Todo este tiempo lo supiste.',
+    'La cicatriz. $SHADOW tenía la misma cicatriz. Todo encajó de golpe, como huesos rotos.',
+    'No había cinco jugadores en este juego. Había seis. Y el sexto era $HER.',
+    'La verdad tenía nombre, y el nombre estaba grabado en la hoja que $HER sostenía.',
+  ],
+  action: [
+    'La hoja cortó el aire. $HER ya no estaba donde había estado un segundo antes.',
+    'Todo pasó en un parpadeo: el grito, el destello, el cuerpo cayendo.',
+    '$HERO no corrió. Caminó hacia el peligro como quien va a casa.',
+    'El suelo tembló. Lo que subía de la grieta no tenía nombre en ningún idioma.',
+    '—Muévete —siseó $HIM, y por primera vez, $HER obedeció.',
+    'Chispas. Acero contra acero. $HERO sonreía, y eso era lo más aterrador de todo.',
+    'La explosión partió la noche en dos. $HER ya corría hacia el fuego, no lejos de él.',
+    'Un golpe. Dos. Al tercero, $RIVAL entendió que había subestimado a la persona equivocada.',
+    'El mundo se volvió lento. $HER vio la trayectoria, calculó, y decidió no esquivarla.',
+    'No hubo gritos. Solo el sonido seco de algo cayendo, y luego el silencio.',
+  ],
+  romance: [
+    'Sus miradas se cruzaron un segundo de más. Ninguno de los dos lo mencionó.',
+    '—Odio que siempre tengas razón —murmuró $HER, sin apartarse.',
+    '$HIM la miró como si fuera la última página de un libro que no quería terminar.',
+    'La distancia entre ellos era de un paso. Ninguno lo dio. Todavía.',
+    '—Si me traicionas otra vez —dijo $HER en voz baja—, esta vez me aseguraré de que duela.',
+    '$HIM le acomodó el mechón detrás de la oreja. Ella lo dejó. Ese fue el error de ambos.',
+    '—No te confundas —dijo $HER, con las mejillas ardiendo—. Solo te necesito vivo. Por ahora.',
+    'Se suponía que $HER lo odiaba. Se suponía. El corazón, terco, no había recibido el memo.',
+    '—Quédate —pidió $HIM. Una sola palabra, y a $HER se le olvidó cómo respirar.',
+    'Sus dedos se rozaron sobre la empuñadura. Ninguno soltó el arma. Ninguno se soltó.',
+  ],
+  cliff: [
+    'Y justo cuando creyó que había ganado, las puertas se abrieron de golpe.',
+    'La voz detrás de ella dijo tres palabras que lo cambiaron todo: —Te estaba esperando.',
+    '$HER sonrió. El verdadero juego apenas comenzaba.',
+    'Lo último que vio antes de que se apagaran las luces fue esa sonrisa. Esa maldita sonrisa.',
+    'Nadie notó la figura en el balcón. Nadie, excepto $HER.',
+    'Entonces $SHADOW pronunció su verdadero nombre, y el suelo pareció ceder bajo sus pies.',
+    'La carta ardió en la chimenea. Pero el nombre ya estaba grabado a fuego en su memoria.',
+    '—Que empiece —dijo $HER, y por primera vez en años, sintió algo parecido a la esperanza. O al terror. Costaba distinguirlos.',
+    'Afuera, las campanas empezaron a sonar. Todas a la vez. Eso solo pasaba cuando moría un rey.',
+    'Y en la última línea de la página que nadie más había leído, aparecía una palabra nueva: su nombre.',
+  ],
+};
+const SENSA = ['ceniza','lluvia fría','rosas marchitas','acero','incienso','tierra mojada','sangre vieja','jazmín'];
+
+// ---------- generador de un capítulo ----------
+function genChapter(def, cast, chapNum, rng){
+  const arc = ARC_TEMPLATES[def.tone] || ARC_TEMPLATES['romance-venganza'];
+  const arcIdx = Math.floor((chapNum-1)/12) % arc.length;
+  const arcName = arc[arcIdx];
+  const inArc = ((chapNum-1)%12)+1;
+
+  const HER = cast.heroine?cast.heroine.name:cast.hero.name;
+  const HIM = cast.hero?cast.hero.name:cast.rival.name;
+  const HERO = cast.hero?cast.hero.name:HER;
+  const RIVAL = cast.rival.name;
+  const SHADOW = cast.shadow.name;
+  const PLACE = def.place;
+
+  function fill(s){
+    return s.replace(/\$HER/g,HER).replace(/\$HIM/g,HIM).replace(/\$HERO/g,HERO)
+            .replace(/\$RIVAL/g,RIVAL).replace(/\$SHADOW/g,SHADOW).replace(/\$PLACE/g,PLACE)
+            .replace(/\$sensa/g,pickR(rng,SENSA));
+  }
+
+  // build scenes: each chapter = several beats with a shape, no repeats within chapter
+  const used = new Set();
+  function draw(bank){
+    const opts = BEATS[bank].filter(x=>!used.has(x));
+    const chosen = opts.length? pickR(rng,opts) : pickR(rng,BEATS[bank]);
+    used.add(chosen); return fill(chosen);
+  }
+  const scenes = [];
+  // shape: open -> tension -> (romance?) -> illus -> reveal -> dialogue -> action -> (illus?) -> tension2? -> cliff
+  scenes.push({type:'para', text:draw('open')});
+  scenes.push({type:'para', text:draw('tension')});
+  if(chance(rng,.55)) scenes.push({type:'para', text:draw('romance')});
+  scenes.push({type:'illus', mood:def.tone, seed:Math.floor(rng()*1e9)});
+  scenes.push({type:'para', text:draw('reveal')});
+  scenes.push({type:'dialogue', a:HER, b:HIM, lines:genDialogue(rng, HER, HIM, def.tone, fill)});
+  scenes.push({type:'para', text:draw('action')});
+  if(chance(rng,.4)) scenes.push({type:'illus', mood:def.tone, seed:Math.floor(rng()*1e9)});
+  if(chance(rng,.5)) scenes.push({type:'para', text:draw('tension')});
+  scenes.push({type:'para', text:draw('cliff')});
+
+  return {
+    num: chapNum,
+    arc: arcName,
+    title: `Cap. ${chapNum} — ${arcName}${inArc>1?' ('+inArc+')':''}`,
+    scenes,
+  };
+}
+
+function genDialogue(rng, A, B, tone, fill){
+  const banks = {
+    'romance-venganza':[
+      [`—Volviste —dijo ${B}—. Imposible.`, `—Nada es imposible cuando se odia lo suficiente —respondió ${A}.`],
+      [`—¿Qué quieres? —preguntó ${B}.`, `—Todo lo que me quitaste —dijo ${A}—. Empezando por tu trono.`],
+      [`—Creí que te había perdido —murmuró ${B}.`, `—Me perdiste —respondió ${A}—. Lo que ves ahora es lo que quedó.`],
+      [`—Podrías reinar a mi lado —ofreció ${B}.`, `—Prefiero reinar sobre tus ruinas.`],
+      [`—¿Todavía me odias? —preguntó ${B} en voz baja.`, `—Todos los días —dijo ${A}—. Es lo único que me mantiene viva.`],
+    ],
+    'sistema-accion':[
+      [`—Esto no estaba en la novela —murmuró ${A}.`, `—Entonces improvisa —dijo ${B}—. Es lo único que sabes hacer.`],
+      [`—¿Sabes cómo termina esto? —preguntó ${B}.`, `—Lo sé —dijo ${A}—. Por eso voy a cambiarlo.`],
+      [`—El sistema no te eligió a ti —dijo ${B}.`, `—No —respondió ${A}—. Yo elegí al sistema.`],
+      [`—Vas a morir en el próximo escenario —advirtió ${B}.`, `—Ya morí una vez. No es para tanto.`],
+    ],
+    'venganza-corte':[
+      [`—Nadie recuerda tu nombre —dijo ${B}.`, `—Perfecto —respondió ${A}—. Así dolerá más cuando lo griten.`],
+      [`—¿Y si te descubren? —preguntó ${B}.`, `—Entonces sabrán exactamente quién los enterró.`],
+      [`—La corte no perdona —dijo ${B}.`, `—Bien. Yo tampoco.`],
+    ],
+    'murim':[
+      [`—Eres demasiado débil para esa técnica —escupió ${B}.`, `—Lo era —dijo ${A}—. En mi otra vida.`],
+      [`—Ninguna secta te aceptará —dijo ${B}.`, `—No busco que me acepten. Busco que me recuerden.`],
+      [`—¿Quién te enseñó a pelear así? —preguntó ${B}, jadeando.`, `—Un demonio —respondió ${A}—. Yo.`],
+    ],
+    'romance-comedia':[
+      [`—No es lo que parece —dijo ${A}.`, `—Estás abrazando a mi hermano —dijo ${B}.`, `—...Vale. Es exactamente lo que parece.`],
+      [`—¿Por qué me sigues? —preguntó ${A}.`, `—No te sigo —dijo ${B}—. Vamos al mismo sitio. Casualmente. Siempre.`],
+      [`—Se supone que tú mueres en el capítulo tres —dijo ${B}.`, `—Pues qué pena —respondió ${A}—, porque pienso arruinarte la trama entera.`],
+    ],
+  };
+  const bank = banks[tone] || banks['romance-venganza'];
+  return pickR(rng, bank);
+}
+
+// ---------- API pública del motor ----------
+function makeSeries(def){
+  const rng = makeRNG(hashStr(def.id));
+  const cast = buildCast(def, rng);
+  return { def, cast };
+}
+function getChapter(series, n){
+  // reseed per chapter so it's reproducible and stable
+  const rng = makeRNG(hashStr(series.def.id)+n*2654435761);
+  return genChapter(series.def, series.cast, n, rng);
+}
+function hashStr(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+
+// export for browser
+if(typeof window!=='undefined'){ window.StoryEngine={SERIES_DEFS,makeSeries,getChapter}; }
+if(typeof module!=='undefined'){ module.exports={SERIES_DEFS,makeSeries,getChapter}; }
+
+</script>
+<script>
+"use strict";
+/* INKWELL — lector estilo Webtoon con ilustraciones generativas */
+
+const E = window.StoryEngine;
+const $ = id => document.getElementById(id);
+const SAVE = 'inkwell_progress_v1';
+
+let progress = {};
+try { progress = JSON.parse(localStorage.getItem(SAVE)) || {}; } catch(e){ progress = {}; }
+function saveProgress(){ try{ localStorage.setItem(SAVE, JSON.stringify(progress)); }catch(e){} }
+
+// series objects
+const seriesMap = {};
+E.SERIES_DEFS.forEach(def => { seriesMap[def.id] = E.makeSeries(def); });
+
+let current = { id:null, chap:1 };
+
+/* ============================================================
+   ILUSTRACIONES GENERATIVAS (arte por código según mood)
+   ============================================================ */
+function drawIllustration(canvas, mood, accent, seed){
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  let s = (seed||1)>>>0;
+  const rng = ()=>{ s=(s*1664525+1013904223)>>>0; return s/4294967296; };
+
+  // mood palettes
+  const P = {
+    'romance-venganza':['#2a0f1e','#4a1530','#c94f7a','#f0a0b8','#1a0812'],
+    'sistema-accion':['#0a1424','#12386a','#3aa0e6','#8ad0ff','#061018'],
+    'venganza-corte':['#1a1408','#3a2a10','#b8862a','#e8c060','#100c04'],
+    'murim':['#0a1710','#1a3a24','#4ea672','#90d0a8','#06120a'],
+    'romance-comedia':['#241408','#4a2e10','#e08a3a','#ffc080','#180f06'],
+  }[mood] || ['#1a0f18','#3a2030','#c94f7a','#f0a0b8','#0f0a10'];
+
+  // sky gradient
+  const g = ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,P[4]); g.addColorStop(.55,P[0]); g.addColorStop(1,P[1]);
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+
+  // atmospheric glow orb (moon/sun/portal)
+  const ox=w*(0.25+rng()*0.5), oy=h*(0.2+rng()*0.25), orad=w*(0.10+rng()*0.08);
+  const og=ctx.createRadialGradient(ox,oy,0,ox,oy,orad*3);
+  og.addColorStop(0,P[3]); og.addColorStop(.3,P[2]); og.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=og; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle=P[3]; ctx.globalAlpha=.9; ctx.beginPath(); ctx.arc(ox,oy,orad,0,7); ctx.fill(); ctx.globalAlpha=1;
+
+  // floating particles
+  for(let i=0;i<40;i++){
+    ctx.globalAlpha=.1+rng()*0.4;
+    ctx.fillStyle=P[3];
+    const px=rng()*w, py=rng()*h, pr=rng()*2.2;
+    ctx.beginPath(); ctx.arc(px,py,pr,0,7); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // silhouette skyline / mountains / spires depending on mood
+  ctx.fillStyle=P[0];
+  if(mood==='murim' || mood==='sistema-accion'){
+    // jagged mountains / ruins
+    ctx.beginPath(); ctx.moveTo(0,h);
+    let x=0; while(x<w){ const peak=h*(0.5+rng()*0.35); ctx.lineTo(x,h-(h-peak)); x+=w*(0.12+rng()*0.1); ctx.lineTo(x,h-(h-peak)*0.4); }
+    ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+  } else {
+    // castle spires
+    ctx.beginPath(); ctx.moveTo(0,h);
+    let x=0; while(x<w){ const bw=w*(0.06+rng()*0.05), bh=h*(0.3+rng()*0.4);
+      ctx.lineTo(x,h-bh); ctx.lineTo(x+bw*0.5,h-bh-h*0.08*rng()); ctx.lineTo(x+bw,h-bh); x+=bw; }
+    ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+  }
+
+  // foreground figure silhouette (a lone character)
+  const fx=w*(0.3+rng()*0.4), fy=h;
+  ctx.fillStyle='rgba(0,0,0,.82)';
+  // cloak body
+  ctx.beginPath();
+  ctx.moveTo(fx, fy);
+  ctx.lineTo(fx-w*0.05, fy-h*0.28);
+  ctx.quadraticCurveTo(fx, fy-h*0.42, fx+w*0.05, fy-h*0.28);
+  ctx.lineTo(fx+w*0.05, fy);
+  ctx.closePath(); ctx.fill();
+  // head
+  ctx.beginPath(); ctx.arc(fx, fy-h*0.34, w*0.028, 0, 7); ctx.fill();
+  // accent rim light on figure
+  ctx.strokeStyle=P[2]; ctx.globalAlpha=.5; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(fx+w*0.05,fy-h*0.28); ctx.lineTo(fx+w*0.05,fy); ctx.stroke();
+  ctx.globalAlpha=1;
+
+  // vignette
+  const vg=ctx.createRadialGradient(w/2,h/2,h*0.3,w/2,h/2,h*0.8);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.5)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+}
+
+/* ============================================================
+   LIBRARY
+   ============================================================ */
+function renderLibrary(){
+  const list = $('seriesList');
+  list.innerHTML='';
+  E.SERIES_DEFS.forEach(def=>{
+    const card=document.createElement('div'); card.className='scard';
+    const cover=document.createElement('div'); cover.className='cover';
+    const cvs=document.createElement('canvas'); cvs.width=176; cvs.height=236;
+    drawIllustration(cvs, def.tone, def.accent, hashStr(def.id));
+    cover.appendChild(cvs);
+    const savedChap = progress[def.id];
+    const meta=document.createElement('div'); meta.className='meta';
+    meta.innerHTML =
+      `<div class="genre" style="color:${def.accent}">${def.genre}</div>`+
+      `<div class="stit">${def.title}</div>`+
+      `<div class="hook">${def.hook}</div>`+
+      `<div class="foot"><span class="badge">∞ caps</span>`+
+      (savedChap?`<span class="cont">▸ Seguir cap. ${savedChap}</span>`:`<span>Nuevo</span>`)+`</div>`;
+    card.appendChild(cover); card.appendChild(meta);
+    card.onclick=()=>openSeries(def.id, savedChap||1);
+    list.appendChild(card);
+  });
+}
+function hashStr(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+
+/* ============================================================
+   READER
+   ============================================================ */
+function openSeries(id, chap){
+  current.id=id; current.chap=chap||1;
+  $('library').style.display='none';
+  $('reader').classList.add('on');
+  renderChapter();
+  window.scrollTo(0,0);
+}
+function closeReader(){
+  $('reader').classList.remove('on');
+  $('library').style.display='block';
+  renderLibrary();
+  window.scrollTo(0,0);
+}
+function renderChapter(){
+  const series = seriesMap[current.id];
+  const def = series.def;
+  const ch = E.getChapter(series, current.chap);
+  document.documentElement.style.setProperty('--accent', def.accent);
+  $('rSeriesTitle').textContent = def.title;
+  $('rChapInfo').textContent = `Capítulo ${current.chap}`;
+  $('jumpInput').value = current.chap;
+
+  const body = $('chapterBody');
+  body.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='fade-in';
+
+  const t=document.createElement('div'); t.className='ch-title'; t.textContent=ch.title.replace(/^Cap\. \d+ — /,'');
+  const arc=document.createElement('div'); arc.className='ch-arc'; arc.textContent='Arco: '+ch.arc;
+  wrap.appendChild(t); wrap.appendChild(arc);
+
+  let firstPara=true;
+  ch.scenes.forEach(sc=>{
+    if(sc.type==='para'){
+      const p=document.createElement('div'); p.className='para'+(firstPara?' first':''); p.textContent=sc.text;
+      firstPara=false; wrap.appendChild(p);
+    } else if(sc.type==='dialogue'){
+      const d=document.createElement('div'); d.className='dialogue';
+      sc.lines.forEach(l=>{ const ln=document.createElement('div'); ln.className='line'; ln.textContent=l; d.appendChild(ln); });
+      wrap.appendChild(d);
+    } else if(sc.type==='illus'){
+      const box=document.createElement('div'); box.className='illus';
+      const cvs=document.createElement('canvas'); cvs.width=520; cvs.height=300;
+      drawIllustration(cvs, sc.mood, def.accent, sc.seed||1);
+      box.appendChild(cvs);
+      wrap.appendChild(box);
+    }
+  });
+  body.appendChild(wrap);
+
+  // save progress
+  progress[current.id]=current.chap; saveProgress();
+
+  $('prevBtn').disabled = current.chap<=1;
+}
+function go(delta){
+  current.chap=Math.max(1,current.chap+delta);
+  renderChapter();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function jumpTo(n){
+  n=parseInt(n,10); if(isNaN(n)||n<1)n=1;
+  current.chap=n; renderChapter(); window.scrollTo(0,0);
+}
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+$('backBtn').onclick=closeReader;
+$('prevBtn').onclick=()=>go(-1);
+$('nextBtn').onclick=()=>go(1);
+$('jumpBtn').onclick=()=>jumpTo($('jumpInput').value);
+$('shuffleBtn').onclick=()=>{ const d=E.SERIES_DEFS[Math.floor(Math.random()*E.SERIES_DEFS.length)]; openSeries(d.id, 1); };
+
+renderLibrary();
+
+</script>
+</body>
+</html>

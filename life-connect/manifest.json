@@ -1,0 +1,17 @@
+{
+  "name": "LifeConnect Pro",
+  "short_name": "LifeConnect",
+  "description": "Asistente de emergencias médicas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#DC2626",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
