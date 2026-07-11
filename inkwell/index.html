@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#0f0d13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INKWELL">
+<link rel="manifest" href="manifest.webmanifest">
+<title>INKWELL — Lector Infinito</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0f0d13; --bg2:#17141d; --card:#1d1a25; --ink:#ece7f2; --dim:#9a92ab;
+    --line:rgba(255,255,255,.08); --accent:#c94f7a;
+    --fbody:Georgia,'Times New Roman',serif;
+    --fsize:17px; --flh:1.78;
+    --sans:-apple-system,'Segoe UI',system-ui,Roboto,sans-serif;
+  }
+  /* temas */
+  body[data-theme="sepia"]{--bg:#f2e8d8;--bg2:#e9dcc6;--card:#e5d6bd;--ink:#2f271c;--dim:#7a6a54;--line:rgba(0,0,0,.12)}
+  body[data-theme="light"]{--bg:#fbfaf8;--bg2:#f1eff2;--card:#eceaef;--ink:#1a1720;--dim:#6b6478;--line:rgba(0,0,0,.1)}
+
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);display:flex;justify-content:center;overscroll-behavior-y:none}
+  #app{width:100%;max-width:620px;min-height:100dvh;background:var(--bg);position:relative;overflow-x:hidden}
+
+  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;
+    padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+    background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .logo{font-family:var(--fbody);font-weight:700;font-size:20px;letter-spacing:-.02em}
+  .logo span{color:var(--accent)}
+  .spacer{flex:1}
+  .iconbtn{min-width:38px;height:38px;padding:0 11px;border-radius:10px;background:var(--card);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font-size:15px;font-weight:600}
+  .iconbtn:active{transform:scale(.94)}
+  .iconbtn.on{background:var(--accent);border-color:transparent;color:#fff}
+
+  .lib-hero{padding:22px 16px 12px}
+  .lib-hero h1{font-family:var(--fbody);font-weight:700;font-size:31px;line-height:1.08;letter-spacing:-.02em}
+  .lib-hero p{color:var(--dim);font-size:13.5px;margin-top:9px;line-height:1.55}
+  .section-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:16px 16px 10px}
+  .series-list{display:flex;flex-direction:column;gap:12px;padding:0 16px 40px}
+  .scard{display:flex;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;cursor:pointer}
+  .scard:active{transform:scale(.985)}
+  .scard.soon{opacity:.45}
+  .cover{width:98px;height:132px;border-radius:11px;flex-shrink:0;overflow:hidden;background:#000;position:relative}
+  .cover img{width:100%;height:100%;object-fit:cover;display:block}
+  .cover .tint{position:absolute;inset:0;mix-blend-mode:multiply}
+  .meta{flex:1;min-width:0;display:flex;flex-direction:column}
+  .genre{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+  .stit{font-family:var(--fbody);font-weight:700;font-size:17.5px;line-height:1.15;margin-bottom:3px}
+  .orig{font-size:10.5px;color:var(--dim);margin-bottom:6px;font-style:italic}
+  .hook{font-size:12px;color:var(--dim);line-height:1.45;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .foot{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:11px;color:var(--dim);flex-wrap:wrap}
+  .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+  .cont{color:var(--accent);font-weight:700}
+
+  #reader{display:none;flex-direction:column;min-height:100dvh}
+  #reader.on{display:flex}
+  .rhead{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:9px;
+    padding:calc(9px + env(safe-area-inset-top)) 12px 9px;
+    background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .rtitle{flex:1;min-width:0}
+  .rtitle .t{font-family:var(--fbody);font-weight:700;font-size:14.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rtitle .c{font-size:11px;color:var(--dim);margin-top:2px}
+  .progress{position:fixed;top:0;left:0;height:2.5px;background:var(--accent);z-index:40;width:0}
+
+  .ch-head{padding:34px 26px 6px;text-align:center}
+  .ch-season{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .ch-title{font-family:var(--fbody);font-weight:700;font-size:26px;line-height:1.2;margin:10px 0 8px}
+  .ch-arc{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
+  .recap{margin:18px 20px 4px;padding:12px 14px;border-left:3px solid var(--accent);background:var(--bg2);border-radius:0 10px 10px 0}
+  .recap .lbl{font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+  .recap p{font-size:13.5px;line-height:1.62;color:var(--dim);font-style:italic}
+
+  .para{font-size:var(--fsize);line-height:var(--flh);padding:11px 22px;font-family:var(--fbody)}
+  .para.first::first-letter{font-weight:700;font-size:2.9em;float:left;line-height:.82;padding:7px 9px 0 0;color:var(--accent)}
+  .para.think{opacity:.82;font-style:italic}
+  .para.sfx{text-align:center;font-family:var(--sans);font-weight:800;font-size:23px;letter-spacing:.16em;color:var(--accent);opacity:.9;padding:18px 22px}
+  .scene-break{display:flex;justify-content:center;padding:18px 0;color:var(--dim);opacity:.4;font-size:11px;letter-spacing:.5em}
+
+  .dialogue{padding:8px 22px;display:flex;flex-direction:column;gap:9px}
+  .dline{display:flex;gap:9px;align-items:stretch}
+  .dline .who{flex-shrink:0;width:4px;border-radius:4px}
+  .dline .say{flex:1;font-size:var(--fsize);line-height:1.68;font-family:var(--fbody)}
+  .dline .say b{font-family:var(--sans);font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:2px;opacity:.8}
+
+  .illus{margin:24px 0;position:relative;background:#000;overflow:hidden}
+  .illus img{width:100%;display:block;filter:saturate(.82) contrast(1.08)}
+  .illus .grad{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.85))}
+  .illus .cap{position:absolute;bottom:8px;left:14px;right:14px;font-size:10.5px;color:rgba(255,255,255,.62);font-style:italic}
+  .illus .cred{position:absolute;top:8px;right:12px;font-size:8.5px;color:rgba(255,255,255,.4);text-align:right;max-width:60%}
+
+  .cliff{margin:26px 20px 10px;padding:18px;border:1px solid var(--accent);border-radius:14px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 10%,transparent),transparent)}
+  .cliff .lbl{font-size:9.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+  .cliff p{font-size:var(--fsize);line-height:1.72;font-family:var(--fbody)}
+
+  .ch-nav{display:flex;gap:9px;padding:22px 16px 6px}
+  .navbtn{flex:1;padding:15px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:14px;cursor:pointer}
+  .navbtn.prim{background:var(--accent);border-color:transparent;color:#fff}
+  .navbtn:disabled{opacity:.3}
+  .jump{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 16px 90px;color:var(--dim);font-size:12px}
+  .jump input{width:86px;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px;font-family:inherit;text-align:center;font-size:15px}
+  .jump button{background:var(--card);border:1px solid var(--line);color:var(--accent);border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer}
+
+  .ttsbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:620px;z-index:35;
+    display:none;gap:8px;align-items:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    background:color-mix(in srgb,var(--bg2) 95%,transparent);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+  .ttsbar.on{display:flex}
+  .ttsbar select{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:10px;font-family:inherit;font-size:12.5px}
+  .ttsbar .rate{width:78px;flex:0 0 auto}
+  .reading{background:color-mix(in srgb,var(--accent) 18%,transparent);border-radius:6px}
+
+  .sheet{position:fixed;inset:0;z-index:50;background:rgba(8,7,11,.72);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center}
+  .sheet.on{display:flex}
+  .sheet-inner{width:100%;max-width:620px;max-height:88dvh;overflow-y:auto;background:var(--bg2);
+    border-radius:20px 20px 0 0;border-top:1px solid var(--line);padding:18px 18px calc(26px + env(safe-area-inset-bottom))}
+  .sheet h3{font-family:var(--fbody);font-size:22px;margin-bottom:4px}
+  .sheet .sub{font-size:12.5px;color:var(--dim);margin-bottom:16px;line-height:1.5}
+  .grp{margin-bottom:20px}
+  .grp h4{font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .row:last-child{border-bottom:0}
+  .r-name{display:flex;align-items:center;gap:8px;min-width:0}
+  .chip{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .r-val{font-size:11.5px;color:var(--dim);text-align:right;flex-shrink:0}
+  .bar{width:64px;height:5px;border-radius:3px;background:color-mix(in srgb,var(--ink) 12%,transparent);overflow:hidden;flex-shrink:0}
+  .bar i{display:block;height:100%;border-radius:3px}
+  .tag-open{color:#d09a30}.tag-hot{color:#e05050}.tag-done{color:#50b080}
+  .ev{font-size:12.5px;color:var(--dim);line-height:1.55;padding:7px 0;border-bottom:1px solid var(--line)}
+  .ev b{color:var(--ink);font-weight:600}
+  .bigbtn{width:100%;padding:15px;border-radius:13px;border:0;background:var(--accent);color:#fff;font-weight:700;font-size:14.5px;cursor:pointer;margin-top:8px}
+  .bigbtn.ghost{background:var(--card);border:1px solid var(--line);color:var(--ink)}
+
+  /* config */
+  .opts{display:flex;gap:8px;flex-wrap:wrap}
+  .opt{padding:10px 13px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:13px;cursor:pointer}
+  .opt.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--card));font-weight:700}
+  .slider{width:100%;margin-top:8px;accent-color:var(--accent)}
+  .sample{margin-top:12px;padding:14px;border-radius:11px;background:var(--card);border:1px solid var(--line);
+    font-family:var(--fbody);font-size:var(--fsize);line-height:var(--flh)}
+
+  .fade-in{animation:fade .45s ease-out}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fade-in{animation:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body data-theme="dark">
+<div id="app">
+  <div class="progress" id="progress"></div>
+
+  <div id="library">
+    <div class="topbar">
+      <div class="logo">INK<span>WELL</span></div>
+      <div class="spacer"></div>
+      <div class="iconbtn" id="cfgBtn">Aa</div>
+      <div class="iconbtn" id="offBtn">⤓</div>
+    </div>
+    <div class="lib-hero">
+      <h1>Historias que<br>nunca se acaban.</h1>
+      <p>Mundos con memoria: los personajes recuerdan, cambian, mueren y guardan rencor. 1500 capítulos por serie, y cada uno sabe lo que pasó antes. Ilustrado con pintura real.</p>
+    </div>
+    <div class="section-label">Listas para leer</div>
+    <div class="series-list" id="seriesList"></div>
+    <div class="section-label">En construcción</div>
+    <div class="series-list" id="soonList"></div>
+  </div>
+
+  <div id="reader">
+    <div class="rhead">
+      <div class="iconbtn" id="backBtn">←</div>
+      <div class="rtitle"><div class="t" id="rTitle"></div><div class="c" id="rInfo"></div></div>
+      <div class="iconbtn" id="cfgBtn2">Aa</div>
+      <div class="iconbtn" id="plotBtn">📖</div>
+      <div class="iconbtn" id="ttsBtn">🔊</div>
+    </div>
+    <div id="chapterBody"></div>
+    <div class="ch-nav">
+      <button class="navbtn" id="prevBtn">← Anterior</button>
+      <button class="navbtn prim" id="nextBtn">Siguiente →</button>
+    </div>
+    <div class="jump">Ir al capítulo <input type="number" id="jumpInput" min="1" max="1500" value="1"> <button id="jumpBtn">Ir</button></div>
+  </div>
+
+  <div class="ttsbar" id="ttsbar">
+    <div class="iconbtn" id="ttsPlay">▶</div>
+    <div class="iconbtn" id="ttsStop">■</div>
+    <select id="voiceSel"></select>
+    <select class="rate" id="rateSel">
+      <option value="0.9">0.9×</option><option value="1" selected>1×</option>
+      <option value="1.15">1.15×</option><option value="1.3">1.3×</option><option value="1.5">1.5×</option>
+    </select>
+  </div>
+
+  <div class="sheet" id="plotSheet"><div class="sheet-inner" id="plotInner"></div></div>
+  <div class="sheet" id="cfgSheet"><div class="sheet-inner" id="cfgInner"></div></div>
+  <div class="sheet" id="offSheet"><div class="sheet-inner" id="offInner"></div></div>
+</div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════
+   INKWELL v3
+   · Tramas REALES (investigadas, no inventadas)
+   · Mundo con MEMORIA: relaciones, secretos, muertos, hilos, poder
+   · Capítulos de 5-10 min
+   · ARTE REAL: pintura de dominio público (Wikimedia Commons)
+   · Todo local: cero red, funciona sin datos
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ---------- azar determinista ---------- */
+function RNG(seed){ let s=(seed>>>0)||1; return ()=>{ s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0; return s/4294967296; }; }
+function hash(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+const pick=(r,a)=>a[Math.floor(r()*a.length)];
+const chance=(r,p)=>r()<p;
+const ri=(r,a,b)=>a+Math.floor(r()*(b-a+1));
+function picks(r,a,n){const c=a.slice(),o=[];for(let i=0;i<n&&c.length;i++)o.push(c.splice(Math.floor(r()*c.length),1)[0]);return o;}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ═══════════════════════════════════════════════════════════════════
+   SERIES — tramas verificadas
+   ═══════════════════════════════════════════════════════════════════ */
+const SERIES=[
+{
+  id:'orv', ready:true,
+  title:'El Lector Omnisciente',
+  orig:'inspirado en Omniscient Reader’s Viewpoint (singNsong)',
+  genre:'Acción · Sistema · Apocalipsis',
+  hook:'Dokja fue el único que terminó de leer una novela de tres mil capítulos. Cuando el mundo se convierte en esa novela, él es el único que sabe cómo muere cada quien — hasta que la trama empieza a desviarse de lo que leyó.',
+  accent:'#3aa0e6', cover:'city',
+  pov:'lead',
+  tone:{action:.36, mystery:.22, horror:.16, comedy:.14, romance:.12},
+  world:{
+    name:'los escenarios',
+    places:['el vagón detenido de la línea 9','la estación de Chungmuro, sin trenes ya','un centro comercial convertido en arena','los túneles bajo el río Han','el refugio del grupo','una avenida donde la gente se volvió estatua','el escenario oculto que no venía en la novela','la azotea desde donde se ve toda Seúl muerta'],
+    threats:['un jefe de escenario','una constelación aburriéndose','el Rey de los Muros','otro regresor','el propio guion de la novela','un incentivo que nadie quiso pagar'],
+    system:['[El escenario principal ha comenzado.]','[Una constelación observa con interés.]','[La probabilidad de supervivencia es del 12%.]','[Has recibido 300 monedas.]','[El escenario oculto no aparece en tu registro.]'],
+  },
+  cast:[
+    {k:'lead',  n:'Dokja',     r:'El único lector', c:'#5ab4f0', d:'Oficinista. Miente sobre todo menos sobre la trama.'},
+    {k:'rival', n:'Joonghyuk', r:'El protagonista', c:'#e05a5a', d:'Ya murió mil veces. Odia que Dokja sepa eso.'},
+    {k:'love',  n:'Sangah',    r:'La colega',       c:'#f0a05a', d:'Se adapta mucho más rápido de lo que él esperaba.'},
+    {k:'friend',n:'Jihye',     r:'El hacha',        c:'#7ae0a0', d:'Adolescente. Da más miedo que los monstruos.'},
+    {k:'mentor',n:'Heewon',    r:'La líder',        c:'#c0a0e0', d:'Comanda un grupo. No cree en profetas.'},
+    {k:'shadow',n:'Sooyoung',  r:'La que sabe',     c:'#a0e0d0', d:'Sabe algo que no estaba en la novela. Y Dokja lo sabe.'},
+  ],
+  arcs:['El Escenario que No Venía Escrito','La Grieta Bajo el Río','El Jefe que Debía Morir en el Capítulo 12','La Constelación Aburrida','Un Regresor Hace Preguntas','El Grupo se Parte','Lo Que Dokja No Contó','La Trama se Desvía','El Rey de los Muros','El Final que Nadie Leyó'],
+  moodArt:{action:'battle', horror:'horror', mystery:'mystery', comedy:'crowd', romance:'romance', wide:'city', group:'crowd'},
+},
+{
+  id:'trono', ready:true,
+  title:'Tu Trono',
+  orig:'inspirado en Your Throne (SAM)',
+  genre:'Fantasía Oscura · Corte · Intriga',
+  hook:'Medea lo calculó todo para ser princesa. Psyche solo quería que la dejaran en paz. El día de la Oración Anual despertaron en el cuerpo de la otra — y el príncipe que las enfrentó todavía no sabe lo que acaba de soltar.',
+  accent:'#b8862a', cover:'court',
+  pov:'lead',
+  tone:{mystery:.38, romance:.22, action:.14, horror:.12, comedy:.14},
+  world:{
+    name:'la corte de Vasilios',
+    places:['el Salón de la Oración Anual','los jardines del palacio imperial','la casa Solon, vacía y fría','el ala este, donde nadie entra','el confesionario del templo','el baile de la corte','los archivos imperiales','el cuarto de Psyche, que ahora es de Medea'],
+    threats:['el príncipe Eros','la corte entera','un rumor','este cuerpo prestado','la verdad','una carta que no debió escribirse'],
+    system:[],
+  },
+  cast:[
+    {k:'lead',  n:'Medea',    r:'Solon',        c:'#d6a84f', d:'Calculadora, cruel, exhausta. Nadie sabe por qué lo hace.'},
+    {k:'love',  n:'Psyche',   r:'Callista',     c:'#e0d0a0', d:'Parece ingenua. No lo es tanto como todos creen.'},
+    {k:'rival', n:'Eros',     r:'Príncipe heredero', c:'#8a4fa0', d:'Las enfrentó a propósito. No por amor.'},
+    {k:'friend',n:'Helio',    r:'Niccolo',      c:'#4fa0d6', d:'Amigo de infancia de Medea. El único que nota el cambio.'},
+    {k:'mentor',n:'Callisto', r:'Sacerdotisa',  c:'#a0a0b0', d:'Sabe lo del intercambio. Calla por un precio.'},
+    {k:'shadow',n:'Lasia',    r:'Dama de compañía', c:'#c05a7a', d:'Escucha todo. Le reporta a alguien.'},
+  ],
+  arcs:['El Día de la Oración','Ser la Otra','El Príncipe Sonríe','Lo Que Helio Notó','La Corte Huele Sangre','Un Trato con la Sacerdotisa','La Verdad de Eros','Dos Mujeres, Un Nombre','El Baile de las Máscaras','Quién Se Queda con el Trono'],
+  moodArt:{action:'battle', horror:'horror', mystery:'mystery', comedy:'crowd', romance:'romance', wide:'court', group:'court'},
+},
+];
+const SOON=[
+  ['Serás Mi Reina','Mage and Demon Queen — comedia romántica GL'],
+  ['El Recluso Absoluto','The Ultimate Shut-In — no puede salir del depa'],
+  ['Todos la Quieren','Everyone Loves Her — thriller de teletransportación'],
+  ['La Basura de la Familia del Conde','Cale Henituse y su vida de lujo perezoso'],
+  ['El Rey Saqueador de Tumbas','Jooheon, 15 años en el pasado'],
+  ['Mercenario Adolescente','Yu Ijin vuelve a la prepa'],
+  ['Tower of God','+ 22 series más en la biblia'],
+];
+
+/* ═══════════════════════════════════════════════════════════════════
+   ESTADO DEL MUNDO
+   ═══════════════════════════════════════════════════════════════════ */
+const THREADS=['un secreto que no debía salir','una deuda de sangre','una promesa rota','un cuerpo mal enterrado',
+ 'una carta sin firmar','un testigo incómodo','un plan que salió mal','una traición a medias',
+ 'algo que se vio y no se dijo','un nombre que nadie pronuncia','una puerta que no debió abrirse',
+ 'un trato con la persona equivocada','una mentira que creció sola','alguien que volvió de donde no se vuelve'];
+
+function initState(S){
+  const st={rel:{},alive:{},power:{},threads:[],events:[],tension:20,season:1,arcIdx:0};
+  S.cast.forEach(a=>{
+    st.alive[a.k]=true;
+    st.power[a.k]= a.k==='lead'?15:ri(RNG(hash(S.id+a.k)),30,60);
+    st.rel[a.k]={};
+    S.cast.forEach(b=>{ if(a.k!==b.k) st.rel[a.k][b.k]= (a.k==='lead'&&b.k==='love')?25:0; });
+  });
+  return st;
+}
+const bump=(st,a,b,d)=>{ if(st.rel[a]&&st.rel[a][b]!=null) st.rel[a][b]=clamp(st.rel[a][b]+d,-100,100); };
+
+function step(S,st,n,r){
+  st.arcIdx=Math.floor((n-1)/15)%S.arcs.length;
+  st.season=Math.floor((n-1)/150)+1;
+  const inArc=((n-1)%15)+1;
+  const phase= inArc<=4?'setup': inArc<=9?'escala': inArc<=12?'climax':'secuela';
+  const cast=S.cast.filter(c=>st.alive[c.k]);
+
+  if(st.threads.filter(t=>t.status!=='resuelto').length<3 && chance(r, phase==='setup'?.75:.28))
+    st.threads.push({what:pick(r,THREADS), who:pick(r,cast).k, status:'abierto', born:n, heat:1});
+
+  const open=st.threads.filter(t=>t.status!=='resuelto');
+  let focus=null;
+  if(open.length){
+    focus=pick(r,open); focus.heat++;
+    if(phase==='climax'&&focus.heat>2&&chance(r,.5)){ focus.status='resuelto'; focus.closed=n; }
+    else if(focus.heat>=3) focus.status='hirviendo';
+  }
+  st.tension=clamp(st.tension + (phase==='climax'?ri(r,6,14): phase==='secuela'?-ri(r,8,18): ri(r,-2,7)),0,100);
+
+  const [a,b]=picks(r,cast,2);
+  let rel=null;
+  if(a&&b){
+    const roll=r();
+    if(roll<S.tone.romance){ bump(st,a.k,b.k,ri(r,4,12)); bump(st,b.k,a.k,ri(r,2,9)); rel={kind:'acerca',a,b}; }
+    else if(roll<S.tone.romance+.30){ bump(st,a.k,b.k,-ri(r,5,15)); rel={kind:'choca',a,b}; }
+    else if(roll<S.tone.romance+.40){ rel={kind:'descubre',a,b}; }
+  }
+  if(chance(r,.3)) st.power.lead=clamp(st.power.lead+ri(r,1,3),0,100);
+
+  let death=null;
+  const killable=cast.filter(c=>c.k!=='lead'&&c.k!=='love'&&c.k!=='rival');
+  if(phase==='climax'&&n>60&&killable.length>1&&chance(r,.04)){
+    death=pick(r,killable); st.alive[death.k]=false; st.tension=clamp(st.tension+30,0,100);
+  }
+
+  const ev={n,arc:S.arcs[st.arcIdx],phase,focus,rel,death,
+            place:pick(r,S.world.places), threat:pick(r,S.world.threats)};
+  st.events.push({n,summary:sumUp(ev)});
+  if(st.events.length>300) st.events.splice(0,st.events.length-300);
+  return ev;
+}
+function sumUp(ev){
+  if(ev.death) return `Murió ${ev.death.n}.`;
+  if(ev.rel){ const{kind,a,b}=ev.rel;
+    if(kind==='acerca')   return `${a.n} y ${b.n} se acercaron más de lo prudente.`;
+    if(kind==='choca')    return `${a.n} y ${b.n} chocaron feo.`;
+    if(kind==='descubre') return `${a.n} descubrió algo sobre ${b.n}.`; }
+  if(ev.focus) return `Se movió el asunto de ${ev.focus.what}.`;
+  return `Algo pasó en ${ev.place}.`;
+}
+const cache={};
+function stateBefore(S,n){
+  cache[S.id]=cache[S.id]||{};
+  const C=cache[S.id];
+  const anchor=Math.floor((n-1)/50)*50;
+  let st,start;
+  if(anchor>0&&C[anchor]){ st=JSON.parse(JSON.stringify(C[anchor])); start=anchor+1; }
+  else { st=initState(S); start=1; }
+  for(let i=start;i<n;i++){
+    step(S,st,i,RNG(hash(S.id)+i*2654435761));
+    if(i%50===0) C[i]=JSON.parse(JSON.stringify(st));
+  }
+  return st;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PROSA — se arma por piezas, no se saca enlatada
+   ═══════════════════════════════════════════════════════════════════ */
+const G={
+ hora:['Al amanecer','Pasada la medianoche','A media tarde','Antes de que saliera el sol','Con la última luz del día','A las tres de la mañana','Dos días después','Esa misma noche','Cuando todos dormían','Al tercer día'],
+ clima:['con una lluvia fina que no terminaba de caer','bajo un cielo del color del plomo','con un frío que se metía en los huesos','con el aire quieto, como conteniendo el aliento','entre una niebla que borraba las orillas','con un calor que pesaba','bajo un silencio que daba miedo'],
+ gesto:['apretó la mandíbula','se tronó los dedos','soltó el aire despacio','no movió un músculo','ladeó la cabeza','cerró los ojos un segundo de más','se acomodó el cuello del abrigo','tragó saliva','contó hasta tres'],
+ emo:['con una calma que no sentía','con el corazón golpeándole las costillas','sin una gota de miedo, y eso era lo raro','con las manos frías','con una rabia vieja','con algo parecido al alivio','con ganas de reírse en el peor momento posible'],
+ sens:['ceniza','metal mojado','ozono','flores marchitas','humo','tierra recién movida','papel viejo','sangre'],
+ cuerpo:['el pulso','la nuca','el estómago','los dientes','las costillas','las palmas'],
+ aviso:['Algo estaba mal.','Eso no debía estar ahí.','La cuenta no daba.','Faltaba alguien.','Sobraba alguien.','Nadie decía nada, y eso era lo peor.','Ya lo había visto antes. En un sueño, o en otra vida.'],
+ reac:['Nadie se movió.','El silencio duró demasiado.','Alguien, atrás, empezó a rezar.','Se oyó un vidrio romperse muy lejos.','El suelo vibró apenas.','Una risa. Una sola. Y nadie supo de quién.'],
+};
+const J=(...p)=>p.filter(Boolean).join(' ');
+const POV=S=>S.cast[0];
+
+function bOpen(S,st,ev,r){
+  const L=POV(S), p=[];
+  p.push(J(`${pick(r,G.hora)}, ${ev.place},`, pick(r,G.clima)+'.'));
+  p.push(J(`${L.n} ${pick(r,G.gesto)}`, pick(r,G.emo)+'.', pick(r,G.aviso)));
+  if(S.world.system.length && chance(r,.5)) p.push(pick(r,S.world.system));
+  p.push(st.tension>60
+    ? `El aire olía a ${pick(r,G.sens)}. En ${S.world.name}, eso nunca significaba nada bueno.`
+    : `Llevaba ${ri(r,2,9)} días sin dormir bien. Se le empezaba a notar en ${pick(r,G.cuerpo)}.`);
+  return p;
+}
+function bCallback(S,st,r){
+  const past=st.events.slice(-70); if(!past.length) return [];
+  const e=pick(r,past);
+  return [pick(r,[
+    `Todavía pensaba en lo del capítulo ${e.n}. ${e.summary} Nadie lo había vuelto a mencionar, y ese silencio pesaba más que el hecho.`,
+    `${e.summary} Eso fue en el ${e.n}. Desde entonces nada volvió a acomodarse del todo.`,
+    `Habían pasado cosas desde el ${e.n}. ${e.summary} ${POV(S).n} no olvidaba. Nunca olvidaba nada.`,
+  ])];
+}
+function bDialogue(S,st,r,mood){
+  const cast=S.cast.filter(c=>st.alive[c.k]);
+  const [a,b]=picks(r,cast,2); if(!a||!b) return null;
+  const rel=(st.rel[a.k]&&st.rel[a.k][b.k])||0;
+  const t=st.threads.filter(x=>x.status!=='resuelto')[0];
+  const L=[];
+  L.push({w:b, t: rel>40 ? pick(r,[`—¿Otra vez sin dormir?`,`—Te esperé. No sé por qué, pero te esperé.`])
+              : rel<-30 ? pick(r,[`—No te quiero aquí —y no levantó la voz. Eso era lo peligroso.`,`—Cada vez que apareces, alguien sangra.`])
+              : pick(r,[`—Tenemos que hablar.`,`—Sé lo que vas a decir. Dilo de todos modos.`])});
+  L.push({w:a, t: mood==='comedy' ? pick(r,[`—Puedo explicarlo.`,`—Eso depende mucho de a qué le llames "eso".`,`—Técnicamente no fue culpa mía. Técnicamente.`])
+              : mood==='romance' ? pick(r,[`—No me pidas que me vaya. Hoy no.`,`—Si te digo la verdad, ¿te quedas?`,`—Odio que siempre tengas razón.`])
+              : mood==='horror'  ? pick(r,[`—¿Escuchaste eso? Otra vez.`,`—No abras esa puerta.`,`—Hay algo aquí. Y lleva rato con nosotros.`])
+              : pick(r,[`—Lo sé. Por eso vine.`,`—Nadie más lo va a hacer. Así que lo hago yo.`,`—Pregunta lo que de verdad quieres preguntar.`])});
+  if(t){
+    L.push({w:b, t:`—Es por ${t.what}, ¿verdad? —no lo preguntaba. Lo confirmaba.`});
+    L.push({w:a, t:pick(r,[`—Es por eso y por todo lo que viene después.`,`—Si te lo cuento, te vuelves parte. Y no quiero eso para ti.`,`—Ya no importa quién empezó. Importa quién lo termina.`])});
+  }
+  if(mood==='comedy'&&chance(r,.6)) L.push({w:b, t:pick(r,[`—Voy a fingir que eso tuvo sentido.`,`—Odio que funcione.`,`—...¿Y el plan B?`])});
+  return {type:'dlg', lines:L};
+}
+function bAction(S,st,ev,r){
+  const L=POV(S), p=[];
+  p.push(pick(r,[
+    `Y entonces ${ev.threat} entró en escena, y se acabó el tiempo de pensar.`,
+    `${ev.threat} no avisó. Nunca avisan.`,
+    `Lo que vino después duró once segundos. ${L.n} los contó todos.`,
+  ]));
+  p.push(J(pick(r,[`${L.n} se movió primero.`,`${L.n} no esquivó: calculó, y decidió recibir el golpe.`,`El primer golpe lo paró de milagro. El segundo, de pura rabia.`]), pick(r,G.reac)));
+  const al=pick(r,S.cast.filter(c=>st.alive[c.k]&&c.k!=='lead'));
+  if(al) p.push(pick(r,[
+    `${al.n} llegó tarde, como siempre, y justo a tiempo, como siempre.`,
+    `Alguien gritó su nombre. Era ${al.n}. No volteó: si volteaba, moría.`,
+    `${al.n} se metió en medio sin pensarlo. Después habría tiempo de reclamárselo.`,
+  ]));
+  return p;
+}
+function bRomance(S,st,r){
+  const a=POV(S), b=S.cast.find(c=>c.k==='love');
+  if(!b||!st.alive[b.k]) return [];
+  const rel=(st.rel[a.k]&&st.rel[a.k][b.k])||0;
+  if(rel<10) return [pick(r,[
+    `${b.n} pasó a su lado sin mirarlo. ${a.n} se dijo que no le importaba, y se mintió fatal.`,
+    `Todavía no eran nada. Ese "todavía" le pesaba a ${a.n} más de lo que iba a admitir.`])];
+  if(rel<55) return [pick(r,[
+    `La distancia entre ellos era de un paso. Ninguno lo dio. Todavía.`,
+    `${b.n} le acomodó el cuello del abrigo, sin decir nada. ${a.n} lo dejó. Ese fue el error de los dos.`,
+    `—No te confundas —dijo ${a.n}, con las orejas ardiendo—. Solo te necesito vivo. Por ahora.`])];
+  return [pick(r,[
+    `—Quédate —pidió ${b.n}. Una palabra, y a ${a.n} se le olvidó cómo respirar.`,
+    `Se quedaron así, sin decir nada, mucho más tiempo del que ninguno de los dos iba a admitir después.`,
+    `—Si me traicionas —murmuró ${a.n}—, esta vez me voy a asegurar de que duela.\n—Lo sé —dijo ${b.n}—. Cuento con eso.`])];
+}
+function bComedy(S,st,r){
+  const [a,b]=picks(r,S.cast.filter(c=>st.alive[c.k]),2); if(!a||!b) return [];
+  return [pick(r,[
+    `${b.n} lo miró con la cara de quien ya vio esta película y sabe exactamente cómo termina. —No lo hagas.\n${a.n} lo hizo.`,
+    `El plan tenía tres pasos. En el paso uno ya se había ido a la basura. ${a.n} improvisó los otros dos con una convicción admirable y absolutamente infundada.`,
+    `—¿Y si sale mal? —preguntó ${b.n}.\n—Entonces sale mal —dijo ${a.n}, como si eso resolviera algo. Curiosamente, lo resolvió.`,
+    `Hubo un silencio largo, digno, casi solemne. Lo rompió ${b.n}: —Eso fue lo más estúpido que te he visto hacer. Y te he visto hacer mucho.`])];
+}
+function bHorror(S,st,ev,r){
+  const L=POV(S);
+  return [pick(r,[
+    `El pasillo estaba igual que siempre. Ese era el problema: exactamente igual que siempre, y ${L.n} habría jurado que la puerta del fondo antes no estaba ahí.`,
+    `No se oía nada. Ni viento, ni pasos, ni la respiración de nadie. ${L.n} se dio cuenta, con un frío que le subió por ${pick(r,G.cuerpo)}, de que tampoco se oía la suya.`,
+    `Contó las siluetas. Siete. Volvió a contar. Ocho. Ninguna se había movido.`,
+    `Lo peor no fue verlo. Lo peor fue que la cosa lo vio a él primero, y esperó, con paciencia, a que se diera cuenta.`])];
+}
+function bReveal(S,st,ev,r){
+  const L=POV(S);
+  const who=S.cast.find(c=>c.k===(ev.focus?ev.focus.who:'shadow'))||L;
+  return [pick(r,[
+    `Y entonces encajó todo de golpe, como huesos rotos: ${ev.focus?ev.focus.what:'lo que estaba pasando'} nunca fue lo que parecía. Y ${who.n} lo sabía desde el principio.`,
+    `El nombre estaba ahí, escrito con una letra que ${L.n} conocía demasiado bien. La de ${who.n}.`,
+    `No fue casualidad. Nada de esto lo era. ${who.n} llevaba capítulos moviendo las piezas, y ${L.n} había sido la más obediente de todas.`])];
+}
+function bCliff(S,st,ev,r){
+  const L=POV(S);
+  if(ev.death) return `${ev.death.n} no se levantó. Y ${L.n} entendió, tarde, que este mundo sí cobra las cosas.`;
+  if(ev.focus&&ev.focus.status==='resuelto') return `Se acabó lo de ${ev.focus.what}. Pero al cerrar esa puerta, ${L.n} oyó cómo se abría otra, mucho más adentro.`;
+  return pick(r,[
+    `Y justo cuando creyó que había ganado, las puertas se abrieron de golpe.`,
+    `La voz detrás de él dijo tres palabras que lo cambiaron todo: —Te estaba esperando.`,
+    `Afuera empezaron a sonar las campanas. Todas a la vez. Eso solo pasaba cuando moría alguien importante.`,
+    `En el suelo, junto a la puerta, había una segunda huella. Y no era de nadie que estuviera vivo.`,
+    `${L.n} sonrió. El juego de verdad apenas empezaba.`]);
+}
+
+function moodRoll(S,r,st){
+  const t={...S.tone};
+  if(st.tension>70){ t.action*=1.6; t.horror*=1.5; t.comedy*=.5; }
+  if(st.tension<25){ t.comedy*=1.5; t.romance*=1.4; }
+  const k=Object.keys(t), sum=k.reduce((s,x)=>s+t[x],0);
+  let x=r()*sum;
+  for(const key of k){ x-=t[key]; if(x<=0) return key; }
+  return 'action';
+}
+
+/* ---------- construir capítulo LARGO ---------- */
+function buildChapter(S,n){
+  const r=RNG(hash(S.id)+n*2654435761);
+  const st=stateBefore(S,n);
+  const ev=step(S,st,n,RNG(hash(S.id)+n*2654435761));
+  const B=[];
+  const add=(t,v,x)=>B.push(Object.assign({t,v},x||{}));
+  const recap=st.events.filter(e=>e.n<n).slice(-2).map(e=>e.summary).join(' ')||null;
+
+  bOpen(S,st,ev,r).forEach(p=>add('p',p));
+  add('img','',{mood:'wide', cap:ev.place});
+
+  const nSc=ri(r,6,9);
+  for(let i=0;i<nSc;i++){
+    const mood=moodRoll(S,r,st);
+    if(i>0) add('br','');
+    if(chance(r,.42)) bCallback(S,st,r).forEach(p=>add('p',p));
+
+    const fn={comedy:bComedy, romance:bRomance, horror:bHorror, action:bAction, mystery:bReveal}[mood];
+    (fn===bAction||fn===bHorror||fn===bReveal ? fn(S,st,ev,r) : fn(S,st,r)).forEach(p=>add('p',p));
+
+    const d=bDialogue(S,st,r,mood); if(d) B.push(d);
+    if(mood==='action'&&chance(r,.5)) add('sfx', pick(r,['CRAC','TUMP','SHHHK','BOOM','CLANG','ZAS']));
+    if(chance(r,.40)) add('img','',{mood, cap:ev.place});
+    if(chance(r,.5)) add('p', J(`${POV(S).n} ${pick(r,G.gesto)}`, pick(r,G.emo)+'.'));
+  }
+
+  if(((n-1)%15)+1>=13){ add('br',''); bReveal(S,st,ev,r).forEach(p=>add('p',p)); }
+  add('img','',{mood:'group', cap:ev.place});
+
+  return {n, arc:ev.arc, season:st.season, title:titleOf(S,ev,n,r),
+          recap, blocks:B, cliff:bCliff(S,st,ev,r), state:st};
+}
+function titleOf(S,ev,n,r){
+  const f=[ev.arc, `${ev.arc} — parte ${((n-1)%15)+1}`,
+    ev.death?'Nadie Dijo Que Sería Gratis':null,
+    ev.focus&&ev.focus.status==='resuelto'?'Se Paga lo que Se Debe':null].filter(Boolean);
+  return pick(r,f);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ARTE REAL — pintura de dominio público (Wikimedia Commons)
+   ═══════════════════════════════════════════════════════════════════ */
+let ART=[], ARTBY={};
+fetch('arte/arte.json').then(x=>x.json()).then(d=>{
+  ART=d;
+  ART.forEach(a=>{ (ARTBY[a.mood]=ARTBY[a.mood]||[]).push(a); });
+  if(cur.id) render();
+}).catch(()=>{});
+
+function artFor(S, mood, seed){
+  const bucket = S.moodArt[mood] || 'mystery';
+  const list = ARTBY[bucket] || ART;
+  if(!list||!list.length) return null;
+  return list[hash(S.id+mood+seed) % list.length];
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   UI
+   ═══════════════════════════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const SAVE='inkwell_v3';
+let store={}; try{ store=JSON.parse(localStorage.getItem(SAVE))||{}; }catch(e){}
+store.cfg = store.cfg || {font:'georgia', size:17, lh:1.78, theme:'dark'};
+const save=()=>{ try{ localStorage.setItem(SAVE, JSON.stringify(store)); }catch(e){} };
+
+const FONTS={
+  georgia:{n:'Georgia', v:"Georgia,'Times New Roman',serif"},
+  palatino:{n:'Palatino', v:"'Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif"},
+  iowan:{n:'Iowan / NY', v:"'Iowan Old Style','New York','Hoefler Text',Georgia,serif"},
+  charter:{n:'Charter', v:"Charter,'Bitstream Charter',Georgia,serif"},
+  system:{n:'Sistema', v:"-apple-system,'Segoe UI',system-ui,Roboto,sans-serif"},
+  avenir:{n:'Avenir', v:"'Avenir Next',Avenir,'Segoe UI',system-ui,sans-serif"},
+  mono:{n:'Mono', v:"ui-monospace,'SF Mono',Menlo,Consolas,monospace"},
+};
+function applyCfg(){
+  const c=store.cfg;
+  document.documentElement.style.setProperty('--fbody', (FONTS[c.font]||FONTS.georgia).v);
+  document.documentElement.style.setProperty('--fsize', c.size+'px');
+  document.documentElement.style.setProperty('--flh', c.lh);
+  document.body.dataset.theme=c.theme;
+}
+applyCfg();
+
+let cur={id:null,n:1,ch:null};
+
+function renderLibrary(){
+  const L=$('seriesList'); L.innerHTML='';
+  SERIES.forEach(S=>{
+    const a=artFor(S,'wide',1)||artFor(S,'group',1);
+    const done=store[S.id];
+    const card=document.createElement('div'); card.className='scard';
+    card.innerHTML=
+      `<div class="cover">${a?`<img src="arte/img/${a.f}" alt="">`:''}<div class="tint" style="background:${S.accent}"></div></div>`+
+      `<div class="meta">
+        <div class="genre" style="color:${S.accent}">${S.genre}</div>
+        <div class="stit">${S.title}</div>
+        <div class="orig">${S.orig}</div>
+        <div class="hook">${S.hook}</div>
+        <div class="foot"><span class="badge">1500 caps</span>`+
+        (done?`<span class="cont">▸ Seguir cap. ${done}</span>`:`<span>Empezar</span>`)+`</div>
+      </div>`;
+    card.onclick=()=>open(S.id, done||1);
+    L.appendChild(card);
+  });
+  const T=$('soonList'); T.innerHTML='';
+  SOON.forEach(([t,d])=>{
+    const c=document.createElement('div'); c.className='scard soon';
+    c.innerHTML=`<div class="meta"><div class="stit">${t}</div><div class="orig">${d}</div></div>`;
+    T.appendChild(c);
+  });
+}
+
+function open(id,n){
+  cur.id=id; cur.n=clamp(n|0,1,1500);
+  $('library').style.display='none';
+  $('reader').classList.add('on');
+  render();
+}
+function back(){
+  stopTTS();
+  $('reader').classList.remove('on');
+  $('library').style.display='block';
+  renderLibrary(); scrollTo(0,0);
+}
+
+function render(){
+  stopTTS();
+  const S=SERIES.find(s=>s.id===cur.id);
+  const ch=buildChapter(S,cur.n); cur.ch=ch;
+  document.documentElement.style.setProperty('--accent',S.accent);
+  $('rTitle').textContent=S.title;
+  $('rInfo').textContent=`T${ch.season} · Cap. ${cur.n} de 1500`;
+  $('jumpInput').value=cur.n;
+
+  const body=$('chapterBody'); body.innerHTML='';
+  const w=document.createElement('div'); w.className='fade-in';
+
+  const h=document.createElement('div'); h.className='ch-head';
+  h.innerHTML=`<div class="ch-season">Temporada ${ch.season} · Capítulo ${ch.n}</div>
+    <div class="ch-title">${ch.title}</div><div class="ch-arc">Arco: ${ch.arc}</div>`;
+  w.appendChild(h);
+
+  if(ch.recap){
+    const rc=document.createElement('div'); rc.className='recap';
+    rc.innerHTML=`<div class="lbl">Antes</div><p>${ch.recap}</p>`;
+    w.appendChild(rc);
+  }
+
+  let first=true, imgN=0;
+  ch.blocks.forEach(b=>{
+    if(b.t==='p'){
+      const p=document.createElement('div'); p.className='para'+(first?' first':'');
+      p.textContent=b.v; first=false; w.appendChild(p);
+    } else if(b.t==='sfx'){
+      const p=document.createElement('div'); p.className='para sfx'; p.textContent=b.v; w.appendChild(p);
+    } else if(b.t==='br'){
+      const d=document.createElement('div'); d.className='scene-break'; d.textContent='• • •'; w.appendChild(d);
+    } else if(b.type==='dlg'){
+      const d=document.createElement('div'); d.className='dialogue';
+      b.lines.forEach(l=>{
+        const row=document.createElement('div'); row.className='dline';
+        row.innerHTML=`<div class="who" style="background:${l.w.c}"></div>
+          <div class="say"><b style="color:${l.w.c}">${l.w.n}</b>${l.t.replace(/\n/g,'<br>')}</div>`;
+        d.appendChild(row);
+      });
+      w.appendChild(d);
+    } else if(b.t==='img'){
+      const a=artFor(S,b.mood, ch.n*7+(imgN++));
+      if(!a) return;
+      const box=document.createElement('div'); box.className='illus';
+      box.innerHTML=`<img loading="lazy" src="arte/img/${a.f}" alt="">
+        <div class="grad"></div>
+        <div class="cred">${a.artist}</div>
+        <div class="cap">${b.cap}</div>`;
+      w.appendChild(box);
+    }
+  });
+
+  const cl=document.createElement('div'); cl.className='cliff';
+  cl.innerHTML=`<div class="lbl">Y entonces…</div><p>${ch.cliff}</p>`;
+  w.appendChild(cl);
+
+  body.appendChild(w);
+  store[cur.id]=cur.n; save();
+  $('prevBtn').disabled=cur.n<=1;
+  $('nextBtn').disabled=cur.n>=1500;
+  scrollTo(0,0);
+}
+const go=d=>{ cur.n=clamp(cur.n+d,1,1500); render(); };
+
+addEventListener('scroll',()=>{
+  const m=document.body.scrollHeight-innerHeight;
+  $('progress').style.width= m>0 ? (scrollY/m*100)+'%' : '0';
+},{passive:true});
+
+/* ---------- TTS (iPhone: voces de iOS) ---------- */
+const synth=window.speechSynthesis;
+let voices=[], on=false, Q=[], qi=0;
+function vScore(v){
+  const n=(v.name||'').toLowerCase(), l=(v.lang||'').toLowerCase();
+  let s=0;
+  if(l.startsWith('es')) s+=60;
+  if(l==='es-mx') s+=30;
+  if(/premium|enhanced|mejorada|neural|natural|online/.test(n)) s+=100;
+  if(/paulina|mónica|monica|jorge|juan|angelica/.test(n)) s+=25;
+  if(/novelty|eloquence|compact/.test(n)) s-=40;
+  return s;
+}
+function loadVoices(){
+  voices=(synth?synth.getVoices():[]).slice().sort((a,b)=>vScore(b)-vScore(a));
+  const sel=$('voiceSel'); sel.innerHTML='';
+  voices.forEach((v,i)=>{
+    const o=document.createElement('option'); o.value=i;
+    o.textContent=(vScore(v)>=100?'★ ':'')+v.name+' · '+v.lang;
+    sel.appendChild(o);
+  });
+  if(store.voice!=null && voices[store.voice]) sel.value=store.voice;
+}
+if(synth){ loadVoices(); synth.onvoiceschanged=loadVoices; }
+$('voiceSel').onchange=e=>{ store.voice=e.target.value; save(); };
+
+function speak(i){
+  if(!synth||i>=Q.length){ stopTTS(); return; }
+  qi=i;
+  document.querySelectorAll('.reading').forEach(n=>n.classList.remove('reading'));
+  Q[i].el.classList.add('reading');
+  Q[i].el.scrollIntoView({block:'center',behavior:'smooth'});
+  const u=new SpeechSynthesisUtterance(Q[i].txt);
+  const v=voices[$('voiceSel').value];
+  if(v){ u.voice=v; u.lang=v.lang; } else u.lang='es-MX';
+  u.rate=parseFloat($('rateSel').value)||1;
+  u.onend=()=>{ if(on) speak(i+1); };
+  u.onerror=()=>{ if(on) speak(i+1); };
+  synth.speak(u);
+}
+function startTTS(){
+  if(!synth){ alert('Este navegador no trae voces.'); return; }
+  Q=[...document.querySelectorAll('#chapterBody .para, #chapterBody .dline, .cliff p')]
+      .filter(n=>n.textContent.trim()).map(n=>({el:n,txt:n.textContent.trim()}));
+  if(!Q.length) return;
+  on=true; $('ttsPlay').textContent='⏸'; speak(0);
+}
+function stopTTS(){ on=false; if(synth) synth.cancel(); $('ttsPlay').textContent='▶';
+  document.querySelectorAll('.reading').forEach(n=>n.classList.remove('reading')); }
+$('ttsBtn').onclick=()=>{
+  const b=$('ttsbar'); b.classList.toggle('on'); $('ttsBtn').classList.toggle('on');
+  if(!b.classList.contains('on')) stopTTS();
+};
+$('ttsPlay').onclick=()=>{
+  if(!on) startTTS();
+  else if(synth.paused){ synth.resume(); $('ttsPlay').textContent='⏸'; }
+  else { synth.pause(); $('ttsPlay').textContent='▶'; }
+};
+$('ttsStop').onclick=stopTTS;
+$('rateSel').onchange=()=>{ if(on){ const i=qi; synth.cancel(); speak(i); } };
+
+/* ---------- CONFIG: tipografía, tamaño, interlineado, tema ---------- */
+function openCfg(){
+  const c=store.cfg;
+  $('cfgInner').innerHTML=`
+    <h3>Lectura</h3>
+    <div class="sub">Ajusta cómo se ve el texto. Se guarda solo.</div>
+    <div class="grp"><h4>Tipografía</h4><div class="opts" id="fOpts">
+      ${Object.entries(FONTS).map(([k,f])=>
+        `<div class="opt ${c.font===k?'on':''}" data-f="${k}" style="font-family:${f.v}">${f.n}</div>`).join('')}
+    </div></div>
+    <div class="grp"><h4>Tamaño · <span id="szV">${c.size}px</span></h4>
+      <input class="slider" type="range" min="14" max="26" step="1" value="${c.size}" id="szS"></div>
+    <div class="grp"><h4>Interlineado · <span id="lhV">${c.lh}</span></h4>
+      <input class="slider" type="range" min="1.4" max="2.2" step="0.05" value="${c.lh}" id="lhS"></div>
+    <div class="grp"><h4>Tema</h4><div class="opts" id="tOpts">
+      ${[['dark','Oscuro'],['sepia','Sepia'],['light','Claro']].map(([k,n])=>
+        `<div class="opt ${c.theme===k?'on':''}" data-t="${k}">${n}</div>`).join('')}
+    </div></div>
+    <div class="sample" id="sample">Contó las siluetas. Siete. Volvió a contar. Ocho. Ninguna se había movido.</div>
+    <button class="bigbtn ghost" id="cfgClose">Listo</button>`;
+  $('cfgSheet').classList.add('on');
+
+  const refresh=()=>{ applyCfg(); save(); if(cur.id&&$('reader').classList.contains('on')) {} };
+  $('fOpts').onclick=e=>{ const o=e.target.closest('.opt'); if(!o)return;
+    store.cfg.font=o.dataset.f; [...$('fOpts').children].forEach(x=>x.classList.toggle('on',x===o)); refresh(); };
+  $('tOpts').onclick=e=>{ const o=e.target.closest('.opt'); if(!o)return;
+    store.cfg.theme=o.dataset.t; [...$('tOpts').children].forEach(x=>x.classList.toggle('on',x===o)); refresh(); };
+  $('szS').oninput=e=>{ store.cfg.size=+e.target.value; $('szV').textContent=e.target.value+'px'; refresh(); };
+  $('lhS').oninput=e=>{ store.cfg.lh=+e.target.value; $('lhV').textContent=e.target.value; refresh(); };
+  $('cfgClose').onclick=()=>$('cfgSheet').classList.remove('on');
+}
+$('cfgBtn').onclick=openCfg;
+$('cfgBtn2').onclick=openCfg;
+
+/* ---------- TRAMA ---------- */
+$('plotBtn').onclick=()=>{
+  const S=SERIES.find(s=>s.id===cur.id), st=cur.ch.state, L=S.cast[0];
+  const rel=S.cast.filter(c=>c.k!=='lead').map(c=>{
+    const v=(st.rel[L.k]&&st.rel[L.k][c.k])||0, pct=(v+100)/2;
+    const col=v>35?'#50b080':v<-35?'#e05050':'#9a92ab';
+    return `<div class="row"><div class="r-name"><span class="chip" style="background:${c.c}"></span>
+      <span>${c.n}${st.alive[c.k]?'':' <span style="color:#e05050">†</span>'} <span style="color:var(--dim);font-size:11px">· ${c.r}</span></span></div>
+      <div class="bar"><i style="width:${pct}%;background:${col}"></i></div></div>`;}).join('');
+  const th=st.threads.slice(-8).reverse().map(t=>{
+    const cls=t.status==='resuelto'?'tag-done':t.status==='hirviendo'?'tag-hot':'tag-open';
+    return `<div class="row"><div class="r-name"><span>${t.what}</span></div>
+      <div class="r-val ${cls}">${t.status} · cap ${t.born}</div></div>`;}).join('')||'<div class="ev">Sin hilos abiertos.</div>';
+  const ev=st.events.slice(-14).reverse().map(e=>`<div class="ev"><b>Cap. ${e.n}</b> — ${e.summary}</div>`).join('');
+  $('plotInner').innerHTML=`<h3>${S.title}</h3>
+    <div class="sub">Temporada ${st.season} · ${cur.ch.arc} · Tensión ${st.tension}/100</div>
+    <div class="grp"><h4>Cómo ve ${L.n} a los demás</h4>${rel}</div>
+    <div class="grp"><h4>Hilos de la trama</h4>${th}</div>
+    <div class="grp"><h4>Lo que ha pasado</h4>${ev}</div>
+    <button class="bigbtn ghost" id="pc">Cerrar</button>`;
+  $('pc').onclick=()=>$('plotSheet').classList.remove('on');
+  $('plotSheet').classList.add('on');
+};
+
+/* ---------- OFFLINE ---------- */
+$('offBtn').onclick=()=>{
+  const inst=matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  $('offInner').innerHTML=`<h3>Leer sin datos</h3>
+    <div class="sub">INKWELL no descarga capítulos: los <b>genera</b> en tu teléfono. No hay servidor. Una vez instalada, funciona en el camión sin una sola barra de señal.</div>
+    <div class="grp"><h4>Instalar en el iPhone</h4>
+      <div class="ev">${inst?'✅ Ya está instalada. Apaga los datos y compruébalo.'
+      :'1. Toca <b>Compartir</b> (el cuadrito con la flecha ↑)<br>2. Baja y toca <b>“Añadir a pantalla de inicio”</b><br>3. Ábrela desde el ícono. Ya funciona sin internet.'}</div></div>
+    <div class="grp"><h4>Voz más humana</h4>
+      <div class="ev">Ajustes → Accesibilidad → Contenido hablado → Voces → Español (México) → descarga <b>Paulina (Mejorada)</b>. La de fábrica suena a robot; esa no.</div></div>
+    <div class="grp"><h4>El arte</h4>
+      <div class="ev">Son <b>pinturas reales de dominio público</b> (Wikimedia Commons): Goya, Kuniyoshi, ukiyo-e, románticos. Se guardan con la app — 14 MB en total.</div></div>
+    <button class="bigbtn ghost" id="oc">Entendido</button>`;
+  $('oc').onclick=()=>$('offSheet').classList.remove('on');
+  $('offSheet').classList.add('on');
+};
+[['plotSheet'],['cfgSheet'],['offSheet']].forEach(([id])=>{
+  $(id).onclick=e=>{ if(e.target.id===id) e.currentTarget.classList.remove('on'); };
+});
+
+$('backBtn').onclick=back;
+$('prevBtn').onclick=()=>go(-1);
+$('nextBtn').onclick=()=>go(1);
+$('jumpBtn').onclick=()=>{ const v=+$('jumpInput').value; if(v>=1&&v<=1500){ cur.n=v; render(); } };
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderLibrary();
+</script>
+</body>
+</html>
