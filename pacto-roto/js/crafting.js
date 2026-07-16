@@ -258,5 +258,127 @@ window.CRAFTING = (function () {
 
   function avg(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
 
-  return { abrir, OFICIOS };
+  /* ============================================================
+     MESA DE TRABAJO LIBRE — avienta lo que sea, la IA decide
+     ============================================================ */
+  const VERBOS = ['cortar','machacar','moler','mezclar','hervir','freír','hornear','fundir','forjar','templar','destilar','coser','tallar','emplatar'];
+  let tray = [], verbos = [];
+
+  function mesaLibre(backCb) {
+    back = backCb; cancelRaf(); tray = []; verbos = [];
+    render();
+  }
+  function itemsInventario() {
+    const s = S(), out = [];
+    for (const k in s.inv) {
+      if (k === 'orbe') continue;
+      out.push({ key: k, nombre: G.nombreItem(k), qty: s.inv[k], icon: G.matIcon(k) });
+    }
+    (s.objetos || []).forEach(o => out.push({ key: 'obj_' + o.uid, nombre: o.nombre + ' (equipo)', qty: 1, icon: '⚔', obj: o }));
+    if (s.oro > 0) out.push({ key: 'oro', nombre: 'Oro', qty: s.oro, icon: '⛃' });
+    return out;
+  }
+  function render() {
+    const sc = G.el('panel-scroll');
+    let html = `<div class="station-head"><span class="ico">🍶</span><div><h2 class="gold">Mesa de trabajo</h2>
+      <div class="dim" style="font-size:12px">Avienta lo que sea — materiales, comida, hasta una espada — hazle cosas, y ve qué sale.</div></div></div>`;
+    // bandeja
+    html += `<div class="dim small-caps" style="font-size:11px">En la mesa</div><div class="tray" id="tray">`;
+    if (!tray.length) html += `<span class="empty">Nada todavía. Añade del inventario.</span>`;
+    else tray.forEach((t, i) => html += `<span class="chip on" data-rm="${i}">${G.esc(t.nombre)} ×${t.qty} <span class="x">✕</span></span>`);
+    html += `</div><button class="btn ghost mini" id="mesa-add">+ Añadir del inventario</button>`;
+    html += `<div id="mesa-picker"></div>`;
+    // verbos
+    html += `<div class="dim small-caps" style="font-size:11px;margin-top:10px">¿Qué le haces? (en orden)</div><div>`;
+    VERBOS.forEach(v => html += `<span class="chip ${verbos.includes(v) ? 'on' : ''}" data-v="${v}">${verbos.includes(v) ? (verbos.indexOf(v) + 1) + '. ' : ''}${v}</span>`);
+    html += `</div>`;
+    html += `<button class="btn gold" id="mesa-crear" style="margin-top:14px" ${tray.length ? '' : 'disabled'}>Trabajar y ver qué sale</button>
+      <button class="btn ghost" id="mesa-back">‹ Salir</button>`;
+    sc.innerHTML = html; G.el('panel-actions').innerHTML = '';
+    sc.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { tray.splice(+b.dataset.rm, 1); render(); });
+    sc.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { const v = b.dataset.v; const i = verbos.indexOf(v); if (i >= 0) verbos.splice(i, 1); else verbos.push(v); render(); });
+    G.el('mesa-add').onclick = togglePicker;
+    G.el('mesa-crear').onclick = crear;
+    G.el('mesa-back').onclick = () => { cancelRaf(); back && back(); };
+    G.show('panel');
+  }
+  function togglePicker() {
+    const box = G.el('mesa-picker');
+    if (box.innerHTML) { box.innerHTML = ''; return; }
+    const items = itemsInventario();
+    if (!items.length) { box.innerHTML = `<p class="dim" style="font-size:13px">No traes nada que aventar.</p>`; return; }
+    box.innerHTML = `<div class="picker">${items.map((it, i) => `<div class="row" data-add="${i}"><span>${it.icon}</span><span class="nm">${G.esc(it.nombre)}</span><span class="q">×${it.qty}</span></div>`).join('')}</div>`;
+    box.querySelectorAll('[data-add]').forEach(r => r.onclick = () => addToTray(items[+r.dataset.add]));
+  }
+  function addToTray(it) {
+    const ex = tray.find(t => t.key === it.key);
+    const max = it.qty;
+    if (ex) { if (ex.qty < max) ex.qty++; }
+    else tray.push({ key: it.key, nombre: it.nombre, qty: 1, kind: it.key.startsWith('obj_') ? 'obj' : it.key === 'oro' ? 'oro' : 'item', obj: it.obj });
+    render(); setTimeout(togglePicker, 0);
+  }
+
+  function crear() {
+    // mini-juego genérico de ejecución (un pulso) → score → juicio
+    mgTrabajo((score) => resolverMesa(score));
+  }
+  function mgTrabajo(done) {
+    const rondas = 3; let ronda = 0, hits = [], pos = 0, dir = 1, speed = 0.02;
+    const sc = G.el('panel-scroll');
+    function draw() {
+      sc.innerHTML = `<div class="station-head"><span class="ico">🍶</span><div><h2 class="gold">Trabajando…</h2>
+        <div class="dim" style="font-size:12px">Pulso ${ronda + 1}/${rondas}. Da en la zona dorada.</div></div></div>
+        <div class="timing-bar" style="height:40px"><div class="forge-zone perfect" style="left:42%;width:16%"></div>
+          <div class="forge-marker" id="mk" style="left:${pos * 100}%;background:var(--gold-lt)"></div></div>
+        <div class="dim">${hits.map(h => h > 0.8 ? '⬤' : h > 0 ? '◐' : '○').join(' ')}</div>
+        <button class="btn gold" id="pulse">Golpe</button>`;
+      G.el('pulse').onclick = tap;
+    }
+    function loop() { pos += dir * speed; if (pos > 1) { pos = 1; dir = -1; } if (pos < 0) { pos = 0; dir = 1; } const m = G.el('mk'); if (m) m.style.left = (pos * 100) + '%'; raf = requestAnimationFrame(loop); }
+    function tap() { const d = Math.abs(pos - 0.5); hits.push(d < 0.08 ? 1 : d < 0.16 ? 0.6 : 0); ronda++; if (ronda >= rondas) { cancelRaf(); return done(avg(hits)); } speed = 0.018 + Math.random() * 0.014; }
+    draw(); cancelRaf(); raf = requestAnimationFrame(loop);
+  }
+
+  async function resolverMesa(score) {
+    cancelRaf();
+    const sc = G.el('panel-scroll');
+    sc.innerHTML = `<p class="thinking">Ves qué resulta… <span class="spinner"></span></p>`;
+    const ingredientes = tray.map(t => ({ key: t.key, nombre: t.nombre, qty: t.qty }));
+    const res = await NARR.juzgarCreacion({ ingredientes, acciones: verbos, oficio: 'libre', score, nivelOficio: 0 });
+    // consumir exactamente lo del consumo
+    for (const k in res.consumo) consumir(k, res.consumo[k]);
+    // crear el ítem según tipo
+    crearDeResultado(res);
+    G.save();
+    mostrarMesaResultado(res);
+  }
+  function consumir(key, qty) {
+    qty = Math.max(0, qty | 0);
+    if (!qty) return;
+    if (key === 'oro') { G.apply({ oro: -qty }); return; }
+    if (key.startsWith('obj_')) { const uid = key.slice(4); S().objetos = (S().objetos || []).filter(o => o.uid !== uid); return; }
+    G.take(key, qty);
+  }
+  function crearDeResultado(res) {
+    if (res.tipo === 'basura') return;
+    if (res.tipo === 'comida' || res.tipo === 'pocion') {
+      G.crearConsumible({ tipo: res.tipo, nombre: res.nombre, efecto: res.efecto, rareza: res.rareza });
+    } else { // arma/armadura/objeto
+      G.crearObjeto({ nombre: res.nombre, slot: res.tipo === 'armadura' ? 'armadura' : res.tipo === 'objeto' ? 'foco' : 'arma', base: res.atributos, rareza: res.rareza });
+    }
+  }
+  function mostrarMesaResultado(res) {
+    const esBasura = res.tipo === 'basura';
+    const stats = Object.assign({}, res.efecto || {}, res.atributos || {});
+    const statTxt = Object.entries(stats).map(([k, v]) => `${k} ${v > 0 ? '+' : ''}${v}`).join(' · ') || (esBasura ? '—' : '');
+    G.modal(`<h3 class="rar-${res.rareza}" style="color:${esBasura ? 'var(--dim)' : 'var(--gold-lt)'}">${G.esc(res.nombre)}</h3>
+      <div class="stat-row"><span>Tipo</span><b>${res.tipo}</b></div>
+      <div class="stat-row"><span>Calidad</span><b class="rar-${res.rareza}">${res.rareza}</b></div>
+      ${statTxt ? `<div class="stat-row"><span>Atributos</span><b>${G.esc(statTxt)}</b></div>` : ''}
+      <p class="effect">${G.esc(res.narracion || '')}</p>
+      <button class="btn gold" id="mesa-ok">${esBasura ? 'Ni modo' : 'Guardar'}</button>`);
+    G.el('mesa-ok').onclick = () => { G.closeModal(); tray = []; verbos = []; render(); };
+  }
+
+  return { abrir, mesaLibre, OFICIOS };
 })();

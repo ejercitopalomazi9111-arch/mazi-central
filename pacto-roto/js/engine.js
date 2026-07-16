@@ -135,6 +135,49 @@ window.G = (function () {
   function has(mat, n = 1) { return (state.inv[mat] || 0) >= n; }
   function canCraft(reqs) { for (const m in reqs) if (!has(m, reqs[m])) return false; return true; }
 
+  /* ---------- creación de objetos/consumibles (para la IA) ---------- */
+  function crearObjeto(o) {
+    // o: {nombre, slot:'arma'|'armadura'|'foco', base:{...}, rareza}
+    if (!state.objetos) state.objetos = [];
+    const item = { uid: 'o' + Date.now() + Math.floor(Math.random() * 9999), nombre: String(o.nombre || 'Objeto'),
+      slot: ['arma', 'armadura', 'foco'].includes(o.slot) ? o.slot : 'arma',
+      rareza: o.rareza || 'comun', base: sanitStats(o.base) };
+    state.objetos.push(item); save(); return item;
+  }
+  function crearConsumible(c) {
+    // c: {tipo:'pocion'|'comida', nombre, efecto|buff, rareza}
+    const tipo = c.tipo === 'comida' ? 'food' : 'poc';
+    const key = tipo + '_free_' + (Date.now() % 100000) + Math.floor(Math.random() * 99);
+    give(key, 1);
+    if (tipo === 'poc') state.flags['pocmeta_' + key] = { nombre: String(c.nombre || 'Poción'), efecto: sanitStats(c.efecto || c.buff), rareza: c.rareza || 'comun' };
+    else state.flags['foodmeta_' + key] = { nombre: String(c.nombre || 'Platillo'), buff: sanitStats(c.buff || c.efecto), rareza: c.rareza || 'comun' };
+    save(); return key;
+  }
+  function sanitStats(o) {
+    const out = {}; if (!o || typeof o !== 'object') return out;
+    for (const k of ['hp', 'mana', 'ataque', 'defensa', 'oro', 'rastro', 'xp', 'suerte', 'focos', 'huir']) {
+      if (o[k] != null) { if (k === 'huir') out[k] = !!o[k]; else if (!isNaN(+o[k])) out[k] = clamp(Math.round(+o[k]), -80, 80); }
+    }
+    return out;
+  }
+  function marcarFantasma(id) {
+    id = id || state.lugar;
+    if (!state.mundo.pueblosFantasma.includes(id)) state.mundo.pueblosFantasma.push(id);
+    const n = DATA.NODOS[id]; if (n && n.faccion) state.reputacion[n.faccion] = -5;
+    save();
+  }
+  // aplica los efectos extendidos que devuelve la IA (dar/gastar/objeto/crear/fantasma)
+  function aplicarEfectos(res) {
+    if (!res) return;
+    if (res.cambios) apply(res.cambios);
+    if (res.dar) for (const m in res.dar) if (DATA.MATS[m]) give(m, clamp(Math.round(+res.dar[m] || 0), 0, 20));
+    if (res.gastar) for (const m in res.gastar) take(m, clamp(Math.round(+res.gastar[m] || 0), 0, 99));
+    if (res.objeto && res.objeto.nombre) crearObjeto(res.objeto);
+    if (res.crear && res.crear.nombre) crearConsumible(res.crear);
+    if (res.fantasma) marcarFantasma();
+    save(); emit();
+  }
+
   /* ---------- arte ---------- */
   function art(id) { return catalog[id] || null; }
   function plateHTML(id) {
@@ -243,6 +286,7 @@ window.G = (function () {
     get state(){ return state; }, set state(s){ state = s; },
     SCHEMA, newGame, save, load, hasSave, wipe, getCfg, setCfg,
     apply, gainXP, setRastro, tirada, give, take, has, canCraft,
+    crearObjeto, crearConsumible, marcarFantasma, aplicarEfectos,
     art, plateHTML, sprStyle, matIcon, nombreItem, show, renderHUD, toast, modal, closeModal,
     on, emit, loadCatalog, get catalog(){ return catalog; },
     clamp, rnd, rint, pick, d20, el, esc,

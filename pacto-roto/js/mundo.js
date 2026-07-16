@@ -42,7 +42,9 @@ window.MUNDO = (function () {
     muelle:   { ico:'🎣', nom:'Muelle', fn: n => { VIDA.pescar(volverPueblo); } },
     pesca:    { ico:'🎣', nom:'Pesca', fn: n => { VIDA.pescar(volverPueblo); } },
     caza:     { ico:'🏹', nom:'Caza', fn: n => { VIDA.cazar(volverPueblo); } },
+    mesa:     { ico:'🍶', nom:'Mesa libre', fn: n => CRAFTING.mesaLibre(volverPueblo) },
   };
+  const CRAFT_SERV = ['herreria','alquimia','cocina','artesania'];
 
   function volverPueblo() { pueblo(); }
 
@@ -59,32 +61,57 @@ window.MUNDO = (function () {
     if (S().mundo.guerra.activa) html += `<div class="effect">Suena la guerra al sur. Frente: ${G.esc(S().mundo.guerra.frente)}, avance ${S().mundo.guerra.avance}.</div>`;
     if (!fantasma) {
       html += `<hr class="rule"><div class="dim small-caps" style="font-size:12px">Servicios</div><div class="btnrow" style="margin-top:6px">`;
-      (n.servicios || []).forEach(k => { if (SERV[k]) html += `<button class="btn mini" data-serv="${k}">${SERV[k].ico} ${SERV[k].nom}</button>`; });
+      const servs = (n.servicios || []).slice();
+      if (servs.some(k => CRAFT_SERV.includes(k)) && !servs.includes('mesa')) servs.push('mesa');
+      servs.forEach(k => { if (SERV[k]) html += `<button class="btn mini" data-serv="${k}">${SERV[k].ico} ${SERV[k].nom}</button>`; });
       html += `</div>`;
-      // opción de moral: si es pueblo con facción y tu moral es baja
-      if (n.tipo === 'pueblo' && n.faccion) html += `<button class="btn blood mini" id="masacre" style="margin-top:10px">☠ Masacrar el pueblo</button>`;
     }
+    html += barraAccionHTML('Haz lo que quieras: hablar, buscar, robar, quemar…');
     sc.innerHTML = html;
     sc.querySelectorAll('[data-serv]').forEach(b => b.onclick = () => SERV[b.dataset.serv].fn(n));
-    const mas = G.el('masacre'); if (mas) mas.onclick = () => masacrar(n);
+    wireAccion(sc);
     UI.hub();
   }
 
-  function masacrar(n) {
-    G.modal(`<h3 class="blood">Masacrar ${G.esc(n.nombre)}</h3>
-      <p>No hay vuelta. El pueblo queda fantasma para siempre. Ganas botín y terror; pierdes toda reputación aquí y con los tuyos.</p>
-      <button class="btn blood" id="mas-si">Hacerlo</button><button class="btn ghost" id="mas-no">No</button>`);
-    G.el('mas-no').onclick = G.closeModal;
-    G.el('mas-si').onclick = () => {
-      G.closeModal();
-      S().mundo.pueblosFantasma.push(S().lugar);
-      if (n.faccion) S().reputacion[n.faccion] = -5;
-      S().reputacion.valle = (S().reputacion.valle || 0) - 3;
-      G.apply({ oro: 60, moral: -4, rastro: 1, xp: 20 });
-      S().hilos.push(`Masacraste ${n.nombre}. El valle lo recuerda.`);
-      G.toast('El pueblo arde. Así se queda.', 'blood');
-      pueblo();
-    };
+  /* ---------- ACCIÓN LIBRE: hablar con el mundo ---------- */
+  function barraAccionHTML(ph) {
+    return `<hr class="rule"><div class="accion-libre">
+      <input class="field" id="acc-input" placeholder="${G.esc(ph || '¿Qué haces?')}" maxlength="120" autocomplete="off">
+      <button class="btn gold" id="acc-go" style="margin-top:6px">▸ Hacerlo</button></div>`;
+  }
+  function wireAccion(scEl) {
+    const inp = scEl.querySelector('#acc-input'), go = scEl.querySelector('#acc-go');
+    if (!go) return;
+    const fire = () => { const t = inp.value.trim(); if (t) accionLibre(t); };
+    go.onclick = fire;
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') fire(); });
+  }
+  async function accionLibre(texto) {
+    UI.mostrarJuego();
+    const sc = G.el('juego-scroll');
+    sc.innerHTML = `<p class="narr">${G.esc(texto)}</p><p class="thinking">El mundo responde… <span class="spinner"></span></p>`;
+    UI.hub();
+    let res;
+    try { res = await NARR.accionLibre(texto); }
+    catch (e) { res = { narracion: 'El mundo calla.', opciones: [{ t: 'Seguir', hint: '' }], cambios: {} }; }
+    if (res.hilo) NARR.registrarHilo(S(), res.hilo);
+    G.aplicarEfectos(res);
+    // avisos de lo ganado
+    const ganado = [];
+    if (res.dar) for (const m in res.dar) ganado.push(`${res.dar[m]}× ${DATA.MATS[m] ? DATA.MATS[m].nombre : m}`);
+    if (res.objeto) ganado.push(res.objeto.nombre);
+    if (res.crear) ganado.push(res.crear.nombre);
+    if (ganado.length) G.toast('Obtienes: ' + ganado.join(', '), 'gold');
+    if (res.fantasma) G.toast('El pueblo queda en cenizas. Así se queda.', 'blood');
+    // cambio de lugar sugerido por la IA
+    if (res.lugar) { const id = resolverLugar(res.lugar); if (id && id !== S().lugar && DATA.NODOS[id]) { S().lugar = id; if (!S().mundo.visitados.includes(id)) S().mundo.visitados.push(id); G.save(); } }
+    escena(res, { libre: true });
+    if (res.enemigo) setTimeout(() => {}, 0); // el botón de enemigo lo pinta escena
+  }
+  function resolverLugar(nombre) {
+    const t = String(nombre).toLowerCase();
+    for (const id in DATA.NODOS) { if (id === t || DATA.NODOS[id].nombre.toLowerCase() === t || DATA.NODOS[id].nombre.toLowerCase().includes(t)) return id; }
+    return null;
   }
 
   /* ---------- POSADA (descanso) ---------- */
@@ -198,7 +225,7 @@ window.MUNDO = (function () {
     try { turn = await NARR.turno('explorar los alrededores'); }
     catch (e) { turn = { narracion: 'El camino sigue, mudo.', imagen_id: null, opciones: [{ t: 'Seguir', hint: '' }], cambios: {}, enemigo: null }; }
     if (turn.hilo) NARR.registrarHilo(S(), turn.hilo);
-    if (turn.cambios) G.apply(turn.cambios);
+    G.aplicarEfectos(turn);
     escena(turn);
   }
 
@@ -234,6 +261,9 @@ window.MUNDO = (function () {
     const rec = document.createElement('button'); rec.className = 'btn ghost'; rec.textContent = '⛏ Recolectar por aquí';
     rec.onclick = () => { const g = VIDA.recolectar(DATA.NODOS[S().lugar].region); G.toast(`Recoges ${g.n}× ${g.nombre}.`, 'gold'); };
     sc.appendChild(rec);
+    // campo de acción libre
+    const bar = document.createElement('div'); bar.innerHTML = barraAccionHTML('¿Qué haces? Escríbelo…');
+    sc.appendChild(bar); wireAccion(sc);
     UI.hub();
   }
 

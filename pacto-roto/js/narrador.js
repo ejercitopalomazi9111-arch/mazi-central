@@ -153,6 +153,170 @@ Reglas: 2 a 4 opciones, SIEMPRE al menos una que no sea pelear. "enemigo": null 
   }
 
   /* ============================================================
+     ACCIÓN LIBRE — el jugador escribe lo que quiere hacer
+     ============================================================ */
+  function invResumen() {
+    const inv = S().inv, out = [];
+    for (const k in inv) { if (DATA.MATS[k]) out.push(`${k}:${inv[k]}`); }
+    return out.join(', ') || '(vacío)';
+  }
+  const MAT_IDS = Object.keys(DATA.MATS);
+
+  async function accionLibre(texto) {
+    const s = S();
+    registrarUltimo(s, texto);
+    if (hasLLM()) {
+      try { return await accionLibreLLM(texto); }
+      catch (e) { G.toast('El oráculo calla. El mundo responde a medias.', ''); return accionLibreReglas(texto); }
+    }
+    return accionLibreReglas(texto);
+  }
+
+  async function accionLibreLLM(texto) {
+    const system = TONO + `
+El jugador puede hacer LO QUE SEA con palabras: buscar, robar, hablar, quemar, matar, construir,
+esconderse, rezar, lo que escriba. Interprétalo con criterio y consecuencias reales. Puedes darle o
+quitarle cosas, crear objetos, moverlo, o hacer que un pueblo quede en cenizas.
+CONTRATO (acción libre). Devuelve exactamente:
+{"narracion":"2-4 frases, segunda persona","imagen_id":"<id del catálogo>","opciones":[{"t":"","hint":""}],"cambios":{"hp":0,"mana":0,"oro":0,"rastro":0,"moral":0,"xp":0},"dar":{},"gastar":{},"objeto":null,"crear":null,"enemigo":null,"lugar":null,"fantasma":false,"hilo":null}
+- "dar"/"gastar": objetos {id:cantidad} SOLO con estos materiales: ${MAT_IDS.join(', ')}.
+- "objeto": null o un equipable creado {"nombre":"","slot":"arma|armadura|foco","base":{"ataque":0,"defensa":0,"mana":0},"rareza":"tosca|comun|fina|maestra|legendaria"}.
+- "crear": null o un consumible {"tipo":"pocion|comida","nombre":"","efecto":{"hp":0,"mana":0},"rareza":""}.
+- "fantasma": true SOLO si el jugador destruye/masacra el pueblo donde está (queda en cenizas para siempre).
+- "enemigo": null o {"n":"","nivel":N,"hp":N} si su acción provoca un combate.
+- "lugar": null o el nombre de un sitio si se mueve. Sé justo: acciones tontas fallan, las crueles pesan en la moral y el Rastro.
+imagen_id de: ${idsArte().join(', ')}.`;
+    const user = `ESTADO:\n${JSON.stringify(compactState())}\nINVENTARIO: ${invResumen()}\n\nEL JUGADOR ESCRIBE: "${texto}"\nInterpreta y resuelve.`;
+    const j = await llmJSON(system, user, { temp: 0.85, maxTok: 750 });
+    const base = normalizarTurno(j);
+    return Object.assign(base, {
+      dar: sanitItems(j.dar), gastar: sanitItems(j.gastar),
+      objeto: normObjeto(j.objeto), crear: normCrear(j.crear),
+      lugar: j.lugar ? String(j.lugar) : null, fantasma: !!j.fantasma,
+    });
+  }
+
+  function sanitItems(o) {
+    const out = {}; if (!o || typeof o !== 'object') return out;
+    for (const k in o) if (DATA.MATS[k] && !isNaN(+o[k])) out[k] = G.clamp(Math.round(+o[k]), 0, 20);
+    return out;
+  }
+  function normObjeto(o) {
+    if (!o || !o.nombre) return null;
+    return { nombre: String(o.nombre).slice(0, 40), slot: ['arma','armadura','foco'].includes(o.slot) ? o.slot : 'arma',
+      base: o.base || {}, rareza: ['tosca','comun','fina','maestra','legendaria'].includes(o.rareza) ? o.rareza : 'comun' };
+  }
+  function normCrear(c) {
+    if (!c || !c.nombre) return null;
+    return { tipo: c.tipo === 'comida' ? 'comida' : 'pocion', nombre: String(c.nombre).slice(0, 40),
+      efecto: c.efecto || c.buff || {}, rareza: ['tosca','comun','fina','maestra','legendaria'].includes(c.rareza) ? c.rareza : 'comun' };
+  }
+
+  function accionLibreReglas(texto) {
+    const s = S(), region = DATA.NODOS[s.lugar] ? DATA.NODOS[s.lugar].region : 'ruinas';
+    const t = (texto || '').toLowerCase();
+    // heurística mínima sin IA
+    if (/(quem|masacr|destru|arras|mat[ao] a todo)/.test(t) && DATA.NODOS[s.lugar] && DATA.NODOS[s.lugar].tipo === 'pueblo') {
+      return { narracion: 'Prendes fuego a todo lo que arde. Cuando el humo baja, no queda nadie. El pueblo es ceniza y así se queda.', imagen_id: 'guerra_ira', opciones: [{ t: 'Seguir', hint: '' }], cambios: { moral: -4, rastro: 1, oro: 40, xp: 18 }, dar: {}, gastar: {}, objeto: null, crear: null, enemigo: null, lugar: null, fantasma: true, hilo: 'Dejaste un pueblo en cenizas.' };
+    }
+    if (/(busc|recog|junt|recolect|hierba|le[ñn]a|mena|caz)/.test(t)) {
+      const g = ['madera','raiz','seta','mena','esporas','ceniza_h'][Math.floor(Math.random()*6)];
+      return { narracion: `Rebuscas por los alrededores. Entre la maleza y la piedra, algo aprovechable.`, imagen_id: MUNDO ? MUNDO.regionArt(region) : null, opciones: [{ t: 'Seguir', hint: '' }], cambios: { xp: 2 }, dar: { [g]: 1 }, gastar: {}, objeto: null, crear: null, enemigo: null, lugar: null, fantasma: false, hilo: null };
+    }
+    return { narracion: `Intentas: "${texto}". El mundo apenas responde sin el oráculo despierto — pega tu llave en ⚙ para que la IA lo interprete de verdad.`, imagen_id: null, opciones: [{ t: 'Seguir', hint: '' }], cambios: {}, dar: {}, gastar: {}, objeto: null, crear: null, enemigo: null, lugar: null, fantasma: false, hilo: null };
+  }
+
+  /* ============================================================
+     MESA DE TRABAJO LIBRE — avienta lo que sea, la IA juzga
+     ============================================================ */
+  async function juzgarCreacion(ctx) {
+    // ctx: {ingredientes:[{key,nombre,qty}], acciones:[verbos], oficio, score, nivelOficio}
+    if (hasLLM()) {
+      try { return await creacionLLM(ctx); }
+      catch (e) { return creacionReglas(ctx); }
+    }
+    return creacionReglas(ctx);
+  }
+
+  async function creacionLLM(ctx) {
+    const system = TONO + `
+El jugador está en un banco de trabajo y combina lo que quiera (materiales, comida, hasta una espada
+o una gema) aplicándole acciones. TÚ decides qué sale: puede ser útil, mediocre, o basura. Sé
+coherente: metal + fuego + forjar = arma; hierbas + hervir/destilar = poción (a veces inútil);
+comida + cocinar = platillo; combinaciones absurdas = basura o algo raro.
+CONTRATO (creación). Devuelve exactamente:
+{"nombre":"","tipo":"comida|pocion|arma|armadura|objeto|basura","rareza":"tosca|comun|fina|maestra|legendaria","narracion":"1-3 frases secas","efecto":{"hp":0,"mana":0,"rastro":0},"atributos":{"ataque":0,"defensa":0,"mana":0},"consumo":{}}
+- "consumo": exactamente qué ingredientes y cuántos se gastan (ids: los que te doy), puede ser todos o algunos.
+- Para comida/poción usa "efecto"; para arma/armadura/objeto usa "atributos"; para basura ambos vacíos.
+- La ejecución (0..1) y el nivel de oficio suben la calidad.`;
+    const ingr = ctx.ingredientes.map(i => `${i.key}(${i.nombre}) x${i.qty}`).join(', ');
+    const user = `INGREDIENTES: ${ingr}\nACCIONES: ${ctx.acciones.join(' → ') || '(ninguna)'}\nOFICIO: ${ctx.oficio || 'libre'}\nEJECUCIÓN: ${(ctx.score != null ? ctx.score : 0.6).toFixed(2)}\nNIVEL DE OFICIO: ${ctx.nivelOficio || 0}`;
+    const j = await llmJSON(system, user, { temp: 0.8, maxTok: 400 });
+    return normalizarCreacion(j, ctx);
+  }
+
+  // traduce el vocabulario libre de la IA (daño, salud, etc.) a claves canónicas del juego
+  function mapStats(pool) {
+    const out = {};
+    const map = { ataque:'ataque', daño:'ataque', dano:'ataque', filo:'ataque', poder:'ataque', fuerza:'ataque',
+      defensa:'defensa', armadura:'defensa', proteccion:'defensa', 'protección':'defensa',
+      hp:'hp', salud:'hp', vida:'hp', cura:'hp', saciedad:'hp', 'nutrición':'hp', nutricion:'hp',
+      mana:'mana', 'maná':'mana', energia:'mana', 'energía':'mana', magia:'mana',
+      rastro:'rastro', oro:'oro', xp:'xp', suerte:'suerte' };
+    for (const k in (pool || {})) {
+      const canon = map[String(k).toLowerCase()];
+      if (!canon) continue;
+      let v = pool[k]; if (typeof v === 'string') v = parseInt(v.replace(/[^\-0-9]/g, ''), 10);
+      if (!isNaN(v)) out[canon] = (out[canon] || 0) + Math.round(v);
+    }
+    return out;
+  }
+
+  function normalizarCreacion(j, ctx) {
+    const tipos = ['comida','pocion','arma','armadura','objeto','basura'];
+    const tipo = tipos.includes(j.tipo) ? j.tipo : 'basura';
+    // pool combinado de stats, con vocabulario normalizado
+    const pool = mapStats(Object.assign({}, j.atributos || {}, j.efecto || {}));
+    const equip = (tipo === 'arma' || tipo === 'armadura' || tipo === 'objeto');
+    const efecto = {}, atributos = {};
+    for (const k in pool) {
+      if (equip) { if (['ataque','defensa','mana'].includes(k)) atributos[k] = pool[k]; }
+      else { if (['hp','mana','rastro','suerte','oro'].includes(k)) efecto[k] = pool[k]; }
+    }
+    if (equip && !Object.keys(atributos).length) atributos[tipo === 'armadura' ? 'defensa' : 'ataque'] = 4; // nunca un arma sin filo
+    // consumo: aceptar {id:qty} o {ids:[...]}, validar contra lo ofrecido
+    const ofrecido = {}; ctx.ingredientes.forEach(i => ofrecido[i.key] = i.qty);
+    const consumo = {};
+    let raw = j.consumo;
+    if (raw && Array.isArray(raw.ids)) { const o = {}; raw.ids.forEach(id => o[id] = ofrecido[id] || 1); raw = o; }
+    if (Array.isArray(raw)) { const o = {}; raw.forEach(id => o[id] = ofrecido[id] || 1); raw = o; }
+    if (raw && typeof raw === 'object') for (const k in raw) if (ofrecido[k]) consumo[k] = G.clamp(Math.round(+raw[k] || 0), 0, ofrecido[k]);
+    if (!Object.keys(consumo).length) ctx.ingredientes.forEach(i => consumo[i.key] = i.qty); // si no dice, gasta todo
+    return {
+      nombre: String(j.nombre || 'Cosa sin nombre').slice(0, 40), tipo,
+      rareza: ['tosca','comun','fina','maestra','legendaria'].includes(j.rareza) ? j.rareza : 'comun',
+      narracion: String(j.narracion || ''), efecto, atributos, consumo,
+    };
+  }
+
+  function creacionReglas(ctx) {
+    const keys = ctx.ingredientes.map(i => i.key);
+    const acc = (ctx.acciones || []).join(' ');
+    const consumo = {}; ctx.ingredientes.forEach(i => consumo[i.key] = i.qty);
+    const tieneMetal = keys.some(k => ['lingote','mena','carbon','gema'].includes(k));
+    const tieneHierba = keys.some(k => ['raiz','ceniza_h','esporas','lagrima'].includes(k));
+    const tieneComida = keys.some(k => DATA.MATS[k] && DATA.MATS[k].tipo === 'ingrediente');
+    const calor = /fund|forj|herv|fre|horn|coc|templ/.test(acc);
+    const score = ctx.score != null ? ctx.score : 0.5;
+    const rareza = score > 0.85 ? 'maestra' : score > 0.6 ? 'fina' : score > 0.35 ? 'comun' : 'tosca';
+    const mult = { tosca: 0.6, comun: 1, fina: 1.4, maestra: 1.9 }[rareza] || 1;
+    if (tieneMetal && calor) return { nombre: 'Hoja improvisada', tipo: 'arma', rareza, narracion: 'El metal cede al calor y toma filo. Tosca, pero corta.', efecto: {}, atributos: { ataque: Math.round(6 * mult) }, consumo };
+    if (tieneComida && calor) { let hp = 0; keys.forEach(k => { if (DATA.MATS[k] && DATA.MATS[k].tipo === 'ingrediente') hp += 6; }); return { nombre: 'Platillo del momento', tipo: 'comida', rareza, narracion: 'Sale comida. Reconforta más de lo que se ve.', efecto: { hp: Math.round(hp * mult) }, atributos: {}, consumo }; }
+    if (tieneHierba) { const util = Math.random() < 0.6; return { nombre: util ? 'Brebaje turbio' : 'Agua sucia', tipo: util ? 'pocion' : 'basura', rareza: util ? rareza : 'tosca', narracion: util ? 'Huele feo, pero algo hace.' : 'No sirvió de nada. Solo perdiste lo que echaste.', efecto: util ? { mana: Math.round(12 * mult) } : {}, atributos: {}, consumo }; }
+    return { nombre: 'Amasijo inútil', tipo: 'basura', rareza: 'tosca', narracion: 'Lo que sea que intentabas, no salió. Basura.', efecto: {}, atributos: {}, consumo };
+  }
+
+  /* ============================================================
      JUICIO DE SELLO (magia dibujada)
      ============================================================ */
   async function juzgarSello(lectura, intencion, sobreCarne) {
@@ -273,5 +437,5 @@ La declaración del jugador es su INTENCIÓN, no un hecho. Si los trazos no la r
     return { habilidad: nombres[pot], desc: pot==='nula'?'No sirve para nada.':'Un poder acorde a lo que mataste.', potencia: pot };
   }
 
-  return { hasLLM, turno, juzgarSello, juzgarCalidad, juzgarOrbe, registrarHilo, lecturaTexto, llm, parseJSON };
+  return { hasLLM, turno, accionLibre, juzgarCreacion, juzgarSello, juzgarCalidad, juzgarOrbe, registrarHilo, lecturaTexto, llm, parseJSON };
 })();
