@@ -123,7 +123,8 @@ hr.rule{border:0;height:1px;background:linear-gradient(90deg,transparent,var(--l
     repeating-linear-gradient(90deg,transparent,transparent 31px,rgba(168,130,60,.04) 32px),
     radial-gradient(circle at 50% 45%,#20242b,#14171c);
   touch-action:none;overflow:hidden}
-#sello-canvas,#sello-fx{position:absolute;inset:0;width:100%;height:100%}
+#sello-canvas,#sello-fx{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#sello-fx{pointer-events:none} /* la capa de efectos NO debe robar los toques del dibujo */
 .flesh-mode .canvas-wrap{background:radial-gradient(circle at 50% 45%,#2a1a1a,#160f0f);
   border-color:var(--blood)}
 .reader{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;min-height:30px}
@@ -290,17 +291,25 @@ hr.rule{border:0;height:1px;background:linear-gradient(90deg,transparent,var(--l
   <div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
 </div>
 
-<script src="js/vendor/anime.min.js"></script>
-<script src="js/data.js"></script>
-<script src="js/engine.js"></script>
-<script src="js/narrador.js"></script>
-<script src="js/magia.js"></script>
-<script src="js/combate.js"></script>
-<script src="js/crafting.js"></script>
-<script src="js/vida.js"></script>
-<script src="js/mundo.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/main.js"></script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}</script>
+<script src="js/vendor/anime.min.js?v=3"></script>
+<script src="js/data.js?v=3"></script>
+<script src="js/engine.js?v=3"></script>
+<script src="js/narrador.js?v=3"></script>
+<script src="js/magia.js?v=3"></script>
+<script src="js/combate.js?v=3"></script>
+<script src="js/crafting.js?v=3"></script>
+<script src="js/vida.js?v=3"></script>
+<script src="js/mundo.js?v=3"></script>
+<script src="js/ui.js?v=3"></script>
+<script src="js/main.js?v=3"></script>
+<script>
+/* Durante el desarrollo activo: NADA de service worker (evita servir código viejo).
+   Además desregistra cualquier SW ya instalado y limpia sus caches. El offline se
+   re-activa cuando el juego esté estable. */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(()=>{});
+}
+if (window.caches && caches.keys) { caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(()=>{}); }
+</script>
 </body>
 </html>
