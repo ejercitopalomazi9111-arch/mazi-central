@@ -199,7 +199,7 @@ window.UI = (function () {
     if (foods.length) { html += `<div class="dim small-caps" style="font-size:12px;margin-top:10px">Comida</div>`; foods.forEach(k => { const m = s.flags['foodmeta_' + k]; html += `<div class="stat-row"><span>${G.esc(m ? m.nombre : k)} ×${s.inv[k]}</span><button class="btn mini" data-eat="${k}">Comer</button></div>`; }); }
     // herramientas
     const tools = Object.keys(s.inv).filter(k => k.startsWith('tool_'));
-    if (tools.length) { html += `<div class="dim small-caps" style="font-size:12px;margin-top:10px">Herramientas</div>`; tools.forEach(k => { const m = s.flags['toolmeta_' + k]; html += `<div class="stat-row"><span>${G.esc(m ? m.nombre : k)} ×${s.inv[k]}</span></div>`; }); }
+    if (tools.length) { html += `<div class="dim small-caps" style="font-size:12px;margin-top:10px">Herramientas</div>`; tools.forEach(k => { html += `<div class="stat-row"><span>${G.esc(G.nombreItem(k))} ×${s.inv[k]}</span></div>`; }); }
     // materiales
     const mats = Object.keys(s.inv).filter(k => DATA.MATS[k]);
     html += `<div class="dim small-caps" style="font-size:12px;margin-top:10px">Materiales</div><div class="grid">`;

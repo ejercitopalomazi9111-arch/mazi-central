@@ -196,7 +196,8 @@ hr.rule{border:0;height:1px;background:linear-gradient(90deg,transparent,var(--l
 .modal{width:100%;max-width:440px;max-height:82vh;overflow-y:auto;background:linear-gradient(180deg,var(--panel2),var(--panel));
   border:1px solid var(--gold);padding:18px 18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
 .modal h3{color:var(--gold-lt);font-variant:small-caps;letter-spacing:.05em;font-size:22px;margin-bottom:8px}
-.modal .stat-row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;border-bottom:1px solid rgba(51,58,66,.5)}
+.modal .stat-row,.stat-row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:3px 0;border-bottom:1px solid rgba(51,58,66,.5)}
+.stat-row>span:first-child{min-width:0}
 
 /* ---- barra de acciones inferior ---- */
 .actionbar{flex-shrink:0;display:flex;gap:6px;padding:8px 12px calc(var(--safe-b) + 8px);

@@ -148,6 +148,16 @@ window.G = (function () {
     const sheet = DATA.FOOD_SHEET[m.sheet];
     return `background-image:url('${sheet}');background-position:-${m.col*32}px -${m.row*32}px;width:32px;height:32px;transform:scale(1.3)`;
   }
+  // nombre legible de cualquier ítem (con meta, receta o prefijo)
+  function nombreItem(key) {
+    for (const p of ['pocmeta_', 'foodmeta_', 'toolmeta_']) {
+      const m = state.flags[p + key]; if (m && m.nombre) return m.nombre;
+    }
+    const bare = key.replace(/^(poc_|food_|tool_)/, '');
+    for (const of in DATA.RECETAS) { const r = DATA.RECETAS[of].find(x => x.id === bare); if (r) return r.nombre; }
+    if (DATA.MATS[key]) return DATA.MATS[key].nombre;
+    return bare.charAt(0).toUpperCase() + bare.slice(1);
+  }
   function matIcon(mat) {
     const m = DATA.MATS[mat]; if (!m) return '?';
     if (m.sheet) return `<span class="spr" style="${sprStyle(mat)}"></span>`;
@@ -233,7 +243,7 @@ window.G = (function () {
     get state(){ return state; }, set state(s){ state = s; },
     SCHEMA, newGame, save, load, hasSave, wipe, getCfg, setCfg,
     apply, gainXP, setRastro, tirada, give, take, has, canCraft,
-    art, plateHTML, sprStyle, matIcon, show, renderHUD, toast, modal, closeModal,
+    art, plateHTML, sprStyle, matIcon, nombreItem, show, renderHUD, toast, modal, closeModal,
     on, emit, loadCatalog, get catalog(){ return catalog; },
     clamp, rnd, rint, pick, d20, el, esc,
   };
