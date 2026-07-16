@@ -157,12 +157,18 @@ window.G = (function () {
   /* ---------- router de pantallas ---------- */
   const SCREENS = ['portada','juego','panel','atelier'];
   function show(id) {
-    SCREENS.forEach(s => { const n = el(s); if (n) n.classList.toggle('on', s === id); });
+    closeModal(); // los modales son transitorios: no sobreviven un cambio de pantalla
+    SCREENS.forEach(s => {
+      const n = el(s); if (!n) return;
+      const on = (s === id);
+      n.classList.toggle('on', on);
+      if (!on) { if (window.anime) anime.remove(n); n.style.opacity = ''; } // limpia opacidad inline que dejó anime
+    });
     const node = el(id);
     if (node && window.anime && !matchMedia('(prefers-reduced-motion:reduce)').matches) {
       anime.remove(node); node.style.opacity = 0;
       anime({ targets: node, opacity: [0,1], duration: 260, easing: 'easeOutQuad' });
-    }
+    } else if (node) { node.style.opacity = ''; }
     window.scrollTo && window.scrollTo(0,0);
     const sc = node && node.querySelector('.scroll'); if (sc) sc.scrollTop = 0;
   }

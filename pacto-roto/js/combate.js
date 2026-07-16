@@ -8,6 +8,7 @@ window.COMBATE = (function () {
   let enemigo = null, turno = 0, onEnd = null, log = [];
 
   function iniciar(en, cb) {
+    G.closeModal();
     // en: {key?, n, nivel, hp} | key de bestiario
     if (typeof en === 'string') { const b = DATA.BESTIARIO[en]; en = { key: en, n: b.nombre, nivel: b.nivel, hp: b.hp, art: b.art, moralis: b.moralis, domesticable: b.domesticable }; }
     enemigo = Object.assign({ hpMax: en.hp }, en);
