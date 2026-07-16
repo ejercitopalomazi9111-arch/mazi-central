@@ -11,7 +11,7 @@ window.NARR = (function () {
   function cfg() { return G.getCfg(); }
   function hasLLM() { const c = cfg(); return !!(c.key && c.prov); }
 
-  async function llm(system, user, { temp = 0.7, maxTok = 700 } = {}) {
+  async function llm(system, user, { temp = 0.7, maxTok = 700, json = false } = {}) {
     const c = cfg();
     if (!c.key) throw new Error('sin-key');
     if (c.prov === 'anthropic') {
@@ -31,7 +31,7 @@ window.NARR = (function () {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + c.key },
       body: JSON.stringify({ model: c.model || 'llama-3.3-70b-versatile', temperature: temp, max_tokens: maxTok,
-        response_format: { type: 'json_object' },
+        ...(json ? { response_format: { type: 'json_object' } } : {}),
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }] })
     });
     if (!r.ok) throw new Error('http ' + r.status);
@@ -49,9 +49,10 @@ window.NARR = (function () {
 
   // llama al LLM esperando JSON; reintenta una vez con el error de vuelta.
   async function llmJSON(system, user, opts) {
+    const o = Object.assign({ json: true }, opts);
     for (let i = 0; i < 2; i++) {
       try {
-        const raw = await llm(system, i === 0 ? user : user + '\n\nTU RESPUESTA ANTERIOR NO FUE JSON VÁLIDO. Devuelve SOLO el objeto JSON, sin texto extra.', opts);
+        const raw = await llm(system, i === 0 ? user : user + '\n\nTU RESPUESTA ANTERIOR NO FUE JSON VÁLIDO. Devuelve SOLO el objeto JSON, sin texto extra.', o);
         const j = parseJSON(raw);
         if (j) return j;
       } catch (e) { if (i === 1) throw e; }
