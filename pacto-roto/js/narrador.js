@@ -22,7 +22,7 @@ window.NARR = (function () {
         body: JSON.stringify({ model: c.model || 'claude-sonnet-5', max_tokens: maxTok, temperature: temp,
           system, messages: [{ role: 'user', content: user }] })
       });
-      if (!r.ok) throw new Error('http ' + r.status);
+      if (!r.ok) throw new Error('Anthropic ' + r.status + ': ' + (await r.text().catch(() => '')).slice(0, 160));
       const j = await r.json();
       return j.content.map(b => b.text || '').join('');
     }
@@ -34,7 +34,7 @@ window.NARR = (function () {
         ...(json ? { response_format: { type: 'json_object' } } : {}),
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }] })
     });
-    if (!r.ok) throw new Error('http ' + r.status);
+    if (!r.ok) throw new Error('Groq ' + r.status + ': ' + (await r.text().catch(() => '')).slice(0, 160));
     const j = await r.json();
     return j.choices[0].message.content;
   }
