@@ -33,7 +33,7 @@ window.G = (function () {
       stats,
       hp: 20 + stats.fue * 2, hpMax: 20 + stats.fue * 2,
       mana: stats.mana * 6, manaMax: stats.mana * 6,
-      oro: 15, rastro: 0, moral: 0,
+      oro: 3, rastro: 0, moral: 0,
       hechiceria: 1,
       lugar: 'velamuerta',
       grimorio: [],           // hechizos aprendidos {nombre, lectura}
@@ -51,8 +51,9 @@ window.G = (function () {
       flags: {}, evoluciones: [],
       creado: Date.now(),
     };
-    // regalo inicial por clase
-    give('lingote', 2); give('raiz', 1); give('carne', 1); give('madera', 1);
+    // Arranque humilde: no traes casi nada. El prólogo te dará el frasco de tinta
+    // (tu maná para dibujar) y un par de cosas para el camino. Todo lo demás se gana.
+    state.flags.nuevo = true;
     save();
     return state;
   }

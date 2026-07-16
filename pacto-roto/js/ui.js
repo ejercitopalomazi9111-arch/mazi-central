@@ -79,9 +79,52 @@ window.UI = (function () {
       G.modal(`<h3 class="gold">${G.esc(nombre)}</h3><p>${G.esc(DATA.CLASES[clase].desc)}</p>
         <p class="dim" style="font-size:13px">Despiertas en el Umbral de Vela Muerta, a la sombra de las Ruinas. El mundo olvidó que la magia fue de todos. Tú vas a recordárselo — o a morir intentándolo.</p>
         <button class="btn gold" id="go">Empezar</button>`, { dismiss: false });
-      G.el('go').onclick = () => { G.closeModal(); entrarJuego(); };
+      G.el('go').onclick = () => { G.closeModal(); prologo(); };
     };
     G.show('panel');
+  }
+
+  /* ---------- PRÓLOGO (por qué tienes tinta mágica) ---------- */
+  function prologo() {
+    const s = S();
+    const cls = DATA.CLASES[s.clase];
+    const notaClase = {
+      grabador: 'Tus manos ya saben lo que es una pluma. Solo les faltaba con qué.',
+      vinculo: 'No sabes de sellos, pero las bestias del monte te siguen sin que las llames.',
+      rompesellos: 'Tú no dibujas: rompes. Pero un anillo cerrado en el momento justo también salva.',
+      tintero: 'De tinta y de oficios sí sabes. Lo demás se aprende en el camino.',
+    }[s.clase] || '';
+    const beats = [
+      { art: 'dore_paraiso', txt: `Hubo un tiempo en que la magia fue de todos. Cualquiera con una pluma y tinta podía dibujar el mundo y cambiarlo un poco. Nadie lo recuerda ya.` },
+      { art: 'circulo_magico', txt: `Los Sombreros Puntiagudos se quedaron con el secreto y le borraron al mundo hasta la memoria de que alguna vez fue suyo. Ahora dibujar sin su permiso es un crimen. Dibujar sobre carne, una condena.` },
+      { art: 'ruinas_torre', txt: `Tú eres nadie. Un don nadie más en el Umbral de Vela Muerta, un puesto de piedra a la sombra de unas ruinas que no llevan a ningún lado. Hasta esta noche.` },
+      { art: 'pesadilla', txt: `Un desconocido se derrumba en tu puerta, con la espalda abierta y los Moralis pisándole el rastro. Antes de apagarse, te mete en la mano un frasco de tinta negra. "Guárdala. Y aprende a dibujar antes de que a ti también te encuentren."` },
+      { art: 'circulo_magico', txt: `Te deja una sola regla, la primera: sin anillo cerrado, nada pasa. Todo lo demás tendrás que arrancárselo al mundo tú solo. ${notaClase}` },
+    ];
+    let i = 0;
+    function pintar() {
+      const b = beats[i];
+      const sc = G.el('panel-scroll');
+      sc.innerHTML = `${G.plateHTML(b.art)}
+        <p class="narr capital" style="min-height:120px">${G.esc(b.txt)}</p>
+        <button class="btn gold" id="pro-next">${i < beats.length - 1 ? '▸ Seguir' : 'Despertar con la tinta'}</button>
+        ${i < beats.length - 1 ? '<button class="btn ghost mini" id="pro-skip">Saltar intro</button>' : ''}`;
+      G.el('panel-actions').innerHTML = '';
+      G.el('pro-next').onclick = () => { i++; (i < beats.length) ? pintar() : arrancar(); };
+      const sk = G.el('pro-skip'); if (sk) sk.onclick = arrancar;
+      G.show('panel');
+    }
+    function arrancar() {
+      // el kit humilde: el frasco de tinta (tu maná) + un mendrugo para el camino
+      s.flags.nuevo = false;
+      s.mana = s.manaMax;
+      G.crearConsumible({ tipo: 'comida', nombre: 'Mendrugo de pan', efecto: { hp: 6 }, rareza: 'tosca' });
+      G.give('raiz', 1);
+      s.hilos.push('Un desconocido te dio un frasco de tinta y murió por ello.');
+      G.save();
+      entrarJuego();
+    }
+    pintar();
   }
 
   /* ---------- ENTRAR / HUB ---------- */
