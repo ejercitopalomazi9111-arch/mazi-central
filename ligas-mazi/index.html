@@ -17,16 +17,27 @@
   --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
-#app{position:relative;width:100vw;height:100dvh;max-width:520px;margin:0 auto;overflow:hidden;background:var(--ink)}
-/* backdrop de arena compartido: da la misma estética premium a TODOS los menús */
+html{height:100%}
+body{min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#05070a;color:var(--bone);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
+/* fondo de arena a viewport COMPLETO: en tablet/PC el marco flota sobre el estadio, sin vacíos negros */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url('assets/arena.jpg') center/cover no-repeat;filter:brightness(.11) saturate(.65) contrast(1.05)}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(90% 60% at 50% 0%,rgba(239,122,53,.12),transparent 60%),
+  radial-gradient(80% 60% at 50% 100%,rgba(167,116,240,.12),transparent 60%),
+  linear-gradient(180deg,rgba(5,7,10,.55),rgba(5,7,10,.78))}
+/* marco de la app: teléfono = pantalla completa; tablet/PC = ventana centrada tipo app */
+#app{position:relative;z-index:2;width:100%;max-width:520px;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ink)}
+/* backdrop de arena DENTRO del marco: misma estética premium en todos los menús */
 #app::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
   background:url('assets/arena.jpg') center/cover no-repeat;filter:brightness(.15) saturate(.7) contrast(1.05)}
 #app::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:
   radial-gradient(120% 78% at 50% -8%,rgba(239,122,53,.10),transparent 55%),
   radial-gradient(100% 70% at 50% 118%,rgba(167,116,240,.10),transparent 60%),
   linear-gradient(180deg,rgba(5,7,10,.62),rgba(5,7,10,.7) 40%,rgba(5,7,10,.86))}
+@media(min-width:640px){
+  #app{height:min(94dvh,940px);max-width:600px;border-radius:28px;box-shadow:0 30px 90px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.07)}
+}
+@media(min-width:1200px){ #app{max-width:660px} }
 .screen{position:absolute;inset:0;z-index:1;display:none;flex-direction:column;overflow:hidden}
 .screen.on{display:flex}
 .screen.on .scroll,.screen.on .fullbg{animation:fade .3s ease}
@@ -329,7 +340,8 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 .fc-rank{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
 .rank-pip{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
 .rank-pip.cur{color:#0b0d12;font-weight:700;border-color:transparent}
-.attrbar{margin-bottom:11px}
+.attrbar{margin-bottom:11px;cursor:pointer}
+.attrbar:active{opacity:.7}
 .attrbar .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
 .attrbar .top .n{font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:#c9cfd9}
 .attrbar .top .v{font-family:var(--disp);font-weight:800;font-size:16px}
@@ -420,7 +432,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- LIGAS -->
   <section class="screen" id="s-ligas">
-    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><span class="ttl">Mis ligas</span></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Mis ligas</span></div>
     <div class="scroll"><div class="pad">
       <div class="leaguerow" onclick="go('rol')"><div class="crest">escudo</div><div><div class="nm">Halcones U-14</div><div class="mt">Liga Municipal · Torneo Apertura</div></div><span class="hat">Papá</span></div>
       <div class="leaguerow" onclick="go('publico')"><div class="crest">escudo</div><div><div class="nm">Liga Barrio Norte</div><div class="mt">Dominical · en curso</div></div><span class="hat" style="color:var(--publico)">Público</span></div>
@@ -433,7 +445,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- HOME PAPÁ -->
   <section class="screen" id="s-rol">
-    <div class="topbar"><div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div></div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:2px 2px 8px">Itinerario de Diego</div>
       <div class="match" onclick="go('marcador')"><div class="when">HOY<br>18:00</div><div class="vs">vs Titanes<small>Jornada 5 · cancha 2</small></div><span class="badge livep">EN VIVO</span></div>
@@ -451,7 +463,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
     <div class="fullbg">
       <div class="courtbg" id="courtbg"></div>
       <div class="court-overlay">
-        <div class="mk-top"><button class="backbtn" onclick="go('hub')" style="background:rgba(7,9,13,.7);backdrop-filter:blur(6px)">‹</button>
+        <div class="mk-top"><button class="backbtn" onclick="goBack()" style="background:rgba(7,9,13,.7);backdrop-filter:blur(6px)">‹</button>
           <span class="pill" style="background:rgba(236,90,69,.9);color:#fff;border:none">● EN VIVO</span></div>
         <div class="mk-score">
           <div class="team"><div class="lg">escudo</div><div class="nm">TITANES</div><div class="sc">42</div></div>
@@ -480,7 +492,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- MESA / ANOTADOR -->
   <section class="screen" id="s-mesa">
-    <div class="mesa-head"><button class="backbtn" onclick="go('marcador')">‹</button><span class="sc" id="mScore">42 — 39</span><span class="clk">Q3 12:34</span></div>
+    <div class="mesa-head"><button class="backbtn" onclick="goBack()">‹</button><span class="sc" id="mScore">42 — 39</span><span class="clk">Q3 12:34</span></div>
     <div class="scroll">
       <div class="mesa-sel"><div class="who">Jugador seleccionado — toca uno, luego la acción</div>
         <div class="player-strip" id="pstrip"></div></div>
@@ -503,7 +515,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- VAR -->
   <section class="screen" id="s-var">
-    <div class="topbar"><button class="backbtn" onclick="go('marcador')">‹</button><span class="ttl">VAR</span></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">VAR</span></div>
     <div class="var-screen">
       <div class="var-viewport"><span class="var-dot">SIN SEÑAL</span><span class="ico"><svg class="ic"><use href="#ic-video"/></svg></span><span class="st">Sin cámara conectada</span></div>
       <div class="var-ctrls"><button>◀◀</button><button>⏸</button><button>▶▶</button><button><svg class="ic"><use href="#ic-flag"/></svg> Marcar</button></div>
@@ -514,7 +526,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
   <!-- PÚBLICO (betting-style) -->
   <section class="screen" id="s-publico">
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--publico)">Modo público</div><div class="t">Marcadores</div></div>
-      <button class="backbtn" onclick="go('hub')" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:2px 2px 10px">En vivo ahora</div>
       <div class="qmatch" onclick="go('marcador')"><div class="side"><span class="tn">Titanes</span><span class="sc">42</span></div><div class="mid">Q3<br>12:34</div><div class="side"><span class="sc">39</span><span class="tn">Halcones</span></div></div>
@@ -533,7 +545,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
   <!-- COACH: VESTIDOR -->
   <section class="screen" id="s-vestidor">
     <div class="banner"><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--coach)">Coach · Vestidor</div><div class="t">Titanes JV</div></div>
-      <button class="backbtn" onclick="go('hub')" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
       <div class="h-row"><h2 class="disp" style="font-size:18px">Roster</h2><span class="more" onclick="go('alta')">＋ Alta</span></div>
       <div class="rosterrow"><span class="num">7</span><span class="nm">Diego G.<small>Base · Titular</small></span><span class="st">11.4 PPP</span></div>
@@ -551,7 +563,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- COACH: ESTRATEGIAS -->
   <section class="screen" id="s-estrategias">
-    <div class="topbar"><button class="backbtn" onclick="go('vestidor')">‹</button><span class="ttl">Estrategias</span><span class="pill" style="margin-left:auto;color:var(--jugador);border-color:var(--jugador)">Formativa: asistente suave</span></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Estrategias</span><span class="pill" style="margin-left:auto;color:var(--jugador);border-color:var(--jugador)">Formativa: asistente suave</span></div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:0 0 8px">Pizarrón · tu sistema actual</div>
       <div class="stratboard">
@@ -583,7 +595,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
   <!-- LIGA: PANEL ADMIN -->
   <section class="screen" id="s-liga">
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--liga)">Liga · Administración</div><div class="t">Liga Municipal</div></div>
-      <button class="backbtn" onclick="go('hub')" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
       <div class="tiles">
         <div class="card" style="margin:0;text-align:center"><div class="disp" style="font-size:30px;color:var(--accent-lt)">12</div><div class="dim" style="font-size:11px">Equipos</div></div>
@@ -601,7 +613,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- LIGA: PERILLAS -->
   <section class="screen" id="s-perillas">
-    <div class="topbar"><button class="backbtn" onclick="go('liga')">‹</button><span class="ttl">Reglas del torneo</span></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Reglas del torneo</span></div>
     <div class="scroll"><div class="pad">
       <div class="card"><div class="kick">Categoría: Juvenil Varonil · U-16</div>
         <div class="knob-row"><div class="k">Duración del cuarto</div><span class="val">10 min</span></div>
@@ -622,7 +634,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- ALTA DE JUGADOR -->
   <section class="screen" id="s-alta">
-    <div class="topbar"><button class="backbtn" onclick="go('rol')">‹</button><span class="ttl">Dar de alta</span></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Dar de alta</span></div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:0 0 4px">Foto — cara del jugador</div>
       <div class="photo-hole"><span style="font-size:30px"><svg class="ic"><use href="#ic-camera"/></svg></span>Subir foto (se le quita el GPS)</div>
@@ -639,7 +651,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
   <!-- TIENDA -->
   <section class="screen" id="s-tienda">
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--papa)">Tienda</div><div class="t">Mercancía</div></div>
-      <button class="backbtn" onclick="go('hub')" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
       <div class="tiles">
         <div class="tile" style="aspect-ratio:.85" onclick="toast('Producto — la liga sube el catálogo')"><div class="crest" style="position:absolute;inset:12px;width:auto;height:60%;border-radius:8px">foto producto</div><div class="g"></div><div class="c"><div class="t" style="font-size:15px">Jersey Titanes</div><div class="s" style="color:var(--papa)">$450</div></div></div>
@@ -653,7 +665,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- PERFIL CARTA — ficha estilo FC Mobile -->
   <section class="screen" id="s-carta">
-    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><span class="ttl">Ficha del jugador</span><span class="coins" onclick="toast('Compartir carta con amigos')" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Ficha del jugador</span><span class="coins" onclick="toast('Compartir carta con amigos')" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
     <div class="scroll">
       <div class="pcard">
         <span class="rk" style="background:linear-gradient(90deg,#e8b13e,#ff9a5a)">◆ ORO</span><div class="ov"><b>78</b><small>GENERAL</small></div>
@@ -702,16 +714,17 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
       </div>
 
       <div class="fc-panel" id="fc-atributos">
-        <div class="attrbar"><div class="top"><span class="n">Tiro exterior</span><span class="v" style="color:var(--papa)">71</span></div><div class="track"><i style="width:71%;background:var(--papa)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">Tiro medio</span><span class="v" style="color:var(--papa)">76</span></div><div class="track"><i style="width:76%;background:var(--papa)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">Bandeja / entrada</span><span class="v" style="color:var(--good)">85</span></div><div class="track"><i style="width:85%;background:var(--good)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">Bote / manejo</span><span class="v" style="color:var(--papa)">80</span></div><div class="track"><i style="width:80%;background:var(--papa)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">Pase / visión</span><span class="v" style="color:var(--papa)">77</span></div><div class="track"><i style="width:77%;background:var(--papa)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">Defensa perimetral</span><span class="v" style="color:var(--good)">88</span></div><div class="track"><i style="width:88%;background:var(--good)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">Rebote</span><span class="v" style="color:var(--good)">84</span></div><div class="track"><i style="width:84%;background:var(--good)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">Físico / resistencia</span><span class="v" style="color:var(--papa)">82</span></div><div class="track"><i style="width:82%;background:var(--papa)"></i></div></div>
-        <div class="attrbar"><div class="top"><span class="n">IQ de juego</span><span class="v" style="color:var(--papa)">79</span></div><div class="track"><i style="width:79%;background:var(--papa)"></i></div></div>
-        <div class="stratnote" style="border-left-color:var(--jugador)">Los atributos los mueve el <b>desempeño real</b> capturado en la mesa, no una compra. En formativas suben lento y nunca bajan por una mala noche.</div>
+        <div class="stratnote" style="border-left-color:var(--jugador);margin-bottom:12px">El coach <b>no</b> pone estos números. Salen del <b>registro de la mesa</b> partido a partido. <b>Toca cualquiera</b> para ver de dónde sale.</div>
+        <div class="attrbar" onclick="attrWhy('Tiro exterior','71 = 34% en triples (61 intentos) marcados por zona en 16 partidos. Sube si mete de 3 con volumen.')"><div class="top"><span class="n">Tiro exterior</span><span class="v" style="color:var(--papa)">71</span></div><div class="track"><i style="width:71%;background:var(--papa)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Tiro medio','76 = 43% en media distancia (2.8 intentos/juego). La mesa marca la zona del tiro.')"><div class="top"><span class="n">Tiro medio</span><span class="v" style="color:var(--papa)">76</span></div><div class="track"><i style="width:76%;background:var(--papa)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Bandeja / entrada','85 = 61% cerca del aro + faltas recibidas al penetrar, en 16 partidos.')"><div class="top"><span class="n">Bandeja / entrada</span><span class="v" style="color:var(--good)">85</span></div><div class="track"><i style="width:85%;background:var(--good)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Bote / manejo','80 = pérdidas bajas (1.4/juego) para los minutos con balón. Menos pérdidas, más manejo.')"><div class="top"><span class="n">Bote / manejo</span><span class="v" style="color:var(--papa)">80</span></div><div class="track"><i style="width:80%;background:var(--papa)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Pase / visión','77 = 3.0 asistencias/juego contra sus pérdidas. Registrado en cada anotación asistida.')"><div class="top"><span class="n">Pase / visión</span><span class="v" style="color:var(--papa)">77</span></div><div class="track"><i style="width:77%;background:var(--papa)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Defensa perimetral','88 = 2.1 robos + 1.4 tapones + puntos permitidos bajos a su marca, en 18 partidos. Necesita captura defensiva (mesa doble o cámara).')"><div class="top"><span class="n">Defensa perimetral</span><span class="v" style="color:var(--good)">88</span></div><div class="track"><i style="width:88%;background:var(--good)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Rebote','84 = 6.1 rebotes/juego (4.3 def · 1.8 of). Cada rebote se marca en la mesa.')"><div class="top"><span class="n">Rebote</span><span class="v" style="color:var(--good)">84</span></div><div class="track"><i style="width:84%;background:var(--good)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Físico / resistencia','82 = minutos jugados sin bajar rendimiento en el 4º cuarto, promediado por temporada.')"><div class="top"><span class="n">Físico / resistencia</span><span class="v" style="color:var(--papa)">82</span></div><div class="track"><i style="width:82%;background:var(--papa)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('IQ de juego','79 = mezcla de asistencias, pocas faltas tontas y buenas decisiones de tiro. Sube con partidos limpios.')"><div class="top"><span class="n">IQ de juego</span><span class="v" style="color:var(--papa)">79</span></div><div class="track"><i style="width:79%;background:var(--papa)"></i></div></div>
+        <div class="stratnote" style="border-left-color:var(--papa)">Cuánto detalle ves depende de la <b>liga</b>: barrio con un anotador da lo básico (puntos, faltas); con zona de tiro salen los tiros por zona; con mesa doble o <b>cámara/VAR</b> sale la defensa fina. Nunca bajan por una mala noche: son <b>promedio rodante</b>.</div>
       </div>
 
       <div class="fc-panel" id="fc-vitrina">
@@ -750,8 +763,15 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 </div>
 
 <script>
-/* ---- router ---- */
+/* ---- router con historial: volver atrás siempre funciona (botón ‹ y back del navegador/Android) ---- */
+let curScreen=null; const navStack=[];
 function go(id){
+  if(curScreen && curScreen!==id){ navStack.push(curScreen); try{history.pushState({d:navStack.length},'');}catch(e){} }
+  render(id);
+}
+function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
+function render(id){
+  curScreen=id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   const el=document.getElementById('s-'+id); el.classList.add('on');
   const sc=el.querySelector('.scroll'); if(sc)sc.scrollTop=0;
@@ -761,6 +781,7 @@ function go(id){
   if(id==='mesa')buildMesa();
   if(id==='perillas')syncCourtKnob();
 }
+window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop()); });
 const NAV=[['hub','home','Inicio'],['ligas','trophy','Ligas'],['marcador','live','En vivo'],['carta','card','Perfil'],['tienda','bag','Tienda']];
 function buildNav(cur){
   document.querySelectorAll('[data-nav]').forEach(nav=>{
@@ -927,9 +948,10 @@ function fcTab(el,which){
   document.querySelectorAll('#s-carta .fc-panel').forEach(p=>p.classList.remove('on'));
   document.getElementById('fc-'+which).classList.add('on');
 }
+function attrWhy(name,why){ toast('<b style="color:var(--accent-lt)">'+name+'</b><br>'+why); }
 function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contains('on');document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';setCourtStyle(on?'realista':'minimalista');toast('La liga fijó la cancha: '+(on?'realista (foto)':'minimalista (líneas)'));}
 function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)return;const on=courtStyle()==='realista';k.classList.toggle('on',on);document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';}
-let tt;function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2200);}
+let tt;function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',Math.min(6500,2200+msg.length*22));}
 buildNav('hub');
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
 buildModes();
