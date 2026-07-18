@@ -230,10 +230,44 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 .sheet h3{font-family:var(--disp);text-transform:uppercase;font-size:16px;color:var(--dim);margin-bottom:12px}
 .sheet .opt{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}
 .sheet .opt .hat{width:12px;height:12px;border-radius:50%} .sheet .opt b{font-weight:650} .sheet .opt .r{margin-left:auto;font-size:11px;color:var(--dim);font-family:var(--mono)}
+.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.avatar .ic{width:19px;height:19px;stroke-width:1.6}
+.medal .m .ic{width:30px;height:30px;stroke-width:1.5}
+.var-viewport .ico .ic{width:44px;height:44px;stroke-width:1.3}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<!-- Íconos: dibujados a mano (SVG de trazo), no emojis. Un sprite, se referencian con <use>. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <symbol id="ic-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 9.7V20h14V9.7"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="ic-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 5.5H4V7a3 3 0 0 0 3 3"/><path d="M17 5.5h3V7a3 3 0 0 1-3 3"/><path d="M9.5 19h5"/><path d="M12 13.8V19"/></symbol>
+  <symbol id="ic-live" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.8"/><path d="M8.2 8.2a6 6 0 0 0 0 7.6"/><path d="M15.8 8.2a6 6 0 0 1 0 7.6"/><path d="M5.6 5.6a9.5 9.5 0 0 0 0 12.8"/><path d="M18.4 5.6a9.5 9.5 0 0 1 0 12.8"/></symbol>
+  <symbol id="ic-card" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.4"/><path d="M12 6.6l1.4 2.9 3.2.4-2.3 2.2.6 3.1L12 15.8l-2.9 1.4.6-3.1-2.3-2.2 3.2-.4z"/></symbol>
+  <symbol id="ic-bag" viewBox="0 0 24 24"><path d="M6.2 8h11.6l-1 12H7.2l-1-12z"/><path d="M9 8V6.4a3 3 0 0 1 6 0V8"/></symbol>
+  <symbol id="ic-clipboard" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2.2"/><path d="M9 4.5a1.2 1.2 0 0 1 1.2-1.2h3.6A1.2 1.2 0 0 1 15 4.5v.8a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1z"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4.5"/></symbol>
+  <symbol id="ic-gear" viewBox="0 0 24 24"><path d="M4 7h8M17 7h3"/><circle cx="14.5" cy="7" r="2.3"/><path d="M4 12h3M12 12h8"/><circle cx="9.5" cy="12" r="2.3"/><path d="M4 17h8M17 17h3"/><circle cx="14.5" cy="17" r="2.3"/></symbol>
+  <symbol id="ic-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4.2L15.6 5.2a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L8.2 19l-4.2 1z"/><path d="M14 6.8l3.2 3.2"/></symbol>
+  <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="ic-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-4 3.6-6 7.5-6s7.5 2 7.5 6"/></symbol>
+  <symbol id="ic-video" viewBox="0 0 24 24"><rect x="3" y="7" width="12" height="10" rx="2.2"/><path d="M15 10.2l6-3v9.6l-6-3z"/></symbol>
+  <symbol id="ic-share" viewBox="0 0 24 24"><path d="M12 15V4.5"/><path d="M8 8l4-4 4 4"/><path d="M5 12v6.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V12"/></symbol>
+  <symbol id="ic-heart" viewBox="0 0 24 24"><path d="M12 20.2S4.5 15.5 4.5 9.8A3.8 3.8 0 0 1 12 7.7a3.8 3.8 0 0 1 7.5 2.1c0 5.7-7.5 10.4-7.5 10.4z"/></symbol>
+  <symbol id="ic-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.3 0 1.8-.9 1.8-1.8 0-1.4 1-2.2 2.2-2.2H17a3 3 0 0 0 3-3c0-4.8-3.9-9-8-9z"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="8" r="1"/><circle cx="16" cy="11" r="1"/></symbol>
+  <symbol id="ic-flag" viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 5h11l-2 3 2 3H6"/></symbol>
+  <symbol id="ic-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.2 20c0-3.3 2.6-5 5.8-5s5.8 1.7 5.8 5"/><path d="M16 5.4A3 3 0 0 1 18.2 11"/><path d="M17.2 15c2.5.3 3.8 2 3.8 5"/></symbol>
+  <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15.5" rx="2.2"/><path d="M4 10h16M8 3.5v4M16 3.5v4"/><path d="M8 14h3M13.5 14h2.5"/></symbol>
+  <symbol id="ic-doc" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 12.5h5M9.5 16h5"/></symbol>
+  <symbol id="ic-camera" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.4"/><path d="M8 7l1.6-2.2h4.8L16 7"/><circle cx="12" cy="13.5" r="3.2"/></symbol>
+  <symbol id="ic-star" viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.9 6.6 19.4l1.2-6-4.5-4.1 6.1-.7z"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.2c0 5-3.5 8.3-7 10-3.5-1.7-7-5-7-10V6z"/></symbol>
+  <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M8 8H5V5"/><path d="M5.2 8.2A8 8 0 1 1 4 12"/></symbol>
+  <symbol id="ic-rewind" viewBox="0 0 24 24"><path d="M11.5 7v10l-7.5-5z"/><path d="M20 7v10l-7.5-5z"/></symbol>
+ </defs>
+</svg>
 <div id="app">
 
   <!-- ENTRADA -->
@@ -252,7 +286,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
   <section class="screen" id="s-hub">
     <div class="topbar">
       <div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Halcones U-14</b><span class="ch">Papá ▾</span></div>
-      <span class="coins">◈ 1,240</span><div class="avatar">🧢</div>
+      <span class="coins">◈ 1,240</span><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div>
     </div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:2px 2px 8px">Lo tuyo primero</div>
@@ -262,17 +296,17 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
       </div>
       <div class="h-row"><h2 class="disp">Jugar</h2></div>
       <div class="tiles">
-        <div class="tile" onclick="go('ligas')"><span class="stripe" style="background:var(--liga)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i">🏆</div><div class="t">Mis ligas</div><div class="s">2 activas</div></div></div>
-        <div class="tile" onclick="go('marcador')"><span class="stripe" style="background:var(--mesa)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i">📺</div><div class="t">En vivo</div><div class="s">1 partido</div></div></div>
-        <div class="tile" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i">🃏</div><div class="t">Perfil</div><div class="s">Carta · Raro</div></div></div>
-        <div class="tile" onclick="go('tienda')"><span class="stripe" style="background:var(--papa)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i">🛍️</div><div class="t">Tienda</div><div class="s">Mercancía</div></div></div>
+        <div class="tile" onclick="go('ligas')"><span class="stripe" style="background:var(--liga)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-trophy"/></svg></div><div class="t">Mis ligas</div><div class="s">2 activas</div></div></div>
+        <div class="tile" onclick="go('marcador')"><span class="stripe" style="background:var(--mesa)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-live"/></svg></div><div class="t">En vivo</div><div class="s">1 partido</div></div></div>
+        <div class="tile" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-card"/></svg></div><div class="t">Perfil</div><div class="s">Carta · Raro</div></div></div>
+        <div class="tile" onclick="go('tienda')"><span class="stripe" style="background:var(--papa)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-bag"/></svg></div><div class="t">Tienda</div><div class="s">Mercancía</div></div></div>
       </div>
       <div class="h-row"><h2 class="disp">Zonas</h2><span class="dim" style="margin-left:auto;font-size:11px">demo · toca para entrar</span></div>
       <div class="tiles">
-        <div class="tile" onclick="go('vestidor')"><span class="stripe" style="background:var(--coach)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i">📋</div><div class="t">Coach</div><div class="s">Vestidor + tácticas</div></div></div>
-        <div class="tile" onclick="go('liga')"><span class="stripe" style="background:var(--liga)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i">⚙️</div><div class="t">Liga</div><div class="s">Admin + perillas</div></div></div>
-        <div class="tile" onclick="go('mesa')"><span class="stripe" style="background:var(--mesa)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i">✍️</div><div class="t">Mesa</div><div class="s">Anotador</div></div></div>
-        <div class="tile" onclick="go('publico')"><span class="stripe" style="background:var(--publico)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i">👁️</div><div class="t">Público</div><div class="s">Solo marcadores</div></div></div>
+        <div class="tile" onclick="go('vestidor')"><span class="stripe" style="background:var(--coach)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-clipboard"/></svg></div><div class="t">Coach</div><div class="s">Vestidor + tácticas</div></div></div>
+        <div class="tile" onclick="go('liga')"><span class="stripe" style="background:var(--liga)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-gear"/></svg></div><div class="t">Liga</div><div class="s">Admin + perillas</div></div></div>
+        <div class="tile" onclick="go('mesa')"><span class="stripe" style="background:var(--mesa)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-pencil"/></svg></div><div class="t">Mesa</div><div class="s">Anotador</div></div></div>
+        <div class="tile" onclick="go('publico')"><span class="stripe" style="background:var(--publico)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-eye"/></svg></div><div class="t">Público</div><div class="s">Solo marcadores</div></div></div>
       </div>
     </div></div>
     <div class="nav" data-nav></div>
@@ -293,7 +327,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- HOME PAPÁ -->
   <section class="screen" id="s-rol">
-    <div class="topbar"><div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div><div class="avatar">🧢</div></div>
+    <div class="topbar"><div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div></div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:2px 2px 8px">Itinerario de Diego</div>
       <div class="match" onclick="go('marcador')"><div class="when">HOY<br>18:00</div><div class="vs">vs Titanes<small>Jornada 5 · cancha 2</small></div><span class="badge livep">EN VIVO</span></div>
@@ -328,10 +362,10 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
         <div class="mk-bottom">
           <div class="mk-bench"><span class="b">Banca:</span><span class="b">#9</span><span class="b">#11 · 3F</span><span class="b">#2</span><span class="b">#5</span><span class="b">#12</span></div>
           <div class="mk-actions">
-            <button onclick="toast('Compartir marcador')"><span class="i">↗</span>Compartir</button>
-            <button onclick="go('var')"><span class="i">🎥</span>VAR</button>
-            <button onclick="toast('Repetición — cuando haya cámara')"><span class="i">⏮</span>Repetir</button>
-            <button class="mesa" onclick="go('mesa')"><span class="i">✍️</span>Mesa</button>
+            <button onclick="toast('Compartir marcador')"><span class="i"><svg class="ic"><use href="#ic-share"/></svg></span>Compartir</button>
+            <button onclick="go('var')"><span class="i"><svg class="ic"><use href="#ic-video"/></svg></span>VAR</button>
+            <button onclick="toast('Repetición — cuando haya cámara')"><span class="i"><svg class="ic"><use href="#ic-rewind"/></svg></span>Repetir</button>
+            <button class="mesa" onclick="go('mesa')"><span class="i"><svg class="ic"><use href="#ic-pencil"/></svg></span>Mesa</button>
           </div>
         </div>
       </div>
@@ -357,7 +391,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
       </div>
       <div class="eyebrow" style="margin:6px 14px 4px">Bitácora del partido (event-log · nunca borra)</div>
       <div class="mesa-log" id="mlog"><div class="r"><span class="tm">12:34</span> Inicio de captura</div></div>
-      <div class="mesa-undo"><button onclick="undo()">↩ Deshacer</button><button onclick="toast('Corregir renglón (Art. 44 FIBA)')">✎ Corregir</button></div>
+      <div class="mesa-undo"><button onclick="undo()"><svg class="ic"><use href="#ic-undo"/></svg> Deshacer</button><button onclick="toast('Corregir renglón (Art. 44 FIBA)')"><svg class="ic"><use href="#ic-pencil"/></svg> Corregir</button></div>
     </div>
   </section>
 
@@ -365,8 +399,8 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
   <section class="screen" id="s-var">
     <div class="topbar"><button class="backbtn" onclick="go('marcador')">‹</button><span class="ttl">VAR</span></div>
     <div class="var-screen">
-      <div class="var-viewport"><span class="var-dot">SIN SEÑAL</span><span class="ico">🎥</span><span class="st">Sin cámara conectada</span></div>
-      <div class="var-ctrls"><button>◀◀</button><button>⏸</button><button>▶▶</button><button>⚑ Marcar</button></div>
+      <div class="var-viewport"><span class="var-dot">SIN SEÑAL</span><span class="ico"><svg class="ic"><use href="#ic-video"/></svg></span><span class="st">Sin cámara conectada</span></div>
+      <div class="var-ctrls"><button>◀◀</button><button>⏸</button><button>▶▶</button><button><svg class="ic"><use href="#ic-flag"/></svg> Marcar</button></div>
       <div class="var-note">El VAR está <b>listo y conectado</b> al partido. Se activa cuando la liga programe una cámara en esta cancha (perilla en <b>Ajustes de la liga</b>). Por ahora no hay cámara.</div>
     </div>
   </section>
@@ -385,7 +419,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
         <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px"><span><b class="mono">2</b> &nbsp; Halcones</span><span class="mono">7-2</span></div>
         <div style="display:flex;justify-content:space-between;padding:10px 14px;font-size:13px"><span><b class="mono">3</b> &nbsp; Lobos</span><span class="mono">5-4</span></div>
       </div>
-      <button class="btn ghost sm block" onclick="toast('Apoyar equipo → tu carta de fan')" style="margin-top:6px">❤ Apoyar a un equipo</button>
+      <button class="btn ghost sm block" onclick="toast('Apoyar equipo → tu carta de fan')" style="margin-top:6px"><svg class="ic"><use href="#ic-heart"/></svg> Apoyar a un equipo</button>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -400,11 +434,11 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
       <div class="rosterrow"><span class="num">4</span><span class="nm">Marco V.<small>Pívot · Titular</small></span><span class="st">8.0 PPP</span></div>
       <div class="rosterrow"><span class="num">11</span><span class="nm">Iker R.<small>Alero · Banca</small></span><span class="st">5.2 PPP</span></div>
       <div class="tiles" style="margin-top:6px">
-        <div class="tile" style="aspect-ratio:1.8" onclick="go('estrategias')"><span class="stripe" style="background:var(--publico)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i">📋</div><div class="t" style="font-size:15px">Estrategias</div></div></div>
-        <div class="tile" style="aspect-ratio:1.8" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i">🃏</div><div class="t" style="font-size:15px">Cartas</div></div></div>
+        <div class="tile" style="aspect-ratio:1.8" onclick="go('estrategias')"><span class="stripe" style="background:var(--publico)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-clipboard"/></svg></div><div class="t" style="font-size:15px">Estrategias</div></div></div>
+        <div class="tile" style="aspect-ratio:1.8" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-card"/></svg></div><div class="t" style="font-size:15px">Cartas</div></div></div>
       </div>
-      <button class="btn ghost sm block" onclick="toast('Editar color y escudo del equipo')" style="margin-top:10px">🎨 Identidad del equipo</button>
-      <button class="btn ghost sm block" onclick="toast('Unir equipo a una liga')">🏆 Unirse a una liga</button>
+      <button class="btn ghost sm block" onclick="toast('Editar color y escudo del equipo')" style="margin-top:10px"><svg class="ic"><use href="#ic-palette"/></svg> Identidad del equipo</button>
+      <button class="btn ghost sm block" onclick="toast('Unir equipo a una liga')"><svg class="ic"><use href="#ic-trophy"/></svg> Unirse a una liga</button>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -450,11 +484,11 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
         <div class="card" style="margin:0;text-align:center"><div class="disp" style="font-size:30px;color:var(--accent-lt)">3</div><div class="dim" style="font-size:11px">Categorías</div></div>
       </div>
       <div class="h-row"><h2 class="disp" style="font-size:18px">Gestión</h2></div>
-      <div class="leaguerow" onclick="toast('Inscribir equipos y jugadores (ancla CURP)')"><div class="crest" style="border-style:solid">👥</div><div><div class="nm" style="font-size:15px">Equipos y jugadores</div><div class="mt">Inscribir · anclar CURP · coaches (1–3)</div></div><span class="more">›</span></div>
-      <div class="leaguerow" onclick="toast('Armar enfrentamientos y calendario')"><div class="crest" style="border-style:solid">📅</div><div><div class="nm" style="font-size:15px">Calendario y enfrentamientos</div><div class="mt">Quién vs quién · jornadas</div></div><span class="more">›</span></div>
-      <div class="leaguerow" onclick="toast('Registrar resultados · ganadores')"><div class="crest" style="border-style:solid">🏁</div><div><div class="nm" style="font-size:15px">Resultados</div><div class="mt">Cerrar partidos · avanzar torneo</div></div><span class="more">›</span></div>
-      <div class="leaguerow" onclick="toast('Verificar responsivas de padres')"><div class="crest" style="border-style:solid">📝</div><div><div class="nm" style="font-size:15px">Responsivas</div><div class="mt">Consentimiento de padres</div></div><span class="more">›</span></div>
-      <button class="btn block" onclick="go('perillas')" style="margin-top:6px">⚙️ Reglas del torneo (perillas)</button>
+      <div class="leaguerow" onclick="toast('Inscribir equipos y jugadores (ancla CURP)')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-people"/></svg></div><div><div class="nm" style="font-size:15px">Equipos y jugadores</div><div class="mt">Inscribir · anclar CURP · coaches (1–3)</div></div><span class="more">›</span></div>
+      <div class="leaguerow" onclick="toast('Armar enfrentamientos y calendario')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-calendar"/></svg></div><div><div class="nm" style="font-size:15px">Calendario y enfrentamientos</div><div class="mt">Quién vs quién · jornadas</div></div><span class="more">›</span></div>
+      <div class="leaguerow" onclick="toast('Registrar resultados · ganadores')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-flag"/></svg></div><div><div class="nm" style="font-size:15px">Resultados</div><div class="mt">Cerrar partidos · avanzar torneo</div></div><span class="more">›</span></div>
+      <div class="leaguerow" onclick="toast('Verificar responsivas de padres')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-doc"/></svg></div><div><div class="nm" style="font-size:15px">Responsivas</div><div class="mt">Consentimiento de padres</div></div><span class="more">›</span></div>
+      <button class="btn block" onclick="go('perillas')" style="margin-top:6px"><svg class="ic"><use href="#ic-gear"/></svg> Reglas del torneo (perillas)</button>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -485,7 +519,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
     <div class="topbar"><button class="backbtn" onclick="go('rol')">‹</button><span class="ttl">Dar de alta</span></div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:0 0 4px">Foto — cara del jugador</div>
-      <div class="photo-hole"><span style="font-size:30px">📷</span>Subir foto (se le quita el GPS)</div>
+      <div class="photo-hole"><span style="font-size:30px"><svg class="ic"><use href="#ic-camera"/></svg></span>Subir foto (se le quita el GPS)</div>
       <input class="field" placeholder="Nombre completo del jugador">
       <div class="eyebrow" style="margin:8px 0 2px">CURP <span style="color:var(--dim)">— llave del jugador, nunca se muestra</span></div>
       <input class="field masked" placeholder="GUGD•••••••••••B2">
@@ -513,7 +547,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 
   <!-- PERFIL CARTA -->
   <section class="screen" id="s-carta">
-    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><span class="ttl">Perfil</span><span class="coins" onclick="toast('Compartir carta con amigos')" style="cursor:pointer">↗ Presumir</span></div>
+    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><span class="ttl">Perfil</span><span class="coins" onclick="toast('Compartir carta con amigos')" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
     <div class="scroll">
       <div class="pcard">
         <span class="rk">◆ RARO</span><div class="ov"><b>78</b><small>GENERAL</small></div>
@@ -524,11 +558,11 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
       </div>
       <div class="h-row" style="padding:0 16px"><h2 class="disp" style="font-size:18px">Vitrina</h2><span class="more">Historia por equipo ›</span></div>
       <div class="medals">
-        <div class="medal"><div class="m gold">🏆</div><small>Campeón Apertura</small></div>
-        <div class="medal"><div class="m gold">⭐</div><small>MVP jornada</small></div>
-        <div class="medal"><div class="m">🎯</div><small>Líder anotación</small></div>
-        <div class="medal"><div class="m">🛡️</div><small>Mejor defensa</small></div>
-        <div class="medal"><div class="m" style="opacity:.4">🔒</div><small>Bloqueada</small></div>
+        <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-trophy"/></svg></div><small>Campeón Apertura</small></div>
+        <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-star"/></svg></div><small>MVP jornada</small></div>
+        <div class="medal"><div class="m"><svg class="ic"><use href="#ic-target"/></svg></div><small>Líder anotación</small></div>
+        <div class="medal"><div class="m"><svg class="ic"><use href="#ic-shield"/></svg></div><small>Mejor defensa</small></div>
+        <div class="medal"><div class="m" style="opacity:.4"><svg class="ic"><use href="#ic-lock"/></svg></div><small>Bloqueada</small></div>
       </div>
     </div>
     <div class="nav" data-nav></div>
@@ -559,14 +593,14 @@ function go(id){
   if(id==='mesa')buildMesa();
   if(id==='perillas')syncCourtKnob();
 }
-const NAV=[['hub','🏠','Inicio'],['ligas','🏆','Ligas'],['marcador','📺','En vivo'],['carta','🃏','Perfil'],['tienda','🛍️','Tienda']];
+const NAV=[['hub','home','Inicio'],['ligas','trophy','Ligas'],['marcador','live','En vivo'],['carta','card','Perfil'],['tienda','bag','Tienda']];
 function buildNav(cur){
   document.querySelectorAll('[data-nav]').forEach(nav=>{
     nav.innerHTML='';
     NAV.forEach(([id,ic,lab])=>{
       const b=document.createElement('button');
       b.className=(id===cur?'on ':'')+(id==='marcador'?'hot':'');
-      b.innerHTML='<span class="i">'+ic+'</span>'+(lab==='En vivo'?'En vivo':lab);
+      b.innerHTML='<span class="i"><svg class="ic"><use href="#ic-'+ic+'"/></svg></span>'+(lab==='En vivo'?'En vivo':lab);
       b.onclick=()=>go(id); nav.appendChild(b);
     });
   });
