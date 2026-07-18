@@ -474,6 +474,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
         <div class="knob-row"><div class="knob" onclick="tk(this)"><i></i></div><div class="k">VAR <small>solo si hay cámara programada — hoy no hay</small></div></div>
         <div class="knob-row"><div class="knob on" onclick="tk(this)"><i></i></div><div class="k">Foto pública en tribuna</div></div>
         <div class="knob-row"><div class="knob" onclick="tk(this)"><i></i></div><div class="k">Asistente táctico en formativas <small>(off recomendado)</small></div></div>
+        <div class="knob-row"><div class="knob on" id="courtKnob" onclick="toggleCourt(this)"><i></i></div><div class="k">Cancha realista en el marcador <small>foto cenital real · apágala para líneas minimalistas</small></div><span class="val" id="courtVal">Realista</span></div>
       </div>
       <div class="stratnote" style="border-left-color:var(--papa)">La liga de barrio y la profesional son el mismo cliente con necesidades opuestas. Las perillas <b>son el precio</b> de servir a las dos.</div>
     </div></div>
@@ -556,6 +557,7 @@ function go(id){
   buildNav(id);
   if(id==='marcador')drawCourt();
   if(id==='mesa')buildMesa();
+  if(id==='perillas')syncCourtKnob();
 }
 const NAV=[['hub','🏠','Inicio'],['ligas','🏆','Ligas'],['marcador','📺','En vivo'],['carta','🃏','Perfil'],['tienda','🛍️','Tienda']];
 function buildNav(cur){
@@ -569,11 +571,24 @@ function buildNav(cur){
     });
   });
 }
-/* ---- cancha desde arriba: IMAGEN REAL de cancha (con velo para legibilidad) ---- */
+/* ---- cancha desde arriba: la LIGA elige realista (foto) o minimalista (líneas) ---- */
+function courtStyle(){ try{return localStorage.getItem('lm_court')||'realista';}catch(e){return 'realista';} }
+function setCourtStyle(v){ try{localStorage.setItem('lm_court',v);}catch(e){} if(document.getElementById('s-marcador').classList.contains('on'))drawCourt(); }
 function drawCourt(){
   const box=document.getElementById('courtbg');
-  box.innerHTML=`<img src="assets/cancha_top.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center">
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,9,13,.78) 0%,rgba(7,9,13,.28) 22%,rgba(7,9,13,.22) 60%,rgba(7,9,13,.82) 100%)"></div>`;
+  if(courtStyle()==='minimalista'){
+    box.innerHTML=`<svg viewBox="0 0 150 300" preserveAspectRatio="xMidYMid slice">
+      <defs><radialGradient id="wood" cx="50%" cy="45%" r="75%"><stop offset="0%" stop-color="#241a12"/><stop offset="60%" stop-color="#15100b"/><stop offset="100%" stop-color="#0a0805"/></radialGradient></defs>
+      <rect x="0" y="0" width="150" height="300" fill="url(#wood)"/>
+      <g stroke="rgba(255,255,255,.18)" stroke-width="1" fill="none">
+        <rect x="10" y="10" width="130" height="280"/><line x1="10" y1="150" x2="140" y2="150"/><circle cx="75" cy="150" r="18"/>
+        <rect x="55" y="10" width="40" height="58"/><circle cx="75" cy="68" r="18"/><path d="M12 90 A63 63 0 0 0 138 90"/><circle cx="75" cy="24" r="4"/>
+        <rect x="55" y="232" width="40" height="58"/><circle cx="75" cy="232" r="18"/><path d="M12 210 A63 63 0 0 1 138 210"/><circle cx="75" cy="276" r="4"/>
+      </g></svg>`;
+  } else {
+    box.innerHTML=`<img src="assets/cancha_top.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,9,13,.78) 0%,rgba(7,9,13,.28) 22%,rgba(7,9,13,.22) 60%,rgba(7,9,13,.82) 100%)"></div>`;
+  }
   // notifs animadas
   const n=document.getElementById('mkNotif');
   n.innerHTML=`<div class="n"><b>12:31</b> · Diego entró a la cancha por #9</div>`;
@@ -600,6 +615,8 @@ function pickCtx(hat,liga,rol,dest){
   closeSheet();toast('Entras como '+rol+' · '+liga);if(dest)go(dest);
 }
 function tk(el){el.classList.toggle('on');}
+function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contains('on');document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';setCourtStyle(on?'realista':'minimalista');toast('La liga fijó la cancha: '+(on?'realista (foto)':'minimalista (líneas)'));}
+function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)return;const on=courtStyle()==='realista';k.classList.toggle('on',on);document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';}
 let tt;function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2200);}
 buildNav('hub');
 </script>
