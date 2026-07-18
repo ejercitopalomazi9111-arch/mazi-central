@@ -569,29 +569,11 @@ function buildNav(cur){
     });
   });
 }
-/* ---- cancha desde arriba (líneas FIBA, excepción permitida) ---- */
+/* ---- cancha desde arriba: IMAGEN REAL de cancha (con velo para legibilidad) ---- */
 function drawCourt(){
   const box=document.getElementById('courtbg');
-  box.innerHTML=`<svg viewBox="0 0 150 300" preserveAspectRatio="xMidYMid slice">
-    <defs><radialGradient id="wood" cx="50%" cy="45%" r="75%">
-      <stop offset="0%" stop-color="#241a12"/><stop offset="60%" stop-color="#15100b"/><stop offset="100%" stop-color="#0a0805"/></radialGradient></defs>
-    <rect x="0" y="0" width="150" height="300" fill="url(#wood)"/>
-    <g stroke="rgba(255,255,255,.16)" stroke-width="1" fill="none">
-      <rect x="10" y="10" width="130" height="280"/>
-      <line x1="10" y1="150" x2="140" y2="150"/>
-      <circle cx="75" cy="150" r="18"/>
-      <!-- aro superior -->
-      <rect x="55" y="10" width="40" height="58"/><circle cx="75" cy="68" r="18"/>
-      <path d="M12 10 A63 63 0 0 0 12 90" /><path d="M138 10 A63 63 0 0 1 138 90"/>
-      <line x1="12" y1="90" x2="12" y2="10" opacity="0"/><path d="M12 90 A63 63 0 0 0 138 90" transform="translate(0,-0)"/>
-      <circle cx="75" cy="24" r="4"/>
-      <!-- aro inferior -->
-      <rect x="55" y="232" width="40" height="58"/><circle cx="75" cy="232" r="18"/>
-      <path d="M12 290 A63 63 0 0 1 12 210"/><path d="M138 290 A63 63 0 0 0 138 210"/>
-      <path d="M12 210 A63 63 0 0 1 138 210"/>
-      <circle cx="75" cy="276" r="4"/>
-    </g>
-  </svg>`;
+  box.innerHTML=`<img src="assets/cancha_top.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,9,13,.78) 0%,rgba(7,9,13,.28) 22%,rgba(7,9,13,.22) 60%,rgba(7,9,13,.82) 100%)"></div>`;
   // notifs animadas
   const n=document.getElementById('mkNotif');
   n.innerHTML=`<div class="n"><b>12:31</b> · Diego entró a la cancha por #9</div>`;
