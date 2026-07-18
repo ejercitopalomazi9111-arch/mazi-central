@@ -198,6 +198,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .knob{width:44px;height:24px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);position:relative;flex-shrink:0;cursor:pointer}
 .knob i{position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:var(--dim);transition:.2s;left:2px}
 .knob.on{background:rgba(84,204,138,.25);border-color:var(--good)} .knob.on i{left:22px;background:var(--good)}
+.knob.locked{cursor:default} .knob.locked::after{content:"";position:absolute;top:6px;left:8px;width:5px;height:8px;border:1.5px solid rgba(11,13,18,.7);border-radius:2px;border-bottom:none;opacity:.6}
 .knob-row .val{font-family:var(--mono);font-size:12px;color:var(--accent-lt);border:1px solid var(--line);padding:4px 9px;border-radius:6px}
 
 /* form (alta) */
@@ -627,6 +628,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div class="knob-row"><div class="knob on" onclick="tk(this)"><i></i></div><div class="k">Foto pública en tribuna</div></div>
         <div class="knob-row"><div class="knob" onclick="tk(this)"><i></i></div><div class="k">Asistente táctico en formativas <small>(off recomendado)</small></div></div>
         <div class="knob-row"><div class="knob on" id="courtKnob" onclick="toggleCourt(this)"><i></i></div><div class="k">Cancha realista en el marcador <small>foto cenital real · apágala para líneas minimalistas</small></div><span class="val" id="courtVal">Realista</span></div>
+        <div class="knob-row"><div class="knob" onclick="tk(this)"><i></i></div><div class="k">Registro defensivo detallado <small>robos y tapones — laborioso, casi ninguna liga lo activa. Sin él, la defensa se estima.</small></div></div>
+      </div>
+      <div class="card"><div class="kick">Privacidad · menores</div>
+        <div class="knob-row"><div class="knob on locked" onclick="toast('Con menores esto queda fijo en ON por seguridad')"><i></i></div><div class="k">Proteger datos de menores <small>oculta al público su ubicación en vivo y su calendario. Solo tutor, coach y liga los ven.</small></div><span class="val" style="color:var(--good);border-color:var(--good)">Fijo</span></div>
+        <div class="knob-row"><div class="knob on locked" onclick="toast('El CURP es llave interna: nunca se muestra ni se busca por él')"><i></i></div><div class="k">CURP nunca visible ni buscable <small>identifica al jugador por dentro; nadie lo ve ni puede buscar por él.</small></div><span class="val" style="color:var(--good);border-color:var(--good)">Fijo</span></div>
       </div>
       <div class="stratnote" style="border-left-color:var(--papa)">La liga de barrio y la profesional son el mismo cliente con necesidades opuestas. Las perillas <b>son el precio</b> de servir a las dos.</div>
     </div></div>
@@ -639,8 +645,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="eyebrow" style="margin:0 0 4px">Foto — cara del jugador</div>
       <div class="photo-hole"><span style="font-size:30px"><svg class="ic"><use href="#ic-camera"/></svg></span>Subir foto (se le quita el GPS)</div>
       <input class="field" placeholder="Nombre completo del jugador">
-      <div class="eyebrow" style="margin:8px 0 2px">CURP <span style="color:var(--dim)">— llave del jugador, nunca se muestra</span></div>
+      <div class="eyebrow" style="margin:8px 0 2px">CURP <span style="color:var(--dim)">— llave interna, se escribe una vez</span></div>
       <input class="field masked" placeholder="GUGD•••••••••••B2">
+      <div class="check" style="background:rgba(84,204,138,.06);border-color:var(--good)"><span class="box" style="border-color:var(--good);color:var(--good);pointer-events:none">✓</span>
+        <span><b>El CURP nunca se muestra ni se puede buscar.</b> Sirve solo por dentro para que no haya dos "Diegos" duplicados. Ni el público, ni otros papás, ni otras ligas lo ven — nadie puede usarlo para saber dónde juega tu hij@.</span></div>
       <input class="field" placeholder="Categoría (ej. Juvenil Varonil)">
       <div class="check"><span class="box" onclick="this.textContent=this.textContent?'':'✓'"></span>
         <span><b>Responsiva de los padres.</b> Autorizo la participación y la <b>conservación de sus datos y estadísticas</b> a largo plazo. Sin esto, el jugador queda incompleto y no se puede alinear.</span></div>
@@ -692,7 +700,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
             <div class="fc-attr"><span class="v mid">74</span><span class="n">Tiro</span></div>
             <div class="fc-attr"><span class="v mid">80</span><span class="n">Manejo</span></div>
             <div class="fc-attr"><span class="v mid">77</span><span class="n">Pase</span></div>
-            <div class="fc-attr"><span class="v hi">88</span><span class="n">Defensa</span></div>
+            <div class="fc-attr"><span class="v mid">78</span><span class="n">Defensa*</span></div>
             <div class="fc-attr"><span class="v mid">82</span><span class="n">Físico</span></div>
             <div class="fc-attr"><span class="v mid">79</span><span class="n">IQ</span></div>
           </div>
@@ -714,13 +722,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       </div>
 
       <div class="fc-panel" id="fc-atributos">
-        <div class="stratnote" style="border-left-color:var(--jugador);margin-bottom:12px">El coach <b>no</b> pone estos números. Salen del <b>registro de la mesa</b> partido a partido. <b>Toca cualquiera</b> para ver de dónde sale.</div>
+        <div class="stratnote" style="border-left-color:var(--jugador);margin-bottom:12px">El coach <b>no</b> pone estos números. Salen de lo que la mesa <b>sí</b> anota sin batallar: puntos, faltas, rebotes, asistencias y minutos. <b>Toca cualquiera</b> para ver de dónde sale.</div>
         <div class="attrbar" onclick="attrWhy('Tiro exterior','71 = 34% en triples (61 intentos) marcados por zona en 16 partidos. Sube si mete de 3 con volumen.')"><div class="top"><span class="n">Tiro exterior</span><span class="v" style="color:var(--papa)">71</span></div><div class="track"><i style="width:71%;background:var(--papa)"></i></div></div>
         <div class="attrbar" onclick="attrWhy('Tiro medio','76 = 43% en media distancia (2.8 intentos/juego). La mesa marca la zona del tiro.')"><div class="top"><span class="n">Tiro medio</span><span class="v" style="color:var(--papa)">76</span></div><div class="track"><i style="width:76%;background:var(--papa)"></i></div></div>
         <div class="attrbar" onclick="attrWhy('Bandeja / entrada','85 = 61% cerca del aro + faltas recibidas al penetrar, en 16 partidos.')"><div class="top"><span class="n">Bandeja / entrada</span><span class="v" style="color:var(--good)">85</span></div><div class="track"><i style="width:85%;background:var(--good)"></i></div></div>
         <div class="attrbar" onclick="attrWhy('Bote / manejo','80 = pérdidas bajas (1.4/juego) para los minutos con balón. Menos pérdidas, más manejo.')"><div class="top"><span class="n">Bote / manejo</span><span class="v" style="color:var(--papa)">80</span></div><div class="track"><i style="width:80%;background:var(--papa)"></i></div></div>
         <div class="attrbar" onclick="attrWhy('Pase / visión','77 = 3.0 asistencias/juego contra sus pérdidas. Registrado en cada anotación asistida.')"><div class="top"><span class="n">Pase / visión</span><span class="v" style="color:var(--papa)">77</span></div><div class="track"><i style="width:77%;background:var(--papa)"></i></div></div>
-        <div class="attrbar" onclick="attrWhy('Defensa perimetral','88 = 2.1 robos + 1.4 tapones + puntos permitidos bajos a su marca, en 18 partidos. Necesita captura defensiva (mesa doble o cámara).')"><div class="top"><span class="n">Defensa perimetral</span><span class="v" style="color:var(--good)">88</span></div><div class="track"><i style="width:88%;background:var(--good)"></i></div></div>
+        <div class="attrbar" onclick="attrWhy('Defensa · estimada','La mesa normalmente NO cuenta robos ni tapones (es una lata estar diciendo quién tapó a quién). Por eso la defensa se ESTIMA con rebotes, faltas y minutos. Si la liga prende el registro defensivo detallado en las perillas, se vuelve exacta.')"><div class="top"><span class="n">Defensa <span style="font-family:var(--body);font-weight:400;font-size:10px;color:var(--dim);text-transform:none;letter-spacing:0">· estimada</span></span><span class="v" style="color:var(--papa)">78</span></div><div class="track"><i style="width:78%;background:var(--papa)"></i></div></div>
         <div class="attrbar" onclick="attrWhy('Rebote','84 = 6.1 rebotes/juego (4.3 def · 1.8 of). Cada rebote se marca en la mesa.')"><div class="top"><span class="n">Rebote</span><span class="v" style="color:var(--good)">84</span></div><div class="track"><i style="width:84%;background:var(--good)"></i></div></div>
         <div class="attrbar" onclick="attrWhy('Físico / resistencia','82 = minutos jugados sin bajar rendimiento en el 4º cuarto, promediado por temporada.')"><div class="top"><span class="n">Físico / resistencia</span><span class="v" style="color:var(--papa)">82</span></div><div class="track"><i style="width:82%;background:var(--papa)"></i></div></div>
         <div class="attrbar" onclick="attrWhy('IQ de juego','79 = mezcla de asistencias, pocas faltas tontas y buenas decisiones de tiro. Sube con partidos limpios.')"><div class="top"><span class="n">IQ de juego</span><span class="v" style="color:var(--papa)">79</span></div><div class="track"><i style="width:79%;background:var(--papa)"></i></div></div>
@@ -813,29 +821,52 @@ const ROLE_LIVE={
   publico:{k:'En vivo ahora',     s:'Titanes vs Halcones · Q3 · sigue el marcador',    sc:'Titanes 42 — 39 Halcones', mt:'Q3 · <b>en vivo</b> ahora'},
   jugador:{k:'Tu partido en vivo',s:'Estás en cancha · Titanes vs Halcones · Q3',      sc:'Titanes 42 — 39 Halcones', mt:'Q3 · <b>estás</b> en cancha'},
 };
-/* sobre de cartas holográfico sin marcas — fondo del panel "Mi carta" */
+/* cartas coleccionables holográficas sin marcas — fondo del panel "Mi carta" */
 function packSVG(cvar){
-  return `<svg viewBox="0 0 400 460" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
+  return `<svg viewBox="0 0 400 480" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
     <defs>
-      <radialGradient id="pbg" cx="50%" cy="36%" r="78%"><stop offset="0%" stop-color="#1b2233"/><stop offset="58%" stop-color="#0e1220"/><stop offset="100%" stop-color="#070a12"/></radialGradient>
-      <linearGradient id="foil" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2b3552"/><stop offset="100%" stop-color="#151b2b"/></linearGradient>
+      <radialGradient id="pbg" cx="50%" cy="30%" r="85%"><stop offset="0%" stop-color="#232c44"/><stop offset="52%" stop-color="#0f1424"/><stop offset="100%" stop-color="#05070f"/></radialGradient>
+      <linearGradient id="cardFace" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stop-color="#2f3a5a"/><stop offset="52%" stop-color="#1a2138"/><stop offset="100%" stop-color="#10162a"/></linearGradient>
       <linearGradient id="holo" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#54cc8a" stop-opacity="0"/><stop offset="34%" stop-color="#8fd0ff" stop-opacity=".5"/>
-        <stop offset="50%" stop-color="#ffffff" stop-opacity=".85"/><stop offset="66%" stop-color="#a774f0" stop-opacity=".5"/>
-        <stop offset="100%" stop-color="#e8b13e" stop-opacity="0"/></linearGradient>
+        <stop offset="8%" stop-color="#54cc8a" stop-opacity="0"/><stop offset="30%" stop-color="#48e0c0" stop-opacity=".45"/>
+        <stop offset="43%" stop-color="#8fd0ff" stop-opacity=".7"/><stop offset="50%" stop-color="#ffffff" stop-opacity=".92"/>
+        <stop offset="58%" stop-color="#c79bff" stop-opacity=".7"/><stop offset="72%" stop-color="#ffb35a" stop-opacity=".45"/>
+        <stop offset="92%" stop-color="#ff6fae" stop-opacity="0"/></linearGradient>
+      <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity=".9"/><stop offset="22%" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+      <radialGradient id="spot" cx="50%" cy="0%" r="70%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".14"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+      <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="11"/></filter>
     </defs>
-    <rect width="400" height="460" fill="url(#pbg)"/>
-    <ellipse cx="200" cy="175" rx="150" ry="165" fill="var(${cvar})" opacity=".16"/>
-    <g transform="rotate(-9 200 220)"><rect x="118" y="66" width="150" height="228" rx="14" fill="#0c1018" stroke="rgba(255,255,255,.13)" stroke-width="2"/>
-      <path d="M193 120l7 15 16 1.5-12 11 3.5 16-14.5-8-14.5 8 3.5-16-12-11 16-1.5z" fill="var(${cvar})" opacity=".5"/></g>
-    <g transform="rotate(7 205 250)">
-      <rect x="132" y="118" width="150" height="252" rx="12" fill="url(#foil)" stroke="rgba(255,255,255,.2)" stroke-width="2"/>
-      <path d="M132 132 l14 -7 14 7 14 -7 14 7 14 -7 14 7 14 -7 14 7 14 -7 v-2 h-150 z" fill="#0e1220"/>
-      <rect x="132" y="118" width="150" height="252" rx="12" fill="url(#holo)" opacity=".55"/>
-      <circle cx="207" cy="244" r="33" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2.5"/>
-      <path d="M207 222l7.5 16 17.5 1.6-13 12 3.8 17.4-15.8-8.7-15.8 8.7 3.8-17.4-13-12 17.5-1.6z" fill="rgba(255,255,255,.85)"/>
+    <rect width="400" height="480" fill="url(#pbg)"/>
+    <path d="M200 -30 L370 340 L30 340 Z" fill="url(#spot)"/>
+    <ellipse cx="200" cy="250" rx="150" ry="175" fill="var(${cvar})" opacity=".2" filter="url(#soft)"/>
+    <!-- cartas en abanico detrás -->
+    <g transform="translate(200 262)">
+      <g transform="rotate(-17) translate(-40 6)"><rect x="-60" y="-98" width="120" height="182" rx="13" fill="#161d30" stroke="var(${cvar})" stroke-opacity=".55" stroke-width="2.5"/><rect x="-60" y="-98" width="120" height="182" rx="13" fill="url(#holo)" opacity=".14"/></g>
+      <g transform="rotate(17) translate(40 6)"><rect x="-60" y="-98" width="120" height="182" rx="13" fill="#161d30" stroke="#8fd0ff" stroke-opacity=".5" stroke-width="2.5"/><rect x="-60" y="-98" width="120" height="182" rx="13" fill="url(#holo)" opacity=".14"/></g>
     </g>
-    <g fill="#fff"><circle cx="92" cy="120" r="2.5" opacity=".8"/><circle cx="320" cy="150" r="3" opacity=".7"/><circle cx="300" cy="330" r="2" opacity=".6"/><circle cx="86" cy="300" r="2.4" opacity=".65"/></g>
+    <!-- carta principal holográfica -->
+    <g transform="translate(200 250) rotate(-4)">
+      <rect x="-84" y="-128" width="168" height="256" rx="16" fill="var(${cvar})" opacity=".5" filter="url(#soft)"/>
+      <rect x="-80" y="-124" width="160" height="248" rx="15" fill="url(#cardFace)" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+      <rect x="-80" y="-124" width="160" height="248" rx="15" fill="url(#holo)" opacity=".6"/>
+      <rect x="-80" y="-124" width="160" height="90" rx="15" fill="url(#rim)" opacity=".5"/>
+      <!-- rating -->
+      <text x="-58" y="-88" font-family="Arial Narrow,sans-serif" font-weight="800" font-size="40" fill="#fff">78</text>
+      <text x="-58" y="-72" font-family="monospace" font-size="10" fill="rgba(255,255,255,.7)" letter-spacing="1">GENERAL</text>
+      <!-- silueta de jugador -->
+      <g transform="translate(0 24)" fill="rgba(255,255,255,.32)">
+        <circle cx="0" cy="-14" r="20"/><path d="M-38 62 C-38 22 -18 8 0 8 C18 8 38 22 38 62 Z"/>
+      </g>
+      <!-- estrella emblema -->
+      <path d="M0 -44l6.5 13.5 15 1.4-11 10.4 3.2 14.8L0 -1l-13.7 7.6 3.2-14.8-11-10.4 15-1.4z" fill="rgba(255,255,255,.85)"/>
+      <line x1="-80" y1="96" x2="80" y2="96" stroke="rgba(255,255,255,.25)"/>
+    </g>
+    <!-- destellos -->
+    <g fill="#fff">
+      <path d="M96 118l3 9 9 3-9 3-3 9-3-9-9-3 9-3z" opacity=".85"/>
+      <path d="M312 150l2.5 7 7 2.5-7 2.5-2.5 7-2.5-7-7-2.5 7-2.5z" opacity=".7"/>
+      <circle cx="330" cy="300" r="2.4" opacity=".6"/><circle cx="74" cy="330" r="2.8" opacity=".7"/><circle cx="120" cy="410" r="2" opacity=".5"/><circle cx="300" cy="400" r="2.2" opacity=".55"/>
+    </g>
   </svg>`;
 }
 let modeIdx=0;
