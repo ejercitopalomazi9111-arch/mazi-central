@@ -359,6 +359,49 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .fc-cmp button.hot{border-color:var(--accent);color:var(--accent-lt)}
 /* franja de rareza sobre la carta */
 .pcard .rk.rare{background:linear-gradient(90deg,#8fd0ff,#a774f0)}
+
+/* ===== MARCA: logo pelota con alas + nombre en todos lados ===== */
+.logo-hero{margin-bottom:16px;filter:drop-shadow(0 8px 22px rgba(239,122,53,.4))}
+.entry-foot{margin-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.entry-foot b{color:var(--accent-lt)}
+.brandmini{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-weight:800;font-size:12px;letter-spacing:.05em;color:#c9cfd9;text-transform:uppercase;flex-shrink:0;opacity:.9}
+.brandmini .ic{width:18px;height:18px;color:var(--accent-lt)}
+.brandmini.on-banner{position:absolute;top:calc(var(--safe-t) + 12px);right:12px;z-index:4}
+.brandfoot{display:flex;align-items:center;justify-content:center;gap:8px;padding:20px 0 8px;opacity:.42;
+  font-family:var(--disp);font-weight:800;font-size:11px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.brandfoot .ic{width:16px;height:16px;color:var(--accent-lt);opacity:.9}
+.hub-brand{display:inline-flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:800;font-size:13px;letter-spacing:.06em;color:#e7ecf3;text-transform:uppercase}
+.hub-brand .ic{width:20px;height:20px;color:var(--accent-lt)}
+
+/* ===== MARCADOR: cartas de jugador en vivo (banca / en juego) ===== */
+#courtTokens{position:absolute;inset:0;z-index:2;pointer-events:none}
+#courtTokens .tok{pointer-events:auto}
+.tok .lab b{display:block;font-family:var(--disp);font-weight:800;font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:.02em}
+.tok .lab .line{font-family:var(--mono);font-size:8.5px;color:#cdd3dd}
+.tok .lab .line .f{color:var(--crit)}
+.mk-bench-wrap{margin:0 2px 8px}
+.mk-bench-ttl{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 2px 6px;display:flex;align-items:center;gap:6px}
+.mk-bench{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}
+.benchcard{flex-shrink:0;min-width:96px;background:rgba(7,9,13,.72);border:1px solid var(--line);border-radius:10px;padding:7px 10px;backdrop-filter:blur(8px)}
+.benchcard .bn{display:block;font-family:var(--disp);font-weight:800;font-size:13px;color:#e7ecf3}
+.benchcard .bs{font-family:var(--mono);font-size:9.5px;color:#aab2c0}
+.benchcard .bs .f{color:var(--crit)}
+.benchcard.oncourt{border-color:var(--accent);background:rgba(239,122,53,.12)}
+.benchcard.oncourt .bn{color:var(--accent-lt)}
+
+/* ===== PC / TABLET: usa el espacio, muestra varias opciones (estilo 2K) ===== */
+@media(min-width:900px){
+  #app{max-width:1120px;height:min(94dvh,900px)}
+  .screen .scroll > .pad{max-width:700px;margin-inline:auto}
+  .mesa-sel,.mesa-grid,.mesa-log,.mesa-undo{max-width:700px;margin-inline:auto}
+  /* hub: el carrusel muestra VARIOS paneles a la vez, no solo el central */
+  .mode-panel{width:340px;height:clamp(360px,52vh,440px)}
+  .mode-rail{max-width:840px;margin-inline:auto;width:100%;justify-content:center}
+  .hub-live{max-width:760px;margin-inline:auto;width:calc(100% - 32px)}
+  /* marcador: cancha centrada, no estirada a lo ancho */
+  #s-marcador .fullbg{left:50%;right:auto;width:min(100%,560px);transform:translateX(-50%)}
+  .banner{min-height:150px}
+}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -391,6 +434,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
   <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M8 8H5V5"/><path d="M5.2 8.2A8 8 0 1 1 4 12"/></symbol>
   <symbol id="ic-rewind" viewBox="0 0 24 24"><path d="M11.5 7v10l-7.5-5z"/><path d="M20 7v10l-7.5-5z"/></symbol>
+  <!-- logo Ligas Mazi: pelota con alas -->
+  <symbol id="ic-logo" viewBox="0 0 24 24"><circle cx="12" cy="13" r="4.3"/><path d="M12 8.8v8.4"/><path d="M7.9 11.3c2.6 1 5.6 1 8.2 0"/><path d="M7.9 14.7c2.6-1 5.6-1 8.2 0"/><path d="M7.7 11.1C5.2 10 2.6 10.2 1 11.5"/><path d="M7.5 12.9C5 12.2 2.6 12.7 1.3 14"/><path d="M7.9 14.7C5.8 14.6 3.9 15.2 2.9 16.2"/><path d="M16.3 11.1C18.8 10 21.4 10.2 23 11.5"/><path d="M16.5 12.9C19 12.2 21.4 12.7 22.7 14"/><path d="M16.1 14.7C18.2 14.6 20.1 15.2 21.1 16.2"/></symbol>
  </defs>
 </svg>
 <div id="app">
@@ -399,11 +444,30 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <section class="screen on" id="s-entrada">
     <div class="hero" style="background-image:url('assets/arena.jpg')"></div>
     <div class="entry">
-      <div class="brand"><div class="k">GRUPO MAZI · BALONCESTO</div></div>
+      <div class="brand">
+        <div class="logo-hero">
+          <svg viewBox="0 0 120 80" width="118" height="78" aria-label="Ligas Mazi">
+            <defs>
+              <linearGradient id="wingG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff9a5a"/><stop offset="100%" stop-color="#ef7a35"/></linearGradient>
+              <radialGradient id="ballG" cx="40%" cy="35%" r="75%"><stop offset="0%" stop-color="#ffb877"/><stop offset="55%" stop-color="#ef7a35"/><stop offset="100%" stop-color="#c25716"/></radialGradient>
+            </defs>
+            <g fill="url(#wingG)">
+              <path d="M52 34c-10-9-24-11-36-6 5 1 8 3 10 6-8-2-16 0-22 5 6 0 10 2 13 5-5 1-9 4-11 8 12-5 27-6 39-13z" opacity=".95"/>
+              <path d="M68 34c10-9 24-11 36-6-5 1-8 3-10 6 8-2 16 0 22 5-6 0-10 2-13 5 5 1 9 4 11 8-12-5-27-6-39-13z" opacity=".95"/>
+            </g>
+            <circle cx="60" cy="44" r="20" fill="url(#ballG)" stroke="#7a3a12" stroke-width="1.5"/>
+            <g fill="none" stroke="#7a3a12" stroke-width="1.6" stroke-linecap="round">
+              <path d="M60 24v40"/><path d="M41 38c12 5 26 5 38 0"/><path d="M41 50c12-5 26-5 38 0"/>
+            </g>
+          </svg>
+        </div>
+        <div class="k">GRUPO MAZI · BALONCESTO</div>
+      </div>
       <div class="title-xl">LIGAS <span class="m">MAZI</span></div>
       <p class="slogan">Organiza, juega, entrena y sigue tu liga. Donde cada canasta queda para siempre.</p>
       <button class="btn" onclick="go('hub')">Entrar <span class="go">›</span></button>
       <button class="btn ghost" onclick="go('publico')">Solo ver (invitado) <span class="go">›</span></button>
+      <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
     </div>
   </section>
 
@@ -472,14 +536,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
           <div class="team"><div class="lg">escudo</div><div class="nm">HALCONES</div><div class="sc" style="color:var(--papa)">39</div></div>
         </div>
         <div class="mk-notif" id="mkNotif"></div>
-        <!-- tokens de jugadores en cancha (por posición, no rastreo) -->
-        <div class="tok away" style="left:50%;top:30%"><div class="jersey">15</div><div class="lab">Base</div></div>
-        <div class="tok away" style="left:26%;top:38%"><div class="jersey">7</div><div class="lab">Escolta</div></div>
-        <div class="tok away" style="left:74%;top:40%"><div class="jersey">23</div><div class="lab">Alero</div></div>
-        <div class="tok mine" style="left:38%;top:58%"><div class="jersey">7</div><div class="lab">Diego · 6 pts</div></div>
-        <div class="tok home" style="left:62%;top:60%"><div class="jersey">4</div><div class="lab">Pívot</div></div>
+        <!-- jugadores en cancha: nombre + minutos · puntos · faltas -->
+        <div id="courtTokens"></div>
         <div class="mk-bottom">
-          <div class="mk-bench"><span class="b">Banca:</span><span class="b">#9</span><span class="b">#11 · 3F</span><span class="b">#2</span><span class="b">#5</span><span class="b">#12</span></div>
+          <div class="mk-bench-wrap">
+            <div class="mk-bench-ttl"><svg class="ic" style="width:13px;height:13px"><use href="#ic-people"/></svg> Banca · Titanes</div>
+            <div class="mk-bench" id="benchRow"></div>
+          </div>
           <div class="mk-actions">
             <button onclick="toast('Compartir marcador')"><span class="i"><svg class="ic"><use href="#ic-share"/></svg></span>Compartir</button>
             <button onclick="go('var')"><span class="i"><svg class="ic"><use href="#ic-video"/></svg></span>VAR</button>
@@ -951,6 +1014,53 @@ function drawCourt(){
   const n=document.getElementById('mkNotif');
   n.innerHTML=`<div class="n"><b>12:31</b> · Diego entró a la cancha por #9</div>`;
   setTimeout(()=>{if(document.getElementById('s-marcador').classList.contains('on'))n.innerHTML=`<div class="n"><b>Diego anotó +2</b> — lleva 6 pts</div>`;},2600);
+  buildLineup();
+}
+/* ---- alineación en vivo: quién juega, quién en banca, con min · pts · faltas ---- */
+const liveOn=[
+  {num:'5', nm:'Sam',  min:20,pts:7,f:0, x:50,y:46, cls:'home'},
+  {num:'11',nm:'Leo',  min:16,pts:4,f:2, x:25,y:54, cls:'home'},
+  {num:'23',nm:'Iker', min:19,pts:5,f:1, x:75,y:55, cls:'home'},
+  {num:'7', nm:'Diego',min:22,pts:6,f:2, x:40,y:68, cls:'mine'},
+  {num:'4', nm:'Marco',min:18,pts:8,f:3, x:63,y:70, cls:'home'},
+];
+const liveBench=[
+  {num:'9', nm:'Beto', min:4,pts:2,f:1},
+  {num:'2', nm:'Nico', min:6,pts:0,f:0},
+  {num:'8', nm:'Rulo', min:8,pts:3,f:2},
+  {num:'12',nm:'Aldo', min:0,pts:0,f:0},
+];
+function buildLineup(){
+  const c=document.getElementById('courtTokens'); if(!c)return; c.innerHTML='';
+  [[50,31,'15'],[29,36,'8'],[71,36,'21']].forEach(([x,y,num])=>{
+    const d=document.createElement('div'); d.className='tok away'; d.style.left=x+'%'; d.style.top=y+'%';
+    d.innerHTML='<div class="jersey">'+num+'</div><div class="lab">Halcones</div>'; c.appendChild(d);
+  });
+  liveOn.forEach(p=>{
+    const d=document.createElement('div'); d.className='tok '+p.cls; d.style.left=p.x+'%'; d.style.top=p.y+'%';
+    d.innerHTML='<div class="jersey">'+p.num+'</div><div class="lab"><b>'+p.nm+'</b><span class="line">'+p.min+'′ · '+p.pts+' pts · <span class="f">'+p.f+'F</span></span></div>';
+    c.appendChild(d);
+  });
+  const b=document.getElementById('benchRow'); if(!b)return; b.innerHTML='';
+  liveBench.forEach(p=>{
+    const d=document.createElement('div'); d.className='benchcard';
+    d.innerHTML='<span class="bn">#'+p.num+' '+p.nm+'</span><span class="bs">'+p.min+'′ · '+p.pts+' pts · <span class="f">'+p.f+'F</span></span>';
+    b.appendChild(d);
+  });
+}
+/* ---- marca en todos lados ---- */
+function brandEl(cls){const s=document.createElement('span');s.className='brandmini'+(cls?' '+cls:'');s.innerHTML='<svg class="ic"><use href="#ic-logo"/></svg><b>LIGAS MAZI</b>';return s;}
+function footEl(){const d=document.createElement('div');d.className='brandfoot';d.innerHTML='<svg class="ic"><use href="#ic-logo"/></svg> Ligas Mazi · Grupo Mazi';return d;}
+function stampBrand(){
+  document.querySelectorAll('.screen').forEach(scr=>{
+    if(scr.id==='s-entrada')return;
+    // pie de marca en cada zona con scroll
+    scr.querySelectorAll('.scroll > .pad, .hub-scroll').forEach(z=>{ if(!z.querySelector(':scope > .brandfoot')) z.appendChild(footEl()); });
+    // marca en el encabezado del marcador
+    const mk=scr.querySelector('.mk-top'); if(mk && !mk.querySelector('.brandmini')) mk.appendChild(brandEl());
+    // marca en banners
+    const bn=scr.querySelector('.banner'); if(bn && !bn.querySelector('.brandmini')) bn.appendChild(brandEl('on-banner'));
+  });
 }
 /* ---- anotador ---- */
 const roster=[['7','Diego'],['4','Marco'],['23','Iker'],['15','Leo'],['9','Sam']];
@@ -986,6 +1096,7 @@ let tt;function toast(msg){const t=document.getElementById('toast');t.innerHTML=
 buildNav('hub');
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
 buildModes();
+stampBrand();
 </script>
 </body>
 </html>
