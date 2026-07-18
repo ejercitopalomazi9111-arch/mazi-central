@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0b0d12">
+<title>Ligas Mazi</title>
+<style>
+:root{
+  --ink:#0b0d12; --ink2:#07090d; --panel:#14171f; --panel2:#1b2029; --line:#2a313d;
+  --bone:#eef1f6; --dim:#8b93a3; --accent:#ef7a35; --accent-lt:#ff9a5a;
+  --publico:#35c2cf; --papa:#e8b13e; --jugador:#54cc8a; --coach:#ef7a35; --liga:#a774f0; --mesa:#ec5a45;
+  --crit:#ec5a45; --good:#54cc8a;
+  --disp:"Arial Narrow","Oswald","Roboto Condensed",system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hidden;
+  -webkit-font-smoothing:antialiased}
+#app{position:relative;width:100vw;height:100dvh;max-width:520px;margin:0 auto;overflow:hidden;background:var(--ink)}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.on{display:flex}
+.screen.on .scroll{animation:fade .32s ease}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{width:0}
+
+/* type */
+.disp{font-family:var(--disp);text-transform:uppercase;font-weight:800;letter-spacing:.02em;line-height:.95}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+.mono{font-family:var(--mono)} .dim{color:var(--dim)}
+h1.disp{font-size:clamp(40px,13vw,60px)} h2.disp{font-size:26px}
+
+/* ---------- ENTRADA (main menu tipo videojuego) ---------- */
+.hero{position:absolute;inset:0;background-size:cover;background-position:center;
+  filter:saturate(.9) contrast(1.05) brightness(.5)}
+.hero::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(11,13,18,.5) 0%,rgba(11,13,18,.2) 35%,rgba(11,13,18,.96) 100%)}
+.entry{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:0 26px calc(var(--safe-b) + 30px)}
+.brand{margin-bottom:auto;padding-top:calc(var(--safe-t) + 34px)}
+.brand .k{color:var(--accent);font-size:13px;letter-spacing:.3em}
+.title-xl{font-size:clamp(52px,17vw,86px);text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.title-xl .m{color:var(--accent)}
+.slogan{color:#cfd5df;font-size:15px;max-width:26ch;margin:14px 0 26px}
+.btn{display:flex;align-items:center;gap:12px;width:100%;font-family:var(--disp);text-transform:uppercase;
+  font-weight:800;font-size:20px;letter-spacing:.03em;color:var(--ink);
+  background:var(--accent);border:none;padding:16px 20px;margin:9px 0;cursor:pointer;border-radius:4px;
+  box-shadow:0 8px 24px rgba(239,122,53,.28);transition:transform .1s}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:rgba(20,23,31,.75);color:var(--bone);border:1px solid var(--line);
+  box-shadow:none;backdrop-filter:blur(6px)}
+.btn .go{margin-left:auto;opacity:.8}
+
+/* ---------- HUD superior + bottom nav ---------- */
+.topbar{position:relative;z-index:3;display:flex;align-items:center;gap:10px;
+  padding:calc(var(--safe-t) + 12px) 16px 12px;flex-shrink:0}
+.ctx{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+  border-radius:30px;padding:5px 6px 5px 12px;cursor:pointer;font-size:13px}
+.ctx .hat{width:10px;height:10px;border-radius:50%} .ctx b{font-weight:650} .ctx .ch{color:var(--dim);font-size:11px}
+.topbar .coins{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--papa)}
+.avatar{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);
+  display:flex;align-items:center;justify-content:center;font-size:15px}
+.backbtn{background:var(--panel);border:1px solid var(--line);color:var(--bone);width:38px;height:38px;
+  border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0}
+.nav{flex-shrink:0;display:flex;background:var(--ink2);border-top:1px solid var(--line);
+  padding-bottom:var(--safe-b)}
+.nav button{flex:1;background:none;border:none;color:var(--dim);padding:9px 0 8px;font-family:var(--body);
+  font-size:10.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav button .i{font-size:20px;line-height:1}
+.nav button.on{color:var(--accent-lt)}
+.nav button.hot .i{filter:drop-shadow(0 0 8px var(--mesa))}
+
+.pad{padding:4px 16px 20px}
+.h-row{display:flex;align-items:baseline;gap:10px;margin:18px 2px 10px}
+.h-row h2{font-size:22px} .h-row .more{margin-left:auto;font-size:12px;color:var(--accent-lt)}
+
+/* ---------- Tiles tipo videojuego ---------- */
+.hero-card{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);
+  min-height:190px;display:flex;align-items:flex-end;cursor:pointer}
+.hero-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.62) saturate(.95)}
+.hero-card .grad{position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(7,9,13,.92))}
+.hero-card .c{position:relative;z-index:2;padding:16px}
+.hero-card .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-lt)}
+.hero-card .t{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:26px;line-height:1;margin:4px 0 3px}
+.hero-card .s{font-size:12.5px;color:#cfd5df}
+.hero-card .live{position:absolute;top:12px;right:12px;z-index:2;font-family:var(--mono);font-size:10px;
+  letter-spacing:.1em;color:#fff;background:var(--mesa);padding:4px 9px;border-radius:20px}
+.hero-card .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:middle;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.tile{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);
+  aspect-ratio:1.35;background:var(--panel);cursor:pointer;display:flex;align-items:flex-end}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.5)}
+.tile .g{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(7,9,13,.9))}
+.tile .c{position:relative;z-index:2;padding:12px}
+.tile .i{font-size:22px} .tile .t{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:18px;margin-top:4px}
+.tile .s{font-size:11px;color:var(--dim)}
+.tile .stripe{position:absolute;top:0;left:0;right:0;height:3px;z-index:2}
+.tile:active{transform:scale(.98)}
+
+/* liga list */
+.leaguerow{display:flex;align-items:center;gap:13px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer}
+.crest{width:48px;height:48px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  border:1px dashed var(--line);color:var(--dim);font-size:10px;text-align:center;background:var(--panel2)}
+.leaguerow .nm{font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:18px}
+.leaguerow .mt{font-size:12px;color:var(--dim)}
+.leaguerow .hat{margin-left:auto;font-size:11px;font-family:var(--mono);border:1px solid var(--line);
+  padding:4px 8px;border-radius:20px;color:var(--papa)}
+.leaguerow.create{border-style:dashed;justify-content:center;color:var(--accent-lt);font-family:var(--disp);
+  text-transform:uppercase;font-weight:700;letter-spacing:.04em}
+
+/* itinerario */
+.match{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:12px;margin-bottom:9px}
+.match .when{font-family:var(--mono);font-size:11px;color:var(--dim);width:48px;text-align:center;flex-shrink:0}
+.match .vs{flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:16px}
+.match .vs small{display:block;font-family:var(--body);font-weight:400;text-transform:none;font-size:11px;color:var(--dim)}
+.match .badge{font-family:var(--mono);font-size:10px;padding:4px 8px;border-radius:20px}
+.badge.next{background:rgba(239,122,53,.16);color:var(--accent-lt);border:1px solid var(--accent)}
+.badge.livep{background:var(--mesa);color:#fff}
+
+/* ---------- DÍA DE PARTIDO ---------- */
+.court{position:relative;margin:12px 16px;border-radius:12px;overflow:hidden;border:1px solid var(--line);min-height:230px}
+.court img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.4) saturate(.9)}
+.court .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,9,13,.75),rgba(7,9,13,.5),rgba(7,9,13,.88))}
+.board{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:16px 18px 6px}
+.board .team{text-align:center;flex:1}
+.board .team .lg{width:40px;height:40px;margin:0 auto 4px;border-radius:8px;border:1px dashed rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.5)}
+.board .team .nm{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#cfd5df}
+.board .team .sc{font-family:var(--disp);font-weight:800;font-size:56px;line-height:.85;font-variant-numeric:tabular-nums;text-shadow:0 2px 12px #000}
+.board .mid{text-align:center}
+.board .mid .q{font-family:var(--mono);font-size:12px;color:var(--accent-lt)}
+.board .mid .clk{font-family:var(--disp);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums}
+.oncourt{position:relative;z-index:2;padding:6px 14px 14px;display:flex;gap:7px;flex-wrap:wrap}
+.pl{font-family:var(--mono);font-size:11px;border:1px solid rgba(255,255,255,.18);border-radius:20px;
+  padding:4px 10px;background:rgba(7,9,13,.5);color:#e6eaf1}
+.pl b{color:#fff} .pl.foul{border-color:var(--crit);color:#ff9a8f} .pl.mine{border-color:var(--papa);color:var(--papa);background:rgba(232,177,62,.12)}
+.notifs{margin:2px 16px 16px}
+.notifs .nrow{display:flex;gap:10px;align-items:baseline;background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--papa);border-radius:8px;padding:10px 12px;margin-bottom:7px;font-size:13.5px}
+.notifs .nrow .tm{font-family:var(--mono);font-size:11px;color:var(--dim);flex-shrink:0}
+.notifs .nrow b{color:var(--papa)}
+.watch{display:flex;gap:9px;margin:0 16px 18px}
+.watch button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--bone);border-radius:8px;
+  padding:12px;font-family:var(--body);font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.watch button .i{font-size:20px}
+
+/* ---------- CARTA ---------- */
+.cardwrap{padding:16px}
+.pcard{position:relative;border-radius:16px;overflow:hidden;border:1px solid #3a4250;
+  background:linear-gradient(160deg,#232834,#10131a);box-shadow:0 20px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+.pcard::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(115deg,transparent 42%,rgba(255,154,90,.14) 50%,transparent 58%);pointer-events:none;
+  animation:shine 4s ease-in-out infinite}
+@keyframes shine{0%,100%{transform:translateX(-30%)}50%{transform:translateX(30%)}}
+.pcard .rk{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+  color:#0b0d12;background:linear-gradient(90deg,#ff9a5a,#a774f0);padding:4px 10px;border-radius:20px;font-weight:700;z-index:2}
+.pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:2}
+.pcard .ov b{font-family:var(--disp);font-weight:800;font-size:40px;line-height:.8;color:var(--accent-lt)}
+.pcard .ov small{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em}
+.pcard .photo{height:230px;margin:38px 14px 0;border-radius:10px;border:1px dashed #3a4250;
+  display:flex;align-items:center;justify-content:center;color:#5c6472;font-size:12px;
+  background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116)}
+.pcard .nm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:28px;padding:12px 16px 2px}
+.pcard .club{font-size:12.5px;color:var(--dim);padding:0 16px}
+.pcard .stats{display:flex;gap:6px;padding:14px 16px 18px}
+.pcard .st{flex:1;text-align:center;background:rgba(7,9,13,.4);border:1px solid var(--line);border-radius:8px;padding:8px 4px}
+.pcard .st b{font-family:var(--disp);font-weight:800;font-size:22px;color:var(--bone);font-variant-numeric:tabular-nums}
+.pcard .st small{display:block;font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.06em;margin-top:2px}
+.vitrina{padding:0 16px 20px}
+.medals{display:flex;gap:10px;overflow-x:auto;padding:6px 0}
+.medal{flex-shrink:0;width:78px;text-align:center}
+.medal .m{width:64px;height:64px;margin:0 auto 6px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:28px;border:1px solid var(--line);background:linear-gradient(160deg,var(--panel2),var(--panel))}
+.medal .m.gold{border-color:var(--papa);box-shadow:0 0 14px rgba(232,177,62,.3)}
+.medal small{font-size:10px;color:var(--dim);line-height:1.2;display:block}
+
+/* sheet (context switch) */
+.sheet-bg{position:absolute;inset:0;z-index:40;background:rgba(6,7,10,.7);display:none;align-items:flex-end;backdrop-filter:blur(3px)}
+.sheet-bg.on{display:flex}
+.sheet{width:100%;background:var(--panel);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px 16px calc(var(--safe-b) + 16px)}
+.sheet h3{font-family:var(--disp);text-transform:uppercase;font-size:16px;color:var(--dim);margin-bottom:12px}
+.sheet .opt{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}
+.sheet .opt .hat{width:12px;height:12px;border-radius:50%}
+.sheet .opt b{font-weight:650} .sheet .opt .r{margin-left:auto;font-size:11px;color:var(--dim);font-family:var(--mono)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ENTRADA -->
+  <section class="screen on" id="s-entrada">
+    <div class="hero" style="background-image:url('assets/arena.jpg')"></div>
+    <div class="entry">
+      <div class="brand"><div class="k mono">GRUPO MAZI · BALONCESTO</div></div>
+      <div class="title-xl disp">LIGAS <span class="m">MAZI</span></div>
+      <p class="slogan">Organiza, juega, entrena y sigue tu liga. Donde cada canasta queda para siempre.</p>
+      <button class="btn" onclick="go('hub')">Entrar <span class="go">›</span></button>
+      <button class="btn ghost" onclick="go('hub')">Solo ver (invitado) <span class="go">›</span></button>
+    </div>
+  </section>
+
+  <!-- HUB -->
+  <section class="screen" id="s-hub">
+    <div class="topbar">
+      <div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Halcones U-14</b><span class="ch">Papá ▾</span></div>
+      <span class="coins">◈ 1,240</span>
+      <div class="avatar">🧢</div>
+    </div>
+    <div class="scroll">
+      <div class="pad">
+        <div class="eyebrow" style="margin:2px 2px 8px">Lo tuyo primero</div>
+        <div class="hero-card" onclick="go('vivo')">
+          <span class="live">EN VIVO</span>
+          <img src="assets/cancha.jpg" alt="">
+          <div class="grad"></div>
+          <div class="c">
+            <div class="lab">Tu hij@ está jugando · Q3</div>
+            <div class="t">Titanes 42 — 39 Halcones</div>
+            <div class="s">Diego lleva 6 pts · en cancha ahora</div>
+          </div>
+        </div>
+
+        <div class="h-row"><h2 class="disp">Jugar</h2></div>
+        <div class="tiles">
+          <div class="tile" onclick="go('ligas')"><span class="stripe" style="background:var(--liga)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i">🏆</div><div class="t">Mis ligas</div><div class="s">2 activas</div></div></div>
+          <div class="tile" onclick="go('vivo')"><span class="stripe" style="background:var(--mesa)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i">📺</div><div class="t">En vivo</div><div class="s">1 partido</div></div></div>
+          <div class="tile" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i">🃏</div><div class="t">Perfil</div><div class="s">Carta · Raro</div></div></div>
+          <div class="tile" onclick="toast('Tienda — próximamente')"><span class="stripe" style="background:var(--papa)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i">🛍️</div><div class="t">Tienda</div><div class="s">Mercancía</div></div></div>
+        </div>
+
+        <div class="h-row"><h2 class="disp">Próximos de Diego</h2><span class="more" onclick="go('rol')">Ver todos ›</span></div>
+        <div class="match"><div class="when">HOY<br>18:00</div><div class="vs">Titanes vs Halcones<small>Jornada 5 · Juvenil</small></div><span class="badge livep">EN VIVO</span></div>
+        <div class="match"><div class="when">SÁB<br>10:00</div><div class="vs">Halcones vs Pumas<small>Jornada 6</small></div><span class="badge next">SIGUE</span></div>
+      </div>
+    </div>
+    <div class="nav" id="nav"></div>
+  </section>
+
+  <!-- SELECTOR DE LIGA -->
+  <section class="screen" id="s-ligas">
+    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><b class="disp" style="font-size:20px">Mis ligas</b></div>
+    <div class="scroll"><div class="pad">
+      <div class="leaguerow" onclick="go('rol')"><div class="crest">escudo</div><div><div class="nm">Halcones U-14</div><div class="mt">Liga Municipal · Torneo Apertura</div></div><span class="hat">Papá</span></div>
+      <div class="leaguerow" onclick="go('hub')"><div class="crest">escudo</div><div><div class="nm">Liga Barrio Norte</div><div class="mt">Dominical · en curso</div></div><span class="hat" style="color:var(--publico)">Público</span></div>
+      <div class="h-row"><h2 class="disp" style="font-size:18px">Archivo</h2></div>
+      <div class="leaguerow" style="opacity:.6" onclick="toast('Liga archivada — solo lectura')"><div class="crest">escudo</div><div><div class="nm">Clausura 2025</div><div class="mt">Terminada · archivada</div></div><span class="hat" style="color:var(--dim)">Ver</span></div>
+      <div class="leaguerow create" onclick="toast('Crear liga — para representantes')">+ Crear una liga</div>
+    </div></div>
+    <div class="nav" id="nav2"></div>
+  </section>
+
+  <!-- HOME POR ROL (Papá) -->
+  <section class="screen" id="s-rol">
+    <div class="topbar">
+      <div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div>
+      <div class="avatar">🧢</div>
+    </div>
+    <div class="scroll"><div class="pad">
+      <div class="eyebrow" style="margin:2px 2px 8px">Itinerario de Diego</div>
+      <div class="match"><div class="when">HOY<br>18:00</div><div class="vs">vs Titanes<small>Jornada 5 · cancha 2</small></div><span class="badge livep">EN VIVO</span></div>
+      <div class="match"><div class="when">SÁB<br>10:00</div><div class="vs">vs Pumas<small>Jornada 6</small></div><span class="badge next">SIGUE</span></div>
+      <div class="match"><div class="when">MIÉ<br>19:00</div><div class="vs">vs Lobos<small>Jornada 7</small></div></div>
+      <div class="h-row"><h2 class="disp" style="font-size:18px">Cuadro del torneo</h2><span class="more" onclick="toast('Bracket — próximamente')">Bracket ›</span></div>
+      <div class="match" onclick="go('carta')"><div class="crest" style="width:40px;height:40px">foto</div><div class="vs">Diego G.<small>Base · #7 · Halcones</small></div><span class="badge next">TU HIJO</span></div>
+    </div></div>
+    <div class="nav" id="nav3"></div>
+  </section>
+
+  <!-- DÍA DE PARTIDO -->
+  <section class="screen" id="s-vivo">
+    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><b class="disp" style="font-size:18px">En vivo</b><span class="coins" style="color:var(--mesa)">● Q3 12:34</span></div>
+    <div class="scroll">
+      <div class="court">
+        <img src="assets/cancha.jpg" alt=""><div class="grad"></div>
+        <div class="board">
+          <div class="team"><div class="lg">escudo</div><div class="nm">TITANES</div><div class="sc">42</div></div>
+          <div class="mid"><div class="q">3er cuarto</div><div class="clk">12:34</div></div>
+          <div class="team"><div class="lg">escudo</div><div class="nm">HALCONES</div><div class="sc">39</div></div>
+        </div>
+        <div class="oncourt">
+          <span class="pl mine"><b>#7 Diego</b> 6 pts</span>
+          <span class="pl"><b>#4</b> 9 pts</span>
+          <span class="pl foul"><b>#11</b> 3 faltas</span>
+          <span class="pl"><b>#2</b> 6 pts</span>
+          <span class="pl"><b>#9</b> banca</span>
+        </div>
+      </div>
+      <div class="eyebrow" style="margin:4px 16px 8px">Notificaciones de Diego</div>
+      <div class="notifs">
+        <div class="nrow"><span class="tm">12:31</span><span>Diego <b>entró</b> a la cancha por #9</span></div>
+        <div class="nrow"><span class="tm">10:02</span><span>Diego anotó <b>+2</b> — lleva 6 pts</span></div>
+        <div class="nrow"><span class="tm">08:47</span><span>Diego <b>2ª falta</b> — cuidado</span></div>
+      </div>
+      <div class="watch">
+        <button onclick="toast('Repetición — cuando haya cámara')"><span class="i">⏮</span>Repetición</button>
+        <button onclick="toast('VAR — si la liga lo activa')"><span class="i">🎥</span>Ver VAR</button>
+        <button onclick="go('carta')"><span class="i">🃏</span>Su carta</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERFIL CARTA -->
+  <section class="screen" id="s-carta">
+    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><b class="disp" style="font-size:18px">Perfil</b><span class="coins" onclick="toast('Compartir carta')" style="cursor:pointer">↗ Presumir</span></div>
+    <div class="scroll">
+      <div class="cardwrap">
+        <div class="pcard">
+          <span class="rk">◆ RARO</span>
+          <div class="ov"><b>78</b><small>GENERAL</small></div>
+          <div class="photo">foto del jugador<br>(la sube el papá)</div>
+          <div class="nm">Diego "El Muro" G.</div>
+          <div class="club">Titanes Basketball Club · Juvenil Varonil · #7</div>
+          <div class="stats">
+            <div class="st"><b>11.4</b><small>PTS</small></div>
+            <div class="st"><b>6.1</b><small>REB</small></div>
+            <div class="st"><b>3.0</b><small>AST</small></div>
+            <div class="st"><b>2.2</b><small>FALTAS</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="vitrina">
+        <div class="h-row"><h2 class="disp" style="font-size:18px">Vitrina</h2><span class="more">Historia por equipo ›</span></div>
+        <div class="medals">
+          <div class="medal"><div class="m gold">🏆</div><small>Campeón Apertura</small></div>
+          <div class="medal"><div class="m gold">⭐</div><small>MVP jornada</small></div>
+          <div class="medal"><div class="m">🎯</div><small>Líder anotación</small></div>
+          <div class="medal"><div class="m">🛡️</div><small>Mejor defensa</small></div>
+          <div class="medal"><div class="m" style="opacity:.4">🔒</div><small>Bloqueada</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="nav" id="nav4"></div>
+  </section>
+
+  <!-- SHEET selector de contexto -->
+  <div class="sheet-bg" id="sheet" onclick="if(event.target.id==='sheet')closeSheet()">
+    <div class="sheet">
+      <h3>Con qué sombrero entras</h3>
+      <div class="opt" onclick="pickCtx('papa','Halcones U-14','Papá')"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="r">Halcones U-14</span></div>
+      <div class="opt" onclick="pickCtx('coach','Titanes JV','Coach')"><span class="hat" style="background:var(--coach)"></span><b>Coach</b><span class="r">Titanes JV</span></div>
+      <div class="opt" onclick="pickCtx('publico','Liga Barrio Norte','Público')"><span class="hat" style="background:var(--publico)"></span><b>Público</b><span class="r">Barrio Norte</span></div>
+      <div class="opt" onclick="pickCtx('jugador','Liga Vets','Jugador')"><span class="hat" style="background:var(--jugador)"></span><b>Jugador</b><span class="r">Liga Vets</span></div>
+    </div>
+  </div>
+
+  <div id="toast" style="position:absolute;left:16px;right:16px;bottom:76px;z-index:50;display:none"></div>
+</div>
+
+<script>
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('s-'+id).classList.add('on');
+  const sc=document.querySelector('#s-'+id+' .scroll'); if(sc)sc.scrollTop=0;
+  buildNav(id);
+}
+const NAV=[['hub','🏠','Inicio'],['ligas','🏆','Ligas'],['vivo','📺','En vivo'],['carta','🃏','Perfil'],['tienda','🛍️','Tienda']];
+function buildNav(cur){
+  document.querySelectorAll('.nav').forEach(nav=>{
+    nav.innerHTML='';
+    NAV.forEach(([id,ic,lab])=>{
+      const b=document.createElement('button');
+      b.className=(id===cur?'on ':'')+(id==='vivo'?'hot':'');
+      b.innerHTML='<span class="i">'+ic+'</span>'+lab;
+      b.onclick=()=>{ if(id==='tienda')return toast('Tienda — próximamente'); go(id); };
+      nav.appendChild(b);
+    });
+  });
+}
+function openSheet(){document.getElementById('sheet').classList.add('on');}
+function closeSheet(){document.getElementById('sheet').classList.remove('on');}
+function pickCtx(hat,liga,rol){
+  const col={papa:'var(--papa)',coach:'var(--coach)',publico:'var(--publico)',jugador:'var(--jugador)'}[hat];
+  document.querySelectorAll('.ctx').forEach(c=>{
+    c.querySelector('.hat').style.background=col;
+    c.querySelector('b').textContent=liga;
+    c.querySelector('.ch').textContent=rol+' ▾';
+  });
+  closeSheet(); toast('Ahora entras como '+rol+' · '+liga);
+}
+let tt;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';
+  t.style.display='block'; clearTimeout(tt); tt=setTimeout(()=>t.style.display='none',2200);
+}
+buildNav('hub');
+</script>
+</body>
+</html>
