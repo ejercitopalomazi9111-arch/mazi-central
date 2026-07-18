@@ -359,6 +359,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .fc-cmp button.hot{border-color:var(--accent);color:var(--accent-lt)}
 /* franja de rareza sobre la carta */
 .pcard .rk.rare{background:linear-gradient(90deg,#8fd0ff,#a774f0)}
+/* avisos efímeros: salen la primera vez, unos segundos, y se cierran solos */
+.hint{position:relative;padding-right:34px;overflow:hidden}
+.hint-x{position:absolute;top:7px;right:8px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(255,255,255,.1);color:#c9cfd9;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.hint-x:active{background:rgba(255,255,255,.2)}
 
 /* ===== MARCA: logo pelota con alas + nombre en todos lados ===== */
 .logo-hero{margin-bottom:16px;filter:drop-shadow(0 8px 22px rgba(239,122,53,.4))}
@@ -710,8 +714,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <input class="field" placeholder="Nombre completo del jugador">
       <div class="eyebrow" style="margin:8px 0 2px">CURP <span style="color:var(--dim)">— llave interna, se escribe una vez</span></div>
       <input class="field masked" placeholder="GUGD•••••••••••B2">
-      <div class="check" style="background:rgba(84,204,138,.06);border-color:var(--good)"><span class="box" style="border-color:var(--good);color:var(--good);pointer-events:none">✓</span>
-        <span><b>El CURP nunca se muestra ni se puede buscar.</b> Sirve solo por dentro para que no haya dos "Diegos" duplicados. Ni el público, ni otros papás, ni otras ligas lo ven — nadie puede usarlo para saber dónde juega tu hij@.</span></div>
+      <div class="check hint" data-hint="curp" style="background:rgba(84,204,138,.06);border-color:var(--good)"><span class="box" style="border-color:var(--good);color:var(--good);pointer-events:none">✓</span>
+        <span><b>El CURP es privado.</b> Se usa solo por dentro para que las estadísticas de tu hij@ siempre sean suyas y no se confundan con las de otro jugador. Queda guardado bajo llave: no aparece en su perfil ni se puede buscar.</span></div>
       <input class="field" placeholder="Categoría (ej. Juvenil Varonil)">
       <div class="check"><span class="box" onclick="this.textContent=this.textContent?'':'✓'"></span>
         <span><b>Responsiva de los padres.</b> Autorizo la participación y la <b>conservación de sus datos y estadísticas</b> a largo plazo. Sin esto, el jugador queda incompleto y no se puede alinear.</span></div>
@@ -851,6 +855,7 @@ function render(id){
   if(id==='marcador')drawCourt();
   if(id==='mesa')buildMesa();
   if(id==='perillas')syncCourtKnob();
+  requestAnimationFrame(()=>armHints(el));
 }
 window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop()); });
 const NAV=[['hub','home','Inicio'],['ligas','trophy','Ligas'],['marcador','live','En vivo'],['carta','card','Perfil'],['tienda','bag','Tienda']];
@@ -1048,6 +1053,23 @@ function buildLineup(){
     b.appendChild(d);
   });
 }
+/* ---- avisos efímeros: primera vez, unos segundos, y se cierran solos ---- */
+function hintId(el){ const d=el.getAttribute('data-hint'); if(d)return d; const t=(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,90); let h=0; for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0; return 'x'+(h>>>0); }
+function dismissHint(h,id){ try{localStorage.setItem('lm_hint_'+id,'1');}catch(e){} clearTimeout(h._t);
+  h.style.transition='opacity .4s ease, max-height .4s ease, margin .4s ease, padding .4s ease, border-width .4s ease';
+  h.style.maxHeight=h.offsetHeight+'px'; requestAnimationFrame(()=>{ h.style.opacity='0'; h.style.maxHeight='0'; h.style.marginTop='0'; h.style.marginBottom='0'; h.style.paddingTop='0'; h.style.paddingBottom='0'; h.style.borderWidth='0'; });
+  setTimeout(()=>h.remove(),440);
+}
+function armHints(scope){
+  (scope||document).querySelectorAll('.stratnote, .hint').forEach(h=>{
+    const id=hintId(h);
+    if(localStorage.getItem('lm_hint_'+id)){ h.remove(); return; }   // ya visto: no vuelve
+    if(h.offsetParent===null) return;                                 // no visible aún (pestaña oculta)
+    if(h.dataset.armed) return; h.dataset.armed='1';
+    if(!h.querySelector('.hint-x')){ const x=document.createElement('button'); x.className='hint-x'; x.setAttribute('aria-label','cerrar'); x.textContent='×'; x.onclick=(e)=>{e.stopPropagation();dismissHint(h,id);}; h.appendChild(x); }
+    h._t=setTimeout(()=>dismissHint(h,id),6500);
+  });
+}
 /* ---- marca en todos lados ---- */
 function brandEl(cls){const s=document.createElement('span');s.className='brandmini'+(cls?' '+cls:'');s.innerHTML='<svg class="ic"><use href="#ic-logo"/></svg><b>LIGAS MAZI</b>';return s;}
 function footEl(){const d=document.createElement('div');d.className='brandfoot';d.innerHTML='<svg class="ic"><use href="#ic-logo"/></svg> Ligas Mazi · Grupo Mazi';return d;}
@@ -1088,6 +1110,7 @@ function fcTab(el,which){
   [...el.parentElement.children].forEach(t=>t.classList.remove('on')); el.classList.add('on');
   document.querySelectorAll('#s-carta .fc-panel').forEach(p=>p.classList.remove('on'));
   document.getElementById('fc-'+which).classList.add('on');
+  requestAnimationFrame(()=>armHints(document.getElementById('s-carta')));
 }
 function attrWhy(name,why){ toast('<b style="color:var(--accent-lt)">'+name+'</b><br>'+why); }
 function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contains('on');document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';setCourtStyle(on?'realista':'minimalista');toast('La liga fijó la cancha: '+(on?'realista (foto)':'minimalista (líneas)'));}
