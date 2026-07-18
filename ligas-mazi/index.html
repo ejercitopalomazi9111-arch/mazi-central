@@ -53,7 +53,7 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 .topbar .ttl{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:19px}
 .avatar{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:15px}
 .backbtn{background:var(--panel);border:1px solid var(--line);color:var(--bone);width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0}
-.nav{flex-shrink:0;display:flex;background:var(--ink2);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
+.nav{position:relative;z-index:6;flex-shrink:0;display:flex;background:var(--ink2);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
 .nav button{flex:1;background:none;border:none;color:var(--dim);padding:9px 0 8px;font-family:var(--body);font-size:10.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .nav button .i{font-size:20px;line-height:1}
 .nav button.on{color:var(--accent-lt)} .nav button.hot .i{filter:drop-shadow(0 0 8px var(--mesa))}
@@ -234,6 +234,65 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 .avatar .ic{width:19px;height:19px;stroke-width:1.6}
 .medal .m .ic{width:30px;height:30px;stroke-width:1.5}
 .var-viewport .ico .ic{width:44px;height:44px;stroke-width:1.3}
+
+/* ============ MENÚ PRINCIPAL ESTILO NBA 2K ============ */
+#s-hub{background:#05070a}
+.arena{position:absolute;inset:0;z-index:0;overflow:hidden}
+.arena img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.34) saturate(.9) contrast(1.05);transform:scale(1.06)}
+.arena .vig{position:absolute;inset:0;background:
+  radial-gradient(120% 80% at 50% -10%,rgba(239,122,53,.16),transparent 55%),
+  radial-gradient(100% 60% at 50% 120%,rgba(167,116,240,.14),transparent 60%),
+  linear-gradient(180deg,rgba(5,7,10,.55),rgba(5,7,10,.35) 30%,rgba(5,7,10,.82) 78%,#05070a)}
+.arena .beam{position:absolute;top:-20%;left:50%;width:140%;height:60%;transform:translateX(-50%);
+  background:conic-gradient(from 180deg at 50% 0%,transparent 42%,rgba(255,255,255,.05) 50%,transparent 58%);pointer-events:none}
+.hub-wrap{position:relative;z-index:2;display:flex;flex-direction:column;flex:1;min-height:0}
+.hub-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+.hub-scroll::-webkit-scrollbar{width:0}
+
+/* barra de modos (tabs superiores 2K) */
+.mode-rail{display:flex;gap:8px;overflow-x:auto;padding:4px 16px 12px;scroll-snap-type:x proximity}
+.mode-rail::-webkit-scrollbar{height:0}
+.mrchip{flex-shrink:0;scroll-snap-align:start;display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:30px;
+  background:rgba(12,15,20,.66);border:1px solid var(--line);color:#aeb6c4;cursor:pointer;backdrop-filter:blur(8px);
+  font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:13px;letter-spacing:.04em;white-space:nowrap;transition:.18s}
+.mrchip .ic{width:16px;height:16px;stroke-width:1.8}
+.mrchip.on{color:#05070a;background:linear-gradient(180deg,var(--accent-lt),var(--accent));border-color:transparent;box-shadow:0 6px 18px rgba(239,122,53,.4)}
+
+/* carrusel grande de paneles de modo */
+.mode-view{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.mode-carousel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 16px 6px;-webkit-overflow-scrolling:touch}
+.mode-carousel::-webkit-scrollbar{height:0}
+.mode-panel{position:relative;flex-shrink:0;scroll-snap-align:center;width:82%;max-width:400px;height:clamp(340px,54vh,440px);
+  border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#0c0f15;cursor:pointer;
+  box-shadow:0 18px 40px rgba(0,0,0,.5);transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease;transform:scale(.93);opacity:.62}
+.mode-panel.active{transform:scale(1);opacity:1;border-color:rgba(255,255,255,.22);box-shadow:0 26px 60px rgba(0,0,0,.62)}
+.mode-panel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.52) saturate(1.02)}
+.mode-panel .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,10,.35) 0%,transparent 34%,rgba(5,7,10,.5) 62%,rgba(5,7,10,.96) 100%)}
+.mode-panel .stripe{position:absolute;top:0;left:0;right:0;height:4px;z-index:3}
+.mode-panel .wm{position:absolute;top:14px;right:16px;z-index:3;opacity:.9}
+.mode-panel .wm .ic{width:34px;height:34px;stroke-width:1.4;filter:drop-shadow(0 2px 8px rgba(0,0,0,.6))}
+.mode-panel .live{position:absolute;top:16px;left:16px;z-index:3;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#fff;background:var(--mesa);padding:4px 10px;border-radius:20px}
+.mode-panel .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:middle;animation:pulse 1.2s infinite}
+.mode-panel .body{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:20px 20px 22px}
+.mode-panel .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent-lt);margin-bottom:5px}
+.mode-panel .t{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:clamp(30px,9vw,42px);line-height:.9;text-shadow:0 3px 18px rgba(0,0,0,.6)}
+.mode-panel .s{font-size:13px;color:#d3d9e2;margin-top:8px;max-width:30ch}
+.mode-panel .enter{display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-family:var(--disp);text-transform:uppercase;
+  font-weight:800;font-size:14px;letter-spacing:.05em;color:#05070a;background:#fff;padding:9px 16px;border-radius:6px}
+.mode-panel:not(.active) .body .enter,.mode-panel:not(.active) .body .s{opacity:0;transition:opacity .2s}
+.mode-panel .enter .ic{width:15px;height:15px;stroke-width:2.4}
+.mode-dots{display:flex;justify-content:center;gap:7px;padding:12px 0 6px}
+.mode-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);transition:.2s}
+.mode-dots i.on{background:var(--accent-lt);width:22px;border-radius:6px}
+
+/* tira inferior: partido en vivo compacto */
+.hub-live{margin:6px 16px calc(var(--safe-b) + 10px);display:flex;align-items:center;gap:12px;
+  background:linear-gradient(90deg,rgba(236,90,69,.14),rgba(12,15,20,.6));border:1px solid var(--mesa);border-radius:12px;padding:11px 14px;cursor:pointer;backdrop-filter:blur(8px)}
+.hub-live .dot{width:8px;height:8px;border-radius:50%;background:var(--mesa);flex-shrink:0;animation:pulse 1.2s infinite}
+.hub-live .sc{font-family:var(--disp);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
+.hub-live .mt{font-size:11px;color:#cfd5df} .hub-live .mt b{color:#fff;font-weight:700}
+.hub-live .go{margin-left:auto;color:var(--accent-lt);font-family:var(--disp);font-weight:800;font-size:13px}
+
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -282,33 +341,27 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
     </div>
   </section>
 
-  <!-- HUB -->
+  <!-- HUB — menú principal estilo NBA 2K -->
   <section class="screen" id="s-hub">
-    <div class="topbar">
-      <div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Halcones U-14</b><span class="ch">Papá ▾</span></div>
-      <span class="coins">◈ 1,240</span><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div>
+    <div class="arena"><img src="assets/arena.jpg" alt=""><div class="beam"></div><div class="vig"></div></div>
+    <div class="hub-wrap">
+      <div class="topbar">
+        <div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Halcones U-14</b><span class="ch">Papá ▾</span></div>
+        <span class="coins">◈ 1,240</span><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div>
+      </div>
+      <div class="hub-scroll">
+        <div class="mode-rail" id="modeRail"></div>
+        <div class="mode-view">
+          <div class="mode-carousel" id="modeCarousel"></div>
+          <div class="mode-dots" id="modeDots"></div>
+        </div>
+        <div class="hub-live" onclick="go('marcador')">
+          <span class="dot"></span>
+          <div><div class="sc">Titanes 42 — 39 Halcones</div><div class="mt">Q3 · <b>Diego</b> lleva 6 pts · en cancha</div></div>
+          <span class="go">VER ›</span>
+        </div>
+      </div>
     </div>
-    <div class="scroll"><div class="pad">
-      <div class="eyebrow" style="margin:2px 2px 8px">Lo tuyo primero</div>
-      <div class="hero-card" onclick="go('marcador')">
-        <span class="badge-live">EN VIVO</span><img src="assets/cancha.jpg" alt=""><div class="grad"></div>
-        <div class="c"><div class="lab">Tu hij@ está jugando · Q3</div><div class="t">Titanes 42 — 39 Halcones</div><div class="s">Diego lleva 6 pts · en cancha ahora</div></div>
-      </div>
-      <div class="h-row"><h2 class="disp">Jugar</h2></div>
-      <div class="tiles">
-        <div class="tile" onclick="go('ligas')"><span class="stripe" style="background:var(--liga)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-trophy"/></svg></div><div class="t">Mis ligas</div><div class="s">2 activas</div></div></div>
-        <div class="tile" onclick="go('marcador')"><span class="stripe" style="background:var(--mesa)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-live"/></svg></div><div class="t">En vivo</div><div class="s">1 partido</div></div></div>
-        <div class="tile" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-card"/></svg></div><div class="t">Perfil</div><div class="s">Carta · Raro</div></div></div>
-        <div class="tile" onclick="go('tienda')"><span class="stripe" style="background:var(--papa)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-bag"/></svg></div><div class="t">Tienda</div><div class="s">Mercancía</div></div></div>
-      </div>
-      <div class="h-row"><h2 class="disp">Zonas</h2><span class="dim" style="margin-left:auto;font-size:11px">demo · toca para entrar</span></div>
-      <div class="tiles">
-        <div class="tile" onclick="go('vestidor')"><span class="stripe" style="background:var(--coach)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-clipboard"/></svg></div><div class="t">Coach</div><div class="s">Vestidor + tácticas</div></div></div>
-        <div class="tile" onclick="go('liga')"><span class="stripe" style="background:var(--liga)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-gear"/></svg></div><div class="t">Liga</div><div class="s">Admin + perillas</div></div></div>
-        <div class="tile" onclick="go('mesa')"><span class="stripe" style="background:var(--mesa)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-pencil"/></svg></div><div class="t">Mesa</div><div class="s">Anotador</div></div></div>
-        <div class="tile" onclick="go('publico')"><span class="stripe" style="background:var(--publico)"></span><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-eye"/></svg></div><div class="t">Público</div><div class="s">Solo marcadores</div></div></div>
-      </div>
-    </div></div>
     <div class="nav" data-nav></div>
   </section>
 
@@ -589,6 +642,7 @@ function go(id){
   const el=document.getElementById('s-'+id); el.classList.add('on');
   const sc=el.querySelector('.scroll'); if(sc)sc.scrollTop=0;
   buildNav(id);
+  if(id==='hub')buildModes();
   if(id==='marcador')drawCourt();
   if(id==='mesa')buildMesa();
   if(id==='perillas')syncCourtKnob();
@@ -604,6 +658,71 @@ function buildNav(cur){
       b.onclick=()=>go(id); nav.appendChild(b);
     });
   });
+}
+/* ---- menú principal estilo NBA 2K: barra de modos + carrusel de paneles ---- */
+const MODES=[
+  {id:'marcador', k:'En vivo ahora',  t:'Jugar ya',  s:'Diego está en cancha · Titanes vs Halcones · Q3', art:'accion.jpg', c:'--mesa',    ic:'live',      short:'Jugar', live:true},
+  {id:'ligas',    k:'Temporada',      t:'Mis ligas', s:'2 ligas activas · Torneo Apertura en curso',        art:'arena.jpg',  c:'--liga',    ic:'trophy',    short:'Ligas'},
+  {id:'carta',    k:'Tu jugador',     t:'Mi carta',  s:'Diego "El Muro" · Raro · 78 GENERAL',                art:'cancha.jpg', c:'--jugador', ic:'card',      short:'Carta'},
+  {id:'vestidor', k:'Coach',          t:'Vestidor',  s:'Roster, pizarrón táctico y estrategias',             art:'accion.jpg', c:'--coach',   ic:'clipboard', short:'Coach'},
+  {id:'liga',     k:'Organizador',    t:'Mi liga',   s:'12 equipos · calendario, resultados y perillas',     art:'arena.jpg',  c:'--liga',    ic:'gear',      short:'Liga'},
+  {id:'publico',  k:'Afición',        t:'Público',   s:'Marcadores en vivo y tabla de posiciones',           art:'arena.jpg',  c:'--publico', ic:'eye',       short:'Público'},
+  {id:'tienda',   k:'Mercancía',      t:'Tienda',    s:'Jerseys, stickers y coleccionables del club',        art:'cancha.jpg', c:'--papa',    ic:'bag',       short:'Tienda'},
+];
+let modeIdx=0;
+function buildModes(){
+  const rail=document.getElementById('modeRail'), car=document.getElementById('modeCarousel'), dots=document.getElementById('modeDots');
+  rail.innerHTML=''; car.innerHTML=''; dots.innerHTML='';
+  MODES.forEach((m,i)=>{
+    const chip=document.createElement('button');
+    chip.className='mrchip'+(i===modeIdx?' on':'');
+    chip.innerHTML='<svg class="ic"><use href="#ic-'+m.ic+'"/></svg>'+m.short;
+    chip.onclick=()=>snapMode(i);
+    rail.appendChild(chip);
+
+    const p=document.createElement('div');
+    p.className='mode-panel'+(i===modeIdx?' active':'');
+    p.innerHTML=`<img src="assets/${m.art}" alt=""><div class="grad"></div>
+      <span class="stripe" style="background:var(${m.c})"></span>
+      ${m.live?'<span class="live">EN VIVO</span>':''}
+      <span class="wm" style="color:var(${m.c})"><svg class="ic"><use href="#ic-${m.ic}"/></svg></span>
+      <div class="body">
+        <div class="k">${m.k}</div>
+        <div class="t">${m.t}</div>
+        <div class="s">${m.s}</div>
+        <span class="enter">Entrar <svg class="ic"><use href="#ic-share"/></svg></span>
+      </div>`;
+    p.querySelector('.enter').innerHTML='Entrar <span style="font-family:var(--disp);font-weight:800">›</span>';
+    p.onclick=()=>{ if(i===modeIdx) go(m.id); else snapMode(i); };
+    car.appendChild(p);
+
+    const d=document.createElement('i'); if(i===modeIdx)d.className='on'; dots.appendChild(d);
+  });
+  requestAnimationFrame(()=>centerMode(modeIdx,false));
+}
+function centerMode(i,smooth){
+  const car=document.getElementById('modeCarousel'); const p=car.children[i]; if(!p)return;
+  const left=p.offsetLeft-(car.clientWidth-p.clientWidth)/2;
+  car.scrollTo({left, behavior:smooth?'smooth':'auto'});
+}
+function setActiveMode(i){
+  if(i===modeIdx)return; modeIdx=i;
+  const car=document.getElementById('modeCarousel'), rail=document.getElementById('modeRail'), dots=document.getElementById('modeDots');
+  [...car.children].forEach((p,k)=>p.classList.toggle('active',k===i));
+  [...rail.children].forEach((c,k)=>c.classList.toggle('on',k===i));
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
+  const chip=rail.children[i]; if(chip)chip.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
+}
+function snapMode(i){ setActiveMode(i); centerMode(i,true); }
+let modeScrollT;
+function onModeScroll(){
+  clearTimeout(modeScrollT);
+  modeScrollT=setTimeout(()=>{
+    const car=document.getElementById('modeCarousel'); const mid=car.scrollLeft+car.clientWidth/2;
+    let best=0,bd=1e9;
+    [...car.children].forEach((p,k)=>{const c=p.offsetLeft+p.clientWidth/2;const d=Math.abs(c-mid);if(d<bd){bd=d;best=k;}});
+    setActiveMode(best);
+  },90);
 }
 /* ---- cancha desde arriba: la LIGA elige realista (foto) o minimalista (líneas) ---- */
 function courtStyle(){ try{return localStorage.getItem('lm_court')||'realista';}catch(e){return 'realista';} }
@@ -653,6 +772,8 @@ function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contain
 function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)return;const on=courtStyle()==='realista';k.classList.toggle('on',on);document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';}
 let tt;function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2200);}
 buildNav('hub');
+document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
+buildModes();
 </script>
 </body>
 </html>
