@@ -293,6 +293,52 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
 .hub-live .mt{font-size:11px;color:#cfd5df} .hub-live .mt b{color:#fff;font-weight:700}
 .hub-live .go{margin-left:auto;color:var(--accent-lt);font-family:var(--disp);font-weight:800;font-size:13px}
 
+/* ============ FICHA DE JUGADOR ESTILO FC MOBILE ============ */
+.fc-tabs{display:flex;margin:8px 16px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.fc-tabs::-webkit-scrollbar{height:0}
+.fctab{flex:1;min-width:max-content;padding:11px 16px;text-align:center;cursor:pointer;white-space:nowrap;
+  font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--dim);border-bottom:2px solid transparent}
+.fctab.on{color:var(--bone);border-bottom-color:var(--accent)}
+.fc-panel{padding:14px 16px 20px;display:none}
+.fc-panel.on{display:block;animation:fade .25s ease}
+.fc-rating{display:flex;gap:14px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.fc-rating .grl{text-align:center;flex-shrink:0;padding-right:14px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.fc-rating .grl b{font-family:var(--disp);font-weight:800;font-size:44px;line-height:.8;color:var(--accent-lt)}
+.fc-rating .grl small{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.14em;margin-top:3px}
+.fc-rating .grl .pos{margin-top:8px;font-family:var(--disp);font-weight:800;font-size:14px;color:var(--bone);background:rgba(255,255,255,.08);border-radius:5px;padding:2px 0}
+.fc-attrs{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:9px 16px;align-content:center}
+.fc-attr{display:flex;align-items:center;gap:9px}
+.fc-attr .v{font-family:var(--disp);font-weight:800;font-size:18px;font-variant-numeric:tabular-nums;width:30px;text-align:right}
+.fc-attr .n{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#aeb6c4}
+.v.hi{color:var(--good)} .v.mid{color:var(--papa)} .v.lo{color:var(--crit)}
+.fc-meta{display:flex;gap:10px;margin-bottom:12px}
+.fc-meta .box{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.fc-meta .box .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.fc-meta .stars{color:var(--papa);letter-spacing:2px;font-size:13px}
+.fc-meta .stars .off{color:var(--line)}
+.fc-train .bar{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden;margin-top:7px}
+.fc-train .bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent-lt))}
+.fc-train .lvl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:#c9cfd9;margin-top:6px}
+.fc-rank{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.rank-pip{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
+.rank-pip.cur{color:#0b0d12;font-weight:700;border-color:transparent}
+.attrbar{margin-bottom:11px}
+.attrbar .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.attrbar .top .n{font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:#c9cfd9}
+.attrbar .top .v{font-family:var(--disp);font-weight:800;font-size:16px}
+.attrbar .track{height:7px;border-radius:5px;background:var(--panel2);overflow:hidden}
+.attrbar .track i{display:block;height:100%;border-radius:5px}
+.histrow{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:8px}
+.histrow .yr{font-family:var(--mono);font-size:11px;color:var(--accent-lt);width:64px;flex-shrink:0}
+.histrow .tm{font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:15px}
+.histrow .tm small{display:block;font-family:var(--body);font-weight:400;text-transform:none;font-size:11px;color:var(--dim)}
+.histrow .badge{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--papa);border:1px solid var(--line);border-radius:20px;padding:3px 8px}
+.fc-cmp{display:flex;gap:8px;margin:2px 16px 16px}
+.fc-cmp button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--bone);border-radius:10px;padding:12px;font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:13px;letter-spacing:.03em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.fc-cmp button .ic{width:16px;height:16px}
+.fc-cmp button.hot{border-color:var(--accent);color:var(--accent-lt)}
+/* franja de rareza sobre la carta */
+.pcard .rk.rare{background:linear-gradient(90deg,#8fd0ff,#a774f0)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -598,24 +644,85 @@ body{background:var(--ink);color:var(--bone);font-family:var(--body);overflow:hi
     <div class="nav" data-nav></div>
   </section>
 
-  <!-- PERFIL CARTA -->
+  <!-- PERFIL CARTA — ficha estilo FC Mobile -->
   <section class="screen" id="s-carta">
-    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><span class="ttl">Perfil</span><span class="coins" onclick="toast('Compartir carta con amigos')" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
+    <div class="topbar"><button class="backbtn" onclick="go('hub')">‹</button><span class="ttl">Ficha del jugador</span><span class="coins" onclick="toast('Compartir carta con amigos')" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
     <div class="scroll">
       <div class="pcard">
-        <span class="rk">◆ RARO</span><div class="ov"><b>78</b><small>GENERAL</small></div>
+        <span class="rk" style="background:linear-gradient(90deg,#e8b13e,#ff9a5a)">◆ ORO</span><div class="ov"><b>78</b><small>GENERAL</small></div>
         <div class="photo">foto del jugador<br>(la sube el papá)</div>
         <div class="nm">Diego "El Muro" G.</div>
         <div class="club">Titanes Basketball Club · Juvenil Varonil · #7</div>
         <div class="stats"><div class="st"><b>11.4</b><small>PTS</small></div><div class="st"><b>6.1</b><small>REB</small></div><div class="st"><b>3.0</b><small>AST</small></div><div class="st"><b>2.2</b><small>FALTAS</small></div></div>
       </div>
-      <div class="h-row" style="padding:0 16px"><h2 class="disp" style="font-size:18px">Vitrina</h2><span class="more">Historia por equipo ›</span></div>
-      <div class="medals">
-        <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-trophy"/></svg></div><small>Campeón Apertura</small></div>
-        <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-star"/></svg></div><small>MVP jornada</small></div>
-        <div class="medal"><div class="m"><svg class="ic"><use href="#ic-target"/></svg></div><small>Líder anotación</small></div>
-        <div class="medal"><div class="m"><svg class="ic"><use href="#ic-shield"/></svg></div><small>Mejor defensa</small></div>
-        <div class="medal"><div class="m" style="opacity:.4"><svg class="ic"><use href="#ic-lock"/></svg></div><small>Bloqueada</small></div>
+      <div class="fc-cmp">
+        <button class="hot" onclick="toast('Comparar con otra carta — elige un jugador')"><svg class="ic"><use href="#ic-people"/></svg> Comparar</button>
+        <button onclick="toast('Subida de rango: junta 3 cartas Oro para pasar a Esmeralda')"><svg class="ic"><use href="#ic-star"/></svg> Subir de rango</button>
+      </div>
+      <div class="fc-tabs">
+        <div class="fctab on" onclick="fcTab(this,'resumen')">Resumen</div>
+        <div class="fctab" onclick="fcTab(this,'atributos')">Atributos</div>
+        <div class="fctab" onclick="fcTab(this,'vitrina')">Vitrina</div>
+        <div class="fctab" onclick="fcTab(this,'historial')">Historial</div>
+      </div>
+
+      <div class="fc-panel on" id="fc-resumen">
+        <div class="fc-rating">
+          <div class="grl"><b>78</b><small>GENERAL</small><span class="pos">BASE</span></div>
+          <div class="fc-attrs">
+            <div class="fc-attr"><span class="v mid">74</span><span class="n">Tiro</span></div>
+            <div class="fc-attr"><span class="v mid">80</span><span class="n">Manejo</span></div>
+            <div class="fc-attr"><span class="v mid">77</span><span class="n">Pase</span></div>
+            <div class="fc-attr"><span class="v hi">88</span><span class="n">Defensa</span></div>
+            <div class="fc-attr"><span class="v mid">82</span><span class="n">Físico</span></div>
+            <div class="fc-attr"><span class="v mid">79</span><span class="n">IQ</span></div>
+          </div>
+        </div>
+        <div class="fc-meta">
+          <div class="box"><div class="k">Resistencia</div><div class="stars">★★★★<span class="off">★</span></div></div>
+          <div class="box"><div class="k">Muñeca</div><div class="stars">★★★★<span class="off">★</span></div></div>
+        </div>
+        <div class="card fc-train">
+          <div class="kick">Nivel de entrenamiento</div>
+          <div class="bar"><i style="width:83%"></i></div>
+          <div class="lvl"><span>Nivel 25 / 30</span><span>Falta poco para el máximo</span></div>
+          <div class="fc-rank">
+            <span class="rank-pip">Bronce</span><span class="rank-pip">Plata</span>
+            <span class="rank-pip cur" style="background:linear-gradient(90deg,#e8b13e,#ff9a5a)">Oro</span>
+            <span class="rank-pip">Esmeralda</span><span class="rank-pip">Zafiro</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fc-panel" id="fc-atributos">
+        <div class="attrbar"><div class="top"><span class="n">Tiro exterior</span><span class="v" style="color:var(--papa)">71</span></div><div class="track"><i style="width:71%;background:var(--papa)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">Tiro medio</span><span class="v" style="color:var(--papa)">76</span></div><div class="track"><i style="width:76%;background:var(--papa)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">Bandeja / entrada</span><span class="v" style="color:var(--good)">85</span></div><div class="track"><i style="width:85%;background:var(--good)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">Bote / manejo</span><span class="v" style="color:var(--papa)">80</span></div><div class="track"><i style="width:80%;background:var(--papa)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">Pase / visión</span><span class="v" style="color:var(--papa)">77</span></div><div class="track"><i style="width:77%;background:var(--papa)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">Defensa perimetral</span><span class="v" style="color:var(--good)">88</span></div><div class="track"><i style="width:88%;background:var(--good)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">Rebote</span><span class="v" style="color:var(--good)">84</span></div><div class="track"><i style="width:84%;background:var(--good)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">Físico / resistencia</span><span class="v" style="color:var(--papa)">82</span></div><div class="track"><i style="width:82%;background:var(--papa)"></i></div></div>
+        <div class="attrbar"><div class="top"><span class="n">IQ de juego</span><span class="v" style="color:var(--papa)">79</span></div><div class="track"><i style="width:79%;background:var(--papa)"></i></div></div>
+        <div class="stratnote" style="border-left-color:var(--jugador)">Los atributos los mueve el <b>desempeño real</b> capturado en la mesa, no una compra. En formativas suben lento y nunca bajan por una mala noche.</div>
+      </div>
+
+      <div class="fc-panel" id="fc-vitrina">
+        <div class="medals" style="padding:2px 0 8px">
+          <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-trophy"/></svg></div><small>Campeón Apertura</small></div>
+          <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-star"/></svg></div><small>MVP jornada</small></div>
+          <div class="medal"><div class="m"><svg class="ic"><use href="#ic-target"/></svg></div><small>Líder anotación</small></div>
+          <div class="medal"><div class="m"><svg class="ic"><use href="#ic-shield"/></svg></div><small>Mejor defensa</small></div>
+          <div class="medal"><div class="m" style="opacity:.4"><svg class="ic"><use href="#ic-lock"/></svg></div><small>Bloqueada</small></div>
+        </div>
+        <div class="stratnote" style="border-left-color:var(--papa)">Cada trofeo es un <b>momento guardado para siempre</b>. La vitrina no se borra aunque cambie de equipo o de liga.</div>
+      </div>
+
+      <div class="fc-panel" id="fc-historial">
+        <div class="histrow"><span class="yr">2025 —</span><div class="tm">Titanes BC<small>Juvenil Varonil · #7 · actual</small></div><span class="badge">Titular</span></div>
+        <div class="histrow"><span class="yr">2023–25</span><div class="tm">Halcones U-12<small>Infantil · #11</small></div><span class="badge">Campeón</span></div>
+        <div class="histrow"><span class="yr">2022</span><div class="tm">Escuela Municipal<small>Semillero · debut</small></div><span class="badge">Novato</span></div>
+        <div class="stratnote" style="border-left-color:var(--jugador)">Un <b>solo jugador, una identidad</b> anclada al CURP: sus números lo siguen de equipo en equipo y de liga en liga, toda su carrera.</div>
       </div>
     </div>
     <div class="nav" data-nav></div>
@@ -768,6 +875,11 @@ function pickCtx(hat,liga,rol,dest){
   closeSheet();toast('Entras como '+rol+' · '+liga);if(dest)go(dest);
 }
 function tk(el){el.classList.toggle('on');}
+function fcTab(el,which){
+  [...el.parentElement.children].forEach(t=>t.classList.remove('on')); el.classList.add('on');
+  document.querySelectorAll('#s-carta .fc-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('fc-'+which).classList.add('on');
+}
 function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contains('on');document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';setCourtStyle(on?'realista':'minimalista');toast('La liga fijó la cancha: '+(on?'realista (foto)':'minimalista (líneas)'));}
 function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)return;const on=courtStyle()==='realista';k.classList.toggle('on',on);document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';}
 let tt;function toast(msg){const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2200);}
