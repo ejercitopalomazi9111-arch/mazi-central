@@ -425,6 +425,46 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   #s-marcador .fullbg{left:50%;right:auto;width:min(100%,560px);transform:translateX(-50%)}
   .banner{min-height:150px}
 }
+/* ===== SISTEMA DE DISEÑO de sub-apartados (apuestas + e-commerce) ===== */
+.pad{padding:8px 16px 26px}
+.h-row{margin:22px 2px 12px}
+.h-row h2{position:relative;padding-left:12px}
+.h-row h2::before{content:"";position:absolute;left:0;top:54%;transform:translateY(-50%);width:4px;height:15px;border-radius:3px;background:var(--accent)}
+.eyebrow{position:relative}
+/* filas de lista premium (leaguerow / match) — tap target cómodo, jerarquía clara */
+.leaguerow,.match{gap:13px;padding:13px 14px;min-height:62px;border-radius:14px;background:linear-gradient(180deg,var(--panel2),var(--panel));transition:transform .1s ease,border-color .15s}
+.leaguerow:active,.match:active{transform:scale(.99);border-color:var(--accent)}
+.leaguerow .more,.match .more{color:var(--dim);font-size:22px;margin-left:auto;flex-shrink:0}
+.crest.sm{width:36px;height:36px;border-radius:9px;font-size:14px}
+/* tarjeta de partido en vivo estilo livescore/apuestas */
+.livecard{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:12px 14px 14px;margin-bottom:11px;cursor:pointer;position:relative;overflow:hidden}
+.livecard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mesa)}
+.livecard .lc-chip{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:#ffb0a5;margin-bottom:10px}
+.livecard .lc-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--mesa);margin-right:7px;animation:pulse 1.2s infinite}
+.lc-row{display:flex;align-items:center;gap:11px;padding:5px 0}
+.lc-row+.lc-row{border-top:1px solid rgba(42,49,61,.5)}
+.lc-team{display:flex;align-items:center;gap:11px;flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:17px}
+.lc-sc{font-family:var(--disp);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;color:#aeb6c4}
+.lc-sc.win{color:var(--bone)}
+.lc-cta{margin-top:10px;text-align:center;font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--accent-lt);border-top:1px solid rgba(42,49,61,.5);padding-top:10px}
+/* tabla de posiciones estilo standings */
+.stand{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.stand-head,.stand-row{display:grid;grid-template-columns:28px 1fr 34px 52px 40px;align-items:center;padding:11px 14px;gap:6px}
+.stand-head{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);background:rgba(7,9,13,.35)}
+.stand-head span:nth-child(n+3),.stand-row span:nth-child(n+3){text-align:center}
+.stand-row{border-top:1px solid rgba(42,49,61,.5);font-size:13.5px}
+.stand-row .tm{display:flex;align-items:center;gap:9px;font-weight:600;text-align:left}
+.stand-row .pos{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--dim);text-align:center}
+.stand-row .pos.p1{color:var(--papa)} .stand-row .pos.p2{color:#cfd5df} .stand-row .pos.p3{color:#d8a15a}
+.stand-row .pts{font-family:var(--disp);font-weight:800;font-size:16px;color:var(--accent-lt)}
+.stand-row .dif{font-family:var(--mono);font-size:12px} .dif.up{color:var(--good)} .dif.dn{color:var(--crit)}
+/* mosaico de estadísticas */
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat-tile{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:14px 8px;text-align:center;position:relative;overflow:hidden}
+.stat-tile::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-lt))}
+.stat-tile b{display:block;font-family:var(--disp);font-weight:800;font-size:30px;line-height:1;color:var(--accent-lt);font-variant-numeric:tabular-nums}
+.stat-tile span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-top:5px;display:block}
+.banner{min-height:120px}
 /* ===== TIENDA ===== */
 .swatches{display:flex;gap:8px}
 .sw{width:30px;height:30px;border-radius:8px;border:2px solid transparent;cursor:pointer}
@@ -627,16 +667,27 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--publico)">Modo público</div><div class="t">Marcadores</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
-      <div class="eyebrow" style="margin:2px 2px 10px">En vivo ahora</div>
-      <div class="qmatch" onclick="go('marcador')"><div class="side"><span class="tn">Titanes</span><span class="sc">42</span></div><div class="mid">Q3<br>12:34</div><div class="side"><span class="sc">39</span><span class="tn">Halcones</span></div></div>
-      <div class="qmatch"><div class="side"><span class="tn">Pumas</span><span class="sc">28</span></div><div class="mid">Q2<br>04:10</div><div class="side"><span class="sc">31</span><span class="tn">Lobos</span></div></div>
-      <div class="h-row"><h2 class="disp" style="font-size:18px">Tabla</h2><span class="more" onclick="toast('Standings completos')">Ver todo ›</span></div>
-      <div class="card" style="padding:0">
-        <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px"><span><b class="mono" style="color:var(--jugador)">1</b> &nbsp; Titanes</span><span class="mono">8-1</span></div>
-        <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px"><span><b class="mono">2</b> &nbsp; Halcones</span><span class="mono">7-2</span></div>
-        <div style="display:flex;justify-content:space-between;padding:10px 14px;font-size:13px"><span><b class="mono">3</b> &nbsp; Lobos</span><span class="mono">5-4</span></div>
+      <div class="h-row" style="margin-top:8px"><h2 class="disp" style="font-size:18px">En vivo ahora</h2><span class="pill" style="margin-left:auto;color:var(--mesa);border-color:var(--mesa)">2 partidos</span></div>
+      <div class="livecard" onclick="go('marcador')">
+        <span class="lc-chip">EN VIVO · Q3 · 12:34</span>
+        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:var(--papa)">TI</span>Titanes</div><span class="lc-sc win">42</span></div>
+        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:var(--publico)">HA</span>Halcones</div><span class="lc-sc">39</span></div>
+        <div class="lc-cta">Ver en vivo ›</div>
       </div>
-      <button class="btn ghost sm block" onclick="toast('Apoyar equipo → tu carta de fan')" style="margin-top:6px"><svg class="ic"><use href="#ic-heart"/></svg> Apoyar a un equipo</button>
+      <div class="livecard">
+        <span class="lc-chip">EN VIVO · Q2 · 04:10</span>
+        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:#8a6bf0">PU</span>Pumas</div><span class="lc-sc">28</span></div>
+        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:#3a9d8f">LO</span>Lobos</div><span class="lc-sc win">31</span></div>
+      </div>
+      <div class="h-row"><h2 class="disp" style="font-size:18px">Tabla</h2><span class="more" onclick="toast('Standings completos')">Ver todo ›</span></div>
+      <div class="stand">
+        <div class="stand-head"><span>#</span><span>Equipo</span><span>PJ</span><span>Dif</span><span>Pts</span></div>
+        <div class="stand-row"><span class="pos p1">1</span><span class="tm"><span class="crest real sm" style="background:var(--papa)">TI</span>Titanes</span><span>9</span><span class="dif up">+64</span><span class="pts">24</span></div>
+        <div class="stand-row"><span class="pos p2">2</span><span class="tm"><span class="crest real sm" style="background:var(--publico)">HA</span>Halcones</span><span>9</span><span class="dif up">+38</span><span class="pts">21</span></div>
+        <div class="stand-row"><span class="pos p3">3</span><span class="tm"><span class="crest real sm" style="background:#3a9d8f">LO</span>Lobos</span><span>9</span><span class="dif up">+9</span><span class="pts">15</span></div>
+        <div class="stand-row"><span class="pos">4</span><span class="tm"><span class="crest real sm" style="background:#8a6bf0">PU</span>Pumas</span><span>9</span><span class="dif dn">−22</span><span class="pts">9</span></div>
+      </div>
+      <button class="btn ghost sm block" onclick="toast('Apoyar equipo → tu carta de fan')" style="margin-top:12px"><svg class="ic"><use href="#ic-heart"/></svg> Apoyar a un equipo</button>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -694,9 +745,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--liga)">Liga · Administración</div><div class="t">Liga Municipal</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
-      <div class="tiles">
-        <div class="card" style="margin:0;text-align:center"><div class="disp" style="font-size:30px;color:var(--accent-lt)">12</div><div class="dim" style="font-size:11px">Equipos</div></div>
-        <div class="card" style="margin:0;text-align:center"><div class="disp" style="font-size:30px;color:var(--accent-lt)">3</div><div class="dim" style="font-size:11px">Categorías</div></div>
+      <div class="stat-row" style="margin-top:8px">
+        <div class="stat-tile"><b>12</b><span>Equipos</span></div>
+        <div class="stat-tile"><b>3</b><span>Categorías</span></div>
+        <div class="stat-tile"><b>68</b><span>Jugadores</span></div>
       </div>
       <div class="h-row"><h2 class="disp" style="font-size:18px">Gestión</h2></div>
       <div class="leaguerow" onclick="toast('Inscribir equipos y jugadores (ancla CURP)')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-people"/></svg></div><div><div class="nm" style="font-size:15px">Equipos y jugadores</div><div class="mt">Inscribir · anclar CURP · coaches (1–3)</div></div><span class="more">›</span></div>
