@@ -101,6 +101,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
 .leaguerow{display:flex;align-items:center;gap:13px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer}
 .crest{width:48px;height:48px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);color:var(--dim);font-size:10px;text-align:center;background:var(--panel2)}
+.crest.real{border:none;color:#0b0d12;font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:.02em}
+.crestc{border:none!important;color:#0b0d12!important;font-family:var(--disp);font-weight:800;font-size:13px}
 .leaguerow .nm{font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:18px} .leaguerow .mt{font-size:12px;color:var(--dim)}
 .leaguerow .hat{margin-left:auto;font-size:11px;font-family:var(--mono);border:1px solid var(--line);padding:4px 8px;border-radius:20px;color:var(--papa)}
 .leaguerow.create{border-style:dashed;justify-content:center;color:var(--accent-lt);font-family:var(--disp);text-transform:uppercase;font-weight:700;letter-spacing:.04em}
@@ -149,8 +151,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mk-actions{display:flex;gap:8px}
 .mk-actions button{flex:1;background:rgba(7,9,13,.72);backdrop-filter:blur(8px);border:1px solid var(--line);color:var(--bone);border-radius:10px;padding:11px 6px;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .mk-actions button .i{font-size:18px} .mk-actions button.mesa{border-color:var(--mesa);color:#ff9a8f}
-.mk-notif{position:absolute;left:12px;right:12px;top:200px;z-index:3;pointer-events:none}
-.mk-notif .n{background:rgba(232,177,62,.16);border:1px solid var(--papa);border-radius:10px;padding:8px 12px;font-size:12.5px;margin-bottom:6px;backdrop-filter:blur(6px);animation:slidein .4s ease}
+.mk-notif{position:relative;z-index:5;margin:8px 12px 0;pointer-events:none}
+.mk-notif:empty{display:none}
+.mk-notif .n{background:rgba(232,177,62,.16);border:1px solid var(--papa);border-radius:10px;padding:8px 12px;font-size:12.5px;backdrop-filter:blur(8px);animation:slidein .4s ease}
 .mk-notif .n b{color:var(--papa)}
 @keyframes slidein{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
 
@@ -169,7 +172,23 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mbtn.foul{background:linear-gradient(180deg,#3a2422,#241615);border-color:var(--crit);color:#ff9a8f}
 .mbtn.sub{border-color:var(--publico);color:#8fe0e8}
 .mbtn:active{transform:scale(.97)}
-.mesa-log{margin:6px 14px;background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12px;max-height:120px;overflow-y:auto}
+.step-lbl{display:flex;align-items:center;gap:8px;margin:14px 2px 8px;font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:15px;letter-spacing:.02em}
+.step-lbl .n{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#0b0d12;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mesa-teams{display:flex;gap:10px}
+.mteam{flex:1;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;color:var(--bone);font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:15px}
+.mteam .crest2{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#0b0d12;flex-shrink:0}
+.mteam .tn{flex:1;text-align:left;line-height:1}
+.mteam b{font-family:var(--disp);font-size:22px;font-variant-numeric:tabular-nums}
+.mteam.sel{border-color:var(--accent);background:rgba(239,122,53,.12);box-shadow:0 0 0 1px var(--accent) inset}
+.psel em{display:block;font-style:normal;font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:1px}
+.mesa-actions{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px}
+.mact{background:linear-gradient(180deg,#243a2c,#16241b);border:1px solid var(--good);color:#9fe6bf;border-radius:14px;padding:16px 4px;cursor:pointer;font-family:var(--disp);font-weight:800;font-size:22px;text-align:center}
+.mact small{display:block;font-family:var(--body);font-weight:400;font-size:9.5px;color:#7fbf9a;text-transform:uppercase;margin-top:2px}
+.mact.foul{background:linear-gradient(180deg,#3a2422,#241615);border-color:var(--crit);color:#ff9a8f}
+.mact:active{transform:scale(.96)}
+.mesa-log .r .g{color:var(--good)} .mesa-log .r .rd{color:var(--crit)}
+.mesa-log{margin:2px 0;background:var(--ink2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12px;max-height:150px;overflow-y:auto}
+.mesa-undo{margin:12px 0 0;display:flex;gap:10px}
 .mesa-log .r{padding:3px 0;border-bottom:1px solid rgba(42,49,61,.5);color:#c9cfd9;display:flex;gap:8px}
 .mesa-log .r .tm{color:var(--dim)} .mesa-log .r:last-child{border-bottom:0}
 .mesa-undo{margin:0 14px calc(var(--safe-b) + 12px);display:flex;gap:10px}
@@ -216,7 +235,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .pcard .rk{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#0b0d12;background:linear-gradient(90deg,#ff9a5a,#a774f0);padding:4px 10px;border-radius:20px;font-weight:700;z-index:2}
 .pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:2}
 .pcard .ov b{font-family:var(--disp);font-weight:800;font-size:40px;line-height:.8;color:var(--accent-lt)} .pcard .ov small{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em}
-.pcard .photo{height:220px;margin:38px 14px 0;border-radius:10px;border:1px dashed #3a4250;display:flex;align-items:center;justify-content:center;color:#5c6472;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116)}
+.pcard .photo{height:220px;margin:38px 14px 0;border-radius:10px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer}
 .pcard .nm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:26px;padding:12px 16px 2px} .pcard .club{font-size:12.5px;color:var(--dim);padding:0 16px}
 .pcard .stats{display:flex;gap:6px;padding:14px 16px 18px}
 .pcard .st{flex:1;text-align:center;background:rgba(7,9,13,.4);border:1px solid var(--line);border-radius:8px;padding:8px 4px}
@@ -265,7 +284,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .arena .beam{position:absolute;top:-20%;left:50%;width:140%;height:60%;transform:translateX(-50%);
   background:conic-gradient(from 180deg at 50% 0%,transparent 42%,rgba(255,255,255,.05) 50%,transparent 58%);pointer-events:none}
 .hub-wrap{position:relative;z-index:2;display:flex;flex-direction:column;flex:1;min-height:0}
-.hub-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+.hub-scroll{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 .hub-scroll::-webkit-scrollbar{width:0}
 
 /* barra de modos (tabs superiores 2K) */
@@ -279,7 +298,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
 /* carrusel grande de paneles de modo */
 .mode-view{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
-.mode-carousel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 16px 6px;-webkit-overflow-scrolling:touch}
+.mode-carousel{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;padding:2px 16px 6px;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior:contain}
 .mode-carousel::-webkit-scrollbar{height:0}
 .mode-panel{position:relative;flex-shrink:0;scroll-snap-align:center;width:82%;max-width:400px;height:clamp(340px,54vh,440px);
   border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#0c0f15;cursor:pointer;
@@ -406,6 +425,20 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   #s-marcador .fullbg{left:50%;right:auto;width:min(100%,560px);transform:translateX(-50%)}
   .banner{min-height:150px}
 }
+/* ===== TIENDA ===== */
+.swatches{display:flex;gap:8px}
+.sw{width:30px;height:30px;border-radius:8px;border:2px solid transparent;cursor:pointer}
+.sw.on{border-color:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.4) inset}
+#shopGrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.prod{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.pimg{height:104px;display:flex;align-items:center;justify-content:center}
+.pini{font-family:var(--disp);font-weight:800;font-size:40px;opacity:.9}
+.prod .pc{padding:10px 12px;cursor:pointer}
+.prod .pn{font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:15px;line-height:1.05}
+.prod .pp{font-family:var(--mono);font-size:13px;color:var(--papa);margin-top:3px}
+.pdel{position:absolute;top:7px;right:7px;width:24px;height:24px;border:none;border-radius:50%;background:rgba(7,9,13,.7);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.empty{grid-column:1/-1;text-align:center;color:var(--dim);padding:30px 0;font-size:13px}
+@media(min-width:900px){ #shopGrid{grid-template-columns:1fr 1fr 1fr} }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -470,7 +503,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="title-xl">LIGAS <span class="m">MAZI</span></div>
       <p class="slogan">Organiza, juega, entrena y sigue tu liga. Donde cada canasta queda para siempre.</p>
       <button class="btn" onclick="go('hub')">Entrar <span class="go">›</span></button>
-      <button class="btn ghost" onclick="go('publico')">Solo ver (invitado) <span class="go">›</span></button>
+      <button class="btn ghost" onclick="setRole('publico','Invitado','Público','hub')">Solo ver (invitado) <span class="go">›</span></button>
       <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
     </div>
   </section>
@@ -503,10 +536,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <section class="screen" id="s-ligas">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Mis ligas</span></div>
     <div class="scroll"><div class="pad">
-      <div class="leaguerow" onclick="go('rol')"><div class="crest">escudo</div><div><div class="nm">Halcones U-14</div><div class="mt">Liga Municipal · Torneo Apertura</div></div><span class="hat">Papá</span></div>
-      <div class="leaguerow" onclick="go('publico')"><div class="crest">escudo</div><div><div class="nm">Liga Barrio Norte</div><div class="mt">Dominical · en curso</div></div><span class="hat" style="color:var(--publico)">Público</span></div>
+      <div class="leaguerow" onclick="go('rol')"><div class="crest real" style="background:var(--papa)">HA</div><div><div class="nm">Halcones U-14</div><div class="mt">Liga Municipal · Torneo Apertura</div></div><span class="hat">Papá</span></div>
+      <div class="leaguerow" onclick="go('publico')"><div class="crest real" style="background:var(--publico)">BN</div><div><div class="nm">Liga Barrio Norte</div><div class="mt">Dominical · en curso</div></div><span class="hat" style="color:var(--publico)">Público</span></div>
       <div class="h-row"><h2 class="disp" style="font-size:18px">Archivo</h2></div>
-      <div class="leaguerow" style="opacity:.6" onclick="toast('Liga archivada — solo lectura, no se borra')"><div class="crest">escudo</div><div><div class="nm">Clausura 2025</div><div class="mt">Terminada · archivada</div></div><span class="hat" style="color:var(--dim)">Ver</span></div>
+      <div class="leaguerow" style="opacity:.6" onclick="toast('Liga archivada — solo lectura, no se borra')"><div class="crest real" style="background:#3a4250">C25</div><div><div class="nm">Clausura 2025</div><div class="mt">Terminada · archivada</div></div><span class="hat" style="color:var(--dim)">Ver</span></div>
       <div class="leaguerow create" onclick="go('liga')">+ Crear una liga</div>
     </div></div>
     <div class="nav" data-nav></div>
@@ -521,7 +554,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="match"><div class="when">SÁB<br>10:00</div><div class="vs">vs Pumas<small>Jornada 6</small></div><span class="badge next">SIGUE</span></div>
       <div class="match"><div class="when">MIÉ<br>19:00</div><div class="vs">vs Lobos<small>Jornada 7</small></div></div>
       <div class="h-row"><h2 class="disp" style="font-size:18px">Cuadro del torneo</h2><span class="more" onclick="toast('Bracket — próximamente')">Bracket ›</span></div>
-      <div class="match" onclick="go('carta')"><div class="crest" style="width:40px;height:40px">foto</div><div class="vs">Diego G.<small>Base · #7 · Halcones</small></div><span class="badge next">TU HIJO</span></div>
+      <div class="match" onclick="go('carta')"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">DG</div><div class="vs">Diego G.<small>Base · #7 · Halcones</small></div><span class="badge next">TU HIJO</span></div>
       <button class="btn ghost sm block" onclick="go('alta')" style="margin-top:8px">＋ Dar de alta a otro hij@</button>
     </div></div>
     <div class="nav" data-nav></div>
@@ -535,9 +568,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div class="mk-top"><button class="backbtn" onclick="goBack()" style="background:rgba(7,9,13,.7);backdrop-filter:blur(6px)">‹</button>
           <span class="pill" style="background:rgba(236,90,69,.9);color:#fff;border:none">● EN VIVO</span></div>
         <div class="mk-score">
-          <div class="team"><div class="lg">escudo</div><div class="nm">TITANES</div><div class="sc">42</div></div>
+          <div class="team"><div class="lg crestc" style="background:var(--papa)">TI</div><div class="nm">TITANES</div><div class="sc">42</div></div>
           <div class="mid"><div class="q">3ER CUARTO</div><div class="clk">12:34</div><div class="bonus">BONUS</div></div>
-          <div class="team"><div class="lg">escudo</div><div class="nm">HALCONES</div><div class="sc" style="color:var(--papa)">39</div></div>
+          <div class="team"><div class="lg crestc" style="background:var(--publico)">HA</div><div class="nm">HALCONES</div><div class="sc" style="color:var(--papa)">39</div></div>
         </div>
         <div class="mk-notif" id="mkNotif"></div>
         <!-- jugadores en cancha: nombre + minutos · puntos · faltas -->
@@ -558,27 +591,25 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     </div>
   </section>
 
-  <!-- MESA / ANOTADOR -->
+  <!-- MESA / ANOTADOR — simple: equipo → jugador → punto/falta -->
   <section class="screen" id="s-mesa">
-    <div class="mesa-head"><button class="backbtn" onclick="goBack()">‹</button><span class="sc" id="mScore">42 — 39</span><span class="clk">Q3 12:34</span></div>
-    <div class="scroll">
-      <div class="mesa-sel"><div class="who">Jugador seleccionado — toca uno, luego la acción</div>
-        <div class="player-strip" id="pstrip"></div></div>
-      <div class="mesa-grid">
-        <div class="mbtn score" onclick="anota(1)">+1<small>tiro libre</small></div>
-        <div class="mbtn score" onclick="anota(2)">+2<small>de campo</small></div>
-        <div class="mbtn score" onclick="anota(3)">+3<small>triple</small></div>
-        <div class="mbtn" onclick="ev('Rebote')">REB<small>rebote</small></div>
-        <div class="mbtn" onclick="ev('Asistencia')">AST<small>asistencia</small></div>
-        <div class="mbtn foul" onclick="ev('Falta')">FALTA<small>personal</small></div>
-        <div class="mbtn sub" onclick="ev('Cambio')">CAMBIO<small>entra/sale</small></div>
-        <div class="mbtn" onclick="ev('Robo')">ROBO<small>balón</small></div>
-        <div class="mbtn" onclick="ev('Tiro fallado')">FALLO<small>tiro errado</small></div>
+    <div class="mesa-head"><button class="backbtn" onclick="goBack()">‹</button><span class="sc" id="mScore">42 — 39</span><span class="clk" id="mClk">Q3 · 12:34</span></div>
+    <div class="scroll"><div class="pad">
+      <div class="step-lbl"><span class="n">1</span> ¿De qué equipo?</div>
+      <div class="mesa-teams" id="mTeams"></div>
+      <div class="step-lbl"><span class="n">2</span> ¿Qué jugador?</div>
+      <div class="player-strip" id="pstrip"></div>
+      <div class="step-lbl"><span class="n">3</span> ¿Qué pasó?</div>
+      <div class="mesa-actions">
+        <button class="mact score" onclick="anota(1)">+1<small>libre</small></button>
+        <button class="mact score" onclick="anota(2)">+2<small>campo</small></button>
+        <button class="mact score" onclick="anota(3)">+3<small>triple</small></button>
+        <button class="mact foul" onclick="falta()">Falta</button>
       </div>
-      <div class="eyebrow" style="margin:6px 14px 4px">Bitácora del partido (event-log · nunca borra)</div>
-      <div class="mesa-log" id="mlog"><div class="r"><span class="tm">12:34</span> Inicio de captura</div></div>
-      <div class="mesa-undo"><button onclick="undo()"><svg class="ic"><use href="#ic-undo"/></svg> Deshacer</button><button onclick="toast('Corregir renglón (Art. 44 FIBA)')"><svg class="ic"><use href="#ic-pencil"/></svg> Corregir</button></div>
-    </div>
+      <div class="mesa-undo"><button onclick="undo()"><svg class="ic"><use href="#ic-undo"/></svg> Deshacer lo último</button></div>
+      <div class="step-lbl" style="margin-top:16px"><span class="n" style="background:var(--dim)">·</span> Bitácora del partido</div>
+      <div class="mesa-log" id="mlog"></div>
+    </div></div>
   </section>
 
   <!-- VAR -->
@@ -616,9 +647,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
       <div class="h-row"><h2 class="disp" style="font-size:18px">Roster</h2><span class="more" onclick="go('alta')">＋ Alta</span></div>
-      <div class="rosterrow"><span class="num">7</span><span class="nm">Diego G.<small>Base · Titular</small></span><span class="st">11.4 PPP</span></div>
-      <div class="rosterrow"><span class="num">4</span><span class="nm">Marco V.<small>Pívot · Titular</small></span><span class="st">8.0 PPP</span></div>
-      <div class="rosterrow"><span class="num">11</span><span class="nm">Iker R.<small>Alero · Banca</small></span><span class="st">5.2 PPP</span></div>
+      <div id="rosterList"></div>
       <div class="tiles" style="margin-top:6px">
         <div class="tile" style="aspect-ratio:1.8" onclick="go('estrategias')"><span class="stripe" style="background:var(--publico)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-clipboard"/></svg></div><div class="t" style="font-size:15px">Estrategias</div></div></div>
         <div class="tile" style="aspect-ratio:1.8" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-card"/></svg></div><div class="t" style="font-size:15px">Cartas</div></div></div>
@@ -711,29 +740,39 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:0 0 4px">Foto — cara del jugador</div>
       <div class="photo-hole"><span style="font-size:30px"><svg class="ic"><use href="#ic-camera"/></svg></span>Subir foto (se le quita el GPS)</div>
-      <input class="field" placeholder="Nombre completo del jugador">
+      <input class="field" id="altaName" placeholder="Nombre completo del jugador">
+      <div style="display:flex;gap:8px">
+        <input class="field" id="altaNum" type="number" inputmode="numeric" placeholder="# dorsal" style="width:110px">
+        <input class="field" id="altaPos" placeholder="Posición (ej. Base)" style="flex:1">
+      </div>
       <div class="eyebrow" style="margin:8px 0 2px">CURP <span style="color:var(--dim)">— llave interna, se escribe una vez</span></div>
       <input class="field masked" placeholder="GUGD•••••••••••B2">
       <div class="check hint" data-hint="curp" style="background:rgba(84,204,138,.06);border-color:var(--good)"><span class="box" style="border-color:var(--good);color:var(--good);pointer-events:none">✓</span>
         <span><b>El CURP es privado.</b> Se usa solo por dentro para que las estadísticas de tu hij@ siempre sean suyas y no se confundan con las de otro jugador. Queda guardado bajo llave: no aparece en su perfil ni se puede buscar.</span></div>
-      <input class="field" placeholder="Categoría (ej. Juvenil Varonil)">
-      <div class="check"><span class="box" onclick="this.textContent=this.textContent?'':'✓'"></span>
+      <input class="field" id="altaCat" placeholder="Categoría (ej. Juvenil Varonil)">
+      <div class="check"><span class="box" id="altaResp" onclick="this.textContent=this.textContent?'':'✓'"></span>
         <span><b>Responsiva de los padres.</b> Autorizo la participación y la <b>conservación de sus datos y estadísticas</b> a largo plazo. Sin esto, el jugador queda incompleto y no se puede alinear.</span></div>
-      <button class="btn block" onclick="toast('Jugador dado de alta · CURP anclado a tu cuenta')">Guardar jugador</button>
+      <button class="btn block" onclick="savePlayer()">Guardar jugador</button>
     </div></div>
   </section>
 
-  <!-- TIENDA -->
+  <!-- TIENDA — catálogo de la liga (el admin sube productos) -->
   <section class="screen" id="s-tienda">
-    <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--papa)">Tienda</div><div class="t">Mercancía</div></div>
+    <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--papa)">Tienda oficial</div><div class="t">Liga Municipal</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
-      <div class="tiles">
-        <div class="tile" style="aspect-ratio:.85" onclick="toast('Producto — la liga sube el catálogo')"><div class="crest" style="position:absolute;inset:12px;width:auto;height:60%;border-radius:8px">foto producto</div><div class="g"></div><div class="c"><div class="t" style="font-size:15px">Jersey Titanes</div><div class="s" style="color:var(--papa)">$450</div></div></div>
-        <div class="tile" style="aspect-ratio:.85" onclick="toast('Producto')"><div class="crest" style="position:absolute;inset:12px;width:auto;height:60%;border-radius:8px">foto producto</div><div class="g"></div><div class="c"><div class="t" style="font-size:15px">Balón oficial</div><div class="s" style="color:var(--papa)">$620</div></div></div>
-        <div class="tile" style="aspect-ratio:.85" onclick="toast('Producto')"><div class="crest" style="position:absolute;inset:12px;width:auto;height:60%;border-radius:8px">foto producto</div><div class="g"></div><div class="c"><div class="t" style="font-size:15px">Gorra Liga</div><div class="s" style="color:var(--papa)">$260</div></div></div>
-        <div class="tile" style="aspect-ratio:.85" onclick="toast('Producto')"><div class="crest" style="position:absolute;inset:12px;width:auto;height:60%;border-radius:8px">foto producto</div><div class="g"></div><div class="c"><div class="t" style="font-size:15px">Sudadera</div><div class="s" style="color:var(--papa)">$780</div></div></div>
+      <div id="shopAdmin" style="display:none">
+        <button class="btn sm block" onclick="toggleShopForm()" id="shopAddBtn" style="margin:2px 0 12px">＋ Agregar producto</button>
+        <div class="card" id="shopForm" style="display:none">
+          <div class="kick">Nuevo producto</div>
+          <input class="field" id="pName" placeholder="Nombre (ej. Jersey local)">
+          <input class="field" id="pPrice" type="number" inputmode="numeric" placeholder="Precio en pesos (ej. 450)">
+          <div class="eyebrow" style="margin:8px 2px 6px">Color</div>
+          <div class="swatches" id="pSwatches"></div>
+          <button class="btn sm block" onclick="addProduct()" style="margin-top:10px">Publicar en la tienda</button>
+        </div>
       </div>
+      <div class="tiles" id="shopGrid"></div>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -744,7 +783,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="scroll">
       <div class="pcard">
         <span class="rk" style="background:linear-gradient(90deg,#e8b13e,#ff9a5a)">◆ ORO</span><div class="ov"><b>78</b><small>GENERAL</small></div>
-        <div class="photo">foto del jugador<br>(la sube el papá)</div>
+        <div class="photo" onclick="toast('Aquí subes la foto del jugador (se le quita el GPS)')"><span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span></div>
         <div class="nm">Diego "El Muro" G.</div>
         <div class="club">Titanes Basketball Club · Juvenil Varonil · #7</div>
         <div class="stats"><div class="st"><b>11.4</b><small>PTS</small></div><div class="st"><b>6.1</b><small>REB</small></div><div class="st"><b>3.0</b><small>AST</small></div><div class="st"><b>2.2</b><small>FALTAS</small></div></div>
@@ -854,34 +893,54 @@ function render(id){
   if(id==='hub')buildModes();
   if(id==='marcador')drawCourt();
   if(id==='mesa')buildMesa();
+  if(id==='tienda')buildShop();
+  if(id==='vestidor')buildRoster();
   if(id==='perillas')syncCourtKnob();
   requestAnimationFrame(()=>armHints(el));
 }
 window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop()); });
-const NAV=[['hub','home','Inicio'],['ligas','trophy','Ligas'],['marcador','live','En vivo'],['carta','card','Perfil'],['tienda','bag','Tienda']];
+/* ====== La app se adapta al sombrero: nav + modos por rol ====== */
+let currentRole='papa';
+const NAV_BY_ROLE={
+  papa:   [['hub','home','Inicio'],['ligas','trophy','Ligas'],['marcador','live','En vivo'],['carta','card','Carta'],['tienda','bag','Tienda']],
+  coach:  [['hub','home','Inicio'],['vestidor','clipboard','Vestidor'],['marcador','live','En vivo'],['estrategias','pencil','Tácticas'],['tienda','bag','Tienda']],
+  liga:   [['hub','home','Inicio'],['liga','gear','Liga'],['marcador','live','En vivo'],['mesa','pencil','Mesa'],['tienda','bag','Tienda']],
+  publico:[['hub','home','Inicio'],['marcador','live','En vivo'],['publico','eye','Marcadores'],['ligas','trophy','Ligas'],['tienda','bag','Tienda']],
+  jugador:[['hub','home','Inicio'],['carta','card','Carta'],['marcador','live','En vivo'],['ligas','trophy','Ligas'],['tienda','bag','Tienda']],
+};
+function navList(){return NAV_BY_ROLE[currentRole]||NAV_BY_ROLE.publico;}
 function buildNav(cur){
   document.querySelectorAll('[data-nav]').forEach(nav=>{
     nav.innerHTML='';
-    NAV.forEach(([id,ic,lab])=>{
+    navList().forEach(([id,ic,lab])=>{
       const b=document.createElement('button');
       b.className=(id===cur?'on ':'')+(id==='marcador'?'hot':'');
-      b.innerHTML='<span class="i"><svg class="ic"><use href="#ic-'+ic+'"/></svg></span>'+(lab==='En vivo'?'En vivo':lab);
+      b.innerHTML='<span class="i"><svg class="ic"><use href="#ic-'+ic+'"/></svg></span>'+lab;
       b.onclick=()=>go(id); nav.appendChild(b);
     });
   });
 }
 /* ---- menú principal estilo NBA 2K: barra de modos + carrusel de paneles ---- */
-const MODES=[
-  {id:'marcador', k:'En vivo ahora',  t:'Jugar ya',  s:'Sigue el marcador en vivo · Q3',                     art:'accion.jpg', c:'--mesa',    ic:'live',      short:'Jugar', live:true},
-  {id:'ligas',    k:'Temporada',      t:'Mis ligas', s:'2 ligas activas · Torneo Apertura en curso',        art:'arena.jpg',  c:'--liga',    ic:'trophy',    short:'Ligas'},
-  {id:'carta',    k:'Tu jugador',     t:'Mi carta',  s:'Diego "El Muro" · Oro · 78 GENERAL',                 pack:true,        c:'--jugador', ic:'card',      short:'Carta'},
-  {id:'vestidor', k:'Coach',          t:'Vestidor',  s:'Roster, pizarrón táctico y estrategias',             art:'accion.jpg', c:'--coach',   ic:'clipboard', short:'Coach'},
-  {id:'liga',     k:'Organizador',    t:'Mi liga',   s:'12 equipos · calendario, resultados y perillas',     art:'arena.jpg',  c:'--liga',    ic:'gear',      short:'Liga'},
-  {id:'publico',  k:'Afición',        t:'Público',   s:'Marcadores en vivo y tabla de posiciones',           art:'arena.jpg',  c:'--publico', ic:'eye',       short:'Público'},
-  {id:'tienda',   k:'Mercancía',      t:'Tienda',    s:'Jerseys, stickers y coleccionables del club',        art:'cancha.jpg', c:'--papa',    ic:'bag',       short:'Tienda'},
-];
+const MODE_DEFS={
+  marcador:  {id:'marcador', k:'En vivo ahora',  t:'Jugar ya',    s:'Sigue el marcador en vivo · Q3',                 art:'accion.jpg', c:'--mesa',    ic:'live',      short:'En vivo', live:true},
+  ligas:     {id:'ligas',    k:'Temporada',      t:'Mis ligas',   s:'Tus ligas y el torneo en curso',                art:'arena.jpg',  c:'--liga',    ic:'trophy',    short:'Ligas'},
+  carta:     {id:'carta',    k:'Tu jugador',     t:'Mi carta',    s:'Diego "El Muro" · Oro · 78 GENERAL',            pack:true,        c:'--jugador', ic:'card',      short:'Carta'},
+  vestidor:  {id:'vestidor', k:'Coach',          t:'Vestidor',    s:'Roster, altas y jugadores del equipo',          art:'accion.jpg', c:'--coach',   ic:'clipboard', short:'Vestidor'},
+  estrategias:{id:'estrategias',k:'Coach',       t:'Tácticas',    s:'Pizarrón y sistema del equipo',                 art:'accion.jpg', c:'--publico', ic:'pencil',    short:'Tácticas'},
+  liga:      {id:'liga',     k:'Organizador',    t:'Mi liga',     s:'Equipos, calendario, resultados y perillas',    art:'arena.jpg',  c:'--liga',    ic:'gear',      short:'Liga'},
+  mesa:      {id:'mesa',     k:'Mesa',           t:'Anotador',    s:'Captura puntos y faltas en vivo',               art:'cancha.jpg', c:'--mesa',    ic:'pencil',    short:'Mesa'},
+  publico:   {id:'publico',  k:'Afición',        t:'Marcadores',  s:'Todos los partidos y la tabla',                 art:'arena.jpg',  c:'--publico', ic:'eye',       short:'Marcadores'},
+  tienda:    {id:'tienda',   k:'Mercancía',      t:'Tienda',      s:'Productos oficiales de la liga',                art:'cancha.jpg', c:'--papa',    ic:'bag',       short:'Tienda'},
+};
+const MODES_BY_ROLE={
+  papa:   ['marcador','carta','ligas','tienda'],
+  coach:  ['marcador','vestidor','estrategias','mesa','tienda'],
+  liga:   ['liga','marcador','mesa','tienda'],
+  publico:['marcador','publico','ligas','tienda'],
+  jugador:['carta','marcador','ligas','tienda'],
+};
+function modeList(){return (MODES_BY_ROLE[currentRole]||MODES_BY_ROLE.publico).map(id=>MODE_DEFS[id]);}
 /* copia del partido en vivo según el sombrero: SOLO el papá ve "tu hij@" */
-let currentRole='papa';
 const ROLE_LIVE={
   papa:   {k:'Tu hij@ en vivo',   s:'Diego está en cancha · Titanes vs Halcones · Q3', sc:'Titanes 42 — 39 Halcones', mt:'Q3 · <b>Diego</b> lleva 6 pts · en cancha'},
   coach:  {k:'Tu equipo en vivo', s:'Diriges a Titanes · Q3 · arriba por 3',           sc:'Titanes 42 — 39 Halcones', mt:'Q3 · diriges a <b>Titanes</b> · +3'},
@@ -942,6 +1001,8 @@ function buildModes(){
   const rail=document.getElementById('modeRail'), car=document.getElementById('modeCarousel'), dots=document.getElementById('modeDots');
   rail.innerHTML=''; car.innerHTML=''; dots.innerHTML='';
   const rl=ROLE_LIVE[currentRole]||ROLE_LIVE.publico;
+  const MODES=modeList();
+  if(modeIdx>=MODES.length)modeIdx=0;
   MODES.forEach((m,i)=>{
     const chip=document.createElement('button');
     chip.className='mrchip'+(i===modeIdx?' on':'');
@@ -1023,11 +1084,11 @@ function drawCourt(){
 }
 /* ---- alineación en vivo: quién juega, quién en banca, con min · pts · faltas ---- */
 const liveOn=[
-  {num:'5', nm:'Sam',  min:20,pts:7,f:0, x:50,y:46, cls:'home'},
-  {num:'11',nm:'Leo',  min:16,pts:4,f:2, x:25,y:54, cls:'home'},
-  {num:'23',nm:'Iker', min:19,pts:5,f:1, x:75,y:55, cls:'home'},
-  {num:'7', nm:'Diego',min:22,pts:6,f:2, x:40,y:68, cls:'mine'},
-  {num:'4', nm:'Marco',min:18,pts:8,f:3, x:63,y:70, cls:'home'},
+  {num:'5', nm:'Sam',  min:20,pts:7,f:0, x:50,y:48, cls:'home'},
+  {num:'11',nm:'Leo',  min:16,pts:4,f:2, x:24,y:56, cls:'home'},
+  {num:'23',nm:'Iker', min:19,pts:5,f:1, x:76,y:57, cls:'home'},
+  {num:'7', nm:'Diego',min:22,pts:6,f:2, x:39,y:70, cls:'mine'},
+  {num:'4', nm:'Marco',min:18,pts:8,f:3, x:64,y:72, cls:'home'},
 ];
 const liveBench=[
   {num:'9', nm:'Beto', min:4,pts:2,f:1},
@@ -1037,7 +1098,7 @@ const liveBench=[
 ];
 function buildLineup(){
   const c=document.getElementById('courtTokens'); if(!c)return; c.innerHTML='';
-  [[50,31,'15'],[29,36,'8'],[71,36,'21']].forEach(([x,y,num])=>{
+  [[50,36,'15'],[28,42,'8'],[72,42,'21']].forEach(([x,y,num])=>{
     const d=document.createElement('div'); d.className='tok away'; d.style.left=x+'%'; d.style.top=y+'%';
     d.innerHTML='<div class="jersey">'+num+'</div><div class="lab">Halcones</div>'; c.appendChild(d);
   });
@@ -1084,27 +1145,92 @@ function stampBrand(){
     const bn=scr.querySelector('.banner'); if(bn && !bn.querySelector('.brandmini')) bn.appendChild(brandEl('on-banner'));
   });
 }
-/* ---- anotador ---- */
-const roster=[['7','Diego'],['4','Marco'],['23','Iker'],['15','Leo'],['9','Sam']];
-let sel=0, home=42, away=39, log=[];
+/* ---- anotador simple: equipo → jugador → punto/falta (funcional) ---- */
+const mTeams=[
+  {name:'Titanes', color:'--papa',    players:[{n:'7',nm:'Diego',pts:6,f:2},{n:'4',nm:'Marco',pts:8,f:3},{n:'23',nm:'Iker',pts:5,f:1},{n:'11',nm:'Leo',pts:4,f:2},{n:'5',nm:'Sam',pts:7,f:0}]},
+  {name:'Halcones', color:'--publico',players:[{n:'15',nm:'Base',pts:9,f:1},{n:'8',nm:'Sosa',pts:6,f:2},{n:'21',nm:'León',pts:7,f:3},{n:'3',nm:'Vela',pts:2,f:1}]},
+];
+let selTeam=0, selPlayer=0, mscore=[42,39], mlog=[], mtick=0;
+function ini2(s){return s.replace(/[^A-Za-zÁÉÍÓÚÑ]/g,'').slice(0,2).toUpperCase();}
 function buildMesa(){
+  const T=document.getElementById('mTeams'); T.innerHTML='';
+  mTeams.forEach((t,i)=>{const b=document.createElement('button');b.className='mteam'+(i===selTeam?' sel':'');
+    b.innerHTML='<span class="crest2" style="background:var('+t.color+')">'+ini2(t.name)+'</span><span class="tn">'+t.name+'</span><b>'+mscore[i]+'</b>';
+    b.onclick=()=>{selTeam=i;selPlayer=0;buildMesa();};T.appendChild(b);});
   const s=document.getElementById('pstrip'); s.innerHTML='';
-  roster.forEach(([n,nm],i)=>{const d=document.createElement('div');d.className='psel'+(i===sel?' sel':'');d.innerHTML=n+'<small>'+nm+'</small>';d.onclick=()=>{sel=i;buildMesa();};s.appendChild(d);});
-  document.getElementById('mScore').textContent=home+' — '+away;
+  mTeams[selTeam].players.forEach((p,i)=>{const d=document.createElement('div');d.className='psel'+(i===selPlayer?' sel':'');
+    d.innerHTML=p.n+'<small>'+p.nm+'</small><em>'+p.pts+'p·'+p.f+'F</em>';d.onclick=()=>{selPlayer=i;buildMesa();};s.appendChild(d);});
+  document.getElementById('mScore').textContent=mscore[0]+' — '+mscore[1];
+  renderMLog();
 }
-function pushLog(t){log.unshift(t);const l=document.getElementById('mlog');l.innerHTML=log.map(x=>'<div class="r"><span class="tm">'+x.t+'</span> '+x.m+'</div>').join('')||'<div class="r"><span class="tm">12:34</span> Inicio de captura</div>';}
-function anota(p){home+=p;const [n,nm]=roster[sel];pushLog({t:'12:'+(30-log.length),m:'#'+n+' '+nm+' anotó <b>+'+p+'</b>'});buildMesa();toast(nm+' +'+p);}
-function ev(name){const [n,nm]=roster[sel];pushLog({t:'12:'+(30-log.length),m:'#'+n+' '+nm+' · '+name});toast(name+' · '+nm);}
-function undo(){if(log.length){const x=log.shift();if(/\+\d/.test(x.m)){const m=x.m.match(/\+(\d)/);home-=+m[1];}pushLog();buildMesa();toast('Deshecho');}}
+function curP(){return mTeams[selTeam].players[selPlayer];}
+function mClk(){mtick++;const mm=Math.max(0,12-Math.floor(mtick/3));const ss=('0'+((60-(mtick*13)%60)%60)).slice(-2);return 'Q3 '+mm+':'+ss;}
+function renderMLog(){const l=document.getElementById('mlog');
+  l.innerHTML=mlog.length?mlog.map(x=>'<div class="r"><span class="tm">'+x.t+'</span> '+x.m+'</div>').join('')
+    :'<div class="r"><span class="tm">—</span> Aún sin capturas · elige equipo, jugador y toca una acción</div>';}
+function anota(p){const t=mTeams[selTeam],pl=curP();pl.pts+=p;mscore[selTeam]+=p;
+  mlog.unshift({t:mClk(),m:'<b>'+t.name+'</b> #'+pl.n+' '+pl.nm+' anotó <b class="g">+'+p+'</b>',u:{team:selTeam,pi:selPlayer,pts:p,f:0}});
+  buildMesa();toast(pl.nm+' +'+p);}
+function falta(){const t=mTeams[selTeam],pl=curP();pl.f+=1;
+  mlog.unshift({t:mClk(),m:'<b>'+t.name+'</b> #'+pl.n+' '+pl.nm+' · <b class="rd">falta</b>'+(pl.f>=5?' <b class="rd">(5ª — fuera)</b>':''),u:{team:selTeam,pi:selPlayer,pts:0,f:1}});
+  buildMesa();toast('Falta · '+pl.nm+(pl.f>=5?' — expulsado':' ('+pl.f+'ª)'));}
+function undo(){if(!mlog.length){toast('Nada que deshacer');return;}const e=mlog.shift();
+  if(e.u){const pl=mTeams[e.u.team].players[e.u.pi];pl.pts-=e.u.pts;pl.f-=e.u.f;mscore[e.u.team]-=e.u.pts;}
+  buildMesa();toast('Deshecho');}
+/* ---- TIENDA: la liga sube productos (funcional, se guardan) ---- */
+const SHOP_COLORS=['#e8b13e','#35c2cf','#54cc8a','#a774f0','#ec5a45','#ff9a5a'];
+let pColor=SHOP_COLORS[0];
+function shopProducts(){try{const s=localStorage.getItem('lm_products');if(s)return JSON.parse(s);}catch(e){}
+  return [{name:'Jersey local',price:450,color:'#e8b13e'},{name:'Balón oficial',price:620,color:'#ec5a45'},{name:'Gorra de la liga',price:260,color:'#35c2cf'},{name:'Sudadera',price:780,color:'#a774f0'}];}
+function saveProducts(a){try{localStorage.setItem('lm_products',JSON.stringify(a));}catch(e){}}
+function buildShop(){
+  const admin=currentRole==='liga';
+  document.getElementById('shopAdmin').style.display=admin?'block':'none';
+  const sw=document.getElementById('pSwatches');
+  if(sw&&!sw.dataset.built){sw.dataset.built='1';SHOP_COLORS.forEach((c,i)=>{const d=document.createElement('button');d.className='sw'+(i===0?' on':'');d.style.background=c;d.onclick=()=>{pColor=c;[...sw.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');};sw.appendChild(d);});}
+  const g=document.getElementById('shopGrid'); g.innerHTML=''; const prods=shopProducts();
+  prods.forEach((p,i)=>{const d=document.createElement('div');d.className='prod';
+    d.innerHTML='<div class="pimg" style="background:linear-gradient(150deg,'+p.color+'40,'+p.color+'10)"><span class="pini" style="color:'+p.color+'">'+((p.name[0]||'?').toUpperCase())+'</span></div>'+
+      '<div class="pc"><div class="pn">'+p.name+'</div><div class="pp">$'+p.price+'</div></div>'+(admin?'<button class="pdel">×</button>':'');
+    d.querySelector('.pc').onclick=()=>toast(admin?'Así lo ve la afición · '+p.name:'Agregado al carrito · '+p.name);
+    if(admin)d.querySelector('.pdel').onclick=(e)=>{e.stopPropagation();prods.splice(i,1);saveProducts(prods);buildShop();toast('Producto quitado');};
+    g.appendChild(d);});
+  if(!prods.length)g.innerHTML='<div class="empty">La liga aún no sube productos.</div>';
+}
+function toggleShopForm(){const f=document.getElementById('shopForm');f.style.display=(f.style.display==='none'||!f.style.display)?'block':'none';}
+function addProduct(){const n=document.getElementById('pName').value.trim();const pr=parseInt(document.getElementById('pPrice').value)||0;
+  if(!n){toast('Ponle nombre al producto');return;}
+  const a=shopProducts();a.unshift({name:n,price:pr,color:pColor});saveProducts(a);
+  document.getElementById('pName').value='';document.getElementById('pPrice').value='';toggleShopForm();buildShop();toast('Producto publicado');}
+/* ---- ROSTER: dar de alta agrega de verdad, aparece en el vestidor ---- */
+function teamRoster(){try{const s=localStorage.getItem('lm_roster');if(s)return JSON.parse(s);}catch(e){}
+  return [{num:'7',nm:'Diego G.',pos:'Base · Titular',ppp:'11.4'},{num:'4',nm:'Marco V.',pos:'Pívot · Titular',ppp:'8.0'},{num:'11',nm:'Iker R.',pos:'Alero · Banca',ppp:'5.2'}];}
+function saveRoster(a){try{localStorage.setItem('lm_roster',JSON.stringify(a));}catch(e){}}
+function buildRoster(){const l=document.getElementById('rosterList'); if(!l)return; const r=teamRoster(); l.innerHTML='';
+  r.forEach((p,i)=>{const d=document.createElement('div');d.className='rosterrow';
+    d.innerHTML='<span class="num">'+(p.num||'-')+'</span><span class="nm">'+p.nm+'<small>'+(p.pos||'Jugador')+'</small></span><span class="st">'+(p.ppp||'0.0')+' PPP</span>';
+    if(currentRole==='coach'||currentRole==='liga'){const x=document.createElement('button');x.className='pdel';x.style.position='static';x.style.marginLeft='6px';x.textContent='×';x.onclick=()=>{r.splice(i,1);saveRoster(r);buildRoster();toast('Quitado del roster');};d.appendChild(x);}
+    l.appendChild(d);});
+  if(!r.length)l.innerHTML='<div class="empty" style="border:1px dashed var(--line);border-radius:10px">Aún no hay jugadores. Toca ＋ Alta.</div>';}
+function savePlayer(){const nm=(document.getElementById('altaName').value||'').trim();
+  if(!nm){toast('Escribe el nombre del jugador');return;}
+  if(!document.getElementById('altaResp').textContent){toast('Falta la responsiva de los padres');return;}
+  const num=(document.getElementById('altaNum').value||'').trim();
+  const pos=(document.getElementById('altaPos').value||'').trim()||'Jugador';
+  const r=teamRoster(); r.push({num:num||String(r.length+1),nm:nm,pos:pos+' · Nuevo',ppp:'0.0'}); saveRoster(r);
+  ['altaName','altaNum','altaPos','altaCat'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('altaResp').textContent='';
+  toast('Jugador dado de alta ✓'); go('vestidor');}
 /* ---- ctx / sheet ---- */
 function openSheet(){document.getElementById('sheet').classList.add('on');}
 function closeSheet(){document.getElementById('sheet').classList.remove('on');}
 function pickCtx(hat,liga,rol,dest){
-  currentRole=hat;
+  currentRole=hat; modeIdx=0;
   const col={papa:'var(--papa)',coach:'var(--coach)',publico:'var(--publico)',jugador:'var(--jugador)',liga:'var(--liga)'}[hat];
   document.querySelectorAll('.ctx').forEach(c=>{c.querySelector('.hat').style.background=col;c.querySelector('b').textContent=liga;c.querySelector('.ch').textContent=rol+' ▾';});
-  closeSheet();toast('Entras como '+rol+' · '+liga);if(dest)go(dest);
+  closeSheet();toast('Entras como '+rol+' · '+liga);go(dest||'hub');
 }
+function setRole(hat,liga,rol,dest){ pickCtx(hat,liga,rol,dest); }
 function tk(el){el.classList.toggle('on');}
 function fcTab(el,which){
   [...el.parentElement.children].forEach(t=>t.classList.remove('on')); el.classList.add('on');
