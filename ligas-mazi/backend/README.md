@@ -69,10 +69,33 @@ supabase db push               # con la CLI y supabase/migrations
 
 ## Estado
 - [x] Esquema + RLS + Realtime + vista pública segura (`schema.sql`).
-- [ ] Provisionar el proyecto Supabase y aplicar la migración.
+- [x] **Proyecto Supabase provisionado y migración aplicada** (org *Mazi's Url's*,
+      proyecto `ligas-mazi`, región `us-west-1`). RLS activa en todas las tablas;
+      `private_curp` sin políticas (solo `service_role` lo toca, por diseño).
+- [x] **`index.html` cableado al cliente** (URL + *publishable key*), **offline-first**:
+      si no hay red la app sigue en `localStorage`. Un indicador muestra
+      *Nube conectada* / *Modo local*.
+- [ ] Auth utilizable: falta **desactivar la confirmación por correo** (o activar
+      *anonymous sign-in*) en el panel de Supabase → Authentication. Es un toggle del
+      dashboard, no se puede hacer por migración. Después: `signUp`/`signIn` en la entrada.
 - [ ] Edge Functions: alta de jugador (hash de CURP en servidor), recomputo de stats.
-- [ ] Cablear `index.html` a Supabase (auth, marcador en vivo, cartas).
+- [ ] Migrar el motor de competencia (equipos/calendario/resultados/tabla) de
+      `localStorage` a las tablas (leagues/seasons/teams/roster/games) + marcador
+      en vivo por Realtime en `game_events`.
 
-> Nota honesta: el prototipo `index.html` hoy funciona **solo en el front** (datos
-> de ejemplo). Este backend es el plano y las migraciones para volverlo multiusuario
-> real. El siguiente paso es provisionar el proyecto y cablearlo.
+### Correcciones al aplicar el esquema
+El `schema.sql` original tenía tres cosas que Postgres rechaza; ya están corregidas
+aquí y en la base:
+1. La PK de `memberships` usaba `coalesce(...)` (una PK no admite expresiones) →
+   ahora es PK sustituta `id uuid` + **índice único** con el mismo criterio.
+2. `players.is_minor` era columna generada con `current_date` (no *immutable*) →
+   ahora la mantiene un **trigger** `set_is_minor`.
+3. `v_public_card` quedaba como *security definer* → se creó con
+   `security_invoker = true` para respetar la RLS de quien consulta.
+Además se añadieron políticas de lectura/escritura para `seasons`, `teams`, `games`,
+`roster` y `player_season_stats`, lectura pública de `cards` compartibles, y
+`search_path` fijo en las funciones trigger.
+
+### Configuración pública (segura en cliente)
+- URL: `https://buqrhhdhzsfqrfopzmxo.supabase.co`
+- Publishable key: `sb_publishable_…` (va en el cliente; la RLS protege los datos).

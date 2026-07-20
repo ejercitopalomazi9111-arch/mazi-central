@@ -18,7 +18,6 @@
 -- ============================================================================
 
 create extension if not exists pgcrypto;      -- gen_random_uuid, digest
-create extension if not exists citext;         -- texto case-insensitive
 
 -- ---------------------------------------------------------------------------
 -- PERFILES (1:1 con auth.users)
@@ -39,10 +38,18 @@ create table public.players (
   full_name     text not null,
   photo_url     text,                         -- se le quita el GPS al subir
   birthdate     date not null,
-  is_minor      boolean generated always as (birthdate > (current_date - interval '18 years')) stored,
+  -- is_minor lo mantiene un trigger: current_date no es immutable, así que no
+  -- puede ser columna generada. El trigger la recalcula al insertar/cambiar fecha.
+  is_minor      boolean not null default false,
   guardian_id   uuid not null references public.profiles(id),
   created_at    timestamptz not null default now()
 );
+create or replace function public.set_is_minor() returns trigger
+language plpgsql set search_path = '' as $$ begin
+  new.is_minor := new.birthdate > (current_date - interval '18 years'); return new;
+end $$;
+create trigger players_is_minor before insert or update of birthdate on public.players
+  for each row execute function public.set_is_minor();
 
 -- CURP: tabla PRIVADA aparte. Solo el service_role la toca (sin políticas RLS
 -- que permitan a usuarios leerla). Guardamos el hash, jamás el CURP en claro.
@@ -93,14 +100,17 @@ create table public.teams (
 create type public.member_role as enum ('admin_liga','coach','papa','jugador','publico');
 
 create table public.memberships (
+  id         uuid primary key default gen_random_uuid(),
   account_id uuid not null references public.profiles(id) on delete cascade,
   league_id  uuid not null references public.leagues(id) on delete cascade,
   team_id    uuid references public.teams(id) on delete cascade,   -- para coach/papa
   player_id  uuid references public.players(id) on delete cascade, -- para papa/jugador
   role       public.member_role not null,
-  created_at timestamptz not null default now(),
-  primary key (account_id, league_id, role, coalesce(team_id,'00000000-0000-0000-0000-000000000000'::uuid))
+  created_at timestamptz not null default now()
 );
+-- una PK no admite expresiones (coalesce); el mismo unicidad va como índice único
+create unique index memberships_uniq on public.memberships
+  (account_id, league_id, role, coalesce(team_id,'00000000-0000-0000-0000-000000000000'::uuid));
 
 -- alineación por temporada
 create table public.roster (
@@ -158,7 +168,7 @@ create index on public.game_events (player_id);
 
 -- Blindaje append-only: prohíbe UPDATE y DELETE a nivel de tabla.
 create or replace function public.no_mutation() returns trigger
-language plpgsql as $$ begin
+language plpgsql set search_path = '' as $$ begin
   raise exception 'game_events es append-only: usa un evento de reversa, no edites ni borres';
 end $$;
 create trigger ge_no_update before update on public.game_events
@@ -201,7 +211,8 @@ create table public.cards (
 -- en vivo, sin calendario. Solo si la carta fue marcada como compartible y,
 -- si es menor, solo cuando el tutor lo permitió (protect_minors respetado).
 -- ===========================================================================
-create view public.v_public_card as
+create view public.v_public_card
+  with (security_invoker = true) as   -- respeta la RLS de quien consulta, no la del dueño de la vista
   select p.id as player_id, p.full_name, p.photo_url,
          c.rarity, c.overall, c.attributes,
          s.points, s.rebounds, s.assists, s.fouls, s.games
@@ -285,9 +296,49 @@ create policy events_read on public.game_events for select
     where g.id = game_id and m.account_id = auth.uid()
   ));
 
--- cartas: el tutor administra la suya
+-- temporadas y equipos: leen los miembros de la liga; administra el dueño
+create policy seasons_read on public.seasons for select
+  using (exists (select 1 from memberships m where m.league_id = league_id and m.account_id = auth.uid())
+         or exists (select 1 from leagues l where l.id = league_id and l.owner_id = auth.uid()));
+create policy seasons_admin on public.seasons for all
+  using (exists (select 1 from leagues l where l.id = league_id and l.owner_id = auth.uid()))
+  with check (exists (select 1 from leagues l where l.id = league_id and l.owner_id = auth.uid()));
+
+create policy teams_read on public.teams for select
+  using (exists (select 1 from memberships m where m.league_id = league_id and m.account_id = auth.uid())
+         or exists (select 1 from leagues l where l.id = league_id and l.owner_id = auth.uid()));
+create policy teams_admin on public.teams for all
+  using (exists (select 1 from leagues l where l.id = league_id and l.owner_id = auth.uid()))
+  with check (exists (select 1 from leagues l where l.id = league_id and l.owner_id = auth.uid()));
+
+-- partidos: leen los miembros; escriben dueño y staff (coach/admin)
+create policy games_read on public.games for select
+  using (exists (select 1 from seasons s join memberships m on m.league_id=s.league_id where s.id=season_id and m.account_id=auth.uid())
+      or exists (select 1 from seasons s join leagues l on l.id=s.league_id where s.id=season_id and l.owner_id=auth.uid()));
+create policy games_admin on public.games for all
+  using (exists (select 1 from seasons s join leagues l on l.id=s.league_id where s.id=season_id and l.owner_id=auth.uid()))
+  with check (exists (select 1 from seasons s join leagues l on l.id=s.league_id where s.id=season_id and l.owner_id=auth.uid()));
+create policy games_staff_write on public.games for update
+  using (exists (select 1 from seasons s join memberships m on m.league_id=s.league_id where s.id=season_id and m.account_id=auth.uid() and m.role in ('coach','admin_liga')))
+  with check (exists (select 1 from seasons s join memberships m on m.league_id=s.league_id where s.id=season_id and m.account_id=auth.uid() and m.role in ('coach','admin_liga')));
+
+-- alineación: leen los miembros; administra el dueño
+create policy roster_read on public.roster for select
+  using (exists (select 1 from teams t join memberships m on m.league_id=t.league_id where t.id=team_id and m.account_id=auth.uid())
+      or exists (select 1 from teams t join leagues l on l.id=t.league_id where t.id=team_id and l.owner_id=auth.uid()));
+create policy roster_admin on public.roster for all
+  using (exists (select 1 from teams t join leagues l on l.id=t.league_id where t.id=team_id and l.owner_id=auth.uid()))
+  with check (exists (select 1 from teams t join leagues l on l.id=t.league_id where t.id=team_id and l.owner_id=auth.uid()));
+
+-- estadísticas agregadas: tutor y staff de la liga
+create policy stats_read on public.player_season_stats for select
+  using (public.is_guardian(player_id) or public.shares_league_staff(player_id));
+
+-- cartas: el tutor administra la suya; el público solo lee las marcadas como compartibles
 create policy cards_owner on public.cards for all
   using (public.is_guardian(player_id)) with check (public.is_guardian(player_id));
+create policy cards_public_read on public.cards for select
+  using (shared_public = true);
 
 -- ===========================================================================
 -- REALTIME: marcador en vivo para miles de espectadores

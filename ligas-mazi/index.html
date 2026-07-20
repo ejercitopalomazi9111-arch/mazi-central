@@ -438,6 +438,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .logo-hero{margin-bottom:16px;filter:drop-shadow(0 8px 22px rgba(239,122,53,.4))}
 .entry-foot{margin-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
 .entry-foot b{color:var(--accent-lt)}
+.cloud-badge{margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+.cloud-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.cloud-badge.online{color:var(--good)} .cloud-badge.online .dot{background:var(--good);box-shadow:0 0 8px var(--good)}
+.cloud-badge.checking .dot{background:var(--accent-lt);animation:cbpulse 1s ease-in-out infinite}
+@keyframes cbpulse{0%,100%{opacity:.3}50%{opacity:1}}
 .brandmini{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-weight:800;font-size:12px;letter-spacing:.05em;color:#c9cfd9;text-transform:uppercase;flex-shrink:0;opacity:.9}
 .brandmini .ic{width:18px;height:18px;color:var(--accent-lt)}
 .brandmini.on-banner{position:absolute;top:calc(var(--safe-t) + 12px);right:12px;z-index:4}
@@ -660,6 +665,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <button class="btn" onclick="doLogin()">Entrar <span class="go">›</span></button>
       <button class="btn ghost" onclick="setRole('publico','Invitado','Público','hub')">Solo ver (invitado) <span class="go">›</span></button>
       <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
+      <div class="cloud-badge" id="cloudBadge"><span class="dot"></span> Modo local</div>
     </div>
   </section>
 
@@ -1081,7 +1087,27 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <div id="toast" style="position:absolute;left:16px;right:16px;bottom:76px;z-index:50;display:none"></div>
 </div>
 
+<!-- Cliente Supabase (mejor esfuerzo): si no carga, la app sigue en modo local -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 <script>
+/* ====== Backend en la nube (Supabase). Offline-first: si no hay red o no carga
+   la librería, todo sigue funcionando en el teléfono (localStorage). ====== */
+const SB_URL='https://buqrhhdhzsfqrfopzmxo.supabase.co';
+const SB_KEY='sb_publishable_1ACOrVabWxGrSEgmiG_qJQ__xJlHdFo';  // clave pública: la RLS protege los datos
+let _sb=null;
+function sbClient(){ if(_sb)return _sb; try{ if(window.supabase&&SB_URL&&SB_KEY){ _sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}}); } }catch(e){} return _sb; }
+function setCloudBadge(state,txt){ const b=document.getElementById('cloudBadge'); if(!b)return; b.className='cloud-badge'+(state?' '+state:''); b.innerHTML='<span class="dot"></span> '+txt; }
+async function checkBackend(){
+  setCloudBadge('checking','Buscando la nube…');
+  const c=sbClient();
+  if(!c){ setCloudBadge('','Modo local'); return false; }
+  try{
+    // consulta ligera a la vista pública segura: prueba conectividad + llave
+    const {error}=await c.from('v_public_card').select('player_id').limit(1);
+    if(error && error.code && error.code!=='PGRST116'){ setCloudBadge('','Modo local'); return false; }
+    setCloudBadge('online','Nube conectada'); return true;
+  }catch(e){ setCloudBadge('','Modo local'); return false; }
+}
 /* ---- router con historial: volver atrás siempre funciona (botón ‹ y back del navegador/Android) ---- */
 let curScreen=null; const navStack=[];
 function go(id){
@@ -1909,6 +1935,8 @@ function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)retu
 let tt;function toast(msg){if(curScreen!=='mesa')return;const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',Math.min(6500,2200+msg.length*22));}
 buildNav('hub');
 (function(){const u=userData();if(u&&u.name){const li=document.getElementById('loginName');if(li)li.value=u.name;}})();
+/* prueba de conexión a la nube una vez que la librería (defer) ya cargó */
+window.addEventListener('load',()=>{ setTimeout(checkBackend,300); });
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
 buildModes();
 stampBrand();
