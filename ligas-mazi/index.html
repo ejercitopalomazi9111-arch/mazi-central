@@ -162,6 +162,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .le-match .btn.sm{flex:0 0 auto;width:auto;min-width:44px;padding:8px 13px}
 .le-match .le-x{flex:0 0 auto}
 .le-match .le-time{flex:0 0 auto;font-family:var(--mono);font-size:10px;color:var(--accent-lt);background:rgba(255,154,90,.12);border-radius:6px;padding:3px 6px;font-variant-numeric:tabular-nums}
+.le-officiate{display:flex;align-items:center;gap:6px;justify-content:center;margin:-2px 0 10px;padding:8px;border:1px dashed var(--mesa);border-radius:10px;color:#ff9a8f;font-size:12px;font-weight:600;cursor:pointer;background:rgba(236,90,69,.06)}
+.mctx-live{margin:0 14px;padding:9px 12px;background:rgba(236,90,69,.12);border:1px solid var(--mesa);border-radius:10px;font-size:12.5px;color:#ffd9d2;text-align:center}
+.mctx-live b{color:#fff}
 .le-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .le-tbl th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--dim);text-transform:uppercase;padding:7px 4px;text-align:center;border-bottom:1px solid var(--line)}
 .le-tbl td{padding:8px 4px;text-align:center;border-bottom:1px solid var(--line);color:#dfe4ec;font-variant-numeric:tabular-nums}
@@ -541,7 +544,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mchip.sub{background:var(--panel2);color:var(--bone);border:1px solid var(--line)}
 .mchip.ghost{background:none;color:var(--dim);font-family:var(--body);font-weight:400;text-transform:none;font-size:13px;padding:6px 0}
 .mq{display:flex;align-items:center;gap:10px;font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:17px;margin:6px 2px 12px}
-.mback{background:var(--panel);border:1px solid var(--line);color:var(--accent-lt);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;font-family:var(--body)}
+.mback{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--accent-lt);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;font-family:var(--body)}
+.mqt{min-width:0}
 .mteams-big{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .mteam-big{display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:22px 10px;cursor:pointer;color:var(--bone);border-top:4px solid var(--tc)}
 .mteam-big .tnm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:19px}
@@ -750,10 +754,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <!-- MESA / ANOTADOR — simple: equipo → jugador → punto/falta -->
   <section class="screen" id="s-mesa">
     <div class="mesa-head"><button class="backbtn" onclick="goBack()">‹</button><span class="sc" id="mScore">42 — 39</span><span class="clk" id="mClk">Q3 · 12:34</span></div>
+    <div id="mOfficiateBanner"></div>
     <div class="mctx" id="mctx"></div>
     <div class="scroll"><div class="pad" style="padding-top:6px">
       <div class="mstep" id="mstep"></div>
       <div class="mesa-undo"><button onclick="mUndo()"><svg class="ic"><use href="#ic-undo"/></svg> Deshacer lo último</button></div>
+      <div id="mFinishWrap" style="display:none;margin:12px 0 0"><button class="btn block" onclick="finishOfficiating()"><svg class="ic"><use href="#ic-flag"/></svg> Finalizar y guardar el resultado</button></div>
       <div class="step-lbl" style="margin-top:16px"><span class="n" style="background:var(--dim)">≡</span> Bitácora del partido</div>
       <div class="mesa-log" id="mlog"></div>
     </div></div>
@@ -1631,11 +1637,12 @@ function buildLeagueCal(){
   let h='<button class="btn block" onclick="genRoundRobin()" style="margin:2px 0 12px"><svg class="ic"><use href="#ic-calendar"/></svg> '+(d.calendar.length?'Regenerar':'Generar')+' rol todos contra todos</button>';
   if(!d.calendar.length){ h+='<div class="stratnote" style="border-left-color:var(--liga)">Aún no hay calendario. Genera el rol y saldrán todas las jornadas: cada equipo juega contra todos, una vez.</div>'; box.innerHTML=h; return; }
   let last=null;
-  d.calendar.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
+  d.calendar.forEach((m,idx)=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
     if(m.jornada!==last){ h+='<div class="h-row" style="align-items:baseline"><h2 class="disp" style="font-size:16px">Jornada '+m.jornada+'</h2>'+(m.date?'<span class="more" style="text-transform:capitalize;color:var(--dim)">'+fmtDate(m.date)+'</span>':'')+'</div>'; last=m.jornada; }
     const res=m.done?('<span class="mid">'+m.hs+'–'+m.as+'</span>'):'<span class="mid" style="color:var(--dim);font-size:11px">vs</span>';
     const hora=m.time?'<span class="le-time">'+m.time+'</span>':'';
     h+='<div class="le-match">'+hora+'<span class="crest real sm" style="background:var('+H.color+')">'+H.ini+'</span><span class="tnm">'+H.name+'</span>'+res+'<span class="tnm r">'+A.name+'</span><span class="crest real sm" style="background:var('+A.color+')">'+A.ini+'</span></div>';
+    if(!m.done && currentRole==='liga'){ h+='<div class="le-officiate" onclick="officiateMatch('+idx+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir en la mesa</div>'; }
   });
   box.innerHTML=h;
 }
@@ -1740,7 +1747,40 @@ function buildResp(){
   });
   box.innerHTML='<div class="stat-row" style="margin:0 0 12px"><div class="stat-tile"><b>'+ok+'/'+total+'</b><span>Responsivas firmadas</span></div></div>'+h;
 }
-function buildMesa(){ mstep=0; mT=null; mP=null; renderWiz(); }
+/* ====== Dirigir en la mesa un partido del calendario: al finalizar, el
+   resultado entra al calendario y la tabla se recalcula sola. ====== */
+function officiateMatch(idx){
+  const d=leagueData(); const m=d.calendar[idx]; if(!m||m.done)return;
+  const H=teamById(m.home), A=teamById(m.away); if(!H||!A)return;
+  const mk=(t)=> (t.players||[]).map((p,i)=>({num:p.num,nm:p.nm,pos:p.pos||'Base',pts:0,f:0,min:0,on:i<5}));
+  const r=rules();
+  GAME.period=1; GAME.clock=String(r.minPer).padStart(2,'0')+':00';
+  GAME.teams=[
+    {id:H.id,name:H.name,ini:H.ini,color:H.color,score:0,tf:0,players:mk(H)},
+    {id:A.id,name:A.name,ini:A.ini,color:A.color,score:0,tf:0,players:mk(A)},
+  ];
+  GAME.log=[]; GAME.matchIdx=idx;
+  go('mesa');
+}
+function finishOfficiating(){
+  if(GAME.matchIdx==null)return;
+  const d=leagueData(); const m=d.calendar[GAME.matchIdx];
+  if(m){ m.hs=GAME.teams[0].score; m.as=GAME.teams[1].score; m.done=true; saveLeague(d); }
+  GAME.matchIdx=null; go('tabla');
+}
+function buildMesa(){
+  mstep=0; mT=null; mP=null;
+  const w=document.getElementById('mFinishWrap');
+  const ban=document.getElementById('mOfficiateBanner');
+  if(GAME.matchIdx!=null){
+    if(w)w.style.display='';
+    if(ban)ban.innerHTML='<div class="mctx-live">Dirigiendo · <b>'+GAME.teams[0].name+'</b> vs <b>'+GAME.teams[1].name+'</b> · partido del calendario</div>';
+  } else {
+    if(w)w.style.display='none';
+    if(ban)ban.innerHTML='';
+  }
+  renderWiz();
+}
 function mClk(){mtick++;const mm=Math.max(0,12-Math.floor(mtick/3));const ss=('0'+((60-(mtick*13)%60+60)%60)).slice(-2);return 'Q'+GAME.period+' '+mm+':'+ss;}
 function renderWiz(){
   document.getElementById('mScore').textContent=GAME.teams[0].score+' — '+GAME.teams[1].score;
@@ -1760,20 +1800,20 @@ function renderWiz(){
       b.onclick=()=>{mT=i;mstep=1;renderWiz();};tb.appendChild(b);});
   } else if(mstep===1){ // JUGADOR
     const t=GAME.teams[mT];
-    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=0;mT=null;renderWiz()">‹ equipos</button>2 · ¿Qué jugador de <b style="color:var('+t.color+')">'+t.name+'</b>?</div><div class="mplayers" id="mpl"></div>';
+    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=0;mT=null;renderWiz()">‹ equipos</button><span class="mqt">2 · ¿Qué jugador de <b style="color:var('+t.color+')">'+t.name+'</b>?</span></div><div class="mplayers" id="mpl"></div>';
     const pl=step.querySelector('#mpl');
     t.players.forEach((p,i)=>{const b=document.createElement('button');b.className='mplayer'+(p.on?'':' benchp');
       b.innerHTML='<span class="pn">'+p.num+'</span><span class="pnm">'+p.nm+'</span><span class="pf">'+p.pts+' pts · '+p.f+'F'+(p.on?'':' · banca')+'</span>';
       b.onclick=()=>{mP=i;mstep=2;renderWiz();};pl.appendChild(b);});
   } else if(mstep===2){ // ACCIÓN
-    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=1;mP=null;renderWiz()">‹ jugadores</button>3 · ¿Qué pasó?</div>'+
+    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=1;mP=null;renderWiz()">‹ jugadores</button><span class="mqt">3 · ¿Qué pasó?</span></div>'+
       '<div class="macts2"><button class="mbig score" onclick="mstep=3;renderWiz()">CANASTA</button><button class="mbig foul" onclick="mstep=4;renderWiz()">FALTA</button></div>';
   } else if(mstep===3){ // PUNTOS
-    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=2;renderWiz()">‹</button>¿Cuántos puntos?</div>'+
+    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=2;renderWiz()">‹</button><span class="mqt">¿Cuántos puntos?</span></div>'+
       '<div class="macts2 three"><button class="mbig score" onclick="mScore(1)">+1<small>libre</small></button><button class="mbig score" onclick="mScore(2)">+2<small>campo</small></button><button class="mbig score" onclick="mScore(3)">+3<small>triple</small></button></div>';
   } else if(mstep===4){ // TIPO DE FALTA
     let btns=foulTypes().map(([code,label,cls])=>'<button class="mbig foul small" onclick="mFoul(\''+code+'\',\''+label+'\')">'+label+'</button>').join('');
-    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=2;renderWiz()">‹</button>Tipo de falta</div><div class="macts-grid">'+btns+'</div>';
+    step.innerHTML='<div class="mq"><button class="mback" onclick="mstep=2;renderWiz()">‹</button><span class="mqt">Tipo de falta</span></div><div class="macts-grid">'+btns+'</div>';
   }
   renderMLog();
 }
