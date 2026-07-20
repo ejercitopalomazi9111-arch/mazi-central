@@ -137,7 +137,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mk-score .mid{text-align:center;padding:0 8px}
 .mk-score .mid .q{font-family:var(--mono);font-size:10px;color:var(--accent-lt)}
 .mk-score .mid .clk{font-family:var(--disp);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
-.mk-score .mid .bonus{font-family:var(--mono);font-size:9px;color:var(--mesa);margin-top:2px}
+.mk-score .mid .mk-ind{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:3px;min-height:14px}
+.mk-score .mid .bonus{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--mesa);border:1px solid var(--mesa);border-radius:5px;padding:1px 5px}
+.mk-score .mid .shot{font-family:var(--mono);font-size:9px;color:#cfd5df;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
+.mk-score .mid .shot b{color:#fff}
 .tok{position:absolute;transform:translate(-50%,-50%);z-index:2;text-align:center;width:56px}
 .tok .jersey{width:40px;height:40px;margin:0 auto;border-radius:50%;border:2px solid rgba(255,255,255,.5);
   background:rgba(20,23,31,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:17px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
@@ -639,7 +642,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <section class="screen" id="s-ligas">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Mis ligas</span></div>
     <div class="scroll"><div class="pad">
-      <div class="leaguerow" onclick="go('rol')"><div class="crest real" style="background:var(--papa)">HA</div><div><div class="nm">Halcones U-14</div><div class="mt">Liga Municipal · Torneo Apertura</div></div><span class="hat">Papá</span></div>
+      <div class="leaguerow" onclick="openLeague('rol')"><div class="crest real" style="background:var(--papa)">HA</div><div><div class="nm">Halcones U-14</div><div class="mt">Liga Municipal · Torneo Apertura</div></div><span class="hat">Papá</span></div>
       <div class="leaguerow" onclick="go('publico')"><div class="crest real" style="background:var(--publico)">BN</div><div><div class="nm">Liga Barrio Norte</div><div class="mt">Dominical · en curso</div></div><span class="hat" style="color:var(--publico)">Público</span></div>
       <div class="h-row"><h2 class="disp" style="font-size:18px">Archivo</h2></div>
       <div class="leaguerow" style="opacity:.6" onclick="toast('Liga archivada — solo lectura, no se borra')"><div class="crest real" style="background:#3a4250">C25</div><div><div class="nm">Clausura 2025</div><div class="mt">Terminada · archivada</div></div><span class="hat" style="color:var(--dim)">Ver</span></div>
@@ -671,9 +674,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div class="mk-top"><button class="backbtn" onclick="goBack()" style="background:rgba(7,9,13,.7);backdrop-filter:blur(6px)">‹</button>
           <span class="pill" style="background:rgba(236,90,69,.9);color:#fff;border:none">● EN VIVO</span></div>
         <div class="mk-score">
-          <div class="team"><div class="lg crestc" style="background:var(--papa)">TI</div><div class="nm">TITANES</div><div class="sc">42</div></div>
-          <div class="mid"><div class="q">3ER CUARTO</div><div class="clk">12:34</div><div class="bonus">BONUS</div></div>
-          <div class="team"><div class="lg crestc" style="background:var(--publico)">HA</div><div class="nm">HALCONES</div><div class="sc" style="color:var(--papa)">39</div></div>
+          <div class="team"><div class="lg crestc" id="mkHomeIni" style="background:var(--papa)">TI</div><div class="nm" id="mkHomeNm">TITANES</div><div class="sc" id="mkHomeSc">42</div></div>
+          <div class="mid"><div class="q" id="mkPeriod">3ER CUARTO</div><div class="clk" id="mkClk2">12:34</div><div class="mk-ind"><span class="bonus" id="mkBonus">BONUS</span><span class="shot" id="mkShot"></span></div></div>
+          <div class="team"><div class="lg crestc" id="mkAwayIni" style="background:var(--publico)">HA</div><div class="nm" id="mkAwayNm">HALCONES</div><div class="sc" id="mkAwaySc">39</div></div>
         </div>
         <div class="mk-notif" id="mkNotif"></div>
         <!-- jugadores en cancha: nombre + minutos · puntos · faltas -->
@@ -990,7 +993,22 @@ function go(id){
   render(id);
 }
 function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
+/* ====== Aislamiento por rol: cada sombrero solo entra a lo suyo ======
+   El público jamás cae en la casa del papá ni en la mesa/VAR/perillas/liga. */
+const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda'];
+const ROLE_SCREENS={
+  papa:   ['rol','carta','alta'],
+  coach:  ['vestidor','estrategias','carta'],
+  liga:   ['liga','mesa','perillas','alta','var','vestidor','estrategias'],
+  publico:[],
+  jugador:['carta'],
+};
+const ROLE_HOME={papa:'rol', coach:'vestidor', liga:'liga', publico:'publico', jugador:'carta'};
+function canAccess(id){ return COMMON_SCREENS.includes(id) || (ROLE_SCREENS[currentRole]||[]).includes(id); }
+/* fila de "Mis ligas": el papá abre su casa; cualquier otro sombrero ve el marcador público */
+function openLeague(home){ go(canAccess(home)?home:'publico'); }
 function render(id){
+  if(!canAccess(id)) id=ROLE_HOME[currentRole]||'hub';   // guardia: redirige a la casa del rol
   curScreen=id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   const el=document.getElementById('s-'+id); el.classList.add('on');
@@ -1167,7 +1185,34 @@ function onModeScroll(){
 /* ---- cancha desde arriba: la LIGA elige realista (foto) o minimalista (líneas) ---- */
 function courtStyle(){ try{return localStorage.getItem('lm_court')||'realista';}catch(e){return 'realista';} }
 function setCourtStyle(v){ try{localStorage.setItem('lm_court',v);}catch(e){} if(document.getElementById('s-marcador').classList.contains('on'))drawCourt(); }
+/* etiqueta del periodo según las perillas: cuartos vs mitades, con overtime */
+function periodLabel(){
+  const r=rules(), p=GAME.period, reg=r.periods;
+  if(p>reg){ return 'PRÓRROGA'+(reg>0&&p-reg>1?' '+(p-reg):''); }
+  if(r.halves){ return (p===1?'1.ª':p===2?'2.ª':p+'.ª')+' MITAD'; }
+  const ord=['','1ER','2DO','3ER','4TO','5TO','6TO','7MO','8VO','9NO','10MO','11MO','12MO'];
+  return (ord[p]||p+'º')+' CUARTO';
+}
+/* sincroniza el encabezado del marcador con el estado real del juego (mesa) y las perillas */
+function syncScoreboard(){
+  const r=rules(), h=GAME.teams[0], a=GAME.teams[1];
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('mkHomeIni',h.ini); set('mkHomeNm',h.name.toUpperCase()); set('mkHomeSc',h.score);
+  set('mkAwayIni',a.ini); set('mkAwayNm',a.name.toUpperCase()); set('mkAwaySc',a.score);
+  const ci=document.getElementById('mkHomeIni'); if(ci)ci.style.background='var('+h.color+')';
+  const ca=document.getElementById('mkAwayIni'); if(ca)ca.style.background='var('+a.color+')';
+  set('mkPeriod',periodLabel()); set('mkClk2',GAME.clock);
+  // BONUS: se enciende para el equipo cuyo rival ya llegó al límite de faltas de equipo
+  const bonus=document.getElementById('mkBonus');
+  if(bonus){ const anyBonus=(a.tf>=r.teamBonus)||(h.tf>=r.teamBonus); bonus.style.display=anyBonus?'':'none'; }
+  // Reloj de tiro: si la perilla está apagada, desaparece de verdad
+  const shot=document.getElementById('mkShot');
+  if(shot){ if(r.shotClock){shot.style.display='';shot.innerHTML='<b>'+r.shotSec+'</b>″';} else {shot.style.display='none';} }
+  // marcador rápido de la mesa y del hub, del mismo estado
+  const ms=document.getElementById('mScore'); if(ms)ms.textContent=h.score+' — '+a.score;
+}
 function drawCourt(){
+  syncScoreboard();
   const box=document.getElementById('courtbg');
   if(courtStyle()==='minimalista'){
     box.innerHTML=`<svg viewBox="0 0 150 300" preserveAspectRatio="xMidYMid slice">
@@ -1185,7 +1230,8 @@ function drawCourt(){
   // notif del marcador — SOLO el papá de Diego ve a "Diego" por nombre
   const n=document.getElementById('mkNotif');
   const esPapa=currentRole==='papa';
-  n.innerHTML=`<div class="n">${esPapa?'<b>12:31</b> · Diego entró a la cancha por #9':'<b>Q3</b> · Titanes 42 — 39 Halcones'}</div>`;
+  const marca=GAME.teams[0].name+' '+GAME.teams[0].score+' — '+GAME.teams[1].score+' '+GAME.teams[1].name;
+  n.innerHTML=`<div class="n">${esPapa?'<b>'+GAME.clock+'</b> · Diego entró a la cancha por #9':'<b>'+periodLabel()+'</b> · '+marca}</div>`;
   setTimeout(()=>{if(document.getElementById('s-marcador').classList.contains('on'))
     n.innerHTML=`<div class="n">${esPapa?'<b>Diego anotó +2</b> — lleva 6 pts':'<b>Anotación de Titanes</b> · +2'}</div>`;},2600);
   buildLineup(); buildMkActions();
