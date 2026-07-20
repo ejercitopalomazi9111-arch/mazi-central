@@ -167,6 +167,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .le-tbl td.tm{text-align:left;color:#fff;font-weight:600;display:flex;align-items:center;gap:7px}
 .le-tbl td.pts{font-family:var(--disp);font-weight:800;color:var(--accent-lt)}
 .le-tbl tr.top td .rk{color:var(--good)}
+.tid-swatches{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tid-sw{width:34px;height:34px;border-radius:8px;border:2px solid transparent;cursor:pointer;padding:0}
+.tid-sw.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.22)}
+.tid-preview{display:flex;align-items:center;gap:10px;margin-top:13px}
 .tok{position:absolute;transform:translate(-50%,-50%);z-index:2;text-align:center;width:56px}
 .tok .jersey{width:40px;height:40px;margin:0 auto;border-radius:50%;border:2px solid rgba(255,255,255,.5);
   background:rgba(20,23,31,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:17px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
@@ -768,7 +772,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div class="stand-row"><span class="pos p3">3</span><span class="tm"><span class="crest real sm" style="background:#3a9d8f">LO</span>Lobos</span><span>9</span><span class="dif up">+9</span><span class="pts">15</span></div>
         <div class="stand-row"><span class="pos">4</span><span class="tm"><span class="crest real sm" style="background:#8a6bf0">PU</span>Pumas</span><span>9</span><span class="dif dn">−22</span><span class="pts">9</span></div>
       </div>
-      <button class="btn ghost sm block" onclick="toast('Apoyar equipo → tu carta de fan')" style="margin-top:12px"><svg class="ic"><use href="#ic-heart"/></svg> Apoyar a un equipo</button>
+      <button class="btn ghost sm block" onclick="toggleFanFollow()" style="margin-top:12px"><svg class="ic"><use href="#ic-heart"/></svg> <span id="fanBtnLbl">Apoyar a un equipo</span></button>
+      <div id="fanFollow" style="display:none;margin-top:10px"></div>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -791,8 +796,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div class="tile" style="aspect-ratio:1.8" onclick="go('estrategias')"><span class="stripe" style="background:var(--publico)"></span><img src="assets/cancha.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-clipboard"/></svg></div><div class="t" style="font-size:15px">Estrategias</div></div></div>
         <div class="tile" style="aspect-ratio:1.8" onclick="go('carta')"><span class="stripe" style="background:var(--jugador)"></span><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="i"><svg class="ic"><use href="#ic-card"/></svg></div><div class="t" style="font-size:15px">Cartas</div></div></div>
       </div>
-      <button class="btn ghost sm block" onclick="toast('Editar color y escudo del equipo')" style="margin-top:10px"><svg class="ic"><use href="#ic-palette"/></svg> Identidad del equipo</button>
-      <button class="btn ghost sm block" onclick="toast('Unir equipo a una liga')"><svg class="ic"><use href="#ic-trophy"/></svg> Unirse a una liga</button>
+      <button class="btn ghost sm block" onclick="toggleTeamIdentity()" style="margin-top:10px"><svg class="ic"><use href="#ic-palette"/></svg> Identidad del equipo</button>
+      <div id="teamIdentity" style="display:none;margin-top:10px"></div>
+      <button class="btn ghost sm block" onclick="go('ligas')" style="margin-top:10px"><svg class="ic"><use href="#ic-trophy"/></svg> Unirse a una liga</button>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -1092,6 +1098,8 @@ function render(id){
   if(id==='responsivas')buildResp();
   if(id==='tabla')buildTable();
   if(id==='carta')renderCard();
+  if(id==='publico')fanBtnRefresh();
+  if(id==='vestidor'){const ti=document.getElementById('teamIdentity');if(ti)ti.style.display='none';}
   requestAnimationFrame(()=>armHints(el));
 }
 window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop()); });
@@ -1776,6 +1784,39 @@ function onCardPhoto(ev){
   }; img.src=fr.result; };
   fr.readAsDataURL(f);
 }
+/* ====== Público: apoyar (seguir) a un equipo — tu carta de fan ====== */
+function fanBtnRefresh(){
+  const lbl=document.getElementById('fanBtnLbl'); if(!lbl)return; const u=userData()||{};
+  const t=u.follows?teamById(u.follows):null;
+  lbl.textContent=t?('Apoyas a '+t.name):'Apoyar a un equipo';
+}
+function toggleFanFollow(){ const box=document.getElementById('fanFollow'); if(!box)return;
+  const open=box.style.display!=='none'; box.style.display=open?'none':'block'; if(!open)buildFanFollow(); }
+function buildFanFollow(){
+  const box=document.getElementById('fanFollow'); if(!box)return;
+  const d=leagueData(), u=userData()||{}; let h='';
+  d.teams.forEach(t=>{ const on=u.follows===t.id;
+    h+='<div class="leaguerow" style="margin-bottom:8px'+(on?';border-color:var('+t.color+')':'')+'" onclick="followTeam(\''+t.id+'\')"><div class="crest real" style="background:var('+t.color+')">'+t.ini+'</div><div><div class="nm">'+t.name+'</div><div class="mt">'+(on?'Lo apoyas':'Tocar para apoyar')+'</div></div><span class="more" style="'+(on?'color:var('+t.color+')':'')+'">'+(on?'♥':'›')+'</span></div>';
+  });
+  box.innerHTML=h;
+}
+function followTeam(id){ const u=userData()||{}; u.follows=(u.follows===id?null:id); saveUser(u); buildFanFollow(); fanBtnRefresh(); }
+/* ====== Coach: identidad del equipo (nombre + color de escudo), conectada a la liga ====== */
+const IDENTITY_COLORS=['--papa','--publico','--coach','--liga','--jugador','--mesa'];
+function coachTeamIn(d){ return d.teams.find(t=>t.id==='ti')||d.teams[0]; }
+function toggleTeamIdentity(){ const box=document.getElementById('teamIdentity'); if(!box)return;
+  const open=box.style.display!=='none'; box.style.display=open?'none':'block'; if(!open)buildTeamIdentity(); }
+function buildTeamIdentity(){
+  const box=document.getElementById('teamIdentity'); if(!box)return;
+  const t=coachTeamIn(leagueData()); if(!t){box.innerHTML='';return;}
+  let sw=''; IDENTITY_COLORS.forEach(c=>{ sw+='<button class="tid-sw'+(t.color===c?' on':'')+'" style="background:var('+c+')" onclick="setTeamColor(\''+c+'\')"></button>'; });
+  box.innerHTML='<div class="card"><div class="kick">Identidad de '+t.name+'</div>'+
+    '<div class="le-add" style="margin-top:6px"><input id="tidName" value="'+t.name.replace(/"/g,'&quot;')+'" placeholder="Nombre del equipo"><button class="btn sm" onclick="setTeamName()">Guardar</button></div>'+
+    '<div class="tid-swatches">'+sw+'</div>'+
+    '<div class="tid-preview"><span class="crest real" style="background:var('+t.color+')">'+t.ini+'</span><span style="color:#c7cdd8;font-size:13px">Así se ve tu escudo en toda la liga</span></div></div>';
+}
+function setTeamColor(c){ const d=leagueData(); const t=coachTeamIn(d); if(t){t.color=c;saveLeague(d);buildTeamIdentity();} }
+function setTeamName(){ const d=leagueData(); const t=coachTeamIn(d); const v=(document.getElementById('tidName').value||'').trim(); if(t&&v){t.name=v;t.ini=iniOf(v);saveLeague(d);buildTeamIdentity();} }
 function tk(el){el.classList.toggle('on');}
 function fcTab(el,which){
   [...el.parentElement.children].forEach(t=>t.classList.remove('on')); el.classList.add('on');
