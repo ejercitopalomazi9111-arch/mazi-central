@@ -172,7 +172,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   background:rgba(20,23,31,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:17px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .tok.home .jersey{border-color:var(--papa);color:var(--papa)} .tok.away .jersey{border-color:var(--publico);color:var(--publico)}
 .tok.mine .jersey{border-color:var(--accent-lt);color:var(--accent-lt);box-shadow:0 0 16px rgba(255,154,90,.6)}
-.tok .lab{font-family:var(--mono);font-size:9px;color:#dfe4ec;margin-top:2px;text-shadow:0 1px 3px #000;white-space:nowrap}
+.tok .lab{position:relative;z-index:3;display:inline-block;font-family:var(--mono);font-size:9px;color:#dfe4ec;margin-top:3px;padding:3px 7px;border-radius:8px;background:rgba(7,9,13,.66);box-shadow:0 2px 8px rgba(0,0,0,.45);text-shadow:0 1px 2px #000;white-space:nowrap}
 .tok .fouls{font-size:8px;color:var(--crit)}
 .mk-bottom{margin-top:auto;padding:0 12px calc(var(--safe-b) + 10px)}
 .mk-bench{display:flex;gap:6px;overflow-x:auto;padding:8px 0;margin:0 2px}
