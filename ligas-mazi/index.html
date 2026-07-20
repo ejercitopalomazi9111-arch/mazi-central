@@ -161,6 +161,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .le-match .si{flex:0 0 auto;width:44px;background:rgba(7,9,13,.8);border:1px solid var(--line);border-radius:7px;color:#fff;text-align:center;padding:7px 2px;font-size:14px;font-variant-numeric:tabular-nums}
 .le-match .btn.sm{flex:0 0 auto;width:auto;min-width:44px;padding:8px 13px}
 .le-match .le-x{flex:0 0 auto}
+.le-match .le-time{flex:0 0 auto;font-family:var(--mono);font-size:10px;color:var(--accent-lt);background:rgba(255,154,90,.12);border-radius:6px;padding:3px 6px;font-variant-numeric:tabular-nums}
 .le-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .le-tbl th{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--dim);text-transform:uppercase;padding:7px 4px;text-align:center;border-bottom:1px solid var(--line)}
 .le-tbl td{padding:8px 4px;text-align:center;border-bottom:1px solid var(--line);color:#dfe4ec;font-variant-numeric:tabular-nums}
@@ -171,6 +172,22 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .tid-sw{width:34px;height:34px;border-radius:8px;border:2px solid transparent;cursor:pointer;padding:0}
 .tid-sw.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.22)}
 .tid-preview{display:flex;align-items:center;gap:10px;margin-top:13px}
+.brk{display:flex;gap:12px;align-items:center}
+.brk-col{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:16px;min-width:0}
+.brk-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--accent-lt);text-transform:uppercase;text-align:center;margin-bottom:2px}
+.brk-match{background:rgba(20,23,31,.6);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:5px}
+.brk-team{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:8px;background:rgba(7,9,13,.4)}
+.brk-team.tap{cursor:pointer}
+.brk-team .bn{flex:1;font-size:12.5px;color:#e7ebf2;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brk-team.win{background:rgba(58,190,120,.16);border:1px solid var(--good)}
+.brk-team.win .bn{color:#fff}
+.brk-team.lose{opacity:.45}
+.brk-team.empty{color:var(--dim);font-size:12px;justify-content:center}
+.brk-team .chk{color:var(--good);font-weight:800}
+.brk-champ{display:flex;align-items:center;gap:12px;margin-top:16px;padding:14px;border-radius:14px;background:linear-gradient(90deg,rgba(232,177,62,.16),rgba(255,154,90,.06));border:1px solid rgba(232,177,62,.5)}
+.brk-champ .crest{width:46px;height:46px}
+.brk-champ .ck{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:#e8b13e;text-transform:uppercase}
+.brk-champ .cn{font-family:var(--disp);font-weight:800;font-size:20px;color:#fff}
 .tok{position:absolute;transform:translate(-50%,-50%);z-index:2;text-align:center;width:56px}
 .tok .jersey{width:40px;height:40px;margin:0 auto;border-radius:50%;border:2px solid rgba(255,255,255,.5);
   background:rgba(20,23,31,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:17px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
@@ -691,7 +708,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="match" onclick="go('marcador')"><div class="when">HOY<br>18:00</div><div class="vs">vs Titanes<small>Jornada 5 · cancha 2</small></div><span class="badge livep">EN VIVO</span></div>
       <div class="match"><div class="when">SÁB<br>10:00</div><div class="vs">vs Pumas<small>Jornada 6</small></div><span class="badge next">SIGUE</span></div>
       <div class="match"><div class="when">MIÉ<br>19:00</div><div class="vs">vs Lobos<small>Jornada 7</small></div></div>
-      <div class="h-row"><h2 class="disp" style="font-size:18px">Cuadro del torneo</h2><span class="more" onclick="toast('Bracket — próximamente')">Bracket ›</span></div>
+      <div class="h-row"><h2 class="disp" style="font-size:18px">Cuadro del torneo</h2><span class="more" onclick="go('bracket')">Bracket ›</span></div>
       <div class="match" onclick="go('carta')"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">DG</div><div class="vs">Diego G.<small>Base · #7 · Halcones</small></div><span class="badge next">TU HIJO</span></div>
       <button class="btn ghost sm block" onclick="go('alta')" style="margin-top:8px">＋ Dar de alta a otro hij@</button>
     </div></div>
@@ -849,6 +866,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="leaguerow" onclick="go('ligaCalendario')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-calendar"/></svg></div><div><div class="nm" style="font-size:15px">Calendario y enfrentamientos</div><div class="mt">Quién vs quién · jornadas</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('ligaResultados')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-flag"/></svg></div><div><div class="nm" style="font-size:15px">Resultados</div><div class="mt">Cerrar partidos · avanzar torneo</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('tabla')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-trophy"/></svg></div><div><div class="nm" style="font-size:15px">Tabla de posiciones</div><div class="mt">Clasificación en vivo · desempates</div></div><span class="more">›</span></div>
+      <div class="leaguerow" onclick="go('bracket')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-flag"/></svg></div><div><div class="nm" style="font-size:15px">Eliminatoria (bracket)</div><div class="mt">Liguilla desde la tabla · campeón</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('responsivas')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-doc"/></svg></div><div><div class="nm" style="font-size:15px">Responsivas</div><div class="mt">Consentimiento de padres</div></div><span class="more">›</span></div>
       <button class="btn block" onclick="go('perillas')" style="margin-top:6px"><svg class="ic"><use href="#ic-gear"/></svg> Reglas del torneo (perillas)</button>
     </div></div>
@@ -887,6 +905,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <section class="screen" id="s-tabla">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Tabla de posiciones</span></div>
     <div class="scroll"><div class="pad" id="leTable"></div></div>
+    <div class="nav" data-nav></div>
+  </section>
+
+  <!-- BRACKET / ELIMINATORIA -->
+  <section class="screen" id="s-bracket">
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Cuadro del torneo</span></div>
+    <div class="scroll"><div class="pad" id="leBracket"></div></div>
     <div class="nav" data-nav></div>
   </section>
 
@@ -1066,7 +1091,7 @@ function go(id){
 function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
 /* ====== Aislamiento por rol: cada sombrero solo entra a lo suyo ======
    El público jamás cae en la casa del papá ni en la mesa/VAR/perillas/liga. */
-const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla'];
+const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket'];
 const ROLE_SCREENS={
   papa:   ['rol','carta','alta'],
   coach:  ['vestidor','estrategias','carta'],
@@ -1097,6 +1122,7 @@ function render(id){
   if(id==='ligaResultados')buildLeagueRes();
   if(id==='responsivas')buildResp();
   if(id==='tabla')buildTable();
+  if(id==='bracket')buildBracket();
   if(id==='carta')renderCard();
   if(id==='publico')fanBtnRefresh();
   if(id==='vestidor'){const ti=document.getElementById('teamIdentity');if(ti)ti.style.display='none';}
@@ -1555,6 +1581,8 @@ function buildLeagueTeams(){
   box.innerHTML=h;
 }
 /* --- calendario todos contra todos (método del círculo) --- */
+function nextSaturday(){ const d=new Date(); d.setHours(0,0,0,0); const add=(6-d.getDay()+7)%7||7; d.setDate(d.getDate()+add); return d; }
+function fmtDate(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
 function genRoundRobin(){
   const d=leagueData(); const arr=d.teams.map(t=>t.id);
   if(arr.length<2){ d.calendar=[]; saveLeague(d); buildLeagueCal(); return; }
@@ -1564,6 +1592,12 @@ function genRoundRobin(){
     for(let i=0;i<half;i++){ const hme=arr[i],awy=arr[n-1-i]; if(hme!==null&&awy!==null)cal.push({jornada:r+1,home:hme,away:awy,hs:null,as:null,done:false}); }
     arr.splice(1,0,arr.pop());
   }
+  // fecha y hora: cada jornada un sábado (semanal), partidos cada 90 min desde las 10:00
+  const base=nextSaturday(); const slot={};
+  cal.forEach(m=>{ const s=(slot[m.jornada]=slot[m.jornada]||0); slot[m.jornada]++;
+    const dt=new Date(base); dt.setDate(dt.getDate()+(m.jornada-1)*7); m.date=dt.toISOString().slice(0,10);
+    const mins=600+s*90; m.time=String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+  });
   d.calendar=cal; saveLeague(d); buildLeagueCal();
 }
 function buildLeagueCal(){
@@ -1572,9 +1606,10 @@ function buildLeagueCal(){
   if(!d.calendar.length){ h+='<div class="stratnote" style="border-left-color:var(--liga)">Aún no hay calendario. Genera el rol y saldrán todas las jornadas: cada equipo juega contra todos, una vez.</div>'; box.innerHTML=h; return; }
   let last=null;
   d.calendar.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-    if(m.jornada!==last){ h+='<div class="h-row"><h2 class="disp" style="font-size:16px">Jornada '+m.jornada+'</h2></div>'; last=m.jornada; }
+    if(m.jornada!==last){ h+='<div class="h-row" style="align-items:baseline"><h2 class="disp" style="font-size:16px">Jornada '+m.jornada+'</h2>'+(m.date?'<span class="more" style="text-transform:capitalize;color:var(--dim)">'+fmtDate(m.date)+'</span>':'')+'</div>'; last=m.jornada; }
     const res=m.done?('<span class="mid">'+m.hs+'–'+m.as+'</span>'):'<span class="mid" style="color:var(--dim);font-size:11px">vs</span>';
-    h+='<div class="le-match"><span class="crest real sm" style="background:var('+H.color+')">'+H.ini+'</span><span class="tnm">'+H.name+'</span>'+res+'<span class="tnm r">'+A.name+'</span><span class="crest real sm" style="background:var('+A.color+')">'+A.ini+'</span></div>';
+    const hora=m.time?'<span class="le-time">'+m.time+'</span>':'';
+    h+='<div class="le-match">'+hora+'<span class="crest real sm" style="background:var('+H.color+')">'+H.ini+'</span><span class="tnm">'+H.name+'</span>'+res+'<span class="tnm r">'+A.name+'</span><span class="crest real sm" style="background:var('+A.color+')">'+A.ini+'</span></div>';
   });
   box.innerHTML=h;
 }
@@ -1619,6 +1654,50 @@ function buildTable(){
   });
   h+='</tbody></table>';
   h+='<div class="stratnote" style="border-left-color:var(--liga);margin-top:12px">Puntos FIBA: <b>victoria 2</b>, <b>derrota 1</b>, no presentarse 0. Desempate por diferencia de puntos y luego puntos a favor.</div>';
+  box.innerHTML=h;
+}
+/* --- eliminatoria (bracket) de semifinales + final desde la tabla --- */
+function bracketData(){ try{const s=localStorage.getItem('lm_bracket');if(s)return JSON.parse(s);}catch(e){} return null; }
+function saveBracket(b){ try{localStorage.setItem('lm_bracket',JSON.stringify(b));}catch(e){} }
+function genBracket(){
+  const rows=computeStandings().slice(0,4);
+  if(rows.length<4)return;
+  saveBracket({ semis:[{a:rows[0].t.id,b:rows[3].t.id,w:null},{a:rows[1].t.id,b:rows[2].t.id,w:null}], final:{a:null,b:null,w:null} });
+  buildBracket();
+}
+function pickWinner(round,idx,teamId){
+  if(currentRole!=='liga')return; const b=bracketData(); if(!b)return;
+  if(round==='semi'){ b.semis[idx].w=teamId; b.final[idx===0?'a':'b']=teamId; b.final.w=null; }
+  else { b.final.w=teamId; }
+  saveBracket(b); buildBracket();
+}
+function brkTeam(round,idx,teamId,winId){
+  if(!teamId)return '<div class="brk-team empty">Por definir</div>';
+  const t=teamById(teamId); if(!t)return '<div class="brk-team empty">—</div>';
+  const cls=winId?(winId===teamId?' win':' lose'):'';
+  const clickable=currentRole==='liga';
+  return '<div class="brk-team'+cls+(clickable?' tap':'')+'"'+(clickable?' onclick="pickWinner(\''+round+'\','+idx+',\''+teamId+'\')"':'')+'><span class="crest real sm" style="background:var('+t.color+')">'+t.ini+'</span><span class="bn">'+t.name+'</span>'+(winId===teamId?'<span class="chk">✓</span>':'')+'</div>';
+}
+function buildBracket(){
+  const box=document.getElementById('leBracket'); if(!box)return;
+  const b=bracketData(); const canEdit=currentRole==='liga';
+  const played=computeStandings().filter(r=>r.pj>0).length;
+  let h='';
+  if(canEdit){ h+='<button class="btn block" onclick="genBracket()" style="margin:2px 0 14px"><svg class="ic"><use href="#ic-flag"/></svg> '+(b?'Rehacer':'Armar')+' liguilla (top 4 de la tabla)</button>'; }
+  if(!b){
+    h+='<div class="stratnote" style="border-left-color:var(--liga)">'+(canEdit?'Arma la liguilla y saldrá el cuadro: 1° vs 4° y 2° vs 3°, ganadores a la final.':'La liga aún no arma la eliminatoria.')+(played<4?' <b>Se necesitan al menos 4 equipos con partidos jugados.</b>':'')+'</div>';
+    box.innerHTML=h; return;
+  }
+  const champ=b.final.w?teamById(b.final.w):null;
+  h+='<div class="brk">';
+  h+='<div class="brk-col"><div class="brk-lbl">Semifinales</div>'+
+     '<div class="brk-match">'+brkTeam('semi',0,b.semis[0].a,b.semis[0].w)+brkTeam('semi',0,b.semis[0].b,b.semis[0].w)+'</div>'+
+     '<div class="brk-match">'+brkTeam('semi',1,b.semis[1].a,b.semis[1].w)+brkTeam('semi',1,b.semis[1].b,b.semis[1].w)+'</div></div>';
+  h+='<div class="brk-col"><div class="brk-lbl">Final</div>'+
+     '<div class="brk-match">'+brkTeam('final',0,b.final.a,b.final.w)+brkTeam('final',0,b.final.b,b.final.w)+'</div></div>';
+  h+='</div>';
+  if(champ){ h+='<div class="brk-champ"><span class="crest real" style="background:var('+champ.color+')">'+champ.ini+'</span><div><div class="ck">Campeón</div><div class="cn">'+champ.name+'</div></div></div>'; }
+  else if(canEdit){ h+='<div class="stratnote" style="border-left-color:var(--liga);margin-top:12px">Toca al ganador de cada llave para hacerlo avanzar.</div>'; }
   box.innerHTML=h;
 }
 /* --- responsivas: consentimiento por jugador (candado para menores) --- */
