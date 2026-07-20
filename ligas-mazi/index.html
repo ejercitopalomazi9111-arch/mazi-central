@@ -141,6 +141,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mk-score .mid .bonus{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.06em;color:var(--mesa);border:1px solid var(--mesa);border-radius:5px;padding:1px 5px}
 .mk-score .mid .shot{font-family:var(--mono);font-size:9px;color:#cfd5df;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
 .mk-score .mid .shot b{color:#fff}
+.login-name{width:100%;box-sizing:border-box;background:rgba(12,15,22,.72);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;padding:14px 16px;font-size:15px;font-family:inherit;margin-bottom:10px;text-align:center;backdrop-filter:blur(6px)}
+.login-name::placeholder{color:rgba(255,255,255,.5)}
+.login-name:focus{outline:none;border-color:var(--accent)}
 /* motor de competencia (liga) */
 .le-pl{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
 .le-pl .le-num{font-family:var(--mono);font-size:12px;color:var(--accent-lt);min-width:30px}
@@ -262,6 +265,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:2}
 .pcard .ov b{font-family:var(--disp);font-weight:800;font-size:40px;line-height:.8;color:var(--accent-lt)} .pcard .ov small{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em}
 .pcard .photo{height:220px;margin:38px 14px 0;border-radius:10px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer}
+.pcard .photo.has-photo{border-style:solid;border-color:#2a313d;background-size:cover;background-position:center}
 .pcard .nm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:26px;padding:12px 16px 2px} .pcard .club{font-size:12.5px;color:var(--dim);padding:0 16px}
 .pcard .stats{display:flex;gap:6px;padding:14px 16px 18px}
 .pcard .st{flex:1;text-align:center;background:rgba(7,9,13,.4);border:1px solid var(--line);border-radius:8px;padding:8px 4px}
@@ -631,7 +635,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       </div>
       <div class="title-xl">LIGAS <span class="m">MAZI</span></div>
       <p class="slogan">Organiza, juega, entrena y sigue tu liga. Donde cada canasta queda para siempre.</p>
-      <button class="btn" onclick="go('hub')">Entrar <span class="go">›</span></button>
+      <input id="loginName" class="login-name" placeholder="Tu nombre" autocomplete="name">
+      <button class="btn" onclick="doLogin()">Entrar <span class="go">›</span></button>
       <button class="btn ghost" onclick="setRole('publico','Invitado','Público','hub')">Solo ver (invitado) <span class="go">›</span></button>
       <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
     </div>
@@ -941,13 +946,14 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- PERFIL CARTA — ficha estilo FC Mobile -->
   <section class="screen" id="s-carta">
-    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Ficha del jugador</span><span class="coins" onclick="toast('Compartir carta con amigos')" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Ficha del jugador</span><span class="coins" onclick="shareCard()" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
     <div class="scroll">
+      <input type="file" id="cardPhotoInput" accept="image/*" style="display:none" onchange="onCardPhoto(event)">
       <div class="pcard">
         <span class="rk" style="background:linear-gradient(90deg,#e8b13e,#ff9a5a)">◆ ORO</span><div class="ov"><b>78</b><small>GENERAL</small></div>
-        <div class="photo" onclick="toast('Aquí subes la foto del jugador (se le quita el GPS)')"><span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span></div>
-        <div class="nm">Diego "El Muro" G.</div>
-        <div class="club">Titanes Basketball Club · Juvenil Varonil · #7</div>
+        <div class="photo" id="fcPhoto" onclick="document.getElementById('cardPhotoInput').click()"><span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span></div>
+        <div class="nm" id="fcName">Diego "El Muro" G.</div>
+        <div class="club" id="fcClub">Titanes Basketball Club · Juvenil Varonil · #7</div>
         <div class="stats"><div class="st"><b>11.4</b><small>PTS</small></div><div class="st"><b>6.1</b><small>REB</small></div><div class="st"><b>3.0</b><small>AST</small></div><div class="st"><b>2.2</b><small>FALTAS</small></div></div>
       </div>
       <div class="fc-cmp">
@@ -1085,6 +1091,7 @@ function render(id){
   if(id==='ligaResultados')buildLeagueRes();
   if(id==='responsivas')buildResp();
   if(id==='tabla')buildTable();
+  if(id==='carta')renderCard();
   requestAnimationFrame(()=>armHints(el));
 }
 window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop()); });
@@ -1200,7 +1207,8 @@ function buildModes(){
     rail.appendChild(chip);
 
     const K = m.id==='marcador'? rl.k : m.k;
-    const S = m.id==='marcador'? rl.s : m.s;
+    let S = m.id==='marcador'? rl.s : m.s;
+    if(m.id==='carta'){const _u=userData(); if(_u&&_u.name)S=_u.name+' · Oro · 78 GENERAL';}
     const bg = m.pack ? packSVG(m.c) : `<img src="assets/${m.art}" alt="">`;
     const p=document.createElement('div');
     p.className='mode-panel'+(i===modeIdx?' active':'');
@@ -1741,6 +1749,33 @@ function pickCtx(hat,liga,rol,dest){
   closeSheet();toast('Entras como '+rol+' · '+liga);go(dest||'hub');
 }
 function setRole(hat,liga,rol,dest){ pickCtx(hat,liga,rol,dest); }
+/* ====== Sesión / identidad: una persona con su nombre; la carta es SUYA ====== */
+function userData(){try{const s=localStorage.getItem('lm_user');if(s)return JSON.parse(s);}catch(e){}return null;}
+function saveUser(u){try{localStorage.setItem('lm_user',JSON.stringify(u));}catch(e){}}
+function doLogin(){
+  const inp=document.getElementById('loginName'); const nm=(inp&&inp.value||'').trim();
+  const u=userData()||{}; if(nm)u.name=nm; if(!u.name)u.name='Jugador'; saveUser(u); go('hub');
+}
+function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+' · Oro · 78 GENERAL · Ligas Mazi';
+  if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}} }
+function renderCard(){
+  const u=userData(); if(!u)return;
+  const nm=document.getElementById('fcName'); if(nm&&u.name)nm.textContent=u.name;
+  if(u.photo){ const ph=document.getElementById('fcPhoto'); if(ph){ph.style.backgroundImage='url('+u.photo+')';ph.classList.add('has-photo');ph.innerHTML='';} }
+}
+/* subir foto: se redimensiona en el teléfono (sin GPS, sin subir nada crudo) */
+function onCardPhoto(ev){
+  const f=ev.target.files&&ev.target.files[0]; if(!f)return;
+  const fr=new FileReader();
+  fr.onload=()=>{ const img=new Image(); img.onload=()=>{
+    const max=520, sc=Math.min(1,max/Math.max(img.width,img.height));
+    const cv=document.createElement('canvas'); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+    let url; try{url=cv.toDataURL('image/jpeg',0.85);}catch(e){url=fr.result;}
+    const u=userData()||{}; u.photo=url; saveUser(u); renderCard();
+  }; img.src=fr.result; };
+  fr.readAsDataURL(f);
+}
 function tk(el){el.classList.toggle('on');}
 function fcTab(el,which){
   [...el.parentElement.children].forEach(t=>t.classList.remove('on')); el.classList.add('on');
@@ -1753,6 +1788,7 @@ function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contain
 function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)return;const on=courtStyle()==='realista';k.classList.toggle('on',on);document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';}
 let tt;function toast(msg){if(curScreen!=='mesa')return;const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',Math.min(6500,2200+msg.length*22));}
 buildNav('hub');
+(function(){const u=userData();if(u&&u.name){const li=document.getElementById('loginName');if(li)li.value=u.name;}})();
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
 buildModes();
 stampBrand();
