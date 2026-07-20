@@ -347,6 +347,35 @@ alter publication supabase_realtime add table public.game_events;
 alter publication supabase_realtime add table public.games;
 
 -- ===========================================================================
+-- GUARDADO EN LA NUBE POR CUENTA (offline-first, puente cross-device)
+-- El cliente guarda su documento (liga denormalizada + perfil) y sincroniza
+-- entre teléfonos de la MISMA cuenta. Las tablas normalizadas de arriba siguen
+-- para el multi-usuario real y el marcador en vivo; esto es el puente.
+-- ===========================================================================
+create table public.app_state (
+  account_id uuid primary key references public.profiles(id) on delete cascade,
+  league     jsonb,
+  profile    jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.app_state enable row level security;
+create policy app_state_owner on public.app_state
+  for all using (account_id = auth.uid()) with check (account_id = auth.uid());
+
+-- perfil automático al registrarse (auth.users → public.profiles)
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = '' as $$ begin
+  insert into public.profiles (id, display_name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email,'@',1)))
+  on conflict (id) do nothing;
+  return new;
+end $$;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_user();
+-- el trigger no debe ser llamable por la API (el trigger igual dispara)
+revoke execute on function public.handle_new_user() from anon, authenticated, public;
+
+-- ===========================================================================
 -- NOTAS DE ESCALA (miles simultáneos)
 --  * Pooler (Supavisor) en modo transaction para muchas conexiones cortas.
 --  * game_events particionada por season_id cuando crezca (LIST/RANGE).

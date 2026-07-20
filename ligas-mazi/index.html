@@ -445,6 +445,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .cloud-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}
 .cloud-badge.online{color:var(--good)} .cloud-badge.online .dot{background:var(--good);box-shadow:0 0 8px var(--good)}
 .cloud-badge.checking .dot{background:var(--accent-lt);animation:cbpulse 1s ease-in-out infinite}
+.login-msg{min-height:0;color:var(--accent-lt);font-size:12px;line-height:1.4;margin:2px 2px 8px;text-align:center}
+.login-msg.err{color:#ff9a8f}
 @keyframes cbpulse{0%,100%{opacity:.3}50%{opacity:1}}
 .brandmini{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-weight:800;font-size:12px;letter-spacing:.05em;color:#c9cfd9;text-transform:uppercase;flex-shrink:0;opacity:.9}
 .brandmini .ic{width:18px;height:18px;color:var(--accent-lt)}
@@ -666,6 +668,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="title-xl">LIGAS <span class="m">MAZI</span></div>
       <p class="slogan">Organiza, juega, entrena y sigue tu liga. Donde cada canasta queda para siempre.</p>
       <input id="loginName" class="login-name" placeholder="Tu nombre" autocomplete="name">
+      <input id="loginEmail" class="login-name" type="email" placeholder="Correo (opcional — para guardar en la nube)" autocomplete="email">
+      <input id="loginPass" class="login-name" type="password" placeholder="Contraseña" autocomplete="current-password">
+      <div id="loginMsg" class="login-msg"></div>
       <button class="btn" onclick="doLogin()">Entrar <span class="go">›</span></button>
       <button class="btn ghost" onclick="setRole('publico','Invitado','Público','hub')">Solo ver (invitado) <span class="go">›</span></button>
       <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
@@ -1113,6 +1118,58 @@ async function checkBackend(){
     if(error && error.code && error.code!=='PGRST116'){ setCloudBadge('','Modo local'); return false; }
     setCloudBadge('online','Nube conectada'); return true;
   }catch(e){ setCloudBadge('','Modo local'); return false; }
+}
+/* ====== Sesión en la nube (activa en cuanto se apague "Confirm email" en
+   Supabase). Todo offline-first: sin red, la app funciona igual en el teléfono. ====== */
+let _session=null, _authed=false;
+function reflectAuth(){
+  if(_authed&&_session&&_session.user){
+    const em=_session.user.email||'';
+    setCloudBadge('online','Nube · '+em);
+    const u=userData()||{}; if(!u.name){ u.name=((_session.user.user_metadata||{}).display_name)||em.split('@')[0]||'Jugador'; saveUser(u); }
+  }
+}
+function loginMsg(txt,err){ const m=document.getElementById('loginMsg'); if(!m)return; m.className='login-msg'+(err?' err':''); m.textContent=txt||''; }
+async function sbSignInOrUp(email,pass,name){
+  const c=sbClient(); if(!c) return {ok:false,error:'Sin conexión a la nube — entraste en modo local.'};
+  try{
+    const r=await c.auth.signInWithPassword({email,password:pass});
+    if(!r.error && r.data && r.data.session){ _session=r.data.session; _authed=true; return {ok:true}; }
+    const msg=((r.error&&r.error.message)||'').toLowerCase();
+    if(msg.includes('not confirmed')) return {ok:false,error:'Tu correo aún no está confirmado (o pide apagar “Confirm email” en Supabase).'};
+    const u=await c.auth.signUp({email,password:pass,options:{data:{display_name:name||email.split('@')[0]}}});
+    if(u.error) return {ok:false,error:u.error.message};
+    if(u.data && u.data.session){ _session=u.data.session; _authed=true; return {ok:true}; }
+    return {ok:false,error:'Cuenta creada: falta confirmar el correo (o apaga “Confirm email” en Supabase).'};
+  }catch(e){ return {ok:false,error:String((e&&e.message)||e)}; }
+}
+async function sbSignOut(){ const c=sbClient(); if(c){try{await c.auth.signOut();}catch(e){}} _session=null; _authed=false; }
+async function cloudPull(){
+  const c=sbClient(); if(!c||!_authed)return;
+  try{
+    const {data,error}=await c.from('app_state').select('league,profile').maybeSingle();
+    if(error){ return; }
+    if(data){ if(data.league)localStorage.setItem('lm_league',JSON.stringify(data.league));
+              if(data.profile)localStorage.setItem('lm_user',JSON.stringify(data.profile)); }
+    else { await cloudPush(); }   // primera vez: sube lo que ya tienes local
+  }catch(e){}
+}
+let _pushT=null;
+function cloudPushSoon(){ if(!_authed)return; clearTimeout(_pushT); _pushT=setTimeout(cloudPush,900); }
+async function cloudPush(){
+  const c=sbClient(); if(!c||!_authed||!_session)return;
+  try{
+    const league=JSON.parse(localStorage.getItem('lm_league')||'null');
+    const profile=JSON.parse(localStorage.getItem('lm_user')||'null');
+    await c.from('app_state').upsert({account_id:_session.user.id, league, profile, updated_at:new Date().toISOString()});
+  }catch(e){}
+}
+async function sbRestore(){
+  const c=sbClient(); if(!c)return false;
+  try{ const {data}=await c.auth.getSession();
+    if(data&&data.session){ _session=data.session; _authed=true; await cloudPull(); reflectAuth(); return true; }
+  }catch(e){}
+  return false;
 }
 /* ---- router con historial: volver atrás siempre funciona (botón ‹ y back del navegador/Android) ---- */
 let curScreen=null; const navStack=[];
@@ -1567,7 +1624,7 @@ function seedLeague(){
   ], calendar:[]};
 }
 function leagueData(){try{const s=localStorage.getItem('lm_league');if(s)return JSON.parse(s);}catch(e){}const d=seedLeague();saveLeague(d);return d;}
-function saveLeague(d){try{localStorage.setItem('lm_league',JSON.stringify(d));}catch(e){}}
+function saveLeague(d){try{localStorage.setItem('lm_league',JSON.stringify(d));}catch(e){} cloudPushSoon();}
 function teamById(id){return leagueData().teams.find(t=>t.id===id);}
 /* panel de la liga: números reales */
 function buildLigaStats(){
@@ -1904,10 +1961,20 @@ function pickCtx(hat,liga,rol,dest){
 function setRole(hat,liga,rol,dest){ pickCtx(hat,liga,rol,dest); }
 /* ====== Sesión / identidad: una persona con su nombre; la carta es SUYA ====== */
 function userData(){try{const s=localStorage.getItem('lm_user');if(s)return JSON.parse(s);}catch(e){}return null;}
-function saveUser(u){try{localStorage.setItem('lm_user',JSON.stringify(u));}catch(e){}}
+function saveUser(u){try{localStorage.setItem('lm_user',JSON.stringify(u));}catch(e){} cloudPushSoon();}
 function doLogin(){
   const inp=document.getElementById('loginName'); const nm=(inp&&inp.value||'').trim();
-  const u=userData()||{}; if(nm)u.name=nm; if(!u.name)u.name='Jugador'; saveUser(u); go('hub');
+  const email=(document.getElementById('loginEmail')||{}).value; const pass=(document.getElementById('loginPass')||{}).value;
+  const u=userData()||{}; if(nm)u.name=nm; if(!u.name)u.name='Jugador'; saveUser(u);
+  if(email && email.trim() && pass && sbClient()){
+    loginMsg('Entrando a la nube…'); setCloudBadge('checking','Entrando…');
+    sbSignInOrUp(email.trim(),pass,u.name).then(r=>{
+      if(r.ok){ reflectAuth(); cloudPull().then(()=>go('hub')); }
+      else { loginMsg(r.error,true); setCloudBadge('','Modo local'); }
+    });
+    return;
+  }
+  go('hub');   // modo local (sin correo): funciona igual, solo en este teléfono
 }
 function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+' · Oro · 78 GENERAL · Ligas Mazi';
   if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}} }
@@ -1975,8 +2042,8 @@ function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)retu
 let tt;function toast(msg){if(curScreen!=='mesa')return;const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',Math.min(6500,2200+msg.length*22));}
 buildNav('hub');
 (function(){const u=userData();if(u&&u.name){const li=document.getElementById('loginName');if(li)li.value=u.name;}})();
-/* prueba de conexión a la nube una vez que la librería (defer) ya cargó */
-window.addEventListener('load',()=>{ setTimeout(checkBackend,300); });
+/* prueba de conexión y restaura sesión una vez que la librería (defer) ya cargó */
+window.addEventListener('load',()=>{ setTimeout(async()=>{ const ok=await checkBackend(); if(ok){ await sbRestore(); } },300); });
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
 buildModes();
 stampBrand();

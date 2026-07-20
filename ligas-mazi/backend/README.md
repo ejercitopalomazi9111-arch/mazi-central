@@ -75,13 +75,20 @@ supabase db push               # con la CLI y supabase/migrations
 - [x] **`index.html` cableado al cliente** (URL + *publishable key*), **offline-first**:
       si no hay red la app sigue en `localStorage`. Un indicador muestra
       *Nube conectada* / *Modo local*.
-- [ ] Auth utilizable: falta **desactivar la confirmación por correo** (o activar
-      *anonymous sign-in*) en el panel de Supabase → Authentication. Es un toggle del
-      dashboard, no se puede hacer por migración. Después: `signUp`/`signIn` en la entrada.
+- [x] **Login + sync cableados** (offline-first, *dormidos hasta el toggle*):
+      registro/inicio de sesión con correo+contraseña en la entrada, `profiles`
+      automático por trigger, y **guardado en la nube por cuenta** en `app_state`
+      (la liga y el perfil sincronizan entre teléfonos de la misma cuenta;
+      `saveLeague`/`saveUser` empujan con debounce; al entrar se hace *pull*).
+      Todo degrada a modo local sin red. **Verificado** en degradación (0 errores).
+- [ ] **Acción tuya para activarlo:** en el panel de Supabase → *Authentication →
+      Sign In / Providers*, **apagar "Confirm email"** (o prender *Anonymous
+      sign-in*). Es un switch del dashboard, no se puede por migración. En cuanto
+      esté, el login real funciona sin más cambios de código.
 - [ ] Edge Functions: alta de jugador (hash de CURP en servidor), recomputo de stats.
-- [ ] Migrar el motor de competencia (equipos/calendario/resultados/tabla) de
-      `localStorage` a las tablas (leagues/seasons/teams/roster/games) + marcador
-      en vivo por Realtime en `game_events`.
+- [ ] Migrar el motor de competencia a las tablas normalizadas
+      (leagues/seasons/teams/roster/games) + marcador en vivo por Realtime en
+      `game_events` (multi-usuario real; `app_state` es el puente cross-device por ahora).
 
 ### Correcciones al aplicar el esquema
 El `schema.sql` original tenía tres cosas que Postgres rechaza; ya están corregidas
