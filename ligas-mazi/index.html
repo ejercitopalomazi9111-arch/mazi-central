@@ -842,26 +842,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--publico)">Modo público</div><div class="t">Marcadores</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
-      <div class="h-row" style="margin-top:8px"><h2 class="disp" style="font-size:18px">En vivo ahora</h2><span class="pill" style="margin-left:auto;color:var(--mesa);border-color:var(--mesa)">2 partidos</span></div>
-      <div class="livecard" onclick="go('marcador')">
-        <span class="lc-chip">EN VIVO · Q3 · 12:34</span>
-        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:var(--papa)">TI</span>Titanes</div><span class="lc-sc win">42</span></div>
-        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:var(--publico)">HA</span>Halcones</div><span class="lc-sc">39</span></div>
-        <div class="lc-cta">Ver en vivo ›</div>
-      </div>
-      <div class="livecard">
-        <span class="lc-chip">EN VIVO · Q2 · 04:10</span>
-        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:#8a6bf0">PU</span>Pumas</div><span class="lc-sc">28</span></div>
-        <div class="lc-row"><div class="lc-team"><span class="crest real sm" style="background:#3a9d8f">LO</span>Lobos</div><span class="lc-sc win">31</span></div>
-      </div>
-      <div class="h-row"><h2 class="disp" style="font-size:18px">Tabla</h2><span class="more" onclick="go('tabla')">Ver todo ›</span></div>
-      <div class="stand">
-        <div class="stand-head"><span>#</span><span>Equipo</span><span>PJ</span><span>Dif</span><span>Pts</span></div>
-        <div class="stand-row"><span class="pos p1">1</span><span class="tm"><span class="crest real sm" style="background:var(--papa)">TI</span>Titanes</span><span>9</span><span class="dif up">+64</span><span class="pts">24</span></div>
-        <div class="stand-row"><span class="pos p2">2</span><span class="tm"><span class="crest real sm" style="background:var(--publico)">HA</span>Halcones</span><span>9</span><span class="dif up">+38</span><span class="pts">21</span></div>
-        <div class="stand-row"><span class="pos p3">3</span><span class="tm"><span class="crest real sm" style="background:#3a9d8f">LO</span>Lobos</span><span>9</span><span class="dif up">+9</span><span class="pts">15</span></div>
-        <div class="stand-row"><span class="pos">4</span><span class="tm"><span class="crest real sm" style="background:#8a6bf0">PU</span>Pumas</span><span>9</span><span class="dif dn">−22</span><span class="pts">9</span></div>
-      </div>
+      <div id="pubLive"></div>
+      <div id="pubStand"></div>
       <button class="btn ghost sm block" onclick="toggleFanFollow()" style="margin-top:12px"><svg class="ic"><use href="#ic-heart"/></svg> <span id="fanBtnLbl">Apoyar a un equipo</span></button>
       <div id="fanFollow" style="display:none;margin-top:10px"></div>
     </div></div>
@@ -1294,7 +1276,7 @@ function render(id){
   if(id==='tabla')buildTable();
   if(id==='bracket')buildBracket();
   if(id==='carta')renderCard();
-  if(id==='publico')fanBtnRefresh();
+  if(id==='publico'){fanBtnRefresh();buildPublicoData();}
   if(id==='ligas')buildMisLigas();
   if(id==='rol')buildPapaHome();
   if(id==='vestidor'){const ti=document.getElementById('teamIdentity');if(ti)ti.style.display='none';}
@@ -1740,6 +1722,37 @@ function buildLigaStats(){
   row.innerHTML='<div class="stat-tile"><b>'+d.teams.length+'</b><span>Equipos</span></div>'+
     '<div class="stat-tile"><b>'+jug+'</b><span>Jugadores</span></div>'+
     '<div class="stat-tile"><b>'+jug_done+'/'+d.calendar.length+'</b><span>Partidos</span></div>';
+}
+/* Público: en vivo real (si la mesa dirige un partido) + tabla real */
+function buildPublicoData(){
+  const d=leagueData();
+  const live=document.getElementById('pubLive');
+  if(live){
+    let h=''; const on=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null);
+    if(on){ const H=GAME.teams[0],A=GAME.teams[1];
+      h+='<div class="h-row" style="margin-top:8px"><h2 class="disp" style="font-size:18px">En vivo ahora</h2><span class="pill" style="margin-left:auto;color:var(--mesa);border-color:var(--mesa)">1 partido</span></div>';
+      h+='<div class="livecard" onclick="go(\'marcador\')"><span class="lc-chip">EN VIVO · '+periodLabel()+' · '+GAME.clock+'</span>'+
+         '<div class="lc-row"><div class="lc-team"><span class="crest real sm" style="'+crestStyle(H)+'">'+crestInner(H)+'</span>'+H.name+'</div><span class="lc-sc'+(H.score>=A.score?' win':'')+'">'+H.score+'</span></div>'+
+         '<div class="lc-row"><div class="lc-team"><span class="crest real sm" style="'+crestStyle(A)+'">'+crestInner(A)+'</span>'+A.name+'</div><span class="lc-sc'+(A.score>H.score?' win':'')+'">'+A.score+'</span></div>'+
+         '<div class="lc-cta">Ver en vivo ›</div></div>';
+    } else {
+      h+='<div class="h-row" style="margin-top:8px"><h2 class="disp" style="font-size:18px">En vivo ahora</h2></div>';
+      h+='<div class="stratnote" style="border-left-color:var(--mesa)">No hay partidos en vivo ahora. Cuando la mesa dirija un partido, aparecerá aquí para todo el público.</div>';
+    }
+    live.innerHTML=h;
+  }
+  const st=document.getElementById('pubStand');
+  if(st){
+    const rows=computeStandings().filter(r=>r.pj>0).slice(0,4);
+    let h='<div class="h-row"><h2 class="disp" style="font-size:18px">Tabla</h2><span class="more" onclick="go(\'tabla\')">Ver todo ›</span></div>';
+    if(rows.length){
+      h+='<div class="stand"><div class="stand-head"><span>#</span><span>Equipo</span><span>PJ</span><span>Dif</span><span>Pts</span></div>';
+      rows.forEach((r,i)=>{ const dif=r.pf-r.pc;
+        h+='<div class="stand-row"><span class="pos'+(i<3?' p'+(i+1):'')+'">'+(i+1)+'</span><span class="tm"><span class="crest real sm" style="'+crestStyle(r.t)+'">'+crestInner(r.t)+'</span>'+r.t.name+'</span><span>'+r.pj+'</span><span class="dif '+(dif>=0?'up':'dn')+'">'+(dif>0?'+':'')+dif+'</span><span class="pts">'+r.pts+'</span></div>'; });
+      h+='</div>';
+    } else { h+='<div class="stratnote" style="border-left-color:var(--liga)">La tabla se llena cuando se jueguen partidos.</div>'; }
+    st.innerHTML=h;
+  }
 }
 /* Home de papá: hij@s vinculados + próximos partidos reales de la liga */
 function buildPapaHome(){
