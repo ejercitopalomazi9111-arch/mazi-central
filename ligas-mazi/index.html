@@ -775,13 +775,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <!-- LIGAS -->
   <section class="screen" id="s-ligas">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Mis ligas</span></div>
-    <div class="scroll"><div class="pad">
-      <div class="leaguerow" onclick="openLeague('rol')"><div class="crest real" style="background:var(--papa)">HA</div><div><div class="nm">Halcones U-14</div><div class="mt">Liga Municipal · Torneo Apertura</div></div><span class="hat">Papá</span></div>
-      <div class="leaguerow" onclick="go('publico')"><div class="crest real" style="background:var(--publico)">BN</div><div><div class="nm">Liga Barrio Norte</div><div class="mt">Dominical · en curso</div></div><span class="hat" style="color:var(--publico)">Público</span></div>
-      <div class="h-row"><h2 class="disp" style="font-size:18px">Archivo</h2></div>
-      <div class="leaguerow" style="opacity:.6" onclick="toast('Liga archivada — solo lectura, no se borra')"><div class="crest real" style="background:#3a4250">C25</div><div><div class="nm">Clausura 2025</div><div class="mt">Terminada · archivada</div></div><span class="hat" style="color:var(--dim)">Ver</span></div>
-      <div class="leaguerow create" onclick="go('liga')">+ Crear una liga</div>
-    </div></div>
+    <div class="scroll"><div class="pad" id="ligasList"></div></div>
     <div class="nav" data-nav></div>
   </section>
 
@@ -1309,6 +1303,7 @@ function render(id){
   if(id==='bracket')buildBracket();
   if(id==='carta')renderCard();
   if(id==='publico')fanBtnRefresh();
+  if(id==='ligas')buildMisLigas();
   if(id==='vestidor'){const ti=document.getElementById('teamIdentity');if(ti)ti.style.display='none';}
   requestAnimationFrame(()=>armHints(el));
 }
@@ -1752,6 +1747,23 @@ function buildLigaStats(){
   row.innerHTML='<div class="stat-tile"><b>'+d.teams.length+'</b><span>Equipos</span></div>'+
     '<div class="stat-tile"><b>'+jug+'</b><span>Jugadores</span></div>'+
     '<div class="stat-tile"><b>'+jug_done+'/'+d.calendar.length+'</b><span>Partidos</span></div>';
+}
+/* Mis ligas: la liga real de la cuenta + acciones honestas por rol */
+function buildMisLigas(){
+  const box=document.getElementById('ligasList'); if(!box)return;
+  const u=userData()||{}; const rl=u.role||'aficionado'; const d=leagueData();
+  let h='';
+  if(d && d.name){
+    const dest=(rl==='admin_liga')?'liga':(rl==='coach'||rl==='dueno')?'vestidor':(rl==='padre')?'rol':(rl==='jugador')?'carta':'publico';
+    const teams=d.teams.length, done=d.calendar.filter(m=>m.done).length, total=d.calendar.length;
+    const style=d.logo?('background-image:url('+d.logo+');background-size:cover;background-position:center'):('background:var(--liga)');
+    h+='<div class="leaguerow" onclick="openLeague(\''+dest+'\')"><div class="crest real" style="'+style+'">'+(d.logo?'':iniOf(d.name))+'</div><div><div class="nm">'+d.name+'</div><div class="mt">'+teams+' equipos · '+done+'/'+total+' partidos</div></div><span class="hat" style="color:var(--liga)">'+(ROLE_LABEL[rl]||'Público')+'</span></div>';
+  } else {
+    h+='<div class="stratnote" style="border-left-color:var(--liga)">Aún no estás en ninguna liga. Crea la tuya o únete con un enlace de invitación.</div>';
+  }
+  if(rl==='admin_liga') h+='<div class="leaguerow create" onclick="go(\'liga\')">＋ Gestionar mi liga</div>';
+  h+='<div class="leaguerow create" style="border-color:rgba(53,194,207,.35);color:var(--publico)" onclick="go(\'publico\')">Explorar marcadores en vivo</div>';
+  box.innerHTML=h;
 }
 /* --- identidad de la liga: nombre + escudo --- */
 function toggleLeagueIdentity(){ const box=document.getElementById('leagueIdentity'); if(!box)return; const open=box.style.display!=='none'; box.style.display=open?'none':'block'; if(!open)buildLeagueIdentity(); }
