@@ -786,7 +786,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         </div>
         <div class="hub-live" id="hubLive" onclick="go('marcador')" style="display:none">
           <span class="dot"></span>
-          <div><div class="sc" id="hubLiveSc">Titanes 42 — 39 Halcones</div><div class="mt" id="hubLiveMt">Q3 · en vivo</div></div>
+          <div><div class="sc" id="hubLiveSc">Sin partido en vivo</div><div class="mt" id="hubLiveMt">en vivo</div></div>
           <span class="go">VER ›</span>
         </div>
       </div>
@@ -825,7 +825,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div id="courtTokens"></div>
         <div class="mk-bottom">
           <div class="mk-bench-wrap">
-            <div class="mk-bench-ttl"><svg class="ic" style="width:13px;height:13px"><use href="#ic-people"/></svg> Banca · Titanes</div>
+            <div class="mk-bench-ttl" id="mkBenchTtl"><svg class="ic" style="width:13px;height:13px"><use href="#ic-people"/></svg> Banca</div>
             <div class="mk-bench" id="benchRow"></div>
           </div>
           <div class="mk-actions" id="mkActions"></div>
@@ -876,10 +876,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- COACH: VESTIDOR -->
   <section class="screen" id="s-vestidor">
-    <div class="banner"><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--coach)">Coach · Vestidor</div><div class="t">Titanes JV</div></div>
+    <div class="banner"><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--coach)">Coach · Vestidor</div><div class="t" id="vestTeam">Tu equipo</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
-      <div class="card" style="border-color:var(--mesa)"><div class="kick" style="color:#ff9a8f">Cambios en vivo · se ven al instante en el marcador</div>
+      <div class="card" id="subCard" style="border-color:var(--mesa)"><div class="kick" style="color:#ff9a8f">Cambios en vivo · se ven al instante en el marcador</div>
         <div class="sub-cols">
           <div><div class="sub-lbl">En cancha — toca quién sale</div><div class="sub-list" id="subOn"></div></div>
           <div><div class="sub-lbl">Banca — luego quién entra</div><div class="sub-list" id="subBench"></div></div>
@@ -1037,7 +1037,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- TIENDA — catálogo de la liga (el admin sube productos) -->
   <section class="screen" id="s-tienda">
-    <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--papa)">Tienda oficial</div><div class="t">Liga Municipal</div></div>
+    <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--papa)">Tienda oficial</div><div class="t" id="shopLeague">Tu liga</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
       <div id="shopAdmin" style="display:none">
@@ -1062,11 +1062,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="scroll">
       <input type="file" id="cardPhotoInput" accept="image/*" style="display:none" onchange="onCardPhoto(event)">
       <div class="pcard">
-        <span class="rk" style="background:linear-gradient(90deg,#e8b13e,#ff9a5a)">◆ ORO</span><div class="ov"><b>78</b><small>GENERAL</small></div>
+        <span class="rk" id="fcRank" style="background:linear-gradient(90deg,#8b93a3,#c7cdd8)">◆ NUEVO</span><div class="ov" id="fcOv"><b>—</b><small>GENERAL</small></div>
         <div class="photo" id="fcPhoto" onclick="document.getElementById('cardPhotoInput').click()"><span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span></div>
-        <div class="nm" id="fcName">Diego "El Muro" G.</div>
-        <div class="club" id="fcClub">Titanes Basketball Club · Juvenil Varonil · #7</div>
-        <div class="stats"><div class="st"><b>11.4</b><small>PTS</small></div><div class="st"><b>6.1</b><small>REB</small></div><div class="st"><b>3.0</b><small>AST</small></div><div class="st"><b>2.2</b><small>FALTAS</small></div></div>
+        <div class="nm" id="fcName">Tu carta</div>
+        <div class="club" id="fcClub">Aún sin equipo</div>
+        <div class="stats" id="fcStats"><div class="st"><b>—</b><small>PTS</small></div><div class="st"><b>—</b><small>REB</small></div><div class="st"><b>—</b><small>AST</small></div><div class="st"><b>—</b><small>FALTAS</small></div></div>
       </div>
       <div class="fc-cmp">
         <button class="hot" onclick="toast('Comparar con otra carta — elige un jugador')"><svg class="ic"><use href="#ic-people"/></svg> Comparar</button>
@@ -1133,10 +1133,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       </div>
 
       <div class="fc-panel" id="fc-historial">
-        <div class="histrow"><span class="yr">2025 —</span><div class="tm">Titanes BC<small>Juvenil Varonil · #7 · actual</small></div><span class="badge">Titular</span></div>
-        <div class="histrow"><span class="yr">2023–25</span><div class="tm">Halcones U-12<small>Infantil · #11</small></div><span class="badge">Campeón</span></div>
-        <div class="histrow"><span class="yr">2022</span><div class="tm">Escuela Municipal<small>Semillero · debut</small></div><span class="badge">Novato</span></div>
-        <div class="stratnote" style="border-left-color:var(--jugador)">Un <b>solo jugador, una identidad</b> anclada al CURP: sus números lo siguen de equipo en equipo y de liga en liga, toda su carrera.</div>
+        <!-- el historial real lo arma renderCard() a partir de la cuenta del jugador -->
       </div>
     </div>
     <div class="nav" data-nav></div>
@@ -1144,12 +1141,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- SHEET -->
   <div class="sheet-bg" id="sheet" onclick="if(event.target.id==='sheet')closeSheet()">
-    <div class="sheet"><h3>Con qué sombrero entras</h3>
-      <div class="opt" onclick="pickCtx('papa','Halcones U-14','Papá','rol')"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="r">Halcones U-14</span></div>
-      <div class="opt" onclick="pickCtx('coach','Titanes JV','Coach','vestidor')"><span class="hat" style="background:var(--coach)"></span><b>Coach</b><span class="r">Titanes JV</span></div>
-      <div class="opt" onclick="pickCtx('liga','Liga Municipal','Liga','liga')"><span class="hat" style="background:var(--liga)"></span><b>Admin de liga</b><span class="r">Liga Municipal</span></div>
-      <div class="opt" onclick="pickCtx('publico','Barrio Norte','Público','publico')"><span class="hat" style="background:var(--publico)"></span><b>Público</b><span class="r">Barrio Norte</span></div>
-      <div class="opt" onclick="pickCtx('jugador','Liga Vets','Jugador','carta')"><span class="hat" style="background:var(--jugador)"></span><b>Jugador</b><span class="r">Liga Vets</span></div>
+    <div class="sheet"><h3>¿Cómo quieres entrar?</h3>
+      <!-- las opciones reales las arma openRoleSwitch() según los roles de tu cuenta -->
     </div>
   </div>
 
@@ -1160,6 +1153,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="prof-lbl">Tema</div>
       <div class="thm-seg"><button id="thmDark" onclick="applyTheme('dark')"><svg class="ic"><use href="#ic-eye"/></svg> Oscuro</button><button id="thmLight" onclick="applyTheme('light')"><svg class="ic"><use href="#ic-star"/></svg> Claro</button></div>
       <button class="btn ghost sm block" onclick="closeProfile();openRoleSwitch()" style="margin-top:14px"><svg class="ic"><use href="#ic-people"/></svg> Cambiar cómo entro</button>
+      <button class="btn ghost sm block" onclick="resetDemo()" style="margin-top:8px"><svg class="ic"><use href="#ic-undo"/></svg> Empezar de cero (borrar datos de prueba)</button>
       <button class="btn ghost sm block" onclick="doLogout()" style="margin-top:8px;color:var(--crit);border-color:rgba(236,90,69,.4)"><svg class="ic"><use href="#ic-lock"/></svg> Cerrar sesión</button>
       <button class="btn ghost sm block" onclick="closeProfile()" style="margin-top:8px">Cerrar</button>
     </div>
@@ -1310,8 +1304,8 @@ function render(id){
   if(id==='hub'){buildModes();buildHubHome();}
   if(id==='marcador')drawCourt();
   if(id==='mesa')buildMesa();
-  if(id==='tienda')buildShop();
-  if(id==='vestidor'){buildRoster();buildCoachSubs();}
+  if(id==='tienda'){buildShop();const sl=document.getElementById('shopLeague');if(sl){const d=leagueData();sl.textContent=(d&&d.name&&d.name!=='Mi liga')?d.name:'Tu liga';}}
+  if(id==='vestidor'){buildRoster();buildCoachSubs();const vt=document.getElementById('vestTeam');if(vt){const d=leagueData();const t=coachTeamIn(d);vt.textContent=t?t.name:'Tu equipo';}}
   if(id==='perillas')buildRules();
   if(id==='liga')buildLigaStats();
   if(id==='ligaEquipos')buildLeagueTeams();
@@ -1353,7 +1347,7 @@ function buildNav(cur){
 const MODE_DEFS={
   marcador:  {id:'marcador', k:'En vivo ahora',  t:'Jugar ya',    s:'Sigue el marcador en vivo · Q3',                 art:'accion.jpg', c:'--mesa',    ic:'live',      short:'En vivo', live:true},
   ligas:     {id:'ligas',    k:'Temporada',      t:'Mis ligas',   s:'Tus ligas y el torneo en curso',                art:'arena.jpg',  c:'--liga',    ic:'trophy',    short:'Ligas'},
-  carta:     {id:'carta',    k:'Tu jugador',     t:'Mi carta',    s:'Diego "El Muro" · Oro · 78 GENERAL',            pack:true,        c:'--jugador', ic:'card',      short:'Carta'},
+  carta:     {id:'carta',    k:'Tu jugador',     t:'Mi carta',    s:'Tu ficha de jugador',            pack:true,        c:'--jugador', ic:'card',      short:'Carta'},
   vestidor:  {id:'vestidor', k:'Coach',          t:'Vestidor',    s:'Roster, altas y jugadores del equipo',          art:'accion.jpg', c:'--coach',   ic:'clipboard', short:'Vestidor'},
   estrategias:{id:'estrategias',k:'Coach',       t:'Tácticas',    s:'Pizarrón y sistema del equipo',                 art:'accion.jpg', c:'--publico', ic:'pencil',    short:'Tácticas'},
   liga:      {id:'liga',     k:'Organizador',    t:'Mi liga',     s:'Equipos, calendario, resultados y perillas',    art:'arena.jpg',  c:'--liga',    ic:'gear',      short:'Liga'},
@@ -1369,14 +1363,17 @@ const MODES_BY_ROLE={
   jugador:['carta','marcador','ligas','tienda'],
 };
 function modeList(){return (MODES_BY_ROLE[currentRole]||MODES_BY_ROLE.publico).map(id=>MODE_DEFS[id]);}
-/* copia del partido en vivo según el sombrero: SOLO el papá ve "tu hij@" */
-const ROLE_LIVE={
-  papa:   {k:'Tu hij@ en vivo',   s:'Diego está en cancha · Titanes vs Halcones · Q3', sc:'Titanes 42 — 39 Halcones', mt:'Q3 · <b>Diego</b> lleva 6 pts · en cancha'},
-  coach:  {k:'Tu equipo en vivo', s:'Diriges a Titanes · Q3 · arriba por 3',           sc:'Titanes 42 — 39 Halcones', mt:'Q3 · diriges a <b>Titanes</b> · +3'},
-  liga:   {k:'En tu liga, en vivo',s:'Partido de tu liga · Titanes vs Halcones · Q3',  sc:'Titanes 42 — 39 Halcones', mt:'Q3 · partido de <b>tu liga</b>'},
-  publico:{k:'En vivo ahora',     s:'Titanes vs Halcones · Q3 · sigue el marcador',    sc:'Titanes 42 — 39 Halcones', mt:'Q3 · <b>en vivo</b> ahora'},
-  jugador:{k:'Tu partido en vivo',s:'Estás en cancha · Titanes vs Halcones · Q3',      sc:'Titanes 42 — 39 Halcones', mt:'Q3 · <b>estás</b> en cancha'},
-};
+/* copia del partido en vivo según el sombrero: se arma del partido REAL en curso.
+   Si no hay partido en vivo, muestra un estado neutro (sin datos de prueba). */
+function roleLive(){
+  if(!hasLiveGame()){
+    const k={papa:'Tu hij@ en vivo',coach:'Tu equipo en vivo',liga:'En tu liga, en vivo',jugador:'Tu partido en vivo'}[currentRole]||'En vivo';
+    return {k, s:'Ahora mismo no hay partido en vivo.', sc:'Sin partido en vivo', mt:'Cuando la mesa dirija un partido, aquí lo verás'};
+  }
+  const H=GAME.teams[0],A=GAME.teams[1], per=periodLabel();
+  const k={papa:'Tu equipo en vivo',coach:'Tu equipo en vivo',liga:'En tu liga, en vivo',publico:'En vivo ahora',jugador:'Tu partido en vivo'}[currentRole]||'En vivo ahora';
+  return {k, s:H.name+' vs '+A.name+' · '+per, sc:H.name+' '+H.score+' — '+A.score+' '+A.name, mt:per+' · <b>en vivo</b>'};
+}
 /* cartas coleccionables holográficas sin marcas — fondo del panel "Mi carta" */
 function packSVG(cvar){
   return `<svg viewBox="0 0 400 480" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%">
@@ -1429,7 +1426,7 @@ let modeIdx=0;
 function buildModes(){
   const rail=document.getElementById('modeRail'), car=document.getElementById('modeCarousel'), dots=document.getElementById('modeDots');
   rail.innerHTML=''; car.innerHTML=''; dots.innerHTML='';
-  const rl=ROLE_LIVE[currentRole]||ROLE_LIVE.publico;
+  const rl=roleLive();
   const MODES=modeList();
   if(modeIdx>=MODES.length)modeIdx=0;
   MODES.forEach((m,i)=>{
@@ -1441,7 +1438,7 @@ function buildModes(){
 
     const K = m.id==='marcador'? rl.k : m.k;
     let S = m.id==='marcador'? rl.s : m.s;
-    if(m.id==='carta'){const _u=userData(); if(_u&&_u.name)S=_u.name+' · Oro · 78 GENERAL';}
+    if(m.id==='carta'){const _u=userData(); if(_u&&_u.name)S=_u.name+(_u.team?' · '+_u.team:' · Tu ficha');}
     const bg = m.pack ? packSVG(m.c) : `<img src="assets/${m.art}" alt="">`;
     const p=document.createElement('div');
     p.className='mode-panel'+(i===modeIdx?' active':'');
@@ -1521,8 +1518,29 @@ function syncScoreboard(){
   const ms=document.getElementById('mScore'); if(ms)ms.textContent=h.score+' — '+a.score;
 }
 function drawCourt(){
-  syncScoreboard();
+  const ov=document.querySelector('#s-marcador .court-overlay');
   const box=document.getElementById('courtbg');
+  let empty=document.getElementById('mkEmpty');
+  if(!hasLiveGame()){
+    // Sin partido en vivo: estado vacío, nada de datos de prueba.
+    if(ov)ov.style.display='none';
+    if(box)box.innerHTML='<div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 20%,#141821,#0a0c11)"></div>';
+    if(!empty){
+      empty=document.createElement('div'); empty.id='mkEmpty';
+      empty.style.cssText='position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:24px;color:var(--muted);z-index:3';
+      const fb=document.querySelector('#s-marcador .fullbg'); if(fb)fb.appendChild(empty);
+    }
+    empty.style.display='flex';
+    empty.innerHTML='<div style="position:absolute;top:12px;left:12px"><button class="backbtn" onclick="goBack()" style="background:rgba(7,9,13,.7);backdrop-filter:blur(6px)">&lsaquo;</button></div>'+
+      '<svg class="ic" style="width:44px;height:44px;opacity:.5"><use href="#ic-live"/></svg>'+
+      '<div style="font-weight:800;font-size:17px;color:var(--txt)">No hay partido en vivo</div>'+
+      '<div style="font-size:13px;max-width:240px">Cuando la mesa dirija un partido del calendario, aquí verás el marcador en tiempo real.</div>'+
+      (currentRole==='liga'?'<button class="btn" style="margin-top:6px" onclick="go(\'tabla\')">Ir al calendario</button>':'');
+    return;
+  }
+  if(empty)empty.style.display='none';
+  if(ov)ov.style.display='';
+  syncScoreboard();
   if(courtStyle()==='minimalista'){
     box.innerHTML=`<svg viewBox="0 0 150 300" preserveAspectRatio="xMidYMid slice">
       <defs><radialGradient id="wood" cx="50%" cy="45%" r="75%"><stop offset="0%" stop-color="#241a12"/><stop offset="60%" stop-color="#15100b"/><stop offset="100%" stop-color="#0a0805"/></radialGradient></defs>
@@ -1536,13 +1554,10 @@ function drawCourt(){
     box.innerHTML=`<img src="assets/cancha_top.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center">
       <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,9,13,.78) 0%,rgba(7,9,13,.28) 22%,rgba(7,9,13,.22) 60%,rgba(7,9,13,.82) 100%)"></div>`;
   }
-  // notif del marcador — SOLO el papá de Diego ve a "Diego" por nombre
+  // notif del marcador: periodo + marcador real (sin datos de prueba)
   const n=document.getElementById('mkNotif');
-  const esPapa=currentRole==='papa';
   const marca=GAME.teams[0].name+' '+GAME.teams[0].score+' — '+GAME.teams[1].score+' '+GAME.teams[1].name;
-  n.innerHTML=`<div class="n">${esPapa?'<b>'+GAME.clock+'</b> · Diego entró a la cancha por #9':'<b>'+periodLabel()+'</b> · '+marca}</div>`;
-  setTimeout(()=>{if(document.getElementById('s-marcador').classList.contains('on'))
-    n.innerHTML=`<div class="n">${esPapa?'<b>Diego anotó +2</b> — lleva 6 pts':'<b>Anotación de Titanes</b> · +2'}</div>`;},2600);
+  if(n)n.innerHTML=`<div class="n"><b>${periodLabel()}</b> · ${marca}</div>`;
   buildLineup(); buildMkActions();
 }
 function buildMkActions(){const a=document.getElementById('mkActions');if(!a)return;
@@ -1554,37 +1569,20 @@ function buildMkActions(){const a=document.getElementById('mkActions');if(!a)ret
   }
   a.innerHTML=btns;
 }
-function shareScore(){const t='Titanes '+GAME.teams[0].score+' — '+GAME.teams[1].score+' Halcones · Ligas Mazi';
+function shareScore(){if(!hasLiveGame())return;const t=GAME.teams[0].name+' '+GAME.teams[0].score+' — '+GAME.teams[1].score+' '+GAME.teams[1].name+' · Ligas Mazi';
   if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}}}
 /* ---- alineación en vivo: quién juega, quién en banca, con min · pts · faltas ---- */
 /* ====== ESTADO DE JUEGO COMPARTIDO — mesa, marcador y coach leen lo mismo.
    Un cambio del coach se ve al instante en el marcador y para el público. ====== */
+/* Estado de juego VACÍO por defecto: no hay partido en vivo hasta que la mesa
+   dirija uno del calendario (officiateMatch lo llena con equipos reales). */
 const GAME={
-  period:3, clock:'12:34',
-  teams:[
-    {id:'ti', name:'Titanes', ini:'TI', color:'--papa', score:42, tf:3, players:[
-      {num:'7', nm:'Diego', pos:'Base',    pts:6, f:2, min:22, on:true},
-      {num:'4', nm:'Marco', pos:'Pívot',   pts:8, f:3, min:18, on:true},
-      {num:'23',nm:'Iker',  pos:'Alero',   pts:5, f:1, min:19, on:true},
-      {num:'11',nm:'Leo',   pos:'Escolta', pts:4, f:2, min:16, on:true},
-      {num:'5', nm:'Sam',   pos:'Ala',     pts:7, f:0, min:20, on:true},
-      {num:'9', nm:'Beto',  pos:'Base',    pts:2, f:1, min:4,  on:false},
-      {num:'2', nm:'Nico',  pos:'Escolta', pts:0, f:0, min:6,  on:false},
-      {num:'8', nm:'Rulo',  pos:'Alero',   pts:3, f:2, min:8,  on:false},
-      {num:'12',nm:'Aldo',  pos:'Pívot',   pts:0, f:0, min:0,  on:false},
-    ]},
-    {id:'ha', name:'Halcones', ini:'HA', color:'--publico', score:39, tf:2, players:[
-      {num:'15',nm:'Ortiz', pos:'Base',    pts:9, f:1, min:21, on:true},
-      {num:'8', nm:'Sosa',  pos:'Escolta', pts:6, f:2, min:18, on:true},
-      {num:'21',nm:'León',  pos:'Alero',   pts:7, f:3, min:20, on:true},
-      {num:'3', nm:'Vela',  pos:'Ala',     pts:2, f:1, min:12, on:true},
-      {num:'10',nm:'Ríos',  pos:'Pívot',   pts:5, f:2, min:16, on:true},
-      {num:'6', nm:'Cano',  pos:'Base',    pts:0, f:0, min:3,  on:false},
-      {num:'14',nm:'Mota',  pos:'Alero',   pts:4, f:1, min:7,  on:false},
-    ]},
-  ],
+  period:1, clock:'', matchIdx:null,
+  teams:[],
   log:[],
 };
+/* ¿Hay un partido real en vivo? Sólo cuando la mesa está dirigiendo uno. */
+function hasLiveGame(){ return GAME.matchIdx!=null && GAME.teams && GAME.teams.length===2; }
 function onCourt(t){return GAME.teams[t].players.filter(p=>p.on);}
 function bench(t){return GAME.teams[t].players.filter(p=>!p.on);}
 const COURT_POS=[{x:50,y:56},{x:23,y:64},{x:77,y:64},{x:37,y:78},{x:63,y:78}];
@@ -1600,7 +1598,7 @@ function courtCardHTML(p,me){
 function isHighlighted(teamIdx,p){
   const me=(userData()||{}).name;
   if(currentRole==='coach') return teamIdx===0;
-  if(currentRole==='papa')  return teamIdx===0 && p.nm===((userData()||{}).child||'Diego');
+  if(currentRole==='papa')  return teamIdx===0 && !!(userData()||{}).child && p.nm===(userData()||{}).child;
   if(currentRole==='jugador') return teamIdx===0 && me && p.nm===me;
   return false;
 }
@@ -1617,6 +1615,7 @@ function buildLineup(){
     const d=document.createElement('div'); d.className='mcourt '+(isHighlighted(0,p)?'mine':'home'); d.style.setProperty('--tc','var('+GAME.teams[0].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
     d.innerHTML=courtCardHTML(p,me);
     d.onclick=()=>openPlayerSheet(0,GAME.teams[0].players.indexOf(p)); c.appendChild(d);});
+  const bt=document.getElementById('mkBenchTtl'); if(bt)bt.innerHTML='<svg class="ic" style="width:13px;height:13px"><use href="#ic-people"/></svg> Banca · '+GAME.teams[0].name;
   const b=document.getElementById('benchRow'); if(!b)return; b.innerHTML='';
   bench(0).forEach(p=>{const d=document.createElement('div'); d.className='benchcard';
     d.innerHTML='<span class="bn">#'+p.num+' '+p.nm+'</span><span class="bs">'+p.min+'′ · '+p.pts+' pts · <span class="f">'+p.f+'F</span></span>';
@@ -1741,16 +1740,10 @@ function ini2(s){return s.replace(/[^A-Za-zÁÉÍÓÚÑ]/g,'').slice(0,2).toUppe
    La liga es real: inscribe equipos y jugadores, genera el rol todos-contra-todos,
    captura resultados y la tabla se recalcula sola. Todo persiste en el teléfono. */
 const TEAM_COLORS=['--papa','--publico','--coach','--liga','--jugador','--mesa'];
+/* Liga vacía: sin datos de prueba. La primera liga real la crea el administrador
+   desde "Mi liga" (nombre, logo, equipos, jugadores, calendario). */
 function seedLeague(){
-  const mk=(id,name,ini,color,pls)=>({id,name,ini,color,players:pls});
-  return {name:'Liga Municipal', teams:[
-    mk('ti','Titanes','TI','--papa',[{num:'7',nm:'Diego',pos:'Base',resp:true},{num:'4',nm:'Marco',pos:'Pívot',resp:true},{num:'23',nm:'Iker',pos:'Alero',resp:false}]),
-    mk('ha','Halcones','HA','--publico',[{num:'15',nm:'Ortiz',pos:'Base',resp:true},{num:'8',nm:'Sosa',pos:'Escolta',resp:true}]),
-    mk('pu','Pumas','PU','--coach',[{num:'9',nm:'Bravo',pos:'Alero',resp:true},{num:'3',nm:'Cruz',pos:'Base',resp:false}]),
-    mk('lo','Lobos','LO','--liga',[{num:'11',nm:'Reyes',pos:'Pívot',resp:true}]),
-    mk('ce','Centellas','CE','--jugador',[{num:'5',nm:'Nava',pos:'Escolta',resp:true}]),
-    mk('to','Toros','TO','--mesa',[{num:'21',nm:'Luna',pos:'Ala',resp:false}]),
-  ], calendar:[]};
+  return {name:'Mi liga', teams:[], calendar:[], admins:[]};
 }
 function leagueData(){try{const s=localStorage.getItem('lm_league');if(s)return JSON.parse(s);}catch(e){}const d=seedLeague();saveLeague(d);return d;}
 function saveLeague(d){try{localStorage.setItem('lm_league',JSON.stringify(d));}catch(e){} cloudPushSoon();}
@@ -2120,6 +2113,17 @@ function mNextPeriod(){ const r=rules(); GAME.period=(GAME.period||1)+1; GAME.re
 function gameAlert(msg){ let el=document.getElementById('gameAlert'); if(!el){el=document.createElement('div');el.id='gameAlert';el.className='game-alert';(document.getElementById('app')||document.body).appendChild(el);} el.textContent=msg; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),2600); }
 function mClk(){mtick++;const mm=Math.max(0,12-Math.floor(mtick/3));const ss=('0'+((60-(mtick*13)%60+60)%60)).slice(-2);return 'Q'+GAME.period+' '+mm+':'+ss;}
 function renderWiz(){
+  const step0=document.getElementById('mstep');
+  if(!hasLiveGame()){
+    // Mesa sin partido asignado: no hay nada que anotar todavía.
+    const ms=document.getElementById('mScore'); if(ms)ms.textContent='—';
+    const mctx0=document.getElementById('mctx'); if(mctx0)mctx0.innerHTML='';
+    if(step0)step0.innerHTML='<div class="empty" style="border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center">'+
+      '<div style="font-weight:800;font-size:16px;color:var(--txt);margin-bottom:6px">La mesa está lista</div>'+
+      '<div style="font-size:13px;color:var(--muted);max-width:260px;margin:0 auto 12px">Aún no hay un partido asignado. Elige uno del calendario para empezar a dirigir y anotar.</div>'+
+      '<button class="btn" onclick="go(\'tabla\')">Ver calendario</button></div>';
+    return;
+  }
   document.getElementById('mScore').textContent=GAME.teams[0].score+' — '+GAME.teams[1].score;
   document.getElementById('mClk').textContent='Q'+GAME.period+' · '+GAME.clock;
   // barra de contexto: qué estoy por registrar
@@ -2175,6 +2179,12 @@ let subOut=null;
 function buildCoachSubs(){
   const on=document.getElementById('subOn'), bn=document.getElementById('subBench'); if(!on)return;
   on.innerHTML=''; bn.innerHTML=''; subOut=null;
+  const wrap=document.getElementById('subCard');
+  if(!hasLiveGame()){ // sin partido en vivo no hay cambios que hacer
+    if(wrap)wrap.style.display='none';
+    return;
+  }
+  if(wrap)wrap.style.display='';
   onCourt(0).forEach(p=>{const i=GAME.teams[0].players.indexOf(p);const b=document.createElement('button');b.className='subp';
     b.innerHTML='<span class="pn">'+p.num+'</span><span class="pnm">'+p.nm+'</span><span class="pf">'+p.pts+'p · '+p.f+'F</span>';
     b.onclick=()=>{subOut=i;[...on.children].forEach(c=>c.classList.remove('sel'));b.classList.add('sel');document.getElementById('subHint').textContent='Ahora toca quién ENTRA de la banca';};on.appendChild(b);});
@@ -2189,7 +2199,7 @@ function buildCoachSubs(){
 const SHOP_COLORS=['#e8b13e','#35c2cf','#54cc8a','#a774f0','#ec5a45','#ff9a5a'];
 let pColor=SHOP_COLORS[0];
 function shopProducts(){try{const s=localStorage.getItem('lm_products');if(s)return JSON.parse(s);}catch(e){}
-  return [{name:'Jersey local',price:450,color:'#e8b13e'},{name:'Balón oficial',price:620,color:'#ec5a45'},{name:'Gorra de la liga',price:260,color:'#35c2cf'},{name:'Sudadera',price:780,color:'#a774f0'}];}
+  return [];}
 function saveProducts(a){try{localStorage.setItem('lm_products',JSON.stringify(a));}catch(e){}}
 function buildShop(){
   const admin=currentRole==='liga';
@@ -2212,7 +2222,7 @@ function addProduct(){const n=document.getElementById('pName').value.trim();cons
   document.getElementById('pName').value='';document.getElementById('pPrice').value='';toggleShopForm();buildShop();toast('Producto publicado');}
 /* ---- ROSTER: dar de alta agrega de verdad, aparece en el vestidor ---- */
 function teamRoster(){try{const s=localStorage.getItem('lm_roster');if(s)return JSON.parse(s);}catch(e){}
-  return [{num:'7',nm:'Diego G.',pos:'Base · Titular',ppp:'11.4'},{num:'4',nm:'Marco V.',pos:'Pívot · Titular',ppp:'8.0'},{num:'11',nm:'Iker R.',pos:'Alero · Banca',ppp:'5.2'}];}
+  return [];}
 function saveRoster(a){try{localStorage.setItem('lm_roster',JSON.stringify(a));}catch(e){}}
 function buildRoster(){const l=document.getElementById('rosterList'); if(!l)return; const r=teamRoster(); l.innerHTML='';
   r.forEach((p,i)=>{const d=document.createElement('div');d.className='rosterrow';
@@ -2260,6 +2270,15 @@ function openProfile(){
   document.getElementById('profileBg').classList.add('on');
 }
 function closeProfile(){document.getElementById('profileBg').classList.remove('on');}
+/* Borra cualquier dato de prueba que un tester haya dejado en el dispositivo,
+   dejando la app lista para subir la primera liga real desde cero. */
+function resetDemo(){
+  if(!confirm('¿Borrar los datos de prueba de este dispositivo? (liga, roster, productos y partido en curso). Tu cuenta no se cierra.'))return;
+  ['lm_league','lm_roster','lm_products','lm_court'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+  try{ GAME.teams=[]; GAME.matchIdx=null; GAME.period=1; GAME.remainSec=null; GAME.running=false; GAME.log=[]; }catch(e){}
+  closeProfile(); flashSaved('Listo · datos de prueba borrados'); navStack.length=0;
+  render(typeof ROLE_HOME!=='undefined'&&ROLE_HOME[currentRole]?ROLE_HOME[currentRole]:'hub');
+}
 function doLogout(){
   try{ if(typeof sbSignOut==='function')sbSignOut(); }catch(e){}
   try{ localStorage.removeItem('lm_user'); }catch(e){}
@@ -2357,12 +2376,27 @@ function doSignin(){
   }).catch(()=>{ hideLoader(); loginMsg('No se pudo conectar a la nube.',true); setCloudBadge('','Modo local'); });
 }
 function doLogin(){ doSignin(); }   /* compat */
-function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+' · Oro · 78 GENERAL · Ligas Mazi';
+function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+(u.team?' · '+u.team:'')+' · Ligas Mazi';
   if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}} }
 function renderCard(){
-  const u=userData(); if(!u)return;
-  const nm=document.getElementById('fcName'); if(nm&&u.name)nm.textContent=u.name;
+  const u=userData()||{};
+  const nm=document.getElementById('fcName'); if(nm)nm.textContent=u.name||'Tu carta';
+  // club/subtítulo: equipo + liga + número si se conocen
+  const club=document.getElementById('fcClub');
+  if(club){ const parts=[]; if(u.team)parts.push(u.team); if(u.league)parts.push(u.league); if(u.num)parts.push('#'+u.num);
+    club.textContent=parts.length?parts.join(' · '):'Aún sin equipo'; }
   if(u.photo){ const ph=document.getElementById('fcPhoto'); if(ph){ph.style.backgroundImage='url('+u.photo+')';ph.classList.add('has-photo');ph.innerHTML='';} }
+  // ¿ya hay estadísticas reales? (las alimenta la mesa; aún no se agregan por jugador)
+  const st=(u.stats||null);
+  const note=(txt)=>'<div class="stratnote" style="border-left-color:var(--jugador)">'+txt+'</div>';
+  if(!st){
+    const empty='<div class="fc-empty" style="text-align:center;padding:22px 16px;color:var(--muted)">'+
+      '<svg class="ic" style="width:38px;height:38px;opacity:.5"><use href="#ic-card"/></svg>'+
+      '<div style="font-weight:800;color:var(--txt);margin:8px 0 4px">Tu carta se arma sola</div>'+
+      '<div style="font-size:13px;max-width:280px;margin:0 auto">Cuando la mesa registre tus partidos (puntos, faltas, rebotes, minutos), aquí aparecerán tu general, tus atributos y tu vitrina.</div></div>';
+    ['fc-resumen','fc-atributos','fc-vitrina','fc-historial'].forEach(id=>{const p=document.getElementById(id);if(p)p.innerHTML=empty;});
+    const r=document.getElementById('fc-historial'); if(r&&u.team)r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+u.team+'<small>'+(u.league||'Liga')+(u.num?' · #'+u.num:'')+' · actual</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
+  }
 }
 /* subir foto: se redimensiona en el teléfono (sin GPS, sin subir nada crudo) */
 function onCardPhoto(ev){
