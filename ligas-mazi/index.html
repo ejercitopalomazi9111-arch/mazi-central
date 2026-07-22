@@ -1801,12 +1801,25 @@ function buildMisLigas(){
 function toggleLeagueIdentity(){ const box=document.getElementById('leagueIdentity'); if(!box)return; const open=box.style.display!=='none'; box.style.display=open?'none':'block'; if(!open)buildLeagueIdentity(); }
 function buildLeagueIdentity(){
   const box=document.getElementById('leagueIdentity'); if(!box)return; const d=leagueData();
+  // el creador queda como admin de la liga
+  if(!d.admins)d.admins=[]; const me=((userData()||{}).email||'').toLowerCase();
+  if(me && d.admins.indexOf(me)<0){ d.admins.unshift(me); saveLeague(d); }
+  let admins='';
+  d.admins.forEach((em,i)=>{ admins+='<div class="le-pl"><span class="le-num">'+(i===0?'★':'')+'</span><b style="font-size:13px">'+em+'</b>'+(i>0?'<button class="le-x" onclick="removeLeagueAdmin('+i+')">×</button>':'<span class="le-pos">creador</span>')+'</div>'; });
   box.innerHTML='<div class="card"><div class="kick">Identidad de la liga</div>'+
     '<div class="le-add" style="margin-top:6px"><input id="lidName" value="'+(d.name||'').replace(/"/g,'&quot;')+'" placeholder="Nombre de la liga"><button class="btn sm" onclick="setLeagueName()">Guardar</button></div>'+
     '<div class="tid-lbl">Escudo de la liga</div>'+
     '<button class="btn ghost sm block" onclick="setLeagueLogo()"><svg class="ic"><use href="#ic-camera"/></svg> '+(d.logo?'Cambiar imagen del escudo':'Subir imagen del escudo')+'</button>'+
-    (d.logo?'<button class="btn ghost sm block" style="margin-top:6px;color:var(--dim)" onclick="clearLeagueLogo()">Quitar imagen</button><div class="tid-preview"><span class="crest real" style="background-image:url('+d.logo+');background-size:cover;background-position:center"></span><span style="color:#c7cdd8;font-size:13px">Escudo de tu liga</span></div>':'')+'</div>';
+    (d.logo?'<button class="btn ghost sm block" style="margin-top:6px;color:var(--dim)" onclick="clearLeagueLogo()">Quitar imagen</button><div class="tid-preview"><span class="crest real" style="background-image:url('+d.logo+');background-size:cover;background-position:center"></span><span style="color:#c7cdd8;font-size:13px">Escudo de tu liga</span></div>':'')+
+    '<div class="tid-lbl">Admins de la liga</div>'+admins+
+    '<div class="le-add"><input id="lidAdmin" type="email" inputmode="email" placeholder="Correo del nuevo admin"><button class="btn sm" onclick="addLeagueAdmin()">Agregar</button></div>'+
+    '<div class="tid-lbl">Redes / web (opcional)</div>'+
+    '<div class="le-add"><input id="lidLink" value="'+((d.link||'').replace(/"/g,'&quot;'))+'" placeholder="https://... o @usuario"><button class="btn sm" onclick="setLeagueLink()">Guardar</button></div>'+
+    '</div>';
 }
+function addLeagueAdmin(){ const d=leagueData(); const em=(document.getElementById('lidAdmin').value||'').trim().toLowerCase(); if(!/.+@.+\..+/.test(em)){flashSaved('Correo inválido');return;} d.admins=d.admins||[]; if(d.admins.indexOf(em)<0)d.admins.push(em); saveLeague(d); buildLeagueIdentity(); flashSaved('Admin agregado ✓'); }
+function removeLeagueAdmin(i){ const d=leagueData(); if(d.admins&&i>0){d.admins.splice(i,1);saveLeague(d);buildLeagueIdentity();} }
+function setLeagueLink(){ const d=leagueData(); d.link=(document.getElementById('lidLink').value||'').trim(); saveLeague(d); flashSaved('Guardado ✓'); }
 function flashSaved(msg){ const a=document.getElementById('app')||document.body; let el=document.getElementById('saveToast'); if(!el){el=document.createElement('div');el.id='saveToast';el.className='save-toast';a.appendChild(el);} el.textContent=msg||'Guardado ✓'; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),1300); }
 function setLeagueName(){ const d=leagueData(); const v=(document.getElementById('lidName').value||'').trim(); if(v){d.name=v;saveLeague(d);buildLeagueIdentity();const bn=document.getElementById('ligaBannerName');if(bn)bn.textContent=v;flashSaved('Liga guardada ✓');} }
 function setLeagueLogo(){ pickLogo(function(url){ const d=leagueData(); d.logo=url; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=url;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';} }); }
