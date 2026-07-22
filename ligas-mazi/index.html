@@ -212,6 +212,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mck.aux.on{color:var(--good);border-color:rgba(70,201,138,.4)}
 .game-alert{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.9);z-index:70;background:rgba(10,13,18,.94);border:1px solid var(--accent);color:#fff;font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.02em;padding:16px 26px;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
 .game-alert.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+/* loader de pelota encestando */
+.loader-ov{position:absolute;inset:0;z-index:90;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(8,10,14,.82);backdrop-filter:blur(4px)}
+.loader-ov.on{display:flex}
+.loader-svg{width:120px;height:150px}
+#loaderBall{transform-box:fill-box}
+.loader-txt{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .le-msg{font-size:12.5px;line-height:1.4;color:var(--good);margin:8px 2px 0;min-height:0}
 .le-msg.err{color:#ff9a8f}
 .tid-swatches{display:flex;gap:8px;margin-top:2px;flex-wrap:wrap}
@@ -1177,9 +1183,30 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   </div>
 
   <div id="toast" style="position:absolute;left:16px;right:16px;bottom:76px;z-index:50;display:none"></div>
+
+  <!-- Loader: pelota encestando (anime.js) -->
+  <div id="loader" class="loader-ov">
+    <svg class="loader-svg" viewBox="0 0 120 150" aria-label="Cargando">
+      <!-- tablero + aro -->
+      <rect x="34" y="18" width="52" height="34" rx="3" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="2"/>
+      <rect x="52" y="34" width="16" height="12" rx="1.5" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+      <ellipse cx="60" cy="58" rx="16" ry="4.5" fill="none" stroke="var(--accent)" stroke-width="3"/>
+      <g id="loaderNet" style="transform-origin:60px 58px">
+        <path d="M45 59 L49 74 M52 60 L54 76 M60 60.5 L60 77 M68 60 L66 76 M75 59 L71 74" stroke="rgba(255,255,255,.45)" stroke-width="1.4" fill="none"/>
+      </g>
+      <!-- pelota -->
+      <g id="loaderBall">
+        <circle cx="0" cy="0" r="9" fill="url(#ballGrad)" stroke="#7a3a12" stroke-width="1.2"/>
+        <path d="M-9 0 H9 M0 -9 V9 M-6.4 -6.4 Q0 0 6.4 6.4 M6.4 -6.4 Q0 0 -6.4 6.4" stroke="#7a3a12" stroke-width="1" fill="none"/>
+      </g>
+      <defs><radialGradient id="ballGrad" cx="38%" cy="34%" r="72%"><stop offset="0%" stop-color="#ffb877"/><stop offset="55%" stop-color="#ef7a35"/><stop offset="100%" stop-color="#c25716"/></radialGradient></defs>
+    </svg>
+    <div class="loader-txt" id="loaderTxt">Cargando…</div>
+  </div>
 </div>
 
 <!-- Cliente Supabase (mejor esfuerzo): si no carga, la app sigue en modo local -->
+<script src="anime.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 <script>
 /* ====== Backend en la nube (Supabase). Offline-first: si no hay red o no carga
@@ -1834,6 +1861,22 @@ function addLeagueAdmin(){ const d=leagueData(); const em=(document.getElementBy
 function removeLeagueAdmin(i){ const d=leagueData(); if(d.admins&&i>0){d.admins.splice(i,1);saveLeague(d);buildLeagueIdentity();} }
 function setLeagueLink(){ const d=leagueData(); d.link=(document.getElementById('lidLink').value||'').trim(); saveLeague(d); flashSaved('Guardado ✓'); }
 function flashSaved(msg){ const a=document.getElementById('app')||document.body; let el=document.getElementById('saveToast'); if(!el){el=document.createElement('div');el.id='saveToast';el.className='save-toast';a.appendChild(el);} el.textContent=msg||'Guardado ✓'; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),1300); }
+/* ===== Loader: pelota encestando (anime.js) ===== */
+function ballLoaderAnim(){
+  if(!window.anime||window._ballAnim)return;
+  window._ballAnim=anime({ targets:'#loaderBall', keyframes:[
+    {translateX:24,translateY:118,scale:.7,opacity:1,duration:0},
+    {translateX:46,translateY:42,duration:460,easing:'easeOutQuad'},
+    {translateX:60,translateY:58,scale:1,duration:200,easing:'easeInQuad'},
+    {translateX:62,translateY:98,scale:.85,opacity:.85,duration:240,easing:'easeInQuad'},
+    {opacity:0,duration:120},
+    {translateX:24,translateY:118,opacity:0,scale:.7,duration:220}
+  ], loop:true });
+  window._netAnim=anime({ targets:'#loaderNet', scaleY:[{value:1,duration:660},{value:1.3,duration:120},{value:1,duration:220}], loop:true, easing:'easeOutQuad' });
+}
+let _loaderT=null;
+function showLoader(txt){ const l=document.getElementById('loader'); if(!l)return; const t=document.getElementById('loaderTxt'); if(t)t.textContent=txt||'Cargando…'; l.classList.add('on'); ballLoaderAnim(); if(window._ballAnim&&window._ballAnim.play)window._ballAnim.play(); clearTimeout(_loaderT); _loaderT=setTimeout(hideLoader,15000); }
+function hideLoader(){ clearTimeout(_loaderT); const l=document.getElementById('loader'); if(l)l.classList.remove('on'); }
 function setLeagueName(){ const d=leagueData(); const v=(document.getElementById('lidName').value||'').trim(); if(v){d.name=v;saveLeague(d);buildLeagueIdentity();const bn=document.getElementById('ligaBannerName');if(bn)bn.textContent=v;flashSaved('Liga guardada ✓');} }
 function setLeagueLogo(){ pickLogo(function(url){ const d=leagueData(); d.logo=url; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=url;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';} }); }
 function clearLeagueLogo(){ const d=leagueData(); delete d.logo; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src='assets/arena.jpg';bi.style.filter='';} }
@@ -2287,14 +2330,15 @@ function doSignup(){
   const u=userData()||{}; u.name=name; u.email=email; u.roles=roles; u.role=roles[0]; saveUser(u);
   const c=sbClient();
   if(!c){ loginMsg('Cuenta creada en este teléfono (sin nube).'); enterAppWithRole(); return; }
-  loginMsg('Creando tu cuenta…'); setCloudBadge('checking','Creando…');
+  loginMsg('Creando tu cuenta…'); setCloudBadge('checking','Creando…'); showLoader('Creando tu cuenta…');
   c.auth.signUp({email,password:pass,options:{data:{display_name:name,role:roles[0],roles:roles}}}).then(r=>{
+    hideLoader();
     if(r.error){ loginMsg(r.error.message,true); setCloudBadge('','Modo local'); return; }
     if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth(); cloudPull().then(enterAppWithRole); }
     else { setCloudBadge('','Confirma tu correo');
       loginMsg('Te enviamos un correo a '+email+'. Confírmalo para activar la nube; mientras tanto ya puedes usar la app.');
       setTimeout(enterAppWithRole,1600); }
-  }).catch(()=>{ loginMsg('Sin conexión — cuenta creada solo en este teléfono.'); enterAppWithRole(); });
+  }).catch(()=>{ hideLoader(); loginMsg('Sin conexión — cuenta creada solo en este teléfono.'); enterAppWithRole(); });
 }
 function doSignin(){
   const email=(document.getElementById('inEmail').value||'').trim();
@@ -2302,15 +2346,15 @@ function doSignin(){
   if(!email||!pass){loginMsg('Escribe tu correo y contraseña.',true);return;}
   const c=sbClient();
   if(!c){ const u=userData(); if(u&&u.email===email){ enterAppWithRole(); return; } loginMsg('Sin conexión a la nube para iniciar sesión ahora.',true); return; }
-  loginMsg('Entrando…'); setCloudBadge('checking','Entrando…');
+  loginMsg('Entrando…'); setCloudBadge('checking','Entrando…'); showLoader('Entrando…');
   c.auth.signInWithPassword({email,password:pass}).then(r=>{
-    if(r.error){ const m=(r.error.message||'').toLowerCase();
+    if(r.error){ hideLoader(); const m=(r.error.message||'').toLowerCase();
       if(m.includes('confirm')) loginMsg('Tu correo aún no está confirmado. Revisa tu bandeja.',true);
       else loginMsg('Correo o contraseña incorrectos.',true);
       setCloudBadge('','Modo local'); return; }
     if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth();
-      cloudPull().then(()=>{ applyRoleFromUser(); modeIdx=0; go('hub'); }); }
-  }).catch(()=>{ loginMsg('No se pudo conectar a la nube.',true); setCloudBadge('','Modo local'); });
+      cloudPull().then(()=>{ hideLoader(); applyRoleFromUser(); modeIdx=0; go('hub'); }); }
+  }).catch(()=>{ hideLoader(); loginMsg('No se pudo conectar a la nube.',true); setCloudBadge('','Modo local'); });
 }
 function doLogin(){ doSignin(); }   /* compat */
 function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+' · Oro · 78 GENERAL · Ligas Mazi';
