@@ -935,6 +935,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="banner"><img src="assets/arena.jpg" id="ligaBannerImg"><div class="g"></div><div class="c"><div class="k" style="color:var(--liga)">Liga · Administración</div><div class="t" id="ligaBannerName">Mi liga</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
+      <div id="ligaClaim" style="display:none"></div>
+      <div id="ligaAdminBody">
       <div class="stat-row" style="margin-top:8px">
         <div class="stat-tile"><b>0</b><span>Equipos</span></div>
         <div class="stat-tile"><b>0</b><span>Jugadores</span></div>
@@ -950,6 +952,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="leaguerow" onclick="go('bracket')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-flag"/></svg></div><div><div class="nm" style="font-size:15px">Eliminatoria (bracket)</div><div class="mt">Liguilla desde la tabla · campeón</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('responsivas')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-doc"/></svg></div><div><div class="nm" style="font-size:15px">Responsivas</div><div class="mt">Consentimiento de padres</div></div><span class="more">›</span></div>
       <button class="btn block" onclick="go('perillas')" style="margin-top:6px"><svg class="ic"><use href="#ic-gear"/></svg> Reglas del torneo (perillas)</button>
+      </div>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -1253,7 +1256,12 @@ async function cloudPull(){
     if(error){ return; }
     if(data){ if(data.league)localStorage.setItem('lm_league',JSON.stringify(data.league));
               if(data.profile)localStorage.setItem('lm_user',JSON.stringify(data.profile)); }
-    else { await cloudPush(); }   // primera vez: sube lo que ya tienes local
+    else {
+      // primera vez para esta cuenta: NO heredar la liga que otro usuario dejó en este dispositivo
+      try{ const local=JSON.parse(localStorage.getItem('lm_league')||'null');
+        if(local && leagueClaimed(local) && !canAdminLeague(local)){ localStorage.removeItem('lm_league'); } }catch(e){}
+      await cloudPush();   // sube el estado limpio de esta cuenta
+    }
   }catch(e){}
 }
 let _pushT=null;
@@ -1751,6 +1759,19 @@ function teamById(id){return leagueData().teams.find(t=>t.id===id);}
 /* panel de la liga: números reales + identidad */
 function buildLigaStats(){
   const d=leagueData();
+  const body=document.getElementById('ligaAdminBody'), claim=document.getElementById('ligaClaim');
+  // Solo el dueño/admins (o súper admin) administran la liga. Una cuenta nueva no hereda la de otro.
+  if(!canAdminLeague(d)){
+    if(body)body.style.display='none';
+    if(claim){ claim.style.display='block';
+      claim.innerHTML='<div class="card" style="margin-top:8px"><div class="kick" style="color:var(--liga)">Aún no administras ninguna liga</div>'+
+        '<div style="font-size:13px;color:var(--muted);margin:6px 0 12px">Crea tu propia liga para empezar a inscribir equipos, jugadores y armar el calendario. Solo tú (y los admins que agregues) podrán administrarla.</div>'+
+        '<div class="le-add"><input id="claimName" placeholder="Nombre de tu liga"><button class="btn sm" onclick="createMyLeague()">Crear liga</button></div></div>'; }
+    const bn0=document.getElementById('ligaBannerName'); if(bn0)bn0.textContent='Tu liga';
+    return;
+  }
+  if(body)body.style.display='';
+  if(claim)claim.style.display='none';
   const bn=document.getElementById('ligaBannerName'); if(bn)bn.textContent=d.name||'Mi liga';
   const bi=document.getElementById('ligaBannerImg'); if(bi&&d.logo){bi.src=d.logo;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';}
   const idbox=document.getElementById('leagueIdentity'); if(idbox)idbox.style.display='none';
@@ -1834,9 +1855,8 @@ function buildMisLigas(){
 function toggleLeagueIdentity(){ const box=document.getElementById('leagueIdentity'); if(!box)return; const open=box.style.display!=='none'; box.style.display=open?'none':'block'; if(!open)buildLeagueIdentity(); }
 function buildLeagueIdentity(){
   const box=document.getElementById('leagueIdentity'); if(!box)return; const d=leagueData();
-  // el creador queda como admin de la liga
-  if(!d.admins)d.admins=[]; const me=((userData()||{}).email||'').toLowerCase();
-  if(me && d.admins.indexOf(me)<0){ d.admins.unshift(me); saveLeague(d); }
+  if(!canAdminLeague(d)){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">Solo el dueño y los admins de la liga pueden editar su identidad.</div>'; return; }
+  if(!d.admins)d.admins=[];
   let admins='';
   d.admins.forEach((em,i)=>{ admins+='<div class="le-pl"><span class="le-num">'+(i===0?'★':'')+'</span><b style="font-size:13px">'+em+'</b>'+(i>0?'<button class="le-x" onclick="removeLeagueAdmin('+i+')">×</button>':'<span class="le-pos">creador</span>')+'</div>'; });
   box.innerHTML='<div class="card"><div class="kick">Identidad de la liga</div>'+
@@ -1850,9 +1870,9 @@ function buildLeagueIdentity(){
     '<div class="le-add"><input id="lidLink" value="'+((d.link||'').replace(/"/g,'&quot;'))+'" placeholder="https://... o @usuario"><button class="btn sm" onclick="setLeagueLink()">Guardar</button></div>'+
     '</div>';
 }
-function addLeagueAdmin(){ const d=leagueData(); const em=(document.getElementById('lidAdmin').value||'').trim().toLowerCase(); if(!/.+@.+\..+/.test(em)){flashSaved('Correo inválido');return;} d.admins=d.admins||[]; if(d.admins.indexOf(em)<0)d.admins.push(em); saveLeague(d); buildLeagueIdentity(); flashSaved('Admin agregado ✓'); }
-function removeLeagueAdmin(i){ const d=leagueData(); if(d.admins&&i>0){d.admins.splice(i,1);saveLeague(d);buildLeagueIdentity();} }
-function setLeagueLink(){ const d=leagueData(); d.link=(document.getElementById('lidLink').value||'').trim(); saveLeague(d); flashSaved('Guardado ✓'); }
+function addLeagueAdmin(){ const d=leagueData(); if(!canAdminLeague(d))return; const em=(document.getElementById('lidAdmin').value||'').trim().toLowerCase(); if(!/.+@.+\..+/.test(em)){flashSaved('Correo inválido');return;} d.admins=d.admins||[]; if(d.admins.indexOf(em)<0)d.admins.push(em); saveLeague(d); buildLeagueIdentity(); flashSaved('Admin agregado ✓'); }
+function removeLeagueAdmin(i){ const d=leagueData(); if(!canAdminLeague(d))return; if(d.admins&&i>0){d.admins.splice(i,1);saveLeague(d);buildLeagueIdentity();} }
+function setLeagueLink(){ const d=leagueData(); if(!canAdminLeague(d))return; d.link=(document.getElementById('lidLink').value||'').trim(); saveLeague(d); flashSaved('Guardado ✓'); }
 function flashSaved(msg){ const a=document.getElementById('app')||document.body; let el=document.getElementById('saveToast'); if(!el){el=document.createElement('div');el.id='saveToast';el.className='save-toast';a.appendChild(el);} el.textContent=msg||'Guardado ✓'; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),1300); }
 /* ===== Loader: pelota encestando (anime.js) ===== */
 function ballLoaderAnim(){
@@ -1884,9 +1904,9 @@ function showLoader(txt){ const l=document.getElementById('loader'); if(!l)retur
   clearInterval(_loaderCycle); _loaderCycle=setInterval(()=>{ const e=document.getElementById('loaderTxt'); if(e)e.textContent=loaderPhrase(); },1500);
   clearTimeout(_loaderT); _loaderT=setTimeout(hideLoader,15000); }
 function hideLoader(){ clearTimeout(_loaderT); clearInterval(_loaderCycle); _loaderCycle=null; const l=document.getElementById('loader'); if(l)l.classList.remove('on'); }
-function setLeagueName(){ const d=leagueData(); const v=(document.getElementById('lidName').value||'').trim(); if(v){d.name=v;saveLeague(d);buildLeagueIdentity();const bn=document.getElementById('ligaBannerName');if(bn)bn.textContent=v;flashSaved('Liga guardada ✓');} }
-function setLeagueLogo(){ pickLogo(function(url){ const d=leagueData(); d.logo=url; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=url;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';} }); }
-function clearLeagueLogo(){ const d=leagueData(); delete d.logo; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src='assets/arena.jpg';bi.style.filter='';} }
+function setLeagueName(){ const d=leagueData(); if(!canAdminLeague(d))return; const v=(document.getElementById('lidName').value||'').trim(); if(v){d.name=v;saveLeague(d);buildLeagueIdentity();const bn=document.getElementById('ligaBannerName');if(bn)bn.textContent=v;flashSaved('Liga guardada ✓');} }
+function setLeagueLogo(){ if(!canAdminLeague())return; pickLogo(function(url){ const d=leagueData(); d.logo=url; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=url;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';} }); }
+function clearLeagueLogo(){ const d=leagueData(); if(!canAdminLeague(d))return; delete d.logo; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src='assets/arena.jpg';bi.style.filter='';} }
 /* --- equipos y jugadores --- */
 let leOpen=null;
 function iniOf(nm){return (nm.replace(/[^A-Za-zÁÉÍÓÚÑñ0-9 ]/g,'').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,3)||nm.slice(0,2)).toUpperCase();}
@@ -1895,21 +1915,21 @@ function addTeam(){
   const inp=document.getElementById('newTeamNm'); const nm=(inp&&inp.value||'').trim();
   const msg=document.getElementById('leTeamMsg');
   const setMsg=(t,err)=>{ if(msg){msg.className='le-msg'+(err?' err':'');msg.textContent=t||'';} };
+  const d=leagueData(); if(!canAdminLeague(d)){ setMsg('Solo el admin de la liga puede agregar equipos.',true); return; }
   if(!nm){ setMsg('Escribe el nombre del equipo.',true); return; }
-  const d=leagueData();
   if(d.teams.some(t=>normName(t.name)===normName(nm))){ setMsg('Ya existe un equipo “'+nm+'” en esta liga. Si es el tuyo, ábrelo abajo; no lo dupliques.',true); return; }
   d.teams.push({id:'t'+Date.now().toString(36),name:nm,ini:iniOf(nm),color:TEAM_COLORS[d.teams.length%TEAM_COLORS.length],players:[]});
   saveLeague(d); setMsg(''); buildLeagueTeams();
 }
-function delTeam(id){const d=leagueData(); d.teams=d.teams.filter(t=>t.id!==id); d.calendar=d.calendar.filter(m=>m.home!==id&&m.away!==id); saveLeague(d); leOpen=null; buildLeagueTeams();}
+function delTeam(id){const d=leagueData(); if(!canAdminLeague(d))return; d.teams=d.teams.filter(t=>t.id!==id); d.calendar=d.calendar.filter(m=>m.home!==id&&m.away!==id); saveLeague(d); leOpen=null; buildLeagueTeams();}
 function addPlayer(tid){
-  const d=leagueData(); const t=d.teams.find(x=>x.id===tid); if(!t)return;
+  const d=leagueData(); if(!canAdminLeague(d))return; const t=d.teams.find(x=>x.id===tid); if(!t)return;
   const num=(document.getElementById('np_'+tid+'_num').value||'').trim();
   const nm=(document.getElementById('np_'+tid+'_nm').value||'').trim(); if(!nm)return;
   const pos=(document.getElementById('np_'+tid+'_pos').value||'Base');
   t.players.push({num:num||'0',nm,pos,resp:false}); saveLeague(d); buildLeagueTeams();
 }
-function delPlayer(tid,i){const d=leagueData();const t=d.teams.find(x=>x.id===tid);if(t){t.players.splice(i,1);saveLeague(d);buildLeagueTeams();}}
+function delPlayer(tid,i){const d=leagueData();if(!canAdminLeague(d))return;const t=d.teams.find(x=>x.id===tid);if(t){t.players.splice(i,1);saveLeague(d);buildLeagueTeams();}}
 function buildLeagueTeams(){
   const d=leagueData(); const box=document.getElementById('leTeams'); if(!box)return;
   let h='<div class="eyebrow" style="margin:2px 2px 10px">'+d.teams.length+' equipos · '+d.teams.reduce((s,t)=>s+t.players.length,0)+' jugadores</div>';
@@ -1933,7 +1953,7 @@ function buildLeagueTeams(){
 function nextSaturday(){ const d=new Date(); d.setHours(0,0,0,0); const add=(6-d.getDay()+7)%7||7; d.setDate(d.getDate()+add); return d; }
 function fmtDate(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
 function genRoundRobin(){
-  const d=leagueData(); const arr=d.teams.map(t=>t.id);
+  const d=leagueData(); if(!canAdminLeague(d))return; const arr=d.teams.map(t=>t.id);
   if(arr.length<2){ d.calendar=[]; saveLeague(d); buildLeagueCal(); return; }
   if(arr.length%2)arr.push(null);
   const n=arr.length, rounds=n-1, half=n/2, cal=[];
@@ -1965,13 +1985,13 @@ function buildLeagueCal(){
 }
 /* --- resultados: captura marcador, cierra partido, alimenta la tabla --- */
 function saveResult(idx){
-  const d=leagueData(); const m=d.calendar[idx]; if(!m)return;
+  const d=leagueData(); if(!canAdminLeague(d))return; const m=d.calendar[idx]; if(!m)return;
   const hs=parseInt(document.getElementById('rs_'+idx+'_h').value,10);
   const as=parseInt(document.getElementById('rs_'+idx+'_a').value,10);
   if(isNaN(hs)||isNaN(as))return;
   m.hs=hs; m.as=as; m.done=true; saveLeague(d); buildLeagueRes();
 }
-function reopenResult(idx){const d=leagueData();const m=d.calendar[idx];if(m){m.done=false;saveLeague(d);buildLeagueRes();}}
+function reopenResult(idx){const d=leagueData();if(!canAdminLeague(d))return;const m=d.calendar[idx];if(m){m.done=false;saveLeague(d);buildLeagueRes();}}
 function buildLeagueRes(){
   const d=leagueData(); const box=document.getElementById('leRes'); if(!box)return;
   if(!d.calendar.length){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">Primero genera el calendario en <b>Calendario y enfrentamientos</b>.</div>'; return; }
@@ -2067,7 +2087,7 @@ function buildResp(){
 /* ====== Dirigir en la mesa un partido del calendario: al finalizar, el
    resultado entra al calendario y la tabla se recalcula sola. ====== */
 function officiateMatch(idx){
-  const d=leagueData(); const m=d.calendar[idx]; if(!m||m.done)return;
+  const d=leagueData(); if(!canAdminLeague(d))return; const m=d.calendar[idx]; if(!m||m.done)return;
   const H=teamById(m.home), A=teamById(m.away); if(!H||!A)return;
   const mk=(t)=> (t.players||[]).map((p,i)=>({num:p.num,nm:p.nm,pos:p.pos||'Base',pts:0,f:0,min:0,on:i<5}));
   const r=rules();
@@ -2322,6 +2342,22 @@ const ROLE_INTERNAL={admin_liga:'liga',dueno:'coach',coach:'coach',padre:'papa',
 const ROLE_LABEL={admin_liga:'Admin de liga',dueno:'Dueño de equipo',coach:'Coach',padre:'Padre',jugador:'Jugador',aficionado:'Aficionado',mesa:'Mesa',superadmin:'Súper Admin'};
 let signupRoles=['admin_liga'];
 const SUPER_EMAIL='palomazi9111@gmail.com';
+/* ===== Propiedad de la liga: solo su dueño/admins pueden administrarla =====
+   Esto evita que una cuenta nueva herede la liga de otra persona y se meta de admin. */
+function myEmail(){ return ((userData()||{}).email||'').toLowerCase(); }
+function isSuperAdmin(){ return myEmail()===SUPER_EMAIL; }
+function leagueClaimed(d){ d=d||leagueData(); return !!((d&&d.owner) || (d&&d.admins&&d.admins.length)); }
+function canAdminLeague(d){ d=d||leagueData(); const em=myEmail(); if(!em)return false; if(isSuperAdmin())return true;
+  const admins=((d&&d.admins)||[]).map(x=>String(x).toLowerCase()); const owner=((d&&d.owner)||'').toLowerCase();
+  return (!!owner&&owner===em) || admins.indexOf(em)>=0; }
+/* crea la liga propia del admin: queda como dueño y único admin, tablero en blanco */
+function createMyLeague(){
+  const inp=document.getElementById('claimName'); const name=((inp&&inp.value)||'').trim();
+  if(!name){ flashSaved('Ponle nombre a tu liga'); return; }
+  const em=myEmail(); if(!em){ flashSaved('Inicia sesión primero'); return; }
+  const d={name:name, owner:em, admins:[em], teams:[], calendar:[], link:''};
+  saveLeague(d); buildLigaStats(); flashSaved('Liga creada ✓');
+}
 function buildRolePick(){
   const box=document.getElementById('rolePick'); if(!box)return; box.innerHTML='';
   SIGNUP_ROLES.forEach(([id,t,s,c])=>{
@@ -2368,9 +2404,13 @@ function doSignup(){
     hideLoader();
     if(r.error){ loginMsg(r.error.message,true); setCloudBadge('','Modo local'); return; }
     if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth(); cloudPull().then(enterAppWithRole); }
-    else { setCloudBadge('','Confirma tu correo');
-      loginMsg('Te enviamos un correo a '+email+'. Confírmalo para activar la nube; mientras tanto ya puedes usar la app.');
-      setTimeout(enterAppWithRole,1600); }
+    else {
+      // Confirmación de correo activa: NO se entra hasta confirmar e iniciar sesión.
+      setCloudBadge('','Confirma tu correo');
+      loginMsg('Te enviamos un correo a '+email+'. Ábrelo, confirma tu cuenta y luego inicia sesión aquí.');
+      setAuthMode('in'); const ie=document.getElementById('inEmail'); if(ie)ie.value=email;
+      const ip=document.getElementById('inPass'); if(ip)ip.value='';
+    }
   }).catch(()=>{ hideLoader(); loginMsg('Sin conexión — cuenta creada solo en este teléfono.'); enterAppWithRole(); });
 }
 function doSignin(){
@@ -2508,7 +2548,7 @@ function buildTeamIdentity(){
     '<div class="tid-preview"><span class="crest real" style="'+crestStyle(t)+'">'+crestInner(t)+'</span><span style="color:#c7cdd8;font-size:13px">Así se ve tu escudo en toda la liga</span></div></div>';
 }
 function setTeamLogo(){ pickLogo(function(url){ const d=leagueData(); const t=coachTeamIn(d); if(t){t.logo=url;saveLeague(d);buildTeamIdentity();} }); }
-function teamLogoFor(id){ pickLogo(function(url){ const d=leagueData(); const t=d.teams.find(x=>x.id===id); if(t){t.logo=url;saveLeague(d);buildLeagueTeams();} }); }
+function teamLogoFor(id){ if(!canAdminLeague())return; pickLogo(function(url){ const d=leagueData(); const t=d.teams.find(x=>x.id===id); if(t){t.logo=url;saveLeague(d);buildLeagueTeams();} }); }
 function clearTeamLogo(){ const d=leagueData(); const t=coachTeamIn(d); if(t){delete t.logo;saveLeague(d);buildTeamIdentity();} }
 function setTeamColor(c){ const d=leagueData(); const t=coachTeamIn(d); if(t){t.color=c;saveLeague(d);buildTeamIdentity();} }
 function setTeamName(){ const d=leagueData(); const t=coachTeamIn(d); const v=(document.getElementById('tidName').value||'').trim(); if(t&&v){t.name=v;t.ini=iniOf(v);saveLeague(d);buildTeamIdentity();flashSaved("Equipo guardado ✓");} }
