@@ -781,16 +781,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- HOME PAPÁ -->
   <section class="screen" id="s-rol">
-    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div></div>
-    <div class="scroll"><div class="pad">
-      <div class="eyebrow" style="margin:2px 2px 8px">Itinerario de Diego</div>
-      <div class="match" onclick="go('marcador')"><div class="when">HOY<br>18:00</div><div class="vs">vs Titanes<small>Jornada 5 · cancha 2</small></div><span class="badge livep">EN VIVO</span></div>
-      <div class="match"><div class="when">SÁB<br>10:00</div><div class="vs">vs Pumas<small>Jornada 6</small></div><span class="badge next">SIGUE</span></div>
-      <div class="match"><div class="when">MIÉ<br>19:00</div><div class="vs">vs Lobos<small>Jornada 7</small></div></div>
-      <div class="h-row"><h2 class="disp" style="font-size:18px">Cuadro del torneo</h2><span class="more" onclick="go('bracket')">Bracket ›</span></div>
-      <div class="match" onclick="go('carta')"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">DG</div><div class="vs">Diego G.<small>Base · #7 · Halcones</small></div><span class="badge next">TU HIJO</span></div>
-      <button class="btn ghost sm block" onclick="go('alta')" style="margin-top:8px">＋ Dar de alta a otro hij@</button>
-    </div></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openProfile()"><span class="hat" style="background:var(--papa)"></span><b id="papaCtxName">Papá / Tutor</b><span class="ch">Papá / Tutor</span></div><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div></div>
+    <div class="scroll"><div class="pad" id="papaHome"></div></div>
     <div class="nav" data-nav></div>
   </section>
 
@@ -1304,6 +1296,7 @@ function render(id){
   if(id==='carta')renderCard();
   if(id==='publico')fanBtnRefresh();
   if(id==='ligas')buildMisLigas();
+  if(id==='rol')buildPapaHome();
   if(id==='vestidor'){const ti=document.getElementById('teamIdentity');if(ti)ti.style.display='none';}
   requestAnimationFrame(()=>armHints(el));
 }
@@ -1747,6 +1740,27 @@ function buildLigaStats(){
   row.innerHTML='<div class="stat-tile"><b>'+d.teams.length+'</b><span>Equipos</span></div>'+
     '<div class="stat-tile"><b>'+jug+'</b><span>Jugadores</span></div>'+
     '<div class="stat-tile"><b>'+jug_done+'/'+d.calendar.length+'</b><span>Partidos</span></div>';
+}
+/* Home de papá: hij@s vinculados + próximos partidos reales de la liga */
+function buildPapaHome(){
+  const box=document.getElementById('papaHome'); if(!box)return;
+  const u=userData()||{}; const d=leagueData(); const kids=u.children||[];
+  const cn=document.getElementById('papaCtxName'); if(cn)cn.textContent=u.name||'Papá / Tutor';
+  let h='';
+  if(kids.length){
+    h+='<div class="eyebrow" style="margin:2px 2px 8px">Tus hij@s</div>';
+    kids.forEach(k=>{ h+='<div class="match" onclick="go(\'carta\')"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">'+iniOf(k.name||'?')+'</div><div class="vs">'+(k.name||'Hij@')+'<small>'+(k.team||'Sin equipo aún')+'</small></div><span class="badge next">TU HIJ@</span></div>'; });
+  } else {
+    h+='<div class="stratnote" style="border-left-color:var(--papa)">Aún no has vinculado a tu hij@. Da de alta su cuenta y ancla su CURP para ver su itinerario y su carta. Su ubicación y calendario solo los ves tú, su coach y la liga.</div>';
+  }
+  h+='<button class="btn ghost sm block" onclick="go(\'alta\')" style="margin-top:8px">＋ Dar de alta / vincular a mi hij@</button>';
+  const up=d.calendar.filter(m=>!m.done).slice(0,4);
+  if(up.length){
+    h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Próximos en la liga</h2></div>';
+    up.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
+      h+='<div class="match"><div class="when">J'+m.jornada+'</div><div class="vs">'+H.name+' vs '+A.name+'<small>'+(d.name||'')+'</small></div></div>'; });
+  }
+  box.innerHTML=h;
 }
 /* Mis ligas: la liga real de la cuenta + acciones honestas por rol */
 function buildMisLigas(){
