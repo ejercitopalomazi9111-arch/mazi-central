@@ -1195,7 +1195,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       </g>
       <defs><radialGradient id="ballGrad" cx="38%" cy="34%" r="72%"><stop offset="0%" stop-color="#ffb877"/><stop offset="55%" stop-color="#ef7a35"/><stop offset="100%" stop-color="#c25716"/></radialGradient></defs>
     </svg>
-    <div class="loader-txt" id="loaderTxt">Cargando…</div>
+    <div class="loader-txt" id="loaderTxt">Preparando tu experiencia…</div>
   </div>
 </div>
 
@@ -1867,9 +1867,23 @@ function ballLoaderAnim(){
   ], loop:true });
   window._netAnim=anime({ targets:'#loaderNet', scaleY:[{value:1,duration:660},{value:1.3,duration:120},{value:1,duration:220}], loop:true, easing:'easeOutQuad' });
 }
-let _loaderT=null;
-function showLoader(txt){ const l=document.getElementById('loader'); if(!l)return; const t=document.getElementById('loaderTxt'); if(t)t.textContent=txt||'Cargando…'; l.classList.add('on'); ballLoaderAnim(); if(window._ballAnim&&window._ballAnim.play)window._ballAnim.play(); clearTimeout(_loaderT); _loaderT=setTimeout(hideLoader,15000); }
-function hideLoader(){ clearTimeout(_loaderT); const l=document.getElementById('loader'); if(l)l.classList.remove('on'); }
+let _loaderT=null,_loaderCycle=null,_lastPhrase=-1;
+/* frases al azar para que la carga se sienta personalizada, no un genérico "Cargando" */
+const LOADER_PHRASES=[
+  'Personalizando tu experiencia…','Ajustando parámetros personalizados…','Preparando tu experiencia…',
+  'Inflando balones…','Recosiendo las redes…','Puliendo la duela…','Colando y tirando…',
+  'Defendiendo el aro…','Marcando las líneas de la cancha…','Calentando en el perímetro…',
+  'Botando en el contragolpe…','Afinando el silbato del árbitro…','Acomodando la banca…',
+  'Encendiendo el marcador…','Repartiendo asistencias…','Sacando brillo al trofeo…',
+  'Trapeando la cancha…','Cargando el reloj de tiro…','Estirando antes del salto…'
+];
+function loaderPhrase(){ let i; do{ i=Math.floor(Math.random()*LOADER_PHRASES.length); }while(i===_lastPhrase&&LOADER_PHRASES.length>1); _lastPhrase=i; return LOADER_PHRASES[i]; }
+function showLoader(txt){ const l=document.getElementById('loader'); if(!l)return; const t=document.getElementById('loaderTxt');
+  if(t)t.textContent=txt||loaderPhrase();
+  l.classList.add('on'); ballLoaderAnim(); if(window._ballAnim&&window._ballAnim.play)window._ballAnim.play();
+  clearInterval(_loaderCycle); _loaderCycle=setInterval(()=>{ const e=document.getElementById('loaderTxt'); if(e)e.textContent=loaderPhrase(); },1500);
+  clearTimeout(_loaderT); _loaderT=setTimeout(hideLoader,15000); }
+function hideLoader(){ clearTimeout(_loaderT); clearInterval(_loaderCycle); _loaderCycle=null; const l=document.getElementById('loader'); if(l)l.classList.remove('on'); }
 function setLeagueName(){ const d=leagueData(); const v=(document.getElementById('lidName').value||'').trim(); if(v){d.name=v;saveLeague(d);buildLeagueIdentity();const bn=document.getElementById('ligaBannerName');if(bn)bn.textContent=v;flashSaved('Liga guardada ✓');} }
 function setLeagueLogo(){ pickLogo(function(url){ const d=leagueData(); d.logo=url; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=url;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';} }); }
 function clearLeagueLogo(){ const d=leagueData(); delete d.logo; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src='assets/arena.jpg';bi.style.filter='';} }
