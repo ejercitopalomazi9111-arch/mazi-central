@@ -418,6 +418,18 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .hub-live .sc{font-family:var(--disp);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums;color:#fff}
 .hub-live .mt{font-size:11px;color:#cfd5df} .hub-live .mt b{color:#fff;font-weight:700}
 .hub-live .go{margin-left:auto;color:var(--accent-lt);font-family:var(--disp);font-weight:800;font-size:13px}
+/* inicio con scroll: feed de accesos + ajustes */
+.hub-home{padding:2px 16px calc(var(--safe-b) + 18px)}
+.hh-greet{font-family:var(--body);font-weight:750;font-size:21px;letter-spacing:-.02em;margin:8px 2px 1px}
+.hh-sub{color:var(--dim);font-size:13px;margin:0 2px 14px}
+.hh-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.hh-tile{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;cursor:pointer;transition:transform .15s,border-color .15s}
+.hh-tile:active{transform:scale(.98)}
+.hh-tile .ic{width:22px;height:22px;color:var(--accent-lt);margin-bottom:8px}
+.hh-tile b{font-size:14.5px;font-weight:650;color:var(--bone)}
+.hh-tile span{font-size:11.5px;color:var(--dim);margin-top:1px}
+.hh-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;margin-top:12px}
+.hh-panel .kick{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
 
 /* ============ FICHA DE JUGADOR ESTILO FC MOBILE ============ */
 .fc-tabs{display:flex;margin:8px 16px 0;border-bottom:1px solid var(--line);overflow-x:auto}
@@ -734,8 +746,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="arena"><img src="assets/arena.jpg" alt=""><div class="beam"></div><div class="vig"></div></div>
     <div class="hub-wrap">
       <div class="topbar">
-        <div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Halcones U-14</b><span class="ch">Papá ▾</span></div>
-        <span class="coins">◈ 1,240</span><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div>
+        <div class="ctx" onclick="openProfile()"><span class="hat" id="hubCtxHat" style="background:var(--publico)"></span><b id="hubCtxName">Invitado</b><span class="ch" id="hubCtxRole">Aficionado ▾</span></div>
+        <div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div>
       </div>
       <div class="hub-scroll">
         <div class="mode-rail" id="modeRail"></div>
@@ -743,11 +755,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
           <div class="mode-carousel" id="modeCarousel"></div>
           <div class="mode-dots" id="modeDots"></div>
         </div>
-        <div class="hub-live" id="hubLive" onclick="go('marcador')">
+        <div class="hub-live" id="hubLive" onclick="go('marcador')" style="display:none">
           <span class="dot"></span>
           <div><div class="sc" id="hubLiveSc">Titanes 42 — 39 Halcones</div><div class="mt" id="hubLiveMt">Q3 · en vivo</div></div>
           <span class="go">VER ›</span>
         </div>
+        <div class="hub-home" id="hubHome"></div>
       </div>
     </div>
     <div class="nav" data-nav></div>
@@ -1262,7 +1275,7 @@ function render(id){
   const el=document.getElementById('s-'+id); el.classList.add('on');
   const sc=el.querySelector('.scroll'); if(sc)sc.scrollTop=0;
   buildNav(id);
-  if(id==='hub')buildModes();
+  if(id==='hub'){buildModes();buildHubHome();}
   if(id==='marcador')drawCourt();
   if(id==='mesa')buildMesa();
   if(id==='tienda')buildShop();
@@ -2022,18 +2035,44 @@ function closeSheet(){document.getElementById('sheet').classList.remove('on');}
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme',t);
   try{localStorage.setItem('lm_theme',t);}catch(e){}
-  const d=document.getElementById('thmDark'),l=document.getElementById('thmLight');
-  if(d)d.classList.toggle('on',t==='dark'); if(l)l.classList.toggle('on',t==='light');
+  document.querySelectorAll('.thm-seg').forEach(function(seg){ var b=seg.querySelectorAll('button'); if(b[0])b[0].classList.toggle('on',t==='dark'); if(b[1])b[1].classList.toggle('on',t==='light'); });
 }
 function initTheme(){ let t='dark'; try{t=localStorage.getItem('lm_theme')||'dark';}catch(e){} applyTheme(t); }
+/* ===== Inicio con scroll: identidad real + feed de accesos ===== */
+const HH_QUICK={
+  admin_liga:[['liga','gear','Mi liga','Equipos · calendario · tabla'],['ligas','trophy','Mis ligas','Cambiar o crear']],
+  dueno:[['vestidor','clipboard','Mi equipo','Roster y cambios'],['liga','gear','La liga','Calendario y tabla']],
+  coach:[['vestidor','clipboard','Vestidor','Roster y cambios en vivo'],['estrategias','pencil','Tácticas','Pizarrón del equipo']],
+  padre:[['rol','home','Mis hijos','Itinerario y carta'],['ligas','trophy','Sus ligas','Dónde juegan']],
+  jugador:[['carta','card','Mi carta','Tu ficha y atributos'],['ligas','trophy','Mis ligas','Dónde juegas']],
+  aficionado:[['publico','eye','Marcadores','Partidos en vivo'],['ligas','trophy','Ligas','Explora y sigue']],
+};
+const ROLE_COLOR={admin_liga:'--liga',dueno:'--papa',coach:'--coach',padre:'--papa',jugador:'--jugador',aficionado:'--publico',mesa:'--mesa',superadmin:'--liga'};
+function buildHubHome(){
+  const u=userData()||{}; const rl=u.role||'aficionado';
+  const hat=document.getElementById('hubCtxHat'); if(hat)hat.style.background='var('+(ROLE_COLOR[rl]||'--publico')+')';
+  const nm=document.getElementById('hubCtxName'); if(nm)nm.textContent=u.name||'Invitado';
+  const role=document.getElementById('hubCtxRole'); if(role)role.textContent=(ROLE_LABEL[rl]||'Invitado')+' ▾';
+  const live=document.getElementById('hubLive'); if(live)live.style.display=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null)?'':'none';
+  const box=document.getElementById('hubHome'); if(!box)return;
+  const hh=new Date().getHours(); const saludo=hh<12?'Buenos días':hh<19?'Buenas tardes':'Buenas noches';
+  const quick=HH_QUICK[rl]||HH_QUICK.aficionado;
+  let h='<div class="hh-greet">'+saludo+', '+(u.name||'Invitado')+'</div><div class="hh-sub">'+(ROLE_LABEL[rl]||'Aficionado')+' · esto es lo tuyo</div><div class="hh-grid">';
+  quick.forEach(function(q){ h+='<div class="hh-tile" onclick="go(\''+q[0]+'\')"><svg class="ic"><use href="#ic-'+q[1]+'"/></svg><b>'+q[2]+'</b><span>'+q[3]+'</span></div>'; });
+  h+='<div class="hh-tile" onclick="go(\'tienda\')"><svg class="ic"><use href="#ic-bag"/></svg><b>Tienda</b><span>Productos y cosméticos</span></div>';
+  h+='<div class="hh-tile" onclick="go(\'carta\')"><svg class="ic"><use href="#ic-card"/></svg><b>Mi carta</b><span>Tu ficha</span></div>';
+  h+='</div>';
+  let t2='dark'; try{t2=localStorage.getItem('lm_theme')||'dark';}catch(e){}
+  h+='<div class="hh-panel"><div class="kick">Ajustes rápidos</div><div class="thm-seg"><button'+(t2==='dark'?' class="on"':'')+' onclick="applyTheme(\'dark\')"><svg class="ic"><use href="#ic-eye"/></svg> Oscuro</button><button'+(t2==='light'?' class="on"':'')+' onclick="applyTheme(\'light\')"><svg class="ic"><use href="#ic-star"/></svg> Claro</button></div><button class="btn ghost sm block" onclick="openProfile()" style="margin-top:10px">Tu cuenta y más ajustes</button></div>';
+  box.innerHTML=h;
+}
 /* ===== Menú de perfil ===== */
 function openProfile(){
   const u=userData()||{};
   const nm=document.getElementById('profNm'); if(nm)nm.textContent=u.name||'Tu cuenta';
   const rl=document.getElementById('profRl'); if(rl)rl.textContent=(u.role?ROLE_LABEL[u.role]||u.role:'Invitado')+(u.email?(' · '+u.email):'');
   let t='dark'; try{t=localStorage.getItem('lm_theme')||'dark';}catch(e){}
-  const d=document.getElementById('thmDark'),l=document.getElementById('thmLight');
-  if(d)d.classList.toggle('on',t==='dark'); if(l)l.classList.toggle('on',t==='light');
+  document.querySelectorAll('#profileBg .thm-seg').forEach(function(seg){var b=seg.querySelectorAll('button');if(b[0])b[0].classList.toggle('on',t==='dark');if(b[1])b[1].classList.toggle('on',t==='light');});
   document.getElementById('profileBg').classList.add('on');
 }
 function closeProfile(){document.getElementById('profileBg').classList.remove('on');}
