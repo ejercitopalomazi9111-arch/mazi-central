@@ -499,16 +499,17 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .leaguerow .more,.match .more{color:var(--dim);font-size:22px;margin-left:auto;flex-shrink:0}
 .crest.sm{width:36px;height:36px;border-radius:9px;font-size:14px}
 /* tarjeta de partido en vivo estilo livescore/apuestas */
-.livecard{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:12px 14px 14px;margin-bottom:11px;cursor:pointer;position:relative;overflow:hidden}
+.livecard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px 14px;margin-bottom:9px;cursor:pointer;position:relative;overflow:hidden;transition:background .15s}
+.livecard:active{background:var(--panel2)}
 .livecard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mesa)}
-.livecard .lc-chip{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:#ffb0a5;margin-bottom:10px}
+.livecard .lc-chip{display:inline-flex;align-items:center;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.02em;color:#ff9a8f;margin-bottom:9px}
 .livecard .lc-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--mesa);margin-right:7px;animation:pulse 1.2s infinite}
 .lc-row{display:flex;align-items:center;gap:11px;padding:5px 0}
-.lc-row+.lc-row{border-top:1px solid rgba(42,49,61,.5)}
-.lc-team{display:flex;align-items:center;gap:11px;flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:17px}
-.lc-sc{font-family:var(--disp);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;color:#aeb6c4}
+.lc-row+.lc-row{border-top:1px solid var(--line)}
+.lc-team{display:flex;align-items:center;gap:11px;flex:1;font-family:var(--body);font-weight:650;font-size:15.5px;letter-spacing:-.01em}
+.lc-sc{font-family:var(--disp);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;color:var(--dim)}
 .lc-sc.win{color:var(--bone)}
-.lc-cta{margin-top:10px;text-align:center;font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--accent-lt);border-top:1px solid rgba(42,49,61,.5);padding-top:10px}
+.lc-cta{margin-top:10px;text-align:center;font-family:var(--body);font-weight:650;font-size:13px;color:var(--accent-lt);border-top:1px solid var(--line);padding-top:11px}
 /* tabla de posiciones estilo standings */
 .stand{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .stand-head,.stand-row{display:grid;grid-template-columns:28px 1fr 34px 52px 40px;align-items:center;padding:11px 14px;gap:6px}
