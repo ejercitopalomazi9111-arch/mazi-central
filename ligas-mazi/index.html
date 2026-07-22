@@ -200,6 +200,18 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 #s-liga .leaguerow > .crest .ic{width:26px;height:26px;stroke-width:1.9}
 .save-toast{position:absolute;left:50%;bottom:calc(var(--safe-b) + 80px);transform:translateX(-50%) translateY(8px);z-index:60;background:var(--good);color:#06210f;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 .save-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* reloj de la mesa */
+.mclock{margin:8px 14px 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.mclock .mck-time{font-family:var(--disp);font-weight:800;font-size:34px;line-height:1;font-variant-numeric:tabular-nums;color:#fff}
+.mclock .mck-per{font-size:12px;color:var(--dim);font-weight:600}
+.mclock .mck-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.mck{font-family:inherit;font-weight:700;font-size:13.5px;border:1px solid var(--line);background:var(--panel2);color:var(--bone);border-radius:10px;padding:9px 13px;cursor:pointer}
+.mck.go{background:var(--good);color:#06210f;border-color:transparent}
+.mck.stop{background:var(--crit);color:#fff;border-color:transparent}
+.mck.next{background:var(--accent);color:#fff;border-color:transparent}
+.mck.aux.on{color:var(--good);border-color:rgba(70,201,138,.4)}
+.game-alert{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.9);z-index:70;background:rgba(10,13,18,.94);border:1px solid var(--accent);color:#fff;font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.02em;padding:16px 26px;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.game-alert.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .le-msg{font-size:12.5px;line-height:1.4;color:var(--good);margin:8px 2px 0;min-height:0}
 .le-msg.err{color:#ff9a8f}
 .tid-swatches{display:flex;gap:8px;margin-top:2px;flex-wrap:wrap}
@@ -818,8 +830,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- MESA / ANOTADOR — simple: equipo → jugador → punto/falta -->
   <section class="screen" id="s-mesa">
-    <div class="mesa-head"><button class="backbtn" onclick="goBack()">‹</button><span class="sc" id="mScore">42 — 39</span><span class="clk" id="mClk">Q3 · 12:34</span></div>
+    <div class="mesa-head"><button class="backbtn" onclick="goBack()">‹</button><span class="sc" id="mScore">0 — 0</span><span class="clk" id="mClk">1º · 10:00</span></div>
     <div id="mOfficiateBanner"></div>
+    <div class="mclock" id="mClock"></div>
     <div class="mctx" id="mctx"></div>
     <div class="scroll"><div class="pad" style="padding-top:6px">
       <div class="mstep" id="mstep"></div>
@@ -2008,7 +2021,7 @@ function officiateMatch(idx){
   const H=teamById(m.home), A=teamById(m.away); if(!H||!A)return;
   const mk=(t)=> (t.players||[]).map((p,i)=>({num:p.num,nm:p.nm,pos:p.pos||'Base',pts:0,f:0,min:0,on:i<5}));
   const r=rules();
-  GAME.period=1; GAME.clock=String(r.minPer).padStart(2,'0')+':00';
+  GAME.period=1; GAME.remainSec=(r.minPer||10)*60; GAME.running=false; GAME.clock=mFmt(GAME.remainSec);
   GAME.teams=[
     {id:H.id,name:H.name,ini:H.ini,color:H.color,score:0,tf:0,players:mk(H)},
     {id:A.id,name:A.name,ini:A.ini,color:A.color,score:0,tf:0,players:mk(A)},
@@ -2033,8 +2046,35 @@ function buildMesa(){
     if(w)w.style.display='none';
     if(ban)ban.innerHTML='';
   }
-  renderWiz();
+  initClock(); buildClock(); renderWiz();
 }
+/* ===== Reloj del partido: iniciar/parar, auto-stop por cuarto, aviso ===== */
+let mClockTimer=null;
+function mFmt(sec){sec=Math.max(0,Math.round(sec));const m=Math.floor(sec/60),s=sec%60;return m+':'+(s<10?'0':'')+s;}
+function initClock(){ const r=rules(); if(GAME.remainSec==null)GAME.remainSec=(r.minPer||10)*60; if(GAME.autoStop==null)GAME.autoStop=true; if(!GAME.period)GAME.period=1; GAME.running=false; if(mClockTimer){clearInterval(mClockTimer);mClockTimer=null;} }
+function buildClock(){
+  const box=document.getElementById('mClock'); if(!box)return;
+  GAME.clock=mFmt(GAME.remainSec);
+  box.innerHTML='<div><div class="mck-time">'+mFmt(GAME.remainSec)+'</div><div class="mck-per">'+periodLabel()+'</div></div>'+
+    '<div class="mck-btns">'+
+    '<button class="mck '+(GAME.running?'stop':'go')+'" onclick="'+(GAME.running?'mClockPause()':'mClockStart()')+'">'+(GAME.running?'⏸ Parar':'▶ Iniciar')+'</button>'+
+    (GAME.remainSec<=0?'<button class="mck next" onclick="mNextPeriod()">Siguiente ›</button>':'')+
+    '<button class="mck aux'+(GAME.autoStop?' on':'')+'" onclick="mToggleAuto()">Auto-stop '+(GAME.autoStop?'ON':'OFF')+'</button>'+
+    '</div>';
+  const mc=document.getElementById('mClk'); if(mc)mc.textContent=periodLabel()+' · '+mFmt(GAME.remainSec);
+}
+function mClockStart(){ if(GAME.running||GAME.remainSec<=0)return; GAME.running=true; buildClock();
+  mClockTimer=setInterval(()=>{ if(!GAME.running)return; GAME.remainSec-=0.25;
+    if(GAME.remainSec<=0){ GAME.remainSec=0; GAME.running=false; clearInterval(mClockTimer); mClockTimer=null; buildClock();
+      gameAlert('⏱ Fin del '+periodLabel());
+      if(!GAME.autoStop && GAME.period<(rules().periods||4)){ setTimeout(mNextPeriod,1300); }
+    } else if(document.getElementById('mClock'))buildClock();
+  },250);
+}
+function mClockPause(){ if(!GAME.running)return; GAME.running=false; if(mClockTimer){clearInterval(mClockTimer);mClockTimer=null;} buildClock(); gameAlert('⏸ Tiempo detenido'); }
+function mToggleAuto(){ GAME.autoStop=!GAME.autoStop; buildClock(); }
+function mNextPeriod(){ const r=rules(); GAME.period=(GAME.period||1)+1; GAME.remainSec=(r.minPer||10)*60; buildClock(); gameAlert('▶ '+periodLabel()); }
+function gameAlert(msg){ let el=document.getElementById('gameAlert'); if(!el){el=document.createElement('div');el.id='gameAlert';el.className='game-alert';(document.getElementById('app')||document.body).appendChild(el);} el.textContent=msg; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),2600); }
 function mClk(){mtick++;const mm=Math.max(0,12-Math.floor(mtick/3));const ss=('0'+((60-(mtick*13)%60+60)%60)).slice(-2);return 'Q'+GAME.period+' '+mm+':'+ss;}
 function renderWiz(){
   document.getElementById('mScore').textContent=GAME.teams[0].score+' — '+GAME.teams[1].score;
