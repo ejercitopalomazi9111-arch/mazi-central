@@ -17,6 +17,17 @@
   --r:12px;
   --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
 }
+/* ===== Tema claro (se activa con data-theme="light" en <html>) ===== */
+:root[data-theme="light"]{
+  --ink:#f3efe6; --ink2:#ffffff; --panel:#ffffff; --panel2:#f4f0e7;
+  --line:rgba(20,24,30,.10); --bone:#191c22; --dim:#5c6470;
+  --accent:#e8641b; --accent-lt:#d0560f;
+}
+:root[data-theme="light"] body{background:#e6e1d6}
+:root[data-theme="light"] body::before{filter:brightness(1.15) saturate(.5) opacity(.05)}
+:root[data-theme="light"] body::after{background:linear-gradient(180deg,rgba(243,239,230,.6),rgba(243,239,230,.82))}
+:root[data-theme="light"] #app::before{opacity:.05;filter:brightness(1.2) saturate(.45)}
+:root[data-theme="light"] #app::after{background:linear-gradient(180deg,rgba(243,239,230,.75),rgba(243,239,230,.9))}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100%}
 body{min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#05070a;color:var(--bone);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
@@ -120,7 +131,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .banner .g{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,13,18,.3),rgba(11,13,18,.9))}
 .banner .c{position:relative;z-index:2;padding:12px 16px}
 .banner .k{font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
-.banner .t{font-family:var(--body);font-weight:750;font-size:20px;letter-spacing:-.01em}
+.banner .t{font-family:var(--body);font-weight:750;font-size:20px;letter-spacing:-.01em;color:#fff}
 
 /* ---------- MARCADOR: CANCHA DESDE ARRIBA (fondo completo) ---------- */
 .fullbg{position:absolute;inset:0;overflow:hidden}
@@ -332,6 +343,16 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .sheet-bg{position:absolute;inset:0;z-index:40;background:rgba(6,7,10,.7);display:none;align-items:flex-end;backdrop-filter:blur(3px)}
 .sheet-bg.on{display:flex}
 .sheet{width:100%;background:var(--panel);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:16px 16px calc(var(--safe-b) + 16px)}
+.prof-id{display:flex;align-items:center;gap:12px;padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+.prof-av{width:46px;height:46px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--accent-lt);flex:none}
+.prof-av .ic{width:22px;height:22px}
+.prof-nm{font-weight:700;font-size:16px;color:var(--bone)}
+.prof-rl{font-size:12.5px;color:var(--dim);margin-top:1px}
+.prof-lbl{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin:14px 2px 8px}
+.thm-seg{display:flex;gap:8px}
+.thm-seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);font-family:inherit;font-size:14px;font-weight:600;padding:12px;border-radius:11px;cursor:pointer;transition:.15s}
+.thm-seg button .ic{width:16px;height:16px}
+.thm-seg button.on{background:var(--accent);color:#fff;border-color:transparent}
 .sheet h3{font-family:var(--disp);text-transform:uppercase;font-size:16px;color:var(--dim);margin-bottom:12px}
 .sheet .opt{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}
 .sheet .opt .hat{width:12px;height:12px;border-radius:50%} .sheet .opt b{font-weight:650} .sheet .opt .r{margin-left:auto;font-size:11px;color:var(--dim);font-family:var(--mono)}
@@ -380,7 +401,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mode-panel .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:middle;animation:pulse 1.2s infinite}
 .mode-panel .body{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:20px 20px 22px}
 .mode-panel .k{font-family:var(--body);font-weight:650;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-lt);margin-bottom:5px}
-.mode-panel .t{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:clamp(30px,9vw,42px);line-height:.9;text-shadow:0 3px 18px rgba(0,0,0,.6)}
+.mode-panel .t{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:clamp(30px,9vw,42px);line-height:.9;text-shadow:0 3px 18px rgba(0,0,0,.6);color:#fff}
 .mode-panel .s{font-size:13px;color:#d3d9e2;margin-top:8px;max-width:30ch}
 .mode-panel .enter{display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-family:var(--disp);text-transform:uppercase;
   font-weight:800;font-size:14px;letter-spacing:.05em;color:#05070a;background:#fff;padding:9px 16px;border-radius:6px}
@@ -394,7 +415,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .hub-live{margin:6px 16px calc(var(--safe-b) + 10px);display:flex;align-items:center;gap:12px;
   background:linear-gradient(90deg,rgba(236,90,69,.14),rgba(12,15,20,.6));border:1px solid var(--mesa);border-radius:12px;padding:11px 14px;cursor:pointer;backdrop-filter:blur(8px)}
 .hub-live .dot{width:8px;height:8px;border-radius:50%;background:var(--mesa);flex-shrink:0;animation:pulse 1.2s infinite}
-.hub-live .sc{font-family:var(--disp);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
+.hub-live .sc{font-family:var(--disp);font-weight:800;font-size:19px;font-variant-numeric:tabular-nums;color:#fff}
 .hub-live .mt{font-size:11px;color:#cfd5df} .hub-live .mt b{color:#fff;font-weight:700}
 .hub-live .go{margin-left:auto;color:var(--accent-lt);font-family:var(--disp);font-weight:800;font-size:13px}
 
@@ -714,7 +735,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="hub-wrap">
       <div class="topbar">
         <div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Halcones U-14</b><span class="ch">Papá ▾</span></div>
-        <span class="coins">◈ 1,240</span><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div>
+        <span class="coins">◈ 1,240</span><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div>
       </div>
       <div class="hub-scroll">
         <div class="mode-rail" id="modeRail"></div>
@@ -747,7 +768,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- HOME PAPÁ -->
   <section class="screen" id="s-rol">
-    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div><div class="avatar"><svg class="ic"><use href="#ic-user"/></svg></div></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openSheet()"><span class="hat" style="background:var(--papa)"></span><b>Papá de Diego</b><span class="ch">Halcones U-14 ▾</span></div><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div></div>
     <div class="scroll"><div class="pad">
       <div class="eyebrow" style="margin:2px 2px 8px">Itinerario de Diego</div>
       <div class="match" onclick="go('marcador')"><div class="when">HOY<br>18:00</div><div class="vs">vs Titanes<small>Jornada 5 · cancha 2</small></div><span class="badge livep">EN VIVO</span></div>
@@ -1116,6 +1137,18 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="opt" onclick="pickCtx('liga','Liga Municipal','Liga','liga')"><span class="hat" style="background:var(--liga)"></span><b>Admin de liga</b><span class="r">Liga Municipal</span></div>
       <div class="opt" onclick="pickCtx('publico','Barrio Norte','Público','publico')"><span class="hat" style="background:var(--publico)"></span><b>Público</b><span class="r">Barrio Norte</span></div>
       <div class="opt" onclick="pickCtx('jugador','Liga Vets','Jugador','carta')"><span class="hat" style="background:var(--jugador)"></span><b>Jugador</b><span class="r">Liga Vets</span></div>
+    </div>
+  </div>
+
+  <!-- MENÚ DE PERFIL (botón de usuario) -->
+  <div class="sheet-bg" id="profileBg" onclick="if(event.target.id==='profileBg')closeProfile()">
+    <div class="sheet">
+      <div class="prof-id"><span class="prof-av"><svg class="ic"><use href="#ic-user"/></svg></span><div><div class="prof-nm" id="profNm">Tu cuenta</div><div class="prof-rl" id="profRl">—</div></div></div>
+      <div class="prof-lbl">Tema</div>
+      <div class="thm-seg"><button id="thmDark" onclick="applyTheme('dark')"><svg class="ic"><use href="#ic-eye"/></svg> Oscuro</button><button id="thmLight" onclick="applyTheme('light')"><svg class="ic"><use href="#ic-star"/></svg> Claro</button></div>
+      <button class="btn ghost sm block" onclick="closeProfile();openSheet()" style="margin-top:14px"><svg class="ic"><use href="#ic-people"/></svg> Cambiar de sombrero (demo)</button>
+      <button class="btn ghost sm block" onclick="doLogout()" style="margin-top:8px;color:var(--crit);border-color:rgba(236,90,69,.4)"><svg class="ic"><use href="#ic-lock"/></svg> Cerrar sesión</button>
+      <button class="btn ghost sm block" onclick="closeProfile()" style="margin-top:8px">Cerrar</button>
     </div>
   </div>
 
@@ -1985,6 +2018,31 @@ function savePlayer(){const nm=(document.getElementById('altaName').value||'').t
 /* ---- ctx / sheet ---- */
 function openSheet(){document.getElementById('sheet').classList.add('on');}
 function closeSheet(){document.getElementById('sheet').classList.remove('on');}
+/* ===== Tema claro/oscuro ===== */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  try{localStorage.setItem('lm_theme',t);}catch(e){}
+  const d=document.getElementById('thmDark'),l=document.getElementById('thmLight');
+  if(d)d.classList.toggle('on',t==='dark'); if(l)l.classList.toggle('on',t==='light');
+}
+function initTheme(){ let t='dark'; try{t=localStorage.getItem('lm_theme')||'dark';}catch(e){} applyTheme(t); }
+/* ===== Menú de perfil ===== */
+function openProfile(){
+  const u=userData()||{};
+  const nm=document.getElementById('profNm'); if(nm)nm.textContent=u.name||'Tu cuenta';
+  const rl=document.getElementById('profRl'); if(rl)rl.textContent=(u.role?ROLE_LABEL[u.role]||u.role:'Invitado')+(u.email?(' · '+u.email):'');
+  let t='dark'; try{t=localStorage.getItem('lm_theme')||'dark';}catch(e){}
+  const d=document.getElementById('thmDark'),l=document.getElementById('thmLight');
+  if(d)d.classList.toggle('on',t==='dark'); if(l)l.classList.toggle('on',t==='light');
+  document.getElementById('profileBg').classList.add('on');
+}
+function closeProfile(){document.getElementById('profileBg').classList.remove('on');}
+function doLogout(){
+  try{ if(typeof sbSignOut==='function')sbSignOut(); }catch(e){}
+  try{ localStorage.removeItem('lm_user'); }catch(e){}
+  _authed=false; _session=null; currentRole='publico'; setCloudBadge('','Modo local');
+  closeProfile(); navStack.length=0; render('entrada');
+}
 function pickCtx(hat,liga,rol,dest){
   currentRole=hat; modeIdx=0;
   const col={papa:'var(--papa)',coach:'var(--coach)',publico:'var(--publico)',jugador:'var(--jugador)',liga:'var(--liga)'}[hat];
@@ -2126,6 +2184,7 @@ function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contain
 function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)return;const on=courtStyle()==='realista';k.classList.toggle('on',on);document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';}
 let tt;function toast(msg){if(curScreen!=='mesa')return;const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',Math.min(6500,2200+msg.length*22));}
 buildNav('hub');
+initTheme();
 (function(){const u=userData();if(u){ if(u.role)currentRole=ROLE_INTERNAL[u.role]||currentRole; const ie=document.getElementById('inEmail'); if(ie&&u.email)ie.value=u.email; } buildRolePick();})();
 /* prueba de conexión y restaura sesión una vez que la librería (defer) ya cargó */
 window.addEventListener('load',()=>{ setTimeout(async()=>{ const ok=await checkBackend(); if(ok){ await sbRestore(); } },300); });
