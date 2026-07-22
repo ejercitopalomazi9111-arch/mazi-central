@@ -143,6 +143,18 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mk-score .mid .shot{font-family:var(--mono);font-size:9px;color:#cfd5df;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-variant-numeric:tabular-nums}
 .mk-score .mid .shot b{color:#fff}
 .login-name{width:100%;box-sizing:border-box;background:rgba(12,15,22,.72);border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;padding:14px 16px;font-size:15px;font-family:inherit;margin-bottom:10px;text-align:center;backdrop-filter:blur(6px)}
+.auth{width:100%}
+.auth-seg{display:flex;gap:6px;background:rgba(12,15,22,.6);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px}
+.auth-seg button{flex:1;background:transparent;border:none;color:var(--dim);font-family:inherit;font-size:14px;font-weight:650;padding:10px;border-radius:9px;cursor:pointer;transition:.15s}
+.auth-seg button.on{background:var(--accent);color:#fff}
+.auth-q{font-size:13px;font-weight:650;color:#cfd5df;margin:2px 2px 9px;text-align:left}
+.rolepick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.rolechip{display:flex;flex-direction:column;gap:2px;text-align:left;background:rgba(12,15,22,.72);border:1px solid var(--line);border-radius:11px;padding:10px 12px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.rolechip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--rc,var(--accent));opacity:.5}
+.rolechip.on{border-color:var(--rc,var(--accent));background:rgba(255,255,255,.05)}
+.rolechip.on::before{opacity:1}
+.rolechip b{font-size:13.5px;font-weight:650;color:#fff}
+.rolechip span{font-size:11px;color:var(--dim);line-height:1.25}
 .login-name::placeholder{color:rgba(255,255,255,.5)}
 .login-name:focus{outline:none;border-color:var(--accent)}
 /* motor de competencia (liga) */
@@ -668,12 +680,29 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       </div>
       <div class="title-xl">LIGAS <span class="m">MAZI</span></div>
       <p class="slogan">Organiza, juega, entrena y sigue tu liga. Donde cada canasta queda para siempre.</p>
-      <input id="loginName" class="login-name" placeholder="Tu nombre" autocomplete="name">
-      <input id="loginEmail" class="login-name" type="email" placeholder="Correo (opcional — para guardar en la nube)" autocomplete="email">
-      <input id="loginPass" class="login-name" type="password" placeholder="Contraseña" autocomplete="current-password">
-      <div id="loginMsg" class="login-msg"></div>
-      <button class="btn" onclick="doLogin()">Entrar <span class="go">›</span></button>
-      <button class="btn ghost" onclick="setRole('publico','Invitado','Público','hub')">Solo ver (invitado) <span class="go">›</span></button>
+      <div class="auth">
+        <div class="auth-seg"><button id="segIn" class="on" onclick="setAuthMode('in')">Iniciar sesión</button><button id="segUp" onclick="setAuthMode('up')">Crear cuenta</button></div>
+
+        <!-- CREAR CUENTA -->
+        <div id="authUp" style="display:none">
+          <div class="auth-q">¿Qué eres?</div>
+          <div class="rolepick" id="rolePick"></div>
+          <input id="upName" class="login-name" placeholder="Tu nombre" autocomplete="name">
+          <input id="upEmail" class="login-name" type="email" placeholder="Correo" autocomplete="email" inputmode="email">
+          <input id="upPass" class="login-name" type="password" placeholder="Contraseña (mín. 6)" autocomplete="new-password">
+          <button class="btn" onclick="doSignup()">Crear cuenta <span class="go">›</span></button>
+        </div>
+
+        <!-- INICIAR SESIÓN -->
+        <div id="authIn">
+          <input id="inEmail" class="login-name" type="email" placeholder="Correo" autocomplete="email" inputmode="email">
+          <input id="inPass" class="login-name" type="password" placeholder="Contraseña" autocomplete="current-password">
+          <button class="btn" onclick="doSignin()">Entrar <span class="go">›</span></button>
+        </div>
+
+        <div id="loginMsg" class="login-msg"></div>
+        <button class="btn ghost" onclick="guestEnter()">Solo ver como invitado <span class="go">›</span></button>
+      </div>
       <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
       <div class="cloud-badge" id="cloudBadge"><span class="dot"></span> Modo local</div>
     </div>
@@ -1966,20 +1995,72 @@ function setRole(hat,liga,rol,dest){ pickCtx(hat,liga,rol,dest); }
 /* ====== Sesión / identidad: una persona con su nombre; la carta es SUYA ====== */
 function userData(){try{const s=localStorage.getItem('lm_user');if(s)return JSON.parse(s);}catch(e){}return null;}
 function saveUser(u){try{localStorage.setItem('lm_user',JSON.stringify(u));}catch(e){} cloudPushSoon();}
-function doLogin(){
-  const inp=document.getElementById('loginName'); const nm=(inp&&inp.value||'').trim();
-  const email=(document.getElementById('loginEmail')||{}).value; const pass=(document.getElementById('loginPass')||{}).value;
-  const u=userData()||{}; if(nm)u.name=nm; if(!u.name)u.name='Jugador'; saveUser(u);
-  if(email && email.trim() && pass && sbClient()){
-    loginMsg('Entrando a la nube…'); setCloudBadge('checking','Entrando…');
-    sbSignInOrUp(email.trim(),pass,u.name).then(r=>{
-      if(r.ok){ reflectAuth(); cloudPull().then(()=>go('hub')); }
-      else { loginMsg(r.error,true); setCloudBadge('','Modo local'); }
-    });
-    return;
-  }
-  go('hub');   // modo local (sin correo): funciona igual, solo en este teléfono
+/* ====== Cuentas reales: el rol se elige al registrarse ====== */
+const SIGNUP_ROLES=[
+  ['admin_liga','Admin de liga','Organizo una liga','--liga'],
+  ['dueno','Dueño de equipo','Registro mi equipo','--papa'],
+  ['coach','Coach','Dirijo un equipo','--coach'],
+  ['padre','Padre / Tutor','De un jugador menor','--papa'],
+  ['jugador','Jugador','Soy el atleta','--jugador'],
+  ['aficionado','Aficionado','Solo quiero ver','--publico'],
+];
+const ROLE_INTERNAL={admin_liga:'liga',dueno:'coach',coach:'coach',padre:'papa',jugador:'jugador',aficionado:'publico',mesa:'liga',superadmin:'liga'};
+const ROLE_LABEL={admin_liga:'Admin de liga',dueno:'Dueño de equipo',coach:'Coach',padre:'Padre',jugador:'Jugador',aficionado:'Aficionado',mesa:'Mesa',superadmin:'Súper Admin'};
+let signupRole='admin_liga';
+function buildRolePick(){
+  const box=document.getElementById('rolePick'); if(!box)return; box.innerHTML='';
+  SIGNUP_ROLES.forEach(([id,t,s,c])=>{
+    const b=document.createElement('button'); b.type='button'; b.className='rolechip'+(id===signupRole?' on':''); b.style.setProperty('--rc','var('+c+')');
+    b.innerHTML='<b>'+t+'</b><span>'+s+'</span>'; b.onclick=()=>{signupRole=id;buildRolePick();};
+    box.appendChild(b);
+  });
 }
+function setAuthMode(m){
+  const si=document.getElementById('segIn'),su=document.getElementById('segUp');
+  if(si)si.classList.toggle('on',m==='in'); if(su)su.classList.toggle('on',m==='up');
+  const ai=document.getElementById('authIn'),au=document.getElementById('authUp');
+  if(ai)ai.style.display=m==='in'?'':'none'; if(au)au.style.display=m==='up'?'':'none';
+  loginMsg(''); if(m==='up')buildRolePick();
+}
+function applyRoleFromUser(){ const u=userData()||{}; if(u.role){ currentRole=ROLE_INTERNAL[u.role]||'publico'; } }
+function enterAppWithRole(){ applyRoleFromUser(); modeIdx=0; go('hub'); }
+function guestEnter(){ const u=userData()||{}; u.role='aficionado'; if(!u.name)u.name='Invitado'; saveUser(u); currentRole='publico'; modeIdx=0; go('hub'); }
+function doSignup(){
+  const name=(document.getElementById('upName').value||'').trim();
+  const email=(document.getElementById('upEmail').value||'').trim();
+  const pass=(document.getElementById('upPass').value||'');
+  if(!name){loginMsg('Escribe tu nombre.',true);return;}
+  if(!/.+@.+\..+/.test(email)){loginMsg('Escribe un correo válido.',true);return;}
+  if(pass.length<6){loginMsg('La contraseña necesita al menos 6 caracteres.',true);return;}
+  const u=userData()||{}; u.name=name; u.email=email; u.role=signupRole; saveUser(u);
+  const c=sbClient();
+  if(!c){ loginMsg('Cuenta creada en este teléfono (sin nube).'); enterAppWithRole(); return; }
+  loginMsg('Creando tu cuenta…'); setCloudBadge('checking','Creando…');
+  c.auth.signUp({email,password:pass,options:{data:{display_name:name,role:signupRole}}}).then(r=>{
+    if(r.error){ loginMsg(r.error.message,true); setCloudBadge('','Modo local'); return; }
+    if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth(); cloudPull().then(enterAppWithRole); }
+    else { setCloudBadge('','Confirma tu correo');
+      loginMsg('Te enviamos un correo a '+email+'. Confírmalo para activar la nube; mientras tanto ya puedes usar la app.');
+      setTimeout(enterAppWithRole,1600); }
+  }).catch(()=>{ loginMsg('Sin conexión — cuenta creada solo en este teléfono.'); enterAppWithRole(); });
+}
+function doSignin(){
+  const email=(document.getElementById('inEmail').value||'').trim();
+  const pass=(document.getElementById('inPass').value||'');
+  if(!email||!pass){loginMsg('Escribe tu correo y contraseña.',true);return;}
+  const c=sbClient();
+  if(!c){ const u=userData(); if(u&&u.email===email){ enterAppWithRole(); return; } loginMsg('Sin conexión a la nube para iniciar sesión ahora.',true); return; }
+  loginMsg('Entrando…'); setCloudBadge('checking','Entrando…');
+  c.auth.signInWithPassword({email,password:pass}).then(r=>{
+    if(r.error){ const m=(r.error.message||'').toLowerCase();
+      if(m.includes('confirm')) loginMsg('Tu correo aún no está confirmado. Revisa tu bandeja.',true);
+      else loginMsg('Correo o contraseña incorrectos.',true);
+      setCloudBadge('','Modo local'); return; }
+    if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth();
+      cloudPull().then(()=>{ applyRoleFromUser(); modeIdx=0; go('hub'); }); }
+  }).catch(()=>{ loginMsg('No se pudo conectar a la nube.',true); setCloudBadge('','Modo local'); });
+}
+function doLogin(){ doSignin(); }   /* compat */
 function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+' · Oro · 78 GENERAL · Ligas Mazi';
   if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}} }
 function renderCard(){
@@ -2045,7 +2126,7 @@ function toggleCourt(el){el.classList.toggle('on');const on=el.classList.contain
 function syncCourtKnob(){const k=document.getElementById('courtKnob');if(!k)return;const on=courtStyle()==='realista';k.classList.toggle('on',on);document.getElementById('courtVal').textContent=on?'Realista':'Minimalista';}
 let tt;function toast(msg){if(curScreen!=='mesa')return;const t=document.getElementById('toast');t.innerHTML='<div style="background:#1b2029;border:1px solid #2a313d;border-left:3px solid #ef7a35;border-radius:8px;padding:11px 14px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5)">'+msg+'</div>';t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',Math.min(6500,2200+msg.length*22));}
 buildNav('hub');
-(function(){const u=userData();if(u&&u.name){const li=document.getElementById('loginName');if(li)li.value=u.name;}})();
+(function(){const u=userData();if(u){ if(u.role)currentRole=ROLE_INTERNAL[u.role]||currentRole; const ie=document.getElementById('inEmail'); if(ie&&u.email)ie.value=u.email; } buildRolePick();})();
 /* prueba de conexión y restaura sesión una vez que la librería (defer) ya cargó */
 window.addEventListener('load',()=>{ setTimeout(async()=>{ const ok=await checkBackend(); if(ok){ await sbRestore(); } },300); });
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
