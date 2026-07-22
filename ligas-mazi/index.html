@@ -221,6 +221,16 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .tok.home .jersey{border-color:var(--papa);color:var(--papa)} .tok.away .jersey{border-color:var(--publico);color:var(--publico)}
 .tok.mine .jersey{border-color:var(--accent-lt);color:var(--accent-lt);box-shadow:0 0 16px rgba(255,154,90,.6)}
 .tok .lab{position:relative;z-index:3;display:inline-block;font-family:var(--mono);font-size:9px;color:#dfe4ec;margin-top:3px;padding:3px 7px;border-radius:8px;background:rgba(7,9,13,.66);box-shadow:0 2px 8px rgba(0,0,0,.45);text-shadow:0 1px 2px #000;white-space:nowrap}
+/* mini-carta en la cancha: cara + nombre + puntos, con marco del equipo/rareza */
+.mcourt{position:absolute;transform:translate(-50%,-50%);z-index:2;width:58px;border-radius:11px;overflow:hidden;border:1.5px solid var(--tc,rgba(255,255,255,.45));background:linear-gradient(180deg,#1b2431,#10151d);box-shadow:0 6px 16px rgba(0,0,0,.55);cursor:pointer;transition:transform .12s}
+.mcourt:active{transform:translate(-50%,-50%) scale(.94)}
+.mcourt.mine{box-shadow:0 0 0 1.5px var(--accent-lt),0 0 18px rgba(255,154,90,.45),0 6px 16px rgba(0,0,0,.55)}
+.mcourt .face{height:44px;background-size:cover;background-position:center;background-color:#2a3a55;position:relative}
+.mcourt .face .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.55)}
+.mcourt .face .ph .ic{width:22px;height:22px}
+.mcourt .num{position:absolute;top:1px;left:4px;font-family:var(--disp);font-weight:800;font-size:13px;color:#fff;text-shadow:0 1px 3px #000;z-index:2}
+.mcourt .nm{font-size:9px;font-weight:700;text-align:center;padding:2px 3px 0;color:#eef1f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+.mcourt .pt{font-family:var(--disp);font-weight:800;text-align:center;font-size:15px;color:var(--accent-lt);line-height:1;padding:0 0 3px}
 .tok .fouls{font-size:8px;color:var(--crit)}
 .mk-bottom{margin-top:auto;padding:0 12px calc(var(--safe-b) + 10px)}
 .mk-bench{display:flex;gap:6px;overflow-x:auto;padding:8px 0;margin:0 2px}
@@ -1542,17 +1552,25 @@ function onCourt(t){return GAME.teams[t].players.filter(p=>p.on);}
 function bench(t){return GAME.teams[t].players.filter(p=>!p.on);}
 const COURT_POS=[{x:50,y:47},{x:24,y:55},{x:76,y:56},{x:39,y:69},{x:63,y:71}];
 const OPP_POS=[{x:50,y:34},{x:29,y:40},{x:71,y:40},{x:40,y:26},{x:60,y:26}];
+function courtCardHTML(p,me){
+  const face=(p.photo||(p.nm===me&&(userData()||{}).photo))||'';
+  const bg=face?(' style="background-image:url('+(p.photo||(userData()||{}).photo)+')"'):'';
+  const ph=face?'':'<span class="ph"><svg class="ic"><use href="#ic-user"/></svg></span>';
+  return '<div class="face"'+bg+'><span class="num">'+p.num+'</span>'+ph+'</div><div class="nm">'+p.nm+'</div><div class="pt">'+p.pts+'</div>';
+}
 function buildLineup(){
   const c=document.getElementById('courtTokens'); if(!c)return; c.innerHTML='';
-  // rival (arriba, fichas simples)
+  const me=(userData()||{}).name;
+  // rival (arriba): mini-cartas con color del equipo
   onCourt(1).forEach((p,i)=>{const pos=OPP_POS[i]||OPP_POS[0];
-    const d=document.createElement('div'); d.className='tok away'; d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
-    d.innerHTML='<div class="jersey">'+p.num+'</div><div class="lab">Halcones</div>';
+    const d=document.createElement('div'); d.className='mcourt away'; d.style.setProperty('--tc','var('+GAME.teams[1].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
+    d.innerHTML=courtCardHTML(p,me);
     d.onclick=()=>openPlayerSheet(1,GAME.teams[1].players.indexOf(p)); c.appendChild(d);});
-  // mi equipo (con carta redondeada + puntos)
+  // mi equipo (abajo): mini-cartas, la mía resaltada
   onCourt(0).forEach((p,i)=>{const pos=COURT_POS[i]||COURT_POS[0];
-    const d=document.createElement('div'); d.className='tok '+(p.nm==='Diego'?'mine':'home'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
-    d.innerHTML='<div class="jersey">'+p.num+'</div><div class="lab"><b>'+p.nm+'</b><span class="line">'+p.min+'′ · '+p.pts+' pts · <span class="f">'+p.f+'F</span></span></div>';
+    const mine=me&&p.nm===me;
+    const d=document.createElement('div'); d.className='mcourt '+(mine?'mine':'home'); d.style.setProperty('--tc','var('+GAME.teams[0].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
+    d.innerHTML=courtCardHTML(p,me);
     d.onclick=()=>openPlayerSheet(0,GAME.teams[0].players.indexOf(p)); c.appendChild(d);});
   const b=document.getElementById('benchRow'); if(!b)return; b.innerHTML='';
   bench(0).forEach(p=>{const d=document.createElement('div'); d.className='benchcard';
