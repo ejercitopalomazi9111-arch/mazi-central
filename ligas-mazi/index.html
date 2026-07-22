@@ -725,7 +725,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
         <!-- CREAR CUENTA -->
         <div id="authUp" style="display:none">
-          <div class="auth-q">¿Qué eres?</div>
+          <div class="auth-q">¿Qué eres? <span style="color:var(--dim);font-weight:400">— elige uno o varios</span></div>
           <div class="rolepick" id="rolePick"></div>
           <input id="upName" class="login-name" placeholder="Tu nombre" autocomplete="name">
           <input id="upEmail" class="login-name" type="email" placeholder="Correo" autocomplete="email" inputmode="email">
@@ -753,7 +753,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="arena"><img src="assets/arena.jpg" alt=""><div class="beam"></div><div class="vig"></div></div>
     <div class="hub-wrap">
       <div class="topbar">
-        <div class="ctx" onclick="openProfile()"><span class="hat" id="hubCtxHat" style="background:var(--publico)"></span><b id="hubCtxName">Invitado</b><span class="ch" id="hubCtxRole">Aficionado ▾</span></div>
+        <div class="ctx" onclick="openRoleSwitch()"><span class="hat" id="hubCtxHat" style="background:var(--publico)"></span><b id="hubCtxName">Invitado</b><span class="ch" id="hubCtxRole">Aficionado ▾</span></div>
         <div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div>
       </div>
       <div class="hub-scroll">
@@ -781,7 +781,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- HOME PAPÁ -->
   <section class="screen" id="s-rol">
-    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openProfile()"><span class="hat" style="background:var(--papa)"></span><b id="papaCtxName">Papá / Tutor</b><span class="ch">Papá / Tutor</span></div><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openRoleSwitch()"><span class="hat" style="background:var(--papa)"></span><b id="papaCtxName">Papá / Tutor</b><span class="ch">Papá / Tutor ▾</span></div><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div></div>
     <div class="scroll"><div class="pad" id="papaHome"></div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -1135,7 +1135,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="prof-id"><span class="prof-av"><svg class="ic"><use href="#ic-user"/></svg></span><div><div class="prof-nm" id="profNm">Tu cuenta</div><div class="prof-rl" id="profRl">—</div></div></div>
       <div class="prof-lbl">Tema</div>
       <div class="thm-seg"><button id="thmDark" onclick="applyTheme('dark')"><svg class="ic"><use href="#ic-eye"/></svg> Oscuro</button><button id="thmLight" onclick="applyTheme('light')"><svg class="ic"><use href="#ic-star"/></svg> Claro</button></div>
-      <button class="btn ghost sm block" onclick="closeProfile();openSheet()" style="margin-top:14px"><svg class="ic"><use href="#ic-people"/></svg> Cambiar de sombrero (demo)</button>
+      <button class="btn ghost sm block" onclick="closeProfile();openRoleSwitch()" style="margin-top:14px"><svg class="ic"><use href="#ic-people"/></svg> Cambiar cómo entro</button>
       <button class="btn ghost sm block" onclick="doLogout()" style="margin-top:8px;color:var(--crit);border-color:rgba(236,90,69,.4)"><svg class="ic"><use href="#ic-lock"/></svg> Cerrar sesión</button>
       <button class="btn ghost sm block" onclick="closeProfile()" style="margin-top:8px">Cerrar</button>
     </div>
@@ -2185,15 +2185,28 @@ const SIGNUP_ROLES=[
 ];
 const ROLE_INTERNAL={admin_liga:'liga',dueno:'coach',coach:'coach',padre:'papa',jugador:'jugador',aficionado:'publico',mesa:'liga',superadmin:'liga'};
 const ROLE_LABEL={admin_liga:'Admin de liga',dueno:'Dueño de equipo',coach:'Coach',padre:'Padre',jugador:'Jugador',aficionado:'Aficionado',mesa:'Mesa',superadmin:'Súper Admin'};
-let signupRole='admin_liga';
+let signupRoles=['admin_liga'];
+const SUPER_EMAIL='palomazi9111@gmail.com';
 function buildRolePick(){
   const box=document.getElementById('rolePick'); if(!box)return; box.innerHTML='';
   SIGNUP_ROLES.forEach(([id,t,s,c])=>{
-    const b=document.createElement('button'); b.type='button'; b.className='rolechip'+(id===signupRole?' on':''); b.style.setProperty('--rc','var('+c+')');
-    b.innerHTML='<b>'+t+'</b><span>'+s+'</span>'; b.onclick=()=>{signupRole=id;buildRolePick();};
+    const on=signupRoles.indexOf(id)>=0;
+    const b=document.createElement('button'); b.type='button'; b.className='rolechip'+(on?' on':''); b.style.setProperty('--rc','var('+c+')');
+    b.innerHTML='<b>'+t+'</b><span>'+s+'</span>';
+    b.onclick=()=>{ const i=signupRoles.indexOf(id); if(i>=0){ if(signupRoles.length>1)signupRoles.splice(i,1); } else signupRoles.push(id); buildRolePick(); };
     box.appendChild(b);
   });
 }
+/* roles de la cuenta (súper admin solo para tu correo) + cómo entra */
+function accountRoles(){ const u=userData()||{}; let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); if((u.email||'').toLowerCase()===SUPER_EMAIL && r.indexOf('superadmin')<0) r.unshift('superadmin'); return r; }
+function openRoleSwitch(){
+  const roles=accountRoles(); if(roles.length<=1){ openProfile(); return; }
+  const sheet=document.querySelector('#sheet .sheet'); if(!sheet)return;
+  let h='<h3>¿Cómo quieres entrar?</h3>';
+  roles.forEach(r=>{ h+='<div class="opt" onclick="setActiveRole(\''+r+'\')"><span class="hat" style="background:var('+(ROLE_COLOR[r]||'--publico')+')"></span><b>'+(ROLE_LABEL[r]||r)+'</b><span class="r">'+((userData()||{}).name||'')+'</span></div>'; });
+  sheet.innerHTML=h; document.getElementById('sheet').classList.add('on');
+}
+function setActiveRole(r){ const u=userData()||{}; u.role=r; saveUser(u); currentRole=ROLE_INTERNAL[r]||'publico'; closeSheet(); modeIdx=0; go('hub'); }
 function setAuthMode(m){
   const si=document.getElementById('segIn'),su=document.getElementById('segUp');
   if(si)si.classList.toggle('on',m==='in'); if(su)su.classList.toggle('on',m==='up');
@@ -2203,7 +2216,7 @@ function setAuthMode(m){
 }
 function applyRoleFromUser(){ const u=userData()||{}; if(u.role){ currentRole=ROLE_INTERNAL[u.role]||'publico'; } }
 function enterAppWithRole(){ applyRoleFromUser(); modeIdx=0; go('hub'); }
-function guestEnter(){ const u=userData()||{}; u.role='aficionado'; if(!u.name)u.name='Invitado'; saveUser(u); currentRole='publico'; modeIdx=0; go('hub'); }
+function guestEnter(){ const u=userData()||{}; u.roles=['aficionado']; u.role='aficionado'; if(!u.name)u.name='Invitado'; saveUser(u); currentRole='publico'; modeIdx=0; go('hub'); }
 function doSignup(){
   const name=(document.getElementById('upName').value||'').trim();
   const email=(document.getElementById('upEmail').value||'').trim();
@@ -2211,11 +2224,12 @@ function doSignup(){
   if(!name){loginMsg('Escribe tu nombre.',true);return;}
   if(!/.+@.+\..+/.test(email)){loginMsg('Escribe un correo válido.',true);return;}
   if(pass.length<6){loginMsg('La contraseña necesita al menos 6 caracteres.',true);return;}
-  const u=userData()||{}; u.name=name; u.email=email; u.role=signupRole; saveUser(u);
+  const roles=signupRoles.slice(); if(email.toLowerCase()===SUPER_EMAIL && roles.indexOf('superadmin')<0) roles.unshift('superadmin');
+  const u=userData()||{}; u.name=name; u.email=email; u.roles=roles; u.role=roles[0]; saveUser(u);
   const c=sbClient();
   if(!c){ loginMsg('Cuenta creada en este teléfono (sin nube).'); enterAppWithRole(); return; }
   loginMsg('Creando tu cuenta…'); setCloudBadge('checking','Creando…');
-  c.auth.signUp({email,password:pass,options:{data:{display_name:name,role:signupRole}}}).then(r=>{
+  c.auth.signUp({email,password:pass,options:{data:{display_name:name,role:roles[0],roles:roles}}}).then(r=>{
     if(r.error){ loginMsg(r.error.message,true); setCloudBadge('','Modo local'); return; }
     if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth(); cloudPull().then(enterAppWithRole); }
     else { setCloudBadge('','Confirma tu correo');
