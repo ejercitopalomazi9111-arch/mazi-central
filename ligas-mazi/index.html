@@ -222,15 +222,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .tok.mine .jersey{border-color:var(--accent-lt);color:var(--accent-lt);box-shadow:0 0 16px rgba(255,154,90,.6)}
 .tok .lab{position:relative;z-index:3;display:inline-block;font-family:var(--mono);font-size:9px;color:#dfe4ec;margin-top:3px;padding:3px 7px;border-radius:8px;background:rgba(7,9,13,.66);box-shadow:0 2px 8px rgba(0,0,0,.45);text-shadow:0 1px 2px #000;white-space:nowrap}
 /* mini-carta en la cancha: cara + nombre + puntos, con marco del equipo/rareza */
-.mcourt{position:absolute;transform:translate(-50%,-50%);z-index:2;width:58px;border-radius:11px;overflow:hidden;border:1.5px solid var(--tc,rgba(255,255,255,.45));background:linear-gradient(180deg,#1b2431,#10151d);box-shadow:0 6px 16px rgba(0,0,0,.55);cursor:pointer;transition:transform .12s}
-.mcourt:active{transform:translate(-50%,-50%) scale(.94)}
-.mcourt.mine{box-shadow:0 0 0 1.5px var(--accent-lt),0 0 18px rgba(255,154,90,.45),0 6px 16px rgba(0,0,0,.55)}
-.mcourt .face{height:44px;background-size:cover;background-position:center;background-color:#2a3a55;position:relative}
+.mcourt{position:absolute;transform:translate(-50%,-50%);z-index:2;width:48px;border-radius:9px;overflow:hidden;border:1.5px solid var(--tc,rgba(255,255,255,.45));background:linear-gradient(180deg,#1b2431,#10151d);box-shadow:0 5px 13px rgba(0,0,0,.55);cursor:pointer;transition:transform .12s}
+.mcourt:active{transform:translate(-50%,-50%) scale(.93)}
+.mcourt.mine{border-width:2px;box-shadow:0 0 0 2px var(--accent-lt),0 0 16px rgba(255,154,90,.5),0 5px 13px rgba(0,0,0,.55);z-index:3}
+.mcourt .face{height:36px;background-size:cover;background-position:center;background-color:#2a3a55;position:relative}
 .mcourt .face .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.55)}
-.mcourt .face .ph .ic{width:22px;height:22px}
-.mcourt .num{position:absolute;top:1px;left:4px;font-family:var(--disp);font-weight:800;font-size:13px;color:#fff;text-shadow:0 1px 3px #000;z-index:2}
-.mcourt .nm{font-size:9px;font-weight:700;text-align:center;padding:2px 3px 0;color:#eef1f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
-.mcourt .pt{font-family:var(--disp);font-weight:800;text-align:center;font-size:15px;color:var(--accent-lt);line-height:1;padding:0 0 3px}
+.mcourt .face .ph .ic{width:18px;height:18px}
+.mcourt .num{position:absolute;top:0;left:3px;font-family:var(--disp);font-weight:800;font-size:11px;color:#fff;text-shadow:0 1px 3px #000;z-index:2}
+.mcourt .nm{font-size:8px;font-weight:700;text-align:center;padding:1px 2px 0;color:#eef1f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+.mcourt .pt{font-family:var(--disp);font-weight:800;text-align:center;font-size:13px;color:var(--accent-lt);line-height:1;padding:0 0 2px}
 .tok .fouls{font-size:8px;color:var(--crit)}
 .mk-bottom{margin-top:auto;padding:0 12px calc(var(--safe-b) + 10px)}
 .mk-bench{display:flex;gap:6px;overflow-x:auto;padding:8px 0;margin:0 2px}
@@ -359,6 +359,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .prof-nm{font-weight:700;font-size:16px;color:var(--bone)}
 .prof-rl{font-size:12.5px;color:var(--dim);margin-top:1px}
 .prof-lbl{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin:14px 2px 8px}
+.crop-frame{position:relative;width:min(64vw,230px);aspect-ratio:3/4;margin:0 auto;border-radius:14px;overflow:hidden;background:#0a0d12;border:1px solid var(--line);touch-action:none;cursor:grab}
+.crop-frame:active{cursor:grabbing}
+.crop-frame img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none;user-select:none}
+.crop-hint{text-align:center;font-size:11.5px;color:var(--dim);margin:10px 0 6px}
+.crop-zoom{display:flex;align-items:center;gap:12px;margin:2px 6px 12px;color:var(--dim);font-size:19px;font-weight:700}
+.crop-zoom input{flex:1;accent-color:var(--accent)}
 .thm-seg{display:flex;gap:8px}
 .thm-seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);font-family:inherit;font-size:14px;font-weight:600;padding:12px;border-radius:11px;cursor:pointer;transition:.15s}
 .thm-seg button .ic{width:16px;height:16px}
@@ -1162,6 +1168,17 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     </div>
   </div>
 
+  <!-- Editor de recorte 3:4 de la foto -->
+  <div class="sheet-bg" id="cropBg" onclick="if(event.target.id==='cropBg')closeCrop()">
+    <div class="sheet"><h3 style="margin-bottom:12px">Ajusta tu foto</h3>
+      <div class="crop-frame" id="cropFrame" onpointerdown="cropStart(event)" onpointermove="cropMove(event)" onpointerup="cropEnd()" onpointerleave="cropEnd()"><img id="cropImg" alt=""></div>
+      <div class="crop-hint">Arrastra para mover · desliza para acercar</div>
+      <div class="crop-zoom"><span>−</span><input type="range" id="cropZoom" min="100" max="300" value="120" oninput="cropZoomTo(this.value)"><span>+</span></div>
+      <button class="btn block" onclick="applyCrop()">Guardar foto</button>
+      <button class="btn ghost sm block" onclick="closeCrop()" style="margin-top:8px">Cancelar</button>
+    </div>
+  </div>
+
   <!-- desglose rápido de jugador (toca una ficha en el juego) -->
   <div class="sheet-bg" id="playerSheetBg" onclick="if(event.target.id==='playerSheetBg')closePlayerSheet()">
     <div class="sheet" id="playerSheet"><h3>Jugador</h3><div class="ps-card"></div>
@@ -1550,26 +1567,34 @@ const GAME={
 };
 function onCourt(t){return GAME.teams[t].players.filter(p=>p.on);}
 function bench(t){return GAME.teams[t].players.filter(p=>!p.on);}
-const COURT_POS=[{x:50,y:47},{x:24,y:55},{x:76,y:56},{x:39,y:69},{x:63,y:71}];
-const OPP_POS=[{x:50,y:34},{x:29,y:40},{x:71,y:40},{x:40,y:26},{x:60,y:26}];
+const COURT_POS=[{x:50,y:56},{x:23,y:64},{x:77,y:64},{x:37,y:78},{x:63,y:78}];
+const OPP_POS=[{x:50,y:26},{x:23,y:35},{x:77,y:35},{x:37,y:47},{x:63,y:47}];
 function courtCardHTML(p,me){
   const face=(p.photo||(p.nm===me&&(userData()||{}).photo))||'';
   const bg=face?(' style="background-image:url('+(p.photo||(userData()||{}).photo)+')"'):'';
   const ph=face?'':'<span class="ph"><svg class="ic"><use href="#ic-user"/></svg></span>';
   return '<div class="face"'+bg+'><span class="num">'+p.num+'</span>'+ph+'</div><div class="nm">'+p.nm+'</div><div class="pt">'+p.pts+'</div>';
 }
+/* A quién ve resaltado cada quien: el papá SOLO a su hijo, el coach a SU equipo
+   (equipo 0, nunca a los contrarios), el jugador a sí mismo, el público a nadie. */
+function isHighlighted(teamIdx,p){
+  const me=(userData()||{}).name;
+  if(currentRole==='coach') return teamIdx===0;
+  if(currentRole==='papa')  return teamIdx===0 && p.nm===((userData()||{}).child||'Diego');
+  if(currentRole==='jugador') return teamIdx===0 && me && p.nm===me;
+  return false;
+}
 function buildLineup(){
   const c=document.getElementById('courtTokens'); if(!c)return; c.innerHTML='';
   const me=(userData()||{}).name;
   // rival (arriba): mini-cartas con color del equipo
   onCourt(1).forEach((p,i)=>{const pos=OPP_POS[i]||OPP_POS[0];
-    const d=document.createElement('div'); d.className='mcourt away'; d.style.setProperty('--tc','var('+GAME.teams[1].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
+    const d=document.createElement('div'); d.className='mcourt away'+(isHighlighted(1,p)?' mine':''); d.style.setProperty('--tc','var('+GAME.teams[1].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
     d.innerHTML=courtCardHTML(p,me);
     d.onclick=()=>openPlayerSheet(1,GAME.teams[1].players.indexOf(p)); c.appendChild(d);});
-  // mi equipo (abajo): mini-cartas, la mía resaltada
+  // mi equipo (abajo): resalta según el rol de quien mira
   onCourt(0).forEach((p,i)=>{const pos=COURT_POS[i]||COURT_POS[0];
-    const mine=me&&p.nm===me;
-    const d=document.createElement('div'); d.className='mcourt '+(mine?'mine':'home'); d.style.setProperty('--tc','var('+GAME.teams[0].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
+    const d=document.createElement('div'); d.className='mcourt '+(isHighlighted(0,p)?'mine':'home'); d.style.setProperty('--tc','var('+GAME.teams[0].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
     d.innerHTML=courtCardHTML(p,me);
     d.onclick=()=>openPlayerSheet(0,GAME.teams[0].players.indexOf(p)); c.appendChild(d);});
   const b=document.getElementById('benchRow'); if(!b)return; b.innerHTML='';
@@ -2157,14 +2182,48 @@ function renderCard(){
 function onCardPhoto(ev){
   const f=ev.target.files&&ev.target.files[0]; if(!f)return;
   const fr=new FileReader();
-  fr.onload=()=>{ const img=new Image(); img.onload=()=>{
-    const max=520, sc=Math.min(1,max/Math.max(img.width,img.height));
-    const cv=document.createElement('canvas'); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
-    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-    let url; try{url=cv.toDataURL('image/jpeg',0.85);}catch(e){url=fr.result;}
-    const u=userData()||{}; u.photo=url; saveUser(u); renderCard();
-  }; img.src=fr.result; };
-  fr.readAsDataURL(f);
+  fr.onload=()=>{ openCrop(fr.result); };
+  fr.readAsDataURL(f); ev.target.value='';
+}
+/* ====== Editor de recorte 3:4 (vertical) para la foto de la carta ====== */
+let CROP={img:null,zoom:1.2,panX:0,panY:0,s0:1,drag:false,lx:0,ly:0};
+function openCrop(dataUrl){
+  const img=new Image();
+  img.onload=()=>{
+    CROP.img=img; CROP.zoom=1.2; CROP.panX=0; CROP.panY=0;
+    const el=document.getElementById('cropImg'); el.src=dataUrl;
+    document.getElementById('cropZoom').value=120;
+    document.getElementById('cropBg').classList.add('on');
+    requestAnimationFrame(cropLayout);
+  };
+  img.src=dataUrl;
+}
+function closeCrop(){ document.getElementById('cropBg').classList.remove('on'); CROP.img=null; }
+function cropFrameSize(){ const fr=document.getElementById('cropFrame'); return {w:fr.clientWidth,h:fr.clientHeight}; }
+function cropLayout(){
+  const el=document.getElementById('cropImg'), img=CROP.img; if(!el||!img)return;
+  const F=cropFrameSize();
+  CROP.s0=Math.max(F.w/img.naturalWidth,F.h/img.naturalHeight);
+  const dw=img.naturalWidth*CROP.s0*CROP.zoom, dh=img.naturalHeight*CROP.s0*CROP.zoom;
+  // clamp pan para que la imagen siempre cubra el marco
+  const mx=Math.max(0,(dw-F.w)/2), my=Math.max(0,(dh-F.h)/2);
+  CROP.panX=Math.max(-mx,Math.min(mx,CROP.panX)); CROP.panY=Math.max(-my,Math.min(my,CROP.panY));
+  el.style.width=dw+'px'; el.style.height=dh+'px';
+  el.style.transform='translate(-50%,-50%) translate('+CROP.panX+'px,'+CROP.panY+'px)';
+}
+function cropZoomTo(v){ CROP.zoom=v/100; cropLayout(); }
+function cropStart(e){ CROP.drag=true; const t=e.touches?e.touches[0]:e; CROP.lx=t.clientX; CROP.ly=t.clientY; }
+function cropMove(e){ if(!CROP.drag)return; const t=e.touches?e.touches[0]:e; CROP.panX+=t.clientX-CROP.lx; CROP.panY+=t.clientY-CROP.ly; CROP.lx=t.clientX; CROP.ly=t.clientY; cropLayout(); if(e.cancelable)e.preventDefault(); }
+function cropEnd(){ CROP.drag=false; }
+function applyCrop(){
+  const img=CROP.img; if(!img){closeCrop();return;}
+  const F=cropFrameSize(); const k=CROP.s0*CROP.zoom;
+  const cx=img.naturalWidth/2 - CROP.panX/k, cy=img.naturalHeight/2 - CROP.panY/k;
+  const hw=(F.w/2)/k, hh=(F.h/2)/k;
+  const Ow=480, Oh=640; const cv=document.createElement('canvas'); cv.width=Ow; cv.height=Oh;
+  cv.getContext('2d').drawImage(img, cx-hw, cy-hh, hw*2, hh*2, 0,0, Ow, Oh);
+  let url; try{url=cv.toDataURL('image/jpeg',0.85);}catch(e){url=img.src;}
+  const u=userData()||{}; u.photo=url; saveUser(u); closeCrop(); renderCard();
 }
 /* ====== Público: apoyar (seguir) a un equipo — tu carta de fan ====== */
 function fanBtnRefresh(){
