@@ -3122,15 +3122,18 @@ function openCrop(dataUrl,aspect,onSave){
   CROP.aspect=aspect||0.75;
   CROP.onSave=onSave||function(url){const u=userData()||{};u.photo=url;saveUser(u);renderCard();};
   const fr=document.getElementById('cropFrame'); if(fr)fr.style.aspectRatio=String(CROP.aspect);
-  const img=new Image();
-  img.onload=()=>{
-    CROP.img=img; CROP.zoom=1.2; CROP.panX=0; CROP.panY=0;
-    const el=document.getElementById('cropImg'); el.src=dataUrl;
-    document.getElementById('cropZoom').value=120;
-    document.getElementById('cropBg').classList.add('on');
-    requestAnimationFrame(cropLayout);
-  };
-  img.src=dataUrl;
+  const el=document.getElementById('cropImg'); if(!el)return;
+  CROP.zoom=1.2; CROP.panX=0; CROP.panY=0;
+  const zc=document.getElementById('cropZoom'); if(zc)zc.value=120;
+  document.getElementById('cropBg').classList.add('on');
+  // Un solo load, sobre la imagen visible. Evita la carrera en iOS donde la
+  // primera foto tras abrir la cámara no disparaba el onload de una 2ª imagen.
+  const ready=()=>{ CROP.img=el; requestAnimationFrame(cropLayout); };
+  el.onload=ready;
+  el.onerror=()=>{ closeCrop(); flashSaved('No se pudo abrir la foto, intenta de nuevo'); };
+  el.src=dataUrl;
+  if(el.complete && el.naturalWidth){ ready(); }        // ya decodificada (cache)
+  else { setTimeout(()=>{ if(el.complete && el.naturalWidth && CROP.img!==el) ready(); }, 400); } // red de seguridad
 }
 function closeCrop(){ document.getElementById('cropBg').classList.remove('on'); CROP.img=null; }
 function cropFrameSize(){ const fr=document.getElementById('cropFrame'); return {w:fr.clientWidth,h:fr.clientHeight}; }
