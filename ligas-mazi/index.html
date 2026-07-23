@@ -1038,24 +1038,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- ALTA DE JUGADOR -->
   <section class="screen" id="s-alta">
-    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Dar de alta</span></div>
-    <div class="scroll"><div class="pad">
-      <div class="eyebrow" style="margin:0 0 4px">Foto — cara del jugador</div>
-      <div class="photo-hole"><span style="font-size:30px"><svg class="ic"><use href="#ic-camera"/></svg></span>Subir foto (se le quita el GPS)</div>
-      <input class="field" id="altaName" placeholder="Nombre completo del jugador">
-      <div style="display:flex;gap:8px">
-        <input class="field" id="altaNum" type="number" inputmode="numeric" placeholder="# dorsal" style="width:110px">
-        <input class="field" id="altaPos" placeholder="Posición (ej. Base)" style="flex:1">
-      </div>
-      <div class="eyebrow" style="margin:8px 0 2px">CURP <span style="color:var(--dim)">— llave interna, se escribe una vez</span></div>
-      <input class="field masked" placeholder="GUGD•••••••••••B2">
-      <div class="check hint" data-hint="curp" style="background:rgba(84,204,138,.06);border-color:var(--good)"><span class="box" style="border-color:var(--good);color:var(--good);pointer-events:none">✓</span>
-        <span><b>El CURP es privado.</b> Se usa solo por dentro para que las estadísticas de tu hij@ siempre sean suyas y no se confundan con las de otro jugador. Queda guardado bajo llave: no aparece en su perfil ni se puede buscar.</span></div>
-      <input class="field" id="altaCat" placeholder="Categoría (ej. Juvenil Varonil)">
-      <div class="check"><span class="box" id="altaResp" onclick="this.textContent=this.textContent?'':'✓'"></span>
-        <span><b>Responsiva de los padres.</b> Autorizo la participación y la <b>conservación de sus datos y estadísticas</b> a largo plazo. Sin esto, el jugador queda incompleto y no se puede alinear.</span></div>
-      <button class="btn block" onclick="savePlayer()">Guardar jugador</button>
-    </div></div>
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl" id="altaTtl">Dar de alta</span></div>
+    <div class="scroll"><div class="pad" id="altaBody"></div></div>
   </section>
 
   <!-- TIENDA — catálogo de la liga (el admin sube productos) -->
@@ -1334,6 +1318,7 @@ function render(id){
   if(id==='mesa')buildMesa();
   if(id==='tienda'){buildShop();const sl=document.getElementById('shopLeague');if(sl){const d=leagueData();sl.textContent=(d&&d.name&&d.name!=='Mi liga')?d.name:'Tu liga';}}
   if(id==='vestidor'){buildRoster();buildCoachSubs();const vt=document.getElementById('vestTeam');if(vt){const d=leagueData();const t=coachTeamIn(d);vt.textContent=t?t.name:'Tu equipo';}}
+  if(id==='alta')buildAlta();
   if(id==='perillas')buildRules();
   if(id==='liga')buildLigaStats();
   if(id==='ligaEquipos')buildLeagueTeams();
@@ -1874,7 +1859,8 @@ function buildPapaHome(){
   let h='';
   if(kids.length){
     h+='<div class="eyebrow" style="margin:2px 2px 8px">Tus hij@s</div>';
-    kids.forEach(k=>{ h+='<div class="match" onclick="go(\'carta\')"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">'+iniOf(k.name||'?')+'</div><div class="vs">'+(k.name||'Hij@')+'<small>'+(k.team||'Sin equipo aún')+'</small></div><span class="badge next">TU HIJ@</span></div>'; });
+    kids.forEach((k,i)=>{ const sub=(k.minor?('Menor'+(k.age!=null?' · '+k.age+' años':'')):'Mayor')+' · '+(k.team||'Sin equipo aún');
+      h+='<div class="match"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">'+iniOf(k.name||'?')+'</div><div class="vs" onclick="go(\'carta\')" style="cursor:pointer">'+(k.name||'Hij@')+'<small>'+sub+'</small></div>'+(k.minor?'<span class="badge next">MENOR</span>':'<span class="badge">TU HIJ@</span>')+'<button class="le-x" style="margin-left:8px" onclick="unlinkChild('+i+')">×</button></div>'; });
   } else {
     h+='<div class="stratnote" style="border-left-color:var(--papa)">Aún no has vinculado a tu hij@. Da de alta su cuenta y ancla su CURP para ver su itinerario y su carta. Su ubicación y calendario solo los ves tú, su coach y la liga.</div>';
   }
@@ -2317,15 +2303,81 @@ function buildRoster(){const l=document.getElementById('rosterList'); if(!l)retu
     if(currentRole==='coach'||currentRole==='liga'){const x=document.createElement('button');x.className='pdel';x.style.position='static';x.style.marginLeft='6px';x.textContent='×';x.onclick=()=>{r.splice(i,1);saveRoster(r);buildRoster();toast('Quitado del roster');};d.appendChild(x);}
     l.appendChild(d);});
   if(!r.length)l.innerHTML='<div class="empty" style="border:1px dashed var(--line);border-radius:10px">Aún no hay jugadores. Toca ＋ Alta.</div>';}
+/* ===== CURP: llave interna (privada). Sirve para calcular edad y anclar identidad.
+   Nunca se muestra completo ni se puede buscar. ===== */
+function curpValid(c){ return /^[A-Z]{4}[0-9]{6}[A-Z0-9]{8}$/.test((c||'').trim().toUpperCase()); }
+function curpBirth(c){ c=(c||'').toUpperCase(); if(c.length<10)return null;
+  const yy=parseInt(c.slice(4,6),10),mm=parseInt(c.slice(6,8),10),dd=parseInt(c.slice(8,10),10);
+  if(isNaN(yy)||isNaN(mm)||isNaN(dd)||mm<1||mm>12||dd<1||dd>31)return null;
+  const cent=/[0-9]/.test(c.charAt(16))?2000:1900; const d=new Date(cent+yy,mm-1,dd);
+  return isNaN(d.getTime())?null:d; }
+function curpAge(c){ const b=curpBirth(c); if(!b)return null; const t=new Date();
+  let a=t.getFullYear()-b.getFullYear(); const m=t.getMonth()-b.getMonth();
+  if(m<0||(m===0&&t.getDate()<b.getDate()))a--; return a; }
+function curpMask(c){ c=(c||'').toUpperCase(); return c.length<6?c:c.slice(0,4)+'•'.repeat(Math.max(0,c.length-6))+c.slice(-2); }
+/* lectura en vivo del CURP mientras se escribe: edad + aviso de menor */
+function altaCurpLive(){
+  const c=(document.getElementById('altaCurp').value||'').trim().toUpperCase();
+  const box=document.getElementById('altaCurpInfo'); if(!box)return;
+  if(!c){ box.innerHTML=''; return; }
+  if(!curpValid(c)){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">El CURP tiene 18 caracteres (4 letras · 6 dígitos de fecha · 8 más).</div>'; return; }
+  const age=curpAge(c);
+  if(age==null){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">Revisa la fecha del CURP.</div>'; return; }
+  if(age<18){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--papa)"><b>Menor de edad ('+age+' años).</b> Debe quedar vinculad@ a una cuenta de papá/tutor para poder jugar. Tú, como tutor, quedas responsable.</div>'; }
+  else { box.innerHTML='<div class="stratnote" style="border-left-color:var(--good)"><b>Mayor de edad ('+age+' años).</b> Puede gestionar su propia cuenta de jugador.</div>'; }
+}
+/* pantalla de alta según el sombrero: el papá vincula hij@ por CURP; coach/liga da de alta jugador */
+function buildAlta(){
+  const box=document.getElementById('altaBody'); if(!box)return;
+  const ttl=document.getElementById('altaTtl');
+  const privacy='<div class="check" style="background:rgba(84,204,138,.06);border-color:var(--good)"><span class="box" style="border-color:var(--good);color:var(--good);pointer-events:none">✓</span>'+
+    '<span><b>El CURP es privado.</b> Solo se usa por dentro para que las estadísticas del jugador sean siempre suyas y no se confundan con otro. No aparece en su perfil ni se puede buscar.</span></div>';
+  if(currentRole==='papa'){
+    if(ttl)ttl.textContent='Vincular a mi hij@';
+    box.innerHTML='<div class="eyebrow" style="margin:0 0 4px">Datos del jugador</div>'+
+      '<input class="field" id="altaName" placeholder="Nombre completo de tu hij@">'+
+      '<div class="eyebrow" style="margin:10px 0 2px">CURP <span style="color:var(--dim)">— llave interna, privada</span></div>'+
+      '<input class="field" id="altaCurp" maxlength="18" autocapitalize="characters" spellcheck="false" placeholder="CURP (18 caracteres)" oninput="this.value=this.value.toUpperCase();altaCurpLive()">'+
+      '<div id="altaCurpInfo" style="margin:4px 0"></div>'+privacy+
+      '<div class="check"><span class="box" id="altaResp" onclick="this.textContent=this.textContent?\'\':\'✓\'"></span>'+
+      '<span><b>Responsiva del tutor.</b> Autorizo la participación de mi hij@ y la <b>conservación de sus datos y estadísticas</b>. Sin esto no se puede alinear.</span></div>'+
+      '<button class="btn block" onclick="saveChild()">Vincular a mi hij@</button>';
+  } else {
+    if(ttl)ttl.textContent='Dar de alta jugador';
+    box.innerHTML='<div class="eyebrow" style="margin:0 0 4px">Datos del jugador</div>'+
+      '<input class="field" id="altaName" placeholder="Nombre completo del jugador">'+
+      '<div style="display:flex;gap:8px"><input class="field" id="altaNum" type="number" inputmode="numeric" placeholder="# dorsal" style="width:110px"><input class="field" id="altaPos" placeholder="Posición (ej. Base)" style="flex:1"></div>'+
+      '<div class="eyebrow" style="margin:10px 0 2px">CURP <span style="color:var(--dim)">— opcional, privado</span></div>'+
+      '<input class="field" id="altaCurp" maxlength="18" autocapitalize="characters" spellcheck="false" placeholder="CURP (18 caracteres)" oninput="this.value=this.value.toUpperCase();altaCurpLive()">'+
+      '<div id="altaCurpInfo" style="margin:4px 0"></div>'+privacy+
+      '<div class="check"><span class="box" id="altaResp" onclick="this.textContent=this.textContent?\'\':\'✓\'"></span>'+
+      '<span><b>Responsiva de los padres.</b> Autorizo la participación y la <b>conservación de datos y estadísticas</b>. Sin esto el jugador no se puede alinear.</span></div>'+
+      '<button class="btn block" onclick="savePlayer()">Guardar jugador</button>';
+  }
+}
+/* el papá vincula a su hij@ por CURP: se ancla a su cuenta, nunca visible en claro */
+function saveChild(){
+  const u=userData()||{};
+  const nm=(document.getElementById('altaName').value||'').trim();
+  const curp=(document.getElementById('altaCurp').value||'').trim().toUpperCase();
+  if(!nm){ flashSaved('Escribe el nombre de tu hij@'); return; }
+  if(!curpValid(curp)){ flashSaved('Revisa el CURP (18 caracteres)'); return; }
+  if(!document.getElementById('altaResp').textContent){ flashSaved('Falta la responsiva del tutor'); return; }
+  u.children=u.children||[];
+  if(u.children.some(k=>k.curp===curp)){ flashSaved('Ya vinculaste a este jugador'); return; }
+  const age=curpAge(curp);
+  u.children.push({name:nm, curp:curp, minor:(age!=null&&age<18), age:age, linkedAt:Date.now()});
+  saveUser(u);
+  flashSaved('Hij@ vinculad@ ✓'); go('rol');
+}
+function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return; u.children.splice(i,1); saveUser(u); buildPapaHome(); } }
 function savePlayer(){const nm=(document.getElementById('altaName').value||'').trim();
-  if(!nm){toast('Escribe el nombre del jugador');return;}
-  if(!document.getElementById('altaResp').textContent){toast('Falta la responsiva de los padres');return;}
+  if(!nm){flashSaved('Escribe el nombre del jugador');return;}
+  if(!document.getElementById('altaResp').textContent){flashSaved('Falta la responsiva de los padres');return;}
   const num=(document.getElementById('altaNum').value||'').trim();
   const pos=(document.getElementById('altaPos').value||'').trim()||'Jugador';
   const r=teamRoster(); r.push({num:num||String(r.length+1),nm:nm,pos:pos+' · Nuevo',ppp:'0.0'}); saveRoster(r);
-  ['altaName','altaNum','altaPos','altaCat'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('altaResp').textContent='';
-  toast('Jugador dado de alta ✓'); go('vestidor');}
+  flashSaved('Jugador dado de alta ✓'); go('vestidor');}
 /* ---- ctx / sheet ---- */
 function openSheet(){document.getElementById('sheet').classList.add('on');}
 function closeSheet(){document.getElementById('sheet').classList.remove('on');}
