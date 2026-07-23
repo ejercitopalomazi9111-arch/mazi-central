@@ -1990,9 +1990,9 @@ function buildLigaStats(){
   if(!canAdminLeague(d)){
     if(body)body.style.display='none';
     if(claim){ claim.style.display='block';
-      claim.innerHTML='<div class="card" style="margin-top:8px"><div class="kick" style="color:var(--liga)">Aún no administras ninguna liga</div>'+
-        '<div style="font-size:13px;color:var(--muted);margin:6px 0 12px">Crea tu propia liga para empezar a inscribir equipos, jugadores y armar el calendario. Solo tú (y los admins que agregues) podrán administrarla.</div>'+
-        '<div class="le-add"><input id="claimName" placeholder="Nombre de tu liga"><button class="btn sm" onclick="createMyLeague()">Crear liga</button></div></div>'; }
+      claim.innerHTML='<div class="card" style="margin-top:8px"><div class="kick" style="color:var(--liga)">No administras ninguna liga</div>'+
+        '<div style="font-size:13px;color:var(--muted);margin:6px 0 12px">Las ligas se crean al registrarse como <b>Admin de liga</b>. Si quieres organizar una liga, crea una cuenta con ese rol. Si buscas una liga existente para seguirla o meter a tu equipo, úsa el buscador.</div>'+
+        '<button class="btn sm block" onclick="go(\'directorio\')"><svg class="ic" style="width:15px;height:15px;vertical-align:-2px"><use href="#ic-trophy"/></svg> Buscar ligas</button></div>'; }
     const bn0=document.getElementById('ligaBannerName'); if(bn0)bn0.textContent='Tu liga';
     return;
   }
@@ -2519,15 +2519,16 @@ function buildLeagueTeams(){
     h+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">';
     h+='<div class="leaguerow" style="margin:0;border:none" onclick="leOpen=(leOpen===\''+t.id+'\'?null:\''+t.id+'\');buildLeagueTeams()"><div class="crest real" style="'+crestStyle(t)+'">'+crestInner(t)+'</div><div><div class="nm">'+t.name+'</div><div class="mt">'+t.players.length+' jugadores</div></div><span class="more">'+(open?'▾':'›')+'</span></div>';
     if(open){ h+='<div style="padding:2px 12px 12px">';
-      h+='<button class="btn ghost sm block" style="margin-bottom:10px" onclick="event.stopPropagation();teamLogoFor(\''+t.id+'\')"><svg class="ic"><use href="#ic-camera"/></svg> '+(t.logo?'Cambiar escudo':'Subir escudo (imagen)')+'</button>';
-      t.players.forEach((p,i)=>{ const av=playerAverages(p); const stat=av?'<span class="le-pos" style="color:var(--liga)">'+av.ppg.toFixed(1)+' PPP · '+av.gp+'PJ</span>':'<span class="le-pos">'+p.pos+'</span>';
-        h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+p.nm+'</b>'+(p.email?'<span class="le-pos" style="opacity:.7;font-size:10px">'+p.email+'</span>':'')+stat+'<button class="le-x" onclick="delPlayer(\''+t.id+'\','+i+')">×</button></div>'; });
-      h+='<div class="le-add" style="flex-wrap:wrap"><input id="np_'+t.id+'_num" placeholder="#" style="flex:0 0 44px;width:44px"><input id="np_'+t.id+'_nm" placeholder="Nombre del jugador"><select id="np_'+t.id+'_pos"><option>Base</option><option>Escolta</option><option>Alero</option><option>Ala</option><option>Pívot</option></select><input id="np_'+t.id+'_email" type="email" inputmode="email" placeholder="Correo del jugador (vincula su cuenta y carta)" style="flex:1 1 100%"><input id="np_'+t.id+'_curp" placeholder="CURP (opcional)" style="flex:1 1 100%;text-transform:uppercase"><button class="btn sm block" onclick="addPlayer(\''+t.id+'\')" style="flex:1 1 100%;margin-top:2px">＋ Registrar jugador</button></div>';
-      h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Eliminar equipo</button></div>';
+      if(!(t.players||[]).length) h+='<div class="stratnote" style="border-left-color:var(--liga);margin:0 0 8px">Este equipo aún no tiene jugadores. Su dueño los suma cuando aprueba solicitudes.</div>';
+      t.players.forEach((p)=>{ const av=playerAverages(p); const stat=av?'<span class="le-pos" style="color:var(--liga)">'+av.ppg.toFixed(1)+' PPP · '+av.gp+'PJ</span>':'<span class="le-pos">'+(p.pos||'')+'</span>';
+        h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+(p.nm||p.name||'')+'</b>'+(p.email?'<span class="le-pos" style="opacity:.7;font-size:10px">'+p.email+'</span>':'')+stat+'</div>'; });
+      h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Quitar de la liga</button></div>';
     }
     h+='</div>';
   });
-  h+='<div class="le-add" style="margin-top:4px"><input id="newTeamNm" placeholder="Nombre del nuevo equipo…"><button class="btn sm" onclick="addTeam()">Agregar</button></div>';
+  if(!d.teams.length) h+='<div class="stratnote" style="border-left-color:var(--liga)">Tu liga aún no tiene equipos. Los dueños te <b>solicitan unirse</b> (buscándote por nombre o código) y tú los apruebas en tu 🔔 bandeja.</div>';
+  else h+='<div class="stratnote" style="border-left-color:var(--liga)">Los equipos se unen solicitándolo; apruébalos en tu 🔔 bandeja. Tú ya no los creas.</div>';
+  if(d.code) h+='<div class="card" style="margin-top:10px;text-align:center"><div class="mt" style="font-size:12px;color:var(--muted)">Código de tu liga (compártelo para que te encuentren)</div><div style="font-family:var(--mono);font-weight:800;font-size:22px;color:var(--liga);letter-spacing:.05em;margin-top:4px">'+d.code+'</div></div>';
   h+='<div id="leTeamMsg" class="le-msg"></div>';
   h+='<div class="stratnote hint" data-hint="curp-alta" style="border-left-color:var(--liga);margin-top:12px">El <b>CURP</b> se ancla al inscribir para no duplicar jugadores entre equipos. Nunca se muestra ni se puede buscar: es solo un candado interno.</div>';
   box.innerHTML=h;
@@ -3187,12 +3188,12 @@ function runSearch(){
 }
 function renderSearchResults(r,q){
   const box=document.getElementById('searchResults'); if(!box)return;
-  const u=userData()||{}; const iAmPlayer=(u.roles||[]).indexOf('jugador')>=0;
+  const u=userData()||{}; const roles=u.roles||[]; const iAmPlayer=roles.indexOf('jugador')>=0; const iAmOwner=roles.indexOf('dueno')>=0||roles.indexOf('coach')>=0;
   let h=''; const n=(r.leagues.length+r.teams.length+r.players.length);
   if(!n){ box.innerHTML='<div class="stratnote">No se encontró nada con “'+q+'”. Revisa el nombre o el código.</div>'; return; }
   if(r.leagues.length){ h+='<div class="eyebrow" style="margin:4px 2px 6px">Ligas</div>';
-    r.leagues.forEach(l=>{ const st=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):'background:var(--liga)';
-      h+='<div class="leaguerow"><div class="crest real" style="cursor:pointer;'+st+'" onclick="openPublicLeague(\''+l.account_id+'\',\''+(l.name||'').replace(/\x27/g,"\\\x27")+'\')">'+(l.logo?'':iniOf(l.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.code?'<b style="color:var(--liga)">'+l.code+'</b> · ':'')+(l.teams||0)+' equipos</div></div><button class="btn sm" onclick="openPublicLeague(\''+l.account_id+'\',\''+(l.name||'').replace(/\x27/g,"\\\x27")+'\')">Ver</button></div>'; }); }
+    r.leagues.forEach(l=>{ const st=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):'background:var(--liga)'; const nmEsc=(l.name||'').replace(/\x27/g,"\\\x27");
+      h+='<div class="leaguerow"><div class="crest real" style="cursor:pointer;'+st+'" onclick="openPublicLeague(\''+l.account_id+'\',\''+nmEsc+'\')">'+(l.logo?'':iniOf(l.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.code?'<b style="color:var(--liga)">'+l.code+'</b> · ':'')+(l.teams||0)+' equipos</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm" onclick="openPublicLeague(\''+l.account_id+'\',\''+nmEsc+'\')">Ver</button>'+(iAmOwner?'<button class="btn ghost sm" onclick="requestJoinLeagueTeam(\''+l.account_id+'\',\''+nmEsc+'\')">Solicitar</button>':'')+'</div></div>'; }); }
   if(r.teams.length){ h+='<div class="eyebrow" style="margin:10px 2px 6px">Equipos</div>';
     r.teams.forEach(t=>{ const st=t.logo?('background-image:url('+t.logo+');background-size:cover;background-position:center'):('background:var('+(t.color||'--papa')+')');
       h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(t.logo?'':iniOf(t.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(t.name||'Equipo')+'</div><div class="mt"><b style="color:var(--papa)">'+t.code+'</b> · '+(t.status==='aprobado'?'en una liga':'libre')+'</div></div>'+(iAmPlayer?'<button class="btn sm" onclick="requestJoinTeam(\''+t.code+'\',\''+(t.name||'').replace(/\x27/g,"\\\x27")+'\',\''+t.account_id+'\')">Unirme</button>':'')+'</div>'; }); }
