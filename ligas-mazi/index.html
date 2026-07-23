@@ -1989,7 +1989,7 @@ function buildLigaStats(){
   if(body)body.style.display='';
   if(claim)claim.style.display='none';
   const bn=document.getElementById('ligaBannerName'); if(bn)bn.textContent=d.name||'Mi liga';
-  const bi=document.getElementById('ligaBannerImg'); if(bi&&d.logo){bi.src=d.logo;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';}
+  const bi=document.getElementById('ligaBannerImg'); if(bi){ const src=d.banner||d.logo; if(src){bi.src=src;bi.style.objectFit='cover';bi.style.filter=d.banner?'brightness(.62)':'brightness(.55) saturate(.9)';} }
   const idbox=document.getElementById('leagueIdentity'); if(idbox)idbox.style.display='none';
   const row=document.querySelector('#s-liga .stat-row'); if(!row)return;
   const jug=d.teams.reduce((s,t)=>s+t.players.length,0);
@@ -2068,7 +2068,9 @@ function renderPublicLeague(lg,fallbackName){
   if(!lg||!lg.teams){ box.innerHTML='<div class="stratnote">Esta liga aún no ha compartido sus datos. Cuando su administrador abra la app con conexión, aparecerá aquí completa.</div>'; return; }
   const name=lg.name||fallbackName||'Liga';
   const crest=lg.logo?('background-image:url('+lg.logo+');background-size:cover;background-position:center'):'background:var(--liga)';
-  let h='<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><span class="crest real" style="width:52px;height:52px;'+crest+'">'+(lg.logo?'':iniOf(name))+'</span><div><div style="font-weight:800;font-size:19px">'+name+'</div><div style="color:var(--muted);font-size:12px">'+(lg.teams.length)+' equipos · '+((lg.calendar||[]).filter(m=>m.done).length)+'/'+((lg.calendar||[]).length)+' partidos · solo lectura</div></div></div>';
+  let h='';
+  if(lg.banner) h+='<div style="height:96px;border-radius:14px;margin-bottom:12px;background-image:url('+lg.banner+');background-size:cover;background-position:center;filter:brightness(.72);border:1px solid var(--line)"></div>';
+  h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><span class="crest real" style="width:52px;height:52px;'+crest+'">'+(lg.logo?'':iniOf(name))+'</span><div><div style="font-weight:800;font-size:19px">'+name+'</div><div style="color:var(--muted);font-size:12px">'+(lg.teams.length)+' equipos · '+((lg.calendar||[]).filter(m=>m.done).length)+'/'+((lg.calendar||[]).length)+' partidos · solo lectura</div></div></div>';
   // Tabla (estilos en línea, autocontenida)
   const rows=computeStandings(lg);
   if(rows.length){ const cell='display:inline-block;width:30px;text-align:center;font-variant-numeric:tabular-nums';
@@ -2370,6 +2372,9 @@ function buildLeagueIdentity(){
     '<div class="tid-lbl">Escudo de la liga</div>'+
     '<button class="btn ghost sm block" onclick="setLeagueLogo()"><svg class="ic"><use href="#ic-camera"/></svg> '+(d.logo?'Cambiar imagen del escudo':'Subir imagen del escudo')+'</button>'+
     (d.logo?'<button class="btn ghost sm block" style="margin-top:6px;color:var(--dim)" onclick="clearLeagueLogo()">Quitar imagen</button><div class="tid-preview"><span class="crest real" style="background-image:url('+d.logo+');background-size:cover;background-position:center"></span><span style="color:#c7cdd8;font-size:13px">Escudo de tu liga</span></div>':'')+
+    '<div class="tid-lbl">Portada / banner de la liga</div>'+
+    '<button class="btn ghost sm block" onclick="setLeagueBanner()"><svg class="ic"><use href="#ic-camera"/></svg> '+(d.banner?'Cambiar portada':'Subir portada (imagen ancha)')+'</button>'+
+    (d.banner?'<button class="btn ghost sm block" style="margin-top:6px;color:var(--dim)" onclick="clearLeagueBanner()">Quitar portada</button><div style="margin-top:8px;height:74px;border-radius:12px;background-image:url('+d.banner+');background-size:cover;background-position:center;border:1px solid var(--line)"></div>':'')+
     '<div class="tid-lbl">Admins de la liga</div>'+admins+
     '<div class="le-add"><input id="lidAdmin" type="email" inputmode="email" placeholder="Correo del nuevo admin"><button class="btn sm" onclick="addLeagueAdmin()">Agregar</button></div>'+
     '<div class="tid-lbl">Invitar a la liga (por correo)</div>'+
@@ -2426,7 +2431,15 @@ function showLoader(txt){ const l=document.getElementById('loader'); if(!l)retur
 function hideLoader(){ clearTimeout(_loaderT); clearInterval(_loaderCycle); _loaderCycle=null; const l=document.getElementById('loader'); if(l)l.classList.remove('on'); }
 function setLeagueName(){ const d=leagueData(); if(!canAdminLeague(d))return; const v=(document.getElementById('lidName').value||'').trim(); if(v){d.name=v;saveLeague(d);buildLeagueIdentity();const bn=document.getElementById('ligaBannerName');if(bn)bn.textContent=v;flashSaved('Liga guardada ✓');} }
 function setLeagueLogo(){ if(!canAdminLeague())return; pickLogo(function(url){ const d=leagueData(); d.logo=url; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=url;bi.style.objectFit='cover';bi.style.filter='brightness(.55) saturate(.9)';} }); }
-function clearLeagueLogo(){ const d=leagueData(); if(!canAdminLeague(d))return; delete d.logo; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src='assets/arena.jpg';bi.style.filter='';} }
+function clearLeagueLogo(){ const d=leagueData(); if(!canAdminLeague(d))return; delete d.logo; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=d.banner||'assets/arena.jpg';bi.style.filter=d.banner?'brightness(.62)':'';} }
+/* portada / banner ancho de la liga (independiente del escudo) */
+function setLeagueBanner(){ if(!canAdminLeague())return;
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=function(ev){ const f=ev.target.files&&ev.target.files[0]; if(!f)return; const fr=new FileReader();
+    fr.onload=()=>openCrop(fr.result, 2.6, function(u){ const d=leagueData(); d.banner=u; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=u;bi.style.objectFit='cover';bi.style.filter='brightness(.62)';} cloudPushSoon(); });
+    fr.readAsDataURL(f); };
+  inp.click(); }
+function clearLeagueBanner(){ const d=leagueData(); if(!canAdminLeague(d))return; delete d.banner; saveLeague(d); buildLeagueIdentity(); const bi=document.getElementById('ligaBannerImg'); if(bi){bi.src=d.logo||'assets/arena.jpg';bi.style.filter=d.logo?'brightness(.55) saturate(.9)':'';} cloudPushSoon(); }
 /* --- equipos y jugadores --- */
 let leOpen=null;
 function iniOf(nm){return (nm.replace(/[^A-Za-zÁÉÍÓÚÑñ0-9 ]/g,'').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,3)||nm.slice(0,2)).toUpperCase();}
@@ -2445,9 +2458,18 @@ function delTeam(id){const d=leagueData(); if(!canAdminLeague(d))return; d.teams
 function addPlayer(tid){
   const d=leagueData(); if(!canAdminLeague(d))return; const t=d.teams.find(x=>x.id===tid); if(!t)return;
   const num=(document.getElementById('np_'+tid+'_num').value||'').trim();
-  const nm=(document.getElementById('np_'+tid+'_nm').value||'').trim(); if(!nm)return;
+  const nm=(document.getElementById('np_'+tid+'_nm').value||'').trim();
   const pos=(document.getElementById('np_'+tid+'_pos').value||'Base');
-  t.players.push({num:num||'0',nm,pos,resp:false}); saveLeague(d); buildLeagueTeams();
+  const email=(document.getElementById('np_'+tid+'_email').value||'').trim().toLowerCase();
+  const curp=(document.getElementById('np_'+tid+'_curp').value||'').trim().toUpperCase();
+  if(!nm){ flashSaved('Escribe el nombre del jugador'); return; }
+  if(!email && !curp){ flashSaved('Agrega el correo (o CURP) del jugador: así vincula su cuenta y su carta'); return; }
+  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ flashSaved('Ese correo no parece válido'); return; }
+  // evita duplicar el mismo jugador (por correo o CURP) en la liga
+  const dup=d.teams.some(tt=>(tt.players||[]).some(p=>(email&&p.email===email)||(curp&&p.curp===curp)));
+  if(dup){ flashSaved('Ese jugador ya está registrado en la liga'); return; }
+  t.players.push({num:num||'0',nm,pos,email:email||undefined,curp:curp||undefined,resp:false});
+  saveLeague(d); buildLeagueTeams(); flashSaved('Jugador registrado ✓'); cloudPushSoon();
 }
 function delPlayer(tid,i){const d=leagueData();if(!canAdminLeague(d))return;const t=d.teams.find(x=>x.id===tid);if(t){t.players.splice(i,1);saveLeague(d);buildLeagueTeams();}}
 function buildLeagueTeams(){
@@ -2459,8 +2481,8 @@ function buildLeagueTeams(){
     if(open){ h+='<div style="padding:2px 12px 12px">';
       h+='<button class="btn ghost sm block" style="margin-bottom:10px" onclick="event.stopPropagation();teamLogoFor(\''+t.id+'\')"><svg class="ic"><use href="#ic-camera"/></svg> '+(t.logo?'Cambiar escudo':'Subir escudo (imagen)')+'</button>';
       t.players.forEach((p,i)=>{ const av=playerAverages(p); const stat=av?'<span class="le-pos" style="color:var(--liga)">'+av.ppg.toFixed(1)+' PPP · '+av.gp+'PJ</span>':'<span class="le-pos">'+p.pos+'</span>';
-        h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+p.nm+'</b>'+stat+'<button class="le-x" onclick="delPlayer(\''+t.id+'\','+i+')">×</button></div>'; });
-      h+='<div class="le-add"><input id="np_'+t.id+'_num" placeholder="#" style="flex:0 0 44px;width:44px"><input id="np_'+t.id+'_nm" placeholder="Nombre del jugador"><select id="np_'+t.id+'_pos"><option>Base</option><option>Escolta</option><option>Alero</option><option>Ala</option><option>Pívot</option></select><button class="btn sm" onclick="addPlayer(\''+t.id+'\')">＋</button></div>';
+        h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+p.nm+'</b>'+(p.email?'<span class="le-pos" style="opacity:.7;font-size:10px">'+p.email+'</span>':'')+stat+'<button class="le-x" onclick="delPlayer(\''+t.id+'\','+i+')">×</button></div>'; });
+      h+='<div class="le-add" style="flex-wrap:wrap"><input id="np_'+t.id+'_num" placeholder="#" style="flex:0 0 44px;width:44px"><input id="np_'+t.id+'_nm" placeholder="Nombre del jugador"><select id="np_'+t.id+'_pos"><option>Base</option><option>Escolta</option><option>Alero</option><option>Ala</option><option>Pívot</option></select><input id="np_'+t.id+'_email" type="email" inputmode="email" placeholder="Correo del jugador (vincula su cuenta y carta)" style="flex:1 1 100%"><input id="np_'+t.id+'_curp" placeholder="CURP (opcional)" style="flex:1 1 100%;text-transform:uppercase"><button class="btn sm block" onclick="addPlayer(\''+t.id+'\')" style="flex:1 1 100%;margin-top:2px">＋ Registrar jugador</button></div>';
       h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Eliminar equipo</button></div>';
     }
     h+='</div>';
@@ -2656,12 +2678,26 @@ function finishOfficiating(){
 function playerAverages(lp){ const s=lp&&lp.stats; if(!s||!s.gp)return null;
   return { gp:s.gp, ppg:(s.pts/s.gp), fpg:(s.f/s.gp), mpg:(s.min/s.gp), pts:s.pts }; }
 /* busca al jugador de liga que corresponde a una cuenta (por CURP o por nombre) */
-function findLeaguePlayer(u){ u=u||userData()||{}; const d=leagueData(); if(!d||!d.teams)return null;
-  const nm=(u.name||'').trim().toLowerCase(); const curp=(u.curp||'').toUpperCase();
-  for(const t of d.teams){ for(const pl of (t.players||[])){
+let _cardRemote=null, _cardSearched=false; // carta hallada en una liga compartida de otra cuenta
+function _matchMeInLeague(u,lg){ if(!lg||!lg.teams)return null;
+  const nm=(u.name||'').trim().toLowerCase(); const curp=(u.curp||'').toUpperCase(); const em=(u.email||'').trim().toLowerCase();
+  for(const t of lg.teams){ for(const pl of (t.players||[])){
+    if(em && pl.email && pl.email.toLowerCase()===em) return {team:t,player:pl};
     if(curp && pl.curp && pl.curp.toUpperCase()===curp) return {team:t,player:pl};
     if(nm && (pl.nm||'').trim().toLowerCase()===nm) return {team:t,player:pl};
   }} return null; }
+function findLeaguePlayer(u){ u=u||userData()||{};
+  const local=_matchMeInLeague(u, leagueData());
+  if(local) return local;
+  if(_cardRemote) return _cardRemote;   // hallado en una liga compartida
+  return null; }
+/* busca al jugador (esta cuenta) en las ligas compartidas que sigue → llena su carta aunque la liga sea de otra cuenta */
+async function enrichCardFromShared(u){
+  u=u||userData()||{}; if(!u.email && !u.curp)return;
+  const follows=(u.followLeagues||[]).filter(l=>l.account_id&&l.account_id!=='local');
+  for(const l of follows){ try{ const lg=await fetchLeagueFull(l.account_id); const m=_matchMeInLeague(u,lg);
+    if(m){ _cardRemote={team:m.team, player:m.player, leagueName:(lg&&lg.name)||l.name}; renderCard(); return; } }catch(e){} }
+}
 function buildMesa(){
   mstep=0; mT=null; mP=null;
   const w=document.getElementById('mFinishWrap');
@@ -3075,7 +3111,7 @@ function setAuthMode(m){
   loginMsg(''); if(m==='up')buildRolePick();
 }
 function applyRoleFromUser(){ const u=userData()||{}; if(u.role){ currentRole=ROLE_INTERNAL[u.role]||'publico'; } }
-function enterAppWithRole(){ applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }
+function enterAppWithRole(){ _cardRemote=null; _cardSearched=false; applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }
 /* recorrido guiado la primera vez, según el rol */
 const ONBOARD={
   liga:{k:'Administras una liga',steps:[['trophy','Crea tu liga','Ponle nombre y escudo en “Mi liga”.'],['people','Inscribe equipos y jugadores','Da de alta con su CURP (privado).'],['calendar','Arma el calendario','Genera el rol todos contra todos.'],['live','Dirige en la mesa','Anota puntos y faltas en vivo; la tabla se actualiza sola.']]},
@@ -3195,6 +3231,9 @@ function renderCard(){
   if(pc){ const e=(u.econ&&u.econ.effect)?cosmeticById(u.econ.effect):null; pc.style.cssText=e?e.css:''; }
   // ¿la cuenta corresponde a un jugador registrado de la liga?
   const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
+  // si no lo hallamos localmente, búscalo (una vez) en las ligas compartidas que sigue
+  if(!link && !_cardSearched && (u.email||u.curp)){ _cardSearched=true; enrichCardFromShared(u); }
+  const remoteName=(link&&link===_cardRemote)?_cardRemote.leagueName:((leagueData()||{}).name||'Liga');
   // solo un jugador registrado (o alguien con identidad de jugador) tiene carta personal;
   // dueños de liga / coach / público NO deben aparecer como un jugador fantasma con su propio nombre.
   const isPlayer=!!link || currentRole==='jugador' || !!u.num;
@@ -3214,7 +3253,7 @@ function renderCard(){
     ['fc-resumen','fc-atributos','fc-vitrina','fc-historial'].forEach(id=>{const p=document.getElementById(id);if(p)p.innerHTML=info;});
     return;
   }
-  if(link){ const d2=leagueData(); if(club){ const parts=[link.team.name]; if(d2&&d2.name)parts.push(d2.name); if(link.player.num)parts.push('#'+link.player.num); club.textContent=parts.join(' · '); } }
+  if(link){ if(club){ const parts=[link.team.name]; if(remoteName)parts.push(remoteName); if(link.player.num)parts.push('#'+link.player.num); club.textContent=parts.join(' · '); } }
   if(avg){
     // GENERAL simple derivado del promedio de puntos + eficiencia
     const rating=Math.max(45,Math.min(99,Math.round(48+avg.ppg*2.6-avg.fpg*1.5)));
@@ -3237,7 +3276,7 @@ function renderCard(){
       '<div class="fc-attr"><span class="v mid">'+tier[0].slice(0,3)+'</span><span class="n">Rango</span></div>'+
       '</div></div>'+note('Estos números salen de lo que la mesa anotó en tus partidos. Suben cuando juegas más y anotas.');
     ['fc-atributos','fc-vitrina'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=note('Se enriquece con más partidos registrados por la mesa.');});
-    const r=document.getElementById('fc-historial'); if(r)r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+link.team.name+'<small>'+((leagueData()||{}).name||'Liga')+(link.player.num?' · #'+link.player.num:'')+' · '+avg.gp+' PJ</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
+    const r=document.getElementById('fc-historial'); if(r)r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+link.team.name+'<small>'+remoteName+(link.player.num?' · #'+link.player.num:'')+' · '+avg.gp+' PJ</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
     return;
   }
   // sin partidos aún: estado honesto
