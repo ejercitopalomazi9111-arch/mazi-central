@@ -1211,6 +1211,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     </div>
   </div>
 
+  <!-- VISOR de partido en vivo remoto (otro mesa/otra liga) -->
+  <div class="sheet-bg" id="liveViewBg" onclick="if(event.target.id==='liveViewBg')closeLiveView()">
+    <div class="sheet"><div id="liveViewBody"></div>
+      <button class="btn ghost sm block" onclick="closeLiveView()" style="margin-top:12px">Cerrar</button></div>
+  </div>
+
   <!-- ONBOARDING — bienvenida guiada la primera vez -->
   <div class="sheet-bg" id="onboardBg">
     <div class="sheet"><div id="onboardBody"></div>
@@ -1354,6 +1360,20 @@ async function fetchDirectory(){
   try{ const {data,error}=await c.from('public_leagues').select('account_id,name,logo,link,teams,players,updated_at').order('updated_at',{ascending:false}).limit(100);
     if(error)return null; return data||[]; }catch(e){ return null; }
 }
+/* ===== Partidos en vivo en la nube (múltiples simultáneos entre cuentas) ===== */
+let _liveT=null;
+function publishLiveGameSoon(){ if(!_authed||!hasLiveGame())return; clearTimeout(_liveT); _liveT=setTimeout(publishLiveGame,700); }
+async function publishLiveGame(){
+  const c=sbClient(); if(!c||!_authed||!_session||!hasLiveGame())return;
+  try{ const d=leagueData(); const H=GAME.teams[0],A=GAME.teams[1];
+    await c.from('live_games').upsert({account_id:_session.user.id, league_name:d.name||'', home_name:H.name, home_ini:H.ini, home_color:H.color, home_score:H.score, away_name:A.name, away_ini:A.ini, away_color:A.color, away_score:A.score, period:GAME.period, clock:GAME.clock, updated_at:new Date().toISOString()});
+  }catch(e){}
+}
+async function clearLiveGame(){ const c=sbClient(); if(!c||!_authed||!_session)return; try{ await c.from('live_games').delete().eq('account_id',_session.user.id); }catch(e){} }
+async function fetchLiveGames(){ const c=sbClient(); if(!c)return null;
+  try{ const cutoff=new Date(Date.now()-1000*60*60).toISOString(); // ignora partidos viejos (>1h sin actualizar)
+    const {data,error}=await c.from('live_games').select('*').gte('updated_at',cutoff).order('updated_at',{ascending:false}).limit(50);
+    if(error)return null; return data||[]; }catch(e){ return null; } }
 /* invitaciones entre cuentas (liga invita por correo / equipo solicita unirse) */
 async function sendInvite(toEmail,kind,extra){
   const c=sbClient(); if(!c||!_authed||!_session){ flashSaved('Necesitas conexión para invitar'); return false; }
@@ -1615,8 +1635,9 @@ function onModeScroll(){
 function courtStyle(){ try{return localStorage.getItem('lm_court')||'realista';}catch(e){return 'realista';} }
 function setCourtStyle(v){ try{localStorage.setItem('lm_court',v);}catch(e){} if(document.getElementById('s-marcador').classList.contains('on'))drawCourt(); }
 /* etiqueta del periodo según las perillas: cuartos vs mitades, con overtime */
-function periodLabel(){
-  const r=rules(), p=GAME.period, reg=r.periods;
+function periodLabel(){ return periodLbl(GAME.period); }
+function periodLbl(p){
+  const r=rules(), reg=r.periods; p=p||1;
   if(p>reg){ return 'PRÓRROGA'+(reg>0&&p-reg>1?' '+(p-reg):''); }
   if(r.halves){ return (p===1?'1.ª':p===2?'2.ª':p+'.ª')+' MITAD'; }
   const ord=['','1ER','2DO','3ER','4TO','5TO','6TO','7MO','8VO','9NO','10MO','11MO','12MO'];
@@ -1967,16 +1988,59 @@ function faceoffCard(H,A,opts){
   return '<div class="'+cls+'" style="--hc:'+hc+';--ac:'+ac+'"'+click+'>'+top+
     side(H,'l')+'<div class="fo-mid">'+mid+'</div>'+side(A,'r')+'</div>';
 }
+let LIVE_CLOUD=[];
+function syncLiveGames(){ fetchLiveGames().then(list=>{ if(list){ LIVE_CLOUD=list; if(curScreen==='publico')buildPublicoData(); } }).catch(()=>{}); }
+/* ===== Ver un partido remoto en vivo + contar espectadores por tipo (Realtime) ===== */
+let _liveSub=null,_presCh=null,_liveGid=null;
+function renderLiveView(g,counts){
+  const box=document.getElementById('liveViewBody'); if(!box||!g)return;
+  const per=periodLbl(g.period)+(g.clock?' · '+g.clock:'');
+  const c=counts||{};
+  const chip=(lbl,n,col)=>'<div style="flex:1;text-align:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 4px"><div style="font-weight:800;font-size:18px;color:var('+col+')">'+(n||0)+'</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">'+lbl+'</div></div>';
+  box.innerHTML='<div style="text-align:center;margin-bottom:6px"><span class="pill" style="color:var(--mesa);border-color:var(--mesa)">● EN VIVO · '+per+'</span></div>'+
+    '<div style="color:var(--muted);font-size:12px;text-align:center;margin-bottom:10px">'+(g.league_name||'Liga')+'</div>'+
+    '<div class="mk-score" style="display:flex;align-items:center;justify-content:space-around;margin:6px 0 14px">'+
+    '<div style="text-align:center"><div class="crest real" style="width:56px;height:56px;margin:0 auto;background:var('+(g.home_color||'--papa')+')">'+g.home_ini+'</div><div style="font-weight:700;font-size:13px;margin-top:6px">'+g.home_name+'</div><div style="font-family:var(--disp);font-weight:800;font-size:40px">'+g.home_score+'</div></div>'+
+    '<div style="color:var(--dim);font-weight:800">–</div>'+
+    '<div style="text-align:center"><div class="crest real" style="width:56px;height:56px;margin:0 auto;background:var('+(g.away_color||'--publico')+')">'+g.away_ini+'</div><div style="font-weight:700;font-size:13px;margin-top:6px">'+g.away_name+'</div><div style="font-family:var(--disp);font-weight:800;font-size:40px">'+g.away_score+'</div></div>'+
+    '</div>'+
+    '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Viendo ahora</div>'+
+    '<div style="display:flex;gap:8px">'+chip('Público',c.publico,'--publico')+chip('Jugadores',c.jugador,'--jugador')+chip('Papás',c.papa,'--papa')+'</div>';
+}
+function viewRemoteGame(accId){
+  const g=(LIVE_CLOUD||[]).find(x=>x.account_id===accId); if(!g){ flashSaved('Partido no disponible'); return; }
+  _liveGid=accId; renderLiveView(g,null); document.getElementById('liveViewBg').classList.add('on');
+  const c=sbClient(); if(!c)return;
+  // suscripción a cambios del marcador
+  try{ _liveSub=c.channel('lg-'+accId).on('postgres_changes',{event:'*',schema:'public',table:'live_games',filter:'account_id=eq.'+accId},payload=>{
+      const row=payload.new; if(row){ const i=LIVE_CLOUD.findIndex(x=>x.account_id===accId); if(i>=0)LIVE_CLOUD[i]=row; if(_liveGid===accId)renderLiveView(row,_presCount()); }
+    }).subscribe(); }catch(e){}
+  // presencia: cuento espectadores por tipo de rol
+  try{ const t=(ROLE_INTERNAL[(userData()||{}).role]||currentRole||'publico');
+    _presCh=c.channel('live:'+accId,{config:{presence:{key:(_session&&_session.user&&_session.user.id)||('anon'+Math.random())}}});
+    _presCh.on('presence',{event:'sync'},()=>{ if(_liveGid===accId)renderLiveView(LIVE_CLOUD.find(x=>x.account_id===accId)||g,_presCount()); })
+      .subscribe(async(status)=>{ if(status==='SUBSCRIBED'){ try{ await _presCh.track({type:t}); }catch(e){} } });
+  }catch(e){}
+}
+function _presCount(){ const c={publico:0,jugador:0,papa:0}; try{ const st=_presCh&&_presCh.presenceState&&_presCh.presenceState(); if(st){ Object.values(st).forEach(arr=>arr.forEach(m=>{ const t=m.type||'publico'; if(c[t]==null)c[t]=0; c[t]++; })); } }catch(e){} return c; }
+function closeLiveView(){ _liveGid=null; document.getElementById('liveViewBg').classList.remove('on');
+  try{ if(_presCh){_presCh.untrack&&_presCh.untrack(); sbClient().removeChannel(_presCh); _presCh=null;} }catch(e){}
+  try{ if(_liveSub){ sbClient().removeChannel(_liveSub); _liveSub=null; } }catch(e){}
+}
 function buildEnVivoBoard(){
   const d=leagueData(); let h='';
   const on=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null&&GAME.teams&&GAME.teams.length===2);
-  h+='<div class="fo-sec-ttl">En vivo ahora'+(on?'<span class="pill" style="color:var(--mesa);border-color:var(--mesa)">1 partido</span>':'')+'</div>';
+  const myId=(_session&&_session.user&&_session.user.id)||'';
+  const cloud=(LIVE_CLOUD||[]).filter(g=>g.account_id!==myId);
+  const liveCount=(on?1:0)+cloud.length;
+  h+='<div class="fo-sec-ttl">En vivo ahora'+(liveCount?'<span class="pill" style="color:var(--mesa);border-color:var(--mesa)">'+liveCount+' partido'+(liveCount>1?'s':'')+'</span>':'')+'</div>';
   if(on){ const gH=GAME.teams[0],gA=GAME.teams[1]; const lH=teamById(gH.id)||{}, lA=teamById(gA.id)||{};
     const H={name:gH.name,color:gH.color,ini:gH.ini,logo:lH.logo}, A={name:gA.name,color:gA.color,ini:gA.ini,logo:lA.logo};
     h+=faceoffCard(H,A,{mode:'live',hs:gH.score,as:gA.score,per:periodLabel()+' · '+GAME.clock,onclick:"go('marcador')"});
-  } else {
-    h+='<div class="stratnote" style="border-left-color:var(--mesa)">No hay partidos en vivo ahora. Cuando la mesa dirija un partido, aparecerá aquí para todo el público.</div>';
   }
+  cloud.forEach(g=>{ const H={name:g.home_name,color:g.home_color,ini:g.home_ini}, A={name:g.away_name,color:g.away_color,ini:g.away_ini};
+    h+=faceoffCard(H,A,{mode:'live',hs:g.home_score,as:g.away_score,per:periodLbl(g.period)+(g.clock?' · '+g.clock:''),onclick:"viewRemoteGame('"+g.account_id+"')"}); });
+  if(!liveCount){ h+='<div class="stratnote" style="border-left-color:var(--mesa)">No hay partidos en vivo ahora. Cuando la mesa dirija un partido, aparecerá aquí para todo el público.</div>'; }
   const bydate=(a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''));
   const liveIdx=on?GAME.matchIdx:-1;
   const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx).sort((a,b)=>bydate(a.m,b.m)).slice(0,10);
@@ -1994,7 +2058,7 @@ function buildEnVivoBoard(){
 function buildPublicoData(){
   const d=leagueData();
   const live=document.getElementById('pubLive');
-  if(live){ live.innerHTML=buildEnVivoBoard(); }
+  if(live){ live.innerHTML=buildEnVivoBoard(); syncLiveGames(); }
   const st=document.getElementById('pubStand');
   if(st){
     const rows=computeStandings().filter(r=>r.pj>0).slice(0,4);
@@ -2482,7 +2546,7 @@ function officiateMatch(idx){
     {id:A.id,name:A.name,ini:A.ini,color:A.color,score:0,tf:0,players:mk(A)},
   ];
   GAME.log=[]; GAME.matchIdx=idx;
-  go('mesa');
+  go('mesa'); publishLiveGameSoon();
 }
 function finishOfficiating(){
   if(GAME.matchIdx==null)return;
@@ -2496,7 +2560,7 @@ function finishOfficiating(){
         s.gp+=1; s.pts+=(gp.pts||0); s.f+=(gp.f||0); s.min+=(gp.min||0); lp.stats=s; }); });
     saveLeague(d);
   }
-  GAME.matchIdx=null; go('tabla');
+  GAME.matchIdx=null; clearLiveGame(); go('tabla');
 }
 /* stats de temporada de un jugador de liga → promedios para su ficha/carta */
 function playerAverages(lp){ const s=lp&&lp.stats; if(!s||!s.gp)return null;
@@ -2535,6 +2599,7 @@ function buildClock(){
     '<button class="mck aux'+(GAME.autoStop?' on':'')+'" onclick="mToggleAuto()">Auto-stop '+(GAME.autoStop?'ON':'OFF')+'</button>'+
     '</div>';
   const mc=document.getElementById('mClk'); if(mc)mc.textContent=periodLabel()+' · '+mFmt(GAME.remainSec);
+  publishLiveGameSoon();
 }
 function mClockStart(){ if(GAME.running||GAME.remainSec<=0)return; GAME.running=true; buildClock();
   mClockTimer=setInterval(()=>{ if(!GAME.running)return; GAME.remainSec-=0.25;
@@ -2597,11 +2662,11 @@ function renderWiz(){
 }
 function mScore(p){const t=GAME.teams[mT],pl=t.players[mP];pl.pts+=p;t.score+=p;
   GAME.log.unshift({t:mClk(),m:'<b>'+t.name+'</b> #'+pl.num+' '+pl.nm+' anotó <b class="g">+'+p+'</b>',u:{team:mT,pi:mP,pts:p,f:0}});
-  flash(pl.nm+'  +'+p,'g'); mstep=1; mP=null; renderWiz();}
+  flash(pl.nm+'  +'+p,'g'); mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
 function mFoul(code,label){const t=GAME.teams[mT],pl=t.players[mP];pl.f+=1;t.tf+=1;const r=rules();
   const out=pl.f>=r.foulOut; const bonus=t.tf>=r.teamBonus;
   GAME.log.unshift({t:mClk(),m:'<b>'+t.name+'</b> #'+pl.num+' '+pl.nm+' · <b class="rd">'+label+'</b>'+(out?' <b class="rd">('+r.foulOut+'ª — fuera)</b>':'')+(bonus?' · <span class="g">bonus</span>':''),u:{team:mT,pi:mP,pts:0,f:1,tf:1}});
-  flash('Falta ('+label+') · '+pl.nm+(out?' — EXPULSADO':''),'rd'); mstep=1; mP=null; renderWiz();}
+  flash('Falta ('+label+') · '+pl.nm+(out?' — EXPULSADO':''),'rd'); mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
 function mUndo(){if(!GAME.log.length){flash('Nada que deshacer');return;}const e=GAME.log.shift();
   if(e.u){const t=GAME.teams[e.u.team],pl=t.players[e.u.pi];pl.pts-=e.u.pts;pl.f-=(e.u.f||0);t.score-=e.u.pts;t.tf-=(e.u.tf||0);}
   flash('Deshecho'); renderWiz();}
