@@ -2102,7 +2102,8 @@ function buildLeagueTeams(){
     h+='<div class="leaguerow" style="margin:0;border:none" onclick="leOpen=(leOpen===\''+t.id+'\'?null:\''+t.id+'\');buildLeagueTeams()"><div class="crest real" style="'+crestStyle(t)+'">'+crestInner(t)+'</div><div><div class="nm">'+t.name+'</div><div class="mt">'+t.players.length+' jugadores</div></div><span class="more">'+(open?'▾':'›')+'</span></div>';
     if(open){ h+='<div style="padding:2px 12px 12px">';
       h+='<button class="btn ghost sm block" style="margin-bottom:10px" onclick="event.stopPropagation();teamLogoFor(\''+t.id+'\')"><svg class="ic"><use href="#ic-camera"/></svg> '+(t.logo?'Cambiar escudo':'Subir escudo (imagen)')+'</button>';
-      t.players.forEach((p,i)=>{ h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+p.nm+'</b><span class="le-pos">'+p.pos+'</span><button class="le-x" onclick="delPlayer(\''+t.id+'\','+i+')">×</button></div>'; });
+      t.players.forEach((p,i)=>{ const av=playerAverages(p); const stat=av?'<span class="le-pos" style="color:var(--liga)">'+av.ppg.toFixed(1)+' PPP · '+av.gp+'PJ</span>':'<span class="le-pos">'+p.pos+'</span>';
+        h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+p.nm+'</b>'+stat+'<button class="le-x" onclick="delPlayer(\''+t.id+'\','+i+')">×</button></div>'; });
       h+='<div class="le-add"><input id="np_'+t.id+'_num" placeholder="#" style="flex:0 0 44px;width:44px"><input id="np_'+t.id+'_nm" placeholder="Nombre del jugador"><select id="np_'+t.id+'_pos"><option>Base</option><option>Escolta</option><option>Alero</option><option>Ala</option><option>Pívot</option></select><button class="btn sm" onclick="addPlayer(\''+t.id+'\')">＋</button></div>';
       h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Eliminar equipo</button></div>';
     }
@@ -2266,9 +2267,26 @@ function officiateMatch(idx){
 function finishOfficiating(){
   if(GAME.matchIdx==null)return;
   const d=leagueData(); const m=d.calendar[GAME.matchIdx];
-  if(m){ m.hs=GAME.teams[0].score; m.as=GAME.teams[1].score; m.done=true; saveLeague(d); }
+  if(m){ m.hs=GAME.teams[0].score; m.as=GAME.teams[1].score; m.done=true;
+    // acumula estadísticas reales por jugador (temporada) desde lo que anotó la mesa
+    GAME.teams.forEach(gt=>{ const lt=d.teams.find(x=>x.id===gt.id); if(!lt)return;
+      gt.players.forEach(gp=>{ const lp=(lt.players||[]).find(x=>String(x.num)===String(gp.num)&&x.nm===gp.nm)||(lt.players||[]).find(x=>x.nm===gp.nm);
+        if(!lp)return; const s=lp.stats||{gp:0,pts:0,f:0,min:0};
+        s.gp+=1; s.pts+=(gp.pts||0); s.f+=(gp.f||0); s.min+=(gp.min||0); lp.stats=s; }); });
+    saveLeague(d);
+  }
   GAME.matchIdx=null; go('tabla');
 }
+/* stats de temporada de un jugador de liga → promedios para su ficha/carta */
+function playerAverages(lp){ const s=lp&&lp.stats; if(!s||!s.gp)return null;
+  return { gp:s.gp, ppg:(s.pts/s.gp), fpg:(s.f/s.gp), mpg:(s.min/s.gp), pts:s.pts }; }
+/* busca al jugador de liga que corresponde a una cuenta (por CURP o por nombre) */
+function findLeaguePlayer(u){ u=u||userData()||{}; const d=leagueData(); if(!d||!d.teams)return null;
+  const nm=(u.name||'').trim().toLowerCase(); const curp=(u.curp||'').toUpperCase();
+  for(const t of d.teams){ for(const pl of (t.players||[])){
+    if(curp && pl.curp && pl.curp.toUpperCase()===curp) return {team:t,player:pl};
+    if(nm && (pl.nm||'').trim().toLowerCase()===nm) return {team:t,player:pl};
+  }} return null; }
 function buildMesa(){
   mstep=0; mT=null; mP=null;
   const w=document.getElementById('mFinishWrap');
@@ -2676,17 +2694,42 @@ function renderCard(){
   if(club){ const parts=[]; if(u.team)parts.push(u.team); if(u.league)parts.push(u.league); if(u.num)parts.push('#'+u.num);
     club.textContent=parts.length?parts.join(' · '):'Aún sin equipo'; }
   if(u.photo){ const ph=document.getElementById('fcPhoto'); if(ph){ph.style.backgroundImage='url('+u.photo+')';ph.classList.add('has-photo');ph.innerHTML='';} }
-  // ¿ya hay estadísticas reales? (las alimenta la mesa; aún no se agregan por jugador)
-  const st=(u.stats||null);
   const note=(txt)=>'<div class="stratnote" style="border-left-color:var(--jugador)">'+txt+'</div>';
-  if(!st){
-    const empty='<div class="fc-empty" style="text-align:center;padding:22px 16px;color:var(--muted)">'+
-      '<svg class="ic" style="width:38px;height:38px;opacity:.5"><use href="#ic-card"/></svg>'+
-      '<div style="font-weight:800;color:var(--txt);margin:8px 0 4px">Tu carta se arma sola</div>'+
-      '<div style="font-size:13px;max-width:280px;margin:0 auto">Cuando la mesa registre tus partidos (puntos, faltas, rebotes, minutos), aquí aparecerán tu general, tus atributos y tu vitrina.</div></div>';
-    ['fc-resumen','fc-atributos','fc-vitrina','fc-historial'].forEach(id=>{const p=document.getElementById(id);if(p)p.innerHTML=empty;});
-    const r=document.getElementById('fc-historial'); if(r&&u.team)r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+u.team+'<small>'+(u.league||'Liga')+(u.num?' · #'+u.num:'')+' · actual</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
+  // ¿la cuenta corresponde a un jugador de la liga con partidos jugados?
+  const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
+  if(link){ const d2=leagueData(); if(club){ const parts=[link.team.name]; if(d2&&d2.name)parts.push(d2.name); if(link.player.num)parts.push('#'+link.player.num); club.textContent=parts.join(' · '); } }
+  if(avg){
+    // GENERAL simple derivado del promedio de puntos + eficiencia
+    const rating=Math.max(45,Math.min(99,Math.round(48+avg.ppg*2.6-avg.fpg*1.5)));
+    const tier = rating>=90?['LEGENDARIO','#e8b13e','#ff9a5a']: rating>=80?['ÉPICO','#a774f0','#c79bff']: rating>=70?['ORO','#e8b13e','#ffca6a']: rating>=60?['PLATA','#c7cdd8','#eef2f8']:['BRONCE','#c88a4a','#e0a566'];
+    const ovc=document.getElementById('fcOv'); if(ovc)ovc.innerHTML='<b>'+rating+'</b><small>GENERAL</small>';
+    const rk=document.getElementById('fcRank'); if(rk){ rk.textContent='◆ '+tier[0]; rk.style.background='linear-gradient(90deg,'+tier[1]+','+tier[2]+')'; }
+    const stx=document.getElementById('fcStats'); if(stx)stx.innerHTML=
+      '<div class="st"><b>'+avg.ppg.toFixed(1)+'</b><small>PTS</small></div>'+
+      '<div class="st"><b>'+avg.mpg.toFixed(0)+'′</b><small>MIN</small></div>'+
+      '<div class="st"><b>'+avg.fpg.toFixed(1)+'</b><small>FALTAS</small></div>'+
+      '<div class="st"><b>'+avg.gp+'</b><small>PJ</small></div>';
+    const res=document.getElementById('fc-resumen'); if(res)res.innerHTML=
+      '<div class="fc-rating"><div class="grl"><b>'+rating+'</b><small>GENERAL</small><span class="pos">'+((link.player.pos||'BASE').toUpperCase())+'</span></div>'+
+      '<div class="fc-attrs">'+
+      '<div class="fc-attr"><span class="v mid">'+avg.ppg.toFixed(1)+'</span><span class="n">Pts/juego</span></div>'+
+      '<div class="fc-attr"><span class="v mid">'+avg.pts+'</span><span class="n">Pts total</span></div>'+
+      '<div class="fc-attr"><span class="v mid">'+avg.mpg.toFixed(0)+'′</span><span class="n">Min/juego</span></div>'+
+      '<div class="fc-attr"><span class="v mid">'+avg.fpg.toFixed(1)+'</span><span class="n">Faltas/j</span></div>'+
+      '<div class="fc-attr"><span class="v mid">'+avg.gp+'</span><span class="n">Partidos</span></div>'+
+      '<div class="fc-attr"><span class="v mid">'+tier[0].slice(0,3)+'</span><span class="n">Rango</span></div>'+
+      '</div></div>'+note('Estos números salen de lo que la mesa anotó en tus partidos. Suben cuando juegas más y anotas.');
+    ['fc-atributos','fc-vitrina'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=note('Se enriquece con más partidos registrados por la mesa.');});
+    const r=document.getElementById('fc-historial'); if(r)r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+link.team.name+'<small>'+((leagueData()||{}).name||'Liga')+(link.player.num?' · #'+link.player.num:'')+' · '+avg.gp+' PJ</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
+    return;
   }
+  // sin partidos aún: estado honesto
+  const empty='<div class="fc-empty" style="text-align:center;padding:22px 16px;color:var(--muted)">'+
+    '<svg class="ic" style="width:38px;height:38px;opacity:.5"><use href="#ic-card"/></svg>'+
+    '<div style="font-weight:800;color:var(--txt);margin:8px 0 4px">Tu carta se arma sola</div>'+
+    '<div style="font-size:13px;max-width:280px;margin:0 auto">Cuando la mesa registre tus partidos (puntos, faltas, minutos), aquí aparecerán tu general y tus números.</div></div>';
+  ['fc-resumen','fc-atributos','fc-vitrina','fc-historial'].forEach(id=>{const p=document.getElementById(id);if(p)p.innerHTML=empty;});
+  const r=document.getElementById('fc-historial'); if(r&&(link||u.team))r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+((link&&link.team.name)||u.team)+'<small>'+(u.league||'Liga')+' · actual</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
 }
 /* subir foto: se redimensiona en el teléfono (sin GPS, sin subir nada crudo) */
 function onCardPhoto(ev){
