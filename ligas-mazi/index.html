@@ -1444,7 +1444,7 @@ async function pollInvitations(){
 async function sbRestore(){
   const c=sbClient(); if(!c)return false;
   try{ const {data}=await c.auth.getSession();
-    if(data&&data.session){ _session=data.session; _authed=true; await cloudPull(); try{pollInvitations();}catch(e){} reflectAuth(); return true; }
+    if(data&&data.session){ _session=data.session; _authed=true; await cloudPull(); try{pollInvitations();}catch(e){} try{pollMatchResults();}catch(e){} reflectAuth(); return true; }
   }catch(e){}
   return false;
 }
@@ -1492,7 +1492,8 @@ function render(id){
   if(id==='logros')buildLogros();
   if(id==='gacha')buildGacha();
   if(id==='directorio')buildDirectorio();
-  if(id==='inbox'){buildInbox(); try{pollInvitations().then(n=>{if(n&&curScreen==='inbox')buildInbox();});}catch(e){}}
+  if(id==='inbox'){buildInbox(); try{pollInvitations().then(n=>{if(n&&curScreen==='inbox')buildInbox();});}catch(e){} try{pollMatchResults().then(n=>{if(n&&curScreen==='inbox')buildInbox();});}catch(e){}}
+  if(id==='tabla'||id==='liga'){ try{pollMatchResults();}catch(e){} }
   if(id==='perillas')buildRules();
   if(id==='liga')buildLigaStats();
   if(id==='ligaEquipos')buildLeagueTeams();
@@ -2074,8 +2075,11 @@ function closeLiveView(){ _liveGid=null; document.getElementById('liveViewBg').c
 }
 /* ===== VISTA PÚBLICA de una liga compartida (otra cuenta) — solo lectura ===== */
 function _teamIn(lg,id){ return ((lg&&lg.teams)||[]).find(t=>t.id===id)||null; }
-function renderPublicLeague(lg,fallbackName){
+let _pubViewLg=null, _pubViewAcc=null;
+function officiateFromPublic(mk){ const lg=_pubViewLg; if(!lg)return; const m=(lg.calendar||[]).find(x=>matchKeyOf(x)===mk); if(!m){ flashSaved('Partido no disponible'); return; } officiateRemoteMatch(_pubViewAcc,(lg.name||'Liga'),m,lg); }
+function renderPublicLeague(lg,fallbackName,accountId){
   const box=document.getElementById('pubLeagueBody'); if(!box)return;
+  _pubViewLg=lg||null; _pubViewAcc=accountId||null;
   if(!lg||!lg.teams){ box.innerHTML='<div class="stratnote">Esta liga aún no ha compartido sus datos. Cuando su administrador abra la app con conexión, aparecerá aquí completa.</div>'; return; }
   const name=lg.name||fallbackName||'Liga';
   const crest=lg.logo?('background-image:url('+lg.logo+');background-size:cover;background-position:center'):'background:var(--liga)';
@@ -2094,9 +2098,11 @@ function renderPublicLeague(lg,fallbackName){
   // Próximos + Resultados
   const cal=lg.calendar||[];
   const up=cal.filter(m=>!m.done).slice(0,8);
-  if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
+  if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>'; const myem=myEmail();
     up.forEach(m=>{ const H=_teamIn(lg,m.home),A=_teamIn(lg,m.away); if(!H||!A)return;
-      h+=faceoffCard(H,A,{mode:'next',when:(m.date?fmtDate(m.date):('Jornada '+(m.jornada||'')))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'')}); }); }
+      h+=faceoffCard(H,A,{mode:'next',when:(m.date?fmtDate(m.date):('Jornada '+(m.jornada||'')))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'')});
+      if(_pubViewAcc && _pubViewAcc!=='local' && myem && (m.mesa||'').toLowerCase()===myem)
+        h+='<div class="le-officiate" style="margin:-6px 0 10px" onclick="officiateFromPublic(\''+matchKeyOf(m)+'\')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir este partido (eres la mesa)</div>'; }); }
   const past=cal.filter(m=>m.done).slice().reverse().slice(0,8);
   if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
     past.forEach(m=>{ const H=_teamIn(lg,m.home),A=_teamIn(lg,m.away); if(!H||!A)return;
@@ -2113,8 +2119,8 @@ function openPublicLeague(accountId,name){
   const bg=document.getElementById('pubLeagueBg'); if(!bg)return;
   document.getElementById('pubLeagueBody').innerHTML='<div class="stratnote">Cargando la liga…</div>';
   bg.classList.add('on');
-  if(accountId==='local'){ renderPublicLeague(leagueData(),name); return; }
-  fetchLeagueFull(accountId).then(lg=>renderPublicLeague(lg,name)).catch(()=>renderPublicLeague(null,name));
+  if(accountId==='local'){ renderPublicLeague(leagueData(),name,'local'); return; }
+  fetchLeagueFull(accountId).then(lg=>renderPublicLeague(lg,name,accountId)).catch(()=>renderPublicLeague(null,name,accountId));
 }
 function closePublicLeague(){ const bg=document.getElementById('pubLeagueBg'); if(bg)bg.classList.remove('on'); }
 function buildEnVivoBoard(){
@@ -2704,6 +2710,9 @@ function officiateMatch(idx){
   go('mesa'); publishLiveGameSoon();
 }
 function finishOfficiating(){
+  // mesa delegada: no escribo la liga local; envío el resultado al admin dueño
+  if(GAME.delegated){ submitMatchResult(); const dg=GAME.delegated; GAME.delegated=null; GAME.matchIdx=null; clearLiveGame();
+    flashSaved('Resultado enviado a la liga ✓'); go('directorio'); return; }
   if(GAME.matchIdx==null)return;
   const d=leagueData(); const m=d.calendar[GAME.matchIdx];
   if(m){ m.hs=GAME.teams[0].score; m.as=GAME.teams[1].score; m.done=true;
@@ -2716,6 +2725,46 @@ function finishOfficiating(){
     saveLeague(d);
   }
   GAME.matchIdx=null; clearLiveGame(); go('tabla');
+}
+/* ===== MESA DELEGADA: dirigir un partido de la liga de OTRA cuenta ===== */
+function matchKeyOf(m){ return (m.jornada||'')+'|'+(m.home||'')+'|'+(m.away||''); }
+function officiateRemoteMatch(leagueAccount, leagueName, m, lg){
+  const H=_teamIn(lg,m.home), A=_teamIn(lg,m.away); if(!H||!A){ flashSaved('No se pudo cargar el partido'); return; }
+  const mk=(t)=> (t.players||[]).map((p,i)=>({num:p.num,nm:p.nm||p.name,code:p.code,email:p.email,pos:p.pos||'Base',pts:0,f:0,min:0,on:i<5}));
+  const r=rules();
+  GAME.period=1; GAME.clock=String(r.minPer||10).padStart(2,'0')+':00'; GAME.running=false; GAME.remainSec=(r.minPer||10)*60;
+  GAME.teams=[ {id:H.id,name:H.name,ini:H.ini||iniOf(H.name),color:H.color,score:0,tf:0,players:mk(H)},
+               {id:A.id,name:A.name,ini:A.ini||iniOf(A.name),color:A.color,score:0,tf:0,players:mk(A)} ];
+  GAME.log=[]; GAME.matchIdx=0; // índice ficticio; el resultado va por match_key
+  GAME.delegated={ league_account:leagueAccount, league_name:leagueName, match_key:matchKeyOf(m), home_name:H.name, away_name:A.name };
+  closePublicLeague&&closePublicLeague(); go('mesa'); publishLiveGameSoon();
+}
+async function submitMatchResult(){
+  const c=sbClient(); const dg=GAME.delegated; if(!c||!_authed||!_session||!dg)return;
+  const stats=[]; GAME.teams.forEach(gt=>gt.players.forEach(p=>{ if((p.pts||p.f||p.min)) stats.push({code:p.code||null, email:p.email||null, num:p.num, nm:p.nm, pts:p.pts||0, f:p.f||0, min:p.min||0}); }));
+  try{ await c.from('match_results').insert({ league_account:dg.league_account, match_key:dg.match_key, home_name:dg.home_name, away_name:dg.away_name, home_score:GAME.teams[0].score, away_score:GAME.teams[1].score, player_stats:stats, submitter_name:(userData()||{}).name||'' }); }catch(e){}
+}
+/* el admin recoge los resultados que le enviaron las mesas y los aplica a su liga */
+async function pollMatchResults(){
+  const c=sbClient(); if(!c||!_authed||!_session)return 0; const d=leagueData(); if(!canAdminLeague(d))return 0;
+  try{ const {data,error}=await c.from('match_results').select('*').eq('league_account',_session.user.id).eq('status','pending');
+    if(error||!data||!data.length)return 0; let applied=0; const d=leagueData();
+    for(const mr of data){ if(applyMatchResult(mr,d)){ applied++; try{ await c.from('match_results').update({status:'applied'}).eq('id',mr.id); }catch(x){}
+      try{ pushNote('partido','Resultado recibido: '+(mr.home_name||'')+' '+mr.home_score+'–'+mr.away_score+' '+(mr.away_name||'')+' (mesa: '+(mr.submitter_name||'—')+')'); }catch(x){} } }
+    if(applied){ saveLeague(d); cloudPushSoon(); refreshBell&&refreshBell(); }
+    return applied;
+  }catch(e){ return 0; }
+}
+function applyMatchResult(mr,d){
+  d=d||leagueData(); const m=(d.calendar||[]).find(x=>matchKeyOf(x)===mr.match_key); if(!m||m.done)return false;
+  m.hs=mr.home_score; m.as=mr.away_score; m.done=true;
+  // acumula stats por jugador (match por code o email o nombre+num)
+  const findLP=(st)=>{ for(const t of d.teams){ for(const lp of (t.players||[])){
+      if(st.code&&lp.code===st.code)return lp; if(st.email&&lp.email&&lp.email.toLowerCase()===String(st.email).toLowerCase())return lp;
+      if(st.nm&&String(lp.num)===String(st.num)&&(lp.nm||lp.name)===st.nm)return lp; } } return null; };
+  (mr.player_stats||[]).forEach(st=>{ const lp=findLP(st); if(!lp)return; const s=lp.stats||{gp:0,pts:0,f:0,min:0};
+    s.gp+=1; s.pts+=(st.pts||0); s.f+=(st.f||0); s.min+=(st.min||0); lp.stats=s; });
+  return true;
 }
 /* stats de temporada de un jugador de liga → promedios para su ficha/carta */
 function playerAverages(lp){ const s=lp&&lp.stats; if(!s||!s.gp)return null;
