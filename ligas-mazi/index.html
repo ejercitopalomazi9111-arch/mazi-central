@@ -1984,6 +1984,11 @@ const ACHIEVEMENTS=[
   {id:'played',  t:'Primer silbatazo',        d:'Se jugó y cerró un partido', coins:120, packs:1, ic:'flag', chk:(u,d)=>!!(d&&d.calendar&&d.calendar.some(m=>m.done))},
   {id:'child',   t:'De tal palo…',            d:'Vinculaste a tu hij@', coins:50, packs:0, ic:'heart', chk:u=>!!(u.children&&u.children.length)},
   {id:'fan',     t:'De hueso colorado',       d:'Sigues a un equipo', coins:30, packs:0, ic:'heart', chk:u=>!!(u.follows&&u.follows.length)},
+  {id:'follow',  t:'Explorador de ligas',     d:'Sigues una liga del directorio', coins:30, packs:0, ic:'trophy', chk:u=>!!(u.followLeagues&&u.followLeagues.length)},
+  {id:'firstpack',t:'Primer sobre',           d:'Abriste tu primer sobre del gachapón', coins:40, packs:0, ic:'bag', chk:u=>!!(u.econ&&u.econ.owned&&u.econ.owned.length)},
+  {id:'collector',t:'Coleccionista',          d:'Juntaste 5 accesorios distintos', coins:80, packs:1, ic:'star', chk:u=>!!(u.econ&&u.econ.owned&&u.econ.owned.length>=5)},
+  {id:'streak3', t:'En racha',                d:'3 días seguidos entrando', coins:60, packs:0, ic:'flag', chk:u=>!!(u.econ&&(u.econ.streak||0)>=3)},
+  {id:'streak7', t:'Semana perfecta',         d:'7 días seguidos entrando', coins:150, packs:1, ic:'trophy', chk:u=>!!(u.econ&&(u.econ.streak||0)>=7)},
 ];
 /* revisa logros contra datos reales; otorga monedas/sobres una sola vez */
 function evalAchievements(silent){
@@ -1994,13 +1999,22 @@ function evalAchievements(silent){
   if(fresh.length){ saveEcon(e); fresh.forEach(a=>{ try{pushNote('logro','Logro: '+a.t+' · +'+a.coins+' monedas'+(a.packs?' y '+a.packs+' sobre':''));}catch(x){} }); if(!silent){ const a=fresh[0]; flashSaved('🏆 '+a.t+' · +'+a.coins+(a.packs?' · +'+a.packs+' sobre':'')); } }
   return fresh;
 }
+/* racha diaria: premia entrar cada día; se rompe si te saltas un día */
+function todayKey(dt){ const d=dt||new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function dailyCheckin(){ const u=userData()||{}; if(!u.name)return 0; const e=econ(); const t=todayKey();
+  if(e.lastDay===t)return 0; const y=new Date(); y.setDate(y.getDate()-1);
+  e.streak=(e.lastDay===todayKey(y))?((e.streak||0)+1):1; e.lastDay=t;
+  const reward=Math.min(60,10+(e.streak-1)*10); e.coins+=reward; saveEcon(e);
+  try{ pushNote('logro','Racha diaria: día '+e.streak+' · +'+reward+' monedas'); }catch(x){}
+  evalAchievements(true); return reward; }
 function buildLogros(){
-  evalAchievements(true);
+  dailyCheckin(); evalAchievements(true);
   const e=econ(); const u=userData()||{}; const d=leagueData();
   const c=document.getElementById('logrosCoins'); if(c)c.innerHTML='<svg class="ic"><use href="#ic-star"/></svg> '+e.coins;
   const box=document.getElementById('logrosBody'); if(!box)return;
   const got=e.done.length, tot=ACHIEVEMENTS.length;
-  let h='<div class="stat-row" style="margin-top:6px"><div class="stat-tile"><b>'+e.coins+'</b><span>Monedas</span></div><div class="stat-tile"><b>'+e.packs+'</b><span>Sobres</span></div><div class="stat-tile"><b>'+got+'/'+tot+'</b><span>Logros</span></div></div>';
+  let h='<div class="stat-row" style="margin-top:6px"><div class="stat-tile"><b>'+e.coins+'</b><span>Monedas</span></div><div class="stat-tile"><b>'+e.packs+'</b><span>Sobres</span></div><div class="stat-tile"><b>🔥 '+(e.streak||0)+'</b><span>Racha (días)</span></div></div>'+
+    '<div class="stratnote" style="border-left-color:var(--papa)">Entra cada día para subir tu racha y ganar monedas. '+got+' de '+tot+' logros.</div>';
   if(e.packs>0)h+='<button class="btn block" onclick="go(\'gacha\')" style="margin:10px 0 2px"><svg class="ic"><use href="#ic-bag"/></svg> Abrir sobres ('+e.packs+')</button>';
   h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tus logros</h2></div>';
   ACHIEVEMENTS.forEach(a=>{ let ok=false; try{ok=e.done.indexOf(a.id)>=0||!!a.chk(u,d);}catch(x){} const done=e.done.indexOf(a.id)>=0;
@@ -2705,7 +2719,7 @@ function buildHubHome(){
   const nm=document.getElementById('hubCtxName'); if(nm)nm.textContent=u.name||'Invitado';
   const role=document.getElementById('hubCtxRole'); if(role)role.textContent=(ROLE_LABEL[rl]||'Invitado')+' ▾';
   const live=document.getElementById('hubLive'); if(live)live.style.display=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null)?'':'none';
-  try{ evalAchievements(); }catch(e){}
+  try{ dailyCheckin(); evalAchievements(); }catch(e){}
 }
 /* ===== Menú de perfil ===== */
 function openProfile(){
