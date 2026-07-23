@@ -2824,8 +2824,57 @@ function doSignin(){
   }).catch(()=>{ hideLoader(); loginMsg('No se pudo conectar a la nube.',true); setCloudBadge('','Modo local'); });
 }
 function doLogin(){ doSignin(); }   /* compat */
-function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+(u.team?' · '+u.team:'')+' · Ligas Mazi';
-  if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}} }
+function shareCard(){ shareCardImage(); }
+/* genera la carta como imagen (Canvas, sin librerías) para presumir/descargar */
+function drawCardCanvas(cb){
+  const u=userData()||{}; const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
+  const cvar=(link&&link.team.color)||'--jugador';
+  const cssVal=(v)=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#35c2cf';
+  const col=cssVal(cvar); const rating=avg?Math.max(45,Math.min(99,Math.round(48+avg.ppg*2.6-avg.fpg*1.5))):null;
+  const W=600,H=800; const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d');
+  // fondo
+  const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#141a2b'); g.addColorStop(.5,'#0e1320'); g.addColorStop(1,'#08060d'); x.fillStyle=g; x.fillRect(0,0,W,H);
+  // halo del color del equipo
+  const rg=x.createRadialGradient(W/2,230,20,W/2,230,340); rg.addColorStop(0,col+'55'); rg.addColorStop(1,'transparent'); x.fillStyle=rg; x.fillRect(0,0,W,H);
+  // marco (accesorio equipado)
+  const hasFrame=u.econ&&u.econ.effect; x.strokeStyle=hasFrame?col:'rgba(255,255,255,.15)'; x.lineWidth=hasFrame?10:4; x.strokeRect(20,20,W-40,H-40);
+  const draw=(photoImg)=>{
+    // ventana de foto
+    x.fillStyle='#0c1120'; roundRect(x,60,70,W-120,300,18,true,false);
+    if(photoImg){ x.save(); roundRect(x,60,70,W-120,300,18,false,false); x.clip(); const ar=photoImg.width/photoImg.height, tw=W-120, th=300; let dw=tw,dh=tw/ar; if(dh<th){dh=th;dw=th*ar;} x.drawImage(photoImg,60+(tw-dw)/2,70+(th-dh)/2,dw,dh); x.restore(); }
+    else { x.fillStyle=col; x.font='800 120px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,250); }
+    // rango + general
+    if(rating){ x.fillStyle=col; x.font='800 22px ui-monospace,monospace'; x.textAlign='left'; x.fillText('◆ '+(rating>=80?'ÉPICO':rating>=70?'ORO':rating>=60?'PLATA':'NUEVO'),50,55);
+      x.textAlign='right'; x.font='800 60px -apple-system,sans-serif'; x.fillStyle='#fff'; x.fillText(rating,W-50,60); x.font='600 16px -apple-system,sans-serif'; x.fillStyle='rgba(255,255,255,.6)'; x.fillText('GENERAL',W-50,80); }
+    // nombre
+    x.textAlign='center'; x.fillStyle='#fff'; x.font='800 46px -apple-system,sans-serif'; x.fillText((u.name||'Tu carta').toUpperCase(),W/2,440);
+    x.fillStyle='rgba(255,255,255,.6)'; x.font='500 20px -apple-system,sans-serif'; x.fillText((link?link.team.name:(u.team||'Aún sin equipo')),W/2,472);
+    // stats
+    const stats = avg? [[avg.ppg.toFixed(1),'PTS'],[avg.mpg.toFixed(0)+'′','MIN'],[avg.fpg.toFixed(1),'FALTAS'],[String(avg.gp),'PJ']]
+                     : [['—','PTS'],['—','MIN'],['—','FALTAS'],['—','PJ']];
+    const bw=118, gap=14, total=bw*4+gap*3, sx=(W-total)/2, sy=520;
+    stats.forEach((s,i)=>{ const bx=sx+i*(bw+gap); x.fillStyle='rgba(255,255,255,.05)'; roundRect(x,bx,sy,bw,110,12,true,false);
+      x.fillStyle='#fff'; x.font='800 34px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(s[0],bx+bw/2,sy+55);
+      x.fillStyle='rgba(255,255,255,.55)'; x.font='600 13px -apple-system,sans-serif'; x.fillText(s[1],bx+bw/2,sy+85); });
+    // footer marca
+    x.fillStyle=col; x.font='800 26px -apple-system,sans-serif'; x.textAlign='center'; x.fillText('LIGAS MAZI',W/2,720);
+    x.fillStyle='rgba(255,255,255,.4)'; x.font='500 15px -apple-system,sans-serif'; x.fillText('Carta de jugador',W/2,748);
+    cb(cv);
+  };
+  if(u.photo){ const im=new Image(); im.onload=()=>draw(im); im.onerror=()=>draw(null); im.src=u.photo; } else draw(null);
+}
+function roundRect(x,rx,ry,w,h,r,fill,stroke){ x.beginPath(); x.moveTo(rx+r,ry); x.arcTo(rx+w,ry,rx+w,ry+h,r); x.arcTo(rx+w,ry+h,rx,ry+h,r); x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); if(fill)x.fill(); if(stroke)x.stroke(); }
+function shareCardImage(){
+  showLoader('Generando tu carta…');
+  drawCardCanvas(function(cv){
+    cv.toBlob(function(blob){ hideLoader(); if(!blob){flashSaved('No se pudo generar');return;}
+      const file=new File([blob],'carta-ligas-mazi.png',{type:'image/png'});
+      const u=userData()||{}; const txt=(u.name||'Mi carta')+' · Ligas Mazi';
+      if(navigator.canShare&&navigator.canShare({files:[file]})){ navigator.share({files:[file],text:txt}).catch(()=>{}); }
+      else { const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='carta-ligas-mazi.png'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),4000); flashSaved('Carta descargada ✓'); }
+    },'image/png');
+  });
+}
 function renderCard(){
   const u=userData()||{};
   // accesorio/efecto equipado del gachapón
