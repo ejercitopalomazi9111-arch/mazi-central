@@ -1643,6 +1643,19 @@ function openPlayerSheet(t,i){const p=GAME.teams[t].players[i];const tm=GAME.tea
   document.getElementById('playerSheetBg').classList.add('on');
 }
 function closePlayerSheet(){document.getElementById('playerSheetBg').classList.remove('on');}
+/* ficha del jugador del roster (coach toca a su jugador para ver su carta) */
+function openRosterCard(i){
+  const r=teamRoster(); const p=r[i]; if(!p)return;
+  const d=leagueData(); const t=coachTeamIn(d)||{}; const col=t.color||'--coach';
+  const face=p.photo?(' style="background-image:url('+p.photo+');background-size:cover;background-position:center;color:transparent"'):(' style="background:var('+col+')"');
+  const el=document.getElementById('playerSheet');
+  el.querySelector('h3').textContent='Ficha del jugador';
+  el.querySelector('.ps-card').innerHTML=
+    '<div class="ps-top"><span class="crest real sm"'+face+'>'+(p.photo?'':iniOf(p.nm||'?'))+'</span><div><div class="ps-nm">'+(p.num?'#'+p.num+' ':'')+(p.nm||'Jugador')+'</div><div class="ps-sub">'+(t.name||'Tu equipo')+' · '+(p.pos||'Jugador')+'</div></div></div>'+
+    '<div class="ps-stats"><div><b>—</b><span>PTS</span></div><div><b>—</b><span>REB</span></div><div><b>—</b><span>FALTAS</span></div></div>'+
+    '<div class="stratnote" style="border-left-color:var('+col+');margin-top:10px">Su carta se llena sola cuando la mesa registre sus partidos: puntos, faltas, rebotes y minutos.</div>';
+  document.getElementById('playerSheetBg').classList.add('on');
+}
 /* ---- avisos efímeros: primera vez, unos segundos, y se cierran solos ---- */
 function hintId(el){ const d=el.getAttribute('data-hint'); if(d)return d; const t=(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,90); let h=0; for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0; return 'x'+(h>>>0); }
 function dismissHint(h,id){ try{localStorage.setItem('lm_hint_'+id,'1');}catch(e){} clearTimeout(h._t);
@@ -2298,9 +2311,10 @@ function teamRoster(){try{const s=localStorage.getItem('lm_roster');if(s)return 
   return [];}
 function saveRoster(a){try{localStorage.setItem('lm_roster',JSON.stringify(a));}catch(e){}}
 function buildRoster(){const l=document.getElementById('rosterList'); if(!l)return; const r=teamRoster(); l.innerHTML='';
-  r.forEach((p,i)=>{const d=document.createElement('div');d.className='rosterrow';
+  r.forEach((p,i)=>{const d=document.createElement('div');d.className='rosterrow';d.style.cursor='pointer';
     d.innerHTML='<span class="num">'+(p.num||'-')+'</span><span class="nm">'+p.nm+'<small>'+(p.pos||'Jugador')+'</small></span><span class="st">'+(p.ppp||'0.0')+' PPP</span>';
-    if(currentRole==='coach'||currentRole==='liga'){const x=document.createElement('button');x.className='pdel';x.style.position='static';x.style.marginLeft='6px';x.textContent='×';x.onclick=()=>{r.splice(i,1);saveRoster(r);buildRoster();toast('Quitado del roster');};d.appendChild(x);}
+    d.onclick=()=>openRosterCard(i);
+    if(currentRole==='coach'||currentRole==='liga'){const x=document.createElement('button');x.className='pdel';x.style.position='static';x.style.marginLeft='6px';x.textContent='×';x.onclick=(e)=>{e.stopPropagation();r.splice(i,1);saveRoster(r);buildRoster();flashSaved('Quitado del roster');};d.appendChild(x);}
     l.appendChild(d);});
   if(!r.length)l.innerHTML='<div class="empty" style="border:1px dashed var(--line);border-radius:10px">Aún no hay jugadores. Toca ＋ Alta.</div>';}
 /* ===== CURP: llave interna (privada). Sirve para calcular edad y anclar identidad.
