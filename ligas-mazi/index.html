@@ -680,6 +680,26 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .seg button.on{background:rgba(239,122,53,.16);border-color:var(--accent);color:var(--accent-lt)}
 @media(min-width:900px){ .mteams-big,.mplayers,.macts-grid{max-width:640px;margin-inline:auto} }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ===== En vivo: enfrentamientos con logos encarados + degradado ===== */
+.fo-sec-ttl{display:flex;align-items:center;gap:8px;margin:16px 2px 9px;font-family:var(--disp);font-weight:800;font-size:16px}
+.fo-sec-ttl .pill{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
+.faceoff{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0d1017;margin-bottom:10px;padding:16px 12px 14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;cursor:pointer}
+.faceoff::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,var(--hc,#2a3350) -12%,rgba(13,16,23,.35) 40%,rgba(13,16,23,.35) 60%,var(--ac,#2a3350) 112%);opacity:.5;pointer-events:none}
+.faceoff>*{position:relative;z-index:1}
+.fo-side{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;min-width:0}
+.fo-side .crest{width:56px;height:56px;font-size:20px;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.fo-side.l .crest{transform:rotate(-6deg)}.fo-side.r .crest{transform:rotate(6deg)}
+.fo-nm{font-family:var(--body);font-weight:700;font-size:13px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.fo-mid{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px}
+.fo-vs{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--dim);opacity:.85}
+.fo-score{font-family:var(--disp);font-weight:800;font-size:24px;letter-spacing:.02em;white-space:nowrap}
+.fo-score .w{color:#fff}.fo-score .l{color:var(--dim)}
+.fo-when{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-transform:capitalize;text-align:center;line-height:1.3}
+.fo-live{position:absolute;top:10px;left:0;right:0;text-align:center;z-index:2}
+.fo-live span{font-size:10px;font-weight:800;letter-spacing:.05em;color:#fff;background:rgba(236,90,69,.92);padding:3px 10px;border-radius:20px}
+.faceoff.islive{padding-top:30px;border-color:rgba(236,90,69,.4)}
+.fo-final{position:absolute;top:10px;left:12px;z-index:2;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--dim)}
+.faceoff.isfinal{padding-top:26px}
 </style>
 </head>
 <body>
@@ -1783,23 +1803,56 @@ function buildLigaStats(){
     '<div class="stat-tile"><b>'+jug_done+'/'+d.calendar.length+'</b><span>Partidos</span></div>';
 }
 /* Público: en vivo real (si la mesa dirige un partido) + tabla real */
+/* ---- tablero de enfrentamientos: logos encarados + degradado de ambos colores ---- */
+function faceoffCard(H,A,opts){
+  opts=opts||{};
+  const hc='var('+(H.color||'--publico')+')', ac='var('+(A.color||'--publico')+')';
+  const side=(t,cls)=>'<div class="fo-side '+cls+'"><span class="crest real" style="'+crestStyle(t)+'">'+crestInner(t)+'</span><div class="fo-nm">'+(t.name||'')+'</div></div>';
+  let mid='', top='', cls='faceoff';
+  if(opts.mode==='live'){
+    cls+=' islive';
+    top='<div class="fo-live"><span>● EN VIVO'+(opts.per?' · '+opts.per:'')+'</span></div>';
+    const hw=opts.hs>=opts.as, aw=opts.as>opts.hs;
+    mid='<div class="fo-score"><span class="'+(hw?'w':'l')+'">'+opts.hs+'</span> <span style="color:var(--dim);font-size:15px">–</span> <span class="'+(aw?'w':'l')+'">'+opts.as+'</span></div>';
+  } else if(opts.mode==='final'){
+    cls+=' isfinal';
+    top='<div class="fo-final">FINAL'+(opts.when?' · '+opts.when:'')+'</div>';
+    const hw=opts.hs>opts.as, aw=opts.as>opts.hs;
+    mid='<div class="fo-score"><span class="'+(hw?'w':'l')+'">'+opts.hs+'</span> <span style="color:var(--dim);font-size:15px">–</span> <span class="'+(aw?'w':'l')+'">'+opts.as+'</span></div>';
+  } else {
+    mid='<div class="fo-vs">VS</div>'+(opts.when?'<div class="fo-when">'+opts.when+'</div>':'');
+  }
+  const click=opts.onclick?(' onclick="'+opts.onclick+'"'):'';
+  return '<div class="'+cls+'" style="--hc:'+hc+';--ac:'+ac+'"'+click+'>'+top+
+    side(H,'l')+'<div class="fo-mid">'+mid+'</div>'+side(A,'r')+'</div>';
+}
+function buildEnVivoBoard(){
+  const d=leagueData(); let h='';
+  const on=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null&&GAME.teams&&GAME.teams.length===2);
+  h+='<div class="fo-sec-ttl">En vivo ahora'+(on?'<span class="pill" style="color:var(--mesa);border-color:var(--mesa)">1 partido</span>':'')+'</div>';
+  if(on){ const gH=GAME.teams[0],gA=GAME.teams[1]; const lH=teamById(gH.id)||{}, lA=teamById(gA.id)||{};
+    const H={name:gH.name,color:gH.color,ini:gH.ini,logo:lH.logo}, A={name:gA.name,color:gA.color,ini:gA.ini,logo:lA.logo};
+    h+=faceoffCard(H,A,{mode:'live',hs:gH.score,as:gA.score,per:periodLabel()+' · '+GAME.clock,onclick:"go('marcador')"});
+  } else {
+    h+='<div class="stratnote" style="border-left-color:var(--mesa)">No hay partidos en vivo ahora. Cuando la mesa dirija un partido, aparecerá aquí para todo el público.</div>';
+  }
+  const bydate=(a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''));
+  const liveIdx=on?GAME.matchIdx:-1;
+  const up=d.calendar.filter((m,i)=>!m.done && i!==liveIdx).slice().sort(bydate).slice(0,10);
+  if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
+    up.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
+      const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'');
+      h+=faceoffCard(H,A,{mode:'next',when:when}); }); }
+  const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
+  if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
+    past.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
+      h+=faceoffCard(H,A,{mode:'final',hs:m.hs,as:m.as,when:(m.date?fmtDate(m.date):'J'+m.jornada)}); }); }
+  return h;
+}
 function buildPublicoData(){
   const d=leagueData();
   const live=document.getElementById('pubLive');
-  if(live){
-    let h=''; const on=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null);
-    if(on){ const H=GAME.teams[0],A=GAME.teams[1];
-      h+='<div class="h-row" style="margin-top:8px"><h2 class="disp" style="font-size:18px">En vivo ahora</h2><span class="pill" style="margin-left:auto;color:var(--mesa);border-color:var(--mesa)">1 partido</span></div>';
-      h+='<div class="livecard" onclick="go(\'marcador\')"><span class="lc-chip">EN VIVO · '+periodLabel()+' · '+GAME.clock+'</span>'+
-         '<div class="lc-row"><div class="lc-team"><span class="crest real sm" style="'+crestStyle(H)+'">'+crestInner(H)+'</span>'+H.name+'</div><span class="lc-sc'+(H.score>=A.score?' win':'')+'">'+H.score+'</span></div>'+
-         '<div class="lc-row"><div class="lc-team"><span class="crest real sm" style="'+crestStyle(A)+'">'+crestInner(A)+'</span>'+A.name+'</div><span class="lc-sc'+(A.score>H.score?' win':'')+'">'+A.score+'</span></div>'+
-         '<div class="lc-cta">Ver en vivo ›</div></div>';
-    } else {
-      h+='<div class="h-row" style="margin-top:8px"><h2 class="disp" style="font-size:18px">En vivo ahora</h2></div>';
-      h+='<div class="stratnote" style="border-left-color:var(--mesa)">No hay partidos en vivo ahora. Cuando la mesa dirija un partido, aparecerá aquí para todo el público.</div>';
-    }
-    live.innerHTML=h;
-  }
+  if(live){ live.innerHTML=buildEnVivoBoard(); }
   const st=document.getElementById('pubStand');
   if(st){
     const rows=computeStandings().filter(r=>r.pj>0).slice(0,4);
