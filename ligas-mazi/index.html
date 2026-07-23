@@ -700,6 +700,22 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .faceoff.islive{padding-top:30px;border-color:rgba(236,90,69,.4)}
 .fo-final{position:absolute;top:10px;left:12px;z-index:2;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--dim)}
 .faceoff.isfinal{padding-top:26px}
+/* ===== Gachapón ===== */
+.gacha-stage{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 0 16px;min-height:220px;justify-content:center}
+.gacha-pack{width:132px;height:172px;border-radius:16px;background:linear-gradient(155deg,#e8b13e,#ff9a5a 55%,#ec5a45);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 16px 40px rgba(236,90,69,.35);transition:transform .15s}
+.gacha-pack:active{transform:scale(.96)}
+.gp-shine{position:absolute;top:-60%;left:-30%;width:60%;height:220%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:rotate(18deg);animation:gpsh 2.4s ease-in-out infinite}
+@keyframes gpsh{0%{left:-40%}60%,100%{left:130%}}
+.gacha-reveal{width:150px;height:150px;border-radius:18px;display:flex;align-items:center;justify-content:center;position:relative}
+.rev-prev{width:120px;height:150px;border-radius:14px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
+.gacha-cap{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
+.cosgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.coscard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+.coscard.on{border-color:var(--rc)}
+.cos-prev{width:64px;height:80px;border-radius:10px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
+.cos-nm{font-family:var(--body);font-weight:700;font-size:12.5px;color:var(--txt)}
+.cos-rar{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+.cos-on{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.04em;color:#0b0d12;background:var(--rc);padding:2px 6px;border-radius:10px}
 </style>
 </head>
 <body>
@@ -1042,6 +1058,18 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="scroll"><div class="pad" id="altaBody"></div></div>
   </section>
 
+  <!-- LOGROS — premios por hitos reales (dan monedas y sobres) -->
+  <section class="screen" id="s-logros">
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Logros</span><span class="coins" id="logrosCoins" style="margin-left:auto"><svg class="ic"><use href="#ic-star"/></svg> 0</span></div>
+    <div class="scroll"><div class="pad" id="logrosBody"></div></div>
+  </section>
+
+  <!-- GACHAPÓN — abrir sobres y ganar efectos/accesorios de carta -->
+  <section class="screen" id="s-gacha">
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Gachapón</span><span class="coins" id="gachaPacks" style="margin-left:auto"><svg class="ic"><use href="#ic-bag"/></svg> 0</span></div>
+    <div class="scroll"><div class="pad" id="gachaBody"></div></div>
+  </section>
+
   <!-- TIENDA — catálogo de la liga (el admin sube productos) -->
   <section class="screen" id="s-tienda">
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--papa)">Tienda oficial</div><div class="t" id="shopLeague">Tu liga</div></div>
@@ -1068,7 +1096,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Ficha del jugador</span><span class="coins" onclick="shareCard()" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
     <div class="scroll">
       <input type="file" id="cardPhotoInput" accept="image/*" style="display:none" onchange="onCardPhoto(event)">
-      <div class="pcard">
+      <div class="pcard" id="pcard">
         <span class="rk" id="fcRank" style="background:linear-gradient(90deg,#8b93a3,#c7cdd8)">◆ NUEVO</span><div class="ov" id="fcOv"><b>—</b><small>GENERAL</small></div>
         <div class="photo" id="fcPhoto" onclick="document.getElementById('cardPhotoInput').click()"><span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span></div>
         <div class="nm" id="fcName">Tu carta</div>
@@ -1159,7 +1187,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="prof-id"><span class="prof-av"><svg class="ic"><use href="#ic-user"/></svg></span><div><div class="prof-nm" id="profNm">Tu cuenta</div><div class="prof-rl" id="profRl">—</div></div></div>
       <div class="prof-lbl">Tema</div>
       <div class="thm-seg"><button id="thmDark" onclick="applyTheme('dark')"><svg class="ic"><use href="#ic-eye"/></svg> Oscuro</button><button id="thmLight" onclick="applyTheme('light')"><svg class="ic"><use href="#ic-star"/></svg> Claro</button></div>
-      <button class="btn ghost sm block" onclick="closeProfile();openRoleSwitch()" style="margin-top:14px"><svg class="ic"><use href="#ic-people"/></svg> Cambiar cómo entro</button>
+      <button class="btn ghost sm block" onclick="closeProfile();go('logros')" style="margin-top:14px"><svg class="ic"><use href="#ic-star"/></svg> Logros y sobres <span id="profCoins" style="margin-left:auto;color:var(--liga)"></span></button>
+      <button class="btn ghost sm block" onclick="closeProfile();openRoleSwitch()" style="margin-top:8px"><svg class="ic"><use href="#ic-people"/></svg> Cambiar cómo entro</button>
       <button class="btn ghost sm block" onclick="resetDemo()" style="margin-top:8px"><svg class="ic"><use href="#ic-undo"/></svg> Empezar de cero (borrar datos de prueba)</button>
       <button class="btn ghost sm block" onclick="doLogout()" style="margin-top:8px;color:var(--crit);border-color:rgba(236,90,69,.4)"><svg class="ic"><use href="#ic-lock"/></svg> Cerrar sesión</button>
       <button class="btn ghost sm block" onclick="closeProfile()" style="margin-top:8px">Cerrar</button>
@@ -1294,7 +1323,7 @@ function go(id){
 function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
 /* ====== Aislamiento por rol: cada sombrero solo entra a lo suyo ======
    El público jamás cae en la casa del papá ni en la mesa/VAR/perillas/liga. */
-const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket'];
+const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket','logros','gacha'];
 const ROLE_SCREENS={
   papa:   ['rol','carta','alta'],
   coach:  ['vestidor','estrategias','carta'],
@@ -1319,6 +1348,8 @@ function render(id){
   if(id==='tienda'){buildShop();const sl=document.getElementById('shopLeague');if(sl){const d=leagueData();sl.textContent=(d&&d.name&&d.name!=='Mi liga')?d.name:'Tu liga';}}
   if(id==='vestidor'){buildRoster();buildCoachSubs();const vt=document.getElementById('vestTeam');if(vt){const d=leagueData();const t=coachTeamIn(d);vt.textContent=t?t.name:'Tu equipo';}}
   if(id==='alta')buildAlta();
+  if(id==='logros')buildLogros();
+  if(id==='gacha')buildGacha();
   if(id==='perillas')buildRules();
   if(id==='liga')buildLigaStats();
   if(id==='ligaEquipos')buildLeagueTeams();
@@ -1865,6 +1896,87 @@ function buildPublicoData(){
   }
 }
 /* Home de papá: hij@s vinculados + próximos partidos reales de la liga */
+/* ===== Economía: monedas + sobres que se ganan con LOGROS reales =====
+   Los logros se calculan de datos reales (tu liga, tus partidos, tu hij@…). */
+function econ(){ const u=userData()||{}; if(!u.econ)u.econ={coins:0,packs:0,owned:[],effect:null,done:[]}; return u.econ; }
+function saveEcon(e){ const u=userData()||{}; u.econ=e; saveUser(u); }
+const ACHIEVEMENTS=[
+  {id:'welcome', t:'Bienvenid@ a Ligas Mazi', d:'Creaste tu cuenta', coins:50, packs:0, ic:'star', chk:u=>!!u.name},
+  {id:'role',    t:'Elegiste tu rol',         d:'Ya sabes cómo entras a la app', coins:20, packs:0, ic:'people', chk:u=>!!(u.roles&&u.roles.length)},
+  {id:'photo',   t:'Cara al descubierto',     d:'Subiste tu foto de perfil', coins:30, packs:0, ic:'camera', chk:u=>!!u.photo},
+  {id:'league',  t:'Fundador de liga',        d:'Creaste tu propia liga', coins:100, packs:1, ic:'trophy', chk:(u,d)=>!!(d&&d.owner&&(d.owner||'').toLowerCase()===((u.email||'').toLowerCase()))},
+  {id:'teams',   t:'Cancha llena',            d:'Tu liga ya tiene 2+ equipos', coins:60, packs:0, ic:'shield', chk:(u,d)=>!!(d&&d.teams&&d.teams.length>=2)},
+  {id:'calendar',t:'Rol armado',              d:'Generaste el calendario', coins:60, packs:0, ic:'calendar', chk:(u,d)=>!!(d&&d.calendar&&d.calendar.length>0)},
+  {id:'played',  t:'Primer silbatazo',        d:'Se jugó y cerró un partido', coins:120, packs:1, ic:'flag', chk:(u,d)=>!!(d&&d.calendar&&d.calendar.some(m=>m.done))},
+  {id:'child',   t:'De tal palo…',            d:'Vinculaste a tu hij@', coins:50, packs:0, ic:'heart', chk:u=>!!(u.children&&u.children.length)},
+  {id:'fan',     t:'De hueso colorado',       d:'Sigues a un equipo', coins:30, packs:0, ic:'heart', chk:u=>!!(u.follows&&u.follows.length)},
+];
+/* revisa logros contra datos reales; otorga monedas/sobres una sola vez */
+function evalAchievements(silent){
+  const u=userData()||{}; if(!u.name) return [];
+  const e=econ(); const d=leagueData(); const fresh=[];
+  ACHIEVEMENTS.forEach(a=>{ if(e.done.indexOf(a.id)>=0)return; let ok=false; try{ok=!!a.chk(u,d);}catch(x){}
+    if(ok){ e.done.push(a.id); e.coins+=a.coins||0; e.packs+=a.packs||0; fresh.push(a); } });
+  if(fresh.length){ saveEcon(e); if(!silent){ const a=fresh[0]; flashSaved('🏆 '+a.t+' · +'+a.coins+(a.packs?' · +'+a.packs+' sobre':'')); } }
+  return fresh;
+}
+function buildLogros(){
+  evalAchievements(true);
+  const e=econ(); const u=userData()||{}; const d=leagueData();
+  const c=document.getElementById('logrosCoins'); if(c)c.innerHTML='<svg class="ic"><use href="#ic-star"/></svg> '+e.coins;
+  const box=document.getElementById('logrosBody'); if(!box)return;
+  const got=e.done.length, tot=ACHIEVEMENTS.length;
+  let h='<div class="stat-row" style="margin-top:6px"><div class="stat-tile"><b>'+e.coins+'</b><span>Monedas</span></div><div class="stat-tile"><b>'+e.packs+'</b><span>Sobres</span></div><div class="stat-tile"><b>'+got+'/'+tot+'</b><span>Logros</span></div></div>';
+  if(e.packs>0)h+='<button class="btn block" onclick="go(\'gacha\')" style="margin:10px 0 2px"><svg class="ic"><use href="#ic-bag"/></svg> Abrir sobres ('+e.packs+')</button>';
+  h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tus logros</h2></div>';
+  ACHIEVEMENTS.forEach(a=>{ let ok=false; try{ok=e.done.indexOf(a.id)>=0||!!a.chk(u,d);}catch(x){} const done=e.done.indexOf(a.id)>=0;
+    h+='<div class="match" style="'+(ok?'':'opacity:.5')+'"><div class="crest real" style="width:40px;height:40px;background:var('+(ok?'--liga':'--dim')+')"><svg class="ic" style="width:20px;height:20px"><use href="#ic-'+a.ic+'"/></svg></div>'+
+      '<div class="vs">'+a.t+'<small>'+a.d+'</small></div>'+
+      '<span class="badge'+(done?' next':'')+'">'+(done?'✓':('+'+a.coins))+'</span></div>'; });
+  box.innerHTML=h;
+}
+/* ===== Gachapón: efectos y accesorios de carta por rareza ===== */
+const RARITY={comun:{t:'Común',c:'#8b93a3',w:58},raro:{t:'Raro',c:'#35c2cf',w:28},epico:{t:'Épico',c:'#a774f0',w:11},legendario:{t:'Legendario',c:'#e8b13e',w:3}};
+const COSMETICS=[
+  {id:'e_glow',   t:'Aura Suave',     kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(255,255,255,.25),0 10px 30px rgba(255,255,255,.12)'},
+  {id:'e_ember',  t:'Brasa',          kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(236,90,69,.5),0 10px 34px rgba(236,90,69,.35)'},
+  {id:'f_steel',  t:'Marco Acero',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #9aa6bd,0 12px 34px rgba(0,0,0,.5)'},
+  {id:'f_ice',    t:'Marco Hielo',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #35c2cf,0 0 28px rgba(53,194,207,.5)'},
+  {id:'e_holo',   t:'Holo Prisma',    kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px rgba(167,116,240,.6),0 0 34px rgba(167,116,240,.55)'},
+  {id:'f_gold',   t:'Marco Dorado',   kind:'frame',  rarity:'epico',      css:'box-shadow:0 0 0 3px #e8b13e,0 0 30px rgba(232,177,62,.55)'},
+  {id:'e_flame',  t:'Fuego Mazi',     kind:'effect', rarity:'legendario', css:'box-shadow:0 0 0 3px #ff9a5a,0 0 46px rgba(255,120,40,.7)'},
+  {id:'f_diamond',t:'Marco Diamante', kind:'frame',  rarity:'legendario', css:'box-shadow:0 0 0 3px #bfe9ff,0 0 40px rgba(143,208,255,.75),inset 0 0 24px rgba(255,255,255,.15)'},
+];
+function cosmeticById(id){ return COSMETICS.find(c=>c.id===id); }
+function rollCosmetic(){ const tot=Object.values(RARITY).reduce((s,r)=>s+r.w,0); let x=Math.random()*tot, pick='comun';
+  for(const k in RARITY){ if(x<RARITY[k].w){pick=k;break;} x-=RARITY[k].w; }
+  const pool=COSMETICS.filter(c=>c.rarity===pick); return pool[Math.floor(Math.random()*pool.length)]||COSMETICS[0]; }
+function buildGacha(){
+  const e=econ(); const box=document.getElementById('gachaBody'); if(!box)return;
+  const pc=document.getElementById('gachaPacks'); if(pc)pc.innerHTML='<svg class="ic"><use href="#ic-bag"/></svg> '+e.packs;
+  let h='<div class="gacha-stage" id="gachaStage"><div class="gacha-pack" id="gachaPackArt" onclick="openPack()"><div class="gp-shine"></div><svg class="ic" style="width:52px;height:52px;color:#0b0d12"><use href="#ic-bag"/></svg></div>'+
+    '<div class="gacha-cap" id="gachaCap">'+(e.packs>0?'Toca el sobre para abrirlo':'No tienes sobres. Gánalos con tus logros.')+'</div></div>';
+  if(e.packs>0)h+='<button class="btn block" onclick="openPack()" style="margin-top:4px">Abrir un sobre ('+e.packs+')</button>';
+  else h+='<button class="btn ghost sm block" onclick="go(\'logros\')" style="margin-top:4px">Ver mis logros</button>';
+  h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tu colección</h2><span class="more" onclick="go(\'carta\')">Aplicar en tu carta ›</span></div>';
+  const owned=e.owned||[];
+  if(!owned.length){ h+='<div class="stratnote" style="border-left-color:var(--jugador)">Aún no tienes accesorios. Abre un sobre para empezar tu colección.</div>'; }
+  else { h+='<div class="cosgrid">'; owned.forEach(id=>{ const c=cosmeticById(id); if(!c)return; const r=RARITY[c.rarity]; const on=e.effect===id;
+      h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+id+'\')" style="--rc:'+r.c+'"><span class="cos-prev" style="'+c.css+'"></span><span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>'; });
+    h+='</div>'; }
+  box.innerHTML=h;
+}
+function openPack(){
+  const e=econ(); if(e.packs<=0){ flashSaved('No tienes sobres'); return; }
+  e.packs--; const c=rollCosmetic(); e.owned=e.owned||[]; const dup=e.owned.indexOf(c.id)>=0;
+  if(!dup)e.owned.push(c.id); else e.coins+=20;
+  saveEcon(e);
+  const r=RARITY[c.rarity]; const stage=document.getElementById('gachaStage');
+  if(stage){ stage.innerHTML='<div class="gacha-reveal" id="gachaReveal" style="--rc:'+r.c+'"><span class="rev-prev" style="'+c.css+'"></span></div><div class="gacha-cap"><b style="color:'+r.c+'">'+r.t+'</b> · '+c.t+(dup?' · duplicado (+20 monedas)':'')+'</div>'; }
+  if(window.anime){ const rev=document.getElementById('gachaReveal'); if(rev)anime({targets:rev,scale:[0.2,1],rotate:[-20,0],opacity:[0,1],duration:700,easing:'easeOutBack'}); }
+  setTimeout(buildGacha, 1700);
+}
+function applyCosmetic(id){ const e=econ(); e.effect=(e.effect===id?null:id); saveEcon(e); buildGacha(); flashSaved(e.effect?'Accesorio aplicado ✓':'Accesorio quitado'); }
 function buildPapaHome(){
   const box=document.getElementById('papaHome'); if(!box)return;
   const u=userData()||{}; const d=leagueData(); const kids=u.children||[];
@@ -2412,6 +2524,7 @@ function buildHubHome(){
   const nm=document.getElementById('hubCtxName'); if(nm)nm.textContent=u.name||'Invitado';
   const role=document.getElementById('hubCtxRole'); if(role)role.textContent=(ROLE_LABEL[rl]||'Invitado')+' ▾';
   const live=document.getElementById('hubLive'); if(live)live.style.display=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null)?'':'none';
+  try{ evalAchievements(); }catch(e){}
 }
 /* ===== Menú de perfil ===== */
 function openProfile(){
@@ -2420,6 +2533,7 @@ function openProfile(){
   const rl=document.getElementById('profRl'); if(rl)rl.textContent=(u.role?ROLE_LABEL[u.role]||u.role:'Invitado')+(u.email?(' · '+u.email):'');
   let t='dark'; try{t=localStorage.getItem('lm_theme')||'dark';}catch(e){}
   document.querySelectorAll('#profileBg .thm-seg').forEach(function(seg){var b=seg.querySelectorAll('button');if(b[0])b[0].classList.toggle('on',t==='dark');if(b[1])b[1].classList.toggle('on',t==='light');});
+  try{ evalAchievements(true); const pc=document.getElementById('profCoins'); if(pc)pc.textContent='★ '+econ().coins; }catch(e){}
   document.getElementById('profileBg').classList.add('on');
 }
 function closeProfile(){document.getElementById('profileBg').classList.remove('on');}
@@ -2553,6 +2667,9 @@ function shareCard(){ const u=userData()||{}; const t=(u.name||'Mi carta')+(u.te
   if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}} }
 function renderCard(){
   const u=userData()||{};
+  // accesorio/efecto equipado del gachapón
+  const pc=document.getElementById('pcard');
+  if(pc){ const e=(u.econ&&u.econ.effect)?cosmeticById(u.econ.effect):null; pc.style.cssText=e?e.css:''; }
   const nm=document.getElementById('fcName'); if(nm)nm.textContent=u.name||'Tu carta';
   // club/subtítulo: equipo + liga + número si se conocen
   const club=document.getElementById('fcClub');
