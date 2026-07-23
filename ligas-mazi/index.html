@@ -837,6 +837,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="nav" data-nav></div>
   </section>
 
+  <!-- DIRECTORIO — todas las ligas publicadas (lectura pública) -->
+  <section class="screen" id="s-directorio">
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Directorio de ligas</span></div>
+    <div class="scroll"><div class="pad" id="dirBody"></div></div>
+    <div class="nav" data-nav></div>
+  </section>
+
   <!-- HOME PAPÁ -->
   <section class="screen" id="s-rol">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><div class="ctx" onclick="openRoleSwitch()"><span class="hat" style="background:var(--papa)"></span><b id="papaCtxName">Papá / Tutor</b><span class="ch">Papá / Tutor ▾</span></div><div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div></div>
@@ -1306,7 +1313,18 @@ async function cloudPush(){
     const league=JSON.parse(localStorage.getItem('lm_league')||'null');
     const profile=JSON.parse(localStorage.getItem('lm_user')||'null');
     await c.from('app_state').upsert({account_id:_session.user.id, league, profile, updated_at:new Date().toISOString()});
+    // publica la liga en el directorio público si esta cuenta la administra
+    if(league && canAdminLeague(league) && league.name && league.name!=='Mi liga'){
+      const players=(league.teams||[]).reduce((s,t)=>s+((t.players||[]).length),0);
+      await c.from('public_leagues').upsert({account_id:_session.user.id, name:league.name, logo:league.logo||null, link:league.link||null, teams:(league.teams||[]).length, players:players, updated_at:new Date().toISOString()});
+    }
   }catch(e){}
+}
+/* trae el directorio de ligas de todas las cuentas (lectura pública) */
+async function fetchDirectory(){
+  const c=sbClient(); if(!c)return null;
+  try{ const {data,error}=await c.from('public_leagues').select('account_id,name,logo,link,teams,players,updated_at').order('updated_at',{ascending:false}).limit(100);
+    if(error)return null; return data||[]; }catch(e){ return null; }
 }
 async function sbRestore(){
   const c=sbClient(); if(!c)return false;
@@ -1324,7 +1342,7 @@ function go(id){
 function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
 /* ====== Aislamiento por rol: cada sombrero solo entra a lo suyo ======
    El público jamás cae en la casa del papá ni en la mesa/VAR/perillas/liga. */
-const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket','logros','gacha'];
+const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket','logros','gacha','directorio'];
 const ROLE_SCREENS={
   papa:   ['rol','carta','alta'],
   coach:  ['vestidor','estrategias','carta'],
@@ -1351,6 +1369,7 @@ function render(id){
   if(id==='alta')buildAlta();
   if(id==='logros')buildLogros();
   if(id==='gacha')buildGacha();
+  if(id==='directorio')buildDirectorio();
   if(id==='perillas')buildRules();
   if(id==='liga')buildLigaStats();
   if(id==='ligaEquipos')buildLeagueTeams();
@@ -2014,9 +2033,41 @@ function buildMisLigas(){
   } else {
     h+='<div class="stratnote" style="border-left-color:var(--liga)">Aún no estás en ninguna liga. Crea la tuya o únete con un enlace de invitación.</div>';
   }
+  // ligas que sigues (del directorio)
+  const fl=u.followLeagues||[];
+  if(fl.length){ h+='<div class="eyebrow" style="margin:14px 2px 6px">Ligas que sigues</div>';
+    fl.forEach(l=>{ const stl=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):('background:var(--publico)');
+      h+='<div class="leaguerow" onclick="go(\'directorio\')"><div class="crest real" style="'+stl+'">'+(l.logo?'':iniOf(l.name||'?'))+'</div><div><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.teams||0)+' equipos</div></div><span class="hat" style="color:var(--publico)">Siguiendo</span></div>'; }); }
   if(rl==='admin_liga') h+='<div class="leaguerow create" onclick="go(\'liga\')">＋ Gestionar mi liga</div>';
+  h+='<div class="leaguerow create" style="border-color:rgba(232,177,62,.4);color:var(--liga)" onclick="go(\'directorio\')"><svg class="ic" style="width:16px;height:16px;vertical-align:-2px"><use href="#ic-trophy"/></svg> Buscar ligas (directorio)</div>';
   h+='<div class="leaguerow create" style="border-color:rgba(53,194,207,.35);color:var(--publico)" onclick="go(\'publico\')">Explorar marcadores en vivo</div>';
   box.innerHTML=h;
+}
+/* ¿sigo esta liga? / seguir-dejar de seguir */
+function isFollowingLeague(id){ const u=userData()||{}; return (u.followLeagues||[]).some(l=>l.account_id===id); }
+function toggleFollowLeague(l){ const u=userData()||{}; u.followLeagues=u.followLeagues||[]; const i=u.followLeagues.findIndex(x=>x.account_id===l.account_id);
+  if(i>=0)u.followLeagues.splice(i,1); else u.followLeagues.push({account_id:l.account_id,name:l.name,logo:l.logo||null,teams:l.teams||0});
+  saveUser(u); buildDirectorio(); flashSaved(i>=0?'Dejaste de seguir':'Ahora sigues '+(l.name||'la liga')); }
+/* directorio: todas las ligas publicadas (nube) + la propia como respaldo offline */
+function buildDirectorio(){
+  const box=document.getElementById('dirBody'); if(!box)return;
+  box.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">Cargando ligas…</div>';
+  const render=(list,offline)=>{
+    let h='';
+    if(offline)h+='<div class="stratnote" style="border-left-color:var(--dim)">Sin conexión: mostramos las ligas guardadas en este teléfono.</div>';
+    if(!list||!list.length){ box.innerHTML=(offline?h:'')+'<div class="stratnote" style="border-left-color:var(--liga)">Aún no hay ligas publicadas. Cuando un administrador cree su liga, aparecerá aquí para que la sigas.</div>'; return; }
+    h+='<div class="eyebrow" style="margin:2px 2px 10px">'+list.length+' liga'+(list.length>1?'s':'')+' publicada'+(list.length>1?'s':'')+'</div>';
+    list.forEach(l=>{ const stl=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):('background:var(--liga)');
+      const fol=isFollowingLeague(l.account_id);
+      h+='<div class="leaguerow"><div class="crest real" style="'+stl+'">'+(l.logo?'':iniOf(l.name||'?'))+'</div>'+
+        '<div style="flex:1"><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.teams||0)+' equipos · '+(l.players||0)+' jugadores</div></div>'+
+        '<button class="btn sm'+(fol?' ghost':'')+'" onclick=\'toggleFollowLeague('+JSON.stringify({account_id:l.account_id,name:l.name,logo:l.logo||null,teams:l.teams||0}).replace(/'/g,"&#39;")+')\'>'+(fol?'Siguiendo ✓':'Seguir')+'</button></div>'; });
+    box.innerHTML=h;
+  };
+  fetchDirectory().then(list=>{
+    if(list===null){ const d=leagueData(); render(d&&d.name&&d.name!=='Mi liga'?[{account_id:'local',name:d.name,logo:d.logo,teams:(d.teams||[]).length,players:(d.teams||[]).reduce((s,t)=>s+(t.players||[]).length,0)}]:[], true); }
+    else render(list,false);
+  }).catch(()=>render([],true));
 }
 /* --- identidad de la liga: nombre + escudo --- */
 function toggleLeagueIdentity(){ const box=document.getElementById('leagueIdentity'); if(!box)return; const open=box.style.display!=='none'; box.style.display=open?'none':'block'; if(!open)buildLeagueIdentity(); }
