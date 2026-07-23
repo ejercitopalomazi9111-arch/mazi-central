@@ -1686,8 +1686,41 @@ function buildMkActions(){const a=document.getElementById('mkActions');if(!a)ret
   }
   a.innerHTML=btns;
 }
-function shareScore(){if(!hasLiveGame())return;const t=GAME.teams[0].name+' '+GAME.teams[0].score+' — '+GAME.teams[1].score+' '+GAME.teams[1].name+' · Ligas Mazi';
-  if(navigator.share){navigator.share({text:t}).catch(()=>{});}else{try{navigator.clipboard.writeText(t);}catch(e){}}}
+function shareScore(){ if(!hasLiveGame())return; shareScoreImage(); }
+/* marcador como imagen (Canvas) para compartir el partido en vivo */
+function drawScoreCanvas(){
+  const H=GAME.teams[0],A=GAME.teams[1];
+  const cssVal=(v)=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#35c2cf';
+  const hc=cssVal(H.color||'--papa'), ac=cssVal(A.color||'--publico');
+  const W=1000,Hh=600; const cv=document.createElement('canvas'); cv.width=W; cv.height=Hh; const x=cv.getContext('2d');
+  const g=x.createLinearGradient(0,0,W,0); g.addColorStop(0,hc); g.addColorStop(.42,'#0b0f1a'); g.addColorStop(.58,'#0b0f1a'); g.addColorStop(1,ac);
+  x.fillStyle='#0b0f1a'; x.fillRect(0,0,W,Hh); x.globalAlpha=.5; x.fillStyle=g; x.fillRect(0,0,W,Hh); x.globalAlpha=1;
+  // EN VIVO
+  x.fillStyle='#ec5a45'; roundRect(x,W/2-90,44,180,44,22,true,false); x.fillStyle='#fff'; x.font='800 22px -apple-system,sans-serif'; x.textAlign='center'; x.fillText('● EN VIVO',W/2,74);
+  // escudos (color + iniciales)
+  const badge=(cx,col,ini)=>{ x.fillStyle=col; roundRect(x,cx-70,150,140,140,26,true,false); x.fillStyle='rgba(0,0,0,.85)'; x.font='800 64px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(ini,cx,232); };
+  badge(200,hc,H.ini); badge(800,ac,A.ini);
+  // nombres
+  x.fillStyle='#fff'; x.font='700 30px -apple-system,sans-serif'; x.fillText(H.name.toUpperCase(),200,330); x.fillText(A.name.toUpperCase(),800,330);
+  // marcador
+  x.font='800 150px -apple-system,sans-serif'; x.fillStyle=H.score>=A.score?'#fff':'rgba(255,255,255,.6)'; x.fillText(H.score,200,470);
+  x.fillStyle=A.score>H.score?'#fff':'rgba(255,255,255,.6)'; x.fillText(A.score,800,470);
+  x.fillStyle='rgba(255,255,255,.5)'; x.font='800 60px -apple-system,sans-serif'; x.fillText('–',W/2,450);
+  // periodo + reloj
+  x.fillStyle='#fff'; x.font='700 26px ui-monospace,monospace'; x.fillText(periodLabel()+' · '+GAME.clock,W/2,400);
+  // marca
+  x.fillStyle='#f0754a'; x.font='800 30px -apple-system,sans-serif'; x.fillText('LIGAS MAZI',W/2,540);
+  return cv;
+}
+function shareScoreImage(){
+  const cv=drawScoreCanvas();
+  cv.toBlob(function(blob){ if(!blob){flashSaved('No se pudo generar');return;}
+    const file=new File([blob],'marcador-ligas-mazi.png',{type:'image/png'});
+    const t=GAME.teams[0].name+' '+GAME.teams[0].score+'–'+GAME.teams[1].score+' '+GAME.teams[1].name+' · Ligas Mazi';
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ navigator.share({files:[file],text:t}).catch(()=>{}); }
+    else { const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='marcador-ligas-mazi.png'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),4000); flashSaved('Marcador descargado ✓'); }
+  },'image/png');
+}
 /* ---- alineación en vivo: quién juega, quién en banca, con min · pts · faltas ---- */
 /* ====== ESTADO DE JUEGO COMPARTIDO — mesa, marcador y coach leen lo mismo.
    Un cambio del coach se ve al instante en el marcador y para el público. ====== */
@@ -2194,7 +2227,17 @@ function buildLeagueIdentity(){
     '<div class="le-add"><input id="lidInvite" type="email" inputmode="email" placeholder="Correo de la persona a invitar"><button class="btn sm" onclick="inviteToLeague()">Invitar</button></div>'+
     '<div class="tid-lbl">Redes / web (opcional)</div>'+
     '<div class="le-add"><input id="lidLink" value="'+((d.link||'').replace(/"/g,'&quot;'))+'" placeholder="https://... o @usuario"><button class="btn sm" onclick="setLeagueLink()">Guardar</button></div>'+
+    '<button class="btn ghost sm block" style="margin-top:10px" onclick="shareLeagueLink()"><svg class="ic"><use href="#ic-share"/></svg> Compartir enlace de la liga</button>'+
     '</div>';
+}
+/* enlace para compartir la liga: abre la app en el directorio buscándola */
+function shareLeagueLink(){ const d=leagueData(); const u=userData()||{};
+  const id=(_session&&_session.user&&_session.user.id)||'';
+  const base=location.origin+location.pathname;
+  const url=base+'#liga='+encodeURIComponent(d.name||'')+(id?('&id='+id):'');
+  const txt=(d.name||'Mi liga')+' en Ligas Mazi';
+  if(navigator.share){ navigator.share({title:txt,text:txt,url:url}).catch(()=>{}); }
+  else { try{ navigator.clipboard.writeText(url); flashSaved('Enlace copiado ✓'); }catch(e){ flashSaved(url); } }
 }
 function inviteToLeague(){ const d=leagueData(); if(!canAdminLeague(d))return; const em=(document.getElementById('lidInvite').value||'').trim().toLowerCase(); if(!/.+@.+\..+/.test(em)){flashSaved('Correo inválido');return;}
   sendInvite(em,'league_invite',{league_name:d.name}).then(ok=>{ if(ok){const i=document.getElementById('lidInvite');if(i)i.value='';} }); }
@@ -3072,7 +3115,10 @@ buildNav('hub');
 initTheme();
 (function(){const u=userData();if(u){ if(u.role)currentRole=ROLE_INTERNAL[u.role]||currentRole; const ie=document.getElementById('inEmail'); if(ie&&u.email)ie.value=u.email; } buildRolePick();})();
 /* prueba de conexión y restaura sesión una vez que la librería (defer) ya cargó */
-window.addEventListener('load',()=>{ setTimeout(async()=>{ const ok=await checkBackend(); if(ok){ await sbRestore(); } },300); });
+window.addEventListener('load',()=>{ setTimeout(async()=>{ const ok=await checkBackend(); if(ok){ await sbRestore(); }
+  // enlace compartido de liga: si venimos con #liga=... y hay sesión, abre el directorio
+  try{ if(/[#&]liga=/.test(location.hash) && _authed){ setTimeout(()=>go('directorio'),200); } }catch(e){}
+},300); });
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
 buildModes();
 stampBrand();
