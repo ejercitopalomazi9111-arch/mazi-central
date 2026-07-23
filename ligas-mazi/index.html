@@ -2483,11 +2483,22 @@ function buildLeagueCal(){
     if(m.jornada!==last){ h+='<div class="h-row" style="align-items:baseline"><h2 class="disp" style="font-size:16px">Jornada '+m.jornada+'</h2>'+(m.date?'<span class="more" style="text-transform:capitalize;color:var(--dim)">'+fmtDate(m.date)+'</span>':'')+'</div>'; last=m.jornada; }
     const res=m.done?('<span class="mid">'+m.hs+'–'+m.as+'</span>'):'<span class="mid" style="color:var(--dim);font-size:11px">vs</span>';
     const hora=m.time?'<span class="le-time">'+m.time+'</span>':'';
-    h+='<div class="le-match">'+hora+'<span class="crest real sm" style="background:var('+H.color+')">'+H.ini+'</span><span class="tnm">'+H.name+'</span>'+res+'<span class="tnm r">'+A.name+'</span><span class="crest real sm" style="background:var('+A.color+')">'+A.ini+'</span></div>';
+    h+='<div class="le-match">'+hora+'<span class="crest real sm" style="'+crestStyle(H)+'">'+crestInner(H)+'</span><span class="tnm">'+H.name+'</span>'+res+'<span class="tnm r">'+A.name+'</span><span class="crest real sm" style="'+crestStyle(A)+'">'+crestInner(A)+'</span></div>';
+    if(m.place) h+='<div style="font-size:11.5px;color:var(--muted);margin:-6px 0 8px;padding-left:2px"><svg class="ic" style="width:12px;height:12px;vertical-align:-2px"><use href="#ic-flag"/></svg> '+m.place+'</div>';
     if(!m.done && canOfficiate(m)){ h+='<div class="le-officiate" onclick="officiateMatch('+idx+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir en la mesa</div>'; }
-    if(!m.done && canAdminLeague(d)){ h+='<div class="le-add" style="margin:-4px 0 10px"><input id="mesa_'+idx+'" type="email" inputmode="email" value="'+((m.mesa||'').replace(/"/g,'&quot;'))+'" placeholder="Correo de la mesa (opcional)"><button class="btn sm ghost" onclick="setMatchMesa('+idx+')">Mesa</button></div>'; }
+    if(!m.done && canAdminLeague(d)){
+      h+='<div class="le-add" style="margin:-2px 0 6px;flex-wrap:wrap"><input id="dt_'+idx+'" type="date" value="'+(m.date||'')+'" style="flex:0 0 auto;min-width:0"><input id="tm_'+idx+'" type="time" value="'+(m.time||'')+'" style="flex:0 0 auto;min-width:0"><input id="pl_'+idx+'" value="'+((m.place||'').replace(/"/g,'&quot;'))+'" placeholder="Lugar / cancha"><button class="btn sm ghost" onclick="setMatchSchedule('+idx+')">Fecha</button></div>';
+      h+='<div class="le-add" style="margin:-4px 0 12px"><input id="mesa_'+idx+'" type="email" inputmode="email" value="'+((m.mesa||'').replace(/"/g,'&quot;'))+'" placeholder="Correo de la mesa (opcional)"><button class="btn sm ghost" onclick="setMatchMesa('+idx+')">Mesa</button></div>';
+    }
   });
   box.innerHTML=h;
+}
+/* editar fecha, hora y lugar de un partido (admin) */
+function setMatchSchedule(idx){
+  const d=leagueData(); if(!canAdminLeague(d))return; const m=d.calendar[idx]; if(!m)return;
+  const dt=document.getElementById('dt_'+idx), tm=document.getElementById('tm_'+idx), pl=document.getElementById('pl_'+idx);
+  if(dt)m.date=dt.value||m.date; if(tm)m.time=tm.value||''; if(pl)m.place=(pl.value||'').trim();
+  saveLeague(d); buildLeagueCal(); flashSaved('Partido actualizado'); cloudPushSoon();
 }
 /* --- resultados: captura marcador, cierra partido, alimenta la tabla --- */
 function saveResult(idx){
