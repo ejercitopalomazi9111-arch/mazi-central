@@ -716,6 +716,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .cos-nm{font-family:var(--body);font-weight:700;font-size:12.5px;color:var(--txt)}
 .cos-rar{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase}
 .cos-on{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.04em;color:#0b0d12;background:var(--rc);padding:2px 6px;border-radius:10px}
+/* campana / bandeja */
+.bell-dot{position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent,#ec5a45);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+.note{display:flex;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:9px;align-items:flex-start}
+.note.unread{border-left:3px solid var(--accent,#ec5a45)}
+.note .ni{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+.note .nb{flex:1;min-width:0}
+.note .nt{font-size:14px;font-weight:650}
+.note .nm2{font-size:12px;color:var(--muted);margin-top:1px}
+.note .nact{display:flex;gap:8px;margin-top:9px}
 </style>
 </head>
 <body>
@@ -812,6 +821,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="hub-wrap">
       <div class="topbar">
         <div class="ctx" onclick="openRoleSwitch()"><span class="hat" id="hubCtxHat" style="background:var(--publico)"></span><b id="hubCtxName">Invitado</b><span class="ch" id="hubCtxRole">Aficionado ▾</span></div>
+        <div class="avatar bell" onclick="go('inbox')" style="position:relative;margin-right:8px"><svg class="ic"><use href="#ic-heart"/></svg><span class="bell-dot" id="bellDot" style="display:none"></span></div>
         <div class="avatar" onclick="openProfile()"><svg class="ic"><use href="#ic-user"/></svg></div>
       </div>
       <div class="hub-scroll">
@@ -834,6 +844,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <section class="screen" id="s-ligas">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Mis ligas</span></div>
     <div class="scroll"><div class="pad" id="ligasList"></div></div>
+    <div class="nav" data-nav></div>
+  </section>
+
+  <!-- BANDEJA — notificaciones e invitaciones -->
+  <section class="screen" id="s-inbox">
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Notificaciones</span><button class="btn ghost sm" id="inboxClear" onclick="clearNotes()" style="margin-left:auto;width:auto;padding:6px 12px">Marcar leídas</button></div>
+    <div class="scroll"><div class="pad" id="inboxBody"></div></div>
     <div class="nav" data-nav></div>
   </section>
 
@@ -1342,7 +1359,7 @@ function go(id){
 function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
 /* ====== Aislamiento por rol: cada sombrero solo entra a lo suyo ======
    El público jamás cae en la casa del papá ni en la mesa/VAR/perillas/liga. */
-const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket','logros','gacha','directorio'];
+const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket','logros','gacha','directorio','inbox'];
 const ROLE_SCREENS={
   papa:   ['rol','carta','alta'],
   coach:  ['vestidor','estrategias','carta'],
@@ -1370,6 +1387,7 @@ function render(id){
   if(id==='logros')buildLogros();
   if(id==='gacha')buildGacha();
   if(id==='directorio')buildDirectorio();
+  if(id==='inbox')buildInbox();
   if(id==='perillas')buildRules();
   if(id==='liga')buildLigaStats();
   if(id==='ligaEquipos')buildLeagueTeams();
@@ -1383,6 +1401,7 @@ function render(id){
   if(id==='ligas')buildMisLigas();
   if(id==='rol')buildPapaHome();
   if(id==='vestidor'){const ti=document.getElementById('teamIdentity');if(ti)ti.style.display='none';}
+  try{refreshBell();}catch(e){}
   requestAnimationFrame(()=>armHints(el));
 }
 window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop()); });
@@ -1937,7 +1956,7 @@ function evalAchievements(silent){
   const e=econ(); const d=leagueData(); const fresh=[];
   ACHIEVEMENTS.forEach(a=>{ if(e.done.indexOf(a.id)>=0)return; let ok=false; try{ok=!!a.chk(u,d);}catch(x){}
     if(ok){ e.done.push(a.id); e.coins+=a.coins||0; e.packs+=a.packs||0; fresh.push(a); } });
-  if(fresh.length){ saveEcon(e); if(!silent){ const a=fresh[0]; flashSaved('🏆 '+a.t+' · +'+a.coins+(a.packs?' · +'+a.packs+' sobre':'')); } }
+  if(fresh.length){ saveEcon(e); fresh.forEach(a=>{ try{pushNote('logro','Logro: '+a.t+' · +'+a.coins+' monedas'+(a.packs?' y '+a.packs+' sobre':''));}catch(x){} }); if(!silent){ const a=fresh[0]; flashSaved('🏆 '+a.t+' · +'+a.coins+(a.packs?' · +'+a.packs+' sobre':'')); } }
   return fresh;
 }
 function buildLogros(){
@@ -1999,6 +2018,38 @@ function openPack(){
 const PACK_COST=150;
 function buyPack(){ const e=econ(); if(e.coins<PACK_COST){ flashSaved('Te faltan '+(PACK_COST-e.coins)+' monedas'); return; } e.coins-=PACK_COST; e.packs++; saveEcon(e); buildGacha(); flashSaved('Sobre comprado ✓ · '+e.coins+' monedas'); }
 function applyCosmetic(id){ const e=econ(); e.effect=(e.effect===id?null:id); saveEcon(e); buildGacha(); flashSaved(e.effect?'Accesorio aplicado ✓':'Accesorio quitado'); }
+/* ===== Bandeja de notificaciones e invitaciones ===== */
+const NOTE_ICON={logro:['star','--liga'],partido:['flag','--mesa'],hijo:['heart','--papa'],invite:['people','--liga'],request:['people','--coach'],info:['card','--publico']};
+function notes(){ const u=userData()||{}; if(!u.notes)u.notes=[]; return u.notes; }
+function saveNotes(n){ const u=userData()||{}; u.notes=n; saveUser(u); refreshBell(); }
+function pushNote(kind,text,extra){ const n=notes(); n.unshift(Object.assign({id:'n'+Date.now().toString(36)+Math.floor(Math.random()*99),kind:kind,text:text,ts:Date.now(),read:false},extra||{})); if(n.length>60)n.length=60; saveNotes(n); }
+function unreadCount(){ return notes().filter(x=>!x.read).length; }
+function refreshBell(){ const d=document.getElementById('bellDot'); if(!d)return; const c=unreadCount(); if(c>0){d.style.display='';d.textContent=c>9?'9+':c;}else d.style.display='none'; }
+function clearNotes(){ const n=notes(); n.forEach(x=>x.read=true); saveNotes(n); buildInbox(); }
+function timeAgo(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60)return 'ahora'; if(s<3600)return Math.floor(s/60)+' min'; if(s<86400)return Math.floor(s/3600)+' h'; return Math.floor(s/86400)+' d'; }
+function buildInbox(){
+  const box=document.getElementById('inboxBody'); if(!box)return;
+  const n=notes();
+  if(!n.length){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">No tienes notificaciones. Aquí llegarán tus logros, resultados de partidos e invitaciones de ligas.</div>'; markSeen(); return; }
+  let h='';
+  n.forEach((x,i)=>{ const ic=NOTE_ICON[x.kind]||NOTE_ICON.info;
+    let act='';
+    if(x.action==='league_invite'){ act='<div class="nact"><button class="btn sm" onclick="acceptInvite(\''+x.id+'\')">Aceptar</button><button class="btn ghost sm" onclick="declineInvite(\''+x.id+'\')">Rechazar</button></div>'; }
+    if(x.action==='join_request'&&x.status!=='done'){ act='<div class="nact"><button class="btn sm" onclick="acceptInvite(\''+x.id+'\')">Aprobar</button><button class="btn ghost sm" onclick="declineInvite(\''+x.id+'\')">Rechazar</button></div>'; }
+    h+='<div class="note'+(x.read?'':' unread')+'"><div class="ni" style="background:var('+ic[1]+')"><svg class="ic" style="width:17px;height:17px;color:#0b0d12"><use href="#ic-'+ic[0]+'"/></svg></div>'+
+      '<div class="nb"><div class="nt">'+x.text+'</div><div class="nm2">'+timeAgo(x.ts)+(x.status==='done'?' · hecho':'')+'</div>'+act+'</div></div>'; });
+  box.innerHTML=h; markSeen();
+}
+function markSeen(){ const n=notes(); let ch=false; n.forEach(x=>{ if(!x.read && !x.action){x.read=true;ch=true;} }); if(ch)saveNotes(n); refreshBell(); }
+function acceptInvite(id){ const n=notes(); const x=n.find(y=>y.id===id); if(!x)return;
+  const u=userData()||{};
+  if(x.action==='league_invite'){ // acepto entrar a una liga → la sigo
+    u.followLeagues=u.followLeagues||[]; if(!u.followLeagues.some(l=>l.name===x.league))u.followLeagues.push({account_id:x.from||'ext',name:x.league,logo:null,teams:x.teams||0});
+    saveUser(u); x.text='Te uniste a '+x.league; }
+  else if(x.action==='join_request'){ x.text=(x.team||'Un equipo')+' fue aprobado en tu liga'; }
+  x.action=null; x.status='done'; x.read=true; saveNotes(n); buildInbox(); flashSaved('Listo ✓');
+}
+function declineInvite(id){ const n=notes(); const x=n.find(y=>y.id===id); if(!x)return; x.action=null; x.status='done'; x.read=true; x.text=x.text+' · rechazado'; saveNotes(n); buildInbox(); }
 function buildPapaHome(){
   const box=document.getElementById('papaHome'); if(!box)return;
   const u=userData()||{}; const d=leagueData(); const kids=u.children||[];
@@ -2322,6 +2373,7 @@ function finishOfficiating(){
   if(GAME.matchIdx==null)return;
   const d=leagueData(); const m=d.calendar[GAME.matchIdx];
   if(m){ m.hs=GAME.teams[0].score; m.as=GAME.teams[1].score; m.done=true;
+    try{ pushNote('partido','Final: '+GAME.teams[0].name+' '+GAME.teams[0].score+'–'+GAME.teams[1].score+' '+GAME.teams[1].name); }catch(x){}
     // acumula estadísticas reales por jugador (temporada) desde lo que anotó la mesa
     GAME.teams.forEach(gt=>{ const lt=d.teams.find(x=>x.id===gt.id); if(!lt)return;
       gt.players.forEach(gp=>{ const lp=(lt.players||[]).find(x=>String(x.num)===String(gp.num)&&x.nm===gp.nm)||(lt.players||[]).find(x=>x.nm===gp.nm);
@@ -2570,6 +2622,7 @@ function saveChild(){
   const age=curpAge(curp);
   u.children.push({name:nm, curp:curp, minor:(age!=null&&age<18), age:age, linkedAt:Date.now()});
   saveUser(u);
+  try{ pushNote('hijo','Vinculaste a '+nm+(age!=null&&age<18?' (menor)':'')); }catch(x){}
   flashSaved('Hij@ vinculad@ ✓'); go('rol');
 }
 function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return; u.children.splice(i,1); saveUser(u); buildPapaHome(); } }
