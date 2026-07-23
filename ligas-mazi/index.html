@@ -1431,6 +1431,10 @@ async function pollInvitations(){
     for(const inv of mine){ if(seen.indexOf(inv.id)>=0)continue;
       if(inv.kind==='league_invite') pushNote('invite',(inv.from_name||'Una liga')+' te invitó a '+(inv.league_name||'su liga'),{action:'league_invite',league:inv.league_name,from:inv.from_account,invId:inv.id});
       else if(inv.kind==='join_request') pushNote('request',(inv.from_name||'Un equipo')+' quiere unirse'+(inv.team_name?' con '+inv.team_name:''),{action:'join_request',team:inv.team_name,from:inv.from_account,invId:inv.id});
+      else if(inv.kind==='join_league') pushNote('request',(inv.from_name||'Un dueño')+' quiere meter a "'+(inv.team_name||'su equipo')+'" a tu liga',{action:'approve_team_league',team:inv.team_name,teamCode:inv.team_code,from:inv.from_account,invId:inv.id});
+      else if(inv.kind==='join_team') pushNote('request',(inv.player_name||'Un jugador')+' quiere unirse a tu equipo'+(inv.team_name?' '+inv.team_name:''),{action:'approve_player_team',player:inv.player_name,playerCode:inv.player_code,from:inv.from_account,invId:inv.id});
+      else if(inv.kind==='team_approved'){ pushNote('ok','Tu equipo "'+(inv.team_name||'')+'" fue aceptado en '+(inv.league_name||'la liga'),{invId:inv.id}); const uu=userData(); if(uu.team){uu.team.status='aprobado';saveUser(uu);publishMyEntities();} }
+      else if(inv.kind==='player_approved'){ pushNote('ok','Fuiste aceptado en el equipo '+(inv.team_name||''),{invId:inv.id}); const uu=userData(); if(uu.playerCode){uu.playerStatus='aprobado';saveUser(uu);publishMyEntities();} }
       added++; try{ await c.from('invitations').update({status:'delivered'}).eq('id',inv.id); }catch(x){}
     }
     if(added)refreshBell(); return added;
@@ -2284,7 +2288,37 @@ function acceptInvite(id){ const n=notes(); const x=n.find(y=>y.id===id); if(!x)
     u.followLeagues=u.followLeagues||[]; if(!u.followLeagues.some(l=>l.name===x.league))u.followLeagues.push({account_id:x.from||'ext',name:x.league,logo:null,teams:x.teams||0});
     saveUser(u); x.text='Te uniste a '+x.league; }
   else if(x.action==='join_request'){ x.text=(x.team||'Un equipo')+' fue aprobado en tu liga'; }
+  else if(x.action==='approve_team_league'){ approveTeamIntoLeague(x.teamCode); x.text='Aprobaste a "'+(x.team||'un equipo')+'" en tu liga'; }
+  else if(x.action==='approve_player_team'){ approvePlayerIntoTeam(x.playerCode); x.text='Aprobaste a '+(x.player||'un jugador')+' en tu equipo'; }
   x.action=null; x.status='done'; x.read=true; saveNotes(n); buildInbox(); flashSaved('Listo ✓');
+}
+/* trae una entidad por su código (búsqueda pública) */
+async function fetchTeamByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('teams_public').select('*').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
+async function fetchPlayerByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('players_public').select('*').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
+/* el admin aprueba un equipo → lo mete a su liga (roster incluido) */
+async function approveTeamIntoLeague(teamCode){
+  const t=await fetchTeamByCode(teamCode); if(!t){ flashSaved('No se encontró el equipo'); return; }
+  const d=leagueData(); if(!canAdminLeague(d)){ flashSaved('Solo el admin de la liga aprueba'); return; }
+  d.teams=d.teams||[]; if(d.teams.some(x=>x.code===teamCode||x.id===('tc-'+teamCode))){ flashSaved('Ese equipo ya está en la liga'); return; }
+  d.teams.push({ id:'tc-'+teamCode, code:teamCode, name:t.name, ini:iniOf(t.name), color:t.color||'--papa', logo:t.logo||undefined, ownerAccount:t.account_id, players:(t.players||[]).slice() });
+  saveLeague(d); if(typeof buildLeagueTeams==='function')buildLeagueTeams(); cloudPushSoon();
+  try{ sendInvite('','team_approved',{to_account:t.account_id, league_name:d.name, team_name:t.name}); }catch(e){}
+}
+/* el dueño de equipo aprueba a un jugador → lo mete a su roster */
+async function approvePlayerIntoTeam(playerCode){
+  const pl=await fetchPlayerByCode(playerCode); if(!pl){ flashSaved('No se encontró al jugador'); return; }
+  const u=userData()||{}; if(!u.team){ flashSaved('No tienes un equipo'); return; }
+  u.team.players=u.team.players||[]; if(u.team.players.some(x=>x.code===playerCode)){ flashSaved('Ese jugador ya está en tu equipo'); return; }
+  u.team.players.push({ code:playerCode, num:pl.num||'0', nm:pl.name, pos:pl.pos||'Base', email:pl.email||undefined, account:pl.account_id });
+  saveUser(u); publishMyEntities(); cloudPushSoon();
+  try{ sendInvite('','player_approved',{to_account:pl.account_id, team_name:u.team.name, player_name:pl.name}); }catch(e){}
+}
+/* un dueño de equipo solicita meter su equipo a una liga */
+function requestJoinLeagueTeam(leagueAccount,leagueName){
+  const u=userData()||{}; if(!u.team){ flashSaved('Primero necesitas un equipo (se crea al registrarte como dueño)'); return; }
+  u.team.status='pendiente'; saveUser(u); publishMyEntities();
+  try{ sendInvite('','join_league',{to_account:leagueAccount, league_name:leagueName, team_name:u.team.name, team_code:u.team.code}); }catch(e){}
+  flashSaved('Solicitud enviada a '+leagueName+' ✓');
 }
 function declineInvite(id){ const n=notes(); const x=n.find(y=>y.id===id); if(!x)return; x.action=null; x.status='done'; x.read=true; x.text=x.text+' · rechazado'; saveNotes(n); buildInbox(); }
 function buildPapaHome(){
