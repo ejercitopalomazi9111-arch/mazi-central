@@ -1217,6 +1217,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <button class="btn ghost sm block" onclick="closeLiveView()" style="margin-top:12px">Cerrar</button></div>
   </div>
 
+  <!-- VISTA PÚBLICA de una liga de otra cuenta (solo lectura: tabla, roster, calendario, resultados) -->
+  <div class="sheet-bg" id="pubLeagueBg" onclick="if(event.target.id==='pubLeagueBg')closePublicLeague()">
+    <div class="sheet" style="max-height:88vh;overflow:auto"><div id="pubLeagueBody"></div>
+      <button class="btn ghost sm block" onclick="closePublicLeague()" style="margin-top:12px">Cerrar</button></div>
+  </div>
+
   <!-- ONBOARDING — bienvenida guiada la primera vez -->
   <div class="sheet-bg" id="onboardBg">
     <div class="sheet"><div id="onboardBody"></div>
@@ -1353,13 +1359,19 @@ async function cloudPush(){
     const league=JSON.parse(localStorage.getItem('lm_league')||'null');
     const profile=JSON.parse(localStorage.getItem('lm_user')||'null');
     await c.from('app_state').upsert({account_id:_session.user.id, league, profile, updated_at:new Date().toISOString()});
-    // publica la liga en el directorio público si esta cuenta la administra
+    // publica la liga en el directorio público + la LIGA COMPLETA si esta cuenta la administra
     if(league && canAdminLeague(league) && league.name && league.name!=='Mi liga'){
       const players=(league.teams||[]).reduce((s,t)=>s+((t.players||[]).length),0);
       await c.from('public_leagues').upsert({account_id:_session.user.id, name:league.name, logo:league.logo||null, link:league.link||null, teams:(league.teams||[]).length, players:players, updated_at:new Date().toISOString()});
+      // liga como entidad compartida: datos completos para que cualquier cuenta la vea
+      await c.from('league_full').upsert({account_id:_session.user.id, name:league.name, data:league, updated_at:new Date().toISOString()});
     }
   }catch(e){}
 }
+/* trae la LIGA COMPLETA de otra cuenta (lectura pública) para verla de verdad */
+async function fetchLeagueFull(accountId){ const c=sbClient(); if(!c||!accountId)return null;
+  try{ const {data,error}=await c.from('league_full').select('data,updated_at').eq('account_id',accountId).maybeSingle();
+    if(error||!data)return null; return data.data||null; }catch(e){ return null; } }
 /* trae el directorio de ligas de todas las cuentas (lectura pública) */
 async function fetchDirectory(){
   const c=sbClient(); if(!c)return null;
@@ -2033,6 +2045,49 @@ function closeLiveView(){ _liveGid=null; document.getElementById('liveViewBg').c
   try{ if(_presCh){_presCh.untrack&&_presCh.untrack(); sbClient().removeChannel(_presCh); _presCh=null;} }catch(e){}
   try{ if(_liveSub){ sbClient().removeChannel(_liveSub); _liveSub=null; } }catch(e){}
 }
+/* ===== VISTA PÚBLICA de una liga compartida (otra cuenta) — solo lectura ===== */
+function _teamIn(lg,id){ return ((lg&&lg.teams)||[]).find(t=>t.id===id)||null; }
+function renderPublicLeague(lg,fallbackName){
+  const box=document.getElementById('pubLeagueBody'); if(!box)return;
+  if(!lg||!lg.teams){ box.innerHTML='<div class="stratnote">Esta liga aún no ha compartido sus datos. Cuando su administrador abra la app con conexión, aparecerá aquí completa.</div>'; return; }
+  const name=lg.name||fallbackName||'Liga';
+  const crest=lg.logo?('background-image:url('+lg.logo+');background-size:cover;background-position:center'):'background:var(--liga)';
+  let h='<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><span class="crest real" style="width:52px;height:52px;'+crest+'">'+(lg.logo?'':iniOf(name))+'</span><div><div style="font-weight:800;font-size:19px">'+name+'</div><div style="color:var(--muted);font-size:12px">'+(lg.teams.length)+' equipos · '+((lg.calendar||[]).filter(m=>m.done).length)+'/'+((lg.calendar||[]).length)+' partidos · solo lectura</div></div></div>';
+  // Tabla (estilos en línea, autocontenida)
+  const rows=computeStandings(lg);
+  if(rows.length){ const cell='display:inline-block;width:30px;text-align:center;font-variant-numeric:tabular-nums';
+    h+='<div class="fo-sec-ttl">Tabla</div><div style="border:1px solid var(--line);border-radius:12px;overflow:hidden">';
+    h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--panel2)"><span style="width:20px">#</span><span style="flex:1">Equipo</span><span style="'+cell+'">PJ</span><span style="'+cell+'">G</span><span style="'+cell+'">P</span><span style="'+cell+'">Pts</span></div>';
+    rows.forEach((r,i)=>{ const cs=(r.t.logo?('background-image:url('+r.t.logo+');background-size:cover;background-position:center'):'background:var('+(r.t.color||'--publico')+')');
+      h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;border-top:1px solid var(--line)"><span style="width:20px;color:var(--muted)">'+(i+1)+'</span><span style="flex:1;display:flex;align-items:center;gap:8px;min-width:0"><span class="crest real" style="width:22px;height:22px;font-size:10px;flex:none;'+cs+'">'+(r.t.logo?'':(r.t.ini||''))+'</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.t.name+'</span></span><span style="'+cell+'">'+r.pj+'</span><span style="'+cell+'">'+r.g+'</span><span style="'+cell+'">'+r.p+'</span><span style="'+cell+';font-weight:800;color:var(--liga)">'+r.pts+'</span></div>'; });
+    h+='</div>'; }
+  else h+='<div class="stratnote">Aún sin partidos jugados — la tabla aparece cuando la mesa registre resultados.</div>';
+  // Próximos + Resultados
+  const cal=lg.calendar||[];
+  const up=cal.filter(m=>!m.done).slice(0,8);
+  if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
+    up.forEach(m=>{ const H=_teamIn(lg,m.home),A=_teamIn(lg,m.away); if(!H||!A)return;
+      h+=faceoffCard(H,A,{mode:'next',when:(m.date?fmtDate(m.date):('Jornada '+(m.jornada||'')))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'')}); }); }
+  const past=cal.filter(m=>m.done).slice().reverse().slice(0,8);
+  if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
+    past.forEach(m=>{ const H=_teamIn(lg,m.home),A=_teamIn(lg,m.away); if(!H||!A)return;
+      h+=faceoffCard(H,A,{mode:'final',hs:m.hs,as:m.as}); }); }
+  // Equipos y roster
+  h+='<div class="fo-sec-ttl">Equipos</div>';
+  lg.teams.forEach(t=>{ const st=(t.logo?('background-image:url('+t.logo+');background-size:cover'):'background:var('+(t.color||'--publico')+')');
+    h+='<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:'+((t.players||[]).length?'8px':'0')+'"><span class="crest real sm" style="width:30px;height:30px;font-size:12px;'+st+'">'+(t.logo?'':(t.ini||''))+'</span><b>'+t.name+'</b><span style="margin-left:auto;color:var(--muted);font-size:12px">'+((t.players||[]).length)+' jugadores</span></div>';
+    (t.players||[]).forEach(p=>{ h+='<div style="display:flex;gap:8px;font-size:13px;padding:3px 0;border-top:1px solid var(--line)"><span style="color:var(--muted);width:26px">#'+(p.num||'–')+'</span><span>'+(p.nm||p.name||'Jugador')+'</span>'+(p.pos?'<span style="margin-left:auto;color:var(--faint);font-size:11px;text-transform:uppercase">'+p.pos+'</span>':'')+'</div>'; });
+    h+='</div>'; });
+  box.innerHTML=h;
+}
+function openPublicLeague(accountId,name){
+  const bg=document.getElementById('pubLeagueBg'); if(!bg)return;
+  document.getElementById('pubLeagueBody').innerHTML='<div class="stratnote">Cargando la liga…</div>';
+  bg.classList.add('on');
+  if(accountId==='local'){ renderPublicLeague(leagueData(),name); return; }
+  fetchLeagueFull(accountId).then(lg=>renderPublicLeague(lg,name)).catch(()=>renderPublicLeague(null,name));
+}
+function closePublicLeague(){ const bg=document.getElementById('pubLeagueBg'); if(bg)bg.classList.remove('on'); }
 function buildEnVivoBoard(){
   const d=leagueData(); let h='';
   const on=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null&&GAME.teams&&GAME.teams.length===2);
@@ -2246,7 +2301,7 @@ function buildMisLigas(){
   const fl=u.followLeagues||[];
   if(fl.length){ h+='<div class="eyebrow" style="margin:14px 2px 6px">Ligas que sigues</div>';
     fl.forEach(l=>{ const stl=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):('background:var(--publico)');
-      h+='<div class="leaguerow" onclick="go(\'directorio\')"><div class="crest real" style="'+stl+'">'+(l.logo?'':iniOf(l.name||'?'))+'</div><div><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.teams||0)+' equipos</div></div><span class="hat" style="color:var(--publico)">Siguiendo</span></div>'; }); }
+      h+='<div class="leaguerow" onclick="openPublicLeague(\''+(l.account_id||'')+'\',\''+((l.name||'Liga').replace(/'/g,"\\'"))+'\')"><div class="crest real" style="'+stl+'">'+(l.logo?'':iniOf(l.name||'?'))+'</div><div><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">Ver tabla y calendario ›</div></div><span class="hat" style="color:var(--publico)">Siguiendo</span></div>'; }); }
   if(rl==='admin_liga') h+='<div class="leaguerow create" onclick="go(\'liga\')">＋ Gestionar mi liga</div>';
   h+='<div class="leaguerow create" style="border-color:rgba(232,177,62,.4);color:var(--liga)" onclick="go(\'directorio\')"><svg class="ic" style="width:16px;height:16px;vertical-align:-2px"><use href="#ic-trophy"/></svg> Buscar ligas (directorio)</div>';
   h+='<div class="leaguerow create" style="border-color:rgba(53,194,207,.35);color:var(--publico)" onclick="go(\'publico\')">Explorar marcadores en vivo</div>';
@@ -2271,9 +2326,11 @@ function buildDirectorio(){
     list.forEach(l=>{ const stl=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):('background:var(--liga)');
       const fol=isFollowingLeague(l.account_id);
       const jl=JSON.stringify({account_id:l.account_id,name:l.name,logo:l.logo||null,teams:l.teams||0}).replace(/'/g,"&#39;");
-      h+='<div class="leaguerow"><div class="crest real" style="'+stl+'">'+(l.logo?'':iniOf(l.name||'?'))+'</div>'+
-        '<div style="flex:1"><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.teams||0)+' equipos · '+(l.players||0)+' jugadores</div></div>'+
+      const vname=(l.name||'Liga').replace(/'/g,"\\'");
+      h+='<div class="leaguerow"><div class="crest real" style="cursor:pointer;'+stl+'" onclick="openPublicLeague(\''+l.account_id+'\',\''+vname+'\')">'+(l.logo?'':iniOf(l.name||'?'))+'</div>'+
+        '<div style="flex:1;cursor:pointer" onclick="openPublicLeague(\''+l.account_id+'\',\''+vname+'\')"><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.teams||0)+' equipos · '+(l.players||0)+' jugadores · ver ›</div></div>'+
         '<div style="display:flex;flex-direction:column;gap:6px">'+
+        '<button class="btn sm" onclick="openPublicLeague(\''+l.account_id+'\',\''+vname+'\')">Ver</button>'+
         '<button class="btn sm'+(fol?' ghost':'')+'" onclick=\'toggleFollowLeague('+jl+')\'>'+(fol?'Siguiendo ✓':'Seguir')+'</button>'+
         (l.account_id!=='local'?'<button class="btn ghost sm" onclick=\'requestJoinLeague('+jl+')\'>Solicitar</button>':'')+
         '</div></div>'; });
@@ -2455,8 +2512,8 @@ function buildLeagueRes(){
   box.innerHTML=h;
 }
 /* --- tabla de posiciones (FIBA: victoria 2 pts, derrota 1) --- */
-function computeStandings(){
-  const d=leagueData(); const tb={};
+function computeStandings(d){
+  d=d||leagueData(); const tb={};
   d.teams.forEach(t=>tb[t.id]={t,pj:0,g:0,p:0,pf:0,pc:0,pts:0});
   d.calendar.forEach(m=>{ if(!m.done||m.hs==null||m.as==null)return; const H=tb[m.home],A=tb[m.away]; if(!H||!A)return;
     H.pj++;A.pj++;H.pf+=m.hs;H.pc+=m.as;A.pf+=m.as;A.pc+=m.hs;
