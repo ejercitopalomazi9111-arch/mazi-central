@@ -1587,7 +1587,7 @@ function buildModes(){
     p.className='mode-panel'+(i===modeIdx?' active':'');
     p.innerHTML=`${bg}<div class="grad"></div>
       <span class="stripe" style="background:var(${m.c})"></span>
-      ${m.live?'<span class="live">EN VIVO</span>':''}
+      ${(m.live&&hasLiveGame())?'<span class="live">EN VIVO</span>':''}
       <span class="wm" style="color:var(${m.c})"><svg class="ic"><use href="#ic-${m.ic}"/></svg></span>
       <div class="body">
         <div class="k">${K}</div>
@@ -2474,7 +2474,7 @@ function bracketData(){ try{const s=localStorage.getItem('lm_bracket');if(s)retu
 function saveBracket(b){ try{localStorage.setItem('lm_bracket',JSON.stringify(b));}catch(e){} }
 function genBracket(){
   const rows=computeStandings().slice(0,4);
-  if(rows.length<4)return;
+  if(rows.length<4){ flashSaved('La liguilla necesita al menos 4 equipos en la tabla'); return; }
   saveBracket({ semis:[{a:rows[0].t.id,b:rows[3].t.id,w:null},{a:rows[1].t.id,b:rows[2].t.id,w:null}], final:{a:null,b:null,w:null} });
   buildBracket();
 }
@@ -2489,7 +2489,7 @@ function brkTeam(round,idx,teamId,winId){
   const t=teamById(teamId); if(!t)return '<div class="brk-team empty">—</div>';
   const cls=winId?(winId===teamId?' win':' lose'):'';
   const clickable=currentRole==='liga';
-  return '<div class="brk-team'+cls+(clickable?' tap':'')+'"'+(clickable?' onclick="pickWinner(\''+round+'\','+idx+',\''+teamId+'\')"':'')+'><span class="crest real sm" style="background:var('+t.color+')">'+t.ini+'</span><span class="bn">'+t.name+'</span>'+(winId===teamId?'<span class="chk">✓</span>':'')+'</div>';
+  return '<div class="brk-team'+cls+(clickable?' tap':'')+'"'+(clickable?' onclick="pickWinner(\''+round+'\','+idx+',\''+teamId+'\')"':'')+'><span class="crest real sm" style="'+crestStyle(t)+'">'+crestInner(t)+'</span><span class="bn">'+t.name+'</span>'+(winId===teamId?'<span class="chk">✓</span>':'')+'</div>';
 }
 function buildBracket(){
   const box=document.getElementById('leBracket'); if(!box)return;
@@ -2704,7 +2704,7 @@ function shopProducts(){try{const s=localStorage.getItem('lm_products');if(s)ret
   return [];}
 function saveProducts(a){try{localStorage.setItem('lm_products',JSON.stringify(a));}catch(e){}}
 function buildShop(){
-  const admin=currentRole==='liga';
+  const admin=(currentRole==='liga') && canAdminLeague();
   document.getElementById('shopAdmin').style.display=admin?'block':'none';
   const sw=document.getElementById('pSwatches');
   if(sw&&!sw.dataset.built){sw.dataset.built='1';SHOP_COLORS.forEach((c,i)=>{const d=document.createElement('button');d.className='sw'+(i===0?' on':'');d.style.background=c;d.onclick=()=>{pColor=c;[...sw.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');};sw.appendChild(d);});}
@@ -3042,15 +3042,27 @@ function renderCard(){
   // accesorio/efecto equipado del gachapón
   const pc=document.getElementById('pcard');
   if(pc){ const e=(u.econ&&u.econ.effect)?cosmeticById(u.econ.effect):null; pc.style.cssText=e?e.css:''; }
-  const nm=document.getElementById('fcName'); if(nm)nm.textContent=u.name||'Tu carta';
+  // ¿la cuenta corresponde a un jugador registrado de la liga?
+  const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
+  // solo un jugador registrado (o alguien con identidad de jugador) tiene carta personal;
+  // dueños de liga / coach / público NO deben aparecer como un jugador fantasma con su propio nombre.
+  const isPlayer=!!link || currentRole==='jugador' || !!u.num;
+  const nm=document.getElementById('fcName'); if(nm)nm.textContent=isPlayer?(u.name||'Tu carta'):'Tu carta';
   // club/subtítulo: equipo + liga + número si se conocen
   const club=document.getElementById('fcClub');
   if(club){ const parts=[]; if(u.team)parts.push(u.team); if(u.league)parts.push(u.league); if(u.num)parts.push('#'+u.num);
-    club.textContent=parts.length?parts.join(' · '):'Aún sin equipo'; }
-  if(u.photo){ const ph=document.getElementById('fcPhoto'); if(ph){ph.style.backgroundImage='url('+u.photo+')';ph.classList.add('has-photo');ph.innerHTML='';} }
+    club.textContent=parts.length?parts.join(' · '):(isPlayer?'Aún sin equipo':'Aún no eres jugador registrado'); }
+  if(isPlayer&&u.photo){ const ph=document.getElementById('fcPhoto'); if(ph){ph.style.backgroundImage='url('+u.photo+')';ph.classList.add('has-photo');ph.innerHTML='';} }
   const note=(txt)=>'<div class="stratnote" style="border-left-color:var(--jugador)">'+txt+'</div>';
-  // ¿la cuenta corresponde a un jugador de la liga con partidos jugados?
-  const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
+  // si no es jugador, muestra estado honesto (no una carta con su nombre)
+  if(!isPlayer){
+    const info='<div class="fc-empty" style="text-align:center;padding:22px 16px;color:var(--muted)">'+
+      '<svg class="ic" style="width:38px;height:38px;opacity:.5"><use href="#ic-card"/></svg>'+
+      '<div style="font-weight:800;color:var(--txt);margin:8px 0 4px">Las cartas son de los jugadores</div>'+
+      '<div style="font-size:13px;max-width:290px;margin:0 auto">Tú entras como '+(ROLE_LABEL[(userData()||{}).role]||'aficionado')+'. Las cartas con general y números se generan para los jugadores registrados de los equipos. Cuando un jugador se registre y la mesa anote sus partidos, su carta aparecerá aquí.</div></div>';
+    ['fc-resumen','fc-atributos','fc-vitrina','fc-historial'].forEach(id=>{const p=document.getElementById(id);if(p)p.innerHTML=info;});
+    return;
+  }
   if(link){ const d2=leagueData(); if(club){ const parts=[link.team.name]; if(d2&&d2.name)parts.push(d2.name); if(link.player.num)parts.push('#'+link.player.num); club.textContent=parts.join(' · '); } }
   if(avg){
     // GENERAL simple derivado del promedio de puntos + eficiencia
