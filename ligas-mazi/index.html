@@ -538,7 +538,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .hub-brand .ic{width:20px;height:20px;color:var(--accent-lt)}
 
 /* ===== MARCADOR: cartas de jugador en vivo (banca / en juego) ===== */
-#courtTokens{position:absolute;inset:0;z-index:2;pointer-events:none}
+#courtTokens{position:relative;flex:1 1 auto;min-height:0;z-index:2;pointer-events:none}
 #courtTokens .tok{pointer-events:auto}
 .tok .lab b{display:block;font-family:var(--disp);font-weight:800;font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:.02em}
 .tok .lab .line{font-family:var(--mono);font-size:8.5px;color:#cdd3dd}
