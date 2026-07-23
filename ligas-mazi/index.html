@@ -1211,6 +1211,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     </div>
   </div>
 
+  <!-- ONBOARDING — bienvenida guiada la primera vez -->
+  <div class="sheet-bg" id="onboardBg">
+    <div class="sheet"><div id="onboardBody"></div>
+      <button class="btn block" onclick="closeOnboard()" style="margin-top:12px">Entendido, empezar</button></div>
+  </div>
+
   <!-- MENÚ DE PERFIL (botón de usuario) -->
   <div class="sheet-bg" id="profileBg" onclick="if(event.target.id==='profileBg')closeProfile()">
     <div class="sheet">
@@ -2857,7 +2863,21 @@ function setAuthMode(m){
   loginMsg(''); if(m==='up')buildRolePick();
 }
 function applyRoleFromUser(){ const u=userData()||{}; if(u.role){ currentRole=ROLE_INTERNAL[u.role]||'publico'; } }
-function enterAppWithRole(){ applyRoleFromUser(); modeIdx=0; go('hub'); }
+function enterAppWithRole(){ applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }
+/* recorrido guiado la primera vez, según el rol */
+const ONBOARD={
+  liga:{k:'Administras una liga',steps:[['trophy','Crea tu liga','Ponle nombre y escudo en “Mi liga”.'],['people','Inscribe equipos y jugadores','Da de alta con su CURP (privado).'],['calendar','Arma el calendario','Genera el rol todos contra todos.'],['live','Dirige en la mesa','Anota puntos y faltas en vivo; la tabla se actualiza sola.']]},
+  papa:{k:'Eres papá o tutor',steps:[['heart','Vincula a tu hij@','Con su CURP; si es menor queda bajo tu cuenta.'],['card','Sigue su carta','Sus números se llenan con cada partido.'],['live','Míralo en vivo','Solo tú ves a tu hij@ resaltado.']]},
+  coach:{k:'Diriges un equipo',steps:[['people','Tu vestidor','Ve tu roster y la ficha de cada jugador.'],['live','Cambios en vivo','Haz sustituciones que se ven al instante en el marcador.']]},
+  jugador:{k:'Eres jugador',steps:[['card','Tu carta','Sube tu foto; tu general sube con tus partidos.'],['bag','Gachapón','Gana sobres con logros y ponle accesorios a tu carta.'],['trophy','Sigue ligas','Encuéntralas en el directorio.']]},
+  publico:{k:'Sigues el basquet',steps:[['live','En vivo','Ve todos los enfrentamientos con marcador en tiempo real.'],['heart','Apoya a un equipo','Síguelo para tenerlo a la mano.'],['trophy','Explora ligas','Búscalas en el directorio.']]},
+};
+function maybeOnboard(){ const u=userData()||{}; if(!u.name||u.onboarded)return; buildOnboard(); document.getElementById('onboardBg').classList.add('on'); }
+function buildOnboard(){ const u=userData()||{}; const o=ONBOARD[currentRole]||ONBOARD.publico; const box=document.getElementById('onboardBody'); if(!box)return;
+  let h='<h3 style="margin:0 0 2px">¡Hola, '+(u.name||'').split(' ')[0]+'! 🏀</h3><div style="color:var(--muted);font-size:13px;margin-bottom:12px">'+o.k+' · así aprovechas Ligas Mazi:</div>';
+  o.steps.forEach(s=>{ h+='<div class="note" style="border:1px solid var(--line)"><div class="ni" style="background:var(--liga)"><svg class="ic" style="width:17px;height:17px;color:#0b0d12"><use href="#ic-'+s[0]+'"/></svg></div><div class="nb"><div class="nt">'+s[1]+'</div><div class="nm2">'+s[2]+'</div></div></div>'; });
+  box.innerHTML=h; }
+function closeOnboard(){ const u=userData()||{}; u.onboarded=true; saveUser(u); document.getElementById('onboardBg').classList.remove('on'); }
 function guestEnter(){ const u=userData()||{}; u.roles=['aficionado']; u.role='aficionado'; if(!u.name)u.name='Invitado'; saveUser(u); currentRole='publico'; modeIdx=0; go('hub'); }
 function doSignup(){
   const name=(document.getElementById('upName').value||'').trim();
@@ -2897,7 +2917,7 @@ function doSignin(){
       else loginMsg('Correo o contraseña incorrectos.',true);
       setCloudBadge('','Modo local'); return; }
     if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth();
-      cloudPull().then(()=>{ hideLoader(); applyRoleFromUser(); modeIdx=0; go('hub'); }); }
+      cloudPull().then(()=>{ hideLoader(); applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }); }
   }).catch(()=>{ hideLoader(); loginMsg('No se pudo conectar a la nube.',true); setCloudBadge('','Modo local'); });
 }
 function doLogin(){ doSignin(); }   /* compat */
