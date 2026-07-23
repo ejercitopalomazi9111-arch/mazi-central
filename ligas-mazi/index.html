@@ -1406,8 +1406,8 @@ let _liveT=null;
 function publishLiveGameSoon(){ if(!_authed||!hasLiveGame())return; clearTimeout(_liveT); _liveT=setTimeout(publishLiveGame,700); }
 async function publishLiveGame(){
   const c=sbClient(); if(!c||!_authed||!_session||!hasLiveGame())return;
-  try{ const d=leagueData(); const H=GAME.teams[0],A=GAME.teams[1];
-    await c.from('live_games').upsert({account_id:_session.user.id, league_name:d.name||'', home_name:H.name, home_ini:H.ini, home_color:H.color, home_score:H.score, away_name:A.name, away_ini:A.ini, away_color:A.color, away_score:A.score, period:GAME.period, clock:GAME.clock, updated_at:new Date().toISOString()});
+  try{ const lgName=(GAME.delegated&&GAME.delegated.league_name)||(leagueData().name||''); const H=GAME.teams[0],A=GAME.teams[1];
+    await c.from('live_games').upsert({account_id:_session.user.id, league_name:lgName, home_name:H.name, home_ini:H.ini, home_color:H.color, home_score:H.score, away_name:A.name, away_ini:A.ini, away_color:A.color, away_score:A.score, period:GAME.period, clock:GAME.clock, updated_at:new Date().toISOString()});
   }catch(e){}
 }
 async function clearLiveGame(){ const c=sbClient(); if(!c||!_authed||!_session)return; try{ await c.from('live_games').delete().eq('account_id',_session.user.id); }catch(e){} }
