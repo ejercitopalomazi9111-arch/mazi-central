@@ -63,7 +63,8 @@ window.sbClient=()=>window.__FAKE;
   const journey = (persona) => { cur = { persona, goals: [] }; journeys.push(cur); };
   const goal = async (name, fn) => { const g = { name, ok: false, detail: '' }; cur.goals.push(g);
     try { const r = await fn(); if (r && r.ok === false) { g.ok = false; g.detail = r.detail || ''; } else { g.ok = true; g.detail = (r && r.detail) || ''; } }
-    catch (e) { g.ok = false; g.detail = 'EXCEPCIÓN: ' + e.message; } };
+    catch (e) { g.ok = false; g.detail = 'EXCEPCIÓN: ' + e.message; }
+    console.log((g.ok ? '✅' : '❌') + ' ' + name + (g.ok ? '' : '  → ' + g.detail)); };
   const wait = (ms) => p.waitForTimeout(ms);
   const ev = (fn, arg) => p.evaluate(fn, arg);
 
