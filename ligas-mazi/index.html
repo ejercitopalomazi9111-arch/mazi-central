@@ -1086,6 +1086,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
           <button class="btn sm block" onclick="addProduct()" style="margin-top:10px">Publicar en la tienda</button>
         </div>
       </div>
+      <div id="shopCoins" style="display:none;margin-bottom:12px"></div>
       <div class="tiles" id="shopGrid"></div>
     </div></div>
     <div class="nav" data-nav></div>
@@ -1957,7 +1958,7 @@ function buildGacha(){
   let h='<div class="gacha-stage" id="gachaStage"><div class="gacha-pack" id="gachaPackArt" onclick="openPack()"><div class="gp-shine"></div><svg class="ic" style="width:52px;height:52px;color:#0b0d12"><use href="#ic-bag"/></svg></div>'+
     '<div class="gacha-cap" id="gachaCap">'+(e.packs>0?'Toca el sobre para abrirlo':'No tienes sobres. Gánalos con tus logros.')+'</div></div>';
   if(e.packs>0)h+='<button class="btn block" onclick="openPack()" style="margin-top:4px">Abrir un sobre ('+e.packs+')</button>';
-  else h+='<button class="btn ghost sm block" onclick="go(\'logros\')" style="margin-top:4px">Ver mis logros</button>';
+  h+='<button class="btn ghost sm block" onclick="buyPack()" style="margin-top:6px">Comprar sobre · '+PACK_COST+' ★ <span style="color:var(--dim)">(tienes '+e.coins+')</span></button>';
   h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tu colección</h2><span class="more" onclick="go(\'carta\')">Aplicar en tu carta ›</span></div>';
   const owned=e.owned||[];
   if(!owned.length){ h+='<div class="stratnote" style="border-left-color:var(--jugador)">Aún no tienes accesorios. Abre un sobre para empezar tu colección.</div>'; }
@@ -1976,6 +1977,8 @@ function openPack(){
   if(window.anime){ const rev=document.getElementById('gachaReveal'); if(rev)anime({targets:rev,scale:[0.2,1],rotate:[-20,0],opacity:[0,1],duration:700,easing:'easeOutBack'}); }
   setTimeout(buildGacha, 1700);
 }
+const PACK_COST=150;
+function buyPack(){ const e=econ(); if(e.coins<PACK_COST){ flashSaved('Te faltan '+(PACK_COST-e.coins)+' monedas'); return; } e.coins-=PACK_COST; e.packs++; saveEcon(e); buildGacha(); flashSaved('Sobre comprado ✓ · '+e.coins+' monedas'); }
 function applyCosmetic(id){ const e=econ(); e.effect=(e.effect===id?null:id); saveEcon(e); buildGacha(); flashSaved(e.effect?'Accesorio aplicado ✓':'Accesorio quitado'); }
 function buildPapaHome(){
   const box=document.getElementById('papaHome'); if(!box)return;
@@ -2422,12 +2425,16 @@ function buildShop(){
   document.getElementById('shopAdmin').style.display=admin?'block':'none';
   const sw=document.getElementById('pSwatches');
   if(sw&&!sw.dataset.built){sw.dataset.built='1';SHOP_COLORS.forEach((c,i)=>{const d=document.createElement('button');d.className='sw'+(i===0?' on':'');d.style.background=c;d.onclick=()=>{pColor=c;[...sw.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');};sw.appendChild(d);});}
+  // atajo: canjear monedas por sobres (economía del jugador)
+  const coinBox=document.getElementById('shopCoins');
+  if(coinBox){ if(admin){ coinBox.style.display='none'; } else { const e=econ(); coinBox.style.display='';
+    coinBox.innerHTML='<div class="card" style="display:flex;align-items:center;gap:12px"><div class="crest real" style="width:40px;height:40px;background:linear-gradient(150deg,var(--liga),var(--accent))"><svg class="ic" style="width:20px;height:20px;color:#0b0d12"><use href="#ic-star"/></svg></div><div style="flex:1"><div class="nm" style="font-weight:750;font-size:14px">Tienes '+e.coins+' monedas</div><div class="mt" style="font-size:12px;color:var(--muted)">Cánjealas por sobres del gachapón</div></div><button class="btn sm" onclick="go(\'gacha\')">Gachapón</button></div>'; } }
   const g=document.getElementById('shopGrid'); g.innerHTML=''; const prods=shopProducts();
   prods.forEach((p,i)=>{const d=document.createElement('div');d.className='prod';
     d.innerHTML='<div class="pimg" style="background:linear-gradient(150deg,'+p.color+'40,'+p.color+'10)"><span class="pini" style="color:'+p.color+'">'+((p.name[0]||'?').toUpperCase())+'</span></div>'+
       '<div class="pc"><div class="pn">'+p.name+'</div><div class="pp">$'+p.price+'</div></div>'+(admin?'<button class="pdel">×</button>':'');
-    d.querySelector('.pc').onclick=()=>toast(admin?'Así lo ve la afición · '+p.name:'Agregado al carrito · '+p.name);
-    if(admin)d.querySelector('.pdel').onclick=(e)=>{e.stopPropagation();prods.splice(i,1);saveProducts(prods);buildShop();toast('Producto quitado');};
+    d.querySelector('.pc').onclick=()=>flashSaved(admin?'Así lo ve la afición · '+p.name:'Agregado al carrito · '+p.name);
+    if(admin)d.querySelector('.pdel').onclick=(e)=>{e.stopPropagation();prods.splice(i,1);saveProducts(prods);buildShop();flashSaved('Producto quitado');};
     g.appendChild(d);});
   if(!prods.length)g.innerHTML='<div class="empty">La liga aún no sube productos.</div>';
 }
