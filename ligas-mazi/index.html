@@ -1395,7 +1395,14 @@ const ROLE_SCREENS={
   jugador:['carta'],
 };
 const ROLE_HOME={papa:'rol', coach:'vestidor', liga:'liga', publico:'publico', jugador:'carta'};
-function canAccess(id){ return COMMON_SCREENS.includes(id) || (ROLE_SCREENS[currentRole]||[]).includes(id); }
+/* ¿esta cuenta es mesa de algún partido pendiente? (permiso cruzado de roles) */
+function isAssignedMesa(){ const em=myEmail(); if(!em)return false; try{ const d=leagueData(); return !!(d.calendar||[]).some(m=>!m.done && (m.mesa||'').toLowerCase()===em); }catch(e){ return false; } }
+function canAccess(id){
+  if(COMMON_SCREENS.includes(id) || (ROLE_SCREENS[currentRole]||[]).includes(id)) return true;
+  // la mesa asignada (aunque sea de otro rol) puede entrar a mesa/marcador para dirigir
+  if((id==='mesa'||id==='marcador') && (isAssignedMesa() || GAME.matchIdx!=null)) return true;
+  return false;
+}
 /* fila de "Mis ligas": el papá abre su casa; cualquier otro sombrero ve el marcador público */
 function openLeague(home){ go(canAccess(home)?home:'publico'); }
 function render(id){
@@ -1933,11 +1940,12 @@ function buildEnVivoBoard(){
   }
   const bydate=(a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''));
   const liveIdx=on?GAME.matchIdx:-1;
-  const up=d.calendar.filter((m,i)=>!m.done && i!==liveIdx).slice().sort(bydate).slice(0,10);
+  const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx).sort((a,b)=>bydate(a.m,b.m)).slice(0,10);
   if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
-    up.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
+    up.forEach(x=>{ const m=x.m; const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
       const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'');
-      h+=faceoffCard(H,A,{mode:'next',when:when}); }); }
+      h+=faceoffCard(H,A,{mode:'next',when:when});
+      if(canOfficiate(m)) h+='<div class="le-officiate" style="margin:-6px 0 10px" onclick="officiateMatch('+x.i+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir este partido (eres la mesa)</div>'; }); }
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
   if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
     past.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
@@ -2286,7 +2294,8 @@ function buildLeagueCal(){
     const res=m.done?('<span class="mid">'+m.hs+'–'+m.as+'</span>'):'<span class="mid" style="color:var(--dim);font-size:11px">vs</span>';
     const hora=m.time?'<span class="le-time">'+m.time+'</span>':'';
     h+='<div class="le-match">'+hora+'<span class="crest real sm" style="background:var('+H.color+')">'+H.ini+'</span><span class="tnm">'+H.name+'</span>'+res+'<span class="tnm r">'+A.name+'</span><span class="crest real sm" style="background:var('+A.color+')">'+A.ini+'</span></div>';
-    if(!m.done && currentRole==='liga'){ h+='<div class="le-officiate" onclick="officiateMatch('+idx+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir en la mesa</div>'; }
+    if(!m.done && canOfficiate(m)){ h+='<div class="le-officiate" onclick="officiateMatch('+idx+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir en la mesa</div>'; }
+    if(!m.done && canAdminLeague(d)){ h+='<div class="le-add" style="margin:-4px 0 10px"><input id="mesa_'+idx+'" type="email" inputmode="email" value="'+((m.mesa||'').replace(/"/g,'&quot;'))+'" placeholder="Correo de la mesa (opcional)"><button class="btn sm ghost" onclick="setMatchMesa('+idx+')">Mesa</button></div>'; }
   });
   box.innerHTML=h;
 }
@@ -2393,8 +2402,14 @@ function buildResp(){
 }
 /* ====== Dirigir en la mesa un partido del calendario: al finalizar, el
    resultado entra al calendario y la tabla se recalcula sola. ====== */
+/* puede dirigir un partido: el admin de la liga o la mesa asignada a ese partido */
+function canOfficiate(m){ if(canAdminLeague())return true; const em=myEmail(); return !!(em && m && (m.mesa||'').toLowerCase()===em); }
+function setMatchMesa(idx){ const d=leagueData(); if(!canAdminLeague(d))return; const m=d.calendar[idx]; if(!m)return;
+  const inp=document.getElementById('mesa_'+idx); const em=((inp&&inp.value)||'').trim().toLowerCase();
+  if(em&&!/.+@.+\..+/.test(em)){ flashSaved('Correo inválido'); return; }
+  m.mesa=em||null; saveLeague(d); buildLeagueCal(); flashSaved(em?('Mesa asignada: '+em):'Mesa quitada'); }
 function officiateMatch(idx){
-  const d=leagueData(); if(!canAdminLeague(d))return; const m=d.calendar[idx]; if(!m||m.done)return;
+  const d=leagueData(); const m=d.calendar[idx]; if(!m||m.done)return; if(!canOfficiate(m))return;
   const H=teamById(m.home), A=teamById(m.away); if(!H||!A)return;
   const mk=(t)=> (t.players||[]).map((p,i)=>({num:p.num,nm:p.nm,pos:p.pos||'Base',pts:0,f:0,min:0,on:i<5}));
   const r=rules();
