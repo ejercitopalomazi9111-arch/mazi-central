@@ -2515,6 +2515,7 @@ function addPlayer(tid){
 function delPlayer(tid,i){const d=leagueData();if(!canAdminLeague(d))return;const t=d.teams.find(x=>x.id===tid);if(t){t.players.splice(i,1);saveLeague(d);buildLeagueTeams();}}
 function buildLeagueTeams(){
   const d=leagueData(); const box=document.getElementById('leTeams'); if(!box)return;
+  try{ syncApprovedTeams(); }catch(e){}   // trae rosters frescos de los dueños (no bloquea)
   let h='<div class="eyebrow" style="margin:2px 2px 10px">'+d.teams.length+' equipos · '+d.teams.reduce((s,t)=>s+t.players.length,0)+' jugadores</div>';
   d.teams.forEach(t=>{ const open=leOpen===t.id;
     h+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">';
@@ -2734,11 +2735,42 @@ function findLeaguePlayer(u){ u=u||userData()||{};
   if(_cardRemote) return _cardRemote;   // hallado en una liga compartida
   return null; }
 /* busca al jugador (esta cuenta) en las ligas compartidas que sigue → llena su carta aunque la liga sea de otra cuenta */
+async function leagueAccountByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('public_leagues').select('account_id,name,logo,teams').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
+/* el admin re-sincroniza el roster de sus equipos aprobados desde teams_public
+   (el dueño es la autoridad de QUIÉN está en el equipo; las estadísticas de la mesa se conservan) */
+let _syncingTeams=false;
+async function syncApprovedTeams(){
+  const d=leagueData(); if(_syncingTeams||!canAdminLeague(d)||!(d.teams||[]).length)return;
+  const withCode=d.teams.filter(t=>t.code); if(!withCode.length)return;
+  _syncingTeams=true; let changed=false;
+  try{ for(const t of withCode){ const tp=await fetchTeamByCode(t.code); if(!tp)continue;
+      const old={}; (t.players||[]).forEach(p=>{ const k=(p.code||p.email||p.nm||''); if(k)old[k]=p; });
+      const merged=(tp.players||[]).map(np=>{ const k=(np.code||np.email||np.nm||''); const prev=old[k];
+        return { code:np.code, num:np.num||(prev&&prev.num)||'0', nm:np.nm||np.name, pos:np.pos||(prev&&prev.pos)||'Base', email:np.email||(prev&&prev.email), account:np.account, stats:(prev&&prev.stats)||undefined }; });
+      // conserva jugadores que la mesa ya tenía aunque el dueño los quitara (para no perder stats históricas)
+      if(JSON.stringify((t.players||[]).map(p=>p.code||p.nm))!==JSON.stringify(merged.map(p=>p.code||p.nm))){ t.players=merged; changed=true; }
+      if(tp.name&&tp.name!==t.name){ t.name=tp.name; t.ini=iniOf(tp.name); changed=true; }
+      if(tp.logo&&tp.logo!==t.logo){ t.logo=tp.logo; changed=true; }
+    }
+  }catch(e){}
+  _syncingTeams=false;
+  if(changed){ saveLeague(d); cloudPushSoon(); if(document.getElementById('s-liga')&&document.getElementById('s-liga').classList.contains('on'))buildLeagueTeams(); }
+}
 async function enrichCardFromShared(u){
-  u=u||userData()||{}; if(!u.email && !u.curp)return;
-  const follows=(u.followLeagues||[]).filter(l=>l.account_id&&l.account_id!=='local');
-  for(const l of follows){ try{ const lg=await fetchLeagueFull(l.account_id); const m=_matchMeInLeague(u,lg);
-    if(m){ _cardRemote={team:m.team, player:m.player, leagueName:(lg&&lg.name)||l.name}; renderCard(); return; } }catch(e){} }
+  u=u||userData()||{}; if(!u.email && !u.curp && !u.playerCode)return;
+  const tried={};
+  const tryAcc=async(acc,name)=>{ if(!acc||acc==='local'||tried[acc])return false; tried[acc]=1;
+    try{ const lg=await fetchLeagueFull(acc); const m=_matchMeInLeague(u,lg);
+      if(m){ _cardRemote={team:m.team, player:m.player, leagueName:(lg&&lg.name)||name};
+        // auto-sigue esa liga para que la vea en su lista
+        const uu=userData()||{}; uu.followLeagues=uu.followLeagues||[];
+        if(!uu.followLeagues.some(l=>l.account_id===acc)){ uu.followLeagues.push({account_id:acc,name:(lg&&lg.name)||name,logo:(lg&&lg.logo)||null,teams:((lg&&lg.teams)||[]).length}); saveUser(uu); }
+        renderCard(); return true; } }catch(e){} return false; };
+  // 1) ligas que ya sigue
+  for(const l of (u.followLeagues||[])){ if(await tryAcc(l.account_id,l.name))return; }
+  // 2) cadena equipo -> liga (si el jugador se unió a un equipo que entró a una liga)
+  if(u.playerTeamCode){ try{ const t=await fetchTeamByCode(u.playerTeamCode);
+    if(t&&t.league_code){ const la=await leagueAccountByCode(t.league_code); if(la&&await tryAcc(la.account_id,la.name))return; } }catch(e){} }
 }
 function buildMesa(){
   mstep=0; mT=null; mP=null;
