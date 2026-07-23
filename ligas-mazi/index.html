@@ -1343,10 +1343,32 @@ async function fetchDirectory(){
   try{ const {data,error}=await c.from('public_leagues').select('account_id,name,logo,link,teams,players,updated_at').order('updated_at',{ascending:false}).limit(100);
     if(error)return null; return data||[]; }catch(e){ return null; }
 }
+/* invitaciones entre cuentas (liga invita por correo / equipo solicita unirse) */
+async function sendInvite(toEmail,kind,extra){
+  const c=sbClient(); if(!c||!_authed||!_session){ flashSaved('Necesitas conexión para invitar'); return false; }
+  try{ const u=userData()||{}; const row=Object.assign({from_account:_session.user.id, from_name:u.name||'', to_email:(toEmail||'').trim().toLowerCase(), kind:kind, status:'pending'}, extra||{});
+    const {error}=await c.from('invitations').insert(row); if(error){ flashSaved('No se pudo enviar'); return false; }
+    flashSaved('Invitación enviada ✓'); return true;
+  }catch(e){ flashSaved('No se pudo enviar'); return false; }
+}
+/* revisa invitaciones dirigidas a mí y las convierte en notificaciones */
+async function pollInvitations(){
+  const c=sbClient(); if(!c||!_authed||!_session)return 0;
+  try{ const email=(myEmail()||''); const {data,error}=await c.from('invitations').select('*').eq('status','pending');
+    if(error||!data)return 0; const mine=data.filter(x=>(x.to_email||'').toLowerCase()===email || x.to_account===_session.user.id);
+    if(!mine.length)return 0; const seen=notes().map(n=>n.invId).filter(Boolean); let added=0;
+    for(const inv of mine){ if(seen.indexOf(inv.id)>=0)continue;
+      if(inv.kind==='league_invite') pushNote('invite',(inv.from_name||'Una liga')+' te invitó a '+(inv.league_name||'su liga'),{action:'league_invite',league:inv.league_name,from:inv.from_account,invId:inv.id});
+      else if(inv.kind==='join_request') pushNote('request',(inv.from_name||'Un equipo')+' quiere unirse'+(inv.team_name?' con '+inv.team_name:''),{action:'join_request',team:inv.team_name,from:inv.from_account,invId:inv.id});
+      added++; try{ await c.from('invitations').update({status:'delivered'}).eq('id',inv.id); }catch(x){}
+    }
+    if(added)refreshBell(); return added;
+  }catch(e){ return 0; }
+}
 async function sbRestore(){
   const c=sbClient(); if(!c)return false;
   try{ const {data}=await c.auth.getSession();
-    if(data&&data.session){ _session=data.session; _authed=true; await cloudPull(); reflectAuth(); return true; }
+    if(data&&data.session){ _session=data.session; _authed=true; await cloudPull(); try{pollInvitations();}catch(e){} reflectAuth(); return true; }
   }catch(e){}
   return false;
 }
@@ -1387,7 +1409,7 @@ function render(id){
   if(id==='logros')buildLogros();
   if(id==='gacha')buildGacha();
   if(id==='directorio')buildDirectorio();
-  if(id==='inbox')buildInbox();
+  if(id==='inbox'){buildInbox(); try{pollInvitations().then(n=>{if(n&&curScreen==='inbox')buildInbox();});}catch(e){}}
   if(id==='perillas')buildRules();
   if(id==='liga')buildLigaStats();
   if(id==='ligaEquipos')buildLeagueTeams();
@@ -2094,6 +2116,8 @@ function buildMisLigas(){
   h+='<div class="leaguerow create" style="border-color:rgba(53,194,207,.35);color:var(--publico)" onclick="go(\'publico\')">Explorar marcadores en vivo</div>';
   box.innerHTML=h;
 }
+/* solicitar unirme a una liga del directorio (le llega al admin como notificación) */
+function requestJoinLeague(l){ const u=userData()||{}; sendInvite('','join_request',{to_account:l.account_id, league_name:l.name, team_name:(u.team||'')}); }
 /* ¿sigo esta liga? / seguir-dejar de seguir */
 function isFollowingLeague(id){ const u=userData()||{}; return (u.followLeagues||[]).some(l=>l.account_id===id); }
 function toggleFollowLeague(l){ const u=userData()||{}; u.followLeagues=u.followLeagues||[]; const i=u.followLeagues.findIndex(x=>x.account_id===l.account_id);
@@ -2110,9 +2134,13 @@ function buildDirectorio(){
     h+='<div class="eyebrow" style="margin:2px 2px 10px">'+list.length+' liga'+(list.length>1?'s':'')+' publicada'+(list.length>1?'s':'')+'</div>';
     list.forEach(l=>{ const stl=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):('background:var(--liga)');
       const fol=isFollowingLeague(l.account_id);
+      const jl=JSON.stringify({account_id:l.account_id,name:l.name,logo:l.logo||null,teams:l.teams||0}).replace(/'/g,"&#39;");
       h+='<div class="leaguerow"><div class="crest real" style="'+stl+'">'+(l.logo?'':iniOf(l.name||'?'))+'</div>'+
         '<div style="flex:1"><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.teams||0)+' equipos · '+(l.players||0)+' jugadores</div></div>'+
-        '<button class="btn sm'+(fol?' ghost':'')+'" onclick=\'toggleFollowLeague('+JSON.stringify({account_id:l.account_id,name:l.name,logo:l.logo||null,teams:l.teams||0}).replace(/'/g,"&#39;")+')\'>'+(fol?'Siguiendo ✓':'Seguir')+'</button></div>'; });
+        '<div style="display:flex;flex-direction:column;gap:6px">'+
+        '<button class="btn sm'+(fol?' ghost':'')+'" onclick=\'toggleFollowLeague('+jl+')\'>'+(fol?'Siguiendo ✓':'Seguir')+'</button>'+
+        (l.account_id!=='local'?'<button class="btn ghost sm" onclick=\'requestJoinLeague('+jl+')\'>Solicitar</button>':'')+
+        '</div></div>'; });
     box.innerHTML=h;
   };
   fetchDirectory().then(list=>{
@@ -2135,10 +2163,14 @@ function buildLeagueIdentity(){
     (d.logo?'<button class="btn ghost sm block" style="margin-top:6px;color:var(--dim)" onclick="clearLeagueLogo()">Quitar imagen</button><div class="tid-preview"><span class="crest real" style="background-image:url('+d.logo+');background-size:cover;background-position:center"></span><span style="color:#c7cdd8;font-size:13px">Escudo de tu liga</span></div>':'')+
     '<div class="tid-lbl">Admins de la liga</div>'+admins+
     '<div class="le-add"><input id="lidAdmin" type="email" inputmode="email" placeholder="Correo del nuevo admin"><button class="btn sm" onclick="addLeagueAdmin()">Agregar</button></div>'+
+    '<div class="tid-lbl">Invitar a la liga (por correo)</div>'+
+    '<div class="le-add"><input id="lidInvite" type="email" inputmode="email" placeholder="Correo de la persona a invitar"><button class="btn sm" onclick="inviteToLeague()">Invitar</button></div>'+
     '<div class="tid-lbl">Redes / web (opcional)</div>'+
     '<div class="le-add"><input id="lidLink" value="'+((d.link||'').replace(/"/g,'&quot;'))+'" placeholder="https://... o @usuario"><button class="btn sm" onclick="setLeagueLink()">Guardar</button></div>'+
     '</div>';
 }
+function inviteToLeague(){ const d=leagueData(); if(!canAdminLeague(d))return; const em=(document.getElementById('lidInvite').value||'').trim().toLowerCase(); if(!/.+@.+\..+/.test(em)){flashSaved('Correo inválido');return;}
+  sendInvite(em,'league_invite',{league_name:d.name}).then(ok=>{ if(ok){const i=document.getElementById('lidInvite');if(i)i.value='';} }); }
 function addLeagueAdmin(){ const d=leagueData(); if(!canAdminLeague(d))return; const em=(document.getElementById('lidAdmin').value||'').trim().toLowerCase(); if(!/.+@.+\..+/.test(em)){flashSaved('Correo inválido');return;} d.admins=d.admins||[]; if(d.admins.indexOf(em)<0)d.admins.push(em); saveLeague(d); buildLeagueIdentity(); flashSaved('Admin agregado ✓'); }
 function removeLeagueAdmin(i){ const d=leagueData(); if(!canAdminLeague(d))return; if(d.admins&&i>0){d.admins.splice(i,1);saveLeague(d);buildLeagueIdentity();} }
 function setLeagueLink(){ const d=leagueData(); if(!canAdminLeague(d))return; d.link=(document.getElementById('lidLink').value||'').trim(); saveLeague(d); flashSaved('Guardado ✓'); }
