@@ -2964,7 +2964,11 @@ function doSignup(){
   loginMsg('Creando tu cuenta…'); setCloudBadge('checking','Creando…'); showLoader('Creando tu cuenta…');
   c.auth.signUp({email,password:pass,options:{data:{display_name:name,role:roles[0],roles:roles}}}).then(r=>{
     hideLoader();
-    if(r.error){ loginMsg(r.error.message,true); setCloudBadge('','Modo local'); return; }
+    if(r.error){ const em=(r.error.message||'').toLowerCase(); let msg=r.error.message;
+      if(em.indexOf('rate limit')>=0||em.indexOf('email rate')>=0) msg='Se alcanzó el límite de correos por hora del servidor. Espera unos minutos y vuelve a intentar, o pide al admin que desactive la confirmación por correo para las pruebas.';
+      else if(em.indexOf('already registered')>=0||em.indexOf('already been registered')>=0) msg='Ese correo ya tiene cuenta. Inicia sesión en su lugar.';
+      else if(em.indexOf('password')>=0) msg='La contraseña debe tener al menos 6 caracteres.';
+      loginMsg(msg,true); setCloudBadge('','Modo local'); return; }
     if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth(); cloudPull().then(enterAppWithRole); }
     else {
       // Confirmación de correo activa: NO se entra hasta confirmar e iniciar sesión.
