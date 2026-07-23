@@ -1110,13 +1110,23 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
           <div class="kick">Nuevo producto</div>
           <input class="field" id="pName" placeholder="Nombre (ej. Jersey local)">
           <input class="field" id="pPrice" type="number" inputmode="numeric" placeholder="Precio en pesos (ej. 450)">
+          <div class="eyebrow" style="margin:8px 2px 6px">Categoría</div>
+          <select class="field" id="pCat">
+            <option>Jerseys y ropa</option><option>Balones y equipo</option><option>Accesorios</option>
+            <option>Bebidas</option><option>Snacks</option><option>Boletos y entradas</option><option>Otros</option>
+          </select>
           <div class="eyebrow" style="margin:8px 2px 6px">Color</div>
           <div class="swatches" id="pSwatches"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+            <div id="pImgPrev" style="width:46px;height:46px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);background-size:cover;background-position:center;flex:none"></div>
+            <button class="btn ghost sm" onclick="pickProductImage()" style="flex:1">Foto del producto (opcional)</button>
+          </div>
           <button class="btn sm block" onclick="addProduct()" style="margin-top:10px">Publicar en la tienda</button>
         </div>
       </div>
       <div id="shopCoins" style="display:none;margin-bottom:12px"></div>
-      <div class="tiles" id="shopGrid"></div>
+      <div id="shopPurch" style="margin-bottom:6px"></div>
+      <div id="shopGrid"></div>
     </div></div>
     <div class="nav" data-nav></div>
   </section>
@@ -1215,6 +1225,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <div class="sheet-bg" id="liveViewBg" onclick="if(event.target.id==='liveViewBg')closeLiveView()">
     <div class="sheet"><div id="liveViewBody"></div>
       <button class="btn ghost sm block" onclick="closeLiveView()" style="margin-top:12px">Cerrar</button></div>
+  </div>
+
+  <!-- CÓDIGO de compra: el aficionado lo muestra en la mesita física -->
+  <div class="sheet-bg" id="buyCodeBg" onclick="if(event.target.id==='buyCodeBg')document.getElementById('buyCodeBg').classList.remove('on')">
+    <div class="sheet" style="text-align:center"><div id="buyCodeBody"></div>
+      <button class="btn ghost sm block" onclick="document.getElementById('buyCodeBg').classList.remove('on')" style="margin-top:14px">Cerrar</button></div>
   </div>
 
   <!-- VISTA PÚBLICA de una liga de otra cuenta (solo lectura: tabla, roster, calendario, resultados) -->
@@ -2773,33 +2789,90 @@ function buildCoachSubs(){
 }
 /* ---- TIENDA: la liga sube productos (funcional, se guardan) ---- */
 const SHOP_COLORS=['#e8b13e','#35c2cf','#54cc8a','#a774f0','#ec5a45','#ff9a5a'];
-let pColor=SHOP_COLORS[0];
-function shopProducts(){try{const s=localStorage.getItem('lm_products');if(s)return JSON.parse(s);}catch(e){}
-  return [];}
-function saveProducts(a){try{localStorage.setItem('lm_products',JSON.stringify(a));}catch(e){}}
+let pColor=SHOP_COLORS[0]; let pImage=''; let SHOP_PRODS=[]; let SHOP_PURCH=[];
+function pickProductImage(){ pickLogo(function(url){ pImage=url; const pv=document.getElementById('pImgPrev'); if(pv)pv.style.backgroundImage='url('+url+')'; }); }
+async function fetchProducts(){ const c=sbClient(); if(!c)return null;
+  try{ const {data,error}=await c.from('products').select('*').eq('active',true).order('created_at',{ascending:false}).limit(300); if(error)return null; return data||[]; }catch(e){ return null; } }
+async function fetchPurchases(){ const c=sbClient(); if(!c||!_authed||!_session)return [];
+  try{ const {data}=await c.from('purchases').select('*').order('created_at',{ascending:false}).limit(100); return data||[]; }catch(e){ return []; } }
 function buildShop(){
   const admin=(currentRole==='liga') && canAdminLeague();
   document.getElementById('shopAdmin').style.display=admin?'block':'none';
   const sw=document.getElementById('pSwatches');
   if(sw&&!sw.dataset.built){sw.dataset.built='1';SHOP_COLORS.forEach((c,i)=>{const d=document.createElement('button');d.className='sw'+(i===0?' on':'');d.style.background=c;d.onclick=()=>{pColor=c;[...sw.children].forEach(x=>x.classList.remove('on'));d.classList.add('on');};sw.appendChild(d);});}
-  // atajo: canjear monedas por sobres (economía del jugador)
   const coinBox=document.getElementById('shopCoins');
   if(coinBox){ if(admin){ coinBox.style.display='none'; } else { const e=econ(); coinBox.style.display='';
     coinBox.innerHTML='<div class="card" style="display:flex;align-items:center;gap:12px"><div class="crest real" style="width:40px;height:40px;background:linear-gradient(150deg,var(--liga),var(--accent))"><svg class="ic" style="width:20px;height:20px;color:#0b0d12"><use href="#ic-star"/></svg></div><div style="flex:1"><div class="nm" style="font-weight:750;font-size:14px">Tienes '+e.coins+' monedas</div><div class="mt" style="font-size:12px;color:var(--muted)">Cánjealas por sobres del gachapón</div></div><button class="btn sm" onclick="go(\'gacha\')">Gachapón</button></div>'; } }
-  const g=document.getElementById('shopGrid'); g.innerHTML=''; const prods=shopProducts();
-  prods.forEach((p,i)=>{const d=document.createElement('div');d.className='prod';
-    d.innerHTML='<div class="pimg" style="background:linear-gradient(150deg,'+p.color+'40,'+p.color+'10)"><span class="pini" style="color:'+p.color+'">'+((p.name[0]||'?').toUpperCase())+'</span></div>'+
-      '<div class="pc"><div class="pn">'+p.name+'</div><div class="pp">$'+p.price+'</div></div>'+(admin?'<button class="pdel">×</button>':'');
-    d.querySelector('.pc').onclick=()=>flashSaved(admin?'Así lo ve la afición · '+p.name:'Agregado al carrito · '+p.name);
-    if(admin)d.querySelector('.pdel').onclick=(e)=>{e.stopPropagation();prods.splice(i,1);saveProducts(prods);buildShop();flashSaved('Producto quitado');};
-    g.appendChild(d);});
-  if(!prods.length)g.innerHTML='<div class="empty">La liga aún no sube productos.</div>';
+  const g=document.getElementById('shopGrid'); if(g)g.innerHTML='<div class="empty">Cargando tienda…</div>';
+  fetchProducts().then(list=>{ SHOP_PRODS=(list||[]); renderShopGrid(admin); });
+  fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(admin); });
+}
+function renderShopGrid(admin){
+  const g=document.getElementById('shopGrid'); if(!g)return;
+  const prods=SHOP_PRODS||[];
+  if(!prods.length){ g.innerHTML='<div class="empty">'+(admin?'Aún no subes productos. Toca “Agregar producto”.':'Aún no hay productos. Cuando una liga suba artículos, aparecerán aquí divididos por liga y categoría.')+'</div>'; return; }
+  const myId=(_session&&_session.user&&_session.user.id)||'';
+  const byLeague={}; prods.forEach(p=>{ const L=p.league_name||'Liga'; (byLeague[L]=byLeague[L]||[]).push(p); });
+  let h='';
+  Object.keys(byLeague).forEach(L=>{
+    h+='<div class="fo-sec-ttl">'+L+'</div>';
+    const byCat={}; byLeague[L].forEach(p=>{ const C=p.category||'Otros'; (byCat[C]=byCat[C]||[]).push(p); });
+    Object.keys(byCat).forEach(C=>{
+      h+='<div class="eyebrow" style="margin:8px 2px 6px;color:var(--muted)">'+C+'</div><div class="tiles">';
+      byCat[C].forEach(p=>{ const mine=p.account_id===myId;
+        const img=p.image?('background-image:url('+p.image+');background-size:cover;background-position:center'):('background:linear-gradient(150deg,'+(p.color||'#888')+'40,'+(p.color||'#888')+'10)');
+        h+='<div class="prod"><div class="pimg" style="'+img+'">'+(p.image?'':'<span class="pini" style="color:'+(p.color||'#aaa')+'">'+((p.name[0]||'?').toUpperCase())+'</span>')+'</div>'+
+          '<div class="pc"><div class="pn">'+p.name+'</div><div class="pp">$'+p.price+'</div></div>'+
+          (admin&&mine?'<button class="pdel" onclick="delProduct(\''+p.id+'\')">×</button>':'')+
+          (!mine?'<button class="btn sm block" style="margin-top:6px" onclick="buyProduct(\''+p.id+'\')">Comprar</button>':'')+
+          '</div>';
+      });
+      h+='</div>';
+    });
+  });
+  g.innerHTML=h;
+}
+function renderPurchases(admin){
+  const box=document.getElementById('shopPurch'); if(!box)return;
+  const myId=(_session&&_session.user&&_session.user.id)||'';
+  const all=SHOP_PURCH||[];
+  if(admin){ const sales=all.filter(x=>x.seller_account===myId && x.status==='pending');
+    box.innerHTML = sales.length? '<div class="fo-sec-ttl">Compras por entregar</div>'+sales.map(s=>'<div class="card" style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">'+(s.buyer_name||'Aficionado')+' · código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+'</div></div><button class="btn sm" onclick="fulfillPurchase(\''+s.id+'\')">Entregado</button></div>').join('') : '';
+  } else { const buys=all.filter(x=>x.buyer_account===myId);
+    box.innerHTML = buys.length? '<div class="fo-sec-ttl">Mis apartados</div>'+buys.map(s=>'<div class="card" style="margin-bottom:8px"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">Código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+' · '+(s.status==='done'?'entregado ✓':'muestra este código en la mesita')+'</div></div>').join('') : '';
+  }
 }
 function toggleShopForm(){const f=document.getElementById('shopForm');f.style.display=(f.style.display==='none'||!f.style.display)?'block':'none';}
-function addProduct(){const n=document.getElementById('pName').value.trim();const pr=parseInt(document.getElementById('pPrice').value)||0;
-  if(!n){toast('Ponle nombre al producto');return;}
-  const a=shopProducts();a.unshift({name:n,price:pr,color:pColor});saveProducts(a);
-  document.getElementById('pName').value='';document.getElementById('pPrice').value='';toggleShopForm();buildShop();toast('Producto publicado');}
+async function addProduct(){
+  const n=document.getElementById('pName').value.trim(); const pr=parseInt(document.getElementById('pPrice').value)||0;
+  if(!n){ flashSaved('Ponle nombre al producto'); return; }
+  const c=sbClient(); if(!c||!_authed||!_session){ flashSaved('Necesitas conexión para publicar'); return; }
+  const cat=(document.getElementById('pCat')||{}).value||'Otros'; const d=leagueData();
+  try{ const {error}=await c.from('products').insert({league_name:d.name||'Mi liga',category:cat,name:n,price:pr,color:pColor,image:pImage||null});
+    if(error){ flashSaved('No se pudo publicar'); return; }
+    document.getElementById('pName').value=''; document.getElementById('pPrice').value=''; pImage='';
+    const pv=document.getElementById('pImgPrev'); if(pv)pv.style.backgroundImage='';
+    toggleShopForm(); flashSaved('Producto publicado'); buildShop();
+  }catch(e){ flashSaved('Sin conexión'); }
+}
+async function delProduct(id){ const c=sbClient(); if(!c)return; try{ await c.from('products').delete().eq('id',id); flashSaved('Producto quitado'); buildShop(); }catch(e){} }
+function genBuyCode(){ return 'MZ-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(10+Math.random()*89); }
+async function buyProduct(id){
+  const p=(SHOP_PRODS||[]).find(x=>x.id===id); if(!p)return;
+  const c=sbClient(); if(!c||!_authed||!_session){ flashSaved('Inicia sesión para apartar'); return; }
+  const code=genBuyCode(); const u=userData()||{};
+  try{ const {error}=await c.from('purchases').insert({code,product_id:p.id,product_name:p.name,price:p.price,seller_account:p.account_id,buyer_name:u.name||'',status:'pending'});
+    if(error){ flashSaved('No se pudo apartar'); return; }
+    const body=document.getElementById('buyCodeBody');
+    if(body)body.innerHTML='<div style="font-size:13px;color:var(--muted)">Apartaste</div><div style="font-weight:800;font-size:18px;margin:2px 0 12px">'+p.name+' · $'+p.price+'</div>'+
+      '<div style="font-family:var(--mono);font-size:30px;font-weight:800;letter-spacing:.06em;color:var(--liga);background:var(--panel2);border:1px dashed var(--liga);border-radius:12px;padding:16px">'+code+'</div>'+
+      '<div style="font-size:13px;color:var(--muted);margin-top:12px">Muestra este código en la mesita de '+(p.league_name||'la liga')+' para pagar y recogerlo.</div>';
+    document.getElementById('buyCodeBg').classList.add('on');
+    fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(false); });
+  }catch(e){ flashSaved('Sin conexión'); }
+}
+function fulfillPurchase(id){ const c=sbClient(); if(!c)return;
+  c.from('purchases').update({status:'done'}).eq('id',id).then(()=>{ flashSaved('Entregado ✓'); fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(true); }); }); }
 /* ---- ROSTER: dar de alta agrega de verdad, aparece en el vestidor ---- */
 function teamRoster(){try{const s=localStorage.getItem('lm_roster');if(s)return JSON.parse(s);}catch(e){}
   return [];}
