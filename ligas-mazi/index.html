@@ -1271,6 +1271,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <circle cx="0" cy="0" r="9" fill="url(#ballGrad)" stroke="#7a3a12" stroke-width="1.2"/>
         <path d="M-9 0 H9 M0 -9 V9 M-6.4 -6.4 Q0 0 6.4 6.4 M6.4 -6.4 Q0 0 -6.4 6.4" stroke="#7a3a12" stroke-width="1" fill="none"/>
       </g>
+      <!-- capa FRONTAL: borde delantero del aro + red, por delante de la pelota
+           para que se vea que la pelota ENTRA (cae por detrás de la red) -->
+      <path d="M44 58 A16 4.5 0 0 0 76 58" fill="none" stroke="var(--accent)" stroke-width="3"/>
+      <g id="loaderNetFront" style="transform-origin:60px 58px">
+        <path d="M45 59 L49 74 M52 60 L54 76 M60 60.5 L60 77 M68 60 L66 76 M75 59 L71 74" stroke="rgba(255,255,255,.6)" stroke-width="1.4" fill="none"/>
+      </g>
       <defs><radialGradient id="ballGrad" cx="38%" cy="34%" r="72%"><stop offset="0%" stop-color="#ffb877"/><stop offset="55%" stop-color="#ef7a35"/><stop offset="100%" stop-color="#c25716"/></radialGradient></defs>
     </svg>
     <div class="loader-txt" id="loaderTxt">Preparando tu experiencia…</div>
@@ -2326,7 +2332,7 @@ function ballLoaderAnim(){
     {opacity:0,duration:120},
     {translateX:24,translateY:118,opacity:0,scale:.7,duration:220}
   ], loop:true });
-  window._netAnim=anime({ targets:'#loaderNet', scaleY:[{value:1,duration:660},{value:1.3,duration:120},{value:1,duration:220}], loop:true, easing:'easeOutQuad' });
+  window._netAnim=anime({ targets:['#loaderNet','#loaderNetFront'], scaleY:[{value:1,duration:660},{value:1.3,duration:120},{value:1,duration:220}], loop:true, easing:'easeOutQuad' });
 }
 let _loaderT=null,_loaderCycle=null,_lastPhrase=-1;
 /* frases al azar para que la carga se sienta personalizada, no un genérico "Cargando" */
@@ -3217,6 +3223,18 @@ window.addEventListener('load',()=>{ setTimeout(async()=>{ const ok=await checkB
   try{ if(/[#&]liga=/.test(location.hash) && _authed){ setTimeout(()=>go('directorio'),200); } }catch(e){}
 },300); });
 document.getElementById('modeCarousel').addEventListener('scroll',onModeScroll,{passive:true});
+/* Fallback de imagen: si una foto/arte no carga, mostrar un balón de básquet
+   en vez del ícono de imagen rota. Captura en fase de captura (los eventos
+   'error' de <img> no burbujean). */
+const IMG_FB="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'>"+
+  "<rect width='120' height='120' fill='%231a1e26'/>"+
+  "<circle cx='60' cy='60' r='30' fill='%23ef7a35' stroke='%237a3a12' stroke-width='2.5'/>"+
+  "<path d='M30 60h60M60 30v60M39 39q21 21 42 42M81 39q-21 21-42 42' stroke='%237a3a12' stroke-width='2.5' fill='none'/>"+
+  "</svg>");
+document.addEventListener('error',function(e){ const t=e.target;
+  if(t&&t.tagName==='IMG'&&!t.dataset.fb&&t.src.indexOf('data:')!==0){ t.dataset.fb='1'; t.src=IMG_FB; t.style.objectFit='cover'; }
+},true);
 buildModes();
 stampBrand();
 </script>
