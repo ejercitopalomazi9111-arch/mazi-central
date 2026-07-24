@@ -277,6 +277,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mcourt .num{position:absolute;top:0;left:3px;font-family:var(--disp);font-weight:800;font-size:11px;color:#fff;text-shadow:0 1px 3px #000;z-index:2}
 .mcourt .nm{font-size:8px;font-weight:700;text-align:center;padding:1px 2px 0;color:#eef1f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
 .mcourt .pt{font-family:var(--disp);font-weight:800;text-align:center;font-size:13px;color:var(--accent-lt);line-height:1;padding:0 0 2px}
+/* Reacciones del token (item pedido: la carta reacciona al anotar/falta/cambio) */
+.tkr-score{animation:tkrBounce .55s cubic-bezier(.3,1.4,.5,1);box-shadow:0 0 0 3px var(--good),0 10px 24px rgba(62,207,142,.55)!important;z-index:5!important}
+.tkr-foul{animation:tkrShake .5s ease-in-out;box-shadow:0 0 0 3px var(--crit),0 10px 24px rgba(233,74,90,.55)!important;filter:hue-rotate(-5deg);z-index:5!important}
+.tkr-sub{animation:tkrFlip .55s ease-in-out;box-shadow:0 0 0 3px var(--liga),0 10px 24px rgba(232,177,62,.5)!important;z-index:5!important}
+@keyframes tkrBounce{0%{transform:translate(-50%,-50%) scale(1)}30%{transform:translate(-50%,-50%) scale(1.24) rotate(-2deg)}60%{transform:translate(-50%,-50%) scale(.95) rotate(1deg)}100%{transform:translate(-50%,-50%) scale(1)}}
+@keyframes tkrShake{0%,100%{transform:translate(-50%,-50%)}20%{transform:translate(calc(-50% - 6px),-50%)}40%{transform:translate(calc(-50% + 6px),-50%)}60%{transform:translate(calc(-50% - 4px),-50%)}80%{transform:translate(calc(-50% + 4px),-50%)}}
+@keyframes tkrFlip{0%{transform:translate(-50%,-50%) rotateY(0)}50%{transform:translate(-50%,-50%) rotateY(90deg) scale(1.06)}100%{transform:translate(-50%,-50%) rotateY(0)}}
 .tok .fouls{font-size:8px;color:var(--crit)}
 .mk-bottom{margin-top:auto;padding:0 12px calc(var(--safe-b) + 10px)}
 .mk-bench{display:flex;gap:6px;overflow-x:auto;padding:8px 0;margin:0 2px}
@@ -2100,20 +2107,33 @@ function buildLineup(){
   const c=document.getElementById('courtTokens'); if(!c)return; c.innerHTML='';
   const me=(userData()||{}).name;
   // rival (arriba): mini-cartas con color del equipo
-  onCourt(1).forEach((p,i)=>{const pos=OPP_POS[i]||OPP_POS[0];
+  onCourt(1).forEach((p,i)=>{const pos=OPP_POS[i]||OPP_POS[0]; const pi=GAME.teams[1].players.indexOf(p);
     const d=document.createElement('div'); d.className='mcourt away'+(isHighlighted(1,p)?' mine':''); d.style.setProperty('--tc','var('+GAME.teams[1].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
+    d.setAttribute('data-team','1'); d.setAttribute('data-pi',pi);
     d.innerHTML=courtCardHTML(p,me);
-    d.onclick=()=>openPlayerSheet(1,GAME.teams[1].players.indexOf(p)); c.appendChild(d);});
+    d.onclick=()=>openPlayerSheet(1,pi); c.appendChild(d);});
   // mi equipo (abajo): resalta según el rol de quien mira
-  onCourt(0).forEach((p,i)=>{const pos=COURT_POS[i]||COURT_POS[0];
+  onCourt(0).forEach((p,i)=>{const pos=COURT_POS[i]||COURT_POS[0]; const pi=GAME.teams[0].players.indexOf(p);
     const d=document.createElement('div'); d.className='mcourt '+(isHighlighted(0,p)?'mine':'home'); d.style.setProperty('--tc','var('+GAME.teams[0].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
+    d.setAttribute('data-team','0'); d.setAttribute('data-pi',pi);
     d.innerHTML=courtCardHTML(p,me);
-    d.onclick=()=>openPlayerSheet(0,GAME.teams[0].players.indexOf(p)); c.appendChild(d);});
+    d.onclick=()=>openPlayerSheet(0,pi); c.appendChild(d);});
   const bt=document.getElementById('mkBenchTtl'); if(bt)bt.innerHTML='<svg class="ic" style="width:13px;height:13px"><use href="#ic-people"/></svg> Banca · '+GAME.teams[0].name;
   const b=document.getElementById('benchRow'); if(!b)return; b.innerHTML='';
-  bench(0).forEach(p=>{const d=document.createElement('div'); d.className='benchcard';
+  bench(0).forEach(p=>{const pi=GAME.teams[0].players.indexOf(p); const d=document.createElement('div'); d.className='benchcard'; d.setAttribute('data-team','0'); d.setAttribute('data-pi',pi);
     d.innerHTML='<span class="bn">#'+p.num+' '+p.nm+'</span><span class="bs">'+p.min+'′ · '+p.pts+' pts · <span class="f">'+p.f+'F</span></span>';
-    d.onclick=()=>openPlayerSheet(0,GAME.teams[0].players.indexOf(p)); b.appendChild(d);});
+    d.onclick=()=>openPlayerSheet(0,pi); b.appendChild(d);});
+}
+/* Devuelve el elemento DOM del token/banca para un jugador — usado por las
+   burbujas de texto que aparecen sobre el jugador al anotar/faltar/cambiar */
+function tokenElFor(team,i){ const sel='[data-team="'+team+'"][data-pi="'+i+'"]';
+  return document.querySelector('#courtTokens '+sel) || document.querySelector('#benchRow '+sel); }
+/* Activa una animación reactiva breve sobre el token (item pedido: la carta
+   del jugador reacciona al evento). */
+function reactTokenAt(team,i,cls){ const el=tokenElFor(team,i); if(!el)return;
+  el.classList.remove('tkr-score','tkr-foul','tkr-sub'); void el.offsetWidth;
+  el.classList.add(cls);
+  setTimeout(()=>{ el.classList.remove(cls); }, 900);
 }
 /* toca un jugador en el juego → desglose rápido */
 function openPlayerSheet(t,i){const p=GAME.teams[t].players[i];const tm=GAME.teams[t];
@@ -2135,11 +2155,16 @@ function openPlayerSheet(t,i){const p=GAME.teams[t].players[i];const tm=GAME.tea
 }
 /* sustitución rápida desde el tablero en vivo del coach (item 15) */
 function doQuickSub(outIdx,inIdx){ const T=GAME.teams[0]; if(!T||!T.players[outIdx]||!T.players[inIdx])return;
+  const outP=T.players[outIdx], inP=T.players[inIdx];
+  // BURBUJA "OUT" sobre el que sale ANTES de repintar (aún es cancha)
+  try{ bubbleOnPlayer(0, outIdx, 'sub_out'); }catch(e){}
   T.players[outIdx].on=false; T.players[inIdx].on=true;
-  GAME.log=GAME.log||[]; GAME.log.unshift({t:'Q'+GAME.period,m:'<b>Cambio</b> entra #'+T.players[inIdx].num+' '+T.players[inIdx].nm+' por #'+T.players[outIdx].num,u:null});
+  GAME.log=GAME.log||[]; GAME.log.unshift({t:'Q'+GAME.period,m:'<b>Cambio</b> entra #'+inP.num+' '+inP.nm+' por #'+outP.num,u:null});
   closePlayerSheet();
   try{buildLineup();}catch(e){} try{buildCoachSubs();}catch(e){}
-  try{ flashEvent('sub_in',{player:'#'+T.players[inIdx].num+' '+T.players[inIdx].nm}); }catch(e){}
+  // BURBUJA "IN" sobre el que entra después de repintar (ya está en cancha)
+  setTimeout(()=>{ try{ bubbleOnPlayer(0, inIdx, 'sub_in'); }catch(e){} }, 30);
+  try{ flashEvent('sub_in',{player:'#'+inP.num+' '+inP.nm}); }catch(e){}
   flashSaved('Cambio hecho ✓ — se ve en el tablero');
 }
 function closePlayerSheet(){document.getElementById('playerSheetBg').classList.remove('on');}
@@ -2785,6 +2810,32 @@ function bubbleAt(el,text,color){ if(!el||!el.getBoundingClientRect)return;
   b.textContent=text||''; document.body.appendChild(b);
   const r=el.getBoundingClientRect(); b.style.position='fixed'; b.style.left=(r.left+r.width/2)+'px'; b.style.top=r.top+'px'; b.style.zIndex=9999;
   setTimeout(()=>b.remove(),1200); }
+/* Combo: burbuja + reacción + sonido para un jugador del marcador (team+pi).
+   type: 'score1'|'score2'|'score3'|'foul'|'sub_in'|'sub_out' — decide colores y sonido. */
+function bubbleOnPlayer(team,pi,type,customText){
+  try{
+    const el=tokenElFor(team,pi); if(!el)return;
+    const map={
+      score1:{text:'+1', color:'#3ecf8e', react:'tkr-score'},
+      score2:{text:'+2', color:'#3ecf8e', react:'tkr-score'},
+      score3:{text:'+3', color:'#e8b13e', react:'tkr-score'},
+      foul:  {text:'FALTA', color:'#e94a5a', react:'tkr-foul'},
+      foul_hot:{text:'⚠ 4ª', color:'#e94a5a', react:'tkr-foul'},
+      foulout:{text:'FUERA', color:'#7a0e1a', react:'tkr-foul'},
+      sub_in:{text:'IN', color:'#3ecf8e', react:'tkr-sub'},
+      sub_out:{text:'OUT', color:'#8a91a0', react:'tkr-sub'},
+    };
+    const m=map[type]||{text:customText||'', color:'#fff'};
+    bubbleAt(el, customText||m.text, m.color);
+    if(m.react) reactTokenAt(team, pi, m.react);
+    if(typeof SFX!=='undefined'){
+      if(type==='score1'||type==='score2'||type==='score3') SFX.score(type==='score3'?3:(type==='score2'?2:1));
+      else if(type==='foul'||type==='foul_hot') SFX.foul();
+      else if(type==='foulout') SFX.whistle();
+      else if(type==='sub_in'||type==='sub_out') SFX.sub();
+    }
+  }catch(e){}
+}
 function rollCosmetic(){ const tot=Object.values(RARITY).reduce((s,r)=>s+r.w,0); let x=Math.random()*tot, pick='bronce';
   for(const k in RARITY){ if(x<RARITY[k].w){pick=k;break;} x-=RARITY[k].w; }
   const pool=COSMETICS.filter(c=>c.rarity===pick); return pool[Math.floor(Math.random()*pool.length)]||COSMETICS[0]; }
@@ -4000,12 +4051,16 @@ function mScore(p){const t=GAME.teams[mT]; if(!t||mP==null||!t.players[mP]){flas
   const secLeft=(GAME.remainSec==null)?999:GAME.remainSec, isLastPeriod=GAME.period>=(rules().periods||4);
   const isBuzzer=secLeft<=3, isClutch=isLastPeriod&&secLeft<=30&&Math.abs(t.score-GAME.teams[1-mT].score)<=3;
   flashEvent(isBuzzer?'buzzer':(isClutch?'clutch':type), {player:pl.nm});
+  // BURBUJA SOBRE EL TOKEN del anotador + reacción + sonido (item pedido)
+  bubbleOnPlayer(mT, mP, type);
   mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
 function mFoul(code,label){const t=GAME.teams[mT]; if(!t||mP==null||!t.players[mP]){flash('Elige jugador primero');mstep=1;renderWiz();return;} const pl=t.players[mP];pl.f+=1;t.tf+=1;const r=rules();
   const out=pl.f>=r.foulOut; const bonus=t.tf>=r.teamBonus;
   GAME.log.unshift({t:mClk(),m:'<b>'+t.name+'</b> #'+pl.num+' '+pl.nm+' · <b class="rd">'+label+'</b>'+(out?' <b class="rd">('+r.foulOut+'ª — fuera)</b>':'')+(bonus?' · <span class="g">bonus</span>':''),u:{team:mT,pi:mP,pts:0,f:1,tf:1}});
   const type=code==='tec'?'tech':(out?'foulout':(pl.f>=4?'foul_hot':'foul'));
   flashEvent(type, {player:pl.nm});
+  // BURBUJA SOBRE EL TOKEN del faltador
+  bubbleOnPlayer(mT, mP, out?'foulout':(pl.f>=4?'foul_hot':'foul'));
   mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
 function mUndo(){if(!GAME.log.length){flash('Nada que deshacer');return;}const e=GAME.log.shift();
   if(e.u){const t=GAME.teams[e.u.team],pl=t.players[e.u.pi];pl.pts-=e.u.pts;pl.f-=(e.u.f||0);t.score-=e.u.pts;t.tf-=(e.u.tf||0);}
