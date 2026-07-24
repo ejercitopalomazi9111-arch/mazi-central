@@ -1477,6 +1477,7 @@ const ROLE_HOME={papa:'rol', coach:'vestidor', liga:'liga', publico:'publico', j
 /* ¿esta cuenta es mesa de algún partido pendiente? (permiso cruzado de roles) */
 function isAssignedMesa(){ const em=myEmail(); if(!em)return false; try{ const d=leagueData(); return !!(d.calendar||[]).some(m=>!m.done && (m.mesa||'').toLowerCase()===em); }catch(e){ return false; } }
 function canAccess(id){
+  if(typeof isSuperAdmin==='function' && isSuperAdmin()) return true; // súper admin ve TODO
   if(COMMON_SCREENS.includes(id) || (ROLE_SCREENS[currentRole]||[]).includes(id)) return true;
   // la mesa asignada (aunque sea de otro rol) puede entrar a mesa/marcador para dirigir
   if((id==='mesa'||id==='marcador') && (isAssignedMesa() || GAME.matchIdx!=null)) return true;
@@ -2184,6 +2185,9 @@ function buildPublicoData(){
    Los logros se calculan de datos reales (tu liga, tus partidos, tu hij@…). */
 function econ(){ const u=userData()||{}; if(!u.econ)u.econ={coins:0,packs:0,owned:[],effect:null,done:[]}; return u.econ; }
 function saveEcon(e){ const u=userData()||{}; u.econ=e; saveUser(u); }
+/* fondos de prueba para la cuenta suprema (item 10) */
+function superFund(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return; const e=econ(); e.coins=(e.coins||0)+9999; saveEcon(e); try{buildLogros();}catch(x){} flashSaved('+9,999 monedas ✓'); }
+function superPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return; const e=econ(); e.packs=(e.packs||0)+25; saveEcon(e); try{buildLogros();}catch(x){} flashSaved('+25 sobres ✓'); }
 const ACHIEVEMENTS=[
   {id:'welcome', t:'Bienvenid@ a Ligas Mazi', d:'Creaste tu cuenta', coins:50, packs:0, ic:'star', chk:u=>!!u.name},
   {id:'role',    t:'Elegiste tu rol',         d:'Ya sabes cómo entras a la app', coins:20, packs:0, ic:'people', chk:u=>!!(u.roles&&u.roles.length)},
@@ -2225,6 +2229,9 @@ function buildLogros(){
   const got=e.done.length, tot=ACHIEVEMENTS.length;
   let h='<div class="stat-row" style="margin-top:6px"><div class="stat-tile"><b>'+e.coins+'</b><span>Monedas</span></div><div class="stat-tile"><b>'+e.packs+'</b><span>Sobres</span></div><div class="stat-tile"><b>🔥 '+(e.streak||0)+'</b><span>Racha (días)</span></div></div>'+
     '<div class="stratnote" style="border-left-color:var(--papa)">Entra cada día para subir tu racha y ganar monedas. '+got+' de '+tot+' logros.</div>';
+  if(typeof isSuperAdmin==='function' && isSuperAdmin()){
+    h+='<div class="stratnote" style="border-left-color:var(--liga)"><b>Modo Súper Admin.</b> Fondos ilimitados para probar tienda y gachapón.</div>'+
+       '<div style="display:flex;gap:8px;margin:8px 0"><button class="btn sm" style="flex:1" onclick="superFund()">＋ 9,999 monedas</button><button class="btn sm ghost" style="flex:1" onclick="superPacks()">＋ 25 sobres</button></div>'; }
   if(e.packs>0)h+='<button class="btn block" onclick="go(\'gacha\')" style="margin:10px 0 2px"><svg class="ic"><use href="#ic-bag"/></svg> Abrir sobres ('+e.packs+')</button>';
   h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tus logros</h2></div>';
   ACHIEVEMENTS.forEach(a=>{ let ok=false; try{ok=e.done.indexOf(a.id)>=0||!!a.chk(u,d);}catch(x){} const done=e.done.indexOf(a.id)>=0;
@@ -3413,7 +3420,10 @@ function requestJoinTeam(teamCode,teamName,teamAccount){
   flashSaved('Solicitud enviada a '+teamName+' ✓');
 }
 /* roles de la cuenta (súper admin solo para tu correo) + cómo entra */
-function accountRoles(){ const u=userData()||{}; let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); if((u.email||'').toLowerCase()===SUPER_EMAIL && r.indexOf('superadmin')<0) r.unshift('superadmin'); return r; }
+const ALL_HATS=['superadmin','admin_liga','dueno','coach','padre','jugador','aficionado'];
+function accountRoles(){ const u=userData()||{};
+  if((u.email||'').toLowerCase()===SUPER_EMAIL) return ALL_HATS.slice(); // súper admin: todos los sombreros
+  let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); return r; }
 function openRoleSwitch(){
   const roles=accountRoles(); if(roles.length<=1){ openProfile(); return; }
   const sheet=document.querySelector('#sheet .sheet'); if(!sheet)return;
