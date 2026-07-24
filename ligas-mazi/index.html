@@ -1442,6 +1442,8 @@ async function pollInvitations(){
       else if(inv.kind==='player_approved'){ pushNote('ok','Fuiste aceptado en el equipo '+(inv.team_name||''),{invId:inv.id}); const uu=userData(); if(uu.playerCode){uu.playerStatus='aprobado';saveUser(uu);publishMyEntities();} }
       else if(inv.kind==='team_rejected'){ pushNote('info','Tu solicitud a '+(inv.league_name||'la liga')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.team){ if(uu.team.status==='pendiente')uu.team.status='solo'; uu.team.reqLeagues=(uu.team.reqLeagues||[]).filter(a=>a!==inv.from_account); saveUser(uu);publishMyEntities(); } }
       else if(inv.kind==='player_rejected'){ pushNote('info','Tu solicitud al equipo '+(inv.team_name||'')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.playerStatus==='pendiente'){uu.playerStatus='libre';saveUser(uu);publishMyEntities();} }
+      else if(inv.kind==='team_invite') pushNote('invite',(inv.from_name||'Un equipo')+' te invitó a unirte'+(inv.team_name?' a '+inv.team_name:''),{action:'accept_team_invite',teamName:inv.team_name,teamCode:inv.team_code,from:inv.from_account,invId:inv.id});
+      else if(inv.kind==='player_accepted'){ approvePlayerIntoTeam(inv.player_code); }
       added++; try{ await c.from('invitations').update({status:'delivered'}).eq('id',inv.id); }catch(x){}
     }
     if(added)refreshBell(); return added;
@@ -2306,6 +2308,10 @@ function acceptInvite(id){ const n=notes(); const x=n.find(y=>y.id===id); if(!x)
     u.followLeagues=u.followLeagues||[]; if(!u.followLeagues.some(l=>l.name===x.league))u.followLeagues.push({account_id:x.from||'ext',name:x.league,logo:null,teams:x.teams||0});
     saveUser(u); x.text='Te uniste a '+x.league; }
   else if(x.action==='join_request'){ x.text=(x.team||'Un equipo')+' fue aprobado en tu liga'; }
+  else if(x.action==='accept_team_invite'){ // me invitaron a un equipo y acepto → me uno
+    u.playerTeamCode=x.teamCode; u.playerStatus='aprobado'; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
+    try{ sendInvite('','player_accepted',{to_account:x.from, team_name:x.teamName, player_code:u.playerCode||'', player_name:u.name||''}); }catch(e){}
+    x.text='Te uniste al equipo '+(x.teamName||''); }
   else if(x.action==='approve_team_league'){ approveTeamIntoLeague(x.teamCode); x.text='Aprobaste a "'+(x.team||'un equipo')+'" en tu liga'; }
   else if(x.action==='approve_player_team'){ approvePlayerIntoTeam(x.playerCode); x.text='Aprobaste a '+(x.player||'un jugador')+' en tu equipo'; }
   x.action=null; x.status='done'; x.read=true; saveNotes(n); buildInbox(); flashSaved('Listo ✓');
@@ -3055,23 +3061,39 @@ async function buyProduct(id){
 function fulfillPurchase(id){ const c=sbClient(); if(!c)return;
   c.from('purchases').update({status:'done'}).eq('id',id).then(()=>{ flashSaved('Entregado ✓'); fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(true); }); }); }
 /* ---- ROSTER: dar de alta agrega de verdad, aparece en el vestidor ---- */
-function teamRoster(){try{const s=localStorage.getItem('lm_roster');if(s)return JSON.parse(s);}catch(e){}
+/* el roster real del equipo = u.team.players (identidad); respaldo local para modo demo */
+function teamRoster(){const u=userData()||{};
+  if(u.team&&Array.isArray(u.team.players)&&u.team.players.length)
+    return u.team.players.map(p=>({code:p.code,num:p.num,nm:p.nm||p.name||'Jugador',pos:p.pos||'Jugador',ppp:p.ppp||'0.0'}));
+  try{const s=localStorage.getItem('lm_roster');if(s)return JSON.parse(s);}catch(e){}
   return [];}
 function saveRoster(a){try{localStorage.setItem('lm_roster',JSON.stringify(a));}catch(e){}}
+function removeFromTeam(i){const u=userData()||{};
+  if(u.team&&Array.isArray(u.team.players)&&u.team.players.length){ u.team.players.splice(i,1); saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){} }
+  else { const r=teamRoster(); r.splice(i,1); saveRoster(r); }
+  buildRoster(); flashSaved('Quitado del roster');}
 function buildRoster(){const l=document.getElementById('rosterList'); if(!l)return; const r=teamRoster(); l.innerHTML='';
   r.forEach((p,i)=>{const d=document.createElement('div');d.className='rosterrow';d.style.cursor='pointer';
     d.innerHTML='<span class="num">'+(p.num||'-')+'</span><span class="nm">'+p.nm+'<small>'+(p.pos||'Jugador')+'</small></span><span class="st">'+(p.ppp||'0.0')+' PPP</span>';
     d.onclick=()=>openRosterCard(i);
-    if(currentRole==='coach'||currentRole==='liga'){const x=document.createElement('button');x.className='pdel';x.style.position='static';x.style.marginLeft='6px';x.textContent='×';x.onclick=(e)=>{e.stopPropagation();r.splice(i,1);saveRoster(r);buildRoster();flashSaved('Quitado del roster');};d.appendChild(x);}
+    if(currentRole==='coach'||currentRole==='liga'){const x=document.createElement('button');x.className='pdel';x.style.position='static';x.style.marginLeft='6px';x.textContent='×';x.onclick=(e)=>{e.stopPropagation();removeFromTeam(i);};d.appendChild(x);}
     l.appendChild(d);});
-  if(!r.length)l.innerHTML='<div class="empty" style="border:1px dashed var(--line);border-radius:10px">Aún no hay jugadores. Toca ＋ Alta.</div>';}
+  if(!r.length)l.innerHTML='<div class="empty" style="border:1px dashed var(--line);border-radius:10px">Aún no hay jugadores. Toca ＋ Alta para buscar e invitar.</div>';}
 /* ===== CURP: llave interna (privada). Sirve para calcular edad y anclar identidad.
    Nunca se muestra completo ni se puede buscar. ===== */
-function curpValid(c){ return /^[A-Z]{4}[0-9]{6}[A-Z0-9]{8}$/.test((c||'').trim().toUpperCase()); }
+function curpFormatOk(c){ return /^[A-Z][AEIOUX][A-Z]{2}[0-9]{6}[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z][0-9]$/.test((c||'').trim().toUpperCase()); }
+/* dígito verificador oficial del CURP: descarta la mayoría de los inventados */
+function curpCheckDigit(c){ c=(c||'').trim().toUpperCase(); if(c.length!==18)return null;
+  const dic='0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'; let sum=0;
+  for(let i=0;i<17;i++){ const v=dic.indexOf(c.charAt(i)); if(v<0)return null; sum+=v*(18-i); }
+  return ((10-(sum%10))%10).toString(); }
+function curpValid(c){ c=(c||'').trim().toUpperCase();
+  if(!/^[A-Z]{4}[0-9]{6}[A-Z0-9]{8}$/.test(c))return false;
+  const cd=curpCheckDigit(c); return cd!==null && cd===c.charAt(17); }
 function curpBirth(c){ c=(c||'').toUpperCase(); if(c.length<10)return null;
   const yy=parseInt(c.slice(4,6),10),mm=parseInt(c.slice(6,8),10),dd=parseInt(c.slice(8,10),10);
   if(isNaN(yy)||isNaN(mm)||isNaN(dd)||mm<1||mm>12||dd<1||dd>31)return null;
-  const cent=/[0-9]/.test(c.charAt(16))?2000:1900; const d=new Date(cent+yy,mm-1,dd);
+  const cent=/[0-9]/.test(c.charAt(16))?1900:2000; const d=new Date(cent+yy,mm-1,dd);
   return isNaN(d.getTime())?null:d; }
 function curpAge(c){ const b=curpBirth(c); if(!b)return null; const t=new Date();
   let a=t.getFullYear()-b.getFullYear(); const m=t.getMonth()-b.getMonth();
@@ -3082,7 +3104,8 @@ function altaCurpLive(){
   const c=(document.getElementById('altaCurp').value||'').trim().toUpperCase();
   const box=document.getElementById('altaCurpInfo'); if(!box)return;
   if(!c){ box.innerHTML=''; return; }
-  if(!curpValid(c)){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">El CURP tiene 18 caracteres (4 letras · 6 dígitos de fecha · 8 más).</div>'; return; }
+  if(!/^[A-Z]{4}[0-9]{6}[A-Z0-9]{8}$/.test(c)){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">El CURP tiene 18 caracteres (4 letras · 6 dígitos de fecha · 8 más).</div>'; return; }
+  if(!curpValid(c)){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--crit)">Ese CURP no pasa la verificación (dígito de control). Revísalo: debe ser el real del jugador.</div>'; return; }
   const age=curpAge(c);
   if(age==null){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">Revisa la fecha del CURP.</div>'; return; }
   if(age<18){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--papa)"><b>Menor de edad ('+age+' años).</b> Debe quedar vinculad@ a una cuenta de papá/tutor para poder jugar. Tú, como tutor, quedas responsable.</div>'; }
@@ -3105,17 +3128,41 @@ function buildAlta(){
       '<span><b>Responsiva del tutor.</b> Autorizo la participación de mi hij@ y la <b>conservación de sus datos y estadísticas</b>. Sin esto no se puede alinear.</span></div>'+
       '<button class="btn block" onclick="saveChild()">Vincular a mi hij@</button>';
   } else {
-    if(ttl)ttl.textContent='Dar de alta jugador';
-    box.innerHTML='<div class="eyebrow" style="margin:0 0 4px">Datos del jugador</div>'+
-      '<input class="field" id="altaName" placeholder="Nombre completo del jugador">'+
-      '<div style="display:flex;gap:8px"><input class="field" id="altaNum" type="number" inputmode="numeric" placeholder="# dorsal" style="width:110px"><input class="field" id="altaPos" placeholder="Posición (ej. Base)" style="flex:1"></div>'+
-      '<div class="eyebrow" style="margin:10px 0 2px">CURP <span style="color:var(--dim)">— opcional, privado</span></div>'+
-      '<input class="field" id="altaCurp" maxlength="18" autocapitalize="characters" spellcheck="false" placeholder="CURP (18 caracteres)" oninput="this.value=this.value.toUpperCase();altaCurpLive()">'+
-      '<div id="altaCurpInfo" style="margin:4px 0"></div>'+privacy+
-      '<div class="check"><span class="box" id="altaResp" onclick="this.textContent=this.textContent?\'\':\'✓\'"></span>'+
-      '<span><b>Responsiva de los padres.</b> Autorizo la participación y la <b>conservación de datos y estadísticas</b>. Sin esto el jugador no se puede alinear.</span></div>'+
-      '<button class="btn block" onclick="savePlayer()">Guardar jugador</button>';
+    if(ttl)ttl.textContent='Agregar jugadores';
+    box.innerHTML='<div class="stratnote" style="border-left-color:var(--coach)">Los jugadores crean su cuenta al registrarse. Aquí <b>buscas jugadores que ya existen</b> para invitarlos, o <b>apruebas</b> a quienes ya pidieron unirse a tu equipo.</div>'+
+      '<div class="eyebrow" style="margin:12px 0 4px">Buscar jugador por nombre o código</div>'+
+      '<input class="field" id="altaSearch" placeholder="Ej. Kevin  ·  J-3P9Z" oninput="altaSearchLive()" autocomplete="off">'+
+      '<div id="altaSearchRes" style="margin:6px 0"></div>'+
+      '<div class="eyebrow" style="margin:16px 0 4px">Solicitudes para unirse</div>'+
+      '<div id="altaReqs"></div>';
+    buildTeamRequests();
   }
+}
+/* buscar jugadores existentes para invitarlos al equipo */
+function altaSearchLive(){ const el=document.getElementById('altaSearch'); const res=document.getElementById('altaSearchRes'); if(!el||!res)return;
+  const q=(el.value||'').trim();
+  if(q.length<2){ res.innerHTML=''; return; }
+  res.innerHTML='<div class="stratnote">Buscando “'+q+'”…</div>';
+  searchEntities(q).then(r=>{ const pl=(r&&r.players)||[];
+    if(!pl.length){ res.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">Ningún jugador con “'+q+'”. Debe tener su cuenta creada.</div>'; return; }
+    let h=''; pl.forEach(p=>{ const st=p.photo?('background-image:url('+p.photo+');background-size:cover;background-position:center'):'background:var(--jugador)';
+      const nm=(p.name||'').replace(/\x27/g,"\\\x27");
+      h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(p.photo?'':iniOf(p.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(p.name||'Jugador')+(p.num?' · #'+p.num:'')+'</div><div class="mt"><b style="color:var(--jugador)">'+p.code+'</b> · '+(p.pos||'')+'</div></div><button class="btn sm" onclick="invitePlayerToTeam(\''+p.code+'\',\''+nm+'\',\''+p.account_id+'\')">Invitar</button></div>'; });
+    res.innerHTML=h;
+  }).catch(()=>{ res.innerHTML='<div class="stratnote">Sin conexión para buscar.</div>'; });
+}
+/* lista de jugadores que pidieron unirse (para aprobar/rechazar aquí mismo) */
+function buildTeamRequests(){ const box=document.getElementById('altaReqs'); if(!box)return;
+  const reqs=notes().filter(x=>x.action==='approve_player_team');
+  if(!reqs.length){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">Nadie ha solicitado unirse todavía. Cuando un jugador pida entrar a tu equipo, aparece aquí.</div>'; return; }
+  let h=''; reqs.forEach(x=>{ h+='<div class="leaguerow"><div class="crest real" style="background:var(--jugador)">'+iniOf(x.player||'?')+'</div><div style="flex:1"><div class="nm">'+(x.player||'Jugador')+'</div><div class="mt">quiere unirse a tu equipo</div></div><div style="display:flex;gap:6px"><button class="btn sm" onclick="acceptInvite(\''+x.id+'\');buildTeamRequests();buildRoster();">Aprobar</button><button class="btn ghost sm" onclick="declineInvite(\''+x.id+'\');buildTeamRequests();">Rechazar</button></div></div>'; });
+  box.innerHTML=h;
+}
+/* invitar a un jugador existente a mi equipo (le llega y decide) */
+function invitePlayerToTeam(code,name,acct){ const u=userData()||{}; if(!u.team){ flashSaved('Primero necesitas un equipo'); return; }
+  if((u.team.players||[]).some(p=>p.code===code)){ flashSaved('Ese jugador ya está en tu equipo'); return; }
+  sendInvite('','team_invite',{to_account:acct, team_name:u.team.name, team_code:u.team.code, player_name:name, player_code:code});
+  flashSaved('Invitación enviada a '+name+' ✓');
 }
 /* el papá vincula a su hij@ por CURP: se ancla a su cuenta, nunca visible en claro */
 function saveChild(){

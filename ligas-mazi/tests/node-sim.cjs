@@ -238,6 +238,26 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       return { ok: got && st === 'solo', detail: 'aviso=' + got + ' status=' + st };
     });
 
+    await goal('Coach invita a un jugador existente y este se suma al equipo', async () => {
+      // un jugador nuevo con cuenta
+      await registrarse('Tania Jugadora', 'jug4@t.mx', ['jugador'], { num: '9' }); await wait(60);
+      const pcode = get("userData().playerCode");
+      const pacc = get("(__DB.players_public.find(p=>p.code===userData().playerCode)||{}).account_id");
+      // el dueño de Lobos la busca e invita
+      await entrar('dueno3@t.mx'); await wait(40);
+      R(`invitePlayerToTeam(${JSON.stringify(pcode)},'Tania Jugadora',${JSON.stringify(pacc)});`); await wait(80);
+      // la jugadora recibe la invitación y acepta
+      await entrar('jug4@t.mx'); R('pollInvitations();'); await wait(120);
+      const id = get("(function(){var n=notes().find(x=>x.action==='accept_team_invite');return n?n.id:null;})()");
+      if (!id) return { ok: false, detail: 'no llegó la invitación del equipo' };
+      R(`acceptInvite(${JSON.stringify(id)});`); await wait(120);
+      const joined = get("userData().playerTeamCode");
+      // el equipo la agrega sola al roster
+      await entrar('dueno3@t.mx'); R('pollInvitations();'); await wait(150);
+      const inRoster = get("(userData().team.players||[]).some(p=>p.code==='" + pcode + "')");
+      return { ok: !!joined && inRoster, detail: 'joined=' + joined + ' inRoster=' + inRoster };
+    });
+
   } catch (e) { journey('FATAL'); await goal('excepción del viaje', async () => ({ ok: false, detail: e.message })); }
 
   let total = 0, pass = 0;
