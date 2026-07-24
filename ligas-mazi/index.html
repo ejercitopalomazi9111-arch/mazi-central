@@ -95,6 +95,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .nav button{flex:1;background:none;border:none;color:var(--dim);padding:9px 0 8px;font-family:var(--body);font-size:10.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .nav button .i{font-size:20px;line-height:1}
 .nav button.on{color:var(--accent-lt)} .nav button.hot .i{filter:drop-shadow(0 0 8px var(--mesa))}
+.nav button.navmore{color:var(--muted)}
+.nav button.navmore.on{color:var(--accent-lt)}
+.morgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.morecell{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;color:var(--txt,#e7ebf2);transition:.12s}
+.morecell:active{transform:scale(.97);border-color:var(--accent)}
+.morecell .mci{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--panel2);color:var(--accent-lt)}
+.morecell .mcn{font-size:12px;font-weight:600;text-align:center;line-height:1.15}
 .pad{padding:4px 16px 22px}
 .h-row{display:flex;align-items:baseline;gap:10px;margin:20px 2px 10px}
 .h-row h2{font-family:var(--body);font-weight:700;font-size:16px;letter-spacing:-.01em;text-transform:none} .h-row .more{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--accent-lt);cursor:pointer}
@@ -233,16 +240,21 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .tid-sw{width:34px;height:34px;border-radius:8px;border:2px solid transparent;cursor:pointer;padding:0}
 .tid-sw.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.22)}
 .tid-preview{display:flex;align-items:center;gap:10px;margin-top:13px}
-.brk{display:flex;gap:12px;align-items:center}
-.brk-col{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:16px;min-width:0}
-.brk-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--accent-lt);text-transform:uppercase;text-align:center;margin-bottom:2px}
-.brk-match{background:rgba(20,23,31,.6);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:5px}
-.brk-team{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:8px;background:rgba(7,9,13,.4)}
-.brk-team.tap{cursor:pointer}
-.brk-team .bn{flex:1;font-size:12.5px;color:#e7ebf2;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.brk-team.win{background:rgba(58,190,120,.16);border:1px solid var(--good)}
+/* bracket estilizado (item 17): cuadro tipo torneo con líneas conectoras */
+.brk{position:relative;display:flex;gap:14px;align-items:stretch;padding:6px 0 10px}
+.brk-col{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:20px;min-width:0;position:relative}
+.brk-col.finalc{flex:0 0 auto;min-width:120px;justify-content:center}
+.brk-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--accent-lt);text-transform:uppercase;text-align:center;margin-bottom:6px;padding:4px 0;border-bottom:1px solid var(--line)}
+.brk-match{position:relative;background:linear-gradient(180deg,rgba(30,36,50,.75),rgba(15,18,26,.85));border:1px solid var(--line);border-radius:11px;padding:6px;display:flex;flex-direction:column;gap:4px;box-shadow:0 6px 18px rgba(0,0,0,.28)}
+.brk-match::after{content:"";position:absolute;top:50%;right:-14px;width:14px;height:1px;background:var(--line)}
+.brk-col:last-child .brk-match::after{display:none}
+.brk-team{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;background:rgba(7,9,13,.5);position:relative}
+.brk-team.tap{cursor:pointer;transition:.15s}
+.brk-team.tap:hover{background:rgba(7,9,13,.75);transform:translateX(2px)}
+.brk-team .bn{flex:1;font-size:12.5px;color:#e7ebf2;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brk-team.win{background:linear-gradient(90deg,rgba(58,190,120,.22),rgba(58,190,120,.08));border:1px solid var(--good);box-shadow:inset 0 0 0 1px rgba(58,190,120,.35)}
 .brk-team.win .bn{color:#fff}
-.brk-team.lose{opacity:.45}
+.brk-team.lose{opacity:.42;filter:grayscale(.4)}
 .brk-team.empty{color:var(--dim);font-size:12px;justify-content:center}
 .brk-team .chk{color:var(--good);font-weight:800}
 .brk-champ{display:flex;align-items:center;gap:12px;margin-top:16px;padding:14px;border-radius:14px;background:linear-gradient(90deg,rgba(232,177,62,.16),rgba(255,154,90,.06));border:1px solid rgba(232,177,62,.5)}
@@ -328,6 +340,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .stratboard{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);min-height:150px;margin-bottom:12px;background:#0e1a12}
 .stratboard svg{width:100%;display:block}
 .stratnote{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--publico);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;color:#c9cfda;margin-bottom:8px}
+.strat-legend{display:flex;gap:16px;justify-content:center;margin:8px 0 2px;font-size:11.5px;color:var(--muted)}
+.strat-legend span{display:inline-flex;align-items:center;gap:6px}
+.strat-legend .dot{width:12px;height:12px;border-radius:50%}
+.strat-legend .dot.fill{background:var(--coach)}
+.strat-legend .dot.hollow{border:2px dashed var(--publico)}
+.chiprow{display:flex;gap:7px;overflow-x:auto;padding:2px 0 4px;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+.chiprow::-webkit-scrollbar{display:none}
 .suggest{background:linear-gradient(180deg,rgba(84,204,138,.08),transparent);border:1px solid var(--good);border-radius:10px;padding:12px;margin-bottom:9px}
 .suggest .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--good);margin-bottom:4px}
 .suggest p{font-size:13.5px;color:#dfe4ec}
@@ -380,7 +399,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .var-dot{position:absolute;top:12px;left:14px;font-family:var(--mono);font-size:10px;color:var(--crit)}
 .var-dot::before{content:"●";margin-right:5px}
 .var-ctrls{display:flex;gap:8px;padding:0 16px}
-.var-ctrls button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:12px;font-size:13px;cursor:not-allowed}
+.var-ctrls button{flex:1;background:var(--panel);border:1px solid var(--line);color:#c9cfd9;border-radius:8px;padding:12px;font-size:12.5px;cursor:pointer;font-weight:600}
+.var-ctrls button:disabled{opacity:.55;cursor:wait}
+.var-dot{position:absolute;top:12px;left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#fff;background:rgba(15,20,26,.7);padding:4px 10px;border-radius:20px}
+.var-dot.live{background:var(--crit);animation:pulse 1.5s infinite}
+.var-strip{display:flex;gap:8px;overflow-x:auto;padding:4px 16px 12px;-webkit-overflow-scrolling:touch}
+.var-strip::-webkit-scrollbar{display:none}
+.var-shot{position:relative;flex:0 0 auto;width:120px;height:90px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.var-shot img{width:100%;height:100%;object-fit:cover;display:block}
+.var-shot .le-x{position:absolute;top:2px;right:2px}
 .var-note{margin:16px;font-size:13px;color:#c7cdd8;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--papa);border-radius:8px;padding:12px}
 
 /* sheet */
@@ -665,6 +692,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .ps-stats b{font-family:var(--disp);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums}
 .ps-stats b.rd{color:var(--crit)}
 .ps-stats span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--dim);margin-top:3px}
+.ps-subttl{margin:14px 0 8px;font-size:12px;color:var(--muted);font-weight:600}
+.ps-subrow{display:flex;gap:7px;flex-wrap:wrap}
+.ps-empty{font-size:12px;color:var(--dim)}
+.fbadge{position:absolute;top:-4px;right:-4px;font-family:var(--mono);font-size:8.5px;font-weight:800;background:#2a313d;color:#c9cfd9;border-radius:8px;padding:1px 4px;line-height:1.3}
+.fbadge.hot{background:var(--crit);color:#fff}
 /* cambios del coach */
 .sub-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .sub-lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-bottom:6px}
@@ -939,11 +971,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <!-- VAR -->
   <section class="screen" id="s-var">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">VAR</span></div>
-    <div class="var-screen">
-      <div class="var-viewport"><span class="var-dot">SIN SEÑAL</span><span class="ico"><svg class="ic"><use href="#ic-video"/></svg></span><span class="st">Sin cámara conectada</span></div>
-      <div class="var-ctrls"><button>◀◀</button><button>⏸</button><button>▶▶</button><button><svg class="ic"><use href="#ic-flag"/></svg> Marcar</button></div>
-      <div class="var-note">El VAR está <b>listo y conectado</b> al partido. Se activa cuando la liga programe una cámara en esta cancha (perilla en <b>Ajustes de la liga</b>). Por ahora no hay cámara.</div>
-    </div>
+    <div class="var-screen" id="varScreen"><!-- lo arma buildVar() --></div>
+  </section>
+
+  <!-- PARTIDO DE PRUEBA (preview) — item 20 -->
+  <section class="screen" id="s-preview">
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Partido de prueba</span></div>
+    <div class="scroll"><div class="pad" id="previewBody"><!-- lo arma buildPreview() --></div></div>
   </section>
 
   <!-- PÚBLICO (betting-style) -->
@@ -988,30 +1022,9 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <section class="screen" id="s-estrategias">
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Estrategias</span><span class="pill" style="margin-left:auto;color:var(--jugador);border-color:var(--jugador)">Formativa: asistente suave</span></div>
     <div class="scroll"><div class="pad">
-      <div class="eyebrow" style="margin:0 0 8px">Pizarrón · tu sistema actual</div>
-      <div class="stratboard">
-        <svg viewBox="0 0 300 150" preserveAspectRatio="none">
-          <rect x="0" y="0" width="300" height="150" fill="#0e1a12"/>
-          <line x1="150" y1="0" x2="150" y2="150" stroke="rgba(255,255,255,.12)" stroke-dasharray="4 4"/>
-          <circle cx="60" cy="45" r="12" fill="none" stroke="var(--papa)" stroke-width="2"/><text x="60" y="49" fill="var(--papa)" font-size="11" text-anchor="middle" font-family="monospace">1</text>
-          <circle cx="60" cy="105" r="12" fill="none" stroke="var(--papa)" stroke-width="2"/><text x="60" y="109" fill="var(--papa)" font-size="11" text-anchor="middle" font-family="monospace">2</text>
-          <circle cx="120" cy="75" r="12" fill="none" stroke="var(--papa)" stroke-width="2"/><text x="120" y="79" fill="var(--papa)" font-size="11" text-anchor="middle" font-family="monospace">3</text>
-          <circle cx="230" cy="55" r="11" fill="none" stroke="var(--publico)" stroke-width="2" stroke-dasharray="3 2"/>
-          <circle cx="230" cy="100" r="11" fill="none" stroke="var(--publico)" stroke-width="2" stroke-dasharray="3 2"/>
-          <path d="M60 45 Q100 55 118 72" stroke="var(--accent-lt)" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-          <defs><marker id="a" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="var(--accent-lt)"/></marker></defs>
-        </svg>
-      </div>
-      <div class="tiles" style="margin-bottom:12px">
-        <div class="card" style="margin:0"><div class="kick">Defensa</div><h3 style="font-size:15px">Zona 2-3</h3></div>
-        <div class="card" style="margin:0"><div class="kick">Ofensiva</div><h3 style="font-size:15px">Pick & roll</h3></div>
-      </div>
-      <div class="h-row"><h2 class="disp" style="font-size:18px">Asistente (cerebro local)</h2><span class="pill" style="margin-left:auto">sin IA de paga</span></div>
-      <div class="suggest"><div class="k">Cambio sugerido</div><p><b>#11 lleva 3 faltas</b> a falta de 12′. Considera sentarlo para no perderlo en el 4º cuarto.</p></div>
-      <div class="suggest"><div class="k">Ajuste táctico</div><p>El rival anota fácil desde la esquina. La regla dice: <b>cierra la línea de fondo</b> y saca la ayuda tarde.</p></div>
-      <div class="h-row"><h2 class="disp" style="font-size:18px">Mis notas</h2></div>
-      <div class="stratnote">"El otro equipo parece <b>3-1 defensivo</b> — atacar por el codo."</div>
-      <input class="field" placeholder="Escribe una nota rápida…">
+      <div class="eyebrow" style="margin:0 0 8px">Pizarrón · toca para cambiar el sistema</div>
+      <div class="stratboard" id="stratBoard"><!-- lo dibuja buildStrategies() --></div>
+      <div id="stratExtra"><!-- selectores + notas --></div>
     </div></div>
   </section>
 
@@ -1037,6 +1050,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="leaguerow" onclick="go('bracket')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-flag"/></svg></div><div><div class="nm" style="font-size:15px">Eliminatoria (bracket)</div><div class="mt">Liguilla desde la tabla · campeón</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('responsivas')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-doc"/></svg></div><div><div class="nm" style="font-size:15px">Responsivas</div><div class="mt">Consentimiento de padres</div></div><span class="more">›</span></div>
       <button class="btn block" onclick="go('perillas')" style="margin-top:6px"><svg class="ic"><use href="#ic-gear"/></svg> Reglas del torneo (perillas)</button>
+      <button class="btn ghost sm block" onclick="go('preview')" style="margin-top:8px"><svg class="ic"><use href="#ic-live"/></svg> Partido de prueba (preview)</button>
       </div>
     </div></div>
     <div class="nav" data-nav></div>
@@ -1237,8 +1251,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- SHEET -->
   <div class="sheet-bg" id="sheet" onclick="if(event.target.id==='sheet')closeSheet()">
-    <div class="sheet"><h3>¿Cómo quieres entrar?</h3>
-      <!-- las opciones reales las arma openRoleSwitch() según los roles de tu cuenta -->
+    <div class="sheet"><h3 id="sheetTitle">¿Cómo quieres entrar?</h3>
+      <div id="sheetBody"><!-- lo llena openRoleSwitch() o openMoreMenu() según qué se abrió --></div>
     </div>
   </div>
 
@@ -1458,7 +1472,9 @@ async function pollInvitations(){
       else if(inv.kind==='player_approved'){ pushNote('ok','Fuiste aceptado en el equipo '+(inv.team_name||''),{invId:inv.id}); const uu=userData(); if(uu.playerCode){uu.playerStatus='aprobado';saveUser(uu);publishMyEntities();} }
       else if(inv.kind==='team_rejected'){ pushNote('info','Tu solicitud a '+(inv.league_name||'la liga')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.team){ if(uu.team.status==='pendiente')uu.team.status='solo'; uu.team.reqLeagues=(uu.team.reqLeagues||[]).filter(a=>a!==inv.from_account); saveUser(uu);publishMyEntities(); } }
       else if(inv.kind==='player_rejected'){ pushNote('info','Tu solicitud al equipo '+(inv.team_name||'')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.playerStatus==='pendiente'){uu.playerStatus='libre';saveUser(uu);publishMyEntities();} }
-      else if(inv.kind==='team_invite') pushNote('invite',(inv.from_name||'Un equipo')+' te invitó a unirte'+(inv.team_name?' a '+inv.team_name:''),{action:'accept_team_invite',teamName:inv.team_name,teamCode:inv.team_code,from:inv.from_account,invId:inv.id});
+      else if(inv.kind==='team_invite'){ const kidCode=inv.minor?inv.player_code:null; const kidNm=inv.player_name||'';
+        const msg=inv.minor?((inv.from_name||'Un equipo')+' invitó a '+kidNm+' (menor)'+(inv.team_name?' a '+inv.team_name:'')):(inv.from_name||'Un equipo')+' te invitó a unirte'+(inv.team_name?' a '+inv.team_name:'');
+        pushNote('invite',msg,{action:'accept_team_invite',teamName:inv.team_name,teamCode:inv.team_code,from:inv.from_account,invId:inv.id,minor:!!inv.minor,playerCode:kidCode,playerName:kidNm}); }
       else if(inv.kind==='player_accepted'){ approvePlayerIntoTeam(inv.player_code); }
       added++; try{ await c.from('invitations').update({status:'delivered'}).eq('id',inv.id); }catch(x){}
     }
@@ -1484,8 +1500,8 @@ function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
 const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket','logros','gacha','directorio','inbox'];
 const ROLE_SCREENS={
   papa:   ['rol','carta','alta'],
-  coach:  ['vestidor','estrategias','carta'],
-  liga:   ['liga','mesa','perillas','alta','var','vestidor','estrategias','ligaEquipos','ligaCalendario','ligaResultados','responsivas'],
+  coach:  ['vestidor','estrategias','carta','preview'],
+  liga:   ['liga','mesa','perillas','alta','var','vestidor','estrategias','ligaEquipos','ligaCalendario','ligaResultados','responsivas','preview'],
   publico:[],
   jugador:['carta'],
 };
@@ -1527,6 +1543,9 @@ function render(id){
   if(id==='responsivas')buildResp();
   if(id==='tabla')buildTable();
   if(id==='bracket')buildBracket();
+  if(id==='estrategias')buildStrategies();
+  if(id==='var')buildVar();
+  if(id==='preview')buildPreview();
   if(id==='carta')renderCard();
   if(id==='publico'){fanBtnRefresh();buildPublicoData();}
   if(id==='ligas')buildMisLigas();
@@ -1555,7 +1574,33 @@ function buildNav(cur){
       b.innerHTML='<span class="i"><svg class="ic"><use href="#ic-'+ic+'"/></svg></span>'+lab;
       b.onclick=()=>go(id); nav.appendChild(b);
     });
+    // botón "Más" universal: abre un menú con todos los apartados accesibles
+    // según el rol activo, para que nadie se pierda entre subpantallas (item 19)
+    const more=document.createElement('button');
+    more.className='navmore'+(cur==='__more'?' on':'');
+    more.innerHTML='<span class="i"><svg class="ic"><use href="#ic-people"/></svg></span>Más';
+    more.onclick=openMoreMenu; nav.appendChild(more);
   });
+}
+/* menú "Más": todas las secciones que le tocan al rol activo, agrupadas y con
+   íconos. Único punto de entrada para las secciones secundarias — nadie se
+   pierde buscando dónde estaba tal cosa (item 19). */
+const MORE_MENU={
+  papa:   [['hub','home','Inicio'],['rol','people','Mi rol'],['ligas','trophy','Ligas'],['carta','card','Carta'],['inbox','flag','Notificaciones'],['directorio','trophy','Buscar ligas'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+  coach:  [['hub','home','Inicio'],['vestidor','clipboard','Mi equipo'],['alta','people','Buscar/invitar jugadores'],['estrategias','pencil','Tácticas'],['marcador','live','En vivo'],['ligas','trophy','Ligas'],['directorio','trophy','Buscar ligas'],['inbox','flag','Notificaciones'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+  liga:   [['hub','home','Inicio'],['liga','gear','Mi liga'],['ligaEquipos','people','Equipos'],['ligaCalendario','calendar','Calendario'],['ligaResultados','flag','Resultados'],['tabla','trophy','Tabla'],['bracket','flag','Liguilla'],['mesa','pencil','Mesa'],['preview','live','Partido de prueba'],['var','video','VAR'],['perillas','gear','Reglas'],['responsivas','doc','Responsivas'],['inbox','flag','Notificaciones'],['tienda','bag','Tienda']],
+  publico:[['hub','home','Inicio'],['publico','eye','Marcadores'],['ligas','trophy','Ligas que sigues'],['directorio','trophy','Buscar ligas'],['inbox','flag','Notificaciones'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+  jugador:[['hub','home','Inicio'],['carta','card','Mi carta'],['ligas','trophy','Ligas'],['directorio','trophy','Buscar ligas'],['marcador','live','En vivo'],['inbox','flag','Notificaciones'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+};
+function openMoreMenu(){
+  const list=MORE_MENU[currentRole]||MORE_MENU.publico;
+  const body=document.getElementById('sheetBody'); const ttl=document.getElementById('sheetTitle');
+  if(!body||!document.getElementById('sheet'))return;
+  if(ttl)ttl.textContent='Todo lo tuyo';
+  let h='<div class="morgrid">';
+  list.forEach(([id,ic,lab])=>{ h+='<button class="morecell" onclick="closeSheet();go(\''+id+'\')"><span class="mci"><svg class="ic"><use href="#ic-'+ic+'"/></svg></span><span class="mcn">'+lab+'</span></button>'; });
+  h+='</div>';
+  body.innerHTML=h; openSheet();
 }
 /* ---- menú principal estilo NBA 2K: barra de modos + carrusel de paneles ---- */
 const MODE_DEFS={
@@ -1850,7 +1895,8 @@ function courtCardHTML(p,me){
   const face=(p.photo||(p.nm===me&&(userData()||{}).photo))||'';
   const bg=face?(' style="background-image:url('+(p.photo||(userData()||{}).photo)+')"'):'';
   const ph=face?'':'<span class="ph"><svg class="ic"><use href="#ic-user"/></svg></span>';
-  return '<div class="face"'+bg+'><span class="num">'+p.num+'</span>'+ph+'</div><div class="nm">'+p.nm+'</div><div class="pt">'+p.pts+'</div>';
+  const fb=(p.f!=null&&p.f>0)?'<span class="fbadge'+(p.f>=4?' hot':'')+'">'+p.f+'F</span>':'';
+  return '<div class="face"'+bg+'><span class="num">'+p.num+'</span>'+ph+'</div><div class="nm">'+p.nm+'</div><div class="pt">'+p.pts+'</div>'+fb;
 }
 /* A quién ve resaltado cada quien: el papá SOLO a su hijo, el coach a SU equipo
    (equipo 0, nunca a los contrarios), el jugador a sí mismo, el público a nadie. */
@@ -1883,10 +1929,28 @@ function buildLineup(){
 /* toca un jugador en el juego → desglose rápido */
 function openPlayerSheet(t,i){const p=GAME.teams[t].players[i];const tm=GAME.teams[t];
   const el=document.getElementById('playerSheet');
+  // Coach del equipo local puede sustituir DESDE AQUÍ mismo (item 15) — sin ir a otra pantalla
+  let sub='';
+  if(currentRole==='coach' && t===0 && hasLiveGame()){
+    if(p.on){ const b=bench(0);
+      sub='<div class="ps-subttl">Cambiar a #'+p.num+' — entra de la banca:</div><div class="ps-subrow">'+
+        (b.length?b.map(q=>'<button class="chip" onclick="doQuickSub('+i+','+GAME.teams[0].players.indexOf(q)+')">#'+q.num+' '+q.nm+'</button>').join(''):'<span class="ps-empty">Sin banca disponible</span>')+'</div>'; }
+    else { const oc=onCourt(0);
+      sub='<div class="ps-subttl">Meter a #'+p.num+' — sale de la cancha:</div><div class="ps-subrow">'+
+        oc.map(q=>'<button class="chip" onclick="doQuickSub('+GAME.teams[0].players.indexOf(q)+','+i+')">#'+q.num+' '+q.nm+'</button>').join('')+'</div>'; }
+  }
   el.querySelector('.ps-card').innerHTML=
     '<div class="ps-top"><span class="crest real sm" style="background:var('+tm.color+')">'+tm.ini+'</span><div><div class="ps-nm">#'+p.num+' '+p.nm+'</div><div class="ps-sub">'+tm.name+' · '+p.pos+' · '+(p.on?'en cancha':'en banca')+'</div></div></div>'+
-    '<div class="ps-stats"><div><b>'+p.pts+'</b><span>PTS</span></div><div><b>'+p.min+'′</b><span>MIN</span></div><div><b class="'+(p.f>=4?'rd':'')+'">'+p.f+'</b><span>FALTAS</span></div></div>';
+    '<div class="ps-stats"><div><b>'+p.pts+'</b><span>PTS</span></div><div><b>'+p.min+'′</b><span>MIN</span></div><div><b class="'+(p.f>=4?'rd':'')+'">'+p.f+'</b><span>FALTAS</span></div></div>'+sub;
   document.getElementById('playerSheetBg').classList.add('on');
+}
+/* sustitución rápida desde el tablero en vivo del coach (item 15) */
+function doQuickSub(outIdx,inIdx){ const T=GAME.teams[0]; if(!T||!T.players[outIdx]||!T.players[inIdx])return;
+  T.players[outIdx].on=false; T.players[inIdx].on=true;
+  GAME.log=GAME.log||[]; GAME.log.unshift({t:'Q'+GAME.period,m:'<b>Cambio</b> entra #'+T.players[inIdx].num+' '+T.players[inIdx].nm+' por #'+T.players[outIdx].num,u:null});
+  closePlayerSheet();
+  try{buildLineup();}catch(e){} try{buildCoachSubs();}catch(e){}
+  flashSaved('Cambio hecho ✓ — se ve en el tablero');
 }
 function closePlayerSheet(){document.getElementById('playerSheetBg').classList.remove('on');}
 /* ficha del jugador del roster (coach toca a su jugador para ver su carta) */
@@ -2134,6 +2198,8 @@ function renderPublicLeague(lg,fallbackName,accountId){
       h+='<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;border-top:1px solid var(--line)"><span style="width:20px;color:var(--muted)">'+(i+1)+'</span><span style="flex:1;display:flex;align-items:center;gap:8px;min-width:0"><span class="crest real" style="width:22px;height:22px;font-size:10px;flex:none;'+cs+'">'+(r.t.logo?'':(r.t.ini||''))+'</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.t.name+'</span></span><span style="'+cell+'">'+r.pj+'</span><span style="'+cell+'">'+r.g+'</span><span style="'+cell+'">'+r.p+'</span><span style="'+cell+';font-weight:800;color:var(--liga)">'+r.pts+'</span></div>'; });
     h+='</div>'; }
   else h+='<div class="stratnote">Aún sin partidos jugados — la tabla aparece cuando la mesa registre resultados.</div>';
+  // Bracket público (item 17): si la liga ya armó liguilla, se ve estilizado
+  if(lg.bracket){ h+='<div class="fo-sec-ttl">Liguilla</div><div style="background:linear-gradient(180deg,rgba(20,25,35,.5),rgba(10,12,18,.7));border:1px solid var(--line);border-radius:14px;padding:12px 10px 10px">'+publicBracketHTML(lg)+'</div>'; }
   // Próximos + Resultados
   const cal=lg.calendar||[];
   const up=cal.filter(m=>!m.done).slice(0,8);
@@ -2392,16 +2458,30 @@ function acceptInvite(id){ const n=notes(); const x=n.find(y=>y.id===id); if(!x)
     saveUser(u); x.text='Te uniste a '+x.league; }
   else if(x.action==='join_request'){ x.text=(x.team||'Un equipo')+' fue aprobado en tu liga'; }
   else if(x.action==='accept_team_invite'){ // me invitaron a un equipo y acepto → me uno
-    u.playerTeamCode=x.teamCode; u.playerStatus='aprobado'; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
-    try{ sendInvite('','player_accepted',{to_account:x.from, team_name:x.teamName, player_code:u.playerCode||'', player_name:u.name||''}); }catch(e){}
-    x.text='Te uniste al equipo '+(x.teamName||''); }
+    if(x.minor && x.playerCode){ // invitación para mi hij@ (item 21): el papá acepta por él
+      const kid=(u.children||[]).find(k=>k.code===x.playerCode);
+      if(kid){ kid.teamCode=x.teamCode; kid.status='aprobado'; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
+        try{ sendInvite('','player_accepted',{to_account:x.from, team_name:x.teamName, player_code:x.playerCode, player_name:kid.name||x.playerName||''}); }catch(e){}
+        x.text=(kid.name||'Tu hij@')+' se unió al equipo '+(x.teamName||''); }
+      else { x.text='No se encontró al hij@ vinculado para esta invitación'; }
+    }
+    else { u.playerTeamCode=x.teamCode; u.playerStatus='aprobado'; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
+      try{ sendInvite('','player_accepted',{to_account:x.from, team_name:x.teamName, player_code:u.playerCode||'', player_name:u.name||''}); }catch(e){}
+      x.text='Te uniste al equipo '+(x.teamName||''); }
+  }
   else if(x.action==='approve_team_league'){ approveTeamIntoLeague(x.teamCode); x.text='Aprobaste a "'+(x.team||'un equipo')+'" en tu liga'; }
   else if(x.action==='approve_player_team'){ approvePlayerIntoTeam(x.playerCode); x.text='Aprobaste a '+(x.player||'un jugador')+' en tu equipo'; }
   x.action=null; x.status='done'; x.read=true; saveNotes(n); buildInbox(); flashSaved('Listo ✓');
 }
 /* trae una entidad por su código (búsqueda pública) */
 async function fetchTeamByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('teams_public').select('*').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
-async function fetchPlayerByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('players_public').select('*').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
+async function fetchPlayerByCode(code){ const c=sbClient(); if(!c||!code)return null;
+  try{ const {data}=await c.from('players_public').select('*').eq('code',code).maybeSingle(); if(data)return data; }catch(e){}
+  // item 21: busca en children_public si no es un jugador con cuenta propia (es un menor del tutor)
+  try{ const {data}=await c.from('children_public').select('*').eq('code',code).maybeSingle();
+    if(data)return {code:data.code, name:data.name, num:data.num, pos:data.pos, photo:data.photo, account_id:data.guardian_account, status:data.status, minor:true}; }catch(e){}
+  return null;
+}
 /* el admin aprueba un equipo → lo mete a su liga (roster incluido) */
 async function approveTeamIntoLeague(teamCode){
   const t=await fetchTeamByCode(teamCode); if(!t){ flashSaved('No se encontró el equipo'); return; }
@@ -2763,8 +2843,32 @@ function buildTable(){
   box.innerHTML=h;
 }
 /* --- eliminatoria (bracket) de semifinales + final desde la tabla --- */
-function bracketData(){ try{const s=localStorage.getItem('lm_bracket');if(s)return JSON.parse(s);}catch(e){} return null; }
-function saveBracket(b){ try{localStorage.setItem('lm_bracket',JSON.stringify(b));}catch(e){} }
+/* fuente de verdad del bracket = leagueData().bracket, así viaja con la liga
+   (se publica a league_full y aparece en la vista pública) */
+function bracketData(){ const d=leagueData(); if(d&&d.bracket)return d.bracket;
+  try{const s=localStorage.getItem('lm_bracket');if(s){ const b=JSON.parse(s); if(d){d.bracket=b;saveLeague(d);} return b; }}catch(e){} return null; }
+function saveBracket(b){ const d=leagueData(); if(d){ d.bracket=b; saveLeague(d); } try{localStorage.setItem('lm_bracket',JSON.stringify(b));}catch(e){} }
+/* helper para la vista pública del bracket (item 17): mismo layout que el editable
+   pero sin taps ni selectores */
+function publicBracketHTML(lg){ const b=lg.bracket; if(!b)return '';
+  const teamById=id=>((lg.teams||[]).find(t=>t.id===id))||null;
+  const cellFor=(id,winId)=>{ if(!id)return '<div class="brk-team empty">Por definir</div>';
+    const t=teamById(id); if(!t)return '<div class="brk-team empty">—</div>';
+    const cls=winId?(winId===id?' win':' lose'):'';
+    const st=t.logo?('background-image:url('+t.logo+');background-size:cover;background-position:center'):'background:var('+(t.color||'--publico')+')';
+    return '<div class="brk-team'+cls+'"><span class="crest real" style="width:22px;height:22px;font-size:10px;'+st+'">'+(t.logo?'':(t.ini||''))+'</span><span class="bn">'+t.name+'</span>'+(winId===id?'<span class="chk">✓</span>':'')+'</div>';
+  };
+  const champ=b.final&&b.final.w?teamById(b.final.w):null;
+  let h='<div class="brk">';
+  if(b.semis&&b.semis.length){ h+='<div class="brk-col"><div class="brk-lbl">Semifinal'+(b.semis.length>1?'es':'')+'</div>';
+    b.semis.forEach(s=>{ h+='<div class="brk-match">'+cellFor(s.a,s.w)+cellFor(s.b,s.w)+'</div>'; });
+    h+='</div>'; }
+  h+='<div class="brk-col finalc"><div class="brk-lbl">Final</div><div class="brk-match">'+cellFor(b.final.a,b.final.w)+cellFor(b.final.b,b.final.w)+'</div>'+(b.bye?'<div class="brk-lbl" style="margin-top:6px;color:var(--dim);border:none">1° pasa directo</div>':'')+'</div>';
+  h+='</div>';
+  if(champ){ const cs=champ.logo?('background-image:url('+champ.logo+');background-size:cover;background-position:center'):'background:var('+(champ.color||'--publico')+')';
+    h+='<div class="brk-champ"><span class="crest real" style="'+cs+'">'+(champ.logo?'':(champ.ini||''))+'</span><div><div class="ck">Campeón</div><div class="cn">'+champ.name+'</div></div></div>'; }
+  return h;
+}
 function genBracket(){
   const rows=computeStandings().slice(0,4);
   if(rows.length<2){ flashSaved('Se necesitan al menos 2 equipos en la tabla para armar la liguilla'); return; }
@@ -2807,13 +2911,123 @@ function buildBracket(){
   if(b.semis&&b.semis.length){ h+='<div class="brk-col"><div class="brk-lbl">Semifinal'+(b.semis.length>1?'es':'')+'</div>';
     b.semis.forEach((s,i)=>{ h+='<div class="brk-match">'+brkTeam('semi',i,s.a,s.w)+brkTeam('semi',i,s.b,s.w)+'</div>'; });
     h+='</div>'; }
-  h+='<div class="brk-col"><div class="brk-lbl">Final</div>'+
+  h+='<div class="brk-col finalc"><div class="brk-lbl">Final</div>'+
      '<div class="brk-match">'+brkTeam('final',0,b.final.a,b.final.w)+brkTeam('final',0,b.final.b,b.final.w)+'</div>'+
      (b.bye?'<div class="brk-lbl" style="margin-top:6px;color:var(--dim)">1° pasa directo</div>':'')+'</div>';
   h+='</div>';
   if(champ){ h+='<div class="brk-champ"><span class="crest real" style="background:var('+champ.color+')">'+champ.ini+'</span><div><div class="ck">Campeón</div><div class="cn">'+champ.name+'</div></div></div>'; }
   else if(canEdit){ h+='<div class="stratnote" style="border-left-color:var(--liga);margin-top:12px">Toca al ganador de cada llave para hacerlo avanzar.</div>'; }
   box.innerHTML=h;
+}
+/* ===== ESTRATEGIAS INTERACTIVAS DEL COACH (item 14) =====
+   Pizarrón que cambia según el sistema elegido: 5 ofensivas × 5 defensas, con
+   descripción de cómo funciona y notas que sí se guardan. */
+const DEF_SCHEMES={
+  man:{t:'Hombre a hombre',d:'Cada quien marca a un rival. Máxima presión al balón; ojo con los bloqueos y las ayudas tardías.',pos:[[58,40],[58,110],[100,75],[138,48],[138,102]]},
+  z23:{t:'Zona 2-3',d:'Dos arriba, tres abajo. Blinda la pintura y el rebote; cede el tiro exterior. Los de arriba presionan, los de abajo cierran el aro.',pos:[[72,50],[72,100],[48,75],[120,45],[120,105]]},
+  z32:{t:'Zona 3-2',d:'Tres arriba, dos abajo. Mata el tiro de tres y el perímetro; queda expuesta en la pintura.',pos:[[55,45],[55,105],[86,75],[122,55],[122,95]]},
+  z131:{t:'Zona 1-3-1',d:'Trampa en las bandas. Fuerza pérdidas y tiros incómodos; cede la esquina y el rebote largo.',pos:[[46,75],[82,42],[82,108],[100,75],[134,75]]},
+  press:{t:'Presión 1-2-2',d:'Presión en toda la cancha. Acelera el juego y roba balones; arriesga canastas fáciles si la rompen.',pos:[[42,75],[76,46],[76,104],[120,55],[120,95]]},
+};
+const OFF_SCHEMES={
+  pnr:{t:'Pick & Roll',d:'Bloqueo directo al base y continuación al aro. Obliga a la defensa a decidir: cambiar, ayudar o soltar el tiro.',pos:[[56,75],[92,52],[92,98],[134,46],[134,104]],arr:[[56,75,90,62],[92,52,120,74]]},
+  motion:{t:'Motion (movimiento)',d:'Cortes y bloqueos ciegos sin parar. Cansa a la defensa y crea tiros liberados por dentro.',pos:[[54,75],[86,46],[86,104],[122,60],[122,96]],arr:[[86,46,120,60],[86,104,86,64]]},
+  out41:{t:'4 afuera, 1 adentro',d:'Cuatro tiradores abiertos y un poste. Espacia la cancha para penetrar y cortar al aro.',pos:[[54,75],[90,42],[90,108],[132,52],[112,75]],arr:[[54,75,92,72]]},
+  fast:{t:'Contragolpe',d:'Corre tras cada rebote. Anota antes de que la defensa se acomode; el base sube el balón volando.',pos:[[44,75],[80,46],[80,104],[122,60],[122,96]],arr:[[44,75,118,62],[80,46,114,60]]},
+  iso:{t:'Aislamiento',d:'Despeja un lado para tu mejor 1c1. Sencillo y letal con un anotador dominante.',pos:[[70,75],[50,42],[50,108],[132,46],[132,108]],arr:[[70,75,120,75]]},
+};
+function stratData(){ try{const s=localStorage.getItem('lm_strat');if(s)return JSON.parse(s);}catch(e){} return {def:'z23',off:'pnr',notes:[]}; }
+function saveStrat(s){ try{localStorage.setItem('lm_strat',JSON.stringify(s));}catch(e){} }
+function setStrat(kind,id){ const s=stratData(); s[kind]=id; saveStrat(s); buildStrategies(); }
+function addStratNote(){ const el=document.getElementById('stratNoteInput'); if(!el)return; const t=(el.value||'').trim(); if(!t){flashSaved('Escribe una nota');return;} const s=stratData(); s.notes=s.notes||[]; s.notes.unshift({t:t,ts:Date.now()}); saveStrat(s); el.value=''; buildStrategies(); }
+function delStratNote(i){ const s=stratData(); if(s.notes&&s.notes[i]){ s.notes.splice(i,1); saveStrat(s); buildStrategies(); } }
+function stratBoardSVG(D,O){
+  const col=(currentRole==='coach'||currentRole==='liga')?'var(--coach)':'var(--papa)';
+  let s='<svg viewBox="0 0 180 150" preserveAspectRatio="xMidYMid meet" style="width:100%;display:block">';
+  s+='<rect x="0" y="0" width="180" height="150" fill="#0e1a12"/>';
+  s+='<line x1="168" y1="0" x2="168" y2="150" stroke="rgba(255,255,255,.14)"/>';
+  s+='<rect x="150" y="52" width="18" height="46" fill="none" stroke="rgba(255,255,255,.16)"/>';
+  s+='<circle cx="150" cy="75" r="16" fill="none" stroke="rgba(255,255,255,.16)"/>';
+  s+='<path d="M168 30 A 60 60 0 0 0 168 120" fill="none" stroke="rgba(255,255,255,.14)" stroke-dasharray="3 3"/>';
+  s+='<circle cx="164" cy="75" r="3" fill="none" stroke="#ff9a5a" stroke-width="1.4"/>';
+  s+='<defs><marker id="sarr" markerWidth="7" markerHeight="7" refX="4" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 z" fill="'+col+'"/></marker></defs>';
+  (D.pos||[]).forEach(p=>{ s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="8.5" fill="none" stroke="var(--publico)" stroke-width="2" stroke-dasharray="3 2"/>'; });
+  (O.arr||[]).forEach(a=>{ s+='<path d="M'+a[0]+' '+a[1]+' Q'+((a[0]+a[2])/2)+' '+(Math.min(a[1],a[3])-14)+' '+a[2]+' '+a[3]+'" fill="none" stroke="'+col+'" stroke-width="2" marker-end="url(#sarr)" opacity=".9"/>'; });
+  (O.pos||[]).forEach((p,i)=>{ s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="9" fill="'+col+'"/><text x="'+p[0]+'" y="'+(p[1]+3.5)+'" fill="#0b0d12" font-size="10" font-weight="800" text-anchor="middle" font-family="monospace">'+(i+1)+'</text>'; });
+  s+='</svg>';
+  return s;
+}
+function buildStrategies(){
+  const board=document.getElementById('stratBoard'), extra=document.getElementById('stratExtra'); if(!board||!extra)return;
+  const s=stratData(); const D=DEF_SCHEMES[s.def]||DEF_SCHEMES.z23, O=OFF_SCHEMES[s.off]||OFF_SCHEMES.pnr;
+  board.innerHTML=stratBoardSVG(D,O);
+  let h='<div class="strat-legend"><span><i class="dot fill"></i>Tu equipo (ofensiva)</span><span><i class="dot hollow"></i>Rival (defensa)</span></div>';
+  h+='<div class="eyebrow" style="margin:12px 2px 6px">Ofensiva</div><div class="chiprow">';
+  for(const k in OFF_SCHEMES){ h+='<button class="chip'+(s.off===k?' on':'')+'" onclick="setStrat(\'off\',\''+k+'\')">'+OFF_SCHEMES[k].t+'</button>'; }
+  h+='</div><div class="stratnote" style="border-left-color:var(--coach)"><b>'+O.t+'.</b> '+O.d+'</div>';
+  h+='<div class="eyebrow" style="margin:12px 2px 6px">Defensa</div><div class="chiprow">';
+  for(const k in DEF_SCHEMES){ h+='<button class="chip'+(s.def===k?' on':'')+'" onclick="setStrat(\'def\',\''+k+'\')">'+DEF_SCHEMES[k].t+'</button>'; }
+  h+='</div><div class="stratnote" style="border-left-color:var(--publico)"><b>'+D.t+'.</b> '+D.d+'</div>';
+  h+='<div class="h-row" style="margin-top:14px"><h2 class="disp" style="font-size:18px">Mis notas</h2></div>';
+  h+='<div style="display:flex;gap:8px;margin-bottom:8px"><input class="field" id="stratNoteInput" placeholder="Escribe una nota de la charla técnica…" style="flex:1" onkeydown="if(event.key===\'Enter\')addStratNote()"><button class="btn sm" onclick="addStratNote()">Guardar</button></div>';
+  const notes=s.notes||[];
+  if(!notes.length){ h+='<div class="stratnote" style="border-left-color:var(--dim)">Aún no tienes notas. Guarda ajustes, recordatorios o lo que viste del rival.</div>'; }
+  else { notes.forEach((n,i)=>{ h+='<div class="stratnote" style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><span>'+String(n.t||'').replace(/</g,'&lt;')+'<br><small style="color:var(--dim)">'+timeAgo(n.ts)+'</small></span><button class="le-x" onclick="delStratNote('+i+')">×</button></div>'; }); }
+  extra.innerHTML=h;
+}
+/* ===== VAR/CÁMARA EN VIVO (item 16) — usa la cámara del dispositivo
+   (getUserMedia) + captura + repetición de 8 s con MediaRecorder.
+   El VAR multi-cámara remoto necesita servidor de streaming; queda listo
+   para conectarse cuando la liga lo active. */
+const VAR={stream:null,facing:'environment',rec:null,chunks:[],stills:[]};
+function buildVar(){ const box=document.getElementById('varScreen'); if(!box)return;
+  const live=!!VAR.stream;
+  let h='<div class="var-viewport" id="varView">'+
+    '<video id="varVideo" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;'+(live?'':'display:none')+'"></video>'+
+    (live?'<span class="var-dot live">● EN VIVO</span>':'<span class="ico"><svg class="ic"><use href="#ic-video"/></svg></span><span class="st">Cámara apagada</span>')+
+    '</div>';
+  h+='<div class="var-ctrls">';
+  if(!live){ h+='<button onclick="varStartCam()"><svg class="ic"><use href="#ic-video"/></svg> Encender cámara</button>'; }
+  else { h+='<button onclick="varSnap()"><svg class="ic"><use href="#ic-flag"/></svg> Capturar</button>'+
+    '<button onclick="varRecord(this)"><svg class="ic"><use href="#ic-rewind"/></svg> Repetir 8s</button>'+
+    '<button onclick="varFlip()">⟲ Girar</button>'+
+    '<button onclick="varStopCam()">⏹ Apagar</button>'; }
+  h+='</div>';
+  h+='<div id="varReplayWrap"></div>';
+  h+='<div id="varStills" class="var-stills"></div>';
+  h+='<div class="var-note">Usa la <b>cámara de este teléfono</b> como VAR: captura una jugada o graba 8 s y repítela para revisar una falta o una canasta. <br><small style="color:var(--dim)">Ver las cámaras de <b>otros</b> teléfonos en vivo (multi-cámara remota) necesita un servidor de streaming; queda listo para conectarse cuando la liga lo active.</small></div>';
+  box.innerHTML=h;
+  if(live){ const v=document.getElementById('varVideo'); if(v&&VAR.stream){v.srcObject=VAR.stream;} }
+  renderVarStills();
+}
+function varStartCam(){ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ flashSaved('Este dispositivo no permite cámara en el navegador'); return; }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:VAR.facing},audio:false}).then(s=>{ VAR.stream=s; buildVar(); })
+    .catch(()=>{ flashSaved('No se pudo abrir la cámara (permiso denegado)'); });
+}
+function varStopCam(){ if(VAR.stream){ VAR.stream.getTracks().forEach(t=>{try{t.stop();}catch(e){}}); VAR.stream=null; } if(VAR.rec&&VAR.rec.state!=='inactive'){try{VAR.rec.stop();}catch(e){}} if(document.getElementById('varScreen'))buildVar(); }
+function varFlip(){ VAR.facing=(VAR.facing==='environment')?'user':'environment'; if(VAR.stream){ VAR.stream.getTracks().forEach(t=>{try{t.stop();}catch(e){}}); VAR.stream=null; } varStartCam(); }
+function varSnap(){ const v=document.getElementById('varVideo'); if(!v||!VAR.stream)return;
+  const cv=document.createElement('canvas'); cv.width=v.videoWidth||640; cv.height=v.videoHeight||480; try{ cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height); }catch(e){ return; }
+  let url; try{ url=cv.toDataURL('image/jpeg',0.8); }catch(e){ return; }
+  VAR.stills.unshift({url:url,ts:Date.now()}); if(VAR.stills.length>8)VAR.stills.length=8; renderVarStills(); flashSaved('Jugada capturada ✓'); if(navigator.vibrate)try{navigator.vibrate(20);}catch(e){}
+}
+function renderVarStills(){ const box=document.getElementById('varStills'); if(!box)return;
+  if(!VAR.stills.length){ box.innerHTML=''; return; }
+  let h='<div class="eyebrow" style="margin:10px 2px 6px">Capturas VAR</div><div class="var-strip">';
+  VAR.stills.forEach((s,i)=>{ h+='<div class="var-shot"><img src="'+s.url+'" alt=""><button class="le-x" onclick="varDelStill('+i+')">×</button></div>'; });
+  h+='</div>'; box.innerHTML=h;
+}
+function varDelStill(i){ VAR.stills.splice(i,1); renderVarStills(); }
+function varRecord(btn){ if(!VAR.stream){ flashSaved('Enciende la cámara primero'); return; }
+  if(typeof MediaRecorder==='undefined'){ flashSaved('Este dispositivo no permite grabar en el navegador'); return; }
+  if(VAR.rec&&VAR.rec.state==='recording')return;
+  try{ VAR.chunks=[]; VAR.rec=new MediaRecorder(VAR.stream);
+    VAR.rec.ondataavailable=e=>{ if(e.data&&e.data.size)VAR.chunks.push(e.data); };
+    VAR.rec.onstop=()=>{ const blob=new Blob(VAR.chunks,{type:'video/webm'}); const url=URL.createObjectURL(blob);
+      const w=document.getElementById('varReplayWrap'); if(w)w.innerHTML='<div class="eyebrow" style="margin:10px 2px 6px">Repetición</div><video src="'+url+'" controls autoplay loop playsinline style="width:100%;border-radius:12px;border:1px solid var(--line)"></video>'; };
+    VAR.rec.start(); if(btn){btn.disabled=true;btn.innerHTML='● Grabando…';}
+    setTimeout(()=>{ if(VAR.rec&&VAR.rec.state==='recording'){try{VAR.rec.stop();}catch(e){}} if(btn){btn.disabled=false;btn.innerHTML='<svg class="ic"><use href="#ic-rewind"/></svg> Repetir 8s';} }, 8000);
+  }catch(e){ flashSaved('No se pudo grabar'); }
 }
 /* --- responsivas: consentimiento por jugador (candado para menores) --- */
 function toggleResp(tid,i){const d=leagueData();const t=d.teams.find(x=>x.id===tid);if(t&&t.players[i]){t.players[i].resp=!t.players[i].resp;saveLeague(d);buildResp();}}
@@ -2837,6 +3051,45 @@ function setMatchMesa(idx){ const d=leagueData(); if(!canAdminLeague(d))return; 
   const inp=document.getElementById('mesa_'+idx); const em=((inp&&inp.value)||'').trim().toLowerCase();
   if(em&&!/.+@.+\..+/.test(em)){ flashSaved('Correo inválido'); return; }
   m.mesa=em||null; saveLeague(d); buildLeagueCal(); flashSaved(em?('Mesa asignada: '+em):'Mesa quitada'); }
+/* ===== PARTIDO DE PRUEBA / PREVIEW (item 20) — modo demo entre 2 equipos
+   para que la liga vea cómo se verá al entrar los jugadores, el marcador,
+   etc. No toca datos reales: al terminar no se guarda nada. */
+function buildPreview(){
+  const box=document.getElementById('previewBody'); if(!box)return;
+  const d=leagueData(); const teams=(d&&d.teams)||[];
+  const opts=teams.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
+  let h='<div class="stratnote" style="border-left-color:var(--jugador)">Modo <b>preview</b>: arma un partido chico entre dos equipos para ver cómo se ve el marcador, los jugadores en cancha y los cambios. <b>No cuenta</b>: nada se guarda al terminar.</div>';
+  if(teams.length>=2){
+    h+='<div class="eyebrow" style="margin:12px 2px 6px">Con tus equipos reales</div>'+
+      '<div style="display:flex;gap:8px;align-items:end;margin-bottom:8px"><label style="flex:1;font-size:11px;color:var(--muted)">Local<br><select class="field" id="prvH">'+opts+'</select></label><label style="flex:1;font-size:11px;color:var(--muted)">Visitante<br><select class="field" id="prvA">'+opts.replace('<option value="'+teams[0].id+'">','<option value="'+teams[0].id+'" selected>')+'</select></label></div>'+
+      '<button class="btn block" onclick="startPreviewFromLeague()">Iniciar preview</button>';
+  }
+  h+='<div class="eyebrow" style="margin:18px 2px 6px">O con equipos de demostración</div>'+
+    '<button class="btn ghost block" onclick="startPreviewDemo()">Halcones vs Titanes (jugadores demo)</button>';
+  box.innerHTML=h;
+}
+function _demoRoster(nm,pref){ const names=[pref+' 1',pref+' 2',pref+' 3',pref+' 4',pref+' 5',pref+' 6',pref+' 7',pref+' 8']; const pos=['Base','Escolta','Alero','Ala-pívot','Pívot','Base','Escolta','Alero'];
+  return names.map((n,i)=>({num:String(i+3),nm:n,pos:pos[i]||'Base',pts:0,f:0,min:0,on:i<5})); }
+function _startPreview(hTeam,aTeam){ const r=(typeof rules==='function')?rules():{minPer:10};
+  GAME.period=1; GAME.remainSec=(r.minPer||10)*60; GAME.running=false; GAME.clock=mFmt(GAME.remainSec);
+  GAME.teams=[
+    Object.assign({score:0,tf:0},hTeam),
+    Object.assign({score:0,tf:0},aTeam),
+  ];
+  GAME.log=[]; GAME.matchIdx=-1; GAME.preview=true; GAME.delegated=null;
+  go('mesa'); if(typeof publishLiveGameSoon==='function'){/* no publica preview en vivo */}
+  flashSaved('Preview iniciado — al terminar no se guarda nada');
+}
+function startPreviewDemo(){ _startPreview(
+  {id:'demoH',name:'Halcones (demo)',ini:'HA',color:'--papa',players:_demoRoster('Halcones','H')},
+  {id:'demoA',name:'Titanes (demo)',ini:'TI',color:'--publico',players:_demoRoster('Titanes','T')} ); }
+function startPreviewFromLeague(){ const d=leagueData(); const hId=(document.getElementById('prvH')||{}).value, aId=(document.getElementById('prvA')||{}).value;
+  const H=(d.teams||[]).find(t=>t.id===hId), A=(d.teams||[]).find(t=>t.id===aId);
+  if(!H||!A||H.id===A.id){ flashSaved('Elige dos equipos distintos'); return; }
+  const pmap=t=>(t.players||[]).length? (t.players||[]).map((p,i)=>({num:p.num||String(i+1),nm:p.nm||p.name||'Jugador',pos:p.pos||'Base',pts:0,f:0,min:0,on:i<5})) : _demoRoster(t.name,'J');
+  _startPreview({id:H.id,name:H.name+' (preview)',ini:H.ini,color:H.color,players:pmap(H)},
+                {id:A.id,name:A.name+' (preview)',ini:A.ini,color:A.color,players:pmap(A)});
+}
 function officiateMatch(idx){
   const d=leagueData(); const m=d.calendar[idx]; if(!m||m.done)return; if(!canOfficiate(m))return;
   const H=teamById(m.home), A=teamById(m.away); if(!H||!A)return;
@@ -2851,6 +3104,9 @@ function officiateMatch(idx){
   go('mesa'); publishLiveGameSoon();
 }
 function finishOfficiating(){
+  // preview: NO persiste nada, solo limpia y avisa
+  if(GAME.preview){ GAME.preview=false; GAME.matchIdx=null; clearLiveGame();
+    flashSaved('Partido de prueba terminado — no se guardó nada real'); go('hub'); return; }
   // mesa delegada: no escribo la liga local; envío el resultado al admin dueño
   if(GAME.delegated){ submitMatchResult(); const dg=GAME.delegated; GAME.delegated=null; GAME.matchIdx=null; clearLiveGame();
     flashSaved('Resultado enviado a la liga ✓'); go('directorio'); return; }
@@ -3133,10 +3389,18 @@ function renderShopGrid(admin){
       h+='<div class="eyebrow" style="margin:8px 2px 6px;color:var(--muted)">'+C+'</div><div class="tiles">';
       byCat[C].forEach(p=>{ const mine=p.account_id===myId;
         const img=p.image?('background-image:url('+p.image+');background-size:cover;background-position:center'):('background:linear-gradient(150deg,'+(p.color||'#888')+'40,'+(p.color||'#888')+'10)');
+        const now=Date.now(); const all=SHOP_PURCH||[];
+        const activeRes=all.filter(x=>x.product_id===p.id && x.status==='pending' && !x.released_at && new Date(x.expires_at||0).getTime()>now)[0];
+        const iAmHolder=activeRes && activeRes.buyer_account===myId;
+        const canBuy=!mine && !activeRes;
+        let btn='';
+        if(mine)btn='';
+        else if(iAmHolder)btn='<div style="margin-top:6px;font-size:12px;color:var(--liga);text-align:center">Ya lo apartaste · vence en <b data-expires="'+new Date(activeRes.expires_at).getTime()+'">-</b></div>';
+        else if(activeRes)btn='<div style="margin-top:6px;font-size:12px;color:var(--muted);text-align:center">Apartado · vuelve en <b data-expires="'+new Date(activeRes.expires_at).getTime()+'">-</b></div>';
+        else btn='<button class="btn sm block" style="margin-top:6px" data-buybtn onclick="buyProduct(\''+p.id+'\')">Apartar</button>';
         h+='<div class="prod"><div class="pimg" style="'+img+'">'+(p.image?'':'<span class="pini" style="color:'+(p.color||'#aaa')+'">'+((p.name[0]||'?').toUpperCase())+'</span>')+'</div>'+
           '<div class="pc"><div class="pn">'+p.name+'</div><div class="pp">$'+p.price+'</div></div>'+
-          (admin&&mine?'<button class="pdel" onclick="delProduct(\''+p.id+'\')">×</button>':'')+
-          (!mine?'<button class="btn sm block" style="margin-top:6px" onclick="buyProduct(\''+p.id+'\')">Comprar</button>':'')+
+          (admin&&mine?'<button class="pdel" onclick="delProduct(\''+p.id+'\')">×</button>':'')+ btn+
           '</div>';
       });
       h+='</div>';
@@ -3146,12 +3410,18 @@ function renderShopGrid(admin){
 }
 function renderPurchases(admin){
   const box=document.getElementById('shopPurch'); if(!box)return;
+  shopStartTicker();
   const myId=(_session&&_session.user&&_session.user.id)||'';
   const all=SHOP_PURCH||[];
   if(admin){ const sales=all.filter(x=>x.seller_account===myId && x.status==='pending');
     box.innerHTML = sales.length? '<div class="fo-sec-ttl">Compras por entregar</div>'+sales.map(s=>'<div class="card" style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">'+(s.buyer_name||'Aficionado')+' · código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+'</div></div><button class="btn sm" onclick="fulfillPurchase(\''+s.id+'\')">Entregado</button></div>').join('') : '';
   } else { const buys=all.filter(x=>x.buyer_account===myId);
-    box.innerHTML = buys.length? '<div class="fo-sec-ttl">Mis apartados</div>'+buys.map(s=>'<div class="card" style="margin-bottom:8px"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">Código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+' · '+(s.status==='done'?'entregado ✓':'muestra este código en la mesita')+'</div></div>').join('') : '';
+    const now=Date.now();
+    const activos=buys.filter(s=>s.status==='pending' && !s.released_at && new Date(s.expires_at||0).getTime()>now);
+    const otros=buys.filter(s=>!activos.includes(s));
+    box.innerHTML = buys.length? '<div class="fo-sec-ttl">Mis apartados</div>'+
+      activos.map(s=>'<div class="card" style="margin-bottom:8px;border-color:var(--liga)"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">Código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+' · vence en <b data-expires="'+new Date(s.expires_at).getTime()+'" style="color:var(--warn)">-</b></div><button class="btn ghost sm" style="margin-top:6px" onclick="releaseReservation(\''+s.id+'\')">Liberar reserva</button></div>').join('')+
+      otros.map(s=>'<div class="card" style="margin-bottom:8px;opacity:.7"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">Código '+s.code+' · $'+s.price+' · '+(s.status==='done'?'entregado ✓':(s.status==='released'||s.released_at?'liberado':'vencido'))+'</div></div>').join('') : '';
   }
 }
 function toggleShopForm(){const f=document.getElementById('shopForm');f.style.display=(f.style.display==='none'||!f.style.display)?'block':'none';}
@@ -3169,22 +3439,50 @@ async function addProduct(){
 }
 async function delProduct(id){ const c=sbClient(); if(!c)return; try{ await c.from('products').delete().eq('id',id); flashSaved('Producto quitado'); buildShop(); }catch(e){} }
 function genBuyCode(){ return 'MZ-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(10+Math.random()*89); }
+/* apartado con caducidad + cooldown (item 18) — como los boletos de cine */
+const RESERVE_MIN=25;   // dura 25 min
+const COOLDOWN_MIN=1;   // 1 min anti-bots antes de re-apartar el mismo producto
+function reservationActive(p){ const now=Date.now(); const all=SHOP_PURCH||[]; return all.some(x=>x.product_id===p.id && x.status==='pending' && !x.released_at && new Date(x.expires_at||0).getTime()>now); }
+function reservationBlock(p){ /* cooldown: si YO apenas libere/expire una reserva de este mismo producto, espero 1 min */
+  const myId=(_session&&_session.user&&_session.user.id)||''; const now=Date.now(); const all=SHOP_PURCH||[];
+  const mine=all.filter(x=>x.product_id===p.id && x.buyer_account===myId).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+  if(!mine)return 0;
+  const released=mine.released_at?new Date(mine.released_at).getTime():(new Date(mine.expires_at||0).getTime()<now?new Date(mine.expires_at).getTime():0);
+  if(!released)return 0;
+  const wait=released+COOLDOWN_MIN*60000-now; return wait>0?wait:0;
+}
 async function buyProduct(id){
   const p=(SHOP_PRODS||[]).find(x=>x.id===id); if(!p)return;
   const c=sbClient(); if(!c||!_authed||!_session){ flashSaved('Inicia sesión para apartar'); return; }
-  const code=genBuyCode(); const u=userData()||{};
-  try{ const {error}=await c.from('purchases').insert({code,product_id:p.id,product_name:p.name,price:p.price,seller_account:p.account_id,buyer_name:u.name||'',status:'pending'});
+  await fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); });   // trae el estado más fresco
+  if(reservationActive(p)){ flashSaved('Ese producto está apartado por otra persona. Vuelve en unos minutos.'); return; }
+  const cd=reservationBlock(p); if(cd>0){ flashSaved('Espera '+Math.ceil(cd/1000)+' s antes de re-apartar este producto.'); return; }
+  const code=genBuyCode(); const u=userData()||{}; const expires=new Date(Date.now()+RESERVE_MIN*60000).toISOString();
+  try{ const {error}=await c.from('purchases').insert({code,product_id:p.id,product_name:p.name,price:p.price,seller_account:p.account_id,buyer_name:u.name||'',status:'pending',expires_at:expires});
     if(error){ flashSaved('No se pudo apartar'); return; }
     const body=document.getElementById('buyCodeBody');
     if(body)body.innerHTML='<div style="font-size:13px;color:var(--muted)">Apartaste</div><div style="font-weight:800;font-size:18px;margin:2px 0 12px">'+p.name+' · $'+p.price+'</div>'+
       '<div style="font-family:var(--mono);font-size:30px;font-weight:800;letter-spacing:.06em;color:var(--liga);background:var(--panel2);border:1px dashed var(--liga);border-radius:12px;padding:16px">'+code+'</div>'+
-      '<div style="font-size:13px;color:var(--muted);margin-top:12px">Muestra este código en la mesita de '+(p.league_name||'la liga')+' para pagar y recogerlo.</div>';
+      '<div style="font-size:13px;color:var(--muted);margin-top:12px">Muestra este código en la mesita de '+(p.league_name||'la liga')+' para pagar y recogerlo.</div>'+
+      '<div style="font-size:12px;color:var(--warn);margin-top:6px">Vence en <b>'+RESERVE_MIN+':00</b> min — luego se libera para otro comprador.</div>';
     document.getElementById('buyCodeBg').classList.add('on');
     fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(false); });
   }catch(e){ flashSaved('Sin conexión'); }
 }
 function fulfillPurchase(id){ const c=sbClient(); if(!c)return;
   c.from('purchases').update({status:'done'}).eq('id',id).then(()=>{ flashSaved('Entregado ✓'); fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(true); }); }); }
+/* libera manualmente una reserva (o se detecta caducada) */
+function releaseReservation(id){ const c=sbClient(); if(!c)return;
+  c.from('purchases').update({released_at:new Date().toISOString(),status:'released'}).eq('id',id).then(()=>{ flashSaved('Reserva liberada — otro comprador ya puede apartarlo'); fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderShopGrid(currentRole==='liga'&&canAdminLeague()); renderPurchases(currentRole==='liga'&&canAdminLeague()); }); }); }
+/* tic de la cuenta regresiva de la tienda — 1/s, solo si el usuario está en la tienda */
+let _shopTickT=null;
+function shopStartTicker(){ if(_shopTickT)return; _shopTickT=setInterval(()=>{
+  if(!document.getElementById('s-tienda')||!document.getElementById('s-tienda').classList.contains('on')){ clearInterval(_shopTickT); _shopTickT=null; return; }
+  document.querySelectorAll('[data-expires]').forEach(el=>{ const t=parseInt(el.dataset.expires,10); const left=t-Date.now();
+    if(left<=0){ el.textContent='vencido'; el.style.color='var(--crit)'; const pid=el.dataset.pid; if(pid) el.closest('.card')?.querySelector('[data-buybtn]')?.removeAttribute('disabled'); }
+    else { const m=Math.floor(left/60000), s=Math.floor((left%60000)/1000); el.textContent=m+':'+(s<10?'0':'')+s; }
+  });
+},1000); }
 /* ---- ROSTER: dar de alta agrega de verdad, aparece en el vestidor ---- */
 /* el roster real del equipo = u.team.players (identidad); respaldo local para modo demo */
 function teamRoster(){const u=userData()||{}; const t=u.team||u.coachTeam;
@@ -3273,7 +3571,8 @@ function altaSearchLive(){ const el=document.getElementById('altaSearch'); const
     if(!pl.length){ res.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">Ningún jugador con “'+q+'”. Debe tener su cuenta creada.</div>'; return; }
     let h=''; pl.forEach(p=>{ const st=p.photo?('background-image:url('+p.photo+');background-size:cover;background-position:center'):'background:var(--jugador)';
       const nm=(p.name||'').replace(/\x27/g,"\\\x27");
-      h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(p.photo?'':iniOf(p.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(p.name||'Jugador')+(p.num?' · #'+p.num:'')+'</div><div class="mt"><b style="color:var(--jugador)">'+p.code+'</b> · '+(p.pos||'')+'</div></div><button class="btn sm" onclick="invitePlayerToTeam(\''+p.code+'\',\''+nm+'\',\''+p.account_id+'\')">Invitar</button></div>'; });
+      const badge=p.minor?' <span class="badge" style="background:rgba(232,177,62,.16);color:var(--warn);font-size:9px;padding:1px 6px;border-radius:8px;margin-left:4px">MENOR · tutor</span>':'';
+      h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(p.photo?'':iniOf(p.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(p.name||'Jugador')+(p.num?' · #'+p.num:'')+badge+'</div><div class="mt"><b style="color:var(--jugador)">'+p.code+'</b> · '+(p.pos||'')+'</div></div><button class="btn sm" onclick="invitePlayerToTeam(\''+p.code+'\',\''+nm+'\',\''+p.account_id+'\','+(p.minor?'true':'false')+')">Invitar</button></div>'; });
     res.innerHTML=h;
   }).catch(()=>{ res.innerHTML='<div class="stratnote">Sin conexión para buscar.</div>'; });
 }
@@ -3284,11 +3583,12 @@ function buildTeamRequests(){ const box=document.getElementById('altaReqs'); if(
   let h=''; reqs.forEach(x=>{ h+='<div class="leaguerow"><div class="crest real" style="background:var(--jugador)">'+iniOf(x.player||'?')+'</div><div style="flex:1"><div class="nm">'+(x.player||'Jugador')+'</div><div class="mt">quiere unirse a tu equipo</div></div><div style="display:flex;gap:6px"><button class="btn sm" onclick="acceptInvite(\''+x.id+'\');buildTeamRequests();buildRoster();">Aprobar</button><button class="btn ghost sm" onclick="declineInvite(\''+x.id+'\');buildTeamRequests();">Rechazar</button></div></div>'; });
   box.innerHTML=h;
 }
-/* invitar a un jugador existente a mi equipo (le llega y decide) */
-function invitePlayerToTeam(code,name,acct){ const u=userData()||{}; if(!u.team){ flashSaved('Primero necesitas un equipo'); return; }
+/* invitar a un jugador existente a mi equipo (le llega y decide). Si es menor, el
+   receptor es el papá (guardian_account), y él acepta desde su bandeja (item 21). */
+function invitePlayerToTeam(code,name,acct,minor){ const u=userData()||{}; if(!u.team){ flashSaved('Primero necesitas un equipo'); return; }
   if((u.team.players||[]).some(p=>p.code===code)){ flashSaved('Ese jugador ya está en tu equipo'); return; }
-  sendInvite('','team_invite',{to_account:acct, team_name:u.team.name, team_code:u.team.code, player_name:name, player_code:code});
-  flashSaved('Invitación enviada a '+name+' ✓');
+  sendInvite('','team_invite',{to_account:acct, team_name:u.team.name, team_code:u.team.code, player_name:name, player_code:code, minor:!!minor});
+  flashSaved('Invitación enviada'+(minor?' al tutor de '+name:' a '+name)+' ✓');
 }
 /* el papá vincula a su hij@ por CURP: se ancla a su cuenta, nunca visible en claro.
    Cada hij@ tiene su PROPIO código/número/posición — nunca se mezcla con el perfil del papá. */
@@ -3304,12 +3604,15 @@ function saveChild(){
   u.children=u.children||[];
   if(u.children.some(k=>k.curp===curp)){ flashSaved('Ya vinculaste a este jugador'); return; }
   const age=curpAge(curp);
-  u.children.push({name:nm, num:num, pos:pos, curp:curp, code:genEntityCode('J-'), minor:(age!=null&&age<18), age:age, linkedAt:Date.now()});
-  saveUser(u);
+  u.children.push({name:nm, num:num, pos:pos, curp:curp, code:genEntityCode('J-'), minor:(age!=null&&age<18), age:age, status:'libre', linkedAt:Date.now()});
+  saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
   try{ pushNote('hijo','Vinculaste a '+nm+(age!=null&&age<18?' (menor)':'')); }catch(x){}
   flashSaved('Hij@ vinculad@ ✓'); go('rol');
 }
-function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return; u.children.splice(i,1); if(_cardViewChild>=u.children.length)_cardViewChild=-1; saveUser(u); buildPapaHome(); } }
+async function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return;
+  const removed=u.children[i]; u.children.splice(i,1); if(_cardViewChild>=u.children.length)_cardViewChild=-1; saveUser(u);
+  try{ const c=sbClient(); if(c&&removed&&removed.code) await c.from('children_public').delete().eq('code',removed.code); }catch(e){}
+  buildPapaHome(); } }
 function savePlayer(){const nm=(document.getElementById('altaName').value||'').trim();
   if(!nm){flashSaved('Escribe el nombre del jugador');return;}
   if(!document.getElementById('altaResp').textContent){flashSaved('Falta la responsiva de los padres');return;}
@@ -3473,6 +3776,12 @@ async function publishMyEntities(){
   const c=sbClient(); if(!c||!_authed||!_session)return; const u=userData()||{}; const uid=_session.user.id;
   try{ if(u.team){ await c.from('teams_public').upsert({account_id:uid, code:u.team.code, name:u.team.name, logo:u.team.logo||null, color:u.team.color||'--papa', league_code:u.team.league_code||null, status:u.team.status||'solo', players:u.team.players||[], coaches:u.team.coaches||[], updated_at:new Date().toISOString()}); } }catch(e){}
   try{ if(u.playerCode){ await c.from('players_public').upsert({account_id:uid, code:u.playerCode, name:u.name||'', email:(u.email||'').toLowerCase()||null, num:u.num||null, pos:u.pos||null, photo:u.photo||null, team_code:u.playerTeamCode||null, status:u.playerStatus||'libre', updated_at:new Date().toISOString()}); } }catch(e){}
+  // item 21: hij@s del papá se publican como jugadores buscables (bajo la cuenta del tutor)
+  try{ if(u.children && u.children.length){
+    for(const k of u.children){ if(!k.code)continue;
+      await c.from('children_public').upsert({code:k.code, guardian_account:uid, name:k.name||'', num:k.num||null, pos:k.pos||null, photo:k.photo||null, team_code:k.teamCode||null, status:k.status||'libre', updated_at:new Date().toISOString()});
+    }
+  } }catch(e){}
 }
 /* buscador universal: ligas, equipos y jugadores por NOMBRE o CÓDIGO */
 async function searchEntities(q){ const c=sbClient();
@@ -3480,12 +3789,16 @@ async function searchEntities(q){ const c=sbClient();
   q=(q||'').replace(/[,()*%]/g,' ').replace(/\s+/g,' ').trim(); if(!c||!q)return {leagues:[],teams:[],players:[]};
   const like='%'+q+'%';
   try{
-    const [lg,tm,pl]=await Promise.all([
+    const [lg,tm,pl,kd]=await Promise.all([
       c.from('public_leagues').select('account_id,name,logo,code,teams,players').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
-      c.from('teams_public').select('account_id,code,name,logo,color,status,league_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
-      c.from('players_public').select('account_id,code,name,num,pos,photo,status,team_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20)
+      c.from('teams_public').select('account_id,code,name,logo,color,status,league_code,coaches').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
+      c.from('players_public').select('account_id,code,name,num,pos,photo,status,team_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
+      c.from('children_public').select('guardian_account,code,name,num,pos,photo,status,team_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20)
     ]);
-    return {leagues:(lg.data||[]), teams:(tm.data||[]), players:(pl.data||[])};
+    // los hij@s se muestran junto a los jugadores (marcados como menor:true) para que el
+    // coach pueda invitarlos igual — la respuesta la aprueba el papá desde su bandeja
+    const kids=(kd.data||[]).map(k=>({account_id:k.guardian_account, code:k.code, name:k.name, num:k.num, pos:k.pos, photo:k.photo, status:k.status, team_code:k.team_code, minor:true}));
+    return {leagues:(lg.data||[]), teams:(tm.data||[]), players:(pl.data||[]).concat(kids)};
   }catch(e){ return {leagues:[],teams:[],players:[]}; }
 }
 let _searchT=null;
@@ -3540,10 +3853,12 @@ function accountRoles(){ const u=userData()||{};
   let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); return r; }
 function openRoleSwitch(){
   const roles=accountRoles(); if(roles.length<=1){ openProfile(); return; }
-  const sheet=document.querySelector('#sheet .sheet'); if(!sheet)return;
-  let h='<h3>¿Cómo quieres entrar?</h3>';
+  const body=document.getElementById('sheetBody'); const ttl=document.getElementById('sheetTitle');
+  if(!body||!document.getElementById('sheet'))return;
+  if(ttl)ttl.textContent='¿Cómo quieres entrar?';
+  let h='';
   roles.forEach(r=>{ h+='<div class="opt" onclick="setActiveRole(\''+r+'\')"><span class="hat" style="background:var('+(ROLE_COLOR[r]||'--publico')+')"></span><b>'+(ROLE_LABEL[r]||r)+'</b><span class="r">'+((userData()||{}).name||'')+'</span></div>'; });
-  sheet.innerHTML=h; document.getElementById('sheet').classList.add('on');
+  body.innerHTML=h; openSheet();
 }
 function setActiveRole(r){ const u=userData()||{}; u.role=r; saveUser(u); currentRole=ROLE_INTERNAL[r]||'publico'; closeSheet(); modeIdx=0; go('hub'); }
 function setAuthMode(m){
