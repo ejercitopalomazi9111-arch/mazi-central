@@ -21,6 +21,7 @@ function makeEl() {
   el.remove = () => {}; el.focus = () => {}; el.click = () => {}; el.closest = () => null;
   el.getContext = () => ({ fillRect(){}, fillText(){}, drawImage(){}, createLinearGradient:()=>({addColorStop(){}}), beginPath(){}, arc(){}, fill(){}, save(){}, restore(){}, measureText:()=>({width:10}), roundRect(){} });
   el.toDataURL = () => 'data:,'; el.getBoundingClientRect = () => ({ width: 100, height: 100, left: 0, top: 0 });
+  el.scrollTo = () => {}; el.scrollIntoView = () => {}; el.scrollLeft = 0; el.scrollWidth = 100; el.clientWidth = 100; el.offsetWidth = 100; el.offsetHeight = 100;
   return new Proxy(el, { get(t, k) { if (k in t) return t[k]; if (typeof k === 'string' && /^on/.test(k)) return t[k] || null; return undefined; }, set(t, k, v) { t[k] = v; return true; } });
 }
 const els = {};
@@ -100,7 +101,8 @@ async function registrarse(name, email, roles, f) {
 }
 async function entrar(email) { setField('inEmail', email); setField('inPass', 'Prueba123'); R('doSignin();'); await wait(80); }
 const get = (expr) => R('(' + expr + ')');
-const getA = (expr) => RA('return (' + expr + ');');
+// Si la cadena trae sentencias (var/return/try/;) se ejecuta como cuerpo; si no, como expresión.
+const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ? expr : ('return (' + expr + ');'));
 
 (async () => {
   let ligaAcc, ligaCode, teamCode1, teamAcc1, teamCode2, teamAcc2;
