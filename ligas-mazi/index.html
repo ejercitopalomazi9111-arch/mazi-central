@@ -2153,7 +2153,7 @@ function buildEnVivoBoard(){
   const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx).sort((a,b)=>bydate(a.m,b.m)).slice(0,10);
   if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
     up.forEach(x=>{ const m=x.m; const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'');
+      const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
       h+=faceoffCard(H,A,{mode:'next',when:when});
       if(canOfficiate(m)) h+='<div class="le-officiate" style="margin:-6px 0 10px" onclick="officiateMatch('+x.i+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir este partido (eres la mesa)</div>'; }); }
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
@@ -2375,7 +2375,7 @@ function buildPapaHome(){
   if(up.length){
     h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Próximos en la liga</h2></div>';
     up.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      h+='<div class="match"><div class="when">J'+m.jornada+'</div><div class="vs">'+H.name+' vs '+A.name+'<small>'+(d.name||'')+'</small></div></div>'; });
+      h+='<div class="match"><div class="when">J'+m.jornada+'</div><div class="vs">'+H.name+' vs '+A.name+'<small>'+(d.name||'')+(m.place?' · '+m.place:'')+(m.time?' · '+m.time:'')+'</small></div></div>'; });
   }
   box.innerHTML=h;
 }
@@ -2687,13 +2687,17 @@ function bracketData(){ try{const s=localStorage.getItem('lm_bracket');if(s)retu
 function saveBracket(b){ try{localStorage.setItem('lm_bracket',JSON.stringify(b));}catch(e){} }
 function genBracket(){
   const rows=computeStandings().slice(0,4);
-  if(rows.length<4){ flashSaved('La liguilla necesita al menos 4 equipos en la tabla'); return; }
-  saveBracket({ semis:[{a:rows[0].t.id,b:rows[3].t.id,w:null},{a:rows[1].t.id,b:rows[2].t.id,w:null}], final:{a:null,b:null,w:null} });
-  buildBracket();
+  if(rows.length<2){ flashSaved('Se necesitan al menos 2 equipos en la tabla para armar la liguilla'); return; }
+  const id=i=>rows[i].t.id; let b;
+  if(rows.length===2){ b={ semis:[], final:{a:id(0),b:id(1),w:null} }; }
+  else if(rows.length===3){ b={ semis:[{a:id(1),b:id(2),w:null,slot:'b'}], final:{a:id(0),b:null,w:null}, bye:id(0) }; }
+  else { b={ semis:[{a:id(0),b:id(3),w:null,slot:'a'},{a:id(1),b:id(2),w:null,slot:'b'}], final:{a:null,b:null,w:null} }; }
+  saveBracket(b); buildBracket();
+  flashSaved(rows.length===2?'Liguilla armada: la final ✓':(rows.length===3?'Liguilla armada (3 equipos: 1° pasa directo) ✓':'Liguilla armada ✓'));
 }
 function pickWinner(round,idx,teamId){
   if(currentRole!=='liga')return; const b=bracketData(); if(!b)return;
-  if(round==='semi'){ b.semis[idx].w=teamId; b.final[idx===0?'a':'b']=teamId; b.final.w=null; }
+  if(round==='semi'){ b.semis[idx].w=teamId; const slot=b.semis[idx].slot||(idx===0?'a':'b'); b.final[slot]=teamId; b.final.w=null; }
   else { b.final.w=teamId; }
   saveBracket(b); buildBracket();
 }
@@ -2709,18 +2713,23 @@ function buildBracket(){
   const b=bracketData(); const canEdit=currentRole==='liga';
   const played=computeStandings().filter(r=>r.pj>0).length;
   let h='';
-  if(canEdit){ h+='<button class="btn block" onclick="genBracket()" style="margin:2px 0 14px"><svg class="ic"><use href="#ic-flag"/></svg> '+(b?'Rehacer':'Armar')+' liguilla (top 4 de la tabla)</button>'; }
+  const nTeams=computeStandings().length;
+  if(canEdit){ h+='<button class="btn block" onclick="genBracket()" style="margin:2px 0 14px"><svg class="ic"><use href="#ic-flag"/></svg> '+(b?'Rehacer':'Armar')+' liguilla '+(nTeams<4?'(con los '+Math.max(nTeams,0)+' equipos)':'(top 4 de la tabla)')+'</button>'; }
   if(!b){
-    h+='<div class="stratnote" style="border-left-color:var(--liga)">'+(canEdit?'Arma la liguilla y saldrá el cuadro: 1° vs 4° y 2° vs 3°, ganadores a la final.':'La liga aún no arma la eliminatoria.')+(played<4?' <b>Se necesitan al menos 4 equipos con partidos jugados.</b>':'')+'</div>';
+    let msg;
+    if(nTeams<2){ msg='<b>Aún no hay equipos suficientes.</b> Se necesitan al menos <b>2 equipos</b> en la tabla para armar la liguilla. Inscribe equipos y juega algún partido.'; }
+    else { msg=canEdit?('Toca «Armar liguilla» y saldrá el cuadro. Con <b>'+nTeams+' equipo'+(nTeams>1?'s':'')+'</b>: '+(nTeams===2?'final directa 1° vs 2°.':(nTeams===3?'el 1° pasa directo a la final y 2° vs 3° en semifinal.':'1° vs 4° y 2° vs 3°, ganadores a la final.'))):'La liga aún no arma la eliminatoria.'; }
+    h+='<div class="stratnote" style="border-left-color:var(--liga)">'+msg+'</div>';
     box.innerHTML=h; return;
   }
   const champ=b.final.w?teamById(b.final.w):null;
   h+='<div class="brk">';
-  h+='<div class="brk-col"><div class="brk-lbl">Semifinales</div>'+
-     '<div class="brk-match">'+brkTeam('semi',0,b.semis[0].a,b.semis[0].w)+brkTeam('semi',0,b.semis[0].b,b.semis[0].w)+'</div>'+
-     '<div class="brk-match">'+brkTeam('semi',1,b.semis[1].a,b.semis[1].w)+brkTeam('semi',1,b.semis[1].b,b.semis[1].w)+'</div></div>';
+  if(b.semis&&b.semis.length){ h+='<div class="brk-col"><div class="brk-lbl">Semifinal'+(b.semis.length>1?'es':'')+'</div>';
+    b.semis.forEach((s,i)=>{ h+='<div class="brk-match">'+brkTeam('semi',i,s.a,s.w)+brkTeam('semi',i,s.b,s.w)+'</div>'; });
+    h+='</div>'; }
   h+='<div class="brk-col"><div class="brk-lbl">Final</div>'+
-     '<div class="brk-match">'+brkTeam('final',0,b.final.a,b.final.w)+brkTeam('final',0,b.final.b,b.final.w)+'</div></div>';
+     '<div class="brk-match">'+brkTeam('final',0,b.final.a,b.final.w)+brkTeam('final',0,b.final.b,b.final.w)+'</div>'+
+     (b.bye?'<div class="brk-lbl" style="margin-top:6px;color:var(--dim)">1° pasa directo</div>':'')+'</div>';
   h+='</div>';
   if(champ){ h+='<div class="brk-champ"><span class="crest real" style="background:var('+champ.color+')">'+champ.ini+'</span><div><div class="ck">Campeón</div><div class="cn">'+champ.name+'</div></div></div>'; }
   else if(canEdit){ h+='<div class="stratnote" style="border-left-color:var(--liga);margin-top:12px">Toca al ganador de cada llave para hacerlo avanzar.</div>'; }
