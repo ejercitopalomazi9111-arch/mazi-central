@@ -390,6 +390,47 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
         detail: 'carlos: super='+carlosSuper+' coins='+carlosCoins+' | pepito: super='+inheritedSuper+' coins='+pepitoCoins+' name='+gotOwnName+' team='+gotOwnTeam };
     });
 
+    await goal('11 rarezas + cosméticos: mínimo 20 marcos/auras/destellos/accesorios/fondos', async () => {
+      const r = get('Object.keys(RARITY).length');
+      const nFrame = get("COSMETICS.filter(c=>c.kind==='frame').length");
+      const nEffect = get("COSMETICS.filter(c=>c.kind==='effect').length");
+      const nShine = get("COSMETICS.filter(c=>c.kind==='shine').length");
+      const nAcc = get("COSMETICS.filter(c=>c.kind==='accessory').length");
+      const nBg = get("COSMETICS.filter(c=>c.kind==='bg').length");
+      const sum = get('Object.values(RARITY).reduce((s,r)=>s+r.w,0)');
+      return { ok: r === 11 && nFrame >= 20 && nEffect >= 20 && nShine >= 20 && nAcc >= 20 && nBg >= 20 && sum > 0,
+        detail: 'rarezas=' + r + ' frame=' + nFrame + ' effect=' + nEffect + ' shine=' + nShine + ' acc=' + nAcc + ' bg=' + nBg };
+    });
+
+    await goal('Super Admin: openAllPacks abre todos los sobres a la vez', async () => {
+      await entrar('admin@t.mx'); await wait(40);
+      // fuerza estado de súper admin en el sim: cambio la sesión y el perfil local
+      R("_session={user:{id:_session.user.id,email:'palomazi9111@gmail.com'}};var u=userData();u.email='palomazi9111@gmail.com';saveUser(u);var e=econ();e.packs=20;saveEcon(e);");
+      const isSup = get('isSuperAdmin()');
+      const before = get('econ().packs');
+      await getA("await openAllPacks();return 'ok';"); await wait(300);
+      const after = get('econ().packs');
+      const owned = get('(econ().owned||[]).length');
+      return { ok: isSup && before === 20 && after === 0 && owned > 0,
+        detail: 'super=' + isSup + ' packs=' + before + '->' + after + ' owned=' + owned };
+    });
+
+    await goal('flashEvent con evento válido no truena y define color por tipo', async () => {
+      const types = ['score1','score2','score3','foul','foul_hot','foulout','tech','steal','block','sub_in','buzzer','clutch'];
+      const missing = types.filter(t => !get("!!EVT_STYLES['" + t + "']"));
+      const r = get("(function(){try{flashEvent('score3',{player:'Kevin'});return 'ok';}catch(e){return 'THREW:'+e.message;}})()");
+      return { ok: missing.length === 0 && r === 'ok', detail: 'faltan=' + missing.join(',') + ' llamada=' + r };
+    });
+
+    await goal('Cosméticos: aplicar uno por categoría (no reemplazan entre sí)', async () => {
+      R("var e=econ();e.owned=['f_dorado','e_neon','a_lentes'];e.equipped={};saveEcon(e);");
+      R("applyCosmetic('f_dorado');applyCosmetic('e_neon');applyCosmetic('a_lentes');");
+      const eq = get("JSON.stringify(econ().equipped)");
+      const parsed = JSON.parse(eq);
+      return { ok: parsed.frame === 'f_dorado' && parsed.effect === 'e_neon' && parsed.accessory === 'a_lentes',
+        detail: eq };
+    });
+
   } catch (e) { journey('FATAL'); await goal('excepción del viaje', async () => ({ ok: false, detail: e.message })); }
 
   let total = 0, pass = 0;
