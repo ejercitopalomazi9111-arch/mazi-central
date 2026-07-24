@@ -222,6 +222,21 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
     await goal('Buscar con caracteres raros no truena', async () => { const r = await getA("try{await searchEntities('a,b(c)%* ñ');return 'ok';}catch(e){return 'THREW:'+e.message;}"); return { ok: r === 'ok', detail: r }; });
     await goal('Correo duplicado se bloquea al registrarse', async () => { const r = await getA("var x=await sbClient().auth.signUp({email:'admin@t.mx',password:'x'});return x.error?'blocked':'allowed';"); return { ok: r === 'blocked', detail: r }; });
     await goal('Anotar sin jugador no truena (guarda defensiva)', async () => { const r = get("(function(){try{mT=0;mP=null;mScore(2);return 'ok';}catch(e){return 'THREW:'+e.message;}})()"); return { ok: r === 'ok', detail: r }; });
+    await goal('Rechazar una solicitud: al solicitante le llega la respuesta', async () => {
+      // nuevo dueño solicita entrar a la liga
+      await registrarse('Nico Dueño', 'dueno3@t.mx', ['dueno'], { team: 'Lobos' }); await wait(60);
+      R(`requestJoinLeagueTeam(${JSON.stringify(ligaAcc)},'Liga Metropolitana');`); await wait(80);
+      // admin recibe y RECHAZA
+      await entrar('admin@t.mx'); R('pollInvitations();'); await wait(120);
+      const id = get("(function(){var n=notes().find(x=>x.action==='approve_team_league'&&x.team==='Lobos');return n?n.id:null;})()");
+      if (!id) return { ok: false, detail: 'admin no recibió la solicitud de Lobos' };
+      R(`declineInvite(${JSON.stringify(id)});`); await wait(120);
+      // el solicitante debe recibir la respuesta y volver a 'solo'
+      await entrar('dueno3@t.mx'); R('pollInvitations();'); await wait(150);
+      const got = get("notes().some(x=>/no fue aceptada/.test(x.text||''))");
+      const st = get("(userData().team||{}).status");
+      return { ok: got && st === 'solo', detail: 'aviso=' + got + ' status=' + st };
+    });
 
   } catch (e) { journey('FATAL'); await goal('excepción del viaje', async () => ({ ok: false, detail: e.message })); }
 
