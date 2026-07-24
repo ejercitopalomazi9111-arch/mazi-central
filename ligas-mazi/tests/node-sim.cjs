@@ -258,6 +258,14 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       return { ok: !!joined && inRoster, detail: 'joined=' + joined + ' inRoster=' + inRoster };
     });
 
+    await goal('Cuenta de jugador NO crea liga fantasma "Mi liga"', async () => {
+      await registrarse('Solo Jugador', 'jug5@t.mx', ['jugador'], { num: '3' }); await wait(60);
+      const owns = get("ownsRealLeague()");
+      const stored = get("(function(){try{var s=JSON.parse(localStorage.getItem('lm_league')||'null');return s?s.name:null;}catch(e){return 'ERR';}})()");
+      // no debe considerarse dueño de liga, y si hay algo guardado no debe ser la fantasma propia
+      return { ok: owns === false, detail: 'owns=' + owns + ' stored=' + stored };
+    });
+
   } catch (e) { journey('FATAL'); await goal('excepción del viaje', async () => ({ ok: false, detail: e.message })); }
 
   let total = 0, pass = 0;
