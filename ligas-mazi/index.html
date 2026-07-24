@@ -375,7 +375,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .pcard .rk{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#0b0d12;background:linear-gradient(90deg,#ff9a5a,#a774f0);padding:4px 10px;border-radius:20px;font-weight:700;z-index:2}
 .pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:2}
 .pcard .ov b{font-family:var(--disp);font-weight:800;font-size:40px;line-height:.8;color:var(--accent-lt)} .pcard .ov small{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em}
-.pcard .photo{width:min(60%,196px);aspect-ratio:3/4;height:auto;margin:30px auto 0;border-radius:12px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer}
+.pcard .photo{width:min(78%,260px);aspect-ratio:3/4;height:auto;margin:30px auto 0;border-radius:14px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer;position:relative;z-index:2}
 .pcard .photo.has-photo{border-style:solid;border-color:#2a313d;background-size:cover;background-position:center top}
 .pcard .nm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:26px;padding:12px 16px 2px} .pcard .club{font-size:12.5px;color:var(--dim);padding:0 16px}
 .pcard .stats{display:flex;gap:6px;padding:14px 16px 18px}
@@ -777,6 +777,114 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .note .nt{font-size:14px;font-weight:650}
 .note .nm2{font-size:12px;color:var(--muted);margin-top:1px}
 .note .nact{display:flex;gap:8px;margin-top:9px}
+/* ═══════════════════ CARTAS: ANIMACIONES, DESTELLOS, ACCESORIOS ═══════════════════ */
+/* Overlay contenedor sobre la carta para efectos animados */
+.pcard{position:relative}
+.pcard .fx-frame{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:5}
+.pcard .fx-shine{position:absolute;inset:0;border-radius:inherit;pointer-events:none;overflow:hidden;z-index:6}
+.pcard .fx-shine::before{content:"";position:absolute;top:-30%;left:-40%;width:40%;height:180%;transform:rotate(20deg);background:linear-gradient(90deg,transparent,rgba(255,215,90,.85),transparent);animation:shineSweep 2.4s cubic-bezier(.5,.1,.5,1) infinite}
+.pcard .fx-shine.double::after{content:"";position:absolute;top:-30%;right:-40%;width:30%;height:180%;transform:rotate(20deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:shineSweep 2.4s cubic-bezier(.5,.1,.5,1) infinite;animation-delay:1s}
+.pcard .fx-shine.prisma::before{background:linear-gradient(90deg,#ff5aa0,transparent,#35c2cf)}
+.pcard .fx-shine.orbit::before{top:20%;left:20%;width:60%;height:60%;transform:none;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.85),transparent 70%);animation:orbitPulse 2s ease-in-out infinite}
+.pcard .fx-accessories{position:absolute;inset:0;pointer-events:none;z-index:7;overflow:hidden;border-radius:inherit}
+.pcard .fx-accessories .acc{position:absolute;font-size:26px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.pcard .fx-accessories .acc.tl{top:8px;left:10px}
+.pcard .fx-accessories .acc.tr{top:8px;right:10px}
+.pcard .fx-accessories .acc.bl{bottom:8px;left:10px}
+.pcard .fx-accessories .acc.br{bottom:8px;right:10px}
+.pcard .fx-accessories .acc.face{top:18%;left:50%;transform:translateX(-50%);font-size:36px}
+.pcard .fx-accessories .acc.head{top:2%;left:50%;transform:translateX(-50%);font-size:28px}
+/* Sweep base */
+@keyframes shineSweep{0%{left:-40%}80%{left:120%}100%{left:120%}}
+@keyframes orbitPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
+/* Marcos animados */
+@keyframes framePulse{0%,100%{box-shadow:inset 0 0 0 3px var(--fc,#e8b13e),0 0 22px var(--fc,#e8b13e)}50%{box-shadow:inset 0 0 0 3px var(--fc,#e8b13e),0 0 46px var(--fc,#e8b13e)}}
+.anmFrameGold{--fc:#e8b13e;animation:framePulse 2.2s ease-in-out infinite}
+.anmFrameBlue{--fc:#5b8cff;animation:framePulse 2.2s ease-in-out infinite}
+.anmFrameRed{--fc:#e94a5a;animation:framePulse 2s ease-in-out infinite}
+.anmFramePurple{--fc:#a774f0;animation:framePulse 2.4s ease-in-out infinite}
+.anmFrameDiamond{--fc:#bfe9ff;animation:framePulse 1.8s ease-in-out infinite}
+.anmFramePink{--fc:#ff8fd8;animation:framePulse 2s ease-in-out infinite}
+.anmFrameElectric{box-shadow:inset 0 0 0 3px #56d9ff,0 0 20px #56d9ff;animation:frameJitter .18s steps(2) infinite}
+@keyframes frameJitter{0%{filter:hue-rotate(0)}50%{filter:hue-rotate(-15deg) brightness(1.2)}100%{filter:hue-rotate(0)}}
+.anmFramePlasma{background:linear-gradient(120deg,#ff5aa0,#8f5cff,#35c2cf,#ff5aa0);background-size:300% 300%;animation:plasmaShift 4s linear infinite;-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:3px}
+@keyframes plasmaShift{0%{background-position:0% 0%}100%{background-position:300% 0%}}
+.anmFrameGalaxy{box-shadow:inset 0 0 0 3px #8f5cff;animation:galaxyFrame 3s ease-in-out infinite}
+@keyframes galaxyFrame{0%,100%{box-shadow:inset 0 0 0 3px #8f5cff,inset 0 0 40px rgba(143,92,255,.5)}50%{box-shadow:inset 0 0 0 3px #35c2cf,inset 0 0 60px rgba(53,194,207,.6)}}
+.anmFrameSun{box-shadow:inset 0 0 0 3px #ffd15a;animation:sunFrame 2.6s linear infinite}
+@keyframes sunFrame{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+.anmFrameDark{box-shadow:inset 0 0 0 3px #161826,inset 0 0 40px rgba(90,60,200,.5);animation:darkBreath 3.2s ease-in-out infinite}
+@keyframes darkBreath{0%,100%{filter:hue-rotate(0) brightness(1)}50%{filter:hue-rotate(30deg) brightness(1.4)}}
+.anmFrameRainbow{background:linear-gradient(90deg,#ff5a5a,#e8b13e,#3ecf8e,#35c2cf,#5b8cff,#a774f0,#ff5aa0,#ff5a5a);background-size:400% 100%;animation:plasmaShift 3s linear infinite;-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:3px}
+/* Auras / efectos de fondo */
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 20px var(--fc)}50%{box-shadow:0 0 46px var(--fc)}}
+.anmPulseBlue{--fc:rgba(91,140,255,.55);animation:pulseGlow 2s ease-in-out infinite;box-shadow:0 0 20px var(--fc)}
+.anmPulsePurple{--fc:rgba(167,116,240,.55);animation:pulseGlow 2s ease-in-out infinite;box-shadow:0 0 20px var(--fc)}
+.anmPulsePink{--fc:rgba(255,143,216,.6);animation:pulseGlow 1.8s ease-in-out infinite;box-shadow:0 0 20px var(--fc)}
+.anmPulseFast{animation:pulseGlow 1s ease-in-out infinite}
+.anmHoloShift{background:linear-gradient(120deg,rgba(255,90,160,.4),rgba(53,194,207,.4),rgba(167,116,240,.4));background-size:200% 200%;animation:plasmaShift 5s linear infinite;box-shadow:0 0 34px rgba(167,116,240,.5)}
+.anmStatic{background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 2px,transparent 2px 4px);animation:staticJitter .12s steps(3) infinite}
+@keyframes staticJitter{0%{background-position:0 0}100%{background-position:0 4px}}
+.anmFire{background:radial-gradient(circle at 50% 100%,rgba(255,140,40,.55),transparent 60%);animation:fireFlicker .18s steps(2) infinite}
+@keyframes fireFlicker{0%{opacity:.85;filter:hue-rotate(-6deg)}100%{opacity:1;filter:hue-rotate(6deg)}}
+.anmLightning{background:linear-gradient(180deg,transparent,rgba(120,220,255,.15));animation:boltFlash 3s steps(2) infinite}
+@keyframes boltFlash{0%,80%,100%{opacity:.6}85%{opacity:1;box-shadow:inset 0 0 40px #7fdcff,0 0 60px #7fdcff}}
+.anmNebula{background:radial-gradient(circle at 30% 40%,rgba(124,83,201,.5),transparent 50%),radial-gradient(circle at 70% 60%,rgba(53,194,207,.4),transparent 50%);background-size:200% 200%;animation:plasmaShift 8s ease-in-out infinite;box-shadow:0 0 46px rgba(124,83,201,.4)}
+.anmDiamondSparkle{background:radial-gradient(circle at 30% 30%,rgba(191,233,255,.4),transparent 40%),radial-gradient(circle at 70% 70%,rgba(255,255,255,.4),transparent 40%);animation:sparkleTwinkle 2s ease-in-out infinite;box-shadow:0 0 40px rgba(191,233,255,.6)}
+@keyframes sparkleTwinkle{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+.anmGalaxy{background:conic-gradient(from 0deg,rgba(143,92,255,.5),rgba(53,194,207,.4),rgba(255,143,216,.4),rgba(143,92,255,.5));animation:spin 6s linear infinite;box-shadow:0 0 50px rgba(143,92,255,.55)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.anmRainbow{background:linear-gradient(120deg,#ff5a5a,#e8b13e,#3ecf8e,#35c2cf,#5b8cff,#a774f0,#ff5aa0);background-size:400% 100%;animation:plasmaShift 4s linear infinite;opacity:.45;mix-blend-mode:overlay}
+.anmDarkMatter{background:radial-gradient(circle at 50% 50%,rgba(90,60,200,.6),transparent 60%);animation:pulseGlow 2.4s ease-in-out infinite;--fc:rgba(90,60,200,.6)}
+.anmSingularity{background:radial-gradient(circle at 50% 50%,#000 25%,rgba(143,92,255,.55) 40%,transparent 65%);animation:spin 5s linear infinite;box-shadow:0 0 70px rgba(143,92,255,.7)}
+/* Fondos animados */
+.anmAurora{background:linear-gradient(180deg,#0a2038,#000);position:relative}
+.anmAurora::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 20%,rgba(90,255,180,.25) 45%,rgba(120,90,220,.2) 60%,transparent 80%);animation:auroraDrift 6s ease-in-out infinite;filter:blur(24px)}
+@keyframes auroraDrift{0%,100%{transform:translateX(-8%)}50%{transform:translateX(8%)}}
+.anmLava::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 90%,rgba(255,120,40,.7),transparent 50%),radial-gradient(circle at 70% 100%,rgba(255,60,20,.6),transparent 45%);animation:lavaBubble 3s ease-in-out infinite}
+@keyframes lavaBubble{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.anmSparkle::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.9) 0.5px,transparent 1px),radial-gradient(circle,rgba(255,255,255,.7) 0.5px,transparent 1px);background-size:40px 40px,25px 25px;background-position:0 0,15px 20px;animation:sparkleDrift 8s linear infinite;opacity:.6}
+@keyframes sparkleDrift{0%{background-position:0 0,15px 20px}100%{background-position:40px 40px,55px 60px}}
+.anmGalaxyDrift{position:relative}
+.anmGalaxyDrift::after{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 30% 40%,rgba(143,92,255,.4),transparent 40%),radial-gradient(circle at 70% 60%,rgba(53,194,207,.3),transparent 40%);animation:spin 30s linear infinite}
+.anmDarkPulse{animation:darkBreath 3s ease-in-out infinite}
+/* Accesorios animados */
+@keyframes flock{0%,100%{transform:translate(0,0)}25%{transform:translate(-3px,-4px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,3px)}}
+.anmFlock{animation:flock 1.4s ease-in-out infinite}
+@keyframes fallDrift{0%{transform:translateY(-20%) rotate(0)}100%{transform:translateY(120%) rotate(360deg)}}
+.anmFall{animation:fallDrift 5s linear infinite}
+@keyframes twinkle{0%,100%{opacity:.5;transform:scale(.9)}50%{opacity:1;transform:scale(1.2)}}
+.anmTwinkle{animation:twinkle 1.6s ease-in-out infinite}
+@keyframes orbitMotion{0%{transform:rotate(0) translateX(30px) rotate(0)}100%{transform:rotate(360deg) translateX(30px) rotate(-360deg)}}
+.anmOrbit{animation:orbitMotion 6s linear infinite}
+@keyframes cometStreak{0%{transform:translate(-10%,-10%)}100%{transform:translate(110%,110%)}}
+.anmComet{animation:cometStreak 3s linear infinite}
+.anmSpin{animation:spin 8s linear infinite}
+/* Flash de mensajes en el marcador (item pedido: mensajes personalizados por evento, con color y animación propia) */
+.mflash.on{animation:mflashPop .32s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes mflashPop{0%{opacity:0;transform:translateY(10px) scale(.85)}70%{opacity:1;transform:translateY(-4px) scale(1.06)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.mflash span.mfx{position:relative;overflow:hidden;display:inline-block;padding:12px 22px;border-radius:14px;font-family:var(--disp);font-weight:900;font-size:17px;letter-spacing:.02em;text-transform:uppercase;box-shadow:0 12px 30px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.14)}
+.mflash span.mfx::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:mflashShine 1.2s ease-out .1s}
+@keyframes mflashShine{to{transform:translateX(100%)}}
+/* Card react animations — cuando el jugador anota, recibe falta, sale/entra, presume */
+@keyframes cardBounce{0%{transform:scale(1)}30%{transform:scale(1.05) rotate(-1deg)}60%{transform:scale(.97) rotate(1deg)}100%{transform:scale(1)}}
+.cardReact-score{animation:cardBounce .55s cubic-bezier(.3,1.4,.5,1)}
+@keyframes cardShakeF{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.cardReact-foul{animation:cardShakeF .5s ease-in-out;filter:drop-shadow(0 0 12px rgba(233,74,90,.7))}
+@keyframes cardFlip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+.cardReact-sub{animation:cardFlip .6s ease-in-out}
+@keyframes cardShowoff{0%{transform:scale(.85) rotate(-4deg);opacity:.4}60%{transform:scale(1.06) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.cardReact-showoff{animation:cardShowoff .8s cubic-bezier(.3,1.3,.5,1)}
+@keyframes cardPulseW{0%,100%{filter:brightness(1) drop-shadow(0 0 0 var(--fc,#3ecf8e))}50%{filter:brightness(1.15) drop-shadow(0 0 22px var(--fc,#3ecf8e))}}
+.cardReact-win{--fc:#3ecf8e;animation:cardPulseW 1.4s ease-in-out}
+.cardReact-loss{--fc:#e94a5a;animation:cardPulseW 1.4s ease-in-out}
+/* Tabla de probabilidades */
+.rprobs{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.rprow{display:flex;align-items:center;gap:8px;font-size:12px}
+.rpname{flex:0 0 auto;width:100px;font-weight:700;font-family:var(--body)}
+.rpbar{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
+.rpbar i{display:block;height:100%;transition:width .4s}
+.rpv{flex:0 0 auto;width:52px;text-align:right;font-family:var(--mono);color:var(--muted)}
 </style>
 </head>
 <body>
@@ -1950,6 +2058,7 @@ function doQuickSub(outIdx,inIdx){ const T=GAME.teams[0]; if(!T||!T.players[outI
   GAME.log=GAME.log||[]; GAME.log.unshift({t:'Q'+GAME.period,m:'<b>Cambio</b> entra #'+T.players[inIdx].num+' '+T.players[inIdx].nm+' por #'+T.players[outIdx].num,u:null});
   closePlayerSheet();
   try{buildLineup();}catch(e){} try{buildCoachSubs();}catch(e){}
+  try{ flashEvent('sub_in',{player:'#'+T.players[inIdx].num+' '+T.players[inIdx].nm}); }catch(e){}
   flashSaved('Cambio hecho ✓ — se ve en el tablero');
 }
 function closePlayerSheet(){document.getElementById('playerSheetBg').classList.remove('on');}
@@ -2276,7 +2385,11 @@ function buildPublicoData(){
 /* Home de papá: hij@s vinculados + próximos partidos reales de la liga */
 /* ===== Economía: monedas + sobres que se ganan con LOGROS reales =====
    Los logros se calculan de datos reales (tu liga, tus partidos, tu hij@…). */
-function econ(){ const u=userData()||{}; if(!u.econ)u.econ={coins:0,packs:0,owned:[],effect:null,done:[]}; return u.econ; }
+function econ(){ const u=userData()||{}; if(!u.econ)u.econ={coins:0,packs:0,owned:[],effect:null,equipped:{},done:[]};
+  if(!u.econ.equipped)u.econ.equipped={};
+  // migración suave: el viejo campo 'effect' entra al equipped por su categoría
+  if(u.econ.effect){ const c=cosmeticById(u.econ.effect); if(c&&!u.econ.equipped[c.kind])u.econ.equipped[c.kind]=u.econ.effect; }
+  return u.econ; }
 function saveEcon(e){ const u=userData()||{}; u.econ=e; saveUser(u); }
 /* fondos de prueba para la cuenta suprema (item 10) */
 function superFund(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return; const e=econ(); e.coins=(e.coins||0)+9999; saveEcon(e); try{buildLogros();}catch(x){} flashSaved('+9,999 monedas ✓'); }
@@ -2334,56 +2447,223 @@ function buildLogros(){
   box.innerHTML=h;
 }
 /* ===== Gachapón: efectos y accesorios de carta por rareza ===== */
-const RARITY={comun:{t:'Común',c:'#8b93a3',w:58},raro:{t:'Raro',c:'#35c2cf',w:28},epico:{t:'Épico',c:'#a774f0',w:11},legendario:{t:'Legendario',c:'#e8b13e',w:3}};
+/* ===== RAREZAS — plan original: 11 rangos, del bronce al dark matter =====
+   'w' = peso relativo del muestreo (probabilidad ≈ w / suma_de_w). Los rangos
+   raros de verdad casi no salen: dark matter ~0.15%, galaxy opal ~0.4%. */
+const RARITY={
+  bronce:        {t:'Bronce',         c:'#c88a4a', w:44},
+  plata:         {t:'Plata',          c:'#c7cdd8', w:26},
+  oro:           {t:'Oro',            c:'#e8b13e', w:14},
+  esmeralda:     {t:'Esmeralda',      c:'#2ecf8e', w:7},
+  zafiro:        {t:'Zafiro',         c:'#5b8cff', w:4},
+  rubi:          {t:'Rubí',           c:'#e94a5a', w:2.2},
+  amatista:      {t:'Amatista',       c:'#a774f0', w:1.4},
+  diamante:      {t:'Diamante',       c:'#bfe9ff', w:0.8},
+  diamante_rosa: {t:'Diamante Rosa',  c:'#ff8fd8', w:0.4},
+  galaxy_opal:   {t:'Galaxy Opal',    c:'#8f5cff', w:0.15},
+  dark_matter:   {t:'Dark Matter',    c:'#161826', w:0.05},
+};
+/* Cosméticos: 6 categorías, con animaciones y overlays reales sobre la carta.
+   kind:
+     frame  = borde/marco (algunos ANIMADOS con la anim de RARITY_ANIM abajo)
+     effect = brillo/aura de fondo
+     shine  = línea de brillo que se pasea por la carta ("chispazo/glimmer")
+     accessory = overlay visual (murciélagos, lentes, flor, halo, corona, humo...)
+     bg     = color/degradado de fondo de la carta
+     msg    = ambientación (afecta color de mensajes flash)
+   'anim' = clase CSS animada opcional, definida en el bloque de estilos. */
 const COSMETICS=[
-  // ——— Comunes (auras y detalles suaves) ———
-  {id:'e_glow',   t:'Aura Suave',     kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(255,255,255,.25),0 10px 30px rgba(255,255,255,.12)'},
-  {id:'e_ember',  t:'Brasa',          kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(236,90,69,.5),0 10px 34px rgba(236,90,69,.35)'},
-  {id:'e_mist',   t:'Niebla',         kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(150,160,180,.4),0 8px 26px rgba(120,130,150,.3)'},
-  {id:'e_mint',   t:'Aura Menta',     kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(62,207,142,.45),0 10px 30px rgba(62,207,142,.28)'},
-  {id:'e_dusk',   t:'Ocaso',          kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(244,166,60,.45),0 10px 30px rgba(244,120,60,.28)'},
-  {id:'e_shadow', t:'Sombra Suave',   kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(20,24,34,.6),0 14px 34px rgba(0,0,0,.5)'},
-  {id:'e_rose',   t:'Rosa Tenue',     kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(240,120,160,.4),0 10px 30px rgba(240,120,160,.26)'},
-  {id:'f_line',   t:'Filo Blanco',    kind:'frame',  rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(255,255,255,.6)'},
-  // ——— Raros (marcos y neones) ———
-  {id:'f_steel',  t:'Marco Acero',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #9aa6bd,0 12px 34px rgba(0,0,0,.5)'},
-  {id:'f_ice',    t:'Marco Hielo',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #35c2cf,0 0 28px rgba(53,194,207,.5)'},
-  {id:'e_neon',   t:'Neón Cyan',      kind:'effect', rarity:'raro',       css:'box-shadow:0 0 0 2px #35c2cf,0 0 22px #35c2cf,0 0 42px rgba(53,194,207,.6)'},
-  {id:'f_copper', t:'Marco Cobre',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #c17a4a,0 0 24px rgba(193,122,74,.5)'},
-  {id:'e_emerald',t:'Aura Esmeralda', kind:'effect', rarity:'raro',       css:'box-shadow:0 0 0 3px #2ecf8e,0 0 26px rgba(46,207,142,.55)'},
-  {id:'f_night',  t:'Marco Noche',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #3a4666,inset 0 0 20px rgba(53,120,207,.4)'},
-  {id:'e_pulse',  t:'Pulso Azul',     kind:'effect', rarity:'raro',       css:'box-shadow:0 0 0 2px #5b8cff,0 0 30px rgba(91,140,255,.6)'},
-  // ——— Épicos ———
-  {id:'e_holo',   t:'Holo Prisma',    kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px rgba(167,116,240,.7),0 0 34px rgba(167,116,240,.6)'},
-  {id:'f_gold',   t:'Marco Dorado',   kind:'frame',  rarity:'epico',      css:'box-shadow:0 0 0 3px #e8b13e,0 0 30px rgba(232,177,62,.6)'},
-  {id:'e_violet', t:'Aura Violeta',   kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px #a774f0,0 0 40px rgba(167,116,240,.7)'},
-  {id:'f_obsidian',t:'Marco Obsidiana',kind:'frame', rarity:'epico',      css:'box-shadow:0 0 0 3px #1a1e2a,0 0 0 5px #6a3fd0,0 0 30px rgba(106,63,208,.6)'},
-  {id:'e_nebula', t:'Nébula',         kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px #7c53c9,0 0 26px #35c2cf,0 0 46px rgba(124,83,201,.6)'},
-  {id:'f_plasma', t:'Marco Plasma',   kind:'frame',  rarity:'epico',      css:'box-shadow:0 0 0 3px #ff5aa0,0 0 30px rgba(255,90,160,.6)'},
-  // ——— Legendarios ———
-  {id:'e_flame',  t:'Fuego Mazi',     kind:'effect', rarity:'legendario', css:'box-shadow:0 0 0 3px #ff9a5a,0 0 46px rgba(255,120,40,.75)'},
-  {id:'f_diamond',t:'Marco Diamante', kind:'frame',  rarity:'legendario', css:'box-shadow:0 0 0 3px #bfe9ff,0 0 40px rgba(143,208,255,.8),inset 0 0 24px rgba(255,255,255,.15)'},
-  {id:'e_rainbow',t:'Arcoíris Real',  kind:'effect', rarity:'legendario', css:'box-shadow:0 0 0 3px #ff5a5a,0 0 0 6px #e8b13e,0 0 34px #35c2cf'},
-  {id:'f_solar',  t:'Corona Solar',   kind:'frame',  rarity:'legendario', css:'box-shadow:0 0 0 3px #ffd15a,0 0 30px #ff9a2a,0 0 60px rgba(255,154,42,.7)'},
+  /* ——— MARCOS (~20) — algunos animados ——— */
+  {id:'f_hilo',      t:'Hilo Blanco',      kind:'frame', rarity:'bronce',        css:'box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)'},
+  {id:'f_madera',    t:'Marco Madera',     kind:'frame', rarity:'bronce',        css:'box-shadow:inset 0 0 0 3px #7a4a2a'},
+  {id:'f_acero',     t:'Marco Acero',      kind:'frame', rarity:'plata',         css:'box-shadow:inset 0 0 0 3px #9aa6bd,inset 0 0 22px rgba(255,255,255,.05)'},
+  {id:'f_cobre',     t:'Marco Cobre',      kind:'frame', rarity:'plata',         css:'box-shadow:inset 0 0 0 3px #c17a4a,inset 0 0 20px rgba(193,122,74,.25)'},
+  {id:'f_hielo',     t:'Marco Hielo',      kind:'frame', rarity:'oro',           css:'box-shadow:inset 0 0 0 3px #35c2cf,inset 0 0 24px rgba(53,194,207,.35)'},
+  {id:'f_dorado',    t:'Marco Dorado',     kind:'frame', rarity:'oro',           css:'box-shadow:inset 0 0 0 3px #e8b13e,inset 0 0 26px rgba(232,177,62,.35)', anim:'anmFrameGold'},
+  {id:'f_esm',       t:'Marco Esmeralda',  kind:'frame', rarity:'esmeralda',     css:'box-shadow:inset 0 0 0 3px #2ecf8e,inset 0 0 26px rgba(46,207,142,.4)'},
+  {id:'f_night',     t:'Marco Noche',      kind:'frame', rarity:'esmeralda',     css:'box-shadow:inset 0 0 0 3px #3a4666,inset 0 0 22px rgba(53,120,207,.35)'},
+  {id:'f_zafiro',    t:'Marco Zafiro',     kind:'frame', rarity:'zafiro',        css:'box-shadow:inset 0 0 0 3px #5b8cff,inset 0 0 26px rgba(91,140,255,.4)', anim:'anmFrameBlue'},
+  {id:'f_electric',  t:'Marco Eléctrico',  kind:'frame', rarity:'zafiro',        css:'box-shadow:inset 0 0 0 3px #56d9ff', anim:'anmFrameElectric'},
+  {id:'f_rubi',      t:'Marco Rubí',       kind:'frame', rarity:'rubi',          css:'box-shadow:inset 0 0 0 3px #e94a5a,inset 0 0 26px rgba(233,74,90,.4)', anim:'anmFrameRed'},
+  {id:'f_plasma',    t:'Marco Plasma',     kind:'frame', rarity:'rubi',          css:'box-shadow:inset 0 0 0 3px #ff5aa0', anim:'anmFramePlasma'},
+  {id:'f_amatista',  t:'Marco Amatista',   kind:'frame', rarity:'amatista',      css:'box-shadow:inset 0 0 0 3px #a774f0,inset 0 0 30px rgba(167,116,240,.5)', anim:'anmFramePurple'},
+  {id:'f_obsidiana', t:'Marco Obsidiana',  kind:'frame', rarity:'amatista',      css:'box-shadow:inset 0 0 0 3px #1a1e2a,inset 0 0 0 5px #6a3fd0'},
+  {id:'f_diam',      t:'Marco Diamante',   kind:'frame', rarity:'diamante',      css:'box-shadow:inset 0 0 0 3px #bfe9ff,inset 0 0 34px rgba(143,208,255,.55)', anim:'anmFrameDiamond'},
+  {id:'f_diam_rosa', t:'Marco Diamante Rosa', kind:'frame', rarity:'diamante_rosa', css:'box-shadow:inset 0 0 0 3px #ff8fd8,inset 0 0 34px rgba(255,143,216,.55)', anim:'anmFramePink'},
+  {id:'f_galaxy',    t:'Marco Galaxia',    kind:'frame', rarity:'galaxy_opal',   css:'box-shadow:inset 0 0 0 3px #8f5cff,inset 0 0 40px rgba(143,92,255,.55)', anim:'anmFrameGalaxy'},
+  {id:'f_solar',     t:'Corona Solar',     kind:'frame', rarity:'galaxy_opal',   css:'box-shadow:inset 0 0 0 3px #ffd15a,inset 0 0 40px rgba(255,154,42,.55)', anim:'anmFrameSun'},
+  {id:'f_dm',        t:'Marco Dark Matter',kind:'frame', rarity:'dark_matter',   css:'box-shadow:inset 0 0 0 3px #161826,inset 0 0 34px rgba(90,60,200,.6)', anim:'anmFrameDark'},
+  {id:'f_rainbow',   t:'Marco Arcoíris',   kind:'frame', rarity:'dark_matter',   css:'', anim:'anmFrameRainbow'},
+
+  /* ——— AURAS / EFECTOS DE FONDO (~20) ——— */
+  {id:'e_glow',      t:'Aura Suave',       kind:'effect', rarity:'bronce',       css:'box-shadow:0 12px 30px rgba(255,255,255,.1)'},
+  {id:'e_brasa',     t:'Brasa',            kind:'effect', rarity:'bronce',       css:'box-shadow:0 12px 34px rgba(236,90,69,.28)'},
+  {id:'e_mist',      t:'Niebla',           kind:'effect', rarity:'plata',        css:'box-shadow:0 12px 30px rgba(150,160,180,.3)'},
+  {id:'e_menta',     t:'Aura Menta',       kind:'effect', rarity:'plata',        css:'box-shadow:0 12px 30px rgba(62,207,142,.28)'},
+  {id:'e_ocaso',     t:'Ocaso',            kind:'effect', rarity:'oro',          css:'box-shadow:0 12px 34px rgba(244,120,60,.35)'},
+  {id:'e_neon',      t:'Neón Cyan',        kind:'effect', rarity:'oro',          css:'box-shadow:0 0 22px #35c2cf,0 0 46px rgba(53,194,207,.5)'},
+  {id:'e_esm',       t:'Aura Esmeralda',   kind:'effect', rarity:'esmeralda',    css:'box-shadow:0 0 34px rgba(46,207,142,.55)'},
+  {id:'e_pulso',     t:'Pulso Azul',       kind:'effect', rarity:'esmeralda',    css:'', anim:'anmPulseBlue'},
+  {id:'e_prisma',    t:'Holo Prisma',      kind:'effect', rarity:'zafiro',       css:'box-shadow:0 0 40px rgba(167,116,240,.6)', anim:'anmHoloShift'},
+  {id:'e_estatica',  t:'Estática',         kind:'effect', rarity:'zafiro',       css:'', anim:'anmStatic'},
+  {id:'e_llama',     t:'Fuego Mazi',       kind:'effect', rarity:'rubi',         css:'', anim:'anmFire'},
+  {id:'e_relampago', t:'Relámpago',        kind:'effect', rarity:'rubi',         css:'', anim:'anmLightning'},
+  {id:'e_violeta',   t:'Aura Violeta',     kind:'effect', rarity:'amatista',     css:'box-shadow:0 0 40px rgba(167,116,240,.7)', anim:'anmPulsePurple'},
+  {id:'e_nebula',    t:'Nébula',           kind:'effect', rarity:'amatista',     css:'', anim:'anmNebula'},
+  {id:'e_diam',      t:'Diamante',         kind:'effect', rarity:'diamante',     css:'box-shadow:0 0 44px rgba(191,233,255,.7)', anim:'anmDiamondSparkle'},
+  {id:'e_rosa',      t:'Aura Rosa',        kind:'effect', rarity:'diamante_rosa',css:'box-shadow:0 0 46px rgba(255,143,216,.75)', anim:'anmPulsePink'},
+  {id:'e_galaxia',   t:'Galaxia',          kind:'effect', rarity:'galaxy_opal',  css:'', anim:'anmGalaxy'},
+  {id:'e_arcoiris',  t:'Arcoíris Real',    kind:'effect', rarity:'galaxy_opal',  css:'', anim:'anmRainbow'},
+  {id:'e_matter',    t:'Dark Matter',      kind:'effect', rarity:'dark_matter',  css:'', anim:'anmDarkMatter'},
+  {id:'e_singular',  t:'Singularidad',     kind:'effect', rarity:'dark_matter',  css:'', anim:'anmSingularity'},
+
+  /* ——— DESTELLOS / SHINE — línea que se pasea por la carta (~20) ——— */
+  {id:'s_amarillo',  t:'Chispazo Dorado',  kind:'shine', rarity:'bronce',       color:'rgba(255,215,90,.85)', speed:'2.4s', angle:20},
+  {id:'s_blanco',    t:'Brillo Blanco',    kind:'shine', rarity:'bronce',       color:'rgba(255,255,255,.75)', speed:'2.6s', angle:22},
+  {id:'s_perla',     t:'Chispa Perlada',   kind:'shine', rarity:'plata',        color:'rgba(230,230,255,.85)', speed:'2.2s', angle:16},
+  {id:'s_ambar',     t:'Ámbar',            kind:'shine', rarity:'plata',        color:'rgba(255,160,60,.85)', speed:'2.6s', angle:24},
+  {id:'s_cyan',      t:'Rayo Cyan',        kind:'shine', rarity:'oro',          color:'rgba(90,220,255,.9)', speed:'1.9s', angle:18},
+  {id:'s_verde',     t:'Chispa Verde',     kind:'shine', rarity:'oro',          color:'rgba(90,255,160,.85)', speed:'2.1s', angle:26},
+  {id:'s_prisma',    t:'Prisma',           kind:'shine', rarity:'esmeralda',    color:'linear-gradient(90deg,transparent,rgba(90,255,180,.8),transparent)', speed:'1.8s', angle:20, prisma:true},
+  {id:'s_electrico', t:'Eléctrico',        kind:'shine', rarity:'esmeralda',    color:'rgba(120,220,255,.95)', speed:'1.4s', angle:14, jitter:true},
+  {id:'s_zafiro',    t:'Chispa Zafiro',    kind:'shine', rarity:'zafiro',       color:'rgba(120,180,255,.95)', speed:'1.9s', angle:16},
+  {id:'s_doble',     t:'Doble Rayo',       kind:'shine', rarity:'zafiro',       color:'rgba(255,255,255,.9)', speed:'2.0s', angle:20, doble:true},
+  {id:'s_carmesi',   t:'Carmesí',          kind:'shine', rarity:'rubi',         color:'rgba(255,90,110,.95)', speed:'1.8s', angle:22},
+  {id:'s_veloz',     t:'Chispa Veloz',     kind:'shine', rarity:'rubi',         color:'rgba(255,215,90,.95)', speed:'1.1s', angle:18},
+  {id:'s_violet',    t:'Violeta',          kind:'shine', rarity:'amatista',     color:'rgba(200,140,255,.95)', speed:'1.8s', angle:20},
+  {id:'s_holo',      t:'Holograma',        kind:'shine', rarity:'amatista',     color:'linear-gradient(90deg,#ff5aa0,transparent,#35c2cf)', speed:'1.6s', angle:24, prisma:true},
+  {id:'s_diamante',  t:'Chispa Diamante',  kind:'shine', rarity:'diamante',     color:'rgba(220,240,255,.98)', speed:'1.5s', angle:18, doble:true},
+  {id:'s_rosa',      t:'Chispa Rosa',      kind:'shine', rarity:'diamante_rosa',color:'rgba(255,143,216,.98)', speed:'1.6s', angle:20},
+  {id:'s_estelar',   t:'Polvo Estelar',    kind:'shine', rarity:'galaxy_opal',  color:'linear-gradient(90deg,#8f5cff,transparent,#ffd15a)', speed:'1.4s', angle:16, prisma:true},
+  {id:'s_galaxia',   t:'Galaxia Girando',  kind:'shine', rarity:'galaxy_opal',  color:'radial-gradient(circle,rgba(143,92,255,.8),transparent)', speed:'2.0s', angle:0, orbit:true},
+  {id:'s_dark',      t:'Vacío Brillante',  kind:'shine', rarity:'dark_matter',  color:'radial-gradient(circle,rgba(255,255,255,.9),transparent)', speed:'1.2s', angle:0, orbit:true},
+  {id:'s_supernova', t:'Supernova',        kind:'shine', rarity:'dark_matter',  color:'linear-gradient(90deg,#fff,#ffd15a,#ff5aa0,#8f5cff,#fff)', speed:'1.0s', angle:26, prisma:true},
+
+  /* ——— ACCESORIOS visuales sobre la foto/carta (~20) ——— */
+  {id:'a_estrella',  t:'Estrella en la Esquina', kind:'accessory', rarity:'bronce',      pos:'tl', emoji:'⭐'},
+  {id:'a_balon',     t:'Balón',            kind:'accessory', rarity:'bronce',           pos:'tr', emoji:'🏀'},
+  {id:'a_flor',      t:'Flor en la Esquina',kind:'accessory', rarity:'plata',           pos:'bl', emoji:'🌸'},
+  {id:'a_cinta',     t:'Cintillo',         kind:'accessory', rarity:'plata',            pos:'top', emoji:'', css:'position:absolute;top:6px;left:8%;right:8%;height:4px;background:linear-gradient(90deg,#e8b13e,#ff9a5a);border-radius:2px'},
+  {id:'a_medalla',   t:'Medalla',          kind:'accessory', rarity:'oro',              pos:'tr', emoji:'🏅'},
+  {id:'a_trofeo',    t:'Trofeo',           kind:'accessory', rarity:'oro',              pos:'br', emoji:'🏆'},
+  {id:'a_lentes',    t:'Lentes',           kind:'accessory', rarity:'esmeralda',        pos:'face', emoji:'🕶️'},
+  {id:'a_corona',    t:'Corona',           kind:'accessory', rarity:'esmeralda',        pos:'head', emoji:'👑'},
+  {id:'a_alas',      t:'Alas',             kind:'accessory', rarity:'zafiro',           pos:'sides', emoji:'🕊️'},
+  {id:'a_halo',      t:'Aureola',          kind:'accessory', rarity:'zafiro',           pos:'head', css:'width:60%;height:20%;top:-4px;left:20%;border-radius:50%;border:3px solid #ffd15a;box-shadow:0 0 20px #ffd15a;position:absolute'},
+  {id:'a_murcielagos',t:'Murciélagos',     kind:'accessory', rarity:'rubi',             pos:'flock', emoji:'🦇', count:4, anim:'anmFlock'},
+  {id:'a_fuego',     t:'Llamas',           kind:'accessory', rarity:'rubi',             pos:'bottom', emoji:'🔥', count:5},
+  {id:'a_hojas',     t:'Hojas cayendo',    kind:'accessory', rarity:'amatista',         pos:'fall', emoji:'🍃', count:6, anim:'anmFall'},
+  {id:'a_rayo',      t:'Rayo',             kind:'accessory', rarity:'amatista',         pos:'diag', emoji:'⚡', count:2},
+  {id:'a_estrellas', t:'Estrellas',        kind:'accessory', rarity:'diamante',         pos:'scatter', emoji:'✨', count:6, anim:'anmTwinkle'},
+  {id:'a_petalos',   t:'Pétalos Rosados',  kind:'accessory', rarity:'diamante_rosa',    pos:'fall', emoji:'🌸', count:6, anim:'anmFall'},
+  {id:'a_planetas',  t:'Planetas',         kind:'accessory', rarity:'galaxy_opal',      pos:'scatter', emoji:'🪐', count:3, anim:'anmOrbit'},
+  {id:'a_cometa',    t:'Cometa',           kind:'accessory', rarity:'galaxy_opal',      pos:'diag', emoji:'☄️', count:2, anim:'anmComet'},
+  {id:'a_galaxia',   t:'Espiral',          kind:'accessory', rarity:'dark_matter',      pos:'center', emoji:'🌀', count:1, anim:'anmSpin'},
+  {id:'a_hoyo',      t:'Agujero Negro',    kind:'accessory', rarity:'dark_matter',      pos:'center', css:'width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,#000 30%,transparent 70%);box-shadow:0 0 60px #8f5cff;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:anmSpin 4s linear infinite'},
+
+  /* ——— FONDOS de carta (~20) ——— */
+  {id:'bg_noche',    t:'Noche',            kind:'bg', rarity:'bronce',           css:'background:linear-gradient(180deg,#141a2b,#08060d)'},
+  {id:'bg_bosque',   t:'Bosque',           kind:'bg', rarity:'bronce',           css:'background:linear-gradient(180deg,#0f2018,#050a08)'},
+  {id:'bg_arena',    t:'Arena',            kind:'bg', rarity:'plata',            css:'background:linear-gradient(180deg,#2a2010,#0e0806)'},
+  {id:'bg_hielo',    t:'Hielo',            kind:'bg', rarity:'plata',            css:'background:linear-gradient(180deg,#0e2530,#04141a)'},
+  {id:'bg_atardec',  t:'Atardecer',        kind:'bg', rarity:'oro',              css:'background:linear-gradient(180deg,#3a1a14,#1a0e08 50%,#050308)'},
+  {id:'bg_tormenta', t:'Tormenta',         kind:'bg', rarity:'oro',              css:'background:linear-gradient(180deg,#1a1c22,#040608)'},
+  {id:'bg_selva',    t:'Selva Densa',      kind:'bg', rarity:'esmeralda',        css:'background:linear-gradient(180deg,#0a2a1a,#020a06)'},
+  {id:'bg_oceano',   t:'Océano Profundo',  kind:'bg', rarity:'esmeralda',        css:'background:linear-gradient(180deg,#08202e,#020608)'},
+  {id:'bg_estrella', t:'Cielo Estrellado', kind:'bg', rarity:'zafiro',           css:'background:radial-gradient(circle at 30% 20%,#2a2a55,#0a0a1a 60%),radial-gradient(circle at 70% 80%,#3a1a55,#000)'},
+  {id:'bg_arctic',   t:'Aurora Ártica',    kind:'bg', rarity:'zafiro',           css:'background:linear-gradient(180deg,#0a2038,#000)', anim:'anmAurora'},
+  {id:'bg_lava',     t:'Lava',             kind:'bg', rarity:'rubi',             css:'background:linear-gradient(180deg,#3a0a08,#1a0402)', anim:'anmLava'},
+  {id:'bg_carmin',   t:'Carmesí Real',     kind:'bg', rarity:'rubi',             css:'background:radial-gradient(circle at 50% 30%,#5a0e18,#1a0208 70%)'},
+  {id:'bg_amanecer', t:'Amanecer Púrpura', kind:'bg', rarity:'amatista',         css:'background:linear-gradient(180deg,#2a0e3a,#1a0824,#08040e)'},
+  {id:'bg_nebula',   t:'Nebulosa',         kind:'bg', rarity:'amatista',         css:'background:radial-gradient(circle at 30% 40%,#4a1e6a,transparent 50%),radial-gradient(circle at 70% 60%,#0a3e6a,transparent 50%),#000', anim:'anmNebula'},
+  {id:'bg_prisma',   t:'Prisma',           kind:'bg', rarity:'diamante',         css:'background:conic-gradient(from 45deg,#08202e,#2a0838,#0a2a1a,#08202e)'},
+  {id:'bg_hielo2',   t:'Hielo Cristal',    kind:'bg', rarity:'diamante',         css:'background:radial-gradient(circle at 40% 20%,rgba(191,233,255,.4),transparent 60%),linear-gradient(180deg,#0a1828,#02060a)', anim:'anmSparkle'},
+  {id:'bg_rosa',     t:'Rosado Cósmico',   kind:'bg', rarity:'diamante_rosa',    css:'background:radial-gradient(circle at 50% 30%,rgba(255,143,216,.5),transparent 60%),linear-gradient(180deg,#2a0818,#08040a)'},
+  {id:'bg_via',      t:'Vía Láctea',       kind:'bg', rarity:'galaxy_opal',      css:'background:radial-gradient(ellipse at center,rgba(143,92,255,.6),rgba(90,20,140,.3) 40%,#020208 80%)', anim:'anmGalaxyDrift'},
+  {id:'bg_supernova',t:'Supernova',        kind:'bg', rarity:'galaxy_opal',      css:'background:radial-gradient(circle at 50% 40%,#ffe45a 0%,#ff5aa0 20%,#8f5cff 55%,#000 90%)', anim:'anmPulseFast'},
+  {id:'bg_dm',       t:'Vacío',            kind:'bg', rarity:'dark_matter',      css:'background:radial-gradient(circle at 50% 50%,#000,#050308)', anim:'anmDarkPulse'},
 ];
 function cosmeticById(id){ return COSMETICS.find(c=>c.id===id); }
-function rollCosmetic(){ const tot=Object.values(RARITY).reduce((s,r)=>s+r.w,0); let x=Math.random()*tot, pick='comun';
+function rollCosmetic(){ const tot=Object.values(RARITY).reduce((s,r)=>s+r.w,0); let x=Math.random()*tot, pick='bronce';
   for(const k in RARITY){ if(x<RARITY[k].w){pick=k;break;} x-=RARITY[k].w; }
   const pool=COSMETICS.filter(c=>c.rarity===pick); return pool[Math.floor(Math.random()*pool.length)]||COSMETICS[0]; }
+/* probabilidad numérica de cada rareza (para la tabla que ve el usuario) */
+function rarityProb(k){ const tot=Object.values(RARITY).reduce((s,r)=>s+r.w,0); return (RARITY[k].w/tot)*100; }
+/* categoría → cuáles llevan efecto en la carta a la vez (una por tipo) */
+function equippedByKind(e,kind){ const owned=(e&&e.owned)||[]; const pick=(e&&e.equipped)||{};
+  const id=pick[kind]; if(!id)return null; if(owned.indexOf(id)<0)return null; return cosmeticById(id); }
+const KIND_TITLE={frame:'Marcos',effect:'Auras / fondos brillantes',shine:'Destellos',accessory:'Accesorios visuales',bg:'Fondos de carta',msg:'Estilo de mensajes'};
+const KIND_ORDER=['frame','effect','shine','accessory','bg','msg'];
 function buildGacha(){
+  // NO reconstruye si hay animación corriendo (bug reportado: cualquier tap cortaba la animación)
+  if(_gcSpinning || _openAllRunning){ return; }
   const e=econ(); const box=document.getElementById('gachaBody'); if(!box)return;
   const pc=document.getElementById('gachaPacks'); if(pc)pc.innerHTML='<svg class="ic"><use href="#ic-bag"/></svg> '+e.packs;
   let h='<div class="gacha-stage" id="gachaStage"><div class="gacha-pack" id="gachaPackArt" onclick="openPack()"><div class="gp-shine"></div><svg class="ic" style="width:52px;height:52px;color:#0b0d12"><use href="#ic-bag"/></svg></div>'+
     '<div class="gacha-cap" id="gachaCap">'+(e.packs>0?'Toca el sobre para abrirlo':'No tienes sobres. Gánalos con tus logros.')+'</div></div>';
   if(e.packs>0)h+='<button class="btn block" onclick="openPack()" style="margin-top:4px">Abrir un sobre ('+e.packs+')</button>';
+  // Súper Admin: botón para abrir TODOS los sobres a la vez (item pedido)
+  if(typeof isSuperAdmin==='function' && isSuperAdmin() && e.packs>1){
+    h+='<button class="btn sm block" style="margin-top:6px;background:var(--liga);border-color:var(--liga)" onclick="openAllPacks()">◆ Abrir los '+e.packs+' sobres (súper admin)</button>';
+  }
   h+='<button class="btn ghost sm block" onclick="buyPack()" style="margin-top:6px">Comprar sobre · '+PACK_COST+' ★ <span style="color:var(--dim)">(tienes '+e.coins+')</span></button>';
+  h+='<button class="btn ghost sm block" onclick="toggleRarityTable()" style="margin-top:6px">Ver probabilidades de cada rareza</button>';
+  h+='<div id="rarityTable" style="display:none;margin-top:8px"></div>';
   h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tu colección</h2><span class="more" onclick="go(\'carta\')">Aplicar en tu carta ›</span></div>';
   const owned=e.owned||[];
-  if(!owned.length){ h+='<div class="stratnote" style="border-left-color:var(--jugador)">Aún no tienes accesorios. Abre un sobre para empezar tu colección.</div>'; }
-  else { h+='<div class="cosgrid">'; owned.forEach(id=>{ const c=cosmeticById(id); if(!c)return; const r=RARITY[c.rarity]; const on=e.effect===id;
-      h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+id+'\')" style="--rc:'+r.c+'"><span class="cos-prev" style="'+c.css+'"></span><span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>'; });
-    h+='</div>'; }
+  if(!owned.length){ h+='<div class="stratnote" style="border-left-color:var(--jugador)">Aún no tienes cosméticos. Abre un sobre para empezar tu colección.</div>'; }
+  else {
+    // agrupado por categoría — así el usuario ve qué tiene de cada tipo
+    const byKind={}; owned.forEach(id=>{ const c=cosmeticById(id); if(!c)return; (byKind[c.kind]=byKind[c.kind]||[]).push(c); });
+    KIND_ORDER.forEach(kind=>{ if(!byKind[kind]||!byKind[kind].length)return;
+      h+='<div class="eyebrow" style="margin:14px 2px 6px;color:var(--muted)">'+(KIND_TITLE[kind]||kind)+'</div>';
+      h+='<div class="cosgrid">';
+      byKind[kind].forEach(c=>{ const r=RARITY[c.rarity]||RARITY.bronce; const on=(e.equipped&&e.equipped[kind])===c.id;
+        h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" style="--rc:'+r.c+'"><span class="cos-prev" style="'+(c.css||'')+'"></span><span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>';
+      });
+      h+='</div>';
+    });
+  }
   box.innerHTML=h;
+}
+/* Tabla de probabilidades (item pedido: "una tableta donde diga qué probabilidad tiene cada rareza de tocarte") */
+function toggleRarityTable(){ const box=document.getElementById('rarityTable'); if(!box)return;
+  const open=box.style.display!=='none';
+  if(open){ box.style.display='none'; return; }
+  let h='<div class="card"><div class="kick">Probabilidad al abrir un sobre</div><div class="rprobs">';
+  Object.keys(RARITY).forEach(k=>{ const r=RARITY[k], p=rarityProb(k);
+    h+='<div class="rprow"><span class="rpname" style="color:'+r.c+'">'+r.t+'</span><div class="rpbar"><i style="width:'+Math.max(0.5,Math.min(100,p*2))+'%;background:'+r.c+'"></i></div><span class="rpv">'+(p>=1?p.toFixed(1):p.toFixed(2))+'%</span></div>';
+  });
+  h+='</div><div class="mt" style="font-size:12px;color:var(--muted);margin-top:8px">Los sobres son honestos: cada tirada se sortea con estos pesos. Puedes recibir duplicados (te dan +20 monedas).</div></div>';
+  box.innerHTML=h; box.style.display='block';
+}
+/* SÚPER ADMIN: abrir TODOS los sobres de un jalón (item pedido). Solo visible/permitido a la cuenta suprema. */
+let _openAllRunning=false;
+async function openAllPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return;
+  if(_openAllRunning||_gcSpinning)return;
+  const e=econ(); if(e.packs<=0)return;
+  _openAllRunning=true;
+  const results=[]; const gained=[];
+  while(e.packs>0){ e.packs--; const c=rollCosmetic(); const dup=(e.owned||[]).indexOf(c.id)>=0;
+    if(!dup){ e.owned=e.owned||[]; e.owned.push(c.id); gained.push(c); } else { e.coins+=20; }
+    results.push({c,dup}); }
+  saveEcon(e);
+  // vista de resultados masivos
+  const stage=document.getElementById('gachaStage');
+  if(stage){
+    let h='<div style="text-align:center;padding:14px 0"><div style="font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase">Súper Admin · lote completo</div>'+
+      '<div style="font-family:var(--disp);font-weight:800;font-size:22px;color:var(--liga);margin-top:4px">'+results.length+' sobres abiertos</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:4px">'+gained.length+' cosméticos nuevos · '+(results.length-gained.length)+' duplicados</div></div>';
+    h+='<div class="cosgrid">';
+    results.forEach(x=>{ const r=RARITY[x.c.rarity]||RARITY.bronce;
+      h+='<div class="coscard'+(x.dup?'':' on')+'" style="--rc:'+r.c+'"><span class="cos-prev" style="'+(x.c.css||'')+'"></span><span class="cos-nm">'+x.c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'+(x.dup?'<span class="cos-on" style="background:#666">DUP</span>':'')+'</div>';
+    });
+    h+='</div>';
+    stage.innerHTML=h;
+  }
+  _openAllRunning=false;
+  setTimeout(()=>{ buildGacha(); }, 100);
+  flashSaved('Abriste '+results.length+' sobres ✓');
 }
 let _gcSpinning=false;
 function openPack(){
@@ -2412,17 +2692,25 @@ function spinCarousel(winner,dup){
     track.style.transform='translateX('+(-target)+'px)';
   });
   setTimeout(()=>{ const cw=wrap.clientWidth; const exact=(WIN_AT*CELL)-(cw/2-CELL/2);
+    if(!track||!track.style)return;
     track.style.transition='transform .32s ease-out'; track.style.transform='translateX('+(-exact)+'px)';
     const cellEls=track.querySelectorAll('.gc-cell'); if(cellEls[WIN_AT])cellEls[WIN_AT].classList.add('win');
-    const r=RARITY[winner.rarity]; const cap=document.getElementById('gachaCap');
+    const r=RARITY[winner.rarity]||RARITY.bronce; const cap=document.getElementById('gachaCap');
     if(cap)cap.innerHTML='<b style="color:'+r.c+'">'+r.t+'</b> · '+winner.t+(dup?' · duplicado (+20 monedas)':'');
-    try{ if(navigator.vibrate)navigator.vibrate(r.w<=11?[20,40,60]:25); }catch(x){}
+    try{ if(navigator.vibrate)navigator.vibrate(r.w<=1?[20,40,60,60,120]:(r.w<=5?[20,40,60]:25)); }catch(x){}
   }, 4150);
   setTimeout(()=>{ _gcSpinning=false; buildGacha(); }, 6400);
 }
 const PACK_COST=150;
 function buyPack(){ const e=econ(); if(e.coins<PACK_COST){ flashSaved('Te faltan '+(PACK_COST-e.coins)+' monedas'); return; } e.coins-=PACK_COST; e.packs++; saveEcon(e); buildGacha(); flashSaved('Sobre comprado ✓ · '+e.coins+' monedas'); }
-function applyCosmetic(id){ const e=econ(); e.effect=(e.effect===id?null:id); saveEcon(e); buildGacha(); flashSaved(e.effect?'Accesorio aplicado ✓':'Accesorio quitado'); }
+/* Aplica un cosmético en su categoría (una activa por tipo). Toca dos veces = lo quita. */
+function applyCosmetic(id){ const e=econ(); const c=cosmeticById(id); if(!c)return;
+  e.equipped=e.equipped||{}; const cur=e.equipped[c.kind]; e.equipped[c.kind]=(cur===id)?null:id;
+  // compat con el campo viejo 'effect'
+  const anyOn=e.equipped[c.kind]; e.effect=anyOn||null;
+  saveEcon(e); buildGacha(); flashSaved(anyOn?(c.t+' aplicado ✓'):(c.t+' quitado'));
+  try{ if(document.getElementById('s-carta')&&document.getElementById('s-carta').classList.contains('on'))renderCard(); }catch(x){}
+}
 /* ===== Bandeja de notificaciones e invitaciones ===== */
 const NOTE_ICON={logro:['star','--liga'],partido:['flag','--mesa'],hijo:['heart','--papa'],invite:['people','--liga'],request:['people','--coach'],info:['card','--publico']};
 function notes(){ const u=userData()||{}; if(!u.notes)u.notes=[]; return u.notes; }
@@ -3113,6 +3401,7 @@ function finishOfficiating(){
   if(GAME.matchIdx==null)return;
   const d=leagueData(); const m=d.calendar[GAME.matchIdx];
   if(m){ m.hs=GAME.teams[0].score; m.as=GAME.teams[1].score; m.done=true;
+    try{ flashEvent(GAME.teams[0].score>=GAME.teams[1].score?'win':'loss'); }catch(e){}
     try{ pushNote('partido','Final: '+GAME.teams[0].name+' '+GAME.teams[0].score+'–'+GAME.teams[1].score+' '+GAME.teams[1].name); }catch(x){}
     // acumula estadísticas reales por jugador (temporada) desde lo que anotó la mesa
     GAME.teams.forEach(gt=>{ const lt=d.teams.find(x=>x.id===gt.id); if(!lt)return;
@@ -3269,7 +3558,14 @@ function mClockStart(){ if(GAME.running||GAME.remainSec<=0)return; GAME.running=
 }
 function mClockPause(){ if(!GAME.running)return; GAME.running=false; if(mClockTimer){clearInterval(mClockTimer);mClockTimer=null;} buildClock(); gameAlert('⏸ Tiempo detenido'); }
 function mToggleAuto(){ GAME.autoStop=!GAME.autoStop; buildClock(); }
-function mNextPeriod(){ const r=rules(); GAME.period=(GAME.period||1)+1; GAME.remainSec=(r.minPer||10)*60; buildClock(); gameAlert('▶ '+periodLabel()); }
+function mNextPeriod(){ const r=rules(); GAME.period=(GAME.period||1)+1; GAME.remainSec=(r.minPer||10)*60; buildClock(); gameAlert('▶ '+periodLabel());
+  // mensaje event-styled: medio tiempo, prórroga, o simplemente nuevo cuarto
+  try{ const reg=r.periods||4; const p=GAME.period;
+    if(p>reg) flashEvent('ot');
+    else if(p===Math.ceil(reg/2)+1) flashEvent('halftime');
+    else flashEvent('quarter',{period:periodLabel()});
+  }catch(e){}
+}
 function gameAlert(msg){ let el=document.getElementById('gameAlert'); if(!el){el=document.createElement('div');el.id='gameAlert';el.className='game-alert';(document.getElementById('app')||document.body).appendChild(el);} el.textContent=msg; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),2600); }
 function mClk(){mtick++;const mm=Math.max(0,12-Math.floor(mtick/3));const ss=('0'+((60-(mtick*13)%60+60)%60)).slice(-2);return 'Q'+GAME.period+' '+mm+':'+ss;}
 function renderWiz(){
@@ -3320,11 +3616,18 @@ function renderWiz(){
 }
 function mScore(p){const t=GAME.teams[mT]; if(!t||mP==null||!t.players[mP]){flash('Elige jugador primero');mstep=1;renderWiz();return;} const pl=t.players[mP];pl.pts+=p;t.score+=p;
   GAME.log.unshift({t:mClk(),m:'<b>'+t.name+'</b> #'+pl.num+' '+pl.nm+' anotó <b class="g">+'+p+'</b>',u:{team:mT,pi:mP,pts:p,f:0}});
-  flash(pl.nm+'  +'+p,'g'); mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
+  const type=p===3?'score3':(p===2?'score2':'score1');
+  // detecta clutch / buzzer / racha
+  const secLeft=(GAME.remainSec==null)?999:GAME.remainSec, isLastPeriod=GAME.period>=(rules().periods||4);
+  const isBuzzer=secLeft<=3, isClutch=isLastPeriod&&secLeft<=30&&Math.abs(t.score-GAME.teams[1-mT].score)<=3;
+  flashEvent(isBuzzer?'buzzer':(isClutch?'clutch':type), {player:pl.nm});
+  mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
 function mFoul(code,label){const t=GAME.teams[mT]; if(!t||mP==null||!t.players[mP]){flash('Elige jugador primero');mstep=1;renderWiz();return;} const pl=t.players[mP];pl.f+=1;t.tf+=1;const r=rules();
   const out=pl.f>=r.foulOut; const bonus=t.tf>=r.teamBonus;
   GAME.log.unshift({t:mClk(),m:'<b>'+t.name+'</b> #'+pl.num+' '+pl.nm+' · <b class="rd">'+label+'</b>'+(out?' <b class="rd">('+r.foulOut+'ª — fuera)</b>':'')+(bonus?' · <span class="g">bonus</span>':''),u:{team:mT,pi:mP,pts:0,f:1,tf:1}});
-  flash('Falta ('+label+') · '+pl.nm+(out?' — EXPULSADO':''),'rd'); mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
+  const type=code==='tec'?'tech':(out?'foulout':(pl.f>=4?'foul_hot':'foul'));
+  flashEvent(type, {player:pl.nm});
+  mstep=1; mP=null; renderWiz(); publishLiveGameSoon();}
 function mUndo(){if(!GAME.log.length){flash('Nada que deshacer');return;}const e=GAME.log.shift();
   if(e.u){const t=GAME.teams[e.u.team],pl=t.players[e.u.pi];pl.pts-=e.u.pts;pl.f-=(e.u.f||0);t.score-=e.u.pts;t.tf-=(e.u.tf||0);}
   flash('Deshecho'); renderWiz();}
@@ -3333,6 +3636,57 @@ function renderMLog(){const l=document.getElementById('mlog');if(!l)return;
     :'<div class="r"><span class="tm">—</span> Aún sin capturas · elige equipo, jugador y acción</div>';}
 let flashT;function flash(msg,cls){const f=document.getElementById('mflash');if(!f)return;
   f.innerHTML='<span class="'+(cls||'')+'">'+msg+'</span>';f.classList.add('on');clearTimeout(flashT);flashT=setTimeout(()=>f.classList.remove('on'),1600);}
+/* ═════════ MENSAJES EVENT-STYLED (item pedido) ═════════
+   Cada tipo de evento del partido dispara un flash con SU color, SU animación
+   y SU frase (rotada para no repetir la misma). Mínimo 20 tipos.
+   Usa flashEvent('score3', {player:'Kevin'}). Si el evento no está definido
+   cae al flash normal. */
+const EVT_STYLES={
+  score1:      {bg:'#3ecf8e', fg:'#fff', frases:['🎯 ANOTA','+1 punto','Tiro libre bueno','Perfecto','Punto para {player}']},
+  score2:      {bg:'#3ecf8e', fg:'#fff', frases:['💥 ¡2 PUNTOS!','Adentro','La embarra','¡Anota {player}!','Buena jugada']},
+  score3:      {bg:'#e8b13e', fg:'#0b0d12', frases:['🔥 ¡TRIPLEEE!','¡Bomba de {player}!','Desde el arco','Baja el aro','Fuera del arco']},
+  score_and1:  {bg:'#ff9a2a', fg:'#0b0d12', frases:['💢 ¡Y UNO!','Falta y anota','{player} lo cierra','Al aro y falta','Golpe doble']},
+  clutch:      {bg:'#ff5a5a', fg:'#fff', frases:['🕒 ¡EN LA HORA!','Frío como el hielo','Clutch {player}','La mete cuando importa','Sangre fría']},
+  buzzer:      {bg:'#e8b13e', fg:'#0b0d12', frases:['⏰ ¡SOBRE LA CHICHARRA!','Sobre la hora','{player} lo mata','Al filo del reloj','Sin tiempo']},
+  foul:        {bg:'#e94a5a', fg:'#fff', frases:['⚠ Falta a {player}','Silbatazo','Falta personal','Marcada','Foul de {player}']},
+  foul_hot:    {bg:'#e94a5a', fg:'#fff', frases:['🚨 4ª FALTA · {player}','Ojo con {player}','Está caliente','Al borde','Cuidado con las faltas']},
+  foulout:     {bg:'#7a0e1a', fg:'#fff', frases:['🚫 EXPULSADO POR FALTAS','5 faltas · fuera','{player} se va','Adiós {player}','Salió por faltas']},
+  tech:        {bg:'#a774f0', fg:'#fff', frases:['🟣 FALTA TÉCNICA','Reclamo','Al banco {player}','Se pasó','La banca lo silba']},
+  turnover:    {bg:'#8a91a0', fg:'#fff', frases:['🔄 Pérdida','Se le va {player}','Balón perdido','Regalo','Mal pase']},
+  steal:       {bg:'#35c2cf', fg:'#0b0d12', frases:['🥷 ROBO','{player} lo roba','Manos activas','¡Le arrebata!','Interceptación']},
+  block:       {bg:'#5b8cff', fg:'#fff', frases:['🖐 TAPÓN','¡Rechazo!','{player} lo aplasta','Al suelo','Se lo comió']},
+  assist:      {bg:'#a774f0', fg:'#fff', frases:['🤝 Asistencia','Pase magistral','{player} lo sirve','Sirvió','Pase para el aro']},
+  rebound:     {bg:'#c17a4a', fg:'#fff', frases:['💪 REBOTE','{player} lo baja','Segundo intento','A la pintura','Barre el aro']},
+  timeout:     {bg:'#f4a63c', fg:'#0b0d12', frases:['⏸ TIEMPO FUERA','Charla técnica','Descanso','Al banco','Corte']},
+  sub_in:      {bg:'#3ecf8e', fg:'#0b0d12', frases:['↑ Entra {player}','Al partido','Cambio de aire','{player} al frente','A la cancha']},
+  sub_out:     {bg:'#8a91a0', fg:'#fff', frases:['↓ Sale {player}','Al banco','Descanso para {player}','A respirar','Se sienta']},
+  quarter:     {bg:'#5b8cff', fg:'#fff', frases:['📣 {period}','Nuevo cuarto','Sigue el juego','A meterle','Prende']},
+  halftime:    {bg:'#f4a63c', fg:'#0b0d12', frases:['🍊 MEDIO TIEMPO','Descanso','Charla del coach','A la caseta','Segunda mitad al rato']},
+  ot:          {bg:'#a774f0', fg:'#fff', frases:['⚔ PRÓRROGA','A tiempo extra','Empatados','No hay ganador','5 min más']},
+  win:         {bg:'#3ecf8e', fg:'#0b0d12', frases:['🏆 ¡GANARON!','Victoria','A festejar','Se lo llevan','A casa con el triunfo']},
+  loss:        {bg:'#e94a5a', fg:'#fff', frases:['💔 Fin del partido','Perdieron','A la próxima','No se dio','Vamos por la siguiente']},
+  hot_streak:  {bg:'#ff9a2a', fg:'#0b0d12', frases:['🔥 EN LLAMAS','{player} no falla','Está prendido','En racha','Imparable']},
+  cold_streak: {bg:'#5b8cff', fg:'#fff', frases:['🥶 FRÍO','No entra ni la mitad','A cambiar','Se apagó','Sin ritmo']},
+  triple_double:{bg:'#e8b13e', fg:'#0b0d12', frases:['💎 TRIPLE-DOBLE','Estadística histórica','{player} lo hace todo','Fenómeno','Legendario']},
+};
+function _rot(list,player,period){ const s=list[Math.floor(Math.random()*list.length)]; return s.replace('{player}',player||'').replace('{period}',period||''); }
+function flashEvent(type,ctx){ ctx=ctx||{}; const st=EVT_STYLES[type]; if(!st){ flash(ctx.msg||type,''); return; }
+  const f=document.getElementById('mflash'); if(!f)return;
+  const txt=_rot(st.frases, ctx.player, ctx.period);
+  const style='background:'+st.bg+';color:'+st.fg+';';
+  f.innerHTML='<span class="mfx" style="'+style+'">'+txt+'</span>';
+  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  clearTimeout(flashT); flashT=setTimeout(()=>f.classList.remove('on'), 1900);
+  // reacción de la carta del sujeto (item pedido: la carta reacciona al encestar, falta, cambio)
+  const kind=(type.indexOf('score')===0||type==='clutch'||type==='buzzer'||type==='block'||type==='steal'||type==='triple_double')?'score':(type.indexOf('foul')===0||type==='tech')?'foul':(type==='sub_in'||type==='sub_out')?'sub':(type==='win')?'win':(type==='loss')?'loss':null;
+  if(kind)cardReact(kind);
+  try{ if(navigator.vibrate){ const strong=type==='foulout'||type==='triple_double'||type==='clutch'||type==='buzzer'; navigator.vibrate(strong?[15,40,80]:20); } }catch(e){}
+}
+function cardReact(kind){ const pc=document.getElementById('pcard'); if(!pc)return;
+  pc.classList.remove('cardReact-score','cardReact-foul','cardReact-sub','cardReact-showoff','cardReact-win','cardReact-loss');
+  void pc.offsetWidth; pc.classList.add('cardReact-'+kind);
+  setTimeout(()=>{ pc.classList.remove('cardReact-'+kind); }, 900);
+}
 
 /* ====== CAMBIO DE JUGADOR del coach → se refleja en marcador y público ====== */
 let subOut=null;
@@ -3935,46 +4289,80 @@ function doSignin(){
 function doLogin(){ doSignin(); }   /* compat */
 function shareCard(){ shareCardImage(); }
 /* genera la carta como imagen (Canvas, sin librerías) para presumir/descargar */
+/* Canvas para presumir: showcase de tamaño póster (900×1200), foto GRANDE,
+   marco por rareza equipada, degradado del fondo cosmético, y decoraciones.
+   Item pedido: "showcase de la carta bien mamador" y "la foto se ve muy chica". */
 function drawCardCanvas(cb){
   const u=cardSubject(); const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
   const cvar=(link&&link.team.color)||'--jugador';
   const cssVal=(v)=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#35c2cf';
   const col=cssVal(cvar); const rating=avg?Math.max(45,Math.min(99,Math.round(48+avg.ppg*2.6-avg.fpg*1.5))):null;
-  const W=600,H=800; const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d');
-  // fondo
-  const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,'#141a2b'); g.addColorStop(.5,'#0e1320'); g.addColorStop(1,'#08060d'); x.fillStyle=g; x.fillRect(0,0,W,H);
-  // halo del color del equipo
-  const rg=x.createRadialGradient(W/2,230,20,W/2,230,340); rg.addColorStop(0,col+'55'); rg.addColorStop(1,'transparent'); x.fillStyle=rg; x.fillRect(0,0,W,H);
-  // marco (accesorio equipado)
-  const hasFrame=u.econ&&u.econ.effect; x.strokeStyle=hasFrame?col:'rgba(255,255,255,.15)'; x.lineWidth=hasFrame?10:4; x.strokeRect(20,20,W-40,H-40);
+  const e=(userData()||{}).econ||{}; const frCos=equippedByKind(e,'frame'); const bgCos=equippedByKind(e,'bg'); const acCos=equippedByKind(e,'accessory');
+  const rInfo=frCos?RARITY[frCos.rarity]:(bgCos?RARITY[bgCos.rarity]:null);
+  const rareCol=rInfo?rInfo.c:col; const rareName=rInfo?rInfo.t.toUpperCase():(rating>=90?'LEGENDARIO':rating>=80?'ÉPICO':rating>=70?'ORO':rating>=60?'PLATA':'NUEVO');
+  const W=900,H=1200; const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d');
+  // fondo cinemático
+  const bg1=x.createLinearGradient(0,0,W,H); bg1.addColorStop(0,'#0a0c14'); bg1.addColorStop(.5,'#0e1320'); bg1.addColorStop(1,'#04050a'); x.fillStyle=bg1; x.fillRect(0,0,W,H);
+  // resplandor grande detrás
+  const rg=x.createRadialGradient(W/2,H*0.35,40,W/2,H*0.35,W*0.7);
+  rg.addColorStop(0, rareCol+'66'); rg.addColorStop(.4, rareCol+'22'); rg.addColorStop(1,'transparent');
+  x.fillStyle=rg; x.fillRect(0,0,W,H);
+  // rayos diagonales tipo trading card
+  x.save(); x.globalAlpha=.14; x.translate(W/2,H*0.35);
+  for(let i=0;i<12;i++){ x.rotate(Math.PI/6); const grd=x.createLinearGradient(0,0,W*0.8,0); grd.addColorStop(0,rareCol); grd.addColorStop(1,'transparent'); x.fillStyle=grd; x.fillRect(0,-16,W*0.8,32); }
+  x.restore();
   const draw=(photoImg)=>{
-    // ventanilla de foto: retrato (3:4), centrada — coincide con el recorte
-    const pw=258, ph=344, px=(W-pw)/2, py=64;
-    x.fillStyle='#0c1120'; roundRect(x,px,py,pw,ph,18,true,false);
-    if(photoImg){ x.save(); roundRect(x,px,py,pw,ph,18,false,false); x.clip(); const ar=photoImg.width/photoImg.height; let dw=pw,dh=pw/ar; if(dh<ph){dh=ph;dw=ph*ar;} x.drawImage(photoImg,px+(pw-dw)/2,py+(ph-dh)/2,dw,dh); x.restore(); }
-    else { x.fillStyle=col; x.font='800 120px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,py+ph/2+40); }
-    // rango + general
-    if(rating){ x.fillStyle=col; x.font='800 22px ui-monospace,monospace'; x.textAlign='left'; x.fillText('◆ '+(rating>=80?'ÉPICO':rating>=70?'ORO':rating>=60?'PLATA':'NUEVO'),50,55);
-      x.textAlign='right'; x.font='800 60px -apple-system,sans-serif'; x.fillStyle='#fff'; x.fillText(rating,W-50,60); x.font='600 16px -apple-system,sans-serif'; x.fillStyle='rgba(255,255,255,.6)'; x.fillText('GENERAL',W-50,80); }
-    // nombre
-    x.textAlign='center'; x.fillStyle='#fff'; x.font='800 46px -apple-system,sans-serif'; x.fillText((u.name||'Tu carta').toUpperCase(),W/2,440);
-    x.fillStyle='rgba(255,255,255,.6)'; x.font='500 20px -apple-system,sans-serif'; x.fillText((link?link.team.name:(u.team||'Aún sin equipo')),W/2,472);
-    // stats
-    const stats = avg? [[avg.ppg.toFixed(1),'PTS'],[avg.mpg.toFixed(0)+'′','MIN'],[avg.fpg.toFixed(1),'FALTAS'],[String(avg.gp),'PJ']]
-                     : [['—','PTS'],['—','MIN'],['—','FALTAS'],['—','PJ']];
-    const bw=118, gap=14, total=bw*4+gap*3, sx=(W-total)/2, sy=520;
-    stats.forEach((s,i)=>{ const bx=sx+i*(bw+gap); x.fillStyle='rgba(255,255,255,.05)'; roundRect(x,bx,sy,bw,110,12,true,false);
-      x.fillStyle='#fff'; x.font='800 34px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(s[0],bx+bw/2,sy+55);
-      x.fillStyle='rgba(255,255,255,.55)'; x.font='600 13px -apple-system,sans-serif'; x.fillText(s[1],bx+bw/2,sy+85); });
+    // ventanilla FOTO GRANDE — antes 258×344, ahora 620×820 (69% del ancho)
+    const pw=620, ph=820, px=(W-pw)/2, py=100;
+    // sombra bajo la foto
+    x.save(); x.shadowColor='rgba(0,0,0,.6)'; x.shadowBlur=40; x.shadowOffsetY=20;
+    x.fillStyle='#0c1120'; roundRect(x,px,py,pw,ph,26,true,false); x.restore();
+    if(photoImg){ x.save(); roundRect(x,px,py,pw,ph,26,false,false); x.clip();
+      const ar=photoImg.width/photoImg.height; let dw=pw,dh=pw/ar; if(dh<ph){dh=ph;dw=ph*ar;}
+      x.drawImage(photoImg,px+(pw-dw)/2,py+(ph-dh)/2,dw,dh);
+      // viñeta desde abajo para que el nombre resalte encima de la foto
+      const vg=x.createLinearGradient(0,py+ph*0.5,0,py+ph); vg.addColorStop(0,'transparent'); vg.addColorStop(1,'rgba(4,5,10,.95)'); x.fillStyle=vg; x.fillRect(px,py+ph*0.5,pw,ph*0.5);
+      x.restore(); }
+    else { x.fillStyle=rareCol; x.font='900 300px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,py+ph/2+100); }
+    // marco por rareza sobre la foto
+    x.save(); x.strokeStyle=rareCol; x.lineWidth=frCos?9:5; x.shadowColor=rareCol; x.shadowBlur=frCos?24:12;
+    roundRect(x,px,py,pw,ph,26,false,true); x.restore();
+    // banda de rango arriba
+    x.fillStyle=rareCol; x.font='900 30px -apple-system,sans-serif'; x.textAlign='left'; x.fillText('◆ '+rareName, 60, 66);
+    // GENERAL grande arriba derecha
+    if(rating){ x.textAlign='right'; x.font='900 96px -apple-system,sans-serif'; x.fillStyle='#fff'; x.fillText(rating,W-56,86); x.font='700 20px -apple-system,sans-serif'; x.fillStyle='rgba(255,255,255,.65)'; x.fillText('GENERAL',W-56,112); }
+    // decoración: accesorio equipado (esquinas)
+    if(acCos && acCos.emoji){ x.font='60px -apple-system,sans-serif'; x.textBaseline='top';
+      const pos=acCos.pos||'tl';
+      if(pos==='tl')x.fillText(acCos.emoji, px+8, py+8);
+      else if(pos==='tr')x.fillText(acCos.emoji, px+pw-72, py+8);
+      else if(pos==='bl')x.fillText(acCos.emoji, px+8, py+ph-72);
+      else if(pos==='br')x.fillText(acCos.emoji, px+pw-72, py+ph-72);
+      else if(pos==='head'){ x.textAlign='center'; x.fillText(acCos.emoji, W/2, py-10); x.textAlign='left'; }
+      x.textBaseline='alphabetic';
+    }
+    // Nombre + club sobre la parte baja de la foto
+    x.textAlign='center'; x.fillStyle='#fff'; x.font='900 68px -apple-system,sans-serif'; x.fillText((u.name||'Tu carta').toUpperCase().slice(0,20), W/2, py+ph-70);
+    x.fillStyle='rgba(255,255,255,.75)'; x.font='600 26px -apple-system,sans-serif'; x.fillText((link?link.team.name:(u.team||'Aún sin equipo'))+(u.num?' · #'+u.num:''), W/2, py+ph-36);
+    // stats — 4 tiles amplias abajo
+    const stats = avg? [[avg.ppg.toFixed(1),'PTS/J'],[avg.mpg.toFixed(0)+'′','MIN'],[avg.fpg.toFixed(1),'FALTAS'],[String(avg.gp),'PJ']]
+                     : [['—','PTS/J'],['—','MIN'],['—','FALTAS'],['—','PJ']];
+    const bw=190, gap=16, total=bw*4+gap*3, sx=(W-total)/2, sy=980;
+    stats.forEach((s,i)=>{ const bx=sx+i*(bw+gap);
+      const g2=x.createLinearGradient(bx,sy,bx,sy+150); g2.addColorStop(0,'rgba(255,255,255,.06)'); g2.addColorStop(1,'rgba(255,255,255,.02)'); x.fillStyle=g2; roundRect(x,bx,sy,bw,150,16,true,false);
+      x.strokeStyle=rareCol+'40'; x.lineWidth=1; roundRect(x,bx,sy,bw,150,16,false,true);
+      x.fillStyle='#fff'; x.font='900 54px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(s[0],bx+bw/2,sy+80);
+      x.fillStyle='rgba(255,255,255,.6)'; x.font='700 16px -apple-system,sans-serif'; x.fillText(s[1],bx+bw/2,sy+120);
+    });
     // footer marca
-    x.fillStyle=col; x.font='800 26px -apple-system,sans-serif'; x.textAlign='center'; x.fillText('LIGAS MAZI',W/2,720);
-    x.fillStyle='rgba(255,255,255,.4)'; x.font='500 15px -apple-system,sans-serif'; x.fillText('Carta de jugador',W/2,748);
+    x.fillStyle=rareCol; x.font='900 32px -apple-system,sans-serif'; x.textAlign='center'; x.fillText('LIGAS MAZI', W/2, 1160);
     cb(cv);
   };
   if(u.photo){ const im=new Image(); im.onload=()=>draw(im); im.onerror=()=>draw(null); im.src=u.photo; } else draw(null);
 }
 function roundRect(x,rx,ry,w,h,r,fill,stroke){ x.beginPath(); x.moveTo(rx+r,ry); x.arcTo(rx+w,ry,rx+w,ry+h,r); x.arcTo(rx+w,ry+h,rx,ry+h,r); x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); if(fill)x.fill(); if(stroke)x.stroke(); }
 function shareCardImage(){
+  cardReact('showoff'); // item pedido: al presumir, la carta hace su showcase
   showLoader('Generando tu carta…');
   drawCardCanvas(function(cv){
     cv.toBlob(function(blob){ hideLoader(); if(!blob){flashSaved('No se pudo generar');return;}
@@ -4000,12 +4388,65 @@ function buildCardSubjectPicker(){
   if(_cardViewChild===-1 && !iAmAlsoPlayer && kids.length)_cardViewChild=0;
 }
 function switchCardSubject(i){ _cardViewChild=i; _cardSearched=false; renderCard(); buildCardSubjectPicker(); }
+/* Aplica en la carta TODOS los cosméticos activos: fondo, aura/efecto, marco,
+   destello (línea que se pasea) y accesorios (murciélagos, lentes, halo, etc.).
+   Cada categoría se dibuja en su propia capa para que se puedan combinar. */
+function applyCardCosmetics(){
+  const pc=document.getElementById('pcard'); if(!pc)return;
+  const e=(userData()||{}).econ||{}; const eq=e.equipped||{};
+  // fondo de la carta (bg): reemplaza el gradiente base con el del cosmético
+  const bg=equippedByKind(e,'bg');
+  if(bg){ pc.style.cssText=(bg.css||'')+';border-radius:16px;overflow:hidden;position:relative'; pc.className='pcard '+(bg.anim||''); }
+  else { pc.style.cssText=''; pc.className='pcard'; }
+  // aura / efecto de brillo
+  const fx=equippedByKind(e,'effect');
+  if(fx){ if(fx.css)pc.style.cssText+=';'+fx.css; if(fx.anim)pc.classList.add(fx.anim); }
+  // marco: capa aparte para que no chocar con box-shadow del fondo
+  let fr=pc.querySelector(':scope > .fx-frame'); if(!fr){fr=document.createElement('div');fr.className='fx-frame';pc.appendChild(fr);}
+  const frCos=equippedByKind(e,'frame');
+  fr.setAttribute('style', frCos?(frCos.css||''):''); fr.className='fx-frame '+((frCos&&frCos.anim)||'');
+  // destello / línea que se pasea (item pedido: como la línea amarilla predeterminada)
+  let sh=pc.querySelector(':scope > .fx-shine'); if(!sh){sh=document.createElement('div');sh.className='fx-shine';pc.appendChild(sh);}
+  const shCos=equippedByKind(e,'shine');
+  if(shCos){
+    sh.className='fx-shine'+(shCos.prisma?' prisma':'')+(shCos.doble?' double':'')+(shCos.orbit?' orbit':'');
+    // css inline para color/velocidad/ángulo del sweep
+    sh.style.setProperty('--shineColor', shCos.color||'rgba(255,215,90,.85)');
+    sh.style.setProperty('animation-duration', shCos.speed||'2.4s');
+    // aplico bg al pseudo-elemento vía variables CSS y una regla ad-hoc
+    const cssKey='__shineCss_'+(shCos.id||'x');
+    let st=document.getElementById(cssKey); if(!st){st=document.createElement('style');st.id=cssKey;document.head.appendChild(st);}
+    const bgVal=shCos.prisma?(shCos.color||'linear-gradient(90deg,transparent,rgba(255,215,90,.85),transparent)'):('linear-gradient(90deg,transparent,'+(shCos.color||'rgba(255,215,90,.85)')+',transparent)');
+    st.textContent='#pcard.pcard > .fx-shine.__shine_'+shCos.id+'::before{background:'+bgVal+';animation-duration:'+(shCos.speed||'2.4s')+'}';
+    sh.classList.add('__shine_'+shCos.id);
+  } else {
+    // sin cosmético equipado: mantenemos el sweep dorado predeterminado (que ya existe en la CSS base)
+    sh.className='fx-shine';
+  }
+  // accesorios visuales (overlays)
+  let ac=pc.querySelector(':scope > .fx-accessories'); if(!ac){ac=document.createElement('div');ac.className='fx-accessories';pc.appendChild(ac);}
+  ac.innerHTML='';
+  const acCos=equippedByKind(e,'accessory');
+  if(acCos){
+    const cnt=acCos.count||1;
+    if(acCos.css){ const el=document.createElement('div'); el.setAttribute('style',acCos.css); el.className=acCos.anim||''; ac.appendChild(el); }
+    else if(acCos.emoji){
+      for(let i=0;i<cnt;i++){
+        const el=document.createElement('span'); el.textContent=acCos.emoji; el.className='acc '+(acCos.pos||'tl')+' '+(acCos.anim||'');
+        if(cnt>1 && (acCos.pos==='scatter'||acCos.pos==='flock'||acCos.pos==='fall'||acCos.pos==='bottom'||acCos.pos==='diag'||acCos.pos==='sides')){
+          const x=(acCos.pos==='sides')?(i%2?92:2):(4+Math.random()*88);
+          const y=(acCos.pos==='fall')?(-15+i*18):(acCos.pos==='bottom')?(88+Math.random()*8):(acCos.pos==='sides')?(30+i*12):(6+Math.random()*80);
+          el.style.cssText='position:absolute;left:'+x+'%;top:'+y+'%;font-size:'+(20+Math.random()*10)+'px;animation-delay:'+(i*0.2)+'s';
+        }
+        ac.appendChild(el);
+      }
+    }
+  }
+}
 function renderCard(){
   const u=userData()||{}; const subj=cardSubject();
   buildCardSubjectPicker();
-  // accesorio/efecto equipado del gachapón (siempre de la cuenta, no del hij@)
-  const pc=document.getElementById('pcard');
-  if(pc){ const e=(u.econ&&u.econ.effect)?cosmeticById(u.econ.effect):null; pc.style.cssText=e?e.css:''; }
+  applyCardCosmetics();
   // ¿el sujeto (yo o el hij@ elegido) es un jugador registrado de la liga?
   const link=findLeaguePlayer(subj); const avg=link?playerAverages(link.player):null;
   // si no lo hallamos localmente, búscalo (una vez) en las ligas compartidas que sigue
