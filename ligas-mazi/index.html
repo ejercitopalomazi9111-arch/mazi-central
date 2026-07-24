@@ -799,6 +799,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 @keyframes orbitPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
 /* Marcos animados */
 @keyframes framePulse{0%,100%{box-shadow:inset 0 0 0 3px var(--fc,#e8b13e),0 0 22px var(--fc,#e8b13e)}50%{box-shadow:inset 0 0 0 3px var(--fc,#e8b13e),0 0 46px var(--fc,#e8b13e)}}
+@keyframes anmFramePulseGenKF{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+.anmFramePulseGen{animation:anmFramePulseGenKF 2.4s ease-in-out infinite}
+@keyframes anmPulseGenKF{0%,100%{filter:brightness(1) saturate(1)}50%{filter:brightness(1.2) saturate(1.3)}}
+.anmPulseGen{animation:anmPulseGenKF 2.2s ease-in-out infinite}
+.anmSparkleGen::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.7) 0.5px,transparent 1.5px);background-size:24px 24px;animation:sparkleDrift 5s linear infinite;opacity:.5;pointer-events:none}
 .anmFrameGold{--fc:#e8b13e;animation:framePulse 2.2s ease-in-out infinite}
 .anmFrameBlue{--fc:#5b8cff;animation:framePulse 2.2s ease-in-out infinite}
 .anmFrameRed{--fc:#e94a5a;animation:framePulse 2s ease-in-out infinite}
@@ -845,6 +850,65 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 @keyframes lavaBubble{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .anmSparkle::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.9) 0.5px,transparent 1px),radial-gradient(circle,rgba(255,255,255,.7) 0.5px,transparent 1px);background-size:40px 40px,25px 25px;background-position:0 0,15px 20px;animation:sparkleDrift 8s linear infinite;opacity:.6}
 @keyframes sparkleDrift{0%{background-position:0 0,15px 20px}100%{background-position:40px 40px,55px 60px}}
+/* Partículas al abrir premios raros */
+.sparkle{position:fixed;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:9999;box-shadow:0 0 12px currentColor;transform:translate(-50%,-50%);animation:sparkleFly .9s cubic-bezier(.2,.6,.4,1) forwards}
+@keyframes sparkleFly{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(.2)}}
+/* Burbuja de texto sobre tokens (item pedido: al anotar/falta/cambio) */
+.pop-bubble{pointer-events:none;font-family:var(--disp);font-weight:900;font-size:16px;padding:5px 11px;border-radius:12px;background:rgba(15,20,32,.92);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.55);border:1.5px solid currentColor;transform:translate(-50%,-100%);animation:popBubble 1.2s cubic-bezier(.2,.9,.3,1) forwards;white-space:nowrap}
+.pop-bubble.big{font-size:22px;padding:6px 14px}
+@keyframes popBubble{0%{opacity:0;transform:translate(-50%,-40%) scale(.4)}25%{opacity:1;transform:translate(-50%,-90%) scale(1.15)}45%{transform:translate(-50%,-100%) scale(1)}100%{opacity:0;transform:translate(-50%,-160%) scale(.95)}}
+/* SHOWCASE del premio del sobre — "primera plana" tipo CSGO (item pedido) */
+.reveal-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(30,20,60,.85),rgba(2,2,6,.98));z-index:5000;display:none;align-items:center;justify-content:center;flex-direction:column;padding:24px;opacity:0;transition:opacity .3s;overflow:hidden}
+.reveal-bg.on{display:flex;opacity:1}
+.reveal-bg::before{content:"";position:absolute;inset:-50%;background:conic-gradient(from 0deg,var(--rc,#e8b13e),transparent 25%,transparent 75%,var(--rc,#e8b13e));animation:spin 6s linear infinite;opacity:.14;pointer-events:none}
+.reveal-card{position:relative;width:min(84vw,320px);aspect-ratio:3/4;border-radius:20px;background:linear-gradient(150deg,#232834,#10131a);border:3px solid var(--rc,#e8b13e);box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 60px var(--rc,#e8b13e);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;z-index:1}
+.reveal-card .rc-badge{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--rc,#e8b13e);text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.reveal-card .rc-nm{font-family:var(--disp);font-weight:900;font-size:24px;text-align:center;margin:14px 12px 4px;text-shadow:0 3px 12px rgba(0,0,0,.7);color:#fff}
+.reveal-card .rc-fl{font-size:12.5px;color:#c9cfd9;text-align:center;padding:0 20px 16px;font-style:italic;line-height:1.4}
+.reveal-title{font-family:var(--disp);font-weight:900;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--rc,#e8b13e);text-shadow:0 4px 20px var(--rc,#e8b13e);z-index:1;margin-bottom:14px;text-align:center}
+.reveal-dupe{font-size:12px;color:var(--dim);margin-top:8px;z-index:1}
+.reveal-actions{margin-top:20px;display:flex;gap:10px;z-index:2}
+.reveal-actions .btn{min-width:110px}
+.rareBar{position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,transparent,var(--rc,#e8b13e),transparent);animation:rareBarPulse 1.4s ease-in-out infinite}
+@keyframes rareBarPulse{0%,100%{opacity:.5;transform:scaleX(.7)}50%{opacity:1;transform:scaleX(1)}}
+/* 8 animaciones de aparición del premio (rareza alta = más aparatosa) */
+.rc-anm-fadeIn{animation:rcFadeIn .8s ease-out}
+.rc-anm-zoom{animation:rcZoom .7s cubic-bezier(.2,1.5,.4,1)}
+.rc-anm-flip{animation:rcFlip 1s ease-in-out}
+.rc-anm-spin{animation:rcSpin 1.2s cubic-bezier(.2,.7,.3,1)}
+.rc-anm-drop{animation:rcDrop 1s cubic-bezier(.3,1.4,.4,1)}
+.rc-anm-glitch{animation:rcGlitch .7s steps(6)}
+.rc-anm-supernova{animation:rcSupernova 1.5s cubic-bezier(.15,1,.4,1)}
+.rc-anm-emerge{animation:rcEmerge 1.2s cubic-bezier(.2,.8,.3,1)}
+@keyframes rcFadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes rcZoom{from{opacity:0;transform:scale(.3)}70%{transform:scale(1.08)}to{opacity:1;transform:scale(1)}}
+@keyframes rcFlip{0%{transform:rotateY(180deg);opacity:0}60%{opacity:1}100%{transform:rotateY(0);opacity:1}}
+@keyframes rcSpin{0%{transform:scale(.3) rotate(-360deg);opacity:0}70%{transform:scale(1.05) rotate(20deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes rcDrop{0%{transform:translateY(-100vh) rotate(-14deg);opacity:0}70%{transform:translateY(20px) rotate(2deg);opacity:1}85%{transform:translateY(-10px) rotate(-1deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes rcGlitch{0%{transform:translate(0,0)}20%{transform:translate(-6px,3px)}40%{transform:translate(6px,-3px);filter:hue-rotate(180deg)}60%{transform:translate(-3px,-3px)}80%{transform:translate(3px,3px);filter:hue-rotate(-90deg)}100%{transform:translate(0,0)}}
+@keyframes rcSupernova{0%{transform:scale(.05);filter:brightness(6);opacity:0;box-shadow:0 0 200px 100px var(--rc,#e8b13e)}30%{opacity:1;transform:scale(1.4);filter:brightness(2)}60%{transform:scale(.95)}80%{transform:scale(1.02)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes rcEmerge{0%{opacity:0;transform:scale(.5);filter:brightness(4) blur(30px)}60%{opacity:1;filter:brightness(1.5) blur(4px)}100%{opacity:1;transform:scale(1);filter:brightness(1) blur(0)}}
+/* Sobres: 3 tipos con precios y tabla */
+.packrow{display:flex;gap:10px;margin:8px 0}
+.packcard{flex:1;background:linear-gradient(160deg,#232834,#10131a);border:2px solid var(--pc,#e8b13e);border-radius:14px;padding:12px 10px;text-align:center;cursor:pointer;transition:.15s;position:relative;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.packcard:active{transform:scale(.97)}
+.packcard.hot{box-shadow:0 8px 26px rgba(232,177,62,.4)}
+.packcard .pk-t{font-family:var(--disp);font-weight:900;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--pc,#e8b13e)}
+.packcard .pk-p{font-family:var(--mono);font-size:13px;color:#fff;margin-top:4px;font-weight:700}
+.packcard .pk-p .off{color:var(--good);font-size:10px;margin-left:4px}
+.packcard .pk-s{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.3}
+/* Daily reward card */
+.dailygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:8px 0 10px}
+.dailycell{aspect-ratio:1;border-radius:8px;background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;color:var(--muted);position:relative}
+.dailycell.done{background:linear-gradient(160deg,rgba(62,207,142,.35),rgba(62,207,142,.1));border-color:var(--good);color:#fff}
+.dailycell.today{background:linear-gradient(160deg,rgba(232,177,62,.4),rgba(232,177,62,.1));border-color:var(--liga);color:#fff;animation:pulseTile 1.6s ease-in-out infinite}
+.dailycell.today::after{content:"HOY";position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;background:var(--liga);color:#0b0d12;padding:1px 6px;border-radius:6px;font-weight:800;letter-spacing:.06em}
+.dailycell .dc-d{font-family:var(--mono);font-size:9px}
+.dailycell .dc-r{font-family:var(--disp);font-weight:900;font-size:13px;color:currentColor}
+.dailycell .dc-sub{font-size:8.5px;color:currentColor;opacity:.85}
+@keyframes pulseTile{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
+.help-card{background:linear-gradient(160deg,rgba(30,36,54,.7),rgba(15,18,26,.7));border:1px solid var(--line);border-left:3px solid var(--liga);border-radius:12px;padding:12px 14px;margin:8px 0;font-size:13px;color:#c9cfd9;line-height:1.5}
+.help-card b{color:#fff}
 .anmGalaxyDrift{position:relative}
 .anmGalaxyDrift::after{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 30% 40%,rgba(143,92,255,.4),transparent 40%),radial-gradient(circle at 70% 60%,rgba(53,194,207,.3),transparent 40%);animation:spin 30s linear infinite}
 .anmDarkPulse{animation:darkBreath 3s ease-in-out infinite}
@@ -1400,6 +1464,23 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <button class="btn ghost sm block" onclick="resetDemo()" style="margin-top:8px"><svg class="ic"><use href="#ic-undo"/></svg> Empezar de cero (borrar datos de prueba)</button>
       <button class="btn ghost sm block" onclick="doLogout()" style="margin-top:8px;color:var(--crit);border-color:rgba(236,90,69,.4)"><svg class="ic"><use href="#ic-lock"/></svg> Cerrar sesión</button>
       <button class="btn ghost sm block" onclick="closeProfile()" style="margin-top:8px">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Overlay del premio del sobre (item pedido: showcase mamador en primera plana) -->
+  <div class="reveal-bg" id="revealBg" onclick="if(event.target.id==='revealBg')closeReveal()">
+    <div class="reveal-title" id="revealTitle">¡Nuevo cosmético!</div>
+    <div class="reveal-card" id="revealCard">
+      <span class="rc-badge" id="revealBadge">◆ Común</span>
+      <div id="revealPrev" style="margin-top:30px"></div>
+      <div class="rc-nm" id="revealNm">—</div>
+      <div class="rc-fl" id="revealFl">—</div>
+      <div class="rareBar"></div>
+    </div>
+    <div class="reveal-dupe" id="revealDupe" style="display:none">Duplicado · +20 monedas</div>
+    <div class="reveal-actions">
+      <button class="btn ghost" onclick="closeReveal()">Guardar</button>
+      <button class="btn" onclick="revealApply()">Aplicar en mi carta</button>
     </div>
   </div>
 
@@ -2393,7 +2474,9 @@ function econ(){ const u=userData()||{}; if(!u.econ)u.econ={coins:0,packs:0,owne
 function saveEcon(e){ const u=userData()||{}; u.econ=e; saveUser(u); }
 /* fondos de prueba para la cuenta suprema (item 10) */
 function superFund(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return; const e=econ(); e.coins=(e.coins||0)+9999; saveEcon(e); try{buildLogros();}catch(x){} flashSaved('+9,999 monedas ✓'); }
-function superPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return; const e=econ(); e.packs=(e.packs||0)+25; saveEcon(e); try{buildLogros();}catch(x){} flashSaved('+25 sobres ✓'); }
+function superPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return;
+  const e=econ(); const inv=_packInv(); inv.sencillo=(inv.sencillo||0)+10; inv.avanzado=(inv.avanzado||0)+10; inv.armado=(inv.armado||0)+5;
+  saveEcon(e); try{buildLogros();buildGacha();}catch(x){} flashSaved('+10 sencillos, +10 avanzados, +5 armados ✓'); }
 const ACHIEVEMENTS=[
   {id:'welcome', t:'Bienvenid@ a Ligas Mazi', d:'Creaste tu cuenta', coins:50, packs:0, ic:'star', chk:u=>!!u.name},
   {id:'role',    t:'Elegiste tu rol',         d:'Ya sabes cómo entras a la app', coins:20, packs:0, ic:'people', chk:u=>!!(u.roles&&u.roles.length)},
@@ -2450,18 +2533,29 @@ function buildLogros(){
 /* ===== RAREZAS — plan original: 11 rangos, del bronce al dark matter =====
    'w' = peso relativo del muestreo (probabilidad ≈ w / suma_de_w). Los rangos
    raros de verdad casi no salen: dark matter ~0.15%, galaxy opal ~0.4%. */
+/* 20 RAREZAS: 9 "clásicas" (comun → leyenda) + 11 "gemas" (bronce → dark matter).
+   Cada una tiene 'tier' 1-11: mayor tier = más raro y feedback más aparatoso. */
 const RARITY={
-  bronce:        {t:'Bronce',         c:'#c88a4a', w:44},
-  plata:         {t:'Plata',          c:'#c7cdd8', w:26},
-  oro:           {t:'Oro',            c:'#e8b13e', w:14},
-  esmeralda:     {t:'Esmeralda',      c:'#2ecf8e', w:7},
-  zafiro:        {t:'Zafiro',         c:'#5b8cff', w:4},
-  rubi:          {t:'Rubí',           c:'#e94a5a', w:2.2},
-  amatista:      {t:'Amatista',       c:'#a774f0', w:1.4},
-  diamante:      {t:'Diamante',       c:'#bfe9ff', w:0.8},
-  diamante_rosa: {t:'Diamante Rosa',  c:'#ff8fd8', w:0.4},
-  galaxy_opal:   {t:'Galaxy Opal',    c:'#8f5cff', w:0.15},
-  dark_matter:   {t:'Dark Matter',    c:'#161826', w:0.05},
+  comun:         {t:'Común',          c:'#8b93a3', w:32,   tier:1},
+  poco_comun:    {t:'Poco Común',     c:'#69c1a4', w:16,   tier:2},
+  raro:          {t:'Raro',           c:'#35c2cf', w:9,    tier:3},
+  super_raro:    {t:'Súper Raro',     c:'#5b8cff', w:5,    tier:4},
+  epico:         {t:'Épico',          c:'#a774f0', w:2.5,  tier:5},
+  mega_epico:    {t:'Mega Épico',     c:'#c150ff', w:1.2,  tier:6},
+  legendario:    {t:'Legendario',     c:'#e8b13e', w:0.5,  tier:7},
+  mitico:        {t:'Mítico',         c:'#ff5a8a', w:0.25, tier:8},
+  leyenda:       {t:'Leyenda',        c:'#ffd15a', w:0.08, tier:9},
+  bronce:        {t:'Bronce',         c:'#c88a4a', w:22,   tier:1},
+  plata:         {t:'Plata',          c:'#c7cdd8', w:13,   tier:2},
+  oro:           {t:'Oro',            c:'#e8b13e', w:7,    tier:3},
+  esmeralda:     {t:'Esmeralda',      c:'#2ecf8e', w:3.5,  tier:4},
+  zafiro:        {t:'Zafiro',         c:'#5b8cff', w:2,    tier:5},
+  rubi:          {t:'Rubí',           c:'#e94a5a', w:1.1,  tier:6},
+  amatista:      {t:'Amatista',       c:'#a774f0', w:0.7,  tier:7},
+  diamante:      {t:'Diamante',       c:'#bfe9ff', w:0.4,  tier:8},
+  diamante_rosa: {t:'Diamante Rosa',  c:'#ff8fd8', w:0.2,  tier:9},
+  galaxy_opal:   {t:'Galaxy Opal',    c:'#8f5cff', w:0.075,tier:10},
+  dark_matter:   {t:'Dark Matter',    c:'#161826', w:0.025,tier:11},
 };
 /* Cosméticos: 6 categorías, con animaciones y overlays reales sobre la carta.
    kind:
@@ -2583,7 +2677,114 @@ const COSMETICS=[
   {id:'bg_supernova',t:'Supernova',        kind:'bg', rarity:'galaxy_opal',      css:'background:radial-gradient(circle at 50% 40%,#ffe45a 0%,#ff5aa0 20%,#8f5cff 55%,#000 90%)', anim:'anmPulseFast'},
   {id:'bg_dm',       t:'Vacío',            kind:'bg', rarity:'dark_matter',      css:'background:radial-gradient(circle at 50% 50%,#000,#050308)', anim:'anmDarkPulse'},
 ];
+/* Frases curiosas por rareza (una sale para cada item de esa rareza; deterministas) */
+const FLAVORS_BY_RARITY={
+  comun:['El comienzo de toda leyenda.','Sin drama pero con estilo.','Lo tienen los que juegan con corazón.'],
+  poco_comun:['Hay quien lo tiene, hay quien lo busca.','Ligeramente por encima del promedio.','Un guiño para quien sabe.'],
+  raro:['No aparece todos los sábados.','Le da un aire distinto a la carta.','Los coleccionistas lo susurran.'],
+  super_raro:['Se ven pocos por temporada.','Una diferencia notable a distancia.','La gente pregunta de dónde salió.'],
+  epico:['Cuando cae, se cuenta.','Se recuerda quién lo abrió.','La cancha lo respeta.'],
+  mega_epico:['Solo los duros lo consiguen.','Grita presencia sin decir nada.','No se rifa dos veces por partido.'],
+  legendario:['Nombre propio en la vitrina.','Se pega en el recuerdo.','Uno de una racha muy corta.'],
+  mitico:['De esos que no se venden.','Casi mito, casi verdad.','Cuando cae, hasta el rival voltea.'],
+  leyenda:['Nadie olvida el día que salió.','Se enmarca, no se guarda.','La cancha aplaude sola.'],
+  bronce:['Metal humilde con orgullo.','Se gana con constancia.','El primer paso de una gran carta.'],
+  plata:['Brillo discreto, corazón fuerte.','No es el más raro, pero es tuyo.','Le va bien a cualquier equipo.'],
+  oro:['Suena bonito decirlo en voz alta.','Un clásico moderno.','Aquí empieza el brillo real.'],
+  esmeralda:['Verde profundo, calma total.','Se lleva bien con casi todo.','Piedra de la constancia.'],
+  zafiro:['Azul que no se quiebra.','Se ilumina con cualquier luz.','El favorito de los estrategas.'],
+  rubi:['Rojo que se escucha.','Cuando aparece, el partido se pone caliente.','Un latido en la esquina.'],
+  amatista:['Violeta místico, energía silenciosa.','Piedra de los que ven todo.','Poca gente puede llevarla bien.'],
+  diamante:['Corta luz, no perdona rayones.','No cualquiera lo carga.','El paso a otra liga.'],
+  diamante_rosa:['Extremadamente raro. Extremadamente bonito.','Poderoso y coqueto.','Suave por fuera, letal por dentro.'],
+  galaxy_opal:['Un pedazo de espacio en la carta.','Los coleccionistas lloran cuando lo ven.','Cambia de color con la luz.'],
+  dark_matter:['No debería existir. Pero existe.','El fin del catálogo. El principio de la leyenda.','Si te salió esto, cuenta el momento.'],
+};
+function flavorOf(cos){ if(cos.flavor)return cos.flavor;
+  const pool=FLAVORS_BY_RARITY[cos.rarity]||['Un detalle nuevo para tu carta.'];
+  let h=0; for(let i=0;i<cos.id.length;i++)h=(h*31+cos.id.charCodeAt(i))|0;
+  return pool[Math.abs(h)%pool.length];
+}
+/* ═════ Generación procedural: garantiza mínimo 20 items por rareza ═════
+   Completa los rangos usando plantillas por categoría con nombres y colores
+   propios. IDs deterministas — no duplican entre re-runs. */
+(function fillCatalog(){
+  const NAMES={
+    frame:['Filo','Marco','Corona','Borde','Aro','Anillo','Cerco','Aureola','Contorno','Ceja','Escuadra','Halo','Rebalse','Ribete','Perímetro','Sable','Barra','Foso','Perfil','Marco Reforzado'],
+    effect:['Aura','Latido','Neblina','Halo','Resplandor','Manto','Vapor','Éter','Vientre','Fulgor','Vibración','Brote','Sombra','Bruma','Emanación','Perfume','Radiar','Vórtice','Poso','Corona Radiante'],
+    shine:['Chispazo','Rayo','Filo','Cinta','Estela','Ligero','Fugaz','Doble Filo','Reflejo','Corte','Cruz','Prisma','Sol','Aliento','Alfiler','Aguja','Cometa','Estrella','Baliza','Sable'],
+    accessory:['Brillo','Punto','Ojo','Pluma','Chispa','Marca','Sello','Punta','Estampa','Escudito','Nudo','Trébol','Cinta','Botón','Punta Fina','Argolla','Anilla','Roseta','Broche','Colmillo'],
+    bg:['Fondo','Ambiente','Cielo','Marea','Bruma','Aroma','Tela','Ámbar','Grieta','Textura','Superficie','Foco','Plano','Nube','Cortina','Camino','Aire','Pared','Vidrio','Corteza'],
+  };
+  const KINDS=['frame','effect','shine','accessory','bg'];
+  const rareIds={}; COSMETICS.forEach(c=>{ (rareIds[c.rarity]=rareIds[c.rarity]||[]).push(c.id); });
+  Object.keys(RARITY).forEach(rk=>{
+    const rInfo=RARITY[rk]; const cur=(rareIds[rk]||[]).length;
+    let need=Math.max(0, 20-cur);
+    const perKind=Math.ceil(need/KINDS.length);
+    KINDS.forEach(kind=>{
+      for(let i=0;i<perKind && need>0;i++){
+        const nm=NAMES[kind][i%NAMES[kind].length]+' '+rInfo.t;
+        const id='g_'+kind[0]+'_'+rk+'_'+i;
+        if(COSMETICS.some(c=>c.id===id))continue;
+        const c=rInfo.c; const soft=c+'55'; const dim=c+'22';
+        const entry={id, t:nm, kind, rarity:rk};
+        if(kind==='frame'){ entry.css='box-shadow:inset 0 0 0 3px '+c+',inset 0 0 22px '+soft; if(rInfo.tier>=5)entry.anim='anmFramePulseGen'; }
+        else if(kind==='effect'){ entry.css='box-shadow:0 0 30px '+soft; if(rInfo.tier>=6)entry.anim='anmPulseGen'; }
+        else if(kind==='shine'){ entry.color=c; entry.speed=(2.6-Math.min(1.4, rInfo.tier*0.15))+'s'; entry.angle=16+i*2; if(i%3===0)entry.doble=true; if(i%4===0)entry.prisma=true; }
+        else if(kind==='accessory'){
+          const em=['⭐','✨','💫','🎯','🏀','🌟','🔥','⚡','🌸','💎','☄️','🦇','🌙','☀','🎖','🏵','💠','🌀','🌊','🍀'][i%20];
+          entry.emoji=em; entry.pos=['tl','tr','bl','br','scatter','fall','sides'][i%7];
+          if(rInfo.tier>=5){ entry.count=2+(i%3); entry.anim=['anmTwinkle','anmFlock','anmFall','anmOrbit'][i%4]; }
+        }
+        else if(kind==='bg'){ entry.css='background:radial-gradient(circle at 50% 30%,'+soft+',transparent 60%),linear-gradient(180deg,'+dim+',#04060a)'; if(rInfo.tier>=7)entry.anim='anmSparkleGen'; }
+        COSMETICS.push(entry); need--;
+      }
+    });
+  });
+})();
 function cosmeticById(id){ return COSMETICS.find(c=>c.id===id); }
+/* ═════════════ SONIDOS con WebAudio (sin archivos) — item pedido ═════════════
+   Se inicializa al primer tap (Safari/iOS lo exige). Silenciable con SFX.mute. */
+const SFX={ctx:null,mute:false,vol:0.5,
+  init(){ if(this.ctx)return this.ctx; const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx)return null;
+    try{ this.ctx=new Ctx(); }catch(e){ this.ctx=null; } return this.ctx; },
+  tone(freq,dur,{type='sine',vol=1,attack=0.005,pan=0}={}){ if(this.mute)return; const c=this.init(); if(!c)return;
+    const t=c.currentTime; const o=c.createOscillator(); const g=c.createGain();
+    o.type=type; o.frequency.value=freq; g.gain.value=0;
+    g.gain.linearRampToValueAtTime(vol*this.vol, t+attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+attack+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t+attack+dur+0.02); },
+  noise(dur,{vol=0.3,freq=1200,q=1}={}){ if(this.mute)return; const c=this.init(); if(!c)return;
+    const t=c.currentTime; const buf=c.createBuffer(1,Math.floor(c.sampleRate*dur),c.sampleRate); const data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);
+    const src=c.createBufferSource(); src.buffer=buf; const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=freq; f.Q.value=q;
+    const g=c.createGain(); g.gain.value=vol*this.vol; src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t); },
+  tick(){ this.tone(1400+Math.random()*100, 0.03, {type:'square',vol:0.15,attack:0.001}); },
+  ping(tier){ const base=520+(tier||1)*40; this.tone(base, 0.18, {type:'sine',vol:0.5}); this.tone(base*1.5, 0.22, {type:'sine',vol:0.35,attack:0.02}); },
+  cheer(tier){ tier=tier||3; const notes=tier>=7?[523,659,784,988,1319]:tier>=5?[523,659,784,988]:tier>=3?[523,659,784]:[523,659];
+    notes.forEach((f,i)=>setTimeout(()=>{ this.tone(f,0.35,{type:'triangle',vol:0.55,attack:0.01}); this.tone(f*2,0.30,{type:'sine',vol:0.25,attack:0.02}); }, i*70));
+    if(tier>=7) setTimeout(()=>this.noise(0.4,{vol:0.15,freq:5000,q:0.8}), notes.length*70+60); },
+  score(pts){ const base=pts===3?880:pts===2?720:600; this.tone(base,0.12,{type:'triangle',vol:0.5}); this.tone(base*1.5,0.15,{type:'sine',vol:0.3,attack:0.02}); },
+  foul(){ this.tone(380,0.14,{type:'sawtooth',vol:0.4}); this.tone(280,0.20,{type:'sawtooth',vol:0.3}); },
+  whistle(){ this.tone(1600,0.15,{type:'sine',vol:0.5}); this.tone(1900,0.12,{type:'sine',vol:0.35,attack:0.03}); },
+  sub(){ this.tone(660,0.08,{type:'sine',vol:0.4}); setTimeout(()=>this.tone(880,0.10,{type:'sine',vol:0.4}),80); },
+  buzzer(){ this.tone(180,0.55,{type:'square',vol:0.55}); this.noise(0.35,{vol:0.2,freq:400,q:0.5}); },
+  win(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>this.tone(f,0.22,{type:'triangle',vol:0.55}),i*90)); },
+  loss(){ [523,466,415,392].forEach((f,i)=>setTimeout(()=>this.tone(f,0.28,{type:'triangle',vol:0.4}),i*130)); },
+  clutch(){ this.tone(1100,0.06,{type:'square',vol:0.4}); setTimeout(()=>{ this.tone(1400,0.10,{type:'square',vol:0.45}); this.tone(1800,0.12,{type:'sine',vol:0.3}); },70); },
+  pop(){ this.tone(660,0.06,{type:'sine',vol:0.35}); },
+};
+/* burbujas de partículas al abrir premios raros */
+function sparkleBurst(x,y,color,n){ const layer=document.body; for(let i=0;i<(n||14);i++){ const p=document.createElement('span'); p.className='sparkle'; const a=Math.random()*Math.PI*2; const d=40+Math.random()*140; p.style.setProperty('--tx',(Math.cos(a)*d)+'px'); p.style.setProperty('--ty',(Math.sin(a)*d)+'px'); p.style.background=color||'#fff'; p.style.color=color||'#fff'; p.style.left=x+'px'; p.style.top=y+'px'; layer.appendChild(p); setTimeout(()=>p.remove(),1000); } }
+/* burbuja de texto sobre un elemento (token del jugador) — item pedido */
+function bubbleAt(el,text,color){ if(!el||!el.getBoundingClientRect)return;
+  const b=document.createElement('div'); b.className='pop-bubble'+((text||'').length<5?' big':''); b.style.color=color||'#fff';
+  b.textContent=text||''; document.body.appendChild(b);
+  const r=el.getBoundingClientRect(); b.style.position='fixed'; b.style.left=(r.left+r.width/2)+'px'; b.style.top=r.top+'px'; b.style.zIndex=9999;
+  setTimeout(()=>b.remove(),1200); }
 function rollCosmetic(){ const tot=Object.values(RARITY).reduce((s,r)=>s+r.w,0); let x=Math.random()*tot, pick='bronce';
   for(const k in RARITY){ if(x<RARITY[k].w){pick=k;break;} x-=RARITY[k].w; }
   const pool=COSMETICS.filter(c=>c.rarity===pick); return pool[Math.floor(Math.random()*pool.length)]||COSMETICS[0]; }
@@ -2594,32 +2795,158 @@ function equippedByKind(e,kind){ const owned=(e&&e.owned)||[]; const pick=(e&&e.
   const id=pick[kind]; if(!id)return null; if(owned.indexOf(id)<0)return null; return cosmeticById(id); }
 const KIND_TITLE={frame:'Marcos',effect:'Auras / fondos brillantes',shine:'Destellos',accessory:'Accesorios visuales',bg:'Fondos de carta',msg:'Estilo de mensajes'};
 const KIND_ORDER=['frame','effect','shine','accessory','bg','msg'];
+/* ═════════ 3 TIPOS DE SOBRE (item pedido) — sencillo/avanzado/armado ═════════
+   Cada uno tiene precio en monedas y un "boost" que sesga la rareza hacia
+   arriba: reducimos los weights de las rarezas comunes y subimos los de las
+   raras según boost. sencillo boost=1 (igual al catálogo), avanzado=2.2,
+   armado=4.5 (mucho más chance de raros). */
+const PACK_TYPES={
+  sencillo: {t:'Sencillo', c:'#8b93a3', price:150, boost:1.0,  s:'Odds normales del catálogo.'},
+  avanzado: {t:'Avanzado', c:'#a774f0', price:400, boost:2.2,  s:'2× más probable que caiga raro.'},
+  armado:   {t:'Armado',   c:'#e8b13e', price:900, boost:4.5,  s:'Chance real de mítico/leyenda.'},
+};
+function _rollBoosted(boost){ boost=boost||1;
+  const tot=Object.values(RARITY).reduce((s,r)=>{ const w=r.w*Math.pow(boost, Math.max(0, r.tier-2)/4); return s+w; },0);
+  let x=Math.random()*tot, pick='comun';
+  for(const k in RARITY){ const w=RARITY[k].w*Math.pow(boost, Math.max(0, RARITY[k].tier-2)/4); if(x<w){pick=k;break;} x-=w; }
+  const pool=COSMETICS.filter(c=>c.rarity===pick && !c.daily_only); return pool[Math.floor(Math.random()*pool.length)]||COSMETICS[0]; }
+/* prob computada por tipo — la tabla la muestra al usuario */
+function packProb(kind, boost){ boost=boost||1;
+  const tot=Object.values(RARITY).reduce((s,r)=>s+r.w*Math.pow(boost, Math.max(0, r.tier-2)/4),0);
+  return (RARITY[kind].w*Math.pow(boost, Math.max(0, RARITY[kind].tier-2)/4)/tot)*100; }
+/* ═════════ COSMÉTICOS EXCLUSIVOS DEL CALENDARIO DIARIO (no salen en sobres) ═════════
+   Los marcamos con daily_only:true para que _rollBoosted los excluya. */
+(function seedDailyOnly(){
+  const list=[
+    {id:'d_f_streak3',   t:'Marco Racha 3 días',      kind:'frame',    rarity:'raro',        css:'box-shadow:inset 0 0 0 3px #3ecf8e,inset 0 0 20px rgba(62,207,142,.4)', anim:'anmFramePulseGen'},
+    {id:'d_f_streak7',   t:'Marco Semana Perfecta',   kind:'frame',    rarity:'epico',       css:'box-shadow:inset 0 0 0 3px #e8b13e,inset 0 0 26px rgba(232,177,62,.5)', anim:'anmFramePulseGen', flavor:'Solo lo llevan los que no fallan un día en 7.'},
+    {id:'d_f_streak30',  t:'Marco Mensual',           kind:'frame',    rarity:'legendario',  css:'box-shadow:inset 0 0 0 3px #ff8fd8,inset 0 0 34px rgba(255,143,216,.55)', anim:'anmFramePulseGen', flavor:'30 días seguidos. Prueba viviente de constancia.'},
+    {id:'d_a_flama',     t:'Racha Ardiente',          kind:'accessory',rarity:'raro',        emoji:'🔥', pos:'tr', count:2, anim:'anmFlock', flavor:'Aparece cuando la constancia se nota.'},
+    {id:'d_a_llave',     t:'Llave del Fiel',          kind:'accessory',rarity:'epico',       emoji:'🗝️', pos:'bl',   flavor:'Solo se entrega a quien vuelve.'},
+    {id:'d_a_medcal',    t:'Medalla del Calendario',  kind:'accessory',rarity:'mega_epico',  emoji:'🎖', pos:'tr',   flavor:'Se cuelga sola.'},
+    {id:'d_e_diarioA',   t:'Aura Del Diario',         kind:'effect',   rarity:'raro',        css:'box-shadow:0 0 34px rgba(62,207,142,.55)'},
+    {id:'d_e_diarioB',   t:'Halo Constancia',         kind:'effect',   rarity:'super_raro',  css:'box-shadow:0 0 38px rgba(91,140,255,.65)', anim:'anmPulseGen'},
+    {id:'d_s_diario',    t:'Chispa Diaria',           kind:'shine',    rarity:'raro',        color:'rgba(120,220,255,.9)', speed:'2.0s', angle:18},
+    {id:'d_bg_diario',   t:'Cielo del Fiel',          kind:'bg',       rarity:'epico',       css:'background:radial-gradient(circle at 50% 30%,rgba(232,177,62,.35),transparent 60%),linear-gradient(180deg,#1a1408,#04030a)'},
+    {id:'d_f_365',       t:'Marco 365 Días',          kind:'frame',    rarity:'leyenda',     css:'box-shadow:inset 0 0 0 3px #ffd15a,inset 0 0 38px rgba(255,209,90,.6)', anim:'anmFramePulseGen', flavor:'Un año entero sin faltar. Menos del 1% lo tiene.'},
+  ];
+  list.forEach(c=>{ c.daily_only=true; COSMETICS.push(c); });
+})();
+/* ═════════ SISTEMA DE RECOMPENSAS DIARIO (item pedido) ═════════
+   Racha de días consecutivos: cada día da monedas; cada 3 días un cosmético
+   único del catálogo daily-only; sobres cada 7/15/30 días.
+   Todo se guarda en econ.daily = {last:'YYYY-MM-DD', streak:N, granted7:'YYYY-Www', granted15:'YYYY-15fortnight', granted30:'YYYY-MM'}. */
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function isoWeek(d){ const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const day=(t.getDay()+6)%7; t.setDate(t.getDate()-day+3); const week1=new Date(t.getFullYear(),0,4); return t.getFullYear()+'-W'+String(1+Math.round(((t-week1)/86400000-3+((week1.getDay()+6)%7))/7)).padStart(2,'0'); }
+function fortnightId(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+(d.getDate()<=15?'A':'B'); }
+function monthId(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function _daysBetween(aISO,bISO){ const a=new Date(aISO+'T00:00:00'), b=new Date(bISO+'T00:00:00'); return Math.round((b-a)/86400000); }
+/* mismo cuidado: quien mute daily debe llamar saveEcon(e) al final */
+function dailyState(){ const e=econ(); if(!e.daily)e.daily={last:null,streak:0,claimed:false,granted7:null,granted15:null,granted30:null,uniques:[]}; return e.daily; }
+/* Devuelve {available, streak, ...} — se llama para construir la UI del día */
+function dailyInfo(){ const d=dailyState(); const today=todayISO();
+  let streak=d.streak||0; let brokenStreak=false;
+  if(d.last){ const gap=_daysBetween(d.last, today); if(gap>1)brokenStreak=true; }
+  const already = d.last===today;
+  return {today, streak, brokenStreak, already, last:d.last};
+}
+function DAILY_REWARDS(streakDay){
+  const day=((streakDay-1)%7)+1;
+  const base=[15,20,25,30,45,60, day===7?120:80][day-1] || 20;
+  return {coins:base, pack: (streakDay%30===0?'armado':(streakDay%15===0?'avanzado':(streakDay%7===0?'sencillo':null))), unique: (streakDay%3===0)};
+}
+/* Reclama la recompensa del día. Solo una vez por día. */
+function claimDailyReward(){ SFX.init();
+  const e=econ(); e.daily=e.daily||{last:null,streak:0,claimed:false,granted7:null,granted15:null,granted30:null,uniques:[]};
+  const today=todayISO();
+  if(e.daily.last===today){ flashSaved('Ya reclamaste hoy — vuelve mañana'); return; }
+  // ¿racha rota? Si sí, el streak arranca en 1.
+  const streak = (e.daily.last && _daysBetween(e.daily.last, today)===1) ? (e.daily.streak||0)+1 : 1;
+  const reward=DAILY_REWARDS(streak);
+  e.coins=(e.coins||0)+reward.coins;
+  const granted=[]; let uniqueGranted=null;
+  if(reward.pack){ e.packInv=e.packInv||{sencillo:0,avanzado:0,armado:0}; e.packInv[reward.pack]=(e.packInv[reward.pack]||0)+1;
+    granted.push('sobre '+PACK_TYPES[reward.pack].t.toLowerCase()); }
+  if(reward.unique){ const dailyPool=COSMETICS.filter(c=>c.daily_only && (e.owned||[]).indexOf(c.id)<0);
+    if(dailyPool.length){ const u=dailyPool[Math.floor(Math.random()*dailyPool.length)]; e.owned=e.owned||[]; e.owned.push(u.id); uniqueGranted=u; granted.push(u.t); } }
+  e.daily.last=today; e.daily.streak=streak;
+  saveEcon(e); SFX.cheer(Math.min(9, streak));
+  if(uniqueGranted) openReveal(uniqueGranted, false);
+  else flashSaved('Día '+streak+': +'+reward.coins+' monedas'+(granted.length?' · '+granted.join(' · '):' ✓'));
+  try{ buildGacha(); }catch(err){}
+}
+/* auto-otorga en el arranque si la fecha cambió; NO reclama solo, deja el
+   botón "reclamar" al usuario (así siente la dopamina). */
+function autoRefreshDaily(){ /* placeholder: hoy solo mantenemos coherente el estado. Reclamar es manual. */ }
+/* Devuelve el inventario de sobres del econ actual. IMPORTANTE: para
+   modificar y persistir, usar el patrón:
+     const e=econ(); e.packInv=e.packInv||{...}; e.packInv.sencillo++; saveEcon(e);
+   Nunca guardar solo el sub-objeto porque saveEcon reemplaza econ completo. */
+function _packInv(){ const e=econ(); e.packInv=e.packInv||{sencillo:0,avanzado:0,armado:0}; return e.packInv; }
+/* Explicación (item pedido: "breve explicación de qué cosas están y donde") */
+const HELP_TEXT='<div class="help-card"><b>Cómo funciona el gachapón</b><br>'+
+  '· Los <b>sobres</b> te dan cosméticos aleatorios para tu carta (marcos, brillos, accesorios, fondos).<br>'+
+  '· Hay 3 sobres: <b>Sencillo</b> (básico), <b>Avanzado</b> (2× raros) y <b>Armado</b> (chance real de mítico/leyenda).<br>'+
+  '· Cada rareza tiene su probabilidad (toca «Ver probabilidades» abajo).<br>'+
+  '· Los <b>duplicados</b> te dan +20 monedas.<br>'+
+  '· En <b>Mi carta</b> puedes aplicar uno de cada tipo (marco + brillo + accesorio + fondo se combinan).<br>'+
+  '<b>Racha diaria</b><br>'+
+  '· Cada día que entres reclamas monedas. La racha crece si vienes seguido.<br>'+
+  '· Cada <b>3 días</b> te llevas un <b>cosmético único</b> del calendario (no sale en sobres).<br>'+
+  '· Cada <b>7 días</b> un sobre Sencillo · cada <b>15</b> un Avanzado · cada <b>30</b> un Armado.<br>'+
+  '· Si dejas de entrar un día, la racha vuelve al día 1.</div>';
 function buildGacha(){
-  // NO reconstruye si hay animación corriendo (bug reportado: cualquier tap cortaba la animación)
   if(_gcSpinning || _openAllRunning){ return; }
   const e=econ(); const box=document.getElementById('gachaBody'); if(!box)return;
-  const pc=document.getElementById('gachaPacks'); if(pc)pc.innerHTML='<svg class="ic"><use href="#ic-bag"/></svg> '+e.packs;
+  const pc=document.getElementById('gachaPacks'); if(pc)pc.innerHTML='<svg class="ic"><use href="#ic-bag"/></svg> '+((e.packInv?(e.packInv.sencillo+e.packInv.avanzado+e.packInv.armado):e.packs)||0);
+  const inv=_packInv();
+  const daily=dailyInfo();
   let h='<div class="gacha-stage" id="gachaStage"><div class="gacha-pack" id="gachaPackArt" onclick="openPack()"><div class="gp-shine"></div><svg class="ic" style="width:52px;height:52px;color:#0b0d12"><use href="#ic-bag"/></svg></div>'+
-    '<div class="gacha-cap" id="gachaCap">'+(e.packs>0?'Toca el sobre para abrirlo':'No tienes sobres. Gánalos con tus logros.')+'</div></div>';
-  if(e.packs>0)h+='<button class="btn block" onclick="openPack()" style="margin-top:4px">Abrir un sobre ('+e.packs+')</button>';
-  // Súper Admin: botón para abrir TODOS los sobres a la vez (item pedido)
-  if(typeof isSuperAdmin==='function' && isSuperAdmin() && e.packs>1){
-    h+='<button class="btn sm block" style="margin-top:6px;background:var(--liga);border-color:var(--liga)" onclick="openAllPacks()">◆ Abrir los '+e.packs+' sobres (súper admin)</button>';
+    '<div class="gacha-cap" id="gachaCap">Tus sobres: <b>'+inv.sencillo+'</b> sencillos · <b>'+inv.avanzado+'</b> avanzados · <b>'+inv.armado+'</b> armados</div></div>';
+  // TIENDA DE SOBRES
+  h+='<div class="h-row" style="margin-top:12px"><h2 class="disp" style="font-size:17px">Sobres</h2><span class="pill">'+e.coins+' ★</span></div>';
+  h+='<div class="packrow">';
+  Object.keys(PACK_TYPES).forEach(k=>{ const p=PACK_TYPES[k]; const own=inv[k]||0; const canBuy=e.coins>=p.price;
+    h+='<div class="packcard'+(k==='armado'?' hot':'')+'" style="--pc:'+p.c+'"><div class="pk-t">'+p.t+'</div>';
+    h+='<div class="pk-p">'+p.price+' ★</div><div class="pk-s">'+p.s+'</div>';
+    if(own>0)h+='<button class="btn sm block" style="margin-top:8px" onclick="openPack(\''+k+'\')">Abrir ('+own+')</button>';
+    else h+='<button class="btn ghost sm block" style="margin-top:8px" '+(canBuy?'':'disabled')+' onclick="buyPack(\''+k+'\')">Comprar '+(canBuy?'':'(te faltan '+(p.price-e.coins)+')')+'</button>';
+    h+='</div>';
+  });
+  h+='</div>';
+  // Súper Admin: abrir todos
+  const totalPacks=inv.sencillo+inv.avanzado+inv.armado;
+  if(typeof isSuperAdmin==='function' && isSuperAdmin() && totalPacks>0){
+    h+='<button class="btn sm block" style="margin-top:6px;background:var(--liga);border-color:var(--liga)" onclick="openAllPacks()">◆ Abrir los '+totalPacks+' sobres (súper admin)</button>';
   }
-  h+='<button class="btn ghost sm block" onclick="buyPack()" style="margin-top:6px">Comprar sobre · '+PACK_COST+' ★ <span style="color:var(--dim)">(tienes '+e.coins+')</span></button>';
-  h+='<button class="btn ghost sm block" onclick="toggleRarityTable()" style="margin-top:6px">Ver probabilidades de cada rareza</button>';
+  h+='<button class="btn ghost sm block" onclick="toggleRarityTable()" style="margin-top:8px">Ver probabilidades de cada rareza</button>';
   h+='<div id="rarityTable" style="display:none;margin-top:8px"></div>';
-  h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tu colección</h2><span class="more" onclick="go(\'carta\')">Aplicar en tu carta ›</span></div>';
+  // RACHA DIARIA — 7 casillas
+  h+='<div class="h-row" style="margin-top:16px"><h2 class="disp" style="font-size:17px">Racha diaria</h2><span class="pill" style="color:var(--liga);border-color:var(--liga)">🔥 '+daily.streak+' días</span></div>';
+  h+='<div class="dailygrid">';
+  for(let i=1;i<=7;i++){
+    const streakDay=daily.streak-((daily.already?7:6)-i);
+    const done=(i<(daily.already?8:7)) && streakDay>=1;
+    const today=(!daily.already && i===7) || (daily.already && i===7);
+    const r=DAILY_REWARDS(Math.max(1,streakDay));
+    const sub=r.pack?PACK_TYPES[r.pack].t.slice(0,4).toUpperCase():(r.unique?'ÚNICO':'');
+    h+='<div class="dailycell'+(done?' done':'')+(today&&!daily.already?' today':'')+'"><div class="dc-d">D'+i+'</div><div class="dc-r">+'+r.coins+'</div>'+(sub?'<div class="dc-sub">'+sub+'</div>':'')+'</div>';
+  }
+  h+='</div>';
+  if(daily.already) h+='<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px">Ya reclamaste hoy. Vuelve mañana para subir la racha ↑</div>';
+  else h+='<button class="btn block" onclick="claimDailyReward()" style="background:var(--liga);border-color:var(--liga);color:#0b0d12"><svg class="ic" style="width:15px;height:15px;color:#0b0d12"><use href="#ic-star"/></svg> Reclamar día '+(daily.streak+((daily.brokenStreak||!daily.last)?1:1))+'</button>';
+  h+=HELP_TEXT;
+  // COLECCIÓN
+  h+='<div class="h-row" style="margin-top:14px"><h2 class="disp" style="font-size:18px">Tu colección</h2><span class="more" onclick="go(\'carta\')">Aplicar en tu carta ›</span></div>';
   const owned=e.owned||[];
   if(!owned.length){ h+='<div class="stratnote" style="border-left-color:var(--jugador)">Aún no tienes cosméticos. Abre un sobre para empezar tu colección.</div>'; }
   else {
-    // agrupado por categoría — así el usuario ve qué tiene de cada tipo
     const byKind={}; owned.forEach(id=>{ const c=cosmeticById(id); if(!c)return; (byKind[c.kind]=byKind[c.kind]||[]).push(c); });
     KIND_ORDER.forEach(kind=>{ if(!byKind[kind]||!byKind[kind].length)return;
       h+='<div class="eyebrow" style="margin:14px 2px 6px;color:var(--muted)">'+(KIND_TITLE[kind]||kind)+'</div>';
       h+='<div class="cosgrid">';
-      byKind[kind].forEach(c=>{ const r=RARITY[c.rarity]||RARITY.bronce; const on=(e.equipped&&e.equipped[kind])===c.id;
-        h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" style="--rc:'+r.c+'"><span class="cos-prev" style="'+(c.css||'')+'"></span><span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>';
+      byKind[kind].forEach(c=>{ const r=RARITY[c.rarity]||RARITY.comun; const on=(e.equipped&&e.equipped[kind])===c.id;
+        h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" style="--rc:'+r.c+'"><span class="cos-prev" style="'+(c.css||'')+'"></span><span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+(c.daily_only?' · diario':'')+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>';
       });
       h+='</div>';
     });
@@ -2641,13 +2968,16 @@ function toggleRarityTable(){ const box=document.getElementById('rarityTable'); 
 let _openAllRunning=false;
 async function openAllPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return;
   if(_openAllRunning||_gcSpinning)return;
-  const e=econ(); if(e.packs<=0)return;
+  const e=econ(); e.packInv=e.packInv||{sencillo:0,avanzado:0,armado:0};
+  const totalPacks=(e.packInv.sencillo||0)+(e.packInv.avanzado||0)+(e.packInv.armado||0);
+  if(totalPacks<=0)return;
   _openAllRunning=true;
   const results=[]; const gained=[];
-  while(e.packs>0){ e.packs--; const c=rollCosmetic(); const dup=(e.owned||[]).indexOf(c.id)>=0;
-    if(!dup){ e.owned=e.owned||[]; e.owned.push(c.id); gained.push(c); } else { e.coins+=20; }
-    results.push({c,dup}); }
-  saveEcon(e);
+  ['sencillo','avanzado','armado'].forEach(kind=>{ const boost=PACK_TYPES[kind].boost;
+    while((e.packInv[kind]||0)>0){ e.packInv[kind]--; const c=_rollBoosted(boost); const dup=(e.owned||[]).indexOf(c.id)>=0;
+      if(!dup){ e.owned=e.owned||[]; e.owned.push(c.id); gained.push(c); } else { e.coins+=20; }
+      results.push({c,dup}); } });
+  saveEcon(e); SFX.cheer(9);
   // vista de resultados masivos
   const stage=document.getElementById('gachaStage');
   if(stage){
@@ -2666,43 +2996,92 @@ async function openAllPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdm
   flashSaved('Abriste '+results.length+' sobres ✓');
 }
 let _gcSpinning=false;
-function openPack(){
+/* Abre un sobre. type: 'sencillo'|'avanzado'|'armado'. Compat: sin arg,
+   abre el primero disponible (sencillo → avanzado → armado). */
+function openPack(type){
   if(_gcSpinning)return;
-  const e=econ(); if(e.packs<=0){ flashSaved('No tienes sobres'); return; }
-  e.packs--; const c=rollCosmetic(); e.owned=e.owned||[]; const dup=e.owned.indexOf(c.id)>=0;
+  SFX.init(); SFX.pop();
+  const e=econ(); e.packInv=e.packInv||{sencillo:0,avanzado:0,armado:0};
+  if(!type){ type = e.packInv.sencillo>0?'sencillo':(e.packInv.avanzado>0?'avanzado':(e.packInv.armado>0?'armado':null)); }
+  if(!type || !e.packInv[type]){ flashSaved('No tienes ese sobre'); return; }
+  e.packInv[type]--; const pInfo=PACK_TYPES[type];
+  const c=_rollBoosted(pInfo.boost);
+  e.owned=e.owned||[]; const dup=e.owned.indexOf(c.id)>=0;
   if(!dup)e.owned.push(c.id); else e.coins+=20;
   saveEcon(e);
-  spinCarousel(c,dup);
+  spinCarousel(c,dup,pInfo);
 }
-/* carrusel que gira y se detiene en el premio, con dos triángulos al centro */
-function spinCarousel(winner,dup){
+function buyPack(type){
+  type=type||'sencillo'; const p=PACK_TYPES[type]; if(!p){ flashSaved('Tipo de sobre desconocido'); return; }
+  const e=econ(); if(e.coins<p.price){ flashSaved('Te faltan '+(p.price-e.coins)+' monedas'); return; }
+  e.coins-=p.price; e.packInv=e.packInv||{sencillo:0,avanzado:0,armado:0}; e.packInv[type]=(e.packInv[type]||0)+1; saveEcon(e);
+  buildGacha(); flashSaved('Sobre '+p.t.toLowerCase()+' comprado ✓ · '+e.coins+' monedas');
+}
+/* Elige la animación del showcase según la rareza. Más raro = más aparatoso. */
+function pickRevealAnim(tier){
+  const easy=['rc-anm-fadeIn','rc-anm-zoom','rc-anm-flip','rc-anm-drop'];
+  const mid=['rc-anm-spin','rc-anm-flip','rc-anm-glitch'];
+  const hard=['rc-anm-supernova','rc-anm-emerge','rc-anm-spin'];
+  const pool = tier>=7?hard : (tier>=4?mid : easy);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function cosPreviewHTML(c,size){ size=size||140; const bg=c.css||'background:linear-gradient(160deg,#232c44,#10162a)';
+  const inner=(c.kind==='accessory'&&c.emoji)?('<span style="font-size:'+(size*0.55)+'px">'+c.emoji+'</span>'):'';
+  return '<div style="width:'+size+'px;height:'+(c.kind==='shine'?(size*0.7):size)+'px;border-radius:14px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;'+bg+'" class="'+(c.anim||'')+'">'+inner+'</div>'; }
+/* SHOWCASE del premio — "primera plana" (item pedido) */
+let _revealCos=null;
+function openReveal(cos,dup){
+  _revealCos=cos; const bg=document.getElementById('revealBg'); if(!bg)return;
+  const r=RARITY[cos.rarity]||RARITY.comun;
+  bg.style.setProperty('--rc', r.c);
+  document.getElementById('revealTitle').textContent=(r.tier>=7?'¡ES DE COLECCIÓN!':(r.tier>=4?'¡Nuevo cosmético!':'Añadido a tu colección'));
+  const bd=document.getElementById('revealBadge'); if(bd){ bd.textContent='◆ '+r.t; bd.style.color=r.c; }
+  document.getElementById('revealNm').textContent=cos.t;
+  document.getElementById('revealFl').textContent='"'+flavorOf(cos)+'"';
+  const dp=document.getElementById('revealDupe'); if(dp)dp.style.display=dup?'':'none';
+  document.getElementById('revealPrev').outerHTML='<div id="revealPrev" style="margin-top:24px">'+cosPreviewHTML(cos,150)+'</div>';
+  const card=document.getElementById('revealCard');
+  ['rc-anm-fadeIn','rc-anm-zoom','rc-anm-flip','rc-anm-spin','rc-anm-drop','rc-anm-glitch','rc-anm-supernova','rc-anm-emerge'].forEach(k=>card.classList.remove(k));
+  void card.offsetWidth; card.classList.add(pickRevealAnim(r.tier));
+  bg.classList.add('on');
+  SFX.cheer(r.tier||1);
+  if(r.tier>=5){ setTimeout(()=>{ const rect=card.getBoundingClientRect(); const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    for(let i=0;i<Math.min(60, r.tier*8); i++){ setTimeout(()=>sparkleBurst(cx+(Math.random()*80-40), cy+(Math.random()*80-40), r.c, 1), i*15); } }, 200); }
+  try{ if(navigator.vibrate)navigator.vibrate(r.tier>=7?[30,50,80,50,120]:(r.tier>=4?[20,40,60]:25)); }catch(x){}
+}
+function closeReveal(){ const bg=document.getElementById('revealBg'); if(bg)bg.classList.remove('on'); _revealCos=null; }
+function revealApply(){ if(!_revealCos)return; applyCosmetic(_revealCos.id); closeReveal(); }
+/* Ruleta CSGO-style: tics por slot que pasa por el centro + ping al detenerse + showcase */
+function spinCarousel(winner,dup,pInfo){
   const stage=document.getElementById('gachaStage'); if(!stage){ setTimeout(buildGacha,200); return; }
-  _gcSpinning=true;
-  const CELL=96, WIN_AT=42; // ancho de celda (88+2*4) y posición del premio
+  _gcSpinning=true; SFX.init();
+  const CELL=96, WIN_AT=42;
   const cells=[]; for(let i=0;i<WIN_AT+9;i++){ cells.push(i===WIN_AT?winner:COSMETICS[Math.floor(Math.random()*COSMETICS.length)]); }
   let html='<div class="gacha-carousel" id="gcWrap"><div class="gc-seam"></div><div class="gc-ptr top"></div><div class="gc-ptr bot"></div><div class="gc-track" id="gcTrack">';
-  cells.forEach(c=>{ const r=RARITY[c.rarity]; html+='<div class="gc-cell" style="--rc:'+r.c+'"><span class="gc-prev" style="'+c.css+'"></span><span class="gc-nm">'+c.t+'</span></div>'; });
-  html+='</div></div><div class="gacha-cap" id="gachaCap">Girando…</div>';
+  cells.forEach(c=>{ const r=RARITY[c.rarity]||RARITY.comun; html+='<div class="gc-cell" style="--rc:'+r.c+'"><span class="gc-prev" style="'+(c.css||'')+'"></span><span class="gc-nm">'+c.t+'</span></div>'; });
+  html+='</div></div><div class="gacha-cap" id="gachaCap">'+((pInfo&&pInfo.t)?('Sobre '+pInfo.t+' — girando…'):'Girando…')+'</div>';
   stage.innerHTML=html;
   const wrap=document.getElementById('gcWrap'), track=document.getElementById('gcTrack');
-  requestAnimationFrame(()=>{ const cw=wrap.clientWidth;
-    const jitter=(Math.random()*40-20);
+  const SPIN_MS=4100;
+  requestAnimationFrame(()=>{ const cw=wrap.clientWidth; const jitter=(Math.random()*40-20);
     const target=(WIN_AT*CELL)-(cw/2-CELL/2)+jitter;
-    track.style.transition='transform 4.1s cubic-bezier(.11,.72,.16,1)';
+    track.style.transition='transform '+(SPIN_MS/1000)+'s cubic-bezier(.11,.72,.16,1)';
     track.style.transform='translateX('+(-target)+'px)';
   });
-  setTimeout(()=>{ const cw=wrap.clientWidth; const exact=(WIN_AT*CELL)-(cw/2-CELL/2);
-    if(!track||!track.style)return;
+  // TICs con ease-out (arrancan rápidos, se espacian al final — feel CSGO)
+  const ticCount=WIN_AT; const ease=t=>1-Math.pow(1-t,3.5);
+  for(let i=0;i<ticCount;i++){ const p=(i+1)/ticCount; const when=ease(p)*SPIN_MS; setTimeout(()=>{ if(!_gcSpinning)return; SFX.tick(); }, when); }
+  setTimeout(()=>{ if(!track||!track.style)return;
+    const cw=wrap.clientWidth; const exact=(WIN_AT*CELL)-(cw/2-CELL/2);
     track.style.transition='transform .32s ease-out'; track.style.transform='translateX('+(-exact)+'px)';
     const cellEls=track.querySelectorAll('.gc-cell'); if(cellEls[WIN_AT])cellEls[WIN_AT].classList.add('win');
-    const r=RARITY[winner.rarity]||RARITY.bronce; const cap=document.getElementById('gachaCap');
+    const r=RARITY[winner.rarity]||RARITY.comun; const cap=document.getElementById('gachaCap');
     if(cap)cap.innerHTML='<b style="color:'+r.c+'">'+r.t+'</b> · '+winner.t+(dup?' · duplicado (+20 monedas)':'');
-    try{ if(navigator.vibrate)navigator.vibrate(r.w<=1?[20,40,60,60,120]:(r.w<=5?[20,40,60]:25)); }catch(x){}
-  }, 4150);
-  setTimeout(()=>{ _gcSpinning=false; buildGacha(); }, 6400);
+    SFX.ping(r.tier||1);
+  }, SPIN_MS+40);
+  setTimeout(()=>{ openReveal(winner, dup); }, SPIN_MS+340);
+  setTimeout(()=>{ _gcSpinning=false; buildGacha(); }, SPIN_MS+2200);
 }
-const PACK_COST=150;
-function buyPack(){ const e=econ(); if(e.coins<PACK_COST){ flashSaved('Te faltan '+(PACK_COST-e.coins)+' monedas'); return; } e.coins-=PACK_COST; e.packs++; saveEcon(e); buildGacha(); flashSaved('Sobre comprado ✓ · '+e.coins+' monedas'); }
 /* Aplica un cosmético en su categoría (una activa por tipo). Toca dos veces = lo quita. */
 function applyCosmetic(id){ const e=econ(); const c=cosmeticById(id); if(!c)return;
   e.equipped=e.equipped||{}; const cur=e.equipped[c.kind]; e.equipped[c.kind]=(cur===id)?null:id;
@@ -4115,6 +4494,12 @@ function applySignupEntities(u){
   if(has('dueno')||has('coach')){ const nm=gv('upTeam')||(u.name+' · equipo');
     u.team={ code:genEntityCode('E-'), name:nm, ini:iniOf(nm), color:'--papa', players:[], status:'solo', league_code:'', owner:(u.email||'').toLowerCase(), coaches:[] }; }
   if(has('jugador')){ u.num=gv('upNum'); u.pos=gv('upPos')||'Base'; u.playerCode=genEntityCode('J-'); }
+  // Regalo de bienvenida (item pedido): monedas suficientes para 1 sobre sencillo + un sobre gratis
+  u.econ=u.econ||{coins:0,packs:0,owned:[],effect:null,equipped:{},done:[]};
+  if(!u.econ.welcomed){ u.econ.coins=(u.econ.coins||0)+150; u.econ.packInv=u.econ.packInv||{sencillo:0,avanzado:0,armado:0}; u.econ.packInv.sencillo=(u.econ.packInv.sencillo||0)+1; u.econ.welcomed=true;
+    // que se entere: se lo decimos con una notificación bonita
+    try{ u.notes=u.notes||[]; u.notes.unshift({id:'nw'+Date.now().toString(36),kind:'logro',text:'🎁 ¡Bienvenida! Te regalamos 150 monedas + 1 sobre sencillo. Ábrelo en Gachapón.',ts:Date.now(),read:false}); }catch(x){}
+  }
   saveUser(u);
 }
 /* red de seguridad: si una cuenta (ya creada o parcial) no tiene su entidad según su rol, la crea */

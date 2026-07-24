@@ -390,29 +390,55 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
         detail: 'carlos: super='+carlosSuper+' coins='+carlosCoins+' | pepito: super='+inheritedSuper+' coins='+pepitoCoins+' name='+gotOwnName+' team='+gotOwnTeam };
     });
 
-    await goal('11 rarezas + cosméticos: mínimo 20 marcos/auras/destellos/accesorios/fondos', async () => {
-      const r = get('Object.keys(RARITY).length');
-      const nFrame = get("COSMETICS.filter(c=>c.kind==='frame').length");
-      const nEffect = get("COSMETICS.filter(c=>c.kind==='effect').length");
-      const nShine = get("COSMETICS.filter(c=>c.kind==='shine').length");
-      const nAcc = get("COSMETICS.filter(c=>c.kind==='accessory').length");
-      const nBg = get("COSMETICS.filter(c=>c.kind==='bg').length");
+    await goal('20 rarezas + cosméticos: mínimo 20 por rareza en el catálogo', async () => {
+      const nRar = get('Object.keys(RARITY).length');
+      // por rareza: cuenta items en el catálogo
+      const perRar = get("Object.keys(RARITY).map(k=>[k,COSMETICS.filter(c=>c.rarity===k).length])");
+      const low = perRar.filter(x => x[1] < 20);
       const sum = get('Object.values(RARITY).reduce((s,r)=>s+r.w,0)');
-      return { ok: r === 11 && nFrame >= 20 && nEffect >= 20 && nShine >= 20 && nAcc >= 20 && nBg >= 20 && sum > 0,
-        detail: 'rarezas=' + r + ' frame=' + nFrame + ' effect=' + nEffect + ' shine=' + nShine + ' acc=' + nAcc + ' bg=' + nBg };
+      return { ok: nRar === 20 && low.length === 0 && sum > 0,
+        detail: 'rarezas=' + nRar + ' faltantes=' + low.map(x=>x[0]+':'+x[1]).join(',') || 'ok' };
     });
 
-    await goal('Super Admin: openAllPacks abre todos los sobres a la vez', async () => {
+    await goal('Súper Admin: openAllPacks abre todos los sobres (nuevo inventario por tipo)', async () => {
       await entrar('admin@t.mx'); await wait(40);
-      // fuerza estado de súper admin en el sim: cambio la sesión y el perfil local
-      R("_session={user:{id:_session.user.id,email:'palomazi9111@gmail.com'}};var u=userData();u.email='palomazi9111@gmail.com';saveUser(u);var e=econ();e.packs=20;saveEcon(e);");
+      R("_session={user:{id:_session.user.id,email:'palomazi9111@gmail.com'}};var u=userData();u.email='palomazi9111@gmail.com';saveUser(u);var e=econ();e.packInv={sencillo:8,avanzado:6,armado:4};saveEcon(e);");
       const isSup = get('isSuperAdmin()');
-      const before = get('econ().packs');
+      const before = get('econ().packInv.sencillo+econ().packInv.avanzado+econ().packInv.armado');
       await getA("await openAllPacks();return 'ok';"); await wait(300);
-      const after = get('econ().packs');
+      const after = get('econ().packInv.sencillo+econ().packInv.avanzado+econ().packInv.armado');
       const owned = get('(econ().owned||[]).length');
-      return { ok: isSup && before === 20 && after === 0 && owned > 0,
+      return { ok: isSup && before === 18 && after === 0 && owned > 0,
         detail: 'super=' + isSup + ' packs=' + before + '->' + after + ' owned=' + owned };
+    });
+
+    await goal('Regalo de bienvenida: 150 monedas + 1 sobre sencillo al registrarse', async () => {
+      await registrarse('Recien Llegado', 'welcome@t.mx', ['jugador'], { num: '15' }); await wait(80);
+      const c = get('econ().coins');
+      const p = get('(econ().packInv&&econ().packInv.sencillo)||0');
+      return { ok: c >= 150 && p >= 1, detail: 'coins=' + c + ' sencillo=' + p };
+    });
+
+    await goal('Racha diaria: reclamar aumenta streak, monedas y sobre por hito 7/15/30', async () => {
+      await registrarse('Racha Diario', 'racha@t.mx', ['jugador'], { num: '9' }); await wait(80);
+      const c0 = get('econ().coins');
+      R('claimDailyReward();'); await wait(80);
+      const c1 = get('econ().coins');
+      const s = get('econ().daily.streak');
+      const already = get('econ().daily.last===todayISO()');
+      // segunda llamada mismo día: no reclama
+      R('claimDailyReward();'); await wait(80);
+      const c2 = get('econ().coins');
+      return { ok: c1 > c0 && s === 1 && already && c2 === c1,
+        detail: 'c0=' + c0 + ' c1=' + c1 + ' c2=' + c2 + ' streak=' + s + ' already=' + already };
+    });
+
+    await goal('Sobre avanzado tiene mejor probabilidad de rareza alta que el sencillo', async () => {
+      // probabilidad de tier>=5 con boost 1 vs boost 2.2 y 4.5
+      const p1 = get("Object.keys(RARITY).filter(k=>RARITY[k].tier>=5).reduce((s,k)=>s+packProb(k,1),0)");
+      const p2 = get("Object.keys(RARITY).filter(k=>RARITY[k].tier>=5).reduce((s,k)=>s+packProb(k,2.2),0)");
+      const p3 = get("Object.keys(RARITY).filter(k=>RARITY[k].tier>=5).reduce((s,k)=>s+packProb(k,4.5),0)");
+      return { ok: p2 > p1 && p3 > p2, detail: 'sencillo=' + p1.toFixed(2) + '%  avanzado=' + p2.toFixed(2) + '%  armado=' + p3.toFixed(2) + '%' };
     });
 
     await goal('flashEvent con evento válido no truena y define color por tipo', async () => {
