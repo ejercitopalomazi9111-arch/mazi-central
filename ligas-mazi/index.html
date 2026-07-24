@@ -961,7 +961,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- COACH: VESTIDOR -->
   <section class="screen" id="s-vestidor">
-    <div class="banner"><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--coach)">Coach · Vestidor</div><div class="t" id="vestTeam">Tu equipo</div></div>
+    <div class="banner"><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--coach)">Coach · Mi equipo</div><div class="t" id="vestTeam">Tu equipo</div></div>
       <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
     <div class="scroll"><div class="pad">
       <div class="card" id="subCard" style="border-color:var(--mesa)"><div class="kick" style="color:#ff9a8f">Cambios en vivo · se ven al instante en el marcador</div>
@@ -1540,7 +1540,7 @@ window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop
 let currentRole='papa';
 const NAV_BY_ROLE={
   papa:   [['hub','home','Inicio'],['ligas','trophy','Ligas'],['marcador','live','En vivo'],['carta','card','Carta'],['tienda','bag','Tienda']],
-  coach:  [['hub','home','Inicio'],['vestidor','clipboard','Vestidor'],['marcador','live','En vivo'],['estrategias','pencil','Tácticas'],['tienda','bag','Tienda']],
+  coach:  [['hub','home','Inicio'],['vestidor','clipboard','Mi equipo'],['marcador','live','En vivo'],['estrategias','pencil','Tácticas'],['tienda','bag','Tienda']],
   liga:   [['hub','home','Inicio'],['liga','gear','Liga'],['marcador','live','En vivo'],['mesa','pencil','Mesa'],['tienda','bag','Tienda']],
   publico:[['hub','home','Inicio'],['marcador','live','En vivo'],['publico','eye','Marcadores'],['ligas','trophy','Ligas'],['tienda','bag','Tienda']],
   jugador:[['hub','home','Inicio'],['carta','card','Carta'],['marcador','live','En vivo'],['ligas','trophy','Ligas'],['tienda','bag','Tienda']],
@@ -1562,7 +1562,7 @@ const MODE_DEFS={
   marcador:  {id:'marcador', k:'En vivo ahora',  t:'Jugar ya',    s:'Sigue el marcador en vivo · Q3',                 art:'accion.jpg', c:'--mesa',    ic:'live',      short:'En vivo', live:true},
   ligas:     {id:'ligas',    k:'Temporada',      t:'Mis ligas',   s:'Tus ligas y el torneo en curso',                art:'arena.jpg',  c:'--liga',    ic:'trophy',    short:'Ligas'},
   carta:     {id:'carta',    k:'Tu jugador',     t:'Mi carta',    s:'Tu ficha de jugador',            pack:true,        c:'--jugador', ic:'card',      short:'Carta'},
-  vestidor:  {id:'vestidor', k:'Coach',          t:'Vestidor',    s:'Roster, altas y jugadores del equipo',          art:'accion.jpg', c:'--coach',   ic:'clipboard', short:'Vestidor'},
+  vestidor:  {id:'vestidor', k:'Coach',          t:'Mi equipo',    s:'Roster, altas y jugadores del equipo',          art:'accion.jpg', c:'--coach',   ic:'clipboard', short:'Mi equipo'},
   estrategias:{id:'estrategias',k:'Coach',       t:'Tácticas',    s:'Pizarrón y sistema del equipo',                 art:'accion.jpg', c:'--publico', ic:'pencil',    short:'Tácticas'},
   liga:      {id:'liga',     k:'Organizador',    t:'Mi liga',     s:'Equipos, calendario, resultados y perillas',    art:'arena.jpg',  c:'--liga',    ic:'gear',      short:'Liga'},
   mesa:      {id:'mesa',     k:'Mesa',           t:'Anotador',    s:'Captura puntos y faltas en vivo',               art:'cancha.jpg', c:'--mesa',    ic:'pencil',    short:'Mesa'},
@@ -1675,9 +1675,19 @@ function buildModes(){
   if(sc)sc.textContent=rl.sc; if(mt)mt.innerHTML=rl.mt;
   requestAnimationFrame(()=>centerMode(modeIdx,false));
 }
+/* mientras el scroll lo dispara EL CÓDIGO (tocaste el chip de arriba), ignoramos
+   onModeScroll: si no, el scroll suave pasa por paneles intermedios y ese listener
+   les roba el estado "activo" a medio camino -> dos paneles se pelean por mostrarse */
+let _modeProgrammatic=false, _modeProgTimer=null;
 function centerMode(i,smooth){
   const car=document.getElementById('modeCarousel'); const p=car.children[i]; if(!p)return;
   const left=p.offsetLeft-(car.clientWidth-p.clientWidth)/2;
+  if(smooth){
+    _modeProgrammatic=true; clearTimeout(_modeProgTimer);
+    const clear=()=>{ _modeProgrammatic=false; car.removeEventListener('scrollend',clear); };
+    try{ car.addEventListener('scrollend',clear,{once:true}); }catch(e){}
+    _modeProgTimer=setTimeout(clear,600); // red de seguridad si el navegador no soporta scrollend
+  }
   car.scrollTo({left, behavior:smooth?'smooth':'auto'});
 }
 function setActiveMode(i){
@@ -1691,6 +1701,7 @@ function setActiveMode(i){
 function snapMode(i){ setActiveMode(i); centerMode(i,true); }
 let modeScrollRaf=0;
 function onModeScroll(){
+  if(_modeProgrammatic)return; // scroll disparado por nosotros (chip/panel) -> no compitas por el activo
   // sigue el dedo: fija el panel activo al instante mientras deslizas (sin esperar a que se detenga)
   if(modeScrollRaf)return;
   modeScrollRaf=requestAnimationFrame(()=>{
@@ -3548,7 +3559,7 @@ function enterAppWithRole(){ _cardRemote=null; _cardSearched=false; _cardViewChi
 const ONBOARD={
   liga:{k:'Administras una liga',steps:[['trophy','Crea tu liga','Ponle nombre y escudo en “Mi liga”.'],['people','Inscribe equipos y jugadores','Da de alta con su CURP (privado).'],['calendar','Arma el calendario','Genera el rol todos contra todos.'],['live','Dirige en la mesa','Anota puntos y faltas en vivo; la tabla se actualiza sola.']]},
   papa:{k:'Eres papá o tutor',steps:[['heart','Vincula a tu hij@','Con su CURP; si es menor queda bajo tu cuenta.'],['card','Sigue su carta','Sus números se llenan con cada partido.'],['live','Míralo en vivo','Solo tú ves a tu hij@ resaltado.']]},
-  coach:{k:'Diriges un equipo',steps:[['people','Tu vestidor','Ve tu roster y la ficha de cada jugador.'],['live','Cambios en vivo','Haz sustituciones que se ven al instante en el marcador.']]},
+  coach:{k:'Diriges un equipo',steps:[['people','Mi equipo','Ve tu roster y la ficha de cada jugador.'],['live','Cambios en vivo','Haz sustituciones que se ven al instante en el marcador.']]},
   jugador:{k:'Eres jugador',steps:[['card','Tu carta','Sube tu foto; tu general sube con tus partidos.'],['bag','Gachapón','Gana sobres con logros y ponle accesorios a tu carta.'],['trophy','Sigue ligas','Encuéntralas en el directorio.']]},
   publico:{k:'Sigues el basquet',steps:[['live','En vivo','Ve todos los enfrentamientos con marcador en tiempo real.'],['heart','Apoya a un equipo','Síguelo para tenerlo a la mano.'],['trophy','Explora ligas','Búscalas en el directorio.']]},
 };
