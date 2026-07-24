@@ -95,6 +95,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .nav button{flex:1;background:none;border:none;color:var(--dim);padding:9px 0 8px;font-family:var(--body);font-size:10.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .nav button .i{font-size:20px;line-height:1}
 .nav button.on{color:var(--accent-lt)} .nav button.hot .i{filter:drop-shadow(0 0 8px var(--mesa))}
+.nav button.navmore{color:var(--muted)}
+.nav button.navmore.on{color:var(--accent-lt)}
+.morgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.morecell{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;color:var(--txt,#e7ebf2);transition:.12s}
+.morecell:active{transform:scale(.97);border-color:var(--accent)}
+.morecell .mci{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--panel2);color:var(--accent-lt)}
+.morecell .mcn{font-size:12px;font-weight:600;text-align:center;line-height:1.15}
 .pad{padding:4px 16px 22px}
 .h-row{display:flex;align-items:baseline;gap:10px;margin:20px 2px 10px}
 .h-row h2{font-family:var(--body);font-weight:700;font-size:16px;letter-spacing:-.01em;text-transform:none} .h-row .more{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--accent-lt);cursor:pointer}
@@ -967,6 +974,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="var-screen" id="varScreen"><!-- lo arma buildVar() --></div>
   </section>
 
+  <!-- PARTIDO DE PRUEBA (preview) — item 20 -->
+  <section class="screen" id="s-preview">
+    <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Partido de prueba</span></div>
+    <div class="scroll"><div class="pad" id="previewBody"><!-- lo arma buildPreview() --></div></div>
+  </section>
+
   <!-- PÚBLICO (betting-style) -->
   <section class="screen" id="s-publico">
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--publico)">Modo público</div><div class="t">Marcadores</div></div>
@@ -1037,6 +1050,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="leaguerow" onclick="go('bracket')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-flag"/></svg></div><div><div class="nm" style="font-size:15px">Eliminatoria (bracket)</div><div class="mt">Liguilla desde la tabla · campeón</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('responsivas')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-doc"/></svg></div><div><div class="nm" style="font-size:15px">Responsivas</div><div class="mt">Consentimiento de padres</div></div><span class="more">›</span></div>
       <button class="btn block" onclick="go('perillas')" style="margin-top:6px"><svg class="ic"><use href="#ic-gear"/></svg> Reglas del torneo (perillas)</button>
+      <button class="btn ghost sm block" onclick="go('preview')" style="margin-top:8px"><svg class="ic"><use href="#ic-live"/></svg> Partido de prueba (preview)</button>
       </div>
     </div></div>
     <div class="nav" data-nav></div>
@@ -1237,8 +1251,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
   <!-- SHEET -->
   <div class="sheet-bg" id="sheet" onclick="if(event.target.id==='sheet')closeSheet()">
-    <div class="sheet"><h3>¿Cómo quieres entrar?</h3>
-      <!-- las opciones reales las arma openRoleSwitch() según los roles de tu cuenta -->
+    <div class="sheet"><h3 id="sheetTitle">¿Cómo quieres entrar?</h3>
+      <div id="sheetBody"><!-- lo llena openRoleSwitch() o openMoreMenu() según qué se abrió --></div>
     </div>
   </div>
 
@@ -1458,7 +1472,9 @@ async function pollInvitations(){
       else if(inv.kind==='player_approved'){ pushNote('ok','Fuiste aceptado en el equipo '+(inv.team_name||''),{invId:inv.id}); const uu=userData(); if(uu.playerCode){uu.playerStatus='aprobado';saveUser(uu);publishMyEntities();} }
       else if(inv.kind==='team_rejected'){ pushNote('info','Tu solicitud a '+(inv.league_name||'la liga')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.team){ if(uu.team.status==='pendiente')uu.team.status='solo'; uu.team.reqLeagues=(uu.team.reqLeagues||[]).filter(a=>a!==inv.from_account); saveUser(uu);publishMyEntities(); } }
       else if(inv.kind==='player_rejected'){ pushNote('info','Tu solicitud al equipo '+(inv.team_name||'')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.playerStatus==='pendiente'){uu.playerStatus='libre';saveUser(uu);publishMyEntities();} }
-      else if(inv.kind==='team_invite') pushNote('invite',(inv.from_name||'Un equipo')+' te invitó a unirte'+(inv.team_name?' a '+inv.team_name:''),{action:'accept_team_invite',teamName:inv.team_name,teamCode:inv.team_code,from:inv.from_account,invId:inv.id});
+      else if(inv.kind==='team_invite'){ const kidCode=inv.minor?inv.player_code:null; const kidNm=inv.player_name||'';
+        const msg=inv.minor?((inv.from_name||'Un equipo')+' invitó a '+kidNm+' (menor)'+(inv.team_name?' a '+inv.team_name:'')):(inv.from_name||'Un equipo')+' te invitó a unirte'+(inv.team_name?' a '+inv.team_name:'');
+        pushNote('invite',msg,{action:'accept_team_invite',teamName:inv.team_name,teamCode:inv.team_code,from:inv.from_account,invId:inv.id,minor:!!inv.minor,playerCode:kidCode,playerName:kidNm}); }
       else if(inv.kind==='player_accepted'){ approvePlayerIntoTeam(inv.player_code); }
       added++; try{ await c.from('invitations').update({status:'delivered'}).eq('id',inv.id); }catch(x){}
     }
@@ -1484,8 +1500,8 @@ function goBack(){ const prev=navStack.pop(); render(prev||'hub'); }
 const COMMON_SCREENS=['entrada','hub','marcador','ligas','publico','tienda','tabla','bracket','logros','gacha','directorio','inbox'];
 const ROLE_SCREENS={
   papa:   ['rol','carta','alta'],
-  coach:  ['vestidor','estrategias','carta'],
-  liga:   ['liga','mesa','perillas','alta','var','vestidor','estrategias','ligaEquipos','ligaCalendario','ligaResultados','responsivas'],
+  coach:  ['vestidor','estrategias','carta','preview'],
+  liga:   ['liga','mesa','perillas','alta','var','vestidor','estrategias','ligaEquipos','ligaCalendario','ligaResultados','responsivas','preview'],
   publico:[],
   jugador:['carta'],
 };
@@ -1558,7 +1574,33 @@ function buildNav(cur){
       b.innerHTML='<span class="i"><svg class="ic"><use href="#ic-'+ic+'"/></svg></span>'+lab;
       b.onclick=()=>go(id); nav.appendChild(b);
     });
+    // botón "Más" universal: abre un menú con todos los apartados accesibles
+    // según el rol activo, para que nadie se pierda entre subpantallas (item 19)
+    const more=document.createElement('button');
+    more.className='navmore'+(cur==='__more'?' on':'');
+    more.innerHTML='<span class="i"><svg class="ic"><use href="#ic-people"/></svg></span>Más';
+    more.onclick=openMoreMenu; nav.appendChild(more);
   });
+}
+/* menú "Más": todas las secciones que le tocan al rol activo, agrupadas y con
+   íconos. Único punto de entrada para las secciones secundarias — nadie se
+   pierde buscando dónde estaba tal cosa (item 19). */
+const MORE_MENU={
+  papa:   [['hub','home','Inicio'],['rol','people','Mi rol'],['ligas','trophy','Ligas'],['carta','card','Carta'],['inbox','flag','Notificaciones'],['directorio','trophy','Buscar ligas'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+  coach:  [['hub','home','Inicio'],['vestidor','clipboard','Mi equipo'],['alta','people','Buscar/invitar jugadores'],['estrategias','pencil','Tácticas'],['marcador','live','En vivo'],['ligas','trophy','Ligas'],['directorio','trophy','Buscar ligas'],['inbox','flag','Notificaciones'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+  liga:   [['hub','home','Inicio'],['liga','gear','Mi liga'],['ligaEquipos','people','Equipos'],['ligaCalendario','calendar','Calendario'],['ligaResultados','flag','Resultados'],['tabla','trophy','Tabla'],['bracket','flag','Liguilla'],['mesa','pencil','Mesa'],['preview','live','Partido de prueba'],['var','video','VAR'],['perillas','gear','Reglas'],['responsivas','doc','Responsivas'],['inbox','flag','Notificaciones'],['tienda','bag','Tienda']],
+  publico:[['hub','home','Inicio'],['publico','eye','Marcadores'],['ligas','trophy','Ligas que sigues'],['directorio','trophy','Buscar ligas'],['inbox','flag','Notificaciones'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+  jugador:[['hub','home','Inicio'],['carta','card','Mi carta'],['ligas','trophy','Ligas'],['directorio','trophy','Buscar ligas'],['marcador','live','En vivo'],['inbox','flag','Notificaciones'],['logros','star','Logros'],['gacha','bag','Gachapón'],['tienda','bag','Tienda']],
+};
+function openMoreMenu(){
+  const list=MORE_MENU[currentRole]||MORE_MENU.publico;
+  const body=document.getElementById('sheetBody'); const ttl=document.getElementById('sheetTitle');
+  if(!body||!document.getElementById('sheet'))return;
+  if(ttl)ttl.textContent='Todo lo tuyo';
+  let h='<div class="morgrid">';
+  list.forEach(([id,ic,lab])=>{ h+='<button class="morecell" onclick="closeSheet();go(\''+id+'\')"><span class="mci"><svg class="ic"><use href="#ic-'+ic+'"/></svg></span><span class="mcn">'+lab+'</span></button>'; });
+  h+='</div>';
+  body.innerHTML=h; openSheet();
 }
 /* ---- menú principal estilo NBA 2K: barra de modos + carrusel de paneles ---- */
 const MODE_DEFS={
@@ -2416,16 +2458,30 @@ function acceptInvite(id){ const n=notes(); const x=n.find(y=>y.id===id); if(!x)
     saveUser(u); x.text='Te uniste a '+x.league; }
   else if(x.action==='join_request'){ x.text=(x.team||'Un equipo')+' fue aprobado en tu liga'; }
   else if(x.action==='accept_team_invite'){ // me invitaron a un equipo y acepto → me uno
-    u.playerTeamCode=x.teamCode; u.playerStatus='aprobado'; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
-    try{ sendInvite('','player_accepted',{to_account:x.from, team_name:x.teamName, player_code:u.playerCode||'', player_name:u.name||''}); }catch(e){}
-    x.text='Te uniste al equipo '+(x.teamName||''); }
+    if(x.minor && x.playerCode){ // invitación para mi hij@ (item 21): el papá acepta por él
+      const kid=(u.children||[]).find(k=>k.code===x.playerCode);
+      if(kid){ kid.teamCode=x.teamCode; kid.status='aprobado'; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
+        try{ sendInvite('','player_accepted',{to_account:x.from, team_name:x.teamName, player_code:x.playerCode, player_name:kid.name||x.playerName||''}); }catch(e){}
+        x.text=(kid.name||'Tu hij@')+' se unió al equipo '+(x.teamName||''); }
+      else { x.text='No se encontró al hij@ vinculado para esta invitación'; }
+    }
+    else { u.playerTeamCode=x.teamCode; u.playerStatus='aprobado'; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
+      try{ sendInvite('','player_accepted',{to_account:x.from, team_name:x.teamName, player_code:u.playerCode||'', player_name:u.name||''}); }catch(e){}
+      x.text='Te uniste al equipo '+(x.teamName||''); }
+  }
   else if(x.action==='approve_team_league'){ approveTeamIntoLeague(x.teamCode); x.text='Aprobaste a "'+(x.team||'un equipo')+'" en tu liga'; }
   else if(x.action==='approve_player_team'){ approvePlayerIntoTeam(x.playerCode); x.text='Aprobaste a '+(x.player||'un jugador')+' en tu equipo'; }
   x.action=null; x.status='done'; x.read=true; saveNotes(n); buildInbox(); flashSaved('Listo ✓');
 }
 /* trae una entidad por su código (búsqueda pública) */
 async function fetchTeamByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('teams_public').select('*').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
-async function fetchPlayerByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('players_public').select('*').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
+async function fetchPlayerByCode(code){ const c=sbClient(); if(!c||!code)return null;
+  try{ const {data}=await c.from('players_public').select('*').eq('code',code).maybeSingle(); if(data)return data; }catch(e){}
+  // item 21: busca en children_public si no es un jugador con cuenta propia (es un menor del tutor)
+  try{ const {data}=await c.from('children_public').select('*').eq('code',code).maybeSingle();
+    if(data)return {code:data.code, name:data.name, num:data.num, pos:data.pos, photo:data.photo, account_id:data.guardian_account, status:data.status, minor:true}; }catch(e){}
+  return null;
+}
 /* el admin aprueba un equipo → lo mete a su liga (roster incluido) */
 async function approveTeamIntoLeague(teamCode){
   const t=await fetchTeamByCode(teamCode); if(!t){ flashSaved('No se encontró el equipo'); return; }
@@ -2995,6 +3051,45 @@ function setMatchMesa(idx){ const d=leagueData(); if(!canAdminLeague(d))return; 
   const inp=document.getElementById('mesa_'+idx); const em=((inp&&inp.value)||'').trim().toLowerCase();
   if(em&&!/.+@.+\..+/.test(em)){ flashSaved('Correo inválido'); return; }
   m.mesa=em||null; saveLeague(d); buildLeagueCal(); flashSaved(em?('Mesa asignada: '+em):'Mesa quitada'); }
+/* ===== PARTIDO DE PRUEBA / PREVIEW (item 20) — modo demo entre 2 equipos
+   para que la liga vea cómo se verá al entrar los jugadores, el marcador,
+   etc. No toca datos reales: al terminar no se guarda nada. */
+function buildPreview(){
+  const box=document.getElementById('previewBody'); if(!box)return;
+  const d=leagueData(); const teams=(d&&d.teams)||[];
+  const opts=teams.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
+  let h='<div class="stratnote" style="border-left-color:var(--jugador)">Modo <b>preview</b>: arma un partido chico entre dos equipos para ver cómo se ve el marcador, los jugadores en cancha y los cambios. <b>No cuenta</b>: nada se guarda al terminar.</div>';
+  if(teams.length>=2){
+    h+='<div class="eyebrow" style="margin:12px 2px 6px">Con tus equipos reales</div>'+
+      '<div style="display:flex;gap:8px;align-items:end;margin-bottom:8px"><label style="flex:1;font-size:11px;color:var(--muted)">Local<br><select class="field" id="prvH">'+opts+'</select></label><label style="flex:1;font-size:11px;color:var(--muted)">Visitante<br><select class="field" id="prvA">'+opts.replace('<option value="'+teams[0].id+'">','<option value="'+teams[0].id+'" selected>')+'</select></label></div>'+
+      '<button class="btn block" onclick="startPreviewFromLeague()">Iniciar preview</button>';
+  }
+  h+='<div class="eyebrow" style="margin:18px 2px 6px">O con equipos de demostración</div>'+
+    '<button class="btn ghost block" onclick="startPreviewDemo()">Halcones vs Titanes (jugadores demo)</button>';
+  box.innerHTML=h;
+}
+function _demoRoster(nm,pref){ const names=[pref+' 1',pref+' 2',pref+' 3',pref+' 4',pref+' 5',pref+' 6',pref+' 7',pref+' 8']; const pos=['Base','Escolta','Alero','Ala-pívot','Pívot','Base','Escolta','Alero'];
+  return names.map((n,i)=>({num:String(i+3),nm:n,pos:pos[i]||'Base',pts:0,f:0,min:0,on:i<5})); }
+function _startPreview(hTeam,aTeam){ const r=(typeof rules==='function')?rules():{minPer:10};
+  GAME.period=1; GAME.remainSec=(r.minPer||10)*60; GAME.running=false; GAME.clock=mFmt(GAME.remainSec);
+  GAME.teams=[
+    Object.assign({score:0,tf:0},hTeam),
+    Object.assign({score:0,tf:0},aTeam),
+  ];
+  GAME.log=[]; GAME.matchIdx=-1; GAME.preview=true; GAME.delegated=null;
+  go('mesa'); if(typeof publishLiveGameSoon==='function'){/* no publica preview en vivo */}
+  flashSaved('Preview iniciado — al terminar no se guarda nada');
+}
+function startPreviewDemo(){ _startPreview(
+  {id:'demoH',name:'Halcones (demo)',ini:'HA',color:'--papa',players:_demoRoster('Halcones','H')},
+  {id:'demoA',name:'Titanes (demo)',ini:'TI',color:'--publico',players:_demoRoster('Titanes','T')} ); }
+function startPreviewFromLeague(){ const d=leagueData(); const hId=(document.getElementById('prvH')||{}).value, aId=(document.getElementById('prvA')||{}).value;
+  const H=(d.teams||[]).find(t=>t.id===hId), A=(d.teams||[]).find(t=>t.id===aId);
+  if(!H||!A||H.id===A.id){ flashSaved('Elige dos equipos distintos'); return; }
+  const pmap=t=>(t.players||[]).length? (t.players||[]).map((p,i)=>({num:p.num||String(i+1),nm:p.nm||p.name||'Jugador',pos:p.pos||'Base',pts:0,f:0,min:0,on:i<5})) : _demoRoster(t.name,'J');
+  _startPreview({id:H.id,name:H.name+' (preview)',ini:H.ini,color:H.color,players:pmap(H)},
+                {id:A.id,name:A.name+' (preview)',ini:A.ini,color:A.color,players:pmap(A)});
+}
 function officiateMatch(idx){
   const d=leagueData(); const m=d.calendar[idx]; if(!m||m.done)return; if(!canOfficiate(m))return;
   const H=teamById(m.home), A=teamById(m.away); if(!H||!A)return;
@@ -3009,6 +3104,9 @@ function officiateMatch(idx){
   go('mesa'); publishLiveGameSoon();
 }
 function finishOfficiating(){
+  // preview: NO persiste nada, solo limpia y avisa
+  if(GAME.preview){ GAME.preview=false; GAME.matchIdx=null; clearLiveGame();
+    flashSaved('Partido de prueba terminado — no se guardó nada real'); go('hub'); return; }
   // mesa delegada: no escribo la liga local; envío el resultado al admin dueño
   if(GAME.delegated){ submitMatchResult(); const dg=GAME.delegated; GAME.delegated=null; GAME.matchIdx=null; clearLiveGame();
     flashSaved('Resultado enviado a la liga ✓'); go('directorio'); return; }
@@ -3291,10 +3389,18 @@ function renderShopGrid(admin){
       h+='<div class="eyebrow" style="margin:8px 2px 6px;color:var(--muted)">'+C+'</div><div class="tiles">';
       byCat[C].forEach(p=>{ const mine=p.account_id===myId;
         const img=p.image?('background-image:url('+p.image+');background-size:cover;background-position:center'):('background:linear-gradient(150deg,'+(p.color||'#888')+'40,'+(p.color||'#888')+'10)');
+        const now=Date.now(); const all=SHOP_PURCH||[];
+        const activeRes=all.filter(x=>x.product_id===p.id && x.status==='pending' && !x.released_at && new Date(x.expires_at||0).getTime()>now)[0];
+        const iAmHolder=activeRes && activeRes.buyer_account===myId;
+        const canBuy=!mine && !activeRes;
+        let btn='';
+        if(mine)btn='';
+        else if(iAmHolder)btn='<div style="margin-top:6px;font-size:12px;color:var(--liga);text-align:center">Ya lo apartaste · vence en <b data-expires="'+new Date(activeRes.expires_at).getTime()+'">-</b></div>';
+        else if(activeRes)btn='<div style="margin-top:6px;font-size:12px;color:var(--muted);text-align:center">Apartado · vuelve en <b data-expires="'+new Date(activeRes.expires_at).getTime()+'">-</b></div>';
+        else btn='<button class="btn sm block" style="margin-top:6px" data-buybtn onclick="buyProduct(\''+p.id+'\')">Apartar</button>';
         h+='<div class="prod"><div class="pimg" style="'+img+'">'+(p.image?'':'<span class="pini" style="color:'+(p.color||'#aaa')+'">'+((p.name[0]||'?').toUpperCase())+'</span>')+'</div>'+
           '<div class="pc"><div class="pn">'+p.name+'</div><div class="pp">$'+p.price+'</div></div>'+
-          (admin&&mine?'<button class="pdel" onclick="delProduct(\''+p.id+'\')">×</button>':'')+
-          (!mine?'<button class="btn sm block" style="margin-top:6px" onclick="buyProduct(\''+p.id+'\')">Comprar</button>':'')+
+          (admin&&mine?'<button class="pdel" onclick="delProduct(\''+p.id+'\')">×</button>':'')+ btn+
           '</div>';
       });
       h+='</div>';
@@ -3304,12 +3410,18 @@ function renderShopGrid(admin){
 }
 function renderPurchases(admin){
   const box=document.getElementById('shopPurch'); if(!box)return;
+  shopStartTicker();
   const myId=(_session&&_session.user&&_session.user.id)||'';
   const all=SHOP_PURCH||[];
   if(admin){ const sales=all.filter(x=>x.seller_account===myId && x.status==='pending');
     box.innerHTML = sales.length? '<div class="fo-sec-ttl">Compras por entregar</div>'+sales.map(s=>'<div class="card" style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><div style="flex:1;min-width:0"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">'+(s.buyer_name||'Aficionado')+' · código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+'</div></div><button class="btn sm" onclick="fulfillPurchase(\''+s.id+'\')">Entregado</button></div>').join('') : '';
   } else { const buys=all.filter(x=>x.buyer_account===myId);
-    box.innerHTML = buys.length? '<div class="fo-sec-ttl">Mis apartados</div>'+buys.map(s=>'<div class="card" style="margin-bottom:8px"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">Código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+' · '+(s.status==='done'?'entregado ✓':'muestra este código en la mesita')+'</div></div>').join('') : '';
+    const now=Date.now();
+    const activos=buys.filter(s=>s.status==='pending' && !s.released_at && new Date(s.expires_at||0).getTime()>now);
+    const otros=buys.filter(s=>!activos.includes(s));
+    box.innerHTML = buys.length? '<div class="fo-sec-ttl">Mis apartados</div>'+
+      activos.map(s=>'<div class="card" style="margin-bottom:8px;border-color:var(--liga)"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">Código <b style="color:var(--liga)">'+s.code+'</b> · $'+s.price+' · vence en <b data-expires="'+new Date(s.expires_at).getTime()+'" style="color:var(--warn)">-</b></div><button class="btn ghost sm" style="margin-top:6px" onclick="releaseReservation(\''+s.id+'\')">Liberar reserva</button></div>').join('')+
+      otros.map(s=>'<div class="card" style="margin-bottom:8px;opacity:.7"><b>'+s.product_name+'</b><div class="mt" style="font-size:12px;color:var(--muted)">Código '+s.code+' · $'+s.price+' · '+(s.status==='done'?'entregado ✓':(s.status==='released'||s.released_at?'liberado':'vencido'))+'</div></div>').join('') : '';
   }
 }
 function toggleShopForm(){const f=document.getElementById('shopForm');f.style.display=(f.style.display==='none'||!f.style.display)?'block':'none';}
@@ -3327,22 +3439,50 @@ async function addProduct(){
 }
 async function delProduct(id){ const c=sbClient(); if(!c)return; try{ await c.from('products').delete().eq('id',id); flashSaved('Producto quitado'); buildShop(); }catch(e){} }
 function genBuyCode(){ return 'MZ-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(10+Math.random()*89); }
+/* apartado con caducidad + cooldown (item 18) — como los boletos de cine */
+const RESERVE_MIN=25;   // dura 25 min
+const COOLDOWN_MIN=1;   // 1 min anti-bots antes de re-apartar el mismo producto
+function reservationActive(p){ const now=Date.now(); const all=SHOP_PURCH||[]; return all.some(x=>x.product_id===p.id && x.status==='pending' && !x.released_at && new Date(x.expires_at||0).getTime()>now); }
+function reservationBlock(p){ /* cooldown: si YO apenas libere/expire una reserva de este mismo producto, espero 1 min */
+  const myId=(_session&&_session.user&&_session.user.id)||''; const now=Date.now(); const all=SHOP_PURCH||[];
+  const mine=all.filter(x=>x.product_id===p.id && x.buyer_account===myId).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+  if(!mine)return 0;
+  const released=mine.released_at?new Date(mine.released_at).getTime():(new Date(mine.expires_at||0).getTime()<now?new Date(mine.expires_at).getTime():0);
+  if(!released)return 0;
+  const wait=released+COOLDOWN_MIN*60000-now; return wait>0?wait:0;
+}
 async function buyProduct(id){
   const p=(SHOP_PRODS||[]).find(x=>x.id===id); if(!p)return;
   const c=sbClient(); if(!c||!_authed||!_session){ flashSaved('Inicia sesión para apartar'); return; }
-  const code=genBuyCode(); const u=userData()||{};
-  try{ const {error}=await c.from('purchases').insert({code,product_id:p.id,product_name:p.name,price:p.price,seller_account:p.account_id,buyer_name:u.name||'',status:'pending'});
+  await fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); });   // trae el estado más fresco
+  if(reservationActive(p)){ flashSaved('Ese producto está apartado por otra persona. Vuelve en unos minutos.'); return; }
+  const cd=reservationBlock(p); if(cd>0){ flashSaved('Espera '+Math.ceil(cd/1000)+' s antes de re-apartar este producto.'); return; }
+  const code=genBuyCode(); const u=userData()||{}; const expires=new Date(Date.now()+RESERVE_MIN*60000).toISOString();
+  try{ const {error}=await c.from('purchases').insert({code,product_id:p.id,product_name:p.name,price:p.price,seller_account:p.account_id,buyer_name:u.name||'',status:'pending',expires_at:expires});
     if(error){ flashSaved('No se pudo apartar'); return; }
     const body=document.getElementById('buyCodeBody');
     if(body)body.innerHTML='<div style="font-size:13px;color:var(--muted)">Apartaste</div><div style="font-weight:800;font-size:18px;margin:2px 0 12px">'+p.name+' · $'+p.price+'</div>'+
       '<div style="font-family:var(--mono);font-size:30px;font-weight:800;letter-spacing:.06em;color:var(--liga);background:var(--panel2);border:1px dashed var(--liga);border-radius:12px;padding:16px">'+code+'</div>'+
-      '<div style="font-size:13px;color:var(--muted);margin-top:12px">Muestra este código en la mesita de '+(p.league_name||'la liga')+' para pagar y recogerlo.</div>';
+      '<div style="font-size:13px;color:var(--muted);margin-top:12px">Muestra este código en la mesita de '+(p.league_name||'la liga')+' para pagar y recogerlo.</div>'+
+      '<div style="font-size:12px;color:var(--warn);margin-top:6px">Vence en <b>'+RESERVE_MIN+':00</b> min — luego se libera para otro comprador.</div>';
     document.getElementById('buyCodeBg').classList.add('on');
     fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(false); });
   }catch(e){ flashSaved('Sin conexión'); }
 }
 function fulfillPurchase(id){ const c=sbClient(); if(!c)return;
   c.from('purchases').update({status:'done'}).eq('id',id).then(()=>{ flashSaved('Entregado ✓'); fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(true); }); }); }
+/* libera manualmente una reserva (o se detecta caducada) */
+function releaseReservation(id){ const c=sbClient(); if(!c)return;
+  c.from('purchases').update({released_at:new Date().toISOString(),status:'released'}).eq('id',id).then(()=>{ flashSaved('Reserva liberada — otro comprador ya puede apartarlo'); fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderShopGrid(currentRole==='liga'&&canAdminLeague()); renderPurchases(currentRole==='liga'&&canAdminLeague()); }); }); }
+/* tic de la cuenta regresiva de la tienda — 1/s, solo si el usuario está en la tienda */
+let _shopTickT=null;
+function shopStartTicker(){ if(_shopTickT)return; _shopTickT=setInterval(()=>{
+  if(!document.getElementById('s-tienda')||!document.getElementById('s-tienda').classList.contains('on')){ clearInterval(_shopTickT); _shopTickT=null; return; }
+  document.querySelectorAll('[data-expires]').forEach(el=>{ const t=parseInt(el.dataset.expires,10); const left=t-Date.now();
+    if(left<=0){ el.textContent='vencido'; el.style.color='var(--crit)'; const pid=el.dataset.pid; if(pid) el.closest('.card')?.querySelector('[data-buybtn]')?.removeAttribute('disabled'); }
+    else { const m=Math.floor(left/60000), s=Math.floor((left%60000)/1000); el.textContent=m+':'+(s<10?'0':'')+s; }
+  });
+},1000); }
 /* ---- ROSTER: dar de alta agrega de verdad, aparece en el vestidor ---- */
 /* el roster real del equipo = u.team.players (identidad); respaldo local para modo demo */
 function teamRoster(){const u=userData()||{}; const t=u.team||u.coachTeam;
@@ -3431,7 +3571,8 @@ function altaSearchLive(){ const el=document.getElementById('altaSearch'); const
     if(!pl.length){ res.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">Ningún jugador con “'+q+'”. Debe tener su cuenta creada.</div>'; return; }
     let h=''; pl.forEach(p=>{ const st=p.photo?('background-image:url('+p.photo+');background-size:cover;background-position:center'):'background:var(--jugador)';
       const nm=(p.name||'').replace(/\x27/g,"\\\x27");
-      h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(p.photo?'':iniOf(p.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(p.name||'Jugador')+(p.num?' · #'+p.num:'')+'</div><div class="mt"><b style="color:var(--jugador)">'+p.code+'</b> · '+(p.pos||'')+'</div></div><button class="btn sm" onclick="invitePlayerToTeam(\''+p.code+'\',\''+nm+'\',\''+p.account_id+'\')">Invitar</button></div>'; });
+      const badge=p.minor?' <span class="badge" style="background:rgba(232,177,62,.16);color:var(--warn);font-size:9px;padding:1px 6px;border-radius:8px;margin-left:4px">MENOR · tutor</span>':'';
+      h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(p.photo?'':iniOf(p.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(p.name||'Jugador')+(p.num?' · #'+p.num:'')+badge+'</div><div class="mt"><b style="color:var(--jugador)">'+p.code+'</b> · '+(p.pos||'')+'</div></div><button class="btn sm" onclick="invitePlayerToTeam(\''+p.code+'\',\''+nm+'\',\''+p.account_id+'\','+(p.minor?'true':'false')+')">Invitar</button></div>'; });
     res.innerHTML=h;
   }).catch(()=>{ res.innerHTML='<div class="stratnote">Sin conexión para buscar.</div>'; });
 }
@@ -3442,11 +3583,12 @@ function buildTeamRequests(){ const box=document.getElementById('altaReqs'); if(
   let h=''; reqs.forEach(x=>{ h+='<div class="leaguerow"><div class="crest real" style="background:var(--jugador)">'+iniOf(x.player||'?')+'</div><div style="flex:1"><div class="nm">'+(x.player||'Jugador')+'</div><div class="mt">quiere unirse a tu equipo</div></div><div style="display:flex;gap:6px"><button class="btn sm" onclick="acceptInvite(\''+x.id+'\');buildTeamRequests();buildRoster();">Aprobar</button><button class="btn ghost sm" onclick="declineInvite(\''+x.id+'\');buildTeamRequests();">Rechazar</button></div></div>'; });
   box.innerHTML=h;
 }
-/* invitar a un jugador existente a mi equipo (le llega y decide) */
-function invitePlayerToTeam(code,name,acct){ const u=userData()||{}; if(!u.team){ flashSaved('Primero necesitas un equipo'); return; }
+/* invitar a un jugador existente a mi equipo (le llega y decide). Si es menor, el
+   receptor es el papá (guardian_account), y él acepta desde su bandeja (item 21). */
+function invitePlayerToTeam(code,name,acct,minor){ const u=userData()||{}; if(!u.team){ flashSaved('Primero necesitas un equipo'); return; }
   if((u.team.players||[]).some(p=>p.code===code)){ flashSaved('Ese jugador ya está en tu equipo'); return; }
-  sendInvite('','team_invite',{to_account:acct, team_name:u.team.name, team_code:u.team.code, player_name:name, player_code:code});
-  flashSaved('Invitación enviada a '+name+' ✓');
+  sendInvite('','team_invite',{to_account:acct, team_name:u.team.name, team_code:u.team.code, player_name:name, player_code:code, minor:!!minor});
+  flashSaved('Invitación enviada'+(minor?' al tutor de '+name:' a '+name)+' ✓');
 }
 /* el papá vincula a su hij@ por CURP: se ancla a su cuenta, nunca visible en claro.
    Cada hij@ tiene su PROPIO código/número/posición — nunca se mezcla con el perfil del papá. */
@@ -3462,12 +3604,15 @@ function saveChild(){
   u.children=u.children||[];
   if(u.children.some(k=>k.curp===curp)){ flashSaved('Ya vinculaste a este jugador'); return; }
   const age=curpAge(curp);
-  u.children.push({name:nm, num:num, pos:pos, curp:curp, code:genEntityCode('J-'), minor:(age!=null&&age<18), age:age, linkedAt:Date.now()});
-  saveUser(u);
+  u.children.push({name:nm, num:num, pos:pos, curp:curp, code:genEntityCode('J-'), minor:(age!=null&&age<18), age:age, status:'libre', linkedAt:Date.now()});
+  saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
   try{ pushNote('hijo','Vinculaste a '+nm+(age!=null&&age<18?' (menor)':'')); }catch(x){}
   flashSaved('Hij@ vinculad@ ✓'); go('rol');
 }
-function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return; u.children.splice(i,1); if(_cardViewChild>=u.children.length)_cardViewChild=-1; saveUser(u); buildPapaHome(); } }
+async function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return;
+  const removed=u.children[i]; u.children.splice(i,1); if(_cardViewChild>=u.children.length)_cardViewChild=-1; saveUser(u);
+  try{ const c=sbClient(); if(c&&removed&&removed.code) await c.from('children_public').delete().eq('code',removed.code); }catch(e){}
+  buildPapaHome(); } }
 function savePlayer(){const nm=(document.getElementById('altaName').value||'').trim();
   if(!nm){flashSaved('Escribe el nombre del jugador');return;}
   if(!document.getElementById('altaResp').textContent){flashSaved('Falta la responsiva de los padres');return;}
@@ -3631,6 +3776,12 @@ async function publishMyEntities(){
   const c=sbClient(); if(!c||!_authed||!_session)return; const u=userData()||{}; const uid=_session.user.id;
   try{ if(u.team){ await c.from('teams_public').upsert({account_id:uid, code:u.team.code, name:u.team.name, logo:u.team.logo||null, color:u.team.color||'--papa', league_code:u.team.league_code||null, status:u.team.status||'solo', players:u.team.players||[], coaches:u.team.coaches||[], updated_at:new Date().toISOString()}); } }catch(e){}
   try{ if(u.playerCode){ await c.from('players_public').upsert({account_id:uid, code:u.playerCode, name:u.name||'', email:(u.email||'').toLowerCase()||null, num:u.num||null, pos:u.pos||null, photo:u.photo||null, team_code:u.playerTeamCode||null, status:u.playerStatus||'libre', updated_at:new Date().toISOString()}); } }catch(e){}
+  // item 21: hij@s del papá se publican como jugadores buscables (bajo la cuenta del tutor)
+  try{ if(u.children && u.children.length){
+    for(const k of u.children){ if(!k.code)continue;
+      await c.from('children_public').upsert({code:k.code, guardian_account:uid, name:k.name||'', num:k.num||null, pos:k.pos||null, photo:k.photo||null, team_code:k.teamCode||null, status:k.status||'libre', updated_at:new Date().toISOString()});
+    }
+  } }catch(e){}
 }
 /* buscador universal: ligas, equipos y jugadores por NOMBRE o CÓDIGO */
 async function searchEntities(q){ const c=sbClient();
@@ -3638,12 +3789,16 @@ async function searchEntities(q){ const c=sbClient();
   q=(q||'').replace(/[,()*%]/g,' ').replace(/\s+/g,' ').trim(); if(!c||!q)return {leagues:[],teams:[],players:[]};
   const like='%'+q+'%';
   try{
-    const [lg,tm,pl]=await Promise.all([
+    const [lg,tm,pl,kd]=await Promise.all([
       c.from('public_leagues').select('account_id,name,logo,code,teams,players').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
-      c.from('teams_public').select('account_id,code,name,logo,color,status,league_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
-      c.from('players_public').select('account_id,code,name,num,pos,photo,status,team_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20)
+      c.from('teams_public').select('account_id,code,name,logo,color,status,league_code,coaches').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
+      c.from('players_public').select('account_id,code,name,num,pos,photo,status,team_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20),
+      c.from('children_public').select('guardian_account,code,name,num,pos,photo,status,team_code').or('name.ilike.'+like+',code.ilike.'+like).limit(20)
     ]);
-    return {leagues:(lg.data||[]), teams:(tm.data||[]), players:(pl.data||[])};
+    // los hij@s se muestran junto a los jugadores (marcados como menor:true) para que el
+    // coach pueda invitarlos igual — la respuesta la aprueba el papá desde su bandeja
+    const kids=(kd.data||[]).map(k=>({account_id:k.guardian_account, code:k.code, name:k.name, num:k.num, pos:k.pos, photo:k.photo, status:k.status, team_code:k.team_code, minor:true}));
+    return {leagues:(lg.data||[]), teams:(tm.data||[]), players:(pl.data||[]).concat(kids)};
   }catch(e){ return {leagues:[],teams:[],players:[]}; }
 }
 let _searchT=null;
@@ -3698,10 +3853,12 @@ function accountRoles(){ const u=userData()||{};
   let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); return r; }
 function openRoleSwitch(){
   const roles=accountRoles(); if(roles.length<=1){ openProfile(); return; }
-  const sheet=document.querySelector('#sheet .sheet'); if(!sheet)return;
-  let h='<h3>¿Cómo quieres entrar?</h3>';
+  const body=document.getElementById('sheetBody'); const ttl=document.getElementById('sheetTitle');
+  if(!body||!document.getElementById('sheet'))return;
+  if(ttl)ttl.textContent='¿Cómo quieres entrar?';
+  let h='';
   roles.forEach(r=>{ h+='<div class="opt" onclick="setActiveRole(\''+r+'\')"><span class="hat" style="background:var('+(ROLE_COLOR[r]||'--publico')+')"></span><b>'+(ROLE_LABEL[r]||r)+'</b><span class="r">'+((userData()||{}).name||'')+'</span></div>'; });
-  sheet.innerHTML=h; document.getElementById('sheet').classList.add('on');
+  body.innerHTML=h; openSheet();
 }
 function setActiveRole(r){ const u=userData()||{}; u.role=r; saveUser(u); currentRole=ROLE_INTERNAL[r]||'publico'; closeSheet(); modeIdx=0; go('hub'); }
 function setAuthMode(m){

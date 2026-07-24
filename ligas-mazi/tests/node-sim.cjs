@@ -54,7 +54,7 @@ vm.createContext(ctx);
 
 // ---------- Supabase falso (mismo modelo que el arnés de navegador) ----------
 const FAKE = `
-window.__DB={app_state:[],public_leagues:[],league_full:[],teams_public:[],players_public:[],invitations:[],match_results:[],products:[],purchases:[],live_games:[]};
+window.__DB={app_state:[],public_leagues:[],league_full:[],teams_public:[],players_public:[],children_public:[],invitations:[],match_results:[],products:[],purchases:[],live_games:[]};
 window.__ACCOUNTS={};window.__CUR={session:null};
 function __uid(){return 'u-'+Math.random().toString(36).slice(2,9);}
 function __ilike(v,pat){const q=String(pat).replace(/%/g,'').toLowerCase();return String(v==null?'':v).toLowerCase().includes(q);}
@@ -65,7 +65,7 @@ function __qb(table){const DB=window.__DB;DB[table]=DB[table]||[];let filters=[]
   or:(str)=>{const parts=str.split(',').map(s=>{const i=s.indexOf('.');const col=s.slice(0,i);const rest=s.slice(i+1);const j=rest.indexOf('.');return{col,op:rest.slice(0,j),val:rest.slice(j+1)};});filters.push({col:'__or',fn:r=>parts.some(pp=>pp.op==='ilike'&&__ilike(r[pp.col],pp.val))});return api;},
   order:()=>api,limit:()=>api,maybeSingle:()=>Promise.resolve({data:run()[0]||null,error:null}),single:()=>{const r=run();return Promise.resolve({data:r[0]||null,error:r.length?null:{message:'no rows'}});},then:(cb,eb)=>Promise.resolve({data:run(),error:null}).then(cb,eb)};
  api.insert=(row)=>{const rows=Array.isArray(row)?row:[row];rows.forEach(x=>{const c=Object.assign({},x);if(c.id===undefined)c.id='id-'+Math.random().toString(36).slice(2,9);DB[table].push(c);});return Promise.resolve({data:rows,error:null});};
- api.upsert=(row)=>{const rows=Array.isArray(row)?row:[row];rows.forEach(x=>{const pk=x.account_id!==undefined?'account_id':(x.id!==undefined?'id':null);if(pk){const i=DB[table].findIndex(r=>r[pk]===x[pk]);if(i>=0)DB[table][i]=Object.assign({},DB[table][i],x);else DB[table].push(Object.assign({},x));}else DB[table].push(Object.assign({},x));});return Promise.resolve({data:rows,error:null});};
+ api.upsert=(row)=>{const rows=Array.isArray(row)?row:[row];rows.forEach(x=>{const pk=(table==='children_public'&&x.code!==undefined)?'code':(x.account_id!==undefined?'account_id':(x.id!==undefined?'id':null));if(pk){const i=DB[table].findIndex(r=>r[pk]===x[pk]);if(i>=0)DB[table][i]=Object.assign({},DB[table][i],x);else DB[table].push(Object.assign({},x));}else DB[table].push(Object.assign({},x));});return Promise.resolve({data:rows,error:null});};
  api.update=(vals)=>{const u={_f:[],eq:function(c,v){this._f.push(r=>r[c]===v);return this;},then:function(cb){DB[table].forEach(r=>{if(this._f.every(f=>f(r)))Object.assign(r,vals);});return Promise.resolve({error:null}).then(cb);}};return u;};
  api.delete=()=>{const d={_f:[],eq:function(c,v){this._f.push(r=>r[c]===v);window.__DB[table]=DB[table].filter(r=>!this._f.every(f=>f(r)));return Promise.resolve({error:null});}};return d;};
  return api;}
@@ -264,6 +264,54 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       await entrar('dueno3@t.mx'); R('pollInvitations();'); await wait(150);
       const inRoster = get("(userData().team.players||[]).some(p=>p.code==='" + pcode + "')");
       return { ok: !!joined && inRoster, detail: 'joined=' + joined + ' inRoster=' + inRoster };
+    });
+
+    await goal('Papá vincula a hij@, el equipo lo encuentra al buscar y el papá aprueba (item 21)', async () => {
+      // papá con hij@ vinculado -> publica children_public
+      await registrarse('Papa Nuevo', 'papa2@t.mx', ['papa'], {}); await wait(60);
+      R(`currentRole='papa';buildAlta();`); await wait(20);
+      setField('altaName', 'Menor Test'); setField('altaNum', '11'); setField('altaPos', 'Base');
+      setField('altaCurp', 'HEGG560427MVZRRL04');
+      R(`document.getElementById('altaResp').textContent='✓';`);
+      R(`saveChild();`); await wait(120);
+      const kidCode = get('(userData().children[0]||{}).code');
+      const publishedKid = get("__DB.children_public.find(k=>k.code==='" + kidCode + "')");
+      if (!publishedKid) return { ok: false, detail: 'no se publicó el hij@ en children_public' };
+      // el dueño de Halcones busca por nombre y encuentra al menor
+      await entrar('dueno2@t.mx'); await wait(40);
+      const found = await getA("(await searchEntities('Menor')).players.find(p=>p.minor===true)");
+      if (!found || !found.code) return { ok: false, detail: 'no lo encontró en searchEntities' };
+      // invita (marcando minor:true -> le llega al papá, no al hij@)
+      R(`invitePlayerToTeam(${JSON.stringify(kidCode)}, 'Menor Test', ${JSON.stringify(publishedKid.guardian_account)}, true);`); await wait(80);
+      // el papá recibe la invitación y la acepta
+      await entrar('papa2@t.mx'); R('pollInvitations();'); await wait(120);
+      const id = get("(function(){var n=notes().find(x=>x.action==='accept_team_invite'&&x.minor);return n?n.id:null;})()");
+      if (!id) return { ok: false, detail: 'no llegó la invitación para el hij@' };
+      R(`acceptInvite(${JSON.stringify(id)});`); await wait(120);
+      const kidStatus = get('(userData().children[0]||{}).status');
+      const kidTeam = get('(userData().children[0]||{}).teamCode');
+      // dueño recibe y el hij@ entra al roster
+      await entrar('dueno2@t.mx'); R('pollInvitations();'); await wait(200);
+      const inRoster = get("(userData().team.players||[]).some(p=>p.code==='" + kidCode + "')");
+      return { ok: kidStatus === 'aprobado' && !!kidTeam && inRoster,
+        detail: 'status=' + kidStatus + ' team=' + kidTeam + ' inRoster=' + inRoster };
+    });
+
+    await goal('Partido de prueba (preview) no toca los datos reales de la liga (item 20)', async () => {
+      await entrar('admin@t.mx'); await wait(40);
+      const beforeCal = get('(leagueData().calendar||[]).length');
+      const beforeDone = get('(leagueData().calendar||[]).filter(m=>m.done).length');
+      // arranca preview con jugadores demo
+      R('startPreviewDemo();'); await wait(80);
+      const isPreview = get('GAME.preview===true && hasLiveGame()');
+      // simula que anotó unos puntos
+      R('GAME.teams[0].score=12;GAME.teams[1].score=8;GAME.teams[0].players[0].pts=6;'); await wait(20);
+      R('finishOfficiating();'); await wait(120);
+      const afterCal = get('(leagueData().calendar||[]).length');
+      const afterDone = get('(leagueData().calendar||[]).filter(m=>m.done).length');
+      const stillPreview = get('GAME.preview===true');
+      return { ok: isPreview && !stillPreview && afterCal === beforeCal && afterDone === beforeDone,
+        detail: 'preview=' + isPreview + ' cal=' + beforeCal + '->' + afterCal + ' done=' + beforeDone + '->' + afterDone };
     });
 
     await goal('Dueño asigna un co-coach; el coach edita el equipo desde SU cuenta', async () => {
