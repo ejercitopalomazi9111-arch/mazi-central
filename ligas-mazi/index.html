@@ -352,8 +352,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .pcard .rk{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#0b0d12;background:linear-gradient(90deg,#ff9a5a,#a774f0);padding:4px 10px;border-radius:20px;font-weight:700;z-index:2}
 .pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:2}
 .pcard .ov b{font-family:var(--disp);font-weight:800;font-size:40px;line-height:.8;color:var(--accent-lt)} .pcard .ov small{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em}
-.pcard .photo{height:220px;margin:38px 14px 0;border-radius:10px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer}
-.pcard .photo.has-photo{border-style:solid;border-color:#2a313d;background-size:cover;background-position:center}
+.pcard .photo{width:min(60%,196px);aspect-ratio:3/4;height:auto;margin:30px auto 0;border-radius:12px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer}
+.pcard .photo.has-photo{border-style:solid;border-color:#2a313d;background-size:cover;background-position:center top}
 .pcard .nm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:26px;padding:12px 16px 2px} .pcard .club{font-size:12.5px;color:var(--dim);padding:0 16px}
 .pcard .stats{display:flex;gap:6px;padding:14px 16px 18px}
 .pcard .st{flex:1;text-align:center;background:rgba(7,9,13,.4);border:1px solid var(--line);border-radius:8px;padding:8px 4px}
@@ -721,6 +721,17 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .cos-nm{font-family:var(--body);font-weight:700;font-size:12.5px;color:var(--txt)}
 .cos-rar{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase}
 .cos-on{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.04em;color:#0b0d12;background:var(--rc);padding:2px 6px;border-radius:10px}
+/* ——— carrusel del gachapón (item 12) ——— */
+.gacha-carousel{position:relative;overflow:hidden;width:100%;max-width:340px;height:132px;border-radius:16px;background:linear-gradient(180deg,#0c1120,#080b13);border:1px solid var(--line);margin:2px auto 8px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
+.gc-track{display:flex;height:100%;align-items:center;will-change:transform}
+.gc-cell{flex:0 0 88px;width:88px;margin:0 4px;height:108px;border-radius:11px;background:rgba(255,255,255,.02);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.07);transition:transform .3s,box-shadow .3s}
+.gc-cell.win{transform:scale(1.06);border-color:var(--rc);box-shadow:0 0 0 2px var(--rc),0 0 22px var(--rc)}
+.gc-prev{width:46px;height:62px;border-radius:9px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
+.gc-nm{font-size:9.5px;color:#aeb6c6;text-align:center;line-height:1.12;padding:0 3px;max-width:84px}
+.gc-ptr{position:absolute;left:50%;transform:translateX(-50%);width:0;height:0;z-index:4;filter:drop-shadow(0 0 4px rgba(0,0,0,.5))}
+.gc-ptr.top{top:-1px;border-left:10px solid transparent;border-right:10px solid transparent;border-top:14px solid var(--liga)}
+.gc-ptr.bot{bottom:-1px;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:14px solid var(--liga)}
+.gc-seam{position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%);background:linear-gradient(180deg,transparent,var(--liga),transparent);opacity:.35;z-index:3}
 /* campana / bandeja */
 .bell-dot{position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--accent,#ec5a45);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
 .note{display:flex;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:9px;align-items:flex-start}
@@ -1270,7 +1281,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="sheet"><h3 style="margin-bottom:12px">Ajusta tu foto</h3>
       <div class="crop-frame" id="cropFrame" onpointerdown="cropStart(event)" onpointermove="cropMove(event)" onpointerup="cropEnd()" onpointerleave="cropEnd()"><img id="cropImg" alt=""></div>
       <div class="crop-hint">Arrastra para mover · desliza para acercar</div>
-      <div class="crop-zoom"><span>−</span><input type="range" id="cropZoom" min="100" max="300" value="120" oninput="cropZoomTo(this.value)"><span>+</span></div>
+      <div class="crop-zoom"><span>−</span><input type="range" id="cropZoom" min="100" max="300" value="100" oninput="cropZoomTo(this.value)"><span>+</span></div>
       <button class="btn block" onclick="applyCrop()">Guardar foto</button>
       <button class="btn ghost sm block" onclick="closeCrop()" style="margin-top:8px">Cancelar</button>
     </div>
@@ -1477,6 +1488,7 @@ const ROLE_HOME={papa:'rol', coach:'vestidor', liga:'liga', publico:'publico', j
 /* ¿esta cuenta es mesa de algún partido pendiente? (permiso cruzado de roles) */
 function isAssignedMesa(){ const em=myEmail(); if(!em)return false; try{ const d=leagueData(); return !!(d.calendar||[]).some(m=>!m.done && (m.mesa||'').toLowerCase()===em); }catch(e){ return false; } }
 function canAccess(id){
+  if(typeof isSuperAdmin==='function' && isSuperAdmin()) return true; // súper admin ve TODO
   if(COMMON_SCREENS.includes(id) || (ROLE_SCREENS[currentRole]||[]).includes(id)) return true;
   // la mesa asignada (aunque sea de otro rol) puede entrar a mesa/marcador para dirigir
   if((id==='mesa'||id==='marcador') && (isAssignedMesa() || GAME.matchIdx!=null)) return true;
@@ -2184,6 +2196,9 @@ function buildPublicoData(){
    Los logros se calculan de datos reales (tu liga, tus partidos, tu hij@…). */
 function econ(){ const u=userData()||{}; if(!u.econ)u.econ={coins:0,packs:0,owned:[],effect:null,done:[]}; return u.econ; }
 function saveEcon(e){ const u=userData()||{}; u.econ=e; saveUser(u); }
+/* fondos de prueba para la cuenta suprema (item 10) */
+function superFund(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return; const e=econ(); e.coins=(e.coins||0)+9999; saveEcon(e); try{buildLogros();}catch(x){} flashSaved('+9,999 monedas ✓'); }
+function superPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdmin()))return; const e=econ(); e.packs=(e.packs||0)+25; saveEcon(e); try{buildLogros();}catch(x){} flashSaved('+25 sobres ✓'); }
 const ACHIEVEMENTS=[
   {id:'welcome', t:'Bienvenid@ a Ligas Mazi', d:'Creaste tu cuenta', coins:50, packs:0, ic:'star', chk:u=>!!u.name},
   {id:'role',    t:'Elegiste tu rol',         d:'Ya sabes cómo entras a la app', coins:20, packs:0, ic:'people', chk:u=>!!(u.roles&&u.roles.length)},
@@ -2225,6 +2240,9 @@ function buildLogros(){
   const got=e.done.length, tot=ACHIEVEMENTS.length;
   let h='<div class="stat-row" style="margin-top:6px"><div class="stat-tile"><b>'+e.coins+'</b><span>Monedas</span></div><div class="stat-tile"><b>'+e.packs+'</b><span>Sobres</span></div><div class="stat-tile"><b>🔥 '+(e.streak||0)+'</b><span>Racha (días)</span></div></div>'+
     '<div class="stratnote" style="border-left-color:var(--papa)">Entra cada día para subir tu racha y ganar monedas. '+got+' de '+tot+' logros.</div>';
+  if(typeof isSuperAdmin==='function' && isSuperAdmin()){
+    h+='<div class="stratnote" style="border-left-color:var(--liga)"><b>Modo Súper Admin.</b> Fondos ilimitados para probar tienda y gachapón.</div>'+
+       '<div style="display:flex;gap:8px;margin:8px 0"><button class="btn sm" style="flex:1" onclick="superFund()">＋ 9,999 monedas</button><button class="btn sm ghost" style="flex:1" onclick="superPacks()">＋ 25 sobres</button></div>'; }
   if(e.packs>0)h+='<button class="btn block" onclick="go(\'gacha\')" style="margin:10px 0 2px"><svg class="ic"><use href="#ic-bag"/></svg> Abrir sobres ('+e.packs+')</button>';
   h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Tus logros</h2></div>';
   ACHIEVEMENTS.forEach(a=>{ let ok=false; try{ok=e.done.indexOf(a.id)>=0||!!a.chk(u,d);}catch(x){} const done=e.done.indexOf(a.id)>=0;
@@ -2236,14 +2254,35 @@ function buildLogros(){
 /* ===== Gachapón: efectos y accesorios de carta por rareza ===== */
 const RARITY={comun:{t:'Común',c:'#8b93a3',w:58},raro:{t:'Raro',c:'#35c2cf',w:28},epico:{t:'Épico',c:'#a774f0',w:11},legendario:{t:'Legendario',c:'#e8b13e',w:3}};
 const COSMETICS=[
+  // ——— Comunes (auras y detalles suaves) ———
   {id:'e_glow',   t:'Aura Suave',     kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(255,255,255,.25),0 10px 30px rgba(255,255,255,.12)'},
   {id:'e_ember',  t:'Brasa',          kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(236,90,69,.5),0 10px 34px rgba(236,90,69,.35)'},
+  {id:'e_mist',   t:'Niebla',         kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(150,160,180,.4),0 8px 26px rgba(120,130,150,.3)'},
+  {id:'e_mint',   t:'Aura Menta',     kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(62,207,142,.45),0 10px 30px rgba(62,207,142,.28)'},
+  {id:'e_dusk',   t:'Ocaso',          kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(244,166,60,.45),0 10px 30px rgba(244,120,60,.28)'},
+  {id:'e_shadow', t:'Sombra Suave',   kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(20,24,34,.6),0 14px 34px rgba(0,0,0,.5)'},
+  {id:'e_rose',   t:'Rosa Tenue',     kind:'effect', rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(240,120,160,.4),0 10px 30px rgba(240,120,160,.26)'},
+  {id:'f_line',   t:'Filo Blanco',    kind:'frame',  rarity:'comun',      css:'box-shadow:0 0 0 2px rgba(255,255,255,.6)'},
+  // ——— Raros (marcos y neones) ———
   {id:'f_steel',  t:'Marco Acero',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #9aa6bd,0 12px 34px rgba(0,0,0,.5)'},
   {id:'f_ice',    t:'Marco Hielo',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #35c2cf,0 0 28px rgba(53,194,207,.5)'},
-  {id:'e_holo',   t:'Holo Prisma',    kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px rgba(167,116,240,.6),0 0 34px rgba(167,116,240,.55)'},
-  {id:'f_gold',   t:'Marco Dorado',   kind:'frame',  rarity:'epico',      css:'box-shadow:0 0 0 3px #e8b13e,0 0 30px rgba(232,177,62,.55)'},
-  {id:'e_flame',  t:'Fuego Mazi',     kind:'effect', rarity:'legendario', css:'box-shadow:0 0 0 3px #ff9a5a,0 0 46px rgba(255,120,40,.7)'},
-  {id:'f_diamond',t:'Marco Diamante', kind:'frame',  rarity:'legendario', css:'box-shadow:0 0 0 3px #bfe9ff,0 0 40px rgba(143,208,255,.75),inset 0 0 24px rgba(255,255,255,.15)'},
+  {id:'e_neon',   t:'Neón Cyan',      kind:'effect', rarity:'raro',       css:'box-shadow:0 0 0 2px #35c2cf,0 0 22px #35c2cf,0 0 42px rgba(53,194,207,.6)'},
+  {id:'f_copper', t:'Marco Cobre',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #c17a4a,0 0 24px rgba(193,122,74,.5)'},
+  {id:'e_emerald',t:'Aura Esmeralda', kind:'effect', rarity:'raro',       css:'box-shadow:0 0 0 3px #2ecf8e,0 0 26px rgba(46,207,142,.55)'},
+  {id:'f_night',  t:'Marco Noche',    kind:'frame',  rarity:'raro',       css:'box-shadow:0 0 0 3px #3a4666,inset 0 0 20px rgba(53,120,207,.4)'},
+  {id:'e_pulse',  t:'Pulso Azul',     kind:'effect', rarity:'raro',       css:'box-shadow:0 0 0 2px #5b8cff,0 0 30px rgba(91,140,255,.6)'},
+  // ——— Épicos ———
+  {id:'e_holo',   t:'Holo Prisma',    kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px rgba(167,116,240,.7),0 0 34px rgba(167,116,240,.6)'},
+  {id:'f_gold',   t:'Marco Dorado',   kind:'frame',  rarity:'epico',      css:'box-shadow:0 0 0 3px #e8b13e,0 0 30px rgba(232,177,62,.6)'},
+  {id:'e_violet', t:'Aura Violeta',   kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px #a774f0,0 0 40px rgba(167,116,240,.7)'},
+  {id:'f_obsidian',t:'Marco Obsidiana',kind:'frame', rarity:'epico',      css:'box-shadow:0 0 0 3px #1a1e2a,0 0 0 5px #6a3fd0,0 0 30px rgba(106,63,208,.6)'},
+  {id:'e_nebula', t:'Nébula',         kind:'effect', rarity:'epico',      css:'box-shadow:0 0 0 3px #7c53c9,0 0 26px #35c2cf,0 0 46px rgba(124,83,201,.6)'},
+  {id:'f_plasma', t:'Marco Plasma',   kind:'frame',  rarity:'epico',      css:'box-shadow:0 0 0 3px #ff5aa0,0 0 30px rgba(255,90,160,.6)'},
+  // ——— Legendarios ———
+  {id:'e_flame',  t:'Fuego Mazi',     kind:'effect', rarity:'legendario', css:'box-shadow:0 0 0 3px #ff9a5a,0 0 46px rgba(255,120,40,.75)'},
+  {id:'f_diamond',t:'Marco Diamante', kind:'frame',  rarity:'legendario', css:'box-shadow:0 0 0 3px #bfe9ff,0 0 40px rgba(143,208,255,.8),inset 0 0 24px rgba(255,255,255,.15)'},
+  {id:'e_rainbow',t:'Arcoíris Real',  kind:'effect', rarity:'legendario', css:'box-shadow:0 0 0 3px #ff5a5a,0 0 0 6px #e8b13e,0 0 34px #35c2cf'},
+  {id:'f_solar',  t:'Corona Solar',   kind:'frame',  rarity:'legendario', css:'box-shadow:0 0 0 3px #ffd15a,0 0 30px #ff9a2a,0 0 60px rgba(255,154,42,.7)'},
 ];
 function cosmeticById(id){ return COSMETICS.find(c=>c.id===id); }
 function rollCosmetic(){ const tot=Object.values(RARITY).reduce((s,r)=>s+r.w,0); let x=Math.random()*tot, pick='comun';
@@ -2264,15 +2303,40 @@ function buildGacha(){
     h+='</div>'; }
   box.innerHTML=h;
 }
+let _gcSpinning=false;
 function openPack(){
+  if(_gcSpinning)return;
   const e=econ(); if(e.packs<=0){ flashSaved('No tienes sobres'); return; }
   e.packs--; const c=rollCosmetic(); e.owned=e.owned||[]; const dup=e.owned.indexOf(c.id)>=0;
   if(!dup)e.owned.push(c.id); else e.coins+=20;
   saveEcon(e);
-  const r=RARITY[c.rarity]; const stage=document.getElementById('gachaStage');
-  if(stage){ stage.innerHTML='<div class="gacha-reveal" id="gachaReveal" style="--rc:'+r.c+'"><span class="rev-prev" style="'+c.css+'"></span></div><div class="gacha-cap"><b style="color:'+r.c+'">'+r.t+'</b> · '+c.t+(dup?' · duplicado (+20 monedas)':'')+'</div>'; }
-  if(window.anime){ const rev=document.getElementById('gachaReveal'); if(rev)anime({targets:rev,scale:[0.2,1],rotate:[-20,0],opacity:[0,1],duration:700,easing:'easeOutBack'}); }
-  setTimeout(buildGacha, 1700);
+  spinCarousel(c,dup);
+}
+/* carrusel que gira y se detiene en el premio, con dos triángulos al centro */
+function spinCarousel(winner,dup){
+  const stage=document.getElementById('gachaStage'); if(!stage){ setTimeout(buildGacha,200); return; }
+  _gcSpinning=true;
+  const CELL=96, WIN_AT=42; // ancho de celda (88+2*4) y posición del premio
+  const cells=[]; for(let i=0;i<WIN_AT+9;i++){ cells.push(i===WIN_AT?winner:COSMETICS[Math.floor(Math.random()*COSMETICS.length)]); }
+  let html='<div class="gacha-carousel" id="gcWrap"><div class="gc-seam"></div><div class="gc-ptr top"></div><div class="gc-ptr bot"></div><div class="gc-track" id="gcTrack">';
+  cells.forEach(c=>{ const r=RARITY[c.rarity]; html+='<div class="gc-cell" style="--rc:'+r.c+'"><span class="gc-prev" style="'+c.css+'"></span><span class="gc-nm">'+c.t+'</span></div>'; });
+  html+='</div></div><div class="gacha-cap" id="gachaCap">Girando…</div>';
+  stage.innerHTML=html;
+  const wrap=document.getElementById('gcWrap'), track=document.getElementById('gcTrack');
+  requestAnimationFrame(()=>{ const cw=wrap.clientWidth;
+    const jitter=(Math.random()*40-20);
+    const target=(WIN_AT*CELL)-(cw/2-CELL/2)+jitter;
+    track.style.transition='transform 4.1s cubic-bezier(.11,.72,.16,1)';
+    track.style.transform='translateX('+(-target)+'px)';
+  });
+  setTimeout(()=>{ const cw=wrap.clientWidth; const exact=(WIN_AT*CELL)-(cw/2-CELL/2);
+    track.style.transition='transform .32s ease-out'; track.style.transform='translateX('+(-exact)+'px)';
+    const cellEls=track.querySelectorAll('.gc-cell'); if(cellEls[WIN_AT])cellEls[WIN_AT].classList.add('win');
+    const r=RARITY[winner.rarity]; const cap=document.getElementById('gachaCap');
+    if(cap)cap.innerHTML='<b style="color:'+r.c+'">'+r.t+'</b> · '+winner.t+(dup?' · duplicado (+20 monedas)':'');
+    try{ if(navigator.vibrate)navigator.vibrate(r.w<=11?[20,40,60]:25); }catch(x){}
+  }, 4150);
+  setTimeout(()=>{ _gcSpinning=false; buildGacha(); }, 6400);
 }
 const PACK_COST=150;
 function buyPack(){ const e=econ(); if(e.coins<PACK_COST){ flashSaved('Te faltan '+(PACK_COST-e.coins)+' monedas'); return; } e.coins-=PACK_COST; e.packs++; saveEcon(e); buildGacha(); flashSaved('Sobre comprado ✓ · '+e.coins+' monedas'); }
@@ -3413,7 +3477,10 @@ function requestJoinTeam(teamCode,teamName,teamAccount){
   flashSaved('Solicitud enviada a '+teamName+' ✓');
 }
 /* roles de la cuenta (súper admin solo para tu correo) + cómo entra */
-function accountRoles(){ const u=userData()||{}; let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); if((u.email||'').toLowerCase()===SUPER_EMAIL && r.indexOf('superadmin')<0) r.unshift('superadmin'); return r; }
+const ALL_HATS=['superadmin','admin_liga','dueno','coach','padre','jugador','aficionado'];
+function accountRoles(){ const u=userData()||{};
+  if((u.email||'').toLowerCase()===SUPER_EMAIL) return ALL_HATS.slice(); // súper admin: todos los sombreros
+  let r=(u.roles&&u.roles.length)?u.roles.slice():(u.role?[u.role]:['aficionado']); return r; }
 function openRoleSwitch(){
   const roles=accountRoles(); if(roles.length<=1){ openProfile(); return; }
   const sheet=document.querySelector('#sheet .sheet'); if(!sheet)return;
@@ -3508,10 +3575,11 @@ function drawCardCanvas(cb){
   // marco (accesorio equipado)
   const hasFrame=u.econ&&u.econ.effect; x.strokeStyle=hasFrame?col:'rgba(255,255,255,.15)'; x.lineWidth=hasFrame?10:4; x.strokeRect(20,20,W-40,H-40);
   const draw=(photoImg)=>{
-    // ventana de foto
-    x.fillStyle='#0c1120'; roundRect(x,60,70,W-120,300,18,true,false);
-    if(photoImg){ x.save(); roundRect(x,60,70,W-120,300,18,false,false); x.clip(); const ar=photoImg.width/photoImg.height, tw=W-120, th=300; let dw=tw,dh=tw/ar; if(dh<th){dh=th;dw=th*ar;} x.drawImage(photoImg,60+(tw-dw)/2,70+(th-dh)/2,dw,dh); x.restore(); }
-    else { x.fillStyle=col; x.font='800 120px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,250); }
+    // ventanilla de foto: retrato (3:4), centrada — coincide con el recorte
+    const pw=258, ph=344, px=(W-pw)/2, py=64;
+    x.fillStyle='#0c1120'; roundRect(x,px,py,pw,ph,18,true,false);
+    if(photoImg){ x.save(); roundRect(x,px,py,pw,ph,18,false,false); x.clip(); const ar=photoImg.width/photoImg.height; let dw=pw,dh=pw/ar; if(dh<ph){dh=ph;dw=ph*ar;} x.drawImage(photoImg,px+(pw-dw)/2,py+(ph-dh)/2,dw,dh); x.restore(); }
+    else { x.fillStyle=col; x.font='800 120px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,py+ph/2+40); }
     // rango + general
     if(rating){ x.fillStyle=col; x.font='800 22px ui-monospace,monospace'; x.textAlign='left'; x.fillText('◆ '+(rating>=80?'ÉPICO':rating>=70?'ORO':rating>=60?'PLATA':'NUEVO'),50,55);
       x.textAlign='right'; x.font='800 60px -apple-system,sans-serif'; x.fillStyle='#fff'; x.fillText(rating,W-50,60); x.font='600 16px -apple-system,sans-serif'; x.fillStyle='rgba(255,255,255,.6)'; x.fillText('GENERAL',W-50,80); }
@@ -3628,7 +3696,7 @@ function openCrop(dataUrl,aspect,onSave){
   const fr=document.getElementById('cropFrame'); if(fr)fr.style.aspectRatio=String(CROP.aspect);
   const el=document.getElementById('cropImg'); if(!el)return;
   CROP.zoom=1.2; CROP.panX=0; CROP.panY=0;
-  const zc=document.getElementById('cropZoom'); if(zc)zc.value=120;
+  const zc=document.getElementById('cropZoom'); if(zc)zc.value=100;
   document.getElementById('cropBg').classList.add('on');
   // Un solo load, sobre la imagen visible. Evita la carrera en iOS donde la
   // primera foto tras abrir la cámara no disparaba el onload de una 2ª imagen.
