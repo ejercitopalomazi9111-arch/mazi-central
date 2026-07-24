@@ -1989,7 +1989,10 @@ const TEAM_COLORS=['--papa','--publico','--coach','--liga','--jugador','--mesa']
 function seedLeague(){
   return {name:'Mi liga', teams:[], calendar:[], admins:[]};
 }
-function leagueData(){try{const s=localStorage.getItem('lm_league');if(s)return JSON.parse(s);}catch(e){}const d=seedLeague();saveLeague(d);return d;}
+function leagueData(){try{const s=localStorage.getItem('lm_league');if(s)return JSON.parse(s);}catch(e){}return seedLeague();/* NO se persiste: evita la "Mi liga" fantasma en cuentas que no crearon liga */}
+/* ¿esta cuenta creó de verdad una liga? (solo admin_liga con nombre real) */
+function ownsRealLeague(){const u=userData()||{};const roles=u.roles||[];const d=leagueData();
+  return roles.indexOf('admin_liga')>=0 && !!d && !!d.name && d.name!=='Mi liga';}
 function saveLeague(d){try{localStorage.setItem('lm_league',JSON.stringify(d));}catch(e){} cloudPushSoon();}
 function teamById(id){return leagueData().teams.find(t=>t.id===id);}
 /* panel de la liga: números reales + identidad */
@@ -2150,7 +2153,7 @@ function buildEnVivoBoard(){
   const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx).sort((a,b)=>bydate(a.m,b.m)).slice(0,10);
   if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
     up.forEach(x=>{ const m=x.m; const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'');
+      const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
       h+=faceoffCard(H,A,{mode:'next',when:when});
       if(canOfficiate(m)) h+='<div class="le-officiate" style="margin:-6px 0 10px" onclick="officiateMatch('+x.i+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir este partido (eres la mesa)</div>'; }); }
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
@@ -2372,22 +2375,25 @@ function buildPapaHome(){
   if(up.length){
     h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Próximos en la liga</h2></div>';
     up.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      h+='<div class="match"><div class="when">J'+m.jornada+'</div><div class="vs">'+H.name+' vs '+A.name+'<small>'+(d.name||'')+'</small></div></div>'; });
+      h+='<div class="match"><div class="when">J'+m.jornada+'</div><div class="vs">'+H.name+' vs '+A.name+'<small>'+(d.name||'')+(m.place?' · '+m.place:'')+(m.time?' · '+m.time:'')+'</small></div></div>'; });
   }
   box.innerHTML=h;
 }
 /* Mis ligas: la liga real de la cuenta + acciones honestas por rol */
 function buildMisLigas(){
   const box=document.getElementById('ligasList'); if(!box)return;
-  const u=userData()||{}; const rl=u.role||'aficionado'; const d=leagueData();
+  const u=userData()||{}; const rl=u.role||'aficionado'; const roles=u.roles||[]; const d=leagueData();
   let h='';
-  if(d && d.name){
+  if(ownsRealLeague()){
     const dest=(rl==='admin_liga')?'liga':(rl==='coach'||rl==='dueno')?'vestidor':(rl==='padre')?'rol':(rl==='jugador')?'carta':'publico';
-    const teams=d.teams.length, done=d.calendar.filter(m=>m.done).length, total=d.calendar.length;
+    const teams=(d.teams||[]).length, done=(d.calendar||[]).filter(m=>m.done).length, total=(d.calendar||[]).length;
     const style=d.logo?('background-image:url('+d.logo+');background-size:cover;background-position:center'):('background:var(--liga)');
     h+='<div class="leaguerow" onclick="openLeague(\''+dest+'\')"><div class="crest real" style="'+style+'">'+(d.logo?'':iniOf(d.name))+'</div><div><div class="nm">'+d.name+'</div><div class="mt">'+teams+' equipos · '+done+'/'+total+' partidos</div></div><span class="hat" style="color:var(--liga)">'+(ROLE_LABEL[rl]||'Público')+'</span></div>';
+  } else if((roles.indexOf('jugador')>=0 && u.playerTeamCode) || (u.team && u.team.code)){
+    // jugador o dueño: mostramos su equipo y (si se puede) en qué liga está — nada de liga fantasma
+    h+='<div id="myTeamLeague"><div class="stratnote" style="border-left-color:var(--publico)">Buscando tu equipo y su liga…</div></div>';
   } else {
-    h+='<div class="stratnote" style="border-left-color:var(--liga)">Aún no estás en ninguna liga. Crea la tuya o únete con un enlace de invitación.</div>';
+    h+='<div class="stratnote" style="border-left-color:var(--liga)">Aún no sigues ninguna liga. Búscala en el directorio por nombre o código, o síguela para ver su tabla y calendario.</div>';
   }
   // ligas que sigues (del directorio)
   const fl=u.followLeagues||[];
@@ -2397,6 +2403,24 @@ function buildMisLigas(){
   if(rl==='admin_liga') h+='<div class="leaguerow create" onclick="go(\'liga\')">＋ Gestionar mi liga</div>';
   h+='<div class="leaguerow create" style="border-color:rgba(232,177,62,.4);color:var(--liga)" onclick="go(\'directorio\')"><svg class="ic" style="width:16px;height:16px;vertical-align:-2px"><use href="#ic-trophy"/></svg> Buscar ligas (directorio)</div>';
   h+='<div class="leaguerow create" style="border-color:rgba(53,194,207,.35);color:var(--publico)" onclick="go(\'publico\')">Explorar marcadores en vivo</div>';
+  box.innerHTML=h;
+  if(document.getElementById('myTeamLeague'))resolveMyTeamLeague();
+}
+/* muestra el equipo del jugador/dueño y en qué liga está (real, cross-cuenta) — nunca liga fantasma */
+async function resolveMyTeamLeague(){ const box=document.getElementById('myTeamLeague'); if(!box)return;
+  const u=userData()||{}; const teamCode=(u.team&&u.team.code)||u.playerTeamCode; if(!teamCode){ box.innerHTML=''; return; }
+  let team=null; try{ team=await fetchTeamByCode(teamCode); }catch(e){}
+  const tname=(team&&team.name)||(u.team&&u.team.name)||'Tu equipo';
+  const tlogo=(team&&team.logo)||(u.team&&u.team.logo)||null;
+  const tstyle=tlogo?('background-image:url('+tlogo+');background-size:cover;background-position:center'):'background:var(--papa)';
+  const dest=u.team?'vestidor':'carta';
+  let h='<div class="leaguerow" onclick="go(\''+dest+'\')"><div class="crest real" style="'+tstyle+'">'+(tlogo?'':iniOf(tname))+'</div><div style="flex:1"><div class="nm">'+tname+'</div><div class="mt"><b style="color:var(--papa)">'+teamCode+'</b> · tu equipo</div></div></div>';
+  const lcode=(team&&team.league_code)||(u.team&&u.team.league_code)||'';
+  if(lcode){ let lg=null; try{ lg=await leagueAccountByCode(lcode); }catch(e){}
+    if(lg){ const ls=lg.logo?('background-image:url('+lg.logo+');background-size:cover;background-position:center'):'background:var(--liga)'; const ln=(lg.name||'Liga').replace(/\x27/g,"\\\x27");
+      h+='<div class="leaguerow" onclick="openPublicLeague(\''+lg.account_id+'\',\''+ln+'\')"><div class="crest real" style="'+ls+'">'+(lg.logo?'':iniOf(lg.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(lg.name||'Liga')+'</div><div class="mt">Tu equipo juega aquí · ver tabla ›</div></div><span class="hat" style="color:var(--liga)">Su liga</span></div>'; }
+    else { h+='<div class="stratnote" style="border-left-color:var(--dim)">Tu equipo está en una liga que aún no carga. Reintenta con conexión.</div>'; }
+  } else { h+='<div class="stratnote" style="border-left-color:var(--dim)">Tu equipo aún no está en una liga. Cuando entre a una, la verás aquí.</div>'; }
   box.innerHTML=h;
 }
 /* solicitar meter mi equipo a una liga del directorio (usa el flujo real de aprobación) */
@@ -2663,13 +2687,17 @@ function bracketData(){ try{const s=localStorage.getItem('lm_bracket');if(s)retu
 function saveBracket(b){ try{localStorage.setItem('lm_bracket',JSON.stringify(b));}catch(e){} }
 function genBracket(){
   const rows=computeStandings().slice(0,4);
-  if(rows.length<4){ flashSaved('La liguilla necesita al menos 4 equipos en la tabla'); return; }
-  saveBracket({ semis:[{a:rows[0].t.id,b:rows[3].t.id,w:null},{a:rows[1].t.id,b:rows[2].t.id,w:null}], final:{a:null,b:null,w:null} });
-  buildBracket();
+  if(rows.length<2){ flashSaved('Se necesitan al menos 2 equipos en la tabla para armar la liguilla'); return; }
+  const id=i=>rows[i].t.id; let b;
+  if(rows.length===2){ b={ semis:[], final:{a:id(0),b:id(1),w:null} }; }
+  else if(rows.length===3){ b={ semis:[{a:id(1),b:id(2),w:null,slot:'b'}], final:{a:id(0),b:null,w:null}, bye:id(0) }; }
+  else { b={ semis:[{a:id(0),b:id(3),w:null,slot:'a'},{a:id(1),b:id(2),w:null,slot:'b'}], final:{a:null,b:null,w:null} }; }
+  saveBracket(b); buildBracket();
+  flashSaved(rows.length===2?'Liguilla armada: la final ✓':(rows.length===3?'Liguilla armada (3 equipos: 1° pasa directo) ✓':'Liguilla armada ✓'));
 }
 function pickWinner(round,idx,teamId){
   if(currentRole!=='liga')return; const b=bracketData(); if(!b)return;
-  if(round==='semi'){ b.semis[idx].w=teamId; b.final[idx===0?'a':'b']=teamId; b.final.w=null; }
+  if(round==='semi'){ b.semis[idx].w=teamId; const slot=b.semis[idx].slot||(idx===0?'a':'b'); b.final[slot]=teamId; b.final.w=null; }
   else { b.final.w=teamId; }
   saveBracket(b); buildBracket();
 }
@@ -2685,18 +2713,23 @@ function buildBracket(){
   const b=bracketData(); const canEdit=currentRole==='liga';
   const played=computeStandings().filter(r=>r.pj>0).length;
   let h='';
-  if(canEdit){ h+='<button class="btn block" onclick="genBracket()" style="margin:2px 0 14px"><svg class="ic"><use href="#ic-flag"/></svg> '+(b?'Rehacer':'Armar')+' liguilla (top 4 de la tabla)</button>'; }
+  const nTeams=computeStandings().length;
+  if(canEdit){ h+='<button class="btn block" onclick="genBracket()" style="margin:2px 0 14px"><svg class="ic"><use href="#ic-flag"/></svg> '+(b?'Rehacer':'Armar')+' liguilla '+(nTeams<4?'(con los '+Math.max(nTeams,0)+' equipos)':'(top 4 de la tabla)')+'</button>'; }
   if(!b){
-    h+='<div class="stratnote" style="border-left-color:var(--liga)">'+(canEdit?'Arma la liguilla y saldrá el cuadro: 1° vs 4° y 2° vs 3°, ganadores a la final.':'La liga aún no arma la eliminatoria.')+(played<4?' <b>Se necesitan al menos 4 equipos con partidos jugados.</b>':'')+'</div>';
+    let msg;
+    if(nTeams<2){ msg='<b>Aún no hay equipos suficientes.</b> Se necesitan al menos <b>2 equipos</b> en la tabla para armar la liguilla. Inscribe equipos y juega algún partido.'; }
+    else { msg=canEdit?('Toca «Armar liguilla» y saldrá el cuadro. Con <b>'+nTeams+' equipo'+(nTeams>1?'s':'')+'</b>: '+(nTeams===2?'final directa 1° vs 2°.':(nTeams===3?'el 1° pasa directo a la final y 2° vs 3° en semifinal.':'1° vs 4° y 2° vs 3°, ganadores a la final.'))):'La liga aún no arma la eliminatoria.'; }
+    h+='<div class="stratnote" style="border-left-color:var(--liga)">'+msg+'</div>';
     box.innerHTML=h; return;
   }
   const champ=b.final.w?teamById(b.final.w):null;
   h+='<div class="brk">';
-  h+='<div class="brk-col"><div class="brk-lbl">Semifinales</div>'+
-     '<div class="brk-match">'+brkTeam('semi',0,b.semis[0].a,b.semis[0].w)+brkTeam('semi',0,b.semis[0].b,b.semis[0].w)+'</div>'+
-     '<div class="brk-match">'+brkTeam('semi',1,b.semis[1].a,b.semis[1].w)+brkTeam('semi',1,b.semis[1].b,b.semis[1].w)+'</div></div>';
+  if(b.semis&&b.semis.length){ h+='<div class="brk-col"><div class="brk-lbl">Semifinal'+(b.semis.length>1?'es':'')+'</div>';
+    b.semis.forEach((s,i)=>{ h+='<div class="brk-match">'+brkTeam('semi',i,s.a,s.w)+brkTeam('semi',i,s.b,s.w)+'</div>'; });
+    h+='</div>'; }
   h+='<div class="brk-col"><div class="brk-lbl">Final</div>'+
-     '<div class="brk-match">'+brkTeam('final',0,b.final.a,b.final.w)+brkTeam('final',0,b.final.b,b.final.w)+'</div></div>';
+     '<div class="brk-match">'+brkTeam('final',0,b.final.a,b.final.w)+brkTeam('final',0,b.final.b,b.final.w)+'</div>'+
+     (b.bye?'<div class="brk-lbl" style="margin-top:6px;color:var(--dim)">1° pasa directo</div>':'')+'</div>';
   h+='</div>';
   if(champ){ h+='<div class="brk-champ"><span class="crest real" style="background:var('+champ.color+')">'+champ.ini+'</span><div><div class="ck">Campeón</div><div class="cn">'+champ.name+'</div></div></div>'; }
   else if(canEdit){ h+='<div class="stratnote" style="border-left-color:var(--liga);margin-top:12px">Toca al ganador de cada llave para hacerlo avanzar.</div>'; }
