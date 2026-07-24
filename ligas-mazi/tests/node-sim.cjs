@@ -441,6 +441,13 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       return { ok: p2 > p1 && p3 > p2, detail: 'sencillo=' + p1.toFixed(2) + '%  avanzado=' + p2.toFixed(2) + '%  armado=' + p3.toFixed(2) + '%' };
     });
 
+    await goal('Burbujas + reacción + sonido en score/foul/sub no truenan', async () => {
+      const has = get("typeof bubbleOnPlayer==='function' && typeof reactTokenAt==='function' && typeof tokenElFor==='function'");
+      // simulacro de estado de partido y llamadas — no debe tronar aunque no haya DOM real
+      const r = get("(function(){try{ GAME.teams=[{name:'H',color:'--papa',players:[{num:'7',nm:'Kevin',pts:0,f:0,min:0,on:true}]},{name:'A',color:'--publico',players:[{num:'10',nm:'Rival',pts:0,f:0,min:0,on:true}]}]; bubbleOnPlayer(0,0,'score3'); bubbleOnPlayer(0,0,'foul'); bubbleOnPlayer(0,0,'sub_out'); return 'ok'; }catch(e){return 'THREW:'+e.message;}})()");
+      return { ok: has && r === 'ok', detail: 'has=' + has + ' llamada=' + r };
+    });
+
     await goal('flashEvent con evento válido no truena y define color por tipo', async () => {
       const types = ['score1','score2','score3','foul','foul_hot','foulout','tech','steal','block','sub_in','buzzer','clutch'];
       const missing = types.filter(t => !get("!!EVT_STYLES['" + t + "']"));
