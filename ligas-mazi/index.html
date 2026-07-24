@@ -1440,6 +1440,8 @@ async function pollInvitations(){
       else if(inv.kind==='join_team') pushNote('request',(inv.player_name||'Un jugador')+' quiere unirse a tu equipo'+(inv.team_name?' '+inv.team_name:''),{action:'approve_player_team',player:inv.player_name,playerCode:inv.player_code,from:inv.from_account,invId:inv.id});
       else if(inv.kind==='team_approved'){ pushNote('ok','Tu equipo "'+(inv.team_name||'')+'" fue aceptado en '+(inv.league_name||'la liga'),{invId:inv.id}); const uu=userData(); if(uu.team){uu.team.status='aprobado'; if(inv.league_code)uu.team.league_code=inv.league_code; saveUser(uu);publishMyEntities();} }
       else if(inv.kind==='player_approved'){ pushNote('ok','Fuiste aceptado en el equipo '+(inv.team_name||''),{invId:inv.id}); const uu=userData(); if(uu.playerCode){uu.playerStatus='aprobado';saveUser(uu);publishMyEntities();} }
+      else if(inv.kind==='team_rejected'){ pushNote('info','Tu solicitud a '+(inv.league_name||'la liga')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.team){ if(uu.team.status==='pendiente')uu.team.status='solo'; uu.team.reqLeagues=(uu.team.reqLeagues||[]).filter(a=>a!==inv.from_account); saveUser(uu);publishMyEntities(); } }
+      else if(inv.kind==='player_rejected'){ pushNote('info','Tu solicitud al equipo '+(inv.team_name||'')+' no fue aceptada'+(inv.reason?' · '+inv.reason:''),{invId:inv.id}); const uu=userData(); if(uu.playerStatus==='pendiente'){uu.playerStatus='libre';saveUser(uu);publishMyEntities();} }
       added++; try{ await c.from('invitations').update({status:'delivered'}).eq('id',inv.id); }catch(x){}
     }
     if(added)refreshBell(); return added;
@@ -2340,7 +2342,13 @@ function requestJoinLeagueTeam(leagueAccount,leagueName){
   try{ sendInvite('','join_league',{to_account:leagueAccount, league_name:leagueName, team_name:u.team.name, team_code:u.team.code}); }catch(e){}
   flashSaved('Solicitud enviada a '+(leagueName||'la liga')+' ✓');
 }
-function declineInvite(id){ const n=notes(); const i=n.findIndex(y=>y.id===id); if(i<0)return; n.splice(i,1); saveNotes(n); buildInbox(); flashSaved('Solicitud rechazada'); }
+function declineInvite(id){ const n=notes(); const i=n.findIndex(y=>y.id===id); if(i<0)return; const x=n[i];
+  // avisarle de vuelta al que mandó la solicitud
+  try{
+    if(x.action==='approve_team_league'&&x.from){ const d=leagueData(); sendInvite('','team_rejected',{to_account:x.from, league_name:(d&&d.name)||'la liga'}); }
+    else if(x.action==='approve_player_team'&&x.from){ const u=userData()||{}; sendInvite('','player_rejected',{to_account:x.from, team_name:(u.team&&u.team.name)||'el equipo'}); }
+  }catch(e){}
+  n.splice(i,1); saveNotes(n); buildInbox(); flashSaved('Solicitud rechazada'); }
 function buildPapaHome(){
   const box=document.getElementById('papaHome'); if(!box)return;
   const u=userData()||{}; const d=leagueData(); const kids=u.children||[];
