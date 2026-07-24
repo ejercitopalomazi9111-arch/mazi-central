@@ -63,6 +63,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .disp{font-family:var(--disp);text-transform:uppercase;font-weight:800;letter-spacing:.02em;line-height:.95}
 .eyebrow{font-family:var(--body);font-weight:600;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
 .mono{font-family:var(--mono)} .dim{color:var(--dim)}
+.chip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s}
+.chip.on{background:var(--jugador);border-color:var(--jugador);color:#0b0d12}
+.chiprow,.fc-whose{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;-webkit-overflow-scrolling:touch}
+.chiprow::-webkit-scrollbar,.fc-whose::-webkit-scrollbar{display:none}
 
 /* ENTRADA */
 .hero{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(.9) contrast(1.05) brightness(.5)}
@@ -1152,6 +1156,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="topbar"><button class="backbtn" onclick="goBack()">‹</button><span class="ttl">Ficha del jugador</span><span class="coins" onclick="shareCard()" style="cursor:pointer"><svg class="ic"><use href="#ic-share"/></svg> Presumir</span></div>
     <div class="scroll">
       <input type="file" id="cardPhotoInput" accept="image/*" style="display:none" onchange="onCardPhoto(event)">
+      <div id="fcWhose" class="fc-whose" style="display:none;padding-left:14px;padding-right:14px"></div>
       <div class="pcard" id="pcard">
         <span class="rk" id="fcRank" style="background:linear-gradient(90deg,#8b93a3,#c7cdd8)">◆ NUEVO</span><div class="ov" id="fcOv"><b>—</b><small>GENERAL</small></div>
         <div class="photo" id="fcPhoto" onclick="document.getElementById('cardPhotoInput').click()"><span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span></div>
@@ -1463,7 +1468,7 @@ async function pollInvitations(){
 async function sbRestore(){
   const c=sbClient(); if(!c)return false;
   try{ const {data}=await c.auth.getSession();
-    if(data&&data.session){ _session=data.session; _authed=true; await cloudPull(); try{pollInvitations();}catch(e){} try{pollMatchResults();}catch(e){} reflectAuth(); return true; }
+    if(data&&data.session){ guardAccountSwitch((data.session.user||{}).email); _session=data.session; _authed=true; await cloudPull(); try{pollInvitations();}catch(e){} try{pollMatchResults();}catch(e){} reflectAuth(); return true; }
   }catch(e){}
   return false;
 }
@@ -1507,7 +1512,7 @@ function render(id){
   if(id==='marcador')drawCourt();
   if(id==='mesa')buildMesa();
   if(id==='tienda'){buildShop();const sl=document.getElementById('shopLeague');if(sl){const d=leagueData();sl.textContent=(d&&d.name&&d.name!=='Mi liga')?d.name:'Tu liga';}}
-  if(id==='vestidor'){buildRoster();buildCoachSubs();const vt=document.getElementById('vestTeam');if(vt){const d=leagueData();const t=coachTeamIn(d);vt.textContent=t?t.name:'Tu equipo';}}
+  if(id==='vestidor'){buildRoster();buildCoachSubs();const vt=document.getElementById('vestTeam');if(vt){const t=coachTeamIn(leagueData());vt.textContent=t?t.name:'Tu equipo';}}
   if(id==='alta')buildAlta();
   if(id==='logros')buildLogros();
   if(id==='gacha')buildGacha();
@@ -2903,10 +2908,21 @@ function _matchMeInLeague(u,lg){ if(!lg||!lg.teams)return null;
     if(curp && pl.curp && pl.curp.toUpperCase()===curp) return {team:t,player:pl};
     if(nm && (pl.nm||'').trim().toLowerCase()===nm) return {team:t,player:pl};
   }} return null; }
-function findLeaguePlayer(u){ u=u||userData()||{};
-  const local=_matchMeInLeague(u, leagueData());
+/* ¿de quién es la carta que se ve ahora mismo? -1 = de la propia cuenta, >=0 = de ese hij@.
+   Esto evita que la carta de un papá que también es jugador se mezcle con la de su hij@. */
+let _cardViewChild=-1;
+function cardSubject(){
+  const u=userData()||{};
+  if(_cardViewChild>=0 && u.children && u.children[_cardViewChild]){
+    const k=u.children[_cardViewChild];
+    return {isChild:true, idx:_cardViewChild, name:k.name, num:k.num, pos:k.pos, curp:k.curp, photo:k.photo||null, playerCode:k.code, email:'', team:null, league:null, econ:u.econ};
+  }
+  return {isChild:false, idx:-1, name:u.name, num:u.num, pos:u.pos, curp:u.curp, photo:u.photo||null, playerCode:u.playerCode, email:u.email, team:u.team, league:u.league, econ:u.econ};
+}
+function findLeaguePlayer(subj){ subj=subj||cardSubject();
+  const local=_matchMeInLeague(subj, leagueData());
   if(local) return local;
-  if(_cardRemote) return _cardRemote;   // hallado en una liga compartida
+  if(_cardRemote && (_cardRemote.forIdx||-1)===(subj.idx||-1)) return _cardRemote;   // hallado en una liga compartida
   return null; }
 /* busca al jugador (esta cuenta) en las ligas compartidas que sigue → llena su carta aunque la liga sea de otra cuenta */
 async function leagueAccountByCode(code){ const c=sbClient(); if(!c||!code)return null; try{ const {data}=await c.from('public_leagues').select('account_id,name,logo,teams').eq('code',code).maybeSingle(); return data||null; }catch(e){ return null; } }
@@ -2925,25 +2941,26 @@ async function syncApprovedTeams(){
       if(JSON.stringify((t.players||[]).map(p=>p.code||p.nm))!==JSON.stringify(merged.map(p=>p.code||p.nm))){ t.players=merged; changed=true; }
       if(tp.name&&tp.name!==t.name){ t.name=tp.name; t.ini=iniOf(tp.name); changed=true; }
       if(tp.logo&&tp.logo!==t.logo){ t.logo=tp.logo; changed=true; }
+      if(tp.color&&tp.color!==t.color){ t.color=tp.color; changed=true; }
     }
   }catch(e){}
   _syncingTeams=false;
   if(changed){ saveLeague(d); cloudPushNow(); if(document.getElementById('s-liga')&&document.getElementById('s-liga').classList.contains('on'))buildLeagueTeams(); }
 }
-async function enrichCardFromShared(u){
-  u=u||userData()||{}; if(!u.email && !u.curp && !u.playerCode)return;
+async function enrichCardFromShared(subj){
+  subj=subj||cardSubject(); const u=userData()||{}; if(!subj.email && !subj.curp && !subj.playerCode)return;
   const tried={};
   const tryAcc=async(acc,name)=>{ if(!acc||acc==='local'||tried[acc])return false; tried[acc]=1;
-    try{ const lg=await fetchLeagueFull(acc); const m=_matchMeInLeague(u,lg);
-      if(m){ _cardRemote={team:m.team, player:m.player, leagueName:(lg&&lg.name)||name};
+    try{ const lg=await fetchLeagueFull(acc); const m=_matchMeInLeague(subj,lg);
+      if(m){ _cardRemote={team:m.team, player:m.player, leagueName:(lg&&lg.name)||name, forIdx:(subj.idx||-1)};
         // auto-sigue esa liga para que la vea en su lista
         const uu=userData()||{}; uu.followLeagues=uu.followLeagues||[];
         if(!uu.followLeagues.some(l=>l.account_id===acc)){ uu.followLeagues.push({account_id:acc,name:(lg&&lg.name)||name,logo:(lg&&lg.logo)||null,teams:((lg&&lg.teams)||[]).length}); saveUser(uu); }
         renderCard(); return true; } }catch(e){} return false; };
-  // 1) ligas que ya sigue
+  // 1) ligas que ya sigue (esta cuenta)
   for(const l of (u.followLeagues||[])){ if(await tryAcc(l.account_id,l.name))return; }
-  // 2) cadena equipo -> liga (si el jugador se unió a un equipo que entró a una liga)
-  if(u.playerTeamCode){ try{ const t=await fetchTeamByCode(u.playerTeamCode);
+  // 2) cadena equipo -> liga (solo aplica a la identidad propia de la cuenta, no a un hij@)
+  if(!subj.isChild && u.playerTeamCode){ try{ const t=await fetchTeamByCode(u.playerTeamCode);
     if(t&&t.league_code){ const la=await leagueAccountByCode(t.league_code); if(la&&await tryAcc(la.account_id,la.name))return; } }catch(e){} }
 }
 function buildMesa(){
@@ -3159,14 +3176,14 @@ function fulfillPurchase(id){ const c=sbClient(); if(!c)return;
   c.from('purchases').update({status:'done'}).eq('id',id).then(()=>{ flashSaved('Entregado ✓'); fetchPurchases().then(list=>{ SHOP_PURCH=(list||[]); renderPurchases(true); }); }); }
 /* ---- ROSTER: dar de alta agrega de verdad, aparece en el vestidor ---- */
 /* el roster real del equipo = u.team.players (identidad); respaldo local para modo demo */
-function teamRoster(){const u=userData()||{};
-  if(u.team&&Array.isArray(u.team.players)&&u.team.players.length)
-    return u.team.players.map(p=>({code:p.code,num:p.num,nm:p.nm||p.name||'Jugador',pos:p.pos||'Jugador',ppp:p.ppp||'0.0'}));
+function teamRoster(){const u=userData()||{}; const t=u.team||u.coachTeam;
+  if(t&&Array.isArray(t.players)&&t.players.length)
+    return t.players.map(p=>({code:p.code,num:p.num,nm:p.nm||p.name||'Jugador',pos:p.pos||'Jugador',ppp:p.ppp||'0.0'}));
   try{const s=localStorage.getItem('lm_roster');if(s)return JSON.parse(s);}catch(e){}
   return [];}
 function saveRoster(a){try{localStorage.setItem('lm_roster',JSON.stringify(a));}catch(e){}}
-function removeFromTeam(i){const u=userData()||{};
-  if(u.team&&Array.isArray(u.team.players)&&u.team.players.length){ u.team.players.splice(i,1); saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){} }
+function removeFromTeam(i){const u=userData()||{}; const t=u.team||u.coachTeam;
+  if(t&&Array.isArray(t.players)&&t.players.length){ t.players.splice(i,1); saveCoachTeam(t); }
   else { const r=teamRoster(); r.splice(i,1); saveRoster(r); }
   buildRoster(); flashSaved('Quitado del roster');}
 function buildRoster(){const l=document.getElementById('rosterList'); if(!l)return; const r=teamRoster(); l.innerHTML='';
@@ -3218,6 +3235,7 @@ function buildAlta(){
     if(ttl)ttl.textContent='Vincular a mi hij@';
     box.innerHTML='<div class="eyebrow" style="margin:0 0 4px">Datos del jugador</div>'+
       '<input class="field" id="altaName" placeholder="Nombre completo de tu hij@">'+
+      '<div style="display:flex;gap:8px"><input class="field" id="altaNum" type="number" inputmode="numeric" placeholder="# dorsal" style="width:110px"><input class="field" id="altaPos" placeholder="Posición (ej. Base)" style="flex:1"></div>'+
       '<div class="eyebrow" style="margin:10px 0 2px">CURP <span style="color:var(--dim)">— llave interna, privada</span></div>'+
       '<input class="field" id="altaCurp" maxlength="18" autocapitalize="characters" spellcheck="false" placeholder="CURP (18 caracteres)" oninput="this.value=this.value.toUpperCase();altaCurpLive()">'+
       '<div id="altaCurpInfo" style="margin:4px 0"></div>'+privacy+
@@ -3261,10 +3279,13 @@ function invitePlayerToTeam(code,name,acct){ const u=userData()||{}; if(!u.team)
   sendInvite('','team_invite',{to_account:acct, team_name:u.team.name, team_code:u.team.code, player_name:name, player_code:code});
   flashSaved('Invitación enviada a '+name+' ✓');
 }
-/* el papá vincula a su hij@ por CURP: se ancla a su cuenta, nunca visible en claro */
+/* el papá vincula a su hij@ por CURP: se ancla a su cuenta, nunca visible en claro.
+   Cada hij@ tiene su PROPIO código/número/posición — nunca se mezcla con el perfil del papá. */
 function saveChild(){
   const u=userData()||{};
   const nm=(document.getElementById('altaName').value||'').trim();
+  const num=(document.getElementById('altaNum').value||'').trim();
+  const pos=(document.getElementById('altaPos').value||'').trim()||'Base';
   const curp=(document.getElementById('altaCurp').value||'').trim().toUpperCase();
   if(!nm){ flashSaved('Escribe el nombre de tu hij@'); return; }
   if(!curpValid(curp)){ flashSaved('Revisa el CURP (18 caracteres)'); return; }
@@ -3272,12 +3293,12 @@ function saveChild(){
   u.children=u.children||[];
   if(u.children.some(k=>k.curp===curp)){ flashSaved('Ya vinculaste a este jugador'); return; }
   const age=curpAge(curp);
-  u.children.push({name:nm, curp:curp, minor:(age!=null&&age<18), age:age, linkedAt:Date.now()});
+  u.children.push({name:nm, num:num, pos:pos, curp:curp, code:genEntityCode('J-'), minor:(age!=null&&age<18), age:age, linkedAt:Date.now()});
   saveUser(u);
   try{ pushNote('hijo','Vinculaste a '+nm+(age!=null&&age<18?' (menor)':'')); }catch(x){}
   flashSaved('Hij@ vinculad@ ✓'); go('rol');
 }
-function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return; u.children.splice(i,1); saveUser(u); buildPapaHome(); } }
+function unlinkChild(i){ const u=userData()||{}; if(u.children&&u.children[i]){ if(!confirm('¿Desvincular a '+(u.children[i].name||'tu hij@')+'?'))return; u.children.splice(i,1); if(_cardViewChild>=u.children.length)_cardViewChild=-1; saveUser(u); buildPapaHome(); } }
 function savePlayer(){const nm=(document.getElementById('altaName').value||'').trim();
   if(!nm){flashSaved('Escribe el nombre del jugador');return;}
   if(!document.getElementById('altaResp').textContent){flashSaved('Falta la responsiva de los padres');return;}
@@ -3337,7 +3358,7 @@ function resetDemo(){
 }
 function doLogout(){
   try{ if(typeof sbSignOut==='function')sbSignOut(); }catch(e){}
-  try{ localStorage.removeItem('lm_user'); }catch(e){}
+  clearLocalAccountCache(); // cierra sesión de verdad: nadie más que use este teléfono hereda nada
   _authed=false; _session=null; currentRole='publico'; setCloudBadge('','Modo local');
   closeProfile(); navStack.length=0; render('entrada');
 }
@@ -3366,8 +3387,22 @@ let signupRoles=['admin_liga'];
 const SUPER_EMAIL='palomazi9111@gmail.com';
 /* ===== Propiedad de la liga: solo su dueño/admins pueden administrarla =====
    Esto evita que una cuenta nueva herede la liga de otra persona y se meta de admin. */
-function myEmail(){ return ((userData()||{}).email||'').toLowerCase(); }
+/* email real de la cuenta AUTENTICADA (nunca del perfil local, que puede ser de otra
+   cuenta que usó este teléfono antes): esto es lo que decide isSuperAdmin() */
+function myEmail(){ if(_session&&_session.user&&_session.user.email) return _session.user.email.toLowerCase(); return ((userData()||{}).email||'').toLowerCase(); }
 function isSuperAdmin(){ return myEmail()===SUPER_EMAIL; }
+/* borra el perfil/liga/roster de ESTE teléfono al detectar que entra una cuenta distinta
+   a la que dejó datos guardados: evita que una cuenta nueva "herede" monedas, rol de
+   súper admin o cualquier otro dato de quien usó el dispositivo antes (bug real: dos
+   personas comparten teléfono, la segunda cuenta heredaba los beneficios de la primera) */
+function clearLocalAccountCache(){
+  ['lm_user','lm_league','lm_roster','lm_bracket','lm_strat','lm_products'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+}
+function guardAccountSwitch(sessionEmail){
+  const em=(sessionEmail||'').toLowerCase(); if(!em)return;
+  const cached=((userData()||{}).email||'').toLowerCase();
+  if(cached && cached!==em) clearLocalAccountCache();
+}
 function leagueClaimed(d){ d=d||leagueData(); return !!((d&&d.owner) || (d&&d.admins&&d.admins.length)); }
 function canAdminLeague(d){ d=d||leagueData(); const em=myEmail(); if(!em)return false; if(isSuperAdmin())return true;
   const admins=((d&&d.admins)||[]).map(x=>String(x).toLowerCase()); const owner=((d&&d.owner)||'').toLowerCase();
@@ -3410,14 +3445,14 @@ function applySignupEntities(u){
     const d={name:nm, owner:u.email, admins:[u.email], code:genEntityCode('L-'), teams:[], calendar:[], link:''};
     saveLeague(d); }
   if(has('dueno')||has('coach')){ const nm=gv('upTeam')||(u.name+' · equipo');
-    u.team={ code:genEntityCode('E-'), name:nm, ini:iniOf(nm), color:'--papa', players:[], status:'solo', league_code:'' }; }
+    u.team={ code:genEntityCode('E-'), name:nm, ini:iniOf(nm), color:'--papa', players:[], status:'solo', league_code:'', owner:(u.email||'').toLowerCase(), coaches:[] }; }
   if(has('jugador')){ u.num=gv('upNum'); u.pos=gv('upPos')||'Base'; u.playerCode=genEntityCode('J-'); }
   saveUser(u);
 }
 /* red de seguridad: si una cuenta (ya creada o parcial) no tiene su entidad según su rol, la crea */
 function ensureMyEntities(){
   const u=userData()||{}; const has=(r)=>(u.roles||[]).indexOf(r)>=0; let ch=false;
-  if((has('dueno')||has('coach')) && !u.team){ u.team={ code:genEntityCode('E-'), name:(u.name||'Mi')+' · equipo', ini:iniOf((u.name||'Mi')+' · equipo'), color:'--papa', players:[], status:'solo', league_code:'' }; ch=true; }
+  if((has('dueno')||has('coach')) && !u.team){ u.team={ code:genEntityCode('E-'), name:(u.name||'Mi')+' · equipo', ini:iniOf((u.name||'Mi')+' · equipo'), color:'--papa', players:[], status:'solo', league_code:'', owner:(u.email||'').toLowerCase(), coaches:[] }; ch=true; }
   if(has('jugador') && !u.playerCode){ u.playerCode=genEntityCode('J-'); u.pos=u.pos||'Base'; ch=true; }
   if(ch)saveUser(u);
   try{ publishMyEntities(); }catch(e){}
@@ -3425,7 +3460,7 @@ function ensureMyEntities(){
 /* publica las entidades del usuario a las tablas públicas (para que se puedan buscar) */
 async function publishMyEntities(){
   const c=sbClient(); if(!c||!_authed||!_session)return; const u=userData()||{}; const uid=_session.user.id;
-  try{ if(u.team){ await c.from('teams_public').upsert({account_id:uid, code:u.team.code, name:u.team.name, logo:u.team.logo||null, color:u.team.color||'--papa', league_code:u.team.league_code||null, status:u.team.status||'solo', players:u.team.players||[], updated_at:new Date().toISOString()}); } }catch(e){}
+  try{ if(u.team){ await c.from('teams_public').upsert({account_id:uid, code:u.team.code, name:u.team.name, logo:u.team.logo||null, color:u.team.color||'--papa', league_code:u.team.league_code||null, status:u.team.status||'solo', players:u.team.players||[], coaches:u.team.coaches||[], updated_at:new Date().toISOString()}); } }catch(e){}
   try{ if(u.playerCode){ await c.from('players_public').upsert({account_id:uid, code:u.playerCode, name:u.name||'', email:(u.email||'').toLowerCase()||null, num:u.num||null, pos:u.pos||null, photo:u.photo||null, team_code:u.playerTeamCode||null, status:u.playerStatus||'libre', updated_at:new Date().toISOString()}); } }catch(e){}
 }
 /* buscador universal: ligas, equipos y jugadores por NOMBRE o CÓDIGO */
@@ -3461,13 +3496,24 @@ function renderSearchResults(r,q){
     r.leagues.forEach(l=>{ const st=l.logo?('background-image:url('+l.logo+');background-size:cover;background-position:center'):'background:var(--liga)'; const nmEsc=(l.name||'').replace(/\x27/g,"\\\x27");
       h+='<div class="leaguerow"><div class="crest real" style="cursor:pointer;'+st+'" onclick="openPublicLeague(\''+l.account_id+'\',\''+nmEsc+'\')">'+(l.logo?'':iniOf(l.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(l.name||'Liga')+'</div><div class="mt">'+(l.code?'<b style="color:var(--liga)">'+l.code+'</b> · ':'')+(l.teams||0)+' equipos</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn sm" onclick="openPublicLeague(\''+l.account_id+'\',\''+nmEsc+'\')">Ver</button>'+(iAmOwner?'<button class="btn ghost sm" onclick="requestJoinLeagueTeam(\''+l.account_id+'\',\''+nmEsc+'\')">Solicitar</button>':'')+'</div></div>'; }); }
   if(r.teams.length){ h+='<div class="eyebrow" style="margin:10px 2px 6px">Equipos</div>';
+    const myEm=myEmail();
     r.teams.forEach(t=>{ const st=t.logo?('background-image:url('+t.logo+');background-size:cover;background-position:center'):('background:var('+(t.color||'--papa')+')');
-      h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(t.logo?'':iniOf(t.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(t.name||'Equipo')+'</div><div class="mt"><b style="color:var(--papa)">'+t.code+'</b> · '+(t.status==='aprobado'?'en una liga':'libre')+'</div></div>'+(iAmPlayer?'<button class="btn sm" onclick="requestJoinTeam(\''+t.code+'\',\''+(t.name||'').replace(/\x27/g,"\\\x27")+'\',\''+t.account_id+'\')">Unirme</button>':'')+'</div>'; }); }
+      const iAmCoach=myEm && (t.coaches||[]).map(x=>String(x).toLowerCase()).indexOf(myEm)>=0;
+      const tnEsc=(t.name||'').replace(/\x27/g,"\\\x27");
+      h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(t.logo?'':iniOf(t.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(t.name||'Equipo')+'</div><div class="mt"><b style="color:var(--papa)">'+t.code+'</b> · '+(t.status==='aprobado'?'en una liga':'libre')+'</div></div>'+
+        (iAmPlayer?'<button class="btn sm" onclick="requestJoinTeam(\''+t.code+'\',\''+tnEsc+'\',\''+t.account_id+'\')">Unirme</button>':'')+
+        (iAmCoach?'<button class="btn sm" onclick=\'claimCoachTeam('+JSON.stringify(t).replace(/\x27/g,"&#39;")+')\'>Gestionar (soy coach)</button>':'')+
+        '</div>'; }); }
   if(r.players.length){ h+='<div class="eyebrow" style="margin:10px 2px 6px">Jugadores</div>';
     r.players.forEach(pl=>{ const st=pl.photo?('background-image:url('+pl.photo+');background-size:cover;background-position:center'):'background:var(--jugador)';
       h+='<div class="leaguerow"><div class="crest real" style="'+st+'">'+(pl.photo?'':iniOf(pl.name||'?'))+'</div><div style="flex:1"><div class="nm">'+(pl.name||'Jugador')+(pl.num?' · #'+pl.num:'')+'</div><div class="mt"><b style="color:var(--jugador)">'+pl.code+'</b> · '+(pl.pos||'')+'</div></div></div>'; }); }
   box.innerHTML=h;
 }
+/* un coach invitado (no dueño) "reclama" gestionar un equipo donde el dueño lo listó
+   en coaches[]; queda cacheado localmente y se escribe directo a teams_public (permitido
+   por RLS a quien esté en coaches, ver tp_upd_coach) */
+function claimCoachTeam(t){ const u=userData()||{}; u.coachTeam=t; u.roles=u.roles||[]; if(u.roles.indexOf('coach')<0)u.roles.push('coach'); u.role='coach'; saveUser(u);
+  flashSaved('Ahora gestionas '+(t.name||'el equipo')+' ✓'); currentRole='coach'; go('vestidor'); }
 /* un jugador se postula a un equipo (por código): queda pendiente y le avisa al dueño */
 function requestJoinTeam(teamCode,teamName,teamAccount){
   const u=userData()||{}; if((u.roles||[]).indexOf('jugador')<0){ flashSaved('Solo un jugador puede unirse a un equipo'); return; }
@@ -3497,7 +3543,7 @@ function setAuthMode(m){
   loginMsg(''); if(m==='up')buildRolePick();
 }
 function applyRoleFromUser(){ const u=userData()||{}; if(u.role){ currentRole=ROLE_INTERNAL[u.role]||'publico'; } }
-function enterAppWithRole(){ _cardRemote=null; _cardSearched=false; ensureMyEntities(); applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }
+function enterAppWithRole(){ _cardRemote=null; _cardSearched=false; _cardViewChild=-1; ensureMyEntities(); applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }
 /* recorrido guiado la primera vez, según el rol */
 const ONBOARD={
   liga:{k:'Administras una liga',steps:[['trophy','Crea tu liga','Ponle nombre y escudo en “Mi liga”.'],['people','Inscribe equipos y jugadores','Da de alta con su CURP (privado).'],['calendar','Arma el calendario','Genera el rol todos contra todos.'],['live','Dirige en la mesa','Anota puntos y faltas en vivo; la tabla se actualiza sola.']]},
@@ -3521,7 +3567,8 @@ function doSignup(){
   if(!/.+@.+\..+/.test(email)){loginMsg('Escribe un correo válido.',true);return;}
   if(pass.length<6){loginMsg('La contraseña necesita al menos 6 caracteres.',true);return;}
   const roles=signupRoles.slice(); if(email.toLowerCase()===SUPER_EMAIL && roles.indexOf('superadmin')<0) roles.unshift('superadmin');
-  const u=userData()||{}; u.name=name; u.email=email; u.roles=roles; u.role=roles[0]; saveUser(u);
+  clearLocalAccountCache(); // cuenta nueva: nunca hereda el perfil/liga/monedas de quien usó este teléfono antes
+  const u={}; u.name=name; u.email=email; u.roles=roles; u.role=roles[0]; saveUser(u);
   applySignupEntities(u);   // crea SU liga / equipo / jugador (una sola vez, con código)
   const c=sbClient();
   if(!c){ loginMsg('Cuenta creada en este teléfono (sin nube).'); enterAppWithRole(); return; }
@@ -3555,15 +3602,15 @@ function doSignin(){
       if(m.includes('confirm')) loginMsg('Tu correo aún no está confirmado. Revisa tu bandeja.',true);
       else loginMsg('Correo o contraseña incorrectos.',true);
       setCloudBadge('','Modo local'); return; }
-    if(r.data && r.data.session){ _session=r.data.session; _authed=true; reflectAuth();
-      cloudPull().then(()=>{ hideLoader(); applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }); }
+    if(r.data && r.data.session){ guardAccountSwitch((r.data.session.user||{}).email); _session=r.data.session; _authed=true; reflectAuth();
+      cloudPull().then(()=>{ hideLoader(); _cardRemote=null; _cardSearched=false; _cardViewChild=-1; applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }); }
   }).catch(()=>{ hideLoader(); loginMsg('No se pudo conectar a la nube.',true); setCloudBadge('','Modo local'); });
 }
 function doLogin(){ doSignin(); }   /* compat */
 function shareCard(){ shareCardImage(); }
 /* genera la carta como imagen (Canvas, sin librerías) para presumir/descargar */
 function drawCardCanvas(cb){
-  const u=userData()||{}; const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
+  const u=cardSubject(); const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
   const cvar=(link&&link.team.color)||'--jugador';
   const cssVal=(v)=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#35c2cf';
   const col=cssVal(cvar); const rating=avg?Math.max(45,Math.min(99,Math.round(48+avg.ppg*2.6-avg.fpg*1.5))):null;
@@ -3612,25 +3659,43 @@ function shareCardImage(){
     },'image/png');
   });
 }
+/* chips "Yo" / hij@s arriba de la carta — evita que se mezclen identidades cuando
+   la misma cuenta es papá Y jugador, o cuando el papá tiene varios hij@s */
+function buildCardSubjectPicker(){
+  const box=document.getElementById('fcWhose'); if(!box)return;
+  const u=userData()||{}; const kids=u.children||[];
+  const iAmAlsoPlayer=!!(u.playerCode||u.num||currentRole==='jugador');
+  if(!kids.length || (!iAmAlsoPlayer && kids.length===1)){ box.innerHTML=''; box.style.display='none'; if(!kids.length)_cardViewChild=-1; else _cardViewChild=0; return; }
+  box.style.display='flex';
+  let h='';
+  if(iAmAlsoPlayer) h+='<button class="chip'+(_cardViewChild===-1?' on':'')+'" onclick="switchCardSubject(-1)">Yo</button>';
+  kids.forEach((k,i)=>{ h+='<button class="chip'+(_cardViewChild===i?' on':'')+'" onclick="switchCardSubject('+i+')">'+(k.name||'Hij@ '+(i+1))+'</button>'; });
+  box.innerHTML=h;
+  if(_cardViewChild===-1 && !iAmAlsoPlayer && kids.length)_cardViewChild=0;
+}
+function switchCardSubject(i){ _cardViewChild=i; _cardSearched=false; renderCard(); buildCardSubjectPicker(); }
 function renderCard(){
-  const u=userData()||{};
-  // accesorio/efecto equipado del gachapón
+  const u=userData()||{}; const subj=cardSubject();
+  buildCardSubjectPicker();
+  // accesorio/efecto equipado del gachapón (siempre de la cuenta, no del hij@)
   const pc=document.getElementById('pcard');
   if(pc){ const e=(u.econ&&u.econ.effect)?cosmeticById(u.econ.effect):null; pc.style.cssText=e?e.css:''; }
-  // ¿la cuenta corresponde a un jugador registrado de la liga?
-  const link=findLeaguePlayer(u); const avg=link?playerAverages(link.player):null;
+  // ¿el sujeto (yo o el hij@ elegido) es un jugador registrado de la liga?
+  const link=findLeaguePlayer(subj); const avg=link?playerAverages(link.player):null;
   // si no lo hallamos localmente, búscalo (una vez) en las ligas compartidas que sigue
-  if(!link && !_cardSearched && (u.email||u.curp)){ _cardSearched=true; enrichCardFromShared(u); }
-  const remoteName=(link&&link===_cardRemote)?_cardRemote.leagueName:((leagueData()||{}).name||'Liga');
-  // solo un jugador registrado (o alguien con identidad de jugador) tiene carta personal;
+  if(!link && !_cardSearched && (subj.email||subj.curp)){ _cardSearched=true; enrichCardFromShared(subj); }
+  const remoteName=(link&&_cardRemote&&link===_cardRemote)?_cardRemote.leagueName:((leagueData()||{}).name||'Liga');
+  // solo un jugador registrado (o con identidad de jugador) tiene carta personal;
   // dueños de liga / coach / público NO deben aparecer como un jugador fantasma con su propio nombre.
-  const isPlayer=!!link || currentRole==='jugador' || !!u.num;
-  const nm=document.getElementById('fcName'); if(nm)nm.textContent=isPlayer?(u.name||'Tu carta'):'Tu carta';
+  const isPlayer=!!link || subj.isChild || (currentRole==='jugador'&&!subj.isChild) || !!subj.num;
+  const nm=document.getElementById('fcName'); if(nm)nm.textContent=isPlayer?(subj.name||'Tu carta'):'Tu carta';
   // club/subtítulo: equipo + liga + número si se conocen
   const club=document.getElementById('fcClub');
-  if(club){ const parts=[]; if(u.team)parts.push(u.team); if(u.league)parts.push(u.league); if(u.num)parts.push('#'+u.num);
+  if(club){ const parts=[]; if(subj.team)parts.push(subj.team); if(subj.league)parts.push(subj.league); if(subj.num)parts.push('#'+subj.num);
     club.textContent=parts.length?parts.join(' · '):(isPlayer?'Aún sin equipo':'Aún no eres jugador registrado'); }
-  if(isPlayer&&u.photo){ const ph=document.getElementById('fcPhoto'); if(ph){ph.style.backgroundImage='url('+u.photo+')';ph.classList.add('has-photo');ph.innerHTML='';} }
+  const ph=document.getElementById('fcPhoto');
+  if(ph){ if(isPlayer&&subj.photo){ ph.style.backgroundImage='url('+subj.photo+')';ph.classList.add('has-photo');ph.innerHTML=''; }
+    else { ph.style.backgroundImage='';ph.classList.remove('has-photo');ph.innerHTML='<span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span>'; } }
   const note=(txt)=>'<div class="stratnote" style="border-left-color:var(--jugador)">'+txt+'</div>';
   // si no es jugador, muestra estado honesto (no una carta con su nombre)
   if(!isPlayer){
@@ -3673,13 +3738,18 @@ function renderCard(){
     '<div style="font-weight:800;color:var(--txt);margin:8px 0 4px">Tu carta se arma sola</div>'+
     '<div style="font-size:13px;max-width:280px;margin:0 auto">Cuando la mesa registre tus partidos (puntos, faltas, minutos), aquí aparecerán tu general y tus números.</div></div>';
   ['fc-resumen','fc-atributos','fc-vitrina','fc-historial'].forEach(id=>{const p=document.getElementById(id);if(p)p.innerHTML=empty;});
-  const r=document.getElementById('fc-historial'); if(r&&(link||u.team))r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+((link&&link.team.name)||u.team)+'<small>'+(u.league||'Liga')+' · actual</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
+  const r=document.getElementById('fc-historial'); if(r&&(link||subj.team))r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+((link&&link.team.name)||subj.team)+'<small>'+(subj.league||'Liga')+' · actual</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
 }
 /* subir foto: se redimensiona en el teléfono (sin GPS, sin subir nada crudo) */
 function onCardPhoto(ev){
   const f=ev.target.files&&ev.target.files[0]; if(!f)return;
-  const fr=new FileReader();
-  fr.onload=()=>{ openCrop(fr.result, 0.75, function(url){const u=userData()||{};u.photo=url;saveUser(u);renderCard();}); };
+  const fr=new FileReader(); const childIdx=_cardViewChild;
+  fr.onload=()=>{ openCrop(fr.result, 0.75, function(url){
+    const u=userData()||{};
+    if(childIdx>=0 && u.children && u.children[childIdx]){ u.children[childIdx].photo=url; }
+    else { u.photo=url; }
+    saveUser(u); renderCard();
+  }); };
   fr.readAsDataURL(f); ev.target.value='';
 }
 /* subir escudo (1:1) — para equipo o liga, con recorte cuadrado */
@@ -3754,7 +3824,19 @@ function buildFanFollow(){
 function followTeam(id){ const u=userData()||{}; u.follows=(u.follows===id?null:id); saveUser(u); buildFanFollow(); fanBtnRefresh(); }
 /* ====== Coach: identidad del equipo (nombre + color de escudo), conectada a la liga ====== */
 const IDENTITY_COLORS=['--papa','--publico','--coach','--liga','--jugador','--mesa'];
-function coachTeamIn(d){ return d.teams.find(t=>t.id==='ti')||d.teams[0]; }
+/* el equipo del coach/dueño VIVE en su propio perfil (u.team) bajo el modelo de
+   identidad — no en leagueData().teams, que solo el ADMIN de la liga controla.
+   Si ya fue aprobado en una liga, editar aquí también actualiza esa copia cuando
+   la liga sincroniza (syncApprovedTeams lee de teams_public). */
+function coachTeamIn(d){ const u=userData()||{}; if(u.team)return u.team; if(u.coachTeam)return u.coachTeam; return (d&&d.teams&&(d.teams.find(t=>t.id==='ti')||d.teams[0]))||null; }
+/* soy dueño → guardo en mi propio perfil (u.team) y publico normal;
+   soy coach delegado de OTRA cuenta → escribo directo a teams_public (RLS lo permite
+   por estar en coaches[]) y refresco mi copia local en cache (u.coachTeam) */
+async function saveCoachTeam(t){ const u=userData()||{};
+  if(u.team){ u.team=t; saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){} return; }
+  if(u.coachTeam){ u.coachTeam=t; saveUser(u);
+    try{ const c=sbClient(); if(c&&t.account_id){ await c.from('teams_public').update({name:t.name,logo:t.logo||null,color:t.color||'--papa',players:t.players||[],coaches:t.coaches||[]}).eq('account_id',t.account_id); } }catch(e){} return; }
+}
 function toggleTeamIdentity(){ const box=document.getElementById('teamIdentity'); if(!box)return;
   const open=box.style.display!=='none'; box.style.display=open?'none':'block'; if(!open)buildTeamIdentity(); }
 /* escudo del equipo: imagen si la subió, si no color + iniciales */
@@ -3762,9 +3844,11 @@ function crestStyle(t){ return t.logo ? ('background-image:url('+t.logo+');backg
 function crestInner(t){ return t.logo ? '' : (t.ini||''); }
 function buildTeamIdentity(){
   const box=document.getElementById('teamIdentity'); if(!box)return;
-  const t=coachTeamIn(leagueData()); if(!t){box.innerHTML='';return;}
+  const t=coachTeamIn(leagueData());
+  if(!t){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--coach)">Aún no tienes equipo. Se crea al registrarte como dueño/coach.</div>'; return; }
+  const u=userData()||{}; const iAmOwner=!!u.team; // solo el dueño asigna/quita coaches
   let sw=''; IDENTITY_COLORS.forEach(c=>{ sw+='<button class="tid-sw'+(t.color===c?' on':'')+'" style="background:var('+c+')" onclick="setTeamColor(\''+c+'\')"></button>'; });
-  box.innerHTML='<div class="card"><div class="kick">Identidad de '+t.name+'</div>'+
+  let h='<div class="card"><div class="kick">Identidad de '+t.name+'</div>'+
     '<div class="le-add" style="margin-top:6px"><input id="tidName" value="'+t.name.replace(/"/g,'&quot;')+'" placeholder="Nombre del equipo"><button class="btn sm" onclick="setTeamName()">Guardar</button></div>'+
     '<div class="tid-lbl">Escudo</div>'+
     '<button class="btn ghost sm block" onclick="setTeamLogo()"><svg class="ic"><use href="#ic-camera"/></svg> '+(t.logo?'Cambiar imagen del escudo':'Subir imagen del escudo')+'</button>'+
@@ -3772,12 +3856,28 @@ function buildTeamIdentity(){
     '<div class="tid-lbl">Color (si no usas imagen)</div>'+
     '<div class="tid-swatches">'+sw+'</div>'+
     '<div class="tid-preview"><span class="crest real" style="'+crestStyle(t)+'">'+crestInner(t)+'</span><span style="color:#c7cdd8;font-size:13px">Así se ve tu escudo en toda la liga</span></div></div>';
+  if(iAmOwner){
+    const coaches=t.coaches||[];
+    h+='<div class="card" style="margin-top:10px"><div class="kick">Otros líderes / coaches</div>'+
+      '<p style="font-size:12.5px;color:var(--muted);margin:2px 0 8px">Dales el correo con el que se registraron. Podrán editar la identidad y el roster de tu equipo desde su propia cuenta.</p>'+
+      '<div class="le-add"><input id="tidCoachEmail" type="email" placeholder="correo@ejemplo.com"><button class="btn sm" onclick="addTeamCoach()">Agregar</button></div>';
+    if(coaches.length){ coaches.forEach((em,i)=>{ h+='<div class="leaguerow" style="padding:8px 10px"><div style="flex:1;font-size:13px">'+em+'</div><button class="le-x" onclick="removeTeamCoach('+i+')">×</button></div>'; }); }
+    else h+='<div class="stratnote" style="border-left-color:var(--dim);margin-top:6px">Aún no agregas coaches. Solo tú administras el equipo.</div>';
+    h+='</div>';
+  } else if(u.coachTeam){ h+='<div class="stratnote" style="border-left-color:var(--coach);margin-top:10px">Gestionas este equipo como coach invitado por su dueño.</div>'; }
+  box.innerHTML=h;
 }
-function setTeamLogo(){ pickLogo(function(url){ const d=leagueData(); const t=coachTeamIn(d); if(t){t.logo=url;saveLeague(d);buildTeamIdentity();} }); }
+function addTeamCoach(){ const t=coachTeamIn(leagueData()); const em=(document.getElementById('tidCoachEmail').value||'').trim().toLowerCase();
+  if(!t||!/.+@.+\..+/.test(em)){ flashSaved('Escribe un correo válido'); return; }
+  t.coaches=t.coaches||[]; if(t.coaches.indexOf(em)>=0){ flashSaved('Ya está en la lista'); return; }
+  t.coaches.push(em); saveCoachTeam(t); buildTeamIdentity(); flashSaved('Coach agregado ✓');
+}
+function removeTeamCoach(i){ const t=coachTeamIn(leagueData()); if(!t||!t.coaches)return; t.coaches.splice(i,1); saveCoachTeam(t); buildTeamIdentity(); flashSaved('Coach quitado'); }
+function setTeamLogo(){ pickLogo(function(url){ const t=coachTeamIn(leagueData()); if(t){t.logo=url;saveCoachTeam(t);buildTeamIdentity();} }); }
 function teamLogoFor(id){ if(!canAdminLeague())return; pickLogo(function(url){ const d=leagueData(); const t=d.teams.find(x=>x.id===id); if(t){t.logo=url;saveLeague(d);buildLeagueTeams();} }); }
-function clearTeamLogo(){ const d=leagueData(); const t=coachTeamIn(d); if(t){delete t.logo;saveLeague(d);buildTeamIdentity();} }
-function setTeamColor(c){ const d=leagueData(); const t=coachTeamIn(d); if(t){t.color=c;saveLeague(d);buildTeamIdentity();} }
-function setTeamName(){ const d=leagueData(); const t=coachTeamIn(d); const v=(document.getElementById('tidName').value||'').trim(); if(t&&v){t.name=v;t.ini=iniOf(v);saveLeague(d);buildTeamIdentity();flashSaved("Equipo guardado ✓");} }
+function clearTeamLogo(){ const t=coachTeamIn(leagueData()); if(t){delete t.logo;saveCoachTeam(t);buildTeamIdentity();} }
+function setTeamColor(c){ const t=coachTeamIn(leagueData()); if(t){t.color=c;saveCoachTeam(t);buildTeamIdentity();} }
+function setTeamName(){ const t=coachTeamIn(leagueData()); const v=(document.getElementById('tidName').value||'').trim(); if(t&&v){t.name=v;t.ini=iniOf(v);saveCoachTeam(t);buildTeamIdentity();flashSaved("Equipo guardado ✓");} }
 function tk(el){el.classList.toggle('on');}
 function fcTab(el,which){
   [...el.parentElement.children].forEach(t=>t.classList.remove('on')); el.classList.add('on');

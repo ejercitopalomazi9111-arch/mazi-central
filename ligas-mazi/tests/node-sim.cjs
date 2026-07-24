@@ -100,6 +100,14 @@ async function registrarse(name, email, roles, f) {
   R('doSignup();'); await wait(60);
 }
 async function entrar(email) { setField('inEmail', email); setField('inPass', 'Prueba123'); R('doSignin();'); await wait(80); }
+/* como registrarse(), pero SIN limpiar localStorage antes: simula que otra persona toma
+   el mismo telefono/sesion de navegador sin cerrar sesion explicitamente primero. */
+async function registrarseRaw(name, email, roles, f) {
+  R(`signupRoles=${JSON.stringify(roles)};buildSignupEntity();`);
+  setField('upName', name); setField('upEmail', email); setField('upPass', 'Prueba123');
+  if (f.league) setField('upLeague', f.league); if (f.team) setField('upTeam', f.team); if (f.num) setField('upNum', f.num);
+  R('doSignup();'); await wait(60);
+}
 const get = (expr) => R('(' + expr + ')');
 // Si la cadena trae sentencias (var/return/try/;) se ejecuta como cuerpo; si no, como expresión.
 const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ? expr : ('return (' + expr + ');'));
@@ -258,12 +266,80 @@ const getA = (expr) => RA(/\b(var|let|const|return|try|if|for)\b|;/.test(expr) ?
       return { ok: !!joined && inRoster, detail: 'joined=' + joined + ' inRoster=' + inRoster };
     });
 
+    await goal('Dueño asigna un co-coach; el coach edita el equipo desde SU cuenta', async () => {
+      // el dueño de Lobos (dueno3@t.mx) agrega a coachy@t.mx como coach
+      await entrar('dueno3@t.mx'); await wait(40);
+      R(`buildTeamIdentity();`); await wait(20);
+      setField('tidCoachEmail', 'coachy@t.mx');
+      R(`addTeamCoach();`); await wait(80);
+      const teamCode = get("(userData().team||{}).code");
+      const listed = get("((userData().team||{}).coaches||[]).indexOf('coachy@t.mx')>=0");
+      if (!listed) return { ok: false, detail: 'el dueño no logró agregar al coach' };
+      // coachy crea SU PROPIA cuenta (nunca tuvo equipo) y busca el equipo por código
+      await registrarse('Coachy Invitado', 'coachy@t.mx', ['jugador'], { num: '0' }); await wait(60);
+      const found = await getA("(await searchEntities('" + teamCode + "')).teams[0]");
+      if (!found || !found.code) return { ok: false, detail: 'coachy no encontró el equipo al buscar' };
+      const canManage = (found.coaches || []).map(x => String(x).toLowerCase()).indexOf('coachy@t.mx') >= 0;
+      R(`claimCoachTeam(${JSON.stringify(found)});`); await wait(80);
+      const gotRole = get("(userData().roles||[]).indexOf('coach')>=0");
+      const gotTeamLocally = get("!!userData().coachTeam");
+      // coachy edita el nombre del equipo DESDE SU CUENTA (no es el dueño)
+      R(`buildTeamIdentity();`); await wait(20);
+      setField('tidName', 'Lobos FC (coach)');
+      R(`setTeamName();`); await wait(100);
+      // se debe reflejar en teams_public (fuente de verdad) bajo la cuenta del DUEÑO
+      const nameInDB = get("(__DB.teams_public.find(t=>t.code==='" + teamCode + "')||{}).name");
+      return { ok: canManage && gotRole && gotTeamLocally && nameInDB === 'Lobos FC (coach)',
+        detail: 'puedeGestionar=' + canManage + ' rolCoach=' + gotRole + ' cache=' + gotTeamLocally + ' nombreEnDB=' + nameInDB };
+    });
+
+    await goal('Papá que también es jugador: su carta y la de su hij@ NO se mezclan', async () => {
+      await registrarse('Papa Jugador', 'papajug@t.mx', ['papa', 'jugador'], { num: '23' }); await wait(60);
+      // vincula a su hij@ con SU PROPIO numero/posicion (nunca los del papa)
+      R(`currentRole='papa';buildAlta();`); await wait(20);
+      setField('altaName', 'Hijo Test'); setField('altaNum', '7'); setField('altaPos', 'Alero');
+      setField('altaCurp', 'HEGG560427MVZRRL04');
+      R(`document.getElementById('altaResp').textContent='✓';`);
+      R(`saveChild();`); await wait(60);
+      const kid = get('(userData().children||[])[0]');
+      if (!kid || kid.num !== '7' || kid.pos !== 'Alero' || !kid.code) return { ok: false, detail: 'hij@ no quedo con num/pos/code propios: ' + JSON.stringify(kid) };
+      // viendo "Yo": debe ser el papa (jugador con num 23)
+      R(`go('carta');`); await wait(40);
+      const selfName = get("document.getElementById('fcName').textContent");
+      const selfNum = get('cardSubject().num');
+      // cambia a ver la carta del hij@
+      R(`switchCardSubject(0);`); await wait(40);
+      const kidName = get("document.getElementById('fcName').textContent");
+      const kidNum = get('cardSubject().num');
+      const kidPos = get('cardSubject().pos');
+      const noMix = selfName !== kidName && selfNum !== kidNum;
+      return { ok: selfName === 'Papa Jugador' && selfNum === '23' && kidName === 'Hijo Test' && kidNum === '7' && kidPos === 'Alero' && noMix,
+        detail: 'yo: ' + selfName + ' #' + selfNum + ' | hij@: ' + kidName + ' #' + kidNum + ' (' + kidPos + ')' };
+    });
+
     await goal('Cuenta de jugador NO crea liga fantasma "Mi liga"', async () => {
       await registrarse('Solo Jugador', 'jug5@t.mx', ['jugador'], { num: '3' }); await wait(60);
       const owns = get("ownsRealLeague()");
       const stored = get("(function(){try{var s=JSON.parse(localStorage.getItem('lm_league')||'null');return s?s.name:null;}catch(e){return 'ERR';}})()");
       // no debe considerarse dueño de liga, y si hay algo guardado no debe ser la fantasma propia
       return { ok: owns === false, detail: 'owns=' + owns + ' stored=' + stored };
+    });
+
+    await goal('Cuenta nueva NO hereda súper admin/monedas de quien usó el teléfono antes', async () => {
+      // Carlos (super admin) usa el telefono: entra, se da monedas, se queda "logueado" en el DOM/localStorage
+      R(`(async()=>{try{await __FAKE.auth.signOut();}catch(e){}})();`); R(`localStorage.removeItem('lm_user');localStorage.removeItem('lm_league');_authed=false;_session=null;`);
+      await registrarseRaw('Carlos Supremo', 'palomazi9111@gmail.com', ['admin_liga'], { league: 'Liga de Carlos' });
+      R(`(function(){var e=econ();e.coins=9999;saveEcon(e);})();`);
+      const carlosSuper = get('isSuperAdmin()'); const carlosCoins = get('econ().coins');
+      // AHORA otra persona toma el MISMO telefono y crea SU cuenta — SIN pasar por logout,
+      // exactamente como lo reporto el cliente ("otro usuario abre su cuenta en mi telefono")
+      await registrarseRaw('Pepito Normal', 'pepito@t.mx', ['jugador'], { num: '5' });
+      const inheritedSuper = get('isSuperAdmin()');
+      const pepitoCoins = get('(econ().coins||0)'); // solo sus PROPIOS logros de bienvenida, nunca los 9999 de Carlos
+      const gotOwnName = get('userData().name');
+      const gotOwnTeam = get('!!userData().team'); // Pepito es jugador, jamas debe traer el equipo/liga de Carlos
+      return { ok: carlosSuper===true && carlosCoins===9999 && inheritedSuper===false && pepitoCoins<500 && gotOwnName==='Pepito Normal' && !gotOwnTeam,
+        detail: 'carlos: super='+carlosSuper+' coins='+carlosCoins+' | pepito: super='+inheritedSuper+' coins='+pepitoCoins+' name='+gotOwnName+' team='+gotOwnTeam };
     });
 
   } catch (e) { journey('FATAL'); await goal('excepción del viaje', async () => ({ ok: false, detail: e.message })); }
