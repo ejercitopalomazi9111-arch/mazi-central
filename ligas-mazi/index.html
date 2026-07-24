@@ -352,8 +352,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .pcard .rk{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#0b0d12;background:linear-gradient(90deg,#ff9a5a,#a774f0);padding:4px 10px;border-radius:20px;font-weight:700;z-index:2}
 .pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:2}
 .pcard .ov b{font-family:var(--disp);font-weight:800;font-size:40px;line-height:.8;color:var(--accent-lt)} .pcard .ov small{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em}
-.pcard .photo{height:220px;margin:38px 14px 0;border-radius:10px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer}
-.pcard .photo.has-photo{border-style:solid;border-color:#2a313d;background-size:cover;background-position:center}
+.pcard .photo{width:min(60%,196px);aspect-ratio:3/4;height:auto;margin:30px auto 0;border-radius:12px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer}
+.pcard .photo.has-photo{border-style:solid;border-color:#2a313d;background-size:cover;background-position:center top}
 .pcard .nm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:26px;padding:12px 16px 2px} .pcard .club{font-size:12.5px;color:var(--dim);padding:0 16px}
 .pcard .stats{display:flex;gap:6px;padding:14px 16px 18px}
 .pcard .st{flex:1;text-align:center;background:rgba(7,9,13,.4);border:1px solid var(--line);border-radius:8px;padding:8px 4px}
@@ -1270,7 +1270,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="sheet"><h3 style="margin-bottom:12px">Ajusta tu foto</h3>
       <div class="crop-frame" id="cropFrame" onpointerdown="cropStart(event)" onpointermove="cropMove(event)" onpointerup="cropEnd()" onpointerleave="cropEnd()"><img id="cropImg" alt=""></div>
       <div class="crop-hint">Arrastra para mover · desliza para acercar</div>
-      <div class="crop-zoom"><span>−</span><input type="range" id="cropZoom" min="100" max="300" value="120" oninput="cropZoomTo(this.value)"><span>+</span></div>
+      <div class="crop-zoom"><span>−</span><input type="range" id="cropZoom" min="100" max="300" value="100" oninput="cropZoomTo(this.value)"><span>+</span></div>
       <button class="btn block" onclick="applyCrop()">Guardar foto</button>
       <button class="btn ghost sm block" onclick="closeCrop()" style="margin-top:8px">Cancelar</button>
     </div>
@@ -3518,10 +3518,11 @@ function drawCardCanvas(cb){
   // marco (accesorio equipado)
   const hasFrame=u.econ&&u.econ.effect; x.strokeStyle=hasFrame?col:'rgba(255,255,255,.15)'; x.lineWidth=hasFrame?10:4; x.strokeRect(20,20,W-40,H-40);
   const draw=(photoImg)=>{
-    // ventana de foto
-    x.fillStyle='#0c1120'; roundRect(x,60,70,W-120,300,18,true,false);
-    if(photoImg){ x.save(); roundRect(x,60,70,W-120,300,18,false,false); x.clip(); const ar=photoImg.width/photoImg.height, tw=W-120, th=300; let dw=tw,dh=tw/ar; if(dh<th){dh=th;dw=th*ar;} x.drawImage(photoImg,60+(tw-dw)/2,70+(th-dh)/2,dw,dh); x.restore(); }
-    else { x.fillStyle=col; x.font='800 120px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,250); }
+    // ventanilla de foto: retrato (3:4), centrada — coincide con el recorte
+    const pw=258, ph=344, px=(W-pw)/2, py=64;
+    x.fillStyle='#0c1120'; roundRect(x,px,py,pw,ph,18,true,false);
+    if(photoImg){ x.save(); roundRect(x,px,py,pw,ph,18,false,false); x.clip(); const ar=photoImg.width/photoImg.height; let dw=pw,dh=pw/ar; if(dh<ph){dh=ph;dw=ph*ar;} x.drawImage(photoImg,px+(pw-dw)/2,py+(ph-dh)/2,dw,dh); x.restore(); }
+    else { x.fillStyle=col; x.font='800 120px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,py+ph/2+40); }
     // rango + general
     if(rating){ x.fillStyle=col; x.font='800 22px ui-monospace,monospace'; x.textAlign='left'; x.fillText('◆ '+(rating>=80?'ÉPICO':rating>=70?'ORO':rating>=60?'PLATA':'NUEVO'),50,55);
       x.textAlign='right'; x.font='800 60px -apple-system,sans-serif'; x.fillStyle='#fff'; x.fillText(rating,W-50,60); x.font='600 16px -apple-system,sans-serif'; x.fillStyle='rgba(255,255,255,.6)'; x.fillText('GENERAL',W-50,80); }
@@ -3638,7 +3639,7 @@ function openCrop(dataUrl,aspect,onSave){
   const fr=document.getElementById('cropFrame'); if(fr)fr.style.aspectRatio=String(CROP.aspect);
   const el=document.getElementById('cropImg'); if(!el)return;
   CROP.zoom=1.2; CROP.panX=0; CROP.panY=0;
-  const zc=document.getElementById('cropZoom'); if(zc)zc.value=120;
+  const zc=document.getElementById('cropZoom'); if(zc)zc.value=100;
   document.getElementById('cropBg').classList.add('on');
   // Un solo load, sobre la imagen visible. Evita la carrera en iOS donde la
   // primera foto tras abrir la cámara no disparaba el onload de una 2ª imagen.
