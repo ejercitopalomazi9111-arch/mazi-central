@@ -184,19 +184,31 @@ Jugable ahí mismo, sin salir del sitio, con control táctil para teléfono.
 *"9111 pisos. Esto es lo que hacemos cuando nadie nos pone límites."*
 → El bug de morir **ya está arreglado** (sección 9).
 
-**5 · ICAMP** — el comercial
+**5 · La app de gestión** — el comercial en video
 Reproductor **nuestro**, no YouTube empotrado (regla de la sección 2). Video alojado en lo
 nuestro.
-→ **Bloqueado: necesito el archivo de video de Carlos.** Sin él la sección no existe.
+
+→ **OJO: ICAMP no es cliente.** Le hicimos un software para *ofrecérselo* y Carlos todavía no
+habla con ellos. Entonces en el sitio **no se nombra a ICAMP ni se usa su marca**:
+
+- Ponerlos de cliente sería mentir, y la primera persona que lo cache nos quema.
+- Usar su marca en nuestra publicidad antes de siquiera hablarles puede **quemar la venta**.
+- La forma correcta: se muestra como **software propio** ("plataforma de gestión que
+  construimos"), sin logos ni nombre de nadie. Si el video trae marca de ICAMP, se recorta o se
+  regraba con una versión neutra.
+- El video con marca sirve para **mandárselo a ICAMP**, no para colgarlo en la web.
+- Si algún día firman, se les pide permiso y ahí sí se nombra.
+
+→ **Bloqueado: necesito el archivo de video de Carlos.**
 
 **6 · Trabajo** — portafolio curado
 
-| Pieza | Qué prueba |
-|---|---|
-| **Ligas Mazi** | Plataforma real con cliente real: cuentas, pagos, privacidad de menores. La prueba **comercial**. |
-| **El Pacto Roto** | RPG con IA que narra y juzga, arte de museo. La prueba **técnica**. |
-| **ICAMP** | Que también hacemos video. |
-| **Torre Infinita** | Que llegamos hasta donde haga falta. |
+| Pieza | Qué prueba | Cómo se nombra |
+|---|---|---|
+| **Ligas Mazi** | Plataforma completa: cuentas, pagos, privacidad de menores. La prueba **comercial**. | por su nombre, es nuestra |
+| **El Pacto Roto** | RPG con IA que narra y juzga, arte de museo. La prueba **técnica**. | por su nombre, es nuestro |
+| **La app de gestión** | Que también hacemos video y software de negocio. | **sin nombrar a ICAMP** (ver arriba) |
+| **Torre Infinita** | Que llegamos hasta donde haga falta. | por su nombre, es nuestra |
 
 **No van** (dicho por Carlos): **Hoja de Romero** y **KERNEL://LOCK** — feos y sin terminar. No
 son portafolio.
@@ -208,7 +220,13 @@ De cada pieza se cuenta **qué problema resolvimos**, nunca cómo.
 Qué esperar: tiempos, entregas, quién te atiende.
 
 **8 · Contacto**
-Formulario **nuestro** (nada de Google Forms), WhatsApp directo y correo.
+Formulario **nuestro** (nada de Google Forms), más:
+
+- **WhatsApp empresarial:** `442 883 3786` (México, +52) → enlace directo `wa.me/524428833786`
+- **Correo:** `grupomazi.oficial@gmail.com`
+
+*Nota para después:* el correo es Gmail. Cuando haya dominio, pasa a `hola@grupomazi.com` — se
+ve serio y es un argumento más para comprar el dominio. El Gmail queda de respaldo.
 
 ### Proteger la propiedad sin parecer avaros
 
@@ -216,23 +234,36 @@ Lo que **sí** se enseña: el resultado, el movimiento, la sensación. Demos jug
 curadas.
 Lo que **no**: código fuente, arquitectura, stack, estructura de base de datos, precios.
 
-**Y una verdad incómoda que hay que atender antes que nada:**
-`torre-infinita` y `mazi-central` son **repos públicos hoy**. Cualquiera puede leer completo el
-código de la Torre, de Ligas Mazi y del Pacto Roto. Poner o no poner la web no cambia eso — ya
-está abierto. Si de verdad preocupa que nos copien, **el primer movimiento no es la web: es
-pasar los repos a privados y publicar sólo el build.** Es gratis y toma dos minutos.
+**Los repos siguen públicos — decisión de Carlos.** Su razón: nadie los conoce todavía. Es
+válida mientras no haya tráfico. Lo que hay que tener claro es que **el sitio es justo lo que
+va a traer ese tráfico**: en cuanto la web funcione, va a haber gente curioseando el nombre en
+GitHub. Así que el momento de revisarlo no es hoy, pero tampoco "algún día" — es **cuando el
+sitio empiece a traer visitas**. Queda anotado como disparador, no como pendiente vago.
 
 Bloquear el clic derecho y minificar es teatro; no lo voy a vender como seguridad.
+
+**Y la regla que no se rompe: no presumimos clientes que no son clientes.** Nada de logos
+ajenos ni "trabajamos con X" sin trato firmado. Es lo que más rápido quema la reputación de una
+empresa nueva, y además puede arruinar la venta que todavía no se hace.
 Lo que protege de verdad es que la ventaja no está en el código: está en la velocidad y el
 criterio. Un competidor puede copiar una animación. No puede copiar que armemos un RPG con IA
 en una semana.
 
-### Lo que necesito de Carlos para terminar el sitio
-1. **El video comercial de ICAMP** (el archivo).
-2. **Permiso para nombrar a ICAMP** como cliente.
-3. **Contacto real:** WhatsApp y correo de negocio.
-4. **Logo:** ¿los `icon-192/512.png` de la raíz son el logo oficial?
-5. **Dominio:** ¿compramos uno o nos quedamos en GitHub Pages por ahora?
+### Datos de la empresa (confirmados por Carlos, 25 jul 2026)
+- **WhatsApp empresarial:** 442 883 3786 (México)
+- **Correo:** grupomazi.oficial@gmail.com
+- **Logo:** el que hay es **provisional**. Carlos va a hacer el bueno después. El sitio se
+  construye para que cambiar el logo sea cambiar un archivo, no rehacer el diseño. Mientras
+  tanto la identidad carga en la **tipografía y el color**, no en el logo — así se ve
+  intencional en vez de inacabado.
+- **Repos:** se quedan **públicos por ahora**. Decisión de Carlos: nadie conoce los repos
+  todavía. Se revisa cuando el sitio empiece a traer visitas.
+
+### Lo que falta para terminar el sitio
+1. **El archivo del video** de la app de gestión.
+2. Confirmar si ese video **trae marca de ICAMP**; si sí, hay que recortarla o regrabar una
+   versión neutra antes de publicarlo.
+3. **Dominio:** ¿compramos uno o nos quedamos en GitHub Pages por ahora?
 
 ---
 
@@ -243,7 +274,7 @@ en una semana.
 | **Ligas Mazi** | Gestión de ligas de baloncesto. Supabase, cuentas reales, marcador en vivo, cartas coleccionables. | ✅ la más fuerte |
 | **El Pacto Roto** | RPG de mundo abierto, la magia se dibuja, IA narra. Arte de museo. | ✅ |
 | **Torre Infinita** | Roguelike Pokémon, 9111 pisos, Phaser 3. Repo aparte. | ✅ jugable |
-| **ICAMP** | App con comercial en video. | ✅ falta el archivo |
+| **App de gestión** | Software que hicimos para **ofrecérselo a ICAMP**. Todavía no hay trato ni plática con ellos: **ICAMP no es cliente**. Va al sitio sin nombrarlos. | ✅ sin marca ajena |
 | **VitalLink / Life-Connect** | Emergencias: centro de comando + app civil. | quizá |
 | **Hoja de Romero** | Sandbox de cocina. | ❌ Carlos: feo y sin terminar |
 | **KERNEL://LOCK** | Escape room con la tsundere. | ❌ Carlos: feo y sin terminar |
@@ -282,4 +313,8 @@ en una semana.
 - **La página se ve feísima en computadora.** Carlos lo vio y lo dejamos para cuando tenga una
   computadora a la mano para probar. Aplica al diseño de escritorio en general — todo se hizo
   pensando en el teléfono.
-- Falta el video de ICAMP y los datos de contacto (sección 6).
+- **Falta el archivo del video** de la app de gestión — y confirmar si trae marca de ICAMP,
+  porque en ese caso hay que quitarla antes de publicar (sección 6).
+- **Logo bueno.** El de ahora es provisional; Carlos hará el definitivo. El sitio se construye
+  para que cambiarlo sea cambiar un archivo.
+- **Revisar si los repos siguen públicos** cuando el sitio empiece a traer visitas.
