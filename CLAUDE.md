@@ -174,10 +174,8 @@ qué hacemos. Sin verborrea corporativa.
 Los seis servicios, una línea cada uno. **Sin listar tecnologías** — eso es entregarle la receta
 al competidor.
 
-**3 · Movimiento** — el laboratorio
-Cuatro a seis demos de animación **corriendo en vivo en la página**, que el visitante puede
-tocar y mover. Este es el argumento de venta real: *esto no lo saca una plantilla de Wix.*
-Reemplaza al portafolio de capturas muertas.
+**3 · Movimiento** — el laboratorio de animación
+El argumento de venta más fuerte que tenemos. Detalle completo en la sección 6-bis.
 
 **4 · Juega** — Torre Infinita empotrada
 Jugable ahí mismo, sin salir del sitio, con control táctil para teléfono.
@@ -267,6 +265,51 @@ en una semana.
 
 ---
 
+## 6-bis. El laboratorio de animación (sección 3 del sitio)
+
+**El problema que resuelve:** casi todos los portafolios de web enseñan capturas. Una captura de
+una animación es una imagen quieta — o sea, exactamente lo contrario de lo que estamos
+vendiendo. Nadie contrata a un animador viendo un JPG.
+
+**Lo que hace:** en vez de *enseñar* animaciones, el sitio **las corre en vivo y el visitante las
+toca**. Les pasa el dedo encima y responden; arrastra y se mueven. Eso no lo finge una plantilla
+de Wix, y el cliente lo siente en dos segundos sin que nadie le explique nada.
+
+### Las piezas — cuatro a seis, cada una probando algo distinto
+
+| Demo | Qué prueba | Por qué le importa al cliente |
+|---|---|---|
+| **Texto que se arma** | control fino de tiempos, entrada escalonada | es el hero de cualquier landing |
+| **Cuadrícula que reacciona al dedo** | respuesta al tacto, física | se siente caro, y en teléfono es lo que engancha |
+| **Números que cuentan** | datos animados | todo dashboard y todo reporte lo pide |
+| **Barra que rasca la animación** | control real, no autoplay | prueba que la manejamos, no que copiamos un efecto |
+| **Tarjeta que se transforma** | transición entre estados | es la "sensación de app" que todos quieren y casi nadie logra |
+
+Cada una en su recuadro, con **una línea** de qué es. Sin explicar **cómo** — eso es la receta.
+
+### Por qué conviene al negocio
+
+Estas piezas **no se construyen una vez y se tiran**: quedan como librería nuestra. La próxima
+vez que un cliente pida un landing con movimiento, ya está hecho. Se construye una vez y se
+cobra muchas — la misma lógica de la Fase 0.
+
+### Cómo convive con la regla del arte
+
+Aquí **el movimiento es el producto**, no un dibujo haciéndose pasar por arte. Una cuadrícula que
+ondula no está fingiendo ser una ilustración, es motion design — que es literalmente lo que
+vendemos. Pero en cuanto una demo necesite una **imagen**, esa imagen es real: una captura de un
+proyecto nuestro o una lámina de museo. **Nunca un dibujo hecho por código.**
+
+### Detalles de construcción
+- Anime.js **vendorizada** (`pacto-roto/js/vendor/anime.min.js` ya la tiene), nunca desde CDN.
+- Teléfono primero: todo tiene que responder al **dedo**, no sólo al ratón.
+- Respetar `prefers-reduced-motion`: si el visitante pidió menos movimiento, se le baja.
+- Cada demo aislada en su propio bloque, para poder arrancar con dos y agregar las demás sin
+  rehacer nada.
+- **No depende de nada de Carlos** — se puede construir sin el video ni el logo definitivo.
+
+---
+
 ## 7. Inventario de proyectos
 
 | Proyecto | Qué es | ¿Portafolio? |
@@ -304,6 +347,10 @@ en una semana.
   *parecía* funcionar porque los botones de la cabina son de `HudScene`, otra escena viva.
   Reproducido y verificado en Chromium headless. PR draft: `torre-infinita#1`.
 - **Ligas Mazi** estable en `main` (36/36 pruebas del simulador).
+
+### Lo siguiente (acordado el 25 jul, para el día siguiente)
+**Arrancar el laboratorio de animación** (sección 6-bis). Es lo único del sitio que no depende
+de nada de Carlos: no necesita el video, ni el logo bueno, ni el dominio. Se empieza por ahí.
 
 ### Pendientes abiertos
 - **El pasto de Torre Infinita se ve mal.** En la captura del piso salió verde plano con la
