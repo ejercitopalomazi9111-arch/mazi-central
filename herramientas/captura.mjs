@@ -72,16 +72,23 @@ const CHROMIUM = process.env.PUPPETEER_EXECUTABLE_PATH
 
 // ---- argumentos ----
 const args = process.argv.slice(2);
-const url = args[0];
-const salida = args[1];
-if (!url || !salida) {
-  console.error('Uso: node herramientas/captura.mjs <url> <salida.png> [--ancho N] [--alto N] [--espera MS] [--teclas a,b] [--js "…"] [--movil] [--completa]');
-  process.exit(1);
-}
+const USO = 'Uso: node herramientas/captura.mjs <url> <salida.png> [--ancho N] [--alto N] [--espera MS] [--teclas a,b] [--js "…"] [--movil] [--completa]';
 const opt = (nombre, pordefecto) => {
   const i = args.indexOf('--' + nombre);
   return i === -1 ? pordefecto : args[i + 1];
 };
+const url = args[0];
+// La salida es posicional, pero también se acepta --salida. Y si el segundo
+// argumento resulta ser una bandera es que se olvidó la ruta: se avisa en vez
+// de escribir un archivo llamado "--ancho" en la raíz del repo. Ya pasó.
+const salida = opt('salida', args[1]?.startsWith('--') ? undefined : args[1]);
+if (!url || !salida) {
+  if (args[1]?.startsWith('--')) {
+    console.error(`Falta la ruta de salida: el segundo argumento es la bandera "${args[1]}".`);
+  }
+  console.error(USO);
+  process.exit(1);
+}
 const bandera = (nombre) => args.includes('--' + nombre);
 
 const movil = bandera('movil');
