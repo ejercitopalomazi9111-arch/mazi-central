@@ -44,11 +44,11 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
 
 # 3 · armar
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
-  --arco "515,233" --encima --barras "452,18,87,11,22,42,30,16"
+  --arco "515,233" --encima --barras "435,40,109,11,22,42,30,16"
 
 # 4 · la versión para fondo oscuro
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma-oscuro.svg \
-  --arco "515,233" --encima --barras "452,18,87,11,22,42,30,16" --negro "#4A4458"
+  --arco "515,233" --encima --barras "435,40,109,11,22,42,30,16" --negro "#4A4458"
 ```
 
 Las perillas y por qué están en ese número:
@@ -64,18 +64,19 @@ Las perillas y por qué están en ese número:
   la punta seguía cortándose contra el ala, y para que dejara de pasar había que hacerlo tan
   chico que se leía como accesorio pegado. Encima, la punta se lee continua y se apoya donde el
   ala ya tiene masa.
-- **`--barras 452,18,87,11,22,42,30,16`** —
+- **`--barras 435,40,109,11,22,42,30,16`** —
   `y,dentro,fuera,grosorDentro,grosorFuera,ángulo,separación,curva`. Son **dos por lado**, como
   un signo igual, en diagonal hacia afuera y abajo. No son rectángulos: cada una es una cuña que
   nace fina (11) dentro del ave, se ensancha hacia afuera (22) y se arquea. Largo 69.
 
-  La altura salió de medir el ave fila por fila: la cintura está en y=470 y el ala no vuelve
-  hasta x=833, así que hay 100 px libres. El par arranca en 452 — la cadera, por decisión de
-  Carlos. Más abajo (468, la cintura exacta) el par empieza a taparle el arranque de la cola.
+  La altura salió de medir el ave fila por fila. El par arranca en 435, a la altura de la cadera:
+  más abajo (468, la cintura exacta) empieza a taparle el arranque de la cola.
 
-  Al bajar, `dentro` tiene que bajar también: el cuerpo se angosta hacia la cadera (57 px de
-  ancho en y=470 contra 98 en y=420), así que con `dentro=28` la barra ya nacería fuera del ave
-  en vez de dentro.
+  **`dentro` y `fuera` se mueven con la altura.** El cuerpo se angosta hacia la cadera —98 px de
+  ancho en y=420 contra 57 en y=470— así que un mismo `dentro` puede nacer dentro del ave a una
+  altura y fuera a otra. Y si el par no se corre hacia afuera al bajarlo, se queda casi todo
+  sobre el violeta y se pierde el efecto de salir del cuerpo: hoy nace a 40 del eje (dentro, el
+  cuerpo llega a 45) y sale hasta 109, cruzando el borde.
 
   Dos números que no son gusto, son aritmética:
   - **La separación se aplica PERPENDICULAR** a la barra, no en vertical. Eso es lo que hace que
