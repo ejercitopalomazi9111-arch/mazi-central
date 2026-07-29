@@ -10,7 +10,7 @@
 // atributo transform: así todo el archivo vive en un solo sistema de
 // coordenadas y se puede recortar, medir y editar sin sorpresas.
 //
-//   node marca/armar.mjs <ave.svg> <arco.svg> <salida.svg> [--arco ancho,abajo] [--encima] [--barras y,dentro,fuera,grosor] [--negro hex]
+//   node marca/armar.mjs <ave.svg> <arco.svg> <salida.svg> [--arco ancho,abajo] [--encima] [--barras y,dentro,fuera,grosor] [--negro hex] [--estrella factor] [--contorno hex,grosor] [--romo]
 //
 // --arco  ancho,abajo   ancho del arco y a qué altura quedan sus puntas, en
 //                       coordenadas de la imagen del ave. Siempre centrado en
@@ -49,9 +49,14 @@ function leer(ruta) {
   return { vb, trazos };
 }
 
+// INVARIANTE DE TODO ESTE ARCHIVO: cada path se compone sólo de comandos con
+// coordenadas ABSOLUTAS EN PARES — M, L, Q, C, Z. Nada de `A` (arco), cuyos
+// parámetros son `rx ry rotación bandera bandera x y` y descuadran cualquier
+// lectura por pares, ni comandos relativos. De eso dependen `mover` y `cajaDe`,
+// y con ellos el recorte del lienzo y la colocación del arco. Los círculos y las
+// puntas redondas se hacen con cúbicas (ver `circulo` y `domo`).
+//
 // Aplica escala + traslación a todos los pares de coordenadas de un path.
-// Todos los comandos que emite el trazador (M, L, Q, Z) usan coordenadas
-// absolutas en pares, así que basta transformarlos en orden.
 function mover(d, s, tx, ty) {
   let pares = 0;
   return d.replace(/-?\d+(?:\.\d+)?/g, n => {
@@ -68,6 +73,26 @@ function cajaDe(trazos) {
     for (const m of nums) { xs.push(+m[1]); ys.push(+m[2]); }
   }
   return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+}
+
+// Círculo con cuatro cúbicas. kappa = 4/3·(√2−1) es la constante de siempre
+// para que una cúbica pase por el cuarto de circunferencia.
+function circulo(cx, cy, r) {
+  const k = 0.5522847498 * r;
+  const P = (x, y) => `${r2(x)} ${r2(y)}`;
+  return `M ${P(cx - r, cy)}`
+    + ` C ${P(cx - r, cy - k)} ${P(cx - k, cy - r)} ${P(cx, cy - r)}`
+    + ` C ${P(cx + k, cy - r)} ${P(cx + r, cy - k)} ${P(cx + r, cy)}`
+    + ` C ${P(cx + r, cy + k)} ${P(cx + k, cy + r)} ${P(cx, cy + r)}`
+    + ` C ${P(cx - k, cy + r)} ${P(cx - r, cy + k)} ${P(cx - r, cy)} Z`;
+}
+
+// Semicírculo de A a B (diametralmente opuestos) abombado hacia `dir`. Con una
+// sola cúbica y controles a 4r/3 la aproximación es indistinguible a este tamaño.
+function domo(ax, ay, bx, by, dx, dy, r) {
+  const d = (4 / 3) * r;
+  return ` C ${r2(ax + dx * d)} ${r2(ay + dy * d)}`
+    + ` ${r2(bx + dx * d)} ${r2(by + dy * d)} ${r2(bx)} ${r2(by)}`;
 }
 
 const ave = leer(avePath);
@@ -139,37 +164,74 @@ if (opt('barras')) {
   const angulo = largos ? v[5] : (v[4] ?? 0);
   const sep = largos ? v[6] : (v[5] ?? 0);
   const curva = largos ? v[7] : 0;
+  // raíz: si viene, las dos barras nacen del MISMO punto y se abren en abanico,
+  // con un disco en el origen. Sin ella siguen siendo paralelas separadas.
+  const raiz = v[8] ?? 0;
 
   const NEGRO = opt('negro', '#010101');
-  const rad = angulo * Math.PI / 180;
-  const cuantas = sep > 0 ? 2 : 1;
+  const cuantas = sep > 0 || raiz > 0 ? 2 : 1;
+  const largo = fuera - dentro;
+
+  // Con raíz, la separación se convierte en apertura angular: el par tiene que
+  // divergir para que el hueco exista, porque en el nacimiento ya no hay
+  // corrimiento que lo abra.
+  const apertura = raiz > 0 ? Math.atan2(sep, largo) * 180 / Math.PI : 0;
 
   for (const lado of [1, -1]) {
-    // Dirección de la barra: hacia afuera y hacia abajo.
-    const ux = lado * Math.cos(rad), uy = Math.sin(rad);
-    // Perpendicular, apuntando siempre hacia abajo para que el par se abra
-    // igual en los dos lados.
-    let px = -uy, py = ux;
-    if (py < 0) { px = -px; py = -py; }
+    if (raiz > 0) {
+      const ox = ejeAve + lado * dentro, oy = y;
+      barras.push({ color: NEGRO, d: circulo(ox, oy, raiz) });
+    }
 
-    const largo = fuera - dentro;
     for (let k = 0; k < cuantas; k++) {
-      const corrimiento = k * sep;
+      // Cada barra del par: con raíz cambia el ángulo; sin raíz, el corrimiento.
+      const grados = angulo + (raiz > 0 ? (k === 0 ? -apertura / 2 : apertura / 2) : 0);
+      const rad = grados * Math.PI / 180;
+      const ux = lado * Math.cos(rad), uy = Math.sin(rad);
+      let px = -uy, py = ux;
+      if (py < 0) { px = -px; py = -py; }
+
+      const corrimiento = raiz > 0 ? 0 : k * sep;
       const ax = ejeAve + lado * dentro + px * corrimiento;
       const ay = y + py * corrimiento;
       const bx = ax + ux * largo, by = ay + uy * largo;
-      // Control del eje: el punto medio desplazado por la curvatura.
       const mx = (ax + bx) / 2 + px * curva, my = (ay + by) / 2 + py * curva;
-      // Contorno: dos cuadráticas paralelas al eje, separadas por el grosor,
-      // que crece de g0 a g1. Para curvaturas suaves basta desplazar por la
-      // perpendicular del eje recto; no hace falta un offset exacto de Bézier.
       const h0 = g0 / 2, h1 = g1 / 2, hm = (h0 + h1) / 2;
+
+      // Punta redonda: un domo en el extremo exterior en vez del corte recto,
+      // abombado en la dirección de la barra para que salga hacia AFUERA.
+      const punta = bandera('romo')
+        ? ` L ${r2(bx - px * h1)} ${r2(by - py * h1)}`
+        : domo(bx + px * h1, by + py * h1, bx - px * h1, by - py * h1, ux, uy, h1);
+
       barras.push({ color: NEGRO, d:
           `M ${r2(ax + px * h0)} ${r2(ay + py * h0)}`
         + ` Q ${r2(mx + px * hm)} ${r2(my + py * hm)} ${r2(bx + px * h1)} ${r2(by + py * h1)}`
-        + ` L ${r2(bx - px * h1)} ${r2(by - py * h1)}`
+        + punta
         + ` Q ${r2(mx - px * hm)} ${r2(my - py * hm)} ${r2(ax - px * h0)} ${r2(ay - py * h0)} Z` });
     }
+  }
+}
+
+/* ── la estrella ───────────────────────────────────────────────────────── */
+
+// La estrella del pecho es el único trazo hueso que trae el ave (el arco usa su
+// propio blanco). Se escala respecto a su propio centro, así que agrandarla no
+// la mueve de sitio.
+if (opt('estrella')) {
+  const factor = Number(opt('estrella'));
+  const HUESO = '#EAE5E3';
+  for (const t of ave.trazos) {
+    if (t.color !== HUESO) continue;
+    const b = cajaDe([t]);
+    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    let pares = 0;
+    t.d = t.d.replace(/-?\d+(?:\.\d+)?/g, n => {
+      const val = Number(n);
+      const esX = pares++ % 2 === 0;
+      const c = esX ? cx : cy;
+      return String(r2(c + (val - c) * factor));
+    });
   }
 }
 
@@ -199,8 +261,32 @@ for (const t of todo) {
   else grupos.push({ color: t.color, ds: [t.d] });
 }
 
-const cuerpo = grupos.map(({ color, ds }) =>
-  `  <g fill="${color}">\n${ds.map(d => `    <path d="${d}"/>`).join('\n')}\n  </g>`).join('\n');
+// --contorno hex,grosor: el filo claro alrededor de la figura, como en las
+// referencias de Carlos. Es lo que hace que la marca exista sobre fondo oscuro
+// sin tener que cambiarle los colores: el negro sigue siendo negro y el contorno
+// lo dibuja.
+//
+// El trazo va CENTRADO, así que la mitad se come la silueta; por eso los grupos
+// se pintan dos veces — primero sólo el contorno, con el trazo al doble, y
+// encima el relleno limpio. El resultado es un filo por fuera de la forma.
+const [contornoColor, contornoGrosor] = (opt('contorno') || '').split(',');
+const conFilo = Boolean(contornoColor);
+
+const pintar = ({ color, ds }, extra = '') =>
+  `  <g fill="${color}"${extra}>\n${ds.map(d => `    <path d="${d}"/>`).join('\n')}\n  </g>`;
+
+let cuerpo;
+if (conFilo) {
+  const g = Number(contornoGrosor || 6);
+  const filo = ` stroke="${contornoColor}" stroke-width="${g * 2}"`
+    + ' stroke-linejoin="round" stroke-linecap="round"';
+  cuerpo = [
+    ...grupos.map(gr => pintar({ color: contornoColor, ds: gr.ds }, filo)),
+    ...grupos.map(gr => pintar(gr)),
+  ].join('\n');
+} else {
+  cuerpo = grupos.map(gr => pintar(gr)).join('\n');
+}
 
 writeFileSync(resolve(salidaPath),
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb.join(' ')}">\n${cuerpo}\n</svg>\n`);

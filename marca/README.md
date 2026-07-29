@@ -11,7 +11,7 @@ se convirtieron en vector real.
 | `fuente/plana-color-bueno.png` | La generación plana. **De aquí sale el ave** y de aquí salió el color exacto. |
 | `fuente/opcion-4.png` | La opción 4, la más parecida al original. **De aquí sale el arco.** |
 | `logo/paloma.svg` | **La marca.** Negro real. Para fondo claro e impresión. |
-| `logo/paloma-oscuro.svg` | Para fondo oscuro: el negro sube a `#4A4458` para que exista. |
+| `logo/paloma-oscuro.svg` | Para fondo oscuro: mismo diseño **con filo hueso**. El negro sigue siendo negro. |
 | `logo/paloma-simple.svg` | Contornos más simplificados, para tamaños chicos. |
 | `logo/arco-de-la-4.svg` | El arco solo, por si hay que recolocarlo. |
 
@@ -44,11 +44,12 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
 
 # 3 · armar
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
-  --arco "515,233" --encima --barras "435,40,109,11,22,42,30,16"
+  --arco "515,233" --encima --barras "435,42,112,15,22,42,34,18,13" --estrella 1.6
 
 # 4 · la versión para fondo oscuro
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma-oscuro.svg \
-  --arco "515,233" --encima --barras "435,40,109,11,22,42,30,16" --negro "#4A4458"
+  --arco "515,233" --encima --barras "435,42,112,15,22,42,34,18,13" --estrella 1.6 \
+  --contorno "#EAE5E3,6"
 ```
 
 Las perillas y por qué están en ese número:
@@ -87,9 +88,22 @@ Las perillas y por qué están en ese número:
     supera el grosor (22) y deja 8 de hueco.
   - **Engrosar y juntar tiran en contra.** Cada vez que sube el grosor hay que subir la
     separación o el hueco se cierra y vuelve el diente. Ese es el margen con el que se juega.
-- **`--negro`** — el negro real desaparece en fondo oscuro: las barras y la mitad oscura del arco
-  dejan de existir. La versión oscura lo sube a `#4A4458`, que conserva la dualidad
-  oscuro/claro y sí se ve.
+- **`--estrella 1.6`** — la estrella del pecho es el único trazo hueso que trae el ave (el arco
+  usa su propio blanco), así que se puede escalar sola. Va respecto a su propio centro: agrandarla
+  no la mueve de sitio. 1.6 la deja del tamaño que tiene en las referencias de Carlos.
+- **`--contorno "#EAE5E3,6"`, y no `--negro`** — el problema era que en fondo oscuro el negro
+  real desaparece: las barras y la mitad oscura del arco dejan de existir. La primera salida fue
+  subir el negro a `#4A4458`; **la buena la trajo Carlos con una referencia**: un filo claro
+  alrededor de la figura. El negro sigue siendo negro y el contorno lo hace existir, que es
+  bastante mejor que falsear el color.
+
+  El trazo va centrado, así que la mitad se comería la silueta; por eso cada grupo se pinta dos
+  veces — primero sólo el contorno con el trazo al doble, encima el relleno limpio. El filo queda
+  por fuera de la forma. `--negro` sigue ahí, pero ya no hace falta.
+- **La raíz de las barras** — el noveno valor de `--barras`. Con raíz, las dos barras de cada lado
+  nacen del MISMO punto, sale un disco en el origen y el par se abre en abanico. Ojo: la
+  separación deja de ser un corrimiento y pasa a ser **apertura angular** — en el nacimiento ya no
+  hay nada que abra el hueco, tiene que abrirlo la divergencia.
 
 ## Por qué el proceso es así, y no "dibújalo en código"
 
@@ -108,3 +122,8 @@ Los tres problemas que costaron encontrar, para no repetirlos:
 3. **El tono intermedio del delineado, si se descarta, deja HUECOS.** Eran las rayas negras que
    cruzaban las alas: no eran contornos, era el fondo asomándose. Se fusiona con el violeta, no
    se descarta. Esta la cazó Carlos, no yo.
+4. **Nada de comandos `A` en los paths.** Todo `armar.mjs` asume coordenadas absolutas en pares
+   —`M L Q C Z`— y de eso dependen `mover` y `cajaDe`, y con ellos el recorte y la colocación del
+   arco. El primer intento de hacer el disco de la raíz y las puntas redondas con arcos de SVG
+   descuadró el lienzo entero (`viewBox -6 -28 1247 842`), porque `A rx ry rot flag flag x y` no
+   son pares de coordenadas. Los círculos y los domos se hacen con cúbicas.
