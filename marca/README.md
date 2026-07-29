@@ -44,11 +44,11 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
 
 # 3 · armar
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
-  --arco "515,233" --encima --barras "406,28,83,12,25,42,34,14"
+  --arco "515,233" --encima --barras "407,28,97,11,22,42,30,16"
 
 # 4 · la versión para fondo oscuro
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma-oscuro.svg \
-  --arco "515,233" --encima --barras "406,28,83,12,25,42,34,14" --negro "#4A4458"
+  --arco "515,233" --encima --barras "407,28,97,11,22,42,30,16" --negro "#4A4458"
 ```
 
 Las perillas y por qué están en ese número:
@@ -64,11 +64,10 @@ Las perillas y por qué están en ese número:
   la punta seguía cortándose contra el ala, y para que dejara de pasar había que hacerlo tan
   chico que se leía como accesorio pegado. Encima, la punta se lee continua y se apoya donde el
   ala ya tiene masa.
-- **`--barras 406,28,83,12,25,42,34,14`** —
+- **`--barras 407,28,97,11,22,42,30,16`** —
   `y,dentro,fuera,grosorDentro,grosorFuera,ángulo,separación,curva`. Son **dos por lado**, como
   un signo igual, en diagonal hacia afuera y abajo. No son rectángulos: cada una es una cuña que
-  nace fina (12) dentro del ave, se ensancha hacia afuera (25) y se arquea. Cortas: 55 de largo,
-  la mitad de lo que medían al principio.
+  nace fina (11) dentro del ave, se ensancha hacia afuera (22) y se arquea. Largo 69.
 
   La altura salió de medir el ave fila por fila: la cintura está en y=470 y el ala no vuelve
   hasta x=833, así que hay 100 px libres; el par arranca más arriba para que quepa su caída
@@ -79,8 +78,8 @@ Las perillas y por qué están en ese número:
     el par se lea como un "=" inclinado en vez de dos rayas sueltas apuntando al mismo lado.
   - **La separación tiene que ser mayor que el grosor exterior.** Con separación 14 y grosor 20
     los bordes se solapaban y las dos barras se fundían en una sola figura — Carlos dijo que
-    parecía un diente, y tenía razón: geométricamente ERA una pieza. Hoy la separación (34)
-    supera el grosor (25) y deja 9 de hueco.
+    parecía un diente, y tenía razón: geométricamente ERA una pieza. Hoy la separación (30)
+    supera el grosor (22) y deja 8 de hueco.
   - **Engrosar y juntar tiran en contra.** Cada vez que sube el grosor hay que subir la
     separación o el hueco se cierra y vuelve el diente. Ese es el margen con el que se juega.
 - **`--negro`** — el negro real desaparece en fondo oscuro: las barras y la mitad oscura del arco
