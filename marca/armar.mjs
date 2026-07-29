@@ -116,17 +116,30 @@ const arcoPuesto = arco.trazos.map(t => ({
 // de 675 a 732 y el ala no vuelve a empezar hasta 833. Ahí caben 100 px de barra
 // sin chocar con nada.
 //
-// Son DOS por lado, como un signo igual, en diagonal hacia afuera y abajo.
+// Son DOS por lado, como un signo igual, en diagonal hacia afuera y abajo. No
+// son rectángulos: cada una es una cuña curva — nace fina dentro del ave, se
+// ensancha hacia afuera y se arquea.
 //
 //   --barras  y,dentro,fuera,grosor[,angulo,separacion]
+//   --barras  y,dentro,fuera,grosorDentro,grosorFuera,angulo,separacion,curva
 //
 // dentro/fuera son distancias desde el eje; el ángulo va en grados y baja hacia
-// afuera; la separación es perpendicular a la barra, no vertical, que es lo que
-// hace que el par se lea como un "=" inclinado y no como dos rayas sueltas.
-// Con cuatro valores sale una sola barra horizontal por lado (el modo viejo).
+// afuera; la separación es PERPENDICULAR a la barra, no vertical, que es lo que
+// hace que el par se lea como un "=" inclinado y no como dos rayas sueltas;
+// `curva` desplaza el punto medio — positiva arquea hacia afuera (convexa hacia
+// el exterior del ave), negativa al revés.
+// Con cuatro o seis valores sale la barra recta de grosor constante.
 const barras = [];
 if (opt('barras')) {
-  const [y, dentro, fuera, grosor, angulo = 0, sep = 0] = opt('barras').split(',').map(Number);
+  const v = opt('barras').split(',').map(Number);
+  const [y, dentro, fuera] = v;
+  const largos = v.length >= 8;
+  const g0 = v[3];
+  const g1 = largos ? v[4] : v[3];
+  const angulo = largos ? v[5] : (v[4] ?? 0);
+  const sep = largos ? v[6] : (v[5] ?? 0);
+  const curva = largos ? v[7] : 0;
+
   const NEGRO = opt('negro', '#010101');
   const rad = angulo * Math.PI / 180;
   const cuantas = sep > 0 ? 2 : 1;
@@ -142,16 +155,20 @@ if (opt('barras')) {
     const largo = fuera - dentro;
     for (let k = 0; k < cuantas; k++) {
       const corrimiento = k * sep;
-      const cx = ejeAve + lado * dentro + px * corrimiento;
-      const cy = y + py * corrimiento;
-      const fx = cx + ux * largo, fy = cy + uy * largo;
-      const h = grosor / 2;
-      const pts = [
-        [cx + px * h, cy + py * h], [fx + px * h, fy + py * h],
-        [fx - px * h, fy - py * h], [cx - px * h, cy - py * h],
-      ];
-      barras.push({ color: NEGRO,
-        d: 'M ' + pts.map(([x, yy]) => `${r2(x)} ${r2(yy)}`).join(' L ') + ' Z' });
+      const ax = ejeAve + lado * dentro + px * corrimiento;
+      const ay = y + py * corrimiento;
+      const bx = ax + ux * largo, by = ay + uy * largo;
+      // Control del eje: el punto medio desplazado por la curvatura.
+      const mx = (ax + bx) / 2 + px * curva, my = (ay + by) / 2 + py * curva;
+      // Contorno: dos cuadráticas paralelas al eje, separadas por el grosor,
+      // que crece de g0 a g1. Para curvaturas suaves basta desplazar por la
+      // perpendicular del eje recto; no hace falta un offset exacto de Bézier.
+      const h0 = g0 / 2, h1 = g1 / 2, hm = (h0 + h1) / 2;
+      barras.push({ color: NEGRO, d:
+          `M ${r2(ax + px * h0)} ${r2(ay + py * h0)}`
+        + ` Q ${r2(mx + px * hm)} ${r2(my + py * hm)} ${r2(bx + px * h1)} ${r2(by + py * h1)}`
+        + ` L ${r2(bx - px * h1)} ${r2(by - py * h1)}`
+        + ` Q ${r2(mx - px * hm)} ${r2(my - py * hm)} ${r2(ax - px * h0)} ${r2(ay - py * h0)} Z` });
     }
   }
 }
