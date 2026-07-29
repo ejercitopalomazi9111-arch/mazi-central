@@ -1,11 +1,11 @@
 ---
 name: ui-components
-description: Elige y usa la librería de componentes correcta para cada proyecto web — Magic UI, SmoothUI, RetroUI o Unlumen UI. Úsala al arrancar cualquier interfaz web (landing, SaaS, dashboard, portafolio, ecommerce), cuando haya que decidir stack visual, cuando pidan animaciones o "que se vea premium", o cuando el proyecto ya use shadcn/ui y haya que extenderlo. Incluye matriz de decisión y cuándo NO usar ninguna.
+description: Elige y usa la librería de componentes correcta para cada proyecto web — Magic UI, SmoothUI, RetroUI, Unlumen UI o React Bits. Úsala al arrancar cualquier interfaz web (landing, SaaS, dashboard, portafolio, ecommerce), cuando haya que decidir stack visual, cuando pidan animaciones, fondos animados o "que se vea premium", o cuando el proyecto ya use shadcn/ui y haya que extenderlo. Incluye matriz de decisión y cuándo NO usar ninguna.
 ---
 
 # Librerías de componentes UI
 
-Cuatro librerías, cuatro personalidades. La habilidad no es conocerlas: es **saber cuál toca**.
+Cinco librerías, cinco personalidades. La habilidad no es conocerlas: es **saber cuál toca**.
 
 ## Primero: ¿toca alguna?
 
@@ -24,7 +24,10 @@ Decirlo es parte del trabajo. Recomendar una librería que no encaja es peor que
 ```
 ¿Es React + Tailwind?
 ├── NO → ninguna. HTML autónomo + Anime.js (ver CLAUDE.md, regla 2 y 3)
+│        Si querían "efecto caro", ve a la skill `scroll-cinema`.
 └── SÍ
+    ├── ¿Se necesita un FONDO animado espectacular (WebGL, fluidos, prismas)?
+    │   └── React Bits — 140+ piezas, la más fuerte en fondos y texto animado
     ├── ¿La marca quiere DESTACAR y romper el molde?
     │   └── RetroUI — neobrutalismo, bordes gruesos, sombras duras, color fuerte
     ├── ¿Es una landing / sitio de marketing que tiene que IMPRESIONAR?
@@ -37,17 +40,21 @@ Decirlo es parte del trabajo. Recomendar una librería que no encaja es peor que
 
 ## Tabla comparativa
 
-| | **Magic UI** | **SmoothUI** | **RetroUI** | **Unlumen UI** |
-|---|---|---|---|---|
-| **Filosofía** | para *design engineers*: componentes bellos y animados | los cimientos que ya conoces, con el pulido que faltaba | "no todo sitio tiene que verse igual" — neobrutalismo | el diseño comunica confianza en segundos |
-| **Volumen** | 150+ componentes y efectos | 50+ componentes | 50+ componentes + 158 bloques | colección enfocada |
-| **Animación** | Motion | Motion + GSAP | mínima (el impacto es visual) | Motion |
-| **Stack** | React · TS · Tailwind · Motion | React 19 · TS · Tailwind v4 · RSC | React · TS · Tailwind v4 · Radix/Base UI | React · Tailwind · Motion |
-| **Con shadcn/ui** | compañero perfecto | mismo patrón de instalación | CLI de shadcn compatible | sigue los patrones de shadcn |
-| **Fuerte en** | landings, portafolios, startups | apps reales, accesibilidad | identidad visual distinta, bloques listos | sobriedad cara |
-| **Extras** | — | reduced-motion, API para IA | Figma kit, MCP, RTL, dark mode | — |
+| | **Magic UI** | **SmoothUI** | **RetroUI** | **Unlumen UI** | **React Bits** |
+|---|---|---|---|---|---|
+| **Filosofía** | para *design engineers* | los cimientos que ya conoces, con el pulido que faltaba | "no todo sitio tiene que verse igual" | el diseño comunica confianza en segundos | la más grande y creativa en animación |
+| **Volumen** | 150+ efectos | 50+ componentes | 50+ componentes + 158 bloques | colección enfocada | **140+**, con altas semanales |
+| **Animación** | Motion | Motion + GSAP | mínima | Motion | propia, WebGL incluido |
+| **Stack** | React · TS · Tailwind · Motion | React 19 · TS · Tailwind v4 · RSC | React · TS · Tailwind v4 · Radix/Base UI | React · Tailwind · Motion | React — **4 variantes**: JS/TS × CSS/Tailwind |
+| **Licencia** | abierta | abierta | abierta, "el código es tuyo" | abierta | **MIT + Commons Clause** ⚠️ |
+| **Instalación** | copy-paste / shadcn | igual que shadcn | CLI de shadcn | patrones de shadcn | CLI de `shadcn` o `jsrepo`, o copy-paste |
+| **Fuerte en** | landings, portafolios | apps reales, accesibilidad | identidad distinta, bloques listos | sobriedad cara | **fondos y texto animado** |
 
-Detalle de cada una en `reference/`.
+Detalle de cada una en `reference/librerias.md`.
+
+⚠️ **Commons Clause en React Bits:** permite uso personal y comercial, pero **restringe vender
+el software en sí**. Para nosotros —que construimos sitios *para* clientes— no estorba. Si algún
+día se empaqueta una plantilla para revenderla, ahí sí hay que leer la licencia completa.
 
 ## Cómo recomendar bien
 

@@ -102,11 +102,66 @@ enlace directo falla, entra por `ui.unlumen.com` y navega.
 
 ---
 
-## Lo que las cuatro tienen en común
+## React Bits · reactbits.dev · `github.com/DavidHDev/react-bits`
 
-1. **React + Tailwind.** Ninguna sirve para HTML autónomo.
+**Se describe como:** *"la librería más grande y creativa de componentes React animados."*
+
+- **140+ componentes** gratuitos y personalizables, con altas semanales
+- **Cuatro variantes de cada componente:** JS+CSS · JS+Tailwind · TS+CSS · TS+Tailwind
+- **Licencia MIT + Commons Clause** — uso personal y comercial permitido
+- Instalación por CLI (`shadcn` o `jsrepo`) o copy-paste
+- Presume dependencias mínimas y código *tree-shakeable*
+
+**Cuatro categorías:** animaciones de texto · animaciones generales · componentes de UI ·
+**fondos animados**
+
+**Lo que la distingue: los fondos.** Es donde ninguna de las otras cuatro compite. Piezas con
+nombre propio: *Liquid Ether* (fluido que reacciona al cursor, con parámetros de viscosidad,
+fuerza del mouse y resolución), *Ferrofluid*, *Lightfall*, *Prism*, *Dark Veil*, *Silk*,
+*Floating Lines*, *Light Pillar*.
+
+También trae componentes de interacción poco comunes: *Gooey Nav*, *Pixel Card*, *Spotlight
+Card*, *Border Glow*, *Flying Posters*, *Card Swap*, *Glass Icons*, *Decay Card*, *Flowing
+Menu*, *Elastic Slider*, *Counter*, *Infinite Menu*, *Stepper*, *Bounce Cards*.
+
+**Para qué es buena**
+- Portadas que tienen que impresionar en los primeros dos segundos
+- Cuando el cliente pide "algo con movimiento" y no sabe describir qué
+- Texto animado — es la más completa de las cinco en eso
+
+**Cuándo no**
+- **Los fondos WebGL cuestan batería y GPU.** En un teléfono de gama baja —que es medio mercado
+  de Grupo Mazi— un fluido interactivo a pantalla completa se siente pesado. Probar en el
+  dispositivo real, no en la laptop.
+- Si el sitio es de lectura o de conversión, un fondo que se mueve compite con el contenido.
+- ⚠️ **Commons Clause:** permite construir sitios para clientes, pero restringe **vender el
+  software en sí**. Si algún día se empaqueta una plantilla para revenderla, hay que leer la
+  licencia completa antes.
+
+**Con qué se compara:** para el mismo efecto de "se ve caro", la alternativa sin React es
+`scroll-cinema` (fotogramas por scroll). React Bits pesa menos y es interactivo; `scroll-cinema`
+funciona sin framework y muestra un objeto real. Distinta herramienta, mismo objetivo.
+
+---
+
+## Lo que las cinco tienen en común
+
+1. **React.** Ninguna sirve para HTML autónomo. (React Bits ofrece variante con CSS plano en vez
+   de Tailwind, pero React sigue siendo obligatorio.)
 2. **Copy-paste, patrón shadcn.** El código queda en tu repo. No hay dependencia que te pueda
    dejar tirado — encaja con la regla de Grupo Mazi.
-3. **Motion** es el denominador común de la animación (SmoothUI le suma GSAP).
+3. **Motion** es el denominador común de la animación (SmoothUI le suma GSAP; React Bits mete
+   WebGL para los fondos).
 4. Todas presumen ser compatibles o complementarias de shadcn/ui, así que **shadcn como base +
    una de estas encima** es el camino de menor resistencia.
+
+## Qué combinar con qué
+
+- **shadcn (base) + Magic UI (portada)** — lo estructural sobrio, el hero con efecto. La más
+  común y la más segura.
+- **shadcn + SmoothUI** — producto real. Instalación idéntica, cero fricción.
+- **shadcn + React Bits (sólo el fondo)** — un fondo animado y el resto neutro. Funciona bien
+  **si es un solo fondo**; meter cinco piezas WebGL en una página la mata.
+- **RetroUI solo** — no lo mezcles. Su gracia es la coherencia del estilo entero.
+- **Nunca dos librerías de animación distintas.** Motion + GSAP + WebGL en el mismo bundle es
+  peso triplicado y peleas entre sí. Se elige una y se complementa con piezas sueltas.

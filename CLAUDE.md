@@ -141,8 +141,9 @@ No "publicar por publicar": un generador que convierta **hitos reales de proyect
 borradores de post. El trabajo ya existe; sólo falta contarlo. Las redes son altavoz, no casa.
 
 ### Fase 6 · Medición propia
-Contador de visitas nuestro (Supabase) en lugar de Google Analytics. Sabemos qué se ve sin
-regalarle los datos a nadie.
+Analítica nuestra en lugar de Google Analytics. Sabemos qué se ve sin regalarle los datos a
+nadie. **Candidato directo: Plausible Analytics** — open source, sin cookies (o sea, sin banner
+de consentimiento). Ver skill `stack-propio`.
 
 ### Cosas que también hacen falta, en cuanto haya aire
 - **Kit de marca** en un archivo: colores, tipografías, logo, tono. Todos los proyectos lo
@@ -345,10 +346,15 @@ Estas skills se cargan solas cuando aplican. **No hace falta que Carlos las menc
 | Skill | Cuándo se dispara |
 |---|---|
 | **`four-judges`** | Antes de cualquier decisión cara o difícil de revertir. Palabra clave: **ROAST**. Guarda veredictos en `.claude/veredictos/`. |
-| **`ui-components`** | Al arrancar cualquier interfaz web: elige entre Magic UI, SmoothUI, RetroUI y Unlumen — o dice que ninguna aplica. |
+| **`ui-components`** | Al arrancar cualquier interfaz web: elige entre Magic UI, SmoothUI, RetroUI, Unlumen y React Bits — o dice que ninguna aplica. |
 | **`web-prompts`** | Al escribir el briefing de un sitio, al pedir "que se vea más caro", y en el pulido antes de entregar. |
+| **`scroll-cinema`** | Animación por scroll tipo Apple: fotogramas en canvas. **Sin React ni build** — encaja con el HTML autónomo. |
+| **`remotion`** | Video MP4 hecho con código, a volumen y por dato. Ojo con su licencia. |
 | **`multi-agent`** | Al armar equipos de agentes: organigrama, carpetas, `CLAUDE.md` por agente, memoria en archivos. |
+| **`stack-propio`** | Al elegir herramienta: open source auto-hospedable antes que suscripción. Sirve directo a la regla §2. |
 | **`manus`** | Al decidir si una tarea conviene delegarse a un agente autónomo externo, y cómo redactarle el encargo. |
+
+Índice completo y mapa de lo que falta: `.claude/skills/CATALOGO.md`
 
 **Cómo se combinan.** El flujo natural de un proyecto nuevo:
 
