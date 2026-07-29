@@ -50,10 +50,40 @@ te da métricas reales que el otro camino no te da.
 tarda días o semanas, y algunas piden cuenta de empresa verificada. **No es difícil, es lento.**
 Por eso conviene arrancar el trámite ya, aunque la herramienta la construyamos después.
 
-**Lo que sí puedo hacer mientras:** la herramienta completa —calendario, cola de publicaciones,
-generación de contenido, aprobación tuya, métricas— con las APIs enchufadas por adaptador. El
-día que pasen las revisiones, se conecta y ya. Y mientras tanto puede funcionar en modo
-"prepara y te aviso para que publiques tú", que ya te ahorra el 80% del trabajo.
+### El remedio temporal — sí se puede, y es mejor de lo que parece
+
+Carlos pidió algo que funcione mientras aprueban. **Sí hay, y es bueno**, porque resulta que
+**no todas las plataformas piden revisión.**
+
+| Plataforma | ¿Revisión? | Se puede automatizar hoy |
+|---|---|---|
+| **YouTube** | no, sólo OAuth y cuota | ✅ subir videos completos |
+| **X / Twitter** | no, capa gratis limitada | ✅ ~1,500 publicaciones al mes |
+| **Telegram** | no, API de bots abierta | ✅ inmediato |
+| **Bluesky** | no, protocolo abierto | ✅ inmediato |
+| **Pinterest** | ligera | ✅ casi inmediato |
+| Instagram / Facebook | sí + verificación de empresa | ⏳ tras aprobación |
+| TikTok | sí | ⏳ tras aprobación |
+| LinkedIn | sí, para publicar orgánico | ⏳ tras aprobación |
+
+**Entonces el plan de dos velocidades:**
+
+1. **Hoy** — la herramienta lee la carpeta, prepara todo (recorta a 9:16, 1:1 y 16:9, escribe
+   el texto, arma los hashtags, programa la hora) y **publica de verdad** en YouTube, X,
+   Telegram, Bluesky y Pinterest.
+2. **Para Meta, TikTok y LinkedIn, mientras aprueban** — modo *"listo para publicar"*: te deja
+   todo preparado en una pantalla donde das **un toque por publicación**. No es automático del
+   todo, pero te quita el 90% del trabajo: el recorte, el texto, la hora y la organización.
+3. **Cuando pasen las revisiones** — se conecta el adaptador y esas tres pasan a automáticas sin
+   tocar nada más.
+
+**Lo que NO voy a construir:** un robot que maneje un navegador haciéndose pasar por ti para
+publicar. Eso es exactamente lo que tumba cuentas, y no hay truco que lo evite — es la
+plataforma aplicando sus reglas, no un sistema que se pueda burlar. Perder la cuenta de
+Instagram del negocio cuesta más que esperar la aprobación.
+
+**Arrancar los trámites es lo primero**, porque es lo único que no puedo acelerar. Te dejo
+preparada la lista de qué pide cada plataforma.
 
 ### El agente de marketing es cuatro productos, no uno
 
@@ -69,22 +99,22 @@ Construirlas todas antes de tener un solo cliente es cómo se van tres meses. **
 y la 2 primero**, que son las que te quitan trabajo desde el día uno. La 3 no sirve sin datos —y
 no hay datos hasta que publiques. La 4 no sirve sin la 3.
 
-### Herlinda es la más importante de la lista y no está en tus prioridades
+### Herlinda — Carlos dice que probablemente no deja dinero, pero lo quiere hacer
 
-Tu orden dice "esta semana Grupo Mazi". Lo respeto. Pero mira lo que tienes ahí:
+Perfecto, y de hecho conviene aunque no pague. Aquí está el argumento:
 
-**Herlinda tiene un dolor descrito, concreto y repetido:** pone una casa en venta y le preguntan
-si se renta. Eso no es una molestia, es **la misma pregunta mil veces**, y es exactamente lo que
-un bot bien hecho resuelve. Además:
+- **Es el mejor caso de estudio posible para el sitio.** "Le quitamos 200 mensajes al mes a una
+  agente inmobiliaria" vende más que cualquier animación bonita.
+- **Es replicable.** Todos los de bienes raíces tienen el mismo dolor: pones una casa en venta y
+  te preguntan si se renta. Le resuelves a una, lo vendes a veinte. **El producto se paga con
+  el segundo cliente, no con ella.**
+- **Es el laboratorio del agente de marketing.** Lo que se construya para Herlinda —responder
+  solo, publicar propiedades, clasificar interesados— es el mismo motor que necesita Grupo Mazi.
 
-- **Es dinero real y cercano**, no un proyecto interno.
-- **Es replicable.** Todos los de bienes raíces tienen ese mismo dolor. Le resuelves a una, lo
-  vendes a veinte.
-- **Es el mejor caso de estudio posible para el sitio** — mucho mejor que una animación bonita.
-  "Le quitamos 200 mensajes al mes a una agente inmobiliaria" vende más que cualquier hero.
+Así que se construye **como producto, no como favor**. Mismo esfuerzo, y queda algo vendible.
 
-**No te estoy cambiando el orden**, es tu llamada. Pero si la semana se aprieta, esta es la que
-yo movería arriba.
+**Lo que necesito de ella:** sus mensajes típicos, o media hora de plática. Sin saber qué le
+preguntan de verdad, el bot sale genérico y no le sirve a nadie.
 
 ### GERALDMED — la decisión no es técnica
 
@@ -100,37 +130,124 @@ Dos preguntas antes de escribir una línea de código:
 
 Yo la dejaría **hasta el final de la lista** y sólo con cotización de por medio. Pero es tuya.
 
-### "Terminar Ligas Mazi" — necesito que definas qué es terminar
+### "Terminar Ligas Mazi" — ya está definido: el fondo del iceberg
 
-En la lista de tareas hay tres pendientes viejos: cadena padre↔menor por CURP, directorio de
-ligas con permiso de mesa, y la sensación de en-vivo real. Más el layout de escritorio que ya
-diagnostiqué.
+Carlos lo aclaró: no es pulido, es **todo lo que hace que un software sea un producto de
+verdad**. La lista:
 
-**"Terminar" puede significar dos cosas muy distintas:**
-- **Presentable** — que se vea bien y no truene. Eso lo cierro esta semana.
-- **Completo** — todas las funciones del plan original. Eso son semanas.
+| # | Qué | Riesgo si no se hace |
+|---|---|---|
+| 1 | Afinar detalles y **asegurar que funcione de verdad** | se cae con el primer usuario real |
+| 2 | Cambiar **logo y nombre** | depende de la decisión de identidad |
+| 3 | Ajustar **sobres** (economía del gacha) | o no vende, o regala de más |
+| 4 | Ajustar **movilidad** (el layout de escritorio incluido) | se ve inacabado |
+| 5 | **Candados de seguridad** | fuga de datos entre cuentas |
+| 6 | **Términos y condiciones** + qué datos recopilamos | ilegal operar sin esto |
+| 7 | **Moderación de imágenes** subidas para las cartas | ⚠️ **el más grave — ver abajo** |
+| 8 | **Deslindes de responsabilidad** | quedas expuesto tú, personalmente |
+| 9 | **Muros de paga que de verdad funcionen** | hoy no cobra nada |
+| 10 | La publicidad, al final | — |
 
-Voy a asumir **presentable**, porque es lo que necesita el portafolio. Si querías completo,
-dime.
+### 🚨 El punto 7 es el más serio de todo el plan, y hay que tratarlo aparte
+
+**Ligas Mazi es una plataforma con menores de edad**, donde padres y niños suben fotos de sus
+caras para las cartas. Eso cambia todo el cálculo: no es "moderar contenido", es **proteger
+niños y protegerte a ti legalmente**.
+
+Lo que esto exige, y no es negociable:
+
+- **Moderación ANTES de publicar, no después.** Cola de revisión: la imagen no se ve en ningún
+  lado hasta que pasa. Publicar primero y limpiar después es exactamente como terminas con algo
+  ilegal en tus servidores.
+- **Consentimiento del padre o tutor, registrado y con fecha.** No una casilla escondida: un
+  registro que puedas mostrar si alguien pregunta.
+- **Nada público por defecto.** La carta de un menor se ve dentro de su liga, no en internet
+  abierto.
+- **Recolectar lo mínimo.** Hoy se pide CURP. Hay que justificar cada dato que se guarda, porque
+  la Ley Federal de Protección de Datos Personales (LFPDPPP) obliga a decir para qué es cada uno.
+- **Una vía de borrado.** Que un padre pueda decir "quiten a mi hijo" y que de verdad se quite.
+- **Detección automática + revisión humana.** Lo automático caza lo obvio; lo dudoso lo ve una
+  persona. Ninguna de las dos sola alcanza.
+
+**Esto no es opcional ni se deja para después.** Es lo que separa un proyecto bonito de uno que
+te puede meter en un problema serio. Y aviso claro: **si el sistema de moderación no está listo,
+la función de subir fotos no se abre al público.** Prefiero que la carta salga sin foto a que
+salga con algo que no debía.
+
+### Los muros de paga de verdad
+
+"Que funcionen" significa cobrar dinero real, y eso arrastra tres cosas que no son código:
+
+1. **Pasarela de pago** — Stripe, Mercado Pago o Conekta. Requiere cuenta de empresa y datos
+   fiscales.
+2. **Facturación** — si cobras en México, tarde o temprano piden factura, y eso necesita un PAC
+   (ver `CLAUDE.md` §2).
+3. **Qué pasa si alguien cancela o pide reembolso.** Definirlo antes, no cuando ya pasó.
+
+Lo que sí puedo construir solo: la lógica de qué se bloquea, los planes, los límites, y la
+pasarela detrás de un adaptador nuestro. Lo que necesita tu firma: la cuenta y los datos
+fiscales.
+
+---
+
+### ¿Puedo editar video? Sí — probado, no prometido
+
+Verificado el 29 de julio armando un clip real: fondo de marca + título con tipografía correcta
++ desvanecido, en 1080×1920 vertical.
+
+**Lo que sí puedo:**
+
+| | |
+|---|---|
+| **Cortar, recortar y unir** | quitar pedazos, pegar clips, ordenar |
+| **Reformatear por plataforma** | 9:16 para reels y TikTok, 1:1, 16:9 — de una sola fuente |
+| **Transiciones** | desvanecidos, cruzados entre clips |
+| **Sobreponer** | logo, marcas de agua, tarjetas de texto, imágenes |
+| **Texto con tipografía real** | se maqueta en el navegador y se sobrepone. **Mejor que el texto nativo de ffmpeg**: control total de fuente, peso y color |
+| **Movimiento sobre foto fija** | el acercamiento lento tipo documental |
+| **Audio** | mezclar, recortar, desvanecer, cambiar la pista |
+| **Subtítulos** | quemados o como pista aparte |
+| **Sacar fotogramas** | para miniaturas y para `scroll-cinema` |
+| **Ver el resultado** | extraigo cuadros y los reviso. **Puedo juzgar cómo quedó, no sólo generarlo** |
+| **Video desde código** | Remotion, para hacer cien videos con datos distintos |
+
+**Lo que no:** no tengo tu material. Tú me pasas el crudo. Y para corrección de color fina o
+decisiones de montaje muy sensibles voy más lento que un editor humano, porque reviso por
+cuadros en vez de ver la línea de tiempo corriendo.
+
+**Lo que esto desbloquea de inmediato:** los reels y videos para redes salen de aquí. Le das
+material crudo a la herramienta y salen las tres versiones ya cortadas, con tu marca y listas
+para publicar.
 
 ---
 
 ## El orden
 
-### 🔴 Bloque 0 · Lo que sólo tú puedes decidir (te preparo el material)
+### 🔴 Bloque 0 · Branding e identidad — **la prioridad que puso Carlos**
 
-**La identidad bloquea cinco frentes.** Flyers, carteles, anuncios, la página y hasta la central
-dependen de saber cómo se llama y cómo se ve la empresa. Sin eso, todo lo visual se hace dos
-veces.
+**La identidad bloquea seis frentes.** Flyers, carteles, anuncios, la página, la central y hasta
+el logo de Ligas Mazi dependen de saber cómo se llama y cómo se ve la empresa. Sin eso, todo lo
+visual se hace dos veces.
 
-Te voy a preparar:
-- **Opciones de nombre**, con el análisis de qué gana y qué pierde cada una (incluida
-  "quedarse como Grupo Mazi")
-- **Propuestas de qué significa Mazi** — y si conviene que signifique algo o que no
-- **Propuestas de logo** — generadas, porque un logo tiene que ser tuyo, no de Wikimedia
-- **El kit de marca** en un archivo: color, tipografía, tono
+Lo que preparo para que tú sólo escojas:
 
-Tú eliges. Yo no decido el nombre de tu empresa.
+1. **Opciones de nombre** — con qué gana y qué pierde cada una. Incluye **quedarse como Grupo
+   Mazi**, que es una opción legítima y probablemente la más barata: ya hay dominio mental,
+   correo, y proyectos que lo llevan en el nombre.
+2. **Qué significa Mazi** — propuestas, y también el argumento de **que no signifique nada**.
+   Muchas marcas fuertes no significan nada (Sony, Kodak, Zara). Un nombre sin significado es
+   más fácil de registrar y no te encasilla.
+3. **Qué significa "Grupo"** — y si conviene. "Grupo" sugiere tamaño; si son pocos, puede jugar
+   en contra o a favor según a quién le vendas.
+4. **Propuestas de logo** — **generadas**, porque un logo tiene que ser tuyo y único. Aquí sí
+   aplica la excepción de la regla del arte.
+5. **El kit de marca** en un archivo: color, tipografía, tono de voz, y cómo se aplica. Es lo
+   que hace que todo se vea de un mismo dueño.
+
+**Yo no decido el nombre de tu empresa.** Te doy el material y el criterio; eliges tú.
+
+**Antes de proponer nada, esto pasa por los Cuatro Jueces** — cambiar el nombre de una empresa
+es de las decisiones más caras y difíciles de revertir que hay.
 
 ### Bloque 1 · Esta semana — la casa en orden
 
