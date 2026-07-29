@@ -28,6 +28,12 @@
  *                         plumas se dividan más lejos del cuerpo" — las
  *                         hendiduras de junto al cuerpo son estrechas, las de
  *                         la punta son anchas.
+ *   --pulir    hex:N      filtro de mayoría de radio N entre ese color y el
+ *                         fondo: cada píxel se queda con lo que sean la mayoría
+ *                         de sus vecinos. Quita el dentado de 1-2 px del borde
+ *                         —los escalones que parecen z-fighting alrededor de las
+ *                         plumas— sin mover la silueta. No toca los demás
+ *                         colores, así que la estrella queda intacta.
  *   --tapar    hex:N      rellena con ese color los huecos de fondo de menos de
  *                         N px de área que queden encerrados. Mata las costuras
  *                         de 1-2 px que el cierre no alcanza y que se ven como
@@ -97,6 +103,11 @@ const fusionar = repetida('fusionar').map(v => {
   const [a, b] = v.split(':');
   return { de: hexARgb(a), a: hexARgb(b) };
 });
+
+const pulir = repetida('pulir').map(v => {
+  const [hex, n] = v.split(':');
+  return { color: hexARgb(hex), radio: Number(n) };
+});
 const minArea = Number(opt('minarea', 12));
 const suave = Number(opt('suave', 1));
 const nColores = Number(opt('n', 6));
@@ -148,6 +159,7 @@ const b64 = readFileSync(resolve(entrada)).toString('base64');
 
 const res = await pagina.evaluate(async (b64, cfg) => {
   const fusionarCfg = cfg.fusionar;
+  const pulirCfg = cfg.pulir;
   const img = new Image();
   img.src = 'data:image/png;base64,' + b64;
   await img.decode();
@@ -258,6 +270,69 @@ const res = await pagina.evaluate(async (b64, cfg) => {
       }
     }
     ctx.putImageData(datos, 0, 0);
+  }
+
+  // PULIDO por mayoría. El borde que sale del cierre viene escalonado: dientes
+  // de uno o dos píxeles que el trazador convierte en zigzag y se leen como
+  // z-fighting alrededor de las plumas. Aquí cada píxel se queda con lo que sean
+  // la mayoría de sus vecinos, así que los dientes se caen y la silueta se
+  // queda donde estaba.
+  //
+  // El conteo va con imagen integral: el total de una ventana son cuatro
+  // lecturas, no (2r+1)² sumas. Sin eso, radio 3 sobre 1408×768 son 50 millones
+  // de operaciones por pasada.
+  //
+  // Sólo intercambia entre el color y el FONDO. Los demás colores no se tocan:
+  // si el pulido pudiera comerse cualquier cosa, se llevaría la estrella.
+  if (pulirCfg.length) {
+    const d = datos.data, W = c.width, H = c.height, N = W * H;
+    const f = cfg.paleta?.[0];
+    if (f) {
+      for (const { color, radio } of pulirCfg) {
+        const es = new Uint8Array(N);
+        const elegible = new Uint8Array(N);
+        for (let i = 0; i < N; i++) {
+          const p = i * 4;
+          const esColor = d[p] === color.r && d[p + 1] === color.g && d[p + 2] === color.b;
+          const esFondo = d[p] === f.r && d[p + 1] === f.g && d[p + 2] === f.b;
+          es[i] = esColor ? 1 : 0;
+          elegible[i] = (esColor || esFondo) ? 1 : 0;
+        }
+        // Integrales de "es color" y de "es elegible", con borde de ceros.
+        const A = (W + 1) * (H + 1);
+        const sumaC = new Int32Array(A), sumaE = new Int32Array(A);
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const i = y * W + x, j = (y + 1) * (W + 1) + (x + 1);
+            sumaC[j] = es[i] + sumaC[j - 1] + sumaC[j - W - 1] - sumaC[j - W - 2];
+            sumaE[j] = elegible[i] + sumaE[j - 1] + sumaE[j - W - 1] - sumaE[j - W - 2];
+          }
+        }
+        const ventana = (S, x0, y0, x1, y1) => {
+          const a = y0 * (W + 1) + x0, b = y0 * (W + 1) + x1 + 1;
+          const cc = (y1 + 1) * (W + 1) + x0, dd = (y1 + 1) * (W + 1) + x1 + 1;
+          return S[dd] - S[b] - S[cc] + S[a];
+        };
+        const nuevo = new Uint8Array(es);
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const i = y * W + x;
+            if (!elegible[i]) continue;
+            const x0 = Math.max(0, x - radio), y0 = Math.max(0, y - radio);
+            const x1 = Math.min(W - 1, x + radio), y1 = Math.min(H - 1, y + radio);
+            const conColor = ventana(sumaC, x0, y0, x1, y1);
+            const conVoto = ventana(sumaE, x0, y0, x1, y1);
+            if (conVoto > 0) nuevo[i] = conColor * 2 > conVoto ? 1 : 0;
+          }
+        }
+        for (let i = 0; i < N; i++) {
+          if (!elegible[i] || nuevo[i] === es[i]) continue;
+          const p = i * 4, v = nuevo[i] ? color : f;
+          d[p] = v.r; d[p + 1] = v.g; d[p + 2] = v.b; d[p + 3] = 255;
+        }
+      }
+      ctx.putImageData(datos, 0, 0);
+    }
   }
 
   // TAPAR HUECOS. El cierre engorda la figura, pero deja costuras de uno o dos
@@ -372,7 +447,7 @@ const res = await pagina.evaluate(async (b64, cfg) => {
   }
 
   return { w: c.width, h: c.height, capas, trazos, volcado };
-}, b64, { paleta, quitar: [...quitar], minArea, suave, nColores, cerrar, tapar, fusionar, volcar: !!opt('volcar') });
+}, b64, { paleta, quitar: [...quitar], minArea, suave, nColores, cerrar, tapar, fusionar, pulir, volcar: !!opt('volcar') });
 
 await navegador.close();
 

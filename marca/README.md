@@ -10,10 +10,8 @@ se convirtieron en vector real.
 |---|---|
 | `fuente/plana-color-bueno.png` | La generación plana. **De aquí sale el ave** y de aquí salió el color exacto. |
 | `fuente/opcion-4.png` | La opción 4, la más parecida al original. **De aquí sale el arco.** |
-| `logo/paloma.svg` | La marca armada. Hoy apunta a la variante sólida. |
-| `logo/paloma-finas.svg` | Plumas finas y muy divididas. La más elegante, la que peor aguanta el tamaño chico. |
-| `logo/paloma-media.svg` | Intermedia. |
-| `logo/paloma-solida.svg` | Masa sólida junto al cuerpo, plumas divididas sólo en el tercio exterior. |
+| `logo/paloma.svg` | **La marca.** 5 trazos, 6 KB. |
+| `logo/paloma-simple.svg` | La misma con los contornos más simplificados (4.5 KB). |
 | `logo/arco-de-la-4.svg` | El arco solo, por si hay que recolocarlo. |
 
 ## Los colores, medidos de la imagen (no inventados)
@@ -31,8 +29,8 @@ se convirtieron en vector real.
 # 1 · el ave (de la imagen plana)
 node herramientas/vectorizar.mjs marca/fuente/plana-color-bueno.png /tmp/ave.svg \
   --colores "#120C1A,#AD21ED,#EAE5E3,#21132D" --quitar "#120C1A" \
-  --fusionar "#21132D:#AD21ED" --cerrar "#AD21ED:6" \
-  --minarea 120 --capas \
+  --fusionar "#21132D:#AD21ED" --cerrar "#AD21ED:3" --pulir "#AD21ED:3" \
+  --minarea 120 --capas --suave 2 \
   --sinzona "1200,580,208,188"   `# la estrellita que dejó el generador` \
   --sinzona "575,435,90,120" --sinzona "745,435,90,120"  `# las comillas: Carlos las quitó` \
   --sinzona "430,55,560,205"     `# el arco de esta imagen, se reemplaza por el de la 4`
@@ -44,11 +42,20 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
   --solozona "#010101:250,20,300,150" --solozona "#F2F2F2:480,20,300,150"
 
 # 3 · armar
-node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg --arco "660,285"
+node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg --arco "620,278"
 ```
 
-El `--cerrar` es la perilla de "qué tan lejos del cuerpo se dividen las plumas": 0 finas, 3
-intermedias, 6 sólidas. El `--arco ancho,abajo` mueve y escala el arco.
+Las perillas y por qué están en ese número:
+
+- **`--cerrar 3`** — qué tan lejos del cuerpo se dividen las plumas. 0 finas, 3 intermedias,
+  6 sólidas. Carlos eligió 3.
+- **`--pulir 3` + `--suave 2`** — el borde que sale del cierre viene escalonado y el trazador lo
+  convierte en zigzag; Carlos lo describió como z-fighting alrededor de las plumas. El pulido es
+  un filtro de mayoría que tumba los dientes sin mover la silueta. De paso el archivo baja de
+  11 KB a 6.
+- **`--arco 620,278`** — con 660 la punta izquierda del arco asomaba por encima del ala como un
+  trocito suelto; sólo se veía en fondo claro. Con 620 queda escondida detrás del ala.
+- **El arco va DETRÁS del ave.** Encima cruzaba el ala izquierda y parecía atravesarle el cuerpo.
 
 ## Por qué el proceso es así, y no "dibújalo en código"
 
