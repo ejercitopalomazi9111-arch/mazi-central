@@ -11,7 +11,6 @@ se convirtieron en vector real.
 | `fuente/plana-color-bueno.png` | La generación plana. **De aquí sale el ave** y de aquí salió el color exacto. |
 | `fuente/opcion-4.png` | La opción 4, la más parecida al original. **De aquí sale el arco.** |
 | `logo/paloma.svg` | **La marca.** Negro real. Para fondo claro e impresión. |
-| `logo/paloma-oscuro.svg` | Para fondo oscuro: mismo diseño **con filo hueso**. El negro sigue siendo negro. |
 | `logo/paloma-simple.svg` | Contornos más simplificados, para tamaños chicos. |
 | `logo/arco-de-la-4.svg` | El arco solo, por si hay que recolocarlo. |
 
@@ -44,12 +43,8 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
 
 # 3 · armar
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
-  --arco "515,233" --encima --barras "435,42,112,15,22,42,34,18,13" --estrella 1.6
+  --arco "515,233" --encima --barras "438,34,103,15,22,42,34,18,13" --estrella 1.6
 
-# 4 · la versión para fondo oscuro
-node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma-oscuro.svg \
-  --arco "515,233" --encima --barras "435,42,112,15,22,42,34,18,13" --estrella 1.6 \
-  --contorno "#EAE5E3,6"
 ```
 
 Las perillas y por qué están en ese número:
@@ -91,15 +86,23 @@ Las perillas y por qué están en ese número:
 - **`--estrella 1.6`** — la estrella del pecho es el único trazo hueso que trae el ave (el arco
   usa su propio blanco), así que se puede escalar sola. Va respecto a su propio centro: agrandarla
   no la mueve de sitio. 1.6 la deja del tamaño que tiene en las referencias de Carlos.
-- **`--contorno "#EAE5E3,6"`, y no `--negro`** — el problema era que en fondo oscuro el negro
-  real desaparece: las barras y la mitad oscura del arco dejan de existir. La primera salida fue
-  subir el negro a `#4A4458`; **la buena la trajo Carlos con una referencia**: un filo claro
-  alrededor de la figura. El negro sigue siendo negro y el contorno lo hace existir, que es
-  bastante mejor que falsear el color.
+## Una sola versión, y es a propósito
 
-  El trazo va centrado, así que la mitad se comería la silueta; por eso cada grupo se pinta dos
-  veces — primero sólo el contorno con el trazo al doble, encima el relleno limpio. El filo queda
-  por fuera de la forma. `--negro` sigue ahí, pero ya no hace falta.
+En fondo oscuro el negro real desaparece: las barras de la cadera y la mitad oscura del arco dejan
+de existir. Se probaron dos salidas — subirle el tono al negro (`--negro`) y ponerle un filo claro
+alrededor (`--contorno`, que Carlos trajo con una referencia). **Las dos funcionan y ninguna se
+usa**, por decisión suya:
+
+> *"para lo de fondo oscuro yo pienso que está bien que lo dejemos sin contorno, le da dinamismo al
+> logo — en fondos claros es un logo donde está la línea negra y en fondos oscuros es la línea
+> clara"*
+
+Y tiene razón: la marca no es la misma imagen en todos lados, cambia de lectura según dónde vive.
+Sobre hueso manda la línea negra; sobre vacío manda la clara. Eso no es un defecto que haya que
+tapar, es cómo respira.
+
+Las dos banderas siguen en `armar.mjs` por si algún soporte las pide —una serigrafía a un color, un
+bordado, un fondo de foto— pero el logo de la casa va limpio.
 - **La raíz de las barras** — el noveno valor de `--barras`. Con raíz, las dos barras de cada lado
   nacen del MISMO punto, sale un disco en el origen y el par se abre en abanico. Ojo: la
   separación deja de ser un corrimiento y pasa a ser **apertura angular** — en el nacimiento ya no
