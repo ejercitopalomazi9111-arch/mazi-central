@@ -267,7 +267,7 @@ la web tiene que ser la mejor pieza del portafolio. Nadie compra animación vien
 
 **Dónde vive:** `sitio/` en `mazi-central` (GitHub Pages, gratis). Con dominio, se sube a la raíz.
 
-**Estética:** tinta `#0E1311`, latón `#D69A2D`, verde `#4FB286`, hueso `#E8E6DF`. Oscuro,
+**Estética:** vacío `#100A18`, superficie `#1E1428`, **violeta `#AC27FF`**, hueso `#E9E4E4`. Oscuro,
 tipografía grande y apretada, líneas finas, un acento. **Cero fotos de stock de gente sonriendo
 con laptops.**
 

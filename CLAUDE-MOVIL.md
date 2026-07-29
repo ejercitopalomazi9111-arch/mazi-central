@@ -136,7 +136,7 @@ Cuando algo "se ve de IA" casi siempre son estas seis, en orden de cuánto arreg
 forma de celular flotando en un vacío negro. En pantalla ancha, o el contenido crece en
 columnas, o el fondo hace trabajo deliberado.
 
-**Paleta de la casa:** tinta `#0E1311` · latón `#D69A2D` · verde `#4FB286` · hueso `#E8E6DF`
+**Paleta de la casa:** vacío `#100A18` · superficie `#1E1428` · **violeta `#AC27FF`** · hueso `#E9E4E4`
 
 **Movimiento:** 120–200ms para respuestas, 200–400ms para transiciones. Sale rápido, entra
 suave. **Sólo `transform` y `opacity`** — animar `width` o `top` produce tirones. Y siempre
