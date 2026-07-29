@@ -44,11 +44,11 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
 
 # 3 · armar
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
-  --arco "515,233" --encima --barras "407,28,97,11,22,42,30,16"
+  --arco "515,233" --encima --barras "452,18,87,11,22,42,30,16"
 
 # 4 · la versión para fondo oscuro
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma-oscuro.svg \
-  --arco "515,233" --encima --barras "407,28,97,11,22,42,30,16" --negro "#4A4458"
+  --arco "515,233" --encima --barras "452,18,87,11,22,42,30,16" --negro "#4A4458"
 ```
 
 Las perillas y por qué están en ese número:
@@ -64,14 +64,18 @@ Las perillas y por qué están en ese número:
   la punta seguía cortándose contra el ala, y para que dejara de pasar había que hacerlo tan
   chico que se leía como accesorio pegado. Encima, la punta se lee continua y se apoya donde el
   ala ya tiene masa.
-- **`--barras 407,28,97,11,22,42,30,16`** —
+- **`--barras 452,18,87,11,22,42,30,16`** —
   `y,dentro,fuera,grosorDentro,grosorFuera,ángulo,separación,curva`. Son **dos por lado**, como
   un signo igual, en diagonal hacia afuera y abajo. No son rectángulos: cada una es una cuña que
   nace fina (11) dentro del ave, se ensancha hacia afuera (22) y se arquea. Largo 69.
 
   La altura salió de medir el ave fila por fila: la cintura está en y=470 y el ala no vuelve
-  hasta x=833, así que hay 100 px libres; el par arranca más arriba para que quepa su caída
-  completa sin rozar la estrella.
+  hasta x=833, así que hay 100 px libres. El par arranca en 452 — la cadera, por decisión de
+  Carlos. Más abajo (468, la cintura exacta) el par empieza a taparle el arranque de la cola.
+
+  Al bajar, `dentro` tiene que bajar también: el cuerpo se angosta hacia la cadera (57 px de
+  ancho en y=470 contra 98 en y=420), así que con `dentro=28` la barra ya nacería fuera del ave
+  en vez de dentro.
 
   Dos números que no son gusto, son aritmética:
   - **La separación se aplica PERPENDICULAR** a la barra, no en vertical. Eso es lo que hace que
