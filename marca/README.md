@@ -44,11 +44,11 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
 
 # 3 · armar
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
-  --arco "515,233" --encima --barras "428,26,124,11,22,22"
+  --arco "515,233" --encima --barras "396,28,138,8,19,42,36,26"
 
 # 4 · la versión para fondo oscuro
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma-oscuro.svg \
-  --arco "515,233" --encima --barras "428,26,124,11,22,22" --negro "#4A4458"
+  --arco "515,233" --encima --barras "396,28,138,8,19,42,36,26" --negro "#4A4458"
 ```
 
 Las perillas y por qué están en ese número:
@@ -64,12 +64,22 @@ Las perillas y por qué están en ese número:
   la punta seguía cortándose contra el ala, y para que dejara de pasar había que hacerlo tan
   chico que se leía como accesorio pegado. Encima, la punta se lee continua y se apoya donde el
   ala ya tiene masa.
-- **`--barras 428,26,124,11,22,22`** — `y,dentro,fuera,grosor,ángulo,separación`. Son **dos por
-  lado**, como un signo igual, en diagonal hacia afuera y abajo. La altura salió de medir el ave
-  fila por fila: la cintura está en y=470 y el ala no vuelve hasta x=833, así que hay 100 px
-  libres; el par arranca en 428 para caber completo sin rozar la estrella. La separación se
-  aplica **perpendicular** a la barra, no en vertical — eso es lo que hace que el par se lea como
-  un "=" inclinado en vez de dos rayas sueltas.
+- **`--barras 396,28,138,8,19,42,36,26`** —
+  `y,dentro,fuera,grosorDentro,grosorFuera,ángulo,separación,curva`. Son **dos por lado**, como
+  un signo igual, en diagonal hacia afuera y abajo. No son rectángulos: cada una es una cuña que
+  nace fina (8) dentro del ave, se ensancha hacia afuera (19) y se arquea.
+
+  La altura salió de medir el ave fila por fila: la cintura está en y=470 y el ala no vuelve
+  hasta x=833, así que hay 100 px libres; el par arranca más arriba para que quepa su caída
+  completa sin rozar la estrella.
+
+  Dos números que no son gusto, son aritmética:
+  - **La separación se aplica PERPENDICULAR** a la barra, no en vertical. Eso es lo que hace que
+    el par se lea como un "=" inclinado en vez de dos rayas sueltas apuntando al mismo lado.
+  - **La separación tiene que ser mayor que el grosor exterior.** Con separación 14 y grosor 20
+    los bordes se solapaban y las dos barras se fundían en una sola figura — Carlos dijo que
+    parecía un diente, y tenía razón: geométricamente ERA una pieza. Hoy la separación (36)
+    supera el grosor (19) y deja 17 de hueco, que es lo que sobrevive a tamaño chico.
 - **`--negro`** — el negro real desaparece en fondo oscuro: las barras y la mitad oscura del arco
   dejan de existir. La versión oscura lo sube a `#4A4458`, que conserva la dualidad
   oscuro/claro y sí se ve.
