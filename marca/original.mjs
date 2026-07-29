@@ -103,35 +103,53 @@ function ala({ plumas = 7, ancho = 30, estrecha = 10, curva = 5, tips } = {}) {
   return d;
 }
 
-function cola({ plumas = 5, largo = 74, corto = 58, abre = 13 } = {}) {
-  const base = [200, 248], d = [], mitad = (plumas - 1) / 2;
+// Cola: 5 plumas, la de en medio sobre el eje. Cortas y bien abiertas — si son
+// largas y juntas se traslapan y el resultado se lee como un aguijón, no como
+// una cola de cinco plumas.
+function cola({ plumas = 5, largo = 56, corto = 40, abre = 25 } = {}) {
+  const base = [200, 252], d = [], mitad = (plumas - 1) / 2;
   for (let i = 0; i < plumas; i++) {
     const k = i - mitad;                       // 0 = sobre el eje
     const ang = (90 + k * abre) * Math.PI / 180;
     const L = largo - (largo - corto) * Math.abs(k) / mitad;
-    const o = [base[0] + k * 7, base[1]];
+    const o = [base[0] + k * 9, base[1]];
     d.push(pluma(o, [o[0] + L * Math.cos(ang), o[1] + L * Math.sin(ang)],
-                 20 - Math.abs(k) * 1.5, 3.5));
+                 18 - Math.abs(k) * 2, 3));
   }
   return d;
 }
 
-// El arco: media luna baja entre las alas, puntas hacia abajo. Se parte por el
-// eje para poder pintar cada mitad distinto.
-function arco({ span = 94, alto = 46, grosor = 13, y = 122 } = {}) {
-  const cima = y - alto;
-  const media = lado => {
-    const x = CX + lado * span, cxm = CX + lado * span / 2;
-    return `M ${x} ${y}`
-      + ` Q ${cxm + lado * 6} ${cima + 6} ${CX} ${cima}`
-      + ` L ${CX} ${cima + grosor}`
-      + ` Q ${cxm - lado * 2} ${cima + grosor + 10} ${x - lado * grosor * 0.9} ${y - 2}`
-      + ` Z`;
+// El arco: media luna baja entre las alas, por encima de la cabeza, puntas
+// hacia abajo tocando las alas por dentro.
+//
+// Se traza como UNA curva con grosor constante y puntas redondas, no como un
+// polígono que adelgaza hacia los extremos: eso último producía una hoz —
+// literalmente parecía que el ave traía un machete encima.
+//
+// Las dos mitades: se pinta la curva completa en hueso y encima se "vacía" la
+// mitad izquierda con un trazo más delgado del color del fondo. Queda mitad
+// izquierda oscura con filo hueso, mitad derecha hueso sólida. Como lo pediste.
+function arco({ span = 100, alto = 30, grosor = 14, y = 104, recorte = 0.10 } = {}) {
+  const P0 = [CX - span, y], P2 = [CX + span, y];
+  const P1 = [CX, 2 * (y - alto) - y];          // control: la curva pasa por la cima
+  const en = t => [
+    (1 - t) ** 2 * P0[0] + 2 * (1 - t) * t * P1[0] + t * t * P2[0],
+    (1 - t) ** 2 * P0[1] + 2 * (1 - t) * t * P1[1] + t * t * P2[1],
+  ];
+  // Subdivisión de una cuadrática al tramo [t0,t1].
+  const tramo = (t0, t1) => {
+    const c = lerp(lerp(P0, P1, t0), lerp(P1, P2, t0), t1);
+    const a = en(t0), b = en(t1);
+    return `M ${r2(a[0])} ${r2(a[1])} Q ${r2(c[0])} ${r2(c[1])} ${r2(b[0])} ${r2(b[1])}`;
   };
-  return { izq: media(-1), der: media(1) };
+  return {
+    entero: tramo(0, 1),
+    huecoIzq: tramo(recorte, 0.5),
+    grosor,
+  };
 }
 
-function comillas({ y1 = 214, y2 = 238, dx = 12, sep = 18 } = {}) {
+function comillas({ y1 = 211, y2 = 232, dx = 11, sep = 25 } = {}) {
   return [`M ${CX + sep} ${y1} L ${CX + sep + dx} ${y2}`,
           `M ${CX - sep} ${y1} L ${CX - sep - dx} ${y2}`];
 }
@@ -139,7 +157,10 @@ function comillas({ y1 = 214, y2 = 238, dx = 12, sep = 18 } = {}) {
 /* ── ensamble ──────────────────────────────────────────────────────────── */
 
 function marca(op = {}) {
-  const { id, plumas = 7, curva = 5, ancho = 30, estrecha = 10,
+  // `fondo` es el color de la mitad oscura del arco. Va fijo al vacío de la
+  // marca, no al fondo de la página: así el logo es autocontenido y "mitad
+  // negra, mitad blanca" se cumple en cualquier soporte.
+  const { id, plumas = 7, curva = 5, ancho = 30, estrecha = 10, fondo = VACIO,
           conArco = true, conEstrella = true, conComillas = true, tips } = op;
 
   const alaDer = ala({ plumas, ancho, estrecha, curva, tips });
@@ -155,12 +176,12 @@ function marca(op = {}) {
       <g transform="translate(${2 * CX},0) scale(-1,1)">${alas}</g>
       <path d="${cuerpo()}"/>
     </g>
-    ${conEstrella ? `<path d="${estrella(CX, 191, 27)}" fill="${HUESO}"/>` : ''}
-    ${conComillas ? `<g stroke="${HUESO}" stroke-width="7.5" stroke-linecap="round" fill="none">
+    ${conEstrella ? `<path d="${estrella(CX, 186, 25)}" fill="${HUESO}"/>` : ''}
+    ${conComillas ? `<g stroke="${HUESO}" stroke-width="7" stroke-linecap="round" fill="none">
       <path d="${cDer}"/><path d="${cIzq}"/></g>` : ''}
-    ${conArco ? `<g>
-      <path d="${arc.izq}" fill="${VACIO}" stroke="${HUESO}" stroke-width="2.2" stroke-linejoin="round"/>
-      <path d="${arc.der}" fill="${HUESO}"/></g>` : ''}
+    ${conArco ? `<g fill="none" stroke-linecap="round">
+      <path d="${arc.entero}" stroke="${HUESO}" stroke-width="${arc.grosor}"/>
+      <path d="${arc.huecoIzq}" stroke="${fondo}" stroke-width="${arc.grosor - 5}"/></g>` : ''}
   </g>`;
 }
 

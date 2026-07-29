@@ -34,16 +34,24 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 // puppeteer vive donde haya quedado instalado; lo buscamos en los lugares de
-// siempre para no tener que instalarlo una vez por proyecto.
+// siempre para no tener que instalarlo una vez por proyecto. Sirve igual
+// `puppeteer` que `puppeteer-core` — el Chromium ya viene en la caja, así que
+// core basta y baja mucho más rápido.
+const PAQUETES = ['puppeteer', 'puppeteer-core'];
 const RAICES = [
   process.env.MAZI_PUPPETEER,
-  new URL('./node_modules/puppeteer/', import.meta.url).pathname,
-  '/workspace/torre-infinita/node_modules/puppeteer/',
-  '/home/user/mazi-central/node_modules/puppeteer/',
+  ...PAQUETES.flatMap(p => [
+    new URL(`./node_modules/${p}/`, import.meta.url).pathname,
+    `/home/user/mazi-central/node_modules/${p}/`,
+    `/workspace/torre-infinita/node_modules/${p}/`,
+  ]),
 ].filter(Boolean);
 
 let puppeteer = null;
-try { puppeteer = (await import('puppeteer')).default; } catch { /* seguimos buscando */ }
+for (const nombre of PAQUETES) {
+  if (puppeteer) break;
+  try { puppeteer = (await import(nombre)).default; } catch { /* seguimos buscando */ }
+}
 for (const raiz of RAICES) {
   if (puppeteer) break;
   try {
@@ -52,7 +60,8 @@ for (const raiz of RAICES) {
   } catch { /* siguiente */ }
 }
 if (!puppeteer) {
-  console.error('No encontré puppeteer. Instálalo con:  npm i -D puppeteer');
+  console.error('No encontré puppeteer. Instálalo con:');
+  console.error('  cd herramientas && npm i puppeteer-core');
   console.error('Busqué en:\n  ' + RAICES.join('\n  '));
   process.exit(1);
 }
