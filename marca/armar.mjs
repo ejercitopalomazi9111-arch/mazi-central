@@ -10,7 +10,7 @@
 // atributo transform: así todo el archivo vive en un solo sistema de
 // coordenadas y se puede recortar, medir y editar sin sorpresas.
 //
-//   node marca/armar.mjs <ave.svg> <arco.svg> <salida.svg> [--arco ancho,abajo] [--encima]
+//   node marca/armar.mjs <ave.svg> <arco.svg> <salida.svg> [--arco ancho,abajo] [--encima] [--barras y,dentro,fuera,grosor] [--negro hex]
 //
 // --arco  ancho,abajo   ancho del arco y a qué altura quedan sus puntas, en
 //                       coordenadas de la imagen del ave. Siempre centrado en
@@ -95,29 +95,68 @@ const s = anchoDestino / anchoArco;
 const tx = ejeAve - (cajaArco.x0 + anchoArco / 2) * s;   // centrado en el eje del ave
 const ty = abajoDestino - (cajaArco.y0 + altoArco) * s;
 
-const arcoPuesto = arco.trazos.map(t => ({ color: t.color, d: mover(t.d, s, tx, ty) }));
+// --negro cambia el negro de la marca. En fondo oscuro el #010101 desaparece:
+// la mitad oscura del arco y las barras de la cintura dejan de existir. Para esa
+// versión se sube a un tono que sí contrasta, conservando la dualidad
+// oscuro/claro que el logo original tenía.
+const NEGRO_DE = '#010101';
+const negro = opt('negro', NEGRO_DE);
+const arcoPuesto = arco.trazos.map(t => ({
+  color: t.color === NEGRO_DE ? negro : t.color,
+  d: mover(t.d, s, tx, ty),
+}));
+
+/* ── las barras de la cintura ──────────────────────────────────────────── */
+
+// Dos líneas perpendiculares al eje, una por lado, que nacen DENTRO del ave y
+// apuntan hacia afuera. Negras, como el arco.
+//
+// La altura y el alcance no son a ojo: se midió el ave fila por fila. La cintura
+// —lo más angosto del cuerpo antes de la cola— está en y=470, donde el cuerpo va
+// de 675 a 732 y el ala no vuelve a empezar hasta 833. Ahí caben 100 px de barra
+// sin chocar con nada.
+//
+//   --barras  y,dentro,fuera,grosor    distancias medidas desde el eje
+const barras = [];
+if (opt('barras')) {
+  const [y, dentro, fuera, grosor] = opt('barras').split(',').map(Number);
+  const NEGRO = opt('negro', '#010101');
+  for (const lado of [1, -1]) {
+    const a = ejeAve + lado * dentro, b = ejeAve + lado * fuera;
+    const x0 = Math.min(a, b), x1 = Math.max(a, b);
+    const y0 = y - grosor / 2, y1 = y + grosor / 2;
+    barras.push({ color: NEGRO,
+      d: `M ${r2(x0)} ${r2(y0)} L ${r2(x1)} ${r2(y0)} L ${r2(x1)} ${r2(y1)} L ${r2(x0)} ${r2(y1)} Z` });
+  }
+}
 
 /* ── componer ──────────────────────────────────────────────────────────── */
 
 // Orden de pintado. Detrás, las puntas del arco asoman por los huecos ENTRE las
 // plumas y el arco parece entretejido con el ala — eso es lo que se ve mal.
 // Encima, la punta se lee continua sobre el ala, como en la imagen 4.
+// Las barras van SIEMPRE encima del ave: nacen dentro y tienen que verse sobre
+// el violeta, que es donde su tramo interior existe.
 const todo = bandera('encima')
-  ? [...ave.trazos, ...arcoPuesto]
-  : [...arcoPuesto, ...ave.trazos];
+  ? [...ave.trazos, ...arcoPuesto, ...barras]
+  : [...arcoPuesto, ...ave.trazos, ...barras];
 
 const c = cajaDe(todo);
 const pad = 6;
 const vb = [r2(c.x0 - pad), r2(c.y0 - pad), r2(c.x1 - c.x0 + pad * 2), r2(c.y1 - c.y0 + pad * 2)];
 
-// Agrupado por color, en el orden en que aparecieron.
-const porColor = new Map();
+// Agrupado por color RESPETANDO EL ORDEN DE PINTADO. Un Map por color no sirve:
+// las barras son negras igual que la mitad oscura del arco, así que se meterían
+// en su grupo y acabarían pintándose donde va el arco — detrás del ave. Aquí un
+// color repetido abre un grupo nuevo si en medio hubo otro color.
+const grupos = [];
 for (const t of todo) {
-  if (!porColor.has(t.color)) porColor.set(t.color, []);
-  porColor.get(t.color).push(t.d);
+  const ultimo = grupos[grupos.length - 1];
+  if (ultimo && ultimo.color === t.color) ultimo.ds.push(t.d);
+  else grupos.push({ color: t.color, ds: [t.d] });
 }
 
-const cuerpo = [...porColor].map(([color, ds]) =>
+const cuerpo = grupos.map(({ color, ds }) =>
   `  <g fill="${color}">\n${ds.map(d => `    <path d="${d}"/>`).join('\n')}\n  </g>`).join('\n');
 
 writeFileSync(resolve(salidaPath),
@@ -126,4 +165,4 @@ writeFileSync(resolve(salidaPath),
 console.log(`🕊  ${salidaPath}`);
 console.log(`   arco: escala ${r2(s)}, movido a (${r2(tx)}, ${r2(ty)})`);
 console.log(`   viewBox ${vb.join(' ')}`);
-console.log(`   ${todo.length} trazos en ${porColor.size} capas: ${[...porColor.keys()].join(' ')}`);
+console.log(`   ${todo.length} trazos en ${grupos.length} capas: ${grupos.map(g => g.color).join(' ')}`);

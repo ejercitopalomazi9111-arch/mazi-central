@@ -10,8 +10,9 @@ se convirtieron en vector real.
 |---|---|
 | `fuente/plana-color-bueno.png` | La generación plana. **De aquí sale el ave** y de aquí salió el color exacto. |
 | `fuente/opcion-4.png` | La opción 4, la más parecida al original. **De aquí sale el arco.** |
-| `logo/paloma.svg` | **La marca.** 5 trazos, 6 KB. |
-| `logo/paloma-simple.svg` | La misma con los contornos más simplificados (4.5 KB). |
+| `logo/paloma.svg` | **La marca.** Negro real. Para fondo claro e impresión. |
+| `logo/paloma-oscuro.svg` | Para fondo oscuro: el negro sube a `#4A4458` para que exista. |
+| `logo/paloma-simple.svg` | Contornos más simplificados, para tamaños chicos. |
 | `logo/arco-de-la-4.svg` | El arco solo, por si hay que recolocarlo. |
 
 ## Los colores, medidos de la imagen (no inventados)
@@ -42,7 +43,12 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
   --solozona "#010101:250,20,300,150" --solozona "#F2F2F2:480,20,300,150"
 
 # 3 · armar
-node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg --arco "620,278"
+node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
+  --arco "560,252" --encima --barras "470,22,128,20"
+
+# 4 · la versión para fondo oscuro
+node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma-oscuro.svg \
+  --arco "560,252" --encima --barras "470,22,128,20" --negro "#4A4458"
 ```
 
 Las perillas y por qué están en ese número:
@@ -53,9 +59,18 @@ Las perillas y por qué están en ese número:
   convierte en zigzag; Carlos lo describió como z-fighting alrededor de las plumas. El pulido es
   un filtro de mayoría que tumba los dientes sin mover la silueta. De paso el archivo baja de
   11 KB a 6.
-- **`--arco 620,278`** — con 660 la punta izquierda del arco asomaba por encima del ala como un
-  trocito suelto; sólo se veía en fondo claro. Con 620 queda escondida detrás del ala.
-- **El arco va DETRÁS del ave.** Encima cruzaba el ala izquierda y parecía atravesarle el cuerpo.
+- **`--encima` + `--arco 560,252`** — con el arco detrás, sus puntas asomaban por los huecos
+  ENTRE las plumas y el arco parecía entretejido con el ala. Acortarlo sólo movía el problema:
+  la punta seguía cortándose contra el ala, y para que dejara de pasar había que hacerlo tan
+  chico que se leía como accesorio pegado. Encima, la punta se lee continua y se apoya donde el
+  ala ya tiene masa.
+- **`--barras 470,22,128,20`** — las dos líneas perpendiculares de la cintura. La altura no es a
+  ojo: se midió el ave fila por fila y la cintura está en y=470, donde el cuerpo va de 675 a 732
+  y el ala no vuelve hasta 833. Separadas 22 px del eje para que se lean como DOS y no como una
+  barra atravesando el ave.
+- **`--negro`** — el negro real desaparece en fondo oscuro: las barras y la mitad oscura del arco
+  dejan de existir. La versión oscura lo sube a `#4A4458`, que conserva la dualidad
+  oscuro/claro y sí se ve.
 
 ## Por qué el proceso es así, y no "dibújalo en código"
 
