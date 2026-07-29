@@ -10,7 +10,7 @@
 // atributo transform: así todo el archivo vive en un solo sistema de
 // coordenadas y se puede recortar, medir y editar sin sorpresas.
 //
-//   node marca/armar.mjs <ave.svg> <arco.svg> <salida.svg> [--arco ancho,abajo]
+//   node marca/armar.mjs <ave.svg> <arco.svg> <salida.svg> [--arco ancho,abajo] [--encima]
 //
 // --arco  ancho,abajo   ancho del arco y a qué altura quedan sus puntas, en
 //                       coordenadas de la imagen del ave. Siempre centrado en
@@ -27,6 +27,7 @@ if (!avePath || !arcoPath || !salidaPath) {
   process.exit(1);
 }
 const opt = (n, d) => { const i = args.indexOf('--' + n); return i === -1 ? d : args[i + 1]; };
+const bandera = n => args.includes('--' + n);
 
 const r2 = n => Math.round(n * 100) / 100;
 
@@ -98,10 +99,12 @@ const arcoPuesto = arco.trazos.map(t => ({ color: t.color, d: mover(t.d, s, tx, 
 
 /* ── componer ──────────────────────────────────────────────────────────── */
 
-// El ARCO PRIMERO: va detrás del ave, como en la imagen 4. Encima quedaba
-// cruzando el ala izquierda y se leía como si le atravesara el cuerpo; detrás,
-// sus puntas se meten tras las alas y el conjunto respira.
-const todo = [...arcoPuesto, ...ave.trazos];
+// Orden de pintado. Detrás, las puntas del arco asoman por los huecos ENTRE las
+// plumas y el arco parece entretejido con el ala — eso es lo que se ve mal.
+// Encima, la punta se lee continua sobre el ala, como en la imagen 4.
+const todo = bandera('encima')
+  ? [...ave.trazos, ...arcoPuesto]
+  : [...arcoPuesto, ...ave.trazos];
 
 const c = cajaDe(todo);
 const pad = 6;
