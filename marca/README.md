@@ -43,7 +43,7 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png /tmp/arco.svg \
 
 # 3 · armar
 node marca/armar.mjs /tmp/ave.svg /tmp/arco.svg marca/logo/paloma.svg \
-  --arco "515,233" --encima --barras "438,34,103,15,22,42,34,18,13" --estrella 1.6
+  --arco "515,233" --encima --barras "402,0,126,15,24,42,62,20,64" --estrella 1.6
 
 ```
 
@@ -103,10 +103,17 @@ tapar, es cómo respira.
 
 Las dos banderas siguen en `armar.mjs` por si algún soporte las pide —una serigrafía a un color, un
 bordado, un fondo de foto— pero el logo de la casa va limpio.
-- **La raíz de las barras** — el noveno valor de `--barras`. Con raíz, las dos barras de cada lado
-  nacen del MISMO punto, sale un disco en el origen y el par se abre en abanico. Ojo: la
-  separación deja de ser un corrimiento y pasa a ser **apertura angular** — en el nacimiento ya no
-  hay nada que abra el hueco, tiene que abrirlo la divergencia.
+- **El vértice de las barras** — el noveno valor de `--barras` es el *retranqueo*: las cuatro
+  barras **apuntan** a un mismo punto sobre el eje del ave, pero arrancan a esa distancia de él,
+  así que nunca se tocan.
+
+  El primer intento fue un disco en el vértice con las barras naciendo pegadas: se combinaban en
+  una sola pieza, que es exactamente lo que Carlos no quería. **Apuntar no es tocarse.**
+
+  Con vértice, `dentro` y `fuera` se miden desde ÉL y no desde el eje, y la apertura sale de
+  `sep`. El hueco en el nacimiento vale `2·retranqueo·sen(apertura/2) − grosorDentro`, así que un
+  retranqueo corto los vuelve a pegar; la herramienta lo calcula y avisa cuando el número no
+  alcanza.
 
 ## Por qué el proceso es así, y no "dibújalo en código"
 

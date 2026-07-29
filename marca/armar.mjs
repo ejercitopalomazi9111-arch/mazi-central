@@ -164,36 +164,47 @@ if (opt('barras')) {
   const angulo = largos ? v[5] : (v[4] ?? 0);
   const sep = largos ? v[6] : (v[5] ?? 0);
   const curva = largos ? v[7] : 0;
-  // raíz: si viene, las dos barras nacen del MISMO punto y se abren en abanico,
-  // con un disco en el origen. Sin ella siguen siendo paralelas separadas.
-  const raiz = v[8] ?? 0;
+  // retranqueo: si viene, las dos barras de cada lado APUNTAN a un mismo vértice
+  // pero arrancan a esta distancia de él, así que nunca se tocan. Sin él siguen
+  // siendo paralelas separadas por `sep`.
+  //
+  // La primera versión de esto ponía un disco en el vértice y las barras naciendo
+  // pegadas a él: se combinaban en una sola pieza, que es justo lo que Carlos NO
+  // quería. Apuntar no es tocarse.
+  const retranqueo = v[8] ?? 0;
+  const conVertice = retranqueo > 0;
 
   const NEGRO = opt('negro', '#010101');
-  const cuantas = sep > 0 || raiz > 0 ? 2 : 1;
-  const largo = fuera - dentro;
+  const cuantas = sep > 0 || conVertice ? 2 : 1;
 
-  // Con raíz, la separación se convierte en apertura angular: el par tiene que
-  // divergir para que el hueco exista, porque en el nacimiento ya no hay
-  // corrimiento que lo abra.
-  const apertura = raiz > 0 ? Math.atan2(sep, largo) * 180 / Math.PI : 0;
+  // Con vértice, `dentro` y `fuera` se miden desde ÉL, no desde el eje, y la
+  // apertura se calcula para que la separación al final sea `sep`. En el inicio
+  // la separación queda proporcional: sep · retranqueo / fuera. Ese número tiene
+  // que superar el grosor inicial o las barras se tocan otra vez.
+  const apertura = conVertice ? 2 * Math.asin(Math.min(1, sep / (2 * fuera))) : 0;
+  const huecoInicio = conVertice ? 2 * retranqueo * Math.sin(apertura / 2) - g0 : null;
+  if (conVertice && huecoInicio <= 0) {
+    console.warn(`   ⚠ las barras se tocan en el nacimiento (falta ${r2(-huecoInicio)} px):`
+      + ' sube el retranqueo o la separación');
+  }
 
   for (const lado of [1, -1]) {
-    if (raiz > 0) {
-      const ox = ejeAve + lado * dentro, oy = y;
-      barras.push({ color: NEGRO, d: circulo(ox, oy, raiz) });
-    }
-
     for (let k = 0; k < cuantas; k++) {
-      // Cada barra del par: con raíz cambia el ángulo; sin raíz, el corrimiento.
-      const grados = angulo + (raiz > 0 ? (k === 0 ? -apertura / 2 : apertura / 2) : 0);
-      const rad = grados * Math.PI / 180;
-      const ux = lado * Math.cos(rad), uy = Math.sin(rad);
+      // Con vértice el par diverge en ángulo; sin vértice se corre en paralelo.
+      const grados = angulo * Math.PI / 180
+        + (conVertice ? (k === 0 ? -apertura / 2 : apertura / 2) : 0);
+      const ux = lado * Math.cos(grados), uy = Math.sin(grados);
       let px = -uy, py = ux;
       if (py < 0) { px = -px; py = -py; }
 
-      const corrimiento = raiz > 0 ? 0 : k * sep;
-      const ax = ejeAve + lado * dentro + px * corrimiento;
-      const ay = y + py * corrimiento;
+      const corrimiento = conVertice ? 0 : k * sep;
+      const desde = conVertice ? retranqueo : dentro;
+      const largo = conVertice ? fuera - retranqueo : fuera - dentro;
+
+      // El vértice al que apuntan las cuatro barras: sobre el eje del ave.
+      const vx = conVertice ? ejeAve : ejeAve + lado * dentro;
+      const ax = vx + (conVertice ? ux * desde : 0) + px * corrimiento;
+      const ay = y + (conVertice ? uy * desde : 0) + py * corrimiento;
       const bx = ax + ux * largo, by = ay + uy * largo;
       const mx = (ax + bx) / 2 + px * curva, my = (ay + by) / 2 + py * curva;
       const h0 = g0 / 2, h1 = g1 / 2, hm = (h0 + h1) / 2;
