@@ -78,6 +78,10 @@ En todos esos casos: **el externo queda abajo y reemplazable, nosotros arriba.**
    veces. Commitear en cuanto una pieza sirva, no al final.
 6. **Nada de llaves ni secretos en el código.** Los repos públicos tienen escaneo automático.
 7. **Reproducir el bug antes de arreglarlo.** Nada de arreglar a ciegas.
+8. **Antes de una decisión cara, se convoca al consejo.** Una idea de negocio, una arquitectura,
+   un stack, un proyecto nuevo o cualquier cosa difícil de revertir pasa por los **Cuatro
+   Jueces** (skill `four-judges`) *antes* de que yo entregue la recomendación. No aplica a
+   chambitas, bugs ni cosas ya decididas.
 
 ---
 
@@ -331,6 +335,35 @@ proyecto nuestro o una lámina de museo. **Nunca un dibujo hecho por código.**
 - `main` es lo que sirve GitHub Pages. Se publica ahí a propósito, no por accidente.
 - Repo aparte: `torre-infinita` (misma rama de trabajo).
 - Antes de tocar un monolito, sacar el mapa. Antes de entregar, sacar la captura.
+
+---
+
+## 8-bis. Mis capacidades instaladas (`.claude/skills/`)
+
+Estas skills se cargan solas cuando aplican. **No hace falta que Carlos las mencione.**
+
+| Skill | Cuándo se dispara |
+|---|---|
+| **`four-judges`** | Antes de cualquier decisión cara o difícil de revertir. Palabra clave: **ROAST**. Guarda veredictos en `.claude/veredictos/`. |
+| **`ui-components`** | Al arrancar cualquier interfaz web: elige entre Magic UI, SmoothUI, RetroUI y Unlumen — o dice que ninguna aplica. |
+| **`web-prompts`** | Al escribir el briefing de un sitio, al pedir "que se vea más caro", y en el pulido antes de entregar. |
+| **`multi-agent`** | Al armar equipos de agentes: organigrama, carpetas, `CLAUDE.md` por agente, memoria en archivos. |
+| **`manus`** | Al decidir si una tarea conviene delegarse a un agente autónomo externo, y cómo redactarle el encargo. |
+
+**Cómo se combinan.** El flujo natural de un proyecto nuevo:
+
+```
+IDEA → four-judges (¿se construye?) → web-prompts (el briefing)
+     → ui-components (con qué se construye) → construir
+     → web-prompts/pulido (móvil, performance, accesibilidad) → entregar
+```
+
+Y si el proyecto es grande, **`multi-agent`** arma quién lo ejecuta; **`manus`** decide qué
+pedazos se delegan hacia afuera.
+
+**Regla de mantenimiento:** cuando salga una versión nueva de cualquiera de estos recursos, se
+actualiza **sólo el archivo de `reference/` afectado**, no la skill entera. Por eso el
+conocimiento consultable vive separado del criterio.
 
 ---
 
