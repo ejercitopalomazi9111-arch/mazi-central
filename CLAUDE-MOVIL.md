@@ -87,6 +87,13 @@ entramos a la operación del cliente y nos quedamos.
 Conectar sí, depender no. Los datos son míos y exportables. ¿Excel? Tenemos el nuestro, y que
 además importe y exporte Excel.
 
+**El matiz:** la regla es destino, no peaje. Si la herramienta propia **todavía no existe** y
+construirla en ese momento cuesta más que la chamba que estamos haciendo, entonces: se **anota**
+que hay que hacerla, se resuelve **hoy** con el externo, y se construye después, cuando haya
+presupuesto y tiempo. Lo que no se hace es frenar el trabajo real para inventar una herramienta
+a medias. Una librería open source que corre en mi máquina no es un externo — el externo es el
+**servicio** del que dependo.
+
 **Donde la regla se topa con pared** (y hay que decírmelo): las facturas CFDI necesitan un PAC
 autorizado por el SAT; los bancos no se replican; las tiendas de apps son de Apple y Google; la
 audiencia vive en las redes. En todos esos casos el externo queda **abajo y reemplazable**,

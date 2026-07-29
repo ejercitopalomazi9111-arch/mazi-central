@@ -89,6 +89,27 @@ sueltas: entramos a la operación del cliente y nos quedamos.
 
 En todos: **el externo queda abajo y reemplazable, nosotros arriba.**
 
+### El matiz que puso Carlos: la regla no se paga con tiempo que no tenemos
+
+> *"Si hacerlo tú mismo en algo tan sencillo gasta más que usar un externo porque la herramienta
+> para hacerlo nosotros no se ha hecho, se debe poner en un apunte que hay que hacer la
+> herramienta y tratar de resolverlo con el externo. Después, cuando haya presupuesto y tiempo,
+> se hace."*
+
+La regla es **destino, no peaje**. Si la herramienta propia ya existe, se usa. Si **no** existe y
+construirla ahí mismo cuesta más que el trabajo que estoy haciendo, entonces:
+
+1. **Se anota en [`herramientas/PENDIENTES.md`](herramientas/PENDIENTES.md)** — con qué la
+   reemplazaría, qué tan seguido nos hace falta y qué tan caro sale construirla. Sin apunte, la
+   regla se convierte en un olvido.
+2. **Se resuelve hoy con el externo** y se sigue con lo que importaba.
+3. **Se construye después**, cuando el apunte pese lo suficiente.
+
+Lo que **no** se hace es detener el trabajo real para inventar una herramienta a medias, ni
+usar la regla de pretexto para dejar la chamba sin terminar. Una librería open source que corre
+en nuestra máquina no es un externo: es stack propio. El externo es el **servicio** del que
+dependemos.
+
 ---
 
 ## 3. Reglas técnicas
