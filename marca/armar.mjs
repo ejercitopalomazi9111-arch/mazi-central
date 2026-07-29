@@ -116,17 +116,43 @@ const arcoPuesto = arco.trazos.map(t => ({
 // de 675 a 732 y el ala no vuelve a empezar hasta 833. Ahí caben 100 px de barra
 // sin chocar con nada.
 //
-//   --barras  y,dentro,fuera,grosor    distancias medidas desde el eje
+// Son DOS por lado, como un signo igual, en diagonal hacia afuera y abajo.
+//
+//   --barras  y,dentro,fuera,grosor[,angulo,separacion]
+//
+// dentro/fuera son distancias desde el eje; el ángulo va en grados y baja hacia
+// afuera; la separación es perpendicular a la barra, no vertical, que es lo que
+// hace que el par se lea como un "=" inclinado y no como dos rayas sueltas.
+// Con cuatro valores sale una sola barra horizontal por lado (el modo viejo).
 const barras = [];
 if (opt('barras')) {
-  const [y, dentro, fuera, grosor] = opt('barras').split(',').map(Number);
+  const [y, dentro, fuera, grosor, angulo = 0, sep = 0] = opt('barras').split(',').map(Number);
   const NEGRO = opt('negro', '#010101');
+  const rad = angulo * Math.PI / 180;
+  const cuantas = sep > 0 ? 2 : 1;
+
   for (const lado of [1, -1]) {
-    const a = ejeAve + lado * dentro, b = ejeAve + lado * fuera;
-    const x0 = Math.min(a, b), x1 = Math.max(a, b);
-    const y0 = y - grosor / 2, y1 = y + grosor / 2;
-    barras.push({ color: NEGRO,
-      d: `M ${r2(x0)} ${r2(y0)} L ${r2(x1)} ${r2(y0)} L ${r2(x1)} ${r2(y1)} L ${r2(x0)} ${r2(y1)} Z` });
+    // Dirección de la barra: hacia afuera y hacia abajo.
+    const ux = lado * Math.cos(rad), uy = Math.sin(rad);
+    // Perpendicular, apuntando siempre hacia abajo para que el par se abra
+    // igual en los dos lados.
+    let px = -uy, py = ux;
+    if (py < 0) { px = -px; py = -py; }
+
+    const largo = fuera - dentro;
+    for (let k = 0; k < cuantas; k++) {
+      const corrimiento = k * sep;
+      const cx = ejeAve + lado * dentro + px * corrimiento;
+      const cy = y + py * corrimiento;
+      const fx = cx + ux * largo, fy = cy + uy * largo;
+      const h = grosor / 2;
+      const pts = [
+        [cx + px * h, cy + py * h], [fx + px * h, fy + py * h],
+        [fx - px * h, fy - py * h], [cx - px * h, cy - py * h],
+      ];
+      barras.push({ color: NEGRO,
+        d: 'M ' + pts.map(([x, yy]) => `${r2(x)} ${r2(yy)}`).join(' L ') + ' Z' });
+    }
   }
 }
 
