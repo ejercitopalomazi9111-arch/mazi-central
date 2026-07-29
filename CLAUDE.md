@@ -66,12 +66,26 @@ En todos esos casos: **el externo queda abajo y reemplazable, nosotros arriba.**
 
 ## 3. Reglas técnicas que no se rompen
 
-1. **JAMÁS dibujo el arte por código.** Nada de canvas procedural, SVG a mano ni "pixel-art por
-   código". Se busca arte real con licencia abierta (Met, Wikimedia Commons, OpenGameArt,
-   Kenney, packs libres de itch.io) y se baja al repo, con créditos. Si el asset no existe, se
-   pregunta — no se inventa.
-   *Una captura de pantalla de un proyecto que sí existe **sí** es material real.*
-2. **Entrega favorita: un archivo HTML autónomo.** Todo inline, sin build, sin CDN.
+1. **El arte por defecto es real, no inventado.** Cuando un proyecto necesita imágenes de
+   relleno —texturas, fondos, sprites, ilustración de ambiente— **no las dibujo por código**.
+   Se buscan reales con licencia abierta (Met, Wikimedia Commons, OpenGameArt, Kenney, packs
+   libres de itch.io) y se bajan al repo con crédito. Nada de canvas procedural ni "pixel-art
+   por código" como sustituto barato de un asset que sí existe.
+
+   **La excepción, y es de Carlos:** si él **pide explícitamente** una pieza generada —un
+   logo, un ícono, una identidad— **se genera**. Pedirle una imagen de Wikipedia a alguien que
+   quiere su logo es absurdo. La regla existe para que no rellene con dibujitos feos, no para
+   negarle diseño original.
+
+   El criterio: **¿existe ya y sólo hay que encontrarlo?** → se busca. **¿Tiene que ser único
+   y de él?** → se crea. Si dudo, pregunto.
+
+   *Una captura de un proyecto que sí existe siempre es material real.*
+2. **Entrega recomendada: un archivo HTML autónomo.** Todo inline, sin build, sin CDN. Es lo
+   que mejor le funciona a Carlos en el teléfono y lo que menos se rompe.
+   **Pero es recomendación, no ley:** React está perfectamente bien cuando el proyecto lo pide
+   (componentes reutilizables, estado complejo, o una librería que sólo existe para React). Se
+   elige por proyecto, no por dogma.
 3. **Anime.js es la biblia de animación** — vendorizada en el repo, nunca desde CDN.
 4. **Todo lo que ve el usuario, en español mexicano.**
 5. **Commits seguido.** El entorno se reinicia y se lleva el trabajo no commiteado. Ya pasó dos
@@ -343,9 +357,16 @@ proyecto nuestro o una lámina de museo. **Nunca un dibujo hecho por código.**
 
 Estas skills se cargan solas cuando aplican. **No hace falta que Carlos las mencione.**
 
+**Al empezar cualquier trabajo, `find-skill` dice cuál toca y en qué orden.**
+
 | Skill | Cuándo se dispara |
 |---|---|
+| **`find-skill`** | El enrutador. Qué skill toca, en qué orden, y cuándo ninguna. |
 | **`four-judges`** | Antes de cualquier decisión cara o difícil de revertir. Palabra clave: **ROAST**. Guarda veredictos en `.claude/veredictos/`. |
+| **`frontend-design`** | Que se vea bonito de verdad: tipografía, escala, jerarquía, layout. |
+| **`revision-web`** | **La cátedra.** Revisión exhaustiva antes de entregar, con las reglas de Vercel. |
+| **`agent-browser`** | Ver y usar la pantalla de verdad. **Nunca decir "ya quedó" sin esto.** |
+| **`web-motion`** | Con qué se anima: GSAP, Motion, Anime.js, Lenis, Rive, Lottie. |
 | **`ui-components`** | Al arrancar cualquier interfaz web: elige entre Magic UI, SmoothUI, RetroUI, Unlumen y React Bits — o dice que ninguna aplica. |
 | **`web-prompts`** | Al escribir el briefing de un sitio, al pedir "que se vea más caro", y en el pulido antes de entregar. |
 | **`scroll-cinema`** | Animación por scroll tipo Apple: fotogramas en canvas. **Sin React ni build** — encaja con el HTML autónomo. |
@@ -396,9 +417,15 @@ de nada de Carlos: no necesita el video, ni el logo bueno, ni el dominio. Se emp
   cuadrícula marcada y unos cuadros negros con diagonales verdes encima. Sospecha: la captura se
   tomó en modo `__GODTEST`, que puede dibujar depuración, y/o el tileset real no cargó y entró
   la textura de respaldo. **Falta confirmarlo con una captura sin GODTEST antes de tocar nada.**
-- **La página se ve feísima en computadora.** Carlos lo vio y lo dejamos para cuando tenga una
-  computadora a la mano para probar. Aplica al diseño de escritorio en general — todo se hizo
-  pensando en el teléfono.
+- **La página se ve feísima en computadora — ya está diagnosticado.** Con `agent-browser` se
+  capturó Ligas Mazi en 1920px y el problema es concreto: **se diseñó sólo para teléfono y en
+  escritorio sólo se centró.** Queda una tarjeta con forma de celular flotando en un vacío
+  negro; los campos de correo y contraseña se estiran a ~1100px (deberían toparse en 480);
+  la pestaña "Crear cuenta" no tiene contenedor y se ve suelta; la foto del fondo se recorta
+  mal. **No es pulido, es que falta un layout de escritorio.** El arreglo está descrito en
+  `frontend-design` §Layout. Se hace cuando Carlos tenga computadora para validarlo.
+- **Objetivos táctiles chicos en Ligas Mazi:** `#segIn` y `#segUp` miden 161×36 en teléfono;
+  el mínimo es 44px de alto (regla de Vercel, ver `revision-web`).
 - **Falta el archivo del video** de la app de gestión — y confirmar si trae marca de ICAMP,
   porque en ese caso hay que quitarla antes de publicar (sección 6).
 - **Logo bueno.** El de ahora es provisional; Carlos hará el definitivo. El sitio se construye

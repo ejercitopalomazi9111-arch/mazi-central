@@ -48,16 +48,23 @@ Tres tienen lugar reservado en el roadmap de Grupo Mazi:
 - **n8n → Fase 2 y 5.** Pega el Panel Mazi con WhatsApp, correo y redes sin construir cada
   integración a mano.
 
-## ⚠️ Fooocus choca con la regla número uno
+## Fooocus y la regla del arte
 
-**Genera imágenes con IA.** La regla de la casa es tajante: *jamás dibujar arte por código;
-siempre arte real con licencia*. Fooocus es lo mismo que canvas procedural, con más pasos.
+Genera imágenes con IA localmente. La regla de la casa (`CLAUDE.md` §3.1) es que **el arte por
+defecto es real, no inventado** — pero con una excepción explícita de Carlos: *si él pide una
+pieza generada, se genera.*
 
-**No se usa para arte de proyectos.** Lo que sí puede servir: pruebas internas desechables,
-maquetas para decidir composición antes de buscar el asset real. **Nunca sale a producción.**
+Cómo se aplica aquí:
 
-Si un proyecto necesita imágenes, se buscan reales — Met, Wikimedia Commons, OpenGameArt,
-Kenney, packs libres de itch.io — y se bajan al repo con crédito.
+- **Relleno y ambiente** (texturas, fondos, sprites, ilustración de escena) → **arte real con
+  licencia**. Met, Wikimedia Commons, OpenGameArt, Kenney, packs libres de itch.io, bajados al
+  repo con crédito. Fooocus **no**.
+- **Pieza única que Carlos pide** (un logo, un ícono, una identidad) → **sí se genera**.
+  Pedirle una imagen de Wikipedia a alguien que quiere su logo es absurdo.
+- **Maquetas internas** para decidir composición antes de buscar el asset real → sí, y se tiran.
+
+El criterio: *¿existe ya y sólo hay que encontrarlo?* → se busca. *¿Tiene que ser único y de
+él?* → se crea. Si dudo, pregunto.
 
 ## Lo que auto-hospedar cuesta de verdad
 
