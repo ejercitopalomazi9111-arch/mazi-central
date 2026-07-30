@@ -22,6 +22,10 @@
      --js "código"    JS a ejecutar en la página antes de esperar
      --movil          viewport de iPhone y user-agent táctil
      --completa       captura la página entera, no sólo el viewport
+     --jpeg N         guarda JPEG con calidad N (1-100) en vez de PNG.
+                      Para fotos y capturas de pantalla: un PNG de 560 KB sale
+                      en 70 KB de JPEG sin que se note. Para logos y cosas con
+                      transparencia, NO — ahí el PNG es el correcto.
 
    Ejemplos:
      node herramientas/captura.mjs http://127.0.0.1:8080/pacto-roto/ sitio/img/pacto.png
@@ -30,7 +34,7 @@
        --teclas Enter,Enter,Enter --espera 5000
    ==========================================================================*/
 
-import { mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 // puppeteer vive donde haya quedado instalado; lo buscamos en los lugares de
@@ -163,8 +167,13 @@ try {
   }
   const destino = resolve(salida);
   mkdirSync(dirname(destino), { recursive: true });
-  await pagina.screenshot({ path: destino, fullPage: bandera('completa') });
-  console.log('📸 ' + salida + `  (${ancho}×${alto} @${escala}x)`);
+  const jpeg = opt('jpeg', null);
+  await pagina.screenshot({
+    path: destino, fullPage: bandera('completa'),
+    ...(jpeg ? { type: 'jpeg', quality: Number(jpeg) } : {}),
+  });
+  const peso = (statSync(destino).size / 1024).toFixed(0);
+  console.log('📸 ' + salida + `  (${ancho}×${alto} @${escala}x · ${peso} KB)`);
   if (problemas.length) {
     console.log('   ⚠ ' + problemas.length + ' problema(s) en consola:');
     problemas.slice(0, 5).forEach(p => console.log('     · ' + p.slice(0, 160)));
