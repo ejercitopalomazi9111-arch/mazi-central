@@ -1100,6 +1100,14 @@ const ALFABETOS = {
       R: { an: 0.76, t: ['a0 a6', 'a0 c0 e1.2 e2 c2.9 a2.9', 'a2.9 e6'],
         nudos: ['a0'], cortes: ['a2.9'] },
 
+      // La T. Su nudo caía a MEDIA barra, no en una punta, así que el corte le
+      // partía el travesaño en dos justo arriba del asta: quedaban dos muñones y un
+      // palo, y de lejos no se leía T. El travesaño ya tapaba el arranque del asta,
+      // o sea que ese nudo nunca hizo falta. Sin él, el travesaño queda entero y la
+      // división se la queda el asta —que mide altura completa y sí aguanta el
+      // puente— exactamente como en la E, la F y la H, donde sí funciona.
+      T: { an: 0.70, t: ['a0 e0', 'c0 c6'] },
+
       // La M: silueta de triángulo con la punta plana. Las astas ya no son
       // verticales, se abren hacia la base — la letra es ancha abajo y angosta
       // arriba— y el vértice del medio se queda a media altura para que las patas
