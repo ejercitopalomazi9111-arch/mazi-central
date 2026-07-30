@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Mapa del sitio público de Grupo Mazi.
+
+  NOTA HONESTA SOBRE robots.txt: no se pone aquí. En GitHub Pages este repo es
+  una "project page" (ejercitopalomazi9111-arch.github.io/mazi-central/), y los
+  buscadores sólo leen el robots.txt de la RAÍZ del dominio — que pertenece al
+  repo <usuario>.github.io, no a éste. Un robots.txt en esta carpeta sería
+  decoración: nadie lo lee. Este sitemap sí sirve: se registra a mano en Google
+  Search Console. Cuando haya dominio propio, el robots.txt sí va a la raíz.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/</loc>
+    <lastmod>2026-07-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

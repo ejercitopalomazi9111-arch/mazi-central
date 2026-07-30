@@ -1,10 +1,70 @@
-<title>Grupo Mazi — construimos la base y todo lo que se levanta sobre ella</title>
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grupo Mazi — construimos la base y todo lo que se levanta sobre ella</title>
 <meta name="theme-color" content="#100A18">
 <meta name="description" content="Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu negocio funcione como un solo ecosistema. Querétaro.">
+<link rel="canonical" href="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/">
+
+<!-- LA TARJETA DE WHATSAPP.
+     Nuestro visitante llega de un reenvío. Sin estas etiquetas el link sale como
+     una tira gris con la URL y nadie lo abre. Es el embudo más barato que
+     tenemos y estuvo roto desde el primer día. La imagen es absoluta a
+     propósito: WhatsApp, Facebook y X no resuelven rutas relativas. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Grupo Mazi">
+<meta property="og:locale" content="es_MX">
+<meta property="og:url" content="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/">
+<meta property="og:title" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta property="og:description" content="Web, software, marketing, video, gestión y tiempos y movimientos. Entramos a tu operación y nos quedamos. Querétaro.">
+<meta property="og:image" content="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Grupo Mazi">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta name="twitter:description" content="Web, software, marketing, video, gestión y tiempos y movimientos. Entramos a tu operación y nos quedamos. Querétaro.">
+<meta name="twitter:image" content="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/img/og.png">
+
+<link rel="icon" href="../marca/render/favicon.png" sizes="256x256">
 <link rel="apple-touch-icon" href="../icon-192.png">
 <link rel="preload" href="fuente/mazi.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- LA FICHA LOCAL.
+     Esto es lo que lee Google para decidir si aparecemos cuando alguien busca
+     "desarrollo de software Querétaro". Antes "Querétaro" sólo existía en el
+     meta description y debajo del reloj: para el buscador, no existíamos. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "Grupo Mazi",
+  "url": "https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/",
+  "image": "https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/img/og.png",
+  "logo": "https://ejercitopalomazi9111-arch.github.io/mazi-central/marca/logo/paloma.svg",
+  "description": "Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu negocio funcione como un solo ecosistema.",
+  "slogan": "Si no existe la herramienta, se construye la herramienta.",
+  "telephone": "+52-442-883-3786",
+  "email": "grupomazi.oficial@gmail.com",
+  "address": { "@type": "PostalAddress", "addressLocality": "Querétaro", "addressRegion": "Querétaro", "addressCountry": "MX" },
+  "areaServed": { "@type": "AdministrativeArea", "name": "Querétaro, México" },
+  "knowsLanguage": "es-MX",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Servicios de Grupo Mazi",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Páginas web", "description": "Creamos espacios digitales que representan tu negocio, generan confianza y convierten visitas en oportunidades." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Desarrollo de software", "description": "Construimos sistemas que eliminan obstáculos, conectan procesos y se adaptan a la forma en que realmente trabaja tu empresa." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Marketing", "description": "Diseñamos estrategias que atraen a las personas correctas y convierten el interés en crecimiento." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Video y fotografía", "description": "Capturamos la esencia de tu marca para que cada imagen comunique el valor de lo que haces antes de decir una sola palabra." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Gestión de negocios", "description": "Organizamos la información, los procesos y la operación para que puedas tomar decisiones con claridad y control." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Tiempos y movimientos", "description": "Medimos cómo trabaja tu empresa para encontrar el tiempo que se está perdiendo — y devolvértelo." } }
+    ]
+  }
+}
+</script>
 
 <!--
   EL SITIO · BLOQUE 1 — armazón, portada y contacto.
@@ -423,6 +483,8 @@
     .reloj .pt { animation:none!important; }
   }
 </style>
+</head>
+<body>
 
 <header class="barra">
   <div class="barra-in">
@@ -650,8 +712,9 @@
   const tic = () => {
     const d = new Date();
     reloj.innerHTML = dos(d.getHours()) + '<span class="pt">:</span>' + dos(d.getMinutes());
-    // La hora también en la pestaña: quien deje el sitio abierto lo ve.
-    document.title = dos(d.getHours()) + ':' + dos(d.getMinutes()) + ' · Grupo Mazi';
+    // La hora NO va en el <title>. Estaba, y era un autogol: borraba el nombre de
+    // la empresa de la pestaña, del historial y de lo que se copia al compartir.
+    // Un reloj bonito no vale el nombre de la casa.
   };
   tic(); setInterval(tic, 15000);
 
@@ -687,3 +750,6 @@
     })
     .catch(() => document.querySelector('[data-sistema-falla]')?.removeAttribute('hidden'));
 </script>
+
+</body>
+</html>
