@@ -242,6 +242,38 @@
   .cierre { font-family:var(--mazi); font-size:clamp(15px,4.4vw,21px);
     color:var(--hueso); margin:0 0 16px; }
 
+  /* ── EL TALLER · el barrido de alfabetos ─────────────────────────────
+     La sección mide 340vh y adentro hay un bloque PEGADO. Esa es toda la
+     mecánica del scroll guiado: el scroll no se intercepta ni se frena, sólo
+     se lee su posición. Por eso se puede uno ir cuando quiera — que es la
+     diferencia entre "animación guiada por scroll" y "scroll secuestrado". */
+  .taller { height:340vh; position:relative; padding:0; border-top:1px solid var(--linea); }
+  .taller-fijo { position:sticky; top:var(--barra);
+    height:calc(100svh - var(--barra));
+    display:flex; flex-direction:column; justify-content:center; gap:18px; }
+
+  .letras { position:relative; width:100%; height:clamp(90px,22vh,190px); }
+  .capa-letras { position:absolute; inset:0; display:flex; align-items:center;
+    will-change:opacity; }
+  .capa-letras svg { width:100%; height:100%; display:block; }
+
+  .ficha { display:flex; flex-direction:column; gap:3px; min-height:44px; }
+  .f-nom { font-family:var(--mazi); font-size:clamp(17px,5vw,26px); line-height:1;
+    color:var(--violeta); }
+  .f-meta { font-size:12px; color:var(--apagado); letter-spacing:.1em;
+    text-transform:uppercase; }
+
+  .riel { height:2px; background:var(--linea); border-radius:2px; overflow:hidden; }
+  .riel i { display:block; height:100%; background:var(--violeta);
+    transform-origin:left center; transform:scaleX(0); will-change:transform; }
+
+  .cifras { display:flex; gap:clamp(18px,6vw,54px); flex-wrap:wrap; }
+  .cifra b { display:block; font-family:var(--mazi); font-size:clamp(26px,8vw,46px);
+    line-height:1; color:var(--hueso); font-weight:400;
+    font-variant-numeric:tabular-nums; }
+  .cifra span { font-size:11.5px; color:var(--apagado); letter-spacing:.1em;
+    text-transform:uppercase; }
+
   footer { border-top:1px solid var(--linea); padding:24px 0 calc(30px + env(safe-area-inset-bottom));
     display:flex; gap:12px; flex-wrap:wrap; align-items:center;
     font-family:var(--mazi); font-size:12px; color:var(--apagado); }
@@ -330,6 +362,7 @@
       <span>GRUPO MAZI</span>
     </a>
     <nav>
+      <a class="menu" href="#taller">EL TALLER</a>
       <a class="menu" href="#trabajamos">CÓMO TRABAJAMOS</a>
       <a class="menu" href="#contacto">CONTACTO</a>
       <a class="wasap" href="https://wa.me/524428833786" target="_blank" rel="noopener">
@@ -371,6 +404,35 @@
       </div>
     </div>
   </div>
+
+  <!-- 3 · EL TALLER · el barrido de los alfabetos -->
+  <section class="taller" id="taller" data-taller>
+    <div class="taller-fijo">
+      <p class="rot">EL TALLER</p>
+      <h2 style="margin:0">Dos mil doscientos años de escritura, y la última la
+        hicimos nosotros.</h2>
+
+      <div class="letras" data-letras></div>
+      <div class="ficha" data-ficha></div>
+      <div class="riel"><i data-progreso></i></div>
+
+      <p hidden data-si-falla class="texto" style="margin:0">
+        Esta pieza no cargó en tu navegador. <b>Escríbenos y te la enseñamos en
+        vivo</b> — es la que más nos gusta.
+      </p>
+
+      <div class="cifras">
+        <span class="cifra"><b data-contar="15">0</b><span>alfabetos</span></span>
+        <span class="cifra"><b data-contar="107">0</b><span>caracteres</span></span>
+        <span class="cifra"><b data-contar="13">0</b><span>pinceles</span></span>
+      </div>
+
+      <p class="texto" style="margin:0;font-size:14px">
+        Las letras no son imágenes: <b>se calculan al vuelo</b> con la misma
+        fábrica con la que fundimos nuestra tipografía.
+      </p>
+    </div>
+  </section>
 
   <!-- 5 · CÓMO TRABAJAMOS -->
   <section id="trabajamos" class="revela">
@@ -512,4 +574,16 @@
   }
 })();
 </script>
+<!-- anime.js v3.2.2, MIT, VENDORIZADA. Nada de CDN: LA REGLA §2. -->
+<script src="anime.min.js" defer></script>
 <script src="efectos.js" defer></script>
+<script type="module">
+  // Si el módulo no carga —navegador viejo, red mala— la sección enseña su
+  // mensaje y el resto del sitio no se entera. Nunca una pantalla en blanco.
+  import('./taller.js')
+    .then(m => {
+      const raiz = document.querySelector('[data-taller]');
+      if (raiz) m.montarTaller(raiz);
+    })
+    .catch(() => document.querySelector('[data-si-falla]')?.removeAttribute('hidden'));
+</script>
