@@ -1151,7 +1151,7 @@ const ALFABETOS = {
       'Ú': { an: 0.80, hereda: 'U', acento: 'agudo' },
       'Ü': { an: 0.80, hereda: 'U', acento: 'dieresis' },
       'Ñ': { an: 0.82, hereda: 'N', acento: 'tilde' },
-      'á': { an: 0.68, hereda: 'a', acento: 'agudo' },
+      'á': { an: 0.70, hereda: 'a', acento: 'agudo' },
       'é': { an: 0.64, hereda: 'e', acento: 'agudo' },
       'í': { an: 0.24, hereda: 'l', acento: 'agudo' },
       'ó': { an: 0.70, hereda: 'o', acento: 'agudo' },
@@ -1178,7 +1178,20 @@ const ALFABETOS = {
          punta, donde de verdad se topan dos trazos; sobre un asta el nudo nunca
          hizo falta, porque el asta ya tapaba el encuentro. */
 
-      a: { an: 0.68, t: ['e2 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'] },
+      // La "a" DE DOS PLANTAS, y no por gusto. La de una planta —círculo con asta a
+      // la derecha, la de Futura— se lee porque el cuenco redondo contrasta con el
+      // asta recta. Aquí el cuenco es superelipse, o sea que su lado derecho YA es
+      // recto: el asta se le pega y desaparece, y la letra sale siendo una "o".
+      // Esa forma es estructuralmente imposible en esta tipografía. Así que va el
+      // gancho de arriba curvando a la izquierda, que es lo que la vuelve
+      // inconfundible: dos contraformas en vez de una.
+      // Con la apertura de arriba ABIERTA, y esto es aritmética: la altura de x mide
+      // 0.667 em y el trazo 0.19, así que tres barras horizontales se comen 0.57 y
+      // quedan 0.1 para repartir entre dos huecos. No caben dos contraformas
+      // cerradas. El gancho termina libre arriba a la izquierda y el hueco de abajo
+      // se queda con todo el espacio — que además es la apertura abierta que aportó
+      // Cercana a esta tipografía.
+      a: { an: 0.70, t: ['a3.2 a2.6 b2 d2 e2.6 e6', 'e3.9 c3.85 a4.4 a5.3 b6 d6 e5.15'] },
       b: { an: 0.70, t: ['a0 a6', 'a2.9 b2 d2 e3 e5 d6 b6 a5.1'] },
       c: { an: 0.62, t: ['e2.7 d2 b2 a3 a5 b6 d6 e5.3'] },
       d: { an: 0.70, t: ['e0 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'] },
