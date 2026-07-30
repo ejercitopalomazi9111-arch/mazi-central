@@ -969,7 +969,7 @@ const ALFABETOS = {
       P: { an: 0.68, t: ['!a0 a6', '!a0 c0 d0.5 d2.4 c2.9 a2.9'], nudos: ['a0', 'a2.9'] },
       Q: { an: 0.80, t: ['!b0 d0 e1 e5 d6 b6 a5 a1 b0', '!c4.6 e6.4'] },
       R: { an: 0.74, t: ['!a0 a6', '!a0 c0 d0.5 d2.4 c2.9 a2.9', '!a2.9 e6'],
-        nudos: ['a0', 'a2.9'] },
+        nudos: ['a0'], cortes: ['a2.9'] },
       S: { an: 0.68, t: ['!e0.6 d0 b0 a1 a2 b2.9 d3.1 e4 e5 d6 b6 a5.4'] },
       T: { an: 0.68, t: ['!a0 e0', '!c0 c6'], nudos: ['c0'] },
       U: { an: 0.76, t: ['!a0 a5 b6 d6 e5 e0'] },
@@ -1089,6 +1089,11 @@ const ALFABETOS = {
       // El vértice de la M baja un poco: Norma lo tenía muy alto y con el ochavo
       // se cerraba. Éste es el punto medio con Cercana.
       M: { an: 1.0, t: ['a6 a0', 'a0 c3.8', 'c3.8 e0', 'e0 e6'], nudos: ['a0', 'c3.8', 'e0'] },
+      // La única división que no puede salir de una regla: el punto donde el
+      // asta, el cuenco y la pierna de la R se juntan. Cortando los tres ahí,
+      // la unión se lee.
+      R: { an: 0.76, t: ['a0 a6', 'a0 c0 e1.2 e2 c2.9 a2.9', 'a2.9 e6'],
+        nudos: ['a0'], cortes: ['a2.9'] },
       c: { an: 0.62, t: ['e2.7 d2 b2 a3 a5 b6 d6 e5.3'] },
       s: { an: 0.58, t: ['e2.7 d2 b2 a2.8 b3.6 d4.4 e5.2 d6 b6 a5.3'] },
       e: { an: 0.64, t: ['a4.1 e4.1 e3 d2 b2 a3 a5 b6 d6 e5.3'] },
@@ -1096,6 +1101,7 @@ const ALFABETOS = {
     },
     porDefecto: {
       pincel: 'uniforme', grosor: 0.19, tracking: 0.05, corte: 'ochavo', ochavo: 0.65,
+      estencil: 1,
     },
   },
 };
@@ -1258,9 +1264,34 @@ function rectoLargo(pts, cerrado) {
   // Y además derecho de a de veras: vertical u horizontal, con 22° de tolerancia.
   // En una diagonal condensada el puente no se lee como puente, se lee como que a
   // la letra le falta un pedazo. En el estencil militar el puente va en el asta.
+  // Y largo de asta, no de brazo. Un brazo de E cortado a la mitad no se lee
+  // estarcido: se lee roto, y la letra deja de ser una E. En Reactor esto no
+  // pasaba porque va condensada al 84% y los brazos no llegaban al mínimo; en
+  // una letra ancha sí llegan. El puente pertenece al asta de altura completa.
+  if (arco < 0.82) return false;
   const g = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI) % 180;
   const a = Math.min(g, 180 - g);
   return a < 22 || Math.abs(a - 90) < 22;
+}
+
+// DIVISIÓN DECLARADA. El estencil automático pone el puente a media asta, y eso
+// deja fuera justo el sitio donde una letra pide una división: el punto donde se
+// juntan todos sus trazos. La R es el caso: el asta, el cuenco y la pierna
+// coinciden en un nodo, y aunque el puente cayera ahí, el cuenco y la pierna lo
+// tapan con su propia tinta. Para que la división se vea hay que cortar los TRES
+// trazos en el mismo punto — y eso no lo puede adivinar una regla: se declara en
+// el glifo, con `cortes`.
+function partirEnNodos(pts, focos, radio) {
+  if (!focos.length) return [pts];
+  const piezas = [];
+  let actual = [];
+  for (const q of pts) {
+    const dentro = focos.some(f => Math.hypot(q[0] - f[0], q[1] - f[1]) < radio);
+    if (dentro) { if (actual.length >= 3) piezas.push(actual); actual = []; }
+    else actual.push(q);
+  }
+  if (actual.length >= 3) piezas.push(actual);
+  return piezas.length ? piezas : [pts];
 }
 
 function partirEstencil(pts, cortes, hueco) {
@@ -1369,7 +1400,14 @@ export function componer(texto, op = {}) {
     let base = G, salto = 0;
     while (base.hereda && salto++ < 4) base = A.glifos[base.hereda] || base;
     const trazos = base.t || [];
+    const trazos_n = trazos.length;
     const nudosG = base.nudos || [];
+    // Los puntos donde el glifo pide partirse, ya en coordenadas de la línea.
+    const cortesG = (base.cortes || []).map(nd => {
+      const [[cx, cy]] = nodos(nd, an);
+      return [cx + x, cy];
+    });
+    const radioCorte = grosor * 0.62;
 
     // Un remate va en un extremo LIBRE. Si dos trazos acaban en el mismo punto
     // eso es una unión, no un final — y ahí un diamante o un pelo se ve como un
@@ -1410,23 +1448,38 @@ export function componer(texto, op = {}) {
       const libres = cerrado ? [false, false]
         : [solo(pts[0][0], pts[0][1]), solo(pts.at(-1)[0], pts.at(-1)[1])];
 
+      // Una división declarada manda sobre el estencil automático: si el glifo
+      // dice dónde quiere partirse, no se le pone además un puente al azar.
+      const enNodo = cortesG.length
+        && cortesG.some(f => pts.some(q => Math.hypot(q[0] - f[0], q[1] - f[1]) < radioCorte));
+
       if (cerdas > 0) {
         cerdasDe(pts, cfg, cerdas).forEach(cuerpo);
-      // Una letra de un solo trazo —la I, la l— partida por la mitad no queda
-      // estarcida: queda partida, y ya no se sabe qué letra es. El puente necesita
-      // que quede letra alrededor.
-      } else if (estencil > 0 && trazos.length > 1 && rectoLargo(pts, cerrado)) {
-        const trozos = partirEstencil(pts, estencil, grosor * 0.5);
-        const ultimo = trozos.length - 1;
-        trozos.forEach((tz, k) => {
-          // El corte interior del estencil SÍ se sesga: ahí está el efecto.
-          const c2 = { ...cfg, cerrado: false,
-            cortaEn: [k === 0 ? libres[0] : true, k === ultimo ? libres[1] : true] };
-          c2.geo = geometria(tz, c2);
-          cuerpo(contorno(tz, c2));
-        });
       } else {
-        cuerpo(contorno(pts, { ...cfg, cortaEn: libres }));
+        let trozos;
+        if (enNodo) {
+          trozos = partirEnNodos(pts, cortesG, radioCorte);
+        // Una letra de un solo trazo —la I, la l— partida por la mitad no queda
+        // estarcida: queda partida, y ya no se sabe qué letra es. El puente
+        // necesita que quede letra alrededor.
+        } else if (estencil > 0 && trazos_n > 1 && rectoLargo(pts, cerrado)) {
+          trozos = partirEstencil(pts, estencil, grosor * 0.5);
+        } else {
+          trozos = null;
+        }
+
+        if (!trozos) {
+          cuerpo(contorno(pts, { ...cfg, cortaEn: libres }));
+        } else {
+          const ultimo = trozos.length - 1;
+          trozos.forEach((tz, k) => {
+            // El corte interior SÍ se remata: ahí está el efecto.
+            const c2 = { ...cfg, cerrado: false,
+              cortaEn: [k === 0 ? libres[0] : true, k === ultimo ? libres[1] : true] };
+            c2.geo = geometria(tz, c2);
+            cuerpo(contorno(tz, c2));
+          });
+        }
       }
 
       // Los remates van en los extremos LIBRES, con el ángulo hacia afuera, y
@@ -1445,6 +1498,9 @@ export function componer(texto, op = {}) {
       // la primera y un borrón que se come el 7-5-3 en la segunda.
       if (hueco || cerdas > 0) break;
       const [[nx, ny]] = nodos(nd, an);
+      // Un disco de unión encima de una división declarada la vuelve a tapar,
+      // que es exactamente por lo que la R parecía no tener corte.
+      if (cortesG.some(f => Math.hypot(nx + x - f[0], ny - f[1]) < radioCorte)) continue;
       cuerpo(disco(nx + x, ny, grosor / 2));
     }
     if (G.acento) {

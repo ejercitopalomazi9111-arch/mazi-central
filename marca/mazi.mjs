@@ -38,6 +38,15 @@ const DETALLES = [
     + 'que el ochavo se ALCANZA A VER. A 0.175 el chaflán medía tres píxeles y no existía.'],
   ['La M a 3.8', 'Norma tenía el vértice muy alto y con el ochavo se cerraba el hueco. Bajó al '
     + 'punto medio con Cercana.'],
+  ['Las divisiones', 'Después entró también el corte de estencil de Reactor. Va sólo en el asta '
+    + 'de altura completa: un brazo de E cortado a la mitad no se lee estarcido, se lee roto. En '
+    + 'Reactor eso no pasaba porque va condensada y los brazos no llegaban al mínimo; en una '
+    + 'letra ancha sí llegan.'],
+  ['La división de la R', 'La única que no puede salir de una regla. El asta, el cuenco y la '
+    + 'pierna se juntan en un punto, y aunque el puente automático cayera ahí, el cuenco y la '
+    + 'pierna lo tapaban con su propia tinta — por eso la R parecía la única sin corte. Se '
+    + 'declara en el glifo y se cortan los tres trazos en el mismo punto. Arreglado también en '
+    + 'Reactor, que es donde se vio.'],
 ];
 
 const comp = (nom, alf, papel, txt) => `
