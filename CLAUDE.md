@@ -213,7 +213,7 @@ afectado**, no la skill entera.
 |---|---|
 | **`find-skill`** | El enrutador. Qué skill toca, en qué orden, y cuándo ninguna |
 | **`four-judges`** | Antes de toda decisión cara. Palabra clave: **ROAST** |
-| **`consejo-tecnico`** | **El consejo de ingenieros**, no de empresarios. Antes de publicar código con cuentas, pagos o datos de personas. Palabras: **AUDITA** y **ROMPE** |
+| **`consejo-tecnico`** | **La Sala de Máquinas: 24 ingenieros con nombre**, jefes y áreas — código, ciberseguridad (dos sombreros negros), oficio, diseño gráfico, front end, más el gato y el perro. Palabras: **AUDITA**, **ROMPE**, **CÓMO SE VE**, **CUÁNTO TARDA** |
 | **`frontend-design`** | Que se vea bonito de verdad: tipografía, escala, jerarquía, layout |
 | **`revision-web`** | **La cátedra.** Revisión exhaustiva antes de entregar (reglas de Vercel) |
 | **`agent-browser`** | Ver y usar la pantalla. **Nunca "ya quedó" sin esto** |
@@ -239,6 +239,8 @@ four-judges → web-prompts (briefing) → ui-components (con qué)
 **Sólo animación:** `web-motion` → `scroll-cinema` o `ui-components` → `agent-browser`
 **Elegir herramienta:** `stack-propio` → `four-judges`
 **Antes de publicar código con datos de personas:** `consejo-tecnico` → arreglar → `revision-web`
+**"¿Cómo se ve?" / "está horrible" / "¿qué le falta?":** `consejo-tecnico` (área de front end
+y diseño) → `frontend-design` → construir → `agent-browser`
 **Proyecto grande:** `four-judges` → `multi-agent` → `manus`
 
 ### Cuándo NO usar ninguna
