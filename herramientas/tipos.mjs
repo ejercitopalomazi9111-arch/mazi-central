@@ -1117,21 +1117,42 @@ const ALFABETOS = {
          reloj enseña. Van rehechos con la misma superelipse, y el 1 es el 1 del
          reloj — una barra partida al centro, sin banderita. Sale idéntico a la I,
          como en el display de verdad. */
+      // El 0 y el 1 se quedan como están — Carlos los aprobó tal cual.
       0: { an: 0.72, t: ['b0 d0 e1.2 e4.8 d6 b6 a4.8 a1.2 b0'], cortes: ['b0', 'd6'] },
       1: { an: 0.30, t: ['c0 c6'], cortes: ['c3'] },
-      2: { an: 0.68, t: ['a1.2 b0 d0 e1.2 e2.2 a6', 'a6 e6'], nudos: ['a6'] },
-      3: { an: 0.68, t: ['a0.9 b0 d0 e1.2 e2.1 d2.9 b2.9',
-        'b2.9 d2.9 e4 e4.9 d6 b6 a5.1'], nudos: ['b2.9'] },
-      // El 4 con diagonal se deshacía: los cortes de unión le partían el vértice y
-      // el asta a la vez. En el reloj el 4 no tiene diagonal — es asta corta
-      // arriba-izquierda, barra al medio y asta completa a la derecha.
-      4: { an: 0.72, t: ['a0 a4.2', 'a4.2 e4.2', 'd0 d6'], nudos: ['a4.2'] },
-      5: { an: 0.68, t: ['e0 a0 a2.6', 'a2.6 c2.4 e3.5 e4.9 d6 b6 a5.1'], nudos: ['a2.6'] },
-      6: { an: 0.70, t: ['d0 b0.5 a1.8 a4.8 b6 d6 e4.8 e3.6 d2.7 b2.7 a3.3'] },
-      7: { an: 0.64, t: ['a0 e0', 'e0 b6'], nudos: ['e0'] },
-      8: { an: 0.70, t: ['b2.9 d2.9 e2.1 e1.2 d0 b0 a1.2 a2.1 b2.9',
-        'b2.9 d2.9 e4 e4.9 d6 b6 a4.9 a4 b2.9'], nudos: ['b2.9', 'd2.9'] },
-      9: { an: 0.70, t: ['b6 d5.5 e4.2 e1.2 d0 b0 a1.2 a2.4 b3.3 d3.3 e2.4'] },
+      // Del 2 al 9, más cuadrados y con la unión a la vista: lados rectos, esquina
+      // corta, y cada dígito partido en los puntos donde de verdad se une, que es
+      // como el display enciende sus palitos por separado.
+      2: { an: 0.68, t: ['a1 b0 d0 e1 e2.3 d3.2 b3.2 a3.4', 'a3.4 a4.9 b6 d6 e6'],
+        nudos: ['a3.4'] },
+      3: { an: 0.68, t: ['a1 b0 d0 e1 e2.2 d3 b3', 'b3 d3 e4 e5 d6 b6 a5'], nudos: ['b3'] },
+      4: { an: 0.72, t: ['a0 a3.4', 'a3.4 e3.4', 'e0 e6'], nudos: ['a3.4', 'e3.4'] },
+      5: { an: 0.68, t: ['e0 b0 a1 a3', 'a3 e3', 'e3 e5 d6 b6 a5'], nudos: ['a3', 'e3'] },
+      6: { an: 0.70, t: ['d0 b0 a1 a3.2', 'a3.2 a4.9 b6 d6 e4.9 e3.6 d3.2 b3.2 a3.2'],
+        nudos: ['a3.2'] },
+      7: { an: 0.64, t: ['a0 e0', 'e0 d6'], nudos: ['e0'] },
+      8: { an: 0.70, t: ['b0 d0 e1 e2.2 d3 b3 a2.2 a1 b0', 'b3 d3 e4 e5 d6 b6 a5 a4 b3'],
+        nudos: ['b3', 'd3'] },
+      9: { an: 0.70, t: ['b3.2 d3.2 e2.4 e1 d0 b0 a1 a2.4 b3.2', 'e2.4 e5 d6 b6 a5'],
+        nudos: ['e2.4'] },
+
+      // Los acentos venían con los anchos del esqueleto neutro, así que la Ñ y la
+      // ñ salían más angostas que su propia N y n — y la ñ es la letra que más
+      // falta en español. Aquí cada una toma el ancho de la letra que hereda.
+      'Á': { an: 0.82, hereda: 'A', acento: 'agudo' },
+      'É': { an: 0.68, hereda: 'E', acento: 'agudo' },
+      'Í': { an: 0.24, hereda: 'I', acento: 'agudo' },
+      'Ó': { an: 0.86, hereda: 'O', acento: 'agudo' },
+      'Ú': { an: 0.80, hereda: 'U', acento: 'agudo' },
+      'Ü': { an: 0.80, hereda: 'U', acento: 'dieresis' },
+      'Ñ': { an: 0.82, hereda: 'N', acento: 'tilde' },
+      'á': { an: 0.68, hereda: 'a', acento: 'agudo' },
+      'é': { an: 0.64, hereda: 'e', acento: 'agudo' },
+      'í': { an: 0.24, hereda: 'l', acento: 'agudo' },
+      'ó': { an: 0.70, hereda: 'o', acento: 'agudo' },
+      'ú': { an: 0.70, hereda: 'u', acento: 'agudo' },
+      'ü': { an: 0.70, hereda: 'u', acento: 'dieresis' },
+      'ñ': { an: 0.70, hereda: 'n', acento: 'tilde' },
 
       /* ── LA CAJA BAJA ───────────────────────────────────────────────────
          Venía heredada de `recto`, que es circular, y por eso no encajaba: una O

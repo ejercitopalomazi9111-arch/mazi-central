@@ -50,9 +50,14 @@ const DETALLES = [
     + 'dibuja. Un campo que servía para pegar, usado para separar.'],
   ['Los dígitos, rehechos', 'Venían del esqueleto neutro, o sea circulares, igual que había '
     + 'pasado con la caja baja. Y en una cara de reloj eso no se puede dejar: el dígito ES lo que un '
-    + 'reloj enseña. Van con la misma superelipse y sus cortes de unión. El 4 con diagonal se '
-    + 'deshacía —los cortes le partían el vértice y el asta a la vez—, así que lleva la forma del '
-    + 'reloj: asta corta arriba, barra al medio, asta completa a la derecha.'],
+    + 'reloj enseña. El 0 y el 1 quedaron aprobados de una; del 2 al 9 son más cuadrados —lado '
+    + 'recto, esquina corta— y van partidos en los puntos donde de verdad se unen, que es como el '
+    + 'display enciende sus palitos por separado. El 4 con diagonal se deshacía, así que lleva la '
+    + 'forma del reloj: asta corta arriba, barra al medio, asta completa a la derecha.'],
+  ['La ñ, que faltaba', 'Los acentos venían con los anchos del esqueleto neutro, así que la Ñ y la '
+    + 'ñ salían más angostas que su propia N y n — y la ñ es la letra que más falta hace en '
+    + 'español. Ahora cada acentuada toma el ancho de la letra que hereda, y la caja baja acentuada '
+    + 'aparece en la muestra: antes ni se enseñaba.'],
   ['La I como el 1 del reloj', 'En un display de segmentos el 1 no es una barra: son dos barras '
     + 'apiladas con un hueco en medio y las puntas que se miran cortadas en diagonal, porque si no '
     + 'los segmentos se tocarían. Aquí sale de la división al centro más el ochavo. Es la excepción '
@@ -156,7 +161,8 @@ writeFileSync(process.argv[2] || 'marca/mazi.html', `<meta charset="utf-8">
   <div class="caja juego">
     ${svg('ABCDEFGHIJKLMNOPQRSTUVWXYZ', OP, HUESO, VACIO)}
     ${svg('abcdefghijklmnopqrstuvwxyz', OP, HUESO, VACIO)}
-    ${svg('0123456789 ÁÉÍÓÚÜÑ ¿? ¡! & @ · /', OP, HUESO, VACIO)}
+    ${svg('0123456789 ¿? ¡! & @ · /', OP, HUESO, VACIO)}
+    ${svg('ÁÉÍÓÚÜÑ áéíóúüñ', OP, HUESO, VACIO)}
   </div>
 
   <h3>De dónde viene, literalmente</h3>
