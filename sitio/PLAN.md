@@ -38,7 +38,7 @@ juego de megabytes.
 | 1 | **El display** (portada) | Paloma + logotipo armándose segmento por segmento, el lema, una frase, y el botón de WhatsApp. Un reloj con la hora **real** en la tipografía de la casa | Que en dos segundos se vea vivo y hecho por alguien |
 | 2 | **Qué hacemos** | Los seis servicios, una línea cada uno. Sin nombres de tecnología | Que se entienda qué se compra |
 | 3 | **El taller** | La fábrica de tipografías **corriendo en la página**. El visitante cambia esqueleto, pincel y ochavo y las letras se redibujan | La prueba de capacidad. Es la sección que nadie más puede copiar |
-| 4 | **Trabajo** | Ligas Mazi por su nombre · la plataforma de gestión sin marca ajena · Torre Infinita **sólo si ya está revestida** (ver §7-ter) | La prueba comercial |
+| 4 | **Trabajo** | Ligas Mazi por su nombre · la plataforma de gestión sin marca ajena. **Torre Infinita queda fuera** (ver §7-ter) | La prueba comercial |
 | 5 | **Cómo trabajamos · Contacto** | El modelo de comisión en cristiano, WhatsApp, correo, y **"trabaja con nosotros"** para colaboradores | Cerrar. Y captar gente, que es el agujero que más sangra |
 
 **La sección 5 trae algo que §7 no tenía: la entrada para colaboradores.** La puso Sofía y tiene
@@ -50,7 +50,7 @@ busque para trabajar.
 | Ruta | Qué es | Por qué no va en la principal |
 |---|---|---|
 | `/taller` | La fábrica completa: 15 alfabetos, 13 pinceles, 6 remates, el juego de 107 caracteres, descarga del SVG | Pesa y es para quien se clavó |
-| `/juega` | Torre Infinita con control táctil. **Bloqueada hasta el revestimiento** | Megabytes de Phaser |
+| ~~`/juega`~~ | ❌ **Eliminada.** Decisión de Carlos, ver §7-ter | |
 | `/marca` | Las hojas que ya existen (`marca/mazi.html`, `tipos.html`) limpiadas | Es material de venta, no de portada |
 
 **Candidata, sin prometer:** `/vectorizar` — subir un PNG y bajar un SVG, gratis, en el navegador.
@@ -461,9 +461,9 @@ de corrido.
 | **2** | Qué hacemos · Cómo trabajamos · Trabaja con nosotros | sí | nada |
 | **3** | **El taller** — la fábrica de tipografías en vivo | sí | nada |
 | **4** | Trabajo — capturas reales de Ligas Mazi con `captura.mjs`, plataforma sin marca ajena | sí | nada |
-| **5** | `/juega` — Torre Infinita | **no hasta revestirla** | reemplazar el arte de Pokémon |
-| **6** | El video de la plataforma | **no** | el archivo de Carlos + confirmar si trae marca de ICAMP |
-| **7** | Dominio y medición (Fase 6 del plan) | | decisión de Carlos |
+| ~~**5**~~ | ❌ **Bloque eliminado.** La prueba interactiva la carga el taller | |
+| **6** | El video de la plataforma | **no** | ⚠️ **confirmado: trae marca de ICAMP.** Carlos lo va a cambiar |
+| **7** | Dominio y medición (Fase 6 del plan) | | Carlos compra dominio **más adelante**; GitHub Pages mientras |
 
 **Por qué el Bloque 1 lleva la portada completa y no sólo el armazón:** porque al final del Bloque 1
 ya hay un sitio publicable con nombre, promesa y teléfono. Eso cierra el agujero #1 desde el primer

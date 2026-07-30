@@ -125,6 +125,13 @@ dependemos.
    El criterio: *¿existe ya y sólo hay que encontrarlo?* → se busca. *¿Tiene que ser único y de
    él?* → se crea. Si dudo, pregunto.
 
+   **Y el matiz que cierra el tema, del 30 de julio: el LOGO nunca lo dibuja un modelo de imagen.**
+   Se **compone**. Reconstruir la paloma desde imágenes generadas costó veinte rondas y el resultado
+   bueno salió de *vectorizar* una, no de generar. Un modelo no repite dos veces la misma paloma ni
+   acierta el violeta medido — y una marca que cambia no es una marca. Lo que sí se puede generar es
+   una **placa de fondo**, y encima se compone el logo real. Herramienta:
+   `marca/render.mjs`; prompt y criterio: [`marca/PLACA.md`](marca/PLACA.md).
+
 2. **Entrega recomendada: un archivo HTML autónomo.** Sin build, sin CDN. Es lo que mejor le
    funciona en el teléfono. **Pero es recomendación, no ley:** React está bien cuando el
    proyecto lo pide. Se elige por proyecto, no por dogma.
@@ -245,6 +252,7 @@ sin skill que la cubra, ahí sí se propone.
 | `herramientas/navegador.mjs` | **Las manos.** Clic, escribe, recorre flujos, barre tamaños y detecta desbordes | ✅ probada |
 | `herramientas/tipos.mjs` | **La fábrica de tipografías.** Esqueleto × pincel × remate, 107 caracteres | ✅ probada |
 | `herramientas/fuente.mjs` | **La fundidora.** Un alfabeto → `.ttf` + `.woff2` + `@font-face` | ✅ probada |
+| `marca/render.mjs` | **La mesa de fotografía.** Logo + logotipo sobre fondos de estudio, y los archivos de uso diario | ✅ probada |
 | `herramientas/vectorizar.mjs` | PNG → SVG con paleta medida y sin trazos basura | ✅ probada |
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
@@ -318,7 +326,7 @@ con laptops.**
 |---|---|---|
 | **Ligas Mazi** | Plataforma completa: cuentas, pagos, privacidad de menores. La prueba **comercial** | por su nombre |
 | **La app de gestión** | Que también hacemos video y software de negocio | **sin nombrar a ICAMP** |
-| **Torre Infinita** | Que llegamos hasta donde haga falta | ⚠️ **sólo revestida** — ver abajo |
+| ~~Torre Infinita~~ | — | ❌ **fuera. Decisión de Carlos** — ver abajo |
 
 **Fuera del portafolio, dicho por Carlos:**
 - **El Pacto Roto** — *"demasiado verde y feo, no es como para que lo vean los clientes"*
@@ -341,7 +349,7 @@ Le hicimos un software para *ofrecérselo* y Carlos todavía no habla con ellos.
 **La regla general: no presumimos clientes que no son clientes.** Es lo que más rápido quema la
 reputación de una empresa nueva.
 
-### ⚠️ Torre Infinita usa arte de Pokémon
+### ❌ Torre Infinita queda fuera del sitio · decidido por Carlos
 
 Lo preguntó Carlos el 30 de julio: *"¿qué tan legal es tener eso en mi página?"* **No lo es**, y en el
 sitio de la empresa es peor que en un proyecto personal. Los sprites, tilesets y nombres son de
@@ -364,8 +372,20 @@ abierta (OpenGameArt, Kenney, LPC, itch.io — ya hay LPC bajado para Hoja de Ro
 propias, y créditos en `CREDITOS.md`. Revestida vende **mejor**: "roguelike de 9111 pisos con
 bestiario propio" pesa más que "fan game".
 
-**Mientras no esté revestida:** `/juega` no se publica, y en el portafolio se menciona sin capturas
-jugables. **Y ojo: el repo público con ese arte es exposición hoy, no cuando publiquemos.**
+**Y Carlos decidió no revestirla:** *"mejor dejarlo así porque las mecánicas también están
+patentadas, tendremos que demostrar de otros modos."* **Tiene razón y el dato lo respalda:** aparte
+del copyright del arte, Nintendo y The Pokémon Company **demandaron a Palworld en 2024 por
+PATENTES** —no por copyright— sobre mecánicas del tipo "lanzar un objeto para capturar una criatura"
+y "montar criaturas". O sea que un roguelike de captura de criaturas queda expuesto por dos flancos,
+no uno. Revestir el arte tapaba el primero y dejaba el segundo abierto.
+
+**Entonces:**
+- **`/juega` no existe.** El Bloque 5 del plan se elimina.
+- **Torre Infinita sale del portafolio.** No se nombra en el sitio.
+- **El juego sigue existiendo** para nosotros; lo que se retira es la publicación.
+- **La prueba interactiva la carga el taller** —la fábrica de tipografías en vivo— más las demos del
+  laboratorio de animación (§7-bis). Y ahí no hay flanco de nadie: es todo nuestro.
+- **El repo público sigue siendo exposición hoy.** Eso no lo resuelve quitarlo del sitio.
 
 Plan completo en [`sitio/PLAN.md`](sitio/PLAN.md) §7-ter.
 
@@ -382,12 +402,17 @@ Nintendo manda los avisos, así que ése no espera al tráfico.
 Bloquear el clic derecho es teatro; no lo voy a vender como seguridad. Lo que protege de verdad
 es que la ventaja no está en el código: está en la velocidad y el criterio.
 
-### Lo que falta de Carlos
-1. **El archivo del video** de la app de gestión
-2. Confirmar si trae marca de ICAMP (si sí, quitarla antes de publicar)
-3. **Dominio:** ¿compramos o nos quedamos en GitHub Pages?
-4. **Logo bueno** — el de ahora es provisional. El sitio se construye para que cambiarlo sea
-   cambiar un archivo; mientras tanto la identidad carga en tipografía y color
+### Lo que falta de Carlos · respondido el 30 de julio
+
+1. **El video de la plataforma de gestión.** ⚠️ **Confirmado: TRAE marca de ICAMP.** Carlos lo va a
+   cambiar cuando pueda. **Hasta entonces el video no se publica** — ni recortado, porque el riesgo
+   no es el logo visible sino presumir un cliente que no es cliente (§7). El Bloque 6 sigue bloqueado.
+2. **Dominio:** Carlos va a comprar uno, **pero por ahora se espera.** GitHub Pages mientras. El
+   sitio se construye con rutas relativas para que mudarlo sea cambiar el CNAME y nada más.
+3. **Logo bueno:** ✅ resuelto. La paloma está vectorizada (`marca/logo/paloma.svg`) y el logotipo es
+   una fuente real (`sitio/fuente/mazi.woff2`). Los renders y los archivos de uso diario se generan
+   con `marca/render.mjs`.
+4. **Las frases del sitio:** 5 de 15 escritas. Ver [`sitio/TEXTOS.md`](sitio/TEXTOS.md).
 
 ---
 
@@ -424,7 +449,7 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
 | Proyecto | Qué es | ¿Portafolio? |
 |---|---|---|
 | **Ligas Mazi** | Ligas de baloncesto. Supabase, cuentas reales, marcador en vivo, cartas | ✅ la más fuerte |
-| **Torre Infinita** | Roguelike, 9111 pisos, Phaser 3. Repo aparte | ⚠️ **usa arte de Pokémon** — revestir antes de publicar (§7) |
+| **Torre Infinita** | Roguelike, 9111 pisos, Phaser 3. Repo aparte | ❌ **no va al sitio** — arte y mecánicas expuestas (§7) |
 | **App de gestión** | Software para ofrecérselo a ICAMP. **No son clientes** | ✅ sin marca ajena |
 | **El Pacto Roto** | RPG, la magia se dibuja, IA narra | ❌ *"muy verde y feo"* |
 | **VitalLink / Life-Connect** | Emergencias | quizá |
