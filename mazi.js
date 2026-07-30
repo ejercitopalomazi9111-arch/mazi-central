@@ -31,6 +31,12 @@
   const enPortada = location.pathname.replace(/index\.html$/, '') === RAIZ;
   if (enPortada) return;
 
+  // Y TAMPOCO en `sitio/`, que es la cara PÚBLICA de la empresa. Ahí van a
+  // llegar clientes, y una píldora que dice "atrás" y lleva a la central
+  // interna es navegación de casa asomándose en la sala. El sitio tiene su
+  // propia barra, con su propio botón de WhatsApp.
+  if (/\/sitio(\/|$)/.test(location.pathname)) return;
+
   const caja = document.createElement('div');
   caja.id = 'mazi-barra';
   const raiz = caja.attachShadow({ mode: 'open' });

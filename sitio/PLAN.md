@@ -604,7 +604,7 @@ de corrido.
 
 | Bloque | Qué | Se puede publicar? | Depende de |
 |---|---|---|---|
-| **1** | El armazón: variables de color, la fuente, la retícula, la barra, teléfono primero. **Portada con la autoprueba + el reloj + contacto** | **Sí. El sitio ya existe** | nada |
+| ~~**1**~~ | ✅ **HECHO** — armazón, portada con autoprueba y reloj real, cómo trabajamos y contacto. `sitio/index.html`, 45/45 pruebas | **publicado** | — |
 | **2** | Qué hacemos · Cómo trabajamos · Trabaja con nosotros | sí | nada |
 | **3** | **El taller** — la carcasa del instrumento + **el cronómetro** (herramienta 1) | sí | la prueba de los 3 mensajes |
 | **3-b** | **Tu nombre en Mazi** (herramienta 2) + el **contrato de herramienta** | sí | nada |
