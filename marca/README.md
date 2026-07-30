@@ -47,7 +47,7 @@ Y si algún día hay que rehacer las piezas desde las imágenes fuente:
 # el ave (de la imagen plana)
 node herramientas/vectorizar.mjs marca/fuente/plana-color-bueno.png marca/piezas/ave.svg \
   --colores "#120C1A,#AD21ED,#EAE5E3,#21132D" --quitar "#120C1A" \
-  --fusionar "#21132D:#AD21ED" --cerrar "#AD21ED:3" --pulir "#AD21ED:3" \
+  --fusionar "#21132D:#AD21ED" --escala 3 --cerrar "#AD21ED:3" --pulir "#AD21ED:3:3" \
   --minarea 120 --capas --suave 2 \
   --sinzona "1200,580,208,188"   `# la estrellita que dejó el generador` \
   --sinzona "575,435,90,120" --sinzona "745,435,90,120"  `# las comillas de esa imagen: fuera` \
@@ -56,7 +56,8 @@ node herramientas/vectorizar.mjs marca/fuente/plana-color-bueno.png marca/piezas
 # el arco (de la opción 4)
 node herramientas/vectorizar.mjs marca/fuente/opcion-4.png marca/piezas/arco.svg \
   --colores "#130E14,#010101,#F2F2F2,#9B34B4" --quitar "#130E14,#9B34B4" \
-  --minarea 60 --capas --recortar \
+  --minarea 60 --capas --recortar --escala 3 \
+  --pulir "#010101:2:2" --pulir "#F2F2F2:2:2" --suave 2 \
   --solozona "#010101:250,20,300,150" --solozona "#F2F2F2:480,20,300,150"
 ```
 
@@ -64,10 +65,20 @@ node herramientas/vectorizar.mjs marca/fuente/opcion-4.png marca/piezas/arco.svg
 
 - **`--cerrar 3`** — qué tan lejos del cuerpo se dividen las plumas. 0 finas, 3 intermedias,
   6 sólidas. Carlos eligió 3.
-- **`--pulir 3` + `--suave 2`** — el borde que sale del cierre viene escalonado y el trazador lo
+- **`--pulir 3:3` + `--suave 2`** — el borde que sale del cierre viene escalonado y el trazador lo
   convierte en zigzag; Carlos lo describió como z-fighting alrededor de las plumas. El pulido es
-  un filtro de mayoría que tumba los dientes sin mover la silueta. De paso el archivo baja de
-  11 KB a 6.
+  un filtro de mayoría que tumba los dientes sin mover la silueta.
+
+  El tercer número son las **pasadas**, y no es un detalle: el filtro usa una ventana CUADRADA, así
+  que una sola pasada de radio grande deja las esquinas cuadradas. Tres pasadas de radio chico
+  aproximan un desenfoque gaussiano y las esquinas salen curvas.
+- **`--escala 3`** — supermuestreo, y es lo que más ayudó con lo tosco de las plumas. El trazador
+  sigue el borde de PÍXELES: a 1× una pluma fina tiene el borde escalonado y ningún filtro lo
+  arregla, porque la información no está. A 3× ese mismo borde tiene tres veces más puntos, y al
+  devolver las coordenadas al sistema original queda con precisión de un tercio de píxel.
+
+  Ojo con una trampa: `pathomit` de imagetracer es **longitud** de borde, no área. Al escalarlo
+  por E² en vez de E se comía la estrella entera.
 - **`--encima` + `--arco 515,233`** — con el arco detrás, sus puntas asomaban por los huecos
   ENTRE las plumas y parecía entretejido con el ala. Acortarlo sólo movía el problema: la punta
   seguía cortándose contra el ala, y para que dejara de pasar había que hacerlo tan chico que se

@@ -28,7 +28,7 @@
  *                         plumas se dividan más lejos del cuerpo" — las
  *                         hendiduras de junto al cuerpo son estrechas, las de
  *                         la punta son anchas.
- *   --pulir    hex:N      filtro de mayoría de radio N entre ese color y el
+ *   --pulir  hex:N[:veces]  filtro de mayoría de radio N entre ese color y el
  *                         fondo: cada píxel se queda con lo que sean la mayoría
  *                         de sus vecinos. Quita el dentado de 1-2 px del borde
  *                         —los escalones que parecen z-fighting alrededor de las
@@ -38,6 +38,16 @@
  *                         N px de área que queden encerrados. Mata las costuras
  *                         de 1-2 px que el cierre no alcanza y que se ven como
  *                         rayas del fondo cruzando la figura.
+ *   --escala   N          SUPERMUESTREO: procesa y traza la imagen a N× su
+ *                         tamaño y luego devuelve las coordenadas al sistema
+ *                         original. El trazador sigue el borde de PÍXELES, así
+ *                         que a 1× una pluma fina tiene el borde escalonado y
+ *                         ningún filtro lo arregla del todo; a 3× ese mismo
+ *                         borde tiene tres veces más puntos y al volver queda
+ *                         con precisión de un tercio de píxel. Es lo que quita
+ *                         lo tosco de verdad. Los radios de --pulir/--cerrar y
+ *                         el --minarea se siguen dando en unidades del original;
+ *                         se escalan solos.
  *   --capas               agrupa por color en <g fill> — SVG más editable
  *
  * Este es el ADAPTADOR: hoy adentro va imagetracerjs (open source, local). Si
@@ -105,12 +115,13 @@ const fusionar = repetida('fusionar').map(v => {
 });
 
 const pulir = repetida('pulir').map(v => {
-  const [hex, n] = v.split(':');
-  return { color: hexARgb(hex), radio: Number(n) };
+  const [hex, n, veces] = v.split(':');
+  return { color: hexARgb(hex), radio: Number(n), veces: Number(veces || 1) };
 });
 const minArea = Number(opt('minarea', 12));
 const suave = Number(opt('suave', 1));
 const nColores = Number(opt('n', 6));
+const escala = Math.max(1, Number(opt('escala', 1)));
 
 /* ── el motor ──────────────────────────────────────────────────────────── */
 // imagetracerjs necesita un ImageData. El único lugar donde tenemos un decoder
@@ -163,10 +174,16 @@ const res = await pagina.evaluate(async (b64, cfg) => {
   const img = new Image();
   img.src = 'data:image/png;base64,' + b64;
   await img.decode();
+  const E = cfg.escala;
   const c = document.createElement('canvas');
-  c.width = img.width; c.height = img.height;
+  c.width = img.width * E; c.height = img.height * E;
   const ctx = c.getContext('2d');
-  ctx.drawImage(img, 0, 0);
+  // Con suavizado: la interpolación crea tonos intermedios en el borde, y la
+  // cuantización posterior los resuelve al color más cercano. Eso es lo que da
+  // un borde de mayor resolución en vez de bloques ampliados.
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, c.width, c.height);
   const datos = ctx.getImageData(0, 0, c.width, c.height);
 
   // PRE-CUANTIZACIÓN. Sin esto, los bordes suavizados de la imagen (el
@@ -241,7 +258,8 @@ const res = await pagina.evaluate(async (b64, cfg) => {
       }
     };
 
-    for (const { color, radio } of cfg.cerrar) {
+    for (const { color, radio: r0 } of cfg.cerrar) {
+      const radio = r0 * E;
       const es = new Uint8Array(N);
       for (let i = 0; i < N; i++) {
         const p = i * 4;
@@ -288,7 +306,13 @@ const res = await pagina.evaluate(async (b64, cfg) => {
     const d = datos.data, W = c.width, H = c.height, N = W * H;
     const f = cfg.paleta?.[0];
     if (f) {
-      for (const { color, radio } of pulirCfg) {
+      for (const { color, radio: rp, veces } of pulirCfg) {
+       const radio = rp * E;
+       // Iterar el filtro es lo que redondea de verdad. Una sola pasada de radio
+       // grande usa una ventana CUADRADA y deja las esquinas cuadradas; tres
+       // pasadas de radio chico aproximan un desenfoque gaussiano (teorema
+       // central del límite aplicado al kernel) y las esquinas salen curvas.
+       for (let pasada = 0; pasada < veces; pasada++) {
         const es = new Uint8Array(N);
         const elegible = new Uint8Array(N);
         for (let i = 0; i < N; i++) {
@@ -330,6 +354,7 @@ const res = await pagina.evaluate(async (b64, cfg) => {
           const p = i * 4, v = nuevo[i] ? color : f;
           d[p] = v.r; d[p + 1] = v.g; d[p + 2] = v.b; d[p + 3] = 255;
         }
+       }
       }
       ctx.putImageData(datos, 0, 0);
     }
@@ -350,7 +375,8 @@ const res = await pagina.evaluate(async (b64, cfg) => {
       };
       const visto = new Uint8Array(N);
       const cola = new Int32Array(N);
-      for (const { color, area } of cfg.tapar) {
+      for (const { color, area: a0 } of cfg.tapar) {
+        const area = a0 * E * E;
         for (let inicio = 0; inicio < N; inicio++) {
           if (visto[inicio] || !esFondo(inicio)) continue;
           // Inundación iterativa (con recursión se desborda la pila en 4 vecinos
@@ -391,7 +417,7 @@ const res = await pagina.evaluate(async (b64, cfg) => {
     // Trazo: menos tolerancia = más fiel; los logos aguantan bastante.
     ltres: 0.5 + cfg.suave * 0.5,
     qtres: 0.5 + cfg.suave * 0.5,
-    pathomit: cfg.minArea,
+    pathomit: cfg.minArea * E,   // es LONGITUD de borde, no área: escala lineal
     rightangleenhance: true,
     // Color: con paleta fija no hay muestreo, que es lo que mete trazos basura.
     colorsampling: cfg.paleta ? 0 : 2,
@@ -441,13 +467,18 @@ const res = await pagina.evaluate(async (b64, cfg) => {
       // svgpathstring(tracedata, nºcapa, nºtrazo, opciones) — índices, no
       // objetos. Devuelve un <path …/> completo, o vacío si lo filtró.
       const s = ImageTracer.svgpathstring(ti, i, j, opciones);
-      const d = s.match(/ d="([^"]+)"/);
-      if (d) trazos.push({ color, d: d[1] });
+      const m = s.match(/ d="([^"]+)"/);
+      if (!m) continue;
+      // De vuelta al sistema de la imagen original: se dividen TODOS los números
+      // por la escala. Los paths sólo llevan coordenadas, así que es directo.
+      const d = E === 1 ? m[1]
+        : m[1].replace(/-?\d+(?:\.\d+)?/g, n => String(Math.round((+n / E) * 100) / 100));
+      trazos.push({ color, d });
     }
   }
 
-  return { w: c.width, h: c.height, capas, trazos, volcado };
-}, b64, { paleta, quitar: [...quitar], minArea, suave, nColores, cerrar, tapar, fusionar, pulir, volcar: !!opt('volcar') });
+  return { w: c.width / E, h: c.height / E, capas, trazos, volcado };
+}, b64, { paleta, quitar: [...quitar], minArea, suave, nColores, cerrar, tapar, fusionar, pulir, escala, volcar: !!opt('volcar') });
 
 await navegador.close();
 
