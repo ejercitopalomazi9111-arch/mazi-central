@@ -96,16 +96,32 @@ function suavizar(p, porTramo = 14, cerrado = false) {
   const at = i => cerrado ? p[(i % n + n) % n] : p[Math.max(0, Math.min(n - 1, i))];
   const salida = [];
   const hasta = cerrado ? n : n - 1;
+
+  // CENTRÍPETA, no uniforme. La Catmull-Rom uniforme reparte el parámetro por
+  // partes iguales sin mirar cuánto mide cada tramo, y donde una recta larga se
+  // encuentra con una esquina corta —que es EXACTAMENTE la superelipse: lado
+  // recto, esquina curva— se pasa de la raya y deja un bulto. La letra de reloj
+  // salía con panza. La variante centrípeta reparte el parámetro según la raíz
+  // de la distancia y por eso no se pasa nunca: existe justo para este caso.
+  const nudo = (a, b) => Math.sqrt(Math.hypot(b[0] - a[0], b[1] - a[1])) || 1e-6;
+
   for (let i = 0; i < hasta; i++) {
     const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
-    for (let j = 0; j < porTramo; j++) {
-      const t = j / porTramo, t2 = t * t, t3 = t2 * t;
-      salida.push([
-        0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2
-          + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
-        0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2
-          + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3),
-      ]);
+    const t0 = 0, t1 = t0 + nudo(p0, p1), t2 = t1 + nudo(p1, p2), t3 = t2 + nudo(p2, p3);
+    // Muestreo segun cuanto mide el tramo, no parejo. Con un numero fijo de
+    // muestras, una curva larga sale poligonal y una corta sale con puntos de
+    // sobra: en la O grande se veian las facetas del contorno a simple vista.
+    const pasos = Math.max(porTramo,
+      Math.min(40, Math.round(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) * 130)));
+    for (let j = 0; j < pasos; j++) {
+      const t = t1 + (t2 - t1) * (j / pasos);
+      const mez = (u, v, ta, tb) => [
+        ((tb - t) * u[0] + (t - ta) * v[0]) / (tb - ta),
+        ((tb - t) * u[1] + (t - ta) * v[1]) / (tb - ta),
+      ];
+      const A1 = mez(p0, p1, t0, t1), A2 = mez(p1, p2, t1, t2), A3 = mez(p2, p3, t2, t3);
+      const B1 = mez(A1, A2, t0, t2), B2 = mez(A2, A3, t1, t3);
+      salida.push(mez(B1, B2, t1, t2));
     }
   }
   if (!cerrado) salida.push(p[n - 1]);
@@ -337,7 +353,7 @@ const recto = {
     // "software" se leía "sottware". Con el arco de arriba ya se distingue. Es un
     // defecto de legibilidad, no un gusto, así que se arregla en la base y lo
     // heredan todos los alfabetos.
-    f: { an: 0.44, t: ['d0.6 c1.4 c6', 'a2.2 e2.2'], nudos: ['c2.2'] },
+    f: { an: 0.46, t: ['e0.2 d0 c0.9 c6', 'a2.2 e2.2'], nudos: ['c2.2'] },
     g: { an: 0.62, t: ['e2 e7 c8 a7', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3'] },
     h: { an: 0.60, t: ['a0 a6', 'a3 c2 e3 e6'], nudos: ['a3'] },
     // El punto estaba en la fila 0, o sea a altura de MAYÚSCULA: flotaba lejísimos
@@ -402,7 +418,8 @@ const recto = {
     ')': { an: 0.32, t: ['b0 d3 b6'] },
     '/': { an: 0.46, t: ['a6 e0'] },
     '&': { an: 0.74, t: ['e6 b2 c0 d1 a5 c6 e4'] },
-    '@': { an: 0.86, t: ['d5 b5 b3 d3 d5 e4 e2 c0 a2 a4 c6 e5'] },
+    '@': { an: 0.88, t: ['c2.4 d3 d4.2 c5 b4.2 b3 c2.4',
+      'd2.8 d4.6 e4.4 e2.6 c0.6 a2.6 a4.4 c6.4 e5.8'] },
     "'": { an: 0.18, t: ['c0 c1'] },
     '"': { an: 0.30, t: ['b0 b1', 'd0 d1'] },
     ' ': { an: 0.30, t: [] },
@@ -1037,6 +1054,50 @@ const ALFABETOS = {
       pincel: 'uniforme', grosor: 0.15, tracking: 0.035,
     },
   },
+
+  /* ── MAZI · la combinación ────────────────────────────────────────────
+     Carlos eligió como base "la que parece reloj", que es Norma: la superelipse
+     de tablero de instrumento. Sobre ese esqueleto entran las otras dos, y cada
+     una entra por UNA puerta, no por todas — combinar es elegir qué se toma de
+     cada quien, no promediar tres cosas hasta que no quede ninguna.
+
+       de NORMA  ── el esqueleto entero: superelipse en cada letra redonda,
+                    peso parejo, ritmo idéntico. Es la base y se nota.
+       de REACTOR ── el bisel, pero mudado de la esquina de la letra a la PUNTA
+                    del trazo: el ochavo. Da lo maquinado sin condensar ni
+                    inclinar, que era lo que rompía la letra de reloj.
+       de CERCANA ── la apertura abierta en C, G, S y su minúscula. Es lo único
+                    que le baja lo frío a un instrumento sin volverlo blando.
+
+     Y dos ajustes que salen de la mezcla, no de ninguna de las tres: el ancho
+     baja de 106% a 100% —lo justo para que quepa en un favicon cuadrado— y el
+     grosor sube de 0.15 a 0.175, que es el peso mínimo para aguantar 24 px con
+     el ochavo comiéndose las esquinas. */
+  mazi: {
+    nombre: 'Mazi',
+    nota: 'La de la casa. Esqueleto de Norma —la superelipse de tablero—, el bisel de '
+        + 'Reactor mudado a la punta del trazo, y la apertura abierta de Cercana. '
+        + 'Instrumento con trato, que es exactamente lo que vende Grupo Mazi.',
+    base: 'norma',
+    escalaAncho: 1.0,
+    glifos: {
+      // Aperturas de Cercana: la C y la S dejan de morderse la cola. Un
+      // instrumento con la boca cerrada se siente hostil.
+      C: { an: 0.78, t: ['e1.2 d0 b0 a1.2 a4.8 b6 d6 e4.8'] },
+      G: { an: 0.82, t: ['e1.2 d0 b0 a1.2 a4.8 b6 d6 e4.9 e3.2', 'e3.2 b3.2'], nudos: ['e3.2'] },
+      S: { an: 0.70, t: ['e1.1 d0 b0 a1.2 a2 b2.9 d3.1 e4 e4.9 d6 b6 a4.9'] },
+      // El vértice de la M baja un poco: Norma lo tenía muy alto y con el ochavo
+      // se cerraba. Éste es el punto medio con Cercana.
+      M: { an: 1.0, t: ['a6 a0', 'a0 c3.8', 'c3.8 e0', 'e0 e6'], nudos: ['a0', 'c3.8', 'e0'] },
+      c: { an: 0.62, t: ['e2.7 d2 b2 a3 a5 b6 d6 e5.3'] },
+      s: { an: 0.58, t: ['e2.7 d2 b2 a2.8 b3.6 d4.4 e5.2 d6 b6 a5.3'] },
+      e: { an: 0.64, t: ['a4.1 e4.1 e3 d2 b2 a3 a5 b6 d6 e5.3'] },
+      g: { an: 0.68, t: ['e2.7 d2 b2 a3 a5 b6 d6 e5.3', 'e2.7 e6.8 d8 b8 a7.2'] },
+    },
+    porDefecto: {
+      pincel: 'uniforme', grosor: 0.19, tracking: 0.05, corte: 'ochavo', ochavo: 0.65,
+    },
+  },
 };
 
 // Tensho, kanteiryū y sōsho son escrituras de rótulo: no tienen caja baja, igual
@@ -1112,25 +1173,64 @@ function geometria(pts, op) {
 
 function contorno(pts, op) {
   const { h, nor, tan } = op.geo ?? geometria(pts, op);
-  const { corte = 'recto', sesgo = 22, cerrado, cortaEn = [true, true] } = op;
+  const { corte = 'recto', sesgo = 22, ochavo = 0.4, cerrado, cortaEn = [true, true] } = op;
   const lado = s => pts.map((p, i) => [p[0] + nor[i][0] * h[i] * s, p[1] + nor[i][1] * h[i] * s]);
   const A = lado(1), B = lado(-1);
 
-  // CORTE SESGADO. Un remate se pega encima; un corte se hace en el trazo mismo,
-  // y para eso hay que mover los dos lados del contorno en sentidos opuestos a lo
-  // largo del trazo. Es la terminación en diagonal del rótulo deportivo: la misma
-  // letra se lee más rápida sólo por esto.
+  // LOS CORTES DE PUNTA — ochavo y sesgo.
   //
-  // Sólo en extremos de verdad libres: en una unión, un corte en diagonal deja
-  // una muesca. Por eso llega `cortaEn` desde afuera, que ya sabe qué punta está
-  // sola y qué punta se topa con otro trazo.
-  if (!cerrado && corte === 'sesgo') {
-    const k = Math.tan(sesgo * Math.PI / 180), u = pts.length - 1;
-    const mover = (arr, i, s) => {
-      arr[i] = [arr[i][0] + tan[i][0] * s * h[i] * k, arr[i][1] + tan[i][1] * s * h[i] * k];
-    };
-    if (cortaEn[0]) { mover(A, 0, -1); mover(B, 0, 1); }
-    if (cortaEn[1]) { mover(A, u, 1); mover(B, u, -1); }
+  // El ochavo es el bisel de Reactor mudado de la esquina de la letra a la PUNTA
+  // del trazo: el extremo deja de ser un corte a escuadra y le salen dos
+  // chaflanes de 45°. El sesgo es la terminación en diagonal del rótulo
+  // deportivo. Los dos van sólo en puntas de verdad libres — en una unión dejan
+  // muesca, y por eso `cortaEn` llega desde afuera ya sabiendo cuál está sola.
+  //
+  // La trampa, que costó una espina en cada S y cada U: cuando un lado tiene que
+  // RETROCEDER, no basta con mover el último punto. El contorno está densificado,
+  // así que el último punto está a fracciones de píxel del penúltimo; empujarlo
+  // hacia atrás lo pasa por encima de sus vecinos y el contorno se cruza consigo
+  // mismo. Hay que RECORTAR el lado hasta la distancia pedida —medida sobre el
+  // recorrido, no sobre índices— y ahí empezar el chaflán.
+  if (!cerrado && corte !== 'recto' && pts.length > 2) {
+    const L = [0];
+    for (let i = 1; i < pts.length; i++) {
+      L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    }
+    const total = L.at(-1) || 1;
+    const u = pts.length - 1;
+    const tope = total * 0.4;   // nunca comerse más del 40% del trazo
+    const dist = i => Math.min(tope, corte === 'ochavo'
+      ? h[i] * Math.min(ochavo, 0.9)
+      : h[i] * Math.tan(sesgo * Math.PI / 180));
+
+    const recortaFin = (arr, d) => { let k = u; while (k > 0 && total - L[k] < d) k--; arr.length = k + 1; };
+    const recortaIni = (arr, d) => { let k = 0; while (k < arr.length - 1 && L[k] < d) k++; arr.splice(0, k); };
+
+    // Qué lado retrocede y qué lado avanza depende del corte, y equivocarse de
+    // lado cruza el contorno. En el OCHAVO retroceden los dos, simétricos. En el
+    // SESGO uno avanza y el otro retrocede — eso es lo que hace la diagonal.
+    if (cortaEn[1]) {
+      const c = dist(u), P = pts[u], n = nor[u], t = tan[u];
+      if (corte === 'ochavo') {
+        recortaFin(A, c); recortaFin(B, c);
+        A.push([P[0] + n[0] * (h[u] - c), P[1] + n[1] * (h[u] - c)]);
+        B.push([P[0] - n[0] * (h[u] - c), P[1] - n[1] * (h[u] - c)]);
+      } else {
+        A.push([P[0] + n[0] * h[u] + t[0] * c, P[1] + n[1] * h[u] + t[1] * c]);
+        recortaFin(B, c);
+      }
+    }
+    if (cortaEn[0]) {
+      const c = dist(0), P = pts[0], n = nor[0], t = tan[0];
+      if (corte === 'ochavo') {
+        recortaIni(A, c); recortaIni(B, c);
+        A.unshift([P[0] + n[0] * (h[0] - c), P[1] + n[1] * (h[0] - c)]);
+        B.unshift([P[0] - n[0] * (h[0] - c), P[1] - n[1] * (h[0] - c)]);
+      } else {
+        A.unshift([P[0] + n[0] * h[0] - t[0] * c, P[1] + n[1] * h[0] - t[1] * c]);
+        recortaIni(B, c);
+      }
+    }
   }
 
   const d = v => v.map(p => `${r2(p[0])} ${r2(p[1])}`).join(' L ');
@@ -1239,7 +1339,7 @@ const PORDEFECTO = {
   alfabeto: 'recto', pincel: 'uniforme', grosor: 0.13, filo: 90, contraste: 0.28,
   tracking: 0.05, anchoGlifo: 1, inclinacion: 0, punta: 'ninguno', alto: 100,
   remate: 'ninguno', cerdas: 0, relleno: 'solido',
-  corte: 'recto', sesgo: 22, estencil: 0,
+  corte: 'recto', sesgo: 22, ochavo: 0.4, estencil: 0,
 };
 
 export function componer(texto, op = {}) {
@@ -1249,7 +1349,7 @@ export function componer(texto, op = {}) {
   const dado = Object.fromEntries(Object.entries(op).filter(([, v]) => v !== undefined));
   const {
     pincel, grosor, filo, contraste, tracking, anchoGlifo, inclinacion,
-    punta, alto, remate, cerdas, relleno, corte, sesgo, estencil,
+    punta, alto, remate, cerdas, relleno, corte, sesgo, ochavo, estencil,
   } = { ...PORDEFECTO, ...(A.porDefecto || {}), ...dado };
 
   const hueco = relleno === 'hueco';
@@ -1302,7 +1402,7 @@ export function componer(texto, op = {}) {
       // cierre; si no, queda abierto justo en la costura.
       if (cerrado) pts.push([...pts[0]]);
 
-      const cfg = { grosor, pincel, filo, contraste, punta, cerrado, corte, sesgo,
+      const cfg = { grosor, pincel, filo, contraste, punta, cerrado, corte, sesgo, ochavo,
         semilla: sem++ };
       cfg.geo = geometria(pts, cfg);
       // Qué punta está sola de verdad. Lo usan el corte sesgado y el remate: en
