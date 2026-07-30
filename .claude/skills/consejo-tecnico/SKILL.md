@@ -177,6 +177,35 @@ Esa prueba es el entregable más valioso de la casa, y es obligación escrita (`
 **un hallazgo sin reproducción es una sospecha, y las sospechas no se arreglan, se confirman.** Rocco
 es el que la corre y trae el resultado.
 
+## Cómo se escribe el acta · **como junta, no como resumen**
+
+Lo pidió Carlos y cambia el entregable: **no quiere el veredicto, quiere ver la junta.**
+
+> *"Quiero ver toda la discusión: quién le dijo qué a quién, cómo le respondió, todo el proceso de
+> debate hasta llegar a lo que me muestras. En qué momento quién dijo qué, cuándo entró el perro con
+> pruebas, cuándo el gato hizo de las suyas — como si estuviese viendo una junta real."*
+
+**Las siete reglas del acta hablada:**
+
+1. **Turnos numerados**, en el orden en que pasaron. `⏱ TURNO 3 · …`
+2. **Cada quien habla en primera persona, con su nombre.** Se cita, no se resume.
+3. **Las interrupciones se escriben.** *"(interrumpe)"*, *"(desde el fondo)"*. Una junta donde nadie
+   se mete es una junta inventada.
+4. **Los desacuerdos NO se resuelven en el momento.** Se dejan colgando —*"Anotado el desacuerdo. Lo
+   fallo al final."*— y la Jueza los cierra en su turno. Ahí está el valor.
+5. **Rocco entra en el turno donde hizo falta la evidencia**, no al final. Si alguien afirma algo sin
+   haberlo visto correr, ahí sale Rocco — y ese momento suele ser el mejor de la junta.
+6. **Michi va después de todos**, siempre. Su trabajo es romper lo que el equipo **ya dio por bueno**.
+7. **La Jueza cierra diciendo qué le rechaza a los suyos**, y si se equivocó, también a sí misma.
+
+**El resumen y las tablas van hasta abajo.** Un acta donde todos estuvieron de acuerdo desde el
+principio es un acta que no sirvió: significa que alguien se calló, y esta casa existe para lo
+contrario.
+
+**Ejemplo vivo:** [`2026-07-30-plan-del-sitio.md`](../../auditorias/2026-07-30-plan-del-sitio.md) —
+turno 4, donde Chuy pregunta si alguien ha visto correr `tipos.mjs`, nadie contesta, y Rocco vuelve
+con la terminal en el hocico.
+
 ## La memoria
 
 Un archivo por auditoría: `.claude/auditorias/AAAA-MM-DD-nombre-del-sistema.md`. Plantilla en

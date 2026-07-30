@@ -71,6 +71,17 @@ El Juez además entrega **la prueba de 10 minutos** que hay que correr antes de 
 sola línea de código. Esa prueba es el entregable más valioso del consejo — es lo que convierte
 la opinión en experimento.
 
+## El acta se escribe como junta · igual que en la Sala de Máquinas
+
+Carlos lo pidió el 30 de julio para las auditorías **y aplica igual aquí**: quiere ver el debate, no
+el resumen. Turnos numerados · cada juez en primera persona · **las interrupciones se escriben** ·
+los desacuerdos se dejan colgando hasta que el Juez falla · y el Juez cierra diciendo **qué le
+rechaza a los otros tres**.
+
+Las reglas completas están en
+[`consejo-tecnico/SKILL.md`](../consejo-tecnico/SKILL.md) §*Cómo se escribe el acta*. **El resumen va
+hasta abajo; el valor está en el camino.**
+
 ## La memoria del consejo
 
 Cada veredicto se guarda para que mañana no empieces de cero. En este repo:
