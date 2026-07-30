@@ -37,17 +37,31 @@ intacto y ése sí es el bueno. La que se retira es la frase de venta, que es ot
 comisión— es exactamente el trabajo de la sección **"Cómo trabajamos"**, que es justo la que
 faltaba. Dos problemas, un movimiento.
 
-### Candidatas para "Cómo trabajamos"
+**Y la reemplaza la frase que Carlos armó**, combinando cuatro de sus propias ideas — ver
+"Cómo trabajamos" abajo. Las tres candidatas que yo había propuesto las rechazó completas, y tenía
+razón: las tres eran auto-descriptivas y las tres metían tres datos en una línea.
 
-| | Frase | Nota |
-|---|---|---|
-| **A** | **Entregamos rápido y nos quedamos mucho tiempo. No vendemos trabajos sueltos: entramos a tu operación y cobramos por resultado, no por hora.** | La más clara. Dice las dos cosas que el original confundía y de una vez explica la comisión |
-| **B** | **Rápido en construir, largos en acompañar. No cobramos por hora: cobramos por lo que el proyecto vale.** | Más corta y con ritmo. Pierde el "entramos a tu operación" |
-| **C** | **No te entregamos un proyecto y desaparecemos. Entregamos rápido, nos quedamos, y cobramos por resultado.** | La más humana. Ataca el miedo real del cliente, que es quedarse solo después de pagar |
+---
 
-**Mi recomendación: la A.** Es la única que dice las tres cosas que un comprador necesita saber
-—rápido, permanente, por resultado— sin sonar a folleto. La C es la más simpática pero arranca en
-negativo, y arrancar nombrando el miedo mete el miedo.
+## ⚠️ La comisión NO va en la página del cliente · decisión de Carlos
+
+> *"No quiero poner lo de la comisión. No me interesa que mi cliente lea eso al entrar."*
+
+**Y es correcto, no es pudor.** La comisión es información sobre **nuestro** dinero, y un comprador
+que apenas llegó todavía está resolviendo si su problema tiene solución. Ponerle el modelo de cobro
+en la portada le cambia la pregunta de *"¿esta gente puede arreglar lo mío?"* a *"¿cuánto me van a
+sacar?"*. Es la conversación correcta en el momento equivocado.
+
+**Dónde sí vive la comisión, entonces:**
+
+| Lugar | Cómo se dice |
+|---|---|
+| **"Trabaja con nosotros"** (colaboradores) | Ahí sí es el argumento central, y ya está dicho: *"gana en proporción al valor que aportas"*. Para el colaborador la comisión no es un precio, es su sueldo |
+| **La conversación de cotización** | Hablado, cuando ya hay alcance. Es donde el número tiene sentido |
+| **El contrato** (Fase 3) | Por escrito, con el reparto ya calculado |
+
+**En la página, para el cliente: nunca.** Lo que sí se le dice es lo que a él le sirve —que
+entramos a la operación y nos quedamos— y eso ya está en la frase de "Cómo trabajamos".
 
 ---
 
@@ -82,6 +96,19 @@ la primera, que trae la mejor imagen del lote.*
 *Y ojo —esta frase hace doble trabajo: **contiene la taxonomía del sitio.** Ver "el acomodo de los
 seis" más abajo.*
 
+### Cómo trabajamos
+
+> **No nos contratas: nos integras. Construimos la base, y nos quedamos a cuidar lo que se levanta
+> sobre ella — la entrega es donde empieza nuestro trabajo.**
+
+*Armada con cuatro ideas de Carlos, y de las cuatro dos pares decían lo mismo: **"no nos contratas:
+nos integras"** ya contiene *"entramos a tu operación"* (las dos hablan de estructura), y **"nos
+quedamos a cuidar lo que se levanta"** ya contiene *"la entrega es donde empieza"* (las dos hablan de
+permanencia). Se quedaron la mejor versión de cada par, más el remate que lo aterriza.*
+
+*"No nos contratas: nos integras" es, comercialmente, la mejor línea del sitio: en cinco palabras
+dice que no somos un proveedor. **Sin comisión, por decisión de Carlos** (arriba el por qué).*
+
 ### Trabaja con nosotros
 
 > **Aquí tu crecimiento depende de tu impacto: genera clientes, participa en proyectos o haz ambas
@@ -89,6 +116,18 @@ seis" más abajo.*
 
 *"Tu crecimiento depende de tu impacto" es lo que resuelve el agujero que más sangra (`CLAUDE.md`
 §5): que nadie sabe cuánto va a ganar.*
+
+> 🔧 **Agregado del consejo, a falta del visto bueno de Carlos.** Sofía pidió tres palabras:
+>
+> > *"…y gana en proporción al valor que aportas, **definido antes de empezar**, no al final."*
+>
+> Su argumento: *"gana en proporción al valor que aportas"* promete proporción y **no dice cuándo se
+> sabe el número**, que es exactamente el miedo del colaborador — que le digan cuánto ganó cuando ya
+> no puede negociar. Tres palabras, ningún precio revelado, y es lo único de las quince frases que
+> ataca un miedo en vez de describir una virtud.
+
+**Y aquí es donde vive la comisión**, no en el texto del cliente. Para el cliente la comisión es un
+precio; para el colaborador **es su sueldo**. El mismo dato, dos lectores, dos significados opuestos.
 
 ---
 
@@ -224,7 +263,51 @@ escribió, o sea que no hay nada que justificar.
 
 ---
 
-## ⬜ Lo único que falta
+## ✅ El texto está completo · y pasó por el consejo
 
-**La frase de "Cómo trabajamos".** Están las tres candidatas arriba. Con ésa, el sitio tiene todo su
-texto.
+**Las quince frases están.** El sitio tiene todo su texto y ya no hay nada que inventar al construir.
+
+El 30 de julio se pasaron por el consejo entero —el equipo y los cuatro jueces—. **Veredicto:
+CONSTRUIR**, con tres agregados que **no tocan ni una palabra de Carlos**. Acta completa en
+[`.claude/veredictos/2026-07-30-los-textos.md`](../.claude/veredictos/2026-07-30-los-textos.md).
+
+### Los tres agregados que salieron del consejo
+
+| # | Qué se agrega | Por qué, y de quién salió |
+|---|---|---|
+| 1 | **Los seis servicios como una sola línea gris en la primera pantalla:** *web · software · marketing · video · gestión · tiempos y movimientos* | La portada no dice a qué nos dedicamos. Una captura de la portada reenviada por WhatsApp no le enseña el negocio a nadie — Renata + Iván |
+| 2 | **Un imperativo al cierre de cada sección**, dirigido al lector | De quince frases, **cero** le piden algo al visitante. Todas describen — Iván |
+| 3 | **"definido antes de empezar"** en la frase de colaboradores | "Gana en proporción al valor que aportas" promete proporción sin decir *cuándo* se sabe el número, que es justo el agujero que sangra (`CLAUDE.md` §5) — Sofía |
+
+### Los cinco imperativos · el agregado #2, ya escrito
+
+Cinco líneas de cinco palabras, al cierre de cada sección. Son lo único del sitio dirigido **al
+lector**, y su trabajo es que ninguna sección sea un callejón sin salida (decisión 8 del consejo del
+sitio).
+
+| Al cerrar | La línea |
+|---|---|
+| Qué hacemos | **Cuéntanos qué se está rompiendo.** |
+| El taller | **Dinos qué herramienta te falta.** |
+| Trabajo | **Tu proyecto es el que sigue.** |
+| Cómo trabajamos | **Escríbenos y hablamos.** |
+| Trabaja con nosotros | **Mándanos lo que sabes hacer.** |
+
+*Cada una lleva pegado el botón de WhatsApp. La de "Cuéntanos qué se está rompiendo" es la mejor de
+las cinco: no pide un proyecto ni un presupuesto, pide un **síntoma**, que es lo único que el visitante
+sí sabe describir cuando llega.*
+
+### Y una contradicción interna que el consejo revisó y decidió dejar
+
+*"Construimos tu independencia"* (El taller, sección 3) contra *"no nos contratas: nos integras"*
+(Cómo trabajamos, sección 5). Leídas juntas parecen pelearse. **Se quedan las dos** porque en español
+*integrarse* es sumarse a un equipo, no volverlo dependiente — y el par se lee como lo que de verdad
+hacemos: **nos metemos a la operación y te dejamos capaz de no necesitar a nadie.** Si algún cliente
+lo pregunta, ésa es la respuesta y está bien tenerla lista.
+
+### El pendiente que dejó el consejo, y es de forma, no de texto
+
+`PLAN.md` §1 dice **"una línea cada uno"** para los seis servicios. Las seis frases miden 110–140
+caracteres: en un teléfono de 390 px son **dos o tres líneas cada una**. O el plan se corrige, o las
+frases se cortan en dos partes (nombre grande + frase chica). **Se corrige el plan, no las frases** —
+la solución es tipográfica: el nombre del servicio grande, la frase en letra chica debajo.

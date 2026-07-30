@@ -523,5 +523,12 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   tocar nada.**
 
 ### Huecos de capacidad detectados
-El más grande: **voz de marca y copywriting**. Vendemos marketing y no tengo skill de *escribir*
-texto — sólo de cómo pedirlo. Después: CRO, cuando haya cliente que pague por conversión medida.
+El más grande: **skill de copywriting**. Vendemos marketing y no tengo skill de *escribir* texto —
+sólo de cómo pedirlo. Después: CRO, cuando haya cliente que pague por conversión medida.
+
+> **Corregido el 30 de julio, y el error era mío.** Aquí decía *"voz de marca y copywriting"*. **La
+> voz no faltaba: es de Carlos y ya estaba.** Escribió las quince frases del sitio en una tarde, sin
+> una sola muletilla de industria, y tiró completas las tres que yo había propuesto — con razón, las
+> tres eran auto-descriptivas. Lo que falta es la **herramienta** para escribir, no la voz. Es una
+> distinción que importa: me estaba preparando para escribirle el texto de un sitio cuya voz no es
+> mía. Acta: [`.claude/veredictos/2026-07-30-los-textos.md`](.claude/veredictos/2026-07-30-los-textos.md).

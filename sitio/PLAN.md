@@ -35,11 +35,19 @@ juego de megabytes.
 
 | # | Sección | Qué hace | Qué resuelve |
 |---|---|---|---|
-| 1 | **El display** (portada) | Paloma + logotipo armándose segmento por segmento, el lema, una frase, y el botón de WhatsApp. Un reloj con la hora **real** en la tipografía de la casa | Que en dos segundos se vea vivo y hecho por alguien |
-| 2 | **Qué hacemos** | Los seis servicios **en tres grupos** —la base · los procesos · la imagen—, una línea cada uno. Sin nombres de tecnología | Que se entienda qué se compra, y que es un sistema |
+| 1 | **El display** (portada) | Paloma + logotipo armándose segmento por segmento, el lema, una frase, **los seis servicios en una línea gris**, y el botón de WhatsApp. Un reloj con la hora **real** en la tipografía de la casa | Que en dos segundos se vea vivo y hecho por alguien — **y que se entienda el negocio en una captura reenviada** |
+| 2 | **Qué hacemos** | Los seis servicios **en tres grupos** —la base · los procesos · la imagen—. **Nombre del servicio grande, frase chica debajo** (ver la corrección al pie). Sin nombres de tecnología | Que se entienda qué se compra, y que es un sistema |
 | 3 | **El taller** | La fábrica de tipografías **corriendo en la página**. El visitante cambia esqueleto, pincel y ochavo y las letras se redibujan | La prueba de capacidad. Es la sección que nadie más puede copiar |
 | 4 | **Trabajo** | Ligas Mazi por su nombre · la plataforma de gestión sin marca ajena. **Torre Infinita queda fuera** (ver §7-ter) | La prueba comercial |
-| 5 | **Cómo trabajamos · Contacto** | El modelo de comisión en cristiano, WhatsApp, correo, y **"trabaja con nosotros"** para colaboradores | Cerrar. Y captar gente, que es el agujero que más sangra |
+| 5 | **Cómo trabajamos · Contacto** | Que entramos a la operación y nos quedamos, WhatsApp, correo, y **"trabaja con nosotros"** para colaboradores — **la comisión se dice ahí, no en el texto del cliente** (decisión de Carlos) | Cerrar. Y captar gente, que es el agujero que más sangra |
+
+> ⚠️ **Corrección de julio 30, del consejo de los textos.** Esta tabla decía **"una línea cada
+> uno"** para los seis servicios. Las seis frases que escribió Carlos miden **110–140 caracteres**:
+> a 390 px son dos o tres líneas cada una, y seis seguidas vuelven la sección una pared de párrafos
+> casi iguales —el 47% de todo el texto del sitio está en esta sección—. **Se corrige el plan, no las
+> frases:** el nombre del servicio va grande y la frase va chica debajo, para que la sección se lea de
+> un barrido por los seis nombres y sólo el interesado lea la frase. Es solución tipográfica, no de
+> texto. Acta: [`.claude/veredictos/2026-07-30-los-textos.md`](../.claude/veredictos/2026-07-30-los-textos.md).
 
 **La sección 5 trae algo que §7 no tenía: la entrada para colaboradores.** La puso Sofía y tiene
 razón — el modelo de comisión necesita gente, y hoy no hay una sola manera de que alguien nos
