@@ -306,3 +306,17 @@ console.log(`🕊  ${salidaPath}`);
 console.log(`   arco: escala ${r2(s)}, movido a (${r2(tx)}, ${r2(ty)})`);
 console.log(`   viewBox ${vb.join(' ')}`);
 console.log(`   ${todo.length} trazos en ${grupos.length} capas: ${grupos.map(g => g.color).join(' ')}`);
+
+// Verificación por MEDIDA, no por fórmula: ninguna barra debe cruzar el eje del
+// ave, o las del lado izquierdo se encuentran con las del derecho y forman una
+// punta y un rombo en el centro. Ya pasó una vez con el script viejo y la fórmula
+// del hueco no lo detectaba, porque mide la distancia entre las dos barras de un
+// mismo lado, no la de cada barra al eje.
+for (let i = 0; i < barras.length; i++) {
+  const b = cajaDe([barras[i]]);
+  const cruza = b.x0 < ejeAve && b.x1 > ejeAve;
+  if (cruza) {
+    console.warn(`   ⚠ la barra ${i} CRUZA el eje (${r2(b.x0 - ejeAve)}..${r2(b.x1 - ejeAve)}):`
+      + ' las de un lado se van a juntar con las del otro. Sube el retranqueo.');
+  }
+}
