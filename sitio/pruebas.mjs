@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 const RAIZ='/home/user/mazi-central';
-const M={'.html':'text/html;charset=utf-8','.js':'text/javascript','.svg':'image/svg+xml',
+const M={'.html':'text/html;charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.svg':'image/svg+xml',
  '.png':'image/png','.woff2':'font/woff2','.ttf':'font/ttf'};
 const srv=createServer((q,s)=>{let p=decodeURIComponent(q.url.split('?')[0]);
  if(p.endsWith('/'))p+='index.html'; const f=join(RAIZ,p);
