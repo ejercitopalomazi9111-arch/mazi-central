@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#171a1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pacto Roto">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="arte/museo/circulo_magico.jpg">
+<title>El Pacto Roto</title>
+<style>
+:root{
+  --ink:#171a1f; --ink2:#12151a; --vellum:#c9c0ac; --dim:#8d8676;
+  --blood:#7b2b26; --blood-lt:#a53f38; --verd:#4a6b62; --verd-lt:#6b9488;
+  --gold:#a8823c; --gold-lt:#d0a24c; --panel:#1e2228; --panel2:#242932; --line:#333a42;
+  --out:#5d5850;
+  --serif:'Iowan Old Style','Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif;
+  --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--ink); color:var(--vellum); font-family:var(--serif);
+  font-size:17px; line-height:1.55; overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(168,130,60,.06), transparent 60%),
+    radial-gradient(100% 60% at 50% 120%, rgba(123,43,38,.05), transparent 60%);
+}
+#app{position:relative;width:100vw;height:100dvh;max-width:640px;margin:0 auto;overflow:hidden}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:calc(var(--safe-t) + 8px) 0 var(--safe-b); opacity:0; pointer-events:none;
+  transition:opacity .001s}
+.screen.on{opacity:1;pointer-events:auto}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 24px}
+.scroll::-webkit-scrollbar{width:0}
+
+/* ---- tipografía ---- */
+h1,h2,h3{font-weight:400;letter-spacing:.01em;line-height:1.15}
+.capital::first-letter{float:left;font-size:3.1em;line-height:.72;padding:6px 8px 0 0;color:var(--gold);font-weight:700}
+.small-caps{font-variant:small-caps;letter-spacing:.14em}
+.gold{color:var(--gold-lt)} .blood{color:var(--blood-lt)} .verd{color:var(--verd-lt)} .dim{color:var(--dim)}
+.center{text-align:center}
+hr.rule{border:0;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:16px 0}
+.deco{color:var(--gold);opacity:.6;text-align:center;letter-spacing:.5em;font-size:13px;margin:4px 0}
+
+/* ---- portada ---- */
+#portada .scroll{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:2px}
+.crest{width:132px;height:132px;border-radius:50%;object-fit:cover;
+  filter:saturate(.6) contrast(1.08) brightness(.82);
+  box-shadow:0 0 0 1px var(--line),0 0 40px rgba(0,0,0,.6), inset 0 0 40px rgba(0,0,0,.5);
+  margin-bottom:18px}
+.title-main{font-size:clamp(38px,13vw,60px);color:var(--vellum);letter-spacing:.02em;
+  text-shadow:0 2px 20px rgba(0,0,0,.7)}
+.title-main .roto{color:var(--blood-lt);font-style:italic}
+.subtitle{color:var(--dim);font-size:14px;letter-spacing:.28em;text-transform:uppercase;margin-top:6px}
+.tagline{color:var(--dim);max-width:30ch;margin:20px auto;font-style:italic;font-size:15px}
+
+/* ---- botones ---- */
+.btn{display:block;width:100%;font-family:var(--serif);font-size:17px;color:var(--vellum);
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);border-left:2px solid var(--verd);
+  padding:14px 16px;margin:8px 0;text-align:left;cursor:pointer;position:relative;
+  transition:border-color .15s,background .15s,transform .08s;border-radius:2px}
+.btn:hover,.btn:focus-visible{border-left-color:var(--gold);background:linear-gradient(180deg,#2a303a,var(--panel2));outline:none}
+.btn:active{transform:scale(.985)}
+.btn .hint{display:block;font-size:12.5px;color:var(--dim);margin-top:3px;font-style:italic}
+.btn.gold{border-left-color:var(--gold);text-align:center;font-variant:small-caps;letter-spacing:.1em;font-size:19px}
+.btn.blood{border-left-color:var(--blood)}
+.btn.ghost{background:transparent;border:1px solid var(--line);text-align:center;color:var(--dim)}
+.btn.mini{display:inline-block;width:auto;padding:8px 14px;font-size:14px;margin:4px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow .btn{margin:8px 0}
+
+/* ---- HUD ---- */
+#hud{flex-shrink:0;padding:6px 14px 8px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,var(--ink2),transparent)}
+.hud-top{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.hud-name{color:var(--gold-lt);font-variant:small-caps;letter-spacing:.06em;font-size:14px}
+.hud-loc{color:var(--dim);margin-left:auto;font-style:italic}
+.bars{display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;margin-top:5px}
+.bar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
+.bar .lbl{width:34px;flex-shrink:0;text-transform:uppercase;letter-spacing:.08em}
+.bar .track{flex:1;height:3px;background:#0c0e11;overflow:hidden}
+.bar .fill{height:100%;transition:width .35s ease}
+.bar.hp .fill{background:var(--blood-lt)} .bar.mana .fill{background:var(--verd-lt)}
+.bar.xp .fill{background:var(--gold)} .bar .num{width:auto;color:var(--vellum);font-variant-numeric:tabular-nums}
+.hud-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:10.5px;padding:2px 7px;border:1px solid var(--line);color:var(--dim);
+  letter-spacing:.06em;border-radius:2px;background:#0c0e11}
+.tag.gold{color:var(--gold-lt);border-color:var(--gold)}
+.tag.blood{color:var(--blood-lt);border-color:var(--blood)}
+.tag.rastro-2{color:var(--gold-lt)} .tag.rastro-3{color:var(--blood-lt);border-color:var(--blood)}
+.tag.rastro-4{color:#fff;background:var(--blood);border-color:var(--blood-lt)}
+
+/* ---- lámina de escena ---- */
+.plate{position:relative;margin:2px 0 14px;border:1px solid var(--line);overflow:hidden;background:#000}
+.plate img{width:100%;display:block;
+  filter:saturate(.72) contrast(1.06) brightness(.82);}
+.plate::after{content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 70px 12px rgba(11,12,15,.85);
+  background:radial-gradient(120% 90% at 50% 40%,transparent 45%,rgba(11,12,15,.55))}
+.plate .cap{position:absolute;left:0;right:0;bottom:0;z-index:2;
+  font-size:10px;letter-spacing:.1em;color:var(--dim);padding:6px 8px;
+  font-variant:small-caps;background:linear-gradient(0deg,rgba(11,12,15,.9),transparent);text-align:right}
+
+/* ---- narración ---- */
+.narr{font-size:17.5px;line-height:1.62;margin:6px 0 14px;min-height:60px}
+.narr p{margin-bottom:10px}
+.effect{font-style:italic;color:var(--gold-lt);border-left:2px solid var(--gold);padding-left:12px;margin:12px 0}
+
+/* ---- bitácora / log ---- */
+#log-strip{font-size:12px;color:var(--dim);font-style:italic;padding:4px 0;min-height:18px}
+
+/* ---- atelier ---- */
+#atelier .scroll{padding-bottom:8px}
+.canvas-wrap{position:relative;width:100%;aspect-ratio:1;max-height:52vh;margin:0 auto;
+  border:1px solid var(--line);background:
+    repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(168,130,60,.04) 32px),
+    repeating-linear-gradient(90deg,transparent,transparent 31px,rgba(168,130,60,.04) 32px),
+    radial-gradient(circle at 50% 45%,#20242b,#14171c);
+  touch-action:none;overflow:hidden}
+#sello-canvas,#sello-fx{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#sello-fx{pointer-events:none} /* la capa de efectos NO debe robar los toques del dibujo */
+.flesh-mode .canvas-wrap{background:radial-gradient(circle at 50% 45%,#2a1a1a,#160f0f);
+  border-color:var(--blood)}
+.reader{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;min-height:30px}
+.glyph-tok{font-size:12px;padding:4px 9px;border:1px solid var(--line);background:#0c0e11;
+  display:flex;align-items:center;gap:6px;border-radius:2px}
+.glyph-tok .g{font-size:16px}
+.glyph-tok.sigilo{border-color:var(--gold);color:var(--gold-lt)}
+.glyph-tok.signo{border-color:var(--verd);color:var(--verd-lt)}
+.glyph-tok.anillo{border-color:var(--gold-lt);color:var(--gold-lt)}
+.glyph-tok.fuera{opacity:.4;text-decoration:line-through}
+.reader-status{font-size:12.5px;color:var(--dim);font-style:italic;margin:2px 0 8px}
+.reader-status b{color:var(--vellum);font-style:normal}
+
+/* ---- combate ---- */
+.enemy-card{border:1px solid var(--blood);background:linear-gradient(180deg,rgba(123,43,38,.12),transparent);
+  padding:10px 12px;margin-bottom:10px}
+.enemy-card .en{color:var(--blood-lt);font-variant:small-caps;font-size:18px;letter-spacing:.05em}
+.turn-order{display:flex;gap:6px;margin:6px 0;font-size:11px;color:var(--dim)}
+
+/* ---- inventario / grid de ítems ---- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;margin:10px 0}
+.slot{border:1px solid var(--line);background:var(--panel);aspect-ratio:1;position:relative;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
+.slot:hover{border-color:var(--gold)}
+.slot .spr{width:44px;height:44px;image-rendering:pixelated;
+  background-repeat:no-repeat;background-size:auto}
+.slot .qty{position:absolute;right:2px;bottom:1px;font-size:10px;color:var(--gold-lt);
+  font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
+.slot .qn{position:absolute;left:0;right:0;bottom:0;font-size:8.5px;text-align:center;
+  color:var(--dim);background:rgba(11,12,15,.8);padding:1px 0;line-height:1.1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rar-tosca{border-color:#5c5750} .rar-comun{border-color:#6f7a72}
+.rar-fina{border-color:var(--verd-lt)} .rar-maestra{border-color:var(--gold)}
+.rar-legendaria{border-color:var(--blood-lt);box-shadow:0 0 8px rgba(165,63,56,.4)}
+
+/* ---- oficios: estaciones y mini-juegos ---- */
+.station-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.station-head .ico{font-size:26px}
+.forge-bar,.timing-bar{position:relative;height:34px;border:1px solid var(--line);background:#0c0e11;
+  margin:14px 0;overflow:hidden}
+.forge-zone{position:absolute;top:0;bottom:0;background:rgba(74,107,98,.35);border-left:1px solid var(--verd-lt);border-right:1px solid var(--verd-lt)}
+.forge-zone.perfect{background:rgba(168,130,60,.4);border-color:var(--gold-lt)}
+.forge-marker{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--blood-lt);box-shadow:0 0 8px var(--blood-lt)}
+.heat{height:6px;background:linear-gradient(90deg,#3a2a1a,#7b2b26,#d0a24c,#e8e2d0);margin:6px 0;position:relative}
+.heat .ind{position:absolute;top:-2px;width:2px;height:10px;background:#fff}
+.mixer{display:flex;flex-direction:column;align-items:center;gap:8px}
+.flask{width:90px;height:120px;border:2px solid var(--line);border-top:none;
+  border-radius:0 0 40px 40px;position:relative;overflow:hidden;background:#0c0e11}
+.flask .liquid{position:absolute;left:0;right:0;bottom:0;transition:height .5s,background .5s}
+.quality-meter{height:8px;background:#0c0e11;border:1px solid var(--line);margin:8px 0;overflow:hidden}
+.quality-meter .qf{height:100%;background:linear-gradient(90deg,var(--blood),var(--gold),var(--verd-lt));transition:width .4s}
+
+/* ---- mapa ---- */
+.map{position:relative;margin:10px 0}
+.map-node{position:absolute;transform:translate(-50%,-50%);cursor:pointer;text-align:center}
+.map-node .dot{width:14px;height:14px;border-radius:50%;background:var(--panel);border:1px solid var(--gold);margin:0 auto}
+.map-node.here .dot{background:var(--gold);box-shadow:0 0 12px var(--gold)}
+.map-node.ghost .dot{background:#000;border-color:var(--blood)}
+.map-node .nm{font-size:10px;color:var(--dim);white-space:nowrap;margin-top:2px}
+.map-node.locked{opacity:.35;pointer-events:none}
+
+/* ---- toasts / modales ---- */
+#toast-wrap{position:absolute;left:0;right:0;top:calc(var(--safe-t) + 8px);z-index:60;pointer-events:none;padding:0 16px}
+.toast{background:var(--panel2);border:1px solid var(--gold);border-left:3px solid var(--gold);
+  padding:9px 13px;margin-bottom:6px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.toast.blood{border-color:var(--blood);border-left-color:var(--blood)}
+.modal-bg{position:absolute;inset:0;z-index:50;background:rgba(6,7,9,.78);display:none;
+  align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.modal-bg.on{display:flex}
+.modal{width:100%;max-width:440px;max-height:82vh;overflow-y:auto;background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--gold);padding:18px 18px 16px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.modal h3{color:var(--gold-lt);font-variant:small-caps;letter-spacing:.05em;font-size:22px;margin-bottom:8px}
+.modal .stat-row,.stat-row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:3px 0;border-bottom:1px solid rgba(51,58,66,.5)}
+.stat-row>span:first-child{min-width:0}
+
+/* ---- barra de acciones inferior ---- */
+.actionbar{flex-shrink:0;display:flex;gap:6px;padding:8px 12px calc(var(--safe-b) + 8px);
+  border-top:1px solid var(--line);background:var(--ink2);overflow-x:auto}
+.actionbar .ab{flex:0 0 auto;font-family:var(--serif);font-size:12px;color:var(--dim);
+  background:var(--panel);border:1px solid var(--line);padding:8px 12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;min-width:56px;border-radius:2px}
+.actionbar .ab .ico{font-size:19px;color:var(--vellum)}
+.actionbar .ab:active{border-color:var(--gold)}
+.actionbar .ab.hot .ico{color:var(--gold-lt)}
+
+/* ---- creación de personaje ---- */
+.choice-card{border:1px solid var(--line);background:var(--panel);padding:12px 14px;margin:8px 0;cursor:pointer;
+  border-left:2px solid var(--line);transition:border-color .15s,background .15s}
+.choice-card.sel{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(168,130,60,.1),transparent)}
+.choice-card h3{color:var(--vellum);font-size:19px;font-variant:small-caps;letter-spacing:.04em}
+.choice-card .role{font-size:12.5px;color:var(--dim);font-style:italic;margin:2px 0 6px}
+.choice-card .st{display:flex;gap:10px;font-size:12px;color:var(--verd-lt);flex-wrap:wrap}
+.field{width:100%;font-family:var(--serif);font-size:18px;color:var(--vellum);background:#0c0e11;
+  border:1px solid var(--line);padding:11px 13px;margin:6px 0}
+.field:focus{outline:none;border-color:var(--gold)}
+.accion-libre{margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 11px;margin:4px 4px 0 0;
+  border:1px solid var(--line);background:var(--panel);cursor:pointer;border-radius:2px;color:var(--vellum)}
+.chip.on{border-color:var(--gold);color:var(--gold-lt);background:linear-gradient(90deg,rgba(168,130,60,.12),transparent)}
+.chip .x{color:var(--blood-lt);font-weight:bold}
+.tray{min-height:44px;border:1px dashed var(--line);padding:8px;margin:8px 0;background:#0c0e11}
+.tray .empty{color:var(--dim);font-style:italic;font-size:13px}
+.picker{max-height:34vh;overflow-y:auto;border:1px solid var(--line);margin:6px 0}
+.picker .row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(51,58,66,.4);cursor:pointer}
+.picker .row:hover{background:var(--panel2)}
+.picker .row .nm{flex:1;font-size:14px}
+.picker .row .q{font-size:12px;color:var(--gold-lt)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thinking{color:var(--dim);font-style:italic;font-size:14px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Portada -->
+  <section id="portada" class="screen on">
+    <div class="scroll">
+      <img class="crest" src="arte/museo/circulo_magico.jpg" alt="">
+      <h1 class="title-main">El Pacto <span class="roto">Roto</span></h1>
+      <div class="subtitle">un mundo que olvidó su magia</div>
+      <p class="tagline">Dibujar sobre carne está prohibido. Tú vas a dibujarlo igual.</p>
+      <div style="width:100%;max-width:340px;margin-top:8px">
+        <button class="btn gold" id="btn-continuar" style="display:none">Continuar</button>
+        <button class="btn gold" id="btn-nueva">Nueva partida</button>
+        <button class="btn ghost mini" id="btn-config" style="display:inline-block;width:auto">⚙ Oráculo (IA)</button>
+      </div>
+      <p class="dim" style="font-size:11px;margin-top:24px;max-width:34ch">
+        Arte real de dominio público · Friedrich, Piranesi, Kuniyoshi, Doré, Goya, Bruegel, Waterhouse y otros.
+      </p>
+    </div>
+  </section>
+
+  <!-- Juego (se llena por JS) -->
+  <section id="juego" class="screen">
+    <div id="hud"></div>
+    <div class="scroll" id="juego-scroll"></div>
+    <div class="actionbar" id="actionbar"></div>
+  </section>
+
+  <!-- Pantalla genérica (menús, oficios, mapa, etc.) -->
+  <section id="panel" class="screen">
+    <div class="scroll" id="panel-scroll"></div>
+    <div class="actionbar" id="panel-actions"></div>
+  </section>
+
+  <!-- Atelier -->
+  <section id="atelier" class="screen">
+    <div class="scroll">
+      <div class="station-head"><span class="ico">✒</span><div><h2 class="gold">Atelier</h2><div class="dim" style="font-size:12px">Traza el sello. Sin anillo cerrado, nada pasa.</div></div></div>
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="sello-canvas"></canvas>
+        <canvas id="sello-fx"></canvas>
+      </div>
+      <div class="reader-status" id="reader-status">Lienzo vacío.</div>
+      <div class="reader" id="reader"></div>
+    </div>
+    <div class="actionbar" id="atelier-actions"></div>
+  </section>
+
+  <div id="toast-wrap"></div>
+  <div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
+</div>
+
+<script src="js/vendor/anime.min.js?v=4"></script>
+<script src="js/data.js?v=4"></script>
+<script src="js/engine.js?v=4"></script>
+<script src="js/narrador.js?v=4"></script>
+<script src="js/magia.js?v=4"></script>
+<script src="js/combate.js?v=4"></script>
+<script src="js/crafting.js?v=4"></script>
+<script src="js/vida.js?v=4"></script>
+<script src="js/mundo.js?v=4"></script>
+<script src="js/ui.js?v=4"></script>
+<script src="js/main.js?v=4"></script>
+<script>
+/* Durante el desarrollo activo: NADA de service worker (evita servir código viejo).
+   Además desregistra cualquier SW ya instalado y limpia sus caches. El offline se
+   re-activa cuando el juego esté estable. */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(()=>{});
+}
+if (window.caches && caches.keys) { caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(()=>{}); }
+</script>
+</body>
+</html>

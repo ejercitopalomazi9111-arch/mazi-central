@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "imagetracerjs": "^1.2.6",
+    "opentype.js": "^2.0.0",
+    "puppeteer-core": "^25.4.0",
+    "wawoff2": "^2.0.1"
+  }
+}

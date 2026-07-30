@@ -1,0 +1,135 @@
+{
+"dore_satan": {
+"r": "inframundo",
+"t": "La desesperación de Satán",
+"a": "Gustave Doré",
+"y": "1866",
+"src": "arte/museo/dore_satan.jpg"
+},
+"dore_paraiso": {
+"r": "inframundo",
+"t": "El paraíso perdido",
+"a": "Gustave Doré",
+"y": "1866",
+"src": "arte/museo/dore_paraiso.jpg"
+},
+"bocklin_isla": {
+"r": "mar",
+"t": "La isla de los muertos",
+"a": "Arnold Böcklin",
+"y": "1883",
+"src": "arte/museo/bocklin_isla.jpg"
+},
+"goya_saturno": {
+"r": "inframundo",
+"t": "Saturno devorando a su hijo",
+"a": "Francisco de Goya",
+"y": "1823",
+"src": "arte/museo/goya_saturno.jpg"
+},
+"bruegel_muerte": {
+"r": "guerra",
+"t": "El triunfo de la muerte",
+"a": "Pieter Bruegel el Viejo",
+"y": "1562",
+"src": "arte/museo/bruegel_muerte.jpg"
+},
+"alquimista": {
+"r": "oficio",
+"t": "El alquimista",
+"a": "Joseph Wright of Derby",
+"y": "1771",
+"src": "arte/museo/alquimista.jpg"
+},
+"circulo_magico": {
+"r": "atelier",
+"t": "El círculo mágico",
+"a": "J. W. Waterhouse",
+"y": "1886",
+"src": "arte/museo/circulo_magico.jpg"
+},
+"guerra_ira": {
+"r": "guerra",
+"t": "El gran día de su ira",
+"a": "John Martin",
+"y": "1853",
+"src": "arte/museo/guerra_ira.jpg"
+},
+"pesadilla": {
+"r": "bestia",
+"t": "La pesadilla",
+"a": "Henry Fuseli",
+"y": "1781",
+"src": "arte/museo/pesadilla.jpg"
+},
+"luna": {
+"r": "norte",
+"t": "Dos hombres contemplando la luna",
+"a": "Caspar David Friedrich",
+"y": "1830",
+"src": "arte/museo/luna.jpg"
+},
+"norte_wanderer": {
+"r": "norte",
+"t": "El caminante sobre el mar de niebla",
+"a": "Caspar David Friedrich",
+"y": "1818",
+"src": "arte/museo/norte_wanderer.jpg"
+},
+"norte_eismeer": {
+"r": "norte",
+"t": "El mar de hielo",
+"a": "Caspar David Friedrich",
+"y": "1824",
+"src": "arte/museo/norte_eismeer.jpg"
+},
+"norte_invierno": {
+"r": "norte",
+"t": "Paisaje invernal con iglesia",
+"a": "Caspar David Friedrich",
+"y": "1811",
+"src": "arte/museo/norte_invierno.jpg"
+},
+"norte_abadia": {
+"r": "norte",
+"t": "La abadía en el robledal",
+"a": "Caspar David Friedrich",
+"y": "1809",
+"src": "arte/museo/norte_abadia.jpg"
+},
+"ruinas_torre": {
+"r": "ruinas",
+"t": "La torre redonda · Carceri",
+"a": "Giovanni Battista Piranesi",
+"y": "1761",
+"src": "arte/museo/ruinas_torre.jpg"
+},
+"ruinas_puente": {
+"r": "ruinas",
+"t": "El puente levadizo · Carceri",
+"a": "Giovanni Battista Piranesi",
+"y": "1761",
+"src": "arte/museo/ruinas_puente.jpg"
+},
+"ruinas_arco": {
+"r": "ruinas",
+"t": "El arco gótico · Carceri",
+"a": "Giovanni Battista Piranesi",
+"y": "1761",
+"src": "arte/museo/ruinas_arco.jpg"
+},
+"salvaje_bruja": {
+"r": "salvaje",
+"t": "Takiyasha la bruja y el espectro",
+"a": "Utagawa Kuniyoshi",
+"y": "c.1844",
+"src": "arte/museo/salvaje_bruja.jpg"
+},
+"salvaje_combate": {
+"r": "salvaje",
+"t": "Combate sobre el Horyukaku",
+"a": "Utagawa Kuniyoshi",
+"y": "c.1840",
+"src": "arte/museo/salvaje_combate.jpg"
+}
+}
