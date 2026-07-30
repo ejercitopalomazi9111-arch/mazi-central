@@ -42,6 +42,29 @@ const DETALLES = [
     + 'de altura completa: un brazo de E cortado a la mitad no se lee estarcido, se lee roto. En '
     + 'Reactor eso no pasaba porque va condensada y los brazos no llegaban al mínimo; en una '
     + 'letra ancha sí llegan.'],
+  ['Modo segmentos', 'Lo que Carlos mandó con la foto del reloj de LED: la letra no es un dibujo '
+    + 'continuo, son barras que NUNCA se tocan, con un hueco fino en cada unión y las puntas '
+    + 'cortadas en diagonal pero con la punta PLANA, no de rombo. Y no hubo que inventar dónde van '
+    + 'los huecos: la lista de uniones de cada glifo ya existía, escrita para taparlas con un '
+    + 'disco. En modo segmentos se hace lo contrario — cada unión se vuelve corte y el disco no se '
+    + 'dibuja. Un campo que servía para pegar, usado para separar.'],
+  ['La I como el 1 del reloj', 'En un display de segmentos el 1 no es una barra: son dos barras '
+    + 'apiladas con un hueco en medio y las puntas que se miran cortadas en diagonal, porque si no '
+    + 'los segmentos se tocarían. Aquí sale de la división al centro más el ochavo. Es la excepción '
+    + 'a la regla de que una letra de un solo trazo no se parte — en este alfabeto, partida ES la '
+    + 'letra.'],
+  ['La M, triángulo de punta plana', 'Las astas ya no son verticales: se abren hacia la base, así '
+    + 'que la letra es ancha abajo y angosta arriba, y el vértice del medio se queda a media altura '
+    + 'para que las patas no se separen del todo. Antes eran dos astas paralelas con un hueco '
+    + 'enorme entre las patitas; ahora es UNA figura. La v y la w llevan la misma punta plana.'],
+  ['La caja baja, rehecha', 'Venía heredada del esqueleto neutro, que es circular, y por eso no '
+    + 'encajaba: una O de superelipse junto a una o de compás cantan. Ahora el juego completo sigue '
+    + 'la misma ley que la mayúscula — cuenco de lado recto y esquina curva, hombro de techo plano, '
+    + 'asta derecha.'],
+  ['La g que se leía como q', 'La razón era concreta: su cola arrancaba a la altura de x, así que '
+    + 'todo el lado derecho de la letra era una recta larga de arriba abajo — que es exactamente el '
+    + 'asta de la q. Ahora el cuenco es un anillo cerrado y la cola nace del PIE del cuenco. Eso es '
+    + 'lo único que de verdad las separa.'],
   ['La división de la R', 'La única que no puede salir de una regla. El asta, el cuenco y la '
     + 'pierna se juntan en un punto, y aunque el puente automático cayera ahí, el cuenco y la '
     + 'pierna lo tapaban con su propia tinta — por eso la R parecía la única sin corte. Se '

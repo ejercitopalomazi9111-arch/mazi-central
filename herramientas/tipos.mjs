@@ -1094,14 +1094,70 @@ const ALFABETOS = {
       // la unión se lee.
       R: { an: 0.76, t: ['a0 a6', 'a0 c0 e1.2 e2 c2.9 a2.9', 'a2.9 e6'],
         nudos: ['a0'], cortes: ['a2.9'] },
+
+      // La M: silueta de triángulo con la punta plana. Las astas ya no son
+      // verticales, se abren hacia la base — la letra es ancha abajo y angosta
+      // arriba— y el vértice del medio se queda a media altura para que las patas
+      // no se separen del todo. Antes eran dos astas paralelas con un hueco
+      // enorme entre las patitas; ahora es UNA figura.
+      M: { an: 0.92, t: ['a6 b0', 'b0 c3.5 d0', 'd0 e6'], nudos: ['b0', 'd0'] },
+
+      // La I, a la manera del reloj. En un display de segmentos el 1 no es una
+      // barra: son DOS barras apiladas con un hueco en medio, y las puntas que se
+      // miran van cortadas en diagonal porque si no los segmentos se tocarían.
+      // Aquí sale solo: la división declarada al centro, y el ochavo ya le pone
+      // el corte diagonal a las dos puntas nuevas. Es la excepción a la regla de
+      // que una letra de un solo trazo no se parte — en este alfabeto, partida ES
+      // la letra.
+      I: { an: 0.24, t: ['c0 c6'], cortes: ['c3'] },
+
+      /* ── LA CAJA BAJA ───────────────────────────────────────────────────
+         Venía heredada de `recto`, que es circular, y por eso no encajaba: una O
+         de superelipse junto a una o de compás cantan. Aquí va el juego completo
+         rehecho con la misma ley que la mayúscula — cuenco de lado recto y
+         esquina curva, hombro de techo plano, asta derecha.
+
+         Y la g, que se leía como q. La razón era concreta y no de gusto: su cola
+         arrancaba a la altura de x, así que todo el lado derecho de la letra era
+         una recta larga de arriba abajo — que es exactamente el asta de la q.
+         Ahora el cuenco es un anillo CERRADO y la cola nace del PIE del cuenco.
+         Eso es lo único que de verdad las separa. */
+
+      a: { an: 0.68, t: ['e2 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'], nudos: ['e2.9', 'e5.1'] },
+      b: { an: 0.70, t: ['a0 a6', 'a2.9 b2 d2 e3 e5 d6 b6 a5.1'], nudos: ['a2.9', 'a5.1'] },
       c: { an: 0.62, t: ['e2.7 d2 b2 a3 a5 b6 d6 e5.3'] },
-      s: { an: 0.58, t: ['e2.7 d2 b2 a2.8 b3.6 d4.4 e5.2 d6 b6 a5.3'] },
-      e: { an: 0.64, t: ['a4.1 e4.1 e3 d2 b2 a3 a5 b6 d6 e5.3'] },
-      g: { an: 0.68, t: ['e2.7 d2 b2 a3 a5 b6 d6 e5.3', 'e2.7 e6.8 d8 b8 a7.2'] },
+      d: { an: 0.70, t: ['e0 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'], nudos: ['e2.9', 'e5.1'] },
+      e: { an: 0.64, t: ['a4.05 e4.05 e3 d2 b2 a3 a5 b6 d6 e5.3'] },
+      f: { an: 0.46, t: ['e0.2 d0 c1 c6', 'a2.2 e2.2'], nudos: ['c2.2'] },
+      g: { an: 0.70, t: ['b2 d2 e3 e5 d6 b6 a5 a3 b2', 'd6.1 e6.7 e7.3 d8 b8 a7.3'] },
+      h: { an: 0.70, t: ['a0 a6', 'a2.9 a2.2 c2 e2.2 e2.9', 'e2.9 e6'],
+        nudos: ['a2.9', 'e2.9'] },
+      i: { an: 0.24, t: ['c2 c6', 'c0.8 c0.8'] },
+      j: { an: 0.34, t: ['c2 c6.9 b8 a7.3', 'c0.8 c0.8'] },
+      k: { an: 0.64, t: ['a0 a6', 'e2 a4.1', 'a4.1 e6'], nudos: ['a4.1'] },
+      l: { an: 0.24, t: ['c0 c6'] },
+      m: { an: 1.04, t: ['a2 a6', 'a2.9 a2.2 b2 c2.2 c2.9', 'c2.9 c6',
+        'c2.9 c2.2 d2 e2.2 e2.9', 'e2.9 e6'], nudos: ['a2.9', 'c2.9', 'e2.9'] },
+      n: { an: 0.70, t: ['a2 a6', 'a2.9 a2.2 c2 e2.2 e2.9', 'e2.9 e6'],
+        nudos: ['a2.9', 'e2.9'] },
+      o: { an: 0.70, t: ['b2 d2 e3 e5 d6 b6 a5 a3 b2'] },
+      p: { an: 0.70, t: ['a2 a8', 'a2.9 b2 d2 e3 e5 d6 b6 a5.1'], nudos: ['a2.9', 'a5.1'] },
+      q: { an: 0.70, t: ['e2 e8', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'], nudos: ['e2.9', 'e5.1'] },
+      r: { an: 0.42, t: ['a2 a6', 'a2.9 a2.2 c2 e2.3'], nudos: ['a2.9'] },
+      s: { an: 0.60, t: ['e2.7 d2 b2 a2.8 b3.6 d4.4 e5.2 d6 b6 a5.3'] },
+      t: { an: 0.48, t: ['c0.8 c5.2 d6', 'a2.2 e2.2'], nudos: ['c2.2'] },
+      u: { an: 0.70, t: ['a2 a4.9 b6 d6 e4.9 e2', 'e2 e6'] },
+      // La v y la w llevan la punta plana de la M, para que la familia se note.
+      v: { an: 0.64, t: ['a2 b5.7 c6 d5.7 e2'] },
+      w: { an: 0.98, t: ['a2 b6', 'b6 c2.5', 'c2.5 d6', 'd6 e2'],
+        nudos: ['b6', 'c2.5', 'd6'] },
+      x: { an: 0.62, t: ['a2 e6', 'e2 a6'] },
+      y: { an: 0.64, t: ['a2 c5.6', 'e2 c5.6', 'c5.6 c6.9 b8 a7.3'], nudos: ['c5.6'] },
+      z: { an: 0.60, t: ['a2 e2', 'e2 a6', 'a6 e6'], nudos: ['e2', 'a6'] },
     },
     porDefecto: {
-      pincel: 'uniforme', grosor: 0.19, tracking: 0.05, corte: 'ochavo', ochavo: 0.65,
-      estencil: 1,
+      pincel: 'uniforme', grosor: 0.19, tracking: 0.055, corte: 'ochavo', ochavo: 0.52,
+      estencil: 1, segmentos: true,
     },
   },
 };
@@ -1269,9 +1325,13 @@ function rectoLargo(pts, cerrado) {
   // pasaba porque va condensada al 84% y los brazos no llegaban al mínimo; en
   // una letra ancha sí llegan. El puente pertenece al asta de altura completa.
   if (arco < 0.82) return false;
+  // Y vertical de verdad, con 8° de tolerancia, no 22. Las astas abiertas de la M
+  // van a 13° y con la tolerancia vieja calificaban: el puente les cortaba la
+  // patita y quedaba un pedacito suelto abajo, que es exactamente lo contrario de
+  // "que no se separen por completo". El puente pertenece al asta recta.
   const g = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI) % 180;
   const a = Math.min(g, 180 - g);
-  return a < 22 || Math.abs(a - 90) < 22;
+  return a < 8 || Math.abs(a - 90) < 8;
 }
 
 // DIVISIÓN DECLARADA. El estencil automático pone el puente a media asta, y eso
@@ -1370,7 +1430,7 @@ const PORDEFECTO = {
   alfabeto: 'recto', pincel: 'uniforme', grosor: 0.13, filo: 90, contraste: 0.28,
   tracking: 0.05, anchoGlifo: 1, inclinacion: 0, punta: 'ninguno', alto: 100,
   remate: 'ninguno', cerdas: 0, relleno: 'solido',
-  corte: 'recto', sesgo: 22, ochavo: 0.4, estencil: 0,
+  corte: 'recto', sesgo: 22, ochavo: 0.4, estencil: 0, segmentos: false,
 };
 
 export function componer(texto, op = {}) {
@@ -1380,7 +1440,7 @@ export function componer(texto, op = {}) {
   const dado = Object.fromEntries(Object.entries(op).filter(([, v]) => v !== undefined));
   const {
     pincel, grosor, filo, contraste, tracking, anchoGlifo, inclinacion,
-    punta, alto, remate, cerdas, relleno, corte, sesgo, ochavo, estencil,
+    punta, alto, remate, cerdas, relleno, corte, sesgo, ochavo, estencil, segmentos,
   } = { ...PORDEFECTO, ...(A.porDefecto || {}), ...dado };
 
   const hueco = relleno === 'hueco';
@@ -1403,11 +1463,22 @@ export function componer(texto, op = {}) {
     const trazos_n = trazos.length;
     const nudosG = base.nudos || [];
     // Los puntos donde el glifo pide partirse, ya en coordenadas de la línea.
-    const cortesG = (base.cortes || []).map(nd => {
+    //
+    // MODO SEGMENTOS. En un reloj de siete segmentos la letra no es un dibujo
+    // continuo: son barras sueltas que NUNCA se tocan, con hueco en cada unión y
+    // las puntas cortadas en diagonal. Aquí eso no hay que inventarlo — la lista
+    // de `nudos` de cada glifo YA es la lista de sus uniones, porque para eso se
+    // escribió: para taparlas con un disco. Con `segmentos` se hace lo contrario:
+    // cada nudo se vuelve un corte y el disco no se dibuja. Un campo que servía
+    // para pegar, usado para separar.
+    const cortesG = [...(base.cortes || []), ...(segmentos ? nudosG : [])].map(nd => {
       const [[cx, cy]] = nodos(nd, an);
       return [cx + x, cy];
     });
-    const radioCorte = grosor * 0.62;
+    // El hueco de la foto es una raya fina, no un mordisco: 0.62 dejaba un vacío
+    // más ancho que el propio trazo y las letras se caían en pedazos.
+    const radioCorte = grosor * 0.27;
+    const enCorte = (px, py) => cortesG.some(f => Math.hypot(px - f[0], py - f[1]) < radioCorte);
 
     // Un remate va en un extremo LIBRE. Si dos trazos acaban en el mismo punto
     // eso es una unión, no un final — y ahí un diamante o un pelo se ve como un
@@ -1445,8 +1516,12 @@ export function componer(texto, op = {}) {
       cfg.geo = geometria(pts, cfg);
       // Qué punta está sola de verdad. Lo usan el corte sesgado y el remate: en
       // una unión, los dos dejan muesca.
+      // Una punta que cae dentro de un corte declarado SÍ se achaflana: ahí ya no
+      // hay unión, hay hueco, y una punta a escuadra frente a otra delata que la
+      // letra era continua.
+      const librePunta = (px, py) => solo(px, py) || enCorte(px, py);
       const libres = cerrado ? [false, false]
-        : [solo(pts[0][0], pts[0][1]), solo(pts.at(-1)[0], pts.at(-1)[1])];
+        : [librePunta(pts[0][0], pts[0][1]), librePunta(pts.at(-1)[0], pts.at(-1)[1])];
 
       // Una división declarada manda sobre el estencil automático: si el glifo
       // dice dónde quiere partirse, no se le pone además un puente al azar.
@@ -1463,7 +1538,7 @@ export function componer(texto, op = {}) {
         // estarcida: queda partida, y ya no se sabe qué letra es. El puente
         // necesita que quede letra alrededor.
         } else if (estencil > 0 && trazos_n > 1 && rectoLargo(pts, cerrado)) {
-          trozos = partirEstencil(pts, estencil, grosor * 0.5);
+          trozos = partirEstencil(pts, estencil, grosor * 0.34);
         } else {
           trozos = null;
         }
@@ -1496,7 +1571,7 @@ export function componer(texto, op = {}) {
     for (const nd of nudosG) {
       // Ni en jaula ni en cerdas: un disco macizo en cada unión es una burbuja en
       // la primera y un borrón que se come el 7-5-3 en la segunda.
-      if (hueco || cerdas > 0) break;
+      if (hueco || cerdas > 0 || segmentos) break;
       const [[nx, ny]] = nodos(nd, an);
       // Un disco de unión encima de una división declarada la vuelve a tapar,
       // que es exactamente por lo que la R parecía no tener corte.
@@ -1538,8 +1613,12 @@ export function componer(texto, op = {}) {
 export function svg(texto, op = {}, tinta = '#EAE5E3', papel = null) {
   const p = componer(texto, op);
   const m = (op.alto ?? 100) * 0.18;
-  const y0 = -m - (op.alto ?? 100) * 0.34;   // sitio para acentos
-  const h = p.alto * 1.34 + m * 2;
+  // El lienzo tiene que caber TODO: los acentos llegan a la fila -2 (-0.33 em) y
+  // los descendentes a la fila 8 (1.33 em), más medio grosor de trazo en cada
+  // punta. El alto era 1.34 em y por eso la cola de la g, la j, la p, la q y la y
+  // quedaba cortada por el borde del viewBox en todos los alfabetos.
+  const y0 = -m - (op.alto ?? 100) * 0.34;
+  const h = p.alto * 1.74 + m * 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m} ${y0} ${p.ancho + m * 2} ${h}">`
     + p.piezas.map(z => (z.hueco
       ? `<path d="${z.d}" fill="${papel || 'none'}" stroke="${tinta}"`
