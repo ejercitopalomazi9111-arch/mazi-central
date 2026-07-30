@@ -249,6 +249,12 @@ const REMATES = {
   bola: (x, y, th, g) => [disco(x + Math.cos(th) * g * 0.18,
     y + Math.sin(th) * g * 0.18, g * 0.56)],
 
+  // Punta redonda exacta: el disco mide justo el trazo y va centrado en el
+  // extremo. No es adorno — es la señal de "amable" más fuerte que hay. Un
+  // corte a escuadra se lee técnico; el mismo trazo con punta redonda se lee
+  // cercano, y no cambió nada más.
+  redondo: (x, y, th, g) => [disco(x, y, g * 0.5)],
+
   escuadra: (x, y, th, g) => {
     // Terminación en ángulo recto: el bloque del kanteiryū, que no desvanece
     // nada — corta cuadrado y llena.
@@ -327,11 +333,17 @@ const recto = {
     c: { an: 0.56, t: ['e3 c2 a3 a5 c6 e5'] },
     d: { an: 0.62, t: ['e0 e6', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3', 'e5'] },
     e: { an: 0.58, t: ['a4 e4 e3 c2 a3 a5 c6 e5'] },
-    f: { an: 0.42, t: ['c1 c6', 'a2 e2'], nudos: ['c2'] },
+    // La f tenía asta recta y travesaño, o sea EXACTAMENTE la t sin pie: en
+    // "software" se leía "sottware". Con el arco de arriba ya se distingue. Es un
+    // defecto de legibilidad, no un gusto, así que se arregla en la base y lo
+    // heredan todos los alfabetos.
+    f: { an: 0.44, t: ['d0.6 c1.4 c6', 'a2.2 e2.2'], nudos: ['c2.2'] },
     g: { an: 0.62, t: ['e2 e7 c8 a7', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3'] },
     h: { an: 0.60, t: ['a0 a6', 'a3 c2 e3 e6'], nudos: ['a3'] },
-    i: { an: 0.18, t: ['c2 c6', 'c0 c0'] },
-    j: { an: 0.32, t: ['d2 d7 c8 a7', 'd0 d0'] },
+    // El punto estaba en la fila 0, o sea a altura de MAYÚSCULA: flotaba lejísimos
+    // de su asta. Sube apenas por encima de la altura de x, que es donde va.
+    i: { an: 0.18, t: ['c2 c6', 'c0.8 c0.8'] },
+    j: { an: 0.32, t: ['d2 d7 c8 a7', 'd0.8 d0.8'] },
     k: { an: 0.58, t: ['a0 a6', 'e2 a4', 'a4 e6'], nudos: ['a4'] },
     l: { an: 0.20, t: ['c0 c6'] },
     m: { an: 0.92, t: ['a2 a6', 'a3 b2 c3 c6', 'c3 d2 e3 e6'], nudos: ['a3', 'c3'] },
@@ -808,6 +820,223 @@ const ALFABETOS = {
       tracking: 0.07, remate: 'pua',
     },
   },
+  /* ═══════════════════════════════════════════════════════════════════════
+     LAS TRES TECNOLÓGICAS
+
+     Lo que la investigación dejó claro y vale copiar:
+
+     · EUROSTILE — la forma clave no es el cuadrado ni el círculo: es la
+       SUPERELIPSE. Lado recto, esquina curva. Y ligeramente extendida. Esa es
+       *la* letra tecnológica, y de ahí sale casi todo lo demás.
+     · BANK GOTHIC — geometría escuadrada y arquitectónica. Comunica fuerza y
+       autoridad. Nació sin minúscula, para rótulo.
+     · DIN — geometría simplificada que viene de la NORMALIZACIÓN INDUSTRIAL,
+       no del gusto de nadie. De ahí la sensación de instrumento.
+     · Rótulo deportivo y de esports — condensada, esquina biselada, corte
+       sesgado, corte de estencil, contraforma estrecha.
+     · Y el dato que decide: la "sans-ificación" de 2024-25 dejó a las marcas
+       tecnológicas con la MISMA cara. Limpias e indistinguibles. Así que la
+       profesional tiene que ser limpia y guardarse un movimiento propio, o no
+       es nada. Aquí ese movimiento es la superelipse llevada a todo el juego.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* ── 1 · CERCANA · la familiar ────────────────────────────────────────
+     Lo que hace que una letra se sienta cercana no es que sea "bonita": son
+     tres cosas medibles. Punta REDONDA (el disco mide justo el trazo). Apertura
+     ABIERTA — la C y la S no se cierran sobre sí mismas, y eso quita la
+     sensación de instrumento. Y contraforma GENEROSA con travesaño bajo, que
+     baja el aire de autoridad. Nada más. La estructura es geométrica igual. */
+  cercana: {
+    nombre: 'Cercana',
+    nota: 'La familiar. Punta redonda, apertura abierta y contraforma generosa: las '
+        + 'tres cosas que hacen que una letra se sienta amable, sin dejar de ser '
+        + 'geométrica. Es la que se puede poner en un mensaje de WhatsApp a un cliente.',
+    base: 'recto',
+    glifos: {
+      A: { an: 0.78, t: ['a6 c0', 'c0 e6', 'b4.2 d4.2'], nudos: ['c0'] },
+      B: { an: 0.70, t: ['a0 a6', 'a0 c0 e1.4 c2.9 a2.9', 'a2.9 c2.9 e4.5 c6 a6'],
+        nudos: ['a0', 'a2.9', 'a6'] },
+      C: { an: 0.76, t: ['e1.3 c0 a2 a4 c6 e4.7'] },
+      D: { an: 0.76, t: ['a0 a6', 'a0 c0 e2 e4 c6 a6'], nudos: ['a0', 'a6'] },
+      E: { an: 0.66, t: ['a0 a6', 'a0 e0', 'a3 d3', 'a6 e6'], nudos: ['a0', 'a3', 'a6'] },
+      F: { an: 0.62, t: ['a0 a6', 'a0 e0', 'a3 d3'], nudos: ['a0', 'a3'] },
+      G: { an: 0.80, t: ['e1.3 c0 a2 a4 c6 e4.8 e3.2', 'e3.2 b3.2'], nudos: ['e3.2'] },
+      H: { an: 0.76, t: ['a0 a6', 'e0 e6', 'a3 e3'], nudos: ['a3', 'e3'] },
+      I: { an: 0.22, t: ['c0 c6'] },
+      J: { an: 0.56, t: ['d0 d4.2 c6 a4.8'] },
+      K: { an: 0.70, t: ['a0 a6', 'e0 a3.3', 'a3.3 e6'], nudos: ['a3.3'] },
+      L: { an: 0.60, t: ['a0 a6', 'a6 e6'], nudos: ['a6'] },
+      M: { an: 0.92, t: ['a6 a0', 'a0 c4', 'c4 e0', 'e0 e6'], nudos: ['a0', 'c4', 'e0'] },
+      N: { an: 0.78, t: ['a6 a0', 'a0 e6', 'e6 e0'], nudos: ['a0', 'e6'] },
+      O: { an: 0.82, t: ['c0 e2 e4 c6 a4 a2 c0'] },
+      P: { an: 0.68, t: ['a0 a6', 'a0 c0 e1.4 c2.9 a2.9'], nudos: ['a0', 'a2.9'] },
+      Q: { an: 0.82, t: ['c0 e2 e4 c6 a4 a2 c0', 'c4.8 e6.4'] },
+      R: { an: 0.72, t: ['a0 a6', 'a0 c0 e1.4 c2.9 a2.9', 'b2.9 e6'], nudos: ['a0', 'a2.9'] },
+      S: { an: 0.68, t: ['e1.2 c0 a1.3 a2.2 c3.2 e4.2 e5 c6 a4.9'] },
+      T: { an: 0.68, t: ['a0 e0', 'c0 c6'], nudos: ['c0'] },
+      U: { an: 0.78, t: ['a0 a4 c6 e4 e0'] },
+      V: { an: 0.78, t: ['a0 c6', 'c6 e0'], nudos: ['c6'] },
+      W: { an: 1.02, t: ['a0 b6', 'b6 c2.2', 'c2.2 d6', 'd6 e0'], nudos: ['b6', 'c2.2', 'd6'] },
+      X: { an: 0.74, t: ['a0 e6', 'e0 a6'] },
+      Y: { an: 0.74, t: ['a0 c3.2', 'e0 c3.2', 'c3.2 c6'], nudos: ['c3.2'] },
+      Z: { an: 0.70, t: ['a0 e0', 'e0 a6', 'a6 e6'], nudos: ['e0', 'a6'] },
+
+      // La minúscula de una sola planta —la "a" que es un círculo con un asta
+      // que no sube— es la más amable que existe. Es la que usan las marcas que
+      // quieren que no les tengas miedo.
+      a: { an: 0.64, t: ['e2 e6', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3', 'e5'] },
+      b: { an: 0.66, t: ['a0 a6', 'a3 c2 e3 e5 c6 a5'], nudos: ['a3', 'a5'] },
+      c: { an: 0.60, t: ['e2.8 c2 a3 a5 c6 e5.2'] },
+      d: { an: 0.66, t: ['e0 e6', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3', 'e5'] },
+      e: { an: 0.62, t: ['a4.1 e4.1 e3 c2 a3 a5 c6 e5.2'] },
+      f: { an: 0.46, t: ['d0.8 c1.6 c6', 'a2.2 e2.2'], nudos: ['c2.2'] },
+      g: { an: 0.66, t: ['e2.8 c2 a3 a5 c6 e5.2', 'e2.8 e6.8 c8 a7.2'] },
+      h: { an: 0.64, t: ['a0 a6', 'a3 c2 e3 e6'], nudos: ['a3'] },
+      i: { an: 0.22, t: ['c2 c6', 'c0.6 c0.6'] },
+      j: { an: 0.34, t: ['c2 c6.8 b8 a7.2', 'c0.6 c0.6'] },
+      k: { an: 0.62, t: ['a0 a6', 'e2 a4.2', 'a4.2 e6'], nudos: ['a4.2'] },
+      l: { an: 0.24, t: ['c0 c6'] },
+      m: { an: 0.98, t: ['a2 a6', 'a3 b2 c3 c6', 'c3 d2 e3 e6'], nudos: ['a3', 'c3'] },
+      n: { an: 0.64, t: ['a2 a6', 'a3 c2 e3 e6'], nudos: ['a3'] },
+      o: { an: 0.66, t: ['c2 e3 e5 c6 a5 a3 c2'] },
+      p: { an: 0.66, t: ['a2 a8', 'a3 c2 e3 e5 c6 a5'], nudos: ['a3', 'a5'] },
+      q: { an: 0.66, t: ['e2 e8', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3', 'e5'] },
+      r: { an: 0.46, t: ['a2 a6', 'a3 c2 e2.4'], nudos: ['a3'] },
+      s: { an: 0.56, t: ['e2.8 c2 a2.9 c4 e5.1 c6 a5.2'] },
+      t: { an: 0.46, t: ['c0.6 c5.2 d6', 'a2.2 e2.2'], nudos: ['c2.2'] },
+      u: { an: 0.64, t: ['a2 a5 c6 e5 e2', 'e5 e6'], nudos: ['e5'] },
+      v: { an: 0.62, t: ['a2 c6', 'c6 e2'], nudos: ['c6'] },
+      w: { an: 0.90, t: ['a2 b6', 'b6 c3.2', 'c3.2 d6', 'd6 e2'], nudos: ['b6', 'c3.2', 'd6'] },
+      x: { an: 0.60, t: ['a2 e6', 'e2 a6'] },
+      y: { an: 0.62, t: ['a2 c6', 'e2 c6 b8'], nudos: ['c6'] },
+      z: { an: 0.58, t: ['a2 e2', 'e2 a6', 'a6 e6'], nudos: ['e2', 'a6'] },
+    },
+    porDefecto: {
+      pincel: 'uniforme', grosor: 0.12, tracking: 0.075, remate: 'redondo',
+    },
+  },
+
+  /* ── 2 · REACTOR · la tecnológica y agresiva ──────────────────────────
+     Aquí van juntas las cuatro señales del rótulo deportivo, y cada una hace un
+     trabajo distinto: BISEL (la esquina de 90° cortada a 45°, que quita lo
+     blando), CONDENSADA (contraforma estrecha, que da velocidad), CORTE SESGADO
+     en las puntas libres (que da dirección) y CORTE DE ESTENCIL (el puente, que
+     da lo militar). Con una sola de las cuatro no pasa nada; juntas cambian la
+     letra de gremio. */
+  reactor: {
+    nombre: 'Reactor',
+    nota: 'La tecnológica y agresiva. Esquina biselada, condensada, punta cortada en '
+        + 'diagonal y cortes de estencil. Las cuatro señales del rótulo deportivo, y '
+        + 'ninguna es adorno: bisel quita lo blando, condensar da velocidad, el sesgo '
+        + 'da dirección y el estencil da lo militar.',
+    base: 'recto',
+    escalaAncho: 0.84,
+    glifos: {
+      A: { an: 0.78, t: ['!a6 b1.2 c0 d1.2 e6', '!b4.2 d4.2'] },
+      B: { an: 0.72, t: ['!a0 a6', '!a0 c0 d0.5 d2.4 c2.9 a2.9',
+        '!a2.9 c2.9 d3.4 d5.5 c6 a6'], nudos: ['a0', 'a2.9', 'a6'] },
+      C: { an: 0.74, t: ['!e0.6 d0 b0 a1 a5 b6 d6 e5.4'] },
+      D: { an: 0.76, t: ['!a0 a6', '!a0 c0 e1.4 e4.6 c6 a6'], nudos: ['a0', 'a6'] },
+      E: { an: 0.66, t: ['!a0 a6', '!a0 e0', '!a3 c3', '!a6 e6'], nudos: ['a0', 'a3', 'a6'] },
+      F: { an: 0.62, t: ['!a0 a6', '!a0 e0', '!a3 c3'], nudos: ['a0', 'a3'] },
+      G: { an: 0.78, t: ['!e0.6 d0 b0 a1 a5 b6 d6 e5 e3', '!e3 b3'], nudos: ['e3'] },
+      H: { an: 0.76, t: ['!a0 a6', '!e0 e6', '!a3 e3'], nudos: ['a3', 'e3'] },
+      I: { an: 0.26, t: ['!c0 c6'] },
+      J: { an: 0.56, t: ['!d0 d5 c6 b6 a5'] },
+      K: { an: 0.72, t: ['!a0 a6', '!e0 a3.2', '!a3.2 e6'], nudos: ['a3.2'] },
+      L: { an: 0.60, t: ['!a0 a6', '!a6 e6'], nudos: ['a6'] },
+      M: { an: 0.96, t: ['!a6 a0', '!a0 c3.6', '!c3.6 e0', '!e0 e6'],
+        nudos: ['a0', 'c3.6', 'e0'] },
+      N: { an: 0.78, t: ['!a6 a0', '!a0 e6', '!e6 e0'], nudos: ['a0', 'e6'] },
+      O: { an: 0.80, t: ['!b0 d0 e1 e5 d6 b6 a5 a1 b0'] },
+      P: { an: 0.68, t: ['!a0 a6', '!a0 c0 d0.5 d2.4 c2.9 a2.9'], nudos: ['a0', 'a2.9'] },
+      Q: { an: 0.80, t: ['!b0 d0 e1 e5 d6 b6 a5 a1 b0', '!c4.6 e6.4'] },
+      R: { an: 0.74, t: ['!a0 a6', '!a0 c0 d0.5 d2.4 c2.9 a2.9', '!a2.9 e6'],
+        nudos: ['a0', 'a2.9'] },
+      S: { an: 0.68, t: ['!e0.6 d0 b0 a1 a2 b2.9 d3.1 e4 e5 d6 b6 a5.4'] },
+      T: { an: 0.68, t: ['!a0 e0', '!c0 c6'], nudos: ['c0'] },
+      U: { an: 0.76, t: ['!a0 a5 b6 d6 e5 e0'] },
+      V: { an: 0.76, t: ['!a0 b5 c6', '!c6 d5 e0'], nudos: ['c6'] },
+      W: { an: 1.00, t: ['!a0 a4.6 b6', '!b6 c1.8', '!c1.8 d6', '!d6 e4.6 e0'],
+        nudos: ['b6', 'c1.8', 'd6'] },
+      X: { an: 0.72, t: ['!a0 e6', '!e0 a6'] },
+      Y: { an: 0.72, t: ['!a0 c3.2', '!e0 c3.2', '!c3.2 c6'], nudos: ['c3.2'] },
+      Z: { an: 0.68, t: ['!a0 e0', '!e0 a6', '!a6 e6'], nudos: ['e0', 'a6'] },
+    },
+    porDefecto: {
+      pincel: 'uniforme', grosor: 0.21, tracking: 0.045, corte: 'sesgo', sesgo: 20,
+      estencil: 1, inclinacion: 7,
+    },
+  },
+
+  /* ── 3 · NORMA · la profesional ───────────────────────────────────────
+     El nombre viene de DIN, que es el instituto alemán de NORMAS: esa letra no
+     se diseñó para gustar, se diseñó para que un tornillo rotulado en Hamburgo
+     se leyera igual en Veracruz.
+     El movimiento propio —lo que la salva de ser otra sans indistinguible— es
+     la SUPERELIPSE aplicada a TODO el juego, no sólo a la O: lado recto y
+     esquina curva en cada letra redonda. Ancha, de peso parejo, apretada de
+     espacio. Se ve como instrumento, no como cartel. */
+  norma: {
+    nombre: 'Norma',
+    nota: 'La profesional. Toda la familia construida sobre la superelipse de Eurostile '
+        + '—lado recto, esquina curva— más el ancho arquitectónico de Bank Gothic. El '
+        + 'nombre viene del instituto alemán de normas: esa letra no se hizo para gustar, '
+        + 'se hizo para leerse igual en todas partes.',
+    base: 'recto',
+    escalaAncho: 1.06,
+    glifos: {
+      A: { an: 0.82, t: ['a6 b1 c0 d1 e6', 'b4.3 d4.3'] },
+      B: { an: 0.74, t: ['a0 a6', 'a0 c0 e1.2 e2 c2.9 a2.9', 'a2.9 c2.9 e4 e5 c6 a6'],
+        nudos: ['a0', 'a2.9', 'a6'] },
+      C: { an: 0.78, t: ['e1 d0 b0 a1.2 a4.8 b6 d6 e5'] },
+      D: { an: 0.80, t: ['a0 a6', 'a0 c0 e1.2 e4.8 c6 a6'], nudos: ['a0', 'a6'] },
+      E: { an: 0.68, t: ['a0 a6', 'a0 e0', 'a3 d3', 'a6 e6'], nudos: ['a0', 'a3', 'a6'] },
+      F: { an: 0.64, t: ['a0 a6', 'a0 e0', 'a3 d3'], nudos: ['a0', 'a3'] },
+      G: { an: 0.82, t: ['e1 d0 b0 a1.2 a4.8 b6 d6 e5 e3.2', 'e3.2 b3.2'], nudos: ['e3.2'] },
+      H: { an: 0.80, t: ['a0 a6', 'e0 e6', 'a3 e3'], nudos: ['a3', 'e3'] },
+      I: { an: 0.24, t: ['c0 c6'] },
+      J: { an: 0.58, t: ['d0 d4.8 c6 a4.8'] },
+      K: { an: 0.74, t: ['a0 a6', 'e0 a3.2', 'a3.2 e6'], nudos: ['a3.2'] },
+      L: { an: 0.62, t: ['a0 a6', 'a6 e6'], nudos: ['a6'] },
+      M: { an: 1.00, t: ['a6 a0', 'a0 c3.4', 'c3.4 e0', 'e0 e6'], nudos: ['a0', 'c3.4', 'e0'] },
+      N: { an: 0.82, t: ['a6 a0', 'a0 e6', 'e6 e0'], nudos: ['a0', 'e6'] },
+      O: { an: 0.86, t: ['b0 d0 e1.2 e4.8 d6 b6 a4.8 a1.2 b0'] },
+      P: { an: 0.70, t: ['a0 a6', 'a0 c0 e1.2 e2 c2.9 a2.9'], nudos: ['a0', 'a2.9'] },
+      Q: { an: 0.86, t: ['b0 d0 e1.2 e4.8 d6 b6 a4.8 a1.2 b0', 'c4.8 e6.3'] },
+      R: { an: 0.76, t: ['a0 a6', 'a0 c0 e1.2 e2 c2.9 a2.9', 'a2.9 e6'], nudos: ['a0', 'a2.9'] },
+      S: { an: 0.70, t: ['e1 d0 b0 a1.2 a2 b2.9 d3.1 e4 e4.8 d6 b6 a5'] },
+      T: { an: 0.70, t: ['a0 e0', 'c0 c6'], nudos: ['c0'] },
+      U: { an: 0.80, t: ['a0 a4.8 b6 d6 e4.8 e0'] },
+      V: { an: 0.80, t: ['a0 c6', 'c6 e0'], nudos: ['c6'] },
+      W: { an: 1.06, t: ['a0 b6', 'b6 c1.8', 'c1.8 d6', 'd6 e0'], nudos: ['b6', 'c1.8', 'd6'] },
+      X: { an: 0.76, t: ['a0 e6', 'e0 a6'] },
+      Y: { an: 0.76, t: ['a0 c3.2', 'e0 c3.2', 'c3.2 c6'], nudos: ['c3.2'] },
+      Z: { an: 0.70, t: ['a0 e0', 'e0 a6', 'a6 e6'], nudos: ['e0', 'a6'] },
+
+      // La minúscula redonda también va a superelipse: si la O es superelipse y
+      // la o es un círculo, se nota, y se nota mal.
+      a: { an: 0.68, t: ['a2.9 b2 d2 e3 e6', 'e5 d6 b6 a5 a4.1 b3.2 e4'], nudos: ['e3'] },
+      b: { an: 0.70, t: ['a0 a6', 'a3 b2 d2 e3 e5 d6 b6 a5'], nudos: ['a3', 'a5'] },
+      c: { an: 0.62, t: ['e2.8 d2 b2 a3 a5 b6 d6 e5.2'] },
+      d: { an: 0.70, t: ['e0 e6', 'e3 d2 b2 a3 a5 b6 d6 e5'], nudos: ['e3', 'e5'] },
+      e: { an: 0.64, t: ['a4.1 e4.1 e3 d2 b2 a3 a5 b6 d6 e5.2'] },
+      g: { an: 0.68, t: ['e2.8 d2 b2 a3 a5 b6 d6 e5.2', 'e2.8 e6.8 d8 b8 a7.2'] },
+      o: { an: 0.70, t: ['b2 d2 e3 e5 d6 b6 a5 a3 b2'] },
+      p: { an: 0.70, t: ['a2 a8', 'a3 b2 d2 e3 e5 d6 b6 a5'], nudos: ['a3', 'a5'] },
+      q: { an: 0.70, t: ['e2 e8', 'e3 d2 b2 a3 a5 b6 d6 e5'], nudos: ['e3', 'e5'] },
+      s: { an: 0.58, t: ['e2.8 d2 b2 a2.8 b3.6 d4.4 e5.2 d6 b6 a5.4'] },
+      u: { an: 0.68, t: ['a2 a5 b6 d6 e5 e2', 'e5 e6'], nudos: ['e5'] },
+      n: { an: 0.68, t: ['a2 a6', 'a3 b2 d2 e3 e6'], nudos: ['a3'] },
+      m: { an: 1.02, t: ['a2 a6', 'a3 b2 c2.6 c3', 'c3 c6', 'c3 d2 e2.6 e3', 'e3 e6'],
+        nudos: ['a3', 'c3', 'e3'] },
+      h: { an: 0.68, t: ['a0 a6', 'a3 b2 d2 e3 e6'], nudos: ['a3'] },
+      r: { an: 0.48, t: ['a2 a6', 'a3 b2 d2 e2.6'], nudos: ['a3'] },
+    },
+    porDefecto: {
+      pincel: 'uniforme', grosor: 0.15, tracking: 0.035,
+    },
+  },
 };
 
 // Tensho, kanteiryū y sōsho son escrituras de rótulo: no tienen caja baja, igual
@@ -815,12 +1044,15 @@ const ALFABETOS = {
 // `recto` —que se vería como otra tipografía metida a fuerzas— la minúscula
 // apunta a su propia mayúscula.
 function sinCajaBaja(id) {
+  ALFABETOS[id].soloAlta = true;
   const g = ALFABETOS[id].glifos;
   for (const [k, v] of Object.entries({ ...g })) {
     if (/^[A-Z]$/.test(k)) g[k.toLowerCase()] = { an: v.an, hereda: k };
   }
 }
-['tensho', 'kanteiryu', 'sosho', 'uncial'].forEach(sinCajaBaja);
+// Reactor entra en la lista por lo mismo que Bank Gothic no tenía minúscula: es
+// letra de rótulo. En caja baja el bisel y el estencil no caben.
+['tensho', 'kanteiryu', 'sosho', 'uncial', 'reactor'].forEach(sinCajaBaja);
 
 // Resuelve la herencia: el alfabeto pedido sobre el juego completo.
 function resolver(id) {
@@ -879,10 +1111,80 @@ function geometria(pts, op) {
 }
 
 function contorno(pts, op) {
-  const { h, nor } = op.geo ?? geometria(pts, op);
+  const { h, nor, tan } = op.geo ?? geometria(pts, op);
+  const { corte = 'recto', sesgo = 22, cerrado, cortaEn = [true, true] } = op;
   const lado = s => pts.map((p, i) => [p[0] + nor[i][0] * h[i] * s, p[1] + nor[i][1] * h[i] * s]);
+  const A = lado(1), B = lado(-1);
+
+  // CORTE SESGADO. Un remate se pega encima; un corte se hace en el trazo mismo,
+  // y para eso hay que mover los dos lados del contorno en sentidos opuestos a lo
+  // largo del trazo. Es la terminación en diagonal del rótulo deportivo: la misma
+  // letra se lee más rápida sólo por esto.
+  //
+  // Sólo en extremos de verdad libres: en una unión, un corte en diagonal deja
+  // una muesca. Por eso llega `cortaEn` desde afuera, que ya sabe qué punta está
+  // sola y qué punta se topa con otro trazo.
+  if (!cerrado && corte === 'sesgo') {
+    const k = Math.tan(sesgo * Math.PI / 180), u = pts.length - 1;
+    const mover = (arr, i, s) => {
+      arr[i] = [arr[i][0] + tan[i][0] * s * h[i] * k, arr[i][1] + tan[i][1] * s * h[i] * k];
+    };
+    if (cortaEn[0]) { mover(A, 0, -1); mover(B, 0, 1); }
+    if (cortaEn[1]) { mover(A, u, 1); mover(B, u, -1); }
+  }
+
   const d = v => v.map(p => `${r2(p[0])} ${r2(p[1])}`).join(' L ');
-  return `M ${d(lado(1))} L ${d(lado(-1).reverse())} Z`;
+  return `M ${d(A)} L ${d(B.reverse())} Z`;
+}
+
+// CORTES DE ESTENCIL. Los huecos se miden por LARGO DE ARCO, no por índice: si se
+// midieran por índice, un trazo corto tendría el mismo hueco proporcional que uno
+// largo y los puentes saldrían de tamaños distintos en la misma letra. Un trazo
+// que no da para sus cortes se deja entero — más vale sin estencil que en migajas.
+// Qué trazo admite estencil. Un anillo o una curva partidos por la mitad no se
+// leen como puente: se leen como GRIETA — la O quedaba rajada en diagonal y la
+// letra parecía dañada, no estarcida. El estencil de verdad, el militar, pone el
+// puente en astas, barras y diagonales, o sea en trazos derechos. Así que se mide
+// la rectitud: largo del recorrido contra distancia entre las dos puntas.
+function rectoLargo(pts, cerrado) {
+  if (cerrado) return false;
+  let arco = 0;
+  for (let i = 1; i < pts.length; i++) {
+    arco += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  }
+  const dx = pts.at(-1)[0] - pts[0][0], dy = pts.at(-1)[1] - pts[0][1];
+  const cuerda = Math.hypot(dx, dy);
+  if (!cuerda || arco / cuerda >= 1.05) return false;
+  // Y además derecho de a de veras: vertical u horizontal, con 22° de tolerancia.
+  // En una diagonal condensada el puente no se lee como puente, se lee como que a
+  // la letra le falta un pedazo. En el estencil militar el puente va en el asta.
+  const g = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI) % 180;
+  const a = Math.min(g, 180 - g);
+  return a < 22 || Math.abs(a - 90) < 22;
+}
+
+function partirEstencil(pts, cortes, hueco) {
+  const L = [0];
+  for (let i = 1; i < pts.length; i++) {
+    L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  }
+  const total = L.at(-1);
+  if (total < (cortes + 1) * hueco * 3.2) return [pts];
+
+  const zonas = Array.from({ length: cortes }, (_, j) => {
+    const c = (total * (j + 1)) / (cortes + 1);
+    return [c - hueco / 2, c + hueco / 2];
+  });
+  const piezas = [];
+  let actual = [];
+  for (let i = 0; i < pts.length; i++) {
+    if (zonas.some(([a, b]) => L[i] >= a && L[i] <= b)) {
+      if (actual.length >= 3) piezas.push(actual);
+      actual = [];
+    } else actual.push(pts[i]);
+  }
+  if (actual.length >= 3) piezas.push(actual);
+  return piezas.length ? piezas : [pts];
 }
 
 // El higemoji 髭文字 —la letra de los carteles de hielo raspado y de sake— no se
@@ -937,6 +1239,7 @@ const PORDEFECTO = {
   alfabeto: 'recto', pincel: 'uniforme', grosor: 0.13, filo: 90, contraste: 0.28,
   tracking: 0.05, anchoGlifo: 1, inclinacion: 0, punta: 'ninguno', alto: 100,
   remate: 'ninguno', cerdas: 0, relleno: 'solido',
+  corte: 'recto', sesgo: 22, estencil: 0,
 };
 
 export function componer(texto, op = {}) {
@@ -946,7 +1249,7 @@ export function componer(texto, op = {}) {
   const dado = Object.fromEntries(Object.entries(op).filter(([, v]) => v !== undefined));
   const {
     pincel, grosor, filo, contraste, tracking, anchoGlifo, inclinacion,
-    punta, alto, remate, cerdas, relleno,
+    punta, alto, remate, cerdas, relleno, corte, sesgo, estencil,
   } = { ...PORDEFECTO, ...(A.porDefecto || {}), ...dado };
 
   const hueco = relleno === 'hueco';
@@ -999,10 +1302,32 @@ export function componer(texto, op = {}) {
       // cierre; si no, queda abierto justo en la costura.
       if (cerrado) pts.push([...pts[0]]);
 
-      const cfg = { grosor, pincel, filo, contraste, punta, cerrado, semilla: sem++ };
+      const cfg = { grosor, pincel, filo, contraste, punta, cerrado, corte, sesgo,
+        semilla: sem++ };
       cfg.geo = geometria(pts, cfg);
-      if (cerdas > 0) cerdasDe(pts, cfg, cerdas).forEach(cuerpo);
-      else cuerpo(contorno(pts, cfg));
+      // Qué punta está sola de verdad. Lo usan el corte sesgado y el remate: en
+      // una unión, los dos dejan muesca.
+      const libres = cerrado ? [false, false]
+        : [solo(pts[0][0], pts[0][1]), solo(pts.at(-1)[0], pts.at(-1)[1])];
+
+      if (cerdas > 0) {
+        cerdasDe(pts, cfg, cerdas).forEach(cuerpo);
+      // Una letra de un solo trazo —la I, la l— partida por la mitad no queda
+      // estarcida: queda partida, y ya no se sabe qué letra es. El puente necesita
+      // que quede letra alrededor.
+      } else if (estencil > 0 && trazos.length > 1 && rectoLargo(pts, cerrado)) {
+        const trozos = partirEstencil(pts, estencil, grosor * 0.5);
+        const ultimo = trozos.length - 1;
+        trozos.forEach((tz, k) => {
+          // El corte interior del estencil SÍ se sesga: ahí está el efecto.
+          const c2 = { ...cfg, cerrado: false,
+            cortaEn: [k === 0 ? libres[0] : true, k === ultimo ? libres[1] : true] };
+          c2.geo = geometria(tz, c2);
+          cuerpo(contorno(tz, c2));
+        });
+      } else {
+        cuerpo(contorno(pts, { ...cfg, cortaEn: libres }));
+      }
 
       // Los remates van en los extremos LIBRES, con el ángulo hacia afuera, y
       // siempre en tinta llena: en el kagomoji el cuerpo va hueco y los pelos no.

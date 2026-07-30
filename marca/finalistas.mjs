@@ -101,11 +101,12 @@ writeFileSync(process.argv[2] || 'marca/finalistas.html', `<meta charset="utf-8"
   article>div{padding:22px 26px;border-radius:11px;margin:0 0 9px}
   .osc{background:${VACIO};border:1px solid #2A2036}
   .clr{background:${HUESO}}
-  .osc svg,.clr svg{height:96px;width:auto;display:block}
-  .lock{display:flex;align-items:center;gap:20px;background:${VACIO};border:1px solid #2A2036}
-  .lock img{height:64px}
-  .lock svg{height:34px;width:auto;display:block}
-  .chico{display:flex;align-items:flex-end;gap:30px;background:#180F22;border:1px solid #2A2036}
+  .osc svg,.clr svg{width:100%;height:auto;max-height:96px;display:block}
+  .lock{display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:${VACIO};border:1px solid #2A2036}
+  .lock img{height:64px;flex:0 0 auto}
+  .lock>div{flex:1 1 220px;min-width:0}
+  .lock svg{width:100%;height:auto;max-height:34px;display:block}
+  .chico{display:flex;align-items:flex-end;gap:30px;flex-wrap:wrap;background:#180F22;border:1px solid #2A2036}
   .chico .et{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8B8296;
              align-self:center;margin-right:4px}
   .chico figure{margin:0;text-align:center}
