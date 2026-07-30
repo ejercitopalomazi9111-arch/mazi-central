@@ -242,6 +242,59 @@
   .cierre { font-family:var(--mazi); font-size:clamp(15px,4.4vw,21px);
     color:var(--hueso); margin:0 0 16px; }
 
+  /* ── EL SISTEMA · la vista explotada en 3D ───────────────────────────
+     3D de verdad, sin librería 3D: `perspective` + `translate3d` los hace la
+     tarjeta gráfica. Lo caro de las demos que trajo Carlos no era el 3D, era
+     el framework debajo. */
+  .sistema { height:460vh; position:relative; padding:0;
+    border-top:1px solid var(--linea); }
+  .sistema-fijo { position:sticky; top:var(--barra);
+    height:calc(100svh - var(--barra));
+    display:flex; flex-direction:column; justify-content:center; gap:16px;
+    overflow:hidden; }
+
+  .escenario { perspective:1200px; perspective-origin:50% 46%;
+    height:clamp(340px,58vh,560px); position:relative; }
+  .escena { position:absolute; inset:0; transform-style:preserve-3d;
+    will-change:transform; }
+
+  .placa { position:absolute; left:50%; top:50%; width:min(58%,330px);
+    height:clamp(74px,11vh,104px); margin:0;
+    transform-style:preserve-3d; will-change:transform,opacity;
+    translate:-50% -50%; }
+  .placa-cara { position:absolute; inset:0; border-radius:6px;
+    background:linear-gradient(140deg,#241634 0%,#1A1026 100%);
+    border:1px solid var(--violeta);
+    box-shadow:0 18px 44px #00000080, 0 0 30px #AC27FF22;
+    display:flex; flex-direction:column; justify-content:center; gap:5px;
+    padding:0 clamp(14px,4vw,24px); }
+  .placa-rot { font-family:var(--mazi); font-size:clamp(15px,4vw,21px);
+    line-height:1; color:var(--hueso); }
+  .placa-que { font-size:clamp(11px,3vw,13px); color:var(--apagado); }
+  /* La rejilla del plano técnico: lo que hace que se lea como despiece y no
+     como tarjetas flotando. */
+  .placa-rejilla { position:absolute; inset:0; border-radius:6px; opacity:.5;
+    pointer-events:none;
+    background-image:
+      repeating-linear-gradient(0deg,#AC27FF14 0 1px,transparent 1px 13px),
+      repeating-linear-gradient(90deg,#AC27FF14 0 1px,transparent 1px 13px); }
+
+  .pieza { position:absolute; left:50%; top:50%; translate:-50% -50%;
+    padding:6px 9px; border-radius:4px; white-space:nowrap;
+    background:#160E20ee; border:1px solid var(--linea);
+    display:flex; flex-direction:column; gap:1px;
+    will-change:transform,opacity; }
+  .pieza-n { font-family:ui-monospace,Consolas,monospace; font-size:10.5px;
+    color:var(--violeta); }
+  .pieza-q { font-size:9px; color:var(--apagado); letter-spacing:.06em;
+    text-transform:uppercase; }
+
+  .hilos { position:absolute; inset:0; width:100%; height:100%;
+    pointer-events:none; overflow:visible; }
+
+  .fase { font-family:var(--mazi); font-size:clamp(13px,3.6vw,17px);
+    color:var(--violeta); line-height:1; min-height:20px; }
+
   /* ── EL TALLER · el barrido de alfabetos ─────────────────────────────
      La sección mide 340vh y adentro hay un bloque PEGADO. Esa es toda la
      mecánica del scroll guiado: el scroll no se intercepta ni se frena, sólo
@@ -362,6 +415,7 @@
       <span>GRUPO MAZI</span>
     </a>
     <nav>
+      <a class="menu" href="#sistema">QUÉ HACEMOS</a>
       <a class="menu" href="#taller">EL TALLER</a>
       <a class="menu" href="#trabajamos">CÓMO TRABAJAMOS</a>
       <a class="menu" href="#contacto">CONTACTO</a>
@@ -404,6 +458,26 @@
       </div>
     </div>
   </div>
+
+  <!-- 2 · EL SISTEMA · la vista explotada -->
+  <section class="sistema" id="sistema" data-sistema>
+    <div class="sistema-fijo">
+      <p class="rot">QUÉ HACEMOS</p>
+      <h2 style="margin:0;font-size:clamp(19px,5vw,30px)">No vendemos piezas sueltas:
+        vendemos un sistema.</h2>
+
+      <div class="escenario">
+        <div class="escena" data-escena></div>
+      </div>
+
+      <p class="fase" data-fase></p>
+      <div class="riel"><i data-riel></i></div>
+
+      <p hidden data-sistema-falla class="texto" style="margin:0">
+        Esta pieza no cargó en tu navegador. <b>Escríbenos y te la enseñamos.</b>
+      </p>
+    </div>
+  </section>
 
   <!-- 3 · EL TALLER · el barrido de los alfabetos -->
   <section class="taller" id="taller" data-taller>
@@ -586,4 +660,11 @@
       if (raiz) m.montarTaller(raiz);
     })
     .catch(() => document.querySelector('[data-si-falla]')?.removeAttribute('hidden'));
+
+  import('./sistema.js')
+    .then(m => {
+      const raiz = document.querySelector('[data-sistema]');
+      if (raiz) m.montarSistema(raiz);
+    })
+    .catch(() => document.querySelector('[data-sistema-falla]')?.removeAttribute('hidden'));
 </script>
