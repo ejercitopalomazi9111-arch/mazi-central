@@ -311,5 +311,7 @@ if ('serviceWorker' in navigator) {
 }
 if (window.caches && caches.keys) { caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(()=>{}); }
 </script>
+
+<script src="../mazi.js" defer></script>
 </body>
 </html>
