@@ -285,14 +285,40 @@ const CRUDO = 'https://raw.githubusercontent.com';
 // Los atajos: los archivos que de verdad se abren seguido. Esto es la razón de
 // ser de la página — que "está en el veredicto md" se vuelva un toque.
 const ATAJOS = [
-  ['CLAUDE.md',                                    'La memoria de trabajo'],
-  ['sitio/PLAN.md',                                'El plan del sitio, accionable'],
-  ['sitio/TEXTOS.md',                              'Los textos, los quince'],
-  ['.claude/veredictos/2026-07-30-los-textos.md',  'Consejo · las frases'],
-  ['.claude/veredictos/2026-07-30-el-sitio.md',    'Consejo · el sitio'],
-  ['.claude/skills/CATALOGO.md',                   'Catálogo de skills'],
-  ['herramientas/PENDIENTES.md',                   'Los pendientes'],
-  ['CLAUDE-MOVIL.md',                              'La versión de teléfono'],
+  // [ruta, cómo se llama de verdad, de qué es]
+  // El nombre va a mano porque un atajo es para reconocerlo de un vistazo, y
+  // "CLAUDE.md" no le dice nada a nadie que no viva en el repo.
+  ['CLAUDE.md',                  'La memoria',        'Todo lo que sé del negocio'],
+  ['sitio/PLAN.md',              'El plan del sitio', 'Accionable, con el taller'],
+  ['sitio/TEXTOS.md',            'Los textos',        'Las quince frases'],
+  ['.claude/skills/CATALOGO.md', 'Catálogo de skills','Qué dispara cada una'],
+  ['herramientas/PENDIENTES.md', 'Los pendientes',    'La deuda, a la vista'],
+  ['CLAUDE-MOVIL.md',            'La de teléfono',    'Para pegar en la app de Claude'],
+];
+
+/**
+ * LOS APARTADOS — las carpetas que de verdad se abren, con su nombre de casa.
+ *
+ * Carlos: "quiero que las auditorías, reuniones del consejo y usos de los 4
+ * jueces me salgan en sus apartados con sus nombres chidos".
+ *
+ * `fechado: true` significa que los archivos se llaman AAAA-MM-DD-lo-que-sea.md:
+ * de ahí sale la fecha y el título legible, y por eso se pueden ordenar por
+ * reciente — que es lo otro que pidió.
+ */
+const APARTADOS = [
+  { glifo:'⚖',  titulo:'El Consejo',        ruta:'.claude/veredictos',
+    que:'Ideas rostizadas · el equipo y los cuatro jueces', fechado:true },
+  { glifo:'🔧', titulo:'La Sala de Máquinas', ruta:'.claude/auditorias',
+    que:'Auditorías de los 24 ingenieros', fechado:true },
+  { glifo:'🧠', titulo:'Las Skills',         ruta:'.claude/skills',
+    que:'Lo que se dispara solo cuando aplica' },
+  { glifo:'📐', titulo:'El Sitio',           ruta:'sitio',
+    que:'El plan, los textos y la fuente de la casa' },
+  { glifo:'🛠', titulo:'Las Herramientas',   ruta:'herramientas',
+    que:'Lo que construimos para construir' },
+  { glifo:'◈',  titulo:'La Marca',           ruta:'marca',
+    que:'El logo, los renders y la mesa de fotografía' },
 ];
 
 const REPOS_BASE = [  // por si la API no responde: al menos éstos siempre están
@@ -333,6 +359,36 @@ const G = {                       // lo que se guarda en el teléfono
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g,
   c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+/**
+ * `2026-07-30-los-textos.md`  →  { fecha:'30 jul', orden:20260730, titulo:'Los textos' }
+ * Un nombre de archivo con fecha adelante es feo de leer y perfecto de ordenar.
+ * Aquí se separan las dos cosas: la máquina se queda el número, Carlos ve el título.
+ */
+function nombrarActa(ruta) {
+  const base = ruta.split('/').pop().replace(/\.md$/i, '');
+  const m = /^(\d{4})-(\d{2})-(\d{2})-(.*)$/.exec(base);
+  if (!m) return { titulo: base.replace(/-/g, ' '), fecha: '', orden: 0 };
+  const [, a, mes, d, resto] = m;
+  const t = resto.replace(/-/g, ' ');
+  return {
+    titulo: t.charAt(0).toUpperCase() + t.slice(1),
+    fecha: `${+d} ${MESES[+mes - 1]} ${a}`,
+    orden: +(a + mes + d),
+  };
+}
+
+/** "hace 3 h", "hace 2 d" — más útil que una fecha cuando lo que importa es qué tan reciente es. */
+function haceCuanto(iso) {
+  if (!iso) return '';
+  const seg = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (seg < 3600) return 'hace ' + Math.max(1, Math.round(seg / 60)) + ' min';
+  if (seg < 86400) return 'hace ' + Math.round(seg / 3600) + ' h';
+  if (seg < 2592000) return 'hace ' + Math.round(seg / 86400) + ' d';
+  return 'hace ' + Math.round(seg / 2592000) + ' meses';
+}
 
 function pesar(n) {
   if (n === undefined || n === null) return '';
@@ -837,7 +893,7 @@ function pintarMigas() {
  * alto de su texto, ~24 px, y los bordes de arriba y abajo de la fila quedan
  * muertos al tacto. Ya lo cachó la prueba de los 44 px).
  */
-function filaHTML(repo, rama, nodo, mostrar) {
+function filaHTML(repo, rama, nodo, mostrar, pie) {
   const esDir = nodo.t === 'd';
   const clase = esDir ? 'dir' : (ext(nodo.p) === 'md' ? 'doc' : '');
   const clv = repo + '/' + nodo.p;
@@ -846,7 +902,8 @@ function filaHTML(repo, rama, nodo, mostrar) {
     + '<a class="liga" href="' + liga(repo, nodo.p, rama) + '">'
     + '<span class="ic">' + icono(nodo) + '</span>'
     + '<span class="cuerpo"><span class="nm">' + esc(mostrar || nodo.p.split('/').pop()) + '</span>'
-    + '<span class="meta">' + (esDir ? 'carpeta' : (pesar(nodo.s) || ext(nodo.p) || 'archivo'))
+    + '<span class="meta">' + esc(pie || (esDir ? 'carpeta'
+        : (pesar(nodo.s) || ext(nodo.p) || 'archivo')))
     + '</span></span><span class="go">›</span></a>'
     + (esDir ? '' : '<button class="fav' + (fav ? ' on' : '') + '" data-fav="' + esc(clv)
         + '" title="Fijar">' + (fav ? '★' : '☆') + '</button>')
@@ -858,12 +915,17 @@ function filaHTML(repo, rama, nodo, mostrar) {
 async function vistaRepos() {
   $('#migas').innerHTML = '<b>Todo mi GitHub</b>';
   const cuerpo = $('#cuerpo');
-  cuerpo.innerHTML = '<div class="cargando">Buscando repos…</div>';
+  cuerpo.innerHTML = '<div class="cargando">Buscando…</div>';
   const repos = await traerRepos();
 
-  let h = '';
+  const ramaBase = G.rama('mazi-central') || repoInfo('mazi-central').default_branch;
 
-  h += '<h1 class="titulo">Explorador</h1>'
+  // El árbol de mazi-central hace falta para armar "lo último" y contar los
+  // apartados. Es UNA petición y está cacheada 12 h, así que no cuesta.
+  let arbol = null;
+  try { arbol = await traerArbol('mazi-central', ramaBase); } catch (e) { /* sin red: se sigue */ }
+
+  let h = '<h1 class="titulo">Explorador</h1>'
      + '<p class="sub">Todo lo que está en GitHub, abierto desde el teléfono. '
      + 'Los <code>.md</code> se leen aquí mismo, ya con formato.</p>';
 
@@ -876,26 +938,71 @@ async function vistaRepos() {
       + '</div>';
   }
 
-  // Con qué rama se abren los atajos. Importa decirlo: el trabajo del día vive en
-  // una rama `claude/…` y main puede no tenerlo todavía. Si un atajo sale vacío,
-  // casi siempre es eso y no un archivo perdido.
-  const ramaAtajos = G.rama('mazi-central') || repoInfo('mazi-central').default_branch;
-  h += '<div class="rot"><h2>Atajos</h2><span class="regla"></span>'
-     + '<span class="cta">rama <b style="color:var(--brass)">' + esc(ramaAtajos) + '</b></span>'
-     + '</div>';
-  if (ramaAtajos !== repoInfo('mazi-central').default_branch) {
-    h += '<div class="aviso" style="margin-bottom:9px">Estás leyendo la rama '
-      + '<code>' + esc(ramaAtajos) + '</code>. '
+  if (ramaBase !== repoInfo('mazi-central').default_branch) {
+    h += '<div class="aviso" style="margin-bottom:14px">Estás leyendo la rama '
+      + '<code>' + esc(ramaBase) + '</code>. '
       + '<a href="' + liga('mazi-central','',repoInfo('mazi-central').default_branch)
       + '" data-rama="' + esc(repoInfo('mazi-central').default_branch) + '">Volver a '
       + esc(repoInfo('mazi-central').default_branch) + '</a></div>';
   }
-  h += '<div class="lista">';
-  ATAJOS.forEach(([ruta, que]) => {
-    h += '<a class="fila doc" href="' + liga('mazi-central', ruta, ramaAtajos) + '">'
-      + '<span class="ic">◈</span><span class="cuerpo">'
-      + '<span class="nm">' + esc(ruta.split('/').pop()) + '</span>'
-      + '<span class="meta">' + esc(que) + '</span></span><span class="go">›</span></a>';
+
+  /* ── LO ÚLTIMO ────────────────────────────────────────────────────────
+     Lo que Carlos pidió hasta arriba: las últimas actas y los repos que se
+     movieron, que es casi siempre en lo que anda trabajando. Las actas salen
+     del árbol (fecha en el nombre) y los repos de `pushed_at` de la API. */
+  const actas = [];
+  if (arbol) {
+    APARTADOS.filter(a => a.fechado).forEach(ap => {
+      arbol.archivos.forEach(n => {
+        if (n.t !== 'f' || !n.p.startsWith(ap.ruta + '/') || !/\.md$/i.test(n.p)) return;
+        if (/README/i.test(n.p)) return;
+        const d = nombrarActa(n.p);
+        if (d.orden) actas.push({ ...d, ruta: n.p, ap });
+      });
+    });
+    actas.sort((a, b) => b.orden - a.orden);
+  }
+
+  const reposFrescos = repos.filter(r => r.pushed_at)
+    .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at)).slice(0, 3);
+
+  if (actas.length || reposFrescos.length) {
+    h += '<div class="rot"><h2>Lo último</h2><span class="regla"></span>'
+       + '<span class="cta">en lo que ando</span></div><div class="lista">';
+    actas.slice(0, 4).forEach(a => {
+      h += '<a class="fila doc" href="' + liga('mazi-central', a.ruta, ramaBase) + '">'
+        + '<span class="ic">' + a.ap.glifo + '</span><span class="cuerpo">'
+        + '<span class="nm">' + esc(a.titulo) + '</span>'
+        + '<span class="meta">' + esc(a.ap.titulo) + ' · ' + esc(a.fecha) + '</span>'
+        + '</span><span class="go">›</span></a>';
+    });
+    reposFrescos.forEach(r => {
+      h += '<a class="fila dir" href="' + liga(r.name, '', G.rama(r.name) || r.default_branch) + '">'
+        + '<span class="ic">▸</span><span class="cuerpo">'
+        + '<span class="nm">' + esc(r.name) + '</span>'
+        + '<span class="meta">repo · ' + esc(haceCuanto(r.pushed_at)) + '</span>'
+        + '</span><span class="go">›</span></a>';
+    });
+    h += '</div>';
+  }
+
+  /* ── LOS APARTADOS ───────────────────────────────────────────────────── */
+  h += '<div class="rot"><h2>Los apartados</h2><span class="regla"></span></div>'
+     + '<div class="lista">';
+  APARTADOS.forEach(ap => {
+    let cuantos = 0;
+    if (arbol) {
+      cuantos = arbol.archivos.filter(n =>
+        n.p.startsWith(ap.ruta + '/') && n.t === 'f'
+        && !/README/i.test(n.p.split('/').pop())).length;
+    }
+    h += '<a class="fila doc" href="' + liga('mazi-central', ap.ruta, ramaBase) + '">'
+      + '<span class="ic">' + ap.glifo + '</span><span class="cuerpo">'
+      + '<span class="nm">' + esc(ap.titulo)
+      + (cuantos ? ' <span style="color:var(--dim);font-weight:400;font-size:11px">'
+          + cuantos + '</span>' : '')
+      + '</span><span class="meta">' + esc(ap.que) + '</span></span>'
+      + '<span class="go">›</span></a>';
   });
   h += '</div>';
 
@@ -915,10 +1022,21 @@ async function vistaRepos() {
     h += '</div>';
   }
 
+  h += '<div class="rot"><h2>Atajos</h2><span class="regla"></span>'
+     + '<span class="cta">rama <b style="color:var(--brass)">' + esc(ramaBase) + '</b></span>'
+     + '</div><div class="lista">';
+  ATAJOS.forEach(([ruta, titulo, que]) => {
+    h += '<a class="fila doc" href="' + liga('mazi-central', ruta, ramaBase) + '">'
+      + '<span class="ic">◈</span><span class="cuerpo">'
+      + '<span class="nm">' + esc(titulo) + '</span>'
+      + '<span class="meta">' + esc(que) + '</span></span><span class="go">›</span></a>';
+  });
+  h += '</div>';
+
   const rec = G.recientes;
   if (rec.length) {
-    h += '<div class="rot"><h2>Recientes</h2><span class="regla"></span></div><div class="lista">';
-    rec.forEach(clv => {
+    h += '<div class="rot"><h2>Abiertos hace poco</h2><span class="regla"></span></div><div class="lista">';
+    rec.slice(0, 6).forEach(clv => {
       const corte = clv.indexOf('/');
       const rp = clv.slice(0, corte), rt = clv.slice(corte + 1);
       h += '<a class="fila" href="' + liga(rp, rt, G.rama(rp) || null) + '">'
@@ -936,7 +1054,8 @@ async function vistaRepos() {
       + '<span class="ic">▸</span><span class="cuerpo">'
       + '<span class="nm">' + esc(r.name)
       + (r.private ? ' <span style="color:var(--dim);font-weight:400;font-size:11px">privado</span>' : '')
-      + '</span><span class="meta">' + esc(r.description || r.default_branch) + '</span></span>'
+      + '</span><span class="meta">' + esc(r.description || r.default_branch)
+      + (r.pushed_at ? ' · ' + esc(haceCuanto(r.pushed_at)) : '') + '</span></span>'
       + '<span class="go">›</span></a>';
   });
   h += '</div>';
@@ -988,15 +1107,29 @@ async function vistaCarpeta() {
     if (!vistos.has(n.p)) { vistos.add(n.p); hijos.push(n); }
   });
 
-  hijos.sort((a,b) => (a.t === b.t)
-    ? a.p.localeCompare(b.p, 'es')
-    : (a.t === 'd' ? -1 : 1));
+  // ¿Esta carpeta es uno de los apartados con nombre de casa?
+  const ap = E.repo === 'mazi-central' && APARTADOS.find(a => a.ruta === E.ruta);
+
+  if (ap && ap.fechado) {
+    // Las actas van de la más nueva a la más vieja: lo de hoy hasta arriba.
+    // Ordenarlas por nombre las dejaría cronológicas al revés de lo que sirve.
+    hijos.sort((a, b) => (a.t === b.t)
+      ? (nombrarActa(b.p).orden - nombrarActa(a.p).orden) || a.p.localeCompare(b.p, 'es')
+      : (a.t === 'd' ? -1 : 1));
+  } else {
+    hijos.sort((a,b) => (a.t === b.t)
+      ? a.p.localeCompare(b.p, 'es')
+      : (a.t === 'd' ? -1 : 1));
+  }
 
   const carpetas = hijos.filter(n => n.t === 'd').length;
   const archivos = hijos.length - carpetas;
 
-  let h = '<h1 class="titulo">' + esc(E.ruta ? E.ruta.split('/').pop() : E.repo) + '</h1>'
-    + '<p class="sub">' + carpetas + ' carpetas · ' + archivos + ' archivos'
+  let h = '<h1 class="titulo">'
+    + esc(ap ? ap.glifo + ' ' + ap.titulo : (E.ruta ? E.ruta.split('/').pop() : E.repo))
+    + '</h1>'
+    + '<p class="sub">' + (ap ? esc(ap.que) + ' · ' : '')
+    + carpetas + ' carpetas · ' + archivos + ' archivos'
     + (E.ruta ? '' : ' · rama <code>' + esc(E.rama) + '</code>') + '</p>';
 
   if (arbol.cortado) {
@@ -1022,7 +1155,15 @@ async function vistaCarpeta() {
   }
 
   h += hijos.length
-    ? '<div class="lista">' + hijos.map(n => filaHTML(E.repo, E.rama, n)).join('') + '</div>'
+    ? '<div class="lista">' + hijos.map(n => {
+        // En un apartado fechado se enseña el título legible y la fecha, no
+        // "2026-07-30-los-textos.md", que es un nombre para la máquina.
+        if (ap && ap.fechado && n.t === 'f' && /\.md$/i.test(n.p) && !/README/i.test(n.p)) {
+          const d = nombrarActa(n.p);
+          if (d.orden) return filaHTML(E.repo, E.rama, n, d.titulo, d.fecha);
+        }
+        return filaHTML(E.repo, E.rama, n);
+      }).join('') + '</div>'
     : '<div class="aviso">Carpeta vacía.</div>';
 
   cuerpo.innerHTML = h;
@@ -1066,8 +1207,16 @@ async function vistaArchivo() {
   }
   acciones += '</div>';
 
-  const cabeza = '<h1 class="titulo">' + esc(nombre) + '</h1>'
-    + '<p class="sub">' + esc(E.repo) + ' · ' + esc(E.ruta) + '</p>' + acciones;
+  // Si el archivo es un acta, el encabezado enseña el título legible y la fecha.
+  const apPadre = E.repo === 'mazi-central'
+    && APARTADOS.find(a => a.fechado && dir === a.ruta);
+  const acta = apPadre && /\.md$/i.test(E.ruta) ? nombrarActa(E.ruta) : null;
+
+  const cabeza = '<h1 class="titulo">'
+    + (acta && acta.orden ? esc(apPadre.glifo + ' ' + acta.titulo) : esc(nombre)) + '</h1>'
+    + '<p class="sub">'
+    + (acta && acta.orden ? esc(apPadre.titulo) + ' · ' + esc(acta.fecha) + ' · ' : '')
+    + esc(E.repo) + ' · ' + esc(E.ruta) + '</p>' + acciones;
 
   try {
     // ── imágenes: raw sirve el tipo correcto, así que <img> basta ────────

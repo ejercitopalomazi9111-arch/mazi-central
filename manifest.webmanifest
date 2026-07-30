@@ -1,14 +1,23 @@
 {
   "name": "Grupo Mazi — Central",
   "short_name": "Mazi",
-  "description": "Todos los proyectos de Grupo Mazi en un solo lugar.",
+  "description": "Todos los proyectos, herramientas y código de Grupo Mazi en un solo lugar.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0E1311",
-  "theme_color": "#0E1311",
+  "background_color": "#100A18",
+  "theme_color": "#100A18",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explorador",
+      "short_name": "Explorador",
+      "description": "Todo el GitHub desde el teléfono",
+      "url": "./explorador/",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
