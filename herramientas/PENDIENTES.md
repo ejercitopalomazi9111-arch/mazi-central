@@ -66,6 +66,34 @@ regresa. Aquí queda la deuda a la vista.
 - **Veredicto:** **construir la mitad que sí se puede**, y para el resto un "listo para
   publicar" de un toque.
 
+### 5. Vendorizar `supabase-js` y `leaflet` — la deuda que ya está en producción
+
+**Ésta no es una herramienta que falte: es una dependencia que ya estamos corriendo en vivo**, y la
+encontró la skill `consejo-tecnico` el día que se construyó, sin necesidad de auditar nada — está a
+la vista en el código.
+
+| Dónde | Qué carga de un CDN ajeno |
+|---|---|
+| `ligas-mazi/index.html:1542` | `@supabase/supabase-js@2` desde `cdn.jsdelivr.net` |
+| `vitallink/index.html:1002` | `leaflet@1.9.4` desde `unpkg.com` |
+
+- **Falta:** que esas dos librerías vivan en el repo, con versión fija, como ya vive
+  `anime.min.js` en la misma carpeta de Ligas Mazi.
+- **Hoy se resuelve con:** el CDN. Funciona… mientras responda.
+- **Por qué duele, y son tres cosas:**
+  1. **Si jsdelivr no contesta, Ligas Mazi se queda sin login.** El código lo contempla con un
+     `if` que simplemente no hace nada, así que falla en silencio.
+  2. **`@2` no es una versión, es un rango**, y sin `integrity` nadie verifica que llegó lo que
+     esperábamos.
+  3. **Ese script corre con todos los permisos de la página** — la misma que maneja sesiones,
+     pagos y datos de menores. Un CDN comprometido no rompe un gráfico: lo ve todo.
+- **Costo de construirla:** **bajísimo.** Bajar el archivo, fijar la versión, cambiar el `src`.
+  Menos de una hora contando la prueba. Ya sabemos hacerlo: `anime.min.js` está vendorizado.
+- **Cada cuánto duele:** cada vez que alguien abre Ligas Mazi.
+- **Veredicto:** **hacerlo ya.** Es la relación costo-beneficio más obvia del archivo, y es
+  violación directa de LA REGLA §2 sin el matiz que la perdona — porque el matiz aplica cuando
+  construir cuesta más que la chamba, y aquí cuesta menos.
+
 ---
 
 ## Movidas de aquí (histórico)

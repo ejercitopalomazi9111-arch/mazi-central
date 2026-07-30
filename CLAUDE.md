@@ -205,7 +205,7 @@ cuando de verdad hace falta. Por eso el criterio y el conocimiento consultable e
 cuando salga una versión nueva de algo, se actualiza **sólo el archivo de `reference/`
 afectado**, no la skill entera.
 
-### Las 13 instaladas
+### Las 14 instaladas
 
 **Empiezo por `find-skill`**, que decide cuál toca y en qué orden.
 
@@ -213,6 +213,7 @@ afectado**, no la skill entera.
 |---|---|
 | **`find-skill`** | El enrutador. Qué skill toca, en qué orden, y cuándo ninguna |
 | **`four-judges`** | Antes de toda decisión cara. Palabra clave: **ROAST** |
+| **`consejo-tecnico`** | **El consejo de ingenieros**, no de empresarios. Antes de publicar código con cuentas, pagos o datos de personas. Palabras: **AUDITA** y **ROMPE** |
 | **`frontend-design`** | Que se vea bonito de verdad: tipografía, escala, jerarquía, layout |
 | **`revision-web`** | **La cátedra.** Revisión exhaustiva antes de entregar (reglas de Vercel) |
 | **`agent-browser`** | Ver y usar la pantalla. **Nunca "ya quedó" sin esto** |
@@ -237,6 +238,7 @@ four-judges → web-prompts (briefing) → ui-components (con qué)
 
 **Sólo animación:** `web-motion` → `scroll-cinema` o `ui-components` → `agent-browser`
 **Elegir herramienta:** `stack-propio` → `four-judges`
+**Antes de publicar código con datos de personas:** `consejo-tecnico` → arreglar → `revision-web`
 **Proyecto grande:** `four-judges` → `multi-agent` → `manus`
 
 ### Cuándo NO usar ninguna
@@ -248,7 +250,7 @@ Carpeta en `.claude/skills/<nombre>/` con un `SKILL.md` que tenga `name` y `desc
 **la descripción es lo que la dispara**, así que dice cuándo se usa, no qué es. Lo largo va en
 `reference/`. Y se registra en `CATALOGO.md`.
 
-**Regla de crecimiento:** una skill nueva **sólo cuando duela su ausencia**. Trece que se usan
+**Regla de crecimiento:** una skill nueva **sólo cuando duela su ausencia**. Catorce que se usan
 seguido valen más que cuarenta que se cargaron una vez. Si un tipo de tarea aparece tres veces
 sin skill que la cubra, ahí sí se propone.
 
@@ -264,6 +266,7 @@ sin skill que la cubra, ahí sí se propone.
 | `herramientas/vectorizar.mjs` | PNG → SVG con paleta medida y sin trazos basura | ✅ probada |
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
+| `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
 | auto-guardado | Commit automático de trabajo en curso | pendiente |
 
 ---
@@ -502,7 +505,7 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
 - **Regla nueva:** todo lo que la empresa use, lo construimos nosotros (§2).
 - **Correcciones de Carlos a mis reglas:** el arte generado sí va cuando él lo pide; React está
   bien; el HTML autónomo es recomendación, no ley.
-- **13 skills instaladas** más dos herramientas propias (§4).
+- **14 skills instaladas** más las herramientas propias (§4).
 - **Torre Infinita — arreglado el softlock al morir.** El input (teclado, mando y d-pad táctil)
   moría al perder porque `GameOverScene` habilitaba el input hasta el final de una cadena
   anidada de `delayedCall` sin protección: si cualquier eslabón tronaba, `ready` se quedaba en

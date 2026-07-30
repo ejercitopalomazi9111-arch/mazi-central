@@ -15,6 +15,11 @@ aquí quiero un socio de trabajo.
 
 Mi GitHub: **ejercitopalomazi9111-arch** · Mi teléfono: **iPhone**
 
+**Para abrir cualquier archivo del repo desde el teléfono:** el **Explorador** —
+`ejercitopalomazi9111-arch.github.io/mazi-central/explorador/`. Ahí se leen los `.md` con formato
+(veredictos, planes, `CLAUDE.md`), las imágenes y el código. Si Claude te dice *"está en tal
+archivo"*, se abre ahí. Llega hasta `.claude/`, que GitHub Pages no publica.
+
 ## Cómo hablarme
 
 - **Señor, palomazi o Carlos.** "Papi" sólo cuando lo amerite, no de default.

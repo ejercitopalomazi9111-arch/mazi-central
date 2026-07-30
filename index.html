@@ -93,9 +93,12 @@
     transform: translateX(2px);
   }
   a.card:focus-visible { box-shadow: 0 0 0 2px var(--brass); }
-  .card .body { flex: 1; min-width: 0; }
-  .card .name { font-weight: 650; font-size: 15.5px; letter-spacing: -0.01em; margin-bottom: 2px; }
-  .card .what { font-size: 12.5px; color: var(--dim); line-height: 1.35; }
+  /* .body, .name y .what son <span>: sin display:block el nombre y la descripción
+     corren en el MISMO renglón ("ExploradorTodo mi GitHub…"). Se veía en la
+     captura de teléfono; es el mismo defecto que traía el explorador. */
+  .card .body { flex: 1; min-width: 0; display: block; }
+  .card .name { display: block; font-weight: 650; font-size: 15.5px; letter-spacing: -0.01em; margin-bottom: 2px; }
+  .card .what { display: block; font-size: 12.5px; color: var(--dim); line-height: 1.35; }
   .card .go { color: var(--dim); font-size: 18px; flex-shrink: 0; }
   a.card:hover .go { color: var(--brass); }
 
@@ -137,6 +140,25 @@
     </div>
     <p class="creed">Si no existe la herramienta, <b>se construye la herramienta.</b></p>
   </header>
+
+  <section>
+    <div class="sec-head">
+      <span class="dot" style="background: var(--brass)"></span>
+      <h2>Herramientas</h2>
+      <span class="rule"></span>
+      <span class="count">1</span>
+    </div>
+    <div class="list">
+      <a class="card repo" href="explorador/">
+        <span class="dot"></span>
+        <span class="body">
+          <span class="name">Explorador <span style="color:var(--brass);font-size:11px">nuevo</span></span>
+          <span class="what">Todo mi GitHub desde el teléfono · abre los <code style="font-family:ui-monospace,monospace;font-size:11px">.md</code> con formato, las imágenes, el código · busca, fija favoritos · llega hasta <code style="font-family:ui-monospace,monospace;font-size:11px">.claude/</code>, que GitHub Pages no publica</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+    </div>
+  </section>
 
   <section>
     <div class="sec-head">

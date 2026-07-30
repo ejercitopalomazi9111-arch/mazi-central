@@ -10,6 +10,7 @@ Estas se cargan solas cuando aplican. No hace falta mencionarlas.
 |---|---|
 | `find-skill` | **El índice.** Qué skill toca, en qué orden, y cuándo ninguna |
 | `four-judges` | Antes de toda decisión cara o difícil de revertir. Palabra clave: **ROAST** |
+| `consejo-tecnico` | **El consejo de ingenieros.** Antes de publicar código con cuentas, pagos, datos de personas, subidas de archivo o llaves. Palabras: **AUDITA** y **ROMPE** |
 | `frontend-design` | Que se vea bonito de verdad: tipografía, escala, jerarquía, layout |
 | `revision-web` | **La cátedra.** Revisión exhaustiva antes de entregar, con las reglas de Vercel |
 | `agent-browser` | Ver y usar la pantalla de verdad. Nunca decir "ya quedó" sin esto |
@@ -67,6 +68,11 @@ como sustituto barato de un asset que ya existe.
 `review` (code review) · `qa` (QA visual) · `codex` (review cross-model) · `security-review` ·
 `verify-work` (verificación end-to-end) · `ship` (deploy final)
 
+> **De esta capa ya no hace falta casi nada.** `qa` y `verify-work` los cubren `agent-browser` +
+> `revision-web`. Y **`review` + `security-review` los cubre `consejo-tecnico`**, que además hace algo
+> que ninguna de las dos hacía: separar al que ataca del que prioriza el arreglo, y clasificar los
+> hallazgos en *sangra / duele / estorba / se acepta* para que no todo parezca urgente.
+
 ---
 
 ## Qué de esos 42 nos falta de verdad
@@ -77,6 +83,10 @@ ayuda. Los que sí tapan un hueco real, en orden:
 1. ~~**Criterio de diseño**~~ → **hecho**: `frontend-design`. Era el hueco más grande, el que
    Carlos señaló con *"en computadora se ve feísima la página."*
 2. ~~**QA visual**~~ → **hecho**: `agent-browser` + `revision-web`, con dos herramientas propias.
+2-bis. ~~**Code review y seguridad**~~ → **hecho**: `consejo-tecnico`. Se construyó el 30 de julio
+   porque Ligas Mazi tiene cuentas reales, pagos y datos de menores en un repo público, y nadie lo
+   había revisado con esos ojos. **Primera auditoría pendiente y ya con orden sugerido** en
+   `consejo-tecnico/reference/superficie.md`.
 3. **`humanise-text` + `voice-jcb`.** La voz de Grupo Mazi está descrita en `CLAUDE.md`, pero no
    como skill que se aplique al copy de un cliente. Vendemos marketing: deberíamos tener lo
    mejor en esto. **Es el hueco más grande que queda.**

@@ -1,0 +1,1255 @@
+<title>Explorador — Grupo Mazi</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1311">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Explorador">
+<link rel="apple-touch-icon" href="../icon-192.png">
+
+<!--
+  EXPLORADOR MAZI — todo el GitHub, desde el teléfono.
+  ───────────────────────────────────────────────────────────────────────────
+  Nace de un problema real: Carlos trabaja desde el iPhone y yo llevaba la
+  sesión entera mandándolo a archivos que no podía abrir. "Está en el veredicto
+  md" no sirve de nada si no hay con qué abrir un .md.
+
+  POR QUÉ NO SON ENLACES RELATIVOS, que era lo obvio:
+  GitHub Pages pasa el repo por Jekyll, y Jekyll IGNORA todo lo que empieza con
+  punto o con guión bajo. O sea que .claude/ —donde viven las skills y los
+  veredictos— NO se publica nunca. Ningún enlace relativo la alcanza.
+
+  Entonces se lee por la API de GitHub:
+    · el árbol de cada repo   → 1 sola petición con ?recursive=1, y se cachea
+    · el contenido de archivo → raw.githubusercontent, que NO gasta cuota
+  Con eso, navegar todo el día cuesta ~2 peticiones por repo. El límite sin
+  llave es 60 por hora, así que sobra.
+
+  LA REGLA (CLAUDE.md §2): cero CDN, cero dependencias. El renderizador de
+  Markdown es nuestro y está aquí abajo — son ~200 líneas y nos quita de encima
+  la única razón por la que alguien cargaría una librería externa en esta
+  página.
+
+  LLAVES: para repos privados hace falta un token de GitHub. Vive SÓLO en el
+  localStorage del teléfono de Carlos, nunca en el código. Mismo patrón que la
+  llave de Groq en Pacto Roto, por la misma razón: el repo es público y tiene
+  escaneo de secretos.
+-->
+
+<style>
+  :root {
+    --ink:#0E1311; --surface:#161F1B; --surface-2:#1D2823; --line:#2C3A33;
+    --bone:#E8E6DF; --dim:#8C9A92; --brass:#D69A2D; --live:#4FB286; --warn:#D66A2D;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --ink:#EDEBE4; --surface:#FBFAF7; --surface-2:#F2F0E9; --line:#D6D2C6;
+      --bone:#17201C; --dim:#5E6B63; --brass:#A06F0E; --live:#2C7D57; --warn:#A34E10; }
+  }
+  :root[data-tema="oscuro"] { --ink:#0E1311; --surface:#161F1B; --surface-2:#1D2823;
+    --line:#2C3A33; --bone:#E8E6DF; --dim:#8C9A92; --brass:#D69A2D; --live:#4FB286; --warn:#D66A2D; }
+  :root[data-tema="claro"] { --ink:#EDEBE4; --surface:#FBFAF7; --surface-2:#F2F0E9;
+    --line:#D6D2C6; --bone:#17201C; --dim:#5E6B63; --brass:#A06F0E; --live:#2C7D57; --warn:#A34E10; }
+
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--ink); color:var(--bone);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif; line-height:1.5;
+    -webkit-font-smoothing:antialiased; overflow-wrap:break-word; }
+
+  /* ── barra de arriba, pegada ─────────────────────────────────────────── */
+  .barra { position:sticky; top:0; z-index:20; background:var(--ink);
+    border-bottom:1px solid var(--line); padding:env(safe-area-inset-top) 0 0; }
+  .barra-in { max-width:900px; margin:0 auto; padding:9px 12px;
+    display:flex; align-items:center; gap:8px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    min-width:44px; min-height:44px; padding:0 12px;
+    background:var(--surface); color:var(--bone); border:1px solid var(--line);
+    border-radius:3px; font-size:13px; font-weight:600; cursor:pointer;
+    text-decoration:none; flex-shrink:0; font-family:inherit; }
+  .btn:active { background:var(--surface-2); }
+  .btn.acento { border-color:var(--brass); color:var(--brass); }
+  .btn.icono { padding:0; width:44px; }
+  #buscar { flex:1; min-width:0; min-height:44px; padding:0 12px;
+    background:var(--surface); border:1px solid var(--line); border-radius:3px;
+    color:var(--bone); font-size:15px; font-family:inherit; }
+  #buscar::placeholder { color:var(--dim); }
+  #buscar:focus { outline:none; border-color:var(--brass); }
+
+  .wrap { max-width:900px; margin:0 auto; padding:14px 12px 90px; }
+
+  /* ── migajas ─────────────────────────────────────────────────────────── */
+  .migas { display:flex; flex-wrap:wrap; align-items:center; gap:2px;
+    font-size:12.5px; margin-bottom:12px; color:var(--dim); }
+  .migas a { color:var(--brass); text-decoration:none; padding:4px 2px; }
+  .migas span.sep { opacity:.5; padding:0 1px; }
+  .migas b { color:var(--bone); font-weight:650; padding:4px 2px; }
+
+  h1.titulo { font-size:19px; font-weight:800; letter-spacing:-.02em; margin:0 0 3px;
+    word-break:break-word; }
+  .sub { font-size:12px; color:var(--dim); margin:0 0 14px; }
+
+  /* ── listas de archivos ──────────────────────────────────────────────── */
+  .lista { display:flex; flex-direction:column; gap:6px; }
+  .fila { display:flex; align-items:center; gap:11px; padding:11px 12px;
+    background:var(--surface); border:1px solid var(--line);
+    border-left:3px solid var(--line); border-radius:3px;
+    text-decoration:none; color:inherit; min-height:48px; }
+  .fila:active { background:var(--surface-2); }
+  .fila.dir { border-left-color:var(--brass); }
+  .fila.doc { border-left-color:var(--live); }
+  .fila .ic { font-size:16px; flex-shrink:0; width:20px; text-align:center; }
+  .fila .cuerpo { flex:1; min-width:0; display:block; }
+  /* .nm y .meta son <span>: sin display:block salen pegados en el mismo
+     renglón ("CLAUDE.mdLa memoria de trabajo"). Lo cachó la captura. */
+  .fila .nm { display:block; font-size:14.5px; font-weight:600; letter-spacing:-.01em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fila .meta { display:block; font-size:11.5px; color:var(--dim); margin-top:1px;
+    line-height:1.35; }
+  .fila .go { color:var(--dim); font-size:17px; flex-shrink:0; }
+  /* El enlace se estira a lo alto de la fila para que TODA la fila sea tocable.
+     Sin `align-self:stretch` mide sólo su texto (~24 px) y los bordes no responden. */
+  .fila > .liga { flex:1; min-width:0; align-self:stretch; display:flex;
+    align-items:center; gap:11px; min-height:44px;
+    text-decoration:none; color:inherit; }
+  .fila .fav { flex-shrink:0; width:44px; align-self:stretch; min-height:44px;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    background:none; border:none; color:var(--dim); cursor:pointer;
+    border-left:1px solid var(--line); margin-left:4px; }
+  .fila .fav.on { color:var(--brass); }
+
+  .rot { display:flex; align-items:center; gap:9px; margin:22px 0 9px; }
+  .rot h2 { margin:0; font-size:11px; font-weight:700; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--bone); }
+  .rot .regla { flex:1; height:1px; background:var(--line); }
+  .rot .cta { font-size:11px; color:var(--dim); }
+
+  .aviso { padding:12px 14px; background:var(--surface); border:1px dashed var(--line);
+    border-radius:3px; font-size:12.5px; color:var(--dim); line-height:1.55; }
+  .aviso b { color:var(--bone); }
+  .aviso.mal { border-color:var(--warn); border-style:solid; color:var(--bone); }
+  .aviso code { font-family:ui-monospace,Consolas,monospace; font-size:11.5px;
+    color:var(--brass); background:var(--surface-2); padding:1px 5px; border-radius:2px; }
+
+  .cargando { padding:26px 0; text-align:center; color:var(--dim); font-size:13px; }
+
+  /* ── visor de archivo ────────────────────────────────────────────────── */
+  .acciones { display:flex; gap:7px; flex-wrap:wrap; margin:0 0 16px; }
+  .visor img, .visor svg { max-width:100%; height:auto; display:block;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:3px; }
+  .codigo { background:var(--surface); border:1px solid var(--line); border-radius:3px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .codigo table { border-collapse:collapse; font-family:ui-monospace,Consolas,monospace;
+    font-size:12px; line-height:1.6; }
+  .codigo td { padding:0; vertical-align:top; }
+  .codigo td.n { text-align:right; padding:0 10px 0 8px; color:var(--dim);
+    user-select:none; position:sticky; left:0; background:var(--surface);
+    border-right:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .codigo td.l { padding:0 14px 0 10px; white-space:pre; }
+
+  /* ── markdown renderizado ────────────────────────────────────────────── */
+  .md { font-size:15.5px; line-height:1.65; }
+  .md h1,.md h2,.md h3,.md h4 { line-height:1.25; letter-spacing:-.02em;
+    margin:26px 0 10px; font-weight:750; }
+  .md h1 { font-size:24px; padding-bottom:8px; border-bottom:2px solid var(--brass); }
+  .md h2 { font-size:19.5px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .md h3 { font-size:16.5px; }
+  .md h4 { font-size:14.5px; color:var(--dim); text-transform:uppercase;
+    letter-spacing:.08em; }
+  .md > *:first-child { margin-top:0; }
+  .md p { margin:0 0 13px; }
+  .md a { color:var(--brass); text-decoration:underline; text-underline-offset:2px; }
+  .md strong { font-weight:750; color:var(--bone); }
+  .md em { font-style:italic; }
+  .md del { opacity:.55; }
+  .md ul,.md ol { margin:0 0 13px; padding-left:22px; }
+  .md li { margin:0 0 5px; }
+  .md li > ul,.md li > ol { margin:5px 0 0; }
+  .md li.tarea { list-style:none; margin-left:-18px; }
+  .md li.tarea .caja { display:inline-block; width:15px; margin-right:5px;
+    color:var(--brass); }
+  .md blockquote { margin:0 0 14px; padding:2px 0 2px 14px;
+    border-left:3px solid var(--brass); color:var(--dim); }
+  .md blockquote strong { color:var(--bone); }
+  .md hr { border:none; border-top:1px solid var(--line); margin:22px 0; }
+  .md code { font-family:ui-monospace,Consolas,monospace; font-size:.86em;
+    background:var(--surface-2); color:var(--brass); padding:2px 5px;
+    border-radius:2px; word-break:break-word; }
+  .md pre { background:var(--surface); border:1px solid var(--line); border-radius:3px;
+    padding:12px; overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 0 14px; }
+  .md pre code { background:none; color:var(--bone); padding:0; font-size:12px;
+    line-height:1.6; white-space:pre; word-break:normal; }
+  .md .tabla-caja { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 0 14px;
+    border:1px solid var(--line); border-radius:3px; }
+  /* Una tabla que se corta en seco no avisa que se desliza, y en el teléfono eso
+     es información que el lector nunca ve. La sombra del borde y el "desliza →"
+     se ponen solos cuando la tabla no cabe, y se quitan al llegar al final. */
+  .md .tabla-envoltura { position:relative; }
+  .md .tabla-envoltura.desborda::after { content:''; position:absolute; top:0; bottom:20px;
+    right:0; width:34px; pointer-events:none; border-radius:0 3px 3px 0;
+    background:linear-gradient(90deg, transparent, var(--ink)); }
+  .md .tabla-pista { font-size:11px; color:var(--dim); letter-spacing:.06em;
+    text-transform:uppercase; margin:-8px 0 14px; display:none; }
+  .md .tabla-envoltura.desborda .tabla-pista { display:block; }
+  .md table { border-collapse:collapse; width:100%; font-size:13.5px; }
+  .md th,.md td { padding:8px 11px; text-align:left; border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line); vertical-align:top; }
+  .md th { background:var(--surface-2); font-weight:700; font-size:12px;
+    letter-spacing:.03em; white-space:nowrap; }
+  .md tr:last-child td { border-bottom:none; }
+  .md th:last-child,.md td:last-child { border-right:none; }
+  .md .frente { background:var(--surface); border:1px solid var(--line);
+    border-left:3px solid var(--live); border-radius:3px; padding:11px 13px;
+    margin:0 0 18px; font-size:13px; }
+  .md .frente .cl { color:var(--dim); font-weight:600; }
+  .md .diagrama { border:1px dashed var(--brass); border-radius:3px; padding:11px 13px;
+    margin:0 0 14px; font-size:12.5px; color:var(--dim); }
+  .md img { max-width:100%; height:auto; border-radius:3px; border:1px solid var(--line); }
+
+  /* ── al pie, fijo ────────────────────────────────────────────────────── */
+  .pie { position:fixed; bottom:0; left:0; right:0; z-index:20;
+    background:var(--ink); border-top:1px solid var(--line);
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom)); }
+  .pie-in { max-width:900px; margin:0 auto; display:flex; gap:7px; align-items:center; }
+  .pie .cuota { font-size:11px; color:var(--dim); margin-left:auto; text-align:right;
+    line-height:1.3; }
+
+  dialog { background:var(--surface); color:var(--bone); border:1px solid var(--line);
+    border-radius:4px; max-width:min(480px,92vw); padding:18px; }
+  dialog::backdrop { background:#000b; }
+  dialog h3 { margin:0 0 10px; font-size:16px; }
+  dialog p { font-size:13px; color:var(--dim); line-height:1.55; margin:0 0 12px; }
+  dialog input { width:100%; min-height:44px; padding:0 11px; background:var(--ink);
+    border:1px solid var(--line); border-radius:3px; color:var(--bone);
+    font-size:15px; font-family:inherit; margin-bottom:12px; }
+  dialog .fila-btn { display:flex; gap:8px; justify-content:flex-end; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none!important; } }
+</style>
+
+<div class="barra"><div class="barra-in">
+  <a class="btn icono" href="../" title="Central">🏠</a>
+  <button class="btn icono" id="bArriba" title="Subir">↑</button>
+  <input id="buscar" type="search" placeholder="Buscar archivo…" autocomplete="off"
+         autocapitalize="off" spellcheck="false">
+  <button class="btn icono" id="bTema" title="Tema">◐</button>
+</div></div>
+
+<div class="wrap">
+  <div class="migas" id="migas"></div>
+  <div id="cuerpo"><div class="cargando">Cargando…</div></div>
+</div>
+
+<div class="pie"><div class="pie-in">
+  <button class="btn" id="bRepos">Repos</button>
+  <button class="btn" id="bFav">★ Fijados</button>
+  <button class="btn icono" id="bRefrescar" title="Refrescar">⟳</button>
+  <span class="cuota" id="cuota"></span>
+</div></div>
+
+<dialog id="dlgLlave">
+  <h3>Llave de GitHub</h3>
+  <p>Sólo hace falta para ver <b>repos privados</b> (como <code>palomazi</code>). Los públicos se
+     leen sin nada.</p>
+  <p>Se guarda nada más en este teléfono (<code>localStorage</code>), nunca en el código. Sácala en
+     GitHub → Settings → Developer settings → Tokens, con permiso de <b>solo lectura</b> de repos.</p>
+  <input id="inLlave" type="password" placeholder="github_pat_… o ghp_…" autocomplete="off">
+  <div class="fila-btn">
+    <button class="btn" id="bQuitarLlave">Quitar</button>
+    <button class="btn" id="bCerrarLlave">Cancelar</button>
+    <button class="btn acento" id="bGuardarLlave">Guardar</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1 · CONFIGURACIÓN Y ESTADO
+   ═════════════════════════════════════════════════════════════════════════ */
+
+const DUEÑO = 'ejercitopalomazi9111-arch';
+const API = 'https://api.github.com';
+const CRUDO = 'https://raw.githubusercontent.com';
+
+// Los atajos: los archivos que de verdad se abren seguido. Esto es la razón de
+// ser de la página — que "está en el veredicto md" se vuelva un toque.
+const ATAJOS = [
+  ['CLAUDE.md',                                    'La memoria de trabajo'],
+  ['sitio/PLAN.md',                                'El plan del sitio, accionable'],
+  ['sitio/TEXTOS.md',                              'Los textos, los quince'],
+  ['.claude/veredictos/2026-07-30-los-textos.md',  'Consejo · las frases'],
+  ['.claude/veredictos/2026-07-30-el-sitio.md',    'Consejo · el sitio'],
+  ['.claude/skills/CATALOGO.md',                   'Catálogo de skills'],
+  ['herramientas/PENDIENTES.md',                   'Los pendientes'],
+  ['CLAUDE-MOVIL.md',                              'La versión de teléfono'],
+];
+
+const REPOS_BASE = [  // por si la API no responde: al menos éstos siempre están
+  { name:'mazi-central',   default_branch:'main', private:false },
+  { name:'torre-infinita', default_branch:'main', private:false },
+];
+
+const E = {                       // el estado, todo junto
+  repos: null,                    // [{name, default_branch, private, pushed_at}]
+  arboles: {},                    // "repo@rama" → {archivos:[...], cuando}
+  repo: 'mazi-central',
+  rama: null,
+  ruta: '',
+  esArchivo: false,
+  cuota: null,
+};
+
+const G = {                       // lo que se guarda en el teléfono
+  get llave()      { return localStorage.getItem('mazi.gh.llave') || ''; },
+  set llave(v)     { v ? localStorage.setItem('mazi.gh.llave', v)
+                       : localStorage.removeItem('mazi.gh.llave'); },
+  get favoritos()  { try { return JSON.parse(localStorage.getItem('mazi.exp.fav')||'[]'); }
+                     catch(e) { return []; } },
+  set favoritos(v) { localStorage.setItem('mazi.exp.fav', JSON.stringify(v.slice(0,60))); },
+  get recientes()  { try { return JSON.parse(localStorage.getItem('mazi.exp.rec')||'[]'); }
+                     catch(e) { return []; } },
+  set recientes(v) { localStorage.setItem('mazi.exp.rec', JSON.stringify(v.slice(0,14))); },
+  get tema()       { return localStorage.getItem('mazi.exp.tema') || ''; },
+  set tema(v)      { v ? localStorage.setItem('mazi.exp.tema', v)
+                       : localStorage.removeItem('mazi.exp.tema'); },
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g,
+  c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+function pesar(n) {
+  if (n === undefined || n === null) return '';
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n/1024).toFixed(n < 10240 ? 1 : 0) + ' KB';
+  return (n/1048576).toFixed(1) + ' MB';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2 · LA API DE GITHUB
+
+   Dos peticiones por repo y a cachear. El límite sin llave son 60 por hora por
+   IP, y una sola recarga descuidada se las come. Por eso el árbol vive en
+   localStorage y sólo se vuelve a pedir con el botón ⟳.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+function cabeceras() {
+  const h = { 'Accept':'application/vnd.github+json' };
+  if (G.llave) h['Authorization'] = 'Bearer ' + G.llave;
+  return h;
+}
+
+async function api(ruta) {
+  const r = await fetch(API + ruta, { headers: cabeceras() });
+  const queda = r.headers.get('x-ratelimit-remaining');
+  if (queda !== null) {
+    E.cuota = { queda: +queda, tope: +(r.headers.get('x-ratelimit-limit')||0) };
+    pintarCuota();
+  }
+  if (!r.ok) {
+    const e = new Error('GitHub ' + r.status);
+    e.codigo = r.status;
+    throw e;
+  }
+  return r.json();
+}
+
+async function traerRepos() {
+  if (E.repos) return E.repos;
+  const guardado = sessionStorage.getItem('mazi.exp.repos');
+  if (guardado) { try { return (E.repos = JSON.parse(guardado)); } catch(e) {} }
+  try {
+    // Con llave se pide /user/repos, que incluye los privados. Sin llave, los públicos.
+    const lista = G.llave
+      ? await api('/user/repos?per_page=100&sort=pushed&affiliation=owner')
+      : await api('/users/' + DUEÑO + '/repos?per_page=100&sort=pushed');
+    E.repos = lista.map(r => ({
+      name: r.name, default_branch: r.default_branch || 'main',
+      private: !!r.private, pushed_at: r.pushed_at, description: r.description || '',
+      has_pages: !!r.has_pages,
+    })).sort((a,b) => a.name === 'mazi-central' ? -1 : b.name === 'mazi-central' ? 1 : 0);
+    sessionStorage.setItem('mazi.exp.repos', JSON.stringify(E.repos));
+  } catch (e) {
+    E.repos = REPOS_BASE.slice();      // sin red o sin cuota: al menos navega los de siempre
+    E.repos.errorApi = e;
+  }
+  return E.repos;
+}
+
+function repoInfo(nombre) {
+  return (E.repos || REPOS_BASE).find(r => r.name === nombre)
+      || { name: nombre, default_branch: 'main', private: false };
+}
+
+/**
+ * El árbol completo de un repo en UNA petición. Se cachea 12 horas en
+ * localStorage; el botón ⟳ lo tira a la basura y lo vuelve a pedir.
+ */
+async function traerArbol(repo, rama, forzar) {
+  const clave = repo + '@' + rama;
+  if (!forzar && E.arboles[clave]) return E.arboles[clave];
+  const enDisco = localStorage.getItem('mazi.exp.arbol.' + clave);
+  if (!forzar && enDisco) {
+    try {
+      const a = JSON.parse(enDisco);
+      if (Date.now() - a.cuando < 432e5) return (E.arboles[clave] = a);
+    } catch(e) {}
+  }
+  const d = await api('/repos/' + DUEÑO + '/' + repo + '/git/trees/'
+                      + encodeURIComponent(rama) + '?recursive=1');
+  const a = {
+    cuando: Date.now(),
+    cortado: !!d.truncated,
+    archivos: (d.tree || [])
+      .filter(n => n.type === 'blob' || n.type === 'tree')
+      .map(n => ({ p:n.path, t:n.type === 'tree' ? 'd' : 'f', s:n.size })),
+  };
+  E.arboles[clave] = a;
+  try { localStorage.setItem('mazi.exp.arbol.' + clave, JSON.stringify(a)); }
+  catch(e) { /* si no cabe, ni modo: queda en memoria */ }
+  return a;
+}
+
+/** El contenido crudo. NO gasta cuota de API, y con llave sirve para privados. */
+async function traerCrudo(repo, rama, ruta) {
+  const url = CRUDO + '/' + DUEÑO + '/' + repo + '/' + encodeURIComponent(rama) + '/'
+            + ruta.split('/').map(encodeURIComponent).join('/');
+  const h = {};
+  if (G.llave) h['Authorization'] = 'Bearer ' + G.llave;
+  const r = await fetch(url, { headers: h });
+  if (!r.ok) throw new Error('No se pudo leer (' + r.status + ')');
+  return r;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3 · RUTAS — el hash
+
+   Formato:  #p=<repo>/<ruta>&r=<rama>
+   La rama va aparte a propósito: los nombres de rama traen diagonales
+   (claude/juego-oregon-3kmicc), así que metida en la misma cadena no se sabe
+   dónde acaba la rama y dónde empieza la ruta.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * El hash se arma A MANO en lugar de con URLSearchParams, y es a propósito:
+ * `URLSearchParams` codifica las diagonales como %2F y deja enlaces así —
+ *   #p=mazi-central%2F.claude%2Fveredictos%2F2026-07-30-los-textos.md
+ * que funcionan pero son ilegibles. Y estos enlaces se pegan en WhatsApp: si
+ * Carlos no puede leer a dónde va el enlace, el enlace vale menos.
+ */
+function liga(repo, ruta, rama) {
+  let h = '#p=' + repo + (ruta ? '/' + ruta : '');
+  if (rama && rama !== repoInfo(repo).default_branch) h += '&r=' + rama;
+  return h;
+}
+
+function leerHash() {
+  const cruda = location.hash.replace(/^#/, '');
+  // Se parte por & pero se respeta lo que traiga la ruta. Orden fijo: p, luego r/v.
+  let p = '', r = null, v = null;
+  cruda.split('&').forEach(trozo => {
+    const i = trozo.indexOf('=');
+    if (i < 0) return;
+    const k = trozo.slice(0, i), val = decodeURIComponent(trozo.slice(i + 1));
+    if (k === 'p') p = val;
+    else if (k === 'r') r = val;
+    else if (k === 'v') v = val;
+  });
+  const trozos = p.split('/').filter(Boolean);
+  return {
+    repo: trozos.shift() || 'mazi-central',
+    ruta: trozos.join('/'),
+    rama: r,
+    vista: v,
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4 · MARKDOWN — el renderizador de la casa
+
+   Se escribe en lugar de cargar una librería porque LA REGLA (CLAUDE.md §2)
+   dice que no dependemos de externos, y porque un .md nuestro usa como diez
+   cosas: encabezados, tablas, listas anidadas, citas, cercas de código,
+   casillas y tachado. Eso cabe aquí.
+
+   Lo que NO hace, dicho de frente: no renderiza HTML crudo (lo escapa, que es
+   lo seguro), y los diagramas mermaid los deja como bloque con nota. Mermaid
+   sería otra librería entera y sólo lo usa un archivo.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+const MD = {};
+
+MD.slug = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+  .replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-').slice(0,60);
+
+/** Resuelve "../x/y.md" contra la carpeta del archivo que se está viendo. */
+MD.resolver = (dir, rel) => {
+  const base = dir ? dir.split('/') : [];
+  const out = base.slice();
+  for (const t of rel.split('/')) {
+    if (t === '' || t === '.') continue;
+    if (t === '..') out.pop();
+    else out.push(t);
+  }
+  return out.join('/');
+};
+
+/** En línea: código, imágenes, enlaces, negritas, cursivas, tachado. */
+MD.enLinea = function (txt, ctx) {
+  const guardado = [];
+  let s = esc(txt);
+
+  // El código en línea se aparta primero: adentro no se aplica nada más.
+  s = s.replace(/(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g, (m, t, c) => {
+    guardado.push('<code>' + c.trim() + '</code>');
+    return ' ' + (guardado.length - 1) + ' ';
+  });
+
+  const destino = href => {
+    href = href.trim();
+    if (/^(https?:|mailto:|tel:)/i.test(href)) return { url:href, fuera:true };
+    if (href.startsWith('#')) return { url:href, fuera:false };
+    return { url: liga(ctx.repo, MD.resolver(ctx.dir, href), ctx.rama), fuera:false };
+  };
+
+  // Imágenes antes que enlaces: ![]() empieza con ! y si no, el enlace se la come.
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (m, alt, src) => {
+    const u = /^https?:/i.test(src)
+      ? src
+      : CRUDO + '/' + DUEÑO + '/' + ctx.repo + '/' + ctx.rama + '/'
+        + MD.resolver(ctx.dir, src).split('/').map(encodeURIComponent).join('/');
+    guardado.push('<img src="' + esc(u) + '" alt="' + alt + '" loading="lazy">');
+    return ' ' + (guardado.length - 1) + ' ';
+  });
+
+  s = s.replace(/\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (m, t, href) => {
+    const d = destino(href);
+    guardado.push('<a href="' + esc(d.url) + '"'
+      + (d.fuera ? ' target="_blank" rel="noopener"' : '') + '>' + t + '</a>');
+    return ' ' + (guardado.length - 1) + ' ';
+  });
+
+  s = s.replace(/~~([\s\S]+?)~~/g, '<del>$1</del>')
+       .replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>')
+       .replace(/__([\s\S]+?)__/g, '<strong>$1</strong>')
+       .replace(/(^|[^\w*])\*([^*\s][^*]*?)\*(?![\w*])/g, '$1<em>$2</em>')
+       .replace(/(^|[^\w_])_([^_\s][^_]*?)_(?![\w_])/g, '$1<em>$2</em>');
+
+  // Enlaces sueltos que nadie escribió como enlace.
+  s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,
+    (m, a, u) => a + '<a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>');
+
+  /* Restaurar EN CICLO, y aquí está el por qué — lo cachó la captura, no la prueba.
+     Los marcadores se anidan. Un enlace cuyo texto trae código,
+
+         [`sitio/TEXTOS.md`](../../sitio/TEXTOS.md)
+
+     primero vuelve el `código` marcador 0, y luego el enlace entero —que ya
+     contiene el 0— se vuelve el marcador 2. Con un solo `replace`, el 2 se
+     cambia por el <a>… que trae el 0 adentro, y a ése ya nadie lo alcanza:
+     salía en pantalla como "\u0000 0 \u0000". Se repite hasta que no quede
+     ninguno, con tope para no colgarse si algo sale raro. */
+  for (let v = 0; v < 8 && / \d+ /.test(s); v++) {
+    s = s.replace(/ (\d+) /g, (m, i) => guardado[+i] !== undefined ? guardado[+i] : m);
+  }
+  return s;
+};
+
+/** Bloques: recorre línea por línea. Recursivo para citas y listas anidadas. */
+MD.bloques = function (lineas, ctx) {
+  const out = [];
+  let i = 0;
+
+  const esListaU = l => /^\s*[-*+]\s+/.test(l);
+  const esListaO = l => /^\s*\d+[.)]\s+/.test(l);
+  const sangria  = l => (l.match(/^\s*/)[0] || '').replace(/\t/g,'    ').length;
+
+  while (i < lineas.length) {
+    const ln = lineas[i];
+
+    if (!ln.trim()) { i++; continue; }
+
+    // ── cerca de código ────────────────────────────────────────────────
+    const cerca = /^\s*(```+|~~~+)\s*([\w-]*)/.exec(ln);
+    if (cerca) {
+      const fin = cerca[1][0].repeat(3);
+      const leng = cerca[2] || '';
+      const cuerpo = [];
+      i++;
+      while (i < lineas.length && !lineas[i].trim().startsWith(fin)) cuerpo.push(lineas[i++]);
+      i++;
+      if (/^mermaid$/i.test(leng)) {
+        out.push('<div class="diagrama"><b>◇ Diagrama (mermaid).</b> Aquí va como texto — '
+          + 'dibujarlo pediría otra librería y sólo lo usa un archivo. Se ve dibujado en GitHub.'
+          + '</div><pre><code>' + esc(cuerpo.join('\n')) + '</code></pre>');
+      } else {
+        out.push('<pre><code>' + esc(cuerpo.join('\n')) + '</code></pre>');
+      }
+      continue;
+    }
+
+    // ── encabezado ─────────────────────────────────────────────────────
+    const enc = /^(#{1,6})\s+(.*)$/.exec(ln);
+    if (enc) {
+      const n = Math.min(enc[1].length, 4);
+      const t = enc[2].replace(/\s*#+\s*$/, '');
+      out.push('<h' + n + ' id="' + MD.slug(t) + '">' + MD.enLinea(t, ctx) + '</h' + n + '>');
+      i++; continue;
+    }
+
+    // ── línea horizontal ───────────────────────────────────────────────
+    if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln)) { out.push('<hr>'); i++; continue; }
+
+    // ── tabla ──────────────────────────────────────────────────────────
+    if (ln.includes('|') && i + 1 < lineas.length
+        && /^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/.test(lineas[i+1])
+        && lineas[i+1].includes('-')) {
+      const celdas = l => {
+        let s = l.trim();
+        if (s.startsWith('|')) s = s.slice(1);
+        if (s.endsWith('|'))   s = s.slice(0, -1);
+        return s.split('|').map(c => c.trim());
+      };
+      const enc2 = celdas(ln);
+      i += 2;
+      const filas = [];
+      while (i < lineas.length && lineas[i].includes('|') && lineas[i].trim()) {
+        filas.push(celdas(lineas[i++]));
+      }
+      let h = '<div class="tabla-caja"><table><thead><tr>';
+      enc2.forEach(c => { h += '<th>' + MD.enLinea(c, ctx) + '</th>'; });
+      h += '</tr></thead><tbody>';
+      filas.forEach(f => {
+        h += '<tr>';
+        for (let k = 0; k < enc2.length; k++) h += '<td>' + MD.enLinea(f[k] || '', ctx) + '</td>';
+        h += '</tr>';
+      });
+      out.push('<div class="tabla-envoltura">' + h + '</tbody></table></div>'
+        + '<div class="tabla-pista">desliza la tabla →</div></div>');
+      continue;
+    }
+
+    // ── cita ───────────────────────────────────────────────────────────
+    if (/^\s*>/.test(ln)) {
+      const dentro = [];
+      while (i < lineas.length && (/^\s*>/.test(lineas[i])
+             || (dentro.length && lineas[i].trim() && !/^\s*$/.test(lineas[i])))) {
+        if (!/^\s*>/.test(lineas[i]) && !lineas[i].trim()) break;
+        dentro.push(lineas[i].replace(/^\s*>\s?/, ''));
+        i++;
+      }
+      out.push('<blockquote>' + MD.bloques(dentro, ctx) + '</blockquote>');
+      continue;
+    }
+
+    // ── listas, con anidado por sangría ────────────────────────────────
+    if (esListaU(ln) || esListaO(ln)) {
+      const ordenada = esListaO(ln);
+      const base = sangria(ln);
+      let h = ordenada ? '<ol>' : '<ul>';
+      while (i < lineas.length) {
+        const l = lineas[i];
+        if (!l.trim()) {
+          // un renglón en blanco sólo corta si lo que sigue ya no es lista
+          const sig = lineas[i+1];
+          if (!sig || !(esListaU(sig) || esListaO(sig)) || sangria(sig) < base) break;
+          i++; continue;
+        }
+        if (!(esListaU(l) || esListaO(l)) && sangria(l) <= base) break;
+        if (sangria(l) < base) break;
+
+        if ((esListaU(l) || esListaO(l)) && sangria(l) === base) {
+          let cuerpo = l.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '');
+          const hijos = [];
+          i++;
+          /* CONTINUACIÓN DE RENGLÓN — aquí estaba el bug que partía las negritas.
+             Un punto de lista que sigue abajo:
+
+                 - dejó dicho que el texto es **corto por
+                   diseño** (decisión 6), y que…
+
+             Antes, TODO lo más sangrado que el punto se trataba como bloque
+             anidado. O sea que ese punto se partía en dos: el `<li>` se quedaba
+             con "…es **corto por" y la continuación se volvía un párrafo aparte
+             que empezaba con "diseño** (decisión 6)". Cada mitad con un `**`
+             suelto, y los asteriscos salían crudos en pantalla.
+
+             Lo correcto: la continuación es parte del texto del punto. Sólo se
+             vuelve bloque anidado cuando de verdad abre uno — otra lista o una
+             cerca de código. Y en cuanto se abre, ya todo lo demás va adentro. */
+          let anidando = false;
+          while (i < lineas.length && lineas[i].trim() && sangria(lineas[i]) > base) {
+            const c = lineas[i];
+            if (!anidando && (esListaU(c) || esListaO(c) || /^\s*(```|~~~)/.test(c))) {
+              anidando = true;
+            }
+            if (anidando) hijos.push(c);
+            else cuerpo += '\n' + c.trim();
+            i++;
+          }
+
+          const tarea = /^\[([ xX])\]\s+/.exec(cuerpo);
+          let clase = '', caja = '';
+          if (tarea) {
+            clase = ' class="tarea"';
+            caja = '<span class="caja">' + (tarea[1] === ' ' ? '☐' : '☑') + '</span>';
+            cuerpo = cuerpo.replace(/^\[[ xX]\]\s+/, '');
+          }
+          h += '<li' + clase + '>' + caja + MD.enLinea(cuerpo, ctx)
+             + (hijos.length ? MD.bloques(hijos, ctx) : '') + '</li>';
+        } else { i++; }
+      }
+      out.push(h + (ordenada ? '</ol>' : '</ul>'));
+      continue;
+    }
+
+    // ── párrafo ────────────────────────────────────────────────────────
+    const p = [];
+    while (i < lineas.length && lineas[i].trim()
+           && !/^\s*(#{1,6}\s|>|```|~~~|[-*+]\s|\d+[.)]\s)/.test(lineas[i])
+           && !/^\s*([-*_])(\s*\1){2,}\s*$/.test(lineas[i])) {
+      p.push(lineas[i++]);
+    }
+    if (p.length) out.push('<p>' + MD.enLinea(p.join('\n'), ctx) + '</p>');
+    else i++;
+  }
+  return out.join('\n');
+};
+
+MD.render = function (texto, ctx) {
+  let lineas = texto.replace(/\r\n?/g, '\n').split('\n');
+  let frente = '';
+
+  // Frontmatter YAML: las skills lo traen y es justo lo que uno quiere leer
+  // primero (name y description), así que se muestra como ficha, no como raya.
+  if (lineas[0] && lineas[0].trim() === '---') {
+    const fin = lineas.indexOf('---', 1);
+    if (fin > 0) {
+      frente = '<div class="frente">' + lineas.slice(1, fin).map(l => {
+        const m = /^([\w-]+):\s*([\s\S]*)$/.exec(l);
+        return m ? '<div><span class="cl">' + esc(m[1]) + ':</span> ' + esc(m[2]) + '</div>'
+                 : '<div>' + esc(l) + '</div>';
+      }).join('') + '</div>';
+      lineas = lineas.slice(fin + 1);
+    }
+  }
+  return frente + MD.bloques(lineas, ctx);
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5 · TIPOS DE ARCHIVO
+   ═════════════════════════════════════════════════════════════════════════ */
+
+const ext = r => { const m = /\.([A-Za-z0-9]+)$/.exec(r); return m ? m[1].toLowerCase() : ''; };
+
+const IMAGENES = ['png','jpg','jpeg','gif','webp','avif','bmp','ico'];
+const CODIGO = ['js','mjs','cjs','ts','tsx','jsx','json','css','html','htm','xml','yml','yaml',
+  'sql','sh','ps1','py','txt','csv','toml','ini','conf','webmanifest','gitignore','nojekyll'];
+const PESADOS = ['zip','ttf','woff','woff2','otf','mp4','mp3','wav','webm','mov','pdf','psd'];
+
+function icono(n) {
+  if (n.t === 'd') return '▸';
+  const e = ext(n.p);
+  if (e === 'md') return '◈';
+  if (e === 'svg') return '◇';
+  if (IMAGENES.includes(e)) return '▣';
+  if (['html','htm'].includes(e)) return '⌘';
+  if (PESADOS.includes(e)) return '⬢';
+  if (CODIGO.includes(e)) return '⟨⟩';
+  return '·';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6 · PINTAR
+   ═════════════════════════════════════════════════════════════════════════ */
+
+function pintarCuota() {
+  if (!E.cuota) { $('#cuota').textContent = ''; return; }
+  const c = E.cuota;
+  $('#cuota').innerHTML = (G.llave ? '🔑 ' : '')
+    + c.queda + '/' + c.tope + ' consultas'
+    + (c.queda < 8 ? '<br><b style="color:var(--warn)">poquitas</b>' : '');
+}
+
+function pintarMigas() {
+  const m = $('#migas');
+  if (!E.repo) { m.innerHTML = ''; return; }
+  let h = '<a href="#">repos</a>';
+  h += '<span class="sep">/</span>';
+  const partes = E.ruta ? E.ruta.split('/') : [];
+  if (partes.length) h += '<a href="' + liga(E.repo,'',E.rama) + '">' + esc(E.repo) + '</a>';
+  else h += '<b>' + esc(E.repo) + '</b>';
+  partes.forEach((p, k) => {
+    h += '<span class="sep">/</span>';
+    h += (k === partes.length - 1)
+      ? '<b>' + esc(p) + '</b>'
+      : '<a href="' + liga(E.repo, partes.slice(0,k+1).join('/'), E.rama) + '">' + esc(p) + '</a>';
+  });
+  if (E.rama && E.rama !== repoInfo(E.repo).default_branch) {
+    h += '<span class="sep">·</span><span>rama ' + esc(E.rama) + '</span>';
+  }
+  m.innerHTML = h;
+}
+
+/**
+ * Una fila con enlace + botón de fijar.
+ *
+ * El enlace NO envuelve la fila entera y el botón NO va dentro del enlace —
+ * un botón dentro de un <a> es HTML inválido y en el teléfono se pelean el
+ * toque. Entonces la fila es un contenedor flex, el enlace es `.liga` y crece
+ * para llenarla (por eso `align-self:stretch`: sin eso el enlace mide sólo el
+ * alto de su texto, ~24 px, y los bordes de arriba y abajo de la fila quedan
+ * muertos al tacto. Ya lo cachó la prueba de los 44 px).
+ */
+function filaHTML(repo, rama, nodo, mostrar) {
+  const esDir = nodo.t === 'd';
+  const clase = esDir ? 'dir' : (ext(nodo.p) === 'md' ? 'doc' : '');
+  const clv = repo + '/' + nodo.p;
+  const fav = G.favoritos.includes(clv);
+  return '<div class="fila ' + clase + '">'
+    + '<a class="liga" href="' + liga(repo, nodo.p, rama) + '">'
+    + '<span class="ic">' + icono(nodo) + '</span>'
+    + '<span class="cuerpo"><span class="nm">' + esc(mostrar || nodo.p.split('/').pop()) + '</span>'
+    + '<span class="meta">' + (esDir ? 'carpeta' : (pesar(nodo.s) || ext(nodo.p) || 'archivo'))
+    + '</span></span><span class="go">›</span></a>'
+    + (esDir ? '' : '<button class="fav' + (fav ? ' on' : '') + '" data-fav="' + esc(clv)
+        + '" title="Fijar">' + (fav ? '★' : '☆') + '</button>')
+    + '</div>';
+}
+
+/* ── vista: lista de repos + atajos + fijados ──────────────────────────── */
+
+async function vistaRepos() {
+  $('#migas').innerHTML = '<b>Todo mi GitHub</b>';
+  const cuerpo = $('#cuerpo');
+  cuerpo.innerHTML = '<div class="cargando">Buscando repos…</div>';
+  const repos = await traerRepos();
+
+  let h = '';
+
+  h += '<h1 class="titulo">Explorador</h1>'
+     + '<p class="sub">Todo lo que está en GitHub, abierto desde el teléfono. '
+     + 'Los <code>.md</code> se leen aquí mismo, ya con formato.</p>';
+
+  if (repos.errorApi) {
+    h += '<div class="aviso mal" style="margin-bottom:16px">'
+      + '<b>La API de GitHub no contestó</b> (' + esc(repos.errorApi.message) + '). '
+      + (repos.errorApi.codigo === 403
+          ? 'Casi siempre es que se acabaron las 60 consultas por hora. Espera un rato o pon una llave con 🔑.'
+          : 'Mientras, están los repos de siempre.')
+      + '</div>';
+  }
+
+  h += '<div class="rot"><h2>Atajos</h2><span class="regla"></span>'
+     + '<span class="cta">lo que abro seguido</span></div><div class="lista">';
+  ATAJOS.forEach(([ruta, que]) => {
+    h += '<a class="fila doc" href="' + liga('mazi-central', ruta, null) + '">'
+      + '<span class="ic">◈</span><span class="cuerpo">'
+      + '<span class="nm">' + esc(ruta.split('/').pop()) + '</span>'
+      + '<span class="meta">' + esc(que) + '</span></span><span class="go">›</span></a>';
+  });
+  h += '</div>';
+
+  const fav = G.favoritos;
+  if (fav.length) {
+    h += '<div class="rot"><h2>Fijados</h2><span class="regla"></span>'
+       + '<span class="cta">' + fav.length + '</span></div><div class="lista">';
+    fav.forEach(clv => {
+      const corte = clv.indexOf('/');
+      const rp = clv.slice(0, corte), rt = clv.slice(corte + 1);
+      h += '<a class="fila doc" href="' + liga(rp, rt, null) + '">'
+        + '<span class="ic">★</span><span class="cuerpo">'
+        + '<span class="nm">' + esc(rt.split('/').pop()) + '</span>'
+        + '<span class="meta">' + esc(rp) + ' · ' + esc(rt) + '</span></span>'
+        + '<span class="go">›</span></a>';
+    });
+    h += '</div>';
+  }
+
+  const rec = G.recientes;
+  if (rec.length) {
+    h += '<div class="rot"><h2>Recientes</h2><span class="regla"></span></div><div class="lista">';
+    rec.forEach(clv => {
+      const corte = clv.indexOf('/');
+      const rp = clv.slice(0, corte), rt = clv.slice(corte + 1);
+      h += '<a class="fila" href="' + liga(rp, rt, null) + '">'
+        + '<span class="ic">↺</span><span class="cuerpo">'
+        + '<span class="nm">' + esc(rt.split('/').pop()) + '</span>'
+        + '<span class="meta">' + esc(rp) + '</span></span><span class="go">›</span></a>';
+    });
+    h += '</div>';
+  }
+
+  h += '<div class="rot"><h2>Repos</h2><span class="regla"></span>'
+     + '<span class="cta">' + repos.length + '</span></div><div class="lista">';
+  repos.forEach(r => {
+    h += '<a class="fila dir" href="' + liga(r.name, '', r.default_branch) + '">'
+      + '<span class="ic">▸</span><span class="cuerpo">'
+      + '<span class="nm">' + esc(r.name)
+      + (r.private ? ' <span style="color:var(--dim);font-weight:400;font-size:11px">privado</span>' : '')
+      + '</span><span class="meta">' + esc(r.description || r.default_branch) + '</span></span>'
+      + '<span class="go">›</span></a>';
+  });
+  h += '</div>';
+
+  if (!G.llave) {
+    h += '<div class="rot"><h2>Privados</h2><span class="regla"></span></div>'
+      + '<div class="aviso">Para ver <b>repos privados</b> hace falta una llave de GitHub de sólo '
+      + 'lectura. Se guarda nada más en este teléfono. '
+      + '<button class="btn acento" id="bPonerLlave" style="margin-top:9px">🔑 Poner llave</button></div>';
+  }
+
+  cuerpo.innerHTML = h;
+  const b = $('#bPonerLlave');
+  if (b) b.onclick = abrirLlave;
+}
+
+/* ── vista: carpeta ─────────────────────────────────────────────────────── */
+
+async function vistaCarpeta() {
+  const cuerpo = $('#cuerpo');
+  cuerpo.innerHTML = '<div class="cargando">Leyendo ' + esc(E.repo) + '…</div>';
+  pintarMigas();
+
+  let arbol;
+  try { arbol = await traerArbol(E.repo, E.rama); }
+  catch (e) {
+    cuerpo.innerHTML = '<div class="aviso mal"><b>No se pudo leer el repo.</b> '
+      + esc(e.message) + (e.codigo === 404
+        ? ' — o no existe, o es privado y falta la llave.'
+        : e.codigo === 403 ? ' — se acabaron las consultas de la hora. Espera o pon una llave.' : '')
+      + '</div>';
+    return;
+  }
+
+  const pre = E.ruta ? E.ruta + '/' : '';
+  const hijos = [];
+  const vistos = new Set();
+  arbol.archivos.forEach(n => {
+    if (!n.p.startsWith(pre)) return;
+    const resto = n.p.slice(pre.length);
+    if (!resto || resto.includes('/')) {
+      // no es hijo directo, pero delata una carpeta intermedia
+      if (resto && resto.includes('/')) {
+        const dir = pre + resto.split('/')[0];
+        if (!vistos.has(dir)) { vistos.add(dir); hijos.push({ p:dir, t:'d' }); }
+      }
+      return;
+    }
+    if (!vistos.has(n.p)) { vistos.add(n.p); hijos.push(n); }
+  });
+
+  hijos.sort((a,b) => (a.t === b.t)
+    ? a.p.localeCompare(b.p, 'es')
+    : (a.t === 'd' ? -1 : 1));
+
+  const carpetas = hijos.filter(n => n.t === 'd').length;
+  const archivos = hijos.length - carpetas;
+
+  let h = '<h1 class="titulo">' + esc(E.ruta ? E.ruta.split('/').pop() : E.repo) + '</h1>'
+    + '<p class="sub">' + carpetas + ' carpetas · ' + archivos + ' archivos'
+    + (E.ruta ? '' : ' · rama <code>' + esc(E.rama) + '</code>') + '</p>';
+
+  if (arbol.cortado) {
+    h += '<div class="aviso mal" style="margin-bottom:14px"><b>El repo es tan grande que GitHub '
+      + 'cortó el listado.</b> Puede faltar algo hasta abajo.</div>';
+  }
+
+  h += '<div class="acciones">'
+    + '<a class="btn" target="_blank" rel="noopener" href="https://github.com/' + DUEÑO + '/'
+    + esc(E.repo) + '/tree/' + esc(E.rama) + '/' + esc(E.ruta) + '">Ver en GitHub ↗</a>'
+    + '</div>';
+
+  h += hijos.length
+    ? '<div class="lista">' + hijos.map(n => filaHTML(E.repo, E.rama, n)).join('') + '</div>'
+    : '<div class="aviso">Carpeta vacía.</div>';
+
+  cuerpo.innerHTML = h;
+}
+
+/* ── vista: archivo ─────────────────────────────────────────────────────── */
+
+async function vistaArchivo() {
+  const cuerpo = $('#cuerpo');
+  cuerpo.innerHTML = '<div class="cargando">Abriendo…</div>';
+  pintarMigas();
+
+  const nombre = E.ruta.split('/').pop();
+  const e = ext(E.ruta);
+  const dir = E.ruta.includes('/') ? E.ruta.slice(0, E.ruta.lastIndexOf('/')) : '';
+  const clv = E.repo + '/' + E.ruta;
+
+  // recientes
+  const rec = G.recientes.filter(x => x !== clv);
+  rec.unshift(clv);
+  G.recientes = rec;
+
+  const info = repoInfo(E.repo);
+  const enGitHub = 'https://github.com/' + DUEÑO + '/' + E.repo + '/blob/' + E.rama + '/' + E.ruta;
+  const urlCruda = CRUDO + '/' + DUEÑO + '/' + E.repo + '/' + E.rama + '/'
+                 + E.ruta.split('/').map(encodeURIComponent).join('/');
+  const esFav = G.favoritos.includes(clv);
+
+  let acciones = '<div class="acciones">'
+    + '<button class="btn' + (esFav ? ' acento' : '') + '" data-fav="' + esc(clv) + '">'
+    + (esFav ? '★ Fijado' : '☆ Fijar') + '</button>'
+    + '<a class="btn" target="_blank" rel="noopener" href="' + esc(enGitHub) + '">GitHub ↗</a>'
+    + '<a class="btn" target="_blank" rel="noopener" href="' + esc(urlCruda) + '">Crudo ↗</a>';
+
+  // Si es una página y está en la rama publicada, se puede abrir de verdad.
+  if (['html','htm'].includes(e) && E.rama === info.default_branch) {
+    const pub = 'https://' + DUEÑO.toLowerCase() + '.github.io/' + E.repo + '/'
+              + E.ruta.replace(/index\.html$/, '');
+    acciones += '<a class="btn acento" target="_blank" rel="noopener" href="' + esc(pub)
+      + '">▶ Abrir la página</a>';
+  }
+  acciones += '</div>';
+
+  const cabeza = '<h1 class="titulo">' + esc(nombre) + '</h1>'
+    + '<p class="sub">' + esc(E.repo) + ' · ' + esc(E.ruta) + '</p>' + acciones;
+
+  try {
+    // ── imágenes: raw sirve el tipo correcto, así que <img> basta ────────
+    if (IMAGENES.includes(e)) {
+      cuerpo.innerHTML = cabeza + '<div class="visor"><img src="' + esc(urlCruda)
+        + '" alt="' + esc(nombre) + '"></div>';
+      atarFav(); atarTablas();
+      return;
+    }
+
+    // ── SVG: raw lo manda como texto plano, así que <img> NO lo dibuja.
+    //    Se inyecta en línea, y antes se le quitan scripts y manejadores.
+    if (e === 'svg') {
+      const t = await (await traerCrudo(E.repo, E.rama, E.ruta)).text();
+      const limpio = t
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+        .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+        .replace(/javascript:/gi, '');
+      cuerpo.innerHTML = cabeza + '<div class="visor">' + limpio + '</div>'
+        + '<div class="aviso" style="margin-top:14px">Es un SVG, o sea texto. '
+        + '<a href="' + liga(E.repo, E.ruta, E.rama) + '&v=codigo">Ver el código</a>.</div>';
+      atarFav(); atarTablas();
+      return;
+    }
+
+    if (PESADOS.includes(e)) {
+      cuerpo.innerHTML = cabeza + '<div class="aviso"><b>' + esc(e.toUpperCase())
+        + '</b> — esto no se abre aquí. Usa <b>Crudo ↗</b> para descargarlo o verlo con la app '
+        + 'del teléfono.</div>';
+      atarFav(); atarTablas();
+      return;
+    }
+
+    const texto = await (await traerCrudo(E.repo, E.rama, E.ruta)).text();
+    const q = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const forzarCodigo = q.get('v') === 'codigo';
+
+    if (e === 'md' && !forzarCodigo) {
+      cuerpo.innerHTML = cabeza
+        + '<div class="md">' + MD.render(texto, { repo:E.repo, rama:E.rama, dir }) + '</div>'
+        + '<div class="acciones" style="margin:22px 0 0"><a class="btn" href="'
+        + liga(E.repo, E.ruta, E.rama) + '&v=codigo">Ver el código</a></div>';
+    } else {
+      const lineas = texto.replace(/\r\n?/g, '\n').split('\n');
+      let t = '<div class="codigo"><table>';
+      lineas.forEach((l, k) => {
+        t += '<tr><td class="n">' + (k+1) + '</td><td class="l">' + esc(l || ' ') + '</td></tr>';
+      });
+      t += '</table></div>';
+      cuerpo.innerHTML = cabeza
+        + '<p class="sub">' + lineas.length + ' líneas · ' + pesar(texto.length) + '</p>'
+        + t
+        + (e === 'md' ? '<div class="acciones" style="margin:22px 0 0"><a class="btn acento" href="'
+            + liga(E.repo, E.ruta, E.rama) + '">Ver con formato</a></div>' : '');
+    }
+    atarFav(); atarTablas();
+  } catch (err) {
+    cuerpo.innerHTML = cabeza + '<div class="aviso mal"><b>No se pudo abrir.</b> '
+      + esc(err.message) + ' — si el repo es privado, hace falta la llave 🔑.</div>';
+    atarFav(); atarTablas();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7 · BUSCAR — sobre el árbol que ya está en memoria, así que es instantáneo
+   ═════════════════════════════════════════════════════════════════════════ */
+
+async function buscar(q) {
+  const cuerpo = $('#cuerpo');
+  q = q.trim().toLowerCase();
+  if (q.length < 2) { ruta(); return; }
+
+  const repos = (E.repos || REPOS_BASE);
+  const golpes = [];
+  for (const r of repos) {
+    const clave = r.name + '@' + r.default_branch;
+    let a = E.arboles[clave];
+    if (!a) {                                    // sólo lo que ya se bajó, para no gastar cuota
+      const d = localStorage.getItem('mazi.exp.arbol.' + clave);
+      if (d) { try { a = E.arboles[clave] = JSON.parse(d); } catch(e) {} }
+    }
+    if (!a) continue;
+    for (const n of a.archivos) {
+      if (n.t !== 'f') continue;
+      if (n.p.toLowerCase().includes(q)) golpes.push({ repo:r.name, rama:r.default_branch, n });
+      if (golpes.length > 300) break;
+    }
+  }
+
+  golpes.sort((x,y) => x.n.p.length - y.n.p.length);
+
+  $('#migas').innerHTML = '<b>Buscando “' + esc(q) + '”</b>';
+  let h = '<h1 class="titulo">' + golpes.length + ' resultado' + (golpes.length === 1 ? '' : 's')
+    + '</h1><p class="sub">Busca en los repos que ya se leyeron. Entra a uno nuevo para '
+    + 'incluirlo.</p>';
+  h += golpes.length
+    ? '<div class="lista">' + golpes.slice(0,120).map(g =>
+        '<a class="fila ' + (ext(g.n.p) === 'md' ? 'doc' : '') + '" href="'
+        + liga(g.repo, g.n.p, g.rama) + '"><span class="ic">' + icono(g.n) + '</span>'
+        + '<span class="cuerpo"><span class="nm">' + esc(g.n.p.split('/').pop()) + '</span>'
+        + '<span class="meta">' + esc(g.repo) + ' · ' + esc(g.n.p) + '</span></span>'
+        + '<span class="go">›</span></a>').join('') + '</div>'
+    : '<div class="aviso">Nada. Prueba con menos letras.</div>';
+  cuerpo.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8 · CABLEADO
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/** Marca las tablas que no caben, para que se vea que hay más a la derecha. */
+function atarTablas() {
+  document.querySelectorAll('.md .tabla-envoltura').forEach(env => {
+    const caja = env.querySelector('.tabla-caja');
+    if (!caja) return;
+    const revisar = () => {
+      const falta = caja.scrollWidth - caja.clientWidth - caja.scrollLeft;
+      env.classList.toggle('desborda', falta > 6);
+    };
+    revisar();
+    caja.addEventListener('scroll', revisar, { passive: true });
+    addEventListener('resize', revisar);
+  });
+}
+
+function atarFav() {
+  document.querySelectorAll('[data-fav]').forEach(b => {
+    b.onclick = ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      const clv = b.getAttribute('data-fav');
+      const f = G.favoritos;
+      const i = f.indexOf(clv);
+      if (i >= 0) f.splice(i,1); else f.unshift(clv);
+      G.favoritos = f;
+      const on = f.includes(clv);
+      if (b.classList.contains('btn')) {
+        b.textContent = on ? '★ Fijado' : '☆ Fijar';
+        b.classList.toggle('acento', on);
+      } else {
+        b.textContent = on ? '★' : '☆';
+        b.classList.toggle('on', on);
+      }
+    };
+  });
+}
+
+async function ruta() {
+  const r = leerHash();
+  $('#buscar').value = '';
+  window.scrollTo(0,0);
+
+  if (!location.hash || !r.ruta && !new URLSearchParams(location.hash.slice(1)).get('p')) {
+    E.repo = null;
+    await vistaRepos();
+    atarFav(); atarTablas();
+    return;
+  }
+
+  await traerRepos();
+  E.repo = r.repo;
+  E.rama = r.rama || repoInfo(r.repo).default_branch;
+  E.ruta = r.ruta;
+
+  // ¿Es archivo o carpeta? Se decide con el árbol, no adivinando por la extensión:
+  // hay archivos sin punto (LICENSE, .nojekyll) y carpetas con punto (.claude).
+  let esArch = false;
+  try {
+    const a = await traerArbol(E.repo, E.rama);
+    const n = a.archivos.find(x => x.p === E.ruta);
+    esArch = n ? n.t === 'f' : !!ext(E.ruta);
+  } catch (e) { esArch = !!ext(E.ruta); }
+
+  if (E.ruta && esArch) await vistaArchivo();
+  else await vistaCarpeta();
+  atarFav(); atarTablas();
+}
+
+function abrirLlave() {
+  $('#inLlave').value = G.llave;
+  $('#dlgLlave').showModal();
+}
+
+$('#bTema').onclick = () => {
+  // Si nadie ha elegido, hay que partir del tema que SE ESTÁ VIENDO —el del
+  // sistema—, no de "nada". Si no, el primer toque no cambia nada visible:
+  // en un teléfono en oscuro, pasar de null a "oscuro" se ve igual.
+  const puesto = document.documentElement.getAttribute('data-tema');
+  const ahora = puesto
+    || (matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro');
+  const sig = ahora === 'oscuro' ? 'claro' : 'oscuro';
+  document.documentElement.setAttribute('data-tema', sig);
+  G.tema = sig;
+};
+if (G.tema) document.documentElement.setAttribute('data-tema', G.tema);
+
+$('#bArriba').onclick = () => {
+  if (!E.repo) return;
+  if (!E.ruta) { location.hash = ''; return; }
+  const p = E.ruta.split('/'); p.pop();
+  location.hash = liga(E.repo, p.join('/'), E.rama).slice(1);
+};
+
+$('#bRepos').onclick = () => { location.hash = ''; };
+
+$('#bFav').onclick = () => {
+  location.hash = '';
+  setTimeout(() => {
+    const r = [...document.querySelectorAll('.rot h2')].find(h => h.textContent === 'Fijados');
+    if (r) r.scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 260);
+};
+
+$('#bRefrescar').onclick = async () => {
+  Object.keys(localStorage).filter(k => k.startsWith('mazi.exp.arbol.'))
+    .forEach(k => localStorage.removeItem(k));
+  sessionStorage.removeItem('mazi.exp.repos');
+  E.arboles = {}; E.repos = null;
+  if (E.repo) { try { await traerArbol(E.repo, E.rama, true); } catch(e) {} }
+  ruta();
+};
+
+let tiempoBusca;
+$('#buscar').oninput = ev => {
+  clearTimeout(tiempoBusca);
+  const v = ev.target.value;
+  tiempoBusca = setTimeout(() => v.trim().length >= 2 ? buscar(v) : ruta(), 180);
+};
+
+$('#bGuardarLlave').onclick = () => {
+  G.llave = $('#inLlave').value.trim();
+  sessionStorage.removeItem('mazi.exp.repos');
+  E.repos = null;
+  $('#dlgLlave').close();
+  ruta();
+};
+$('#bQuitarLlave').onclick = () => {
+  G.llave = ''; E.repos = null;
+  sessionStorage.removeItem('mazi.exp.repos');
+  $('#dlgLlave').close(); ruta();
+};
+$('#bCerrarLlave').onclick = () => $('#dlgLlave').close();
+$('#cuota').onclick = abrirLlave;
+
+addEventListener('hashchange', ruta);
+ruta();
+</script>
