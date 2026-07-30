@@ -1299,7 +1299,14 @@ const [, , cmd, ...resto] = process.argv;
 const opt = (n, d) => { const i = resto.indexOf('--' + n); return i === -1 ? d : resto[i + 1]; };
 const num = n => (opt(n) === undefined ? undefined : +opt(n));
 
-if (cmd === 'catalogo') {
+// Sólo cuando se corre a mano. Sin esta guarda, cualquier archivo que importe
+// `svg` o `componer` imprime la ayuda de la herramienta en su propia salida.
+const directo = process.argv[1]
+  && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+
+if (!directo) {
+  /* importada: no se corre nada */
+} else if (cmd === 'catalogo') {
   catalogo(resto[0] || 'tipos.html');
 } else if (cmd === 'juego') {
   const al = opt('alfabeto', 'recto');
