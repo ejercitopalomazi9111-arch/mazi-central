@@ -38,7 +38,7 @@ juego de megabytes.
 | 1 | **El display** (portada) | Paloma + logotipo armándose segmento por segmento, el lema, una frase, y el botón de WhatsApp. Un reloj con la hora **real** en la tipografía de la casa | Que en dos segundos se vea vivo y hecho por alguien |
 | 2 | **Qué hacemos** | Los seis servicios, una línea cada uno. Sin nombres de tecnología | Que se entienda qué se compra |
 | 3 | **El taller** | La fábrica de tipografías **corriendo en la página**. El visitante cambia esqueleto, pincel y ochavo y las letras se redibujan | La prueba de capacidad. Es la sección que nadie más puede copiar |
-| 4 | **Trabajo** | Ligas Mazi por su nombre · la plataforma de gestión sin marca ajena · Torre Infinita con liga a jugar | La prueba comercial |
+| 4 | **Trabajo** | Ligas Mazi por su nombre · la plataforma de gestión sin marca ajena · Torre Infinita **sólo si ya está revestida** (ver §7-ter) | La prueba comercial |
 | 5 | **Cómo trabajamos · Contacto** | El modelo de comisión en cristiano, WhatsApp, correo, y **"trabaja con nosotros"** para colaboradores | Cerrar. Y captar gente, que es el agujero que más sangra |
 
 **La sección 5 trae algo que §7 no tenía: la entrada para colaboradores.** La puso Sofía y tiene
@@ -50,7 +50,7 @@ busque para trabajar.
 | Ruta | Qué es | Por qué no va en la principal |
 |---|---|---|
 | `/taller` | La fábrica completa: 15 alfabetos, 13 pinceles, 6 remates, el juego de 107 caracteres, descarga del SVG | Pesa y es para quien se clavó |
-| `/juega` | Torre Infinita con control táctil | Megabytes de Phaser |
+| `/juega` | Torre Infinita con control táctil. **Bloqueada hasta el revestimiento** | Megabytes de Phaser |
 | `/marca` | Las hojas que ya existen (`marca/mazi.html`, `tipos.html`) limpiadas | Es material de venta, no de portada |
 
 **Candidata, sin prometer:** `/vectorizar` — subir un PNG y bajar un SVG, gratis, en el navegador.
@@ -227,12 +227,79 @@ Esto es la mitad del trabajo.
 - ⛔ **Precios.** Se cotiza, no se lista (§7 · proteger la propiedad).
 - ⛔ **La lista de tecnologías.** Nadie compra "React + Supabase" y decirlo nos vuelve intercambiables.
 - ⛔ **Ligas al repositorio.** El sitio es justo lo que va a traer ese tráfico (§7).
-- ⛔ **Bloquear el clic derecho.** Es teatro y ya está dicho que no lo vamos a vender como seguridad.
 - ⛔ **Un blog.** Nadie lo va a escribir. Una sección vacía con fecha de hace ocho meses hace más
   daño que no tenerla.
 - ⛔ **Formulario de contacto largo.** Nombre y mensaje, o de plano nada más el botón de WhatsApp.
   Y ojo: **GitHub Pages no tiene servidor**, así que un formulario de verdad necesita un externo.
   Eso va a `PENDIENTES.md`, no al sitio de una.
+
+---
+
+## 6-bis · El menú de contexto propio · decisión de Carlos
+
+Carlos pidió quitar el menú de contexto del navegador *"porque es más aesthetic y no se salen de la
+experiencia"*. **Se hace, y se hace bien** — hay una versión de esto que sí suma:
+
+**No se bloquea nada: se REEMPLAZA.** El clic derecho abre **nuestro** menú, en la tipografía y los
+colores de la casa, con cosas que sirven:
+
+```
+┌──────────────────────────┐
+│  Copiar liga             │
+│  Compartir por WhatsApp  │
+│  ─────────────────────   │
+│  Ver la marca            │
+│  Hablar con nosotros     │
+└──────────────────────────┘
+```
+
+Eso es lo que lo vuelve estética y no fricción: el visitante no pierde una función, gana un atajo —
+y el más útil de todos es "compartir por WhatsApp", que es justo por donde va a llegar la gente.
+
+**Lo que NO se toca, y esto no es negociable porque rompe el sitio:**
+- La **selección de texto** se queda. Bloquearla impide copiar el teléfono y el correo.
+- Los **atajos de teclado** se quedan. `Ctrl+C`, `Ctrl+F`, `Tab`.
+- El **lector de pantalla** se queda funcionando.
+- En **teléfono no aplica**: no hay clic derecho. Ahí la pulsación larga sigue siendo la del sistema.
+
+**Y lo digo una vez y no vuelvo a insistir:** esto es estética, no protección. Quien quiera el código
+lo tiene con `Ctrl+U`. Lo que protege de verdad ya está dicho en `CLAUDE.md` §7: la ventaja no está
+en el código, está en la velocidad y el criterio.
+
+---
+
+## 6-ter · Animación por scroll — corrección al plan
+
+**Yo escribí "nada de scroll secuestrado" y Carlos pidió animaciones que sigan el scroll. No se
+contradicen, y mi redacción fue floja. Son dos cosas distintas:**
+
+| | Qué es | Veredicto |
+|---|---|---|
+| **Scroll secuestrado** | La página se apodera del scroll: te obliga a pasar por una secuencia a su ritmo, un gesto salta una pantalla completa, no puedes irte | ⛔ **No** |
+| **Animación guiada por scroll** | El scroll es una **perilla**: el visitante manda, y lo que ve responde a dónde está. Suelta la perilla y se queda ahí | ✅ **Sí, y es lo que queremos** |
+
+La segunda es exactamente lo que pidió, y hay skill para eso: **`scroll-cinema`** (secuencia de
+fotogramas en canvas, la técnica de Apple) y **`web-motion`** para decidir con qué se anima.
+
+### Las tres piezas guiadas por scroll
+
+| Pieza | Qué hace el scroll | Dónde |
+|---|---|---|
+| **La autoprueba, extendida** | Los segmentos del logotipo se encienden conforme bajas los primeros 400 px. Al abrir corre sola en 1.2 s; al volver a subir, la manejas tú | Portada |
+| **El barrido del taller** | Bajando, la misma palabra recorre los 15 alfabetos históricos: sello Qin → kabuki → gótica del XIII → Mazi. **Ésta es la pieza fuerte del sitio** | El taller |
+| **Los números que cuentan** | 9111 pisos · 107 caracteres · 15 alfabetos. Cuentan al entrar en pantalla, una vez | Trabajo |
+
+### Las reglas, para que sea de alto nivel y no un mareo
+
+1. **El scroll nunca se secuestra.** El visitante puede irse en cualquier momento y llega al final
+   con un gesto largo.
+2. **Todo va amarrado a la posición, no al tiempo.** Si sube, se deshace. Eso es lo que se siente
+   caro: que responde a la mano.
+3. **`prefers-reduced-motion` recibe el estado final**, no una versión aguada.
+4. **Presupuesto:** el barrido del taller se dibuja en canvas con `tipos.mjs`, o sea **cero
+   fotogramas que descargar** — la animación se *calcula*. Eso es la ventaja de tener la fábrica: lo
+   que en otro sitio serían 300 imágenes, aquí son 9 KB de fuente y unas líneas de JavaScript.
+5. **Nada de librería de animación.** `IntersectionObserver` + `requestAnimationFrame` + CSS.
 
 ---
 
@@ -256,6 +323,60 @@ pueda"**. Hay cuatro cosas, y todas ya existen:
 
 **La regla que amarra todo:** cada sección tiene que **hacer** algo. Si una sección sólo cuenta,
 sobra o se convierte en una línea dentro de otra.
+
+---
+
+## 7-ter · Torre Infinita y el arte de Pokémon
+
+Carlos preguntó qué tan legal es. **La respuesta corta: no lo es, y en el sitio de la empresa es
+peor que en un proyecto personal.** No soy abogado, pero los hechos aquí no son ambiguos.
+
+**Lo que dice la ley:** los sprites, tilesets, música y nombres de Pokémon son de Nintendo, Game
+Freak y The Pokémon Company. Usarlos sin permiso es infracción de derechos de autor. No hay
+excepción de "es un fan game", ni de "es gratis", ni de "doy crédito".
+
+**Lo que dice la práctica, que importa más:** Nintendo es de las empresas más agresivas del mundo en
+esto. Han tirado **379 juegos de fans de un solo golpe** en Game Jolt, mataron **Pokémon
+Essentials** —la herramienta con la que se hacen esos juegos— y en los últimos años están mandando
+avisos **directo a GitHub**. Y el detalle que nos pega en el hueso: en el caso de Game Jolt el
+argumento fue que **no sólo usaban su propiedad sin permiso, sino que LUCRABAN con ella.**
+
+**Por qué en nuestro sitio es peor:**
+
+1. **Contexto comercial.** Un sitio que vende servicios no es un proyecto de recámara. Eso mata
+   cualquier defensa y sube muchísimo la probabilidad de que alguien actúe.
+2. **El repo es público y está en GitHub**, que es justo donde están mandando los avisos. Y el sitio
+   es lo que va a traer el tráfico que lo encuentre — eso ya estaba anotado en `CLAUDE.md` §7 como
+   disparador.
+3. **Y ésta es la que de verdad importa, y no es legal sino de marca:** Grupo Mazi vende
+   *"todo lo que la empresa use lo construimos nosotros"*. Poner como pieza estrella del portafolio
+   un juego construido sobre arte de otro **se contradice con lo único que vendemos.** Un cliente
+   que lo note no piensa "qué buen juego": piensa "¿y mi proyecto también lo van a armar con cosas
+   de alguien más?"
+
+### Lo que NO se hace: tirar Torre Infinita
+
+El objetivo era *"probar que llegamos hasta donde haga falta"*, y ese objetivo sobrevive completo.
+**Lo único que cambia son las imágenes.** El código, las mecánicas, los 9111 pisos, el generador de
+mazmorras, el arreglo del softlock — todo eso es nuestro y es lo que impresiona.
+
+**El revestimiento:**
+- Arte real con licencia abierta, que es la regla de la casa (`CLAUDE.md` §3, regla 1): **OpenGameArt,
+  Kenney, LPC, itch.io.** Ya tenemos assets LPC bajados para Hoja de Romero.
+- Las criaturas dejan de ser Pokémon y pasan a ser **nuestras**. Eso además vuelve la pieza **más**
+  fuerte, no menos: "roguelike de 9111 pisos con bestiario propio" vende mejor que "fan game".
+- Créditos y licencias en un `CREDITOS.md`, como ya se hace en el resto.
+
+### Mientras no esté revestido
+
+- **`/juega` no se publica.** El Bloque 5 queda bloqueado.
+- En la sección Trabajo, Torre Infinita **se menciona sin capturas jugables** o no se menciona.
+- **Y aparte del sitio:** el repo público con arte de Pokémon es exposición **hoy**, no cuando
+  publiquemos. Eso sube de prioridad y ya no es "cuando haya visitas".
+
+**Lo que puedo hacer en cuanto me digas:** enganchar el repo `torre-infinita` y sacarte el
+**inventario exacto** — cuántos sprites hay, cuáles son de Nintendo, cuáles ya son nuestros, y qué
+cuesta el reemplazo en horas. Sin ese número la decisión se toma a ciegas.
 
 ---
 
@@ -340,7 +461,7 @@ de corrido.
 | **2** | Qué hacemos · Cómo trabajamos · Trabaja con nosotros | sí | nada |
 | **3** | **El taller** — la fábrica de tipografías en vivo | sí | nada |
 | **4** | Trabajo — capturas reales de Ligas Mazi con `captura.mjs`, plataforma sin marca ajena | sí | nada |
-| **5** | `/juega` — Torre Infinita | sí | nada |
+| **5** | `/juega` — Torre Infinita | **no hasta revestirla** | reemplazar el arte de Pokémon |
 | **6** | El video de la plataforma | **no** | el archivo de Carlos + confirmar si trae marca de ICAMP |
 | **7** | Dominio y medición (Fase 6 del plan) | | decisión de Carlos |
 

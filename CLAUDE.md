@@ -129,21 +129,27 @@ dependemos.
    funciona en el teléfono. **Pero es recomendación, no ley:** React está bien cuando el
    proyecto lo pide. Se elige por proyecto, no por dogma.
 
-3. **Todo lo que ve el usuario, en español mexicano.**
+3. **Animación por scroll sí; scroll secuestrado no.** Son dos cosas distintas y confundirlas ya
+   me pasó al escribir el plan del sitio. **Guiada por scroll** = el scroll es una perilla, el
+   visitante manda y lo que ve responde a dónde está; suelta y se queda ahí. **Secuestrado** = la
+   página se apodera del scroll y te obliga a pasar por una secuencia a su ritmo. Lo primero es lo
+   que pidió Carlos y lo que queremos; lo segundo no va. Skills: `scroll-cinema` y `web-motion`.
 
-4. **Commits seguido.** El entorno se reinicia y se lleva el trabajo no commiteado. Ya pasó
+4. **Todo lo que ve el usuario, en español mexicano.**
+
+5. **Commits seguido.** El entorno se reinicia y se lleva el trabajo no commiteado. Ya pasó
    tres veces. Se commitea en cuanto una pieza sirve, no al final.
 
-5. **Nada de llaves ni secretos en el código.** Los repos son públicos y tienen escaneo.
+6. **Nada de llaves ni secretos en el código.** Los repos son públicos y tienen escaneo.
 
-6. **Reproducir el bug antes de arreglarlo.** Nada a ciegas.
+7. **Reproducir el bug antes de arreglarlo.** Nada a ciegas.
 
-7. **Ver la pantalla antes de decir que quedó.** Skill `agent-browser`. Leer el código no cuenta.
+8. **Ver la pantalla antes de decir que quedó.** Skill `agent-browser`. Leer el código no cuenta.
 
-8. **Antes de una decisión cara, se convoca al consejo.** Skill `four-judges`. No aplica a
+9. **Antes de una decisión cara, se convoca al consejo.** Skill `four-judges`. No aplica a
    chambitas ni a bugs.
 
-9. **Si no me sale, se resuelve — el plan NO se tira.** Que a mí no me salga una pieza no es
+10. **Si no me sale, se resuelve — el plan NO se tira.** Que a mí no me salga una pieza no es
    razón para cambiar el plan: es razón para buscar otra vía. Otra herramienta, otro método,
    otro ángulo. Y si de plano yo no puedo, **somos grupo: se pide ayuda o se recurre a alguien
    más.** Reportar el problema está bien; proponer abandonar el objetivo por incapacidad mía,
@@ -312,7 +318,7 @@ con laptops.**
 |---|---|---|
 | **Ligas Mazi** | Plataforma completa: cuentas, pagos, privacidad de menores. La prueba **comercial** | por su nombre |
 | **La app de gestión** | Que también hacemos video y software de negocio | **sin nombrar a ICAMP** |
-| **Torre Infinita** | Que llegamos hasta donde haga falta | por su nombre, jugable |
+| **Torre Infinita** | Que llegamos hasta donde haga falta | ⚠️ **sólo revestida** — ver abajo |
 
 **Fuera del portafolio, dicho por Carlos:**
 - **El Pacto Roto** — *"demasiado verde y feo, no es como para que lo vean los clientes"*
@@ -335,14 +341,43 @@ Le hicimos un software para *ofrecérselo* y Carlos todavía no habla con ellos.
 **La regla general: no presumimos clientes que no son clientes.** Es lo que más rápido quema la
 reputación de una empresa nueva.
 
+### ⚠️ Torre Infinita usa arte de Pokémon
+
+Lo preguntó Carlos el 30 de julio: *"¿qué tan legal es tener eso en mi página?"* **No lo es**, y en el
+sitio de la empresa es peor que en un proyecto personal. Los sprites, tilesets y nombres son de
+Nintendo, Game Freak y The Pokémon Company. No hay excepción por ser fan game, ni por ser gratis, ni
+por dar crédito.
+
+**Y no es riesgo teórico.** Nintendo tiró 379 juegos de fans de un golpe en Game Jolt, mató Pokémon
+Essentials, y hoy manda avisos **directo a GitHub** — que es donde vive nuestro repo, público. En el
+caso de Game Jolt el argumento fue que **no sólo usaban su propiedad sino que lucraban con ella**:
+exactamente nuestro caso si va en un sitio que vende servicios.
+
+**Pero la razón que más pesa no es legal, es de marca:** vendemos *"todo lo que la empresa use lo
+construimos nosotros"*. Poner como pieza estrella un juego construido sobre arte de otro **se
+contradice con lo único que vendemos.**
+
+**Lo que se hace — y NO es tirar Torre Infinita.** El objetivo era probar que llegamos hasta donde
+haga falta, y ese objetivo sobrevive completo: el código, las mecánicas, los 9111 pisos y el
+generador son nuestros y son lo que impresiona. **Sólo cambian las imágenes:** arte con licencia
+abierta (OpenGameArt, Kenney, LPC, itch.io — ya hay LPC bajado para Hoja de Romero), criaturas
+propias, y créditos en `CREDITOS.md`. Revestida vende **mejor**: "roguelike de 9111 pisos con
+bestiario propio" pesa más que "fan game".
+
+**Mientras no esté revestida:** `/juega` no se publica, y en el portafolio se menciona sin capturas
+jugables. **Y ojo: el repo público con ese arte es exposición hoy, no cuando publiquemos.**
+
+Plan completo en [`sitio/PLAN.md`](sitio/PLAN.md) §7-ter.
+
 ### Proteger la propiedad
 
 **Sí se enseña:** el resultado, el movimiento, la sensación. Demos jugables, capturas curadas.
 **No:** código fuente, arquitectura, stack, base de datos, precios.
 
 **Los repos siguen públicos — decisión de Carlos**, y es válida mientras nadie los conozca. Pero
-**el sitio es justo lo que va a traer ese tráfico**. Disparador para revisarlo: **cuando el sitio
-empiece a traer visitas.**
+**el sitio es justo lo que va a traer ese tráfico**. Disparador original: cuando el sitio empiece a
+traer visitas. **Adelantado:** el repo de Torre Infinita tiene arte de Pokémon y GitHub es donde
+Nintendo manda los avisos, así que ése no espera al tráfico.
 
 Bloquear el clic derecho es teatro; no lo voy a vender como seguridad. Lo que protege de verdad
 es que la ventaja no está en el código: está en la velocidad y el criterio.
@@ -389,7 +424,7 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
 | Proyecto | Qué es | ¿Portafolio? |
 |---|---|---|
 | **Ligas Mazi** | Ligas de baloncesto. Supabase, cuentas reales, marcador en vivo, cartas | ✅ la más fuerte |
-| **Torre Infinita** | Roguelike Pokémon, 9111 pisos, Phaser 3. Repo aparte | ✅ jugable |
+| **Torre Infinita** | Roguelike, 9111 pisos, Phaser 3. Repo aparte | ⚠️ **usa arte de Pokémon** — revestir antes de publicar (§7) |
 | **App de gestión** | Software para ofrecérselo a ICAMP. **No son clientes** | ✅ sin marca ajena |
 | **El Pacto Roto** | RPG, la magia se dibuja, IA narra | ❌ *"muy verde y feo"* |
 | **VitalLink / Life-Connect** | Emergencias | quizá |
