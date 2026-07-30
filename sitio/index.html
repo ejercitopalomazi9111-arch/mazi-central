@@ -283,15 +283,27 @@
       repeating-linear-gradient(0deg,#AC27FF14 0 1px,transparent 1px 13px),
       repeating-linear-gradient(90deg,#AC27FF14 0 1px,transparent 1px 13px); }
 
+  /* max-width para que la tarjeta nunca sea más ancha que media pantalla:
+     sin tope, un nombre largo la sacaba del escenario y se cortaba. */
   .pieza { position:absolute; left:50%; top:50%; translate:-50% -50%;
-    padding:6px 9px; border-radius:4px; white-space:nowrap;
+    max-width:46vw; padding:6px 9px; border-radius:4px; white-space:nowrap;
     background:#160E20ee; border:1px solid var(--linea);
     display:flex; flex-direction:column; gap:1px;
     will-change:transform,opacity; }
   .pieza-n { font-family:ui-monospace,Consolas,monospace; font-size:10.5px;
-    color:var(--violeta); }
+    color:var(--violeta); overflow:hidden; text-overflow:ellipsis; }
   .pieza-q { font-size:9px; color:var(--apagado); letter-spacing:.06em;
-    text-transform:uppercase; }
+    text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; }
+
+  /* MODO LISTA (teléfono): las herramientas dejan de flotar y se acomodan en
+     una rejilla debajo del escenario. Encenderse en su sitio se lee como un
+     sistema que se activa; flotar en 390 px se leía como tarjetas rotas. */
+  .lista-piezas { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .lista-piezas .pieza { position:static; translate:none; max-width:none;
+    opacity:.22; transition:opacity .3s ease, border-color .3s ease, box-shadow .3s ease; }
+  .lista-piezas .pieza.viva { opacity:1; border-color:var(--violeta);
+    box-shadow:0 0 16px #AC27FF22; }
+  .lista-piezas.flotan { display:contents; }
 
   .hilos { position:absolute; inset:0; width:100%; height:100%;
     pointer-events:none; overflow:visible; }
@@ -473,6 +485,9 @@
       <div class="escenario">
         <div class="escena" data-escena></div>
       </div>
+      <!-- En teléfono las herramientas viven AQUÍ, fuera del escenario 3D:
+           dentro son absolutas y se encimaban sobre las placas. -->
+      <div class="lista-piezas" data-lista></div>
 
       <p class="fase" data-fase></p>
       <div class="riel"><i data-riel></i></div>

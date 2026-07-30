@@ -71,14 +71,25 @@ export function montarSistema(raiz) {
         </div>
         <div class="placa-rejilla"></div>
       </div>`).join('') +
-    HERRAMIENTAS.map((h, i) => `
-      <div class="pieza" data-pieza="${i}">
-        <span class="pieza-n">${h.n}</span><span class="pieza-q">${h.q}</span>
-      </div>`).join('') +
+
     `<svg class="hilos" data-hilos aria-hidden="true"></svg>`;
 
   const placas = [...escena.querySelectorAll('.placa')];
-  const piezas = [...escena.querySelectorAll('.pieza')];
+  // Las piezas viven FUERA del escenario en teléfono. Se montan en su propio
+  // contenedor y, si hay ancho de sobra, se mudan adentro para flotar en 3D.
+  const lista = raiz.querySelector('[data-lista]');
+  lista.innerHTML = HERRAMIENTAS.map((h, i) => `
+      <div class="pieza" data-pieza="${i}">
+        <span class="pieza-n">${h.n}</span><span class="pieza-q">${h.q}</span>
+      </div>`).join('');
+  const piezas = [...lista.querySelectorAll('.pieza')];
+  let dondeEstan = 'lista';
+  const mudar = (aEscena) => {
+    const destino = aEscena ? escena : lista;
+    if ((aEscena ? 'escena' : 'lista') === dondeEstan) return;
+    piezas.forEach(pz => destino.appendChild(pz));
+    dondeEstan = aEscena ? 'escena' : 'lista';
+  };
   const hilos  = escena.querySelector('[data-hilos]');
 
   const FASES = [
@@ -120,28 +131,47 @@ export function montarSistema(raiz) {
       el.style.opacity = op.toFixed(3);
     });
 
-    /* ── 3 · LAS HERRAMIENTAS entran de los lados, una tras otra ─────── */
+    /* ── 3 · LAS HERRAMIENTAS ────────────────────────────────────────
+       DOS MODOS, y no es capricho: en un teléfono de 390 px, tres placas
+       abanicadas más seis tarjetas flotando NO CABEN. Da igual dónde las
+       ponga — salen cortadas por el borde o encimadas sobre el texto del
+       estrato. Lo comprobé en cinco posiciones del scroll: 5 cortadas y 17
+       choques. No es un ajuste: no hay espacio.
+
+       Entonces: en teléfono las herramientas van ABAJO, en lista, y se
+       encienden una por una conforme avanza el recorrido. En escritorio,
+       donde sí sobra ancho, flotan al costado de su placa como estaban. */
+    const flotan = raiz.clientWidth >= 760;
+    escena.classList.toggle('flotan', flotan);
+    lista.classList.toggle('flotan', flotan);
+    mudar(flotan);
+
     piezas.forEach((el, i) => {
       const h = HERRAMIENTAS[i];
       const desde = 0.44 + i * 0.045;
       const t = tramo(p, desde, desde + 0.14) * (1 - cierra);
-      // Las herramientas descansan A UN COSTADO de su placa, nunca encima:
-      // aterrizando en el centro tapaban el nombre del estrato, que es lo que
-      // el visitante tiene que leer. Entran desde fuera y se paran al lado.
-      // Proporcional al ancho, no fijo: 168 px a cada lado en un teléfono de
-      // 390 deja las tarjetas cortadas por el borde. En pantalla ancha se
-      // separan más, que es donde sobra espacio.
-      const reposo = h.lado * Math.min(210, escena.clientWidth * 0.33);
-      const x = reposo + h.lado * (1 - t) * 220;
-      const z = (h.capa - 1) * 130 * apertura + 30;
-      const y = (h.capa - 1) * 104 * apertura + (i % 3 - 1) * 30;
-      el.style.transform =
-        `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)`;
-      el.style.opacity = t.toFixed(3);
+
+      if (flotan) {
+        const anchoEsc = escena.clientWidth;
+        const tope = Math.max(0, anchoEsc / 2 - (el.offsetWidth || 150) / 2 - 8);
+        const reposo = Math.max(-tope, Math.min(tope, h.lado * anchoEsc * 0.31));
+        const x = reposo + h.lado * (1 - t) * (anchoEsc * 0.6);
+        const z = (h.capa - 1) * 130 * apertura + 34;
+        const y = (h.capa - 1) * 104 * apertura + (i % 2 ? 30 : -6);
+        el.style.transform =
+          `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px)`;
+        el.style.opacity = t.toFixed(3);
+      } else {
+        // En la lista no se mueven: se ENCIENDEN. Mover una lista corta se
+        // siente nervioso; encenderla se lee como un sistema que se activa.
+        el.style.transform = 'none';
+        el.style.opacity = (0.22 + 0.78 * t).toFixed(3);
+        el.classList.toggle('viva', t > 0.5);
+      }
     });
 
     /* ── 4 · LOS HILOS, dibujados de la pieza a su capa ──────────────── */
-    if (hilos) {
+    if (hilos && escena.classList.contains('flotan')) {
       const rE = escena.getBoundingClientRect();
       hilos.setAttribute('viewBox', `0 0 ${rE.width} ${rE.height}`);
       hilos.innerHTML = piezas.map((el, i) => {
@@ -156,7 +186,7 @@ export function montarSistema(raiz) {
                       stroke="#AC27FF" stroke-width="1"
                       stroke-opacity="${(op * 0.42).toFixed(2)}"/>`;
       }).join('');
-    }
+    } else if (hilos) { hilos.innerHTML = ''; }
 
     /* ── 5 · el rótulo de la fase y el riel ──────────────────────────── */
     let f = 0;
