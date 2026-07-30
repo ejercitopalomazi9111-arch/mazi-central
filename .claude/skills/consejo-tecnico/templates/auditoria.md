@@ -7,6 +7,20 @@
 **¿Hay datos de personas?** sí / no · **¿de menores?** sí / no · **¿el repo es público?** sí / no
 **Mesa convocada:** chica (6) · por área · completa (24) — y por qué ese tamaño
 
+> 🎙 **ESTA ACTA SE ESCRIBE COMO JUNTA, NO COMO RESUMEN.** Lo pidió Carlos el 30 de julio:
+> *"quiero ver toda la discusión — quién le dijo qué a quién, cómo le respondió, todo el proceso de
+> debate, en qué momento entró el perro con pruebas, cuándo el gato hizo de las suyas — como si
+> estuviese viendo una junta real."*
+>
+> **Entonces:** turnos numerados en orden · cada quien habla en primera persona con su nombre ·
+> **las interrupciones se escriben** (*"(interrumpe)"*) · **los desacuerdos se dejan sin resolver
+> hasta que la Jueza falla** · Rocco entra **en el turno donde la evidencia hizo falta**, no al
+> final · Michi va **después de todos**, porque su trabajo es romper lo que ya dieron por bueno · y
+> la Jueza cierra diciendo **qué le rechaza a los suyos**.
+>
+> **El resumen va hasta abajo. El valor está en el camino.** Un acta donde todos estuvieron de
+> acuerdo desde el principio es un acta que no sirvió: significa que alguien se calló.
+
 > ⚠️ **Recordatorio de la regla del acta:** este archivo vive en un repo público. Mientras un
 > hallazgo 🔴 esté abierto, aquí va **sólo área, nivel y "en proceso"**. El detalle se le dice a
 > Carlos en el chat y se escribe **después** de que está tapado.
