@@ -45,7 +45,22 @@ regresa. Aquí queda la deuda a la vista.
 - **Cada cuánto duele:** en cada iteración de arte. Es lo que más nos ha frenado.
 - **Veredicto:** **hablarlo con Carlos.** Necesita decisión de presupuesto, no código.
 
-### 3. Medición propia (analítica)
+### 3. Exportar la tipografía a fuente instalable (TTF/OTF)
+
+- **Falta:** `tipos.mjs` genera los glifos y los saca en SVG, pero no produce un archivo de fuente
+  que se pueda instalar en el sistema y usar en Word, Canva, Figma o el navegador con `@font-face`.
+  Hoy cada pieza de texto hay que generarla como vector.
+- **Hoy se resuelve con:** generar el SVG desde la herramienta y pegarlo. Para un logotipo o un
+  encabezado alcanza; para un documento largo, no.
+- **Costo de construirla:** medio. El formato TTF es documentado pero tedioso —tablas `glyf`,
+  `cmap`, `hmtx`, `head`— y hay librerías open source que corren local (`opentype.js`) que lo
+  escriben. No es investigación, es plomería.
+- **Cada cuánto duele:** cada vez que haya que escribir texto largo con la tipografía de la casa,
+  o cuando un cliente pida su marca como fuente usable.
+- **Veredicto:** **construir cuando haya un documento real que lo pida.** Mientras el uso sea
+  logotipos y encabezados, el SVG alcanza.
+
+### 4. Medición propia (analítica)
 
 - **Falta:** saber quién entra al sitio y qué hace, sin entregarle el dato a Google.
 - **Hoy se resuelve con:** nada. El sitio todavía no existe.
@@ -54,7 +69,7 @@ regresa. Aquí queda la deuda a la vista.
 - **Cada cuánto duele:** todavía no duele. Duele el día que haya tráfico.
 - **Veredicto:** **auto-hospedar, no escribir.** Es la Fase 6 del plan.
 
-### 4. Publicador de redes
+### 5. Publicador de redes
 
 - **Falta:** publicar en todas las redes desde un panel nuestro.
 - **Hoy se resuelve con:** publicar a mano.
