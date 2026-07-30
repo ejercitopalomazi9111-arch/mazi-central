@@ -1,0 +1,388 @@
+<title>Grupo Mazi — construimos la base y todo lo que se levanta sobre ella</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100A18">
+<meta name="description" content="Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu negocio funcione como un solo ecosistema. Querétaro.">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<link rel="preload" href="fuente/mazi.woff2" as="font" type="font/woff2" crossorigin>
+
+<!--
+  EL SITIO · BLOQUE 1 — armazón, portada y contacto.
+  ───────────────────────────────────────────────────────────────────────────
+  Construido según sitio/PLAN.md, que pasó por la auditoría de los 24 y por el
+  consejo de negocio. Lo que hay que saber para no deshacerlo:
+
+  · LA APERTURA es la AUTOPRUEBA DEL DISPLAY: un reloj de LED, al encender,
+    prende TODOS los segmentos un instante y luego muestra la hora. Nuestra
+    tipografía ES un display de segmentos, así que el gesto es de la máquina, no
+    un efecto inventado. Dura 1.2 s y NO BLOQUEA: el contenido está en el HTML
+    desde el primer byte y la animación sólo revela. Si el JS truena, la portada
+    se ve completa.
+
+  · EL RELOJ da la hora REAL. Cuesta veinte líneas y dice "esto está vivo y es de
+    alguien" antes de que el visitante lea una palabra.
+
+  · EL FÓSFORO #E8232A vive SÓLO dentro del display. Si se sale a un botón o a un
+    título, la marca deja de tener un acento y pasa a tener dos, que es lo mismo
+    que no tener ninguno.
+
+  · LOS SEIS SERVICIOS en la primera pantalla, en gris chico. Sin eso la portada
+    no dice a qué nos dedicamos: una captura reenviada por WhatsApp no le enseña
+    el negocio a nadie. Lo pidieron Renata e Iván en el consejo de los textos.
+
+  · CERO librerías, CERO CDN. LA REGLA §2.
+-->
+
+<style>
+  @font-face {
+    font-family:"Mazi";
+    src:url("fuente/mazi.woff2") format("woff2"), url("fuente/mazi.ttf") format("truetype");
+    font-weight:400; font-style:normal; font-display:swap;
+  }
+
+  :root {
+    --vacio:#100A18; --superficie:#1E1428; --linea:#2A2036;
+    --hueso:#E9E4E4; --apagado:#8B8296; --violeta:#AC27FF; --fosforo:#E8232A;
+    --mazi:"Mazi", system-ui, sans-serif;
+    --cuerpo:"Segoe UI", system-ui, -apple-system, sans-serif;
+    --barra:52px;
+  }
+
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  body {
+    margin:0; background:var(--vacio); color:var(--hueso);
+    font-family:var(--cuerpo); line-height:1.55; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:
+      radial-gradient(125% 72% at 50% -14%, #2E1B45 0%, #190F26 46%, var(--vacio) 80%),
+      radial-gradient(60% 38% at 86% 6%, #AC27FF1a 0%, transparent 64%), var(--vacio);
+  }
+  body::after {
+    content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    opacity:.045; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>\
+<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter>\
+<rect width='160' height='160' filter='url(%23n)'/></svg>");
+    background-size:160px 160px;
+  }
+
+  /* ── la barra · 52 px, fija ─────────────────────────────────────────── */
+  .barra {
+    position:fixed; top:0; left:0; right:0; z-index:50; height:var(--barra);
+    padding-top:env(safe-area-inset-top);
+    background:#100A18e6; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--linea);
+  }
+  .barra-in {
+    max-width:1100px; margin:0 auto; height:var(--barra);
+    padding:0 clamp(12px,4vw,28px);
+    display:flex; align-items:center; gap:11px;
+  }
+  .barra .casa { display:flex; align-items:center; gap:9px; text-decoration:none;
+    color:inherit; min-height:44px; }
+  .barra .casa img { width:26px; height:auto; display:block; }
+  .barra .casa span { font-family:var(--mazi); font-size:15px; line-height:1;
+    padding-top:2px; }
+  .barra nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
+  .barra nav a.menu { display:none; }
+  @media (min-width:820px) {
+    .barra nav a.menu { display:flex; align-items:center; min-height:44px; padding:0 12px;
+      font-family:var(--mazi); font-size:13px; color:var(--apagado);
+      text-decoration:none; }
+    .barra nav a.menu:hover { color:var(--hueso); }
+  }
+
+  .wasap {
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    min-height:44px; padding:0 17px; border-radius:24px;
+    background:var(--violeta); color:#12081C; text-decoration:none;
+    font-family:var(--mazi); font-size:14px; line-height:1;
+    box-shadow:0 0 24px #AC27FF44;
+  }
+  .wasap:active { filter:brightness(.9); }
+  .wasap.hueco { background:transparent; color:var(--violeta);
+    border:1px solid var(--violeta); box-shadow:none; }
+  .barra .wasap { padding:0 14px; font-size:13px; }
+
+  main { max-width:1100px; margin:0 auto; padding:0 clamp(16px,5vw,28px); }
+
+  /* ── 1 · EL DISPLAY (portada) ───────────────────────────────────────── */
+  .display {
+    min-height:calc(100svh - var(--barra));
+    padding:calc(var(--barra) + 22px) 0 34px;
+    display:flex; flex-direction:column; justify-content:center; gap:clamp(18px,4vh,30px);
+  }
+  .display .ave { width:clamp(58px,17vw,104px); height:auto; display:block;
+    filter:drop-shadow(0 0 26px #AC27FF55); }
+  .logotipo {
+    font-family:var(--mazi); font-weight:400; margin:0;
+    font-size:clamp(38px,13.5vw,92px); line-height:.92; letter-spacing:-.008em;
+  }
+  .logotipo .l2 { display:block; color:var(--violeta); }
+
+  .frase {
+    font-size:clamp(17px,4.6vw,26px); line-height:1.36; margin:0;
+    max-width:20ch; text-wrap:balance;
+  }
+  .frase b { color:var(--hueso); font-weight:650; }
+  .frase .suave { color:var(--apagado); }
+
+  /* Los seis servicios. Sin esto la portada no dice a qué nos dedicamos. */
+  .seis {
+    margin:0; font-size:clamp(11px,3vw,13px); color:var(--apagado);
+    letter-spacing:.02em; line-height:1.7; max-width:44ch;
+  }
+  .seis i { font-style:normal; color:var(--violeta); opacity:.55; padding:0 3px; }
+
+  .acciones { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+  /* El reloj: hora REAL, en la tipografía de la casa. Aquí vive el fósforo. */
+  .reloj {
+    font-family:var(--mazi); font-size:clamp(26px,8vw,44px); line-height:1;
+    color:var(--fosforo); letter-spacing:.04em;
+    text-shadow:0 0 18px #E8232A55; font-variant-numeric:tabular-nums;
+  }
+  .reloj .pt { animation:latir 1s steps(1,end) infinite; }
+  @keyframes latir { 0%,49%{opacity:1} 50%,100%{opacity:.18} }
+  .reloj-pie { font-size:11px; color:var(--apagado); letter-spacing:.14em;
+    text-transform:uppercase; margin-top:5px; }
+
+  /* ── secciones ──────────────────────────────────────────────────────── */
+  section { padding:clamp(46px,9vh,86px) 0; border-top:1px solid var(--linea); }
+  .rot { font-family:var(--mazi); font-size:clamp(13px,3.6vw,16px); line-height:1;
+    color:var(--apagado); margin:0 0 18px; }
+  h2 { font-size:clamp(22px,6vw,38px); line-height:1.18; margin:0 0 16px;
+    font-weight:650; letter-spacing:-.02em; max-width:22ch; text-wrap:balance; }
+  .texto { font-size:clamp(15px,4vw,18px); color:var(--apagado); margin:0 0 24px;
+    max-width:52ch; line-height:1.6; }
+  .texto b { color:var(--hueso); font-weight:650; }
+
+  .datos { display:flex; flex-direction:column; gap:9px; margin:0 0 26px; }
+  .dato {
+    display:flex; align-items:center; gap:13px; min-height:56px;
+    padding:12px 15px; background:var(--superficie);
+    border:1px solid var(--linea); border-left:2px solid var(--violeta);
+    border-radius:4px; text-decoration:none; color:inherit;
+  }
+  .dato:active { background:#271B34; }
+  .dato .et { font-size:11px; color:var(--apagado); letter-spacing:.12em;
+    text-transform:uppercase; display:block; margin-bottom:2px; }
+  .dato .vl { font-family:var(--mazi); font-size:17px; line-height:1;
+    word-break:break-all; }
+
+  .cierre { font-family:var(--mazi); font-size:clamp(15px,4.4vw,21px);
+    color:var(--hueso); margin:0 0 16px; }
+
+  footer { border-top:1px solid var(--linea); padding:24px 0 calc(30px + env(safe-area-inset-bottom));
+    display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+    font-family:var(--mazi); font-size:12px; color:var(--apagado); }
+  footer .sep { flex:1; }
+    /* 44 px también aquí: un enlace de 18 px de alto en el pie no se puede tocar
+     en un teléfono, y ya van cuatro veces que este bug sale. */
+  footer a { color:var(--apagado); text-decoration:none;
+    display:inline-flex; align-items:center; min-height:44px; padding:0 4px; }
+
+  @media (min-width:900px) {
+    .display { gap:34px; }
+    .dos { display:grid; grid-template-columns:1fr 1fr; gap:44px; align-items:start; }
+    .datos { margin:0; }
+  }
+
+  /* ── LA AUTOPRUEBA ──────────────────────────────────────────────────
+     Empieza EN el estado final. La animación sólo revela: si el JS no corre o
+     truena, la portada se ve completa. Nunca al revés. */
+  @media (prefers-reduced-motion: no-preference) {
+    .arranca .ave,
+    .arranca .frase,
+    .arranca .seis,
+    .arranca .acciones { opacity:0; transform:translateY(9px); }
+    .arranca .logotipo { color:transparent; text-shadow:0 0 26px #AC27FF; }
+    .arranca .logotipo .l2 { color:transparent; }
+
+    .listo .ave      { animation:sube .5s .70s cubic-bezier(.22,.8,.3,1) both; }
+    .listo .frase    { animation:sube .5s .90s cubic-bezier(.22,.8,.3,1) both; }
+    .listo .seis     { animation:sube .5s 1.02s cubic-bezier(.22,.8,.3,1) both; }
+    .listo .acciones { animation:sube .5s 1.15s cubic-bezier(.22,.8,.3,1) both; }
+    .listo .logotipo { animation:prueba .55s .15s ease-out both; }
+    .listo .logotipo .l2 { animation:prueba2 .55s .15s ease-out both; }
+
+    @keyframes sube { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:none} }
+    /* Todos los segmentos prendidos en violeta tenue → se apagan los que no van */
+    @keyframes prueba {
+      0%   { color:transparent; text-shadow:0 0 30px #AC27FFcc, 0 0 60px #AC27FF66; }
+      55%  { color:#AC27FF66;   text-shadow:0 0 22px #AC27FF99; }
+      100% { color:var(--hueso);text-shadow:none; }
+    }
+    @keyframes prueba2 {
+      0%   { color:transparent; }
+      55%  { color:#AC27FF66; }
+      100% { color:var(--violeta); }
+    }
+    .revela { opacity:0; transform:translateY(14px);
+      transition:opacity .55s ease, transform .55s cubic-bezier(.22,.8,.3,1); }
+    .revela.dentro { opacity:1; transform:none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation:none!important; transition:none!important; }
+    .arranca .ave, .arranca .frase, .arranca .seis, .arranca .acciones,
+    .revela { opacity:1!important; transform:none!important; }
+    .arranca .logotipo { color:var(--hueso)!important; text-shadow:none!important; }
+    .arranca .logotipo .l2 { color:var(--violeta)!important; }
+    .reloj .pt { animation:none!important; }
+  }
+</style>
+
+<header class="barra">
+  <div class="barra-in">
+    <a class="casa" href="#arriba">
+      <img src="../marca/logo/paloma-simple.svg" alt="" width="26" height="16">
+      <span>GRUPO MAZI</span>
+    </a>
+    <nav>
+      <a class="menu" href="#trabajamos">CÓMO TRABAJAMOS</a>
+      <a class="menu" href="#contacto">CONTACTO</a>
+      <a class="wasap" href="https://wa.me/524428833786" target="_blank" rel="noopener">
+        WHATSAPP
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="arriba">
+
+  <!-- 1 · EL DISPLAY -->
+  <div class="display" id="display">
+    <img class="ave" src="../marca/logo/paloma.svg" alt="Grupo Mazi" width="104" height="61">
+
+    <h1 class="logotipo">GRUPO<span class="l2">MAZI</span></h1>
+
+    <p class="frase">
+      <span class="suave">Todo gran proyecto comienza con una base sólida.</span>
+      <b>Nosotros la construimos, y también la última pieza que le da vida.</b>
+    </p>
+
+    <p class="seis">
+      Páginas web <i>·</i> Software <i>·</i> Marketing <i>·</i> Video y fotografía
+      <i>·</i> Gestión de negocios <i>·</i> Tiempos y movimientos
+    </p>
+
+    <div class="acciones">
+      <a class="wasap" href="https://wa.me/524428833786?text=Hola%2C%20quiero%20platicar%20de%20un%20proyecto"
+         target="_blank" rel="noopener">Hablar por WhatsApp</a>
+      <div>
+        <div class="reloj" id="reloj" aria-hidden="true">--<span class="pt">:</span>--</div>
+        <div class="reloj-pie">Querétaro, ahora</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · CÓMO TRABAJAMOS -->
+  <section id="trabajamos" class="revela">
+    <p class="rot">CÓMO TRABAJAMOS</p>
+    <h2>No nos contratas: nos integras.</h2>
+    <p class="texto">
+      Construimos la base, y nos quedamos a cuidar lo que se levanta sobre ella —
+      <b>la entrega es donde empieza nuestro trabajo.</b>
+    </p>
+    <p class="texto">
+      Cuando construimos nuestras propias herramientas, también construimos
+      <b>tu independencia</b>.
+    </p>
+  </section>
+
+  <!-- CONTACTO -->
+  <section id="contacto" class="revela">
+    <div class="dos">
+      <div>
+        <p class="rot">CONTACTO</p>
+        <h2>Cuéntanos qué se está rompiendo.</h2>
+        <p class="texto">
+          No hace falta que traigas un proyecto armado ni un presupuesto.
+          Con el síntoma basta: nosotros lo aterrizamos.
+        </p>
+      </div>
+      <div>
+        <div class="datos">
+          <a class="dato" href="https://wa.me/524428833786" target="_blank" rel="noopener">
+            <span><span class="et">WhatsApp</span><span class="vl">442 883 3786</span></span>
+          </a>
+          <a class="dato" href="mailto:grupomazi.oficial@gmail.com">
+            <span><span class="et">Correo</span><span class="vl">grupomazi.oficial@gmail.com</span></span>
+          </a>
+        </div>
+        <p class="cierre" style="margin-top:22px">¿QUIERES TRABAJAR CON NOSOTROS?</p>
+        <p class="texto">
+          Aquí tu crecimiento depende de tu impacto: genera clientes, participa en
+          proyectos o haz ambas cosas, y <b>gana en proporción al valor que aportas,
+          definido antes de empezar</b>, no al final.
+        </p>
+        <a class="wasap hueco" href="https://wa.me/524428833786?text=Hola%2C%20quiero%20trabajar%20con%20ustedes"
+           target="_blank" rel="noopener">Mándanos lo que sabes hacer</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>GRUPO MAZI</span>
+    <span class="sep"></span>
+    <a href="https://wa.me/524428833786" target="_blank" rel="noopener">442 883 3786</a>
+    <a href="mailto:grupomazi.oficial@gmail.com">CORREO</a>
+  </footer>
+
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  /* LA AUTOPRUEBA. La clase `arranca` está en el HTML y `listo` la pone el JS:
+     si el JS no corre, `arranca` sin `listo` deja los elementos ocultos… y por
+     eso las reglas de `arranca` viven DENTRO de `prefers-reduced-motion:
+     no-preference` y se anulan en `reduce`. Aquí el seguro extra: si algo
+     truena antes de este punto, un temporizador destapa la portada de todos
+     modos. Una animación jamás puede ser la razón de que no se vea el sitio. */
+  const display = document.getElementById('display');
+  const destapar = () => display.classList.remove('arranca');
+
+  // Se ESCONDE aquí, no en el HTML. Es la diferencia entre "si el JS truena la
+  // portada se ve completa" y que sea mentira: si esta línea nunca corre, nunca
+  // se escondió nada. La primera versión escondía desde el CSS y sólo el JS
+  // destapaba — o sea que un error de JS dejaba la portada en blanco. Lo cachó
+  // la prueba que tira el script a propósito.
+  display.classList.add('arranca');
+  const arrancar = () => { display.classList.add('listo'); setTimeout(destapar, 1800); };
+  try {
+    document.fonts && document.fonts.ready
+      ? document.fonts.ready.then(arrancar).catch(arrancar)
+      : arrancar();
+  } catch (e) { destapar(); }
+  setTimeout(destapar, 3000);   // seguro doble
+
+  /* EL RELOJ · hora real. Veinte líneas que dicen "esto está vivo". */
+  const reloj = document.getElementById('reloj');
+  const dos = n => String(n).padStart(2, '0');
+  const tic = () => {
+    const d = new Date();
+    reloj.innerHTML = dos(d.getHours()) + '<span class="pt">:</span>' + dos(d.getMinutes());
+    // La hora también en la pestaña: quien deje el sitio abierto lo ve.
+    document.title = dos(d.getHours()) + ':' + dos(d.getMinutes()) + ' · Grupo Mazi';
+  };
+  tic(); setInterval(tic, 15000);
+
+  /* Revelar al entrar en pantalla. UNA vez: algo que se re-anima cada que pasas
+     por encima es lo que agota (PLAN.md §8, regla 2). */
+  if ('IntersectionObserver' in window) {
+    const ojo = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('dentro'); ojo.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -12% 0px' });
+    document.querySelectorAll('.revela').forEach(n => ojo.observe(n));
+  } else {
+    document.querySelectorAll('.revela').forEach(n => n.classList.add('dentro'));
+  }
+})();
+</script>
