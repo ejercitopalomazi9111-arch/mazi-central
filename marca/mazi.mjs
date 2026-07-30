@@ -48,6 +48,11 @@ const DETALLES = [
     + 'los huecos: la lista de uniones de cada glifo ya existía, escrita para taparlas con un '
     + 'disco. En modo segmentos se hace lo contrario — cada unión se vuelve corte y el disco no se '
     + 'dibuja. Un campo que servía para pegar, usado para separar.'],
+  ['Los dígitos, rehechos', 'Venían del esqueleto neutro, o sea circulares, igual que había '
+    + 'pasado con la caja baja. Y en una cara de reloj eso no se puede dejar: el dígito ES lo que un '
+    + 'reloj enseña. Van con la misma superelipse y sus cortes de unión. El 4 con diagonal se '
+    + 'deshacía —los cortes le partían el vértice y el asta a la vez—, así que lleva la forma del '
+    + 'reloj: asta corta arriba, barra al medio, asta completa a la derecha.'],
   ['La I como el 1 del reloj', 'En un display de segmentos el 1 no es una barra: son dos barras '
     + 'apiladas con un hueco en medio y las puntas que se miran cortadas en diagonal, porque si no '
     + 'los segmentos se tocarían. Aquí sale de la división al centro más el ochavo. Es la excepción '
@@ -111,6 +116,8 @@ writeFileSync(process.argv[2] || 'marca/mazi.html', `<meta charset="utf-8">
   .juego{background:#180F22}
   .juego svg{width:100%;height:auto;max-height:42px;display:block;margin:0 0 10px}
   .uso{background:#180F22}
+  .reloj{background:#0b0b0d;border-color:#22222a;text-align:center}
+  .reloj svg{width:auto;height:auto;max-height:150px;max-width:100%;margin:0 auto;display:block}
   .uso .mx svg{width:100%;height:auto;max-height:54px;display:block;margin:0 0 14px}
   .uso .ln svg{width:100%;height:auto;max-height:22px;display:block}
   .pad{border-top:1px solid #2A2036;padding:16px 0 0;margin:0 0 22px}
@@ -151,6 +158,9 @@ writeFileSync(process.argv[2] || 'marca/mazi.html', `<meta charset="utf-8">
     ${svg('abcdefghijklmnopqrstuvwxyz', OP, HUESO, VACIO)}
     ${svg('0123456789 ÁÉÍÓÚÜÑ ¿? ¡! & @ · /', OP, HUESO, VACIO)}
   </div>
+
+  <h3>De dónde viene, literalmente</h3>
+  <div class="caja reloj">${svg('10:23', OP, '#E8232A', '#0b0b0d')}</div>
 
   <h3>En uso</h3>
   <div class="caja uso">

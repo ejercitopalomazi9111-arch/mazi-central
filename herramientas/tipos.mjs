@@ -1111,6 +1111,28 @@ const ALFABETOS = {
       // la letra.
       I: { an: 0.24, t: ['c0 c6'], cortes: ['c3'] },
 
+      /* ── LOS DÍGITOS ────────────────────────────────────────────────────
+         Venían del esqueleto neutro, o sea circulares, igual que pasó con la caja
+         baja. Y en una cara de reloj eso no se puede dejar: el dígito ES lo que un
+         reloj enseña. Van rehechos con la misma superelipse, y el 1 es el 1 del
+         reloj — una barra partida al centro, sin banderita. Sale idéntico a la I,
+         como en el display de verdad. */
+      0: { an: 0.72, t: ['b0 d0 e1.2 e4.8 d6 b6 a4.8 a1.2 b0'], cortes: ['b0', 'd6'] },
+      1: { an: 0.30, t: ['c0 c6'], cortes: ['c3'] },
+      2: { an: 0.68, t: ['a1.2 b0 d0 e1.2 e2.2 a6', 'a6 e6'], nudos: ['a6'] },
+      3: { an: 0.68, t: ['a0.9 b0 d0 e1.2 e2.1 d2.9 b2.9',
+        'b2.9 d2.9 e4 e4.9 d6 b6 a5.1'], nudos: ['b2.9'] },
+      // El 4 con diagonal se deshacía: los cortes de unión le partían el vértice y
+      // el asta a la vez. En el reloj el 4 no tiene diagonal — es asta corta
+      // arriba-izquierda, barra al medio y asta completa a la derecha.
+      4: { an: 0.72, t: ['a0 a4.2', 'a4.2 e4.2', 'd0 d6'], nudos: ['a4.2'] },
+      5: { an: 0.68, t: ['e0 a0 a2.6', 'a2.6 c2.4 e3.5 e4.9 d6 b6 a5.1'], nudos: ['a2.6'] },
+      6: { an: 0.70, t: ['d0 b0.5 a1.8 a4.8 b6 d6 e4.8 e3.6 d2.7 b2.7 a3.3'] },
+      7: { an: 0.64, t: ['a0 e0', 'e0 b6'], nudos: ['e0'] },
+      8: { an: 0.70, t: ['b2.9 d2.9 e2.1 e1.2 d0 b0 a1.2 a2.1 b2.9',
+        'b2.9 d2.9 e4 e4.9 d6 b6 a4.9 a4 b2.9'], nudos: ['b2.9', 'd2.9'] },
+      9: { an: 0.70, t: ['b6 d5.5 e4.2 e1.2 d0 b0 a1.2 a2.4 b3.3 d3.3 e2.4'] },
+
       /* ── LA CAJA BAJA ───────────────────────────────────────────────────
          Venía heredada de `recto`, que es circular, y por eso no encajaba: una O
          de superelipse junto a una o de compás cantan. Aquí va el juego completo
@@ -1156,7 +1178,7 @@ const ALFABETOS = {
       z: { an: 0.60, t: ['a2 e2', 'e2 a6', 'a6 e6'], nudos: ['e2', 'a6'] },
     },
     porDefecto: {
-      pincel: 'uniforme', grosor: 0.19, tracking: 0.055, corte: 'ochavo', ochavo: 0.52,
+      pincel: 'uniforme', grosor: 0.19, tracking: 0.055, corte: 'ochavo', ochavo: 0.72,
       estencil: 1, segmentos: true,
     },
   },
