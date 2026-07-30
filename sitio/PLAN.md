@@ -291,6 +291,12 @@ el teléfono con la lectura abierta.
 
 ---
 
+> 📎 **Referencias de efectos, con los números medidos:**
+> [`REFERENCIAS.md`](REFERENCIAS.md). Resumen: **una sola demo de las que trajo Carlos pesa 1,421 KB
+> de JavaScript** —siete veces el presupuesto de toda la portada— y **seis de las ocho necesitan
+> mouse**, que en un teléfono no existe. Se toman las ideas; el stack no. La única que entra es la
+> máscara que revela, atada al scroll, y cuesta 30 líneas de CSS.
+
 ## 4 · El estilo
 
 **Un instrumento, no un cartel.** La referencia no es una agencia: es un tablero — un reloj de
