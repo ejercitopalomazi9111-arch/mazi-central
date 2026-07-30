@@ -1,7 +1,7 @@
 <title>Explorador — Grupo Mazi</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0E1311">
+<meta name="theme-color" content="#100A18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Explorador">
@@ -38,17 +38,17 @@
 
 <style>
   :root {
-    --ink:#0E1311; --surface:#161F1B; --surface-2:#1D2823; --line:#2C3A33;
-    --bone:#E8E6DF; --dim:#8C9A92; --brass:#D69A2D; --live:#4FB286; --warn:#D66A2D;
+    --ink:#100A18; --surface:#1E1428; --surface-2:#271B34; --line:#3A2A4C;
+    --bone:#E9E4E4; --dim:#9A8FA8; --brass:#AC27FF; --live:#C77BFF; --warn:#E8232A;
   }
   @media (prefers-color-scheme: light) {
-    :root { --ink:#EDEBE4; --surface:#FBFAF7; --surface-2:#F2F0E9; --line:#D6D2C6;
-      --bone:#17201C; --dim:#5E6B63; --brass:#A06F0E; --live:#2C7D57; --warn:#A34E10; }
+    :root { --ink:#F4F1F6; --surface:#FFFFFF; --surface-2:#F7F3FA; --line:#DED5E6;
+      --bone:#1A1122; --dim:#6B5F79; --brass:#8400D6; --live:#6E00B4; --warn:#B01018; }
   }
-  :root[data-tema="oscuro"] { --ink:#0E1311; --surface:#161F1B; --surface-2:#1D2823;
-    --line:#2C3A33; --bone:#E8E6DF; --dim:#8C9A92; --brass:#D69A2D; --live:#4FB286; --warn:#D66A2D; }
-  :root[data-tema="claro"] { --ink:#EDEBE4; --surface:#FBFAF7; --surface-2:#F2F0E9;
-    --line:#D6D2C6; --bone:#17201C; --dim:#5E6B63; --brass:#A06F0E; --live:#2C7D57; --warn:#A34E10; }
+  :root[data-tema="oscuro"] { --ink:#100A18; --surface:#1E1428; --surface-2:#271B34;
+    --line:#3A2A4C; --bone:#E9E4E4; --dim:#9A8FA8; --brass:#AC27FF; --live:#C77BFF; --warn:#E8232A; }
+  :root[data-tema="claro"] { --ink:#F4F1F6; --surface:#FFFFFF; --surface-2:#F7F3FA;
+    --line:#DED5E6; --bone:#1A1122; --dim:#6B5F79; --brass:#8400D6; --live:#6E00B4; --warn:#B01018; }
 
   * { box-sizing:border-box; }
   html { -webkit-text-size-adjust:100%; }
@@ -84,8 +84,12 @@
   .migas span.sep { opacity:.5; padding:0 1px; }
   .migas b { color:var(--bone); font-weight:650; padding:4px 2px; }
 
-  h1.titulo { font-size:19px; font-weight:800; letter-spacing:-.02em; margin:0 0 3px;
-    word-break:break-word; }
+  @font-face { font-family:"Mazi"; src:url("../sitio/fuente/mazi.woff2") format("woff2");
+    font-display:swap; }
+  /* Mazi es de display: va en el título y los rótulos, nunca en el texto
+     corrido ni en números chicos (a 12 px el 5 se lee como S). */
+  h1.titulo { font-family:"Mazi",system-ui,sans-serif; font-weight:400;
+    font-size:22px; letter-spacing:-.01em; margin:0 0 4px; word-break:break-word; }
   .sub { font-size:12px; color:var(--dim); margin:0 0 14px; }
 
   /* ── listas de archivos ──────────────────────────────────────────────── */
@@ -127,8 +131,8 @@
   .ficha.viva { border-color:var(--brass); color:var(--brass); font-weight:700; }
 
   .rot { display:flex; align-items:center; gap:9px; margin:22px 0 9px; }
-  .rot h2 { margin:0; font-size:11px; font-weight:700; letter-spacing:.16em;
-    text-transform:uppercase; color:var(--bone); }
+  .rot h2 { margin:0; font-family:"Mazi",system-ui,sans-serif; font-weight:400;
+    font-size:14px; line-height:1; color:var(--bone); padding-top:2px; }
   .rot .regla { flex:1; height:1px; background:var(--line); }
   .rot .cta { font-size:11px; color:var(--dim); min-width:0; overflow:hidden;
     text-overflow:ellipsis; white-space:nowrap; }
@@ -238,7 +242,7 @@
 </style>
 
 <div class="barra"><div class="barra-in">
-  <a class="btn icono" href="../" title="Central">🏠</a>
+  <a class="btn icono" href="../" title="Central" style="padding:0 9px"><img src="../marca/logo/paloma-simple.svg" alt="Central" style="width:24px;display:block"></a>
   <button class="btn icono" id="bArriba" title="Subir">↑</button>
   <input id="buscar" type="search" placeholder="Buscar archivo…" autocomplete="off"
          autocapitalize="off" spellcheck="false">
@@ -1473,3 +1477,5 @@ $('#cuota').onclick = abrirLlave;
 addEventListener('hashchange', ruta);
 ruta();
 </script>
+
+<script src="../mazi.js" defer></script>
