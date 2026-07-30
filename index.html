@@ -1,402 +1,512 @@
 <title>Grupo Mazi — Central</title>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0E1311">
+<meta name="theme-color" content="#100A18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mazi">
+<meta name="description" content="Central de Grupo Mazi — todos los proyectos, herramientas y código en un solo lugar.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preload" href="sitio/fuente/mazi.woff2" as="font" type="font/woff2" crossorigin>
+
+<!--
+  CENTRAL MAZI — rediseñada el 30 de julio.
+  ───────────────────────────────────────────────────────────────────────────
+  Carlos: "a mazis central ponle nuestra tipografía y hazlo más bonito porque
+  está horrible".
+
+  Lo que cambió y por qué, que es lo que importa para no deshacerlo después:
+
+  1 · LA PALETA. Estaba en latón y verde, que no es de nadie. Ahora es la de la
+      marca y está medida: vacío #100A18, superficie #1E1428, violeta #AC27FF,
+      hueso #E9E4E4. La central es lo primero que Carlos abre todos los días;
+      tenía que verse de la casa.
+
+  2 · LA TIPOGRAFÍA MAZI, en su lugar correcto. Es una fuente de DISPLAY —nació
+      de un reloj de segmentos— así que va en el logotipo y en los rótulos de
+      sección: grande, corto, en mayúsculas. El texto corrido se queda en una
+      sans del sistema, porque una fuente de display en un párrafo se lee peor y
+      eso no es lealtad a la marca, es terquedad.
+
+  3 · LA PALOMA, que ya existe vectorizada y no estaba aquí.
+
+  4 · JERARQUÍA. Antes todas las secciones pesaban lo mismo y el Explorador
+      —la herramienta que usa a diario— se veía igual que un prototipo de mayo.
+      Ahora hay una pieza principal y lo demás baja de tamaño.
+
+  5 · EL FONDO no es una imagen: degradado + grano en SVG. Cero kilobytes, se
+      adapta a cualquier pantalla y se cambia de color en una línea.
+-->
+
 <style>
+  @font-face {
+    font-family: "Mazi";
+    src: url("sitio/fuente/mazi.woff2") format("woff2"),
+         url("sitio/fuente/mazi.ttf") format("truetype");
+    font-weight: 400; font-style: normal; font-display: swap;
+  }
+
   :root {
-    --ink: #0E1311;
-    --surface: #161F1B;
-    --surface-2: #1D2823;
-    --line: #2C3A33;
-    --bone: #E8E6DF;
-    --dim: #8C9A92;
-    --brass: #D69A2D;
-    --live: #4FB286;
-    --idle: #6B7B73;
+    --vacio:#100A18; --superficie:#1E1428; --superficie-2:#271B34; --linea:#3A2A4C;
+    --hueso:#E9E4E4; --tenue:#9A8FA8; --violeta:#AC27FF; --violeta-suave:#C77BFF;
+    --mazi:"Mazi", system-ui, sans-serif;
+    --cuerpo:"Segoe UI", system-ui, -apple-system, sans-serif;
   }
   @media (prefers-color-scheme: light) {
-    :root {
-      --ink: #EDEBE4; --surface: #FBFAF7; --surface-2: #F2F0E9; --line: #D6D2C6;
-      --bone: #17201C; --dim: #5E6B63; --brass: #A06F0E; --live: #2C7D57; --idle: #97A099;
-    }
+    :root { --vacio:#F4F1F6; --superficie:#FFFFFF; --superficie-2:#F7F3FA; --linea:#DED5E6;
+      --hueso:#1A1122; --tenue:#6B5F79; --violeta:#8400D6; --violeta-suave:#6E00B4; }
   }
-  :root[data-theme="dark"] {
-    --ink: #0E1311; --surface: #161F1B; --surface-2: #1D2823; --line: #2C3A33;
-    --bone: #E8E6DF; --dim: #8C9A92; --brass: #D69A2D; --live: #4FB286; --idle: #6B7B73;
-  }
-  :root[data-theme="light"] {
-    --ink: #EDEBE4; --surface: #FBFAF7; --surface-2: #F2F0E9; --line: #D6D2C6;
-    --bone: #17201C; --dim: #5E6B63; --brass: #A06F0E; --live: #2C7D57; --idle: #97A099;
-  }
+  :root[data-tema="oscuro"] { --vacio:#100A18; --superficie:#1E1428; --superficie-2:#271B34;
+    --linea:#3A2A4C; --hueso:#E9E4E4; --tenue:#9A8FA8; --violeta:#AC27FF; --violeta-suave:#C77BFF; }
+  :root[data-tema="claro"] { --vacio:#F4F1F6; --superficie:#FFFFFF; --superficie-2:#F7F3FA;
+    --linea:#DED5E6; --hueso:#1A1122; --tenue:#6B5F79; --violeta:#8400D6; --violeta-suave:#6E00B4; }
 
-  * { box-sizing: border-box; }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
   body {
-    margin: 0;
-    background: var(--ink);
-    color: var(--bone);
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+    margin:0; min-height:100vh; position:relative;
+    background:var(--vacio); color:var(--hueso);
+    font-family:var(--cuerpo); line-height:1.55;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
-  .wrap { max-width: 660px; margin: 0 auto; padding: 26px 16px 60px; }
+  /* El fondo: dos degradados y grano. Cero archivos. */
+  body::before {
+    content:''; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:
+      radial-gradient(120% 70% at 50% -12%, #2E1B45 0%, #1A1028 46%, var(--vacio) 78%),
+      radial-gradient(70% 40% at 88% 8%, #AC27FF1f 0%, transparent 62%),
+      var(--vacio);
+  }
+  @media (prefers-color-scheme: light) {
+    body::before { background:
+      radial-gradient(120% 70% at 50% -12%, #FFFFFF 0%, #F7F3FA 46%, var(--vacio) 78%),
+      radial-gradient(70% 40% at 88% 8%, #8400D614 0%, transparent 62%), var(--vacio); }
+  }
+  body::after {
+    content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    opacity:.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>\
+<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter>\
+<rect width='160' height='160' filter='url(%23n)'/></svg>");
+    background-size:160px 160px;
+  }
 
-  header {
-    display: flex; flex-direction: column; gap: 10px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid var(--brass);
-    margin-bottom: 28px;
-  }
-  .mark { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  h1 {
-    margin: 0;
-    font-size: clamp(30px, 9vw, 44px);
-    font-weight: 800; letter-spacing: -0.03em; line-height: 1;
-    text-transform: uppercase;
-  }
-  h1 .mazi { color: var(--brass); }
-  .tag {
-    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--dim); font-weight: 600;
-  }
-  .creed { font-size: 14px; color: var(--dim); max-width: 46ch; margin: 0; }
-  .creed b { color: var(--bone); font-weight: 600; }
+  .wrap { max-width:720px; margin:0 auto; padding:0 16px 70px; }
 
-  section { margin-bottom: 32px; }
-  .sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  h2 {
-    margin: 0; font-size: 12px; font-weight: 700;
-    letter-spacing: 0.18em; text-transform: uppercase; color: var(--bone);
+  /* ── portada ────────────────────────────────────────────────────────── */
+  header { padding:34px 0 26px; }
+  .marca { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+  .marca img { width:clamp(52px,15vw,74px); height:auto; flex-shrink:0;
+    filter:drop-shadow(0 0 22px #AC27FF55); }
+  .logotipo {
+    font-family:var(--mazi); font-weight:400;
+    font-size:clamp(31px,10.4vw,54px); line-height:.94;
+    letter-spacing:-.005em; margin:0; color:var(--hueso);
   }
-  .count { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .rule { flex: 1; height: 1px; background: var(--line); }
-
-  .list { display: flex; flex-direction: column; gap: 8px; }
-
-  a.card {
-    display: flex; align-items: center; gap: 13px;
-    padding: 14px 15px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--live);
-    border-radius: 3px;
-    text-decoration: none; color: inherit;
-    transition: background .15s ease, border-color .15s ease, transform .12s ease;
+  .logotipo .n2 { display:block; color:var(--violeta); }
+  .placa {
+    display:inline-block; font-family:var(--mazi); font-size:11.5px;
+    letter-spacing:.02em; color:var(--violeta); border:1px solid var(--violeta);
+    border-radius:2px; padding:4px 9px 3px; margin-bottom:14px;
   }
-  a.card:hover, a.card:focus-visible {
-    background: var(--surface-2);
-    border-left-color: var(--brass);
-    outline: none;
-    transform: translateX(2px);
+  .lema {
+    font-size:clamp(15px,4.3vw,18.5px); line-height:1.45; margin:0; max-width:32ch;
+    color:var(--tenue); text-wrap:balance;
   }
-  a.card:focus-visible { box-shadow: 0 0 0 2px var(--brass); }
-  /* .body, .name y .what son <span>: sin display:block el nombre y la descripción
-     corren en el MISMO renglón ("ExploradorTodo mi GitHub…"). Se veía en la
-     captura de teléfono; es el mismo defecto que traía el explorador. */
-  .card .body { flex: 1; min-width: 0; display: block; }
-  .card .name { display: block; font-weight: 650; font-size: 15.5px; letter-spacing: -0.01em; margin-bottom: 2px; }
-  .card .what { display: block; font-size: 12.5px; color: var(--dim); line-height: 1.35; }
-  .card .go { color: var(--dim); font-size: 18px; flex-shrink: 0; }
-  a.card:hover .go { color: var(--brass); }
+  .lema b { color:var(--hueso); font-weight:650; }
+  .linea-marca { height:2px; margin:24px 0 0;
+    background:linear-gradient(90deg, var(--violeta) 0%, var(--linea) 62%, transparent 100%); }
 
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live); flex-shrink: 0; }
-  .card.repo { border-left-color: var(--brass); }
-  .card.repo .dot { background: var(--brass); }
-
-  .note {
-    padding: 13px 15px;
-    background: var(--surface);
-    border: 1px dashed var(--line);
-    border-radius: 3px;
-    font-size: 12.5px; color: var(--dim); line-height: 1.55;
+  /* ── secciones ──────────────────────────────────────────────────────── */
+  section { margin-top:38px; }
+  .rotulo { display:flex; align-items:center; gap:11px; margin-bottom:13px; }
+  .rotulo h2 {
+    margin:0; font-family:var(--mazi); font-weight:400;
+    font-size:clamp(15px,4.4vw,18px); line-height:1;
+    color:var(--hueso); padding-top:2px;
   }
-  .note b { color: var(--bone); font-weight: 600; }
-  .note code {
-    font-family: ui-monospace, Consolas, monospace;
-    font-size: 11.5px; color: var(--brass);
-    background: var(--surface-2);
-    padding: 1px 5px; border-radius: 2px;
+  .rotulo .regla { flex:1; height:1px; background:var(--linea); }
+  /* Los contadores NO van en la tipografía Mazi. Es una fuente de segmentos: a
+     12 px el 5 se lee como S y el 1 como dos puntos. Un número que hay que
+     descifrar no es un número. Van en la sans, con cifras de ancho fijo. */
+  .rotulo .cuantos {
+    font-size:12px; color:var(--tenue); font-variant-numeric:tabular-nums;
+    font-weight:600; min-width:2ch; text-align:right; flex-shrink:0;
+  }
+  .punto { width:6px; height:6px; border-radius:50%; background:var(--violeta);
+    flex-shrink:0; box-shadow:0 0 9px #AC27FF88; }
+
+  .lista { display:flex; flex-direction:column; gap:7px; }
+
+  a.tarjeta {
+    display:flex; align-items:center; gap:13px;
+    padding:13px 14px; min-height:56px;
+    background:var(--superficie);
+    border:1px solid var(--linea); border-left:2px solid var(--linea);
+    border-radius:4px; text-decoration:none; color:inherit;
+    transition:background .16s ease, border-color .16s ease, transform .14s ease;
+  }
+  a.tarjeta:hover, a.tarjeta:focus-visible {
+    background:var(--superficie-2); border-left-color:var(--violeta);
+    transform:translateX(3px); outline:none;
+  }
+  a.tarjeta:focus-visible { box-shadow:0 0 0 2px var(--violeta); }
+  a.tarjeta:active { background:var(--superficie-2); }
+  /* En rejilla, las tarjetas de una fila deben medir lo mismo. */
+  .lista { align-items:stretch; }
+  .cuerpo { flex:1; min-width:0; display:block; }
+  .nombre {
+    display:block; font-size:15.5px; font-weight:650; letter-spacing:-.012em;
+    margin-bottom:2px; color:var(--hueso);
+  }
+  .nuevo {
+    font-family:var(--mazi); font-size:10px; color:var(--violeta);
+    border:1px solid var(--violeta); border-radius:2px;
+    padding:2px 5px 1px; margin-left:6px; vertical-align:1px; letter-spacing:0;
+  }
+  .que { display:block; font-size:12.5px; color:var(--tenue); line-height:1.42; }
+  .que code { font-family:ui-monospace,Consolas,monospace; font-size:11px;
+    color:var(--violeta-suave); }
+  .flecha { color:var(--linea); font-size:19px; flex-shrink:0; }
+  a.tarjeta:hover .flecha { color:var(--violeta); }
+
+  /* La pieza principal: la herramienta del día. Pesa más a propósito. */
+  a.tarjeta.principal {
+    padding:17px; min-height:72px; align-items:flex-start;
+    border-left-width:3px; border-left-color:var(--violeta);
+    background:linear-gradient(135deg, var(--superficie-2) 0%, var(--superficie) 62%);
+  }
+  a.tarjeta.principal .nombre { font-size:18px; margin-bottom:4px; }
+  a.tarjeta.principal .que { font-size:13px; }
+  a.tarjeta.principal .glifo {
+    font-family:var(--mazi); font-size:24px; color:var(--violeta);
+    line-height:1; flex-shrink:0; padding-top:2px;
+  }
+
+  .repo { border-left-color:#5A4470; }
+  .privado { font-size:10.5px; color:var(--tenue); font-weight:400;
+    text-transform:uppercase; letter-spacing:.08em; margin-left:5px; }
+
+  .nota {
+    padding:15px 16px; background:var(--superficie);
+    border:1px dashed var(--linea); border-radius:4px;
+    font-size:12.5px; color:var(--tenue); line-height:1.6;
+  }
+  .nota b { color:var(--hueso); font-weight:650; }
+  .nota code {
+    display:block; margin:10px 0; padding:10px 12px;
+    font-family:ui-monospace,Consolas,monospace; font-size:11.5px;
+    color:var(--violeta-suave); background:var(--vacio);
+    border:1px solid var(--linea); border-radius:3px;
+    overflow-x:auto; white-space:pre;
   }
 
   footer {
-    margin-top: 38px; padding-top: 16px;
-    border-top: 1px solid var(--line);
-    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--dim);
-    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin-top:44px; padding-top:18px; border-top:1px solid var(--linea);
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    font-family:var(--mazi); font-size:12px; color:var(--tenue);
   }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  footer .sep { flex:1; }
+  #tema {
+    min-width:44px; min-height:44px; padding:0 12px;
+    background:var(--superficie); color:var(--hueso);
+    border:1px solid var(--linea); border-radius:3px;
+    font-family:var(--mazi); font-size:13px; cursor:pointer;
+  }
+  #tema:active { background:var(--superficie-2); }
+
+  /* Entrada suave. Se apaga sola si el aparato pide menos movimiento. */
+  @media (prefers-reduced-motion: no-preference) {
+    header, section { animation:sube .5s cubic-bezier(.22,.8,.3,1) both; }
+    section:nth-of-type(1){animation-delay:.05s} section:nth-of-type(2){animation-delay:.1s}
+    section:nth-of-type(3){animation-delay:.14s} section:nth-of-type(4){animation-delay:.18s}
+    section:nth-of-type(5){animation-delay:.22s} section:nth-of-type(6){animation-delay:.26s}
+    section:nth-of-type(7){animation-delay:.3s}
+    @keyframes sube { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+  }
+  @media (prefers-reduced-motion: reduce) { *{transition:none!important;animation:none!important} }
+
+  /* ── LAYOUT DE ESCRITORIO · VA AL FINAL A PROPÓSITO ────────────────────
+     Este bloque estaba arriba y NO se aplicaba. Una media query no agrega
+     especificidad: `.lista{display:flex}` escrito más abajo le ganaba a
+     `.lista{display:grid}` de aquí, y en 1280 px seguía saliendo una sola
+     columna. Se veía en la captura y no en las pruebas, porque las pruebas
+     medían desbordes y tamaños, no cuántas columnas había. Si algo de aquí se
+     mueve arriba, se vuelve a apagar solo. */
+  @media (min-width:900px) {
+    .wrap { max-width:1080px; padding:0 32px 90px; }
+    .lista { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    /* La pieza principal y la nota cruzan las dos columnas: son una sola cosa. */
+    .lista > .principal { grid-column:1 / -1; }
+    header { padding:52px 0 34px; }
+    .marca { gap:20px; }
+    .lema { max-width:44ch; font-size:20px; }
+    section { margin-top:48px; }
+  }
+  @media (min-width:1400px) {
+    .wrap { max-width:1260px; }
+    .lista { grid-template-columns:1fr 1fr 1fr; }
+  }
+
+
 </style>
 
 <div class="wrap">
 
   <header>
-    <div class="mark">
-      <h1>Grupo <span class="mazi">Mazi</span></h1>
-      <span class="tag">Central</span>
+    <span class="placa">CENTRAL</span>
+    <div class="marca">
+      <img src="marca/logo/paloma.svg" alt="" width="74" height="44">
+      <h1 class="logotipo">GRUPO<span class="n2">MAZI</span></h1>
     </div>
-    <p class="creed">Si no existe la herramienta, <b>se construye la herramienta.</b></p>
+    <p class="lema">Si no existe la herramienta, <b>se construye la herramienta.</b></p>
+    <div class="linea-marca"></div>
   </header>
 
   <section>
-    <div class="sec-head">
-      <span class="dot" style="background: var(--brass)"></span>
-      <h2>Herramientas</h2>
-      <span class="rule"></span>
-      <span class="count">1</span>
+    <div class="rotulo">
+      <span class="punto"></span><h2>HERRAMIENTAS</h2>
+      <span class="regla"></span><span class="cuantos">1</span>
     </div>
-    <div class="list">
-      <a class="card repo" href="explorador/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Explorador <span style="color:var(--brass);font-size:11px">nuevo</span></span>
-          <span class="what">Todo mi GitHub desde el teléfono · abre los <code style="font-family:ui-monospace,monospace;font-size:11px">.md</code> con formato, las imágenes, el código · busca, fija favoritos · llega hasta <code style="font-family:ui-monospace,monospace;font-size:11px">.claude/</code>, que GitHub Pages no publica</span>
+    <div class="lista">
+      <a class="tarjeta principal" href="explorador/">
+        <span class="glifo">◈</span>
+        <span class="cuerpo">
+          <span class="nombre">Explorador <span class="nuevo">NUEVO</span></span>
+          <span class="que">Todo mi GitHub desde el teléfono. Abre los <code>.md</code> con formato,
+            las imágenes y el código; busca, fija favoritos y cambia de rama. Llega hasta
+            <code>.claude/</code>, que GitHub Pages nunca publica.</span>
         </span>
-        <span class="go">›</span>
-      </a>
-    </div>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <span class="dot"></span>
-      <h2>Juegos</h2>
-      <span class="rule"></span>
-      <span class="count">5</span>
-    </div>
-    <div class="list">
-      <a class="card" href="pacto-roto/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">El Pacto Roto <span style="color:var(--brass);font-size:11px">nuevo</span></span>
-          <span class="what">RPG de mundo abierto · la magia se dibuja · IA narra y juzga · oficios con mini-juegos · arte de museo · offline</span>
-        </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="https://ejercitopalomazi9111-arch.github.io/torre-infinita/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Torre Infinita</span>
-          <span class="what">Roguelike Pokémon · 9111 pisos · Phaser 3</span>
-        </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="kernel-lock.html">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">KERNEL://LOCK</span>
-          <span class="what">Escape room · eres una IA atrapada por Miyu · 4 finales</span>
-        </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="romero/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Hoja de Romero <span style="color:var(--brass);font-size:11px">v2</span></span>
-          <span class="what">Sandbox de cocina y campo · arte real · vecinos procedurales · sin datos</span>
-        </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="inkwell/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">INKWELL <span style="color:var(--brass);font-size:11px">v3</span></span>
-          <span class="what">Lector infinito · memoria de trama · voz · pintura real · sin datos</span>
-        </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
     </div>
   </section>
 
   <section>
-    <div class="sec-head">
-      <span class="dot"></span>
-      <h2>Plataformas</h2>
-      <span class="rule"></span>
-      <span class="count">1</span>
+    <div class="rotulo">
+      <span class="punto"></span><h2>JUEGOS</h2>
+      <span class="regla"></span><span class="cuantos">5</span>
     </div>
-    <div class="list">
-      <a class="card" href="ligas-mazi/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Ligas Mazi <span style="color:var(--brass);font-size:11px">nuevo</span></span>
-          <span class="what">Gestión de ligas de baloncesto · menús estilo videojuego · marcador cenital en vivo · cartas coleccionables · privacidad de menores · teléfono/tablet/PC</span>
+    <div class="lista">
+      <a class="tarjeta" href="pacto-roto/">
+        <span class="cuerpo">
+          <span class="nombre">El Pacto Roto <span class="nuevo">NUEVO</span></span>
+          <span class="que">RPG de mundo abierto · la magia se dibuja · IA narra y juzga · oficios con mini-juegos · arte de museo · offline</span>
         </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
-    </div>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <span class="dot"></span>
-      <h2>Emergencias</h2>
-      <span class="rule"></span>
-      <span class="count">2</span>
-    </div>
-    <div class="list">
-      <a class="card" href="vitallink/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">VitalLink</span>
-          <span class="what">Centro de comando · interfaz (el backend corre aparte)</span>
+      <a class="tarjeta" href="https://ejercitopalomazi9111-arch.github.io/torre-infinita/">
+        <span class="cuerpo">
+          <span class="nombre">Torre Infinita</span>
+          <span class="que">Roguelike · 9111 pisos · Phaser 3</span>
         </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
-      <a class="card" href="life-connect/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Life-Connect</span>
-          <span class="what">Reporte civil de emergencias · el par de VitalLink</span>
+      <a class="tarjeta" href="kernel-lock.html">
+        <span class="cuerpo">
+          <span class="nombre">KERNEL://LOCK</span>
+          <span class="que">Escape room · eres una IA atrapada por Miyu · 4 finales</span>
         </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta" href="romero/">
+        <span class="cuerpo">
+          <span class="nombre">Hoja de Romero <span class="nuevo">V2</span></span>
+          <span class="que">Sandbox de cocina y campo · arte real · vecinos procedurales · sin datos</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta" href="inkwell/">
+        <span class="cuerpo">
+          <span class="nombre">INKWELL <span class="nuevo">V3</span></span>
+          <span class="que">Lector infinito · memoria de trama · voz · pintura real · sin datos</span>
+        </span>
+        <span class="flecha">›</span>
       </a>
     </div>
   </section>
 
   <section>
-    <div class="sec-head">
-      <span class="dot"></span>
-      <h2>Rembrandt</h2>
-      <span class="rule"></span>
-      <span class="count">3</span>
+    <div class="rotulo">
+      <span class="punto"></span><h2>PLATAFORMAS</h2>
+      <span class="regla"></span><span class="cuantos">1</span>
     </div>
-    <div class="list">
-      <a class="card" href="https://guanajuato-trip.netlify.app/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Viaje a Guanajuato</span>
-          <span class="what">Crónica interactiva · video, audio, galería, i18n</span>
+    <div class="lista">
+      <a class="tarjeta" href="ligas-mazi/">
+        <span class="cuerpo">
+          <span class="nombre">Ligas Mazi</span>
+          <span class="que">Ligas de baloncesto · cuentas reales · marcador en vivo · cartas coleccionables · privacidad de menores</span>
         </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="evaluaciones/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Evaluaciones</span>
-          <span class="what">Versión offline · corre sin internet</span>
-        </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="manzanilla/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Manzanilla</span>
-          <span class="what">Sitio estático</span>
-        </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
     </div>
   </section>
 
   <section>
-    <div class="sec-head">
-      <span class="dot"></span>
-      <h2>Publicado en Netlify</h2>
-      <span class="rule"></span>
-      <span class="count">5</span>
+    <div class="rotulo">
+      <span class="punto"></span><h2>EMERGENCIAS</h2>
+      <span class="regla"></span><span class="cuantos">2</span>
     </div>
-    <div class="list">
-      <a class="card" href="https://inscripcion-geraldmed-curso.netlify.app/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Inscripción GeraldMed</span>
-          <span class="what">Registro del curso · 4 jul</span>
+    <div class="lista">
+      <a class="tarjeta" href="vitallink/">
+        <span class="cuerpo">
+          <span class="nombre">VitalLink</span>
+          <span class="que">Centro de comando · interfaz (el backend corre aparte)</span>
         </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
-      <a class="card" href="https://luz-del-conocimiento-louvre.netlify.app/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Luz del Conocimiento — Louvre</span>
-          <span class="what">Pirámide impresa en 3D · bitácora del proceso</span>
+      <a class="tarjeta" href="life-connect/">
+        <span class="cuerpo">
+          <span class="nombre">Life-Connect</span>
+          <span class="que">Reporte civil de emergencias · el par de VitalLink</span>
         </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="https://our-magical-trip.netlify.app/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Our Magical Trip</span>
-          <span class="what">Versión hermana del viaje · 2 jun</span>
-        </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="https://velvety-parfait-5345b5.netlify.app/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Velvety Parfait</span>
-          <span class="what">Iteración previa del viaje · 27 may</span>
-        </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card" href="https://venerable-bombolone-d2df4e.netlify.app/">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Venerable Bombolone</span>
-          <span class="what">Primer prototipo del viaje · 25 may</span>
-        </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
     </div>
   </section>
 
   <section>
-    <div class="sec-head">
-      <span class="dot" style="background: var(--brass)"></span>
-      <h2>Código y respaldo</h2>
-      <span class="rule"></span>
-      <span class="count">4</span>
+    <div class="rotulo">
+      <span class="punto"></span><h2>REMBRANDT</h2>
+      <span class="regla"></span><span class="cuantos">3</span>
     </div>
-    <div class="list">
-      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch/palomazi">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">palomazi <span style="color:var(--dim);font-weight:400">· privado</span></span>
-          <span class="what">El respaldo completo: proyectos, skills, memoria, bitácora, setup.ps1</span>
+    <div class="lista">
+      <a class="tarjeta" href="https://guanajuato-trip.netlify.app/">
+        <span class="cuerpo">
+          <span class="nombre">Viaje a Guanajuato</span>
+          <span class="que">Crónica interactiva · video, audio, galería, i18n</span>
         </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
-      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch/torre-infinita">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">torre-infinita</span>
-          <span class="what">La obra maestra · Phaser 3 + Vite</span>
+      <a class="tarjeta" href="evaluaciones/">
+        <span class="cuerpo">
+          <span class="nombre">Evaluaciones</span>
+          <span class="que">Versión offline · corre sin internet</span>
         </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
-      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch/VitalLink">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">VitalLink</span>
-          <span class="what">Centro de comando · Node + backend</span>
+      <a class="tarjeta" href="manzanilla/">
+        <span class="cuerpo">
+          <span class="nombre">Manzanilla</span>
+          <span class="que">Sitio estático</span>
         </span>
-        <span class="go">›</span>
-      </a>
-      <a class="card repo" href="https://github.com/ejercitopalomazi9111-arch?tab=repositories">
-        <span class="dot"></span>
-        <span class="body">
-          <span class="name">Todos mis repos</span>
-          <span class="what">El perfil completo en GitHub</span>
-        </span>
-        <span class="go">›</span>
+        <span class="flecha">›</span>
       </a>
     </div>
   </section>
 
   <section>
-    <div class="note">
-      <b>¿PC nueva?</b> Dile a Claude Code:<br><br>
-      <code>Clona github.com/ejercitopalomazi9111-arch/palomazi y corre setup.ps1</code><br><br>
-      De ahí salen las skills, la memoria, el CLAUDE.md y todos los proyectos.
+    <div class="rotulo">
+      <span class="punto"></span><h2>PUBLICADO EN NETLIFY</h2>
+      <span class="regla"></span><span class="cuantos">5</span>
+    </div>
+    <div class="lista">
+      <a class="tarjeta" href="https://inscripcion-geraldmed-curso.netlify.app/">
+        <span class="cuerpo">
+          <span class="nombre">Inscripción GeraldMed</span>
+          <span class="que">Registro del curso · 4 jul</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta" href="https://luz-del-conocimiento-louvre.netlify.app/">
+        <span class="cuerpo">
+          <span class="nombre">Luz del Conocimiento — Louvre</span>
+          <span class="que">Pirámide impresa en 3D · bitácora del proceso</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta" href="https://our-magical-trip.netlify.app/">
+        <span class="cuerpo">
+          <span class="nombre">Our Magical Trip</span>
+          <span class="que">Versión hermana del viaje · 2 jun</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta" href="https://velvety-parfait-5345b5.netlify.app/">
+        <span class="cuerpo">
+          <span class="nombre">Velvety Parfait</span>
+          <span class="que">Iteración previa del viaje · 27 may</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta" href="https://venerable-bombolone-d2df4e.netlify.app/">
+        <span class="cuerpo">
+          <span class="nombre">Venerable Bombolone</span>
+          <span class="que">Primer prototipo del viaje · 25 may</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="rotulo">
+      <span class="punto"></span><h2>CÓDIGO Y RESPALDO</h2>
+      <span class="regla"></span><span class="cuantos">4</span>
+    </div>
+    <div class="lista">
+      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch/palomazi">
+        <span class="cuerpo">
+          <span class="nombre">palomazi <span class="privado">privado</span></span>
+          <span class="que">El respaldo completo: proyectos, skills, memoria, bitácora, setup.ps1</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch/torre-infinita">
+        <span class="cuerpo">
+          <span class="nombre">torre-infinita</span>
+          <span class="que">Phaser 3 + Vite</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch/VitalLink">
+        <span class="cuerpo">
+          <span class="nombre">VitalLink</span>
+          <span class="que">Centro de comando · Node + backend</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch?tab=repositories">
+        <span class="cuerpo">
+          <span class="nombre">Todos mis repos</span>
+          <span class="que">El perfil completo en GitHub</span>
+        </span>
+        <span class="flecha">›</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="nota">
+      <b>¿PC nueva?</b> Dile a Claude Code:
+      <code>Clona github.com/ejercitopalomazi9111-arch/palomazi y corre setup.ps1</code>
+      De ahí salen las skills, la memoria, el <b>CLAUDE.md</b> y todos los proyectos.
     </div>
   </section>
 
   <footer>
-    <span>Grupo Mazi</span>
-    <span>10 jul 2026</span>
+    <span>GRUPO MAZI</span>
+    <span class="sep"></span>
+    <span>30 JUL 2026</span>
+    <button id="tema" title="Claro u oscuro">◐</button>
   </footer>
 
 </div>
+
+<script>
+  // Claro/oscuro. Parte del tema que se está VIENDO, no de "nada": si arranca en
+  // null, el primer toque no cambiaría nada visible en un teléfono en oscuro.
+  const raiz = document.documentElement;
+  const guardado = localStorage.getItem('mazi.central.tema');
+  if (guardado) raiz.setAttribute('data-tema', guardado);
+  document.getElementById('tema').onclick = () => {
+    const puesto = raiz.getAttribute('data-tema');
+    const ahora = puesto
+      || (matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro');
+    const sig = ahora === 'oscuro' ? 'claro' : 'oscuro';
+    raiz.setAttribute('data-tema', sig);
+    localStorage.setItem('mazi.central.tema', sig);
+  };
+</script>
