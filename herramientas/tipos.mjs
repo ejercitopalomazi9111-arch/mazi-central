@@ -87,9 +87,14 @@ function nodos(cadena, an) {
 // todos, que es lo que hace que definir una letra sea poner puntos y ya.
 function suavizar(p, porTramo = 14, cerrado = false) {
   if (p.length === 2) {
-    return Array.from({ length: porTramo + 1 }, (_, i) => [
-      p[0][0] + (p[1][0] - p[0][0]) * (i / porTramo),
-      p[0][1] + (p[1][1] - p[0][1]) * (i / porTramo),
+    // También aquí el muestreo va con el largo. Con un número fijo, un corte
+    // declarado caía en una rejilla gruesa y se comía más trazo del pedido — que
+    // fue lo que dejó a la "a" sin asta.
+    const pasos = Math.max(porTramo,
+      Math.min(40, Math.round(Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]) * 130)));
+    return Array.from({ length: pasos + 1 }, (_, i) => [
+      p[0][0] + (p[1][0] - p[0][0]) * (i / pasos),
+      p[0][1] + (p[1][1] - p[0][1]) * (i / pasos),
     ]);
   }
   const n = p.length;
@@ -1164,31 +1169,38 @@ const ALFABETOS = {
          arrancaba a la altura de x, así que todo el lado derecho de la letra era
          una recta larga de arriba abajo — que es exactamente el asta de la q.
          Ahora el cuenco es un anillo CERRADO y la cola nace del PIE del cuenco.
-         Eso es lo único que de verdad las separa. */
+         Eso es lo único que de verdad las separa.
 
-      a: { an: 0.68, t: ['e2 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'], nudos: ['e2.9', 'e5.1'] },
-      b: { an: 0.70, t: ['a0 a6', 'a2.9 b2 d2 e3 e5 d6 b6 a5.1'], nudos: ['a2.9', 'a5.1'] },
+         Y el nudo que NO va. En modo segmentos cada nudo se vuelve corte, así que
+         un nudo puesto SOBRE un asta la parte — y a la altura de x el trozo del
+         medio queda tan corto que el chaflán se lo come y sale un rombo. La "a" se
+         quedaba sin asta y se leía "c". Sólo llevan nudo las uniones punta con
+         punta, donde de verdad se topan dos trazos; sobre un asta el nudo nunca
+         hizo falta, porque el asta ya tapaba el encuentro. */
+
+      a: { an: 0.68, t: ['e2 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'] },
+      b: { an: 0.70, t: ['a0 a6', 'a2.9 b2 d2 e3 e5 d6 b6 a5.1'] },
       c: { an: 0.62, t: ['e2.7 d2 b2 a3 a5 b6 d6 e5.3'] },
-      d: { an: 0.70, t: ['e0 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'], nudos: ['e2.9', 'e5.1'] },
+      d: { an: 0.70, t: ['e0 e6', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'] },
       e: { an: 0.64, t: ['a4.05 e4.05 e3 d2 b2 a3 a5 b6 d6 e5.3'] },
-      f: { an: 0.46, t: ['e0.2 d0 c1 c6', 'a2.2 e2.2'], nudos: ['c2.2'] },
+      f: { an: 0.46, t: ['e0.2 d0 c1 c6', 'a2.2 e2.2'] },
       g: { an: 0.70, t: ['b2 d2 e3 e5 d6 b6 a5 a3 b2', 'd6.1 e6.7 e7.3 d8 b8 a7.3'] },
       h: { an: 0.70, t: ['a0 a6', 'a2.9 a2.2 c2 e2.2 e2.9', 'e2.9 e6'],
-        nudos: ['a2.9', 'e2.9'] },
+        nudos: ['e2.9'] },
       i: { an: 0.24, t: ['c2 c6', 'c0.8 c0.8'] },
       j: { an: 0.34, t: ['c2 c6.9 b8 a7.3', 'c0.8 c0.8'] },
-      k: { an: 0.64, t: ['a0 a6', 'e2 a4.1', 'a4.1 e6'], nudos: ['a4.1'] },
+      k: { an: 0.64, t: ['a0 a6', 'e2 a4.1', 'a4.1 e6'] },
       l: { an: 0.24, t: ['c0 c6'] },
       m: { an: 1.04, t: ['a2 a6', 'a2.9 a2.2 b2 c2.2 c2.9', 'c2.9 c6',
-        'c2.9 c2.2 d2 e2.2 e2.9', 'e2.9 e6'], nudos: ['a2.9', 'c2.9', 'e2.9'] },
+        'c2.9 c2.2 d2 e2.2 e2.9', 'e2.9 e6'], nudos: ['c2.9', 'e2.9'] },
       n: { an: 0.70, t: ['a2 a6', 'a2.9 a2.2 c2 e2.2 e2.9', 'e2.9 e6'],
-        nudos: ['a2.9', 'e2.9'] },
+        nudos: ['e2.9'] },
       o: { an: 0.70, t: ['b2 d2 e3 e5 d6 b6 a5 a3 b2'] },
-      p: { an: 0.70, t: ['a2 a8', 'a2.9 b2 d2 e3 e5 d6 b6 a5.1'], nudos: ['a2.9', 'a5.1'] },
-      q: { an: 0.70, t: ['e2 e8', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'], nudos: ['e2.9', 'e5.1'] },
-      r: { an: 0.42, t: ['a2 a6', 'a2.9 a2.2 c2 e2.3'], nudos: ['a2.9'] },
+      p: { an: 0.70, t: ['a2 a8', 'a2.9 b2 d2 e3 e5 d6 b6 a5.1'] },
+      q: { an: 0.70, t: ['e2 e8', 'e2.9 d2 b2 a3 a5 b6 d6 e5.1'] },
+      r: { an: 0.42, t: ['a2 a6', 'a2.9 a2.2 c2 e2.3'] },
       s: { an: 0.60, t: ['e2.7 d2 b2 a2.8 b3.6 d4.4 e5.2 d6 b6 a5.3'] },
-      t: { an: 0.48, t: ['c0.8 c5.2 d6', 'a2.2 e2.2'], nudos: ['c2.2'] },
+      t: { an: 0.48, t: ['c0.8 c5.2 d6', 'a2.2 e2.2'] },
       u: { an: 0.70, t: ['a2 a4.9 b6 d6 e4.9 e2', 'e2 e6'] },
       // La v y la w llevan la punta plana de la M, para que la familia se note.
       v: { an: 0.64, t: ['a2 b5.7 c6 d5.7 e2'] },
@@ -1303,7 +1315,9 @@ function contorno(pts, op) {
     }
     const total = L.at(-1) || 1;
     const u = pts.length - 1;
-    const tope = total * 0.4;   // nunca comerse más del 40% del trazo
+    // Nunca más del 28% de cada punta: al 40%, un trozo corto se quedaba sin nada
+    // de plano y salía convertido en rombo.
+    const tope = total * 0.28;
     const dist = i => Math.min(tope, corte === 'ochavo'
       ? h[i] * Math.min(ochavo, 0.9)
       : h[i] * Math.tan(sesgo * Math.PI / 180));

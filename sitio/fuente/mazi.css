@@ -1,0 +1,16 @@
+/* Mazi — la tipografía de la casa.
+   Generada por herramientas/fuente.mjs desde el alfabeto de tipos.mjs.
+   No se edita a mano: se regenera. */
+
+@font-face {
+  font-family: "Mazi";
+  src: url("mazi.woff2") format("woff2"),
+       url("mazi.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* El tracking ya viene metido en el avance de cada glifo, así que no hace falta
+   letter-spacing. Para titulares grandes, apretar un poco cae bien. */
+:root { --mazi: "Mazi", system-ui, sans-serif; }

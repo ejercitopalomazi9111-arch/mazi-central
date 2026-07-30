@@ -237,6 +237,9 @@ sin skill que la cubra, ahí sí se propone.
 |---|---|---|
 | `herramientas/captura.mjs` | **Los ojos.** Abre una URL y saca la foto | ✅ probada |
 | `herramientas/navegador.mjs` | **Las manos.** Clic, escribe, recorre flujos, barre tamaños y detecta desbordes | ✅ probada |
+| `herramientas/tipos.mjs` | **La fábrica de tipografías.** Esqueleto × pincel × remate, 107 caracteres | ✅ probada |
+| `herramientas/fuente.mjs` | **La fundidora.** Un alfabeto → `.ttf` + `.woff2` + `@font-face` | ✅ probada |
+| `herramientas/vectorizar.mjs` | PNG → SVG con paleta medida y sin trazos basura | ✅ probada |
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | auto-guardado | Commit automático de trabajo en curso | pendiente |
