@@ -163,6 +163,7 @@
      En teléfono el círculo sigue al dedo, y si nadie toca, se pasea solo. */
   function rayosX(caja) {
     const capa = caja.querySelector('[data-rx-abajo]');
+    const arriba = caja.querySelector('h2');
     if (!capa) return;
     let vivo = true;
     const pinta = (forzado) => {
@@ -177,11 +178,27 @@
         // — la máscara simplemente nunca aparecía. Se calcula en píxeles a
         // partir del ancho de la caja, que además la deja del mismo tamaño
         // relativo en teléfono y en escritorio.
-        const rad = Math.round(Math.min(r.width, 520) * (P.activo ? 0.34 : 0.27));
-        const m = `radial-gradient(circle ${rad}px at ${x.toFixed(1)}% ${y.toFixed(1)}%,
-                   #000 0%, #000 55%, transparent 78%)`;
-        capa.style.webkitMaskImage = m;
-        capa.style.maskImage = m;
+        // Círculo más chico: con 34% del ancho la ventana tapaba casi todo el
+        // titular y las dos capas se leían encimadas. Un rayos X que destapa
+        // media pantalla no es rayos X, es un cambio de texto.
+        const rad = Math.round(Math.min(r.width, 520) * (P.activo ? 0.22 : 0.17));
+        /* UN RAYOS X SUSTITUYE, NO SUPERPONE.
+           La primera versión encimaba dos frases distintas y se leía como
+           basura: las letras de abajo caían entre las de arriba. Carlos lo
+           fotografió y tenía toda la razón.
+           El arreglo es que las dos máscaras sean COMPLEMENTARIAS: dentro del
+           círculo se ve sólo la capa de abajo, y el titular se recorta ahí
+           mismo. Fuera del círculo, al revés. Nunca las dos a la vez. */
+        const dentro = `radial-gradient(circle ${rad}px at ${x.toFixed(1)}% ${y.toFixed(1)}%,
+                   #000 0%, #000 58%, transparent 76%)`;
+        const fuera  = `radial-gradient(circle ${rad}px at ${x.toFixed(1)}% ${y.toFixed(1)}%,
+                   transparent 0%, transparent 58%, #000 76%)`;
+        capa.style.webkitMaskImage = dentro;
+        capa.style.maskImage = dentro;
+        // El titular ya NO se recorta: como el clon dice lo mismo, el contorno
+        // encaja letra por letra y se lee como un plano encima del texto, no
+        // como dos frases peleando. Recortarlo dejaba huecos en la palabra.
+        void fuera; void arriba;
       }
       requestAnimationFrame(pinta);
     };
