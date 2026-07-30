@@ -412,8 +412,16 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
 ## 10. Prioridades
 
 ### 🔴 Esta semana — **Grupo Mazi, la empresa**
-La página · marketing · redes. **Arrancar por el laboratorio de animación** (§7-bis): es lo
-único del sitio que no depende del video, ni del logo bueno, ni del dominio.
+La página. **El plan está en [`sitio/PLAN.md`](sitio/PLAN.md)** y el acta del consejo que lo
+decidió en `.claude/veredictos/2026-07-30-el-sitio.md`. Reemplaza la lista de secciones de §7.
+
+**Se arranca por el Bloque 1** —armazón + portada completa + contacto—, no por el laboratorio de
+animación como decía antes: ahora existen el logo vectorizado y la tipografía de la casa, así que
+lo que no depende de nada es la portada, y en cuanto está publicada el agujero #1 queda cerrado.
+El taller (la fábrica de tipografías en vivo) es la sección 3 y va **después** del argumento.
+
+**Lo que falta de Carlos para el sitio: las frases.** Cinco primero (§7 · la prueba de las cinco
+frases), ocho después.
 
 ### 🟡 La semana que entra — **Ligas Mazi**
 Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
