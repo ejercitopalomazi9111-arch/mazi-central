@@ -94,6 +94,27 @@ la vista en el código.
   violación directa de LA REGLA §2 sin el matiz que la perdona — porque el matiz aplica cuando
   construir cuesta más que la chamba, y aquí cuesta menos.
 
+### 6. Revisar la skill `UIUX Pro Max` antes de instalarla
+
+- **Falta:** decidir si entra al catálogo. La trajo Carlos el 30 de julio en una guía junto con
+  Framer Motion y 21st.dev.
+- **Hoy se resuelve con:** `frontend-design`, que ya cubre criterio visual.
+- **Por qué no se instaló de una:** una skill de fuera **corre con nuestros permisos y hereda
+  nuestro contexto** (`CATALOGO.md` lo dice con todas sus letras). Se lee completa antes.
+- **Cada cuánto duele:** poco. Ya hay criterio de diseño en la casa.
+- **Veredicto:** **leerla cuando toque el Bloque 2**, no antes.
+
+### 7. El stack de React para el Panel Mazi (Fase 2)
+
+- **Falta:** decidir librería de componentes y de animación para el panel interno.
+- **Hoy se resuelve con:** nada, la Fase 2 no ha empezado.
+- **Lo que ya sabemos, y viene de las referencias del 30 de julio**
+  ([`sitio/REFERENCIAS.md`](../sitio/REFERENCIAS.md)): **Framer Motion + 21st.dev NO van en el sitio
+  público** —pesan 300 KB antes de la primera letra— **pero sí encajan en el Panel Mazi**, que es una
+  app interna que se usa sentado y donde el peso no manda.
+- **Veredicto:** **queda decidido de antemano.** Cuando arranque la Fase 2, ese stack se evalúa
+  primero en vez de empezar de cero.
+
 ---
 
 ## Movidas de aquí (histórico)
