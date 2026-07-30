@@ -152,6 +152,35 @@
   .reloj-pie { font-size:11px; color:var(--apagado); letter-spacing:.14em;
     text-transform:uppercase; margin-top:5px; }
 
+  /* ── LOS EFECTOS ────────────────────────────────────────────────────
+     Reconstruidos a mano desde las referencias que trajo Carlos. Cada uno
+     degrada solo: si el JS no llega, se ve la capa de abajo y ya. */
+
+  /* Fondo neural: puntos que se unen. Detrás de todo, sin estorbar al dedo. */
+  #neural { position:fixed; inset:0; z-index:-1; pointer-events:none;
+    width:100%; height:100%; }
+
+  /* La paloma con el shader de líquido encima. El <img> queda debajo: si no
+     hay WebGL, se ve la paloma normal y nadie se entera. */
+  .ave-caja { position:relative; width:clamp(58px,17vw,104px); }
+  .ave-caja canvas { position:absolute; inset:0; width:100%; height:100%;
+    opacity:0; transition:opacity .5s ease; pointer-events:none; }
+  .ave-caja canvas.listo { opacity:1; }
+  .ave-caja canvas.listo + .ave { opacity:0; }
+  .ave-caja .ave { transition:opacity .4s ease; }
+
+  /* Rayos X: la capa de abajo se destapa donde está el dedo. */
+  .rx { position:relative; }
+  .rx-abajo { position:absolute; inset:0; display:flex; align-items:center;
+    padding:inherit; pointer-events:none;
+    color:var(--violeta); font-family:var(--mazi);
+    font-size:clamp(22px,6vw,38px); line-height:1.18; }
+
+  /* Eco del texto: tres copias detrás que se separan al acercarse el dedo. */
+  [data-eco] { position:relative; display:inline-block; }
+  .eco-capa { position:absolute; inset:0; color:var(--violeta);
+    pointer-events:none; z-index:-1; white-space:nowrap; }
+
   /* ── secciones ──────────────────────────────────────────────────────── */
   section { padding:clamp(46px,9vh,86px) 0; border-top:1px solid var(--linea); }
   .rot { font-family:var(--mazi); font-size:clamp(13px,3.6vw,16px); line-height:1;
@@ -253,11 +282,16 @@
   </div>
 </header>
 
+<canvas id="neural" data-neural aria-hidden="true"></canvas>
+
 <main id="arriba">
 
   <!-- 1 · EL DISPLAY -->
   <div class="display" id="display">
-    <img class="ave" src="../marca/logo/paloma.svg" alt="Grupo Mazi" width="104" height="61">
+    <div class="ave-caja">
+      <canvas data-liquido="../marca/logo/paloma.svg" aria-hidden="true"></canvas>
+      <img class="ave" src="../marca/logo/paloma.svg" alt="Grupo Mazi" width="104" height="61">
+    </div>
 
     <h1 class="logotipo">GRUPO<span class="l2">MAZI</span></h1>
 
@@ -284,7 +318,12 @@
   <!-- 5 · CÓMO TRABAJAMOS -->
   <section id="trabajamos" class="revela">
     <p class="rot">CÓMO TRABAJAMOS</p>
-    <h2>No nos contratas: nos integras.</h2>
+    <div class="rx" data-rayos-x>
+      <h2>No nos contratas: nos integras.</h2>
+      <div class="rx-abajo" data-rx-abajo aria-hidden="true">
+        Nos metemos a tu operación.
+      </div>
+    </div>
     <p class="texto">
       Construimos la base, y nos quedamos a cuidar lo que se levanta sobre ella —
       <b>la entrega es donde empieza nuestro trabajo.</b>
@@ -299,7 +338,7 @@
   <section id="contacto" class="revela">
     <div class="dos">
       <div>
-        <p class="rot">CONTACTO</p>
+        <p class="rot"><span data-eco>CONTACTO</span></p>
         <h2>Cuéntanos qué se está rompiendo.</h2>
         <p class="texto">
           No hace falta que traigas un proyecto armado ni un presupuesto.
@@ -386,3 +425,4 @@
   }
 })();
 </script>
+<script src="efectos.js" defer></script>
