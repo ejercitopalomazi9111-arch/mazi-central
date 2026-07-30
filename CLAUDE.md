@@ -266,6 +266,7 @@ sin skill que la cubra, ahí sí se propone.
 | `herramientas/fuente.mjs` | **La fundidora.** Un alfabeto → `.ttf` + `.woff2` + `@font-face` | ✅ probada |
 | `marca/render.mjs` | **La mesa de fotografía.** Logo + logotipo sobre fondos de estudio, y los archivos de uso diario | ✅ probada |
 | `herramientas/vectorizar.mjs` | PNG → SVG con paleta medida y sin trazos basura | ✅ probada |
+| `herramientas/pruebas-tipos-navegador.mjs` | **El hueso de Rocco.** Comprueba que `tipos.mjs` carga en el navegador. Corre antes de tocar el taller | ✅ pasa |
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
@@ -504,6 +505,15 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
 ## 11. Bitácora
 
 ### Hecho
+- **Primera auditoría de la casa** (`consejo-tecnico`, mesa completa de 24) sobre el plan del sitio.
+  Veredicto ARREGLAR PRIMERO. **El hallazgo grande: `tipos.mjs` NO corría en el navegador** —
+  importaba `node:fs` arriba y leía `process.argv` al cargar—, y el plan afirmaba que sí como
+  argumento número uno de por qué el sitio no se puede copiar. Arreglado el mismo día y con prueba de
+  regresión. Acta: [`.claude/auditorias/2026-07-30-plan-del-sitio.md`](.claude/auditorias/2026-07-30-plan-del-sitio.md).
+- **El taller es un instrumento con módulos**, alcance congelado en **dos** herramientas para la v1:
+  el cronómetro de tiempos y movimientos primero, "tu nombre en Mazi" después. Cada herramienta
+  prueba un servicio o no va. Veredicto:
+  [`.claude/veredictos/2026-07-30-el-taller-de-herramientas.md`](.claude/veredictos/2026-07-30-el-taller-de-herramientas.md).
 - **Regla nueva:** todo lo que la empresa use, lo construimos nosotros (§2).
 - **Correcciones de Carlos a mis reglas:** el arte generado sí va cuando él lo pide; React está
   bien; el HTML autónomo es recomendación, no ley.
