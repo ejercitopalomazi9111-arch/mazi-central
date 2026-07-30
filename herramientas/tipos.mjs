@@ -10,11 +10,11 @@
  *   node herramientas/tipos.mjs catalogo salida.html                  → alfabetos × pinceles
  *   node herramientas/tipos.mjs texto "GRUPO MAZI" salida.svg
  *
- * ── LAS DOS PARTES QUE HAY QUE SEPARAR ────────────────────────────────────
+ * ── LAS PARTES QUE HAY QUE SEPARAR ────────────────────────────────────────
  *
  * Un error fácil —y el que hubo que corregir aquí— es creer que cambiando el
  * pincel salen tipografías distintas. No: salen versiones de la MISMA letra. Una
- * tipografía es dos cosas independientes:
+ * tipografía son partes independientes:
  *
  *   1 · EL ESQUELETO — la estructura de la letra. Si la O es un círculo o un
  *       hexágono, si la M tiene el vértice a la mitad o hasta abajo, si la A
@@ -22,9 +22,14 @@
  *       vean distintas de verdad.
  *   2 · EL PINCEL — cómo se engorda ese esqueleto. Grosor uniforme, contraste de
  *       plumilla, presión de pincel real, punta de cuña. Es el acabado.
+ *   3 · EL REMATE — lo que se le pega a la punta. Un perfil de grosor no puede
+ *       hacer un rombo, y el rombo ES la gótica. Van aparte: diamante, bola,
+ *       escuadra, cuña, bigote.
+ *   4 · EL RELLENO — macizo o hueco. El hueco es la letra de jaula japonesa.
+ *   5 · LAS CERDAS — el trazo abierto en líneas paralelas, para el higemoji.
  *
- * Esqueleto × pincel = la matriz de posibilidades. Cambiar sólo el pincel es
- * cambiar el acabado de la misma letra.
+ * Esqueleto × pincel × remate = la matriz de posibilidades. Cambiar sólo el
+ * pincel es cambiar el acabado de la misma letra.
  *
  * ── LA REJILLA ────────────────────────────────────────────────────────────
  *
@@ -36,8 +41,12 @@
  *   filas      0=alto de mayúscula … 6=línea de base
  *              2=altura de la x    7,8=descendente    −1,−2=acentos
  *
+ *   columnas   a=0  k=.125  b=.25  l=.375  c=.5  m=.625  d=.75  n=.875  e=1
+ *
  *   "a0 a6"              → recta de arriba-izquierda a abajo-izquierda
  *   "c0 e2 e4 c6 a4 a2 c0"  → tres o más nodos = curva suave que pasa por todos
+ *   "!a0 c3 e0"          → el "!" quita el suavizado: la esquina queda esquina
+ *   "d2.6"               → las filas aceptan decimal
  *   un trazo que acaba donde empieza se cierra solo
  *
  * ── BITMAP Y VECTOR ───────────────────────────────────────────────────────
@@ -55,14 +64,19 @@ const r2 = n => Math.round(n * 100) / 100;
 
 /* ═══ LA REJILLA ═══════════════════════════════════════════════════════════ */
 
-const COL = { a: 0, b: 0.25, c: 0.5, d: 0.75, e: 1 };
+// Cinco columnas no alcanzaban para la letra gótica ni para las escaleras del
+// sello, así que hay nueve: las de en medio son k l m n.
+const COL = {
+  a: 0, k: 0.125, b: 0.25, l: 0.375, c: 0.5, m: 0.625, d: 0.75, n: 0.875, e: 1,
+};
 const FILA = f => f / 6;   // 0 = alto de mayúscula, 6 = línea de base
 
-// "c0 e2 e4 c6" → [[0.5,0], [1,0.33], …]
+// "c0 e2 e4 c6" → [[0.5,0], [1,0.33], …]. Las filas aceptan decimal ("d2.6")
+// porque un remate de diamante no cae nunca en una fila entera.
 function nodos(cadena, an) {
   return cadena.trim().split(/\s+/).map(tok => {
-    const m = /^([a-e])(-?\d)$/.exec(tok);
-    if (!m) throw new Error(`nodo inválido: "${tok}"`);
+    const m = /^([a-z])(-?\d+(?:\.\d+)?)$/.exec(tok);
+    if (!m || COL[m[1]] === undefined) throw new Error(`nodo inválido: "${tok}"`);
     return [COL[m[1]] * an, FILA(Number(m[2]))];
   });
 }
@@ -98,6 +112,26 @@ function suavizar(p, porTramo = 14, cerrado = false) {
   return salida;
 }
 
+// El trazo QUEBRADO. Un trazo que empieza con "!" no se suaviza: los nodos se
+// unen con recta y la esquina queda esquina. Es lo que hace posible la gótica —
+// en la Textura del siglo XIII la curva desaparece y sólo quedan cambios de
+// dirección abruptos— y las escaleras del sello, que sustituyen la diagonal.
+function tieso(p, porTramo = 8, cerrado = false) {
+  const q = cerrado ? [...p, p[0]] : p;
+  const salida = [];
+  for (let i = 0; i < q.length - 1; i++) {
+    for (let j = 0; j < porTramo; j++) {
+      const t = j / porTramo;
+      salida.push([
+        q[i][0] + (q[i + 1][0] - q[i][0]) * t,
+        q[i][1] + (q[i + 1][1] - q[i][1]) * t,
+      ]);
+    }
+  }
+  salida.push(q.at(-1));
+  return salida;
+}
+
 /* ═══ LOS PINCELES ═════════════════════════════════════════════════════════ */
 //
 // Un pincel es una función (t, θ) → factor de grosor, con t la posición a lo
@@ -112,6 +146,11 @@ const PINCELES = {
   plumilla: {
     nota: 'Plumilla ancha: grueso perpendicular al filo, fino a lo largo de él. '
         + 'De aquí sale el contraste de la tipografía clásica, por física.',
+    // `filo` es el ángulo del FILO de la plumilla, en el sistema del SVG (y hacia
+    // abajo). El trazo más fino sale cuando se va en la dirección del filo. Filo
+    // −40° es el ángulo de pluma de la Textura gótica: astas casi al máximo,
+    // diagonales convertidas en pelo. Filo 90 es la plumilla vertical, o sea
+    // contraste INVERTIDO: horizontales gordas y astas finas.
     f: (t, th, { filo = 90, contraste = 0.28 }) =>
       contraste + (1 - contraste) * Math.abs(Math.sin(th - filo * Math.PI / 180)),
   },
@@ -143,6 +182,106 @@ const PINCELES = {
         + 'geometría perfecta.',
     f: (t, th, op, semilla = 0) =>
       0.72 + 0.28 * (Math.sin(t * 23 + semilla * 7) * 0.5 + Math.sin(t * 41 + semilla * 3) * 0.5),
+  },
+
+  // ── Los tres finales del pincel japonés ─────────────────────────────────
+  // En caligrafía hay tres maneras de terminar un trazo y son nombres propios,
+  // no matices: tome (止め) para, hane (跳ね) rebota, harai (払い) barre.
+
+  harai: {
+    nota: 'Harai 払い — barrido: el pincel se sostiene y luego se levanta poco a '
+        + 'poco hasta que el trazo se va en un pelo. El final más largo de los tres.',
+    f: t => (t < 0.46 ? 1 : Math.max(0.04, ((1 - t) / 0.54) ** 0.85)),
+  },
+  hane: {
+    nota: 'Hane 跳ね — rebote: el trazo se sostiene grueso y en el último tramo el '
+        + 'pincel se levanta de golpe. Corte seco, no desvanecido.',
+    f: t => (t < 0.84 ? 0.92 + 0.08 * Math.sin(Math.PI * t) : Math.max(0.06, (1 - t) / 0.16 * 0.9)),
+  },
+  tome: {
+    nota: 'Tome 止め — parada: entra con presión, adelgaza al centro y vuelve a '
+        + 'apoyarse al detenerse. Los extremos pesan más que el cuerpo.',
+    f: t => 0.70 + 0.30 * Math.cos(2 * Math.PI * t) * 0.5 + 0.15,
+  },
+  higemoji: {
+    nota: 'Higemoji 髭文字 — letra de bigote: el perfil que pide el reparto 7-5-3 '
+        + 'de las cerdas. Vientre ancho y extremos delgados, para que al abrirse en '
+        + 'cerdas queden siete en el cuerpo, cinco al angostarse y tres al acabar.',
+    f: t => 0.34 + 0.66 * Math.sin(Math.PI * t) ** 0.55,
+  },
+  sumi: {
+    nota: 'Sumi 墨 — la tinta que se acaba: entra cargado y se va rayando y '
+        + 'adelgazando. Tiembla y se desvanece a la vez.',
+    f: (t, th, op, semilla = 0) =>
+      Math.max(0.08, (1 - 0.62 * t ** 1.2)
+        * (0.86 + 0.14 * Math.sin(t * 37 + semilla * 5))),
+  },
+};
+
+/* ═══ LOS REMATES ══════════════════════════════════════════════════════════ */
+//
+// Un pincel no puede hacer un remate. El perfil de grosor sólo engorda o
+// adelgaza el trazo a lo largo — no le puede pegar un rombo en la punta. Y el
+// rombo ES la gótica: "quadrata" viene justo de esos remates en diamante arriba
+// y abajo de cada asta, y el nombre "textura" viene de *texere*, tejer, por la
+// trama que forman las astas parejas con sus diamantes.
+//
+// Así que los remates son un mecanismo aparte: piezas que se pegan en los
+// extremos LIBRES de cada trazo (nunca en una unión), orientadas con el ángulo
+// del trazo y con el filo de la plumilla.
+
+const REMATES = {
+  ninguno: () => [],
+
+  diamante: (x, y, th, g, filo) => {
+    // La huella de la plumilla apoyada: un rombo cuyo eje largo va sobre el filo.
+    const f = filo * Math.PI / 180;
+    const cx = x + Math.cos(th) * g * 0.06, cy = y + Math.sin(th) * g * 0.06;
+    // Del ancho de la plumilla, no más: un rombo largo deja de ser remate y se
+    // vuelve espina. El diamante de la Textura mide más o menos el trazo.
+    const L = g * 0.56, S = g * 0.30;
+    const fx = Math.cos(f), fy = Math.sin(f);
+    const P = (a, b) => `${r2(a)} ${r2(b)}`;
+    return [`M ${P(cx + L * fx, cy + L * fy)} L ${P(cx - S * fy, cy + S * fx)}`
+      + ` L ${P(cx - L * fx, cy - L * fy)} L ${P(cx + S * fy, cy - S * fx)} Z`];
+  },
+
+  bola: (x, y, th, g) => [disco(x + Math.cos(th) * g * 0.18,
+    y + Math.sin(th) * g * 0.18, g * 0.56)],
+
+  escuadra: (x, y, th, g) => {
+    // Terminación en ángulo recto: el bloque del kanteiryū, que no desvanece
+    // nada — corta cuadrado y llena.
+    // `b` es exactamente el medio ancho del trazo: si es más, el bloque asoma
+    // por los lados y parece una pestaña pegada.
+    const ux = Math.cos(th), uy = Math.sin(th), a = g * 0.15, b = g * 0.5;
+    const cx = x + ux * a, cy = y + uy * a;
+    const P = (px, py) => `${r2(px)} ${r2(py)}`;
+    return [`M ${P(cx + ux * a - uy * b, cy + uy * a + ux * b)}`
+      + ` L ${P(cx + ux * a + uy * b, cy + uy * a - ux * b)}`
+      + ` L ${P(cx - ux * a + uy * b, cy - uy * a - ux * b)}`
+      + ` L ${P(cx - ux * a - uy * b, cy - uy * a + ux * b)} Z`];
+  },
+
+  pua: (x, y, th, g, filo) => {
+    // Cuña: la serifa medieval que no llegó a rombo. Apunta sobre el filo.
+    const f = filo * Math.PI / 180;
+    const tx = x + Math.cos(f) * g * 0.86, ty = y + Math.sin(f) * g * 0.86;
+    const ux = Math.cos(th), uy = Math.sin(th);
+    const P = (px, py) => `${r2(px)} ${r2(py)}`;
+    return [`M ${P(tx, ty)} L ${P(x - uy * g * 0.42, y + ux * g * 0.42)}`
+      + ` L ${P(x + uy * g * 0.42, y - ux * g * 0.42)} Z`];
+  },
+
+  bigote: (x, y, th, g) => {
+    // Los pelos del kagomoji 籠文字: tres, cortos, saliendo del extremo.
+    const P = (px, py) => `${r2(px)} ${r2(py)}`;
+    return [-0.5, 0, 0.5].map(d => {
+      const a = th + d, L = g * (d === 0 ? 0.62 : 0.48);
+      const bx = -Math.sin(a) * g * 0.075, by = Math.cos(a) * g * 0.075;
+      return `M ${P(x + bx, y + by)} L ${P(x + Math.cos(a) * L, y + Math.sin(a) * L)}`
+        + ` L ${P(x - bx, y - by)} Z`;
+    });
   },
 };
 
@@ -356,7 +495,332 @@ const ALFABETOS = {
       D: { an: 0.76, t: ['c0 a6', 'a6 e6', 'e6 c0'], nudos: ['c0', 'a6', 'e6'] }, // Δ
     },
   },
+
+  /* ── 篆書 TENSHO · escritura de sello ──────────────────────────────────
+     La más vieja de las cinco escrituras clásicas: Zhou y Qin, la que sigue
+     usándose para los hanko. Su ley es que NO HAY DIAGONALES: todo es vertical
+     u horizontal, las vueltas se redondean, y donde la letra necesitaría un
+     trazo oblicuo se pone una ESCALERA. Alta, estrecha, simétrica, grosor
+     parejo. Es lo más lejano que existe de una marca sencilla. */
+  tensho: {
+    nombre: 'Tensho 篆書',
+    nota: 'Escritura de sello, dinastía Qin. Sin una sola diagonal: lo oblicuo se '
+        + 'vuelve escalera y las vueltas se redondean. Alta, estrecha y simétrica, '
+        + 'de grosor parejo. Es la lógica del hanko aplicada al alfabeto latino.',
+    base: 'recto',
+    glifos: {
+      A: { an: 0.68, t: ['b6 b1 c0 d1 d6', 'b3.6 d3.6'] },
+      B: { an: 0.66, t: ['b0 b6', 'b0 d0 d2.6 b2.6', 'b3.4 d3.4 d6 b6'] },
+      C: { an: 0.62, t: ['d0 b0 b6 d6'] },
+      D: { an: 0.66, t: ['b0 b6', 'b0 d0 d6 b6'] },
+      E: { an: 0.60, t: ['b0 b6', 'b0 d0', 'b3 c3', 'b6 d6'] },
+      F: { an: 0.58, t: ['b0 b6', 'b0 d0', 'b3 c3'] },
+      G: { an: 0.66, t: ['d0 b0 b6 d6 d3.4', 'd3.4 c3.4'] },
+      H: { an: 0.66, t: ['b0 b6', 'd0 d6', 'b3 d3'] },
+      I: { an: 0.20, t: ['c0 c6'] },
+      J: { an: 0.52, t: ['d0 d5 c6 b5'] },
+      K: { an: 0.64, t: ['!b0 b6', '!d0 d2 b2', '!b4 d4 d6'] },
+      L: { an: 0.56, t: ['b0 b6 d6'] },
+      M: { an: 0.84, t: ['a6 a0 e0 e6', 'c0 c3.6'] },
+      N: { an: 0.70, t: ['b0 b6', 'd0 d6', '!b1 c1 c5 d5'] },
+      O: { an: 0.70, t: ['b0 d0 d6 b6 b0'] },
+      P: { an: 0.60, t: ['b0 b6', 'b0 d0 d3 b3'] },
+      Q: { an: 0.70, t: ['b0 d0 d6 b6 b0', 'c6 c7.4'] },
+      R: { an: 0.66, t: ['b0 b6', 'b0 d0 d3 b3', '!c3 c4 d4 d6'] },
+      S: { an: 0.62, t: ['d0 b0 b3 d3 d6 b6'] },
+      T: { an: 0.62, t: ['a0 e0', 'c0 c6'] },
+      U: { an: 0.66, t: ['b0 b6 d6 d0'] },
+      V: { an: 0.72, t: ['!a0 a3 b3 b6 d6 d3 e3 e0'] },
+      W: { an: 1.00, t: ['!a0 a4 b4 b6 c6 c2 d2 d4 e4 e0'] },
+      X: { an: 0.78, t: ['!a0 b0 b2.6 c2.6', '!c3.4 d3.4 d6 e6',
+        '!e0 d0 d2.6 c2.6', '!c3.4 b3.4 b6 a6'] },
+      Y: { an: 0.70, t: ['!a0 a2 c2 c6', '!e0 e2 c2'] },
+      // Con un solo escalón la Z salía un 工 chino: el tramo central quedaba
+      // vertical y larguísimo. Con tres escalones la escalera se lee como Z.
+      Z: { an: 0.72, t: ['a0 e0', '!e0 e1 d1 d2.6 c2.6 c4 b4 b5.4 a5.4 a6', 'a6 e6'] },
+    },
+    porDefecto: { pincel: 'uniforme', grosor: 0.085, tracking: 0.15, filo: 90 },
+  },
+
+  /* ── 勘亭流 KANTEIRYŪ · el cartel de kabuki ───────────────────────────
+     Escritura inventada en el Edo para los carteles de kabuki y de rakugo. La
+     idea no es estética: los trazos son gordos y se curvan HACIA ADENTRO para
+     que no quede hueco en el cartel, porque el hueco significaba butaca vacía.
+     Termina en ángulo recto, nunca en punta. Pesa, ocupa y aguanta de lejos. */
+  kanteiryu: {
+    nombre: 'Kanteiryū 勘亭流',
+    nota: 'Cartel de kabuki del Edo. Trazo gordo que se curva hacia adentro y '
+        + 'termina en ángulo recto: se diseñó para no dejar hueco en el papel, '
+        + 'porque el hueco significaba butaca vacía. Se lee a media calle.',
+    base: 'recto',
+    glifos: {
+      A: { an: 0.82, t: ['a6 l3 c0', 'c0 m3 e6', 'b4.5 d4.5'], nudos: ['c0'] },
+      B: { an: 0.78, t: ['b0 l3 b6', 'b0 d0 e1 d2.8 b2.8', 'b2.8 d2.8 e4.4 d6 b6'],
+        nudos: ['b0', 'b2.8', 'b6'] },
+      C: { an: 0.78, t: ['e1 d0 b0 a2 a4 b6 d6 e5'] },
+      D: { an: 0.80, t: ['b0 l3 b6', 'b0 d0 e2 e4 d6 b6'], nudos: ['b0', 'b6'] },
+      E: { an: 0.74, t: ['b0 l3 b6', 'b0 e0', 'b3 d3', 'b6 e6'], nudos: ['b0', 'b3', 'b6'] },
+      F: { an: 0.70, t: ['b0 l3 b6', 'b0 e0', 'b3 d3'], nudos: ['b0', 'b3'] },
+      G: { an: 0.84, t: ['e1 d0 b0 a2 a4 b6 d6 e5 e3.4', 'e3.4 c3.4'], nudos: ['e3.4'] },
+      H: { an: 0.80, t: ['b0 l3 b6', 'd0 m3 d6', 'b3 d3'], nudos: ['b3', 'd3'] },
+      I: { an: 0.28, t: ['c0 c6'] },
+      J: { an: 0.62, t: ['d0 d4 b6 a4.6'] },
+      K: { an: 0.78, t: ['b0 l3 b6', 'e0 b3', 'b3 e6'], nudos: ['b3'] },
+      L: { an: 0.70, t: ['b0 l3 b6', 'b6 e6'], nudos: ['b6'] },
+      M: { an: 0.98, t: ['a6 k3 a0', 'a0 c4', 'c4 e0', 'e0 n3 e6'],
+        nudos: ['a0', 'c4', 'e0'] },
+      N: { an: 0.82, t: ['a6 k3 a0', 'a0 e6', 'e6 n3 e0'], nudos: ['a0', 'e6'] },
+      O: { an: 0.86, t: ['b0 d0 e1 e5 d6 b6 a5 a1 b0'] },
+      P: { an: 0.74, t: ['b0 l3 b6', 'b0 d0 e1 d3 b3'], nudos: ['b0', 'b3'] },
+      Q: { an: 0.86, t: ['b0 d0 e1 e5 d6 b6 a5 a1 b0', 'c4.6 e6.4'] },
+      R: { an: 0.80, t: ['b0 l3 b6', 'b0 d0 e1 d3 b3', 'b3 e6'], nudos: ['b0', 'b3'] },
+      S: { an: 0.74, t: ['e1 c0 a1.4 c3 e4.6 c6 a5'] },
+      T: { an: 0.76, t: ['a0 e0', 'c0 c6'], nudos: ['c0'] },
+      U: { an: 0.80, t: ['a0 k3.5 a4 c6 e4 n3.5 e0'] },
+      V: { an: 0.80, t: ['a0 l3 c6', 'c6 m3 e0'], nudos: ['c6'] },
+      W: { an: 1.02, t: ['a0 b6', 'b6 c2', 'c2 d6', 'd6 e0'], nudos: ['b6', 'c2', 'd6'] },
+      X: { an: 0.80, t: ['a0 b3 e6', 'e0 d3 a6'] },
+      Y: { an: 0.80, t: ['a0 c3', 'e0 c3', 'c3 c6'], nudos: ['c3'] },
+      Z: { an: 0.74, t: ['a0 e0', 'e0 c3.4 a6', 'a6 e6'], nudos: ['e0', 'a6'] },
+    },
+    porDefecto: {
+      pincel: 'uniforme', grosor: 0.30, tracking: 0.015, remate: 'escuadra', filo: 90,
+    },
+  },
+
+  /* ── 草書 SŌSHO · cursiva de aliento ──────────────────────────────────
+     La quinta escritura: la que se escribe de corrido, donde el trazo no se
+     levanta y la forma se abrevia hasta quedar en el gesto. Aquí cada letra es
+     UN solo movimiento cuando se puede — la Z entera es un trazo. Va con harai
+     o con látigo, porque lo que la define es la velocidad. */
+  sosho: {
+    nombre: 'Sōsho 草書',
+    nota: 'La cursiva clásica, la que se escribe sin levantar el pincel. Cada letra '
+        + 'es un solo movimiento donde se puede: la Z entera es un trazo. Lo que la '
+        + 'define no es la forma, es la velocidad.',
+    base: 'recto',
+    glifos: {
+      A: { an: 0.76, t: ['a6 c0 e6 c4.4 a4.6'] },
+      B: { an: 0.70, t: ['a6 a0 c0 d1.4 c3 a3.2 c3.4 d4.6 c6 a6'] },
+      C: { an: 0.70, t: ['e1 c0 a2 a4.4 c6 e5'] },
+      D: { an: 0.74, t: ['a6 a0 c0.4 e2 e4 c6 a5.6'] },
+      E: { an: 0.66, t: ['e0.6 b0 a1.4 a3 c3 a3.4 a5 b6 e5.6'] },
+      F: { an: 0.60, t: ['e0.6 b0 a1.4 a6', 'a3 c3'] },
+      G: { an: 0.76, t: ['e1 c0 a2 a4.4 c6 e4.8 e3.2 c3.4'] },
+      H: { an: 0.74, t: ['a0 a6 a3.2 e2.8 e0 e6'] },
+      I: { an: 0.20, t: ['c0 c6'] },
+      J: { an: 0.54, t: ['d0 d4.6 c6 a5'] },
+      K: { an: 0.70, t: ['a0 a6 a3.4 e0.4', 'a3.2 e6'] },
+      L: { an: 0.60, t: ['a0 a5.6 c6 e5.2'] },
+      M: { an: 0.92, t: ['a6 a1 b0 c4 d0 e1 e6'] },
+      N: { an: 0.76, t: ['a6 a0 e6 e0'] },
+      O: { an: 0.76, t: ['c0 e2 e4 c6 a4 a2 c0'] },
+      P: { an: 0.66, t: ['a6 a0 c0 d1.4 c3.2 a3.4'] },
+      Q: { an: 0.76, t: ['c0 e2 e4 c6 a4 a2 c0', 'c4.4 e6.6'] },
+      R: { an: 0.72, t: ['a6 a0 c0 d1.4 c3.2 a3.4 e6'] },
+      S: { an: 0.64, t: ['e1 c0 a1.2 c3 e4.6 c6 a5'] },
+      T: { an: 0.64, t: ['a0.4 e0', 'c0 c6'] },
+      U: { an: 0.74, t: ['a0 a4.4 c6 e4.4 e0 e6'] },
+      V: { an: 0.72, t: ['a0 c6 e0'] },
+      W: { an: 0.94, t: ['a0 b6 c1.6 d6 e0'] },
+      X: { an: 0.70, t: ['a0 e6', 'e0 a6'] },
+      Y: { an: 0.70, t: ['a0 c3.4 c6', 'e0 c3.4'] },
+      Z: { an: 0.70, t: ['a0 e0 a6 e6'] },
+    },
+    porDefecto: { pincel: 'harai', grosor: 0.22, inclinacion: 10, tracking: 0.03 },
+  },
+
+  /* ── TEXTURA QUADRATA · la gótica del siglo XIII ──────────────────────
+     "Textura" viene de *texere*, tejer: la página de astas parejas y apretadas
+     forma una trama, un tejido. "Quadrata" viene de los REMATES EN DIAMANTE
+     arriba y abajo de cada asta. Para el XIII la curva ya había desaparecido:
+     sólo quedan cambios de dirección abruptos, y por eso aquí casi todo trazo
+     va con "!". Pluma de filo ancho a −40°, estrechísima, negrísima. */
+  textura: {
+    nombre: 'Textura Quadrata',
+    nota: 'La gótica del siglo XIII. El nombre viene de texere, tejer: las astas '
+        + 'parejas y apretadas hacen una trama en la página. "Quadrata" es por los '
+        + 'remates en diamante. Para entonces la curva ya no existía — sólo quiebres.',
+    base: 'recto',
+    // La Textura es negra y apretada: el hueco de la letra mide casi lo mismo
+    // que el asta. Con grosor de tipografía normal se ve gótica desganada.
+    escalaAncho: 0.74,
+    glifos: {
+      A: { an: 0.74, t: ['!a6 c0', '!c0 e6', '!b4 d4'], nudos: ['c0'] },
+      B: { an: 0.66, t: ['!a0 a6', '!a0 c0 d0.6 d2.4 c3 a3', '!a3 c3 d3.6 d5.4 c6 a6'],
+        nudos: ['a0', 'a3', 'a6'] },
+      C: { an: 0.66, t: ['!e0.8 d0 b0 a1.6 a4.4 b6 d6 e5.2'] },
+      D: { an: 0.70, t: ['!a0 a6', '!a0 c0 e1.6 e4.4 c6 a6'], nudos: ['a0', 'a6'] },
+      E: { an: 0.62, t: ['!a0 a6', '!a0 e0', '!a3 c3', '!a6 e6'], nudos: ['a0', 'a3', 'a6'] },
+      F: { an: 0.58, t: ['!a0 a6', '!a0 e0', '!a3 c3'], nudos: ['a0', 'a3'] },
+      G: { an: 0.72, t: ['!e0.8 d0 b0 a1.6 a4.4 b6 d6 e5 e3', '!e3 c3'], nudos: ['e3'] },
+      H: { an: 0.70, t: ['!a0 a6', '!e0 e6', '!a3 e3'], nudos: ['a3', 'e3'] },
+      I: { an: 0.26, t: ['!c0 c6'] },
+      J: { an: 0.50, t: ['!d0 d4.6 c6 a5'] },
+      K: { an: 0.66, t: ['!a0 a6', '!e0 a3', '!a3 e6'], nudos: ['a3'] },
+      L: { an: 0.56, t: ['!a0 a6', '!a6 e6'], nudos: ['a6'] },
+      M: { an: 0.92, t: ['!a6 a0', '!a0 c4', '!c4 e0', '!e0 e6'], nudos: ['a0', 'c4', 'e0'] },
+      N: { an: 0.72, t: ['!a6 a0', '!a0 e6', '!e6 e0'], nudos: ['a0', 'e6'] },
+      O: { an: 0.72, t: ['!b0 d0 e1.6 e4.4 d6 b6 a4.4 a1.6 b0'] },
+      P: { an: 0.62, t: ['!a0 a6', '!a0 c0 d0.6 d2.4 c3 a3'], nudos: ['a0', 'a3'] },
+      Q: { an: 0.72, t: ['!b0 d0 e1.6 e4.4 d6 b6 a4.4 a1.6 b0', '!c4.6 e6.4'] },
+      R: { an: 0.66, t: ['!a0 a6', '!a0 c0 d0.6 d2.4 c3 a3', '!a3 e6'], nudos: ['a0', 'a3'] },
+      S: { an: 0.60, t: ['!e0.8 d0 b0 a1.2 b2.4 d3.6 e4.8 d6 b6 a5.2'] },
+      T: { an: 0.62, t: ['!a0 e0', '!c0 c6'], nudos: ['c0'] },
+      U: { an: 0.70, t: ['!a0 a4.4 b6 d6 e4.4 e0'] },
+      V: { an: 0.70, t: ['!a0 c6', '!c6 e0'], nudos: ['c6'] },
+      W: { an: 0.94, t: ['!a0 b6', '!b6 c2', '!c2 d6', '!d6 e0'], nudos: ['b6', 'c2', 'd6'] },
+      X: { an: 0.68, t: ['!a0 e6', '!e0 a6'] },
+      Y: { an: 0.68, t: ['!a0 c3', '!e0 c3', '!c3 c6'], nudos: ['c3'] },
+      Z: { an: 0.64, t: ['!a0 e0', '!e0 a6', '!a6 e6'], nudos: ['e0', 'a6'] },
+
+      // Aquí vive de verdad la Textura: la minúscula. Todas comparten el mismo
+      // asta y el mismo hombro quebrado, y de esa repetición sale el tejido.
+      a: { an: 0.58, t: ['!b2 e2', '!e2 e6', '!a3.4 b2', '!a4.6 a6 c6 e5.2'] },
+      b: { an: 0.62, t: ['!a0 a6', '!a3 b2 d2 e3 e5 d6 b6 a5'], nudos: ['a3', 'a5'] },
+      c: { an: 0.52, t: ['!e2.8 d2 b2 a3 a5 b6 d6 e5.2'] },
+      d: { an: 0.62, t: ['!e0 e6', '!e3 d2 b2 a3 a5 b6 d6 e5'], nudos: ['e3', 'e5'] },
+      e: { an: 0.56, t: ['!e5 d6 b6 a5 a3 b2 d2 e3', '!a4 e4'] },
+      f: { an: 0.42, t: ['!c1 c6', '!a2.6 e2.6'], nudos: ['c2.6'] },
+      g: { an: 0.60, t: ['!e2.6 d2 b2 a3 a5 b6 d6 e5',
+        '!e2.6 e6.6 d7.6 b7.6 a7'] },
+      h: { an: 0.62, t: ['!a0 a6', '!a3 b2 d2 e3', '!e3 e6'], nudos: ['a3', 'e3'] },
+      // El punto de la i en Textura no es un punto: es una rayita al ángulo de la
+      // pluma. Un disco a este grosor sale del tamaño de una canica.
+      i: { an: 0.26, t: ['!c2 c6', '!b0.4 d1'] },
+      j: { an: 0.32, t: ['!c2 c6.6 b7.6 a7', '!b0.4 d1'] },
+      k: { an: 0.58, t: ['!a0 a6', '!e2 a4', '!a4 d6'], nudos: ['a4'] },
+      l: { an: 0.26, t: ['!c0 c6'] },
+      m: { an: 0.94, t: ['!a2 a6', '!a3 b2 c2.6 c3', '!c3 c6', '!c3 d2 e2.6 e3', '!e3 e6'],
+        nudos: ['a3', 'c3', 'e3'] },
+      n: { an: 0.62, t: ['!a2 a6', '!a3 b2 d2 e3', '!e3 e6'], nudos: ['a3', 'e3'] },
+      o: { an: 0.60, t: ['!b2 d2 e3 e5 d6 b6 a5 a3 b2'] },
+      p: { an: 0.62, t: ['!a2 a8', '!a3 b2 d2 e3 e5 d6 b6 a5'], nudos: ['a3', 'a5'] },
+      q: { an: 0.62, t: ['!e2 e8', '!e3 d2 b2 a3 a5 b6 d6 e5'], nudos: ['e3', 'e5'] },
+      r: { an: 0.46, t: ['!a2 a6', '!a3 b2 d2 d2.8'], nudos: ['a3'] },
+      s: { an: 0.50, t: ['!e2.6 d2 b2 a2.8 b3.6 d4.4 e5.2 d6 b6 a5.4'] },
+      t: { an: 0.42, t: ['!c1 c5.4 d6', '!a2.6 e2.6'], nudos: ['c2.6'] },
+      u: { an: 0.62, t: ['!a2 a5 b6 d6 e5', '!e2 e6'], nudos: ['e5'] },
+      v: { an: 0.58, t: ['!a2 a5 b6 d6 e5 e2'] },
+      w: { an: 0.86, t: ['!a2 a5 b6 c5 c2', '!c2.6 c5 d6 e5 e2'] },
+      x: { an: 0.56, t: ['!a2 e6', '!e2 a6'] },
+      y: { an: 0.58, t: ['!a2 a5 b6 d6 e5 e2', '!e2 e6.6 d7.6 b7.6 a7'] },
+      z: { an: 0.54, t: ['!a2 e2', '!e2 a6', '!a6 e6'], nudos: ['e2', 'a6'] },
+    },
+    porDefecto: {
+      pincel: 'plumilla', grosor: 0.26, filo: -40, contraste: 0.38,
+      tracking: 0.008, remate: 'diamante',
+    },
+  },
+
+  /* ── ROTUNDA · la gótica del sur ──────────────────────────────────────
+     La otra rama: menos comprimida, los cuencos vuelven a ser redondos y los
+     bordes se suavizan. Hereda de la Textura y sólo devuelve la curva donde la
+     Textura la había quebrado — que es exactamente la diferencia histórica
+     entre las dos. Remate de bola en vez de diamante, filo más plano. */
+  rotunda: {
+    nombre: 'Rotunda',
+    nota: 'La gótica del sur de Europa: la misma familia que la Textura pero con el '
+        + 'cuenco redondo otra vez y menos comprimida. Aquí sólo se devuelve la curva '
+        + 'donde la Textura la había quebrado: esa es la diferencia, literalmente.',
+    base: 'textura',
+    escalaAncho: 0.96,
+    glifos: {
+      C: { an: 0.72, t: ['e1 c0 a2 a4 c6 e5'] },
+      D: { an: 0.76, t: ['!a0 a6', 'a0 c0 e2 e4 c6 a6'], nudos: ['a0', 'a6'] },
+      G: { an: 0.78, t: ['e1 c0 a2 a4 c6 e5 e3', '!e3 c3'], nudos: ['e3'] },
+      O: { an: 0.78, t: ['c0 e2 e4 c6 a4 a2 c0'] },
+      Q: { an: 0.78, t: ['c0 e2 e4 c6 a4 a2 c0', 'c4.6 e6.4'] },
+      S: { an: 0.64, t: ['e1 c0 a1.2 c3 e4.4 e5 c6 a5'] },
+      U: { an: 0.74, t: ['a0 a4 c6 e4 e0'] },
+      B: { an: 0.70, t: ['!a0 a6', 'a0 d0 d1 c3 a3', 'a3 d3 d5 c6 a6'],
+        nudos: ['a0', 'a3', 'a6'] },
+      P: { an: 0.66, t: ['!a0 a6', 'a0 d0 d2 c3 a3'], nudos: ['a0', 'a3'] },
+      R: { an: 0.70, t: ['!a0 a6', 'a0 d0 d2 c3 a3', '!a3 e6'], nudos: ['a0', 'a3'] },
+      a: { an: 0.62, t: ['a3 c2 e3 e6', 'e5 c6 a5 a4 c3 e4'], nudos: ['e3'] },
+      b: { an: 0.66, t: ['!a0 a6', 'a3 c2 e3 e5 c6 a5'], nudos: ['a3', 'a5'] },
+      c: { an: 0.56, t: ['e3 c2 a3 a5 c6 e5'] },
+      d: { an: 0.66, t: ['!e0 e6', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3', 'e5'] },
+      e: { an: 0.60, t: ['a4 e4 e3 c2 a3 a5 c6 e5'] },
+      g: { an: 0.64, t: ['e3 c2 a3 a5 c6 e5', 'e2.6 e6.6 c7.8 a7'] },
+      o: { an: 0.64, t: ['c2 e3 e5 c6 a5 a3 c2'] },
+      p: { an: 0.66, t: ['!a2 a8', 'a3 c2 e3 e5 c6 a5'], nudos: ['a3', 'a5'] },
+      q: { an: 0.66, t: ['!e2 e8', 'e3 c2 a3 a5 c6 e5'], nudos: ['e3', 'e5'] },
+      s: { an: 0.54, t: ['e3 c2 a3 c4 e5 c6 a5'] },
+      u: { an: 0.64, t: ['!a2 a5 c6 e5', '!e2 e6'], nudos: ['e5'] },
+      m: { an: 0.96, t: ['!a2 a6', 'a3 b2 c3 c6', 'c3 d2 e3 e6'], nudos: ['a3', 'c3'] },
+      n: { an: 0.64, t: ['!a2 a6', 'a3 c2 e3 e6'], nudos: ['a3'] },
+      h: { an: 0.64, t: ['!a0 a6', 'a3 c2 e3 e6'], nudos: ['a3'] },
+      r: { an: 0.46, t: ['!a2 a6', 'a3 c2 e2'], nudos: ['a3'] },
+    },
+    porDefecto: {
+      pincel: 'plumilla', grosor: 0.22, filo: -25, contraste: 0.40,
+      tracking: 0.035, remate: 'bola',
+    },
+  },
+
+  /* ── UNCIAL · la mayúscula del manuscrito ─────────────────────────────
+     Antes de la gótica: la letra ancha y redonda de los códices, sin diferencia
+     entre caja alta y baja porque no la había. Poco contraste, remate de cuña.
+     Es lo contrario de la Textura: donde una aprieta, la otra abre. */
+  uncial: {
+    nombre: 'Uncial',
+    nota: 'La letra de los códices, anterior a la gótica: ancha, redonda y sin '
+        + 'distinción entre mayúscula y minúscula porque todavía no existía. Poco '
+        + 'contraste y remate de cuña. Es el opuesto exacto de la Textura.',
+    base: 'recto',
+    escalaAncho: 1.06,
+    glifos: {
+      // La uncial tiene dos formas de A. La de cuenco —un "ɑ" con asta— sale
+      // idéntica a la D: en la prueba "MAZI" se leyó "mdZI". Así que va la otra,
+      // la de arco redondeado con travesaño, que se lee A y sigue siendo uncial.
+      A: { an: 0.82, t: ['a6 a4 b1 c0 d1.6 e4 e6', 'b4.4 d4.4'] },
+      B: { an: 0.74, t: ['a0 a6', 'a0 c0 d1.4 c2.8 a2.8', 'a2.8 c2.8 d4.4 c6 a6'],
+        nudos: ['a0', 'a2.8', 'a6'] },
+      C: { an: 0.78, t: ['e1 c0 a2 a4 c6 e5'] },
+      D: { an: 0.80, t: ['e0.6 e6', 'e1.6 c0.6 a2.4 a4.6 c6 e5'], nudos: ['e1.6', 'e5'] },
+      E: { an: 0.72, t: ['e1 c0 a2 a4 c6 e5', 'a3.4 c3.4'] },
+      F: { an: 0.66, t: ['b0 b8', 'b0.6 d0 e1.4', 'a3 d3'], nudos: ['b3'] },
+      G: { an: 0.76, t: ['e1.4 c0 a2 a4 c6 e5 e3.2', 'e3.2 c3.4'], nudos: ['e3.2'] },
+      H: { an: 0.78, t: ['a0 a6', 'a3 c2.4 e3.4 e6'], nudos: ['a3'] },
+      I: { an: 0.26, t: ['c0 c6'] },
+      J: { an: 0.44, t: ['c0 c6.6 b7.8 a7'] },
+      K: { an: 0.72, t: ['a0 a6', 'e2 a3.8', 'a3.8 e6'], nudos: ['a3.8'] },
+      L: { an: 0.62, t: ['a0 a5.4 c6 e5.2'] },
+      M: { an: 0.98, t: ['a6 a2 b0.8 c2.4 c6', 'c2.4 d0.8 e2 e6'], nudos: ['c2.4'] },
+      N: { an: 0.80, t: ['a0 a6', 'a1 e5', 'e0 e6'], nudos: ['a1', 'e5'] },
+      O: { an: 0.86, t: ['c0 e2 e4 c6 a4 a2 c0'] },
+      P: { an: 0.70, t: ['b0 b8', 'b0 d0 e1.4 d2.8 b2.8'], nudos: ['b0', 'b2.8'] },
+      Q: { an: 0.86, t: ['c0 e2 e4 c6 a4 a2 c0', 'c5.6 c8'] },
+      R: { an: 0.76, t: ['a0 a6', 'a0 c0 d1.4 c2.8 a2.8', 'a2.8 e6'], nudos: ['a0', 'a2.8'] },
+      S: { an: 0.68, t: ['e1 c0 a1.4 c3 e4.6 c6 a5'] },
+      T: { an: 0.74, t: ['a0.8 c0 e0.8', 'c0 c6'], nudos: ['c0'] },
+      U: { an: 0.82, t: ['a0 a4 c6 e4 e0'] },
+      V: { an: 0.80, t: ['a0 a3 c6', 'c6 e3 e0'], nudos: ['c6'] },
+      W: { an: 1.04, t: ['a0 a3 b6', 'b6 c2.6', 'c2.6 d6', 'd6 e3 e0'],
+        nudos: ['b6', 'c2.6', 'd6'] },
+      X: { an: 0.76, t: ['a0 c3 e6', 'e0 c3 a6'], nudos: ['c3'] },
+      Y: { an: 0.78, t: ['a0 c3.2', 'e0 c3.2', 'c3.2 c6'], nudos: ['c3.2'] },
+      Z: { an: 0.70, t: ['a0.6 c0 e0.6', 'e0.6 a5.4', 'a5.4 c6 e5.4'], nudos: ['e0.6', 'a5.4'] },
+    },
+    porDefecto: {
+      pincel: 'plumilla', grosor: 0.19, filo: -22, contraste: 0.52,
+      tracking: 0.07, remate: 'pua',
+    },
+  },
 };
+
+// Tensho, kanteiryū y sōsho son escrituras de rótulo: no tienen caja baja, igual
+// que la uncial tampoco la tenía. En vez de dejarlas heredando la minúscula de
+// `recto` —que se vería como otra tipografía metida a fuerzas— la minúscula
+// apunta a su propia mayúscula.
+function sinCajaBaja(id) {
+  const g = ALFABETOS[id].glifos;
+  for (const [k, v] of Object.entries({ ...g })) {
+    if (/^[A-Z]$/.test(k)) g[k.toLowerCase()] = { an: v.an, hereda: k };
+  }
+}
+['tensho', 'kanteiryu', 'sosho', 'uncial'].forEach(sinCajaBaja);
 
 // Resuelve la herencia: el alfabeto pedido sobre el juego completo.
 function resolver(id) {
@@ -376,33 +840,86 @@ const ACENTOS = {
 
 /* ═══ ENGORDAR ═════════════════════════════════════════════════════════════ */
 
-function contorno(pts, op) {
+// Medio ancho y normal en cada punto del trazo. Se calcula una sola vez porque
+// lo usan tres cosas: el contorno, las cerdas y los remates.
+function geometria(pts, op) {
   const { grosor, pincel, filo, contraste, punta, cerrado, semilla } = op;
   const n = pts.length;
   const fn = PINCELES[pincel].f;
+  const h = [], nor = [], tan = [];
 
-  const semi = i => {
-    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
-    const th = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  // En un trazo cerrado los vecinos dan la vuelta. Si no, en la costura los dos
+  // lados del contorno no coinciden y queda una muesca — que era justo el
+  // pellizco que se veía arriba de cada O.
+  const m = cerrado ? n - 1 : n;
+  const vec = i => (cerrado ? pts[((i % m) + m) % m] : pts[Math.max(0, Math.min(n - 1, i))]);
+
+  for (let i = 0; i < n; i++) {
+    const a = vec(i - 1), b = vec(i + 1);
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+    const th = Math.atan2(dy, dx);
     const t = i / (n - 1);
-    let g = grosor * Math.max(0.05, fn(t, th, { filo, contraste }, semilla));
+    // Un anillo no tiene principio ni fin, así que un pincel que entra grueso y
+    // sale en pelo —harai, cuña, sumi— dejaba la O más flaca que sus vecinas.
+    // Aquí el recorrido del perfil se vuelve una onda que empieza y acaba en el
+    // mismo valor: modula igual, pero cierra parejo.
+    const tp = cerrado ? 0.5 + 0.35 * Math.sin(2 * Math.PI * t) : t;
+    let g = grosor * Math.max(0.05, fn(tp, th, { filo, contraste }, semilla));
     // La punta de cuña sólo en los extremos LIBRES; donde hay unión, nunca.
     if (!cerrado && punta !== 'ninguno') {
       const z = 0.2;
       if ((punta === 'ambos' || punta === 'inicio') && t < z) g *= 0.15 + 0.85 * (t / z);
       if ((punta === 'ambos' || punta === 'fin') && t > 1 - z) g *= 0.15 + 0.85 * ((1 - t) / z);
     }
-    return g / 2;
-  };
+    h.push(g / 2);
+    nor.push([-dy / L, dx / L]);
+    tan.push([dx / L, dy / L]);
+  }
+  return { h, nor, tan };
+}
 
-  const lado = s => pts.map((p, i) => {
-    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
-    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
-    return [p[0] - dy / L * semi(i) * s, p[1] + dx / L * semi(i) * s];
-  });
-
+function contorno(pts, op) {
+  const { h, nor } = op.geo ?? geometria(pts, op);
+  const lado = s => pts.map((p, i) => [p[0] + nor[i][0] * h[i] * s, p[1] + nor[i][1] * h[i] * s]);
   const d = v => v.map(p => `${r2(p[0])} ${r2(p[1])}`).join(' L ');
   return `M ${d(lado(1))} L ${d(lado(-1).reverse())} Z`;
+}
+
+// El higemoji 髭文字 —la letra de los carteles de hielo raspado y de sake— no se
+// dibuja como una masa sino como CERDAS: el pincel se abre y deja líneas
+// paralelas. Y no son las que caigan: el oficio manda un reparto de 7-5-3, siete
+// en el cuerpo del trazo, cinco donde se angosta y tres al terminar.
+//
+// Aquí eso no se programa a mano: cada cerda existe sólo donde el trazo es lo
+// bastante ancho para ella —las de la orilla necesitan más ancho que las del
+// centro—, así que el 7-5-3 sale del propio adelgazamiento del trazo.
+function cerdasDe(pts, op, K = 7) {
+  const { h, nor } = op.geo ?? geometria(pts, op);
+  const hmax = Math.max(...h) || 1;
+  const salida = [];
+
+  for (let j = 0; j < K; j++) {
+    const u = K === 1 ? 0 : -1 + (2 * j) / (K - 1);
+    const umbral = 0.30 + 0.64 * Math.abs(u);
+    let corrida = [];
+    const cerrar = () => {
+      if (corrida.length >= 5) {
+        salida.push(contorno(corrida, {
+          grosor: op.grosor * 0.095, pincel: 'uniforme', filo: 0, contraste: 1,
+          punta: 'ambos', cerrado: false, semilla: 0,
+        }));
+      }
+      corrida = [];
+    };
+    for (let i = 0; i < pts.length; i++) {
+      if (h[i] >= hmax * umbral) {
+        corrida.push([pts[i][0] + nor[i][0] * u * h[i] * 0.84,
+          pts[i][1] + nor[i][1] * u * h[i] * 0.84]);
+      } else cerrar();
+    }
+    cerrar();
+  }
+  return salida;
 }
 
 function disco(cx, cy, r) {
@@ -416,16 +933,27 @@ function disco(cx, cy, r) {
 
 /* ═══ COMPONER ═════════════════════════════════════════════════════════════ */
 
-export function componer(texto, op = {}) {
-  const {
-    alfabeto = 'recto', pincel = 'uniforme', grosor = 0.13, filo = 90,
-    contraste = 0.28, tracking = 0.05, anchoGlifo = 1, inclinacion = 0,
-    punta = 'ninguno', alto = 100,
-  } = op;
+const PORDEFECTO = {
+  alfabeto: 'recto', pincel: 'uniforme', grosor: 0.13, filo: 90, contraste: 0.28,
+  tracking: 0.05, anchoGlifo: 1, inclinacion: 0, punta: 'ninguno', alto: 100,
+  remate: 'ninguno', cerdas: 0, relleno: 'solido',
+};
 
-  const A = resolver(alfabeto);
+export function componer(texto, op = {}) {
+  const A = resolver(op.alfabeto || 'recto');
+  // Cada alfabeto histórico trae su propio ajuste de fábrica —la Textura sin filo
+  // a −40° y sin diamante no es Textura— pero lo que se pida a mano siempre gana.
+  const dado = Object.fromEntries(Object.entries(op).filter(([, v]) => v !== undefined));
+  const {
+    pincel, grosor, filo, contraste, tracking, anchoGlifo, inclinacion,
+    punta, alto, remate, cerdas, relleno,
+  } = { ...PORDEFECTO, ...(A.porDefecto || {}), ...dado };
+
+  const hueco = relleno === 'hueco';
   const esc = (A.escalaAncho ?? 1) * anchoGlifo;
   const partes = [];
+  const cuerpo = d => partes.push({ d, hueco });
+  const tinta = d => partes.push({ d, hueco: false });
   let x = grosor / 2;
   let sem = 0;
 
@@ -433,34 +961,74 @@ export function componer(texto, op = {}) {
     let G = A.glifos[ch];
     if (!G) G = A.glifos[ch.toUpperCase()] || A.glifos[' '];
     const an = G.an * esc;
-    const base = G.hereda ? A.glifos[G.hereda] : G;
+    // La herencia puede ser de dos saltos: "á" hereda "a", y en un alfabeto sin
+    // caja baja "a" hereda "A". Hay que seguir la cadena o el acento sale solo.
+    let base = G, salto = 0;
+    while (base.hereda && salto++ < 4) base = A.glifos[base.hereda] || base;
     const trazos = base.t || [];
     const nudosG = base.nudos || [];
 
+    // Un remate va en un extremo LIBRE. Si dos trazos acaban en el mismo punto
+    // eso es una unión, no un final — y ahí un diamante o un pelo se ve como un
+    // error. Así que primero se juntan todos los extremos del glifo y luego se
+    // pregunta si el punto está solo. (Fue lo que llenó de púas al kagomoji.)
+    const extremos = [];
     for (const cadena of trazos) {
-      const p = nodos(cadena, an);
-      const cerrado = p.length > 2
-        && Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]) < 1e-9;
-      const pts = suavizar(cerrado ? p.slice(0, -1) : p, 14, cerrado)
-        .map(([px, py]) => [px + x, py]);
+      const p = nodos(cadena.replace(/^!/, ''), an);
+      if (p.length < 2) continue;
+      if (p.length > 2 && Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]) < 1e-9) continue;
+      extremos.push([p[0][0] + x, p[0][1]], [p.at(-1)[0] + x, p.at(-1)[1]]);
+    }
+    const solo = (px, py) => extremos.filter(q =>
+      Math.hypot(q[0] - px, q[1] - py) < grosor * 0.5).length <= 1;
+
+    for (const cadena of trazos) {
+      const quebrado = cadena.startsWith('!');
+      const p = nodos(quebrado ? cadena.slice(1) : cadena, an);
       // Un punto solo (el punto de la i, el de la coma) se dibuja como disco.
       if (p.length === 2 && Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]) < 1e-9) {
-        partes.push(disco(p[0][0] + x, p[0][1], grosor * 0.62));
+        cuerpo(disco(p[0][0] + x, p[0][1], grosor * 0.62));
         continue;
       }
-      partes.push(contorno(pts, { grosor, pincel, filo, contraste, punta, cerrado, semilla: sem++ }));
+      const cerrado = p.length > 2
+        && Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]) < 1e-9;
+      const crudo = cerrado ? p.slice(0, -1) : p;
+      const pts = (quebrado ? tieso(crudo, 8, cerrado) : suavizar(crudo, 14, cerrado))
+        .map(([px, py]) => [px + x, py]);
+      // El anillo tiene que volver a su punto de partida para que el contorno
+      // cierre; si no, queda abierto justo en la costura.
+      if (cerrado) pts.push([...pts[0]]);
+
+      const cfg = { grosor, pincel, filo, contraste, punta, cerrado, semilla: sem++ };
+      cfg.geo = geometria(pts, cfg);
+      if (cerdas > 0) cerdasDe(pts, cfg, cerdas).forEach(cuerpo);
+      else cuerpo(contorno(pts, cfg));
+
+      // Los remates van en los extremos LIBRES, con el ángulo hacia afuera, y
+      // siempre en tinta llena: en el kagomoji el cuerpo va hueco y los pelos no.
+      if (!cerrado && remate !== 'ninguno') {
+        const fin = pts.length - 1;
+        for (const [i, s] of [[0, -1], [fin, 1]]) {
+          if (!solo(pts[i][0], pts[i][1])) continue;
+          const th = Math.atan2(cfg.geo.tan[i][1] * s, cfg.geo.tan[i][0] * s);
+          REMATES[remate](pts[i][0], pts[i][1], th, cfg.geo.h[i] * 2, filo).forEach(tinta);
+        }
+      }
     }
     for (const nd of nudosG) {
+      // Ni en jaula ni en cerdas: un disco macizo en cada unión es una burbuja en
+      // la primera y un borrón que se come el 7-5-3 en la segunda.
+      if (hueco || cerdas > 0) break;
       const [[nx, ny]] = nodos(nd, an);
-      partes.push(disco(nx + x, ny, grosor / 2));
+      cuerpo(disco(nx + x, ny, grosor / 2));
     }
     if (G.acento) {
       for (const p of ACENTOS[G.acento](an)) {
         const pts = suavizar(p, 10).map(([px, py]) => [px + x, py]);
         if (Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]) < 1e-9) {
-          partes.push(disco(p[0][0] + x, p[0][1], grosor * 0.55));
+          cuerpo(disco(p[0][0] + x, p[0][1], grosor * 0.55));
         } else {
-          partes.push(contorno(pts, { grosor: grosor * 0.85, pincel, filo, contraste,
+          cuerpo(contorno(pts, { grosor: grosor * 0.85, pincel, filo, contraste,
             punta: 'ninguno', cerrado: false, semilla: sem++ }));
         }
       }
@@ -473,16 +1041,29 @@ export function componer(texto, op = {}) {
   const tr = d => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, a, b) =>
     `${r2((+a - sh * (+b - 0.5)) * alto)} ${r2(+b * alto)}`);
 
-  return { ancho: ancho * alto + Math.abs(sh) * alto, alto, ds: partes.map(tr) };
+  const piezas = partes.map(z => ({ d: tr(z.d), hueco: z.hueco }));
+  return {
+    ancho: ancho * alto + Math.abs(sh) * alto, alto, piezas,
+    trazoHueco: r2(grosor * 0.135 * alto),
+    ds: piezas.map(z => z.d),   // compatibilidad: el bitmap y la marca usan esto
+  };
 }
 
-export function svg(texto, op = {}, tinta = '#EAE5E3') {
+// `papel` sólo hace falta en modo hueco, y hace mucho: la letra de jaula se
+// dibuja trazo por trazo, así que los cruces de un trazo con otro se veían por
+// dentro y parecían un armazón. Rellenando cada trazo del color del fondo ANTES
+// de delinearlo, cada trazo tapa las líneas que le caen encima y queda un solo
+// contorno — que es como se pintaba. Sin unión de polígonos: sólo orden.
+export function svg(texto, op = {}, tinta = '#EAE5E3', papel = null) {
   const p = componer(texto, op);
   const m = (op.alto ?? 100) * 0.18;
   const y0 = -m - (op.alto ?? 100) * 0.34;   // sitio para acentos
   const h = p.alto * 1.34 + m * 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-m} ${y0} ${p.ancho + m * 2} ${h}">`
-    + p.ds.map(d => `<path d="${d}" fill="${tinta}"/>`).join('') + '</svg>';
+    + p.piezas.map(z => (z.hueco
+      ? `<path d="${z.d}" fill="${papel || 'none'}" stroke="${tinta}"`
+        + ` stroke-width="${p.trazoHueco}" stroke-linejoin="round"/>`
+      : `<path d="${z.d}" fill="${tinta}"/>`)).join('') + '</svg>';
 }
 
 /* ═══ BITMAP ═══════════════════════════════════════════════════════════════ */
@@ -528,7 +1109,7 @@ const MUESTRA = 'GRUPO MAZI';
 
 const COMBOS = [
   { a: 'recto', p: 'uniforme', g: 0.13, nota: 'La base: estructura neutra, grosor plano.' },
-  { a: 'recto', p: 'plumilla', g: 0.19, filo: 90, nota: 'Contraste vertical clásico.' },
+  { a: 'recto', p: 'plumilla', g: 0.19, filo: 90, nota: 'Plumilla vertical: contraste invertido, horizontales gordas.' },
   { a: 'recto', p: 'cincel', g: 0.24, filo: 72, nota: 'Contraste extremo, filo en diagonal.' },
   { a: 'recto', p: 'presion', g: 0.20, nota: 'Presión de mano: engorda al centro del trazo.' },
   { a: 'recto', p: 'cuna', g: 0.20, punta: 'ninguno', nota: 'Cada trazo sale en punta de pluma.' },
@@ -549,6 +1130,60 @@ const COMBOS = [
   { a: 'recto', p: 'uniforme', g: 0.26, tr: 0.02, nota: 'Muy gorda y apretada: máximo peso.' },
 ];
 
+// Los históricos. Aquí el pincel casi no se toca: lo que cambia es el ESQUELETO,
+// que es lo que hace que se vean de siglos distintos y no del mismo dibujo.
+const COMBOS_HIST = [
+  { a: 'tensho', t: 'Sello de la dinastía Qin',
+    nota: 'Tensho 篆書, la más vieja de las cinco escrituras clásicas. Ni una diagonal: '
+        + 'la N y la Z resuelven lo oblicuo con escalera, como los sellos de piedra.' },
+  { a: 'tensho', g: 0.30, tr: 0.06, t: 'Kakuji: el sello macizo',
+    nota: 'El mismo esqueleto con el trazo engordado hasta que el hueco casi se cierra: '
+        + 'es el kakuji 角字, la versión de bloque que se usa para grabar.' },
+  { a: 'kanteiryu', t: 'Cartel de kabuki',
+    nota: 'Kanteiryū 勘亭流, del Edo. Trazo gordo curvado hacia adentro y terminación en '
+        + 'ángulo recto: no dejar hueco significaba no dejar butaca vacía.' },
+  { a: 'kanteiryu', hueco: true, remate: 'bigote', t: 'Kagomoji: letra de jaula',
+    nota: 'Kagomoji 籠文字, la letra "de canasta": el mismo cuerpo pero sólo su contorno, '
+        + 'con los pelos afuera. Se pintaba así para luego rellenarla a mano.' },
+  { a: 'kanteiryu', p: 'higemoji', cerdas: 7, g: 0.34, remate: 'ninguno',
+    t: 'Higemoji: el reparto 7-5-3',
+    nota: 'Higemoji 髭文字, la letra de bigote de los puestos de hielo raspado y de sake. '
+        + 'El oficio manda siete cerdas en el cuerpo del trazo, cinco donde se angosta y '
+        + 'tres al terminar — y aquí eso no está escrito a mano: sale de que cada cerda '
+        + 'sólo existe donde el trazo da para ella.' },
+  { a: 'sosho', t: 'Cursiva de aliento',
+    nota: 'Sōsho 草書, la que se escribe sin levantar el pincel. La Z entera es un trazo. '
+        + 'Termina en harai 払い: el pincel se levanta poco a poco y la línea se va en un pelo.' },
+  { a: 'sosho', p: 'sumi', g: 0.26, incl: 14, t: 'La tinta que se acaba',
+    nota: 'La misma cursiva con el pincel sumi 墨: entra cargado y se va rayando. Es el trazo '
+        + 'que delata que hubo una mano y no una máquina.' },
+  { a: 'textura', m: 'Grupo Mazi', t: 'Textura Quadrata · siglo XIII',
+    nota: 'La gótica de verdad vive en la minúscula: astas parejas, hombros quebrados y el '
+        + 'remate en diamante. De ahí los dos nombres — texere, tejer, por la trama; y '
+        + 'quadrata, por los diamantes.' },
+  { a: 'textura', t: 'Textura en caja alta',
+    nota: 'El mismo esqueleto todo en mayúscula: se pierde la trama y gana peso de escudo. '
+        + 'Pluma de filo ancho a −40°, que es el ángulo real de la gótica.' },
+  { a: 'rotunda', m: 'Grupo Mazi', t: 'Rotunda · la gótica del sur',
+    nota: 'La otra rama de la misma familia: el cuenco vuelve a ser redondo y el remate es de '
+        + 'bola. La diferencia con la Textura es, literalmente, dónde se devolvió la curva.' },
+  { a: 'uncial', t: 'Uncial · la letra del códice',
+    nota: 'Anterior a la gótica y su opuesto: ancha, redonda, de poco contraste y con remate '
+        + 'de cuña. No tiene minúscula porque cuando se usaba todavía no existía.' },
+  { a: 'textura', p: 'hane', g: 0.24, remate: 'ninguno', t: 'Gótica con rebote japonés',
+    nota: 'El cruce que sólo se puede hacer teniendo las dos partes separadas: esqueleto de '
+        + 'gótica del XIII con el final hane 跳ね, donde el pincel se levanta de golpe. '
+        + 'Ninguna fundidora vende esto.' },
+];
+
+function opDe(c) {
+  return {
+    alfabeto: c.a, pincel: c.p, grosor: c.g, filo: c.filo, tracking: c.tr,
+    inclinacion: c.incl, punta: c.punta, remate: c.remate, cerdas: c.cerdas,
+    relleno: c.hueco ? 'hueco' : undefined,
+  };
+}
+
 function bloqueCombo(c, i) {
   const op = {
     alfabeto: c.a, pincel: c.p, grosor: c.g, filo: c.filo ?? 90,
@@ -560,6 +1195,20 @@ function bloqueCombo(c, i) {
     <div class="o">${svg(MUESTRA, op, '#EAE5E3')}</div>
     <div class="c">${svg(MUESTRA, op, '#120C1A')}</div>
     <div class="lock"><img src="../marca/logo/paloma.svg" alt="">${svg(MUESTRA, op, '#EAE5E3')}</div>
+    <p>${c.nota}</p>
+  </article>`;
+}
+
+function bloqueHist(c, i) {
+  const op = opDe(c);
+  const A = ALFABETOS[c.a];
+  const m = c.m || MUESTRA;
+  return `<article class="hist">
+    <h2><b>H${String(i + 1).padStart(2, '0')}</b> ${c.t}
+      <span>${A.nombre}${c.p ? ` · ${c.p}` : ''}</span></h2>
+    <div class="o big">${svg(m, op, '#EAE5E3', '#120C1A')}</div>
+    <div class="c big">${svg(m, op, '#120C1A', '#EAE5E3')}</div>
+    <div class="lock"><img src="../marca/logo/paloma.svg" alt="">${svg(m, op, '#EAE5E3', '#120C1A')}</div>
     <p>${c.nota}</p>
   </article>`;
 }
@@ -592,6 +1241,10 @@ function catalogo(salida) {
   .o{background:#120C1A;border:1px solid #2A2036}
   .c{background:#EAE5E3}
   article svg{height:60px;width:auto;display:block}
+  .big svg{height:104px}
+  .hist h2 b{color:#F2B03C}
+  .fuentes{color:#6E657C;font-size:12px;line-height:1.9;margin:26px 0 0}
+  .fuentes a{color:#8B8296}
   .lock{display:flex;align-items:center;gap:16px;background:#120C1A;border:1px solid #2A2036}
   .lock img{height:46px}
   .lock svg{height:26px}
@@ -601,29 +1254,50 @@ function catalogo(salida) {
 </style>
 <div class="wrap">
   <h1>tipos.mjs · la fábrica de tipografías</h1>
-  <p class="sub">Dos cosas independientes, y confundirlas fue el error que hubo que corregir:
+  <p class="sub">Partes independientes, y confundirlas fue el error que hubo que corregir:
   el <b>esqueleto</b> es la estructura de la letra —si la O es círculo o hexágono, si la M baja
-  hasta la base— y el <b>pincel</b> es cómo se engorda. Cambiar sólo el pincel da versiones de la
-  misma letra; cambiar el esqueleto da tipografías distintas. Aquí hay
-  <b>${Object.keys(ALFABETOS).length} esqueletos × ${Object.keys(PINCELES).length} pinceles</b>,
-  sobre un juego de <b>${Object.keys(juego).length} caracteres</b> editable desde una rejilla.</p>
+  hasta la base—, el <b>pincel</b> es cómo se engorda, y el <b>remate</b> es lo que se le pega a la
+  punta, porque un perfil de grosor no puede hacer un rombo y el rombo es la gótica. Cambiar sólo
+  el pincel da versiones de la misma letra; cambiar el esqueleto da tipografías distintas. Aquí hay
+  <b>${Object.keys(ALFABETOS).length} esqueletos × ${Object.keys(PINCELES).length} pinceles ×
+  ${Object.keys(REMATES).length} remates</b>, más relleno hueco y trazo abierto en cerdas, sobre un
+  juego de <b>${Object.keys(juego).length} caracteres</b> editable desde una rejilla.</p>
 
   <h3>El juego completo · esqueleto recto</h3>
   <div class="juego">
     ${filas.map(f => svg(f, { grosor: 0.13 }, '#EAE5E3')).join('\n    ')}
   </div>
 
-  <h3>Los ${COMBOS.length} tipos</h3>
+  <h3>Los históricos · escritura clásica japonesa y letra medieval</h3>
+  <p class="sub">Estos no son otro acabado: son otra <b>estructura</b>. Salieron de investigar
+  las cinco escrituras clásicas japonesas —tensho 篆書 el sello, reisho, kaisho, gyōsho y sōsho
+  草書 la cursiva—, los <b>edomoji</b>, que son las letras que se inventaron en el Edo
+  <i>para anunciar</i>, y las dos ramas de la gótica europea. Cada uno resolvió un problema
+  concreto de su siglo, y ese problema es lo que les dio la forma.</p>
+  ${COMBOS_HIST.map(bloqueHist).join('\n')}
+
+  <p class="fuentes">De dónde salió: <a href="https://en.wikipedia.org/wiki/Edomoji">Edomoji</a> ·
+  <a href="https://craft.city.taito.lg.jp/center/en/list/%E6%B1%9F%E6%88%B8%E6%96%87%E5%AD%97en/">Centro
+  de Artesanía Tradicional de Edo-Taito</a> ·
+  <a href="https://theslowbrush.com/posts/five-classical-styles-japanese-calligraphy/">las cinco
+  escrituras clásicas</a> ·
+  <a href="https://www.calligraphytokyo.com/blogs/magazine/5-scripts-of-japanese-calligraphy">Calligraphy
+  Tokyo</a> · <a href="https://www.lttrink.com/blog/comprehensive-guide-blackletter/">guía de
+  blackletter de LTTR/INK</a> ·
+  <a href="https://youblob.com/us/blueprints/gothic-blackletter-calligraphy">Textura Quadrata</a>.</p>
+
+  <h3>Los ${COMBOS.length} tipos de la primera vuelta</h3>
   ${COMBOS.map(bloqueCombo).join('\n')}
 </div>
 `);
-  console.log(`✒  ${salida}  ·  ${COMBOS.length} tipos`);
+  console.log(`✒  ${salida}  ·  ${COMBOS_HIST.length} históricos + ${COMBOS.length} tipos`);
 }
 
 /* ═══ CLI ══════════════════════════════════════════════════════════════════ */
 
 const [, , cmd, ...resto] = process.argv;
 const opt = (n, d) => { const i = resto.indexOf('--' + n); return i === -1 ? d : resto[i + 1]; };
+const num = n => (opt(n) === undefined ? undefined : +opt(n));
 
 if (cmd === 'catalogo') {
   catalogo(resto[0] || 'tipos.html');
@@ -642,10 +1316,14 @@ if (cmd === 'catalogo') {
   const t = resto[0] || 'GRUPO MAZI';
   const salida = resto[1] || 'texto.svg';
   writeFileSync(salida, svg(t, {
-    alfabeto: opt('alfabeto', 'recto'), pincel: opt('pincel', 'uniforme'),
-    grosor: +opt('grosor', 0.13), filo: +opt('filo', 90),
-    tracking: +opt('tracking', 0.05), inclinacion: +opt('inclinacion', 0),
-    punta: opt('punta', 'ninguno'), anchoGlifo: +opt('ancho', 1),
+    // Nada de valores por omisión aquí: lo que no se pida a mano lo pone el
+    // ajuste de fábrica del alfabeto, que para los históricos es la mitad del
+    // estilo. `--alfabeto textura` a secas ya sale con filo −40° y diamante.
+    alfabeto: opt('alfabeto', 'recto'), pincel: opt('pincel'),
+    grosor: num('grosor'), filo: num('filo'), tracking: num('tracking'),
+    inclinacion: num('inclinacion'), punta: opt('punta'), anchoGlifo: num('ancho'),
+    remate: opt('remate'), cerdas: num('cerdas'),
+    relleno: resto.includes('--hueco') ? 'hueco' : undefined,
   }));
   console.log(`✒  ${salida}`);
 } else {
@@ -655,11 +1333,16 @@ if (cmd === 'catalogo') {
   juego     [--alfabeto X]     lista los glifos disponibles
   pinceles                     lista los pinceles y qué hace cada uno
   bitmap    "texto" [--filas N]  rasteriza a rejilla ASCII
-  texto     "texto" salida.svg   [--alfabeto --pincel --grosor --filo
-                                  --tracking --inclinacion --punta --ancho]
+  texto     "texto" salida.svg   [--alfabeto --pincel --grosor --filo --tracking
+                                  --inclinacion --punta --ancho --remate
+                                  --cerdas N --hueco]
 
   alfabetos: ${Object.keys(ALFABETOS).join(', ')}
-  pinceles:  ${Object.keys(PINCELES).join(', ')}`);
+  pinceles:  ${Object.keys(PINCELES).join(', ')}
+  remates:   ${Object.keys(REMATES).join(', ')}
+
+  Cada alfabeto trae su ajuste de fábrica (pincel, filo, remate): "--alfabeto
+  textura" a secas ya sale con filo −40° y remate de diamante.`);
 }
 
 export { ALFABETOS, PINCELES, resolver };
