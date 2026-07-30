@@ -117,11 +117,21 @@
     border-left:1px solid var(--line); margin-left:4px; }
   .fila .fav.on { color:var(--brass); }
 
+  .ramas { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; align-items:center; }
+  .ramas .et { font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--dim); margin-right:2px; }
+  .ficha { display:inline-flex; align-items:center; min-height:38px; padding:0 11px;
+    background:var(--surface); border:1px solid var(--line); border-radius:20px;
+    font-size:12.5px; color:var(--bone); text-decoration:none;
+    font-family:ui-monospace,Consolas,monospace; }
+  .ficha.viva { border-color:var(--brass); color:var(--brass); font-weight:700; }
+
   .rot { display:flex; align-items:center; gap:9px; margin:22px 0 9px; }
   .rot h2 { margin:0; font-size:11px; font-weight:700; letter-spacing:.16em;
     text-transform:uppercase; color:var(--bone); }
   .rot .regla { flex:1; height:1px; background:var(--line); }
-  .rot .cta { font-size:11px; color:var(--dim); }
+  .rot .cta { font-size:11px; color:var(--dim); min-width:0; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
 
   .aviso { padding:12px 14px; background:var(--surface); border:1px dashed var(--line);
     border-radius:3px; font-size:12.5px; color:var(--dim); line-height:1.55; }
@@ -129,6 +139,8 @@
   .aviso.mal { border-color:var(--warn); border-style:solid; color:var(--bone); }
   .aviso code { font-family:ui-monospace,Consolas,monospace; font-size:11.5px;
     color:var(--brass); background:var(--surface-2); padding:1px 5px; border-radius:2px; }
+  /* Sin esto el enlace sale azul de navegador y rompe la paleta entera. */
+  .aviso a { color:var(--brass); text-decoration:underline; text-underline-offset:2px; }
 
   .cargando { padding:26px 0; text-align:center; color:var(--dim); font-size:13px; }
 
@@ -311,6 +323,11 @@ const G = {                       // lo que se guarda en el teléfono
   get tema()       { return localStorage.getItem('mazi.exp.tema') || ''; },
   set tema(v)      { v ? localStorage.setItem('mazi.exp.tema', v)
                        : localStorage.removeItem('mazi.exp.tema'); },
+  // La rama elegida por repo se recuerda: si Carlos anda leyendo lo de una rama
+  // de trabajo, no tiene que volver a escogerla en cada archivo que abra.
+  rama(repo)       { return localStorage.getItem('mazi.exp.rama.' + repo) || ''; },
+  ponRama(repo, v) { v ? localStorage.setItem('mazi.exp.rama.' + repo, v)
+                       : localStorage.removeItem('mazi.exp.rama.' + repo); },
 };
 
 const $ = s => document.querySelector(s);
@@ -407,6 +424,26 @@ async function traerArbol(repo, rama, forzar) {
   try { localStorage.setItem('mazi.exp.arbol.' + clave, JSON.stringify(a)); }
   catch(e) { /* si no cabe, ni modo: queda en memoria */ }
   return a;
+}
+
+/**
+ * Las ramas de un repo. Una petición, cacheada en la sesión.
+ *
+ * Hace falta porque el trabajo de la casa vive en una rama `claude/…` durante
+ * días antes de llegar a `main`, y `main` es lo único que publica GitHub Pages.
+ * O sea que sin esto, un archivo recién escrito no se puede leer hasta que se
+ * fusione — que es exactamente el problema que este explorador vino a resolver.
+ */
+async function traerRamas(repo) {
+  const clave = 'mazi.exp.ramas.' + repo;
+  const g = sessionStorage.getItem(clave);
+  if (g) { try { return JSON.parse(g); } catch(e) {} }
+  try {
+    const d = await api('/repos/' + DUEÑO + '/' + repo + '/branches?per_page=100');
+    const r = d.map(b => b.name);
+    sessionStorage.setItem(clave, JSON.stringify(r));
+    return r;
+  } catch (e) { return [repoInfo(repo).default_branch]; }
 }
 
 /** El contenido crudo. NO gasta cuota de API, y con llave sirve para privados. */
@@ -839,10 +876,23 @@ async function vistaRepos() {
       + '</div>';
   }
 
+  // Con qué rama se abren los atajos. Importa decirlo: el trabajo del día vive en
+  // una rama `claude/…` y main puede no tenerlo todavía. Si un atajo sale vacío,
+  // casi siempre es eso y no un archivo perdido.
+  const ramaAtajos = G.rama('mazi-central') || repoInfo('mazi-central').default_branch;
   h += '<div class="rot"><h2>Atajos</h2><span class="regla"></span>'
-     + '<span class="cta">lo que abro seguido</span></div><div class="lista">';
+     + '<span class="cta">rama <b style="color:var(--brass)">' + esc(ramaAtajos) + '</b></span>'
+     + '</div>';
+  if (ramaAtajos !== repoInfo('mazi-central').default_branch) {
+    h += '<div class="aviso" style="margin-bottom:9px">Estás leyendo la rama '
+      + '<code>' + esc(ramaAtajos) + '</code>. '
+      + '<a href="' + liga('mazi-central','',repoInfo('mazi-central').default_branch)
+      + '" data-rama="' + esc(repoInfo('mazi-central').default_branch) + '">Volver a '
+      + esc(repoInfo('mazi-central').default_branch) + '</a></div>';
+  }
+  h += '<div class="lista">';
   ATAJOS.forEach(([ruta, que]) => {
-    h += '<a class="fila doc" href="' + liga('mazi-central', ruta, null) + '">'
+    h += '<a class="fila doc" href="' + liga('mazi-central', ruta, ramaAtajos) + '">'
       + '<span class="ic">◈</span><span class="cuerpo">'
       + '<span class="nm">' + esc(ruta.split('/').pop()) + '</span>'
       + '<span class="meta">' + esc(que) + '</span></span><span class="go">›</span></a>';
@@ -856,7 +906,7 @@ async function vistaRepos() {
     fav.forEach(clv => {
       const corte = clv.indexOf('/');
       const rp = clv.slice(0, corte), rt = clv.slice(corte + 1);
-      h += '<a class="fila doc" href="' + liga(rp, rt, null) + '">'
+      h += '<a class="fila doc" href="' + liga(rp, rt, G.rama(rp) || null) + '">'
         + '<span class="ic">★</span><span class="cuerpo">'
         + '<span class="nm">' + esc(rt.split('/').pop()) + '</span>'
         + '<span class="meta">' + esc(rp) + ' · ' + esc(rt) + '</span></span>'
@@ -871,7 +921,7 @@ async function vistaRepos() {
     rec.forEach(clv => {
       const corte = clv.indexOf('/');
       const rp = clv.slice(0, corte), rt = clv.slice(corte + 1);
-      h += '<a class="fila" href="' + liga(rp, rt, null) + '">'
+      h += '<a class="fila" href="' + liga(rp, rt, G.rama(rp) || null) + '">'
         + '<span class="ic">↺</span><span class="cuerpo">'
         + '<span class="nm">' + esc(rt.split('/').pop()) + '</span>'
         + '<span class="meta">' + esc(rp) + '</span></span><span class="go">›</span></a>';
@@ -882,7 +932,7 @@ async function vistaRepos() {
   h += '<div class="rot"><h2>Repos</h2><span class="regla"></span>'
      + '<span class="cta">' + repos.length + '</span></div><div class="lista">';
   repos.forEach(r => {
-    h += '<a class="fila dir" href="' + liga(r.name, '', r.default_branch) + '">'
+    h += '<a class="fila dir" href="' + liga(r.name, '', G.rama(r.name) || r.default_branch) + '">'
       + '<span class="ic">▸</span><span class="cuerpo">'
       + '<span class="nm">' + esc(r.name)
       + (r.private ? ' <span style="color:var(--dim);font-weight:400;font-size:11px">privado</span>' : '')
@@ -959,6 +1009,18 @@ async function vistaCarpeta() {
     + esc(E.repo) + '/tree/' + esc(E.rama) + '/' + esc(E.ruta) + '">Ver en GitHub ↗</a>'
     + '</div>';
 
+  // En la raíz del repo se ofrecen las ramas. Es lo que hace que un archivo
+  // recién escrito se pueda leer sin esperar a que se fusione a main.
+  if (!E.ruta) {
+    const ramas = await traerRamas(E.repo);
+    if (ramas.length > 1) {
+      h += '<div class="ramas"><span class="et">rama</span>'
+        + ramas.map(r => '<a class="ficha' + (r === E.rama ? ' viva' : '') + '" data-rama="'
+            + esc(r) + '" href="' + liga(E.repo, '', r) + '">' + esc(r) + '</a>').join('')
+        + '</div>';
+    }
+  }
+
   h += hijos.length
     ? '<div class="lista">' + hijos.map(n => filaHTML(E.repo, E.rama, n)).join('') + '</div>'
     : '<div class="aviso">Carpeta vacía.</div>';
@@ -1012,7 +1074,7 @@ async function vistaArchivo() {
     if (IMAGENES.includes(e)) {
       cuerpo.innerHTML = cabeza + '<div class="visor"><img src="' + esc(urlCruda)
         + '" alt="' + esc(nombre) + '"></div>';
-      atarFav(); atarTablas();
+      atarFav(); atarTablas(); atarRamas();
       return;
     }
 
@@ -1028,7 +1090,7 @@ async function vistaArchivo() {
       cuerpo.innerHTML = cabeza + '<div class="visor">' + limpio + '</div>'
         + '<div class="aviso" style="margin-top:14px">Es un SVG, o sea texto. '
         + '<a href="' + liga(E.repo, E.ruta, E.rama) + '&v=codigo">Ver el código</a>.</div>';
-      atarFav(); atarTablas();
+      atarFav(); atarTablas(); atarRamas();
       return;
     }
 
@@ -1036,7 +1098,7 @@ async function vistaArchivo() {
       cuerpo.innerHTML = cabeza + '<div class="aviso"><b>' + esc(e.toUpperCase())
         + '</b> — esto no se abre aquí. Usa <b>Crudo ↗</b> para descargarlo o verlo con la app '
         + 'del teléfono.</div>';
-      atarFav(); atarTablas();
+      atarFav(); atarTablas(); atarRamas();
       return;
     }
 
@@ -1062,11 +1124,11 @@ async function vistaArchivo() {
         + (e === 'md' ? '<div class="acciones" style="margin:22px 0 0"><a class="btn acento" href="'
             + liga(E.repo, E.ruta, E.rama) + '">Ver con formato</a></div>' : '');
     }
-    atarFav(); atarTablas();
+    atarFav(); atarTablas(); atarRamas();
   } catch (err) {
     cuerpo.innerHTML = cabeza + '<div class="aviso mal"><b>No se pudo abrir.</b> '
       + esc(err.message) + ' — si el repo es privado, hace falta la llave 🔑.</div>';
-    atarFav(); atarTablas();
+    atarFav(); atarTablas(); atarRamas();
   }
 }
 
@@ -1132,6 +1194,13 @@ function atarTablas() {
   });
 }
 
+/** Al elegir una rama se recuerda, para no volver a escogerla en cada archivo. */
+function atarRamas() {
+  document.querySelectorAll('[data-rama]').forEach(a => {
+    a.addEventListener('click', () => G.ponRama(E.repo, a.getAttribute('data-rama')));
+  });
+}
+
 function atarFav() {
   document.querySelectorAll('[data-fav]').forEach(b => {
     b.onclick = ev => {
@@ -1161,13 +1230,15 @@ async function ruta() {
   if (!location.hash || !r.ruta && !new URLSearchParams(location.hash.slice(1)).get('p')) {
     E.repo = null;
     await vistaRepos();
-    atarFav(); atarTablas();
+    atarFav(); atarTablas(); atarRamas();
     return;
   }
 
   await traerRepos();
   E.repo = r.repo;
-  E.rama = r.rama || repoInfo(r.repo).default_branch;
+  // Prioridad: la del enlace > la que Carlos eligió antes > la del repo.
+  E.rama = r.rama || G.rama(r.repo) || repoInfo(r.repo).default_branch;
+  if (r.rama) G.ponRama(r.repo, r.rama);   // venir por enlace también la fija
   E.ruta = r.ruta;
 
   // ¿Es archivo o carpeta? Se decide con el árbol, no adivinando por la extensión:
@@ -1181,7 +1252,7 @@ async function ruta() {
 
   if (E.ruta && esArch) await vistaArchivo();
   else await vistaCarpeta();
-  atarFav(); atarTablas();
+  atarFav(); atarTablas(); atarRamas();
 }
 
 function abrirLlave() {
