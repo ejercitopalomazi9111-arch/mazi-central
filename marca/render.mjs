@@ -95,6 +95,25 @@ const TOMAS = [
     fondo: `background:${VACIO}`,
     tinta: HUESO, aura: null, soloAve: true, apretado: true,
   },
+  // Los iconos de la app instalada en el teléfono. Antes eran una foto; ahora
+  // son el logo. Van SIN aura y con margen generoso: iOS recorta las esquinas y
+  // un resplandor a 60 px se ve como una mancha, no como brillo.
+  {
+    id: 'icono-192', an: 192, al: 192, nota: 'Icono de la app · 192',
+    fondo: `background:
+      radial-gradient(78% 78% at 50% 30%, #33204A 0%, #1B1327 62%, ${VACIO} 100%),
+      ${VACIO}`,
+    tinta: HUESO, aura: VIOLETA, auraFuerza: 0.35, soloAve: true, apretado: false,
+    escala: 1, grano: 0,
+  },
+  {
+    id: 'icono-512', an: 512, al: 512, nota: 'Icono de la app · 512',
+    fondo: `background:
+      radial-gradient(78% 78% at 50% 30%, #33204A 0%, #1B1327 62%, ${VACIO} 100%),
+      ${VACIO}`,
+    tinta: HUESO, aura: VIOLETA, auraFuerza: 0.45, soloAve: true, apretado: false,
+    escala: 1, grano: 0,
+  },
 ];
 
 /* ═══ UNA TOMA ═════════════════════════════════════════════════════════════ */
@@ -109,7 +128,10 @@ function toma(t) {
     : '';
   const aura = halo(t.auraFuerza ?? 0, t.aura);
   const auraTxt = halo((t.auraFuerza ?? 0) * 0.26, t.aura);
-  const marco = t.apretado ? 8 : t.soloAve ? 16 : t.apilado ? 12 : 9;
+  // Los iconos de app llevan más margen que el avatar: iOS les recorta las
+  // esquinas con un radio grande y sin aire se come las puntas de las alas.
+  const marco = /^icono-/.test(t.id) ? 19
+    : t.apretado ? 8 : t.soloAve ? 16 : t.apilado ? 12 : 9;
 
   const ave = `<div class="ave" style="${aura}">${paloma}</div>`;
   const texto = t.soloAve ? '' : `<div class="txt" style="color:${t.tinta};${auraTxt}">${LOGOTIPO}</div>`;
@@ -144,7 +166,8 @@ const html = `<!doctype html>
   .marca{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
          gap:6%}
   .marca.apilada{flex-direction:column;gap:4.5%}
-  .marca.sola{padding:16%!important}
+  /* Sin esto, el important pisaba el margen mayor de los iconos de app. */
+  .marca.sola{}
   .ave{flex:0 0 auto;line-height:0}
   .ave svg{display:block;width:100%;height:auto}
   .fila .ave{width:26%}
@@ -195,7 +218,10 @@ if (process.argv.includes('--capturar')) {
   for (const t of TOMAS) {
     const png = new URL(`./render/${t.id}.png`, import.meta.url).pathname;
     execFileSync('node', [captura, `file://${salida}#${t.id}`, png,
-      '--ancho', String(t.an), '--alto', String(t.al), '--escala', '2',
+      '--ancho', String(t.an), '--alto', String(t.al),
+      // Los iconos se sacan a 1x: el manifiesto declara 192 y 512, y un PNG
+      // de 384 declarado como 192 son bytes que nadie usa.
+      '--escala', String(t.escala ?? 2),
       '--espera', '3500',
       '--js', `(()=>{const e=document.getElementById('${t.id}');
         document.body.style.padding='0';document.body.style.background='transparent';

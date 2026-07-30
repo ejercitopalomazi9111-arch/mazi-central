@@ -10,7 +10,7 @@ Estas se cargan solas cuando aplican. No hace falta mencionarlas.
 |---|---|
 | `find-skill` | **El índice.** Qué skill toca, en qué orden, y cuándo ninguna |
 | `four-judges` | Antes de toda decisión cara o difícil de revertir. Palabra clave: **ROAST** |
-| `consejo-tecnico` | **El consejo de ingenieros.** Antes de publicar código con cuentas, pagos, datos de personas, subidas de archivo o llaves. Palabras: **AUDITA** y **ROMPE** |
+| `consejo-tecnico` | **La Sala de Máquinas — 24 ingenieros con nombre.** Antes de publicar código con cuentas, pagos, datos de personas, subidas o llaves. También contesta *"¿cómo se ve?"* y *"¿cuánto tarda?"*. Palabras: **AUDITA**, **ROMPE**, **CÓMO SE VE**, **CUÁNTO TARDA** |
 | `frontend-design` | Que se vea bonito de verdad: tipografía, escala, jerarquía, layout |
 | `revision-web` | **La cátedra.** Revisión exhaustiva antes de entregar, con las reglas de Vercel |
 | `agent-browser` | Ver y usar la pantalla de verdad. Nunca decir "ya quedó" sin esto |
@@ -37,6 +37,11 @@ qué hueco tenemos, no como material listo.
 
 Muchos de esos nombres corresponden a skills públicas reales. **Antes de instalar cualquiera de
 fuera, léela completa**: una skill corre con nuestros permisos y hereda nuestro contexto.
+
+> **Buena parte de esta capa y de la 2 ya tienen dueño**, no skill: el área de **front end**
+> (Ximena, Iker, Pilar, Gonzalo) y la de **diseño gráfico** (Renée, Mateo, Sol, Bruno) de
+> `consejo-tecnico`. Lo que faltaba no era criterio suelto: era **alguien encargado de opinar apartado
+> por apartado y entregar la propuesta hecha.**
 
 ### Capa 1 · Frontend y UI — *"diseño que no parece de IA"*
 `frontend-design` (interfaces distintivas) · `ui-ux-pro-max` (inteligencia UI/UX) ·

@@ -58,7 +58,25 @@
  * Las dos herramientas se enganchan.
  */
 
-import { writeFileSync } from 'node:fs';
+/* ── POR QUÉ `node:fs` NO SE IMPORTA ARRIBA ───────────────────────────────
+   Este archivo tiene que correr en DOS lados: en Node (el CLI que saca los
+   catálogos) y en el NAVEGADOR (el taller del sitio, que es la sección estrella).
+
+   Con `import { writeFileSync } from 'node:fs'` en el nivel superior, el
+   navegador ni siquiera llega a leer el resto: falla al cargar el módulo con
+   "Access to script at 'node:fs' has been blocked". Comprobado con Chromium el
+   30 de julio — el plan del sitio afirmaba que esto "corre en el navegador tal
+   cual" y era falso.
+
+   `node:fs` sólo lo usan las funciones del CLI, así que se carga cuando se usa.
+   Prueba de regresión: `rocco-tipos.mjs` debe imprimir `OK <n> bytes de SVG`. */
+const enNode = typeof process !== 'undefined'
+  && !!(process.versions && process.versions.node);
+
+async function escribir(ruta, contenido) {
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync(ruta, contenido);
+}
 
 const r2 = n => Math.round(n * 100) / 100;
 
@@ -1851,13 +1869,13 @@ function bloqueHist(c, i) {
   </article>`;
 }
 
-function catalogo(salida) {
+async function catalogo(salida) {
   const juego = resolver('recto').glifos;
   const filas = [
     'ABCDEFGHIJKLM', 'NOPQRSTUVWXYZ', 'abcdefghijklm', 'nopqrstuvwxyz',
     '0123456789', 'ÁÉÍÓÚÜÑ áéíóúüñ', '.,:;-–·!¡?¿()/&@', 'ΓΔΘΛΞΠΣΥΦΩ μζ',
   ];
-  writeFileSync(salida, `<meta charset="utf-8">
+  await escribir(salida, `<meta charset="utf-8">
 <title>tipos.mjs — la fábrica de tipografías</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
@@ -1933,19 +1951,20 @@ function catalogo(salida) {
 
 /* ═══ CLI ══════════════════════════════════════════════════════════════════ */
 
-const [, , cmd, ...resto] = process.argv;
+// En el navegador no hay `process`, y leerlo aquí tumbaba el módulo entero.
+const [, , cmd, ...resto] = enNode ? process.argv : [];
 const opt = (n, d) => { const i = resto.indexOf('--' + n); return i === -1 ? d : resto[i + 1]; };
 const num = n => (opt(n) === undefined ? undefined : +opt(n));
 
 // Sólo cuando se corre a mano. Sin esta guarda, cualquier archivo que importe
 // `svg` o `componer` imprime la ayuda de la herramienta en su propia salida.
-const directo = process.argv[1]
+const directo = enNode && process.argv[1]
   && import.meta.url === new URL(`file://${process.argv[1]}`).href;
 
 if (!directo) {
   /* importada: no se corre nada */
 } else if (cmd === 'catalogo') {
-  catalogo(resto[0] || 'tipos.html');
+  await catalogo(resto[0] || 'tipos.html');
 } else if (cmd === 'juego') {
   const al = opt('alfabeto', 'recto');
   const g = resolver(al).glifos;
@@ -1960,7 +1979,7 @@ if (!directo) {
 } else if (cmd === 'texto') {
   const t = resto[0] || 'GRUPO MAZI';
   const salida = resto[1] || 'texto.svg';
-  writeFileSync(salida, svg(t, {
+  await escribir(salida, svg(t, {
     // Nada de valores por omisión aquí: lo que no se pida a mano lo pone el
     // ajuste de fábrica del alfabeto, que para los históricos es la mitad del
     // estilo. `--alfabeto textura` a secas ya sale con filo −40° y diamante.

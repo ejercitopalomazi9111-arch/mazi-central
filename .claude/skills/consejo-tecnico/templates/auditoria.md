@@ -5,6 +5,7 @@
 **Qué se auditó:** [archivos, rutas, tablas — concreto]
 **Dónde corre:** [GitHub Pages · Supabase · localStorage · el teléfono]
 **¿Hay datos de personas?** sí / no · **¿de menores?** sí / no · **¿el repo es público?** sí / no
+**Mesa convocada:** chica (6) · por área · completa (24) — y por qué ese tamaño
 
 > ⚠️ **Recordatorio de la regla del acta:** este archivo vive en un repo público. Mientras un
 > hallazgo 🔴 esté abierto, aquí va **sólo área, nivel y "en proceso"**. El detalle se le dice a
@@ -22,7 +23,7 @@ el consejo va a auditar en abstracto.]
 
 ---
 
-## 🏗 La Arquitecta
+## 🏗 Arquitectura · Verónica, Beto, Kenji, Lucía
 
 **Qué pieza está haciendo trabajo que no le toca**
 
@@ -36,13 +37,26 @@ el consejo va a auditar en abstracto.]
 
 ---
 
-## 🕳 El Sombrero Negro
+## 🕳 Cuervo · el sombrero negro EN CONTRA (a ciegas)
 
-*Los caminos, sin receta. Área y efecto — el paso a paso va en el chat mientras esté abierto.*
+*Sólo con lo que tiene cualquiera: la página, el inspector y el repo público.*
 
 | # | Por dónde | Qué se lleva o qué rompe | Qué tan fácil |
 |---|---|---|---|
 | 1 | | | |
+
+---
+
+## 🕳 AK · el sombrero negro A FAVOR (con los planos)
+
+*Pega más duro, y además explica de qué clase es y cómo se cierra. Clases en
+[`vulnerabilidades.md`](../skills/consejo-tecnico/reference/vulnerabilidades.md).*
+
+| # | Clase | Cómo aplica aquí | Cómo se cierra |
+|---|---|---|---|
+| 1 | | | |
+
+*Área y efecto — el paso a paso va en el chat mientras el hallazgo esté abierto.*
 
 **Lo que viaja al navegador y no debería**
 
@@ -56,7 +70,7 @@ el consejo va a auditar en abstracto.]
 
 ---
 
-## 🛡 El Sombrero Blanco
+## 🛡 Los sombreros blancos · Damián, Emilio, Paola, Tadeo
 
 | Nivel | Hallazgo | Arreglo concreto | Cómo se comprueba |
 |---|---|---|---|
@@ -69,6 +83,38 @@ el consejo va a auditar en abstracto.]
 > 1.
 > 2.
 > 3.
+
+---
+
+## 🎨 Diseño gráfico · Renée, Mateo, Sol, Bruno
+
+*Sólo si el cambio se ve. Y no se entrega el reclamo: se entrega la propuesta.*
+
+**Qué está fuera de la marca** (color medido, tipografía de la casa, logo compuesto)
+
+**La propuesta, hecha** — archivo o captura, no párrafo:
+
+**Formatos que faltan** (avatar, favicon, cuadrado, vertical) y cuánto pesan
+
+---
+
+## 🖥 Front end · Ximena, Iker, Pilar, Gonzalo
+
+*Apartado por apartado. Veredicto y arreglo de cada uno, y qué poner donde falta.*
+
+| Apartado | Cómo se ve hoy | El arreglo | Nivel |
+|---|---|---|---|
+| | | | |
+
+**Lo que NO debería existir**
+
+**Lo que falta y qué poner ahí**
+
+**Movimiento** — ¿guiado por scroll, o secuestrado? (regla 3)
+
+**Tacto y accesibilidad** — objetivos < 44 px · contraste · foco · `prefers-reduced-motion`
+
+**Anchos** — teléfono 390 · laptop 1280 · ancho 1920. Desbordes horizontales:
 
 ---
 
@@ -88,7 +134,21 @@ el consejo va a auditar en abstracto.]
 
 ---
 
-## 🌙 El de Guardia
+## 🌙 Oficio y operación · cuánto cuesta y por dónde no moverse
+
+### Nayeli · las tres cubetas
+
+| | Dónde | Por qué |
+|---|---|---|
+| 🟢 **Terreno firme** | | |
+| 🟡 **Con cuidado** | | |
+| 🔴 **Minado** | | |
+
+**La estimación honesta, y qué la infla:**
+
+**Por dónde empezar para llegar más lejos hoy:**
+
+### 🌙 El de Guardia
 
 **Cuando falle, ¿cómo me entero? ¿el mensaje dice algo?**
 
@@ -104,11 +164,36 @@ el consejo va a auditar en abstracto.]
 
 ---
 
-## ⚖️ El Juez Técnico
+## 🐈 Michi · lo que nadie planeó
+
+*Doble clic · recarga a media operación · sin señal en el paso 3 · atrás después de guardar ·
+formulario vacío · nombre de 4,000 letras · archivo que miente sobre lo que es · girar el teléfono.*
+
+| Qué le hizo | Qué pasó |
+|---|---|
+| | |
+
+---
+
+## 🐕 Rocco · la evidencia
+
+*Nadie dice "ya quedó" sin esto.*
+
+| Qué se probó | Cómo | Resultado |
+|---|---|---|
+| | | |
+
+**Capturas:**
+**Prueba de regresión enterrada en:**
+
+---
+
+## ⚖️ Nadia Berrones · la Jueza Técnica
 
 # VEREDICTO: `ENVIAR` · `ARREGLAR PRIMERO` · `NO SE ENVÍA`
 
-**Qué rechazo de mis propios cinco, y por qué:**
+**Qué rechazo de mi propio equipo, y por qué:** *(un consejo donde todos tuvieron razón
+no sirvió de nada)*
 
 **El riesgo más grande, en una línea:**
 

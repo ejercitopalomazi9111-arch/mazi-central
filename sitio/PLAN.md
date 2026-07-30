@@ -80,8 +80,14 @@ Teléfono en vertical primero. Siempre.
 │      ▓▓▓▓  ▓▓▓▓  (paloma)   │
 │      GRUPO MAZI             │ ← se arma segmento por segmento
 │                             │
-│   No lo hacemos en corto,   │
-│   lo hacemos a la larga.    │
+│   Todo gran proyecto        │
+│   comienza con una base     │
+│   sólida. Nosotros la       │
+│   construimos, y también    │
+│   la última pieza que le    │
+│   da vida.                  │
+│   web · software · mkt ·    │ ← los seis, en gris chico
+│   video · gestión · tiempos │
 │                             │
 │   ┌───────────────────┐     │
 │   │  Hablar por WhatsApp    │ ← el único botón de la primera pantalla
@@ -99,16 +105,20 @@ Teléfono en vertical primero. Siempre.
 │  Marketing · Video y foto   │
 ├─────────────────────────────┤
 │  EL TALLER                  │
-│  [ GRUPO MAZI ]  ← se redibuja
-│  esqueleto ◄ ● ►            │
-│  pincel    ◄ ● ►            │
-│  ochavo    ──●──            │
-│  → ver la fábrica completa  │
+│  [ cronómetro │ tu nombre ] │ ← fichas: elegir herramienta
+│                             │
+│        00:04.82             │ ← LA LECTURA, arriba
+│    ciclo 7 · prom 5.1 s     │
+│                             │
+│  perilla ────●────          │ ← los controles, abajo
+│  ⤓ exportar ↺ ⌾ compartir   │ ← LA BANDEJA, igual en todas
+│  "nada de esto sale de tu   │
+│   teléfono"                 │
 ├─────────────────────────────┤
 │  TRABAJO                    │
 │  Ligas Mazi                 │
 │  Plataforma de gestión      │
-│  Torre Infinita → jugar     │
+│  Este sitio                 │
 ├─────────────────────────────┤
 │  CÓMO TRABAJAMOS            │
 │  … comisión en cristiano    │
@@ -163,6 +173,121 @@ Cómo va:
 
 **Lo que NO va:** pantalla de carga con porcentaje, logo girando, cortina que tapa el contenido,
 scroll secuestrado en la portada, ni video de fondo.
+
+---
+
+## 3-bis · EL TALLER · el instrumento con módulos
+
+**De dónde sale:** Carlos, 30 de julio — *"en herramientas no tendremos sólo el de fuentes;
+necesitamos cosas a diferentes escalas para las industrias reales, necesitamos que todo sea una sola
+experiencia, así que vamos a priorizar diseño."*
+
+Pasó por la casa de ingeniería
+([acta](../.claude/auditorias/2026-07-30-plan-del-sitio.md), **ARREGLAR PRIMERO**) y por el consejo de
+negocio y los cuatro jueces
+([veredicto](../.claude/veredictos/2026-07-30-el-taller-de-herramientas.md), **CONSTRUIR con alcance
+congelado en dos**).
+
+### Qué significa "una sola experiencia" — y es lo contrario de lo obvio
+
+> **No se diseñan cinco herramientas. Se diseña UN instrumento con cinco módulos.**
+
+Cinco juguetes con estilos parecidos **no** son una experiencia única: se nota a los dos segundos
+porque los controles no se comportan igual. **La consistencia visual sin consistencia de interfaz
+dura hasta la tercera herramienta.**
+
+**El vocabulario del instrumento — cinco piezas y ni una más:**
+
+| Pieza | Qué es | Regla |
+|---|---|---|
+| **La perilla** | Rango con etiqueta y cifra en Mazi | **Mínimo 44 px de alto.** Es la que más se toca |
+| **El selector** | Elegir entre opciones | Fichas, no menú. En teléfono un menú es un paso de más |
+| **La lectura** | Donde sale el resultado | **Siempre arriba** de los controles en teléfono |
+| **El botón de acción** | Uno por herramienta, en violeta | **Uno.** El segundo va en texto |
+| **La bandeja** | Exportar · reiniciar · compartir | **Idéntica en todas.** Es la que hace que se sienta la misma máquina |
+
+**Y el contrato en código, que ES la experiencia única dicha técnicamente:**
+
+```js
+sitio/taller/<herramienta>.js  →  export default {
+    id, nombre, servicio,      // a qué servicio de los seis pertenece
+    montar(nodo, taller),      // se dibuja dentro del nodo que le dan
+    exportar(),                // { nombre, tipo, datos }  ← el MISMO para todas
+    liberar()                  // se apaga al salir: temporizadores, listeners
+}
+```
+
+Si `exportar()` no es igual para todas, el botón de exportar tiene que ser distinto en cada una — y
+ahí se acabó la experiencia única por más que se pinten iguales. Y `liberar()` no es adorno: el
+cronómetro tiene un temporizador vivo; sin apagarlo al cambiar de herramienta, sigue corriendo.
+
+> **Cuándo se escribe el contrato:** antes de la **segunda** herramienta, no de la primera. Escribir
+> la arquitectura de cinco herramientas teniendo cero es cómo no se entrega nada. *(Nadia corrigiendo
+> a Verónica.)*
+
+### Las herramientas — cada una prueba un servicio, o no va
+
+| Herramienta | Prueba el servicio | Para quién es, de verdad | Cubeta |
+|---|---|---|---|
+| **1ª · Cronómetro de tiempos y movimientos** | *Tiempos y movimientos* | Un taller, una cocina, una línea. Mide ciclos, saca promedio y desviación, **señala el cuello de botella** y exporta a Excel | 🟢 |
+| **2ª · Tu nombre en Mazi** | *Marketing · identidad* | Cualquiera. Es el imán: se comparte solo | 🟢 |
+| *después* · La fábrica completa | *Marketing · identidad* | El que se clavó. Es la que nadie puede copiar | 🟡 |
+| *después* · Redimensionador para redes | *Video y fotografía* | Una tienda, un restaurante: una foto → los cinco formatos | 🟡 |
+| *después* · Vectorizador | *Video y foto · web* | El negocio que sólo tiene su logo en JPG borroso | 🔴 |
+| *Fase 3* · Cotizador | *Gestión de negocios* | — | — |
+
+**Alcance congelado en DOS para la v1.** Las demás entran de una en una, y **sólo cuando haya alguien
+usando la anterior**. Cinco herramientas es una apuesta de un mes sobre una hipótesis sin probar.
+
+**Y falta uno, hay que decirlo:** *Desarrollo de software* y *Páginas web* **no tienen herramienta
+pública**, y son los dos servicios más caros. **El sitio mismo es su demostración** — por eso Trabajo
+ahora incluye este sitio como pieza.
+
+### Por qué el cronómetro va primero, y no la de tipografías
+
+1. Es 🟢 y la de tipografías es 🟡 (dependía de un arreglo que ya se hizo, pero aun así).
+2. **Es literalmente uno de los seis servicios.** *Tiempos y movimientos* es el que nadie entiende;
+   una herramienta que lo hace lo explica sin explicarlo.
+3. **Quien lo abre ya está calificado.** Nadie mide los ciclos de su cocina por diversión: lo hace
+   porque siente que se le va el tiempo y no sabe dónde. Ésa es la persona que nos compra.
+4. **Es la mitad de una herramienta que la empresa necesita de todos modos** — la bitácora de horas
+   de `CLAUDE.md` §6. No es una desviación: es la Fase 0 avanzando disfrazada de marketing.
+
+### Lo que va en pantalla, y sale del consejo
+
+| Qué | Dónde | De quién |
+|---|---|---|
+| **"Regalamos la medición. Cobramos la interpretación y el arreglo."** | En el taller, junto a las herramientas | Renata. Sin esto, la herramienta compite con nosotros mismos |
+| **"Nada de esto sale de tu teléfono."** | En cada herramienta que guarde algo | Paola. Es **LA REGLA §2 dicha para el cliente**, y es la primera vez que la podemos demostrar en vez de prometerla |
+| **La salida a WhatsApp, al TERMINAR la medición** | No antes | Iván. En el momento en que acaba de ver su propio cuello de botella |
+| **Nuestro nombre y el WhatsApp en el archivo exportado** | En el Excel y en el SVG | Iván. Ese archivo se manda a un socio o a un jefe: **es publicidad que viaja sola** |
+
+### Las reglas del instrumento
+
+1. **Las herramientas no se animan al entrar. Responden al tacto y ya.** El movimiento guiado por
+   scroll es para el relato; dentro de un instrumento, el único movimiento es el que provoca el dedo.
+   *(Iker: mezclarlos es lo que hace que un sitio se sienta caro por fuera y barato al usarlo.)*
+2. **Mazi para cifras GRANDES, nunca para números chicos.** A 40 px la cifra es el mejor argumento de
+   marca del sitio; a 12 px es un acertijo — ya pasó en la central, donde el `5` se leía como `S`.
+3. **El fósforo `#E8232A` se amplía a la lectura de las herramientas** (que también son pantallas),
+   y **sigue prohibido en botones y títulos**. Ampliar la frontera por escrito es mejor que verla
+   romperse sola.
+4. **Anchos:** teléfono una columna (lectura arriba) · **≥900 px dos columnas** (controles izquierda,
+   lectura derecha) · ≥1400 px crece la lectura, **no** los controles.
+5. **`import()` dinámico por herramienta.** La portada no carga un byte del taller. Es lo que hace
+   que la herramienta seis no le cueste velocidad a nadie.
+6. **Si una herramienta truena, lo dice** — *"esta herramienta no cargó, escríbenos y te la
+   enseñamos"* con el botón. Un espacio en blanco es peor que un error honesto, sobre todo en la
+   sección que prueba que sabemos.
+
+### Lo que Michi ya rompió, y hay que contemplar desde el primer día
+
+Nueve hallazgos, **seis del cronómetro**: doble toque en "marcar ciclo" (ignorar bajo ~300 ms) ·
+teléfono bloqueado a media medición (**el tiempo se calcula con la hora del reloj, no contando
+cuadros**) · cambio de pestaña · recarga con 40 ciclos medidos (**guardar en cada ciclo, no al
+final**) · cambiar de herramienta con el cronómetro corriendo (`liberar()`) · exportar sin haber
+medido (**botón apagado hasta que haya algo**). Más: imagen de 80 MB, nombre de 4,000 letras, y girar
+el teléfono con la lectura abierta.
 
 ---
 
@@ -320,16 +445,26 @@ fotogramas en canvas, la técnica de Apple) y **`web-motion`** para decidir con 
 La pregunta correcta no es "cómo nos vemos mejor" sino **"qué podemos hacer que el de al lado no
 pueda"**. Hay cuatro cosas, y todas ya existen:
 
-1. **La fábrica de tipografías en vivo.** `tipos.mjs` es JavaScript sin una sola dependencia: corre
-   en el navegador tal cual. El visitante mueve tres perillas y ve 15 alfabetos históricos —
+1. **La fábrica de tipografías en vivo.** `tipos.mjs` es JavaScript sin una sola dependencia y
+   **corre en el navegador — ahora sí.**
+
+   > ⚠️ **Aquí decía "corre en el navegador tal cual" y era falso.** La auditoría del 30 de julio lo
+   > comprobó con Chromium: el módulo ni siquiera cargaba, porque importaba `node:fs` en el nivel
+   > superior y leía `process.argv` al arrancar. **Era el argumento número uno de por qué el sitio no
+   > se puede copiar, y estaba sin verificar.** Se arregló el mismo día —el `import` se volvió
+   > perezoso y `process` se lee sólo si existe— y la condición de salida es que
+   > `rocco-tipos.mjs` imprima `OK <n> bytes de SVG`. Hoy imprime `OK 7603`. Acta:
+   > [`.claude/auditorias/2026-07-30-plan-del-sitio.md`](../.claude/auditorias/2026-07-30-plan-del-sitio.md).
+ El visitante mueve tres perillas y ve 15 alfabetos históricos —
    escritura de sello de la dinastía Qin, cartel de kabuki, gótica del siglo XIII— redibujarse en
    tiempo real. **Ninguna agencia de la ciudad tiene esto**, y no porque no se les ocurra: porque
    hay que haberlo construido.
 2. **El reloj.** La hora real, corriendo, en una tipografía que es un display de segmentos porque
    nació de la foto de un reloj. Cuesta veinte líneas y dice "esto está vivo y es de alguien" antes
    de que el visitante lea una palabra.
-3. **Un juego jugable.** Torre Infinita, con el dedo, en el teléfono. Eso no lo empotra un sitio
-   hecho con plantilla.
+3. **Herramientas que el visitante se lleva.** No una demo que se mira: un cronómetro que mide su
+   operación y le exporta el estudio a Excel. *(Antes aquí decía "un juego jugable · Torre Infinita";
+   salió por §7-ter y lo reemplaza algo que además prueba un servicio que vendemos.)*
 4. **Que la tipografía sea nuestra.** No es decir "diseñamos identidades": es que el sitio está
    escrito con una letra que no existe en ningún otro lado. Es la prueba y el producto a la vez.
 
@@ -471,8 +606,9 @@ de corrido.
 |---|---|---|---|
 | **1** | El armazón: variables de color, la fuente, la retícula, la barra, teléfono primero. **Portada con la autoprueba + el reloj + contacto** | **Sí. El sitio ya existe** | nada |
 | **2** | Qué hacemos · Cómo trabajamos · Trabaja con nosotros | sí | nada |
-| **3** | **El taller** — la fábrica de tipografías en vivo | sí | nada |
-| **4** | Trabajo — capturas reales de Ligas Mazi con `captura.mjs`, plataforma sin marca ajena | sí | nada |
+| **3** | **El taller** — la carcasa del instrumento + **el cronómetro** (herramienta 1) | sí | la prueba de los 3 mensajes |
+| **3-b** | **Tu nombre en Mazi** (herramienta 2) + el **contrato de herramienta** | sí | nada |
+| **4** | Trabajo — capturas reales de Ligas Mazi con `captura.mjs`, plataforma sin marca ajena, **y este sitio como pieza** | sí | nada |
 | ~~**5**~~ | ❌ **Bloque eliminado.** La prueba interactiva la carga el taller | |
 | **6** | El video de la plataforma | **no** | ⚠️ **confirmado: trae marca de ICAMP.** Carlos lo va a cambiar |
 | **7** | Dominio y medición (Fase 6 del plan) | | Carlos compra dominio **más adelante**; GitHub Pages mientras |
@@ -501,7 +637,7 @@ páginas que nadie recorre.
 **Dentro de la página:** las secciones se enlazan con ancla (`#taller`, `#trabajo`, `#contacto`) para
 que se puedan compartir de una en una.
 
-**Las rutas aparte** (`/taller`, `/juega`, `/marca`) siempre traen: la barra, un "← volver" y una
+**Las rutas aparte** (`/taller`, `/marca`) siempre traen: la barra, un "← volver" y una
 salida a contacto al final. **Ninguna ruta es un callejón sin salida.**
 
 ---
@@ -518,20 +654,18 @@ flowchart TD
     POR["<b>1 · EL DISPLAY</b> (portada)<br/>autoprueba de segmentos · lema · reloj vivo<br/><i>resuelve: ¿esto es real y de alguien?</i>"]
 
     POR --> QUE["<b>2 · QUÉ HACEMOS</b><br/>seis servicios, una línea cada uno<br/><i>resuelve: ¿qué le compro?</i>"]
-    QUE --> TAL["<b>3 · EL TALLER</b><br/>la fábrica de tipografías en vivo<br/><i>resuelve: ¿saben hacerlo?</i>"]
-    TAL --> TRA["<b>4 · TRABAJO</b><br/>Ligas Mazi · plataforma · Torre<br/><i>resuelve: ¿ya lo hicieron antes?</i>"]
+    QUE --> TAL["<b>3 · EL TALLER</b><br/>herramientas de verdad, usables<br/><i>resuelve: ¿saben hacerlo?</i>"]
+    TAL --> TRA["<b>4 · TRABAJO</b><br/>Ligas Mazi · plataforma · este sitio<br/><i>resuelve: ¿ya lo hicieron antes?</i>"]
     TRA --> COM["<b>5 · CÓMO TRABAJAMOS</b><br/>el modelo de comisión en cristiano<br/><i>resuelve: ¿cómo se paga esto?</i>"]
 
     COM --> CON["<b>CONTACTO</b><br/>WhatsApp · correo<br/><i>resuelve: cerrar</i>"]
     COM --> COL["<b>TRABAJA CON NOSOTROS</b><br/><i>resuelve: el agujero que más sangra</i>"]
 
     TAL -.->|"ruta aparte"| RTAL["<b>/taller</b><br/>15 alfabetos · 13 pinceles<br/>107 caracteres · bajar el SVG<br/>bajar la fuente"]
-    TRA -.->|"ruta aparte"| RJUE["<b>/juega</b><br/>Torre Infinita, con el dedo"]
     TRA -.->|"ruta aparte"| RMAR["<b>/marca</b><br/>las hojas de la tipografía"]
 
     POR ==>|"botón fijo, siempre visible"| CON
     RTAL --> CON
-    RJUE --> CON
     RMAR --> CON
 
     E404["<b>404</b><br/>error de display: E:404"] --> POR
@@ -541,7 +675,7 @@ flowchart TD
     classDef entra fill:#100A18,stroke:#8B8296,stroke-width:1px,color:#8B8296
     classDef cierra fill:#2A1428,stroke:#E8232A,stroke-width:2px,color:#E9E4E4
     class POR,QUE,TAL,TRA,COM principal
-    class RTAL,RJUE,RMAR,E404 ruta
+    class RTAL,RMAR,E404 ruta
     class IG,GG entra
     class CON,COL cierra
 ```
@@ -573,3 +707,11 @@ resuelto por el mismo sitio.
 | 9 | El Bloque 1 se publica solo, feo o no | Mauro |
 | 10 | Nada del sitio espera a Carlos hasta el Bloque 6 | yo |
 | 11 | La Fase 2 (Panel Mazi) sigue siendo la que para el sangrado, **y esto es una desviación** | Sofía, y se registra |
+| 12 | El taller es **un instrumento con módulos**, no cinco demos | Renée (auditoría) + Renata |
+| 13 | **Alcance congelado en dos herramientas** para la v1 | Tomás + el Inversionista, fallado por el Juez |
+| 14 | **El cronómetro va primero**, no la de tipografías | Nadia (auditoría), sostenida por el Juez |
+| 15 | Cada herramienta **prueba un servicio**, o no va | Ximena (auditoría) |
+| 16 | *"Regalamos la medición, cobramos el arreglo"* entra al texto | Renata |
+| 17 | *"Nada de esto sale de tu teléfono"* en pantalla | Paola (auditoría) |
+| 18 | El **Bloque 1 se publica antes** de que exista la primera herramienta | Mauro |
+| 19 | `tipos.mjs` **no corría en el navegador**. Arreglado y verificado | Rocco (auditoría) |
