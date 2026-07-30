@@ -72,12 +72,23 @@
   }
 
   /* ── la barra · 52 px, fija ─────────────────────────────────────────── */
+  /* La barra es OPACA a proposito. Estaba en 90% con `backdrop-filter`, y en el
+     iPhone de Carlos el texto del hero se veia NITIDO por encima de "GRUPO MAZI"
+     — el blur no aplicaba y la transparencia dejaba pasar todo. Un encabezado
+     fijo sobre contenido que se desplaza no se juega con transparencias: se
+     tapa. Y `main` se manda explicitamente debajo, para que el apilamiento no
+     dependa de que el navegador se porte bien. */
   .barra {
-    position:fixed; top:0; left:0; right:0; z-index:50; height:var(--barra);
+    position:fixed; top:0; left:0; right:0; z-index:100; height:var(--barra);
     padding-top:env(safe-area-inset-top);
-    background:#100A18e6; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    background:var(--vacio);
     border-bottom:1px solid var(--linea);
+    isolation:isolate;
   }
+  /* El alto real incluye el area segura: sin esto, en un iPhone con isla la
+     barra mide 52 px de caja pero ocupa mas, y el hero arranca tapado. */
+  .barra, .barra-in { height:auto; min-height:var(--barra); }
+  .barra-in { height:var(--barra); }
   .barra-in {
     max-width:1100px; margin:0 auto; height:var(--barra);
     padding:0 clamp(12px,4vw,28px);
@@ -109,7 +120,8 @@
     border:1px solid var(--violeta); box-shadow:none; }
   .barra .wasap { padding:0 14px; font-size:13px; }
 
-  main { max-width:1100px; margin:0 auto; padding:0 clamp(16px,5vw,28px); }
+  main { max-width:1100px; margin:0 auto; padding:0 clamp(16px,5vw,28px);
+    position:relative; z-index:1; }
 
   /* ── 1 · EL DISPLAY (portada) ───────────────────────────────────────── */
   .display {
@@ -123,7 +135,13 @@
     font-family:var(--mazi); font-weight:400; margin:0;
     font-size:clamp(38px,13.5vw,92px); line-height:.92; letter-spacing:-.008em;
   }
+  .logotipo { position:relative; }
   .logotipo .l2 { display:block; color:var(--violeta); }
+  .logotipo .seg { display:inline-block; }
+  /* La capa del destello: una copia del logotipo en violeta, encima, que sólo
+     se ve medio segundo. No se lee: se siente. */
+  .autoprueba { position:absolute; inset:0; opacity:0; pointer-events:none;
+    color:var(--violeta); text-shadow:0 0 30px var(--violeta); }
 
   .frase {
     font-size:clamp(17px,4.6vw,26px); line-height:1.36; margin:0;
@@ -169,12 +187,29 @@
   .ave-caja canvas.listo + .ave { opacity:0; }
   .ave-caja .ave { transition:opacity .4s ease; }
 
-  /* Rayos X: la capa de abajo se destapa donde está el dedo. */
-  .rx { position:relative; }
-  .rx-abajo { position:absolute; inset:0; display:flex; align-items:center;
-    padding:inherit; pointer-events:none;
-    color:var(--violeta); font-family:var(--mazi);
-    font-size:clamp(22px,6vw,38px); line-height:1.18; }
+  /* Rayos X. La capa de abajo es un CLON EXACTO del titular: mismo tamaño de
+     letra, mismo interlineado, mismo ancho máximo y mismo peso. Antes tenía su
+     propio `font-size` y un `display:flex` que la centraba, así que el texto no
+     coincidía con el h2, se salía de la caja y se veía REBANADO — que es justo
+     lo que Carlos fotografió. Ahora ocupa el mismo rectángulo, letra por letra. */
+  .rx { position:relative; isolation:isolate; }
+  .rx h2 { position:relative; z-index:1; }
+  /* El clon dice LO MISMO, en contorno. Antes decía otra frase, y encimar dos
+     textos distintos siempre se lee como basura: las letras de uno caen entre
+     las del otro. Carlos lo fotografió y tenía razón. Un rayos X enseña la
+     misma cosa en otro estado — aquí, el plano técnico de las mismas palabras. */
+  .rx-abajo {
+    position:absolute; top:0; left:0; right:0;
+    margin:0; pointer-events:none; z-index:2;
+    color:transparent;
+    -webkit-text-stroke:1px var(--violeta);
+    text-shadow:0 0 14px #AC27FF66;
+    font-size:clamp(22px,6vw,38px); line-height:1.18; font-weight:650;
+    letter-spacing:-.02em; max-width:22ch; text-wrap:balance;
+    /* Sin esto, si el clon es más largo que el titular se desborda hacia abajo
+       y asoma por debajo aunque la máscara esté lejos. */
+    overflow:hidden;
+  }
 
   /* Eco del texto: tres copias detrás que se separan al acercarse el dedo. */
   [data-eco] { position:relative; display:inline-block; }
@@ -231,14 +266,36 @@
     .arranca .seis,
     .arranca .acciones { opacity:0; transform:translateY(9px); }
     .arranca .logotipo { color:transparent; text-shadow:0 0 26px #AC27FF; }
+    .arranca .seg { opacity:0; }
     .arranca .logotipo .l2 { color:transparent; }
 
     .listo .ave      { animation:sube .5s .70s cubic-bezier(.22,.8,.3,1) both; }
     .listo .frase    { animation:sube .5s .90s cubic-bezier(.22,.8,.3,1) both; }
     .listo .seis     { animation:sube .5s 1.02s cubic-bezier(.22,.8,.3,1) both; }
     .listo .acciones { animation:sube .5s 1.15s cubic-bezier(.22,.8,.3,1) both; }
-    .listo .logotipo { animation:prueba .55s .15s ease-out both; }
-    .listo .logotipo .l2 { animation:prueba2 .55s .15s ease-out both; }
+    /* Cada letra es su propio segmento. `--i` lo pone el JS al partir el
+       logotipo en <span>, y de ahí sale el retardo — así el display se
+       enciende de izquierda a derecha en lugar de aparecer de golpe. */
+    .listo .seg { animation:enciende .42s cubic-bezier(.2,.9,.3,1) both;
+      animation-delay:calc(.12s + var(--i) * .035s); }
+    .listo .logotipo:not(:has(.seg)) { animation:prueba .55s .15s ease-out both; }
+    .listo .logotipo:not(:has(.seg)) .l2 { animation:prueba2 .55s .15s ease-out both; }
+
+    /* El destello de la autoprueba: TODOS los segmentos prenden un instante
+       antes de que las letras se acomoden. Es lo que hace un reloj de LED al
+       encender, y es el gesto que da la marca. */
+    .listo .autoprueba { animation:destello .5s ease-out both; }
+    @keyframes destello {
+      0%   { opacity:0; }
+      22%  { opacity:.55; }
+      100% { opacity:0; }
+    }
+    @keyframes enciende {
+      0%   { opacity:0; color:transparent; text-shadow:0 0 26px var(--violeta);
+             transform:translateY(4px); }
+      45%  { opacity:1; color:#AC27FF88; text-shadow:0 0 16px #AC27FFaa; }
+      100% { opacity:1; color:inherit; text-shadow:none; transform:none; }
+    }
 
     @keyframes sube { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:none} }
     /* Todos los segmentos prendidos en violeta tenue → se apagan los que no van */
@@ -320,9 +377,7 @@
     <p class="rot">CÓMO TRABAJAMOS</p>
     <div class="rx" data-rayos-x>
       <h2>No nos contratas: nos integras.</h2>
-      <div class="rx-abajo" data-rx-abajo aria-hidden="true">
-        Nos metemos a tu operación.
-      </div>
+      <div class="rx-abajo" data-rx-abajo aria-hidden="true">No nos contratas: nos integras.</div>
     </div>
     <p class="texto">
       Construimos la base, y nos quedamos a cuidar lo que se levanta sobre ella —
@@ -388,12 +443,44 @@
   const display = document.getElementById('display');
   const destapar = () => display.classList.remove('arranca');
 
-  // Se ESCONDE aquí, no en el HTML. Es la diferencia entre "si el JS truena la
-  // portada se ve completa" y que sea mentira: si esta línea nunca corre, nunca
-  // se escondió nada. La primera versión escondía desde el CSS y sólo el JS
-  // destapaba — o sea que un error de JS dejaba la portada en blanco. Lo cachó
-  // la prueba que tira el script a propósito.
-  display.classList.add('arranca');
+  /* LA AUTOPRUEBA, LETRA POR LETRA.
+     El logotipo se parte en <span> por carácter para que cada uno prenda con su
+     propio retardo — como un display de segmentos que se enciende de izquierda
+     a derecha. Se hace en JS y no en el HTML a propósito: el HTML se queda con
+     el texto limpio, así que un buscador y un lector de pantalla leen
+     "GRUPO MAZI" y no once letras sueltas. Si esto no corre, el logotipo sigue
+     ahí completo y la animación vieja (de bloque) toma su lugar sola. */
+  const logo = display.querySelector('.logotipo');
+  if (logo) {
+    // Se reconstruye el logotipo con un <span> por letra. Cada uno lleva su
+    // índice en `--i`, y de ahí sale el retardo de su encendido.
+    logo.textContent = '';
+    logo.setAttribute('aria-label', 'Grupo Mazi');
+    const armar = (texto, clase, desde) => {
+      const cont = document.createElement('span');
+      if (clase) cont.className = clase;
+      [...texto].forEach((ch, i) => {
+        const sp = document.createElement('span');
+        sp.className = 'seg';
+        sp.style.setProperty('--i', i + desde);
+        sp.textContent = ch;
+        sp.setAttribute('aria-hidden', 'true');
+        cont.appendChild(sp);
+      });
+      logo.appendChild(cont);
+    };
+    armar('GRUPO', '', 0);
+    armar('MAZI', 'l2', 5);
+
+    // El destello de autoprueba: una copia encima que prende y se apaga en
+    // medio segundo. No se lee, se siente — es lo que hace un LED al encender.
+    const flash = document.createElement('span');
+    flash.className = 'autoprueba';
+    flash.setAttribute('aria-hidden', 'true');
+    flash.textContent = 'GRUPO';
+    logo.appendChild(flash);
+  }
+
   const arrancar = () => { display.classList.add('listo'); setTimeout(destapar, 1800); };
   try {
     document.fonts && document.fonts.ready
