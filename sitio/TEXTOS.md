@@ -10,17 +10,44 @@ por flojera.
 
 ## La idea que amarra todo
 
-Sin proponérselo, las cinco frases encontraron un **eje**, y es mejor que cualquier lista de
-servicios:
+Sin proponérselo, las frases encontraron un **eje**, y es mejor que cualquier lista de servicios:
 
 > **La base, y todo lo que se levanta sobre ella.**
 
-Eso funciona por tres razones. Es **concreto** —se ve, no se explica—. **Cubre los seis servicios sin
-listarlos**: los cimientos son web y software, los procesos son gestión y tiempos y movimientos, la
-imagen es marketing y video. Y **no se parece a nada** de lo que dice la competencia, que habla de
-soluciones y de transformación.
+Es **concreto** —se ve, no se explica—. **Cubre los seis servicios sin listarlos.** Y **no se parece
+a nada** de lo que dice la competencia, que habla de soluciones y de transformación.
 
-Es el hallazgo más valioso del lote. Todo lo demás debería obedecerle.
+---
+
+## ⚠️ La frase retirada
+
+> ~~"No lo hacemos en corto, lo hacemos a la larga."~~
+
+**La mató Carlos, y con razón:** *"dice que nos tardamos, cuando justamente entregamos proyectos
+rápido y con soporte por mucho tiempo."*
+
+La idea era buena —no hacemos trabajos sueltos, nos quedamos en la operación— pero **las palabras
+dicen lo contrario de lo que hacemos.** "A la larga" habla de la duración de la *entrega*; lo que
+queríamos decir era la duración de la *relación*. Eso en una portada es un autogol.
+
+**El lema de la casa no se toca:** *si no existe la herramienta, se construye la herramienta* sigue
+intacto y ése sí es el bueno. La que se retira es la frase de venta, que es otra cosa.
+
+**Y su contenido no se pierde: se muda.** Lo que decía —entramos y nos quedamos, se cobra por
+comisión— es exactamente el trabajo de la sección **"Cómo trabajamos"**, que es justo la que
+faltaba. Dos problemas, un movimiento.
+
+### Candidatas para "Cómo trabajamos"
+
+| | Frase | Nota |
+|---|---|---|
+| **A** | **Entregamos rápido y nos quedamos mucho tiempo. No vendemos trabajos sueltos: entramos a tu operación y cobramos por resultado, no por hora.** | La más clara. Dice las dos cosas que el original confundía y de una vez explica la comisión |
+| **B** | **Rápido en construir, largos en acompañar. No cobramos por hora: cobramos por lo que el proyecto vale.** | Más corta y con ritmo. Pierde el "entramos a tu operación" |
+| **C** | **No te entregamos un proyecto y desaparecemos. Entregamos rápido, nos quedamos, y cobramos por resultado.** | La más humana. Ataca el miedo real del cliente, que es quedarse solo después de pagar |
+
+**Mi recomendación: la A.** Es la única que dice las tres cosas que un comprador necesita saber
+—rápido, permanente, por resultado— sin sonar a folleto. La C es la más simpática pero arranca en
+negativo, y arrancar nombrando el miedo mete el miedo.
 
 ---
 
@@ -31,99 +58,173 @@ Es el hallazgo más valioso del lote. Todo lo demás debería obedecerle.
 > **Todo gran proyecto comienza con una base sólida.
 > Nosotros la construimos, y también la última pieza que le da vida.**
 
-*Es la frase que Carlos ofreció "para algún lugar de la página" — y su lugar es la portada.* Se armó
-juntando sus dos versiones: el arranque de la segunda, que es más limpio, y el cierre de la primera,
-que trae la mejor imagen del lote ("la última pieza que le da vida"). Convive con el lema sin
-pelearse: el lema habla de **tiempo** (*a la larga*), ésta habla de **alcance** (*de la base hasta
-arriba*).
+*Armada juntando las dos versiones de Carlos: el arranque de la segunda, más limpio, y el cierre de
+la primera, que trae la mejor imagen del lote.*
 
 ### Qué hacemos
 
 > **Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu
 > negocio funcione como un solo ecosistema.**
 
-*"Conectamos" es la palabra que más vale aquí: es LA REGLA (§2) dicha para el cliente — conectar sí,
-depender no. Y es el único lugar donde "ecosistema" se gana su lugar, porque "un solo ecosistema" es
-el remate de la frase, no un adorno.*
+*"Conectamos" es LA REGLA (§2) dicha para el cliente: conectar sí, depender no.*
 
 ### El taller
 
 > **Cuando construimos nuestras propias herramientas, también construimos tu independencia.**
 
-*La mejor frase del lote. Convierte un hecho técnico —construimos lo nuestro— en un beneficio del
-cliente —no dependes de nadie—. Eso es exactamente lo que LA REGLA significa y nadie lo había dicho
-así en toda la memoria de la casa.*
-
-*Se cortó ahí a propósito.* La versión larga seguía con *"evolucionan con tu empresa, se adaptan a
-cada reto y hacen posible lo que otros no pueden ofrecer"*, y esos tres remates diluyen el golpe: la
-frase ya estaba ganada en "independencia". Lo que sigue puede vivir **debajo**, en letra chica, como
-las tres razones — no dentro de la misma línea.
+*La mejor frase del lote. Convierte un hecho técnico en un beneficio del cliente.*
 
 ### Trabajo
 
 > **Cada proyecto demuestra lo mismo: cuando la base, los procesos y la imagen trabajan como un solo
 > sistema, el negocio deja de tropezarse consigo mismo.**
 
-*"La base, los procesos y la imagen" es la mejor parte y se queda tal cual: son los seis servicios
-en tres palabras.* Se cambió el cierre — la versión original decía *"el crecimiento deja de tener
-límites"*, que es la clase de promesa que un comprador ya leyó cien veces. *"Deja de tropezarse
-consigo mismo"* dice el mismo beneficio pero nombra el dolor real de un negocio desordenado, y ése
-sí se reconoce.
+*Y ojo —esta frase hace doble trabajo: **contiene la taxonomía del sitio.** Ver "el acomodo de los
+seis" más abajo.*
 
 ### Trabaja con nosotros
 
-> **El crecimiento se construye entre todos: puedes generar clientes, participar en los proyectos o
-> hacer ambas cosas. Tu recompensa siempre refleja el valor que aportas.**
+> **Aquí tu crecimiento depende de tu impacto: genera clientes, participa en proyectos o haz ambas
+> cosas, y gana en proporción al valor que aportas.**
 
-*Ésta llegó etiquetada como "Cómo trabajamos", pero está escrita para el **colaborador**, no para el
-cliente: "puedes generar clientes, participar en los proyectos" es el modelo visto desde adentro. Y
-está muy bien — es justo la frase que faltaba para la sección que pidió Sofía, y era de la segunda
-tanda.*
-
-*"Tu recompensa siempre refleja el valor que aportas" es lo que resuelve el agujero que más sangra
-(`CLAUDE.md` §5): que nadie sabe cuánto va a ganar. Aquí queda dicho.*
+*"Tu crecimiento depende de tu impacto" es lo que resuelve el agujero que más sangra (`CLAUDE.md`
+§5): que nadie sabe cuánto va a ganar.*
 
 ---
 
-## ⬜ Lo que falta
+## ✅ Los seis servicios
 
-### Cómo trabajamos — la del cliente
+### Páginas web
+> **Creamos espacios digitales que representan tu negocio, generan confianza y convierten visitas en
+> oportunidades.**
 
-La sección sigue sin su frase, porque la que se escribió se fue a "Trabaja con nosotros". Ésta le
-habla a **quien va a pagar**, y tiene que decir lo que hace distinto a Grupo Mazi:
-**no vendemos chambas sueltas, entramos a la operación y nos quedamos; y se cobra por comisión, no
-por hora.** Eso es *"no lo hacemos en corto, lo hacemos a la larga"* explicado.
+### Desarrollo de software
+> **Construimos sistemas que eliminan obstáculos, conectan procesos y se adaptan a la forma en que
+> realmente trabaja tu empresa.**
 
-### Las seis de servicio · una línea cada una
+*"Se adaptan a la forma en que realmente trabaja tu empresa" es la mejor parte de las seis: es la
+diferencia entre software hecho y software comprado, dicha sin decir "a la medida".*
 
-Sin nombrar tecnologías (`sitio/PLAN.md` §6).
+### Marketing
+> **Diseñamos estrategias que atraen a las personas correctas y convierten el interés en crecimiento.**
 
-| Servicio | Su línea |
-|---|---|
-| Web | ⬜ |
-| Software | ⬜ |
-| Marketing | ⬜ |
-| Video y fotografía | ⬜ |
-| Gestión de negocios | ⬜ |
-| Tiempos y movimientos | ⬜ |
+*"Las personas correctas" es lo bueno. El cierre es el más genérico de las seis — candidato a
+afilar cuando haya un caso real que contar.*
 
-### Las tres del portafolio
+### Video y fotografía
+> **Capturamos la esencia de tu marca para que cada imagen comunique el valor de lo que haces antes
+> de decir una sola palabra.**
 
-Cada una dice **qué problema resolvimos**, nunca cómo.
+*La mejor de las seis. "Antes de decir una sola palabra" es una imagen de verdad y es exactamente lo
+que hace el trabajo visual. No se toca.*
 
-| Pieza | Su línea |
-|---|---|
-| Ligas Mazi | ⬜ |
-| Plataforma de gestión *(sin nombrar a ICAMP)* | ⬜ |
-| Torre Infinita *(sólo si se reviste — `PLAN.md` §7-ter)* | ⬜ |
+### Gestión de negocios
+> **Organizamos la información, los procesos y la operación para que puedas tomar decisiones con
+> claridad y control.**
+
+### Tiempos y movimientos
+> **Medimos cómo trabaja tu empresa para encontrar el tiempo que se está perdiendo — y devolvértelo.**
+
+*Ésta se afiló. La original decía "reducir desperdicios, optimizar recursos y hacer que cada proceso
+avance con mayor eficiencia": tres abstracciones seguidas, y es justo el servicio que más necesita
+aterrizarse porque nadie sabe qué es. "Devolvértelo" da el resultado en una palabra.*
 
 ---
 
-## La nota de edición que importa
+## ✅ El portafolio
 
-**"Ecosistema" aparecía en tres de las cinco frases.** Una palabra que sale tres veces en cinco
-líneas deja de ser una idea y se vuelve la muletilla de la marca — y es justo el tipo de palabra que
-usa todo el mundo, así que repetirla nos acerca al montón en vez de alejarnos.
+### Ligas Mazi
+> **Unificamos la administración de una liga completa —cuentas reales, pagos y la privacidad de los
+> menores— para que jugadores, equipos y organizadores trabajaran en el mismo lugar.**
 
-Se dejó **una sola vez**, en "Qué hacemos", donde de verdad remata. En las otras dos manda el eje que
-Carlos encontró: **la base y lo que se levanta encima.**
+*Se le agregaron los tres datos duros. "Unificamos la administración" es cierto pero suave; lo que
+de verdad prueba capacidad es que hay **cuentas reales, pagos y datos de menores**, que es la parte
+difícil y la que un comprador reconoce como difícil. Y son problemas resueltos, no implementación,
+así que no rompen la regla de "nunca cómo".*
+
+### Plataforma de gestión
+> **Construimos una plataforma que centraliza la operación de una organización entera en un solo
+> lugar, para bajar la complejidad y facilitar el trabajo diario.**
+
+> ⚠️ **Corrección importante.** La versión original decía *"Centralizamos la operación de una
+> organización"*, y eso **implica que hubo un cliente.** No lo hubo: la plataforma se construyó para
+> *ofrecérsela* a ICAMP y Carlos todavía no habla con ellos (`CLAUDE.md` §7). Decir "centralizamos"
+> presume un trabajo entregado. **"Construimos una plataforma que centraliza"** dice exactamente lo
+> mismo de la capacidad sin inventar una relación. Es un cambio de dos palabras y es la diferencia
+> entre describir y presumir.
+
+### ~~Torre Infinita~~
+> ~~Transformamos una idea ambiciosa en una experiencia digital capaz de comunicar su visión con
+> claridad y generar impacto.~~
+
+**Esta frase se queda sin casa:** Carlos decidió sacar Torre Infinita del sitio (`PLAN.md` §7-ter,
+por el arte y las patentes de mecánicas). Está bien escrita y se guarda aquí por si el juego algún
+día tiene vida propia fuera del sitio.
+
+**El portafolio queda con dos piezas, y así está bien.** Dos reales pesan más que tres donde una es
+un estirón. Si más adelante hace falta una tercera, la candidata natural es **la tipografía Mazi**:
+es trabajo real, es 100% nuestro y ya está terminado.
+
+---
+
+## El acomodo de los seis · la idea de Carlos, ejecutada
+
+Carlos propuso dejar de llamarles "servicios" y llamarles **áreas del ecosistema**, con seis nombres
+abstractos: *el ecosistema digital · la operación · la imagen · el crecimiento · la optimización · la
+estrategia.* **El instinto es correcto y hay que quedárselo. La ejecución tiene tres problemas.**
+
+**Lo que está bien del instinto:** que el visitante entienda que no compra piezas sueltas sino
+partes de un sistema. Eso es exactamente el eje de la marca.
+
+**Los tres problemas de los seis nombres abstractos:**
+
+1. **Nadie sabe qué se vende.** "La optimización" no le dice a nadie que hacemos estudios de tiempos
+   y movimientos. Un visitante en el teléfono tiene que saber qué compra en una pasada.
+2. **Se pierde en el buscador.** Nadie busca *"la optimización"*. Buscan *"diseño de páginas web
+   Querétaro"*. Si los encabezados son abstracciones, el sitio pierde justo las palabras que la
+   gente escribe.
+3. **Tres de los seis se pisan entre sí.** *El crecimiento*, *la estrategia* y *la imagen* apuntan
+   al mismo lugar. Y *"el ecosistema digital"* como una de seis partes choca con "ecosistema" como
+   el nombre del todo: la parte no puede llamarse igual que el conjunto.
+
+### La solución, y sale de su propia frase
+
+**Carlos ya escribió la taxonomía sin darse cuenta.** Está en la frase de Trabajo:
+
+> *"cuando **la base**, **los procesos** y **la imagen** trabajan como un solo sistema…"*
+
+Ésas son las tres. No seis abstracciones nuevas: **tres grupos, seis servicios, cada uno con su
+nombre de siempre.**
+
+```
+LA BASE          Páginas web              Desarrollo de software
+LOS PROCESOS     Gestión de negocios      Tiempos y movimientos
+LA IMAGEN        Marketing                Video y fotografía
+```
+
+Con eso se gana el sistema **y** se conserva la claridad: el encabezado del grupo dice *"esto es una
+pieza de algo más grande"* y el nombre del servicio dice *"esto es lo que te vendo"*. El buscador se
+queda con las palabras buenas. Y la estructura del sitio queda amarrada a una frase que Carlos ya
+escribió, o sea que no hay nada que justificar.
+
+---
+
+## Nota de edición
+
+**Dos muletillas vigiladas.**
+
+- **"Ecosistema"** aparecía en tres de las cinco primeras frases. Queda **una sola vez**, en "Qué
+  hacemos", donde remata. Una palabra que sale tres veces en cinco líneas deja de ser una idea y se
+  vuelve tic — y es de las que usa todo el mundo, así que repetirla nos acerca al montón.
+- **La estructura "verbo + tres cosas"** está en cinco de los seis servicios: *creamos… que
+  representan, generan y convierten* · *construimos… que eliminan, conectan y se adaptan* ·
+  *organizamos… la información, los procesos y la operación*. Una vez suena firme; seis seguidas se
+  aplanan. Por eso a *Tiempos y movimientos* se le rompió el patrón a propósito, y por eso *Video y
+  fotografía* —que ya lo rompía— es la que mejor suena de las seis.
+
+---
+
+## ⬜ Lo único que falta
+
+**La frase de "Cómo trabajamos".** Están las tres candidatas arriba. Con ésa, el sitio tiene todo su
+texto.

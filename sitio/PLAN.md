@@ -36,7 +36,7 @@ juego de megabytes.
 | # | Sección | Qué hace | Qué resuelve |
 |---|---|---|---|
 | 1 | **El display** (portada) | Paloma + logotipo armándose segmento por segmento, el lema, una frase, y el botón de WhatsApp. Un reloj con la hora **real** en la tipografía de la casa | Que en dos segundos se vea vivo y hecho por alguien |
-| 2 | **Qué hacemos** | Los seis servicios, una línea cada uno. Sin nombres de tecnología | Que se entienda qué se compra |
+| 2 | **Qué hacemos** | Los seis servicios **en tres grupos** —la base · los procesos · la imagen—, una línea cada uno. Sin nombres de tecnología | Que se entienda qué se compra, y que es un sistema |
 | 3 | **El taller** | La fábrica de tipografías **corriendo en la página**. El visitante cambia esqueleto, pincel y ochavo y las letras se redibujan | La prueba de capacidad. Es la sección que nadie más puede copiar |
 | 4 | **Trabajo** | Ligas Mazi por su nombre · la plataforma de gestión sin marca ajena. **Torre Infinita queda fuera** (ver §7-ter) | La prueba comercial |
 | 5 | **Cómo trabajamos · Contacto** | El modelo de comisión en cristiano, WhatsApp, correo, y **"trabaja con nosotros"** para colaboradores | Cerrar. Y captar gente, que es el agujero que más sangra |
@@ -82,9 +82,13 @@ Teléfono en vertical primero. Siempre.
 │              10:23  ← hora real, en nuestra tipografía
 ├─────────────────────────────┤
 │  QUÉ HACEMOS                │
-│  Web · una línea            │
+│  ── LA BASE ──              │
+│  Páginas web · una línea    │
 │  Software · una línea       │
-│  … los seis                 │
+│  ── LOS PROCESOS ──         │
+│  Gestión · Tiempos y mov.   │
+│  ── LA IMAGEN ──            │
+│  Marketing · Video y foto   │
 ├─────────────────────────────┤
 │  EL TALLER                  │
 │  [ GRUPO MAZI ]  ← se redibuja

@@ -56,8 +56,16 @@ Empresa de servicios que cobra **por comisión**, no por hora suelta.
 **Lo que vendemos:** web · software · marketing · video y fotografía · gestión de negocios ·
 tiempos y movimientos.
 
-**Cómo lo vendemos:** *"no lo hacemos en corto, lo hacemos a la larga."* No cerramos chambas
-sueltas: entramos a la operación del cliente y nos quedamos.
+**Cómo lo vendemos:** No cerramos chambas sueltas: entramos a la operación del cliente y nos
+quedamos. **Se entrega rápido y se acompaña mucho tiempo** — son dos cosas, y decirlas juntas es lo
+que nos distingue.
+
+> ⚠️ **La frase *"no lo hacemos en corto, lo hacemos a la larga"* queda retirada.** La mató Carlos el
+> 30 de julio con un argumento correcto: *"dice que nos tardamos, cuando justamente entregamos
+> proyectos rápido y con soporte por mucho tiempo."* La idea era buena —no hacemos trabajos sueltos—
+> pero las palabras dicen lo contrario de lo que hacemos, y eso en la portada es un autogol.
+> **El lema de la casa NO se toca:** *si no existe la herramienta, se construye la herramienta* sigue
+> intacto y es el bueno. Reemplazos candidatos en [`sitio/TEXTOS.md`](sitio/TEXTOS.md).
 
 **Cómo pagamos:** los colaboradores cobran comisión por proyecto.
 
