@@ -169,6 +169,27 @@
     const pinta = (forzado) => {
       if (vivo || forzado) {
         const r = caja.getBoundingClientRect();
+
+        /* EL RAYOS X SÓLO EXISTE DONDE ESTÁ EL DEDO.
+           Carlos: "el x-ray se ve en teléfono a cualquier altura, no sólo al
+           pasar por el texto, y cambia estando yo en otro lado".
+           Las dos quejas son la misma causa: el puntero global tiene un vaivén
+           propio para que los efectos se vean sin tocar nada. Eso está bien
+           para el FONDO —da vida— y está mal para un TEXTO: leerlo y que se
+           transforme solo se siente roto, no vivo.
+           Entonces aquí, y sólo aquí, se ignora el vaivén: si nadie ha tocado,
+           o si el dedo no está sobre esta caja, el contorno no existe. */
+        const px = P.x * innerWidth, py = P.y * innerHeight;
+        const holgura = 60;
+        const encima = P.tocado
+          && px > r.left - holgura && px < r.right + holgura
+          && py > r.top - holgura && py < r.bottom + holgura;
+        if (!encima) {
+          capa.style.opacity = '0';
+          requestAnimationFrame(pinta);
+          return;
+        }
+        capa.style.opacity = '1';
         // El puntero es global (0..1 de la ventana); aquí se traduce a
         // coordenadas de ESTA caja, o si no el círculo aparece corrido.
         const x = lim(((P.x * innerWidth) - r.left) / r.width, -.4, 1.4) * 100;

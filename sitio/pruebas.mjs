@@ -65,6 +65,7 @@ for (const [nom,an,al,rm] of [['telefono',390,844,false],['laptop',1280,900,fals
       liquidoCanvas:!!document.querySelector('[data-liquido]'),
       liquidoListo:!!document.querySelector('[data-liquido].listo'),
       rx:!!document.querySelector('[data-rx-abajo]'),
+      rxOpacidad:+getComputedStyle(document.querySelector('[data-rx-abajo]')).opacity,
       rxMascara:(()=>{const e=document.querySelector('[data-rx-abajo]');
         return e?(getComputedStyle(e).webkitMaskImage||getComputedStyle(e).maskImage||'').includes('radial'):false})(),
       ecos:document.querySelectorAll('.eco-capa').length,
@@ -78,17 +79,30 @@ for (const [nom,an,al,rm] of [['telefono',390,844,false],['laptop',1280,900,fals
   } else {
     rev(nom+': fondo neural dibujando',ef.neural&&ef.neuralPinta===true,JSON.stringify({a:ef.neuralAncho,p:ef.neuralPinta}));
     rev(nom+': shader de liquido activo',ef.liquidoListo,'canvas='+ef.liquidoCanvas+' listo='+ef.liquidoListo);
-    rev(nom+': mascara de rayos X puesta',ef.rxMascara,String(ef.rxMascara));
+    // El rayos X ya NO nace puesto: sale sólo con el dedo encima del titular.
+    // Esta prueba comprobaba lo contrario, que era el bug que reportó Carlos.
+    rev(nom+': el rayos X NACE apagado',!ef.rxMascara||ef.rxOpacidad===0,
+      'mascara='+ef.rxMascara+' op='+ef.rxOpacidad);
     rev(nom+': eco de texto (3 capas)',ef.ecos===3,ef.ecos+' capas');
   }
   // toca la pantalla y verifica que el efecto SIGUE al dedo
   if(!rm){
     await p.evaluate(()=>document.querySelector('.rx').scrollIntoView({block:'center'}));
     await p.waitForTimeout(400);
+    // Con el dedo LEJOS: apagado. Con el dedo ENCIMA: prendido y siguiendo.
+    const opa=()=>p.evaluate(()=>+getComputedStyle(document.querySelector('[data-rx-abajo]')).opacity);
+    await p.mouse.move(5,5); await p.waitForTimeout(450);
+    const lejos=await opa();
+    const c=await p.evaluate(()=>{const r=document.querySelector('.rx').getBoundingClientRect();
+      return [Math.round(r.left+r.width/2),Math.round(r.top+r.height/2)]});
+    await p.mouse.move(c[0],c[1]); await p.waitForTimeout(450);
+    const encima=await opa();
     const m1=await p.evaluate(()=>getComputedStyle(document.querySelector('[data-rx-abajo]')).webkitMaskImage);
-    await p.mouse.move(60,120); await p.waitForTimeout(400);
+    await p.mouse.move(c[0]-70,c[1]); await p.waitForTimeout(400);
     const m2=await p.evaluate(()=>getComputedStyle(document.querySelector('[data-rx-abajo]')).webkitMaskImage);
-    rev(nom+': la mascara SIGUE al dedo',m1!==m2&&m2.includes('radial'),'cambio='+(m1!==m2));
+    rev(nom+': apagado con el dedo lejos',lejos===0,'op='+lejos);
+    rev(nom+': prendido con el dedo encima',encima===1,'op='+encima);
+    rev(nom+': y SIGUE al dedo',m1!==m2&&m2.includes('radial'),'cambio='+(m1!==m2));
     await p.evaluate(()=>scrollTo(0,0)); await p.waitForTimeout(300);
   }
   await p.screenshot({path:'caps/60-sitio-'+nom+'.png'});
