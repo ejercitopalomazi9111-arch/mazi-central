@@ -114,6 +114,23 @@ const TOMAS = [
     tinta: HUESO, aura: VIOLETA, auraFuerza: 0.45, soloAve: true, apretado: false,
     escala: 1, grano: 0,
   },
+  // LA TARJETA DE COMPARTIR. 1200×630 es la medida que piden WhatsApp, Facebook
+  // y X, y es la ÚNICA toma que no es sólo el logo: en un chat, quien ve la
+  // miniatura decide en dos segundos si abre. Ahí no cabe un eslogan bonito —
+  // cabe QUÉ VENDEMOS. Sale a 1x porque la medida es exacta y un PNG de 2400 px
+  // declarado como 1200 son bytes que el scraper tira.
+  {
+    id: 'compartir', an: 1200, al: 630, nota: 'Tarjeta de compartir · WhatsApp y redes',
+    fondo: `background:
+      radial-gradient(95% 120% at 14% -10%, #33204A 0%, #1C1329 48%, ${VACIO} 82%),
+      ${VACIO}`,
+    tinta: HUESO, aura: VIOLETA, auraFuerza: 0.32, escala: 1, grano: 0.04,
+    tarjeta: {
+      lema: 'Si no existe la herramienta,<br><b>se construye la herramienta.</b>',
+      lista: 'Web · Software · Marketing · Video · Gestión · Tiempos y movimientos',
+      pie: 'Querétaro · 442 883 3786',
+    },
+  },
 ];
 
 /* ═══ UNA TOMA ═════════════════════════════════════════════════════════════ */
@@ -135,6 +152,29 @@ function toma(t) {
 
   const ave = `<div class="ave" style="${aura}">${paloma}</div>`;
   const texto = t.soloAve ? '' : `<div class="txt" style="color:${t.tinta};${auraTxt}">${LOGOTIPO}</div>`;
+
+  // La tarjeta de compartir tiene su propia composición: no es el logo centrado
+  // en un fondo, es un anuncio. Logo arriba a la izquierda, la promesa grande, y
+  // abajo qué vendemos y dónde estamos.
+  if (t.tarjeta) {
+    return `
+<figure class="toma tarjeta" id="${t.id}" style="width:${t.an}px;height:${t.al}px;${t.fondo}">
+  <div class="rejilla fina"></div>
+  <div class="tj">
+    <div class="tj-marca">
+      <div class="ave" style="${aura}">${paloma}</div>
+      <div class="txt" style="color:${t.tinta};${auraTxt}">${LOGOTIPO}</div>
+    </div>
+    <p class="tj-lema">${t.tarjeta.lema}</p>
+    <div class="tj-pie">
+      <span class="tj-lista">${t.tarjeta.lista}</span>
+      <span class="tj-donde">${t.tarjeta.pie}</span>
+    </div>
+  </div>
+  <div class="grano" style="opacity:${t.grano ?? 0.055}"></div>
+  <div class="vinieta"></div>
+</figure>`;
+  }
 
   return `
 <figure class="toma" id="${t.id}" style="width:${t.an}px;height:${t.al}px;${t.fondo}">
@@ -202,6 +242,32 @@ const html = `<!doctype html>
 
   .vinieta{position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(120% 100% at 50% 45%,transparent 45%,#00000055 100%)}
+
+  /* ── LA TARJETA DE COMPARTIR ──────────────────────────────────────────────
+     Composición de anuncio, no de logo. La medida manda: en la miniatura de un
+     chat el logo se ve del tamaño de una uña, así que la que tiene que leerse
+     es la PROMESA, no el nombre. */
+  .tarjeta .rejilla.fina{opacity:.35;
+    background-image:
+      repeating-linear-gradient(0deg,#ffffff0a 0 1px,transparent 1px 40px),
+      repeating-linear-gradient(90deg,#ffffff0a 0 1px,transparent 1px 40px)}
+  .tj{position:absolute;inset:0;padding:58px 68px;display:flex;flex-direction:column;
+      justify-content:space-between}
+  .tj-marca{display:flex;align-items:center;gap:16px}
+  .tj-marca .ave{width:52px;line-height:0}
+  .tj-marca .ave svg{display:block;width:100%;height:auto}
+  /* flex:0 0 auto es obligatorio: la regla genérica .txt trae flex:1 1 auto y
+     sin esto el logotipo se estira a todo el ancho de la tarjeta. */
+  .tj-marca .txt{flex:0 0 auto;width:186px;line-height:0}
+  .tj-marca .txt svg{display:block;width:100%;height:auto;fill:currentColor}
+  .tj-lema{font-family:"Segoe UI",system-ui,sans-serif;font-weight:400;
+    font-size:54px;line-height:1.12;letter-spacing:-.02em;color:#E9E4E4;
+    max-width:24ch;margin:0}
+  .tj-lema b{font-weight:700;color:#fff}
+  .tj-pie{display:flex;flex-direction:column;gap:10px;
+    font-family:"Segoe UI",system-ui,sans-serif}
+  .tj-lista{font-size:22px;color:#8B8296;letter-spacing:.01em}
+  .tj-donde{font-size:19px;color:#AC27FF;letter-spacing:.06em;font-weight:600}
 </style>
 <h1>Marca Mazi · renders</h1>
 ${TOMAS.map(t => `<p class="rot">${t.id} · ${t.nota} · ${t.an}×${t.al}</p>${toma(t)}`).join('\n')}

@@ -1,10 +1,71 @@
-<title>Grupo Mazi — construimos la base y todo lo que se levanta sobre ella</title>
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grupo Mazi — construimos la base y todo lo que se levanta sobre ella</title>
 <meta name="theme-color" content="#100A18">
 <meta name="description" content="Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu negocio funcione como un solo ecosistema. Querétaro.">
+<link rel="canonical" href="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/">
+
+<!-- LA TARJETA DE WHATSAPP.
+     Nuestro visitante llega de un reenvío. Sin estas etiquetas el link sale como
+     una tira gris con la URL y nadie lo abre. Es el embudo más barato que
+     tenemos y estuvo roto desde el primer día. La imagen es absoluta a
+     propósito: WhatsApp, Facebook y X no resuelven rutas relativas. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Grupo Mazi">
+<meta property="og:locale" content="es_MX">
+<meta property="og:url" content="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/">
+<meta property="og:title" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta property="og:description" content="Web, software, marketing, video, gestión y tiempos y movimientos. Entramos a tu operación y nos quedamos. Querétaro.">
+<meta property="og:image" content="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Grupo Mazi — si no existe la herramienta, se construye la herramienta">
+<meta name="twitter:description" content="Web, software, marketing, video, gestión y tiempos y movimientos. Entramos a tu operación y nos quedamos. Querétaro.">
+<meta name="twitter:image" content="https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/img/og.jpg">
+
+<link rel="icon" href="../marca/render/favicon.png" sizes="256x256">
 <link rel="apple-touch-icon" href="../icon-192.png">
 <link rel="preload" href="fuente/mazi.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- LA FICHA LOCAL.
+     Esto es lo que lee Google para decidir si aparecemos cuando alguien busca
+     "desarrollo de software Querétaro". Antes "Querétaro" sólo existía en el
+     meta description y debajo del reloj: para el buscador, no existíamos. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "Grupo Mazi",
+  "url": "https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/",
+  "image": "https://ejercitopalomazi9111-arch.github.io/mazi-central/sitio/img/og.jpg",
+  "logo": "https://ejercitopalomazi9111-arch.github.io/mazi-central/marca/logo/paloma.svg",
+  "description": "Diseñamos, desarrollamos y conectamos tecnología, herramientas y estrategias para que todo tu negocio funcione como un solo ecosistema.",
+  "slogan": "Si no existe la herramienta, se construye la herramienta.",
+  "telephone": "+52-442-883-3786",
+  "email": "grupomazi.oficial@gmail.com",
+  "address": { "@type": "PostalAddress", "addressLocality": "Querétaro", "addressRegion": "Querétaro", "addressCountry": "MX" },
+  "areaServed": { "@type": "AdministrativeArea", "name": "Querétaro, México" },
+  "knowsLanguage": "es-MX",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Servicios de Grupo Mazi",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Páginas web", "description": "Creamos espacios digitales que representan tu negocio, generan confianza y convierten visitas en oportunidades." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Desarrollo de software", "description": "Construimos sistemas que eliminan obstáculos, conectan procesos y se adaptan a la forma en que realmente trabaja tu empresa." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Marketing", "description": "Diseñamos estrategias que atraen a las personas correctas y convierten el interés en crecimiento." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Video y fotografía", "description": "Capturamos la esencia de tu marca para que cada imagen comunique el valor de lo que haces antes de decir una sola palabra." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Gestión de negocios", "description": "Organizamos la información, los procesos y la operación para que puedas tomar decisiones con claridad y control." } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Tiempos y movimientos", "description": "Medimos cómo trabaja tu empresa para encontrar el tiempo que se está perdiendo — y devolvértelo." } }
+    ]
+  }
+}
+</script>
 
 <!--
   EL SITIO · BLOQUE 1 — armazón, portada y contacto.
@@ -45,6 +106,19 @@
     --hueso:#E9E4E4; --apagado:#8B8296; --violeta:#AC27FF; --fosforo:#E8232A;
     --mazi:"Mazi", system-ui, sans-serif;
     --cuerpo:"Segoe UI", system-ui, -apple-system, sans-serif;
+    /* La tercera voz: monoespaciada para números, medidas y etiquetas. Es
+       vocabulario de plano técnico, no de plantilla — y refuerza justo lo que
+       vendemos (medición, tiempos y movimientos). */
+    --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    /* Los títulos: sans apretado y pesado. NO Mazi.
+       ─────────────────────────────────────────────────────────────────────
+       Mazi es un display de segmentos: preciosa en el logotipo y en una
+       palabra, ilegible en una frase. Carlos lo señaló tres veces —"hay letras
+       raras"— y tenía razón las tres. Se queda donde manda: el logo, el
+       logotipo y las etiquetas de una palabra. Las frases van en sans, con el
+       peso y el interletrado apretados, que es de donde sale la tensión
+       tipográfica que hace que algo se lea caro. */
+    --titulo:"Segoe UI", system-ui, -apple-system, sans-serif;
     --barra:52px;
   }
 
@@ -119,6 +193,20 @@
   .wasap.hueco { background:transparent; color:var(--violeta);
     border:1px solid var(--violeta); box-shadow:none; }
   .barra .wasap { padding:0 14px; font-size:13px; }
+
+  /* El interruptor del sonido, siempre a la mano y APAGADO por omisión. */
+  .son { all:unset; box-sizing:border-box; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:44px; min-height:44px; border-radius:22px;
+    color:var(--apagado); font-size:15px; line-height:1; }
+  .son:hover { color:var(--hueso); }
+  .son:focus-visible { outline:2px solid var(--violeta); outline-offset:-4px; }
+  .son .son-on { display:none; }
+  [data-sonido="si"] .son { color:var(--violeta); }
+  [data-sonido="si"] .son .son-on { display:inline; }
+  [data-sonido="si"] .son .son-off { display:none; }
+  .oculto { position:absolute; width:1px; height:1px; overflow:hidden;
+    clip-path:inset(50%); white-space:nowrap; }
 
   main { max-width:1100px; margin:0 auto; padding:0 clamp(16px,5vw,28px);
     position:relative; z-index:1; }
@@ -222,9 +310,15 @@
 
   /* ── secciones ──────────────────────────────────────────────────────── */
   section { padding:clamp(46px,9vh,86px) 0; border-top:1px solid var(--linea); }
-  .rot { font-family:var(--mazi); font-size:clamp(13px,3.6vw,16px); line-height:1;
+  /* La etiqueta de sección. Sans chica con mucho aire entre letras: en Mazi a
+     13 px se leía "QUE HAC:MOS" — ésas son las "letras raras" que Carlos venía
+     señalando. Mazi es un display de segmentos: manda en el logo y en una
+     palabra, y no se puede leer en una frase. */
+  .rot { font-family:var(--cuerpo); font-weight:600; font-size:11px; line-height:1;
+    letter-spacing:.22em; text-transform:uppercase;
     color:var(--apagado); margin:0 0 18px; }
-  h2 { font-size:clamp(22px,6vw,38px); line-height:1.18; margin:0 0 16px;
+  h2 { font-family:var(--titulo); font-weight:700; letter-spacing:-.022em;
+    font-size:clamp(22px,6vw,38px); line-height:1.14; margin:0 0 16px;
     font-weight:650; letter-spacing:-.02em; max-width:22ch; text-wrap:balance; }
   .texto { font-size:clamp(15px,4vw,18px); color:var(--apagado); margin:0 0 24px;
     max-width:52ch; line-height:1.6; }
@@ -240,10 +334,12 @@
   .dato:active { background:#271B34; }
   .dato .et { font-size:11px; color:var(--apagado); letter-spacing:.12em;
     text-transform:uppercase; display:block; margin-bottom:2px; }
-  .dato .vl { font-family:var(--mazi); font-size:17px; line-height:1;
+  .dato .vl { font-family:var(--mono); font-variant-numeric:tabular-nums;
+    font-size:16px; line-height:1;
     word-break:break-all; }
 
-  .cierre { font-family:var(--mazi); font-size:clamp(15px,4.4vw,21px);
+  .cierre { font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(15px,4.4vw,21px);
     color:var(--hueso); margin:0 0 16px; }
 
   /* ── EL SISTEMA · la vista explotada en 3D ───────────────────────────
@@ -272,7 +368,8 @@
     box-shadow:0 18px 44px #00000080, 0 0 30px #AC27FF22;
     display:flex; flex-direction:column; justify-content:center; gap:5px;
     padding:0 clamp(14px,4vw,24px); }
-  .placa-rot { font-family:var(--mazi); font-size:clamp(15px,4vw,21px);
+  .placa-rot { font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(15px,4vw,21px);
     line-height:1; color:var(--hueso); }
   .placa-que { font-size:clamp(11px,3vw,13px); color:var(--apagado); }
   /* La rejilla del plano técnico: lo que hace que se lea como despiece y no
@@ -308,7 +405,8 @@
   .hilos { position:absolute; inset:0; width:100%; height:100%;
     pointer-events:none; overflow:visible; }
 
-  .fase { font-family:var(--mazi); font-size:clamp(13px,3.6vw,17px);
+  .fase { font-family:var(--cuerpo); font-weight:600; letter-spacing:.04em;
+    font-size:clamp(12px,3.2vw,15px);
     color:var(--violeta); line-height:1; min-height:20px; }
 
   /* ── EL TALLER · el barrido de alfabetos ─────────────────────────────
@@ -327,7 +425,8 @@
   .capa-letras svg { width:100%; height:100%; display:block; }
 
   .ficha { display:flex; flex-direction:column; gap:3px; min-height:44px; }
-  .f-nom { font-family:var(--mazi); font-size:clamp(17px,5vw,26px); line-height:1;
+  .f-nom { font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(17px,5vw,26px); line-height:1;
     color:var(--violeta); }
   .f-meta { font-size:12px; color:var(--apagado); letter-spacing:.1em;
     text-transform:uppercase; }
@@ -337,7 +436,10 @@
     transform-origin:left center; transform:scaleX(0); will-change:transform; }
 
   .cifras { display:flex; gap:clamp(18px,6vw,54px); flex-wrap:wrap; }
-  .cifra b { display:block; font-family:var(--mazi); font-size:clamp(26px,8vw,46px);
+  /* Las cifras van en monoespaciada con números tabulares. En Mazi el 5 se leía
+     como S y el 1 como dos puntos — un número que no se lee no es un número. */
+  .cifra b { display:block; font-family:var(--mono); font-variant-numeric:tabular-nums;
+    letter-spacing:-.03em; font-size:clamp(26px,8vw,46px);
     line-height:1; color:var(--hueso); font-weight:400;
     font-variant-numeric:tabular-nums; }
   .cifra span { font-size:11.5px; color:var(--apagado); letter-spacing:.1em;
@@ -423,10 +525,555 @@
     .reloj .pt { animation:none!important; }
   }
 </style>
+<style>
+/* ════════════════════════════════════════════════════════════════════════════
+   LA EXPERIENCIA — encendido · caída · juguetes · la computadora
+   Motor y decisiones: sitio/experiencia.js
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── EL TEMA CLARO ──────────────────────────────────────────────────────────
+   El interruptor no pone un filtro encima: cambia el SISTEMA DE COLOR. Por eso
+   todo el sitio está escrito con variables y no con colores sueltos — y por eso
+   el cambio es una línea y no una hoja de estilos paralela. Esa es justamente
+   la capacidad que se está demostrando. */
+:root[data-tema="claro"] {
+  --vacio:#F4F1F6; --superficie:#FFFFFF; --linea:#DCD5E4;
+  --hueso:#160E20; --apagado:#5E5470; --violeta:#7A12C4;
+  color-scheme:light;
+}
+:root[data-tema="claro"] body::before {
+  background:
+    radial-gradient(125% 72% at 50% -14%, #EDE6F5 0%, #F6F3F8 46%, var(--vacio) 80%),
+    var(--vacio) !important;
+}
+:root[data-tema="claro"] body::after { opacity:.03; }
+:root[data-tema="claro"] .barra { background:#FFFFFFe8; }
+:root[data-tema="claro"] .wasap { color:#FFFFFF; }
+html, body, .barra, .tarj, .llave, .cara { transition:background-color .5s ease, color .5s ease, border-color .5s ease; }
+
+/* ── ACTO 0 · EL ENCENDIDO ───────────────────────────────────────────────── */
+.intro {
+  position:fixed; inset:0; z-index:900; display:grid; place-items:center;
+  background:#08050D; gap:0;
+  transition:opacity .5s ease, visibility .5s;
+}
+.intro.apagado { opacity:0; visibility:hidden; pointer-events:none; }
+/* Si el JS no corre, la intro NO se queda tapando la página. El JS es el que
+   la enciende; sin JS ni siquiera aparece. Al revés ya nos costó una portada. */
+html:not(.encendiendo):not(.encendido) .intro { display:none; }
+
+.intro-logo {
+  --luz:0;
+  display:flex; flex-direction:column; align-items:center; gap:clamp(10px,3vw,20px);
+  /* El brillo del filamento: opacidad, resplandor y un pelo de saturación.
+     Los tres juntos son lo que hace que se lea como luz y no como un fundido. */
+  opacity:calc(.06 + var(--luz) * .94);
+  filter:brightness(calc(.5 + var(--luz) * .9))
+         drop-shadow(0 0 calc(var(--luz) * 42px) rgba(172,39,255,calc(var(--luz) * .75)))
+         drop-shadow(0 0 calc(var(--luz) * 120px) rgba(172,39,255,calc(var(--luz) * .35)));
+}
+.intro-logo .ave { width:clamp(86px,24vw,150px); height:auto; display:block; }
+.intro-marca {
+  font-family:var(--mazi); font-size:clamp(40px,13vw,96px); line-height:.94;
+  margin:0; letter-spacing:-.01em; text-align:center; color:var(--hueso);
+}
+.intro-marca .l2 { display:block; color:var(--violeta); }
+.intro-marca span[data-letra] { display:inline-block; }
+
+/* El parpadeo: cada letra prende y apaga dos veces, con su retardo. El retardo
+   lo pone el JS; la coreografía vive aquí porque el navegador sincroniza sus
+   propias animaciones mejor de lo que las sincronizaría un temporizador. */
+@keyframes titila {
+  0%,100% { opacity:1; }
+  12% { opacity:.15; } 20% { opacity:1; }
+  40% { opacity:.3; }  48% { opacity:1; }
+}
+span[data-letra].parpadea { animation:titila .62s ease-in-out both; }
+
+/* La paloma que cruza. Sale por un lado, entra por el otro, sube un poco y bate
+   —el batir es un `scaleY` sobre la silueta, no un dibujo cuadro a cuadro. */
+.intro-vuelo { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.intro-vuelo img { position:absolute; left:-16%; top:62%; width:clamp(40px,9vw,74px);
+  opacity:0; filter:drop-shadow(0 0 16px #AC27FF88); }
+@keyframes cruza {
+  0%   { transform:translate(0,0) rotate(-6deg) scaleY(1); opacity:0; }
+  8%   { opacity:.95; }
+  50%  { transform:translate(60vw,-22vh) rotate(4deg) scaleY(.62); }
+  92%  { opacity:.9; }
+  100% { transform:translate(128vw,-42vh) rotate(-3deg) scaleY(1); opacity:0; }
+}
+@keyframes aletea { 0%,100%{ transform:scaleY(1) } 50%{ transform:scaleY(.55) } }
+.intro-vuelo.vuela img { animation:cruza 2.1s cubic-bezier(.35,.1,.5,1) both; }
+
+.saltar {
+  all:unset; box-sizing:border-box; cursor:pointer; position:absolute;
+  bottom:calc(24px + env(safe-area-inset-bottom)); left:50%; translate:-50% 0;
+  min-height:44px; padding:0 20px; display:flex; align-items:center;
+  border:1px solid #ffffff22; border-radius:22px;
+  font:600 11px/1 "Segoe UI",system-ui,sans-serif; letter-spacing:.2em;
+  text-transform:uppercase; color:#7A7288;
+  opacity:0; animation:asoma .5s ease 2.4s both;
+}
+.saltar:hover { color:#E9E4E4; border-color:#ffffff44; }
+@keyframes asoma { to { opacity:1 } }
+
+/* Mientras la intro corre, la página no se scrollea — no es secuestro: es que
+   todavía no hay nada que ver. En cuanto termina, se suelta. */
+html.encendiendo body { overflow:hidden; }
+
+/* ── ACTO 1 · LA CAÍDA ──────────────────────────────────────────────────────
+   600vh de recorrido con un escenario pegado adentro. Ese alto ES la duración
+   de la caída: más alto, más despacio se cae. */
+.caida {
+  height:600vh; position:relative;
+  width:100vw; margin-left:calc(50% - 50vw);
+  border-top:1px solid var(--linea);
+}
+.cielo {
+  --caida:0;
+  position:sticky; top:0; height:100svh; overflow:hidden;
+  perspective:1100px; perspective-origin:50% 46%;
+  /* De noche cerrada arriba a la luz de la máquina abajo. */
+  background:
+    radial-gradient(120% 80% at 50% calc(118% - var(--caida) * 62%),
+      rgba(172,39,255,calc(.16 + var(--caida) * .22)) 0%, transparent 62%),
+    linear-gradient(#07040C, #0E0817 55%, #150C22);
+}
+:root[data-tema="claro"] .cielo {
+  background:
+    radial-gradient(120% 80% at 50% calc(118% - var(--caida) * 62%),
+      rgba(122,18,196,calc(.10 + var(--caida) * .16)) 0%, transparent 62%),
+    linear-gradient(#FFFFFF, #F4F1F6 55%, #EBE4F2);
+}
+
+/* Las estrellas: dos capas de puntos a distinta velocidad. Cero imágenes, y el
+   paralaje sale del tamaño del mosaico, no de dos animaciones distintas. */
+.cielo::before, .cielo::after {
+  content:''; position:absolute; inset:-20% -10%; pointer-events:none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, #ffffff55, transparent),
+    radial-gradient(1.5px 1.5px at 70% 18%, #ffffff44, transparent),
+    radial-gradient(2px 2px at 45% 72%, #AC27FF66, transparent),
+    radial-gradient(1.5px 1.5px at 88% 58%, #ffffff33, transparent),
+    radial-gradient(1.5px 1.5px at 12% 84%, #ffffff44, transparent);
+  background-size:340px 340px;
+  transform:translateY(calc(var(--caida) * -34vh));
+}
+.cielo::after { background-size:620px 620px; opacity:.6;
+  transform:translateY(calc(var(--caida) * -78vh)); }
+:root[data-tema="claro"] .cielo::before,
+:root[data-tema="claro"] .cielo::after { opacity:.25; filter:invert(1); }
+
+/* ── EL MUNDO 3D ────────────────────────────────────────────────────────────
+   `perspective` en el padre y `preserve-3d` en el mundo. Ojo con esto último:
+   si a CUALQUIER ancestro entre el padre con perspectiva y las piezas se le
+   pone `overflow` distinto de visible, `filter`, o `opacity` menor que 1, el
+   navegador aplasta el 3D y todo queda plano. Es el error que más veces rompe
+   una escena así, y por eso el mundo no lleva nada de eso encima. */
+.escenario-caida { position:absolute; inset:0; transform-style:preserve-3d; }
+.mundo { position:absolute; inset:0; transform-style:preserve-3d;
+  will-change:transform; }
+
+/* Las capas del fondo. Planas a propósito: el 3D es para las piezas; el fondo
+   sólo tiene que moverse MENOS, que es lo que el ojo lee como distancia. */
+.capa-fondo { position:absolute; inset:-25%; pointer-events:none;
+  will-change:transform;
+  background-image:
+    radial-gradient(1.6px 1.6px at 18% 24%, #ffffff66, transparent),
+    radial-gradient(1.6px 1.6px at 74% 14%, #ffffff4d, transparent),
+    radial-gradient(2.2px 2.2px at 42% 68%, #AC27FF77, transparent),
+    radial-gradient(1.6px 1.6px at 88% 54%, #ffffff3d, transparent),
+    radial-gradient(1.6px 1.6px at 9% 82%, #ffffff55, transparent);
+  background-size:300px 300px; }
+.capa-fondo.capa-b { opacity:.5; background-size:660px 660px;
+  background-image:
+    radial-gradient(2.4px 2.4px at 30% 40%, #AC27FF55, transparent),
+    radial-gradient(1.8px 1.8px at 80% 76%, #ffffff44, transparent),
+    /* Retícula lejanísima: da suelo y escala sin dibujar un suelo. */
+    repeating-linear-gradient(0deg,#AC27FF0d 0 1px,transparent 1px 90px),
+    repeating-linear-gradient(90deg,#AC27FF0d 0 1px,transparent 1px 90px); }
+:root[data-tema="claro"] .capa-fondo { opacity:.3; filter:invert(1); }
+[data-est] { position:absolute; left:50%; top:50%; transform-style:preserve-3d;
+  will-change:transform,opacity; }
+
+/* ── LO QUE HACE CADA PIEZA CUANDO LA CÁMARA LA ENFOCA ─────────────────────
+   Aquí está la diferencia entre "un espacio con cosas" y "un comercial": cada
+   pieza tiene un gesto propio y lo hace cuando le toca. La clase la pone el JS
+   una sola vez al entrar en foco. */
+
+/* Una pantalla ENCIENDE: barrido de arriba a abajo y la interfaz aparece. */
+.pantalla-flota .barrido {
+  position:absolute; left:0; right:0; top:0; height:2px; opacity:0;
+  background:linear-gradient(90deg,transparent,#AC27FF,transparent);
+  box-shadow:0 0 22px #AC27FFcc; pointer-events:none;
+}
+.pantalla-flota img { transition:opacity .5s ease .25s, filter .6s ease .25s; }
+.pantalla-flota:not(.enfocado) img { opacity:.34; filter:grayscale(.7) brightness(.7); }
+@keyframes barre { 0%{ top:0; opacity:0 } 12%{ opacity:1 } 88%{ opacity:1 } 100%{ top:100%; opacity:0 } }
+.pantalla-flota.enfocado .barrido { animation:barre .75s ease-out both; }
+.pantalla-flota figcaption { opacity:0; transform:translateY(8px);
+  transition:opacity .4s ease .5s, transform .4s cubic-bezier(.22,.8,.3,1) .5s; }
+.pantalla-flota.enfocado figcaption { opacity:1; transform:none; }
+/* El marco se prende al enfocarse. */
+.pantalla-flota { transition:border-color .5s ease, box-shadow .5s ease; }
+.pantalla-flota.enfocado { border-color:#AC27FF66;
+  box-shadow:0 30px 70px #000000aa, 0 0 44px #AC27FF33; }
+
+/* Una TARJETA se abre: el rótulo entra, el título sube, el texto detrás. */
+.tarj .n, .tarj h3, .tarj p { opacity:0; transform:translateY(12px);
+  transition:opacity .45s ease, transform .45s cubic-bezier(.22,.8,.3,1); }
+.tarj.enfocado .n { opacity:1; transform:none; transition-delay:.05s; }
+.tarj.enfocado h3 { opacity:1; transform:none; transition-delay:.14s; }
+.tarj.enfocado p  { opacity:1; transform:none; transition-delay:.23s; }
+.tarj { transition:border-color .5s ease, box-shadow .5s ease; }
+.tarj.enfocado { border-color:#AC27FF55; box-shadow:0 24px 60px #00000088, 0 0 40px #AC27FF22; }
+
+/* ── LOS LETREROS COLGADOS ─────────────────────────────────────────────────
+   Un cartel que cuelga de un cordel y se mece. El balanceo NO es un adorno:
+   es lo que hace que el espacio se sienta un espacio con aire y no una
+   maqueta. Y el giro va desde ARRIBA (`transform-origin: 50% 0`), que es de
+   donde cuelga de verdad — si girara desde el centro se vería como una hélice,
+   no como algo colgado. */
+.letrero { width:clamp(158px,40vw,232px); }
+.letrero .cuerda { display:block; width:1px; height:clamp(30px,7vw,52px);
+  margin:0 auto; background:linear-gradient(#AC27FF00, #AC27FF88);
+  transform-origin:50% 0; }
+.letrero .cuerda::after { content:''; display:block; width:5px; height:5px;
+  margin:-2px auto 0; border-radius:50%; background:var(--violeta);
+  box-shadow:0 0 12px #AC27FFcc; }
+.letrero .cara {
+  transform-origin:50% -12%;
+  padding:14px 16px 15px; border-radius:12px;
+  background:color-mix(in srgb, var(--superficie) 88%, transparent);
+  border:1px solid var(--linea);
+  box-shadow:0 18px 44px #00000077;
+  animation:mece 5.2s ease-in-out infinite;
+}
+@keyframes mece {
+  0%,100% { transform:rotate(-1.6deg) }
+  50%     { transform:rotate(1.6deg) }
+}
+.letrero .cara .n { display:block; font:600 9px/1 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--violeta); margin-bottom:7px; }
+.letrero .cara b { display:block; font-family:var(--titulo); font-weight:700;
+  letter-spacing:-.015em; font-size:clamp(14px,3.8vw,18px); line-height:1.14;
+  color:var(--hueso); }
+.letrero .cara i { display:block; font-style:normal; margin-top:5px;
+  font-size:12.5px; line-height:1.45; color:var(--apagado); }
+.letrero .cara .cifra-min { font-family:var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--violeta); }
+.letrero:not(.enfocado) .cara { opacity:.45; }
+.letrero .cara { transition:opacity .5s ease, border-color .5s ease, box-shadow .5s ease; }
+.letrero.enfocado .cara { border-color:#AC27FF55;
+  box-shadow:0 18px 44px #00000099, 0 0 34px #AC27FF22; }
+
+/* EL RENGLÓN DEL FRENTE · qué estoy viendo ahora. */
+.hud {
+  position:absolute; left:0; right:0; top:0; z-index:210; pointer-events:none;
+  padding:calc(var(--barra) + 16px) clamp(18px,5vw,44px) 0;
+  font:600 10px/1.4 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--violeta);
+  min-height:34px;
+}
+@keyframes hud-entra { from { opacity:0; transform:translateY(-6px) } to { opacity:1; transform:none } }
+.hud.entra { animation:hud-entra .4s cubic-bezier(.22,.8,.3,1) both; }
+
+/* Un GLIFO se DIBUJA: el trazo se recorre, como cuando la fábrica de
+   tipografías lo escribe. Es la marca contándose a sí misma. */
+.glifo { transition:opacity .5s ease; }
+@keyframes traza { from { opacity:0; letter-spacing:.3em; } to { opacity:.62; letter-spacing:0; } }
+.glifo.enfocado { animation:traza .9s cubic-bezier(.22,.8,.3,1) both; }
+
+/* Una CIFRA cuenta. El número lo mueve el JS; aquí sólo entra. */
+@keyframes sube-cifra { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:none } }
+.marcador-cifra { text-align:center; }
+.marcador-cifra b { display:block; font-family:var(--mono);
+  font-variant-numeric:tabular-nums; letter-spacing:-.04em;
+  font-size:clamp(54px,16vw,120px); line-height:.9; color:var(--hueso); }
+.marcador-cifra span { display:block; margin-top:8px;
+  font:600 10px/1.3 "Segoe UI",system-ui,sans-serif; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--violeta); }
+.marcador-cifra.enfocado { animation:sube-cifra .6s cubic-bezier(.22,.8,.3,1) both; }
+
+/* El abanico saca las pantallas del mundo: dejan de estar en la hélice y se
+   ponen de frente. La transición la hace el JS cuadro a cuadro; esto sólo
+   apaga lo que estorba. */
+.caida.en-abanico .tarj,
+.caida.en-abanico .glifo,
+.caida.en-abanico .marcador-cifra { opacity:0 !important; visibility:hidden !important; }
+.caida.en-abanico .pantalla-flota figcaption { opacity:0; }
+.caida.en-abanico .pantalla-flota:not(.enfocado) img { opacity:1; filter:none; }
+
+/* Cada cosa que cae. Se posiciona por porcentaje y el JS sólo la transforma. */
+[data-objeto] {
+  position:absolute; top:50%; will-change:transform,opacity;
+  opacity:0; visibility:hidden;
+  transform-style:preserve-3d;
+}
+/* El ancho manda sobre la profundidad. Una pantalla a `prof .95` se escala a
+   1.3, así que 29vw se convierten en 38vw y con el objeto centrado en left:72%
+   se sale por la derecha. Se calcula al revés: el ancho base es el que, ya
+   escalado al máximo, todavía cabe. */
+.pantalla-flota {
+  width:clamp(112px,21vw,196px); border-radius:16px; overflow:hidden;
+  border:1px solid #ffffff1f; background:#0C0813;
+  box-shadow:0 30px 70px #00000099, 0 0 0 1px #00000044;
+}
+.pantalla-flota img { display:block; width:100%; height:auto; }
+.pantalla-flota figcaption {
+  position:absolute; left:0; right:0; bottom:0; padding:22px 12px 10px;
+  font:600 12px/1.25 "Segoe UI",system-ui,sans-serif; color:#E9E4E4;
+  background:linear-gradient(to top,#07040Cf2 26%,transparent);
+}
+
+/* Las tarjetitas que miran al cursor. */
+.tarj {
+  width:clamp(180px,44vw,278px); padding:18px 18px 20px; border-radius:18px;
+  background:color-mix(in srgb, var(--superficie) 82%, transparent);
+  border:1px solid var(--linea); backdrop-filter:blur(9px);
+  box-shadow:0 24px 60px #00000066;
+}
+.tarj .n { display:block; font:600 10px/1 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--violeta);
+  margin-bottom:10px; }
+.tarj h3 { margin:0 0 7px; font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
+  font-size:clamp(17px,4.4vw,22px); line-height:1.05; color:var(--hueso); }
+.tarj p { margin:0; font-size:13.5px; line-height:1.5; color:var(--apagado); }
+
+/* Los glifos sueltos: letras de NUESTRA fuente cayendo. Es la marca hecha
+   objeto — y no cuesta un solo kilobyte extra, la fuente ya está cargada. */
+.glifo { font-family:var(--mazi); font-size:clamp(56px,17vw,150px); line-height:1;
+  color:transparent; -webkit-text-stroke:1px var(--violeta);
+  opacity:.55; user-select:none; }
+
+.caida-txt {
+  position:absolute; left:0; right:0; bottom:0; z-index:200; pointer-events:none;
+  padding:0 clamp(18px,5vw,44px) calc(28px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,#07040Cf0 16%,transparent);
+}
+:root[data-tema="claro"] .caida-txt {
+  background:linear-gradient(to top,#FFFFFFf2 16%,transparent); }
+/* Los dos textos se apilan en la MISMA celda de rejilla: así el bloque no
+   cambia de alto al cambiar de uno a otro y el texto no brinca. */
+.caida-txt { display:grid; }
+.cap { grid-area:1/1; opacity:0; transform:translateY(10px); pointer-events:none;
+  transition:opacity .5s ease, transform .5s cubic-bezier(.22,.8,.3,1); }
+.cap.visible { opacity:1; transform:none; }
+.caida-txt h2 { margin:0; font-family:var(--titulo); font-weight:700; letter-spacing:-.022em;
+  font-size:clamp(22px,6.4vw,44px); line-height:1.04; color:var(--hueso);
+  max-width:16ch; text-wrap:balance; }
+.caida-txt p { margin:8px 0 0; font-size:clamp(13px,3.6vw,16px);
+  color:var(--apagado); max-width:34ch; }
+
+.caida.quieto { height:auto; }
+.caida.quieto .cielo { position:relative; height:auto; padding:40px 0 60px; }
+.caida.quieto .escenario-caida { position:relative; inset:auto;
+  display:grid; gap:22px; justify-items:center; padding:0 18px; }
+.caida.quieto [data-objeto] { position:relative; top:auto; }
+
+/* ── LOS JUGUETES ───────────────────────────────────────────────────────── */
+.juguetes { padding:clamp(56px,12vh,104px) 0; border-top:1px solid var(--linea); }
+.juguetes-rej { display:grid; gap:clamp(20px,5vw,34px); }
+@media (min-width:860px) { .juguetes-rej { grid-template-columns:1.35fr 1fr; align-items:start; } }
+
+.caja {
+  border:1px solid var(--linea); border-radius:20px; padding:clamp(18px,4.5vw,26px);
+  background:color-mix(in srgb, var(--superficie) 60%, transparent);
+}
+.caja .n { display:block; font:600 10px/1 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--violeta); margin-bottom:12px; }
+
+/* EL TECLADO. Botones de verdad: se enfocan con tabulador, responden a Enter y
+   al teclado físico. Un teclado que sólo obedece al ratón es un dibujo. */
+.teclado { display:grid; gap:7px; }
+.fila-t { display:flex; gap:7px; justify-content:center; }
+.llave {
+  all:unset; box-sizing:border-box; cursor:pointer; position:relative;
+  flex:1 1 0; min-width:0; aspect-ratio:1/1; max-width:54px;
+  display:grid; place-items:center; border-radius:9px;
+  background:linear-gradient(#241832,#1A1226);
+  border:1px solid #3A2A4C; border-bottom-width:3px;
+  font-family:var(--mazi); font-size:clamp(11px,3vw,15px); color:var(--apagado);
+  transition:transform .09s ease, background .18s ease, color .18s ease,
+             box-shadow .18s ease, border-color .18s ease;
+}
+:root[data-tema="claro"] .llave { background:linear-gradient(#FFFFFF,#EFEAF4);
+  border-color:#D2C8DE; color:#5E5470; }
+.llave:hover, .llave:focus-visible {
+  color:var(--hueso); border-color:var(--violeta);
+  box-shadow:0 0 22px #AC27FF44, inset 0 0 18px #AC27FF1a;
+}
+.llave:focus-visible { outline:2px solid var(--violeta); outline-offset:2px; }
+@keyframes pisa {
+  0%   { transform:translateY(0)   scale(1); }
+  35%  { transform:translateY(3px) scale(.94); }
+  100% { transform:translateY(0)   scale(1); }
+}
+.llave.pulsada { animation:pisa .17s cubic-bezier(.3,1.4,.5,1) both;
+  color:#12081C; background:var(--violeta); border-color:var(--violeta);
+  box-shadow:0 0 34px #AC27FF88; }
+
+.escrito {
+  margin:14px 0 0; min-height:34px; padding:8px 12px; border-radius:10px;
+  background:#00000038; border:1px solid var(--linea);
+  font-family:var(--mazi); font-size:clamp(14px,4vw,20px); color:var(--hueso);
+  letter-spacing:.06em; overflow:hidden; white-space:nowrap;
+  direction:rtl; text-align:left;   /* el texto crece hacia la izquierda */
+}
+:root[data-tema="claro"] .escrito { background:#00000008; }
+.escrito.de-teclado { color:var(--violeta); }
+.pista { margin:8px 0 0; font-size:12.5px; color:var(--apagado); }
+
+/* EL INTERRUPTOR. Un interruptor de pared, no una casilla de formulario. */
+.switch {
+  all:unset; box-sizing:border-box; cursor:pointer; display:block;
+  width:78px; height:120px; border-radius:16px; padding:7px;
+  background:linear-gradient(#1E1428,#150E1F);
+  border:1px solid var(--linea); position:relative;
+  box-shadow:inset 0 2px 12px #00000066;
+}
+:root[data-tema="claro"] .switch { background:linear-gradient(#FFFFFF,#EFEAF4); }
+.switch .palanca {
+  display:block; height:52px; border-radius:11px;
+  background:linear-gradient(#3E2B54,#2A1D3A);
+  border:1px solid #4A3663;
+  transition:transform .26s cubic-bezier(.3,1.5,.5,1), background .26s ease;
+  box-shadow:0 5px 0 #00000055;
+}
+.switch[aria-pressed="true"] .palanca {
+  transform:translateY(54px);
+  background:linear-gradient(#FFE9A8,#F5CE5C); border-color:#E0B93F;
+  box-shadow:0 5px 0 #00000022, 0 0 40px #F5CE5C88;
+}
+.switch:focus-visible { outline:2px solid var(--violeta); outline-offset:3px; }
+.switch-pie { margin:10px 0 0; font:600 10px/1.3 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.18em; text-transform:uppercase; color:var(--apagado); }
+
+/* LOS BOTONES QUE REBOTAN. */
+@keyframes botado {
+  0%   { transform:scale(1); }
+  30%  { transform:scale(.9); }
+  62%  { transform:scale(1.06); }
+  100% { transform:scale(1); }
+}
+.rebota { animation:botado .34s cubic-bezier(.3,1.5,.5,1) both; }
+
+/* ── ACTO 3 · LA COMPUTADORA Y EL MARCO ─────────────────────────────────────
+   El marco no es una imagen encima del contenido: son cuatro bordes FIJOS con
+   un hueco en medio. Por eso todo lo de adentro se sigue tocando, escribiendo y
+   scrolleando. El "zoom" es el hueco creciendo hasta comerse la pantalla. */
+.maquina { height:260vh; position:relative;
+  width:100vw; margin-left:calc(50% - 50vw); border-top:1px solid var(--linea); }
+.maquina-fijo { position:sticky; top:0; height:100svh; display:grid; place-items:center;
+  overflow:hidden; background:#08050D; }
+:root[data-tema="claro"] .maquina-fijo { background:#EDE8F2; }
+
+.marco {
+  --dentro:0; position:fixed; inset:0; z-index:400; pointer-events:none;
+  opacity:calc(var(--dentro) * 1.4 - .1);
+  visibility:hidden;
+}
+html.en-la-pc .marco { visibility:visible; }
+html.sin-marco .marco { opacity:0 !important; }
+/* Los cuatro bordes. El grosor se encoge conforme entramos: al principio la
+   máquina se ve chica y lejos (borde gordo), al final estamos pegados a la
+   pantalla (borde de nada). */
+.marco i {
+  position:absolute; display:block; background:#140D1E;
+  border:1px solid #35263F; box-shadow:inset 0 0 30px #00000088;
+}
+.marco .arr { left:0; right:0; top:0; height:calc((1 - var(--dentro)) * 15vh + 26px); }
+.marco .aba { left:0; right:0; bottom:0; height:calc((1 - var(--dentro)) * 19vh + 40px); }
+.marco .izq { top:0; bottom:0; left:0; width:calc((1 - var(--dentro)) * 12vw + 12px); }
+.marco .der { top:0; bottom:0; right:0; width:calc((1 - var(--dentro)) * 12vw + 12px); }
+/* La cámara y la marca del portátil, para que se lea como aparato. */
+.marco .ojo { position:absolute; top:calc((1 - var(--dentro)) * 15vh / 2 + 13px);
+  left:50%; translate:-50% -50%; width:7px; height:7px; border-radius:50%;
+  background:#241832; border:1px solid #3E2B54; box-shadow:0 0 8px #AC27FF55; }
+.marco .pie { position:absolute; bottom:calc((1 - var(--dentro)) * 9.5vh + 14px);
+  left:50%; translate:-50% 0; font:600 9px/1 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.3em; text-transform:uppercase; color:#4B4159; }
+
+.acercar {
+  all:unset; box-sizing:border-box; cursor:pointer; position:fixed; z-index:401;
+  right:max(14px, env(safe-area-inset-right));
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  min-height:44px; padding:0 18px; display:none; align-items:center; gap:9px;
+  border-radius:23px; background:var(--violeta); color:#12081C;
+  font-family:var(--mazi); font-size:12px; letter-spacing:.04em;
+  box-shadow:0 8px 30px #00000088, 0 0 26px #AC27FF66;
+  transition:transform .16s cubic-bezier(.3,1.5,.5,1), box-shadow .2s ease;
+}
+html.en-la-pc .acercar { display:flex; }
+.acercar:hover { box-shadow:0 8px 34px #000000aa, 0 0 40px #AC27FFaa; }
+.acercar:active { transform:scale(.94); }
+
+/* La máquina del final: la misma silueta de la secuencia, en DOM. */
+.pc { position:relative; width:min(76vw,760px); transform-style:preserve-3d; }
+.pc .tapa { position:relative; aspect-ratio:16/10; border-radius:14px;
+  background:#1A1226; border:1px solid #3A2A4C; padding:10px;
+  box-shadow:0 40px 90px #000000aa; }
+.pc .vidrio { position:absolute; inset:10px; border-radius:8px; overflow:hidden;
+  background:radial-gradient(75% 90% at 50% 42%,#1A1028,#0A0611);
+  display:grid; place-items:center; gap:10px; }
+.pc .vidrio .ave { width:16%; }
+.pc .vidrio .rot { font:600 11px/1 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.42em; text-transform:uppercase; color:var(--apagado);
+  padding-left:.42em; }
+.pc .base { height:12px; margin:0 -6%; border-radius:0 0 12px 12px;
+  background:#160F21; border:1px solid #33253F; border-top:0; }
+.pc .luz { position:absolute; left:50%; bottom:-4px; translate:-50% 0;
+  width:44%; height:2px; background:var(--violeta); border-radius:2px;
+  box-shadow:0 0 30px #AC27FFcc; }
+
+.maquina-txt { position:absolute; left:0; right:0; bottom:0; pointer-events:none;
+  padding:0 clamp(18px,5vw,44px) calc(30px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,#08050Df2 16%,transparent); }
+.maquina-txt h2 { margin:0; font-family:var(--titulo); font-weight:700; letter-spacing:-.022em;
+  font-size:clamp(21px,6vw,40px); line-height:1.05; color:var(--hueso);
+  max-width:18ch; text-wrap:balance; }
+
+/* Cuando estamos dentro de la pantalla, el contenido se mete en el hueco. */
+html.en-la-pc .adentro { padding:0 clamp(14px,3vw,40px); }
+html.sin-marco .adentro { padding:0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .caida { height:auto; }
+  .maquina { height:auto; }
+  .maquina-fijo { position:relative; height:auto; padding:60px 0; }
+  .intro { display:none !important; }
+  .llave, .switch .palanca, .acercar { transition:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ ACTO 0 · EL ENCENDIDO ═══════════════════════════════════════════════
+     Fondo negro y el logo calentando como un foco. Ojo con el orden: esta capa
+     sólo existe si el JS corrió (`html.encendiendo`). Si el JS truena, no
+     aparece y la página se ve completa. Al revés —CSS que tapa y JS que
+     destapa— ya nos costó una portada en blanco. -->
+<div class="intro" data-intro>
+  <div class="intro-vuelo" data-ave>
+    <img src="../marca/logo/paloma-simple.svg" alt="" width="74" height="46">
+  </div>
+
+  <div class="intro-logo" data-logo>
+    <img class="ave" src="../marca/logo/paloma.svg" alt="" width="150" height="88">
+    <p class="intro-marca">
+      <span data-letra>G</span><span data-letra>R</span><span data-letra>U</span><span data-letra>P</span><span data-letra>O</span>
+      <span class="l2"><span data-letra>M</span><span data-letra>A</span><span data-letra>Z</span><span data-letra>I</span></span>
+    </p>
+  </div>
+
+  <button class="saltar" data-saltar type="button">Saltar la intro</button>
+</div>
 
 <header class="barra">
   <div class="barra-in">
-    <a class="casa" href="#arriba">
+    <!-- El logo de la intro ATERRIZA aquí. `data-logo-destino` es la caja que
+         se mide para calcular el viaje; no se toca su acomodo. -->
+    <a class="casa" href="#arriba" data-logo-destino>
       <img src="../marca/logo/paloma-simple.svg" alt="" width="26" height="16">
       <span>GRUPO MAZI</span>
     </a>
@@ -435,6 +1082,10 @@
       <a class="menu" href="#taller">EL TALLER</a>
       <a class="menu" href="#trabajamos">CÓMO TRABAJAMOS</a>
       <a class="menu" href="#contacto">CONTACTO</a>
+      <button class="son" data-son type="button" aria-pressed="false" aria-label="Encender sonido">
+        <span class="son-on" aria-hidden="true">◉</span>
+        <span class="son-off" aria-hidden="true">◎</span>
+      </button>
       <a class="wasap" href="https://wa.me/524428833786" target="_blank" rel="noopener">
         WHATSAPP
       </a>
@@ -474,6 +1125,289 @@
       </div>
     </div>
   </div>
+
+  <!-- ═══ ACTO 1 · EL VIAJE ══════════════════════════════════════════════
+       Una CÁMARA volando por un espacio. Cada pieza tiene una posición fija en
+       una hélice que baja (la calcula experiencia.js) y lo que se mueve es el
+       mundo entero, al revés — que es como se hace una cámara cuando no existe
+       una cámara. El fondo va en capas que se mueven menos: eso es el paralaje.
+
+       La cámara frena en cada pieza y le da tiempo a que haga LO SUYO: una
+       pantalla enciende con un barrido, una tarjeta se abre por partes, un
+       glifo se traza, una cifra cuenta, un letrero se mece colgado de su
+       cuerda. Ese acelerón-freno es todo el oficio: una cámara a velocidad
+       constante se siente barata aunque el espacio sea impecable.
+
+       LO QUE SE ENSEÑA ES SÓLO NUESTRO. Ligas Mazi corriendo, la fábrica de
+       tipografías, la paloma vectorizada y el explorador. Torre Infinita NO
+       entra: lo decidió Carlos el 30 de julio y el motivo sigue vivo — arte de
+       Nintendo, y además las mecánicas quedaron expuestas por el pleito de
+       patentes contra Palworld. Un flanco tapado y el otro abierto no es tapar.
+
+       `data-est` = estación (el orden del HTML es el orden del recorrido).
+       `data-info` = el renglón que se lee arriba mientras se ve.
+       `data-abanico` = tiene sitio en el mazo del final.
+       `data-capa` = fondo con paralaje; el número es qué tan lejos está. -->
+  <section class="caida" id="cae" data-caida>
+    <div class="cielo" data-cielo>
+
+      <!-- El fondo, en capas. Se mueven MENOS que el mundo: sin esto el fondo
+           se queda clavado mientras la cámara vuela y todo se siente telón. -->
+      <div class="capa-fondo" data-capa=".06" aria-hidden="true"></div>
+      <div class="capa-fondo capa-b" data-capa=".16" aria-hidden="true"></div>
+
+      <p class="hud" data-hud aria-live="polite"></p>
+
+      <div class="escenario-caida">
+        <div class="mundo" data-mundo>
+
+          <figure class="pantalla-flota" data-est data-abanico="0" data-mira
+                  data-info="Ligas Mazi · cuentas reales">
+            <img src="img/pantallas/entrada.jpg" alt="Cuentas reales, con privacidad de menores"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>Cuentas reales</figcaption>
+          </figure>
+
+          <div class="letrero" data-est data-info="Privacidad de menores, por diseño">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">Lo difícil</span>
+              <b>Una liga tiene menores</b>
+              <i>Cuentas de padre y de jugador atadas, y los datos del menor no
+                 salen a ninguna pantalla pública.</i>
+            </div>
+          </div>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 01 · Páginas web">
+            <span class="n">01 · Páginas web</span>
+            <h3>Que convierten visitas en oportunidades</h3>
+            <p>Creamos espacios digitales que representan tu negocio y generan confianza.</p>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="5" data-mira
+                  data-info="Ligas Mazi · el tablero">
+            <img src="img/pantallas/hub.jpg" alt="El tablero del aficionado"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>El tablero</figcaption>
+          </figure>
+
+          <span class="glifo" data-est data-info="Tipografía propia · fundida aquí"
+                aria-hidden="true">M</span>
+
+          <div class="letrero" data-est data-info="La fábrica de tipografías">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">Herramienta propia</span>
+              <b>Nuestra letra la fundimos nosotros</b>
+              <i>Esqueleto × pincel × remate. <span class="cifra-min">107</span>
+                 caracteres, <span class="cifra-min">15</span> alfabetos, y sale
+                 en <span class="cifra-min">.woff2</span>.</i>
+            </div>
+          </div>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 02 · Software">
+            <span class="n">02 · Desarrollo de software</span>
+            <h3>Que se adapta a cómo trabajas</h3>
+            <p>Sistemas que eliminan obstáculos y conectan procesos.</p>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="2" data-mira
+                  data-info="Ligas Mazi · dirigir el partido">
+            <img src="img/pantallas/mesa.jpg" alt="La mesa de control de un partido"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>La mesa de control</figcaption>
+          </figure>
+
+          <!-- La cifra es real y verificable: son los caracteres que trae la
+               tipografía que fundimos, contables en herramientas/tipos.mjs.
+               Cualquier número que no podamos probar hoy, no va. -->
+          <div class="marcador-cifra" data-est data-cuenta="107"
+               data-info="107 caracteres, dibujados por código">
+            <b data-cifra>0</b>
+            <span>caracteres · tipografía propia</span>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="3" data-mira
+                  data-info="Ligas Mazi · marcador en vivo">
+            <img src="img/pantallas/marcador.jpg" alt="Marcador en vivo de Ligas Mazi"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>Marcador en vivo</figcaption>
+          </figure>
+
+          <div class="letrero" data-est data-info="La paloma: vectorizada, no dibujada">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">La marca</span>
+              <b>Un logo que no cambia nunca</b>
+              <i>Vectorizado a mano, <span class="cifra-min">9</span> trazos y un
+                 violeta medido. Un modelo de imagen no repite dos veces la misma
+                 paloma; un SVG sí.</i>
+            </div>
+          </div>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 03 · Tiempos y movimientos">
+            <span class="n">03 · Tiempos y movimientos</span>
+            <h3>Encontramos el tiempo que se pierde</h3>
+            <p>Medimos cómo trabaja tu empresa — y te lo devolvemos.</p>
+          </div>
+
+          <span class="glifo" data-est data-info="Cada letra, un trazo calculado"
+                aria-hidden="true">A</span>
+
+          <figure class="pantalla-flota" data-est data-abanico="1" data-mira
+                  data-info="Ligas Mazi · la liga completa">
+            <img src="img/pantallas/liga.jpg" alt="Administración de una liga completa"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>La liga completa</figcaption>
+          </figure>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 04 · Gestión de negocios">
+            <span class="n">04 · Gestión de negocios</span>
+            <h3>Decisiones con claridad y control</h3>
+            <p>Organizamos la información, los procesos y la operación.</p>
+          </div>
+
+          <div class="letrero" data-est data-info="El explorador · todo el repo en el teléfono">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">Herramienta propia</span>
+              <b>Todo el trabajo, desde el teléfono</b>
+              <i>Un explorador nuestro: archivos, imágenes y páginas del repo
+                 completo, con búsqueda. <span class="cifra-min">44/44</span> pruebas.</i>
+            </div>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="4" data-mira
+                  data-info="Ligas Mazi · las reglas del torneo">
+            <img src="img/pantallas/perillas.jpg" alt="Las reglas del torneo, configurables"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>Las reglas, en tus manos</figcaption>
+          </figure>
+
+          <span class="glifo" data-est data-info="Y la última la hicimos nosotros"
+                aria-hidden="true">Z</span>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 05 · Video y fotografía">
+            <span class="n">05 · Video y fotografía</span>
+            <h3>Comunica antes de decir una palabra</h3>
+            <p>Capturamos la esencia de tu marca.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Dos textos en la misma celda: uno para el viaje y otro para el
+           abanico. El JS sólo cambia una clase; no hay reacomodo, nada brinca. -->
+      <div class="caida-txt">
+        <div class="cap visible" data-cap data-de="0" data-a=".82">
+          <h2>Esto no es un portafolio: está corriendo.</h2>
+          <p>Cada pieza de este recorrido es software nuestro, en funcionamiento.</p>
+        </div>
+        <div class="cap" data-cap data-de=".82" data-a="1">
+          <h2>Seis pantallas. Un solo sistema.</h2>
+          <p><b>Ligas Mazi</b> — cuentas reales, pagos, la mesa de control y el
+             marcador en vivo. Una liga entera en un teléfono.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ LOS JUGUETES · la demostración ═══════════════════════════════════
+       Cada uno prueba una capacidad distinta y ninguno es decorativo. -->
+  <section class="juguetes" id="juguetes">
+    <p class="rot">TÓCALO</p>
+    <h2 style="margin:0 0 8px;font-family:var(--titulo);font-weight:700;letter-spacing:-.022em;
+               font-size:clamp(21px,5.6vw,38px);line-height:1.04;text-wrap:balance">
+      Lo que vendemos no se explica: se aprieta.</h2>
+    <p style="margin:0 0 26px;color:var(--apagado);max-width:44ch">
+      Tres piezas de esta misma página. Ninguna es un video.</p>
+
+    <div class="juguetes-rej">
+      <div class="caja">
+        <span class="n">El teclado · responde a tu teclado de verdad</span>
+        <div class="teclado" data-teclado>
+          <div class="fila-t">
+            <button class="llave" data-tecla="Q" type="button">Q</button>
+            <button class="llave" data-tecla="W" type="button">W</button>
+            <button class="llave" data-tecla="E" type="button">E</button>
+            <button class="llave" data-tecla="R" type="button">R</button>
+            <button class="llave" data-tecla="T" type="button">T</button>
+            <button class="llave" data-tecla="Y" type="button">Y</button>
+            <button class="llave" data-tecla="U" type="button">U</button>
+          </div>
+          <div class="fila-t">
+            <button class="llave" data-tecla="A" type="button">A</button>
+            <button class="llave" data-tecla="S" type="button">S</button>
+            <button class="llave" data-tecla="D" type="button">D</button>
+            <button class="llave" data-tecla="F" type="button">F</button>
+            <button class="llave" data-tecla="G" type="button">G</button>
+            <button class="llave" data-tecla="H" type="button">H</button>
+            <button class="llave" data-tecla="J" type="button">J</button>
+          </div>
+          <div class="fila-t">
+            <button class="llave" data-tecla="Z" type="button">Z</button>
+            <button class="llave" data-tecla="X" type="button">X</button>
+            <button class="llave" data-tecla="C" type="button">C</button>
+            <button class="llave" data-tecla="V" type="button">V</button>
+            <button class="llave" data-tecla="B" type="button">B</button>
+            <button class="llave" data-tecla="N" type="button">N</button>
+            <button class="llave" data-tecla="M" type="button">M</button>
+          </div>
+        </div>
+        <p class="escrito" data-escrito aria-live="polite"></p>
+        <p class="pista">Escribe con tu teclado. Las letras se pintan en
+          <b>nuestra tipografía</b>, la que fundimos aquí.</p>
+      </div>
+
+      <div class="caja" style="display:grid;gap:22px;justify-items:start">
+        <div>
+          <span class="n">El interruptor · cambia el sistema de color</span>
+          <button class="switch" data-tema-btn type="button" aria-pressed="false"
+                  aria-label="Cambiar a claro"><span class="palanca"></span></button>
+          <p class="switch-pie">No es un filtro encima:<br>es la paleta completa.</p>
+        </div>
+        <div>
+          <span class="n">Los botones · responden al toque</span>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a class="wasap" data-rebota
+               href="https://wa.me/524428833786?text=Hola%2C%20vi%20la%20p%C3%A1gina%20y%20quiero%20platicar%20de%20un%20proyecto"
+               target="_blank" rel="noopener">Hablar por WhatsApp</a>
+            <a class="wasap hueco" data-rebota href="#contacto">Ver contacto</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ACTO 3 · LA COMPUTADORA ══════════════════════════════════════════
+       Todo se mete de vuelta en la máquina y la cámara entra a la pantalla. A
+       partir de aquí el visitante está DENTRO: ve el marco del portátil y la
+       página de adentro se usa normal. -->
+  <section class="maquina" id="maquina" data-maquina>
+    <div class="maquina-fijo">
+      <div class="pc">
+        <div class="tapa">
+          <div class="vidrio">
+            <img class="ave" src="../marca/logo/paloma-simple.svg" alt="" width="120" height="74">
+            <span class="rot">Grupo Mazi</span>
+          </div>
+        </div>
+        <div class="base"></div>
+        <span class="luz"></span>
+      </div>
+      <div class="maquina-txt">
+        <h2>De aquí salió todo. Ahora entra tú.</h2>
+      </div>
+    </div>
+  </section>
+
+  <div class="adentro">
 
   <!-- 2 · EL SISTEMA · la vista explotada -->
   <section class="sistema" id="sistema" data-sistema>
@@ -583,7 +1517,24 @@
     <a href="mailto:grupomazi.oficial@gmail.com">CORREO</a>
   </footer>
 
+  </div><!-- /.adentro -->
 </main>
+
+<!-- EL MARCO DEL PORTÁTIL.
+     Cuatro bordes fijos con un hueco en medio. NO es una imagen encima del
+     contenido — por eso todo lo de adentro se sigue tocando, escribiendo y
+     scrolleando. El grosor lo manda `--dentro`, que el scroll mueve de 0 a 1:
+     al principio la máquina se ve chica y lejos, al final estamos pegados. -->
+<div class="marco" data-marco aria-hidden="true">
+  <i class="arr"></i><i class="aba"></i><i class="izq"></i><i class="der"></i>
+  <span class="ojo"></span>
+  <span class="pie">Grupo Mazi</span>
+</div>
+
+<button class="acercar" data-acercar type="button" aria-pressed="false">
+  <span aria-hidden="true">⤢</span>
+  <span data-acercar-txt>ENTRAR A PANTALLA COMPLETA</span>
+</button>
 
 <script>
 (() => {
@@ -650,8 +1601,9 @@
   const tic = () => {
     const d = new Date();
     reloj.innerHTML = dos(d.getHours()) + '<span class="pt">:</span>' + dos(d.getMinutes());
-    // La hora también en la pestaña: quien deje el sitio abierto lo ve.
-    document.title = dos(d.getHours()) + ':' + dos(d.getMinutes()) + ' · Grupo Mazi';
+    // La hora NO va en el <title>. Estaba, y era un autogol: borraba el nombre de
+    // la empresa de la pestaña, del historial y de lo que se copia al compartir.
+    // Un reloj bonito no vale el nombre de la casa.
   };
   tic(); setInterval(tic, 15000);
 
@@ -686,4 +1638,47 @@
       if (raiz) m.montarSistema(raiz);
     })
     .catch(() => document.querySelector('[data-sistema-falla]')?.removeAttribute('hidden'));
+
+  /* LA EXPERIENCIA. Va en un solo import porque las piezas comparten el pulso,
+     el puntero y el sonido: cargarlas por separado sería tener cuatro relojes.
+
+     Si esto no carga, la página NO se queda a medias: la intro nunca aparece
+     (sólo existe con `html.encendiendo`, que lo pone el JS), la caída se queda
+     con sus objetos visibles y quietos, y el marco del portátil no se dibuja.
+     Todo el contenido sigue ahí y se puede leer y usar. */
+  import('./experiencia.js')
+    .then(m => {
+      const q = (s) => document.querySelector(s);
+
+      const son = q('[data-son]');       if (son) m.montarSonido(son);
+      const tema = q('[data-tema-btn]'); if (tema) m.montarInterruptor(tema);
+      m.montarRebotes([...document.querySelectorAll('[data-rebota]')]);
+
+      const tec = q('[data-teclado]');   if (tec) m.montarTeclado(tec);
+      const caida = q('[data-caida]');   if (caida) m.montarViaje(caida);
+      const maq = q('[data-maquina]');   if (maq) m.montarComputadora(maq);
+
+      // El encendido va al final: para el viaje del logo necesita que la barra
+      // ya esté medida, y midiendo antes de que el resto se acomode el destino
+      // sale en el lugar equivocado.
+      const intro = q('[data-intro]');   if (intro) m.montarEncendido(intro);
+    })
+    .catch(e => {
+      console.error('experiencia.js no cargó:', e);
+      // La caída sin motor cobra 600vh de scroll por objetos invisibles. Se le
+      // quita el recorrido y se enseñan quietos: cobrar scroll por una pantalla
+      // vacía es peor que no tener la sección.
+      const caida = document.querySelector('[data-caida]');
+      if (caida) {
+        caida.classList.add('quieto');
+        caida.querySelectorAll('[data-objeto]').forEach(n => {
+          n.style.visibility = 'visible'; n.style.opacity = '1'; n.style.transform = 'none';
+        });
+      }
+      const maq = document.querySelector('[data-maquina]');
+      if (maq) maq.style.height = 'auto';
+    });
 </script>
+
+</body>
+</html>

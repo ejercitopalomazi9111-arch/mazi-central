@@ -22,6 +22,10 @@
      --js "código"    JS a ejecutar en la página antes de esperar
      --movil          viewport de iPhone y user-agent táctil
      --completa       captura la página entera, no sólo el viewport
+     --jpeg N         guarda JPEG con calidad N (1-100) en vez de PNG.
+                      Para fotos y capturas de pantalla: un PNG de 560 KB sale
+                      en 70 KB de JPEG sin que se note. Para logos y cosas con
+                      transparencia, NO — ahí el PNG es el correcto.
 
    Ejemplos:
      node herramientas/captura.mjs http://127.0.0.1:8080/pacto-roto/ sitio/img/pacto.png
@@ -30,7 +34,7 @@
        --teclas Enter,Enter,Enter --espera 5000
    ==========================================================================*/
 
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 // puppeteer vive donde haya quedado instalado; lo buscamos en los lugares de
@@ -59,16 +63,42 @@ for (const raiz of RAICES) {
     puppeteer = (await import(raiz + (pkg.module || pkg.main))).default;
   } catch { /* siguiente */ }
 }
+
+// SEGUNDO MOTOR: Playwright.
+// El ojo dejó de abrir en esta caja porque aquí no hay puppeteer instalado —
+// hay Playwright, que viene con la máquina. Antes eso significaba "no hay
+// capturas", y sin capturas no hay portafolio. Las dos librerías manejan el
+// MISMO Chromium y su API de página es casi idéntica (goto, evaluate, keyboard,
+// screenshot, on), así que lo único que cambia es cómo se abre. Se abstrae ese
+// pedazo y el resto del archivo no se entera de cuál está corriendo.
+let playwright = null;
 if (!puppeteer) {
-  console.error('No encontré puppeteer. Instálalo con:');
+  for (const nombre of ['playwright', 'playwright-core',
+                        '/opt/node22/lib/node_modules/playwright/index.js']) {
+    if (playwright) break;
+    try { playwright = (await import(nombre)).chromium; } catch { /* siguiente */ }
+  }
+}
+
+if (!puppeteer && !playwright) {
+  console.error('No encontré ni puppeteer ni playwright. Instala uno:');
   console.error('  cd herramientas && npm i puppeteer-core');
-  console.error('Busqué en:\n  ' + RAICES.join('\n  '));
+  console.error('Busqué puppeteer en:\n  ' + RAICES.join('\n  '));
   process.exit(1);
 }
 
-// el Chromium ya viene en la caja; no hay que bajar otro
-const CHROMIUM = process.env.PUPPETEER_EXECUTABLE_PATH
-  || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+// El Chromium ya viene en la caja; no hay que bajar otro. Se prueban las rutas
+// conocidas en orden y se usa la primera que exista, porque la versión del
+// paquete cambia con la imagen y una ruta fija se pudre sola.
+const CHROMIUM = (() => {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
+  const candidatas = [
+    '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',
+  ];
+  for (const c of candidatas) if (existsSync(c)) return c;
+  return undefined;   // que el motor use el suyo
+})();
 
 // ---- argumentos ----
 const args = process.argv.slice(2);
@@ -101,14 +131,25 @@ const js = opt('js', null);
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
-const navegador = await puppeteer.launch({
-  headless: 'new',
-  executablePath: CHROMIUM,
-  args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars'],
-});
-const pagina = await navegador.newPage();
-await pagina.setViewport({ width: ancho, height: alto, deviceScaleFactor: escala, isMobile: movil, hasTouch: movil });
-if (movil) await pagina.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1');
+const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+const ARGS = ['--no-sandbox', '--disable-gpu', '--hide-scrollbars'];
+
+let navegador, pagina;
+if (puppeteer) {
+  navegador = await puppeteer.launch({ headless: 'new', executablePath: CHROMIUM, args: ARGS });
+  pagina = await navegador.newPage();
+  await pagina.setViewport({ width: ancho, height: alto, deviceScaleFactor: escala, isMobile: movil, hasTouch: movil });
+  if (movil) await pagina.setUserAgent(IPHONE);
+} else {
+  navegador = await playwright.launch({ executablePath: CHROMIUM, args: ARGS });
+  const contexto = await navegador.newContext({
+    viewport: { width: ancho, height: alto },
+    deviceScaleFactor: escala, isMobile: movil, hasTouch: movil,
+    ...(movil ? { userAgent: IPHONE } : {}),
+  });
+  pagina = await contexto.newPage();
+}
+console.log('   motor: ' + (puppeteer ? 'puppeteer' : 'playwright'));
 
 const problemas = [];
 pagina.on('pageerror', e => problemas.push('ERROR: ' + e.message));
@@ -126,8 +167,13 @@ try {
   }
   const destino = resolve(salida);
   mkdirSync(dirname(destino), { recursive: true });
-  await pagina.screenshot({ path: destino, fullPage: bandera('completa') });
-  console.log('📸 ' + salida + `  (${ancho}×${alto} @${escala}x)`);
+  const jpeg = opt('jpeg', null);
+  await pagina.screenshot({
+    path: destino, fullPage: bandera('completa'),
+    ...(jpeg ? { type: 'jpeg', quality: Number(jpeg) } : {}),
+  });
+  const peso = (statSync(destino).size / 1024).toFixed(0);
+  console.log('📸 ' + salida + `  (${ancho}×${alto} @${escala}x · ${peso} KB)`);
   if (problemas.length) {
     console.log('   ⚠ ' + problemas.length + ' problema(s) en consola:');
     problemas.slice(0, 5).forEach(p => console.log('     · ' + p.slice(0, 160)));
