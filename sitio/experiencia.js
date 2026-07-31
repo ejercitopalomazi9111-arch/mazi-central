@@ -262,6 +262,7 @@ export function montarEncendido(raiz) {
 export function montarCaida(raiz) {
   const cielo = raiz.querySelector('[data-cielo]');
   const objetos = [...raiz.querySelectorAll('[data-objeto]')];
+  const capitulos = [...raiz.querySelectorAll('[data-cap]')];
   if (!objetos.length) return;
 
   // Cada objeto trae su sitio y su profundidad escritos en el HTML. Así el
@@ -273,7 +274,25 @@ export function montarCaida(raiz) {
     de: Number(el.dataset.de || 0),         // cuándo entra (0-1 del recorrido)
     giro: Number(el.dataset.giro || 0),
     tarjeta: el.hasAttribute('data-mira'),  // ¿mira al cursor?
+    // Las que tienen sitio en el abanico del final. El número es su columna.
+    abanico: el.dataset.abanico != null ? Number(el.dataset.abanico) : null,
   }));
+
+  /* EL ABANICO · el cierre.
+     ─────────────────────────────────────────────────────────────────────────
+     Carlos lo pidió con estas palabras: "sí quiero la animación donde se
+     centre esto y se dé el dinamismo de las imágenes moviéndose como un buen
+     comercial". Y tiene razón en el diagnóstico: cosas cayendo sueltas se ven
+     sueltas. Un comercial no termina con los productos dispersos — termina con
+     todos juntos, ordenados, en una sola toma que se puede fotografiar.
+
+     Así que la caída CONVERGE: las seis pantallas dejan de caer, se juntan al
+     centro y se acomodan en abanico. Y ahí no se congelan — el mazo respira y
+     se inclina hacia el dedo, que es de donde sale el dinamismo. */
+  const enAbanico = piezas.filter(p => p.abanico != null)
+    .sort((a, b) => a.abanico - b.abanico);
+  const N = enAbanico.length;
+  const DE_ABANICO = .68, A_ABANICO = .94;
 
   // Reparto vertical: si dos objetos entran al mismo tiempo y a la misma
   // profundidad se encaraman. Se separan por el orden de aparición.
@@ -305,10 +324,84 @@ export function montarCaida(raiz) {
     // la máquina, encendida.
     if (cielo) cielo.style.setProperty('--caida', t.toFixed(3));
 
+    // El texto cambia con el acto. Se cambia una clase, no el contenido: si se
+    // reescribiera el nodo, un lector de pantalla lo anunciaría cada cuadro.
+    for (const c of capitulos) {
+      c.classList.toggle('visible', t >= Number(c.dataset.de) && t <= Number(c.dataset.a));
+    }
+
+    /* ── El abanico manda sobre la caída ────────────────────────────────
+       Cuando `junta` empieza a subir, las pantallas del abanico salen de su
+       coreografía de caída y entran a la del cierre. Se calcula aquí arriba y
+       una sola vez para las seis, no dentro del bucle. */
+    const junta = suave(tramo(t, DE_ABANICO, A_ABANICO));
+    if (junta > 0 && N) {
+      // El mazo entero se inclina hacia el dedo. Es lo que lo mantiene vivo:
+      // un abanico quieto es una foto, y una foto no es un comercial.
+      const incX = (Puntero.tocado ? (Puntero.y - .5) : 0) * 9;
+      const incY = (Puntero.tocado ? (Puntero.x - .5) : 0) * -14;
+      // Y respira, aunque nadie lo toque. Amplitud chica a propósito: si se
+      // nota que "se mueve solo", se ve como un GIF.
+      const resp = Math.sin(performance.now() / 1400) * 1.4;
+
+      enAbanico.forEach((p, i) => {
+        const col = i - (N - 1) / 2;                   // -2.5 … 2.5
+        const anchoPieza = p.el.offsetWidth || 180;
+        // Se solapan un 42%: apretadas se leen como un mazo, separadas como
+        // una fila de cromos.
+        const sep = Math.min(anchoPieza * .58, innerWidth * .155);
+
+        // Del sitio donde iba cayendo al sitio del abanico. `left` está en % y
+        // es fijo, así que la corrección al centro va en el translate.
+        const correccion = (50 - p.x) / 100 * innerWidth;
+        const lado = correccion + col * sep;
+        const alto = Math.abs(col) * innerHeight * .022 - innerHeight * .01;
+        const z = -Math.abs(col) * 130;
+        const giroY = -col * 13 + incY;
+
+        p.el.style.visibility = 'visible';
+        // Ojo con el `-50%` VERTICAL: los objetos están anclados con `top:50%`,
+        // así que sin él la pieza cuelga hacia abajo del centro en vez de estar
+        // centrada. Era el bug por el que todo se veía hundido en la mitad de
+        // abajo del cuadro.
+        p.el.style.transform =
+          `translate3d(calc(-50% + ${lado.toFixed(1)}px), calc(-50% + ${alto.toFixed(1)}px), ${z.toFixed(0)}px)` +
+          ` rotateY(${(giroY + resp).toFixed(1)}deg) rotateX(${incX.toFixed(1)}deg)` +
+          ` scale(${(0.78 + junta * 0.26).toFixed(3)})`;
+        p.el.style.opacity = junta.toFixed(3);
+        // El del centro arriba, y de ahí hacia afuera. Sin esto el mazo se ve
+        // barajado al azar.
+        p.el.style.zIndex = String(60 - Math.round(Math.abs(col) * 10));
+        // Y las de los lados se apagan un poco. Es lo que hace que el ojo sepa
+        // dónde mirar: en un mazo todo igual de brillante no hay protagonista.
+        p.el.style.filter = `brightness(${(1 - Math.abs(col) * .16).toFixed(2)})`;
+        // Los rótulos se apagan encimados: no se leen y ensucian. En la caída
+        // cada pantalla se lee sola; aquí lo que habla es el conjunto.
+        const cap = p.el.querySelector('figcaption');
+        if (cap) cap.style.opacity = String(1 - junta);
+      });
+    }
+
     for (const p of piezas) {
-      // Cada pieza vive una ventana del recorrido. Fuera de ella no se dibuja:
-      // veinte nodos transformados a la vez en un teléfono es un tobogán.
-      const local = tramo(t, p.fase, p.fase + .40);
+      // Las que ya están en el abanico no vuelven a la caída.
+      if (junta > 0 && p.abanico != null) continue;
+      // Y las que NO son del abanico se retiran para dejarle el cuadro: seis
+      // pantallas ordenadas con tarjetas sueltas volando encima es ruido.
+      // El factor se MULTIPLICA más abajo en vez de asignarse aquí: si se
+      // asignara, el dibujo normal lo pisaría dos líneas después.
+      const seRetira = junta > 0 ? Math.max(0, 1 - junta * 1.6) : 1;
+      if (seRetira <= 0) { p.el.style.visibility = 'hidden'; continue; }
+
+      /* Cada pieza vive una ventana del recorrido. Fuera de ella no se dibuja:
+         veinte nodos transformados a la vez en un teléfono es un tobogán.
+
+         Las del abanico son la excepción y por una razón concreta: si su
+         ventana terminara antes del cierre, la pantalla desaparecería y
+         volvería a aparecer de la nada para formarse. Su caída se estira hasta
+         justo donde empieza el abanico, así que llegan al cierre en vez de
+         reaparecer en él. */
+      const finVentana = p.abanico != null ? DE_ABANICO : p.fase + .40;
+      const local = tramo(t, p.fase, Math.max(p.fase + .12, finVentana));
       if (local <= 0 || local >= 1) {
         if (p.el.style.visibility !== 'hidden') {
           p.el.style.visibility = 'hidden';
@@ -320,14 +413,28 @@ export function montarCaida(raiz) {
 
       // Cae de arriba a abajo. Cuanto más cerca (prof alto), más rápido pasa y
       // más grande se ve — eso es todo el truco del paralaje.
+      /* 1.25 y no 1.9: con el recorrido largo, cada objeto cruzaba la pantalla
+         en un tercio de su ventana y el resto del tiempo estaba fuera de cuadro
+         — quedaban huecos de media pantalla vacía. Acortando el viaje, los
+         objetos conviven y la caída se siente poblada, que es el punto. */
       const vel = 0.45 + p.prof * 1.55;
-      const y = (0.5 - local) * innerHeight * 1.9 * vel;
+      const y = (0.5 - local) * innerHeight * 1.25 * vel;
       const z = -900 + p.prof * 1100;
       const esc = 0.55 + p.prof * 0.75;
 
+      /* Y aquí el tope que faltaba: por muy cerca que pase, el objeto no puede
+         salirse del lienzo. Se calcula qué tanto cabe desde su columna hacia el
+         borde más cercano y se recorta la escala a eso. Sin esto, las pantallas
+         de `prof .95` se cortaban por la derecha — lo primero que se ve mal en
+         una captura. */
+      const anchoBase = p.el.offsetWidth || 200;
+      const margenPct = Math.min(p.x, 100 - p.x) / 100;      // 0…0.5
+      const cabe = (innerWidth * margenPct * 2 - 20) / anchoBase;
+      const escTope = Math.max(0.4, Math.min(esc, cabe));
+
       // Entra y sale desvaneciéndose para que no aparezca de golpe en el borde.
       const opa = Math.min(1, local / .16) * Math.min(1, (1 - local) / .16)
-                * (0.42 + p.prof * 0.58);
+                * (0.42 + p.prof * 0.58) * seRetira;
 
       let mira = '';
       if (p.tarjeta && Puntero.tocado) {
@@ -342,10 +449,13 @@ export function montarCaida(raiz) {
         mira = ` rotateY(${gy.toFixed(1)}deg) rotateX(${gx.toFixed(1)}deg)`;
       }
 
+      // El `-50%` vertical va aquí igual que en el abanico: `top:50%` ancla el
+      // BORDE de arriba al centro, no la pieza.
       p.el.style.transform =
-        `translate3d(-50%, ${y.toFixed(1)}px, ${z.toFixed(0)}px)` +
+        `translate3d(-50%, calc(-50% + ${y.toFixed(1)}px), ${z.toFixed(0)}px)` +
         ` rotate(${(p.giro * (1 - local)).toFixed(1)}deg)` +
-        ` scale(${esc.toFixed(3)})${mira}`;
+        ` scale(${escTope.toFixed(3)})${mira}`;
+      p.el.style.filter = '';
       p.el.style.opacity = opa.toFixed(3);
       p.el.style.zIndex = String(Math.round(p.prof * 100));
     }

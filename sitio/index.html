@@ -106,6 +106,19 @@
     --hueso:#E9E4E4; --apagado:#8B8296; --violeta:#AC27FF; --fosforo:#E8232A;
     --mazi:"Mazi", system-ui, sans-serif;
     --cuerpo:"Segoe UI", system-ui, -apple-system, sans-serif;
+    /* La tercera voz: monoespaciada para números, medidas y etiquetas. Es
+       vocabulario de plano técnico, no de plantilla — y refuerza justo lo que
+       vendemos (medición, tiempos y movimientos). */
+    --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    /* Los títulos: sans apretado y pesado. NO Mazi.
+       ─────────────────────────────────────────────────────────────────────
+       Mazi es un display de segmentos: preciosa en el logotipo y en una
+       palabra, ilegible en una frase. Carlos lo señaló tres veces —"hay letras
+       raras"— y tenía razón las tres. Se queda donde manda: el logo, el
+       logotipo y las etiquetas de una palabra. Las frases van en sans, con el
+       peso y el interletrado apretados, que es de donde sale la tensión
+       tipográfica que hace que algo se lea caro. */
+    --titulo:"Segoe UI", system-ui, -apple-system, sans-serif;
     --barra:52px;
   }
 
@@ -297,9 +310,15 @@
 
   /* ── secciones ──────────────────────────────────────────────────────── */
   section { padding:clamp(46px,9vh,86px) 0; border-top:1px solid var(--linea); }
-  .rot { font-family:var(--mazi); font-size:clamp(13px,3.6vw,16px); line-height:1;
+  /* La etiqueta de sección. Sans chica con mucho aire entre letras: en Mazi a
+     13 px se leía "QUE HAC:MOS" — ésas son las "letras raras" que Carlos venía
+     señalando. Mazi es un display de segmentos: manda en el logo y en una
+     palabra, y no se puede leer en una frase. */
+  .rot { font-family:var(--cuerpo); font-weight:600; font-size:11px; line-height:1;
+    letter-spacing:.22em; text-transform:uppercase;
     color:var(--apagado); margin:0 0 18px; }
-  h2 { font-size:clamp(22px,6vw,38px); line-height:1.18; margin:0 0 16px;
+  h2 { font-family:var(--titulo); font-weight:700; letter-spacing:-.022em;
+    font-size:clamp(22px,6vw,38px); line-height:1.14; margin:0 0 16px;
     font-weight:650; letter-spacing:-.02em; max-width:22ch; text-wrap:balance; }
   .texto { font-size:clamp(15px,4vw,18px); color:var(--apagado); margin:0 0 24px;
     max-width:52ch; line-height:1.6; }
@@ -315,10 +334,12 @@
   .dato:active { background:#271B34; }
   .dato .et { font-size:11px; color:var(--apagado); letter-spacing:.12em;
     text-transform:uppercase; display:block; margin-bottom:2px; }
-  .dato .vl { font-family:var(--mazi); font-size:17px; line-height:1;
+  .dato .vl { font-family:var(--mono); font-variant-numeric:tabular-nums;
+    font-size:16px; line-height:1;
     word-break:break-all; }
 
-  .cierre { font-family:var(--mazi); font-size:clamp(15px,4.4vw,21px);
+  .cierre { font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(15px,4.4vw,21px);
     color:var(--hueso); margin:0 0 16px; }
 
   /* ── EL SISTEMA · la vista explotada en 3D ───────────────────────────
@@ -347,7 +368,8 @@
     box-shadow:0 18px 44px #00000080, 0 0 30px #AC27FF22;
     display:flex; flex-direction:column; justify-content:center; gap:5px;
     padding:0 clamp(14px,4vw,24px); }
-  .placa-rot { font-family:var(--mazi); font-size:clamp(15px,4vw,21px);
+  .placa-rot { font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(15px,4vw,21px);
     line-height:1; color:var(--hueso); }
   .placa-que { font-size:clamp(11px,3vw,13px); color:var(--apagado); }
   /* La rejilla del plano técnico: lo que hace que se lea como despiece y no
@@ -383,7 +405,8 @@
   .hilos { position:absolute; inset:0; width:100%; height:100%;
     pointer-events:none; overflow:visible; }
 
-  .fase { font-family:var(--mazi); font-size:clamp(13px,3.6vw,17px);
+  .fase { font-family:var(--cuerpo); font-weight:600; letter-spacing:.04em;
+    font-size:clamp(12px,3.2vw,15px);
     color:var(--violeta); line-height:1; min-height:20px; }
 
   /* ── EL TALLER · el barrido de alfabetos ─────────────────────────────
@@ -402,7 +425,8 @@
   .capa-letras svg { width:100%; height:100%; display:block; }
 
   .ficha { display:flex; flex-direction:column; gap:3px; min-height:44px; }
-  .f-nom { font-family:var(--mazi); font-size:clamp(17px,5vw,26px); line-height:1;
+  .f-nom { font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
+    font-size:clamp(17px,5vw,26px); line-height:1;
     color:var(--violeta); }
   .f-meta { font-size:12px; color:var(--apagado); letter-spacing:.1em;
     text-transform:uppercase; }
@@ -412,7 +436,10 @@
     transform-origin:left center; transform:scaleX(0); will-change:transform; }
 
   .cifras { display:flex; gap:clamp(18px,6vw,54px); flex-wrap:wrap; }
-  .cifra b { display:block; font-family:var(--mazi); font-size:clamp(26px,8vw,46px);
+  /* Las cifras van en monoespaciada con números tabulares. En Mazi el 5 se leía
+     como S y el 1 como dos puntos — un número que no se lee no es un número. */
+  .cifra b { display:block; font-family:var(--mono); font-variant-numeric:tabular-nums;
+    letter-spacing:-.03em; font-size:clamp(26px,8vw,46px);
     line-height:1; color:var(--hueso); font-weight:400;
     font-variant-numeric:tabular-nums; }
   .cifra span { font-size:11.5px; color:var(--apagado); letter-spacing:.1em;
@@ -645,8 +672,12 @@ html.encendiendo body { overflow:hidden; }
   opacity:0; visibility:hidden;
   transform-style:preserve-3d;
 }
+/* El ancho manda sobre la profundidad. Una pantalla a `prof .95` se escala a
+   1.3, así que 29vw se convierten en 38vw y con el objeto centrado en left:72%
+   se sale por la derecha. Se calcula al revés: el ancho base es el que, ya
+   escalado al máximo, todavía cabe. */
 .pantalla-flota {
-  width:clamp(132px,29vw,214px); border-radius:16px; overflow:hidden;
+  width:clamp(112px,21vw,196px); border-radius:16px; overflow:hidden;
   border:1px solid #ffffff1f; background:#0C0813;
   box-shadow:0 30px 70px #00000099, 0 0 0 1px #00000044;
 }
@@ -667,7 +698,7 @@ html.encendiendo body { overflow:hidden; }
 .tarj .n { display:block; font:600 10px/1 "Segoe UI",system-ui,sans-serif;
   letter-spacing:.22em; text-transform:uppercase; color:var(--violeta);
   margin-bottom:10px; }
-.tarj h3 { margin:0 0 7px; font-family:var(--mazi); font-weight:400;
+.tarj h3 { margin:0 0 7px; font-family:var(--titulo); font-weight:700; letter-spacing:-.02em;
   font-size:clamp(17px,4.4vw,22px); line-height:1.05; color:var(--hueso); }
 .tarj p { margin:0; font-size:13.5px; line-height:1.5; color:var(--apagado); }
 
@@ -684,7 +715,13 @@ html.encendiendo body { overflow:hidden; }
 }
 :root[data-tema="claro"] .caida-txt {
   background:linear-gradient(to top,#FFFFFFf2 16%,transparent); }
-.caida-txt h2 { margin:0; font-family:var(--mazi); font-weight:400;
+/* Los dos textos se apilan en la MISMA celda de rejilla: así el bloque no
+   cambia de alto al cambiar de uno a otro y el texto no brinca. */
+.caida-txt { display:grid; }
+.cap { grid-area:1/1; opacity:0; transform:translateY(10px); pointer-events:none;
+  transition:opacity .5s ease, transform .5s cubic-bezier(.22,.8,.3,1); }
+.cap.visible { opacity:1; transform:none; }
+.caida-txt h2 { margin:0; font-family:var(--titulo); font-weight:700; letter-spacing:-.022em;
   font-size:clamp(22px,6.4vw,44px); line-height:1.04; color:var(--hueso);
   max-width:16ch; text-wrap:balance; }
 .caida-txt p { margin:8px 0 0; font-size:clamp(13px,3.6vw,16px);
@@ -854,7 +891,7 @@ html.en-la-pc .acercar { display:flex; }
 .maquina-txt { position:absolute; left:0; right:0; bottom:0; pointer-events:none;
   padding:0 clamp(18px,5vw,44px) calc(30px + env(safe-area-inset-bottom));
   background:linear-gradient(to top,#08050Df2 16%,transparent); }
-.maquina-txt h2 { margin:0; font-family:var(--mazi); font-weight:400;
+.maquina-txt h2 { margin:0; font-family:var(--titulo); font-weight:700; letter-spacing:-.022em;
   font-size:clamp(21px,6vw,40px); line-height:1.05; color:var(--hueso);
   max-width:18ch; text-wrap:balance; }
 
@@ -964,7 +1001,7 @@ html.sin-marco .adentro { padding:0; }
     <div class="cielo" data-cielo>
       <div class="escenario-caida">
 
-        <figure class="pantalla-flota" data-objeto data-mira
+        <figure class="pantalla-flota" data-objeto data-abanico="3" data-mira
                 data-x="26" data-prof=".82" data-de=".02" data-giro="-7"
                 style="left:26%">
           <img src="img/pantallas/marcador.jpg" alt="Marcador en vivo de Ligas Mazi"
@@ -982,7 +1019,7 @@ html.sin-marco .adentro { padding:0; }
         <span class="glifo" data-objeto data-x="12" data-prof=".26" data-de=".14"
               data-giro="-18" style="left:12%" aria-hidden="true">M</span>
 
-        <figure class="pantalla-flota" data-objeto data-mira
+        <figure class="pantalla-flota" data-objeto data-abanico="2" data-mira
                 data-x="70" data-prof=".92" data-de=".20" data-giro="8" style="left:70%">
           <img src="img/pantallas/mesa.jpg" alt="La mesa de control de un partido"
                width="780" height="1688" loading="lazy" decoding="async">
@@ -999,7 +1036,7 @@ html.sin-marco .adentro { padding:0; }
         <span class="glifo" data-objeto data-x="88" data-prof=".34" data-de=".32"
               data-giro="22" style="left:88%" aria-hidden="true">A</span>
 
-        <figure class="pantalla-flota" data-objeto data-mira
+        <figure class="pantalla-flota" data-objeto data-abanico="1" data-mira
                 data-x="24" data-prof=".70" data-de=".38" data-giro="-9" style="left:24%">
           <img src="img/pantallas/liga.jpg" alt="Administración de una liga completa"
                width="780" height="1688" loading="lazy" decoding="async">
@@ -1016,7 +1053,7 @@ html.sin-marco .adentro { padding:0; }
         <span class="glifo" data-objeto data-x="50" data-prof=".18" data-de=".50"
               data-giro="-12" style="left:50%" aria-hidden="true">Z</span>
 
-        <figure class="pantalla-flota" data-objeto data-mira
+        <figure class="pantalla-flota" data-objeto data-abanico="4" data-mira
                 data-x="68" data-prof=".60" data-de=".56" data-giro="10" style="left:68%">
           <img src="img/pantallas/perillas.jpg" alt="Las reglas del torneo, configurables"
                width="780" height="1688" loading="lazy" decoding="async">
@@ -1030,14 +1067,21 @@ html.sin-marco .adentro { padding:0; }
           <p>Organizamos la información, los procesos y la operación.</p>
         </div>
 
-        <figure class="pantalla-flota" data-objeto data-mira
-                data-x="72" data-prof=".95" data-de=".70" data-giro="6" style="left:72%">
+        <figure class="pantalla-flota" data-objeto data-abanico="0" data-mira
+                data-x="72" data-prof=".95" data-de=".44" data-giro="6" style="left:72%">
           <img src="img/pantallas/entrada.jpg" alt="Cuentas reales, con privacidad de menores"
                width="780" height="1688" loading="lazy" decoding="async">
           <figcaption>Cuentas reales</figcaption>
         </figure>
 
-        <div class="tarj" data-objeto data-mira data-x="28" data-prof=".68" data-de=".76"
+        <figure class="pantalla-flota" data-objeto data-abanico="5" data-mira
+                data-x="46" data-prof=".80" data-de=".50" data-giro="-4" style="left:46%">
+          <img src="img/pantallas/hub.jpg" alt="El tablero del aficionado"
+               width="780" height="1688" loading="lazy" decoding="async">
+          <figcaption>El tablero</figcaption>
+        </figure>
+
+        <div class="tarj" data-objeto data-mira data-x="28" data-prof=".68" data-de=".56"
              data-giro="8" style="left:28%">
           <span class="n">05 · Video y fotografía</span>
           <h3>Comunica antes de decir una palabra</h3>
@@ -1046,10 +1090,18 @@ html.sin-marco .adentro { padding:0; }
 
       </div>
 
+      <!-- Dos textos en la misma celda: el de la caída y el del abanico. El JS
+           sólo les cambia una clase; no hay reacomodo, así que nada brinca. -->
       <div class="caida-txt">
-        <h2>Esto no es un portafolio: está corriendo.</h2>
-        <p>Todo lo que pasa cayendo es software nuestro, en funcionamiento.
-           <b>Ligas Mazi</b> — una liga entera en un teléfono.</p>
+        <div class="cap visible" data-cap data-de="0" data-a=".64">
+          <h2>Esto no es un portafolio: está corriendo.</h2>
+          <p>Todo lo que pasa cayendo es software nuestro, en funcionamiento.</p>
+        </div>
+        <div class="cap" data-cap data-de=".64" data-a="1">
+          <h2>Seis pantallas. Un solo sistema.</h2>
+          <p><b>Ligas Mazi</b> — cuentas reales, pagos, la mesa de control y el
+             marcador en vivo. Una liga entera en un teléfono.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -1058,7 +1110,7 @@ html.sin-marco .adentro { padding:0; }
        Cada uno prueba una capacidad distinta y ninguno es decorativo. -->
   <section class="juguetes" id="juguetes">
     <p class="rot">TÓCALO</p>
-    <h2 style="margin:0 0 8px;font-family:var(--mazi);font-weight:400;
+    <h2 style="margin:0 0 8px;font-family:var(--titulo);font-weight:700;letter-spacing:-.022em;
                font-size:clamp(21px,5.6vw,38px);line-height:1.04;text-wrap:balance">
       Lo que vendemos no se explica: se aprieta.</h2>
     <p style="margin:0 0 26px;color:var(--apagado);max-width:44ch">
