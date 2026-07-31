@@ -93,8 +93,15 @@
       + '<text x="50" y="92" text-anchor="middle" font-family="system-ui,sans-serif"'
       + ' font-weight="800" font-size="13" fill="'+eq.col+'">'+eq.ini+'</text>'
       + '</svg>';
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    return aDataURI(svg);
   }
+
+  /* El SVG va en BASE64, no percent-encoded.
+     `crestStyle()` compone `background-image:url(` + logo + `)` SIN comillas, y
+     ahí un data-URI con caracteres escapados se rompe: el escudo salía como una
+     cajita vacía. En base64 no hay carácter que pueda romper el `url()`. */
+  const aDataURI = (svg) =>
+    'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
 
   /* Avatar de respaldo: iniciales sobre un campo de color sacado del propio
      nombre, así el mismo jugador tiene siempre el mismo. Se usa en las listas
@@ -110,7 +117,7 @@
       + '<text x="50" y="62" text-anchor="middle" font-family="system-ui,sans-serif"'
       + ' font-weight="800" font-size="38" fill="#E9E4E4">'+ini+'</text>'
       + '</svg>';
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    return aDataURI(svg);
   }
 
   /* Todos contra todos por el método del círculo: uno queda fijo y el resto
