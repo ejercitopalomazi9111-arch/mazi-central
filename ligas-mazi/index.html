@@ -1256,7 +1256,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <button class="btn ghost sm block" onclick="toggleLeagueIdentity()" style="margin-top:10px"><svg class="ic"><use href="#ic-palette"/></svg> Identidad de la liga (nombre + escudo)</button>
       <div id="leagueIdentity" style="display:none;margin-top:10px"></div>
       <div class="h-row"><h2 class="disp" style="font-size:18px">Gestión</h2></div>
-      <div class="leaguerow" onclick="go('ligaEquipos')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-people"/></svg></div><div><div class="nm" style="font-size:15px">Equipos y jugadores</div><div class="mt">Inscribir · anclar CURP · coaches (1–3)</div></div><span class="more">›</span></div>
+      <div class="leaguerow" onclick="go('ligaEquipos')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-people"/></svg></div><div><div class="nm" style="font-size:15px">Equipos y jugadores</div><div class="mt">Inscribir · aprobar equipos · coaches (1–3)</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('ligaCalendario')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-calendar"/></svg></div><div><div class="nm" style="font-size:15px">Calendario y enfrentamientos</div><div class="mt">Quién vs quién · jornadas</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('ligaResultados')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-flag"/></svg></div><div><div class="nm" style="font-size:15px">Resultados</div><div class="mt">Cerrar partidos · avanzar torneo</div></div><span class="more">›</span></div>
       <div class="leaguerow" onclick="go('tabla')"><div class="crest" style="border-style:solid"><svg class="ic"><use href="#ic-trophy"/></svg></div><div><div class="nm" style="font-size:15px">Tabla de posiciones</div><div class="mt">Clasificación en vivo · desempates</div></div><span class="more">›</span></div>
@@ -1323,7 +1323,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div id="advRules" style="display:none"></div>
       <div class="card"><div class="kick">Privacidad · menores (fijo)</div>
         <div class="knob-row"><div class="knob on locked"><i></i></div><div class="k">Proteger datos de menores <small>oculta al público su ubicación en vivo y calendario. Solo tutor, coach y liga.</small></div><span class="val" style="color:var(--good);border-color:var(--good)">Fijo</span></div>
-        <div class="knob-row"><div class="knob on locked"><i></i></div><div class="k">CURP nunca visible ni buscable</div><span class="val" style="color:var(--good);border-color:var(--good)">Fijo</span></div>
+        <div class="knob-row"><div class="knob on locked"><i></i></div><div class="k">Datos del menor nunca visibles ni buscables</div><span class="val" style="color:var(--good);border-color:var(--good)">Fijo</span></div>
       </div>
     </div></div>
   </section>
@@ -3495,7 +3495,7 @@ function buildPapaHome(){
     kids.forEach((k,i)=>{ const sub=(k.minor?('Menor'+(k.age!=null?' · '+k.age+' años':'')):'Mayor')+' · '+(k.team||'Sin equipo aún');
       h+='<div class="match"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">'+iniOf(k.name||'?')+'</div><div class="vs" onclick="go(\'carta\')" style="cursor:pointer">'+(k.name||'Hij@')+'<small>'+sub+'</small></div>'+(k.minor?'<span class="badge next">MENOR</span>':'<span class="badge">TU HIJ@</span>')+'<button class="le-x" style="margin-left:8px" onclick="unlinkChild('+i+')">×</button></div>'; });
   } else {
-    h+='<div class="stratnote" style="border-left-color:var(--papa)">Aún no has vinculado a tu hij@. Da de alta su cuenta y ancla su CURP para ver su itinerario y su carta. Su ubicación y calendario solo los ves tú, su coach y la liga.</div>';
+    h+='<div class="stratnote" style="border-left-color:var(--papa)">Aún no has vinculado a tu hij@. Da de alta su cuenta para ver su itinerario y su carta. Su ubicación y calendario solo los ves tú, su coach y la liga.</div>';
   }
   h+='<button class="btn ghost sm block" onclick="go(\'alta\')" style="margin-top:8px">＋ Dar de alta / vincular a mi hij@</button>';
   const up=d.calendar.filter(m=>!m.done).slice(0,4);
@@ -3687,14 +3687,21 @@ function addPlayer(tid){
   const nm=(document.getElementById('np_'+tid+'_nm').value||'').trim();
   const pos=(document.getElementById('np_'+tid+'_pos').value||'Base');
   const email=(document.getElementById('np_'+tid+'_email').value||'').trim().toLowerCase();
-  const curp=(document.getElementById('np_'+tid+'_curp').value||'').trim().toUpperCase();
   if(!nm){ flashSaved('Escribe el nombre del jugador'); return; }
-  if(!email && !curp){ flashSaved('Agrega el correo (o CURP) del jugador: así vincula su cuenta y su carta'); return; }
-  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ flashSaved('Ese correo no parece válido'); return; }
-  // evita duplicar el mismo jugador (por correo o CURP) en la liga
-  const dup=d.teams.some(tt=>(tt.players||[]).some(p=>(email&&p.email===email)||(curp&&p.curp===curp)));
+  /* EL CURP SALE DE AQUÍ. Carlos: "quita todas las menciones al CURP dentro de
+     la app excepto en el apartado de inscribir a tu hijo como papá". Este es el
+     alta que hace la LIGA, no el papá, así que aquí el jugador se identifica
+     por su correo y nada más.
+     Y de paso: el campo `np_<id>_curp` que este código leía YA NO EXISTE en
+     pantalla — la liga dejó de crear jugadores cuando los equipos pasaron a
+     solicitar unirse. Estaba leyendo un elemento nulo y habría reventado en el
+     primer uso. */
+  if(!email){ flashSaved('Agrega el correo del jugador: así vincula su cuenta y su carta'); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ flashSaved('Ese correo no parece válido'); return; }
+  // evita duplicar al mismo jugador en la liga
+  const dup=d.teams.some(tt=>(tt.players||[]).some(p=>p.email===email));
   if(dup){ flashSaved('Ese jugador ya está registrado en la liga'); return; }
-  t.players.push({num:num||'0',nm,pos,email:email||undefined,curp:curp||undefined,resp:false});
+  t.players.push({num:num||'0',nm,pos,email:email,resp:false});
   saveLeague(d); buildLeagueTeams(); flashSaved('Jugador registrado ✓'); cloudPushSoon();
 }
 function delPlayer(tid,i){const d=leagueData();if(!canAdminLeague(d))return;const t=d.teams.find(x=>x.id===tid);if(t){t.players.splice(i,1);saveLeague(d);buildLeagueTeams();}}
@@ -3717,7 +3724,6 @@ function buildLeagueTeams(){
   else h+='<div class="stratnote" style="border-left-color:var(--liga)">Los equipos se unen solicitándolo; apruébalos en tu 🔔 bandeja. Tú ya no los creas.</div>';
   if(d.code) h+='<div class="card" style="margin-top:10px;text-align:center"><div class="mt" style="font-size:12px;color:var(--muted)">Código de tu liga (compártelo para que te encuentren)</div><div style="font-family:var(--mono);font-weight:800;font-size:22px;color:var(--liga);letter-spacing:.05em;margin-top:4px">'+d.code+'</div></div>';
   h+='<div id="leTeamMsg" class="le-msg"></div>';
-  h+='<div class="stratnote hint" data-hint="curp-alta" style="border-left-color:var(--liga);margin-top:12px">El <b>CURP</b> se ancla al inscribir para no duplicar jugadores entre equipos. Nunca se muestra ni se puede buscar: es solo un candado interno.</div>';
   box.innerHTML=h;
 }
 /* --- calendario todos contra todos (método del círculo) --- */
@@ -4915,7 +4921,7 @@ function applyRoleFromUser(){ const u=userData()||{}; if(u.role){ currentRole=RO
 function enterAppWithRole(){ _cardRemote=null; _cardSearched=false; _cardViewChild=-1; ensureMyEntities(); applyRoleFromUser(); modeIdx=0; go('hub'); setTimeout(maybeOnboard,400); }
 /* recorrido guiado la primera vez, según el rol */
 const ONBOARD={
-  liga:{k:'Administras una liga',steps:[['trophy','Crea tu liga','Ponle nombre y escudo en “Mi liga”.'],['people','Inscribe equipos y jugadores','Da de alta con su CURP (privado).'],['calendar','Arma el calendario','Genera el rol todos contra todos.'],['live','Dirige en la mesa','Anota puntos y faltas en vivo; la tabla se actualiza sola.']]},
+  liga:{k:'Administras una liga',steps:[['trophy','Crea tu liga','Ponle nombre y escudo en “Mi liga”.'],['people','Inscribe equipos y jugadores','Aprueba a los equipos que te soliciten unirse.'],['calendar','Arma el calendario','Genera el rol todos contra todos.'],['live','Dirige en la mesa','Anota puntos y faltas en vivo; la tabla se actualiza sola.']]},
   papa:{k:'Eres papá o tutor',steps:[['heart','Vincula a tu hij@','Con su CURP; si es menor queda bajo tu cuenta.'],['card','Sigue su carta','Sus números se llenan con cada partido.'],['live','Míralo en vivo','Solo tú ves a tu hij@ resaltado.']]},
   coach:{k:'Diriges un equipo',steps:[['people','Mi equipo','Ve tu roster y la ficha de cada jugador.'],['live','Cambios en vivo','Haz sustituciones que se ven al instante en el marcador.']]},
   jugador:{k:'Eres jugador',steps:[['card','Tu carta','Sube tu foto; tu general sube con tus partidos.'],['bag','Gachapón','Gana sobres con logros y ponle accesorios a tu carta.'],['trophy','Sigue ligas','Encuéntralas en el directorio.']]},
