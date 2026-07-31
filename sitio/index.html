@@ -664,7 +664,145 @@ html.encendiendo body { overflow:hidden; }
 :root[data-tema="claro"] .cielo::before,
 :root[data-tema="claro"] .cielo::after { opacity:.25; filter:invert(1); }
 
+/* ── EL MUNDO 3D ────────────────────────────────────────────────────────────
+   `perspective` en el padre y `preserve-3d` en el mundo. Ojo con esto último:
+   si a CUALQUIER ancestro entre el padre con perspectiva y las piezas se le
+   pone `overflow` distinto de visible, `filter`, o `opacity` menor que 1, el
+   navegador aplasta el 3D y todo queda plano. Es el error que más veces rompe
+   una escena así, y por eso el mundo no lleva nada de eso encima. */
 .escenario-caida { position:absolute; inset:0; transform-style:preserve-3d; }
+.mundo { position:absolute; inset:0; transform-style:preserve-3d;
+  will-change:transform; }
+
+/* Las capas del fondo. Planas a propósito: el 3D es para las piezas; el fondo
+   sólo tiene que moverse MENOS, que es lo que el ojo lee como distancia. */
+.capa-fondo { position:absolute; inset:-25%; pointer-events:none;
+  will-change:transform;
+  background-image:
+    radial-gradient(1.6px 1.6px at 18% 24%, #ffffff66, transparent),
+    radial-gradient(1.6px 1.6px at 74% 14%, #ffffff4d, transparent),
+    radial-gradient(2.2px 2.2px at 42% 68%, #AC27FF77, transparent),
+    radial-gradient(1.6px 1.6px at 88% 54%, #ffffff3d, transparent),
+    radial-gradient(1.6px 1.6px at 9% 82%, #ffffff55, transparent);
+  background-size:300px 300px; }
+.capa-fondo.capa-b { opacity:.5; background-size:660px 660px;
+  background-image:
+    radial-gradient(2.4px 2.4px at 30% 40%, #AC27FF55, transparent),
+    radial-gradient(1.8px 1.8px at 80% 76%, #ffffff44, transparent),
+    /* Retícula lejanísima: da suelo y escala sin dibujar un suelo. */
+    repeating-linear-gradient(0deg,#AC27FF0d 0 1px,transparent 1px 90px),
+    repeating-linear-gradient(90deg,#AC27FF0d 0 1px,transparent 1px 90px); }
+:root[data-tema="claro"] .capa-fondo { opacity:.3; filter:invert(1); }
+[data-est] { position:absolute; left:50%; top:50%; transform-style:preserve-3d;
+  will-change:transform,opacity; }
+
+/* ── LO QUE HACE CADA PIEZA CUANDO LA CÁMARA LA ENFOCA ─────────────────────
+   Aquí está la diferencia entre "un espacio con cosas" y "un comercial": cada
+   pieza tiene un gesto propio y lo hace cuando le toca. La clase la pone el JS
+   una sola vez al entrar en foco. */
+
+/* Una pantalla ENCIENDE: barrido de arriba a abajo y la interfaz aparece. */
+.pantalla-flota .barrido {
+  position:absolute; left:0; right:0; top:0; height:2px; opacity:0;
+  background:linear-gradient(90deg,transparent,#AC27FF,transparent);
+  box-shadow:0 0 22px #AC27FFcc; pointer-events:none;
+}
+.pantalla-flota img { transition:opacity .5s ease .25s, filter .6s ease .25s; }
+.pantalla-flota:not(.enfocado) img { opacity:.34; filter:grayscale(.7) brightness(.7); }
+@keyframes barre { 0%{ top:0; opacity:0 } 12%{ opacity:1 } 88%{ opacity:1 } 100%{ top:100%; opacity:0 } }
+.pantalla-flota.enfocado .barrido { animation:barre .75s ease-out both; }
+.pantalla-flota figcaption { opacity:0; transform:translateY(8px);
+  transition:opacity .4s ease .5s, transform .4s cubic-bezier(.22,.8,.3,1) .5s; }
+.pantalla-flota.enfocado figcaption { opacity:1; transform:none; }
+/* El marco se prende al enfocarse. */
+.pantalla-flota { transition:border-color .5s ease, box-shadow .5s ease; }
+.pantalla-flota.enfocado { border-color:#AC27FF66;
+  box-shadow:0 30px 70px #000000aa, 0 0 44px #AC27FF33; }
+
+/* Una TARJETA se abre: el rótulo entra, el título sube, el texto detrás. */
+.tarj .n, .tarj h3, .tarj p { opacity:0; transform:translateY(12px);
+  transition:opacity .45s ease, transform .45s cubic-bezier(.22,.8,.3,1); }
+.tarj.enfocado .n { opacity:1; transform:none; transition-delay:.05s; }
+.tarj.enfocado h3 { opacity:1; transform:none; transition-delay:.14s; }
+.tarj.enfocado p  { opacity:1; transform:none; transition-delay:.23s; }
+.tarj { transition:border-color .5s ease, box-shadow .5s ease; }
+.tarj.enfocado { border-color:#AC27FF55; box-shadow:0 24px 60px #00000088, 0 0 40px #AC27FF22; }
+
+/* ── LOS LETREROS COLGADOS ─────────────────────────────────────────────────
+   Un cartel que cuelga de un cordel y se mece. El balanceo NO es un adorno:
+   es lo que hace que el espacio se sienta un espacio con aire y no una
+   maqueta. Y el giro va desde ARRIBA (`transform-origin: 50% 0`), que es de
+   donde cuelga de verdad — si girara desde el centro se vería como una hélice,
+   no como algo colgado. */
+.letrero { width:clamp(158px,40vw,232px); }
+.letrero .cuerda { display:block; width:1px; height:clamp(30px,7vw,52px);
+  margin:0 auto; background:linear-gradient(#AC27FF00, #AC27FF88);
+  transform-origin:50% 0; }
+.letrero .cuerda::after { content:''; display:block; width:5px; height:5px;
+  margin:-2px auto 0; border-radius:50%; background:var(--violeta);
+  box-shadow:0 0 12px #AC27FFcc; }
+.letrero .cara {
+  transform-origin:50% -12%;
+  padding:14px 16px 15px; border-radius:12px;
+  background:color-mix(in srgb, var(--superficie) 88%, transparent);
+  border:1px solid var(--linea);
+  box-shadow:0 18px 44px #00000077;
+  animation:mece 5.2s ease-in-out infinite;
+}
+@keyframes mece {
+  0%,100% { transform:rotate(-1.6deg) }
+  50%     { transform:rotate(1.6deg) }
+}
+.letrero .cara .n { display:block; font:600 9px/1 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--violeta); margin-bottom:7px; }
+.letrero .cara b { display:block; font-family:var(--titulo); font-weight:700;
+  letter-spacing:-.015em; font-size:clamp(14px,3.8vw,18px); line-height:1.14;
+  color:var(--hueso); }
+.letrero .cara i { display:block; font-style:normal; margin-top:5px;
+  font-size:12.5px; line-height:1.45; color:var(--apagado); }
+.letrero .cara .cifra-min { font-family:var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--violeta); }
+.letrero:not(.enfocado) .cara { opacity:.45; }
+.letrero .cara { transition:opacity .5s ease, border-color .5s ease, box-shadow .5s ease; }
+.letrero.enfocado .cara { border-color:#AC27FF55;
+  box-shadow:0 18px 44px #00000099, 0 0 34px #AC27FF22; }
+
+/* EL RENGLÓN DEL FRENTE · qué estoy viendo ahora. */
+.hud {
+  position:absolute; left:0; right:0; top:0; z-index:210; pointer-events:none;
+  padding:calc(var(--barra) + 16px) clamp(18px,5vw,44px) 0;
+  font:600 10px/1.4 "Segoe UI",system-ui,sans-serif;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--violeta);
+  min-height:34px;
+}
+@keyframes hud-entra { from { opacity:0; transform:translateY(-6px) } to { opacity:1; transform:none } }
+.hud.entra { animation:hud-entra .4s cubic-bezier(.22,.8,.3,1) both; }
+
+/* Un GLIFO se DIBUJA: el trazo se recorre, como cuando la fábrica de
+   tipografías lo escribe. Es la marca contándose a sí misma. */
+.glifo { transition:opacity .5s ease; }
+@keyframes traza { from { opacity:0; letter-spacing:.3em; } to { opacity:.62; letter-spacing:0; } }
+.glifo.enfocado { animation:traza .9s cubic-bezier(.22,.8,.3,1) both; }
+
+/* Una CIFRA cuenta. El número lo mueve el JS; aquí sólo entra. */
+@keyframes sube-cifra { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:none } }
+.marcador-cifra { text-align:center; }
+.marcador-cifra b { display:block; font-family:var(--mono);
+  font-variant-numeric:tabular-nums; letter-spacing:-.04em;
+  font-size:clamp(54px,16vw,120px); line-height:.9; color:var(--hueso); }
+.marcador-cifra span { display:block; margin-top:8px;
+  font:600 10px/1.3 "Segoe UI",system-ui,sans-serif; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--violeta); }
+.marcador-cifra.enfocado { animation:sube-cifra .6s cubic-bezier(.22,.8,.3,1) both; }
+
+/* El abanico saca las pantallas del mundo: dejan de estar en la hélice y se
+   ponen de frente. La transición la hace el JS cuadro a cuadro; esto sólo
+   apaga lo que estorba. */
+.caida.en-abanico .tarj,
+.caida.en-abanico .glifo,
+.caida.en-abanico .marcador-cifra { opacity:0 !important; visibility:hidden !important; }
+.caida.en-abanico .pantalla-flota figcaption { opacity:0; }
+.caida.en-abanico .pantalla-flota:not(.enfocado) img { opacity:1; filter:none; }
 
 /* Cada cosa que cae. Se posiciona por porcentaje y el JS sólo la transforma. */
 [data-objeto] {
@@ -988,116 +1126,190 @@ html.sin-marco .adentro { padding:0; }
     </div>
   </div>
 
-  <!-- ═══ ACTO 1 · LA CAÍDA ════════════════════════════════════════════════
-       Caemos desde el cielo y las cosas pasan a distintas velocidades. Lo que
-       cae NO es adorno: son las pantallas reales del sistema (sacadas con
-       `sitio/pantallas.mjs`), los seis servicios y las letras de nuestra
-       fuente. Si un objeto no dice nada, no va.
+  <!-- ═══ ACTO 1 · EL VIAJE ══════════════════════════════════════════════
+       Una CÁMARA volando por un espacio. Cada pieza tiene una posición fija en
+       una hélice que baja (la calcula experiencia.js) y lo que se mueve es el
+       mundo entero, al revés — que es como se hace una cámara cuando no existe
+       una cámara. El fondo va en capas que se mueven menos: eso es el paralaje.
 
-       `data-prof` es la distancia: 0 lejos, 1 cerca. Manda velocidad, tamaño y
-       opacidad — que es literalmente cómo se ve por la ventanilla de un coche.
-       `data-mira` marca las que giran hacia el cursor. -->
+       La cámara frena en cada pieza y le da tiempo a que haga LO SUYO: una
+       pantalla enciende con un barrido, una tarjeta se abre por partes, un
+       glifo se traza, una cifra cuenta, un letrero se mece colgado de su
+       cuerda. Ese acelerón-freno es todo el oficio: una cámara a velocidad
+       constante se siente barata aunque el espacio sea impecable.
+
+       LO QUE SE ENSEÑA ES SÓLO NUESTRO. Ligas Mazi corriendo, la fábrica de
+       tipografías, la paloma vectorizada y el explorador. Torre Infinita NO
+       entra: lo decidió Carlos el 30 de julio y el motivo sigue vivo — arte de
+       Nintendo, y además las mecánicas quedaron expuestas por el pleito de
+       patentes contra Palworld. Un flanco tapado y el otro abierto no es tapar.
+
+       `data-est` = estación (el orden del HTML es el orden del recorrido).
+       `data-info` = el renglón que se lee arriba mientras se ve.
+       `data-abanico` = tiene sitio en el mazo del final.
+       `data-capa` = fondo con paralaje; el número es qué tan lejos está. -->
   <section class="caida" id="cae" data-caida>
     <div class="cielo" data-cielo>
+
+      <!-- El fondo, en capas. Se mueven MENOS que el mundo: sin esto el fondo
+           se queda clavado mientras la cámara vuela y todo se siente telón. -->
+      <div class="capa-fondo" data-capa=".06" aria-hidden="true"></div>
+      <div class="capa-fondo capa-b" data-capa=".16" aria-hidden="true"></div>
+
+      <p class="hud" data-hud aria-live="polite"></p>
+
       <div class="escenario-caida">
+        <div class="mundo" data-mundo>
 
-        <figure class="pantalla-flota" data-objeto data-abanico="3" data-mira
-                data-x="26" data-prof=".82" data-de=".02" data-giro="-7"
-                style="left:26%">
-          <img src="img/pantallas/marcador.jpg" alt="Marcador en vivo de Ligas Mazi"
-               width="780" height="1688" loading="lazy" decoding="async">
-          <figcaption>Marcador en vivo</figcaption>
-        </figure>
+          <figure class="pantalla-flota" data-est data-abanico="0" data-mira
+                  data-info="Ligas Mazi · cuentas reales">
+            <img src="img/pantallas/entrada.jpg" alt="Cuentas reales, con privacidad de menores"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>Cuentas reales</figcaption>
+          </figure>
 
-        <div class="tarj" data-objeto data-mira data-x="72" data-prof=".55" data-de=".08"
-             data-giro="6" style="left:72%">
-          <span class="n">01 · Páginas web</span>
-          <h3>Que convierten visitas en oportunidades</h3>
-          <p>Creamos espacios digitales que representan tu negocio y generan confianza.</p>
+          <div class="letrero" data-est data-info="Privacidad de menores, por diseño">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">Lo difícil</span>
+              <b>Una liga tiene menores</b>
+              <i>Cuentas de padre y de jugador atadas, y los datos del menor no
+                 salen a ninguna pantalla pública.</i>
+            </div>
+          </div>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 01 · Páginas web">
+            <span class="n">01 · Páginas web</span>
+            <h3>Que convierten visitas en oportunidades</h3>
+            <p>Creamos espacios digitales que representan tu negocio y generan confianza.</p>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="5" data-mira
+                  data-info="Ligas Mazi · el tablero">
+            <img src="img/pantallas/hub.jpg" alt="El tablero del aficionado"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>El tablero</figcaption>
+          </figure>
+
+          <span class="glifo" data-est data-info="Tipografía propia · fundida aquí"
+                aria-hidden="true">M</span>
+
+          <div class="letrero" data-est data-info="La fábrica de tipografías">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">Herramienta propia</span>
+              <b>Nuestra letra la fundimos nosotros</b>
+              <i>Esqueleto × pincel × remate. <span class="cifra-min">107</span>
+                 caracteres, <span class="cifra-min">15</span> alfabetos, y sale
+                 en <span class="cifra-min">.woff2</span>.</i>
+            </div>
+          </div>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 02 · Software">
+            <span class="n">02 · Desarrollo de software</span>
+            <h3>Que se adapta a cómo trabajas</h3>
+            <p>Sistemas que eliminan obstáculos y conectan procesos.</p>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="2" data-mira
+                  data-info="Ligas Mazi · dirigir el partido">
+            <img src="img/pantallas/mesa.jpg" alt="La mesa de control de un partido"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>La mesa de control</figcaption>
+          </figure>
+
+          <!-- La cifra es real y verificable: son los caracteres que trae la
+               tipografía que fundimos, contables en herramientas/tipos.mjs.
+               Cualquier número que no podamos probar hoy, no va. -->
+          <div class="marcador-cifra" data-est data-cuenta="107"
+               data-info="107 caracteres, dibujados por código">
+            <b data-cifra>0</b>
+            <span>caracteres · tipografía propia</span>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="3" data-mira
+                  data-info="Ligas Mazi · marcador en vivo">
+            <img src="img/pantallas/marcador.jpg" alt="Marcador en vivo de Ligas Mazi"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>Marcador en vivo</figcaption>
+          </figure>
+
+          <div class="letrero" data-est data-info="La paloma: vectorizada, no dibujada">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">La marca</span>
+              <b>Un logo que no cambia nunca</b>
+              <i>Vectorizado a mano, <span class="cifra-min">9</span> trazos y un
+                 violeta medido. Un modelo de imagen no repite dos veces la misma
+                 paloma; un SVG sí.</i>
+            </div>
+          </div>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 03 · Tiempos y movimientos">
+            <span class="n">03 · Tiempos y movimientos</span>
+            <h3>Encontramos el tiempo que se pierde</h3>
+            <p>Medimos cómo trabaja tu empresa — y te lo devolvemos.</p>
+          </div>
+
+          <span class="glifo" data-est data-info="Cada letra, un trazo calculado"
+                aria-hidden="true">A</span>
+
+          <figure class="pantalla-flota" data-est data-abanico="1" data-mira
+                  data-info="Ligas Mazi · la liga completa">
+            <img src="img/pantallas/liga.jpg" alt="Administración de una liga completa"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>La liga completa</figcaption>
+          </figure>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 04 · Gestión de negocios">
+            <span class="n">04 · Gestión de negocios</span>
+            <h3>Decisiones con claridad y control</h3>
+            <p>Organizamos la información, los procesos y la operación.</p>
+          </div>
+
+          <div class="letrero" data-est data-info="El explorador · todo el repo en el teléfono">
+            <span class="cuerda"></span>
+            <div class="cara">
+              <span class="n">Herramienta propia</span>
+              <b>Todo el trabajo, desde el teléfono</b>
+              <i>Un explorador nuestro: archivos, imágenes y páginas del repo
+                 completo, con búsqueda. <span class="cifra-min">44/44</span> pruebas.</i>
+            </div>
+          </div>
+
+          <figure class="pantalla-flota" data-est data-abanico="4" data-mira
+                  data-info="Ligas Mazi · las reglas del torneo">
+            <img src="img/pantallas/perillas.jpg" alt="Las reglas del torneo, configurables"
+                 width="780" height="1688" loading="lazy" decoding="async">
+            <i class="barrido"></i>
+            <figcaption>Las reglas, en tus manos</figcaption>
+          </figure>
+
+          <span class="glifo" data-est data-info="Y la última la hicimos nosotros"
+                aria-hidden="true">Z</span>
+
+          <div class="tarj" data-est data-mira data-info="Servicio 05 · Video y fotografía">
+            <span class="n">05 · Video y fotografía</span>
+            <h3>Comunica antes de decir una palabra</h3>
+            <p>Capturamos la esencia de tu marca.</p>
+          </div>
+
         </div>
-
-        <span class="glifo" data-objeto data-x="12" data-prof=".26" data-de=".14"
-              data-giro="-18" style="left:12%" aria-hidden="true">M</span>
-
-        <figure class="pantalla-flota" data-objeto data-abanico="2" data-mira
-                data-x="70" data-prof=".92" data-de=".20" data-giro="8" style="left:70%">
-          <img src="img/pantallas/mesa.jpg" alt="La mesa de control de un partido"
-               width="780" height="1688" loading="lazy" decoding="async">
-          <figcaption>La mesa de control</figcaption>
-        </figure>
-
-        <div class="tarj" data-objeto data-mira data-x="28" data-prof=".62" data-de=".26"
-             data-giro="-5" style="left:28%">
-          <span class="n">02 · Software</span>
-          <h3>Que se adapta a cómo trabajas</h3>
-          <p>Sistemas que eliminan obstáculos y conectan procesos.</p>
-        </div>
-
-        <span class="glifo" data-objeto data-x="88" data-prof=".34" data-de=".32"
-              data-giro="22" style="left:88%" aria-hidden="true">A</span>
-
-        <figure class="pantalla-flota" data-objeto data-abanico="1" data-mira
-                data-x="24" data-prof=".70" data-de=".38" data-giro="-9" style="left:24%">
-          <img src="img/pantallas/liga.jpg" alt="Administración de una liga completa"
-               width="780" height="1688" loading="lazy" decoding="async">
-          <figcaption>La liga completa</figcaption>
-        </figure>
-
-        <div class="tarj" data-objeto data-mira data-x="74" data-prof=".88" data-de=".44"
-             data-giro="7" style="left:74%">
-          <span class="n">03 · Tiempos y movimientos</span>
-          <h3>Encontramos el tiempo que se pierde</h3>
-          <p>Medimos cómo trabaja tu empresa — y te lo devolvemos.</p>
-        </div>
-
-        <span class="glifo" data-objeto data-x="50" data-prof=".18" data-de=".50"
-              data-giro="-12" style="left:50%" aria-hidden="true">Z</span>
-
-        <figure class="pantalla-flota" data-objeto data-abanico="4" data-mira
-                data-x="68" data-prof=".60" data-de=".56" data-giro="10" style="left:68%">
-          <img src="img/pantallas/perillas.jpg" alt="Las reglas del torneo, configurables"
-               width="780" height="1688" loading="lazy" decoding="async">
-          <figcaption>Las reglas, en tus manos</figcaption>
-        </figure>
-
-        <div class="tarj" data-objeto data-mira data-x="30" data-prof=".76" data-de=".62"
-             data-giro="-6" style="left:30%">
-          <span class="n">04 · Gestión de negocios</span>
-          <h3>Decisiones con claridad y control</h3>
-          <p>Organizamos la información, los procesos y la operación.</p>
-        </div>
-
-        <figure class="pantalla-flota" data-objeto data-abanico="0" data-mira
-                data-x="72" data-prof=".95" data-de=".44" data-giro="6" style="left:72%">
-          <img src="img/pantallas/entrada.jpg" alt="Cuentas reales, con privacidad de menores"
-               width="780" height="1688" loading="lazy" decoding="async">
-          <figcaption>Cuentas reales</figcaption>
-        </figure>
-
-        <figure class="pantalla-flota" data-objeto data-abanico="5" data-mira
-                data-x="46" data-prof=".80" data-de=".50" data-giro="-4" style="left:46%">
-          <img src="img/pantallas/hub.jpg" alt="El tablero del aficionado"
-               width="780" height="1688" loading="lazy" decoding="async">
-          <figcaption>El tablero</figcaption>
-        </figure>
-
-        <div class="tarj" data-objeto data-mira data-x="28" data-prof=".68" data-de=".56"
-             data-giro="8" style="left:28%">
-          <span class="n">05 · Video y fotografía</span>
-          <h3>Comunica antes de decir una palabra</h3>
-          <p>Capturamos la esencia de tu marca.</p>
-        </div>
-
       </div>
 
-      <!-- Dos textos en la misma celda: el de la caída y el del abanico. El JS
-           sólo les cambia una clase; no hay reacomodo, así que nada brinca. -->
+      <!-- Dos textos en la misma celda: uno para el viaje y otro para el
+           abanico. El JS sólo cambia una clase; no hay reacomodo, nada brinca. -->
       <div class="caida-txt">
-        <div class="cap visible" data-cap data-de="0" data-a=".64">
+        <div class="cap visible" data-cap data-de="0" data-a=".82">
           <h2>Esto no es un portafolio: está corriendo.</h2>
-          <p>Todo lo que pasa cayendo es software nuestro, en funcionamiento.</p>
+          <p>Cada pieza de este recorrido es software nuestro, en funcionamiento.</p>
         </div>
-        <div class="cap" data-cap data-de=".64" data-a="1">
+        <div class="cap" data-cap data-de=".82" data-a="1">
           <h2>Seis pantallas. Un solo sistema.</h2>
           <p><b>Ligas Mazi</b> — cuentas reales, pagos, la mesa de control y el
              marcador en vivo. Una liga entera en un teléfono.</p>
@@ -1443,7 +1655,7 @@ html.sin-marco .adentro { padding:0; }
       m.montarRebotes([...document.querySelectorAll('[data-rebota]')]);
 
       const tec = q('[data-teclado]');   if (tec) m.montarTeclado(tec);
-      const caida = q('[data-caida]');   if (caida) m.montarCaida(caida);
+      const caida = q('[data-caida]');   if (caida) m.montarViaje(caida);
       const maq = q('[data-maquina]');   if (maq) m.montarComputadora(maq);
 
       // El encendido va al final: para el viaje del logo necesita que la barra

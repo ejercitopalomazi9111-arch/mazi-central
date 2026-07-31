@@ -259,6 +259,300 @@ export function montarEncendido(raiz) {
    algo. Si un objeto no dice nada, no va.
    ═════════════════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   EL VIAJE · una cámara de verdad dentro de un espacio de verdad
+   ---------------------------------------------------------------------------
+   Carlos: "no sólo la caída — quiero movimientos dinámicos de cámara, que
+   viajemos por un entorno que simule uno 3D y se vayan enfocando las cosas con
+   animaciones de cada una."
+
+   Y eso es OTRA COSA que un paralaje. Un paralaje mueve capas planas a
+   distintas velocidades y siempre se ve desde el mismo sitio. Aquí hay un
+   ESPACIO: cada pieza tiene una posición real (x, y, z) y no se mueve nunca.
+   Lo que se mueve es la cámara.
+
+   ── CÓMO SE HACE UNA CÁMARA EN CSS ────────────────────────────────────────
+   No existe una cámara: existe el mundo. Así que se mueve el mundo al revés.
+   Si la cámara está en (cx, cy, cz) mirando con un giro `ry`, al mundo se le
+   aplica la transformación INVERSA y en orden inverso:
+
+       translateZ(P) rotateX(-rx) rotateY(-ry) translate3d(-cx, -cy, -cz)
+
+   El `translateZ(P)` empuja el mundo hasta el plano de enfoque que declara
+   `perspective:P` en el padre. Sin él, todo nace pegado al ojo.
+
+   ── LA RUTA ───────────────────────────────────────────────────────────────
+   Las piezas viven en una hélice que baja: cada una un poco más abajo, más al
+   fondo, y girada sobre el eje. Volar por dentro de una hélice da la sensación
+   de descender por un hueco — que es la caída que Carlos pedía, pero con
+   cámara en vez de con capas.
+
+   ── EL RITMO, QUE ES LO QUE HACE QUE NO SE SIENTA SIMPLE ──────────────────
+   La cámara NO va a velocidad constante. En cada pieza frena, se planta y le
+   da tiempo a que la pieza haga LO SUYO (una pantalla que enciende, un
+   contador que corre, un teclado que se prende tecla por tecla). Después
+   acelera al siguiente. Ese acelerón-freno es todo el oficio: una cámara a
+   velocidad constante se siente barata aunque el espacio sea impecable.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+export function montarViaje(raiz) {
+  const mundo = raiz.querySelector('[data-mundo]');
+  const cielo = raiz.querySelector('[data-cielo]');
+  const piezas = [...raiz.querySelectorAll('[data-est]')];
+  const capitulos = [...raiz.querySelectorAll('[data-cap]')];
+  const hud = raiz.querySelector('[data-hud]');
+  const capas = [...raiz.querySelectorAll('[data-capa]')];
+  if (!mundo || !piezas.length) return;
+
+  const N = piezas.length;
+
+  /* La hélice. Los números están calibrados a ojo contra la captura, que es la
+     única forma honesta de calibrar algo que se mira. */
+  const RADIO = 300;        // qué tanto se abre la espiral a los lados
+  const PASO_Z = 560;       // qué tan al fondo va cada pieza
+  const PASO_Y = 190;       // qué tanto baja cada pieza
+  const VUELTA = 0.62;      // radianes de giro entre pieza y pieza
+  const RETRANCO = 640;     // a qué distancia se planta la cámara
+
+  const sitio = (i) => {
+    const a = i * VUELTA;
+    return { x: Math.sin(a) * RADIO, y: i * PASO_Y, z: -i * PASO_Z, a };
+  };
+
+  /* EL GIRO DE CADA PIEZA — y el error que costó una captura de espaldas.
+     La primera versión hacía `rotateY(a * 34)` con `a` en RADIANES, tratándolo
+     como si fueran grados. A la sexta pieza eso son 126° y la pieza queda de
+     canto o del revés: el texto sale espejeado. Se ve exactamente como un bug
+     y lo es.
+
+     La corrección no es convertir bien las unidades: es cambiar el criterio.
+     Una pieza que hay que LEER no puede girar libre — se le da un giro chico y
+     fijo, alternado, que da variedad sin comprometer la lectura. La sensación
+     de espacio la dan la posición, la profundidad y el alabeo de la cámara, no
+     que los carteles estén torcidos. */
+  const giroPieza = (i) => (i % 2 ? 1 : -1) * (9 + (i % 3) * 4);
+
+  // Cada pieza se coloca UNA vez y no se vuelve a tocar su posición. Lo único
+  // que cambia por cuadro es la del mundo. Eso es lo que hace que esto corra
+  // en un teléfono: una transformación por cuadro, no veinte.
+  piezas.forEach((el, i) => {
+    const s = sitio(i);
+    el.style.setProperty('--x', s.x.toFixed(0) + 'px');
+    el.style.setProperty('--y', s.y.toFixed(0) + 'px');
+    el.style.setProperty('--z', s.z.toFixed(0) + 'px');
+    el.dataset.giroMundo = giroPieza(i).toFixed(1);
+    el.style.transform =
+      `translate3d(calc(-50% + var(--x)), calc(-50% + var(--y)), var(--z))` +
+      ` rotateY(${giroPieza(i).toFixed(1)}deg)`;
+  });
+
+  /* El abanico del final: las pantallas se despegan de la hélice y se ordenan
+     de frente a la cámara. Es el cierre que pidió Carlos y el que se puede
+     fotografiar. */
+  const delAbanico = piezas.filter(p => p.dataset.abanico != null)
+    .sort((a, b) => Number(a.dataset.abanico) - Number(b.dataset.abanico));
+  const NA = delAbanico.length;
+  const DE_ABANICO = .84;
+
+  let ultimoFoco = -1, vivo = false;
+
+  /* La cifra que corre al enfocarse. Arranca desde 0 y frena al llegar —
+     `salida()` es lo que hace que se sienta un contador y no una barra de
+     progreso. Se dispara una vez por enfoque, no por cuadro. */
+  function cuenta(el) {
+    if (!el) return;
+    const meta = Number(el.dataset.cuenta || 0);
+    const dest = el.querySelector('[data-cifra]');
+    if (!meta || !dest) return;
+    const t0 = performance.now(), DUR = 1100;
+    const paso = () => {
+      const p = lim((performance.now() - t0) / DUR, 0, 1);
+      dest.textContent = String(Math.round(salida(p) * meta));
+      if (p < 1) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  }
+
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(es => { vivo = es[0].isIntersecting; }, { rootMargin: '300px 0px' })
+      .observe(raiz);
+  } else vivo = true;
+
+  const avance = () => {
+    const r = raiz.getBoundingClientRect();
+    const rec = raiz.offsetHeight - innerHeight;
+    return rec <= 0 ? 0 : lim(-r.top / rec, 0, 1);
+  };
+
+  cada(() => {
+    if (!vivo) return;
+    const t = avance();
+    if (cielo) cielo.style.setProperty('--caida', t.toFixed(3));
+
+    for (const c of capitulos) {
+      c.classList.toggle('visible', t >= Number(c.dataset.de) && t <= Number(c.dataset.a));
+    }
+
+    /* ── EL RITMO ──────────────────────────────────────────────────────
+       `bruto` es dónde estaríamos a velocidad constante. `pos` es dónde
+       estamos de verdad: el mismo recorrido, pero frenando en cada pieza.
+       El truco es aplicar una curva DENTRO de cada tramo — rápido al salir,
+       lento al llegar — en vez de una curva global. */
+    const bruto = t * (N - 1);
+    const i = Math.min(N - 2, Math.floor(bruto));
+    const dentro = lim(bruto - i, 0, 1);
+    // Acelera al salir y frena al llegar, con una meseta en medio donde la
+    // pieza hace lo suyo sin que la cámara le robe la atención.
+    // .45 y no .62: con el umbral alto la cámara pasaba MÁS de la mitad del
+    // tiempo viajando, y el visitante casi nunca cae en una toma plantada. Con
+    // .45 se pasa más tiempo mirando que moviéndose, que es lo que hace un
+    // comercial: los planos se sostienen.
+    const ritmo = dentro < .45 ? suave(dentro / .45) : 1;
+    const pos = i + ritmo;
+
+    const a = sitio(Math.floor(pos));
+    const b = sitio(Math.floor(pos) + 1 <= N - 1 ? Math.floor(pos) + 1 : N - 1);
+    const f = pos - Math.floor(pos);
+
+    /* La cámara va EXACTAMENTE por donde están las piezas, sólo que retrasada.
+       Sin el `* 1.16` que tenía antes: ese factor desplazaba la cámara de la
+       línea de las piezas y la pieza enfocada se salía del cuadro por la
+       esquina. Si la cámara sigue la ruta, lo enfocado queda centrado — que es
+       lo único que una cámara tiene que garantizar. */
+    const cx = a.x + (b.x - a.x) * f;
+    // Sin desfase vertical: la cámara va a la ALTURA de la pieza. El `-30` que
+    // tenía la subía y dejaba lo enfocado por debajo del centro del cuadro.
+    const cy = a.y + (b.y - a.y) * f;
+    const cz = (a.z + (b.z - a.z) * f) + RETRANCO;
+
+    /* El alabeo. La cámara se inclina al pasar, como un avión, y responde un
+       poco al dedo. Va ACOTADO a unos pocos grados: sin tope el mundo se pone
+       de canto y deja de leerse. Sin alabeo, viajar se siente como ir en tren;
+       con alabeo —y sólo con un poco—, se siente como volar. */
+    const ry = Math.sin(pos * 0.9) * 5 + (Puntero.tocado ? (Puntero.x - .5) * 7 : 0);
+    const rx = Math.sin(pos * 1.1) * 3.2 + (Puntero.tocado ? (Puntero.y - .5) * -5 : 0);
+
+    /* LA CORRECCIÓN DE ENCUADRE.
+       Al girar la cámara, lo que tiene enfrente se le va de lado: un punto a
+       RETRANCO de distancia se desplaza RETRANCO·sen(giro) al rotar. Con 5° de
+       alabeo eso son 61 px — suficiente para que la pieza enfocada quede
+       descentrada, que es justo lo que una cámara no puede permitirse.
+       Se cancela con un empujón AL FINAL (primero en la cadena, porque las
+       transformaciones se aplican de derecha a izquierda). */
+    const rad = Math.PI / 180;
+    const corrX = RETRANCO * Math.sin(-ry * rad);
+    const corrY = RETRANCO * Math.sin(rx * rad);
+
+    // El signo va en POSITIVO. Con el negativo la corrección sumaba en vez de
+    // cancelar y la pieza enfocada se iba al doble de lejos del centro — que es
+    // por lo que salía siempre pegada a la derecha en las capturas.
+    mundo.style.transform =
+      `translate3d(${corrX.toFixed(1)}px, ${corrY.toFixed(1)}px, 0)` +
+      ` translateZ(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${(-ry).toFixed(2)}deg)` +
+      ` translate3d(${(-cx).toFixed(0)}px, ${(-cy).toFixed(0)}px, ${(-cz).toFixed(0)}px)`;
+
+    /* EL PARALAJE DEL FONDO.
+       Las capas de atrás se mueven MENOS que el mundo. Sin esto, el fondo se
+       queda clavado mientras la cámara vuela y el espacio se siente como un
+       telón pintado. `data-capa` dice qué tan lejos está: 0.05 casi no se
+       mueve, 0.4 acompaña. */
+    for (const capa of capas) {
+      const f2 = Number(capa.dataset.capa || .2);
+      capa.style.transform =
+        `translate3d(${(-cx * f2).toFixed(1)}px, ${(-cy * f2 - t * 90).toFixed(1)}px, 0)` +
+        ` scale(${(1 + f2 * .35).toFixed(2)})`;
+    }
+
+    /* ── EL FOCO ───────────────────────────────────────────────────────
+       La pieza que la cámara tiene enfrente se marca, y su animación propia
+       arranca desde CSS. Se marca UNA vez al entrar, no cada cuadro: volver a
+       poner la clase reiniciaría la animación sesenta veces por segundo. */
+    const foco = Math.round(pos);
+    if (foco !== ultimoFoco) {
+      piezas[ultimoFoco]?.classList.remove('enfocado');
+      piezas[foco]?.classList.add('enfocado');
+      ultimoFoco = foco;
+      if (t > .02 && t < .98) Son.caida(t);
+      cuenta(piezas[foco]);
+    }
+
+    /* NIEBLA Y CULLING — y el bug que hacía que todo se viera borroso.
+       ─────────────────────────────────────────────────────────────────────
+       La primera versión medía la distancia con `Math.abs(k - pos)`, o sea sin
+       distinguir lo que está DELANTE de lo que ya quedó ATRÁS. Y lo que queda
+       atrás no desaparece: en CSS 3D una pieza a espaldas de la cámara se
+       proyecta gigante y desenfocada, y se comía media pantalla. Eso era la
+       mancha borrosa de las capturas.
+
+       Con signo, el arreglo es de una línea: lo que ya pasamos se esconde. Lo
+       de delante se apaga con la distancia, que es la niebla que da fondo. */
+    piezas.forEach((el, k) => {
+      const d = k - pos;                     // >0 delante, <0 ya pasó
+      if (d < -0.25) { el.style.visibility = 'hidden'; return; }
+      el.style.visibility = 'visible';
+      el.style.opacity = String(lim(1.25 - Math.abs(d) * 0.28, 0, 1).toFixed(3));
+    });
+
+    /* EL LETRERO DEL FRENTE · qué estoy viendo.
+       Un renglón que cambia con lo que la cámara tiene enfrente. No explica la
+       animación: nombra lo que se está viendo, que es lo que un comercial hace
+       con una voz en off. */
+    if (hud) {
+      const info = piezas[foco]?.dataset.info;
+      if (info && info !== hud.dataset.actual) {
+        hud.dataset.actual = info;
+        hud.textContent = info;
+        hud.classList.remove('entra'); void hud.offsetWidth; hud.classList.add('entra');
+      }
+    }
+
+    /* ── EL ABANICO ────────────────────────────────────────────────────
+       Al final las pantallas se despegan del mundo y se ordenan de frente. Se
+       les quita la transformación de la hélice y se les pone una fija respecto
+       a la pantalla: por eso salen del `data-mundo` visualmente aunque sigan
+       dentro de él. */
+    const junta = suave(tramo(t, DE_ABANICO, 1));
+    raiz.classList.toggle('en-abanico', junta > .02);
+    if (junta > .02 && NA) {
+      const incY = (Puntero.tocado ? (Puntero.x - .5) : 0) * -14;
+      const incX = (Puntero.tocado ? (Puntero.y - .5) : 0) * 9;
+      const resp = Math.sin(performance.now() / 1400) * 1.4;
+
+      delAbanico.forEach((el, k) => {
+        const col = k - (NA - 1) / 2;
+        const ancho = el.offsetWidth || 180;
+        const sep = Math.min(ancho * .58, innerWidth * .155);
+        el.style.opacity = junta.toFixed(3);
+        el.style.visibility = 'visible';
+        el.style.zIndex = String(60 - Math.round(Math.abs(col) * 10));
+        el.style.filter = `brightness(${(1 - Math.abs(col) * .16).toFixed(2)})`;
+        el.style.transform =
+          `translate3d(calc(-50% + ${(col * sep).toFixed(1)}px), -50%, ${(-Math.abs(col) * 130).toFixed(0)}px)` +
+          ` rotateY(${(-col * 13 + incY + resp).toFixed(1)}deg) rotateX(${incX.toFixed(1)}deg)` +
+          ` scale(${(0.80 + junta * 0.28).toFixed(3)})`;
+      });
+    } else {
+      // Al salir del abanico, cada pantalla vuelve a su sitio en la hélice.
+      delAbanico.forEach(el => {
+        el.style.filter = '';
+        el.style.transform =
+          `translate3d(calc(-50% + var(--x)), calc(-50% + var(--y)), var(--z))` +
+          ` rotateY(${el.dataset.giroMundo || 0}deg)`;
+      });
+    }
+  });
+
+  // Menos movimiento: no hay viaje. Las piezas se ponen en una lista legible y
+  // el argumento —qué construimos— llega completo.
+  if (menosMovimiento()) {
+    raiz.classList.add('quieto');
+    piezas.forEach(el => {
+      el.style.transform = 'none'; el.style.opacity = '1';
+      el.style.visibility = 'visible'; el.classList.add('enfocado');
+    });
+  }
+}
+
 export function montarCaida(raiz) {
   const cielo = raiz.querySelector('[data-cielo]');
   const objetos = [...raiz.querySelectorAll('[data-objeto]')];
