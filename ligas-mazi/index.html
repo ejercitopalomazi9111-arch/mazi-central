@@ -4714,6 +4714,10 @@ function resetDemo(){
   render(typeof ROLE_HOME!=='undefined'&&ROLE_HOME[currentRole]?ROLE_HOME[currentRole]:'hub');
 }
 function doLogout(){
+  /* Primero se archiva, DESPUÉS se limpia. Si se limpiara antes, el llavero
+     guardaría una cuenta vacía y al volver a entrar el usuario encontraría su
+     liga y su carta en blanco — que es peor que no poder entrar. */
+  try{ const u=userData(); if(u&&u.email) guardarCuentaLocal(u.email, null); }catch(e){}
   try{ if(typeof sbSignOut==='function')sbSignOut(); }catch(e){}
   clearLocalAccountCache(); // cierra sesión de verdad: nadie más que use este teléfono hereda nada
   _authed=false; _session=null; currentRole='publico'; setCloudBadge('','Modo local');
@@ -4946,7 +4950,11 @@ function doSignup(){
   const u={}; u.name=name; u.email=email; u.roles=roles; u.role=roles[0]; saveUser(u);
   applySignupEntities(u);   // crea SU liga / equipo / jugador (una sola vez, con código)
   const c=sbClient();
-  if(!c){ loginMsg('Cuenta creada en este teléfono (sin nube).'); enterAppWithRole(); return; }
+  if(!c){
+    // Sin nube, la cuenta se guarda en el llavero local. Sin esto, cerrar
+    // sesión te dejaba fuera de tu propia cuenta para siempre.
+    try{ guardarCuentaLocal(email, pass); }catch(e){}
+    loginMsg('Cuenta creada en este teléfono (sin nube).'); enterAppWithRole(); return; }
   loginMsg('Creando tu cuenta…'); setCloudBadge('checking','Creando…'); showLoader('Creando tu cuenta…');
   c.auth.signUp({email,password:pass,options:{data:{display_name:name,role:roles[0],roles:roles}}}).then(r=>{
     hideLoader();
@@ -4970,7 +4978,18 @@ function doSignin(){
   const pass=(document.getElementById('inPass').value||'');
   if(!email||!pass){loginMsg('Escribe tu correo y contraseña.',true);return;}
   const c=sbClient();
-  if(!c){ const u=userData(); if(u&&u.email===email){ enterAppWithRole(); return; } loginMsg('Sin conexión a la nube para iniciar sesión ahora.',true); return; }
+  if(!c){
+    /* Sin nube. Antes esto sólo dejaba entrar si eras el ÚLTIMO que usó el
+       teléfono; cualquier otro veía "sin conexión" y se quedaba fuera de una
+       cuenta que sí existía en el aparato. Ahora se busca en el llavero. */
+    try{
+      if(entrarCuentaLocal(email, pass)){ applyRoleFromUser(); enterAppWithRole(); return; }
+      if(hayCuentaLocal(email)){ loginMsg('Contraseña incorrecta.',true); return; }
+    }catch(e){}
+    const u=userData();
+    if(u&&u.email===email){ enterAppWithRole(); return; }
+    loginMsg('En este teléfono no hay una cuenta con ese correo. Crea una cuenta o conéctate para entrar con la de la nube.',true);
+    return; }
   loginMsg('Entrando…'); setCloudBadge('checking','Entrando…'); showLoader('Entrando…');
   c.auth.signInWithPassword({email,password:pass}).then(r=>{
     if(r.error){ hideLoader(); const m=(r.error.message||'').toLowerCase();
@@ -5474,6 +5493,9 @@ stampBrand();
 <!-- La liga de demostración va en archivo APARTE, no dentro del monolito: así
      se lee de un vistazo, se revisa sin bucear entre 5,400 líneas, y el día que
      estorbe se borra el archivo y la línea. -->
+<!-- El llavero de cuentas locales. Va aparte del monolito y se carga antes que
+     demo.js porque el registro y el inicio de sesión lo usan. -->
+<script src="cuentas-local.js"></script>
 <script src="demo.js" defer></script>
 
 </body>
