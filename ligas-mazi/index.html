@@ -3502,7 +3502,8 @@ function buildPapaHome(){
   if(up.length){
     h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Próximos en la liga</h2></div>';
     up.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      h+='<div class="match"><div class="when">J'+m.jornada+'</div><div class="vs">'+H.name+' vs '+A.name+'<small>'+(d.name||'')+(m.place?' · '+m.place:'')+(m.time?' · '+m.time:'')+'</small></div></div>'; });
+      const c=catDeMatch(H,A);
+      h+='<div class="match"><div class="when">J'+m.jornada+'</div><div class="vs">'+H.name+' vs '+A.name+'<small>'+(c?c+' · ':'')+(d.name||'')+(m.place?' · '+m.place:'')+(m.time?' · '+m.time:'')+'</small></div></div>'; });
   }
   box.innerHTML=h;
 }
@@ -3677,7 +3678,10 @@ function addTeam(){
   const d=leagueData(); if(!canAdminLeague(d)){ setMsg('Solo el admin de la liga puede agregar equipos.',true); return; }
   if(!nm){ setMsg('Escribe el nombre del equipo.',true); return; }
   if(d.teams.some(t=>normName(t.name)===normName(nm))){ setMsg('Ya existe un equipo “'+nm+'” en esta liga. Si es el tuyo, ábrelo abajo; no lo dupliques.',true); return; }
-  d.teams.push({id:'t'+Date.now().toString(36),name:nm,ini:iniOf(nm),color:TEAM_COLORS[d.teams.length%TEAM_COLORS.length],players:[]});
+  const catSel=document.getElementById('leTeamCat');
+  d.teams.push({id:'t'+Date.now().toString(36),name:nm,ini:iniOf(nm),
+    color:TEAM_COLORS[d.teams.length%TEAM_COLORS.length],
+    categoria:(catSel&&catSel.value)||'', players:[]});
   saveLeague(d); setMsg(''); buildLeagueTeams();
 }
 function delTeam(id){const d=leagueData(); if(!canAdminLeague(d))return; d.teams=d.teams.filter(t=>t.id!==id); d.calendar=d.calendar.filter(m=>m.home!==id&&m.away!==id); saveLeague(d); leOpen=null; buildLeagueTeams();}
@@ -3711,7 +3715,7 @@ function buildLeagueTeams(){
   let h='<div class="eyebrow" style="margin:2px 2px 10px">'+d.teams.length+' equipos · '+d.teams.reduce((s,t)=>s+t.players.length,0)+' jugadores</div>';
   d.teams.forEach(t=>{ const open=leOpen===t.id;
     h+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">';
-    h+='<div class="leaguerow" style="margin:0;border:none" onclick="leOpen=(leOpen===\''+t.id+'\'?null:\''+t.id+'\');buildLeagueTeams()"><div class="crest real" style="'+crestStyle(t)+'">'+crestInner(t)+'</div><div><div class="nm">'+t.name+'</div><div class="mt">'+t.players.length+' jugadores</div></div><span class="more">'+(open?'▾':'›')+'</span></div>';
+    h+='<div class="leaguerow" style="margin:0;border:none" onclick="leOpen=(leOpen===\''+t.id+'\'?null:\''+t.id+'\');buildLeagueTeams()"><div class="crest real" style="'+crestStyle(t)+'">'+crestInner(t)+'</div><div><div class="nm">'+t.name+'</div><div class="mt">'+(t.categoria&&CAT_NOMBRE[t.categoria]?CAT_NOMBRE[t.categoria]+' · ':'')+t.players.length+' jugadores</div></div><span class="more">'+(open?'▾':'›')+'</span></div>';
     if(open){ h+='<div style="padding:2px 12px 12px">';
       if(!(t.players||[]).length) h+='<div class="stratnote" style="border-left-color:var(--liga);margin:0 0 8px">Este equipo aún no tiene jugadores. Su dueño los suma cuando aprueba solicitudes.</div>';
       t.players.forEach((p)=>{ const av=playerAverages(p); const stat=av?'<span class="le-pos" style="color:var(--liga)">'+av.ppg.toFixed(1)+' PPP · '+av.gp+'PJ</span>':'<span class="le-pos">'+(p.pos||'')+'</span>';
@@ -3724,8 +3728,33 @@ function buildLeagueTeams(){
   else h+='<div class="stratnote" style="border-left-color:var(--liga)">Los equipos se unen solicitándolo; apruébalos en tu 🔔 bandeja. Tú ya no los creas.</div>';
   if(d.code) h+='<div class="card" style="margin-top:10px;text-align:center"><div class="mt" style="font-size:12px;color:var(--muted)">Código de tu liga (compártelo para que te encuentren)</div><div style="font-family:var(--mono);font-weight:800;font-size:22px;color:var(--liga);letter-spacing:.05em;margin-top:4px">'+d.code+'</div></div>';
   h+='<div id="leTeamMsg" class="le-msg"></div>';
+  /* La categoría del equipo. Se pide al inscribirlo porque después nadie
+     regresa a llenarla, y sin ella el papá no puede filtrar los partidos de
+     su hij@ entre las nueve categorías de la jornada. */
+  h+='<div class="le-add" style="margin-top:10px">'
+    +'<select class="field" id="leTeamCat" style="flex:1;min-width:0">'
+    +'<option value="">Categoría del equipo…</option>'
+    + Object.keys(CAT_NOMBRE).map(k=>'<option value="'+k+'">'+CAT_NOMBRE[k]+'</option>').join('')
+    +'</select></div>';
   box.innerHTML=h;
 }
+/* La categoría de un enfrentamiento. Sale del equipo, no del partido: en una
+   liga por categorías los dos equipos SIEMPRE son de la misma, así que basta
+   con preguntarle a uno. Si los equipos no la traen —ligas viejas, de antes de
+   que existiera el campo— no se inventa nada: se devuelve vacío y el renglón
+   simplemente no sale. */
+function catDeMatch(H,A){
+  const c=(H&&H.categoria)||(A&&A.categoria)||'';
+  if(!c) return '';
+  return (typeof CAT_NOMBRE==='object' && CAT_NOMBRE[c]) ? CAT_NOMBRE[c] : c;
+}
+/* Los nombres bonitos de las categorías que dictó Carlos. La clave es la que se
+   guarda en el equipo; esto es sólo cómo se lee. */
+const CAT_NOMBRE={
+  'mixta-7-9':'Mixta 7–9', 'mixta-10-11':'Mixta 10–11', 'mixta-12-13':'Mixta 12–13',
+  'var-12-13':'Varonil 12–13', 'var-14-15':'Varonil 14–15', 'var-16-17':'Varonil 16–17',
+  'fem-12-13':'Femenil 12–13', 'fem-14-15':'Femenil 14–15', 'fem-16-17':'Femenil 16–17',
+};
 /* --- calendario todos contra todos (método del círculo) --- */
 function nextSaturday(){ const d=new Date(); d.setHours(0,0,0,0); const add=(6-d.getDay()+7)%7||7; d.setDate(d.getDate()+add); return d; }
 function fmtDate(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
@@ -3756,7 +3785,18 @@ function buildLeagueCal(){
     const res=m.done?('<span class="mid">'+m.hs+'–'+m.as+'</span>'):'<span class="mid" style="color:var(--dim);font-size:11px">vs</span>';
     const hora=m.time?'<span class="le-time">'+m.time+'</span>':'';
     h+='<div class="le-match">'+hora+'<span class="crest real sm" style="'+crestStyle(H)+'">'+crestInner(H)+'</span><span class="tnm">'+H.name+'</span>'+res+'<span class="tnm r">'+A.name+'</span><span class="crest real sm" style="'+crestStyle(A)+'">'+crestInner(A)+'</span></div>';
-    if(m.place) h+='<div style="font-size:11.5px;color:var(--muted);margin:-6px 0 8px;padding-left:2px"><svg class="ic" style="width:12px;height:12px;vertical-align:-2px"><use href="#ic-flag"/></svg> '+m.place+'</div>';
+    /* CATEGORÍA · LUGAR, en un solo renglón bajo el partido.
+       Un papá no busca "el partido": busca el de la categoría de su hij@, y con
+       nueve categorías jugando la misma jornada, sin esto tiene que abrir cada
+       partido para saber cuál es el suyo. La categoría va PRIMERO porque es lo
+       que filtra; el lugar después, que es lo que necesita para llegar. */
+    const cat = catDeMatch(H, A);
+    if(cat || m.place){
+      h+='<div style="font-size:11.5px;color:var(--muted);margin:-6px 0 8px;padding-left:2px;display:flex;gap:10px;flex-wrap:wrap">'
+        + (cat?'<span style="color:var(--liga);font-weight:700">'+cat+'</span>':'')
+        + (m.place?'<span><svg class="ic" style="width:12px;height:12px;vertical-align:-2px"><use href="#ic-flag"/></svg> '+m.place+'</span>':'')
+        + '</div>';
+    }
     if(!m.done && canOfficiate(m)){ h+='<div class="le-officiate" onclick="officiateMatch('+idx+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir en la mesa</div>'; }
     if(!m.done && canAdminLeague(d)){
       h+='<div class="le-add" style="margin:-2px 0 6px;flex-wrap:wrap"><input id="dt_'+idx+'" type="date" value="'+(m.date||'')+'" style="flex:0 0 auto;min-width:0"><input id="tm_'+idx+'" type="time" value="'+(m.time||'')+'" style="flex:0 0 auto;min-width:0"><input id="pl_'+idx+'" value="'+((m.place||'').replace(/"/g,'&quot;'))+'" placeholder="Lugar / cancha"><button class="btn sm ghost" onclick="setMatchSchedule('+idx+')">Fecha</button></div>';

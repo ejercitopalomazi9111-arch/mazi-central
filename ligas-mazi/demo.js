@@ -162,6 +162,9 @@
         // los seis salían seis escudos violetas idénticos y la tabla no se
         // leía de un vistazo.
         color: ['--papa','--publico','--coach','--liga','--jugador','--mesa'][i % 6],
+        // Categoría: sin ella el calendario no puede decirle al papá cuál de
+        // los partidos de la jornada es el de su hij@.
+        categoria: ['mixta-7-9','mixta-10-11','mixta-12-13','var-12-13','fem-12-13','var-14-15'][i % 6],
         logo: escudo(eq),
         silueta: arte('escudo', i),   // la silueta bajada, por si se quiere componer
         banner: arte('lugar', i),     // una cancha de verdad
