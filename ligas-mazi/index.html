@@ -275,6 +275,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .mcourt .face .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.55)}
 .mcourt .face .ph .ic{width:18px;height:18px}
 .mcourt .num{position:absolute;top:0;left:3px;font-family:var(--disp);font-weight:800;font-size:11px;color:#fff;text-shadow:0 1px 3px #000;z-index:2}
+/* la posición, encima de la mini-carta: para eso el papá abre la app */
+.mcourt .pos{position:absolute;top:0;right:0;font-family:var(--mono);font-weight:800;font-size:8px;line-height:1;letter-spacing:.02em;color:#0b0d12;background:var(--tc,rgba(255,255,255,.8));padding:2px 3px;border-radius:0 0 0 5px;z-index:2}
 .mcourt .nm{font-size:8px;font-weight:700;text-align:center;padding:1px 2px 0;color:#eef1f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
 .mcourt .pt{font-family:var(--disp);font-weight:800;text-align:center;font-size:13px;color:var(--accent-lt);line-height:1;padding:0 0 2px}
 /* Reacciones del token (item pedido: la carta reacciona al anotar/falta/cambio) */
@@ -715,6 +717,34 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .sub-list{display:flex;flex-direction:column;gap:6px}
 .subp{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--bone);text-align:left}
 .subp .pn{font-family:var(--disp);font-weight:800;color:var(--accent-lt);width:22px} .subp .pnm{flex:1;font-size:13px} .subp .pf{font-family:var(--mono);font-size:9px;color:var(--dim)}
+.subp .pnm small{display:block;color:var(--dim);font-size:10px;margin-top:2px}
+/* La fila de cancha lleva chip de posición, así que en una columna de 160px no
+   cabe todo en renglón. Se parte en dos: arriba dorsal y nombre, abajo la
+   posición y las estadísticas. */
+.subp.oncourt{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"pn nm nm" "chip chip pf";column-gap:8px;row-gap:2px;align-items:center}
+.subp.oncourt .pn{grid-area:pn;width:auto} .subp.oncourt .pnm{grid-area:nm;line-height:1.2}
+.subp.oncourt .poschip{grid-area:chip;justify-self:start;margin-top:0}
+.subp.oncourt .pf{grid-area:pf;justify-self:end;white-space:nowrap}
+/* ---- POSICIONES: el chip que las cambia y el picker que las explica ----
+   Del tamaño del dedo (44px) porque el coach lo usa a media cancha, de pie y
+   con prisa — no sentado con un mouse. */
+.poschip{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-top:5px;padding:0 11px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:22px;color:#e6ebf3;
+  font-size:13px;font-weight:650;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.poschip svg{width:11px;height:8px;flex:0 0 auto;color:var(--dim)}
+.poschip.ab{font-family:var(--mono);font-weight:800;letter-spacing:.04em;padding:0 9px;gap:5px}
+.poschip:active{border-color:var(--coach);background:rgba(239,122,53,.16)}
+.posopt{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;margin-bottom:8px;padding:10px 14px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:13px;color:var(--bone);text-align:left;cursor:pointer}
+.posopt .ab{flex:0 0 40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:11px;
+  background:rgba(239,122,53,.14);color:var(--coach);font-family:var(--mono);font-weight:800;font-size:14px}
+.posopt .tx{flex:1;min-width:0} .posopt .tx b{display:block;font-size:15px;font-weight:750}
+.posopt .tx small{display:block;color:var(--dim);font-size:12px;line-height:1.35;margin-top:2px}
+.posopt .ok{color:var(--coach);font-size:18px;font-weight:800}
+.posopt.on{border-color:var(--coach);background:rgba(239,122,53,.1)}
+/* En el roster el chip va en su propio renglón, debajo del nombre: así los
+   cinco quedan alineados en columna y se leen de un vistazo. */
+.rosterrow .poschip{display:flex;width:max-content;margin-top:6px}
 .subp.sel{border-color:var(--accent);background:rgba(239,122,53,.15)}
 .subp.bench{opacity:.75}
 .sub-hint{font-size:12px;color:var(--accent-lt);margin-top:8px;text-align:center}
@@ -1216,7 +1246,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
           <div><div class="sub-lbl">En cancha — toca quién sale</div><div class="sub-list" id="subOn"></div></div>
           <div><div class="sub-lbl">Banca — luego quién entra</div><div class="sub-list" id="subBench"></div></div>
         </div>
-        <div class="sub-hint" id="subHint">Toca un jugador de cancha y luego uno de banca</div>
+        <div class="sub-hint" id="subHint">Toca un jugador de cancha y luego uno de banca · el chip de abajo le cambia la posición sin sacarlo</div>
       </div>
       <div class="h-row"><h2 class="disp" style="font-size:18px">Roster</h2><span class="more" onclick="go('alta')">＋ Alta</span></div>
       <div id="rosterList"></div>
@@ -2126,14 +2156,81 @@ const GAME={
 function hasLiveGame(){ return GAME.matchIdx!=null && GAME.teams && GAME.teams.length===2; }
 function onCourt(t){return GAME.teams[t].players.filter(p=>p.on);}
 function bench(t){return GAME.teams[t].players.filter(p=>!p.on);}
+/* ====== POSICIONES — quién juega dónde, y lo decide el coach ==================
+   El coach las pone en DOS momentos, que es como pasa en la duela:
+     1. Antes del partido, en el vestidor, armando la alineación.
+     2. Durante el partido, al hacer un cambio (el que entra cubre la posición
+        del que sale, y ahí mismo se le puede cambiar).
+   La cancha las dibuja: el pívot pegado al aro contrario y el base hasta atrás,
+   para que un papá vea de un vistazo dónde juega su hij@.
+   ============================================================================ */
+const POSICIONES=[
+  {id:'Base',      ab:'B',  d:'Sube el balón y arma la jugada'},
+  {id:'Escolta',   ab:'E',  d:'Tira de fuera y corta al aro'},
+  {id:'Alero',     ab:'AL', d:'Juega la banda: tira o entra'},
+  {id:'Ala-pívot', ab:'AP', d:'Poste alto: rebote y espaldas al aro'},
+  {id:'Pívot',     ab:'P',  d:'Poste bajo: pintura, tapas y rebote'},
+];
+/* Cómo le dice la gente de verdad. "Poste", "pivot" sin acento, "armador" —
+   todo eso entra y se guarda con el nombre de la casa, para que la cancha no
+   se rompa por una tilde. */
+const POS_ALIAS={'poste':'Ala-pívot','poste alto':'Ala-pívot','poste bajo':'Pívot',
+  'ala':'Alero','ala-pivot':'Ala-pívot','alapivot':'Ala-pívot','pivot':'Pívot','centro':'Pívot',
+  'armador':'Base','guard':'Escolta','forward':'Alero','center':'Pívot'};
+function posNorm(p){ const s=String(p||'').trim(); if(!s)return 'Base';
+  const hit=POSICIONES.find(x=>x.id.toLowerCase()===s.toLowerCase()); if(hit)return hit.id;
+  return POS_ALIAS[s.toLowerCase()]||'Base'; }
+function posAb(p){ const n=posNorm(p); return (POSICIONES.find(x=>x.id===n)||POSICIONES[0]).ab; }
+function posRank(p){ const i=POSICIONES.findIndex(x=>x.id===posNorm(p)); return i<0?0:i; }
+/* El botón con el que se cambia. En el roster cabe el nombre completo; en la
+   columna de cambios en vivo, que mide 160px en un iPhone, sólo la abreviatura
+   — ahí un <select> salía cortado ("Bas…", "Esc…") y eso no se entrega. */
+function posChip(scope,i,valor,corto){ const n=posNorm(valor);
+  return '<button type="button" class="poschip'+(corto?' ab':'')+'" onclick="event.stopPropagation();abrirPosPicker(\''+scope+'\','+i+')">'+
+    (corto?posAb(n):n)+'<svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1.5 2 6 6.5 10.5 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'; }
+/* El picker: pantalla completa por abajo, cinco opciones grandes y cada una
+   dice QUÉ hace esa posición. Un coach nuevo no tiene por qué saberse los
+   nombres de memoria. */
+function abrirPosPicker(scope,i){
+  const p = scope==='juego' ? (hasLiveGame()?GAME.teams[0].players[i]:null) : (teamRoster()[i]||null);
+  if(!p)return;
+  const actual=posNorm(p.pos);
+  document.getElementById('sheetTitle').textContent='¿De qué juega '+(p.nm||'este jugador')+'?';
+  document.getElementById('sheetBody').innerHTML=
+    POSICIONES.map(x=>'<button class="posopt'+(x.id===actual?' on':'')+'" onclick="elegirPos(\''+scope+'\','+i+',\''+x.id+'\')">'+
+      '<span class="ab">'+x.ab+'</span><span class="tx"><b>'+x.id+'</b><small>'+x.d+'</small></span>'+
+      (x.id===actual?'<span class="ok">✓</span>':'')+'</button>').join('');
+  document.getElementById('sheet').classList.add('on');
+}
+function elegirPos(scope,i,id){ closeSheet(); if(scope==='juego')setGamePos(i,id); else setRosterPos(i,id); }
+
 const COURT_POS=[{x:50,y:56},{x:23,y:64},{x:77,y:64},{x:37,y:78},{x:63,y:78}];
 const OPP_POS=[{x:50,y:26},{x:23,y:35},{x:77,y:35},{x:37,y:47},{x:63,y:47}];
+/* Qué hueco de la cancha le toca a cada posición, por rango (Base…Pívot).
+   Mi equipo ataca hacia arriba: el pívot va al hueco de enfrente (el 0) y el
+   base al de atrás. El rival ataca al revés, así que su reparto es el espejo. */
+const HUECO_CASA =[3,4,1,2,0];
+const HUECO_RIVAL=[0,1,2,3,4];
+/* Reparte a los cinco de cancha en sus huecos. Si dos traen la misma posición
+   —pasa, y no es un error del coach— el segundo se va al hueco libre más
+   cercano en vez de encimarse. */
+function acomodarCancha(lista, huecos){
+  const cancha=new Array(5).fill(null);
+  lista.slice(0,5).forEach(p=>{
+    let s=huecos[posRank(p.pos)];
+    if(cancha[s]!=null){ let mejor=-1,dist=99;
+      for(let k=0;k<5;k++) if(cancha[k]==null && Math.abs(k-s)<dist){dist=Math.abs(k-s);mejor=k;}
+      s=mejor; }
+    if(s>=0) cancha[s]=p;
+  });
+  return cancha;
+}
 function courtCardHTML(p,me){
   const face=(p.photo||(p.nm===me&&(userData()||{}).photo))||'';
   const bg=face?(' style="background-image:url('+(p.photo||(userData()||{}).photo)+')"'):'';
   const ph=face?'':'<span class="ph"><svg class="ic"><use href="#ic-user"/></svg></span>';
   const fb=(p.f!=null&&p.f>0)?'<span class="fbadge'+(p.f>=4?' hot':'')+'">'+p.f+'F</span>':'';
-  return '<div class="face"'+bg+'><span class="num">'+p.num+'</span>'+ph+'</div><div class="nm">'+p.nm+'</div><div class="pt">'+p.pts+'</div>'+fb;
+  return '<div class="face"'+bg+'><span class="num">'+p.num+'</span><span class="pos">'+posAb(p.pos)+'</span>'+ph+'</div><div class="nm">'+p.nm+'</div><div class="pt">'+p.pts+'</div>'+fb;
 }
 /* A quién ve resaltado cada quien: el papá SOLO a su hijo, el coach a SU equipo
    (equipo 0, nunca a los contrarios), el jugador a sí mismo, el público a nadie. */
@@ -2147,14 +2244,16 @@ function isHighlighted(teamIdx,p){
 function buildLineup(){
   const c=document.getElementById('courtTokens'); if(!c)return; c.innerHTML='';
   const me=(userData()||{}).name;
-  // rival (arriba): mini-cartas con color del equipo
-  onCourt(1).forEach((p,i)=>{const pos=OPP_POS[i]||OPP_POS[0]; const pi=GAME.teams[1].players.indexOf(p);
+  // rival (arriba): mini-cartas con color del equipo, cada quien en su posición
+  acomodarCancha(onCourt(1),HUECO_RIVAL).forEach((p,k)=>{ if(!p)return;
+    const pos=OPP_POS[k]; const pi=GAME.teams[1].players.indexOf(p);
     const d=document.createElement('div'); d.className='mcourt away'+(isHighlighted(1,p)?' mine':''); d.style.setProperty('--tc','var('+GAME.teams[1].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
     d.setAttribute('data-team','1'); d.setAttribute('data-pi',pi);
     d.innerHTML=courtCardHTML(p,me);
     d.onclick=()=>openPlayerSheet(1,pi); c.appendChild(d);});
   // mi equipo (abajo): resalta según el rol de quien mira
-  onCourt(0).forEach((p,i)=>{const pos=COURT_POS[i]||COURT_POS[0]; const pi=GAME.teams[0].players.indexOf(p);
+  acomodarCancha(onCourt(0),HUECO_CASA).forEach((p,k)=>{ if(!p)return;
+    const pos=COURT_POS[k]; const pi=GAME.teams[0].players.indexOf(p);
     const d=document.createElement('div'); d.className='mcourt '+(isHighlighted(0,p)?'mine':'home'); d.style.setProperty('--tc','var('+GAME.teams[0].color+')'); d.style.left=pos.x+'%'; d.style.top=pos.y+'%';
     d.setAttribute('data-team','0'); d.setAttribute('data-pi',pi);
     d.innerHTML=courtCardHTML(p,me);
@@ -4428,15 +4527,47 @@ function buildCoachSubs(){
     return;
   }
   if(wrap)wrap.style.display='';
-  onCourt(0).forEach(p=>{const i=GAME.teams[0].players.indexOf(p);const b=document.createElement('button');b.className='subp';
-    b.innerHTML='<span class="pn">'+p.num+'</span><span class="pnm">'+p.nm+'</span><span class="pf">'+p.pts+'p · '+p.f+'F</span>';
-    b.onclick=()=>{subOut=i;[...on.children].forEach(c=>c.classList.remove('sel'));b.classList.add('sel');document.getElementById('subHint').textContent='Ahora toca quién ENTRA de la banca';};on.appendChild(b);});
+  /* EN CANCHA. Cada uno trae su selector de posición: el coach puede moverlo de
+     ala a poste sin sacarlo del partido. El selector no es un botón dentro de
+     otro botón (eso rompe el HTML), por eso la fila es un div con rol. */
+  onCourt(0).forEach(p=>{const i=GAME.teams[0].players.indexOf(p);
+    const b=document.createElement('div'); b.className='subp oncourt'; b.setAttribute('role','button'); b.tabIndex=0;
+    b.innerHTML='<span class="pn">'+p.num+'</span>'+
+      '<span class="pnm">'+p.nm+'</span>'+
+      posChip('juego',i,p.pos,true)+
+      '<span class="pf">'+p.pts+'p · '+p.f+'F</span>';
+    b.onclick=()=>{subOut=i;[...on.children].forEach(c=>c.classList.remove('sel'));b.classList.add('sel');document.getElementById('subHint').textContent='Ahora toca quién ENTRA de la banca';};
+    b.onkeydown=(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.onclick();}};
+    on.appendChild(b);});
+  /* BANCA. El que entra cubre la posición del que sale — que es lo que hace un
+     coach de verdad—, y enseguida se le puede cambiar arriba. */
   bench(0).forEach(p=>{const i=GAME.teams[0].players.indexOf(p);const b=document.createElement('button');b.className='subp bench';
-    b.innerHTML='<span class="pn">'+p.num+'</span><span class="pnm">'+p.nm+'</span><span class="pf">banca</span>';
+    b.innerHTML='<span class="pn">'+p.num+'</span><span class="pnm">'+p.nm+'<small>'+posNorm(p.pos)+'</small></span><span class="pf">banca</span>';
     b.onclick=()=>{if(subOut==null){document.getElementById('subHint').textContent='Primero toca quién SALE de la cancha';return;}
-      GAME.teams[0].players[subOut].on=false; GAME.teams[0].players[i].on=true;
-      GAME.log.unshift({t:'Q'+GAME.period,m:'<b>Cambio</b> entra #'+p.num+' '+p.nm+' por #'+GAME.teams[0].players[subOut].num,u:null});
-      buildCoachSubs();document.getElementById('subHint').textContent='✓ Cambio hecho — ya se ve en el marcador';};bn.appendChild(b);});
+      const sale=GAME.teams[0].players[subOut], entra=GAME.teams[0].players[i];
+      const hueco=posNorm(sale.pos);
+      sale.on=false; entra.on=true; entra.pos=hueco; guardarPosEnRoster(entra);
+      GAME.log.unshift({t:'Q'+GAME.period,m:'<b>Cambio</b> entra #'+entra.num+' '+entra.nm+' de '+hueco+' por #'+sale.num+' '+sale.nm,u:null});
+      buildCoachSubs(); buildLineup();
+      document.getElementById('subHint').innerHTML='✓ '+entra.nm+' entró de <b>'+hueco+'</b> — si quieres otra posición, cámbiasela arriba';};bn.appendChild(b);});
+}
+/* Cambiar la posición SIN sacar al jugador: pasa a media cancha todo el tiempo. */
+function setGamePos(i,pos){ if(!hasLiveGame())return;
+  const p=GAME.teams[0].players[i]; if(!p)return;
+  const nueva=posNorm(pos); if(posNorm(p.pos)===nueva)return;
+  p.pos=nueva; guardarPosEnRoster(p);
+  GAME.log.unshift({t:'Q'+GAME.period,m:'<b>Posición</b> #'+p.num+' '+p.nm+' pasa a '+nueva,u:null});
+  buildCoachSubs(); buildLineup(); flashSaved(p.nm+' → '+nueva);
+}
+/* Lo que el coach decide en el partido no se pierde al acabar: se escribe en el
+   roster del equipo, que es el que vive entre partidos. */
+function guardarPosEnRoster(p){
+  const u=userData()||{}; const t=u.team||u.coachTeam;
+  const igual=(x)=>(x.code&&p.code&&x.code===p.code)||((x.nm||x.name)===p.nm);
+  if(t&&Array.isArray(t.players)){ const m=t.players.find(igual);
+    if(m){ m.pos=p.pos; try{ saveCoachTeam(t); }catch(e){} return; } }
+  try{ const r=JSON.parse(localStorage.getItem('lm_roster')||'[]');
+    const m=r.find(igual); if(m){ m.pos=p.pos; saveRoster(r); } }catch(e){}
 }
 /* ---- TIENDA: la liga sube productos (funcional, se guardan) ---- */
 const SHOP_COLORS=['#e8b13e','#35c2cf','#54cc8a','#a774f0','#ec5a45','#ff9a5a'];
@@ -4570,7 +4701,7 @@ function shopStartTicker(){ if(_shopTickT)return; _shopTickT=setInterval(()=>{
 /* el roster real del equipo = u.team.players (identidad); respaldo local para modo demo */
 function teamRoster(){const u=userData()||{}; const t=u.team||u.coachTeam;
   if(t&&Array.isArray(t.players)&&t.players.length)
-    return t.players.map(p=>({code:p.code,num:p.num,nm:p.nm||p.name||'Jugador',pos:p.pos||'Jugador',ppp:p.ppp||'0.0'}));
+    return t.players.map(p=>({code:p.code,num:p.num,nm:p.nm||p.name||'Jugador',pos:posNorm(p.pos),ppp:p.ppp||'0.0'}));
   try{const s=localStorage.getItem('lm_roster');if(s)return JSON.parse(s);}catch(e){}
   return [];}
 function saveRoster(a){try{localStorage.setItem('lm_roster',JSON.stringify(a));}catch(e){}}
@@ -4578,9 +4709,28 @@ function removeFromTeam(i){const u=userData()||{}; const t=u.team||u.coachTeam;
   if(t&&Array.isArray(t.players)&&t.players.length){ t.players.splice(i,1); saveCoachTeam(t); }
   else { const r=teamRoster(); r.splice(i,1); saveRoster(r); }
   buildRoster(); flashSaved('Quitado del roster');}
+/* La alineación de antes del partido: aquí el coach deja escrito quién juega de
+   qué. Es lo mismo que va a ver en los cambios en vivo y lo que dibuja la
+   cancha, así que se guarda en el roster del equipo, no en la pantalla. */
+function setRosterPos(i,pos){
+  const u=userData()||{}; const t=u.team||u.coachTeam; const nueva=posNorm(pos);
+  if(t&&Array.isArray(t.players)&&t.players[i]){ t.players[i].pos=nueva; try{saveCoachTeam(t);}catch(e){} }
+  else { const r=teamRoster(); if(r[i]){ r[i].pos=nueva; saveRoster(r); } }
+  // si ese jugador ya está en un partido en vivo, el cambio se ve al instante
+  if(hasLiveGame()){
+    const nm=((t&&t.players&&t.players[i])||teamRoster()[i]||{});
+    const g=GAME.teams[0].players.find(x=>(x.code&&nm.code&&x.code===nm.code)||x.nm===(nm.nm||nm.name));
+    if(g){ g.pos=nueva; buildCoachSubs(); buildLineup(); }
+  }
+  buildRoster(); flashSaved((teamRoster()[i]||{}).nm+' → '+nueva);
+}
 function buildRoster(){const l=document.getElementById('rosterList'); if(!l)return; const r=teamRoster(); l.innerHTML='';
+  const puede=(currentRole==='coach'||currentRole==='liga');
+  if(r.length&&puede) l.innerHTML='<div class="stratnote" style="border-left-color:var(--coach);margin-bottom:8px">Pon aquí de qué juega cada quien. Es la alineación con la que arranca el partido — durante el juego la puedes cambiar en <b>Cambios en vivo</b>.</div>';
   r.forEach((p,i)=>{const d=document.createElement('div');d.className='rosterrow';d.style.cursor='pointer';
-    d.innerHTML='<span class="num">'+(p.num||'-')+'</span><span class="nm">'+p.nm+'<small>'+(p.pos||'Jugador')+'</small></span><span class="st">'+(p.ppp||'0.0')+' PPP</span>';
+    d.innerHTML='<span class="num">'+(p.num||'-')+'</span><span class="nm">'+p.nm+
+      (puede?posChip('roster',i,p.pos,false):'<small>'+posNorm(p.pos)+'</small>')+
+      '</span><span class="st">'+(p.ppp||'0.0')+' PPP</span>';
     d.onclick=()=>openRosterCard(i);
     if(currentRole==='coach'||currentRole==='liga'){const x=document.createElement('button');x.className='pdel';x.style.position='static';x.style.marginLeft='6px';x.textContent='×';x.onclick=(e)=>{e.stopPropagation();removeFromTeam(i);};d.appendChild(x);}
     l.appendChild(d);});
