@@ -379,10 +379,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .pcard{position:relative;border-radius:16px;overflow:hidden;border:1px solid #3a4250;background:linear-gradient(160deg,#232834,#10131a);box-shadow:0 20px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);margin:16px}
 .pcard::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 42%,rgba(255,154,90,.14) 50%,transparent 58%);pointer-events:none;animation:shine 4s ease-in-out infinite}
 @keyframes shine{0%,100%{transform:translateX(-30%)}50%{transform:translateX(30%)}}
-.pcard .rk{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#0b0d12;background:linear-gradient(90deg,#ff9a5a,#a774f0);padding:4px 10px;border-radius:20px;font-weight:700;z-index:2}
-.pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:2}
+/* EL ORDEN DE LAS CAPAS DE LA CARTA.
+   La foto tenía `z-index:2`, el MISMO que el rango y el general. Con empate de
+   z-index gana quien va después en el HTML, y la foto va después — así que la
+   foto se pintaba encima del rango y del general. Rango y general suben a 4, y
+   además la foto arranca más abajo para que no se toquen ni por accidente. */
+.pcard .rk{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:#0b0d12;background:linear-gradient(90deg,#ff9a5a,#a774f0);padding:4px 10px;border-radius:20px;font-weight:700;z-index:4}
+.pcard .ov{position:absolute;top:12px;right:16px;text-align:center;z-index:4}
 .pcard .ov b{font-family:var(--disp);font-weight:800;font-size:40px;line-height:.8;color:var(--accent-lt)} .pcard .ov small{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em}
-.pcard .photo{width:min(78%,260px);aspect-ratio:3/4;height:auto;margin:30px auto 0;border-radius:14px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer;position:relative;z-index:2}
+.pcard .photo{width:min(78%,260px);aspect-ratio:3/4;height:auto;margin:56px auto 0;border-radius:14px;border:1px dashed #3a4250;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#7c8494;font-size:12px;text-align:center;background:radial-gradient(circle at 50% 30%,#1c2029,#0e1116);cursor:pointer;position:relative;z-index:1}
 .pcard .photo.has-photo{border-style:solid;border-color:#2a313d;background-size:cover;background-position:center top}
 .pcard .nm{font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:26px;padding:12px 16px 2px} .pcard .club{font-size:12.5px;color:var(--dim);padding:0 16px}
 .pcard .stats{display:flex;gap:6px;padding:14px 16px 18px}
@@ -2348,12 +2353,38 @@ function buildLigaStats(){
     if(claim){ claim.style.display='block';
       claim.innerHTML='<div class="card" style="margin-top:8px"><div class="kick" style="color:var(--liga)">No administras ninguna liga</div>'+
         '<div style="font-size:13px;color:var(--muted);margin:6px 0 12px">Las ligas se crean al registrarse como <b>Admin de liga</b>. Si quieres organizar una liga, crea una cuenta con ese rol. Si buscas una liga existente para seguirla o meter a tu equipo, úsa el buscador.</div>'+
-        '<button class="btn sm block" onclick="go(\'directorio\')"><svg class="ic" style="width:15px;height:15px;vertical-align:-2px"><use href="#ic-trophy"/></svg> Buscar ligas</button></div>'; }
+        '<button class="btn sm block" onclick="go(\'directorio\')"><svg class="ic" style="width:15px;height:15px;vertical-align:-2px"><use href="#ic-trophy"/></svg> Buscar ligas</button>'+
+        // Sin esto, una cuenta recién hecha no puede ver NADA de lo que la app
+        // sabe hacer: todas las pantallas salen vacías.
+        '<button class="btn ghost sm block" onclick="cargarLigaDemo()" style="margin-top:8px">'+
+        '<svg class="ic" style="width:15px;height:15px;vertical-align:-2px"><use href="#ic-people"/></svg>'+
+        ' Ver una liga de demostración</button>'+
+        '<div style="font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.45">'+
+        'Seis equipos inventados con media temporada jugada, para conocer la app sin '+
+        'registrar a nadie. <b>Ningún jugador es real</b> y se borra cuando quieras.</div></div>'; }
     const bn0=document.getElementById('ligaBannerName'); if(bn0)bn0.textContent='Tu liga';
     return;
   }
   if(body)body.style.display='';
   if(claim)claim.style.display='none';
+
+  /* AVISO DE DEMOSTRACIÓN, arriba de todo. Si esta liga se tomara por real, el
+     administrador acabaría capturando resultados encima de equipos que no
+     existen. */
+  let aviso=document.getElementById('ligaDemoAviso');
+  if(d.demo){
+    if(!aviso && body){
+      aviso=document.createElement('div');
+      aviso.id='ligaDemoAviso'; aviso.className='stratnote';
+      aviso.style.cssText='border-left-color:var(--liga);margin:0 0 12px';
+      aviso.innerHTML='<b>Liga de demostración.</b> Los seis equipos y los 48 jugadores '+
+        'están inventados; ninguno es una persona real y las cartas llevan balones y aros, '+
+        'no retratos. '+
+        '<button class="btn ghost sm" style="margin-top:8px" onclick="borrarLigaDemo()">Borrarla</button>';
+      body.insertBefore(aviso, body.firstChild);
+    }
+  } else if(aviso){ aviso.remove(); }
+
   const bn=document.getElementById('ligaBannerName'); if(bn)bn.textContent=d.name||'Mi liga';
   const bi=document.getElementById('ligaBannerImg'); if(bi){ const src=d.banner||d.logo; if(src){bi.src=src;bi.style.objectFit='cover';bi.style.filter=d.banner?'brightness(.62)':'brightness(.55) saturate(.9)';} }
   const idbox=document.getElementById('leagueIdentity'); if(idbox)idbox.style.display='none';
@@ -2921,6 +2952,40 @@ function equippedByKind(e,kind){ const owned=(e&&e.owned)||[]; const pick=(e&&e.
   const id=pick[kind]; if(!id)return null; if(owned.indexOf(id)<0)return null; return cosmeticById(id); }
 const KIND_TITLE={frame:'Marcos',effect:'Auras / fondos brillantes',shine:'Destellos',accessory:'Accesorios visuales',bg:'Fondos de carta',msg:'Estilo de mensajes'};
 const KIND_ORDER=['frame','effect','shine','accessory','bg','msg'];
+
+/* ═══ LA RAREZA DE LA CARTA · sale de TODO lo que traes puesto ═══════════════
+   Carlos: "mi carta es marcada como normal pero tengo puros accesorios
+   rarísimos, así que ponle que también eso afecte la rareza general".
+
+   Tenía razón y la causa era estrecha: la carta miraba SÓLO el marco y el
+   fondo (`frCos ? … : bgCos ? … : null`). Quien tuviera un Diamante Rosa en
+   destellos y un Mítico en accesorios seguía saliendo "NUEVO", porque esos dos
+   tipos no se consultaban. La carta estaba juzgando con dos de los seis cajones.
+
+   Ahora mira los seis, y con dos reglas:
+
+   1. **Manda la mejor pieza.** Una sola pieza altísima ya distingue la carta;
+      no tiene sentido castigarte por no haber completado el juego.
+   2. **El CONJUNTO suma.** Traer tres o más piezas del mismo rango alto sube un
+      peldaño más. Reunir un ajuar completo es más difícil que sacarse una sola
+      pieza, y la carta debería notarlo — que es justo lo que Carlos está
+      describiendo cuando dice "puros accesorios rarísimos". */
+function rarezaDeCarta(e){
+  const puestas = KIND_ORDER.map(k => equippedByKind(e, k)).filter(Boolean);
+  if(!puestas.length) return null;
+  const rs = puestas.map(c => RARITY[c.rarity] || RARITY.comun)
+                    .sort((a,b) => b.tier - a.tier);
+  const mejor = rs[0];
+  // "Del mismo rango alto" = dentro de tres peldaños de la mejor. Sin ese
+  // margen, un ajuar de Rubí + Amatista + Legendario no contaría como conjunto
+  // sólo porque no son idénticos.
+  const acompañan = rs.filter(r => r.tier >= mejor.tier - 3).length;
+  const objetivo = Math.min(20, mejor.tier + (acompañan >= 3 ? 1 : 0));
+  // Se busca la rareza que ocupa ese peldaño. Si el bono se pasa del tope, se
+  // queda en la mejor que sí exista.
+  for(const k in RARITY) if(RARITY[k].tier === objetivo) return RARITY[k];
+  return mejor;
+}
 /* ═════════ 3 TIPOS DE SOBRE (item pedido) — sencillo/avanzado/armado ═════════
    Cada uno tiene precio en monedas y un "boost" que sesga la rareza hacia
    arriba: reducimos los weights de las rarezas comunes y subimos los de las
@@ -4922,7 +4987,10 @@ function drawCardCanvas(cb){
   const cssVal=(v)=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#35c2cf';
   const col=cssVal(cvar); const rating=avg?Math.max(45,Math.min(99,Math.round(48+avg.ppg*2.6-avg.fpg*1.5))):null;
   const e=(userData()||{}).econ||{}; const frCos=equippedByKind(e,'frame'); const bgCos=equippedByKind(e,'bg'); const acCos=equippedByKind(e,'accessory');
-  const rInfo=frCos?RARITY[frCos.rarity]:(bgCos?RARITY[bgCos.rarity]:null);
+  // Antes: `frCos ? … : bgCos ? … : null` — sólo marco y fondo. Un ajuar de
+  // destellos y accesorios rarísimos salía sin rango. Ahora mira los seis
+  // cajones, igual que la carta de pantalla.
+  const rInfo=rarezaDeCarta(e)||(frCos?RARITY[frCos.rarity]:(bgCos?RARITY[bgCos.rarity]:null));
   const rareCol=rInfo?rInfo.c:col; const rareName=rInfo?rInfo.t.toUpperCase():(rating>=90?'LEGENDARIO':rating>=80?'ÉPICO':rating>=70?'ORO':rating>=60?'PLATA':'NUEVO');
   const W=900,H=1200; const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const x=cv.getContext('2d');
   // fondo cinemático
@@ -5183,7 +5251,17 @@ function renderCard(){
   if(avg){
     // GENERAL simple derivado del promedio de puntos + eficiencia
     const rating=Math.max(45,Math.min(99,Math.round(48+avg.ppg*2.6-avg.fpg*1.5)));
-    const tier = rating>=90?['LEGENDARIO','#e8b13e','#ff9a5a']: rating>=80?['ÉPICO','#a774f0','#c79bff']: rating>=70?['ORO','#e8b13e','#ffca6a']: rating>=60?['PLATA','#c7cdd8','#eef2f8']:['BRONCE','#c88a4a','#e0a566'];
+    /* EL RANGO DE LA CARTA. Sale de lo que JUEGAS y de lo que TRAES PUESTO, y
+       manda el que esté más arriba. Antes salía sólo del promedio de puntos,
+       así que un jugador con un ajuar de Diamante Rosa seguía marcado como
+       "BRONCE" — que es lo que Carlos reportó. Los dos caminos cuentan porque
+       las dos cosas cuestan: uno se gana jugando y el otro juntando. */
+    const porJuego = rating>=90?['LEGENDARIO','#e8b13e','#ff9a5a']: rating>=80?['ÉPICO','#a774f0','#c79bff']: rating>=70?['ORO','#e8b13e','#ffca6a']: rating>=60?['PLATA','#c7cdd8','#eef2f8']:['BRONCE','#c88a4a','#e0a566'];
+    const tierJuego = rating>=90?14: rating>=80?8: rating>=70?7: rating>=60?5:4;   // peldaños de la escalera
+    const porAjuar = rarezaDeCarta(econ());
+    const tier = (porAjuar && porAjuar.tier > tierJuego)
+      ? [porAjuar.t.toUpperCase(), porAjuar.c, porAjuar.c]
+      : porJuego;
     const ovc=document.getElementById('fcOv'); if(ovc)ovc.innerHTML='<b>'+rating+'</b><small>GENERAL</small>';
     const rk=document.getElementById('fcRank'); if(rk){ rk.textContent='◆ '+tier[0]; rk.style.background='linear-gradient(90deg,'+tier[1]+','+tier[2]+')'; }
     const stx=document.getElementById('fcStats'); if(stx)stx.innerHTML=
@@ -5386,6 +5464,11 @@ document.addEventListener('error',function(e){ const t=e.target;
 buildModes();
 stampBrand();
 </script>
+
+<!-- La liga de demostración va en archivo APARTE, no dentro del monolito: así
+     se lee de un vistazo, se revisa sin bucear entre 5,400 líneas, y el día que
+     estorbe se borra el archivo y la línea. -->
+<script src="demo.js" defer></script>
 
 </body>
 </html>
