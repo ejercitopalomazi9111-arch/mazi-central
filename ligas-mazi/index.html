@@ -769,6 +769,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .gc-track{display:flex;height:100%;align-items:center;will-change:transform}
 .gc-cell{flex:0 0 88px;width:88px;margin:0 4px;height:108px;border-radius:11px;background:rgba(255,255,255,.02);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.07);transition:transform .3s,box-shadow .3s}
 .gc-cell.win{transform:scale(1.06);border-color:var(--rc);box-shadow:0 0 0 2px var(--rc),0 0 22px var(--rc)}
+@keyframes cosBarre{0%{transform:translateX(-40%) rotate(var(--ang,20deg))}100%{transform:translateX(760%) rotate(var(--ang,20deg))}}
+@keyframes cosFlota{0%,100%{transform:translateY(0) scale(1);opacity:.85}50%{transform:translateY(-4px) scale(1.12);opacity:1}}
+/* La previa del rayo barre de izquierda a derecha; el giro va en el estilo en
+   linea de cada franja, asi que aqui solo se mueve. */
+@keyframes cosBarreSimple{0%{left:-60%}100%{left:120%}}
 .gc-prev{width:46px;height:62px;border-radius:9px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
 .gc-nm{font-size:9.5px;color:#aeb6c6;text-align:center;line-height:1.12;padding:0 3px;max-width:84px}
 .gc-ptr{position:absolute;left:50%;transform:translateX(-50%);width:0;height:0;z-index:4;filter:drop-shadow(0 0 4px rgba(0,0,0,.5))}
@@ -1411,6 +1416,13 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       </div>
 
       <div class="fc-panel" id="fc-vitrina">
+        <!-- LOS ACCESORIOS, DESDE LA CARTA.
+             Carlos: "desde el apartado de mi carta debo poder poner y quitar
+             los accesorios". Antes sólo se podía desde el gachapón, que es
+             donde se GANAN — no donde se usan. Lo arma renderCard(). -->
+        <div id="fcCos"></div>
+
+        <div class="eyebrow" style="margin:16px 2px 6px;color:var(--muted)">Vitrina</div>
         <div class="medals" style="padding:2px 0 8px">
           <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-trophy"/></svg></div><small>Campeón Apertura</small></div>
           <div class="medal"><div class="m gold"><svg class="ic"><use href="#ic-star"/></svg></div><small>MVP jornada</small></div>
@@ -2555,33 +2567,72 @@ function buildLogros(){
   box.innerHTML=h;
 }
 /* ===== Gachapón: efectos y accesorios de carta por rareza ===== */
-/* ===== RAREZAS — plan original: 11 rangos, del bronce al dark matter =====
-   'w' = peso relativo del muestreo (probabilidad ≈ w / suma_de_w). Los rangos
-   raros de verdad casi no salen: dark matter ~0.15%, galaxy opal ~0.4%. */
-/* 20 RAREZAS: 9 "clásicas" (comun → leyenda) + 11 "gemas" (bronce → dark matter).
-   Cada una tiene 'tier' 1-11: mayor tier = más raro y feedback más aparatoso. */
+/* ═══ RAREZAS · UNA SOLA ESCALERA ═══════════════════════════════════════════
+   Aquí había DOS sistemas pegados con cinta —el propio comentario lo decía:
+   "9 clásicas + 11 gemas"— y cada uno traía su propio 'tier' del 1 al 9. O sea
+   que había dos rarezas distintas empatadas en cada peldaño, con pesos que no
+   se hablaban entre sí. El resultado que vio Carlos:
+
+     Leyenda (w 0.08) salía MÁS RARA que Diamante Rosa (w 0.2)
+
+   ...cuando Diamante Rosa es de las de más arriba. No era un número mal
+   puesto: eran dos escaleras compitiendo por el mismo edificio.
+
+   Ahora es UNA sola de 20 peldaños con todos los términos, `tier` es la
+   POSICIÓN en esa escalera (1 = lo más común, 20 = lo más raro) y el peso baja
+   siempre. Dos reglas que no se rompen:
+
+     · Ningún tier se repite.
+     · w[i] > w[i+1] SIEMPRE. Si algún día se edita esta tabla y un peso queda
+       más alto que el de abajo, la escalera vuelve a mentir. Hay una prueba
+       más abajo que lo grita en consola.
+
+   'w' = peso del muestreo (probabilidad ≈ w / suma de w). */
 const RARITY={
-  comun:         {t:'Común',          c:'#8b93a3', w:32,   tier:1},
-  poco_comun:    {t:'Poco Común',     c:'#69c1a4', w:16,   tier:2},
-  raro:          {t:'Raro',           c:'#35c2cf', w:9,    tier:3},
-  super_raro:    {t:'Súper Raro',     c:'#5b8cff', w:5,    tier:4},
-  epico:         {t:'Épico',          c:'#a774f0', w:2.5,  tier:5},
-  mega_epico:    {t:'Mega Épico',     c:'#c150ff', w:1.2,  tier:6},
-  legendario:    {t:'Legendario',     c:'#e8b13e', w:0.5,  tier:7},
-  mitico:        {t:'Mítico',         c:'#ff5a8a', w:0.25, tier:8},
-  leyenda:       {t:'Leyenda',        c:'#ffd15a', w:0.08, tier:9},
-  bronce:        {t:'Bronce',         c:'#c88a4a', w:22,   tier:1},
-  plata:         {t:'Plata',          c:'#c7cdd8', w:13,   tier:2},
-  oro:           {t:'Oro',            c:'#e8b13e', w:7,    tier:3},
-  esmeralda:     {t:'Esmeralda',      c:'#2ecf8e', w:3.5,  tier:4},
-  zafiro:        {t:'Zafiro',         c:'#5b8cff', w:2,    tier:5},
-  rubi:          {t:'Rubí',           c:'#e94a5a', w:1.1,  tier:6},
-  amatista:      {t:'Amatista',       c:'#a774f0', w:0.7,  tier:7},
-  diamante:      {t:'Diamante',       c:'#bfe9ff', w:0.4,  tier:8},
-  diamante_rosa: {t:'Diamante Rosa',  c:'#ff8fd8', w:0.2,  tier:9},
-  galaxy_opal:   {t:'Galaxy Opal',    c:'#8f5cff', w:0.075,tier:10},
-  dark_matter:   {t:'Dark Matter',    c:'#161826', w:0.025,tier:11},
+  comun:         {t:'Común',          c:'#8b93a3', w:30,    tier:1},
+  poco_comun:    {t:'Poco Común',     c:'#69c1a4', w:19,    tier:2},
+  raro:          {t:'Raro',           c:'#35c2cf', w:12,    tier:3},
+  bronce:        {t:'Bronce',         c:'#c88a4a', w:9,     tier:4},
+  plata:         {t:'Plata',          c:'#c7cdd8', w:6.5,   tier:5},
+  super_raro:    {t:'Súper Raro',     c:'#5b8cff', w:4.6,   tier:6},
+  oro:           {t:'Oro',            c:'#e8b13e', w:3.3,   tier:7},
+  epico:         {t:'Épico',          c:'#a774f0', w:2.3,   tier:8},
+  esmeralda:     {t:'Esmeralda',      c:'#2ecf8e', w:1.6,   tier:9},
+  mega_epico:    {t:'Mega Épico',     c:'#c150ff', w:1.1,   tier:10},
+  zafiro:        {t:'Zafiro',         c:'#4f7dff', w:0.75,  tier:11},
+  rubi:          {t:'Rubí',           c:'#e94a5a', w:0.50,  tier:12},
+  amatista:      {t:'Amatista',       c:'#b47cff', w:0.33,  tier:13},
+  legendario:    {t:'Legendario',     c:'#f0a92e', w:0.22,  tier:14},
+  mitico:        {t:'Mítico',         c:'#ff5a8a', w:0.14,  tier:15},
+  diamante:      {t:'Diamante',       c:'#bfe9ff', w:0.09,  tier:16},
+  leyenda:       {t:'Leyenda',        c:'#ffd15a', w:0.055, tier:17},
+  diamante_rosa: {t:'Diamante Rosa',  c:'#ff8fd8', w:0.032, tier:18},
+  galaxy_opal:   {t:'Galaxy Opal',    c:'#8f5cff', w:0.014, tier:19},
+  dark_matter:   {t:'Dark Matter',    c:'#2b2140', w:0.005, tier:20},
 };
+
+/* POMPA — qué tan aparatoso es el festejo, del 1 al 5.
+   Va aparte del `tier` a propósito. Antes el código comparaba `tier>=7` para
+   decidir si sacaba confeti, y con la escalera vieja de 9 peldaños eso tenía
+   sentido; con veinte, TODO habría salido con confeti y el premio gordo dejaba
+   de sentirse gordo. La pompa reparte los veinte peldaños en cinco bandas, así
+   que la escalera puede crecer sin volver a tocar un solo umbral. */
+const POMPA = (tier) => tier<=4 ? 1 : tier<=8 ? 2 : tier<=12 ? 3 : tier<=16 ? 4 : 5;
+
+/* La prueba que impide que esto vuelva a mentir. Corre al cargar y no cuesta
+   nada; si alguien edita la tabla y rompe el orden, sale en consola en vez de
+   salir en la cara de un jugador tres semanas después. */
+(function pruebaEscalera(){
+  const ks=Object.keys(RARITY).sort((a,b)=>RARITY[a].tier-RARITY[b].tier);
+  const tiers=ks.map(k=>RARITY[k].tier);
+  const dup=tiers.filter((v,i)=>tiers.indexOf(v)!==i);
+  if(dup.length) console.error('RAREZAS: tiers repetidos →', dup);
+  for(let i=1;i<ks.length;i++){
+    if(RARITY[ks[i]].w >= RARITY[ks[i-1]].w)
+      console.error('RAREZAS: "'+ks[i]+'" (tier '+RARITY[ks[i]].tier+') no es más raro que "'
+                    +ks[i-1]+'". Pesos: '+RARITY[ks[i]].w+' vs '+RARITY[ks[i-1]].w);
+  }
+})();
 /* Cosméticos: 6 categorías, con animaciones y overlays reales sobre la carta.
    kind:
      frame  = borde/marco (algunos ANIMADOS con la anim de RARITY_ANIM abajo)
@@ -2754,15 +2805,15 @@ function flavorOf(cos){ if(cos.flavor)return cos.flavor;
         if(COSMETICS.some(c=>c.id===id))continue;
         const c=rInfo.c; const soft=c+'55'; const dim=c+'22';
         const entry={id, t:nm, kind, rarity:rk};
-        if(kind==='frame'){ entry.css='box-shadow:inset 0 0 0 3px '+c+',inset 0 0 22px '+soft; if(rInfo.tier>=5)entry.anim='anmFramePulseGen'; }
-        else if(kind==='effect'){ entry.css='box-shadow:0 0 30px '+soft; if(rInfo.tier>=6)entry.anim='anmPulseGen'; }
-        else if(kind==='shine'){ entry.color=c; entry.speed=(2.6-Math.min(1.4, rInfo.tier*0.15))+'s'; entry.angle=16+i*2; if(i%3===0)entry.doble=true; if(i%4===0)entry.prisma=true; }
+        if(kind==='frame'){ entry.css='box-shadow:inset 0 0 0 3px '+c+',inset 0 0 22px '+soft; if(POMPA(rInfo.tier)>=2)entry.anim='anmFramePulseGen'; }
+        else if(kind==='effect'){ entry.css='box-shadow:0 0 30px '+soft; if(POMPA(rInfo.tier)>=3)entry.anim='anmPulseGen'; }
+        else if(kind==='shine'){ entry.color=c; entry.speed=(2.6-Math.min(1.4, POMPA(rInfo.tier)*0.30))+'s'; entry.angle=16+i*2; if(i%3===0)entry.doble=true; if(i%4===0)entry.prisma=true; }
         else if(kind==='accessory'){
           const em=['⭐','✨','💫','🎯','🏀','🌟','🔥','⚡','🌸','💎','☄️','🦇','🌙','☀','🎖','🏵','💠','🌀','🌊','🍀'][i%20];
           entry.emoji=em; entry.pos=['tl','tr','bl','br','scatter','fall','sides'][i%7];
-          if(rInfo.tier>=5){ entry.count=2+(i%3); entry.anim=['anmTwinkle','anmFlock','anmFall','anmOrbit'][i%4]; }
+          if(POMPA(rInfo.tier)>=2){ entry.count=2+(i%3); entry.anim=['anmTwinkle','anmFlock','anmFall','anmOrbit'][i%4]; }
         }
-        else if(kind==='bg'){ entry.css='background:radial-gradient(circle at 50% 30%,'+soft+',transparent 60%),linear-gradient(180deg,'+dim+',#04060a)'; if(rInfo.tier>=7)entry.anim='anmSparkleGen'; }
+        else if(kind==='bg'){ entry.css='background:radial-gradient(circle at 50% 30%,'+soft+',transparent 60%),linear-gradient(180deg,'+dim+',#04060a)'; if(POMPA(rInfo.tier)>=4)entry.anim='anmSparkleGen'; }
         COSMETICS.push(entry); need--;
       }
     });
@@ -2789,9 +2840,9 @@ const SFX={ctx:null,mute:false,vol:0.5,
     src.start(t); },
   tick(){ this.tone(1400+Math.random()*100, 0.03, {type:'square',vol:0.15,attack:0.001}); },
   ping(tier){ const base=520+(tier||1)*40; this.tone(base, 0.18, {type:'sine',vol:0.5}); this.tone(base*1.5, 0.22, {type:'sine',vol:0.35,attack:0.02}); },
-  cheer(tier){ tier=tier||3; const notes=tier>=7?[523,659,784,988,1319]:tier>=5?[523,659,784,988]:tier>=3?[523,659,784]:[523,659];
+  cheer(tier){ const p=POMPA(tier||1); const notes=p>=5?[523,659,784,988,1319]:p>=4?[523,659,784,988]:p>=2?[523,659,784]:[523,659];
     notes.forEach((f,i)=>setTimeout(()=>{ this.tone(f,0.35,{type:'triangle',vol:0.55,attack:0.01}); this.tone(f*2,0.30,{type:'sine',vol:0.25,attack:0.02}); }, i*70));
-    if(tier>=7) setTimeout(()=>this.noise(0.4,{vol:0.15,freq:5000,q:0.8}), notes.length*70+60); },
+    if(p>=5) setTimeout(()=>this.noise(0.4,{vol:0.15,freq:5000,q:0.8}), notes.length*70+60); },
   score(pts){ const base=pts===3?880:pts===2?720:600; this.tone(base,0.12,{type:'triangle',vol:0.5}); this.tone(base*1.5,0.15,{type:'sine',vol:0.3,attack:0.02}); },
   foul(){ this.tone(380,0.14,{type:'sawtooth',vol:0.4}); this.tone(280,0.20,{type:'sawtooth',vol:0.3}); },
   whistle(){ this.tone(1600,0.15,{type:'sine',vol:0.5}); this.tone(1900,0.12,{type:'sine',vol:0.35,attack:0.03}); },
@@ -2997,7 +3048,7 @@ function buildGacha(){
       h+='<div class="eyebrow" style="margin:14px 2px 6px;color:var(--muted)">'+(KIND_TITLE[kind]||kind)+'</div>';
       h+='<div class="cosgrid">';
       byKind[kind].forEach(c=>{ const r=RARITY[c.rarity]||RARITY.comun; const on=(e.equipped&&e.equipped[kind])===c.id;
-        h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" style="--rc:'+r.c+'"><span class="cos-prev" style="'+(c.css||'')+'"></span><span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+(c.daily_only?' · diario':'')+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>';
+        h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" style="--rc:'+r.c+'">'+previewCos(c, 78, 104)+'<span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+(c.daily_only?' · diario':'')+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>';
       });
       h+='</div>';
     });
@@ -3073,19 +3124,81 @@ function pickRevealAnim(tier){
   const easy=['rc-anm-fadeIn','rc-anm-zoom','rc-anm-flip','rc-anm-drop'];
   const mid=['rc-anm-spin','rc-anm-flip','rc-anm-glitch'];
   const hard=['rc-anm-supernova','rc-anm-emerge','rc-anm-spin'];
-  const pool = tier>=7?hard : (tier>=4?mid : easy);
+  const pool = POMPA(tier)>=5?hard : (POMPA(tier)>=3?mid : easy);
   return pool[Math.floor(Math.random()*pool.length)];
 }
-function cosPreviewHTML(c,size){ size=size||140; const bg=c.css||'background:linear-gradient(160deg,#232c44,#10162a)';
-  const inner=(c.kind==='accessory'&&c.emoji)?('<span style="font-size:'+(size*0.55)+'px">'+c.emoji+'</span>'):'';
-  return '<div style="width:'+size+'px;height:'+(c.kind==='shine'?(size*0.7):size)+'px;border-radius:14px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;'+bg+'" class="'+(c.anim||'')+'">'+inner+'</div>'; }
+/* ═══ LA VISTA PREVIA DE UN COSMÉTICO ═══════════════════════════════════════
+   Carlos: "los showcase de lo que te tocó, especialmente en los RAYOS, se ve
+   fatal". Y tenía razón, con causa exacta:
+
+     `style="'+(c.css||'')+'"`
+
+   Los rayos son de tipo `shine` y NO tienen `css`: se describen con `color`,
+   `speed`, `angle`, `doble` y `prisma`. Así que caían al degradado vacío y el
+   catálogo entero de rayos eran cajitas azules idénticas. No se veía "fatal"
+   por gusto: no se estaba dibujando nada.
+
+   Esta función sabe pintar los cinco tipos, y es la ÚNICA que pinta previas —
+   antes había dos sitios copiando el mismo error. */
+function previewCos(c, size, alto){
+  size = size || 46;
+  alto = alto || Math.round(size * 1.35);
+  const base = 'position:relative;overflow:hidden;border-radius:9px;display:flex;'
+             + 'align-items:center;justify-content:center;width:'+size+'px;height:'+alto+'px;';
+  const r = (RARITY[c.rarity] || RARITY.comun);
+
+  // El fondo de la previa lleva el color de la rareza: aunque el cosmético sea
+  // un rayo blanco, la cajita ya dice de qué peldaño es.
+  const lienzo = c.css || ('background:linear-gradient(160deg,'+r.c+'22,#10162a 70%)');
+
+  let dentro = '';
+
+  if (c.kind === 'shine') {
+    // El rayo, de verdad: una franja diagonal que barre. `doble` echa una
+    // segunda desfasada; `prisma` la vuelve arcoíris.
+    const franja = (retardo, ancho) =>
+      '<i style="position:absolute;top:-40%;bottom:-40%;left:-60%;width:'+ancho+'px;'
+      + 'background:'+(c.prisma
+          ? 'linear-gradient(90deg,transparent,#ff5aa0,#ffd15a,#35c2cf,transparent)'
+          : 'linear-gradient(90deg,transparent,'+(c.color||'#fff')+',transparent)')+';'
+      // Ojo: la animación mueve `left`, NO `transform`. El giro vive en el
+      // transform en línea, y una animación sobre `transform` lo pisaría y
+      // dejaría la franja recta — que es justo lo que no se quiere.
+      + 'transform:rotate('+(c.angle||20)+'deg);'
+      + 'animation:cosBarreSimple '+(c.speed||'2.2s')+' linear '+retardo+' infinite;'
+      + 'filter:blur('+(c.jitter?0.4:1.2)+'px)"></i>';
+    dentro = franja('0s', Math.max(8, size*0.22)) + (c.doble ? franja('-.9s', Math.max(5, size*0.14)) : '');
+  }
+  else if (c.kind === 'accessory' && c.emoji) {
+    // Los accesorios se enseñan con su cuenta real, no con uno suelto: si el
+    // cosmético echa seis pétalos, la previa echa seis.
+    const n = Math.min(c.count || 3, 6);
+    for (let i = 0; i < n; i++) {
+      const x = 12 + (i * 76 / Math.max(1, n - 1 || 1)), y = 18 + ((i * 37) % 60);
+      dentro += '<span style="position:absolute;left:'+x+'%;top:'+y+'%;'
+              + 'font-size:'+Math.round(size*0.30)+'px;line-height:1;'
+              + 'animation:cosFlota '+(1.8 + i*0.25)+'s ease-in-out '+(i*0.18)+'s infinite">'
+              + c.emoji + '</span>';
+    }
+  }
+  else if (c.kind === 'frame' || c.kind === 'effect') {
+    // Marcos y auras van sobre una silueta de carta: un marco sobre nada no se
+    // lee como marco.
+    dentro = '<i style="position:absolute;inset:16%;border-radius:5px;'
+           + 'background:linear-gradient(160deg,#1b2338,#0b1020)"></i>';
+  }
+
+  return '<span class="'+(c.anim||'')+'" style="'+base+lienzo+'">'+dentro+'</span>';
+}
+/* Se conserva el nombre viejo por si algo más lo llama, apuntando al bueno. */
+function cosPreviewHTML(c,size){ return previewCos(c, size||140, c.kind==='shine'?Math.round((size||140)*0.7):(size||140)); }
 /* SHOWCASE del premio — "primera plana" (item pedido) */
 let _revealCos=null;
 function openReveal(cos,dup){
   _revealCos=cos; const bg=document.getElementById('revealBg'); if(!bg)return;
   const r=RARITY[cos.rarity]||RARITY.comun;
   bg.style.setProperty('--rc', r.c);
-  document.getElementById('revealTitle').textContent=(r.tier>=7?'¡ES DE COLECCIÓN!':(r.tier>=4?'¡Nuevo cosmético!':'Añadido a tu colección'));
+  document.getElementById('revealTitle').textContent=(POMPA(r.tier)>=5?'¡ES DE COLECCIÓN!':(POMPA(r.tier)>=3?'¡Nuevo cosmético!':'Añadido a tu colección'));
   const bd=document.getElementById('revealBadge'); if(bd){ bd.textContent='◆ '+r.t; bd.style.color=r.c; }
   document.getElementById('revealNm').textContent=cos.t;
   document.getElementById('revealFl').textContent='"'+flavorOf(cos)+'"';
@@ -3096,11 +3209,18 @@ function openReveal(cos,dup){
   void card.offsetWidth; card.classList.add(pickRevealAnim(r.tier));
   bg.classList.add('on');
   SFX.cheer(r.tier||1);
-  if(r.tier>=5){ setTimeout(()=>{ const rect=card.getBoundingClientRect(); const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-    for(let i=0;i<Math.min(60, r.tier*8); i++){ setTimeout(()=>sparkleBurst(cx+(Math.random()*80-40), cy+(Math.random()*80-40), r.c, 1), i*15); } }, 200); }
-  try{ if(navigator.vibrate)navigator.vibrate(r.tier>=7?[30,50,80,50,120]:(r.tier>=4?[20,40,60]:25)); }catch(x){}
+  if(POMPA(r.tier)>=3){ setTimeout(()=>{ const rect=card.getBoundingClientRect(); const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    for(let i=0;i<Math.min(90, POMPA(r.tier)*22); i++){ setTimeout(()=>sparkleBurst(cx+(Math.random()*80-40), cy+(Math.random()*80-40), r.c, 1), i*15); } }, 200); }
+  try{ if(navigator.vibrate)navigator.vibrate(POMPA(r.tier)>=5?[30,50,80,50,120]:(POMPA(r.tier)>=3?[20,40,60]:25)); }catch(x){}
 }
-function closeReveal(){ const bg=document.getElementById('revealBg'); if(bg)bg.classList.remove('on'); _revealCos=null; }
+function closeReveal(){
+  const bg=document.getElementById('revealBg'); if(bg)bg.classList.remove('on');
+  _revealCos=null;
+  // Cerrar el premio es lo que libera el gachapón y redibuja. Antes lo hacía
+  // un temporizador y por eso el premio se iba solo.
+  _gcSpinning=false;
+  if(curScreen==='gacha') buildGacha();
+}
 function revealApply(){ if(!_revealCos)return; applyCosmetic(_revealCos.id); closeReveal(); }
 /* Ruleta CSGO-style: tics por slot que pasa por el centro + ping al detenerse + showcase */
 function spinCarousel(winner,dup,pInfo){
@@ -3109,7 +3229,7 @@ function spinCarousel(winner,dup,pInfo){
   const CELL=96, WIN_AT=42;
   const cells=[]; for(let i=0;i<WIN_AT+9;i++){ cells.push(i===WIN_AT?winner:COSMETICS[Math.floor(Math.random()*COSMETICS.length)]); }
   let html='<div class="gacha-carousel" id="gcWrap"><div class="gc-seam"></div><div class="gc-ptr top"></div><div class="gc-ptr bot"></div><div class="gc-track" id="gcTrack">';
-  cells.forEach(c=>{ const r=RARITY[c.rarity]||RARITY.comun; html+='<div class="gc-cell" style="--rc:'+r.c+'"><span class="gc-prev" style="'+(c.css||'')+'"></span><span class="gc-nm">'+c.t+'</span></div>'; });
+  cells.forEach(c=>{ const r=RARITY[c.rarity]||RARITY.comun; html+='<div class="gc-cell" style="--rc:'+r.c+'">'+previewCos(c, 46, 62)+'<span class="gc-nm">'+c.t+'</span></div>'; });
   html+='</div></div><div class="gacha-cap" id="gachaCap">'+((pInfo&&pInfo.t)?('Sobre '+pInfo.t+' — girando…'):'Girando…')+'</div>';
   stage.innerHTML=html;
   const wrap=document.getElementById('gcWrap'), track=document.getElementById('gcTrack');
@@ -3131,15 +3251,41 @@ function spinCarousel(winner,dup,pInfo){
     SFX.ping(r.tier||1);
   }, SPIN_MS+40);
   setTimeout(()=>{ openReveal(winner, dup); }, SPIN_MS+340);
-  setTimeout(()=>{ _gcSpinning=false; buildGacha(); }, SPIN_MS+2200);
+
+  /* EL PREMIO YA NO SE VA SOLO.
+     ─────────────────────────────────────────────────────────────────────
+     Aquí había un `buildGacha()` a los 1.9 s de abrir el premio, y
+     `buildGacha` REDIBUJA la pantalla entera. O sea que el sobre se abría, te
+     enseñaba lo que te tocó, y menos de dos segundos después se reconstruía
+     todo debajo. Eso es exactamente lo que Carlos reportó: "al abrir 3 sobres
+     se cierra muy rápido y no alcanzo a ver".
+
+     Un premio no se cierra solo. Se cierra cuando el jugador lo cierra —
+     ahora `closeReveal()` es quien libera el giro y redibuja. El temporizador
+     que queda es sólo un seguro por si el premio nunca llegó a abrirse
+     (pestaña en segundo plano, por ejemplo); si el premio está en pantalla,
+     no toca nada. */
+  setTimeout(()=>{
+    const bg=document.getElementById('revealBg');
+    if(bg && bg.classList.contains('on')) return;   // está viéndolo: no estorbar
+    _gcSpinning=false; buildGacha();
+  }, SPIN_MS+2200);
 }
 /* Aplica un cosmético en su categoría (una activa por tipo). Toca dos veces = lo quita. */
 function applyCosmetic(id){ const e=econ(); const c=cosmeticById(id); if(!c)return;
   e.equipped=e.equipped||{}; const cur=e.equipped[c.kind]; e.equipped[c.kind]=(cur===id)?null:id;
   // compat con el campo viejo 'effect'
   const anyOn=e.equipped[c.kind]; e.effect=anyOn||null;
-  saveEcon(e); buildGacha(); flashSaved(anyOn?(c.t+' aplicado ✓'):(c.t+' quitado'));
-  try{ if(document.getElementById('s-carta')&&document.getElementById('s-carta').classList.contains('on'))renderCard(); }catch(x){}
+  saveEcon(e);
+  // `buildGacha` sólo si estamos EN el gachapón: llamarlo desde la carta
+  // redibujaba una pantalla que nadie está viendo, y de paso perdía el scroll.
+  if(curScreen==='gacha'){ try{ buildGacha(); }catch(x){} }
+  flashSaved(anyOn?(c.t+' aplicado ✓'):(c.t+' quitado'));
+  try{
+    if(document.getElementById('s-carta')&&document.getElementById('s-carta').classList.contains('on')){
+      applyCardCosmetics(); buildCardCosmetics();
+    }
+  }catch(x){}
 }
 /* ===== Bandeja de notificaciones e invitaciones ===== */
 const NOTE_ICON={logro:['star','--liga'],partido:['flag','--mesa'],hijo:['heart','--papa'],invite:['people','--liga'],request:['people','--coach'],info:['card','--publico']};
@@ -4764,6 +4910,27 @@ function drawCardCanvas(cb){
       const vg=x.createLinearGradient(0,py+ph*0.5,0,py+ph); vg.addColorStop(0,'transparent'); vg.addColorStop(1,'rgba(4,5,10,.95)'); x.fillStyle=vg; x.fillRect(px,py+ph*0.5,pw,ph*0.5);
       x.restore(); }
     else { x.fillStyle=rareCol; x.font='900 300px -apple-system,sans-serif'; x.textAlign='center'; x.fillText(iniOf(u.name||'?'),W/2,py+ph/2+100); }
+    /* EL FOIL · los rayos, otra vez, pero ENCIMA de la foto.
+       ─────────────────────────────────────────────────────────────────────
+       Carlos: "la foto de la carta queda arriba de los rayos y efectos". Era
+       literal: los rayos se dibujaban al principio y la foto, que ocupa el 69%
+       del ancho, los tapaba enteros. Sólo quedaban los cachitos del borde.
+
+       Así que van dos pasadas, que además es como funciona una carta de
+       verdad: el fondo abajo y el FOIL encima, en modo `lighten` para que
+       aclare la foto sin borrarla. Cuanto más raro, más se nota. */
+    x.save();
+    x.globalCompositeOperation='lighten';
+    x.globalAlpha = 0.05 + POMPA(rInfo?rInfo.tier:1) * 0.035;
+    x.translate(W/2, H*0.35);
+    for(let i=0;i<12;i++){
+      x.rotate(Math.PI/6);
+      const g2=x.createLinearGradient(0,0,W*0.8,0);
+      g2.addColorStop(0,rareCol); g2.addColorStop(.55,rareCol+'55'); g2.addColorStop(1,'transparent');
+      x.fillStyle=g2; x.fillRect(0,-14,W*0.8,28);
+    }
+    x.restore();
+
     // marco por rareza sobre la foto
     x.save(); x.strokeStyle=rareCol; x.lineWidth=frCos?9:5; x.shadowColor=rareCol; x.shadowBlur=frCos?24:12;
     roundRect(x,px,py,pw,ph,26,false,true); x.restore();
@@ -4883,10 +5050,71 @@ function applyCardCosmetics(){
     }
   }
 }
+/* ═══ PONER Y QUITAR ACCESORIOS DESDE LA CARTA ══════════════════════════════
+   Los cosméticos se GANAN en el gachapón, pero se USAN aquí. Tenerlos sólo en
+   la tienda es como guardar la ropa en la tienda donde la compraste.
+
+   Una fila por categoría con lo que ya tienes. Tocar equipa; tocar lo que ya
+   está puesto lo QUITA — `applyCosmetic` ya alterna, sólo faltaba la puerta.
+   Y cada categoría trae su "Ninguno", porque quitar tiene que ser tan fácil
+   como poner y no todo el mundo adivina que se destoca. */
+function buildCardCosmetics(){
+  const caja=document.getElementById('fcCos'); if(!caja)return;
+  const e=econ(); const propios=(e.owned||[]);
+  if(!propios.length){
+    caja.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">'
+      +'Todavía no tienes accesorios. Se ganan en el <b>gachapón</b> de la tienda, '
+      +'y aquí es donde te los pones.</div>';
+    return;
+  }
+  const mios=propios.map(cosmeticById).filter(Boolean);
+  let h='<div class="eyebrow" style="margin:2px 2px 8px;color:var(--muted)">Accesorios de tu carta</div>';
+
+  KIND_ORDER.forEach(kind=>{
+    const lista=mios.filter(c=>c.kind===kind);
+    if(!lista.length)return;
+    const puesto=(e.equipped||{})[kind];
+    h+='<div style="margin:0 0 14px">'
+      +'<div class="k" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;'
+      +'color:var(--dim);margin:0 2px 6px">'+(KIND_TITLE[kind]||kind)+'</div>'
+      +'<div style="display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;-webkit-overflow-scrolling:touch">';
+
+    // "Ninguno" primero: quitar es una opción de primera, no un truco.
+    h+='<button class="coscard'+(puesto?'':' on')+'" onclick="quitarCosmetico(\''+kind+'\')" '
+      +'style="--rc:#6b7383;flex:0 0 auto;min-width:92px;min-height:44px">'
+      +'<span class="cos-prev" style="display:flex;align-items:center;justify-content:center;'
+      +'width:78px;height:104px;border-radius:9px;background:#141a28;color:#6b7383;font-size:22px">✕</span>'
+      +'<span class="cos-nm">Ninguno</span></button>';
+
+    lista.forEach(c=>{
+      const r=RARITY[c.rarity]||RARITY.comun; const on=(puesto===c.id);
+      h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" '
+        +'style="--rc:'+r.c+';flex:0 0 auto;min-width:92px">'
+        + previewCos(c, 78, 104)
+        +'<span class="cos-nm">'+c.t+'</span>'
+        +'<span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'
+        +(on?'<span class="cos-on">EN USO</span>':'')
+        +'</button>';
+    });
+    h+='</div></div>';
+  });
+  caja.innerHTML=h;
+}
+function quitarCosmetico(kind){
+  const e=econ(); e.equipped=e.equipped||{};
+  if(!e.equipped[kind]){ return; }              // ya no hay nada que quitar
+  const c=cosmeticById(e.equipped[kind]);
+  e.equipped[kind]=null; e.effect=null; saveEcon(e);
+  try{ applyCardCosmetics(); }catch(x){}
+  buildCardCosmetics();
+  flashSaved((c?c.t:'Accesorio')+' quitado');
+}
+
 function renderCard(){
   const u=userData()||{}; const subj=cardSubject();
   buildCardSubjectPicker();
   applyCardCosmetics();
+  buildCardCosmetics();
   // ¿el sujeto (yo o el hij@ elegido) es un jugador registrado de la liga?
   const link=findLeaguePlayer(subj); const avg=link?playerAverages(link.player):null;
   // si no lo hallamos localmente, búscalo (una vez) en las ligas compartidas que sigue
@@ -5121,6 +5349,5 @@ buildModes();
 stampBrand();
 </script>
 
-<script src="../mazi.js" defer></script>
 </body>
 </html>
