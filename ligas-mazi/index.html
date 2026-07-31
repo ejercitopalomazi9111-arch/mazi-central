@@ -921,6 +921,30 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 @keyframes pulseTile{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
 .help-card{background:linear-gradient(160deg,rgba(30,36,54,.7),rgba(15,18,26,.7));border:1px solid var(--line);border-left:3px solid var(--liga);border-radius:12px;padding:12px 14px;margin:8px 0;font-size:13px;color:#c9cfd9;line-height:1.5}
 .help-card b{color:#fff}
+
+/* ── EL DESPLEGABLE ─────────────────────────────────────────────────────────
+   <details> nativo. La cabecera tiene 44 px de alto porque es un objetivo
+   táctil de verdad — este bug ya reapareció cuatro veces en el repo, así que
+   aquí va medido y no supuesto. */
+.plegable{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0;
+  background:rgba(255,255,255,.02)}
+.plegable>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;
+  min-height:44px;padding:0 14px;font-size:13.5px;font-weight:700;color:#fff;
+  border-left:3px solid var(--liga)}
+.plegable>summary::-webkit-details-marker{display:none}
+/* La flechita la dibujamos: el triángulo por defecto es distinto en cada
+   navegador y no se puede girar. */
+.plegable>summary::after{content:'';margin-left:auto;width:9px;height:9px;flex:0 0 auto;
+  /* En `var(--muted)` la flecha era invisible sobre el fondo de la cabecera:
+     una señal de "esto se abre" que no se ve no es una señal. */
+  border-right:2px solid #cfd6e2;border-bottom:2px solid #cfd6e2;opacity:.85;
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .22s ease}
+.plegable[open]>summary::after{transform:rotate(-135deg) translate(-3px,-3px)}
+.plegable>summary:hover{background:rgba(255,255,255,.03)}
+.plegable>summary:focus-visible{outline:2px solid var(--liga);outline-offset:-2px}
+.plegable .help-card{border:0;border-left:3px solid var(--liga);margin:0}
+.plegable .card{margin:0;border:0;border-radius:0}
+@media (prefers-reduced-motion: reduce){ .plegable>summary::after{transition:none} }
 .anmGalaxyDrift{position:relative}
 .anmGalaxyDrift::after{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 30% 40%,rgba(143,92,255,.4),transparent 40%),radial-gradient(circle at 70% 60%,rgba(53,194,207,.3),transparent 40%);animation:spin 30s linear infinite}
 .anmDarkPulse{animation:darkBreath 3s ease-in-out infinite}
@@ -2986,7 +3010,14 @@ function autoRefreshDaily(){ /* placeholder: hoy solo mantenemos coherente el es
    Nunca guardar solo el sub-objeto porque saveEcon reemplaza econ completo. */
 function _packInv(){ const e=econ(); e.packInv=e.packInv||{sencillo:0,avanzado:0,armado:0}; return e.packInv; }
 /* Explicación (item pedido: "breve explicación de qué cosas están y donde") */
-const HELP_TEXT='<div class="help-card"><b>Cómo funciona el gachapón</b><br>'+
+/* El "cómo funciona" iba SIEMPRE abierto y se comía media pantalla debajo de
+   lo único que la gente viene a hacer aquí, que es abrir sobres. Va en un
+   <details> NATIVO —no un acordeón hecho a mano— porque así abre y cierra sin
+   una línea de JavaScript, se opera con el teclado, el buscador lo lee, y si el
+   JS truena la información sigue estando ahí. Un acordeón casero no hace
+   ninguna de las cuatro. */
+const HELP_TEXT='<details class="plegable"><summary>Cómo funciona el gachapón</summary>'+
+  '<div class="help-card" style="margin-top:0;border-radius:0 0 12px 12px">'+
   '· Los <b>sobres</b> te dan cosméticos aleatorios para tu carta (marcos, brillos, accesorios, fondos).<br>'+
   '· Hay 3 sobres: <b>Sencillo</b> (básico), <b>Avanzado</b> (2× raros) y <b>Armado</b> (chance real de mítico/leyenda).<br>'+
   '· Cada rareza tiene su probabilidad (toca «Ver probabilidades» abajo).<br>'+
@@ -2996,7 +3027,7 @@ const HELP_TEXT='<div class="help-card"><b>Cómo funciona el gachapón</b><br>'+
   '· Cada día que entres reclamas monedas. La racha crece si vienes seguido.<br>'+
   '· Cada <b>3 días</b> te llevas un <b>cosmético único</b> del calendario (no sale en sobres).<br>'+
   '· Cada <b>7 días</b> un sobre Sencillo · cada <b>15</b> un Avanzado · cada <b>30</b> un Armado.<br>'+
-  '· Si dejas de entrar un día, la racha vuelve al día 1.</div>';
+  '· Si dejas de entrar un día, la racha vuelve al día 1.</div></details>';
 function buildGacha(){
   if(_gcSpinning || _openAllRunning){ return; }
   const e=econ(); const box=document.getElementById('gachaBody'); if(!box)return;
@@ -3021,8 +3052,10 @@ function buildGacha(){
   if(typeof isSuperAdmin==='function' && isSuperAdmin() && totalPacks>0){
     h+='<button class="btn sm block" style="margin-top:6px;background:var(--liga);border-color:var(--liga)" onclick="openAllPacks()">◆ Abrir los '+totalPacks+' sobres (súper admin)</button>';
   }
-  h+='<button class="btn ghost sm block" onclick="toggleRarityTable()" style="margin-top:8px">Ver probabilidades de cada rareza</button>';
-  h+='<div id="rarityTable" style="display:none;margin-top:8px"></div>';
+  // También plegable, y con las veinte rarezas dentro: abierta ocupaba media
+  // pantalla de scroll por una tabla que se consulta una vez.
+  h+='<details class="plegable" style="margin-top:8px"><summary>Probabilidades de cada rareza</summary>'
+    +'<div id="rarityTable"></div></details>';
   // RACHA DIARIA — 7 casillas
   h+='<div class="h-row" style="margin-top:16px"><h2 class="disp" style="font-size:17px">Racha diaria</h2><span class="pill" style="color:var(--liga);border-color:var(--liga)">🔥 '+daily.streak+' días</span></div>';
   h+='<div class="dailygrid">';
@@ -3054,17 +3087,22 @@ function buildGacha(){
     });
   }
   box.innerHTML=h;
+  // La tabla de probabilidades se llena AQUÍ, al construir la pantalla. Antes
+  // la llenaba el botón que la abría; con <details> ya no hay botón, así que
+  // sin esto el desplegable abriría vacío.
+  try{ toggleRarityTable(); }catch(x){}
 }
 /* Tabla de probabilidades (item pedido: "una tableta donde diga qué probabilidad tiene cada rareza de tocarte") */
+/* Ya no alterna nada: el <details> abre y cierra solo, sin JavaScript. Esto
+   sólo LLENA la tabla, y lo llama buildGacha al construir la pantalla. Se
+   conserva el nombre por si algo más lo invoca. */
 function toggleRarityTable(){ const box=document.getElementById('rarityTable'); if(!box)return;
-  const open=box.style.display!=='none';
-  if(open){ box.style.display='none'; return; }
   let h='<div class="card"><div class="kick">Probabilidad al abrir un sobre</div><div class="rprobs">';
   Object.keys(RARITY).forEach(k=>{ const r=RARITY[k], p=rarityProb(k);
     h+='<div class="rprow"><span class="rpname" style="color:'+r.c+'">'+r.t+'</span><div class="rpbar"><i style="width:'+Math.max(0.5,Math.min(100,p*2))+'%;background:'+r.c+'"></i></div><span class="rpv">'+(p>=1?p.toFixed(1):p.toFixed(2))+'%</span></div>';
   });
   h+='</div><div class="mt" style="font-size:12px;color:var(--muted);margin-top:8px">Los sobres son honestos: cada tirada se sortea con estos pesos. Puedes recibir duplicados (te dan +20 monedas).</div></div>';
-  box.innerHTML=h; box.style.display='block';
+  box.innerHTML=h;
 }
 /* SÚPER ADMIN: abrir TODOS los sobres de un jalón (item pedido). Solo visible/permitido a la cuenta suprema. */
 let _openAllRunning=false;
