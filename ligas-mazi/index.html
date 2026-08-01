@@ -835,13 +835,17 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
    centro empujó a los lados por debajo de los 56px del escudo y los cortó
    contra el borde. El simulacro lo marcó como desborde de `.fo-side` y en la
    captura se veía clarito: los escudos partidos a la mitad. */
-.faceoff{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0d1017;margin-bottom:10px;padding:16px 12px 14px;display:grid;grid-template-columns:minmax(74px,1fr) minmax(0,auto) minmax(74px,1fr);align-items:center;gap:6px;cursor:pointer}
+.faceoff{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0d1017;margin-bottom:10px;padding:16px 12px 14px;display:grid;grid-template-columns:minmax(88px,1fr) minmax(0,1.1fr) minmax(88px,1fr);align-items:center;gap:6px;cursor:pointer}
 .faceoff::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,var(--hc,#2a3350) -12%,rgba(13,16,23,.35) 40%,rgba(13,16,23,.35) 60%,var(--ac,#2a3350) 112%);opacity:.5;pointer-events:none}
 .faceoff>*{position:relative;z-index:1}
 .fo-side{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;min-width:0}
 .fo-side .crest{width:56px;height:56px;font-size:20px;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .fo-side.l .crest{transform:rotate(-6deg)}.fo-side.r .crest{transform:rotate(6deg)}
-.fo-nm{font-family:var(--body);font-weight:700;font-size:13px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* "Coyotes de Alameda" no cabía en dos renglones y salía "Coyotes de…".
+   Un equipo cortado en su propia tarjeta es de las cosas que más rápido
+   hacen sentir barata una app: es el nombre de la gente. Tres renglones y
+   una pizca menos de cuerpo, y entra completo. */
+.fo-nm{font-family:var(--body);font-weight:700;font-size:12.5px;line-height:1.2;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow-wrap:anywhere}
 .fo-mid{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px;min-width:0}
 .fo-vs{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--dim);opacity:.85}
 .fo-score{font-family:var(--disp);font-weight:800;font-size:24px;letter-spacing:.02em;white-space:nowrap}
@@ -851,10 +855,38 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .fo-when{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;line-height:1.3;min-width:0;overflow-wrap:anywhere}
 .fo-when::first-letter{text-transform:uppercase}
 /* El ID del partido: chico, legible y del tamaño del dedo para copiarlo. */
-.mid-chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-6px 0 10px;padding:0 12px;
-  background:var(--panel2);border:1px solid var(--line);border-radius:22px;cursor:pointer;
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--dim)}
-.mid-chip b{color:var(--accent-lt);font-size:12.5px;letter-spacing:.06em}
+/* El ID es un dato de APOYO, no el titular. Con la pastilla grande y el texto
+   naranja pesaba más que el lugar del partido, que es lo que de verdad se va
+   a leer. Se queda tocable (44px) pero visualmente calladito. */
+.mid-chip{display:inline-flex;align-items:center;gap:5px;min-height:44px;margin:-8px 0 10px;padding:0 10px;
+  background:transparent;border:1px solid var(--line);border-radius:22px;cursor:pointer;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--dim);opacity:.75}
+.mid-chip b{color:#cfd6e2;font-size:11px;letter-spacing:.06em;font-weight:700}
+.mid-chip:active{opacity:1}
+/* ---- Limpiar notificaciones ---- */
+.nbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.nbar .nb-n{flex:1;min-width:0;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.05em}
+.nbar .btn{width:auto;flex:0 0 auto;margin:0}
+.nbar .btn[disabled]{opacity:.4;pointer-events:none}
+.note{position:relative}
+.note.marcada{border-color:var(--liga);background:rgba(167,116,240,.12)}
+.ncheck{flex:0 0 auto;width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--liga);font-weight:800;font-size:14px;align-self:center}
+.note.marcada .ncheck{border-color:var(--liga);background:rgba(167,116,240,.2)}
+/* La ✕ se ve discreta y se toca de 44: no es la acción principal de la fila. */
+.ndel{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;background:transparent;border:none;
+  color:var(--dim);font-size:20px;line-height:1;cursor:pointer;border-radius:8px}
+.ndel::before{content:"";position:absolute;top:50%;left:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
+.ndel:active{color:var(--crit);background:rgba(236,90,69,.14)}
+/* La cinta de "aquí juega tu hij@": lo primero que el ojo del papá encuentra. */
+.faceoff.esmio{border-color:var(--papa);box-shadow:0 0 0 1px var(--papa),0 8px 26px rgba(232,177,62,.18)}
+.fo-mio{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:7px;
+  margin:-6px -12px 10px;padding:8px 12px;background:rgba(232,177,62,.16);
+  border-bottom:1px solid rgba(232,177,62,.35);color:#f5dfa6;font-size:12.5px;font-weight:650}
+.fo-mio b{color:#ffe9b8}
+.fo-mio span{color:rgba(245,223,166,.75);font-weight:500}
+.fo-mio .ic{width:14px;height:14px;color:var(--papa)}
 .mid-chip:active{border-color:var(--accent)}
 /* El logo de confirmar: apagado hasta que la palabra esté bien escrita. Que se
    vea apagado es parte del mensaje — dice 'todavía no', sin regañar. */
@@ -1675,7 +1707,6 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div class="thm-seg"><button id="thmDark" onclick="applyTheme('dark')"><svg class="ic"><use href="#ic-eye"/></svg> Oscuro</button><button id="thmLight" onclick="applyTheme('light')"><svg class="ic"><use href="#ic-star"/></svg> Claro</button></div>
       <button class="btn ghost sm block" onclick="closeProfile();go('logros')" style="margin-top:14px"><svg class="ic"><use href="#ic-star"/></svg> Logros y sobres <span id="profCoins" style="margin-left:auto;color:var(--liga)"></span></button>
       <button class="btn ghost sm block" onclick="closeProfile();openRoleSwitch()" style="margin-top:8px"><svg class="ic"><use href="#ic-people"/></svg> Cambiar cómo entro</button>
-      <button class="btn ghost sm block" onclick="resetDemo()" style="margin-top:8px"><svg class="ic"><use href="#ic-undo"/></svg> Empezar de cero (borrar datos de prueba)</button>
       <button class="btn ghost sm block" onclick="doLogout()" style="margin-top:8px;color:var(--crit);border-color:rgba(236,90,69,.4)"><svg class="ic"><use href="#ic-lock"/></svg> Cerrar sesión</button>
       <button class="btn ghost sm block" onclick="closeProfile()" style="margin-top:8px">Cerrar</button>
     </div>
@@ -2647,6 +2678,121 @@ function buildLigaStats(){
 }
 /* Público: en vivo real (si la mesa dirige un partido) + tabla real */
 /* ---- tablero de enfrentamientos: logos encarados + degradado de ambos colores ---- */
+/* ═══ "AQUÍ JUEGA TU HIJ@" ══════════════════════════════════════════════════
+   Carlos me corrigió y tenía razón: *"al papá no le sale su hija porque nunca
+   hiciste que salga un letrero o indicador en el panel de juegos de que su hija
+   está en ese; estás buscando algo que no existe."*
+
+   Y así era. Yo había construido el filtro por categoría —que ayuda— pero nunca
+   el LETRERO que dice *este partido es el de tu hija*. La prueba buscaba una
+   cosa que no existía en la app, y por eso los 64 papás del simulacro seguían
+   rindiéndose por más que yo arreglara el filtro.
+
+   Cómo se resuelve, tal como lo dictó: se busca el partido cuyo equipo tenga a
+   un jugador con el MISMO CÓDIGO que el hij@ vinculado a esta cuenta. El código
+   es el que la app genera (`J-…`), que es justo el que quedó como ancla cuando
+   se quitó el CURP.
+
+   Se compara por código y, de respaldo, por nombre: a un niño lo puede haber
+   dado de alta el coach sin que el código coincida todavía, y en ese caso el
+   papá sigue necesitando ver dónde juega. Es mejor un letrero de más que un
+   papá dando vueltas en la cancha equivocada. */
+function hijosDeEstaCuenta(){
+  const u=userData()||{};
+  const l=(u.children||[]).map(k=>({code:k.code,name:k.name}));
+  // El jugador que mira su propia cuenta también cuenta como "el mío".
+  if(u.playerCode) l.push({code:u.playerCode,name:u.name});
+  return l.filter(x=>x.code||x.name);
+}
+/* ¿Quién de los míos juega en este partido? Devuelve el nombre, o null. */
+function miHijoEnPartido(m){
+  const mios=hijosDeEstaCuenta(); if(!mios.length||!m) return null;
+  const H=teamById(m.home), A=teamById(m.away);
+  for(const t of [H,A]){
+    if(!t) continue;
+    for(const p of (t.players||[])){
+      for(const k of mios){
+        if(k.code && p.code && String(p.code)===String(k.code)) return {nombre:k.name, equipo:t.name};
+        if(k.name && (p.nm||p.name) && String(p.nm||p.name).trim()===String(k.name).trim())
+          return {nombre:k.name, equipo:t.name};
+      }
+    }
+  }
+  return null;
+}
+/* Todos los partidos de los míos, ordenados por fecha. Es lo que alimenta el
+   letrero, el aviso y la revisión del día del partido. */
+function partidosDeMisHijos(){
+  const d=leagueData();
+  return (d.calendar||[]).map((m,i)=>({m,i,quien:miHijoEnPartido(m)}))
+    .filter(x=>x.quien)
+    .sort((a,b)=>((a.m.date||'')+(a.m.time||'')).localeCompare((b.m.date||'')+(b.m.time||'')));
+}
+/* ═══ LA VIGILANCIA DEL PARTIDO DE MI HIJ@ ══════════════════════════════════
+   Carlos: *"eso debe revisarse varias veces, incluyendo el día del partido,
+   para asegurar que el papá pueda ver en qué partido está qué hijo, y deben
+   salirle las alertas de que inicia el partido."*
+
+   Por qué "varias veces" y no una: el vínculo NO es estable. El coach mete al
+   niño al equipo días después de que el papá lo registró; la liga cambia la
+   fecha; el equipo se cambia de categoría. Si esto se resolviera una sola vez
+   al abrir la app, el papá vería el letrero el día que se inscribió y ya no.
+
+   Tres momentos, y cada uno tapa un hueco distinto:
+     · al abrir la app       — por si algo cambió mientras no estaba
+     · cada 5 minutos        — por si el cambio pasa con la app abierta
+     · el DÍA del partido    — que es el único que de verdad importa
+
+   Los avisos no se repiten: cada uno se marca por partido y por tipo, porque
+   una app que avisa lo mismo cinco veces se silencia, y una app silenciada no
+   avisa nada el día que sí importa. */
+function _avisado(clave){ try{ return localStorage.getItem('lm_aviso_'+clave)==='1'; }catch(e){ return false; } }
+function _marcarAvisado(clave){ try{ localStorage.setItem('lm_aviso_'+clave,'1'); }catch(e){} }
+
+function revisarPartidosDeMisHijos(){
+  const mios=partidosDeMisHijos(); if(!mios.length) return;
+  const hoy=new Date(); const iso=hoy.toISOString().slice(0,10);
+  mios.forEach(({m,quien})=>{
+    const id=idPartido(m);
+    // 1 · Aviso de que ya quedó ubicado: se manda UNA vez por partido.
+    if(!_avisado('ubi-'+id)){
+      pushNote('hijo','Ya sabemos dónde juega '+quien.nombre+': '+id
+        +(m.date?' · '+fmtDate(m.date):'')+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:''));
+      _marcarAvisado('ubi-'+id);
+    }
+    if(m.done) return;
+    // 2 · El día del partido. Éste es el que importa y va aparte.
+    if(m.date===iso && !_avisado('hoy-'+id)){
+      pushNote('partido','HOY juega '+quien.nombre+' con '+quien.equipo
+        +(m.time?' a las '+m.time:'')+(m.place?' en '+m.place:'')+' · '+id);
+      _marcarAvisado('hoy-'+id);
+      try{ if(navigator.vibrate)navigator.vibrate([20,60,20]); }catch(e){}
+    }
+    // 3 · Media hora antes de empezar.
+    if(m.date===iso && m.time && !_avisado('pronto-'+id)){
+      const [hh,mm]=String(m.time).split(':').map(Number);
+      const inicio=new Date(hoy); inicio.setHours(hh||0, mm||0, 0, 0);
+      const faltan=(inicio-hoy)/60000;
+      if(faltan>0 && faltan<=30){
+        pushNote('partido','En '+Math.round(faltan)+' min empieza el partido de '+quien.nombre+' · '+id);
+        _marcarAvisado('pronto-'+id);
+      }
+    }
+  });
+  try{ refreshBell(); }catch(e){}
+}
+/* Se arranca sola y se queda vigilando. Cinco minutos es el punto medio: lo
+   bastante seguido para cachar un cambio de última hora, lo bastante espaciado
+   para no calentar el teléfono de nadie. */
+(function vigilarHijos(){
+  const arranca=()=>{ try{ revisarPartidosDeMisHijos(); }catch(e){}
+    setInterval(()=>{ try{ revisarPartidosDeMisHijos(); }catch(e){} }, 5*60*1000); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(arranca,1200));
+  else setTimeout(arranca,1200);
+  // Y al volver a la app desde el fondo, que es cuando más cambia el mundo.
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ try{ revisarPartidosDeMisHijos(); }catch(e){} } });
+})();
+
 function faceoffCard(H,A,opts){
   opts=opts||{};
   const hc='var('+(H.color||'--publico')+')', ac='var('+(A.color||'--publico')+')';
@@ -2666,7 +2812,17 @@ function faceoffCard(H,A,opts){
     mid='<div class="fo-vs">VS</div>'+(opts.when?'<div class="fo-when">'+opts.when+'</div>':'');
   }
   const click=opts.onclick?(' onclick="'+opts.onclick+'"'):'';
-  return '<div class="'+cls+'" style="--hc:'+hc+';--ac:'+ac+'"'+click+'>'+top+
+  /* EL LETRERO. Va arriba de todo y con el color del papá, porque es lo primero
+     que su ojo tiene que encontrar entre nueve categorías jugando el mismo
+     sábado. Dice el NOMBRE de su hij@, no "tu hij@": el papá reconoce el nombre
+     más rápido que una etiqueta genérica, y si tiene tres hijos necesita saber
+     cuál de los tres es éste. */
+  const mio = opts.mio;
+  const cinta = mio
+    ? '<div class="fo-mio"><svg class="ic"><use href="#ic-heart"/></svg> Aquí juega <b>'+mio.nombre+'</b>'
+      + (mio.equipo?' <span>· '+mio.equipo+'</span>':'') + '</div>'
+    : '';
+  return '<div class="'+cls+(mio?' esmio':'')+'" style="--hc:'+hc+';--ac:'+ac+'"'+click+'>'+cinta+top+
     side(H,'l')+'<div class="fo-mid">'+mid+'</div>'+side(A,'r')+'</div>';
 }
 let LIVE_CLOUD=[];
@@ -2832,7 +2988,7 @@ function buildEnVivoBoard(){
       // reconoce el partido de su hij@ entre nueve que juegan el mismo sábado.
       const when=(cat?(CAT_NOMBRE[cat]||cat)+' · ':'')
         +(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
-      h+=faceoffCard(H,A,{mode:'next',when:when});
+      h+=faceoffCard(H,A,{mode:'next',when:when,mio:miHijoEnPartido(m)});
       // El ID, debajo y copiable de un toque: el día del juego se dicta o se
       // pega en el grupo, no se busca entre nueve categorías.
       h+='<div class="mid-chip" onclick="copiarId(\''+idPartido(m)+'\')" title="Copiar">'
@@ -2841,7 +2997,7 @@ function buildEnVivoBoard(){
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
   if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
     past.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      h+=faceoffCard(H,A,{mode:'final',hs:m.hs,as:m.as,when:(m.date?fmtDate(m.date):'J'+m.jornada)}); }); }
+      h+=faceoffCard(H,A,{mode:'final',hs:m.hs,as:m.as,when:(m.date?fmtDate(m.date):'J'+m.jornada),mio:miHijoEnPartido(m)}); }); }
   return h;
 }
 function buildPublicoData(){
@@ -3664,6 +3820,33 @@ function previewCos(c, size, alto){
   return '<span class="'+(c.anim||'')+'" style="'+base+lienzo+'">'+dentro+'</span>';
 }
 /* Se conserva el nombre viejo por si algo más lo llama, apuntando al bueno. */
+/* ═══ FOTOS DE RELLENO ══════════════════════════════════════════════════════
+   Carlos las pidió para grabar el video: *"ponles fotos placeholder a todo, no
+   importa de qué sean"*. Salen del arte que ya bajamos con licencia abierta
+   (`ligas-mazi/arte/`, créditos en `arte/CREDITOS.md`) — balones, aros, canchas
+   y escudos. Nada de caras: **ninguna persona real aparece en una foto de
+   relleno**, que es la regla que ya nos costó un problema con el producto de la
+   tienda.
+
+   El reparto es DETERMINISTA: el mismo jugador saca siempre la misma imagen. Si
+   fuera al azar, cada render le cambiaría la cara al mismo niño y el video se
+   vería roto.
+
+   Y es sólo relleno: en cuanto alguien sube su foto de verdad, la suya manda. */
+const RELLENO = {
+  jugador: ['arte/balon/balon-1.jpg','arte/balon/balon-2.png','arte/balon/balon-5.jpg',
+            'arte/aro/aro-1.jpg','arte/aro/aro-2.jpg','arte/aro/aro-3.jpg',
+            'arte/aro/aro-4.jpg','arte/aro/aro-5.jpg'],
+  equipo:  ['arte/escudo/escudo-1.png','arte/escudo/escudo-3.png','arte/escudo/escudo-4.png',
+            'arte/escudo/escudo-5.png','arte/escudo/escudo-6.png'],
+  fondo:   ['arte/cancha/cancha-1.png','arte/cancha/cancha-5.png','arte/gradas/gradas-1.jpg'],
+};
+function _huella(txt){ let h=0; const s=String(txt||'?');
+  for(let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))>>>0; } return h; }
+function fotoRelleno(quien, tipo){
+  const l=RELLENO[tipo||'jugador']||RELLENO.jugador;
+  return l[_huella(quien)%l.length];
+}
 function cosPreviewHTML(c,size){ return previewCos(c, size||140, c.kind==='shine'?Math.round((size||140)*0.7):(size||140)); }
 /* SHOWCASE del premio — "primera plana" (item pedido) */
 let _revealCos=null;
@@ -3796,6 +3979,58 @@ function pushNote(kind,text,extra){ const n=notes(); n.unshift(Object.assign({id
 function unreadCount(){ return notes().filter(x=>!x.read).length; }
 function refreshBell(){ const d=document.getElementById('bellDot'); if(!d)return; const c=unreadCount(); if(c>0){d.style.display='';d.textContent=c>9?'9+':c;}else d.style.display='none'; }
 function clearNotes(){ const n=notes(); n.forEach(x=>x.read=true); saveNotes(n); buildInbox(); }
+
+/* ═══ BORRAR NOTIFICACIONES ═════════════════════════════════════════════════
+   Carlos: *"haz que se puedan borrar las notificaciones ya leídas, seleccionar
+   cuáles y una por una, porque es súper incómodo ver 700 notificaciones ahí."*
+
+   Tres formas porque son tres necesidades distintas, y una sola no cubre las
+   otras dos:
+     · UNA POR UNA — la ✕ de cada renglón, para la que estorba ahora mismo
+     · LAS LEÍDAS   — un botón, para el montón acumulado. Es el que resuelve
+                      las 700 de golpe
+     · SELECCIONAR  — para cuando quieres tirar diez pero salvar una
+
+   Lo que NUNCA se borra de un botonazo: las que tienen algo PENDIENTE. Una
+   invitación sin contestar no es ruido, es trabajo, y barrerla es perderle una
+   liga a alguien. Se pueden borrar una por una si de plano se quiere, pero no
+   se las lleva la escoba. */
+let _selNotas = null;   // null = no estoy seleccionando; Set = sí
+
+function pendiente(x){ return !!x.action && x.status!=='done'; }
+
+function borrarNota(id){
+  const n=notes().filter(x=>x.id!==id); saveNotes(n); buildInbox();
+}
+function borrarLeidas(){
+  const antes=notes().length;
+  const n=notes().filter(x=>!x.read || pendiente(x));
+  saveNotes(n); buildInbox();
+  flashSaved(antes-n.length ? ('Se fueron '+(antes-n.length)+' leídas') : 'No había leídas que borrar');
+}
+function modoSeleccion(prender){
+  _selNotas = prender ? new Set() : null;
+  buildInbox();
+}
+function alternarSel(id){
+  if(!_selNotas) return;
+  _selNotas.has(id) ? _selNotas.delete(id) : _selNotas.add(id);
+  buildInbox();
+}
+function selTodas(){
+  if(!_selNotas) return;
+  const todas=notes().map(x=>x.id);
+  if(_selNotas.size===todas.length) _selNotas.clear();
+  else todas.forEach(id=>_selNotas.add(id));
+  buildInbox();
+}
+function borrarSeleccionadas(){
+  if(!_selNotas || !_selNotas.size) return;
+  const cuantas=_selNotas.size;
+  const n=notes().filter(x=>!_selNotas.has(x.id));
+  saveNotes(n); _selNotas=null; buildInbox();
+  flashSaved('Se fueron '+cuantas);
+}
 function timeAgo(ts){ const s=Math.floor((Date.now()-ts)/1000); if(s<60)return 'ahora'; if(s<3600)return Math.floor(s/60)+' min'; if(s<86400)return Math.floor(s/3600)+' h'; return Math.floor(s/86400)+' d'; }
 function sanitizeNotes(){ const n=notes(); let ch=false;
   n.forEach(x=>{ if(typeof x.text==='string' && /\{["']?(code|name|players)["']?\s*:/.test(x.text)){ x.text=x.text.replace(/\s*con\s*\{[\s\S]*$/,'').replace(/\{[\s\S]*$/,'').trim()||'Un equipo quiere unirse a tu liga'; ch=true; }
@@ -3806,13 +4041,38 @@ function buildInbox(){
   sanitizeNotes();
   const n=notes();
   if(!n.length){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">No tienes notificaciones. Aquí llegarán tus logros, resultados de partidos e invitaciones de ligas.</div>'; markSeen(); return; }
-  let h='';
+  const sel=_selNotas;
+  const leidas=n.filter(x=>x.read && !pendiente(x)).length;
+  /* La barra de arriba cambia según en qué modo estás. En modo normal ofrece
+     limpiar; en modo selección dice cuántas llevas y qué puedes hacer con
+     ellas. Nunca las dos cosas a la vez: es la misma franja. */
+  let h='<div class="nbar">';
+  if(sel){
+    h+='<span class="nb-n">'+sel.size+' seleccionada'+(sel.size===1?'':'s')+'</span>'
+      +'<button class="btn ghost sm" onclick="selTodas()">'+(sel.size===n.length?'Ninguna':'Todas')+'</button>'
+      +'<button class="btn sm" '+(sel.size?'':'disabled')+' style="background:var(--crit);border-color:var(--crit)" onclick="borrarSeleccionadas()">Borrar</button>'
+      +'<button class="btn ghost sm" onclick="modoSeleccion(false)">Salir</button>';
+  } else {
+    h+='<span class="nb-n">'+n.length+' notificación'+(n.length===1?'':'es')+'</span>'
+      +'<button class="btn ghost sm" onclick="modoSeleccion(true)">Seleccionar</button>'
+      +'<button class="btn ghost sm" '+(leidas?'':'disabled')+' onclick="borrarLeidas()">Borrar leídas'+(leidas?' ('+leidas+')':'')+'</button>';
+  }
+  h+='</div>';
   n.forEach((x,i)=>{ const ic=NOTE_ICON[x.kind]||NOTE_ICON.info;
     let act='';
     if(x.action==='league_invite'){ act='<div class="nact"><button class="btn sm" onclick="acceptInvite(\''+x.id+'\')">Aceptar</button><button class="btn ghost sm" onclick="declineInvite(\''+x.id+'\')">Rechazar</button></div>'; }
     if(x.action==='join_request'&&x.status!=='done'){ act='<div class="nact"><button class="btn sm" onclick="acceptInvite(\''+x.id+'\')">Aprobar</button><button class="btn ghost sm" onclick="declineInvite(\''+x.id+'\')">Rechazar</button></div>'; }
-    h+='<div class="note'+(x.read?'':' unread')+'"><div class="ni" style="background:var('+ic[1]+')"><svg class="ic" style="width:17px;height:17px;color:#0b0d12"><use href="#ic-'+ic[0]+'"/></svg></div>'+
-      '<div class="nb"><div class="nt">'+x.text+'</div><div class="nm2">'+timeAgo(x.ts)+(x.status==='done'?' · hecho':'')+'</div>'+act+'</div></div>'; });
+    const marcada = sel && sel.has(x.id);
+    const abre = sel ? (' onclick="alternarSel(\''+x.id+'\')"') : '';
+    h+='<div class="note'+(x.read?'':' unread')+(marcada?' marcada':'')+'"'+abre+'>'
+      + (sel ? '<span class="ncheck">'+(marcada?'✓':'')+'</span>' : '')
+      + '<div class="ni" style="background:var('+ic[1]+')"><svg class="ic" style="width:17px;height:17px;color:#0b0d12"><use href="#ic-'+ic[0]+'"/></svg></div>'
+      + '<div class="nb"><div class="nt">'+x.text+'</div><div class="nm2">'+timeAgo(x.ts)
+      + (x.status==='done'?' · hecho':'') + (pendiente(x)?' · <b style="color:var(--papa)">te toca contestar</b>':'') + '</div>'+act+'</div>'
+      // La ✕ de cada renglón: para la que estorba AHORA. No aparece en modo
+      // selección, donde el toque ya significa otra cosa.
+      + (sel ? '' : '<button class="ndel" onclick="event.stopPropagation();borrarNota(\''+x.id+'\')" aria-label="Borrar">×</button>')
+      + '</div>'; });
   box.innerHTML=h; markSeen();
 }
 function markSeen(){ const n=notes(); let ch=false; n.forEach(x=>{ if(!x.read && !x.action){x.read=true;ch=true;} }); if(ch)saveNotes(n); refreshBell(); }
@@ -4204,7 +4464,25 @@ function alternarPrivado(idx){
   const d=leagueData(); if(!canAdminLeague(d))return;
   const m=d.calendar[idx]; if(!m)return;
   m.privado=!m.privado;
-  if(m.privado && !m.codigo) m.codigo=String(Math.floor(Math.random()*9000+1000));
+  /* APAGAR EL CANDADO INVALIDA LOS PASES. Lo cazó Michi en la auditoría del
+     1 de agosto, picándole a lo que todos ya habíamos dado por bueno: prendes
+     privado, alguien entra con el código, apagas, vuelves a prender… y ese
+     alguien sigue adentro con el pase viejo.
+
+     Y no es un caso de laboratorio: el día del torneo la liga va a prender y
+     apagar ese candado tres veces mientras acomoda partidos. Si el pase
+     sobrevive, "privado" deja de significar nada justo cuando importa.
+
+     Al APAGARLO se borran los invitados y se tira el código. Volver a prender
+     es una puerta NUEVA: código nuevo y lista en blanco. Es más molesto para
+     la liga —tiene que repartir de nuevo— y es lo correcto: un candado que se
+     apaga y no olvida no es un candado. */
+  if(!m.privado){
+    try{ localStorage.removeItem('lm_inv_'+idPartido(m)); }catch(e){}
+    delete m.codigo;
+  } else if(!m.codigo){
+    m.codigo=String(Math.floor(Math.random()*9000+1000));
+  }
   saveLeague(d);
   try{ buildLeagueCal(); }catch(e){}
   flashSaved(m.privado?('Partido privado · código '+m.codigo):'Partido abierto a todos');
@@ -4212,7 +4490,12 @@ function alternarPrivado(idx){
 function ligaCambiarCodigo(idx){
   const d=leagueData(); if(!canAdminLeague(d))return;
   const m=d.calendar[idx]; if(!m)return;
-  m.codigo=String(Math.floor(Math.random()*9000+1000)); saveLeague(d);
+  m.codigo=String(Math.floor(Math.random()*9000+1000));
+  // Rotar el código también corre a los que ya habían entrado: si no, "otro
+  // código" sólo le cierra la puerta a los que todavía no pasaban, que es a
+  // quienes menos falta hace cerrársela.
+  try{ localStorage.removeItem('lm_inv_'+idPartido(m)); }catch(e){}
+  saveLeague(d);
   try{ buildLeagueCal(); }catch(e){}
   flashSaved('Código nuevo: '+m.codigo+' — el anterior ya no sirve');
 }
@@ -5233,33 +5516,68 @@ function curpAge(c){ const b=curpBirth(c); if(!b)return null; const t=new Date()
   if(m<0||(m===0&&t.getDate()<b.getDate()))a--; return a; }
 function curpMask(c){ c=(c||'').toUpperCase(); return c.length<6?c:c.slice(0,4)+'•'.repeat(Math.max(0,c.length-6))+c.slice(-2); }
 /* lectura en vivo del CURP mientras se escribe: edad + aviso de menor */
-function altaCurpLive(){
-  const c=(document.getElementById('altaCurp').value||'').trim().toUpperCase();
-  const box=document.getElementById('altaCurpInfo'); if(!box)return;
-  if(!c){ box.innerHTML=''; return; }
-  if(!/^[A-Z]{4}[0-9]{6}[A-Z0-9]{8}$/.test(c)){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">El CURP tiene 18 caracteres (4 letras · 6 dígitos de fecha · 8 más).</div>'; return; }
-  if(!curpValid(c)){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--crit)">Ese CURP no pasa la verificación (dígito de control). Revísalo: debe ser el real del jugador.</div>'; return; }
-  const age=curpAge(c);
-  if(age==null){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--dim)">Revisa la fecha del CURP.</div>'; return; }
-  if(age<18){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--papa)"><b>Menor de edad ('+age+' años).</b> Debe quedar vinculad@ a una cuenta de papá/tutor para poder jugar. Tú, como tutor, quedas responsable.</div>'; }
-  else { box.innerHTML='<div class="stratnote" style="border-left-color:var(--good)"><b>Mayor de edad ('+age+' años).</b> Puede gestionar su propia cuenta de jugador.</div>'; }
+/* ═══ POR QUÉ AQUÍ YA NO SE PIDE CURP ═══════════════════════════════════════
+   Carlos preguntó qué tan expuestos nos deja pedirlo. La respuesta corta: no
+   hay certificación que pagar —México no exige registrar bases de datos ni
+   certificarse— pero el CURP igual no se gana su lugar aquí.
+
+   Servía para dos cosas: calcular la edad y no confundir a dos niños con el
+   mismo nombre. La primera la resuelve la FECHA DE NACIMIENTO; la segunda, el
+   código de jugador que la app YA genera. O sea que estábamos guardando el
+   identificador oficial de un menor para algo que ya sabíamos hacer sin él.
+
+   Y el riesgo de verdad no es una multa: es que estos repos son públicos, y un
+   CURP que se cuele en un commit no se puede desandar.
+
+   Menos datos, misma función. Lo que se afirma ahora es de la CUENTA, no del
+   jugador —"soy mayor de edad y soy su tutor"—, porque esto es una liga
+   infantil y la mayoría de los jugadores son menores por definición. */
+function edadDeNacimiento(iso){
+  if(!iso) return null;
+  const b=new Date(iso+'T00:00:00'); if(isNaN(b.getTime())) return null;
+  const h=new Date(); let a=h.getFullYear()-b.getFullYear();
+  const m=h.getMonth()-b.getMonth();
+  if(m<0 || (m===0 && h.getDate()<b.getDate())) a--;
+  return a;
+}
+/* Con la edad ya se puede decir en qué categoría cae: es lo único para lo que
+   pedimos la fecha, así que se enseña de inmediato y se justifica sola. */
+function categoriasParaEdad(edad){
+  const rangos=[['mixta-7-9',7,9],['mixta-10-11',10,11],['mixta-12-13',12,13],
+    ['var-12-13',12,13],['var-14-15',14,15],['var-16-17',16,17],
+    ['fem-12-13',12,13],['fem-14-15',14,15],['fem-16-17',16,17]];
+  return rangos.filter(r=>edad>=r[1]&&edad<=r[2]).map(r=>CAT_NOMBRE[r[0]]||r[0]);
+}
+function altaNacLive(){
+  const v=(document.getElementById('altaNac')||{}).value||'';
+  const box=document.getElementById('altaNacInfo'); if(!box)return;
+  if(!v){ box.innerHTML=''; return; }
+  const edad=edadDeNacimiento(v);
+  if(edad==null||edad<0||edad>90){ box.innerHTML='<div class="stratnote" style="border-left-color:var(--crit)">Revisa la fecha.</div>'; return; }
+  const cats=categoriasParaEdad(edad);
+  box.innerHTML='<div class="stratnote" style="border-left-color:'+(cats.length?'var(--good)':'var(--papa)')+'">'
+    +'<b>'+edad+' años.</b> '
+    +(cats.length?('Le tocan las categorías: <b>'+cats.join('</b>, <b>')+'</b>.')
+                 :'No cae en ninguna categoría de esta liga — revisa la fecha o pregúntale a la liga.')
+    +'</div>';
 }
 /* pantalla de alta según el sombrero: el papá vincula hij@ por CURP; coach/liga da de alta jugador */
 function buildAlta(){
   const box=document.getElementById('altaBody'); if(!box)return;
   const ttl=document.getElementById('altaTtl');
   const privacy='<div class="check" style="background:rgba(84,204,138,.06);border-color:var(--good)"><span class="box" style="border-color:var(--good);color:var(--good);pointer-events:none">✓</span>'+
-    '<span><b>El CURP es privado.</b> Solo se usa por dentro para que las estadísticas del jugador sean siempre suyas y no se confundan con otro. No aparece en su perfil ni se puede buscar.</span></div>';
+    '<span><b>Pedimos lo mínimo.</b> La fecha de nacimiento sirve sólo para saber en qué categoría juega. '+
+    '<b>No pedimos CURP ni ningún documento oficial:</b> para no confundir a dos jugadores con el mismo nombre usamos un código que genera la app.</span></div>';
   if(currentRole==='papa'){
     if(ttl)ttl.textContent='Vincular a mi hij@';
     box.innerHTML='<div class="eyebrow" style="margin:0 0 4px">Datos del jugador</div>'+
       '<input class="field" id="altaName" placeholder="Nombre completo de tu hij@">'+
       '<div style="display:flex;gap:8px"><input class="field" id="altaNum" type="number" inputmode="numeric" placeholder="# dorsal" style="width:110px"><input class="field" id="altaPos" placeholder="Posición (ej. Base)" style="flex:1"></div>'+
-      '<div class="eyebrow" style="margin:10px 0 2px">CURP <span style="color:var(--dim)">— llave interna, privada</span></div>'+
-      '<input class="field" id="altaCurp" maxlength="18" autocapitalize="characters" spellcheck="false" placeholder="CURP (18 caracteres)" oninput="this.value=this.value.toUpperCase();altaCurpLive()">'+
-      '<div id="altaCurpInfo" style="margin:4px 0"></div>'+privacy+
+      '<div class="eyebrow" style="margin:10px 0 2px">Fecha de nacimiento <span style="color:var(--dim)">— sólo para su categoría</span></div>'+
+      '<input class="field" id="altaNac" type="date" oninput="altaNacLive()">'+
+      '<div id="altaNacInfo" style="margin:4px 0"></div>'+privacy+
       '<div class="check"><span class="box" id="altaResp" onclick="this.textContent=this.textContent?\'\':\'✓\'"></span>'+
-      '<span><b>Responsiva del tutor.</b> Autorizo la participación de mi hij@ y la <b>conservación de sus datos y estadísticas</b>. Sin esto no se puede alinear.</span></div>'+
+      '<span><b>Soy mayor de edad y soy su papá, mamá o tutor.</b> Autorizo su participación y que se guarden sus estadísticas. Sin esto no se puede alinear.</span></div>'+
       '<button class="btn block" onclick="saveChild()">Vincular a mi hij@</button>';
   } else {
     if(ttl)ttl.textContent='Agregar jugadores';
@@ -5307,14 +5625,19 @@ function saveChild(){
   const nm=(document.getElementById('altaName').value||'').trim();
   const num=(document.getElementById('altaNum').value||'').trim();
   const pos=(document.getElementById('altaPos').value||'').trim()||'Base';
-  const curp=(document.getElementById('altaCurp').value||'').trim().toUpperCase();
+  const nac=(document.getElementById('altaNac')||{}).value||'';
   if(!nm){ flashSaved('Escribe el nombre de tu hij@'); return; }
-  if(!curpValid(curp)){ flashSaved('Revisa el CURP (18 caracteres)'); return; }
-  if(!document.getElementById('altaResp').textContent){ flashSaved('Falta la responsiva del tutor'); return; }
+  if(!nac){ flashSaved('Falta la fecha de nacimiento'); return; }
+  const age=edadDeNacimiento(nac);
+  if(age==null||age<0||age>90){ flashSaved('Revisa la fecha de nacimiento'); return; }
+  if(!document.getElementById('altaResp').textContent){ flashSaved('Falta confirmar que eres su tutor'); return; }
   u.children=u.children||[];
-  if(u.children.some(k=>k.curp===curp)){ flashSaved('Ya vinculaste a este jugador'); return; }
-  const age=curpAge(curp);
-  u.children.push({name:nm, num:num, pos:pos, curp:curp, code:genEntityCode('J-'), minor:(age!=null&&age<18), age:age, status:'libre', linkedAt:Date.now()});
+  /* El duplicado se detecta por nombre + fecha, no por documento oficial. No es
+     infalible —dos primos tocayos nacidos el mismo día pasarían— pero eso lo
+     arregla la liga en dos segundos, y no vale guardar el CURP de un menor para
+     cubrir un caso que casi no existe. */
+  if(u.children.some(k=>k.name===nm && k.nacimiento===nac)){ flashSaved('Ya vinculaste a este jugador'); return; }
+  u.children.push({name:nm, num:num, pos:pos, nacimiento:nac, code:genEntityCode('J-'), minor:(age<18), age:age, status:'libre', linkedAt:Date.now()});
   saveUser(u); try{publishMyEntities();cloudPushNow();}catch(e){}
   try{ pushNote('hijo','Vinculaste a '+nm+(age!=null&&age<18?' (menor)':'')); }catch(x){}
   flashSaved('Hij@ vinculad@ ✓'); go('rol');
@@ -5420,7 +5743,7 @@ const SUPER_EMAIL='palomazi9111@gmail.com';
    discute. Con esto se ve de un vistazo qué build trae el teléfono.
    SE SUBE A MANO en cada entrega. Si el número no cambió después de publicar,
    el problema es el caché: cerrar la pestaña y volver a abrir. */
-const VERSION='2026.08.01-b';
+const VERSION='2026.08.01-d';
 (function sello(){
   const poner=()=>{ const e=document.getElementById('verSello');
     if(e) e.textContent='v'+VERSION; };
@@ -6021,7 +6344,18 @@ function renderCardBase(){
     club.textContent=parts.length?parts.join(' · '):(isPlayer?'Aún sin equipo':'Aún no eres jugador registrado'); }
   const ph=document.getElementById('fcPhoto');
   if(ph){ if(isPlayer&&subj.photo){ ph.style.backgroundImage='url('+subj.photo+')';ph.classList.add('has-photo');ph.innerHTML=''; }
-    else { ph.style.backgroundImage='';ph.classList.remove('has-photo');ph.innerHTML='<span style="font-size:34px;opacity:.6"><svg class="ic"><use href="#ic-camera"/></svg></span><span style="margin-top:8px;font-size:12px">Toca para subir la foto</span>'; } }
+    else {
+      /* Sin foto propia, va una de relleno del arte con licencia abierta — para
+         que la carta no se vea hueca en el video. Se deja tenue y con el aviso
+         encima, porque sigue siendo una invitación a subir la suya, no un
+         retrato. */
+      const rell=fotoRelleno(subj.playerCode||subj.name||'x','jugador');
+      ph.style.backgroundImage='url('+rell+')';
+      ph.classList.remove('has-photo');
+      ph.innerHTML='<span style="position:absolute;inset:0;background:rgba(10,13,20,.66);border-radius:inherit"></span>'
+        +'<span style="position:relative;font-size:34px;opacity:.75"><svg class="ic"><use href="#ic-camera"/></svg></span>'
+        +'<span style="position:relative;margin-top:8px;font-size:12px">Toca para subir la foto</span>';
+    } }
   const note=(txt)=>'<div class="stratnote" style="border-left-color:var(--jugador)">'+txt+'</div>';
   // si no es jugador, muestra estado honesto (no una carta con su nombre)
   if(!isPlayer){
@@ -6067,6 +6401,18 @@ function renderCardBase(){
     ['fc-atributos','fc-vitrina'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=note('Se enriquece con más partidos registrados por la mesa.');});
     const r=document.getElementById('fc-historial'); if(r)r.innerHTML='<div class="histrow"><span class="yr">Ahora</span><div class="tm">'+link.team.name+'<small>'+remoteName+(link.player.num?' · #'+link.player.num:'')+' · '+avg.gp+' PJ</small></div><span class="badge">Activo</span></div>'+note('Un solo jugador, una identidad: tus números te siguen de equipo en equipo y de liga en liga.');
     return;
+  }
+  /* EL RANGO CUANDO TODAVÍA NO HAY PARTIDOS.
+     Lo cacé revisando la app a mano: un jugador con corona de Leyenda y ajuar
+     de Dark Matter salía marcado como "NUEVO". La causa es que el rango se
+     calculaba SÓLO dentro del bloque de promedios, y ese bloque se salta
+     cuando la mesa aún no anota nada. Pero el ajuar ya se ganó y ya cuesta:
+     dejarlo en "NUEVO" es no reconocerle al chavo lo que junté. */
+  const soloAjuar = rarezaDeCarta(econ());
+  const rkv = document.getElementById('fcRank');
+  if(rkv && soloAjuar){
+    rkv.textContent='◆ '+soloAjuar.t.toUpperCase();
+    rkv.style.background='linear-gradient(90deg,'+colorLegible(soloAjuar.c)+','+soloAjuar.c+')';
   }
   // sin partidos aún: estado honesto
   const empty='<div class="fc-empty" style="text-align:center;padding:22px 16px;color:var(--muted)">'+
