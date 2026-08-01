@@ -2819,7 +2819,11 @@ function buildEnVivoBoard(){
   }
   // Con filtro puesto caben más, porque ya son los partidos que a esta persona
   // le importan y no un revoltijo de nueve categorías.
-  const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx && cumple(x.m))
+  const up=d.calendar.map((m,i)=>({m,i}))
+    // Los privados sólo salen para quien tiene el pase. Se filtran AQUÍ, en la
+    // lista, y no escondiendo la tarjeta con CSS: lo que no se debe ver, no se
+    // dibuja.
+    .filter(x=>!x.m.done && x.i!==liveIdx && cumple(x.m) && puedoVerPartido(x.m))
     .sort((a,b)=>bydate(a.m,b.m)).slice(0, catSel?20:10);
   if(up.length){ if(catsCal.length<=1) h+='<div class="fo-sec-ttl">Próximos</div>';
     up.forEach(x=>{ const m=x.m; const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
@@ -4155,6 +4159,122 @@ const CAT_NOMBRE={
   'var-12-13':'Varonil 12–13', 'var-14-15':'Varonil 14–15', 'var-16-17':'Varonil 16–17',
   'fem-12-13':'Femenil 12–13', 'fem-14-15':'Femenil 14–15', 'fem-16-17':'Femenil 16–17',
 };
+/* ═══ PARTIDOS PRIVADOS ═════════════════════════════════════════════════════
+   Carlos: *"una opción para poner que sólo puedan ver personas invitadas el
+   partido; quienes sean invitadas son las personas a las que el líder de la
+   liga les da un link que los lleva a una pantalla que pregunte si quieren
+   seguir ese juego, para que el día que esté abierto sólo los que tuvieron el
+   link lo puedan ver, pero que pida un código que proporcione la liga para
+   evitar que se meta gente que no va en partidos más privados."*
+
+   Son DOS cerraduras y hacen falta las dos, por razones distintas:
+
+     · EL LINK dice *dónde* está el partido. Se reenvía —así se comparte todo—
+       así que por sí solo no protege nada: sólo evita que alguien lo encuentre
+       por casualidad.
+     · EL CÓDIGO dice *quién puede pasar*. Lo da la liga en corto, a quien
+       quiere, y es lo que de verdad deja fuera a quien no va.
+
+   Un link sin código es una puerta sin llave; un código sin link es una llave
+   sin puerta. Juntos sirven.
+
+   ── LO QUE ESTO NO ES ────────────────────────────────────────────────────
+   **No es seguridad de verdad.** En modo local todo vive en el teléfono y quien
+   sepa abrir las herramientas del navegador se lo salta. Sirve para lo que
+   Carlos pidió —que no se meta gente que no va— y no para guardar un secreto.
+   Cuando esto viva en la nube, la comprobación tiene que hacerse allá; aquí se
+   deja el camino puesto y dicho con todas sus letras. */
+function esPrivado(m){ return !!(m && m.privado); }
+/* La lista de invitados vive por partido y en este teléfono: es el registro de
+   quién ya pasó la puerta. */
+function invitadosDe(id){ try{ return JSON.parse(localStorage.getItem('lm_inv_'+id)||'[]'); }catch(e){ return []; } }
+function guardarInvitado(id, quien){
+  const l=invitadosDe(id); if(l.indexOf(quien)<0){ l.push(quien); try{ localStorage.setItem('lm_inv_'+id, JSON.stringify(l)); }catch(e){} }
+}
+function puedoVerPartido(m){
+  if(!esPrivado(m)) return true;
+  if(typeof isSuperAdmin==='function' && isSuperAdmin()) return true;
+  if(canAdminLeague(leagueData())) return true;                 // la liga siempre ve lo suyo
+  const yo=(myEmail()||'').toLowerCase(); if(!yo) return false;
+  return invitadosDe(idPartido(m)).indexOf(yo)>=0;
+}
+/* La liga prende el candado y define el código. El código NO se inventa solo a
+   escondidas: se enseña, porque la liga lo va a dictar por teléfono. */
+function alternarPrivado(idx){
+  const d=leagueData(); if(!canAdminLeague(d))return;
+  const m=d.calendar[idx]; if(!m)return;
+  m.privado=!m.privado;
+  if(m.privado && !m.codigo) m.codigo=String(Math.floor(Math.random()*9000+1000));
+  saveLeague(d);
+  try{ buildLeagueCal(); }catch(e){}
+  flashSaved(m.privado?('Partido privado · código '+m.codigo):'Partido abierto a todos');
+}
+function ligaCambiarCodigo(idx){
+  const d=leagueData(); if(!canAdminLeague(d))return;
+  const m=d.calendar[idx]; if(!m)return;
+  m.codigo=String(Math.floor(Math.random()*9000+1000)); saveLeague(d);
+  try{ buildLeagueCal(); }catch(e){}
+  flashSaved('Código nuevo: '+m.codigo+' — el anterior ya no sirve');
+}
+function ligaLinkPartido(idx){
+  const d=leagueData(); const m=d.calendar[idx]; if(!m)return;
+  const url=location.origin+location.pathname+'#partido='+idPartido(m);
+  try{ navigator.clipboard.writeText(url); flashSaved('Link copiado · el código es '+(m.codigo||'—')); }
+  catch(e){ flashSaved(url); }
+}
+/* LA PANTALLA DE LA PUERTA. A esto llega quien abrió el link. Pregunta si
+   quiere seguir el partido y pide el código, en ese orden — que es el orden en
+   que la persona lo piensa. */
+function abrirPuertaPartido(idPart){
+  const enc=partidoPorId(idPart);
+  const t=document.getElementById('sheetTitle'), b=document.getElementById('sheetBody');
+  if(!enc){ t.textContent='No encontramos ese partido';
+    b.innerHTML='<div class="stratnote" style="border-left-color:var(--crit)">El link apunta al partido <b>'+idPart+'</b> y en esta liga no existe. Puede ser de otra liga, o el partido ya se borró.</div>'
+      +'<button class="btn block" onclick="closeSheet()">Entendido</button>';
+    document.getElementById('sheet').classList.add('on'); return; }
+  const m=enc.m, H=teamById(m.home), A=teamById(m.away);
+  t.textContent='¿Quieres seguir este partido?';
+  b.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">'
+    +'<b>'+((H&&H.name)||'?')+'</b> vs <b>'+((A&&A.name)||'?')+'</b><br>'
+    +(m.date?fmtDate(m.date):'Jornada '+m.jornada)+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'')
+    +'<br><span style="font-family:var(--mono);font-size:11px;color:var(--dim)">ID '+idPartido(m)+'</span></div>'
+    +(esPrivado(m)
+      ? '<div class="eyebrow" style="margin:14px 2px 6px">Este partido es privado · escribe el código que te dio la liga</div>'
+        +'<input class="field" id="puertaCod" inputmode="numeric" autocomplete="off" placeholder="Código de 4 dígitos">'
+        +'<div id="puertaMsg" style="margin:6px 2px;font-size:12.5px"></div>'
+        +'<button class="btn block" onclick="entrarAlPartido(\''+idPart+'\')">Seguir el partido</button>'
+      : '<div class="stratnote">Este partido es <b>abierto</b>: cualquiera puede verlo.</div>'
+        +'<button class="btn block" onclick="entrarAlPartido(\''+idPart+'\')">Seguirlo</button>')
+    +'<button class="btn ghost block" style="margin-top:8px" onclick="closeSheet()">Ahora no</button>';
+  document.getElementById('sheet').classList.add('on');
+}
+function entrarAlPartido(idPart){
+  const enc=partidoPorId(idPart); if(!enc)return;
+  const m=enc.m;
+  if(esPrivado(m)){
+    const dado=(document.getElementById('puertaCod')||{}).value||'';
+    const msg=document.getElementById('puertaMsg');
+    if(String(dado).trim()!==String(m.codigo||'')){
+      if(msg){ msg.style.color='var(--crit)';
+        msg.textContent='Ese código no es. Pídeselo a quien organiza la liga.'; }
+      return;
+    }
+    const yo=(myEmail()||'').toLowerCase();
+    if(!yo){ if(msg){ msg.style.color='var(--crit)';
+      msg.textContent='Entra con tu cuenta primero: el pase se guarda a tu nombre.'; } return; }
+    guardarInvitado(idPartido(m), yo);
+  }
+  closeSheet(); flashSaved('Listo — ya sigues este partido'); go('publico');
+}
+/* El link se lee al abrir: `…/ligas-mazi/#partido=M79-J3-COMA`. */
+(function puertaDesdeElLink(){
+  const leer=()=>{ const h=(location.hash||'').match(/partido=([A-Za-z0-9-]+)/);
+    if(h){ try{ abrirPuertaPartido(h[1]); }catch(e){} } };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(leer,600));
+  else setTimeout(leer,600);
+  window.addEventListener('hashchange', leer);
+})();
+
 /* ═══ EL ID DEL PARTIDO ═════════════════════════════════════════════════════
    Carlos: *"ponle id a los partidos para que los papás los puedan encontrar
    rápido el día del juego"*.
@@ -4228,16 +4348,35 @@ function buildLeagueCal(){
        partido para saber cuál es el suyo. La categoría va PRIMERO porque es lo
        que filtra; el lugar después, que es lo que necesita para llegar. */
     const cat = catDeMatch(H, A);
-    if(cat || m.place){
-      h+='<div style="font-size:11.5px;color:var(--muted);margin:-6px 0 8px;padding-left:2px;display:flex;gap:10px;flex-wrap:wrap">'
-        + (cat?'<span style="color:var(--liga);font-weight:700">'+cat+'</span>':'')
-        + (m.place?'<span><svg class="ic" style="width:12px;height:12px;vertical-align:-2px"><use href="#ic-flag"/></svg> '+m.place+'</span>':'')
-        + '</div>';
-    }
+    h+='<div style="font-size:11.5px;color:var(--muted);margin:-6px 0 8px;padding-left:2px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+      + (cat?'<span style="color:var(--liga);font-weight:700">'+cat+'</span>':'')
+      + (m.place?'<span><svg class="ic" style="width:12px;height:12px;vertical-align:-2px"><use href="#ic-flag"/></svg> '+m.place+'</span>':'')
+      // El ID va con el partido en el panel de la liga también: es el que la
+      // liga dicta cuando alguien pregunta "¿cuál es el de mi hijo?".
+      + '<span style="font-family:var(--mono);letter-spacing:.06em;color:var(--dim)">'+idPartido(m)+'</span>'
+      + (esPrivado(m)?'<span style="color:var(--papa);font-weight:700">🔒 privado</span>':'')
+      + '</div>';
     if(!m.done && canOfficiate(m)){ h+='<div class="le-officiate" onclick="officiateMatch('+idx+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir en la mesa</div>'; }
     if(!m.done && canAdminLeague(d)){
       h+='<div class="le-add" style="margin:-2px 0 6px;flex-wrap:wrap"><input id="dt_'+idx+'" type="date" value="'+(m.date||'')+'" style="flex:0 0 auto;min-width:0"><input id="tm_'+idx+'" type="time" value="'+(m.time||'')+'" style="flex:0 0 auto;min-width:0"><input id="pl_'+idx+'" value="'+((m.place||'').replace(/"/g,'&quot;'))+'" placeholder="Lugar / cancha"><button class="btn sm ghost" onclick="setMatchSchedule('+idx+')">Fecha</button></div>';
       h+='<div class="le-add" style="margin:-4px 0 12px"><input id="mesa_'+idx+'" type="email" inputmode="email" value="'+((m.mesa||'').replace(/"/g,'&quot;'))+'" placeholder="Correo de la mesa (opcional)"><button class="btn sm ghost" onclick="setMatchMesa('+idx+')">Mesa</button></div>';
+      /* EL CANDADO DEL PARTIDO. Prendido, enseña el código y el botón del link:
+         los dos juntos, porque uno sin el otro no sirve de nada y la liga los
+         va a mandar en el mismo mensaje. */
+      h+='<div class="le-add" style="margin:-6px 0 14px;flex-wrap:wrap;gap:8px">'
+        +'<button class="btn sm '+(esPrivado(m)?'':'ghost')+'" onclick="alternarPrivado('+idx+')" style="flex:0 0 auto">'
+        +(esPrivado(m)?'🔒 Privado':'🔓 Abierto')+'</button>';
+      if(esPrivado(m)){
+        h+='<span style="font-family:var(--mono);font-size:15px;letter-spacing:.14em;color:var(--papa);'
+          +'background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px;display:inline-flex;align-items:center">'
+          +(m.codigo||'----')+'</span>'
+          +'<button class="btn sm ghost" style="flex:0 0 auto" onclick="ligaLinkPartido('+idx+')">Copiar link</button>'
+          +'<button class="btn sm ghost" style="flex:0 0 auto" onclick="ligaCambiarCodigo('+idx+')">Otro código</button>'
+          +'<div style="flex:1 0 100%;font-size:11.5px;color:var(--dim);line-height:1.45">'
+          +'Manda el <b>link</b> y el <b>código</b> juntos. El link dice dónde está el partido; el código dice quién puede pasar. '
+          +'Sólo quien tenga los dos va a poder verlo.</div>';
+      }
+      h+='</div>';
     }
   });
   box.innerHTML=h;
