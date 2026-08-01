@@ -251,8 +251,14 @@
         escribir('#altaNum',  k.num || String(4 + i));
         escribir('#altaPos',  k.pos || 'Base');
         // Fecha de nacimiento coherente con su edad (ya no se pide CURP).
+        /* La fecha se separa POR HIJO, no sólo por edad. Derivarla nada más de
+           la edad hacía que dos hermanos de los mismos años salieran con el
+           MISMO cumpleaños, y el alta los rechazaba por duplicados — con toda
+           la razón: la app no puede distinguir a dos niños con igual nombre y
+           misma fecha. El dato degenerado era mío, no la regla de la app. */
         var edad = k.age || 10;
         var n = new Date(); n.setFullYear(n.getFullYear() - edad);
+        n.setMonth((i * 5) % 12); n.setDate(1 + (i * 7) % 27);
         escribir('#altaNac', n.toISOString().slice(0, 10));
         var resp = $('#altaResp'); if (resp && !resp.textContent) tocar(resp);
         var b = $$('#altaBody button').filter(function (x){ return /vincular/i.test(x.innerText); })[0];
