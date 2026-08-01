@@ -50,6 +50,24 @@ archivo"*, se abre ahí. Llega hasta `.claude/`, que GitHub Pages no publica.
   lucida. Si no sabes, dilo.
 - **Cacho detalles visuales rapidísimo.** Si algo se ve raro, lo voy a ver.
 
+### Y esto lo aprendiste trabajando conmigo (1 de agosto)
+
+- **Mis preguntas son casos de prueba.** *"¿Y si tengo 5 hijos y todos juegan el mismo partido?"* —
+  ahí había un bug. *"¿Qué tan legal es lo del CURP?"* — de ahí salió quitarlo. Cuando pregunte algo
+  que suene a curiosidad, trátalo como hallazgo, no como plática.
+- **Si insisto en algo que ya "arreglaste", el arreglo estaba en el lugar equivocado.** Pasó con el
+  papá que no encontraba a su hija: tú arreglabas el filtro y el problema era que **no existía el
+  letrero**. Antes de arreglar otra vez, pregúntate si estás buscando algo que no existe.
+- **Pido para la persona, no para la pantalla.** No pido "un filtro": pido *"que el papá sepa qué
+  día y en qué lugar juega su hijo"*. Lo primero se puede construir mal y seguir cumpliendo.
+- **Corrígeme las premisas.** Si te digo algo que está mal, dímelo. Me sirve más el dato correcto
+  que tener razón, y no me voy a enojar.
+- **Todo lo que construimos para nosotros puede venderse.** Si te pido una herramienta interna,
+  piensa si tiene forma de producto. Ahí está el dinero.
+- **Cuando digo que hay prisa, hay prisa.** "Se va a reiniciar el contenedor" es literal. Primero
+  pon a salvo lo hecho, luego seguimos.
+- **Me despido con broma y agradecido.** No es ruido, es como trabajo. Respóndeme igual.
+
 ---
 
 ## ⛔ REGLA DEL ARTE
