@@ -856,6 +856,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--dim)}
 .mid-chip b{color:var(--accent-lt);font-size:12.5px;letter-spacing:.06em}
 .mid-chip:active{border-color:var(--accent)}
+/* El logo de confirmar: apagado hasta que la palabra esté bien escrita. Que se
+   vea apagado es parte del mensaje — dice 'todavía no', sin regañar. */
+.borralogo{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;
+  border-radius:14px;border:1px dashed var(--line);background:var(--panel2);color:var(--dim);
+  font-family:var(--body);font-weight:750;font-size:15px;cursor:not-allowed;opacity:.5;transition:.18s}
+.borralogo .ic{width:26px;height:26px}
+.borralogo.listo{cursor:pointer;opacity:1;border-style:solid;border-color:var(--crit);
+  background:rgba(236,90,69,.14);color:#ffb4a8;box-shadow:0 0 0 3px rgba(236,90,69,.12)}
+.borralogo.listo .ic{color:var(--crit)}
 .fo-live{position:absolute;top:10px;left:0;right:0;text-align:center;z-index:2}
 .fo-live span{font-size:10px;font-weight:800;letter-spacing:.05em;color:#fff;background:rgba(236,90,69,.92);padding:3px 10px;border-radius:20px}
 .faceoff.islive{padding-top:30px;border-color:rgba(236,90,69,.4)}
@@ -2595,6 +2604,20 @@ function buildLigaStats(){
   if(body)body.style.display='';
   if(claim)claim.style.display='none';
 
+  /* El botón de borrar la liga, sólo para el admin supremo y hasta abajo del
+     panel: es la acción más cara de la app y no tiene por qué estar a la mano
+     de un pulgar que iba pasando. */
+  if(body && typeof isSuperAdmin==='function' && isSuperAdmin()){
+    let bl=document.getElementById('ligaBorrar');
+    if(!bl){ bl=document.createElement('div'); bl.id='ligaBorrar'; bl.style.marginTop='22px'; body.appendChild(bl); }
+    bl.innerHTML='<div class="eyebrow" style="margin:0 2px 6px;color:var(--crit)">Zona de riesgo · admin supremo</div>'
+      +'<button class="btn ghost sm block" style="color:var(--crit);border-color:var(--crit);border-style:dashed" '
+      +'onclick="pedirBorrado(\'liga\',\''+(d.code||'')+'\',\''+String(d.name||'esta liga').replace(/'/g,"\\'")+'\')">'
+      +'◆ Borrar la liga completa</button>'
+      +'<div style="font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.45">'
+      +'Se lleva sus equipos, su calendario y sus resultados. Pide escribir <b>Mazi</b> y pulsar el logo.</div>';
+  }
+
   /* AVISO DE DEMOSTRACIÓN, arriba de todo. Si esta liga se tomara por real, el
      administrador acabaría capturando resultados encima de equipos que no
      existen. */
@@ -4091,7 +4114,13 @@ function buildLeagueTeams(){
       if(!(t.players||[]).length) h+='<div class="stratnote" style="border-left-color:var(--liga);margin:0 0 8px">Este equipo aún no tiene jugadores. Su dueño los suma cuando aprueba solicitudes.</div>';
       t.players.forEach((p)=>{ const av=playerAverages(p); const stat=av?'<span class="le-pos" style="color:var(--liga)">'+av.ppg.toFixed(1)+' PPP · '+av.gp+'PJ</span>':'<span class="le-pos">'+(p.pos||'')+'</span>';
         h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+(p.nm||p.name||'')+'</b>'+(p.email?'<span class="le-pos" style="opacity:.7;font-size:10px">'+p.email+'</span>':'')+stat+'</div>'; });
-      h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Quitar de la liga</button></div>';
+      h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Quitar de la liga</button>';
+      /* El admin supremo además puede BORRARLO, que no es lo mismo que quitarlo
+         de la liga: quitar lo saca de este torneo, borrar se lo lleva a él y a
+         sus partidos. Por eso lleva la confirmación de dos actos. */
+      if(typeof isSuperAdmin==='function' && isSuperAdmin())
+        h+='<button class="btn ghost sm block" style="margin-top:6px;color:var(--crit);border-color:var(--crit);border-style:dashed" onclick="pedirBorrado(\'equipo\',\''+t.id+'\',\''+String(t.name).replace(/'/g,"\\'")+'\')">◆ Borrar el equipo (admin supremo)</button>';
+      h+='</div>';
     }
     h+='</div>';
   });
@@ -5265,6 +5294,63 @@ const VERSION='2026.08.01-b';
    cuenta que usó este teléfono antes): esto es lo que decide isSuperAdmin() */
 function myEmail(){ if(_session&&_session.user&&_session.user.email) return _session.user.email.toLowerCase(); return ((userData()||{}).email||'').toLowerCase(); }
 function isSuperAdmin(){ return myEmail()===SUPER_EMAIL; }
+
+/* ═══ BORRAR DE VERDAD, CON DOS ACTOS ═══════════════════════════════════════
+   Carlos: *"haz que admin supremo pueda borrar ligas y equipos pero que
+   requiera de una confirmación sencilla como escribir Mazi y pulsar el logo de
+   grupo Mazi"*.
+
+   Y el diseño que pidió es el correcto, vale la pena decir por qué: borrar una
+   liga se lleva sus equipos, su calendario y su historia — no se deshace. Un
+   "¿Estás seguro? [Sí]" se contesta con el pulgar sin leer, y ahí es donde se
+   pierden cosas. Dos actos DISTINTOS —teclear una palabra y luego tocar el
+   logo— no se hacen sin querer, y aun así no piden más de cinco segundos.
+
+   El logo sólo se enciende cuando la palabra ya está bien escrita: así el
+   segundo acto confirma que el primero se hizo a conciencia. */
+let _borrar=null;   // { tipo:'liga'|'equipo', id, nombre }
+function pedirBorrado(tipo, id, nombre){
+  if(!isSuperAdmin()){ flashSaved('Sólo el admin supremo puede borrar'); return; }
+  _borrar={ tipo, id, nombre };
+  document.getElementById('sheetTitle').textContent='Borrar '+(tipo==='liga'?'la liga':'el equipo');
+  document.getElementById('sheetBody').innerHTML=
+    '<div class="stratnote" style="border-left-color:var(--crit)">'
+    +'Vas a borrar <b>'+nombre+'</b>'
+    +(tipo==='liga'?' y con ella <b>sus equipos, su calendario y sus resultados</b>':'')
+    +'. <b>Esto no se deshace.</b></div>'
+    +'<div class="eyebrow" style="margin:14px 2px 6px">1 · Escribe <b style="color:var(--bone)">Mazi</b></div>'
+    +'<input class="field" id="borrarPalabra" autocapitalize="words" autocomplete="off" '
+    +'placeholder="Mazi" oninput="revisarPalabraBorrado()">'
+    +'<div class="eyebrow" style="margin:14px 2px 6px">2 · Pulsa el logo para confirmar</div>'
+    +'<button id="borrarLogo" class="borralogo" disabled onclick="confirmarBorrado()">'
+    +'<svg class="ic"><use href="#ic-logo"/></svg><span>Borrar '+nombre+'</span></button>'
+    +'<button class="btn ghost block" style="margin-top:10px" onclick="closeSheet()">Mejor no</button>';
+  document.getElementById('sheet').classList.add('on');
+}
+function revisarPalabraBorrado(){
+  const v=(document.getElementById('borrarPalabra').value||'').trim().toLowerCase();
+  const b=document.getElementById('borrarLogo'); if(!b)return;
+  const ok=(v==='mazi');
+  b.disabled=!ok; b.classList.toggle('listo', ok);
+}
+function confirmarBorrado(){
+  if(!_borrar || !isSuperAdmin()) return;
+  const {tipo,id,nombre}=_borrar;
+  if(tipo==='equipo'){
+    const d=leagueData();
+    d.teams=(d.teams||[]).filter(t=>t.id!==id);
+    // El calendario se va con el equipo: dejar partidos de un equipo que ya no
+    // existe deja la tabla mintiendo y la mesa sin a quién anotarle.
+    d.calendar=(d.calendar||[]).filter(m=>m.home!==id&&m.away!==id);
+    saveLeague(d);
+    try{ leOpen=null; buildLeagueTeams(); buildLeagueCal(); }catch(e){}
+  } else {
+    ['lm_league','lm_roster','lm_bracket','lm_strat'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+    const u=userData()||{}; if(u.league) delete u.league; saveUser(u);
+    try{ render('hub'); }catch(e){}
+  }
+  _borrar=null; closeSheet(); flashSaved('Borrado: '+nombre);
+}
 /* borra el perfil/liga/roster de ESTE teléfono al detectar que entra una cuenta distinta
    a la que dejó datos guardados: evita que una cuenta nueva "herede" monedas, rol de
    súper admin o cualquier otro dato de quien usó el dispositivo antes (bug real: dos
