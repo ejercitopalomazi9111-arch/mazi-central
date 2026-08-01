@@ -881,12 +881,17 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .ndel:active{color:var(--crit);background:rgba(236,90,69,.14)}
 /* La cinta de "aquí juega tu hij@": lo primero que el ojo del papá encuentra. */
 .faceoff.esmio{border-color:var(--papa);box-shadow:0 0 0 1px var(--papa),0 8px 26px rgba(232,177,62,.18)}
-.fo-mio{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:7px;
+.fo-mio{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;text-align:center;
   margin:-6px -12px 10px;padding:8px 12px;background:rgba(232,177,62,.16);
   border-bottom:1px solid rgba(232,177,62,.35);color:#f5dfa6;font-size:12.5px;font-weight:650}
 .fo-mio b{color:#ffe9b8}
 .fo-mio span{color:rgba(245,223,166,.75);font-weight:500}
-.fo-mio .ic{width:14px;height:14px;color:var(--papa)}
+.fo-mio .ic{width:14px;height:14px;flex:0 0 auto;color:var(--papa)}
+.fo-mio-tx{min-width:0;line-height:1.35}
+/* Hermanos enfrentados: no se entierra en la lista, se dice primero. */
+.fo-mio .enfrentados{display:inline-block;background:var(--papa);color:#1a1206;
+  font-weight:800;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  border-radius:20px;padding:2px 8px;margin-right:5px}
 .mid-chip:active{border-color:var(--accent)}
 /* El logo de confirmar: apagado hasta que la palabra esté bien escrita. Que se
    vea apagado es parte del mensaje — dice 'todavía no', sin regañar. */
@@ -2705,20 +2710,66 @@ function hijosDeEstaCuenta(){
   return l.filter(x=>x.code||x.name);
 }
 /* ¿Quién de los míos juega en este partido? Devuelve el nombre, o null. */
-function miHijoEnPartido(m){
-  const mios=hijosDeEstaCuenta(); if(!mios.length||!m) return null;
+/* TODOS los míos que juegan aquí, no el primero.
+   ─────────────────────────────────────────────────────────────────────────
+   Carlos preguntó: *"¿y si tengo 5 hijos y todos van a jugar el mismo
+   partido? ¿o 5 hijos y 3 juegan éste?"* — y la primera versión de esto
+   devolvía **el primero que encontraba y se salía**. O sea que un papá con
+   tres hijos en la cancha veía un solo nombre, y lo peor no es que faltaran
+   dos: es que se iba creyendo que los otros dos NO jugaban ese día.
+
+   Ahora se recorren las dos plantillas completas y se devuelven todos, con el
+   equipo de cada quien. Que sea una lista y no un nombre también resuelve el
+   caso bonito: **dos hermanos en equipos contrarios**. Ahí el papá necesita
+   saberlo antes de sentarse de un lado. */
+function misHijosEnPartido(m){
+  const mios=hijosDeEstaCuenta(); if(!mios.length||!m) return [];
   const H=teamById(m.home), A=teamById(m.away);
-  for(const t of [H,A]){
-    if(!t) continue;
-    for(const p of (t.players||[])){
-      for(const k of mios){
-        if(k.code && p.code && String(p.code)===String(k.code)) return {nombre:k.name, equipo:t.name};
-        if(k.name && (p.nm||p.name) && String(p.nm||p.name).trim()===String(k.name).trim())
-          return {nombre:k.name, equipo:t.name};
-      }
-    }
+  const out=[]; const yaVa=new Set();
+  [H,A].forEach(t=>{
+    if(!t) return;
+    (t.players||[]).forEach(p=>{
+      mios.forEach(k=>{
+        const igual = (k.code && p.code && String(p.code)===String(k.code))
+                   || (k.name && (p.nm||p.name) && String(p.nm||p.name).trim()===String(k.name).trim());
+        // La llave lleva el equipo: si el mismo niño apareciera en las dos
+        // plantillas —pasa cuando la liga lo mueve y no limpia la anterior—
+        // se enseña una sola vez por equipo y no se duplica el renglón.
+        const llave=(k.code||k.name)+'@'+t.id;
+        if(igual && !yaVa.has(llave)){ yaVa.add(llave); out.push({nombre:k.name, equipo:t.name, equipoId:t.id}); }
+      });
+    });
+  });
+  return out;
+}
+/* Se conserva el nombre viejo porque lo usan la vigilancia y las alertas, pero
+   ahora es sólo el atajo de "¿hay alguno?". */
+function miHijoEnPartido(m){ const l=misHijosEnPartido(m); return l.length?l[0]:null; }
+
+/* Cómo se dice, según cuántos y de qué lado.
+   Un nombre se lee de un vistazo; cinco nombres seguidos, no. Y si están en
+   equipos contrarios, eso NO se puede enterrar en una lista: es la información
+   que decide de qué lado de la cancha se sienta el papá. */
+function textoDeMisHijos(lista){
+  if(!lista.length) return '';
+  const equipos=[...new Set(lista.map(x=>x.equipoId))];
+  /* Ojo con la precedencia: `.replace` se pega al `.join`, no a la cadena
+     completa. La primera versión aplicaba el reemplazo a un texto que todavía
+     no terminaba en `</b>`, así que la "y" nunca entraba y salía
+     "Ana, Beto, Caro, Dani, Emi". Se arma primero, se corrige después. */
+  const nom=(a)=>{
+    const t='<b>'+a.map(x=>x.nombre).join('</b>, <b>')+'</b>';
+    return t.replace(/, (<b>[^<]*<\/b>)$/, ' y $1');
+  };
+  if(equipos.length>1){
+    // Hermanos enfrentados. Se dice primero, porque es lo que cambia su tarde.
+    return '<span class="enfrentados">Se enfrentan</span> '
+      + equipos.map(id=>{ const g=lista.filter(x=>x.equipoId===id);
+          return nom(g)+' <span>('+g[0].equipo+')</span>'; }).join(' <span>vs</span> ');
   }
-  return null;
+  const g=lista;
+  return (g.length===1?'Aquí juega ':'Aquí juegan ') + nom(g)
+       + ' <span>· '+g[0].equipo+'</span>';
 }
 /* Todos los partidos de los míos, ordenados por fecha. Es lo que alimenta el
    letrero, el aviso y la revisión del día del partido. */
@@ -2752,18 +2803,35 @@ function _marcarAvisado(clave){ try{ localStorage.setItem('lm_aviso_'+clave,'1')
 function revisarPartidosDeMisHijos(){
   const mios=partidosDeMisHijos(); if(!mios.length) return;
   const hoy=new Date(); const iso=hoy.toISOString().slice(0,10);
-  mios.forEach(({m,quien})=>{
+  mios.forEach(({m})=>{
     const id=idPartido(m);
-    // 1 · Aviso de que ya quedó ubicado: se manda UNA vez por partido.
+    /* Los avisos nombran a TODOS los que juegan, no al primero. Un papá con
+       tres hijos en la cancha que recibe un aviso con un solo nombre entiende
+       lo contrario de lo que pasa: creería que los otros dos no juegan. */
+    const quienes=misHijosEnPartido(m);
+    if(!quienes.length) return;
+    const equipos=[...new Set(quienes.map(x=>x.equipoId))];
+    const nombres=quienes.map(x=>x.nombre);
+    const lista=nombres.length===1 ? nombres[0]
+      : nombres.slice(0,-1).join(', ')+' y '+nombres[nombres.length-1];
+    const verbo=nombres.length===1?'juega':'juegan';
+    // Hermanos en equipos contrarios: se dice, porque decide de qué lado se
+    // sienta el papá.
+    const contra = equipos.length>1
+      ? ' — ¡se enfrentan! '+equipos.map(e=>{ const g=quienes.filter(x=>x.equipoId===e);
+          return g.map(x=>x.nombre).join(' y ')+' con '+g[0].equipo; }).join(' vs ')
+      : ' con '+quienes[0].equipo;
+
+    // 1 · Aviso de que ya quedaron ubicados: se manda UNA vez por partido.
     if(!_avisado('ubi-'+id)){
-      pushNote('hijo','Ya sabemos dónde juega '+quien.nombre+': '+id
+      pushNote('hijo','Ya sabemos dónde '+verbo+' '+lista+': '+id
         +(m.date?' · '+fmtDate(m.date):'')+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:''));
       _marcarAvisado('ubi-'+id);
     }
     if(m.done) return;
     // 2 · El día del partido. Éste es el que importa y va aparte.
     if(m.date===iso && !_avisado('hoy-'+id)){
-      pushNote('partido','HOY juega '+quien.nombre+' con '+quien.equipo
+      pushNote('partido','HOY '+verbo+' '+lista+contra
         +(m.time?' a las '+m.time:'')+(m.place?' en '+m.place:'')+' · '+id);
       _marcarAvisado('hoy-'+id);
       try{ if(navigator.vibrate)navigator.vibrate([20,60,20]); }catch(e){}
@@ -2774,7 +2842,7 @@ function revisarPartidosDeMisHijos(){
       const inicio=new Date(hoy); inicio.setHours(hh||0, mm||0, 0, 0);
       const faltan=(inicio-hoy)/60000;
       if(faltan>0 && faltan<=30){
-        pushNote('partido','En '+Math.round(faltan)+' min empieza el partido de '+quien.nombre+' · '+id);
+        pushNote('partido','En '+Math.round(faltan)+' min empieza el partido de '+lista+' · '+id);
         _marcarAvisado('pronto-'+id);
       }
     }
@@ -2817,12 +2885,12 @@ function faceoffCard(H,A,opts){
      sábado. Dice el NOMBRE de su hij@, no "tu hij@": el papá reconoce el nombre
      más rápido que una etiqueta genérica, y si tiene tres hijos necesita saber
      cuál de los tres es éste. */
-  const mio = opts.mio;
-  const cinta = mio
-    ? '<div class="fo-mio"><svg class="ic"><use href="#ic-heart"/></svg> Aquí juega <b>'+mio.nombre+'</b>'
-      + (mio.equipo?' <span>· '+mio.equipo+'</span>':'') + '</div>'
+  const mios = opts.mios || (opts.mio ? [opts.mio] : []);
+  const cinta = mios.length
+    ? '<div class="fo-mio"><svg class="ic"><use href="#ic-heart"/></svg><span class="fo-mio-tx">'
+      + textoDeMisHijos(mios) + '</span></div>'
     : '';
-  return '<div class="'+cls+(mio?' esmio':'')+'" style="--hc:'+hc+';--ac:'+ac+'"'+click+'>'+cinta+top+
+  return '<div class="'+cls+(mios.length?' esmio':'')+'" style="--hc:'+hc+';--ac:'+ac+'"'+click+'>'+cinta+top+
     side(H,'l')+'<div class="fo-mid">'+mid+'</div>'+side(A,'r')+'</div>';
 }
 let LIVE_CLOUD=[];
@@ -2988,7 +3056,7 @@ function buildEnVivoBoard(){
       // reconoce el partido de su hij@ entre nueve que juegan el mismo sábado.
       const when=(cat?(CAT_NOMBRE[cat]||cat)+' · ':'')
         +(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
-      h+=faceoffCard(H,A,{mode:'next',when:when,mio:miHijoEnPartido(m)});
+      h+=faceoffCard(H,A,{mode:'next',when:when,mios:misHijosEnPartido(m)});
       // El ID, debajo y copiable de un toque: el día del juego se dicta o se
       // pega en el grupo, no se busca entre nueve categorías.
       h+='<div class="mid-chip" onclick="copiarId(\''+idPartido(m)+'\')" title="Copiar">'
@@ -2997,7 +3065,7 @@ function buildEnVivoBoard(){
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
   if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
     past.forEach(m=>{ const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      h+=faceoffCard(H,A,{mode:'final',hs:m.hs,as:m.as,when:(m.date?fmtDate(m.date):'J'+m.jornada),mio:miHijoEnPartido(m)}); }); }
+      h+=faceoffCard(H,A,{mode:'final',hs:m.hs,as:m.as,when:(m.date?fmtDate(m.date):'J'+m.jornada),mios:misHijosEnPartido(m)}); }); }
   return h;
 }
 function buildPublicoData(){
@@ -5743,7 +5811,7 @@ const SUPER_EMAIL='palomazi9111@gmail.com';
    discute. Con esto se ve de un vistazo qué build trae el teléfono.
    SE SUBE A MANO en cada entrega. Si el número no cambió después de publicar,
    el problema es el caché: cerrar la pestaña y volver a abrir. */
-const VERSION='2026.08.01-d';
+const VERSION='2026.08.01-e';
 (function sello(){
   const poner=()=>{ const e=document.getElementById('verSello');
     if(e) e.textContent='v'+VERSION; };
