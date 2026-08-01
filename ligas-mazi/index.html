@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<!-- GitHub Pages sirve el HTML con max-age=600 y Safari en iPhone lo estira
+     mucho más. Esto le pide que revalide; no es garantía —el caché del
+     navegador manda— por eso además abajo va un sello de VERSIÓN visible: si
+     el número no cambió, es el teléfono, no el servidor. -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="theme-color" content="#0b0d12">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -825,18 +830,41 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 /* ===== En vivo: enfrentamientos con logos encarados + degradado ===== */
 .fo-sec-ttl{display:flex;align-items:center;gap:8px;margin:16px 2px 9px;font-family:var(--disp);font-weight:800;font-size:16px}
 .fo-sec-ttl .pill{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
-.faceoff{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0d1017;margin-bottom:10px;padding:16px 12px 14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;cursor:pointer}
+/* Las columnas laterales tienen PISO. Antes eran `1fr auto 1fr`, y la de en
+   medio crece con el texto: al ponerle la categoría y el lugar al partido, el
+   centro empujó a los lados por debajo de los 56px del escudo y los cortó
+   contra el borde. El simulacro lo marcó como desborde de `.fo-side` y en la
+   captura se veía clarito: los escudos partidos a la mitad. */
+.faceoff{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0d1017;margin-bottom:10px;padding:16px 12px 14px;display:grid;grid-template-columns:minmax(74px,1fr) minmax(0,auto) minmax(74px,1fr);align-items:center;gap:6px;cursor:pointer}
 .faceoff::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,var(--hc,#2a3350) -12%,rgba(13,16,23,.35) 40%,rgba(13,16,23,.35) 60%,var(--ac,#2a3350) 112%);opacity:.5;pointer-events:none}
 .faceoff>*{position:relative;z-index:1}
 .fo-side{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;min-width:0}
 .fo-side .crest{width:56px;height:56px;font-size:20px;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .fo-side.l .crest{transform:rotate(-6deg)}.fo-side.r .crest{transform:rotate(6deg)}
 .fo-nm{font-family:var(--body);font-weight:700;font-size:13px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.fo-mid{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px}
+.fo-mid{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px;min-width:0}
 .fo-vs{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--dim);opacity:.85}
 .fo-score{font-family:var(--disp);font-weight:800;font-size:24px;letter-spacing:.02em;white-space:nowrap}
 .fo-score .w{color:#fff}.fo-score .l{color:var(--dim)}
-.fo-when{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-transform:capitalize;text-align:center;line-height:1.3}
+/* `capitalize` sube TODAS las palabras: 'sábado, 8 de agosto' salía como
+   'Sábado, 8 De Agosto'. En español sólo va la primera. */
+.fo-when{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+.fo-when::first-letter{text-transform:uppercase}
+/* El ID del partido: chico, legible y del tamaño del dedo para copiarlo. */
+.mid-chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-6px 0 10px;padding:0 12px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:22px;cursor:pointer;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--dim)}
+.mid-chip b{color:var(--accent-lt);font-size:12.5px;letter-spacing:.06em}
+.mid-chip:active{border-color:var(--accent)}
+/* El logo de confirmar: apagado hasta que la palabra esté bien escrita. Que se
+   vea apagado es parte del mensaje — dice 'todavía no', sin regañar. */
+.borralogo{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;
+  border-radius:14px;border:1px dashed var(--line);background:var(--panel2);color:var(--dim);
+  font-family:var(--body);font-weight:750;font-size:15px;cursor:not-allowed;opacity:.5;transition:.18s}
+.borralogo .ic{width:26px;height:26px}
+.borralogo.listo{cursor:pointer;opacity:1;border-style:solid;border-color:var(--crit);
+  background:rgba(236,90,69,.14);color:#ffb4a8;box-shadow:0 0 0 3px rgba(236,90,69,.12)}
+.borralogo.listo .ic{color:var(--crit)}
 .fo-live{position:absolute;top:10px;left:0;right:0;text-align:center;z-index:2}
 .fo-live span{font-size:10px;font-weight:800;letter-spacing:.05em;color:#fff;background:rgba(236,90,69,.92);padding:3px 10px;border-radius:20px}
 .faceoff.islive{padding-top:30px;border-color:rgba(236,90,69,.4)}
@@ -852,7 +880,16 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .rev-prev{width:120px;height:150px;border-radius:14px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
 .gacha-cap{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
 .cosgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
-.coscard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+/* LA TARJETA ENCIERRA LO QUE TIENE DENTRO.
+   Carlos: 'hay cosméticos animados que se salen de las cartas'. Y era literal:
+   las previas con órbitas y destellos —Ojo Leyenda, los que giran— se salían
+   de su tarjeta y se encimaban con la de abajo, porque nada las recortaba.
+   Una animación que invade a su vecina no se ve premium, se ve rota. */
+.coscard{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+.coscard>*{max-width:100%}
+/* El recorte va también en la previa misma: hay animaciones que se escapan de
+   su propia caja antes de llegar al borde de la tarjeta. */
+.coscard .cos-prev, .coscard>div:first-child{overflow:hidden;border-radius:10px;flex:0 0 auto}
 .coscard.on{border-color:var(--rc)}
 .cos-prev{width:64px;height:80px;border-radius:10px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
 .cos-nm{font-family:var(--body);font-weight:700;font-size:12.5px;color:var(--txt)}
@@ -1205,7 +1242,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div id="loginMsg" class="login-msg"></div>
         <button class="btn ghost" onclick="guestEnter()">Solo ver como invitado <span class="go">›</span></button>
       </div>
-      <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
+      <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos<br><span id="verSello" style="font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.06em"></span></div>
       <div class="cloud-badge" id="cloudBadge"><span class="dot"></span> Modo local</div>
     </div>
   </section>
@@ -2567,6 +2604,20 @@ function buildLigaStats(){
   if(body)body.style.display='';
   if(claim)claim.style.display='none';
 
+  /* El botón de borrar la liga, sólo para el admin supremo y hasta abajo del
+     panel: es la acción más cara de la app y no tiene por qué estar a la mano
+     de un pulgar que iba pasando. */
+  if(body && typeof isSuperAdmin==='function' && isSuperAdmin()){
+    let bl=document.getElementById('ligaBorrar');
+    if(!bl){ bl=document.createElement('div'); bl.id='ligaBorrar'; bl.style.marginTop='22px'; body.appendChild(bl); }
+    bl.innerHTML='<div class="eyebrow" style="margin:0 2px 6px;color:var(--crit)">Zona de riesgo · admin supremo</div>'
+      +'<button class="btn ghost sm block" style="color:var(--crit);border-color:var(--crit);border-style:dashed" '
+      +'onclick="pedirBorrado(\'liga\',\''+(d.code||'')+'\',\''+String(d.name||'esta liga').replace(/'/g,"\\'")+'\')">'
+      +'◆ Borrar la liga completa</button>'
+      +'<div style="font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.45">'
+      +'Se lleva sus equipos, su calendario y sus resultados. Pide escribir <b>Mazi</b> y pulsar el logo.</div>';
+  }
+
   /* AVISO DE DEMOSTRACIÓN, arriba de todo. Si esta liga se tomara por real, el
      administrador acabaría capturando resultados encima de equipos que no
      existen. */
@@ -2709,6 +2760,11 @@ function openPublicLeague(accountId,name){
   fetchLeagueFull(accountId).then(lg=>renderPublicLeague(lg,name,accountId)).catch(()=>renderPublicLeague(null,name,accountId));
 }
 function closePublicLeague(){ const bg=document.getElementById('pubLeagueBg'); if(bg)bg.classList.remove('on'); }
+/* Qué categoría está filtrando el calendario. `null` = todas. Vive fuera de la
+   función porque tiene que sobrevivir al redibujo que dispara el propio filtro. */
+let _calCat=null;
+function filtrarCalendario(cat){ _calCat=cat; try{ buildPublicoData(); }catch(e){}
+  try{ if(typeof buildHub==='function') buildHub(); }catch(e){} }
 function buildEnVivoBoard(){
   const d=leagueData(); let h='';
   const on=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null&&GAME.teams&&GAME.teams.length===2);
@@ -2725,11 +2781,62 @@ function buildEnVivoBoard(){
   if(!liveCount){ h+='<div class="stratnote" style="border-left-color:var(--mesa)">No hay partidos en vivo ahora. Cuando la mesa dirija un partido, aparecerá aquí para todo el público.</div>'; }
   const bydate=(a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''));
   const liveIdx=on?GAME.matchIdx:-1;
-  const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx).sort((a,b)=>bydate(a.m,b.m)).slice(0,10);
-  if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
+  /* ═══ EL FILTRO POR CATEGORÍA ══════════════════════════════════════════
+     Salió del simulacro y fue el hallazgo más caro: **los 64 papás del reparto,
+     los 64, se rindieron buscando el partido de su hij@**. No se aburrieron —
+     insistieron entre 3 y 8 veces cada uno. La causa era ésta: la lista de
+     "Próximos" se cortaba en 10 partidos de las NUEVE categorías juntas, así
+     que el de su niño casi nunca alcanzaba a salir.
+
+     Carlos lo había pedido tal cual: *"un papá de un niño de una categoría x
+     necesita saber más exactamente qué días y en qué lugares se enfrenta la
+     categoría de su hijo"*. Con filtro sí se puede, y al papá se le abre ya
+     puesto en la categoría de su hij@ — porque no tiene por qué buscarla. */
+  const catsCal=[...new Set(d.calendar.map(m=>{const t=teamById(m.home)||teamById(m.away); return t&&t.categoria;}).filter(Boolean))];
+  let catSel=_calCat;
+  if(catSel==null && currentRole==='papa'){          // el papá arranca en la de su hij@
+    const u=userData()||{}; const kid=(u.children||[])[0];
+    /* Se busca al hij@ por su código de equipo, y si no lo trae, RASTREANDO las
+       plantillas. Esto último no es lujo: el `teamCode` sólo queda escrito
+       cuando el papá mismo hizo la vinculación, y a los niños los da de alta el
+       coach todo el tiempo. Sin este respaldo, justo esos papás —que son
+       muchos— se quedaban sin filtro y volvían al revoltijo de nueve
+       categorías. Lo cazó el simulacro: 64 de 64 papás seguían rindiéndose. */
+    let eqKid = kid && kid.teamCode ? (d.teams||[]).find(t=>t.code===kid.teamCode) : null;
+    if(!eqKid && kid){
+      eqKid=(d.teams||[]).find(t=>(t.players||[]).some(p=>
+        (p.code&&kid.code&&p.code===kid.code) || ((p.nm||p.name)===kid.name)));
+    }
+    if(eqKid&&eqKid.categoria) catSel=eqKid.categoria;
+  }
+  const catDe=(m)=>{const t=teamById(m.home)||teamById(m.away); return (t&&t.categoria)||'';};
+  const cumple=(m)=>!catSel||catDe(m)===catSel;
+  if(catsCal.length>1){
+    h+='<div class="fo-sec-ttl">Próximos</div><div class="chips" style="margin:-2px 0 8px">'
+      +'<button class="chip'+(catSel?'':' on')+'" onclick="filtrarCalendario(null)">Todas</button>'
+      +catsCal.map(c=>'<button class="chip'+(catSel===c?' on':'')+'" onclick="filtrarCalendario(\''+c+'\')">'+(CAT_NOMBRE[c]||c)+'</button>').join('')
+      +'</div>';
+  }
+  // Con filtro puesto caben más, porque ya son los partidos que a esta persona
+  // le importan y no un revoltijo de nueve categorías.
+  const up=d.calendar.map((m,i)=>({m,i}))
+    // Los privados sólo salen para quien tiene el pase. Se filtran AQUÍ, en la
+    // lista, y no escondiendo la tarjeta con CSS: lo que no se debe ver, no se
+    // dibuja.
+    .filter(x=>!x.m.done && x.i!==liveIdx && cumple(x.m) && puedoVerPartido(x.m))
+    .sort((a,b)=>bydate(a.m,b.m)).slice(0, catSel?20:10);
+  if(up.length){ if(catsCal.length<=1) h+='<div class="fo-sec-ttl">Próximos</div>';
     up.forEach(x=>{ const m=x.m; const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
+      const cat=catDe(m);
+      // La categoría va PRIMERO en la línea: es el dato con el que un papá
+      // reconoce el partido de su hij@ entre nueve que juegan el mismo sábado.
+      const when=(cat?(CAT_NOMBRE[cat]||cat)+' · ':'')
+        +(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
       h+=faceoffCard(H,A,{mode:'next',when:when});
+      // El ID, debajo y copiable de un toque: el día del juego se dicta o se
+      // pega en el grupo, no se busca entre nueve categorías.
+      h+='<div class="mid-chip" onclick="copiarId(\''+idPartido(m)+'\')" title="Copiar">'
+        +'ID <b>'+idPartido(m)+'</b></div>';
       if(canOfficiate(m)) h+='<div class="le-officiate" style="margin:-6px 0 10px" onclick="officiateMatch('+x.i+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir este partido (eres la mesa)</div>'; }); }
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
   if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
@@ -3537,10 +3644,21 @@ function previewCos(c, size, alto){
     }
   }
   else if (c.kind === 'frame' || c.kind === 'effect') {
-    // Marcos y auras van sobre una silueta de carta: un marco sobre nada no se
-    // lee como marco.
-    dentro = '<i style="position:absolute;inset:16%;border-radius:5px;'
-           + 'background:linear-gradient(160deg,#1b2338,#0b1020)"></i>';
+    /* EL MARCO VA EN LA CARTITA, NO EN LA CAJA DE FUERA.
+       Aquí estaba el bug que reportó Carlos: *"algunas cosas en la pantalla de
+       showcase no muestran qué producto es"*. Los marcos se describen con
+       `box-shadow:inset …`, y ese `css` se estaba pintando en el contenedor
+       exterior — que NO tiene fondo propio— mientras la silueta oscura se
+       dibujaba encima y tapaba el anillo. Resultado: "Filo Épico" salía como un
+       rectángulo vacío. El anillo tiene que ir EN la silueta, que es lo que un
+       marco hace en la vida real: enmarcar una carta. */
+    dentro = '<i style="position:absolute;inset:14%;border-radius:7px;'
+           + 'background:linear-gradient(160deg,#1b2338,#0b1020);' + (c.css || '') + '"></i>';
+    // Y la caja de fuera se queda con el tinte de la rareza, para que el marco
+    // tenga contra qué recortarse.
+    return '<span class="'+(c.anim||'')+'" style="'+base
+         + 'background:radial-gradient(120% 90% at 50% 30%,'+r.c+'26,#0b1020 72%)">'
+         + dentro + '</span>';
   }
 
   return '<span class="'+(c.anim||'')+'" style="'+base+lienzo+'">'+dentro+'</span>';
@@ -4000,7 +4118,13 @@ function buildLeagueTeams(){
       if(!(t.players||[]).length) h+='<div class="stratnote" style="border-left-color:var(--liga);margin:0 0 8px">Este equipo aún no tiene jugadores. Su dueño los suma cuando aprueba solicitudes.</div>';
       t.players.forEach((p)=>{ const av=playerAverages(p); const stat=av?'<span class="le-pos" style="color:var(--liga)">'+av.ppg.toFixed(1)+' PPP · '+av.gp+'PJ</span>':'<span class="le-pos">'+(p.pos||'')+'</span>';
         h+='<div class="le-pl"><span class="le-num">#'+p.num+'</span><b>'+(p.nm||p.name||'')+'</b>'+(p.email?'<span class="le-pos" style="opacity:.7;font-size:10px">'+p.email+'</span>':'')+stat+'</div>'; });
-      h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Quitar de la liga</button></div>';
+      h+='<button class="btn ghost sm block" style="margin-top:10px;color:var(--crit);border-color:var(--crit)" onclick="delTeam(\''+t.id+'\')">Quitar de la liga</button>';
+      /* El admin supremo además puede BORRARLO, que no es lo mismo que quitarlo
+         de la liga: quitar lo saca de este torneo, borrar se lo lleva a él y a
+         sus partidos. Por eso lleva la confirmación de dos actos. */
+      if(typeof isSuperAdmin==='function' && isSuperAdmin())
+        h+='<button class="btn ghost sm block" style="margin-top:6px;color:var(--crit);border-color:var(--crit);border-style:dashed" onclick="pedirBorrado(\'equipo\',\''+t.id+'\',\''+String(t.name).replace(/'/g,"\\'")+'\')">◆ Borrar el equipo (admin supremo)</button>';
+      h+='</div>';
     }
     h+='</div>';
   });
@@ -4035,6 +4159,159 @@ const CAT_NOMBRE={
   'var-12-13':'Varonil 12–13', 'var-14-15':'Varonil 14–15', 'var-16-17':'Varonil 16–17',
   'fem-12-13':'Femenil 12–13', 'fem-14-15':'Femenil 14–15', 'fem-16-17':'Femenil 16–17',
 };
+/* ═══ PARTIDOS PRIVADOS ═════════════════════════════════════════════════════
+   Carlos: *"una opción para poner que sólo puedan ver personas invitadas el
+   partido; quienes sean invitadas son las personas a las que el líder de la
+   liga les da un link que los lleva a una pantalla que pregunte si quieren
+   seguir ese juego, para que el día que esté abierto sólo los que tuvieron el
+   link lo puedan ver, pero que pida un código que proporcione la liga para
+   evitar que se meta gente que no va en partidos más privados."*
+
+   Son DOS cerraduras y hacen falta las dos, por razones distintas:
+
+     · EL LINK dice *dónde* está el partido. Se reenvía —así se comparte todo—
+       así que por sí solo no protege nada: sólo evita que alguien lo encuentre
+       por casualidad.
+     · EL CÓDIGO dice *quién puede pasar*. Lo da la liga en corto, a quien
+       quiere, y es lo que de verdad deja fuera a quien no va.
+
+   Un link sin código es una puerta sin llave; un código sin link es una llave
+   sin puerta. Juntos sirven.
+
+   ── LO QUE ESTO NO ES ────────────────────────────────────────────────────
+   **No es seguridad de verdad.** En modo local todo vive en el teléfono y quien
+   sepa abrir las herramientas del navegador se lo salta. Sirve para lo que
+   Carlos pidió —que no se meta gente que no va— y no para guardar un secreto.
+   Cuando esto viva en la nube, la comprobación tiene que hacerse allá; aquí se
+   deja el camino puesto y dicho con todas sus letras. */
+function esPrivado(m){ return !!(m && m.privado); }
+/* La lista de invitados vive por partido y en este teléfono: es el registro de
+   quién ya pasó la puerta. */
+function invitadosDe(id){ try{ return JSON.parse(localStorage.getItem('lm_inv_'+id)||'[]'); }catch(e){ return []; } }
+function guardarInvitado(id, quien){
+  const l=invitadosDe(id); if(l.indexOf(quien)<0){ l.push(quien); try{ localStorage.setItem('lm_inv_'+id, JSON.stringify(l)); }catch(e){} }
+}
+function puedoVerPartido(m){
+  if(!esPrivado(m)) return true;
+  if(typeof isSuperAdmin==='function' && isSuperAdmin()) return true;
+  if(canAdminLeague(leagueData())) return true;                 // la liga siempre ve lo suyo
+  const yo=(myEmail()||'').toLowerCase(); if(!yo) return false;
+  return invitadosDe(idPartido(m)).indexOf(yo)>=0;
+}
+/* La liga prende el candado y define el código. El código NO se inventa solo a
+   escondidas: se enseña, porque la liga lo va a dictar por teléfono. */
+function alternarPrivado(idx){
+  const d=leagueData(); if(!canAdminLeague(d))return;
+  const m=d.calendar[idx]; if(!m)return;
+  m.privado=!m.privado;
+  if(m.privado && !m.codigo) m.codigo=String(Math.floor(Math.random()*9000+1000));
+  saveLeague(d);
+  try{ buildLeagueCal(); }catch(e){}
+  flashSaved(m.privado?('Partido privado · código '+m.codigo):'Partido abierto a todos');
+}
+function ligaCambiarCodigo(idx){
+  const d=leagueData(); if(!canAdminLeague(d))return;
+  const m=d.calendar[idx]; if(!m)return;
+  m.codigo=String(Math.floor(Math.random()*9000+1000)); saveLeague(d);
+  try{ buildLeagueCal(); }catch(e){}
+  flashSaved('Código nuevo: '+m.codigo+' — el anterior ya no sirve');
+}
+function ligaLinkPartido(idx){
+  const d=leagueData(); const m=d.calendar[idx]; if(!m)return;
+  const url=location.origin+location.pathname+'#partido='+idPartido(m);
+  try{ navigator.clipboard.writeText(url); flashSaved('Link copiado · el código es '+(m.codigo||'—')); }
+  catch(e){ flashSaved(url); }
+}
+/* LA PANTALLA DE LA PUERTA. A esto llega quien abrió el link. Pregunta si
+   quiere seguir el partido y pide el código, en ese orden — que es el orden en
+   que la persona lo piensa. */
+function abrirPuertaPartido(idPart){
+  const enc=partidoPorId(idPart);
+  const t=document.getElementById('sheetTitle'), b=document.getElementById('sheetBody');
+  if(!enc){ t.textContent='No encontramos ese partido';
+    b.innerHTML='<div class="stratnote" style="border-left-color:var(--crit)">El link apunta al partido <b>'+idPart+'</b> y en esta liga no existe. Puede ser de otra liga, o el partido ya se borró.</div>'
+      +'<button class="btn block" onclick="closeSheet()">Entendido</button>';
+    document.getElementById('sheet').classList.add('on'); return; }
+  const m=enc.m, H=teamById(m.home), A=teamById(m.away);
+  t.textContent='¿Quieres seguir este partido?';
+  b.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">'
+    +'<b>'+((H&&H.name)||'?')+'</b> vs <b>'+((A&&A.name)||'?')+'</b><br>'
+    +(m.date?fmtDate(m.date):'Jornada '+m.jornada)+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'')
+    +'<br><span style="font-family:var(--mono);font-size:11px;color:var(--dim)">ID '+idPartido(m)+'</span></div>'
+    +(esPrivado(m)
+      ? '<div class="eyebrow" style="margin:14px 2px 6px">Este partido es privado · escribe el código que te dio la liga</div>'
+        +'<input class="field" id="puertaCod" inputmode="numeric" autocomplete="off" placeholder="Código de 4 dígitos">'
+        +'<div id="puertaMsg" style="margin:6px 2px;font-size:12.5px"></div>'
+        +'<button class="btn block" onclick="entrarAlPartido(\''+idPart+'\')">Seguir el partido</button>'
+      : '<div class="stratnote">Este partido es <b>abierto</b>: cualquiera puede verlo.</div>'
+        +'<button class="btn block" onclick="entrarAlPartido(\''+idPart+'\')">Seguirlo</button>')
+    +'<button class="btn ghost block" style="margin-top:8px" onclick="closeSheet()">Ahora no</button>';
+  document.getElementById('sheet').classList.add('on');
+}
+function entrarAlPartido(idPart){
+  const enc=partidoPorId(idPart); if(!enc)return;
+  const m=enc.m;
+  if(esPrivado(m)){
+    const dado=(document.getElementById('puertaCod')||{}).value||'';
+    const msg=document.getElementById('puertaMsg');
+    if(String(dado).trim()!==String(m.codigo||'')){
+      if(msg){ msg.style.color='var(--crit)';
+        msg.textContent='Ese código no es. Pídeselo a quien organiza la liga.'; }
+      return;
+    }
+    const yo=(myEmail()||'').toLowerCase();
+    if(!yo){ if(msg){ msg.style.color='var(--crit)';
+      msg.textContent='Entra con tu cuenta primero: el pase se guarda a tu nombre.'; } return; }
+    guardarInvitado(idPartido(m), yo);
+  }
+  closeSheet(); flashSaved('Listo — ya sigues este partido'); go('publico');
+}
+/* El link se lee al abrir: `…/ligas-mazi/#partido=M79-J3-COMA`. */
+(function puertaDesdeElLink(){
+  const leer=()=>{ const h=(location.hash||'').match(/partido=([A-Za-z0-9-]+)/);
+    if(h){ try{ abrirPuertaPartido(h[1]); }catch(e){} } };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(leer,600));
+  else setTimeout(leer,600);
+  window.addEventListener('hashchange', leer);
+})();
+
+/* ═══ EL ID DEL PARTIDO ═════════════════════════════════════════════════════
+   Carlos: *"ponle id a los partidos para que los papás los puedan encontrar
+   rápido el día del juego"*.
+
+   Se arma con lo que la gente ya sabe: la categoría, la jornada y los dos
+   equipos. Así el ID es LEGIBLE y se puede dictar por teléfono o pegar en un
+   grupo de WhatsApp — `M79-J3-COMA` es "Mixta 7-9, jornada 3, Coyotes contra
+   Marea". Un número al azar tipo #48213 sería más corto y no serviría de nada:
+   nadie lo reconoce ni lo recuerda.
+
+   Es determinista: el mismo partido da el mismo ID siempre, aunque se
+   regenere el calendario. Eso importa porque el ID se comparte antes del
+   juego y tiene que seguir sirviendo el día del juego. */
+const CAT_SIGLA={'mixta-7-9':'M79','mixta-10-11':'M1011','mixta-12-13':'M1213',
+  'var-12-13':'V1213','var-14-15':'V1415','var-16-17':'V1617',
+  'fem-12-13':'F1213','fem-14-15':'F1415','fem-16-17':'F1617'};
+function copiarId(id){
+  try{ navigator.clipboard.writeText(id); flashSaved('ID copiado: '+id); }
+  catch(e){ flashSaved('ID del partido: '+id); }
+}
+function idPartido(m){
+  if(!m) return '';
+  const H=teamById(m.home), A=teamById(m.away);
+  const sig=(t)=>((t&&t.name)||'??').normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase();
+  const cat=(H&&H.categoria)||(A&&A.categoria)||'';
+  return [CAT_SIGLA[cat]||'GEN', 'J'+(m.jornada||0), sig(H)+sig(A)].join('-');
+}
+/* Buscar un partido por su ID, sin importar mayúsculas ni guiones: la gente lo
+   va a teclear como se acuerde. */
+function partidoPorId(txt){
+  const q=String(txt||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!q) return null;
+  const d=leagueData();
+  const i=(d.calendar||[]).findIndex(m=>idPartido(m).replace(/[^A-Z0-9]/g,'')===q);
+  return i<0?null:{idx:i, m:d.calendar[i]};
+}
 /* --- calendario todos contra todos (método del círculo) --- */
 function nextSaturday(){ const d=new Date(); d.setHours(0,0,0,0); const add=(6-d.getDay()+7)%7||7; d.setDate(d.getDate()+add); return d; }
 function fmtDate(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
@@ -4071,16 +4348,35 @@ function buildLeagueCal(){
        partido para saber cuál es el suyo. La categoría va PRIMERO porque es lo
        que filtra; el lugar después, que es lo que necesita para llegar. */
     const cat = catDeMatch(H, A);
-    if(cat || m.place){
-      h+='<div style="font-size:11.5px;color:var(--muted);margin:-6px 0 8px;padding-left:2px;display:flex;gap:10px;flex-wrap:wrap">'
-        + (cat?'<span style="color:var(--liga);font-weight:700">'+cat+'</span>':'')
-        + (m.place?'<span><svg class="ic" style="width:12px;height:12px;vertical-align:-2px"><use href="#ic-flag"/></svg> '+m.place+'</span>':'')
-        + '</div>';
-    }
+    h+='<div style="font-size:11.5px;color:var(--muted);margin:-6px 0 8px;padding-left:2px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+      + (cat?'<span style="color:var(--liga);font-weight:700">'+cat+'</span>':'')
+      + (m.place?'<span><svg class="ic" style="width:12px;height:12px;vertical-align:-2px"><use href="#ic-flag"/></svg> '+m.place+'</span>':'')
+      // El ID va con el partido en el panel de la liga también: es el que la
+      // liga dicta cuando alguien pregunta "¿cuál es el de mi hijo?".
+      + '<span style="font-family:var(--mono);letter-spacing:.06em;color:var(--dim)">'+idPartido(m)+'</span>'
+      + (esPrivado(m)?'<span style="color:var(--papa);font-weight:700">🔒 privado</span>':'')
+      + '</div>';
     if(!m.done && canOfficiate(m)){ h+='<div class="le-officiate" onclick="officiateMatch('+idx+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir en la mesa</div>'; }
     if(!m.done && canAdminLeague(d)){
       h+='<div class="le-add" style="margin:-2px 0 6px;flex-wrap:wrap"><input id="dt_'+idx+'" type="date" value="'+(m.date||'')+'" style="flex:0 0 auto;min-width:0"><input id="tm_'+idx+'" type="time" value="'+(m.time||'')+'" style="flex:0 0 auto;min-width:0"><input id="pl_'+idx+'" value="'+((m.place||'').replace(/"/g,'&quot;'))+'" placeholder="Lugar / cancha"><button class="btn sm ghost" onclick="setMatchSchedule('+idx+')">Fecha</button></div>';
       h+='<div class="le-add" style="margin:-4px 0 12px"><input id="mesa_'+idx+'" type="email" inputmode="email" value="'+((m.mesa||'').replace(/"/g,'&quot;'))+'" placeholder="Correo de la mesa (opcional)"><button class="btn sm ghost" onclick="setMatchMesa('+idx+')">Mesa</button></div>';
+      /* EL CANDADO DEL PARTIDO. Prendido, enseña el código y el botón del link:
+         los dos juntos, porque uno sin el otro no sirve de nada y la liga los
+         va a mandar en el mismo mensaje. */
+      h+='<div class="le-add" style="margin:-6px 0 14px;flex-wrap:wrap;gap:8px">'
+        +'<button class="btn sm '+(esPrivado(m)?'':'ghost')+'" onclick="alternarPrivado('+idx+')" style="flex:0 0 auto">'
+        +(esPrivado(m)?'🔒 Privado':'🔓 Abierto')+'</button>';
+      if(esPrivado(m)){
+        h+='<span style="font-family:var(--mono);font-size:15px;letter-spacing:.14em;color:var(--papa);'
+          +'background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px;display:inline-flex;align-items:center">'
+          +(m.codigo||'----')+'</span>'
+          +'<button class="btn sm ghost" style="flex:0 0 auto" onclick="ligaLinkPartido('+idx+')">Copiar link</button>'
+          +'<button class="btn sm ghost" style="flex:0 0 auto" onclick="ligaCambiarCodigo('+idx+')">Otro código</button>'
+          +'<div style="flex:1 0 100%;font-size:11.5px;color:var(--dim);line-height:1.45">'
+          +'Manda el <b>link</b> y el <b>código</b> juntos. El link dice dónde está el partido; el código dice quién puede pasar. '
+          +'Sólo quien tenga los dos va a poder verlo.</div>';
+      }
+      h+='</div>';
     }
   });
   box.innerHTML=h;
@@ -5117,12 +5413,83 @@ const ROLE_INTERNAL={admin_liga:'liga',dueno:'coach',coach:'coach',padre:'papa',
 const ROLE_LABEL={admin_liga:'Admin de liga',dueno:'Dueño de equipo',coach:'Coach',padre:'Padre',jugador:'Jugador',aficionado:'Aficionado',mesa:'Mesa',superadmin:'Súper Admin'};
 let signupRoles=['admin_liga'];
 const SUPER_EMAIL='palomazi9111@gmail.com';
+/* ═══ EL SELLO DE VERSIÓN ═══════════════════════════════════════════════════
+   Nació de una pregunta que ya nos costó tiempo dos veces: *"no muestra los
+   cambios"*. Y el sitio SÍ los tenía — lo que no se actualizaba era el caché
+   del iPhone. Sin un número a la vista, esa duda no se puede resolver: se
+   discute. Con esto se ve de un vistazo qué build trae el teléfono.
+   SE SUBE A MANO en cada entrega. Si el número no cambió después de publicar,
+   el problema es el caché: cerrar la pestaña y volver a abrir. */
+const VERSION='2026.08.01-b';
+(function sello(){
+  const poner=()=>{ const e=document.getElementById('verSello');
+    if(e) e.textContent='v'+VERSION; };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',poner);
+  else poner();
+})();
 /* ===== Propiedad de la liga: solo su dueño/admins pueden administrarla =====
    Esto evita que una cuenta nueva herede la liga de otra persona y se meta de admin. */
 /* email real de la cuenta AUTENTICADA (nunca del perfil local, que puede ser de otra
    cuenta que usó este teléfono antes): esto es lo que decide isSuperAdmin() */
 function myEmail(){ if(_session&&_session.user&&_session.user.email) return _session.user.email.toLowerCase(); return ((userData()||{}).email||'').toLowerCase(); }
 function isSuperAdmin(){ return myEmail()===SUPER_EMAIL; }
+
+/* ═══ BORRAR DE VERDAD, CON DOS ACTOS ═══════════════════════════════════════
+   Carlos: *"haz que admin supremo pueda borrar ligas y equipos pero que
+   requiera de una confirmación sencilla como escribir Mazi y pulsar el logo de
+   grupo Mazi"*.
+
+   Y el diseño que pidió es el correcto, vale la pena decir por qué: borrar una
+   liga se lleva sus equipos, su calendario y su historia — no se deshace. Un
+   "¿Estás seguro? [Sí]" se contesta con el pulgar sin leer, y ahí es donde se
+   pierden cosas. Dos actos DISTINTOS —teclear una palabra y luego tocar el
+   logo— no se hacen sin querer, y aun así no piden más de cinco segundos.
+
+   El logo sólo se enciende cuando la palabra ya está bien escrita: así el
+   segundo acto confirma que el primero se hizo a conciencia. */
+let _borrar=null;   // { tipo:'liga'|'equipo', id, nombre }
+function pedirBorrado(tipo, id, nombre){
+  if(!isSuperAdmin()){ flashSaved('Sólo el admin supremo puede borrar'); return; }
+  _borrar={ tipo, id, nombre };
+  document.getElementById('sheetTitle').textContent='Borrar '+(tipo==='liga'?'la liga':'el equipo');
+  document.getElementById('sheetBody').innerHTML=
+    '<div class="stratnote" style="border-left-color:var(--crit)">'
+    +'Vas a borrar <b>'+nombre+'</b>'
+    +(tipo==='liga'?' y con ella <b>sus equipos, su calendario y sus resultados</b>':'')
+    +'. <b>Esto no se deshace.</b></div>'
+    +'<div class="eyebrow" style="margin:14px 2px 6px">1 · Escribe <b style="color:var(--bone)">Mazi</b></div>'
+    +'<input class="field" id="borrarPalabra" autocapitalize="words" autocomplete="off" '
+    +'placeholder="Mazi" oninput="revisarPalabraBorrado()">'
+    +'<div class="eyebrow" style="margin:14px 2px 6px">2 · Pulsa el logo para confirmar</div>'
+    +'<button id="borrarLogo" class="borralogo" disabled onclick="confirmarBorrado()">'
+    +'<svg class="ic"><use href="#ic-logo"/></svg><span>Borrar '+nombre+'</span></button>'
+    +'<button class="btn ghost block" style="margin-top:10px" onclick="closeSheet()">Mejor no</button>';
+  document.getElementById('sheet').classList.add('on');
+}
+function revisarPalabraBorrado(){
+  const v=(document.getElementById('borrarPalabra').value||'').trim().toLowerCase();
+  const b=document.getElementById('borrarLogo'); if(!b)return;
+  const ok=(v==='mazi');
+  b.disabled=!ok; b.classList.toggle('listo', ok);
+}
+function confirmarBorrado(){
+  if(!_borrar || !isSuperAdmin()) return;
+  const {tipo,id,nombre}=_borrar;
+  if(tipo==='equipo'){
+    const d=leagueData();
+    d.teams=(d.teams||[]).filter(t=>t.id!==id);
+    // El calendario se va con el equipo: dejar partidos de un equipo que ya no
+    // existe deja la tabla mintiendo y la mesa sin a quién anotarle.
+    d.calendar=(d.calendar||[]).filter(m=>m.home!==id&&m.away!==id);
+    saveLeague(d);
+    try{ leOpen=null; buildLeagueTeams(); buildLeagueCal(); }catch(e){}
+  } else {
+    ['lm_league','lm_roster','lm_bracket','lm_strat'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+    const u=userData()||{}; if(u.league) delete u.league; saveUser(u);
+    try{ render('hub'); }catch(e){}
+  }
+  _borrar=null; closeSheet(); flashSaved('Borrado: '+nombre);
+}
 /* borra el perfil/liga/roster de ESTE teléfono al detectar que entra una cuenta distinta
    a la que dejó datos guardados: evita que una cuenta nueva "herede" monedas, rol de
    súper admin o cualquier otro dato de quien usó el dispositivo antes (bug real: dos

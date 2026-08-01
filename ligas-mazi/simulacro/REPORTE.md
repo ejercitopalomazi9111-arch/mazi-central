@@ -1,6 +1,6 @@
 # Simulacro de Ligas Mazi · reporte
 
-Corrido el 2026-08-01 · 129.8s · 570 personas · 3 pasadas
+Corrido el 2026-08-01 · 148.4s · 570 personas · 3 pasadas
 
 > Cada persona de este reparto tiene nombre, temperamento y CURP válido, y hace lo que
 > haría alguien de verdad. **Nadie abandona a la primera**: la gente es terca, así que lo
@@ -138,7 +138,7 @@ primera es **fricción** —la app se deja usar, pero cuesta—; quedarse sin in
 - fricción: **0**
 - abandonos: **64**
 
-4294 pantallas caminadas con identidades reales del reparto. 74 hallazgos en bruto, **7 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
+4294 pantallas caminadas con identidades reales del reparto. 68 hallazgos en bruto, **7 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
 
 ✅ **Ningún error de consola** en todo el recorrido.
 
@@ -146,18 +146,18 @@ primera es **fricción** —la app se deja usar, pero cuesta—; quedarse sin in
 
 | Pantalla | Qué | Dónde | A cuánta gente | Roles |
 |---|---|---|---|---|
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 4 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 21 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 6 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 16 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 5 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 13 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 8 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 3 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 4 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 21 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 6 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 16 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 5 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 13 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 8 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 3 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
 
 ### 🟡 Incómodos (2)
 
 | Pantalla | Qué | Dónde | A cuánta gente | Roles |
 |---|---|---|---|---|
-| `publico` | Se sale 22px de su caja | `fo-side` | 8 | jugador, mesa, papa, publico |
 | `gacha` | Se sale 4554px de su caja | `#gcTrack` | 2 | papa, publico |
+| `gacha` | Se sale 10px de su caja | `gc-cell` | 2 | papa, publico |
 
 ## Lo que este simulacro NO prueba
 
