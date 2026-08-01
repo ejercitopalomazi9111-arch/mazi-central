@@ -1,6 +1,6 @@
 # Simulacro de Ligas Mazi · reporte
 
-Corrido el 2026-08-01 · 65.7s · 570 personas · 3 pasadas
+Corrido el 2026-08-01 · 129.8s · 570 personas · 3 pasadas
 
 > Cada persona de este reparto tiene nombre, temperamento y CURP válido, y hace lo que
 > haría alguien de verdad. **Nadie abandona a la primera**: la gente es terca, así que lo
@@ -27,69 +27,69 @@ Corrido el 2026-08-01 · 65.7s · 570 personas · 3 pasadas
 
 - **175 partidos** jugados minuto a minuto
 - **9 campeones** (uno por categoría)
-- **1824 decisiones del coach** entre cambios de jugador y ajustes de posición
+- **1770 decisiones del coach** entre cambios de jugador y ajustes de posición
 - tienda: 10 códigos comprados con puntos · 10 canjeados por la liga · 0 se quedaron cortos de puntos
-- gachapón: 10 sobres de visitantes · 23 de jugadores
+- gachapón: 10 sobres de visitantes · 5 de jugadores
 - ✅ ningún código se pudo canjear dos veces
 - ✅ con la perilla apagada, la tienda por puntos sí niega la compra
 
 **Campeones:**
 
-- `mixta-7-9` — **Venados de Juriquilla** (subcampeón: Titanes de Bravo)
-- `mixta-10-11` — **Venados de Juriquilla** (subcampeón: Coyotes de Alameda)
+- `mixta-7-9` — **Venados de Juriquilla** (subcampeón: Cantera Negra)
+- `mixta-10-11` — **Cantera Negra** (subcampeón: Coyotes de Alameda)
 - `mixta-12-13` — **Venados de Juriquilla** (subcampeón: Halcones del Cerro)
-- `var-12-13` — **Coyotes de Alameda** (subcampeón: Cantera Negra)
-- `var-14-15` — **Marea Alta** (subcampeón: Titanes de Bravo)
-- `var-16-17` — **Halcones del Cerro** (subcampeón: Titanes de Bravo)
-- `fem-12-13` — **Titanes de Bravo** (subcampeón: Marea Alta)
-- `fem-14-15` — **Halcones del Cerro** (subcampeón: Titanes de Bravo)
-- `fem-16-17` — **Halcones del Cerro** (subcampeón: Marea Alta)
+- `var-12-13` — **Venados de Juriquilla** (subcampeón: Coyotes de Alameda)
+- `var-14-15` — **Cantera Negra** (subcampeón: Titanes de Bravo)
+- `var-16-17` — **Halcones del Cerro** (subcampeón: Marea Alta)
+- `fem-12-13` — **Halcones del Cerro** (subcampeón: Marea Alta)
+- `fem-14-15` — **Marea Alta** (subcampeón: Venados de Juriquilla)
+- `fem-16-17` — **Venados de Juriquilla** (subcampeón: Coyotes de Alameda)
 
 ### Pasada 2 · Copa Mazi Invierno
 
 - **175 partidos** jugados minuto a minuto
 - **9 campeones** (uno por categoría)
-- **1832 decisiones del coach** entre cambios de jugador y ajustes de posición
+- **1789 decisiones del coach** entre cambios de jugador y ajustes de posición
 - tienda: 10 códigos comprados con puntos · 10 canjeados por la liga · 0 se quedaron cortos de puntos
-- gachapón: 10 sobres de visitantes · 21 de jugadores
+- gachapón: 10 sobres de visitantes · 3 de jugadores
 - ✅ ningún código se pudo canjear dos veces
 - ✅ con la perilla apagada, la tienda por puntos sí niega la compra
 - ✅ las estadísticas del equipo **sobrevivieron** el cambio de liga
 
 **Campeones:**
 
-- `mixta-7-9` — **Cantera Negra** (subcampeón: Halcones del Cerro)
-- `mixta-10-11` — **Venados de Juriquilla** (subcampeón: Cantera Negra)
-- `mixta-12-13` — **Halcones del Cerro** (subcampeón: Marea Alta)
-- `var-12-13` — **Coyotes de Alameda** (subcampeón: Lobos del Norte)
-- `var-14-15` — **Coyotes de Alameda** (subcampeón: Cantera Negra)
-- `var-16-17` — **Venados de Juriquilla** (subcampeón: Titanes de Bravo)
-- `fem-12-13` — **Titanes de Bravo** (subcampeón: Coyotes de Alameda)
-- `fem-14-15` — **Coyotes de Alameda** (subcampeón: Marea Alta)
-- `fem-16-17` — **Cantera Negra** (subcampeón: Venados de Juriquilla)
+- `mixta-7-9` — **Halcones del Cerro** (subcampeón: Cantera Negra)
+- `mixta-10-11` — **Coyotes de Alameda** (subcampeón: Cantera Negra)
+- `mixta-12-13` — **Cantera Negra** (subcampeón: Titanes de Bravo)
+- `var-12-13` — **Lobos del Norte** (subcampeón: Coyotes de Alameda)
+- `var-14-15` — **Titanes de Bravo** (subcampeón: Coyotes de Alameda)
+- `var-16-17` — **Coyotes de Alameda** (subcampeón: Cantera Negra)
+- `fem-12-13` — **Coyotes de Alameda** (subcampeón: Cantera Negra)
+- `fem-14-15` — **Marea Alta** (subcampeón: Cantera Negra)
+- `fem-16-17` — **Titanes de Bravo** (subcampeón: Venados de Juriquilla)
 
 ### Pasada 3 · Metropolitana + Bajío
 
 - **175 partidos** jugados minuto a minuto
 - **9 campeones** (uno por categoría)
-- **1812 decisiones del coach** entre cambios de jugador y ajustes de posición
+- **1766 decisiones del coach** entre cambios de jugador y ajustes de posición
 - tienda: 10 códigos comprados con puntos · 10 canjeados por la liga · 0 se quedaron cortos de puntos
-- gachapón: 10 sobres de visitantes · 18 de jugadores
+- gachapón: 10 sobres de visitantes · 4 de jugadores
 - ✅ ningún código se pudo canjear dos veces
 - ✅ con la perilla apagada, la tienda por puntos sí niega la compra
 - 569 personas activas en las dos ligas al mismo tiempo
 
 **Campeones:**
 
-- `mixta-7-9` — **Cantera Negra** (subcampeón: Coyotes de Alameda)
-- `mixta-10-11` — **Halcones del Cerro** (subcampeón: Marea Alta)
-- `mixta-12-13` — **Titanes de Bravo** (subcampeón: Halcones del Cerro)
-- `var-12-13` — **Cantera Negra** (subcampeón: Venados de Juriquilla)
-- `var-14-15` — **Marea Alta** (subcampeón: Halcones del Cerro)
-- `var-16-17` — **Venados de Juriquilla** (subcampeón: Cantera Negra)
-- `fem-12-13` — **Coyotes de Alameda** (subcampeón: Cantera Negra)
-- `fem-14-15` — **Cantera Negra** (subcampeón: Marea Alta)
-- `fem-16-17` — **Marea Alta** (subcampeón: Titanes de Bravo)
+- `mixta-7-9` — **Marea Alta** (subcampeón: Titanes de Bravo)
+- `mixta-10-11` — **Coyotes de Alameda** (subcampeón: Titanes de Bravo)
+- `mixta-12-13` — **Halcones del Cerro** (subcampeón: Marea Alta)
+- `var-12-13` — **Lobos del Norte** (subcampeón: Cantera Negra)
+- `var-14-15` — **Marea Alta** (subcampeón: Coyotes de Alameda)
+- `var-16-17` — **Venados de Juriquilla** (subcampeón: Titanes de Bravo)
+- `fem-12-13` — **Venados de Juriquilla** (subcampeón: Halcones del Cerro)
+- `fem-14-15` — **Titanes de Bravo** (subcampeón: Cantera Negra)
+- `fem-16-17` — **Coyotes de Alameda** (subcampeón: Titanes de Bravo)
 
 ## La previa del partido · lo del equipo nuevo
 
@@ -108,20 +108,56 @@ Categoría `var-12-13`, con posición y puntaje como se pidió:
 
 | Pos | Equipo | G-P | Dif | Pts |
 |---|---|---|---|---|
-| 1 | Coyotes de Alameda | 8-1 | +45 | 17 |
-| 2 | Cantera Negra | 6-3 | +27 | 15 |
-| 3 | Venados de Juriquilla | 5-3 | +39 | 13 |
-| 4 | Lobos del Norte | 3-5 | -5 | 11 |
-| 5 | Marea Alta | 3-4 | -33 | 10 |
-| 6 | Halcones del Cerro | 2-5 | -9 | 9 |
-| 7 | Titanes de Bravo | 2-5 | -25 | 9 |
-| 8 | Águilas del Río | 2-5 | -39 | 9 |
+| 1 | Venados de Juriquilla | 6-2 | +62 | 14 |
+| 2 | Coyotes de Alameda | 6-2 | +14 | 14 |
+| 3 | Cantera Negra | 4-3 | -3 | 11 |
+| 4 | Marea Alta | 3-4 | -35 | 10 |
+| 5 | Lobos del Norte | 2-4 | -2 | 8 |
+| 6 | Halcones del Cerro | 2-4 | -5 | 8 |
+| 7 | Titanes de Bravo | 2-4 | -11 | 8 |
+| 8 | Águilas del Río | 2-4 | -20 | 8 |
 
 ## La app de verdad · lo que encontró el inspector
 
-4294 pantallas caminadas con identidades reales del reparto. 0 hallazgos en bruto, **0 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
+### ¿La app cuenta lo que de verdad se jugó?
+
+Ligas Mazi tiene un solo trabajo: **medir partidos**. Aquí se compara, dato por dato, lo
+que el motor jugó contra lo que la app enseña en pantalla — marcador, orden de la tabla,
+día y lugar del calendario, y de quién es la carta. Se lee del DOM, no del estado interno:
+lo que importa es lo que ve la persona, no lo que la app cree que tiene guardado.
+
+✅ **Sin desacuerdos.** El marcador, la tabla, el calendario y la carta enseñan lo que se jugó.
+
+### ¿Dónde costó usarla?
+
+Cada persona se registró, cerró sesión y volvió a entrar **tocando los botones**, y según
+su temperamento insistió más o menos veces antes de rendirse. Un intento que no salió a la
+primera es **fricción** —la app se deja usar, pero cuesta—; quedarse sin intentos es
+**abandono**, que ya es alguien que quería y no pudo.
+
+- fricción: **0**
+- abandonos: **64**
+
+4294 pantallas caminadas con identidades reales del reparto. 74 hallazgos en bruto, **7 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
 
 ✅ **Ningún error de consola** en todo el recorrido.
+
+### 🔴 Graves (5)
+
+| Pantalla | Qué | Dónde | A cuánta gente | Roles |
+|---|---|---|---|---|
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 4 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 21 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 6 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 16 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 5 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 13 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 8 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 3 intentos · en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
+
+### 🟡 Incómodos (2)
+
+| Pantalla | Qué | Dónde | A cuánta gente | Roles |
+|---|---|---|---|---|
+| `publico` | Se sale 22px de su caja | `fo-side` | 8 | jugador, mesa, papa, publico |
+| `gacha` | Se sale 4554px de su caja | `#gcTrack` | 2 | papa, publico |
 
 ## Lo que este simulacro NO prueba
 
