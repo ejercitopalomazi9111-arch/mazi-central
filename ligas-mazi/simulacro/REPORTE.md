@@ -1,6 +1,6 @@
 # Simulacro de Ligas Mazi · reporte
 
-Corrido el 2026-08-01 · 154.2s · 570 personas · 3 pasadas
+Corrido el 2026-08-01 · 149.6s · 570 personas · 3 pasadas
 
 > Cada persona de este reparto tiene nombre, temperamento y CURP válido, y hace lo que
 > haría alguien de verdad. **Nadie abandona a la primera**: la gente es terca, así que lo
