@@ -889,6 +889,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .fo-mio .ic{width:14px;height:14px;flex:0 0 auto;color:var(--papa)}
 .fo-mio-tx{min-width:0;line-height:1.35}
 /* Hermanos enfrentados: no se entierra en la lista, se dice primero. */
+.chip.mios{border-color:var(--papa);color:var(--papa)}
+.chip.mios.on{background:var(--papa);border-color:var(--papa);color:#1a1206}
 .fo-mio .enfrentados{display:inline-block;background:var(--papa);color:#1a1206;
   font-weight:800;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
   border-radius:20px;padding:2px 8px;margin-right:5px}
@@ -3018,7 +3020,19 @@ function buildEnVivoBoard(){
      puesto en la categoría de su hij@ — porque no tiene por qué buscarla. */
   const catsCal=[...new Set(d.calendar.map(m=>{const t=teamById(m.home)||teamById(m.away); return t&&t.categoria;}).filter(Boolean))];
   let catSel=_calCat;
-  if(catSel==null && currentRole==='papa'){          // el papá arranca en la de su hij@
+  /* ═══ "MIS HIJ@S" ES EL FILTRO POR DEFECTO DEL PAPÁ ═════════════════════
+     Esto lo encontré recorriendo la app yo, como mamá de tres: el filtro
+     arrancaba en la categoría del PRIMER hijo, y los otros dos desaparecían.
+     Con Ximena y Diego en Mixta 7-9 y Renata en Varonil 14-15, el partido de
+     Renata —que era ESE MISMO DÍA— simplemente no salía.
+
+     Filtrar por categoría fue el arreglo correcto para un papá de un hijo, y el
+     equivocado para uno de tres. Lo que un papá quiere ver primero no es una
+     categoría: son SUS HIJOS, jueguen donde jueguen. La categoría se queda
+     como filtro, pero deja de ser la entrada. */
+  const tengoHijos = (userData()||{}).children && (userData()||{}).children.length;
+  if(catSel==null && currentRole==='papa' && tengoHijos) catSel='__mios__';
+  if(catSel==null && currentRole==='papa'){          // sin hijos vinculados, la vieja vía
     const u=userData()||{}; const kid=(u.children||[])[0];
     /* Se busca al hij@ por su código de equipo, y si no lo trae, RASTREANDO las
        plantillas. Esto último no es lujo: el `teamCode` sólo queda escrito
@@ -3034,9 +3048,12 @@ function buildEnVivoBoard(){
     if(eqKid&&eqKid.categoria) catSel=eqKid.categoria;
   }
   const catDe=(m)=>{const t=teamById(m.home)||teamById(m.away); return (t&&t.categoria)||'';};
-  const cumple=(m)=>!catSel||catDe(m)===catSel;
+  const cumple=(m)=> !catSel
+    || (catSel==='__mios__' ? misHijosEnPartido(m).length>0 : catDe(m)===catSel);
   if(catsCal.length>1){
     h+='<div class="fo-sec-ttl">Próximos</div><div class="chips" style="margin:-2px 0 8px">'
+      // "Mis hij@s" va primero y es lo que un papá busca al abrir.
+      +(tengoHijos?'<button class="chip mios'+(catSel==='__mios__'?' on':'')+'" onclick="filtrarCalendario(\'__mios__\')">♥ Mis hij@s</button>':'')
       +'<button class="chip'+(catSel?'':' on')+'" onclick="filtrarCalendario(null)">Todas</button>'
       +catsCal.map(c=>'<button class="chip'+(catSel===c?' on':'')+'" onclick="filtrarCalendario(\''+c+'\')">'+(CAT_NOMBRE[c]||c)+'</button>').join('')
       +'</div>';
@@ -5811,7 +5828,7 @@ const SUPER_EMAIL='palomazi9111@gmail.com';
    discute. Con esto se ve de un vistazo qué build trae el teléfono.
    SE SUBE A MANO en cada entrega. Si el número no cambió después de publicar,
    el problema es el caché: cerrar la pestaña y volver a abrir. */
-const VERSION='2026.08.01-e';
+const VERSION='2026.08.01-f';
 (function sello(){
   const poner=()=>{ const e=document.getElementById('verSello');
     if(e) e.textContent='v'+VERSION; };

@@ -222,14 +222,26 @@
        el calendario existe, sólo que no ahí y sin filtro por categoría. */
     var donde = ['publico', 'tabla', 'hub'];
     var i = 0;
+    /* EL CRITERIO CAMBIÓ, Y ÉSA ES LA HISTORIA.
+       Antes esto daba por bueno que en la pantalla se leyera una categoría, una
+       hora y un lugar. Carlos lo tumbó: *"estás buscando algo que no existe"*.
+       Y tenía razón — que la pantalla mencione "Mixta 7–9" no le dice a un papá
+       que ahí juega SU hija; se lo diría de cualquier partido de esa categoría.
+
+       Lo que de verdad hay que comprobar es que el papá vea EL LETRERO CON EL
+       NOMBRE DE SU HIJ@. Si el nombre no está, no encontró nada, aunque la
+       pantalla esté llena de datos. */
+    var mios = (userData() && userData().children || []).map(function(k){ return k.name; });
     return insistir('encontrar el partido de mi hij@', function (){
       go(donde[i % donde.length]); i++;
     }, function (){
       var t = ((document.querySelector('.screen.on') || {}).innerText || '');
-      // Le sirve sólo si ve las tres cosas: de qué categoría, a qué hora y dónde.
-      return /Mixta|Varonil|Femenil/.test(t) && /\d{1,2}:\d{2}/.test(t)
-          && /(Gimnasio|Deportiva|Cancha|Club|Unidad|CBTis)/.test(t);
-    }, 'no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@');
+      if (!/Aquí juega/.test(t)) return false;              // no hay letrero
+      if (!mios.length) return false;
+      // Y que el letrero traiga el nombre de alguno de los suyos.
+      for (var k = 0; k < mios.length; k++) if (t.indexOf(mios[k]) >= 0) return true;
+      return false;
+    }, 'no ve ningún letrero que diga dónde juega su hij@');
   };
 
   /* 8 · EL VISITANTE CURIOSEA antes del partido, que es lo que hace alguien
