@@ -48,17 +48,52 @@
     for (var i = 0; i < CFG.ignorar.length; i++){
       try { if (el.closest(CFG.ignorar[i])) return true; } catch (e){}
     }
+    /* Lo que está dentro de un desplegable CERRADO no se está viendo, así que
+       no se juzga. Los motores siguen reportando cajas para ese contenido y por
+       eso salía marcado como "texto invisible" algo que simplemente no está en
+       pantalla todavía. */
+    try { var d = el.closest('details'); if (d && !d.open) return true; } catch (e){}
     return false;
+  }
+  /* ¿El desborde lo causa un `::before` absoluto y transparente? Ése es el
+     truco de agrandar el blanco táctil sin agrandar el dibujo — no se ve, no
+     empuja nada y no saca barras de desplazamiento. Reportarlo sería castigar
+     justo el arreglo correcto. */
+  function esBlancoTactil(el){
+    try {
+      var pb = getComputedStyle(el, '::before');
+      if (!pb || pb.content === 'none' || pb.position !== 'absolute') return false;
+      var an = parseFloat(pb.width) || 0, al = parseFloat(pb.height) || 0;
+      var r = el.getBoundingClientRect();
+      return (an > r.width || al > r.height) && alfa(pb.backgroundColor) < 0.05;
+    } catch (e){ return false; }
   }
 
   /* Color plano: el texto y su fondo REAL son el mismo color. Es el bug del
      tema claro ("Ver contacto" blanco sobre blanco), y no lo caza ninguna
      prueba de código — sólo mirar el resultado ya pintado. */
+  /* Sube buscando el primer fondo que de verdad TAPE lo que hay detrás.
+     ── Corregido después de la primera corrida de 570 personas ──
+     La versión anterior tomaba el primer `background-color` distinto de
+     transparente, y con eso reportó cuatro problemas graves que no existían:
+     un velo de `rgba(255,255,255,.02)` lo leía como BLANCO OPACO, así que
+     concluía que el texto blanco encima era invisible. Es al revés — ese velo
+     casi no pinta nada y el fondo real sigue siendo el oscuro de atrás.
+     Ahora se ignora todo lo que tenga menos de 50% de alfa. */
+  function alfa(c){
+    var m = /rgba?\(([^)]+)\)/.exec(c || ''); if (!m) return 1;
+    var p = m[1].split(','); return p.length > 3 ? parseFloat(p[3]) : 1;
+  }
   function fondoReal(el){
     var n = el;
     while (n && n !== document.documentElement){
-      var bg = getComputedStyle(n).backgroundColor;
-      if (bg && bg !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(bg)) return bg;
+      var s = getComputedStyle(n);
+      /* Un degradado no es un color, y comparar contra él da resultados
+         inventados: la pastilla de rango es texto oscuro sobre un degradado
+         claro —perfectamente legible— y salía marcada como invisible. Si hay
+         imagen de fondo, esta revisión no opina. */
+      if (s.backgroundImage && s.backgroundImage !== 'none') return null;
+      if (s.backgroundColor && alfa(s.backgroundColor) >= 0.5) return s.backgroundColor;
       n = n.parentElement;
     }
     return getComputedStyle(document.body).backgroundColor || 'rgb(255,255,255)';
@@ -99,9 +134,22 @@
       Array.prototype.forEach.call(tocables, function (el){
         if (!visible(el) || ignorado(el)) return;
         var r = el.getBoundingClientRect();
-        if (r.height < MIN_DEDO || r.width < 24){
+        /* Un control chico puede tener el blanco grande: se pone un `::before`
+           transparente y centrado, y el toque en esa zona igual le llega al
+           botón. Es lo correcto para una ✕ o una casilla, que TIENEN que verse
+           chicas. Sin mirar el pseudo-elemento, esta revisión reportaba como
+           malos justo los que ya estaban arreglados bien. */
+        var an = r.width, al = r.height;
+        try {
+          var pb = getComputedStyle(el, '::before');
+          if (pb && pb.content !== 'none' && pb.position === 'absolute'){
+            an = Math.max(an, parseFloat(pb.width) || 0);
+            al = Math.max(al, parseFloat(pb.height) || 0);
+          }
+        } catch (e){}
+        if (al < MIN_DEDO || an < 24){
           apunta('dedo', 'medio',
-            'Objetivo táctil de ' + Math.round(r.width) + '×' + Math.round(r.height) +
+            'Objetivo táctil de ' + Math.round(an) + '×' + Math.round(al) +
             ' (mínimo ' + MIN_DEDO + ' de alto)', el);
         }
       });
@@ -120,6 +168,7 @@
         if (!visible(el) || ignorado(el)) return;
         var s = getComputedStyle(el);
         if (s.overflowX !== 'visible' && s.overflowX !== 'clip') return;   // el que sí desplaza, no cuenta
+        if (esBlancoTactil(el)) return;
         if (el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 2){
           apunta('desborde', 'medio', 'Se sale ' + (el.scrollWidth - el.clientWidth) + 'px de su caja', el);
         }

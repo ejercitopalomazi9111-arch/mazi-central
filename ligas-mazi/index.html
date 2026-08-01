@@ -85,7 +85,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
 /* topbar + nav */
 .topbar{position:relative;z-index:5;display:flex;align-items:center;gap:10px;padding:calc(var(--safe-t) + 12px) 16px 12px;flex-shrink:0}
-.ctx{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:30px;padding:5px 6px 5px 12px;cursor:pointer;font-size:13px}
+.ctx{display:flex;align-items:center;gap:8px;min-height:44px;background:var(--panel);border:1px solid var(--line);border-radius:30px;padding:5px 10px 5px 14px;cursor:pointer;font-size:13px}
 .ctx .hat{width:10px;height:10px;border-radius:50%} .ctx b{font-weight:650} .ctx .ch{color:var(--dim);font-size:11px}
 .topbar .coins{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--papa)}
 .topbar .ttl{font-family:var(--body);font-weight:700;font-size:16.5px;letter-spacing:-.01em}
@@ -95,6 +95,35 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
    cada una su propio `top` en línea: por eso unas quedaban encima del título y
    otras demasiado arriba. Ahora hay UNA regla y la portada se abre sola para
    dejarle su lugar, así que no importa qué tan corta sea. */
+/* ══ EL DEDO MIDE 44 ══════════════════════════════════════════════════════
+   Salido del simulacro de 570 personas: 4,294 pantallas caminadas y la queja
+   más repetida, por mucho, fue la misma — controles de 15, 24 o 30 píxeles de
+   alto. No es una regla de manual: es que la app se usa parada en una duela,
+   con una mano, y un blanco de 15px se falla. Los peores, con el número de
+   personas que se los topó:
+
+     .pdel  24×24  (593) · .btn.sm 193×38 (565) · .more 140×15 (565)
+     .fctab   ×39  (555) · .coins  83×15 (555) · .chip   ×30  (162)
+     .le-x  24×24  (185) · #altaResp 22×22 (64) · .mck    ×36  (5)
+
+   Se arregla aquí, en las clases, y no renglón por renglón: son los mismos
+   ocho patrones repetidos cientos de veces. Donde el elemento tiene que verse
+   chico —una ✕, un contador— crece el ÁREA TOCABLE sin crecer el dibujo. */
+.more, .coins{display:inline-flex;align-items:center;gap:6px;min-height:44px}
+.h-row .more{padding:0 2px}
+.btn.sm{padding:13px 14px;min-height:44px}
+.chip{padding:11px 14px;min-height:44px;display:inline-flex;align-items:center}
+.fctab{padding:14px 16px;min-height:48px;display:flex;align-items:center;justify-content:center}
+.le-pl{padding:11px 0;min-height:44px}
+.mck{padding:12px 14px;min-height:44px}
+.avatar{width:44px;height:44px}
+/* La ✕ se ve de 24 y se toca de 44: el dibujo no crece, el blanco sí. */
+.pdel, .le-x{position:relative}
+.pdel::before, .le-x::before{content:"";position:absolute;top:50%;left:50%;
+  width:44px;height:44px;transform:translate(-50%,-50%)}
+.check .box{position:relative}
+.check .box::before{content:"";position:absolute;top:50%;left:50%;
+  width:44px;height:44px;transform:translate(-50%,-50%)}
 .backbtn{background:var(--panel);border:1px solid var(--line);color:var(--bone);width:44px;height:44px;border-radius:50%;font-size:19px;line-height:1;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0}
 .backbtn.flota{position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:4;
   background:rgba(7,9,13,.72);backdrop-filter:blur(8px);border-color:rgba(255,255,255,.18)}
@@ -205,7 +234,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .le-pl .le-pos{font-size:11px;color:var(--dim)}
 .le-x{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--crit);font-size:15px;line-height:1;cursor:pointer}
 .le-add{display:flex;gap:6px;align-items:center;margin-top:8px}
-.le-add input{flex:1;min-width:0;background:rgba(20,23,31,.9);border:1px solid var(--line);border-radius:8px;color:#e7ebf2;padding:8px 10px;font-size:13px;font-family:inherit}
+/* 16px de fuente no es capricho: abajo de eso, Safari en iPhone hace zoom solo
+   al enfocar el campo y deja la pantalla descuadrada. Y 44 de alto porque es un
+   buscador — lo primero que toca alguien que llega sin saber a dónde va. */
+.le-add input{flex:1;min-width:0;background:rgba(20,23,31,.9);border:1px solid var(--line);border-radius:8px;color:#e7ebf2;padding:11px 12px;min-height:44px;font-size:16px;font-family:inherit}
 .le-add select{flex:0 0 auto;width:auto;background:rgba(20,23,31,.9);border:1px solid var(--line);border-radius:8px;color:#e7ebf2;padding:8px 8px;font-size:12.5px;font-family:inherit}
 .le-add .btn.sm{flex:0 0 auto;width:auto;min-width:46px;padding:9px 14px;white-space:nowrap}
 .le-match{display:flex;align-items:center;gap:8px;padding:9px 11px;background:rgba(20,23,31,.55);border:1px solid var(--line);border-radius:11px;margin-bottom:7px}
@@ -777,7 +809,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .sub-hint{font-size:12px;color:var(--accent-lt);margin-top:8px;text-align:center}
 /* perillas */
 .preset-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
-.preset{background:var(--panel);border:1px solid var(--line);color:#c9cfd9;border-radius:10px;padding:12px 6px;font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:14px;cursor:pointer}
+.preset{background:var(--panel);border:1px solid var(--line);color:#c9cfd9;border-radius:10px;padding:12px 6px;min-height:44px;font-family:var(--disp);text-transform:uppercase;font-weight:800;font-size:14px;cursor:pointer}
 .preset.on{background:linear-gradient(180deg,var(--accent-lt),var(--accent));color:#0b0d12;border-color:transparent}
 .rule-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(42,49,61,.6)}
 .rule-row:last-child{border-bottom:0} .rule-row.col{flex-direction:column;align-items:stretch;gap:8px}
@@ -998,7 +1030,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 @keyframes rcSupernova{0%{transform:scale(.05);filter:brightness(6);opacity:0;box-shadow:0 0 200px 100px var(--rc,#e8b13e)}30%{opacity:1;transform:scale(1.4);filter:brightness(2)}60%{transform:scale(.95)}80%{transform:scale(1.02)}100%{transform:scale(1);filter:brightness(1)}}
 @keyframes rcEmerge{0%{opacity:0;transform:scale(.5);filter:brightness(4) blur(30px)}60%{opacity:1;filter:brightness(1.5) blur(4px)}100%{opacity:1;transform:scale(1);filter:brightness(1) blur(0)}}
 /* Sobres: 3 tipos con precios y tabla */
-.packrow{display:flex;gap:10px;margin:8px 0}
+/* Tres sobres no caben a lo ancho de un iPhone: se salían 30px de la caja y
+   la página entera se corría de lado. Ahora se desplazan, que es lo que hace
+   una fila de cartas en cualquier app que se sienta bien. */
+.packrow{display:flex;gap:10px;margin:8px 0;overflow-x:auto;padding-bottom:4px;
+  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.packrow>*{flex:0 0 auto;scroll-snap-align:start}
 .packcard{flex:1;background:linear-gradient(160deg,#232834,#10131a);border:2px solid var(--pc,#e8b13e);border-radius:14px;padding:12px 10px;text-align:center;cursor:pointer;transition:.15s;position:relative;box-shadow:0 8px 20px rgba(0,0,0,.35)}
 .packcard:active{transform:scale(.97)}
 .packcard.hot{box-shadow:0 8px 26px rgba(232,177,62,.4)}
@@ -1078,7 +1115,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 /* Tabla de probabilidades */
 .rprobs{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .rprow{display:flex;align-items:center;gap:8px;font-size:12px}
-.rpname{flex:0 0 auto;width:100px;font-weight:700;font-family:var(--body)}
+.rpname{flex:0 0 auto;width:100px;font-weight:700;font-family:var(--body);color:#dfe5ee}
 .rpbar{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
 .rpbar i{display:block;height:100%;transition:width .4s}
 .rpv{flex:0 0 auto;width:52px;text-align:right;font-family:var(--mono);color:var(--muted)}

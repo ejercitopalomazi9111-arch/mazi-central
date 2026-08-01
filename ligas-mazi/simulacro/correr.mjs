@@ -42,7 +42,7 @@ import { abrirApp, recorrerTodos, traducirLiga, juntar } from './app.mjs';
 
 const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i < 0 ? d : process.argv[i + 1]; };
 const bandera = (n) => process.argv.includes('--' + n);
-const URL = arg('url', 'http://127.0.0.1:8099/ligas-mazi/');
+const SITIO = arg('url', 'http://127.0.0.1:8099/ligas-mazi/');
 const MUESTRA = Number(arg('muestra', 0)) || 0;      // 0 = todas
 const SIN_APP = bandera('sin-app');
 
@@ -154,7 +154,7 @@ pasadas.push({ n:3, titulo:'Metropolitana + Bajío', ...pA, segunda: pB, solapa 
 let revision = null;
 if (!SIN_APP){
   linea('\n── La app real, persona por persona ────────────────────────');
-  const { navegador, pagina, errores } = await abrirApp({ url: URL });
+  const { navegador, pagina, errores } = await abrirApp({ url: SITIO });
   const appLiga = traducirLiga(p1.liga, reparto.admin.email);
   const gente = MUESTRA ? reparto.personas.slice(0, MUESTRA) : reparto.personas;
   linea(`  ${gente.length} personas × sus pantallas…`);
@@ -304,6 +304,6 @@ L('');
 L('Generado por `ligas-mazi/simulacro/correr.mjs`. Semilla fija: la misma corrida produce la');
 L('misma gente y los mismos partidos, así que cualquier hallazgo se puede volver a producir.');
 
-const salida = new URL('./REPORTE.md', import.meta.url).pathname;
+const salida = new global.URL('./REPORTE.md', import.meta.url).pathname;
 writeFileSync(salida, md.join('\n'));
 linea(`\n✅ Reporte en ${salida}  (${seg}s)`);
