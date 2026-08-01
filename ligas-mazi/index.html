@@ -90,7 +90,21 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .topbar .coins{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--papa)}
 .topbar .ttl{font-family:var(--body);font-weight:700;font-size:16.5px;letter-spacing:-.01em}
 .avatar{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:15px}
-.backbtn{background:var(--panel);border:1px solid var(--line);color:var(--bone);width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0}
+/* ---- LA FLECHITA DE VOLVER ------------------------------------------------
+   Estaba en 38px (el dedo pide 44) y las que flotan sobre una portada traían
+   cada una su propio `top` en línea: por eso unas quedaban encima del título y
+   otras demasiado arriba. Ahora hay UNA regla y la portada se abre sola para
+   dejarle su lugar, así que no importa qué tan corta sea. */
+.backbtn{background:var(--panel);border:1px solid var(--line);color:var(--bone);width:44px;height:44px;border-radius:50%;font-size:19px;line-height:1;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.backbtn.flota{position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:4;
+  background:rgba(7,9,13,.72);backdrop-filter:blur(8px);border-color:rgba(255,255,255,.18)}
+/* La portada que hospeda una flechita flotante se reserva su franja de arriba.
+   Como el texto va pegado abajo (`align-items:flex-end`), este relleno es lo
+   que garantiza que NUNCA se encimen, mida lo que mida la portada. */
+.banner:has(.backbtn.flota){padding-top:calc(var(--safe-t) + 62px)}
+/* Sobre la cancha y sobre la portada, la flechita va translúcida: encima de una
+   foto un botón opaco se ve pegado, y encima de nada no se lee. */
+.mk-top .backbtn, .fullbg .backbtn{background:rgba(7,9,13,.72);backdrop-filter:blur(8px);border-color:rgba(255,255,255,.18)}
 .nav{position:relative;z-index:6;flex-shrink:0;display:flex;background:var(--ink2);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
 .nav button{flex:1;background:none;border:none;color:var(--dim);padding:9px 0 8px;font-family:var(--body);font-size:10.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 .nav button .i{font-size:20px;line-height:1}
@@ -379,8 +393,21 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 
 /* card / perfil (reuse) */
 .pcard{position:relative;border-radius:16px;overflow:hidden;border:1px solid #3a4250;background:linear-gradient(160deg,#232834,#10131a);box-shadow:0 20px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);margin:16px}
-.pcard::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 42%,rgba(255,154,90,.14) 50%,transparent 58%);pointer-events:none;animation:shine 4s ease-in-out infinite}
-@keyframes shine{0%,100%{transform:translateX(-30%)}50%{transform:translateX(30%)}}
+/* EL BRILLO DE LA CARTA.
+   Era una franja naranja de 16% de ancho oscilando de lado a lado **para
+   siempre**, encima del nombre y de la foto. Carlos: *"el brillo que sale al
+   compartir la tarjeta desde el centro de la pantalla está horrible"* — y sí:
+   una mancha naranja que nunca se va no es un destello, es una mancha.
+   Ahora es lo que debía ser: un barrido angosto, blanco y tenue, que cruza una
+   vez cada siete segundos y el resto del tiempo no está. */
+.pcard::after{content:"";position:absolute;top:-20%;left:-30%;width:14%;height:150%;
+  transform:rotate(18deg);pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.10),transparent);
+  animation:shine 7s cubic-bezier(.45,.05,.55,.95) infinite}
+@media (prefers-reduced-motion:reduce){ .pcard::after{animation:none;opacity:0} }
+/* Cruza en el primer 22% del ciclo y se queda fuera de cuadro el resto: por eso
+   se lee como destello y no como mancha. */
+@keyframes shine{0%{left:-30%}22%{left:120%}100%{left:120%}}
 /* EL ORDEN DE LAS CAPAS DE LA CARTA.
    La foto tenía `z-index:2`, el MISMO que el rango y el general. Con empate de
    z-index gana quien va después en el HTML, y la foto va después — así que la
@@ -841,6 +868,25 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .pcard .fx-accessories .acc.br{bottom:8px;right:10px}
 .pcard .fx-accessories .acc.face{top:18%;left:50%;transform:translateX(-50%);font-size:36px}
 .pcard .fx-accessories .acc.head{top:2%;left:50%;transform:translateX(-50%);font-size:28px}
+/* ── LAS OCHO POSICIONES QUE FALTABAN ──────────────────────────────────────
+   Carlos: *"hay varios cosméticos que se salen de su posición"*. La causa era
+   exacta: el catálogo usa catorce valores de `pos` —tl, tr, bl, br, top, face,
+   head, sides, flock, bottom, fall, diag, scatter, center— y aquí sólo había
+   regla para SEIS. Los otros ocho quedaban con `position:absolute` sin `top`
+   ni `left`, o sea en su posición estática: todos amontonados en la esquina de
+   arriba a la izquierda. No se "salían": es que nunca se les dijo a dónde ir.
+   Y le tocaba a las buenas — la Espiral, el Agujero Negro, los Planetas, las
+   Alas, las Llamas, el Rayo, las Hojas, el Cometa. */
+.pcard .fx-accessories .acc.center{top:50%;left:50%;transform:translate(-50%,-50%);font-size:44px}
+.pcard .fx-accessories .acc.top{top:6px;left:50%;transform:translateX(-50%)}
+.pcard .fx-accessories .acc.bottom{bottom:10px;left:50%;transform:translateX(-50%)}
+.pcard .fx-accessories .acc.sides{top:44%;left:3%}
+.pcard .fx-accessories .acc.sides:nth-of-type(even){left:auto;right:3%}
+.pcard .fx-accessories .acc.diag{top:16%;left:14%;font-size:30px}
+.pcard .fx-accessories .acc.diag:nth-of-type(even){top:auto;bottom:16%;left:auto;right:14%}
+.pcard .fx-accessories .acc.scatter{top:22%;left:16%}
+.pcard .fx-accessories .acc.flock{top:14%;left:22%}
+.pcard .fx-accessories .acc.fall{top:-12%;left:20%}
 /* Sweep base */
 @keyframes shineSweep{0%{left:-40%}80%{left:120%}100%{left:120%}}
 @keyframes orbitPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
@@ -913,7 +959,23 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .reveal-card .rc-nm{font-family:var(--disp);font-weight:900;font-size:24px;text-align:center;margin:14px 12px 4px;text-shadow:0 3px 12px rgba(0,0,0,.7);color:#fff}
 .reveal-card .rc-fl{font-size:12.5px;color:#c9cfd9;text-align:center;padding:0 20px 16px;font-style:italic;line-height:1.4}
 .reveal-title{font-family:var(--disp);font-weight:900;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--rc,#e8b13e);text-shadow:0 4px 20px var(--rc,#e8b13e);z-index:1;margin-bottom:14px;text-align:center}
-.reveal-dupe{font-size:12px;color:var(--dim);margin-top:8px;z-index:1}
+/* El repetido dejó de ser un renglón gris que nadie leía. Es información que
+   cambia lo que el jugador siente al abrir el sobre, así que se ve. */
+.reveal-dupe{margin-top:12px;z-index:1;font-size:13.5px;color:#f0d9a8;text-align:center;
+  background:rgba(232,177,62,.14);border:1px solid rgba(232,177,62,.42);
+  border-radius:22px;padding:9px 16px}
+.reveal-dupe b{color:#ffd98a}
+/* Qué tan raro fue lo que te salió, en número. */
+.reveal-card .rc-prob{font-family:var(--mono);font-size:11.5px;color:var(--dim);
+  text-align:center;padding:0 20px 14px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.reveal-card .rc-prob b{font-size:14px}
+.reveal-card .rc-prob span{opacity:.8}
+/* El lote del súper admin: encabezado, secciones y el botón de cerrar. */
+.lote-top{text-align:center;padding:14px 0 4px}
+.lote-n{font-family:var(--disp);font-weight:800;font-size:22px;color:var(--liga);margin-top:4px}
+.lote-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+.lote-sec{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);margin:16px 2px 8px}
 .reveal-actions{margin-top:20px;display:flex;gap:10px;z-index:2}
 .reveal-actions .btn{min-width:110px}
 .rareBar{position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,transparent,var(--rc,#e8b13e),transparent);animation:rareBarPulse 1.4s ease-in-out infinite}
@@ -1173,7 +1235,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
     <div class="fullbg">
       <div class="courtbg" id="courtbg"></div>
       <div class="court-overlay">
-        <div class="mk-top"><button class="backbtn" onclick="goBack()" style="background:rgba(7,9,13,.7);backdrop-filter:blur(6px)">‹</button>
+        <div class="mk-top"><button class="backbtn" onclick="goBack()">‹</button>
           <span class="pill" style="background:rgba(236,90,69,.9);color:#fff;border:none">● EN VIVO</span></div>
         <div class="mk-score">
           <div class="team"><div class="lg crestc" id="mkHomeIni" style="background:var(--papa)">TI</div><div class="nm" id="mkHomeNm">TITANES</div><div class="sc" id="mkHomeSc">42</div></div>
@@ -1226,7 +1288,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <!-- PÚBLICO (betting-style) -->
   <section class="screen" id="s-publico">
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--publico)">Modo público</div><div class="t">Marcadores</div></div>
-      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn flota" onclick="goBack()">‹</button></div>
     <div class="scroll"><div class="pad">
       <div id="pubLive"></div>
       <div id="pubStand"></div>
@@ -1239,7 +1301,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <!-- COACH: VESTIDOR -->
   <section class="screen" id="s-vestidor">
     <div class="banner"><img src="assets/accion.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--coach)">Coach · Mi equipo</div><div class="t" id="vestTeam">Tu equipo</div></div>
-      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn flota" onclick="goBack()">‹</button></div>
     <div class="scroll"><div class="pad">
       <div class="card" id="subCard" style="border-color:var(--mesa)"><div class="kick" style="color:#ff9a8f">Cambios en vivo · se ven al instante en el marcador</div>
         <div class="sub-cols">
@@ -1274,7 +1336,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <!-- LIGA: PANEL ADMIN -->
   <section class="screen" id="s-liga">
     <div class="banner"><img src="assets/arena.jpg" id="ligaBannerImg"><div class="g"></div><div class="c"><div class="k" style="color:var(--liga)">Liga · Administración</div><div class="t" id="ligaBannerName">Mi liga</div></div>
-      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn flota" onclick="goBack()">‹</button></div>
     <div class="scroll"><div class="pad">
       <div id="ligaClaim" style="display:none"></div>
       <div id="ligaAdminBody">
@@ -1379,7 +1441,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
   <!-- TIENDA — catálogo de la liga (el admin sube productos) -->
   <section class="screen" id="s-tienda">
     <div class="banner"><img src="assets/arena.jpg"><div class="g"></div><div class="c"><div class="k" style="color:var(--papa)">Tienda oficial</div><div class="t" id="shopLeague">Tu liga</div></div>
-      <button class="backbtn" onclick="goBack()" style="position:absolute;top:calc(var(--safe-t) + 10px);left:12px;z-index:3;background:rgba(7,9,13,.6)">‹</button></div>
+      <button class="backbtn flota" onclick="goBack()">‹</button></div>
     <div class="scroll"><div class="pad">
       <div id="shopAdmin" style="display:none">
         <button class="btn sm block" onclick="toggleShopForm()" id="shopAddBtn" style="margin:2px 0 12px">＋ Agregar producto</button>
@@ -1553,9 +1615,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
       <div id="revealPrev" style="margin-top:30px"></div>
       <div class="rc-nm" id="revealNm">—</div>
       <div class="rc-fl" id="revealFl">—</div>
+      <div class="rc-prob" id="revealProb"></div>
       <div class="rareBar"></div>
     </div>
-    <div class="reveal-dupe" id="revealDupe" style="display:none">Duplicado · +20 monedas</div>
+    <div class="reveal-dupe" id="revealDupe" style="display:none">Ya lo tenías · +20 monedas</div>
     <div class="reveal-actions">
       <button class="btn ghost" onclick="closeReveal()">Guardar</button>
       <button class="btn" onclick="revealApply()">Aplicar en mi carta</button>
@@ -2069,7 +2132,7 @@ function drawCourt(){
       const fb=document.querySelector('#s-marcador .fullbg'); if(fb)fb.appendChild(empty);
     }
     empty.style.display='flex';
-    empty.innerHTML='<div style="position:absolute;top:12px;left:12px"><button class="backbtn" onclick="goBack()" style="background:rgba(7,9,13,.7);backdrop-filter:blur(6px)">&lsaquo;</button></div>'+
+    empty.innerHTML='<button class="backbtn flota" onclick="goBack()">&lsaquo;</button>'+
       '<svg class="ic" style="width:44px;height:44px;opacity:.5"><use href="#ic-live"/></svg>'+
       '<div style="font-weight:800;font-size:17px;color:var(--txt)">No hay partido en vivo</div>'+
       '<div style="font-size:13px;max-width:240px">Cuando la mesa dirija un partido del calendario, aquí verás el marcador en tiempo real.</div>'+
@@ -3051,6 +3114,31 @@ function equippedByKind(e,kind){ const owned=(e&&e.owned)||[]; const pick=(e&&e.
   const id=pick[kind]; if(!id)return null; if(owned.indexOf(id)<0)return null; return cosmeticById(id); }
 const KIND_TITLE={frame:'Marcos',effect:'Auras / fondos brillantes',shine:'Destellos',accessory:'Accesorios visuales',bg:'Fondos de carta',msg:'Estilo de mensajes'};
 const KIND_ORDER=['frame','effect','shine','accessory','bg','msg'];
+/* ORDEN DEL INVENTARIO: lo más raro arriba.
+   Carlos: *"haz que se acomoden por rareza descendente, más raros arriba menos
+   abajo; esto obviamente en TU INVENTARIO, no los escalones que mencionan
+   rarezas"* — o sea que la tabla de probabilidades se queda como está (ahí el
+   orden ascendente es el que se entiende), y lo que se reordena es la
+   colección y los accesorios de la carta. Que es lo correcto: uno abre su
+   inventario a ver qué tiene de bueno, no a leer de común para arriba.
+   Empate de rareza → alfabético, para que la lista no baile entre visitas. */
+/* El color de una rareza sirve para pintar el objeto, no siempre para LEERLO.
+   Dark Matter es #2b2140 —morado casi negro— y su nombre encima del fondo
+   oscuro de la app quedaba ilegible. Esto aclara sólo lo que haga falta para
+   que el texto se lea, y deja intacto el color con el que se pinta la pieza. */
+function colorLegible(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex||'')); if(!m) return hex;
+  let r = parseInt(m[1].slice(0,2),16), g = parseInt(m[1].slice(2,4),16), b = parseInt(m[1].slice(4,6),16);
+  const luma = () => 0.2126*r + 0.7152*g + 0.0722*b;
+  let vueltas = 0;
+  while (luma() < 118 && vueltas++ < 24){ r = Math.min(255, r+14); g = Math.min(255, g+14); b = Math.min(255, b+16); }
+  const h = (n) => n.toString(16).padStart(2,'0');
+  return '#' + h(r) + h(g) + h(b);
+}
+function porRarezaDesc(a, b){
+  const ra = RARITY[a.rarity] || RARITY.comun, rb = RARITY[b.rarity] || RARITY.comun;
+  return rb.tier - ra.tier || String(a.t).localeCompare(String(b.t), 'es');
+}
 
 /* ═══ LA RAREZA DE LA CARTA · sale de TODO lo que traes puesto ═══════════════
    Carlos: "mi carta es marcada como normal pero tengo puros accesorios
@@ -3244,8 +3332,9 @@ function buildGacha(){
     KIND_ORDER.forEach(kind=>{ if(!byKind[kind]||!byKind[kind].length)return;
       h+='<div class="eyebrow" style="margin:14px 2px 6px;color:var(--muted)">'+(KIND_TITLE[kind]||kind)+'</div>';
       h+='<div class="cosgrid">';
-      byKind[kind].forEach(c=>{ const r=RARITY[c.rarity]||RARITY.comun; const on=(e.equipped&&e.equipped[kind])===c.id;
-        h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" style="--rc:'+r.c+'">'+previewCos(c, 78, 104)+'<span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+(c.daily_only?' · diario':'')+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>';
+      byKind[kind].sort(porRarezaDesc).forEach(c=>{ const r=RARITY[c.rarity]||RARITY.comun; const on=(e.equipped&&e.equipped[kind])===c.id;
+        const pr=textoProb(c.rarity,1);
+        h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" style="--rc:'+r.c+'">'+previewCos(c, 78, 104)+'<span class="cos-nm">'+c.t+'</span><span class="cos-rar" style="color:'+colorLegible(r.c)+'">'+r.t+(c.daily_only?' · diario':' · '+pr.pct)+'</span>'+(on?'<span class="cos-on">EN USO</span>':'')+'</button>';
       });
       h+='</div>';
     });
@@ -3282,23 +3371,50 @@ async function openAllPacks(){ if(!(typeof isSuperAdmin==='function'&&isSuperAdm
       if(!dup){ e.owned=e.owned||[]; e.owned.push(c.id); gained.push(c); } else { e.coins+=20; }
       results.push({c,dup}); } });
   saveEcon(e); SFX.cheer(9);
-  // vista de resultados masivos
+
+  /* LA LISTA DEL LOTE YA NO SE BORRA SOLA.
+     ─────────────────────────────────────────────────────────────────────
+     Carlos: *"en la de abrir todos los sobres de admin no hay dónde ver cuáles
+     me salieron"*. Y sí había: se dibujaba la cuadrícula completa… y 100 ms
+     después un `buildGacha()` REDIBUJABA la pantalla entera y se la llevaba.
+     Es el mismo bug que ya habíamos matado en el premio de un sobre, en otra
+     ruta. Ahora la lista se queda hasta que el admin la cierre.
+
+     De pasada, dos cosas más que estaban mal aquí:
+       · `style="'+(x.c.css||'')+'"` — los rayos y los brillos NO tienen `css`,
+         así que salían como cajitas vacías. Se usa `previewCos`, que sabe
+         pintar los cinco tipos y es la única que pinta previas.
+       · sin orden: 40 sobres salían revueltos. Ahora van por rareza
+         descendente, que es como uno quiere ver un botín. */
   const stage=document.getElementById('gachaStage');
   if(stage){
-    let h='<div style="text-align:center;padding:14px 0"><div style="font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase">Súper Admin · lote completo</div>'+
-      '<div style="font-family:var(--disp);font-weight:800;font-size:22px;color:var(--liga);margin-top:4px">'+results.length+' sobres abiertos</div>'+
-      '<div style="font-size:12px;color:var(--muted);margin-top:4px">'+gained.length+' cosméticos nuevos · '+(results.length-gained.length)+' duplicados</div></div>';
-    h+='<div class="cosgrid">';
-    results.forEach(x=>{ const r=RARITY[x.c.rarity]||RARITY.bronce;
-      h+='<div class="coscard'+(x.dup?'':' on')+'" style="--rc:'+r.c+'"><span class="cos-prev" style="'+(x.c.css||'')+'"></span><span class="cos-nm">'+x.c.t+'</span><span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'+(x.dup?'<span class="cos-on" style="background:#666">DUP</span>':'')+'</div>';
-    });
-    h+='</div>';
+    const ordenados=results.slice().sort((a,b)=>
+      ((RARITY[b.c.rarity]||RARITY.comun).tier)-((RARITY[a.c.rarity]||RARITY.comun).tier)
+      || a.c.t.localeCompare(b.c.t,'es'));
+    const nuevos=ordenados.filter(x=>!x.dup), repes=ordenados.filter(x=>x.dup);
+    const celda=(x)=>{ const r=RARITY[x.c.rarity]||RARITY.comun; const t=textoProb(x.c.rarity,1);
+      return '<div class="coscard'+(x.dup?'':' on')+'" style="--rc:'+r.c+'">'
+        + previewCos(x.c, 54, 72)
+        + '<span class="cos-nm">'+x.c.t+'</span>'
+        + '<span class="cos-rar" style="color:'+colorLegible(r.c)+'">'+r.t+' · '+t.pct+'</span>'
+        + (x.dup?'<span class="cos-on" style="background:#666">REPE</span>':'')+'</div>'; };
+    let h='<div class="lote-top"><div class="eyebrow">Súper Admin · lote completo</div>'
+      + '<div class="lote-n">'+results.length+' sobres abiertos</div>'
+      + '<div class="lote-sub"><b style="color:var(--good)">'+nuevos.length+' nuevos</b> · '
+      + repes.length+' repetidos <span style="color:var(--dim)">(+'+(repes.length*20)+' monedas)</span></div>'
+      + '<button class="btn sm" style="margin-top:10px" onclick="cerrarLote()">Listo, ya los vi</button></div>';
+    if(nuevos.length){ h+='<div class="lote-sec">Nuevos ('+nuevos.length+')</div><div class="cosgrid">'
+      + nuevos.map(celda).join('')+'</div>'; }
+    if(repes.length){ h+='<div class="lote-sec">Repetidos ('+repes.length+')</div><div class="cosgrid">'
+      + repes.map(celda).join('')+'</div>'; }
     stage.innerHTML=h;
+    stage.scrollIntoView({block:'start',behavior:'smooth'});
   }
   _openAllRunning=false;
-  setTimeout(()=>{ buildGacha(); }, 100);
   flashSaved('Abriste '+results.length+' sobres ✓');
 }
+/* El admin cierra su lote cuando acabó de verlo, no un temporizador. */
+function cerrarLote(){ _gcSpinning=false; _openAllRunning=false; buildGacha(); }
 let _gcSpinning=false;
 /* Abre un sobre. type: 'sencillo'|'avanzado'|'armado'. Compat: sin arg,
    abre el primero disponible (sencillo → avanzado → armado). */
@@ -3396,15 +3512,39 @@ function previewCos(c, size, alto){
 function cosPreviewHTML(c,size){ return previewCos(c, size||140, c.kind==='shine'?Math.round((size||140)*0.7):(size||140)); }
 /* SHOWCASE del premio — "primera plana" (item pedido) */
 let _revealCos=null;
-function openReveal(cos,dup){
+/* Qué tan raro fue lo que te salió, en palabras y en número.
+   Carlos: *"haz que en el de abrir, cuando te salga lo que te tocó, te diga qué
+   probabilidad tenía de salir"*. Se calcula con el MISMO boost del sobre que
+   abriste — no con la probabilidad base—, porque si no el número miente: un
+   sobre armado sube las rarezas altas y decirle al jugador la cifra del sencillo
+   sería enseñarle una probabilidad que no era la suya. */
+function textoProb(rarezaId, boost){
+  const p = packProb(rarezaId, boost || 1);
+  const uno = p > 0 ? Math.round(100 / p) : 0;
+  const cifra = p >= 10 ? p.toFixed(0) : (p >= 1 ? p.toFixed(1) : p.toFixed(2));
+  return { pct: cifra + '%', unoDe: uno > 1 ? ('1 de cada ' + uno.toLocaleString('es-MX')) : '' };
+}
+function openReveal(cos,dup,boost){
   _revealCos=cos; const bg=document.getElementById('revealBg'); if(!bg)return;
   const r=RARITY[cos.rarity]||RARITY.comun;
   bg.style.setProperty('--rc', r.c);
   document.getElementById('revealTitle').textContent=(POMPA(r.tier)>=5?'¡ES DE COLECCIÓN!':(POMPA(r.tier)>=3?'¡Nuevo cosmético!':'Añadido a tu colección'));
-  const bd=document.getElementById('revealBadge'); if(bd){ bd.textContent='◆ '+r.t; bd.style.color=r.c; }
+  const bd=document.getElementById('revealBadge'); if(bd){ bd.textContent='◆ '+r.t; bd.style.color=colorLegible(r.c); }
   document.getElementById('revealNm').textContent=cos.t;
   document.getElementById('revealFl').textContent='"'+flavorOf(cos)+'"';
-  const dp=document.getElementById('revealDupe'); if(dp)dp.style.display=dup?'':'none';
+  const pb=document.getElementById('revealProb');
+  if(pb){ const t=textoProb(cos.rarity, boost);
+    pb.innerHTML='<b style="color:'+colorLegible(r.c)+'">'+t.pct+'</b> de probabilidad'+(t.unoDe?' · <span>'+t.unoDe+'</span>':''); }
+  /* EL MENSAJE DE REPETIDO YA NO SE PIERDE.
+     Estaba en la leyenda de abajo del carrusel, que la tapa este mismo premio
+     300 ms después. O sea que el "duplicado (+20 monedas)" existía, pero nadie
+     alcanzaba a leerlo nunca. Ahora vive AQUÍ, encima de todo, con su color y
+     su tamaño — y de paso el título cambia, porque "¡Nuevo cosmético!" cuando
+     es repetido es mentirle al jugador. */
+  const dp=document.getElementById('revealDupe');
+  if(dp){ dp.style.display=dup?'':'none';
+    if(dup){ dp.innerHTML='<b>Ya lo tenías</b> · se te pagan <b>+20 monedas</b>';
+      document.getElementById('revealTitle').textContent='Repetido'; } }
   document.getElementById('revealPrev').outerHTML='<div id="revealPrev" style="margin-top:24px">'+cosPreviewHTML(cos,150)+'</div>';
   const card=document.getElementById('revealCard');
   ['rc-anm-fadeIn','rc-anm-zoom','rc-anm-flip','rc-anm-spin','rc-anm-drop','rc-anm-glitch','rc-anm-supernova','rc-anm-emerge'].forEach(k=>card.classList.remove(k));
@@ -3449,10 +3589,14 @@ function spinCarousel(winner,dup,pInfo){
     track.style.transition='transform .32s ease-out'; track.style.transform='translateX('+(-exact)+'px)';
     const cellEls=track.querySelectorAll('.gc-cell'); if(cellEls[WIN_AT])cellEls[WIN_AT].classList.add('win');
     const r=RARITY[winner.rarity]||RARITY.comun; const cap=document.getElementById('gachaCap');
-    if(cap)cap.innerHTML='<b style="color:'+r.c+'">'+r.t+'</b> · '+winner.t+(dup?' · duplicado (+20 monedas)':'');
+    if(cap)cap.innerHTML='<b style="color:'+colorLegible(r.c)+'">'+r.t+'</b> · '+winner.t+(dup?' · duplicado (+20 monedas)':'');
     SFX.ping(r.tier||1);
   }, SPIN_MS+40);
-  setTimeout(()=>{ openReveal(winner, dup); }, SPIN_MS+340);
+  /* 340 ms era muy poco: la leyenda de abajo apenas parpadeaba antes de que el
+     premio la tapara. Con 900 ms se alcanza a leer QUÉ salió en el carrusel, y
+     luego llega el premio. El mensaje de repetido, además, ya vive dentro del
+     premio, así que aunque no dé tiempo de leer la leyenda, no se pierde. */
+  setTimeout(()=>{ openReveal(winner, dup, pInfo&&pInfo.boost); }, SPIN_MS+900);
 
   /* EL PREMIO YA NO SE VA SOLO.
      ─────────────────────────────────────────────────────────────────────
@@ -3471,7 +3615,7 @@ function spinCarousel(winner,dup,pInfo){
     const bg=document.getElementById('revealBg');
     if(bg && bg.classList.contains('on')) return;   // está viéndolo: no estorbar
     _gcSpinning=false; buildGacha();
-  }, SPIN_MS+2200);
+  }, SPIN_MS+2800);
 }
 /* Aplica un cosmético en su categoría (una activa por tipo). Toca dos veces = lo quita. */
 function applyCosmetic(id){ const e=econ(); const c=cosmeticById(id); if(!c)return;
@@ -5379,8 +5523,22 @@ function applyCardCosmetics(){
    está puesto lo QUITA — `applyCosmetic` ya alterna, sólo faltaba la puerta.
    Y cada categoría trae su "Ninguno", porque quitar tiene que ser tan fácil
    como poner y no todo el mundo adivina que se destoca. */
+/* Su caja se ASEGURA, no se supone.
+   `renderCard()` reescribe `#fc-vitrina` en tres caminos distintos (sin
+   partidos, sin ser jugador, y con promedios), y en los tres se llevaba por
+   delante el `#fcCos` que trae el HTML. Por eso "poner mis accesorios desde mi
+   carta" no existía en la práctica: se construía y acto seguido se borraba.
+   Ahora la caja se crea si no está, y esto corre AL FINAL del render. */
+function cajaCosmeticos(){
+  let caja=document.getElementById('fcCos');
+  if(caja) return caja;
+  const vit=document.getElementById('fc-vitrina'); if(!vit) return null;
+  caja=document.createElement('div'); caja.id='fcCos';
+  vit.insertBefore(caja, vit.firstChild);     // arriba: es a lo que se entra
+  return caja;
+}
 function buildCardCosmetics(){
-  const caja=document.getElementById('fcCos'); if(!caja)return;
+  const caja=cajaCosmeticos(); if(!caja)return;
   const e=econ(); const propios=(e.owned||[]);
   if(!propios.length){
     caja.innerHTML='<div class="stratnote" style="border-left-color:var(--liga)">'
@@ -5407,13 +5565,13 @@ function buildCardCosmetics(){
       +'width:78px;height:104px;border-radius:9px;background:#141a28;color:#6b7383;font-size:22px">✕</span>'
       +'<span class="cos-nm">Ninguno</span></button>';
 
-    lista.forEach(c=>{
+    lista.sort(porRarezaDesc).forEach(c=>{
       const r=RARITY[c.rarity]||RARITY.comun; const on=(puesto===c.id);
       h+='<button class="coscard'+(on?' on':'')+'" onclick="applyCosmetic(\''+c.id+'\')" '
         +'style="--rc:'+r.c+';flex:0 0 auto;min-width:92px">'
         + previewCos(c, 78, 104)
         +'<span class="cos-nm">'+c.t+'</span>'
-        +'<span class="cos-rar" style="color:'+r.c+'">'+r.t+'</span>'
+        +'<span class="cos-rar" style="color:'+colorLegible(r.c)+'">'+r.t+'</span>'
         +(on?'<span class="cos-on">EN USO</span>':'')
         +'</button>';
     });
@@ -5431,7 +5589,15 @@ function quitarCosmetico(kind){
   flashSaved((c?c.t:'Accesorio')+' quitado');
 }
 
+/* El render de la carta tiene tres salidas anticipadas, y los accesorios tienen
+   que quedar puestos en las tres. Por eso se envuelve: primero arma la carta,
+   pase lo que pase, y AL FINAL pone los accesorios — así ningún camino se los
+   lleva. Meterlos dentro y acordarse de repetirlos antes de cada `return` es
+   justo el tipo de cosa que se rompe al siguiente cambio. */
 function renderCard(){
+  try { renderCardBase(); } finally { try{ buildCardCosmetics(); }catch(e){} }
+}
+function renderCardBase(){
   const u=userData()||{}; const subj=cardSubject();
   buildCardSubjectPicker();
   applyCardCosmetics();
