@@ -216,12 +216,20 @@
      CATEGORÍA, el día y el lugar sin preguntarle a nadie — si no, la app no le
      resolvió lo único que venía a resolver. */
   API.buscarPartidoDelHijo = function (){
+    /* Busca como buscaría él: primero donde cree que está, y si no, en la otra.
+       La primera versión sólo abría "Tabla" —que es la tabla de POSICIONES— y
+       reportaba abandono. El abandono era real, pero por la razón de al lado:
+       el calendario existe, sólo que no ahí y sin filtro por categoría. */
+    var donde = ['publico', 'tabla', 'hub'];
+    var i = 0;
     return insistir('encontrar el partido de mi hij@', function (){
-      go('tabla');
+      go(donde[i % donde.length]); i++;
     }, function (){
-      var t = ($('#s-tabla') || {}).innerText || '';
-      return /Mixta|Varonil|Femenil/.test(t) && /\d{1,2}:\d{2}/.test(t);
-    }, 'en el calendario no se ve categoría ni hora, así que no sabe cuándo juega su hij@');
+      var t = ((document.querySelector('.screen.on') || {}).innerText || '');
+      // Le sirve sólo si ve las tres cosas: de qué categoría, a qué hora y dónde.
+      return /Mixta|Varonil|Femenil/.test(t) && /\d{1,2}:\d{2}/.test(t)
+          && /(Gimnasio|Deportiva|Cancha|Club|Unidad|CBTis)/.test(t);
+    }, 'no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@');
   };
 
   /* 8 · EL VISITANTE CURIOSEA antes del partido, que es lo que hace alguien

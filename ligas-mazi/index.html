@@ -825,18 +825,26 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 /* ===== En vivo: enfrentamientos con logos encarados + degradado ===== */
 .fo-sec-ttl{display:flex;align-items:center;gap:8px;margin:16px 2px 9px;font-family:var(--disp);font-weight:800;font-size:16px}
 .fo-sec-ttl .pill{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
-.faceoff{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0d1017;margin-bottom:10px;padding:16px 12px 14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;cursor:pointer}
+/* Las columnas laterales tienen PISO. Antes eran `1fr auto 1fr`, y la de en
+   medio crece con el texto: al ponerle la categoría y el lugar al partido, el
+   centro empujó a los lados por debajo de los 56px del escudo y los cortó
+   contra el borde. El simulacro lo marcó como desborde de `.fo-side` y en la
+   captura se veía clarito: los escudos partidos a la mitad. */
+.faceoff{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);background:#0d1017;margin-bottom:10px;padding:16px 12px 14px;display:grid;grid-template-columns:minmax(74px,1fr) minmax(0,auto) minmax(74px,1fr);align-items:center;gap:6px;cursor:pointer}
 .faceoff::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,var(--hc,#2a3350) -12%,rgba(13,16,23,.35) 40%,rgba(13,16,23,.35) 60%,var(--ac,#2a3350) 112%);opacity:.5;pointer-events:none}
 .faceoff>*{position:relative;z-index:1}
 .fo-side{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;min-width:0}
 .fo-side .crest{width:56px;height:56px;font-size:20px;box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .fo-side.l .crest{transform:rotate(-6deg)}.fo-side.r .crest{transform:rotate(6deg)}
 .fo-nm{font-family:var(--body);font-weight:700;font-size:13px;line-height:1.15;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.fo-mid{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px}
+.fo-mid{display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 4px;min-width:0}
 .fo-vs{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--dim);opacity:.85}
 .fo-score{font-family:var(--disp);font-weight:800;font-size:24px;letter-spacing:.02em;white-space:nowrap}
 .fo-score .w{color:#fff}.fo-score .l{color:var(--dim)}
-.fo-when{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-transform:capitalize;text-align:center;line-height:1.3}
+/* `capitalize` sube TODAS las palabras: 'sábado, 8 de agosto' salía como
+   'Sábado, 8 De Agosto'. En español sólo va la primera. */
+.fo-when{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+.fo-when::first-letter{text-transform:uppercase}
 .fo-live{position:absolute;top:10px;left:0;right:0;text-align:center;z-index:2}
 .fo-live span{font-size:10px;font-weight:800;letter-spacing:.05em;color:#fff;background:rgba(236,90,69,.92);padding:3px 10px;border-radius:20px}
 .faceoff.islive{padding-top:30px;border-color:rgba(236,90,69,.4)}
@@ -2709,6 +2717,11 @@ function openPublicLeague(accountId,name){
   fetchLeagueFull(accountId).then(lg=>renderPublicLeague(lg,name,accountId)).catch(()=>renderPublicLeague(null,name,accountId));
 }
 function closePublicLeague(){ const bg=document.getElementById('pubLeagueBg'); if(bg)bg.classList.remove('on'); }
+/* Qué categoría está filtrando el calendario. `null` = todas. Vive fuera de la
+   función porque tiene que sobrevivir al redibujo que dispara el propio filtro. */
+let _calCat=null;
+function filtrarCalendario(cat){ _calCat=cat; try{ buildPublicoData(); }catch(e){}
+  try{ if(typeof buildHub==='function') buildHub(); }catch(e){} }
 function buildEnVivoBoard(){
   const d=leagueData(); let h='';
   const on=(typeof GAME!=='undefined'&&GAME&&GAME.matchIdx!=null&&GAME.teams&&GAME.teams.length===2);
@@ -2725,10 +2738,43 @@ function buildEnVivoBoard(){
   if(!liveCount){ h+='<div class="stratnote" style="border-left-color:var(--mesa)">No hay partidos en vivo ahora. Cuando la mesa dirija un partido, aparecerá aquí para todo el público.</div>'; }
   const bydate=(a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''));
   const liveIdx=on?GAME.matchIdx:-1;
-  const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx).sort((a,b)=>bydate(a.m,b.m)).slice(0,10);
-  if(up.length){ h+='<div class="fo-sec-ttl">Próximos</div>';
+  /* ═══ EL FILTRO POR CATEGORÍA ══════════════════════════════════════════
+     Salió del simulacro y fue el hallazgo más caro: **los 64 papás del reparto,
+     los 64, se rindieron buscando el partido de su hij@**. No se aburrieron —
+     insistieron entre 3 y 8 veces cada uno. La causa era ésta: la lista de
+     "Próximos" se cortaba en 10 partidos de las NUEVE categorías juntas, así
+     que el de su niño casi nunca alcanzaba a salir.
+
+     Carlos lo había pedido tal cual: *"un papá de un niño de una categoría x
+     necesita saber más exactamente qué días y en qué lugares se enfrenta la
+     categoría de su hijo"*. Con filtro sí se puede, y al papá se le abre ya
+     puesto en la categoría de su hij@ — porque no tiene por qué buscarla. */
+  const catsCal=[...new Set(d.calendar.map(m=>{const t=teamById(m.home)||teamById(m.away); return t&&t.categoria;}).filter(Boolean))];
+  let catSel=_calCat;
+  if(catSel==null && currentRole==='papa'){          // el papá arranca en la de su hij@
+    const u=userData()||{}; const kid=(u.children||[])[0];
+    const eqKid=kid&&kid.teamCode?(d.teams||[]).find(t=>t.code===kid.teamCode):null;
+    if(eqKid&&eqKid.categoria) catSel=eqKid.categoria;
+  }
+  const catDe=(m)=>{const t=teamById(m.home)||teamById(m.away); return (t&&t.categoria)||'';};
+  const cumple=(m)=>!catSel||catDe(m)===catSel;
+  if(catsCal.length>1){
+    h+='<div class="fo-sec-ttl">Próximos</div><div class="chips" style="margin:-2px 0 8px">'
+      +'<button class="chip'+(catSel?'':' on')+'" onclick="filtrarCalendario(null)">Todas</button>'
+      +catsCal.map(c=>'<button class="chip'+(catSel===c?' on':'')+'" onclick="filtrarCalendario(\''+c+'\')">'+(CAT_NOMBRE[c]||c)+'</button>').join('')
+      +'</div>';
+  }
+  // Con filtro puesto caben más, porque ya son los partidos que a esta persona
+  // le importan y no un revoltijo de nueve categorías.
+  const up=d.calendar.map((m,i)=>({m,i})).filter(x=>!x.m.done && x.i!==liveIdx && cumple(x.m))
+    .sort((a,b)=>bydate(a.m,b.m)).slice(0, catSel?20:10);
+  if(up.length){ if(catsCal.length<=1) h+='<div class="fo-sec-ttl">Próximos</div>';
     up.forEach(x=>{ const m=x.m; const H=teamById(m.home),A=teamById(m.away); if(!H||!A)return;
-      const when=(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
+      const cat=catDe(m);
+      // La categoría va PRIMERO en la línea: es el dato con el que un papá
+      // reconoce el partido de su hij@ entre nueve que juegan el mismo sábado.
+      const when=(cat?(CAT_NOMBRE[cat]||cat)+' · ':'')
+        +(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
       h+=faceoffCard(H,A,{mode:'next',when:when});
       if(canOfficiate(m)) h+='<div class="le-officiate" style="margin:-6px 0 10px" onclick="officiateMatch('+x.i+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir este partido (eres la mesa)</div>'; }); }
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
