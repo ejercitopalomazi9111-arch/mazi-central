@@ -1,6 +1,6 @@
 # Simulacro de Ligas Mazi · reporte
 
-Corrido el 2026-08-01 · 195.6s · 570 personas · 3 pasadas
+Corrido el 2026-08-01 · 168.2s · 570 personas · 3 pasadas
 
 > Cada persona de este reparto tiene nombre, temperamento y CURP válido, y hace lo que
 > haría alguien de verdad. **Nadie abandona a la primera**: la gente es terca, así que lo
@@ -138,7 +138,7 @@ primera es **fricción** —la app se deja usar, pero cuesta—; quedarse sin in
 - fricción: **0**
 - abandonos: **249**
 
-4294 pantallas caminadas con identidades reales del reparto. 254 hallazgos en bruto, **186 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
+4294 pantallas caminadas con identidades reales del reparto. 256 hallazgos en bruto, **186 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
 
 ✅ **Ningún error de consola** en todo el recorrido.
 
@@ -192,8 +192,8 @@ primera es **fricción** —la app se deja usar, pero cuesta—; quedarse sin in
 
 | Pantalla | Qué | Dónde | A cuánta gente | Roles |
 |---|---|---|---|---|
+| `gacha` | Se sale 10px de su caja | `gc-cell` | 4 | papa, publico |
 | `gacha` | Se sale 4554px de su caja | `#gcTrack` | 2 | papa, publico |
-| `gacha` | Se sale 10px de su caja | `gc-cell` | 2 | papa, publico |
 | `inbox` | Se sale 15px de su caja | `nb-n` | 1 | liga |
 
 ## Lo que este simulacro NO prueba
