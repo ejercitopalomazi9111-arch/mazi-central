@@ -38,7 +38,7 @@
 import { writeFileSync } from 'node:fs';
 import { armarReparto } from './personas.mjs';
 import * as M from './mundo.mjs';
-import { abrirApp, recorrerTodos, traducirLiga, juntar } from './app.mjs';
+import { abrirApp, recorrerTodos, traducirLiga, juntar, cotejar } from './app.mjs';
 
 const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i < 0 ? d : process.argv[i + 1]; };
 const bandera = (n) => process.argv.includes('--' + n);
@@ -69,8 +69,16 @@ function correrTemporada({ nombre, reparto, semilla, historialPrevio, categorias
   //       el reporte: ahí se comprueba lo de "primera vez" del EQUIPO.
   const previas = [];
   const regulares = liga.calendario.filter(p => p.fase === 'regular');
+  /* LA ÚLTIMA JORNADA SE QUEDA SIN JUGAR, A PROPÓSITO.
+     Salió del primer cotejo: con el 100% de los partidos jugados, el calendario
+     sólo enseña resultados y nunca "lo que viene", así que la revisión de si un
+     papá puede saber DÓNDE y A QUÉ HORA juega su hij@ no se podía hacer — y ésa
+     es la razón por la que un papá abre la app. Una temporada de verdad casi
+     nunca está completa: siempre hay algo por jugarse. */
+  const ultima = Math.max(...regulares.map(p => p.jornada));
   regulares.forEach((p, i) => {
     if (i < 6) previas.push(M.previaDelPartido(liga, p));
+    if (p.jornada === ultima) return;              // ésta es la que viene
     const aud = M.audiencia(liga, p, reparto.personas);
     M.jugarPartido(liga, p, { espectadores: aud });
   });
@@ -166,9 +174,28 @@ if (!SIN_APP){
     },
   });
   process.stdout.write('\n');
+
+  /* EL COTEJO. Lo que el motor jugó contra lo que la app enseña. Para una app
+     que mide partidos, ésta es la revisión que de verdad decide si sirve. */
+  const catMuestra = p1.liga.categorias[3].id;
+  /* Se coteja contra un partido QUE VIENE, no contra uno ya jugado. La hora y
+     el lugar sólo tienen sentido antes: en uno terminado lo que se enseña es el
+     resultado. Preguntarle a la app por la hora de un partido de la semana
+     pasada era una pregunta mal hecha de mi parte. */
+  const jugado = p1.liga.calendario.filter(x => x.estado === 'programado')[0]
+              || p1.liga.calendario.filter(x => x.estado === 'jugado')[0];
+  const unJug = Object.values(p1.liga.jugadores)[0];
+  const deCotejo = await cotejar({ pagina, liga: p1.liga, appLiga,
+    tablaEsperada: M.tabla(p1.liga, catMuestra), unPartido: jugado, unJugador: unJug });
+  linea(`  cotejo contra el motor: ${deCotejo.length ? deCotejo.length + ' desacuerdos' : 'la app cuenta lo mismo que se jugó ✓'}`);
+
   await navegador.close();
 
-  revision = { juntos: juntar(hallazgos), crudos: hallazgos.length, visitadas, errores };
+  const todos = hallazgos.concat(deCotejo);
+  revision = { juntos: juntar(todos), crudos: todos.length, visitadas, errores,
+    cotejo: deCotejo.length,
+    friccion: hallazgos.filter(h => h.tipo === 'friccion').length,
+    abandonos: hallazgos.filter(h => h.tipo === 'abandono').length };
   linea(`  ${visitadas} pantallas revisadas · ${revision.juntos.length} problemas distintos`);
   linea(`  errores de consola: ${errores.length}`);
 }
@@ -255,6 +282,27 @@ L('');
 
 if (revision){
   L('## La app de verdad · lo que encontró el inspector');
+  L('');
+  L('### ¿La app cuenta lo que de verdad se jugó?');
+  L('');
+  L('Ligas Mazi tiene un solo trabajo: **medir partidos**. Aquí se compara, dato por dato, lo');
+  L('que el motor jugó contra lo que la app enseña en pantalla — marcador, orden de la tabla,');
+  L('día y lugar del calendario, y de quién es la carta. Se lee del DOM, no del estado interno:');
+  L('lo que importa es lo que ve la persona, no lo que la app cree que tiene guardado.');
+  L('');
+  L(revision.cotejo === 0
+    ? '✅ **Sin desacuerdos.** El marcador, la tabla, el calendario y la carta enseñan lo que se jugó.'
+    : `🔴 **${revision.cotejo} desacuerdos** entre lo jugado y lo mostrado (abajo, marcados como \`cotejo\`).`);
+  L('');
+  L('### ¿Dónde costó usarla?');
+  L('');
+  L('Cada persona se registró, cerró sesión y volvió a entrar **tocando los botones**, y según');
+  L('su temperamento insistió más o menos veces antes de rendirse. Un intento que no salió a la');
+  L('primera es **fricción** —la app se deja usar, pero cuesta—; quedarse sin intentos es');
+  L('**abandono**, que ya es alguien que quería y no pudo.');
+  L('');
+  L(`- fricción: **${revision.friccion}**`);
+  L(`- abandonos: **${revision.abandonos}**`);
   L('');
   L(`${revision.visitadas} pantallas caminadas con identidades reales del reparto. ` +
     `${revision.crudos} hallazgos en bruto, **${revision.juntos.length} problemas distintos** ` +

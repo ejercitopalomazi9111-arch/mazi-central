@@ -23,6 +23,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { TEMPERAMENTOS } from './personas.mjs';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 
@@ -135,7 +136,8 @@ export async function abrirApp({ url, ancho = 390, alto = 844 } = {}){
 
   await pagina.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await new Promise(r => setTimeout(r, 1500));
-  await pagina.evaluate(readFileSync(resolve(AQUI, 'inspector.js'), 'utf8'));
+  for (const mod of ['inspector.js', 'manos.js', 'cotejo.js'])
+    await pagina.evaluate(readFileSync(resolve(AQUI, mod), 'utf8'));
   await pagina.evaluate(`INSPECTOR.configurar({ pantallas:'.screen', activa:'on',
     ignorar:['.banner','.fullbg','#courtbg'] })`);
 
@@ -154,8 +156,13 @@ export async function recorrerTodos({ pagina, personas, liga, appLiga, alAvanzar
     const tanda = personas.slice(i, i + TANDA).map(p => {
       const primeroDeSuRol = !profundasHechas[p.rol];
       profundasHechas[p.rol] = true;
+      const t = TEMPERAMENTOS[p.temperamento] || TEMPERAMENTOS.normal;
       return {
-        id: p.id, rol: p.rol, nombre: p.nombre,
+        id: p.id, rol: p.rol, nombre: p.nombre, email: p.email, pass: p.pass,
+        // La terquedad viaja con la persona: es lo que decide cuántas veces
+        // insiste antes de rendirse, y por lo tanto qué se anota como fricción
+        // y qué como abandono.
+        terquedad: t.terquedad, paciencia: t.paciencia, lee: t.lee,
         user: traducirPersona(p, liga, appLiga),
         pantallas: RECORRIDO[p.rol] || RECORRIDO.publico,
         profundo: primeroDeSuRol,
@@ -186,6 +193,22 @@ export async function recorrerTodos({ pagina, personas, liga, appLiga, alAvanzar
           que: e.message, donde:'' }]; }
         vistas += pasos.length;
         h.forEach(x => out.push(Object.assign({}, x, { persona: per.id, rol: per.rol })));
+
+        /* Y AHORA SÍ, LAS MANOS. Mirar la pantalla no prueba los caminos de
+           escritura; esto se registra, cierra sesión, vuelve a entrar, hace un
+           cambio y abre un sobre — tocando, con la terquedad de esta persona. */
+        try {
+          MANOS.vivir(per).forEach(f => out.push({
+            pantalla: 'usar · ' + f.paso, tipo: f.tipo, gravedad: f.gravedad,
+            que: f.que, donde: f.paso, persona: per.id, rol: per.rol }));
+        } catch (e){
+          out.push({ pantalla:'usar', tipo:'excepcion', gravedad:'grave',
+            que:'Truena al usar la app: ' + e.message, donde:'', persona: per.id, rol: per.rol });
+        }
+        /* La identidad se volvió a escribir durante el registro, así que se
+           repone la del reparto para que la siguiente persona arranque limpia. */
+        try { localStorage.setItem('lm_user', JSON.stringify(per.user));
+              localStorage.setItem('lm_league', ligaJSON); applyRoleFromUser(); } catch (e){}
       });
       return { out, vistas };
     }, tanda, JSON.stringify(appLiga));
@@ -205,6 +228,25 @@ export async function recorrerTodos({ pagina, personas, liga, appLiga, alAvanzar
    por qué es y dónde está, y se cuenta a cuánta gente le pasó — que además es
    el dato que dice qué tan urgente es.
    ══════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   COTEJAR: que la app enseñe lo que de verdad se jugó.
+   Se le pasa la verdad del motor —la tabla, un partido, un jugador— y se
+   compara contra lo que aparece EN PANTALLA. Se lee del DOM y no del estado
+   interno de la app a propósito: lo que importa es lo que ve la persona, no lo
+   que la app cree que tiene guardado.
+   ══════════════════════════════════════════════════════════════════════════ */
+export async function cotejar({ pagina, liga, appLiga, tablaEsperada, unPartido, unJugador }){
+  return await pagina.evaluate((ligaJSON, tabla, partido, jugador) => {
+    localStorage.setItem('lm_league', ligaJSON);
+    let out = [];
+    try { out = out.concat(COTEJO.tabla(tabla)); }       catch (e){ out.push({tipo:'cotejo',gravedad:'grave',pantalla:'tabla',que:'Truena al cotejar: '+e.message,donde:''}); }
+    try { out = out.concat(COTEJO.calendario(partido)); }catch (e){ out.push({tipo:'cotejo',gravedad:'grave',pantalla:'tabla',que:'Truena al cotejar: '+e.message,donde:''}); }
+    try { out = out.concat(COTEJO.marcador()); }         catch (e){ out.push({tipo:'cotejo',gravedad:'grave',pantalla:'marcador',que:'Truena al cotejar: '+e.message,donde:''}); }
+    try { out = out.concat(COTEJO.carta(jugador)); }     catch (e){ out.push({tipo:'cotejo',gravedad:'grave',pantalla:'carta',que:'Truena al cotejar: '+e.message,donde:''}); }
+    return out.map(x => Object.assign({}, x, { rol:'(cotejo)', persona:'(motor)' }));
+  }, JSON.stringify(appLiga), tablaEsperada, unPartido, unJugador);
+}
+
 export function juntar(hallazgos){
   const mapa = new Map();
   hallazgos.forEach(h => {
