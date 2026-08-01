@@ -106,9 +106,18 @@ export function traducirPersona(p, liga, appLiga){
   if (p.rol === 'papa'){
     u.children = (p.hijos || []).map(hid => {
       const j = liga.jugadores[hid];
+      /* A la MITAD de los hij@s se les deja SIN `teamCode`, a propósito. Es lo
+         que pasa en la vida real: ese campo sólo queda escrito cuando el papá
+         mismo hizo la vinculación, y a los niños los da de alta el coach todo
+         el tiempo. Si la prueba se los pusiera a todos, nunca se probaría el
+         caso del papá que llega con los datos a medias — que es justo el que
+         se estaba quedando sin poder encontrar el partido de su niño. */
+      const conCodigo = Number(String(hid).replace(/\D/g, '')) % 2 === 0;
+      const eq = liga.equipos.find(e => (e.jugadores || []).includes(hid));
       return { code:'J-'+hid, name: j?.nombre || 'Hij@', num: String(j?.dorsal || 0),
                pos: j?.pos || 'Base', curp: j?.curp, minor: (j?.edad || 0) < 18,
-               age: j?.edad, status:'enequipo' };
+               age: j?.edad, status:'enequipo',
+               ...(conCodigo && eq ? { teamCode: 'E-' + eq.id } : {}) };
     });
     if (u.children[0]) u.child = u.children[0].name;
   }

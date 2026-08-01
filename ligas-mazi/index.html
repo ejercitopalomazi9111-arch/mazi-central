@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<!-- GitHub Pages sirve el HTML con max-age=600 y Safari en iPhone lo estira
+     mucho más. Esto le pide que revalide; no es garantía —el caché del
+     navegador manda— por eso además abajo va un sello de VERSIÓN visible: si
+     el número no cambió, es el teléfono, no el servidor. -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta name="theme-color" content="#0b0d12">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -845,6 +850,12 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
    'Sábado, 8 De Agosto'. En español sólo va la primera. */
 .fo-when{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;line-height:1.3;min-width:0;overflow-wrap:anywhere}
 .fo-when::first-letter{text-transform:uppercase}
+/* El ID del partido: chico, legible y del tamaño del dedo para copiarlo. */
+.mid-chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-6px 0 10px;padding:0 12px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:22px;cursor:pointer;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--dim)}
+.mid-chip b{color:var(--accent-lt);font-size:12.5px;letter-spacing:.06em}
+.mid-chip:active{border-color:var(--accent)}
 .fo-live{position:absolute;top:10px;left:0;right:0;text-align:center;z-index:2}
 .fo-live span{font-size:10px;font-weight:800;letter-spacing:.05em;color:#fff;background:rgba(236,90,69,.92);padding:3px 10px;border-radius:20px}
 .faceoff.islive{padding-top:30px;border-color:rgba(236,90,69,.4)}
@@ -860,7 +871,16 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .rev-prev{width:120px;height:150px;border-radius:14px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
 .gacha-cap{font-size:13px;color:var(--muted);text-align:center;max-width:280px}
 .cosgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
-.coscard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+/* LA TARJETA ENCIERRA LO QUE TIENE DENTRO.
+   Carlos: 'hay cosméticos animados que se salen de las cartas'. Y era literal:
+   las previas con órbitas y destellos —Ojo Leyenda, los que giran— se salían
+   de su tarjeta y se encimaban con la de abajo, porque nada las recortaba.
+   Una animación que invade a su vecina no se ve premium, se ve rota. */
+.coscard{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+.coscard>*{max-width:100%}
+/* El recorte va también en la previa misma: hay animaciones que se escapan de
+   su propia caja antes de llegar al borde de la tarjeta. */
+.coscard .cos-prev, .coscard>div:first-child{overflow:hidden;border-radius:10px;flex:0 0 auto}
 .coscard.on{border-color:var(--rc)}
 .cos-prev{width:64px;height:80px;border-radius:10px;background:linear-gradient(160deg,#232c44,#10162a);display:block}
 .cos-nm{font-family:var(--body);font-weight:700;font-size:12.5px;color:var(--txt)}
@@ -1213,7 +1233,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
         <div id="loginMsg" class="login-msg"></div>
         <button class="btn ghost" onclick="guestEnter()">Solo ver como invitado <span class="go">›</span></button>
       </div>
-      <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos</div>
+      <div class="entry-foot">Hecho por <b>Grupo Mazi</b> · un negocio que tú y yo gestionamos<br><span id="verSello" style="font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.06em"></span></div>
       <div class="cloud-badge" id="cloudBadge"><span class="dot"></span> Modo local</div>
     </div>
   </section>
@@ -2753,7 +2773,17 @@ function buildEnVivoBoard(){
   let catSel=_calCat;
   if(catSel==null && currentRole==='papa'){          // el papá arranca en la de su hij@
     const u=userData()||{}; const kid=(u.children||[])[0];
-    const eqKid=kid&&kid.teamCode?(d.teams||[]).find(t=>t.code===kid.teamCode):null;
+    /* Se busca al hij@ por su código de equipo, y si no lo trae, RASTREANDO las
+       plantillas. Esto último no es lujo: el `teamCode` sólo queda escrito
+       cuando el papá mismo hizo la vinculación, y a los niños los da de alta el
+       coach todo el tiempo. Sin este respaldo, justo esos papás —que son
+       muchos— se quedaban sin filtro y volvían al revoltijo de nueve
+       categorías. Lo cazó el simulacro: 64 de 64 papás seguían rindiéndose. */
+    let eqKid = kid && kid.teamCode ? (d.teams||[]).find(t=>t.code===kid.teamCode) : null;
+    if(!eqKid && kid){
+      eqKid=(d.teams||[]).find(t=>(t.players||[]).some(p=>
+        (p.code&&kid.code&&p.code===kid.code) || ((p.nm||p.name)===kid.name)));
+    }
     if(eqKid&&eqKid.categoria) catSel=eqKid.categoria;
   }
   const catDe=(m)=>{const t=teamById(m.home)||teamById(m.away); return (t&&t.categoria)||'';};
@@ -2776,6 +2806,10 @@ function buildEnVivoBoard(){
       const when=(cat?(CAT_NOMBRE[cat]||cat)+' · ':'')
         +(m.date?fmtDate(m.date):('Jornada '+m.jornada))+(m.time?' · '+m.time:'')+(m.place?' · '+m.place:'');
       h+=faceoffCard(H,A,{mode:'next',when:when});
+      // El ID, debajo y copiable de un toque: el día del juego se dicta o se
+      // pega en el grupo, no se busca entre nueve categorías.
+      h+='<div class="mid-chip" onclick="copiarId(\''+idPartido(m)+'\')" title="Copiar">'
+        +'ID <b>'+idPartido(m)+'</b></div>';
       if(canOfficiate(m)) h+='<div class="le-officiate" style="margin:-6px 0 10px" onclick="officiateMatch('+x.i+')"><svg class="ic" style="width:14px;height:14px"><use href="#ic-live"/></svg> Dirigir este partido (eres la mesa)</div>'; }); }
   const past=d.calendar.filter(m=>m.done).slice().reverse().slice(0,10);
   if(past.length){ h+='<div class="fo-sec-ttl">Resultados</div>';
@@ -3583,10 +3617,21 @@ function previewCos(c, size, alto){
     }
   }
   else if (c.kind === 'frame' || c.kind === 'effect') {
-    // Marcos y auras van sobre una silueta de carta: un marco sobre nada no se
-    // lee como marco.
-    dentro = '<i style="position:absolute;inset:16%;border-radius:5px;'
-           + 'background:linear-gradient(160deg,#1b2338,#0b1020)"></i>';
+    /* EL MARCO VA EN LA CARTITA, NO EN LA CAJA DE FUERA.
+       Aquí estaba el bug que reportó Carlos: *"algunas cosas en la pantalla de
+       showcase no muestran qué producto es"*. Los marcos se describen con
+       `box-shadow:inset …`, y ese `css` se estaba pintando en el contenedor
+       exterior — que NO tiene fondo propio— mientras la silueta oscura se
+       dibujaba encima y tapaba el anillo. Resultado: "Filo Épico" salía como un
+       rectángulo vacío. El anillo tiene que ir EN la silueta, que es lo que un
+       marco hace en la vida real: enmarcar una carta. */
+    dentro = '<i style="position:absolute;inset:14%;border-radius:7px;'
+           + 'background:linear-gradient(160deg,#1b2338,#0b1020);' + (c.css || '') + '"></i>';
+    // Y la caja de fuera se queda con el tinte de la rareza, para que el marco
+    // tenga contra qué recortarse.
+    return '<span class="'+(c.anim||'')+'" style="'+base
+         + 'background:radial-gradient(120% 90% at 50% 30%,'+r.c+'26,#0b1020 72%)">'
+         + dentro + '</span>';
   }
 
   return '<span class="'+(c.anim||'')+'" style="'+base+lienzo+'">'+dentro+'</span>';
@@ -4081,6 +4126,43 @@ const CAT_NOMBRE={
   'var-12-13':'Varonil 12–13', 'var-14-15':'Varonil 14–15', 'var-16-17':'Varonil 16–17',
   'fem-12-13':'Femenil 12–13', 'fem-14-15':'Femenil 14–15', 'fem-16-17':'Femenil 16–17',
 };
+/* ═══ EL ID DEL PARTIDO ═════════════════════════════════════════════════════
+   Carlos: *"ponle id a los partidos para que los papás los puedan encontrar
+   rápido el día del juego"*.
+
+   Se arma con lo que la gente ya sabe: la categoría, la jornada y los dos
+   equipos. Así el ID es LEGIBLE y se puede dictar por teléfono o pegar en un
+   grupo de WhatsApp — `M79-J3-COMA` es "Mixta 7-9, jornada 3, Coyotes contra
+   Marea". Un número al azar tipo #48213 sería más corto y no serviría de nada:
+   nadie lo reconoce ni lo recuerda.
+
+   Es determinista: el mismo partido da el mismo ID siempre, aunque se
+   regenere el calendario. Eso importa porque el ID se comparte antes del
+   juego y tiene que seguir sirviendo el día del juego. */
+const CAT_SIGLA={'mixta-7-9':'M79','mixta-10-11':'M1011','mixta-12-13':'M1213',
+  'var-12-13':'V1213','var-14-15':'V1415','var-16-17':'V1617',
+  'fem-12-13':'F1213','fem-14-15':'F1415','fem-16-17':'F1617'};
+function copiarId(id){
+  try{ navigator.clipboard.writeText(id); flashSaved('ID copiado: '+id); }
+  catch(e){ flashSaved('ID del partido: '+id); }
+}
+function idPartido(m){
+  if(!m) return '';
+  const H=teamById(m.home), A=teamById(m.away);
+  const sig=(t)=>((t&&t.name)||'??').normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase();
+  const cat=(H&&H.categoria)||(A&&A.categoria)||'';
+  return [CAT_SIGLA[cat]||'GEN', 'J'+(m.jornada||0), sig(H)+sig(A)].join('-');
+}
+/* Buscar un partido por su ID, sin importar mayúsculas ni guiones: la gente lo
+   va a teclear como se acuerde. */
+function partidoPorId(txt){
+  const q=String(txt||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!q) return null;
+  const d=leagueData();
+  const i=(d.calendar||[]).findIndex(m=>idPartido(m).replace(/[^A-Z0-9]/g,'')===q);
+  return i<0?null:{idx:i, m:d.calendar[i]};
+}
 /* --- calendario todos contra todos (método del círculo) --- */
 function nextSaturday(){ const d=new Date(); d.setHours(0,0,0,0); const add=(6-d.getDay()+7)%7||7; d.setDate(d.getDate()+add); return d; }
 function fmtDate(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return iso; } }
@@ -5163,6 +5245,20 @@ const ROLE_INTERNAL={admin_liga:'liga',dueno:'coach',coach:'coach',padre:'papa',
 const ROLE_LABEL={admin_liga:'Admin de liga',dueno:'Dueño de equipo',coach:'Coach',padre:'Padre',jugador:'Jugador',aficionado:'Aficionado',mesa:'Mesa',superadmin:'Súper Admin'};
 let signupRoles=['admin_liga'];
 const SUPER_EMAIL='palomazi9111@gmail.com';
+/* ═══ EL SELLO DE VERSIÓN ═══════════════════════════════════════════════════
+   Nació de una pregunta que ya nos costó tiempo dos veces: *"no muestra los
+   cambios"*. Y el sitio SÍ los tenía — lo que no se actualizaba era el caché
+   del iPhone. Sin un número a la vista, esa duda no se puede resolver: se
+   discute. Con esto se ve de un vistazo qué build trae el teléfono.
+   SE SUBE A MANO en cada entrega. Si el número no cambió después de publicar,
+   el problema es el caché: cerrar la pestaña y volver a abrir. */
+const VERSION='2026.08.01-b';
+(function sello(){
+  const poner=()=>{ const e=document.getElementById('verSello');
+    if(e) e.textContent='v'+VERSION; };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',poner);
+  else poner();
+})();
 /* ===== Propiedad de la liga: solo su dueño/admins pueden administrarla =====
    Esto evita que una cuenta nueva herede la liga de otra persona y se meta de admin. */
 /* email real de la cuenta AUTENTICADA (nunca del perfil local, que puede ser de otra
