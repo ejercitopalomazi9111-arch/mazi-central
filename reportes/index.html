@@ -257,7 +257,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   clip-path:polygon(0 100%, 100% 100%, 100% 73.5%, 60% 82.7%, 0 82.7%)}
 /* Y abajo al revés: gruesa junto al borde derecho y adelgazando conforme
    baja hacia donde arranca la recta. */
-.cred .inf-rojo{clip-path:polygon(56% 83.1%, 100% 73.5%, 100% 68.2%, 56% 81.9%)}
+.cred .inf-rojo{clip-path:polygon(56% 84.4%, 100% 74.3%, 100% 71%, 56% 83%)}
 
 /* Las bandas rojas no son rojo plano: llevan veteado azul encima, que es lo
    que las hace ver impresas y no de plástico. */
@@ -283,11 +283,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .cred .logo{width:100%; max-height:9.6mm; object-fit:contain; display:block}
 /* la raya del electro: fina de verdad, y el pico sin deformar */
 .cred .ecg{display:flex; align-items:center; width:100%}
-.cred .ecg .raya{flex:1; height:.3mm; background:var(--rojo); min-width:0}
+.cred .ecg .raya{flex:1; height:.26mm; background:var(--rojo); min-width:0}
 /* La caja del SVG tiene EXACTAMENTE el aspecto de su viewBox (60:44). Si es
    más ancha, el dibujo se centra dentro y deja un hueco entre la raya y el
    pico — que es lo que se veía. */
-.cred .ecg svg{flex:0 0 auto; width:6.5mm; height:4.8mm; display:block; margin-left:-.2mm}
+.cred .ecg svg{flex:0 0 auto; width:9.6mm; height:7.04mm; display:block; margin-left:-.25mm}
 .cred .pulso-logo{margin:-.6mm 0 0 auto; width:94%}
 
 .cred .persona{display:flex; gap:2.4mm; align-items:flex-start; margin-bottom:1.6mm}
@@ -2320,7 +2320,7 @@ function ECG(clase){
        raya sin escalón */
     '<svg viewBox="0 0 60 44" aria-hidden="true">'+
       '<path d="M0 22H23l3-5 2 5 2 0 2.5-18 3 26 2.5-11 2 3H60" fill="none"'+
-      ' stroke="#C8102E" stroke-width="1.6" stroke-linejoin="miter" stroke-linecap="butt"/>'+
+      ' stroke="#C8102E" stroke-width="2.4" stroke-linejoin="miter" stroke-linecap="butt"/>'+
     '</svg></span>';
 }
 const PULSO = ECG('pulso');
