@@ -283,7 +283,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .cred .logo{width:100%; max-height:9.6mm; object-fit:contain; display:block}
 /* la raya del electro: fina de verdad, y el pico sin deformar */
 .cred .ecg{display:flex; align-items:center; width:100%}
-.cred .ecg .raya{flex:1; height:.26mm; background:var(--rojo); min-width:0}
+.cred .ecg .raya{flex:1; height:.38mm; background:var(--rojo); min-width:0}
 /* La caja del SVG tiene EXACTAMENTE el aspecto de su viewBox (60:44). Si es
    más ancha, el dibujo se centra dentro y deja un hueco entre la raya y el
    pico — que es lo que se veía. */
@@ -314,24 +314,24 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 
 /* el pie: se sube 2 mm para que el emblema no toque el borde */
 .cred .pie{
-  position:absolute; left:0; right:0; bottom:2.4mm; height:16mm; z-index:3;
-  display:flex; align-items:center; gap:1.6mm; padding:0 3mm;
+  position:absolute; left:0; right:0; bottom:2mm; height:16.6mm; z-index:3;
+  display:flex; align-items:center; gap:1.3mm; padding:0 2.2mm;
 }
 .cred .pie .casco{
-  width:16mm; height:9.5mm; flex:0 0 auto;
+  width:19mm; height:10.3mm; flex:0 0 auto;
   background-image:url("credencial/emblema-fire-rescue.png");
   background-repeat:no-repeat; background-size:contain; background-position:center;
 }
 .cred .pie .marca-fr{line-height:1.08; min-width:0; flex:1 1 auto;
   display:flex; flex-direction:column}
-.cred .pie .marca-fr .a{font-size:6.6pt; font-weight:800; color:#fff; white-space:nowrap}
-.cred .pie .marca-fr .c{font-size:6.6pt; font-weight:800; color:#E8354B; white-space:nowrap}
+.cred .pie .marca-fr .a{font-size:7.4pt; font-weight:800; color:#fff; white-space:nowrap}
+.cred .pie .marca-fr .c{font-size:7.4pt; font-weight:800; color:#E8354B; white-space:nowrap}
 .cred .pie .ciclo{
-  margin-left:auto; flex:0 0 auto; border:.28mm solid rgba(255,255,255,.5); border-radius:1.5mm;
-  padding:1.1mm 1.5mm; color:#fff; font-size:5pt; font-weight:700; line-height:1.22;
-  display:flex; gap:1.2mm; align-items:center;
+  margin-left:auto; flex:0 0 auto; border:.3mm solid rgba(255,255,255,.55); border-radius:1.7mm;
+  padding:1.5mm 1.9mm; color:#fff; font-size:5.6pt; font-weight:700; line-height:1.24;
+  display:flex; gap:1.3mm; align-items:center;
 }
-.cred .pie .ciclo svg{width:3mm; height:3mm; fill:#fff; flex:0 0 auto}
+.cred .pie .ciclo svg{width:3.6mm; height:3.6mm; fill:#fff; flex:0 0 auto}
 
 /* ══ el reverso ══ */
 .cred.reverso .interior{top:6mm; bottom:34mm; padding:2mm 3.4mm 1mm}
@@ -542,8 +542,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
    flujo, que es de lo que depende el salto de página; `transform` no, y por
    eso seguiría desbordando. */
 @page{size:letter portrait; margin:0}
+#impresora{display:none}
 @media print{
   .hoja, .pliego{ zoom:var(--imp, .86); }
+  /* imprimiendo credenciales: fuera todo lo demás, incluida la hoja carta */
+  body.imprime-cred .lienzo{display:none !important}
+  body.imprime-cred #impresora{display:block !important}
   html,body{background:#fff !important; margin:0; padding:0}
   .barra,.tira-vista,.no-imprime,
   #panel-escribir,#panel-formato,#panel-verificar,#panel-guardados{display:none !important}
@@ -587,6 +591,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   </nav>
 </header>
 
+<div id="impresora" aria-hidden="true"></div>
 <main class="lienzo">
 <div class="dos" id="tablero">
 
@@ -2548,16 +2553,18 @@ function pliegosDe(gente){
 }
 
 function imprimirCredenciales(soloEsta){
-  const gente = soloEsta ? [cAct()] : CRED.gente;
+  const gente = (soloEsta ? [cAct()] : CRED.gente).filter(Boolean);
+  if(!gente.length){ alert('No hay ninguna credencial que imprimir.'); return; }
   guardarCred(); aplicarEscalaImpresion();
-  const pila = PILA();
-  pila.textContent = '';
-  pila.insertAdjacentHTML('beforeend', pliegosDe(gente));
-  const antes = pila.style.transform;
-  pila.style.transform = 'none'; $('#marco').style.width=''; $('#marco').style.height='';
-  verVista('ver');
+  /* La bandeja de impresión es SOLO de las credenciales. Antes esto usaba la
+     pila del reporte, y verVista('ver') mandaba repintar(): 106 ms después
+     paginar() borraba los pliegos y el print salía en blanco o con el reporte.
+     Aquí nadie más escribe, así que no hay carrera que perder. */
+  const imp = $('#impresora');
+  imp.innerHTML = pliegosDe(gente);
+  document.body.classList.add('imprime-cred');
   setTimeout(()=>{ window.print();
-    setTimeout(()=>{ pila.style.transform = antes; repintar(); }, 400); }, 160);
+    setTimeout(()=>{ document.body.classList.remove('imprime-cred'); imp.innerHTML=''; }, 500); }, 160);
 }
 $('#cImprimir').addEventListener('click', () => imprimirCredenciales(false));
 $('#cSoloEsta').addEventListener('click', () => imprimirCredenciales(true));
