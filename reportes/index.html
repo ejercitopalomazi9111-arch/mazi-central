@@ -224,10 +224,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 /* ═════════ LA CREDENCIAL · copiada del diseño de Carlos ═════════
    Medida: 63.5 × 105 mm, que sale de la proporción 1.654 de su original.
    Todo lo de aquí es para que se vea IGUAL a su tarjeta, no parecido. */
-.cred, .cred *{font-family:var(--cred-fam)}
+.cred, .cred *{font-family:var(--cred-fam); font-stretch:condensed}
 .cred{
   --an:63.5mm; --al:105mm;
-  --cred-fam:Arial, Helvetica, "Liberation Sans", sans-serif;
+  --cred-fam:"Arial Narrow", "Helvetica Neue Condensed Bold", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif;
   --navy:#0E2050; --rojo:#C8102E;
   position:relative; width:var(--an); height:var(--al);
   background:#fff; color:#111; overflow:hidden; border-radius:3mm;
@@ -248,12 +248,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
    completa— con la roja corriendo en paralelo hasta el borde derecho. */
 .cred .franja{position:absolute; left:0; top:0; width:100%; height:100%}
 .cred .sup-navy{background:var(--navy); clip-path:polygon(0 0, 68% 0, 0 18%)}
-.cred .sup-rojo{clip-path:polygon(0 18%, 68% 0, 82% 0, 0 21.4%)}
+/* La roja NO es de grosor parejo: se adelgaza hacia arriba, para que la
+   división entre el azul y el blanco sea suave y no un listón pegado. */
+.cred .sup-rojo{clip-path:polygon(0 17.4%, 68% 0, 71.4% 0, 0 23%)}
 /* abajo NO es una diagonal: es una recta y luego un triángulo que sube a la
    derecha, tal como el original */
 .cred .inf-navy{background:var(--navy);
   clip-path:polygon(0 100%, 100% 100%, 100% 73.5%, 60% 82.7%, 0 82.7%)}
-.cred .inf-rojo{clip-path:polygon(55% 83.6%, 100% 73.2%, 100% 69.8%, 55% 80.2%)}
+/* Y abajo al revés: gruesa junto al borde derecho y adelgazando conforme
+   baja hacia donde arranca la recta. */
+.cred .inf-rojo{clip-path:polygon(56% 83.1%, 100% 73.5%, 100% 68.2%, 56% 81.9%)}
 
 /* Las bandas rojas no son rojo plano: llevan veteado azul encima, que es lo
    que las hace ver impresas y no de plástico. */
@@ -275,9 +279,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   position:absolute; left:0; right:0; top:13.5mm; bottom:23.5mm; z-index:2;
   padding:1.6mm 3.6mm .6mm; display:flex; flex-direction:column; min-height:0;
 }
-.cred .marca-acc{margin:0 auto 1.4mm; width:90%}
+.cred .marca-acc{margin:0 auto 1.2mm; width:92%}
 .cred .logo{width:100%; max-height:9.6mm; object-fit:contain; display:block}
-.cred .pulso-logo{display:block; width:86%; height:2.2mm; margin:-.6mm 0 0 auto}
+/* la raya del electro: fina de verdad, y el pico sin deformar */
+.cred .ecg{display:flex; align-items:center; width:100%}
+.cred .ecg .raya{flex:1; height:.3mm; background:var(--rojo); min-width:0}
+/* La caja del SVG tiene EXACTAMENTE el aspecto de su viewBox (60:44). Si es
+   más ancha, el dibujo se centra dentro y deja un hueco entre la raya y el
+   pico — que es lo que se veía. */
+.cred .ecg svg{flex:0 0 auto; width:6.5mm; height:4.8mm; display:block; margin-left:-.2mm}
+.cred .pulso-logo{margin:-.6mm 0 0 auto; width:94%}
 
 .cred .persona{display:flex; gap:2.4mm; align-items:flex-start; margin-bottom:1.6mm}
 .cred .retrato{
@@ -296,7 +307,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   line-height:1.12;
 }
 .cred .campos{list-style:none; margin:0; padding:0; display:flex; flex-direction:column;
-  gap:1.1mm; flex:1; min-height:0; overflow:hidden; justify-content:flex-start}
+  gap:.95mm; flex:1; min-height:0; overflow:visible; justify-content:flex-start}
 .cred .campos li{display:flex; gap:1.9mm; align-items:flex-start; font-size:5.8pt;
   font-weight:700; color:var(--navy); line-height:1.22}
 .cred .campos svg{width:3mm; height:3mm; flex:0 0 auto; fill:var(--rojo); margin-top:.15mm}
@@ -326,7 +337,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .cred.reverso .interior{top:6mm; bottom:34mm; padding:2mm 3.4mm 1mm}
 .cred .cabeza{display:flex; align-items:center; gap:2mm; margin-bottom:2.4mm}
 .cred .cabeza img{height:9mm; width:auto; flex:0 0 auto}
-.cred .cabeza .pulso{flex:1; height:4mm}
+.cred .cabeza .pulso{flex:1; min-width:0}
 .cred .tabla{border:.26mm solid #C3C9D8; border-radius:1.6mm; overflow:hidden}
 .cred .tabla .ren{
   display:grid; grid-template-columns:4.4mm 1fr 1.05fr; gap:1.4mm; align-items:center;
@@ -336,14 +347,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .cred .tabla svg{width:3.2mm; height:3.2mm; fill:var(--rojo)}
 .cred .tabla .et{font-size:4.6pt; font-weight:800; color:var(--navy); letter-spacing:.015em; line-height:1.14}
 .cred .tabla .va{font-size:5pt; font-weight:700; color:#16161E; line-height:1.14; word-break:break-word}
-.cred .latido{width:100%; height:3.4mm; margin-top:1.8mm; display:block; flex:0 0 auto}
+.cred .latido{margin-top:1.8mm; flex:0 0 auto}
 
 .cred .bloque-inf{
   position:absolute; left:0; right:0; bottom:0; height:34mm; z-index:3;
   background:var(--navy); color:#fff; display:flex; flex-direction:column;
 }
 .cred .bloque-inf .arriba{flex:1; display:flex; gap:2.4mm; padding:3mm 3.2mm 0; min-height:0}
-.cred .bloque-inf .estrella{position:absolute; left:26mm; top:6mm; width:13mm; opacity:.16; fill:#fff}
+.cred .bloque-inf .estrella{
+  position:absolute; left:22mm; top:6mm; width:19mm; height:auto; opacity:.26;
+  /* ya viene en blanco y con el fondo quitado: no hace falta filtro */
+  /* y se desvanece en círculo hacia los bordes, como un resplandor */
+  -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 58%, rgba(0,0,0,.7) 76%, transparent 96%);
+  mask-image:radial-gradient(circle at 50% 50%, #000 58%, rgba(0,0,0,.7) 76%, transparent 96%);
+}
 .cred .bloque-inf .leyenda{
   flex:1; min-width:0; font-size:5.4pt; line-height:1.38; font-weight:700;
   display:flex; align-items:center;      /* que llene su apartado, no que flote arriba */
@@ -741,7 +758,8 @@ El día ...
         <div class="rejilla" style="margin-top:10px">
           <label class="campo"><span>Tipografía</span>
             <select id="cFuente">
-              <option value='Arial, Helvetica, "Liberation Sans", sans-serif'>Arial · la del diseño original</option>
+              <option value='"Arial Narrow", "Helvetica Neue Condensed Bold", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif'>Condensada · la del diseño</option>
+              <option value='Arial, Helvetica, "Liberation Sans", sans-serif'>Arial</option>
               <option value='"Helvetica Neue", Helvetica, Arial, sans-serif'>Helvetica</option>
               <option value='Verdana, Geneva, sans-serif'>Verdana</option>
               <option value='"Trebuchet MS", "Segoe UI", sans-serif'>Trebuchet</option>
@@ -1326,7 +1344,7 @@ Qué significa lo anterior.
    ═════════════════════════════════════════════════════════════════════════ */
 const LLAVE = 'reportes_mazi_v1';
 const FORMATO_OFICIAL = {
-  fuente:'Arial, Helvetica, "Liberation Sans", sans-serif',
+  fuente:'"Arial Narrow", "Helvetica Neue Condensed Bold", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif',
   tamano:'11pt', inter:'1.5', alinea:'justify',
   lado:30, tope:34, fondo:42,
   agua:'paloma', opacidad:6, leyenda:'GRUPO MAZI · DOCUMENTO ORIGINAL',
@@ -2216,6 +2234,23 @@ const ICONO = {
   persona:'<path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5c0-3-4-5.5-9-5.5z"/>',
   credencial:'<path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="10" r="2.2"/><path d="M5 16c0-1.7 1.6-2.6 3.5-2.6S12 14.3 12 16zM14 8h5v1.6h-5zM14 11.2h5v1.6h-5zM14 14.4h5V16h-5z"/>',
   estrella:'<path d="M12 2l2.2 3.9 4.4-1.1-1.1 4.4L21 12l-3.5 2.8 1.1 4.4-4.4-1.1L12 22l-2.2-3.9-4.4 1.1 1.1-4.4L3 12l3.5-2.8-1.1-4.4 4.4 1.1z"/>',
+  /* La estrella de la vida de verdad: seis brazos a 60 grados y la vara de
+     Asclepio con la serpiente. La otra era una estrella cualquiera. */
+  /* La estrella de la vida: seis brazos a 60 grados y la vara de Asclepio.
+     La vara y la serpiente van CALADAS en color del fondo — dibujadas del
+     mismo blanco se perdían y la marca de agua parecía una flor. */
+  estrellaVida:
+    '<g>'+
+      '<g fill="rgba(255,255,255,.17)">'+
+        '<rect x="9.7" y=".8" width="4.6" height="22.4" rx=".9"/>'+
+        '<rect x="9.7" y=".8" width="4.6" height="22.4" rx=".9" transform="rotate(60 12 12)"/>'+
+        '<rect x="9.7" y=".8" width="4.6" height="22.4" rx=".9" transform="rotate(120 12 12)"/>'+
+      '</g>'+
+      '<g fill="none" stroke="#0E2050" stroke-width="1.05" stroke-linecap="round">'+
+        '<path d="M12 4.3v15.4"/>'+
+        '<path d="M13.1 5.9c-2.1.9-2.3 2.9-.5 4 1.8 1.1 1.9 2.8.1 3.9-1.9 1.2-1.8 3.2.3 4.2"/>'+
+      '</g>'+
+    '</g>',
   llave:'<path d="M20.6 3.4a5 5 0 01-6 8L4 22l-2-2L12.6 9.4a5 5 0 018-6z"/>',
   auto:'<path d="M5 11l1.5-4.2A2 2 0 018.4 5.5h7.2a2 2 0 011.9 1.3L19 11h1a1 1 0 011 1v4h-2.2a2.3 2.3 0 01-4.6 0h-4.4a2.3 2.3 0 01-4.6 0H3v-4a1 1 0 011-1z"/>',
   lupa:'<path d="M10.5 3a7.5 7.5 0 105.9 12.1l4.3 4.3 1.6-1.6-4.3-4.3A7.5 7.5 0 0010.5 3zm0 2.4a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2z"/>',
@@ -2251,9 +2286,7 @@ function credFrente(c){
     '<div class="interior">'+
       '<div class="marca-acc">'+
         '<img class="logo" src="credencial/logo-acc.png" alt="">'+
-        '<svg class="pulso-logo" viewBox="0 0 200 14" preserveAspectRatio="none">'+
-          '<path d="M0 8h150l4-6 4 11 4-9 3 4h35" fill="none" stroke="#C8102E" stroke-width="1.5"/>'+
-        '</svg>'+
+        ECG('pulso-logo')+
       '</div>'+
       '<div class="persona">'+
         '<div class="retrato">'+ (c.foto
@@ -2277,8 +2310,20 @@ function credFrente(c){
 }
 
 /* ── el reverso ── */
-const PULSO = '<svg class="pulso" viewBox="0 0 200 20" preserveAspectRatio="none">'+
-  '<path d="M0 10h70l4-6 5 12 5-9 4 3h112" fill="none" stroke="#C8102E" stroke-width="1.5"/></svg>';
+/* El complejo del electro: una raya fina y, al final, el pico. Van por
+   separado porque estirar un SVG con preserveAspectRatio="none" deforma el
+   trazo y lo deja blando — que era justo lo que se veía mal. */
+function ECG(clase){
+  return '<span class="ecg '+clase+'">'+
+    '<span class="raya"></span>'+
+    /* la línea base va justo en el centro del lienzo para que empalme con la
+       raya sin escalón */
+    '<svg viewBox="0 0 60 44" aria-hidden="true">'+
+      '<path d="M0 22H23l3-5 2 5 2 0 2.5-18 3 26 2.5-11 2 3H60" fill="none"'+
+      ' stroke="#C8102E" stroke-width="1.6" stroke-linejoin="miter" stroke-linecap="butt"/>'+
+    '</svg></span>';
+}
+const PULSO = ECG('pulso');
 
 function credReverso(c){
   const b = CRED.base;
@@ -2301,12 +2346,11 @@ function credReverso(c){
       '<div class="tabla">'+ R.map(x =>
         '<div class="ren">'+svg(x[0])+'<span class="et">'+esc(x[1])+'</span>'+
         '<span class="va">'+esc(x[2]).replace(/\n/g,'<br>')+'</span></div>').join('') +'</div>'+
-      '<svg class="latido" viewBox="0 0 200 20" preserveAspectRatio="none">'+
-        '<path d="M0 10h86l4-7 5 14 5-11 4 4h96" fill="none" stroke="#C8102E" stroke-width="1.4"/></svg>'+
+      ECG('latido')+
     '</div>'+
     '<div class="bloque-inf">'+
       '<div class="arriba">'+
-        svg('estrella',' class="estrella"')+
+        '<img class="estrella" src="credencial/estrella-vida.png" alt="">'+
         '<div class="leyenda">'+esc(b.leyenda)+'</div>'+
         '<div class="lado">'+
           /* el código que mandó Carlos ya trae la arroba dentro de la imagen,
