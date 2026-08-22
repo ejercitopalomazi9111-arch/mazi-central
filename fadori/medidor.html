@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fadori · el medidor</title>
+<meta name="theme-color" content="#0B0714">
+<link rel="stylesheet" href="estilo.css">
+<style>
+  .contador{
+    display:grid; place-items:center; gap:16px; padding:28px 18px; border-radius:24px;
+    background:linear-gradient(160deg, var(--sup2), var(--sup)); border:1px solid var(--linea);
+    text-align:center;
+  }
+  .contador .n{font-size:clamp(84px,26vw,150px); font-weight:900; line-height:.9;
+    letter-spacing:-.05em; font-variant-numeric:tabular-nums}
+  .contador .boton-grande{
+    width:100%; min-height:110px; border-radius:22px; border:0; background:var(--violeta);
+    color:#150420; font-size:26px; font-weight:900; letter-spacing:-.02em;
+  }
+  .contador .boton-grande:active{transform:scale(.98)}
+  .grafica{
+    width:100%; height:190px; background:var(--piso); border:1px solid var(--linea);
+    border-radius:16px; overflow:hidden; display:block;
+  }
+  .leyenda{display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--tenue); margin-top:8px}
+  .leyenda i{display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra-fila">
+    <span class="marca">Fadori<b>.</b></span>
+    <span class="crece"></span>
+    <span class="quiensoy">El medidor</span>
+  </div>
+  <div class="barra-fila" style="margin-top:8px">
+    <nav class="saltos" aria-label="Pantallas de Fadori"><a href="index.html">Alumno</a><a href="mostrador.html">Mostrador</a><a href="pantalla.html">Pantalla</a><a href="medidor.html" aria-current="page">Medidor</a></nav>
+  </div>
+</header>
+
+<main class="envoltura">
+
+  <h1>La app se mide sola</h1>
+  <p class="sub">Una app que dice "resolvimos el problema de las filas" es una opinión.
+    Una app que <b>enseña la gráfica de cómo bajó</b>, con datos que ella misma recogió,
+    es un proyecto que se defiende solo.</p>
+
+  <div class="chips" id="pestanas" style="margin:8px 0 18px">
+    <button class="chip" type="button" data-vista="hoy" aria-pressed="true">Lo que va del día</button>
+    <button class="chip" type="button" data-vista="contador" aria-pressed="false">Contar a mano</button>
+    <button class="chip" type="button" data-vista="antes" aria-pressed="false">Antes y después</button>
+  </div>
+
+  <!-- ══════════ LO QUE VA DEL DÍA ══════════ -->
+  <section id="v-hoy">
+    <div class="cifras" id="cifras"></div>
+
+    <h2>La fila, minuto a minuto</h2>
+    <p class="sub">Cuántos pedidos había sin despachar en cada momento. Sale de contar los
+      turnos vivos, no de un cronómetro.</p>
+    <svg class="grafica" id="grafica" viewBox="0 0 600 190" preserveAspectRatio="none"
+      role="img" aria-label="La fila minuto a minuto"></svg>
+    <div class="leyenda">
+      <span><i style="background:var(--violeta)"></i>fila virtual (la app)</span>
+      <span><i style="background:var(--ambar)"></i>fila física (contada a mano)</span>
+    </div>
+
+    <h2>Cuánto tarda cada cosa</h2>
+    <p class="sub">Medido de verdad: de "ya lo tengo" a "listo". Es lo que alimenta el
+      estimado del alumno y el orden de la fila.</p>
+    <div style="overflow-x:auto"><table id="tablaTiempos"></table></div>
+
+    <h2>Bajar los datos</h2>
+    <p class="sub">Todo exportable, en formato nuestro, para meterlo al reporte y a la
+      gráfica de antes y después.</p>
+    <div class="chips">
+      <button class="btn" id="bCsvPedidos" type="button">Pedidos en CSV</button>
+      <button class="btn" id="bCsvConteos" type="button">Conteos a mano en CSV</button>
+    </div>
+  </section>
+
+  <!-- ══════════ CONTADOR MANUAL ══════════ -->
+  <section id="v-contador" hidden>
+    <p class="sub">Para el <b>"antes"</b>: los días en que la app todavía no está publicada,
+      o para contar la fila física que convive con la virtual. Un toque por persona formada.</p>
+    <div class="contador">
+      <div class="n" id="cuenta">0</div>
+      <button class="boton-grande" id="bMas" type="button">+ 1 persona formada</button>
+      <div class="chips">
+        <button class="btn chico" id="bMenos" type="button">− 1</button>
+        <button class="btn chico" id="bCero" type="button">Empezar de cero</button>
+      </div>
+    </div>
+    <label for="nota">Una nota, si hace falta</label>
+    <input id="nota" maxlength="80" placeholder="minuto 5 del recreo, lunes">
+    <button class="btn fuerte ancho" id="bAnotar" type="button" style="margin-top:12px">
+      Guardar este conteo</button>
+
+    <h2>Lo que llevas contado</h2>
+    <div class="pila" id="listaConteos"></div>
+  </section>
+
+  <!-- ══════════ ANTES Y DESPUÉS ══════════ -->
+  <section id="v-antes" hidden>
+    <h2>El número del reporte</h2>
+    <div class="aviso" id="frase" style="font-size:16px; color:var(--hueso)"></div>
+
+    <h2>Contra la línea base</h2>
+    <p class="sub">La línea base es lo que Carlos midió a mano el 22 de agosto de 2026,
+      antes de que existiera la app.</p>
+    <div style="overflow-x:auto"><table id="tablaAntes"></table></div>
+
+    <h2>La línea base, si hay que corregirla</h2>
+    <label for="bFormados">Cuántos se formaban por recreo</label>
+    <input id="bFormados" type="number" min="0" step="1">
+    <label for="bAlcanzaban">Cuántos alcanzaban a comprar</label>
+    <input id="bAlcanzaban" type="number" min="0" step="1">
+    <label for="bMinutos">Minutos de pie, en promedio</label>
+    <input id="bMinutos" type="number" min="0" step="1">
+  </section>
+
+</main>
+
+<script src="nucleo.js"></script>
+<script>
+(function(){
+'use strict';
+const $  = (s) => document.querySelector(s);
+const $$ = (s) => Array.prototype.slice.call(document.querySelectorAll(s));
+const F = window.FADORI;
+const esc = (t) => String(t==null?'':t).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+F.cargar();
+
+/* La línea base: lo que Carlos midió a mano antes de que existiera la app.
+   Se puede corregir desde la pantalla, pero arranca con lo medido. */
+const LLAVE_BASE = 'fadori_linea_base';
+const BASE_MEDIDA = { formados:82, alcanzaban:50, minutos:17 };
+function lineaBase(){
+  try{ const b = JSON.parse(localStorage.getItem(LLAVE_BASE) || 'null');
+       if(b && b.formados) return b; }catch(e){}
+  return Object.assign({}, BASE_MEDIDA);
+}
+function guardarBase(b){ try{ localStorage.setItem(LLAVE_BASE, JSON.stringify(b)); }catch(e){} }
+
+let vista = 'hoy';
+let cuenta = 0;
+
+function verVista(v){
+  vista = v;
+  ['hoy','contador','antes'].forEach(n => { $('#v-'+n).hidden = (n !== v); });
+  $$('#pestanas .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vista === v)));
+  pintar(); window.scrollTo(0,0);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LO QUE VA DEL DÍA
+   ═════════════════════════════════════════════════════════════════════ */
+function pintarHoy(){
+  const r = F.resumenDelDia();
+  const pct = r.pedidos ? Math.round(r.noAlcanzaron / r.pedidos * 100) : 0;
+  $('#cifras').innerHTML =
+    '<div class="cifra"><b>'+r.pedidos+'</b><span>pidieron hoy</span></div>'+
+    '<div class="cifra"><b>'+r.entregados+'</b><span>alcanzaron</span></div>'+
+    '<div class="cifra'+(r.noAlcanzaron?' malo':'')+'"><b>'+r.noAlcanzaron+'</b>'+
+      '<span>siguen en la fila</span></div>'+
+    '<div class="cifra'+(pct>20?' malo':'')+'"><b>'+pct+' %</b><span>no alcanzó</span></div>'+
+    '<div class="cifra"><b>'+(r.despachoPromedio||'—')+' s</b><span>por despacho</span></div>'+
+    '<div class="cifra"><b>'+(r.esperaPromedio ? Math.round(r.esperaPromedio/60)+' min' : '—')+
+      '</b><span>esperó cada quien</span></div>'+
+    '<div class="cifra"><b>'+r.anticipados+'</b><span>pidieron desde el salón</span></div>'+
+    '<div class="cifra"><b>'+F.pesos(r.dinero)+'</b><span>entró</span></div>';
+
+  pintarGrafica();
+
+  /* tiempo real por producto */
+  const filas = F.productos(false).map(p => ({
+    nombre: p.nombre,
+    medido: F.segReales(p.id),
+    estimado: p.segPrep,
+  })).filter(f => f.medido || f.estimado)
+     .sort((a,b) => (b.medido||b.estimado) - (a.medido||a.estimado));
+  $('#tablaTiempos').innerHTML =
+    '<thead><tr><th>Qué</th><th class="num">Medido</th><th class="num">Estimado</th></tr></thead><tbody>'+
+    filas.map(f => '<tr><td>'+esc(f.nombre)+'</td>'+
+      '<td class="num">'+(f.medido ? f.medido+' s' : '—')+'</td>'+
+      '<td class="num">'+f.estimado+' s</td></tr>').join('')+'</tbody>';
+}
+
+function pintarGrafica(){
+  const puntos = F.curvaDeFila();
+  const conteos = F.estado().conteos.filter(c => c.t >= arranque());
+  const g = $('#grafica');
+  const W = 600, H = 190, pad = 10;
+
+  if(!puntos.length && !conteos.length){
+    g.innerHTML = '<text x="300" y="100" fill="#A99CBE" font-size="15" '+
+      'text-anchor="middle" font-family="system-ui">Todavía no hay nada que graficar hoy</text>';
+    return;
+  }
+
+  const todos = puntos.map(p => p.t).concat(conteos.map(c => c.t));
+  const t0 = Math.min.apply(null, todos), t1 = Math.max.apply(null, todos);
+  const maxN = Math.max(1,
+    Math.max.apply(null, puntos.map(p => p.n).concat(conteos.map(c => c.n)).concat([1])));
+  const x = (t) => pad + (t1 === t0 ? W/2 - pad : (t - t0)/(t1 - t0) * (W - pad*2));
+  const y = (n) => H - pad - (n / maxN) * (H - pad*2);
+
+  /* rejilla horizontal, para que el ojo lea la altura sin adivinar */
+  let html = '';
+  for(let i=0;i<=4;i++){
+    const n = Math.round(maxN * i/4);
+    html += '<line x1="'+pad+'" y1="'+y(n)+'" x2="'+(W-pad)+'" y2="'+y(n)+
+      '" stroke="#33244D" stroke-width="1"/>'+
+      '<text x="'+(pad+3)+'" y="'+(y(n)-4)+'" fill="#A99CBE" font-size="10" '+
+      'font-family="system-ui">'+n+'</text>';
+  }
+
+  if(puntos.length){
+    const d = puntos.map((p,i) => (i?'L':'M') + x(p.t).toFixed(1) + ' ' + y(p.n).toFixed(1)).join(' ');
+    html += '<path d="'+d+'" fill="none" stroke="#AC27FF" stroke-width="2.5" '+
+      'stroke-linejoin="round" stroke-linecap="round"/>';
+  }
+  conteos.forEach(c => {
+    html += '<circle cx="'+x(c.t).toFixed(1)+'" cy="'+y(c.n).toFixed(1)+
+      '" r="4" fill="#FFB627"/>';
+  });
+  g.innerHTML = html;
+}
+
+function arranque(){ const h = new Date(); h.setHours(0,0,0,0); return h.getTime(); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   CONTADOR MANUAL
+   ═════════════════════════════════════════════════════════════════════ */
+function pintarContador(){
+  $('#cuenta').textContent = cuenta;
+  const cs = F.estado().conteos.slice().reverse().slice(0,20);
+  $('#listaConteos').innerHTML = cs.length ? cs.map(c =>
+    '<div class="renglon"><span class="n">'+c.n+'</span>'+
+    '<span class="q">'+esc(c.nota || 'sin nota')+
+    '<small>'+new Date(c.t).toLocaleString('es-MX')+'</small></span></div>').join('')
+    : '<p class="sub">Todavía no has guardado ningún conteo.</p>';
+}
+
+$('#bMas').addEventListener('click', () => {
+  cuenta++; pintarContador();
+  try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){}
+});
+$('#bMenos').addEventListener('click', () => { cuenta = Math.max(0, cuenta-1); pintarContador(); });
+$('#bCero').addEventListener('click', () => { cuenta = 0; pintarContador(); });
+$('#bAnotar').addEventListener('click', () => {
+  if(!cuenta) return alert('El conteo está en cero.');
+  F.contarFila(cuenta, $('#nota').value);
+  cuenta = 0; $('#nota').value = '';
+  pintarContador();
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   ANTES Y DESPUÉS
+   ═════════════════════════════════════════════════════════════════════ */
+function pintarAntes(){
+  const b = lineaBase();
+  const r = F.resumenDelDia();
+  $('#bFormados').value = b.formados;
+  $('#bAlcanzaban').value = b.alcanzaban;
+  $('#bMinutos').value = b.minutos;
+
+  const noAlcanzabanAntes = Math.max(0, b.formados - b.alcanzaban);
+  const pctAntes = b.formados ? Math.round(noAlcanzabanAntes / b.formados * 100) : 0;
+  const pctHoy = r.pedidos ? Math.round(r.noAlcanzaron / r.pedidos * 100) : 0;
+  const esperaHoy = r.esperaPromedio ? Math.round(r.esperaPromedio/60) : null;
+
+  $('#frase').innerHTML =
+    '<b>Antes:</b> cada recreo, '+b.formados+' alumnos se formaban y sólo '+b.alcanzaban+
+    ' alcanzaban a comprar. Los otros '+noAlcanzabanAntes+' pasaban hasta media hora de pie '+
+    'en un pasillo y regresaban al salón sin comer.'+
+    (r.pedidos
+      ? '<br><br><b>Hoy con Fadori:</b> '+r.pedidos+' pidieron, '+r.entregados+' alcanzaron, '+
+        r.noAlcanzaron+' no. Nadie tuvo que averiguarlo parado.'
+      : '<br><br><i>Todavía no hay datos de hoy. En cuanto se despache el primer pedido, '+
+        'esta frase se completa sola.</i>');
+
+  const fila = (q, antes, hoy, mejor) =>
+    '<tr><td>'+q+'</td><td class="num">'+antes+'</td><td class="num"><b>'+hoy+'</b></td>'+
+    '<td class="num">'+mejor+'</td></tr>';
+
+  $('#tablaAntes').innerHTML =
+    '<thead><tr><th>Qué</th><th class="num">Antes</th><th class="num">Hoy</th>'+
+    '<th class="num">Meta</th></tr></thead><tbody>'+
+    fila('Se formaron', b.formados, r.pedidos || '—', '—')+
+    fila('Alcanzaron a comprar', b.alcanzaban, r.entregados || '—', 'que suba')+
+    fila('No alcanzaron', noAlcanzabanAntes, r.pedidos ? r.noAlcanzaron : '—', 'menos de 10')+
+    fila('% que no alcanzó', pctAntes+' %', r.pedidos ? pctHoy+' %' : '—', 'menos de 12 %')+
+    fila('Minutos de pie', b.minutos, esperaHoy === null ? '—' : '0', 'menos de 3')+
+    fila('Pidieron con anticipación', 0, r.anticipados, '30')+
+    '</tbody>';
+}
+
+['#bFormados','#bAlcanzaban','#bMinutos'].forEach(sel => {
+  $(sel).addEventListener('change', () => {
+    guardarBase({
+      formados: Math.max(0, parseInt($('#bFormados').value,10) || 0),
+      alcanzaban: Math.max(0, parseInt($('#bAlcanzaban').value,10) || 0),
+      minutos: Math.max(0, parseInt($('#bMinutos').value,10) || 0),
+    });
+    pintarAntes();
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════ */
+$('#bCsvPedidos').addEventListener('click', () => {
+  const hoy = new Date().toISOString().slice(0,10);
+  F.bajarCSV('fadori-pedidos-'+hoy+'.csv', F.csvDePedidos());
+});
+$('#bCsvConteos').addEventListener('click', () => {
+  F.bajarCSV('fadori-fila-contada.csv', F.csvDeConteos());
+});
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-vista]');
+  if(b) verVista(b.dataset.vista);
+});
+
+function pintar(){
+  if(vista === 'hoy') pintarHoy();
+  if(vista === 'contador') pintarContador();
+  if(vista === 'antes') pintarAntes();
+}
+
+F.alCambiar(() => { F.cargar(); pintar(); });
+setInterval(() => { F.cargar(); pintar(); }, 6000);
+verVista('hoy');
+
+/* ══════════════════════════════════════════════════════════════════════
+   PRUEBAS
+   ═════════════════════════════════════════════════════════════════════ */
+(function(){
+  let bien = 0, mal = 0;
+  const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
+  const guardado = JSON.stringify(F.estado());
+
+  const uno = F.productos(true)[0];
+  const p1 = F.pedir(null, [{prod:uno.id, cant:1}], {origen:'mostrador', nombre:'A'});
+  const p2 = F.pedir(null, [{prod:uno.id, cant:2}], {origen:'mostrador', nombre:'B'});
+  F.tomar(p1.id,'x'); F.marcarListo(p1.id); F.entregar(p1.id, p1.total);
+
+  const r = F.resumenDelDia();
+  ok('el medidor cuenta quién alcanzó y quién no',
+     r.entregados >= 1 && r.noAlcanzaron >= 1);
+  ok('mide los segundos de despacho de verdad', typeof r.despachoPromedio === 'number');
+  ok('mide cuánto esperó cada quien', typeof r.esperaPromedio === 'number');
+
+  const curva = F.curvaDeFila();
+  ok('la curva de la fila sube al pedir y baja al entregar',
+     curva.length >= 3 && curva[curva.length-1].n < Math.max.apply(null, curva.map(c=>c.n)));
+
+  F.contarFila(41, 'prueba');
+  ok('el contador manual guarda el conteo',
+     F.estado().conteos.some(c => c.n === 41 && c.nota === 'prueba'));
+
+  const csv = F.csvDePedidos();
+  ok('el CSV trae una fila por pedido', csv.trim().split('\n').length >= 3);
+  ok('el CSV escapa las comas sin romper columnas',
+     csv.split('\n')[0].split(',').length === csv.split('\n')[1].split(',').length);
+  ok('el CSV de conteos trae los conteos a mano',
+     F.csvDeConteos().indexOf('41') > 0);
+
+  pintarHoy();
+  ok('la gráfica dibuja algo cuando hay datos',
+     document.querySelector('#grafica path') !== null);
+  pintarAntes();
+  ok('la frase del reporte sale con la línea base medida',
+     document.querySelector('#frase').textContent.indexOf('82') >= 0);
+
+  try{ localStorage.setItem('fadori_v1', guardado); }catch(e){}
+  F.cargar(); pintar();
+  console.log('%cFadori medidor · '+bien+'/'+(bien+mal)+' pruebas',
+    'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
+})();
+
+})();
+</script>
+</body>
+</html>

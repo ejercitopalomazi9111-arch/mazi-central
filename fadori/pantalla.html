@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fadori · turnos</title>
+<meta name="theme-color" content="#07050C">
+<link rel="stylesheet" href="estilo.css">
+<style>
+  /* Esta pantalla se ve DE LEJOS, colgada junto a la cooperativa. Todo es
+     más grande de lo que parece razonable de cerca, a propósito. */
+  body.publica .envoltura{max-width:1400px; padding:0 20px 40px}
+  .encabezado{
+    display:flex; align-items:baseline; gap:18px; flex-wrap:wrap;
+    padding:22px 20px 6px; max-width:1400px; margin:0 auto;
+  }
+  .encabezado h1{font-size:clamp(28px,4vw,46px); margin:0}
+  .encabezado .reloj{margin-left:auto; font-size:clamp(22px,3vw,36px); font-weight:800;
+    font-variant-numeric:tabular-nums; color:var(--tenue)}
+  .grupo-turnos{margin:26px 0 0}
+  .grupo-turnos h2{font-size:clamp(16px,2vw,24px)}
+  .vacio{
+    text-align:center; padding:14vh 20px; color:var(--tenue);
+    font-size:clamp(20px,3vw,32px); font-weight:700;
+  }
+  .pie-publico{
+    max-width:1400px; margin:34px auto 0; padding:0 20px;
+    color:var(--tenue); font-size:15px; line-height:1.6;
+  }
+</style>
+</head>
+<body class="publica">
+
+<div class="encabezado">
+  <h1>Turnos</h1>
+  <span class="reloj" id="reloj">—</span>
+</div>
+
+<div class="encabezado" style="padding-top:0">
+  <nav class="saltos" aria-label="Pantallas de Fadori"><a href="index.html">Alumno</a><a href="mostrador.html">Mostrador</a><a href="pantalla.html" aria-current="page">Pantalla</a><a href="medidor.html">Medidor</a></nav>
+</div>
+
+<main class="envoltura">
+  <div id="cuerpo"></div>
+  <p class="pie-publico">
+    Busca <b>tu número</b>. Cuando aparezca en verde, tu pedido está listo.<br>
+    Fadori · Proyecto Sin Filas
+  </p>
+</main>
+
+<script src="nucleo.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = (s) => document.querySelector(s);
+const F = window.FADORI;
+F.cargar();
+
+/* Números, NUNCA nombres. Una pantalla pública con nombres de alumnos es
+   exhibir a un menor, y aquí no hace falta: el número basta. */
+function pintar(){
+  const d = F.estado();
+  const listos = d.pedidos.filter(p => p.estado === 'listo')
+    .sort((a,b) => a.listoEn - b.listoEn);
+  const cola = F.colaOrdenada();
+
+  const casilla = (p, clase) =>
+    '<div class="casilla'+(clase?' '+clase:'')+'">'+
+      '<div class="n">'+p.turno+'</div>'+
+      '<div class="e">'+(clase === 'listo' ? 'listo' :
+        p.estado === 'preparando' ? 'preparándose' : 'en la fila')+'</div>'+
+    '</div>';
+
+  let html = '';
+  if(listos.length){
+    html += '<section class="grupo-turnos"><h2>Ya están listos · pasa por él</h2>'+
+      '<div class="tablero">'+ listos.map(p => casilla(p,'listo')).join('') +'</div></section>';
+  }
+  if(cola.length){
+    html += '<section class="grupo-turnos"><h2>En la fila · '+cola.length+
+      (cola.length === 1 ? ' pedido' : ' pedidos')+'</h2>'+
+      '<div class="tablero">'+ cola.slice(0,24).map(p => casilla(p)).join('') +'</div></section>';
+  }
+  if(!html) html = '<p class="vacio">No hay pedidos en la fila</p>';
+  $('#cuerpo').innerHTML = html;
+}
+
+function reloj(){
+  const t = new Date();
+  const queda = F.quedanSegundosDeRecreo();
+  $('#reloj').textContent = t.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}) +
+    (F.enRecreo() ? ' · quedan ' + Math.ceil(queda/60) + ' min' : '');
+}
+
+F.alCambiar(() => { F.cargar(); pintar(); });
+setInterval(() => { F.cargar(); pintar(); reloj(); }, 3000);
+pintar(); reloj();
+
+/* que la pantalla no se apague sola, si el navegador lo permite */
+(async () => {
+  try{ if(navigator.wakeLock) await navigator.wakeLock.request('screen'); }catch(e){}
+})();
+
+(function(){
+  let bien = 0, mal = 0;
+  const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
+  const guardado = JSON.stringify(F.estado());
+  const uno = F.productos(true)[0];
+  const p = F.pedir(null, [{prod:uno.id, cant:1}],
+    { origen:'mostrador', nombre:'Fulanito Secreto', grupo:'3A' });
+  F.cargar(); pintar();
+  const texto = $('#cuerpo').textContent;
+  ok('la pantalla pública muestra el número de turno', texto.indexOf(String(p.turno)) >= 0);
+  ok('la pantalla pública NUNCA muestra nombres', texto.indexOf('Fulanito') < 0);
+  ok('tampoco muestra el grupo, que también identifica', texto.indexOf('3A') < 0);
+  ok('ni el código del pedido, que va sólo en el ticket', texto.indexOf(p.folio) < 0);
+  try{ localStorage.setItem('fadori_v1', guardado); }catch(e){}
+  F.cargar(); pintar();
+  console.log('%cFadori pantalla · '+bien+'/'+(bien+mal)+' pruebas',
+    'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
+})();
+
+})();
+</script>
+</body>
+</html>

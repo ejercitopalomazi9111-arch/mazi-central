@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fadori · mostrador</title>
+<meta name="theme-color" content="#F4F6FA">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body class="mostrador">
+
+<header class="barra">
+  <div class="barra-fila">
+    <span class="marca">Fadori<b>.</b></span>
+    <span class="crece"></span>
+    <span class="quiensoy"><b id="cuantosEnCola">0</b>&nbsp;en la fila</span>
+  </div>
+  <div class="barra-fila" style="margin-top:8px">
+    <nav class="saltos" aria-label="Pantallas de Fadori"><a href="index.html">Alumno</a><a href="mostrador.html" aria-current="page">Mostrador</a><a href="pantalla.html">Pantalla</a><a href="medidor.html">Medidor</a></nav>
+  </div>
+</header>
+
+<main class="envoltura">
+
+  <div class="chips" id="pestanas" style="margin:14px 0 4px">
+    <button class="chip" type="button" data-vista="despachar" aria-pressed="true">Despachar</button>
+    <button class="chip" type="button" data-vista="menu" aria-pressed="false">El menú</button>
+    <button class="chip" type="button" data-vista="corte" aria-pressed="false">Corte del día</button>
+    <button class="chip" type="button" data-vista="deudas" aria-pressed="false">Fiados</button>
+    <button class="chip" type="button" data-vista="ajustes" aria-pressed="false">Ajustes</button>
+  </div>
+
+  <!-- ══════════ DESPACHAR · F19–F25 ══════════ -->
+  <section id="v-despachar">
+    <div id="actual"></div>
+
+    <h2>Lo que sigue</h2>
+    <div class="pila" id="cola"></div>
+
+    <h2>Pedido de a pie <span class="solo-lectores">para quien llegó sin app</span></h2>
+    <p class="sub">Para quien llegó sin teléfono. Sin esto la fila física queda fuera del
+      sistema, el turno miente y la medición mide la mitad de la operación.</p>
+    <button class="btn ancho" id="bDeAPie" type="button">+ Capturar un pedido de mostrador</button>
+
+    <h2>Si se cae la app</h2>
+    <p class="sub">Congela la lista y la enseña para despachar en papel. La operación no se
+      detiene nunca, pase lo que pase con la red.</p>
+    <button class="btn ancho" id="bPapel" type="button">Ver la lista para imprimir</button>
+  </section>
+
+  <!-- ══════════ EL MENÚ · F33–F35 ══════════ -->
+  <section id="v-menu" hidden>
+    <h2>Qué hay hoy</h2>
+    <p class="sub">Un toque para agotar o reponer. Lo que se agota <b>desaparece del menú del
+      alumno al instante</b>, que es como se evita el pedido de algo que ya no hay.</p>
+    <div class="pila" id="listaMenu"></div>
+    <button class="btn ancho" id="bNuevoProd" type="button" style="margin-top:14px">
+      + Agregar algo al menú</button>
+  </section>
+
+  <!-- ══════════ CORTE · F36–F38 ══════════ -->
+  <section id="v-corte" hidden>
+    <h2>Cómo va el día</h2>
+    <div class="cifras" id="cifrasCorte"></div>
+    <h2>Qué se vendió</h2>
+    <div style="overflow-x:auto"><table id="tablaVentas"></table></div>
+    <h2>Qué se acabó y a qué hora</h2>
+    <div id="listaAgotados"></div>
+    <div class="chips" style="margin-top:18px">
+      <button class="btn" id="bCSV" type="button">Bajar los pedidos en CSV</button>
+      <button class="btn" id="bCerrar" type="button">Cerrar el recreo</button>
+    </div>
+  </section>
+
+  <!-- ══════════ FIADOS · F27–F31 ══════════ -->
+  <section id="v-deudas" hidden>
+    <h2>Quién debe</h2>
+    <p class="sub">Esta pantalla es <b>sólo de la cooperativa</b>. Ningún alumno ve lo que
+      debe otro: eso es humillación, no administración.</p>
+    <div class="pila" id="listaDeudas"></div>
+  </section>
+
+  <!-- ══════════ AJUSTES ══════════ -->
+  <section id="v-ajustes" hidden>
+    <h2>Las perillas</h2>
+    <label for="aRecreo">A qué hora suena la chicharra</label>
+    <input id="aRecreo" type="time">
+    <label for="aMinutos">Cuántos minutos dura el recreo</label>
+    <input id="aMinutos" type="number" min="5" max="120" step="1">
+    <label for="aDespachadores">Cuántas personas despachan</label>
+    <input id="aDespachadores" type="number" min="1" max="6" step="1">
+    <label for="aTope">Máximo de pedidos por alumno, por día</label>
+    <input id="aTope" type="number" min="1" max="10" step="1">
+    <label for="aAdelantos">Ningún pedido se atrasa más de… (turnos)</label>
+    <input id="aAdelantos" type="number" min="1" max="20" step="1">
+    <label for="aLimite">Límite de fiado, en pesos</label>
+    <input id="aLimite" type="number" min="0" step="1">
+    <label style="display:flex; align-items:center; gap:10px; margin-top:16px">
+      <input type="checkbox" id="aAnticipados" style="width:26px; min-height:26px; flex:0 0 auto">
+      <span style="color:var(--hueso); font-weight:700">Aceptar pedidos desde el salón,
+        antes del recreo</span></label>
+    <p class="aviso" style="margin-top:14px">Pedir con anticipación es <b>lo único que sube la
+      capacidad sin contratar a nadie</b>: con 30 pedidos ya hechos cuando suena la chicharra,
+      prácticamente todos alcanzan a comer.</p>
+
+    <h2>Sugerencias y errores</h2>
+    <div class="pila" id="listaSugerencias"></div>
+
+    <h2>Cierre de ciclo escolar</h2>
+    <p class="sub">Borra los alumnos, los pedidos y los adeudos. El menú se queda.
+      <b>Si nadie escribe cuándo se borra, no se borra nunca.</b></p>
+    <button class="btn ancho" id="bCiclo" type="button">Cerrar el ciclo y borrar los datos</button>
+  </section>
+
+</main>
+
+<div class="velo" id="velo" hidden>
+  <div class="hojita" role="dialog" aria-modal="true" aria-labelledby="hojitaT">
+    <h3 id="hojitaT">—</h3>
+    <div id="hojitaC"></div>
+  </div>
+</div>
+
+<script src="nucleo.js"></script>
+<script>
+(function(){
+'use strict';
+const $  = (s,d) => (d||document).querySelector(s);
+const $$ = (s,d) => Array.prototype.slice.call((d||document).querySelectorAll(s));
+const F = window.FADORI;
+const esc = (t) => String(t==null?'':t).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+F.cargar();
+
+/* Quién está despachando. Sirve para F23: varios a la vez sin chocar. */
+const LLAVE_QUIEN = 'fadori_despachador';
+let quien = '';
+try{ quien = localStorage.getItem(LLAVE_QUIEN) || ''; }catch(e){}
+if(!quien){ quien = 'mostrador-' + F.codigo(3); try{ localStorage.setItem(LLAVE_QUIEN, quien); }catch(e){} }
+
+let vista = 'despachar';
+const VISTAS = ['despachar','menu','corte','deudas','ajustes'];
+
+function verVista(v){
+  vista = v;
+  VISTAS.forEach(n => { $('#v-'+n).hidden = (n !== v); });
+  $$('#pestanas .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vista === v)));
+  pintar();
+  window.scrollTo(0,0);
+}
+
+function tono(cat){
+  const c = F.CATEGORIAS.find(x => x.id === cat) || F.CATEGORIAS[0];
+  return c;
+}
+
+function mini(p){
+  const c = tono(p ? p.cat : '');
+  return '<span class="mini" style="--t1:'+c.tono+'; --t2:'+c.tono+'88">'+
+    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+'</span>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DESPACHAR · F19 · un pedido a la vez, ocupando la pantalla
+   ═════════════════════════════════════════════════════════════════════ */
+function pintarDespachar(){
+  const cola = F.colaOrdenada();
+  $('#cuantosEnCola').textContent = cola.length;
+
+  /* el mío: el que ya tomé. Si no tengo ninguno, el primero de la cola. */
+  const mio = cola.find(p => p.estado === 'preparando' && p.despachador === quien);
+  const listos = F.estado().pedidos.filter(p => p.estado === 'listo');
+  const actual = mio || null;
+
+  const caja = $('#actual');
+  if(actual){
+    caja.innerHTML = fichaActual(actual);
+  } else if(cola.length){
+    const sig = cola.find(p => p.estado === 'en_cola');
+    caja.innerHTML = sig
+      ? '<div class="actual"><div class="encabeza">'+
+        '<span class="turno-n">'+sig.turno+'</span>'+
+        '<span class="quien">'+esc(sig.nombre)+(sig.grupo?' · '+esc(sig.grupo):'')+'</span>'+
+        '<span class="cod">'+esc(sig.folio)+'</span></div>'+
+        '<p class="sub" style="margin:12px 0 0">'+resumenCorto(sig)+'</p>'+
+        '<button class="btn fuerte ancho" data-tomar="'+sig.id+'" type="button" '+
+        'style="margin-top:16px">Tomar este pedido</button></div>'
+      : '<div class="aviso">Todos los pedidos ya están tomados por alguien más.</div>';
+  } else {
+    caja.innerHTML = '<div class="aviso bueno">No hay nada en la fila. Todo despachado.</div>';
+  }
+
+  /* la cola: lo que sigue, sin lo que ya tomé yo */
+  const resto = cola.filter(p => !actual || p.id !== actual.id);
+  $('#cola').innerHTML =
+    listos.map(p => renglonPedido(p, 'listo')).join('') +
+    (resto.length ? resto.map(p => renglonPedido(p)).join('')
+      : (listos.length ? '' : '<p class="sub">Nada pendiente.</p>'));
+}
+
+function resumenCorto(p){
+  return p.renglones.map(r => r.cant+'× '+((F.producto(r.prod)||{}).nombre||'—')).join(' · ');
+}
+
+function fichaActual(p){
+  return '<div class="actual">'+
+    '<div class="encabeza">'+
+      '<span class="turno-n">'+p.turno+'</span>'+
+      '<span class="quien">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+'</span>'+
+      '<span class="cod">'+esc(p.folio)+'</span>'+
+    '</div>'+
+    (p.enCamino ? '<div class="aviso bueno" style="margin-top:12px">Ya viene en camino</div>' : '')+
+    '<div class="pila" style="margin-top:14px">'+
+      p.renglones.map((r,i) => {
+        const prod = F.producto(r.prod) || { nombre:'—', precio:0 };
+        return '<button class="linea-prod'+(r.listo?' ya':'')+'" type="button" '+
+          'data-renglon="'+p.id+':'+i+'">'+
+          mini(prod)+
+          '<span class="cant">'+r.cant+'×</span>'+
+          '<span style="flex:1; min-width:0">'+esc(prod.nombre)+
+            (r.para ? '<span class="para">para '+esc(r.para)+'</span>' : '')+'</span>'+
+          '<span>'+(r.listo ? '✓' : '')+'</span>'+
+        '</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="chips" style="margin-top:16px">'+
+      '<button class="btn fuerte" data-listo="'+p.id+'" type="button" style="flex:1">'+
+        'Pedido listo · '+F.pesos(p.total)+'</button>'+
+      '<button class="btn" data-soltar="'+p.id+'" type="button">Soltar</button>'+
+    '</div></div>';
+}
+
+function renglonPedido(p, tipo){
+  const listo = tipo === 'listo';
+  return '<div class="renglon" style="border-width:2px'+
+    (listo ? '; border-color:var(--verde)' : '')+'">'+
+    '<span class="n" style="font-size:22px">'+p.turno+'</span>'+
+    '<span class="q"><b>'+esc(p.nombre)+'</b>'+(p.grupo?' · '+esc(p.grupo):'')+
+      (p.anticipado ? ' <b style="color:var(--violeta-2)">· anticipado</b>' : '')+
+      '<small>'+esc(resumenCorto(p))+'</small></span>'+
+    (listo
+      ? '<button class="btn chico" data-cobrar="'+p.id+'" type="button">Entregar</button>'
+      : '<button class="btn chico" data-tomar="'+p.id+'" type="button">Tomar</button>')+
+    '</div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   COBRAR · F26 · el ticket · F27 · la deuda
+   ═════════════════════════════════════════════════════════════════════ */
+function abrirCobro(oid){
+  const p = F.pedido(oid); if(!p) return;
+  $('#hojitaT').textContent = 'Cobrar el turno ' + p.turno;
+  $('#hojitaC').innerHTML =
+    '<p class="sub">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+' · código <b>'+esc(p.folio)+'</b></p>'+
+    '<div class="cifras"><div class="cifra"><b>'+F.pesos(p.total)+'</b><span>total</span></div></div>'+
+    '<label for="hPago">¿Con cuánto paga?</label>'+
+    '<input id="hPago" type="number" inputmode="decimal" min="0" step="0.5" value="'+(p.total/100)+'">'+
+    '<div id="hCambio" class="aviso" style="margin-top:12px"></div>'+
+    '<div class="chips" style="margin-top:16px">'+
+      '<button class="btn fuerte" id="hCobrar" type="button" style="flex:1">Entregar y cobrar</button>'+
+      '<button class="btn" id="hCerrar" type="button">Cancelar</button>'+
+    '</div>';
+  $('#velo').hidden = false;
+
+  const calcular = () => {
+    const paga = Math.round(parseFloat($('#hPago').value || 0) * 100);
+    const dif = paga - p.total;
+    const c = $('#hCambio');
+    c.className = 'aviso' + (dif < 0 ? ' malo' : dif > 0 ? ' bueno' : '');
+    c.innerHTML = dif > 0 ? 'Cambio: <b>'+F.pesos(dif)+'</b>'
+      : dif < 0 ? 'Queda a deber <b>'+F.pesos(-dif)+'</b>, y se le suma al siguiente pago.'
+      : 'Pago exacto.';
+  };
+  $('#hPago').addEventListener('input', calcular); calcular();
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#hCobrar').addEventListener('click', () => {
+    const paga = Math.round(parseFloat($('#hPago').value || 0) * 100);
+    F.entregar(oid, Math.min(paga, p.total));   /* el cambio no es un abono */
+    $('#velo').hidden = true;
+    pintar();
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   F22 · pedido de a pie
+   ═════════════════════════════════════════════════════════════════════ */
+function abrirDeAPie(){
+  const disp = F.productos(true);
+  const carrito = [];
+  $('#hojitaT').textContent = 'Pedido de mostrador';
+  const pintarH = () => {
+    $('#hojitaC').innerHTML =
+      '<label for="hNombre" style="margin-top:0">¿A nombre de quién?</label>'+
+      '<input id="hNombre" maxlength="24" placeholder="Nombre de pila" value="'+esc(nombreTmp)+'">'+
+      '<label for="hGrupo">Grupo (si lo sabe)</label>'+
+      '<input id="hGrupo" maxlength="6" value="'+esc(grupoTmp)+'">'+
+      '<h3 style="margin:18px 0 8px">¿Qué lleva?</h3>'+
+      '<div class="pila">'+ disp.map(p =>
+        '<button class="linea-prod" type="button" data-agregar="'+p.id+'">'+
+        mini(p)+'<span style="flex:1; min-width:0">'+esc(p.nombre)+'</span>'+
+        '<span class="cant">'+(carrito.filter(r=>r.prod===p.id).reduce((s,r)=>s+r.cant,0)||'')+'</span>'+
+        '<span>'+F.pesos(p.precio)+'</span></button>').join('') +'</div>'+
+      '<div class="chips" style="margin-top:16px">'+
+        '<button class="btn fuerte" id="hCrear" type="button" style="flex:1">'+
+          'Meter a la fila · '+F.pesos(F.totalDe(carrito))+'</button>'+
+        '<button class="btn" id="hCerrar" type="button">Cancelar</button>'+
+      '</div>';
+    $$('#hojitaC [data-agregar]').forEach(b => b.addEventListener('click', () => {
+      const r = carrito.find(x => x.prod === b.dataset.agregar);
+      if(r) r.cant++; else carrito.push({ prod:b.dataset.agregar, cant:1 });
+      guardaTmp(); pintarH();
+    }));
+    $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+    $('#hCrear').addEventListener('click', () => {
+      guardaTmp();
+      if(!carrito.length) return alert('El pedido está vacío.');
+      try{
+        F.pedir(null, carrito, { origen:'mostrador', nombre:nombreTmp || 'Mostrador', grupo:grupoTmp });
+        $('#velo').hidden = true; pintar();
+      }catch(e){ alert(e.message); }
+    });
+  };
+  let nombreTmp = '', grupoTmp = '';
+  const guardaTmp = () => {
+    const n = $('#hNombre'), g = $('#hGrupo');
+    if(n) nombreTmp = n.value; if(g) grupoTmp = g.value;
+  };
+  pintarH();
+  $('#velo').hidden = false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   F25 · modo a mano · si se cae la app
+   ═════════════════════════════════════════════════════════════════════ */
+function abrirPapel(){
+  const cola = F.colaOrdenada();
+  const listos = F.estado().pedidos.filter(p => p.estado === 'listo');
+  const todo = listos.concat(cola);
+  $('#hojitaT').textContent = 'Para despachar en papel';
+  $('#hojitaC').innerHTML =
+    '<p class="sub">Esta lista está congelada. Aunque se caiga la red o el aparato, '+
+      'con esto se sigue despachando.</p>'+
+    (todo.length
+      ? '<div style="overflow-x:auto"><table><thead><tr><th>Turno</th><th>Código</th>'+
+        '<th>Quién</th><th>Qué lleva</th><th class="num">Total</th></tr></thead><tbody>'+
+        todo.map(p => '<tr><td><b>'+p.turno+'</b></td><td>'+esc(p.folio)+'</td>'+
+          '<td>'+esc(p.nombre)+(p.grupo?'<br><small>'+esc(p.grupo)+'</small>':'')+'</td>'+
+          '<td>'+esc(resumenCorto(p))+'</td>'+
+          '<td class="num">'+F.pesos(p.total)+'</td></tr>').join('')+
+        '</tbody></table></div>'
+      : '<p class="sub">No hay nada pendiente.</p>')+
+    '<div class="chips" style="margin-top:16px">'+
+      '<button class="btn fuerte" id="hImprimir" type="button" style="flex:1">Imprimir</button>'+
+      '<button class="btn" id="hCerrar" type="button">Cerrar</button>'+
+    '</div>';
+  $('#velo').hidden = false;
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#hImprimir').addEventListener('click', () => window.print());
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   EL MENÚ · F33 · F34 · F35 · F37
+   ═════════════════════════════════════════════════════════════════════ */
+function pintarMenu(){
+  const todos = F.productos(false);
+  $('#listaMenu').innerHTML = todos.map(p => {
+    const agotado = !p.disponible || !F.existenciasOk(p);
+    const pocas = typeof p.existencias === 'number' && p.existencias > 0 && p.existencias <= 3;
+    return '<div class="renglon" style="border-width:2px'+
+      (agotado?'; opacity:.55':'')+(pocas?'; border-color:var(--ambar)':'')+'">'+
+      mini(p)+
+      '<span class="q" style="flex:1"><b>'+esc(p.nombre)+'</b>'+
+        (p.destacado ? ' <b style="color:var(--violeta-2)">· hoy</b>' : '')+
+        '<small>'+F.pesos(p.precio)+
+        (typeof p.existencias === 'number' ? ' · quedan '+p.existencias : '')+
+        (pocas ? ' ⚠️' : '')+'</small></span>'+
+      '<button class="btn chico" data-agotar="'+p.id+'" type="button">'+
+        (agotado ? 'Reponer' : 'Se acabó')+'</button>'+
+      '<button class="btn chico" data-editar="'+p.id+'" type="button">Editar</button>'+
+    '</div>';
+  }).join('');
+}
+
+function abrirProducto(pid){
+  const p = pid ? F.producto(pid) : null;
+  $('#hojitaT').textContent = p ? 'Editar '+p.nombre : 'Algo nuevo en el menú';
+  $('#hojitaC').innerHTML =
+    '<label for="hNom" style="margin-top:0">Cómo se llama</label>'+
+    '<input id="hNom" maxlength="42" value="'+esc(p?p.nombre:'')+'">'+
+    '<label for="hPrecio">Cuánto cuesta, en pesos</label>'+
+    '<input id="hPrecio" type="number" min="0" step="0.5" value="'+(p?(p.precio/100):'')+'">'+
+    '<label for="hCat">De qué es</label>'+
+    '<select id="hCat">'+ F.CATEGORIAS.map(c =>
+      '<option value="'+c.id+'"'+(p&&p.cat===c.id?' selected':'')+'>'+c.emoji+' '+c.nombre+'</option>').join('') +'</select>'+
+    '<label for="hSeg">Cuántos segundos toma prepararlo</label>'+
+    '<input id="hSeg" type="number" min="1" max="600" step="5" value="'+(p?p.segPrep:40)+'">'+
+    '<label for="hExist">Cuántos hay (déjalo vacío si no llevas cuenta)</label>'+
+    '<input id="hExist" type="number" min="0" step="1" value="'+
+      (p && typeof p.existencias === 'number' ? p.existencias : '')+'">'+
+    '<label for="hFoto">La foto</label>'+
+    '<input id="hFoto" type="file" accept="image/*">'+
+    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="" style="margin-top:10px; max-height:120px; border-radius:12px">' : '')+
+    '<label style="display:flex; align-items:center; gap:10px; margin-top:16px">'+
+      '<input type="checkbox" id="hDest" style="width:26px; min-height:26px; flex:0 0 auto"'+
+      (p&&p.destacado?' checked':'')+'>'+
+      '<span style="color:var(--hueso); font-weight:700">Es lo de hoy · sale hasta arriba</span></label>'+
+    '<div class="chips" style="margin-top:18px">'+
+      '<button class="btn fuerte" id="hGuardar" type="button" style="flex:1">Guardar</button>'+
+      (p ? '<button class="btn" id="hBorrar" type="button">Quitar del menú</button>' : '')+
+      '<button class="btn" id="hCerrar" type="button">Cancelar</button>'+
+    '</div>';
+  $('#velo').hidden = false;
+
+  let fotoNueva = null;
+  $('#hFoto').addEventListener('change', (e) => {
+    const f = e.target.files[0]; if(!f) return;
+    achicar(f, 640, (dataUrl) => { fotoNueva = dataUrl; });
+  });
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  const borrar = $('#hBorrar');
+  if(borrar) borrar.addEventListener('click', () => {
+    if(!confirm('¿Quitar "'+p.nombre+'" del menú?')) return;
+    F.borrarProducto(p.id); $('#velo').hidden = true; pintar();
+  });
+  $('#hGuardar').addEventListener('click', () => {
+    const ex = $('#hExist').value;
+    const datos = {
+      id: p ? p.id : undefined,
+      nombre: $('#hNom').value.trim(),
+      precio: Math.round(parseFloat($('#hPrecio').value || 0) * 100),
+      cat: $('#hCat').value,
+      segPrep: Math.max(1, parseInt($('#hSeg').value, 10) || 40),
+      existencias: ex === '' ? null : Math.max(0, parseInt(ex, 10) || 0),
+      destacado: $('#hDest').checked,
+    };
+    if(fotoNueva) datos.foto = fotoNueva;
+    if(!datos.nombre) return alert('Le falta el nombre.');
+    F.guardarProducto(datos);
+    $('#velo').hidden = true; pintar();
+  });
+}
+
+/* Las fotos se achican antes de guardarlas: una foto de teléfono llena la
+   memoria del navegador en veinte productos. */
+function achicar(archivo, lado, listo){
+  const lector = new FileReader();
+  lector.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, lado / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      listo(c.toDataURL('image/jpeg', .78));
+    };
+    img.src = lector.result;
+  };
+  lector.readAsDataURL(archivo);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CORTE · F36 · F38
+   ═════════════════════════════════════════════════════════════════════ */
+function pintarCorte(){
+  const r = F.resumenDelDia();
+  $('#cifrasCorte').innerHTML =
+    '<div class="cifra"><b>'+F.pesos(r.dinero)+'</b><span>entró hoy</span></div>'+
+    '<div class="cifra"><b>'+r.entregados+'</b><span>despachados</span></div>'+
+    '<div class="cifra'+(r.noAlcanzaron?' malo':'')+'"><b>'+r.noAlcanzaron+'</b>'+
+      '<span>siguen en la fila</span></div>'+
+    '<div class="cifra"><b>'+r.anticipados+'</b><span>pedidos con anticipación</span></div>'+
+    '<div class="cifra"><b>'+(r.despachoPromedio||'—')+' s</b><span>por pedido</span></div>'+
+    '<div class="cifra"><b>'+(r.esperaPromedio ? Math.round(r.esperaPromedio/60)+' min' : '—')+
+      '</b><span>esperó cada quien</span></div>'+
+    (r.deudaNueva ? '<div class="cifra malo"><b>'+F.pesos(r.deudaNueva)+'</b><span>quedó a deber</span></div>' : '');
+
+  $('#tablaVentas').innerHTML = r.ventas.length
+    ? '<thead><tr><th>Qué</th><th class="num">Unidades</th><th class="num">Dinero</th></tr></thead><tbody>'+
+      r.ventas.map(v => '<tr><td>'+esc(v.nombre)+'</td><td class="num">'+v.unidades+'</td>'+
+        '<td class="num">'+F.pesos(v.dinero)+'</td></tr>').join('')+'</tbody>'
+    : '<tbody><tr><td>Todavía no se vende nada hoy.</td></tr></tbody>';
+
+  $('#listaAgotados').innerHTML = r.agotados.length
+    ? '<div class="pila">'+ r.agotados.map(a => '<div class="renglon"><span class="q">'+
+        esc(a.nombre)+'<small>a las '+a.hora.toLocaleTimeString('es-MX',
+        {hour:'2-digit',minute:'2-digit'})+'</small></span></div>').join('') +'</div>'
+    : '<p class="sub">Nada se ha agotado hoy.</p>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   FIADOS · F30
+   ═════════════════════════════════════════════════════════════════════ */
+function pintarDeudas(){
+  const d = F.estado();
+  const deben = Object.values(d.alumnos).filter(a => a.deuda > 0)
+    .sort((a,b) => b.deuda - a.deuda);
+  $('#listaDeudas').innerHTML = deben.length ? deben.map(a =>
+    '<div class="renglon" style="border-width:2px">'+
+    '<span class="q" style="flex:1"><b>'+esc(a.nombre)+'</b> · '+esc(a.grupo)+
+      '<small>código '+esc(a.codigo)+'</small></span>'+
+    '<span style="font-weight:900; font-size:19px">'+F.pesos(a.deuda)+'</span>'+
+    '<button class="btn chico" data-abonar="'+a.codigo+'" type="button">Abonar</button>'+
+    '<button class="btn chico" data-perdonar="'+a.codigo+'" type="button">Perdonar</button>'+
+    '</div>').join('')
+    : '<div class="aviso bueno">Nadie debe nada.</div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   AJUSTES
+   ═════════════════════════════════════════════════════════════════════ */
+const PERILLAS = [
+  ['#aRecreo','recreoInicia', v => v],
+  ['#aMinutos','recreoMinutos', v => parseInt(v,10)||30],
+  ['#aDespachadores','despachadores', v => Math.max(1, parseInt(v,10)||1)],
+  ['#aTope','topeporAlumno', v => Math.max(1, parseInt(v,10)||3)],
+  ['#aAdelantos','topeAdelantos', v => Math.max(1, parseInt(v,10)||4)],
+  ['#aLimite','limiteDeuda', v => Math.max(0, Math.round(parseFloat(v||0)*100))],
+];
+
+function pintarAjustes(){
+  const c = F.estado().config;
+  $('#aRecreo').value = c.recreoInicia;
+  $('#aMinutos').value = c.recreoMinutos;
+  $('#aDespachadores').value = c.despachadores;
+  $('#aTope').value = c.topeporAlumno;
+  $('#aAdelantos').value = c.topeAdelantos;
+  $('#aLimite').value = (c.limiteDeuda/100);
+  $('#aAnticipados').checked = !!c.aceptaAnticipados;
+
+  const sug = F.sugerencias();
+  $('#listaSugerencias').innerHTML = sug.length ? sug.slice(0,20).map(s =>
+    '<div class="renglon"><span class="q">'+esc(s.texto)+
+    '<small>'+new Date(s.t).toLocaleString('es-MX')+' · desde la pantalla "'+esc(s.pantalla)+'"</small>'+
+    '</span></div>').join('')
+    : '<p class="sub">Todavía nadie ha mandado nada.</p>';
+}
+
+PERILLAS.forEach(([sel, campo, leer]) => {
+  document.addEventListener('DOMContentLoaded', () => {});
+  $(sel).addEventListener('change', () => {
+    F.estado().config[campo] = leer($(sel).value);
+    F.guardar(); pintar();
+  });
+});
+$('#aAnticipados').addEventListener('change', () => {
+  F.estado().config.aceptaAnticipados = $('#aAnticipados').checked;
+  F.guardar();
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOS BOTONES
+   ═════════════════════════════════════════════════════════════════════ */
+document.addEventListener('click', (e) => {
+  const t = (n) => e.target.closest('['+n+']');
+  let b;
+  if((b = t('data-vista'))) return verVista(b.dataset.vista);
+  if((b = t('data-tomar'))){ F.tomar(b.dataset.tomar, quien); return pintar(); }
+  if((b = t('data-soltar'))){
+    const p = F.pedido(b.dataset.soltar);
+    if(p){ p.estado = 'en_cola'; p.despachador = null; F.guardar(); }
+    return pintar();
+  }
+  if((b = t('data-renglon'))){
+    const [oid, i] = b.dataset.renglon.split(':');
+    const p = F.pedido(oid);
+    F.renglonListo(oid, +i, !(p && p.renglones[+i].listo));
+    return pintar();
+  }
+  if((b = t('data-listo'))){ F.marcarListo(b.dataset.listo); return pintar(); }
+  if((b = t('data-cobrar'))) return abrirCobro(b.dataset.cobrar);
+  if((b = t('data-agotar'))){
+    const p = F.producto(b.dataset.agotar);
+    F.marcarDisponible(p.id, !(p.disponible && F.existenciasOk(p)));
+    if(p.disponible && typeof p.existencias === 'number' && p.existencias === 0) p.existencias = null;
+    F.guardar(); return pintar();
+  }
+  if((b = t('data-editar'))) return abrirProducto(b.dataset.editar);
+  if((b = t('data-abonar'))){
+    const cod = b.dataset.abonar, a = F.estado().alumnos[cod];
+    const v = prompt('¿Cuánto abona '+a.nombre+'? Debe '+F.pesos(a.deuda), (a.deuda/100));
+    if(v === null) return;
+    F.abonar(cod, Math.round(parseFloat(v||0)*100)); return pintar();
+  }
+  if((b = t('data-perdonar'))){
+    const cod = b.dataset.perdonar, a = F.estado().alumnos[cod];
+    if(!confirm('¿Perdonar los '+F.pesos(a.deuda)+' de '+a.nombre+'? Queda registrado.')) return;
+    F.ajustarDeuda(cod, 0, quien); return pintar();
+  }
+});
+
+$('#bDeAPie').addEventListener('click', abrirDeAPie);
+$('#bPapel').addEventListener('click', abrirPapel);
+$('#bNuevoProd').addEventListener('click', () => abrirProducto(null));
+$('#bCSV').addEventListener('click', () => {
+  const hoy = new Date().toISOString().slice(0,10);
+  F.bajarCSV('fadori-pedidos-'+hoy+'.csv', F.csvDePedidos());
+});
+$('#bCerrar').addEventListener('click', () => {
+  const r = F.resumenDelDia();
+  alert('Cierre del recreo\n\n'+
+    'Entró: '+F.pesos(r.dinero)+'\n'+
+    'Despachados: '+r.entregados+'\n'+
+    'Se quedaron en la fila: '+r.noAlcanzaron+'\n'+
+    'Segundos por pedido: '+(r.despachoPromedio||'—')+'\n'+
+    'Se agotó primero: '+(r.agotados[0] ? r.agotados[0].nombre : 'nada'));
+});
+$('#bCiclo').addEventListener('click', () => {
+  if(!confirm('Esto borra TODOS los alumnos, pedidos y adeudos. El menú se queda.\n\n¿Seguro?')) return;
+  if(!confirm('Última: no hay manera de recuperarlo. ¿De verdad?')) return;
+  const r = F.cerrarCiclo();
+  alert('Ciclo cerrado. Se despacharon '+r.entregados+' pedidos en total.');
+  pintar();
+});
+$('#velo').addEventListener('click', (e) => { if(e.target === $('#velo')) $('#velo').hidden = true; });
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIVO
+   ═════════════════════════════════════════════════════════════════════ */
+function pintar(){
+  if(vista === 'despachar') pintarDespachar();
+  if(vista === 'menu') pintarMenu();
+  if(vista === 'corte') pintarCorte();
+  if(vista === 'deudas') pintarDeudas();
+  if(vista === 'ajustes') pintarAjustes();
+  $('#cuantosEnCola').textContent = F.colaOrdenada().length;
+}
+
+F.alCambiar(() => { F.cargar(); pintar(); });
+setInterval(() => { F.cargar(); pintar(); }, 4000);
+verVista('despachar');
+
+/* ══════════════════════════════════════════════════════════════════════
+   PRUEBAS
+   ═════════════════════════════════════════════════════════════════════ */
+(function(){
+  let bien = 0, mal = 0;
+  const ok = (q,c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
+  const guardado = JSON.stringify(F.estado());
+
+  const menu = F.productos(true);
+  const uno = menu[0];
+
+  /* F22 · el pedido de a pie entra a la MISMA fila que los de la app */
+  const p = F.pedir(null, [{prod:uno.id, cant:1}], { origen:'mostrador', nombre:'De a pie', grupo:'1A' });
+  ok('el pedido de mostrador entra a la misma fila',
+     F.colaOrdenada().some(x => x.id === p.id));
+  ok('el de mostrador no pide cuenta ni acepta términos', p.alumno === null);
+
+  /* F23 · dos despachadores no chocan */
+  ok('el segundo despachador ya no puede tomar lo tomado', (function(){
+    F.tomar(p.id, 'ana');
+    return F.tomar(p.id, 'beto') === null;
+  })());
+
+  /* F20 · renglón por renglón */
+  F.renglonListo(p.id, 0, true);
+  ok('el renglón se marca listo', F.pedido(p.id).renglones[0].listo === true);
+
+  /* F33 · agotar saca del menú del alumno al instante */
+  F.marcarDisponible(uno.id, false);
+  ok('lo agotado desaparece del menú del alumno',
+     !F.productos(true).some(x => x.id === uno.id));
+  F.marcarDisponible(uno.id, true);
+
+  /* F26/F27 · cobrar de menos deja deuda, y el cambio NO se abona */
+  F.marcarListo(p.id);
+  F.entregar(p.id, uno.precio);
+  ok('cobrar completo no deja deuda', !F.pedido(p.id).debio);
+
+  /* F36 · el corte cuenta lo del día */
+  const r = F.resumenDelDia();
+  ok('el corte suma el dinero que entró', r.dinero >= uno.precio);
+  ok('el corte lista qué se vendió', r.ventas.length >= 1);
+
+  /* F25 · la lista de papel incluye lo que está en la fila */
+  ok('hay lista para despachar en papel', typeof abrirPapel === 'function');
+
+  try{ localStorage.setItem('fadori_v1', guardado); }catch(e){}
+  F.cargar(); pintar();
+
+  console.log('%cFadori mostrador · '+bien+'/'+(bien+mal)+' pruebas',
+    'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
+})();
+
+})();
+</script>
+</body>
+</html>

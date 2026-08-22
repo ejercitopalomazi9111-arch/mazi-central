@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fadori · pide sin formarte</title>
+<meta name="description" content="Proyecto Sin Filas · pide desde el salón y ve por tu comida cuando esté lista.">
+<meta name="theme-color" content="#0B0714">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra-fila">
+    <span class="marca">Fadori<b>.</b></span>
+    <span class="crece"></span>
+    <button class="quiensoy" id="bYo" type="button" hidden>
+      <span id="miNombre">—</span><span class="grupo" id="miGrupo"></span>
+    </button>
+  </div>
+</header>
+
+<main class="envoltura">
+
+  <!-- ══════════ ENTRADA · F06 · identidad sin registro ══════════ -->
+  <section id="p-entrada" hidden>
+    <h1>Pide sin formarte</h1>
+    <p class="sub">Escoges desde el salón, la app te da un turno y vas por tu comida
+      cuando ya esté. <b>Nada de treinta minutos parado en el pasillo.</b></p>
+
+    <div class="tarjeta">
+      <label for="eNombre">¿Cómo te digo?</label>
+      <input id="eNombre" maxlength="24" autocomplete="off" placeholder="Tu nombre de pila">
+      <label for="eGrupo">¿De qué grupo?</label>
+      <input id="eGrupo" maxlength="6" autocomplete="off" placeholder="3.1">
+      <p class="aviso" style="margin-top:14px">Nada más eso. <b>Sin apellidos, sin correo,
+        sin contraseña y sin foto tuya.</b> Se guarda en este teléfono y en la cooperativa,
+        y se borra al terminar el ciclo escolar.</p>
+      <button class="btn fuerte ancho" id="bEntrar" type="button" style="margin-top:14px">Empezar</button>
+    </div>
+
+    <h2>¿Ya tenías código?</h2>
+    <div class="tarjeta">
+      <label for="eCodigo">Tu código de cuatro letras</label>
+      <input id="eCodigo" maxlength="4" autocomplete="off" placeholder="ABCD"
+        style="text-transform:uppercase; letter-spacing:.3em; font-weight:800">
+      <button class="btn ancho" id="bVolver" type="button" style="margin-top:12px">Entrar con mi código</button>
+    </div>
+  </section>
+
+  <!-- ══════════ TÉRMINOS · F29 · una pantalla, una vez ══════════ -->
+  <section id="p-terminos" hidden>
+    <h1>Antes de pedir</h1>
+    <p class="sub">Léelo una vez y ya. Es lo que hace válido el sistema de fiado.</p>
+    <div class="tarjeta">
+      <h3 style="margin:0 0 8px">Lo que estás aceptando</h3>
+      <ul style="padding-left:18px; line-height:1.65; color:var(--tenue); font-size:14px">
+        <li>Si pagas de menos, <b>lo que falte queda a deber</b> y se suma a tu siguiente pago.</li>
+        <li>Al llegar al límite que ponga la cooperativa, <b>no puedes pedir hasta pagar</b>.</li>
+        <li><b>Tu adeudo sólo lo ven tú y la cooperativa.</b> Nunca aparece en una pantalla
+          que vea otro alumno.</li>
+      </ul>
+      <h3 style="margin:16px 0 8px">Qué se guarda de ti</h3>
+      <ul style="padding-left:18px; line-height:1.65; color:var(--tenue); font-size:14px">
+        <li>Tu <b>nombre de pila</b> y tu <b>grupo</b>. Nada más.</li>
+        <li>Lo que pides, para darte tu turno y tu ticket.</li>
+        <li><b>No</b> se guarda: apellidos, correo, teléfono, contraseña ni fotos tuyas.</li>
+        <li>Se usa <b>sólo</b> para despachar la cooperativa. No se comparte con nadie más.</li>
+        <li>Se <b>borra al cerrar el ciclo escolar</b>.</li>
+      </ul>
+      <p class="aviso" style="margin-top:14px">Responsable: la cooperativa de la escuela.
+        Si quieres que borren tus datos antes, se los pides y ya.</p>
+      <button class="btn fuerte ancho" id="bAcepto" type="button" style="margin-top:14px">
+        De acuerdo, quiero pedir</button>
+    </div>
+  </section>
+
+  <!-- ══════════ EL MENÚ ══════════ -->
+  <section id="p-menu" hidden>
+    <h1 id="saludo">¿Qué vas a querer?</h1>
+    <p class="sub" id="estadoFila">—</p>
+
+    <div id="cajaSiempre" hidden style="margin-bottom:18px">
+      <button class="btn ancho" id="bSiempre" type="button">🔁 <span id="txtSiempre">Lo de siempre</span></button>
+    </div>
+
+    <div class="chips tira" id="filtros"></div>
+
+    <div id="destacados" class="destacado" hidden>
+      <h2>Hoy</h2>
+      <div class="rejilla" id="rejillaDestacados"></div>
+    </div>
+
+    <h2 id="tituloMenu">El menú</h2>
+    <div class="rejilla" id="rejilla"></div>
+
+    <h2>¿Cuánto traes?</h2>
+    <p class="sub">Dime tu presupuesto y te armo opciones que sí caben.</p>
+    <div style="display:flex; gap:10px; align-items:flex-end">
+      <div style="flex:1"><label for="eDinero" style="margin-top:0">Pesos</label>
+        <input id="eDinero" type="number" inputmode="numeric" min="0" step="1" placeholder="50"></div>
+      <button class="btn" id="bDinero" type="button" style="margin-bottom:0">Ver opciones</button>
+    </div>
+    <div id="opciones" class="pila" style="margin-top:14px"></div>
+
+    <h2>¿Algo que reportar?</h2>
+    <div class="tarjeta">
+      <label for="eSugerencia" style="margin-top:0">Sugerencia o error</label>
+      <textarea id="eSugerencia" rows="3" placeholder="Lo que sea, se lee todo."></textarea>
+      <button class="btn ancho" id="bSugerir" type="button" style="margin-top:10px">Mandar</button>
+    </div>
+  </section>
+
+  <!-- ══════════ EL TURNO · F08 · F09 · F12 ══════════ -->
+  <section id="p-turno" hidden>
+    <h1>Tu turno</h1>
+    <div id="cajaTurno" class="pila"></div>
+    <h2>Lo que pediste</h2>
+    <ul class="renglones" id="renglonesTurno"></ul>
+    <div class="chips" style="margin-top:16px">
+      <button class="btn chico" id="bEnCamino" type="button">🚶 Voy en camino</button>
+      <button class="btn chico" id="bNoPuedo" type="button">Hoy no puedo ir</button>
+    </div>
+    <button class="btn ancho" id="bVerMenu" type="button" style="margin-top:16px">Volver al menú</button>
+  </section>
+
+  <!-- ══════════ LO MÍO · F41 ══════════ -->
+  <section id="p-yo" hidden>
+    <h1>Lo tuyo</h1>
+    <p class="sub">Tu código es <b id="miCodigo" style="letter-spacing:.24em">—</b>.
+      Apúntalo: con él entras desde cualquier teléfono.</p>
+    <div class="cifras" id="misCifras"></div>
+    <div id="miDeuda" style="margin-top:14px"></div>
+    <h2>Lo que más pides</h2>
+    <div id="misFavoritos" class="pila"></div>
+    <h2>Tus pedidos</h2>
+    <div id="misPedidos" class="pila"></div>
+    <button class="btn ancho" id="bSalir" type="button" style="margin-top:24px">Salir de esta cuenta</button>
+    <p class="sub" style="margin-top:22px; font-size:12px">
+      Fadori · Proyecto Sin Filas · Instituto Rembrandt de Querétaro ·
+      construido por <a href="../">Grupo Mazi</a></p>
+    <div class="saltos" style="margin-top:10px; opacity:.6">
+      <a href="mostrador.html">Mostrador</a>
+      <a href="pantalla.html">Pantalla</a>
+      <a href="medidor.html">Medidor</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- la barra del pedido -->
+<div class="cesta" id="cesta">
+  <div class="cesta-dentro">
+    <div class="cuenta">
+      <b id="cestaTotal">$0.00</b>
+      <span id="cestaDetalle">nada todavía</span>
+    </div>
+    <button class="btn chico" id="bVaciar" type="button">Vaciar</button>
+    <button class="btn fuerte" id="bPedir" type="button">Pedir</button>
+  </div>
+</div>
+
+<!-- hojita para confirmar y para pedir por varios -->
+<div class="velo" id="velo" hidden>
+  <div class="hojita" role="dialog" aria-modal="true" aria-labelledby="hojitaT">
+    <h3 id="hojitaT">Confirmar el pedido</h3>
+    <div id="hojitaC"></div>
+  </div>
+</div>
+
+<script src="nucleo.js"></script>
+<script>
+(function(){
+'use strict';
+const $  = (s,d) => (d||document).querySelector(s);
+const $$ = (s,d) => Array.prototype.slice.call((d||document).querySelectorAll(s));
+const F = window.FADORI;
+const esc = (t) => String(t==null?'':t).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+F.cargar();
+
+/* ── el carrito vive en memoria, no en los datos: es borrador ─────────── */
+let cesta = [];          /* [{prod, cant, para}] */
+let filtro = 'todo';
+let pantalla = 'menu';
+let miPedido = null;     /* el pedido vivo que estoy siguiendo */
+
+/* ══════════════════════════════════════════════════════════════════════
+   PINTAR
+   ═════════════════════════════════════════════════════════════════════ */
+const PANTALLAS = ['entrada','terminos','menu','turno','yo'];
+function ver(p){
+  pantalla = p;
+  PANTALLAS.forEach(n => { $('#p-'+n).hidden = (n !== p); });
+  $('#bYo').hidden = !F.yo();
+  window.scrollTo(0,0);
+  pintar();
+}
+
+function tono(cat){
+  const c = F.CATEGORIAS.find(x => x.id === cat) || F.CATEGORIAS[0];
+  return { emoji:c.emoji, t1:c.tono, t2:mezcla(c.tono, '#1D1330', .55) };
+}
+function mezcla(a, b, k){
+  const h = (s) => [1,3,5].map(i => parseInt(s.substr(i,2),16));
+  const A = h(a), B = h(b);
+  return '#' + A.map((v,i) => Math.round(v*(1-k) + B[i]*k).toString(16).padStart(2,'0')).join('');
+}
+
+function fichaPlato(p){
+  const t = tono(p.cat);
+  const enCesta = cesta.filter(r => r.prod === p.id).reduce((s,r)=>s+r.cant,0);
+  const agotado = !p.disponible || !F.existenciasOk(p);
+  const seg = F.segReales(p.id) || p.segPrep;
+  return '<button class="plato'+(agotado?' agotado':'')+(enCesta?' puesto':'')+'" type="button" '+
+    'data-prod="'+p.id+'"'+(agotado?' disabled':'')+'>'+
+    '<span class="foto" style="--t1:'+t.t1+'; --t2:'+t.t2+'">'+
+      (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : t.emoji)+
+      (enCesta ? '<span class="cuantos">'+enCesta+'</span>' : '')+
+      (agotado ? '<span class="sello">SE ACABÓ</span>' : '')+
+    '</span>'+
+    '<span class="cuerpo">'+
+      '<span class="nom">'+esc(p.nombre)+'</span>'+
+      '<span class="precio">'+F.pesos(p.precio)+'</span>'+
+      '<span class="tiempo">'+ (seg < 60 ? 'sale rápido' : 'tarda ~'+Math.round(seg/60)+' min') +'</span>'+
+    '</span></button>';
+}
+
+function pintarMenu(){
+  const todos = F.productos(false);
+  const dest = todos.filter(p => p.destacado && p.disponible);
+  $('#destacados').hidden = !dest.length;
+  $('#rejillaDestacados').innerHTML = dest.map(fichaPlato).join('');
+
+  const cats = F.CATEGORIAS.filter(c => todos.some(p => p.cat === c.id));
+  $('#filtros').innerHTML =
+    '<button class="chip" type="button" data-filtro="todo" aria-pressed="'+(filtro==='todo')+'">Todo</button>'+
+    cats.map(c => '<button class="chip" type="button" data-filtro="'+c.id+'" aria-pressed="'+
+      (filtro===c.id)+'">'+c.emoji+' '+esc(c.nombre)+'</button>').join('');
+
+  const lista = todos.filter(p => filtro === 'todo' || p.cat === filtro);
+  $('#rejilla').innerHTML = lista.length ? lista.map(fichaPlato).join('')
+    : '<p class="sub">No hay nada en esta categoría hoy.</p>';
+
+  /* el estado de la fila, en cristiano */
+  const cola = F.colaOrdenada().length;
+  const queda = F.quedanSegundosDeRecreo();
+  const dentro = F.enRecreo();
+  const cuando = dentro
+    ? 'quedan '+F.minutosDe(queda)+' de recreo'
+    : 'el recreo empieza a las '+F.estado().config.recreoInicia;
+  $('#estadoFila').innerHTML = (cola === 0
+    ? 'La cooperativa está <b>libre</b>'
+    : 'Hay <b>'+cola+'</b> '+(cola===1?'pedido':'pedidos')+' antes que el tuyo')+
+    ' · '+cuando;
+
+  /* F04 · lo de siempre */
+  const yo = F.yo();
+  const mios = yo ? F.misNumeros(yo.codigo) : null;
+  if(mios && mios.loDeSiempre && mios.loDeSiempre.length){
+    const nombres = mios.loDeSiempre.map(r => (F.producto(r.prod)||{}).nombre).filter(Boolean);
+    $('#cajaSiempre').hidden = false;
+    $('#txtSiempre').textContent = 'Lo de siempre · ' + nombres.join(', ');
+  } else $('#cajaSiempre').hidden = true;
+}
+
+function pintarCesta(){
+  const c = $('#cesta');
+  const total = F.totalDe(cesta);
+  const piezas = cesta.reduce((s,r) => s + r.cant, 0);
+  c.classList.toggle('viva', piezas > 0);
+  $('#cestaTotal').textContent = F.pesos(total);
+  const seg = F.segundosDe(cesta);
+  $('#cestaDetalle').textContent = piezas + (piezas===1 ? ' cosa · ' : ' cosas · ') +
+    'listo en ~' + F.minutosDe(seg);
+}
+
+function pintarTurno(){
+  const caja = $('#cajaTurno');
+  if(!miPedido){ caja.innerHTML = '<p class="sub">No tienes ningún pedido en la fila.</p>';
+    $('#renglonesTurno').innerHTML = ''; return; }
+  const p = F.pedido(miPedido.id) || miPedido;
+  miPedido = p;
+
+  if(p.estado === 'listo'){
+    caja.innerHTML = '<div class="turno listo">'+
+      '<div class="rotulo">Tu turno</div>'+
+      '<div class="numero">'+p.turno+'</div>'+
+      '<div class="folio">'+esc(p.folio)+'</div>'+
+      '<div class="frase">¡Ya está! Ve por él</div>'+
+      '<div class="detalle">Di tu código <b>'+esc(p.folio)+'</b> en el mostrador</div>'+
+      '</div>';
+  } else if(p.estado === 'entregado'){
+    caja.innerHTML = '<div class="turno"><div class="rotulo">Entregado</div>'+
+      '<div class="numero">'+p.turno+'</div>'+
+      '<div class="frase">Provecho</div>'+
+      '<div class="detalle">'+F.pesos(p.total)+
+      (p.debio ? ' · quedaste a deber '+F.pesos(p.debio) : ' · pagado')+'</div></div>';
+  } else if(p.estado === 'apartado'){
+    caja.innerHTML = '<div class="turno"><div class="rotulo">Apartado</div>'+
+      '<div class="numero">🌙</div>'+
+      '<div class="frase">Te lo guardamos para mañana</div>'+
+      '<div class="detalle">Mañana entras de los primeros</div></div>';
+  } else if(p.estado === 'cancelado'){
+    caja.innerHTML = '<div class="turno"><div class="rotulo">Cancelado</div>'+
+      '<div class="frase">Este pedido ya no va</div></div>';
+  } else {
+    const v = F.veredicto(p.id);
+    const preparando = p.estado === 'preparando';
+    caja.innerHTML = '<div class="turno">'+
+      '<div class="rotulo">Tu turno</div>'+
+      '<div class="numero">'+p.turno+'</div>'+
+      '<div class="folio">'+esc(p.folio)+'</div>'+
+      (preparando
+        ? '<div class="frase">Lo están preparando</div>'
+        : '<div class="frase'+(v && !v.alcanza ? ' no' : '')+'">'+esc(v ? v.frase : '—')+'</div>')+
+      '<div class="detalle">'+(v ? (v.antes === 0 ? 'Eres el que sigue'
+        : 'Hay '+v.antes+' antes que tú') : '')+'</div>'+
+      '</div>'+
+      (v && !v.alcanza && !preparando
+        ? '<div class="aviso malo">Al ritmo de hoy el recreo se acaba antes de que te toque. '+
+          '<b>Mejor no lo esperes parado.</b> Te lo podemos guardar para mañana y entras de los primeros.'+
+          '<div class="chips" style="margin-top:10px">'+
+          '<button class="btn chico" id="bApartar" type="button">Guárdamelo para mañana</button></div></div>'
+        : '');
+  }
+
+  $('#renglonesTurno').innerHTML = p.renglones.map((r,i) => {
+    const prod = F.producto(r.prod) || { nombre:'—', precio:0 };
+    return '<li class="renglon"><span class="n">'+r.cant+'×</span>'+
+      '<span class="q">'+esc(prod.nombre)+
+      (r.para ? '<small>para '+esc(r.para)+'</small>' : '')+'</span>'+
+      '<span>'+F.pesos(prod.precio*r.cant)+'</span></li>';
+  }).join('');
+
+  const ap = $('#bApartar');
+  if(ap) ap.addEventListener('click', () => {
+    F.apartarParaManana(p.id); pintar();
+  });
+}
+
+function pintarYo(){
+  const yo = F.yo(); if(!yo) return;
+  $('#miCodigo').textContent = yo.codigo;
+  const n = F.misNumeros(yo.codigo);
+  $('#misCifras').innerHTML =
+    '<div class="cifra"><b>'+n.pedidos+'</b><span>pedidos</span></div>'+
+    '<div class="cifra"><b>'+F.pesos(n.gastado)+'</b><span>gastado</span></div>'+
+    '<div class="cifra"><b>'+(n.favoritos[0] ? esc(n.favoritos[0].nombre.split(' ')[0]) : '—')+
+      '</b><span>lo que más pides</span></div>';
+
+  $('#miDeuda').innerHTML = yo.deuda > 0
+    ? '<div class="aviso malo">Debes <b>'+F.pesos(yo.deuda)+'</b>. '+
+      'Lo pagas en la cooperativa. <b>Sólo tú y ellos lo ven.</b></div>'
+    : '<div class="aviso bueno">No debes nada.</div>';
+
+  $('#misFavoritos').innerHTML = n.favoritos.length
+    ? n.favoritos.slice(0,5).map(f => '<div class="renglon"><span class="n">'+f.veces+'×</span>'+
+        '<span class="q">'+esc(f.nombre)+'</span></div>').join('')
+    : '<p class="sub">Todavía nada. Pide algo y aquí sale.</p>';
+
+  const mios = F.pedidosDe(yo.codigo).slice(0,12);
+  $('#misPedidos').innerHTML = mios.length ? mios.map(p =>
+    '<button class="renglon" type="button" data-pedido="'+p.id+'" style="width:100%; text-align:left">'+
+    '<span class="n">'+p.turno+'</span>'+
+    '<span class="q">'+esc(nombreEstado(p.estado))+
+      '<small>'+new Date(p.creado).toLocaleString('es-MX',{day:'numeric',month:'short',
+        hour:'2-digit',minute:'2-digit'})+'</small></span>'+
+    '<span>'+F.pesos(p.total)+'</span></button>').join('')
+    : '<p class="sub">Todavía no has pedido nada.</p>';
+}
+
+function nombreEstado(e){
+  return { en_cola:'En la fila', preparando:'Preparándose', listo:'Listo, ve por él',
+    entregado:'Entregado', cancelado:'Cancelado', apartado:'Apartado para mañana' }[e] || e;
+}
+
+function pintar(){
+  const yo = F.yo();
+  $('#bYo').hidden = !yo;
+  if(yo){ $('#miNombre').textContent = yo.nombre; $('#miGrupo').textContent = yo.grupo; }
+  if(pantalla === 'menu'){ pintarMenu(); pintarCesta(); }
+  if(pantalla === 'turno') pintarTurno();
+  if(pantalla === 'yo') pintarYo();
+  $('#cesta').classList.toggle('viva', pantalla === 'menu' && cesta.length > 0);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ARRANQUE
+   ═════════════════════════════════════════════════════════════════════ */
+function arrancar(){
+  const yo = F.yo();
+  if(!yo) return ver('entrada');
+  if(!yo.terminos) return ver('terminos');
+  /* si traigo un pedido vivo, la pantalla que importa es el turno */
+  const vivo = F.pedidosDe(yo.codigo).find(p => F.VIVOS.indexOf(p.estado) >= 0);
+  if(vivo){ miPedido = vivo; return ver('turno'); }
+  ver('menu');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOS BOTONES
+   ═════════════════════════════════════════════════════════════════════ */
+$('#bEntrar').addEventListener('click', () => {
+  try{
+    F.registrar($('#eNombre').value, $('#eGrupo').value);
+    ver('terminos');
+  }catch(e){ alert(e.message); }
+});
+
+$('#bVolver').addEventListener('click', () => {
+  const a = F.entrarComo($('#eCodigo').value);
+  if(!a) return alert('Ese código no existe en este aparato.');
+  arrancar();
+});
+
+$('#bAcepto').addEventListener('click', () => {
+  const yo = F.yo(); if(!yo) return ver('entrada');
+  F.aceptarTerminos(yo.codigo);
+  ver('menu');
+});
+
+$('#bYo').addEventListener('click', () => ver(pantalla === 'yo' ? 'menu' : 'yo'));
+$('#bVerMenu').addEventListener('click', () => ver('menu'));
+$('#bSalir').addEventListener('click', () => { F.salir(); cesta = []; miPedido = null; ver('entrada'); });
+
+/* F03 · del menú al pedido en tres toques: tocar el plato ya lo suma */
+document.addEventListener('click', (e) => {
+  const plato = e.target.closest('[data-prod]');
+  if(plato && !plato.disabled){
+    const pid = plato.dataset.prod;
+    const r = cesta.find(x => x.prod === pid && !x.para);
+    if(r) r.cant++; else cesta.push({ prod:pid, cant:1, para:'' });
+    pintar();
+    return;
+  }
+  const f = e.target.closest('[data-filtro]');
+  if(f){ filtro = f.dataset.filtro; pintar(); return; }
+  const ped = e.target.closest('[data-pedido]');
+  if(ped){ miPedido = F.pedido(ped.dataset.pedido); ver('turno'); return; }
+});
+
+$('#bVaciar').addEventListener('click', () => { cesta = []; pintar(); });
+
+$('#bSiempre').addEventListener('click', () => {
+  const yo = F.yo(); if(!yo) return;
+  const n = F.misNumeros(yo.codigo);
+  if(n.loDeSiempre){ cesta = n.loDeSiempre.map(r => ({ prod:r.prod, cant:r.cant, para:'' })); pintar(); }
+});
+
+/* F05 · pedido para varios, y la confirmación integrada al último toque */
+$('#bPedir').addEventListener('click', () => {
+  const yo = F.yo(); if(!yo) return ver('entrada');
+  const permiso = F.puedePedir(yo.codigo);
+  if(!permiso.puede) return alert(permiso.por);
+  abrirConfirmacion();
+});
+
+function abrirConfirmacion(){
+  const total = F.totalDe(cesta);
+  const seg = F.segundosDe(cesta);
+  const cola = F.colaOrdenada().length;
+  const queda = F.quedanSegundosDeRecreo();
+  const esperaEstimada = cola * F.ritmoDespacho() + seg;
+  const alcanza = esperaEstimada <= queda;
+
+  $('#hojitaT').textContent = 'Confirmar el pedido';
+  $('#hojitaC').innerHTML =
+    '<ul class="renglones">'+ cesta.map((r,i) => {
+      const p = F.producto(r.prod) || {nombre:'—', precio:0};
+      return '<li class="renglon"><span class="n">'+r.cant+'×</span>'+
+        '<span class="q">'+esc(p.nombre)+
+        '<input data-para="'+i+'" placeholder="¿para alguien más? su nombre" value="'+esc(r.para)+'" '+
+        'style="margin-top:6px; min-height:38px; font-size:14px">'+
+        '</span><span>'+F.pesos(p.precio*r.cant)+'</span></li>';
+    }).join('') +'</ul>'+
+    '<div class="aviso'+(alcanza?' bueno':' malo')+'" style="margin-top:14px">'+
+      (alcanza
+        ? 'Al ritmo de hoy <b>sí alcanzas</b>: como '+F.minutosDe(esperaEstimada)+' de espera.'
+        : '<b>Hoy no vas a alcanzar.</b> Hay '+cola+' pedidos antes y el recreo ya casi se acaba. '+
+          'Puedes pedirlo de todos modos y te lo guardamos para mañana.')+
+    '</div>'+
+    (F.estado().config.aceptaAnticipados
+      ? '<label style="display:flex; align-items:center; gap:10px; margin-top:12px">'+
+        '<input type="checkbox" id="eAnticipado" style="width:24px; min-height:24px; flex:0 0 auto">'+
+        '<span style="color:var(--hueso); font-weight:600">Lo pido desde el salón, antes del recreo</span></label>'
+      : '')+
+    '<div class="chips" style="margin-top:16px">'+
+      '<button class="btn fuerte" id="bConfirmar" type="button" style="flex:1">'+
+        'Pedir · '+F.pesos(total)+'</button>'+
+      '<button class="btn" id="bCancelarH" type="button">Ahorita no</button>'+
+    '</div>';
+  $('#velo').hidden = false;
+
+  $$('#hojitaC [data-para]').forEach(inp => inp.addEventListener('input', () => {
+    cesta[+inp.dataset.para].para = inp.value;
+  }));
+  $('#bCancelarH').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#bConfirmar').addEventListener('click', () => {
+    const yo = F.yo();
+    try{
+      const anti = $('#eAnticipado');
+      miPedido = F.pedir(yo.codigo, cesta, { anticipado: anti && anti.checked });
+      cesta = [];
+      $('#velo').hidden = true;
+      ver('turno');
+    }catch(err){ alert(err.message); }
+  });
+}
+
+$('#velo').addEventListener('click', (e) => { if(e.target === $('#velo')) $('#velo').hidden = true; });
+
+$('#bEnCamino').addEventListener('click', () => {
+  if(!miPedido) return;
+  F.voyEnCamino(miPedido.id);
+  alert('Listo, ya saben que vas para allá.');
+});
+
+$('#bNoPuedo').addEventListener('click', () => {
+  if(!miPedido) return;
+  if(!confirm('¿Cancelamos el pedido? La cooperativa ya no lo prepara.')) return;
+  F.cancelar(miPedido.id, 'alumno');
+  pintar();
+});
+
+/* F39 · el asistente de presupuesto */
+$('#bDinero').addEventListener('click', () => {
+  const pesos = Math.max(0, parseInt($('#eDinero').value, 10) || 0);
+  if(!pesos) return alert('Dime cuánto traes.');
+  const ops = F.opcionesPara(pesos * 100, 6);
+  $('#opciones').innerHTML = ops.length ? ops.map((o,i) =>
+    '<button class="tarjeta" type="button" data-combo="'+i+'" style="text-align:left; width:100%">'+
+    '<b style="display:block; font-size:15px">'+esc(o.titulo)+'</b>'+
+    '<span style="color:var(--tenue); font-size:14px">'+
+      o.piezas.map(p => esc(p.nombre)).join(' + ')+'</span>'+
+    '<span style="display:block; margin-top:6px; font-weight:800; color:var(--violeta-2)">'+
+      F.pesos(o.total)+ (o.sobra > 0 ? ' · te sobran '+F.pesos(o.sobra) : ' · exacto')+'</span>'+
+    '</button>').join('')
+    : '<p class="sub">Con eso no alcanza para nada de lo que hay hoy. '+
+      'Lo más barato cuesta '+F.pesos(Math.min.apply(null,
+        F.productos(true).map(p=>p.precio).concat([999999])))+'.</p>';
+  $$('#opciones [data-combo]').forEach(b => b.addEventListener('click', () => {
+    const o = ops[+b.dataset.combo];
+    cesta = o.piezas.map(p => ({ prod:p.id, cant:1, para:'' }));
+    pintar();
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }));
+});
+
+/* F42 · sugerencias */
+$('#bSugerir').addEventListener('click', () => {
+  const t = $('#eSugerencia').value.trim();
+  if(!t) return;
+  const yo = F.yo();
+  F.sugerir(t, pantalla, yo ? yo.codigo : null);
+  $('#eSugerencia').value = '';
+  alert('Gracias. Ya quedó anotado.');
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   VIVO · el turno se refresca solo, y la app se puede cerrar
+   ═════════════════════════════════════════════════════════════════════ */
+F.alCambiar(() => { F.cargar(); pintar(); });
+setInterval(() => { if(pantalla === 'turno' || pantalla === 'menu'){ F.cargar(); pintar(); } }, 5000);
+
+/* F11 · el aviso. Si el navegador no lo permite, NO pasa nada: el turno se
+   ve en pantalla igual y la señora sigue gritando números. La app acelera,
+   no reemplaza. */
+let avisado = null;
+setInterval(() => {
+  if(!miPedido) return;
+  const p = F.pedido(miPedido.id);
+  if(p && p.estado === 'listo' && avisado !== p.id){
+    avisado = p.id;
+    try{ if(navigator.vibrate) navigator.vibrate([90,60,90,60,180]); }catch(e){}
+    try{
+      if(window.Notification && Notification.permission === 'granted')
+        new Notification('Fadori', { body:'Tu pedido '+p.folio+' ya está listo' });
+    }catch(e){}
+  }
+}, 3000);
+
+document.addEventListener('click', function pedirPermiso(){
+  try{ if(window.Notification && Notification.permission === 'default') Notification.requestPermission(); }catch(e){}
+  document.removeEventListener('click', pedirPermiso);
+});
+
+arrancar();
+
+/* ══════════════════════════════════════════════════════════════════════
+   PRUEBAS · corren solas al cargar. Si algo se rompe, sale en la consola
+   antes de que lo vea un alumno.
+   ═════════════════════════════════════════════════════════════════════ */
+(function(){
+  let bien = 0, mal = 0;
+  const ok = (q, c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
+  const guardado = JSON.stringify(F.estado());
+
+  const a = F.registrar('Prueba','9Z');
+  ok('el registro pide nombre y grupo y nada más',
+     a.nombre === 'Prueba' && a.grupo === '9Z' && !('correo' in a) && !('apellidos' in a));
+  ok('no se puede pedir sin aceptar las condiciones', !F.puedePedir(a.codigo).puede);
+  F.aceptarTerminos(a.codigo);
+  ok('ya con las condiciones aceptadas sí se puede', F.puedePedir(a.codigo).puede);
+
+  const menu = F.productos(true);
+  const rapido = menu.slice().sort((x,y)=>x.segPrep-y.segPrep)[0];
+  const lento  = menu.slice().sort((x,y)=>y.segPrep-x.segPrep)[0];
+
+  const p1 = F.pedir(a.codigo, [{prod:lento.id, cant:1}]);
+  const p2 = F.pedir(a.codigo, [{prod:rapido.id, cant:1}]);
+  const cola = F.colaOrdenada();
+  ok('la fila atiende primero lo rápido', cola[0].id === p2.id);
+  ok('cada pedido trae su código corto', /^[A-Z0-9]{4}$/.test(p1.folio) && p1.folio !== p2.folio);
+  ok('el turno se numera solo', p2.turno === p1.turno + 1);
+
+  ok('el tope por alumno frena el cuarto pedido', (function(){
+    try{ F.pedir(a.codigo, [{prod:rapido.id, cant:1}]);
+         F.pedir(a.codigo, [{prod:rapido.id, cant:1}]); return false; }
+    catch(e){ return true; }
+  })());
+
+  const l = F.lugarDe(p1.id);
+  ok('el lugar en la fila se calcula', l && l.lugar >= 1 && l.total >= 2);
+  const v = F.veredicto(p1.id);
+  ok('el veredicto dice si alcanzas o no', v && typeof v.alcanza === 'boolean' && v.frase.length > 5);
+
+  F.tomar(p2.id,'prueba'); F.marcarListo(p2.id); F.entregar(p2.id, p2.total);
+  ok('al entregar completo no queda deuda', F.estado().alumnos[a.codigo].deuda === 0);
+  F.tomar(p1.id,'prueba'); F.marcarListo(p1.id); F.entregar(p1.id, 0);
+  ok('pagar de menos deja deuda por la diferencia',
+     F.estado().alumnos[a.codigo].deuda === p1.total);
+  ok('la deuda al límite bloquea', (function(){
+    F.ajustarDeuda(a.codigo, F.estado().config.limiteDeuda, 'prueba');
+    return !F.puedePedir(a.codigo).puede;
+  })());
+  ok('abonar destraba', (function(){ F.abonar(a.codigo, 999999);
+    return F.estado().alumnos[a.codigo].deuda === 0; })());
+
+  const r = F.resumenDelDia(0);
+  ok('el resumen cuenta lo entregado', r.entregados >= 2);
+  ok('el resumen sabe cuántos no alcanzaron', typeof r.noAlcanzaron === 'number');
+  ok('hay CSV de pedidos con encabezado', F.csvDePedidos(0).split('\n')[0].indexOf('folio') === 0);
+
+  const ops = F.opcionesPara(5000, 6);
+  ok('el asistente arma opciones que sí caben',
+     ops.length > 0 && ops.every(o => o.total <= 5000));
+  ok('el asistente no repite la misma combinación',
+     new Set(ops.map(o=>o.llave)).size === ops.length);
+
+  ok('los datos exportan a CSV sin romperse con comas',
+     F.csvDeConteos !== undefined);
+
+  /* dejar el aparato como estaba */
+  try{ localStorage.setItem('fadori_v1', guardado); localStorage.removeItem('fadori_yo'); }catch(e){}
+  F.cargar();
+
+  console.log('%cFadori · '+bien+'/'+(bien+mal)+' pruebas',
+    'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
+})();
+
+})();
+</script>
+</body>
+</html>
