@@ -5,7 +5,7 @@
 | `logo-acc.jpg` | Advanced Critical Care · el original que mandó Carlos | él |
 | `logo-acc.png` | el mismo, **sin fondo** | derivado |
 | `parche-fire-rescue.jpg` | el parche bordado, original | él |
-| `parche-fire-rescue.png` | el mismo, **sin fondo** | derivado |
+| `emblema-fire-rescue.png` | el casco y las llamas, **sin fondo y sin el rótulo** | derivado |
 | `escudo-ems.jpg` | EMS Paramedic · todavía no se usa, guardado para después | él |
 | `qr-instagram.jpg` | el QR del perfil, puesto de base y cambiable | él |
 
@@ -19,21 +19,52 @@ lo que deja el diente de sierra al imprimir.
 Los `.jpg` se conservan **como fuente**: si hay que volver a derivar el recorte, se parte de ellos y
 no de una copia de una copia.
 
-## El recorte del parche
+## Cómo se limpió el parche
 
-El parche trae su propio texto arriba y abajo, y en el pie de la credencial estorba porque la
-tarjeta ya dice *ADVANCED FIRE RESCUE* con su tipografía. Se muestra sólo el casco con las llamas.
+El parche trae su propio rótulo —*ADVANCED CRITICAL CARE* arriba a la izquierda y *FIRE RESCUE*
+abajo— y en el pie de la credencial estorba, porque la tarjeta ya lo dice con su tipografía.
 
-La zona se **midió**, no se estimó: el color vive entre **x 17.8 – 81.4 %** y **y 19.1 – 66.9 %**,
-lo que da un aspecto de **1.8**. Por eso la caja del pie lleva ese mismo aspecto — si se le deja
-holgura vertical, vuelve a asomar el texto.
+**Recortarlo por CSS no servía:** el rótulo de arriba está **al lado** del casco, no encima, así que
+ninguna ventana rectangular lo excluye sin comerse las llamas. Se midió el archivo y se borraron las
+dos franjas del rótulo, y de ahí salió `emblema-fire-rescue.png`, que ya entra completo y se acomoda
+con `background-size: contain` sin un solo número mágico.
+
+Lo que se midió antes de borrar:
+
+| | |
+|---|---|
+| Zona de color (casco y llamas) | x **17.8 – 81.4 %** · y **19.1 – 66.9 %** |
+| Rótulo de arriba | no pasa de x **56 %** ni de y **31 %** |
+| Rótulo de abajo | empieza después de y **67.5 %** |
+| Aspecto del emblema resultante | **1.80** (832 × 463) |
 
 ## La medida de la credencial
 
 De la imagen que mandó Carlos: **1.654** de alto sobre ancho, que da **63.5 × 105 mm**. Se puede
 cambiar desde la pestaña **Credencial**, porque cada imprenta pide lo suyo.
 
-## Pendiente
+## La tipografía
 
-Selector de tipografía. Hoy la credencial usa Arial —la de su diseño original— y **nunca** la
-tipografía de Grupo Mazi. Lo pidió Carlos así, con la opción de cambiarla el día que quiera.
+La credencial arranca en **Arial**, la de su diseño original, y **nunca** hereda la de Grupo Mazi.
+Se elige desde la pestaña **Credencial → Lo que es igual en todas**, y ahí está Mazi como una opción
+más para el día que la quiera.
+
+> Cuidado con esto: la clase `.rotulo` es la de los rótulos de sección de la interfaz, que sí llevan
+> la tipografía de la casa. Reusarla dentro de una tarjeta le cuela la letra de Mazi al diseño de
+> alguien más. Ya pasó una vez.
+
+## Llenar muchas de un jalón
+
+**Pegar una lista** acepta una persona por renglón, con las columnas separadas por **tabulador**
+—que es como pega una hoja de cálculo— o por **|**. Si la primera fila trae los nombres de las
+columnas, se acomodan solas; si no, se toma este orden:
+
+`apellidos | nombres | nivel | empleado | num | acred | sangre | alergias | tel | familiar | inicio | vence | otras`
+
+Las acreditaciones extra separadas por coma se convierten en renglones.
+
+## Cómo salen a la imprenta
+
+**Cuatro por hoja carta**, con marcas de corte. Primero todos los frentes, luego los reversos **en
+espejo por renglón**, para que al voltear la hoja por el lado largo cada reverso caiga sobre su
+frente. Eso es lo que más se equivoca haciéndolo a mano y lo que más papel tira.
