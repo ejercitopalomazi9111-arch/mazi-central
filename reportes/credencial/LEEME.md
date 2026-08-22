@@ -89,3 +89,34 @@ del logo.
 Safari en iPhone se queda con un margen propio que no se puede apagar. Sin encoger la hoja, cada
 página arrastra una **página en blanco detrás**. Por eso todo lo que se imprime —hojas y pliegos de
 credenciales— lleva un `zoom` de **0.86**, ajustable desde **Formato → Al imprimir**.
+
+## Los cuatro detalles que Carlos corrigió mirando la impresa
+
+Ninguno se adivina desde el código. Los cuatro cambian cómo se percibe la tarjeta:
+
+1. **Las bandas rojas son cuñas, no listones.** La de arriba se adelgaza **hacia arriba** y la de
+   abajo **hacia abajo**. De grosor parejo, la división entre el azul y el blanco queda dura; en
+   cuña, suave.
+2. **Abajo es una recta y un triángulo.** El borde superior del azul va plano hasta pasada la mitad
+   y de ahí sube en diagonal a la derecha.
+3. **La marca de agua es la estrella de la vida**, no una estrella cualquiera: seis brazos a 60° y
+   la vara de Asclepio. La vara y la serpiente van **caladas en el color del fondo** — dibujadas del
+   mismo blanco se pierden y parece una flor.
+4. **El electro es rudo, no suave.** Estaba blando porque el SVG se estiraba con
+   `preserveAspectRatio="none"`, y eso deforma el trazo. Ahora la raya es un `div` y el pico va en
+   su propio SVG **con la caja al aspecto exacto de su viewBox** — si la caja es más ancha, el
+   dibujo se centra dentro y deja un hueco visible entre la raya y el pico.
+
+## La tipografía y la estrella
+
+**Condensada por decisión de Carlos:** más delgada y más alargada, que se ve más seria. La pila es
+`Arial Narrow → Helvetica Neue Condensed Bold → Liberation Sans Narrow`, con `font-stretch:condensed`
+de respaldo. En el iPhone entra la de Helvetica. Se puede cambiar desde la pestaña.
+
+**`estrella-vida.png`** sale de la imagen que mandó Carlos. La que él prefería —la del resplandor
+azul— trae encima la marca de agua de un banco de imágenes, así que se tomó la versión limpia y el
+resplandor se hace aquí: la estrella va en blanco y se desvanece en círculo con una máscara radial.
+
+El archivo original venía con **fondo blanco opaco**, no transparente. Sin quitarlo, al aclararlo
+por filtro toda la imagen se vuelve un rectángulo blanco — que fue exactamente lo que pasó en el
+primer intento.
