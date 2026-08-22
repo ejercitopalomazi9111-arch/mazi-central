@@ -85,3 +85,37 @@ botones de la pantalla de entrada, o sea los primeros que toca cualquiera.
 válido que recorren la app completa —cuentas, enfrentamientos, notificación, partido en vivo,
 puntos por minuto visto, tienda por códigos, las tres fases del torneo— tres veces. El reparto ya
 está (`personas.mjs`); falta el motor que los mueva.
+
+---
+
+## 🔵 De la sesión del 1 de agosto
+
+### El traspaso de la cuenta del hijo al hijo
+Hoy un niño chiquito vive **dentro** de la cuenta del papá (`children[]`) y no tiene sesión propia
+— y eso está bien, es lo correcto para un niño de 7. Lo que falta es **el día que crezca**: hoy
+tiene que registrarse aparte y que la liga lo empate a mano con su código.
+
+Debería poder hacerse desde la app: el papá toca "entregarle su cuenta", el chavo se registra, y
+sus estadísticas, su carta y sus cosméticos se van con él. Es la única parte del ciclo de vida de
+un jugador que todavía es manual.
+
+### Rebotes y asistencias
+La carta enseña REB y AST y la mesa **no los captura**. O se anotan, o se quitan de la carta —
+enseñar una casilla que nunca se llena es peor que no enseñarla.
+
+### La herramienta de simulacro, como producto
+Carlos lo dijo con todas sus letras: si se pule, se le puede vender a estudios de videojuegos,
+aeronáuticas, científicos y psicólogos, porque **contratar testers humanos sale carísimo**. Hoy es
+específica de Ligas Mazi en el puente (`app.mjs`) pero el inspector ya es genérico. Lo que falta
+para que sea producto:
+
+- Un archivo de configuración en vez de código para describir roles y recorridos
+- Que el reparto de personas se pueda definir sin tocar `personas.mjs`
+- Un reporte que no dependa de conocer el dominio
+- Y lo más importante: **cerrar el cuarto eslabón** de los abandonos del papá, que quedó abierto
+
+### El cuarto eslabón (abierto)
+El simulacro reporta abandonos en los papás que **no se han podido eliminar**. Ya se cerraron tres
+causas, todas de la prueba y no de la app: el papá se registraba sin hijos vinculados; el registro
+borraba la liga; y dos hermanos de la misma edad salían con el mismo cumpleaños. Queda al menos
+una más sin encontrar. **La app funciona a mano** — verificado con capturas y 40/40 comprobaciones.

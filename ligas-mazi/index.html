@@ -889,6 +889,15 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .fo-mio .ic{width:14px;height:14px;flex:0 0 auto;color:var(--papa)}
 .fo-mio-tx{min-width:0;line-height:1.35}
 /* Hermanos enfrentados: no se entierra en la lista, se dice primero. */
+.vacio-papa{text-align:center;padding:26px 18px;background:var(--panel);
+  border:1px solid rgba(232,177,62,.35);border-radius:16px;margin:6px 0}
+.vacio-papa .ic{width:40px;height:40px;color:var(--papa);opacity:.85}
+.vacio-papa .t{font-family:var(--body);font-weight:800;font-size:18px;color:var(--txt);margin:10px 0 6px}
+.vacio-papa .s{font-size:13.5px;color:var(--muted);line-height:1.5;max-width:300px;margin:0 auto}
+.vacio-papa .s b{color:#f0d9a8}
+.vacio-papa .p{font-size:11.5px;color:var(--dim);margin-top:10px}
+.chip.mios{border-color:var(--papa);color:var(--papa)}
+.chip.mios.on{background:var(--papa);border-color:var(--papa);color:#1a1206}
 .fo-mio .enfrentados{display:inline-block;background:var(--papa);color:#1a1206;
   font-weight:800;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
   border-radius:20px;padding:2px 8px;margin-right:5px}
@@ -1998,7 +2007,15 @@ window.addEventListener('popstate',()=>{ if(navStack.length) render(navStack.pop
 /* ====== La app se adapta al sombrero: nav + modos por rol ====== */
 let currentRole='papa';
 const NAV_BY_ROLE={
-  papa:   [['hub','home','Inicio'],['ligas','trophy','Ligas'],['marcador','live','En vivo'],['carta','card','Carta'],['tienda','bag','Tienda']],
+  /* LA CASA DEL PAPÁ VA EN LA BARRA, NO ESCONDIDA EN "MÁS".
+     Carlos lo cachó y no tiene defensa: 'Mi rol' —que es DONDE SE VINCULA AL
+     HIJO— sólo estaba en el submenú de desbordamiento. O sea que la acción más
+     importante que hace un papá en toda la app, sin la cual nada más funciona,
+     requería descubrir un menú escondido. Un papá normal no lo iba a encontrar
+     nunca, y peor: iba a concluir que la app no sirve para lo que él vino.
+     Se cambió 'Ligas' por 'Mis hij@s'. Ligas sigue en Más, que sí es pantalla
+     de andar curioseando; vincular a tu hijo no lo es. */
+  papa:   [['hub','home','Inicio'],['rol','people','Mis hij@s'],['marcador','live','En vivo'],['carta','card','Carta'],['tienda','bag','Tienda']],
   coach:  [['hub','home','Inicio'],['vestidor','clipboard','Mi equipo'],['marcador','live','En vivo'],['estrategias','pencil','Tácticas'],['tienda','bag','Tienda']],
   liga:   [['hub','home','Inicio'],['liga','gear','Liga'],['marcador','live','En vivo'],['mesa','pencil','Mesa'],['tienda','bag','Tienda']],
   publico:[['hub','home','Inicio'],['marcador','live','En vivo'],['publico','eye','Marcadores'],['ligas','trophy','Ligas'],['tienda','bag','Tienda']],
@@ -3018,7 +3035,19 @@ function buildEnVivoBoard(){
      puesto en la categoría de su hij@ — porque no tiene por qué buscarla. */
   const catsCal=[...new Set(d.calendar.map(m=>{const t=teamById(m.home)||teamById(m.away); return t&&t.categoria;}).filter(Boolean))];
   let catSel=_calCat;
-  if(catSel==null && currentRole==='papa'){          // el papá arranca en la de su hij@
+  /* ═══ "MIS HIJ@S" ES EL FILTRO POR DEFECTO DEL PAPÁ ═════════════════════
+     Esto lo encontré recorriendo la app yo, como mamá de tres: el filtro
+     arrancaba en la categoría del PRIMER hijo, y los otros dos desaparecían.
+     Con Ximena y Diego en Mixta 7-9 y Renata en Varonil 14-15, el partido de
+     Renata —que era ESE MISMO DÍA— simplemente no salía.
+
+     Filtrar por categoría fue el arreglo correcto para un papá de un hijo, y el
+     equivocado para uno de tres. Lo que un papá quiere ver primero no es una
+     categoría: son SUS HIJOS, jueguen donde jueguen. La categoría se queda
+     como filtro, pero deja de ser la entrada. */
+  const tengoHijos = (userData()||{}).children && (userData()||{}).children.length;
+  if(catSel==null && currentRole==='papa' && tengoHijos) catSel='__mios__';
+  if(catSel==null && currentRole==='papa'){          // sin hijos vinculados, la vieja vía
     const u=userData()||{}; const kid=(u.children||[])[0];
     /* Se busca al hij@ por su código de equipo, y si no lo trae, RASTREANDO las
        plantillas. Esto último no es lujo: el `teamCode` sólo queda escrito
@@ -3034,9 +3063,12 @@ function buildEnVivoBoard(){
     if(eqKid&&eqKid.categoria) catSel=eqKid.categoria;
   }
   const catDe=(m)=>{const t=teamById(m.home)||teamById(m.away); return (t&&t.categoria)||'';};
-  const cumple=(m)=>!catSel||catDe(m)===catSel;
+  const cumple=(m)=> !catSel
+    || (catSel==='__mios__' ? misHijosEnPartido(m).length>0 : catDe(m)===catSel);
   if(catsCal.length>1){
     h+='<div class="fo-sec-ttl">Próximos</div><div class="chips" style="margin:-2px 0 8px">'
+      // "Mis hij@s" va primero y es lo que un papá busca al abrir.
+      +(tengoHijos?'<button class="chip mios'+(catSel==='__mios__'?' on':'')+'" onclick="filtrarCalendario(\'__mios__\')">♥ Mis hij@s</button>':'')
       +'<button class="chip'+(catSel?'':' on')+'" onclick="filtrarCalendario(null)">Todas</button>'
       +catsCal.map(c=>'<button class="chip'+(catSel===c?' on':'')+'" onclick="filtrarCalendario(\''+c+'\')">'+(CAT_NOMBRE[c]||c)+'</button>').join('')
       +'</div>';
@@ -4221,9 +4253,22 @@ function buildPapaHome(){
     kids.forEach((k,i)=>{ const sub=(k.minor?('Menor'+(k.age!=null?' · '+k.age+' años':'')):'Mayor')+' · '+(k.team||'Sin equipo aún');
       h+='<div class="match"><div class="crest real" style="width:40px;height:40px;background:var(--jugador)">'+iniOf(k.name||'?')+'</div><div class="vs" onclick="go(\'carta\')" style="cursor:pointer">'+(k.name||'Hij@')+'<small>'+sub+'</small></div>'+(k.minor?'<span class="badge next">MENOR</span>':'<span class="badge">TU HIJ@</span>')+'<button class="le-x" style="margin-left:8px" onclick="unlinkChild('+i+')">×</button></div>'; });
   } else {
-    h+='<div class="stratnote" style="border-left-color:var(--papa)">Aún no has vinculado a tu hij@. Da de alta su cuenta para ver su itinerario y su carta. Su ubicación y calendario solo los ves tú, su coach y la liga.</div>';
+    /* SIN HIJOS VINCULADOS, LA APP NO SIRVE PARA NADA — así que aquí no va una
+       notita gris, va la puerta. Un papá que llega y no sabe qué hacer se va, y
+       con razón: vino a una sola cosa. */
+    h+='<div class="vacio-papa">'
+      +'<svg class="ic"><use href="#ic-people"/></svg>'
+      +'<div class="t">Vincula a tu hij@ para empezar</div>'
+      +'<div class="s">Es lo primero y toma un minuto. Con eso vas a ver <b>en qué partido juega</b>, '
+      +'a qué hora y en qué cancha, su carta y sus estadísticas — y te llegan los avisos el día del juego.</div>'
+      +'<button class="btn block" style="margin-top:14px" onclick="go(\'alta\')">＋ Vincular a mi hij@</button>'
+      +'<div class="p">Sólo tú, su coach y la liga ven su calendario.</div>'
+      +'</div>';
   }
-  h+='<button class="btn ghost sm block" onclick="go(\'alta\')" style="margin-top:8px">＋ Dar de alta / vincular a mi hij@</button>';
+  // El botón de agregar sólo se repite abajo cuando YA hay hij@s: si no hay, la
+  // puerta de arriba ya ES el botón, y dos botones iguales confunden.
+  if(kids.length)
+    h+='<button class="btn ghost sm block" onclick="go(\'alta\')" style="margin-top:8px">＋ Vincular a otr@ hij@</button>';
   const up=d.calendar.filter(m=>!m.done).slice(0,4);
   if(up.length){
     h+='<div class="h-row"><h2 class="disp" style="font-size:18px">Próximos en la liga</h2></div>';
@@ -5811,7 +5856,7 @@ const SUPER_EMAIL='palomazi9111@gmail.com';
    discute. Con esto se ve de un vistazo qué build trae el teléfono.
    SE SUBE A MANO en cada entrega. Si el número no cambió después de publicar,
    el problema es el caché: cerrar la pestaña y volver a abrir. */
-const VERSION='2026.08.01-e';
+const VERSION='2026.08.01-g';
 (function sello(){
   const poner=()=>{ const e=document.getElementById('verSello');
     if(e) e.textContent='v'+VERSION; };
