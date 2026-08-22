@@ -231,14 +231,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
      multiply — si no, sale una caja blanca encima del azul;
    · las bandas de arriba y abajo se recortan con clip-path en vez de
      dibujarse con degradados, que era como se me atravesaban en el texto.  */
-.cred, .cred *{font-family:Arial, Helvetica, "Liberation Sans", sans-serif}
+.cred, .cred *{font-family:var(--cred-fam)}
 .cred{
   --an:63.5mm; --al:105mm;
+  --cred-fam:Arial, Helvetica, "Liberation Sans", sans-serif;
   --navy:#0E2050; --rojo:#C8102E;
   --sup:16.5mm; --inf:16.5mm;
   position:relative; width:var(--an); height:var(--al);
   background:#fff; color:#111; overflow:hidden; border-radius:2.6mm;
-  font-family:Arial, Helvetica, "Liberation Sans", sans-serif;
   box-shadow:0 10px 26px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
   print-color-adjust:exact; -webkit-print-color-adjust:exact;
 }
@@ -303,21 +303,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   display:flex; align-items:center; gap:1.2mm; padding:0 2.4mm;
 }
 .cred .pie .casco{
-  /* El parche mide 1280×944 y trae su propio texto arriba y abajo. Se
-     encuadra por FONDO y no por <img> posicionada: la imagen absoluta se
-     salía de su caja y acababa pisando el rótulo. */
-  /* La caja tiene el MISMO aspecto que la zona de color del parche (1.8), o
-     el hueco de arriba y abajo deja ver el texto que trae la imagen. */
+  /* El emblema ya viene sin el rótulo que traía el parche original, así que
+     aquí no hay recorte que calcular: entra completo y se acomoda solo.
+     Cómo se limpió: reportes/credencial/LEEME.md */
   width:15mm; height:8.4mm; flex:0 0 auto;
-  background-image:url("credencial/parche-fire-rescue.png");
+  background-image:url("credencial/emblema-fire-rescue.png");
   background-repeat:no-repeat;
-  background-size:23.59mm auto;   /* medido: el color vive en x 17.8-81.4 %, y 19.1-66.9 % */
-  background-position:-4.2mm -3.32mm;
+  background-size:contain;
+  background-position:center;
 }
-.cred .pie .marca-fr{
-  line-height:1.06; min-width:0; flex:1 1 auto;
-  font-family:Arial, Helvetica, "Liberation Sans", sans-serif;  /* nunca la de la casa */
-}
+.cred .pie .marca-fr{line-height:1.06; min-width:0; flex:1 1 auto}
 .cred .pie .marca-fr .a{font-size:6pt; font-weight:800; color:#fff; letter-spacing:.01em;
   white-space:nowrap}
 .cred .pie .marca-fr .b{font-size:6pt; font-weight:800; color:#FF3B52; white-space:nowrap}
@@ -683,6 +678,7 @@ El día ...
         border-color:var(--violeta); color:#12061C">Nueva credencial</button>
       <button class="chip" type="button" id="cDuplicar">Duplicar esta</button>
       <button class="chip" type="button" id="cBorrar">Borrar esta</button>
+      <button class="chip" type="button" id="cPegar">Pegar una lista</button>
     </div>
 
     <h2 class="rotulo">Quién es <span class="regla"></span></h2>
@@ -729,6 +725,15 @@ El día ...
       <summary>Lo que es igual en todas · se llena una vez</summary>
       <div class="dentro">
         <div class="rejilla" style="margin-top:10px">
+          <label class="campo"><span>Tipografía</span>
+            <select id="cFuente">
+              <option value='Arial, Helvetica, "Liberation Sans", sans-serif'>Arial · la del diseño original</option>
+              <option value='"Helvetica Neue", Helvetica, Arial, sans-serif'>Helvetica</option>
+              <option value='Verdana, Geneva, sans-serif'>Verdana</option>
+              <option value='"Trebuchet MS", "Segoe UI", sans-serif'>Trebuchet</option>
+              <option value='"Times New Roman", Times, serif'>Times New Roman</option>
+              <option value='"Mazi", Arial, sans-serif'>Mazi · la de la casa</option>
+            </select></label>
           <label class="campo"><span>Ciclo</span><input type="text" id="cCiclo"></label>
           <label class="campo"><span>Red social</span><input type="text" id="cRed"></label>
           <label class="campo"><span>Ancho (mm)</span>
@@ -2145,6 +2150,9 @@ $('#bPasar').addEventListener('click', () => {
 const LLAVE_CRED = 'reportes_mazi_cred_v1';
 const CRED_BASE = {
   ciclo:'2026-2027', red:'@ADVANCED.CRITICAL_CARE', ancho:63.5, alto:105, qr:'credencial/qr-instagram.jpg',
+  /* La credencial NO usa la tipografía de la casa por decisión de Carlos.
+     Se cambia desde la pestaña el día que la quiera. */
+  fuente:'Arial, Helvetica, "Liberation Sans", sans-serif',
   leyenda:'RESPETUOSAMENTE, PEDIMOS A LAS AUTORIDADES CIVILES, MILITARES Y FEDERALES QUE '+
           'OTORGUEN TODAS LAS FACILIDADES A PORTADOR DE LA MISMA PARA EL BIEN DESEMPEÑO DE SUS FUNCIONES.',
 };
@@ -2201,7 +2209,8 @@ function credFrente(c){
   if(c.acred)    filas.push(['estrella','ACREDITADO COMO:<br><b>'+esc(c.acred)+'</b>']);
   otras.forEach((o,k) => filas.push([glifos[k % glifos.length], '<b>'+esc(o)+'</b>']));
 
-  return '<div class="cred" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm">'+
+  return '<div class="cred" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm; --cred-fam:'+
+      (b.fuente || CRED_BASE.fuente).replace(/"/g,'&quot;')+'">'+
     '<div class="panal"></div>'+
     '<div class="raya-sup"></div><div class="banda-sup"></div>'+
     '<div class="raya-inf"></div><div class="banda-inf"></div>'+
@@ -2242,7 +2251,8 @@ function credReverso(c){
     ['reloj','FECHA DE VENCIMIENTO', c.vence],
   ].filter(x => x[2]);
 
-  return '<div class="cred reverso" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm">'+
+  return '<div class="cred reverso" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm; --cred-fam:'+
+      (b.fuente || CRED_BASE.fuente).replace(/"/g,'&quot;')+'">'+
     '<div class="panal"></div><div class="ranura"></div>'+
     '<div class="raya-inf"></div><div class="banda-inf"></div>'+
     '<div class="interior">'+
@@ -2271,7 +2281,7 @@ const CAMPOS_CRED = [['#cApellidos','apellidos'],['#cNombres','nombres'],['#cNiv
   ['#cEmpleado','empleado'],['#cNum','num'],['#cAcred','acred'],['#cOtras','otras'],
   ['#cSangre','sangre'],['#cAlergias','alergias'],['#cTel','tel'],['#cFamiliar','familiar'],
   ['#cInicio','inicio'],['#cVence','vence']];
-const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda']];
+const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda'],['#cFuente','fuente']];
 
 function pintarCred(){
   const c = cAct(), b = CRED.base;
@@ -2335,6 +2345,90 @@ $('#cQRIn').addEventListener('change', async e => {
   try{ CRED.base.qr = await achicar(f, 520); guardarCred(); pintarCred(); }
   catch(err){ alert('Ese código no se pudo leer.'); }
   e.target.value = '';
+});
+
+/* ── llenar muchas de un jalón ──
+   "Estoy llenando muchas credenciales": una por una son quince campos cada
+   vez. Se pega la lista de una hoja de cálculo o de un mensaje y salen todas.
+   Se acepta tabulador (que es como pega Excel y Sheets) o barra vertical. */
+const COLUMNAS = [
+  ['apellidos', /apellid/i],  ['nombres', /nombre/i],   ['nivel', /nivel|puesto|cargo/i],
+  ['empleado', /^emplead/i],  ['num', /n[uú]m|no\.?\s*de\s*emplead|clave|matr[ií]cula/i],
+  ['acred', /acredit/i],      ['sangre', /sangre|tipo\s*de\s*s/i],
+  ['alergias', /alergi/i],    ['tel', /tel|contacto|celular/i],
+  ['familiar', /familiar|pariente/i],
+  ['inicio', /inicio|alta|ingres/i], ['vence', /vence|vencim|expir|caduc/i],
+  ['otras', /otras|acreditaciones|adicional/i],
+];
+const ORDEN_POR_OMISION = ['apellidos','nombres','nivel','empleado','num','acred',
+  'sangre','alergias','tel','familiar','inicio','vence','otras'];
+
+function leerLista(texto){
+  const lineas = String(texto||'').replace(/\r/g,'').split('\n')
+    .map(x => x.trim()).filter(Boolean);
+  if(!lineas.length) return [];
+  const parte = (l) => (l.indexOf('\t') >= 0 ? l.split('\t') : l.split('|')).map(x => x.trim());
+
+  /* ¿la primera fila son los nombres de las columnas? */
+  const cab = parte(lineas[0]);
+  let orden = null;
+  const pinta = cab.filter(c => COLUMNAS.some(([,re]) => re.test(c))).length;
+  if(pinta >= 2){
+    orden = cab.map(c => {
+      const m = COLUMNAS.find(([,re]) => re.test(c));
+      return m ? m[0] : null;
+    });
+    lineas.shift();
+  }else{
+    orden = ORDEN_POR_OMISION;
+  }
+
+  return lineas.map(l => {
+    const celdas = parte(l);
+    const g = credNueva();
+    orden.forEach((campo, k) => {
+      if(!campo) return;
+      const v = (celdas[k] || '').trim();
+      if(v) g[campo] = (campo === 'otras') ? v.replace(/\s*[;,/]\s*/g, '\n') : v;
+    });
+    return g;
+  }).filter(g => g.apellidos || g.nombres || g.num);
+}
+
+$('#cPegar').addEventListener('click', () => {
+  abrirHojita('<h3>Pegar una lista</h3>'+
+    '<p class="sub">Una persona por renglón. Las columnas separadas por <b>tabulador</b> '+
+    '—como pega una hoja de cálculo— o por <b>|</b>. Si la primera fila trae los nombres de '+
+    'las columnas, se acomodan solas; si no, se toma este orden:</p>'+
+    '<p class="aviso" style="margin:0 0 12px"><code>'+ORDEN_POR_OMISION.join(' | ')+'</code></p>'+
+    '<textarea id="hLista" style="min-height:190px" placeholder="GUERRERO LESCALE | MIGUEL ANGEL | '+
+      'TÉCNICO NIVEL AVANZADO | PP1 | ACC-1127 | BOMBERO FF3 | A+ | NINGUNA | +52 55 4488 1587 | '+
+      '&quot;MAMÁ&quot; LORENA LESCALE | 22/AGOSTO/2026 | 31 DE DICIEMBRE DEL 2027"></textarea>'+
+    '<div class="chips" style="margin-top:12px">'+
+      '<button class="chip" type="button" id="hVer">Ver qué entiende</button>'+
+      '<button class="chip" type="button" id="hMeter" style="background:var(--violeta);'+
+      'border-color:var(--violeta); color:#12061C">Crearlas</button>'+
+      '<button class="chip" type="button" data-cerrar>Cancelar</button></div>'+
+    '<p class="aviso" id="hPrevia"></p>');
+  const previa = () => {
+    const g = leerLista($('#hLista').value);
+    $('#hPrevia').innerHTML = g.length
+      ? '<b>'+g.length+'</b> credencial(es): '+
+        g.slice(0,6).map(x => esc(((x.apellidos||'')+' '+(x.nombres||'')).trim() || x.num)).join(' · ')+
+        (g.length > 6 ? ' …' : '')
+      : 'Todavía no se entiende nada. Revisa que haya tabulador o <b>|</b> entre las columnas.';
+  };
+  $('#hLista').addEventListener('input', previa);
+  $('#hVer').addEventListener('click', previa);
+  $('#hMeter').addEventListener('click', () => {
+    const g = leerLista($('#hLista').value);
+    if(!g.length){ previa(); return; }
+    const vacia = CRED.gente.length === 1 && !CRED.gente[0].apellidos && !CRED.gente[0].nombres;
+    if(vacia) CRED.gente = [];
+    CRED.gente = CRED.gente.concat(g);
+    credActiva = CRED.gente.length - g.length;
+    guardarCred(); cerrarHojita(); pintarCred();
+  });
 });
 
 /* ── a la imprenta: cuatro por hoja, con marcas de corte ──
@@ -2912,7 +3006,23 @@ repintar();
        número de empleado, que es lo que sí sale de los dos lados */
     CRED.gente[0].num='AAA'; CRED.gente[1].num='BBB'; CRED.gente[2].num='CCC';
     const h = pliegosDe(CRED.gente);
-    ok('la credencial mide lo que se midió del original',
+    (function(){
+    const conCab = leerLista('Apellidos\tNombres\tNo. de empleado\nGUZMAN\tCARLOS\tACC-1\nRUIZ\tANA\tACC-2');
+    ok('la lista con encabezado se acomoda sola',
+       conCab.length === 2 && conCab[0].apellidos === 'GUZMAN' && conCab[1].num === 'ACC-2');
+    const sinCab = leerLista('GUZMAN | CARLOS | TÉCNICO | PP1 | ACC-1');
+    ok('sin encabezado toma el orden por omisión',
+       sinCab.length === 1 && sinCab[0].nivel === 'TÉCNICO' && sinCab[0].num === 'ACC-1');
+    ok('las acreditaciones separadas por coma quedan en renglones',
+       leerLista('GUZMAN|CARLOS|N|E|1|A|O+|-|-|-|-|-|K-9, TASK FORCE')[0].otras === 'K-9\nTASK FORCE');
+    ok('los renglones vacíos no crean credenciales', leerLista('\n\n   \n').length === 0);
+    ok('acepta tabulador, que es como pega una hoja de cálculo',
+       leerLista('GUZMAN\tCARLOS')[0].nombres === 'CARLOS');
+  })();
+  ok('arranca con la tipografía de su diseño, no con la nuestra',
+     /Arial/.test(CRED_BASE.fuente) && !/Mazi/.test(CRED_BASE.fuente));
+  ok('la tipografía se puede cambiar', credFrente(credNueva()).indexOf('--cred-fam:') > 0);
+  ok('la credencial mide lo que se midió del original',
        credFrente(CRED.gente[0]).indexOf('--an:63.5mm; --al:105mm') > 0);
     ok('tres credenciales caben en un pliego', (h.match(/class="pliego"/g)||[]).length === 2);
     const vuelta = h.split('class="pliego"')[2];
