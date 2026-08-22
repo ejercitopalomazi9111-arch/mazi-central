@@ -1,0 +1,2872 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reportes · Instituto Rembrandt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100A18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Reportes">
+<meta name="description" content="Redactor de reportes con el formato institucional del Instituto Rembrandt. Escribe o pega el texto y se acomoda solo en páginas listas para PDF.">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../icon-192.png">
+
+<!--
+  REPORTES · herramienta de Carlos para sus dos cargos.
+  ──────────────────────────────────────────────────────────────────────────
+  Jefe de grupo del 3.1 y candidato a la presidencia de la sociedad de alumnos.
+  Escribe ~200 reportes a la semana; el cuello de botella es acomodarlos, no
+  redactarlos.
+
+  QUÉ HACE: se escribe (o se pega de una IA) en un marcado sencillo, y el texto
+  se reparte solo en hojas tamaño carta con el membrete real de la escuela,
+  numeradas y listas para imprimir o guardar como PDF.
+
+  EL FORMATO ES REAL, no una imitación: los dos membretes salieron del .docx
+  institucional que mandó Carlos (formato/LEEME.md dice cómo). Página carta,
+  márgenes 2.5 cm arriba y abajo, 3 cm a los lados, membrete a sangre.
+
+  LO QUE SE MEJORÓ ENCIMA, que era el encargo:
+   · bloque de título con folio, fecha y destinatario, que el formato no traía
+   · jerarquía tipográfica de verdad y tablas legibles
+   · numeración "Página X de Y" y firma que no se parte entre hojas
+   · evidencias fotográficas numeradas automáticamente
+   · MARCA DE AGUA con la paloma de Grupo Mazi, y un SELLO DE VERIFICACIÓN
+     calculado del contenido: si alguien altera una letra, el sello ya no
+     coincide y se comprueba en la pestaña Verificar.
+
+  NADA EXTERNO: sin CDN, sin librerías, sin servidor. El PDF lo hace el propio
+  navegador al imprimir, que además es lo que mejor respeta el membrete.
+-->
+
+<style>
+:root{
+  --vacio:#100A18; --superficie:#1E1428; --superficie-2:#271B34; --linea:#3A2A4C;
+  --hueso:#E9E4E4; --tenue:#9A8FA8; --violeta:#AC27FF; --violeta-suave:#C77BFF;
+  --mazi:"Mazi", system-ui, sans-serif;
+  --ui:"Segoe UI", system-ui, -apple-system, sans-serif;
+  /* institucionales, medidos del membrete original */
+  --azul:#002060; --azul-vivo:#1800AD; --rojo:#C00000;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0; padding:0}
+body{
+  background:
+    radial-gradient(120% 70% at 50% -12%, #2E1B45 0%, #1A1028 46%, var(--vacio) 78%),
+    var(--vacio);
+  background-attachment:fixed;
+  color:var(--hueso); font-family:var(--ui); line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+@font-face{font-family:"Mazi"; src:url("../sitio/fuente/mazi.woff2") format("woff2"); font-display:swap}
+
+/* ───────── barra superior ───────── */
+.barra{
+  position:sticky; top:0; z-index:40;
+  background:rgba(16,10,24,.82); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--linea);
+  padding:max(8px,env(safe-area-inset-top)) 12px 0;
+}
+.barra-fila{display:flex; align-items:center; gap:10px; min-height:44px}
+.marca{font-family:var(--mazi); font-size:19px; letter-spacing:.01em; color:var(--hueso);
+  text-decoration:none; display:flex; align-items:center; gap:8px; white-space:nowrap}
+.marca b{color:var(--violeta); font-weight:400}
+.crece{flex:1}
+.btn{
+  appearance:none; border:1px solid var(--linea); background:var(--superficie);
+  color:var(--hueso); font:inherit; font-size:14px; font-weight:600;
+  min-height:44px; padding:0 14px; border-radius:11px; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  transition:border-color .16s, background .16s, transform .08s;
+}
+.btn:hover{border-color:var(--violeta); background:var(--superficie-2)}
+.btn:active{transform:translateY(1px)}
+.btn.fuerte{background:var(--violeta); border-color:var(--violeta); color:#12061C}
+.btn.fuerte:hover{background:var(--violeta-suave); border-color:var(--violeta-suave)}
+.btn.chico{min-height:36px; padding:0 11px; font-size:13px; border-radius:9px}
+.btn[disabled]{opacity:.4; pointer-events:none}
+
+.pestanas{display:flex; gap:2px; margin-top:8px; overflow-x:auto; scrollbar-width:none}
+.pestanas::-webkit-scrollbar{display:none}
+.pestana{
+  appearance:none; border:0; background:transparent; color:var(--tenue);
+  font:inherit; font-size:14px; font-weight:600; padding:10px 14px 11px;
+  border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; min-height:44px;
+}
+.pestana[aria-selected="true"]{color:var(--hueso); border-bottom-color:var(--violeta)}
+
+/* ───────── cuerpo ───────── */
+.lienzo{max-width:1480px; margin:0 auto; padding:16px 14px 90px}
+.dos{display:grid; gap:16px; grid-template-columns:1fr}
+@media(min-width:1080px){
+  .dos.partido{grid-template-columns:minmax(380px,44%) 1fr; align-items:start}
+  .dos.partido>#panel-ver{position:sticky; top:118px}
+}
+.panel{background:var(--superficie); border:1px solid var(--linea); border-radius:16px; padding:16px;
+  min-width:0}   /* sin esto la columna crece hasta el ancho de la hoja y no se puede encoger */
+.panel.limpio{background:transparent; border:0; padding:0}
+.rotulo{
+  display:flex; align-items:baseline; gap:10px; margin:0 0 12px;
+  font-family:var(--mazi); font-weight:400; font-size:15px; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--hueso);
+}
+.rotulo .regla{flex:1; height:1px; background:var(--linea)}
+.rotulo small{font-family:var(--ui); font-size:12px; letter-spacing:0; text-transform:none; color:var(--tenue)}
+
+label.campo{display:block; margin:0 0 12px}
+label.campo>span{display:block; font-size:12.5px; font-weight:600; color:var(--tenue); margin-bottom:5px; letter-spacing:.01em}
+input[type=text], input[type=date], input[type=number], select, textarea{
+  width:100%; background:var(--vacio); color:var(--hueso);
+  border:1px solid var(--linea); border-radius:10px;
+  font:inherit; font-size:16px; padding:11px 12px; min-height:44px;
+}
+textarea{min-height:340px; resize:vertical; line-height:1.65; font-size:16px;
+  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outline-offset:1px; border-color:transparent}
+.rejilla{display:grid; gap:0 12px; grid-template-columns:1fr 1fr}
+@media(max-width:520px){.rejilla{grid-template-columns:1fr}}
+
+.chips{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px}
+.area{display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-bottom:9px}
+.area-n{
+  width:100%; font-size:11.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--tenue); margin-bottom:1px;
+}
+.chip{
+  appearance:none; border:1px solid var(--linea); background:var(--vacio); color:var(--tenue);
+  font:inherit; font-size:13px; font-weight:600; padding:9px 12px; border-radius:999px;
+  cursor:pointer; min-height:40px;
+}
+.chip[aria-pressed="true"]{background:var(--violeta); border-color:var(--violeta); color:#12061C}
+
+.ayuda{border:1px solid var(--linea); border-radius:12px; overflow:hidden; margin-top:12px}
+.ayuda summary{cursor:pointer; padding:12px 14px; font-size:13.5px; font-weight:600; color:var(--tenue); min-height:44px; display:flex; align-items:center}
+.ayuda summary::marker{color:var(--violeta)}
+.ayuda .dentro{padding:0 14px 14px; font-size:13.5px; color:var(--tenue)}
+.ayuda code{background:var(--vacio); border:1px solid var(--linea); border-radius:5px; padding:1px 5px;
+  font-size:12.5px; color:var(--violeta-suave)}
+.ayuda table{width:100%; border-collapse:collapse; margin-top:6px}
+.ayuda td{padding:6px 4px; border-bottom:1px solid var(--linea); vertical-align:top}
+.ayuda td:first-child{white-space:nowrap; width:1%; padding-right:14px}
+
+/* evidencias */
+.evidencias{display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); margin-top:10px}
+.evi{background:var(--vacio); border:1px solid var(--linea); border-radius:11px; overflow:hidden}
+.evi img{width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#000}
+.evi .pie{padding:8px}
+.evi .pie input{font-size:13px; min-height:38px; padding:7px 9px}
+.evi .fila{display:flex; gap:6px; align-items:center; margin-top:6px}
+.evi .marca-evi{font-size:11px; color:var(--violeta-suave); font-weight:700; letter-spacing:.03em}
+.vacio-nota{color:var(--tenue); font-size:13.5px; text-align:center; padding:22px 10px;
+  border:1px dashed var(--linea); border-radius:12px}
+
+/* registro de incidencias */
+.alumnos{display:grid; gap:7px; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); margin-bottom:14px}
+.alumno{
+  appearance:none; border:1px solid var(--linea); background:var(--vacio); color:var(--hueso);
+  font:inherit; font-size:13.5px; font-weight:600; padding:10px 8px; border-radius:11px;
+  cursor:pointer; min-height:56px; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:3px; text-align:center; line-height:1.25;
+}
+.alumno:hover{border-color:var(--violeta)}
+.alumno .marcas{font-size:11px; font-weight:700; letter-spacing:.02em}
+.alumno[data-nivel="0"] .marcas{color:var(--tenue)}
+.alumno[data-nivel="1"]{border-color:#C9A227} .alumno[data-nivel="1"] .marcas{color:#E8C34A}
+.alumno[data-nivel="2"]{border-color:#B3392F} .alumno[data-nivel="2"] .marcas{color:#FF7A7A}
+
+.entradas{display:flex; flex-direction:column; gap:7px}
+.entrada{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--vacio);
+  border:1px solid var(--linea); border-radius:11px; min-height:52px; font-size:14px;
+}
+.entrada .e-q{font-weight:650; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.entrada .e-t{color:var(--tenue); font-size:13px; flex:1; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.entrada .e-h{color:var(--violeta-suave); font-size:12.5px; font-variant-numeric:tabular-nums}
+
+.hojita{
+  position:fixed; inset:auto 0 0 0; z-index:60; background:var(--superficie);
+  border-top:1px solid var(--linea); border-radius:18px 18px 0 0;
+  padding:16px 14px calc(16px + env(safe-area-inset-bottom));
+  max-height:82vh; overflow:auto; box-shadow:0 -18px 50px rgba(0,0,0,.55);
+}
+.hojita[hidden]{display:none}
+.velo{position:fixed; inset:0; z-index:59; background:rgba(8,4,14,.62)}
+.velo[hidden]{display:none}
+.hojita h3{margin:0 0 4px; font-size:17px}
+.hojita .sub{margin:0 0 14px; color:var(--tenue); font-size:13.5px}
+
+/* lista de reportes guardados */
+.guardados{display:flex; flex-direction:column; gap:8px}
+.guardado{display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--vacio);
+  border:1px solid var(--linea); border-radius:11px; text-align:left; cursor:pointer;
+  font:inherit; color:var(--hueso); width:100%; min-height:56px}
+.guardado:hover{border-color:var(--violeta)}
+.guardado .g-t{flex:1; min-width:0}
+.guardado .g-n{font-weight:650; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.guardado .g-f{font-size:12px; color:var(--tenue)}
+
+.aviso{font-size:13px; color:var(--tenue); margin:10px 0 0}
+.aviso b{color:var(--hueso)}
+.ok{color:#5BD98A} .mal{color:#FF7A7A}
+
+/* ───────── zona de hojas ───────── */
+.tira-vista{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+.contador{font-size:13px; color:var(--tenue); font-variant-numeric:tabular-nums}
+.escenario{
+  background:#0B0710; border:1px solid var(--linea); border-radius:16px;
+  padding:18px 0; overflow:auto; -webkit-overflow-scrolling:touch;
+}
+#marco{margin:0 auto}
+.pila{transform-origin:top left; width:215.9mm}
+
+/* ═════════ LA CREDENCIAL · gafete vertical, medido del original ═════════
+   La proporción salió de MEDIR la imagen que mandó Carlos: 1.654 de alto
+   sobre ancho, que da 63.5 × 105 mm. Es ajustable porque cada imprenta pide
+   lo suyo, y adivinar el tamaño de un gafete se paga en papel tirado.
+
+   Dos cosas que sólo se ven imprimiendo y por eso están escritas aquí:
+   · los logos son JPG con fondo blanco, así que van con mix-blend-mode
+     multiply — si no, sale una caja blanca encima del azul;
+   · las bandas de arriba y abajo se recortan con clip-path en vez de
+     dibujarse con degradados, que era como se me atravesaban en el texto.  */
+.cred, .cred *{font-family:Arial, Helvetica, "Liberation Sans", sans-serif}
+.cred{
+  --an:63.5mm; --al:105mm;
+  --navy:#0E2050; --rojo:#C8102E;
+  --sup:16.5mm; --inf:16.5mm;
+  position:relative; width:var(--an); height:var(--al);
+  background:#fff; color:#111; overflow:hidden; border-radius:2.6mm;
+  font-family:Arial, Helvetica, "Liberation Sans", sans-serif;
+  box-shadow:0 10px 26px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.cred .panal{
+  position:absolute; inset:0; opacity:.32;
+  background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='24' height='28' viewBox='0 0 24 28'>\
+<path d='M12 1 L22 6.5 L22 17.5 L12 23 L2 17.5 L2 6.5 Z' fill='none' stroke='%23CBD2DE' stroke-width='1'/>\
+</svg>");
+  background-size:4.2mm 4.9mm;
+}
+.cred .banda-sup, .cred .banda-inf, .cred .raya-sup, .cred .raya-inf{
+  position:absolute; left:0; width:100%;
+}
+.cred .banda-sup{top:0; height:var(--sup); background:var(--navy);
+  clip-path:polygon(0 0, 100% 0, 100% 46%, 0 100%)}
+.cred .raya-sup{top:0; height:calc(var(--sup) + 4mm); background:var(--rojo);
+  clip-path:polygon(0 100%, 100% 46%, 100% 62%, 0 100%)}
+.cred .banda-inf{bottom:0; height:var(--inf); background:var(--navy);
+  clip-path:polygon(0 100%, 100% 100%, 100% 0, 0 54%)}
+.cred .raya-inf{bottom:0; height:calc(var(--inf) + 4mm); background:var(--rojo);
+  clip-path:polygon(0 44%, 100% 0, 100% 14%, 0 58%)}
+.cred.reverso .banda-sup, .cred.reverso .raya-sup{display:none}
+
+.cred .ranura{
+  position:absolute; top:3mm; left:50%; transform:translateX(-50%); z-index:4;
+  width:16mm; height:2.4mm; border-radius:1.2mm;
+  background:#F2F4F8; box-shadow:inset 0 0 0 .26mm #AEB6C6;
+}
+.cred .interior{
+  position:absolute; left:0; right:0; top:var(--sup); bottom:var(--inf);
+  padding:2.4mm 4mm 1.6mm; z-index:2; display:flex; flex-direction:column; min-height:0;
+}
+.cred .logo{
+  width:88%; max-height:8.6mm; object-fit:contain; display:block; margin:0 auto 1.8mm;
+}
+
+.cred .persona{display:flex; gap:2.4mm; align-items:flex-start; margin-bottom:1.8mm}
+.cred .retrato{
+  width:21mm; height:25mm; flex:0 0 auto; border:.45mm solid var(--navy);
+  border-radius:1.2mm; overflow:hidden; background:#DFE3EB; display:grid; place-items:center;
+}
+.cred .retrato img{width:100%; height:100%; object-fit:cover; display:block}
+.cred .retrato .silueta{width:58%; height:auto; fill:#B6BCC9}
+.cred .quien{flex:1; min-width:0}
+.cred .apellidos{font-size:9pt; font-weight:800; line-height:1.04; color:var(--navy);
+  letter-spacing:-.015em; word-break:break-word}
+.cred .nombres{font-size:7pt; font-weight:700; color:var(--navy); line-height:1.1; margin-top:.5mm}
+.cred .nivel{
+  display:block; margin-top:1.4mm; padding:.9mm 1.8mm; border-radius:.8mm; text-align:center;
+  background:var(--rojo); color:#fff; font-size:5.2pt; font-weight:800; letter-spacing:.02em;
+  line-height:1.15;
+}
+.cred .campos{list-style:none; margin:0; padding:0; display:flex; flex-direction:column;
+  gap:1.15mm; flex:1; min-height:0; overflow:hidden; justify-content:flex-start}
+.cred .campos li{display:flex; gap:1.6mm; align-items:flex-start; font-size:5.5pt;
+  font-weight:700; color:var(--navy); line-height:1.22}
+.cred .campos svg{width:2.9mm; height:2.9mm; flex:0 0 auto; fill:var(--rojo); margin-top:.15mm}
+
+.cred .pie{
+  position:absolute; left:0; right:0; bottom:0; height:var(--inf); z-index:3;
+  display:flex; align-items:center; gap:1.2mm; padding:0 2.4mm;
+}
+.cred .pie .casco{
+  /* El parche mide 1280×944 y trae su propio texto arriba y abajo. Se
+     encuadra por FONDO y no por <img> posicionada: la imagen absoluta se
+     salía de su caja y acababa pisando el rótulo. */
+  /* La caja tiene el MISMO aspecto que la zona de color del parche (1.8), o
+     el hueco de arriba y abajo deja ver el texto que trae la imagen. */
+  width:15mm; height:8.4mm; flex:0 0 auto;
+  background-image:url("credencial/parche-fire-rescue.png");
+  background-repeat:no-repeat;
+  background-size:23.59mm auto;   /* medido: el color vive en x 17.8-81.4 %, y 19.1-66.9 % */
+  background-position:-4.2mm -3.32mm;
+}
+.cred .pie .marca-fr{
+  line-height:1.06; min-width:0; flex:1 1 auto;
+  font-family:Arial, Helvetica, "Liberation Sans", sans-serif;  /* nunca la de la casa */
+}
+.cred .pie .marca-fr .a{font-size:6pt; font-weight:800; color:#fff; letter-spacing:.01em;
+  white-space:nowrap}
+.cred .pie .marca-fr .b{font-size:6pt; font-weight:800; color:#FF3B52; white-space:nowrap}
+.cred .pie .ciclo{
+  margin-left:auto; flex:0 0 auto; border:.28mm solid rgba(255,255,255,.5); border-radius:1.4mm;
+  padding:1mm 1.4mm; color:#fff; font-size:4.7pt; font-weight:700; line-height:1.2;
+  display:flex; gap:1.1mm; align-items:center;
+}
+.cred .pie .ciclo svg{width:2.9mm; height:2.9mm; fill:#fff; flex:0 0 auto}
+
+/* ── el reverso ── */
+.cred.reverso{--sup:8mm; --inf:34mm}
+.cred.reverso .interior{padding:2mm 3.4mm 1.4mm}
+.cred .tabla{border:.26mm solid #C3C9D8; border-radius:1.4mm; overflow:hidden}
+.cred .tabla .ren{
+  display:grid; grid-template-columns:4.2mm 1fr 1.02fr; gap:1.3mm; align-items:center;
+  padding:1.15mm 1.6mm; border-bottom:.2mm solid #DDE2EC;
+}
+.cred .tabla .ren:last-child{border-bottom:0}
+.cred .tabla svg{width:3.1mm; height:3.1mm; fill:var(--rojo)}
+.cred .tabla .et{font-size:4.6pt; font-weight:800; color:var(--navy); letter-spacing:.015em; line-height:1.12}
+.cred .tabla .va{font-size:5pt; font-weight:700; color:#16161E; line-height:1.12; word-break:break-word}
+.cred .latido{width:100%; height:3.2mm; margin-top:1.4mm; display:block; flex:0 0 auto}
+.cred .bloque-inf{
+  position:absolute; left:0; right:0; bottom:0; height:var(--inf); z-index:3;
+  background:var(--navy); color:#fff; padding:2.6mm 3mm 0;
+  display:flex; flex-direction:column;
+}
+.cred .bloque-inf .estrella{position:absolute; right:25mm; top:3mm; width:14mm; opacity:.14; fill:#fff}
+.cred .bloque-inf .fila{display:flex; gap:2.2mm; align-items:flex-start; flex:1; min-height:0}
+.cred .bloque-inf .leyenda{font-size:4.4pt; line-height:1.3; font-weight:700; flex:1; min-width:0}
+.cred .bloque-inf .qr{
+  width:18mm; height:18mm; background:#fff; border-radius:.9mm; padding:.8mm; flex:0 0 auto;
+  display:grid; place-items:center; overflow:hidden;
+}
+.cred .bloque-inf .qr img{width:100%; height:100%; object-fit:contain}
+.cred .bloque-inf .qr .falta{font-size:4pt; color:#8A8A96; text-align:center; font-weight:700}
+.cred .bloque-inf .arroba{font-size:4pt; font-weight:800; text-align:right; padding:.6mm 0 0}
+.cred .bloque-inf .red{
+  margin:1.6mm -3mm 0; background:var(--rojo); padding:1.2mm 3mm;
+  display:flex; align-items:center; gap:1.5mm; font-size:5.6pt; font-weight:800;
+}
+.cred .bloque-inf .red svg{width:2.9mm; height:2.9mm; fill:#fff; flex:0 0 auto}
+
+/* la mesa donde se ven las tarjetas */
+.mesa{display:flex; flex-wrap:wrap; gap:16px; justify-content:center; padding:18px 10px;
+  background:#0B0710; border:1px solid var(--linea); border-radius:16px}
+.pliego{
+  width:215.9mm; height:279.4mm; background:#fff; margin:0 auto 18px; position:relative;
+  display:grid; grid-template-columns:repeat(2, 1fr); grid-template-rows:repeat(2, 1fr);
+  place-items:center; padding:9mm; box-shadow:0 18px 46px rgba(0,0,0,.55);
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.pliego .marca-corte{position:absolute; background:#B9BFCB}
+
+/* ═════════ LA HOJA · tamaño carta real, en milímetros ═════════
+   Todo lo de aquí abajo es el documento impreso. Se mide en mm y pt a
+   propósito: es lo único que hace que lo que se ve en pantalla sea
+   exactamente lo que sale en el PDF. */
+.hoja{
+  --lado:30mm;          /* margen izquierdo y derecho del formato oficial */
+  --tope:34mm;          /* dónde empieza el texto, bajo el membrete */
+  --fondo:42mm;         /* espacio reservado abajo para folio y membrete */
+  --cuerpo-fam:Arial, Helvetica, "Liberation Sans", sans-serif;
+  --cuerpo-pt:11pt;
+  --interlineado:1.5;
+
+  position:relative; width:215.9mm; height:279.4mm; margin:0 auto 18px;
+  background:#fff; color:#111; overflow:hidden;
+  box-shadow:0 18px 46px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+  font-family:var(--cuerpo-fam); font-size:var(--cuerpo-pt); line-height:var(--interlineado);
+  print-color-adjust:exact; -webkit-print-color-adjust:exact;
+}
+.hoja .membrete-sup{position:absolute; top:0; left:0; width:100%; display:block}
+.hoja .membrete-inf{position:absolute; bottom:0; left:0; width:100%; display:block}
+
+/* marca de agua — la paloma de Grupo Mazi */
+.hoja .agua{
+  position:absolute; inset:0; display:grid; place-items:center;
+  pointer-events:none; z-index:0;
+}
+.hoja .agua svg{width:118mm; height:auto; transform:rotate(-21deg); opacity:.055}
+.hoja .agua .letras{
+  position:absolute; font-family:var(--ui); font-weight:800; letter-spacing:.32em;
+  font-size:8.5pt; color:#000; opacity:.055; transform:rotate(-21deg) translateY(38mm);
+  white-space:nowrap;
+}
+
+.hoja .zona{
+  position:absolute; z-index:1;
+  left:var(--lado); right:var(--lado); top:var(--tope);
+  height:calc(279.4mm - var(--tope) - var(--fondo));
+  overflow:hidden;
+}
+.hoja .folio-pie{
+  position:absolute; z-index:2; left:var(--lado); right:var(--lado);
+  bottom:calc(var(--fondo) - 7mm);
+  display:flex; align-items:flex-end; justify-content:space-between; gap:10mm;
+  font-family:var(--ui); font-size:7.6pt; color:#5A5A66; line-height:1.35;
+}
+.hoja .folio-pie .sello{text-align:right; white-space:nowrap}
+.hoja .folio-pie .sello b{color:var(--azul); letter-spacing:.06em; font-size:8.2pt}
+.hoja .folio-pie .pagina{font-variant-numeric:tabular-nums}
+
+/* ── bloques del documento ── */
+.doc>*{margin:0 0 3.2mm}
+.doc>*:last-child{margin-bottom:0}
+
+.doc .titulo-bloque{
+  border-bottom:.9mm solid var(--azul); padding-bottom:3mm; margin-bottom:5mm;
+}
+.doc .titulo-bloque .tipo{
+  font-family:var(--ui); font-size:8.4pt; font-weight:800; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--rojo); margin-bottom:1.4mm;
+}
+.doc .titulo-bloque h1{
+  margin:0; font-size:16pt; line-height:1.22; color:var(--azul);
+  font-weight:700; letter-spacing:-.01em; text-wrap:balance;
+}
+.doc .titulo-bloque .datos{
+  display:grid; grid-template-columns:auto 1fr auto 1fr; gap:1.2mm 3mm;
+  margin-top:3.4mm; font-size:9.2pt; color:#26262E;
+}
+.doc .titulo-bloque .datos dt{font-weight:700; color:#6A6A78; letter-spacing:.02em}
+.doc .titulo-bloque .datos dd{margin:0}
+@media (max-width:1px){}
+
+.doc h2{
+  margin:6mm 0 2.4mm; font-size:12.4pt; font-weight:700; color:var(--azul);
+  text-transform:uppercase; letter-spacing:.045em; line-height:1.3;
+  border-left:1.3mm solid var(--rojo); padding-left:3mm;
+}
+.doc h3{margin:4.4mm 0 1.8mm; font-size:11.2pt; font-weight:700; color:#1A1A24}
+.doc h2 .rom{color:var(--rojo); margin-right:1.5mm}
+.doc p.quien{
+  margin:3.2mm 0 1mm; text-align:left; font-size:10.6pt;
+  display:flex; align-items:baseline; gap:3mm; border-bottom:.2mm solid #E2E6EF; padding-bottom:1mm;
+}
+.doc p.quien b{color:var(--azul)}
+.doc p.quien .cuando{color:#6A6A78; font-size:9.4pt; font-variant-numeric:tabular-nums}
+.doc p.quien + p{margin-top:0}
+.doc p{margin:0 0 2.9mm; text-align:justify; hyphens:auto}
+.hoja.izq .doc p, .hoja.izq .doc li{text-align:left}
+.doc p.izq{text-align:left}
+.doc ul,.doc ol{margin:0 0 3mm; padding-left:7mm}
+.doc li{margin-bottom:1.4mm; text-align:justify}
+.doc li::marker{color:var(--rojo); font-weight:700}
+.doc strong{font-weight:700; color:#000}
+.doc em{font-style:italic}
+
+.doc dl.ficha{
+  display:grid; grid-template-columns:auto 1fr; gap:1.3mm 4mm;
+  margin:0 0 3.4mm; padding:2.6mm 4mm; background:#F7F8FB;
+  border:.2mm solid #DCE1EC; border-radius:1mm; font-size:10.2pt;
+}
+.doc dl.ficha dt{font-weight:700; color:var(--azul); white-space:nowrap}
+.doc dl.ficha dd{margin:0; color:#1A1A24}
+.doc p.etiqueta{
+  margin:0 0 3mm; text-align:left; font-size:9.4pt; color:#4A4A58;
+  padding-left:3mm; border-left:.6mm solid #C3C9D8;
+}
+.doc p.etiqueta b{color:var(--azul); font-weight:700; margin-right:1.5mm}
+.doc p.quien + p.etiqueta{margin-top:-1mm}
+.doc blockquote{
+  margin:0 0 3.2mm; padding:2.6mm 4mm; background:#F4F6FB;
+  border-left:1.3mm solid var(--azul-vivo); color:#1E2440; font-size:10.4pt;
+}
+.doc blockquote p{margin:0; text-align:left}
+
+.doc table{width:100%; border-collapse:collapse; font-size:9.6pt; margin:0 0 3.4mm}
+.doc table th{
+  background:var(--azul); color:#fff; font-weight:700; text-align:left;
+  padding:1.9mm 2.6mm; border:.2mm solid var(--azul); letter-spacing:.02em;
+}
+.doc table td{padding:1.7mm 2.6mm; border:.2mm solid #C3C9D8; vertical-align:top}
+.doc table tr:nth-child(even) td{background:#F6F8FC}
+
+.doc hr{border:0; border-top:.3mm solid #C3C9D8; margin:4mm 0}
+
+.doc figure{margin:0 0 4mm; text-align:center; break-inside:avoid}
+.doc figure img{width:100%; height:72mm; object-fit:contain; background:#F2F4F8;
+  border:.25mm solid #C3C9D8; border-radius:1mm}
+.doc figcaption{
+  margin-top:1.6mm; font-size:8.8pt; color:#4A4A58; font-style:italic; text-align:center;
+}
+.doc figcaption b{font-style:normal; color:var(--azul)}
+.doc .par-fig{display:grid; grid-template-columns:1fr 1fr; gap:4mm; align-items:end}
+
+.doc .firmas{
+  margin-top:12mm; display:grid; grid-template-columns:repeat(var(--n,2),1fr); gap:8mm;
+  text-align:center; font-size:9.6pt;
+}
+.doc .firmas .linea{border-top:.3mm solid #24242E; margin-bottom:1.8mm; padding-top:0}
+.doc .firmas .quien{font-weight:700}
+.doc .firmas .cargo{color:#5A5A66; font-size:8.8pt}
+
+.medidor{position:absolute; left:-9999px; top:0; visibility:hidden}
+
+/* ───────── impresión ───────── */
+@page{size:letter portrait; margin:0}
+@media print{
+  html,body{background:#fff !important; margin:0; padding:0}
+  .barra,.tira-vista,.no-imprime,
+  #panel-escribir,#panel-formato,#panel-verificar,#panel-guardados{display:none !important}
+  #panel-ver{display:block !important}
+  .lienzo{max-width:none; margin:0; padding:0}
+  .escenario{background:transparent; border:0; padding:0; overflow:visible}
+  .pila{transform:none !important; width:auto; margin:0}
+  #marco{width:auto !important; height:auto !important; margin:0}
+  .dos{display:block}
+  .hoja{
+    box-shadow:none; margin:0 auto; break-after:page; page-break-after:always;
+    width:215.9mm; height:279.4mm;
+  }
+  .hoja:last-child{break-after:auto; page-break-after:auto}
+  .pliego{box-shadow:none; margin:0 auto; break-after:page; page-break-after:always}
+  .pliego:last-child{break-after:auto; page-break-after:auto}
+  .cred{box-shadow:none}
+  .mesa{display:none !important}
+}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra-fila">
+    <a class="marca" href="../">Reportes<b>.</b></a>
+    <span class="crece"></span>
+    <button class="btn chico" id="bNuevo" type="button">Nuevo</button>
+    <button class="btn fuerte" id="bImprimir" type="button">Imprimir / PDF</button>
+  </div>
+  <nav class="pestanas" role="tablist" aria-label="Secciones">
+    <button class="pestana" role="tab" data-vista="escribir" aria-selected="true">Escribir</button>
+    <button class="pestana" role="tab" data-vista="ver" aria-selected="false">Vista</button>
+    <button class="pestana" role="tab" data-vista="credencial" aria-selected="false">Credencial</button>
+    <button class="pestana" role="tab" data-vista="plantilla" aria-selected="false">Plantilla</button>
+    <button class="pestana" role="tab" data-vista="registro" aria-selected="false">Registro</button>
+    <button class="pestana" role="tab" data-vista="formato" aria-selected="false">Formato</button>
+    <button class="pestana" role="tab" data-vista="verificar" aria-selected="false">Verificar</button>
+    <button class="pestana" role="tab" data-vista="guardados" aria-selected="false">Guardados</button>
+  </nav>
+</header>
+
+<main class="lienzo">
+<div class="dos" id="tablero">
+
+  <!-- ══════════ ESCRIBIR ══════════ -->
+  <section class="panel" id="panel-escribir">
+    <h2 class="rotulo">Tipo de reporte <span class="regla"></span></h2>
+    <div class="chips" id="tipos"></div>
+
+    <h2 class="rotulo">Datos <span class="regla"></span>
+      <small>el folio y el sello se calculan solos</small></h2>
+    <label class="campo"><span>Título del reporte</span>
+      <input type="text" id="fTitulo" placeholder="Reporte semanal del grupo 3.1"></label>
+    <div class="rejilla">
+      <label class="campo"><span>Fecha</span><input type="date" id="fFecha"></label>
+      <label class="campo"><span>Grupo o instancia</span>
+        <input type="text" id="fGrupo" placeholder="3.1"></label>
+      <label class="campo"><span>Dirigido a</span>
+        <input type="text" id="fPara" placeholder="Prefectura / Dirección académica"></label>
+      <label class="campo"><span>Lugar</span>
+        <input type="text" id="fLugar" placeholder="Santiago de Querétaro, Qro."></label>
+      <label class="campo"><span>Semestre</span>
+        <input type="text" id="fSemestre" placeholder="Tercero"></label>
+      <label class="campo"><span>Tutor</span>
+        <input type="text" id="fTutor" placeholder="Nombre del tutor"></label>
+      <label class="campo"><span>Periodo reportado</span>
+        <input type="text" id="fPeriodo" placeholder="Segunda semana de agosto · primer parcial"></label>
+      <label class="campo"><span>Quien lo firma</span>
+        <input type="text" id="fAutor" placeholder="Carlos Eduardo Gutiérrez Guevara"></label>
+      <label class="campo"><span>Cargo</span>
+        <input type="text" id="fCargo" placeholder="Jefe de grupo 3.1"></label>
+    </div>
+    <label class="campo"><span>Segunda firma <small style="color:var(--tenue)">(opcional)</small></span>
+      <div class="rejilla">
+        <input type="text" id="fAutor2" placeholder="Nombre">
+        <input type="text" id="fCargo2" placeholder="Cargo">
+      </div>
+    </label>
+
+    <h2 class="rotulo">Cuerpo <span class="regla"></span>
+      <small id="cuentaPal">0 palabras</small></h2>
+    <div class="chips">
+      <button class="chip" type="button" id="bEsqueleto">Insertar esqueleto del tipo</button>
+      <button class="chip" type="button" id="bLimpiar">Limpiar pegado de IA</button>
+    </div>
+    <textarea id="fCuerpo" spellcheck="true" placeholder="Escribe aquí, o pega el texto tal cual de la IA.
+
+## Antecedentes
+El día ...
+
+- Punto uno
+- Punto dos"></textarea>
+
+    <details class="ayuda">
+      <summary>Cómo se escribe · marcado</summary>
+      <div class="dentro">
+        <p style="margin-top:0">Se entiende el mismo marcado que sueltan ChatGPT y compañía, así que
+        casi siempre basta con <b>pegar y ya</b>.</p>
+        <table>
+          <tr><td><code># Título</code></td><td>título de sección grande</td></tr>
+          <tr><td><code>## Apartado</code></td><td>apartado con barra roja — el más usado</td></tr>
+          <tr><td><code>### Sub-apartado</code></td><td>subtítulo</td></tr>
+          <tr><td><code>- punto</code></td><td>lista con viñeta</td></tr>
+          <tr><td><code>1. punto</code></td><td>lista numerada</td></tr>
+          <tr><td><code>&gt; nota</code></td><td>recuadro destacado</td></tr>
+          <tr><td><code>**negrita**</code> · <code>*cursiva*</code></td><td>énfasis</td></tr>
+          <tr><td><code>| a | b |</code></td><td>tabla — una fila por renglón</td></tr>
+          <tr><td><code>---</code></td><td>línea separadora</td></tr>
+          <tr><td><code>[hoja]</code></td><td>salto de página forzado</td></tr>
+          <tr><td><code>[img:2]</code></td><td>coloca la evidencia 2 justo ahí</td></tr>
+        </table>
+        <p>Las evidencias que no se coloquen a mano se van todas juntas al final, en su
+        apartado, numeradas solas.</p>
+      </div>
+    </details>
+
+    <h2 class="rotulo" style="margin-top:18px">Evidencias <span class="regla"></span>
+      <small id="cuentaEvi">ninguna</small></h2>
+    <div class="chips">
+      <button class="chip" type="button" id="bFoto">Agregar fotos</button>
+      <input type="file" id="fFoto" accept="image/*" multiple hidden>
+    </div>
+    <div class="evidencias" id="listaEvi"></div>
+    <p class="aviso" id="notaEvi">Las fotos se guardan <b>sólo en este teléfono</b>. No se suben a
+      ningún lado.</p>
+  </section>
+
+  <!-- ══════════ VISTA ══════════ -->
+  <section class="panel limpio" id="panel-ver">
+    <div class="tira-vista">
+      <span class="contador" id="contadorHojas">—</span>
+      <span class="crece"></span>
+      <button class="btn chico" type="button" id="bMenos">−</button>
+      <span class="contador" id="nivelZoom">100%</span>
+      <button class="btn chico" type="button" id="bMas">+</button>
+      <button class="btn chico" type="button" id="bAjustar">Ajustar</button>
+      <button class="btn fuerte chico" type="button" id="bImprimir2">Imprimir / PDF</button>
+    </div>
+    <div class="escenario" id="escenario">
+      <div id="marco"><div class="pila" id="pila"></div></div>
+    </div>
+    <p class="aviso no-imprime">En iPhone: <b>Imprimir</b> → separa dos dedos sobre la miniatura →
+      <b>Compartir</b> → <b>Guardar en Archivos</b>. Eso te deja el PDF.</p>
+  </section>
+
+  <!-- ══════════ CREDENCIAL ══════════ -->
+  <section class="panel" id="panel-credencial" hidden>
+    <h2 class="rotulo">Credenciales <span class="regla"></span>
+      <small id="cuentaCred"></small></h2>
+    <div class="chips" id="listaCred"></div>
+    <div class="chips">
+      <button class="chip" type="button" id="cNueva" style="background:var(--violeta);
+        border-color:var(--violeta); color:#12061C">Nueva credencial</button>
+      <button class="chip" type="button" id="cDuplicar">Duplicar esta</button>
+      <button class="chip" type="button" id="cBorrar">Borrar esta</button>
+    </div>
+
+    <h2 class="rotulo">Quién es <span class="regla"></span></h2>
+    <div class="rejilla">
+      <label class="campo"><span>Apellidos</span>
+        <input type="text" id="cApellidos" placeholder="GUERRERO LESCALE"></label>
+      <label class="campo"><span>Nombres</span>
+        <input type="text" id="cNombres" placeholder="MIGUEL ANGEL"></label>
+      <label class="campo"><span>Nivel o puesto <small style="color:var(--tenue)">(la barra roja)</small></span>
+        <input type="text" id="cNivel" placeholder="TÉCNICO NIVEL AVANZADO"></label>
+      <label class="campo"><span>Empleado</span>
+        <input type="text" id="cEmpleado" placeholder="PP1"></label>
+      <label class="campo"><span>No. de empleado</span>
+        <input type="text" id="cNum" placeholder="ACC-1127"></label>
+      <label class="campo"><span>Acreditado como</span>
+        <input type="text" id="cAcred" placeholder="BOMBERO FF3"></label>
+    </div>
+    <label class="campo"><span>Otras acreditaciones <small style="color:var(--tenue)">(una por renglón)</small></span>
+      <textarea id="cOtras" style="min-height:88px; font-family:inherit"
+        placeholder="TASK FORCE MEX 1&#10;TÉC. EXTRAC- VEHICULAR&#10;RESCATE K-9"></textarea></label>
+    <div class="chips">
+      <button class="chip" type="button" id="cFoto">Poner la foto</button>
+      <button class="chip" type="button" id="cQuitarFoto">Quitar la foto</button>
+      <input type="file" id="cFotoIn" accept="image/*" hidden>
+    </div>
+
+    <h2 class="rotulo">Lo del reverso <span class="regla"></span></h2>
+    <div class="rejilla">
+      <label class="campo"><span>Tipo de sangre</span>
+        <input type="text" id="cSangre" placeholder="A+"></label>
+      <label class="campo"><span>Alergias</span>
+        <input type="text" id="cAlergias" placeholder="ANTIHISTAMÍNICOS"></label>
+      <label class="campo"><span>Contacto de emergencia</span>
+        <input type="text" id="cTel" placeholder="+52 55 4488 1587"></label>
+      <label class="campo"><span>Familiar</span>
+        <input type="text" id="cFamiliar" placeholder="&quot;MAMÁ&quot; LORENA LESCALE"></label>
+      <label class="campo"><span>Fecha de inicio</span>
+        <input type="text" id="cInicio" placeholder="22/AGOSTO/2026"></label>
+      <label class="campo"><span>Fecha de vencimiento</span>
+        <input type="text" id="cVence" placeholder="31 DE DICIEMBRE DEL 2027"></label>
+    </div>
+
+    <details class="ayuda">
+      <summary>Lo que es igual en todas · se llena una vez</summary>
+      <div class="dentro">
+        <div class="rejilla" style="margin-top:10px">
+          <label class="campo"><span>Ciclo</span><input type="text" id="cCiclo"></label>
+          <label class="campo"><span>Red social</span><input type="text" id="cRed"></label>
+          <label class="campo"><span>Ancho (mm)</span>
+            <input type="number" id="cAncho" step="0.5" min="45" max="100"></label>
+          <label class="campo"><span>Alto (mm)</span>
+            <input type="number" id="cAlto" step="0.5" min="70" max="160"></label>
+        </div>
+        <label class="campo"><span>Leyenda del reverso</span>
+          <textarea id="cLeyenda" style="min-height:80px; font-family:inherit"></textarea></label>
+        <div class="chips">
+          <button class="chip" type="button" id="cQR">Poner el código QR</button>
+          <input type="file" id="cQRIn" accept="image/*" hidden>
+          <button class="chip" type="button" id="cMedidas">Volver a 63.5 × 105 mm</button>
+        </div>
+        <p class="aviso">La proporción del original que mandaste es <b>1.654</b> de alto sobre
+          ancho, que da justo <b>63.5 × 105 mm</b>. Si tu imprenta pide otra medida, cámbiala aquí
+          y todo se reacomoda solo.</p>
+      </div>
+    </details>
+
+    <h2 class="rotulo" style="margin-top:18px">Cómo va quedando <span class="regla"></span></h2>
+    <div class="mesa" id="mesaCred"></div>
+    <div class="chips" style="margin-top:14px">
+      <button class="chip" type="button" id="cImprimir" style="background:var(--violeta);
+        border-color:var(--violeta); color:#12061C">Imprimir todas</button>
+      <button class="chip" type="button" id="cSoloEsta">Imprimir sólo ésta</button>
+    </div>
+    <p class="aviso">Salen <b>4 por hoja carta</b> con marcas de corte: primero todos los frentes,
+      luego los reversos <b>en espejo</b>, para que al voltear la hoja cada reverso caiga sobre su
+      frente. Los datos se guardan sólo en este aparato.</p>
+  </section>
+
+  <!-- ══════════ PLANTILLA ══════════ -->
+  <section class="panel" id="panel-plantilla" hidden>
+    <h2 class="rotulo">Para escribirlo con IA <span class="regla"></span></h2>
+    <p class="aviso" style="margin:0 0 12px">Copia esto y pégalo <b>antes</b> de pedirle el reporte.
+      Trae las reglas y el esqueleto del tipo que tengas elegido, así que lo que te devuelva
+      entra aquí sin tocarlo.</p>
+    <div class="chips">
+      <button class="chip" type="button" id="bCopiarIA" style="background:var(--violeta);
+        border-color:var(--violeta); color:#12061C">Copiar instrucciones para la IA</button>
+      <button class="chip" type="button" id="bCopiarPlantilla">Copiar sólo el esqueleto</button>
+    </div>
+    <textarea id="txtIA" readonly style="min-height:260px; font-size:13px"></textarea>
+
+    <h2 class="rotulo" style="margin-top:22px">Cómo se organiza el texto <span class="regla"></span></h2>
+    <div class="ayuda" open>
+      <div class="dentro" style="padding-top:14px">
+        <table>
+          <tr><td><code># Título</code></td><td>título grande. Casi nunca hace falta: el título del reporte ya va arriba</td></tr>
+          <tr><td><code>## Apartado</code></td><td><b>el que más se usa.</b> Sale con la barra roja</td></tr>
+          <tr><td><code>## IV. Apartado</code></td><td>igual, con el romano en rojo</td></tr>
+          <tr><td><code>### Sub-apartado</code></td><td>subtítulo dentro de un apartado</td></tr>
+          <tr><td><code>Campo: valor</code></td><td>ficha de datos. Dos o más seguidos hacen una tarjeta</td></tr>
+          <tr><td><code>Tipo: valor</code></td><td>uno solo sale como etiqueta discreta</td></tr>
+          <tr><td><code>Nombre — 09:42 h</code></td><td>renglón de incidencia: nombre en azul, hora en gris</td></tr>
+          <tr><td><code>- punto</code></td><td>lista con viñeta</td></tr>
+          <tr><td><code>1. punto</code></td><td>lista numerada</td></tr>
+          <tr><td><code>&gt; nota</code></td><td>recuadro destacado. Va bien para la nota final</td></tr>
+          <tr><td><code>**negrita**</code></td><td>énfasis dentro del párrafo</td></tr>
+          <tr><td><code>| a | b |</code></td><td>tabla, una fila por renglón. La primera es el encabezado</td></tr>
+          <tr><td><code>---</code></td><td>línea separadora</td></tr>
+          <tr><td><code>[hoja]</code></td><td>salto de página forzado</td></tr>
+          <tr><td><code>[img:2]</code></td><td>coloca la evidencia 2 justo ahí</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h2 class="rotulo" style="margin-top:22px">Lo que sale mal <span class="regla"></span></h2>
+    <div class="ayuda">
+      <div class="dentro" style="padding-top:14px">
+        <table>
+          <tr><td><b class="mal">✕</b></td><td>Escribir el título del reporte dentro del cuerpo. <b>Ya va arriba</b>, en su bloque</td></tr>
+          <tr><td><b class="mal">✕</b></td><td>Poner la firma y la fecha al final. <b>Las pone la herramienta sola</b></td></tr>
+          <tr><td><b class="mal">✕</b></td><td>Usar emoji o adornos. Es un documento institucional</td></tr>
+          <tr><td><b class="mal">✕</b></td><td>Renglones sueltos en medio de un párrafo: se juntan solos. Deja <b>una línea en blanco</b> entre párrafos</td></tr>
+          <tr><td><b class="mal">✕</b></td><td>Tablas con la fila de guiones <code>|---|</code>: no estorba, pero no hace falta</td></tr>
+          <tr><td><b class="ok">✓</b></td><td>Una línea en blanco antes y después de cada <code>##</code></td></tr>
+          <tr><td><b class="ok">✓</b></td><td>Hechos primero, opinión después y marcada como tal</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h2 class="rotulo" style="margin-top:22px">Del reglamento, lo que te sirve <span class="regla"></span></h2>
+    <div class="ayuda">
+      <div class="dentro" style="padding-top:14px">
+        <table>
+          <tr><td><b>Celular</b></td><td>Aparatos electrónicos IV b. <b>Ya trae escalera de tres:</b> 1ª se entrega al final de la clase, 2ª al concluir su carga horaria, 3ª se le entrega al padre</td></tr>
+          <tr><td><b>Reportes</b></td><td>Todas las faltas generan registro en el expediente. <b>Tres reportes de disciplina</b> → notificación personal para evitar suspensión de tres días</td></tr>
+          <tr><td><b>Consecuencia</b></td><td>Un reporte lleva <b>trabajo comunitario</b>: en el receso si la falta es menor, en fin de semana si no</td></tr>
+          <tr><td><b>Respeto</b></td><td>Comportamiento IX d: groserías, expresiones vulgares, mentiras, amenazas, intimidaciones y apodos</td></tr>
+          <tr><td><b>Físico</b></td><td>IX b y c: empujar o abusar físicamente, y afecto más allá de la amistad</td></tr>
+          <tr><td><b>Uniforme</b></td><td>III i: se notifica a los padres; <b>de reincidir, suspensión de ese día</b></td></tr>
+          <tr><td><b>Lockers</b></td><td>V: se entrega al inicio del ciclo, con candado confiable; sin candado lo cierra prefectura; no se guarda comida</td></tr>
+          <tr><td><b>Retardos</b></td><td>I c: llegar tarde a clase <b>cuenta como falta</b> en esa clase. Acceso hasta 7:00; 80% de asistencia para examen parcial</td></tr>
+          <tr><td><b>Permisos</b></td><td>II c: por escrito, <b>un día antes</b>, firmados por los padres con copia de INE, entregados en Dirección</td></tr>
+        </table>
+        <p style="margin:10px 0 0">Cada falta del <b>Registro</b> ya sale con su fundamento citado; no lo tienes
+          que buscar.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ REGISTRO ══════════ -->
+  <section class="panel" id="panel-registro" hidden>
+    <h2 class="rotulo">Registro del día <span class="regla"></span>
+      <small id="fechaRegistro"></small></h2>
+    <p class="aviso" style="margin:0 0 12px">Toca a quien haga la falta y elige qué fue. La hora se
+      pone sola. Al final, <b>Pasar al reporte</b> escribe los apartados completos.</p>
+    <div class="alumnos" id="listaAlumnos"></div>
+    <div class="chips">
+      <button class="chip" type="button" id="bAlumnos">Editar la lista del grupo</button>
+      <button class="chip" type="button" id="bOtroDia">Ver otro día</button>
+    </div>
+
+    <h2 class="rotulo">Lo registrado <span class="regla"></span>
+      <small id="cuentaEntradas"></small></h2>
+    <div class="entradas" id="listaEntradas"></div>
+    <div class="chips" style="margin-top:14px">
+      <button class="chip" type="button" id="bPasar" style="background:var(--violeta);
+        border-color:var(--violeta); color:#12061C">Pasar al reporte</button>
+      <button class="chip" type="button" id="bBorrarDia">Borrar el día</button>
+    </div>
+    <p class="aviso">Todo esto vive <b>sólo en este teléfono</b>. Son nombres de menores: no se
+      suben a ningún servidor ni salen del aparato.</p>
+  </section>
+
+  <!-- ══════════ FORMATO ══════════ -->
+  <section class="panel" id="panel-formato" hidden>
+    <h2 class="rotulo">Tipografía <span class="regla"></span></h2>
+    <div class="rejilla">
+      <label class="campo"><span>Letra del cuerpo</span>
+        <select id="oFuente">
+          <option value='Arial, Helvetica, "Liberation Sans", sans-serif'>Arial</option>
+          <option value='"Times New Roman", Times, "Liberation Serif", serif'>Times New Roman</option>
+          <option value='Georgia, "Liberation Serif", serif'>Georgia</option>
+          <option value='Verdana, Geneva, sans-serif'>Verdana</option>
+        </select></label>
+      <label class="campo"><span>Tamaño</span>
+        <select id="oTamano">
+          <option value="10pt">10 pt</option><option value="11pt" selected>11 pt</option>
+          <option value="11.5pt">11.5 pt</option><option value="12pt">12 pt</option>
+        </select></label>
+      <label class="campo"><span>Interlineado</span>
+        <select id="oInter">
+          <option value="1.15">Sencillo (1.15)</option>
+          <option value="1.5" selected>1.5</option>
+          <option value="2">Doble</option>
+        </select></label>
+      <label class="campo"><span>Alineación del texto</span>
+        <select id="oAlinea">
+          <option value="justify" selected>Justificado</option>
+          <option value="left">A la izquierda</option>
+        </select></label>
+    </div>
+
+    <h2 class="rotulo">Márgenes <span class="regla"></span>
+      <small>los del formato oficial son 3 cm a los lados</small></h2>
+    <div class="rejilla">
+      <label class="campo"><span>Lados (mm)</span><input type="number" id="oLado" min="12" max="45" step="1"></label>
+      <label class="campo"><span>Bajo el membrete (mm)</span><input type="number" id="oTope" min="26" max="60" step="1"></label>
+      <label class="campo"><span>Reserva de abajo (mm)</span><input type="number" id="oFondo" min="28" max="60" step="1"></label>
+    </div>
+
+    <h2 class="rotulo">Marca de agua y sello <span class="regla"></span></h2>
+    <label class="campo"><span>Marca de agua de Grupo Mazi</span>
+      <select id="oAgua">
+        <option value="paloma" selected>Paloma + leyenda</option>
+        <option value="solo">Sólo la paloma</option>
+        <option value="texto">Sólo la leyenda</option>
+        <option value="no">Sin marca de agua</option>
+      </select></label>
+    <div class="rejilla">
+      <label class="campo"><span>Intensidad (%)</span><input type="number" id="oOpacidad" min="2" max="22" step="1"></label>
+      <label class="campo"><span>Leyenda</span><input type="text" id="oLeyenda"></label>
+    </div>
+    <label class="campo"><span>Sello de verificación en el pie</span>
+      <select id="oSello"><option value="si" selected>Sí</option><option value="no">No</option></select></label>
+    <p class="aviso">El <b>sello</b> se calcula del contenido del reporte. Si alguien le cambia una
+      sola letra, deja de coincidir — y se comprueba en la pestaña <b>Verificar</b>.</p>
+
+    <h2 class="rotulo">Membrete <span class="regla"></span></h2>
+    <label class="campo"><span>En qué hojas va</span>
+      <select id="oMembrete">
+        <option value="todas" selected>En todas</option>
+        <option value="primera">Sólo en la primera</option>
+      </select></label>
+    <p class="aviso">Los dos membretes salieron del <b>.docx institucional</b>. No se redibujaron:
+      son los originales.</p>
+    <div class="chips" style="margin-top:14px">
+      <button class="chip" type="button" id="bResetFormato">Volver al formato oficial</button>
+    </div>
+  </section>
+
+  <!-- ══════════ VERIFICAR ══════════ -->
+  <section class="panel" id="panel-verificar" hidden>
+    <h2 class="rotulo">Verificar un reporte <span class="regla"></span></h2>
+    <p class="aviso" style="margin-top:0">Pega el <b>sello</b> que trae impreso el documento y su
+      texto. Si alguien lo alteró, no va a coincidir.</p>
+    <label class="campo"><span>Sello impreso</span>
+      <input type="text" id="vSello" placeholder="7K2M-9QX4" autocapitalize="characters"></label>
+    <label class="campo"><span>Folio impreso</span>
+      <input type="text" id="vFolio" placeholder="IR-3.1-20260822-001"></label>
+    <label class="campo"><span>Texto del reporte, tal cual</span>
+      <textarea id="vTexto" style="min-height:200px"></textarea></label>
+    <button class="btn fuerte" type="button" id="bVerificar">Comprobar</button>
+    <p class="aviso" id="vResultado"></p>
+  </section>
+
+  <!-- ══════════ GUARDADOS ══════════ -->
+  <section class="panel" id="panel-guardados" hidden>
+    <h2 class="rotulo">Mis reportes <span class="regla"></span>
+      <small id="cuentaGuardados"></small></h2>
+    <div class="guardados" id="listaGuardados"></div>
+    <p class="aviso">Se guardan solos mientras escribes, en este dispositivo. Para llevártelos a otro
+      lado, usa <b>Exportar</b>.</p>
+    <div class="chips" style="margin-top:14px">
+      <button class="chip" type="button" id="bExportar">Exportar todo</button>
+      <button class="chip" type="button" id="bImportar">Importar</button>
+      <input type="file" id="fImportar" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<div class="velo" id="velo" hidden></div>
+<div class="hojita" id="hojita" hidden></div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1 · LOS TIPOS DE REPORTE
+   Cada uno trae su esqueleto. No es decoración: es lo que convierte "tengo que
+   escribir un reporte" en "tengo que llenar seis huecos", que es la diferencia
+   entre veinte minutos y tres.
+   ═════════════════════════════════════════════════════════════════════════ */
+const TIPOS = [
+  { area:'jefe', id:'incidencia', nombre:'Incidencia', etiqueta:'Reporte de incidencia',
+    titulo:'Reporte de incidencia · grupo 3.1', para:'Prefectura',
+    cuerpo:
+`## Datos del hecho
+**Fecha y hora:** 
+**Lugar:** 
+**Involucrados:** 
+**Reportado por:** 
+
+## Qué ocurrió
+Describe los hechos en orden, sin opinar. Primero lo que se vio, después lo que
+se hizo.
+
+## Acciones tomadas en el momento
+- 
+- 
+
+## Antecedentes
+Si ya había pasado algo parecido con las mismas personas, va aquí. Si no, se
+escribe "sin antecedentes".
+
+## Seguimiento propuesto
+- 
+
+> Este reporte se levanta con carácter informativo para prefectura y queda a
+> disposición de la dirección académica.` },
+
+  { area:'jefe', id:'semanal', nombre:'Semanal de grupo', etiqueta:'Reporte semanal de grupo',
+    titulo:'Reporte semanal del grupo 3.1', para:'Prefectura',
+    cuerpo:
+`## Resumen de la semana
+Dos o tres renglones con lo importante. Si alguien lo lee nada más de aquí, que
+se entienda.
+
+## Asistencia
+| Día | Presentes | Ausentes | Retardos |
+| Lunes |  |  |  |
+| Martes |  |  |  |
+| Miércoles |  |  |  |
+| Jueves |  |  |  |
+| Viernes |  |  |  |
+
+## Limpieza y orden del aula
+- 
+
+## Conducta y convivencia
+- 
+
+## Pendientes del grupo
+- 
+
+## Observaciones del jefe de grupo
+` },
+
+  { area:'sociedad', id:'minuta', nombre:'Minuta', etiqueta:'Minuta de reunión',
+    titulo:'Minuta de reunión · Sociedad de Alumnos', para:'Sociedad de Alumnos',
+    cuerpo:
+`## Datos de la reunión
+**Fecha:**  **Hora de inicio:**  **Hora de cierre:** 
+**Lugar:** 
+**Quien preside:** 
+
+## Asistentes
+| Nombre | Cargo | Asistió |
+|  |  |  |
+
+## Orden del día
+1. 
+2. 
+3. 
+
+## Desarrollo
+### 1. 
+### 2. 
+
+## Acuerdos
+| # | Acuerdo | Responsable | Fecha límite |
+| 1 |  |  |  |
+
+## Próxima reunión
+**Fecha:**  **Lugar:** ` },
+
+  { area:'sociedad', id:'propuesta', nombre:'Propuesta', etiqueta:'Propuesta / plan de trabajo',
+    titulo:'Plan de trabajo · Sociedad de Alumnos', para:'Comunidad estudiantil',
+    cuerpo:
+`## Diagnóstico
+Qué problema hay, con datos. Una propuesta sin diagnóstico es una ocurrencia.
+
+## Objetivo
+Una sola frase. Qué queremos que sea distinto y para cuándo.
+
+## Acciones
+| # | Acción | Responsable | Cuándo | Qué se necesita |
+| 1 |  |  |  |  |
+
+## Calendario
+- 
+
+## Recursos que se piden a la escuela
+- 
+
+## Cómo se va a medir
+| Indicador | Hoy | Meta |
+|  |  |  |
+
+> Esta propuesta se somete a consideración de la dirección y de la comunidad
+> estudiantil.` },
+
+  { area:'sociedad', id:'actividad', nombre:'Informe de actividad', etiqueta:'Informe de actividad',
+    titulo:'Informe de actividad', para:'Dirección académica',
+    cuerpo:
+`## Objetivo de la actividad
+
+## Desarrollo
+Qué se hizo, en orden, con horarios si aplica.
+
+## Participación
+| Grupo | Convocados | Participaron |
+|  |  |  |
+
+## Resultados
+
+## Evidencias
+Las fotos se acomodan solas aquí abajo.
+
+## Conclusiones y siguiente paso
+- ` },
+
+  { area:'jefe', id:'grupo', nombre:'Semanal completo', etiqueta:'Reporte de incidencias, convivencia y necesidades del grupo',
+    titulo:'Reporte de incidencias, convivencia y necesidades del grupo', para:'Profesor tutor',
+    cuerpo:
+`## I. Objetivo del reporte
+Por medio del presente, y con el debido respeto hacia mis compañeros, presento un registro de las principales incidencias observadas dentro del grupo, así como situaciones relacionadas con el cumplimiento del reglamento escolar, convivencia, organización, limpieza y desarrollo de las actividades académicas.
+
+El propósito de este documento no es perjudicar personalmente a ningún alumno, sino proporcionar al profesor tutor un registro claro de las situaciones observadas y facilitar la implementación de medidas que permitan mejorar el ambiente académico y la convivencia.
+
+Como jefe de grupo procuro diferenciar entre faltas al reglamento, observaciones de convivencia y situaciones que requieren seguimiento, evitando atribuir una sanción que únicamente corresponde determinar a las autoridades escolares.
+
+## II. Incidencias grupales
+
+1. Exceso de ruido
+
+Tipo: Observación grupal de convivencia.
+Frecuencia: 
+
+2. Limpieza deficiente del aula
+
+3. Cambios de lugar y levantarse sin autorización
+
+Estas conductas corresponden a faltas al reglamento de salón entregado por los profesores.
+
+## III. Incidencias individuales
+Usa la pestaña **Registro** y el botón **Pasar al reporte**: escribe este apartado y el resumen individual solos.
+
+## IV. Uso de teléfonos celulares
+El reglamento institucional ya contempla el procedimiento (Aparatos electrónicos IV, inciso b): el teléfono se retira y se entrega **al final de la clase** en la primera ocasión, **al concluir su carga horaria** en la segunda, y **al padre** en la tercera.
+
+Desde la jefatura de grupo se solicita únicamente que dicho procedimiento se aplique de manera constante. No se propone una medida adicional: se pide facilitar el cumplimiento de una disposición ya establecida.
+
+## V. Observación sobre el lenguaje entre compañeros
+Se identificó el uso ocasional de palabras ofensivas entre compañeros, conducta contemplada en el reglamento (Comportamiento IX, inciso d).
+
+Como parte de un registro equilibrado, se hace constar que quien suscribe también incurrió en expresiones inapropiadas en situaciones puntuales. Lo anterior se incluye para que el reporte no presente una visión unilateral y para reconocer que las normas de convivencia se aplican de manera general.
+
+## VI. Reporte de limpieza
+Fecha: 
+Al recibir el salón se observó:
+
+- 
+
+Responsables de limpieza asignados:
+
+- 
+
+Se aclara que el problema identificado no corresponde a una deficiencia en la asignación de responsables, sino al incumplimiento de algunos integrantes del grupo respecto de la obligación colectiva de colaborar con la limpieza.
+
+## VII. Acomodo del grupo
+Los cambios de lugar y levantarse sin autorización constituyen faltas al reglamento de salón. Por este motivo se considera importante establecer un acomodo definitivo que permita reducir cambios de lugar, facilitar el control del aula, disminuir distracciones y mantener una organización estable.
+
+## VIII. Pendientes administrativos
+**Lockers:** 
+**Reglamento firmado:** 
+**Fichas de permiso de baño:** 
+
+El reglamento institucional establece que al inicio de cada ciclo escolar se entrega un locker al alumno, que debe mantenerse limpio, cerrado y con candado confiable (Casillero V).
+
+Respecto de las fichas de baño, ya se encuentran implementadas; la solicitud consiste en que **todos los docentes las utilicen de manera uniforme**, para evitar salidas simultáneas y diferencias en la aplicación del procedimiento.
+
+## IX. Medidas disciplinarias internas y su cumplimiento
+Se registran aquí las medidas acordadas dentro del grupo y si se cumplieron. Este apartado es un seguimiento interno y no constituye por sí mismo una falta disciplinaria, salvo que el tutor determine lo contrario.
+
+| Responsable | Medida acordada | ¿Se cumplió? |
+|  |  |  |
+
+## X. Sistema interno de seguimiento
+El grupo maneja un sistema interno mediante tarjetas:
+
+- Tarjeta amarilla: primera advertencia registrada.
+- Dos tarjetas amarillas: equivalen a una tarjeta roja.
+- Tarjeta roja: citatorio.
+
+Este sistema se utiliza como mecanismo interno de organización y no sustituye los reportes disciplinarios oficiales del Instituto.
+
+## XI. Resumen grupal
+
+**Faltas al reglamento de salón**
+
+1. 
+
+**Observaciones de convivencia**
+
+1. 
+
+**Organización y responsabilidades**
+
+1. 
+
+## XII. Propuestas y solicitudes al tutor
+Respetuosamente se solicita considerar las siguientes medidas:
+
+1. 
+2. 
+3. 
+
+## XIII. Consideración final
+Como jefe de grupo considero importante señalar que la finalidad de este documento es mejorar el funcionamiento del grupo y no generar conflictos personales.
+
+Asimismo, considero importante que cualquier medida disciplinaria sea determinada por las autoridades correspondientes con base en los hechos, su gravedad, recurrencia y el reglamento institucional.
+
+Agradezco al profesor tutor el tiempo destinado a revisar este reporte y quedo atento a las indicaciones que considere pertinentes.` },
+
+  { area:'jefe', id:'limpieza', nombre:'Limpieza', etiqueta:'Reporte de limpieza del aula',
+    titulo:'Reporte de limpieza del aula', para:'Prefectura',
+    cuerpo:
+`**Fecha:** 
+**Hora de la revisión:** 
+**Aula:** 
+
+## Estado en que se recibió el salón
+- 
+
+## Estado en que se entregó el salón
+- 
+
+## Responsables de limpieza asignados
+- 
+
+## Observaciones
+Se aclara que, cuando el salón no queda limpio, el problema no corresponde necesariamente a una deficiencia en la asignación de responsables, sino al incumplimiento de algunos integrantes del grupo respecto de la obligación colectiva de colaborar.
+
+## Lo que se solicita
+- ` },
+
+  { area:'general', id:'solicitud', nombre:'Solicitud', etiqueta:'Solicitud',
+    titulo:'Solicitud', para:'Dirección académica',
+    cuerpo:
+`## Lo que se solicita
+Redacta en una sola frase qué se pide. Concreto y sin rodeos.
+
+## Motivo
+Por qué se pide, con los hechos que lo sostienen.
+
+## Fundamento
+Si aplica, el apartado del reglamento o el acuerdo previo en que se apoya la solicitud.
+
+## Beneficio esperado
+Qué mejora si se autoriza.
+
+## Lo que ofrece el grupo
+Con qué se compromete el grupo o la jefatura para que funcione.
+
+> Se agradece de antemano la atención y se queda en espera de la respuesta que se considere pertinente.` },
+
+  { area:'jefe', id:'aviso', nombre:'Aviso', etiqueta:'Aviso',
+    titulo:'Aviso al grupo', para:'Grupo 3.1',
+    cuerpo:
+`## El aviso
+Una frase. Qué pasa, cuándo y qué hay que hacer.
+
+## Detalles
+**Fecha:** 
+**Hora:** 
+**Lugar:** 
+**Quién debe atenderlo:** 
+
+## Qué hay que llevar o entregar
+- 
+
+## Fecha límite
+> Cualquier duda, con la jefatura de grupo antes de la fecha límite.` },
+
+  { area:'general', id:'general', nombre:'Reporte general', etiqueta:'Reporte',
+    titulo:'', para:'',
+    cuerpo:
+`## Antecedentes
+Qué había antes de esto. El contexto mínimo para que se entienda lo demás.
+
+## Situación
+Qué pasó o qué se observó, en orden y sin opinar.
+
+## Datos
+| Concepto | Dato |
+|  |  |
+
+## Análisis
+Qué significa lo anterior.
+
+## Conclusiones
+- 
+
+## Lo que se propone
+1. ` },
+
+  { area:'general', id:'libre', nombre:'Libre', etiqueta:'Reporte',
+    titulo:'', para:'',
+    cuerpo:`## \n` },
+];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2 · EL ESTADO
+   ═════════════════════════════════════════════════════════════════════════ */
+const LLAVE = 'reportes_mazi_v1';
+const FORMATO_OFICIAL = {
+  fuente:'Arial, Helvetica, "Liberation Sans", sans-serif',
+  tamano:'11pt', inter:'1.5', alinea:'justify',
+  lado:30, tope:34, fondo:42,
+  agua:'paloma', opacidad:6, leyenda:'GRUPO MAZI · DOCUMENTO ORIGINAL',
+  sello:'si', membrete:'todas',
+};
+let R = nuevoReporte();
+let TODOS = [];
+let zoom = 1, zoomAuto = true;
+
+function nuevoReporte(){
+  const hoy = new Date();
+  return {
+    id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    tipo:'incidencia', titulo:'', fecha:iso(hoy), grupo:'3.1', para:'', lugar:'Santiago de Querétaro, Qro.',
+    autor:'', cargo:'Jefe de grupo 3.1', autor2:'', cargo2:'',
+    semestre:'', tutor:'', periodo:'',
+    cuerpo:'', evidencias:[], formato:Object.assign({},FORMATO_OFICIAL),
+    creado:Date.now(), tocado:Date.now(),
+  };
+}
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+const $ = (s,c)=> (c||document).querySelector(s);
+const $$ = (s,c)=> Array.from((c||document).querySelectorAll(s));
+function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ── el sello: FNV-1a sobre el contenido normalizado ──
+   No es criptografía y no lo vendo como tal: es un dígito verificador. Sirve
+   para lo que se pidió — que no se pueda alterar el texto de un reporte y que
+   siga pareciendo el mismo documento. */
+function normalizar(t){
+  return String(t||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+const ALFA = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // sin I ni O, que se confunden
+function sello(texto){
+  const s = normalizar(texto);
+  let h1 = 0x811c9dc5, h2 = 0x01000193;
+  for(let i=0;i<s.length;i++){
+    h1 = ((h1 ^ s.charCodeAt(i)) * 0x01000193) >>> 0;
+    h2 = ((h2 + s.charCodeAt(i) * (i+7)) * 0x85ebca6b) >>> 0;
+  }
+  let n = (BigInt(h1) << 32n) | BigInt(h2), out = '';
+  for(let i=0;i<8;i++){ out = ALFA[Number(n % 34n)] + out; n /= 34n; }
+  return out.slice(0,4)+'-'+out.slice(4);
+}
+function textoSellable(r){
+  return [r.titulo, r.fecha, r.grupo, r.semestre, r.tutor, r.periodo, r.para, r.autor, r.cargo, r.cuerpo,
+          (r.evidencias||[]).map(e=>e.pie).join(' ')].join('\n');
+}
+function folio(r){
+  const f = (r.fecha||'').replace(/-/g,'');
+  const g = (r.grupo||'GEN').replace(/[^0-9A-Za-z.]/g,'') || 'GEN';
+  const s = sello(textoSellable(r)).replace('-','');
+  return 'IR-'+g+'-'+f+'-'+s.slice(0,3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3 · EL LECTOR DE MARCADO
+   Tolerante a propósito: lo que sueltan las IA trae mezclas raras (viñetas con
+   punto medio, tablas sin la fila de guiones, títulos con ###). Todo eso entra.
+   ═════════════════════════════════════════════════════════════════════════ */
+function enLinea(t){
+  let s = esc(t);
+  s = s.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  s = s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  s = s.replace(/(^|[\s(])\*([^*\n]+?)\*(?=$|[\s.,;:)])/g,'$1<em>$2</em>');
+  s = s.replace(/(^|[\s(])_([^_\n]+?)_(?=$|[\s.,;:)])/g,'$1<em>$2</em>');
+  s = s.replace(/`([^`]+?)`/g,'<strong>$1</strong>');
+  return s;
+}
+
+function leer(texto, evidencias){
+  const lineas = String(texto||'').replace(/\r/g,'').split('\n');
+  const bloques = [];
+  const usadas = new Set();
+  let i = 0;
+
+  const figura = (n) => {
+    const e = evidencias[n-1];
+    if(!e) return null;
+    usadas.add(n-1);
+    return { tipo:'figura', n:n, html:
+      '<figure><img src="'+e.datos+'" alt=""><figcaption><b>Imagen '+n+'.</b> '+
+      esc(e.pie||'Evidencia fotográfica')+'</figcaption></figure>' };
+  };
+
+  while(i < lineas.length){
+    let l = lineas[i];
+    const t = l.trim();
+
+    if(!t){ i++; continue; }
+
+    if(/^\[hoja\]$/i.test(t)){ bloques.push({tipo:'salto'}); i++; continue; }
+
+    let mi = t.match(/^\[img:(\d+)\]$/i);
+    if(mi){ const f = figura(parseInt(mi[1],10)); if(f) bloques.push(f); i++; continue; }
+
+    if(/^(-{3,}|\*{3,}|_{3,}|\u2E3B+|—{2,}|─{2,})$/.test(t)){
+      bloques.push({tipo:'hr', html:'<hr>'}); i++; continue; }
+
+    /* "IV. INCIDENCIAS DEL 11/08" — así numera Carlos sus apartados */
+    let mr = t.match(/^([IVXLCDM]{1,7})[.)]\s+(\S.*)$/);
+    if(mr && mr[2].length < 110){
+      bloques.push({ tipo:'h2', pega:true,
+        html:'<h2><span class="rom">'+esc(mr[1])+'.</span> '+enLinea(mr[2])+'</h2>' });
+      i++; continue;
+    }
+    /* un renglón corto TODO EN MAYÚSCULAS también es un apartado */
+    if(t.length > 3 && t.length < 90 && !/[.;]$/.test(t) &&
+       t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{3}/.test(t) && !/^\||^\d+[.)]/.test(t)){
+      bloques.push({tipo:'h2', pega:true, html:'<h2>'+enLinea(t)+'</h2>'});
+      i++; continue;
+    }
+
+    let mh = t.match(/^(#{1,6})\s+(.*)$/);
+    if(mh){
+      const nivel = mh[1].length <= 2 ? 2 : 3;
+      bloques.push({ tipo:'h'+nivel, pega:true,
+        html:'<h'+nivel+'>'+enLinea(mh[2].replace(/[:：]\s*$/,''))+'</h'+nivel+'>' });
+      i++; continue;
+    }
+
+    /* tabla pegada con tabuladores — es como sale de Word y de Sheets */
+    if(/\t/.test(l) && (i+1 < lineas.length) && /\t/.test(lineas[i+1])){
+      const filas = [];
+      while(i < lineas.length && /\t/.test(lineas[i])){
+        filas.push(lineas[i].split('\t').map(c=>c.trim())); i++;
+      }
+      const cols = Math.max.apply(null, filas.map(f=>f.length));
+      const celda = (f,n)=>{ const c=[];
+        for(let k=0;k<cols;k++) c.push('<'+n+'>'+enLinea(f[k]||'')+'</'+n+'>'); return c.join(''); };
+      let html = '<table><thead><tr>'+celda(filas[0],'th')+'</tr></thead><tbody>';
+      for(let k=1;k<filas.length;k++) html += '<tr>'+celda(filas[k],'td')+'</tr>';
+      bloques.push({tipo:'tabla', html:html+'</tbody></table>', filas:filas.length});
+      continue;
+    }
+
+    /* tabla: bloque de renglones que empiezan con | */
+    if(/^\|/.test(t)){
+      const filas = [];
+      while(i < lineas.length && /^\s*\|/.test(lineas[i])){
+        const cruda = lineas[i].trim().replace(/^\|/,'').replace(/\|$/,'');
+        if(!/^[\s|:-]+$/.test(cruda)) filas.push(cruda.split('|').map(c=>c.trim()));
+        i++;
+      }
+      if(filas.length){
+        const cols = Math.max.apply(null, filas.map(f=>f.length));
+        const celda = (f,n)=>{ const c=[]; for(let k=0;k<cols;k++) c.push('<'+n+'>'+enLinea(f[k]||'')+'</'+n+'>'); return c.join(''); };
+        let html = '<table><thead><tr>'+celda(filas[0],'th')+'</tr></thead><tbody>';
+        for(let k=1;k<filas.length;k++) html += '<tr>'+celda(filas[k],'td')+'</tr>';
+        html += '</tbody></table>';
+        bloques.push({tipo:'tabla', html:html, filas:filas.length});
+      }
+      continue;
+    }
+
+    /* cita */
+    if(/^>\s?/.test(t)){
+      const parr = [];
+      while(i < lineas.length && /^\s*>\s?/.test(lineas[i])){ parr.push(lineas[i].trim().replace(/^>\s?/,'')); i++; }
+      bloques.push({tipo:'cita', html:'<blockquote><p>'+enLinea(parr.join(' '))+'</p></blockquote>'});
+      continue;
+    }
+
+    /* listas */
+    const esViñeta = (x)=> /^\s*([-*•·–]|•)\s+/.test(x);
+    const esNum = (x)=> /^\s*\d+[.)]\s+/.test(x);
+    /* Un renglón numerado corto, sin punto final y con un renglón en blanco
+       después, no es una lista: es un subtítulo. Así están escritos los
+       apartados "1. Exceso de ruido" del reporte real. */
+    if(esNum(t) && t.length < 64 && !/[.;:]$/.test(t) &&
+       (i+1 >= lineas.length || !lineas[i+1].trim()) && !esNum((lineas[i+2]||'').trim())){
+      bloques.push({tipo:'h3', pega:true,
+        html:'<h3>'+enLinea(t.replace(/^\s*\d+[.)]\s+/,''))+'</h3>'});
+      i++; continue;
+    }
+
+    if(esViñeta(t) || esNum(t)){
+      const num = esNum(t);
+      const items = [];
+      while(i < lineas.length && (num ? esNum(lineas[i]) : esViñeta(lineas[i]))){
+        items.push(lineas[i].trim().replace(num ? /^\d+[.)]\s+/ : /^([-*•·–]|•)\s+/, ''));
+        i++;
+      }
+      const etq = num ? 'ol' : 'ul';
+      bloques.push({tipo:'lista',
+        html:'<'+etq+'>'+items.map(x=>'<li>'+enLinea(x)+'</li>').join('')+'</'+etq+'>',
+        items:items.length});
+      continue;
+    }
+
+    /* "Marco — 09:42 h" · nombre y hora de una incidencia individual */
+    const mq = t.match(/^([^—–\-|*#>][^—–]{0,60}?)\s+[—–]\s+(.{1,44})$/);
+    if(mq && !/[;:]$/.test(mq[1]) && !/\w{4,}\.$/.test(mq[1].trim()) &&
+       (i+1 < lineas.length) && lineas[i+1].trim()){
+      bloques.push({tipo:'quien', pega:true,
+        html:'<p class="quien"><b>'+enLinea(mq[1].trim())+'</b>'+
+             '<span class="cuando">'+enLinea(mq[2].trim())+'</span></p>'});
+      i++; continue;
+    }
+
+    /* ficha de datos: renglones del tipo "**Campo:** valor", uno tras otro.
+       Antes se pegaban todos en un párrafo y quedaba ilegible. */
+    const ETIQUETAS = /^(tipo|fecha|hora|momento|frecuencia|periodo|per[ií]odo|lugar|semestre|tutor|grupo|jefe de grupo|responsables?|involucrados?|reportado por|firma|asunto|dirigido a|elaborado por|instituto)$/i;
+    const esCampo = (x)=>{
+      if(/^\s*\*\*[^*]{1,42}?(:\*\*|\*\*:)\s*/.test(x)) return true;
+      /* "Tipo: Falta al reglamento" — sin negrita, como lo escribe Carlos.
+         Se exige valor en el mismo renglón para no confundirlo con una frase
+         que termina en dos puntos ("se solicita lo siguiente:"). */
+      const m = x.trim().match(/^([^:*|>#]{2,30}):\s+(\S.{0,110})$/);
+      return !!m && (ETIQUETAS.test(m[1].trim()) || (m[1].trim().split(/\s+/).length <= 3 && m[2].length <= 70));
+    };
+    if(esCampo(t)){
+      const pares = [];
+      while(i < lineas.length && esCampo(lineas[i])){
+        const cru = lineas[i].trim();
+        const m = cru.match(/^\*\*([^*]+?):?\*\*:?\s*(.*)$/) || cru.match(/^([^:*|>#]{2,30}):\s+(.*)$/);
+        if(!m) break;
+        pares.push([m[1].trim(), m[2].trim()]);
+        i++;
+      }
+      const largo = pares.reduce((n,x)=> Math.max(n, x[1].length), 0);
+      if(pares.length >= 2 || largo <= 70){
+        /* Un solo campo —el "Tipo:" que va bajo cada incidencia— como tarjeta
+           pesa demasiado y se repite veinte veces en la hoja. Va de etiqueta. */
+        if(pares.length === 1){
+          bloques.push({tipo:'etiqueta',
+            html:'<p class="etiqueta"><b>'+enLinea(pares[0][0])+'</b> '+
+                 enLinea(pares[0][1]||'')+'</p>'});
+        }else{
+          bloques.push({tipo:'ficha', html:'<dl class="ficha">' +
+            pares.map(x=>'<dt>'+enLinea(x[0])+'</dt><dd>'+enLinea(x[1]||'')+'</dd>').join('') +
+            '</dl>'});
+        }
+        continue;
+      }
+      /* si el valor es largo, es prosa: se devuelve y sigue como párrafo */
+      i -= pares.length;
+    }
+
+    /* párrafo: junta renglones seguidos */
+    const parr = [];
+    while(i < lineas.length){
+      const x = lineas[i], xt = x.trim();
+      if(!xt || /^(#{1,6})\s/.test(xt) || /^\|/.test(xt) || /^>\s?/.test(xt) ||
+         esViñeta(xt) || esNum(xt) || /^(-{3,}|\*{3,}|_{3,})$/.test(xt) ||
+         /^\[(hoja|img:\d+)\]$/i.test(xt) || (parr.length && esCampo(xt))) break;
+      parr.push(xt); i++;
+    }
+    if(parr.length) bloques.push({tipo:'p', html:'<p>'+enLinea(parr.join(' '))+'</p>'});
+  }
+
+  /* las evidencias que nadie colocó a mano se van al final, con su apartado */
+  const sobrantes = evidencias.map((e,k)=>k).filter(k=>!usadas.has(k));
+  if(sobrantes.length){
+    if(!/##\s*evidencia/i.test(texto||''))
+      bloques.push({tipo:'h2', pega:true, html:'<h2>Evidencias</h2>'});
+    sobrantes.forEach(k=>{
+      const e = evidencias[k];
+      bloques.push({ tipo:'figura', html:
+        '<figure><img src="'+e.datos+'" alt=""><figcaption><b>Imagen '+(k+1)+'.</b> '+
+        esc(e.pie||'Evidencia fotográfica')+'</figcaption></figure>' });
+    });
+  }
+  return bloques;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4 · EL PAGINADOR
+   Mide cada bloque en una hoja fantasma con la tipografía real y lo reparte.
+   Reglas: un título nunca se queda solo al pie, una figura no se parte, y una
+   tabla que no cabe se corta por renglones repitiendo su encabezado.
+   ═════════════════════════════════════════════════════════════════════════ */
+const PILA = () => $('#pila');
+
+function estilosHoja(hoja, f, primera){
+  hoja.style.setProperty('--lado', f.lado+'mm');
+  hoja.style.setProperty('--fondo', f.fondo+'mm');
+  hoja.style.setProperty('--cuerpo-fam', f.fuente);
+  hoja.style.setProperty('--cuerpo-pt', f.tamano);
+  hoja.style.setProperty('--interlineado', f.inter);
+  const conMembrete = (f.membrete === 'todas') || primera;
+  hoja.style.setProperty('--tope', (conMembrete ? f.tope : 22) + 'mm');
+  return conMembrete;
+}
+
+function armaHoja(f, primera){
+  const h = document.createElement('div');
+  h.className = 'hoja';
+  const conMembrete = estilosHoja(h, f, primera);
+  if(conMembrete){
+    const im = document.createElement('img');
+    im.className = 'membrete-sup'; im.src = 'formato/membrete-superior.png'; im.alt = '';
+    h.appendChild(im);
+  }
+  if(f.agua !== 'no'){
+    const a = document.createElement('div'); a.className = 'agua';
+    if(f.agua === 'paloma' || f.agua === 'solo'){
+      const p = document.createElement('img');
+      p.src = '../marca/logo/paloma-simple.svg'; p.alt = '';
+      p.style.width = '118mm'; p.style.transform = 'rotate(-21deg)';
+      p.style.opacity = (f.opacidad/100);
+      p.style.filter = 'grayscale(1) brightness(.35)';
+      a.appendChild(p);
+    }
+    if(f.agua === 'paloma' || f.agua === 'texto'){
+      const t = document.createElement('div');
+      t.className = 'letras'; t.textContent = f.leyenda || '';
+      t.style.opacity = (f.opacidad/100);
+      if(f.agua === 'texto') t.style.transform = 'rotate(-21deg)';
+      a.appendChild(t);
+    }
+    h.appendChild(a);
+  }
+  if(f.alinea === 'left') h.classList.add('izq');
+  const z = document.createElement('div'); z.className = 'zona';
+  const d = document.createElement('div'); d.className = 'doc';
+  z.appendChild(d); h.appendChild(z);
+  const pie = document.createElement('div'); pie.className = 'folio-pie';
+  h.appendChild(pie);
+  const inf = document.createElement('img');
+  inf.className = 'membrete-inf'; inf.src = 'formato/membrete-inferior.png'; inf.alt = '';
+  h.appendChild(inf);
+  return h;
+}
+
+function bloqueTitulo(r){
+  const T = TIPOS.find(t=>t.id===r.tipo) || TIPOS[0];
+  const d = [];
+  const fecha = r.fecha ? new Date(r.fecha+'T12:00:00') : null;
+  const MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+               'septiembre','octubre','noviembre','diciembre'];
+  const bonita = fecha ? (fecha.getDate()+' de '+MES[fecha.getMonth()]+' de '+fecha.getFullYear()) : '';
+  if(bonita) d.push(['Fecha', bonita]);
+  if(r.grupo) d.push(['Grupo', r.grupo]);
+  if(r.semestre) d.push(['Semestre', r.semestre]);
+  if(r.tutor) d.push(['Tutor', r.tutor]);
+  if(r.periodo) d.push(['Periodo', r.periodo]);
+  if(r.para) d.push(['Dirigido a', r.para]);
+  if(r.lugar) d.push(['Lugar', r.lugar]);
+  d.push(['Folio', folio(r)]);
+  const el = document.createElement('div');
+  el.className = 'titulo-bloque';
+  el.innerHTML =
+    '<div class="tipo">'+esc(T.etiqueta)+'</div>'+
+    '<h1>'+esc(r.titulo || T.titulo || 'Reporte sin título')+'</h1>'+
+    '<dl class="datos">'+ d.map(x=>'<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>').join('') +'</dl>';
+  return el;
+}
+
+function bloqueFirmas(r){
+  const gente = [[r.autor, r.cargo]];
+  if(r.autor2) gente.push([r.autor2, r.cargo2]);
+  if(!r.autor && !r.autor2) return null;
+  const el = document.createElement('div');
+  el.className = 'firmas';
+  el.style.setProperty('--n', gente.length);
+  el.innerHTML = gente.map(g =>
+    '<div><div class="linea"></div><div class="quien">'+esc(g[0]||'')+'</div>'+
+    '<div class="cargo">'+esc(g[1]||'')+'</div></div>').join('');
+  return el;
+}
+
+function alturaCon(el, primero){
+  const cs = getComputedStyle(el);
+  const mt = primero ? 0 : parseFloat(cs.marginTop) || 0;
+  const mb = parseFloat(cs.marginBottom) || 0;
+  return el.getBoundingClientRect().height + mt + mb;
+}
+
+/* corta una tabla que no cabe, repitiendo su encabezado */
+function partirTabla(tabla, medidorDoc, disponible){
+  const thead = tabla.querySelector('thead');
+  const filas = Array.from(tabla.querySelectorAll('tbody tr'));
+  if(!filas.length) return null;
+  const molde = document.createElement('table');
+  if(thead) molde.appendChild(thead.cloneNode(true));
+  const tb = document.createElement('tbody'); molde.appendChild(tb);
+  medidorDoc.appendChild(molde);
+  let cabidas = 0;
+  for(let k=0;k<filas.length;k++){
+    tb.appendChild(filas[k].cloneNode(true));
+    if(molde.getBoundingClientRect().height > disponible){ tb.removeChild(tb.lastChild); break; }
+    cabidas++;
+  }
+  medidorDoc.removeChild(molde);
+  if(cabidas === 0 || cabidas === filas.length) return null;
+
+  const hacer = (desde, hasta) => {
+    const t = document.createElement('table');
+    if(thead) t.appendChild(thead.cloneNode(true));
+    const b = document.createElement('tbody');
+    for(let k=desde;k<hasta;k++) b.appendChild(filas[k].cloneNode(true));
+    t.appendChild(b); return t;
+  };
+  return [hacer(0,cabidas), hacer(cabidas,filas.length)];
+}
+
+function paginar(r){
+  const f = r.formato;
+  const pila = PILA();
+  pila.textContent = '';
+
+  /* Hojas fantasma para medir con la tipografía y el ancho de verdad.
+     Van pegadas al documento a propósito: un elemento suelto mide CERO, y
+     medir en el aire fue exactamente el error que metió todo en una hoja. */
+  const fantasma = armaHoja(f, true);
+  fantasma.classList.add('medidor');
+  document.body.appendChild(fantasma);
+  const medDoc = $('.doc', fantasma);
+  const altoPrimera = $('.zona', fantasma).clientHeight;
+  let altoResto = altoPrimera;
+  if(f.membrete === 'primera'){
+    const f2 = armaHoja(f, false);
+    f2.classList.add('medidor');
+    document.body.appendChild(f2);
+    altoResto = $('.zona', f2).clientHeight;
+    document.body.removeChild(f2);
+  }
+
+  /* todos los elementos, en orden */
+  const piezas = [];
+  piezas.push({ el:bloqueTitulo(r), pega:false, tipo:'titulo' });
+  leer(r.cuerpo, r.evidencias).forEach(b=>{
+    if(b.tipo === 'salto'){ piezas.push({salto:true}); return; }
+    const cont = document.createElement('div');
+    cont.innerHTML = b.html;
+    const el = cont.firstElementChild;
+    if(el) piezas.push({ el:el, pega:!!b.pega, tipo:b.tipo });
+  });
+  const firmas = bloqueFirmas(r);
+  if(firmas) piezas.push({ el:firmas, pega:false, tipo:'firmas' });
+
+  const hojas = [];
+  let hoja = null, doc = null, usado = 0, primeraDeHoja = true;
+  const nuevaHoja = () => {
+    hoja = armaHoja(f, hojas.length === 0);
+    doc = $('.doc', hoja);
+    hojas.push(hoja); usado = 0; primeraDeHoja = true;
+  };
+  nuevaHoja();
+  const altoDe = () => (hojas.length === 1 ? altoPrimera : altoResto);
+
+  for(let i=0;i<piezas.length && i<4000;i++){
+    const p = piezas[i];
+    if(p.salto){ if(usado > 0) nuevaHoja(); continue; }
+
+    /* se mide en el fantasma, SIEMPRE, y ese número es el que se usa */
+    medDoc.textContent = ''; medDoc.appendChild(p.el);
+    let h = alturaCon(p.el, primeraDeHoja);
+    const libre = altoDe() - usado;
+
+    /* un título no se queda huérfano al pie: se mide junto con lo que sigue */
+    let cabe = h <= libre;
+    if(p.pega && piezas[i+1] && piezas[i+1].el){
+      medDoc.appendChild(piezas[i+1].el);
+      cabe = medDoc.getBoundingClientRect().height <= libre;
+      medDoc.removeChild(piezas[i+1].el);
+    }
+
+    if(!cabe && usado > 0){
+      /* lo único que se parte a la mitad es una tabla, repitiendo encabezado */
+      if(p.tipo === 'tabla'){
+        const cortes = partirTabla(p.el, medDoc, libre);
+        if(cortes){
+          medDoc.textContent = '';
+          piezas.splice(i, 1, {el:cortes[0], tipo:'tabla'}, {el:cortes[1], tipo:'tabla'});
+          i--; continue;
+        }
+      }
+      nuevaHoja();
+      medDoc.textContent = ''; medDoc.appendChild(p.el);
+      h = alturaCon(p.el, true);
+    }
+
+    medDoc.textContent = '';
+    doc.appendChild(p.el);
+    usado += h;
+    primeraDeHoja = false;
+  }
+
+  document.body.removeChild(fantasma);
+
+  /* pies: folio, sello y numeración */
+  const sl = sello(textoSellable(r)), fo = folio(r);
+  hojas.forEach((h, k) => {
+    const pie = $('.folio-pie', h);
+    pie.innerHTML =
+      '<div><b style="color:var(--azul)">Folio</b> '+esc(fo)+
+      '<br>Instituto Rembrandt · Bachillerato Tecnológico del Estado de Querétaro</div>'+
+      '<div class="sello">'+
+        (f.sello === 'si' ? 'Sello de verificación <b>'+esc(sl)+'</b><br>' : '')+
+        '<span class="pagina">Página '+(k+1)+' de '+hojas.length+'</span></div>';
+    pila.appendChild(h);
+  });
+
+  $('#contadorHojas').textContent = hojas.length + (hojas.length===1 ? ' hoja' : ' hojas')
+    + ' · sello ' + sl;
+  return hojas.length;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4-bis · EL REGISTRO DE INCIDENCIAS
+   Aquí está la mitad del trabajo de Carlos: los apartados de incidencias
+   individuales y el resumen por alumno son puro dedo repetido. Se toca al
+   alumno, se elige qué fue, y la hora se pone sola. Al final se escriben los
+   apartados enteros con el formato que él ya usa.
+
+   Son nombres de menores: NO salen de este aparato. Ni servidor, ni respaldo
+   automático, ni nada. Sólo el respaldo que él exporte a mano.
+   ═════════════════════════════════════════════════════════════════════════ */
+const LLAVE_GRUPO = 'reportes_mazi_grupo_v1';
+const FALTAS = [
+  {id:'lugar',    nombre:'Cambio de lugar',        texto:'Cambio de lugar durante una clase.',
+   clase:'Falta al reglamento de salón.',
+   regla:'Reglamento escolar, Aspectos disciplinarios IX, inciso b (interrupción del orden del salón).'},
+  {id:'levantar', nombre:'Se levantó',             texto:'Se levantó de su lugar sin autorización durante una clase.',
+   clase:'Falta al reglamento de salón.',
+   regla:'Reglamento escolar, faltas que ameritan suspensión, inciso b (interrumpir el orden y los procedimientos del salón).'},
+  {id:'celular',  nombre:'Teléfono',               texto:'Uso de teléfono celular durante una clase.',
+   clase:'Falta al reglamento de salón.',
+   regla:'Reglamento escolar, Aparatos electrónicos IV, incisos a y b. Procede el retiro del aparato: 1ª ocasión se entrega al final de la clase; 2ª al concluir su carga horaria; 3ª se entrega al padre.'},
+  {id:'ruido',    nombre:'Ruido',                  texto:'Nivel de ruido que dificultó el desarrollo de la clase.',
+   clase:'Observación de convivencia.',
+   regla:'Reglamento escolar, faltas que ameritan suspensión, inciso b.'},
+  {id:'pelota',   nombre:'Juego con objetos',      texto:'Participó en un juego con objetos durante una clase.',
+   clase:'Falta al reglamento de salón y observación de convivencia.',
+   regla:'Reglamento escolar, Aparatos electrónicos IV, inciso c (objetos sin propósito académico) y faltas que ameritan suspensión, inciso b.'},
+  {id:'lanzar',   nombre:'Lanzó objetos',          texto:'Lanzó objetos dentro del salón.',
+   clase:'Conducta de riesgo / convivencia.',
+   regla:'Reglamento escolar, faltas que ameritan suspensión, inciso a (poner en riesgo la seguridad propia o de otro alumno).'},
+  {id:'lenguaje', nombre:'Lenguaje inapropiado',   texto:'Uso de lenguaje inapropiado.',
+   clase:'Observación de convivencia.',
+   regla:'Reglamento escolar, Comportamiento IX, inciso d (ofender con groserías, expresiones vulgares, apodos o intimidaciones).'},
+  {id:'irrespeto',nombre:'Falta de respeto',       texto:'Conducta irrespetuosa hacia un compañero o hacia personal del Instituto.',
+   clase:'Falta disciplinaria.',
+   regla:'Reglamento escolar, faltas que ameritan suspensión, inciso c (ser irrespetuoso hacia compañeros, maestros, autoridades y personal escolar).'},
+  {id:'fisico',   nombre:'Contacto físico indebido', texto:'Contacto físico indebido dentro del salón.',
+   clase:'Falta disciplinaria. Requiere valoración del tutor.',
+   regla:'Reglamento escolar, Comportamiento IX, incisos b y c (empujar o abusar físicamente; afecto más allá de la amistad).'},
+  {id:'alimento', nombre:'Comió en clase',         texto:'Consumió alimentos durante una clase.',
+   clase:'Observación de conducta durante actividad académica.',
+   regla:'Reglamento escolar, Aspectos disciplinarios (orden durante la actividad académica).'},
+  {id:'limpieza', nombre:'Se fue de la limpieza',  texto:'Se retiró antes de que concluyeran las actividades de limpieza, pese a la indicación de los responsables de limpieza y del jefe de grupo.',
+   clase:'Falta al reglamento de salón.',
+   regla:'Reglamento escolar, faltas que ameritan suspensión, inciso d (rehusarse a seguir las recomendaciones de una autoridad del Instituto).'},
+  {id:'uniforme', nombre:'Uniforme',               texto:'No portó el uniforme conforme a lo establecido.',
+   clase:'Falta al reglamento.',
+   regla:'Reglamento escolar, Uniformes III. De reincidir procede suspensión de clases por ese día.'},
+  {id:'tarea',    nombre:'Sin material o tarea',   texto:'No presentó el material o la actividad solicitada por el docente.',
+   clase:'Situación académica en seguimiento.',
+   regla:'Reglamento escolar, Aspectos académicos (tareas y material).'},
+  {id:'retardo',  nombre:'Llegó tarde',            texto:'Llegó tarde a la clase.',
+   clase:'Falta de asistencia a esa clase.',
+   regla:'Reglamento escolar, Hora de llegada I, inciso c: llegar tarde a clases se considera falta en esa clase.'},
+  {id:'otro',     nombre:'Otro…',                  texto:'', clase:'Observación de convivencia.', regla:''},
+];
+
+let GRUPO = { alumnos:[], entradas:[] };   /* entradas: {id, alumno, falta, texto, clase, fecha, hora} */
+let diaVisto = iso(new Date());
+
+function cargarGrupo(){
+  try{ const g = JSON.parse(localStorage.getItem(LLAVE_GRUPO) || 'null');
+       if(g && Array.isArray(g.alumnos)) GRUPO = g; }catch(e){}
+  if(!Array.isArray(GRUPO.entradas)) GRUPO.entradas = [];
+}
+function guardarGrupo(){
+  try{ localStorage.setItem(LLAVE_GRUPO, JSON.stringify(GRUPO)); }
+  catch(e){ alert('No cupo en la memoria del teléfono.'); }
+}
+function entradasDe(f){ return GRUPO.entradas.filter(x => x.fecha === f); }
+function cuentaDe(alumno, hasta){
+  return GRUPO.entradas.filter(x => x.alumno === alumno && (!hasta || x.fecha <= hasta)).length;
+}
+function tarjetas(n){ return { rojas: Math.floor(n/2), amarillas: n % 2 }; }
+function textoTarjetas(n){
+  const t = tarjetas(n);
+  if(!n) return 'sin registro';
+  const p = [];
+  if(t.rojas) p.push(t.rojas + (t.rojas===1 ? ' roja' : ' rojas'));
+  if(t.amarillas) p.push(t.amarillas + (t.amarillas===1 ? ' amarilla' : ' amarillas'));
+  return p.join(' · ');
+}
+const HORA = () => {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' h';
+};
+function fechaBonita(f){
+  const d = new Date(f+'T12:00:00');
+  const MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+               'septiembre','octubre','noviembre','diciembre'];
+  return d.getDate()+' de '+MES[d.getMonth()]+' de '+d.getFullYear();
+}
+
+/* ── la hojita de abajo, que es como se elige en el teléfono ── */
+function abrirHojita(html){
+  $('#hojita').innerHTML = html; $('#hojita').hidden = false; $('#velo').hidden = false;
+}
+function cerrarHojita(){ $('#hojita').hidden = true; $('#velo').hidden = true; }
+$('#velo').addEventListener('click', cerrarHojita);
+
+function pintarRegistro(){
+  $('#fechaRegistro').textContent = fechaBonita(diaVisto);
+  const c = $('#listaAlumnos');
+  if(!GRUPO.alumnos.length){
+    c.innerHTML = '<p class="vacio-nota" style="grid-column:1/-1">Todavía no hay lista del grupo. '+
+      'Toca <b>Editar la lista del grupo</b> y pega los nombres, uno por renglón.</p>';
+  }else{
+    c.innerHTML = GRUPO.alumnos.map(a => {
+      const n = cuentaDe(a, diaVisto);
+      const t = tarjetas(n);
+      const nivel = t.rojas ? 2 : (t.amarillas ? 1 : 0);
+      return '<button class="alumno" type="button" data-alumno="'+esc(a)+'" data-nivel="'+nivel+'">'+
+        '<span>'+esc(a)+'</span><span class="marcas">'+
+        (n ? textoTarjetas(n) : '—')+'</span></button>';
+    }).join('');
+  }
+  const dia = entradasDe(diaVisto);
+  $('#cuentaEntradas').textContent = dia.length
+    ? dia.length + (dia.length===1 ? ' incidencia' : ' incidencias') : 'nada todavía';
+  const e = $('#listaEntradas');
+  e.innerHTML = dia.length ? dia.slice().sort((a,b)=> a.hora.localeCompare(b.hora)).map(x =>
+      '<div class="entrada"><span class="e-q">'+esc(x.alumno)+'</span>'+
+      '<span class="e-t">'+esc(x.texto)+'</span>'+
+      '<span class="e-h">'+esc(x.hora)+'</span>'+
+      '<button class="btn chico" type="button" data-quitarE="'+esc(x.id)+'">✕</button></div>').join('')
+    : '<p class="vacio-nota">Sin incidencias registradas este día. Ojalá siga así.</p>';
+}
+
+$('#listaAlumnos').addEventListener('click', e => {
+  const b = e.target.closest('[data-alumno]'); if(!b) return;
+  const quien = b.dataset.alumno;
+  abrirHojita('<h3>'+esc(quien)+'</h3><p class="sub">¿Qué pasó? La hora se pone sola: '+HORA()+'</p>'+
+    '<div class="chips">'+ FALTAS.map(f =>
+      '<button class="chip" type="button" data-falta="'+f.id+'" data-quien="'+esc(quien)+'">'+
+      esc(f.nombre)+'</button>').join('') +'</div>'+
+    '<button class="btn" type="button" data-cerrar style="width:100%">Cancelar</button>');
+});
+
+$('#hojita').addEventListener('click', e => {
+  if(e.target.closest('[data-cerrar]')){ cerrarHojita(); return; }
+  const b = e.target.closest('[data-falta]'); if(!b) return;
+  const f = FALTAS.find(x => x.id === b.dataset.falta);
+  let texto = f.texto;
+  if(f.id === 'otro'){
+    texto = prompt('¿Qué pasó? Escríbelo como quieres que salga en el reporte.');
+    if(!texto) return;
+  }
+  GRUPO.entradas.push({ id:'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    alumno:b.dataset.quien, falta:f.id, texto:texto, clase:f.clase, regla:f.regla,
+    fecha:diaVisto, hora:HORA() });
+  guardarGrupo(); cerrarHojita(); pintarRegistro();
+});
+
+$('#listaEntradas').addEventListener('click', e => {
+  const b = e.target.closest('[data-quitare]'); if(!b) return;
+  GRUPO.entradas = GRUPO.entradas.filter(x => x.id !== b.dataset.quitare);
+  guardarGrupo(); pintarRegistro();
+});
+
+$('#bAlumnos').addEventListener('click', () => {
+  abrirHojita('<h3>La lista del grupo</h3><p class="sub">Un nombre por renglón. Se guarda aquí, '+
+    'en el teléfono, y no sale de aquí.</p>'+
+    '<textarea id="hGrupo" style="min-height:220px; font-family:inherit">'+
+      esc(GRUPO.alumnos.join('\n'))+'</textarea>'+
+    '<div class="chips" style="margin-top:12px">'+
+      '<button class="chip" type="button" id="hGuardar" style="background:var(--violeta);'+
+      'border-color:var(--violeta); color:#12061C">Guardar</button>'+
+      '<button class="chip" type="button" data-cerrar>Cancelar</button></div>');
+  $('#hGuardar').addEventListener('click', () => {
+    GRUPO.alumnos = $('#hGrupo').value.split('\n').map(x=>x.trim()).filter(Boolean);
+    guardarGrupo(); cerrarHojita(); pintarRegistro();
+  });
+});
+
+$('#bOtroDia').addEventListener('click', () => {
+  const dias = [...new Set(GRUPO.entradas.map(x=>x.fecha))].sort().reverse();
+  abrirHojita('<h3>Ver otro día</h3><p class="sub">Los días con algo registrado.</p>'+
+    '<label class="campo"><span>Fecha</span><input type="date" id="hDia" value="'+diaVisto+'"></label>'+
+    (dias.length ? '<div class="chips">'+dias.map(d=>
+      '<button class="chip" type="button" data-dia="'+d+'">'+fechaBonita(d)+
+      ' <b style="opacity:.7">('+entradasDe(d).length+')</b></button>').join('')+'</div>' : '')+
+    '<button class="btn" type="button" data-cerrar style="width:100%">Cerrar</button>');
+  $('#hDia').addEventListener('change', () => {
+    diaVisto = $('#hDia').value || diaVisto; cerrarHojita(); pintarRegistro(); });
+  $$('[data-dia]', $('#hojita')).forEach(b => b.addEventListener('click', () => {
+    diaVisto = b.dataset.dia; cerrarHojita(); pintarRegistro(); }));
+});
+
+$('#bBorrarDia').addEventListener('click', () => {
+  const n = entradasDe(diaVisto).length;
+  if(!n) return;
+  if(!confirm('¿Borrar las '+n+' incidencias del '+fechaBonita(diaVisto)+'? No se puede deshacer.')) return;
+  GRUPO.entradas = GRUPO.entradas.filter(x => x.fecha !== diaVisto);
+  guardarGrupo(); pintarRegistro();
+});
+
+/* ── de registro a texto de reporte, con el formato que Carlos ya usa ── */
+function redactarIncidencias(desde, hasta){
+  const dentro = GRUPO.entradas.filter(x => x.fecha >= desde && x.fecha <= hasta);
+  if(!dentro.length) return '';
+  const dias = [...new Set(dentro.map(x=>x.fecha))].sort();
+  const L = [];
+
+  L.push('## Incidencias individuales');
+  L.push('');
+  dias.forEach(d => {
+    L.push('### '+fechaBonita(d));
+    L.push('');
+    /* si la misma persona hizo lo mismo varias veces en el día, va en un solo
+       renglón con sus dos horas — así lo escribe él, y se lee mejor */
+    const delDia = dentro.filter(x=>x.fecha===d);
+    const juntas = new Map();
+    delDia.forEach(x => {
+      const k = x.alumno+'|'+x.texto;
+      if(!juntas.has(k)) juntas.set(k, {x:x, horas:[]});
+      juntas.get(k).horas.push(x.hora);
+    });
+    [...juntas.values()]
+      .sort((a,b)=> a.horas[0].localeCompare(b.horas[0]))
+      .forEach(g => {
+        g.horas.sort();
+        L.push(g.x.alumno+' — '+g.horas.join(' y '));
+        L.push(g.horas.length > 1
+          ? 'Se registraron '+g.horas.length+' ocasiones. '+g.x.texto
+          : g.x.texto);
+        L.push('Tipo: '+g.x.clase);
+        if(g.x.regla) L.push('Fundamento: '+g.x.regla);
+        L.push('');
+      });
+  });
+
+  /* el resumen por alumno, que es el apartado más latoso de hacer a mano */
+  L.push('## Resumen individual');
+  L.push('');
+  L.push('| Alumno | Incidencias registradas | Tarjetas |');
+  const lista = GRUPO.alumnos.length ? GRUPO.alumnos : [...new Set(dentro.map(x=>x.alumno))].sort();
+  lista.forEach(a => {
+    const mias = dentro.filter(x => x.alumno === a);
+    if(!mias.length){ L.push('| '+a+' | Sin incidencia individual registrada | — |'); return; }
+    const porTipo = new Map();
+    mias.forEach(x => porTipo.set(x.texto, (porTipo.get(x.texto)||0)+1));
+    const detalle = [...porTipo.entries()]
+      .map(([t,n]) => (n>1 ? n+' × ' : '') + t.replace(/\.$/,''))
+      .join('; ');
+    L.push('| '+a+' | '+detalle+' | '+textoTarjetas(mias.length)+' |');
+  });
+  L.push('');
+  L.push('> Este cuadro es un resumen del registro interno y no representa por sí mismo el número '+
+         'de reportes oficiales. La determinación de una falta y su consecuencia corresponde a la '+
+         'autoridad competente.');
+  return L.join('\n');
+}
+
+$('#bPasar').addEventListener('click', () => {
+  const dias = [...new Set(GRUPO.entradas.map(x=>x.fecha))].sort();
+  if(!dias.length){ alert('Todavía no hay nada registrado.'); return; }
+  abrirHojita('<h3>Pasar al reporte</h3><p class="sub">¿De qué días? Se escriben los apartados '+
+    'completos y se pegan al final del cuerpo.</p>'+
+    '<div class="rejilla">'+
+      '<label class="campo"><span>Desde</span><input type="date" id="hDesde" value="'+dias[0]+'"></label>'+
+      '<label class="campo"><span>Hasta</span><input type="date" id="hHasta" value="'+dias[dias.length-1]+'"></label>'+
+    '</div>'+
+    '<div class="chips">'+
+      '<button class="chip" type="button" id="hPasar" style="background:var(--violeta);'+
+      'border-color:var(--violeta); color:#12061C">Escribirlo</button>'+
+      '<button class="chip" type="button" data-cerrar>Cancelar</button></div>');
+  $('#hPasar').addEventListener('click', () => {
+    const txt = redactarIncidencias($('#hDesde').value, $('#hHasta').value);
+    if(!txt){ alert('No hay incidencias en esas fechas.'); return; }
+    R.cuerpo = (R.cuerpo.trim() ? R.cuerpo.trim()+'\n\n' : '') + txt;
+    $('#fCuerpo').value = R.cuerpo;
+    contarPalabras(); guardar(); cerrarHojita(); verVista('escribir'); repintar();
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4-quater · LAS CREDENCIALES
+   Carlos está llenando muchas y a mano cada una es media hora. Se llenan los
+   campos, se ve la tarjeta al tamaño real, y salen cuatro por hoja carta con
+   marcas de corte — los reversos en espejo para que al voltear coincidan.
+
+   La medida salió de MEDIR la imagen que mandó: 1.654 de alto sobre ancho,
+   que da 63.5 × 105 mm. Es ajustable porque cada imprenta pide lo suyo, y
+   adivinar el tamaño de un gafete se paga en papel tirado.
+   ═════════════════════════════════════════════════════════════════════════ */
+const LLAVE_CRED = 'reportes_mazi_cred_v1';
+const CRED_BASE = {
+  ciclo:'2026-2027', red:'@ADVANCED.CRITICAL_CARE', ancho:63.5, alto:105, qr:'credencial/qr-instagram.jpg',
+  leyenda:'RESPETUOSAMENTE, PEDIMOS A LAS AUTORIDADES CIVILES, MILITARES Y FEDERALES QUE '+
+          'OTORGUEN TODAS LAS FACILIDADES A PORTADOR DE LA MISMA PARA EL BIEN DESEMPEÑO DE SUS FUNCIONES.',
+};
+let CRED = { base:Object.assign({},CRED_BASE), gente:[] };
+let credActiva = 0;
+
+function credNueva(){
+  return { id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    apellidos:'', nombres:'', nivel:'', empleado:'', num:'', acred:'', otras:'', foto:'',
+    sangre:'', alergias:'', tel:'', familiar:'', inicio:'', vence:'' };
+}
+function cargarCred(){
+  try{ const c = JSON.parse(localStorage.getItem(LLAVE_CRED) || 'null');
+       if(c && Array.isArray(c.gente)) CRED = c; }catch(e){}
+  CRED.base = Object.assign({}, CRED_BASE, CRED.base || {});
+  if(!CRED.gente.length) CRED.gente = [credNueva()];
+  if(credActiva >= CRED.gente.length) credActiva = 0;
+}
+function guardarCred(){
+  try{ localStorage.setItem(LLAVE_CRED, JSON.stringify(CRED)); }
+  catch(e){ alert('No cupo en la memoria. Quita alguna foto o borra credenciales viejas.'); }
+}
+const cAct = () => CRED.gente[credActiva];
+
+/* iconos: glifos funcionales, no ilustración. Van en el código porque son
+   quince trazos y bajarlos de algún lado sería depender de alguien más. */
+const ICONO = {
+  persona:'<path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5 0-9 2.5-9 5.5V22h18v-2.5c0-3-4-5.5-9-5.5z"/>',
+  credencial:'<path d="M3 4h18v16H3z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="10" r="2.2"/><path d="M5 16c0-1.7 1.6-2.6 3.5-2.6S12 14.3 12 16zM14 8h5v1.6h-5zM14 11.2h5v1.6h-5zM14 14.4h5V16h-5z"/>',
+  estrella:'<path d="M12 2l2.2 3.9 4.4-1.1-1.1 4.4L21 12l-3.5 2.8 1.1 4.4-4.4-1.1L12 22l-2.2-3.9-4.4 1.1 1.1-4.4L3 12l3.5-2.8-1.1-4.4 4.4 1.1z"/>',
+  llave:'<path d="M20.6 3.4a5 5 0 01-6 8L4 22l-2-2L12.6 9.4a5 5 0 018-6z"/>',
+  auto:'<path d="M5 11l1.5-4.2A2 2 0 018.4 5.5h7.2a2 2 0 011.9 1.3L19 11h1a1 1 0 011 1v4h-2.2a2.3 2.3 0 01-4.6 0h-4.4a2.3 2.3 0 01-4.6 0H3v-4a1 1 0 011-1z"/>',
+  lupa:'<path d="M10.5 3a7.5 7.5 0 105.9 12.1l4.3 4.3 1.6-1.6-4.3-4.3A7.5 7.5 0 0010.5 3zm0 2.4a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2z"/>',
+  gota:'<path d="M12 2.5S5.5 10 5.5 14.2a6.5 6.5 0 1013 0C18.5 10 12 2.5 12 2.5z"/>',
+  alerta:'<path d="M12 2L1.5 21h21zM11 9h2v6h-2zm0 8h2v2h-2z"/>',
+  telefono:'<path d="M6.6 3h3l1.6 4-2 1.5a13 13 0 006.3 6.3l1.5-2 4 1.6v3c0 .9-.7 1.6-1.6 1.6A17.4 17.4 0 015 4.6C5 3.7 5.7 3 6.6 3z"/>',
+  gente:'<path d="M8 12a4 4 0 100-8 4 4 0 000 8zm8 0a3.4 3.4 0 100-6.8A3.4 3.4 0 0016 12zM8 14c-4 0-6.5 2-6.5 4.4V21h13v-2.6C14.5 16 12 14 8 14zm8 .4c-.9 0-1.7.1-2.4.3 1.7 1.1 2.9 2.6 2.9 4.7V21h6.5v-2.3c0-2.2-2.5-4.3-7-4.3z"/>',
+  escudo:'<path d="M12 2l8 3.2v6c0 5-3.4 9.4-8 10.8-4.6-1.4-8-5.8-8-10.8v-6z"/>',
+  calendario:'<path d="M7 2v2H4v18h16V4h-3V2h-2v2H9V2zm-1 8h12v10H6z"/>',
+  reloj:'<path d="M6 2h12v2c0 2.8-1.6 5.2-4 6.4V12c2.4 1.2 4 3.6 4 6.4V22H6v-3.6c0-2.8 1.6-5.2 4-6.4v-1.6C7.6 9.2 6 6.8 6 4z"/>',
+  globo:'<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.9 9h-3a15 15 0 00-1.5-6.1A8 8 0 0118.9 11zM12 4.2c.9 1.3 1.7 3.6 1.9 6.8h-3.8c.2-3.2 1-5.5 1.9-6.8zM9.6 4.9A15 15 0 008.1 11h-3a8 8 0 014.5-6.1zM5.1 13h3a15 15 0 001.5 6.1A8 8 0 015.1 13zm6.9 6.8c-.9-1.3-1.7-3.6-1.9-6.8h3.8c-.2 3.2-1 5.5-1.9 6.8zm2.4-.7a15 15 0 001.5-6.1h3a8 8 0 01-4.5 6.1z"/>',
+  silueta:'<path d="M12 12.5a5.2 5.2 0 100-10.4 5.2 5.2 0 000 10.4zM3.4 24c0-5.4 3.9-9.1 8.6-9.1s8.6 3.7 8.6 9.1z"/>',
+};
+const svg = (n, extra) => '<svg viewBox="0 0 24 24" aria-hidden="true"'+(extra||'')+'>'+ICONO[n]+'</svg>';
+
+/* ── el frente ── */
+function credFrente(c){
+  const b = CRED.base;
+  const otras = (c.otras||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  const glifos = ['llave','auto','lupa','estrella','credencial','persona'];
+  const filas = [];
+  if(c.empleado) filas.push(['persona','EMPLEADO: <b>'+esc(c.empleado)+'</b>']);
+  if(c.num)      filas.push(['credencial','NO. DE EMPLEADO: <b>'+esc(c.num)+'</b>']);
+  if(c.acred)    filas.push(['estrella','ACREDITADO COMO:<br><b>'+esc(c.acred)+'</b>']);
+  otras.forEach((o,k) => filas.push([glifos[k % glifos.length], '<b>'+esc(o)+'</b>']));
+
+  return '<div class="cred" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm">'+
+    '<div class="panal"></div>'+
+    '<div class="raya-sup"></div><div class="banda-sup"></div>'+
+    '<div class="raya-inf"></div><div class="banda-inf"></div>'+
+    '<div class="ranura"></div>'+
+    '<div class="interior">'+
+      '<img class="logo" src="credencial/logo-acc.png" alt="">'+
+      '<div class="persona">'+
+        '<div class="retrato">'+ (c.foto
+            ? '<img src="'+c.foto+'" alt="">'
+            : svg('silueta',' class="silueta"')) +'</div>'+
+        '<div class="quien">'+
+          '<div class="apellidos">'+esc(c.apellidos || 'APELLIDOS')+'</div>'+
+          '<div class="nombres">'+esc(c.nombres || 'NOMBRES')+'</div>'+
+          (c.nivel ? '<div class="nivel">'+esc(c.nivel)+'</div>' : '')+
+        '</div>'+
+      '</div>'+
+      '<ul class="campos">'+ filas.map(f =>
+        '<li>'+svg(f[0])+'<span>'+f[1]+'</span></li>').join('') +'</ul>'+
+    '</div>'+
+    '<div class="pie">'+
+      '<span class="casco" aria-hidden="true"></span>'+
+      '<div class="marca-fr"><div class="a">ADVANCED</div><div class="b">FIRE RESCUE</div></div>'+
+      '<div class="ciclo">'+svg('calendario')+'<span>FECHA:<br>'+esc(b.ciclo)+'</span></div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ── el reverso ── */
+function credReverso(c){
+  const b = CRED.base;
+  const R = [
+    ['gota','TIPO DE SANGRE', c.sangre],
+    ['alerta','ALERGIAS', c.alergias],
+    ['telefono','CONTACTO DE EMERGENCIA', c.tel],
+    ['gente','FAMILIAR', c.familiar],
+    ['escudo','NO. DE EMPLEADO', c.num],
+    ['calendario','FECHA DE INICIO', c.inicio],
+    ['reloj','FECHA DE VENCIMIENTO', c.vence],
+  ].filter(x => x[2]);
+
+  return '<div class="cred reverso" style="--an:'+b.ancho+'mm; --al:'+b.alto+'mm">'+
+    '<div class="panal"></div><div class="ranura"></div>'+
+    '<div class="raya-inf"></div><div class="banda-inf"></div>'+
+    '<div class="interior">'+
+      '<img class="logo" src="credencial/logo-acc.png" alt="">'+
+      '<div class="tabla">'+ R.map(x =>
+        '<div class="ren">'+svg(x[0])+'<span class="et">'+esc(x[1])+'</span>'+
+        '<span class="va">'+esc(x[2]).replace(/\n/g,'<br>')+'</span></div>').join('') +'</div>'+
+      '<svg class="latido" viewBox="0 0 200 20" preserveAspectRatio="none">'+
+        '<path d="M0 10h74l5-7 6 14 6-11 5 4h98" fill="none" stroke="#C8102E" stroke-width="1.6"/></svg>'+
+    '</div>'+
+    '<div class="bloque-inf">'+
+      svg('estrella',' class="estrella"')+
+      '<div class="fila">'+
+        '<div class="leyenda">'+esc(b.leyenda)+'</div>'+
+        '<div class="qr">'+ (b.qr ? '<img src="'+b.qr+'" alt="">'
+            : '<span class="falta">Pon aquí<br>el QR</span>') +'</div>'+
+      '</div>'+
+      '<div class="arroba">'+esc(b.red)+'</div>'+
+      '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ── la pantalla de credenciales ── */
+const CAMPOS_CRED = [['#cApellidos','apellidos'],['#cNombres','nombres'],['#cNivel','nivel'],
+  ['#cEmpleado','empleado'],['#cNum','num'],['#cAcred','acred'],['#cOtras','otras'],
+  ['#cSangre','sangre'],['#cAlergias','alergias'],['#cTel','tel'],['#cFamiliar','familiar'],
+  ['#cInicio','inicio'],['#cVence','vence']];
+const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda']];
+
+function pintarCred(){
+  const c = cAct(), b = CRED.base;
+  $('#cuentaCred').textContent = CRED.gente.length +
+    (CRED.gente.length===1 ? ' credencial' : ' credenciales');
+  $('#listaCred').innerHTML = CRED.gente.map((g,k) =>
+    '<button class="chip" type="button" data-cred="'+k+'" aria-pressed="'+(k===credActiva)+'">'+
+    esc((g.apellidos||'').split(' ')[0] || g.nombres || ('Sin nombre '+(k+1)))+'</button>').join('');
+  CAMPOS_CRED.forEach(([sel,campo]) => { $(sel).value = c[campo] || ''; });
+  CAMPOS_BASE.forEach(([sel,campo]) => { $(sel).value = b[campo] || ''; });
+  $('#cAncho').value = b.ancho; $('#cAlto').value = b.alto;
+  $('#mesaCred').innerHTML = credFrente(c) + credReverso(c);
+}
+
+CAMPOS_CRED.forEach(([sel,campo]) => {
+  $(sel).addEventListener('input', () => { cAct()[campo] = $(sel).value; guardarCred(); pintarCred(); });
+});
+CAMPOS_BASE.forEach(([sel,campo]) => {
+  $(sel).addEventListener('input', () => { CRED.base[campo] = $(sel).value; guardarCred(); pintarCred(); });
+});
+['#cAncho','#cAlto'].forEach(sel => {
+  $(sel).addEventListener('input', () => {
+    const v = parseFloat($(sel).value);
+    if(v > 0) CRED.base[sel === '#cAncho' ? 'ancho' : 'alto'] = v;
+    guardarCred(); pintarCred();
+  });
+});
+$('#cMedidas').addEventListener('click', () => {
+  CRED.base.ancho = 63.5; CRED.base.alto = 105; guardarCred(); pintarCred();
+});
+
+$('#listaCred').addEventListener('click', e => {
+  const b = e.target.closest('[data-cred]'); if(!b) return;
+  credActiva = +b.dataset.cred; pintarCred();
+});
+$('#cNueva').addEventListener('click', () => {
+  CRED.gente.push(credNueva()); credActiva = CRED.gente.length-1; guardarCred(); pintarCred();
+});
+$('#cDuplicar').addEventListener('click', () => {
+  const copia = Object.assign({}, cAct(), credNueva());
+  copia.apellidos = ''; copia.nombres = ''; copia.foto = ''; copia.num = '';
+  CRED.gente.push(copia); credActiva = CRED.gente.length-1; guardarCred(); pintarCred();
+});
+$('#cBorrar').addEventListener('click', () => {
+  if(CRED.gente.length === 1){ CRED.gente[0] = credNueva(); guardarCred(); pintarCred(); return; }
+  if(!confirm('¿Borrar esta credencial?')) return;
+  CRED.gente.splice(credActiva,1); credActiva = Math.max(0, credActiva-1);
+  guardarCred(); pintarCred();
+});
+$('#cFoto').addEventListener('click', () => $('#cFotoIn').click());
+$('#cFotoIn').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  try{ cAct().foto = await achicar(f, 620); guardarCred(); pintarCred(); }
+  catch(err){ alert('Esa foto no se pudo leer.'); }
+  e.target.value = '';
+});
+$('#cQuitarFoto').addEventListener('click', () => { cAct().foto = ''; guardarCred(); pintarCred(); });
+$('#cQR').addEventListener('click', () => $('#cQRIn').click());
+$('#cQRIn').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  try{ CRED.base.qr = await achicar(f, 520); guardarCred(); pintarCred(); }
+  catch(err){ alert('Ese código no se pudo leer.'); }
+  e.target.value = '';
+});
+
+/* ── a la imprenta: cuatro por hoja, con marcas de corte ──
+   Los reversos van EN ESPEJO por columna: al voltear la hoja por el lado
+   largo, cada reverso cae encima de su frente. Es lo que más se equivoca
+   cuando se hace a mano, y lo que más papel tira. */
+function pliegosDe(gente){
+  const b = CRED.base;
+  const hojas = [];
+  for(let i=0;i<gente.length;i+=4){
+    const grupo = gente.slice(i, i+4);
+    const espejo = [];
+    for(let f=0; f<2; f++){
+      const fila = [grupo[f*2], grupo[f*2+1]];
+      espejo.push(fila[1]); espejo.push(fila[0]);
+    }
+    hojas.push({ frentes:grupo, reversos:espejo });
+  }
+  return hojas.map(h => {
+    const caja = (html) => '<div>'+ (html || '') +'</div>';
+    const cortes =
+      '<div class="marca-corte" style="left:0;right:0;top:'+ (279.4/2) +'mm;height:.2mm"></div>'+
+      '<div class="marca-corte" style="top:0;bottom:0;left:'+ (215.9/2) +'mm;width:.2mm"></div>';
+    return '<div class="pliego">'+ cortes +
+      h.frentes.map(g => caja(credFrente(g))).join('') +'</div>'+
+      '<div class="pliego">'+ cortes +
+      h.reversos.map(g => caja(g ? credReverso(g) : '')).join('') +'</div>';
+  }).join('');
+}
+
+function imprimirCredenciales(soloEsta){
+  const gente = soloEsta ? [cAct()] : CRED.gente;
+  guardarCred();
+  const pila = PILA();
+  pila.textContent = '';
+  pila.insertAdjacentHTML('beforeend', pliegosDe(gente));
+  const antes = pila.style.transform;
+  pila.style.transform = 'none'; $('#marco').style.width=''; $('#marco').style.height='';
+  verVista('ver');
+  setTimeout(()=>{ window.print();
+    setTimeout(()=>{ pila.style.transform = antes; repintar(); }, 400); }, 160);
+}
+$('#cImprimir').addEventListener('click', () => imprimirCredenciales(false));
+$('#cSoloEsta').addEventListener('click', () => imprimirCredenciales(true));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4-ter · LA PLANTILLA
+   Lo pidió Carlos con todas sus letras: que la herramienta le entregue las
+   instrucciones que hay que darle a una IA para que lo que devuelva entre
+   aquí sin arreglarlo a mano. Se genera con el tipo que él tenga elegido,
+   así que no es un texto genérico: trae SU esqueleto.
+   ═════════════════════════════════════════════════════════════════════════ */
+function instruccionesIA(){
+  const T = TIPOS.find(t => t.id === R.tipo) || TIPOS[0];
+  return [
+'Vas a redactar un documento escolar que se va a pegar en una herramienta que lo',
+'acomoda solo en hojas con membrete. Sigue estas reglas EXACTAMENTE.',
+'',
+'QUÉ ES',
+'· Documento: '+T.etiqueta+'.',
+'· Institución: Instituto Rembrandt de Querétaro · Bachillerato Tecnológico del',
+'  Estado de Querétaro, especialidad en Programación.',
+'· Lo firma: '+(R.autor || '[nombre]')+', '+(R.cargo || '[cargo]')+'.',
+(R.grupo ? '· Grupo: '+R.grupo+'.' : null),
+(R.para ? '· Dirigido a: '+R.para+'.' : null),
+'',
+'CÓMO SE MARCA EL TEXTO',
+'· "## Apartado" para cada apartado. Si el documento se numera, "## IV. Apartado".',
+'· "### Sub-apartado" para lo de adentro.',
+'· "Campo: valor" en renglones seguidos para las fichas de datos.',
+'· "Nombre — 09:42 h" para el renglón de una incidencia individual, y debajo la',
+'  descripción y luego "Tipo: ...".',
+'· "- punto" para viñetas, "1. punto" para numeradas.',
+'· "> texto" para una nota destacada.',
+'· "**negrita**" sólo para énfasis dentro de un párrafo.',
+'· Tablas así, una fila por renglón, la primera es el encabezado:',
+'  | Concepto | Dato |',
+'  | Ejemplo | 12 |',
+'· Una línea en blanco antes y después de cada "##" y de cada tabla.',
+'',
+'LO QUE NO DEBES HACER',
+'· NO escribas el título del documento ni el encabezado institucional: ya van aparte.',
+'· NO escribas la firma, ni el lugar, ni la fecha al final: los pone la herramienta.',
+'· NO uses emoji, adornos, ni líneas de guiones para decorar.',
+'· NO uses "⸻" ni separadores salvo que quieras una línea de verdad ("---").',
+'· NO inventes datos, nombres, horas ni cantidades. Si falta un dato, deja el hueco.',
+'',
+'CÓMO SE REDACTA',
+'· Español de México, formal y sobrio. Sin adjetivos de más.',
+'· Los hechos primero y sin opinar; la valoración después y marcada como tal.',
+'· No atribuyas sanciones: eso lo determina la autoridad escolar. Se describe la',
+'  conducta y, si aplica, se cita el reglamento como "Fundamento: ...".',
+'· Al hablar de un alumno, describe la conducta, no a la persona.',
+'',
+'ESTRUCTURA QUE DEBES SEGUIR',
+'Usa este esqueleto y rellénalo. Puedes agregar apartados si hacen falta, con el',
+'mismo estilo, pero no quites los que están.',
+'',
+T.cuerpo,
+'',
+'---',
+'Ahora pídeme la información que te falte, o redáctalo con lo que te di.',
+  ].filter(x => x != null).join('\n');   /* null = quítalo; '' = renglón en blanco */
+}
+
+async function copiar(txt, boton){
+  const antes = boton.textContent;
+  try{
+    if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(txt);
+    else{
+      const a = document.createElement('textarea');
+      a.value = txt; a.style.position='fixed'; a.style.opacity='0';
+      document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove();
+    }
+    boton.textContent = '✓ Copiado';
+  }catch(e){
+    $('#txtIA').select(); boton.textContent = 'Selecciónalo y copia';
+  }
+  setTimeout(()=>{ boton.textContent = antes; }, 1800);
+}
+$('#bCopiarIA').addEventListener('click', e => {
+  $('#txtIA').value = instruccionesIA();
+  copiar($('#txtIA').value, e.currentTarget);
+});
+$('#bCopiarPlantilla').addEventListener('click', e => {
+  const T = TIPOS.find(t => t.id === R.tipo) || TIPOS[0];
+  copiar(T.cuerpo, e.currentTarget);
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5 · GUARDADO · en este aparato, sin servidor
+   ═════════════════════════════════════════════════════════════════════════ */
+function cargarTodos(){
+  try{ TODOS = JSON.parse(localStorage.getItem(LLAVE) || '[]'); }
+  catch(e){ TODOS = []; }
+  if(!Array.isArray(TODOS)) TODOS = [];
+}
+function guardar(){
+  R.tocado = Date.now();
+  const k = TODOS.findIndex(x => x.id === R.id);
+  if(k >= 0) TODOS[k] = R; else TODOS.unshift(R);
+  TODOS.sort((a,b)=> b.tocado - a.tocado);
+  try{ localStorage.setItem(LLAVE, JSON.stringify(TODOS)); }
+  catch(e){ nota('No cupo en la memoria del teléfono. Borra reportes viejos o quita fotos.', true); }
+  pintarGuardados();
+}
+let temporizador = null;
+function guardarLuego(){ clearTimeout(temporizador); temporizador = setTimeout(guardar, 600); }
+
+function nota(txt, malo){
+  const p = $('#notaEvi');
+  p.innerHTML = txt; p.className = 'aviso ' + (malo ? 'mal' : '');
+  if(!malo) setTimeout(()=>{ p.className='aviso';
+    p.innerHTML='Las fotos se guardan <b>sólo en este teléfono</b>. No se suben a ningún lado.'; }, 3200);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6 · LA PANTALLA
+   ═════════════════════════════════════════════════════════════════════════ */
+const AREAS = [['jefe','Jefe de grupo'], ['sociedad','Sociedad de alumnos'], ['general','Cualquiera']];
+function pintarTipos(){
+  $('#tipos').innerHTML = AREAS.map(([a, nombre]) => {
+    const míos = TIPOS.filter(t => (t.area||'general') === a);
+    if(!míos.length) return '';
+    return '<div class="area"><span class="area-n">'+esc(nombre)+'</span>'+
+      míos.map(t => '<button class="chip" type="button" data-tipo="'+t.id+'" aria-pressed="'+
+        (t.id===R.tipo)+'">'+esc(t.nombre)+'</button>').join('')+'</div>';
+  }).join('');
+}
+function pintarCampos(){
+  $('#fTitulo').value = R.titulo; $('#fFecha').value = R.fecha;
+  $('#fGrupo').value = R.grupo;   $('#fPara').value = R.para;
+  $('#fLugar').value = R.lugar;   $('#fAutor').value = R.autor;
+  $('#fSemestre').value = R.semestre || ''; $('#fTutor').value = R.tutor || '';
+  $('#fPeriodo').value = R.periodo || '';
+  $('#fCargo').value = R.cargo;   $('#fAutor2').value = R.autor2;
+  $('#fCargo2').value = R.cargo2; $('#fCuerpo').value = R.cuerpo;
+  const f = R.formato;
+  $('#oFuente').value = f.fuente; $('#oTamano').value = f.tamano;
+  $('#oInter').value = f.inter;   $('#oAlinea').value = f.alinea;
+  $('#oLado').value = f.lado;     $('#oTope').value = f.tope;
+  $('#oFondo').value = f.fondo;   $('#oAgua').value = f.agua;
+  $('#oOpacidad').value = f.opacidad; $('#oLeyenda').value = f.leyenda;
+  $('#oSello').value = f.sello;   $('#oMembrete').value = f.membrete;
+  pintarEvidencias(); contarPalabras();
+}
+function contarPalabras(){
+  const n = (R.cuerpo.trim().match(/\S+/g) || []).length;
+  $('#cuentaPal').textContent = n + (n===1 ? ' palabra' : ' palabras');
+}
+function pintarEvidencias(){
+  const c = $('#listaEvi');
+  $('#cuentaEvi').textContent = R.evidencias.length
+    ? R.evidencias.length + (R.evidencias.length===1?' foto':' fotos') : 'ninguna';
+  if(!R.evidencias.length){
+    c.innerHTML = '<p class="vacio-nota" style="grid-column:1/-1">Sin evidencias. Las que agregues se '+
+      'numeran solas y puedes colocarlas donde quieras con <code>[img:1]</code>.</p>';
+    return;
+  }
+  c.innerHTML = R.evidencias.map((e,k) =>
+    '<div class="evi"><img src="'+e.datos+'" alt="">'+
+    '<div class="pie"><span class="marca-evi">IMAGEN '+(k+1)+'</span>'+
+    '<input type="text" data-pie="'+k+'" value="'+esc(e.pie||'')+'" placeholder="Pie de foto">'+
+    '<div class="fila"><button class="btn chico" type="button" data-mover="'+k+'" data-dir="-1">↑</button>'+
+    '<button class="btn chico" type="button" data-mover="'+k+'" data-dir="1">↓</button>'+
+    '<span class="crece"></span>'+
+    '<button class="btn chico" type="button" data-quitar="'+k+'">Quitar</button></div></div></div>').join('');
+}
+function pintarGuardados(){
+  const c = $('#listaGuardados');
+  $('#cuentaGuardados').textContent = TODOS.length ? TODOS.length+' guardados' : '';
+  if(!TODOS.length){ c.innerHTML = '<p class="vacio-nota">Todavía no hay reportes guardados.</p>'; return; }
+  c.innerHTML = TODOS.map(x => {
+    const T = TIPOS.find(t=>t.id===x.tipo) || TIPOS[0];
+    const d = new Date(x.tocado);
+    return '<button class="guardado" type="button" data-abrir="'+x.id+'">'+
+      '<span class="g-t"><span class="g-n">'+esc(x.titulo || T.titulo || 'Sin título')+'</span>'+
+      '<span class="g-f">'+esc(T.nombre)+' · '+d.toLocaleDateString('es-MX')+' '+
+      d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})+
+      (x.id===R.id ? ' · <b style="color:var(--violeta-suave)">abierto</b>' : '')+'</span></span>'+
+      '<span style="color:var(--tenue)" data-borrar="'+x.id+'">✕</span></button>';
+  }).join('');
+}
+
+let pintando = null;
+function repintar(){
+  clearTimeout(pintando);
+  pintando = setTimeout(()=>{ paginar(R); aplicarZoom(); }, 90);
+}
+
+/* zoom: en el teléfono la hoja carta no cabe, así que se ajusta al ancho */
+function aplicarZoom(){
+  const esc_ = $('#escenario'), pila = PILA(), marco = $('#marco');
+  const anchoHoja = 215.9 * (96/25.4);
+  const altoHoja  = 279.4 * (96/25.4) + 18;   /* hoja carta + su separación */
+  const disponible = esc_.clientWidth;
+  if(zoomAuto && disponible > 40) zoom = Math.min(1, (disponible - 24) / anchoHoja);
+  pila.style.transform = 'scale('+zoom+')';
+  const hojas = $$('.hoja', pila).length;
+  /* el marco ocupa el tamaño YA escalado; si no, queda una barra horizontal
+     fantasma del ancho de la hoja sin encoger */
+  marco.style.width  = hojas ? (anchoHoja * zoom) + 'px' : '';
+  marco.style.height = hojas ? (hojas * altoHoja * zoom) + 'px' : '';
+  $('#nivelZoom').textContent = Math.round(zoom*100) + '%';
+}
+
+/* ── pestañas ── */
+function verVista(v){
+  $$('.pestana').forEach(b => b.setAttribute('aria-selected', String(b.dataset.vista===v)));
+  const anchoGrande = window.matchMedia('(min-width:1080px)').matches;
+  const partido = anchoGrande && (v==='escribir' || v==='ver');
+  $('#tablero').classList.toggle('partido', partido);
+  const mostrar = {
+    escribir: partido ? ['escribir','ver'] : ['escribir'],
+    ver:      partido ? ['escribir','ver'] : ['ver'],
+    credencial:['credencial'], plantilla:['plantilla'], registro: ['registro'],
+    formato:  ['formato'], verificar:['verificar'], guardados:['guardados'],
+  }[v] || ['escribir'];
+  ['escribir','ver','credencial','plantilla','registro','formato','verificar','guardados'].forEach(n=>{
+    $('#panel-'+n).hidden = mostrar.indexOf(n) < 0;
+  });
+  if(mostrar.indexOf('ver') >= 0) requestAnimationFrame(()=>{ repintar(); });
+  if(v === 'registro') pintarRegistro();
+  if(v === 'plantilla') $('#txtIA').value = instruccionesIA();
+  if(v === 'credencial') pintarCred();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7 · LOS BOTONES
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Las fotos del teléfono pesan 4 MB. Sin achicarlas, el segundo reporte con
+   evidencias ya no cabe en la memoria del navegador. Se reducen a 1400 px de
+   lado largo, que sigue siendo mucho más de lo que necesita una hoja carta. */
+function achicar(archivo, maxLado){
+  return new Promise((listo, falla) => {
+    const lector = new FileReader();
+    lector.onerror = falla;
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = falla;
+      img.onload = () => {
+        const max = maxLado || 1400;
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if(Math.max(w,h) > max){ const e = max/Math.max(w,h); w = Math.round(w*e); h = Math.round(h*e); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const x = c.getContext('2d');
+        x.fillStyle = '#fff'; x.fillRect(0,0,w,h);
+        x.drawImage(img, 0, 0, w, h);
+        listo(c.toDataURL('image/jpeg', .72));
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
+/* Lo que pegan las IA trae basura previsible. Esto la quita sin tocar el texto. */
+function limpiarIA(t){
+  return String(t||'')
+    .replace(/ /g,' ')
+    .replace(/[“”]/g,'"').replace(/[‘’]/g,"'")
+    .replace(/^\s*```[a-z]*\s*$/gmi,'')
+    .replace(/^\s*[-–—]{3,}\s*$/gm,'---')
+    .replace(/^\s*[•·▪]\s+/gm,'- ')
+    .replace(/^\s*\*\s+/gm,'- ')
+    .replace(/^(#{1,6})([^#\s])/gm,'$1 $2')
+    .replace(/\n{3,}/g,'\n\n')
+    .replace(/[ \t]+$/gm,'')
+    .trim();
+}
+
+function conectar(id, campo, despues){
+  const el = $(id);
+  el.addEventListener('input', () => {
+    R[campo] = el.value;
+    if(despues) despues();
+    guardarLuego(); repintar();
+  });
+}
+['#fTitulo:titulo','#fFecha:fecha','#fGrupo:grupo','#fPara:para','#fLugar:lugar',
+ '#fAutor:autor','#fCargo:cargo','#fAutor2:autor2','#fCargo2:cargo2',
+ '#fSemestre:semestre','#fTutor:tutor','#fPeriodo:periodo']
+  .forEach(par => { const [s,c] = par.split(':'); conectar(s, c); });
+conectar('#fCuerpo','cuerpo', contarPalabras);
+
+/* formato */
+function conectarFormato(id, clave, num){
+  const el = $(id);
+  el.addEventListener('input', () => {
+    R.formato[clave] = num ? (parseInt(el.value,10) || FORMATO_OFICIAL[clave]) : el.value;
+    guardarLuego(); repintar();
+  });
+}
+conectarFormato('#oFuente','fuente'); conectarFormato('#oTamano','tamano');
+conectarFormato('#oInter','inter');   conectarFormato('#oAlinea','alinea');
+conectarFormato('#oLado','lado',1);   conectarFormato('#oTope','tope',1);
+conectarFormato('#oFondo','fondo',1); conectarFormato('#oAgua','agua');
+conectarFormato('#oOpacidad','opacidad',1); conectarFormato('#oLeyenda','leyenda');
+conectarFormato('#oSello','sello');   conectarFormato('#oMembrete','membrete');
+
+$('#bResetFormato').addEventListener('click', () => {
+  R.formato = Object.assign({}, FORMATO_OFICIAL);
+  pintarCampos(); guardar(); repintar();
+});
+
+/* tipos */
+$('#tipos').addEventListener('click', e => {
+  const b = e.target.closest('[data-tipo]'); if(!b) return;
+  R.tipo = b.dataset.tipo;
+  const T = TIPOS.find(t => t.id === R.tipo);
+  if(!R.titulo && T.titulo) { R.titulo = T.titulo; $('#fTitulo').value = T.titulo; }
+  if(!R.para && T.para) { R.para = T.para; $('#fPara').value = T.para; }
+  pintarTipos(); guardar(); repintar();
+  if(!$('#panel-plantilla').hidden) $('#txtIA').value = instruccionesIA();
+});
+$('#bEsqueleto').addEventListener('click', () => {
+  const T = TIPOS.find(t => t.id === R.tipo) || TIPOS[0];
+  const ya = R.cuerpo.trim();
+  if(ya && !confirm('Ya hay texto escrito. ¿Le pego el esqueleto al final?')) return;
+  R.cuerpo = ya ? (ya + '\n\n' + T.cuerpo) : T.cuerpo;
+  $('#fCuerpo').value = R.cuerpo; contarPalabras(); guardar(); repintar();
+});
+$('#bLimpiar').addEventListener('click', () => {
+  R.cuerpo = limpiarIA(R.cuerpo);
+  $('#fCuerpo').value = R.cuerpo; contarPalabras(); guardar(); repintar();
+});
+
+/* evidencias */
+$('#bFoto').addEventListener('click', () => $('#fFoto').click());
+$('#fFoto').addEventListener('change', async e => {
+  const archivos = Array.from(e.target.files || []);
+  if(!archivos.length) return;
+  nota('Preparando '+archivos.length+' foto(s)…');
+  for(const a of archivos){
+    try{ R.evidencias.push({ datos: await achicar(a), pie:'' }); }
+    catch(err){ nota('Una foto no se pudo leer.', true); }
+  }
+  e.target.value = '';
+  pintarEvidencias(); guardar(); repintar();
+  nota('Listo. Colócalas con <code>[img:N]</code> o déjalas al final.');
+});
+$('#listaEvi').addEventListener('input', e => {
+  const el = e.target.closest('[data-pie]'); if(!el) return;
+  R.evidencias[+el.dataset.pie].pie = el.value;
+  guardarLuego(); repintar();
+});
+$('#listaEvi').addEventListener('click', e => {
+  const q = e.target.closest('[data-quitar]');
+  if(q){ R.evidencias.splice(+q.dataset.quitar, 1); pintarEvidencias(); guardar(); repintar(); return; }
+  const m = e.target.closest('[data-mover]');
+  if(m){
+    const k = +m.dataset.mover, d = +m.dataset.dir, n = k + d;
+    if(n < 0 || n >= R.evidencias.length) return;
+    const t = R.evidencias[k]; R.evidencias[k] = R.evidencias[n]; R.evidencias[n] = t;
+    pintarEvidencias(); guardar(); repintar();
+  }
+});
+
+/* guardados */
+$('#listaGuardados').addEventListener('click', e => {
+  const b = e.target.closest('[data-borrar]');
+  if(b){
+    e.stopPropagation();
+    if(!confirm('¿Borrar este reporte? No se puede deshacer.')) return;
+    TODOS = TODOS.filter(x => x.id !== b.dataset.borrar);
+    localStorage.setItem(LLAVE, JSON.stringify(TODOS));
+    if(R.id === b.dataset.borrar){ R = nuevoReporte(); pintarTipos(); pintarCampos(); }
+    pintarGuardados(); repintar(); return;
+  }
+  const a = e.target.closest('[data-abrir]');
+  if(a){
+    const x = TODOS.find(y => y.id === a.dataset.abrir); if(!x) return;
+    R = Object.assign(nuevoReporte(), x);
+    R.formato = Object.assign({}, FORMATO_OFICIAL, x.formato || {});
+    pintarTipos(); pintarCampos(); pintarGuardados(); verVista('escribir'); repintar();
+  }
+});
+$('#bNuevo').addEventListener('click', () => {
+  guardar();
+  const antes = R;
+  R = nuevoReporte();
+  R.autor = antes.autor; R.cargo = antes.cargo; R.grupo = antes.grupo; R.lugar = antes.lugar;
+  R.semestre = antes.semestre; R.tutor = antes.tutor;
+  pintarTipos(); pintarCampos(); pintarGuardados(); verVista('escribir'); repintar();
+});
+
+/* exportar / importar */
+$('#bExportar').addEventListener('click', () => {
+  guardar();
+  const blob = new Blob([JSON.stringify(TODOS, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'reportes-' + iso(new Date()) + '.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+});
+$('#bImportar').addEventListener('click', () => $('#fImportar').click());
+$('#fImportar').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0]; if(!f) return;
+  const l = new FileReader();
+  l.onload = () => {
+    try{
+      const lista = JSON.parse(l.result);
+      if(!Array.isArray(lista)) throw 0;
+      const tengo = new Set(TODOS.map(x=>x.id));
+      let n = 0;
+      lista.forEach(x => { if(x && x.id && !tengo.has(x.id)){ TODOS.push(x); n++; } });
+      TODOS.sort((a,b)=> b.tocado - a.tocado);
+      localStorage.setItem(LLAVE, JSON.stringify(TODOS));
+      pintarGuardados();
+      alert('Entraron '+n+' reporte(s).');
+    }catch(err){ alert('Ese archivo no es un respaldo de reportes.'); }
+  };
+  l.readAsText(f); e.target.value = '';
+});
+
+/* verificar */
+$('#bVerificar').addEventListener('click', () => {
+  const dado = ($('#vSello').value || '').toUpperCase().replace(/[^0-9A-Z]/g,'');
+  const calc = sello($('#vTexto').value).replace('-','');
+  const p = $('#vResultado');
+  if(!dado){ p.className='aviso mal'; p.textContent='Falta el sello impreso.'; return; }
+  if(dado === calc){
+    p.className = 'aviso ok';
+    p.innerHTML = '<b>✓ Coincide.</b> El texto es exactamente el que se selló. '+
+      'El sello calculado es <b>'+esc(sello($('#vTexto').value))+'</b>.';
+  }else{
+    p.className = 'aviso mal';
+    p.innerHTML = '<b>✕ No coincide.</b> Con este texto el sello daría <b>'+
+      esc(sello($('#vTexto').value))+'</b>, no <b>'+esc(dado.slice(0,4)+'-'+dado.slice(4))+'</b>. '+
+      'O el texto se alteró, o falta parte de él, o se copió sin el cuerpo completo.';
+  }
+});
+
+/* vista e impresión */
+$$('.pestana').forEach(b => b.addEventListener('click', () => verVista(b.dataset.vista)));
+$('#bMas').addEventListener('click', () => { zoomAuto=false; zoom=Math.min(2, zoom+.1); aplicarZoom(); });
+$('#bMenos').addEventListener('click', () => { zoomAuto=false; zoom=Math.max(.2, zoom-.1); aplicarZoom(); });
+$('#bAjustar').addEventListener('click', () => { zoomAuto=true; aplicarZoom(); });
+function imprimir(){
+  guardar();
+  verVista('ver');
+  paginar(R);
+  const antes = PILA().style.transform;
+  PILA().style.transform = 'none'; PILA().style.height = '';
+  setTimeout(()=>{ window.print();
+    setTimeout(()=>{ PILA().style.transform = antes; aplicarZoom(); }, 300); }, 120);
+}
+$('#bImprimir').addEventListener('click', imprimir);
+$('#bImprimir2').addEventListener('click', imprimir);
+window.addEventListener('resize', () => { if(zoomAuto) aplicarZoom(); });
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8 · ARRANQUE
+   ═════════════════════════════════════════════════════════════════════════ */
+cargarTodos(); cargarGrupo(); cargarCred();
+if(TODOS.length){
+  R = Object.assign(nuevoReporte(), TODOS[0]);
+  R.formato = Object.assign({}, FORMATO_OFICIAL, TODOS[0].formato || {});
+}
+pintarTipos(); pintarCampos(); pintarGuardados(); pintarRegistro(); pintarCred();
+verVista('escribir');
+repintar();
+
+/* Las pruebas de la casa: si algo de esto truena, se ve en la consola y no en
+   el reporte de Carlos a las once de la noche. */
+(function pruebas(){
+  const P = [];
+  const ok = (n,c)=> P.push((c?'✓':'✗')+' '+n) && c;
+  ok('el sello es estable', sello('hola mundo') === sello('hola   MUNDO'));
+  ok('el sello cambia si cambia el texto', sello('hola mundo') !== sello('hola mundos'));
+  ok('el sello tiene forma XXXX-XXXX', /^[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(sello('x')));
+  ok('lee títulos', leer('## Hola',[])[0].html === '<h2>Hola</h2>');
+  ok('lee viñetas con punto medio', leer('• uno\n• dos',[])[0].items === 2);
+  ok('lee listas numeradas', /<ol>/.test(leer('1. uno\n2. dos',[])[0].html));
+  ok('lee tablas sin fila de guiones', leer('| a | b |\n| 1 | 2 |',[])[0].filas === 2);
+  ok('ignora la fila de guiones', leer('| a |\n|---|\n| 1 |',[])[0].filas === 2);
+  ok('junta renglones en un párrafo', leer('uno\ndos',[]).length === 1);
+  ok('escapa el html', leer('<'+'b>ojo',[])[0].html.indexOf('&lt;') > 0);
+  ok('la negrita sale', /<strong>/.test(leer('**x** y',[])[0].html));
+  ok('negrita sin dos puntos NO es ficha', leer('**Importante** revisar',[])[0].tipo === 'p');
+  ok('el salto de hoja se entiende', leer('[hoja]',[])[0].tipo === 'salto');
+  ok('agrupa los campos en ficha', leer('**Lugar:** aula 3.1\n**Hora:** 11:35',[])[0].tipo === 'ficha');
+  ok('un campo con prosa larga sigue siendo párrafo',
+     leer('**Nota:** '+'x'.repeat(90),[])[0].tipo === 'p');
+  ok('lee apartados con romano', leer('IV. INCIDENCIAS',[])[0].tipo === 'h2');
+  ok('lee apartados en mayúsculas', leer('PROPUESTA DE ACOMODO',[])[0].tipo === 'h2');
+  ok('el separador largo es una raya', leer('\u2E3B\u2E3B',[])[0].tipo === 'hr');
+  ok('numerado corto y suelto es subtítulo', leer('1. Exceso de ruido\n',[])[0].tipo === 'h3');
+  ok('numerado con prosa sigue siendo lista', leer('1. uno\n2. dos',[])[0].tipo === 'lista');
+  ok('lee nombre y hora', leer('Marco \u2014 09:42 h\nCambio de lugar.',[])[0].tipo === 'quien');
+  ok('lee campo sin negrita', leer('Tipo: Falta al reglamento',[])[0].tipo === 'etiqueta');
+  ok('una frase que acaba en dos puntos no es campo',
+     leer('Se solicita lo siguiente:',[])[0].tipo === 'p');
+  ok('lee tabla con tabuladores', leer('Alumno\tIncidencias\nZoe\tDos cambios',[])[0].filas === 2);
+  ok('limpia el pegado de IA', limpiarIA('•  uno\n\n\n\ndos') === '- uno\n\ndos');
+  ok('un apellido abreviado no rompe el renglón de quién',
+     leer('Diego T. \u2014 12:10 h\nConsumió alimentos.',[])[0].tipo === 'quien');
+  ok('un solo campo va de etiqueta, no de tarjeta',
+     leer('Tipo: Falta al reglamento',[])[0].tipo === 'etiqueta');
+  ok('dos campos siguen siendo tarjeta',
+     leer('Lugar: aula 3.1\nHora: 11:35',[])[0].tipo === 'ficha');
+  (function(){
+    const g = CRED;
+    CRED = { base:Object.assign({},CRED_BASE), gente:[credNueva(),credNueva(),credNueva()] };
+    CRED.gente[0].apellidos='UNO'; CRED.gente[1].apellidos='DOS'; CRED.gente[2].apellidos='TRES';
+    /* el reverso no lleva apellidos, así que el espejo se comprueba con el
+       número de empleado, que es lo que sí sale de los dos lados */
+    CRED.gente[0].num='AAA'; CRED.gente[1].num='BBB'; CRED.gente[2].num='CCC';
+    const h = pliegosDe(CRED.gente);
+    ok('la credencial mide lo que se midió del original',
+       credFrente(CRED.gente[0]).indexOf('--an:63.5mm; --al:105mm') > 0);
+    ok('tres credenciales caben en un pliego', (h.match(/class="pliego"/g)||[]).length === 2);
+    const vuelta = h.split('class="pliego"')[2];
+    ok('los reversos van en espejo', vuelta.indexOf('BBB') < vuelta.indexOf('AAA'));
+    ok('la credencial sin foto dibuja silueta', credFrente(credNueva()).indexOf('silueta') > 0);
+    ok('el reverso sólo muestra los datos que hay',
+       credReverso(credNueva()).indexOf('TIPO DE SANGRE') < 0);
+    CRED = g;
+  })();
+  ok('las instrucciones para la IA traen el esqueleto del tipo',
+     instruccionesIA().indexOf((TIPOS.find(t=>t.id===R.tipo)||TIPOS[0]).cuerpo.slice(0,40)) > 0);
+  ok('las instrucciones prohíben inventar datos', /NO inventes datos/.test(instruccionesIA()));
+  ok('las instrucciones conservan sus renglones en blanco',
+     /EXACTAMENTE\.\n\nQUÉ ES/.test(instruccionesIA()));
+  ok('las instrucciones dicen que no firme', /NO escribas la firma/.test(instruccionesIA()));
+  ok('el semanal completo trae todos los apartados',
+     leer(TIPOS.find(t=>t.id==='grupo').cuerpo,[]).filter(b=>b.tipo==='h2').length >= 13);
+  ok('hay tipo para cada cosa que usa',
+     ['incidencia','grupo','semanal','limpieza','aviso','solicitud','general','minuta','propuesta','actividad','libre']
+       .every(id => TIPOS.some(t=>t.id===id)));
+  ok('todos los tipos tienen área', TIPOS.every(t => !!t.area));
+  ok('el fundamento del reglamento llega al texto',
+     FALTAS.filter(f=>f.regla).length >= 12);
+  ok('el reporte de grupo trae su columna vertebral',
+     /I\. Objetivo del reporte/.test(TIPOS.find(t=>t.id==='grupo').cuerpo));
+  ok('los apartados romanos del esqueleto se leen como títulos',
+     leer(TIPOS.find(t=>t.id==='grupo').cuerpo,[]).filter(b=>b.tipo==='h2').length >= 9);
+  ok('dos incidencias son una roja', textoTarjetas(2) === '1 roja');
+  ok('tres incidencias son roja y amarilla', textoTarjetas(3) === '1 roja · 1 amarilla');
+  ok('sin incidencias no hay tarjeta', textoTarjetas(0) === 'sin registro');
+  (function(){
+    const g = GRUPO;
+    GRUPO = { alumnos:['Ana','Beto'], entradas:[
+      {id:'1',alumno:'Ana',falta:'lugar',texto:'Cambio de lugar durante una clase.',
+       clase:'Falta al reglamento de salón.',fecha:'2026-08-10',hora:'08:10 h'},
+      {id:'2',alumno:'Ana',falta:'lugar',texto:'Cambio de lugar durante una clase.',
+       clase:'Falta al reglamento de salón.',fecha:'2026-08-10',hora:'09:20 h'},
+    ]};
+    const t = redactarIncidencias('2026-08-10','2026-08-10');
+    ok('el registro se vuelve reporte', /## Incidencias individuales/.test(t));
+    ok('junta las dos horas de la misma falta', /08:10 h y 09:20 h/.test(t));
+    ok('el resumen marca a quien no tuvo nada', /Beto \| Sin incidencia individual registrada/.test(t));
+    ok('el resumen cuenta las tarjetas', /Ana \|.*\| 1 roja \|/.test(t));
+    ok('el reporte que sale se vuelve a leer bien', leer(t,[]).length > 4);
+    GRUPO = g;
+  })();
+  const malas = P.filter(x => x[0] === '✗');
+  console.log('%cReportes · '+(P.length-malas.length)+'/'+P.length+' pruebas',
+    'color:'+(malas.length?'#FF7A7A':'#5BD98A')+';font-weight:700');
+  if(malas.length) console.warn(malas.join('\n'));
+})();
+</script>
+</body>
+</html>

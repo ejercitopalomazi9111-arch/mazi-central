@@ -39,6 +39,46 @@
 - **Escribe rápido, con errores de dedo y de dictado** ("valla", "ahregate", "aremos"). Se
   entiende y ya. **Nunca le corrijo la ortografía.**
 
+### Cómo piensa — lo que aprendí trabajando con él (1 de agosto)
+
+Esto es distinto de la sección de arriba: aquella es **cómo se comporta**, ésta es **cómo razona**.
+Salió de una sesión larga donde me corrigió cuatro veces y las cuatro tenía razón.
+
+- **Encuentra bugs preguntando, no leyendo código.** *"¿Y si tengo 5 hijos y todos juegan el mismo
+  partido?"* — y ahí estaba: mi función devolvía el primero y se salía. *"¿Qué tan legal es lo del
+  CURP?"* — y de ahí salió quitarlo. **Sus preguntas son casos de prueba.** Cuando pregunta algo
+  que suena a curiosidad, casi siempre es un hueco que ya olió. Hay que tratarlas como hallazgos,
+  no como charla.
+
+- **Distingue el síntoma de la causa mejor que yo.** Yo llevaba tres rondas arreglando el filtro de
+  categoría; él dijo *"nunca hiciste que salga un letrero de que su hija está en ese partido, estás
+  buscando algo que no existe"*. Tenía razón y me ahorró otra ronda. **Cuando insiste en un
+  reporte que yo ya "arreglé", el arreglo estaba en el lugar equivocado.**
+
+- **Piensa en la persona, no en la pantalla.** No pide "un filtro": pide *"que el papá sepa qué día
+  y en qué lugar juega la categoría de su hijo"*. La diferencia importa: lo primero se puede
+  construir mal y seguir cumpliendo; lo segundo no.
+
+- **Corrige premisas sin pelear.** Cuando le dije que las certificaciones de datos no existen en
+  México, no discutió: ajustó y siguió. **Le sirve más un dato correcto que tener razón**, y eso
+  significa que decirle "eso que crees está mal" es un servicio, no un riesgo.
+
+- **Piensa en vender lo que construimos para nosotros.** El simulacro de 570 lo pidió para probar
+  Ligas Mazi, y a la mitad me explicó que si se pule se le puede vender a estudios de videojuegos,
+  a aeronáuticas, a psicólogos. **No construye herramientas de un solo uso.** Cuando pida algo
+  interno, vale la pena preguntarse si tiene forma de producto.
+
+- **Da contexto de negocio sin que se lo pidan.** *"Si usamos humanos va a salir muy caro."* Ese
+  tipo de frase es la justificación real de la tarea, y conviene guardarla: es lo que decide qué
+  se prioriza cuando el tiempo se acaba.
+
+- **Cierra las sesiones con calidez y humor.** Bromea, agradece, se despide bien. **No es ruido:**
+  es cómo trabaja. Responderle secamente a eso es leer mal la sala.
+
+- **Trabaja contra el reloj real, no contra un plan.** *"Se va a reiniciar el contenedor SÚBELO
+  TODO YA."* Cuando avisa de una fecha o de un límite, es literal. Lo primero es poner a salvo lo
+  hecho; lo segundo, seguir.
+
 ### Lo que espera de mí
 - Que **entregue**, no que pregunte de más. Si puedo decidir con criterio, decido y aviso.
 - Que **le diga la verdad** cuando algo está bloqueado, cuando una fuente resultó ser basura, o

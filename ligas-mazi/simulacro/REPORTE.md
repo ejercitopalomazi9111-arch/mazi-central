@@ -1,6 +1,6 @@
 # Simulacro de Ligas Mazi · reporte
 
-Corrido el 2026-08-01 · 148.4s · 570 personas · 3 pasadas
+Corrido el 2026-08-01 · 168.2s · 570 personas · 3 pasadas
 
 > Cada persona de este reparto tiene nombre, temperamento y CURP válido, y hace lo que
 > haría alguien de verdad. **Nadie abandona a la primera**: la gente es terca, así que lo
@@ -136,28 +136,65 @@ primera es **fricción** —la app se deja usar, pero cuesta—; quedarse sin in
 **abandono**, que ya es alguien que quería y no pudo.
 
 - fricción: **0**
-- abandonos: **64**
+- abandonos: **249**
 
-4294 pantallas caminadas con identidades reales del reparto. 68 hallazgos en bruto, **7 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
+4294 pantallas caminadas con identidades reales del reparto. 256 hallazgos en bruto, **186 problemas distintos** (la misma cosa la encuentran muchas personas; se agrupan y se cuenta a cuánta gente le pasa, que además es lo que dice qué tan urgente es).
 
 ✅ **Ningún error de consola** en todo el recorrido.
 
-### 🔴 Graves (5)
+### 🔴 Graves (183)
 
 | Pantalla | Qué | Dónde | A cuánta gente | Roles |
 |---|---|---|---|---|
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 4 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 21 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 6 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 16 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 5 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 13 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 8 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
-| `usar · encontrar el partido de mi hij@` | Se rindió después de 3 intentos · no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 4 intentos · no ve ningún letrero que diga dónde juega su hij@ | `encontrar el partido de mi hij@` | 21 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 6 intentos · no ve ningún letrero que diga dónde juega su hij@ | `encontrar el partido de mi hij@` | 16 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 5 intentos · no ve ningún letrero que diga dónde juega su hij@ | `encontrar el partido de mi hij@` | 13 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 8 intentos · no ve ningún letrero que diga dónde juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
+| `usar · encontrar el partido de mi hij@` | Se rindió después de 3 intentos · no ve ningún letrero que diga dónde juega su hij@ | `encontrar el partido de mi hij@` | 7 | papa |
+| `usar · vincular a Romina Cañedo` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Romina Cañedo` | 2 | papa |
+| `usar · vincular a Bruno Berrones` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Bruno Berrones` | 2 | papa |
+| `usar · vincular a Emiliano Gaytán` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Emiliano Gaytán` | 2 | papa |
+| `usar · vincular a Santiago Gaytán` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Santiago Gaytán` | 2 | papa |
+| `usar · vincular a Ximena Ramírez` | Se rindió después de 3 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Ximena Ramírez` | 2 | papa |
+| `usar · vincular a Aitana Cañedo` | Se rindió después de 3 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Aitana Cañedo` | 2 | papa |
+| `usar · vincular a Rodrigo Quiroz` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Rodrigo Quiroz` | 2 | papa |
+| `usar · vincular a Sebastián Cañedo` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Sebastián Cañedo` | 1 | papa |
+| `usar · vincular a Leonardo Quiroz` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Leonardo Quiroz` | 1 | papa |
+| `usar · vincular a Jimena Fonseca` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Jimena Fonseca` | 1 | papa |
+| `usar · vincular a Romina Treviño` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Romina Treviño` | 1 | papa |
+| `usar · vincular a Iker Escalante` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Iker Escalante` | 1 | papa |
+| `usar · vincular a Valeria Zepeda` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Valeria Zepeda` | 1 | papa |
+| `usar · vincular a Danna Olvera` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Danna Olvera` | 1 | papa |
+| `usar · vincular a Santiago Ordóñez` | Se rindió después de 4 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Santiago Ordóñez` | 1 | papa |
+| `usar · vincular a Bruno Ibarra` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Bruno Ibarra` | 1 | papa |
+| `usar · vincular a Elías Villagrán` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Elías Villagrán` | 1 | papa |
+| `usar · vincular a Elías Peñaloza` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Elías Peñaloza` | 1 | papa |
+| `usar · vincular a Julián Cisneros` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Julián Cisneros` | 1 | papa |
+| `usar · vincular a Andrea Peñaloza` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Andrea Peñaloza` | 1 | papa |
+| `usar · vincular a Regina Cañedo` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Regina Cañedo` | 1 | papa |
+| `usar · vincular a Renata Cisneros` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Renata Cisneros` | 1 | papa |
+| `usar · vincular a Andrea Manzanares` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Andrea Manzanares` | 1 | papa |
+| `usar · vincular a Andrea Fonseca` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Andrea Fonseca` | 1 | papa |
+| `usar · vincular a Maximiliano Escalante` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Maximiliano Escalante` | 1 | papa |
+| `usar · vincular a Alexa Villagrán` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Alexa Villagrán` | 1 | papa |
+| `usar · vincular a Julián Treviño` | Se rindió después de 6 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Julián Treviño` | 1 | papa |
+| `usar · vincular a Bruno Gaytán` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Bruno Gaytán` | 1 | papa |
+| `usar · vincular a Tadeo Rivadeneyra` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Tadeo Rivadeneyra` | 1 | papa |
+| `usar · vincular a Ximena Cañedo` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Ximena Cañedo` | 1 | papa |
+| `usar · vincular a Paola Ibarra` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Paola Ibarra` | 1 | papa |
+| `usar · vincular a Alonso Escalante` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Alonso Escalante` | 1 | papa |
+| `usar · vincular a Iker Cervantes` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Iker Cervantes` | 1 | papa |
+| `usar · vincular a Ángel Cervantes` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Ángel Cervantes` | 1 | papa |
+| `usar · vincular a Alexa Fonseca` | Se rindió después de 5 intentos · llenó el alta y su hij@ no quedó vinculad@ | `vincular a Alexa Fonseca` | 1 | papa |
+| … | y 143 más | | | |
 
-### 🟡 Incómodos (2)
+### 🟡 Incómodos (3)
 
 | Pantalla | Qué | Dónde | A cuánta gente | Roles |
 |---|---|---|---|---|
+| `gacha` | Se sale 10px de su caja | `gc-cell` | 4 | papa, publico |
 | `gacha` | Se sale 4554px de su caja | `#gcTrack` | 2 | papa, publico |
-| `gacha` | Se sale 10px de su caja | `gc-cell` | 2 | papa, publico |
+| `inbox` | Se sale 15px de su caja | `nb-n` | 1 | liga |
 
 ## Lo que este simulacro NO prueba
 

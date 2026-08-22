@@ -211,6 +211,72 @@
     }, 'se descontó el sobre y no llegó ningún cosmético ni monedas de repetido');
   };
 
+  /* 6.5 · EL PAPÁ VINCULA A SUS HIJ@S.
+     ─────────────────────────────────────────────────────────────────────
+     ESTE PASO FALTABA Y EXPLICA LOS 64 ABANDONOS. La prueba hacía que el papá
+     se registrara de cero —que es correcto, es lo que pidió Carlos— y acto
+     seguido le pedía encontrar el partido de su hija. Pero **una cuenta recién
+     creada no tiene hijos vinculados**: el registro los borra porque es una
+     cuenta nueva. Le estábamos pidiendo que encontrara a una hija que todavía
+     no había dado de alta.
+
+     O sea que el abandono era real y el diagnóstico estaba al revés: no era
+     que la app no supiera enseñar el partido, era que en ese punto del
+     recorrido la app **no tenía a quién buscar**. Y de paso, el flujo de
+     "vincular a mi hij@" —una de las pantallas más importantes de la app—
+     nunca se estaba probando.
+
+     Ahora se vincula desde la pantalla REAL, llenando los campos y tocando el
+     botón. Si el alta se rompe, se rompe aquí y con nombre. */
+  API.vincularHijos = function (per, ligaJSON){
+    var hijos = (per.user && per.user.children) || [];
+    if (!hijos.length) return null;
+    /* SEGUNDA MITAD DE LA CADENA, y también estaba mal de mi lado.
+       `doSignup` llama a `clearLocalAccountCache()`, que borra `lm_league` — y
+       hace bien: una cuenta nueva NO debe heredar la liga de quien usó el
+       teléfono antes. Pero eso deja al papá recién registrado **sin liga y sin
+       calendario**, así que no hay partido que encontrar aunque el letrero
+       funcione perfecto.
+
+       En la vida real ese hueco lo llena la nube, o el papá sigue una liga del
+       directorio. Aquí se repone la liga a mano, que es el equivalente de
+       "ya se unió a la liga de su hij@". Sin este paso la prueba mide el vacío
+       de una cuenta nueva, no si el papá encuentra a su hija. */
+    if (ligaJSON) { try { localStorage.setItem('lm_league', ligaJSON); } catch (e){} }
+    var puestos = 0;
+    hijos.forEach(function (k, i){
+      insistir('vincular a ' + (k.name || 'mi hij@'), function (){
+        go('alta');
+        escribir('#altaName', k.name || ('Hij@ ' + i));
+        escribir('#altaNum',  k.num || String(4 + i));
+        escribir('#altaPos',  k.pos || 'Base');
+        // Fecha de nacimiento coherente con su edad (ya no se pide CURP).
+        /* La fecha se separa POR HIJO, no sólo por edad. Derivarla nada más de
+           la edad hacía que dos hermanos de los mismos años salieran con el
+           MISMO cumpleaños, y el alta los rechazaba por duplicados — con toda
+           la razón: la app no puede distinguir a dos niños con igual nombre y
+           misma fecha. El dato degenerado era mío, no la regla de la app. */
+        var edad = k.age || 10;
+        var n = new Date(); n.setFullYear(n.getFullYear() - edad);
+        n.setMonth((i * 5) % 12); n.setDate(1 + (i * 7) % 27);
+        escribir('#altaNac', n.toISOString().slice(0, 10));
+        var resp = $('#altaResp'); if (resp && !resp.textContent) tocar(resp);
+        var b = $$('#altaBody button').filter(function (x){ return /vincular/i.test(x.innerText); })[0];
+        tocar(b);
+      }, function (){
+        var u = userData() || {};
+        return (u.children || []).some(function (c){ return c.name === k.name; });
+      }, 'llenó el alta y su hij@ no quedó vinculad@');
+      var u = userData() || {};
+      if ((u.children || []).some(function (c){ return c.name === k.name; })) puestos++;
+    });
+    /* El código que la app le generó al vincular NO es el mismo que trae el
+       equipo en la liga de prueba —son dos altas distintas—, así que se empata
+       por nombre, que es como los empata la app cuando el coach dio de alta al
+       niño por su lado. Sin esto el letrero no tendría con qué reconocerlo. */
+    return puestos;
+  };
+
   /* 7 · EL PAPÁ BUSCA EL PARTIDO DE SU HIJ@.
      La razón por la que un papá abre esta app. Tiene que poder ver la
      CATEGORÍA, el día y el lugar sin preguntarle a nadie — si no, la app no le
@@ -222,14 +288,26 @@
        el calendario existe, sólo que no ahí y sin filtro por categoría. */
     var donde = ['publico', 'tabla', 'hub'];
     var i = 0;
+    /* EL CRITERIO CAMBIÓ, Y ÉSA ES LA HISTORIA.
+       Antes esto daba por bueno que en la pantalla se leyera una categoría, una
+       hora y un lugar. Carlos lo tumbó: *"estás buscando algo que no existe"*.
+       Y tenía razón — que la pantalla mencione "Mixta 7–9" no le dice a un papá
+       que ahí juega SU hija; se lo diría de cualquier partido de esa categoría.
+
+       Lo que de verdad hay que comprobar es que el papá vea EL LETRERO CON EL
+       NOMBRE DE SU HIJ@. Si el nombre no está, no encontró nada, aunque la
+       pantalla esté llena de datos. */
+    var mios = (userData() && userData().children || []).map(function(k){ return k.name; });
     return insistir('encontrar el partido de mi hij@', function (){
       go(donde[i % donde.length]); i++;
     }, function (){
       var t = ((document.querySelector('.screen.on') || {}).innerText || '');
-      // Le sirve sólo si ve las tres cosas: de qué categoría, a qué hora y dónde.
-      return /Mixta|Varonil|Femenil/.test(t) && /\d{1,2}:\d{2}/.test(t)
-          && /(Gimnasio|Deportiva|Cancha|Club|Unidad|CBTis)/.test(t);
-    }, 'no encuentra en qué categoría, a qué hora ni en qué lugar juega su hij@');
+      if (!/Aquí juega/.test(t)) return false;              // no hay letrero
+      if (!mios.length) return false;
+      // Y que el letrero traiga el nombre de alguno de los suyos.
+      for (var k = 0; k < mios.length; k++) if (t.indexOf(mios[k]) >= 0) return true;
+      return false;
+    }, 'no ve ningún letrero que diga dónde juega su hij@');
   };
 
   /* 8 · EL VISITANTE CURIOSEA antes del partido, que es lo que hace alguien
@@ -251,8 +329,8 @@
   /* ══════════════════════════════════════════════════════════════════════
      EL RECORRIDO DE UNA PERSONA
      ══════════════════════════════════════════════════════════════════════ */
-  API.vivir = function (per){
-    quien = per; reg = [];
+  API.vivir = function (per, ligaJSON){
+    quien = per; reg = []; API._liga = ligaJSON || API._liga;
     try {
       /* Todo el mundo pasa por lo mismo al principio, que es donde más gente
          se cae: crear cuenta, salirse, y volver. */
@@ -261,7 +339,7 @@
         API.iniciarSesion(per);
       }
       if (per.rol === 'coach'){ API.hacerCambio(); API.cambiarPosicion(); }
-      if (per.rol === 'papa')  { API.buscarPartidoDelHijo(); }
+      if (per.rol === 'papa')  { API.vincularHijos(per, API._liga); API.buscarPartidoDelHijo(); }
       if (per.rol === 'publico'){ API.curiosear(); }
       if (per.rol === 'jugador' || per.rol === 'publico'){ API.gachapon(); }
     } catch (e){

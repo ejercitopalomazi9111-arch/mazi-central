@@ -207,7 +207,7 @@ export async function recorrerTodos({ pagina, personas, liga, appLiga, alAvanzar
            escritura; esto se registra, cierra sesión, vuelve a entrar, hace un
            cambio y abre un sobre — tocando, con la terquedad de esta persona. */
         try {
-          MANOS.vivir(per).forEach(f => out.push({
+          MANOS.vivir(per, ligaJSON).forEach(f => out.push({
             pantalla: 'usar · ' + f.paso, tipo: f.tipo, gravedad: f.gravedad,
             que: f.que, donde: f.paso, persona: per.id, rol: per.rol }));
         } catch (e){
