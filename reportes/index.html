@@ -793,14 +793,18 @@ El día ...
 
     <h2 class="rotulo" style="margin-top:18px">Cómo va quedando <span class="regla"></span></h2>
     <div class="mesa" id="mesaCred"></div>
+    <label style="display:block; margin-top:14px">Cómo acomodarlas en la hoja
+      <select id="cAcomodo">
+        <option value="junta">Frente y reverso juntos — 2 credenciales por hoja</option>
+        <option value="doblecara">Doble cara — 4 por hoja, para voltear la hoja</option>
+      </select></label>
     <div class="chips" style="margin-top:14px">
       <button class="chip" type="button" id="cImprimir" style="background:var(--violeta);
         border-color:var(--violeta); color:#12061C">Imprimir todas</button>
       <button class="chip" type="button" id="cSoloEsta">Imprimir sólo ésta</button>
     </div>
-    <p class="aviso">Salen <b>4 por hoja carta</b> con marcas de corte: primero todos los frentes,
-      luego los reversos <b>en espejo</b>, para que al voltear la hoja cada reverso caiga sobre su
-      frente. Los datos se guardan sólo en este aparato.</p>
+    <p class="aviso" id="cAvisoAcomodo"></p>
+    <p class="aviso">Los datos se guardan sólo en este aparato.</p>
   </section>
 
   <!-- ══════════ PLANTILLA ══════════ -->
@@ -2205,6 +2209,10 @@ $('#bPasar').addEventListener('click', () => {
    ═════════════════════════════════════════════════════════════════════════ */
 const LLAVE_CRED = 'reportes_mazi_cred_v1';
 const CRED_BASE = {
+  /* 'junta' = frente y reverso en LA MISMA hoja, dos credenciales completas
+     por hoja. 'doblecara' = todos los frentes en una y los reversos en otra,
+     en espejo, para imprimir por los dos lados. */
+  acomodo:'junta',
   ciclo:'2026-2027', red:'@ADVANCED.CRITICAL_CARE', ancho:63.5, alto:105, qr:'credencial/qr-instagram.jpg',
   /* La credencial NO usa la tipografía de la casa por decisión de Carlos.
      Se cambia desde la pestaña el día que la quiera. */
@@ -2375,6 +2383,13 @@ const CAMPOS_CRED = [['#cApellidos','apellidos'],['#cNombres','nombres'],['#cNiv
   ['#cSangre','sangre'],['#cAlergias','alergias'],['#cTel','tel'],['#cFamiliar','familiar'],
   ['#cInicio','inicio'],['#cVence','vence']];
 const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda'],['#cFuente','fuente']];
+const AVISO_ACOMODO = {
+  junta:'Sale <b>una hoja por cada dos credenciales</b>, con el frente y el reverso de cada una '+
+        'lado a lado. Se corta, se pega espalda con espalda y se plastifica. Es lo que menos papel gasta.',
+  doblecara:'Salen <b>4 por hoja carta</b>: primero todos los frentes, luego los reversos '+
+        '<b>en espejo</b>, para que al voltear la hoja cada reverso caiga sobre su frente. '+
+        'Conviene cuando son muchas y la impresora imprime por los dos lados.',
+};
 
 function pintarCred(){
   const c = cAct(), b = CRED.base;
@@ -2386,6 +2401,8 @@ function pintarCred(){
   CAMPOS_CRED.forEach(([sel,campo]) => { $(sel).value = c[campo] || ''; });
   CAMPOS_BASE.forEach(([sel,campo]) => { $(sel).value = b[campo] || ''; });
   $('#cAncho').value = b.ancho; $('#cAlto').value = b.alto;
+  $('#cAcomodo').value = b.acomodo || 'junta';
+  $('#cAvisoAcomodo').innerHTML = AVISO_ACOMODO[b.acomodo] || AVISO_ACOMODO.junta;
   $('#mesaCred').innerHTML = credFrente(c) + credReverso(c);
 }
 
@@ -2528,28 +2545,44 @@ $('#cPegar').addEventListener('click', () => {
    Los reversos van EN ESPEJO por columna: al voltear la hoja por el lado
    largo, cada reverso cae encima de su frente. Es lo que más se equivoca
    cuando se hace a mano, y lo que más papel tira. */
-function pliegosDe(gente){
-  const b = CRED.base;
-  const hojas = [];
-  for(let i=0;i<gente.length;i+=4){
-    const grupo = gente.slice(i, i+4);
-    const espejo = [];
-    for(let f=0; f<2; f++){
-      const fila = [grupo[f*2], grupo[f*2+1]];
-      espejo.push(fila[1]); espejo.push(fila[0]);
-    }
-    hojas.push({ frentes:grupo, reversos:espejo });
+const CORTES =
+  '<div class="marca-corte" style="left:0;right:0;top:'+ (279.4/2) +'mm;height:.2mm"></div>'+
+  '<div class="marca-corte" style="top:0;bottom:0;left:'+ (215.9/2) +'mm;width:.2mm"></div>';
+const CAJA = (html) => '<div>'+ (html || '') +'</div>';
+
+/* Dos credenciales COMPLETAS por hoja: cada renglón es una persona, con su
+   frente y su reverso lado a lado. Se corta, se pega espalda con espalda y se
+   plastifica. Una sola hoja por par en vez de dos, que es lo que pidió Carlos
+   para no tirar papel cuando son pocas. */
+function pliegoJunto(par){
+  const celdas = [];
+  par.forEach(g => { celdas.push(CAJA(credFrente(g))); celdas.push(CAJA(credReverso(g))); });
+  while(celdas.length < 4) celdas.push(CAJA(''));
+  return '<div class="pliego">'+ CORTES + celdas.join('') +'</div>';
+}
+
+/* Cuatro por hoja para tirajes grandes: los frentes en una hoja y los reversos
+   en otra, EN ESPEJO por columna, para que al voltear por el lado largo cada
+   reverso caiga encima de su frente. */
+function pliegoDobleCara(grupo){
+  const espejo = [];
+  for(let f=0; f<2; f++){
+    const fila = [grupo[f*2], grupo[f*2+1]];
+    espejo.push(fila[1]); espejo.push(fila[0]);
   }
-  return hojas.map(h => {
-    const caja = (html) => '<div>'+ (html || '') +'</div>';
-    const cortes =
-      '<div class="marca-corte" style="left:0;right:0;top:'+ (279.4/2) +'mm;height:.2mm"></div>'+
-      '<div class="marca-corte" style="top:0;bottom:0;left:'+ (215.9/2) +'mm;width:.2mm"></div>';
-    return '<div class="pliego">'+ cortes +
-      h.frentes.map(g => caja(credFrente(g))).join('') +'</div>'+
-      '<div class="pliego">'+ cortes +
-      h.reversos.map(g => caja(g ? credReverso(g) : '')).join('') +'</div>';
-  }).join('');
+  return '<div class="pliego">'+ CORTES + grupo.map(g => CAJA(credFrente(g))).join('') +'</div>'+
+         '<div class="pliego">'+ CORTES + espejo.map(g => CAJA(g ? credReverso(g) : '')).join('') +'</div>';
+}
+
+function pliegosDe(gente, modo){
+  const m = modo || CRED.base.acomodo || 'junta';
+  const paso = m === 'junta' ? 2 : 4;
+  const salida = [];
+  for(let i=0;i<gente.length;i+=paso){
+    const grupo = gente.slice(i, i+paso);
+    salida.push(m === 'junta' ? pliegoJunto(grupo) : pliegoDobleCara(grupo));
+  }
+  return salida.join('');
 }
 
 function imprimirCredenciales(soloEsta){
@@ -2566,6 +2599,9 @@ function imprimirCredenciales(soloEsta){
   setTimeout(()=>{ window.print();
     setTimeout(()=>{ document.body.classList.remove('imprime-cred'); imp.innerHTML=''; }, 500); }, 160);
 }
+$('#cAcomodo').addEventListener('change', () => {
+  CRED.base.acomodo = $('#cAcomodo').value; guardarCred(); pintarCred();
+});
 $('#cImprimir').addEventListener('click', () => imprimirCredenciales(false));
 $('#cSoloEsta').addEventListener('click', () => imprimirCredenciales(true));
 
@@ -3111,7 +3147,7 @@ repintar();
     /* el reverso no lleva apellidos, así que el espejo se comprueba con el
        número de empleado, que es lo que sí sale de los dos lados */
     CRED.gente[0].num='AAA'; CRED.gente[1].num='BBB'; CRED.gente[2].num='CCC';
-    const h = pliegosDe(CRED.gente);
+    const h = pliegosDe(CRED.gente, 'doblecara');
     (function(){
     const conCab = leerLista('Apellidos\tNombres\tNo. de empleado\nGUZMAN\tCARLOS\tACC-1\nRUIZ\tANA\tACC-2');
     ok('la lista con encabezado se acomoda sola',
@@ -3130,9 +3166,22 @@ repintar();
   ok('la tipografía se puede cambiar', credFrente(credNueva()).indexOf('--cred-fam:') > 0);
   ok('la credencial mide lo que se midió del original',
        credFrente(CRED.gente[0]).indexOf('--an:63.5mm; --al:105mm') > 0);
-    ok('tres credenciales caben en un pliego', (h.match(/class="pliego"/g)||[]).length === 2);
+    ok('doble cara: tres credenciales caben en un pliego y su vuelta',
+       (h.match(/class="pliego"/g)||[]).length === 2);
     const vuelta = h.split('class="pliego"')[2];
     ok('los reversos van en espejo', vuelta.indexOf('BBB') < vuelta.indexOf('AAA'));
+    (function(){
+      const j = pliegosDe(CRED.gente, 'junta');
+      ok('juntas: dos credenciales por hoja', (j.match(/class="pliego"/g)||[]).length === 2);
+      const h1 = j.split('class="pliego"')[1];
+      ok('juntas: el frente y el reverso de la misma persona van en la misma hoja',
+         h1.indexOf('AAA') >= 0 && h1.indexOf('BBB') >= 0 && h1.indexOf('CCC') < 0);
+      ok('juntas: una sola persona gasta UNA hoja, no dos',
+         (pliegosDe([CRED.gente[0]], 'junta').match(/class="pliego"/g)||[]).length === 1);
+      ok('juntas: la hoja incompleta se rellena con celdas vacías',
+         (pliegosDe([CRED.gente[0]], 'junta').match(/<div><\/div>/g)||[]).length === 2);
+      ok('el acomodo por omisión es el que menos papel gasta', CRED_BASE.acomodo === 'junta');
+    })();
     ok('la credencial sin foto dibuja silueta', credFrente(credNueva()).indexOf('silueta') > 0);
     ok('el reverso sólo muestra los datos que hay',
        credReverso(credNueva()).indexOf('TIPO DE SANGRE') < 0);
