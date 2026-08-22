@@ -613,6 +613,14 @@ El día ...
 - Punto uno
 - Punto dos"></textarea>
 
+    <div id="cajaApartados" hidden>
+      <h2 class="rotulo" style="margin-top:18px">Apartados de este reporte <span class="regla"></span>
+        <small id="cuentaApartados"></small></h2>
+      <p class="aviso" style="margin:0 0 10px">Apaga el que no lleves hoy. <b>No se borra</b>: el
+        texto se queda guardado y lo vuelves a prender cuando lo ocupes.</p>
+      <div class="chips" id="listaApartados"></div>
+    </div>
+
     <details class="ayuda">
       <summary>Cómo se escribe · marcado</summary>
       <div class="dentro">
@@ -1299,7 +1307,7 @@ function nuevoReporte(){
     id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     tipo:'incidencia', titulo:'', fecha:iso(hoy), grupo:'3.1', para:'', lugar:'Santiago de Querétaro, Qro.',
     autor:'', cargo:'Jefe de grupo 3.1', autor2:'', cargo2:'',
-    semestre:'', tutor:'', periodo:'',
+    semestre:'', tutor:'', periodo:'', apagados:[],
     cuerpo:'', evidencias:[], formato:Object.assign({},FORMATO_OFICIAL),
     creado:Date.now(), tocado:Date.now(),
   };
@@ -1331,7 +1339,8 @@ function sello(texto){
   return out.slice(0,4)+'-'+out.slice(4);
 }
 function textoSellable(r){
-  return [r.titulo, r.fecha, r.grupo, r.semestre, r.tutor, r.periodo, r.para, r.autor, r.cargo, r.cuerpo,
+  return [r.titulo, r.fecha, r.grupo, r.semestre, r.tutor, r.periodo, r.para, r.autor, r.cargo,
+          cuerpoVivo(r),
           (r.evidencias||[]).map(e=>e.pie).join(' ')].join('\n');
 }
 function folio(r){
@@ -1339,6 +1348,68 @@ function folio(r){
   const g = (r.grupo||'GEN').replace(/[^0-9A-Za-z.]/g,'') || 'GEN';
   const s = sello(textoSellable(r)).replace('-','');
   return 'IR-'+g+'-'+f+'-'+s.slice(0,3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2-bis · APARTADOS QUE SE APAGAN
+   Un reporte semanal no siempre lleva todos los apartados. Antes había que
+   borrar el texto —y perderlo—; ahora se apaga y se vuelve a prender.
+
+   El corte se hace sobre el TEXTO y no sobre los bloques ya leídos, a
+   propósito: así el sello de verificación y la paginación ven exactamente lo
+   mismo que se va a imprimir, y no hubo que tocar nada de lo que ya servía.
+   ═════════════════════════════════════════════════════════════════════════ */
+function llaveApartado(t){
+  return String(t||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/^[ivxlcdm]+[.)]\s*/,'')          /* "IV." no cuenta: puede renumerarse */
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+/* Devuelve los apartados de nivel 2, en orden, con dónde empieza cada uno. */
+function apartadosDe(texto){
+  const lineas = String(texto||'').replace(/\r/g,'').split('\n');
+  const out = [];
+  lineas.forEach((l, i) => {
+    const m = l.trim().match(/^##\s+(\S.*)$/);
+    if(m) out.push({ titulo:m[1].trim(), llave:llaveApartado(m[1]), linea:i });
+  });
+  return out;
+}
+/* Si los apartados van numerados con romanos y se apaga uno, la numeración
+   queda saltando (V, VII, VIII…). En un documento que entrega a un tutor eso
+   se ve mal, así que se renumera lo que quedó encendido. */
+const ROMANOS = ['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV',
+  'XV','XVI','XVII','XVIII','XIX','XX','XXI','XXII','XXIII','XXIV','XXV','XXVI','XXVII',
+  'XXVIII','XXIX','XXX'];
+function renumerar(texto){
+  const lineas = String(texto||'').split('\n');
+  const cabezas = lineas.map((l,i) => ({i, m:l.trim().match(/^##\s+([IVXLCDM]{1,7})[.)]\s+(\S.*)$/)}))
+                        .filter(x => x.m);
+  if(cabezas.length < 2) return texto;      /* uno solo no es una numeración */
+  cabezas.forEach((c, k) => {
+    const n = ROMANOS[k+1] || String(k+1);
+    lineas[c.i] = '## ' + n + '. ' + c.m[2];
+  });
+  return lineas.join('\n');
+}
+
+/* El cuerpo sin los apartados apagados. Lo de antes del primer "##" siempre
+   se queda: suele ser la entrada del documento. */
+function cuerpoVivo(r){
+  const apagados = r.apagados || [];
+  if(!apagados.length) return r.cuerpo;   /* sin nada apagado no se toca nada */
+  const lineas = String(r.cuerpo||'').replace(/\r/g,'').split('\n');
+  const secs = apartadosDe(r.cuerpo);
+  if(!secs.length) return r.cuerpo;
+  const fuera = new Set(apagados);
+  const quitar = new Array(lineas.length).fill(false);
+  secs.forEach((sec, k) => {
+    if(!fuera.has(sec.llave)) return;
+    const hasta = (k+1 < secs.length) ? secs[k+1].linea : lineas.length;
+    for(let i=sec.linea; i<hasta; i++) quitar[i] = true;
+  });
+  const vivo = lineas.filter((_, i) => !quitar[i]).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+  return renumerar(vivo);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1708,7 +1779,7 @@ function paginar(r){
   /* todos los elementos, en orden */
   const piezas = [];
   piezas.push({ el:bloqueTitulo(r), pega:false, tipo:'titulo' });
-  leer(r.cuerpo, r.evidencias).forEach(b=>{
+  leer(cuerpoVivo(r), r.evidencias).forEach(b=>{
     if(b.tipo === 'salto'){ piezas.push({salto:true}); return; }
     const cont = document.createElement('div');
     cont.innerHTML = b.html;
@@ -2057,7 +2128,7 @@ $('#bPasar').addEventListener('click', () => {
     if(!txt){ alert('No hay incidencias en esas fechas.'); return; }
     R.cuerpo = (R.cuerpo.trim() ? R.cuerpo.trim()+'\n\n' : '') + txt;
     $('#fCuerpo').value = R.cuerpo;
-    contarPalabras(); guardar(); cerrarHojita(); verVista('escribir'); repintar();
+    pintarApartados(); contarPalabras(); guardar(); cerrarHojita(); verVista('escribir'); repintar();
   });
 });
 
@@ -2362,7 +2433,7 @@ function instruccionesIA(){
 'Usa este esqueleto y rellénalo. Puedes agregar apartados si hacen falta, con el',
 'mismo estilo, pero no quites los que están.',
 '',
-T.cuerpo,
+cuerpoVivo({cuerpo:T.cuerpo, apagados:(R.tipo === T.id ? R.apagados : [])}),
 '',
 '---',
 'Ahora pídeme la información que te falte, o redáctalo con lo que te di.',
@@ -2448,12 +2519,38 @@ function pintarCampos(){
   $('#oFondo').value = f.fondo;   $('#oAgua').value = f.agua;
   $('#oOpacidad').value = f.opacidad; $('#oLeyenda').value = f.leyenda;
   $('#oSello').value = f.sello;   $('#oMembrete').value = f.membrete;
-  pintarEvidencias(); contarPalabras();
+  pintarEvidencias(); pintarApartados(); contarPalabras();
 }
 function contarPalabras(){
-  const n = (R.cuerpo.trim().match(/\S+/g) || []).length;
+  const n = (cuerpoVivo(R).trim().match(/\S+/g) || []).length;
   $('#cuentaPal').textContent = n + (n===1 ? ' palabra' : ' palabras');
 }
+function pintarApartados(){
+  const secs = apartadosDe(R.cuerpo);
+  const caja = $('#cajaApartados');
+  caja.hidden = secs.length < 2;
+  if(caja.hidden) return;
+  const fuera = new Set(R.apagados || []);
+  const vivos = secs.filter(x => !fuera.has(x.llave)).length;
+  $('#cuentaApartados').textContent = vivos + ' de ' + secs.length + ' encendidos';
+  $('#listaApartados').innerHTML = secs.map(x =>
+    '<button class="chip" type="button" data-apartado="'+esc(x.llave)+'" aria-pressed="'+
+    (!fuera.has(x.llave))+'">'+esc(x.titulo)+'</button>').join('');
+}
+$('#listaApartados').addEventListener('click', e => {
+  const b = e.target.closest('[data-apartado]'); if(!b) return;
+  const k = b.dataset.apartado;
+  R.apagados = R.apagados || [];
+  const i = R.apagados.indexOf(k);
+  if(i >= 0) R.apagados.splice(i,1); else R.apagados.push(k);
+  /* se cambia el botón EN SU LUGAR y no se repinta la lista: repintarla
+     desprende el que acabas de tocar y el siguiente toque cae en el vacío */
+  b.setAttribute('aria-pressed', String(i >= 0));
+  const secs = apartadosDe(R.cuerpo), fuera = new Set(R.apagados);
+  $('#cuentaApartados').textContent =
+    secs.filter(x => !fuera.has(x.llave)).length + ' de ' + secs.length + ' encendidos';
+  contarPalabras(); guardar(); repintar();
+});
 function pintarEvidencias(){
   const c = $('#listaEvi');
   $('#cuentaEvi').textContent = R.evidencias.length
@@ -2588,7 +2685,7 @@ function conectar(id, campo, despues){
  '#fAutor:autor','#fCargo:cargo','#fAutor2:autor2','#fCargo2:cargo2',
  '#fSemestre:semestre','#fTutor:tutor','#fPeriodo:periodo']
   .forEach(par => { const [s,c] = par.split(':'); conectar(s, c); });
-conectar('#fCuerpo','cuerpo', contarPalabras);
+conectar('#fCuerpo','cuerpo', () => { pintarApartados(); contarPalabras(); });
 
 /* formato */
 function conectarFormato(id, clave, num){
@@ -2625,11 +2722,11 @@ $('#bEsqueleto').addEventListener('click', () => {
   const ya = R.cuerpo.trim();
   if(ya && !confirm('Ya hay texto escrito. ¿Le pego el esqueleto al final?')) return;
   R.cuerpo = ya ? (ya + '\n\n' + T.cuerpo) : T.cuerpo;
-  $('#fCuerpo').value = R.cuerpo; contarPalabras(); guardar(); repintar();
+  $('#fCuerpo').value = R.cuerpo; pintarApartados(); contarPalabras(); guardar(); repintar();
 });
 $('#bLimpiar').addEventListener('click', () => {
   R.cuerpo = limpiarIA(R.cuerpo);
-  $('#fCuerpo').value = R.cuerpo; contarPalabras(); guardar(); repintar();
+  $('#fCuerpo').value = R.cuerpo; pintarApartados(); contarPalabras(); guardar(); repintar();
 });
 
 /* evidencias */
@@ -2831,6 +2928,29 @@ repintar();
   ok('las instrucciones conservan sus renglones en blanco',
      /EXACTAMENTE\.\n\nQUÉ ES/.test(instruccionesIA()));
   ok('las instrucciones dicen que no firme', /NO escribas la firma/.test(instruccionesIA()));
+  (function(){
+    const r = { cuerpo:'entrada\n\n## Uno\na\n\n## II. Dos\nb\n\n## Tres\nc', apagados:[] };
+    ok('detecta los apartados', apartadosDe(r.cuerpo).length === 3);
+    ok('el romano no cuenta en la llave', llaveApartado('II. Dos') === llaveApartado('Dos'));
+    r.apagados = [llaveApartado('II. Dos')];
+    const v = cuerpoVivo(r);
+    ok('el apartado apagado desaparece', v.indexOf('Dos') < 0 && v.indexOf('b') < 0);
+    ok('los demás apartados se quedan', /## Uno/.test(v) && /## Tres/.test(v));
+    ok('lo de antes del primer apartado nunca se va', /entrada/.test(v));
+    r.apagados = [];
+    ok('sin nada apagado el cuerpo no se toca', cuerpoVivo(r) === r.cuerpo);
+    const num = { cuerpo:'## I. Uno\na\n\n## II. Dos\nb\n\n## III. Tres\nc',
+                  apagados:[llaveApartado('II. Dos')] };
+    const nv = cuerpoVivo(num);
+    ok('renumera lo que quedó encendido', /## I\. Uno/.test(nv) && /## II\. Tres/.test(nv));
+    ok('no deja huecos en la numeración', nv.indexOf('III.') < 0);
+    ok('un solo apartado numerado no se renumera',
+       renumerar('## IV. Solo\nx') === '## IV. Solo\nx');
+    ok('los apartados sin romano no se tocan',
+       renumerar('## Uno\n\n## Dos') === '## Uno\n\n## Dos');
+    ok('el sello cambia si se apaga un apartado',
+       sello(v) !== sello(r.cuerpo));
+  })();
   ok('el semanal completo trae todos los apartados',
      leer(TIPOS.find(t=>t.id==='grupo').cuerpo,[]).filter(b=>b.tipo==='h2').length >= 13);
   ok('hay tipo para cada cosa que usa',

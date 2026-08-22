@@ -107,3 +107,19 @@ Y las dos consecuencias que conviene tener a la mano: **todas las faltas generan
 expediente**, y **tres reportes de disciplina** llevan a notificación personal para evitar la
 suspensión de tres días. Un reporte trae además **trabajo comunitario** —en el receso si la falta es
 menor, en fin de semana si no.
+
+## Apagar apartados
+
+Un semanal no siempre lleva todos los apartados. En **Escribir** hay un interruptor por cada `##`
+del documento: se apaga el que no toque ese día.
+
+Dos decisiones que importan:
+
+- **No se borra nada.** El texto se queda guardado en el reporte; apagarlo sólo lo saca de la
+  impresión. Se vuelve a prender cuando se ocupe.
+- **La numeración se recompone.** Si los apartados van con romanos y se apaga el VI, el documento
+  saldría saltando de V a VII, que en algo que entregas a un tutor se ve mal. Los que quedan
+  encendidos se renumeran solos.
+
+El corte se hace sobre el **texto** y no sobre los bloques ya leídos, a propósito: así el sello de
+verificación y la paginación ven exactamente lo mismo que se va a imprimir.
