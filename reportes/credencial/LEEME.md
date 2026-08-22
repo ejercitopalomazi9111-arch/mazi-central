@@ -68,3 +68,24 @@ Las acreditaciones extra separadas por coma se convierten en renglones.
 **Cuatro por hoja carta**, con marcas de corte. Primero todos los frentes, luego los reversos **en
 espejo por renglón**, para que al voltear la hoja por el lado largo cada reverso caiga sobre su
 frente. Eso es lo que más se equivoca haciéndolo a mano y lo que más papel tira.
+
+## La geometría, copiada del original
+
+Tres cosas que Carlos corrigió mirando la tarjeta impresa, y que no se adivinan:
+
+1. **Arriba el azul es un TRIÁNGULO de esquina**, no una banda que cruza toda la tarjeta. La roja
+   corre en paralelo y sí llega hasta el borde derecho.
+2. **Abajo es una recta y un triángulo**: el azul tiene el borde superior plano hasta poco más de
+   la mitad y de ahí sube en diagonal a la derecha. La roja corre pegada a esa subida.
+3. **Las bandas rojas no son rojo plano.** Llevan veteado azul encima —tres degradados suaves— que
+   es lo que las hace ver impresas en vez de plásticas. Sin eso la tarjeta se ve barata y es lo
+   primero que se nota.
+
+Y bajo el logo va la **línea de pulso** roja, que es parte del candado de marca y no del archivo
+del logo.
+
+## Al imprimir
+
+Safari en iPhone se queda con un margen propio que no se puede apagar. Sin encoger la hoja, cada
+página arrastra una **página en blanco detrás**. Por eso todo lo que se imprime —hojas y pliegos de
+credenciales— lleva un `zoom` de **0.86**, ajustable desde **Formato → Al imprimir**.
