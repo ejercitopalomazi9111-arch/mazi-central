@@ -263,6 +263,17 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms !important; transition-duration:.01ms !important}
 }
+/* Saltar entre las cuatro pantallas. Va en las de operación, no en la del
+   alumno: el alumno no tiene por qué caer en el mostrador de un dedazo. */
+.saltos{display:flex; gap:6px; flex-wrap:wrap}
+.saltos a{
+  min-height:44px; padding:0 13px; border-radius:999px; border:1px solid var(--linea);
+  background:var(--sup); color:var(--tenue); font-weight:700; font-size:13px;
+  display:inline-flex; align-items:center; text-decoration:none;
+}
+.saltos a[aria-current="page"]{background:var(--violeta); border-color:var(--violeta); color:#150420}
+body.mostrador .saltos a[aria-current="page"]{color:#fff}
+
 .solo-lectores{
   position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;
 }
