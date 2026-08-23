@@ -6,8 +6,10 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 const EMU = 914400, W = 13.333, H = 7.5, ESC = 96;   /* px por pulgada */
 
+const ARCHIVO = process.argv[2] || 'Fadori-STEAM.pptx';
+const SALIDA  = process.argv[3] || '/tmp/vista';
 execSync('rm -rf /tmp/desempacado && mkdir -p /tmp/desempacado && cd /tmp/desempacado && unzip -q ' +
-         JSON.stringify(process.cwd() + '/Fadori-STEAM.pptx'));
+         JSON.stringify(process.cwd() + '/' + ARCHIVO));
 
 const leer = (p) => readFileSync('/tmp/desempacado/' + p, 'utf8');
 const esc = (t) => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -52,8 +54,10 @@ laminas.forEach((ruta, i) => {
         const t = rels.match(new RegExp('Id="'+emb[1]+'"[^>]*Target="([^"]+)"'));
         if(t){
           const f = t[1].replace(/^\.\.\//,'');
-          const b = readFileSync('/tmp/desempacado/ppt/' + f).toString('base64');
-          src = 'data:image/png;base64,' + b;
+          const bin = readFileSync('/tmp/desempacado/ppt/' + f);
+          const tipo = /\.svg$/i.test(f) ? 'image/svg+xml'
+                     : /\.jpe?g$/i.test(f) ? 'image/jpeg' : 'image/png';
+          src = 'data:' + tipo + ';base64,' + bin.toString('base64');
         }
       }
       html += `<img class="sh" src="${src}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">`;
@@ -95,6 +99,6 @@ laminas.forEach((ruta, i) => {
   html += '</div>';
 });
 
-mkdirSync('/tmp/vista', { recursive: true });
-writeFileSync('/tmp/vista/index.html', html);
-console.log('✓ /tmp/vista/index.html ·', laminas.length, 'láminas');
+mkdirSync(SALIDA, { recursive: true });
+writeFileSync(SALIDA + '/index.html', html);
+console.log('✓ ' + SALIDA + '/index.html ·', laminas.length, 'láminas');

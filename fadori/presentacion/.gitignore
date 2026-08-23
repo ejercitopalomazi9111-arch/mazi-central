@@ -1,2 +1,7 @@
 # La librería que arma el .pptx. Se instala con `npm install` y pesa 8 MB.
 node_modules/
+
+# Carpetas de trabajo: el .pptx se desempaca aquí para editarle el XML.
+# Se regeneran solas con `python3 rehacer.py`.
+desempacado/
+trabajo/
