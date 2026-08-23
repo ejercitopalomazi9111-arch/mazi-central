@@ -1,27 +1,53 @@
 /* ============================================================================
-   FADORI · la piel
+   FADORI · la piel · crema, café, naranja y dorado
    ----------------------------------------------------------------------------
-   Dos mundos opuestos a propósito (regla 2 del catálogo):
-   · el ALUMNO va oscuro, con fotos grandes, para un teléfono en un pasillo.
-   · la COOPERATIVA va clara y de alto contraste, con botones del tamaño de la
-     palma, porque se usa con las manos ocupadas y muchas veces con sol pegando.
-   Objetivos táctiles de 44px mínimo en los dos. Sin excepción.
+   El plan completo y por qué de cada decisión: ESTETICA.md.
+
+   Lo esencial: Fadori NO usa la piel de Grupo Mazi. Primero porque no es de
+   Carlos sino de la escuela, y segundo porque el violeta le quita apetito a
+   la comida — que es la razón por la que ninguna cocina y ninguna carta de
+   restaurante lo usan. El apetito vive en la franja rojo-naranja-ámbar.
+
+   Tres mundos, cada uno con su trabajo:
+   · el ALUMNO va en crema y café, con fotos grandes. Es el que vende.
+   · la COOPERATIVA va clara y de altísimo contraste, con botones del tamaño
+     de la palma: se usa con las manos ocupadas y con sol pegando, así que
+     ahí la legibilidad le gana al apetito.
+   · la PANTALLA PÚBLICA se invierte a espresso, porque se lee de lejos.
+   Objetivos táctiles de 44px mínimo en los tres. Sin excepción.
    ==========================================================================*/
 
 :root{
-  --tinta:#0B0714;
-  --piso:#140C22;
-  --sup:#1D1330;
-  --sup2:#271A3F;
-  --linea:#33244D;
-  --hueso:#EFEAF5;
-  --tenue:#A99CBE;
-  --violeta:#AC27FF;
-  --violeta-2:#C471FF;
-  --verde:#3DDC84;
-  --ambar:#FFB627;
-  --rojo:#FF5470;
-  --radio:18px;
+  /* el papel · el blanco NUNCA es #FFFFFF: blanco puro vuelve gris la comida
+     que va encima, y ése es el detalle que más se nota de toda la paleta */
+  --fondo:#FDF8F0;      /* crema */
+  --sup:#FFFDF9;        /* papel · tarjetas */
+  --piso:#F6EADA;       /* masa · campos y superficie hundida */
+  --sup2:#F0DFC9;       /* masa honda */
+  --linea:#E6D5BE;      /* corteza */
+
+  /* la tinta · café profundo, no negro. Negro sobre crema se lee clínico,
+     de receta médica; café sobre crema se lee horneado. 15.51 de contraste */
+  --cafe:#2E1B10;
+  --tenue:#7A5A42;      /* 5.90 sobre crema */
+
+  /* el sabor */
+  --naranja:#C2410C;    /* acción. 4.90 sobre crema · 5.18 con blanco encima */
+  --naranja-vivo:#E8590C; /* franjas y fondos grandes. NUNCA texto chico */
+  --rescoldo:#FFE8D6;   /* fondo suave de acción */
+  --dorado:#8A6212;     /* el acento de valor: precios, "hoy". 5.18 */
+  --dorado-vivo:#C8901E; /* ⚠ 2.66 sobre crema: DECORACIÓN, jamás texto */
+  --verde:#3F6B23;      /* listo, disponible */
+  --ambar:#9A5B08;      /* aguas, no alcanzas */
+  --rojo:#A62B1B;       /* se acabó, adeudo */
+
+  /* las sombras son CAFÉ, nunca grises. Una sombra gris debajo de una foto
+     de comida la ensucia; una café la asienta. Es el cambio más barato de
+     todos y el que más se siente */
+  --sombra:0 2px 10px rgba(70,40,20,.07), 0 10px 30px rgba(70,40,20,.06);
+  --sombra-alta:0 4px 14px rgba(70,40,20,.10), 0 18px 44px rgba(70,40,20,.10);
+
+  --radio:14px;         /* esquinas muy redondas se leen a juguete, no a comida */
   --tap:48px;
   --fam:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
@@ -29,27 +55,27 @@
 *{box-sizing:border-box}
 html,body{margin:0; padding:0}
 body{
-  font-family:var(--fam); background:var(--tinta); color:var(--hueso);
+  font-family:var(--fam); background:var(--fondo); color:var(--cafe);
   -webkit-text-size-adjust:100%; overscroll-behavior-y:none;
   padding-bottom:env(safe-area-inset-bottom);
 }
 img{max-width:100%; display:block}
 button,input,select,textarea{font:inherit; color:inherit}
 button{cursor:pointer}
-a{color:var(--violeta-2)}
+a{color:var(--dorado)}
 
 /* ── el armazón ─────────────────────────────────────────────────────────── */
 .envoltura{max-width:640px; margin:0 auto; padding:0 14px 120px}
 
 .barra{
-  position:sticky; top:0; z-index:40; background:rgba(11,7,20,.86);
+  position:sticky; top:0; z-index:40; background:rgba(253,248,240,.88);
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid var(--linea);
   padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
 }
 .barra-fila{display:flex; align-items:center; gap:10px; max-width:640px; margin:0 auto}
-.marca{font-weight:800; letter-spacing:-.03em; font-size:22px; text-decoration:none; color:var(--hueso)}
-.marca b{color:var(--violeta)}
+.marca{font-weight:800; letter-spacing:-.03em; font-size:22px; text-decoration:none; color:var(--cafe)}
+.marca b{color:var(--naranja-vivo)}
 .crece{flex:1}
 
 .quiensoy{
@@ -67,12 +93,13 @@ h2::after{content:''; flex:1; height:1px; background:var(--linea)}
 /* ── botones ────────────────────────────────────────────────────────────── */
 .btn{
   min-height:var(--tap); padding:0 20px; border-radius:14px; border:1px solid var(--linea);
-  background:var(--sup); color:var(--hueso); font-weight:700; font-size:15px;
+  background:var(--sup); color:var(--cafe); font-weight:700; font-size:15px;
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   transition:transform .12s ease, background .15s ease;
 }
 .btn:active{transform:scale(.97)}
-.btn.fuerte{background:var(--violeta); border-color:var(--violeta); color:#150420}
+.btn.fuerte{background:var(--naranja); border-color:var(--naranja); color:#fff;
+  box-shadow:var(--sombra)}
 .btn.ancho{width:100%}
 .btn.chico{min-height:44px; padding:0 14px; font-size:14px; border-radius:11px}
 .btn:disabled{opacity:.4}
@@ -92,7 +119,7 @@ h2::after{content:''; flex:1; height:1px; background:var(--linea)}
   background:var(--sup); color:var(--tenue); font-weight:700; font-size:14px;
   display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
 }
-.chip[aria-pressed="true"]{background:var(--violeta); border-color:var(--violeta); color:#150420}
+.chip[aria-pressed="true"]{background:var(--naranja); border-color:var(--naranja); color:#fff}
 
 /* ── campos ─────────────────────────────────────────────────────────────── */
 label{display:block; font-size:13px; font-weight:700; color:var(--tenue); margin:14px 0 6px}
@@ -100,13 +127,15 @@ input,select,textarea{
   width:100%; min-height:var(--tap); padding:12px 14px; border-radius:13px;
   border:1px solid var(--linea); background:var(--piso); font-size:16px;
 }
-input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outline-offset:1px; border-color:transparent}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outline-offset:1px; border-color:transparent}
 
 /* ── tarjetas ───────────────────────────────────────────────────────────── */
-.tarjeta{background:var(--sup); border:1px solid var(--linea); border-radius:var(--radio); padding:16px}
+.tarjeta{background:var(--sup); border:1px solid var(--linea); border-radius:var(--radio);
+  padding:16px; box-shadow:var(--sombra)}
 .aviso{
-  background:var(--sup); border:1px solid var(--linea); border-left:3px solid var(--violeta);
+  background:var(--sup); border:1px solid var(--linea); border-left:3px solid var(--naranja);
   border-radius:12px; padding:12px 14px; font-size:14px; color:var(--tenue); line-height:1.5;
+  box-shadow:var(--sombra);
 }
 .aviso.malo{border-left-color:var(--rojo)}
 .aviso.bueno{border-left-color:var(--verde)}
@@ -114,64 +143,71 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 /* ── el menú ────────────────────────────────────────────────────────────── */
 .rejilla{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px}
 .plato{
-  background:var(--sup); border:1px solid var(--linea); border-radius:16px; overflow:hidden;
+  background:var(--sup); border:1px solid var(--linea); border-radius:12px; overflow:hidden;
   text-align:left; padding:0; display:flex; flex-direction:column; min-height:var(--tap);
-  transition:transform .12s ease, border-color .15s ease;
+  transition:transform .12s ease, border-color .15s ease, box-shadow .15s ease;
+  box-shadow:var(--sombra);
 }
 .plato:active{transform:scale(.97)}
-.plato.puesto{border-color:var(--violeta); box-shadow:0 0 0 1px var(--violeta)}
+.plato.puesto{border-color:var(--naranja); box-shadow:0 0 0 2px var(--naranja), var(--sombra-alta)}
 .plato .foto{
-  aspect-ratio:4/3; width:100%; display:grid; place-items:center; font-size:46px;
-  background:linear-gradient(150deg, var(--t1), var(--t2)); position:relative;
+  aspect-ratio:1/1; width:100%; display:grid; place-items:center; font-size:58px;
+  background:linear-gradient(155deg, var(--t1), var(--t2)); position:relative;
+  border-bottom:1px solid var(--tb, var(--linea));
 }
 .plato .foto img{width:100%; height:100%; object-fit:cover}
 .plato .cuerpo{padding:10px 12px 12px; display:flex; flex-direction:column; gap:3px; flex:1}
 .plato .nom{font-weight:700; font-size:14px; line-height:1.25}
-.plato .precio{font-weight:800; font-size:15px; color:var(--violeta-2)}
+.plato .precio{font-weight:800; font-size:16px; color:var(--dorado);
+  font-variant-numeric:tabular-nums}
 .plato .tiempo{font-size:12px; color:var(--tenue)}
 .plato .cuantos{
   position:absolute; top:8px; right:8px; min-width:28px; height:28px; border-radius:14px;
-  background:var(--violeta); color:#150420; font-weight:800; font-size:14px;
+  background:var(--naranja); color:#fff; font-weight:800; font-size:14px;
+  box-shadow:0 2px 8px rgba(70,40,20,.35);
   display:grid; place-items:center; padding:0 8px;
 }
 .plato.agotado{opacity:.42}
 .plato .sello{
-  position:absolute; inset:auto 0 0 0; background:rgba(11,7,20,.8); text-align:center;
+  position:absolute; inset:auto 0 0 0; background:rgba(46,27,16,.82); color:#FDF8F0;
+  text-align:center;
   font-size:12px; font-weight:800; padding:5px; letter-spacing:.06em;
 }
 .destacado .rejilla{grid-template-columns:1fr}
-.destacado .plato .foto{aspect-ratio:16/9}
+.destacado .plato{border-color:var(--dorado-vivo); box-shadow:0 0 0 1px var(--dorado-vivo), var(--sombra-alta)}
+.destacado .plato .foto{aspect-ratio:3/2; max-height:200px; font-size:72px}
 
 /* ── la barra del pedido ────────────────────────────────────────────────── */
 .cesta{
   position:fixed; left:0; right:0; bottom:0; z-index:50;
-  background:rgba(20,12,34,.94); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  background:var(--sup); box-shadow:0 -6px 24px rgba(70,40,20,.14);
   border-top:1px solid var(--linea); padding:12px 14px calc(12px + env(safe-area-inset-bottom));
   transform:translateY(120%); transition:transform .22s cubic-bezier(.22,1,.36,1);
 }
 .cesta.viva{transform:none}
 .cesta-dentro{max-width:640px; margin:0 auto; display:flex; align-items:center; gap:12px}
 .cesta .cuenta{flex:1; min-width:0}
-.cesta .cuenta b{display:block; font-size:18px; letter-spacing:-.02em}
+.cesta .cuenta b{display:block; font-size:19px; letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
 .cesta .cuenta span{font-size:13px; color:var(--tenue)}
 
 /* ── el turno · la pantalla que saca a la gente del pasillo ─────────────── */
 .turno{
-  text-align:center; padding:26px 18px; border-radius:24px;
-  background:linear-gradient(160deg, var(--sup2), var(--sup));
-  border:1px solid var(--linea);
+  text-align:center; padding:26px 18px; border-radius:20px;
+  background:linear-gradient(165deg, #FFF6E8, var(--sup));
+  border:1px solid var(--linea); box-shadow:var(--sombra-alta);
 }
 .turno .rotulo{font-size:13px; font-weight:800; letter-spacing:.14em; color:var(--tenue); text-transform:uppercase}
 .turno .numero{
   font-size:clamp(76px, 30vw, 140px); font-weight:900; line-height:.92; letter-spacing:-.05em;
   margin:6px 0 2px; font-variant-numeric:tabular-nums;
 }
-.turno .folio{font-size:15px; font-weight:800; letter-spacing:.22em; color:var(--violeta-2)}
+.turno .folio{font-size:16px; font-weight:800; letter-spacing:.22em; color:var(--dorado)}
 .turno .frase{margin-top:14px; font-size:17px; font-weight:700; line-height:1.35}
 .turno .frase.no{color:var(--ambar)}
 .turno .detalle{margin-top:6px; font-size:14px; color:var(--tenue)}
-.turno.listo{background:linear-gradient(160deg, #13432B, #0F3423); border-color:#2C7A52}
-.turno.listo .frase{color:var(--verde)}
+.turno.listo{background:linear-gradient(165deg, #E6F5DA, #F1FAE8); border-color:#8FBF6A}
+.turno.listo .frase{color:#2E5417}
 
 /* ── listas ─────────────────────────────────────────────────────────────── */
 .renglones{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:8px}
@@ -179,48 +215,67 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   display:flex; align-items:center; gap:12px; background:var(--piso);
   border:1px solid var(--linea); border-radius:12px; padding:10px 12px;
 }
-.renglon .n{font-weight:800; color:var(--violeta-2); min-width:26px}
+.renglon .n{font-weight:800; color:var(--dorado); min-width:26px}
 .renglon .q{flex:1; min-width:0; font-size:14px}
 .renglon .q small{display:block; color:var(--tenue)}
 
 .pila{display:flex; flex-direction:column; gap:10px}
 
 /* ── el modo cooperativa: claro y enorme ────────────────────────────────── */
+/* La cooperativa NO se hace más bonita: se usa con las manos ocupadas y con
+   sol pegando, así que la legibilidad le gana al apetito. Sigue clara, de
+   altísimo contraste (16.65) y con botones de 56px. Lo único que cambia es
+   que el azul pasa a la familia naranja, y que el blanco se entibia lo justo
+   para que no se vea de otra app. */
 body.mostrador{
-  --tinta:#F4F6FA; --piso:#FFFFFF; --sup:#FFFFFF; --sup2:#EDF1F7;
-  --linea:#C6CEDC; --hueso:#0E1420; --tenue:#4C5768;
-  --violeta:#1F5AE0; --violeta-2:#1746B4; --tap:56px;
+  --fondo:#F7F3EC; --piso:#FFFFFF; --sup:#FFFFFF; --sup2:#EFE7DA;
+  --linea:#C9BCA8; --cafe:#1C120A; --tenue:#5C4634;
+  --naranja:#C2410C; --dorado:#8A6212; --tap:56px;
+  --sombra:0 1px 3px rgba(70,40,20,.10);
+  --sombra-alta:0 2px 8px rgba(70,40,20,.14);
 }
-body.mostrador .barra{background:rgba(244,246,250,.93)}
-body.mostrador .cesta{background:rgba(255,255,255,.96)}
+body.mostrador .barra{background:rgba(247,243,236,.95)}
+body.mostrador .cesta{background:#fff}
 body.mostrador .envoltura{max-width:900px}
 body.mostrador .btn{font-size:17px; font-weight:800}
 body.mostrador .btn.fuerte{color:#fff}
+body.mostrador .plato,
+body.mostrador .tarjeta{box-shadow:none}
 body.mostrador .chip[aria-pressed="true"]{color:#fff}
 body.mostrador h1{font-size:30px}
 
 /* el pedido en grande: uno a la vez ocupando toda la pantalla (F19) */
-.actual{border:2px solid var(--violeta); border-radius:22px; padding:18px; background:var(--sup)}
+.actual{border:2px solid var(--naranja); border-radius:22px; padding:18px; background:var(--sup)}
 .actual .encabeza{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
 .actual .turno-n{font-size:52px; font-weight:900; letter-spacing:-.04em; line-height:1}
 .actual .quien{font-size:20px; font-weight:800}
-.actual .cod{margin-left:auto; font-size:19px; font-weight:800; letter-spacing:.18em; color:var(--violeta-2)}
+.actual .cod{margin-left:auto; font-size:19px; font-weight:800; letter-spacing:.18em; color:var(--dorado)}
 .linea-prod{
   display:flex; align-items:center; gap:14px; padding:14px; border-radius:14px;
   border:2px solid var(--linea); background:var(--piso); width:100%; text-align:left;
   min-height:var(--tap); font-size:18px; font-weight:700;
 }
-.linea-prod.ya{border-color:var(--verde); background:#E8F8EF}
+.linea-prod.ya{border-color:var(--verde); background:#EAF5DF}
 .linea-prod .mini{
   width:52px; height:52px; border-radius:11px; flex:0 0 auto; display:grid; place-items:center;
   font-size:26px; background:linear-gradient(150deg, var(--t1), var(--t2)); overflow:hidden;
 }
 .linea-prod .mini img{width:100%; height:100%; object-fit:cover}
-.linea-prod .cant{font-size:22px; font-weight:900; color:var(--violeta-2); min-width:38px}
+.linea-prod .cant{font-size:22px; font-weight:900; color:var(--dorado); min-width:38px}
 .linea-prod .para{display:block; font-size:14px; font-weight:600; color:var(--tenue)}
 
 /* ── la pantalla pública: números, nunca nombres ────────────────────────── */
-body.publica{background:#07050C}
+/* Se lee desde el otro lado del pasillo, así que aquí manda el contraste:
+   crema sobre espresso da 17.79, que es lo más alto de toda la app. */
+body.publica{
+  --fondo:#1A0F0A; --sup:#26160E; --piso:#20130C; --sup2:#2E1B10;
+  --linea:#3D2618; --cafe:#F5E9DA; --tenue:#C4A78D;
+  --naranja:#FF8A3D; --dorado:#E0A93C; --verde:#7BC24A;
+  --sombra:none; --sombra-alta:none;
+  background:#1A0F0A;
+}
+body.publica .saltos a{background:var(--sup)}
+body.publica .saltos a[aria-current="page"]{background:var(--naranja); color:#1A0F0A}
 .tablero{
   display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:18px;
   padding:18px; max-width:1400px; margin:0 auto;
@@ -231,13 +286,14 @@ body.publica{background:#07050C}
 }
 .tablero .casilla .n{font-size:clamp(44px,7vw,84px); font-weight:900; line-height:1; letter-spacing:-.04em}
 .tablero .casilla .e{font-size:14px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--tenue); margin-top:8px}
-.tablero .casilla.listo{background:#12402A; border-color:#2C7A52}
-.tablero .casilla.listo .e{color:var(--verde)}
+.tablero .casilla.listo{background:#254D14; border-color:#5E9636}
+.tablero .casilla.listo .e{color:#B6E38C}
 
 /* ── tablas y números del reporte ───────────────────────────────────────── */
 .cifras{display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:10px}
 .cifra{background:var(--sup); border:1px solid var(--linea); border-radius:14px; padding:14px}
-.cifra b{display:block; font-size:28px; font-weight:900; letter-spacing:-.03em; line-height:1.1}
+.cifra b{display:block; font-size:28px; font-weight:900; letter-spacing:-.03em; line-height:1.1;
+  font-variant-numeric:tabular-nums}
 .cifra span{font-size:12px; color:var(--tenue); font-weight:700; text-transform:uppercase; letter-spacing:.06em}
 .cifra.malo b{color:var(--ambar)}
 
@@ -271,7 +327,7 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
   background:var(--sup); color:var(--tenue); font-weight:700; font-size:13px;
   display:inline-flex; align-items:center; text-decoration:none;
 }
-.saltos a[aria-current="page"]{background:var(--violeta); border-color:var(--violeta); color:#150420}
+.saltos a[aria-current="page"]{background:var(--naranja); border-color:var(--naranja); color:#fff}
 body.mostrador .saltos a[aria-current="page"]{color:#fff}
 
 .solo-lectores{

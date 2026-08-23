@@ -32,14 +32,18 @@ const CONFIG_BASE = {
   nombreLugar: 'Cooperativa',
 };
 
-/* Las categorías mandan el orden del menú y los colores de las fichas. */
+/* Las categorías mandan el orden del menú y los colores de las fichas.
+   El tono NO sale de una paleta bonita: sale del alimento. Guisado, masa
+   dorada, pan tostado, fruta. Y las BEBIDAS son el único acento frío de toda
+   la app, a propósito: eso las hace ver frescas —que es justo lo que se vende
+   de una bebida— y rompe la monotonía cálida antes de que empalague. */
 const CATEGORIAS = [
-  { id:'fuerte',  nombre:'Plato fuerte', emoji:'🍲', tono:'#FF6B35' },
-  { id:'antojo',  nombre:'Antojitos',    emoji:'🌮', tono:'#F7B32B' },
-  { id:'torta',   nombre:'Tortas y sándwiches', emoji:'🥪', tono:'#8AC926' },
-  { id:'dulce',   nombre:'Dulces y postres', emoji:'🍩', tono:'#FF477E' },
-  { id:'bebida',  nombre:'Bebidas',      emoji:'🥤', tono:'#4CC9F0' },
-  { id:'botana',  nombre:'Botanas',      emoji:'🥨', tono:'#B388EB' },
+  { id:'fuerte',  nombre:'Plato fuerte', emoji:'🍲', tono:'#C2410C' },  /* guisado, caldo */
+  { id:'antojo',  nombre:'Antojitos',    emoji:'🌮', tono:'#D98324' },  /* masa dorada */
+  { id:'torta',   nombre:'Tortas y sándwiches', emoji:'🥪', tono:'#A8763E' },  /* pan tostado */
+  { id:'dulce',   nombre:'Dulces y postres', emoji:'🍩', tono:'#B34A6B' },  /* fruta */
+  { id:'bebida',  nombre:'Bebidas',      emoji:'🥤', tono:'#3E7C8C' },  /* el único frío */
+  { id:'botana',  nombre:'Botanas',      emoji:'🥨', tono:'#8A6212' },  /* fritura, sal */
 ];
 
 /* El menú de arranque. La cooperativa lo cambia entero desde su pantalla:

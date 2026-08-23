@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fadori · mostrador</title>
-<meta name="theme-color" content="#F4F6FA">
+<meta name="theme-color" content="#F7F3EC">
 <link rel="stylesheet" href="estilo.css">
 </head>
 <body class="mostrador">
@@ -97,7 +97,7 @@
     <input id="aLimite" type="number" min="0" step="1">
     <label style="display:flex; align-items:center; gap:10px; margin-top:16px">
       <input type="checkbox" id="aAnticipados" style="width:26px; min-height:26px; flex:0 0 auto">
-      <span style="color:var(--hueso); font-weight:700">Aceptar pedidos desde el salón,
+      <span style="color:var(--cafe); font-weight:700">Aceptar pedidos desde el salón,
         antes del recreo</span></label>
     <p class="aviso" style="margin-top:14px">Pedir con anticipación es <b>lo único que sube la
       capacidad sin contratar a nadie</b>: con 30 pedidos ya hechos cuando suena la chicharra,
@@ -237,7 +237,7 @@ function renglonPedido(p, tipo){
     (listo ? '; border-color:var(--verde)' : '')+'">'+
     '<span class="n" style="font-size:22px">'+p.turno+'</span>'+
     '<span class="q"><b>'+esc(p.nombre)+'</b>'+(p.grupo?' · '+esc(p.grupo):'')+
-      (p.anticipado ? ' <b style="color:var(--violeta-2)">· anticipado</b>' : '')+
+      (p.anticipado ? ' <b style="color:var(--dorado)">· anticipado</b>' : '')+
       '<small>'+esc(resumenCorto(p))+'</small></span>'+
     (listo
       ? '<button class="btn chico" data-cobrar="'+p.id+'" type="button">Entregar</button>'
@@ -371,7 +371,7 @@ function pintarMenu(){
       (agotado?'; opacity:.55':'')+(pocas?'; border-color:var(--ambar)':'')+'">'+
       mini(p)+
       '<span class="q" style="flex:1"><b>'+esc(p.nombre)+'</b>'+
-        (p.destacado ? ' <b style="color:var(--violeta-2)">· hoy</b>' : '')+
+        (p.destacado ? ' <b style="color:var(--dorado)">· hoy</b>' : '')+
         '<small>'+F.pesos(p.precio)+
         (typeof p.existencias === 'number' ? ' · quedan '+p.existencias : '')+
         (pocas ? ' ⚠️' : '')+'</small></span>'+
@@ -404,7 +404,7 @@ function abrirProducto(pid){
     '<label style="display:flex; align-items:center; gap:10px; margin-top:16px">'+
       '<input type="checkbox" id="hDest" style="width:26px; min-height:26px; flex:0 0 auto"'+
       (p&&p.destacado?' checked':'')+'>'+
-      '<span style="color:var(--hueso); font-weight:700">Es lo de hoy · sale hasta arriba</span></label>'+
+      '<span style="color:var(--cafe); font-weight:700">Es lo de hoy · sale hasta arriba</span></label>'+
     '<div class="chips" style="margin-top:18px">'+
       '<button class="btn fuerte" id="hGuardar" type="button" style="flex:1">Guardar</button>'+
       (p ? '<button class="btn" id="hBorrar" type="button">Quitar del menú</button>' : '')+

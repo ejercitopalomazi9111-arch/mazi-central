@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fadori · pide sin formarte</title>
 <meta name="description" content="Proyecto Sin Filas · pide desde el salón y ve por tu comida cuando esté lista.">
-<meta name="theme-color" content="#0B0714">
+<meta name="theme-color" content="#FDF8F0">
 <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
@@ -200,7 +200,11 @@ function ver(p){
 
 function tono(cat){
   const c = F.CATEGORIAS.find(x => x.id === cat) || F.CATEGORIAS[0];
-  return { emoji:c.emoji, t1:c.tono, t2:mezcla(c.tono, '#1D1330', .55) };
+  /* El mosaico va LAVADO, no saturado: el tono mezclado con crema. Un
+     cuadro de naranja puro compite con la comida en vez de anunciarla, y
+     además el mosaico es relleno mientras no haya foto, no el diseño. */
+  return { emoji:c.emoji, t1:mezcla(c.tono, '#FFFDF9', .84),
+           t2:mezcla(c.tono, '#FFFDF9', .66), borde:mezcla(c.tono, '#FFFDF9', .55) };
 }
 function mezcla(a, b, k){
   const h = (s) => [1,3,5].map(i => parseInt(s.substr(i,2),16));
@@ -215,7 +219,7 @@ function fichaPlato(p){
   const seg = F.segReales(p.id) || p.segPrep;
   return '<button class="plato'+(agotado?' agotado':'')+(enCesta?' puesto':'')+'" type="button" '+
     'data-prod="'+p.id+'"'+(agotado?' disabled':'')+'>'+
-    '<span class="foto" style="--t1:'+t.t1+'; --t2:'+t.t2+'">'+
+    '<span class="foto" style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'">'+
       (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : t.emoji)+
       (enCesta ? '<span class="cuantos">'+enCesta+'</span>' : '')+
       (agotado ? '<span class="sello">SE ACABÓ</span>' : '')+
@@ -484,7 +488,7 @@ function abrirConfirmacion(){
     (F.estado().config.aceptaAnticipados
       ? '<label style="display:flex; align-items:center; gap:10px; margin-top:12px">'+
         '<input type="checkbox" id="eAnticipado" style="width:24px; min-height:24px; flex:0 0 auto">'+
-        '<span style="color:var(--hueso); font-weight:600">Lo pido desde el salón, antes del recreo</span></label>'
+        '<span style="color:var(--cafe); font-weight:600">Lo pido desde el salón, antes del recreo</span></label>'
       : '')+
     '<div class="chips" style="margin-top:16px">'+
       '<button class="btn fuerte" id="bConfirmar" type="button" style="flex:1">'+
@@ -534,7 +538,7 @@ $('#bDinero').addEventListener('click', () => {
     '<b style="display:block; font-size:15px">'+esc(o.titulo)+'</b>'+
     '<span style="color:var(--tenue); font-size:14px">'+
       o.piezas.map(p => esc(p.nombre)).join(' + ')+'</span>'+
-    '<span style="display:block; margin-top:6px; font-weight:800; color:var(--violeta-2)">'+
+    '<span style="display:block; margin-top:6px; font-weight:800; color:var(--dorado)">'+
       F.pesos(o.total)+ (o.sobra > 0 ? ' · te sobran '+F.pesos(o.sobra) : ' · exacto')+'</span>'+
     '</button>').join('')
     : '<p class="sub">Con eso no alcanza para nada de lo que hay hoy. '+
