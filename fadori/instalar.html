@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fadori · ponla en tu pantalla de inicio</title>
+<meta name="description" content="Cómo dejar Fadori como una app en tu teléfono, en iPhone y en Android.">
+<meta name="theme-color" content="#FDF8F0">
+<link rel="icon" href="marca/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
+<link rel="stylesheet" href="estilo.css">
+<script>
+/* el tema, antes de pintar · ver estilo.css §F49 */
+(function(){try{
+  var t = localStorage.getItem('fadori_tema') || 'auto';
+  var osc = t === 'oscuro' || (t === 'auto' &&
+    window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.tema = osc ? 'oscuro' : 'claro';
+}catch(e){}})();
+</script>
+</head>
+<body>
+
+<header class="barra">
+  <div class="envoltura barra-dentro">
+    <a class="marca" href="./">Fadori<b>.</b></a>
+  </div>
+</header>
+
+<main class="envoltura">
+
+  <h1>Ponla en tu pantalla de inicio</h1>
+  <p class="sub">Queda como una app: se abre de un toque, a pantalla completa y sin la barra
+    del navegador. <b>No ocupa espacio ni pide permisos.</b></p>
+
+  <!-- Android: el único caso donde SÍ se puede instalar de un botón -->
+  <div id="cajaAndroid" hidden>
+    <button class="btn fuerte ancho" id="bInstalar" type="button" style="margin-top:8px">
+      Instalar Fadori</button>
+    <p class="sub" style="margin-top:8px">Tu teléfono la puede instalar de un toque.</p>
+  </div>
+
+  <div class="pasos-inst" id="pasos"></div>
+
+  <h2>O apunta la cámara</h2>
+  <p class="sub">Sirve para pasarla en el salón sin dictar la dirección.</p>
+
+  <div class="qr-par">
+    <figure class="qr">
+      <img src="qr/abrir.svg" alt="Código QR para abrir Fadori">
+      <figcaption><b>Abrir Fadori</b><span>va directo a la app</span></figcaption>
+    </figure>
+    <figure class="qr">
+      <img src="qr/instalar.svg" alt="Código QR de esta página">
+      <figcaption><b>Cómo instalarla</b><span>trae a esta página</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="aviso" style="margin-top:22px">
+    <b>Con todas sus letras:</b> ningún código QR puede meter una app a tu pantalla de inicio
+    solo. El de la izquierda abre Fadori; el de la derecha trae aquí, donde vienen los dos
+    pasos. En Android además sale el botón de instalar de arriba, que sí lo hace de un toque.
+  </div>
+
+  <p class="sub" style="margin-top:26px; font-size:12px">
+    Fadori · Proyecto Sin Filas · Bachillerato Rembrandt ·
+    construido por <a href="../">Grupo Mazi</a></p>
+
+</main>
+
+<script src="nucleo.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = (s) => document.querySelector(s);
+const F = window.FADORI;
+try{ F.avisaCon((t) => alert(t)); }catch(e){}
+
+/* ── Qué teléfono trae quien está leyendo ─────────────────────────────────
+   Se detecta para enseñar UNOS pasos, no todos: una lista de "si tienes
+   iPhone… si tienes Android…" es la manera más segura de que nadie la siga. */
+function queTelefono(){
+  const ua = navigator.userAgent || '';
+  const iOS = /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(iOS) return 'iphone';
+  if(/Android/i.test(ua)) return 'android';
+  return 'compu';
+}
+
+const PASOS = {
+  iphone: {
+    titulo: 'En iPhone',
+    ojo: 'Tiene que ser con <b>Safari</b>. Desde Chrome o desde Instagram no aparece la opción.',
+    lista: [
+      'Toca el botón de <b>compartir</b>, el cuadrito con la flecha hacia arriba.',
+      'Baja y toca <b>Agregar a inicio</b>.',
+      'Toca <b>Agregar</b>, arriba a la derecha.',
+    ],
+  },
+  android: {
+    titulo: 'En Android',
+    ojo: 'Con <b>Chrome</b>. Si sale el botón naranja de arriba, con ése basta.',
+    lista: [
+      'Toca los <b>tres puntitos</b> de arriba a la derecha.',
+      'Toca <b>Agregar a la pantalla principal</b> o <b>Instalar aplicación</b>.',
+      'Confirma con <b>Instalar</b>.',
+    ],
+  },
+  compu: {
+    titulo: 'En computadora',
+    ojo: 'Esto está pensado para el teléfono, pero también se puede.',
+    lista: [
+      'En Chrome o Edge, busca el ícono de <b>instalar</b> en la barra de la dirección.',
+      'O abre el menú y busca <b>Instalar Fadori</b>.',
+      'Para el teléfono, apunta la cámara al código de aquí abajo.',
+    ],
+  },
+};
+
+function pintar(){
+  const cual = queTelefono(), p = PASOS[cual];
+  $('#pasos').innerHTML =
+    '<h2>' + p.titulo + '</h2>' +
+    '<p class="sub">' + p.ojo + '</p>' +
+    '<ol class="pasos-lista">' +
+      p.lista.map(t => '<li>' + t + '</li>').join('') +
+    '</ol>' +
+    (cual === 'compu' ? '' :
+      '<p class="sub" style="margin-top:12px">¿Traes el otro? ' +
+      '<button class="enlacillo" type="button" id="bOtro">Ver los pasos de ' +
+      (cual === 'iphone' ? 'Android' : 'iPhone') + '</button></p>');
+  const otro = $('#bOtro');
+  if(otro) otro.addEventListener('click', () => {
+    const c = cual === 'iphone' ? 'android' : 'iphone';
+    const q = PASOS[c];
+    $('#pasos').innerHTML = '<h2>' + q.titulo + '</h2><p class="sub">' + q.ojo + '</p>' +
+      '<ol class="pasos-lista">' + q.lista.map(t => '<li>' + t + '</li>').join('') + '</ol>';
+  });
+}
+pintar();
+
+/* ── Android · la instalación de un toque, cuando el navegador la ofrece ──
+   Es el ÚNICO camino real de "instalar sin pasos". iOS no lo tiene: ahí no
+   hay manera y por eso se dice en la página en vez de fingir que sí. */
+let guardado = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  guardado = e;
+  $('#cajaAndroid').hidden = false;
+});
+$('#bInstalar').addEventListener('click', async () => {
+  if(!guardado) return;
+  guardado.prompt();
+  try{ await guardado.userChoice; }catch(e){}
+  guardado = null;
+  $('#cajaAndroid').hidden = true;
+});
+/* si ya está instalada, no tiene caso ofrecerlo */
+if(window.matchMedia && matchMedia('(display-mode: standalone)').matches){
+  $('#pasos').innerHTML = '<div class="aviso bueno"><b>Ya la tienes instalada.</b> '+
+    'Estás viéndola como app.</div>';
+}
+
+/* ── pruebas ─────────────────────────────────────────────────────────── */
+(function(){
+  let bien = 0, mal = 0;
+  const ok = (q, c) => { if(c) bien++; else { mal++; console.error('✗ ' + q); } };
+
+  ok('la página dice los pasos de algún teléfono', $('.pasos-lista li') !== null);
+  ok('trae los dos códigos QR', document.querySelectorAll('.qr img').length === 2);
+  ok('el QR de abrir apunta a la app', /qr\/abrir\.svg$/.test(document.querySelector('.qr img').src));
+
+  /* Lo que NO se debe prometer: que un QR instala solo. Si algún día alguien
+     escribe eso aquí, esta prueba se cae — y con razón, porque no se puede. */
+  const texto = document.body.innerText;
+  ok('no le promete a nadie que un QR instala la app solo',
+     /ningún código QR puede meter una app/i.test(texto));
+
+  ok('detecta el teléfono en vez de enseñar todas las listas juntas',
+     ['iphone','android','compu'].indexOf(queTelefono()) >= 0);
+
+  console.log('%cFadori instalar · ' + bien + '/' + (bien + mal) + ' pruebas',
+    'color:' + (mal ? '#FF7A7A' : '#5BD98A') + ';font-weight:700');
+})();
+})();
+</script>
+</body>
+</html>

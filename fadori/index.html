@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fadori · pide sin formarte</title>
-<meta name="description" content="Proyecto Sin Filas · pide desde el salón y ve por tu comida cuando esté lista.">
+<meta name="description" content="Proyecto Sin Filas · deja tu pedido con anticipación y ve por tu comida cuando esté lista.">
 <meta name="theme-color" content="#FDF8F0">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="marca/icon-192.png" type="image/png">
@@ -69,7 +69,7 @@
   <!-- ══════════ ENTRADA · F06 · identidad sin registro ══════════ -->
   <section id="p-entrada" hidden>
     <h1>Pide sin formarte</h1>
-    <p class="sub">Escoges desde el salón, la app te da un turno y vas por tu comida
+    <p class="sub">Dejas tu pedido con anticipación, la app te da un turno y vas por tu comida
       cuando ya esté. <b>Nada de treinta minutos parado en el pasillo.</b></p>
 
     <div class="tarjeta">
@@ -149,7 +149,20 @@
     <h2 id="tituloMenu">El menú</h2>
     <div class="rejilla" id="rejilla"></div>
 
-    <p class="rotulillo">Para cuadrar el gasto</p>
+    <!-- Los créditos. Aquí decía "Para cuadrar el gasto" y debajo no había
+         nada: el asistente de presupuesto se movió arriba y el rótulo se
+         quedó solo. Carlos lo cachó. Ahora dice de quién es esto. -->
+    <div class="creditos">
+      <img class="cred-logo" src="marca/icon-192.png" alt="">
+      <div class="cred-marca">Fadori<b>.</b></div>
+      <div class="cred-sub">Proyecto Sin Filas</div>
+      <div class="cred-quienes">
+        <span class="cred-rot">Hecho por</span>
+        Renata Zoe · Brenda Natalia · Christopher Yuudai ·
+        Marco Olvera · Carlos Gutiérrez
+      </div>
+      <div class="cred-escuela">Bachillerato Rembrandt · 3.1 · STEAM 2025</div>
+    </div>
   </section>
 
   <!-- ══════════ EL TURNO · F08 · F09 · F12 ══════════ -->
@@ -1167,8 +1180,8 @@ function pintarCarrito(){
       (anti
         ? '<label class="op op-palanca">'+
             '<span class="op-ico">🏫</span>'+
-            '<span class="op-que"><b>Lo pido desde el salón</b>'+
-              '<small>antes del recreo, para que ya esté hecho</small></span>'+
+            '<span class="op-que"><b>Lo dejo pedido de antes</b>'+
+              '<small>desde ayer o antes de clases, para que ya esté hecho</small></span>'+
             '<input type="checkbox" id="eAnticipado"'+(antesMarcado?' checked':'')+'>'+
           '</label>'
         : '')+
@@ -1422,7 +1435,10 @@ pintarReloj();
     document.body.classList.remove('cortina-arriba');
     setTimeout(() => c.remove(), 420);
   };
-  setTimeout(quitar, 1900);
+  /* 3.2 s: la última capa aterriza en 2.18 y el nombre entra en 2.26, así que
+     antes de eso la cortinilla se cerraba a media animación. Sigue siendo una
+     vez por visita y con un toque te la saltas. */
+  setTimeout(quitar, 3200);
   c.addEventListener('click', quitar);
 })();
 
@@ -1874,6 +1890,33 @@ arrancar();
      una nota en un documento. */
   ok('la app enlaza los créditos de las fotos, que es lo que cumple la licencia',
      !!document.querySelector('a[href="fotos/CREDITOS.md"]'));
+
+  /* Lo que el alumno de verdad lee: sin el código de los <script> ni los
+     comentarios. Sin esto, una prueba que busca una frase se encuentra a sí
+     misma escrita en el comentario de al lado y pasa —o falla— por la razón
+     equivocada. Ya pasó con estas dos. */
+  function loQueSeLee(){
+    const copia = document.body.cloneNode(true);
+    copia.querySelectorAll('script, style').forEach(e => e.remove());
+    return copia.textContent;
+  }
+
+  /* Los créditos. El equipo puso su nombre en un proyecto de la escuela: si
+     un cambio los borra, se borra a cinco personas de su propio trabajo. */
+  (function(){
+    const c = document.querySelector('.creditos');
+    ok('la app dice de quién es, con el equipo completo',
+       !!c && ['Renata','Brenda','Christopher','Marco','Carlos']
+              .every(n => c.textContent.includes(n)));
+    ok('y ya no queda el rótulo huérfano del presupuesto',
+       !/Para cuadrar el gasto/.test(loQueSeLee()));
+  })();
+
+  /* Lo de "pedir desde el salón" salió del texto a propósito: a la dirección
+     le suena a usar el celular en clase, y el argumento bueno es otro —se
+     puede dejar pedido desde antes—. Que no se cuele de vuelta. */
+  ok('en ningún lado se le vende al alumno pedir desde el salón',
+     !/desde el salón/i.test(loQueSeLee()));
 
   /* F47 · el ícono de la pantalla de inicio. Si el manifiesto o el ícono de
      Apple no están enganchados, "Agregar a inicio" pone una captura de la

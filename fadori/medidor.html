@@ -201,7 +201,7 @@ function pintarHoy(){
     '<div class="cifra"><b>'+(r.despachoPromedio||'—')+' s</b><span>por despacho</span></div>'+
     '<div class="cifra"><b>'+(r.esperaPromedio ? Math.round(r.esperaPromedio/60)+' min' : '—')+
       '</b><span>esperó cada quien</span></div>'+
-    '<div class="cifra"><b>'+r.anticipados+'</b><span>pidieron desde el salón</span></div>'+
+    '<div class="cifra"><b>'+r.anticipados+'</b><span>pidieron con anticipación</span></div>'+
     '<div class="cifra"><b>'+F.pesos(r.dinero)+'</b><span>entró</span></div>';
 
   pintarGrafica();

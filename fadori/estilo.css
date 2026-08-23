@@ -635,15 +635,79 @@ body.cortina-arriba{overflow:hidden}
 }
 .cort-marca{
   font-size:clamp(38px,12vw,60px); font-weight:900; letter-spacing:-.045em; line-height:1;
-  opacity:0; animation:cort-entra .5s cubic-bezier(.22,1,.36,1) .06s forwards;
+  /* el nombre entra cuando el pan de arriba aterriza, no antes: así el
+     remate de la animación es uno solo y no dos cosas sueltas */
+  opacity:0; animation:cort-entra .55s cubic-bezier(.22,1,.36,1) 2.26s forwards;
 }
 .cort-marca b{color:#FFD9BE}
 .cort-pie{
   font-size:13px; font-weight:800; letter-spacing:.2em; text-transform:uppercase;
   color:rgba(255,246,236,.72); opacity:0;
-  animation:cort-entra .5s ease 1.15s forwards;
+  animation:cort-entra .5s ease 2.62s forwards;
 }
 @keyframes cort-entra{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+
+/* ── La página de instalar · los QR y los pasos ───────────────────────────
+   Los códigos van GRANDES: se van a apuntar desde media pared de distancia,
+   con la cámara de un teléfono de secundaria y con el sol pegando. */
+.qr-par{display:flex; gap:16px; flex-wrap:wrap; margin-top:14px}
+.qr{
+  flex:1 1 220px; margin:0; padding:16px; border-radius:20px;
+  background:var(--sup); border:1px solid var(--linea); box-shadow:var(--sombra);
+  text-align:center;
+}
+.qr img{
+  width:100%; max-width:280px; height:auto; display:block; margin:0 auto;
+  border-radius:12px; background:#FFFDF9;   /* el papel del QR nunca cambia con el tema:
+                                               un QR en oscuro no lo lee ninguna cámara */
+}
+.qr figcaption{margin-top:12px; font-size:15px; color:var(--tenue); line-height:1.35}
+.qr figcaption b{display:block; font-size:17px; color:var(--cafe)}
+.pasos-lista{
+  margin:14px 0 0; padding:0 0 0 4px; list-style:none;
+  counter-reset:paso; display:flex; flex-direction:column; gap:12px;
+}
+.pasos-lista li{
+  counter-increment:paso; position:relative; padding:14px 16px 14px 56px;
+  border-radius:16px; background:var(--sup); border:1px solid var(--linea);
+  box-shadow:var(--sombra); font-size:16px; line-height:1.4;
+}
+.pasos-lista li::before{
+  content:counter(paso); position:absolute; left:14px; top:50%;
+  transform:translateY(-50%); width:30px; height:30px; border-radius:50%;
+  background:var(--naranja-relleno); color:#fff; font-weight:900; font-size:15px;
+  display:grid; place-items:center;
+}
+.enlacillo{
+  border:0; background:none; padding:0; cursor:pointer; font:inherit;
+  color:var(--naranja-hondo); font-weight:800; text-decoration:underline;
+}
+
+/* ── Los créditos · de quién es esto ──────────────────────────────────────
+   Van hasta abajo de la pantalla del alumno. Antes ahí había un rótulo
+   huérfano —"Para cuadrar el gasto"— sin nada debajo: el asistente de
+   presupuesto se movió arriba y el letrero se quedó solo. */
+.creditos{
+  margin:34px 0 8px; padding:26px 20px 24px; border-radius:20px;
+  background:var(--sup); border:1px solid var(--linea); box-shadow:var(--sombra);
+  text-align:center;
+}
+.cred-logo{width:62px; height:62px; border-radius:16px; display:block; margin:0 auto 12px}
+.cred-marca{font-size:26px; font-weight:900; letter-spacing:-.03em; color:var(--cafe)}
+.cred-marca b{color:var(--naranja)}
+.cred-sub{
+  margin-top:2px; font-size:11px; font-weight:800; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--tenue);
+}
+.cred-quienes{
+  margin:18px auto 0; max-width:31ch; font-size:14px; font-weight:700;
+  line-height:1.6; color:var(--cafe);
+}
+.cred-rot{
+  display:block; margin-bottom:6px; font-size:11px; font-weight:800;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--naranja-hondo);
+}
+.cred-escuela{margin-top:14px; font-size:12px; color:var(--tenue)}
 
 /* F50 · "el viernes hay pizza". Una línea, no una sección: el alumno viene a
    pedir hoy, no a leer el calendario. */
@@ -684,29 +748,46 @@ body.cortina-arriba{overflow:hidden}
 .cap{
   position:absolute; left:0; width:100%; height:auto; display:block;
   opacity:0; will-change:transform, opacity;
-  animation:cae .46s cubic-bezier(.3,1.5,.5,1) forwards;
+  /* Carlos: "demasiado rápida, hazla más lenta y satisfactoria con rebote".
+     Cada capa cae en .72 s con una curva que se pasa de su lugar y regresa
+     —eso es el rebote— y además se aplasta al aterrizar, que es lo que
+     convence al ojo de que pesa. Sin el aplaste el rebote se ve de goma. */
+  animation:cae .72s cubic-bezier(.34,1.56,.44,1) forwards;
 }
-/* Los `top` salen de las franjas medidas en el logo bueno —152 px de pan, 33
-   de lechuga, 24 de jitomate, 13 de queso, 40 de carne— escaladas hasta que
-   la silueta armada dé lo más cerca posible del original. Si un día cambia el
-   arte, se vuelve a medir; no se tantea. */
-.burger .pan-arriba{ top:0;      --cae:-150%; animation-delay:.76s }
-.burger .lechuga   { top:33.2%;  --cae:-265%; animation-delay:.62s }
-.burger .jitomate  { top:40.3%;  --cae:-412%; animation-delay:.50s }
+/* Los `top` salen de las franjas medidas en el logo bueno. Los retardos están
+   más separados que antes: la gracia es ver caer CADA capa, no una lluvia. */
+.burger .pan-arriba{ top:0;      --cae:-150%; animation-delay:1.46s }
+.burger .lechuga   { top:33.2%;  --cae:-265%; animation-delay:1.20s }
+.burger .jitomate  { top:40.3%;  --cae:-412%; animation-delay:.96s }
 /* El queso arranca MÁS ABAJO que la carne a propósito: se pinta después, así
-   que su rebanada cae sobre ella y el chorreón escurre por encima, como en el
-   logo. Puesto arriba quedaba escondido y no se veía escurrir. */
-.burger .queso     { top:49.1%;  --cae:-332%; animation-delay:.38s }
-.burger .carne     { top:48.7%;  --cae:-404%; animation-delay:.24s }
-.burger .pan-abajo { top:57.1%;  --cae:-70%;  animation-delay:.10s }
-.burger .sombra    { top:87.8%;  --cae:0%;    animation-delay:.10s;
-  animation-name:sombra-entra; animation-timing-function:ease-out }
+   que su rebanada cae sobre ella y el chorreón escurre por encima. */
+.burger .queso     { top:49.1%;  --cae:-332%; animation-delay:.72s }
+.burger .carne     { top:48.7%;  --cae:-404%; animation-delay:.46s }
+.burger .pan-abajo { top:57.1%;  --cae:-70%;  animation-delay:.18s }
+.burger .sombra    { top:87.8%;  --cae:0%;    animation-delay:.18s;
+  animation-name:sombra-late; animation-duration:1.9s;
+  animation-timing-function:ease-out }
 
+/* La caída: entra pasada de largo, rebota y aterriza aplastándose un poco */
 @keyframes cae{
-  from{ opacity:0; transform:translateY(var(--cae)) }
-  to  { opacity:1; transform:translateY(0) }
+  0%   { opacity:0; transform:translateY(var(--cae)) scaleX(.92) scaleY(1.08) }
+  55%  { opacity:1 }
+  72%  { transform:translateY(6%)  scaleX(1.06) scaleY(.92) }   /* el golpe */
+  86%  { transform:translateY(-3%) scaleX(.98)  scaleY(1.03) }  /* el rebote */
+  100% { opacity:1; transform:translateY(0) scaleX(1) scaleY(1) }
 }
-@keyframes sombra-entra{ from{opacity:0; transform:scaleX(.6)} to{opacity:.9; transform:none} }
+/* La sombra late con cada capa que aterriza: se ensancha de golpe y se
+   recoge. Es lo que amarra el rebote con el piso. */
+@keyframes sombra-late{
+  0%   { opacity:0;  transform:scaleX(.55) }
+  12%  { opacity:.5; transform:scaleX(.72) }
+  26%  { opacity:.8; transform:scaleX(1.04) }
+  38%  { opacity:.6; transform:scaleX(.86) }
+  55%  { opacity:.85; transform:scaleX(1.06) }
+  70%  { opacity:.65; transform:scaleX(.9) }
+  85%  { opacity:.9; transform:scaleX(1.03) }
+  100% { opacity:.9; transform:scaleX(1) }
+}
 @keyframes vapor-sube{
   0%  {opacity:0; transform:translateX(-50%) translateY(6px) scale(.5)}
   35% {opacity:.9}
