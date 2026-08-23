@@ -52,23 +52,60 @@ no cuentan: la rúbrica los pide.
 | Estado actual | 19 |
 | Ortografía | revisada, con acentos |
 
-## Cómo se revisó — y qué NO se pudo revisar
+## Cómo se revisó
 
-- `validate.py --original formato-institucional.pptx` → **pasa**, con la plantilla de base
-  para que sus propios defectos no se lean como míos.
+```bash
+./ver.sh Fadori-STEAM.pptx          # una imagen por lámina — para MIRARLA
+python3 medir.py Fadori-STEAM.pptx  # el metro, sobre el render de verdad
+```
+
+- `medir.py` → **pasa**: nada partido, nada encimado, nada fuera del papel.
+- `validate.py --original formato-institucional.pptx` → pasa.
 - `markitdown` → el texto llegó completo, sin sobras de plantilla, sin "2025".
-- `python3 medir.py Fadori-STEAM.pptx formato-institucional.pptx` → **el metro de la casa**.
-  Lee las coordenadas reales de las 19 láminas y busca lo único que se puede comprobar sin
-  ojos: algo fuera del lienzo, o una foto encimada sobre un cuadro de texto. Le pasas la
-  plantilla como segundo argumento para que su decoración sangrada no cuente como defecto.
-  **Ya cazó uno:** en "¿Cómo funciona?" el cuerpo heredado de la lámina 8 medía 15.49″ de
-  ancho y le pasaba por encima a las tres capturas. Se subió a 2.50″ y quedaron 0.85″ de aire.
-  Y se comprobó que el metro sirve volviendo a meter el bug a propósito: lo cazó otra vez.
+- Y se miraron las 19 láminas renderizadas, una por una.
 
-**Lo que falta y hay que decirlo:** LibreOffice está roto en este contenedor —falla hasta
-abriendo un `.txt`, y también con la plantilla original, así que no es culpa del archivo—.
-Eso significa que **nadie la ha visto renderizada**. La geometría está medida, no vista.
-Ábrela una vez y dime qué se ve mal.
+## La metida de pata que hay que dejar escrita
+
+La primera versión de `medir.py` medía las **cajas declaradas en el XML** y
+daba `✓ nada se encima` mientras la presentación se veía así:
+
+```
+Objetiv
+o
+  Justificación      ← encimado
+```
+
+Carlos tuvo que mandar capturas de su teléfono para que me enterara. El
+defecto era **del medidor**: un título que no cabe se parte en dos renglones y
+crece hacia abajo (las cajas traen `spAutoFit`), pero la caja declarada no se
+mueve ni un EMU. Midiendo cajas eso es invisible.
+
+Y encima yo daba por hecho que **LibreOffice estaba roto** en el contenedor
+porque fallaba hasta con un `.txt`. No estaba roto: estaba **incompleto** —
+sólo venían `libreoffice-core` y `libreoffice-common`, sin un solo filtro de
+documento. Un `apt-get install libreoffice-impress` y listo. Lo di por perdido
+sin diagnosticarlo, y eso costó una entrega fea.
+
+Ahora `medir.py` renderiza de verdad y lee las coordenadas de cada palabra
+pintada. Comprobado contra `formato-institucional.pptx`, que trae 31 defectos
+propios: los caza todos, incluidos «Objetiv / o», «Indic / e» y «Misió / n».
+
+## Qué se arregló, y qué venía ya roto
+
+Los encimados **no eran todos míos**. Rindiendo la plantilla original salió que
+ya traía: la palabra «Portada» partida en «Portad / a», lo mismo «Problema»,
+«Descripción», «Objetivo» y «Misión»; «Filas enormes» montada sobre su propio
+pie; el nombre del instituto encima del bachillerato. Se arreglaron todos —
+Carlos pidió «deja el formato puesto pero lo demás acomódalo», y los cuadros de
+texto son «lo demás». Los escudos, los logos y las formas no se tocaron.
+
+Lo que era mío y se arregló:
+
+| Qué | Por qué pasaba |
+|---|---|
+| Títulos partidos en dos renglones | las láminas nuevas heredaban 92 pt en una caja de 8.45", que alcanzaba para «Visión» pero no para «¿Para qué sirve Fadori?» |
+| El cuerpo leído como poema | 44.5 pt **centrado** en 7.6": once palabras salían en cinco renglones, cada uno arrancando en distinto margen |
+| La misma gráfica dos láminas seguidas | «Enfoque» y «S · Ciencia» compartían captura; se veía como si nos hubiéramos quedado sin material |
 
 ## `vista.mjs`
 

@@ -213,6 +213,31 @@ def mover(s, nombre, x, y, w, h):
                '<a:ext cx="%d" cy="%d"/>' % (int(w*EMU), int(h*EMU)), c, count=1)
     return s[:ini] + c + s[fin:]
 
+def formato(s, nombre, sz=None, algn=None):
+    """Cambia el tamaño de letra y la alineación de un cuadro.
+
+    Hace falta porque las láminas nuevas heredan el formato de la lámina 8, y
+    esa lámina decía «Visión» — seis letras. A 92 pt en una caja de 8.45" cabe
+    «Visión»; no cabe «¿Para qué sirve Fadori?». El título se partía en dos
+    renglones, crecía hacia abajo (la caja trae `spAutoFit`) y se derramaba
+    encima del cuerpo. Lo mismo el cuerpo: 44.5 pt centrado en 7.6" partía una
+    frase de once palabras en cinco renglones.
+    """
+    r = forma(s, nombre)
+    if not r:
+        print('  ⚠ no encontré «%s» para darle formato' % nombre); return s
+    ini, fin = r
+    c = s[ini:fin]
+    if sz is not None:
+        c = re.sub(r'(<a:(?:rPr|defRPr|endParaRPr)\b[^>]*?)\bsz="\d+"',
+                   lambda m: m.group(1) + 'sz="%d"' % int(sz*100), c)
+    if algn is not None:
+        c = re.sub(r'(<a:pPr\b[^>]*?)\balgn="[^"]*"',
+                   lambda m: m.group(1) + 'algn="%s"' % algn, c)
+        # los párrafos sin `algn` heredan el centrado del diseño: se los ponemos
+        c = re.sub(r'<a:pPr(?![^>]*\balgn=)', '<a:pPr algn="%s"' % algn, c)
+    return s[:ini] + c + s[fin:]
+
 def cambiar(n, pares):
     """Los pares son (fragmento tal cual está, texto nuevo). Un texto vacío
        deja el cuadro en blanco, que es como se quitan renglones sin mover el
@@ -328,20 +353,37 @@ cambiar(10, [
 # imagen de la app.
 #   «TextBox 6» = el título grande · «TextBox 7» = el cuerpo
 
+# El lienzo mide 20" de ancho. La decoración de la escuela come los primeros
+# ~3.3" arriba a la izquierda y las diagonales de abajo a la derecha, así que
+# el texto vive en la franja de en medio.
+TIT = (1.9, 0.85, 16.2, 1.55)     # título: ancho de sobra para UN solo renglón
+TIT_SZ = 62                        # 92 pt sólo cabía para «Visión»
+CUERPO_SZ = 30
+
 def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False):
     p = sl(n); s = leer(p)
     s = poner_texto(s, 'TextBox 6', [titulo])
     s = poner_texto(s, 'TextBox 7', cuerpo if isinstance(cuerpo, list) else [cuerpo])
+    # El título se ensancha y se achica hasta caber en un renglón. Si no, la
+    # caja crece hacia abajo y se come el cuerpo — que es exactamente lo que
+    # pasaba en «¿Cómo funciona?», «Objetivo» y «M · Matemáticas».
+    s = mover(s, 'TextBox 6', *TIT)
+    s = formato(s, 'TextBox 6', sz=TIT_SZ, algn='ctr')
+    # El cuerpo va ALINEADO A LA IZQUIERDA. Centrado, cada renglón arranca en
+    # un lugar distinto y una frase de once palabras se lee como un poema.
+    s = formato(s, 'TextBox 7', sz=CUERPO_SZ, algn='l')
     if cuerpo_izq:
-        # el cuerpo se recoge a la izquierda para dejarle la mitad a la imagen
-        s = mover(s, 'TextBox 7', 1.6, 4.1, 7.6, 3.2)
+        # media lámina para el texto, media para la captura
+        s = mover(s, 'TextBox 7', 1.9, 3.30, 8.10, 2.60)
+    else:
+        s = mover(s, 'TextBox 7', 1.9, 3.30, 16.20, 1.40)
     escribir(p, s)
     if imagen:
         poner_imagen(n, imagen, caja or (10.2, 3.1, 8.2, 6.6))
 
 lamina(clon['que-es'], '¿Qué es Fadori?',
        'App que ordena la cafetería sin filas.',
-       '02-menu.png', (11.6, 2.6, 6.6, 8.0), cuerpo_izq=True)
+       '02-menu.png', (11.8, 3.6, 6.2, 6.6), cuerpo_izq=True)
 
 lamina(clon['como'], '¿Cómo funciona?',
        'Dejas tu pedido, recibes turno, vas cuando esté listo.',
@@ -353,30 +395,158 @@ _p = sl(clon['como']); _s = leer(_p)
 _s = mover(_s, 'TextBox 7', 2.66, 2.50, 15.49, 1.25)
 escribir(_p, _s)
 # tres pasos, tres capturas — las tres alineadas por arriba en 4.6"
-poner_imagen(clon['como'], '02-menu.png',          (2.10, 4.60, 4.20, 6.10))
-poner_imagen(clon['como'], '03-mi-turno.png',      (7.90, 4.60, 4.20, 6.10))
-poner_imagen(clon['como'], '04-pantalla-turnos.png',(13.10, 4.60, 5.40, 3.05))
+poner_imagen(clon['como'], '02-menu.png',           (2.10, 4.95, 4.20, 5.80))
+poner_imagen(clon['como'], '03-mi-turno.png',       (7.90, 4.95, 4.20, 5.80))
+poner_imagen(clon['como'], '04-pantalla-turnos.png',(13.10, 4.96, 5.40, 3.05))
 
 lamina(clon['enfoque'], 'Enfoque',
        'Cuantitativo y deductivo: medimos tiempos y comprobamos la hipótesis.',
-       '08-grafica.png', (11.0, 4.2, 7.6, 5.4), cuerpo_izq=True)
+       '08-grafica.png', (10.7, 4.3, 7.8, 5.2), cuerpo_izq=True)
 
+# Una captura DISTINTA por letra. Antes «Enfoque» y «S · Ciencia» llevaban la
+# misma gráfica en láminas seguidas: se leía como si nos hubiéramos quedado sin
+# material. Cada caja se midió aparte porque las capturas de teléfono son altas
+# y angostas y las de escritorio anchas y bajas; una sola caja para todas dejaba
+# a unas nadando y a otras desbordadas.
 STEAM = [
-  ('S', 'Ciencia',     'Medimos la fila antes y después.',              '08-grafica.png'),
-  ('T', 'Tecnología',  'App web, servidor propio, funciona sin internet.', '02-menu.png'),
-  ('E', 'Ingeniería',  'La fila se ordena sola, con tope justo.',       '05-mostrador.png'),
-  ('A', 'Arte',        'Identidad propia: logo, color y tipografía.',   '01-cortinilla.png'),
-  ('M', 'Matemáticas', 'Turnos, promedios y porcentajes calculados solos.', '07-cifras.png'),
+  ('S', 'Ciencia',     'Medimos la fila antes y después.',
+   '06-medidor.png',   (10.7, 3.7, 7.8, 6.4)),
+  ('T', 'Tecnología',  'App web, servidor propio, funciona sin internet.',
+   '03-mi-turno.png',  (13.6, 3.6, 4.4, 6.6)),
+  ('E', 'Ingeniería',  'La fila se ordena sola, con tope justo.',
+   '05-mostrador.png', (10.7, 3.7, 7.9, 6.4)),
+  ('A', 'Arte',        'Identidad propia: logo, color y tipografía.',
+   '01-cortinilla.png',(13.6, 3.6, 4.4, 6.6)),
+  ('M', 'Matemáticas', 'Turnos, promedios y porcentajes calculados solos.',
+   '07-cifras.png',    (10.7, 4.6, 7.9, 4.6)),
 ]
-for letra, nombre, texto, img in STEAM:
-    n = clon[letra]
-    ancho = 5.4 if img in ('02-menu.png', '01-cortinilla.png') else 8.4
-    lamina(n, letra + ' · ' + nombre, texto, img,
-           (19.0 - ancho, 4.0, ancho, 6.4), cuerpo_izq=True)
+for letra, nombre, texto, img, caja in STEAM:
+    lamina(clon[letra], letra + ' · ' + nombre, texto, img, caja, cuerpo_izq=True)
 
 lamina(clon['estado'], 'Estado actual',
        ['Terminada, publicada y en línea. Cuatro pantallas.'],
-       '05-mostrador.png', (10.6, 4.0, 8.0, 6.2), cuerpo_izq=True)
+       '04-pantalla-turnos.png', (10.7, 4.3, 7.9, 5.2), cuerpo_izq=True)
+
+# ═══ AFINAR LAS LÁMINAS ORIGINALES ═══════════════════════════════════════
+# Al renderizar por fin la presentación salieron encimados en las láminas que
+# YO NO HICE: «Portad/a», «Problem/a», «Filas enormes» montada sobre su propio
+# pie, el nombre del instituto encima del bachillerato. Se comprobó rindiendo
+# también `formato-institucional.pptx`: los defectos YA VENÍAN AHÍ.
+#
+# Se arreglan porque Carlos pidió exactamente eso: «deja el formato puesto pero
+# lo demás acomódalo». Los logos, los escudos y las formas no se tocan; lo que
+# se mueve son cuadros de texto, que es «lo demás».
+
+def titulo_chico(n, de=9200, a=6200):
+    """Baja los títulos de 92 pt a 62 pt SIN tocar los subtítulos que viven en
+       el mismo cuadro (por ejemplo «Objetivo» 92 pt + «Justificación» 39 pt).
+       92 pt alcanzaba para «Visión»; «¿Para qué sirve Fadori?» se partía en dos
+       renglones, y como la caja trae `spAutoFit`, crecía hacia abajo y se comía
+       el cuerpo."""
+    p = sl(n); s = leer(p)
+    escribir(p, s.replace('sz="%d"' % de, 'sz="%d"' % a))
+
+def letra(n, cajas, sz):
+    """Baja el tamaño de letra de unos cuadros concretos."""
+    p = sl(n); s = leer(p)
+    for nombre in cajas:
+        s = formato(s, nombre, sz=sz)
+    escribir(p, s)
+
+def acomodar(n, cambios):
+    """cambios: {'TextBox 7': (x, y, ancho, alto)} en pulgadas."""
+    p = sl(n); s = leer(p)
+    for nombre, caja in cambios.items():
+        s = mover(s, nombre, *caja)
+    escribir(p, s)
+
+for n in (5, 6, 7, 8, 9, 10):          # Descripción, Objetivo, Misión, Visión,
+    titulo_chico(n)                     # Propósito general, Impacto Esperado
+
+# ── 1 · la portada ───────────────────────────────────────────────────────
+# «Instituto Tecnológico en Programación» a 56 pt se partía y aterrizaba encima
+# de «Bachillerato Rembrandt». Y los cinco nombres, en una columna de 3.07",
+# se encimaban entre ellos y se salían por abajo.
+acomodar(1, {
+  'TextBox 13': (1.33, 2.50, 16.09, 1.00),   # Instituto Tecnológico
+  'TextBox 12': (1.33, 3.62, 16.09, 1.00),   # Bachillerato Rembrandt
+  'TextBox 10': (1.33, 4.95, 16.09, 1.60),   # Ciclo académico
+  'TextBox 14': (1.33, 6.95, 16.09, 0.90),   # 3.1
+  'TextBox 11': (4.60, 7.90, 12.00, 3.00),   # Integrantes + los cinco nombres
+})
+# Y a 56 pt «Instituto Tecnológico en Programación» se parte igual aunque la
+# caja mida 16": no es la caja, es la letra. A 44 pt entra en un renglón con
+# aire de sobra. Se comprobó en el render Y en las capturas del teléfono de
+# Carlos, que traían el mismo encimado.
+letra(1, ['TextBox 13', 'TextBox 12'], 44)
+# Los nombres se corrieron a la derecha porque a la izquierda los pisaba la
+# retícula de puntos rojos de la esquina.
+
+
+# ── 2 · la carátula del proyecto ─────────────────────────────────────────
+# El encabezado caía justo sobre la diagonal azul y roja de la esquina.
+acomodar(2, { 'TextBox 10': (5.20, 0.50, 9.60, 0.95) })
+
+# ── 3 · el índice ────────────────────────────────────────────────────────
+# Las etiquetas venían en cajas de 1.16" a 26 pt: «Problema» no cabe en 1.16",
+# así que se partía a media palabra. Se ensanchan todas al mismo ancho — que
+# además las deja alineadas, cosa que antes tampoco estaban.
+acomodar(3, { nombre: (8.56, y, 3.40, 0.55) for nombre, y in [
+  ('TextBox 34', 2.69), ('TextBox 35', 3.77), ('TextBox 36', 4.73),
+  ('TextBox 37', 5.68), ('TextBox 38', 6.63), ('TextBox 39', 7.59),
+  ('TextBox 40', 8.54), ('TextBox 41', 9.62)] })
+
+# ── 4 · el problema ──────────────────────────────────────────────────────
+# «El Problema» se partía en dos y caía sobre «¿Qué está pasando?»; «Filas
+# enormes» se partía y caía sobre «Hasta 20 minutos formado».
+acomodar(4, {
+  'TextBox 7':  (1.90, 1.55, 5.20, 0.80),    # El Problema
+  'TextBox 8':  (1.90, 2.60, 8.00, 1.10),    # ¿Qué está pasando?
+  'TextBox 9':  (1.90, 5.90, 8.00, 1.10),    # Filas enormes
+  'TextBox 10': (1.90, 7.20, 8.00, 1.50),    # Hasta 20 minutos formado
+  'TextBox 11': (10.23, 5.90, 8.00, 1.10),   # Pedidos manuales
+})
+
+# ── 6 · descripción ──────────────────────────────────────────────────────
+acomodar(5, { 'TextBox 6': (3.90, 2.90, 12.20, 4.20) })
+
+# ── 8 · objetivo ─────────────────────────────────────────────────────────
+# «Objetivo» a 92 pt en 5.43" se partía como «Objetiv / o».
+acomodar(6, { 'TextBox 7': (4.50, 0.64, 11.00, 2.54),
+              'TextBox 6': (2.68, 3.60, 14.60, 3.00) })
+
+# ── 9 · misión ───────────────────────────────────────────────────────────
+acomodar(7, { 'TextBox 3': (1.90, 1.10, 16.20, 1.30),
+              'TextBox 2': (1.90, 3.40, 14.28, 5.00) })
+
+# ── 10 · visión ──────────────────────────────────────────────────────────
+acomodar(8, { 'TextBox 6': (1.90, 1.10, 16.20, 1.30),
+              'TextBox 7': (2.66, 3.60, 15.49, 2.60) })
+
+# ── 11 · propósito general ───────────────────────────────────────────────
+# Los tres puntos estaban regados: uno a la izquierda arriba, otro a la derecha,
+# el tercero abajo a la izquierda. No era diseño, era dónde cayeron.
+acomodar(9, {
+  'TextBox 6':  (1.90, 0.80, 16.20, 1.30),   # el título
+  'TextBox 11': (5.60, 3.80, 11.00, 0.95),   # ✨ Solución digital
+  'TextBox 8':  (5.60, 5.35, 11.00, 0.95),   # 🎯 Pedidos automatizados
+  'TextBox 10': (5.60, 6.90, 11.00, 0.95),   # 📱 Web y móvil
+  'TextBox 7':  (3.60, 8.80, 13.00, 1.40),   # el cierre en cursiva
+})
+# Los tres puntos venían centrados, o sea que cada uno arrancaba en un margen
+# distinto y a distinta altura: no se leían como una lista sino como tres cosas
+# tiradas. Ahora comparten sangría y la misma separación (1.55") entre uno y
+# otro. Los emoji los escribió el equipo; ésos se respetan.
+letra(9, ['TextBox 11'], 33)          # venía a 40 pt, los otros dos a 33
+acomodar(9, {})
+_p = sl(9); _s = leer(_p)
+for _c in ('TextBox 11', 'TextBox 8', 'TextBox 10'):
+    _s = formato(_s, _c, algn='l')
+escribir(_p, _s)
+
+# ── 12 · impacto esperado ────────────────────────────────────────────────
+acomodar(10, { 'TextBox 7': (4.20, 1.00, 12.40, 2.41),
+               'TextBox 2': (2.86, 4.20, 14.00, 2.60) })
 
 # ═══ EL ORDEN ═════════════════════════════════════════════════════════════
 ORDEN = [1, 2, 3, 4, clon['que-es'], 5, clon['como'], 6, 7, 8, 9, 10,
