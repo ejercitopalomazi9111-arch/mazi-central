@@ -84,6 +84,12 @@ Sale **`https://fadori.palomazi9111.workers.dev`**.
 > servidor. No se estorban — cada uno tiene su propia configuración en su propia carpeta, y
 > mezclarlos es como se termina publicando el código del servidor.
 
+> **Un detalle que ya te ahorré:** la configuración del servidor estaba en `wrangler.toml` y la
+> del sitio en `wrangler.jsonc`. Con formatos distintos, wrangler se subía hasta la raíz del repo,
+> agarraba la del **sitio** y trataba de armar la carpeta del sitio dentro de `servidor/`. Fallaba
+> con `Cannot find module .../servidor/build.mjs` y no había manera de adivinar por qué. Las dos
+> están ya en `.jsonc`, así que gana la de la carpeta donde estás parado.
+
 ### O desde tu computadora, si la tienes a la mano
 
 ```bash

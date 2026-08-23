@@ -87,9 +87,27 @@ ok('una escuela NUNCA ve los pedidos de otra',
    (otra.cambios.pedidos || []).length === 0);
 
 /* ── la puerta ─────────────────────────────────────────────────────────── */
-const conOrigen = await fetch(API + '/api/salud', { headers:{ Origin:'https://ratero.example' }});
+const permiso = async (origen) => {
+  const r = await fetch(API + '/api/salud', { headers:{ Origin: origen }});
+  return r.headers.get('access-control-allow-origin');
+};
+
 ok('un origen que no está en la lista NO recibe permiso de CORS',
-   !conOrigen.headers.get('access-control-allow-origin'));
+   !await permiso('https://ratero.example'));
+
+/* las vistas previas del propio proyecto sí, para poder probar antes de
+   publicar; las de cualquier otro, no */
+ok('una vista previa del propio proyecto SÍ pasa',
+   await permiso('https://d2ace14a-mazi-central.palomazi9111.workers.dev') ===
+   'https://d2ace14a-mazi-central.palomazi9111.workers.dev');
+ok('y la de una rama también',
+   !!await permiso('https://claude-mi-rama-mazi-central.palomazi9111.workers.dev'));
+ok('pero un nombre que sólo TERMINA parecido no pasa',
+   !await permiso('https://ratero-mazi-central.palomazi9111.workers.dev.malo.example'));
+ok('ni el mismo nombre por http en vez de https',
+   !await permiso('http://d2ace14a-mazi-central.palomazi9111.workers.dev'));
+ok('ni la vista previa de OTRA cuenta de Cloudflare',
+   !await permiso('https://algo-mazi-central.otracuenta.workers.dev'));
 
 console.log((mal ? '✗' : '✓') + ' servidor · ' + bien + '/' + (bien + mal) + ' pruebas');
 process.exit(mal ? 1 : 0);

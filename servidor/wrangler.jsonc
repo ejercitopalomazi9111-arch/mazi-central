@@ -1,0 +1,42 @@
+{
+  // ── Fadori · el SERVIDOR ────────────────────────────────────────────────
+  // Un Durable Object por escuela. Es lo que hace que el turno 7 sea el turno
+  // 7 en los doscientos teléfonos a la vez: un solo lugar que ordena, con
+  // memoria propia y consistencia fuerte. No hay base de datos que administrar.
+  //
+  // Corre en el plan GRATIS de Cloudflare Workers: los Durable Objects con
+  // almacenamiento SQLite están incluidos ahí (los de key-value no, y por eso
+  // éste usa SQLite — está en la migración de abajo).
+  //
+  // ⚠️ Va en .jsonc y NO en .toml a propósito. Con un .toml aquí, wrangler
+  // subía hasta la raíz del repo, tomaba el wrangler.jsonc DEL SITIO y trataba
+  // de correr su `node build.mjs` dentro de esta carpeta. Fallaba con
+  // "Cannot find module .../servidor/build.mjs" y no era obvio por qué.
+  // Mismo formato = misma preferencia = gana el de esta carpeta.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fadori",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+
+  // El sitio se sirve aparte y la API por aquí. Si algún día viven en el mismo
+  // dominio, se le pone una ruta y se acabaron los CORS.
+  "workers_dev": true,
+  "observability": { "enabled": true },
+
+  "durable_objects": {
+    "bindings": [{ "name": "COOPERATIVA", "class_name": "Cooperativa" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Cooperativa"] }],
+
+  "vars": {
+    // De dónde se acepta que llamen. En claro y sin comodín: un "*" aquí sería
+    // dejarle la puerta abierta a cualquier página del mundo.
+    "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,http://localhost:8777,http://127.0.0.1:8777",
+
+    // Las vistas previas: Cloudflare hace una por rama y una por commit, con un
+    // nombre distinto cada vez. Se aceptan sólo las que cuelgan de ESTE
+    // proyecto —nadie más puede crear un nombre ahí— para poder probar un
+    // cambio contra el servidor de verdad antes de publicárselo a los alumnos.
+    "VISTAS_PREVIAS": "mazi-central.palomazi9111.workers.dev"
+  }
+}
