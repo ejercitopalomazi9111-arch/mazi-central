@@ -14,37 +14,55 @@ sitio de Grupo Mazi**, no sólo Fadori — servir un repo privado es función de
 que primero se levanta la casa nueva y luego se cierra la vieja:
 
 ```
-1 · Cloudflare Pages   →   el sitio vive en otro lado
+1 · El sitio           →   vive en Cloudflare, no en GitHub
 2 · El servidor        →   Fadori deja de ser una copia por aparato
 3 · Conectar los dos   →   pegar la dirección y abrir la puerta
-4 · Repo privado       →   ya se puede, porque Pages sí sirve repos privados
+4 · Repo privado       →   ya se puede: Cloudflare sí sirve repos privados
 ```
 
 ---
 
-## 1 · El sitio en Cloudflare Pages · ~8 min
+## 1 · El sitio en Cloudflare · ~5 min
+
+> **Si ya lo intentaste y falló con `Asset too large`, no hiciste nada mal.** Cloudflare adivinó la
+> configuración: puso el directorio de salida en `.` y trató de subir el repo **entero** como si
+> fuera público — incluido `.git`, que pesa 55 MB. **Ya está arreglado en el repo**, así que sólo
+> hay que volver a intentarlo.
+
+### Si ya creaste el proyecto
+
+**Workers & Pages → `mazi-central` → Deployments → Retry deployment.** Nada más. No hay que tocar
+ningún ajuste: el repo ahora trae `wrangler.jsonc`, que le dice a Cloudflare exactamente qué hacer,
+y un `build.mjs` que arma la carpeta con **sólo lo que va publicado**.
+
+### Si lo vas a crear de cero
 
 1. Crea la cuenta en **dash.cloudflare.com** (gratis, sin tarjeta).
-2. **Workers & Pages → Create → Pages → Connect to Git**, autoriza GitHub y escoge
+2. **Workers & Pages → Create → Import a repository**, autoriza GitHub y escoge
    `ejercitopalomazi9111-arch/mazi-central`.
-3. Configuración:
-   - **Production branch:** `main`
-   - **Build command:** *déjalo vacío*
-   - **Build output directory:** `/`
+3. Deja todo como venga y dale **Deploy**. La configuración ya está en el repo.
 
-   No hay build. El sitio es HTML, CSS y JS tal cual — por eso esto es un formulario y no una
-   pelea.
-4. **Save and Deploy.**
+Sale una dirección tipo **`https://mazi-central.<tu-subdominio>.workers.dev`**.
 
-Sale una dirección tipo **`https://mazi-central.pages.dev`**. Fadori queda en
-`https://mazi-central.pages.dev/fadori/`.
+> **Anótala.** La vas a necesitar en el paso 2.
 
-> **Anótala.** La vas a necesitar en el paso 3.
+### Qué se publica y qué no · esto importa más de lo que parece
 
-**Qué NO se rompe:** el sitio no tiene una sola ruta absoluta —lo verifiqué— así que funciona igual
-en `github.io`, en `pages.dev` o en un dominio tuyo el día que compres uno.
+**GitHub Pages nunca publicó `.claude/` por su cuenta. Cloudflare sí lo haría**, junto con el
+`CLAUDE.md` —que trae cosas del negocio, lo de ICAMP y los precios— y el código del servidor.
 
----
+Por eso **no se sirve la raíz del repo**: `build.mjs` arma una carpeta con la lista de lo que sí va,
+y esa lista está escrita a la vista en ese archivo. Si algún día algo "no se publicó", se revisa esa
+lista y se acabó el misterio.
+
+Lo comprobé sirviendo la carpeta armada: las cinco pantallas abren, y `CLAUDE.md`, `DESPLIEGUE.md`,
+`servidor/` y `.claude/` devuelven **404**.
+
+**Menos los créditos.** `CREDITOS.md` sí se publica, a propósito: hay arte y fotos con licencia
+CC BY-SA en Fadori, Ligas Mazi, El Pacto Roto y Hoja de Romero, y esa licencia **obliga** a dar
+crédito. Si no se publica, estaríamos usando el trabajo de otros sin cumplir lo único que pidieron a
+cambio. La app de Fadori además lo enlaza hasta abajo, y hay una prueba que falla si ese enlace
+desaparece.
 
 ## 2 · El servidor · ~7 min
 
@@ -64,7 +82,7 @@ Sale una dirección tipo **`https://fadori.<tu-subdominio>.workers.dev`**.
 tiene que traer la dirección de tu Pages del paso 1:
 
 ```toml
-ORIGENES = "https://mazi-central.pages.dev,http://localhost:8777"
+ORIGENES = "https://mazi-central.<tu-subdominio>.workers.dev,http://localhost:8777"
 ```
 
 Sin eso el navegador bloquea las llamadas y parece que el servidor no sirve, cuando en realidad
@@ -85,7 +103,7 @@ curl https://fadori.<tu-subdominio>.workers.dev/api/salud
 
 ## 3 · Conectar los dos · ~2 min
 
-1. Abre **`https://mazi-central.pages.dev/fadori/mostrador.html`** en la tablet.
+1. Abre **`<la dirección del paso 1>/fadori/mostrador.html`** en la tablet.
 2. Pasador (el de arranque es `1234`).
 3. **Ajustes → El servidor** → pega la dirección del paso 2 → **Probar y guardar**.
 
@@ -108,7 +126,7 @@ la dirección puesta; eso lo dejamos para cuando sepamos la dirección buena).
 **GitHub → mazi-central → Settings → General → hasta abajo, Danger Zone → Change repository
 visibility → Private.**
 
-- **Cloudflare Pages sigue publicando**, porque sí sirve repos privados en el plan gratis. Eso es
+- **Cloudflare sigue publicando**, porque sí sirve repos privados en el plan gratis. Eso es
   justamente lo que GitHub cobra.
 - La dirección `ejercitopalomazi9111-arch.github.io/mazi-central` deja de funcionar. Si alguien la
   tiene guardada, hay que pasarle la nueva.

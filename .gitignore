@@ -1,6 +1,6 @@
+# La carpeta que arma `node build.mjs`. Se genera en cada despliegue; tenerla
+# en el repo sólo duplicaría 69 MB y garantizaría que un día esté vieja.
+dist/
 node_modules/
-capturas/
-
-# guiones desechables de prueba: se escriben, se corren y se tiran.
-# Si un comando se pasa de tiempo, el rm no alcanza a correr y se quedan.
-_*.mjs
+.wrangler/
+.DS_Store
