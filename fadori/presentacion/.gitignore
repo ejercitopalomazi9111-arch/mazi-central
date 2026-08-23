@@ -1,0 +1,2 @@
+# La librería que arma el .pptx. Se instala con `npm install` y pesa 8 MB.
+node_modules/
