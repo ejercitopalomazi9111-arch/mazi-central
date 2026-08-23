@@ -186,7 +186,7 @@ const LLAVE = 'fadori_v1';
 
 function estadoVacio(){
   return {
-    version: 2,
+    version: 3,
     config: Object.assign({}, CONFIG_BASE),
     productos: [],
     alumnos: {},      /* codigo -> {codigo, nombre, grupo, deuda, terminos, favorito} */
@@ -252,17 +252,278 @@ const MotorLocal = {
   },
 };
 
-/* El hueco donde entra el servidor el día que se autorice. Se deja escrito
-   para que sea conectar y no rehacer — igual que el hueco del pago (F32). */
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MOTOR DE SERVIDOR · F48
+   Ya no es un hueco. El servidor vive en `servidor/` y es un Durable Object
+   de Cloudflare.
+
+   ── Lo que hay que entender antes de tocar esto ───────────────────────────
+   El servidor va ENCIMA del motor local, no en su lugar. Todo lo que se
+   escribe cae primero en el aparato —igual que siempre— y de ahí se empuja.
+   Por eso, si se cae el internet, se cae Cloudflare o la escuela apaga el
+   wifi, no se detiene nada: el alumno pide, la señora despacha, y cuando
+   vuelve la red se ponen de acuerdo solos.
+
+   Un servidor que se vuelve indispensable hace que la app falle MÁS. La regla
+   3 de la casa dice que nada se detiene si algo falla, y "conéctale un
+   servidor para que nunca falle" sólo se cumple de esta manera.
+
+   ── Cómo sabe qué mandar ──────────────────────────────────────────────────
+   No se manda el documento entero: se mandan los REGISTROS que cambiaron, y
+   gana el más reciente de cada uno. Para saber cuáles cambiaron sin tener que
+   tocar las cincuenta funciones que escriben, se le saca una huella a cada
+   registro en cada guardado y se compara con la anterior. El que cambió se
+   estampa con la hora y sale en el siguiente empujón.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+const LLAVE_API   = 'fadori_servidor';   /* la dirección, fuera del documento */
+const LLAVE_SYNC  = 'fadori_sync';       /* hasta qué reloj ya me puse de acuerdo */
+const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
+
+function direccionServidor(){
+  try{ return localStorage.getItem(LLAVE_API) || ''; }catch(e){ return ''; }
+}
+function ponerServidor(url){
+  const u = String(url || '').trim().replace(/\/+$/, '');
+  if(u && !/^https?:\/\//.test(u)) throw new Error('La dirección tiene que empezar con https://');
+  try{ u ? localStorage.setItem(LLAVE_API, u) : localStorage.removeItem(LLAVE_API); }catch(e){}
+  return u;
+}
+
+/* los registros de cada cajón, como lista, con su id */
+function registrosDe(d, cajon){
+  if(cajon === 'alumnos'){
+    return Object.keys(d.alumnos || {}).map(k =>
+      Object.assign({ id: k }, d.alumnos[k]));
+  }
+  return (d[cajon] || []).filter(r => r && r.id);
+}
+
+/* la huella: si cambia, el registro cambió. Se le quita la `t` para que
+   estampar la hora no cuente como cambio y se vuelva un perro persiguiéndose
+   la cola. */
+function huellaDe(r){
+  const c = {};
+  for(const k in r) if(k !== 't' && k !== '_r') c[k] = r[k];
+  try{ return JSON.stringify(c); }catch(e){ return String(Math.random()); }
+}
+
 const MotorServidor = {
   nombre: 'servidor',
-  disponible: false,
-  leer(){ throw new Error('El motor de servidor todavía no está conectado.'); },
-  escribir(){ throw new Error('El motor de servidor todavía no está conectado.'); },
-  alCambiar(){},
+  _huellas: null,      /* cajon -> {id: huella} */
+  _reloj: 0,
+  _oyentes: [],
+  _ws: null,
+  _empujando: false,
+  _otraVez: false,
+  _reintento: 2000,
+  ultimoIntento: 0,
+  enLinea: false,
+  pendientes: 0,
+
+  leer(){ return MotorLocal.leer(); },
+
+  escribir(d){
+    this.estampar(d);
+    MotorLocal.escribir(d);          /* primero al aparato. SIEMPRE. */
+    this.empujar();                  /* y luego, si se puede, al servidor */
+  },
+
+  alCambiar(fn){
+    MotorLocal.alCambiar(fn);
+    this._oyentes.push(fn);
+  },
+
+  _avisar(){ this._oyentes.forEach(f => { try{ f(); }catch(e){} }); },
+
+  /* ── Le pone la hora a lo que de verdad cambió ──────────────────────── */
+  estampar(d){
+    if(!this._huellas){
+      this._huellas = {};
+      for(const c of CAJONES){
+        this._huellas[c] = {};
+        registrosDe(d, c).forEach(r => { this._huellas[c][r.id] = huellaDe(r); });
+      }
+      this._huellaConfig = huellaDe(d.config || {});
+      return;                        /* la primera vez sólo se toma la foto */
+    }
+    const t = ahora();
+    for(const c of CAJONES){
+      registrosDe(d, c).forEach(r => {
+        const h = huellaDe(r);
+        if(this._huellas[c][r.id] !== h){
+          this._huellas[c][r.id] = h;
+          if(c === 'alumnos'){ if(d.alumnos[r.id]) d.alumnos[r.id].t = t; }
+          else r.t = t;
+        }
+      });
+    }
+    const hc = huellaDe(d.config || {});
+    if(hc !== this._huellaConfig){ this._huellaConfig = hc; d.config.t = t; }
+  },
+
+  /* ── Lo que todavía no sabe el servidor ─────────────────────────────── */
+  porMandar(d){
+    const visto = this._visto();
+    const cambios = {};
+    let cuantos = 0;
+    for(const c of CAJONES){
+      cambios[c] = registrosDe(d, c).filter(r => (r.t || 0) > (visto[c] || 0));
+      cuantos += cambios[c].length;
+    }
+    if((d.config && d.config.t || 0) > (visto.config || 0)){ cambios.config = d.config; cuantos++; }
+    return { cambios, cuantos };
+  },
+
+  _visto(){
+    try{ return JSON.parse(localStorage.getItem(LLAVE_SYNC) || '{}') || {}; }
+    catch(e){ return {}; }
+  },
+  _guardarVisto(v){
+    try{ localStorage.setItem(LLAVE_SYNC, JSON.stringify(v)); }catch(e){}
+  },
+
+  /* ── El empujón ─────────────────────────────────────────────────────── */
+  async empujar(){
+    const api = direccionServidor();
+    if(!api) return;
+    if(this._empujando){ this._otraVez = true; return; }
+    this._empujando = true;
+    try{
+      const d = MotorLocal.leer(); if(!d) return;
+      const visto = this._visto();
+      const { cambios, cuantos } = this.porMandar(d);
+      this.pendientes = cuantos;
+      this.ultimoIntento = ahora();
+
+      const r = await fetch(api + '/api/sync?casa=' + encodeURIComponent(this.casa()), {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ desde: this._reloj, cambios }),
+      });
+      if(!r.ok) throw new Error('el servidor contestó ' + r.status);
+      const res = await r.json();
+
+      /* lo que mandé ya está allá: la próxima vez no se vuelve a mandar */
+      const nuevoVisto = Object.assign({}, visto);
+      for(const c of CAJONES){
+        (cambios[c] || []).forEach(x => {
+          nuevoVisto[c] = Math.max(nuevoVisto[c] || 0, x.t || 0);
+        });
+      }
+      if(cambios.config) nuevoVisto.config = Math.max(nuevoVisto.config || 0, cambios.config.t || 0);
+      this._guardarVisto(nuevoVisto);
+
+      const cambio = this.mezclar(res.cambios || {});
+      this._reloj = res.reloj || this._reloj;
+      this.enLinea = true;
+      this._reintento = 2000;
+      this.pendientes = 0;
+      if(cambio) this._avisar();
+    }catch(e){
+      /* Aquí NO se avienta el error: quedarse sin red no es un error del
+         alumno y no tiene por qué salirle en pantalla. Lo suyo ya está
+         guardado en su aparato; esto se vuelve a intentar solo. */
+      this.enLinea = false;
+      this._reintento = Math.min(this._reintento * 2, 60000);
+      clearTimeout(this._alarma);
+      this._alarma = setTimeout(() => this.empujar(), this._reintento);
+    }finally{
+      this._empujando = false;
+      if(this._otraVez){ this._otraVez = false; setTimeout(() => this.empujar(), 60); }
+    }
+  },
+
+  /* ── Meter lo que llegó, sin pisar lo que es más nuevo aquí ─────────── */
+  mezclar(cambios){
+    const d = MotorLocal.leer(); if(!d) return false;
+    let tocado = false;
+
+    for(const c of CAJONES){
+      const lista = cambios[c] || [];
+      for(const r of lista){
+        if(!r || !r.id) continue;
+        if(c === 'alumnos'){
+          const v = d.alumnos[r.id];
+          if(!v || (r.t || 0) > (v.t || 0)){
+            const copia = Object.assign({}, r); delete copia.id; delete copia._r;
+            d.alumnos[r.id] = copia; tocado = true;
+          }
+          continue;
+        }
+        if(!Array.isArray(d[c])) d[c] = [];
+        const i = d[c].findIndex(x => x && x.id === r.id);
+        const copia = Object.assign({}, r); delete copia._r;
+        if(i < 0){ d[c].push(copia); tocado = true; }
+        else if((r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
+      }
+    }
+    if(cambios.config && (cambios.config.t || 0) > (d.config.t || 0)){
+      const cc = Object.assign({}, cambios.config); delete cc._r;
+      d.config = Object.assign({}, CONFIG_BASE, cc); tocado = true;
+    }
+
+    if(tocado){
+      d.pedidos.sort((a, b) => (a.creado || 0) - (b.creado || 0));
+      d.eventos.sort((a, b) => (a.t || 0) - (b.t || 0));
+      /* se refresca la foto de huellas para no volver a mandar lo que
+         acaba de llegar de allá */
+      this._huellas = null; this.estampar(d);
+      MotorLocal.escribir(d);
+      D = d;
+    }
+    return tocado;
+  },
+
+  casa(){
+    try{ return localStorage.getItem('fadori_casa') || 'rembrandt'; }catch(e){ return 'rembrandt'; }
+  },
+
+  /* ── El socket: no trae datos, trae "hubo cambio, ven por él" ───────── */
+  enchufar(){
+    const api = direccionServidor();
+    if(!api || typeof WebSocket === 'undefined') return;
+    try{ if(this._ws) this._ws.close(); }catch(e){}
+    const url = api.replace(/^http/, 'ws') + '/api/vivo?casa=' + encodeURIComponent(this.casa());
+    try{
+      const ws = new WebSocket(url);
+      this._ws = ws;
+      ws.onmessage = (e) => {
+        if(e.data === 'pong') return;
+        let m = null; try{ m = JSON.parse(e.data); }catch(err){ return; }
+        if(m && m.tipo === 'reloj' && m.reloj > this._reloj) this.empujar();
+      };
+      ws.onopen  = () => { this.enLinea = true; this.empujar(); };
+      ws.onclose = () => { this.enLinea = false; clearTimeout(this._reconecta);
+        this._reconecta = setTimeout(() => this.enchufar(), 4000); };
+      ws.onerror = () => { try{ ws.close(); }catch(e){} };
+      clearInterval(this._latido);
+      this._latido = setInterval(() => {
+        try{ if(ws.readyState === 1) ws.send('ping'); }catch(e){}
+      }, 30000);
+    }catch(e){ /* sin socket se sigue trabajando: queda el reloj de abajo */ }
+  },
+
+  /* Y por si el socket no pasa el wifi de la escuela: preguntar cada rato.
+     Es el cinturón además de los tirantes, y cuesta un pedido de 200 bytes. */
+  arrancar(){
+    if(!direccionServidor()) return;
+    this.enchufar();
+    clearInterval(this._ronda);
+    this._ronda = setInterval(() => this.empujar(), 15000);
+    this.empujar();
+  },
 };
 
 let MOTOR = MotorLocal;
+
+/* Si hay dirección guardada, el motor de servidor entra solo. Y si no la hay,
+   todo sigue exactamente como estaba: local, sin cuenta de nadie y sin
+   internet. */
+function elegirMotor(){
+  MOTOR = direccionServidor() ? MotorServidor : MotorLocal;
+  return MOTOR.nombre;
+}
+elegirMotor();
 
 /* ══════════════════════════════════════════════════════════════════════════
    3 · EL ESTADO
@@ -271,7 +532,7 @@ let D = null;
 
 function siembra(){
   const d = estadoVacio();
-  d.version = 2;
+  d.version = 3;
   d.productos = MENU_BASE.map((p, i) => ({
     id: id('p'),
     nombre: p.nombre,
@@ -322,17 +583,33 @@ function migrar(d){
     });
   }
 
-  d.version = 2;
+  /* 2 → 3 · id en eventos y conteos. Sin id no se pueden mezclar con los de
+     otro aparato: cada sincronización los volvería a meter. */
+  if(antes < 3){
+    d.eventos.forEach(e => { if(!e.id) e.id = id('e'); });
+    d.conteos.forEach(c => { if(!c.id) c.id = id('c'); });
+  }
+
+  d.version = 3;
   return antes;
 }
 
 function cargar(){
   D = MOTOR.leer();
-  if(!D){ D = siembra(); MOTOR.escribir(D); return D; }
+  if(!D){ D = siembra(); MOTOR.escribir(D); arrancarSync(); return D; }
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
-  if(antes < 2){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(antes < 3){ try{ MOTOR.escribir(D); }catch(e){} }
+  arrancarSync();
   return D;
+}
+
+/* la sincronía se prende una sola vez, y sólo si hay dirección guardada */
+let syncPrendida = false;
+function arrancarSync(){
+  if(syncPrendida || MOTOR.nombre !== 'servidor') return;
+  syncPrendida = true;
+  try{ MotorServidor.arrancar(); }catch(e){ console.warn('Fadori: no arrancó la sincronía', e); }
 }
 
 function guardar(){ MOTOR.escribir(D); }
@@ -346,7 +623,9 @@ function estado(){ return D || cargar(); }
    solo: los números los recogió la app, no la memoria de alguien.
    ═════════════════════════════════════════════════════════════════════════ */
 function anotar(tipo, datos){
-  D.eventos.push(Object.assign({ t: ahora(), tipo }, datos || {}));
+  /* con id, porque el servidor mezcla por registro: sin id, cada
+     sincronización volvería a meter el mismo evento */
+  D.eventos.push(Object.assign({ id: id('e'), t: ahora(), tipo }, datos || {}));
   if(D.eventos.length > 5000) D.eventos = D.eventos.slice(-4000);
 }
 
@@ -546,13 +825,23 @@ function pedir(cod, renglones, opciones){
     origen: o.origen || 'app',
     despachador: null,
     tomado: 0, listoEn: 0, entregado: 0,
-    turno: siguienteTurno(),
+    /* Con servidor el turno lo pone ÉL: cada aparato contaría por su cuenta
+       "van tres, me toca el cuatro" y saldrían tres turnos 4. Llega en
+       cuanto el pedido cruza; mientras tanto la pantalla muestra "…". */
+    turno: MOTOR.nombre === 'servidor' ? null : siguienteTurno(),
   };
   d.pedidos.push(p);
   anotar('pedido', { pedido:p.id, alumno:cod, total:p.total,
     anticipado:p.anticipado, origen:p.origen, seg:segundosDe(limpios) });
   guardar();
   return p;
+}
+
+/* Con servidor, el turno tarda un parpadeo en llegar. Mientras tanto se
+   muestra "…" y NUNCA la palabra null, que es lo que sale si nadie lo cuida.
+   Es un detalle chico y es exactamente de los que se ven en una captura. */
+function verTurno(p){
+  return (p && p.turno != null && p.turno !== '') ? String(p.turno) : '…';
 }
 
 function siguienteTurno(){
@@ -1006,7 +1295,7 @@ function abonar(cod, centavos){
    ═════════════════════════════════════════════════════════════════════════ */
 function contarFila(cuantos, nota){
   const d = estado();
-  d.conteos.push({ t:ahora(), n:Math.max(0, cuantos|0), nota: String(nota||'').slice(0,80) });
+  d.conteos.push({ id: id('c'), t:ahora(), n:Math.max(0, cuantos|0), nota: String(nota||'').slice(0,80) });
   guardar();
 }
 
@@ -1309,7 +1598,8 @@ const FADORI = {
   pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
   misAlergias, guardarAlergias, choquesDe,
   /* datos */
-  cargar, guardar, estado, _migrar: migrar, avisaCon, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
+  cargar, guardar, estado, _migrar: migrar, avisaCon, verTurno,
+  servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, yo, entrarComo, salir, aceptarTerminos,
   /* menú */

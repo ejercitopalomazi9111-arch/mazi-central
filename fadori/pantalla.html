@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fadori · turnos</title>
 <meta name="theme-color" content="#1A0F0A">
+<link rel="icon" href="marca/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Turnos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="estilo.css">
 <style>
   /* Esta pantalla se ve DE LEJOS, colgada junto a la cooperativa. Todo es
@@ -66,7 +72,7 @@ function pintar(){
 
   const casilla = (p, clase) =>
     '<div class="casilla'+(clase?' '+clase:'')+'">'+
-      '<div class="n">'+p.turno+'</div>'+
+      '<div class="n">'+F.verTurno(p)+'</div>'+
       '<div class="e">'+(clase === 'listo' ? 'listo' :
         p.estado === 'preparando' ? 'preparándose' : 'en la fila')+'</div>'+
     '</div>';
