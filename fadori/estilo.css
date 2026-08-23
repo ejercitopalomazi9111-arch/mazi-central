@@ -663,29 +663,38 @@ body.cortina-arriba{overflow:hidden}
    pan— porque una hamburguesa se arma así, y el ojo lo nota aunque nadie
    sepa decir por qué. */
 .burger{
-  position:relative; width:min(62vw, 236px); aspect-ratio:408/310; margin:0 auto;
+  /* 408 × 226 sale de MEDIR, no de tantear. La hamburguesa del logo de Carlos
+     mide 324 de alto por 455 de ancho —0.712— y la mía iba en 1.29: casi el
+     doble de alta, con aire entre capa y capa. Él lo cachó en la primera
+     captura.
+
+     Quedó en 0.925, no en 0.712, y hay una razón que conviene dejar escrita:
+     las piezas de la lámina abierta están DIBUJADAS más gruesas que en el
+     logo armado —se dibujaron para verse por separado—. Apretándolas hasta
+     0.712 exacto, la lechuga y el jitomate desaparecen detrás del pan y se
+     pierde media hamburguesa. 0.925 es lo más apretado en lo que todavía se
+     ven los seis ingredientes. */
+  position:relative; width:min(64vw, 250px); aspect-ratio:408/226; margin:0 auto;
 }
 .cap{
   position:absolute; left:0; width:100%; height:auto; display:block;
   opacity:0; will-change:transform, opacity;
   animation:cae .46s cubic-bezier(.3,1.5,.5,1) forwards;
 }
-/* top = dónde termina · --cae = de dónde viene, en % de su propia altura */
-/* Los sitios están medidos para que las capas se ENCIMEN, no para que se
-   toquen de puntitas. Una hamburguesa de verdad no tiene aire entre el queso
-   y la carne, y en la primera versión sí lo tenía: se veía flotada.
-
-   El queso es el que más baja de los seis. Su rebanada está en la PARTE DE
-   ARRIBA de la lámina y todo lo de abajo es el chorreón, así que colocado por
-   su caja quedaba a media altura. Bajándolo, la rebanada cae SOBRE la carne y
-   el chorreón escurre por encima de ella, que es como se ve en el logo. */
-.burger .pan-arriba{ top:7%;     --cae:-210%; animation-delay:.76s }
-.burger .lechuga   { top:32.5%;  --cae:-430%; animation-delay:.62s }
-.burger .jitomate  { top:41.5%;  --cae:-400%; animation-delay:.50s }
-.burger .queso     { top:49%;    --cae:-200%; animation-delay:.38s }
-.burger .carne     { top:53.5%;  --cae:-115%; animation-delay:.24s }
-.burger .pan-abajo { top:66.5%;  --cae:-60%;  animation-delay:.10s }
-.burger .sombra    { top:91.3%;  --cae:0%;    animation-delay:.10s;
+/* Los `top` salen de las franjas medidas en el logo bueno —152 px de pan, 33
+   de lechuga, 24 de jitomate, 13 de queso, 40 de carne— escaladas hasta que
+   la silueta armada dé lo más cerca posible del original. Si un día cambia el
+   arte, se vuelve a medir; no se tantea. */
+.burger .pan-arriba{ top:0;      --cae:-150%; animation-delay:.76s }
+.burger .lechuga   { top:33.2%;  --cae:-265%; animation-delay:.62s }
+.burger .jitomate  { top:40.3%;  --cae:-412%; animation-delay:.50s }
+/* El queso arranca MÁS ABAJO que la carne a propósito: se pinta después, así
+   que su rebanada cae sobre ella y el chorreón escurre por encima, como en el
+   logo. Puesto arriba quedaba escondido y no se veía escurrir. */
+.burger .queso     { top:49.1%;  --cae:-332%; animation-delay:.38s }
+.burger .carne     { top:48.7%;  --cae:-404%; animation-delay:.24s }
+.burger .pan-abajo { top:57.1%;  --cae:-70%;  animation-delay:.10s }
+.burger .sombra    { top:87.8%;  --cae:0%;    animation-delay:.10s;
   animation-name:sombra-entra; animation-timing-function:ease-out }
 
 @keyframes cae{
