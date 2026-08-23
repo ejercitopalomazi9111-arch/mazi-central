@@ -4,19 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fadori · el medidor</title>
-<meta name="theme-color" content="#0B0714">
+<meta name="theme-color" content="#FDF8F0">
 <link rel="stylesheet" href="estilo.css">
 <style>
   .contador{
     display:grid; place-items:center; gap:16px; padding:28px 18px; border-radius:24px;
-    background:linear-gradient(160deg, var(--sup2), var(--sup)); border:1px solid var(--linea);
-    text-align:center;
+    background:linear-gradient(165deg, #FFF6E8, var(--sup)); border:1px solid var(--linea);
+    text-align:center; box-shadow:var(--sombra-alta);
   }
   .contador .n{font-size:clamp(84px,26vw,150px); font-weight:900; line-height:.9;
     letter-spacing:-.05em; font-variant-numeric:tabular-nums}
   .contador .boton-grande{
-    width:100%; min-height:110px; border-radius:22px; border:0; background:var(--violeta);
-    color:#150420; font-size:26px; font-weight:900; letter-spacing:-.02em;
+    width:100%; min-height:110px; border-radius:18px; border:0; background:var(--naranja);
+    color:#fff; font-size:26px; font-weight:900; letter-spacing:-.02em;
+    box-shadow:var(--sombra-alta);
   }
   .contador .boton-grande:active{transform:scale(.98)}
   .grafica{
@@ -63,7 +64,7 @@
     <svg class="grafica" id="grafica" viewBox="0 0 600 190" preserveAspectRatio="none"
       role="img" aria-label="La fila minuto a minuto"></svg>
     <div class="leyenda">
-      <span><i style="background:var(--violeta)"></i>fila virtual (la app)</span>
+      <span><i style="background:var(--naranja)"></i>fila virtual (la app)</span>
       <span><i style="background:var(--ambar)"></i>fila física (contada a mano)</span>
     </div>
 
@@ -105,7 +106,7 @@
   <!-- ══════════ ANTES Y DESPUÉS ══════════ -->
   <section id="v-antes" hidden>
     <h2>El número del reporte</h2>
-    <div class="aviso" id="frase" style="font-size:16px; color:var(--hueso)"></div>
+    <div class="aviso" id="frase" style="font-size:16px; color:var(--cafe)"></div>
 
     <h2>Contra la línea base</h2>
     <p class="sub">La línea base es lo que Carlos midió a mano el 22 de agosto de 2026,
@@ -196,7 +197,7 @@ function pintarGrafica(){
   const W = 600, H = 190, pad = 10;
 
   if(!puntos.length && !conteos.length){
-    g.innerHTML = '<text x="300" y="100" fill="#A99CBE" font-size="15" '+
+    g.innerHTML = '<text x="300" y="100" fill="#7A5A42" font-size="15" '+
       'text-anchor="middle" font-family="system-ui">Todavía no hay nada que graficar hoy</text>';
     return;
   }
@@ -213,19 +214,19 @@ function pintarGrafica(){
   for(let i=0;i<=4;i++){
     const n = Math.round(maxN * i/4);
     html += '<line x1="'+pad+'" y1="'+y(n)+'" x2="'+(W-pad)+'" y2="'+y(n)+
-      '" stroke="#33244D" stroke-width="1"/>'+
-      '<text x="'+(pad+3)+'" y="'+(y(n)-4)+'" fill="#A99CBE" font-size="10" '+
+      '" stroke="#E6D5BE" stroke-width="1"/>'+
+      '<text x="'+(pad+3)+'" y="'+(y(n)-4)+'" fill="#7A5A42" font-size="10" '+
       'font-family="system-ui">'+n+'</text>';
   }
 
   if(puntos.length){
     const d = puntos.map((p,i) => (i?'L':'M') + x(p.t).toFixed(1) + ' ' + y(p.n).toFixed(1)).join(' ');
-    html += '<path d="'+d+'" fill="none" stroke="#AC27FF" stroke-width="2.5" '+
+    html += '<path d="'+d+'" fill="none" stroke="#C2410C" stroke-width="2.5" '+
       'stroke-linejoin="round" stroke-linecap="round"/>';
   }
   conteos.forEach(c => {
     html += '<circle cx="'+x(c.t).toFixed(1)+'" cy="'+y(c.n).toFixed(1)+
-      '" r="4" fill="#FFB627"/>';
+      '" r="4.5" fill="#9A5B08"/>';
   });
   g.innerHTML = html;
 }

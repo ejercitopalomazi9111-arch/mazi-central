@@ -1,7 +1,8 @@
 # Fadori · el plan de la piel
 
-> **Plan, no implementación.** Aquí está decidido cómo se va a ver Fadori y por qué. Se ejecuta
-> cambiando `fadori/estilo.css`, que para eso está armado con variables.
+> ✅ **EJECUTADO.** Este documento era el plan; ya está aplicado en `estilo.css`, `nucleo.js` y las
+> cuatro pantallas. Se queda como la explicación de por qué cada color es el que es — y al final,
+> en §9, lo que se hizo distinto de lo planeado y por qué.
 
 ---
 
@@ -213,4 +214,31 @@ tiempo se acaba a la mitad, se acaba después del 2 y se ve bien.
 
 ---
 
-*Fadori · Grupo Mazi · plan de estética · 22 de agosto de 2026*
+---
+
+## 9 · Lo que salió distinto del plan
+
+Dos cosas cambiaron al construirlo. Van escritas porque un plan que no se corrige con lo que se
+ve en pantalla no sirve de nada.
+
+### El mosaico de categoría va **lavado**, no saturado
+
+El plan decía "cada categoría tiene el color de su comida" y daba los tonos. Aplicados **a saturación
+completa**, un menú sin fotos queda como un muro de naranja — que contradice la regla del propio §3:
+*si la pantalla se ve naranja, está mal hecha*. Los tonos son los mismos, pero se mezclan con crema
+al 84 % y al 66 % para el degradado. El color sigue diciendo de qué es cada cosa y deja de competir
+con la comida.
+
+Y el destacado lleva **tope de altura** (200 px). Sin tope, la tarjeta del día a `3/2` en una
+pantalla de teléfono se come el doblez completo.
+
+### El blanco del mostrador se entibió
+
+El plan decía "lo único que cambia es que el azul pasa a naranja". Se cambió también el gris azulado
+`#F4F6FA` por un hueso `#F7F3EC`, porque con el blanco frío la pantalla de la cooperativa se veía de
+**otra app**. El contraste no se tocó: subió de 16.16 a **16.65**. Los botones siguen de 56 px y
+siguen sin adornos: ahí la legibilidad le gana al apetito, y eso sí se respetó completo.
+
+---
+
+*Fadori · Grupo Mazi · estética · planeada y ejecutada el 22 de agosto de 2026*
