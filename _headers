@@ -1,0 +1,27 @@
+# Cabeceras para Cloudflare Pages.
+# GitHub Pages ignora este archivo, así que tenerlo aquí no rompe nada mientras
+# el sitio siga allá. En cuanto se mude, empieza a servir.
+
+/*
+  # Nada de que otro sitio nos meta en un marco y se cuelgue la reputación
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  # Sin permisos que no usamos. La cámara y el micrófono no los pide nadie aquí.
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
+# Las fotos del menú y los iconos no cambian: que el teléfono no los vuelva a
+# bajar en cada recreo. Es el ahorro más grande en un wifi de escuela.
+/fadori/marca/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/fadori/fotos/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+# El código sí cambia, y cuando cambia tiene que llegar YA: un arreglo que
+# tarda un día en llegar al teléfono de un alumno no es un arreglo.
+/fadori/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/fadori/nucleo.js
+  Cache-Control: public, max-age=0, must-revalidate
+/fadori/estilo.css
+  Cache-Control: public, max-age=0, must-revalidate

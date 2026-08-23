@@ -144,7 +144,7 @@ antes de que lo vea un alumno.
 
 ```
 index.html      93 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración, faltantes, tema, semana
-mostrador.html  36 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador, faltantes, semana
+mostrador.html  47 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador, faltantes, semana
 pantalla.html    4 pruebas    que el número salga y que el NOMBRE nunca salga
 medidor.html    12 pruebas    quién alcanzó, la curva, el contador, el CSV
 ```
@@ -158,11 +158,27 @@ un nombre de alumno **no** aparece en una pantalla pública.
 
 ---
 
+## El servidor · ya no es un hueco
+
+Vive en [`servidor/`](../servidor/) y es un **Durable Object de Cloudflare**, uno por escuela, en
+el plan gratis. Va **encima** del motor local, no en su lugar: todo cae primero en el aparato y de
+ahí se empuja, así que si se cae el internet no se detiene nada.
+
+Lo único que decide el servidor es **el turno** — justo lo que no se puede calcular en el teléfono.
+Todo lo demás se mezcla registro por registro, y gana el más reciente de cada uno.
+
+**Se enciende pegando la dirección** en el mostrador, en *Ajustes → El servidor*. Sin dirección
+pegada, la app funciona exactamente como siempre: local, sin cuenta de nadie y sin internet. Los
+pasos completos están en [`DESPLIEGUE.md`](../DESPLIEGUE.md), y el servidor trae sus propias
+13 pruebas en `servidor/prueba.mjs`.
+
+---
+
 ## Lo que falta
 
 | Qué | Por qué no está |
 |---|---|
-| **El motor de servidor** | necesita permiso de la escuela. El hueco ya está escrito |
+| **La cerradura del servidor** | el servidor ya existe, pero hoy cualquiera que sepa la dirección puede escribir. Alcanza para la demostración y para el wifi de una escuela; para producción hace falta que el rol viva allá |
 | **Pago desde la app** | Carlos lo marcó como "más adelante". El ticket ya contempla "pagado en línea" |
 | **La notificación en iPhone** | sólo llega si la app se instala en la pantalla de inicio. **Falta probarlo en un iPhone real antes de prometerlo** |
 | **Las fotos de ESTA cooperativa** | el menú ya trae fotos reales con licencia libre; las suyas las sube desde su pantalla |

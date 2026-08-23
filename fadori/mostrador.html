@@ -145,6 +145,22 @@
     <h2>Sugerencias y errores</h2>
     <div class="pila" id="listaSugerencias"></div>
 
+    <h2>El servidor</h2>
+    <p class="sub">Sin servidor, <b>cada aparato tiene su propia copia</b>: sirve para
+      probar y para operar desde esta tablet, no para que doscientos teléfonos se
+      pongan de acuerdo. Con servidor, el turno 7 es el turno 7 en todos.</p>
+    <div id="estadoServidor" style="margin-bottom:12px"></div>
+    <label for="aServidor">La dirección que salió al publicarlo</label>
+    <input id="aServidor" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+      placeholder="https://fadori.algo.workers.dev">
+    <div class="chips" style="margin-top:10px">
+      <button class="btn" id="bProbar" type="button">Probar y guardar</button>
+      <button class="btn" id="bSinServidor" type="button">Quitar el servidor</button>
+    </div>
+    <p class="sub" style="margin-top:10px">Se prueba <b>antes</b> de guardarse. Y si mañana
+      se cae el servidor, la app no se detiene: cada aparato sigue trabajando solo y se
+      ponen de acuerdo cuando vuelva.</p>
+
     <h2>La semana</h2>
     <p class="sub">Lo que se ofrece cada día. Se arma solo con los días que le
       marcaste a cada platillo — aquí no se captura nada, sólo se revisa.</p>
@@ -827,6 +843,18 @@ function pintarAjustes(){
   $('#aAnticipados').checked = !!c.aceptaAnticipados;
   $('#aPasador').value = c.pasador || '1234';
 
+  /* F48 · el servidor: qué dice y cómo se ve */
+  (function(){
+    const e = F.estadoSync();
+    const color = e.modo === 'enlinea' ? 'var(--verde)'
+                : e.modo === 'sinred'  ? 'var(--ambar)' : 'var(--tenue)';
+    $('#aServidor').value = F.servidor() || '';
+    $('#estadoServidor').innerHTML =
+      '<div class="renglon" style="border-left:5px solid '+color+'">'+
+        '<span class="q" style="flex:1"><b>'+esc(e.texto)+'</b>'+
+        (e.api ? '<small>'+esc(e.api)+'</small>' : '')+'</span></div>';
+  })();
+
   /* F50 · la semana de un vistazo. Es la pantalla que contesta "¿qué día hay
      pizza?" sin que nadie tenga que abrir platillo por platillo. */
   const hoyN = F.diaDeHoy();
@@ -1043,6 +1071,37 @@ $('#rEntrar').addEventListener('click', () => {
 });
 $('#rPase').addEventListener('keydown', (e) => { if(e.key === 'Enter') $('#rEntrar').click(); });
 $('#bSalirMostrador').addEventListener('click', () => { F.cerrarMostrador(); abrirReja(); });
+/* F48 · pegar la dirección del servidor. Se PRUEBA antes de guardarse:
+   pegar una URL mal escrita y no enterarte hasta el recreo es exactamente lo
+   que no queremos que pase en una cooperativa con cien niños formados. */
+$('#bProbar').addEventListener('click', async () => {
+  const u = $('#aServidor').value.trim();
+  if(!u) return aviso('Pega la dirección primero.', 'malo');
+  $('#bProbar').disabled = true;
+  $('#bProbar').textContent = 'Probando…';
+  try{
+    await F.probarServidor(u);
+    F.ponerServidor(u);
+    F.elegirMotor();
+    aviso('Servidor conectado. Recargando…', 'bueno');
+    setTimeout(() => location.reload(), 900);
+  }catch(err){
+    aviso('No se pudo: ' + err.message, 'malo');
+  }finally{
+    $('#bProbar').disabled = false;
+    $('#bProbar').textContent = 'Probar y guardar';
+  }
+});
+$('#bSinServidor').addEventListener('click', () => {
+  preguntar({
+    titulo: '¿Quitar el servidor?',
+    texto: 'Esta tablet vuelve a trabajar sola con su propia copia. Lo que ya está '+
+           'guardado aquí no se pierde, pero deja de sincronizarse con los demás aparatos.',
+    si: 'Sí, quitarlo',
+    hecho: () => { F.ponerServidor(''); F.elegirMotor(); location.reload(); },
+  });
+});
+
 $('#aPasador').addEventListener('change', () => {
   try{ F.cambiarPasador($('#aPasador').value); aviso('Pasador cambiado.', 'bueno'); }
   catch(e){ aviso(e.message, 'malo'); pintarAjustes(); }
@@ -1126,6 +1185,98 @@ verVista('despachar');
        salio === 'probando');
     ok('y un confirm o un prompt colados nunca hacen la acción a ciegas',
        r === false && q === null);
+  })();
+
+  /* F48 · el motor de servidor. Aquí NO se prueba la red —eso se prueba con
+     el servidor corriendo, aparte— sino las reglas que deciden qué se manda y
+     qué se mezcla, que es donde se pierden los pedidos si están mal. */
+  (function(){
+    const M = F.sync;
+
+    ok('sin dirección guardada, el motor es el local y nada sale del aparato',
+       !F.servidor() && F.motor() === 'local');
+
+    ok('una dirección sin https no se acepta',
+       (function(){ try{ F.ponerServidor('fadori.workers.dev'); return false; }
+                    catch(e){ return true; } })());
+
+    /* la huella: sólo sale lo que de verdad cambió */
+    const d = F.estado();
+    M._huellas = null; M.estampar(d);        /* foto inicial */
+
+    ok('un aparato que NUNCA sincronizó tiene todo pendiente, y así debe ser',
+       M.porMandar(d).cuantos > 0);
+
+    /* se finge una sincronización buena: de aquí en adelante sólo debe salir
+       lo que se toque después */
+    const yaVisto = {};
+    const pend = M.porMandar(d).cambios;
+    ['productos','alumnos','pedidos','conteos','eventos'].forEach(c => {
+      yaVisto[c] = (pend[c] || []).reduce((m, x) => Math.max(m, x.t || 0), 0);
+    });
+    if(pend.config) yaVisto.config = pend.config.t || 0;
+    M._guardarVisto(yaVisto);
+    ok('recién sincronizado ya no hay nada que mandar', M.porMandar(d).cuantos === 0);
+
+    d.productos[0].precio += 100;
+    M.estampar(d);
+    ok('tocar un platillo lo pone en la lista de lo que hay que mandar',
+       M.porMandar(d).cambios.productos.some(x => x.id === d.productos[0].id));
+    ok('y NO arrastra los otros dieciséis que no se tocaron',
+       M.porMandar(d).cambios.productos.length === 1);
+    d.productos[0].precio -= 100; M.estampar(d);
+
+    /* el reloj de las estampas SIEMPRE avanza, aunque dos cambios caigan en
+       el mismo milisegundo. Sin eso, el segundo se queda en el aparato. */
+    const a1 = d.productos[0].t;
+    d.productos[1].precio += 1; M.estampar(d);
+    ok('dos cambios seguidos nunca comparten la hora',
+       d.productos[1].t > a1);
+    d.productos[1].precio -= 1; M.estampar(d);
+    M._guardarVisto({});
+
+    /* la mezcla: gana el más reciente, por registro */
+    const p0 = d.productos[0];
+    const suyo = Object.assign({}, p0, { nombre:'Del servidor', t:(p0.t||0) + 10000 });
+    M.mezclar({ productos:[suyo] });
+    ok('lo que llega del servidor más nuevo SÍ pisa lo de aquí',
+       F.producto(p0.id).nombre === 'Del servidor');
+
+    const viejo = Object.assign({}, F.producto(p0.id), { nombre:'Viejo', t:1 });
+    M.mezclar({ productos:[viejo] });
+    ok('pero lo que llega más VIEJO no pisa nada',
+       F.producto(p0.id).nombre === 'Del servidor');
+
+    /* un pedido que sólo existe allá tiene que aparecer aquí */
+    const ajeno = { id:'o-ajeno', t:Date.now(), creado:Date.now(), turno:99,
+                    folio:'ZZZZ', nombre:'De otro aparato', renglones:[], total:0,
+                    estado:'en_cola', pagado:0 };
+    M.mezclar({ pedidos:[ajeno] });
+    ok('un pedido hecho en OTRO aparato aparece aquí, no se pierde',
+       !!F.pedido('o-ajeno'));
+
+    /* Lo que llega de afuera no se cree a ciegas. Un pedido sin renglones
+       —de una versión vieja, de una prueba, de otro aparato con otra versión—
+       tumbaba la pantalla ENTERA del mostrador. Pasó de verdad. */
+    M.mezclar({ pedidos:[{ id:'o-basura', t:Date.now() }] });
+    const basura = F.pedido('o-basura');
+    ok('un pedido malformado del servidor no tumba el mostrador',
+       !!basura && Array.isArray(basura.renglones));
+    ok('y se le rellena lo que le falta en vez de dejarlo a medias',
+       basura.estado === 'en_cola' && typeof basura.total === 'number' &&
+       typeof basura.folio === 'string');
+    ok('la fila lo puede ordenar sin reventar',
+       (function(){ try{ F.colaOrdenada(); return true; }catch(e){ return false; } })());
+
+    /* y el estado se puede leer para enseñarlo en pantalla */
+    ok('el estado de la sincronía se puede consultar para la pantalla',
+       ['local','enlinea','sinred'].indexOf(F.estadoSync().modo) >= 0);
+
+    /* limpiar lo que ensució la prueba */
+    F.estado().pedidos = F.estado().pedidos.filter(x =>
+      x.id !== 'o-ajeno' && x.id !== 'o-basura');
+    F.producto(p0.id).nombre = 'Guisado del día con arroz';
+    F.guardar();
   })();
 
   /* F50 · los platillos por día de la semana */

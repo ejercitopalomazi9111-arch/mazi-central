@@ -411,6 +411,7 @@ const MotorServidor = {
   _oyentes: [],
   _ws: null,
   _empujando: false,
+  _ultimoT: 0,
   _otraVez: false,
   _reintento: 2000,
   ultimoIntento: 0,
@@ -443,7 +444,13 @@ const MotorServidor = {
       this._huellaConfig = huellaDe(d.config || {});
       return;                        /* la primera vez sólo se toma la foto */
     }
-    const t = ahora();
+    /* Un reloj que SIEMPRE avanza. `ahora()` tiene resolución de milisegundo,
+       así que dos cambios en el mismo milisegundo saldrían con la misma hora;
+       si esa hora es justo la marca del último empujón, el segundo cambio
+       nunca se manda y ese pedido se queda en el aparato para siempre. Un
+       milisegundo de más no le hace daño a nadie; un pedido perdido sí. */
+    const t = Math.max(ahora(), (this._ultimoT || 0) + 1);
+    this._ultimoT = t;
     for(const c of CAJONES){
       registrosDe(d, c).forEach(r => {
         const h = huellaDe(r);
@@ -529,6 +536,32 @@ const MotorServidor = {
     }
   },
 
+  /* Lo que llega de afuera no se cree a ciegas. Un pedido sin renglones
+     —de una versión vieja, de una prueba, de un aparato con otra versión de
+     la app— tumbaba la pantalla entera del mostrador con las manos ocupadas.
+     Que llegue basura es cuestión de tiempo; que tumbe el mostrador, no. */
+  sanear(cajon, r){
+    const c = Object.assign({}, r);
+    delete c._r;
+    if(cajon === 'pedidos'){
+      if(!Array.isArray(c.renglones)) c.renglones = [];
+      c.renglones = c.renglones.filter(x => x && x.prod);
+      if(typeof c.estado !== 'string' || ESTADOS.indexOf(c.estado) < 0) c.estado = 'en_cola';
+      if(typeof c.total !== 'number') c.total = totalDe(c.renglones);
+      if(typeof c.creado !== 'number') c.creado = ahora();
+      if(typeof c.pagado !== 'number') c.pagado = 0;
+      if(typeof c.folio !== 'string') c.folio = codigo(4);
+      if(typeof c.nombre !== 'string') c.nombre = 'Sin nombre';
+    }
+    if(cajon === 'productos'){
+      if(!Array.isArray(c.alergenos)) c.alergenos = [];
+      if(!Array.isArray(c.dias)) c.dias = [];
+      if(typeof c.precio !== 'number') c.precio = 0;
+      if(typeof c.nombre !== 'string') c.nombre = '—';
+    }
+    return c;
+  },
+
   /* ── Meter lo que llegó, sin pisar lo que es más nuevo aquí ─────────── */
   mezclar(cambios){
     const d = MotorLocal.leer(); if(!d) return false;
@@ -541,14 +574,14 @@ const MotorServidor = {
         if(c === 'alumnos'){
           const v = d.alumnos[r.id];
           if(!v || (r.t || 0) > (v.t || 0)){
-            const copia = Object.assign({}, r); delete copia.id; delete copia._r;
+            const copia = this.sanear('alumnos', r); delete copia.id;
             d.alumnos[r.id] = copia; tocado = true;
           }
           continue;
         }
         if(!Array.isArray(d[c])) d[c] = [];
         const i = d[c].findIndex(x => x && x.id === r.id);
-        const copia = Object.assign({}, r); delete copia._r;
+        const copia = this.sanear(c, r);
         if(i < 0){ d[c].push(copia); tocado = true; }
         else if((r.t || 0) > (d[c][i].t || 0)){ d[c][i] = copia; tocado = true; }
       }
@@ -568,6 +601,41 @@ const MotorServidor = {
       D = d;
     }
     return tocado;
+  },
+
+  /* Para que la cooperativa vea de un vistazo si esto está hablando con el
+     servidor o no. Sin este dato, "no me aparece el pedido" no se puede
+     diagnosticar: no se sabe si falló la red o falló la app. */
+  estado(){
+    const api = direccionServidor();
+    if(!api) return { modo:'local', texto:'Sin servidor · cada aparato por su cuenta' };
+    if(this.enLinea) return { modo:'enlinea', texto:'Conectado al servidor', api };
+    return {
+      modo:'sinred',
+      texto: this.pendientes
+        ? 'Sin conexión · '+this.pendientes+' cambios esperando'
+        : 'Sin conexión · se reintenta solo',
+      api,
+    };
+  },
+
+  /* probar la dirección ANTES de guardarla: pegar una URL mal escrita y no
+     enterarte hasta el recreo es exactamente lo que no queremos */
+  async probar(url){
+    const u = String(url || '').trim().replace(/\/+$/, '');
+    if(!u) throw new Error('Falta la dirección.');
+    if(!/^https?:\/\//.test(u)) throw new Error('Tiene que empezar con https://');
+    let r;
+    try{ r = await fetch(u + '/api/salud', { method:'GET' }); }
+    catch(e){
+      /* "Failed to fetch" no le dice nada a la señora de la cooperativa */
+      throw new Error('No se pudo llegar a esa dirección. Revisa que esté bien escrita '+
+                      'y que esta tablet tenga internet.');
+    }
+    if(!r.ok) throw new Error('Esa dirección contestó ' + r.status + '. Revísala.');
+    const j = await r.json().catch(() => null);
+    if(!j || j.quien !== 'fadori') throw new Error('Ahí hay algo, pero no es Fadori.');
+    return true;
   },
 
   casa(){
@@ -864,14 +932,14 @@ const ESTADOS = ['en_cola','preparando','listo','entregado','cancelado','apartad
 const VIVOS = ['en_cola','preparando','listo'];
 
 function totalDe(renglones){
-  return renglones.reduce((s, r) => {
+  return (renglones || []).reduce((s, r) => {
     const p = producto(r.prod);
     return s + (p ? p.precio * r.cant : 0);
   }, 0);
 }
 
 function segundosDe(renglones){
-  return renglones.reduce((s, r) => {
+  return (renglones || []).reduce((s, r) => {
     const p = producto(r.prod);
     return s + (p ? (segReales(p.id) || p.segPrep || 40) * r.cant : 0);
   }, 0);
@@ -1709,7 +1777,8 @@ const FADORI = {
   cargar, guardar, estado, _migrar: migrar, avisaCon,
   DIAS, tocaHoy, menuDelDia, nombreDelDia, cuandoTocaTexto, diaDeHoy,
   tema, ponerTema, esOscuro, aplicarTema, verTurno,
-  servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
+  servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor,
+  estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, yo, entrarComo, salir, aceptarTerminos,
   /* menú */
