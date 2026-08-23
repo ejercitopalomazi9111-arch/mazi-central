@@ -13,6 +13,10 @@
   <div class="barra-fila">
     <span class="marca">Fadori<b>.</b></span>
     <span class="crece"></span>
+    <div class="reloj-recreo" id="relojRecreo">
+      <span class="reloj-que" id="relojQue">de recreo</span>
+      <b class="reloj-n" id="relojN">—</b>
+    </div>
     <span class="quiensoy"><b id="cuantosEnCola">0</b>&nbsp;en la fila</span>
   </div>
   <div class="barra-fila" style="margin-top:8px">
@@ -20,7 +24,23 @@
   </div>
 </header>
 
-<main class="envoltura">
+<section class="reja" id="reja" hidden>
+  <div class="reja-caja">
+    <h1>Pantalla de la cooperativa</h1>
+    <p class="sub">Esta pantalla despacha pedidos, cobra y ve los fiados.
+      Escribe el pasador para entrar.</p>
+    <label for="rPase">Pasador</label>
+    <input id="rPase" type="tel" inputmode="numeric" maxlength="8" autocomplete="off"
+      style="font-size:28px; letter-spacing:.5em; text-align:center; font-weight:900">
+    <button class="btn fuerte ancho" id="rEntrar" type="button" style="margin-top:14px">Entrar</button>
+    <p class="aviso" style="margin-top:16px"><b>Esto es un pasador, no una cerradura.</b>
+      Detiene al alumno curioso, no a alguien que se lo proponga: el número vive en
+      este mismo aparato. La cerradura de verdad llega con el servidor.</p>
+    <a class="btn ancho" href="index.html" style="margin-top:12px">← Ir a la app del alumno</a>
+  </div>
+</section>
+
+<main class="envoltura" id="cuerpoMostrador">
 
   <div class="chips" id="pestanas" style="margin:14px 0 4px">
     <button class="chip" type="button" data-vista="despachar" aria-pressed="true">Despachar</button>
@@ -105,6 +125,15 @@
 
     <h2>Sugerencias y errores</h2>
     <div class="pila" id="listaSugerencias"></div>
+
+    <h2>El pasador de esta pantalla</h2>
+    <label for="aPasador">De 4 a 8 números</label>
+    <input id="aPasador" type="tel" inputmode="numeric" maxlength="8" autocomplete="off">
+    <p class="aviso" style="margin-top:8px"><b>Es un pasador, no una cerradura.</b>
+      Detiene al alumno curioso; no a quien sepa abrir las herramientas del navegador.
+      La cerradura de verdad llega con el servidor.</p>
+    <button class="btn ancho" id="bSalirMostrador" type="button" style="margin-top:12px">
+      Cerrar esta pantalla</button>
 
     <h2>Cierre de ciclo escolar</h2>
     <p class="sub">Borra los alumnos, los pedidos y los adeudos. El menú se queda.
@@ -413,7 +442,9 @@ function abrirProducto(pid){
       (p && typeof p.existencias === 'number' ? p.existencias : '')+'">'+
     '<label for="hFoto">La foto</label>'+
     '<input id="hFoto" type="file" accept="image/*">'+
-    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="" style="margin-top:10px; max-height:120px; border-radius:12px">' : '')+
+    '<div id="hVista" style="margin-top:10px">'+
+      (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="" style="max-height:140px; border-radius:12px">' : '')+
+    '</div>'+
     '<label style="display:flex; align-items:center; gap:10px; margin-top:16px">'+
       '<input type="checkbox" id="hDest" style="width:26px; min-height:26px; flex:0 0 auto"'+
       (p&&p.destacado?' checked':'')+'>'+
@@ -426,6 +457,10 @@ function abrirProducto(pid){
   $('#velo').hidden = false;
 
   let fotoNueva = null;
+  /* La foto se achica en el navegador y eso TARDA. Antes, si le dabas a
+     Guardar antes de que terminara, la foto se perdía en silencio y el
+     alumno no la veía nunca. Ahora se ve la vista previa y el botón espera. */
+  let fotoOcupada = false;
   let alerg = p ? (p.alergenos || []).slice() : [];
   $$('#hAlerg [data-al]').forEach(b => b.addEventListener('click', () => {
     const id = b.dataset.al, i = alerg.indexOf(id);
@@ -434,7 +469,15 @@ function abrirProducto(pid){
   }));
   $('#hFoto').addEventListener('change', (e) => {
     const f = e.target.files[0]; if(!f) return;
-    achicar(f, 640, (dataUrl) => { fotoNueva = dataUrl; });
+    fotoOcupada = true;
+    $('#hVista').innerHTML = '<p class="sub" style="margin:0">Preparando la foto…</p>';
+    $('#hGuardar').disabled = true;
+    achicar(f, 640, (dataUrl) => {
+      fotoNueva = dataUrl; fotoOcupada = false;
+      $('#hVista').innerHTML = '<img src="'+dataUrl+'" alt="" '+
+        'style="max-height:140px; border-radius:12px">';
+      $('#hGuardar').disabled = false;
+    });
   });
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   const borrar = $('#hBorrar');
@@ -455,9 +498,22 @@ function abrirProducto(pid){
       desc: $('#hDesc').value.trim(),
       alergenos: alerg,
     };
+    if(fotoOcupada) return alert('Espera dos segundos, la foto todavía se está preparando.');
     if(fotoNueva) datos.foto = fotoNueva;
     if(!datos.nombre) return alert('Le falta el nombre.');
-    F.guardarProducto(datos);
+    try{
+      F.guardarProducto(datos);
+    }catch(err){
+      return alert('No se pudo guardar: '+err.message);
+    }
+    /* Comprobar que de VERDAD quedó. Si la memoria del aparato se llenó,
+       antes se perdía en silencio y nadie se enteraba hasta que un alumno
+       decía "no veo la foto". */
+    const guardado = F.producto(datos.id || (F.productos(false).slice(-1)[0]||{}).id);
+    if(datos.foto && guardado && !guardado.foto){
+      return alert('La foto no cupo en la memoria de este aparato. '+
+        'Quita alguna foto vieja del menú y vuelve a intentar.');
+    }
     $('#velo').hidden = true; pintar();
   });
 }
@@ -548,6 +604,7 @@ function pintarAjustes(){
   $('#aAdelantos').value = c.topeAdelantos;
   $('#aLimite').value = (c.limiteDeuda/100);
   $('#aAnticipados').checked = !!c.aceptaAnticipados;
+  $('#aPasador').value = c.pasador || '1234';
 
   const sug = F.sugerencias();
   $('#listaSugerencias').innerHTML = sug.length ? sug.slice(0,20).map(s =>
@@ -647,8 +704,48 @@ function pintar(){
   $('#cuantosEnCola').textContent = F.colaOrdenada().length;
 }
 
+/* el reloj del recreo, que aquí sirve para saber cuándo dejar de aceptar */
+function pintarReloj(){
+  const c = F.cuentaRegresiva(), caja = $('#relojRecreo');
+  const n = $('#relojN'), q = $('#relojQue');
+  if(c.estado === 'antes'){
+    q.textContent = 'para el recreo'; n.textContent = F.relojCorto(c.segundos);
+    caja.className = 'reloj-recreo antes';
+  } else if(c.estado === 'durante'){
+    q.textContent = 'de recreo'; n.textContent = F.relojCorto(c.segundos);
+    caja.className = 'reloj-recreo' +
+      (c.segundos <= 120 ? ' urge' : c.segundos <= 300 ? ' apura' : '');
+  } else {
+    q.textContent = 'el recreo'; n.textContent = 'terminó';
+    caja.className = 'reloj-recreo fuera';
+  }
+}
+setInterval(pintarReloj, 1000);
+pintarReloj();
+
 F.alCambiar(() => { F.cargar(); pintar(); });
 setInterval(() => { F.cargar(); pintar(); }, 4000);
+/* ── la reja ── */
+function abrirReja(){
+  const dentro = F.pasoElPasador();
+  $('#reja').hidden = dentro;
+  $('#cuerpoMostrador').hidden = !dentro;
+  document.querySelector('header.barra').hidden = !dentro;
+  if(!dentro) setTimeout(() => $('#rPase').focus(), 100);
+  return dentro;
+}
+$('#rEntrar').addEventListener('click', () => {
+  if(F.pasadorOk($('#rPase').value)){ abrirReja(); pintar(); }
+  else { $('#rPase').value = ''; alert('Ese no es el pasador.'); }
+});
+$('#rPase').addEventListener('keydown', (e) => { if(e.key === 'Enter') $('#rEntrar').click(); });
+$('#bSalirMostrador').addEventListener('click', () => { F.cerrarMostrador(); abrirReja(); });
+$('#aPasador').addEventListener('change', () => {
+  try{ F.cambiarPasador($('#aPasador').value); alert('Pasador cambiado.'); }
+  catch(e){ alert(e.message); pintarAjustes(); }
+});
+
+abrirReja();
 verVista('despachar');
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -696,6 +793,18 @@ verVista('despachar');
 
   /* F25 · la lista de papel incluye lo que está en la fila */
   ok('hay lista para despachar en papel', typeof abrirPapel === 'function');
+  /* el pasador: sirve de pasador, y se dice que no es más que eso */
+  (function(){
+    F.cerrarMostrador();
+    ok('sin pasador no se entra', F.pasoElPasador() === false);
+    ok('el pasador equivocado no abre', F.pasadorOk('0000') === false);
+    ok('el pasador bueno sí abre', F.pasadorOk(F.estado().config.pasador) === true);
+    ok('se puede cambiar', F.cambiarPasador('5678') === '5678' &&
+       F.pasadorOk('5678') === true);
+    ok('y no acepta cualquier cosa como pasador',
+       (function(){ try{ F.cambiarPasador('ab'); return false; }catch(e){ return true; } })());
+    F.cambiarPasador('1234');
+  })();
   /* la nota del alumno tiene que LLEGAR y VERSE, o es un campo decorativo */
   (function(){
     const conAl = F.productos(false).find(x => (x.alergenos||[]).length);

@@ -30,6 +30,8 @@ const CONFIG_BASE = {
   despachadores: 1,           /* F23 */
   aceptaAnticipados: true,    /* F13 */
   nombreLugar: 'Cooperativa',
+  /* El pasador de la pantalla de la cooperativa. Se cambia desde Ajustes. */
+  pasador: '1234',
 };
 
 /* Las categorías mandan el orden del menú y los colores de las fichas.
@@ -48,39 +50,43 @@ const CATEGORIAS = [
 
 /* El menú de arranque. La cooperativa lo cambia entero desde su pantalla:
    esto es para que la app sirva desde el primer minuto, no una lista fija.
+   Las fotos son REALES y con licencia libre, bajadas de Wikimedia Commons:
+   el crédito de cada una está en fotos/CREDITOS.md. Nada de dibujitos de
+   relleno — regla de la casa: si la imagen ya existe, se busca; no se
+   inventa. La cooperativa las reemplaza por las suyas cuando quiera.
    Los segundos de preparación son la SEMILLA del estimado; en cuanto haya
    despachos reales, F40 los reemplaza con lo medido. */
 const MENU_BASE = [
   { nombre:'Guisado del día con arroz', cat:'fuerte', precio:4500, seg:95,
-    desc:'El guisado que toque hoy, con arroz y su tortilla.', al:['picante'] },
+    desc:'El guisado que toque hoy, con arroz y su tortilla.', al:['picante'] , foto:'fotos/guisado.jpg'},
   { nombre:'Pozole', cat:'fuerte', precio:5000, seg:80,
-    desc:'Caldo de maíz cacahuazintle con su lechuga, rábano y limón.', al:['picante'] },
+    desc:'Caldo de maíz cacahuazintle con su lechuga, rábano y limón.', al:['picante'] , foto:'fotos/pozole.jpg'},
   { nombre:'Chilaquiles', cat:'fuerte', precio:4000, seg:75,
-    desc:'Totopos bañados en salsa, con crema y queso.', al:['lacteos','picante'] },
+    desc:'Totopos bañados en salsa, con crema y queso.', al:['lacteos','picante'] , foto:'fotos/chilaquiles.jpg'},
   { nombre:'Torta de jamón', cat:'torta', precio:3000, seg:45,
-    desc:'Telera con jamón, queso, aguacate y jitomate.', al:['gluten','lacteos'] },
+    desc:'Telera con jamón, queso, aguacate y jitomate.', al:['gluten','lacteos'] , foto:'fotos/torta-jamon.jpg'},
   { nombre:'Torta de milanesa', cat:'torta', precio:3800, seg:60,
-    desc:'Milanesa empanizada en telera, con todo.', al:['gluten','huevo','lacteos'] },
+    desc:'Milanesa empanizada en telera, con todo.', al:['gluten','huevo','lacteos'] , foto:'fotos/torta-milanesa.jpg'},
   { nombre:'Sándwich', cat:'torta', precio:2500, seg:25,
-    desc:'Pan de caja con jamón y queso.', al:['gluten','lacteos'] },
+    desc:'Pan de caja con jamón y queso.', al:['gluten','lacteos'] , foto:'fotos/sandwich.jpg'},
   { nombre:'Quesadilla', cat:'antojo', precio:2000, seg:50,
-    desc:'Tortilla de maíz con queso, a la plancha.', al:['lacteos'] },
+    desc:'Tortilla de maíz con queso, a la plancha.', al:['lacteos'] , foto:'fotos/quesadilla.jpg'},
   { nombre:'Tacos dorados', cat:'antojo', precio:2500, seg:55,
-    desc:'Tres tacos dorados con lechuga, crema y queso.', al:['lacteos'] },
+    desc:'Tres tacos dorados con lechuga, crema y queso.', al:['lacteos'] , foto:'fotos/tacos-dorados.jpg'},
   { nombre:'Tamal', cat:'antojo', precio:2000, seg:20,
-    desc:'De masa, al vapor.', al:[] },
+    desc:'De masa, al vapor.', al:[] , foto:'fotos/tamal.jpg'},
   { nombre:'Agua del día', cat:'bebida', precio:1200, seg:12,
-    desc:'El sabor que toque hoy.', al:[] },
-  { nombre:'Refresco', cat:'bebida', precio:1800, seg:8, desc:'De lata.', al:[] },
-  { nombre:'Jugo', cat:'bebida', precio:1500, seg:8, desc:'De caja.', al:[] },
-  { nombre:'Gelatina', cat:'dulce', precio:1200, seg:10, desc:'Con leche.', al:['lacteos'] },
+    desc:'El sabor que toque hoy.', al:[] , foto:'fotos/agua.jpg'},
+  { nombre:'Refresco', cat:'bebida', precio:1800, seg:8, desc:'De lata.', al:[] , foto:'fotos/refresco.jpg'},
+  { nombre:'Jugo', cat:'bebida', precio:1500, seg:8, desc:'De caja.', al:[] , foto:'fotos/jugo.jpg'},
+  { nombre:'Gelatina', cat:'dulce', precio:1200, seg:10, desc:'Con leche.', al:['lacteos'] , foto:'fotos/gelatina.jpg'},
   { nombre:'Galletas', cat:'dulce', precio:1000, seg:6, desc:'Paquete chico.',
-    al:['gluten','lacteos','huevo'] },
+    al:['gluten','lacteos','huevo'] , foto:'fotos/galletas.jpg'},
   { nombre:'Pastelito', cat:'dulce', precio:1500, seg:6, desc:'Empaquetado.',
-    al:['gluten','lacteos','huevo','soya'] },
-  { nombre:'Papas', cat:'botana', precio:1500, seg:6, desc:'Bolsa chica.', al:[] },
+    al:['gluten','lacteos','huevo','soya'] , foto:'fotos/pastelito.jpg'},
+  { nombre:'Papas', cat:'botana', precio:1500, seg:6, desc:'Bolsa chica.', al:[] , foto:'fotos/papas.jpg'},
   { nombre:'Cacahuates', cat:'botana', precio:1200, seg:6, desc:'Japoneses.',
-    al:['cacahuate','gluten','soya'] },
+    al:['cacahuate','gluten','soya'] , foto:'fotos/cacahuates.jpg'},
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -186,7 +192,15 @@ const MotorLocal = {
          el medidor duele menos que perder un pedido. */
       d.eventos = d.eventos.slice(-400);
       try{ localStorage.setItem(LLAVE, JSON.stringify(d)); }
-      catch(e2){ console.warn('Fadori: no cupo en la memoria del aparato'); }
+      catch(e2){
+        /* Y si aun así no cupo, esto NO se traga en silencio. Antes se
+           perdía una foto y nadie se enteraba hasta que un alumno decía
+           "no la veo". Un guardado que falla callado es lo peor que puede
+           hacer un programa con los datos de alguien. */
+        console.error('Fadori: no cupo en la memoria del aparato', e2);
+        this._avisar();
+        throw new Error('la memoria de este aparato ya está llena');
+      }
     }
     this._avisar();
   },
@@ -238,7 +252,7 @@ function siembra(){
     segPrep: p.seg,
     desc: p.desc || '',
     alergenos: p.al || [],
-    foto: '',
+    foto: p.foto || '',
     disponible: true,
     destacado: i === 0,          /* F02 · el plato fuerte del día va primero */
     existencias: null,           /* null = sin control de inventario */
@@ -273,6 +287,36 @@ function estado(){ return D || cargar(); }
 function anotar(tipo, datos){
   D.eventos.push(Object.assign({ t: ahora(), tipo }, datos || {}));
   if(D.eventos.length > 5000) D.eventos = D.eventos.slice(-4000);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4-bis · EL PASADOR DE LA COOPERATIVA
+   ----------------------------------------------------------------------
+   ⚠️ Esto es un PASADOR, no una cerradura, y hay que decirlo con todas sus
+   letras: el número vive en el mismo aparato que lo comprueba, así que
+   cualquiera que sepa abrir las herramientas del navegador lo ve. Sirve
+   para lo que de verdad pasa en una escuela —que un alumno abra la
+   pantalla de la cooperativa de curioso y le mueva— y NO sirve contra
+   alguien que se lo proponga. La cerradura de verdad llega con el
+   servidor, donde el rol vive en la base de datos y no en el teléfono.
+   ═════════════════════════════════════════════════════════════════════════ */
+const LLAVE_PASE = 'fadori_pase_mostrador';
+
+function pasadorOk(intento){
+  const d = estado();
+  const bueno = String(d.config.pasador || CONFIG_BASE.pasador);
+  if(String(intento || '').trim() !== bueno) return false;
+  try{ sessionStorage.setItem(LLAVE_PASE, '1'); }catch(e){}
+  return true;
+}
+function pasoElPasador(){
+  try{ return sessionStorage.getItem(LLAVE_PASE) === '1'; }catch(e){ return true; }
+}
+function cerrarMostrador(){ try{ sessionStorage.removeItem(LLAVE_PASE); }catch(e){} }
+function cambiarPasador(nuevo){
+  const n = String(nuevo || '').trim();
+  if(!/^\d{4,8}$/.test(n)) throw new Error('El pasador va de 4 a 8 números.');
+  estado().config.pasador = n; guardar(); return n;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -562,6 +606,24 @@ function enRecreo(){
    las siete de la mañana es un anticipado, no un "ya no alcanzas". Devolver
    cero ahí hacía que la app le dijera "hoy no alcanzas" a alguien que pidió
    antes de que empezara el recreo, que es exactamente al revés. */
+/* La cuenta regresiva que se ve SIEMPRE. Devuelve en qué momento del día
+   estamos y cuántos segundos faltan para lo que toca — que empiece el recreo
+   si todavía no, o que se acabe si ya empezó. */
+function cuentaRegresiva(){
+  const w = ventanaRecreo(), t = ahora();
+  if(t < w.inicio) return { estado:'antes',   segundos: Math.round((w.inicio - t)/1000) };
+  if(t < w.fin)    return { estado:'durante', segundos: Math.round((w.fin - t)/1000) };
+  return { estado:'despues', segundos:0 };
+}
+
+/* mm:ss cuando falta poco, "12 min" cuando falta harto. Nadie necesita los
+   segundos a veinte minutos del final, y a los dos minutos sí. */
+function relojCorto(seg){
+  if(seg >= 600) return Math.round(seg/60) + ' min';
+  const m = Math.floor(seg/60), s2 = seg % 60;
+  return m + ':' + String(s2).padStart(2,'0');
+}
+
 function quedanSegundosDeRecreo(){
   const d = estado(), w = ventanaRecreo(), t = ahora();
   if(t < w.inicio || t >= w.fin) return (d.config.recreoMinutos || 30) * 60;
@@ -904,6 +966,17 @@ function opcionesPara(centavos, cuantas){
   rico(porCat('dulce')).forEach(d => rico(porCat('bebida')).forEach(b =>
     mete('Sólo algo dulce', [d,b])));
 
+  /* Con poco dinero no hay combinaciones, y antes eso significaba mandar al
+     alumno al diablo con un "no te alcanza para nada" — aunque sí alcanzara
+     para una cosa. Si no salió ningún combo, se ofrecen las piezas sueltas
+     que sí caben, de la más cara a la más barata: con veinte pesos lo que
+     quieres saber es qué es lo mejor que puedes comprar, no que no puedes. */
+  if(!combos.length){
+    /* una sola cosa: el título es el nombre del platillo, no seis tarjetas
+       que dicen todas "Alcanza para" */
+    rico(disp.filter(p => p.precio <= tope)).forEach(p => mete(p.nombre, [p]));
+  }
+
   /* lo que más aprovecha el dinero primero, y con variedad de encabezado */
   const vistos = {};
   return combos
@@ -982,6 +1055,8 @@ function sugerencias(){
    ═════════════════════════════════════════════════════════════════════════ */
 const FADORI = {
   /* utilería */
+  /* los billetes y monedas con los que de verdad llega un alumno */
+  ALGO_DE_DINERO: [10, 15, 20, 30, 50, 100],
   pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
   misAlergias, guardarAlergias, choquesDe,
   /* datos */
@@ -995,11 +1070,14 @@ const FADORI = {
   cancelar, apartarParaManana, voyEnCamino,
   /* la fila */
   colaOrdenada, lugarDe, veredicto, quedanSegundosDeRecreo, enRecreo, ventanaRecreo,
+  cuentaRegresiva, relojCorto,
   ritmoDespacho, segReales,
   /* mostrador */
   tomar, renglonListo, marcarListo, entregar, ajustarDeuda, abonar,
   /* medición */
   contarFila, resumenDelDia, curvaDeFila, csvDePedidos, csvDeConteos, bajarCSV, cerrarCiclo,
+  /* el pasador */
+  pasadorOk, pasoElPasador, cerrarMostrador, cambiarPasador,
   /* cerebro */
   opcionesPara, sugerenciasPara, misNumeros, sugerir, sugerencias,
   /* para las pruebas */

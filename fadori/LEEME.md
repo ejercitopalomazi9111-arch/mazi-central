@@ -10,7 +10,7 @@
 
 | Archivo | Quién la usa | Cómo se ve |
 |---|---|---|
-| [`index.html`](index.html) | **el alumno**, en su teléfono | oscura, fotos grandes |
+| [`index.html`](index.html) | **el alumno**, en su teléfono | crema y café, fotos grandes |
 | [`mostrador.html`](mostrador.html) | **la cooperativa**, en una tablet | clara, alto contraste, botones enormes |
 | [`pantalla.html`](pantalla.html) | **colgada junto a la cooperativa** | números gigantes, nada más |
 | [`medidor.html`](medidor.html) | **Carlos**, para el reporte STEAM | cifras, gráfica y CSV |
@@ -113,11 +113,15 @@ Cada pantalla trae las suyas y **corren solas al cargar**. Si algo se rompe, sal
 antes de que lo vea un alumno.
 
 ```
-index.html      19 pruebas    registro, fila, tope, deuda, resumen, presupuesto
-mostrador.html   9 pruebas    pedido de a pie, dos despachadores, agotar, cobrar, corte
+index.html      51 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste
+mostrador.html  19 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador
 pantalla.html    4 pruebas    que el número salga y que el NOMBRE nunca salga
 medidor.html    10 pruebas    quién alcanzó, la curva, el contador, el CSV
 ```
+
+Tres de las de `index.html` **miden el contraste en pantalla** y fallan por debajo de 4.5. Están
+ahí porque un chip activo llegó a quedar en 1.18 —letra blanca sobre tinte claro, invisible— y
+ninguna prueba lo cazó: sólo se vio mirando una captura.
 
 Las de `pantalla.html` son las más importantes de todas y son las más chiquitas: comprueban que
 un nombre de alumno **no** aparece en una pantalla pública.
@@ -131,7 +135,41 @@ un nombre de alumno **no** aparece en una pantalla pública.
 | **El motor de servidor** | necesita permiso de la escuela. El hueco ya está escrito |
 | **Pago desde la app** | Carlos lo marcó como "más adelante". El ticket ya contempla "pagado en línea" |
 | **La notificación en iPhone** | sólo llega si la app se instala en la pantalla de inicio. **Falta probarlo en un iPhone real antes de prometerlo** |
-| **Fotos de verdad del menú** | las sube la cooperativa desde su pantalla. Mientras, cada categoría tiene su color y su ícono |
+| **Las fotos de ESTA cooperativa** | el menú ya trae fotos reales con licencia libre; las suyas las sube desde su pantalla |
+| **La cerradura de la pantalla de la cooperativa** | hoy hay un pasador, que no es lo mismo. Ver abajo |
+
+---
+
+## Cómo entrar como cooperativa
+
+La pantalla del mostrador es una dirección más: **`/fadori/mostrador.html`** — desde la app del
+alumno, hasta abajo en "Lo mío", o directo por la URL.
+
+Pide un **pasador**. El de arranque es **`1234`** y se cambia en *Ajustes → El pasador de esta
+pantalla*.
+
+> ⚠️ **Es un pasador, no una cerradura, y hay que decirlo con todas sus letras.** El número vive
+> en el mismo aparato que lo comprueba, así que cualquiera que sepa abrir las herramientas del
+> navegador lo ve. Sirve para lo que de verdad pasa en una escuela —que un alumno abra la
+> pantalla de la cooperativa de curioso y le mueva a un pedido o a un fiado— y **no** sirve
+> contra alguien que se lo proponga.
+>
+> La cerradura de verdad llega con el motor de servidor, donde el rol vive en la base de datos y
+> no en el teléfono. Está anotado como lo primero que se conecta ese día.
+
+El medidor (`/fadori/medidor.html`) no pide pasador: no deja tocar nada, sólo mira.
+
+---
+
+## Las fotos del menú
+
+Son **reales y con licencia libre**, bajadas de Wikimedia Commons y recortadas cuadradas a
+560 px. El crédito y la licencia de cada una está en [`fotos/CREDITOS.md`](fotos/CREDITOS.md) —
+varias son CC BY-SA, que obliga a dar crédito, así que ese archivo no es cortesía: es lo que
+cumple con la licencia.
+
+**Son el arranque, no una lista fija.** En cuanto la cooperativa suba las fotos de su comida de
+verdad desde su pantalla, éstas desaparecen y el menú se ve el doble de bien.
 
 ---
 
