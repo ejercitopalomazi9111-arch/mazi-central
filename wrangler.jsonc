@@ -1,0 +1,26 @@
+{
+  // ── El SITIO de Grupo Mazi en Cloudflare ────────────────────────────────
+  // Sin este archivo, Cloudflare adivina: detectó "Static", puso el
+  // directorio en "." y trató de subir el repo ENTERO como si fuera público
+  // —incluido `.git`, que pesa 55 MB— y reventó con "Asset too large".
+  //
+  // Adivinar bien una vez no es una configuración. Esto lo deja escrito.
+  //
+  // El servidor de Fadori NO se despliega desde aquí: vive en `servidor/` con
+  // su propio wrangler.toml y se publica aparte. Son dos cosas distintas y
+  // mezclarlas es como se termina publicando el código del servidor.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mazi-central",
+  "compatibility_date": "2026-08-20",
+  "observability": { "enabled": true },
+  // Se arma la carpeta ANTES de subir. No se sirve la raíz del repo: servir
+  // la raíz publica todo lo que hay en el repo, y ahí viven `.claude/`, el
+  // CLAUDE.md con cosas del negocio y el código del servidor. La lista de lo
+  // que sí va está en `build.mjs`, a la vista.
+  "build": { "command": "node build.mjs" },
+  "assets": {
+    "directory": "dist",
+    // una URL que no existe devuelve 404 de verdad, no la portada disfrazada
+    "not_found_handling": "none"
+  }
+}

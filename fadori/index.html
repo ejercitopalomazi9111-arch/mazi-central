@@ -191,7 +191,8 @@
     <button class="btn ancho" id="bSalir" type="button" style="margin-top:24px">Salir de esta cuenta</button>
     <p class="sub" style="margin-top:22px; font-size:12px">
       Fadori · Proyecto Sin Filas · Instituto Rembrandt de Querétaro ·
-      construido por <a href="../">Grupo Mazi</a></p>
+      construido por <a href="../">Grupo Mazi</a> ·
+      <a href="fotos/CREDITOS.md">créditos de las fotos</a></p>
     <div class="saltos" style="margin-top:10px; opacity:.6">
       <a href="mostrador.html">Mostrador</a>
       <a href="pantalla.html">Pantalla</a>
@@ -1831,6 +1832,13 @@ arrancar();
        JSON.stringify(F.estado().alumnos).indexOf('tema') < 0);
     F.ponerTema(antes);
   })();
+
+  /* Los créditos de las fotos. Varias son CC BY-SA y esa licencia obliga a
+     dar crédito: si el enlace desaparece, estamos usando trabajo de otros sin
+     cumplir con lo único que pidieron a cambio. Por eso es una prueba y no
+     una nota en un documento. */
+  ok('la app enlaza los créditos de las fotos, que es lo que cumple la licencia',
+     !!document.querySelector('a[href="fotos/CREDITOS.md"]'));
 
   /* F47 · el ícono de la pantalla de inicio. Si el manifiesto o el ícono de
      Apple no están enganchados, "Agregar a inicio" pone una captura de la
