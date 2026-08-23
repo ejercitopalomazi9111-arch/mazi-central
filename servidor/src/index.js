@@ -239,8 +239,28 @@ function puerta(origen, env){
   };
   /* Sin comodín a propósito: se responde el origen SÓLO si está en la lista.
      Un "*" aquí le abriría la puerta a cualquier página del mundo. */
-  if(origen && lista.indexOf(origen) >= 0) h['Access-Control-Allow-Origin'] = origen;
+  if(origen && (lista.indexOf(origen) >= 0 || esVistaPrevia(origen, env)))
+    h['Access-Control-Allow-Origin'] = origen;
   return h;
+}
+
+/* Las vistas previas de Cloudflare · una por rama y una por commit.
+   Cada despliegue de prueba sale en una dirección distinta y cambiante
+   —`d2ace14a-mazi-central…`, `claude-mi-rama-mazi-central…`— así que
+   ponerlas a mano en la lista es imposible.
+
+   Lo que SÍ se puede es aceptar sólo las que cuelgan del subdominio del
+   proyecto. Nadie más que Cloudflare puede crear un nombre ahí, así que esto
+   no es un comodín al mundo: es "mis propias vistas previas y nada más".
+   Y sirve para lo que importa: poder probar un cambio con el servidor de
+   verdad ANTES de publicarlo a los alumnos. */
+function esVistaPrevia(origen, env){
+  const base = String(env.VISTAS_PREVIAS || '').trim();
+  if(!base) return false;
+  let host;
+  try{ const u = new URL(origen); if(u.protocol !== 'https:') return false; host = u.host; }
+  catch(e){ return false; }
+  return host.endsWith('-' + base) || host === base;
 }
 
 function json(o, estado, cabezas){

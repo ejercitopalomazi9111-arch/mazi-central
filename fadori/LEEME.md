@@ -170,7 +170,7 @@ Todo lo demás se mezcla registro por registro, y gana el más reciente de cada 
 **Se enciende pegando la dirección** en el mostrador, en *Ajustes → El servidor*. Sin dirección
 pegada, la app funciona exactamente como siempre: local, sin cuenta de nadie y sin internet. Los
 pasos completos están en [`DESPLIEGUE.md`](../DESPLIEGUE.md), y el servidor trae sus propias
-13 pruebas en `servidor/prueba.mjs`.
+18 pruebas en `servidor/prueba.mjs`.
 
 ---
 
