@@ -709,6 +709,174 @@ function cancelar(oid, quien){
   return p;
 }
 
+/* ── SE ACABÓ · F45 ───────────────────────────────────────────────────
+   Lo preguntó Carlos y no había respuesta: *"si se acaba un producto y varios
+   en la fila lo pidieron, no pasa nada"*. Y era cierto — agotar sacaba el
+   platillo del menú, pero los pedidos que ya lo traían se quedaban ahí,
+   esperando algo que nunca iba a salir, y el alumno se enteraba hasta llegar
+   al mostrador.
+
+   Las tres reglas que ordenan esto:
+
+   1 · **El renglón no se borra, se marca.** `sinSurtir` deja la huella. Si se
+       borrara, nadie podría contar cuántas veces se acabó algo con gente
+       formada, que es EL dato que le sirve a la cooperativa para comprar mejor
+       la próxima semana.
+   2 · **El total baja solo.** Nadie paga lo que no le dieron, y no depende de
+       que alguien se acuerde de restarlo.
+   3 · **El lugar en la fila se respeta.** La culpa fue nuestra, no del alumno.
+       Si cambia lo que se acabó por otra cosa, conserva su turno y su hora de
+       llegada. Mandarlo al final por un error de la cooperativa es castigarlo
+       por algo que no hizo. */
+
+/* el corazón: le pega a todos los pedidos vivos que traigan ese producto */
+function avisarFalta(pid){
+  const d = estado(), falta = producto(pid);
+  if(!falta) return { producto:'', tocados:[], cancelados:[] };
+  const tocados = [], cancelados = [];
+
+  d.pedidos.forEach(p => {
+    if(VIVOS.indexOf(p.estado) < 0) return;
+    let cambio = false;
+    p.renglones.forEach(r => {
+      /* lo que YA está servido no se toca: eso ya salió de la cocina */
+      if(r.prod === pid && !r.sinSurtir && !r.listo){ r.sinSurtir = ahora(); cambio = true; }
+    });
+    if(!cambio) return;
+
+    p.total = totalDe(p.renglones.filter(r => !r.sinSurtir));
+    const nombres = (p.avisoFalta && p.avisoFalta.nombres || []).slice();
+    if(nombres.indexOf(falta.nombre) < 0) nombres.push(falta.nombre);
+    p.avisoFalta = { nombres, t: ahora() };
+    tocados.push(p.id);
+
+    /* la huella del faltante se deja SIEMPRE, muera o no el pedido. Si sólo
+       se anotara cuando sobrevive, el corte del día dejaría fuera justo al
+       que peor le fue: el que se quedó sin nada. */
+    anotar('sin_surtir', { pedido:p.id, prod:pid });
+
+    if(!p.renglones.some(r => !r.sinSurtir)){
+      /* no le quedó nada que darle. Se cancela, pero marcado como culpa
+         nuestra: así el alumno lo puede revivir cambiando el platillo. */
+      p.estado = 'cancelado';
+      p.cancelado = ahora();
+      p.porFalta = true;
+      anotar('cancelado', { pedido:p.id, quien:'mostrador', por:'agotado', prod:pid });
+      cancelados.push(p.id);
+    }
+  });
+
+  guardar();
+  return { producto: falta.nombre, tocados, cancelados };
+}
+
+/* lo que toca la señora: "se acabó". Saca del menú Y avisa a la fila. */
+function seAcabo(pid){
+  marcarDisponible(pid, false);
+  return avisarFalta(pid);
+}
+
+/* a quiénes les pega, ANTES de tocar nada. Sirve para preguntar bien. */
+function aQuienLePega(pid){
+  return estado().pedidos.filter(p => VIVOS.indexOf(p.estado) >= 0 &&
+    p.renglones.some(r => r.prod === pid && !r.sinSurtir && !r.listo));
+}
+
+/* F45b · qué le ofrezco a cambio.
+   El orden importa y no es capricho: primero de su mismo tipo —quien quería
+   una torta quiere comer, no beber—, después que NO cueste más que lo que ya
+   iba a gastar, y nunca algo que choque con sus alergias. Ofrecerle algo más
+   caro a un niño con veinte pesos es burlarse de él. */
+function enLugarDe(pid, cuantas){
+  const falta = producto(pid) || { precio: 0, cat: '' };
+  const mias = misAlergias();
+  const libres = productos(true).filter(p =>
+    p.id !== pid && !(p.alergenos || []).some(a => mias.indexOf(a) >= 0));
+
+  /* Nada más caro de lo que ya iba a pagar. No es una preferencia: es que
+     el niño trae UNA moneda contada, y ofrecerle algo de treinta y ocho
+     cuando venía por uno de treinta es burlarse de él con una pantalla. */
+  const alcanza = libres.filter(p => p.precio <= falta.precio);
+  const lista = alcanza.length ? alcanza
+    : libres.slice().sort((a,b) => a.precio - b.precio).slice(0, 1);
+
+  const puntua = (p) => {
+    let n = 0;
+    if(p.cat === falta.cat) n += 1000;              /* mismo tipo de hambre */
+    n -= (falta.precio - p.precio) / 100;           /* lo más parecido de precio */
+    return n;
+  };
+  return lista.sort((a,b) => puntua(b) - puntua(a)).slice(0, cuantas || 3);
+}
+
+/* F45c · el alumno cambia lo que no hubo por otra cosa.
+   Conserva turno y hora de llegada — ver la regla 3. Y si el pedido se había
+   cancelado porque no le quedaba nada, revive: sólo el que se cayó por falta
+   nuestra, nunca el que el alumno canceló por su cuenta. */
+function cambiarRenglon(oid, i, nuevoPid){
+  const p = pedido(oid); if(!p || !p.renglones[i]) return null;
+  const nuevo = producto(nuevoPid);
+  if(!nuevo || !nuevo.disponible || !existenciasOk(nuevo))
+    throw new Error('De eso tampoco hay ya.');
+  const r = p.renglones[i];
+  const antes = r.prod;
+  r.prod = nuevoPid; r.sinSurtir = 0; r.listo = false;
+
+  if(p.estado === 'cancelado' && p.porFalta){
+    p.estado = 'en_cola'; p.cancelado = 0; p.porFalta = false;
+    anotar('revivido', { pedido:oid });
+  }
+  p.total = totalDe(p.renglones.filter(x => !x.sinSurtir));
+  if(!p.renglones.some(x => x.sinSurtir)) p.avisoFalta = null;
+  anotar('cambio_por_falta', { pedido:oid, de:antes, a:nuevoPid });
+  guardar();
+  return p;
+}
+
+/* "mejor déjalo así" · se quita el renglón y el pedido sigue con lo demás */
+function renunciarA(oid, i){
+  const p = pedido(oid); if(!p || !p.renglones[i]) return null;
+  p.renglones.splice(i, 1);
+  p.total = totalDe(p.renglones.filter(x => !x.sinSurtir));
+  if(!p.renglones.some(x => x.sinSurtir)) p.avisoFalta = null;
+  if(!p.renglones.length){
+    p.estado = 'cancelado'; p.cancelado = ahora(); p.porFalta = false;
+    anotar('cancelado', { pedido:oid, quien:'alumno', por:'agotado' });
+  }
+  anotar('renuncia', { pedido:oid });
+  guardar();
+  return p;
+}
+
+/* F45d · "a ÉSTE no se lo puedo dar" · un solo renglón de un solo pedido.
+   Distinto de agotar: aquí no se acabó para todos, se acabó para él —se cayó
+   al piso, salió mal, era el último—. El menú no se toca. */
+function noSePuede(oid, i){
+  const p = pedido(oid); if(!p || !p.renglones[i]) return null;
+  const r = p.renglones[i];
+  if(r.sinSurtir) return p;
+  r.sinSurtir = ahora();
+  const prod = producto(r.prod) || { nombre:'eso' };
+  p.total = totalDe(p.renglones.filter(x => !x.sinSurtir));
+  const nombres = (p.avisoFalta && p.avisoFalta.nombres || []).slice();
+  if(nombres.indexOf(prod.nombre) < 0) nombres.push(prod.nombre);
+  p.avisoFalta = { nombres, t: ahora() };
+  anotar('sin_surtir', { pedido:oid, prod:r.prod });
+  if(!p.renglones.some(x => !x.sinSurtir)){
+    p.estado = 'cancelado'; p.cancelado = ahora(); p.porFalta = true;
+    anotar('cancelado', { pedido:oid, quien:'mostrador', por:'agotado', prod:r.prod });
+  }
+  guardar();
+  return p;
+}
+
+/* los renglones que están esperando que el alumno decida */
+function faltantesDe(p){
+  if(!p) return [];
+  return p.renglones.map((r,i) => r.sinSurtir ? { i, r,
+    prod: producto(r.prod) || { nombre:'—', precio:0 } } : null).filter(Boolean);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    10 · EL MOSTRADOR
    ═════════════════════════════════════════════════════════════════════════ */
@@ -738,7 +906,14 @@ function renglonListo(oid, i, si){
     const prod = producto(r.prod);
     if(prod && typeof prod.existencias === 'number'){
       prod.existencias = Math.max(0, prod.existencias - r.cant);
-      if(prod.existencias === 0) prod.disponible = false;
+      /* si con éste se acabó, la fila se entera sola: es el caso que más
+         pasa de verdad —el inventario llega a cero surtiendo un pedido— y
+         nadie va a acordarse de tocar "se acabó" con las manos ocupadas */
+      if(prod.existencias === 0 && prod.disponible){
+        prod.disponible = false;
+        anotar('producto_agotado', { prod: prod.id });
+        avisarFalta(prod.id);
+      }
     }
   }
   guardar();
@@ -836,6 +1011,17 @@ function resumenDelDia(desde){
   const agotados = d.eventos.filter(e => e.tipo === 'producto_agotado' && e.t >= t0)
     .map(e => ({ nombre:(producto(e.prod)||{}).nombre || '—', hora:new Date(e.t) }));
 
+  /* F45 · lo que se quedó a deber la cooperativa: cuántas veces hubo alguien
+     formado pidiendo algo que ya no había. ESTE es el número que sirve para
+     comprar mejor la semana que entra — "se acabó el pozole" no dice nada;
+     "se acabó el pozole con nueve formados" dice exactamente cuánto faltó. */
+  const faltantes = {};
+  d.eventos.filter(e => e.tipo === 'sin_surtir' && e.t >= t0).forEach(e => {
+    const k = e.prod;
+    if(!faltantes[k]) faltantes[k] = { prod:k, nombre:(producto(k)||{}).nombre||'—', pedidos:0 };
+    faltantes[k].pedidos++;
+  });
+
   return {
     pedidos: hoy.length,
     entregados: entregados.length,
@@ -850,6 +1036,8 @@ function resumenDelDia(desde){
     esperaPromedio: prom(esperas),
     ventas: Object.values(porProducto).sort((a,b) => b.unidades - a.unidades),
     agotados,
+    /* cuántos pedidos se quedaron sin algo, y de qué */
+    seQuedaronSin: Object.values(faltantes).sort((a,b) => b.pedidos - a.pedidos),
     filaAhora: colaOrdenada().length,
   };
 }
@@ -1102,6 +1290,7 @@ const FADORI = {
   /* pedidos */
   pedir, pedido, pedidosDe, pedidosDeHoy, puedePedir, totalDe, segundosDe,
   cancelar, apartarParaManana, voyEnCamino,
+  seAcabo, avisarFalta, aQuienLePega, noSePuede, enLugarDe, cambiarRenglon, renunciarA, faltantesDe,
   /* la fila */
   colaOrdenada, lugarDe, veredicto, quedanSegundosDeRecreo, enRecreo, ventanaRecreo,
   cuentaRegresiva, relojCorto,

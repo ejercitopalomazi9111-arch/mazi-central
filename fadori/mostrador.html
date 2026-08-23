@@ -245,14 +245,24 @@ function fichaActual(p){
     '<div class="pila" style="margin-top:14px">'+
       p.renglones.map((r,i) => {
         const prod = F.producto(r.prod) || { nombre:'—', precio:0 };
-        return '<button class="linea-prod'+(r.listo?' ya':'')+'" type="button" '+
+        if(r.sinSurtir) return '<div class="linea-prod nohay">'+
+          mini(prod)+
+          '<span class="cant">'+r.cant+'×</span>'+
+          '<span style="flex:1; min-width:0"><s>'+esc(prod.nombre)+'</s>'+
+            '<span class="para">no se pudo · ya se le avisó</span></span>'+
+        '</div>';
+        return '<div class="par-linea">'+
+          '<button class="linea-prod'+(r.listo?' ya':'')+'" type="button" '+
           'data-renglon="'+p.id+':'+i+'">'+
           mini(prod)+
           '<span class="cant">'+r.cant+'×</span>'+
           '<span style="flex:1; min-width:0">'+esc(prod.nombre)+
             (r.para ? '<span class="para">para '+esc(r.para)+'</span>' : '')+'</span>'+
           '<span>'+(r.listo ? '✓' : '')+'</span>'+
-        '</button>';
+        '</button>'+
+        (r.listo ? '' : '<button class="btn-nohay" type="button" data-nohay="'+p.id+':'+i+'" '+
+          'title="No se lo puedo dar" aria-label="No se lo puedo dar">no hay</button>')+
+        '</div>';
       }).join('')+
     '</div>'+
     '<div class="chips" style="margin-top:16px">'+
@@ -388,6 +398,98 @@ function abrirPapel(){
   $('#velo').hidden = false;
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   $('#hImprimir').addEventListener('click', () => window.print());
+}
+
+/* "A ÉSTE no se lo puedo dar" · F45d
+   Distinto de agotar: aquí no se acabó para todos, se acabó para él. Y sí
+   pregunta, porque el botón está a un centímetro de "ya lo tengo" y
+   equivocarse le cancela media comida a un niño. */
+function abrirNoHay(dato){
+  const [oid, i] = dato.split(':');
+  const p = F.pedido(oid); if(!p || !p.renglones[+i]) return;
+  const prod = F.producto(p.renglones[+i].prod) || { nombre:'eso' };
+  const solo = p.renglones.filter(r => !r.sinSurtir).length === 1;
+
+  $('#hojitaT').textContent = 'No le puedes dar ' + prod.nombre;
+  $('#hojitaC').innerHTML =
+    '<div class="aviso" style="border-left-color:var(--ambar)">'+
+      'Turno <b>'+p.turno+'</b> · '+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+
+    '</div>'+
+    '<p class="sub" style="margin-top:14px">Le sale en su teléfono que no hubo, '+
+      'se le baja del total y escoge otra cosa. '+
+      (solo
+        ? '<b>Es lo único que traía</b>, así que su pedido se cae — pero vuelve con '+
+          'el mismo turno si escoge otra cosa.'
+        : 'Se lleva lo demás igual.')+
+      ' <b>No pierde su lugar en la fila.</b></p>'+
+    '<p class="sub" style="margin-top:10px">Esto NO saca el platillo del menú. '+
+      'Si ya se acabó para todos, eso se marca en <b>El menú</b>.</p>'+
+    '<div class="chips" style="margin-top:16px">'+
+      '<button class="btn fuerte" id="hNoHaySi" type="button" style="flex:1">'+
+        'Sí, no se lo puedo dar</button>'+
+      '<button class="btn" id="hCerrar" type="button">Mejor no</button>'+
+    '</div>';
+  $('#velo').hidden = false;
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#hNoHaySi').addEventListener('click', () => {
+    F.noSePuede(oid, +i);
+    $('#velo').hidden = true; pintar();
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SE ACABÓ · F45
+   Agotar no es sólo quitarlo del menú: es que los que YA lo pidieron dejen
+   de esperar algo que no va a salir. Por eso esto pregunta antes — y sólo
+   pregunta cuando de verdad hay alguien formado con eso en su pedido.
+   ═════════════════════════════════════════════════════════════════════ */
+function abrirSeAcabo(pid){
+  const p = F.producto(pid);
+  const pegados = F.aQuienLePega(pid);
+
+  if(!pegados.length){          /* nadie lo pidió: sin ceremonia */
+    F.marcarDisponible(pid, false);
+    return pintar();
+  }
+
+  const moririan = pegados.filter(o =>
+    !o.renglones.some(r => r.prod !== pid && !r.sinSurtir && !r.listo));
+
+  $('#hojitaT').textContent = 'Se acabó ' + p.nombre;
+  $('#hojitaC').innerHTML =
+    '<div class="aviso" style="border-left-color:var(--ambar)">'+
+      '<b>'+pegados.length+(pegados.length===1?' pedido en la fila lo trae':' pedidos en la fila lo traen')+'.</b> '+
+      (moririan.length
+        ? 'A '+(moririan.length===1?'uno':moririan.length)+' no le queda nada más, así que ese pedido se cae.'
+        : 'A todos les queda algo más, así que sus pedidos siguen.')+
+    '</div>'+
+    '<div class="pila" style="margin-top:14px">'+
+      pegados.map(o => '<div class="renglon">'+
+        '<span class="n" style="font-size:22px">'+o.turno+'</span>'+
+        '<span class="q"><b>'+esc(o.nombre)+'</b>'+(o.grupo?' · '+esc(o.grupo):'')+
+          '<small>'+esc(resumenCorto(o))+'</small></span></div>').join('')+
+    '</div>'+
+    '<p class="sub" style="margin-top:14px">Si le picas a avisar, a cada uno le sale en su '+
+      'teléfono que se acabó, se le baja del total y se le ofrece qué llevarse en su lugar. '+
+      '<b>Nadie pierde su lugar en la fila</b> — la falla fue de aquí, no de ellos.</p>'+
+    '<div class="chips" style="margin-top:16px">'+
+      '<button class="btn fuerte" id="hAvisar" type="button" style="flex:1">'+
+        'Quitarlo y avisarles</button>'+
+      '<button class="btn" id="hSolo" type="button">Sólo quitarlo del menú</button>'+
+      '<button class="btn" id="hCerrar" type="button">Mejor no</button>'+
+    '</div>';
+  $('#velo').hidden = false;
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#hAvisar').addEventListener('click', () => {
+    F.seAcabo(pid);
+    $('#velo').hidden = true; pintar();
+  });
+  /* "sólo quitarlo" existe porque a veces la señora YA les dijo en persona y
+     avisarles otra vez por el teléfono nada más confunde */
+  $('#hSolo').addEventListener('click', () => {
+    F.marcarDisponible(pid, false);
+    $('#velo').hidden = true; pintar();
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -649,10 +751,15 @@ document.addEventListener('click', (e) => {
   if((b = t('data-cobrar'))) return abrirCobro(b.dataset.cobrar);
   if((b = t('data-agotar'))){
     const p = F.producto(b.dataset.agotar);
-    F.marcarDisponible(p.id, !(p.disponible && F.existenciasOk(p)));
-    if(p.disponible && typeof p.existencias === 'number' && p.existencias === 0) p.existencias = null;
-    F.guardar(); return pintar();
+    const agotado = !(p.disponible && F.existenciasOk(p));
+    if(agotado){                       /* reponer: nunca pregunta nada */
+      F.marcarDisponible(p.id, true);
+      if(typeof p.existencias === 'number' && p.existencias === 0) p.existencias = null;
+      F.guardar(); return pintar();
+    }
+    return abrirSeAcabo(p.id);
   }
+  if((b = t('data-nohay'))) return abrirNoHay(b.dataset.nohay);
   if((b = t('data-editar'))) return abrirProducto(b.dataset.editar);
   if((b = t('data-abonar'))){
     const cod = b.dataset.abonar, a = F.estado().alumnos[cod];
@@ -681,7 +788,13 @@ $('#bCerrar').addEventListener('click', () => {
     'Despachados: '+r.entregados+'\n'+
     'Se quedaron en la fila: '+r.noAlcanzaron+'\n'+
     'Segundos por pedido: '+(r.despachoPromedio||'—')+'\n'+
-    'Se agotó primero: '+(r.agotados[0] ? r.agotados[0].nombre : 'nada'));
+    'Se agotó primero: '+(r.agotados[0] ? r.agotados[0].nombre : 'nada')+'\n\n'+
+    (r.seQuedaronSin.length
+      ? 'Faltó para gente ya formada:\n'+
+        r.seQuedaronSin.map(x => '  · '+x.nombre+' — '+x.pedidos+
+          (x.pedidos===1?' pedido':' pedidos')).join('\n')+
+        '\n\nEso es lo que hay que comprar de más mañana.'
+      : 'No le faltó nada a nadie que ya estuviera formado.'));
 });
 $('#bCiclo').addEventListener('click', () => {
   if(!confirm('Esto borra TODOS los alumnos, pedidos y adeudos. El menú se queda.\n\n¿Seguro?')) return;
@@ -780,6 +893,68 @@ verVista('despachar');
   ok('lo agotado desaparece del menú del alumno',
      !F.productos(true).some(x => x.id === uno.id));
   F.marcarDisponible(uno.id, true);
+
+  /* El corte tiene que decir de QUÉ faltó y a cuántos, no sólo "se agotó" */
+  (function(){
+    const tres = F.productos(true)[2];
+    if(!tres) return;
+    const q = F.pedir(null, [{prod:tres.id, cant:1}], { origen:'mostrador', nombre:'Corte45' });
+    F.seAcabo(tres.id);
+    const r = F.resumenDelDia();
+    const fila = r.seQuedaronSin.find(x => x.prod === tres.id);
+    ok('el corte del día dice de qué faltó y a cuánta gente formada',
+       !!fila && fila.pedidos >= 1);
+    F.cancelar(q.id, 'prueba'); F.marcarDisponible(tres.id, true);
+  })();
+
+  /* La miniatura del menú. Va aquí porque estuvo rota en vivo y ninguna
+     prueba la cazó: el estilo colgaba de .linea-prod, y en la lista del menú
+     —que es un .renglon— la foto salía a su tamaño real, 560 px. */
+  (function(){
+    pintarMenu();
+    const m = document.querySelector('#listaMenu .mini');
+    if(!m) return;
+    /* la vista puede estar detrás del pasador o en otra pestaña: para medir
+       hay que enseñarla un instante y dejarla como estaba */
+    const caja = document.querySelector('#v-menu'), cuerpo = document.querySelector('#cuerpoMostrador');
+    const cOculta = caja && caja.hidden, uOculto = cuerpo && cuerpo.hidden;
+    if(caja) caja.hidden = false; if(cuerpo) cuerpo.hidden = false;
+    const r = m.getBoundingClientRect();
+    if(caja) caja.hidden = cOculta; if(cuerpo) cuerpo.hidden = uOculto;
+    ok('la foto del menú es una miniatura, no una foto de 560 px',
+       r.width > 0 && r.width <= 80 && r.height <= 80);
+  })();
+
+  /* F45 · "se acabó" desde el mostrador. Lo que se prueba aquí es la
+     diferencia entre las dos salidas: avisar mueve la fila, sólo quitar no. */
+  (function(){
+    const dos = F.productos(true).filter(x => x.id !== uno.id)[0];
+    if(!dos) return;
+    const q = F.pedir(null, [{prod:dos.id, cant:1}], { origen:'mostrador', nombre:'Prueba45' });
+
+    ok('el mostrador puede ver a quién le pega ANTES de agotar',
+       F.aQuienLePega(dos.id).some(x => x.id === q.id));
+
+    /* "sólo quitarlo del menú": la señora ya les dijo en persona */
+    F.marcarDisponible(dos.id, false);
+    ok('sólo quitarlo del menú no le mueve nada a los que ya pidieron',
+       !F.pedido(q.id).renglones[0].sinSurtir && !F.pedido(q.id).avisoFalta);
+
+    /* avisar sí */
+    F.seAcabo(dos.id);
+    ok('avisarles sí les marca el renglón y les avisa',
+       !!F.pedido(q.id).renglones[0].sinSurtir && !!F.pedido(q.id).avisoFalta);
+
+    /* "a ÉSTE no se lo puedo dar": un solo renglón, sin tocar el menú */
+    F.marcarDisponible(dos.id, true);
+    const q2 = F.pedir(null, [{prod:dos.id, cant:1}], { origen:'mostrador', nombre:'Prueba45b' });
+    F.noSePuede(q2.id, 0);
+    ok('"no se lo puedo dar" marca ese pedido y NO saca el platillo del menú',
+       !!F.pedido(q2.id).renglones[0].sinSurtir &&
+       F.productos(true).some(x => x.id === dos.id));
+    ok('y si no le quedaba nada más, ese pedido se cae marcado como culpa nuestra',
+       F.pedido(q2.id).estado === 'cancelado' && F.pedido(q2.id).porFalta === true);
+  })();
 
   /* F26/F27 · cobrar de menos deja deuda, y el cambio NO se abona */
   F.marcarListo(p.id);

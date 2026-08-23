@@ -269,6 +269,49 @@ convive con la virtual. Es como se captura la línea base sin depender de la mem
 
 ---
 
+# Bloque 8 · Cuando se acaba algo · *el hueco que encontró Carlos*
+
+### F45 · **(+)** Se acabó, y la fila ya lo había pedido
+
+Salió de una pregunta suya, que es como salen casi todos los huecos de verdad:
+
+> *"Y si se acaba un producto y varios en la fila lo pidieron, no pasa nada. No hay manera de
+> eliminar un pedido que al final no entregaste, ni les llega el aviso de que su pedido no se
+> puede realizar, y se les dan sugerencias."*
+
+Y era exacto. "Se acabó" sacaba el platillo del menú **para los que todavía no habían pedido**, y a
+los que ya estaban formados no les pasaba absolutamente nada: seguían esperando algo que no iba a
+salir y se enteraban al llegar al mostrador, que es justo el viaje que esta app existe para
+ahorrarse.
+
+**Lo que hace ahora, en las dos direcciones:**
+
+| Del lado de la cooperativa | Qué pasa |
+|---|---|
+| Toca **"Se acabó"** | Antes de quitarlo le dice **cuántos pedidos de la fila lo traen y a quiénes**, y le da a escoger: *quitarlo y avisarles* o *sólo quitarlo* (para cuando ya les dijo en persona) |
+| Toca **"no hay"** en un renglón | Es "a ÉSTE no se lo puedo dar" — se cayó, salió mal, era el último. **No toca el menú**, sólo ese pedido |
+| Se le acaba el **inventario** surtiendo | La fila se entera **sola**. Nadie va a acordarse de tocar un botón con las manos ocupadas |
+| Cierra el día | El corte dice **de qué faltó y a cuánta gente formada**. "Se acabó el pozole" no dice nada; "se acabó el pozole con nueve formados" dice cuánto comprar mañana |
+
+| Del lado del alumno | Qué ve |
+|---|---|
+| Le vibra y le sale un punto rojo | En "Mi turno", aunque esté en otra pantalla |
+| Un cartel pegado a su turno | **"Se acabó la torta. Perdón, la falla fue de aquí."** |
+| El total ya bajado | *No pagas lo que no te dieron* |
+| Tres cosas que sí hay | Del mismo tipo, y **nunca más caras** de lo que ya iba a pagar |
+| Un botón para dejarlo así | Se lleva lo demás, o cancela si no le quedaba nada |
+
+**Las tres reglas que sostienen todo esto:**
+
+1. **El renglón no se borra, se marca.** Si se borrara, nadie podría contar cuántas veces se acabó
+   algo con gente formada — y ése es el dato que sirve para comprar mejor.
+2. **El total baja solo.** Nadie paga lo que no le dieron, y no depende de que alguien se acuerde.
+3. **El lugar en la fila se respeta.** Si el alumno cambia lo que se acabó por otra cosa, conserva
+   su turno y su hora de llegada; si su pedido se había caído entero, **revive con el mismo
+   número**. Mandarlo al final por un error de la cooperativa es castigarlo por algo que no hizo.
+
+---
+
 ## Las cinco reglas de construcción que aplican a todo
 
 1. **Teléfono primero.** Objetivos táctiles de **44px mínimo**, texto de 16px o más en los campos.
