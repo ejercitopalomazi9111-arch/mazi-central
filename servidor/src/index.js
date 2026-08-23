@@ -129,9 +129,17 @@ export class Cooperativa {
            `turno: null`, y sin esta línea se le daría un turno nuevo. Un
            pedido con dos turnos es un niño formado dos veces. */
         if(cajon === 'pedidos'){
+          const teniaTurno = copia.turno !== null && copia.turno !== undefined;
           if(viejo && viejo.turno) copia.turno = viejo.turno;
-          else if(copia.turno === null || copia.turno === undefined)
-            copia.turno = this.siguienteTurno(copia.creado);
+          else if(!teniaTurno) copia.turno = this.siguienteTurno(copia.creado);
+
+          /* Y si el turno lo puso el servidor, el servidor TOCÓ el registro:
+             le adelanta la hora. Sin esto, el pedido vuelve al teléfono con
+             la misma hora con la que salió, el aparato lo descarta por no ser
+             más nuevo, y el alumno se queda mirando "…" para siempre en vez
+             de su número. Quien cambia un registro le pone la hora: no es una
+             formalidad, es lo que hace que el cambio llegue de regreso. */
+          if(!teniaTurno && copia.turno) copia.t = Math.max((Number(r.t) || 0) + 1, Date.now());
         }
 
         copia._r = nuevo;
