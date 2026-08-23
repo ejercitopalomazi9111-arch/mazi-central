@@ -121,7 +121,7 @@
       <button class="btn chico" id="bEnCamino" type="button">🚶 Voy en camino</button>
       <button class="btn chico" id="bNoPuedo" type="button">Hoy no puedo ir</button>
     </div>
-    <button class="btn ancho" id="bVerMenu" type="button" style="margin-top:16px">Volver al menú</button>
+    <button class="btn ancho" id="bVerMenu" type="button" style="margin-top:16px">Pedir algo más</button>
   </section>
 
   <!-- ══════════ LO MÍO · F41 ══════════ -->
@@ -148,17 +148,31 @@
 
 </main>
 
-<!-- la barra del pedido -->
+<!-- ══════════ LO DE ABAJO ══════════
+  Todo lo que se usa seguido vive aquí, al alcance del pulgar. Arriba sólo
+  queda lo que se lee, no lo que se toca: la esquina superior derecha de un
+  teléfono es el punto más incómodo que hay, y ahí NO puede vivir la
+  navegación de una app que se usa de pie y con una mano. -->
 <div class="cesta" id="cesta">
   <div class="cesta-dentro">
+    <button class="btn chico redondo" id="bVaciar" type="button" aria-label="Vaciar el pedido">✕</button>
     <div class="cuenta">
       <b id="cestaTotal">$0.00</b>
       <span id="cestaDetalle">nada todavía</span>
     </div>
-    <button class="btn chico" id="bVaciar" type="button">Vaciar</button>
     <button class="btn fuerte" id="bPedir" type="button">Pedir</button>
   </div>
 </div>
+
+<nav class="pulgar" id="pulgar" aria-label="Secciones">
+  <button class="dedo" type="button" data-ir="menu" aria-current="page">
+    <span class="ico" aria-hidden="true">🍽️</span><span>Menú</span></button>
+  <button class="dedo" type="button" data-ir="turno">
+    <span class="ico" aria-hidden="true">🎟️</span><span>Mi turno</span>
+    <span class="punto" id="puntoTurno" hidden></span></button>
+  <button class="dedo" type="button" data-ir="yo">
+    <span class="ico" aria-hidden="true">👤</span><span>Lo mío</span></button>
+</nav>
 
 <!-- hojita para confirmar y para pedir por varios -->
 <div class="velo" id="velo" hidden>
@@ -212,42 +226,88 @@ function mezcla(a, b, k){
   return '#' + A.map((v,i) => Math.round(v*(1-k) + B[i]*k).toString(16).padStart(2,'0')).join('');
 }
 
+function cuantosDe(pid){
+  return cesta.filter(r => r.prod === pid && !r.para).reduce((s,r)=>s+r.cant,0);
+}
+
+/* La ficha es un DIV con la foto tocable adentro, no un <button> gigante:
+   así el "−" y el "+" pueden ser botones de verdad sin anidar botones, que
+   es HTML inválido y en Safari se comporta raro. */
 function fichaPlato(p){
   const t = tono(p.cat);
-  const enCesta = cesta.filter(r => r.prod === p.id).reduce((s,r)=>s+r.cant,0);
+  const n = cuantosDe(p.id);
   const agotado = !p.disponible || !F.existenciasOk(p);
   const seg = F.segReales(p.id) || p.segPrep;
-  return '<button class="plato'+(agotado?' agotado':'')+(enCesta?' puesto':'')+'" type="button" '+
-    'data-prod="'+p.id+'"'+(agotado?' disabled':'')+'>'+
-    '<span class="foto" style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'">'+
+  return '<div class="plato'+(agotado?' agotado':'')+(n?' puesto':'')+'" data-ficha="'+p.id+'">'+
+    '<button class="foto" type="button" data-sumar="'+p.id+'"'+(agotado?' disabled':'')+
+      ' style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'"'+
+      ' aria-label="Agregar '+esc(p.nombre)+'">'+
       (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : t.emoji)+
-      (enCesta ? '<span class="cuantos">'+enCesta+'</span>' : '')+
       (agotado ? '<span class="sello">SE ACABÓ</span>' : '')+
-    '</span>'+
-    '<span class="cuerpo">'+
+    '</button>'+
+    '<div class="cuerpo">'+
       '<span class="nom">'+esc(p.nombre)+'</span>'+
       '<span class="precio">'+F.pesos(p.precio)+'</span>'+
       '<span class="tiempo">'+ (seg < 60 ? 'sale rápido' : 'tarda ~'+Math.round(seg/60)+' min') +'</span>'+
-    '</span></button>';
+    '</div>'+
+    (agotado ? '' : '<div class="pasos">'+ pasosDe(p, n) +'</div>')+
+  '</div>';
 }
 
-function pintarMenu(){
+/* Sumar y restar sin salir de la ficha. Antes, para pedir tres tortas había
+   que tocar tres veces Y cada toque redibujaba el menú entero. */
+function pasosDe(p, n){
+  return n
+    ? '<button class="paso" type="button" data-restar="'+p.id+'" aria-label="Quitar uno">−</button>'+
+      '<span class="cuantos" aria-live="polite">'+n+'</span>'+
+      '<button class="paso mas" type="button" data-sumar="'+p.id+'" aria-label="Agregar otro">+</button>'
+    : '<button class="paso solo" type="button" data-sumar="'+p.id+'">Agregar</button>';
+}
+
+/* Sólo se repinta la ficha que se tocó. Es la diferencia entre que la app
+   responda al dedo y que parpadee entera cada vez. */
+function refrescarFicha(pid){
+  const p = F.producto(pid); if(!p) return;
+  const n = cuantosDe(pid);
+  $$('[data-ficha="'+pid+'"]').forEach(caja => {
+    caja.classList.toggle('puesto', n > 0);
+    const pasos = $('.pasos', caja);
+    if(pasos) pasos.innerHTML = pasosDe(p, n);
+  });
+}
+
+/* La firma del catálogo. Si no cambió, no hay por qué volver a construir el
+   menú: el temporizador corría cada 5 segundos y reescribía la rejilla
+   completa, que en un teléfono se siente como un tirón. */
+function firmaMenu(){
+  return filtro + '|' + F.productos(false)
+    .map(p => p.id+p.disponible+p.precio+p.destacado+(p.existencias)+p.nombre+(p.foto?1:0))
+    .join(',');
+}
+let ultimaFirma = '';
+
+function pintarMenu(forzar){
   const todos = F.productos(false);
-  const dest = todos.filter(p => p.destacado && p.disponible);
-  $('#destacados').hidden = !dest.length;
-  $('#rejillaDestacados').innerHTML = dest.map(fichaPlato).join('');
+  const firma = firmaMenu();
+  if(forzar || firma !== ultimaFirma){
+    ultimaFirma = firma;
+    const dest = todos.filter(p => p.destacado && p.disponible);
+    $('#destacados').hidden = !dest.length;
+    $('#rejillaDestacados').innerHTML = dest.map(fichaPlato).join('');
 
-  const cats = F.CATEGORIAS.filter(c => todos.some(p => p.cat === c.id));
-  $('#filtros').innerHTML =
-    '<button class="chip" type="button" data-filtro="todo" aria-pressed="'+(filtro==='todo')+'">Todo</button>'+
-    cats.map(c => '<button class="chip" type="button" data-filtro="'+c.id+'" aria-pressed="'+
-      (filtro===c.id)+'">'+c.emoji+' '+esc(c.nombre)+'</button>').join('');
+    const cats = F.CATEGORIAS.filter(c => todos.some(p => p.cat === c.id));
+    $('#filtros').innerHTML =
+      '<button class="chip" type="button" data-filtro="todo" aria-pressed="'+(filtro==='todo')+'">Todo</button>'+
+      cats.map(c => '<button class="chip" type="button" data-filtro="'+c.id+'" aria-pressed="'+
+        (filtro===c.id)+'">'+c.emoji+' '+esc(c.nombre)+'</button>').join('');
 
-  const lista = todos.filter(p => filtro === 'todo' || p.cat === filtro);
-  $('#rejilla').innerHTML = lista.length ? lista.map(fichaPlato).join('')
-    : '<p class="sub">No hay nada en esta categoría hoy.</p>';
+    const lista = todos.filter(p => filtro === 'todo' || p.cat === filtro);
+    $('#rejilla').innerHTML = lista.length ? lista.map(fichaPlato).join('')
+      : '<p class="sub">No hay nada en esta categoría hoy.</p>';
+  }
 
-  /* el estado de la fila, en cristiano */
+  /* el estado de la fila, en cristiano. Esto sí se refresca siempre: es una
+     línea de texto, no cuesta nada */
   const cola = F.colaOrdenada().length;
   const queda = F.quedanSegundosDeRecreo();
   const dentro = F.enRecreo();
@@ -388,6 +448,19 @@ function pintar(){
   if(pantalla === 'turno') pintarTurno();
   if(pantalla === 'yo') pintarYo();
   $('#cesta').classList.toggle('viva', pantalla === 'menu' && cesta.length > 0);
+
+  /* la barra del pulgar: sólo cuando ya hay con quién */
+  const dentro = yo && yo.terminos && ['menu','turno','yo'].indexOf(pantalla) >= 0;
+  $('#pulgar').hidden = !dentro;
+  document.body.classList.toggle('con-pulgar', !!dentro);
+  $$('#pulgar .dedo').forEach(b => {
+    if(b.dataset.ir === pantalla) b.setAttribute('aria-current','page');
+    else b.removeAttribute('aria-current');
+  });
+  /* el puntito del turno: para saber que hay algo vivo sin ir a mirar */
+  const vivo = yo ? F.pedidosDe(yo.codigo).find(x => F.VIVOS.indexOf(x.estado) >= 0) : null;
+  $('#puntoTurno').hidden = !vivo;
+  $('#puntoTurno').classList.toggle('listo', !!(vivo && vivo.estado === 'listo'));
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -429,28 +502,44 @@ $('#bYo').addEventListener('click', () => ver(pantalla === 'yo' ? 'menu' : 'yo')
 $('#bVerMenu').addEventListener('click', () => ver('menu'));
 $('#bSalir').addEventListener('click', () => { F.salir(); cesta = []; miPedido = null; ver('entrada'); });
 
-/* F03 · del menú al pedido en tres toques: tocar el plato ya lo suma */
+/* F03 · del menú al pedido en tres toques. Cada toque repinta SÓLO su ficha
+   y la barra de abajo: nada de redibujar el menú entero. */
+function vibra(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
 document.addEventListener('click', (e) => {
-  const plato = e.target.closest('[data-prod]');
-  if(plato && !plato.disabled){
-    const pid = plato.dataset.prod;
+  let b;
+
+  if((b = e.target.closest('[data-sumar]')) && !b.disabled){
+    const pid = b.dataset.sumar;
     const r = cesta.find(x => x.prod === pid && !x.para);
-    if(r) r.cant++; else cesta.push({ prod:pid, cant:1, para:'' });
-    pintar();
+    if(r) r.cant = Math.min(10, r.cant + 1); else cesta.push({ prod:pid, cant:1, para:'' });
+    refrescarFicha(pid); pintarCesta(); vibra(8);
     return;
   }
-  const f = e.target.closest('[data-filtro]');
-  if(f){ filtro = f.dataset.filtro; pintar(); return; }
-  const ped = e.target.closest('[data-pedido]');
-  if(ped){ miPedido = F.pedido(ped.dataset.pedido); ver('turno'); return; }
+  if((b = e.target.closest('[data-restar]'))){
+    const pid = b.dataset.restar;
+    const i = cesta.findIndex(x => x.prod === pid && !x.para);
+    if(i >= 0){ cesta[i].cant--; if(cesta[i].cant <= 0) cesta.splice(i,1); }
+    refrescarFicha(pid); pintarCesta(); vibra(8);
+    return;
+  }
+  if((b = e.target.closest('[data-ir]'))){ ver(b.dataset.ir); return; }
+  if((b = e.target.closest('[data-filtro]'))){ filtro = b.dataset.filtro; pintarMenu(true); return; }
+  if((b = e.target.closest('[data-pedido]'))){ miPedido = F.pedido(b.dataset.pedido); ver('turno'); return; }
 });
 
-$('#bVaciar').addEventListener('click', () => { cesta = []; pintar(); });
+$('#bVaciar').addEventListener('click', () => {
+  const eran = cesta.map(r => r.prod);
+  cesta = [];
+  eran.forEach(refrescarFicha); pintarCesta();
+});
 
 $('#bSiempre').addEventListener('click', () => {
   const yo = F.yo(); if(!yo) return;
   const n = F.misNumeros(yo.codigo);
-  if(n.loDeSiempre){ cesta = n.loDeSiempre.map(r => ({ prod:r.prod, cant:r.cant, para:'' })); pintar(); }
+  if(!n.loDeSiempre) return;
+  cesta = n.loDeSiempre.map(r => ({ prod:r.prod, cant:r.cant, para:'' }));
+  pintarMenu(true); pintarCesta(); vibra(12);
 });
 
 /* F05 · pedido para varios, y la confirmación integrada al último toque */
@@ -506,7 +595,10 @@ function abrirConfirmacion(){
     try{
       const anti = $('#eAnticipado');
       miPedido = F.pedir(yo.codigo, cesta, { anticipado: anti && anti.checked });
+      const eran = cesta.map(r => r.prod);
       cesta = [];
+      eran.forEach(refrescarFicha);   /* si no, la ficha se queda con el conteo viejo */
+      pintarCesta();
       $('#velo').hidden = true;
       ver('turno');
     }catch(err){ alert(err.message); }
@@ -547,8 +639,8 @@ $('#bDinero').addEventListener('click', () => {
   $$('#opciones [data-combo]').forEach(b => b.addEventListener('click', () => {
     const o = ops[+b.dataset.combo];
     cesta = o.piezas.map(p => ({ prod:p.id, cant:1, para:'' }));
-    pintar();
-    window.scrollTo({ top:0, behavior:'smooth' });
+    pintarMenu(true); pintarCesta(); vibra(12);
+    $('#rejilla').scrollIntoView({ behavior:'smooth', block:'start' });
   }));
 });
 
@@ -567,6 +659,8 @@ $('#bSugerir').addEventListener('click', () => {
    ═════════════════════════════════════════════════════════════════════ */
 F.alCambiar(() => { F.cargar(); pintar(); });
 setInterval(() => { if(pantalla === 'turno' || pantalla === 'menu'){ F.cargar(); pintar(); } }, 5000);
+/* pintarMenu sólo reconstruye si el catálogo cambió, así que este
+   temporizador ya no le da el tirón a la rejilla cada cinco segundos */
 
 /* F11 · el aviso. Si el navegador no lo permite, NO pasa nada: el turno se
    ve en pantalla igual y la señora sigue gritando números. La app acelera,
@@ -655,6 +749,30 @@ arrancar();
 
   ok('los datos exportan a CSV sin romperse con comas',
      F.csvDeConteos !== undefined);
+
+  /* Ergonomía · el menú ya no se reconstruye en cada toque, así que hay que
+     comprobar que las piezas que se refrescan solas de verdad se refrescan */
+  (function(){
+    const prod = F.productos(true)[0];
+    cesta = [{ prod:prod.id, cant:2, para:'' }];
+    pintarMenu(true);
+    const ficha = document.querySelector('[data-ficha="'+prod.id+'"]');
+    ok('la ficha enseña cuántos llevas', ficha &&
+       ficha.querySelector('.pasos .cuantos') &&
+       ficha.querySelector('.pasos .cuantos').textContent === '2');
+    ok('sumar y restar son botones de 48px o más', (function(){
+      const paso = ficha && ficha.querySelector('.paso');
+      return paso && parseFloat(getComputedStyle(paso).minHeight) >= 48;
+    })());
+    cesta = [];
+    refrescarFicha(prod.id);
+    ok('al vaciar, la ficha vuelve a "Agregar" sin reconstruir el menú',
+       !!(ficha && ficha.querySelector('.paso.solo')));
+    ok('la barra del pulgar tiene sus tres destinos',
+       document.querySelectorAll('#pulgar .dedo[data-ir]').length === 3);
+    ok('nada de retardo de 300 ms en lo que se toca',
+       getComputedStyle(document.querySelector('.plato .paso')).touchAction === 'manipulation');
+  })();
 
   /* dejar el aparato como estaba */
   try{ localStorage.setItem('fadori_v1', guardado); localStorage.removeItem('fadori_yo'); }catch(e){}

@@ -48,11 +48,19 @@
   --sombra-alta:0 4px 14px rgba(70,40,20,.10), 0 18px 44px rgba(70,40,20,.10);
 
   --radio:14px;         /* esquinas muy redondas se leen a juguete, no a comida */
-  --tap:48px;
+  --tap:52px;           /* 44 es el mínimo legal; 52 es el que se acierta caminando */
+  --barra-baja:64px;    /* lo que ocupa la barra del pulgar */
   --fam:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
 
 *{box-sizing:border-box}
+/* La mitad de la sensación de "pesada" en un teléfono son estas dos cosas:
+   el retardo de 300 ms que el navegador se guarda por si viene un doble
+   toque, y el destello azul del sistema. Las dos se apagan aquí. */
+button, a, .plato, [role="button"]{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
 html,body{margin:0; padding:0}
 body{
   font-family:var(--fam); background:var(--fondo); color:var(--cafe);
@@ -66,6 +74,41 @@ a{color:var(--dorado)}
 
 /* ── el armazón ─────────────────────────────────────────────────────────── */
 .envoltura{max-width:640px; margin:0 auto; padding:0 14px 120px}
+body.con-pulgar .envoltura{
+  padding-bottom:calc(var(--barra-baja) + 96px + env(safe-area-inset-bottom));
+}
+
+/* ── LA BARRA DEL PULGAR ───────────────────────────────────────────────
+   La esquina superior derecha de un teléfono es el punto más incómodo que
+   existe, y ahí vivía la navegación. Aquí abajo se alcanza sin recolocar la
+   mano, que es lo que hace falta cuando se usa de pie en un pasillo. */
+.pulgar{
+  position:fixed; left:0; right:0; bottom:0; z-index:60;
+  display:grid; grid-template-columns:repeat(3,1fr);
+  background:var(--sup); border-top:1px solid var(--linea);
+  box-shadow:0 -4px 18px rgba(70,40,20,.10);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.pulgar[hidden]{display:none}
+.dedo{
+  position:relative; min-height:var(--barra-baja); border:0; background:none;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  color:var(--tenue); font-size:11px; font-weight:700; letter-spacing:.01em;
+}
+.dedo .ico{font-size:21px; line-height:1}
+.dedo[aria-current="page"]{color:var(--naranja)}
+.dedo[aria-current="page"]::before{
+  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:34px; height:3px; border-radius:0 0 3px 3px; background:var(--naranja);
+}
+.dedo:active{background:var(--piso)}
+.dedo .punto{
+  position:absolute; top:9px; left:calc(50% + 11px);
+  width:9px; height:9px; border-radius:50%; background:var(--ambar);
+  box-shadow:0 0 0 2px var(--sup);
+}
+.dedo .punto.listo{background:var(--verde)}
+.dedo .punto[hidden]{display:none}
 
 .barra{
   position:sticky; top:0; z-index:40; background:rgba(253,248,240,.88);
@@ -101,7 +144,7 @@ h2::after{content:''; flex:1; height:1px; background:var(--linea)}
 .btn.fuerte{background:var(--naranja); border-color:var(--naranja); color:#fff;
   box-shadow:var(--sombra)}
 .btn.ancho{width:100%}
-.btn.chico{min-height:44px; padding:0 14px; font-size:14px; border-radius:11px}
+.btn.chico{min-height:46px; padding:0 15px; font-size:14px; border-radius:11px}
 .btn:disabled{opacity:.4}
 
 .chips{display:flex; gap:8px; flex-wrap:wrap}
@@ -144,11 +187,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
 .rejilla{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px}
 .plato{
   background:var(--sup); border:1px solid var(--linea); border-radius:12px; overflow:hidden;
-  text-align:left; padding:0; display:flex; flex-direction:column; min-height:var(--tap);
-  transition:transform .12s ease, border-color .15s ease, box-shadow .15s ease;
+  text-align:left; padding:0; display:flex; flex-direction:column;
+  transition:border-color .15s ease, box-shadow .15s ease;
   box-shadow:var(--sombra);
 }
-.plato:active{transform:scale(.97)}
+.plato .foto{border:0; padding:0; width:100%}
+.plato .foto:active{filter:brightness(.94)}
 .plato.puesto{border-color:var(--naranja); box-shadow:0 0 0 2px var(--naranja), var(--sombra-alta)}
 .plato .foto{
   aspect-ratio:1/1; width:100%; display:grid; place-items:center; font-size:58px;
@@ -156,12 +200,33 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
   border-bottom:1px solid var(--tb, var(--linea));
 }
 .plato .foto img{width:100%; height:100%; object-fit:cover}
-.plato .cuerpo{padding:10px 12px 12px; display:flex; flex-direction:column; gap:3px; flex:1}
+.plato .cuerpo{padding:10px 12px 8px; display:flex; flex-direction:column; gap:3px; flex:1}
+
+/* ── los pasos: sumar y restar sin salir de la ficha ───────────────────
+   Pedir tres tortas no puede costar tres viajes al mismo pixel. Y los dos
+   botones miden 48px de alto: se aciertan con el pulgar sin mirar. */
+.plato .pasos{display:flex; align-items:stretch; gap:6px; padding:0 8px 8px}
+.plato .paso{
+  flex:0 0 48px; min-height:48px; border-radius:11px; border:1px solid var(--linea);
+  background:var(--piso); color:var(--cafe); font-size:24px; font-weight:800; line-height:1;
+  display:grid; place-items:center;
+}
+.plato .paso.mas{background:var(--naranja); border-color:var(--naranja); color:#fff}
+.plato .paso.solo{
+  flex:1; font-size:15px; font-weight:800; background:var(--rescoldo);
+  border-color:var(--rescoldo); color:var(--naranja);
+}
+.plato .paso:active{transform:scale(.94)}
+.plato .pasos .cuantos{
+  position:static; flex:1; display:grid; place-items:center; min-height:48px;
+  background:transparent; color:var(--cafe); font-size:19px; font-weight:900;
+  font-variant-numeric:tabular-nums; box-shadow:none; border-radius:0;
+}
 .plato .nom{font-weight:700; font-size:14px; line-height:1.25}
 .plato .precio{font-weight:800; font-size:16px; color:var(--dorado);
   font-variant-numeric:tabular-nums}
 .plato .tiempo{font-size:12px; color:var(--tenue)}
-.plato .cuantos{
+.plato .foto .cuantos{
   position:absolute; top:8px; right:8px; min-width:28px; height:28px; border-radius:14px;
   background:var(--naranja); color:#fff; font-weight:800; font-size:14px;
   box-shadow:0 2px 8px rgba(70,40,20,.35);
@@ -181,10 +246,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
 .cesta{
   position:fixed; left:0; right:0; bottom:0; z-index:50;
   background:var(--sup); box-shadow:0 -6px 24px rgba(70,40,20,.14);
-  border-top:1px solid var(--linea); padding:12px 14px calc(12px + env(safe-area-inset-bottom));
-  transform:translateY(120%); transition:transform .22s cubic-bezier(.22,1,.36,1);
+  border-top:1px solid var(--linea); padding:11px 14px 11px;
+  transform:translateY(200%); transition:transform .22s cubic-bezier(.22,1,.36,1);
 }
+/* Cuando hay pedido, la cuenta se apila justo encima de la barra del pulgar:
+   las dos cosas que se tocan quedan en el mismo tercio de la pantalla. */
 .cesta.viva{transform:none}
+body.con-pulgar .cesta{bottom:calc(var(--barra-baja) + env(safe-area-inset-bottom))}
+.btn.redondo{width:44px; min-width:44px; padding:0; border-radius:50%; font-size:17px}
 .cesta-dentro{max-width:640px; margin:0 auto; display:flex; align-items:center; gap:12px}
 .cesta .cuenta{flex:1; min-width:0}
 .cesta .cuenta b{display:block; font-size:19px; letter-spacing:-.02em;
@@ -239,6 +308,7 @@ body.mostrador .cesta{background:#fff}
 body.mostrador .envoltura{max-width:900px}
 body.mostrador .btn{font-size:17px; font-weight:800}
 body.mostrador .btn.fuerte{color:#fff}
+body.mostrador .btn.chico{min-height:48px; font-size:15px}
 body.mostrador .plato,
 body.mostrador .tarjeta{box-shadow:none}
 body.mostrador .chip[aria-pressed="true"]{color:#fff}
