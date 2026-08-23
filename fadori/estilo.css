@@ -121,6 +121,9 @@ body.con-pulgar .envoltura{
   box-shadow:0 0 0 2px var(--sup);
 }
 .dedo .punto.listo{background:var(--verde)}
+.dedo .punto.urge{background:var(--rojo); animation:latido 1.1s ease-in-out infinite}
+@keyframes latido{0%,100%{transform:scale(1)} 50%{transform:scale(1.55)}}
+@media (prefers-reduced-motion: reduce){ .dedo .punto.urge{animation:none} }
 .dedo .punto[hidden]{display:none}
 
 .barra{
@@ -319,6 +322,46 @@ body.con-pulgar .cesta{bottom:calc(var(--barra-baja) + env(safe-area-inset-botto
 .turno.listo{background:linear-gradient(165deg, #E6F5DA, #F1FAE8); border-color:#8FBF6A}
 .turno.listo .frase{color:#2E5417}
 
+/* ── F45 · el cartel de lo que se acabó ─────────────────────────────────
+   Va pegado abajo del turno, no al final de la pantalla: si hay que bajar a
+   buscarlo, no existe. Y no es rojo de alarma completo: el niño no hizo nada
+   malo. Es ámbar de "esto pasó, aquí está la salida". */
+.falta{
+  margin-top:14px; padding:20px 18px 18px; border-radius:20px; text-align:left;
+  background:linear-gradient(165deg, #FFF1E2, var(--sup));
+  border:2px solid var(--ambar); box-shadow:var(--sombra-alta);
+}
+.falta-t{font-size:22px; font-weight:900; letter-spacing:-.02em; line-height:1.15}
+.falta-p{margin:10px 0 0; font-size:15px; line-height:1.45}
+.falta-r{margin:18px 0 10px; font-size:15px; font-weight:800}
+.falta-ops{display:flex; flex-direction:column; gap:10px}
+.falta-op{
+  display:flex; align-items:center; gap:13px; width:100%; text-align:left; cursor:pointer;
+  min-height:var(--tap); padding:10px 14px 10px 10px; border-radius:16px;
+  border:2px solid var(--linea); background:var(--sup); box-shadow:var(--sombra);
+}
+.falta-op:active{transform:scale(.985); border-color:var(--naranja)}
+.falta-op .fo-i{
+  width:48px; height:48px; border-radius:12px; flex:0 0 auto; overflow:hidden;
+  display:grid; place-items:center; font-size:24px;
+  background:linear-gradient(150deg, var(--t1), var(--t2));
+}
+.falta-op .fo-i img{width:100%; height:100%; object-fit:cover}
+.falta-op .fo-n{flex:1; min-width:0; font-size:16px; font-weight:800}
+.falta-op .fo-p{font-size:16px; font-weight:900; color:var(--naranja-hondo)}
+.falta-no{
+  display:block; width:100%; margin-top:12px; min-height:var(--tap); cursor:pointer;
+  border-radius:999px; border:1px solid var(--linea); background:transparent;
+  font-size:15px; font-weight:700; color:var(--tenue);
+}
+.falta-no:active{background:var(--piso)}
+.falta-fila{
+  margin:14px 0 0; padding-top:12px; border-top:1px dashed var(--linea);
+  font-size:13px; line-height:1.4; color:var(--tenue);
+}
+.renglon.sinsurtir{opacity:.6}
+.renglon.sinsurtir .q s{color:var(--tenue)}
+
 /* ── listas ─────────────────────────────────────────────────────────────── */
 .renglones{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:8px}
 .renglon{
@@ -366,13 +409,33 @@ body.mostrador h1{font-size:30px}
   min-height:var(--tap); font-size:18px; font-weight:700;
 }
 .linea-prod.ya{border-color:var(--verde); background:#EAF5DF}
-.linea-prod .mini{
+/* La miniatura NO se cuelga de .linea-prod: se usa igual en la lista del
+   menú, en el cobro y en el papel. Colgada del renglón, en todos esos lados
+   salía sin estilo — y una foto de 560 px sin estilo se dibuja de 560 px.
+   Así se veía el menú de la cooperativa: una foto gigante y el nombre del
+   platillo espichado en una columna de dos centímetros. */
+.mini{
   width:52px; height:52px; border-radius:11px; flex:0 0 auto; display:grid; place-items:center;
   font-size:26px; background:linear-gradient(150deg, var(--t1), var(--t2)); overflow:hidden;
 }
-.linea-prod .mini img{width:100%; height:100%; object-fit:cover}
+.mini img{width:100%; height:100%; object-fit:cover; display:block}
 .linea-prod .cant{font-size:22px; font-weight:900; color:var(--dorado); min-width:38px}
 .linea-prod .para{display:block; font-size:14px; font-weight:600; color:var(--tenue)}
+
+/* F45 · "no se lo puedo dar" · el renglón y su botón de escape.
+   El botón va SEPARADO del renglón a propósito: el renglón grande es "ya lo
+   tengo" y se toca cien veces al día; éste se toca dos y no se puede tocar
+   por accidente. Por eso es angosto, está pegado a la derecha y es rojo. */
+.par-linea{display:flex; gap:8px; align-items:stretch}
+.par-linea .linea-prod{flex:1; min-width:0}
+.btn-nohay{
+  flex:0 0 auto; width:74px; border-radius:14px; border:2px solid var(--rojo);
+  background:#FFF1EE; color:var(--rojo); font-weight:900; font-size:14px;
+  letter-spacing:.02em; cursor:pointer; min-height:var(--tap);
+}
+.btn-nohay:active{background:var(--rojo); color:#fff}
+.linea-prod.nohay{opacity:.62; border-style:dashed; background:transparent}
+.linea-prod.nohay s{color:var(--tenue)}
 
 /* ── la pantalla pública: números, nunca nombres ────────────────────────── */
 /* Se lee desde el otro lado del pasillo, así que aquí manda el contraste:

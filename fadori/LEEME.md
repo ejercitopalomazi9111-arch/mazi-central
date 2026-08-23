@@ -76,6 +76,20 @@ No es "primero en llegar". El orden es:
 El paso 3 no es un detalle: sin él, atender primero lo rápido baja el promedio de todos **pero
 deja sin comer al que pidió el plato fuerte**, y eso se nota al tercer día.
 
+### 2-bis · Cuando se acaba algo, la fila se entera
+
+La regla es que **el renglón no se borra, se marca** (`sinSurtir`). Tres cosas dependen de eso:
+
+- el total del pedido baja solo, así que **nadie paga lo que no le dieron**;
+- el corte del día puede decir **de qué faltó y a cuánta gente formada**, que es el número que
+  sirve para comprar mejor la semana que entra — borrarlo lo perdería;
+- y el alumno conserva **su turno y su hora de llegada** al cambiar el platillo. Si su pedido se
+  había caído entero, revive con el mismo número. La falla fue de la cooperativa, no de él, y
+  mandarlo al final de la fila por eso es castigarlo por algo que no hizo.
+
+Todo esto lo cazó Carlos preguntando: *"¿y si se acaba un producto y varios en la fila lo
+pidieron?"*. No pasaba nada. Ahora pasa todo. Detalle completo en `FUNCIONES.md` §F45.
+
 ### 3 · Cero datos de más
 
 Nombre de pila y grupo. **Sin apellidos, sin correo, sin teléfono, sin contraseña, sin fotos de
@@ -113,8 +127,8 @@ Cada pantalla trae las suyas y **corren solas al cargar**. Si algo se rompe, sal
 antes de que lo vea un alumno.
 
 ```
-index.html      55 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración
-mostrador.html  19 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador
+index.html      78 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración, faltantes
+mostrador.html  26 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador, faltantes
 pantalla.html    4 pruebas    que el número salga y que el NOMBRE nunca salga
 medidor.html    10 pruebas    quién alcanzó, la curva, el contador, el CSV
 ```

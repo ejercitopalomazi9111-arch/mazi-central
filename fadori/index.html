@@ -443,6 +443,57 @@ function misVivos(){
     });
 }
 
+/* F45 · el pedido mío que está esperando que yo decida qué hacer con algo
+   que se acabó. Puede estar cancelado —si no le quedaba nada más— y aun así
+   cuenta: justo ése es el que urge enseñar. */
+function miFalta(){
+  const yo = F.yo(); if(!yo) return null;
+  return F.pedidosDe(yo.codigo)
+    .filter(p => p.avisoFalta && F.faltantesDe(p).length)
+    .sort((a,b) => (b.avisoFalta.t||0) - (a.avisoFalta.t||0))[0] || null;
+}
+
+/* El cartel. Lo que tiene que lograr, en este orden:
+   1 · que entienda QUÉ pasó sin leer dos veces,
+   2 · que vea que ya no lo está pagando,
+   3 · que pueda arreglarlo de un toque, y
+   4 · que sepa que NO pierde su lugar — que es lo que más miedo le da. */
+function cartelFalta(p){
+  const faltan = F.faltantesDe(p);
+  if(!faltan.length) return '';
+  const f = faltan[0];
+  const otros = faltan.length - 1;
+  const cambios = F.enLugarDe(f.r.prod, 3);
+  const quedaba = p.renglones.some(r => !r.sinSurtir);
+
+  return '<div class="falta">'+
+    '<div class="falta-t">Se acabó '+esc(f.prod.nombre)+'</div>'+
+    '<p class="falta-p">'+
+      (f.r.cant > 1 ? 'Se nos acabaron antes de llegar a tu pedido.'
+                    : 'Se nos acabó antes de llegar a tu pedido.')+
+      ' <b>Perdón, la falla fue de aquí.</b>'+
+      (otros ? ' (Y también falta otra cosa; la vemos en cuanto resuelvas ésta.)' : '')+'</p>'+
+    '<p class="falta-p">Ya te lo quitamos del total'+
+      (quedaba ? ': ahora tu pedido va en <b>'+F.pesos(p.total)+'</b>.' : '.')+
+      ' No pagas lo que no te dieron.</p>'+
+    (cambios.length
+      ? '<p class="falta-r">¿Te llevas otra cosa en su lugar?</p>'+
+        '<div class="falta-ops">'+ cambios.map(c =>
+          '<button class="falta-op" type="button" data-cambiar="'+p.id+':'+f.i+':'+c.id+'">'+
+            '<span class="fo-i">'+(c.foto
+              ? '<img src="'+esc(c.foto)+'" alt="">'
+              : (F.CATEGORIAS.find(x=>x.id===c.cat)||{}).emoji || '🍽️')+'</span>'+
+            '<span class="fo-n">'+esc(c.nombre)+'</span>'+
+            '<span class="fo-p">'+F.pesos(c.precio)+'</span>'+
+          '</button>').join('') +'</div>'
+      : '<p class="falta-r">Ya no queda nada más que ofrecerte hoy. Perdón de verdad.</p>')+
+    '<button class="falta-no" type="button" data-renuncio="'+p.id+':'+f.i+'">'+
+      (quedaba ? 'Déjalo así, me llevo lo demás' : 'Mejor lo dejo para otro día')+'</button>'+
+    '<p class="falta-fila">Escojas lo que escojas, <b>no pierdes tu lugar en la fila</b>: '+
+      'conservas tu turno y la hora a la que pediste.</p>'+
+  '</div>';
+}
+
 function tarjetaTurno(p){
   if(p.estado === 'listo'){
     return '<div class="turno listo">'+
@@ -493,7 +544,11 @@ function pintarTurno(){
 
   /* el grande es el primero de la fila; si no hay vivos, el último que
      hubo, para que se pueda ver "entregado" o "cancelado" */
-  if(vivos.length){
+  /* lo que está esperando una decisión mía manda sobre todo lo demás */
+  const conFalta = miFalta();
+  if(conFalta){
+    miPedido = conFalta;
+  } else if(vivos.length){
     miPedido = F.pedido(vivos[0].id);
   } else if(miPedido){
     miPedido = F.pedido(miPedido.id) || miPedido;
@@ -520,10 +575,19 @@ function pintarTurno(){
       '<div class="numero">🌙</div>'+
       '<div class="frase">Te lo guardamos para mañana</div>'+
       '<div class="detalle">Mañana entras de los primeros</div></div>';
+  } else if(p.porFalta){
+    caja.innerHTML = '<div class="turno"><div class="rotulo">Se cayó</div>'+
+      '<div class="numero">'+p.turno+'</div>'+
+      '<div class="frase no">No hubo nada de lo que pediste</div>'+
+      '<div class="detalle">Si escoges otra cosa aquí abajo, vuelve con este mismo turno</div></div>';
   } else {
     caja.innerHTML = '<div class="turno"><div class="rotulo">Cancelado</div>'+
       '<div class="frase">Este pedido ya no va</div></div>';
   }
+
+  /* el cartel de lo que se acabó va PEGADO al turno, no al final de la
+     pantalla: si hay que bajar a buscarlo, no existe */
+  caja.insertAdjacentHTML('beforeend', cartelFalta(p));
 
   /* los que esperan su turno detrás del grande */
   const detras = vivos.slice(1);
@@ -535,6 +599,9 @@ function pintarTurno(){
 
   $('#renglonesTurno').innerHTML = p.renglones.map(r => {
     const prod = F.producto(r.prod) || { nombre:'—', precio:0 };
+    if(r.sinSurtir) return '<li class="renglon sinsurtir"><span class="n">'+r.cant+'×</span>'+
+      '<span class="q"><s>'+esc(prod.nombre)+'</s><small>se acabó · no lo pagas</small></span>'+
+      '<span>—</span></li>';
     return '<li class="renglon"><span class="n">'+r.cant+'×</span>'+
       '<span class="q">'+esc(prod.nombre)+
       (r.para ? '<small>para '+esc(r.para)+'</small>' : '')+'</span>'+
@@ -623,8 +690,12 @@ function pintar(){
   });
   /* el puntito del turno: para saber que hay algo vivo sin ir a mirar */
   const vivo = yo ? F.pedidosDe(yo.codigo).find(x => F.VIVOS.indexOf(x.estado) >= 0) : null;
-  $('#puntoTurno').hidden = !vivo;
-  $('#puntoTurno').classList.toggle('listo', !!(vivo && vivo.estado === 'listo'));
+  const falta = miFalta();
+  $('#puntoTurno').hidden = !vivo && !falta;
+  $('#puntoTurno').classList.toggle('listo', !falta && !!(vivo && vivo.estado === 'listo'));
+  /* rojo = te toca decidir algo. Gana sobre el verde de "ya está" porque si
+     se acabó lo tuyo, eso es lo que urge que veas */
+  $('#puntoTurno').classList.toggle('urge', !!falta);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -635,6 +706,8 @@ function arrancar(){
   if(!yo) return ver('entrada');
   if(!yo.terminos) return ver('terminos');
   /* si traigo un pedido vivo, la pantalla que importa es el turno */
+  const falta = miFalta();
+  if(falta){ miPedido = falta; return ver('turno'); }
   const vivo = F.pedidosDe(yo.codigo).find(p => F.VIVOS.indexOf(p.estado) >= 0);
   if(vivo){ miPedido = vivo; return ver('turno'); }
   ver('menu');
@@ -757,6 +830,37 @@ document.addEventListener('click', (e) => {
   if((b = e.target.closest('[data-ver]'))){ abrirPlatillo(b.dataset.ver); return; }
   if((b = e.target.closest('[data-ir]'))){ ver(b.dataset.ir); return; }
   if((b = e.target.closest('[data-filtro]'))){ filtro = b.dataset.filtro; pintarMenu(true); return; }
+  /* F45 · lo que se acabó: cambiarlo o soltarlo. Los dos conservan el turno */
+  if((b = e.target.closest('[data-cambiar]'))){
+    if(muySeguido('cambiar')) return;
+    const [oid, i, pid] = b.dataset.cambiar.split(':');
+    try{
+      F.cambiarRenglon(oid, +i, pid);
+      const nom = (F.producto(pid)||{}).nombre || 'eso';
+      vibra(14); pintar();
+      aviso('Cambiado por '+nom+'. Sigues con tu mismo turno.', 'bueno');
+    }catch(err){ pintar(); aviso(err.message, 'malo'); }
+    return;
+  }
+  if((b = e.target.closest('[data-renuncio]'))){
+    if(muySeguido('renuncio')) return;
+    const [oid, i] = b.dataset.renuncio.split(':');
+    const pe = F.pedido(oid);
+    const solo = pe && pe.renglones.filter(r => !r.sinSurtir).length === 0;
+    preguntar({
+      titulo: solo ? '¿Cancelas el pedido?' : '¿Lo dejamos así?',
+      texto: solo
+        ? 'No te quedaría nada de este pedido. Puedes volver a pedir cuando quieras.'
+        : 'Te llevas lo demás y esto se quita. Ya no lo pagas.',
+      si: solo ? 'Sí, cancélalo' : 'Sí, déjalo así',
+      no: 'Mejor no',
+      hecho: () => {
+        F.renunciarA(oid, +i); pintar();
+        aviso(solo ? 'Cancelado. Nada que pagar.' : 'Listo, te llevas lo demás.', 'bueno');
+      },
+    });
+    return;
+  }
   if((b = e.target.closest('[data-apartar]'))){
     F.apartarParaManana(b.dataset.apartar); pintar();
     aviso('Listo, te lo guardamos para mañana.', 'bueno'); return;
@@ -1180,7 +1284,20 @@ $('#bSoporte').addEventListener('click', () => {
 /* ══════════════════════════════════════════════════════════════════════
    VIVO · el turno se refresca solo, y la app se puede cerrar
    ═════════════════════════════════════════════════════════════════════ */
-F.alCambiar(() => { F.cargar(); pintar(); });
+/* F45 · si se acaba algo mío mientras ando en otra pantalla, me entero AHÍ.
+   Enterarse al llegar al mostrador es justo lo que estamos arreglando. */
+let faltaAvisada = 0;
+F.alCambiar(() => {
+  F.cargar(); pintar();
+  const f = miFalta();
+  if(f && f.avisoFalta.t !== faltaAvisada){
+    faltaAvisada = f.avisoFalta.t;
+    if(pantalla !== 'turno'){
+      aviso('Se acabó '+f.avisoFalta.nombres.join(' y ')+'. Toca "Mi turno".', 'malo');
+      vibra([30,60,30]);
+    }
+  }
+});
 setInterval(() => { if(pantalla === 'turno' || pantalla === 'menu'){ F.cargar(); pintar(); } }, 5000);
 /* pintarMenu sólo reconstruye si el catálogo cambió, así que este
    temporizador ya no le da el tirón a la rejilla cada cinco segundos */
@@ -1241,7 +1358,16 @@ arrancar();
 (function(){
   let bien = 0, mal = 0;
   const ok = (q, c) => { if(c) bien++; else { mal++; console.error('✗ '+q); } };
+  /* Las pruebas corren en el aparato del alumno, encima de SUS datos. Así que
+     antes de tocar nada se guarda todo lo suyo y al final se repone tal cual.
+     Y sí importa: durante un rato esto borraba su sesión en cada recarga —el
+     menú se seguía viendo, pero al pedir la app le decía que no había puesto
+     su nombre. Un alumno no tiene por qué pagar el precio de nuestras
+     pruebas. */
   const guardado = JSON.stringify(F.estado());
+  let suYo = null, susAlergias = null;
+  try{ suYo = localStorage.getItem('fadori_yo');
+       susAlergias = localStorage.getItem('fadori_mis_alergias'); }catch(e){}
 
   const a = F.registrar('Prueba','9Z');
   ok('el registro pide nombre y grupo y nada más',
@@ -1472,9 +1598,141 @@ arrancar();
          muySeguido('a'); return muySeguido('b') === false; })());
   })();
 
-  /* dejar el aparato como estaba */
-  try{ localStorage.setItem('fadori_v1', guardado); localStorage.removeItem('fadori_yo'); }catch(e){}
+  /* ── F45 · se acabó algo y la fila ya lo había pedido ──────────────
+     Lo cazó Carlos preguntando, que es como caza los bugs: *"si se acaba un
+     producto y varios en la fila lo pidieron, no pasa nada"*. Y no pasaba
+     nada, literal. Estas pruebas son para que no vuelva a no pasar nada. */
+  (function(){
+    const prods = F.productos(true);
+    const torta = prods.find(p => p.cat === 'torta');
+    const agua  = prods.find(p => p.cat === 'bebida');
+    if(!torta || !agua) return;
+
+    F.registrar('Fila', '3A'); const a1 = F.yo().codigo; F.aceptarTerminos(a1);
+    F.registrar('Fila2','3A'); const a2 = F.yo().codigo; F.aceptarTerminos(a2);
+
+    /* uno pidió la torta Y un agua; el otro pidió sólo la torta */
+    const p1 = F.pedir(a1, [{prod:torta.id, cant:1}, {prod:agua.id, cant:1}]);
+    const p2 = F.pedir(a2, [{prod:torta.id, cant:2}]);
+    const turnoAntes = p2.turno, creadoAntes = p2.creado;
+    const totalAntes = p1.total;
+
+    ok('antes de agotar, el mostrador sabe a quién le pega',
+       F.aQuienLePega(torta.id).length === 2);
+
+    const r = F.seAcabo(torta.id);
+
+    ok('se acabó algo y los pedidos de la fila SÍ se enteran',
+       r.tocados.length === 2);
+    ok('el renglón no se borra: queda la huella de que faltó',
+       F.pedido(p1.id).renglones.length === 2 &&
+       !!F.pedido(p1.id).renglones[0].sinSurtir);
+    ok('el total baja solo — nadie paga lo que no le dieron',
+       F.pedido(p1.id).total === totalAntes - torta.precio);
+    ok('al que le quedaba algo más, su pedido sigue vivo',
+       F.pedido(p1.id).estado === 'en_cola');
+    ok('al que no le quedaba nada, se le cae el pedido',
+       F.pedido(p2.id).estado === 'cancelado');
+    ok('y se cae marcado como culpa nuestra, no de él',
+       F.pedido(p2.id).porFalta === true);
+
+    /* lo que se le ofrece a cambio */
+    const cambios = F.enLugarDe(torta.id, 3);
+    ok('lo que se ofrece a cambio nunca incluye lo que se acabó',
+       cambios.every(c => c.id !== torta.id));
+    ok('ni nada que ya esté agotado',
+       cambios.every(c => c.disponible && F.existenciasOk(c)));
+    ok('y lo primero que ofrece es del mismo tipo de hambre',
+       cambios.length === 0 || cambios[0].cat === torta.cat);
+    ok('y NUNCA le ofrece algo más caro de lo que ya iba a pagar',
+       cambios.every(c => c.precio <= torta.precio));
+
+    /* el cambio conserva el lugar en la fila: la falla fue nuestra */
+    const otra = cambios[0];
+    if(otra){
+      F.cambiarRenglon(p2.id, 0, otra.id);
+      const d2 = F.pedido(p2.id);
+      ok('cambiar lo que se acabó revive el pedido que se había caído',
+         d2.estado === 'en_cola');
+      ok('y NO lo manda al final de la fila: mismo turno y misma hora',
+         d2.turno === turnoAntes && d2.creado === creadoAntes);
+      ok('ya no queda nada pendiente que decidir en ese pedido',
+         !d2.avisoFalta && F.faltantesDe(d2).length === 0);
+      ok('el total se rehace con lo nuevo',
+         d2.total === otra.precio * 2);
+    }
+
+    /* el que prefiere no cambiar nada */
+    F.renunciarA(p1.id, 0);
+    const d1 = F.pedido(p1.id);
+    ok('el que renuncia se lleva lo demás y ya no lo debe',
+       d1.estado === 'en_cola' && d1.renglones.length === 1 &&
+       d1.total === agua.precio);
+
+    /* lo ya servido no se toca */
+    const p3 = F.pedir(a1, [{prod:agua.id, cant:1}]);
+    F.tomar(p3.id, 'prueba'); F.renglonListo(p3.id, 0, true);
+    F.seAcabo(agua.id);
+    ok('lo que YA está servido nunca se marca como faltante',
+       !F.pedido(p3.id).renglones[0].sinSurtir);
+    F.marcarDisponible(agua.id, true);
+    F.marcarDisponible(torta.id, true);
+
+    /* el caso que más pasa: el inventario llega a cero surtiendo */
+    const galleta = F.productos(true).find(p => p.cat === 'dulce');
+    if(galleta){
+      galleta.existencias = 1; F.guardar();
+      const p4 = F.pedir(a1, [{prod:galleta.id, cant:1}]);
+      const p5 = F.pedir(a2, [{prod:galleta.id, cant:1}]);
+      F.tomar(p4.id, 'prueba'); F.renglonListo(p4.id, 0, true);
+      ok('si el inventario llega a cero surtiendo, la fila se entera sola',
+         !!F.pedido(p5.id).renglones[0].sinSurtir);
+      ok('y al que se lo estaban surtiendo no le pasa nada',
+         !F.pedido(p4.id).renglones[0].sinSurtir);
+      galleta.existencias = null; galleta.disponible = true; F.guardar();
+    }
+
+    /* el puntito del menú de abajo. Va aquí porque ya se rompió una vez:
+       le puse la clase "falta", que era la del cartel grande, y el punto de
+       9 px se infló a 59. Ninguna prueba lo cazó — se vio en una captura. */
+    (function(){
+      const pt = $('#puntoTurno'), barra = $('#pulgar');
+      if(!pt || !barra) return;
+      const antes = pt.className, oculto = pt.hidden, barraOculta = barra.hidden;
+      barra.hidden = false; pt.hidden = false; pt.className = 'punto urge';
+      const r = pt.getBoundingClientRect();
+      barra.hidden = barraOculta;
+      ok('el puntito del menú de abajo es un punto, no una mancha',
+         r.width > 0 && r.width <= 20 && r.height <= 20);
+      pt.className = antes; pt.hidden = oculto;
+    })();
+
+    /* el cartel que ve el alumno */
+    const conFalta = F.pedidosDe(a2).find(x => x.avisoFalta) ||
+                     F.pedidosDe(a1).find(x => x.avisoFalta);
+    if(conFalta){
+      const html = cartelFalta(conFalta);
+      ok('el cartel le dice al alumno que NO pierde su lugar en la fila',
+         /no pierdes tu lugar/i.test(html));
+      ok('y le da un botón para cambiarlo de un toque',
+         /data-cambiar=/.test(html));
+    }
+  })();
+
+  /* dejar el aparato EXACTAMENTE como estaba: sus datos, su sesión y sus
+     alergias. Lo que se repone es lo que había, no "nada". */
+  try{
+    localStorage.setItem('fadori_v1', guardado);
+    if(suYo === null) localStorage.removeItem('fadori_yo');
+    else localStorage.setItem('fadori_yo', suYo);
+    if(susAlergias === null) localStorage.removeItem('fadori_mis_alergias');
+    else localStorage.setItem('fadori_mis_alergias', susAlergias);
+  }catch(e){}
   F.cargar();
+
+  ok('las pruebas no le tumban la sesión al alumno',
+     (function(){ let v = null; try{ v = localStorage.getItem('fadori_yo'); }catch(e){}
+       return v === suYo; })());
 
   console.log('%cFadori · '+bien+'/'+(bien+mal)+' pruebas',
     'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
