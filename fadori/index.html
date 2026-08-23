@@ -7,7 +7,7 @@
 <meta name="description" content="Proyecto Sin Filas · pide desde el salón y ve por tu comida cuando esté lista.">
 <meta name="theme-color" content="#FDF8F0">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="marca/fadori.svg" type="image/svg+xml">
+<link rel="icon" href="marca/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -18,21 +18,25 @@
 <body>
 
 <!-- ══════════ LA CORTINILLA ══════════
-  Lo primero que se ve: el color de la casa, el nombre, y una torta armándose
-  en el plato. Dura menos de dos segundos, sale UNA vez por visita y se salta
-  entera si el teléfono pide menos movimiento. Nada de hacer esperar a nadie
-  por una animación bonita. -->
+  Lo primero que se ve: el color de la casa, la hamburguesa de Fadori
+  armándose sola, y el nombre. Dura menos de dos segundos, sale UNA vez por
+  visita y se salta entera si el teléfono pide menos movimiento.
+
+  El dibujo es el logo REAL que mandó Carlos, cortado en sus seis capas — no
+  está redibujado por código. Cada capa cae desde donde estaba en la lámina
+  del logo abierto hasta su lugar en la hamburguesa armada, de abajo hacia
+  arriba. Por eso el final es idéntico al logo: es el logo. -->
 <div class="cortinilla" id="cortinilla" role="presentation">
-  <div class="cort-marca">Fadori<b>.</b></div>
-  <div class="torta" aria-hidden="true">
-    <span class="plato-base"></span>
-    <span class="vapor v1"></span><span class="vapor v2"></span><span class="vapor v3"></span>
-    <span class="capa pan-abajo"></span>
-    <span class="capa carne"></span>
-    <span class="capa queso"></span>
-    <span class="capa verde"></span>
-    <span class="capa pan-arriba"></span>
+  <div class="burger" aria-hidden="true">
+    <img class="cap sombra"     src="marca/capa-sombra.png"     alt="">
+    <img class="cap pan-abajo"  src="marca/capa-pan-abajo.png"  alt="">
+    <img class="cap carne"      src="marca/capa-carne.png"      alt="">
+    <img class="cap queso"      src="marca/capa-queso.png"      alt="">
+    <img class="cap jitomate"   src="marca/capa-jitomate.png"   alt="">
+    <img class="cap lechuga"    src="marca/capa-lechuga.png"    alt="">
+    <img class="cap pan-arriba" src="marca/capa-pan-arriba.png" alt="">
   </div>
+  <div class="cort-marca">Fadori<b>.</b></div>
   <div class="cort-pie">Proyecto Sin Filas</div>
 </div>
 
@@ -505,7 +509,7 @@ function tarjetaTurno(p){
   if(p.estado === 'listo'){
     return '<div class="turno listo">'+
       '<div class="rotulo">Tu turno</div>'+
-      '<div class="numero">'+p.turno+'</div>'+
+      '<div class="numero">'+F.verTurno(p)+'</div>'+
       '<div class="folio">'+esc(p.folio)+'</div>'+
       '<div class="frase">¡Ya está! Ve por él</div>'+
       '<div class="detalle">Di tu código <b>'+esc(p.folio)+'</b> en el mostrador</div>'+
@@ -515,7 +519,7 @@ function tarjetaTurno(p){
   const preparando = p.estado === 'preparando';
   return '<div class="turno">'+
     '<div class="rotulo">Tu turno</div>'+
-    '<div class="numero">'+p.turno+'</div>'+
+    '<div class="numero">'+F.verTurno(p)+'</div>'+
     '<div class="folio">'+esc(p.folio)+'</div>'+
     (preparando
       ? '<div class="frase">Lo están preparando</div>'
@@ -536,7 +540,7 @@ function tarjetaTurno(p){
 function tarjetaEspera(p, lugar){
   const v = F.veredicto(p.id);
   return '<button class="turno-chico" type="button" data-pedido="'+p.id+'">'+
-    '<span class="tc-n">'+p.turno+'</span>'+
+    '<span class="tc-n">'+F.verTurno(p)+'</span>'+
     '<span class="tc-q"><b>'+esc(p.renglones.map(r =>
       r.cant+'× '+((F.producto(r.prod)||{}).nombre||'—')).join(', '))+'</b>'+
       '<small>'+(p.estado === 'preparando' ? 'preparándose'
@@ -573,7 +577,7 @@ function pintarTurno(){
     caja.innerHTML = tarjetaTurno(p);
   } else if(p.estado === 'entregado'){
     caja.innerHTML = '<div class="turno"><div class="rotulo">Entregado</div>'+
-      '<div class="numero">'+p.turno+'</div>'+
+      '<div class="numero">'+F.verTurno(p)+'</div>'+
       '<div class="frase">Provecho</div>'+
       '<div class="detalle">'+F.pesos(p.total)+
       (p.debio ? ' · quedaste a deber '+F.pesos(p.debio) : ' · pagado')+'</div></div>';
@@ -584,7 +588,7 @@ function pintarTurno(){
       '<div class="detalle">Mañana entras de los primeros</div></div>';
   } else if(p.porFalta){
     caja.innerHTML = '<div class="turno"><div class="rotulo">Se cayó</div>'+
-      '<div class="numero">'+p.turno+'</div>'+
+      '<div class="numero">'+F.verTurno(p)+'</div>'+
       '<div class="frase no">No hubo nada de lo que pediste</div>'+
       '<div class="detalle">Si escoges otra cosa aquí abajo, vuelve con este mismo turno</div></div>';
   } else {
@@ -643,7 +647,7 @@ function pintarYo(){
   const mios = F.pedidosDe(yo.codigo).slice(0,12);
   $('#misPedidos').innerHTML = mios.length ? mios.map(p =>
     '<button class="renglon" type="button" data-pedido="'+p.id+'" style="width:100%; text-align:left">'+
-    '<span class="n">'+p.turno+'</span>'+
+    '<span class="n">'+F.verTurno(p)+'</span>'+
     '<span class="q">'+esc(nombreEstado(p.estado))+
       '<small>'+new Date(p.creado).toLocaleString('es-MX',{day:'numeric',month:'short',
         hour:'2-digit',minute:'2-digit'})+'</small></span>'+
@@ -1453,7 +1457,14 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 2);
+       viejo.version === 3);
+    ok('y les pone id a los eventos y conteos viejos, para poder sincronizarlos',
+       (function(){
+         const v2 = { version:2, config:{}, alumnos:{}, pedidos:[], productos:[],
+                      eventos:[{t:1, tipo:'pedido'}], conteos:[{t:1, n:3}] };
+         F._migrar(v2);
+         return !!v2.eventos[0].id && !!v2.conteos[0].id;
+       })());
   })();
 
   /* Ergonomía · el menú ya no se reconstruye en cada toque, así que hay que

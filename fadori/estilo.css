@@ -571,42 +571,45 @@ body.cortina-arriba{overflow:hidden}
 }
 @keyframes cort-entra{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
 
-/* ── la torta armándose ── */
-.torta{position:relative; width:168px; height:120px}
-.torta span{position:absolute; left:50%; transform:translateX(-50%)}
+/* ── la hamburguesa armándose ──────────────────────────────────────────────
+   Es el logo REAL de Fadori, cortado en sus capas: `marca/capa-*.png` salen
+   de `marca/hamburguesa-armandose.png`, con el blanco quitado para que se
+   puedan encimar. Antes esto era una hamburguesa dibujada con `border-radius`
+   y se notaba.
 
-.torta .plato-base{
-  bottom:0; width:168px; height:16px; border-radius:50%;
-  background:rgba(255,246,236,.92); box-shadow:0 6px 18px rgba(90,30,0,.35);
-  opacity:0; transform:translateX(-50%) scale(.6);
-  animation:plato-cae .42s cubic-bezier(.22,1,.36,1) .18s forwards;
-}
-@keyframes plato-cae{ to{opacity:1; transform:translateX(-50%) scale(1)} }
+   Cada capa arranca ARRIBA de su lugar y cae. La distancia va en % de la
+   ALTURA DE LA PROPIA CAPA, no en píxeles: así se ve igual en un iPhone SE
+   que en una tablet, sin una sola media query.
 
-/* cada capa cae desde arriba, una tras otra, con su rebotecito */
-.torta .capa{ border-radius:999px; opacity:0;
-  animation:capa-cae .38s cubic-bezier(.34,1.4,.64,1) forwards; }
-@keyframes capa-cae{
-  from{opacity:0; transform:translateX(-50%) translateY(-46px) scaleX(.82)}
-  to  {opacity:1; transform:translateX(-50%) translateY(0) scaleX(1)}
+   El orden es de abajo hacia arriba —pan, carne, queso, jitomate, lechuga,
+   pan— porque una hamburguesa se arma así, y el ojo lo nota aunque nadie
+   sepa decir por qué. */
+.burger{
+  position:relative; width:min(62vw, 236px); aspect-ratio:408/310; margin:0 auto;
 }
-.torta .pan-abajo {bottom:12px; width:118px; height:17px; background:#E8A85C; animation-delay:.42s}
-.torta .carne     {bottom:26px; width:126px; height:15px; background:#7A4423; animation-delay:.60s}
-.torta .queso     {bottom:38px; width:132px; height:10px; background:#FFC53D; animation-delay:.76s;
-                   border-radius:4px}
-.torta .verde     {bottom:46px; width:128px; height:11px; background:#7FB542; animation-delay:.90s}
-.torta .pan-arriba{bottom:55px; width:120px; height:34px; background:#E8A85C; animation-delay:1.04s;
-                   border-radius:60px 60px 12px 12px}
+.cap{
+  position:absolute; left:0; width:100%; height:auto; display:block;
+  opacity:0; will-change:transform, opacity;
+  animation:cae .46s cubic-bezier(.3,1.5,.5,1) forwards;
+}
+/* top = dónde termina · --cae = de dónde viene, en % de su propia altura */
+.burger .pan-arriba{ top:2%;     --cae:-200%; animation-delay:.76s }
+.burger .lechuga   { top:28%;    --cae:-410%; animation-delay:.62s }
+.burger .jitomate  { top:37.5%;  --cae:-380%; animation-delay:.50s }
+/* el queso va bajo a propósito: su rebanada está en la PARTE DE ARRIBA de la
+   lámina y lo de abajo es el chorreón. Puesto por su caja quedaba despegado
+   de la carne y la hamburguesa no cerraba. */
+.burger .queso     { top:46%;    --cae:-190%; animation-delay:.38s }
+.burger .carne     { top:52.3%;  --cae:-109%; animation-delay:.24s }
+.burger .pan-abajo { top:66.5%;  --cae:-60%;  animation-delay:.10s }
+.burger .sombra    { top:91.3%;  --cae:0%;    animation-delay:.10s;
+  animation-name:sombra-entra; animation-timing-function:ease-out }
 
-/* y el vaporcito al final, que es lo que la hace ver caliente */
-.torta .vapor{
-  bottom:92px; width:5px; height:5px; border-radius:50%;
-  background:rgba(255,246,236,.85); opacity:0;
-  animation:vapor-sube 1.1s ease-out infinite;
+@keyframes cae{
+  from{ opacity:0; transform:translateY(var(--cae)) }
+  to  { opacity:1; transform:translateY(0) }
 }
-.torta .v1{margin-left:-26px; animation-delay:1.30s}
-.torta .v2{margin-left:0;     animation-delay:1.46s}
-.torta .v3{margin-left:26px;  animation-delay:1.38s}
+@keyframes sombra-entra{ from{opacity:0; transform:scaleX(.6)} to{opacity:.9; transform:none} }
 @keyframes vapor-sube{
   0%  {opacity:0; transform:translateX(-50%) translateY(6px) scale(.5)}
   35% {opacity:.9}

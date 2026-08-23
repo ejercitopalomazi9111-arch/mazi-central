@@ -6,7 +6,7 @@
 <title>Fadori · mostrador</title>
 <meta name="theme-color" content="#F7F3EC">
 <link rel="manifest" href="manifest-mostrador.webmanifest">
-<link rel="icon" href="marca/fadori.svg" type="image/svg+xml">
+<link rel="icon" href="marca/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -304,7 +304,7 @@ function resumenCorto(p){
 function fichaActual(p){
   return '<div class="actual">'+
     '<div class="encabeza">'+
-      '<span class="turno-n">'+p.turno+'</span>'+
+      '<span class="turno-n">'+F.verTurno(p)+'</span>'+
       '<span class="quien">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+'</span>'+
       '<span class="cod">'+esc(p.folio)+'</span>'+
     '</div>'+
@@ -345,7 +345,7 @@ function renglonPedido(p, tipo){
   const listo = tipo === 'listo';
   return '<div class="renglon" style="border-width:2px'+
     (listo ? '; border-color:var(--verde)' : '')+'">'+
-    '<span class="n" style="font-size:22px">'+p.turno+'</span>'+
+    '<span class="n" style="font-size:22px">'+F.verTurno(p)+'</span>'+
     '<span class="q"><b>'+esc(p.nombre)+'</b>'+(p.grupo?' · '+esc(p.grupo):'')+
       (p.anticipado ? ' <b style="color:var(--dorado)">· anticipado</b>' : '')+
       '<small>'+esc(resumenCorto(p))+'</small></span>'+
@@ -360,7 +360,7 @@ function renglonPedido(p, tipo){
    ═════════════════════════════════════════════════════════════════════ */
 function abrirCobro(oid){
   const p = F.pedido(oid); if(!p) return;
-  $('#hojitaT').textContent = 'Cobrar el turno ' + p.turno;
+  $('#hojitaT').textContent = 'Cobrar el turno ' + F.verTurno(p);
   $('#hojitaC').innerHTML =
     '<p class="sub">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+' · código <b>'+esc(p.folio)+'</b></p>'+
     '<div class="cifras"><div class="cifra"><b>'+F.pesos(p.total)+'</b><span>total</span></div></div>'+
@@ -454,7 +454,7 @@ function abrirPapel(){
     (todo.length
       ? '<div style="overflow-x:auto"><table><thead><tr><th>Turno</th><th>Código</th>'+
         '<th>Quién</th><th>Qué lleva</th><th class="num">Total</th></tr></thead><tbody>'+
-        todo.map(p => '<tr><td><b>'+p.turno+'</b></td><td>'+esc(p.folio)+'</td>'+
+        todo.map(p => '<tr><td><b>'+F.verTurno(p)+'</b></td><td>'+esc(p.folio)+'</td>'+
           '<td>'+esc(p.nombre)+(p.grupo?'<br><small>'+esc(p.grupo)+'</small>':'')+'</td>'+
           '<td>'+esc(resumenCorto(p))+'</td>'+
           '<td class="num">'+F.pesos(p.total)+'</td></tr>').join('')+
@@ -482,7 +482,7 @@ function abrirNoHay(dato){
   $('#hojitaT').textContent = 'No le puedes dar ' + prod.nombre;
   $('#hojitaC').innerHTML =
     '<div class="aviso" style="border-left-color:var(--ambar)">'+
-      'Turno <b>'+p.turno+'</b> · '+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+
+      'Turno <b>'+F.verTurno(p)+'</b> · '+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+
     '</div>'+
     '<p class="sub" style="margin-top:14px">Le sale en su teléfono que no hubo, '+
       'se le baja del total y escoge otra cosa. '+
@@ -534,7 +534,7 @@ function abrirSeAcabo(pid){
     '</div>'+
     '<div class="pila" style="margin-top:14px">'+
       pegados.map(o => '<div class="renglon">'+
-        '<span class="n" style="font-size:22px">'+o.turno+'</span>'+
+        '<span class="n" style="font-size:22px">'+F.verTurno(o)+'</span>'+
         '<span class="q"><b>'+esc(o.nombre)+'</b>'+(o.grupo?' · '+esc(o.grupo):'')+
           '<small>'+esc(resumenCorto(o))+'</small></span></div>').join('')+
     '</div>'+
