@@ -57,10 +57,13 @@ no cuentan: la rúbrica los pide.
 - `validate.py --original formato-institucional.pptx` → **pasa**, con la plantilla de base
   para que sus propios defectos no se lean como míos.
 - `markitdown` → el texto llegó completo, sin sobras de plantilla, sin "2025".
-- Un medidor de geometría propio (`/tmp`, se rehace en un minuto) revisó las 19 láminas:
-  cero traslapes entre fotos y cuadros de texto, todo dentro del lienzo. **Ya cazó uno:** en
-  "¿Cómo funciona?" el cuerpo heredado de la lámina 8 medía 15.49″ de ancho y le pasaba por
-  encima a las tres capturas. Se subió a 2.50″ y quedaron 0.85″ de aire.
+- `python3 medir.py Fadori-STEAM.pptx formato-institucional.pptx` → **el metro de la casa**.
+  Lee las coordenadas reales de las 19 láminas y busca lo único que se puede comprobar sin
+  ojos: algo fuera del lienzo, o una foto encimada sobre un cuadro de texto. Le pasas la
+  plantilla como segundo argumento para que su decoración sangrada no cuente como defecto.
+  **Ya cazó uno:** en "¿Cómo funciona?" el cuerpo heredado de la lámina 8 medía 15.49″ de
+  ancho y le pasaba por encima a las tres capturas. Se subió a 2.50″ y quedaron 0.85″ de aire.
+  Y se comprobó que el metro sirve volviendo a meter el bug a propósito: lo cazó otra vez.
 
 **Lo que falta y hay que decirlo:** LibreOffice está roto en este contenedor —falla hasta
 abriendo un `.txt`, y también con la plantilla original, así que no es culpa del archivo—.
