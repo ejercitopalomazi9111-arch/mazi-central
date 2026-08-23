@@ -1,0 +1,20 @@
+{
+  "name": "Fadori · Proyecto Sin Filas",
+  "short_name": "Fadori",
+  "description": "Pide desde el salón y ve por tu comida cuando esté lista.",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#C2410C",
+  "theme_color": "#C2410C",
+  "categories": ["food", "education"],
+  "icons": [
+    { "src": "marca/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "marca/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "marca/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "marca/fadori.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

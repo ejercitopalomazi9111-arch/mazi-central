@@ -6,6 +6,13 @@
 <title>Fadori · pide sin formarte</title>
 <meta name="description" content="Proyecto Sin Filas · pide desde el salón y ve por tu comida cuando esté lista.">
 <meta name="theme-color" content="#FDF8F0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="marca/fadori.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fadori">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
@@ -1718,6 +1725,20 @@ arrancar();
       ok('y le da un botón para cambiarlo de un toque',
          /data-cambiar=/.test(html));
     }
+  })();
+
+  /* F47 · el ícono de la pantalla de inicio. Si el manifiesto o el ícono de
+     Apple no están enganchados, "Agregar a inicio" pone una captura de la
+     página en vez del logo, y eso se ve barato en el teléfono de un alumno. */
+  (function(){
+    const man = document.querySelector('link[rel="manifest"]');
+    const ios = document.querySelector('link[rel="apple-touch-icon"]');
+    ok('la app trae manifiesto para poder instalarse',
+       !!man && /manifest\.webmanifest$/.test(man.getAttribute('href')));
+    ok('y trae ícono para la pantalla de inicio del iPhone',
+       !!ios && /\.png$/.test(ios.getAttribute('href')));
+    ok('con nombre corto, para que abajo del ícono no salga la URL',
+       (document.querySelector('meta[name="apple-mobile-web-app-title"]')||{}).content === 'Fadori');
   })();
 
   /* F46 · el candado contra los diálogos del navegador. Carlos los pidió
