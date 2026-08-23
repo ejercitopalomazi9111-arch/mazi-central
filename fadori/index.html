@@ -1298,6 +1298,30 @@ arrancar();
   ok('los datos exportan a CSV sin romperse con comas',
      F.csvDeConteos !== undefined);
 
+  /* ── la migración ── el menú se siembra UNA vez, así que todo lo que se le
+     agregue después hay que traérselo a quien ya lo tenía. Pasó de verdad:
+     las fotos no llegaban a quien había entrado antes de que existieran. */
+  (function(){
+    const viejo = {
+      version: 1, config:{}, alumnos:{}, pedidos:[], eventos:[], conteos:[],
+      productos: [
+        { id:'v1', nombre:'Pozole', cat:'fuerte', precio:5000, segPrep:80,
+          foto:'', disponible:true, destacado:false, existencias:null, orden:0 },
+        { id:'v2', nombre:'Algo de la cooperativa', cat:'antojo', precio:1000, segPrep:20,
+          foto:'una-suya.jpg', disponible:true, destacado:false, existencias:null, orden:1 },
+      ],
+    };
+    F._migrar(viejo);
+    ok('a un menú viejo le llegan las fotos del arranque',
+       /^fotos\//.test(viejo.productos[0].foto));
+    ok('y también la descripción y los alérgenos que faltaban',
+       viejo.productos[0].desc.length > 0);
+    ok('pero NO le pisa la foto que la cooperativa ya había puesto',
+       viejo.productos[1].foto === 'una-suya.jpg');
+    ok('y la migración deja el archivo marcado, para no repetirla',
+       viejo.version === 2);
+  })();
+
   /* Ergonomía · el menú ya no se reconstruye en cada toque, así que hay que
      comprobar que las piezas que se refrescan solas de verdad se refrescan */
   (function(){

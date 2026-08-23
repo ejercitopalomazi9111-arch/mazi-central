@@ -113,7 +113,7 @@ Cada pantalla trae las suyas y **corren solas al cargar**. Si algo se rompe, sal
 antes de que lo vea un alumno.
 
 ```
-index.html      51 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste
+index.html      55 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración
 mostrador.html  19 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador
 pantalla.html    4 pruebas    que el número salga y que el NOMBRE nunca salga
 medidor.html    10 pruebas    quién alcanzó, la curva, el contador, el CSV
@@ -170,6 +170,32 @@ cumple con la licencia.
 
 **Son el arranque, no una lista fija.** En cuanto la cooperativa suba las fotos de su comida de
 verdad desde su pantalla, éstas desaparecen y el menú se ve el doble de bien.
+
+### Y por eso existe `migrar()`
+
+El menú **se siembra una sola vez**, la primera que se abre la app. Todo lo que se le agregue
+después al menú de arranque —descripciones, alérgenos, fotos— **no le llega solo** a quien ya
+tenía la app abierta: su aparato ya tiene su copia y no la vuelve a sembrar nunca.
+
+Y ya pasó de verdad: se subieron las 17 fotos, se vieron perfectas en un teléfono nuevo, y en el
+de quien había entrado antes **el menú siguió sin una sola imagen**.
+
+`migrar(d)` en `nucleo.js` es lo que lo arregla. Corre en cada carga, compara la `version` del
+archivo guardado contra la de hoy y le trae lo que le falte:
+
+- rellena las fotos, descripciones y alérgenos de los platillos **que se llaman igual** que uno
+  del menú de arranque,
+- **no pisa** la foto que la cooperativa ya haya subido,
+- y **no inventa nada** para los platillos que ellos agregaron por su cuenta — ésos se quedan con
+  el emoji de su categoría, que es lo correcto: de "Esquites de la señora" no tenemos foto.
+
+> **La regla que queda:** cada cosa nueva que se le meta a `MENU_BASE` o a `CONFIG_BASE` necesita
+> su renglón en `migrar()` y un `version` más arriba. Si no, le llega **sólo a quien instale de
+> cero** — y eso no se nota en la máquina de uno, que siempre está limpia. Se nota en el teléfono
+> de Carlos, tres días después.
+
+Hay cuatro pruebas en `index.html` que fallan si la migración deja de traer las fotos, si pisa una
+foto propia, o si se le olvida marcar la versión.
 
 ---
 

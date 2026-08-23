@@ -159,7 +159,7 @@ const LLAVE = 'fadori_v1';
 
 function estadoVacio(){
   return {
-    version: 1,
+    version: 2,
     config: Object.assign({}, CONFIG_BASE),
     productos: [],
     alumnos: {},      /* codigo -> {codigo, nombre, grupo, deuda, terminos, favorito} */
@@ -244,6 +244,7 @@ let D = null;
 
 function siembra(){
   const d = estadoVacio();
+  d.version = 2;
   d.productos = MENU_BASE.map((p, i) => ({
     id: id('p'),
     nombre: p.nombre,
@@ -261,16 +262,49 @@ function siembra(){
   return d;
 }
 
+/* ── Las migraciones ──────────────────────────────────────────────────
+   El menú se siembra UNA sola vez, la primera. Todo lo que se le agregue
+   después —descripciones, alérgenos, fotos— no le llega solo a quien ya
+   tenía la app abierta: hay que traérselo aquí. Y sí pasó: las fotos del
+   menú no aparecían en el teléfono de quien había entrado antes de que
+   existieran. Cada cosa nueva del arranque necesita su renglón en esta
+   función, o le llega sólo a quien instala de cero. */
+function migrar(d){
+  const antes = d.version || 1;
+  d.config = Object.assign({}, CONFIG_BASE, d.config || {});
+  ['productos','pedidos','eventos','conteos'].forEach(k => { if(!Array.isArray(d[k])) d[k] = []; });
+  if(!d.alumnos) d.alumnos = {};
+  d.productos.forEach(p => {
+    if(!Array.isArray(p.alergenos)) p.alergenos = [];
+    if(typeof p.desc !== 'string') p.desc = '';
+    if(typeof p.foto !== 'string') p.foto = '';
+  });
+
+  /* 1 → 2 · las fotos del menú de arranque. Sólo a los que se llaman igual
+     que un platillo sembrado y NO tienen foto propia: si la cooperativa ya
+     le puso la suya, no se toca. */
+  if(antes < 2){
+    const porNombre = {};
+    MENU_BASE.forEach(b => { if(b.foto) porNombre[b.nombre] = b.foto; });
+    d.productos.forEach(p => {
+      if(!p.foto && porNombre[p.nombre]) p.foto = porNombre[p.nombre];
+      if(!p.desc && !p.alergenos.length){
+        const b = MENU_BASE.find(x => x.nombre === p.nombre);
+        if(b){ p.desc = b.desc || ''; p.alergenos = (b.al || []).slice(); }
+      }
+    });
+  }
+
+  d.version = 2;
+  return antes;
+}
+
 function cargar(){
   D = MOTOR.leer();
-  if(!D) { D = siembra(); MOTOR.escribir(D); }
-  /* migración suave: si el archivo viene de una versión vieja, se completa */
-  D.config = Object.assign({}, CONFIG_BASE, D.config || {});
-  ['productos','pedidos','eventos','conteos'].forEach(k => { if(!Array.isArray(D[k])) D[k] = []; });
-  /* migración: los productos de antes no traían alérgenos ni descripción */
-  D.productos.forEach(p => { if(!Array.isArray(p.alergenos)) p.alergenos = [];
-    if(typeof p.desc !== 'string') p.desc = ''; });
-  if(!D.alumnos) D.alumnos = {};
+  if(!D){ D = siembra(); MOTOR.escribir(D); return D; }
+  const antes = migrar(D);
+  /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
+  if(antes < 2){ try{ MOTOR.escribir(D); }catch(e){} }
   return D;
 }
 
@@ -1060,7 +1094,7 @@ const FADORI = {
   pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
   misAlergias, guardarAlergias, choquesDe,
   /* datos */
-  cargar, guardar, estado, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
+  cargar, guardar, estado, _migrar: migrar, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, yo, entrarComo, salir, aceptarTerminos,
   /* menú */
