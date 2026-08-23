@@ -155,6 +155,33 @@ function limpiaGrupo(t){
    Una sola interfaz: leer(), escribir(), alCambiar(). Hoy la cumple el motor
    local; mañana la cumple el del servidor sin que nadie más cambie.
    ═════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════
+   EL CANDADO CONTRA LOS DIÁLOGOS DEL NAVEGADOR · F46
+   Carlos los pidió fuera TODOS: *"solo quiero que la app responda nada más"*.
+   Y tiene razón de sobra — un alert dice "ejercitopalomazi9111-arch.github.io
+   dice", trae un botón de "no permitir más diálogos" que deja la pantalla
+   muerta hasta recargar, y en una tablet colgada frente a media escuela se ve
+   prestado.
+
+   Quitarlos uno por uno no basta: el que se cuele mañana vuelve a salir. Así
+   que aquí se tapan los tres de raíz. Cada pantalla registra su propio aviso
+   con `FADORI.avisaCon(fn)` y todo lo que alguien mande por alert sale por
+   ahí. `confirm` devuelve false y `prompt` devuelve null: si algo se coló, lo
+   seguro es NO hacer la acción, nunca hacerla a ciegas.
+   ═════════════════════════════════════════════════════════════════════════ */
+let AVISA = null;
+function avisaCon(fn){ AVISA = typeof fn === 'function' ? fn : null; }
+if(typeof window !== 'undefined'){
+  const decir = (m, tono) => {
+    const t = String(m == null ? '' : m);
+    if(AVISA){ try{ AVISA(t, tono); return; }catch(e){} }
+    console.warn('[fadori] aviso sin pantalla dónde salir:', t);
+  };
+  window.alert   = (m) => { decir(m); };
+  window.confirm = (m) => { decir(m, 'malo'); return false; };
+  window.prompt  = (m) => { decir(m, 'malo'); return null; };
+}
+
 const LLAVE = 'fadori_v1';
 
 function estadoVacio(){
@@ -1282,7 +1309,7 @@ const FADORI = {
   pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
   misAlergias, guardarAlergias, choquesDe,
   /* datos */
-  cargar, guardar, estado, _migrar: migrar, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
+  cargar, guardar, estado, _migrar: migrar, avisaCon, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, yo, entrarComo, salir, aceptarTerminos,
   /* menú */

@@ -90,6 +90,22 @@ La regla es que **el renglón no se borra, se marca** (`sinSurtir`). Tres cosas 
 Todo esto lo cazó Carlos preguntando: *"¿y si se acaba un producto y varios en la fila lo
 pidieron?"*. No pasaba nada. Ahora pasa todo. Detalle completo en `FUNCIONES.md` §F45.
 
+### 2-ter · Ni un diálogo del navegador
+
+Lo pidió Carlos con todas sus letras: *"elimínalos TODOS, sólo quiero que la app responda nada
+más."* No queda un `alert`, un `confirm` ni un `prompt` en las cuatro pantallas.
+
+Y no se quitaron sólo uno por uno, porque el que se cuele mañana volvería a salir: **están
+tapados de raíz en `nucleo.js`**. Los tres están reemplazados ahí mismo, y cada pantalla registra
+su propio aviso con `FADORI.avisaCon(fn)`. Si alguien manda algo por `alert`, sale por el aviso de
+la casa; un `confirm` colado devuelve `false` y un `prompt` colado devuelve `null` — porque si
+algo se escapó, lo seguro es **no** hacer la acción, nunca hacerla a ciegas.
+
+Por qué importaba más de lo que parece: un diálogo del navegador dice
+*"ejercitopalomazi9111-arch.github.io dice"*, trae un botón de **"no permitir más diálogos"** que
+deja la pantalla muerta hasta recargar, y en una tablet colgada frente a media escuela se ve
+prestado. Hay una prueba en cada pantalla que falla si el candado se afloja.
+
 ### 3 · Cero datos de más
 
 Nombre de pila y grupo. **Sin apellidos, sin correo, sin teléfono, sin contraseña, sin fotos de
@@ -127,10 +143,10 @@ Cada pantalla trae las suyas y **corren solas al cargar**. Si algo se rompe, sal
 antes de que lo vea un alumno.
 
 ```
-index.html      78 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración, faltantes
-mostrador.html  26 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador, faltantes
+index.html      80 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración, faltantes
+mostrador.html  29 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador, faltantes
 pantalla.html    4 pruebas    que el número salga y que el NOMBRE nunca salga
-medidor.html    10 pruebas    quién alcanzó, la curva, el contador, el CSV
+medidor.html    12 pruebas    quién alcanzó, la curva, el contador, el CSV
 ```
 
 Tres de las de `index.html` **miden el contraste en pantalla** y fallan por debajo de 4.5. Están

@@ -130,6 +130,18 @@
 'use strict';
 const $  = (s) => document.querySelector(s);
 const $$ = (s) => Array.prototype.slice.call(document.querySelectorAll(s));
+
+/* Los avisos son de la casa · F46 · aquí sólo hace falta el tostón */
+function aviso(texto, tono){
+  const t = document.createElement('div');
+  t.className = 'toston' + (tono ? ' '+tono : '');
+  t.textContent = texto;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('vivo'));
+  setTimeout(() => { t.classList.remove('vivo');
+    setTimeout(() => t.remove(), 300); }, 3000);
+}
+window.FADORI.avisaCon(aviso);   /* todo lo que se mande por alert sale por aquí */
 const F = window.FADORI;
 const esc = (t) => String(t==null?'':t).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -253,7 +265,7 @@ $('#bMas').addEventListener('click', () => {
 $('#bMenos').addEventListener('click', () => { cuenta = Math.max(0, cuenta-1); pintarContador(); });
 $('#bCero').addEventListener('click', () => { cuenta = 0; pintarContador(); });
 $('#bAnotar').addEventListener('click', () => {
-  if(!cuenta) return alert('El conteo está en cero.');
+  if(!cuenta) return aviso('El conteo está en cero.', 'malo');
   F.contarFila(cuenta, $('#nota').value);
   cuenta = 0; $('#nota').value = '';
   pintarContador();
@@ -377,6 +389,23 @@ verVista('hoy');
 
   try{ localStorage.setItem('fadori_v1', guardado); }catch(e){}
   F.cargar(); pintar();
+  /* F46 · el candado contra los diálogos del navegador. Carlos los pidió
+     fuera TODOS. Quitarlos uno por uno no basta: el que se cuele mañana
+     vuelve a salir, así que están tapados de raíz en nucleo.js. Esto
+     comprueba que el candado sigue puesto en ESTA pantalla. */
+  (function(){
+    let salio = '';
+    window.FADORI.avisaCon((t) => { salio = t; });
+    const r = window.confirm('probando');
+    const q = window.prompt('probando');
+    window.alert('probando');
+    window.FADORI.avisaCon(aviso);
+    ok('un alert no abre un diálogo del navegador: sale por el aviso de la casa',
+       salio === 'probando');
+    ok('y un confirm o un prompt colados nunca hacen la acción a ciegas',
+       r === false && q === null);
+  })();
+
   console.log('%cFadori medidor · '+bien+'/'+(bien+mal)+' pruebas',
     'color:'+(mal?'#FF7A7A':'#5BD98A')+';font-weight:700');
 })();

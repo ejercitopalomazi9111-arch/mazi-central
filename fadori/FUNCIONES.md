@@ -310,6 +310,26 @@ ahorrarse.
    su turno y su hora de llegada; si su pedido se había caído entero, **revive con el mismo
    número**. Mandarlo al final por un error de la cooperativa es castigarlo por algo que no hizo.
 
+### F46 · **(+)** Ni un diálogo del navegador
+
+> *"Aún hay mensajes del navegador, elimínalos TODOS, sólo quiero que la app responda nada más."*
+
+Ya no queda ninguno en las cuatro pantallas: se cambiaron los diecisiete por avisos de la casa —un
+tostón que sube por abajo para lo corto, una hojita para preguntar sí/no o pedir un número, y una
+hoja completa para lo que hay que leer con calma, como el **cierre del recreo**, que era un `alert`
+de seis renglones pegados y ahora es una tabla con lo que hay que comprar de más.
+
+**Y están tapados de raíz**, no sólo quitados: `nucleo.js` reemplaza `alert`, `confirm` y `prompt`,
+y cada pantalla registra su aviso con `FADORI.avisaCon(fn)`. El que se cuele mañana tampoco va a
+salir. Un `confirm` colado devuelve `false` y un `prompt` colado devuelve `null`: si algo se
+escapó, lo seguro es **no** hacer la acción, nunca hacerla a ciegas.
+
+Por qué pesaba: el diálogo dice *"ejercitopalomazi9111-arch.github.io dice"*, trae un botón de
+**"no permitir más diálogos"** que deja la pantalla muerta hasta recargar, y en una tablet colgada
+frente a media escuela se ve prestado.
+
+---
+
 ---
 
 ## Las cinco reglas de construcción que aplican a todo
