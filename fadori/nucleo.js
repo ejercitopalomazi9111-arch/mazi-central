@@ -276,6 +276,51 @@ const MotorLocal = {
    estampa con la hora y sale en el siguiente empujón.
    ═════════════════════════════════════════════════════════════════════════ */
 
+/* ── El tema · F49 ────────────────────────────────────────────────────
+   Tres estados y no dos: "automático" es el que casi todos van a dejar, y es
+   el que hace que la app se ponga oscura de noche sin que nadie toque nada.
+   Es POR APARATO, no por alumno: el modo oscuro es de los ojos de quien
+   sostiene el teléfono, no de la cuenta. */
+const LLAVE_TEMA = 'fadori_tema';
+
+function tema(){
+  try{ return localStorage.getItem(LLAVE_TEMA) || 'auto'; }catch(e){ return 'auto'; }
+}
+function esOscuro(t){
+  const q = t || tema();
+  if(q === 'oscuro') return true;
+  if(q === 'claro')  return false;
+  try{ return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
+  catch(e){ return false; }
+}
+function aplicarTema(){
+  try{
+    document.documentElement.dataset.tema = esOscuro() ? 'oscuro' : 'claro';
+    /* la barra del navegador también, si no se ve un cintillo claro arriba
+       de una app oscura y parece que se partió la pantalla */
+    const m = document.querySelector('meta[name="theme-color"]');
+    if(m){
+      const fondo = getComputedStyle(document.body).backgroundColor;
+      if(fondo) m.setAttribute('content', fondo);
+    }
+  }catch(e){}
+}
+function ponerTema(t){
+  const q = (t === 'claro' || t === 'oscuro') ? t : 'auto';
+  try{ localStorage.setItem(LLAVE_TEMA, q); }catch(e){}
+  aplicarTema();
+  return q;
+}
+/* si está en automático y el teléfono cambia de modo, la app cambia con él */
+try{
+  if(window.matchMedia){
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    const alCambiarTema = () => { if(tema() === 'auto') aplicarTema(); };
+    if(mq.addEventListener) mq.addEventListener('change', alCambiarTema);
+    else if(mq.addListener) mq.addListener(alCambiarTema);
+  }
+}catch(e){}
+
 const LLAVE_API   = 'fadori_servidor';   /* la dirección, fuera del documento */
 const LLAVE_SYNC  = 'fadori_sync';       /* hasta qué reloj ya me puse de acuerdo */
 const CAJONES = ['productos', 'alumnos', 'pedidos', 'conteos', 'eventos'];
@@ -1598,7 +1643,8 @@ const FADORI = {
   pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
   misAlergias, guardarAlergias, choquesDe,
   /* datos */
-  cargar, guardar, estado, _migrar: migrar, avisaCon, verTurno,
+  cargar, guardar, estado, _migrar: migrar, avisaCon,
+  tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, yo, entrarComo, salir, aceptarTerminos,
