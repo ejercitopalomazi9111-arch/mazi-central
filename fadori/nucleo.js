@@ -394,6 +394,9 @@ function pedir(cod, renglones, opciones){
     creado: ahora(),
     estado: 'en_cola',
     anticipado: !!o.anticipado,
+    /* la nota la escribe el alumno y la LEE la cooperativa. Si no sale en la
+       pantalla de despachar, es un campo decorativo y mejor no tenerlo. */
+    nota: String(o.nota || '').slice(0, 140).trim(),
     origen: o.origen || 'app',
     despachador: null,
     tomado: 0, listoEn: 0, entregado: 0,
@@ -753,6 +756,7 @@ function csvDePedidos(desde){
     { titulo:'estado',       valor:p => p.estado },
     { titulo:'origen',       valor:p => p.origen },
     { titulo:'anticipado',   valor:p => p.anticipado ? 'sí' : 'no' },
+    { titulo:'nota',         valor:p => p.nota || '' },
     { titulo:'articulos',    valor:p => p.renglones.reduce((s,r)=>s+r.cant,0) },
     { titulo:'total_pesos',  valor:p => (p.total/100).toFixed(2) },
     { titulo:'pagado_pesos', valor:p => (p.pagado/100).toFixed(2) },
