@@ -30,4 +30,6 @@ new_sqlite_classes = ["Cooperativa"]
 [vars]
 # De dónde se acepta que llamen. En claro y sin comodín: un "*" aquí sería
 # dejarle la puerta abierta a cualquier página del mundo.
-ORIGENES = "https://fadori.pages.dev,http://localhost:8777,http://127.0.0.1:8777"
+# La dirección real del sitio, ya publicada. Si algún día cambia —un dominio
+# propio, otro proyecto— se cambia AQUÍ y se vuelve a desplegar el servidor.
+ORIGENES = "https://mazi-central.palomazi9111.workers.dev,http://localhost:8777,http://127.0.0.1:8777"

@@ -3,7 +3,7 @@
 > Todo lo que se podía hacer sin tu cuenta ya está hecho y probado. **Aquí está lo que sólo tú
 > puedes hacer**, en el orden en que hay que hacerlo y con lo que se rompe si se hace al revés.
 >
-> Tiempo real: **unos 25 minutos**. Cuesta **cero pesos** — todo cabe en los planes gratis.
+> Tiempo real: **unos 10 minutos**, porque el paso 1 ya está hecho. Cuesta **cero pesos** — todo cabe en los planes gratis.
 
 ---
 
@@ -42,9 +42,12 @@ y un `build.mjs` que arma la carpeta con **sólo lo que va publicado**.
    `ejercitopalomazi9111-arch/mazi-central`.
 3. Deja todo como venga y dale **Deploy**. La configuración ya está en el repo.
 
-Sale una dirección tipo **`https://mazi-central.<tu-subdominio>.workers.dev`**.
+**Ya está hecho.** El sitio vive en:
 
-> **Anótala.** La vas a necesitar en el paso 2.
+> ### https://mazi-central.palomazi9111.workers.dev
+
+Verificado en vivo: las cinco pantallas abren, y `CLAUDE.md`, `DESPLIEGUE.md`, `servidor/`,
+`.claude/` y `build.mjs` devuelven **404**. Los créditos de las fotos sí se sirven.
 
 ### Qué se publica y qué no · esto importa más de lo que parece
 
@@ -64,46 +67,54 @@ crédito. Si no se publica, estaríamos usando el trabajo de otros sin cumplir l
 cambio. La app de Fadori además lo enlaza hasta abajo, y hay una prueba que falla si ese enlace
 desaparece.
 
-## 2 · El servidor · ~7 min
+## 2 · El servidor · ~5 min
 
-Desde tu computadora, con el repo clonado:
+Igual que el sitio, y **sin tocar la computadora** si no quieres: Cloudflare lo construye desde el
+mismo repo.
+
+### Desde el panel · lo más fácil
+
+1. **Workers & Pages → Create → Import a repository** → otra vez `mazi-central`.
+2. En **Root directory** pon **`servidor`**. Ése es el único campo que cambia.
+3. **Deploy.**
+
+Sale **`https://fadori.palomazi9111.workers.dev`**.
+
+> Son dos proyectos distintos apuntando al mismo repo: uno sirve el sitio y otro corre el
+> servidor. No se estorban — cada uno tiene su propia configuración en su propia carpeta, y
+> mezclarlos es como se termina publicando el código del servidor.
+
+### O desde tu computadora, si la tienes a la mano
 
 ```bash
 cd mazi-central/servidor
-npx wrangler login          # abre el navegador y te pide entrar a Cloudflare
+npx wrangler login
 npx wrangler deploy
 ```
 
-Sale una dirección tipo **`https://fadori.<tu-subdominio>.workers.dev`**.
+### No hay que editar nada
 
-> **Anótala también.**
-
-**Antes de correr `deploy`, edita una línea.** En `servidor/wrangler.toml`, la línea `ORIGENES`
-tiene que traer la dirección de tu Pages del paso 1:
+La línea `ORIGENES` de `servidor/wrangler.toml` **ya trae la dirección real del sitio**:
 
 ```toml
-ORIGENES = "https://mazi-central.<tu-subdominio>.workers.dev,http://localhost:8777"
+ORIGENES = "https://mazi-central.palomazi9111.workers.dev,http://localhost:8777,http://127.0.0.1:8777"
 ```
 
-Sin eso el navegador bloquea las llamadas y parece que el servidor no sirve, cuando en realidad
-está haciendo su trabajo: **no tiene comodín a propósito**. Un `*` ahí le abriría la puerta a
-cualquier página del mundo para escribir en los pedidos de la escuela.
+Eso es lo que le da permiso a la app para hablarle al servidor. **No tiene comodín a propósito:**
+un `*` ahí le abriría la puerta a cualquier página del mundo para escribir en los pedidos de la
+escuela. Si algún día compras un dominio, se cambia esa línea y se vuelve a desplegar.
 
-Si te equivocas, se arregla sin volver a desplegar:
-`npx wrangler secret put` no — es una variable normal: edita el `.toml` y `npx wrangler deploy`
-otra vez.
+**Para comprobar que quedó**, abre esto en el teléfono:
 
-**Para comprobar que quedó:**
-```bash
-curl https://fadori.<tu-subdominio>.workers.dev/api/salud
-# {"bien":true,"quien":"fadori",...}
-```
+`https://fadori.palomazi9111.workers.dev/api/salud`
+
+Tiene que contestar `{"bien":true,"quien":"fadori",...}`. Si contesta eso, ya está.
 
 ---
 
 ## 3 · Conectar los dos · ~2 min
 
-1. Abre **`<la dirección del paso 1>/fadori/mostrador.html`** en la tablet.
+1. Abre **`https://mazi-central.palomazi9111.workers.dev/fadori/mostrador.html`** en la tablet.
 2. Pasador (el de arranque es `1234`).
 3. **Ajustes → El servidor** → pega la dirección del paso 2 → **Probar y guardar**.
 
