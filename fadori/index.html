@@ -106,13 +106,16 @@
     <div class="chips tira" id="filtros"></div>
 
     <div id="destacados" class="destacado" hidden>
-      <h2>Hoy</h2>
+      <p class="rotulillo">Lo que hay hoy</p>
+      <h2>El plato del día</h2>
       <div class="rejilla" id="rejillaDestacados"></div>
     </div>
 
+    <p class="rotulillo">Todo lo que hay</p>
     <h2 id="tituloMenu">El menú</h2>
     <div class="rejilla" id="rejilla"></div>
 
+    <p class="rotulillo">Para cuadrar el gasto</p>
     <h2>¿Cuánto traes?</h2>
     <p class="sub">Dime tu presupuesto y te armo opciones que sí caben.</p>
     <div style="display:flex; gap:10px; align-items:flex-end">
@@ -258,6 +261,31 @@ function cuantosDe(pid){
 /* La ficha es un DIV con la foto tocable adentro, no un <button> gigante:
    así el "−" y el "+" pueden ser botones de verdad sin anidar botones, que
    es HTML inválido y en Safari se comporta raro. */
+/* El destacado, cuando SÍ hay foto de verdad, se vuelve un cartel: la foto
+   a sangre y el texto encima, como en los sitios de restaurante. Con el
+   mosaico de color no se hace —el texto encima de un lavado pálido no se
+   lee— y entonces se queda como ficha normal. */
+function fichaHeroe(p){
+  const seg = F.segReales(p.id) || p.segPrep;
+  const n = cuantosDe(p.id);
+  const agotado = !p.disponible || !F.existenciasOk(p);
+  return '<div class="heroe'+(agotado?' agotado':'')+(n?' puesto':'')+'" data-ficha="'+p.id+'">'+
+    '<img src="'+esc(p.foto)+'" alt="">'+
+    '<div class="heroe-velo"></div>'+
+    '<button class="heroe-toca" type="button" data-ver="'+p.id+'" '+
+      'aria-label="Ver '+esc(p.nombre)+'"></button>'+
+    '<span class="marca-esq">'+(agotado?'se acabó':'hoy')+'</span>'+
+    '<div class="heroe-texto">'+
+      '<span class="heroe-nom">'+esc(p.nombre)+'</span>'+
+      (p.desc ? '<span class="heroe-desc">'+esc(p.desc)+'</span>' : '')+
+      '<span class="heroe-precio">'+F.pesos(p.precio)+
+        '<small>'+(seg < 60 ? ' · sale rápido' : ' · tarda ~'+Math.round(seg/60)+' min')+'</small></span>'+
+    '</div>'+
+    (agotado ? '' : botonFlota(p, n))+
+    (agotado ? '' : '<div class="pasos"'+(n?'':' hidden')+'>'+ pasosDe(p, n) +'</div>')+
+  '</div>';
+}
+
 function fichaPlato(p){
   const t = tono(p.cat);
   const n = cuantosDe(p.id);
@@ -334,7 +362,8 @@ function pintarMenu(forzar){
     ultimaFirma = firma;
     const dest = todos.filter(p => p.destacado && p.disponible);
     $('#destacados').hidden = !dest.length;
-    $('#rejillaDestacados').innerHTML = dest.map(fichaPlato).join('');
+    $('#rejillaDestacados').innerHTML = dest.map(p =>
+      p.foto ? fichaHeroe(p) : fichaPlato(p)).join('');
 
     const cats = F.CATEGORIAS.filter(c => todos.some(p => p.cat === c.id));
     $('#filtros').innerHTML =
@@ -1063,6 +1092,16 @@ arrancar();
       const paso = ficha && ficha.querySelector('.paso');
       return paso && parseFloat(getComputedStyle(paso).minHeight) >= 48;
     })());
+    ok('el destacado con foto se vuelve cartel, y sin foto se queda ficha',
+       (function(){
+         const d = F.productos(false).find(x => x.destacado);
+         if(!d) return false;
+         const sinFoto = fichaPlato(d).indexOf('class="plato') > 0;
+         F.guardarProducto({ id:d.id, foto:'data:image/gif;base64,R0lGODlhAQABAAAAACw=' });
+         const conFoto = fichaHeroe(F.producto(d.id)).indexOf('class="heroe') > 0;
+         F.guardarProducto({ id:d.id, foto:'' });
+         return sinFoto && conFoto;
+       })());
     ok('el "+" de la esquina se vuelve el número cuando ya llevas algo',
        !!(ficha && ficha.querySelector('.mas-flota.cuenta') &&
           ficha.querySelector('.mas-flota.cuenta').textContent === '2'));
