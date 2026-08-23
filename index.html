@@ -251,6 +251,26 @@
   }
 
 
+
+/* Los enlaces sueltos de una tarjeta · para el montaje de Fadori en la escuela.
+   Chicos y en una fila: no compiten con la tarjeta, la acompañan. */
+.subenlaces{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  margin:-4px 0 4px; padding:12px 14px;
+  border:1px dashed rgba(172,39,255,.28); border-radius:14px;
+}
+.subenlaces .sub-rot{
+  width:100%; font-size:11px; font-weight:800; letter-spacing:.16em;
+  text-transform:uppercase; color:rgba(233,228,228,.5); margin-bottom:2px;
+}
+.subenlaces a{
+  display:flex; flex-direction:column; gap:1px; text-decoration:none;
+  padding:9px 14px; border-radius:10px; background:rgba(172,39,255,.12);
+  border:1px solid rgba(172,39,255,.3); color:#E9E4E4;
+  font-size:14px; font-weight:700; line-height:1.2;
+}
+.subenlaces a small{font-size:11px; font-weight:500; color:rgba(233,228,228,.55)}
+.subenlaces a:hover{background:rgba(172,39,255,.22)}
 </style>
 
 <div class="wrap">
@@ -377,6 +397,17 @@
         </span>
         <span class="flecha">›</span>
       </a>
+      <!-- Las tres pantallas de operación, sueltas. Van aquí y no dentro de la
+           tarjeta porque un enlace no puede vivir dentro de otro enlace, y
+           porque el día del montaje en la escuela lo que se necesita es
+           poder abrir CADA una en su aparato sin ir buscando. -->
+      <div class="subenlaces">
+        <span class="sub-rot">Montaje en la escuela</span>
+        <a href="fadori/mostrador.html">Mostrador <small>tablet · pasador 1234</small></a>
+        <a href="fadori/pantalla.html">Turnos <small>la pantalla del pasillo</small></a>
+        <a href="fadori/medidor.html">Medidor <small>los números del reporte</small></a>
+        <a href="fadori/instalar.html">Instalar <small>los QR para los alumnos</small></a>
+      </div>
       <a class="tarjeta" href="ligas-mazi/">
         <span class="cuerpo">
           <span class="nombre">Ligas Mazi</span>
