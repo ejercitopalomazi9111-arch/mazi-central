@@ -154,6 +154,12 @@
     <div id="misFavoritos" class="pila"></div>
     <h2>Tus pedidos</h2>
     <div id="misPedidos" class="pila"></div>
+    <h2>Tus alergias</h2>
+    <p class="sub">Márcalas y la app te avisa si algo del menú las lleva.
+      <b>Se guardan sólo en este teléfono</b> — la cooperativa no las ve y no salen
+      en ninguna lista. Aun así, si tu alergia es seria, pregúntales antes de pedir.</p>
+    <div class="chips" id="misAlergias"></div>
+
     <button class="btn ancho" id="bSalir" type="button" style="margin-top:24px">Salir de esta cuenta</button>
     <p class="sub" style="margin-top:22px; font-size:12px">
       Fadori · Proyecto Sin Filas · Instituto Rembrandt de Querétaro ·
@@ -268,11 +274,12 @@ function fichaPlato(p){
     /* el "+" flotando en la esquina de la foto: al reposo la ficha no gasta
        un renglón entero en botones, y así cabe más menú en la pantalla */
     (agotado ? '' : botonFlota(p, n))+
-    '<div class="cuerpo">'+
+    '<button class="cuerpo" type="button" data-ver="'+p.id+'">'+
       '<span class="precio">'+F.pesos(p.precio)+'</span>'+
       '<span class="nom">'+esc(p.nombre)+'</span>'+
-      '<span class="tiempo">'+ (seg < 60 ? 'sale rápido' : 'tarda ~'+Math.round(seg/60)+' min') +'</span>'+
-    '</div>'+
+      '<span class="tiempo">'+ (seg < 60 ? 'sale rápido' : 'tarda ~'+Math.round(seg/60)+' min') +
+        ((p.alergenos && p.alergenos.length) ? ' · qué contiene' : '') +'</span>'+
+    '</button>'+
     (agotado ? '' : '<div class="pasos"'+(n?'':' hidden')+'>'+ pasosDe(p, n) +'</div>')+
   '</div>';
 }
@@ -441,6 +448,10 @@ function pintarTurno(){
 
 function pintarYo(){
   const yo = F.yo(); if(!yo) return;
+  const mias = F.misAlergias();
+  $('#misAlergias').innerHTML = F.ALERGENOS.map(a =>
+    '<button class="chip" type="button" data-alergia="'+a.id+'" aria-pressed="'+
+    (mias.indexOf(a.id) >= 0)+'">'+a.emoji+' '+esc(a.nombre)+'</button>').join('');
   $('#miCodigo').textContent = yo.codigo;
   const n = F.misNumeros(yo.codigo);
   $('#misCifras').innerHTML =
@@ -576,6 +587,14 @@ document.addEventListener('click', (e) => {
     refrescarFicha(pid); pintarCesta(); vibra(8);
     return;
   }
+  if((b = e.target.closest('[data-alergia]'))){
+    const id = b.dataset.alergia, mias = F.misAlergias();
+    const i = mias.indexOf(id);
+    if(i >= 0) mias.splice(i,1); else mias.push(id);
+    F.guardarAlergias(mias); pintarYo(); vibra(8);
+    return;
+  }
+  if((b = e.target.closest('[data-ver]'))){ abrirPlatillo(b.dataset.ver); return; }
   if((b = e.target.closest('[data-ir]'))){ ver(b.dataset.ir); return; }
   if((b = e.target.closest('[data-filtro]'))){ filtro = b.dataset.filtro; pintarMenu(true); return; }
   if((b = e.target.closest('[data-pedido]'))){ miPedido = F.pedido(b.dataset.pedido); ver('turno'); return; }
@@ -614,6 +633,77 @@ $('#bPedir').addEventListener('click', () => {
    ═════════════════════════════════════════════════════════════════════ */
 let notaPedido = '';
 let abiertoPara = false;
+
+/* ══════════════════════════════════════════════════════════════════════
+   LA FICHA DEL PLATILLO
+   Se abre al tocar el NOMBRE (el "+" sigue agregando de un toque, que es el
+   caso común). Trae la foto grande, de qué es, y —lo que de verdad importa
+   en una escuela— QUÉ CONTIENE.
+   ═════════════════════════════════════════════════════════════════════ */
+function abrirPlatillo(pid){
+  const p = F.producto(pid); if(!p) return;
+  const c = F.CATEGORIAS.find(x => x.id === p.cat) || F.CATEGORIAS[0];
+  const mias = F.misAlergias();
+  const choca = (p.alergenos || []).filter(a => mias.indexOf(a) >= 0);
+  let cuantos = Math.max(1, cuantosDe(pid) || 1);
+
+  const pinta = () => {
+    $('#hojitaT').textContent = p.nombre;
+    $('#hojitaC').innerHTML =
+      '<div class="fic-foto" style="--t1:'+mezcla(c.tono,'#FFFDF9',.84)+
+        '; --t2:'+mezcla(c.tono,'#FFFDF9',.66)+'">'+
+        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+'</div>'+
+      '<div class="fic-precio">'+F.pesos(p.precio)+'</div>'+
+      (p.desc ? '<p class="fic-desc">'+esc(p.desc)+'</p>' : '')+
+
+      (choca.length
+        ? '<div class="aviso malo" style="margin-top:14px"><b>Ojo:</b> esto lleva '+
+          choca.map(a => esc((F.ALERGENOS.find(x=>x.id===a)||{}).nombre||a).toLowerCase()).join(' y ')+
+          ', que marcaste como tu alergia.</div>'
+        : '')+
+
+      '<h3 class="fic-tit">Qué contiene</h3>'+
+      ((p.alergenos && p.alergenos.length)
+        ? '<div class="alergenos">'+ p.alergenos.map(a => {
+            const A = F.ALERGENOS.find(x => x.id === a) || { nombre:a, emoji:'⚠️' };
+            return '<span class="alerg'+(mias.indexOf(a)>=0?' mio':'')+'">'+
+              A.emoji+' '+esc(A.nombre)+'</span>';
+          }).join('') +'</div>'+
+          '<p class="fic-nota">Lo declara la cooperativa. Si tienes alguna alergia seria, '+
+          'pregúntales antes de pedir.</p>'
+        : '<p class="fic-nota">La cooperativa no declaró ningún alérgeno para este platillo. '+
+          '<b>Eso no quiere decir que no tenga:</b> si tienes alguna alergia seria, pregúntales.</p>')+
+
+      '<div class="carro-pie">'+
+        '<div class="fic-pasos">'+
+          '<button class="paso" type="button" id="fMenos" aria-label="Uno menos">−</button>'+
+          '<span class="cuantos">'+cuantos+'</span>'+
+          '<button class="paso mas" type="button" id="fMas" aria-label="Uno más">+</button>'+
+        '</div>'+
+        '<button class="btn fuerte" id="fAgregar" type="button" style="flex:1">'+
+          'Agregar · '+F.pesos(p.precio * cuantos)+'</button>'+
+      '</div>';
+
+    $('#fMenos').addEventListener('click', () => {
+      if(muySeguido('fmenos')) return;
+      cuantos = Math.max(1, cuantos - 1); pinta(); vibra(8);
+    });
+    $('#fMas').addEventListener('click', () => {
+      if(muySeguido('fmas')) return;
+      cuantos = Math.min(10, cuantos + 1); pinta(); vibra(8);
+    });
+    $('#fAgregar').addEventListener('click', () => {
+      if(muySeguido('fagregar')) return;
+      const r = cesta.find(x => x.prod === pid && !x.para);
+      if(r) r.cant = Math.min(10, r.cant + cuantos);
+      else cesta.push({ prod:pid, cant:cuantos, para:'' });
+      refrescarFicha(pid); pintarCesta(); vibra(12);
+      $('#velo').hidden = true;
+    });
+  };
+  pinta();
+  $('#velo').hidden = false;
+}
 
 function abrirConfirmacion(){
   pintarCarrito();
@@ -682,6 +772,18 @@ function pintarCarrito(){
 
     '<button class="btn ancho" id="bMasCosas" type="button" style="margin-top:12px">'+
       '+ Ver todo el menú</button>'+
+
+    /* Lo primero de todo: si algo de lo que llevas choca con una alergia que
+       marcaste. Va antes que el precio y antes que el tiempo. */
+    (function(){
+      const ch = F.choquesDe(cesta);
+      if(!ch.length) return '';
+      return '<div class="aviso malo" style="margin-top:14px">'+
+        '<b>Ojo con tus alergias.</b> '+
+        ch.map(x => esc(x.nombre)+' lleva '+ x.alergenos.map(a =>
+          esc((F.ALERGENOS.find(y=>y.id===a)||{}).nombre||a).toLowerCase()).join(' y ')).join('; ')+
+        '.</div>';
+    })()+
 
     /* El veredicto va ARRIBA, no junto al botón: es lo que hay que leer antes
        de decidir, y abajo se lo comía el pie pegajoso. */
@@ -997,6 +1099,30 @@ arrancar();
       })());
       ok('el botón de pedir trae el contador',
          document.querySelector('#bConfirmar .globo').textContent === '4');
+    })();
+
+    /* ── los alérgenos ── lo único del catálogo que puede mandar a alguien
+       al hospital, así que va con prueba de las dos puntas */
+    (function(){
+      const conAl = F.productos(false).find(p => (p.alergenos||[]).indexOf('gluten') >= 0);
+      ok('los platillos declaran qué contienen', !!conAl);
+      F.guardarAlergias(['gluten']);
+      ok('las alergias se guardan SÓLO en el teléfono, nunca en el registro',
+         JSON.stringify(F.estado().alumnos).indexOf('gluten') < 0 &&
+         F.misAlergias().indexOf('gluten') >= 0);
+      const ch = F.choquesDe([{prod:conAl.id, cant:1}]);
+      ok('la app avisa si lo que llevas choca con tu alergia',
+         ch.length === 1 && ch[0].alergenos.indexOf('gluten') >= 0);
+      const sinAl = F.productos(false).find(p => !(p.alergenos||[]).length);
+      ok('y no inventa choques donde no los hay',
+         F.choquesDe([{prod:sinAl.id, cant:1}]).length === 0);
+      abrirPlatillo(conAl.id);
+      ok('la ficha del platillo enseña qué contiene',
+         document.querySelectorAll('.alergenos .alerg').length > 0);
+      ok('y marca el que es TU alergia',
+         document.querySelectorAll('.alergenos .alerg.mio').length === 1);
+      document.querySelector('#velo').hidden = true;
+      F.guardarAlergias([]);
       cesta = []; document.querySelector('#velo').hidden = true;
     })();
 

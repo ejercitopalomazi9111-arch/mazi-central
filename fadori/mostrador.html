@@ -395,6 +395,17 @@ function abrirProducto(pid){
     '<label for="hCat">De qué es</label>'+
     '<select id="hCat">'+ F.CATEGORIAS.map(c =>
       '<option value="'+c.id+'"'+(p&&p.cat===c.id?' selected':'')+'>'+c.emoji+' '+c.nombre+'</option>').join('') +'</select>'+
+    '<label for="hDesc">De qué es (una línea)</label>'+
+    '<input id="hDesc" maxlength="120" value="'+esc(p?(p.desc||''):'')+'" '+
+      'placeholder="Telera con jamón, queso y aguacate">'+
+    '<label style="margin-top:16px">Qué contiene <b style="color:var(--rojo)">·'+
+      ' esto es seguridad, no adorno</b></label>'+
+    '<div class="chips" id="hAlerg">'+ F.ALERGENOS.map(a =>
+      '<button class="chip" type="button" data-al="'+a.id+'" aria-pressed="'+
+      (!!(p && (p.alergenos||[]).indexOf(a.id) >= 0))+'">'+a.emoji+' '+esc(a.nombre)+
+      '</button>').join('') +'</div>'+
+    '<p class="aviso" style="margin-top:8px">Si no estás segura, márcalo. '+
+      'Un alumno alérgico confía en esta lista.</p>'+
     '<label for="hSeg">Cuántos segundos toma prepararlo</label>'+
     '<input id="hSeg" type="number" min="1" max="600" step="5" value="'+(p?p.segPrep:40)+'">'+
     '<label for="hExist">Cuántos hay (déjalo vacío si no llevas cuenta)</label>'+
@@ -415,6 +426,12 @@ function abrirProducto(pid){
   $('#velo').hidden = false;
 
   let fotoNueva = null;
+  let alerg = p ? (p.alergenos || []).slice() : [];
+  $$('#hAlerg [data-al]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.al, i = alerg.indexOf(id);
+    if(i >= 0) alerg.splice(i,1); else alerg.push(id);
+    b.setAttribute('aria-pressed', String(i < 0));
+  }));
   $('#hFoto').addEventListener('change', (e) => {
     const f = e.target.files[0]; if(!f) return;
     achicar(f, 640, (dataUrl) => { fotoNueva = dataUrl; });
@@ -435,6 +452,8 @@ function abrirProducto(pid){
       segPrep: Math.max(1, parseInt($('#hSeg').value, 10) || 40),
       existencias: ex === '' ? null : Math.max(0, parseInt(ex, 10) || 0),
       destacado: $('#hDest').checked,
+      desc: $('#hDesc').value.trim(),
+      alergenos: alerg,
     };
     if(fotoNueva) datos.foto = fotoNueva;
     if(!datos.nombre) return alert('Le falta el nombre.');
@@ -678,6 +697,13 @@ verVista('despachar');
   /* F25 · la lista de papel incluye lo que está en la fila */
   ok('hay lista para despachar en papel', typeof abrirPapel === 'function');
   /* la nota del alumno tiene que LLEGAR y VERSE, o es un campo decorativo */
+  (function(){
+    const conAl = F.productos(false).find(x => (x.alergenos||[]).length);
+    ok('los platillos del menú traen sus alérgenos declarados', !!conAl);
+    F.guardarProducto({ id:conAl.id, alergenos:['gluten','picante'] });
+    ok('la cooperativa puede cambiar lo que contiene un platillo',
+       F.producto(conAl.id).alergenos.join(',') === 'gluten,picante');
+  })();
   (function(){
     const q = F.pedir(null, [{prod:uno.id, cant:1}],
       { origen:'mostrador', nombre:'Con nota', nota:'sin chile por favor' });

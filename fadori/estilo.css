@@ -650,3 +650,52 @@ body.cortina-arriba{overflow:hidden}
   margin-left:8px; border-radius:999px; background:rgba(255,255,255,.26); color:#fff;
   font-size:13px; font-weight:900; font-variant-numeric:tabular-nums;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   LA FICHA DEL PLATILLO · y los alérgenos
+   ----------------------------------------------------------------------
+   Los alérgenos son lo único de todo el catálogo que puede mandar a alguien
+   al hospital, así que se ven grandes y con su ícono, no en letra chica.
+   ═════════════════════════════════════════════════════════════════════ */
+.fic-foto{
+  width:100%; aspect-ratio:3/2; max-height:220px; border-radius:16px; overflow:hidden;
+  display:grid; place-items:center; font-size:82px; margin-top:4px;
+  background:linear-gradient(155deg, var(--t1), var(--t2));
+}
+.fic-foto img{width:100%; height:100%; object-fit:cover}
+.fic-precio{margin-top:14px; font-size:26px; font-weight:900; color:var(--naranja);
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+.fic-desc{margin:6px 0 0; font-size:15px; line-height:1.5; color:var(--tenue)}
+.fic-tit{margin:22px 0 10px; font-size:17px; font-weight:800; letter-spacing:-.02em}
+.fic-nota{margin:10px 0 0; font-size:12.5px; line-height:1.5; color:var(--tenue)}
+
+.alergenos{display:flex; flex-wrap:wrap; gap:8px}
+.alerg{
+  display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 14px;
+  border-radius:999px; background:var(--sup); box-shadow:var(--sombra);
+  font-size:14px; font-weight:700;
+}
+/* el que es TU alergia se pinta en rojo: es el que hay que ver de lejos */
+.alerg.mio{background:#FFE4E0; color:var(--rojo); font-weight:900;
+  box-shadow:0 0 0 2px var(--rojo)}
+
+.fic-pasos{
+  display:flex; align-items:center; gap:2px; flex:0 0 auto;
+  background:var(--sup); border-radius:999px; padding:3px; box-shadow:var(--sombra);
+}
+.fic-pasos .paso{
+  width:44px; height:44px; min-height:44px; border:0; border-radius:999px;
+  background:transparent; color:var(--cafe); font-size:21px; font-weight:800;
+  display:grid; place-items:center;
+}
+.fic-pasos .paso.mas{background:var(--naranja); color:#fff}
+.fic-pasos .paso:active{transform:scale(.9)}
+.fic-pasos .cuantos{min-width:26px; text-align:center; font-size:17px; font-weight:900;
+  font-variant-numeric:tabular-nums}
+/* cuando el pie lleva pasos + botón, van en fila */
+.carro-pie:has(.fic-pasos){display:flex; align-items:center; gap:10px}
+
+/* el cuerpo de la ficha del menú es un botón: que no se vea como uno */
+.plato .cuerpo{border:0; background:none; text-align:left; width:100%; font:inherit; color:inherit}
+.plato .cuerpo:active{background:var(--piso)}
