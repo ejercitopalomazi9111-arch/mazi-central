@@ -51,23 +51,59 @@ const CATEGORIAS = [
    Los segundos de preparación son la SEMILLA del estimado; en cuanto haya
    despachos reales, F40 los reemplaza con lo medido. */
 const MENU_BASE = [
-  { nombre:'Guisado del día con arroz', cat:'fuerte', precio:4500, seg:95 },
-  { nombre:'Pozole',            cat:'fuerte', precio:5000, seg:80 },
-  { nombre:'Chilaquiles',       cat:'fuerte', precio:4000, seg:75 },
-  { nombre:'Torta de jamón',    cat:'torta',  precio:3000, seg:45 },
-  { nombre:'Torta de milanesa', cat:'torta',  precio:3800, seg:60 },
-  { nombre:'Sándwich',          cat:'torta',  precio:2500, seg:25 },
-  { nombre:'Quesadilla',        cat:'antojo', precio:2000, seg:50 },
-  { nombre:'Tacos dorados',     cat:'antojo', precio:2500, seg:55 },
-  { nombre:'Tamal',             cat:'antojo', precio:2000, seg:20 },
-  { nombre:'Agua del día',      cat:'bebida', precio:1200, seg:12 },
-  { nombre:'Refresco',          cat:'bebida', precio:1800, seg:8  },
-  { nombre:'Jugo',              cat:'bebida', precio:1500, seg:8  },
-  { nombre:'Gelatina',          cat:'dulce',  precio:1200, seg:10 },
-  { nombre:'Galletas',          cat:'dulce',  precio:1000, seg:6  },
-  { nombre:'Pastelito',         cat:'dulce',  precio:1500, seg:6  },
-  { nombre:'Papas',             cat:'botana', precio:1500, seg:6  },
-  { nombre:'Cacahuates',        cat:'botana', precio:1200, seg:6  },
+  { nombre:'Guisado del día con arroz', cat:'fuerte', precio:4500, seg:95,
+    desc:'El guisado que toque hoy, con arroz y su tortilla.', al:['picante'] },
+  { nombre:'Pozole', cat:'fuerte', precio:5000, seg:80,
+    desc:'Caldo de maíz cacahuazintle con su lechuga, rábano y limón.', al:['picante'] },
+  { nombre:'Chilaquiles', cat:'fuerte', precio:4000, seg:75,
+    desc:'Totopos bañados en salsa, con crema y queso.', al:['lacteos','picante'] },
+  { nombre:'Torta de jamón', cat:'torta', precio:3000, seg:45,
+    desc:'Telera con jamón, queso, aguacate y jitomate.', al:['gluten','lacteos'] },
+  { nombre:'Torta de milanesa', cat:'torta', precio:3800, seg:60,
+    desc:'Milanesa empanizada en telera, con todo.', al:['gluten','huevo','lacteos'] },
+  { nombre:'Sándwich', cat:'torta', precio:2500, seg:25,
+    desc:'Pan de caja con jamón y queso.', al:['gluten','lacteos'] },
+  { nombre:'Quesadilla', cat:'antojo', precio:2000, seg:50,
+    desc:'Tortilla de maíz con queso, a la plancha.', al:['lacteos'] },
+  { nombre:'Tacos dorados', cat:'antojo', precio:2500, seg:55,
+    desc:'Tres tacos dorados con lechuga, crema y queso.', al:['lacteos'] },
+  { nombre:'Tamal', cat:'antojo', precio:2000, seg:20,
+    desc:'De masa, al vapor.', al:[] },
+  { nombre:'Agua del día', cat:'bebida', precio:1200, seg:12,
+    desc:'El sabor que toque hoy.', al:[] },
+  { nombre:'Refresco', cat:'bebida', precio:1800, seg:8, desc:'De lata.', al:[] },
+  { nombre:'Jugo', cat:'bebida', precio:1500, seg:8, desc:'De caja.', al:[] },
+  { nombre:'Gelatina', cat:'dulce', precio:1200, seg:10, desc:'Con leche.', al:['lacteos'] },
+  { nombre:'Galletas', cat:'dulce', precio:1000, seg:6, desc:'Paquete chico.',
+    al:['gluten','lacteos','huevo'] },
+  { nombre:'Pastelito', cat:'dulce', precio:1500, seg:6, desc:'Empaquetado.',
+    al:['gluten','lacteos','huevo','soya'] },
+  { nombre:'Papas', cat:'botana', precio:1500, seg:6, desc:'Bolsa chica.', al:[] },
+  { nombre:'Cacahuates', cat:'botana', precio:1200, seg:6, desc:'Japoneses.',
+    al:['cacahuate','gluten','soya'] },
+];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   0-bis · LOS ALÉRGENOS
+   Esto no es adorno de diseño: en una escuela hay chavos alérgicos y hoy la
+   app no dice nada de lo que lleva cada platillo. Es lo único de todo el
+   catálogo que puede mandar a alguien al hospital.
+
+   Y la línea que NO se cruza: las alergias del ALUMNO se guardan sólo en su
+   teléfono, en una llave aparte, y nunca entran al registro que ve la
+   cooperativa. Un dato de salud de un menor en una base compartida es
+   exactamente lo que la regla de "cero datos de más" existe para evitar.
+   ═════════════════════════════════════════════════════════════════════════ */
+const ALERGENOS = [
+  { id:'gluten',   nombre:'Gluten',        emoji:'🌾' },
+  { id:'lacteos',  nombre:'Leche',         emoji:'🥛' },
+  { id:'huevo',    nombre:'Huevo',         emoji:'🥚' },
+  { id:'soya',     nombre:'Soya',          emoji:'🫘' },
+  { id:'cacahuate',nombre:'Cacahuate',     emoji:'🥜' },
+  { id:'nuez',     nombre:'Nueces',        emoji:'🌰' },
+  { id:'mariscos', nombre:'Pescado y mariscos', emoji:'🦐' },
+  { id:'ajonjoli', nombre:'Ajonjolí',      emoji:'🫓' },
+  { id:'picante',  nombre:'Picante',       emoji:'🌶️' },
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -200,6 +236,8 @@ function siembra(){
     cat: p.cat,
     precio: p.precio,
     segPrep: p.seg,
+    desc: p.desc || '',
+    alergenos: p.al || [],
     foto: '',
     disponible: true,
     destacado: i === 0,          /* F02 · el plato fuerte del día va primero */
@@ -215,6 +253,9 @@ function cargar(){
   /* migración suave: si el archivo viene de una versión vieja, se completa */
   D.config = Object.assign({}, CONFIG_BASE, D.config || {});
   ['productos','pedidos','eventos','conteos'].forEach(k => { if(!Array.isArray(D[k])) D[k] = []; });
+  /* migración: los productos de antes no traían alérgenos ni descripción */
+  D.productos.forEach(p => { if(!Array.isArray(p.alergenos)) p.alergenos = [];
+    if(typeof p.desc !== 'string') p.desc = ''; });
   if(!D.alumnos) D.alumnos = {};
   return D;
 }
@@ -311,7 +352,7 @@ function guardarProducto(datos){
     if(p) Object.assign(p, datos);
   } else {
     d.productos.push(Object.assign({
-      id:id('p'), foto:'', disponible:true, destacado:false,
+      id:id('p'), foto:'', disponible:true, destacado:false, desc:'', alergenos:[],
       existencias:null, segPrep:40, orden:d.productos.length,
     }, datos));
   }
@@ -799,6 +840,32 @@ function cerrarCiclo(){
   return resumen;
 }
 
+/* ── Mis alergias · SÓLO en este teléfono ────────────────────────────────
+   No entran a `alumnos`, que es lo que la cooperativa ve y exporta. Un dato
+   de salud de un menor no vive en una base compartida por comodidad. */
+const LLAVE_ALERGIAS = 'fadori_mis_alergias';
+
+function misAlergias(){
+  try{ const a = JSON.parse(localStorage.getItem(LLAVE_ALERGIAS) || '[]');
+       return Array.isArray(a) ? a : []; }catch(e){ return []; }
+}
+function guardarAlergias(lista){
+  try{ localStorage.setItem(LLAVE_ALERGIAS,
+    JSON.stringify((lista||[]).filter(x => ALERGENOS.some(a => a.id === x)))); }catch(e){}
+}
+
+/* Qué de lo que llevas choca con lo que marcaste. Devuelve por platillo, no
+   una lista suelta: hace falta saber CUÁL quitar, no sólo que hay problema. */
+function choquesDe(renglones){
+  const mias = misAlergias();
+  if(!mias.length) return [];
+  return (renglones || []).map(r => {
+    const p = producto(r.prod); if(!p) return null;
+    const choca = (p.alergenos || []).filter(a => mias.indexOf(a) >= 0);
+    return choca.length ? { prod:p.id, nombre:p.nombre, alergenos:choca } : null;
+  }).filter(Boolean);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    13 · F39 · EL ASISTENTE DE PRESUPUESTO
    "Traigo 50 pesos" → opciones que caben. Y no sólo el trío de siempre.
@@ -915,7 +982,8 @@ function sugerencias(){
    ═════════════════════════════════════════════════════════════════════════ */
 const FADORI = {
   /* utilería */
-  pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE,
+  pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
+  misAlergias, guardarAlergias, choquesDe,
   /* datos */
   cargar, guardar, estado, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
