@@ -845,6 +845,37 @@ function opcionesPara(centavos, cuantas){
     .slice(0, cuantas || 6);
 }
 
+/* "Llévate algo más" · lo que le falta a este pedido para ser una comida.
+   NO es vender por vender: mira qué categorías trae el carrito y ofrece las
+   que faltan —lo de tomar, lo dulce— empezando por lo más barato y por lo
+   que esa persona ya pide seguido. En un recreo de treinta minutos, volver
+   al menú por la bebida cuesta más que el refresco. */
+function sugerenciasPara(renglones, cod, cuantas){
+  const dentro = (renglones || []).map(r => r.prod);
+  const cats = dentro.map(id => (producto(id) || {}).cat);
+  const disp = productos(true).filter(p => dentro.indexOf(p.id) < 0);
+
+  /* el orden de lo que más falta: primero de tomar, luego algo dulce */
+  const faltan = ['bebida','dulce','botana','antojo']
+    .filter(c => cats.indexOf(c) < 0);
+
+  /* lo que esa persona ya pide seguido va primero dentro de su categoría */
+  const mios = {};
+  if(cod) misNumeros(cod).favoritos.forEach(f => { mios[f.prod] = f.veces; });
+
+  const puntua = (p) => (mios[p.id] || 0) * 1000 - p.precio;
+  const salida = [];
+  faltan.forEach(c => {
+    const dela = disp.filter(p => p.cat === c).sort((a,b) => puntua(b) - puntua(a));
+    if(dela.length) salida.push(dela[0]);
+  });
+  /* si no falta ninguna categoría, se ofrece lo barato que no lleve */
+  if(!salida.length){
+    disp.sort((a,b) => puntua(b) - puntua(a)).slice(0,4).forEach(p => salida.push(p));
+  }
+  return salida.slice(0, cuantas || 3);
+}
+
 /* F41 · lo tuyo: tus tendencias, tus más pedidos, cuánto llevas gastado */
 function misNumeros(cod){
   const mios = pedidosDe(cod).filter(p => p.estado === 'entregado');
@@ -902,7 +933,7 @@ const FADORI = {
   /* medición */
   contarFila, resumenDelDia, curvaDeFila, csvDePedidos, csvDeConteos, bajarCSV, cerrarCiclo,
   /* cerebro */
-  opcionesPara, misNumeros, sugerir, sugerencias,
+  opcionesPara, sugerenciasPara, misNumeros, sugerir, sugerencias,
   /* para las pruebas */
   _siembra: siembra, _anotar: anotar, ESTADOS, VIVOS,
 };

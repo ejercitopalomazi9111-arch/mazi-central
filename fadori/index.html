@@ -179,7 +179,7 @@
       <b id="cestaTotal">$0.00</b>
       <span id="cestaDetalle">nada todavía</span>
     </div>
-    <button class="btn fuerte" id="bPedir" type="button">Pedir</button>
+    <button class="btn fuerte" id="bPedir" type="button">Ver pedido <span class="globo" id="cestaCuantos">0</span></button>
   </div>
 </div>
 
@@ -372,6 +372,7 @@ function pintarCesta(){
   const seg = F.segundosDe(cesta);
   $('#cestaDetalle').textContent = piezas + (piezas===1 ? ' cosa · ' : ' cosas · ') +
     'listo en ~' + F.minutosDe(seg);
+  $('#cestaCuantos').textContent = piezas;
 }
 
 function pintarTurno(){
@@ -656,8 +657,31 @@ function pintarCarrito(){
       }).join('')+
     '</div>'+
 
+    /* Llévate algo más · lo que le falta al pedido para ser una comida.
+       Volver al menú por la bebida cuesta más que la bebida. */
+    (function(){
+      const sug = F.sugerenciasPara(cesta, (F.yo()||{}).codigo, 3);
+      if(!sug.length) return '';
+      return '<div class="llevate">'+
+        '<h3>Llévate algo más</h3>'+
+        '<p>Lo que le falta a tu pedido</p>'+
+        '<div class="llevate-tira">'+ sug.map(p => {
+          const c = F.CATEGORIAS.find(x => x.id === p.cat) || F.CATEGORIAS[0];
+          return '<div class="llevate-uno">'+
+            '<span class="llevate-foto" style="--t1:'+mezcla(c.tono,'#FFFDF9',.84)+
+              '; --t2:'+mezcla(c.tono,'#FFFDF9',.66)+'">'+
+              (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+
+              '<button class="mas-flota" type="button" data-csug="'+p.id+'"'+
+                ' aria-label="Agregar '+esc(p.nombre)+'">+</button>'+
+            '</span>'+
+            '<span class="llevate-precio">'+F.pesos(p.precio)+'</span>'+
+            '<span class="llevate-nom">'+esc(p.nombre)+'</span>'+
+          '</div>';
+        }).join('') +'</div></div>';
+    })()+
+
     '<button class="btn ancho" id="bMasCosas" type="button" style="margin-top:12px">'+
-      '+ Agregar algo más</button>'+
+      '+ Ver todo el menú</button>'+
 
     /* El veredicto va ARRIBA, no junto al botón: es lo que hay que leer antes
        de decidir, y abajo se lo comía el pie pegajoso. */
@@ -701,7 +725,7 @@ function pintarCarrito(){
     '<div class="carro-pie">'+
       '<div class="carro-total"><span>Total</span><b>'+F.pesos(total)+'</b></div>'+
       '<button class="btn fuerte ancho" id="bConfirmar" type="button">'+
-        'Pedir · '+F.pesos(total)+'</button>'+
+        'Pedir <span class="globo">'+cesta.reduce((s,r)=>s+r.cant,0)+'</span></button>'+
     '</div>';
 
   /* ── lo que se toca ── */
@@ -723,6 +747,12 @@ function pintarCarrito(){
   }));
   $$('#hojitaC [data-para]').forEach(inp => inp.addEventListener('input', () => {
     cesta[+inp.dataset.para].para = inp.value;
+  }));
+  $$('#hojitaC [data-csug]').forEach(b => b.addEventListener('click', () => {
+    const pid = b.dataset.csug;
+    if(muySeguido('csug:'+pid)) return;
+    cesta.push({ prod:pid, cant:1, para:'' });
+    refrescarFicha(pid); pintarCesta(); pintarCarrito(); vibra(10);
   }));
   $('#bMasCosas').addEventListener('click', () => { $('#velo').hidden = true; });
   $('#bNota').addEventListener('click', () => {
@@ -958,6 +988,15 @@ arrancar();
       ok('el veredicto de alcanzas va ARRIBA del pie, no debajo',
          document.querySelector('.hojita .aviso').compareDocumentPosition(
            document.querySelector('.carro-pie')) & Node.DOCUMENT_POSITION_FOLLOWING);
+      ok('el carrito ofrece llevarte lo que le falta al pedido',
+         document.querySelectorAll('.llevate [data-csug]').length > 0);
+      ok('y no ofrece algo que ya llevas', (function(){
+        const dentro = cesta.map(r => r.prod);
+        return [...document.querySelectorAll('.llevate [data-csug]')]
+          .every(b => dentro.indexOf(b.dataset.csug) < 0);
+      })());
+      ok('el botón de pedir trae el contador',
+         document.querySelector('#bConfirmar .globo').textContent === '4');
       cesta = []; document.querySelector('#velo').hidden = true;
     })();
 
