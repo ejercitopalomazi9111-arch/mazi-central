@@ -1,2 +1,6 @@
 node_modules/
 capturas/
+
+# guiones desechables de prueba: se escriben, se corren y se tiran.
+# Si un comando se pasa de tiempo, el rm no alcanza a correr y se quedan.
+_*.mjs
