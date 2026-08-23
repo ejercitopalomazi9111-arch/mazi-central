@@ -210,6 +210,8 @@ function fichaActual(p){
       '<span class="quien">'+esc(p.nombre)+(p.grupo?' · '+esc(p.grupo):'')+'</span>'+
       '<span class="cod">'+esc(p.folio)+'</span>'+
     '</div>'+
+    (p.nota ? '<div class="aviso" style="margin-top:12px; border-left-color:var(--ambar)">'+
+      '<b>Nota:</b> '+esc(p.nota)+'</div>' : '')+
     (p.enCamino ? '<div class="aviso bueno" style="margin-top:12px">Ya viene en camino</div>' : '')+
     '<div class="pila" style="margin-top:14px">'+
       p.renglones.map((r,i) => {
@@ -675,6 +677,16 @@ verVista('despachar');
 
   /* F25 · la lista de papel incluye lo que está en la fila */
   ok('hay lista para despachar en papel', typeof abrirPapel === 'function');
+  /* la nota del alumno tiene que LLEGAR y VERSE, o es un campo decorativo */
+  (function(){
+    const q = F.pedir(null, [{prod:uno.id, cant:1}],
+      { origen:'mostrador', nombre:'Con nota', nota:'sin chile por favor' });
+    ok('la nota del alumno se guarda con el pedido', F.pedido(q.id).nota === 'sin chile por favor');
+    F.tomar(q.id, quien);
+    ok('y se ve en la pantalla de despachar',
+       fichaActual(F.pedido(q.id)).indexOf('sin chile por favor') > 0);
+    ok('la nota también sale en el CSV', F.csvDePedidos().indexOf('sin chile') > 0);
+  })();
 
   try{ localStorage.setItem('fadori_v1', guardado); }catch(e){}
   F.cargar(); pintar();

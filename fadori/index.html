@@ -602,55 +602,145 @@ $('#bPedir').addEventListener('click', () => {
   abrirConfirmacion();
 });
 
+/* ══════════════════════════════════════════════════════════════════════
+   EL CARRITO
+   ----------------------------------------------------------------------
+   Antes era una lista muerta: para cambiar una cantidad había que cerrar,
+   buscar el platillo otra vez y ajustarlo. Ahora se edita aquí mismo —
+   quitar, sumar, restar— y las cosas que casi nadie usa (la nota, los
+   nombres de para quién, el anticipado) viven detrás de un renglón cada
+   una, en vez de estorbar en cada línea.
+   ═════════════════════════════════════════════════════════════════════ */
+let notaPedido = '';
+let abiertoPara = false;
+
 function abrirConfirmacion(){
+  pintarCarrito();
+  $('#velo').hidden = false;
+}
+
+function pintarCarrito(){
+  if(!cesta.length){ $('#velo').hidden = true; return; }
   const total = F.totalDe(cesta);
   const seg = F.segundosDe(cesta);
   const cola = F.colaOrdenada().length;
   const queda = F.quedanSegundosDeRecreo();
-  const esperaEstimada = cola * F.ritmoDespacho() + seg;
-  const alcanza = esperaEstimada <= queda;
+  const espera = cola * F.ritmoDespacho() + seg;
+  const alcanza = espera <= queda;
+  const anti = F.estado().config.aceptaAnticipados;
+  const antesMarcado = $('#eAnticipado') ? $('#eAnticipado').checked : false;
 
-  $('#hojitaT').textContent = 'Confirmar el pedido';
+  $('#hojitaT').textContent = 'Tu pedido';
   $('#hojitaC').innerHTML =
-    '<ul class="renglones">'+ cesta.map((r,i) => {
-      const p = F.producto(r.prod) || {nombre:'—', precio:0};
-      return '<li class="renglon"><span class="n">'+r.cant+'×</span>'+
-        '<span class="q">'+esc(p.nombre)+
-        '<input data-para="'+i+'" placeholder="¿para alguien más? su nombre" value="'+esc(r.para)+'" '+
-        'style="margin-top:6px; min-height:38px; font-size:14px">'+
-        '</span><span>'+F.pesos(p.precio*r.cant)+'</span></li>';
-    }).join('') +'</ul>'+
+    '<div class="carro">'+
+      cesta.map((r,i) => {
+        const p = F.producto(r.prod) || {nombre:'—', precio:0, cat:''};
+        const c = F.CATEGORIAS.find(x => x.id === p.cat) || F.CATEGORIAS[0];
+        return '<div class="carro-linea">'+
+          '<span class="carro-foto" style="--t1:'+mezcla(c.tono,'#FFFDF9',.84)+
+            '; --t2:'+mezcla(c.tono,'#FFFDF9',.66)+'">'+
+            (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : c.emoji)+'</span>'+
+          '<span class="carro-que">'+
+            '<b>'+esc(p.nombre)+'</b>'+
+            '<span class="carro-precio">'+F.pesos(p.precio * r.cant)+'</span>'+
+            (r.para ? '<small>para '+esc(r.para)+'</small>' : '')+
+          '</span>'+
+          '<span class="carro-pasos">'+
+            '<button class="paso" type="button" data-cmenos="'+i+'" aria-label="'+
+              (r.cant === 1 ? 'Quitar '+esc(p.nombre) : 'Uno menos')+'">'+
+              (r.cant === 1 ? '🗑' : '−')+'</button>'+
+            '<span class="cuantos">'+r.cant+'</span>'+
+            '<button class="paso mas" type="button" data-cmas="'+i+'" aria-label="Uno más">+</button>'+
+          '</span>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+
+    '<button class="btn ancho" id="bMasCosas" type="button" style="margin-top:12px">'+
+      '+ Agregar algo más</button>'+
+
+    /* El veredicto va ARRIBA, no junto al botón: es lo que hay que leer antes
+       de decidir, y abajo se lo comía el pie pegajoso. */
     '<div class="aviso'+(alcanza?' bueno':' malo')+'" style="margin-top:14px">'+
       (alcanza
-        ? 'Al ritmo de hoy <b>sí alcanzas</b>: como '+F.minutosDe(esperaEstimada)+' de espera.'
+        ? 'Al ritmo de hoy <b>sí alcanzas</b>: como '+F.minutosDe(espera)+' de espera.'
         : '<b>Hoy no vas a alcanzar.</b> Hay '+cola+' pedidos antes y el recreo ya casi se acaba. '+
           'Puedes pedirlo de todos modos y te lo guardamos para mañana.')+
     '</div>'+
-    (F.estado().config.aceptaAnticipados
-      ? '<label style="display:flex; align-items:center; gap:10px; margin-top:12px">'+
-        '<input type="checkbox" id="eAnticipado" style="width:24px; min-height:24px; flex:0 0 auto">'+
-        '<span style="color:var(--cafe); font-weight:600">Lo pido desde el salón, antes del recreo</span></label>'
-      : '')+
-    '<div class="chips" style="margin-top:16px">'+
-      '<button class="btn fuerte" id="bConfirmar" type="button" style="flex:1">'+
-        'Pedir · '+F.pesos(total)+'</button>'+
-      '<button class="btn" id="bCancelarH" type="button">Ahorita no</button>'+
-    '</div>';
-  $('#velo').hidden = false;
 
+    '<div class="renglones-op">'+
+      '<button class="op" type="button" id="bNota">'+
+        '<span class="op-ico">📝</span>'+
+        '<span class="op-que"><b>Una nota para la cooperativa</b>'+
+          '<small>'+(notaPedido ? esc(notaPedido) : 'sin chile, para llevar, lo que sea')+'</small></span>'+
+        '<span class="op-mas">'+(notaPedido ? 'cambiar' : '+')+'</span></button>'+
+      '<button class="op" type="button" id="bPara">'+
+        '<span class="op-ico">👥</span>'+
+        '<span class="op-que"><b>Es para varios</b>'+
+          '<small>'+(cesta.some(r=>r.para) ? 'ya pusiste nombres' : 'pon de quién es cada cosa')+'</small></span>'+
+        '<span class="op-mas">'+(abiertoPara ? '−' : '+')+'</span></button>'+
+      (abiertoPara
+        ? '<div class="para-lista">'+ cesta.map((r,i) => {
+            const p = F.producto(r.prod) || {nombre:'—'};
+            return '<label class="para-uno">'+esc(p.nombre)+
+              '<input data-para="'+i+'" maxlength="24" placeholder="¿de quién es?" value="'+esc(r.para)+'"></label>';
+          }).join('') +'</div>'
+        : '')+
+      (anti
+        ? '<label class="op op-palanca">'+
+            '<span class="op-ico">🏫</span>'+
+            '<span class="op-que"><b>Lo pido desde el salón</b>'+
+              '<small>antes del recreo, para que ya esté hecho</small></span>'+
+            '<input type="checkbox" id="eAnticipado"'+(antesMarcado?' checked':'')+'>'+
+          '</label>'
+        : '')+
+    '</div>'+
+
+    /* el total y el botón viajan juntos y pegados abajo: son la misma
+       decisión, y separarlos obliga a subir la vista para ver cuánto es */
+    '<div class="carro-pie">'+
+      '<div class="carro-total"><span>Total</span><b>'+F.pesos(total)+'</b></div>'+
+      '<button class="btn fuerte ancho" id="bConfirmar" type="button">'+
+        'Pedir · '+F.pesos(total)+'</button>'+
+    '</div>';
+
+  /* ── lo que se toca ── */
+  $$('#hojitaC [data-cmas]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.dataset.cmas;
+    if(muySeguido('cmas:'+i)) return;
+    cesta[i].cant = Math.min(10, cesta[i].cant + 1);
+    refrescarFicha(cesta[i].prod); pintarCesta(); pintarCarrito(); vibra(8);
+  }));
+  $$('#hojitaC [data-cmenos]').forEach(b => b.addEventListener('click', () => {
+    const i = +b.dataset.cmenos;
+    if(muySeguido('cmenos:'+i)) return;
+    const pid = cesta[i].prod;
+    cesta[i].cant--;
+    if(cesta[i].cant <= 0) cesta.splice(i, 1);
+    refrescarFicha(pid); pintarCesta(); vibra(8);
+    if(!cesta.length){ $('#velo').hidden = true; return; }
+    pintarCarrito();
+  }));
   $$('#hojitaC [data-para]').forEach(inp => inp.addEventListener('input', () => {
     cesta[+inp.dataset.para].para = inp.value;
   }));
-  $('#bCancelarH').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#bMasCosas').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#bNota').addEventListener('click', () => {
+    const t = prompt('¿Algo que decirle a la cooperativa?', notaPedido);
+    if(t === null) return;
+    notaPedido = String(t).slice(0, 140).trim();
+    pintarCarrito();
+  });
+  $('#bPara').addEventListener('click', () => { abiertoPara = !abiertoPara; pintarCarrito(); });
   $('#bConfirmar').addEventListener('click', () => {
     /* el que más duele repetir: dos toques nerviosos = dos pedidos */
     if(muySeguido('confirmar')) return;
     const yo = F.yo();
     try{
-      const anti = $('#eAnticipado');
-      miPedido = F.pedir(yo.codigo, cesta, { anticipado: anti && anti.checked });
+      const a = $('#eAnticipado');
+      miPedido = F.pedir(yo.codigo, cesta, { anticipado: a && a.checked, nota: notaPedido });
       const eran = cesta.map(r => r.prod);
-      cesta = [];
+      cesta = []; notaPedido = ''; abiertoPara = false;
       eran.forEach(refrescarFicha);   /* si no, la ficha se queda con el conteo viejo */
       pintarCesta();
       $('#velo').hidden = true;
@@ -851,6 +941,25 @@ arrancar();
          return !!(f && f.querySelector('button.mas-flota') && f.querySelector('.pasos').hidden); })());
     ok('la barra del pulgar tiene sus tres destinos',
        document.querySelectorAll('#pulgar .dedo[data-ir]').length === 3);
+
+    /* ── el carrito ── se edita ahí mismo, y eso hay que comprobarlo */
+    (function(){
+      const dos = F.productos(true).slice(0,2);
+      cesta = [{prod:dos[0].id, cant:1, para:''}, {prod:dos[1].id, cant:3, para:''}];
+      pintarCarrito();
+      const lineas = document.querySelectorAll('.carro-linea');
+      ok('el carrito lista una línea por platillo', lineas.length === 2);
+      ok('con uno solo, el botón de quitar es el bote y no un menos',
+         lineas[0].querySelector('.paso').textContent === '🗑');
+      ok('con varios, sí es un menos',
+         lineas[1].querySelector('.paso').textContent === '−');
+      ok('el total del carrito cuadra con la suma',
+         document.querySelector('.carro-total b').textContent === F.pesos(F.totalDe(cesta)));
+      ok('el veredicto de alcanzas va ARRIBA del pie, no debajo',
+         document.querySelector('.hojita .aviso').compareDocumentPosition(
+           document.querySelector('.carro-pie')) & Node.DOCUMENT_POSITION_FOLLOWING);
+      cesta = []; document.querySelector('#velo').hidden = true;
+    })();
 
     /* El contraste se MIDE en pantalla, no se supone. El chip activo llegó a
        quedar en 1.18 —letra blanca sobre tinte claro, invisible— y sólo se vio
