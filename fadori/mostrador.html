@@ -927,7 +927,10 @@ document.addEventListener('click', (e) => {
     return abrirSeAcabo(p.id);
   }
   if((b = t('data-nohay'))) return abrirNoHay(b.dataset.nohay);
-  if((b = t('data-tema'))){ F.ponerTema(b.dataset.tema); return pintar(); }
+  /* `button[...]` y no `[...]` a secas: el tema se aplica poniéndole
+     `data-tema` al <html>, así que sin el `button` este renglón se traga
+     TODOS los clics de la pantalla. Pasó en la app del alumno. */
+  if((b = e.target.closest('button[data-tema]'))){ F.ponerTema(b.dataset.tema); return pintar(); }
   if((b = t('data-editar'))) return abrirProducto(b.dataset.editar);
   if((b = t('data-abonar'))){
     const cod = b.dataset.abonar, a = F.estado().alumnos[cod];

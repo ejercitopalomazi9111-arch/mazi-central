@@ -889,7 +889,11 @@ document.addEventListener('click', (e) => {
     refrescarFicha(pid); pintarCesta(); vibra(8);
     return;
   }
-  if((b = e.target.closest('[data-tema]'))){
+  /* OJO con el selector: el tema se aplica poniéndole `data-tema` al <html>,
+     así que `closest('[data-tema]')` desde CUALQUIER lado encuentra el <html>
+     y se traga el clic. Pasó: dejó de funcionar el menú de abajo entero y no
+     se podía entrar a "Mi turno" ni a "Lo mío". Por eso dice `button`. */
+  if((b = e.target.closest('button[data-tema]'))){
     F.ponerTema(b.dataset.tema); pintarTemas(); vibra(8);
     return;
   }
@@ -1811,6 +1815,37 @@ arrancar();
       ok('y le da un botón para cambiarlo de un toque',
          /data-cambiar=/.test(html));
     }
+  })();
+
+  /* Dos trampas que ya tumbaron la app y que no se ven leyendo el código.
+     Van juntas porque las dos son de "algo tapa a algo". */
+  (function(){
+    /* 1 · El tema se aplica poniéndole `data-tema` al <html>. Con un selector
+       `[data-tema]` a secas, CUALQUIER clic de la pantalla encuentra el <html>
+       y el manejador del tema se traga el clic: dejó de funcionar el menú de
+       abajo entero y no se podía entrar a "Mi turno" ni a "Lo mío". */
+    ok('el <html> con tema puesto NO se hace pasar por botón de tema',
+       document.body.closest('button[data-tema]') === null);
+    ok('y el menú de abajo sí cambia de apartado al tocarlo',
+       (function(){
+         const antes = pantalla;
+         const boton = $('#pulgar [data-ir="yo"]');
+         if(!boton) return false;
+         const barra = $('#pulgar').hidden; $('#pulgar').hidden = false;
+         boton.dispatchEvent(new MouseEvent('click', { bubbles:true }));
+         const fue = pantalla === 'yo';
+         $('#pulgar').hidden = barra;
+         ver(antes);
+         return fue;
+       })());
+
+    /* 2 · La hojita de preguntar tiene que ir ENCIMA de la hoja grande: su
+       trabajo es preguntar con otra hoja ya abierta. Estaban las dos en el
+       mismo z-index y ésta viene antes en el documento, así que la nota del
+       carrito se abría POR DETRÁS y parecía que el botón no servía. */
+    ok('la hojita de preguntar se abre ENCIMA de la hoja grande',
+       parseInt(getComputedStyle($('#velo2')).zIndex, 10) >
+       parseInt(getComputedStyle($('#velo')).zIndex, 10));
   })();
 
   /* F49 · el tema. Tres estados y no dos: sin "automático" no hay manera de
