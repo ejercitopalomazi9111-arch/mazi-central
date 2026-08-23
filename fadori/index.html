@@ -14,6 +14,18 @@
 <meta name="apple-mobile-web-app-title" content="Fadori">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="estilo.css">
+<script>
+/* El tema, ANTES de pintar. Va aquí y no en nucleo.js —que carga hasta el
+   final— porque si no, la página parpadea en claro antes de ponerse oscura y
+   eso se ve barato. Son cuatro renglones repetidos a propósito. */
+(function(){try{
+  var t = localStorage.getItem('fadori_tema') || 'auto';
+  var osc = t === 'oscuro' || (t === 'auto' &&
+    window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.tema = osc ? 'oscuro' : 'claro';
+}catch(e){}})();
+</script>
+
 </head>
 <body>
 
@@ -116,6 +128,8 @@
       <button class="btn ancho" id="bSiempre" type="button">🔁 <span id="txtSiempre">Lo de siempre</span></button>
     </div>
 
+    <p class="semana" id="laSemana" hidden></p>
+
     <button class="btn ancho cuanto-traes" id="bCuanto" type="button">
       <span class="ct-ico">🪙</span>
       <span class="ct-que"><b>¿Cuánto traes?</b>
@@ -168,6 +182,11 @@
       <b>Se guardan sólo en este teléfono</b> — la cooperativa no las ve y no salen
       en ninguna lista. Aun así, si tu alergia es seria, pregúntales antes de pedir.</p>
     <div class="chips" id="misAlergias"></div>
+
+    <h2>Cómo se ve</h2>
+    <p class="sub">Es de este teléfono, no de tu cuenta. En <b>automático</b> se pone
+      oscura cuando tu teléfono se pone oscuro.</p>
+    <div class="chips" id="misTemas"></div>
 
     <button class="btn ancho" id="bSalir" type="button" style="margin-top:24px">Salir de esta cuenta</button>
     <p class="sub" style="margin-top:22px; font-size:12px">
@@ -377,7 +396,32 @@ function firmaMenu(){
 }
 let ultimaFirma = '';
 
+/* F50 · "el viernes hay pizza".
+   El alumno sólo ve lo que hay HOY, y eso está bien — pero entonces nunca se
+   enteraría de que el viernes hay pizza, y saberlo es medio chiste de tener
+   un menú de la semana. Esta línea lo dice sin llenar la pantalla. */
+function pintarSemana(){
+  const caja = $('#laSemana'); if(!caja) return;
+  const hoy = F.diaDeHoy();
+  const proximos = [];
+  for(let i = 1; i <= 6 && proximos.length < 2; i++){
+    const d = (hoy + i) % 7;
+    F.menuDelDia(d).forEach(p => {
+      if(!(p.dias || []).length) return;               /* los de siempre no son noticia */
+      if(F.tocaHoy(p)) return;                          /* si hoy también hay, tampoco */
+      if(proximos.some(x => x.prod.id === p.id)) return;
+      if(proximos.length < 2) proximos.push({ dia:d, prod:p });
+    });
+  }
+  caja.hidden = !proximos.length;
+  if(!proximos.length) return;
+  caja.innerHTML = '🗓️ ' + proximos.map(x =>
+    'el <b>' + esc(F.nombreDelDia(x.dia).toLowerCase()) + '</b> hay ' +
+    esc(x.prod.nombre)).join(' · ');
+}
+
 function pintarMenu(forzar){
+  pintarSemana();
   const todos = F.productos(false);
   const firma = firmaMenu();
   if(forzar || firma !== ultimaFirma){
@@ -620,7 +664,19 @@ function pintarTurno(){
   }).join('');
 }
 
+/* F49 · el selector de tema. Tres botones, no un interruptor: con un
+   interruptor no cabe "automático", que es el que casi todos van a dejar. */
+const TEMAS = [['auto','Automático','🌗'], ['claro','Claro','☀️'], ['oscuro','Oscuro','🌙']];
+function pintarTemas(){
+  const caja = $('#misTemas'); if(!caja) return;
+  const hoy = F.tema();
+  caja.innerHTML = TEMAS.map(([id, nom, emo]) =>
+    '<button class="chip'+(hoy === id ? ' on' : '')+'" type="button" data-tema="'+id+'" '+
+    'aria-pressed="'+(hoy === id)+'">'+emo+' '+nom+'</button>').join('');
+}
+
 function pintarYo(){
+  pintarTemas();
   const yo = F.yo(); if(!yo) return;
   const mias = F.misAlergias();
   $('#misAlergias').innerHTML = F.ALERGENOS.map(a =>
@@ -830,6 +886,10 @@ document.addEventListener('click', (e) => {
     const i = cesta.findIndex(x => x.prod === pid && !x.para);
     if(i >= 0){ cesta[i].cant--; if(cesta[i].cant <= 0) cesta.splice(i,1); }
     refrescarFicha(pid); pintarCesta(); vibra(8);
+    return;
+  }
+  if((b = e.target.closest('[data-tema]'))){
+    F.ponerTema(b.dataset.tema); pintarTemas(); vibra(8);
     return;
   }
   if((b = e.target.closest('[data-alergia]'))){
@@ -1457,7 +1517,9 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 3);
+       viejo.version === 4);
+    ok('y a los platillos viejos les pone "todos los días", que no cambia nada',
+       Array.isArray(viejo.productos[0].dias) && viejo.productos[0].dias.length === 0);
     ok('y les pone id a los eventos y conteos viejos, para poder sincronizarlos',
        (function(){
          const v2 = { version:2, config:{}, alumnos:{}, pedidos:[], productos:[],
@@ -1599,13 +1661,25 @@ arrancar();
         }
         return razon(cs.color, fondo);
       };
-      const activo = document.querySelector('#filtros .chip[aria-pressed="true"]');
-      ok('el filtro activo se lee de verdad (4.5 o más)', activo && mide(activo) >= 4.5);
-      const mas = document.querySelector('.plato button.mas-flota');
-      ok('el "+" de la esquina se lee de verdad', mas && mide(mas) >= 4.5);
-      const chicos = [...document.querySelectorAll('.sub, .nom, .precio, .cifra span')]
-        .filter(e => e.offsetParent && mide(e) < 4.5);
-      ok('ningún texto de la pantalla baja de 4.5', chicos.length === 0);
+      /* F49 · y se mide en LOS DOS TEMAS. Un modo oscuro bonito con letra
+         que no se lee es peor que no tener modo oscuro: la paleta clara
+         llevaba meses medida y la oscura nació hoy. */
+      const antes = document.documentElement.dataset.tema;
+      const revisa = (comoSeLlama) => {
+        const activo = document.querySelector('#filtros .chip[aria-pressed="true"]');
+        ok('en '+comoSeLlama+', el filtro activo se lee de verdad (4.5 o más)',
+           activo && mide(activo) >= 4.5);
+        const mas = document.querySelector('.plato button.mas-flota');
+        ok('en '+comoSeLlama+', el "+" de la esquina se lee de verdad',
+           mas && mide(mas) >= 4.5);
+        const chicos = [...document.querySelectorAll('.sub, .nom, .precio, .cifra span')]
+          .filter(e => e.offsetParent && mide(e) < 4.5);
+        ok('en '+comoSeLlama+', ningún texto de la pantalla baja de 4.5',
+           chicos.length === 0);
+      };
+      document.documentElement.dataset.tema = 'claro';  revisa('modo claro');
+      document.documentElement.dataset.tema = 'oscuro'; revisa('modo oscuro');
+      document.documentElement.dataset.tema = antes || 'claro';
     })();
     ok('nada de retardo de 300 ms en lo que se toca',
        getComputedStyle(document.querySelector('.plato .paso')).touchAction === 'manipulation');
@@ -1736,6 +1810,26 @@ arrancar();
       ok('y le da un botón para cambiarlo de un toque',
          /data-cambiar=/.test(html));
     }
+  })();
+
+  /* F49 · el tema. Tres estados y no dos: sin "automático" no hay manera de
+     seguir al teléfono, que es lo que casi todos van a dejar puesto. */
+  (function(){
+    const antes = F.tema();
+    ok('el tema arranca en automático', ['auto','claro','oscuro'].indexOf(antes) >= 0);
+    F.ponerTema('oscuro');
+    ok('escoger oscuro pinta la página de oscuro',
+       document.documentElement.dataset.tema === 'oscuro' && F.esOscuro() === true);
+    F.ponerTema('claro');
+    ok('y escoger claro la regresa',
+       document.documentElement.dataset.tema === 'claro' && F.esOscuro() === false);
+    F.ponerTema('auto');
+    ok('en automático manda el teléfono, no la app',
+       F.esOscuro() === !!(window.matchMedia &&
+         matchMedia('(prefers-color-scheme: dark)').matches));
+    ok('y el tema es de este aparato: NUNCA entra al expediente del alumno',
+       JSON.stringify(F.estado().alumnos).indexOf('tema') < 0);
+    F.ponerTema(antes);
   })();
 
   /* F47 · el ícono de la pantalla de inicio. Si el manifiesto o el ícono de

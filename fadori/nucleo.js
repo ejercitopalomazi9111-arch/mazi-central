@@ -186,7 +186,7 @@ const LLAVE = 'fadori_v1';
 
 function estadoVacio(){
   return {
-    version: 3,
+    version: 4,
     config: Object.assign({}, CONFIG_BASE),
     productos: [],
     alumnos: {},      /* codigo -> {codigo, nombre, grupo, deuda, terminos, favorito} */
@@ -275,6 +275,102 @@ const MotorLocal = {
    registro en cada guardado y se compara con la anterior. El que cambió se
    estampa con la hora y sale en el siguiente empujón.
    ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── El tema · F49 ────────────────────────────────────────────────────
+   Tres estados y no dos: "automático" es el que casi todos van a dejar, y es
+   el que hace que la app se ponga oscura de noche sin que nadie toque nada.
+   Es POR APARATO, no por alumno: el modo oscuro es de los ojos de quien
+   sostiene el teléfono, no de la cuenta. */
+/* ── El menú de la semana · F50 ──────────────────────────────────────
+   Lo pidió Carlos: *"poder programar los platillos del día dentro de la
+   semana, por ejemplo viernes hay pizza, lunes otra cosa pero no pizza"*.
+
+   Se guarda en el platillo, no en un calendario aparte: `dias` es la lista de
+   días en que ese platillo se ofrece. Vacía = todos los días, que es lo que
+   ya son los diecisiete de arranque y por eso la migración no rompe nada.
+
+   Por qué en el platillo y no en un calendario: un calendario obliga a
+   capturar la semana entera cada lunes. Así, la cooperativa marca UNA vez
+   "la pizza es de viernes" y se olvida para siempre. La regla se escribe
+   donde vive la cosa. */
+const DIAS = [
+  { n:1, corto:'L',  nombre:'Lunes' },
+  { n:2, corto:'M',  nombre:'Martes' },
+  { n:3, corto:'Mi', nombre:'Miércoles' },
+  { n:4, corto:'J',  nombre:'Jueves' },
+  { n:5, corto:'V',  nombre:'Viernes' },
+  { n:6, corto:'S',  nombre:'Sábado' },
+  { n:0, corto:'D',  nombre:'Domingo' },
+];
+
+function diaDeHoy(cuando){ return new Date(cuando || ahora()).getDay(); }
+
+/* ¿este platillo toca hoy? */
+function tocaHoy(p, cuando){
+  if(!p || !Array.isArray(p.dias) || !p.dias.length) return true;   /* siempre */
+  return p.dias.indexOf(diaDeHoy(cuando)) >= 0;
+}
+
+/* qué se ofrece un día dado. Sirve para la vista de la semana del mostrador
+   y para poder contestar "¿qué día hay pizza?" sin que nadie adivine. */
+function menuDelDia(n){
+  return productos(false).filter(p =>
+    p.disponible && (!Array.isArray(p.dias) || !p.dias.length || p.dias.indexOf(n) >= 0));
+}
+
+function nombreDelDia(n){
+  const d = DIAS.find(x => x.n === n);
+  return d ? d.nombre : '—';
+}
+
+/* el texto que ve el alumno cuando algo no es de hoy */
+function cuandoTocaTexto(p){
+  if(!p || !Array.isArray(p.dias) || !p.dias.length) return '';
+  const nombres = DIAS.filter(d => p.dias.indexOf(d.n) >= 0).map(d => d.nombre.toLowerCase());
+  if(!nombres.length) return 'no está programado ningún día';
+  if(nombres.length === 1) return 'sólo los ' + nombres[0];
+  return 'los ' + nombres.slice(0, -1).join(', ') + ' y ' + nombres[nombres.length - 1];
+}
+
+const LLAVE_TEMA = 'fadori_tema';
+
+function tema(){
+  try{ return localStorage.getItem(LLAVE_TEMA) || 'auto'; }catch(e){ return 'auto'; }
+}
+function esOscuro(t){
+  const q = t || tema();
+  if(q === 'oscuro') return true;
+  if(q === 'claro')  return false;
+  try{ return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
+  catch(e){ return false; }
+}
+function aplicarTema(){
+  try{
+    document.documentElement.dataset.tema = esOscuro() ? 'oscuro' : 'claro';
+    /* la barra del navegador también, si no se ve un cintillo claro arriba
+       de una app oscura y parece que se partió la pantalla */
+    const m = document.querySelector('meta[name="theme-color"]');
+    if(m){
+      const fondo = getComputedStyle(document.body).backgroundColor;
+      if(fondo) m.setAttribute('content', fondo);
+    }
+  }catch(e){}
+}
+function ponerTema(t){
+  const q = (t === 'claro' || t === 'oscuro') ? t : 'auto';
+  try{ localStorage.setItem(LLAVE_TEMA, q); }catch(e){}
+  aplicarTema();
+  return q;
+}
+/* si está en automático y el teléfono cambia de modo, la app cambia con él */
+try{
+  if(window.matchMedia){
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    const alCambiarTema = () => { if(tema() === 'auto') aplicarTema(); };
+    if(mq.addEventListener) mq.addEventListener('change', alCambiarTema);
+    else if(mq.addListener) mq.addListener(alCambiarTema);
+  }
+}catch(e){}
 
 const LLAVE_API   = 'fadori_servidor';   /* la dirección, fuera del documento */
 const LLAVE_SYNC  = 'fadori_sync';       /* hasta qué reloj ya me puse de acuerdo */
@@ -532,7 +628,7 @@ let D = null;
 
 function siembra(){
   const d = estadoVacio();
-  d.version = 3;
+  d.version = 4;
   d.productos = MENU_BASE.map((p, i) => ({
     id: id('p'),
     nombre: p.nombre,
@@ -542,6 +638,7 @@ function siembra(){
     desc: p.desc || '',
     alergenos: p.al || [],
     foto: p.foto || '',
+    dias: [],                    /* vacío = todos los días (F50) */
     disponible: true,
     destacado: i === 0,          /* F02 · el plato fuerte del día va primero */
     existencias: null,           /* null = sin control de inventario */
@@ -564,6 +661,7 @@ function migrar(d){
   if(!d.alumnos) d.alumnos = {};
   d.productos.forEach(p => {
     if(!Array.isArray(p.alergenos)) p.alergenos = [];
+    if(!Array.isArray(p.dias)) p.dias = [];
     if(typeof p.desc !== 'string') p.desc = '';
     if(typeof p.foto !== 'string') p.foto = '';
   });
@@ -590,7 +688,13 @@ function migrar(d){
     d.conteos.forEach(c => { if(!c.id) c.id = id('c'); });
   }
 
-  d.version = 3;
+  /* 3 → 4 · los días de la semana. Vacío = todos los días, así que a un menú
+     que ya existía no le cambia absolutamente nada. */
+  if(antes < 4){
+    d.productos.forEach(p => { if(!Array.isArray(p.dias)) p.dias = []; });
+  }
+
+  d.version = 4;
   return antes;
 }
 
@@ -599,7 +703,7 @@ function cargar(){
   if(!D){ D = siembra(); MOTOR.escribir(D); arrancarSync(); return D; }
   const antes = migrar(D);
   /* si de verdad se migró, se guarda: si no, cada carga vuelve a hacerlo */
-  if(antes < 3){ try{ MOTOR.escribir(D); }catch(e){} }
+  if(antes < 4){ try{ MOTOR.escribir(D); }catch(e){} }
   arrancarSync();
   return D;
 }
@@ -711,7 +815,11 @@ function aceptarTerminos(cod){
 function productos(soloDisponibles){
   const d = estado();
   const lista = d.productos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
-  return soloDisponibles ? lista.filter(p => p.disponible && existenciasOk(p)) : lista;
+  /* F50 · lo que no toca hoy no sale en el menú del alumno. Sale en el del
+     mostrador (soloDisponibles = false) porque ahí se administra la semana. */
+  return soloDisponibles
+    ? lista.filter(p => p.disponible && existenciasOk(p) && tocaHoy(p))
+    : lista;
 }
 
 function existenciasOk(p){
@@ -736,7 +844,7 @@ function guardarProducto(datos){
     if(p) Object.assign(p, datos);
   } else {
     d.productos.push(Object.assign({
-      id:id('p'), foto:'', disponible:true, destacado:false, desc:'', alergenos:[],
+      id:id('p'), foto:'', disponible:true, destacado:false, desc:'', alergenos:[], dias:[],
       existencias:null, segPrep:40, orden:d.productos.length,
     }, datos));
   }
@@ -1598,7 +1706,9 @@ const FADORI = {
   pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
   misAlergias, guardarAlergias, choquesDe,
   /* datos */
-  cargar, guardar, estado, _migrar: migrar, avisaCon, verTurno,
+  cargar, guardar, estado, _migrar: migrar, avisaCon,
+  DIAS, tocaHoy, menuDelDia, nombreDelDia, cuandoTocaTexto, diaDeHoy,
+  tema, ponerTema, esOscuro, aplicarTema, verTurno,
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor, alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
   registrar, yo, entrarComo, salir, aceptarTerminos,

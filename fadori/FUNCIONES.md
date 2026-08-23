@@ -330,6 +330,45 @@ frente a media escuela se ve prestado.
 
 ---
 
+### F49 · **(+)** Modo claro y modo oscuro
+
+Lo pidió Carlos para toda la página y por estética. **Tres estados, no dos:** automático, claro y
+oscuro. "Automático" sigue al teléfono y es el que casi todos van a dejar puesto.
+
+Es **por aparato, no por cuenta** — el modo oscuro es de los ojos de quien sostiene el teléfono, no
+de un expediente. Hay una prueba de que nunca entra a los datos del alumno.
+
+Y oscuro **no es gris**: es el mismo café de la tinta llevado hasta el fondo. Una app de comida en
+gris se ve a comida fría, y la comida de las fotos tiene que seguir siendo lo más claro de la
+pantalla. El mostrador en oscuro queda **más** contrastado que la app del alumno, no menos: la
+señora la usa con las manos ocupadas.
+
+> Las tres pruebas de contraste ahora corren **en los dos temas**. Un modo oscuro bonito con letra
+> que no se lee es peor que no tener modo oscuro — y de hecho el "+" del menú nació en 2.3 de
+> contraste. Lo cazó la prueba, no el ojo.
+
+### F50 · **(+)** El menú de la semana
+
+> *"Poder programar los platillos del día dentro de la semana. Por ejemplo viernes hay pizza, lunes
+> otra cosa pero no pizza."*
+
+Cada platillo guarda **en qué días se ofrece**. Sin ningún día marcado se ofrece todos los días,
+que es lo que ya eran los diecisiete del arranque — por eso encenderlo no le cambia nada a nadie.
+
+- **El alumno sólo ve lo de hoy.** Lo que no toca, no aparece: no se puede pedir algo que no hay.
+- **La cooperativa ve todo**, porque ahí es donde se administra la semana, y cada renglón dice
+  *"sólo los viernes"* o *"hoy no toca"*.
+- **La semana de un vistazo** en Ajustes: qué se ofrece cada día, con el de hoy marcado. Contesta
+  *"¿qué día hay pizza?"* sin abrir platillo por platillo.
+- **Y el alumno se entera de lo que viene:** una línea en el menú dice *"🗓️ el viernes hay pizza"*.
+  Sin ella el menú de la semana sería un secreto de la cooperativa, que es medio chiste.
+
+**Por qué vive en el platillo y no en un calendario:** un calendario obliga a capturar la semana
+entera cada lunes. Así, se marca **una vez** "la pizza es de viernes" y se olvida para siempre. La
+regla se escribe donde vive la cosa.
+
+---
+
 ---
 
 ## Las cinco reglas de construcción que aplican a todo

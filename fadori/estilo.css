@@ -36,6 +36,12 @@
 
   /* el sabor */
   --naranja:#C2410C;    /* acción. 4.90 sobre crema · 5.18 con blanco encima */
+  /* El relleno de los botones naranjas. Va aparte de --naranja porque los dos
+     tienen trabajos distintos: --naranja es TEXTO sobre el fondo de la app y
+     en oscuro tiene que aclararse; éste es FONDO con letra blanca encima y en
+     oscuro tiene que quedarse hondo. Cuando eran el mismo token, el "+" del
+     menú en modo oscuro quedó en 2.3 de contraste. Lo cazó una prueba. */
+  --naranja-relleno:#C2410C;
   --naranja-vivo:#E8590C; /* franjas y fondos grandes. NUNCA texto chico */
   --rescoldo:#FFE8D6;   /* fondo suave de acción · paneles */
   --rescoldo-hondo:#FFD9BE; /* el mismo, un punto más hondo, para que la
@@ -58,10 +64,63 @@
      a juguete". Eso es cierto de una esquina redonda en una caja CHICA; en
      una tarjeta grande, 16 se lee a app cara. Lo que sí es ley es que los
      botones van de píldora completa. */
+  /* Los velos translúcidos y los tintes suaves también son del tema. Estaban
+     escritos a mano en rgba() y en modo oscuro se quedaban claros: la barra de
+     arriba salía como una cinta blanca encima de una app oscura. */
+  --velo-barra:rgba(243,236,225,.92);
+  --velo-pildora:rgba(255,253,249,.95);
+  --rojo-suave:#FFF1EE;
+
   --radio:16px;
   --tap:52px;           /* 44 es el mínimo legal; 52 es el que se acierta caminando */
   --barra-baja:64px;    /* lo que ocupa la barra del pulgar */
   --fam:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MODO OSCURO · F49
+   Lo pidió Carlos para toda la página y por estética. Y aquí "oscuro" no es
+   invertir la crema: una app de comida en gris se ve a comida fría. Lo que se
+   hace es meter el mismo café de la tinta hasta el fondo —café quemado, no
+   negro— y subir el naranja para que siga leyéndose. La comida de las fotos
+   sigue siendo lo más claro de la pantalla, que es de lo que se trata.
+
+   Un solo bloque, no dos. El tema lo resuelve un guioncito que corre en el
+   <head> antes de pintar: si el usuario escogió, manda su elección; si dejó
+   "automático", manda el teléfono. Con dos bloques —uno de media query y otro
+   de atributo— habría que mantener los mismos veinte colores en dos lugares,
+   y ése es exactamente el tipo de cosa que se desincroniza en la tercera
+   semana y nadie se entera.
+   ═════════════════════════════════════════════════════════════════════════ */
+:root[data-tema="oscuro"]{
+  --fondo:#17110D;      /* café quemado · el suelo */
+  --sup:#241A14;        /* las tarjetas, que siguen flotando */
+  --piso:#2B1F17;       /* campos */
+  --sup2:#332419;
+  --linea:#43301F;
+
+  --cafe:#F5EADF;       /* la tinta se vuelve crema · 14.7 sobre el suelo */
+  --tenue:#C3AC98;      /* 7.9 · el gris de aquí también es café */
+
+  --naranja:#FF8A4C;    /* el de crema se apaga en oscuro; éste da 7.4 */
+  --naranja-relleno:#C2410C;  /* fondo sólido: se queda hondo, 5.18 con blanco */
+  --naranja-vivo:#E8590C;  /* fondos grandes con letra blanca: no cambia */
+  --rescoldo:#3A2115;      /* el panel suave de acción, ahora hondo */
+  --rescoldo-hondo:#4A2A1A;
+  --naranja-hondo:#FFA470; /* el que SÍ se lee encima del rescoldo hondo */
+  --dorado:#E7BC6A;        /* precios y "hoy" */
+  --dorado-vivo:#C8901E;   /* ⚠ decoración, jamás texto */
+  --verde:#8ACF63;
+  --ambar:#F5B04F;
+  --rojo:#FF8973;
+
+  /* en oscuro una sombra café no se ve: se hunde en negro y se le sube el
+     peso, porque si no las tarjetas se pegan al fondo y todo se aplana */
+  --sombra:0 1px 2px rgba(0,0,0,.34), 0 6px 20px rgba(0,0,0,.42);
+  --sombra-alta:0 2px 6px rgba(0,0,0,.40), 0 14px 40px rgba(0,0,0,.52);
+  --velo-barra:rgba(23,17,13,.92);
+  --velo-pildora:rgba(36,26,20,.95);
+  --rojo-suave:#3A1B16;
 }
 
 *{box-sizing:border-box}
@@ -127,7 +186,7 @@ body.con-pulgar .envoltura{
 .dedo .punto[hidden]{display:none}
 
 .barra{
-  position:sticky; top:0; z-index:40; background:rgba(243,236,225,.92);
+  position:sticky; top:0; z-index:40; background:var(--velo-barra);
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid var(--linea);
   padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
@@ -161,7 +220,7 @@ h2{font-size:20px; font-weight:800; letter-spacing:-.025em; margin:28px 0 12px;
   transition:transform .12s ease, background .15s ease;
 }
 .btn:active{transform:scale(.97)}
-.btn.fuerte{background:var(--naranja); border-color:var(--naranja); color:#fff;
+.btn.fuerte{background:var(--naranja-relleno); border-color:var(--naranja-relleno); color:#fff;
   box-shadow:0 4px 14px rgba(194,65,12,.28)}
 .btn.ancho{width:100%}
 .btn.chico{min-height:46px; padding:0 17px; font-size:14px; border-radius:999px}
@@ -226,7 +285,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
 .plato .marca-esq{
   position:absolute; top:9px; left:9px; z-index:2; padding:4px 10px; border-radius:999px;
   font-size:11px; font-weight:900; letter-spacing:.04em; text-transform:uppercase;
-  background:var(--naranja); color:#fff; box-shadow:0 2px 8px rgba(70,40,20,.28);
+  background:var(--naranja-relleno); color:#fff; box-shadow:0 2px 8px rgba(70,40,20,.28);
 }
 .plato .marca-esq.agotado{background:var(--cafe)}
 .plato .foto{
@@ -247,7 +306,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
 .mas-flota{
   position:absolute; right:9px; bottom:9px; z-index:2;
   width:46px; height:46px; padding:0;
-  border:0; border-radius:999px; background:var(--naranja); color:#fff;
+  border:0; border-radius:999px; background:var(--naranja-relleno); color:#fff;
   font-size:28px; font-weight:800; line-height:1; display:grid; place-items:center;
   box-shadow:0 3px 12px rgba(194,65,12,.42);
 }
@@ -261,7 +320,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
   background:var(--piso); color:var(--cafe); font-size:24px; font-weight:800; line-height:1;
   display:grid; place-items:center;
 }
-.pasos .paso.mas{background:var(--naranja); border-color:var(--naranja); color:#fff}
+.pasos .paso.mas{background:var(--naranja-relleno); border-color:var(--naranja-relleno); color:#fff}
 .pasos .paso:active{transform:scale(.94)}
 .pasos .cuantos{
   position:static; flex:1; display:grid; place-items:center; min-height:48px;
@@ -276,7 +335,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
 .plato .tiempo{font-size:12px; color:var(--tenue)}
 .plato .foto .cuantos{
   position:absolute; top:8px; right:8px; min-width:28px; height:28px; border-radius:14px;
-  background:var(--naranja); color:#fff; font-weight:800; font-size:14px;
+  background:var(--naranja-relleno); color:#fff; font-weight:800; font-size:14px;
   box-shadow:0 2px 8px rgba(70,40,20,.35);
   display:grid; place-items:center; padding:0 8px;
 }
@@ -387,8 +446,18 @@ body.mostrador{
   --sombra:0 1px 3px rgba(70,40,20,.10);
   --sombra-alta:0 2px 8px rgba(70,40,20,.14);
 }
+/* El mostrador en oscuro. Se queda MÁS contrastado que la app del alumno, no
+   menos: la señora la usa con sol pegando y con las manos ocupadas, y ahí el
+   contraste no es estética, es poder leer. */
+:root[data-tema="oscuro"] body.mostrador{
+  --fondo:#140F0B; --piso:#221913; --sup:#221913; --sup2:#2D2018;
+  --linea:#4A3626; --cafe:#FBF3EA; --tenue:#CBB6A2;
+  --naranja:#FF9159; --dorado:#EFC677;
+}
 body.mostrador .barra{background:rgba(244,239,231,.96)}
+:root[data-tema="oscuro"] body.mostrador .barra{background:rgba(20,15,11,.96)}
 body.mostrador .cesta{background:#fff}
+:root[data-tema="oscuro"] body.mostrador .cesta{background:var(--sup)}
 body.mostrador .envoltura{max-width:900px}
 body.mostrador .btn{font-size:17px; font-weight:800}
 body.mostrador .btn.fuerte{color:#fff}
@@ -430,7 +499,7 @@ body.mostrador h1{font-size:30px}
 .par-linea .linea-prod{flex:1; min-width:0}
 .btn-nohay{
   flex:0 0 auto; width:74px; border-radius:14px; border:2px solid var(--rojo);
-  background:#FFF1EE; color:var(--rojo); font-weight:900; font-size:14px;
+  background:var(--rojo-suave); color:var(--rojo); font-weight:900; font-size:14px;
   letter-spacing:.02em; cursor:pointer; min-height:var(--tap);
 }
 .btn-nohay:active{background:var(--rojo); color:#fff}
@@ -571,6 +640,15 @@ body.cortina-arriba{overflow:hidden}
 }
 @keyframes cort-entra{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
 
+/* F50 · "el viernes hay pizza". Una línea, no una sección: el alumno viene a
+   pedir hoy, no a leer el calendario. */
+.semana{
+  margin:0 0 16px; padding:11px 14px; border-radius:14px;
+  background:var(--rescoldo); color:var(--naranja-hondo);
+  font-size:14px; font-weight:700; line-height:1.4;
+}
+.semana[hidden]{display:none}
+
 /* ── la hamburguesa armándose ──────────────────────────────────────────────
    Es el logo REAL de Fadori, cortado en sus capas: `marca/capa-*.png` salen
    de `marca/hamburguesa-armandose.png`, con el blanco quitado para que se
@@ -593,14 +671,19 @@ body.cortina-arriba{overflow:hidden}
   animation:cae .46s cubic-bezier(.3,1.5,.5,1) forwards;
 }
 /* top = dónde termina · --cae = de dónde viene, en % de su propia altura */
-.burger .pan-arriba{ top:2%;     --cae:-200%; animation-delay:.76s }
-.burger .lechuga   { top:28%;    --cae:-410%; animation-delay:.62s }
-.burger .jitomate  { top:37.5%;  --cae:-380%; animation-delay:.50s }
-/* el queso va bajo a propósito: su rebanada está en la PARTE DE ARRIBA de la
-   lámina y lo de abajo es el chorreón. Puesto por su caja quedaba despegado
-   de la carne y la hamburguesa no cerraba. */
-.burger .queso     { top:46%;    --cae:-190%; animation-delay:.38s }
-.burger .carne     { top:52.3%;  --cae:-109%; animation-delay:.24s }
+/* Los sitios están medidos para que las capas se ENCIMEN, no para que se
+   toquen de puntitas. Una hamburguesa de verdad no tiene aire entre el queso
+   y la carne, y en la primera versión sí lo tenía: se veía flotada.
+
+   El queso es el que más baja de los seis. Su rebanada está en la PARTE DE
+   ARRIBA de la lámina y todo lo de abajo es el chorreón, así que colocado por
+   su caja quedaba a media altura. Bajándolo, la rebanada cae SOBRE la carne y
+   el chorreón escurre por encima de ella, que es como se ve en el logo. */
+.burger .pan-arriba{ top:7%;     --cae:-210%; animation-delay:.76s }
+.burger .lechuga   { top:32.5%;  --cae:-430%; animation-delay:.62s }
+.burger .jitomate  { top:41.5%;  --cae:-400%; animation-delay:.50s }
+.burger .queso     { top:49%;    --cae:-200%; animation-delay:.38s }
+.burger .carne     { top:53.5%;  --cae:-115%; animation-delay:.24s }
 .burger .pan-abajo { top:66.5%;  --cae:-60%;  animation-delay:.10s }
 .burger .sombra    { top:91.3%;  --cae:0%;    animation-delay:.10s;
   animation-name:sombra-entra; animation-timing-function:ease-out }
@@ -648,7 +731,7 @@ body.cortina-arriba{overflow:hidden}
   background:transparent; color:var(--cafe); font-size:21px; font-weight:800;
   display:grid; place-items:center;
 }
-.carro-pasos .paso.mas{background:var(--naranja); color:#fff}
+.carro-pasos .paso.mas{background:var(--naranja-relleno); color:#fff}
 .carro-pasos .paso:active{transform:scale(.9)}
 .carro-pasos .cuantos{
   min-width:26px; text-align:center; font-size:17px; font-weight:900;
@@ -776,7 +859,7 @@ body.cortina-arriba{overflow:hidden}
   background:transparent; color:var(--cafe); font-size:21px; font-weight:800;
   display:grid; place-items:center;
 }
-.fic-pasos .paso.mas{background:var(--naranja); color:#fff}
+.fic-pasos .paso.mas{background:var(--naranja-relleno); color:#fff}
 .fic-pasos .paso:active{transform:scale(.9)}
 .fic-pasos .cuantos{min-width:26px; text-align:center; font-size:17px; font-weight:900;
   font-variant-numeric:tabular-nums}
@@ -826,11 +909,11 @@ body.cortina-arriba{overflow:hidden}
 .heroe .pasos{
   position:absolute; right:9px; bottom:9px; z-index:3;
   align-self:auto; padding:3px; gap:2px;
-  background:rgba(255,253,249,.95); border-radius:999px;
+  background:var(--velo-pildora); border-radius:999px;
   box-shadow:0 3px 12px rgba(30,14,6,.45);
 }
 .heroe .pasos .paso{flex:0 0 48px; min-height:48px; border:0; background:transparent}
-.heroe .pasos .paso.mas{background:var(--naranja)}
+.heroe .pasos .paso.mas{background:var(--naranja-relleno)}
 .heroe .pasos .cuantos{min-width:24px; font-size:17px}
 .heroe-texto{padding-right:158px}
 .heroe.agotado{opacity:.5}

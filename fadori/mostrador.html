@@ -13,6 +13,18 @@
 <meta name="apple-mobile-web-app-title" content="Mostrador">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="estilo.css">
+<script>
+/* El tema, ANTES de pintar. Va aquí y no en nucleo.js —que carga hasta el
+   final— porque si no, la página parpadea en claro antes de ponerse oscura y
+   eso se ve barato. Son cuatro renglones repetidos a propósito. */
+(function(){try{
+  var t = localStorage.getItem('fadori_tema') || 'auto';
+  var osc = t === 'oscuro' || (t === 'auto' &&
+    window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.tema = osc ? 'oscuro' : 'claro';
+}catch(e){}})();
+</script>
+
 </head>
 <body class="mostrador">
 
@@ -132,6 +144,16 @@
 
     <h2>Sugerencias y errores</h2>
     <div class="pila" id="listaSugerencias"></div>
+
+    <h2>La semana</h2>
+    <p class="sub">Lo que se ofrece cada día. Se arma solo con los días que le
+      marcaste a cada platillo — aquí no se captura nada, sólo se revisa.</p>
+    <div class="pila" id="laSemana"></div>
+
+    <h2>Cómo se ve esta pantalla</h2>
+    <p class="sub">Es de esta tablet, no de la cuenta. En <b>automático</b> sigue al
+      aparato. De noche o en un cuarto oscuro, la oscura cansa menos la vista.</p>
+    <div class="chips" id="aTemas"></div>
 
     <h2>El pasador de esta pantalla</h2>
     <label for="aPasador">De 4 a 8 números</label>
@@ -576,7 +598,10 @@ function pintarMenu(){
         (p.destacado ? ' <b style="color:var(--dorado)">· hoy</b>' : '')+
         '<small>'+F.pesos(p.precio)+
         (typeof p.existencias === 'number' ? ' · quedan '+p.existencias : '')+
-        (pocas ? ' ⚠️' : '')+'</small></span>'+
+        (pocas ? ' ⚠️' : '')+
+        ((p.dias||[]).length ? ' · <b style="color:var(--naranja)">'+
+          esc(F.cuandoTocaTexto(p))+'</b>' : '')+
+        (!F.tocaHoy(p) ? ' · <b>hoy no toca</b>' : '')+'</small></span>'+
       '<button class="btn chico" data-agotar="'+p.id+'" type="button">'+
         (agotado ? 'Reponer' : 'Se acabó')+'</button>'+
       '<button class="btn chico" data-editar="'+p.id+'" type="button">Editar</button>'+
@@ -595,6 +620,13 @@ function abrirProducto(pid){
     '<label for="hCat">De qué es</label>'+
     '<select id="hCat">'+ F.CATEGORIAS.map(c =>
       '<option value="'+c.id+'"'+(p&&p.cat===c.id?' selected':'')+'>'+c.emoji+' '+c.nombre+'</option>').join('') +'</select>'+
+    '<label style="margin-top:16px">Qué días se ofrece</label>'+
+    '<p class="sub" style="margin:0 0 8px">Sin ninguno marcado se ofrece <b>todos los días</b>. '+
+      'Marca sólo los días que toca: la pizza el viernes, el pozole el jueves.</p>'+
+    '<div class="chips" id="hDias">'+ F.DIAS.map(d =>
+      '<button class="chip'+((p && (p.dias||[]).indexOf(d.n) >= 0) ? ' on' : '')+'" type="button" '+
+      'data-dia="'+d.n+'" aria-pressed="'+!!(p && (p.dias||[]).indexOf(d.n) >= 0)+'">'+
+      d.nombre+'</button>').join('') +'</div>'+
     '<label for="hDesc">De qué es (una línea)</label>'+
     '<input id="hDesc" maxlength="120" value="'+esc(p?(p.desc||''):'')+'" '+
       'placeholder="Telera con jamón, queso y aguacate">'+
@@ -661,6 +693,17 @@ function abrirProducto(pid){
                      aviso('Quitado del menú.', 'bueno'); },
     });
   });
+  /* F50 · los días viven en la hoja mientras está abierta, igual que los
+     alérgenos: se guardan al darle a Guardar, no en cada toque */
+  let dias = p ? (p.dias || []).slice() : [];
+  $('#hDias').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dia]'); if(!b) return;
+    const n = +b.dataset.dia, i = dias.indexOf(n);
+    if(i >= 0) dias.splice(i, 1); else dias.push(n);
+    b.classList.toggle('on', dias.indexOf(n) >= 0);
+    b.setAttribute('aria-pressed', dias.indexOf(n) >= 0);
+  });
+
   $('#hGuardar').addEventListener('click', () => {
     const ex = $('#hExist').value;
     const datos = {
@@ -673,6 +716,7 @@ function abrirProducto(pid){
       destacado: $('#hDest').checked,
       desc: $('#hDesc').value.trim(),
       alergenos: alerg,
+      dias: dias.slice().sort((x,y) => x - y),
     };
     if(fotoOcupada) return aviso('Espera dos segundos, la foto todavía se está preparando.');
     if(fotoNueva) datos.foto = fotoNueva;
@@ -783,6 +827,26 @@ function pintarAjustes(){
   $('#aAnticipados').checked = !!c.aceptaAnticipados;
   $('#aPasador').value = c.pasador || '1234';
 
+  /* F50 · la semana de un vistazo. Es la pantalla que contesta "¿qué día hay
+     pizza?" sin que nadie tenga que abrir platillo por platillo. */
+  const hoyN = F.diaDeHoy();
+  $('#laSemana').innerHTML = F.DIAS.map(d => {
+    const delDia = F.menuDelDia(d.n);
+    const propios = delDia.filter(p => (p.dias||[]).length);
+    return '<div class="renglon"'+(d.n === hoyN ? ' style="border:2px solid var(--naranja)"' : '')+'>'+
+      '<span class="q" style="flex:1"><b>'+d.nombre+(d.n === hoyN ? ' · hoy' : '')+'</b>'+
+        '<small>'+delDia.length+' platillos'+
+          (propios.length ? ' · sólo de este día: '+
+            propios.map(p => esc(p.nombre)).join(', ') : '')+
+        '</small></span></div>';
+  }).join('');
+
+  /* F49 · claro / oscuro / automático */
+  const hoy = F.tema();
+  $('#aTemas').innerHTML = [['auto','Automático','🌗'],['claro','Claro','☀️'],['oscuro','Oscuro','🌙']]
+    .map(([id,nom,emo]) => '<button class="chip'+(hoy===id?' on':'')+'" type="button" '+
+      'data-tema="'+id+'" aria-pressed="'+(hoy===id)+'">'+emo+' '+nom+'</button>').join('');
+
   const sug = F.sugerencias();
   $('#listaSugerencias').innerHTML = sug.length ? sug.slice(0,20).map(s =>
     '<div class="renglon"><span class="q">'+esc(s.texto)+
@@ -835,6 +899,7 @@ document.addEventListener('click', (e) => {
     return abrirSeAcabo(p.id);
   }
   if((b = t('data-nohay'))) return abrirNoHay(b.dataset.nohay);
+  if((b = t('data-tema'))){ F.ponerTema(b.dataset.tema); return pintar(); }
   if((b = t('data-editar'))) return abrirProducto(b.dataset.editar);
   if((b = t('data-abonar'))){
     const cod = b.dataset.abonar, a = F.estado().alumnos[cod];
@@ -1061,6 +1126,37 @@ verVista('despachar');
        salio === 'probando');
     ok('y un confirm o un prompt colados nunca hacen la acción a ciegas',
        r === false && q === null);
+  })();
+
+  /* F50 · los platillos por día de la semana */
+  (function(){
+    const p1 = F.productos(false)[0];
+    const hoy = F.diaDeHoy();
+    const otro = (hoy + 2) % 7;
+    const antes = (p1.dias || []).slice();
+
+    p1.dias = []; F.guardar();
+    ok('sin días marcados, un platillo se ofrece todos los días',
+       F.tocaHoy(p1) && F.productos(true).some(x => x.id === p1.id));
+
+    p1.dias = [otro]; F.guardar();
+    ok('marcado sólo para otro día, hoy NO le sale al alumno',
+       !F.tocaHoy(p1) && !F.productos(true).some(x => x.id === p1.id));
+    ok('pero SÍ le sale a la cooperativa, que es donde se administra',
+       F.productos(false).some(x => x.id === p1.id));
+    ok('y el menú de ese día sí lo trae',
+       F.menuDelDia(otro).some(x => x.id === p1.id));
+    ok('mientras que el de hoy no',
+       !F.menuDelDia(hoy).some(x => x.id === p1.id));
+
+    p1.dias = [5]; F.guardar();
+    ok('y se dice en cristiano de qué día es',
+       F.cuandoTocaTexto(p1) === 'sólo los viernes');
+    p1.dias = [1,5]; F.guardar();
+    ok('y con dos días también',
+       F.cuandoTocaTexto(p1) === 'los lunes y viernes');
+
+    p1.dias = antes; F.guardar();
   })();
 
   /* La miniatura del menú. Va aquí porque estuvo rota en vivo y ninguna

@@ -143,8 +143,8 @@ Cada pantalla trae las suyas y **corren solas al cargar**. Si algo se rompe, sal
 antes de que lo vea un alumno.
 
 ```
-index.html      80 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración, faltantes
-mostrador.html  29 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador, faltantes
+index.html      93 pruebas    registro, fila, tope, deuda, alergias, carrito, contraste, migración, faltantes, tema, semana
+mostrador.html  36 pruebas    de a pie, dos despachadores, agotar, cobrar, corte, pasador, faltantes, semana
 pantalla.html    4 pruebas    que el número salga y que el NOMBRE nunca salga
 medidor.html    12 pruebas    quién alcanzó, la curva, el contador, el CSV
 ```
