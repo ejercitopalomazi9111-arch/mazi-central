@@ -10,6 +10,25 @@
 </head>
 <body>
 
+<!-- ══════════ LA CORTINILLA ══════════
+  Lo primero que se ve: el color de la casa, el nombre, y una torta armándose
+  en el plato. Dura menos de dos segundos, sale UNA vez por visita y se salta
+  entera si el teléfono pide menos movimiento. Nada de hacer esperar a nadie
+  por una animación bonita. -->
+<div class="cortinilla" id="cortinilla" role="presentation">
+  <div class="cort-marca">Fadori<b>.</b></div>
+  <div class="torta" aria-hidden="true">
+    <span class="plato-base"></span>
+    <span class="vapor v1"></span><span class="vapor v2"></span><span class="vapor v3"></span>
+    <span class="capa pan-abajo"></span>
+    <span class="capa carne"></span>
+    <span class="capa queso"></span>
+    <span class="capa verde"></span>
+    <span class="capa pan-arriba"></span>
+  </div>
+  <div class="cort-pie">Proyecto Sin Filas</div>
+</div>
+
 <header class="barra">
   <div class="barra-fila">
     <span class="marca">Fadori<b>.</b></span>
@@ -239,29 +258,43 @@ function fichaPlato(p){
   const agotado = !p.disponible || !F.existenciasOk(p);
   const seg = F.segReales(p.id) || p.segPrep;
   return '<div class="plato'+(agotado?' agotado':'')+(n?' puesto':'')+'" data-ficha="'+p.id+'">'+
+    (agotado ? '<span class="marca-esq agotado">se acabó</span>'
+             : (p.destacado ? '<span class="marca-esq">hoy</span>' : ''))+
     '<button class="foto" type="button" data-sumar="'+p.id+'"'+(agotado?' disabled':'')+
       ' style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'"'+
       ' aria-label="Agregar '+esc(p.nombre)+'">'+
       (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : t.emoji)+
-      (agotado ? '<span class="sello">SE ACABÓ</span>' : '')+
     '</button>'+
+    /* el "+" flotando en la esquina de la foto: al reposo la ficha no gasta
+       un renglón entero en botones, y así cabe más menú en la pantalla */
+    (agotado ? '' : botonFlota(p, n))+
     '<div class="cuerpo">'+
-      '<span class="nom">'+esc(p.nombre)+'</span>'+
       '<span class="precio">'+F.pesos(p.precio)+'</span>'+
+      '<span class="nom">'+esc(p.nombre)+'</span>'+
       '<span class="tiempo">'+ (seg < 60 ? 'sale rápido' : 'tarda ~'+Math.round(seg/60)+' min') +'</span>'+
     '</div>'+
-    (agotado ? '' : '<div class="pasos">'+ pasosDe(p, n) +'</div>')+
+    (agotado ? '' : '<div class="pasos"'+(n?'':' hidden')+'>'+ pasosDe(p, n) +'</div>')+
   '</div>';
 }
 
-/* Sumar y restar sin salir de la ficha. Antes, para pedir tres tortas había
-   que tocar tres veces Y cada toque redibujaba el menú entero. */
-function pasosDe(p, n){
+/* Sumar y restar sin salir de la ficha, y con botones de 48px de verdad — no
+   un −/+ diminuto encima de la foto. Sólo aparece cuando ya llevas algo:
+   antes de eso basta el "+" de la esquina. */
+/* El "+" de la esquina no desaparece cuando ya llevas algo: se convierte en
+   EL NÚMERO, en el mismo sitio. Así la ficha no cambia de forma y de un
+   vistazo sabes cuántos llevas de cada cosa. El − y el + grandes salen abajo
+   para ajustar sin apuntarle a un botón diminuto. */
+function botonFlota(p, n){
   return n
-    ? '<button class="paso" type="button" data-restar="'+p.id+'" aria-label="Quitar uno">−</button>'+
-      '<span class="cuantos" aria-live="polite">'+n+'</span>'+
-      '<button class="paso mas" type="button" data-sumar="'+p.id+'" aria-label="Agregar otro">+</button>'
-    : '<button class="paso solo" type="button" data-sumar="'+p.id+'">Agregar</button>';
+    ? '<span class="mas-flota cuenta" aria-hidden="true">'+n+'</span>'
+    : '<button class="mas-flota" type="button" data-sumar="'+p.id+'"'+
+      ' aria-label="Agregar '+esc(p.nombre)+'">+</button>';
+}
+
+function pasosDe(p, n){
+  return '<button class="paso" type="button" data-restar="'+p.id+'" aria-label="Quitar uno">−</button>'+
+    '<span class="cuantos" aria-live="polite">'+n+'</span>'+
+    '<button class="paso mas" type="button" data-sumar="'+p.id+'" aria-label="Agregar otro">+</button>';
 }
 
 /* Sólo se repinta la ficha que se tocó. Es la diferencia entre que la app
@@ -271,8 +304,9 @@ function refrescarFicha(pid){
   const n = cuantosDe(pid);
   $$('[data-ficha="'+pid+'"]').forEach(caja => {
     caja.classList.toggle('puesto', n > 0);
-    const pasos = $('.pasos', caja);
-    if(pasos) pasos.innerHTML = pasosDe(p, n);
+    const pasos = $('.pasos', caja), flota = $('.mas-flota', caja);
+    if(pasos){ pasos.innerHTML = pasosDe(p, n); pasos.hidden = n === 0; }
+    if(flota) flota.outerHTML = botonFlota(p, n);
   });
 }
 
@@ -506,11 +540,28 @@ $('#bSalir').addEventListener('click', () => { F.salir(); cesta = []; miPedido =
    y la barra de abajo: nada de redibujar el menú entero. */
 function vibra(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 
+/* ── La guarda del toque ──────────────────────────────────────────────
+   Quitamos el retardo de 300 ms del navegador para que el toque responda al
+   instante — pero ese retardo también servía de red: un pulgar tembloroso,
+   un rebote del dedo o un doble toque de nervios sumaban DOS.
+   Así que la respuesta instantánea se queda y la red se pone aquí: 150 ms de
+   guarda POR BOTÓN. El primer toque entra de inmediato; el segundo al mismo
+   sitio dentro de la ventana se ignora. Tocar OTRO botón nunca espera. */
+const GUARDA = 150;
+const ultimoToque = new Map();
+function muySeguido(llave){
+  const t = Date.now(), antes = ultimoToque.get(llave) || 0;
+  ultimoToque.set(llave, t);
+  if(ultimoToque.size > 60) ultimoToque.clear();
+  return (t - antes) < GUARDA;
+}
+
 document.addEventListener('click', (e) => {
   let b;
 
   if((b = e.target.closest('[data-sumar]')) && !b.disabled){
     const pid = b.dataset.sumar;
+    if(muySeguido('mas:'+pid)) return;
     const r = cesta.find(x => x.prod === pid && !x.para);
     if(r) r.cant = Math.min(10, r.cant + 1); else cesta.push({ prod:pid, cant:1, para:'' });
     refrescarFicha(pid); pintarCesta(); vibra(8);
@@ -518,6 +569,7 @@ document.addEventListener('click', (e) => {
   }
   if((b = e.target.closest('[data-restar]'))){
     const pid = b.dataset.restar;
+    if(muySeguido('menos:'+pid)) return;
     const i = cesta.findIndex(x => x.prod === pid && !x.para);
     if(i >= 0){ cesta[i].cant--; if(cesta[i].cant <= 0) cesta.splice(i,1); }
     refrescarFicha(pid); pintarCesta(); vibra(8);
@@ -591,6 +643,8 @@ function abrirConfirmacion(){
   }));
   $('#bCancelarH').addEventListener('click', () => { $('#velo').hidden = true; });
   $('#bConfirmar').addEventListener('click', () => {
+    /* el que más duele repetir: dos toques nerviosos = dos pedidos */
+    if(muySeguido('confirmar')) return;
     const yo = F.yo();
     try{
       const anti = $('#eAnticipado');
@@ -684,6 +738,29 @@ document.addEventListener('click', function pedirPermiso(){
   document.removeEventListener('click', pedirPermiso);
 });
 
+/* ── La cortinilla ───────────────────────────────────────────────────
+   Sale una vez por visita. Si el teléfono pide menos movimiento, o si ya se
+   vio en esta sesión, se quita de inmediato: la animación es un saludo, no
+   un peaje. Y con un toque te la saltas. */
+(function(){
+  const c = $('#cortinilla');
+  if(!c) return;
+  let yaSalio = false;
+  try{ yaSalio = sessionStorage.getItem('fadori_cortinilla') === '1'; }catch(e){}
+  const menos = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(yaSalio || menos){ c.remove(); return; }
+  document.body.classList.add('cortina-arriba');
+  try{ sessionStorage.setItem('fadori_cortinilla','1'); }catch(e){}
+  const quitar = () => {
+    if(!c.isConnected) return;
+    c.classList.add('se-va');
+    document.body.classList.remove('cortina-arriba');
+    setTimeout(() => c.remove(), 420);
+  };
+  setTimeout(quitar, 1900);
+  c.addEventListener('click', quitar);
+})();
+
 arrancar();
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -764,14 +841,53 @@ arrancar();
       const paso = ficha && ficha.querySelector('.paso');
       return paso && parseFloat(getComputedStyle(paso).minHeight) >= 48;
     })());
+    ok('el "+" de la esquina se vuelve el número cuando ya llevas algo',
+       !!(ficha && ficha.querySelector('.mas-flota.cuenta') &&
+          ficha.querySelector('.mas-flota.cuenta').textContent === '2'));
     cesta = [];
     refrescarFicha(prod.id);
-    ok('al vaciar, la ficha vuelve a "Agregar" sin reconstruir el menú',
-       !!(ficha && ficha.querySelector('.paso.solo')));
+    ok('al vaciar, la ficha vuelve al "+" de la esquina sin reconstruir el menú',
+       (function(){ const f = document.querySelector('[data-ficha="'+prod.id+'"]');
+         return !!(f && f.querySelector('button.mas-flota') && f.querySelector('.pasos').hidden); })());
     ok('la barra del pulgar tiene sus tres destinos',
        document.querySelectorAll('#pulgar .dedo[data-ir]').length === 3);
+
+    /* El contraste se MIDE en pantalla, no se supone. El chip activo llegó a
+       quedar en 1.18 —letra blanca sobre tinte claro, invisible— y sólo se vio
+       mirando la captura. Esto lo caza sin mirar. */
+    (function(){
+      const lum = (c) => {
+        const v = c.match(/\d+/g).slice(0,3).map(x => {
+          const n = x/255; return n <= .03928 ? n/12.92 : Math.pow((n+.055)/1.055, 2.4);
+        });
+        return .2126*v[0] + .7152*v[1] + .0722*v[2];
+      };
+      const razon = (a,b) => { const x=lum(a), y=lum(b);
+        return (Math.max(x,y)+.05) / (Math.min(x,y)+.05); };
+      const mide = (el) => {
+        const cs = getComputedStyle(el);
+        let fondo = cs.backgroundColor, n = el;
+        while(/rgba\(0, 0, 0, 0\)|transparent/.test(fondo) && n.parentElement){
+          n = n.parentElement; fondo = getComputedStyle(n).backgroundColor;
+        }
+        return razon(cs.color, fondo);
+      };
+      const activo = document.querySelector('#filtros .chip[aria-pressed="true"]');
+      ok('el filtro activo se lee de verdad (4.5 o más)', activo && mide(activo) >= 4.5);
+      const mas = document.querySelector('.plato button.mas-flota');
+      ok('el "+" de la esquina se lee de verdad', mas && mide(mas) >= 4.5);
+      const chicos = [...document.querySelectorAll('.sub, .nom, .precio, .cifra span')]
+        .filter(e => e.offsetParent && mide(e) < 4.5);
+      ok('ningún texto de la pantalla baja de 4.5', chicos.length === 0);
+    })();
     ok('nada de retardo de 300 ms en lo que se toca',
        getComputedStyle(document.querySelector('.plato .paso')).touchAction === 'manipulation');
+    ok('pero SÍ hay guarda: el mismo botón dos veces seguidas cuenta una',
+       (function(){ ultimoToque.clear();
+         return muySeguido('x') === false && muySeguido('x') === true; })());
+    ok('la guarda es por botón: tocar otro nunca espera',
+       (function(){ ultimoToque.clear();
+         muySeguido('a'); return muySeguido('b') === false; })());
   })();
 
   /* dejar el aparato como estaba */
