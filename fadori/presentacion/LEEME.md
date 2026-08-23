@@ -21,6 +21,7 @@ lienzo de 20″ × 11.25″— y encima se cambia únicamente el contenido.
 ## Cómo se rehace
 
 ```bash
+python3 recortar.py         # capturas enteras → recortes/ (sólo lo que importa)
 python3 rehacer.py          # → Fadori-STEAM.pptx
 ```
 
@@ -106,6 +107,7 @@ Lo que era mío y se arregló:
 | Títulos partidos en dos renglones | las láminas nuevas heredaban 92 pt en una caja de 8.45", que alcanzaba para «Visión» pero no para «¿Para qué sirve Fadori?» |
 | El cuerpo leído como poema | 44.5 pt **centrado** en 7.6": once palabras salían en cinco renglones, cada uno arrancando en distinto margen |
 | La misma gráfica dos láminas seguidas | «Enfoque» y «S · Ciencia» compartían captura; se veía como si nos hubiéramos quedado sin material |
+| Capturas ilegibles al proyectar | iban enteras: barra de navegación, pestañas y párrafos de ayuda en letra de 8 px. Lo que importaba quedaba del tamaño de una uña. `recortar.py` deja sólo el pedido, el turno, las cifras o el logo |
 
 ## `vista.mjs`
 

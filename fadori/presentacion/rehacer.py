@@ -142,7 +142,13 @@ def poner_imagen(n, archivo, caja):
     """Mete un PNG en la diapositiva n, encajado en `caja` = (x,y,w,h) en
        pulgadas, SIN deformarlo. Registra el medio y la relación, que es lo
        que se olvida y deja el archivo corrupto."""
-    origen = os.path.join(AQUI, archivo)
+    # Si hay recorte, manda el recorte. Las capturas enteras traen barra de
+    # navegación, pestañas y párrafos de ayuda en letra de 8 px: metidas
+    # completas en una lámina de 20", lo que importa queda del tamaño de una uña
+    # y el resto es una mancha gris. `recortar.py` deja sólo lo que se tiene que
+    # ver desde la última banca.
+    recorte = os.path.join(AQUI, 'recortes', archivo)
+    origen = recorte if os.path.exists(recorte) else os.path.join(AQUI, archivo)
     w, h = medida_png(origen)
     cx, cy, cw, ch = caja
     a = w / h
@@ -383,7 +389,7 @@ def lamina(n, titulo, cuerpo, imagen=None, caja=None, cuerpo_izq=False):
 
 lamina(clon['que-es'], '¿Qué es Fadori?',
        'App que ordena la cafetería sin filas.',
-       '02-menu.png', (11.8, 3.6, 6.2, 6.6), cuerpo_izq=True)
+       '02-menu.png', (12.20, 3.45, 5.40, 7.00), cuerpo_izq=True)
 
 lamina(clon['como'], '¿Cómo funciona?',
        'Dejas tu pedido, recibes turno, vas cuando esté listo.',
@@ -395,37 +401,41 @@ _p = sl(clon['como']); _s = leer(_p)
 _s = mover(_s, 'TextBox 7', 2.66, 2.50, 15.49, 1.25)
 escribir(_p, _s)
 # tres pasos, tres capturas — las tres alineadas por arriba en 4.6"
-poner_imagen(clon['como'], '02-menu.png',           (2.10, 4.95, 4.20, 5.80))
-poner_imagen(clon['como'], '03-mi-turno.png',       (7.90, 4.95, 4.20, 5.80))
-poner_imagen(clon['como'], '04-pantalla-turnos.png',(13.10, 4.96, 5.40, 3.05))
+# Las tres alineadas por ARRIBA en 4.90". Cada caja lleva el alto que le toca
+# a su propio recorte —el menú es alto y angosto, la pantalla de turnos ancha y
+# baja—; con una sola caja para las tres, unas nadaban y otras se desbordaban.
+poner_imagen(clon['como'], '02-menu.png',           ( 2.40, 4.90, 3.40, 5.76))
+poner_imagen(clon['como'], '03-mi-turno.png',       ( 7.40, 4.90, 4.40, 4.81))
+poner_imagen(clon['como'], '04-pantalla-turnos.png',(12.80, 4.90, 5.60, 3.15))
 
 lamina(clon['enfoque'], 'Enfoque',
        'Cuantitativo y deductivo: medimos tiempos y comprobamos la hipótesis.',
-       '08-grafica.png', (10.7, 4.3, 7.8, 5.2), cuerpo_izq=True)
+       '06-medidor.png', (10.60, 4.40, 8.00, 4.10), cuerpo_izq=True)
 
 # Una captura DISTINTA por letra. Antes «Enfoque» y «S · Ciencia» llevaban la
 # misma gráfica en láminas seguidas: se leía como si nos hubiéramos quedado sin
-# material. Cada caja se midió aparte porque las capturas de teléfono son altas
+# material. «Enfoque» habla del método, así que le toca el tablero del medidor;
+# «S · Ciencia» habla de medir antes y después, así que le toca la gráfica. Cada caja se midió aparte porque las capturas de teléfono son altas
 # y angostas y las de escritorio anchas y bajas; una sola caja para todas dejaba
 # a unas nadando y a otras desbordadas.
 STEAM = [
   ('S', 'Ciencia',     'Medimos la fila antes y después.',
-   '06-medidor.png',   (10.7, 3.7, 7.8, 6.4)),
+   '08-grafica.png',   (10.60, 4.40, 8.00, 4.15)),
   ('T', 'Tecnología',  'App web, servidor propio, funciona sin internet.',
-   '03-mi-turno.png',  (13.6, 3.6, 4.4, 6.6)),
+   '03-mi-turno.png',  (12.90, 3.60, 5.20, 5.70)),
   ('E', 'Ingeniería',  'La fila se ordena sola, con tope justo.',
-   '05-mostrador.png', (10.7, 3.7, 7.9, 6.4)),
+   '05-mostrador.png', (10.50, 4.50, 8.20, 3.48)),
   ('A', 'Arte',        'Identidad propia: logo, color y tipografía.',
-   '01-cortinilla.png',(13.6, 3.6, 4.4, 6.6)),
+   '01-cortinilla.png',(12.50, 3.60, 5.60, 5.50)),
   ('M', 'Matemáticas', 'Turnos, promedios y porcentajes calculados solos.',
-   '07-cifras.png',    (10.7, 4.6, 7.9, 4.6)),
+   '07-cifras.png',    (10.60, 4.60, 8.00, 3.00)),
 ]
 for letra, nombre, texto, img, caja in STEAM:
     lamina(clon[letra], letra + ' · ' + nombre, texto, img, caja, cuerpo_izq=True)
 
 lamina(clon['estado'], 'Estado actual',
        ['Terminada, publicada y en línea. Cuatro pantallas.'],
-       '04-pantalla-turnos.png', (10.7, 4.3, 7.9, 5.2), cuerpo_izq=True)
+       '04-pantalla-turnos.png', (10.60, 4.30, 8.00, 4.50), cuerpo_izq=True)
 
 # ═══ AFINAR LAS LÁMINAS ORIGINALES ═══════════════════════════════════════
 # Al renderizar por fin la presentación salieron encimados en las láminas que
