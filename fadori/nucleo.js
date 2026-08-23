@@ -186,7 +186,15 @@ const MotorLocal = {
          el medidor duele menos que perder un pedido. */
       d.eventos = d.eventos.slice(-400);
       try{ localStorage.setItem(LLAVE, JSON.stringify(d)); }
-      catch(e2){ console.warn('Fadori: no cupo en la memoria del aparato'); }
+      catch(e2){
+        /* Y si aun así no cupo, esto NO se traga en silencio. Antes se
+           perdía una foto y nadie se enteraba hasta que un alumno decía
+           "no la veo". Un guardado que falla callado es lo peor que puede
+           hacer un programa con los datos de alguien. */
+        console.error('Fadori: no cupo en la memoria del aparato', e2);
+        this._avisar();
+        throw new Error('la memoria de este aparato ya está llena');
+      }
     }
     this._avisar();
   },
@@ -562,6 +570,24 @@ function enRecreo(){
    las siete de la mañana es un anticipado, no un "ya no alcanzas". Devolver
    cero ahí hacía que la app le dijera "hoy no alcanzas" a alguien que pidió
    antes de que empezara el recreo, que es exactamente al revés. */
+/* La cuenta regresiva que se ve SIEMPRE. Devuelve en qué momento del día
+   estamos y cuántos segundos faltan para lo que toca — que empiece el recreo
+   si todavía no, o que se acabe si ya empezó. */
+function cuentaRegresiva(){
+  const w = ventanaRecreo(), t = ahora();
+  if(t < w.inicio) return { estado:'antes',   segundos: Math.round((w.inicio - t)/1000) };
+  if(t < w.fin)    return { estado:'durante', segundos: Math.round((w.fin - t)/1000) };
+  return { estado:'despues', segundos:0 };
+}
+
+/* mm:ss cuando falta poco, "12 min" cuando falta harto. Nadie necesita los
+   segundos a veinte minutos del final, y a los dos minutos sí. */
+function relojCorto(seg){
+  if(seg >= 600) return Math.round(seg/60) + ' min';
+  const m = Math.floor(seg/60), s2 = seg % 60;
+  return m + ':' + String(s2).padStart(2,'0');
+}
+
 function quedanSegundosDeRecreo(){
   const d = estado(), w = ventanaRecreo(), t = ahora();
   if(t < w.inicio || t >= w.fin) return (d.config.recreoMinutos || 30) * 60;
@@ -904,6 +930,17 @@ function opcionesPara(centavos, cuantas){
   rico(porCat('dulce')).forEach(d => rico(porCat('bebida')).forEach(b =>
     mete('Sólo algo dulce', [d,b])));
 
+  /* Con poco dinero no hay combinaciones, y antes eso significaba mandar al
+     alumno al diablo con un "no te alcanza para nada" — aunque sí alcanzara
+     para una cosa. Si no salió ningún combo, se ofrecen las piezas sueltas
+     que sí caben, de la más cara a la más barata: con veinte pesos lo que
+     quieres saber es qué es lo mejor que puedes comprar, no que no puedes. */
+  if(!combos.length){
+    /* una sola cosa: el título es el nombre del platillo, no seis tarjetas
+       que dicen todas "Alcanza para" */
+    rico(disp.filter(p => p.precio <= tope)).forEach(p => mete(p.nombre, [p]));
+  }
+
   /* lo que más aprovecha el dinero primero, y con variedad de encabezado */
   const vistos = {};
   return combos
@@ -982,6 +1019,8 @@ function sugerencias(){
    ═════════════════════════════════════════════════════════════════════════ */
 const FADORI = {
   /* utilería */
+  /* los billetes y monedas con los que de verdad llega un alumno */
+  ALGO_DE_DINERO: [10, 15, 20, 30, 50, 100],
   pesos, minutosDe, codigo, id, ahora, CATEGORIAS, CONFIG_BASE, ALERGENOS,
   misAlergias, guardarAlergias, choquesDe,
   /* datos */
@@ -995,6 +1034,7 @@ const FADORI = {
   cancelar, apartarParaManana, voyEnCamino,
   /* la fila */
   colaOrdenada, lugarDe, veredicto, quedanSegundosDeRecreo, enRecreo, ventanaRecreo,
+  cuentaRegresiva, relojCorto,
   ritmoDespacho, segReales,
   /* mostrador */
   tomar, renglonListo, marcarListo, entregar, ajustarDeuda, abonar,

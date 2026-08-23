@@ -33,9 +33,11 @@
   <div class="barra-fila">
     <span class="marca">Fadori<b>.</b></span>
     <span class="crece"></span>
-    <button class="quiensoy" id="bYo" type="button" hidden>
-      <span id="miNombre">—</span><span class="grupo" id="miGrupo"></span>
-    </button>
+    <div class="reloj-recreo" id="relojRecreo" hidden>
+      <span class="reloj-que" id="relojQue">de recreo</span>
+      <b class="reloj-n" id="relojN">—</b>
+    </div>
+    <button class="btn-esq" id="bSoporte" type="button" aria-label="Reportar algo">?</button>
   </div>
 </header>
 
@@ -103,6 +105,13 @@
       <button class="btn ancho" id="bSiempre" type="button">🔁 <span id="txtSiempre">Lo de siempre</span></button>
     </div>
 
+    <button class="btn ancho cuanto-traes" id="bCuanto" type="button">
+      <span class="ct-ico">🪙</span>
+      <span class="ct-que"><b>¿Cuánto traes?</b>
+        <small>te armo lo que sí alcanza</small></span>
+      <span class="ct-mas">›</span>
+    </button>
+
     <div class="chips tira" id="filtros"></div>
 
     <div id="destacados" class="destacado" hidden>
@@ -116,28 +125,14 @@
     <div class="rejilla" id="rejilla"></div>
 
     <p class="rotulillo">Para cuadrar el gasto</p>
-    <h2>¿Cuánto traes?</h2>
-    <p class="sub">Dime tu presupuesto y te armo opciones que sí caben.</p>
-    <div style="display:flex; gap:10px; align-items:flex-end">
-      <div style="flex:1"><label for="eDinero" style="margin-top:0">Pesos</label>
-        <input id="eDinero" type="number" inputmode="numeric" min="0" step="1" placeholder="50"></div>
-      <button class="btn" id="bDinero" type="button" style="margin-bottom:0">Ver opciones</button>
-    </div>
-    <div id="opciones" class="pila" style="margin-top:14px"></div>
-
-    <h2>¿Algo que reportar?</h2>
-    <div class="tarjeta">
-      <label for="eSugerencia" style="margin-top:0">Sugerencia o error</label>
-      <textarea id="eSugerencia" rows="3" placeholder="Lo que sea, se lee todo."></textarea>
-      <button class="btn ancho" id="bSugerir" type="button" style="margin-top:10px">Mandar</button>
-    </div>
   </section>
 
   <!-- ══════════ EL TURNO · F08 · F09 · F12 ══════════ -->
   <section id="p-turno" hidden>
     <h1>Tu turno</h1>
     <div id="cajaTurno" class="pila"></div>
-    <h2>Lo que pediste</h2>
+    <div id="esperando"></div>
+    <h2 id="tituloRenglones">Lo que pediste</h2>
     <ul class="renglones" id="renglonesTurno"></ul>
     <div class="chips" style="margin-top:16px">
       <button class="btn chico" id="bEnCamino" type="button">🚶 Voy en camino</button>
@@ -203,10 +198,18 @@
 </nav>
 
 <!-- hojita para confirmar y para pedir por varios -->
+<div class="velo velo-chico" id="velo2" hidden>
+  <div class="hojita hojita-chica" id="hojita2" role="dialog" aria-modal="true"></div>
+</div>
+
 <div class="velo" id="velo" hidden>
   <div class="hojita" role="dialog" aria-modal="true" aria-labelledby="hojitaT">
-    <h3 id="hojitaT">Confirmar el pedido</h3>
-    <div id="hojitaC"></div>
+    <div class="hojita-cabeza">
+      <h3 id="hojitaT">Confirmar el pedido</h3>
+      <button class="hojita-x" id="hojitaX" type="button" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="hojita-rueda" id="hojitaC"></div>
+    <div class="hojita-pie" id="hojitaP" hidden></div>
   </div>
 </div>
 
@@ -235,7 +238,6 @@ const PANTALLAS = ['entrada','terminos','menu','turno','yo'];
 function ver(p){
   pantalla = p;
   PANTALLAS.forEach(n => { $('#p-'+n).hidden = (n !== p); });
-  $('#bYo').hidden = !F.yo();
   window.scrollTo(0,0);
   pintar();
 }
@@ -411,21 +413,93 @@ function pintarCesta(){
   $('#cestaCuantos').textContent = piezas;
 }
 
-function pintarTurno(){
-  const caja = $('#cajaTurno');
-  if(!miPedido){ caja.innerHTML = '<p class="sub">No tienes ningún pedido en la fila.</p>';
-    $('#renglonesTurno').innerHTML = ''; return; }
-  const p = F.pedido(miPedido.id) || miPedido;
-  miPedido = p;
+/* ══════════════════════════════════════════════════════════════════════
+   TU TURNO · con varios pedidos vivos
+   ----------------------------------------------------------------------
+   Si tienes dos pedidos en la fila, el que va PRIMERO va en grande y el
+   otro abajito, esperando. Cuando el de arriba se entrega, el de abajo
+   sube solo. Antes sólo se veía el último que pediste, que es justo el
+   que menos urge.
+   ═════════════════════════════════════════════════════════════════════ */
+function misVivos(){
+  const yo = F.yo(); if(!yo) return [];
+  const cola = F.colaOrdenada().map(p => p.id);
+  return F.pedidosDe(yo.codigo)
+    .filter(p => F.VIVOS.indexOf(p.estado) >= 0)
+    .sort((a,b) => {
+      /* los listos primero: ésos ya sólo hay que ir por ellos */
+      if((a.estado==='listo') !== (b.estado==='listo')) return a.estado==='listo' ? -1 : 1;
+      const ia = cola.indexOf(a.id), ib = cola.indexOf(b.id);
+      return (ia < 0 ? 9999 : ia) - (ib < 0 ? 9999 : ib);
+    });
+}
 
+function tarjetaTurno(p){
   if(p.estado === 'listo'){
-    caja.innerHTML = '<div class="turno listo">'+
+    return '<div class="turno listo">'+
       '<div class="rotulo">Tu turno</div>'+
       '<div class="numero">'+p.turno+'</div>'+
       '<div class="folio">'+esc(p.folio)+'</div>'+
       '<div class="frase">¡Ya está! Ve por él</div>'+
       '<div class="detalle">Di tu código <b>'+esc(p.folio)+'</b> en el mostrador</div>'+
-      '</div>';
+    '</div>';
+  }
+  const v = F.veredicto(p.id);
+  const preparando = p.estado === 'preparando';
+  return '<div class="turno">'+
+    '<div class="rotulo">Tu turno</div>'+
+    '<div class="numero">'+p.turno+'</div>'+
+    '<div class="folio">'+esc(p.folio)+'</div>'+
+    (preparando
+      ? '<div class="frase">Lo están preparando</div>'
+      : '<div class="frase'+(v && !v.alcanza ? ' no' : '')+'">'+esc(v ? v.frase : '—')+'</div>')+
+    '<div class="detalle">'+(v ? (v.antes === 0 ? 'Eres el que sigue'
+      : 'Hay '+v.antes+' antes que tú') : '')+'</div>'+
+  '</div>'+
+  (v && !v.alcanza && !preparando
+    ? '<div class="aviso malo">Al ritmo de hoy el recreo se acaba antes de que te toque. '+
+      '<b>Mejor no lo esperes parado.</b> Te lo podemos guardar para mañana y entras de los primeros.'+
+      '<div class="chips" style="margin-top:10px">'+
+      '<button class="btn chico" data-apartar="'+p.id+'" type="button">Guárdamelo para mañana</button>'+
+      '</div></div>'
+    : '');
+}
+
+/* los que vienen detrás: chiquitos, en una fila cada uno */
+function tarjetaEspera(p, lugar){
+  const v = F.veredicto(p.id);
+  return '<button class="turno-chico" type="button" data-pedido="'+p.id+'">'+
+    '<span class="tc-n">'+p.turno+'</span>'+
+    '<span class="tc-q"><b>'+esc(p.renglones.map(r =>
+      r.cant+'× '+((F.producto(r.prod)||{}).nombre||'—')).join(', '))+'</b>'+
+      '<small>'+(p.estado === 'preparando' ? 'preparándose'
+        : v ? 'va en el '+v.lugar+' de la fila' : 'en la fila')+'</small></span>'+
+    '<span class="tc-p">'+F.pesos(p.total)+'</span>'+
+  '</button>';
+}
+
+function pintarTurno(){
+  const caja = $('#cajaTurno');
+  const vivos = misVivos();
+
+  /* el grande es el primero de la fila; si no hay vivos, el último que
+     hubo, para que se pueda ver "entregado" o "cancelado" */
+  if(vivos.length){
+    miPedido = F.pedido(vivos[0].id);
+  } else if(miPedido){
+    miPedido = F.pedido(miPedido.id) || miPedido;
+  }
+
+  if(!miPedido){
+    caja.innerHTML = '<p class="sub">No tienes ningún pedido en la fila.</p>';
+    $('#renglonesTurno').innerHTML = ''; $('#tituloRenglones').hidden = true;
+    $('#esperando').innerHTML = ''; return;
+  }
+  const p = miPedido;
+  $('#tituloRenglones').hidden = false;
+
+  if(F.VIVOS.indexOf(p.estado) >= 0){
+    caja.innerHTML = tarjetaTurno(p);
   } else if(p.estado === 'entregado'){
     caja.innerHTML = '<div class="turno"><div class="rotulo">Entregado</div>'+
       '<div class="numero">'+p.turno+'</div>'+
@@ -437,42 +511,26 @@ function pintarTurno(){
       '<div class="numero">🌙</div>'+
       '<div class="frase">Te lo guardamos para mañana</div>'+
       '<div class="detalle">Mañana entras de los primeros</div></div>';
-  } else if(p.estado === 'cancelado'){
+  } else {
     caja.innerHTML = '<div class="turno"><div class="rotulo">Cancelado</div>'+
       '<div class="frase">Este pedido ya no va</div></div>';
-  } else {
-    const v = F.veredicto(p.id);
-    const preparando = p.estado === 'preparando';
-    caja.innerHTML = '<div class="turno">'+
-      '<div class="rotulo">Tu turno</div>'+
-      '<div class="numero">'+p.turno+'</div>'+
-      '<div class="folio">'+esc(p.folio)+'</div>'+
-      (preparando
-        ? '<div class="frase">Lo están preparando</div>'
-        : '<div class="frase'+(v && !v.alcanza ? ' no' : '')+'">'+esc(v ? v.frase : '—')+'</div>')+
-      '<div class="detalle">'+(v ? (v.antes === 0 ? 'Eres el que sigue'
-        : 'Hay '+v.antes+' antes que tú') : '')+'</div>'+
-      '</div>'+
-      (v && !v.alcanza && !preparando
-        ? '<div class="aviso malo">Al ritmo de hoy el recreo se acaba antes de que te toque. '+
-          '<b>Mejor no lo esperes parado.</b> Te lo podemos guardar para mañana y entras de los primeros.'+
-          '<div class="chips" style="margin-top:10px">'+
-          '<button class="btn chico" id="bApartar" type="button">Guárdamelo para mañana</button></div></div>'
-        : '');
   }
 
-  $('#renglonesTurno').innerHTML = p.renglones.map((r,i) => {
+  /* los que esperan su turno detrás del grande */
+  const detras = vivos.slice(1);
+  $('#esperando').innerHTML = detras.length
+    ? '<p class="rotulillo">También pediste</p>'+
+      '<h2>'+detras.length+(detras.length===1?' pedido más en la fila':' pedidos más en la fila')+'</h2>'+
+      '<div class="pila">'+ detras.map((x,k) => tarjetaEspera(x, k+2)).join('') +'</div>'
+    : '';
+
+  $('#renglonesTurno').innerHTML = p.renglones.map(r => {
     const prod = F.producto(r.prod) || { nombre:'—', precio:0 };
     return '<li class="renglon"><span class="n">'+r.cant+'×</span>'+
       '<span class="q">'+esc(prod.nombre)+
       (r.para ? '<small>para '+esc(r.para)+'</small>' : '')+'</span>'+
       '<span>'+F.pesos(prod.precio*r.cant)+'</span></li>';
   }).join('');
-
-  const ap = $('#bApartar');
-  if(ap) ap.addEventListener('click', () => {
-    F.apartarParaManana(p.id); pintar();
-  });
 }
 
 function pintarYo(){
@@ -515,10 +573,32 @@ function nombreEstado(e){
     entregado:'Entregado', cancelado:'Cancelado', apartado:'Apartado para mañana' }[e] || e;
 }
 
+/* El reloj se refresca SOLO: escribe dos textos y una clase, nada más. No
+   entra en pintar() porque pintar() cuesta y esto corre cada segundo. */
+function pintarReloj(){
+  const yo = F.yo();
+  const caja = $('#relojRecreo');
+  caja.hidden = !(yo && yo.terminos);
+  if(caja.hidden) return;
+  const c = F.cuentaRegresiva();
+  const n = $('#relojN'), q = $('#relojQue');
+  if(c.estado === 'antes'){
+    q.textContent = 'para el recreo'; n.textContent = F.relojCorto(c.segundos);
+    caja.className = 'reloj-recreo antes';
+  } else if(c.estado === 'durante'){
+    q.textContent = 'de recreo'; n.textContent = F.relojCorto(c.segundos);
+    caja.className = 'reloj-recreo' +
+      (c.segundos <= 120 ? ' urge' : c.segundos <= 300 ? ' apura' : '');
+  } else {
+    q.textContent = 'el recreo'; n.textContent = 'terminó';
+    caja.className = 'reloj-recreo fuera';
+  }
+}
+setInterval(pintarReloj, 1000);
+
 function pintar(){
   const yo = F.yo();
-  $('#bYo').hidden = !yo;
-  if(yo){ $('#miNombre').textContent = yo.nombre; $('#miGrupo').textContent = yo.grupo; }
+  pintarReloj();
   if(pantalla === 'menu'){ pintarMenu(); pintarCesta(); }
   if(pantalla === 'turno') pintarTurno();
   if(pantalla === 'yo') pintarYo();
@@ -558,12 +638,12 @@ $('#bEntrar').addEventListener('click', () => {
   try{
     F.registrar($('#eNombre').value, $('#eGrupo').value);
     ver('terminos');
-  }catch(e){ alert(e.message); }
+  }catch(e){ aviso(e.message, 'malo'); }
 });
 
 $('#bVolver').addEventListener('click', () => {
   const a = F.entrarComo($('#eCodigo').value);
-  if(!a) return alert('Ese código no existe en este aparato.');
+  if(!a) return aviso('Ese código no existe en este aparato.', 'malo');
   arrancar();
 });
 
@@ -573,13 +653,55 @@ $('#bAcepto').addEventListener('click', () => {
   ver('menu');
 });
 
-$('#bYo').addEventListener('click', () => ver(pantalla === 'yo' ? 'menu' : 'yo'));
 $('#bVerMenu').addEventListener('click', () => ver('menu'));
 $('#bSalir').addEventListener('click', () => { F.salir(); cesta = []; miPedido = null; ver('entrada'); });
 
 /* F03 · del menú al pedido en tres toques. Cada toque repinta SÓLO su ficha
    y la barra de abajo: nada de redibujar el menú entero. */
 function vibra(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
+/* ── Los avisos son de la casa ────────────────────────────────────────
+   Los diálogos del navegador dicen "ejercitopalomazi9111-arch.github.io
+   dice", tienen un botón de "suprimir diálogos" que rompe la app para
+   siempre, y se ven prestados. Estos tres los reemplazan. */
+function aviso(texto, tono){
+  const t = document.createElement('div');
+  t.className = 'toston' + (tono ? ' '+tono : '');
+  t.textContent = texto;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('vivo'));
+  setTimeout(() => { t.classList.remove('vivo');
+    setTimeout(() => t.remove(), 300); }, 2600);
+}
+
+/* Una hojita chica para preguntar sí/no o pedir un texto. Devuelve por
+   callback porque no hay await en este archivo y no hace falta. */
+function preguntar(op){
+  const v = $('#velo2'), c = $('#hojita2');
+  c.innerHTML =
+    '<h3>'+esc(op.titulo)+'</h3>'+
+    (op.texto ? '<p class="sub" style="margin:6px 0 0">'+esc(op.texto)+'</p>' : '')+
+    (op.campo !== undefined
+      ? '<input id="p2Campo" maxlength="'+(op.max||140)+'" value="'+esc(op.campo)+'" '+
+        'placeholder="'+esc(op.pista||'')+'" style="margin-top:14px">'
+      : '')+
+    '<div class="chips" style="margin-top:18px">'+
+      '<button class="btn fuerte" id="p2Si" type="button" style="flex:1">'+
+        esc(op.si || 'Sí')+'</button>'+
+      '<button class="btn" id="p2No" type="button">'+esc(op.no || 'Cancelar')+'</button>'+
+    '</div>';
+  v.hidden = false;
+  const cerrar = () => { v.hidden = true; };
+  $('#p2No').addEventListener('click', cerrar);
+  v.addEventListener('click', (e) => { if(e.target === v) cerrar(); }, { once:true });
+  $('#p2Si').addEventListener('click', () => {
+    const campo = $('#p2Campo');
+    cerrar();
+    op.hecho(campo ? campo.value : true);
+  });
+  const campo = $('#p2Campo');
+  if(campo) setTimeout(() => campo.focus(), 60);
+}
 
 /* ── La guarda del toque ──────────────────────────────────────────────
    Quitamos el retardo de 300 ms del navegador para que el toque responda al
@@ -626,7 +748,17 @@ document.addEventListener('click', (e) => {
   if((b = e.target.closest('[data-ver]'))){ abrirPlatillo(b.dataset.ver); return; }
   if((b = e.target.closest('[data-ir]'))){ ver(b.dataset.ir); return; }
   if((b = e.target.closest('[data-filtro]'))){ filtro = b.dataset.filtro; pintarMenu(true); return; }
-  if((b = e.target.closest('[data-pedido]'))){ miPedido = F.pedido(b.dataset.pedido); ver('turno'); return; }
+  if((b = e.target.closest('[data-apartar]'))){
+    F.apartarParaManana(b.dataset.apartar); pintar();
+    aviso('Listo, te lo guardamos para mañana.', 'bueno'); return;
+  }
+  if((b = e.target.closest('[data-pedido]'))){
+    miPedido = F.pedido(b.dataset.pedido);
+    /* al tocar uno de los que esperan, ése pasa al grande */
+    if(pantalla === 'turno'){ pintarTurno(); window.scrollTo({top:0,behavior:'smooth'}); }
+    else ver('turno');
+    return;
+  }
 });
 
 $('#bVaciar').addEventListener('click', () => {
@@ -647,7 +779,7 @@ $('#bSiempre').addEventListener('click', () => {
 $('#bPedir').addEventListener('click', () => {
   const yo = F.yo(); if(!yo) return ver('entrada');
   const permiso = F.puedePedir(yo.codigo);
-  if(!permiso.puede) return alert(permiso.por);
+  if(!permiso.puede) return aviso(permiso.por, 'malo');
   abrirConfirmacion();
 });
 
@@ -703,15 +835,16 @@ function abrirPlatillo(pid){
         : '<p class="fic-nota">La cooperativa no declaró ningún alérgeno para este platillo. '+
           '<b>Eso no quiere decir que no tenga:</b> si tienes alguna alergia seria, pregúntales.</p>')+
 
-      '<div class="carro-pie">'+
-        '<div class="fic-pasos">'+
-          '<button class="paso" type="button" id="fMenos" aria-label="Uno menos">−</button>'+
-          '<span class="cuantos">'+cuantos+'</span>'+
-          '<button class="paso mas" type="button" id="fMas" aria-label="Uno más">+</button>'+
-        '</div>'+
-        '<button class="btn fuerte" id="fAgregar" type="button" style="flex:1">'+
-          'Agregar · '+F.pesos(p.precio * cuantos)+'</button>'+
-      '</div>';
+      '';
+    $('#hojitaP').hidden = false;
+    $('#hojitaP').innerHTML =
+      '<div class="fic-pasos">'+
+        '<button class="paso" type="button" id="fMenos" aria-label="Uno menos">−</button>'+
+        '<span class="cuantos">'+cuantos+'</span>'+
+        '<button class="paso mas" type="button" id="fMas" aria-label="Uno más">+</button>'+
+      '</div>'+
+      '<button class="btn fuerte" id="fAgregar" type="button" style="flex:1">'+
+        'Agregar · '+F.pesos(p.precio * cuantos)+'</button>';
 
     $('#fMenos').addEventListener('click', () => {
       if(muySeguido('fmenos')) return;
@@ -727,7 +860,7 @@ function abrirPlatillo(pid){
       if(r) r.cant = Math.min(10, r.cant + cuantos);
       else cesta.push({ prod:pid, cant:cuantos, para:'' });
       refrescarFicha(pid); pintarCesta(); vibra(12);
-      $('#velo').hidden = true;
+      cerrarHoja();
     });
   };
   pinta();
@@ -740,7 +873,7 @@ function abrirConfirmacion(){
 }
 
 function pintarCarrito(){
-  if(!cesta.length){ $('#velo').hidden = true; return; }
+  if(!cesta.length){ cerrarHoja(); return; }
   const total = F.totalDe(cesta);
   const seg = F.segundosDe(cesta);
   const cola = F.colaOrdenada().length;
@@ -851,13 +984,15 @@ function pintarCarrito(){
         : '')+
     '</div>'+
 
-    /* el total y el botón viajan juntos y pegados abajo: son la misma
-       decisión, y separarlos obliga a subir la vista para ver cuánto es */
-    '<div class="carro-pie">'+
-      '<div class="carro-total"><span>Total</span><b>'+F.pesos(total)+'</b></div>'+
-      '<button class="btn fuerte ancho" id="bConfirmar" type="button">'+
-        'Pedir <span class="globo">'+cesta.reduce((s,r)=>s+r.cant,0)+'</span></button>'+
-    '</div>';
+    '';
+
+  /* El pie va FUERA de la zona que rueda. Cuando era pegajoso se montaba
+     encima de las opciones y las dejaba "por debajo del botón de pedir". */
+  $('#hojitaP').hidden = false;
+  $('#hojitaP').innerHTML =
+    '<div class="carro-total"><span>Total</span><b>'+F.pesos(total)+'</b></div>'+
+    '<button class="btn fuerte ancho" id="bConfirmar" type="button">'+
+      'Pedir <span class="globo">'+cesta.reduce((s,r)=>s+r.cant,0)+'</span></button>';
 
   /* ── lo que se toca ── */
   $$('#hojitaC [data-cmas]').forEach(b => b.addEventListener('click', () => {
@@ -873,7 +1008,7 @@ function pintarCarrito(){
     cesta[i].cant--;
     if(cesta[i].cant <= 0) cesta.splice(i, 1);
     refrescarFicha(pid); pintarCesta(); vibra(8);
-    if(!cesta.length){ $('#velo').hidden = true; return; }
+    if(!cesta.length){ cerrarHoja(); return; }
     pintarCarrito();
   }));
   $$('#hojitaC [data-para]').forEach(inp => inp.addEventListener('input', () => {
@@ -885,12 +1020,12 @@ function pintarCarrito(){
     cesta.push({ prod:pid, cant:1, para:'' });
     refrescarFicha(pid); pintarCesta(); pintarCarrito(); vibra(10);
   }));
-  $('#bMasCosas').addEventListener('click', () => { $('#velo').hidden = true; });
+  $('#bMasCosas').addEventListener('click', cerrarHoja);
   $('#bNota').addEventListener('click', () => {
-    const t = prompt('¿Algo que decirle a la cooperativa?', notaPedido);
-    if(t === null) return;
-    notaPedido = String(t).slice(0, 140).trim();
-    pintarCarrito();
+    preguntar({ titulo:'Una nota para la cooperativa',
+      texto:'Sin chile, para llevar, lo que sea.',
+      campo:notaPedido, pista:'sin chile, por favor', si:'Guardar',
+      hecho:(t) => { notaPedido = String(t).slice(0,140).trim(); pintarCarrito(); } });
   });
   $('#bPara').addEventListener('click', () => { abiertoPara = !abiertoPara; pintarCarrito(); });
   $('#bConfirmar').addEventListener('click', () => {
@@ -904,59 +1039,133 @@ function pintarCarrito(){
       cesta = []; notaPedido = ''; abiertoPara = false;
       eran.forEach(refrescarFicha);   /* si no, la ficha se queda con el conteo viejo */
       pintarCesta();
-      $('#velo').hidden = true;
+      cerrarHoja();
       ver('turno');
-    }catch(err){ alert(err.message); }
+    }catch(err){ aviso(err.message, 'malo'); }
   });
 }
 
-$('#velo').addEventListener('click', (e) => { if(e.target === $('#velo')) $('#velo').hidden = true; });
+function cerrarHoja(){ $('#velo').hidden = true; $('#hojitaP').hidden = true; $('#hojitaP').innerHTML=''; }
+$('#velo').addEventListener('click', (e) => { if(e.target === $('#velo')) cerrarHoja(); });
+$('#hojitaX').addEventListener('click', cerrarHoja);
 
 $('#bEnCamino').addEventListener('click', () => {
-  if(!miPedido) return;
+  if(!miPedido || F.VIVOS.indexOf(miPedido.estado) < 0) return aviso('Ese pedido ya no está en la fila.');
   F.voyEnCamino(miPedido.id);
-  alert('Listo, ya saben que vas para allá.');
+  aviso('Listo, ya saben que vas para allá.', 'bueno');
 });
 
 $('#bNoPuedo').addEventListener('click', () => {
   if(!miPedido) return;
-  if(!confirm('¿Cancelamos el pedido? La cooperativa ya no lo prepara.')) return;
-  F.cancelar(miPedido.id, 'alumno');
-  pintar();
+  preguntar({ titulo:'¿Cancelamos el pedido?',
+    texto:'La cooperativa ya no lo prepara y pierdes tu turno.',
+    si:'Sí, cancélalo', no:'No, déjalo',
+    hecho:() => { F.cancelar(miPedido.id, 'alumno'); pintar();
+      aviso('Pedido cancelado.'); } });
 });
 
 /* F39 · el asistente de presupuesto */
-$('#bDinero').addEventListener('click', () => {
+/* ══════════════════════════════════════════════════════════════════════
+   F39 · EL ASISTENTE DE PRESUPUESTO
+   Estaba hasta el fondo del menú, debajo de diecisiete platillos: quien
+   trae poco dinero es justo quien más lo necesita y menos iba a bajar a
+   buscarlo. Ahora es un botón grande hasta arriba y se abre en su hoja.
+   ═════════════════════════════════════════════════════════════════════ */
+let dineroUltimo = '';
+
+function abrirPresupuesto(){
+  $('#hojitaT').textContent = '¿Cuánto traes?';
+  $('#hojitaC').innerHTML =
+    '<p class="sub" style="margin:2px 0 0">Dime con cuánto vienes y te armo lo que '+
+      '<b>sí</b> alcanza con lo que hay hoy.</p>'+
+    '<div class="dinero-fila">'+
+      F.ALGO_DE_DINERO.map(n => '<button class="chip" type="button" data-pesos="'+n+'">$'+n+'</button>').join('')+
+    '</div>'+
+    '<label for="eDinero" style="margin-top:6px">O ponlo tú</label>'+
+    '<div style="display:flex; gap:10px; align-items:center">'+
+      '<input id="eDinero" type="number" inputmode="numeric" min="0" step="1" '+
+        'placeholder="50" value="'+esc(dineroUltimo)+'" style="flex:1">'+
+      '<button class="btn" id="bDinero" type="button">Ver</button>'+
+    '</div>'+
+    '<div id="opciones" class="pila" style="margin-top:16px"></div>';
+  $('#hojitaP').hidden = true;
+  $('#velo').hidden = false;
+
+  $$('#hojitaC [data-pesos]').forEach(b => b.addEventListener('click', () => {
+    $('#eDinero').value = b.dataset.pesos; calcular();
+  }));
+  $('#bDinero').addEventListener('click', calcular);
+  if(dineroUltimo) calcular();
+}
+
+function calcular(){
   const pesos = Math.max(0, parseInt($('#eDinero').value, 10) || 0);
-  if(!pesos) return alert('Dime cuánto traes.');
+  if(!pesos) return aviso('Dime cuánto traes.', 'malo');
+  dineroUltimo = String(pesos);
   const ops = F.opcionesPara(pesos * 100, 6);
-  $('#opciones').innerHTML = ops.length ? ops.map((o,i) =>
-    '<button class="tarjeta" type="button" data-combo="'+i+'" style="text-align:left; width:100%">'+
-    '<b style="display:block; font-size:15px">'+esc(o.titulo)+'</b>'+
-    '<span style="color:var(--tenue); font-size:14px">'+
-      o.piezas.map(p => esc(p.nombre)).join(' + ')+'</span>'+
-    '<span style="display:block; margin-top:6px; font-weight:800; color:var(--dorado)">'+
-      F.pesos(o.total)+ (o.sobra > 0 ? ' · te sobran '+F.pesos(o.sobra) : ' · exacto')+'</span>'+
-    '</button>').join('')
-    : '<p class="sub">Con eso no alcanza para nada de lo que hay hoy. '+
-      'Lo más barato cuesta '+F.pesos(Math.min.apply(null,
-        F.productos(true).map(p=>p.precio).concat([999999])))+'.</p>';
+  const disp = F.productos(true);
+  const masBarato = disp.length ? Math.min.apply(null, disp.map(p => p.precio)) : 0;
+
+  $('#opciones').innerHTML = ops.length
+    ? '<p class="rotulillo" style="margin-top:0">Con $'+pesos+' te alcanza para</p>'+
+      ops.map((o,i) =>
+      '<button class="tarjeta" type="button" data-combo="'+i+'" style="text-align:left; width:100%">'+
+      '<b style="display:block; font-size:15px">'+esc(o.titulo)+'</b>'+
+      (o.piezas.length > 1
+        ? '<span style="color:var(--tenue); font-size:14px">'+
+          o.piezas.map(p => esc(p.nombre)).join(' + ')+'</span>'
+        : (o.piezas[0].desc
+            ? '<span style="color:var(--tenue); font-size:14px">'+esc(o.piezas[0].desc)+'</span>'
+            : ''))+
+      '<span style="display:block; margin-top:6px; font-weight:900; color:var(--naranja)">'+
+        F.pesos(o.total)+ (o.sobra > 0 ? ' · te sobran '+F.pesos(o.sobra) : ' · exacto')+'</span>'+
+      '</button>').join('')
+    : '<div class="aviso malo">Hoy lo más barato cuesta <b>'+F.pesos(masBarato)+'</b>, '+
+      'así que con $'+pesos+' todavía no alcanza. Te faltan '+
+      F.pesos(Math.max(0, masBarato - pesos*100))+'.</div>';
+
   $$('#opciones [data-combo]').forEach(b => b.addEventListener('click', () => {
     const o = ops[+b.dataset.combo];
     cesta = o.piezas.map(p => ({ prod:p.id, cant:1, para:'' }));
     pintarMenu(true); pintarCesta(); vibra(12);
-    $('#rejilla').scrollIntoView({ behavior:'smooth', block:'start' });
+    cerrarHoja();
+    aviso('Listo, ya te lo puse en el pedido.', 'bueno');
   }));
-});
+}
 
-/* F42 · sugerencias */
-$('#bSugerir').addEventListener('click', () => {
-  const t = $('#eSugerencia').value.trim();
-  if(!t) return;
+$('#bCuanto').addEventListener('click', abrirPresupuesto);
+
+/* ══════════════════════════════════════════════════════════════════════
+   F42 · SOPORTE · el botón de la esquina
+   Antes era un cuadro de texto al final del menú que nadie iba a ver.
+   Ahora vive arriba a la derecha, donde vive el "?" de cualquier app.
+   ═════════════════════════════════════════════════════════════════════ */
+$('#bSoporte').addEventListener('click', () => {
   const yo = F.yo();
-  F.sugerir(t, pantalla, yo ? yo.codigo : null);
-  $('#eSugerencia').value = '';
-  alert('Gracias. Ya quedó anotado.');
+  $('#hojitaT').textContent = 'Reportar algo';
+  $('#hojitaC').innerHTML =
+    '<p class="sub" style="margin:2px 0 14px">¿Algo no jala, algo falta, algo se ve mal? '+
+      'Escríbelo y le llega a quien hizo la app. Se lee todo.</p>'+
+    '<textarea id="eSugerencia" rows="5" placeholder="Lo que sea."></textarea>'+
+    '<div class="pila" style="margin-top:18px">'+
+      (yo ? '<div class="renglon"><span class="q"><b>Tu código</b>'+
+        '<small>por si hay que buscar tu pedido: '+esc(yo.codigo)+'</small></span></div>' : '')+
+      '<button class="op" type="button" id="bIrYo">'+
+        '<span class="op-ico">👤</span>'+
+        '<span class="op-que"><b>Lo mío</b><small>tu código, tus pedidos, tus alergias</small></span>'+
+        '<span class="op-mas">›</span></button>'+
+    '</div>';
+  $('#hojitaP').hidden = false;
+  $('#hojitaP').innerHTML = '<button class="btn fuerte ancho" id="bSugerir" type="button">Mandar</button>';
+  $('#velo').hidden = false;
+  $('#bIrYo').addEventListener('click', () => { cerrarHoja(); ver('yo'); });
+  $('#bSugerir').addEventListener('click', () => {
+    const t = $('#eSugerencia').value.trim();
+    if(!t) return aviso('Escribe algo primero.', 'malo');
+    F.sugerir(t, pantalla, yo ? yo.codigo : null);
+    cerrarHoja();
+    aviso('Gracias. Ya quedó anotado.', 'bueno');
+  });
 });
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -988,6 +1197,8 @@ document.addEventListener('click', function pedirPermiso(){
   try{ if(window.Notification && Notification.permission === 'default') Notification.requestPermission(); }catch(e){}
   document.removeEventListener('click', pedirPermiso);
 });
+
+pintarReloj();
 
 /* ── La cortinilla ───────────────────────────────────────────────────
    Sale una vez por visita. Si el teléfono pide menos movimiento, o si ya se
@@ -1110,6 +1321,29 @@ arrancar();
     ok('al vaciar, la ficha vuelve al "+" de la esquina sin reconstruir el menú',
        (function(){ const f = document.querySelector('[data-ficha="'+prod.id+'"]');
          return !!(f && f.querySelector('button.mas-flota') && f.querySelector('.pasos').hidden); })());
+    /* el reloj del recreo: se ve siempre y dice lo que toca */
+    (function(){
+      const c = F.cuentaRegresiva();
+      ok('la cuenta regresiva sabe en qué momento del día estamos',
+         ['antes','durante','despues'].indexOf(c.estado) >= 0);
+      ok('a más de diez minutos dice minutos, no segundos', F.relojCorto(900) === '15 min');
+      ok('a menos de diez minutos dice mm:ss, que es cuando importan',
+         F.relojCorto(125) === '2:05' && F.relojCorto(59) === '0:59');
+      pintarReloj();
+      ok('el reloj se ve y trae algo escrito',
+         !$('#relojRecreo').hidden && $('#relojN').textContent.length > 0);
+      ok('el final del recreo sale de la configuración, no de un número pegado',
+         (function(){
+           const w = F.ventanaRecreo();
+           return w.fin === w.inicio + F.estado().config.recreoMinutos * 60000;
+         })());
+      ok('con la configuración de la escuela, el recreo acaba a las 11:00',
+         (function(){
+           const f = new Date(F.ventanaRecreo().fin);
+           return f.getHours() === 11 && f.getMinutes() === 0;
+         })());
+    })();
+
     ok('la barra del pulgar tiene sus tres destinos',
        document.querySelectorAll('#pulgar .dedo[data-ir]').length === 3);
 
@@ -1126,9 +1360,11 @@ arrancar();
          lineas[1].querySelector('.paso').textContent === '−');
       ok('el total del carrito cuadra con la suma',
          document.querySelector('.carro-total b').textContent === F.pesos(F.totalDe(cesta)));
-      ok('el veredicto de alcanzas va ARRIBA del pie, no debajo',
-         document.querySelector('.hojita .aviso').compareDocumentPosition(
-           document.querySelector('.carro-pie')) & Node.DOCUMENT_POSITION_FOLLOWING);
+      /* El pie vive FUERA de la zona que rueda, así que ya no puede taparle
+         nada: es hermano del cuerpo, no un pegajoso encima de él. */
+      ok('el pie del carrito está fuera de la zona que rueda',
+         document.querySelector('#hojitaP #bConfirmar') !== null &&
+         document.querySelector('#hojitaC #bConfirmar') === null);
       ok('el carrito ofrece llevarte lo que le falta al pedido',
          document.querySelectorAll('.llevate [data-csug]').length > 0);
       ok('y no ofrece algo que ya llevas', (function(){
@@ -1160,9 +1396,9 @@ arrancar();
          document.querySelectorAll('.alergenos .alerg').length > 0);
       ok('y marca el que es TU alergia',
          document.querySelectorAll('.alergenos .alerg.mio').length === 1);
-      document.querySelector('#velo').hidden = true;
+      cerrarHoja();
       F.guardarAlergias([]);
-      cesta = []; document.querySelector('#velo').hidden = true;
+      cesta = []; cerrarHoja();
     })();
 
     /* El contraste se MIDE en pantalla, no se supone. El chip activo llegó a

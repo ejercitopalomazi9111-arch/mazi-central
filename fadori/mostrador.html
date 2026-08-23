@@ -13,6 +13,10 @@
   <div class="barra-fila">
     <span class="marca">Fadori<b>.</b></span>
     <span class="crece"></span>
+    <div class="reloj-recreo" id="relojRecreo">
+      <span class="reloj-que" id="relojQue">de recreo</span>
+      <b class="reloj-n" id="relojN">—</b>
+    </div>
     <span class="quiensoy"><b id="cuantosEnCola">0</b>&nbsp;en la fila</span>
   </div>
   <div class="barra-fila" style="margin-top:8px">
@@ -413,7 +417,9 @@ function abrirProducto(pid){
       (p && typeof p.existencias === 'number' ? p.existencias : '')+'">'+
     '<label for="hFoto">La foto</label>'+
     '<input id="hFoto" type="file" accept="image/*">'+
-    (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="" style="margin-top:10px; max-height:120px; border-radius:12px">' : '')+
+    '<div id="hVista" style="margin-top:10px">'+
+      (p && p.foto ? '<img src="'+esc(p.foto)+'" alt="" style="max-height:140px; border-radius:12px">' : '')+
+    '</div>'+
     '<label style="display:flex; align-items:center; gap:10px; margin-top:16px">'+
       '<input type="checkbox" id="hDest" style="width:26px; min-height:26px; flex:0 0 auto"'+
       (p&&p.destacado?' checked':'')+'>'+
@@ -426,6 +432,10 @@ function abrirProducto(pid){
   $('#velo').hidden = false;
 
   let fotoNueva = null;
+  /* La foto se achica en el navegador y eso TARDA. Antes, si le dabas a
+     Guardar antes de que terminara, la foto se perdía en silencio y el
+     alumno no la veía nunca. Ahora se ve la vista previa y el botón espera. */
+  let fotoOcupada = false;
   let alerg = p ? (p.alergenos || []).slice() : [];
   $$('#hAlerg [data-al]').forEach(b => b.addEventListener('click', () => {
     const id = b.dataset.al, i = alerg.indexOf(id);
@@ -434,7 +444,15 @@ function abrirProducto(pid){
   }));
   $('#hFoto').addEventListener('change', (e) => {
     const f = e.target.files[0]; if(!f) return;
-    achicar(f, 640, (dataUrl) => { fotoNueva = dataUrl; });
+    fotoOcupada = true;
+    $('#hVista').innerHTML = '<p class="sub" style="margin:0">Preparando la foto…</p>';
+    $('#hGuardar').disabled = true;
+    achicar(f, 640, (dataUrl) => {
+      fotoNueva = dataUrl; fotoOcupada = false;
+      $('#hVista').innerHTML = '<img src="'+dataUrl+'" alt="" '+
+        'style="max-height:140px; border-radius:12px">';
+      $('#hGuardar').disabled = false;
+    });
   });
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   const borrar = $('#hBorrar');
@@ -455,9 +473,22 @@ function abrirProducto(pid){
       desc: $('#hDesc').value.trim(),
       alergenos: alerg,
     };
+    if(fotoOcupada) return alert('Espera dos segundos, la foto todavía se está preparando.');
     if(fotoNueva) datos.foto = fotoNueva;
     if(!datos.nombre) return alert('Le falta el nombre.');
-    F.guardarProducto(datos);
+    try{
+      F.guardarProducto(datos);
+    }catch(err){
+      return alert('No se pudo guardar: '+err.message);
+    }
+    /* Comprobar que de VERDAD quedó. Si la memoria del aparato se llenó,
+       antes se perdía en silencio y nadie se enteraba hasta que un alumno
+       decía "no veo la foto". */
+    const guardado = F.producto(datos.id || (F.productos(false).slice(-1)[0]||{}).id);
+    if(datos.foto && guardado && !guardado.foto){
+      return alert('La foto no cupo en la memoria de este aparato. '+
+        'Quita alguna foto vieja del menú y vuelve a intentar.');
+    }
     $('#velo').hidden = true; pintar();
   });
 }
@@ -646,6 +677,25 @@ function pintar(){
   if(vista === 'ajustes') pintarAjustes();
   $('#cuantosEnCola').textContent = F.colaOrdenada().length;
 }
+
+/* el reloj del recreo, que aquí sirve para saber cuándo dejar de aceptar */
+function pintarReloj(){
+  const c = F.cuentaRegresiva(), caja = $('#relojRecreo');
+  const n = $('#relojN'), q = $('#relojQue');
+  if(c.estado === 'antes'){
+    q.textContent = 'para el recreo'; n.textContent = F.relojCorto(c.segundos);
+    caja.className = 'reloj-recreo antes';
+  } else if(c.estado === 'durante'){
+    q.textContent = 'de recreo'; n.textContent = F.relojCorto(c.segundos);
+    caja.className = 'reloj-recreo' +
+      (c.segundos <= 120 ? ' urge' : c.segundos <= 300 ? ' apura' : '');
+  } else {
+    q.textContent = 'el recreo'; n.textContent = 'terminó';
+    caja.className = 'reloj-recreo fuera';
+  }
+}
+setInterval(pintarReloj, 1000);
+pintarReloj();
 
 F.alCambiar(() => { F.cargar(); pintar(); });
 setInterval(() => { F.cargar(); pintar(); }, 4000);

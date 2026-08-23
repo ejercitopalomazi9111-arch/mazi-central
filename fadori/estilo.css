@@ -423,12 +423,41 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
   place-items:end center; padding:0;
 }
 .velo[hidden]{display:none}
+/* La hoja es una COLUMNA: cabeza fija, cuerpo que rueda, pie fijo. Cuando
+   el pie era pegajoso dentro del cuerpo se montaba encima de las opciones
+   y las dejaba "por debajo del botón de pedir". Así no se pueden tapar. */
 .hojita{
   width:100%; max-width:640px; background:var(--piso); border:1px solid var(--linea);
-  border-radius:22px 22px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom));
-  max-height:88vh; overflow:auto;
+  border-radius:22px 22px 0 0; max-height:90vh;
+  display:flex; flex-direction:column; overflow:hidden;
 }
-.hojita h3{margin:0 0 4px; font-size:19px; letter-spacing:-.02em}
+.hojita-cabeza{
+  flex:0 0 auto; display:flex; align-items:center; gap:10px;
+  padding:16px 16px 8px;
+}
+.hojita h3{margin:0; font-size:20px; font-weight:900; letter-spacing:-.025em; flex:1}
+.hojita-x{
+  flex:0 0 auto; width:44px; height:44px; border:0; border-radius:999px;
+  background:var(--sup); color:var(--cafe); font-size:17px; font-weight:800;
+  display:grid; place-items:center; box-shadow:var(--sombra);
+}
+.hojita-rueda{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:0 16px 6px}
+.hojita-pie{
+  flex:0 0 auto; padding:12px 16px calc(14px + env(safe-area-inset-bottom));
+  background:var(--piso); border-top:2px solid var(--linea);
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+.hojita-pie[hidden]{display:none}
+.hojita-pie .btn{flex:1 1 auto}
+
+/* la hojita chica de preguntar: no ocupa toda la pantalla */
+.velo-chico{place-items:center}
+.hojita-chica{
+  max-width:420px; margin:0 16px; border-radius:20px; max-height:none;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom)); display:block; overflow:visible;
+}
+.hojita-chica h3{margin:0; font-size:19px}
 
 /* ── accesibilidad ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce){
@@ -604,17 +633,13 @@ body.cortina-arriba{overflow:hidden}
 .para-uno{margin:0; font-size:12px; color:var(--tenue); font-weight:700}
 .para-uno input{margin-top:4px; min-height:46px; font-size:15px}
 
-.carro-total{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px}
+.carro-total{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px}
 .carro-total span{font-size:17px; font-weight:800}
 .carro-total b{font-size:26px; font-weight:900; letter-spacing:-.03em;
   font-variant-numeric:tabular-nums}
 /* El pie va PEGADO abajo y OPACO: con degradado se comía el aviso de
    "alcanzas / no alcanzas", que es justo lo que hay que leer antes de pedir. */
-.carro-pie{
-  position:sticky; bottom:0; z-index:3; isolation:isolate;
-  margin-top:16px; padding:14px 0 4px;
-  background:var(--piso); border-top:2px solid var(--linea);
-}
+.carro-total{flex:1 1 100%}
 
 
 /* ── Llévate algo más ─────────────────────────────────────────────────
@@ -694,7 +719,7 @@ body.cortina-arriba{overflow:hidden}
 .fic-pasos .cuantos{min-width:26px; text-align:center; font-size:17px; font-weight:900;
   font-variant-numeric:tabular-nums}
 /* cuando el pie lleva pasos + botón, van en fila */
-.carro-pie:has(.fic-pasos){display:flex; align-items:center; gap:10px}
+
 
 /* el cuerpo de la ficha del menú es un botón: que no se vea como uno */
 .plato .cuerpo{border:0; background:none; text-align:left; width:100%; font:inherit; color:inherit}
@@ -736,3 +761,104 @@ body.cortina-arriba{overflow:hidden}
 .heroe-precio small{font-size:12.5px; font-weight:700; color:rgba(255,246,236,.72)}
 .heroe .pasos{position:relative; z-index:3; align-self:stretch}
 .heroe.agotado{opacity:.5}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   EL RELOJ DEL RECREO · siempre a la vista
+   ----------------------------------------------------------------------
+   Va en la esquina de arriba, que es lo que más se mira sin querer. Ahí
+   estaba el nombre de uno, que ya se llega con la barra de abajo — y el
+   nombre propio nadie lo necesita ver, el tiempo que queda sí.
+   ═════════════════════════════════════════════════════════════════════ */
+.reloj-recreo{
+  display:flex; flex-direction:column; align-items:flex-end; justify-content:center;
+  min-height:44px; padding:4px 13px; border-radius:14px; margin-left:auto;
+  background:var(--sup); box-shadow:var(--sombra); line-height:1.05;
+}
+.reloj-recreo[hidden]{display:none}
+.reloj-que{font-size:10px; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--tenue); white-space:nowrap}
+.reloj-n{font-size:19px; font-weight:900; letter-spacing:-.02em; color:var(--cafe);
+  font-variant-numeric:tabular-nums}
+
+/* conforme se acaba, el reloj se pone serio. Y el color no va solo: el
+   rótulo cambia con él, para que no dependa nada más del color. */
+.reloj-recreo.apura .reloj-n{color:var(--ambar)}
+.reloj-recreo.urge{background:#FFE4E0}
+.reloj-recreo.urge .reloj-n{color:var(--rojo)}
+.reloj-recreo.urge .reloj-que{color:var(--rojo)}
+.reloj-recreo.antes .reloj-n,
+.reloj-recreo.fuera .reloj-n{color:var(--tenue); font-size:17px}
+
+/* con el reloj en la esquina, el chip del nombre se encoge a lo mínimo */
+.quiensoy.chiquito{padding:6px 11px; font-size:12px; gap:5px; max-width:38vw; overflow:hidden}
+.quiensoy.chiquito #miNombre{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+@media (max-width:359px){
+  .quiensoy.chiquito .grupo{display:none}
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   LOS AVISOS DE LA CASA · en vez de los del navegador
+   ----------------------------------------------------------------------
+   Un alert del navegador dice "ejercitopalomazi9111-arch.github.io dice",
+   se ve prestado, y trae un botón de "suprimir diálogos" que si alguien
+   toca deja la app muda para siempre. Estos no.
+   ═════════════════════════════════════════════════════════════════════ */
+.toston{
+  position:fixed; left:50%; bottom:calc(var(--barra-baja) + 24px + env(safe-area-inset-bottom));
+  z-index:220; transform:translate(-50%, 20px); opacity:0;
+  max-width:min(92vw, 460px); padding:13px 18px; border-radius:999px;
+  background:var(--cafe); color:#FFF6EC; font-size:14.5px; font-weight:700;
+  line-height:1.35; text-align:center; box-shadow:0 8px 30px rgba(70,40,20,.4);
+  transition:opacity .22s ease, transform .22s cubic-bezier(.22,1,.36,1);
+  pointer-events:none;
+}
+.toston.vivo{opacity:1; transform:translate(-50%, 0)}
+.toston.bueno{background:#2E5417}
+.toston.malo{background:var(--rojo)}
+
+/* ── el botón de soporte, arriba a la derecha ───────────────────────── */
+.btn-esq{
+  flex:0 0 auto; width:44px; height:44px; margin-left:auto;
+  border:0; border-radius:999px; background:var(--sup); color:var(--naranja-hondo);
+  font-size:21px; font-weight:900; display:grid; place-items:center;
+  box-shadow:var(--sombra);
+}
+.btn-esq:active{transform:scale(.92)}
+
+/* ── ¿cuánto traes? · arriba, no al fondo ───────────────────────────── */
+.cuanto-traes{
+  display:flex; align-items:center; gap:12px; text-align:left;
+  padding:10px 16px; min-height:64px; margin:6px 0 14px;
+  background:var(--sup); border-color:transparent; box-shadow:var(--sombra);
+}
+.ct-ico{font-size:24px; flex:0 0 auto}
+.ct-que{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px}
+.ct-que b{font-size:15px; font-weight:800}
+.ct-que small{color:var(--tenue); font-size:12.5px; font-weight:600}
+.ct-mas{color:var(--naranja); font-size:22px; font-weight:900; flex:0 0 auto}
+.dinero-fila{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+
+/* ── los pedidos que esperan detrás del grande ──────────────────────── */
+.turno-chico{
+  display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+  background:var(--sup); border:0; border-radius:14px; padding:12px 14px;
+  box-shadow:var(--sombra); min-height:64px;
+}
+.turno-chico:active{transform:scale(.99)}
+.tc-n{
+  flex:0 0 auto; min-width:42px; height:42px; padding:0 8px; border-radius:12px;
+  background:var(--piso); color:var(--cafe); font-size:20px; font-weight:900;
+  display:grid; place-items:center; font-variant-numeric:tabular-nums;
+}
+.tc-q{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px}
+.tc-q b{font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tc-q small{color:var(--tenue); font-size:12.5px}
+.tc-p{flex:0 0 auto; font-weight:900; color:var(--naranja); font-variant-numeric:tabular-nums}
+
+/* ── la barra del pulgar, endurecida para iOS ───────────────────────── */
+.pulgar{
+  transform:translateZ(0);            /* fuerza su propia capa */
+  will-change:transform;
+}
