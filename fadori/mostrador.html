@@ -24,7 +24,23 @@
   </div>
 </header>
 
-<main class="envoltura">
+<section class="reja" id="reja" hidden>
+  <div class="reja-caja">
+    <h1>Pantalla de la cooperativa</h1>
+    <p class="sub">Esta pantalla despacha pedidos, cobra y ve los fiados.
+      Escribe el pasador para entrar.</p>
+    <label for="rPase">Pasador</label>
+    <input id="rPase" type="tel" inputmode="numeric" maxlength="8" autocomplete="off"
+      style="font-size:28px; letter-spacing:.5em; text-align:center; font-weight:900">
+    <button class="btn fuerte ancho" id="rEntrar" type="button" style="margin-top:14px">Entrar</button>
+    <p class="aviso" style="margin-top:16px"><b>Esto es un pasador, no una cerradura.</b>
+      Detiene al alumno curioso, no a alguien que se lo proponga: el número vive en
+      este mismo aparato. La cerradura de verdad llega con el servidor.</p>
+    <a class="btn ancho" href="index.html" style="margin-top:12px">← Ir a la app del alumno</a>
+  </div>
+</section>
+
+<main class="envoltura" id="cuerpoMostrador">
 
   <div class="chips" id="pestanas" style="margin:14px 0 4px">
     <button class="chip" type="button" data-vista="despachar" aria-pressed="true">Despachar</button>
@@ -109,6 +125,15 @@
 
     <h2>Sugerencias y errores</h2>
     <div class="pila" id="listaSugerencias"></div>
+
+    <h2>El pasador de esta pantalla</h2>
+    <label for="aPasador">De 4 a 8 números</label>
+    <input id="aPasador" type="tel" inputmode="numeric" maxlength="8" autocomplete="off">
+    <p class="aviso" style="margin-top:8px"><b>Es un pasador, no una cerradura.</b>
+      Detiene al alumno curioso; no a quien sepa abrir las herramientas del navegador.
+      La cerradura de verdad llega con el servidor.</p>
+    <button class="btn ancho" id="bSalirMostrador" type="button" style="margin-top:12px">
+      Cerrar esta pantalla</button>
 
     <h2>Cierre de ciclo escolar</h2>
     <p class="sub">Borra los alumnos, los pedidos y los adeudos. El menú se queda.
@@ -579,6 +604,7 @@ function pintarAjustes(){
   $('#aAdelantos').value = c.topeAdelantos;
   $('#aLimite').value = (c.limiteDeuda/100);
   $('#aAnticipados').checked = !!c.aceptaAnticipados;
+  $('#aPasador').value = c.pasador || '1234';
 
   const sug = F.sugerencias();
   $('#listaSugerencias').innerHTML = sug.length ? sug.slice(0,20).map(s =>
@@ -699,6 +725,27 @@ pintarReloj();
 
 F.alCambiar(() => { F.cargar(); pintar(); });
 setInterval(() => { F.cargar(); pintar(); }, 4000);
+/* ── la reja ── */
+function abrirReja(){
+  const dentro = F.pasoElPasador();
+  $('#reja').hidden = dentro;
+  $('#cuerpoMostrador').hidden = !dentro;
+  document.querySelector('header.barra').hidden = !dentro;
+  if(!dentro) setTimeout(() => $('#rPase').focus(), 100);
+  return dentro;
+}
+$('#rEntrar').addEventListener('click', () => {
+  if(F.pasadorOk($('#rPase').value)){ abrirReja(); pintar(); }
+  else { $('#rPase').value = ''; alert('Ese no es el pasador.'); }
+});
+$('#rPase').addEventListener('keydown', (e) => { if(e.key === 'Enter') $('#rEntrar').click(); });
+$('#bSalirMostrador').addEventListener('click', () => { F.cerrarMostrador(); abrirReja(); });
+$('#aPasador').addEventListener('change', () => {
+  try{ F.cambiarPasador($('#aPasador').value); alert('Pasador cambiado.'); }
+  catch(e){ alert(e.message); pintarAjustes(); }
+});
+
+abrirReja();
 verVista('despachar');
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -746,6 +793,18 @@ verVista('despachar');
 
   /* F25 · la lista de papel incluye lo que está en la fila */
   ok('hay lista para despachar en papel', typeof abrirPapel === 'function');
+  /* el pasador: sirve de pasador, y se dice que no es más que eso */
+  (function(){
+    F.cerrarMostrador();
+    ok('sin pasador no se entra', F.pasoElPasador() === false);
+    ok('el pasador equivocado no abre', F.pasadorOk('0000') === false);
+    ok('el pasador bueno sí abre', F.pasadorOk(F.estado().config.pasador) === true);
+    ok('se puede cambiar', F.cambiarPasador('5678') === '5678' &&
+       F.pasadorOk('5678') === true);
+    ok('y no acepta cualquier cosa como pasador',
+       (function(){ try{ F.cambiarPasador('ab'); return false; }catch(e){ return true; } })());
+    F.cambiarPasador('1234');
+  })();
   /* la nota del alumno tiene que LLEGAR y VERSE, o es un campo decorativo */
   (function(){
     const conAl = F.productos(false).find(x => (x.alergenos||[]).length);

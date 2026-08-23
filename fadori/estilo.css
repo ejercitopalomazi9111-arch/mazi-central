@@ -215,7 +215,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
   transition:border-color .15s ease, box-shadow .15s ease;
   box-shadow:var(--sombra); position:relative;
 }
-.plato .foto{border:0; padding:0; width:100%}
+.plato .cuadro{position:relative; display:block; width:100%}
+.plato .foto{border:0; padding:0; width:100%; display:block}
 .plato .foto:active{filter:brightness(.94)}
 .plato.puesto{border-color:var(--naranja); box-shadow:0 0 0 2px var(--naranja), var(--sombra-alta)}
 /* el sello de esquina: chiquito, en píldora, encima de la foto */
@@ -248,23 +249,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outlin
   box-shadow:0 3px 12px rgba(194,65,12,.42);
 }
 .mas-flota:active{transform:scale(.9)}
-/* cuando ya llevas algo, el mismo círculo enseña cuántos */
-span.mas-flota{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums}
 
-.plato .pasos{display:flex; align-items:stretch; gap:6px; padding:0 8px 8px}
-.plato .pasos[hidden]{display:none}
-.plato .paso{
+
+.pasos{display:flex; align-items:stretch; gap:6px; padding:0 8px 8px}
+.pasos[hidden]{display:none}
+.pasos .paso{
   flex:0 0 48px; min-height:48px; border-radius:999px; border:1px solid var(--linea);
   background:var(--piso); color:var(--cafe); font-size:24px; font-weight:800; line-height:1;
   display:grid; place-items:center;
 }
-.plato .paso.mas{background:var(--naranja); border-color:var(--naranja); color:#fff}
-.plato .paso.solo{
-  flex:1; font-size:15px; font-weight:900; background:var(--rescoldo-hondo);
-  border-color:var(--rescoldo-hondo); color:var(--naranja-hondo); border-radius:999px;
-}
-.plato .paso:active{transform:scale(.94)}
-.plato .pasos .cuantos{
+.pasos .paso.mas{background:var(--naranja); border-color:var(--naranja); color:#fff}
+.pasos .paso:active{transform:scale(.94)}
+.pasos .cuantos{
   position:static; flex:1; display:grid; place-items:center; min-height:48px;
   background:transparent; color:var(--cafe); font-size:19px; font-weight:900;
   font-variant-numeric:tabular-nums; box-shadow:none; border-radius:0;
@@ -759,7 +755,18 @@ body.cortina-arriba{overflow:hidden}
 .heroe-precio{display:block; margin-top:8px; font-size:20px; font-weight:900;
   color:#FFC98F; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
 .heroe-precio small{font-size:12.5px; font-weight:700; color:rgba(255,246,236,.72)}
-.heroe .pasos{position:relative; z-index:3; align-self:stretch}
+/* En el cartel los pasos NO se estiran: van en una pastilla compacta abajo
+   a la derecha, donde estaba el "+". Estirados tapaban media foto. */
+.heroe .pasos{
+  position:absolute; right:9px; bottom:9px; z-index:3;
+  align-self:auto; padding:3px; gap:2px;
+  background:rgba(255,253,249,.95); border-radius:999px;
+  box-shadow:0 3px 12px rgba(30,14,6,.45);
+}
+.heroe .pasos .paso{flex:0 0 48px; min-height:48px; border:0; background:transparent}
+.heroe .pasos .paso.mas{background:var(--naranja)}
+.heroe .pasos .cuantos{min-width:24px; font-size:17px}
+.heroe-texto{padding-right:158px}
 .heroe.agotado{opacity:.5}
 
 
@@ -862,3 +869,16 @@ body.cortina-arriba{overflow:hidden}
   transform:translateZ(0);            /* fuerza su propia capa */
   will-change:transform;
 }
+
+
+/* ── la reja de la pantalla de la cooperativa ────────────────────────── */
+.reja{
+  position:fixed; inset:0; z-index:150; display:grid; place-items:center;
+  background:var(--fondo); padding:24px;
+}
+.reja[hidden]{display:none}
+.reja-caja{
+  width:100%; max-width:420px; background:var(--sup); border-radius:20px;
+  padding:24px 20px; box-shadow:var(--sombra-alta);
+}
+.reja-caja h1{margin:0 0 4px; font-size:24px}

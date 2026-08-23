@@ -296,14 +296,16 @@ function fichaPlato(p){
   return '<div class="plato'+(agotado?' agotado':'')+(n?' puesto':'')+'" data-ficha="'+p.id+'">'+
     (agotado ? '<span class="marca-esq agotado">se acabó</span>'
              : (p.destacado ? '<span class="marca-esq">hoy</span>' : ''))+
-    '<button class="foto" type="button" data-sumar="'+p.id+'"'+(agotado?' disabled':'')+
-      ' style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'"'+
-      ' aria-label="Agregar '+esc(p.nombre)+'">'+
-      (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : t.emoji)+
-    '</button>'+
-    /* el "+" flotando en la esquina de la foto: al reposo la ficha no gasta
-       un renglón entero en botones, y así cabe más menú en la pantalla */
-    (agotado ? '' : botonFlota(p, n))+
+    '<span class="cuadro">'+
+      '<button class="foto" type="button" data-sumar="'+p.id+'"'+(agotado?' disabled':'')+
+        ' style="--t1:'+t.t1+'; --t2:'+t.t2+'; --tb:'+t.borde+'"'+
+        ' aria-label="Agregar '+esc(p.nombre)+'">'+
+        (p.foto ? '<img src="'+esc(p.foto)+'" alt="">' : t.emoji)+
+      '</button>'+
+      /* el "+" cuelga de la FOTO, no de la tarjeta: anclado a la tarjeta se
+         montaba encima del nombre en cuanto el texto crecía */
+      (agotado ? '' : botonFlota(p, n))+
+    '</span>'+
     '<button class="cuerpo" type="button" data-ver="'+p.id+'">'+
       '<span class="precio">'+F.pesos(p.precio)+'</span>'+
       '<span class="nom">'+esc(p.nombre)+'</span>'+
@@ -322,10 +324,12 @@ function fichaPlato(p){
    vistazo sabes cuántos llevas de cada cosa. El − y el + grandes salen abajo
    para ajustar sin apuntarle a un botón diminuto. */
 function botonFlota(p, n){
-  return n
-    ? '<span class="mas-flota cuenta" aria-hidden="true">'+n+'</span>'
-    : '<button class="mas-flota" type="button" data-sumar="'+p.id+'"'+
-      ' aria-label="Agregar '+esc(p.nombre)+'">+</button>';
+  /* Al reposo, un "+" colgado de la foto. En cuanto llevas algo manda el
+     renglón de − / n / + y el círculo se va: el mismo número en dos sitios
+     a la vez no informa, estorba. */
+  return n ? '' :
+    '<button class="mas-flota" type="button" data-sumar="'+p.id+'"'+
+    ' aria-label="Agregar '+esc(p.nombre)+'">+</button>';
 }
 
 function pasosDe(p, n){
@@ -343,7 +347,12 @@ function refrescarFicha(pid){
     caja.classList.toggle('puesto', n > 0);
     const pasos = $('.pasos', caja), flota = $('.mas-flota', caja);
     if(pasos){ pasos.innerHTML = pasosDe(p, n); pasos.hidden = n === 0; }
-    if(flota) flota.outerHTML = botonFlota(p, n);
+    /* el "+" se quita o se pone según haga falta */
+    const cuadro = $('.cuadro', caja) || $('.heroe-velo', caja);
+    if(flota) flota.remove();
+    if(!n && cuadro && !caja.classList.contains('agotado')){
+      cuadro.insertAdjacentHTML('beforeend', botonFlota(p, n));
+    }
   });
 }
 
@@ -1313,9 +1322,9 @@ arrancar();
          F.guardarProducto({ id:d.id, foto:'' });
          return sinFoto && conFoto;
        })());
-    ok('el "+" de la esquina se vuelve el número cuando ya llevas algo',
-       !!(ficha && ficha.querySelector('.mas-flota.cuenta') &&
-          ficha.querySelector('.mas-flota.cuenta').textContent === '2'));
+    ok('con algo en el pedido, el "+" deja paso al renglón de − y +',
+       !!(ficha && !ficha.querySelector('.mas-flota') &&
+          ficha.querySelector('.pasos .cuantos').textContent === '2'));
     cesta = [];
     refrescarFicha(prod.id);
     ok('al vaciar, la ficha vuelve al "+" de la esquina sin reconstruir el menú',
