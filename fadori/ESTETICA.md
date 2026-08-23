@@ -241,4 +241,62 @@ siguen sin adornos: ahí la legibilidad le gana al apetito, y eso sí se respet�
 
 ---
 
+---
+
+## 10 · La segunda pasada · con las apps de comida de referencia
+
+Carlos mandó capturas de DiDi, Uber Eats, Little Caesars y McDonald's y dijo: **tómalas de punto
+de partida**. Lo que se adoptó y por qué.
+
+### Lo que se tomó
+
+| De la referencia | Qué se hizo |
+|---|---|
+| **Tarjetas blancas flotando sobre un suelo más hondo** | el suelo bajó a `#F3ECE1`. Antes fondo y tarjeta eran casi el mismo crema y todo se leía plano: la tarjeta se notaba por el borde, no por la altura |
+| **Títulos negros, pesados, sin adornos** | h1 a 900 y 30px, h2 a 800 y 20px, y **fuera la reglita** al lado del título: en un teléfono roba jerarquía en vez de darla |
+| **Botones de píldora** | radio 999px en todo lo que se toca |
+| **El filtro activo con tinte suave, no bloque sólido** | un bloque naranja lleno grita más fuerte que el contenido que filtra |
+| **El "+" flotando en la esquina de la foto** | al reposo la ficha ya no gasta un renglón entero en botones, y cabe más menú en la pantalla |
+| **El "+" que se vuelve el número** | *(Little Caesars)* el círculo no desaparece: enseña cuántos llevas, en el mismo sitio, sin que la ficha cambie de forma |
+| **El precio primero y en naranja** | en una carta el precio es lo que se busca antes que el nombre, y es lo que decide si sigues leyendo |
+| **Sellos de esquina en píldora** | "hoy" y "se acabó" en vez de una banda encima de la foto |
+| **La pastilla detrás del ícono activo** | en la barra de abajo, en vez de una rayita arriba |
+
+### Lo que NO se tomó, y por qué
+
+- **El negro de Uber Eats** para el botón principal. Es su marca, no la nuestra: aquí el naranja
+  ya hace ese trabajo y meter negro rompe la paleta.
+- **La rejilla de categorías con foto**, de 2×5. Se ve muy bien y ocupa 200 px; la tira de chips
+  ocupa 52. En un menú de diecisiete cosas, esos 150 px valen más que la vistosidad.
+- **El buscador.** Con diecisiete productos, buscar es más lento que mirar.
+
+### Un bug que sólo salió mirando
+
+El chip activo quedó en **1.18 de contraste** — letra blanca sobre tinte claro, literalmente
+invisible en la pantalla de la cooperativa. Ninguna prueba lo cazó porque ninguna prueba medía
+color. Ahora sí: hay tres pruebas que **miden el contraste en pantalla** y fallan por debajo de
+4.5. De ahí salieron dos tonos nuevos, `--rescoldo-hondo` y `--naranja-hondo`, que suben el par a
+**5.41**.
+
+---
+
+## 11 · La cortinilla
+
+Lo pidió Carlos con la referencia de Uber Eats: *"al abrir podría mostrar el logo en un fondo del
+color representativo, hacer una animación relacionada a comida… y luego se abriría la app."*
+
+**Qué hace:** el naranja de la casa a pantalla completa, el nombre, y **una torta que se arma
+sola en el plato** — plato, pan, carne, queso, verde, tapa, y el vaporcito al final.
+
+**Y las tres reglas que la hacen aceptable**, porque una cortinilla mal hecha es un peaje:
+
+1. **Dura 1.9 s y sale UNA vez por visita.** La segunda carga entra directo.
+2. **Un toque y te la saltas.**
+3. **No sale si el teléfono pide menos movimiento.** Ahí ni se dibuja.
+
+Está hecha con formas de CSS, no con una imagen: pesa cero, se ve nítida en cualquier pantalla y
+es de la casa.
+
+---
+
 *Fadori · Grupo Mazi · estética · planeada y ejecutada el 22 de agosto de 2026*
