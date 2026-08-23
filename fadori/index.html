@@ -128,6 +128,8 @@
       <button class="btn ancho" id="bSiempre" type="button">🔁 <span id="txtSiempre">Lo de siempre</span></button>
     </div>
 
+    <p class="semana" id="laSemana" hidden></p>
+
     <button class="btn ancho cuanto-traes" id="bCuanto" type="button">
       <span class="ct-ico">🪙</span>
       <span class="ct-que"><b>¿Cuánto traes?</b>
@@ -394,7 +396,32 @@ function firmaMenu(){
 }
 let ultimaFirma = '';
 
+/* F50 · "el viernes hay pizza".
+   El alumno sólo ve lo que hay HOY, y eso está bien — pero entonces nunca se
+   enteraría de que el viernes hay pizza, y saberlo es medio chiste de tener
+   un menú de la semana. Esta línea lo dice sin llenar la pantalla. */
+function pintarSemana(){
+  const caja = $('#laSemana'); if(!caja) return;
+  const hoy = F.diaDeHoy();
+  const proximos = [];
+  for(let i = 1; i <= 6 && proximos.length < 2; i++){
+    const d = (hoy + i) % 7;
+    F.menuDelDia(d).forEach(p => {
+      if(!(p.dias || []).length) return;               /* los de siempre no son noticia */
+      if(F.tocaHoy(p)) return;                          /* si hoy también hay, tampoco */
+      if(proximos.some(x => x.prod.id === p.id)) return;
+      if(proximos.length < 2) proximos.push({ dia:d, prod:p });
+    });
+  }
+  caja.hidden = !proximos.length;
+  if(!proximos.length) return;
+  caja.innerHTML = '🗓️ ' + proximos.map(x =>
+    'el <b>' + esc(F.nombreDelDia(x.dia).toLowerCase()) + '</b> hay ' +
+    esc(x.prod.nombre)).join(' · ');
+}
+
 function pintarMenu(forzar){
+  pintarSemana();
   const todos = F.productos(false);
   const firma = firmaMenu();
   if(forzar || firma !== ultimaFirma){
@@ -1490,7 +1517,9 @@ arrancar();
     ok('pero NO le pisa la foto que la cooperativa ya había puesto',
        viejo.productos[1].foto === 'una-suya.jpg');
     ok('y la migración deja el archivo marcado, para no repetirla',
-       viejo.version === 3);
+       viejo.version === 4);
+    ok('y a los platillos viejos les pone "todos los días", que no cambia nada',
+       Array.isArray(viejo.productos[0].dias) && viejo.productos[0].dias.length === 0);
     ok('y les pone id a los eventos y conteos viejos, para poder sincronizarlos',
        (function(){
          const v2 = { version:2, config:{}, alumnos:{}, pedidos:[], productos:[],

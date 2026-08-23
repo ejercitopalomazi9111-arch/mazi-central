@@ -640,6 +640,15 @@ body.cortina-arriba{overflow:hidden}
 }
 @keyframes cort-entra{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
 
+/* F50 · "el viernes hay pizza". Una línea, no una sección: el alumno viene a
+   pedir hoy, no a leer el calendario. */
+.semana{
+  margin:0 0 16px; padding:11px 14px; border-radius:14px;
+  background:var(--rescoldo); color:var(--naranja-hondo);
+  font-size:14px; font-weight:700; line-height:1.4;
+}
+.semana[hidden]{display:none}
+
 /* ── la hamburguesa armándose ──────────────────────────────────────────────
    Es el logo REAL de Fadori, cortado en sus capas: `marca/capa-*.png` salen
    de `marca/hamburguesa-armandose.png`, con el blanco quitado para que se
