@@ -1,0 +1,4 @@
+# Lo que wrangler deja al correr en local: bundles y estado del Durable Object.
+# No es código nuestro y cambia en cada arranque.
+.wrangler/
+node_modules/
