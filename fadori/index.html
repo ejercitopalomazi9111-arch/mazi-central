@@ -755,6 +755,7 @@ function aviso(texto, tono){
   setTimeout(() => { t.classList.remove('vivo');
     setTimeout(() => t.remove(), 300); }, 2600);
 }
+window.FADORI.avisaCon(aviso);   /* todo lo que se mande por alert sale por aquí */
 
 /* Una hojita chica para preguntar sí/no o pedir un texto. Devuelve por
    callback porque no hay await en este archivo y no hace falta. */
@@ -1717,6 +1718,23 @@ arrancar();
       ok('y le da un botón para cambiarlo de un toque',
          /data-cambiar=/.test(html));
     }
+  })();
+
+  /* F46 · el candado contra los diálogos del navegador. Carlos los pidió
+     fuera TODOS. Quitarlos uno por uno no basta: el que se cuele mañana
+     vuelve a salir, así que están tapados de raíz en nucleo.js. Esto
+     comprueba que el candado sigue puesto en ESTA pantalla. */
+  (function(){
+    let salio = '';
+    window.FADORI.avisaCon((t) => { salio = t; });
+    const r = window.confirm('probando');
+    const q = window.prompt('probando');
+    window.alert('probando');
+    window.FADORI.avisaCon(aviso);
+    ok('un alert no abre un diálogo del navegador: sale por el aviso de la casa',
+       salio === 'probando');
+    ok('y un confirm o un prompt colados nunca hacen la acción a ciegas',
+       r === false && q === null);
   })();
 
   /* dejar el aparato EXACTAMENTE como estaba: sus datos, su sesión y sus

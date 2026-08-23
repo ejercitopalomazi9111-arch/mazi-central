@@ -145,9 +145,19 @@
 
 <div class="velo" id="velo" hidden>
   <div class="hojita" role="dialog" aria-modal="true" aria-labelledby="hojitaT">
-    <h3 id="hojitaT">—</h3>
-    <div id="hojitaC"></div>
+    <!-- La misma estructura que la del alumno: cabeza fija y cuerpo que rueda.
+         Sin ella la hoja no tenía NADA de margen y el título salía pegado al
+         borde, cortado. Se veía en cada captura y nunca lo cazó una prueba. -->
+    <div class="hojita-cabeza"><h3 id="hojitaT">—</h3></div>
+    <div class="hojita-rueda" id="hojitaC"></div>
   </div>
+</div>
+
+<!-- La segunda capa. Existe para poder preguntar ENCIMA de una hojita ya
+     abierta —"¿quitar del menú?" se pregunta con el editor abierto— sin que
+     una se coma a la otra. -->
+<div class="velo velo-chico" id="velo2" hidden>
+  <div class="hojita hojita-chica" id="hojita2" role="dialog" aria-modal="true"></div>
 </div>
 
 <script src="nucleo.js"></script>
@@ -156,6 +166,58 @@
 'use strict';
 const $  = (s,d) => (d||document).querySelector(s);
 const $$ = (s,d) => Array.prototype.slice.call((d||document).querySelectorAll(s));
+
+/* ── Los avisos son de la casa · F46 ──────────────────────────────────
+   Los diálogos del navegador dicen "ejercitopalomazi9111-arch.github.io
+   dice", traen un botón de "no permitir más diálogos" que deja la pantalla
+   muerta hasta recargar, y se ven prestados. En la pantalla que va colgada
+   frente a media escuela eso se nota el doble. Estos tres los reemplazan
+   TODOS: no queda un alert, un confirm ni un prompt en la app. */
+function aviso(texto, tono){
+  const t = document.createElement('div');
+  t.className = 'toston' + (tono ? ' '+tono : '');
+  t.textContent = texto;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('vivo'));
+  setTimeout(() => { t.classList.remove('vivo');
+    setTimeout(() => t.remove(), 300); }, 3000);
+}
+window.FADORI.avisaCon(aviso);   /* todo lo que se mande por alert sale por aquí */
+
+/* sí/no, o pedir un número. Devuelve por callback: no hay await aquí. */
+function preguntar(op){
+  const v = $('#velo2'), c = $('#hojita2');
+  c.innerHTML =
+    '<h3>'+esc(op.titulo)+'</h3>'+
+    (op.texto ? '<p class="sub" style="margin:8px 0 0">'+esc(op.texto)+'</p>' : '')+
+    (op.campo !== undefined
+      ? '<input id="p2Campo" type="'+(op.tipo||'text')+'" '+
+        (op.tipo === 'number' ? 'step="0.5" min="0" ' : 'maxlength="'+(op.max||140)+'" ')+
+        'value="'+esc(String(op.campo))+'" style="margin-top:14px">'
+      : '')+
+    '<div class="chips" style="margin-top:18px">'+
+      '<button class="btn fuerte" id="p2Si" type="button" style="flex:1">'+
+        esc(op.si || 'Sí')+'</button>'+
+      (op.no === null ? ''
+        : '<button class="btn" id="p2No" type="button">'+esc(op.no || 'Cancelar')+'</button>')+
+    '</div>';
+  v.hidden = false;
+  const cerrar = () => { v.hidden = true; };
+  if($('#p2No')) $('#p2No').addEventListener('click', cerrar);
+  v.addEventListener('click', (e) => { if(e.target === v) cerrar(); }, { once:true });
+  $('#p2Si').addEventListener('click', () => {
+    const campo = $('#p2Campo');
+    cerrar();
+    if(op.hecho) op.hecho(campo ? campo.value : true);
+  });
+  const campo = $('#p2Campo');
+  if(campo) setTimeout(() => { campo.focus(); campo.select(); }, 60);
+}
+
+/* decir algo largo que hay que leer con calma: un solo botón */
+function decir(titulo, texto, hecho){
+  preguntar({ titulo, texto, si:'Entendido', no:null, hecho });
+}
 const F = window.FADORI;
 const esc = (t) => String(t==null?'':t).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -355,11 +417,11 @@ function abrirDeAPie(){
     $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
     $('#hCrear').addEventListener('click', () => {
       guardaTmp();
-      if(!carrito.length) return alert('El pedido está vacío.');
+      if(!carrito.length) return aviso('El pedido está vacío.', 'malo');
       try{
         F.pedir(null, carrito, { origen:'mostrador', nombre:nombreTmp || 'Mostrador', grupo:grupoTmp });
         $('#velo').hidden = true; pintar();
-      }catch(e){ alert(e.message); }
+      }catch(e){ aviso(e.message, 'malo'); }
     });
   };
   let nombreTmp = '', grupoTmp = '';
@@ -584,8 +646,13 @@ function abrirProducto(pid){
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   const borrar = $('#hBorrar');
   if(borrar) borrar.addEventListener('click', () => {
-    if(!confirm('¿Quitar "'+p.nombre+'" del menú?')) return;
-    F.borrarProducto(p.id); $('#velo').hidden = true; pintar();
+    preguntar({
+      titulo: '¿Quitar "'+p.nombre+'" del menú?',
+      texto: 'Deja de aparecerle al alumno. Los pedidos que ya lo traían no se tocan.',
+      si: 'Sí, quitarlo',
+      hecho: () => { F.borrarProducto(p.id); $('#velo').hidden = true; pintar();
+                     aviso('Quitado del menú.', 'bueno'); },
+    });
   });
   $('#hGuardar').addEventListener('click', () => {
     const ex = $('#hExist').value;
@@ -600,21 +667,22 @@ function abrirProducto(pid){
       desc: $('#hDesc').value.trim(),
       alergenos: alerg,
     };
-    if(fotoOcupada) return alert('Espera dos segundos, la foto todavía se está preparando.');
+    if(fotoOcupada) return aviso('Espera dos segundos, la foto todavía se está preparando.');
     if(fotoNueva) datos.foto = fotoNueva;
-    if(!datos.nombre) return alert('Le falta el nombre.');
+    if(!datos.nombre) return aviso('Le falta el nombre.', 'malo');
     try{
       F.guardarProducto(datos);
     }catch(err){
-      return alert('No se pudo guardar: '+err.message);
+      return decir('No se pudo guardar', err.message);
     }
     /* Comprobar que de VERDAD quedó. Si la memoria del aparato se llenó,
        antes se perdía en silencio y nadie se enteraba hasta que un alumno
        decía "no veo la foto". */
     const guardado = F.producto(datos.id || (F.productos(false).slice(-1)[0]||{}).id);
     if(datos.foto && guardado && !guardado.foto){
-      return alert('La foto no cupo en la memoria de este aparato. '+
-        'Quita alguna foto vieja del menú y vuelve a intentar.');
+      return decir('La foto no cupo',
+        'La memoria de este aparato ya está llena. Quita alguna foto vieja del menú y '+
+        'vuelve a intentar — todo lo demás del platillo sí se guardó.');
     }
     $('#velo').hidden = true; pintar();
   });
@@ -763,14 +831,29 @@ document.addEventListener('click', (e) => {
   if((b = t('data-editar'))) return abrirProducto(b.dataset.editar);
   if((b = t('data-abonar'))){
     const cod = b.dataset.abonar, a = F.estado().alumnos[cod];
-    const v = prompt('¿Cuánto abona '+a.nombre+'? Debe '+F.pesos(a.deuda), (a.deuda/100));
-    if(v === null) return;
-    F.abonar(cod, Math.round(parseFloat(v||0)*100)); return pintar();
+    preguntar({
+      titulo: '¿Cuánto abona '+a.nombre+'?',
+      texto: 'Debe '+F.pesos(a.deuda)+'. En pesos.',
+      campo: (a.deuda/100), tipo:'number', si:'Abonar',
+      hecho: (v) => {
+        const cent = Math.round(parseFloat(v||0)*100);
+        if(!(cent > 0)) return aviso('No se abonó nada.', 'malo');
+        F.abonar(cod, cent); pintar();
+        aviso('Abonados '+F.pesos(cent)+'.', 'bueno');
+      },
+    });
+    return;
   }
   if((b = t('data-perdonar'))){
     const cod = b.dataset.perdonar, a = F.estado().alumnos[cod];
-    if(!confirm('¿Perdonar los '+F.pesos(a.deuda)+' de '+a.nombre+'? Queda registrado.')) return;
-    F.ajustarDeuda(cod, 0, quien); return pintar();
+    preguntar({
+      titulo: '¿Perdonar la deuda de '+a.nombre+'?',
+      texto: 'Son '+F.pesos(a.deuda)+' y queda registrado quién lo perdonó.',
+      si: 'Sí, perdonarla',
+      hecho: () => { F.ajustarDeuda(cod, 0, quien); pintar();
+                     aviso('Deuda perdonada.', 'bueno'); },
+    });
+    return;
   }
 });
 
@@ -781,27 +864,62 @@ $('#bCSV').addEventListener('click', () => {
   const hoy = new Date().toISOString().slice(0,10);
   F.bajarCSV('fadori-pedidos-'+hoy+'.csv', F.csvDePedidos());
 });
-$('#bCerrar').addEventListener('click', () => {
+/* El cierre del recreo · F46
+   Era un alert con seis renglones pegados. Es lo ÚNICO que la cooperativa lee
+   completo en todo el día —de aquí sale qué comprar mañana—, así que va en una
+   hoja de verdad, con la lista de lo que faltó separada del dinero. */
+function abrirCierre(){
   const r = F.resumenDelDia();
-  alert('Cierre del recreo\n\n'+
-    'Entró: '+F.pesos(r.dinero)+'\n'+
-    'Despachados: '+r.entregados+'\n'+
-    'Se quedaron en la fila: '+r.noAlcanzaron+'\n'+
-    'Segundos por pedido: '+(r.despachoPromedio||'—')+'\n'+
-    'Se agotó primero: '+(r.agotados[0] ? r.agotados[0].nombre : 'nada')+'\n\n'+
+  const fila = (q, v, tono) => '<div class="renglon">'+
+    '<span class="q" style="flex:1"><b>'+esc(q)+'</b></span>'+
+    '<span style="font-weight:900; font-size:19px'+(tono?'; color:'+tono:'')+'">'+esc(v)+'</span></div>';
+
+  $('#hojitaT').textContent = 'Cierre del recreo';
+  $('#hojitaC').innerHTML =
+    '<div class="pila">'+
+      fila('Entró', F.pesos(r.dinero), 'var(--verde)')+
+      fila('Pedidos despachados', String(r.entregados))+
+      fila('Se quedaron en la fila', String(r.noAlcanzaron), r.noAlcanzaron ? 'var(--ambar)' : '')+
+      fila('Segundos por pedido', r.despachoPromedio ? r.despachoPromedio+' s' : '—')+
+      fila('Se agotó primero', r.agotados[0] ? r.agotados[0].nombre : 'nada')+
+    '</div>'+
+    '<h3 style="margin:22px 0 8px; font-size:18px">Qué hay que comprar de más</h3>'+
     (r.seQuedaronSin.length
-      ? 'Faltó para gente ya formada:\n'+
-        r.seQuedaronSin.map(x => '  · '+x.nombre+' — '+x.pedidos+
-          (x.pedidos===1?' pedido':' pedidos')).join('\n')+
-        '\n\nEso es lo que hay que comprar de más mañana.'
-      : 'No le faltó nada a nadie que ya estuviera formado.'));
-});
+      ? '<p class="sub" style="margin:0 0 10px">Esto le faltó a gente que <b>ya estaba '+
+          'formada</b>. Es el número que sirve para comprar, no el "se agotó" a secas.</p>'+
+        '<div class="pila">'+ r.seQuedaronSin.map(x =>
+          '<div class="renglon"><span class="q" style="flex:1"><b>'+esc(x.nombre)+'</b></span>'+
+          '<span style="font-weight:900; color:var(--rojo)">'+x.pedidos+
+            (x.pedidos===1?' pedido':' pedidos')+'</span></div>').join('') +'</div>'
+      : '<p class="sub" style="margin:0">No le faltó nada a nadie que ya estuviera formado. '+
+        'Buen día.</p>')+
+    '<div class="chips" style="margin-top:18px">'+
+      '<button class="btn fuerte" id="hCerrar" type="button" style="flex:1">Listo</button>'+
+    '</div>';
+  $('#velo').hidden = false;
+  $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
+}
+$('#bCerrar').addEventListener('click', abrirCierre);
+
+/* Cerrar el ciclo borra alumnos, pedidos y adeudos. Se pregunta dos veces a
+   propósito: es lo único de la app que no tiene vuelta atrás. */
 $('#bCiclo').addEventListener('click', () => {
-  if(!confirm('Esto borra TODOS los alumnos, pedidos y adeudos. El menú se queda.\n\n¿Seguro?')) return;
-  if(!confirm('Última: no hay manera de recuperarlo. ¿De verdad?')) return;
-  const r = F.cerrarCiclo();
-  alert('Ciclo cerrado. Se despacharon '+r.entregados+' pedidos en total.');
-  pintar();
+  preguntar({
+    titulo: '¿Cerrar el ciclo?',
+    texto: 'Esto borra TODOS los alumnos, pedidos y adeudos. El menú se queda.',
+    si: 'Sí, cerrarlo',
+    hecho: () => preguntar({
+      titulo: 'Última: no hay manera de recuperarlo',
+      texto: 'Si alguien debe algo, esa deuda desaparece. ¿De verdad?',
+      si: 'De verdad, bórralo',
+      hecho: () => {
+        const r = F.cerrarCiclo();
+        pintar();
+        decir('Ciclo cerrado',
+          'Se despacharon '+r.entregados+' pedidos en total. El menú sigue como estaba.');
+      },
+    }),
+  });
 });
 $('#velo').addEventListener('click', (e) => { if(e.target === $('#velo')) $('#velo').hidden = true; });
 
@@ -849,13 +967,13 @@ function abrirReja(){
 }
 $('#rEntrar').addEventListener('click', () => {
   if(F.pasadorOk($('#rPase').value)){ abrirReja(); pintar(); }
-  else { $('#rPase').value = ''; alert('Ese no es el pasador.'); }
+  else { $('#rPase').value = ''; aviso('Ese no es el pasador.', 'malo'); }
 });
 $('#rPase').addEventListener('keydown', (e) => { if(e.key === 'Enter') $('#rEntrar').click(); });
 $('#bSalirMostrador').addEventListener('click', () => { F.cerrarMostrador(); abrirReja(); });
 $('#aPasador').addEventListener('change', () => {
-  try{ F.cambiarPasador($('#aPasador').value); alert('Pasador cambiado.'); }
-  catch(e){ alert(e.message); pintarAjustes(); }
+  try{ F.cambiarPasador($('#aPasador').value); aviso('Pasador cambiado.', 'bueno'); }
+  catch(e){ aviso(e.message, 'malo'); pintarAjustes(); }
 });
 
 abrirReja();
@@ -905,6 +1023,37 @@ verVista('despachar');
     ok('el corte del día dice de qué faltó y a cuánta gente formada',
        !!fila && fila.pedidos >= 1);
     F.cancelar(q.id, 'prueba'); F.marcarDisponible(tres.id, true);
+  })();
+
+  /* La hoja tiene margen. Sin la estructura de cabeza y cuerpo, el título
+     salía pegado al borde izquierdo y cortado, en TODAS las hojas de esta
+     pantalla. Se veía en cada captura y no lo cazó ninguna prueba. */
+  (function(){
+    $('#hojitaT').textContent = 'Midiendo';
+    const velo = $('#velo'), estaba = velo.hidden;
+    velo.hidden = false;
+    const h = $('#hojitaT').getBoundingClientRect();
+    const caja = $('#velo .hojita').getBoundingClientRect();
+    velo.hidden = estaba;
+    ok('el título de la hoja no sale pegado al borde',
+       h.left - caja.left >= 10);
+  })();
+
+  /* F46 · el candado contra los diálogos del navegador. Carlos los pidió
+     fuera TODOS. Quitarlos uno por uno no basta: el que se cuele mañana
+     vuelve a salir, así que están tapados de raíz en nucleo.js. Esto
+     comprueba que el candado sigue puesto en ESTA pantalla. */
+  (function(){
+    let salio = '';
+    window.FADORI.avisaCon((t) => { salio = t; });
+    const r = window.confirm('probando');
+    const q = window.prompt('probando');
+    window.alert('probando');
+    window.FADORI.avisaCon(aviso);
+    ok('un alert no abre un diálogo del navegador: sale por el aviso de la casa',
+       salio === 'probando');
+    ok('y un confirm o un prompt colados nunca hacen la acción a ciegas',
+       r === false && q === null);
   })();
 
   /* La miniatura del menú. Va aquí porque estuvo rota en vivo y ninguna
