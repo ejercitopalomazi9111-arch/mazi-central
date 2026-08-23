@@ -1435,10 +1435,12 @@ pintarReloj();
     document.body.classList.remove('cortina-arriba');
     setTimeout(() => c.remove(), 420);
   };
-  /* 3.2 s: la última capa aterriza en 2.18 y el nombre entra en 2.26, así que
-     antes de eso la cortinilla se cerraba a media animación. Sigue siendo una
-     vez por visita y con un toque te la saltas. */
-  setTimeout(quitar, 3200);
+  /* 2.95 s: el pan de arriba pega en 1.72, el nombre entra en 1.76 y el pie
+     en 2.06, así que a los 2.52 ya está todo puesto y quedan ~0.4 s para leer
+     el logo armado antes de que se vaya. Antes eran 3.2 s con medio segundo
+     de nada en medio. Sigue siendo una vez por visita y con un toque te la
+     saltas. */
+  setTimeout(quitar, 2950);
   c.addEventListener('click', quitar);
 })();
 

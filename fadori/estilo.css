@@ -616,8 +616,14 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
    LA CORTINILLA · lo primero que se ve
    ----------------------------------------------------------------------
    El color de la casa a pantalla completa, el nombre, y una torta que se
-   arma sola en el plato. Dura 1.9 s, se salta con un toque, sale una sola
-   vez por visita y NO sale si el teléfono pide menos movimiento.
+   arma sola en el plato. Los seis ingredientes aterrizan entre 0.44 s y
+   1.72 s, el nombre entra en el golpe del último y la cortinilla se va a los
+   2.95 s. Se salta con un toque, sale una sola vez por visita y NO sale si el
+   teléfono pide menos movimiento.
+   Los tiempos NO se tocan a ojo: `fadori/pruebas-cortinilla.mjs` rebobina la
+   animación en un navegador de verdad y revisa que cada golpe de la torre
+   caiga sobre el aterrizaje de su capa. Córrela después de mover cualquier
+   número de aquí abajo.
    Está dibujada aquí con formas, no con una imagen: pesa cero, se ve nítida
    en cualquier pantalla y es de la casa.
    ═════════════════════════════════════════════════════════════════════ */
@@ -625,7 +631,7 @@ body.cortina-arriba{overflow:hidden}
 
 .cortinilla{
   position:fixed; inset:0; z-index:200; display:grid; place-content:center; justify-items:center;
-  gap:26px; background:linear-gradient(165deg, #E8590C, #C2410C 62%, #A83809);
+  gap:20px; background:linear-gradient(165deg, #E8590C, #C2410C 62%, #A83809);
   color:#FFF6EC; text-align:center;
   padding:24px calc(24px + env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom));
 }
@@ -635,17 +641,25 @@ body.cortina-arriba{overflow:hidden}
 }
 .cort-marca{
   font-size:clamp(38px,12vw,60px); font-weight:900; letter-spacing:-.045em; line-height:1;
-  /* el nombre entra cuando el pan de arriba aterriza, no antes: así el
-     remate de la animación es uno solo y no dos cosas sueltas */
-  opacity:0; animation:cort-entra .55s cubic-bezier(.22,1,.36,1) 2.26s forwards;
+  /* El nombre entra EN el golpe del pan, no después. Antes salía en 2.26 s
+     cuando el último aterrizaje era en 2.18: medio segundo de nada en medio,
+     y el final se leía como dos cosas sueltas en vez de un remate. Ahora el
+     pan pega en 1.72 y el nombre arranca en 1.76 — un solo tiempo. */
+  opacity:0; animation:cort-entra .5s cubic-bezier(.22,1,.36,1) 1.76s forwards;
 }
 .cort-marca b{color:#FFD9BE}
 .cort-pie{
   font-size:13px; font-weight:800; letter-spacing:.2em; text-transform:uppercase;
   color:rgba(255,246,236,.72); opacity:0;
-  animation:cort-entra .5s ease 2.62s forwards;
+  animation:cort-entra .46s ease 2.06s forwards;
 }
-@keyframes cort-entra{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+/* El nombre no se desliza y ya: se pasa un pelo y regresa, igual que las
+   capas. Si el remate no rebota como todo lo demás, se nota que va pegado. */
+@keyframes cort-entra{
+  0%  { opacity:0; transform:translateY(12px) scale(.965) }
+  62% { opacity:1; transform:translateY(-2px) scale(1.012) }
+  100%{ opacity:1; transform:none }
+}
 
 /* ── La página de instalar · los QR y los pasos ───────────────────────────
    Los códigos van GRANDES: se van a apuntar desde media pared de distancia,
@@ -748,45 +762,114 @@ body.cortina-arriba{overflow:hidden}
 .cap{
   position:absolute; left:0; width:100%; height:auto; display:block;
   opacity:0; will-change:transform, opacity;
-  /* Carlos: "demasiado rápida, hazla más lenta y satisfactoria con rebote".
-     Cada capa cae en .72 s con una curva que se pasa de su lugar y regresa
-     —eso es el rebote— y además se aplasta al aterrizar, que es lo que
-     convence al ojo de que pesa. Sin el aplaste el rebote se ve de goma. */
-  animation:cae .72s cubic-bezier(.34,1.56,.44,1) forwards;
+  /* El aplaste sale del BORDE DE ABAJO, no del centro: una rebanada que cae
+     se achata contra lo que tiene debajo, no se encoge en el aire. */
+  transform-origin:50% 90%;
+  /* Dos animaciones, no una, y es a propósito: `cae` lleva el movimiento y
+     necesita una curva distinta en cada tramo (acelerar, golpear, rebotar);
+     `aparece` sólo prende la capa cuando le toca. Metiendo la opacidad dentro
+     de `cae` la curva del tramo se le aplicaba también, y eso obliga a usar
+     una sola curva para todo — que es justo lo que se veía chafa. */
+  animation-name:cae, aparece;
+  animation-duration:var(--dur), .14s;
+  animation-delay:var(--t), var(--t);
+  animation-fill-mode:forwards, forwards;
 }
-/* Los `top` salen de las franjas medidas en el logo bueno. Los retardos están
-   más separados que antes: la gracia es ver caer CADA capa, no una lluvia. */
-.burger .pan-arriba{ top:0;      --cae:-150%; animation-delay:1.46s }
-.burger .lechuga   { top:33.2%;  --cae:-265%; animation-delay:1.20s }
-.burger .jitomate  { top:40.3%;  --cae:-412%; animation-delay:.96s }
+
+/* Los `top` salen de las franjas medidas en el logo bueno. Lo que cambió es
+   el RITMO: los golpes ya no van parejos cada .25 s —eso era un goteo— sino
+   apretándose (.36, .26, .22, .18) y con un respiro antes del pan de arriba,
+   que es el remate. Un ritmo que acelera y luego respira se siente; uno
+   parejo se ignora.
+
+   `--t` no se escribió a mano: es el aterrizaje menos el 72 % de la duración,
+   que es donde el fotograma del golpe cae dentro de `cae`. Así los tiempos de
+   la torre y de la sombra amarran con los de las capas, en vez de andar cada
+   quien por su lado. */
+.burger .pan-abajo { top:57.1%; --cae:-70%;  --gira:-3deg;   --dur:.58s; --t:.02s  } /* golpea en 0.44 */
+.burger .carne     { top:48.7%; --cae:-404%; --gira:2.6deg;  --dur:.54s; --t:.41s  } /* 0.80 */
 /* El queso arranca MÁS ABAJO que la carne a propósito: se pinta después, así
    que su rebanada cae sobre ella y el chorreón escurre por encima. */
-.burger .queso     { top:49.1%;  --cae:-332%; animation-delay:.72s }
-.burger .carne     { top:48.7%;  --cae:-404%; animation-delay:.46s }
-.burger .pan-abajo { top:57.1%;  --cae:-70%;  animation-delay:.18s }
-.burger .sombra    { top:87.8%;  --cae:0%;    animation-delay:.18s;
-  animation-name:sombra-late; animation-duration:1.9s;
-  animation-timing-function:ease-out }
+.burger .queso     { top:49.1%; --cae:-332%; --gira:-2.2deg; --dur:.50s; --t:.70s  } /* 1.06 */
+.burger .jitomate  { top:40.3%; --cae:-412%; --gira:3deg;    --dur:.46s; --t:.95s  } /* 1.28 */
+.burger .lechuga   { top:33.2%; --cae:-265%; --gira:-2.4deg; --dur:.44s; --t:1.14s } /* 1.46 */
+/* El pan de arriba cae de MÁS LEJOS que antes (-230 % contra -150 %) y tarda
+   más: es el único golpe que la gente espera, así que tiene que pesar. */
+.burger .pan-arriba{ top:0;     --cae:-230%; --gira:1.6deg;  --dur:.68s; --t:1.23s } /* 1.72 */
 
-/* La caída: entra pasada de largo, rebota y aterriza aplastándose un poco */
-@keyframes cae{
-  0%   { opacity:0; transform:translateY(var(--cae)) scaleX(.92) scaleY(1.08) }
-  55%  { opacity:1 }
-  72%  { transform:translateY(6%)  scaleX(1.06) scaleY(.92) }   /* el golpe */
-  86%  { transform:translateY(-3%) scaleX(.98)  scaleY(1.03) }  /* el rebote */
-  100% { opacity:1; transform:translateY(0) scaleX(1) scaleY(1) }
+.burger .sombra{
+  top:87.8%; transform-origin:50% 50%;
+  animation-name:sombra-golpes; animation-duration:2s; animation-delay:0s;
+  animation-timing-function:ease-out;
 }
-/* La sombra late con cada capa que aterriza: se ensancha de golpe y se
-   recoge. Es lo que amarra el rebote con el piso. */
-@keyframes sombra-late{
-  0%   { opacity:0;  transform:scaleX(.55) }
-  12%  { opacity:.5; transform:scaleX(.72) }
-  26%  { opacity:.8; transform:scaleX(1.04) }
-  38%  { opacity:.6; transform:scaleX(.86) }
-  55%  { opacity:.85; transform:scaleX(1.06) }
-  70%  { opacity:.65; transform:scaleX(.9) }
-  85%  { opacity:.9; transform:scaleX(1.03) }
-  100% { opacity:.9; transform:scaleX(1) }
+
+/* La caída de una capa.
+   La curva NO es una sola: el tramo de bajada usa una curva que ACELERA
+   —cubic-bezier(.55,.06,.68,.19), o sea gravedad— y el rebote usa una que
+   sale disparada y frena. Antes todo iba con una sola curva de salida, que
+   arranca rápido y frena: se veía como una ventana de interfaz deslizándose,
+   no como una rebanada cayendo. Ése era el defecto de fondo.
+   Y llega ladeada: nada cae perfectamente plano, y enderezarse al aterrizar
+   es lo que quita el aire de calcomanía. */
+@keyframes cae{
+  0%   { transform:translateY(var(--cae)) rotate(var(--gira)) scaleX(.94) scaleY(1.10);
+         animation-timing-function:cubic-bezier(.55,.06,.68,.19) }
+  72%  { transform:translateY(7%)   rotate(calc(var(--gira) * -.22)) scaleX(1.09) scaleY(.88);
+         animation-timing-function:cubic-bezier(.18,.9,.32,1) }      /* el golpe */
+  85%  { transform:translateY(-4%)  rotate(calc(var(--gira) * .12))  scaleX(.97)  scaleY(1.05);
+         animation-timing-function:ease-in-out }                     /* el rebote */
+  93%  { transform:translateY(1.2%) rotate(0deg) scaleX(1.02) scaleY(.985);
+         animation-timing-function:ease-out }
+  100% { transform:translateY(0)    rotate(0deg) scaleX(1)    scaleY(1) }
+}
+@keyframes aparece{ from{opacity:0} to{opacity:1} }
+
+/* LA TORRE SIENTE LOS GOLPES.
+   Esto es lo que faltaba y lo que hacía que se viera barata: cada capa
+   aterrizaba y todo lo de abajo se quedaba como piedra. Aquí la hamburguesa
+   entera se comprime en cada aterrizaje, desde el piso hacia arriba, y el
+   apretón crece con el peso: mínimo en la lechuga, el más fuerte en el pan
+   de arriba. Los porcentajes son los aterrizajes reales sobre 2 s
+   (0.44 → 22 %, 0.80 → 40 %, 1.06 → 53 %, 1.28 → 64 %, 1.46 → 73 %,
+   1.72 → 86 %). */
+.burger{ animation:torre-golpes 2s linear forwards; will-change:transform }
+@keyframes torre-golpes{
+  0%,20% { transform:none }
+  22%    { transform:scaleX(1.018) scaleY(.974) }
+  27%,38%{ transform:none }
+  40%    { transform:scaleX(1.022) scaleY(.970) }
+  45%,51%{ transform:none }
+  53%    { transform:scaleX(1.017) scaleY(.977) }
+  57%,62%{ transform:none }
+  64%    { transform:scaleX(1.013) scaleY(.983) }
+  68%,71%{ transform:none }
+  73%    { transform:scaleX(1.012) scaleY(.985) }
+  77%,84%{ transform:none }
+  86%    { transform:scaleX(1.060) scaleY(.935) }   /* el remate */
+  90%    { transform:scaleX(.976)  scaleY(1.030) }  /* y la torre rebota */
+  95%    { transform:scaleX(1.010) scaleY(.992) }
+  100%   { transform:none }
+}
+
+/* La sombra late con cada aterrizaje DE VERDAD. Antes latía con tiempos
+   inventados que no coincidían con ninguna capa, así que el ojo veía dos
+   ritmos encima y no amarraba ninguno. Ahora comparte los mismos porcentajes
+   que la torre, y en el remate se abre de golpe. */
+@keyframes sombra-golpes{
+  0%,18% { opacity:0;   transform:scaleX(.50) }
+  22%    { opacity:.85; transform:scaleX(1.05) }
+  30%    { opacity:.60; transform:scaleX(.88) }
+  40%    { opacity:.82; transform:scaleX(1.04) }
+  48%    { opacity:.62; transform:scaleX(.90) }
+  53%    { opacity:.80; transform:scaleX(1.02) }
+  59%    { opacity:.64; transform:scaleX(.92) }
+  64%    { opacity:.78; transform:scaleX(1.01) }
+  69%    { opacity:.66; transform:scaleX(.94) }
+  73%    { opacity:.78; transform:scaleX(1.01) }
+  80%    { opacity:.68; transform:scaleX(.95) }
+  86%    { opacity:1;   transform:scaleX(1.16) }    /* el remate */
+  92%    { opacity:.72; transform:scaleX(.94) }
+  100%   { opacity:.90; transform:scaleX(1) }
 }
 @keyframes vapor-sube{
   0%  {opacity:0; transform:translateX(-50%) translateY(6px) scale(.5)}

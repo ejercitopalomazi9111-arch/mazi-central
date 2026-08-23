@@ -307,6 +307,8 @@ sin skill que la cubra, ahí sí se propone.
 | `marca/render.mjs` | **La mesa de fotografía.** Logo + logotipo sobre fondos de estudio, y los archivos de uso diario | ✅ probada |
 | `herramientas/vectorizar.mjs` | PNG → SVG con paleta medida y sin trazos basura | ✅ probada |
 | `herramientas/pruebas-tipos-navegador.mjs` | **El hueso de Rocco.** Comprueba que `tipos.mjs` carga en el navegador. Corre antes de tocar el taller | ✅ pasa |
+| `fadori/pruebas-cortinilla.mjs` | **El metrónomo.** Rebobina la animación de la hamburguesa en un navegador y revisa el ritmo: que caiga acelerando, que la torre se apriete en cada aterrizaje y que el nombre entre en el golpe | ✅ 19/19 |
+| `fadori/presentacion/medir.py` | **El metro.** Revisa un `.pptx` sin abrirlo: nada fuera del lienzo, nada encimado | ✅ probada |
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
