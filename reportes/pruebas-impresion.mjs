@@ -130,6 +130,103 @@ for(const [nombre, margen] of [['Safari con sus encabezados', SAFARI_PEOR],
      p > hojas ? 'sobran ' + (p - hojas) : '');
 }
 
+/* ── QUÉ IMPRIME EL BOTÓN DESDE CADA PESTAÑA ──────────────────────────
+   Carlos: «revisa que no siempre imprime lo que corresponde el botón de
+   imprimir». Hay OCHO pestañas y el botón de la barra se ve desde todas, así
+   que se prueban las ocho y no la que uno se acuerde.
+
+   Ya falló una vez: desde «Credencial» te brincaba a «Vista» y te imprimía el
+   REPORTE, con las credenciales hechas y todo. */
+console.log('\n── Qué imprime el botón desde cada pestaña ──');
+await page.evaluate(() => {
+  R.cuerpo = '## Uno\n\nTexto para que el reporte tenga contenido.';
+  const c = document.querySelector('#fCuerpo');
+  c.value = R.cuerpo; c.dispatchEvent(new Event('input', { bubbles:true }));
+  CRED.gente = [Object.assign(credNueva(), { apellidos:'RAMÍREZ', num:'PM-1' }),
+                Object.assign(credNueva(), { apellidos:'LÓPEZ',   num:'PM-2' })];
+  credActiva = 0; guardarCred();
+  window.print = () => {};
+});
+await page.waitForTimeout(700);
+
+const PESTANAS = ['escribir','ver','credencial','plantilla','registro',
+                  'formato','verificar','guardados'];
+for(const t of PESTANAS){
+  await page.evaluate((v) => {
+    document.body.classList.remove('imprime-cred');
+    document.querySelector('#impresora').innerHTML = '';
+    verVista(v);
+  }, t);
+  await page.waitForTimeout(320);
+  await page.click('#bImprimir');
+  await page.waitForTimeout(300);
+  const r = await page.evaluate(() => ({
+    donde: vistaActual(),
+    cred:  document.body.classList.contains('imprime-cred'),
+    caras: (document.querySelector('#impresora').innerHTML.match(/class="cred/g)||[]).length,
+    hojas: document.querySelectorAll('.hoja').length,
+  }));
+  /* La regla, dicha una vez: en «Credencial» se imprimen credenciales; en
+     todas las demás, el reporte. Ninguna otra pestaña tiene documento propio
+     —Registro alimenta al reporte, Guardados carga uno, Formato y Verificar
+     son del reporte—, así que el reporte es lo que corresponde. */
+  if(t === 'credencial'){
+    ok('desde «' + t + '» imprime LAS CREDENCIALES', r.cred && r.caras === 4,
+       r.cred ? r.caras + ' caras' : 'se fue al reporte');
+    ok('y no te saca de la pestaña', r.donde === 'credencial', 'te mandó a ' + r.donde);
+  } else {
+    ok('desde «' + t + '» imprime el reporte', !r.cred && r.hojas >= 1,
+       r.cred ? 'salió en modo credencial' : r.hojas + ' hojas');
+  }
+}
+
+/* ── Que no se mezclen ─────────────────────────────────────────────────── */
+console.log('\n── Que no se mezclen los dos documentos ──');
+await page.evaluate(() => {
+  R.cuerpo = '## Uno\n\nPALABRACLAVEREPORTE en el cuerpo.';
+  const c = document.querySelector('#fCuerpo');
+  c.value = R.cuerpo; c.dispatchEvent(new Event('input', { bubbles:true }));
+  verVista('credencial'); pintarCred();
+  document.querySelector('#impresora').innerHTML = pliegosDe(CRED.gente);
+  document.body.classList.add('imprime-cred');
+});
+await page.waitForTimeout(700);
+{
+  const pdf = await page.pdf({ format:'Letter', printBackground:true,
+    margin:{ top:'10mm', bottom:'10mm', left:'10mm', right:'10mm' } });
+  const f = '/tmp/claude-0/-home-user-mazi-central/617efe1d-4733-537e-8ae2-f3b050e50e7a/scratchpad/mezcla.pdf';
+  writeFileSync(f, pdf);
+  const t = execFileSync('pdftotext', ['-layout', f, '-'], { encoding:'utf-8' });
+  ok('imprimiendo credenciales, el reporte NO se cuela',
+     !/PALABRACLAVEREPORTE/.test(t));
+  ok('y las credenciales sí salen', /PM-1/.test(t) && /PM-2/.test(t));
+  try{ unlinkSync(f); }catch(e){}
+}
+
+/* ── Lo vacío, que antes salía en blanco sin avisar ────────────────────── */
+console.log('\n── Cuando no hay nada que imprimir ──');
+{
+  const avisos = [];
+  page.on('dialog', d => { avisos.push(d.message()); d.dismiss(); });
+  await page.evaluate(() => {
+    document.body.classList.remove('imprime-cred');
+    R.cuerpo = ''; R.titulo = '';
+    const c = document.querySelector('#fCuerpo');
+    c.value = ''; c.dispatchEvent(new Event('input', { bubbles:true }));
+    verVista('escribir');
+    window.__imprimio = false;
+    window.print = () => { window.__imprimio = true; };
+  });
+  await page.waitForTimeout(400);
+  await page.click('#bImprimir');
+  await page.waitForTimeout(400);
+  ok('un reporte vacío NO se manda a imprimir en blanco',
+     await page.evaluate(() => window.__imprimio === false),
+     'gastó una hoja con nada más el membrete');
+  ok('y dice por qué', avisos.some(a => /vac[ií]o/i.test(a)),
+     avisos[0] || 'no avisó nada');
+}
+
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 
 await b.close();
