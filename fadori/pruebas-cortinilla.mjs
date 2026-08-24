@@ -110,6 +110,101 @@ d.capas.forEach(c => {
      !!g, g ? '' : 'la torre no reaccionó — la capa cae sobre piedra');
 });
 
+console.log('\n── una capa aterrizada nunca destapa a la de abajo ──');
+// El reporte de Carlos: «el ingrediente que cae se comprime más de lo que hace
+// alguno de los de abajo y se logra ver el de abajo». El queso tapa el 100 % de
+// la carne, así que basta que se encoja o se levante un pelo para destaparla.
+// Desde el golpe hasta el final, una capa sólo puede taparlo todo o MÁS.
+const destapes = await pg.evaluate(() => {
+  const malos = [];
+  document.querySelectorAll('.burger .cap:not(.sombra)').forEach(c => {
+    const a = c.getAnimations().find(x => x.animationName === 'cae');
+    const { delay, duration } = a.effect.getTiming();
+    const capa = c.className.replace('cap ', '');
+    // del golpe (72 %) al final, de 1 % en 1 %
+    for(let f = 0.72; f <= 1.0001; f += 0.01){
+      a.currentTime = delay + duration * Math.min(f, 1);
+      const m = new DOMMatrixReadOnly(getComputedStyle(c).transform);
+      const en = ' al ' + Math.round(f*100) + '% de su caída';
+      if(m.a < 0.999) malos.push([capa, 'se angosta (scaleX ' + m.a.toFixed(3) + ')' + en]);
+      if(m.d < 0.999) malos.push([capa, 'se encoge de alto (scaleY ' + m.d.toFixed(3) + ')' + en]);
+      if(m.f < -0.5)  malos.push([capa, 'se levanta ' + (-m.f).toFixed(1) + ' px sobre su lugar' + en]);
+      if(Math.abs(m.b) > 0.002) malos.push([capa, 'sigue ladeada' + en]);
+    }
+  });
+  return malos;
+});
+const porCapa = {};
+destapes.forEach(([c, q]) => { (porCapa[c] = porCapa[c] || []).push(q); });
+['pan-abajo','carne','queso','jitomate','lechuga','pan-arriba'].forEach(capa => {
+  ok('«' + capa + '» ya aterrizada no destapa nada de abajo',
+     !porCapa[capa], porCapa[capa] ? porCapa[capa][0] : '');
+});
+
+// La prueba de arriba mira la transformación de CADA capa por separado. Ésta
+// mira lo que de verdad se ve: el traslape en píxeles entre capas vecinas,
+// rebobinando TODAS las animaciones a la vez — incluida la de la torre, que
+// también escala a las capas y podría abrir un hueco sin que ninguna capa se
+// mueva sola.
+const traslapes = await pg.evaluate(() => {
+  const orden = ['pan-abajo','carne','queso','jitomate','lechuga','pan-arriba'];
+  const el = {}, cae = {}, fin = {};
+  orden.forEach(c => {
+    el[c] = document.querySelector('.burger .' + c);
+    cae[c] = el[c].getAnimations().find(x => x.animationName === 'cae');
+    const t = cae[c].effect.getTiming();
+    // Se cuenta desde el GOLPE (72 % de su caída), no desde que la animación
+    // termina. El destape se ve justo al aterrizar, y midiendo sólo el reposo
+    // esta prueba pasaba con el bug puesto.
+    fin[c] = t.delay + t.duration * 0.72;
+  });
+  const todas = [...document.querySelector('.burger').getAnimations(),
+                 ...orden.flatMap(c => el[c].getAnimations())];
+  const poner = t => todas.forEach(a => { a.currentTime = t; });
+
+  // El traslape se mide EN PROPORCIÓN al alto de la capa de arriba, no en
+  // píxeles. Si se mide en píxeles, el aplaste de la torre —que encoge TODO un
+  // 6.5 % en el remate— sale como «pierde 2 px de traslape» cuando en realidad
+  // no se abrió ningún hueco: la hamburguesa entera se hizo más bajita y el
+  // traslape encogió con ella. Eso es lo correcto, y en proporción se ve igual.
+  // El divisor es el alto de LA TORRE, no el de la capa. Dividir entre la capa
+  // sale mal justo cuando la capa rebota creciendo: el traslape se queda igual
+  // pero el divisor sube, y la fracción baja sola — daba un ✗ que no existía.
+  // La torre es la referencia estable y además absorbe su propio aplaste, que
+  // es lo que había que descontar.
+  const caja = document.querySelector('.burger');
+  const razon = i => {
+    const a = el[orden[i-1]].getBoundingClientRect();
+    const b = el[orden[i]].getBoundingClientRect();
+    return (Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+           / caja.getBoundingClientRect().height;
+  };
+  poner(2000);                                // en reposo: el traslape bueno
+  const reposo = {};
+  for(let i = 1; i < orden.length; i++) reposo[orden[i]] = razon(i);
+  const peor = {};
+  for(let t = 0; t <= 2000; t += 10){
+    poner(t);
+    for(let i = 1; i < orden.length; i++){
+      const arriba = orden[i];
+      // sólo cuentan las dos ya aterrizadas
+      if(t < fin[arriba] || t < fin[orden[i-1]]) continue;
+      const tr = razon(i);
+      if(!(arriba in peor) || tr < peor[arriba][0]) peor[arriba] = [tr, t];
+    }
+  }
+  return orden.slice(1).map(c => ({ capa: c, reposo: reposo[c],
+                                    peor: peor[c] ? peor[c][0] : null,
+                                    cuando: peor[c] ? peor[c][1] : null }));
+});
+traslapes.forEach(t => {
+  const perdido = t.peor == null ? 1 : t.reposo - t.peor;
+  ok('«' + t.capa + '» nunca se despega de la de abajo',
+     t.peor != null && perdido <= 0.005,
+     'en reposo se encima ' + (t.reposo*100).toFixed(1) + '% del alto de la torre y baja a ' +
+     (t.peor*100).toFixed(1) + '% en ' + (t.cuando/1000).toFixed(2) + ' s');
+});
+
 console.log('\n── el ritmo ──');
 const huecos = d.capas.slice(1).map((c,i) => c.aterriza - d.capas[i].aterriza);
 ok('el ritmo se aprieta conforme sube la torre',

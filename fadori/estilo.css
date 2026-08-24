@@ -809,18 +809,50 @@ body.cortina-arriba{overflow:hidden}
    sale disparada y frena. Antes todo iba con una sola curva de salida, que
    arranca rápido y frena: se veía como una ventana de interfaz deslizándose,
    no como una rebanada cayendo. Ése era el defecto de fondo.
-   Y llega ladeada: nada cae perfectamente plano, y enderezarse al aterrizar
-   es lo que quita el aire de calcomanía. */
+   Y llega ladeada: nada cae perfectamente plano.
+
+   ══ LA REGLA QUE FALTABA ═══════════════════════════════════════════════
+   Carlos: «el ingrediente que cae se comprime más de lo que hace alguno de
+   los de abajo y se logra ver el de abajo, eso se ve mal.»
+
+   Tenía razón, y al medir los traslapes salió por qué DUELE tanto: el queso
+   tapa el 100 % de la carne. Están dibujados casi del mismo tamaño y uno
+   encima del otro. Así que basta que el queso se encoja un pelo —o que se
+   levante un pelo— para que la carne asome por la orilla.
+
+   Los fotogramas viejos hacían las DOS cosas: `scaleY(.88)` lo encogía 12 %
+   en el golpe, y `translateY(-4%)` lo levantaba POR ENCIMA de su lugar en el
+   rebote. Y de pendiente la rotación, que ya aterrizada ladea la rebanada y
+   destapa una esquina.
+
+   De ahí sale la regla, y vale para toda capa YA ATERRIZADA:
+
+       sólo puede taparlo todo o MÁS, nunca menos.
+
+   O sea: bajar sí, crecer sí. Subir no, encoger no, ladearse no. Traducido a
+   números — de aquí en adelante, translateY ≥ 0, scaleX ≥ 1, scaleY ≥ 1 y
+   rotate = 0.
+
+   ¿Y el aplaste, que es lo que da la sensación de peso? Se pasa a dos lugares
+   donde no puede destapar nada:
+     · a lo ANCHO en la propia capa (scaleX 1.10 — abrirse tapa más, no menos);
+     · a lo ALTO en LA TORRE ENTERA (`torre-golpes`), que al escalar padre e
+       hijos juntos comprime los huecos SIN abrir ninguno.
+   Y el rebote, en vez de brincar hacia arriba, se hunde de más y regresa. Se
+   siente igual de pesado y no destapa nada. */
 @keyframes cae{
-  0%   { transform:translateY(var(--cae)) rotate(var(--gira)) scaleX(.94) scaleY(1.10);
+  0%   { transform:translateY(var(--cae)) rotate(var(--gira)) scaleX(.96) scaleY(1.08);
          animation-timing-function:cubic-bezier(.55,.06,.68,.19) }
-  72%  { transform:translateY(7%)   rotate(calc(var(--gira) * -.22)) scaleX(1.09) scaleY(.88);
-         animation-timing-function:cubic-bezier(.18,.9,.32,1) }      /* el golpe */
-  85%  { transform:translateY(-4%)  rotate(calc(var(--gira) * .12))  scaleX(.97)  scaleY(1.05);
-         animation-timing-function:ease-in-out }                     /* el rebote */
-  93%  { transform:translateY(1.2%) rotate(0deg) scaleX(1.02) scaleY(.985);
+  /* el golpe: se abre a lo ancho y se HUNDE — nunca se encoge de alto */
+  72%  { transform:translateY(5%)   rotate(0deg) scaleX(1.10)  scaleY(1);
+         animation-timing-function:cubic-bezier(.18,.9,.32,1) }
+  /* el rebote: se estira hacia arriba, que TAPA más, en vez de despegarse */
+  84%  { transform:translateY(1.2%) rotate(0deg) scaleX(1.005) scaleY(1.03);
+         animation-timing-function:ease-in-out }
+  /* el segundo apachurrón, ya chiquito */
+  92%  { transform:translateY(.4%)  rotate(0deg) scaleX(1.04)  scaleY(1);
          animation-timing-function:ease-out }
-  100% { transform:translateY(0)    rotate(0deg) scaleX(1)    scaleY(1) }
+  100% { transform:translateY(0)    rotate(0deg) scaleX(1)     scaleY(1) }
 }
 @keyframes aparece{ from{opacity:0} to{opacity:1} }
 
@@ -832,7 +864,12 @@ body.cortina-arriba{overflow:hidden}
    de arriba. Los porcentajes son los aterrizajes reales sobre 2 s
    (0.44 → 22 %, 0.80 → 40 %, 1.06 → 53 %, 1.28 → 64 %, 1.46 → 73 %,
    1.72 → 86 %). */
-.burger{ animation:torre-golpes 2s linear forwards; will-change:transform }
+.burger{ animation:torre-golpes 2s linear forwards; will-change:transform;
+  /* contra el plato, no contra su propio centro: una torre se aplasta
+     desde el piso. Y al escalar padre e hijos juntos, los traslapes entre
+     capas se conservan — por eso el aplaste vertical vive AQUÍ y no en
+     cada capa. */
+  transform-origin:50% 100% }
 @keyframes torre-golpes{
   0%,20% { transform:none }
   22%    { transform:scaleX(1.018) scaleY(.974) }
