@@ -805,12 +805,20 @@ $('#bCrear').addEventListener('click', async () => {
   $('#bCrear').disabled = true;
   try{
     const r = await fetch('/api/puercos/codigo');
+    /* Si el servidor de salas todavía no está publicado, esta ruta devuelve
+       la página de 404 y no un código. Se dice CUÁL de las dos cosas pasó:
+       «revisa tu internet» cuando el problema es del otro lado sólo hace que
+       la gente le pique diez veces. */
+    if(!r.ok) throw new Error('sin servidor');
     const { codigo } = await r.json();
+    if(!codigo) throw new Error('sin servidor');
     $('#codigoTexto').textContent = codigo;
     $('#miCodigo').classList.remove('oculto');
     conectar(codigo);
   }catch(e){
-    avisoSala('No se pudo hacer el código. Revisa el internet.');
+    avisoSala('El modo de jugar a distancia todavía no está publicado. '
+            + 'Mientras tanto sí puedes jugar contra la máquina o de dos en '
+            + 'este teléfono.');
   }
   $('#bCrear').disabled = false;
 });

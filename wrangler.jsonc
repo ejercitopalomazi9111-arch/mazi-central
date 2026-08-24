@@ -22,20 +22,5 @@
     "directory": "dist",
     // una URL que no existe devuelve 404 de verdad, no la portada disfrazada
     "not_found_handling": "none"
-  },
-
-  // ── El worker · sólo para las salas de Guerra de Puercos ────────────────
-  // Antes no había ninguno y Cloudflare servía `dist/` directo. Sigue
-  // sirviéndolo: con `assets`, LOS ARCHIVOS VAN PRIMERO y el worker sólo ve
-  // las peticiones para las que no hay archivo. Por eso aquí NO va un binding
-  // `ASSETS` — se probó con uno y toda ruta con archivo devolvía 500, además
-  // de que era ponerle al worker un trabajo que ya estaba hecho.
-  "main": "worker.js",
-
-  // Un objeto por sala. SQLite porque es lo que está incluido en el plan
-  // gratis —los de key-value no—, igual que en el servidor de Fadori.
-  "durable_objects": {
-    "bindings": [{ "name": "SALA", "class_name": "Sala" }]
-  },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }]
+  }
 }
