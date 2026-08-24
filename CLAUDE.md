@@ -310,6 +310,9 @@ sin skill que la cubra, ahí sí se propone.
 | `fadori/pruebas-cortinilla.mjs` | **El metrónomo.** Rebobina la animación de la hamburguesa en un navegador y revisa el ritmo: que caiga acelerando, que la torre se apriete en cada aterrizaje y que el nombre entre en el golpe | ✅ 19/19 |
 | `fadori/presentacion/ver.sh` | **Los ojos para presentaciones.** `.pptx` → una imagen por lámina. LibreOffice **sí sirve** en el contenedor: sólo faltaba `libreoffice-impress` (venía nada más el core, por eso fallaba hasta con un `.txt`) | ✅ probada |
 | `fadori/presentacion/medir.py` | **El metro.** Renderiza y lee las coordenadas de cada palabra PINTADA: caza texto encimado, palabras partidas a media sílaba y texto fuera del papel. **La versión que medía cajas del XML daba ✓ mientras la presentación se veía rota** | ✅ 31 defectos cazados en la plantilla de la escuela |
+| `herramientas/acta.mjs` | **El acta legible.** Una auditoría o un veredicto → PDF con avatar, área y cargo de quien habla, el veredicto como sello y los 🔴🟠🟡⚪ como etiqueta. Sale un ARCHIVO: no abre el diálogo de imprimir | ✅ probada, 39/39 |
+| `herramientas/consejo.js` | **El censo.** Los 24 de la sala más el gato y el perro, más los 4 jueces, con su área y su color. Si entra alguien nuevo, se agrega aquí y en ningún otro lado | ✅ probada |
+| `juegos/guerra-de-puercos/motor.js` | **Las reglas del juego de la amiga de Carlos**, aparte de la pantalla y probadas contra los ejemplos de su propio reglamento | ✅ probada, 61/61 |
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
