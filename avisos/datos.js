@@ -72,10 +72,46 @@ const PLANTILLAS = [
     columnas:2, holgado:34 },
   { id:'lista',     nombre:'Lista',     que:'Un renglón por pendiente. Para los días de muchísimo.',
     columnas:2, holgado:999, compacta:true },
+
+  /* ── las otras siete ──────────────────────────────────────────────────
+     Carlos: «crea otras 7 plantillas diferentes para tener buena variedad».
+     No son siete pieles del mismo cartel: cada una cambia algo que se NOTA —
+     cuántas columnas, si va apretada, el color del papel y el de las bandas.
+     Un cartel que cambia se sigue mirando; uno idéntico todos los días deja de
+     verse a la semana. */
+  { id:'pizarron',  nombre:'Pizarrón',  que:'Fondo oscuro, letra clara. Se ve distinto de todo lo demás.',
+    columnas:1, holgado:12, papel:'#1A2230', tinta:'clara', bandas:['#B4232A','#2C4A6E'] },
+  { id:'gaceta',    nombre:'Gaceta',    que:'Tres columnas apretadas, como un periódico de verdad.',
+    columnas:3, holgado:60, compacta:true },
+  { id:'cuaderno',  nombre:'Cuaderno',  que:'Papel de libreta y bandas azules. Se siente escrito a mano.',
+    columnas:1, holgado:12, papel:'#FBFAF4', bandas:['#1E5083','#123A5E'] },
+  { id:'urgente',   nombre:'Urgente',   que:'Todo en rojo y apretado. Para el día antes de entregas.',
+    columnas:2, holgado:34, papel:'#FFF4F1', bandas:['#8C1C1C','#B4232A'] },
+  { id:'pizarra',   nombre:'Dos y media',que:'Dos columnas con tarjetas grandes. El punto medio.',
+    columnas:2, holgado:20, papel:'#F5F1E8' },
+  { id:'boleta',    nombre:'Boleta',    que:'Una sola columna angosta, como un recibo. Fácil de leer de corrido.',
+    columnas:1, holgado:16, compacta:true, papel:'#FFFDF6' },
+  { id:'mural',     nombre:'Mural',     que:'Cuatro columnas. Para pegar impreso en la pared del salón.',
+    columnas:4, holgado:80, compacta:true, papel:'#F7F3EA' },
+];
+
+/* ══ LAS TIPOGRAFÍAS ══════════════════════════════════════════════════════
+   Carlos: «pon que pueda cambiar la fuente aquí también» —la de Reportes ya lo
+   tenía—. Van las que existen en cualquier teléfono y computadora, no las
+   bonitas de internet: el cartel se convierte en IMAGEN en el aparato de
+   Carlos, así que si la tipografía no está instalada ahí, el navegador pone
+   otra y la imagen sale con la de repuesto sin avisar. */
+const FUENTES = [
+  { id:'sistema', nombre:'La del sistema',
+    fam:'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif' },
+  { id:'palo',    nombre:'Palo seco (Arial)', fam:'Arial,"Liberation Sans",Helvetica,sans-serif' },
+  { id:'serif',   nombre:'Con remates (Georgia)', fam:'Georgia,"Times New Roman",serif' },
+  { id:'estrecha',nombre:'Estrecha', fam:'"Arial Narrow","Liberation Sans Narrow",Arial,sans-serif' },
+  { id:'maquina', nombre:'De máquina', fam:'"Courier New",Courier,monospace' },
 ];
 
 const DIAS   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const MESES  = ['enero','febrero','marzo','abril','mayo','junio','julio',
                 'agosto','septiembre','octubre','noviembre','diciembre'];
 
-if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS, CUANDOS, DESTACADO, PLANTILLAS, DIAS, MESES };
+if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS, CUANDOS, DESTACADO, PLANTILLAS, FUENTES, DIAS, MESES };

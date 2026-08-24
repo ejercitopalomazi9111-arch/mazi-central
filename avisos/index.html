@@ -131,6 +131,11 @@
     <label for="fPlantilla">Formato del cartel</label>
     <select id="fPlantilla"></select>
     <p class="nota" id="quePlantilla"></p>
+    <label for="fFuente">Tipografía</label>
+    <select id="fFuente"></select>
+    <p class="nota">Sólo van las que existen en cualquier aparato. El cartel se
+      convierte en imagen aquí mismo, así que una tipografía de internet saldría
+      cambiada sin avisar.</p>
   </div>
   <div class="aviso-caja" id="consejo" hidden></div>
 
@@ -181,9 +186,9 @@ function hoyISO(){
   return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
 }
 let D = { fecha: hoyISO(), grupo:'3.1', semestre:'3er semestre',
-          plantilla:'tablero', pendientes:[] };
+          plantilla:'tablero', fuente:'sistema', pendientes:[] };
 try{ const g = JSON.parse(localStorage.getItem(LLAVE));
-     if(g && g.pendientes) D = Object.assign({ plantilla:'tablero' }, g); }catch(e){}
+     if(g && g.pendientes) D = Object.assign({ plantilla:'tablero', fuente:'sistema' }, g); }catch(e){}
 function guardar(){ try{ localStorage.setItem(LLAVE, JSON.stringify(D)); }catch(e){} }
 
 const materia = id => MATERIAS.find(m => m.id === id) || MATERIAS[MATERIAS.length-1];
@@ -307,6 +312,11 @@ $('#fPlantilla').innerHTML = PLANTILLAS
 $('#fPlantilla').addEventListener('change', () => {
   D.plantilla = $('#fPlantilla').value; guardar(); describePlantilla(); dibujar();
 });
+$('#fFuente').innerHTML = FUENTES
+  .map(f => '<option value="' + f.id + '">' + f.nombre + '</option>').join('');
+$('#fFuente').addEventListener('change', () => {
+  D.fuente = $('#fFuente').value; guardar(); dibujar();
+});
 function describePlantilla(){
   const x = PLANTILLAS.find(z => z.id === D.plantilla) || PLANTILLAS[0];
   $('#quePlantilla').textContent = x.que;
@@ -387,7 +397,67 @@ function caja(ctx, x, y, w, h, r, relleno, borde){
   if(borde){ ctx.strokeStyle = borde; ctx.lineWidth = 1.5; ctx.stroke(); }
 }
 
-const F = (peso, tam) => peso + ' ' + tam + 'px ' + getComputedStyle(document.body).fontFamily;
+/* La familia tipográfica del CARTEL, que no es la de la pantalla: Carlos la
+   escoge y la imagen tiene que salir con ésa. */
+function familia(){
+  return (FUENTES.find(f => f.id === D.fuente) || FUENTES[0]).fam;
+}
+const F = (peso, tam) => peso + ' ' + tam + 'px ' + familia();
+
+/* La piel de la plantilla en UN SOLO LUGAR. Antes los colores estaban regados
+   por el dibujo, y agregar una plantilla obligaba a tocar seis sitios. */
+function piel(){
+  const p = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  const oscuro = p.tinta === 'clara';
+  const bandas = p.bandas || ['#7C1D24', '#123A5E'];
+  return {
+    plantilla:p, oscuro,
+    papel:   p.papel || '#FAF4EA',
+    tarjeta: oscuro ? '#232C3C' : '#FFFDF8',
+    borde:   oscuro ? '#334054' : '#E6DCCB',
+    tinta:   oscuro ? '#F2F5FA' : '#241A14',
+    suave:   oscuro ? 'rgba(242,245,250,.82)' : '#4A3B30',
+    chica:   oscuro ? 'rgba(242,245,250,.66)' : '#6B5A4A',
+    urgente: bandas[0], calma: bandas[1],
+    destacada: oscuro ? '#3A1418' : '#5A1319',
+    /* Cada materia tiñe MUY POCO su tarjeta —un 9 %— y colorea su orilla.
+       Carlos: «que según la materia tenga un color un poco diferente el
+       recuadro». Poco a propósito: si el tinte pesa, seis tarjetas seguidas
+       parecen un arcoíris y deja de leerse cuál importa. */
+    tinte: (color) => mezclar(color, oscuro ? '#232C3C' : '#FFFDF8', oscuro ? .16 : .09),
+    /* El color de la materia SIRVE PARA PAPEL CLARO. Sobre una tarjeta oscura,
+       «GEOMETRÍA» en azul marino sobre azul marino no se lee — se vio en la
+       primera plantilla oscura. Aquí se aclara hasta que pase 4.5:1 contra la
+       tarjeta, en vez de confiar en que se vea. */
+    acento: function(color){
+      const fondo = oscuro ? mezclar(color, '#232C3C', .16) : '#FFFDF8';
+      let c = color;
+      for(let k = 0; k < 12 && contraste(c, fondo) < 4.5; k++)
+        c = mezclar('#FFFFFF', c, .12 * (k + 1));
+      return c;
+    },
+  };
+}
+
+/* Contraste WCAG. Se usa para decidir, no para decorar. */
+function luminancia(h){
+  const c = [1,3,5].map(i => parseInt(h.slice(i, i+2), 16) / 255)
+    .map(v => v <= .03928 ? v/12.92 : Math.pow((v + .055)/1.055, 2.4));
+  return .2126*c[0] + .7152*c[1] + .0722*c[2];
+}
+function contraste(a, b){
+  const x = luminancia(a), y = luminancia(b);
+  return (Math.max(x,y) + .05) / (Math.min(x,y) + .05);
+}
+
+/* Mezcla dos colores. Hace falta porque el canvas no entiende `color-mix()`. */
+function mezclar(a, b, cuanto){
+  const n = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+  const [r1,g1,b1] = n(a), [r2,g2,b2] = n(b);
+  const m = (x,y) => Math.round(y + (x - y) * cuanto);
+  return '#' + [m(r1,r2), m(g1,g2), m(b1,b2)]
+    .map(v => v.toString(16).padStart(2,'0')).join('');
+}
 
 /* Compone el aviso. Se corre DOS veces: la primera sólo mide (pintar=false)
    para saber qué alto necesita el lienzo, la segunda dibuja. Sin la pasada de
@@ -478,15 +548,16 @@ function bloqueRenglon(ctx0, p){
     alto: (w) => medir(w).alto,
     pinta: (ctx, x, y, w) => {
       const q = medir(w);
-      const D_ = !!p.destacado;
-      caja(ctx, x, y, w, q.alto, 10, D_ ? m.color : '#FFFDF8', D_ ? m.color : '#EDE4D6');
-      iconoCanvas(ctx, m.icono, x + 12, y + 12, 24, D_ ? '#FFF6EC' : m.color, 2);
+      const D_ = !!p.destacado, P = piel();
+      caja(ctx, x, y, w, q.alto, 10,
+           D_ ? m.color : P.tinte(m.color), D_ ? m.color : m.color + '55');
+      iconoCanvas(ctx, m.icono, x + 12, y + 12, 24, D_ ? '#FFF6EC' : P.acento(m.color), 2);
       let ty = y + 13 + 20;
       for(const linea of q.lineas){
         for(const t2 of linea){
           ctx.font = t2.fuente;
-          ctx.fillStyle = t2.fuerte ? (D_ ? '#FFF6EC' : '#241A14')
-                                    : (D_ ? 'rgba(255,246,236,.85)' : '#5A4A3C');
+          ctx.fillStyle = t2.fuerte ? (D_ ? '#FFF6EC' : P.tinta)
+                                    : (D_ ? 'rgba(255,246,236,.85)' : P.suave);
           ctx.fillText(t2.texto, x + 46 + t2.x, ty);
         }
         ty += 28;
@@ -518,7 +589,8 @@ function bloquesDe(ctx, compacta){
     if(b !== bloqueActual){
       bloqueActual = b;
       const c = b === 'destacado' ? DESTACADO : (CUANDOS.find(x => x.id === b) || CUANDOS[3]);
-      const fondo = b === 'destacado' ? '#5A1319' : (c.urgente ? '#7C1D24' : '#123A5E');
+      const P = piel();
+      const fondo = b === 'destacado' ? P.destacada : (c.urgente ? P.urgente : P.calma);
       out.push(bloqueBanda(c.nombre, fondo, compacta));
     }
     out.push(compacta ? bloqueRenglon(ctx, p) : bloqueFicha(ctx, p));
@@ -569,7 +641,7 @@ function componer(ctx, pintar, columnas){
   /* ── el encabezado ── */
   const altoCab = 168;
   if(pintar){
-    caja(ctx, 0, 0, ANCHO, altoCab, 0, '#7C1D24');
+    caja(ctx, 0, 0, ANCHO, altoCab, 0, piel().urgente);
     if(escudo.complete && escudo.naturalWidth) ctx.drawImage(escudo, M, 28, 112, 112);
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = 'rgba(255,246,236,.82)';
@@ -588,10 +660,11 @@ function componer(ctx, pintar, columnas){
   /* ── la fila de la fecha ── */
   const altoFila = 66;
   if(pintar){
-    caja(ctx, 0, y, ANCHO, altoFila, 0, '#FFF3E2');
-    ctx.fillStyle = '#5A1319'; ctx.font = F(800, 25);
+    const Pf = piel();
+    caja(ctx, 0, y, ANCHO, altoFila, 0, mezclar(Pf.urgente, Pf.papel, .10));
+    ctx.fillStyle = Pf.oscuro ? '#F2F5FA' : Pf.destacada; ctx.font = F(800, 25);
     ctx.fillText(fechaLarga(D.fecha), M, y + 43);
-    ctx.textAlign = 'right'; ctx.fillStyle = '#7C1D24'; ctx.font = F(800, 23);
+    ctx.textAlign = 'right'; ctx.fillStyle = Pf.oscuro ? '#BFD4EA' : Pf.urgente; ctx.font = F(800, 23);
     ctx.fillText('Grupo ' + D.grupo + '  ·  ' + D.semestre, ANCHO - M, y + 43);
     ctx.textAlign = 'left';
   }
@@ -617,7 +690,7 @@ function componer(ctx, pintar, columnas){
 
   if(!bloques.length){
     if(pintar){
-      ctx.fillStyle = '#6B5A4A'; ctx.font = F(600, 26); ctx.textAlign = 'center';
+      ctx.fillStyle = piel().chica; ctx.font = F(600, 26); ctx.textAlign = 'center';
       ctx.fillText('Sin pendientes por hoy.', ANCHO/2, y + 50);
       ctx.textAlign = 'left';
     }
@@ -627,7 +700,7 @@ function componer(ctx, pintar, columnas){
   /* ── el pie ── */
   y += 14;
   if(pintar){
-    caja(ctx, 0, y, ANCHO, 62, 0, '#7C1D24');
+    caja(ctx, 0, y, ANCHO, 62, 0, piel().urgente);
     ctx.fillStyle = 'rgba(255,246,236,.9)'; ctx.font = F(800, 20);
     ctx.textAlign = 'center'; ctx.letterSpacing = '3px';
     ctx.fillText('RESPETO · CULTURA · HONOR', ANCHO/2, y + 39);
@@ -689,12 +762,16 @@ function ficha(ctx, p, x, y, w, pintar){
     /* Una ficha destacada se pinta A COLOR ENTERO, no sólo se sube de lugar.
        Si sólo cambiara de posición, en un aviso de doce pendientes nadie
        notaría cuál es el importante. */
-    const D_ = !!p.destacado;
-    const tintaFuerte = D_ ? '#FFF6EC' : '#241A14';
-    const tintaSuave  = D_ ? 'rgba(255,246,236,.88)' : '#4A3B30';
-    const tintaChica  = D_ ? 'rgba(255,246,236,.78)' : '#6B5A4A';
+    const D_ = !!p.destacado, P = piel();
+    const tintaFuerte = D_ ? '#FFF6EC' : P.tinta;
+    const tintaSuave  = D_ ? 'rgba(255,246,236,.88)' : P.suave;
+    const tintaChica  = D_ ? 'rgba(255,246,236,.78)' : P.chica;
 
-    caja(ctx, x, y, w, alto, 14, D_ ? m.color : '#FFFDF8', D_ ? m.color : '#E6DCCB');
+    /* El recuadro se tiñe con el color de su materia y su orilla lo lleva más
+       marcado. Es lo que pidió Carlos, y de paso deja encontrar la materia sin
+       leer el rótulo. */
+    caja(ctx, x, y, w, alto, 14,
+         D_ ? m.color : P.tinte(m.color), D_ ? m.color : m.color + '55');
     if(!D_){
       ctx.save();
       ctx.beginPath();
@@ -704,10 +781,11 @@ function ficha(ctx, p, x, y, w, pintar){
       ctx.restore();
     }
 
-    caja(ctx, x + pad, y + pad - 2, 50, 50, 12, D_ ? 'rgba(255,246,236,.18)' : m.color + '1F');
-    iconoCanvas(ctx, m.icono, x + pad + 10, y + pad + 8, 30, D_ ? '#FFF6EC' : m.color, 2);
+    caja(ctx, x + pad, y + pad - 2, 50, 50, 12,
+         D_ ? 'rgba(255,246,236,.18)' : mezclar(m.color, P.tinte(m.color), .16));
+    iconoCanvas(ctx, m.icono, x + pad + 10, y + pad + 8, 30, D_ ? '#FFF6EC' : P.acento(m.color), 2);
 
-    ctx.fillStyle = D_ ? 'rgba(255,246,236,.92)' : m.color; ctx.font = F(800, 22);
+    ctx.fillStyle = D_ ? 'rgba(255,246,236,.92)' : P.acento(m.color); ctx.font = F(800, 22);
     ctx.fillText(m.corto.toUpperCase(), x + sangria, y + pad + 20);
     ctx.fillStyle = tintaChica; ctx.font = F(700, 20);
     if(dosRenglones){
@@ -730,7 +808,7 @@ function ficha(ctx, p, x, y, w, pintar){
     for(const ls of renglones){
       for(let i = 0; i < ls.length; i++){
         if(i === 0){
-          ctx.fillStyle = D_ ? 'rgba(255,246,236,.75)' : m.color;
+          ctx.fillStyle = D_ ? 'rgba(255,246,236,.75)' : P.acento(m.color);
           ctx.beginPath(); ctx.arc(x + sangria + 6, ty - 8, 4.5, 0, Math.PI*2); ctx.fill();
         }
         ctx.fillStyle = tintaSuave;
@@ -768,7 +846,7 @@ function dibujar(){
   c.width = Math.round(ANCHO * ESC); c.height = Math.round(alto * ESC);
   const g = c.getContext('2d');
   g.setTransform(ESC, 0, 0, ESC, 0, 0);
-  g.fillStyle = '#FAF4EA'; g.fillRect(0, 0, ANCHO, alto);
+  g.fillStyle = piel().papel; g.fillRect(0, 0, ANCHO, alto);
   componer(g, true, cols);
   consejoPlantilla(cols);
 }
@@ -1015,6 +1093,60 @@ function pruebas(){
        ls.every(l => g.measureText(l).width <= 300 + 1));
   })();
 
+  /* ── las diez plantillas y los colores en todas ── */
+  ok('hay diez plantillas', PLANTILLAS.length === 10);
+  ok('ningún id de plantilla repetido',
+     new Set(PLANTILLAS.map(x => x.id)).size === PLANTILLAS.length);
+  ok('todas dicen para qué sirven y cuántas columnas llevan',
+     PLANTILLAS.every(x => x.que && x.columnas >= 1 && x.holgado > 0));
+  ok('no son la misma con otro nombre', (function(){
+     /* que de verdad se distingan: columnas, apretado o papel */
+     const huellas = new Set(PLANTILLAS.map(x =>
+       [x.columnas, !!x.compacta, x.papel || '', (x.bandas||[]).join('')].join('|')));
+     return huellas.size >= 8;
+  })());
+
+  /* El color de la materia se usa como TEXTO. En papel claro pasaba; en una
+     plantilla oscura «GEOMETRÍA» en azul marino sobre azul marino no se leía.
+     Esto lo mide en las DIEZ, no en una. */
+  (function(){
+    const antes = D.plantilla;
+    const flojos = [];
+    for(const pl of PLANTILLAS){
+      D.plantilla = pl.id;
+      const P = piel();
+      for(const m of MATERIAS){
+        const fondo = P.oscuro ? mezclar(m.color, '#232C3C', .16) : '#FFFDF8';
+        if(contraste(P.acento(m.color), fondo) < 4.5) flojos.push(pl.id + '/' + m.corto);
+      }
+    }
+    D.plantilla = antes;
+    ok('el nombre de la materia se lee en las diez plantillas', flojos.length === 0);
+    if(flojos.length) console.error('   flojos:', flojos.slice(0,8));
+  })();
+
+  /* ── la tipografía ── */
+  ok('se puede cambiar la tipografía', FUENTES.length >= 4);
+  ok('todas las tipografías existen en cualquier aparato',
+     FUENTES.every(f => !/https?:|@import|fonts\.google/.test(f.fam)));
+  ok('la fuente elegida es la que usa el dibujo', (function(){
+     const antes = D.fuente; D.fuente = 'maquina';
+     const usa = /Courier/.test(F(800, 20));
+     D.fuente = antes; return usa;
+  })());
+
+  /* ── el tinte por materia ── */
+  ok('cada materia tiñe distinto su recuadro', (function(){
+     const P = piel();
+     const tonos = new Set(MATERIAS.map(m => P.tinte(m.color)));
+     return tonos.size >= 6;
+  })());
+  ok('pero el tinte es SUAVE, no un arcoíris', (function(){
+     const P = piel();
+     /* el recuadro teñido tiene que seguir pareciéndose al papel */
+     return MATERIAS.every(m => contraste(P.tinte(m.color), P.papel) < 1.35);
+  })());
+
   /* ── que se alcance con el dedo ── */
   /* Ya me pasó en Ligas Mazi: campos de 36 px que nadie atina. Aquí se mide,
      no se confía. */
@@ -1047,6 +1179,7 @@ $('#fFecha').value = D.fecha;
 $('#fGrupo').value = D.grupo;
 $('#fSemestre').value = D.semestre;
 $('#fPlantilla').value = D.plantilla;
+$('#fFuente').value = D.fuente || 'sistema';
 describePlantilla();
 pintarLista();
 escudo.onload = dibujar;

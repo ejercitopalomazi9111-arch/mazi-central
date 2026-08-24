@@ -96,7 +96,7 @@ de descarga a veces no hace nada, así que además se enseña la imagen:
 manteniéndola apretada se guarda o se comparte, y esa vía funciona en todos
 lados.
 
-## Tres plantillas, porque no todos los días son iguales
+## Diez plantillas, porque no todos los días son iguales
 
 Carlos hace avisos de cinco pendientes y avisos de sesenta. **No se leen igual.**
 Y mandar el mismo cartel idéntico todos los días hace que la gente deje de
@@ -104,13 +104,42 @@ mirarlo.
 
 | Plantilla | Cómo es | Aguanta |
 |---|---|---|
-| **Tablero** | Tarjetas grandes, una columna | hasta ~12 |
-| **Periódico** | Dos columnas, más apretado | hasta ~34 |
-| **Lista** | Un renglón por pendiente, dos columnas | los días de muchísimo |
+| **Tablero** | Tarjetas grandes, una columna | ~12 |
+| **Periódico** | Dos columnas | ~34 |
+| **Lista** | Un renglón por pendiente | los días de muchísimo |
+| **Pizarrón** | Fondo oscuro, letra clara | ~12 |
+| **Gaceta** | Tres columnas apretadas | ~60 |
+| **Cuaderno** | Papel de libreta, bandas azules | ~12 |
+| **Urgente** | Todo en rojo, apretado | ~34 |
+| **Dos y media** | Dos columnas con tarjetas grandes | ~20 |
+| **Boleta** | Una columna angosta, como un recibo | ~16 |
+| **Mural** | Cuatro columnas, para pegar en la pared | ~80 |
 
-Con 60 pendientes: Tablero sale de **21 834 px** de alto, Periódico de 12 726 y
-Lista de 5 680. La herramienta **sugiere** la que conviene según cuántos haya,
-con un botón para cambiar — sugiere, no obliga.
+**No son diez pieles del mismo cartel:** cada una cambia algo que se nota —
+columnas, si va apretada, el color del papel, el de las bandas. Hay una prueba
+que lo mide: si dos plantillas acaban con la misma huella, falla.
+
+## Tipografía
+
+Cinco, y **sólo las que existen en cualquier aparato**. El cartel se convierte
+en imagen en el teléfono de Carlos, así que una tipografía de internet saldría
+cambiada por otra sin avisar. Hay una prueba que rechaza cualquier familia que
+apunte a un servidor.
+
+## El color del recuadro
+
+Cada materia **tiñe su tarjeta un 9 %** y colorea su orilla. Poco a propósito:
+si el tinte pesa, seis tarjetas seguidas parecen un arcoíris y deja de leerse
+cuál importa. Hay dos pruebas — que los tintes sean distintos entre sí, y que
+cada uno siga pareciéndose al papel (contraste menor a 1.35).
+
+## Un defecto que sólo salió con la plantilla oscura
+
+Los colores de materia están hechos **para papel claro**. En «Pizarrón»,
+«GEOMETRÍA» en azul marino sobre una tarjeta azul marino **no se leía**. Ahora
+el color se aclara automáticamente hasta pasar 4.5:1 contra el fondo que le
+toca, y la prueba lo mide en **las diez plantillas × las dieciséis materias**,
+no en una.
 
 ## Crece en todas direcciones, no sólo hacia abajo
 
@@ -175,7 +204,7 @@ los dos se ve a ojo; salieron midiendo, y ahora hay una prueba que los mide.
 
 ## Pruebas
 
-41, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
+51, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
 el orden del periódico ponga lo de mañana primero, que ningún renglón se salga
 de su tarjeta —eso no se ve hasta que el aviso ya se mandó—, que la imagen
 crezca con el contenido, que las fechas salgan en español y que **ningún
