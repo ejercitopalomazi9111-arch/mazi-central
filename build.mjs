@@ -37,7 +37,10 @@ const VA = [
    trabajo de otros sin cumplir lo único que pidieron a cambio. */
 const NO_VA = (ruta) => {
   const f = ruta.split('/').pop();
-  if(f === 'CREDITOS.md') return false;          /* ← la excepción que importa */
+  if(f === 'CREDITOS.md') return false;
+  /* Los perfiles de las credenciales SÍ se publican: son justamente lo que el
+     QR va a buscar. El .md de esa carpeta no. */
+  if(/\.json$/i.test(f) && /credencial\/datos/.test(ruta)) return false;          /* ← la excepción que importa */
   if(/\.md$/i.test(f)) return true;
   if(f === '.DS_Store') return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;

@@ -745,6 +745,14 @@ El día ...
     <label class="campo"><span>Otras acreditaciones <small style="color:var(--tenue)">(una por renglón)</small></span>
       <textarea id="cOtras" style="min-height:88px; font-family:inherit"
         placeholder="TASK FORCE MEX 1&#10;TÉC. EXTRAC- VEHICULAR&#10;RESCATE K-9"></textarea></label>
+    <label class="campo"><span>Habilidades, certificaciones y cursos
+      <small style="color:var(--tenue)">(una por renglón · van en el QR, no en la credencial)</small></span>
+      <textarea id="cHabilidades" style="min-height:130px; font-family:inherit"
+        placeholder="TUM Básico (CRUM Querétaro, 2023)&#10;RCP y DEA para profesionales (AHA BLS, 2026)&#10;Atención Prehospitalaria del Trauma (PHTLS, 2025)"></textarea></label>
+    <p class="aviso" id="avisoQR" style="margin-top:10px"></p>
+    <div class="chips">
+      <button class="chip" type="button" id="cPublicar">Preparar el archivo para publicar</button>
+    </div>
     <div class="chips">
       <button class="chip" type="button" id="cFoto">Poner la foto</button>
       <button class="chip" type="button" id="cQuitarFoto">Quitar la foto</button>
@@ -1030,6 +1038,10 @@ El día ...
 <div class="velo" id="velo" hidden></div>
 <div class="hojita" id="hojita" hidden></div>
 
+<!-- El generador de QR, copiado al repo con su licencia MIT. Va ANTES del
+     script principal a propósito: si va después, la primera pintada de las
+     credenciales ocurre sin él y salen sin QR hasta que algo las repinte. -->
+<script src="credencial/vendor/qrcode.min.js"></script>
 <script>
 "use strict";
 
@@ -2272,7 +2284,7 @@ let credActiva = 0;
 
 function credNueva(){
   return { id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    apellidos:'', nombres:'', nivel:'', empleado:'', num:'', acred:'', otras:'', foto:'',
+    apellidos:'', nombres:'', nivel:'', empleado:'', num:'', acred:'', otras:'', habilidades:'', foto:'',
     sangre:'', alergias:'', tel:'', familiar:'', inicio:'', vence:'' };
 }
 function cargarCred(){
@@ -2325,6 +2337,76 @@ const ICONO = {
   silueta:'<path d="M12 12.5a5.2 5.2 0 100-10.4 5.2 5.2 0 000 10.4zM3.4 24c0-5.4 3.9-9.1 8.6-9.1s8.6 3.7 8.6 9.1z"/>',
 };
 const svg = (n, extra) => '<svg viewBox="0 0 24 24" aria-hidden="true"'+(extra||'')+'>'+ICONO[n]+'</svg>';
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EL QR DE LAS HABILIDADES
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «hay paramédicos que tienen un chingo de habilidades y la credencial
+   tolera 3 a la vez».
+
+   POR QUÉ EL QR NO LLEVA LOS DATOS ADENTRO — que era lo limpio, sin publicar
+   nada. Está medido: un perfil real con 18 certificaciones pesa 1 035 bytes;
+   comprimido 604; en base64, 806 caracteres. Eso es un QR de versión 24, o sea
+   113 × 113 módulos. Impreso a 22 mm —lo más grande que cabe en una credencial
+   de 63.5 mm— sale a 0.18 mm por módulo, y un teléfono necesita ~0.4. Se ve
+   bonito y NO ESCANEA.
+
+   Con la dirección corta el QR baja a versión 5, 37 × 37, y a 18 mm da
+   0.40 mm por módulo. Ésa sí. Por eso los datos viven en el sitio y el QR
+   nada más lleva el folio.
+
+   El generador está copiado en `credencial/vendor/` con su licencia MIT: es
+   open source corriendo en nuestra máquina, no un servicio del que dependamos
+   (regla §2). Hace falta en el navegador porque cada credencial lleva un folio
+   distinto y se arman en el teléfono de Carlos.
+   ═════════════════════════════════════════════════════════════════════════ */
+const QRS = {};                       /* folio → imagen, para no regenerarla */
+
+/* El folio es el número de empleado. Si no hay, no hay QR: un QR que lleva a
+   una página vacía es peor que no tener QR. */
+function folioCred(c){
+  return String(c.num || c.empleado || '').trim().replace(/\s+/g, '-');
+}
+function habilidadesDe(c){
+  return String(c.habilidades || '').split('\n').map(x => x.trim()).filter(Boolean);
+}
+function urlHabilidades(folio){
+  return new URL('credencial/#' + encodeURIComponent(folio), location.href).href;
+}
+function llevaQR(c){ return !!folioCred(c) && habilidadesDe(c).length > 0; }
+
+async function prepararQRs(){
+  if(typeof QRCode === 'undefined') return;
+  for(const c of CRED.gente){
+    if(!llevaQR(c)) continue;
+    const f = folioCred(c);
+    if(QRS[f]) continue;
+    try{
+      QRS[f] = await QRCode.toDataURL(urlHabilidades(f), {
+        errorCorrectionLevel:'M', margin:2, width:640,
+        color:{ dark:'#0A2440', light:'#FFFFFF' } });
+    }catch(e){ /* si truena, la credencial sale con el QR de siempre */ }
+  }
+}
+
+/* El archivo que Carlos sube a mano. NO se publica nada solo: son datos de
+   otras personas y esa decisión es suya. */
+function archivoDe(c){
+  const nombre = [c.nombres, c.apellidos].filter(Boolean).join(' ').trim();
+  /* `MES` de las otras funciones es local de cada una, no global: aquí va su
+     propia lista en vez de alcanzar una variable que no existe en este ámbito. */
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+                 'septiembre','octubre','noviembre','diciembre'];
+  const hoy = new Date();
+  return {
+    nombre, cargo: c.acred || c.nivel || '', acred: c.acred || '', nivel: c.nivel || '',
+    vigencia: [c.inicio, c.vence].filter(Boolean).join(' — '),
+    sangre: c.sangre || '', alergias: c.alergias || '',
+    tel: c.tel || '', familiar: c.familiar || '',
+    habilidades: habilidadesDe(c),
+    actualizado: hoy.getDate() + ' de ' + MESES[hoy.getMonth()] + ' de ' + hoy.getFullYear(),
+  };
+}
 
 /* ── el frente ── */
 function credFrente(c){
@@ -2415,8 +2497,13 @@ function credReverso(c){
         '<div class="lado">'+
           /* el código que mandó Carlos ya trae la arroba dentro de la imagen,
              así que no se repite abajo */
-          '<div class="qr">'+ (b.qr ? '<img src="'+b.qr+'" alt="">'
-              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div>'+
+          /* El QR personal MANDA sobre el de la marca: la credencial es de una
+             persona, y sus certificaciones pesan más que un enlace a Instagram.
+             Si no tiene folio o no tiene habilidades cargadas, se queda el de
+             siempre. */
+          '<div class="qr">'+ (QRS[folioCred(c)] ? '<img src="'+QRS[folioCred(c)]+'" alt="">'
+              : (b.qr ? '<img src="'+b.qr+'" alt="">'
+              : '<span class="falta">Pon aquí<br>el QR</span>')) +'</div>'+
         '</div>'+
       '</div>'+
       '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
@@ -2427,6 +2514,7 @@ function credReverso(c){
 /* ── la pantalla de credenciales ── */
 const CAMPOS_CRED = [['#cApellidos','apellidos'],['#cNombres','nombres'],['#cNivel','nivel'],
   ['#cEmpleado','empleado'],['#cNum','num'],['#cAcred','acred'],['#cOtras','otras'],
+  ['#cHabilidades','habilidades'],
   ['#cSangre','sangre'],['#cAlergias','alergias'],['#cTel','tel'],['#cFamiliar','familiar'],
   ['#cInicio','inicio'],['#cVence','vence']];
 const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda'],['#cFuente','fuente']];
@@ -2438,8 +2526,37 @@ const AVISO_ACOMODO = {
         'Conviene cuando son muchas y la impresora imprime por los dos lados.',
 };
 
+/* Qué decirle sobre el QR de esta persona, en el momento en que estorba. */
+function avisarQR(c){
+  const caja = $('#avisoQR'); if(!caja) return;
+  const f = folioCred(c), h = habilidadesDe(c).length;
+  if(!h){
+    caja.className = 'aviso';
+    caja.innerHTML = 'Escribe aquí <b>todas</b> sus certificaciones. En la credencial ' +
+      'siguen saliendo sólo las de arriba; el QR del reverso lleva a la lista completa.';
+  } else if(!f){
+    caja.className = 'aviso mal';
+    caja.innerHTML = '<b>Falta el número de empleado.</b> El QR usa ese número como folio, ' +
+      'y sin él no se puede armar. Llénalo arriba y el QR aparece solo.';
+  } else {
+    caja.className = 'aviso';
+    caja.innerHTML = '<b>' + h + (h === 1 ? ' certificación' : ' certificaciones') +
+      '</b> en el QR del reverso, con folio <b>' + esc(f) + '</b>. ' +
+      'Falta subir su archivo a <code>reportes/credencial/datos/</code> — ' +
+      'hasta entonces el QR abre una página que dice que no está publicada.';
+  }
+}
+
 function pintarCred(){
   const c = cAct(), b = CRED.base;
+  avisarQR(c);
+  prepararQRs().then(() => {
+    /* Si acababa de generarse un QR que no existía, se repinta UNA vez.
+       Sin la condición se llamaría a sí misma para siempre. */
+    if(llevaQR(c) && QRS[folioCred(c)] && !$('#mesaCred').dataset.conQR){
+      $('#mesaCred').dataset.conQR = '1'; pintarCred();
+    }
+  });
   $('#cuentaCred').textContent = CRED.gente.length +
     (CRED.gente.length===1 ? ' credencial' : ' credenciales');
   $('#listaCred').innerHTML = CRED.gente.map((g,k) =>
@@ -2684,6 +2801,21 @@ function avisarSiNoSePuedeImprimir(donde){
    las credenciales. */
 avisarSiNoSePuedeImprimir(document.querySelector('#cImprimir') &&
                           document.querySelector('#cImprimir').parentNode);
+
+/* Bajar el archivo de esta persona para subirlo al sitio. Se descarga, no se
+   publica: son datos de alguien más y la decisión es de Carlos. */
+$('#cPublicar').addEventListener('click', () => {
+  const c = cAct(); const f = folioCred(c);
+  if(!f){ alert('Primero ponle el número de empleado: ése es el folio del QR.'); return; }
+  if(!habilidadesDe(c).length){ alert('No tiene ninguna habilidad escrita todavía.'); return; }
+  const blob = new Blob([JSON.stringify(archivoDe(c), null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = f + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  nota('Bajó <b>' + esc(f) + '.json</b>. Súbelo a <code>reportes/credencial/datos/</code> ' +
+       'y el QR ya abrirá su lista.');
+});
 
 $('#cImprimir').addEventListener('click', () => imprimirCredenciales(false));
 $('#cSoloEsta').addEventListener('click', () => imprimirCredenciales(true));
@@ -3197,6 +3329,31 @@ repintar();
 (function pruebas(){
   const P = [];
   const ok = (n,c)=> P.push((c?'✓':'✗')+' '+n) && c;
+
+  /* El QR de habilidades. Carlos: «hay paramédicos con un chingo de
+     habilidades y la credencial tolera 3». */
+  ok('el generador de QR está copiado en el repo, no se pide a un CDN',
+     typeof QRCode !== 'undefined');
+  ok('el folio sale del número de empleado',
+     folioCred({ num:'ACC-2026-0184' }) === 'ACC-2026-0184');
+  ok('sin número de empleado no hay folio, y por tanto no hay QR',
+     folioCred({ num:'', empleado:'' }) === '' &&
+     llevaQR({ num:'', habilidades:'una\ndos' }) === false);
+  ok('sin habilidades tampoco se pone QR, para no mandar a una página vacía',
+     llevaQR({ num:'X-1', habilidades:'' }) === false);
+  ok('con folio y habilidades sí lleva QR',
+     llevaQR({ num:'X-1', habilidades:'una\ndos' }) === true);
+  ok('las habilidades se parten por renglón',
+     habilidadesDe({ habilidades:' una \n\n dos \n' }).length === 2);
+  /* Lo que hizo falta medir: un perfil entero NO cabe en un QR de credencial.
+     Se deja escrito como prueba para que nadie lo intente otra vez. */
+  ok('la dirección del QR es corta, que es lo único que escanea a 18 mm',
+     urlHabilidades('ACC-2026-0184').length < 120);
+  ok('el archivo que se exporta lleva todas las habilidades',
+     archivoDe({ num:'X-1', nombres:'Ana', apellidos:'Ruiz',
+                 habilidades:'una\ndos\ntres' }).habilidades.length === 3);
+  ok('y no inventa campos vacíos',
+     archivoDe({ num:'X-1', nombres:'Ana', apellidos:'Ruiz', habilidades:'una' }).sangre === '');
   /* La fecha. Carlos abrió la herramienta un lunes 24 y el campo decía 22 ago:
      al arrancar se retoma el último reporte y su fecha pisa la de hoy.
 
