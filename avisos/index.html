@@ -84,6 +84,8 @@
     padding:8px 12px; font-size:14px; color:var(--tinta); cursor:pointer;
   }
   .marca-caja input{width:24px; height:24px; min-height:24px; flex:0 0 auto; margin:0; accent-color:var(--vino)}
+  .marca-caja.fijar{background:#EEF3F8; border-color:var(--marino-vivo)}
+  .marca-caja.fijar input{accent-color:var(--marino)}
   .pend{border-left:5px solid var(--vino)}
   .pend-cab{display:flex; align-items:center; gap:10px; margin-bottom:4px}
   .pend-cab svg{width:22px; height:22px; flex:0 0 auto}
@@ -96,6 +98,15 @@
   }
   #salida img{width:100%; height:auto; border-radius:12px; display:block; border:1px solid var(--linea)}
   .nota{font-size:13px; color:var(--tenue); line-height:1.5; margin:8px 0 0}
+  #mensajito{
+    position:fixed; left:50%; transform:translate(-50%, 20px);
+    bottom:calc(18px + env(safe-area-inset-bottom)); z-index:50;
+    background:var(--tinta); color:#FFF6EC; padding:13px 20px; border-radius:999px;
+    font-size:14px; font-weight:700; max-width:88vw; text-align:center;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+    box-shadow:0 10px 30px rgba(40,20,8,.3);
+  }
+  #mensajito.viendose{opacity:1; transform:translate(-50%, 0)}
 </style>
 </head>
 <body>
@@ -117,7 +128,11 @@
     </div>
     <label for="fSemestre">Semestre</label>
     <input id="fSemestre" value="3er semestre">
+    <label for="fPlantilla">Formato del cartel</label>
+    <select id="fPlantilla"></select>
+    <p class="nota" id="quePlantilla"></p>
   </div>
+  <div class="aviso-caja" id="consejo" hidden></div>
 
   <h2>Los pendientes</h2>
   <div id="lista"></div>
@@ -147,13 +162,28 @@
 const $ = s => document.querySelector(s);
 const LLAVE = 'avisos_31_v1';
 
+/* Un mensajito de la casa. Nada de `alert()`: en el teléfono sale un cuadro del
+   navegador que dice «tal-dirección dice», se ve ajeno a la app y trae un botón
+   de «no permitir más diálogos» que la deja muda. Es la misma lección de Fadori. */
+function aviso(texto){
+  let t = $('#mensajito');
+  if(!t){
+    t = document.createElement('div'); t.id = 'mensajito'; document.body.appendChild(t);
+  }
+  t.textContent = texto; t.classList.add('viendose');
+  clearTimeout(aviso._t);
+  aviso._t = setTimeout(() => t.classList.remove('viendose'), 3600);
+}
+
 /* ══ EL ESTADO ═══════════════════════════════════════════════════════════ */
 function hoyISO(){
   const d = new Date();
   return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
 }
-let D = { fecha: hoyISO(), grupo:'3.1', semestre:'3er semestre', pendientes:[] };
-try{ const g = JSON.parse(localStorage.getItem(LLAVE)); if(g && g.pendientes) D = g; }catch(e){}
+let D = { fecha: hoyISO(), grupo:'3.1', semestre:'3er semestre',
+          plantilla:'tablero', pendientes:[] };
+try{ const g = JSON.parse(localStorage.getItem(LLAVE));
+     if(g && g.pendientes) D = Object.assign({ plantilla:'tablero' }, g); }catch(e){}
 function guardar(){ try{ localStorage.setItem(LLAVE, JSON.stringify(D)); }catch(e){} }
 
 const materia = id => MATERIAS.find(m => m.id === id) || MATERIAS[MATERIAS.length-1];
@@ -205,6 +235,8 @@ function pintarLista(){
         placeholder="Traer el juego de geometría">
       <label class="marca-caja"><input type="checkbox" data-c="destacado"
         ${p.destacado ? 'checked' : ''}> <span>Muy importante · lo sube hasta arriba</span></label>
+      <label class="marca-caja fijar"><input type="checkbox" data-c="fijado"
+        ${p.fijado ? 'checked' : ''}> <span>Sigue vigente · no se borra al vaciar la lista</span></label>
       <label>Detalles · uno por renglón</label>
       <textarea data-c="detalles" placeholder="Escuadras&#10;Compás&#10;Transportador">${p.detalles||''}</textarea>
       <div class="acciones">
@@ -259,9 +291,26 @@ $('#bVaciar').addEventListener('click', () => {
     setTimeout(() => { b.dataset.seguro = ''; b.textContent = 'Vaciar la lista'; }, 4000);
     return;
   }
-  D.pendientes = []; b.dataset.seguro = ''; b.textContent = 'Vaciar la lista';
+  /* Lo FIJADO sobrevive a vaciar. Es justo lo que Carlos pidió: hay avisos de
+     dirección que valen un día y otros que valen semanas, y los de semanas no
+     se pueden estar reescribiendo cada tarde. */
+  const quedan = D.pendientes.filter(p => p.fijado).length;
+  D.pendientes = D.pendientes.filter(p => p.fijado);
+  b.dataset.seguro = ''; b.textContent = 'Vaciar la lista';
   guardar(); pintarLista(); dibujar();
+  if(quedan) aviso(quedan + (quedan === 1 ? ' aviso se quedó' : ' avisos se quedaron') +
+                   ' porque sigue(n) vigente(s).');
 });
+
+$('#fPlantilla').innerHTML = PLANTILLAS
+  .map(x => '<option value="' + x.id + '">' + x.nombre + '</option>').join('');
+$('#fPlantilla').addEventListener('change', () => {
+  D.plantilla = $('#fPlantilla').value; guardar(); describePlantilla(); dibujar();
+});
+function describePlantilla(){
+  const x = PLANTILLAS.find(z => z.id === D.plantilla) || PLANTILLAS[0];
+  $('#quePlantilla').textContent = x.que;
+}
 
 ['fFecha','fGrupo','fSemestre'].forEach(id => {
   $('#'+id).addEventListener('input', () => {
@@ -314,8 +363,171 @@ const F = (peso, tam) => peso + ' ' + tam + 'px ' + getComputedStyle(document.bo
    para saber qué alto necesita el lienzo, la segunda dibuja. Sin la pasada de
    medición habría que adivinar el alto, y con contenido variable eso siempre
    sale mal por un lado o por el otro. */
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MOTOR · se arma una lista de BLOQUES que saben medirse solos, y luego la
+   plantilla decide dónde caen.
+
+   Por qué así y no dibujando derecho: para repartir en dos columnas hay que
+   saber cuánto mide cada cosa ANTES de colocarla, y para eso hay que poder
+   medir sin pintar. Un bloque es { alto(ancho), pinta(x,y,ancho) }.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* La banda que separa secciones. */
+function bloqueBanda(texto, fondo, compacta){
+  const alto = compacta ? 40 : 52;
+  return {
+    banda: true,
+    alto: () => alto,
+    pinta: (ctx, x, y, w) => {
+      caja(ctx, x, y, w, alto, 10, fondo);
+      ctx.fillStyle = '#FFF6EC'; ctx.font = F(900, compacta ? 21 : 26);
+      ctx.letterSpacing = '2px';
+      ctx.fillText(texto.toUpperCase(), x + 18, y + (compacta ? 27 : 35));
+      ctx.letterSpacing = '0px';
+    }
+  };
+}
+
+/* Un pendiente en tarjeta. */
+function bloqueFicha(ctx0, p){
+  return {
+    alto: (w) => ficha(ctx0, p, 0, 0, w, false),
+    pinta: (ctx, x, y, w) => ficha(ctx, p, x, y, w, true)
+  };
+}
+
+/* Acomoda trozos de texto con FUENTES DISTINTAS en un mismo párrafo.
+
+   Hace falta porque en la lista compacta el título va en negritas y los
+   detalles en normal, pegados. El primer intento fue dibujar todo el renglón en
+   normal y encima el título en negritas: no funciona, porque las negritas son
+   más anchas y el texto queda impreso encima de sí mismo. Se veía horrible y
+   sólo se notó al renderizar un aviso de sesenta.
+
+   `sangriaPrimera` es el hueco que hay que dejar en el PRIMER renglón: ahí es
+   donde va el sello de «sigue vigente», y si no se reserva, el sello se encima
+   sobre el título. */
+function fluir(ctx, trozos, ancho, sangriaPrimera){
+  const lineas = [[]];
+  let x = 0, primera = true;
+  const cabe = () => (primera ? ancho - (sangriaPrimera || 0) : ancho);
+  for(const t of trozos){
+    ctx.font = t.fuente;
+    for(const palabra of String(t.texto).split(/\s+/).filter(Boolean)){
+      const sep = x > 0 ? ' ' : '';
+      const w = ctx.measureText(sep + palabra).width;
+      if(x + w > cabe() && x > 0){
+        lineas.push([]); x = 0; primera = false;
+        lineas[lineas.length-1].push({ ...t, texto: palabra, x: 0 });
+        x = ctx.measureText(palabra).width;
+      } else {
+        lineas[lineas.length-1].push({ ...t, texto: sep + palabra, x });
+        x += w;
+      }
+    }
+  }
+  return lineas;
+}
+
+/* Un pendiente en UN SOLO RENGLÓN (o dos si no cabe). Es lo que hace posible el
+   día de sesenta pendientes: los detalles se pegan al título separados por
+   puntos, y la tarjeta se vuelve una línea. */
+function bloqueRenglon(ctx0, p){
+  const m = materia(p.materia), t = tipo(p.tipo);
+  const detalles = String(p.detalles || '').split('\n').map(z => z.trim()).filter(Boolean);
+  const cola = detalles.join(' · ');
+  const trozos = [{ texto: p.titulo || t.nombre, fuente: F(800, 23), fuerte: true }];
+  if(cola) trozos.push({ texto: '· ' + cola, fuente: F(500, 21), fuerte: false });
+
+  const medir = (w) => {
+    const disponible = w - 46 - 14;
+    const lineas = fluir(ctx0, trozos, disponible, p.fijado ? 74 : 0);
+    return { lineas, alto: 13 + lineas.length * 28 + 11 };
+  };
+  return {
+    alto: (w) => medir(w).alto,
+    pinta: (ctx, x, y, w) => {
+      const q = medir(w);
+      const D_ = !!p.destacado;
+      caja(ctx, x, y, w, q.alto, 10, D_ ? m.color : '#FFFDF8', D_ ? m.color : '#EDE4D6');
+      iconoCanvas(ctx, m.icono, x + 12, y + 12, 24, D_ ? '#FFF6EC' : m.color, 2);
+      let ty = y + 13 + 20;
+      for(const linea of q.lineas){
+        for(const t2 of linea){
+          ctx.font = t2.fuente;
+          ctx.fillStyle = t2.fuerte ? (D_ ? '#FFF6EC' : '#241A14')
+                                    : (D_ ? 'rgba(255,246,236,.85)' : '#5A4A3C');
+          ctx.fillText(t2.texto, x + 46 + t2.x, ty);
+        }
+        ty += 28;
+      }
+      if(p.fijado) chipFijado(ctx, x + w - 12, y + 11, D_);
+    }
+  };
+}
+
+/* El sello de «sigue vigente». Va en la esquina y no en el texto: si fuera
+   texto, en la lista compacta se comería el renglón. */
+function chipFijado(ctx, xDer, y, sobreColor){
+  const t = 'SIGUE';
+  ctx.font = F(900, 13); ctx.letterSpacing = '1px';
+  const w = ctx.measureText(t).width + 16;
+  caja(ctx, xDer - w, y, w, 20, 6, sobreColor ? 'rgba(255,246,236,.24)' : '#8A6516');
+  ctx.fillStyle = '#FFF6EC'; ctx.textAlign = 'center';
+  ctx.fillText(t, xDer - w/2, y + 15);
+  ctx.textAlign = 'left'; ctx.letterSpacing = '0px';
+}
+
+/* Arma la lista de bloques ya ordenada y con sus bandas. */
+function bloquesDe(ctx, compacta){
+  const lista = ordenados();
+  const out = [];
+  let bloqueActual = null;
+  for(const p of lista){
+    const b = bloqueDe(p);
+    if(b !== bloqueActual){
+      bloqueActual = b;
+      const c = b === 'destacado' ? DESTACADO : (CUANDOS.find(x => x.id === b) || CUANDOS[3]);
+      const fondo = b === 'destacado' ? '#5A1319' : (c.urgente ? '#7C1D24' : '#123A5E');
+      out.push(bloqueBanda(c.nombre, fondo, compacta));
+    }
+    out.push(compacta ? bloqueRenglon(ctx, p) : bloqueFicha(ctx, p));
+  }
+  return out;
+}
+
+/* Reparte los bloques en `n` columnas dejándolas parejas.
+
+   Con una regla que importa: UNA BANDA NUNCA SE QUEDA SOLA al pie de una
+   columna. Si el corte cae justo después de un encabezado, el encabezado se
+   pasa a la otra columna con su contenido — si no, la primera columna termina
+   con un «PARA MAÑANA» huérfano y la segunda arranca con tarjetas sin decir de
+   qué son. */
+function repartir(bloques, n, ancho, hueco){
+  if(n === 1) return [bloques];
+  const altos = bloques.map(b => b.alto(ancho) + hueco);
+  const total = altos.reduce((a, b) => a + b, 0);
+  const meta = total / n;
+  const cols = []; let actual = [], acumulado = 0;
+  for(let i = 0; i < bloques.length; i++){
+    actual.push(bloques[i]); acumulado += altos[i];
+    const quedan = bloques.length - i - 1;
+    if(cols.length < n - 1 && acumulado >= meta && quedan > 0){
+      /* si el último que metimos es una banda, se devuelve */
+      while(actual.length && actual[actual.length-1].banda){
+        acumulado -= altos[i]; i--; actual.pop();
+      }
+      if(actual.length){ cols.push(actual); actual = []; acumulado = 0; }
+    }
+  }
+  if(actual.length) cols.push(actual);
+  while(cols.length < n) cols.push([]);
+  return cols;
+}
+
 function componer(ctx, pintar){
-  const M = 34;                     /* margen */
+  const M = 34;
+  const plantilla = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
   let y = 0;
 
   /* ── el encabezado ── */
@@ -349,28 +561,27 @@ function componer(ctx, pintar){
   }
   y += altoFila + 26;
 
-  /* ── los bloques ── */
-  const lista = ordenados();
-  let bloqueActual = null;
-  for(const p of lista){
-    const b = bloqueDe(p);
-    if(b !== bloqueActual){
-      bloqueActual = b;
-      const c = b === 'destacado' ? DESTACADO
-                                  : (CUANDOS.find(x => x.id === b) || CUANDOS[3]);
-      const fondo = b === 'destacado' ? '#5A1319' : (c.urgente ? '#7C1D24' : '#123A5E');
-      if(pintar){
-        caja(ctx, M, y, ANCHO - M*2, 52, 10, fondo);
-        ctx.fillStyle = '#FFF6EC'; ctx.font = F(900, 26); ctx.letterSpacing = '2px';
-        ctx.fillText(c.nombre.toUpperCase(), M + 20, y + 35);
-        ctx.letterSpacing = '0px';
-      }
-      y += 52 + 14;
-    }
-    y += ficha(ctx, p, M, y, ANCHO - M*2, pintar) + 12;
-  }
+  /* ── el cuerpo, según la plantilla ── */
+  const bloques = bloquesDe(ctx, !!plantilla.compacta);
+  const hueco = plantilla.compacta ? 8 : 12;
+  const cols = plantilla.columnas;
+  const anchoCol = (ANCHO - M*2 - (cols - 1) * 20) / cols;
+  const repartido = repartir(bloques, cols, anchoCol, hueco);
 
-  if(!lista.length){
+  let maxAlto = 0;
+  repartido.forEach((col, i) => {
+    const x = M + i * (anchoCol + 20);
+    let cy = y;
+    for(const b of col){
+      const h = b.alto(anchoCol);
+      if(pintar) b.pinta(ctx, x, cy, anchoCol);
+      cy += h + hueco;
+    }
+    maxAlto = Math.max(maxAlto, cy - y);
+  });
+  y += maxAlto;
+
+  if(!bloques.length){
     if(pintar){
       ctx.fillStyle = '#6B5A4A'; ctx.font = F(600, 26); ctx.textAlign = 'center';
       ctx.fillText('Sin pendientes por hoy.', ANCHO/2, y + 50);
@@ -391,21 +602,46 @@ function componer(ctx, pintar){
   return y + 62;
 }
 
+function etiquetaDe(p, t){
+  return t.nombre + (p.cuando === 'fecha' && p.dia ? '  ·  ' + fechaCorta(p.dia) : '');
+}
+
+/* ¿Caben el nombre de la materia y la etiqueta del tipo en el MISMO renglón?
+   Vive aparte para que la prueba use ESTA función y no una copia de la cuenta:
+   una prueba que reimplementa la regla que quiere comprobar sólo comprueba que
+   sé copiar y pegar. */
+function cabeElEncabezado(ctx, m, etiqueta, w){
+  const pad = 20, sangria = 74, aire = 42;
+  ctx.font = F(800, 22);
+  const a = ctx.measureText(m.corto.toUpperCase()).width;
+  ctx.font = F(700, 20);
+  const b = ctx.measureText(etiqueta).width;
+  return (a + b + aire) <= (w - sangria - pad);
+}
+
 /* Una ficha de pendiente. Devuelve su alto. */
 function ficha(ctx, p, x, y, w, pintar){
   const m = materia(p.materia), t = tipo(p.tipo);
   const pad = 20, sangria = 74;
   let alto = pad;
 
-  ctx.font = F(800, 22);
-  const encabezado = 34;
+  /* ¿Caben el nombre de la materia y la etiqueta del tipo en el MISMO renglón?
+     En una columna angosta no: «PROGRAMACIÓN» se encimaba con «Examen · JUE 3
+     SEP» y quedaba ilegible. Si no caben, la etiqueta se baja a su propio
+     renglón en vez de encimarse o de recortar el nombre de la materia, que es
+     lo que el alumno usa para encontrar lo suyo. */
+  const etiqueta = etiquetaDe(p, t);
+  ctx.font = F(700, 20);
+  const anchoEti = ctx.measureText(etiqueta).width;
+  const dosRenglones = !cabeElEncabezado(ctx, m, etiqueta, w);
+  const encabezado = dosRenglones ? 62 : 34;
   alto += encabezado + 8;
 
   ctx.font = F(800, 30);
   const titulo = envolver(ctx, p.titulo || t.nombre, w - sangria - pad);
   alto += titulo.length * 38;
 
-  const detalles = String(p.detalles || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const detalles = String(p.detalles || '').split('\n').map(z => z.trim()).filter(Boolean);
   ctx.font = F(500, 25);
   const renglones = [];
   for(const d of detalles){
@@ -426,7 +662,6 @@ function ficha(ctx, p, x, y, w, pintar){
 
     caja(ctx, x, y, w, alto, 14, D_ ? m.color : '#FFFDF8', D_ ? m.color : '#E6DCCB');
     if(!D_){
-      /* la banda de color de la materia, pegada a la izquierda */
       ctx.save();
       ctx.beginPath();
       if(ctx.roundRect) ctx.roundRect(x, y, w, alto, 14); else ctx.rect(x, y, w, alto);
@@ -435,29 +670,27 @@ function ficha(ctx, p, x, y, w, pintar){
       ctx.restore();
     }
 
-    /* el icono de la materia, en su cuadrito */
     caja(ctx, x + pad, y + pad - 2, 50, 50, 12, D_ ? 'rgba(255,246,236,.18)' : m.color + '1F');
     iconoCanvas(ctx, m.icono, x + pad + 10, y + pad + 8, 30, D_ ? '#FFF6EC' : m.color, 2);
 
-    /* materia y tipo */
     ctx.fillStyle = D_ ? 'rgba(255,246,236,.92)' : m.color; ctx.font = F(800, 22);
     ctx.fillText(m.corto.toUpperCase(), x + sangria, y + pad + 20);
-    ctx.textAlign = 'right';
     ctx.fillStyle = tintaChica; ctx.font = F(700, 20);
-    const etiqueta = t.nombre + (p.cuando === 'fecha' && p.dia ? '  ·  ' + fechaCorta(p.dia) : '');
-    ctx.fillText(etiqueta, x + w - pad, y + pad + 20);
-    ctx.textAlign = 'left';
+    if(dosRenglones){
+      /* segundo renglón, alineado con la materia */
+      iconoCanvas(ctx, t.icono, x + sangria, y + pad + 32, 21, tintaChica, 1.8);
+      ctx.fillText(etiqueta, x + sangria + 28, y + pad + 48);
+    } else {
+      ctx.textAlign = 'right';
+      ctx.fillText(etiqueta, x + w - pad, y + pad + 20);
+      ctx.textAlign = 'left';
+      iconoCanvas(ctx, t.icono, x + w - pad - anchoEti - 30, y + pad + 4, 21, tintaChica, 1.8);
+    }
 
-    /* el icono del tipo, chiquito, junto a la etiqueta */
-    const anchoEti = ctx.measureText(etiqueta).width;
-    iconoCanvas(ctx, t.icono, x + w - pad - anchoEti - 30, y + pad + 4, 21, tintaChica, 1.8);
-
-    /* el título */
     let ty = y + pad + encabezado + 34;
     ctx.fillStyle = tintaFuerte; ctx.font = F(800, 30);
     for(const l of titulo){ ctx.fillText(l, x + sangria, ty); ty += 38; }
 
-    /* los detalles */
     ctx.font = F(500, 25);
     ty += detalles.length ? 6 : 0;
     for(const ls of renglones){
@@ -470,23 +703,40 @@ function ficha(ctx, p, x, y, w, pintar){
         ctx.fillText(ls[i], x + sangria + 26, ty); ty += 33;
       }
     }
+    if(p.fijado) chipFijado(ctx, x + w - pad, y + alto - 30, D_);
   }
   return alto;
 }
 
 function dibujar(){
   const c = $('#lienzo'), ctx = c.getContext('2d');
-  /* pasada 1: medir con una fuente cualquiera puesta */
   c.width = ANCHO * ESC; c.height = 100;
   ctx.setTransform(ESC, 0, 0, ESC, 0, 0);
   const alto = componer(ctx, false);
-  /* pasada 2: dibujar. Cambiar el tamaño BORRA el contexto, así que la escala
-     se vuelve a poner después. */
   c.width = ANCHO * ESC; c.height = Math.round(alto * ESC);
   const g = c.getContext('2d');
   g.setTransform(ESC, 0, 0, ESC, 0, 0);
   g.fillStyle = '#FAF4EA'; g.fillRect(0, 0, ANCHO, alto);
   componer(g, true);
+  consejoPlantilla();
+}
+
+/* Le dice cuál plantilla le conviene, sin quitarle la que eligió. */
+function consejoPlantilla(){
+  const n = D.pendientes.length;
+  const actual = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  const buena = PLANTILLAS.find(x => n <= x.holgado) || PLANTILLAS[PLANTILLAS.length-1];
+  const caja = $('#consejo');
+  if(!caja) return;
+  if(buena.id === actual.id || !n){ caja.hidden = true; return; }
+  caja.hidden = false;
+  caja.innerHTML = 'Con <b>' + n + ' pendientes</b>, «' + actual.nombre + '» va a salir muy ' +
+    (actual.holgado < buena.holgado ? 'larga' : 'vacía') +
+    '. Te conviene <b>«' + buena.nombre + '»</b>. ' +
+    '<button class="btn chico" type="button" id="bCambiarPlantilla">Cambiar a ' + buena.nombre + '</button>';
+  $('#bCambiarPlantilla').onclick = () => {
+    D.plantilla = buena.id; guardar(); $('#fPlantilla').value = buena.id; dibujar();
+  };
 }
 
 $('#bImagen').addEventListener('click', () => {
@@ -606,6 +856,79 @@ function pruebas(){
      (function(){ D.pendientes[1].destacado = false;
        return ordenados()[0].titulo === 'normal'; })());
 
+  /* ── las plantillas ── */
+  ok('hay más de una plantilla', PLANTILLAS.length >= 3);
+  ok('todas dicen para qué sirven', PLANTILLAS.every(x => x.que && x.columnas >= 1));
+  D.pendientes = [];
+  for(let i = 0; i < 40; i++) D.pendientes.push(
+    { materia: MATERIAS[i % MATERIAS.length].id, tipo:'tarea', cuando:'manana',
+      titulo:'Pendiente número ' + i, detalles:'Un detalle\nOtro detalle' });
+  const altos = {};
+  for(const x of PLANTILLAS){ D.plantilla = x.id; dibujar(); altos[x.id] = $('#lienzo').height; }
+  ok('con 40 pendientes, «periódico» sale más corta que «tablero»',
+     altos.periodico < altos.tablero);
+  ok('y «lista» más corta que las dos', altos.lista < altos.periodico);
+  ok('las de dos columnas usan las dos', (function(){
+    D.plantilla = 'periodico';
+    const cols = repartir(bloquesDe($('#lienzo').getContext('2d'), false), 2, 480, 12);
+    return cols.length === 2 && cols[0].length > 0 && cols[1].length > 0;
+  })());
+  /* La regla de que una banda nunca se quede sola al pie de una columna.
+
+     Ojo con cómo se prueba esto: con pendientes de verdad el caso NO OCURRE
+     NUNCA —se comprobó quitando la guarda y barriendo de 4 a 28 pendientes: ni
+     una sola banda huérfana—, porque una banda mide 40 px y el corte casi
+     siempre lo cruza una tarjeta, no un encabezado. O sea que la primera
+     versión de esta prueba pasaba igual con el defecto puesto: confianza falsa,
+     que es peor que no tener prueba.
+
+     Así que se le da a `repartir` una lista ARMADA A PROPÓSITO para que el
+     corte caiga justo en la banda. Se prueba el contrato de la función, no la
+     suerte de los datos. */
+  ok('una banda nunca se queda sola al pie de una columna', (function(){
+    const falso = (h, banda) => ({ banda, alto: () => h, pinta: () => {} });
+    /* alturas elegidas para que la mitad caiga exactamente en la banda:
+       100+12=112, +112=224, +40+12=276 · total 500, mitad 250 */
+    const bl = [falso(100), falso(100), falso(40, true), falso(100), falso(100)];
+    const cols = repartir(bl, 2, 480, 12);
+    return cols.length === 2 && cols.every(c => !c.length || !c[c.length-1].banda);
+  })());
+
+  /* ── que el encabezado de la tarjeta no se encime ── */
+  /* En columna angosta «PROGRAMACIÓN» se montaba sobre «Examen · JUE 3 SEP».
+     No se ve leyendo el código: salió al renderizar en dos columnas.
+     La prueba usa la MISMA función que el dibujo, no una copia de la cuenta. */
+  (function(){
+    const g = $('#lienzo').getContext('2d');
+    const ANCHA = 1012, ANGOSTA = 496;   /* una columna · dos columnas */
+    const peor = MATERIAS.reduce((a, m) => {
+      g.font = F(800, 22);
+      return g.measureText(m.corto.toUpperCase()).width >
+             g.measureText(a.corto.toUpperCase()).width ? m : a;
+    });
+    const etiquetaLarga = etiquetaDe({ cuando:'fecha', dia:'2026-08-28' },
+                                     TIPOS.find(t => t.id === 'proyecto'));
+    ok('en columna angosta, el par más largo NO se pone en un renglón',
+       cabeElEncabezado(g, peor, etiquetaLarga, ANGOSTA) === false);
+    ok('en una sola columna, ese mismo par SÍ cabe en un renglón',
+       cabeElEncabezado(g, peor, etiquetaLarga, ANCHA) === true);
+    /* y que la ficha crezca de verdad cuando decide dos renglones */
+    const p1 = { materia: peor.id, tipo:'proyecto', cuando:'fecha', dia:'2026-08-28', titulo:'X' };
+    ok('la tarjeta se hace más alta cuando el encabezado va en dos renglones',
+       ficha(g, p1, 0, 0, ANGOSTA, false) - ficha(g, p1, 0, 0, ANCHA, false) >= 20);
+  })();
+
+  /* ── lo fijado ── */
+  D.pendientes = [
+    { materia:'direccion', tipo:'aviso', cuando:'semana', fijado:true, titulo:'dura semanas' },
+    { materia:'ingles', tipo:'tarea', cuando:'manana', titulo:'es de hoy' },
+  ];
+  const sobreviven = D.pendientes.filter(p => p.fijado);
+  ok('vaciar la lista respeta lo fijado', sobreviven.length === 1 &&
+     sobreviven[0].titulo === 'dura semanas');
+  D.plantilla = 'tablero'; dibujar();
+  ok('un fijado se dibuja sin tronar', $('#lienzo').height > 200 * ESC);
+
   /* ── que se alcance con el dedo ── */
   /* Ya me pasó en Ligas Mazi: campos de 36 px que nadie atina. Aquí se mide,
      no se confía. */
@@ -637,6 +960,8 @@ D.fecha = hoyISO(); guardar();
 $('#fFecha').value = D.fecha;
 $('#fGrupo').value = D.grupo;
 $('#fSemestre').value = D.semestre;
+$('#fPlantilla').value = D.plantilla;
+describePlantilla();
 pintarLista();
 escudo.onload = dibujar;
 dibujar();

@@ -57,8 +57,25 @@ const CUANDOS = [
   { id:'pronto',  nombre:'Sin fecha aún',  urgente:false },
 ];
 
+/* ══ LAS PLANTILLAS ═══════════════════════════════════════════════════════
+   Tres formas de sacar el mismo aviso. No es decoración: es que un aviso de
+   cinco pendientes y uno de sesenta NO se leen igual, y Carlos hace de los dos.
+   Además, mandar el mismo cartel idéntico todos los días hace que la gente deje
+   de mirarlo. Que cambie ayuda a que se vea.
+
+   `holgado` es cuántos pendientes aguanta antes de que convenga otra: se usa
+   para sugerirle la buena, no para prohibirle nada. */
+const PLANTILLAS = [
+  { id:'tablero',   nombre:'Tablero',   que:'Tarjetas grandes, una columna. La más fácil de leer.',
+    columnas:1, holgado:12 },
+  { id:'periodico', nombre:'Periódico', que:'Dos columnas, más apretado. Para cuando ya no cabe.',
+    columnas:2, holgado:34 },
+  { id:'lista',     nombre:'Lista',     que:'Un renglón por pendiente. Para los días de muchísimo.',
+    columnas:2, holgado:999, compacta:true },
+];
+
 const DIAS   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const MESES  = ['enero','febrero','marzo','abril','mayo','junio','julio',
                 'agosto','septiembre','octubre','noviembre','diciembre'];
 
-if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS, CUANDOS, DESTACADO, DIAS, MESES };
+if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS, CUANDOS, DESTACADO, PLANTILLAS, DIAS, MESES };

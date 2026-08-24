@@ -96,6 +96,53 @@ de descarga a veces no hace nada, así que además se enseña la imagen:
 manteniéndola apretada se guarda o se comparte, y esa vía funciona en todos
 lados.
 
+## Tres plantillas, porque no todos los días son iguales
+
+Carlos hace avisos de cinco pendientes y avisos de sesenta. **No se leen igual.**
+Y mandar el mismo cartel idéntico todos los días hace que la gente deje de
+mirarlo.
+
+| Plantilla | Cómo es | Aguanta |
+|---|---|---|
+| **Tablero** | Tarjetas grandes, una columna | hasta ~12 |
+| **Periódico** | Dos columnas, más apretado | hasta ~34 |
+| **Lista** | Un renglón por pendiente, dos columnas | los días de muchísimo |
+
+Con 60 pendientes: Tablero sale de **21 834 px** de alto, Periódico de 12 726 y
+Lista de 5 680. La herramienta **sugiere** la que conviene según cuántos haya,
+con un botón para cambiar — sugiere, no obliga.
+
+## «Sigue vigente»
+
+Hay avisos de dirección que valen un día y otros que valen semanas. Los de
+semanas se marcan como **fijados**: llevan un sello «SIGUE» y **no se borran al
+vaciar la lista**. Los de semanas no se pueden estar reescribiendo cada tarde.
+
+Es distinto de «Muy importante»: uno es cuánto **pesa**, el otro cuánto **dura**.
+Un pendiente puede ser las dos cosas, una, o ninguna.
+
+## Tres defectos que sólo salieron RENDERIZANDO
+
+1. **El texto impreso encima de sí mismo.** En la plantilla Lista el título va
+   en negritas y los detalles en normal, pegados en el mismo renglón. El primer
+   intento dibujaba todo el renglón en normal y encima el título en negritas —
+   pero las negritas son más anchas, así que no coinciden y sale un borrón. Se
+   arregló con `fluir()`, que acomoda trozos de distinta fuente en un párrafo.
+
+2. **El encabezado de la tarjeta se encimaba.** En columna angosta
+   «PROGRAMACIÓN» se montaba sobre «Examen · JUE 3 SEP». Ahora la tarjeta mide
+   los dos y, si no caben, baja la etiqueta a su propio renglón — en vez de
+   recortar el nombre de la materia, que es lo que el alumno usa para encontrar
+   lo suyo.
+
+3. **Una prueba que no probaba nada.** La de «una banda nunca se queda sola al
+   pie de una columna» pasaba igual con el defecto puesto: con pendientes de
+   verdad ese caso **no ocurre nunca** —se barrió de 4 a 28 pendientes sin la
+   guarda y no salió ni uno—, porque una banda mide 40 px y el corte casi
+   siempre lo cruza una tarjeta. Ahora se le da al reparto una lista armada a
+   propósito para que el corte caiga justo ahí. Se prueba el contrato, no la
+   suerte de los datos.
+
 ## Los colores se miden, no se escogen a ojo
 
 El color de la materia se usa como **texto chico** sobre el papel, y en una
@@ -109,7 +156,7 @@ los dos se ve a ojo; salieron midiendo, y ahora hay una prueba que los mide.
 
 ## Pruebas
 
-25, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
+36, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
 el orden del periódico ponga lo de mañana primero, que ningún renglón se salga
 de su tarjeta —eso no se ve hasta que el aviso ya se mandó—, que la imagen
 crezca con el contenido, que las fechas salgan en español y que **ningún
