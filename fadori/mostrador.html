@@ -512,7 +512,60 @@ function abrirPapel(){
   $('#velo').hidden = false;
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   $('#hImprimir').addEventListener('click', () => window.print());
+  avisarSiNoSePuedeImprimir($('#hImprimir').parentNode);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IMPRIMIR DESDE LA PANTALLA DE INICIO · el aviso que faltaba
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «el imprimir no sirve directamente, ofrece imprimir lo que se ve del
+   navegador, no el archivo que se quiere imprimir».
+
+   La causa no es el CSS —se comprobó emulando la impresión y sale limpio—: es
+   que esta pantalla se declara como app de pantalla de inicio, y en ese modo
+   iOS NO DEJA IMPRIMIR. `window.print()` no hace nada y tampoco hay
+   Compartir → Imprimir. El usuario le da al botón, no pasa nada o sale algo
+   raro, y concluye que la herramienta no sirve.
+
+   No se puede arreglar desde el código —es una limitación de iOS—, así que lo
+   que sí se puede es DECIRLO en el momento en que estorba, en vez de dejar un
+   botón que no hace nada. */
+function enPantallaDeInicio(){
+  return window.navigator.standalone === true ||
+         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+function avisarSiNoSePuedeImprimir(donde){
+  if(!enPantallaDeInicio() || !donde) return;
+  const n = document.createElement('p');
+  n.className = 'aviso no-imprime';
+  n.style.marginTop = '12px';
+  n.innerHTML = '<b>Abriste esto desde la pantalla de inicio, y ahí iPhone no deja ' +
+    'imprimir.</b> No es de la app: iOS apaga la impresión en ese modo. ' +
+    'Abre la misma dirección en Safari y desde ahí sí se puede.';
+  donde.appendChild(n);
+}
+
+
+/* Marcar el cuerpo cuando hay una hojita abierta y se va a imprimir.
+   Se hace con `beforeprint` y no sólo en el botón porque el mostrador también
+   se imprime desde el menú del navegador —Archivo → Imprimir, o Compartir →
+   Imprimir en el teléfono— y por ahí no pasa por nuestro botón.
+   Y sólo se esconde la app si de verdad HAY una hojita abierta: si alguien
+   imprime estando en «Corte del día», esconder `main` le dejaría la hoja en
+   blanco, que es peor que el defecto original. */
+(function(){
+  const marcar = () => document.body.classList.toggle(
+    'imprimiendo-hoja', !$('#velo').hidden);
+  window.addEventListener('beforeprint', marcar);
+  window.addEventListener('afterprint', () =>
+    document.body.classList.remove('imprimiendo-hoja'));
+  if(window.matchMedia){
+    /* Safari viejo no manda `beforeprint`, pero sí cambia el medio */
+    const mq = window.matchMedia('print');
+    if(mq.addEventListener) mq.addEventListener('change', e => { if(e.matches) marcar(); });
+  }
+})();
+
 
 /* "A ÉSTE no se lo puedo dar" · F45d
    Distinto de agotar: aquí no se acabó para todos, se acabó para él. Y sí
@@ -1399,11 +1452,46 @@ verVista('despachar');
     /* Lo que un humano LEE en la pantalla, sin el código fuente: `textContent`
        del body incluye lo que está dentro de <script>, así que una prueba que
        busca una frase se aprueba a sí misma leyendo su propio texto. */
+    /* El texto de todas las reglas @media print juntas. */
+    const reglasDeImpresion = () => {
+      let t = '';
+      for(const h of document.styleSheets){
+        try{ for(const r of h.cssRules)
+               if(r.type === CSSRule.MEDIA_RULE &&
+                  /print/.test(r.conditionText || r.media.mediaText)) t += r.cssText; }catch(e){}
+      }
+      return t;
+    };
     const loQueSeLee = () => {
       const copia = document.body.cloneNode(true);
       copia.querySelectorAll('script, style').forEach(e => e.remove());
       return copia.textContent;
     };
+    /* ── imprimir ── */
+    /* Carlos: «el imprimir no sirve, ofrece imprimir lo que se ve del
+       navegador». Era literal: NO había ni una regla @media print en toda la
+       app, así que salía la barra, las pestañas, los pedidos y once botones.
+       Se reprodujo emulando la impresión en un navegador de verdad. */
+    ok('hay reglas de impresión', (function(){
+      for(const h of document.styleSheets){
+        try{ for(const r of h.cssRules)
+               if(r.type === CSSRule.MEDIA_RULE && /print/.test(r.conditionText || r.media.mediaText))
+                 return true; }catch(e){}
+      }
+      return false;
+    })());
+    ok('al imprimir se esconde la barra de la app',
+       /(^|,|\s)\.barra(,|\s|\{)/.test(reglasDeImpresion()));
+    ok('al imprimir se esconden los botones',
+       /(^|,|\s)button(,|\s|\{)/.test(reglasDeImpresion()));
+    ok('al imprimir se esconde el menú de abajo',
+       /#pulgar/.test(reglasDeImpresion()));
+    ok('con una hojita abierta se imprime SÓLO la hojita',
+       /imprimiendo-hoja/.test(reglasDeImpresion()));
+    ok('se avisa que desde la pantalla de inicio iPhone no deja imprimir',
+       typeof enPantallaDeInicio === 'function' &&
+       typeof avisarSiNoSePuedeImprimir === 'function');
+
     ok('sin pasador no se entra', F.pasoElPasador() === false);
     /* Reportado por un compañero que probó la app: a la cooperativa le volvía a
        pedir el pasador cada vez que se recargaba. Vivía en sessionStorage, que

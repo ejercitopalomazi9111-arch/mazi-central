@@ -2602,6 +2602,42 @@ function imprimirCredenciales(soloEsta){
 $('#cAcomodo').addEventListener('change', () => {
   CRED.base.acomodo = $('#cAcomodo').value; guardarCred(); pintarCred();
 });
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IMPRIMIR DESDE LA PANTALLA DE INICIO · el aviso que faltaba
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «el imprimir no sirve directamente, ofrece imprimir lo que se ve del
+   navegador, no el archivo que se quiere imprimir».
+
+   La causa no es el CSS —se comprobó emulando la impresión y sale limpio—: es
+   que esta pantalla se declara como app de pantalla de inicio, y en ese modo
+   iOS NO DEJA IMPRIMIR. `window.print()` no hace nada y tampoco hay
+   Compartir → Imprimir. El usuario le da al botón, no pasa nada o sale algo
+   raro, y concluye que la herramienta no sirve.
+
+   No se puede arreglar desde el código —es una limitación de iOS—, así que lo
+   que sí se puede es DECIRLO en el momento en que estorba, en vez de dejar un
+   botón que no hace nada. */
+function enPantallaDeInicio(){
+  return window.navigator.standalone === true ||
+         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+function avisarSiNoSePuedeImprimir(donde){
+  if(!enPantallaDeInicio() || !donde) return;
+  const n = document.createElement('p');
+  n.className = 'aviso no-imprime';
+  n.style.marginTop = '12px';
+  n.innerHTML = '<b>Abriste esto desde la pantalla de inicio, y ahí iPhone no deja ' +
+    'imprimir.</b> No es de la app: iOS apaga la impresión en ese modo. ' +
+    'Abre la misma dirección en Safari y desde ahí sí se puede.';
+  donde.appendChild(n);
+}
+
+/* El aviso se pega junto a los dos botones de imprimir: el de arriba y el de
+   las credenciales. */
+avisarSiNoSePuedeImprimir(document.querySelector('#cImprimir') &&
+                          document.querySelector('#cImprimir').parentNode);
+
 $('#cImprimir').addEventListener('click', () => imprimirCredenciales(false));
 $('#cSoloEsta').addEventListener('click', () => imprimirCredenciales(true));
 

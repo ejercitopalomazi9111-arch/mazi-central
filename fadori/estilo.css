@@ -1269,3 +1269,71 @@ body.cortina-arriba{overflow:hidden}
   color:var(--naranja-relleno);
 }
 .codigo-caja .btn{ min-height:44px; padding-inline:26px }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AL IMPRIMIR · sólo sale el papel, no la app
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «el imprimir de Fadori no sirve, ofrece imprimir lo que se ve del
+   navegador, no el archivo que se quiere imprimir».
+
+   Y era literal: NO HABÍA NI UNA REGLA de impresión en toda la app. Al darle
+   a imprimir salía la barra, las pestañas, los pedidos de la pantalla, los
+   botones y el velo gris encima — y la lista que sí se quería, en un cuadrito
+   a media hoja. Se reprodujo emulando la impresión en un navegador: once
+   botones visibles y la barra de la app dentro de la hoja.
+
+   Aquí se apaga todo y se deja sólo la hojita abierta, convertida en un
+   documento normal: fondo blanco, tinta negra, sin sombras ni bordes redondos
+   —la impresora gasta tóner en eso y no aporta nada— y sin el velo.
+   ═════════════════════════════════════════════════════════════════════════ */
+@media print{
+  /* fuera todo lo que no es el papel */
+  .barra, #pulgar, .no-imprime, .hojita-pie, .hojita-x,
+  .chips, .btn, button, .velo-chico{ display:none !important }
+
+  html, body{
+    background:#fff !important; color:#000 !important;
+    margin:0 !important; padding:0 !important;
+    /* que el navegador respete los fondos que SÍ importan (las franjas de la
+       tabla), en vez de imprimirlo todo en blanco */
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+
+  /* Con una hojita abierta, se imprime SÓLO la hojita.
+     Van las dos formas a propósito: la clase la pone `beforeprint`, que es lo
+     que funciona cuando se imprime desde el menú del navegador; y `:has()`
+     cubre los casos donde ese evento no llega. Si alguna de las dos falla, la
+     otra sostiene. */
+  body.imprimiendo-hoja main,
+  body.imprimiendo-hoja header,
+  body:has(#velo:not([hidden])) main,
+  body:has(#velo:not([hidden])) header{ display:none !important }
+
+  .velo{
+    position:static !important; inset:auto !important; display:block !important;
+    background:none !important; padding:0 !important; overflow:visible !important;
+  }
+  .velo[hidden]{ display:none !important }
+
+  .hojita{
+    position:static !important; max-height:none !important; height:auto !important;
+    width:auto !important; max-width:none !important;
+    border-radius:0 !important; box-shadow:none !important; border:0 !important;
+    background:#fff !important; color:#000 !important;
+    transform:none !important; padding:0 !important;
+  }
+  .hojita-rueda{ overflow:visible !important; max-height:none !important; padding:0 !important }
+  .hojita-cabeza{ border:0 !important; padding:0 0 10mm !important; background:none !important }
+  .hojita h3{ font-size:20pt !important; color:#000 !important }
+
+  /* la tabla, que es lo que de verdad se imprime */
+  table{ width:100% !important; border-collapse:collapse !important; font-size:11pt !important }
+  th, td{ border-bottom:1px solid #999 !important; padding:6pt 4pt !important; color:#000 !important }
+  th{ background:#EEE !important; text-align:left !important }
+
+  /* que ninguna fila se parta entre dos hojas */
+  tr, .plato, .linea-prod{ break-inside:avoid; page-break-inside:avoid }
+
+  @page{ margin:14mm }
+}
