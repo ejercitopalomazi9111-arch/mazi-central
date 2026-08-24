@@ -44,6 +44,13 @@ const NO_VA = (ruta) => {
   if(/\.json$/i.test(f) && /credencial\/datos/.test(ruta)) return false;          /* ← la excepción que importa */
   if(/\.md$/i.test(f)) return true;
   if(f === '.DS_Store') return true;
+  /* Las pruebas y los guiones de armado NO se publican. No rompen nada si van
+     —nadie los ejecuta desde el navegador— pero no los usa el sitio, y este
+     archivo existe justamente para que lo publicado sea lo que decidimos
+     publicar y no lo que se quedó en la carpeta. Se colaban diez. */
+  if(/^pruebas[^/]*\.(mjs|js|py)$/i.test(f)) return true;
+  if(/^armar-suelto\.mjs$/i.test(f)) return true;
+  if(/^(medir|rehacer|recortar)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
 };
