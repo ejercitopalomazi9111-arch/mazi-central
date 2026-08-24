@@ -2325,7 +2325,15 @@ function guardarCred(){
   try{ localStorage.setItem(LLAVE_CRED, JSON.stringify(CRED)); }
   catch(e){ alert('No cupo en la memoria. Quita alguna foto o borra credenciales viejas.'); }
 }
-const cAct = () => CRED.gente[credActiva];
+/* Nunca devuelve `undefined`. Si la lista quedara vacía —por una importación
+   rara o por datos guardados a medias—, `folioCred(undefined)` tronaba y se
+   caía la pestaña ENTERA: ni se pintaba la credencial ni servía el botón de
+   imprimir. Vale más una credencial en blanco que una pantalla muerta. */
+const cAct = () => {
+  if(!CRED.gente.length){ CRED.gente = [credNueva()]; credActiva = 0; }
+  if(credActiva >= CRED.gente.length) credActiva = CRED.gente.length - 1;
+  return CRED.gente[credActiva];
+};
 
 /* iconos: glifos funcionales, no ilustración. Van en el código porque son
    quince trazos y bajarlos de algún lado sería depender de alguien más. */
@@ -3386,6 +3394,17 @@ function imprimir(){
      El botón de «Imprimir todas» de allá abajo sigue existiendo; esto sólo
      hace que el de arriba haga lo que uno espera desde donde está parado. */
   if(vistaActual() === 'credencial'){ imprimirCredenciales(false); return; }
+
+  /* Un reporte sin nada adentro imprimía UNA HOJA EN BLANCO, con su membrete y
+     su folio, sin decir ni pío. El de credenciales sí avisa cuando no hay nada
+     que imprimir; éste no, y gastar una hoja para descubrirlo es peor que un
+     aviso. */
+  if(!String(R.cuerpo || '').trim() && !String(R.titulo || '').trim()){
+    alert('El reporte está vacío: saldría una hoja con nada más el membrete.\n\n'
+        + 'Escribe algo en la pestaña «Escribir», o cámbiate a «Credencial» si '
+        + 'lo que querías era imprimir credenciales.');
+    return;
+  }
   guardar();
   aplicarEscalaImpresion();
   verVista('ver');
