@@ -2387,13 +2387,30 @@ function folioCred(c){
 function habilidadesDe(c){
   return String(c.habilidades || '').split('\n').map(x => x.trim()).filter(Boolean);
 }
+/* Dónde vive de verdad la página de habilidades.
+   ⚠️ Va FIJA y no sale de `location.href`, y la razón es que esto se IMPRIME.
+   Cloudflare hace una vista previa por rama y otra por commit, con nombre
+   distinto cada vez; si Carlos arma las credenciales desde una de ésas, el QR
+   impreso apunta a una dirección que se va a borrar, y eso ya no se puede
+   corregir: las tarjetas ya están en la cartera de la gente.
+   Si algún día el sitio se muda a un dominio propio, se cambia esta línea. */
+const CASA_HABILIDADES = 'https://mazi-central.palomazi9111.workers.dev/reportes/';
+
 function urlHabilidades(folio){
-  return new URL('credencial/#' + encodeURIComponent(folio), location.href).href;
+  /* En la máquina de uno sí se usa la dirección local, para poder probarlo. */
+  const local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const base = local
+    ? new URL('.', location.href).href
+    : CASA_HABILIDADES;
+  return base + 'credencial/#' + encodeURIComponent(folio);
 }
 function llevaQR(c){ return !!folioCred(c) && habilidadesDe(c).length > 0; }
 
+/* Devuelve si generó alguno NUEVO. De eso depende repintar, y es lo que
+   arregla el defecto de abajo. */
 async function prepararQRs(){
-  if(typeof QRCode === 'undefined') return;
+  if(typeof QRCode === 'undefined') return false;
+  let nuevos = 0;
   for(const c of CRED.gente){
     if(!llevaQR(c)) continue;
     const f = folioCred(c);
@@ -2402,8 +2419,12 @@ async function prepararQRs(){
       QRS[f] = await QRCode.toDataURL(urlHabilidades(f), {
         errorCorrectionLevel:'M', margin:2, width:640,
         color:{ dark:'#0A2440', light:'#FFFFFF' } });
+      /* Se cuenta DESPUÉS de que salió bien. Contarlo antes haría que un QR
+         que tronó pidiera un repintado que no cambia nada. */
+      nuevos++;
     }catch(e){ /* si truena, la credencial sale con el QR de siempre */ }
   }
+  return nuevos > 0;
 }
 
 /* El archivo que Carlos sube a mano. NO se publica nada solo: son datos de
@@ -2526,6 +2547,7 @@ function credReverso(c){
       '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
     '</div>'+
   '</div>';
+  return nuevos > 0;
 }
 
 /* ── la pantalla de credenciales ── */
@@ -2567,13 +2589,20 @@ function avisarQR(c){
 function pintarCred(){
   const c = cAct(), b = CRED.base;
   avisarQR(c);
-  prepararQRs().then(() => {
-    /* Si acababa de generarse un QR que no existía, se repinta UNA vez.
-       Sin la condición se llamaría a sí misma para siempre. */
-    if(llevaQR(c) && QRS[folioCred(c)] && !$('#mesaCred').dataset.conQR){
-      $('#mesaCred').dataset.conQR = '1'; pintarCred();
-    }
-  });
+  /* El QR se arma tarde —generarlo es asíncrono—, así que la primera pasada
+     pinta con lo que hay: el QR de la marca. Cuando el de la persona está
+     listo, hay que repintar.
+
+     ⚠️ Esto estaba mal y es EL defecto que reportó Carlos: «la credencial solo
+     tiene la de Instagram». La condición usaba una bandera GLOBAL en el
+     elemento de la mesa, así que se encendía con la PRIMERA credencial y ya
+     nunca se volvía a repintar. La primera persona salía con su QR y la
+     segunda —con su folio y sus certificaciones igual de llenas— se quedaba
+     con el de Instagram para siempre.
+
+     Ahora la condición es «¿se generó alguno nuevo?». Termina sola porque la
+     segunda vuelta ya no genera nada. */
+  prepararQRs().then((huboNuevos) => { if(huboNuevos) pintarCred(); });
   $('#cuentaCred').textContent = CRED.gente.length +
     (CRED.gente.length===1 ? ' credencial' : ' credenciales');
   $('#listaCred').innerHTML = CRED.gente.map((g,k) =>
@@ -3400,6 +3429,32 @@ repintar();
      llevaQR({ num:'X-1', habilidades:'' }) === false);
   ok('con folio y habilidades sí lleva QR',
      llevaQR({ num:'X-1', habilidades:'una\ndos' }) === true);
+
+  /* ── El QR: lo que reportó Carlos y lo que se imprime ──────────────────── */
+  ok('el QR apunta a la página de habilidades con el folio',
+     /credencial\/#PM-014$/.test(urlHabilidades('PM-014')));
+  /* Esto es lo que hace que un QR impreso siga sirviendo el año que entra.
+     Desde una vista previa de Cloudflare, la dirección tiene que ser la de la
+     casa y NO la de la vista previa, que se borra. */
+  ok('la dirección del QR es fija, no la de la vista previa donde se armó',
+     location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+       ? true
+       : urlHabilidades('X-1').startsWith('https://mazi-central.palomazi9111.workers.dev/'),
+     urlHabilidades('X-1'));
+  ok('el folio se escapa, por si trae algo raro',
+     urlHabilidades('A B/C').includes(encodeURIComponent('A B/C')));
+  /* El defecto que reportó Carlos: «la credencial solo tiene la de Instagram».
+     `prepararQRs` tiene que AVISAR si generó alguno nuevo — de eso depende que
+     la credencial se repinte. Antes se usaba una bandera global que se
+     encendía con la primera persona, así que la segunda se quedaba con el QR
+     de la marca aunque tuviera todo lleno. */
+  ok('prepararQRs avisa si generó alguno nuevo', (function(){
+     return /return nuevos > 0/.test(prepararQRs.toString());
+  })());
+  ok('y la credencial se repinta con eso, no con una bandera global', (function(){
+     return /huboNuevos/.test(pintarCred.toString())
+         && !/dataset\.conQR/.test(pintarCred.toString());
+  })());
   ok('las habilidades se parten por renglón',
      habilidadesDe({ habilidades:' una \n\n dos \n' }).length === 2);
   /* Lo que hizo falta medir: un perfil entero NO cabe en un QR de credencial.
