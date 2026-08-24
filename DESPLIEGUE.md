@@ -166,21 +166,23 @@ Al auditarlo salieron dos cosas que ya estaban mal aunque nadie las hubiera nota
    Cloudflare.
 2. **El manual de Ligas Mazi** mandaba a la gente a la dirección de github.io. Ya no.
 
-### Lo que falta y es TU decisión
+### Torre Infinita · CERRADO, decisión de Carlos
 
-**El índice de Mazi Central enlaza a Torre Infinita**, a
-`ejercitopalomazi9111-arch.github.io/torre-infinita/`. Ese enlace:
+Lo pregunté y lo resolvió: **no se toca.**
 
-- **se va a romper** en cuanto hagas privado ese repo, y
-- es un puntero público, desde lo que sí va a tener visitas, hacia justo lo que decidiste cerrar
-  por el arte y las patentes de Nintendo.
+> *«Por ahora olvídala, no tiene tráfico y no es razón de demanda, no gastemos tiempo ni recursos
+> en eso por ahora ni le muevas. Además yo lo juego con frecuencia. Y Mazi Central no es para que
+> cualquiera lo use, solo yo sé de su existencia y lo necesito, y quiero que se quede así.»*
 
-No lo quité porque es tu tablero y es tu llamada. **Dime si lo quito o lo dejo.**
+Así que:
 
-### Y el que más urge no es éste
+- El enlace a Torre Infinita en el índice **se queda**.
+- El repo de `torre-infinita` **se queda público**.
+- **Mazi Central es su tablero personal**, no un sitio público. Eso cambia cómo se leen las cosas
+  de aquí: no es un escaparate, es su herramienta. No hay que tratarlo como si fuera a recibir
+  visitas.
 
-El repo de **`torre-infinita` es aparte** y sigue público. Ése tiene el arte de Nintendo, y GitHub
-es justo donde ellos mandan los avisos. Ése urge más que `mazi-central`.
+**No volver a sacar el tema** salvo que cambie el tráfico o que él lo pida.
 
 ---
 

@@ -569,6 +569,16 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   `HudScene`, otra escena viva. Reproducido y verificado. PR draft `torre-infinita#1`.
 - **Ligas Mazi** estable en `main` (36/36 pruebas del simulador).
 
+### Decidido y cerrado · no volver a proponerlo
+
+- **Torre Infinita se queda como está, y su repo también.** Carlos: *«no tiene tráfico y no es
+  razón de demanda, no gastemos tiempo ni recursos en eso ni le muevas; además yo lo juego con
+  frecuencia».* El análisis legal de §7 sigue siendo correcto para **el sitio de la empresa**; lo
+  que él decidió es que el riesgo real hoy no justifica el trabajo. Es su llamada y está tomada.
+- **Mazi Central (`index.html`) es su tablero personal, no un escaparate.** *«No es para que
+  cualquiera lo use, solo yo sé de su existencia y lo necesito, y quiero que se quede así.»* No
+  hay que tratarlo como si fuera a recibir visitas ni pulirlo para desconocidos.
+
 ### Pendientes con diagnóstico
 - **Ligas Mazi se ve mal en computadora — ya está diagnosticado.** Capturado en 1920px con
   `agent-browser`: **se diseñó sólo para teléfono y en escritorio sólo se centró.** Queda una

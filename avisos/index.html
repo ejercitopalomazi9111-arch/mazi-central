@@ -320,7 +320,23 @@ function describePlantilla(){
 });
 
 /* ══ LA IMAGEN ═══════════════════════════════════════════════════════════ */
-const ANCHO = 1080, ESC = 2;          /* 2160 px de ancho: nítido en cualquier teléfono */
+/* El ANCHO YA NO ES FIJO.
+
+   Carlos: «no hagas que crezca solo hacia abajo, haz que lo haga en todas
+   direcciones». Tenía razón: con sesenta pendientes de mucho texto, un lienzo
+   de ancho fijo se convierte en una tira de veinte mil píxeles que nadie
+   scrollea. Un periódico no se hace más largo — se hace de más columnas.
+
+   Así que el ANCHO DE COLUMNA se queda quieto —eso es lo que mantiene el texto
+   del mismo tamaño y por tanto igual de legible— y lo que crece es el NÚMERO
+   de columnas. Más columnas = lienzo más ancho y más bajito.
+
+   `PROPORCION_TOPE` es hasta dónde se le deja crecer hacia abajo antes de
+   abrir otra columna. 1.6 es un poco más alto que una hoja carta. */
+const ANCHO_BASE = 1080, ESC = 2;
+const PROPORCION_TOPE = 1.6;
+const COLUMNAS_TOPE = 6;
+let ANCHO = ANCHO_BASE;
 const escudo = new Image(); escudo.src = 'escudo-rembrandt.png';
 
 function fechaLarga(iso){
@@ -339,7 +355,21 @@ function fechaCorta(iso){
    solo: si no se hace esto, el texto se sale de la tarjeta y nadie se entera
    hasta que el aviso ya se mandó al chat. */
 function envolver(ctx, texto, ancho){
-  const palabras = String(texto).split(/\s+/).filter(Boolean);
+  const palabras = [];
+  for(const w of String(texto).split(/\s+/).filter(Boolean)){
+    /* Una palabra más larga que la columna —una dirección de internet, un
+       nombre de archivo— no se puede acomodar entre espacios: hay que PARTIRLA.
+       Sin esto se salía de la tarjeta, y con las columnas angostas eso deja de
+       ser raro. */
+    if(ctx.measureText(w).width <= ancho){ palabras.push(w); continue; }
+    let trozo = '';
+    for(const letra of w){
+      if(ctx.measureText(trozo + letra).width > ancho && trozo){
+        palabras.push(trozo); trozo = letra;
+      } else trozo += letra;
+    }
+    if(trozo) palabras.push(trozo);
+  }
   const out = []; let linea = '';
   for(const w of palabras){
     const prueba = linea ? linea + ' ' + w : w;
@@ -525,9 +555,15 @@ function repartir(bloques, n, ancho, hueco){
   return cols;
 }
 
-function componer(ctx, pintar){
+function componer(ctx, pintar, columnas){
   const M = 34;
   const plantilla = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  const cols = columnas || plantilla.columnas;
+  /* El ancho de columna NO cambia con el número de columnas: sale del lienzo
+     base con las columnas que la plantilla pide. Por eso el texto se ve igual
+     de grande lleve dos columnas o cinco. */
+  const anchoCol = (ANCHO_BASE - M*2 - (plantilla.columnas - 1) * 20) / plantilla.columnas;
+  ANCHO = Math.round(M*2 + cols * anchoCol + (cols - 1) * 20);
   let y = 0;
 
   /* ── el encabezado ── */
@@ -564,8 +600,6 @@ function componer(ctx, pintar){
   /* ── el cuerpo, según la plantilla ── */
   const bloques = bloquesDe(ctx, !!plantilla.compacta);
   const hueco = plantilla.compacta ? 8 : 12;
-  const cols = plantilla.columnas;
-  const anchoCol = (ANCHO - M*2 - (cols - 1) * 20) / cols;
   const repartido = repartir(bloques, cols, anchoCol, hueco);
 
   let maxAlto = 0;
@@ -708,21 +742,39 @@ function ficha(ctx, p, x, y, w, pintar){
   return alto;
 }
 
+/* Cuántas columnas hacen falta para que el cartel no salga como una tira.
+   Se prueba de la que pide la plantilla hacia arriba y se para en cuanto la
+   proporción entra en el tope — o cuando ya no mejora, que pasa cuando un solo
+   pendiente es más alto que toda la meta. */
+function elegirColumnas(ctx){
+  const plantilla = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  let mejor = plantilla.columnas, mejorProp = Infinity;
+  for(let n = plantilla.columnas; n <= COLUMNAS_TOPE; n++){
+    const alto = componer(ctx, false, n);
+    const prop = alto / ANCHO;
+    if(prop <= PROPORCION_TOPE) return n;
+    if(prop < mejorProp - 0.02){ mejorProp = prop; mejor = n; }
+    else break;                       /* ya no mejora: no tiene caso ensanchar */
+  }
+  return mejor;
+}
+
 function dibujar(){
   const c = $('#lienzo'), ctx = c.getContext('2d');
-  c.width = ANCHO * ESC; c.height = 100;
+  c.width = ANCHO_BASE * ESC; c.height = 100;
   ctx.setTransform(ESC, 0, 0, ESC, 0, 0);
-  const alto = componer(ctx, false);
-  c.width = ANCHO * ESC; c.height = Math.round(alto * ESC);
+  const cols = elegirColumnas(ctx);
+  const alto = componer(ctx, false, cols);      /* fija ANCHO */
+  c.width = Math.round(ANCHO * ESC); c.height = Math.round(alto * ESC);
   const g = c.getContext('2d');
   g.setTransform(ESC, 0, 0, ESC, 0, 0);
   g.fillStyle = '#FAF4EA'; g.fillRect(0, 0, ANCHO, alto);
-  componer(g, true);
-  consejoPlantilla();
+  componer(g, true, cols);
+  consejoPlantilla(cols);
 }
 
 /* Le dice cuál plantilla le conviene, sin quitarle la que eligió. */
-function consejoPlantilla(){
+function consejoPlantilla(cols){
   const n = D.pendientes.length;
   const actual = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
   const buena = PLANTILLAS.find(x => n <= x.holgado) || PLANTILLAS[PLANTILLAS.length-1];
@@ -928,6 +980,40 @@ function pruebas(){
      sobreviven[0].titulo === 'dura semanas');
   D.plantilla = 'tablero'; dibujar();
   ok('un fijado se dibuja sin tronar', $('#lienzo').height > 200 * ESC);
+
+  /* ── que crezca en todas direcciones, no sólo hacia abajo ── */
+  /* Carlos: «no hagas que crezca solo hacia abajo». Con mucho contenido el
+     lienzo tiene que ENSANCHARSE abriendo columnas, no volverse una tira. */
+  (function(){
+    const gordo = 'Traer la investigación completa sobre la técnica correcta para correr';
+    const det = ['Incluir imágenes de la postura desde tres ángulos y explicar cada una',
+                 'Explicar el método de respiración y cada cuántos pasos se aplica',
+                 'Comparar la zancada de fondo con la de velocidad y decir por qué'].join('\n');
+    D.plantilla = 'tablero'; D.pendientes = [];
+    for(let i = 0; i < 14; i++) D.pendientes.push(
+      { materia: MATERIAS[i % 11].id, tipo:'tarea', cuando:'manana',
+        titulo: gordo + ' — ' + i, detalles: det });
+    dibujar();
+    const anchoGordo = $('#lienzo').width, altoGordo = $('#lienzo').height;
+    ok('con mucho contenido el lienzo se ensancha', anchoGordo > ANCHO_BASE * ESC);
+    ok('y no queda como una tira', altoGordo / anchoGordo <= 2.2);
+
+    D.pendientes = D.pendientes.slice(0, 2); dibujar();
+    ok('con poco contenido NO se ensancha de más', $('#lienzo').width <= anchoGordo);
+  })();
+
+  /* ── una palabra más larga que la columna ── */
+  /* Sin partir palabras, una dirección de internet se salía de la tarjeta. Con
+     columnas angostas eso deja de ser raro. */
+  (function(){
+    const g = $('#lienzo').getContext('2d');
+    g.font = F(500, 25);
+    const bicho = 'https://mazi-central.palomazi9111.workers.dev/fadori/instalar.html';
+    const ls = envolver(g, bicho, 300);
+    ok('una palabra larguísima se parte en vez de desbordarse', ls.length > 1);
+    ok('y ningún trozo se sale del ancho',
+       ls.every(l => g.measureText(l).width <= 300 + 1));
+  })();
 
   /* ── que se alcance con el dedo ── */
   /* Ya me pasó en Ligas Mazi: campos de 36 px que nadie atina. Aquí se mide,

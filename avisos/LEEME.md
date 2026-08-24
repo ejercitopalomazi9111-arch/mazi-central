@@ -112,6 +112,25 @@ Con 60 pendientes: Tablero sale de **21 834 px** de alto, Periódico de 12 726 y
 Lista de 5 680. La herramienta **sugiere** la que conviene según cuántos haya,
 con un botón para cambiar — sugiere, no obliga.
 
+## Crece en todas direcciones, no sólo hacia abajo
+
+Carlos: *«no hagas que crezca solo hacia abajo, haz que lo haga en todas
+direcciones».* Tenía razón: con muchos pendientes de mucho texto, un lienzo de
+ancho fijo se vuelve una tira de veinte mil píxeles que nadie scrollea. **Un
+periódico no se hace más largo — se hace de más columnas.**
+
+Así que el **ancho de columna se queda quieto** —eso es lo que mantiene el texto
+del mismo tamaño y por tanto igual de legible— y lo que crece es el **número de
+columnas**. Más columnas = lienzo más ancho y más bajito, hasta seis.
+
+Medido con 40 pendientes de mucho texto cada uno (cinco renglones de detalle):
+
+| Plantilla | Antes · ancho fijo | Ahora |
+|---|---|---|
+| Tablero | 21 834 px de alto | 8 352 × 10 960 · **1:1.31** |
+| Periódico | — | 6 288 × 13 778 · 1:2.19 |
+| Lista | — | 5 256 × 8 000 · **1:1.52** |
+
 ## «Sigue vigente»
 
 Hay avisos de dirección que valen un día y otros que valen semanas. Los de
@@ -156,7 +175,7 @@ los dos se ve a ojo; salieron midiendo, y ahora hay una prueba que los mide.
 
 ## Pruebas
 
-36, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
+41, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
 el orden del periódico ponga lo de mañana primero, que ningún renglón se salga
 de su tarjeta —eso no se ve hasta que el aviso ya se mandó—, que la imagen
 crezca con el contenido, que las fechas salgan en español y que **ningún
