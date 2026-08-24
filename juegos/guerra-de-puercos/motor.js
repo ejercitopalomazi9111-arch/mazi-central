@@ -282,5 +282,11 @@ const API = {
   puntuar, porQueNoSeVale, danoEntre, repartir, jugarRonda, jugadasPosibles,
 };
 
+/* Tres formas de cargarlo, un solo archivo:
+   · `module.exports` para las pruebas en node,
+   · `globalThis.MOTOR` para la página (donde `globalThis` ES `window`) y
+     también para el Worker de Cloudflare, que no tiene `window`.
+   Si aquí dijera `window.MOTOR`, en el servidor no se definiría nada y el
+   servidor tendría que llevar su propia copia de las reglas. */
 if(typeof module !== 'undefined') module.exports = API;
-if(typeof window !== 'undefined') window.MOTOR = API;
+globalThis.MOTOR = API;

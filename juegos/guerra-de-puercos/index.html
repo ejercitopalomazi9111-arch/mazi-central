@@ -202,6 +202,7 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   <div class="menu">
     <button class="btn fuerte ancho" data-modo="maquina">Jugar contra la máquina</button>
     <button class="btn ancho" data-modo="dos">Dos en este teléfono</button>
+    <button class="btn ancho" id="bLinea">Jugar con alguien lejos</button>
     <button class="btn ancho" id="bReglas">Cómo se juega</button>
   </div>
   <p class="pie">El juego y su reglamento son de su autora.<br>Esta versión para
@@ -248,6 +249,42 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
       no se pueden usar en combinaciones. Una carta sólo recibe una por ronda.</p>
   </div>
   <p class="pie">Reglamento original de la autora del juego.</p>
+</main>
+
+<!-- ══ SALA (en línea) ══════════════════════════════════════════════════ -->
+<main id="p-sala" class="envoltura oculto">
+  <div style="padding-top:14px"><button class="btn chico" data-ir="portada">‹ Volver</button></div>
+
+  <div class="tapete" style="margin-top:12px">
+    <p class="rotulo">Empieza una partida</p>
+    <p style="font-size:14px; font-weight:700; line-height:1.5; margin:0 0 12px">
+      Se hace un código de 4 letras. Se lo pasas a la otra persona por
+      WhatsApp y los dos entran a la misma mesa.</p>
+    <button class="btn fuerte ancho" id="bCrear">Hacer un código</button>
+    <div id="miCodigo" class="oculto" style="text-align:center; margin-top:14px">
+      <div style="font-size:11px; font-weight:900; letter-spacing:.16em;
+                  text-transform:uppercase; color:var(--rosa-hondo)">Tu código</div>
+      <div id="codigoTexto" style="font-size:46px; font-weight:900; letter-spacing:.16em;
+                  line-height:1.15"></div>
+      <button class="btn chico" id="bCopiar">Copiar el código</button>
+    </div>
+  </div>
+
+  <div class="tapete">
+    <p class="rotulo">O entra a una que ya existe</p>
+    <input id="fCodigo" inputmode="latin" autocapitalize="characters" autocomplete="off"
+      maxlength="4" placeholder="ABCD"
+      style="width:100%; min-height:56px; font-size:30px; font-weight:900;
+             text-align:center; letter-spacing:.22em; text-transform:uppercase;
+             border:3px solid var(--tinta); border-radius:12px; background:var(--hueso);
+             font-family:inherit; padding:6px">
+    <button class="btn ancho" id="bEntrar" style="margin-top:10px" disabled>Entrar a la sala</button>
+    <p class="aviso" id="salaAviso" hidden></p>
+  </div>
+
+  <p class="pie">Cualquiera que sepa el código puede entrar mientras haya lugar.
+    Es un código de sala, no una contraseña.<br>Lo que sí está protegido son
+    tus cartas: el otro nunca las recibe.</p>
 </main>
 
 <!-- ══ MESA ═════════════════════════════════════════════════════════════ -->
@@ -344,10 +381,21 @@ let elegidas = [];     /* cartas marcadas */
 let especial = null;   /* 'bono' | 'castigo' | null */
 let guardadaA = null;  /* la jugada de A mientras A espera a B */
 
-const NOMBRES = { maquina: { a:'Tú', b:'Máquina' }, dos: { a:'Jugador 1', b:'Jugador 2' } };
+const NOMBRES = { maquina:{ a:'Tú', b:'Máquina' }, dos:{ a:'Jugador 1', b:'Jugador 2' },
+                  linea:{ a:'Tú', b:'El otro' } };
+
+/* ── EL MODO EN LÍNEA ────────────────────────────────────────────────────
+   La partida NO vive aquí: vive en el servidor, y de allá llega sólo MI
+   vista —mis cartas, y del rival los PV y cuántas cartas trae—. Por eso esta
+   página no puede enseñar la mano del otro ni aunque alguien la abra y la
+   lea: nunca la recibe. */
+const LINEA = { ws:null, codigo:null, asiento:null, vista:null, esperando:false };
+window.LINEA = LINEA;   /* para que las pruebas puedan mirar la sala */
+const LLAVE_SECRETO = 'puercos_secreto_';
 
 function pantalla(cual){
-  for(const p of ['portada','reglas','mesa']) $('#p-' + p).classList.toggle('oculto', p !== cual);
+  for(const p of ['portada','reglas','sala','mesa'])
+    $('#p-' + p).classList.toggle('oculto', p !== cual);
   window.scrollTo(0, 0);
 }
 function fase(cual){
@@ -374,6 +422,24 @@ function elDorso(){
 /* ── quién está eligiendo ahora ── */
 const yo    = () => J[turnoDe];
 const rival = () => J[turnoDe === 'a' ? 'b' : 'a'];
+
+/* Convierte la VISTA que manda el servidor en el mismo `J` que usan los otros
+   dos modos, para que toda la pintura de abajo funcione igual sin saber si la
+   partida es local o de allá. Del rival se arma una mano de cartas TAPADAS
+   —sólo para contarlas—, porque sus valores nunca llegaron. */
+function deLaVista(v){
+  const mio = { pv:v.yo.pv, mano:v.yo.mano, combosUsados:v.yo.combosUsados,
+                especiales:v.yo.especiales, nombre:v.asiento };
+  const suyo = { pv:v.rival.pv, combosUsados:v.rival.combosUsados,
+                 especiales:v.rival.especiales, nombre:'rival',
+                 mano: Array.from({ length:v.rival.cartas },
+                                  (_, i) => ({ id:'tapada' + i, valor:0, nivel:'?' })) };
+  const j = { mazo: Array.from({ length:v.mazo }), ronda:v.ronda,
+              acabo:v.acabo, porCartas:v.porCartas, historia:[] };
+  j[v.asiento] = mio;
+  j[v.asiento === 'a' ? 'b' : 'a'] = suyo;
+  return j;
+}
 
 function pintarMano(){
   const m = $('#mMano'); m.innerHTML = '';
@@ -573,12 +639,25 @@ function cortina(quien, texto, luego){
 function pedirJugada(){
   elegidas = []; especial = null;
   fase('Elegir');
+  $('#bJugar').classList.remove('oculto');
+  $('#bLimpiar').classList.remove('oculto');
   pintarMarcador(); pintarMano(); pintarBotones();
 }
 
 function jugar(){
   const jugada = { cartas: elegidas.slice(), especial };
   if(MOTOR.porQueNoSeVale(jugada, yo())) return;
+
+  if(modo === 'linea'){
+    /* Se mandan IDS, no cartas: el servidor busca los valores en la mano que
+       él tiene guardada. Mandar valores sería dejar que el teléfono se
+       inventara un 100. */
+    LINEA.ws.send(JSON.stringify({ tipo:'jugada',
+      cartas: jugada.cartas.map(c => c.id), especial: jugada.especial }));
+    LINEA.esperando = true;
+    esperandoAlOtro();
+    return;
+  }
 
   if(modo === 'maquina'){
     const jb = pensarMaquina(J.b);
@@ -613,6 +692,143 @@ function nuevaPartida(){
   } else pedirJugada();
 }
 
+/* ══ EN LÍNEA ═════════════════════════════════════════════════════════════ */
+function avisoSala(texto){
+  const a = $('#salaAviso');
+  if(!texto){ a.hidden = true; return; }
+  a.hidden = false; a.textContent = texto;
+}
+
+function esperandoAlOtro(){
+  fase('Elegir');
+  $('#rTuMano').textContent = 'Ya jugaste · falta el otro';
+  $('#mMano').innerHTML = '<p style="grid-column:1/-1; text-align:center; font-weight:800;'
+    + ' margin:16px 0">Esperando a que el otro elija su carta…</p>';
+  $('#mEspeciales').innerHTML = '';
+  $('#mAviso').hidden = true;
+  $('#bJugar').disabled = true;
+  /* Se esconden, no se apagan: un botón apagado invita a picarle y a
+     preguntarse por qué no hace nada. */
+  $('#bJugar').classList.add('oculto');
+  $('#bLimpiar').classList.add('oculto');
+  $('#mPistas').textContent = '';
+}
+
+function conectar(codigo){
+  LINEA.codigo = codigo;
+  const esquema = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const secreto = (() => { try{ return localStorage.getItem(LLAVE_SECRETO + codigo) || ''; }
+                           catch(e){ return ''; } })();
+  const url = esquema + '//' + location.host + '/api/puercos/sala/' + codigo
+            + (secreto ? '?secreto=' + encodeURIComponent(secreto) : '');
+  const ws = new WebSocket(url);
+  LINEA.ws = ws;
+  modo = 'linea';
+
+  ws.addEventListener('open', () => avisoSala(null));
+  ws.addEventListener('message', (ev) => {
+    const m = JSON.parse(ev.data);
+
+    if(m.tipo === 'lleno'){ avisoSala(m.porque); pantalla('sala'); return; }
+    if(m.tipo === 'error'){
+      /* Un rechazo del servidor es información, no un cuelgue: se dice y se
+         le devuelve la mano para que vuelva a elegir. */
+      LINEA.esperando = false;
+      pedirJugada();
+      $('#mAviso').hidden = false; $('#mAviso').textContent = m.porque;
+      return;
+    }
+
+    if(m.tipo === 'sentado'){
+      LINEA.asiento = m.asiento;
+      turnoDe = m.asiento;
+      /* Los rótulos del marcador dependen de EN QUÉ ASIENTO quedé. Estaban
+         fijos en a='Tú', y al que le tocaba el asiento b le decían «Tú» a los
+         puntos del otro. */
+      NOMBRES.linea = {};
+      NOMBRES.linea[m.asiento] = 'Tú';
+      NOMBRES.linea[m.asiento === 'a' ? 'b' : 'a'] = 'El otro';
+      try{ localStorage.setItem(LLAVE_SECRETO + codigo, m.secreto); }catch(e){}
+      return;
+    }
+
+    if(m.tipo === 'estado'){
+      const v = m.vista;
+      LINEA.vista = v;
+
+      /* Mientras falta el otro NO se entra a la mesa: se queda la pantalla de
+         la sala, con el código grande y el botón de copiar a la mano. Antes se
+         saltaba a una mesa vacía que decía «MÁQUINA» en el marcador y enseñaba
+         un botón de jugar apagado — o sea, tres cosas que no venían al caso
+         justo cuando lo único que tiene que hacer es pasar el código. */
+      if(v.esperando || !v.listo){
+        pantalla('sala');
+        $('#codigoTexto').textContent = codigo;
+        $('#miCodigo').classList.remove('oculto');
+        avisoSala('Ya estás en la sala ' + codigo + '. Falta que entre la otra '
+                + 'persona con ese mismo código.');
+        return;
+      }
+
+      pantalla('mesa');
+      J = deLaVista(v);
+      pintarMarcador();
+
+      /* Si vino con la ronda resuelta, primero se enseña el duelo. */
+      if(m.ronda){
+        const antes = J;
+        J.historia = [m.ronda.h];
+        mostrarDuelo(antes, J, m.ronda.a, m.ronda.b);
+        LINEA.esperando = false;
+        return;
+      }
+
+      if(v.yaJugue){ LINEA.esperando = true; esperandoAlOtro(); return; }
+      LINEA.esperando = false;
+      if(!v.acabo) pedirJugada(); else terminar();
+      return;
+    }
+  });
+
+  ws.addEventListener('close', (ev) => {
+    if(ev.code === 4001) return;               /* sala llena: ya se avisó */
+    if(modo !== 'linea') return;
+    avisoSala('Se cortó la conexión. Vuelve a entrar con el mismo código y '
+            + 'sigues en tu lugar.');
+    pantalla('sala');
+  });
+  ws.addEventListener('error', () => avisoSala('No se pudo conectar. Revisa el internet.'));
+}
+
+$('#bLinea').addEventListener('click', () => { avisoSala(null); pantalla('sala'); });
+$('#bCrear').addEventListener('click', async () => {
+  $('#bCrear').disabled = true;
+  try{
+    const r = await fetch('/api/puercos/codigo');
+    const { codigo } = await r.json();
+    $('#codigoTexto').textContent = codigo;
+    $('#miCodigo').classList.remove('oculto');
+    conectar(codigo);
+  }catch(e){
+    avisoSala('No se pudo hacer el código. Revisa el internet.');
+  }
+  $('#bCrear').disabled = false;
+});
+$('#bCopiar').addEventListener('click', async () => {
+  try{ await navigator.clipboard.writeText($('#codigoTexto').textContent);
+       $('#bCopiar').textContent = 'Copiado'; }
+  catch(e){ $('#bCopiar').textContent = 'Cópialo a mano'; }
+});
+$('#fCodigo').addEventListener('input', () => {
+  const v = $('#fCodigo').value.toUpperCase().replace(/[^A-Z]/g, '');
+  $('#fCodigo').value = v;
+  $('#bEntrar').disabled = v.length !== 4;
+});
+$('#bEntrar').addEventListener('click', () => {
+  avisoSala(null);
+  conectar($('#fCodigo').value.toUpperCase());
+});
+
 /* ── conexiones ── */
 $$('[data-modo]').forEach(b => b.addEventListener('click', () => {
   modo = b.dataset.modo; nuevaPartida();
@@ -622,9 +838,21 @@ $('#bReglas').addEventListener('click', () => pantalla('reglas'));
 $('#bJugar').addEventListener('click', jugar);
 $('#bLimpiar').addEventListener('click', () => { elegidas = []; especial = null;
   pintarMano(); pintarBotones(); });
-$('#bOtra').addEventListener('click', nuevaPartida);
+$('#bOtra').addEventListener('click', () => {
+  if(modo === 'linea'){
+    /* La revancha la pide al servidor: si cada teléfono repartiera su propia
+       partida, serían dos partidas distintas. */
+    LINEA.ws.send(JSON.stringify({ tipo:'otra' }));
+    return;
+  }
+  nuevaPartida();
+});
 $('#bSeguir').addEventListener('click', () => {
   if(J.acabo) return terminar();
+  if(modo === 'linea'){
+    if(LINEA.vista && LINEA.vista.yaJugue) return esperandoAlOtro();
+    return pedirJugada();
+  }
   if(modo === 'dos'){
     cortina('Pásale el teléfono a ' + NOMBRES.dos.a, 'Ronda ' + J.ronda + '.', pedirJugada);
   } else pedirJugada();
