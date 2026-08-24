@@ -1,0 +1,37 @@
+{
+  // ── Guerra de Puercos · el SERVIDOR DE SALAS ────────────────────────────
+  // Un Durable Object por sala, para que dos primos jueguen desde dos casas.
+  //
+  // ⚠️ Es un proyecto de Cloudflare APARTE, y eso no es capricho: primero se
+  // metió dentro del proyecto del sitio y los despliegues de los DOS
+  // proyectos empezaron a fallar al instante y sin registro. Al quitarlo,
+  // verde otra vez. Un juego de cartas no puede tumbar el despliegue del
+  // tablero, de Avisos ni de Reportes.
+  //
+  // Mismo arreglo y misma razón que el servidor de Fadori en `servidor/`.
+  //
+  // Va en .jsonc y NO en .toml a propósito, igual que aquél: con un .toml,
+  // wrangler sube hasta la raíz del repo, toma el wrangler.jsonc DEL SITIO y
+  // trata de correr su `node build.mjs` dentro de esta carpeta.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "puercos",
+  "main": "index.js",
+  "compatibility_date": "2026-08-20",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+
+  // SQLite porque es lo que está incluido en el plan gratis; los de
+  // key-value no. Igual que la Cooperativa de Fadori.
+  "durable_objects": {
+    "bindings": [{ "name": "SALA", "class_name": "Sala" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }],
+
+  "vars": {
+    // De dónde se acepta que llamen. En claro y sin comodín.
+    "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,http://localhost:8791,http://127.0.0.1:8791",
+    // Las vistas previas del sitio, para poder probar contra el servidor de
+    // verdad antes de publicarle el juego a nadie.
+    "VISTAS_PREVIAS": "mazi-central.palomazi9111.workers.dev"
+  }
+}
