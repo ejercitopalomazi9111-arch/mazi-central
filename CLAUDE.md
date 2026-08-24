@@ -313,6 +313,7 @@ sin skill que la cubra, ahí sí se propone.
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
+| `avisos/` | **El aviso del grupo, hecho en un minuto.** Carlos es jefe del 3.1: escribe los pendientes y sale una imagen para el chat, con el formato de la escuela e icono por materia y por tipo. Materias y maestros salen de su horario real | ✅ probada, 19/19 |
 | auto-guardado | Commit automático de trabajo en curso | pendiente |
 
 ---
