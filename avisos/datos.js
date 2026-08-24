@@ -102,6 +102,13 @@ const PLANTILLAS = [
    Carlos, así que si la tipografía no está instalada ahí, el navegador pone
    otra y la imagen sale con la de repuesto sin avisar. */
 const FUENTES = [
+  /* La de la casa. Es la ÚNICA que no viene con el aparato, así que se carga
+     con @font-face desde `sitio/fuente/` —que es nuestro, no un servicio de
+     fuera— y el dibujo espera a que esté antes de pintar. Cubre letras,
+     acentos, números y ¿¡; le faltan «—», «%», «+» y «#», y ésos caen solos a
+     la de repuesto sin que se note. */
+  { id:'mazi',    nombre:'Mazi · la de la casa', propia:true,
+    fam:'"Mazi", system-ui, -apple-system, sans-serif' },
   { id:'sistema', nombre:'La del sistema',
     fam:'system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif' },
   { id:'palo',    nombre:'Palo seco (Arial)', fam:'Arial,"Liberation Sans",Helvetica,sans-serif' },

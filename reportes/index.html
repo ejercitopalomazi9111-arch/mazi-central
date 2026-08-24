@@ -578,10 +578,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   .hoja{
     box-shadow:none; margin:0 auto; break-after:page; page-break-after:always;
     width:215.9mm; height:279.4mm;
+    /* Carlos: «el pie de página se pasa a la siguiente y deja una hoja vacía
+       con solo el pie». Eso es la hoja PARTIÉNDOSE: mide 279.4 mm y no cabía
+       en lo que deja el navegador, así que la parte de abajo —donde están el
+       membrete inferior y el folio, puestos en posición absoluta— caía en la
+       página siguiente y salía sola. Esto prohíbe la partida; la escala de
+       abajo se encarga de que quepa. */
+    break-inside:avoid; page-break-inside:avoid;
   }
 
   .hoja:last-child{break-after:auto; page-break-after:auto}
-  .pliego{box-shadow:none; margin:0 auto; break-after:page; page-break-after:always}
+  .pliego{box-shadow:none; margin:0 auto; break-after:page; page-break-after:always;
+    break-inside:avoid; page-break-inside:avoid}
   .pliego:last-child{break-after:auto; page-break-after:auto}
   .cred{box-shadow:none}
   .mesa{display:none !important}
@@ -987,10 +995,10 @@ El día ...
     <h2 class="rotulo">Al imprimir <span class="regla"></span></h2>
     <label class="campo"><span>Desde dónde imprimes</span>
       <select id="oImpresion">
-        <option value="0.86">iPhone o iPad · Safari</option>
+        <option value="0.80">iPhone o iPad · Safari</option>
         <option value="0.90">Android · Chrome</option>
         <option value="1">Computadora, con márgenes en «ninguno»</option>
-        <option value="0.80">Se sigue partiendo · encoger más</option>
+        <option value="0.72">Se sigue partiendo · encoger más</option>
       </select></label>
     <p class="aviso">Safari en iPhone <b>se queda con un margen suyo</b> que no se puede apagar, y
       por eso una hoja completa no le cabe: se pasa por un pelo y arrastra una <b>página en blanco
@@ -1391,7 +1399,7 @@ const FORMATO_OFICIAL = {
   sello:'si', membrete:'todas',
   /* Cuánto se encoge la hoja al imprimir. Safari en iPhone se queda con un
      margen suyo que no se puede apagar; sin esto, cada hoja se parte en dos. */
-  impresion:0.86,
+  impresion:0.80,
 };
 let R = nuevoReporte();
 let TODOS = [];
@@ -3155,6 +3163,19 @@ conectarFormato('#oLado','lado',1);   conectarFormato('#oTope','tope',1);
 conectarFormato('#oFondo','fondo',1); conectarFormato('#oAgua','agua');
 conectarFormato('#oOpacidad','opacidad',1); conectarFormato('#oLeyenda','leyenda');
 conectarFormato('#oSello','sello');   conectarFormato('#oMembrete','membrete');
+/* La hoja mide esto y no se negocia: es tamaño carta. */
+const HOJA_MM = { alto:279.4, ancho:215.9 };
+
+/* Cuánto papel se queda Safari en iPhone en el PEOR caso: con los
+   «encabezados y pies de página» puestos, que es como viene de fábrica.
+   Son ~22 mm arriba y ~22 mm abajo, más 12.7 a los lados.
+
+   De aquí sale la escala, y no de tantear: 279.4 - 44 = 235.4 mm de alto
+   útil, así que la hoja tiene que caber en 235.4/279.4 = 0.842. Estaba en
+   0.86 y por eso se partía: la mitad de abajo —membrete y folio, los dos en
+   posición absoluta— caía en la página siguiente y salía sola. */
+const SAFARI_COME = { arriba:22, abajo:22, lados:12.7 };
+
 function aplicarEscalaImpresion(){
   document.documentElement.style.setProperty('--imp',
     String(R.formato.impresion || FORMATO_OFICIAL.impresion));

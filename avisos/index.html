@@ -33,6 +33,16 @@
   propio navegador con canvas. Se guarda solo en el teléfono.
 -->
 <style>
+  /* La tipografía de la casa. Vive en `sitio/fuente/` y es NUESTRA: la generó
+     `herramientas/fuente.mjs`. Se llega por ruta relativa a propósito, para que
+     funcione igual en el repo, en `dist/` y en el teléfono. */
+  @font-face{
+    font-family:"Mazi";
+    src:url("../sitio/fuente/mazi.woff2") format("woff2"),
+        url("../sitio/fuente/mazi.ttf") format("truetype");
+    font-weight:400; font-style:normal; font-display:swap;
+  }
+
   :root{
     /* La paleta salió de MEDIR los avisos que ya hizo Carlos y el escudo de la
        escuela, no de escogerla a ojo. El rojo #CA2229 es el del escudo. */
@@ -1127,8 +1137,21 @@ function pruebas(){
 
   /* ── la tipografía ── */
   ok('se puede cambiar la tipografía', FUENTES.length >= 4);
-  ok('todas las tipografías existen en cualquier aparato',
+  ok('ninguna tipografía viene de un servicio de fuera',
      FUENTES.every(f => !/https?:|@import|fonts\.google/.test(f.fam)));
+  /* Las de repuesto tienen que estar en el aparato; la de la casa NO —ésa se
+     carga— y por eso se le pregunta otra cosa. */
+  ok('las tipografías de repuesto sí vienen con el aparato',
+     FUENTES.filter(f => !f.propia).every(f => !/Mazi/.test(f.fam)));
+  ok('la de la casa está en la lista y es la nuestra',
+     FUENTES.some(f => f.id === 'mazi' && f.propia && /"Mazi"/.test(f.fam)));
+  /* Lo que de verdad falla si se olvida el @font-face: el canvas pinta con la
+     de repuesto sin avisar. Se comprueba MIDIENDO, no leyendo el CSS. */
+  ok('la fuente de la casa está declarada en esta página',
+     [...document.styleSheets].some(h => { try{
+        return [...h.cssRules].some(r => r.constructor.name === 'CSSFontFaceRule'
+               && /Mazi/.test(r.style.getPropertyValue('font-family')));
+     }catch(e){ return false; } }));
   ok('la fuente elegida es la que usa el dibujo', (function(){
      const antes = D.fuente; D.fuente = 'maquina';
      const usa = /Courier/.test(F(800, 20));
@@ -1184,6 +1207,18 @@ describePlantilla();
 pintarLista();
 escudo.onload = dibujar;
 dibujar();
+
+/* La tipografía de la casa se carga aparte, y hasta que llega se vuelve a
+   dibujar. Sin esto el cartel sale con la de repuesto SIN AVISAR: el canvas
+   no espera a las fuentes, pinta con lo que haya en ese instante. Es
+   justamente el error que ya está anotado arriba en la lista de FUENTES. */
+if(document.fonts && document.fonts.load){
+  document.fonts.load('800 40px "Mazi"')
+    .then(() => document.fonts.load('500 40px "Mazi"'))
+    .then(() => dibujar())
+    .catch(() => {});
+}
+
 pruebas();
 </script>
 </body>
