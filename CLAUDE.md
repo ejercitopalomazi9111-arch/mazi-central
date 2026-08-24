@@ -537,7 +537,7 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
   etiquetas de `sitio/index.html` que mandaban a Google y a WhatsApp a la dirección que está por
   apagarse.
 - **El servidor de Fadori no se despliega desde aquí.** Vive en `servidor/` con su propio
-  `wrangler.toml` y se publica aparte. Son dos cosas y mezclarlas es como se termina publicando el
+  `wrangler.jsonc` y se publica aparte. Son dos cosas y mezclarlas es como se termina publicando el
   código del servidor.
 - Los pasos que sólo puede dar Carlos —crear el proyecto en Cloudflare, conectar el servidor,
   pasar el repo a privado— y **qué se rompe con cada uno**, en [`DESPLIEGUE.md`](DESPLIEGUE.md).
