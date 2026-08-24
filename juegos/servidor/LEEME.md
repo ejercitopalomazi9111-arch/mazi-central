@@ -2,13 +2,42 @@
 
 Lo que hace posible que dos primos jueguen desde dos casas.
 
+## ⚠️ Lo que falta para que funcione: crear el proyecto en Cloudflare
+
+Es **un proyecto aparte**, como el servidor de Fadori. Hay que crearlo una
+sola vez:
+
+1. En Cloudflare → Workers → conectar este repo.
+2. Directorio raíz: `juegos/servidor`.
+3. Nombre: `puercos` (queda en `https://puercos.palomazi9111.workers.dev`).
+
+Si le pones otro nombre, se cambia `SERVIDOR_POR_OMISION` en
+`juegos/guerra-de-puercos/index.html` y ya. Mientras no exista, el juego
+avisa que el modo a distancia no está publicado y **los otros dos modos
+siguen funcionando igual**.
+
+## Por qué está separado, y no dentro del sitio
+
+Primero se metió dentro del proyecto del sitio, para ahorrarle a Carlos tener
+que crear uno a mano. **Salió caro:** los despliegues de los DOS proyectos
+—`mazi-central` y `fadori`— empezaron a fallar al instante y sin registro,
+justo en ese commit. Al quitarlo, verde otra vez.
+
+O sea que un juego de cartas podía tumbar el despliegue del tablero, de
+Avisos y de Reportes. Eso no se arregla entendiendo la causa exacta: **se
+arregla no volviendo a mezclarlos.**
+
+El precio de separarlo es CORS, y se paga en claro: una lista de orígenes en
+`wrangler.jsonc`, sin comodines. Un `*` ahí le abriría la puerta a cualquier
+página del mundo para abrir salas en nombre de alguien.
+
 ## Cómo está armado
 
 | Pieza | Qué hace |
 |---|---|
-| `worker.js` (en la raíz) | Mira si la ruta es `/api/puercos/…`. Si no, no hace nada |
-| `juegos/servidor/sala.js` | Un Durable Object por sala. Ahí vive la partida |
-| `juegos/servidor/motor-servidor.js` | Envoltorio de 4 líneas: el mismo `motor.js` del juego, en módulo de ES |
+| `index.js` | Reparte códigos, enruta a la sala, revisa el origen |
+| `sala.js` | Un Durable Object por sala. Ahí vive la partida |
+| `motor-servidor.js` | Envoltorio de 4 líneas: el mismo `motor.js` del juego, en módulo de ES |
 
 **El servidor manda.** La partida vive en el Durable Object, no en los
 teléfonos, y usa **las mismas reglas** que la pantalla — literalmente el mismo
@@ -39,27 +68,23 @@ Las salas se olvidan solas a la media hora sin que nadie hable.
 
 ## Correrlo en local
 
+Son **dos** servidores, porque así queda en producción. Probarlos en el mismo
+origen escondería justo lo que puede fallar: CORS y la lista de orígenes.
+
 ```bash
-npx wrangler dev --port 8803 --local
-node juegos/guerra-de-puercos/pruebas-linea.mjs http://127.0.0.1:8803
+# el sitio
+python3 -m http.server 8791 --bind 127.0.0.1
+
+# el servidor de salas, desde ESTA carpeta
+cd juegos/servidor && npx wrangler dev --port 8815 --local
+
+# las pruebas, con las dos direcciones
+node juegos/guerra-de-puercos/pruebas-linea.mjs http://127.0.0.1:8791 http://127.0.0.1:8815
 ```
 
-⚠️ **No corras `node build.mjs` a mano con `wrangler dev` arriba.** El build
-borra `dist/` entera antes de rearmarla, y wrangler la está sirviendo: se cae
-con 500 y parece que rompiste el worker. Wrangler ya corre el build él solo
-cuando hace falta. Si necesitas reconstruir, reinicia wrangler.
+⚠️ **Que no queden dos `wrangler` vivos.** El segundo no puede tomar el puerto,
+se queda a medias y todo devuelve 500 — que se parece mucho a un worker roto y
+no lo es. `pkill -f wrangler; pkill -f workerd`.
 
-⚠️ **Que no queden dos wrangler vivos.** El segundo no puede tomar el puerto,
-se queda a medias y todas las rutas con archivo devuelven 500 — que se parece
-mucho a un worker roto y no lo es. `pkill -f wrangler; pkill -f workerd`.
-
-## Por qué el worker va en el proyecto que ya existía
-
-Un proyecto nuevo de Cloudflare hay que crearlo a mano, y eso lo tendría que
-hacer Carlos. Así el juego se publica con el mismo empujón de siempre. Y al
-estar en el mismo dominio no hay CORS, o sea que no hay lista de orígenes que
-se quede vieja.
-
-**Los archivos van primero.** Cloudflare busca el archivo en `dist/` y sólo si
-no existe llega al worker. Eso significa que este worker **no puede tumbar el
-sitio**: para la portada, `/avisos/` o `/reportes/` nunca se le pregunta.
+⚠️ **No corras `node build.mjs` a mano con un `wrangler dev` sirviendo `dist/`.**
+El build borra la carpeta entera antes de rearmarla y se cae con 500.

@@ -391,6 +391,26 @@ const NOMBRES = { maquina:{ a:'Tú', b:'Máquina' }, dos:{ a:'Jugador 1', b:'Jug
    lea: nunca la recibe. */
 const LINEA = { ws:null, codigo:null, asiento:null, vista:null, esperando:false };
 window.LINEA = LINEA;   /* para que las pruebas puedan mirar la sala */
+
+/* Dónde vive el servidor de salas. Va FUERA del código de la partida y se
+   puede cambiar sin tocar el juego, igual que en Fadori: hoy es un proyecto
+   de Cloudflare aparte, y si mañana se muda, se cambia esta línea (o se
+   guarda otra dirección en el aparato) y nada más.
+
+   Si la página se sirve desde el mismo sitio donde vive el servidor, se usa
+   ese mismo origen y no hay que configurar nada. */
+const SERVIDOR_POR_OMISION = 'https://puercos.palomazi9111.workers.dev';
+function servidorSalas(){
+  try{
+    const guardado = localStorage.getItem('puercos_servidor');
+    if(guardado) return guardado.replace(/\/+$/, '');
+  }catch(e){}
+  /* En local, contra `wrangler dev` en esta misma máquina. */
+  if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+    return location.origin;
+  }
+  return SERVIDOR_POR_OMISION;
+}
 const LLAVE_SECRETO = 'puercos_secreto_';
 
 function pantalla(cual){
@@ -716,10 +736,10 @@ function esperandoAlOtro(){
 
 function conectar(codigo){
   LINEA.codigo = codigo;
-  const esquema = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const base = servidorSalas();
   const secreto = (() => { try{ return localStorage.getItem(LLAVE_SECRETO + codigo) || ''; }
                            catch(e){ return ''; } })();
-  const url = esquema + '//' + location.host + '/api/puercos/sala/' + codigo
+  const url = base.replace(/^http/, 'ws') + '/api/puercos/sala/' + codigo
             + (secreto ? '?secreto=' + encodeURIComponent(secreto) : '');
   const ws = new WebSocket(url);
   LINEA.ws = ws;
@@ -804,7 +824,7 @@ $('#bLinea').addEventListener('click', () => { avisoSala(null); pantalla('sala')
 $('#bCrear').addEventListener('click', async () => {
   $('#bCrear').disabled = true;
   try{
-    const r = await fetch('/api/puercos/codigo');
+    const r = await fetch(servidorSalas() + '/api/puercos/codigo');
     /* Si el servidor de salas todavía no está publicado, esta ruta devuelve
        la página de 404 y no un código. Se dice CUÁL de las dos cosas pasó:
        «revisa tu internet» cuando el problema es del otro lado sólo hace que

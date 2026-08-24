@@ -17,7 +17,12 @@
  *   npx wrangler dev --port 8799 --local
  *   node juegos/guerra-de-puercos/pruebas-linea.mjs
  */
-const BASE = process.argv[2] || 'http://127.0.0.1:8799';
+/* Dos direcciones, no una, porque así queda en producción: el sitio en un
+   lado y el servidor de salas en OTRO proyecto de Cloudflare. Probarlos en el
+   mismo origen escondería justo lo que puede fallar — CORS y la lista de
+   orígenes del servidor. */
+const BASE     = process.argv[2] || 'http://127.0.0.1:8791';
+const SERVIDOR = process.argv[3] || 'http://127.0.0.1:8815';
 const pw = await import('/opt/node22/lib/node_modules/playwright/index.js');
 const chromium = pw.chromium || pw.default.chromium;
 
@@ -40,6 +45,11 @@ for(const [n, p] of [['uno', uno], ['dos', dos]])
 /* Se guarda TODO lo que el servidor le manda a cada quien. Es la evidencia de
    la prueba más importante: si la mano del rival apareciera, aquí estaría. */
 for(const [n, p] of [['uno', uno], ['dos', dos]]){
+  /* Se le dice al juego dónde vive el servidor, por el mismo camino que
+     usaría Carlos si algún día se muda: una llave en el aparato. */
+  await p.addInitScript((s) => {
+    try{ localStorage.setItem('puercos_servidor', s); }catch(e){}
+  }, SERVIDOR);
   await p.addInitScript(() => {
     window.__recibido = [];
     const Orig = window.WebSocket;
@@ -140,10 +150,9 @@ ok('hasta ese momento sí se revelan las dos cartas',
    (await uno.evaluate(() => document.querySelectorAll('#dCartaB .carta').length)) > 0);
 
 console.log('\n── Que no se pueda hacer trampa ──');
-const trampa = await uno.evaluate(async () => {
-  /* Se le manda al servidor una carta que NO es de este jugador. */
+const trampa = await uno.evaluate(async (srv) => {
   return new Promise(res => {
-    const ws = new WebSocket(location.origin.replace('http', 'ws')
+    const ws = new WebSocket(srv.replace('http', 'ws')
       + '/api/puercos/sala/' + window.LINEA.codigo);
     ws.onmessage = (e) => {
       const m = JSON.parse(e.data);
@@ -152,8 +161,19 @@ const trampa = await uno.evaluate(async () => {
     };
     setTimeout(() => { res('sin respuesta'); try{ ws.close(); }catch(e){} }, 2500);
   });
-});
+}, SERVIDOR);
 ok('un tercero NO se puede meter a una sala de dos', trampa === 'LLENO', String(trampa));
+
+ok('el servidor NO le abre salas a una página de otro sitio', await uno.evaluate(async (srv) => {
+  /* Se pide un código haciéndose pasar por otro origen. La lista del servidor
+     tiene que rebotarlo: sin esto, cualquier página del mundo podría abrir
+     salas en nombre de alguien. */
+  const r = await fetch(srv + '/api/puercos/codigo',
+                        { headers:{ 'X-Probar-Origen':'1' } }).catch(() => null);
+  /* El navegador manda el Origin solo; si el servidor lo acepta, algo anda mal
+     con la lista. Se mira el resultado, no el intento. */
+  return r ? r.status === 403 : true;
+}, SERVIDOR));
 
 console.log('\n── Volver después de que se corte ──');
 await uno.reload({ waitUntil:'networkidle' });
