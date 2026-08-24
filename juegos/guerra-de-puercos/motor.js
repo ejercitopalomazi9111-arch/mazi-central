@@ -272,8 +272,15 @@ function jugadasPosibles(jugador){
   return salen;
 }
 
-if(typeof module !== 'undefined') module.exports = {
+/* Se expone de dos formas a propósito: `module.exports` para que las pruebas
+   lo carguen en node, y `window.MOTOR` para que la página lo cargue con un
+   <script> normal, sin build ni módulos. Es el mismo archivo en los dos lados,
+   que es justo lo que hace que las pruebas valgan para lo que se publica. */
+const API = {
   NIVELES, PV_INICIAL, MANO, DANO_TOPE, COMBOS_POR_JUGADOR, ESPECIALES,
   azar, revolver, armarMazo, nivelDe, sePuedeCombinar,
   puntuar, porQueNoSeVale, danoEntre, repartir, jugarRonda, jugadasPosibles,
 };
+
+if(typeof module !== 'undefined') module.exports = API;
+if(typeof window !== 'undefined') window.MOTOR = API;
