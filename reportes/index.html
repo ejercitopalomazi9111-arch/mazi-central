@@ -3196,30 +3196,35 @@ repintar();
    el reporte de Carlos a las once de la noche. */
 (function pruebas(){
   const P = [];
+  const ok = (n,c)=> P.push((c?'✓':'✗')+' '+n) && c;
   /* La fecha. Carlos abrió la herramienta un lunes 24 y el campo decía 22 ago:
-     al arrancar se retoma el último reporte y su fecha pisa la de hoy. */
-  P.push(['revisarFecha existe', typeof revisarFecha === 'function']);
-  P.push(['un reporte fechado hoy no avisa nada', (function(){
+     al arrancar se retoma el último reporte y su fecha pisa la de hoy.
+
+     OJO CON EL ARNÉS: este archivo guarda las pruebas como CADENAS ('✓ nombre')
+     y cuenta las fallidas mirando `x[0]`, el primer carácter. La primera versión
+     de estas cuatro empujaba arreglos `[nombre, booleano]`, cuyo `x[0]` es el
+     nombre y nunca es '✗' — o sea que pasaban siempre, dijera lo que dijera el
+     código. Se descubrió quitando la comprobación a propósito y viendo 80/80.
+     Van con `ok()`, que es el del arnés. */
+  ok('un reporte fechado hoy no avisa nada', (function(){
     const antes = R.fecha; R.fecha = iso(new Date()); revisarFecha();
     const callado = $('#fechaVieja').hidden;
     R.fecha = antes; revisarFecha(); return callado;
-  })()]);
-  P.push(['un reporte fechado otro día SÍ avisa', (function(){
+  })());
+  ok('un reporte fechado otro día SÍ avisa', (function(){
     const antes = R.fecha; R.fecha = '2020-01-02'; revisarFecha();
     const avisa = !$('#fechaVieja').hidden && /2020/.test($('#fechaVieja').textContent);
     R.fecha = antes; revisarFecha(); return avisa;
-  })()]);
-  P.push(['y trae botón para ponerla en hoy', (function(){
+  })());
+  ok('y trae botón para ponerla en hoy', (function(){
     const antes = R.fecha; R.fecha = '2020-01-02'; revisarFecha();
     const hay = !!$('#bFechaHoy');
     R.fecha = antes; revisarFecha(); return hay;
-  })()]);
-  P.push(['el folio sale de la fecha, por eso no se cambia sola', (function(){
-    const a = folio({ fecha:'2026-08-22', id:'x', titulo:'t', cuerpo:'c' });
-    const b = folio({ fecha:'2026-08-24', id:'x', titulo:'t', cuerpo:'c' });
-    return a !== b;
-  })()]);
-  const ok = (n,c)=> P.push((c?'✓':'✗')+' '+n) && c;
+  })());
+  ok('el folio sale de la fecha, por eso no se cambia sola',
+     folio({ fecha:'2026-08-22', id:'x', titulo:'t', cuerpo:'c' }) !==
+     folio({ fecha:'2026-08-24', id:'x', titulo:'t', cuerpo:'c' }));
+
   ok('el sello es estable', sello('hola mundo') === sello('hola   MUNDO'));
   ok('el sello cambia si cambia el texto', sello('hola mundo') !== sello('hola mundos'));
   ok('el sello tiene forma XXXX-XXXX', /^[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(sello('x')));
