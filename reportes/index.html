@@ -543,6 +543,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
    eso seguiría desbordando. */
 @page{size:letter portrait; margin:0}
 #impresora{display:none}
+/* El aviso de fecha vieja. Va PEGADO al campo, no en una barra arriba: un
+   aviso lejos del error se ignora. */
+.fecha-vieja{
+  display:block; margin-top:8px; font-size:13px; line-height:1.5;
+  background:#FFF3D6; border:1.5px solid #B98A2E; color:#3A2A10;
+  border-radius:10px; padding:10px 12px;
+}
+.fecha-vieja[hidden]{display:none}
+.fecha-vieja .btn{margin-top:8px; min-height:44px}
 @media print{
   .hoja, .pliego{ zoom:var(--imp, .86); }
   /* imprimiendo credenciales: fuera todo lo demás, incluida la hoja carta */
@@ -605,7 +614,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
     <label class="campo"><span>Título del reporte</span>
       <input type="text" id="fTitulo" placeholder="Reporte semanal del grupo 3.1"></label>
     <div class="rejilla">
-      <label class="campo"><span>Fecha</span><input type="date" id="fFecha"></label>
+      <label class="campo"><span>Fecha</span><input type="date" id="fFecha">
+        <span class="fecha-vieja" id="fechaVieja" hidden></span></label>
       <label class="campo"><span>Grupo o instancia</span>
         <input type="text" id="fGrupo" placeholder="3.1"></label>
       <label class="campo"><span>Dirigido a</span>
@@ -1365,6 +1375,43 @@ const FORMATO_OFICIAL = {
 let R = nuevoReporte();
 let TODOS = [];
 let zoom = 1, zoomAuto = true;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LA FECHA DEL REPORTE · el defecto que reportó Carlos
+   ──────────────────────────────────────────────────────────────────────────
+   Abrió la herramienta un lunes 24 y el campo decía «22 ago 2026».
+
+   La causa: al arrancar se retoma el último reporte tocado —
+   `R = Object.assign(nuevoReporte(), TODOS[0])`— y la fecha del reporte viejo
+   PISA la de hoy. Así que si dejó un borrador el sábado y lo sigue el lunes,
+   sale fechado el sábado.
+
+   Y NO se puede corregir en silencio: **el folio se calcula de la fecha**, así
+   que rescribirla le cambia el folio a un reporte que quizá ya entregó. Un
+   documento fechado a propósito en otro día es legítimo.
+
+   Entonces se hacen dos cosas distintas según el caso:
+
+   · Si el borrador está EN BLANCO —sin título y sin cuerpo— no es un
+     documento, es un cascarón: se le pone hoy y ya.
+   · Si ya tiene algo escrito, no se toca nada, pero **se avisa junto al campo**
+     con un botón de un toque para ponerla en hoy. Así el error deja de ser
+     invisible sin que la herramienta decida por él.
+   ═════════════════════════════════════════════════════════════════════════ */
+function revisarFecha(){
+  const caja = $('#fechaVieja');
+  if(!caja) return;
+  const hoy = iso(new Date());
+  if(!R.fecha || R.fecha === hoy){ caja.hidden = true; caja.innerHTML = ''; return; }
+  caja.hidden = false;
+  caja.innerHTML = 'Este reporte está fechado el <b>' + fechaBonita(R.fecha) +
+    '</b> y hoy es <b>' + fechaBonita(hoy) + '</b>. ' +
+    '<button type="button" class="btn chico" id="bFechaHoy">Ponerla en hoy</button>';
+  $('#bFechaHoy').addEventListener('click', () => {
+    R.fecha = hoy; $('#fFecha').value = hoy;
+    guardar(); repintar(); revisarFecha();
+  });
+}
 
 function nuevoReporte(){
   const hoy = new Date();
@@ -2767,6 +2814,7 @@ function pintarTipos(){
 }
 function pintarCampos(){
   $('#fTitulo').value = R.titulo; $('#fFecha').value = R.fecha;
+  revisarFecha();
   $('#fGrupo').value = R.grupo;   $('#fPara').value = R.para;
   $('#fLugar').value = R.lugar;   $('#fAutor').value = R.autor;
   $('#fSemestre').value = R.semestre || ''; $('#fTutor').value = R.tutor || '';
@@ -2948,6 +2996,8 @@ function conectar(id, campo, despues){
  '#fAutor:autor','#fCargo:cargo','#fAutor2:autor2','#fCargo2:cargo2',
  '#fSemestre:semestre','#fTutor:tutor','#fPeriodo:periodo']
   .forEach(par => { const [s,c] = par.split(':'); conectar(s, c); });
+/* si la cambia a mano, el aviso se va o se queda según toque */
+$('#fFecha').addEventListener('change', revisarFecha);
 conectar('#fCuerpo','cuerpo', () => { pintarApartados(); contarPalabras(); });
 
 /* formato */
@@ -3133,8 +3183,12 @@ cargarTodos(); cargarGrupo(); cargarCred();
 if(TODOS.length){
   R = Object.assign(nuevoReporte(), TODOS[0]);
   R.formato = Object.assign({}, FORMATO_OFICIAL, TODOS[0].formato || {});
+  /* un cascarón sin título ni cuerpo no es un documento: se le pone hoy */
+  if(!String(R.titulo || '').trim() && !String(R.cuerpo || '').trim())
+    R.fecha = iso(new Date());
 }
 pintarTipos(); pintarCampos(); pintarGuardados(); pintarRegistro(); pintarCred();
+revisarFecha();
 verVista('escribir');
 repintar();
 
@@ -3142,6 +3196,29 @@ repintar();
    el reporte de Carlos a las once de la noche. */
 (function pruebas(){
   const P = [];
+  /* La fecha. Carlos abrió la herramienta un lunes 24 y el campo decía 22 ago:
+     al arrancar se retoma el último reporte y su fecha pisa la de hoy. */
+  P.push(['revisarFecha existe', typeof revisarFecha === 'function']);
+  P.push(['un reporte fechado hoy no avisa nada', (function(){
+    const antes = R.fecha; R.fecha = iso(new Date()); revisarFecha();
+    const callado = $('#fechaVieja').hidden;
+    R.fecha = antes; revisarFecha(); return callado;
+  })()]);
+  P.push(['un reporte fechado otro día SÍ avisa', (function(){
+    const antes = R.fecha; R.fecha = '2020-01-02'; revisarFecha();
+    const avisa = !$('#fechaVieja').hidden && /2020/.test($('#fechaVieja').textContent);
+    R.fecha = antes; revisarFecha(); return avisa;
+  })()]);
+  P.push(['y trae botón para ponerla en hoy', (function(){
+    const antes = R.fecha; R.fecha = '2020-01-02'; revisarFecha();
+    const hay = !!$('#bFechaHoy');
+    R.fecha = antes; revisarFecha(); return hay;
+  })()]);
+  P.push(['el folio sale de la fecha, por eso no se cambia sola', (function(){
+    const a = folio({ fecha:'2026-08-22', id:'x', titulo:'t', cuerpo:'c' });
+    const b = folio({ fecha:'2026-08-24', id:'x', titulo:'t', cuerpo:'c' });
+    return a !== b;
+  })()]);
   const ok = (n,c)=> P.push((c?'✓':'✗')+' '+n) && c;
   ok('el sello es estable', sello('hola mundo') === sello('hola   MUNDO'));
   ok('el sello cambia si cambia el texto', sello('hola mundo') !== sello('hola mundos'));
