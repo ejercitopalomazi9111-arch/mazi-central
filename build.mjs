@@ -26,7 +26,7 @@ const DIST = join(RAIZ, 'dist');
 const VA = [
   'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   '_headers', 'kernel-lock.html',
-  'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones',
+  'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
 ];
@@ -74,6 +74,6 @@ for(const cosa of VA){
 /* Que nadie indexe lo que todavía no está para el público. Cuando el sitio
    esté listo se cambia esta línea y no otra cosa. */
 await writeFile(join(DIST, 'robots.txt'),
-  'User-agent: *\nDisallow: /reportes/\nDisallow: /evaluaciones/\n');
+  'User-agent: *\nDisallow: /reportes/\nDisallow: /evaluaciones/\nDisallow: /avisos/\n');
 
 console.log('✓ dist/ armado · ' + copiados + ' archivos · ' + saltados + ' saltados');
