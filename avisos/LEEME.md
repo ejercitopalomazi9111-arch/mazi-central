@@ -42,6 +42,26 @@ lista.
 
 Más «Proyecto STEAM» y «Aviso general», que no son clases pero sí son avisos.
 
+## De quién viene, cuando no viene de una materia
+
+Carlos: *«muchas veces dirección da avisos y me gustaría poder ponerlos allí
+mismo».* Un aviso de dirección **no es de una materia**: no tiene tarea, no
+tiene maestro y pesa distinto. Por eso hay tres entradas propias —
+**Dirección**, **Prefectura** y **Sociedad de alumnos** — con su icono y su
+color, en vez de disfrazarlas de «Aviso general».
+
+## «Muy importante»
+
+Cualquier pendiente se puede **destacar**. Los destacados:
+
+1. **suben hasta arriba**, antes que lo de mañana — si un aviso de dirección
+   queda enterrado a la mitad, da igual haberlo puesto;
+2. se pintan **a color entero** con letra crema. Si sólo cambiaran de lugar, en
+   un aviso de doce pendientes nadie notaría cuál es el importante.
+
+Es lo que en los avisos que hacía Carlos a mano era la banda de «MUY
+IMPORTANTE».
+
 ## Los iconos NO son emoji
 
 Están dibujados con trazos en `iconos.js`. La razón: cada teléfono dibuja sus
@@ -76,9 +96,20 @@ de descarga a veces no hace nada, así que además se enseña la imagen:
 manteniéndola apretada se guarda o se comparte, y esa vía funciona en todos
 lados.
 
+## Los colores se miden, no se escogen a ojo
+
+El color de la materia se usa como **texto chico** sobre el papel, y en una
+ficha destacada el **texto crema va encima del color**. Las dos veces tiene que
+pasar 4.5:1.
+
+Al medirlos salieron dos malos: el dorado de Metodología daba **3.07** —o sea
+que no se leía— y Prefectura era exactamente el color de la banda de «Muy
+importante», así que la tarjeta se fundía con su propio encabezado. Ninguno de
+los dos se ve a ojo; salieron midiendo, y ahora hay una prueba que los mide.
+
 ## Pruebas
 
-19, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
+25, corren solas al cargar. Revisan que ninguna materia se quede sin icono, que
 el orden del periódico ponga lo de mañana primero, que ningún renglón se salga
 de su tarjeta —eso no se ve hasta que el aviso ya se mandó—, que la imagen
 crezca con el contenido, que las fechas salgan en español y que **ningún

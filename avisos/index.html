@@ -78,6 +78,12 @@
   .btn.chico{min-height:44px; padding:10px 14px; font-size:14px; width:auto}
   .btn.borrar{border-color:#B23A3A; color:#B23A3A}
   .acciones{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .marca-caja{
+    display:flex; align-items:center; gap:10px; min-height:46px; margin:12px 0 0;
+    background:#FFF3D6; border:1.5px solid var(--dorado); border-radius:10px;
+    padding:8px 12px; font-size:14px; color:var(--tinta); cursor:pointer;
+  }
+  .marca-caja input{width:24px; height:24px; min-height:24px; flex:0 0 auto; margin:0; accent-color:var(--vino)}
   .pend{border-left:5px solid var(--vino)}
   .pend-cab{display:flex; align-items:center; gap:10px; margin-bottom:4px}
   .pend-cab svg{width:22px; height:22px; flex:0 0 auto}
@@ -156,10 +162,15 @@ const tipo    = id => TIPOS.find(t => t.id === id)    || TIPOS[TIPOS.length-1];
 /* Orden del periódico: primero lo de mañana, luego la semana, luego lo demás.
    Dentro de cada bloque se respeta el orden en que Carlos los escribió. */
 const ORDEN_CUANDO = { manana:0, semana:1, fecha:2, pronto:3 };
+/* Lo destacado va HASTA ARRIBA, antes que lo de mañana. Es donde van los avisos
+   de dirección y cualquier cosa que no se puede perder: si queda enterrado a la
+   mitad del aviso, da igual haberlo puesto. */
+const bloqueDe = p => p.destacado ? 'destacado' : p.cuando;
+const ordenBloque = b => b === 'destacado' ? -1 : ORDEN_CUANDO[b];
 function ordenados(){
   return D.pendientes
     .map((p,i) => ({ p, i }))
-    .sort((a,b) => (ORDEN_CUANDO[a.p.cuando] - ORDEN_CUANDO[b.p.cuando]) || (a.i - b.i))
+    .sort((a,b) => (ordenBloque(bloqueDe(a.p)) - ordenBloque(bloqueDe(b.p))) || (a.i - b.i))
     .map(x => x.p);
 }
 
@@ -192,6 +203,8 @@ function pintarLista(){
       <label>Qué es</label>
       <input data-c="titulo" value="${(p.titulo||'').replace(/"/g,'&quot;')}"
         placeholder="Traer el juego de geometría">
+      <label class="marca-caja"><input type="checkbox" data-c="destacado"
+        ${p.destacado ? 'checked' : ''}> <span>Muy importante · lo sube hasta arriba</span></label>
       <label>Detalles · uno por renglón</label>
       <textarea data-c="detalles" placeholder="Escuadras&#10;Compás&#10;Transportador">${p.detalles||''}</textarea>
       <div class="acciones">
@@ -206,12 +219,14 @@ function pintarLista(){
 $('#lista').addEventListener('input', e => {
   const caja = e.target.closest('[data-i]'); if(!caja) return;
   const campo = e.target.getAttribute('data-c'); if(!campo) return;
-  D.pendientes[+caja.dataset.i][campo] = e.target.value;
+  D.pendientes[+caja.dataset.i][campo] =
+    e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   guardar();
   /* Cambiar materia, tipo o «cuándo» redibuja la ficha (el icono y el campo de
      fecha dependen de eso). Escribir el título NO: si se redibuja, el teclado
      se cierra a media palabra. Ya me pasó probándolo. */
-  if(campo === 'materia' || campo === 'tipo' || campo === 'cuando') pintarLista();
+  if(campo === 'materia' || campo === 'tipo' || campo === 'cuando' ||
+     campo === 'destacado') pintarLista();
   dibujar();
 });
 $('#lista').addEventListener('click', e => {
@@ -336,12 +351,14 @@ function componer(ctx, pintar){
 
   /* ── los bloques ── */
   const lista = ordenados();
-  let cuandoActual = null;
+  let bloqueActual = null;
   for(const p of lista){
-    if(p.cuando !== cuandoActual){
-      cuandoActual = p.cuando;
-      const c = CUANDOS.find(x => x.id === cuandoActual) || CUANDOS[3];
-      const fondo = c.urgente ? '#7C1D24' : '#123A5E';
+    const b = bloqueDe(p);
+    if(b !== bloqueActual){
+      bloqueActual = b;
+      const c = b === 'destacado' ? DESTACADO
+                                  : (CUANDOS.find(x => x.id === b) || CUANDOS[3]);
+      const fondo = b === 'destacado' ? '#5A1319' : (c.urgente ? '#7C1D24' : '#123A5E');
       if(pintar){
         caja(ctx, M, y, ANCHO - M*2, 52, 10, fondo);
         ctx.fillStyle = '#FFF6EC'; ctx.font = F(900, 26); ctx.letterSpacing = '2px';
@@ -399,47 +416,57 @@ function ficha(ctx, p, x, y, w, pintar){
   alto += pad;
 
   if(pintar){
-    caja(ctx, x, y, w, alto, 14, '#FFFDF8', '#E6DCCB');
-    /* la banda de color de la materia, pegada a la izquierda */
-    ctx.save();
-    ctx.beginPath();
-    if(ctx.roundRect) ctx.roundRect(x, y, w, alto, 14); else ctx.rect(x, y, w, alto);
-    ctx.clip();
-    caja(ctx, x, y, 7, alto, 0, m.color);
-    ctx.restore();
+    /* Una ficha destacada se pinta A COLOR ENTERO, no sólo se sube de lugar.
+       Si sólo cambiara de posición, en un aviso de doce pendientes nadie
+       notaría cuál es el importante. */
+    const D_ = !!p.destacado;
+    const tintaFuerte = D_ ? '#FFF6EC' : '#241A14';
+    const tintaSuave  = D_ ? 'rgba(255,246,236,.88)' : '#4A3B30';
+    const tintaChica  = D_ ? 'rgba(255,246,236,.78)' : '#6B5A4A';
 
-    /* el icono de la materia, en su cuadrito de color */
-    caja(ctx, x + pad, y + pad - 2, 50, 50, 12, m.color + '1F');
-    iconoCanvas(ctx, m.icono, x + pad + 10, y + pad + 8, 30, m.color, 2);
+    caja(ctx, x, y, w, alto, 14, D_ ? m.color : '#FFFDF8', D_ ? m.color : '#E6DCCB');
+    if(!D_){
+      /* la banda de color de la materia, pegada a la izquierda */
+      ctx.save();
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(x, y, w, alto, 14); else ctx.rect(x, y, w, alto);
+      ctx.clip();
+      caja(ctx, x, y, 7, alto, 0, m.color);
+      ctx.restore();
+    }
+
+    /* el icono de la materia, en su cuadrito */
+    caja(ctx, x + pad, y + pad - 2, 50, 50, 12, D_ ? 'rgba(255,246,236,.18)' : m.color + '1F');
+    iconoCanvas(ctx, m.icono, x + pad + 10, y + pad + 8, 30, D_ ? '#FFF6EC' : m.color, 2);
 
     /* materia y tipo */
-    ctx.fillStyle = m.color; ctx.font = F(800, 22);
+    ctx.fillStyle = D_ ? 'rgba(255,246,236,.92)' : m.color; ctx.font = F(800, 22);
     ctx.fillText(m.corto.toUpperCase(), x + sangria, y + pad + 20);
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#6B5A4A'; ctx.font = F(700, 20);
+    ctx.fillStyle = tintaChica; ctx.font = F(700, 20);
     const etiqueta = t.nombre + (p.cuando === 'fecha' && p.dia ? '  ·  ' + fechaCorta(p.dia) : '');
     ctx.fillText(etiqueta, x + w - pad, y + pad + 20);
     ctx.textAlign = 'left';
 
     /* el icono del tipo, chiquito, junto a la etiqueta */
     const anchoEti = ctx.measureText(etiqueta).width;
-    iconoCanvas(ctx, t.icono, x + w - pad - anchoEti - 30, y + pad + 4, 21, '#6B5A4A', 1.8);
+    iconoCanvas(ctx, t.icono, x + w - pad - anchoEti - 30, y + pad + 4, 21, tintaChica, 1.8);
 
     /* el título */
     let ty = y + pad + encabezado + 34;
-    ctx.fillStyle = '#241A14'; ctx.font = F(800, 30);
+    ctx.fillStyle = tintaFuerte; ctx.font = F(800, 30);
     for(const l of titulo){ ctx.fillText(l, x + sangria, ty); ty += 38; }
 
     /* los detalles */
-    ctx.font = F(500, 25); ctx.fillStyle = '#4A3B30';
+    ctx.font = F(500, 25);
     ty += detalles.length ? 6 : 0;
     for(const ls of renglones){
       for(let i = 0; i < ls.length; i++){
         if(i === 0){
-          ctx.fillStyle = m.color;
+          ctx.fillStyle = D_ ? 'rgba(255,246,236,.75)' : m.color;
           ctx.beginPath(); ctx.arc(x + sangria + 6, ty - 8, 4.5, 0, Math.PI*2); ctx.fill();
-          ctx.fillStyle = '#4A3B30';
         }
+        ctx.fillStyle = tintaSuave;
         ctx.fillText(ls[i], x + sangria + 26, ty); ty += 33;
       }
     }
@@ -546,6 +573,38 @@ function pruebas(){
     try{ return JSON.parse(localStorage.getItem(LLAVE)).pendientes[0].titulo === 'guardado'; }
     catch(e){ return false; }
   })());
+
+  /* ── que los colores se lean ── */
+  /* El color de la materia se usa como TEXTO chico sobre el papel, y en una
+     ficha destacada el texto crema va encima del color. Las dos veces tiene que
+     pasar 4.5:1. El dorado #B98A2E medía 3.07 y nadie lo iba a notar a ojo:
+     salió midiendo. */
+  const lum = h => { const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255)
+      .map(v => v<=.03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4));
+    return .2126*c[0] + .7152*c[1] + .0722*c[2]; };
+  const contra = (a,b) => { const x=lum(a), y=lum(b);
+    return (Math.max(x,y)+.05) / (Math.min(x,y)+.05); };
+  const flojos = MATERIAS.filter(m => contra(m.color,'#FFFDF8') < 4.5 ||
+                                      contra(m.color,'#FFF6EC') < 4.5);
+  ok('todos los colores de materia se leen (4.5:1)', flojos.length === 0);
+  if(flojos.length) console.error('   flojos:', flojos.map(m => m.corto + ' ' + m.color));
+  ok('prefectura no se funde con la banda de «muy importante»',
+     (MATERIAS.find(m => m.id === 'prefectura') || {}).color !== '#5A1319');
+
+  /* ── de dónde viene el aviso ── */
+  ok('se puede poner un aviso de dirección',
+     MATERIAS.some(m => m.id === 'direccion' && m.oficial));
+  ok('y de prefectura y de la sociedad de alumnos',
+     ['prefectura','sociedad'].every(id => MATERIAS.some(m => m.id === id)));
+  D.pendientes = [
+    { materia:'ingles', tipo:'tarea', cuando:'manana', titulo:'normal' },
+    { materia:'direccion', tipo:'aviso', cuando:'pronto', destacado:true, titulo:'de dirección' },
+  ];
+  ok('lo destacado se sube por encima de lo de mañana',
+     ordenados()[0].titulo === 'de dirección');
+  ok('sin destacar, «sin fecha» se va hasta abajo',
+     (function(){ D.pendientes[1].destacado = false;
+       return ordenados()[0].titulo === 'normal'; })());
 
   /* ── que se alcance con el dedo ── */
   /* Ya me pasó en Ligas Mazi: campos de 36 px que nadie atina. Aquí se mide,
