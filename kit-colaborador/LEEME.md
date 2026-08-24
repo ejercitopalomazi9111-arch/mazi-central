@@ -8,13 +8,38 @@ perder lo suyo y sin llevarse nada de Carlos**.
 ```bash
 git clone --depth 1 https://github.com/ejercitopalomazi9111-arch/mazi-central
 cd mazi-central
-
-# Windows
-powershell -ExecutionPolicy Bypass -File kit-colaborador\instalar.ps1
-
-# Mac o Linux
-bash kit-colaborador/instalar.sh
 ```
+
+### A · Para tu Claude de la computadora
+
+```bash
+powershell -ExecutionPolicy Bypass -File kit-colaborador\instalar.ps1   # Windows
+bash kit-colaborador/instalar.sh                                        # Mac o Linux
+```
+
+### B · Para tu Claude que corre EN GITHUB
+
+Ahí **no existe** `~/.claude`: cada sesión clona tu repo y lee lo que traiga
+adentro. Si las skills no están **commiteadas en el repo**, para esa sesión no
+existen. Por eso hay un modo que instala dentro del repositorio:
+
+```bash
+powershell -ExecutionPolicy Bypass -File kit-colaborador\instalar.ps1 -Repo C:\ruta\a\tu-repo
+bash kit-colaborador/instalar.sh --repo ~/ruta/a/tu-repo
+```
+
+Y luego —esto es lo que falta y sin ello no sirve— **desde tu repo**:
+
+```bash
+git add .claude CLAUDE-mazi.md
+git commit -m "La forma de trabajar de Mazi"
+git push
+```
+
+Hasta que eso esté empujado, tu Claude de GitHub no ve nada.
+
+En este modo el respaldo se guarda **fuera** del repo, para no meterle basura
+a tu historial.
 
 Al final te dice qué entró, qué ya tenías y qué chocó. Nada más.
 
@@ -72,6 +97,10 @@ bash kit-colaborador/pruebas.sh
 Levantan un Claude de mentiras que **ya tiene skills propias**, incluida una
 que choca de nombre, y comprueban las tres promesas midiendo los archivos
 —huella byte por byte de la memoria y del `CLAUDE.md`—, no leyendo el código.
+
+Se prueban **los dos modos**: el de la máquina y el del repo. En el del repo
+además se comprueba que no escribió nada fuera del repositorio y que el
+respaldo no se coló al historial.
 
 La última vuelve a meter el defecto a propósito: pisa la skill a mano y
 comprueba que la prueba lo detecta. Una prueba que no puede fallar no es una

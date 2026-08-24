@@ -21,13 +21,37 @@
 # ============================================================================
 $ErrorActionPreference = "Continue"
 
+param(
+  # Sin -Repo  -> se instala en la MAQUINA (~/.claude). Para el Claude que
+  #               corre en su computadora.
+  # Con -Repo  -> se instala DENTRO DE UN REPOSITORIO. Eso es lo que hace
+  #               falta para un Claude que corre EN GITHUB: ahi no existe la
+  #               carpeta del usuario, cada sesion clona el repo y lee lo que
+  #               traiga adentro. Si las skills no estan commiteadas en el
+  #               repo, para esa sesion no existen.
+  [string]$Repo = ""
+)
+
 $aqui    = $PSScriptRoot
-$repo    = Split-Path $aqui -Parent
-$origen  = Join-Path $repo ".claude\skills"
-$casa    = if ($env:CLAUDE_HOME) { $env:CLAUDE_HOME } else { Join-Path $env:USERPROFILE ".claude" }
-$destino = Join-Path $casa "skills"
+$repoKit = Split-Path $aqui -Parent
+$origen  = Join-Path $repoKit ".claude\skills"
 $sello   = Get-Date -Format "yyyyMMdd-HHmmss"
-$respaldo= Join-Path $casa "respaldos\skills-$sello"
+
+if ($Repo -ne "") {
+  if (-not (Test-Path $Repo)) { Write-Host "   !!  No existe esa carpeta: $Repo" -ForegroundColor Red; exit 1 }
+  $modo    = "repo"
+  $destRepo= (Resolve-Path $Repo).Path
+  $casa    = Join-Path $destRepo ".claude"
+  # El respaldo NUNCA va dentro del repo: acabaria commiteado y metiendole
+  # basura al historial de alguien mas. Se guarda al lado, fuera de el.
+  $respaldo= Join-Path (Split-Path $destRepo -Parent) ((Split-Path $destRepo -Leaf) + "-respaldo-skills-$sello")
+} else {
+  $modo    = "maquina"
+  $destRepo= ""
+  $casa    = if ($env:CLAUDE_HOME) { $env:CLAUDE_HOME } else { Join-Path $env:USERPROFILE ".claude" }
+  $respaldo= Join-Path $casa "respaldos\skills-$sello"
+}
+$destino = Join-Path $casa "skills"
 
 function Paso($t){ Write-Host "`n>> $t" -ForegroundColor Yellow }
 function Ok($t)  { Write-Host "   OK  $t" -ForegroundColor Green }
@@ -44,6 +68,13 @@ Write-Host @"
 if (-not (Test-Path $origen)) {
   Mal "No encuentro $origen. Corre esto desde el repo clonado."
   exit 1
+}
+
+if ($modo -eq "repo") {
+  Gris "instalando DENTRO del repositorio: $destRepo"
+  Gris "asi lo ve un Claude que corre en GitHub, que no tiene carpeta de usuario"
+} else {
+  Gris "instalando en la maquina: $casa"
 }
 
 # ---------- 1. Respaldo, ANTES de tocar nada ----------
@@ -98,18 +129,35 @@ Get-ChildItem $origen -Directory | ForEach-Object {
 
 # ---------- 3. El CLAUDE.md, que se AGREGA y no reemplaza ----------
 Paso "Poniendo la forma de trabajar"
-$archivoCasa = Join-Path $casa "CLAUDE-mazi.md"
+if ($modo -eq "repo") {
+  # En un repo va a la RAIZ, junto al CLAUDE.md del proyecto, porque es lo que
+  # la sesion de GitHub lee al clonar.
+  $archivoCasa = Join-Path $destRepo "CLAUDE-mazi.md"
+  $enganche    = "@CLAUDE-mazi.md"
+} else {
+  $archivoCasa = Join-Path $casa "CLAUDE-mazi.md"
+  $enganche    = "@$archivoCasa"
+}
+New-Item -ItemType Directory -Force -Path (Split-Path $archivoCasa -Parent) | Out-Null
 Copy-Item (Join-Path $aqui "CLAUDE-colaborador.md") -Destination $archivoCasa -Force
 Ok "metodo de la casa en $archivoCasa"
 Gris "va en archivo APARTE: tu CLAUDE.md no se toca."
 Gris "Para engancharlo, pegale esta linea a tu CLAUDE.md:"
-Write-Host "`n      @$archivoCasa`n" -ForegroundColor Cyan
+Write-Host "`n      $enganche`n" -ForegroundColor Cyan
 
 # ---------- 4. Lo que NO se hizo, dicho en voz alta ----------
 Paso "Lo que NO se toco, a proposito"
 Gris "tu memoria - ni un archivo. Lo que tu Claude aprendio contigo es tuyo."
 Gris "tu CLAUDE.md - sigue igual."
 Gris "no se instalo nada de los proyectos de Carlos ni se pidio acceso a sus repos."
+
+if ($modo -eq "repo") {
+  Paso "Falta UN paso, y sin el no sirve"
+  Gris "un Claude de GitHub lee lo que esta COMMITEADO. Desde tu repo:"
+  Write-Host "`n      git add .claude CLAUDE-mazi.md && git commit -m `"La forma de trabajar de Mazi`"" -ForegroundColor Cyan
+  Write-Host "      git push`n" -ForegroundColor Cyan
+  Gris "hasta que eso este empujado, tu Claude de GitHub no ve nada de esto."
+}
 
 Write-Host "`n  ============================================================"
 Write-Host "   $nuevas skills nuevas - $iguales ya las tenias - $alado quedaron al lado"
