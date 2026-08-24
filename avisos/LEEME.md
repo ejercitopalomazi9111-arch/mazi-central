@@ -21,26 +21,32 @@ que Carlos ya usaba** — esto no cambia su método, le quita el trabajo manual.
 
 ## Los datos del grupo
 
-Las materias, los maestros y los colores salen de **su horario real**, no de
-suponer. Viven en `datos.js` y en ningún otro lado: si cambia el semestre, se
-cambia ese archivo y ya. La herramienta no sabe nada de materias, sólo lee esa
-lista.
+Las materias y los colores salen de **su horario real**, no de suponer. Viven en
+`datos.js` y en ningún otro lado: si cambia el semestre, se cambia ese archivo y
+ya. La herramienta no sabe nada de materias, sólo lee esa lista.
 
-| | |
-|---|---|
-| Química y Biología III | Michelle Ramírez |
-| Geometría Analítica | Daniel Vázquez Alvarado |
-| Programación y BD | Michelle Ramírez Almaraz |
-| Física I enfoque STEAM | Daniel Vázquez |
-| Inglés III | Valentín Hernández Salazar |
-| Educación Física III | Diana Olvera Antonio |
-| Metodología Inv. I STEAM | Omar Ávila Cruz |
-| Humanidades III y Ética | Omar Ávila Cruz |
-| Mto. de equipo y SO | Fernanda Rosas |
-| TEC III | Fernanda Rosas Mendoza |
-| Admón. y estructura de redes | Ricardo Carrillo Cue |
+Química y Biología III · Geometría Analítica · Programación y BD ·
+Física I enfoque STEAM · Inglés III · Educación Física III ·
+Metodología Inv. I STEAM · Humanidades III y Ética · Mto. de equipo y SO ·
+TEC III · Admón. y estructura de redes.
 
 Más «Proyecto STEAM» y «Aviso general», que no son clases pero sí son avisos.
+
+### Aquí NO va el nombre de quien imparte
+
+Lo hubo, y **no lo leía nadie**: ni la ficha, ni el cartel, ni una sola prueba.
+Eran los nombres completos de ocho maestros reales publicándose en un sitio web
+y en un repositorio público a cambio de nada.
+
+La pista de que estaba muerto la daba el propio archivo: **tres personas
+aparecían escritas de dos formas distintas** —unas veces con el segundo
+apellido y otras sin él—. Si alguien lo hubiera visto en pantalla alguna vez,
+se habría notado.
+
+Si algún día la ficha va a mostrar quién imparte, se vuelve a añadir — pero con
+el repositorio ya en privado (`DESPLIEGUE.md` · paso 4). El alumno del 3.1 no
+necesita el apellido de su maestro para saber qué materia le toca: para eso
+están el nombre de la materia, su color y su icono.
 
 ## De quién viene, cuando no viene de una materia
 
