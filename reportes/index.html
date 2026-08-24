@@ -365,8 +365,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   flex:1; min-width:0; font-size:5.4pt; line-height:1.38; font-weight:700;
   display:flex; align-items:center;      /* que llene su apartado, no que flote arriba */
 }
-.cred .bloque-inf .lado{flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:.8mm}
+/* Con los dos códigos puestos, la leyenda se aprieta un punto para que quepan
+   los tres sin que nada se salga. Se probó midiendo, no a ojo. */
+.cred .bloque-inf .arriba:has(.unqr + .unqr) .leyenda{font-size:4.6pt; line-height:1.3}
+.cred .bloque-inf .lado{flex:0 0 auto; display:flex; align-items:flex-start; gap:1.4mm}
+.cred .bloque-inf .unqr{display:flex; flex-direction:column; align-items:center; gap:.5mm}
+.cred .bloque-inf .rotulo-qr{font-size:3.6pt; font-weight:800; letter-spacing:.06em;
+  color:#fff; opacity:.72; white-space:nowrap}
+/* 20 mm cuando va solo. Con dos, 17.5 cada uno: por debajo de eso el módulo
+   del código baja de 0.4 mm y un teléfono ya no lo lee — eso ya me pasó con
+   la primera versión de este QR, que salió versión 24 e ilegible. */
 .cred .bloque-inf .qr{width:20mm; height:20mm; background:#fff; border-radius:1.2mm; overflow:hidden}
+.cred .bloque-inf .lado:has(.unqr + .unqr) .qr{width:17.5mm; height:17.5mm}
 .cred .bloque-inf .qr img{width:100%; height:100%; object-fit:contain; display:block}
 .cred .bloque-inf .qr .falta{font-size:4pt; color:#8A8A96; text-align:center; font-weight:700;
   display:grid; place-items:center; height:100%}
@@ -2532,16 +2542,21 @@ function credReverso(c){
       '<div class="arriba">'+
         '<img class="estrella" src="credencial/estrella-vida.png" alt="">'+
         '<div class="leyenda">'+esc(b.leyenda)+'</div>'+
+        /* LOS DOS QR, uno al lado del otro. Carlos: «si se pone el qr quede
+           ese ADEMÁS del de redes, no puedes quitarle el de redes».
+           Antes el personal REEMPLAZABA al de la marca, y ésa fue mi decisión
+           equivocada: no son lo mismo ni sirven para lo mismo. El de redes es
+           de la empresa; el de habilidades es de la persona.
+           Van rotulados, porque dos QR sin etiqueta obligan a escanear los dos
+           para saber cuál es cuál. */
         '<div class="lado">'+
-          /* el código que mandó Carlos ya trae la arroba dentro de la imagen,
-             así que no se repite abajo */
-          /* El QR personal MANDA sobre el de la marca: la credencial es de una
-             persona, y sus certificaciones pesan más que un enlace a Instagram.
-             Si no tiene folio o no tiene habilidades cargadas, se queda el de
-             siempre. */
-          '<div class="qr">'+ (QRS[folioCred(c)] ? '<img src="'+QRS[folioCred(c)]+'" alt="">'
-              : (b.qr ? '<img src="'+b.qr+'" alt="">'
-              : '<span class="falta">Pon aquí<br>el QR</span>')) +'</div>'+
+          (QRS[folioCred(c)]
+            ? '<div class="unqr"><div class="qr"><img src="'+QRS[folioCred(c)]+'" alt=""></div>'
+              + '<span class="rotulo-qr">HABILIDADES</span></div>'
+            : '')+
+          '<div class="unqr"><div class="qr">'+ (b.qr ? '<img src="'+b.qr+'" alt="">'
+              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div>'
+            + (QRS[folioCred(c)] ? '<span class="rotulo-qr">REDES</span>' : '') +'</div>'+
         '</div>'+
       '</div>'+
       '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
@@ -3097,6 +3112,13 @@ function aplicarZoom(){
 }
 
 /* ── pestañas ── */
+/* En qué pestaña está parado. Se lee de la pestaña marcada y no de una
+   variable aparte, para que no puedan discrepar. */
+function vistaActual(){
+  const p = $$('.pestana').find(b => b.getAttribute('aria-selected') === 'true');
+  return p ? p.dataset.vista : 'escribir';
+}
+
 function verVista(v){
   $$('.pestana').forEach(b => b.setAttribute('aria-selected', String(b.dataset.vista===v)));
   const anchoGrande = window.matchMedia('(min-width:1080px)').matches;
@@ -3354,6 +3376,16 @@ $('#bMas').addEventListener('click', () => { zoomAuto=false; zoom=Math.min(2, zo
 $('#bMenos').addEventListener('click', () => { zoomAuto=false; zoom=Math.max(.2, zoom-.1); aplicarZoom(); });
 $('#bAjustar').addEventListener('click', () => { zoomAuto=true; aplicarZoom(); });
 function imprimir(){
+  /* ⚠️ Si estamos en la pestaña de credenciales, se imprimen LAS
+     CREDENCIALES. Antes no: el botón grande de la barra —el único que se ve
+     sin bajarle 3000 px a la página— brincaba a la pestaña Vista e imprimía el
+     REPORTE, aunque Carlos estuviera parado en Credencial con dos credenciales
+     hechas. De ahí salió su «me sale solo una»: era una hoja del reporte, no
+     su credencial.
+
+     El botón de «Imprimir todas» de allá abajo sigue existiendo; esto sólo
+     hace que el de arriba haga lo que uno espera desde donde está parado. */
+  if(vistaActual() === 'credencial'){ imprimirCredenciales(false); return; }
   guardar();
   aplicarEscalaImpresion();
   verVista('ver');
@@ -3448,6 +3480,21 @@ repintar();
      la credencial se repinte. Antes se usaba una bandera global que se
      encendía con la primera persona, así que la segunda se quedaba con el QR
      de la marca aunque tuviera todo lleno. */
+  /* ── Los DOS códigos y el botón de imprimir ──────────────────────────
+     Lo que se puede comprobar aquí mismo, que es síncrono. Que los dos
+     códigos SE LEAN de verdad al imprimirse necesita renderizar un PDF y
+     decodificarlo, y eso vive en `reportes/pruebas-credencial.mjs`. */
+  ok('cuando hay dos códigos, cada uno va rotulado', (function(){
+     const rot = [...document.querySelectorAll('#mesaCred .rotulo-qr')].map(r => r.textContent);
+     /* Con uno solo no lleva rótulo y está bien: no hay con qué confundirlo. */
+     return rot.length === 0 || (rot.includes('HABILIDADES') && rot.includes('REDES'));
+  })());
+  ok('el botón de arriba imprime CREDENCIALES cuando estás en credenciales',
+     /vistaActual\(\) === 'credencial'/.test(imprimir.toString()),
+     'imprimía el REPORTE, y por eso a Carlos le salía una hoja en vez de sus credenciales');
+  ok('y sabe en qué pestaña estás leyéndolo de la pestaña, no de una variable aparte',
+     typeof vistaActual === 'function' && /aria-selected/.test(vistaActual.toString()));
+
   ok('prepararQRs avisa si generó alguno nuevo', (function(){
      return /return nuevos > 0/.test(prepararQRs.toString());
   })());
