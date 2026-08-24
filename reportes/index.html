@@ -558,8 +558,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   body.imprime-cred .lienzo{display:none !important}
   body.imprime-cred #impresora{display:block !important}
   html,body{background:#fff !important; margin:0; padding:0}
-  .barra,.tira-vista,.no-imprime,
-  #panel-escribir,#panel-formato,#panel-verificar,#panel-guardados{display:none !important}
+  .barra,.tira-vista,.no-imprime{display:none !important}
+  /* SE ESCONDEN TODOS LOS PANELES, no una lista.
+     Carlos imprimió estando en la pestaña Credencial y le salieron 16 páginas:
+     las últimas dos eran el FORMULARIO de la credencial, con su fondo oscuro y
+     sus campos. La regla vieja nombraba cuatro paneles —escribir, formato,
+     verificar y guardados— y para entonces ya había siete: `credencial`,
+     `plantilla` y `registro` se colaban.
+     Nombrarlos uno por uno significa que cada panel nuevo se cuela hasta que
+     alguien se acuerde de agregarlo aquí. Así, el que se cuela es el que
+     alguien decida mostrar a propósito. */
+  [id^="panel-"]{display:none !important}
   #panel-ver{display:block !important}
   .lienzo{max-width:none; margin:0; padding:0}
   .escenario{background:transparent; border:0; padding:0; overflow:visible}
@@ -3329,6 +3338,33 @@ repintar();
 (function pruebas(){
   const P = [];
   const ok = (n,c)=> P.push((c?'✓':'✗')+' '+n) && c;
+
+  /* La impresión. Carlos imprimió desde la pestaña Credencial y le salieron 16
+     páginas: las últimas dos, el formulario de la credencial con su fondo
+     oscuro. La regla nombraba cuatro paneles y ya había siete.
+
+     Esta prueba NO nombra paneles: los cuenta. Así, cuando alguien agregue el
+     octavo, la prueba lo cubre sola. */
+  (function(){
+    const reglas = (function(){
+      let t = '';
+      for(const h of document.styleSheets){
+        try{ for(const r of h.cssRules)
+               if(r.type === CSSRule.MEDIA_RULE &&
+                  /print/.test(r.conditionText || r.media.mediaText)) t += r.cssText; }catch(e){}
+      }
+      return t;
+    })();
+    const paneles = [...document.querySelectorAll('[id^="panel-"]')].map(e => e.id);
+    ok('hay reglas de impresión', reglas.length > 0);
+    ok('la impresión esconde TODOS los paneles, no una lista con nombres',
+       /\[id\^=("|')panel-("|')\]/.test(reglas));
+    ok('y vuelve a mostrar sólo el de la vista', /#panel-ver\s*\{[^}]*display\s*:\s*block/.test(reglas));
+    ok('ningún panel se nombra a mano en la impresión (se colarían los nuevos)',
+       !paneles.filter(id => id !== 'panel-ver')
+               .some(id => new RegExp('#' + id + '\\b').test(reglas)));
+    ok('siguen siendo siete paneles o más, y todos cubiertos', paneles.length >= 7);
+  })();
 
   /* El QR de habilidades. Carlos: «hay paramédicos con un chingo de
      habilidades y la credencial tolera 3». */
