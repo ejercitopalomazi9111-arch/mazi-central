@@ -87,6 +87,7 @@ const n = await page.evaluate(() => ({
   hoja:   HOJA_MM,
   come:   SAFARI_COME,
 }));
+const FORMATO_OFICIAL_ESPERADO = n.escala;
 const utilAlto  = n.hoja.alto  - n.come.arriba - n.come.abajo;
 const utilAncho = n.hoja.ancho - n.come.lados * 2;
 const altoHoja  = n.hoja.alto  * n.escala;
@@ -228,6 +229,45 @@ console.log('\n── Cuando no hay nada que imprimir ──');
 }
 
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
+
+/* ── LA ESCALA QUE SE QUEDÓ GUARDADA ──────────────────────────────────
+   Esto es lo que hizo que a Carlos «le siguiera pasando» después de que yo
+   diera el defecto por arreglado. La escala de impresión vive DENTRO de cada
+   reporte, guardada. Cambiar el valor por omisión sólo arregla los reportes
+   nuevos: el que él ya tenía escrito seguía trayendo 0.86 y lo pisaba.
+
+   A 0.86 la hoja mide 240.3 mm y en lo que deja Safari con sus encabezados
+   —235.4 mm— se pasa por 4.9 mm. Esos 4.9 mm son exactamente la banda del
+   membrete inferior, que es lo que él veía solita en cada página par: 14
+   páginas para 7 hojas. */
+console.log('\n── La escala vieja que se quedó guardada en el reporte ──');
+{
+  const ctx2 = await b.newContext({ viewport:{ width:390, height:844 } });
+  const p2 = await ctx2.newPage();
+  await p2.addInitScript(() => {
+    localStorage.setItem('reportes_todos', JSON.stringify([{
+      id:'viejo', titulo:'Reporte con la escala de antes',
+      cuerpo:'## Uno\n\n' + 'Texto. '.repeat(300), fecha:'2026-08-24', evidencias:[],
+      formato:{ impresion:0.86 },
+    }]));
+  });
+  await p2.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p2.waitForTimeout(1200);
+  const n = await p2.evaluate(() => ({
+    enDisco: (JSON.parse(localStorage.getItem('reportes_todos')||'[]')[0]||{}).formato.impresion,
+    enUso: R.formato.impresion,
+    css: getComputedStyle(document.documentElement).getPropertyValue('--imp').trim(),
+  }));
+  ok('un reporte guardado con la escala vieja se abre con la nueva',
+     n.enUso === FORMATO_OFICIAL_ESPERADO, 'se abrió con ' + n.enUso);
+  ok('y la hoja escalada CABE en lo que deja Safari',
+     279.4 * n.enUso <= 279.4 - 44,
+     (279.4 * n.enUso).toFixed(1) + ' mm contra 235.4 útiles');
+  ok('MUTACIÓN: con la escala vieja NO cabía, que es por lo que se partía',
+     279.4 * 0.86 > 279.4 - 44,
+     'entonces 0.86 sí cabía y el diagnóstico está mal');
+  await ctx2.close();
+}
 
 await b.close();
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
