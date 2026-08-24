@@ -1246,3 +1246,26 @@ body.cortina-arriba{overflow:hidden}
   padding:24px 20px; box-shadow:var(--sombra-alta);
 }
 .reja-caja h1{margin:0 0 4px; font-size:24px}
+
+
+/* ── La tarjeta del código del alumno ────────────────────────────────────
+   Es lo ÚNICO que necesita para entrar desde otro teléfono, así que se lee
+   de lejos y se copia de un toque. Antes iba como letra chica gris dentro de
+   un párrafo y un compañero que probó la app no lo encontraba. */
+.codigo-caja{
+  display:grid; gap:10px; justify-items:center; text-align:center;
+  border:2px solid var(--naranja); background:var(--sup);
+}
+.codigo-que{
+  font-size:12px; font-weight:800; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--tenue);
+}
+.codigo-es{
+  font-size:clamp(40px, 15vw, 60px); font-weight:900; line-height:1;
+  letter-spacing:.22em; text-indent:.22em;   /* el sangrado compensa el espacio
+                                                que la última letra arrastra a la
+                                                derecha, si no el código se ve
+                                                descentrado */
+  color:var(--naranja-relleno);
+}
+.codigo-caja .btn{ min-height:44px; padding-inline:26px }
