@@ -26,7 +26,7 @@ const DIST = join(RAIZ, 'dist');
 const VA = [
   'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   '_headers', 'kernel-lock.html',
-  'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones',
+  'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
 ];
@@ -37,7 +37,10 @@ const VA = [
    trabajo de otros sin cumplir lo único que pidieron a cambio. */
 const NO_VA = (ruta) => {
   const f = ruta.split('/').pop();
-  if(f === 'CREDITOS.md') return false;          /* ← la excepción que importa */
+  if(f === 'CREDITOS.md') return false;
+  /* Los perfiles de las credenciales SÍ se publican: son justamente lo que el
+     QR va a buscar. El .md de esa carpeta no. */
+  if(/\.json$/i.test(f) && /credencial\/datos/.test(ruta)) return false;          /* ← la excepción que importa */
   if(/\.md$/i.test(f)) return true;
   if(f === '.DS_Store') return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
@@ -74,6 +77,6 @@ for(const cosa of VA){
 /* Que nadie indexe lo que todavía no está para el público. Cuando el sitio
    esté listo se cambia esta línea y no otra cosa. */
 await writeFile(join(DIST, 'robots.txt'),
-  'User-agent: *\nDisallow: /reportes/\nDisallow: /evaluaciones/\n');
+  'User-agent: *\nDisallow: /reportes/\nDisallow: /evaluaciones/\nDisallow: /avisos/\n');
 
 console.log('✓ dist/ armado · ' + copiados + ' archivos · ' + saltados + ' saltados');

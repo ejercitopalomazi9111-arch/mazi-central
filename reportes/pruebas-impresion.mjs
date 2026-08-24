@@ -1,0 +1,137 @@
+/* Las pruebas de IMPRESIÓN de Reportes.
+ *
+ * Por qué existe: Carlos reportó dos veces lo mismo —«el pie de página se pasa
+ * a la siguiente y deja una hoja vacía con solo el pie»— y las pruebas que ya
+ * había no podían cacharlo, porque revisan el TEXTO del reporte y esto es un
+ * defecto de PAGINACIÓN FÍSICA: la hoja mide 279.4 mm, el navegador deja
+ * menos, y la hoja se parte en dos páginas. La mitad de abajo lleva el
+ * membrete inferior y el folio —los dos en posición absoluta— y sale sola.
+ *
+ * Leer el CSS no lo encuentra. Hay que imprimir de verdad y contar las hojas.
+ * Eso hace esto: manda el reporte a PDF con los márgenes que se queda Safari
+ * y comprueba que salgan TANTAS páginas COMO HOJAS, ni una más.
+ *
+ *   node reportes/pruebas-impresion.mjs [http://localhost:8791]
+ */
+const BASE = process.argv[2] || 'http://localhost:8791';
+const pw = await import('/opt/node22/lib/node_modules/playwright/index.js');
+const chromium = pw.chromium || pw.default.chromium;
+import { execFileSync } from 'node:child_process';
+import { writeFileSync, unlinkSync } from 'node:fs';
+
+let bien = 0, mal = 0;
+const ok = (que, cond, detalle='') => {
+  if(cond){ bien++; console.log('  ✓ ' + que); }
+  else { mal++; console.log('  ✗ ' + que + (detalle ? '  → ' + detalle : '')); }
+};
+
+/* Los márgenes que se queda Safari en iPhone. El caso malo es con los
+   «encabezados y pies de página» PUESTOS, que es como viene de fábrica:
+   ahí se come cerca de 22 mm arriba y abajo, no los 12.7 de siempre. */
+const SAFARI_PEOR = { top:'22mm', bottom:'22mm', left:'12.7mm', right:'12.7mm' };
+const SAFARI_LIMPIO = { top:'12.7mm', bottom:'12.7mm', left:'12.7mm', right:'12.7mm' };
+
+const paginasDe = (buf) => {
+  const f = '/tmp/claude-0/-home-user-mazi-central/617efe1d-4733-537e-8ae2-f3b050e50e7a/scratchpad/imp.pdf';
+  writeFileSync(f, buf);
+  const info = execFileSync('pdfinfo', [f], { encoding:'utf-8' });
+  const n = Number(/Pages:\s+(\d+)/.exec(info)[1]);
+  unlinkSync(f);
+  return n;
+};
+
+const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
+const ctx = await b.newContext({ viewport:{ width:390, height:844 } });
+const page = await ctx.newPage();
+const errores = [];
+page.on('pageerror', e => errores.push(String(e)));
+
+await page.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+
+/* Un reporte largo de verdad: si sólo hay una hoja, la prueba no prueba nada
+   —el defecto es que la hoja N se parte y empuja a la N+1. */
+const PARRAFO = 'Se hace constar que durante la jornada se observaron diversas '
+  + 'situaciones relacionadas con el cumplimiento del reglamento escolar, la '
+  + 'organización del grupo y el desarrollo normal de las actividades académicas '
+  + 'asignadas para la semana en curso. ';
+await page.evaluate((p) => {
+  const c = document.querySelector('#fCuerpo');
+  let t = '';
+  for(let i = 1; i <= 8; i++){
+    t += '## Apartado ' + i + '\n\n' + p.repeat(6) + '\n\n';
+  }
+  c.value = t;
+  c.dispatchEvent(new Event('input', { bubbles:true }));
+}, PARRAFO);
+await page.waitForTimeout(700);
+
+/* Se pagina como lo hace el botón de imprimir, y se cuentan las hojas. */
+await page.evaluate(() => { document.querySelector('#bImprimir').click(); });
+await page.waitForTimeout(900);
+const hojas = await page.evaluate(() => document.querySelectorAll('.hoja').length);
+console.log('\n· el reporte de prueba ocupa ' + hojas + ' hojas\n');
+ok('el reporte de prueba ocupa más de una hoja', hojas > 1, hojas + ' hojas');
+
+/* ── LA CONDICIÓN REAL ─────────────────────────────────────────────────
+   Chromium no reproduce el síntoma de Carlos: su hoja lleva `overflow:hidden`,
+   así que Chromium la RECORTA en vez de partirla y el conteo de páginas sale
+   bien aunque la hoja no quepa. Contar páginas aquí abajo sirve de red, pero
+   no prueba nada por sí solo.
+
+   Lo que sí se puede comprobar, y es exactamente lo que falló, es la
+   aritmética: la hoja escalada tiene que caber en el papel que deja Safari.
+   Esta comprobación lee los números de la página misma, así que si alguien
+   vuelve a subir la escala, truena aquí. */
+const n = await page.evaluate(() => ({
+  escala: FORMATO_OFICIAL.impresion,
+  hoja:   HOJA_MM,
+  come:   SAFARI_COME,
+}));
+const utilAlto  = n.hoja.alto  - n.come.arriba - n.come.abajo;
+const utilAncho = n.hoja.ancho - n.come.lados * 2;
+const altoHoja  = n.hoja.alto  * n.escala;
+const anchoHoja = n.hoja.ancho * n.escala;
+
+console.log('· escala ' + n.escala + ' → hoja de ' + altoHoja.toFixed(1) + ' x '
+          + anchoHoja.toFixed(1) + ' mm, en un papel útil de '
+          + utilAlto.toFixed(1) + ' x ' + utilAncho.toFixed(1) + ' mm\n');
+
+ok('la hoja escalada CABE a lo alto en lo que deja Safari',
+   altoHoja <= utilAlto,
+   'se pasa por ' + (altoHoja - utilAlto).toFixed(1) + ' mm — por ahí se parte');
+ok('la hoja escalada CABE a lo ancho en lo que deja Safari',
+   anchoHoja <= utilAncho,
+   'se pasa por ' + (anchoHoja - utilAncho).toFixed(1) + ' mm');
+
+/* MUTACIÓN de la aritmética: con la escala que tenía antes (0.86) NO cabía.
+   Si esto no truena, la comprobación de arriba no está comprobando nada. */
+ok('MUTACIÓN: con la escala vieja (0.86) la hoja NO cabía',
+   n.hoja.alto * 0.86 > utilAlto,
+   'entonces 0.86 sí cabía y el diagnóstico está mal');
+
+/* ── el candado contra la partida, leído del navegador, no del archivo ── */
+await page.emulateMedia({ media:'print' });
+const candado = await page.evaluate(() => {
+  const h = document.querySelector('.hoja');
+  const c = getComputedStyle(h);
+  return { corte: c.breakInside, alto: c.height, zoom: c.zoom };
+});
+await page.emulateMedia({ media:null });
+ok('al imprimir, la hoja tiene prohibido partirse', candado.corte === 'avoid',
+   'break-inside = ' + candado.corte);
+
+/* ── red de seguridad: en Chromium, hojas dentro = páginas fuera ──────── */
+for(const [nombre, margen] of [['Safari con sus encabezados', SAFARI_PEOR],
+                               ['Safari sin encabezados', SAFARI_LIMPIO]]){
+  const pdf = await page.pdf({ format:'Letter', printBackground:true, margin:margen,
+                               preferCSSPageSize:false });
+  const p = paginasDe(pdf);
+  ok(nombre + ': ' + hojas + ' hojas → ' + p + ' páginas', p === hojas,
+     p > hojas ? 'sobran ' + (p - hojas) : '');
+}
+
+ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
+
+await b.close();
+console.log('\n' + bien + ' bien · ' + mal + ' mal');
+process.exit(mal ? 1 : 0);

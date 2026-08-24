@@ -51,7 +51,7 @@ Una app para **organizar y seguir ligas de baloncesto**. Hace tres cosas:
 
 ### 0.2 · Dónde vive
 
-`https://ejercitopalomazi9111-arch.github.io/mazi-central/ligas-mazi/`
+`https://mazi-central.palomazi9111.workers.dev/ligas-mazi/`
 
 Se abre en el navegador del teléfono. **No hay que instalar nada.** En iPhone conviene tocar
 **Compartir → Añadir a pantalla de inicio** para que quede como una app de verdad, a pantalla

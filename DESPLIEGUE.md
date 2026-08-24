@@ -138,17 +138,51 @@ la dirección puesta; eso lo dejamos para cuando sepamos la dirección buena).
 
 ## 4 · El repo privado · ~1 min
 
-**Ahora sí**, con el sitio ya viviendo en Pages:
+**Esto lo tienes que picar tú.** No hay forma de cambiar la visibilidad de un repo desde aquí, así
+que lo que sí se hizo fue **auditar qué se rompe** para que le des sin sustos.
 
 **GitHub → mazi-central → Settings → General → hasta abajo, Danger Zone → Change repository
 visibility → Private.**
 
-- **Cloudflare sigue publicando**, porque sí sirve repos privados en el plan gratis. Eso es
-  justamente lo que GitHub cobra.
-- La dirección `ejercitopalomazi9111-arch.github.io/mazi-central` deja de funcionar. Si alguien la
-  tiene guardada, hay que pasarle la nueva.
-- El repo de **`torre-infinita` es aparte** y sigue público. Ése es el que tiene arte de Nintendo y
-  es el que más urge cerrar, más que éste.
+### Qué se rompe · medido, no supuesto
+
+| Qué | Pasa | Por qué |
+|---|---|---|
+| **Cloudflare** | ✅ sigue publicando | Sí sirve repos privados en el plan gratis. Eso es justo lo que GitHub cobra |
+| `mazi-central.palomazi9111.workers.dev` | ✅ intacta | Es la dirección de verdad y no depende del repo |
+| **El servidor de Fadori** | ✅ intacto | Se despliega igual |
+| `ejercitopalomazi9111-arch.github.io/mazi-central` | ❌ **se apaga** | Servir un repo privado es función de paga de GitHub. Hoy responde 200 |
+| **El explorador** | ✅ sigue sirviendo | Ya trae campo de token, y para repos privados hace falta uno. Se pega una vez y vive sólo en tu teléfono |
+| Los **QR de Fadori** | ✅ intactos | Apuntan a `workers.dev`, no a github.io |
+
+### Lo que se arregló ANTES de que le des
+
+Al auditarlo salieron dos cosas que ya estaban mal aunque nadie las hubiera notado:
+
+1. **El sitio se declaraba a sí mismo en la dirección equivocada.** `sitio/index.html` traía siete
+   etiquetas —`canonical`, `og:url`, `og:image`, `twitter:image` y el bloque de datos
+   estructurados— apuntando a `github.io`. O sea que le decía a Google y a WhatsApp *«la versión
+   buena está allá»* y mandaba las visitas a un lugar que además está por apagarse. Ya apuntan a
+   Cloudflare.
+2. **El manual de Ligas Mazi** mandaba a la gente a la dirección de github.io. Ya no.
+
+### Torre Infinita · CERRADO, decisión de Carlos
+
+Lo pregunté y lo resolvió: **no se toca.**
+
+> *«Por ahora olvídala, no tiene tráfico y no es razón de demanda, no gastemos tiempo ni recursos
+> en eso por ahora ni le muevas. Además yo lo juego con frecuencia. Y Mazi Central no es para que
+> cualquiera lo use, solo yo sé de su existencia y lo necesito, y quiero que se quede así.»*
+
+Así que:
+
+- El enlace a Torre Infinita en el índice **se queda**.
+- El repo de `torre-infinita` **se queda público**.
+- **Mazi Central es su tablero personal**, no un sitio público. Eso cambia cómo se leen las cosas
+  de aquí: no es un escaparate, es su herramienta. No hay que tratarlo como si fuera a recibir
+  visitas.
+
+**No volver a sacar el tema** salvo que cambie el tráfico o que él lo pida.
 
 ---
 

@@ -1,0 +1,133 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cartel de Fadori</title>
+<style>
+  /* ══════════════════════════════════════════════════════════════════════
+     EL CARTEL · para pegar en la cafetería y para mandar por WhatsApp
+     ─────────────────────────────────────────────────────────────────────
+     A4 vertical a 150 dpi (1240 × 1754). Se renderiza al doble, así que el
+     PNG sale a 300 dpi: se puede imprimir sin que se vea pixeleado.
+
+     La marca NO se redibuja: se usa `marca/logo-fadori.png`, que es el logo
+     bueno. Su letra es café, hecha para fondo claro — por eso va sobre una
+     tarjeta crema, que además es el sistema visual de la app (tarjetas de
+     papel flotando sobre el color de la casa). Ponerlo directo sobre el
+     naranja sería café sobre naranja: ilegible.
+     ═════════════════════════════════════════════════════════════════════ */
+  *{margin:0; padding:0; box-sizing:border-box}
+  :root{
+    --naranja-vivo:#E8590C;  --naranja:#C2410C;  --naranja-hondo:#A83809;
+    --papel:#FFFDF9;         --crema:#FFF6EC;    --cafe:#2E1B10;
+    --durazno:#FFD9BE;
+    --fam:"Liberation Sans", Arial, Helvetica, sans-serif;
+  }
+  html,body{width:1240px; height:1754px}
+  body{
+    font-family:var(--fam); color:var(--crema);
+    background:linear-gradient(165deg, var(--naranja-vivo) 0%, var(--naranja) 58%, var(--naranja-hondo) 100%);
+    display:flex; flex-direction:column; align-items:center;
+    padding:74px 78px 60px; overflow:hidden;
+  }
+
+  /* la marca, en su tarjeta */
+  .marca-caja{
+    background:var(--papel); border-radius:44px; width:100%;
+    padding:52px 40px; display:grid; justify-items:center;
+    box-shadow:0 26px 60px rgba(70,25,5,.28);
+  }
+  /* El logo está DESCENTRADO dentro de su propio lienzo y hay que encuadrarlo.
+     OJO con cómo se mide: el archivo trae ~32 000 píxeles con alfa = 1 —
+     invisibles a la vista pero contados por cualquier «caja del dibujo»—, y
+     medido así el logo parecía ocupar 1032 × 934 cuando de verdad ocupa
+     797 × 579. Con esa medida mala la tarjeta salía con un hueco enorme abajo.
+     Midiendo con umbral (alfa > 8) el dibujo va de (230, 354) a (1027, 933)
+     sobre un lienzo de 1254 → 18.34% y 28.23% de sangría, 63.56% × 46.17% de
+     tamaño.
+
+     Se encuadra aquí, con esos números, en vez de recortar el archivo: el logo
+     bueno no se toca. Ancho deseado del dibujo = 520 px → la imagen mide
+     520 / .6356 y se corre hacia atrás lo que sobra por arriba y por la
+     izquierda. */
+  .recorte{ width:520px; height:378px; overflow:hidden; position:relative }
+  .recorte img{
+    position:absolute; width:818px; height:818px;
+    left:-150px;   /* 18.34% de 818 */
+    top:-231px;    /* 28.23% de 818 */
+    display:block;
+  }
+
+  .lema{
+    font-size:56px; font-weight:800; letter-spacing:-.025em; line-height:1.1;
+    text-align:center; margin:44px 0 8px;
+  }
+  .lema b{color:var(--durazno)}
+  .bajada{
+    font-size:27px; font-weight:600; line-height:1.4; text-align:center;
+    color:rgba(255,246,236,.86); max-width:780px; margin-bottom:46px;
+  }
+
+  /* los dos códigos */
+  .par{display:grid; grid-template-columns:1fr 1fr; gap:30px; width:100%}
+  .qr-caja{
+    background:var(--papel); border-radius:36px; padding:30px 26px 26px;
+    display:grid; justify-items:center; gap:14px; color:var(--cafe);
+    box-shadow:0 22px 48px rgba(70,25,5,.26);
+  }
+  .paso{
+    width:56px; height:56px; border-radius:50%; background:var(--naranja);
+    color:var(--papel); font-size:31px; font-weight:900;
+    display:grid; place-items:center;
+  }
+  /* Alto fijo de dos renglones: «Ábrela» ocupa uno y «Déjala en tu pantalla de
+     inicio» ocupa dos, y sin esto los dos códigos quedaban a distinta altura y
+     las tarjetas desparejas. */
+  .qr-que{font-size:31px; font-weight:900; letter-spacing:-.02em; text-align:center;
+    line-height:1.15; min-height:72px; display:grid; align-content:center}
+  .qr-caja img{width:100%; height:auto; display:block; border-radius:12px}
+  .qr-como{
+    font-size:20px; font-weight:600; line-height:1.35; text-align:center;
+    color:#6B4A34; min-height:54px;
+  }
+
+  /* el pie: la dirección escrita, por si alguien no trae cámara */
+  .pie{margin-top:auto; width:100%; display:grid; justify-items:center; gap:16px}
+  .direccion{
+    background:rgba(46,27,16,.28); border:2px solid rgba(255,246,236,.34);
+    border-radius:999px; padding:16px 34px; font-size:22px; font-weight:700;
+    letter-spacing:.01em; color:var(--crema);
+  }
+  .direccion span{opacity:.72; font-weight:600}
+  .firma{
+    font-size:16px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+    color:rgba(255,246,236,.62); text-align:center; line-height:1.6;
+  }
+</style>
+
+<div class="marca-caja">
+  <div class="recorte"><img src="../marca/logo-fadori.png" alt="Fadori"></div>
+</div>
+
+<p class="lema">Pide desde tu teléfono.<br><b>Recoge sin hacer fila.</b></p>
+<p class="bajada">Déjalo listo el día anterior o antes de clases.
+  Te llega tu turno y pasas por él cuando esté hecho.</p>
+
+<div class="par">
+  <div class="qr-caja">
+    <div class="paso">1</div>
+    <div class="qr-que">Ábrela</div>
+    <img src="../qr/abrir.svg" alt="">
+    <div class="qr-como">Apunta la cámara al código<br>y toca el aviso.</div>
+  </div>
+  <div class="qr-caja">
+    <div class="paso">2</div>
+    <div class="qr-que">Déjala en tu<br>pantalla de inicio</div>
+    <img src="../qr/instalar.svg" alt="">
+    <div class="qr-como">Te enseña cómo, según<br>si traes iPhone o Android.</div>
+  </div>
+</div>
+
+<div class="pie">
+  <div class="direccion"><span>o escríbela:</span> mazi-central.palomazi9111.workers.dev/fadori</div>
+  <p class="firma">Proyecto Sin Filas · Bachillerato Rembrandt 3.1<br>
+    Renata Zoe · Brenda Natalia · Christopher Yuudai · Marco Olvera · Carlos Gutiérrez</p>
+</div>

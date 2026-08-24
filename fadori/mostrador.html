@@ -54,7 +54,11 @@
     <button class="btn fuerte ancho" id="rEntrar" type="button" style="margin-top:14px">Entrar</button>
     <p class="aviso" style="margin-top:16px"><b>Esto es un pasador, no una cerradura.</b>
       Detiene al alumno curioso, no a alguien que se lo proponga: el número vive en
-      este mismo aparato. La cerradura de verdad llega con el servidor.</p>
+      este mismo aparato. La cerradura de verdad llega con el servidor.<br>
+      <b>Una vez que entras, esta pantalla queda abierta en este teléfono</b> hasta
+      que le des «Cerrar la caja» en Ajustes, o hasta que pasen 14 horas sin usarla.
+      Así no te la vuelve a pedir a media venta — pero quien agarre este teléfono
+      desbloqueado entra.</p>
     <a class="btn ancho" href="index.html" style="margin-top:12px">← Ir a la app del alumno</a>
   </div>
 </section>
@@ -177,8 +181,11 @@
     <p class="aviso" style="margin-top:8px"><b>Es un pasador, no una cerradura.</b>
       Detiene al alumno curioso; no a quien sepa abrir las herramientas del navegador.
       La cerradura de verdad llega con el servidor.</p>
+    <p class="sub" style="margin-top:10px">Mientras no le des a cerrar, esta pantalla
+      queda abierta en este teléfono aunque recargues o cambies de app. Se cierra sola
+      si pasan 14 horas sin usarla.</p>
     <button class="btn ancho" id="bSalirMostrador" type="button" style="margin-top:12px">
-      Cerrar esta pantalla</button>
+      Cerrar la caja en este teléfono</button>
 
     <h2>Cierre de ciclo escolar</h2>
     <p class="sub">Borra los alumnos, los pedidos y los adeudos. El menú se queda.
@@ -505,7 +512,60 @@ function abrirPapel(){
   $('#velo').hidden = false;
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   $('#hImprimir').addEventListener('click', () => window.print());
+  avisarSiNoSePuedeImprimir($('#hImprimir').parentNode);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IMPRIMIR DESDE LA PANTALLA DE INICIO · el aviso que faltaba
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «el imprimir no sirve directamente, ofrece imprimir lo que se ve del
+   navegador, no el archivo que se quiere imprimir».
+
+   La causa no es el CSS —se comprobó emulando la impresión y sale limpio—: es
+   que esta pantalla se declara como app de pantalla de inicio, y en ese modo
+   iOS NO DEJA IMPRIMIR. `window.print()` no hace nada y tampoco hay
+   Compartir → Imprimir. El usuario le da al botón, no pasa nada o sale algo
+   raro, y concluye que la herramienta no sirve.
+
+   No se puede arreglar desde el código —es una limitación de iOS—, así que lo
+   que sí se puede es DECIRLO en el momento en que estorba, en vez de dejar un
+   botón que no hace nada. */
+function enPantallaDeInicio(){
+  return window.navigator.standalone === true ||
+         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+function avisarSiNoSePuedeImprimir(donde){
+  if(!enPantallaDeInicio() || !donde) return;
+  const n = document.createElement('p');
+  n.className = 'aviso no-imprime';
+  n.style.marginTop = '12px';
+  n.innerHTML = '<b>Abriste esto desde la pantalla de inicio, y ahí iPhone no deja ' +
+    'imprimir.</b> No es de la app: iOS apaga la impresión en ese modo. ' +
+    'Abre la misma dirección en Safari y desde ahí sí se puede.';
+  donde.appendChild(n);
+}
+
+
+/* Marcar el cuerpo cuando hay una hojita abierta y se va a imprimir.
+   Se hace con `beforeprint` y no sólo en el botón porque el mostrador también
+   se imprime desde el menú del navegador —Archivo → Imprimir, o Compartir →
+   Imprimir en el teléfono— y por ahí no pasa por nuestro botón.
+   Y sólo se esconde la app si de verdad HAY una hojita abierta: si alguien
+   imprime estando en «Corte del día», esconder `main` le dejaría la hoja en
+   blanco, que es peor que el defecto original. */
+(function(){
+  const marcar = () => document.body.classList.toggle(
+    'imprimiendo-hoja', !$('#velo').hidden);
+  window.addEventListener('beforeprint', marcar);
+  window.addEventListener('afterprint', () =>
+    document.body.classList.remove('imprimiendo-hoja'));
+  if(window.matchMedia){
+    /* Safari viejo no manda `beforeprint`, pero sí cambia el medio */
+    const mq = window.matchMedia('print');
+    if(mq.addEventListener) mq.addEventListener('change', e => { if(e.matches) marcar(); });
+  }
+})();
+
 
 /* "A ÉSTE no se lo puedo dar" · F45d
    Distinto de agotar: aquí no se acabó para todos, se acabó para él. Y sí
@@ -1376,8 +1436,96 @@ verVista('despachar');
   ok('hay lista para despachar en papel', typeof abrirPapel === 'function');
   /* el pasador: sirve de pasador, y se dice que no es más que eso */
   (function(){
+    /* ⚠ Estas pruebas ABREN el pasador para comprobarlo, así que tienen que
+       dejarlo como estaba. Antes no lo hacían y no se notaba porque el pase
+       vivía en sessionStorage y moría con la pestaña; al pasarlo a disco, las
+       pruebas dejaban la caja abierta PARA SIEMPRE en cualquier teléfono que
+       abriera esta pantalla. Una prueba que afloja lo que vino a comprobar es
+       peor que no tenerla. */
+    const PASE = 'fadori_pase_mostrador';
+    const antes = (function(){ try{ return localStorage.getItem(PASE); }catch(e){ return null; } })();
+    const reponer = () => { try{
+      if(antes === null) localStorage.removeItem(PASE); else localStorage.setItem(PASE, antes);
+      sessionStorage.removeItem(PASE);
+    }catch(e){} };
     F.cerrarMostrador();
+    /* Lo que un humano LEE en la pantalla, sin el código fuente: `textContent`
+       del body incluye lo que está dentro de <script>, así que una prueba que
+       busca una frase se aprueba a sí misma leyendo su propio texto. */
+    /* El texto de todas las reglas @media print juntas. */
+    const reglasDeImpresion = () => {
+      let t = '';
+      for(const h of document.styleSheets){
+        try{ for(const r of h.cssRules)
+               if(r.type === CSSRule.MEDIA_RULE &&
+                  /print/.test(r.conditionText || r.media.mediaText)) t += r.cssText; }catch(e){}
+      }
+      return t;
+    };
+    const loQueSeLee = () => {
+      const copia = document.body.cloneNode(true);
+      copia.querySelectorAll('script, style').forEach(e => e.remove());
+      return copia.textContent;
+    };
+    /* ── imprimir ── */
+    /* Carlos: «el imprimir no sirve, ofrece imprimir lo que se ve del
+       navegador». Era literal: NO había ni una regla @media print en toda la
+       app, así que salía la barra, las pestañas, los pedidos y once botones.
+       Se reprodujo emulando la impresión en un navegador de verdad. */
+    ok('hay reglas de impresión', (function(){
+      for(const h of document.styleSheets){
+        try{ for(const r of h.cssRules)
+               if(r.type === CSSRule.MEDIA_RULE && /print/.test(r.conditionText || r.media.mediaText))
+                 return true; }catch(e){}
+      }
+      return false;
+    })());
+    ok('al imprimir se esconde la barra de la app',
+       /(^|,|\s)\.barra(,|\s|\{)/.test(reglasDeImpresion()));
+    ok('al imprimir se esconden los botones',
+       /(^|,|\s)button(,|\s|\{)/.test(reglasDeImpresion()));
+    ok('al imprimir se esconde el menú de abajo',
+       /#pulgar/.test(reglasDeImpresion()));
+    ok('con una hojita abierta se imprime SÓLO la hojita',
+       /imprimiendo-hoja/.test(reglasDeImpresion()));
+    ok('se avisa que desde la pantalla de inicio iPhone no deja imprimir',
+       typeof enPantallaDeInicio === 'function' &&
+       typeof avisarSiNoSePuedeImprimir === 'function');
+
     ok('sin pasador no se entra', F.pasoElPasador() === false);
+    /* Reportado por un compañero que probó la app: a la cooperativa le volvía a
+       pedir el pasador cada vez que se recargaba. Vivía en sessionStorage, que
+       el teléfono tira en cuanto descarta la pestaña. */
+    ok('el pase sobrevive a recargar (no vive en sessionStorage)', (function(){
+      F.cerrarMostrador(); F.pasadorOk(F.estado().config.pasador);
+      const enSesion = (function(){ try{ return sessionStorage.getItem('fadori_pase_mostrador'); }
+                                    catch(e){ return null; } })();
+      const enDisco  = (function(){ try{ return localStorage.getItem('fadori_pase_mostrador'); }
+                                    catch(e){ return null; } })();
+      return !enSesion && !!enDisco && F.pasoElPasador() === true;
+    })());
+    ok('el pase caduca solo tras 14 h sin usarse', (function(){
+      try{
+        localStorage.setItem('fadori_pase_mostrador', String(Date.now() - F.PASE_DURA - 1000));
+        const caducado = F.pasoElPasador() === false;
+        localStorage.setItem('fadori_pase_mostrador', String(Date.now() - F.PASE_DURA + 60000));
+        return caducado && F.pasoElPasador() === true;
+      }catch(e){ return false; }
+    })());
+    ok('usar la pantalla renueva el plazo', (function(){
+      try{
+        const viejo = Date.now() - 10 * 60 * 60 * 1000;
+        localStorage.setItem('fadori_pase_mostrador', String(viejo));
+        F.pasoElPasador();
+        return Number(localStorage.getItem('fadori_pase_mostrador')) > viejo + 60000;
+      }catch(e){ return false; }
+    })());
+    ok('«Cerrar la caja» sí cierra', (function(){
+      F.pasadorOk(F.estado().config.pasador); F.cerrarMostrador();
+      return F.pasoElPasador() === false;
+    })());
+    ok('se dice que queda abierto en el aparato, no se esconde',
+       /queda abierta en este tel|abierta en este teléfono/i.test(loQueSeLee()));
     ok('el pasador equivocado no abre', F.pasadorOk('0000') === false);
     ok('el pasador bueno sí abre', F.pasadorOk(F.estado().config.pasador) === true);
     ok('se puede cambiar', F.cambiarPasador('5678') === '5678' &&
@@ -1385,6 +1533,9 @@ verVista('despachar');
     ok('y no acepta cualquier cosa como pasador',
        (function(){ try{ F.cambiarPasador('ab'); return false; }catch(e){ return true; } })());
     F.cambiarPasador('1234');
+    reponer();
+    ok('las pruebas no dejaron la caja abierta',
+       (function(){ try{ return localStorage.getItem(PASE) === antes; }catch(e){ return true; } })());
   })();
   /* la nota del alumno tiene que LLEGAR y VERSE, o es un campo decorativo */
   (function(){

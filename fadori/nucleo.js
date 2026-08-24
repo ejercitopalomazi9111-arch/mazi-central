@@ -814,17 +814,54 @@ function anotar(tipo, datos){
    ═════════════════════════════════════════════════════════════════════════ */
 const LLAVE_PASE = 'fadori_pase_mostrador';
 
+/* Cuánto dura abierto. Reportado por un compañero de Carlos que probó la app:
+   «el de la cooperativa, al poner su contraseña, no necesita ponerla a cada
+   rato cada que actualiza el navegador».
+
+   Tenía razón y la causa era `sessionStorage`: muere al cerrar la pestaña, y
+   en un teléfono el sistema descarta pestañas en cuanto se abre WhatsApp. O
+   sea que a media venta, a la señora de la cooperativa le volvía a pedir el
+   pasador. Eso no protege nada: lo que consigue es que acaben poniendo 1234 y
+   dejándolo pegado en un papel junto a la caja.
+
+   Ahora vive en `localStorage` y dura 14 horas SIN USARSE, que cubre una
+   jornada escolar completa con margen. Cada vez que se usa la pantalla se
+   renueva el plazo, así que durante el día no vuelve a preguntar.
+
+   Y hay que decirlo con todas sus letras: esto lo hace MENOS cerradura, no
+   más. Sigue siendo un pasador contra el alumno curioso, y ahora además queda
+   abierto en ese aparato hasta que le den «Cerrar la caja». Quien agarre ese
+   teléfono desbloqueado entra. La cerradura de verdad llega con el servidor,
+   donde el rol vive en la base de datos y no en el teléfono. */
+const PASE_DURA = 14 * 60 * 60 * 1000;
+
 function pasadorOk(intento){
   const d = estado();
   const bueno = String(d.config.pasador || CONFIG_BASE.pasador);
   if(String(intento || '').trim() !== bueno) return false;
-  try{ sessionStorage.setItem(LLAVE_PASE, '1'); }catch(e){}
+  renovarPase();
   return true;
 }
-function pasoElPasador(){
-  try{ return sessionStorage.getItem(LLAVE_PASE) === '1'; }catch(e){ return true; }
+function renovarPase(){
+  try{ localStorage.setItem(LLAVE_PASE, String(ahora())); }catch(e){}
 }
-function cerrarMostrador(){ try{ sessionStorage.removeItem(LLAVE_PASE); }catch(e){} }
+function pasoElPasador(){
+  try{
+    /* El pase viejo vivía en sessionStorage. A quien lo tenga abierto en este
+       momento no se le corta la sesión a media venta: se le traspasa. */
+    if(sessionStorage.getItem(LLAVE_PASE) === '1'){
+      sessionStorage.removeItem(LLAVE_PASE); renovarPase(); return true;
+    }
+    const t = Number(localStorage.getItem(LLAVE_PASE) || 0);
+    if(!t) return false;
+    if(ahora() - t > PASE_DURA){ localStorage.removeItem(LLAVE_PASE); return false; }
+    renovarPase();                       // se usó: el plazo vuelve a empezar
+    return true;
+  }catch(e){ return true; }
+}
+function cerrarMostrador(){
+  try{ localStorage.removeItem(LLAVE_PASE); sessionStorage.removeItem(LLAVE_PASE); }catch(e){}
+}
 function cambiarPasador(nuevo){
   const n = String(nuevo || '').trim();
   if(!/^\d{4,8}$/.test(n)) throw new Error('El pasador va de 4 a 8 números.');
@@ -1796,7 +1833,7 @@ const FADORI = {
   /* medición */
   contarFila, resumenDelDia, curvaDeFila, csvDePedidos, csvDeConteos, bajarCSV, cerrarCiclo,
   /* el pasador */
-  pasadorOk, pasoElPasador, cerrarMostrador, cambiarPasador,
+  pasadorOk, pasoElPasador, cerrarMostrador, cambiarPasador, renovarPase, PASE_DURA,
   /* cerebro */
   opcionesPara, sugerenciasPara, misNumeros, sugerir, sugerencias,
   /* para las pruebas */

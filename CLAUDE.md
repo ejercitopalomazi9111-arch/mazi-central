@@ -307,9 +307,13 @@ sin skill que la cubra, ahí sí se propone.
 | `marca/render.mjs` | **La mesa de fotografía.** Logo + logotipo sobre fondos de estudio, y los archivos de uso diario | ✅ probada |
 | `herramientas/vectorizar.mjs` | PNG → SVG con paleta medida y sin trazos basura | ✅ probada |
 | `herramientas/pruebas-tipos-navegador.mjs` | **El hueso de Rocco.** Comprueba que `tipos.mjs` carga en el navegador. Corre antes de tocar el taller | ✅ pasa |
+| `fadori/pruebas-cortinilla.mjs` | **El metrónomo.** Rebobina la animación de la hamburguesa en un navegador y revisa el ritmo: que caiga acelerando, que la torre se apriete en cada aterrizaje y que el nombre entre en el golpe | ✅ 19/19 |
+| `fadori/presentacion/ver.sh` | **Los ojos para presentaciones.** `.pptx` → una imagen por lámina. LibreOffice **sí sirve** en el contenedor: sólo faltaba `libreoffice-impress` (venía nada más el core, por eso fallaba hasta con un `.txt`) | ✅ probada |
+| `fadori/presentacion/medir.py` | **El metro.** Renderiza y lee las coordenadas de cada palabra PINTADA: caza texto encimado, palabras partidas a media sílaba y texto fuera del papel. **La versión que medía cajas del XML daba ✓ mientras la presentación se veía rota** | ✅ 31 defectos cazados en la plantilla de la escuela |
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
+| `avisos/` | **El aviso del grupo, hecho en un minuto.** Carlos es jefe del 3.1: escribe los pendientes y sale una imagen para el chat, con el formato de la escuela e icono por materia y por tipo. Materias y maestros salen de su horario real | ✅ probada, 19/19 |
 | auto-guardado | Commit automático de trabajo en curso | pendiente |
 
 ---
@@ -564,6 +568,16 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   falso para siempre. El ratón *parecía* funcionar porque los botones de la cabina son de
   `HudScene`, otra escena viva. Reproducido y verificado. PR draft `torre-infinita#1`.
 - **Ligas Mazi** estable en `main` (36/36 pruebas del simulador).
+
+### Decidido y cerrado · no volver a proponerlo
+
+- **Torre Infinita se queda como está, y su repo también.** Carlos: *«no tiene tráfico y no es
+  razón de demanda, no gastemos tiempo ni recursos en eso ni le muevas; además yo lo juego con
+  frecuencia».* El análisis legal de §7 sigue siendo correcto para **el sitio de la empresa**; lo
+  que él decidió es que el riesgo real hoy no justifica el trabajo. Es su llamada y está tomada.
+- **Mazi Central (`index.html`) es su tablero personal, no un escaparate.** *«No es para que
+  cualquiera lo use, solo yo sé de su existencia y lo necesito, y quiero que se quede así.»* No
+  hay que tratarlo como si fuera a recibir visitas ni pulirlo para desconocidos.
 
 ### Pendientes con diagnóstico
 - **Ligas Mazi se ve mal en computadora — ya está diagnosticado.** Capturado en 1920px con

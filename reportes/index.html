@@ -543,14 +543,32 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
    eso seguiría desbordando. */
 @page{size:letter portrait; margin:0}
 #impresora{display:none}
+/* El aviso de fecha vieja. Va PEGADO al campo, no en una barra arriba: un
+   aviso lejos del error se ignora. */
+.fecha-vieja{
+  display:block; margin-top:8px; font-size:13px; line-height:1.5;
+  background:#FFF3D6; border:1.5px solid #B98A2E; color:#3A2A10;
+  border-radius:10px; padding:10px 12px;
+}
+.fecha-vieja[hidden]{display:none}
+.fecha-vieja .btn{margin-top:8px; min-height:44px}
 @media print{
   .hoja, .pliego{ zoom:var(--imp, .86); }
   /* imprimiendo credenciales: fuera todo lo demás, incluida la hoja carta */
   body.imprime-cred .lienzo{display:none !important}
   body.imprime-cred #impresora{display:block !important}
   html,body{background:#fff !important; margin:0; padding:0}
-  .barra,.tira-vista,.no-imprime,
-  #panel-escribir,#panel-formato,#panel-verificar,#panel-guardados{display:none !important}
+  .barra,.tira-vista,.no-imprime{display:none !important}
+  /* SE ESCONDEN TODOS LOS PANELES, no una lista.
+     Carlos imprimió estando en la pestaña Credencial y le salieron 16 páginas:
+     las últimas dos eran el FORMULARIO de la credencial, con su fondo oscuro y
+     sus campos. La regla vieja nombraba cuatro paneles —escribir, formato,
+     verificar y guardados— y para entonces ya había siete: `credencial`,
+     `plantilla` y `registro` se colaban.
+     Nombrarlos uno por uno significa que cada panel nuevo se cuela hasta que
+     alguien se acuerde de agregarlo aquí. Así, el que se cuela es el que
+     alguien decida mostrar a propósito. */
+  [id^="panel-"]{display:none !important}
   #panel-ver{display:block !important}
   .lienzo{max-width:none; margin:0; padding:0}
   .escenario{background:transparent; border:0; padding:0; overflow:visible}
@@ -560,10 +578,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   .hoja{
     box-shadow:none; margin:0 auto; break-after:page; page-break-after:always;
     width:215.9mm; height:279.4mm;
+    /* Carlos: «el pie de página se pasa a la siguiente y deja una hoja vacía
+       con solo el pie». Eso es la hoja PARTIÉNDOSE: mide 279.4 mm y no cabía
+       en lo que deja el navegador, así que la parte de abajo —donde están el
+       membrete inferior y el folio, puestos en posición absoluta— caía en la
+       página siguiente y salía sola. Esto prohíbe la partida; la escala de
+       abajo se encarga de que quepa. */
+    break-inside:avoid; page-break-inside:avoid;
   }
 
   .hoja:last-child{break-after:auto; page-break-after:auto}
-  .pliego{box-shadow:none; margin:0 auto; break-after:page; page-break-after:always}
+  .pliego{box-shadow:none; margin:0 auto; break-after:page; page-break-after:always;
+    break-inside:avoid; page-break-inside:avoid}
   .pliego:last-child{break-after:auto; page-break-after:auto}
   .cred{box-shadow:none}
   .mesa{display:none !important}
@@ -605,7 +631,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
     <label class="campo"><span>Título del reporte</span>
       <input type="text" id="fTitulo" placeholder="Reporte semanal del grupo 3.1"></label>
     <div class="rejilla">
-      <label class="campo"><span>Fecha</span><input type="date" id="fFecha"></label>
+      <label class="campo"><span>Fecha</span><input type="date" id="fFecha">
+        <span class="fecha-vieja" id="fechaVieja" hidden></span></label>
       <label class="campo"><span>Grupo o instancia</span>
         <input type="text" id="fGrupo" placeholder="3.1"></label>
       <label class="campo"><span>Dirigido a</span>
@@ -735,6 +762,14 @@ El día ...
     <label class="campo"><span>Otras acreditaciones <small style="color:var(--tenue)">(una por renglón)</small></span>
       <textarea id="cOtras" style="min-height:88px; font-family:inherit"
         placeholder="TASK FORCE MEX 1&#10;TÉC. EXTRAC- VEHICULAR&#10;RESCATE K-9"></textarea></label>
+    <label class="campo"><span>Habilidades, certificaciones y cursos
+      <small style="color:var(--tenue)">(una por renglón · van en el QR, no en la credencial)</small></span>
+      <textarea id="cHabilidades" style="min-height:130px; font-family:inherit"
+        placeholder="TUM Básico (CRUM Querétaro, 2023)&#10;RCP y DEA para profesionales (AHA BLS, 2026)&#10;Atención Prehospitalaria del Trauma (PHTLS, 2025)"></textarea></label>
+    <p class="aviso" id="avisoQR" style="margin-top:10px"></p>
+    <div class="chips">
+      <button class="chip" type="button" id="cPublicar">Preparar el archivo para publicar</button>
+    </div>
     <div class="chips">
       <button class="chip" type="button" id="cFoto">Poner la foto</button>
       <button class="chip" type="button" id="cQuitarFoto">Quitar la foto</button>
@@ -960,10 +995,10 @@ El día ...
     <h2 class="rotulo">Al imprimir <span class="regla"></span></h2>
     <label class="campo"><span>Desde dónde imprimes</span>
       <select id="oImpresion">
-        <option value="0.86">iPhone o iPad · Safari</option>
+        <option value="0.80">iPhone o iPad · Safari</option>
         <option value="0.90">Android · Chrome</option>
         <option value="1">Computadora, con márgenes en «ninguno»</option>
-        <option value="0.80">Se sigue partiendo · encoger más</option>
+        <option value="0.72">Se sigue partiendo · encoger más</option>
       </select></label>
     <p class="aviso">Safari en iPhone <b>se queda con un margen suyo</b> que no se puede apagar, y
       por eso una hoja completa no le cabe: se pasa por un pelo y arrastra una <b>página en blanco
@@ -1020,6 +1055,10 @@ El día ...
 <div class="velo" id="velo" hidden></div>
 <div class="hojita" id="hojita" hidden></div>
 
+<!-- El generador de QR, copiado al repo con su licencia MIT. Va ANTES del
+     script principal a propósito: si va después, la primera pintada de las
+     credenciales ocurre sin él y salen sin QR hasta que algo las repinte. -->
+<script src="credencial/vendor/qrcode.min.js"></script>
 <script>
 "use strict";
 
@@ -1360,11 +1399,48 @@ const FORMATO_OFICIAL = {
   sello:'si', membrete:'todas',
   /* Cuánto se encoge la hoja al imprimir. Safari en iPhone se queda con un
      margen suyo que no se puede apagar; sin esto, cada hoja se parte en dos. */
-  impresion:0.86,
+  impresion:0.80,
 };
 let R = nuevoReporte();
 let TODOS = [];
 let zoom = 1, zoomAuto = true;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LA FECHA DEL REPORTE · el defecto que reportó Carlos
+   ──────────────────────────────────────────────────────────────────────────
+   Abrió la herramienta un lunes 24 y el campo decía «22 ago 2026».
+
+   La causa: al arrancar se retoma el último reporte tocado —
+   `R = Object.assign(nuevoReporte(), TODOS[0])`— y la fecha del reporte viejo
+   PISA la de hoy. Así que si dejó un borrador el sábado y lo sigue el lunes,
+   sale fechado el sábado.
+
+   Y NO se puede corregir en silencio: **el folio se calcula de la fecha**, así
+   que rescribirla le cambia el folio a un reporte que quizá ya entregó. Un
+   documento fechado a propósito en otro día es legítimo.
+
+   Entonces se hacen dos cosas distintas según el caso:
+
+   · Si el borrador está EN BLANCO —sin título y sin cuerpo— no es un
+     documento, es un cascarón: se le pone hoy y ya.
+   · Si ya tiene algo escrito, no se toca nada, pero **se avisa junto al campo**
+     con un botón de un toque para ponerla en hoy. Así el error deja de ser
+     invisible sin que la herramienta decida por él.
+   ═════════════════════════════════════════════════════════════════════════ */
+function revisarFecha(){
+  const caja = $('#fechaVieja');
+  if(!caja) return;
+  const hoy = iso(new Date());
+  if(!R.fecha || R.fecha === hoy){ caja.hidden = true; caja.innerHTML = ''; return; }
+  caja.hidden = false;
+  caja.innerHTML = 'Este reporte está fechado el <b>' + fechaBonita(R.fecha) +
+    '</b> y hoy es <b>' + fechaBonita(hoy) + '</b>. ' +
+    '<button type="button" class="btn chico" id="bFechaHoy">Ponerla en hoy</button>';
+  $('#bFechaHoy').addEventListener('click', () => {
+    R.fecha = hoy; $('#fFecha').value = hoy;
+    guardar(); repintar(); revisarFecha();
+  });
+}
 
 function nuevoReporte(){
   const hoy = new Date();
@@ -2225,7 +2301,7 @@ let credActiva = 0;
 
 function credNueva(){
   return { id:'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-    apellidos:'', nombres:'', nivel:'', empleado:'', num:'', acred:'', otras:'', foto:'',
+    apellidos:'', nombres:'', nivel:'', empleado:'', num:'', acred:'', otras:'', habilidades:'', foto:'',
     sangre:'', alergias:'', tel:'', familiar:'', inicio:'', vence:'' };
 }
 function cargarCred(){
@@ -2278,6 +2354,76 @@ const ICONO = {
   silueta:'<path d="M12 12.5a5.2 5.2 0 100-10.4 5.2 5.2 0 000 10.4zM3.4 24c0-5.4 3.9-9.1 8.6-9.1s8.6 3.7 8.6 9.1z"/>',
 };
 const svg = (n, extra) => '<svg viewBox="0 0 24 24" aria-hidden="true"'+(extra||'')+'>'+ICONO[n]+'</svg>';
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EL QR DE LAS HABILIDADES
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «hay paramédicos que tienen un chingo de habilidades y la credencial
+   tolera 3 a la vez».
+
+   POR QUÉ EL QR NO LLEVA LOS DATOS ADENTRO — que era lo limpio, sin publicar
+   nada. Está medido: un perfil real con 18 certificaciones pesa 1 035 bytes;
+   comprimido 604; en base64, 806 caracteres. Eso es un QR de versión 24, o sea
+   113 × 113 módulos. Impreso a 22 mm —lo más grande que cabe en una credencial
+   de 63.5 mm— sale a 0.18 mm por módulo, y un teléfono necesita ~0.4. Se ve
+   bonito y NO ESCANEA.
+
+   Con la dirección corta el QR baja a versión 5, 37 × 37, y a 18 mm da
+   0.40 mm por módulo. Ésa sí. Por eso los datos viven en el sitio y el QR
+   nada más lleva el folio.
+
+   El generador está copiado en `credencial/vendor/` con su licencia MIT: es
+   open source corriendo en nuestra máquina, no un servicio del que dependamos
+   (regla §2). Hace falta en el navegador porque cada credencial lleva un folio
+   distinto y se arman en el teléfono de Carlos.
+   ═════════════════════════════════════════════════════════════════════════ */
+const QRS = {};                       /* folio → imagen, para no regenerarla */
+
+/* El folio es el número de empleado. Si no hay, no hay QR: un QR que lleva a
+   una página vacía es peor que no tener QR. */
+function folioCred(c){
+  return String(c.num || c.empleado || '').trim().replace(/\s+/g, '-');
+}
+function habilidadesDe(c){
+  return String(c.habilidades || '').split('\n').map(x => x.trim()).filter(Boolean);
+}
+function urlHabilidades(folio){
+  return new URL('credencial/#' + encodeURIComponent(folio), location.href).href;
+}
+function llevaQR(c){ return !!folioCred(c) && habilidadesDe(c).length > 0; }
+
+async function prepararQRs(){
+  if(typeof QRCode === 'undefined') return;
+  for(const c of CRED.gente){
+    if(!llevaQR(c)) continue;
+    const f = folioCred(c);
+    if(QRS[f]) continue;
+    try{
+      QRS[f] = await QRCode.toDataURL(urlHabilidades(f), {
+        errorCorrectionLevel:'M', margin:2, width:640,
+        color:{ dark:'#0A2440', light:'#FFFFFF' } });
+    }catch(e){ /* si truena, la credencial sale con el QR de siempre */ }
+  }
+}
+
+/* El archivo que Carlos sube a mano. NO se publica nada solo: son datos de
+   otras personas y esa decisión es suya. */
+function archivoDe(c){
+  const nombre = [c.nombres, c.apellidos].filter(Boolean).join(' ').trim();
+  /* `MES` de las otras funciones es local de cada una, no global: aquí va su
+     propia lista en vez de alcanzar una variable que no existe en este ámbito. */
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+                 'septiembre','octubre','noviembre','diciembre'];
+  const hoy = new Date();
+  return {
+    nombre, cargo: c.acred || c.nivel || '', acred: c.acred || '', nivel: c.nivel || '',
+    vigencia: [c.inicio, c.vence].filter(Boolean).join(' — '),
+    sangre: c.sangre || '', alergias: c.alergias || '',
+    tel: c.tel || '', familiar: c.familiar || '',
+    habilidades: habilidadesDe(c),
+    actualizado: hoy.getDate() + ' de ' + MESES[hoy.getMonth()] + ' de ' + hoy.getFullYear(),
+  };
+}
 
 /* ── el frente ── */
 function credFrente(c){
@@ -2368,8 +2514,13 @@ function credReverso(c){
         '<div class="lado">'+
           /* el código que mandó Carlos ya trae la arroba dentro de la imagen,
              así que no se repite abajo */
-          '<div class="qr">'+ (b.qr ? '<img src="'+b.qr+'" alt="">'
-              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div>'+
+          /* El QR personal MANDA sobre el de la marca: la credencial es de una
+             persona, y sus certificaciones pesan más que un enlace a Instagram.
+             Si no tiene folio o no tiene habilidades cargadas, se queda el de
+             siempre. */
+          '<div class="qr">'+ (QRS[folioCred(c)] ? '<img src="'+QRS[folioCred(c)]+'" alt="">'
+              : (b.qr ? '<img src="'+b.qr+'" alt="">'
+              : '<span class="falta">Pon aquí<br>el QR</span>')) +'</div>'+
         '</div>'+
       '</div>'+
       '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
@@ -2380,6 +2531,7 @@ function credReverso(c){
 /* ── la pantalla de credenciales ── */
 const CAMPOS_CRED = [['#cApellidos','apellidos'],['#cNombres','nombres'],['#cNivel','nivel'],
   ['#cEmpleado','empleado'],['#cNum','num'],['#cAcred','acred'],['#cOtras','otras'],
+  ['#cHabilidades','habilidades'],
   ['#cSangre','sangre'],['#cAlergias','alergias'],['#cTel','tel'],['#cFamiliar','familiar'],
   ['#cInicio','inicio'],['#cVence','vence']];
 const CAMPOS_BASE = [['#cCiclo','ciclo'],['#cRed','red'],['#cLeyenda','leyenda'],['#cFuente','fuente']];
@@ -2391,8 +2543,37 @@ const AVISO_ACOMODO = {
         'Conviene cuando son muchas y la impresora imprime por los dos lados.',
 };
 
+/* Qué decirle sobre el QR de esta persona, en el momento en que estorba. */
+function avisarQR(c){
+  const caja = $('#avisoQR'); if(!caja) return;
+  const f = folioCred(c), h = habilidadesDe(c).length;
+  if(!h){
+    caja.className = 'aviso';
+    caja.innerHTML = 'Escribe aquí <b>todas</b> sus certificaciones. En la credencial ' +
+      'siguen saliendo sólo las de arriba; el QR del reverso lleva a la lista completa.';
+  } else if(!f){
+    caja.className = 'aviso mal';
+    caja.innerHTML = '<b>Falta el número de empleado.</b> El QR usa ese número como folio, ' +
+      'y sin él no se puede armar. Llénalo arriba y el QR aparece solo.';
+  } else {
+    caja.className = 'aviso';
+    caja.innerHTML = '<b>' + h + (h === 1 ? ' certificación' : ' certificaciones') +
+      '</b> en el QR del reverso, con folio <b>' + esc(f) + '</b>. ' +
+      'Falta subir su archivo a <code>reportes/credencial/datos/</code> — ' +
+      'hasta entonces el QR abre una página que dice que no está publicada.';
+  }
+}
+
 function pintarCred(){
   const c = cAct(), b = CRED.base;
+  avisarQR(c);
+  prepararQRs().then(() => {
+    /* Si acababa de generarse un QR que no existía, se repinta UNA vez.
+       Sin la condición se llamaría a sí misma para siempre. */
+    if(llevaQR(c) && QRS[folioCred(c)] && !$('#mesaCred').dataset.conQR){
+      $('#mesaCred').dataset.conQR = '1'; pintarCred();
+    }
+  });
   $('#cuentaCred').textContent = CRED.gente.length +
     (CRED.gente.length===1 ? ' credencial' : ' credenciales');
   $('#listaCred').innerHTML = CRED.gente.map((g,k) =>
@@ -2602,6 +2783,57 @@ function imprimirCredenciales(soloEsta){
 $('#cAcomodo').addEventListener('change', () => {
   CRED.base.acomodo = $('#cAcomodo').value; guardarCred(); pintarCred();
 });
+
+/* ══════════════════════════════════════════════════════════════════════════
+   IMPRIMIR DESDE LA PANTALLA DE INICIO · el aviso que faltaba
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «el imprimir no sirve directamente, ofrece imprimir lo que se ve del
+   navegador, no el archivo que se quiere imprimir».
+
+   La causa no es el CSS —se comprobó emulando la impresión y sale limpio—: es
+   que esta pantalla se declara como app de pantalla de inicio, y en ese modo
+   iOS NO DEJA IMPRIMIR. `window.print()` no hace nada y tampoco hay
+   Compartir → Imprimir. El usuario le da al botón, no pasa nada o sale algo
+   raro, y concluye que la herramienta no sirve.
+
+   No se puede arreglar desde el código —es una limitación de iOS—, así que lo
+   que sí se puede es DECIRLO en el momento en que estorba, en vez de dejar un
+   botón que no hace nada. */
+function enPantallaDeInicio(){
+  return window.navigator.standalone === true ||
+         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+function avisarSiNoSePuedeImprimir(donde){
+  if(!enPantallaDeInicio() || !donde) return;
+  const n = document.createElement('p');
+  n.className = 'aviso no-imprime';
+  n.style.marginTop = '12px';
+  n.innerHTML = '<b>Abriste esto desde la pantalla de inicio, y ahí iPhone no deja ' +
+    'imprimir.</b> No es de la app: iOS apaga la impresión en ese modo. ' +
+    'Abre la misma dirección en Safari y desde ahí sí se puede.';
+  donde.appendChild(n);
+}
+
+/* El aviso se pega junto a los dos botones de imprimir: el de arriba y el de
+   las credenciales. */
+avisarSiNoSePuedeImprimir(document.querySelector('#cImprimir') &&
+                          document.querySelector('#cImprimir').parentNode);
+
+/* Bajar el archivo de esta persona para subirlo al sitio. Se descarga, no se
+   publica: son datos de alguien más y la decisión es de Carlos. */
+$('#cPublicar').addEventListener('click', () => {
+  const c = cAct(); const f = folioCred(c);
+  if(!f){ alert('Primero ponle el número de empleado: ése es el folio del QR.'); return; }
+  if(!habilidadesDe(c).length){ alert('No tiene ninguna habilidad escrita todavía.'); return; }
+  const blob = new Blob([JSON.stringify(archivoDe(c), null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = f + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  nota('Bajó <b>' + esc(f) + '.json</b>. Súbelo a <code>reportes/credencial/datos/</code> ' +
+       'y el QR ya abrirá su lista.');
+});
+
 $('#cImprimir').addEventListener('click', () => imprimirCredenciales(false));
 $('#cSoloEsta').addEventListener('click', () => imprimirCredenciales(true));
 
@@ -2731,6 +2963,7 @@ function pintarTipos(){
 }
 function pintarCampos(){
   $('#fTitulo').value = R.titulo; $('#fFecha').value = R.fecha;
+  revisarFecha();
   $('#fGrupo').value = R.grupo;   $('#fPara').value = R.para;
   $('#fLugar').value = R.lugar;   $('#fAutor').value = R.autor;
   $('#fSemestre').value = R.semestre || ''; $('#fTutor').value = R.tutor || '';
@@ -2912,6 +3145,8 @@ function conectar(id, campo, despues){
  '#fAutor:autor','#fCargo:cargo','#fAutor2:autor2','#fCargo2:cargo2',
  '#fSemestre:semestre','#fTutor:tutor','#fPeriodo:periodo']
   .forEach(par => { const [s,c] = par.split(':'); conectar(s, c); });
+/* si la cambia a mano, el aviso se va o se queda según toque */
+$('#fFecha').addEventListener('change', revisarFecha);
 conectar('#fCuerpo','cuerpo', () => { pintarApartados(); contarPalabras(); });
 
 /* formato */
@@ -2928,6 +3163,19 @@ conectarFormato('#oLado','lado',1);   conectarFormato('#oTope','tope',1);
 conectarFormato('#oFondo','fondo',1); conectarFormato('#oAgua','agua');
 conectarFormato('#oOpacidad','opacidad',1); conectarFormato('#oLeyenda','leyenda');
 conectarFormato('#oSello','sello');   conectarFormato('#oMembrete','membrete');
+/* La hoja mide esto y no se negocia: es tamaño carta. */
+const HOJA_MM = { alto:279.4, ancho:215.9 };
+
+/* Cuánto papel se queda Safari en iPhone en el PEOR caso: con los
+   «encabezados y pies de página» puestos, que es como viene de fábrica.
+   Son ~22 mm arriba y ~22 mm abajo, más 12.7 a los lados.
+
+   De aquí sale la escala, y no de tantear: 279.4 - 44 = 235.4 mm de alto
+   útil, así que la hoja tiene que caber en 235.4/279.4 = 0.842. Estaba en
+   0.86 y por eso se partía: la mitad de abajo —membrete y folio, los dos en
+   posición absoluta— caía en la página siguiente y salía sola. */
+const SAFARI_COME = { arriba:22, abajo:22, lados:12.7 };
+
 function aplicarEscalaImpresion(){
   document.documentElement.style.setProperty('--imp',
     String(R.formato.impresion || FORMATO_OFICIAL.impresion));
@@ -3097,8 +3345,12 @@ cargarTodos(); cargarGrupo(); cargarCred();
 if(TODOS.length){
   R = Object.assign(nuevoReporte(), TODOS[0]);
   R.formato = Object.assign({}, FORMATO_OFICIAL, TODOS[0].formato || {});
+  /* un cascarón sin título ni cuerpo no es un documento: se le pone hoy */
+  if(!String(R.titulo || '').trim() && !String(R.cuerpo || '').trim())
+    R.fecha = iso(new Date());
 }
 pintarTipos(); pintarCampos(); pintarGuardados(); pintarRegistro(); pintarCred();
+revisarFecha();
 verVista('escribir');
 repintar();
 
@@ -3107,6 +3359,86 @@ repintar();
 (function pruebas(){
   const P = [];
   const ok = (n,c)=> P.push((c?'✓':'✗')+' '+n) && c;
+
+  /* La impresión. Carlos imprimió desde la pestaña Credencial y le salieron 16
+     páginas: las últimas dos, el formulario de la credencial con su fondo
+     oscuro. La regla nombraba cuatro paneles y ya había siete.
+
+     Esta prueba NO nombra paneles: los cuenta. Así, cuando alguien agregue el
+     octavo, la prueba lo cubre sola. */
+  (function(){
+    const reglas = (function(){
+      let t = '';
+      for(const h of document.styleSheets){
+        try{ for(const r of h.cssRules)
+               if(r.type === CSSRule.MEDIA_RULE &&
+                  /print/.test(r.conditionText || r.media.mediaText)) t += r.cssText; }catch(e){}
+      }
+      return t;
+    })();
+    const paneles = [...document.querySelectorAll('[id^="panel-"]')].map(e => e.id);
+    ok('hay reglas de impresión', reglas.length > 0);
+    ok('la impresión esconde TODOS los paneles, no una lista con nombres',
+       /\[id\^=("|')panel-("|')\]/.test(reglas));
+    ok('y vuelve a mostrar sólo el de la vista', /#panel-ver\s*\{[^}]*display\s*:\s*block/.test(reglas));
+    ok('ningún panel se nombra a mano en la impresión (se colarían los nuevos)',
+       !paneles.filter(id => id !== 'panel-ver')
+               .some(id => new RegExp('#' + id + '\\b').test(reglas)));
+    ok('siguen siendo siete paneles o más, y todos cubiertos', paneles.length >= 7);
+  })();
+
+  /* El QR de habilidades. Carlos: «hay paramédicos con un chingo de
+     habilidades y la credencial tolera 3». */
+  ok('el generador de QR está copiado en el repo, no se pide a un CDN',
+     typeof QRCode !== 'undefined');
+  ok('el folio sale del número de empleado',
+     folioCred({ num:'ACC-2026-0184' }) === 'ACC-2026-0184');
+  ok('sin número de empleado no hay folio, y por tanto no hay QR',
+     folioCred({ num:'', empleado:'' }) === '' &&
+     llevaQR({ num:'', habilidades:'una\ndos' }) === false);
+  ok('sin habilidades tampoco se pone QR, para no mandar a una página vacía',
+     llevaQR({ num:'X-1', habilidades:'' }) === false);
+  ok('con folio y habilidades sí lleva QR',
+     llevaQR({ num:'X-1', habilidades:'una\ndos' }) === true);
+  ok('las habilidades se parten por renglón',
+     habilidadesDe({ habilidades:' una \n\n dos \n' }).length === 2);
+  /* Lo que hizo falta medir: un perfil entero NO cabe en un QR de credencial.
+     Se deja escrito como prueba para que nadie lo intente otra vez. */
+  ok('la dirección del QR es corta, que es lo único que escanea a 18 mm',
+     urlHabilidades('ACC-2026-0184').length < 120);
+  ok('el archivo que se exporta lleva todas las habilidades',
+     archivoDe({ num:'X-1', nombres:'Ana', apellidos:'Ruiz',
+                 habilidades:'una\ndos\ntres' }).habilidades.length === 3);
+  ok('y no inventa campos vacíos',
+     archivoDe({ num:'X-1', nombres:'Ana', apellidos:'Ruiz', habilidades:'una' }).sangre === '');
+  /* La fecha. Carlos abrió la herramienta un lunes 24 y el campo decía 22 ago:
+     al arrancar se retoma el último reporte y su fecha pisa la de hoy.
+
+     OJO CON EL ARNÉS: este archivo guarda las pruebas como CADENAS ('✓ nombre')
+     y cuenta las fallidas mirando `x[0]`, el primer carácter. La primera versión
+     de estas cuatro empujaba arreglos `[nombre, booleano]`, cuyo `x[0]` es el
+     nombre y nunca es '✗' — o sea que pasaban siempre, dijera lo que dijera el
+     código. Se descubrió quitando la comprobación a propósito y viendo 80/80.
+     Van con `ok()`, que es el del arnés. */
+  ok('un reporte fechado hoy no avisa nada', (function(){
+    const antes = R.fecha; R.fecha = iso(new Date()); revisarFecha();
+    const callado = $('#fechaVieja').hidden;
+    R.fecha = antes; revisarFecha(); return callado;
+  })());
+  ok('un reporte fechado otro día SÍ avisa', (function(){
+    const antes = R.fecha; R.fecha = '2020-01-02'; revisarFecha();
+    const avisa = !$('#fechaVieja').hidden && /2020/.test($('#fechaVieja').textContent);
+    R.fecha = antes; revisarFecha(); return avisa;
+  })());
+  ok('y trae botón para ponerla en hoy', (function(){
+    const antes = R.fecha; R.fecha = '2020-01-02'; revisarFecha();
+    const hay = !!$('#bFechaHoy');
+    R.fecha = antes; revisarFecha(); return hay;
+  })());
+  ok('el folio sale de la fecha, por eso no se cambia sola',
+     folio({ fecha:'2026-08-22', id:'x', titulo:'t', cuerpo:'c' }) !==
+     folio({ fecha:'2026-08-24', id:'x', titulo:'t', cuerpo:'c' }));
+
   ok('el sello es estable', sello('hola mundo') === sello('hola   MUNDO'));
   ok('el sello cambia si cambia el texto', sello('hola mundo') !== sello('hola mundos'));
   ok('el sello tiene forma XXXX-XXXX', /^[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(sello('x')));

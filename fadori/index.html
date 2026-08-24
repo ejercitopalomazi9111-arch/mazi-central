@@ -85,7 +85,9 @@
 
     <h2>¿Ya tenías código?</h2>
     <div class="tarjeta">
-      <label for="eCodigo">Tu código de cuatro letras</label>
+      <p class="sub" style="margin-top:0">Lo encuentras en el otro teléfono, en
+        <b>Lo mío</b>: sale hasta arriba, en grande.</p>
+      <label for="eCodigo">Tu código: cuatro letras y números</label>
       <input id="eCodigo" maxlength="4" autocomplete="off" placeholder="ABCD"
         style="text-transform:uppercase; letter-spacing:.3em; font-weight:800">
       <button class="btn ancho" id="bVolver" type="button" style="margin-top:12px">Entrar con mi código</button>
@@ -182,8 +184,18 @@
   <!-- ══════════ LO MÍO · F41 ══════════ -->
   <section id="p-yo" hidden>
     <h1>Lo tuyo</h1>
-    <p class="sub">Tu código es <b id="miCodigo" style="letter-spacing:.24em">—</b>.
-      Apúntalo: con él entras desde cualquier teléfono.</p>
+    <!-- El código va ARRIBA y en grande. Antes vivía aquí mismo pero como letra
+         chica gris dentro de un párrafo, y un compañero que probó la app dijo que
+         era difícil de encontrar. Tenía razón: es lo único que necesitas para
+         entrar desde otro teléfono, y estaba escrito como si fuera una nota al pie. -->
+    <div class="tarjeta codigo-caja">
+      <span class="codigo-que">Tu código</span>
+      <b class="codigo-es" id="miCodigo">—</b>
+      <button class="btn" id="bCopiarCodigo" type="button">Copiar</button>
+      <p class="sub" style="margin:0">Con esto entras desde cualquier otro teléfono:
+        abre la app, baja a <b>«¿Ya tenías código?»</b> y escríbelo.
+        No lo compartas — quien lo tenga puede pedir a tu nombre.</p>
+    </div>
     <div class="cifras" id="misCifras"></div>
     <div id="miDeuda" style="margin-top:14px"></div>
     <h2>Lo que más pides</h2>
@@ -802,6 +814,22 @@ $('#bEntrar').addEventListener('click', () => {
     F.registrar($('#eNombre').value, $('#eGrupo').value);
     ver('terminos');
   }catch(e){ aviso(e.message, 'malo'); }
+});
+
+/* Copiar el código. `navigator.clipboard` no existe en contextos inseguros ni
+   en navegadores viejos, así que hay respaldo: se selecciona el texto para que
+   el alumno lo copie a mano. Nunca se queda sin salida. */
+$('#bCopiarCodigo').addEventListener('click', async () => {
+  const cod = ($('#miCodigo').textContent || '').trim();
+  if(!cod || cod === '—') return;
+  try{
+    await navigator.clipboard.writeText(cod);
+    aviso('Copiado: ' + cod);
+  }catch(e){
+    const r = document.createRange(); r.selectNode($('#miCodigo'));
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    aviso('Tu código es ' + cod + '. Cópialo de la pantalla.');
+  }
 });
 
 $('#bVolver').addEventListener('click', () => {
@@ -1435,10 +1463,12 @@ pintarReloj();
     document.body.classList.remove('cortina-arriba');
     setTimeout(() => c.remove(), 420);
   };
-  /* 3.2 s: la última capa aterriza en 2.18 y el nombre entra en 2.26, así que
-     antes de eso la cortinilla se cerraba a media animación. Sigue siendo una
-     vez por visita y con un toque te la saltas. */
-  setTimeout(quitar, 3200);
+  /* 2.95 s: el pan de arriba pega en 1.72, el nombre entra en 1.76 y el pie
+     en 2.06, así que a los 2.52 ya está todo puesto y quedan ~0.4 s para leer
+     el logo armado antes de que se vaya. Antes eran 3.2 s con medio segundo
+     de nada en medio. Sigue siendo una vez por visita y con un toque te la
+     saltas. */
+  setTimeout(quitar, 2950);
   c.addEventListener('click', quitar);
 })();
 
@@ -1900,6 +1930,40 @@ arrancar();
     copia.querySelectorAll('script, style').forEach(e => e.remove());
     return copia.textContent;
   }
+
+  /* El código del alumno. Un compañero que probó la app dijo que era difícil de
+     encontrar, y era cierto: iba como letra chica gris dentro de un párrafo.
+     Estas pruebas cuidan que no se vuelva a hundir ahí. */
+  (function(){
+    const caja = document.querySelector('.codigo-caja');
+    ok('el código vive en su propia tarjeta, no en letra chica', !!caja);
+    const b = document.getElementById('miCodigo');
+    ok('y se pinta en grande', b && parseFloat(getComputedStyle(b).fontSize) >= 34);
+    ok('está hasta arriba de «Lo tuyo»',
+       caja && document.getElementById('p-yo').firstElementChild.nextElementSibling === caja);
+    ok('se puede copiar de un toque', !!document.getElementById('bCopiarCodigo'));
+    ok('el botón de copiar se alcanza con el dedo', (function(){
+      const x = document.getElementById('bCopiarCodigo');
+      if(!x) return false;
+      const r = x.getBoundingClientRect();
+      return r.height === 0 || r.height >= 44;   /* oculto no se mide */
+    })());
+    ok('dice que no se comparte', /No lo compartas/i.test(loQueSeLee()));
+    ok('la pantalla de entrada dice dónde encontrarlo',
+       /Lo encuentras en el otro tel/i.test(loQueSeLee()));
+    /* El alfabeto trae números (ABCDEFGHJKLMNPQRSTUVWXYZ23456789), así que la
+       app no puede prometer «cuatro letras»: un alumno con K4ZP se queda
+       buscando dónde escribir el 4. */
+    ok('no le dice «cuatro letras» a un código que trae números',
+       /* «cuatro letras y números» sí vale; lo que no vale es prometer letras
+          a secas. De ahí el «no seguido de y números». */
+       !/cuatro letras(?!\s+y\s+n[úu]meros)/i.test(loQueSeLee()));
+    ok('y de hecho el código trae números', (function(){
+      let hayNumero = false;
+      for(let i = 0; i < 60; i++) if(/\d/.test(F.codigo(4))) { hayNumero = true; break; }
+      return hayNumero;
+    })());
+  })();
 
   /* Los créditos. El equipo puso su nombre en un proyecto de la escuela: si
      un cambio los borra, se borra a cinco personas de su propio trabajo. */

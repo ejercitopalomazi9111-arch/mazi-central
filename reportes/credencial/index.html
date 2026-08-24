@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Credencial · habilidades y certificaciones</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A2440">
+<meta name="robots" content="noindex">
+<meta name="description" content="Habilidades, certificaciones y cursos del portador de la credencial.">
+
+<!--
+  LA PÁGINA DEL QR DE LA CREDENCIAL
+  ─────────────────────────────────────────────────────────────────────────
+  EL PROBLEMA (Carlos): «hay paramédicos que tienen un chingo de habilidades y
+  la credencial tolera 3 a la vez».
+
+  POR QUÉ EL QR NO TRAE LOS DATOS ADENTRO. Fue lo primero que probé, porque
+  sería lo más limpio: nada publicado, todo en el código. No se puede, y está
+  medido. Un perfil real de paramédico con 18 certificaciones pesa 1 035 bytes;
+  comprimido con deflate quedan 604, y en base64 son 806 caracteres. Eso da un
+  QR de VERSIÓN 24 — 113 × 113 módulos. Impreso a 22 mm, que es lo más grande
+  que cabe en una credencial de 63.5 mm, sale a 0.18 mm por módulo. Un teléfono
+  necesita ~0.4 mm. O sea: se ve bonito y NO ESCANEA.
+
+  Con la dirección corta —80 caracteres— el QR baja a versión 5, 37 × 37, y a
+  18 mm da 0.40 mm por módulo: sí escanea.
+
+  QUÉ SIGNIFICA ESO. Que los datos tienen que vivir en el sitio, no en el
+  código. Y como son datos de OTRAS PERSONAS, no se publica nada solo: Carlos
+  exporta el archivo de cada quien y lo sube a mano, sabiendo lo que sube. Esta
+  página nada más lo lee.
+-->
+<style>
+  :root{
+    --navy:#0A2440; --navy-claro:#123A5E; --rojo:#B4232A;
+    --papel:#FFFFFF; --hueso:#F4F6F9; --tinta:#12202E; --tenue:#5B6B7C;
+    --fam:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font-family:var(--fam); background:var(--hueso); color:var(--tinta);
+       padding:0 0 calc(40px + env(safe-area-inset-bottom))}
+  header{
+    background:linear-gradient(160deg, var(--navy-claro), var(--navy));
+    color:#fff; padding:calc(26px + env(safe-area-inset-top)) 20px 26px;
+  }
+  .envoltura{max-width:680px; margin:0 auto; padding:0 20px}
+  header .envoltura{padding:0}
+  h1{margin:0; font-size:clamp(24px,6.4vw,32px); letter-spacing:-.02em; line-height:1.15}
+  .cargo{margin:6px 0 0; font-size:16px; font-weight:700; color:#BFD4EA}
+  .folio{
+    display:inline-block; margin-top:14px; padding:7px 14px; border-radius:999px;
+    background:rgba(255,255,255,.14); font-size:13px; font-weight:800; letter-spacing:.14em;
+  }
+  main{max-width:680px; margin:0 auto; padding:22px 20px}
+  h2{
+    font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--rojo);
+    margin:26px 0 10px; display:flex; align-items:center; gap:10px;
+  }
+  h2::after{content:''; flex:1; height:1px; background:#D9E1EA}
+  .tarjeta{background:var(--papel); border:1px solid #E1E7EE; border-radius:14px; padding:16px}
+  ul.hab{list-style:none; margin:0; padding:0; display:grid; gap:0}
+  ul.hab li{
+    display:flex; gap:12px; align-items:flex-start; padding:12px 0;
+    border-bottom:1px solid #EDF1F5; font-size:16px; line-height:1.45;
+  }
+  ul.hab li:last-child{border-bottom:0}
+  ul.hab .n{
+    flex:0 0 auto; width:26px; height:26px; border-radius:8px; background:var(--navy);
+    color:#fff; font-size:12px; font-weight:800; display:grid; place-items:center; margin-top:1px;
+  }
+  .datos{display:grid; gap:0}
+  .datos .ren{display:flex; gap:12px; padding:11px 0; border-bottom:1px solid #EDF1F5; font-size:15px}
+  .datos .ren:last-child{border-bottom:0}
+  .datos .et{flex:0 0 44%; color:var(--tenue); font-weight:700}
+  .datos .va{font-weight:600}
+  .nota{font-size:13px; color:var(--tenue); line-height:1.55; margin:20px 0 0}
+  .malo{background:#FFF1F1; border:1px solid #E7B4B4; border-radius:14px; padding:20px; font-size:16px; line-height:1.55}
+  .malo b{display:block; margin-bottom:6px; font-size:18px}
+</style>
+</head>
+<body>
+
+<header><div class="envoltura">
+  <h1 id="nombre">Buscando…</h1>
+  <p class="cargo" id="cargo"></p>
+  <span class="folio" id="folio" hidden></span>
+</div></header>
+
+<main id="cuerpo"></main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* El folio viene en el ancla, no en la ruta ni en la consulta: el ancla NO se
+   manda al servidor, así que ni siquiera queda en la bitácora de accesos de
+   quién consultó a quién. */
+const folio = decodeURIComponent((location.hash || '').replace(/^#/, '')).trim();
+
+function decir(titulo, cuerpo){
+  $('#nombre').textContent = titulo;
+  $('#cuerpo').innerHTML = '<div class="malo">' + cuerpo + '</div>';
+}
+
+async function arrancar(){
+  if(!folio){
+    decir('Falta el folio',
+      '<b>Esta página se abre con el código de una credencial.</b>' +
+      'Escanea el QR del reverso; si escribiste la dirección a mano, le faltó el folio.');
+    return;
+  }
+  let p = null;
+  try{
+    const r = await fetch('datos/' + encodeURIComponent(folio) + '.json', { cache:'no-store' });
+    if(r.ok) p = await r.json();
+  }catch(e){}
+
+  if(!p){
+    decir('No encontramos ese folio',
+      '<b>Folio ' + esc(folio) + '</b>' +
+      'O la credencial todavía no se publica, o el folio cambió. ' +
+      'Pídele al portador que lo confirme con quien le expidió la credencial.');
+    $('#folio').hidden = false; $('#folio').textContent = folio;
+    return;
+  }
+
+  document.title = (p.nombre || 'Credencial') + ' · habilidades';
+  $('#nombre').textContent = p.nombre || '—';
+  $('#cargo').textContent = p.cargo || '';
+  $('#folio').hidden = false;
+  $('#folio').textContent = 'FOLIO ' + folio;
+
+  const hab = (p.habilidades || []).filter(Boolean);
+  const datos = [
+    ['Acreditado como', p.acred], ['Nivel', p.nivel],
+    ['Vigencia', p.vigencia], ['Tipo de sangre', p.sangre],
+    ['Alergias', p.alergias], ['Contacto de emergencia', p.tel],
+    ['Familiar', p.familiar],
+  ].filter(x => x[1]);
+
+  $('#cuerpo').innerHTML =
+    (hab.length
+      ? '<h2>Certificaciones y cursos · ' + hab.length + '</h2><div class="tarjeta"><ul class="hab">' +
+        hab.map((h,i) => '<li><span class="n">' + (i+1) + '</span><span>' + esc(h) + '</span></li>').join('') +
+        '</ul></div>'
+      : '') +
+    (datos.length
+      ? '<h2>Datos del portador</h2><div class="tarjeta"><div class="datos">' +
+        datos.map(x => '<div class="ren"><span class="et">' + esc(x[0]) + '</span>' +
+          '<span class="va">' + esc(x[1]).replace(/\n/g,'<br>') + '</span></div>').join('') +
+        '</div></div>'
+      : '') +
+    '<p class="nota">Esta página existe porque una credencial no tiene espacio para todas ' +
+    'las certificaciones de alguien que lleva años preparándose. La información la publica ' +
+    'quien expide la credencial; si algo no cuadra, confírmalo con ellos.' +
+    (p.actualizado ? '<br>Actualizada el ' + esc(p.actualizado) + '.' : '') + '</p>';
+}
+arrancar();
+window.addEventListener('hashchange', () => location.reload());
+</script>
+</body>
+</html>
