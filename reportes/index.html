@@ -3225,6 +3225,22 @@ conectarFormato('#oSello','sello');   conectarFormato('#oMembrete','membrete');
 /* La hoja mide esto y no se negocia: es tamaño carta. */
 const HOJA_MM = { alto:279.4, ancho:215.9 };
 
+/* La escala vieja, la que NO cabía. Vivía guardada dentro de cada reporte, y
+   ahí está el detalle que me faltó: cambiar el valor por omisión sólo arregla
+   los reportes NUEVOS. El que Carlos ya tenía guardado seguía trayendo 0.86 y
+   lo pisaba, así que para él no cambió nada: le siguieron saliendo 14 páginas
+   para 7 hojas, con la banda del membrete sola en cada página par.
+
+   Se cambia al cargar, no al guardar, para que también se arreglen los que ya
+   estaban escritos. */
+const ESCALA_VIEJA = 0.86;
+
+function formatoAlDia(f){
+  const g = Object.assign({}, FORMATO_OFICIAL, f || {});
+  if(Math.abs(g.impresion - ESCALA_VIEJA) < 0.001) g.impresion = FORMATO_OFICIAL.impresion;
+  return g;
+}
+
 /* Cuánto papel se queda Safari en iPhone en el PEOR caso: con los
    «encabezados y pies de página» puestos, que es como viene de fábrica.
    Son ~22 mm arriba y ~22 mm abajo, más 12.7 a los lados.
@@ -3317,7 +3333,7 @@ $('#listaGuardados').addEventListener('click', e => {
   if(a){
     const x = TODOS.find(y => y.id === a.dataset.abrir); if(!x) return;
     R = Object.assign(nuevoReporte(), x);
-    R.formato = Object.assign({}, FORMATO_OFICIAL, x.formato || {});
+    R.formato = formatoAlDia(x.formato);
     pintarTipos(); pintarCampos(); pintarGuardados(); verVista('escribir'); repintar();
   }
 });
@@ -3424,7 +3440,7 @@ window.addEventListener('resize', () => { if(zoomAuto) aplicarZoom(); });
 cargarTodos(); cargarGrupo(); cargarCred();
 if(TODOS.length){
   R = Object.assign(nuevoReporte(), TODOS[0]);
-  R.formato = Object.assign({}, FORMATO_OFICIAL, TODOS[0].formato || {});
+  R.formato = formatoAlDia(TODOS[0].formato);
   /* un cascarón sin título ni cuerpo no es un documento: se le pone hoy */
   if(!String(R.titulo || '').trim() && !String(R.cuerpo || '').trim())
     R.fecha = iso(new Date());
