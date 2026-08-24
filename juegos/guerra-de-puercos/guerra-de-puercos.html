@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guerra de Puercos</title>
+<meta name="description" content="El juego de cartas de Guerra de Puercos, para jugar en el teléfono.">
+<meta name="theme-color" content="#E84A8A">
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   GUERRA DE PUERCOS · la mesa
+   El rosa, el negro y el hueso salieron de MEDIR el reglamento que hizo ella,
+   no de escogerlos a ojo. Es su juego; la pantalla tiene que parecerse a lo
+   que él ya vio en papel, o va a sentir que es otro juego.
+   ═════════════════════════════════════════════════════════════════════════ */
+:root{
+  --rosa:#E84A8A; --rosa-hondo:#C42463; --rosa-claro:#FFD6E6; --rosa-papel:#FFF0F6;
+  --tinta:#1B0E16; --hueso:#FFF7FA; --linea:#F5A9C7;
+  --S:#8E1B2E; --A:#C0392B; --B:#2C6FA8; --C:#2E7D4F; --D:#8A6516;
+  --ok:#2E7D4F; --mal:#C0392B;
+  --fam:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--fam); color:var(--tinta); background:var(--rosa);
+  background-image:radial-gradient(circle at 22% 12%, #FF7DB0 0, transparent 46%),
+                   radial-gradient(circle at 82% 84%, #FF6BA6 0, transparent 44%);
+  min-height:100dvh; -webkit-text-size-adjust:100%;
+  padding:0 0 calc(12px + env(safe-area-inset-bottom));
+}
+.envoltura{max-width:560px; margin:0 auto; padding:0 14px}
+button{font-family:inherit; font-size:16px; cursor:pointer}
+.oculto{display:none !important}
+
+/* ── el botón de la casa ── */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:52px; padding:12px 20px; border-radius:14px;
+  border:3px solid var(--tinta); background:var(--hueso); color:var(--tinta);
+  font-weight:800; letter-spacing:.01em; box-shadow:0 4px 0 var(--tinta);
+  transition:transform .08s, box-shadow .08s;
+}
+.btn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--tinta)}
+.btn[disabled]{opacity:.42; box-shadow:0 4px 0 rgba(27,14,22,.35); cursor:not-allowed}
+.btn.fuerte{background:var(--tinta); color:var(--hueso)}
+.btn.ancho{width:100%}
+.btn.chico{min-height:44px; padding:8px 14px; font-size:14px; box-shadow:0 3px 0 var(--tinta)}
+
+/* ── portada ── */
+.portada{text-align:center; padding:26px 0 18px}
+.hocico{width:74px; height:74px; margin:0 auto 10px; display:block}
+.titulo{
+  margin:0; font-size:clamp(34px,11vw,52px); line-height:.92; font-weight:900;
+  letter-spacing:-.02em; color:var(--hueso); text-transform:uppercase;
+  text-shadow:3px 3px 0 var(--tinta), -1px -1px 0 var(--tinta);
+}
+.titulo small{display:block; font-size:.42em; letter-spacing:.32em; margin:6px 0;
+  text-shadow:2px 2px 0 var(--tinta)}
+.lema{margin:12px auto 0; max-width:34ch; color:var(--tinta); font-weight:700;
+  font-size:14px; line-height:1.45; background:var(--rosa-claro);
+  border:3px solid var(--tinta); border-radius:12px; padding:9px 12px}
+.menu{display:grid; gap:12px; margin:22px 0 8px}
+
+/* ── la mesa ── */
+.marcador{
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
+  background:var(--tinta); color:var(--hueso); border-radius:16px;
+  padding:10px 12px; margin:12px 0;
+}
+.quien{font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+  opacity:.72}
+.pv{font-size:26px; font-weight:900; font-variant-numeric:tabular-nums; line-height:1}
+.pv .u{font-size:12px; opacity:.6; margin-left:2px}
+.barra{height:7px; border-radius:99px; background:rgba(255,255,255,.18); margin-top:5px;
+  overflow:hidden}
+.barra i{display:block; height:100%; background:var(--rosa); border-radius:99px;
+  transition:width .5s cubic-bezier(.2,.8,.3,1)}
+.marcador .der{text-align:right}
+.ronda{font-size:11px; font-weight:800; letter-spacing:.1em; text-align:center;
+  background:var(--rosa); color:var(--tinta); border-radius:99px; padding:5px 10px;
+  white-space:nowrap}
+
+.tapete{
+  background:var(--rosa-papel); border:3px solid var(--tinta); border-radius:18px;
+  padding:14px; margin-bottom:12px; box-shadow:0 5px 0 var(--tinta);
+}
+.rotulo{font-size:11px; font-weight:900; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--rosa-hondo); margin:0 0 8px}
+
+/* ── las cartas ── */
+/* Las 5 cartas van en UN renglón y punto. Con ancho fijo se partían 4 y 1 en
+   un iPhone —64x5 más los huecos no caben en 334 px de ancho útil— y una mano
+   partida se lee como si algo se hubiera roto. Con `1fr` se encogen juntas
+   hasta caber, y el `aspect-ratio` mantiene la forma de carta. */
+.mano{display:grid; grid-template-columns:repeat(5, 1fr); gap:7px; align-items:end}
+.carta{
+  position:relative; width:100%; aspect-ratio:64/92; border-radius:11px;
+  border:3px solid var(--tinta); background:var(--hueso);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-weight:900; box-shadow:0 3px 0 var(--tinta); padding:0;
+  transition:transform .12s, box-shadow .12s;
+}
+.carta .valor{font-size:24px; line-height:1; font-variant-numeric:tabular-nums}
+.carta .niv{
+  position:absolute; top:-3px; left:-3px; width:22px; height:22px;
+  border:3px solid var(--tinta); border-top-left-radius:11px; border-bottom-right-radius:9px;
+  display:grid; place-items:center; font-size:12px; color:#fff;
+}
+.carta.marcada{transform:translateY(-8px); box-shadow:0 9px 0 var(--rosa-hondo)}
+.carta.marcada::after{
+  content:'✓'; position:absolute; bottom:-2px; right:3px; font-size:15px;
+  color:var(--rosa-hondo);
+}
+/* .34 dejaba los números casi invisibles; .5 tampoco alcanza. Es para un
+   niño: tiene que poder LEER la carta. Y una carta REVELADA no se desvae
+   nunca — es justo lo que hay que mirar en esa pantalla. */
+.carta[disabled]{opacity:.55}
+.carta.revelada[disabled]{opacity:1}
+.carta.chica{width:54px; height:78px; aspect-ratio:auto; flex:0 0 auto}
+.carta.chica .valor{font-size:20px}
+.carta.dorso{
+  background:var(--rosa-hondo); background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 6px, transparent 6px 12px);
+}
+.n-S{background:var(--S)} .n-A{background:var(--A)} .n-B{background:var(--B)}
+.n-C{background:var(--C)} .n-D{background:var(--D)}
+
+/* ── especiales ── */
+.especiales{display:flex; gap:10px; justify-content:center; margin-top:12px}
+.esp{
+  min-height:52px; padding:8px 12px; border-radius:12px; border:3px solid var(--tinta);
+  background:var(--hueso); font-weight:900; font-size:13px; display:flex;
+  flex-direction:column; align-items:center; gap:1px; box-shadow:0 3px 0 var(--tinta);
+}
+.esp b{font-size:17px}
+.esp small{font-size:10px; letter-spacing:.06em; opacity:.7; font-weight:800}
+.esp.bono{background:#D8F3E0} .esp.castigo{background:#FBD9D4}
+.esp.puesta{background:var(--tinta); color:var(--hueso)}
+.esp[disabled]{opacity:.5}
+
+/* ── avisos ── */
+.aviso{
+  margin:10px 0 0; padding:10px 12px; border-radius:12px; font-size:14px;
+  font-weight:700; line-height:1.4; border:3px solid var(--tinta);
+  background:#FFE9B8;
+}
+.aviso[hidden]{display:none}
+
+/* ── el duelo ── */
+.duelo{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
+  text-align:center; margin:4px 0 10px}
+.duelo .vs{font-weight:900; font-size:20px; color:var(--rosa-hondo)}
+.duelo .lado{display:flex; flex-direction:column; align-items:center; gap:6px}
+.puntos{font-size:30px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums}
+.cuenta{font-size:12px; font-weight:800; color:var(--rosa-hondo); min-height:16px}
+.golpe{
+  text-align:center; font-size:15px; font-weight:900; padding:10px;
+  border-radius:12px; border:3px solid var(--tinta); background:var(--rosa-claro);
+}
+.golpe .n{font-size:30px; display:block; line-height:1.1}
+
+/* ── cortina de "pásale el teléfono" ── */
+.cortina{
+  position:fixed; inset:0; z-index:40; background:var(--tinta); color:var(--hueso);
+  display:grid; place-items:center; text-align:center; padding:24px;
+}
+.cortina h2{font-size:clamp(26px,9vw,40px); margin:0 0 6px; text-transform:uppercase}
+.cortina p{margin:0 0 20px; opacity:.72; font-weight:700; max-width:28ch}
+
+/* ── reglas ── */
+.reglas{background:var(--hueso); border:3px solid var(--tinta); border-radius:16px;
+  padding:14px 16px; margin-bottom:12px}
+.reglas h3{margin:14px 0 6px; font-size:15px; text-transform:uppercase; letter-spacing:.06em}
+.reglas h3:first-child{margin-top:0}
+.reglas p, .reglas li{font-size:14px; line-height:1.55; margin:5px 0}
+.reglas ul{padding-left:18px; margin:6px 0}
+.reglas table{width:100%; border-collapse:collapse; font-size:13px; margin:8px 0}
+.reglas th, .reglas td{border:2px solid var(--tinta); padding:5px 7px; text-align:left}
+.reglas th{background:var(--rosa-claro); font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase}
+.pie{text-align:center; font-size:12px; font-weight:700; color:var(--hueso);
+  opacity:.85; padding:10px 0 4px; line-height:1.6}
+.pie a{color:var(--hueso)}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
+</style>
+</head>
+<body>
+
+<!-- ══ PORTADA ══════════════════════════════════════════════════════════ -->
+<main id="p-portada" class="envoltura">
+  <div class="portada">
+    <svg class="hocico" viewBox="0 0 48 48" aria-hidden="true">
+      <ellipse cx="24" cy="24" rx="21" ry="17" fill="#FFD6E6" stroke="#1B0E16" stroke-width="3.5"/>
+      <ellipse cx="17" cy="24" rx="3.6" ry="5.4" fill="#1B0E16"/>
+      <ellipse cx="31" cy="24" rx="3.6" ry="5.4" fill="#1B0E16"/>
+    </svg>
+    <h1 class="titulo">Guerra <small>de</small> Puercos</h1>
+    <p class="lema">Ni héroe ni villano, solo un puerco haciendo lo suyo.</p>
+  </div>
+
+  <div class="menu">
+    <button class="btn fuerte ancho" data-modo="maquina">Jugar contra la máquina</button>
+    <button class="btn ancho" data-modo="dos">Dos en este teléfono</button>
+        <button class="btn ancho" id="bReglas">Cómo se juega</button>
+  </div>
+  <p class="pie">El juego y su reglamento son de su autora.<br>Esta versión para
+    teléfono la hizo Grupo Mazi.</p>
+</main>
+
+<!-- ══ REGLAS ═══════════════════════════════════════════════════════════ -->
+<main id="p-reglas" class="envoltura oculto">
+  <div style="padding-top:14px"><button class="btn chico" data-ir="portada">‹ Volver</button></div>
+  <div class="reglas" style="margin-top:12px">
+    <h3>El objetivo</h3>
+    <p>Bájale los <b>200 puntos de vida</b> a tu rival hasta 0. El último puerco en pie gana.</p>
+
+    <h3>Una ronda</h3>
+    <ul>
+      <li>Cada quien elige <b>1 carta</b> de su mano de 5.</li>
+      <li>Si quieres, le pones <b>1 carta especial</b>.</li>
+      <li>Se voltean al mismo tiempo. <b>Gana la puntuación más alta.</b></li>
+      <li>La diferencia es el daño que recibe el que perdió, <b>hasta 15</b>.</li>
+      <li>Si las dos valen igual, <b>no pasa nada</b>.</li>
+    </ul>
+
+    <h3>Los niveles</h3>
+    <table>
+      <tr><th>Nivel</th><th>Puntos</th><th>Cuántas</th><th>Se combina</th></tr>
+      <tr><td>S</td><td>96 – 100</td><td>5</td><td>no</td></tr>
+      <tr><td>A</td><td>76 – 95</td><td>27</td><td>no</td></tr>
+      <tr><td>B</td><td>56 – 75</td><td>21</td><td>sí, +15</td></tr>
+      <tr><td>C</td><td>36 – 55</td><td>27</td><td>sí, +20</td></tr>
+      <tr><td>D</td><td>16 – 35</td><td>20</td><td>sí, +30</td></tr>
+    </table>
+
+    <h3>Las combinaciones</h3>
+    <p>Junta <b>2 cartas del mismo nivel</b> — sólo D+D, C+C o B+B. <b>No se suman
+      las dos:</b> se toma nada más la más alta y se le añade el bono del nivel.</p>
+    <p>Ejemplo: un 42 y un 54 de nivel C dan <b>54 + 20 = 74</b>, no 96. La otra
+      carta se gasta sin aportar sus puntos.</p>
+    <p>Fíjate que el bono es <b>más grande entre más débil el nivel</b>: por eso
+      las cartas malas sirven. Y sólo tienes <b>4 combinaciones en toda la partida</b>.</p>
+
+    <h3>Las especiales</h3>
+    <p><b>Bonificación (+5)</b> va sobre tu carta. <b>Penalización (−5)</b> va sobre
+      la de tu rival. Ninguna de las dos cambia el nivel ni el valor impreso, y
+      no se pueden usar en combinaciones. Una carta sólo recibe una por ronda.</p>
+  </div>
+  <p class="pie">Reglamento original de la autora del juego.</p>
+</main>
+
+<!-- ══ SALA (en línea) ══════════════════════════════════════════════════ -->
+<main id="p-sala" class="envoltura oculto">
+  <div style="padding-top:14px"><button class="btn chico" data-ir="portada">‹ Volver</button></div>
+
+  <div class="tapete" style="margin-top:12px">
+    <p class="rotulo">Empieza una partida</p>
+    <p style="font-size:14px; font-weight:700; line-height:1.5; margin:0 0 12px">
+      Se hace un código de 4 letras. Se lo pasas a la otra persona por
+      WhatsApp y los dos entran a la misma mesa.</p>
+    <button class="btn fuerte ancho" id="bCrear">Hacer un código</button>
+    <div id="miCodigo" class="oculto" style="text-align:center; margin-top:14px">
+      <div style="font-size:11px; font-weight:900; letter-spacing:.16em;
+                  text-transform:uppercase; color:var(--rosa-hondo)">Tu código</div>
+      <div id="codigoTexto" style="font-size:46px; font-weight:900; letter-spacing:.16em;
+                  line-height:1.15"></div>
+      <button class="btn chico" id="bCopiar">Copiar el código</button>
+    </div>
+  </div>
+
+  <div class="tapete">
+    <p class="rotulo">O entra a una que ya existe</p>
+    <input id="fCodigo" inputmode="latin" autocapitalize="characters" autocomplete="off"
+      maxlength="4" placeholder="ABCD"
+      style="width:100%; min-height:56px; font-size:30px; font-weight:900;
+             text-align:center; letter-spacing:.22em; text-transform:uppercase;
+             border:3px solid var(--tinta); border-radius:12px; background:var(--hueso);
+             font-family:inherit; padding:6px">
+    <button class="btn ancho" id="bEntrar" style="margin-top:10px" disabled>Entrar a la sala</button>
+    <p class="aviso" id="salaAviso" hidden></p>
+  </div>
+
+  <p class="pie">Cualquiera que sepa el código puede entrar mientras haya lugar.
+    Es un código de sala, no una contraseña.<br>Lo que sí está protegido son
+    tus cartas: el otro nunca las recibe.</p>
+</main>
+
+<!-- ══ MESA ═════════════════════════════════════════════════════════════ -->
+<main id="p-mesa" class="envoltura oculto">
+  <div class="marcador">
+    <div>
+      <div class="quien" id="mNomA">Tú</div>
+      <div class="pv"><span id="mPvA">200</span><span class="u">PV</span></div>
+      <div class="barra"><i id="mBarA" style="width:100%"></i></div>
+    </div>
+    <div class="ronda" id="mRonda">Ronda 1</div>
+    <div class="der">
+      <div class="quien" id="mNomB">Máquina</div>
+      <div class="pv"><span id="mPvB">200</span><span class="u">PV</span></div>
+      <div class="barra"><i id="mBarB" style="width:100%"></i></div>
+    </div>
+  </div>
+
+  <!-- elegir -->
+  <section id="fElegir">
+    <div class="tapete">
+      <p class="rotulo" id="rTuMano">Tu mano · elige una carta</p>
+      <div class="mano" id="mMano"></div>
+      <div class="especiales" id="mEspeciales"></div>
+      <p class="aviso" id="mAviso" hidden></p>
+    </div>
+    <div style="display:grid; gap:10px">
+      <button class="btn fuerte ancho" id="bJugar" disabled>Jugar carta</button>
+      <div style="display:flex; gap:10px">
+        <button class="btn chico" style="flex:1" id="bLimpiar">Quitar selección</button>
+        <button class="btn chico" style="flex:1" data-ir="portada">Salir</button>
+      </div>
+    </div>
+    <p class="pie" id="mPistas"></p>
+  </section>
+
+  <!-- resultado -->
+  <section id="fDuelo" class="oculto">
+    <div class="tapete">
+      <div class="duelo">
+        <div class="lado">
+          <div id="dCartaA"></div>
+          <div class="puntos" id="dPtsA">—</div>
+          <div class="cuenta" id="dCtaA"></div>
+        </div>
+        <div class="vs">VS</div>
+        <div class="lado">
+          <div id="dCartaB"></div>
+          <div class="puntos" id="dPtsB">—</div>
+          <div class="cuenta" id="dCtaB"></div>
+        </div>
+      </div>
+      <div class="golpe" id="dGolpe"></div>
+    </div>
+    <button class="btn fuerte ancho" id="bSeguir">Siguiente ronda</button>
+  </section>
+
+  <!-- fin -->
+  <section id="fFin" class="oculto">
+    <div class="tapete" style="text-align:center">
+      <h2 id="finTitulo" style="margin:4px 0 8px; text-transform:uppercase; font-size:28px"></h2>
+      <p id="finTexto" style="font-weight:700; margin:0 0 4px"></p>
+    </div>
+    <div style="display:grid; gap:10px">
+      <button class="btn fuerte ancho" id="bOtra">Otra partida</button>
+      <button class="btn ancho" data-ir="portada">Al inicio</button>
+    </div>
+  </section>
+</main>
+
+<!-- ══ CORTINA ══════════════════════════════════════════════════════════ -->
+<div class="cortina oculto" id="cortina">
+  <div>
+    <h2 id="corQuien">Pásale el teléfono</h2>
+    <p id="corTexto">Que el otro no vea tus cartas.</p>
+    <button class="btn ancho" id="bCortina" style="max-width:280px">Ya soy yo, ver mis cartas</button>
+  </div>
+</div>
+
+<script>
+/* motor.js, metido aquí para que el archivo funcione solo */
+/* ══════════════════════════════════════════════════════════════════════════
+   GUERRA DE PUERCOS · EL MOTOR DE REGLAS
+   ──────────────────────────────────────────────────────────────────────────
+   Las reglas del juego y NADA de pantalla. Va aparte a propósito: las reglas
+   tienen tres trampas que no se ven jugando una partida y sí se ven en una
+   prueba, y una prueba no puede hacer clic en botones.
+
+   Las tres trampas, por si algún día alguien duda del código:
+
+   1. EL TOPE DE 15. El daño es la diferencia… hasta 15. Una carta S contra
+      una D da 84 de diferencia y sólo 15 de daño. Sin el tope, dos rondas
+      afortunadas acaban la partida y el juego no existe.
+
+   2. LA COMBINACIÓN NO SUMA. Es lo que más se malentiende del reglamento, y
+      está dicho con todas sus letras: «NO se suman los puntos de las dos
+      cartas. Se toma SOLO la carta con mayor puntuación y se añade el bono
+      del nivel». Un 42 + 54 no da 96: da 74, porque es el 54 más el bono de
+      20 que da el nivel C. La otra carta se gasta y no aporta su valor.
+
+   3. EL BONO ES AL REVÉS DE LO QUE PARECE. D da +30, C da +20 y B da +15:
+      entre más débil el nivel, más grande el bono. Tiene sentido y por eso
+      importa no "corregirlo": es lo que hace que las cartas malas sirvan.
+
+   El reglamento es de la amiga de Carlos. Aquí sólo está programado.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── Los niveles, tal como vienen en el reglamento ────────────────────────
+   `bono` es lo que suma la combinación de ese nivel; `null` es que ese nivel
+   NO se puede combinar. */
+const NIVELES = [
+  { id:'S', de: 96, a:100, cuantas: 5, bono:null, color:'#8E1B2E' },
+  { id:'A', de: 76, a: 95, cuantas:27, bono:null, color:'#C0392B' },
+  { id:'B', de: 56, a: 75, cuantas:21, bono:  15, color:'#2C6FA8' },
+  { id:'C', de: 36, a: 55, cuantas:27, bono:  20, color:'#2E7D4F' },
+  { id:'D', de: 16, a: 35, cuantas:20, bono:  30, color:'#8A6516' },
+];
+
+const PV_INICIAL      = 200;
+const MANO            = 5;
+const DANO_TOPE       = 15;
+const COMBOS_POR_JUGADOR = 4;
+const ESPECIALES      = { bono: 5, castigo: 5 };   /* 5 y 5, como dice el 8 */
+
+/* ── Azar reproducible ────────────────────────────────────────────────────
+   Con semilla, a propósito: una partida se puede volver a jugar igualita para
+   perseguir un defecto, y las dos personas de una partida en línea reparten
+   el MISMO mazo sin mandarse las cartas. */
+/* Es `splitmix32` y no el xorshift de tres líneas que tenía antes, y la razón
+   está medida: con el xorshift, la PRIMERA salida después de sembrar iba
+   pegada a la semilla, y `revolver` la usa de inmediato. El resultado era un
+   mazo mal revuelto —de cinco elementos, el primero caía al final 6381 veces
+   de 20000 en vez de 4000— y la mano de arranque del jugador A valía 5 puntos
+   más que la de B en promedio. Con eso, A ganaba el 55% de las partidas
+   jugando los dos al azar.
+
+   Un juego que le regalas a un niño no puede repartir chueco. */
+function azar(semilla){
+  let s = (semilla >>> 0) || 1;
+  return function(){
+    s = (s + 0x9E3779B9) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function revolver(lista, dado){
+  const a = lista.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(dado() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ── El mazo · 100 cartas exactas ─────────────────────────────────────────
+   Un nivel puede pedir más cartas que valores tiene (A quiere 27 en 20
+   valores), así que los valores se reparten dando la vuelta: así ninguno se
+   repite tres veces mientras otro no sale nunca. */
+function armarMazo(){
+  const cartas = [];
+  let n = 0;
+  for(const niv of NIVELES){
+    const valores = [];
+    for(let v = niv.de; v <= niv.a; v++) valores.push(v);
+    for(let i = 0; i < niv.cuantas; i++){
+      cartas.push({ id:'c' + (n++), valor: valores[i % valores.length], nivel: niv.id });
+    }
+  }
+  return cartas;
+}
+
+const nivelDe = (id) => NIVELES.find(n => n.id === id);
+const sePuedeCombinar = (id) => nivelDe(id).bono !== null;
+
+/* ── La puntuación de una jugada ──────────────────────────────────────────
+   Todo lo que decide quién gana la ronda sale de aquí, y sólo de aquí. */
+function puntuar(jugada){
+  if(!jugada || !jugada.cartas || !jugada.cartas.length) return null;
+
+  if(jugada.cartas.length === 2){
+    /* Combinación. La regla 7: se toma SÓLO la carta mayor y se le añade el
+       bono del nivel. La menor se gasta sin aportar su valor. */
+    const [x, y] = jugada.cartas;
+    const mayor = x.valor >= y.valor ? x : y;
+    const bono  = nivelDe(mayor.nivel).bono;
+    return { puntos: mayor.valor + bono, base: mayor.valor, bono,
+             nivel: mayor.nivel, combinada: true, especial: null };
+  }
+
+  /* Carta sola. Puede traer un especial encima —uno, nunca dos (regla 8). */
+  const c = jugada.cartas[0];
+  const esp = jugada.especial || null;
+  const mueve = esp === 'bono' ? 5 : esp === 'castigo' ? -5 : 0;
+  return { puntos: c.valor + mueve, base: c.valor, bono: mueve,
+           /* «No cambia el nivel ni el valor impreso de la carta» — regla 8.
+              Por eso el nivel sale de la carta y no de la puntuación. */
+           nivel: c.nivel, combinada: false, especial: esp };
+}
+
+/* ── Por qué una jugada NO es legal ───────────────────────────────────────
+   Devuelve el motivo en español o `null` si sí se vale. En español porque es
+   lo que se le enseña al jugador: un código de error no le dice nada a un
+   niño. */
+function porQueNoSeVale(jugada, jugador){
+  if(!jugada || !jugada.cartas || !jugada.cartas.length) return 'Falta elegir carta.';
+  if(jugada.cartas.length > 2) return 'Son una o dos cartas, no más.';
+
+  const enMano = (c) => jugador.mano.some(m => m.id === c.id);
+  if(!jugada.cartas.every(enMano)) return 'Esa carta no está en tu mano.';
+  if(jugada.cartas.length === 2 && jugada.cartas[0].id === jugada.cartas[1].id)
+    return 'Es la misma carta dos veces.';
+
+  if(jugada.cartas.length === 2){
+    const [x, y] = jugada.cartas;
+    if(x.nivel !== y.nivel) return 'Sólo se combinan dos cartas del MISMO nivel.';
+    if(!sePuedeCombinar(x.nivel)) return 'El nivel ' + x.nivel + ' no se puede combinar. Sólo D+D, C+C y B+B.';
+    if(jugador.combosUsados >= COMBOS_POR_JUGADOR)
+      return 'Ya usaste tus ' + COMBOS_POR_JUGADOR + ' combinaciones de toda la partida.';
+    if(jugada.especial) return 'Las cartas especiales no se pueden usar en combinaciones.';
+  }
+
+  if(jugada.especial){
+    if(!(jugador.especiales[jugada.especial] > 0))
+      return 'Ya no te quedan cartas de ' + (jugada.especial === 'bono' ? 'bonificación' : 'penalización') + '.';
+  }
+  return null;
+}
+
+/* ── El daño ──────────────────────────────────────────────────────────────
+   Regla 5, entera: la diferencia, con tope de 15, y el empate no hace nada. */
+function danoEntre(puntosA, puntosB){
+  if(puntosA === puntosB) return { dano: 0, quienPierde: null, crudo: 0 };
+  const crudo = Math.abs(puntosA - puntosB);
+  return { dano: Math.min(crudo, DANO_TOPE),
+           quienPierde: puntosA > puntosB ? 'b' : 'a',
+           crudo };
+}
+
+/* ── Repartir ─────────────────────────────────────────────────────────────
+   Los especiales se reparten 5 y 5. No pueden quedar 2.5 de cada tipo por
+   jugador, así que uno se lleva 3 bonificaciones y 2 penalizaciones y el otro
+   al revés; quién de los dos, lo decide el azar. Es lo más parejo que permite
+   un 5 y 5, y era eso o dejar que a uno le tocaran las 5 penalizaciones. */
+function repartir(semilla){
+  const dado = azar(semilla);
+  const mazo = revolver(armarMazo(), dado);
+  const alReves = dado() < 0.5;
+
+  const jugador = (nombre, bonos, castigos) => ({
+    nombre, pv: PV_INICIAL, mano: [], combosUsados: 0,
+    especiales: { bono: bonos, castigo: castigos },
+  });
+
+  const a = jugador('a', alReves ? 2 : 3, alReves ? 3 : 2);
+  const b = jugador('b', alReves ? 3 : 2, alReves ? 2 : 3);
+
+  for(let i = 0; i < MANO; i++){ a.mano.push(mazo.pop()); b.mano.push(mazo.pop()); }
+  return { a, b, mazo, ronda: 1, historia: [], acabo: null };
+}
+
+/* ── Una ronda completa ───────────────────────────────────────────────────
+   Recibe el estado y las dos jugadas y devuelve el estado NUEVO. No toca el
+   que le dieron: así la pantalla puede animar el antes y el después, y una
+   partida en línea puede repetir la misma ronda sin que se ensucie nada.
+
+   La penalización va sobre la carta del RIVAL. El reglamento no lo dice con
+   esas palabras —dice «se usa sobre 1 carta individual»— pero es la única
+   lectura en la que alguien la usaría: nadie gasta una carta para empeorar la
+   suya. Y encaja con el límite de la regla 8, «cada carta individual solo
+   puede recibir 1 Bonificación O 1 Penalización por ronda», que sólo hace
+   falta si las dos pueden caer sobre la misma carta. Queda anotado por si la
+   amiga de Carlos lo quiso de otro modo: se cambia aquí y en ningún otro lado.
+*/
+function jugarRonda(estado, jugadaA, jugadaB){
+  const est = JSON.parse(JSON.stringify(estado));
+  if(est.acabo) return est;
+
+  for(const [j, jugada] of [[est.a, jugadaA], [est.b, jugadaB]]){
+    const mal = porQueNoSeVale(jugada, j);
+    if(mal) throw new Error('Jugada inválida de ' + j.nombre + ': ' + mal);
+  }
+
+  /* Los especiales se aplican antes de puntuar. El bono a la carta propia, el
+     castigo a la del rival. Y una carta no recibe dos. */
+  const conEspecial = (mia, delRival) => {
+    const puestos = [];
+    if(mia.especial === 'bono')       puestos.push('bono');
+    if(delRival.especial === 'castigo') puestos.push('castigo');
+    return puestos.length ? puestos[0] : null;   /* la primera; nunca dos */
+  };
+
+  const jA = { cartas: jugadaA.cartas, especial: jugadaA.cartas.length === 2 ? null
+               : conEspecial(jugadaA, jugadaB) };
+  const jB = { cartas: jugadaB.cartas, especial: jugadaB.cartas.length === 2 ? null
+               : conEspecial(jugadaB, jugadaA) };
+
+  const pA = puntuar(jA), pB = puntuar(jB);
+  const res = danoEntre(pA.puntos, pB.puntos);
+
+  if(res.quienPierde === 'a') est.a.pv = Math.max(0, est.a.pv - res.dano);
+  if(res.quienPierde === 'b') est.b.pv = Math.max(0, est.b.pv - res.dano);
+
+  /* Se gastan las cartas, los especiales y las combinaciones. */
+  for(const [j, jugada] of [[est.a, jugadaA], [est.b, jugadaB]]){
+    const fuera = new Set(jugada.cartas.map(c => c.id));
+    j.mano = j.mano.filter(c => !fuera.has(c.id));
+    if(jugada.cartas.length === 2) j.combosUsados++;
+    if(jugada.especial) j.especiales[jugada.especial]--;
+    /* Regla 4.8: reponer hasta tener 5. Si el mazo se acabó, se juega con lo
+       que quede — no se inventan cartas. */
+    while(j.mano.length < MANO && est.mazo.length) j.mano.push(est.mazo.pop());
+  }
+
+  est.historia.push({ ronda: est.ronda, a: pA, b: pB,
+                      dano: res.dano, crudo: res.crudo, perdio: res.quienPierde });
+  est.ronda++;
+
+  /* Se acaba por PV en cero, o porque ya nadie tiene con qué jugar. */
+  if(est.a.pv <= 0 || est.b.pv <= 0){
+    est.acabo = est.a.pv <= 0 && est.b.pv <= 0 ? 'empate'
+              : est.a.pv <= 0 ? 'b' : 'a';
+  } else if(!est.a.mano.length || !est.b.mano.length){
+    est.acabo = est.a.pv === est.b.pv ? 'empate' : (est.a.pv > est.b.pv ? 'a' : 'b');
+    est.porCartas = true;
+  }
+  return est;
+}
+
+/* ── Las jugadas que un jugador PUEDE hacer ───────────────────────────────
+   La usa la máquina para pensar y la pantalla para no ofrecer lo prohibido.
+   Que salgan del mismo lugar es lo que evita que la máquina haga una jugada
+   que a la persona no la dejan hacer. */
+function jugadasPosibles(jugador){
+  const salen = [];
+  for(const c of jugador.mano){
+    salen.push({ cartas:[c], especial:null });
+    for(const e of ['bono', 'castigo']){
+      if(jugador.especiales[e] > 0) salen.push({ cartas:[c], especial:e });
+    }
+  }
+  if(jugador.combosUsados < COMBOS_POR_JUGADOR){
+    for(let i = 0; i < jugador.mano.length; i++){
+      for(let j = i + 1; j < jugador.mano.length; j++){
+        const x = jugador.mano[i], y = jugador.mano[j];
+        if(x.nivel === y.nivel && sePuedeCombinar(x.nivel))
+          salen.push({ cartas:[x, y], especial:null });
+      }
+    }
+  }
+  return salen;
+}
+
+/* Se expone de dos formas a propósito: `module.exports` para que las pruebas
+   lo carguen en node, y `window.MOTOR` para que la página lo cargue con un
+   <script> normal, sin build ni módulos. Es el mismo archivo en los dos lados,
+   que es justo lo que hace que las pruebas valgan para lo que se publica. */
+const API = {
+  NIVELES, PV_INICIAL, MANO, DANO_TOPE, COMBOS_POR_JUGADOR, ESPECIALES,
+  azar, revolver, armarMazo, nivelDe, sePuedeCombinar,
+  puntuar, porQueNoSeVale, danoEntre, repartir, jugarRonda, jugadasPosibles,
+};
+
+/* Tres formas de cargarlo, un solo archivo:
+   · `module.exports` para las pruebas en node,
+   · `globalThis.MOTOR` para la página (donde `globalThis` ES `window`) y
+     también para el Worker de Cloudflare, que no tiene `window`.
+   Si aquí dijera `window.MOTOR`, en el servidor no se definiría nada y el
+   servidor tendría que llevar su propia copia de las reglas. */
+if(typeof module !== 'undefined') module.exports = API;
+globalThis.MOTOR = API;
+
+</script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   LA PANTALLA. Las reglas NO viven aquí: viven en `motor.js`, que se prueba
+   solo con `node juegos/guerra-de-puercos/pruebas.mjs`. Aquí sólo se pinta y
+   se escucha el dedo. Si alguna regla se cambia, se cambia allá.
+   ═════════════════════════════════════════════════════════════════════════ */
+const $  = (s, d=document) => d.querySelector(s);
+const $$ = (s, d=document) => [...d.querySelectorAll(s)];
+
+let J = null;          /* el estado de la partida */
+let modo = 'maquina';  /* 'maquina' | 'dos' */
+let turnoDe = 'a';     /* de quién es la elección en curso (modo dos) */
+let elegidas = [];     /* cartas marcadas */
+let especial = null;   /* 'bono' | 'castigo' | null */
+let guardadaA = null;  /* la jugada de A mientras A espera a B */
+
+const NOMBRES = { maquina:{ a:'Tú', b:'Máquina' }, dos:{ a:'Jugador 1', b:'Jugador 2' },
+                  linea:{ a:'Tú', b:'El otro' } };
+
+/* ── EL MODO EN LÍNEA ────────────────────────────────────────────────────
+   La partida NO vive aquí: vive en el servidor, y de allá llega sólo MI
+   vista —mis cartas, y del rival los PV y cuántas cartas trae—. Por eso esta
+   página no puede enseñar la mano del otro ni aunque alguien la abra y la
+   lea: nunca la recibe. */
+const LINEA = { ws:null, codigo:null, asiento:null, vista:null, esperando:false };
+window.LINEA = LINEA;   /* para que las pruebas puedan mirar la sala */
+const LLAVE_SECRETO = 'puercos_secreto_';
+
+function pantalla(cual){
+  for(const p of ['portada','reglas','sala','mesa'])
+    $('#p-' + p).classList.toggle('oculto', p !== cual);
+  window.scrollTo(0, 0);
+}
+function fase(cual){
+  for(const f of ['Elegir','Duelo','Fin']) $('#f' + f).classList.toggle('oculto', f !== cual);
+}
+
+/* ── dibujar una carta ── */
+function laCarta(c, opciones = {}){
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'carta' + (opciones.chica ? ' chica' : '');
+  b.dataset.id = c.id;
+  b.innerHTML = '<span class="niv n-' + c.nivel + '">' + c.nivel + '</span>'
+              + '<span class="valor">' + c.valor + '</span>';
+  if(opciones.estatica){ b.disabled = true; b.classList.add('revelada'); }
+  return b;
+}
+function elDorso(){
+  const d = document.createElement('div');
+  d.className = 'carta chica dorso';
+  return d;
+}
+
+/* ── quién está eligiendo ahora ── */
+const yo    = () => J[turnoDe];
+const rival = () => J[turnoDe === 'a' ? 'b' : 'a'];
+
+/* Convierte la VISTA que manda el servidor en el mismo `J` que usan los otros
+   dos modos, para que toda la pintura de abajo funcione igual sin saber si la
+   partida es local o de allá. Del rival se arma una mano de cartas TAPADAS
+   —sólo para contarlas—, porque sus valores nunca llegaron. */
+function deLaVista(v){
+  const mio = { pv:v.yo.pv, mano:v.yo.mano, combosUsados:v.yo.combosUsados,
+                especiales:v.yo.especiales, nombre:v.asiento };
+  const suyo = { pv:v.rival.pv, combosUsados:v.rival.combosUsados,
+                 especiales:v.rival.especiales, nombre:'rival',
+                 mano: Array.from({ length:v.rival.cartas },
+                                  (_, i) => ({ id:'tapada' + i, valor:0, nivel:'?' })) };
+  const j = { mazo: Array.from({ length:v.mazo }), ronda:v.ronda,
+              acabo:v.acabo, porCartas:v.porCartas, historia:[] };
+  j[v.asiento] = mio;
+  j[v.asiento === 'a' ? 'b' : 'a'] = suyo;
+  return j;
+}
+
+function pintarMano(){
+  const m = $('#mMano'); m.innerHTML = '';
+  const puedeCombinar = yo().combosUsados < MOTOR.COMBOS_POR_JUGADOR;
+
+  for(const c of yo().mano){
+    const b = laCarta(c);
+    const marcada = elegidas.some(x => x.id === c.id);
+    b.classList.toggle('marcada', marcada);
+    /* NINGUNA carta de la mano se apaga. La versión anterior apagaba las
+       cuatro restantes en cuanto elegías una, y para cambiar de opinión había
+       que pasar por «Quitar selección» — un callejón sin salida que un niño no
+       va a resolver, y además cuatro cartas grises se ven como si se hubieran
+       roto. Ahora se puede picar cualquiera siempre, y `marcar` decide qué
+       significa: combinar si se puede, cambiar de carta si no. */
+    b.addEventListener('click', () => marcar(c));
+    m.appendChild(b);
+  }
+
+  const e = $('#mEspeciales'); e.innerHTML = '';
+  for(const [id, etiqueta, signo] of [['bono','Bonificación','+5'], ['castigo','Penalización','−5']]){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'esp ' + id + (especial === id ? ' puesta' : '');
+    b.innerHTML = '<b>' + signo + '</b><small>' + etiqueta.toUpperCase() + '</small>'
+                + '<small>te quedan ' + yo().especiales[id] + '</small>';
+    b.disabled = yo().especiales[id] === 0 || elegidas.length === 2;
+    b.addEventListener('click', () => {
+      especial = especial === id ? null : id;
+      pintarMano(); pintarBotones();
+    });
+    e.appendChild(b);
+  }
+
+  $('#rTuMano').textContent = modo === 'dos'
+    ? NOMBRES.dos[turnoDe] + ' · elige tu carta'
+    : 'Tu mano · elige una carta';
+
+  const faltan = MOTOR.COMBOS_POR_JUGADOR - yo().combosUsados;
+  $('#mPistas').innerHTML =
+    'Te quedan <b>' + faltan + '</b> combinacion' + (faltan === 1 ? '' : 'es')
+    + ' · quedan <b>' + J.mazo.length + '</b> cartas en el mazo';
+}
+
+function marcar(c){
+  const i = elegidas.findIndex(x => x.id === c.id);
+  if(i >= 0){ elegidas.splice(i, 1); }
+  else if(elegidas.length === 0){
+    elegidas.push(c);
+  }
+  else {
+    /* Ya hay algo elegido. Se pregunta a las REGLAS si la carta nueva se puede
+       combinar con lo que hay; si sí, se suma y queda una combinación. Si no,
+       la carta nueva REEMPLAZA a la anterior — que es lo que quiere alguien
+       que está cambiando de opinión, y nunca deja la pantalla trabada. */
+    const tentativa = { cartas: elegidas.concat([c]), especial };
+    if(elegidas.length === 1 && !MOTOR.porQueNoSeVale(tentativa, yo())) elegidas.push(c);
+    else elegidas = [c];
+  }
+  if(elegidas.length === 2) especial = null;   /* regla 8: no van juntas */
+  pintarMano(); pintarBotones();
+}
+
+function pintarBotones(){
+  const jugada = { cartas: elegidas, especial };
+  const mal = elegidas.length ? MOTOR.porQueNoSeVale(jugada, yo()) : 'Falta elegir carta.';
+  $('#bJugar').disabled = !!mal;
+  const av = $('#mAviso');
+  /* El aviso sólo sale cuando ya eligió algo: regañar antes de que toque nada
+     es ruido. */
+  if(mal && elegidas.length){ av.hidden = false; av.textContent = mal; }
+  else av.hidden = true;
+
+  /* Que vea la cuenta ANTES de jugar. Es la parte que cuesta entender del
+     reglamento —la combinación no suma las dos cartas— y enseñarla hecha
+     enseña la regla sin explicarla. */
+  if(!mal && elegidas.length === 2){
+    const p = MOTOR.puntuar(jugada);
+    av.hidden = false;
+    av.textContent = 'Combinación de nivel ' + p.nivel + ': se toma la más alta, '
+                   + p.base + ' + ' + p.bono + ' del nivel = ' + p.puntos + ' puntos.';
+  }
+  if(!mal && elegidas.length === 1 && especial){
+    const p = MOTOR.puntuar(jugada);
+    av.hidden = false;
+    av.textContent = p.base + (especial === 'bono' ? ' + 5' : ' − 5') + ' = '
+                   + p.puntos + ' puntos. Sigue siendo nivel ' + p.nivel + '.';
+  }
+  $('#bJugar').textContent = elegidas.length === 2 ? 'Jugar la combinación' : 'Jugar carta';
+}
+
+function pintarMarcador(){
+  $('#mNomA').textContent = NOMBRES[modo].a;
+  $('#mNomB').textContent = NOMBRES[modo].b;
+  $('#mPvA').textContent = J.a.pv;
+  $('#mPvB').textContent = J.b.pv;
+  $('#mBarA').style.width = (J.a.pv / MOTOR.PV_INICIAL * 100) + '%';
+  $('#mBarB').style.width = (J.b.pv / MOTOR.PV_INICIAL * 100) + '%';
+  $('#mRonda').textContent = 'Ronda ' + J.ronda;
+}
+
+/* ── LA MÁQUINA ───────────────────────────────────────────────────────────
+   No hace trampa: NO ve la mano del rival. Elige entre sus jugadas legales
+   —las mismas que se le ofrecen a la persona— con una idea sencilla y honesta:
+   guarda las cartas altas, gasta las bajas, y no quema una combinación por
+   nada. Es suficiente para que un niño tenga que pensar y no tanto como para
+   que nunca gane. */
+function pensarMaquina(j){
+  const posibles = MOTOR.jugadasPosibles(j);
+  const valor = (jugada) => {
+    const p = MOTOR.puntuar(jugada);
+    let v = p.puntos;
+    /* Una combinación es un recurso escaso: sólo hay 4 en toda la partida.
+       Sólo vale la pena si de verdad sube mucho lo que ya tenía. */
+    if(p.combinada){
+      const mejorSola = Math.max(...j.mano.map(c => c.valor));
+      v = p.puntos - 22 - (p.puntos <= mejorSola ? 40 : 0);
+    }
+    /* Los especiales también se acaban. Que no los tire en cualquier ronda. */
+    if(jugada.especial) v -= 7;
+    return v + (Math.random() * 9 - 4.5);   /* un pelo de azar, para que no sea un robot */
+  };
+  return posibles.reduce((mejor, x) => valor(x) > valor(mejor) ? x : mejor, posibles[0]);
+}
+
+/* ── el duelo ── */
+function mostrarDuelo(antes, despues, jugadaA, jugadaB){
+  fase('Duelo');
+  const h = despues.historia[despues.historia.length - 1];
+  const pinta = (lado, jugada, p, dondeCarta, dondePts, dondeCta) => {
+    const cont = $(dondeCarta); cont.innerHTML = '';
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display:flex; gap:5px; justify-content:center';
+    for(const c of jugada.cartas) fila.appendChild(laCarta(c, { chica:true, estatica:true }));
+    cont.appendChild(fila);
+    $(dondePts).textContent = p.puntos;
+    $(dondeCta).textContent = p.combinada
+      ? 'combinación ' + p.base + ' + ' + p.bono
+      : p.especial === 'bono'    ? p.base + ' + 5 de bonificación'
+      : p.especial === 'castigo' ? p.base + ' − 5 de penalización'
+      : '';
+  };
+  pinta('a', jugadaA, h.a, '#dCartaA', '#dPtsA', '#dCtaA');
+  pinta('b', jugadaB, h.b, '#dCartaB', '#dPtsB', '#dCtaB');
+
+  const g = $('#dGolpe');
+  if(h.dano === 0){
+    g.innerHTML = '<span class="n">Empate</span>Las dos valen ' + h.a.puntos
+                + '. No hay daño.';
+  } else {
+    /* «Tú recibe el golpe» estaba mal escrito, y en un juego para un niño la
+       frase se lee muchísimas veces. Contra la máquina se habla de tú; en el
+       modo de dos, por nombre. */
+    const frase = modo === 'maquina'
+      ? (h.perdio === 'a' ? '<b>Recibes</b> el golpe.' : 'La <b>máquina</b> recibe el golpe.')
+      : '<b>' + NOMBRES.dos[h.perdio] + '</b> recibe el golpe.';
+    const tope = h.crudo > MOTOR.DANO_TOPE
+      ? '<br><small>La diferencia era ' + h.crudo + ', pero el daño nunca pasa de '
+        + MOTOR.DANO_TOPE + '.</small>' : '';
+    g.innerHTML = '<span class="n">−' + h.dano + ' PV</span>' + frase + tope;
+  }
+  pintarMarcador();
+  $('#bSeguir').textContent = despues.acabo ? 'Ver el resultado' : 'Siguiente ronda';
+}
+
+function terminar(){
+  fase('Fin');
+  const gane = J.acabo === 'a';
+  if(J.acabo === 'empate'){
+    $('#finTitulo').textContent = 'Empate';
+    $('#finTexto').textContent = 'Los dos quedaron igual. Ni modo.';
+  } else if(modo === 'maquina'){
+    $('#finTitulo').textContent = gane ? '¡Ganaste!' : 'Perdiste';
+    $('#finTexto').textContent = gane
+      ? 'Último puerco en pie. Te quedaron ' + J.a.pv + ' PV.'
+      : 'A la máquina le quedaron ' + J.b.pv + ' PV. Otra y te la cobras.';
+  } else {
+    $('#finTitulo').textContent = 'Ganó ' + NOMBRES.dos[J.acabo];
+    $('#finTexto').textContent = 'Le quedaron ' + J[J.acabo].pv + ' PV.';
+  }
+  if(J.porCartas){
+    $('#finTexto').textContent += ' Se acabaron las cartas, así que gana el que tenía más vida.';
+  }
+}
+
+/* ── la cortina de "pásale el teléfono" ───────────────────────────────────
+   Sin esto, el modo de dos en un teléfono no funciona: el segundo vería la
+   mano del primero. Es la pieza que hace posible ese modo, no un adorno. */
+function cortina(quien, texto, luego){
+  $('#corQuien').textContent = quien;
+  $('#corTexto').textContent = texto;
+  $('#cortina').classList.remove('oculto');
+  $('#bCortina').onclick = () => { $('#cortina').classList.add('oculto'); luego(); };
+}
+
+/* ── el turno ── */
+function pedirJugada(){
+  elegidas = []; especial = null;
+  fase('Elegir');
+  $('#bJugar').classList.remove('oculto');
+  $('#bLimpiar').classList.remove('oculto');
+  pintarMarcador(); pintarMano(); pintarBotones();
+}
+
+function jugar(){
+  const jugada = { cartas: elegidas.slice(), especial };
+  if(MOTOR.porQueNoSeVale(jugada, yo())) return;
+
+  if(modo === 'linea'){
+    /* Se mandan IDS, no cartas: el servidor busca los valores en la mano que
+       él tiene guardada. Mandar valores sería dejar que el teléfono se
+       inventara un 100. */
+    LINEA.ws.send(JSON.stringify({ tipo:'jugada',
+      cartas: jugada.cartas.map(c => c.id), especial: jugada.especial }));
+    LINEA.esperando = true;
+    esperandoAlOtro();
+    return;
+  }
+
+  if(modo === 'maquina'){
+    const jb = pensarMaquina(J.b);
+    const antes = J;
+    J = MOTOR.jugarRonda(J, jugada, jb);
+    mostrarDuelo(antes, J, jugada, jb);
+    return;
+  }
+
+  /* Dos en un teléfono: se guarda la del 1 y se le pasa el aparato al 2. */
+  if(turnoDe === 'a'){
+    guardadaA = jugada;
+    turnoDe = 'b';
+    cortina('Pásale el teléfono a ' + NOMBRES.dos.b,
+            'Ya quedó la jugada de ' + NOMBRES.dos.a + '. Nadie la puede ver.',
+            pedirJugada);
+  } else {
+    const antes = J;
+    J = MOTOR.jugarRonda(J, guardadaA, jugada);
+    mostrarDuelo(antes, J, guardadaA, jugada);
+    guardadaA = null; turnoDe = 'a';
+  }
+}
+
+function nuevaPartida(){
+  J = MOTOR.repartir((Math.random() * 0xFFFFFFF) >>> 0);
+  turnoDe = 'a'; guardadaA = null;
+  pantalla('mesa');
+  if(modo === 'dos'){
+    cortina(NOMBRES.dos.a + ', te toca', 'Que ' + NOMBRES.dos.b + ' no vea la pantalla.',
+            pedirJugada);
+  } else pedirJugada();
+}
+
+/* ══ EN LÍNEA ═════════════════════════════════════════════════════════════ */
+function avisoSala(texto){
+  const a = $('#salaAviso');
+  if(!texto){ a.hidden = true; return; }
+  a.hidden = false; a.textContent = texto;
+}
+
+function esperandoAlOtro(){
+  fase('Elegir');
+  $('#rTuMano').textContent = 'Ya jugaste · falta el otro';
+  $('#mMano').innerHTML = '<p style="grid-column:1/-1; text-align:center; font-weight:800;'
+    + ' margin:16px 0">Esperando a que el otro elija su carta…</p>';
+  $('#mEspeciales').innerHTML = '';
+  $('#mAviso').hidden = true;
+  $('#bJugar').disabled = true;
+  /* Se esconden, no se apagan: un botón apagado invita a picarle y a
+     preguntarse por qué no hace nada. */
+  $('#bJugar').classList.add('oculto');
+  $('#bLimpiar').classList.add('oculto');
+  $('#mPistas').textContent = '';
+}
+
+function conectar(codigo){
+  LINEA.codigo = codigo;
+  const esquema = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const secreto = (() => { try{ return localStorage.getItem(LLAVE_SECRETO + codigo) || ''; }
+                           catch(e){ return ''; } })();
+  const url = esquema + '//' + location.host + '/api/puercos/sala/' + codigo
+            + (secreto ? '?secreto=' + encodeURIComponent(secreto) : '');
+  const ws = new WebSocket(url);
+  LINEA.ws = ws;
+  modo = 'linea';
+
+  ws.addEventListener('open', () => avisoSala(null));
+  ws.addEventListener('message', (ev) => {
+    const m = JSON.parse(ev.data);
+
+    if(m.tipo === 'lleno'){ avisoSala(m.porque); pantalla('sala'); return; }
+    if(m.tipo === 'error'){
+      /* Un rechazo del servidor es información, no un cuelgue: se dice y se
+         le devuelve la mano para que vuelva a elegir. */
+      LINEA.esperando = false;
+      pedirJugada();
+      $('#mAviso').hidden = false; $('#mAviso').textContent = m.porque;
+      return;
+    }
+
+    if(m.tipo === 'sentado'){
+      LINEA.asiento = m.asiento;
+      turnoDe = m.asiento;
+      /* Los rótulos del marcador dependen de EN QUÉ ASIENTO quedé. Estaban
+         fijos en a='Tú', y al que le tocaba el asiento b le decían «Tú» a los
+         puntos del otro. */
+      NOMBRES.linea = {};
+      NOMBRES.linea[m.asiento] = 'Tú';
+      NOMBRES.linea[m.asiento === 'a' ? 'b' : 'a'] = 'El otro';
+      try{ localStorage.setItem(LLAVE_SECRETO + codigo, m.secreto); }catch(e){}
+      return;
+    }
+
+    if(m.tipo === 'estado'){
+      const v = m.vista;
+      LINEA.vista = v;
+
+      /* Mientras falta el otro NO se entra a la mesa: se queda la pantalla de
+         la sala, con el código grande y el botón de copiar a la mano. Antes se
+         saltaba a una mesa vacía que decía «MÁQUINA» en el marcador y enseñaba
+         un botón de jugar apagado — o sea, tres cosas que no venían al caso
+         justo cuando lo único que tiene que hacer es pasar el código. */
+      if(v.esperando || !v.listo){
+        pantalla('sala');
+        $('#codigoTexto').textContent = codigo;
+        $('#miCodigo').classList.remove('oculto');
+        avisoSala('Ya estás en la sala ' + codigo + '. Falta que entre la otra '
+                + 'persona con ese mismo código.');
+        return;
+      }
+
+      pantalla('mesa');
+      J = deLaVista(v);
+      pintarMarcador();
+
+      /* Si vino con la ronda resuelta, primero se enseña el duelo. */
+      if(m.ronda){
+        const antes = J;
+        J.historia = [m.ronda.h];
+        mostrarDuelo(antes, J, m.ronda.a, m.ronda.b);
+        LINEA.esperando = false;
+        return;
+      }
+
+      if(v.yaJugue){ LINEA.esperando = true; esperandoAlOtro(); return; }
+      LINEA.esperando = false;
+      if(!v.acabo) pedirJugada(); else terminar();
+      return;
+    }
+  });
+
+  ws.addEventListener('close', (ev) => {
+    if(ev.code === 4001) return;               /* sala llena: ya se avisó */
+    if(modo !== 'linea') return;
+    avisoSala('Se cortó la conexión. Vuelve a entrar con el mismo código y '
+            + 'sigues en tu lugar.');
+    pantalla('sala');
+  });
+  ws.addEventListener('error', () => avisoSala('No se pudo conectar. Revisa el internet.'));
+}
+
+if($('#bLinea')) $('#bLinea').addEventListener('click', () => { avisoSala(null); pantalla('sala'); });
+$('#bCrear').addEventListener('click', async () => {
+  $('#bCrear').disabled = true;
+  try{
+    const r = await fetch('/api/puercos/codigo');
+    const { codigo } = await r.json();
+    $('#codigoTexto').textContent = codigo;
+    $('#miCodigo').classList.remove('oculto');
+    conectar(codigo);
+  }catch(e){
+    avisoSala('No se pudo hacer el código. Revisa el internet.');
+  }
+  $('#bCrear').disabled = false;
+});
+$('#bCopiar').addEventListener('click', async () => {
+  try{ await navigator.clipboard.writeText($('#codigoTexto').textContent);
+       $('#bCopiar').textContent = 'Copiado'; }
+  catch(e){ $('#bCopiar').textContent = 'Cópialo a mano'; }
+});
+$('#fCodigo').addEventListener('input', () => {
+  const v = $('#fCodigo').value.toUpperCase().replace(/[^A-Z]/g, '');
+  $('#fCodigo').value = v;
+  $('#bEntrar').disabled = v.length !== 4;
+});
+$('#bEntrar').addEventListener('click', () => {
+  avisoSala(null);
+  conectar($('#fCodigo').value.toUpperCase());
+});
+
+/* ── conexiones ── */
+$$('[data-modo]').forEach(b => b.addEventListener('click', () => {
+  modo = b.dataset.modo; nuevaPartida();
+}));
+$$('[data-ir]').forEach(b => b.addEventListener('click', () => pantalla(b.dataset.ir)));
+$('#bReglas').addEventListener('click', () => pantalla('reglas'));
+$('#bJugar').addEventListener('click', jugar);
+$('#bLimpiar').addEventListener('click', () => { elegidas = []; especial = null;
+  pintarMano(); pintarBotones(); });
+$('#bOtra').addEventListener('click', () => {
+  if(modo === 'linea'){
+    /* La revancha la pide al servidor: si cada teléfono repartiera su propia
+       partida, serían dos partidas distintas. */
+    LINEA.ws.send(JSON.stringify({ tipo:'otra' }));
+    return;
+  }
+  nuevaPartida();
+});
+$('#bSeguir').addEventListener('click', () => {
+  if(J.acabo) return terminar();
+  if(modo === 'linea'){
+    if(LINEA.vista && LINEA.vista.yaJugue) return esperandoAlOtro();
+    return pedirJugada();
+  }
+  if(modo === 'dos'){
+    cortina('Pásale el teléfono a ' + NOMBRES.dos.a, 'Ronda ' + J.ronda + '.', pedirJugada);
+  } else pedirJugada();
+});
+</script>
+</body>
+</html>
