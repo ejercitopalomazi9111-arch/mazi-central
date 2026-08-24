@@ -236,5 +236,40 @@ console.log('\n── La MUTACIÓN: si le quito el tope de 15, ¿lo cacho? ─�
      42 + 54 === 96 && combo(42,54,'C').puntos === 74);
 }
 
+console.log('\n── Que el archivo suelto no se quede viejo ──');
+{
+  /* El archivo suelto es el que se le manda a la amiga de Carlos por WhatsApp,
+     y se ARMA aparte de lo que se publica. O sea que puede quedarse atrás sin
+     que nadie lo note: se toca `index.html`, se publica bien, y el archivo que
+     ella ya tiene sigue con el juego de antier.
+
+     Esto lo vuelve a armar en memoria y compara. Si truena, se corre
+     `node juegos/guerra-de-puercos/armar-suelto.mjs` y ya. */
+  const fs = await import('node:fs/promises');
+  const { fileURLToPath } = await import('node:url');
+  const path = await import('node:path');
+  const AQUI = path.dirname(fileURLToPath(import.meta.url));
+
+  const html  = await fs.readFile(path.join(AQUI, 'index.html'), 'utf-8');
+  const motor = await fs.readFile(path.join(AQUI, 'motor.js'), 'utf-8');
+  let esperado = html.replace('<script src="motor.js"></script>',
+    '<script>\n/* motor.js, metido aquí para que el archivo funcione solo */\n'
+    + motor + '\n</script>');
+  esperado = esperado.replace(
+    '<button class="btn ancho" id="bLinea">Jugar con alguien lejos</button>\n', '');
+  esperado = esperado.replace("$('#bLinea').addEventListener('click',",
+                              "if($('#bLinea')) $('#bLinea').addEventListener('click',");
+
+  let hay = null;
+  try{ hay = await fs.readFile(path.join(AQUI, 'guerra-de-puercos.html'), 'utf-8'); }catch(e){}
+  ok('el archivo suelto existe', hay !== null);
+  ok('el archivo suelto está al día con index.html y motor.js', hay === esperado,
+     'corre: node juegos/guerra-de-puercos/armar-suelto.mjs');
+  ok('y NO trae el botón de jugar a distancia, que ahí no serviría',
+     hay !== null && !/id="bLinea"/.test(hay));
+  ok('pero SÍ trae el motor adentro, para que funcione sin internet',
+     hay !== null && /splitmix32/.test(hay) && !/<script src="motor\.js">/.test(hay));
+}
+
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
 process.exit(mal ? 1 : 0);
