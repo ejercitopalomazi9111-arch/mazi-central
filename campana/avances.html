@@ -1,0 +1,266 @@
+<title>Expediente de Campaña</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+
+<style>
+/* ══ EXPEDIENTE ═══════════════════════════════════════════════════════════
+   Misma familia visual que «Las nueve», porque son el mismo expediente:
+   Public Sans (hecha para uso de gobierno) e Instrument Serif. Los tres
+   colores son los de la campaña, ya medidos. */
+:root{
+  --papel:#F6F8FB; --tarjeta:#FFFFFF; --tinta:#101821;
+  --tenue:#4C5A6B; --muy-tenue:#7A8798; --linea:#D9E1EA;
+  --organiza:#0A3D6E; --actualiza:#A81440; --optimiza:#0E8350;
+  --display:"Instrument Serif",Georgia,serif;
+  --cuerpo:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --dato:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papel:#0B1017; --tarjeta:#131C26; --tinta:#EAF0F7; --tenue:#A3B2C3;
+    --muy-tenue:#74849A; --linea:#22303F;
+    --organiza:#5798D6; --actualiza:#F0648F; --optimiza:#3FC98A;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#0B1017; --tarjeta:#131C26; --tinta:#EAF0F7; --tenue:#A3B2C3;
+  --muy-tenue:#74849A; --linea:#22303F;
+  --organiza:#5798D6; --actualiza:#F0648F; --optimiza:#3FC98A;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--papel); color:var(--tinta);
+  font-family:var(--cuerpo); font-size:16.5px; line-height:1.62;
+  -webkit-text-size-adjust:100%;
+}
+.hoja{max-width:790px; margin:0 auto; padding:0 22px 84px}
+
+.portada{padding:54px 0 30px}
+.sello{font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.19em;
+  text-transform:uppercase; color:var(--muy-tenue); margin:0 0 16px}
+h1{font-family:var(--display); font-weight:400; font-size:clamp(42px,10vw,74px);
+  line-height:.98; letter-spacing:-.02em; margin:0 0 16px}
+h1 i{font-style:italic}
+.entrada{font-size:17px; color:var(--tenue); margin:0; max-width:60ch}
+.entrada b{color:var(--tinta); font-weight:600}
+
+section{padding-top:46px}
+h2{font-family:var(--display); font-weight:400; font-size:clamp(27px,5.8vw,37px);
+  line-height:1.08; margin:0 0 10px}
+.bajada{color:var(--tenue); margin:0 0 24px; max-width:60ch}
+p{margin:0 0 14px; max-width:64ch}
+strong{font-weight:600}
+
+/* ── los tres verbos ── */
+.verbos{display:grid; gap:11px; grid-template-columns:1fr; margin-bottom:8px}
+@media (min-width:620px){ .verbos{grid-template-columns:repeat(3,1fr)} }
+.v{
+  border-radius:13px; padding:16px 17px; color:#fff;
+}
+.v .fig{font-size:19px; display:block; margin-bottom:7px; opacity:.85}
+.v h3{font-family:var(--cuerpo); font-weight:700; font-size:17px; margin:0 0 5px;
+  text-transform:uppercase; letter-spacing:.02em}
+.v p{font-size:14px; margin:0; color:rgba(255,255,255,.9); max-width:none}
+.v.o{background:var(--organiza)} .v.a{background:var(--actualiza)} .v.p{background:var(--optimiza)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .v{color:#0B1017}
+  :root:not([data-theme="light"]) .v p{color:rgba(11,16,23,.82)}
+}
+:root[data-theme="dark"] .v{color:#0B1017}
+:root[data-theme="dark"] .v p{color:rgba(11,16,23,.82)}
+
+/* ── documentos ── */
+.doc{
+  display:block; text-decoration:none; color:inherit;
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
+  padding:18px 20px; margin-bottom:12px;
+}
+.doc:hover{border-color:var(--organiza)}
+.doc:focus-visible{outline:2px solid var(--optimiza); outline-offset:2px}
+.doc-cab{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px}
+.doc h3{font-family:var(--cuerpo); font-weight:700; font-size:18px; margin:0;
+  letter-spacing:-.012em}
+.doc .estado{
+  font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.13em;
+  text-transform:uppercase; padding:3px 8px; border-radius:99px; margin-left:auto;
+  white-space:nowrap;
+}
+.listo{background:color-mix(in srgb, var(--optimiza) 16%, transparent); color:var(--optimiza)}
+.curso{background:color-mix(in srgb, var(--actualiza) 15%, transparent); color:var(--actualiza)}
+.doc p{margin:0; font-size:15px; color:var(--tenue)}
+.doc .abrir{
+  display:inline-block; margin-top:10px; font-family:var(--dato); font-size:11px;
+  font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--organiza);
+}
+
+/* ── tablas ── */
+.envoltura{overflow-x:auto; border:1px solid var(--linea); border-radius:13px;
+  background:var(--tarjeta); margin-bottom:16px}
+table{border-collapse:collapse; width:100%; min-width:440px; font-size:14.5px}
+th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--linea);
+  vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+td:first-child{font-weight:600; white-space:nowrap}
+td:last-child{color:var(--tenue)}
+
+ul{margin:0 0 16px; padding:0; list-style:none; max-width:64ch}
+li{position:relative; padding-left:20px; margin-bottom:9px}
+li::before{content:""; position:absolute; left:2px; top:.68em; width:6px; height:6px;
+  border-radius:2px; background:var(--organiza)}
+ul.falta li::before{background:var(--actualiza)}
+
+.caja{
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
+  padding:19px 21px; margin:0 0 16px;
+}
+.caja.ojo{border-color:var(--actualiza)}
+.caja h4{font-family:var(--cuerpo); font-weight:700; font-size:17px; margin:0 0 8px}
+.caja p:last-child{margin-bottom:0}
+
+.pie{margin-top:50px; padding-top:20px; border-top:1px solid var(--linea);
+  font-family:var(--dato); font-size:11.5px; line-height:1.75; color:var(--muy-tenue)}
+</style>
+
+<div class="hoja">
+
+<header class="portada">
+  <p class="sello">Comité estudiantil · Bachillerato Rembrandt · Agosto 2026</p>
+  <h1>Expediente<br>de <i>campaña</i></h1>
+  <p class="entrada">Todo lo que lleva la candidatura hasta hoy, en un solo lugar.
+  <b>Seis documentos</b>: la estructura del comité, la identidad, la convocatoria abierta, las
+  nueve propuestas con su forma de medirse, el cronograma de trabajo, y el tablero de
+  pendientes.</p>
+</header>
+
+<section>
+  <h2>La idea en tres palabras</h2>
+  <p class="bajada">Toda la campaña cuelga de tres verbos. Cada propuesta pertenece a uno, cada
+  color corresponde a uno, y cada uno trae además su propia figura para que se distingan
+  también impresos en blanco y negro.</p>
+  <div class="verbos">
+    <div class="v o"><span class="fig">◼</span><h3>Organiza</h3>
+      <p>Que las cosas pasen a tiempo y que se sepa cuándo.</p></div>
+    <div class="v a"><span class="fig">◆</span><h3>Actualiza</h3>
+      <p>Traer al presente lo que ya existe pero se quedó viejo.</p></div>
+    <div class="v p"><span class="fig">▲</span><h3>Optimiza</h3>
+      <p>Quitar el desperdicio de lo que ya se hace.</p></div>
+  </div>
+  <p style="font-family:var(--display); font-style:italic; font-size:20px; margin-top:20px">
+    «Solo llegarás rápido. Juntos, lejos.»</p>
+</section>
+
+<section>
+  <h2>Los documentos</h2>
+  <p class="bajada">En orden de lectura. Cada uno abre en su propia página.</p>
+
+  <a class="doc" href="https://claude.ai/code/artifact/7a4c50a1-08ac-4465-a410-75b8080f9190"
+     target="_blank" rel="noopener">
+    <div class="doc-cab"><h3>Las nueve propuestas</h3><span class="estado listo">Terminado</span></div>
+    <p>Tres por verbo. Cada una dice qué es, qué problema resuelve hoy y <strong>con qué número
+    se sabrá si se cumplió</strong>. Incluye el cronograma, cómo se cuentan los votos y las
+    tácticas de fondos.</p>
+    <span class="abrir">Abrir →</span>
+  </a>
+
+  <a class="doc" href="https://claude.ai/code/artifact/1a59810a-c8d9-4f67-865e-581d92ba39ec"
+     target="_blank" rel="noopener">
+    <div class="doc-cab"><h3>La estructura del comité</h3><span class="estado listo">Terminado</span></div>
+    <p>Las siete direcciones, qué hace cada una y a qué se compromete. Los jefes de grupo
+    participan como enlace sin formar parte del comité.</p>
+    <span class="abrir">Abrir →</span>
+  </a>
+
+  <a class="doc" href="https://claude.ai/code/artifact/a459bee5-11c6-4a37-b23d-7def59f22b93"
+     target="_blank" rel="noopener">
+    <div class="doc-cab"><h3>Identidad y colores</h3><span class="estado listo">Terminado</span></div>
+    <p>Qué significa cada color y por qué ése y no otro. Con las mediciones de contraste y la
+    prueba en escala de grises, para que los materiales se lean igual fotocopiados.</p>
+    <span class="abrir">Abrir →</span>
+  </a>
+
+  <a class="doc" href="https://claude.ai/code/artifact/248851e0-46da-405f-b2ff-e5c3bf2a8856"
+     target="_blank" rel="noopener">
+    <div class="doc-cab"><h3>Convocatoria al equipo</h3><span class="estado listo">Terminado</span></div>
+    <p>El llamado abierto para integrar el comité, con los requisitos académicos y de conducta
+    que pide la dirección.</p>
+    <span class="abrir">Abrir →</span>
+  </a>
+
+  <a class="doc" href="https://claude.ai/code/artifact/b3c87c60-fd58-41cf-8081-4aa0e8493317"
+     target="_blank" rel="noopener">
+    <div class="doc-cab"><h3>Tablero de pendientes</h3><span class="estado curso">En curso</span></div>
+    <p>Las catorce tareas de la campaña ordenadas por urgencia, con lo que implica cada una,
+    cuánto tarda y de qué depende. Es la herramienta de trabajo diaria.</p>
+    <span class="abrir">Abrir →</span>
+  </a>
+
+  <a class="doc" href="https://claude.ai/code/artifact/a3877d38-20a9-466b-9ab0-bdb6ed69e21e"
+     target="_blank" rel="noopener">
+    <div class="doc-cab"><h3>Guía de materiales gráficos</h3><span class="estado curso">En curso</span></div>
+    <p>Las especificaciones para los carteles y el logotipo, para que quien tome la dirección de
+    diseño trabaje con reglas claras y todo se vea de la misma familia.</p>
+    <span class="abrir">Abrir →</span>
+  </a>
+</section>
+
+<section>
+  <h2>Cómo se escogieron las propuestas</h2>
+  <p class="bajada">Se propusieron más de nueve. Sobrevivieron las que pasaron <strong>los tres
+  filtros</strong>. La que fallaba uno solo, no entró.</p>
+  <div class="envoltura">
+    <table>
+      <thead><tr><th>Filtro</th><th>Qué exige</th><th>Por qué</th></tr></thead>
+      <tbody>
+        <tr><td>Viable</td><td>Se puede hacer con lo que ya hay en la escuela</td>
+          <td>Una propuesta que necesita presupuesto nuevo o permiso especial se convierte en
+          pretexto a los dos meses</td></tr>
+        <tr><td>Académica</td><td>Toca directamente el estudio o la organización escolar</td>
+          <td>Es lo que pidió la dirección, y es donde un comité de verdad puede mover algo</td></tr>
+        <tr><td>Medible</td><td>Trae un número que se puede revisar después</td>
+          <td>Lo que no se puede comprobar no es una propuesta: es una promesa</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que falta y de quién depende</h2>
+  <p class="bajada">Se dice completo, incluyendo lo que todavía no está.</p>
+
+  <div class="caja ojo">
+    <h4>Depende de la dirección</h4>
+    <ul class="falta">
+      <li><strong>Las fechas exactas</strong> del debate y de la elección. El cronograma está
+      hecho contando hacia atrás desde el día de la elección justamente para no detener el
+      trabajo mientras tanto: con la fecha se convierte en calendario en un minuto.</li>
+      <li><strong>El reglamento vigente</strong>, para dos cosas: preparar la versión legible
+      que se propone, y revisar que ninguna de las otras ocho propuestas choque con una regla.</li>
+      <li><strong>Las reglas del conteo de votos</strong>: quién cuenta, cómo se vota, quién
+      puede votar, qué pasa con un empate, y si cada planilla puede tener un representante
+      presente.</li>
+      <li><strong>Si el comité puede manejar dinero</strong> y bajo qué condiciones. De eso
+      depende la mitad de las tácticas de fondos.</li>
+    </ul>
+  </div>
+
+  <div class="caja">
+    <h4>Depende de nosotros</h4>
+    <ul>
+      <li>Cerrar el equipo de siete y verificar que todos cumplan el requisito académico
+      <strong>antes</strong> de anunciarlos.</li>
+      <li>Cerrar el logotipo definitivo y mandar a imprimir.</li>
+      <li>Ensayar el debate con las preguntas difíciles hechas por el propio equipo.</li>
+    </ul>
+  </div>
+</section>
+
+<p class="pie">
+  Comité estudiantil · Bachillerato Rembrandt<br>
+  Documento de avance preparado para el profesor encargado. Los seis documentos enlazados son
+  la versión vigente; si alguno se actualiza, el enlace sigue siendo el mismo.
+</p>
+
+</div>
