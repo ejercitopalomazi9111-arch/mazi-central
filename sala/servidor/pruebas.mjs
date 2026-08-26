@@ -71,7 +71,14 @@ console.log('\n· Hablar');
   await entrar(s, 'cl-1');
   const [c1, r1] = await leer(await pedir(s, 'POST', 'decir',
     { de:'cl-1', tipo:'inventado', texto:'hola' }));
-  ok('un tipo que no existe se rechaza', c1 === 400 && /Tipo desconocido/.test(r1.error));
+  ok('un tipo que no existe se rechaza', c1 === 400 && /no existe/i.test(r1.error));
+
+  /* Corrección de Carlos: el tipo NO es obligatorio. En una junta nadie
+     anuncia «esto es una PROPUESTA» antes de hablar. */
+  const [c0, r0] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', texto:'nada más quiero decir esto y ya' }));
+  ok('se puede hablar SIN decir de qué tipo es', c0 === 200);
+  ok('y sin tipo se guarda como mensaje', r0.evento.tipo === 'mensaje');
 
   const [c2] = await leer(await pedir(s, 'POST', 'decir',
     { de:'fantasma', tipo:'mensaje', texto:'hola' }));
@@ -216,6 +223,46 @@ console.log('\n· El hilo');
   }
   ok('el hilo se recorta solo y no crece sin fin', s.hilo.length <= 400);
   ok('lo que se conserva es lo último', s.hilo[s.hilo.length - 1].texto === 'm449');
+}
+
+
+/* ══ 8 · la nota del final · «como una sala de juntas» ════════════════════ */
+console.log('\n· La nota para el otro Claude');
+{
+  const s = nueva({ LLAVES:'carlos:AAA,amigo:BBB' });
+  await entrar(s, 'cl-carlos', 'claude', 'AAA');
+  await entrar(s, 'cl-amigo',  'claude', 'BBB');
+  await entrar(s, 'carlos', 'humano', 'AAA');
+  const esperar = (yo, desde) => sFetch(s, `esperar?de=${yo}${desde ? '&desde='+desde : ''}`);
+
+  const [c, r] = await leer(await pedir(s, 'POST', 'decir', {
+    de:'carlos', texto:'Aquí va todo lo que pienso del inventario, largo y para todos.',
+    nota:{ a:'cl-amigo', texto:'tú encárgate de las pantallas' },
+  }, 'AAA'));
+  ok('se puede mandar el mensajote con una nota al final', c === 200 && !!r.evento.nota);
+  ok('la nota guarda a quién va dirigida', r.evento.nota.a === 'cl-amigo');
+
+  /* Lo que esto resuelve: el cuerpo lo lee toda la sala, pero sólo despierta
+     el que trae la nota. Nadie hace dos veces el mismo trabajo. */
+  const [, alDeLaNota] = await leer(await esperar('cl-amigo'));
+  ok('despierta a quien va dirigida la nota',
+     alDeLaNota.eventos.some(e => e.nota && e.nota.a === 'cl-amigo'));
+
+  const [, elOtro] = await leer(await esperar('cl-carlos'));
+  ok('NO despierta al otro, aunque el cuerpo fuera para toda la sala',
+     !elOtro.eventos.some(e => e.nota && e.nota.a === 'cl-amigo'));
+
+  const [cn] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'carlos', texto:'x', nota:{ a:'nadie', texto:'y' } }, 'AAA'));
+  ok('una nota dirigida a alguien que no está se rechaza', cn === 400);
+
+  /* Y sin destinatario ni nota, sigue siendo para todos y despierta a todos. */
+  await pedir(s, 'POST', 'decir', { de:'carlos', texto:'esto sí es para todos' }, 'AAA');
+  const [, t1] = await leer(await esperar('cl-carlos'));
+  const [, t2] = await leer(await esperar('cl-amigo'));
+  ok('sin destinatario ni nota, despierta a todos',
+     t1.eventos.some(e => e.texto === 'esto sí es para todos') &&
+     t2.eventos.some(e => e.texto === 'esto sí es para todos'));
 }
 
 function sFetch(sala, ruta){

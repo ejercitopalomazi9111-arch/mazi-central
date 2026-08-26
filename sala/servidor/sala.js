@@ -225,8 +225,19 @@ export class Sala {
       if(quien.cuenta !== cuenta){
         return Response.json({ error:'Esa sesión es de otra cuenta.' }, { status:403 });
       }
-      if(!TIPOS.has(c.tipo)){
-        return Response.json({ error:`Tipo desconocido. Van: ${[...TIPOS].join(', ')}` },
+      /* ── El tipo es OPCIONAL, y eso es una corrección de Carlos ─────────
+         «no necesariamente tienen que decir qué tipo de mensaje es sino poner
+         su mensajote y al final algo para el otro claude si es necesario,
+         como una sala de juntas.»
+
+         Tiene razón: obligar a etiquetar cada cosa vuelve tieso lo que debería
+         ser una junta. Nadie en una junta anuncia «esto es una PROPUESTA»
+         antes de hablar. El tipo sigue existiendo porque pintar distinto una
+         decisión de un desacuerdo es justo lo que deja leer el hilo de un
+         vistazo — pero se pone cuando ayuda, no porque el sistema lo exija. */
+      const tipo = c.tipo || 'mensaje';
+      if(!TIPOS.has(tipo)){
+        return Response.json({ error:`Ese tipo no existe. Puedes omitirlo, o usar: ${[...TIPOS].join(', ')}` },
                              { status:400 });
       }
 
@@ -256,11 +267,29 @@ export class Sala {
                              { status:400 });
       }
 
+      /* ── la nota del final ─────────────────────────────────────────────
+         El cuerpo se lo dices a la sala; la nota es el «oye, tú» del final,
+         dirigido a alguien en concreto. Resuelve bonito el problema que tenía
+         el destinatario único: el mensajote lo leen todos —que es lo que uno
+         quiere en una junta— pero SÓLO despierta a quien va dirigida la nota.
+         Así nadie hace dos veces el mismo trabajo por estar «a todos». */
+      let nota = null;
+      if(c.nota && (c.nota.texto || typeof c.nota === 'string')){
+        const n = typeof c.nota === 'string' ? { texto:c.nota } : c.nota;
+        const na = n.a ? String(n.a).slice(0, 60) : null;
+        if(na && !na.startsWith('@') && !this.gente[na]){
+          return Response.json({ error:`La nota va dirigida a "${na}", que no está en la sala.` },
+                               { status:400 });
+        }
+        nota = { a: na, texto: String(n.texto || '').slice(0, 4000) };
+      }
+
       const evento = {
         de: { id:quien.id, nombre:quien.nombre, tipo:quien.tipo, cuenta:quien.cuenta },
         a,
-        tipo: c.tipo,
+        tipo,
         texto: String(c.texto || '').slice(0, TOPE_TEXTO),
+        nota,
         adjuntos: c.adjuntos || [],
         proyecto: c.proyecto ? String(c.proyecto).slice(0, 60) : null,
       };
@@ -283,9 +312,15 @@ export class Sala {
       /* Un agente NO despierta con un mensaje dirigido a alguien más. Es lo
          que evita que los dos contesten lo mismo y se pague doble. */
       const mio = this.gente[yo];
-      const paraMi = (e) => !e.a
-                         || e.a === yo
-                         || (e.a.startsWith('@') && mio && e.a.slice(1) === mio.cuenta);
+      const dirigido = (d) => !!d && (d === yo
+                         || (d.startsWith('@') && mio && d.slice(1) === mio.cuenta));
+      /* Despierta si el mensaje va para ti, O si la nota del final va para ti
+         aunque el cuerpo sea para toda la sala. Un mensaje sin destinatario y
+         sin nota es «para todos» y sí despierta a todos: es una decisión de
+         quien escribe, no un descuido del sistema. */
+      const paraMi = (e) => (!e.a && !(e.nota && e.nota.a))
+                         || dirigido(e.a)
+                         || dirigido(e.nota && e.nota.a);
       const sirve = (e) => e.tipo !== 'sistema'
                         && e.de?.id !== yo
                         && (!deQuien || e.de?.id === deQuien)

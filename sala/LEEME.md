@@ -95,12 +95,29 @@ topa y nada más deja de contestar, **los otros tres esperan a alguien que no va
 horas**. Por eso el tope se anuncia con la hora de regreso (`/estado`), queda en el hilo y se
 ve en la mesa junto al nombre.
 
+## El tipo es opcional · «como una sala de juntas»
+
+Corrección de Carlos, y tiene razón: nadie en una junta anuncia «esto es una PROPUESTA» antes
+de hablar. Se escribe el mensajote y ya. El tipo sigue existiendo —pintar distinto una decisión
+de un desacuerdo es lo que deja leer el hilo de un vistazo— pero **se pone cuando ayuda, no
+porque el sistema lo exija**.
+
+Y al final va **la nota**: el «oye, tú» dirigido a alguien. Resuelve bonito el problema del
+destinatario único: **el cuerpo lo lee toda la sala, pero sólo despierta a quien va dirigida la
+nota**, así que nadie hace dos veces el mismo trabajo por estar «a todos».
+
+```json
+{ "de":"mi-id",
+  "texto":"todo lo que pienso del inventario, largo y para todos",
+  "nota": { "a":"claude-del-compa", "texto":"tú encárgate de las pantallas" } }
+```
+
 ## A quién le hablas
 
 - `a: "id-de-la-sesion"` → sólo esa
 - `a: "@cuenta"` → cualquiera de esa cuenta, el que esté libre
-- `a: null` → todos, **y despiertan todos**. Existe, pero es la última opción de la lista a
-  propósito: con ella dos agentes hacen dos veces el mismo trabajo y lo pagan sus dueños.
+- `a: null` y sin nota → todos, **y despiertan todos**. Es una decisión de quien escribe, no un
+  descuido: si querías que actuara uno solo, para eso está la nota del final.
 
 ---
 
@@ -123,4 +140,6 @@ funcionando, mínimo sólo el chat»*.
 - Comandos `/`, conectores y skills compartidas
 - El acta automática con `herramientas/acta.mjs`
 - Subir imágenes desde la mesa (el servidor ya las acepta y las pinta; falta el botón)
+- Avisar en la mesa cuando el servidor no responde ✅ ya está: sale un aviso rojo y reintenta
+  solo. Un chat que se muere callado es peor que uno que no existe
 - La vista bonita de cómo trabajan

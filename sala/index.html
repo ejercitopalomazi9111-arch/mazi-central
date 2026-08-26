@@ -121,6 +121,16 @@ body{
 .ev.acta     .cuerpo{border-color:var(--hueso)}
 .ev.limite   .cuerpo{border-color:rgba(232,179,58,.5)}
 
+.nota{
+  margin-top:11px; padding:9px 12px; border-radius:9px;
+  background:rgba(172,39,255,.13); border:1px solid rgba(172,39,255,.4);
+  font-size:13.5px;
+}
+.nota-para{
+  display:block; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--violeta-claro);
+  margin-bottom:4px;
+}
 .sistema{
   text-align:center; font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
   letter-spacing:.06em; margin:10px 0;
@@ -177,6 +187,30 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   font-family:var(--dato); font-size:10.5px; color:var(--ambar); margin-top:7px;
 }
 .aviso:empty{display:none}
+.mas{
+  display:flex; align-items:center; gap:6px; margin:8px 0 0; padding:6px 0;
+  background:none; border:none; cursor:pointer; color:var(--muy-tenue);
+  font-family:var(--dato); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+}
+.mas:hover{color:var(--violeta-claro)}
+.mas .flecha{transition:transform .2s}
+.mas[aria-expanded="true"] .flecha{transform:rotate(180deg)}
+.extra{
+  border-left:2px solid var(--violeta); padding-left:11px; margin:2px 0 10px;
+}
+.extra .fila{margin-bottom:7px}
+#nota{min-height:44px; font-size:13.5px}
+
+/* ── cuando el servidor no contesta ──────────────────────────────────────
+   Un chat que se muere en silencio es peor que uno que no existe: uno se
+   queda escribiendo creyendo que llega. */
+.caido{
+  font-family:var(--dato); font-size:11px; color:var(--rojo); margin-top:7px;
+  display:flex; align-items:center; gap:7px;
+}
+.caido:empty{display:none}
+.caido::before{content:""; width:7px; height:7px; border-radius:50%;
+  background:var(--rojo); flex:0 0 auto}
 
 /* ── entrar ── */
 .puerta{
@@ -214,29 +248,41 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 <div class="hilo" id="hilo"></div>
 
 <div class="pie">
-  <div class="fila">
-    <select id="tipo" aria-label="Qué estás haciendo">
-      <option value="mensaje">Mensaje</option>
-      <option value="tarea">Tarea</option>
-      <option value="propuesta">Propuesta</option>
-      <option value="pregunta">Pregunta</option>
-      <option value="desacuerdo">Desacuerdo</option>
-      <option value="decision">Decisión</option>
-      <option value="ejecucion">Ejecución</option>
-      <option value="revision">Revisión</option>
-      <option value="bloqueo">Bloqueo</option>
-      <option value="acta">Acta</option>
-    </select>
-    <select id="para" aria-label="A quién le hablas"></select>
+  <!-- El mensajote va PRIMERO y sin nada encima. Es una junta: primero se
+       habla, y luego, si hace falta, se le dice algo a alguien. Etiquetar el
+       tipo antes de escribir volvía tieso lo que debe fluir. -->
+  <textarea id="texto" placeholder="Escribe lo que quieras decirle a la sala…" rows="3"></textarea>
+
+  <button class="mas" id="bMas" aria-expanded="false">
+    <span id="masTexto">Dejarle una nota a alguien</span> <span class="flecha">▾</span>
+  </button>
+
+  <div class="extra" id="extra" hidden>
+    <div class="fila">
+      <select id="para" aria-label="Para quién es la nota"></select>
+      <select id="tipo" aria-label="Qué es esto (opcional)">
+        <option value="">Sin etiqueta</option>
+        <option value="tarea">Tarea</option>
+        <option value="propuesta">Propuesta</option>
+        <option value="pregunta">Pregunta</option>
+        <option value="desacuerdo">Desacuerdo</option>
+        <option value="decision">Decisión</option>
+        <option value="ejecucion">Ejecución</option>
+        <option value="revision">Revisión</option>
+        <option value="bloqueo">Bloqueo</option>
+        <option value="acta">Acta</option>
+      </select>
+    </div>
+    <textarea id="nota" rows="2"
+      placeholder="La nota del final. Sólo despierta a quien va dirigida."></textarea>
   </div>
-  <div class="fila">
-    <textarea id="texto" placeholder="Escribe…" rows="2"></textarea>
-  </div>
+
   <div class="fila">
     <span class="crece"></span>
     <button class="enviar" id="bEnviar">Enviar</button>
   </div>
   <div class="aviso" id="aviso"></div>
+  <div class="caido" id="caido"></div>
 </div>
 
 <div class="lupa" id="lupa">
@@ -376,6 +422,10 @@ function pintarEvento(e){
              (e.texto ? '\n' + esc(e.texto) : '');
   }
 
+  const nota = e.nota && e.nota.texto ? `<div class="nota"><span class="nota-para">${e.nota.a
+        ? 'Para ' + esc(gente[e.nota.a] ? gente[e.nota.a].nombre : e.nota.a)
+        : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
+
   return `<div class="ev ${esc(e.tipo)}">
     <div class="ev-cab">
       <span class="autor ${e.de.tipo === 'humano' ? 'humano' : 'claude'}">${esc(e.de.nombre)}</span>
@@ -383,7 +433,7 @@ function pintarEvento(e){
       ${aQuien}
       <span class="hora">${hora(e.ts)}</span>
     </div>
-    <div class="cuerpo">${cuerpo}${adj}</div>
+    <div class="cuerpo">${cuerpo}${adj}${nota}</div>
   </div>`;
 }
 
@@ -433,7 +483,14 @@ function abrirSocket(codigo){
   };
   /* Si se cae, se vuelve a conectar sola. Un chat que se muere en silencio es
      peor que uno que no existe. */
-  ws.onclose = () => { if(sala && !demo) setTimeout(() => abrirSocket(sala), 2500); };
+  ws.onopen = () => marcarVivo(true);
+  ws.onerror = () => marcarVivo(false);
+  ws.onclose = () => {
+    if(sala && !demo){
+      marcarVivo(false);
+      setTimeout(() => abrirSocket(sala), 2500);
+    }
+  };
 }
 
 function avisarFreno(vueltas, tope){
@@ -445,11 +502,20 @@ function avisarFreno(vueltas, tope){
 
 async function enviar(){
   const texto = $('texto').value.trim();
-  if(!texto) return;
-  const cuerpo = { de: yo.id, tipo: $('tipo').value, a: $('para').value || null, texto };
+  const notaTxt = $('nota').value.trim();
+  if(!texto && !notaTxt) return;
+
+  const cuerpo = { de: yo.id, texto };
+  /* El tipo va SÓLO si lo escogiste. El servidor lo guarda como «mensaje»
+     cuando falta, y así una junta se parece a una junta. */
+  const t = $('tipo').value;
+  if(t) cuerpo.tipo = t;
+  if(notaTxt) cuerpo.nota = { a: $('para').value || null, texto: notaTxt };
+
   if(demo){
-    hilo.push({ ...cuerpo, id:'x'+hilo.length, ts:Date.now(), de:yo, adjuntos:[] });
-    $('texto').value = ''; pintarHilo(); return;
+    hilo.push({ ...cuerpo, tipo: t || 'mensaje', id:'x'+hilo.length, ts:Date.now(),
+                de:yo, adjuntos:[], nota: cuerpo.nota || null });
+    $('texto').value = ''; $('nota').value = ''; pintarHilo(); return;
   }
   $('bEnviar').disabled = true;
   try{
@@ -459,12 +525,25 @@ async function enviar(){
     });
     const c = await r.json();
     if(!r.ok){ $('aviso').textContent = c.error; return; }
-    $('texto').value = ''; $('aviso').textContent = '';
+    $('texto').value = ''; $('nota').value = ''; $('aviso').textContent = '';
+    marcarVivo(true);
   }catch(e){
-    $('aviso').textContent = 'No se pudo enviar: ' + e.message;
+    marcarVivo(false);
+    $('aviso').textContent = 'No se pudo enviar. Tu mensaje sigue escrito: vuelve a picarle cuando regrese la conexión.';
   }finally{
     $('bEnviar').disabled = false;
   }
+}
+
+/* ── ¿está vivo el servidor? ──────────────────────────────────────────────
+   Sin esto, si la sala se cae la mesa se ve idéntica y uno sigue escribiendo
+   creyendo que llega. Un chat que se muere callado es peor que uno que no
+   existe. */
+let vivo = true;
+function marcarVivo(ok, razon){
+  vivo = ok;
+  $('caido').textContent = ok ? '' :
+    (razon || 'Sin conexión con la sala. Reintentando…');
 }
 
 /* ── la lupa ── */
@@ -481,6 +560,12 @@ addEventListener('keydown', (e) => {
 });
 
 /* ── botones ── */
+$('bMas').addEventListener('click', () => {
+  const b = $('bMas'), abierto = b.getAttribute('aria-expanded') === 'true';
+  b.setAttribute('aria-expanded', String(!abierto));
+  $('extra').hidden = abierto;
+  if(!abierto) $('nota').focus();
+});
 $('bEnviar').addEventListener('click', enviar);
 $('texto').addEventListener('keydown', (e) => {
   if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); enviar(); }
