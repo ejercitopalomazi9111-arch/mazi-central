@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Expediente de Campaña</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,24 +90,13 @@ strong{font-weight:600}
 .listo{background:color-mix(in srgb, var(--optimiza) 16%, transparent); color:var(--optimiza)}
 .curso{background:color-mix(in srgb, var(--actualiza) 15%, transparent); color:var(--actualiza)}
 .doc p{margin:0; font-size:15px; color:var(--tenue)}
-.doc .liga{
-  display:flex; align-items:center; gap:9px; margin-top:12px; padding-top:11px;
-  border-top:1px dashed var(--linea);
+.doc .abrir{
+  display:inline-block; margin-top:11px; padding-top:11px;
+  border-top:1px dashed var(--linea); width:100%;
+  font-family:var(--dato); font-size:11px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--organiza);
 }
-.doc .url{
-  font-family:var(--dato); font-size:11.5px; color:var(--organiza);
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;
-  text-decoration:none;
-}
-.doc .url:hover{text-decoration:underline}
-.doc .copiar{
-  flex:0 0 auto; font-family:var(--dato); font-size:10px; font-weight:700;
-  letter-spacing:.1em; text-transform:uppercase; cursor:pointer;
-  padding:6px 11px; border-radius:8px; background:transparent;
-  color:var(--tenue); border:1px solid var(--linea);
-}
-.doc .copiar:hover{color:var(--organiza); border-color:var(--organiza)}
-.doc .copiar:focus-visible{outline:2px solid var(--optimiza); outline-offset:2px}
+.doc:focus-visible{outline:2px solid var(--optimiza); outline-offset:2px}
 
 /* ── tablas ── */
 .envoltura{overflow-x:auto; border:1px solid var(--linea); border-radius:13px;
@@ -167,56 +158,56 @@ ul.falta li::before{background:var(--actualiza)}
 
 <section>
   <h2>Los documentos</h2>
-  <p class="bajada">En orden de lectura. Cada uno vive en su propia página: toca la liga para abrirla, o cópiala si estás viendo esto dentro de otra aplicación.</p>
+  <p class="bajada">En orden de lectura. Toca cualquiera para abrirlo.</p>
 
-  <div class="doc" data-liga="https://claude.ai/code/artifact/7a4c50a1-08ac-4465-a410-75b8080f9190"
+  <a class="doc" href="propuestas.html"
      >
     <div class="doc-cab"><h3>Las nueve propuestas</h3><span class="estado listo">Terminado</span></div>
     <p>Tres por verbo. Cada una dice qué es, qué problema resuelve hoy y <strong>con qué número
     se sabrá si se cumplió</strong>. Incluye el cronograma, cómo se cuentan los votos y las
     tácticas de fondos.</p>
-    <div class="liga"><a class="url"></a><button class="copiar" type="button">Copiar</button></div>
-  </div>
+    <span class="abrir">Abrir →</span>
+  </a>
 
-  <div class="doc" data-liga="https://claude.ai/code/artifact/1a59810a-c8d9-4f67-865e-581d92ba39ec"
+  <a class="doc" href="planta.html"
      >
     <div class="doc-cab"><h3>La estructura del comité</h3><span class="estado listo">Terminado</span></div>
     <p>Las siete direcciones, qué hace cada una y a qué se compromete. Los jefes de grupo
     participan como enlace sin formar parte del comité.</p>
-    <div class="liga"><a class="url"></a><button class="copiar" type="button">Copiar</button></div>
-  </div>
+    <span class="abrir">Abrir →</span>
+  </a>
 
-  <div class="doc" data-liga="https://claude.ai/code/artifact/a459bee5-11c6-4a37-b23d-7def59f22b93"
+  <a class="doc" href="color.html"
      >
     <div class="doc-cab"><h3>Identidad y colores</h3><span class="estado listo">Terminado</span></div>
     <p>Qué significa cada color y por qué ése y no otro. Con las mediciones de contraste y la
     prueba en escala de grises, para que los materiales se lean igual fotocopiados.</p>
-    <div class="liga"><a class="url"></a><button class="copiar" type="button">Copiar</button></div>
-  </div>
+    <span class="abrir">Abrir →</span>
+  </a>
 
-  <div class="doc" data-liga="https://claude.ai/code/artifact/248851e0-46da-405f-b2ff-e5c3bf2a8856"
+  <a class="doc" href="convocatoria.html"
      >
     <div class="doc-cab"><h3>Convocatoria al equipo</h3><span class="estado listo">Terminado</span></div>
     <p>El llamado abierto para integrar el comité, con los requisitos académicos y de conducta
     que pide la dirección.</p>
-    <div class="liga"><a class="url"></a><button class="copiar" type="button">Copiar</button></div>
-  </div>
+    <span class="abrir">Abrir →</span>
+  </a>
 
-  <div class="doc" data-liga="https://claude.ai/code/artifact/b3c87c60-fd58-41cf-8081-4aa0e8493317"
+  <a class="doc" href="mapa.html"
      >
     <div class="doc-cab"><h3>Tablero de pendientes</h3><span class="estado curso">En curso</span></div>
     <p>Las catorce tareas de la campaña ordenadas por urgencia, con lo que implica cada una,
     cuánto tarda y de qué depende. Es la herramienta de trabajo diaria.</p>
-    <div class="liga"><a class="url"></a><button class="copiar" type="button">Copiar</button></div>
-  </div>
+    <span class="abrir">Abrir →</span>
+  </a>
 
-  <div class="doc" data-liga="https://claude.ai/code/artifact/a3877d38-20a9-466b-9ab0-bdb6ed69e21e"
+  <a class="doc" href="prompts.html"
      >
     <div class="doc-cab"><h3>Guía de materiales gráficos</h3><span class="estado curso">En curso</span></div>
     <p>Las especificaciones para los carteles y el logotipo, para que quien tome la dirección de
     diseño trabaje con reglas claras y todo se vea de la misma familia.</p>
-    <div class="liga"><a class="url"></a><button class="copiar" type="button">Copiar</button></div>
-  </div>
+    <span class="abrir">Abrir →</span>
+  </a>
 </section>
 
 <section>
@@ -277,30 +268,3 @@ ul.falta li::before{background:var(--actualiza)}
 </p>
 
 </div>
-
-<script>
-/* Las ligas se pintan desde `data-liga` y NO desde un <a> que envuelva toda
-   la tarjeta: dentro del visor de artifacts una liga con target="_blank" no
-   navega —el recuadro nada más se ilumina— y el lector se queda atorado sin
-   saber por qué. Enseñar la dirección y poder copiarla funciona siempre. */
-document.querySelectorAll('.doc').forEach((d) => {
-  const liga = d.dataset.liga;
-  const a = d.querySelector('.url');
-  a.href = liga;
-  a.textContent = liga.replace(/^https:\/\//, '');
-  a.target = '_blank'; a.rel = 'noopener';
-  d.querySelector('.copiar').addEventListener('click', async (e) => {
-    const b = e.currentTarget;
-    try{
-      await navigator.clipboard.writeText(liga);
-      b.textContent = '¡copiada!';
-    }catch(err){
-      /* Sin permiso de portapapeles se selecciona, para que se copie a mano. */
-      const r = document.createRange(); r.selectNodeContents(a);
-      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
-      b.textContent = 'selecciónala';
-    }
-    setTimeout(() => { b.textContent = 'Copiar'; }, 1800);
-  });
-});
-</script>

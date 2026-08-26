@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Convocatoria al Comité</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -365,3 +367,19 @@ p{margin:0 0 16px; text-wrap:pretty}
 </footer>
 
 </div>
+
+<script>
+/* Sólo cuando esto se sirve como página del sitio (no dentro de un artifact)
+   aparece la barra para volver al expediente. Así el mismo archivo sirve en
+   los dos lados sin tener dos copias que se desincronizan. */
+if(location.pathname.includes('/campana/')){
+  const b = document.createElement('a');
+  b.href = './';
+  b.textContent = '\u2190 Expediente de campaña';
+  b.style.cssText = 'position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));'
+    + 'z-index:99;font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;'
+    + 'text-decoration:none;padding:10px 14px;border-radius:99px;'
+    + 'background:#101821;color:#F6F8FB;box-shadow:0 6px 22px rgba(0,0,0,.28)';
+  document.body.appendChild(b);
+}
+</script>
