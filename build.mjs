@@ -27,6 +27,7 @@ const VA = [
   'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   '_headers', 'kernel-lock.html',
   'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
+  'sala',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
@@ -50,6 +51,11 @@ const NO_VA = (ruta) => {
      publicar y no lo que se quedó en la carpeta. Se colaban diez. */
   if(/^pruebas[^/]*\.(mjs|js|py)$/i.test(f)) return true;
   if(/^armar-suelto\.mjs$/i.test(f)) return true;
+  /* El código del worker de La Sala NO es parte del sitio: es otro proyecto de
+     Cloudflare. Publicarlo aquí no filtra secretos —las llaves son secretos del
+     worker— pero sí sirve como estático algo que nadie usa desde el navegador,
+     y este archivo existe justo para que lo publicado sea lo que decidimos. */
+  if(/(^|\/)sala\/servidor\//.test(ruta)) return true;
   if(/^(medir|rehacer|recortar)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
