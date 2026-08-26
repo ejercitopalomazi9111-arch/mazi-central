@@ -28,8 +28,15 @@
 
   "vars": {
     // De dónde se acepta que llamen. En claro y sin comodín.
-    "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,http://localhost:8792,http://127.0.0.1:8792"
-    // VISTAS_PREVIAS y LLAVES NO van aquí. Ver abajo.
+    "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,http://localhost:8792,http://127.0.0.1:8792",
+
+    // Las vistas previas del sitio: Cloudflare le pone un nombre distinto a
+    // cada rama y a cada commit. Sin esto, la mesa abierta desde una vista
+    // previa NO puede hablarle a la sala, y ahí es justo donde se prueba
+    // ANTES de publicar en main. Sólo las que cuelgan de NUESTRO proyecto:
+    // nadie más puede crear un nombre bajo ese dominio.
+    "VISTAS_PREVIAS": "mazi-central.palomazi9111.workers.dev"
+    // LLAVES no va aquí. Ver abajo.
   }
 
   // ── LAS LLAVES NO VAN EN ESTE ARCHIVO ───────────────────────────────────
