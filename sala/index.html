@@ -131,6 +131,46 @@ body{
   letter-spacing:.13em; text-transform:uppercase; color:var(--violeta-claro);
   margin-bottom:4px;
 }
+/* ── el taller ── */
+.taller{flex:1; overflow:auto; padding:18px 14px 28px; -webkit-overflow-scrolling:touch}
+.hebras{position:relative; display:grid; gap:0; min-width:min-content}
+.carril-cab{
+  display:flex; gap:8px; position:sticky; top:0; z-index:3; padding-bottom:10px;
+  background:linear-gradient(180deg, var(--vacio) 72%, transparent);
+}
+.carril-cab div{
+  flex:1 1 0; min-width:86px; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--muy-tenue);
+  text-align:center; padding:0 4px; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.carril-cab div.claude{color:var(--violeta-claro)}
+.paso-t{display:flex; gap:8px; position:relative; padding:5px 0}
+.celda{flex:1 1 0; min-width:86px; display:flex; align-items:stretch}
+.ficha{
+  width:100%; border-radius:10px; padding:8px 10px; cursor:pointer; text-align:left;
+  border:1px solid var(--borde-vivo); background:var(--superficie); color:var(--hueso);
+  font-family:inherit; font-size:12px; line-height:1.4;
+}
+.ficha:hover{border-color:var(--violeta)}
+.ficha b{
+  display:block; font-family:var(--dato); font-size:8.5px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; margin-bottom:3px;
+}
+.ficha .qu{display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; color:var(--tenue)}
+.ficha.decision{border-color:var(--verde)} .ficha.decision b{color:var(--verde)}
+.ficha.desacuerdo{border-color:var(--rojo)} .ficha.desacuerdo b{color:var(--rojo)}
+.ficha.propuesta{border-color:rgba(172,39,255,.55)} .ficha.propuesta b{color:var(--violeta-claro)}
+.ficha.revision b{color:var(--ambar)}
+.ficha.ejecucion b{color:var(--verde)}
+.ficha.bloqueo{border-color:var(--rojo)} .ficha.bloqueo b{color:var(--rojo)}
+.ficha.limite{border-color:var(--ambar)} .ficha.limite b{color:var(--ambar)}
+.ficha.acta{background:var(--hueso); color:var(--vacio); border-color:var(--hueso)}
+.ficha.acta .qu{color:#3A2B4A}
+.vacio-t{flex:1 1 0; min-width:86px}
+.nada-t{color:var(--muy-tenue); font-family:var(--dato); font-size:12px; padding:30px 4px}
+
 .sistema{
   text-align:center; font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
   letter-spacing:.06em; margin:10px 0;
@@ -209,6 +249,36 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   display:flex; align-items:center; gap:7px;
 }
 .caido:empty{display:none}
+
+/* ── lo que se va a mandar pegado ── */
+.pegados{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:8px}
+.pegados:empty{display:none}
+.pegado{position:relative; width:62px; height:62px; border-radius:9px; overflow:hidden;
+  border:1px solid var(--borde-vivo)}
+.pegado img{width:100%; height:100%; object-fit:cover; display:block}
+.pegado button{
+  position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%;
+  border:none; cursor:pointer; background:rgba(8,5,13,.82); color:var(--hueso);
+  font-size:13px; line-height:1; padding:0;
+}
+
+/* ── comandos ── */
+.comandos{
+  position:fixed; left:14px; right:14px; z-index:50;
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:12px;
+  overflow:hidden; box-shadow:0 -10px 34px rgba(0,0,0,.5);
+}
+.comandos button{
+  display:flex; align-items:baseline; gap:10px; width:100%; text-align:left;
+  padding:11px 14px; background:transparent; border:none; cursor:pointer;
+  color:var(--hueso); font-family:inherit; font-size:14px;
+  border-bottom:1px solid var(--borde);
+}
+.comandos button:last-child{border-bottom:none}
+.comandos button:hover,.comandos button.aqui{background:var(--superficie)}
+.comandos b{font-family:var(--dato); font-size:12.5px; color:var(--violeta-claro);
+  flex:0 0 auto}
+.comandos span{color:var(--tenue); font-size:13px}
 .caido::before{content:""; width:7px; height:7px; border-radius:50%;
   background:var(--rojo); flex:0 0 auto}
 
@@ -247,6 +317,14 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 <div class="gente" id="gente"></div>
 <div class="hilo" id="hilo"></div>
 
+<!-- ── LA VISTA DE CÓMO TRABAJAN ─────────────────────────────────────────
+     El chat contesta «qué se dijo». Esto contesta «cómo se llegó ahí», que
+     es lo que Carlos quería ver: una hebra por participante y el trabajo
+     saltando de una a otra, con las decisiones marcadas como estaciones. -->
+<div class="taller" id="taller" hidden>
+  <div class="hebras" id="hebras"></div>
+</div>
+
 <div class="pie">
   <!-- El mensajote va PRIMERO y sin nada encima. Es una junta: primero se
        habla, y luego, si hace falta, se le dice algo a alguien. Etiquetar el
@@ -277,13 +355,22 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
       placeholder="La nota del final. Sólo despierta a quien va dirigida."></textarea>
   </div>
 
+  <div class="pegados" id="pegados"></div>
+
   <div class="fila">
+    <button class="btn" id="bImagen" title="Adjuntar una imagen">📎 Imagen</button>
+    <button class="btn" id="bVista" title="Cambiar cómo se ve el hilo">Vista</button>
     <span class="crece"></span>
     <button class="enviar" id="bEnviar">Enviar</button>
   </div>
+  <input type="file" id="archivo" accept="image/*" multiple hidden>
   <div class="aviso" id="aviso"></div>
   <div class="caido" id="caido"></div>
 </div>
+
+<!-- Los comandos salen al escribir «/» al principio del renglón. Son atajos
+     para lo que uno pide seguido en una junta, no una consola escondida. -->
+<div class="comandos" id="comandos" hidden></div>
 
 <div class="lupa" id="lupa">
   <button class="btn cerrar" id="bCerrarLupa">Cerrar</button>
@@ -477,9 +564,9 @@ function abrirSocket(codigo){
     if(p.que === 'evento'){
       hilo.push(p.evento);
       if(p.evento.tipo === 'sistema') { /* la lista se refresca abajo */ }
-      pintarHilo(); avisarFreno(p.vueltas, p.tope);
+      pintarHilo(); if(vistaTaller) pintarTaller(); avisarFreno(p.vueltas, p.tope);
     }
-    if(p.que === 'gente'){ gente = p.gente; pintarGente(); }
+    if(p.que === 'gente'){ gente = p.gente; pintarGente(); if(vistaTaller) pintarTaller(); }
   };
   /* Si se cae, se vuelve a conectar sola. Un chat que se muere en silencio es
      peor que uno que no existe. */
@@ -500,12 +587,20 @@ function avisarFreno(vueltas, tope){
     : '';
 }
 
+function limpiar(){
+  $('texto').value = ''; $('nota').value = '';
+  pegados.length = 0; pintarPegados();
+}
+
 async function enviar(){
   const texto = $('texto').value.trim();
   const notaTxt = $('nota').value.trim();
   if(!texto && !notaTxt) return;
 
   const cuerpo = { de: yo.id, texto };
+  /* `vista` es la copia con encabezado data: que usa la miniatura de aquí;
+     al servidor sólo va el base64 pelón, que es lo que él sabe revisar. */
+  if(pegados.length) cuerpo.adjuntos = pegados.map(({ vista, ...a }) => a);
   /* El tipo va SÓLO si lo escogiste. El servidor lo guarda como «mensaje»
      cuando falta, y así una junta se parece a una junta. */
   const t = $('tipo').value;
@@ -514,8 +609,8 @@ async function enviar(){
 
   if(demo){
     hilo.push({ ...cuerpo, tipo: t || 'mensaje', id:'x'+hilo.length, ts:Date.now(),
-                de:yo, adjuntos:[], nota: cuerpo.nota || null });
-    $('texto').value = ''; $('nota').value = ''; pintarHilo(); return;
+                de:yo, adjuntos: cuerpo.adjuntos || [], nota: cuerpo.nota || null });
+    limpiar(); pintarHilo(); if(vistaTaller) pintarTaller(); return;
   }
   $('bEnviar').disabled = true;
   try{
@@ -525,7 +620,7 @@ async function enviar(){
     });
     const c = await r.json();
     if(!r.ok){ $('aviso').textContent = c.error; return; }
-    $('texto').value = ''; $('nota').value = ''; $('aviso').textContent = '';
+    limpiar(); $('aviso').textContent = '';
     marcarVivo(true);
   }catch(e){
     marcarVivo(false);
@@ -545,6 +640,244 @@ function marcarVivo(ok, razon){
   $('caido').textContent = ok ? '' :
     (razon || 'Sin conexión con la sala. Reintentando…');
 }
+
+
+/* ══ IMÁGENES ═════════════════════════════════════════════════════════════
+   El servidor topa el evento en ~1.5 MB, y una foto de teléfono pesa cuatro.
+   Entonces se encoge AQUÍ antes de mandarla: si se mandara tal cual, el
+   servidor la rechazaría y el usuario nada más vería un error sin saber qué
+   hacer. Encoger es la diferencia entre «no se pudo» y que funcione. */
+const TOPE_LADO = 1600;
+const pegados = [];
+
+function encoger(archivo){
+  return new Promise((listo, falla) => {
+    const lector = new FileReader();
+    lector.onerror = () => falla(new Error('No se pudo leer la imagen.'));
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => falla(new Error('Ese archivo no es una imagen que se pueda abrir.'));
+      img.onload = () => {
+        const f = Math.min(1, TOPE_LADO / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * f); c.height = Math.round(img.height * f);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        /* PNG sólo si es chica; si no, JPEG, que para una captura o una foto
+           pesa una fracción y no se nota. */
+        let datos = c.toDataURL('image/jpeg', .82);
+        let mime = 'image/jpeg';
+        if(datos.length > 1_400_000) datos = c.toDataURL('image/jpeg', .6);
+        listo({ clase:'imagen', mime, nombre: archivo.name || 'imagen',
+                datos: datos.split(',')[1], ancho:c.width, alto:c.height, vista:datos });
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
+async function pegar(archivos){
+  for(const a of [...archivos].slice(0, 6)){
+    if(!/^image\//.test(a.type)) continue;
+    try{ pegados.push(await encoger(a)); }
+    catch(e){ $('aviso').textContent = e.message; }
+  }
+  pintarPegados();
+}
+
+function pintarPegados(){
+  $('pegados').innerHTML = pegados.map((p, i) =>
+    `<span class="pegado"><img src="${p.vista}" alt="">` +
+    `<button type="button" data-quitar="${i}" aria-label="Quitar">×</button></span>`).join('');
+}
+$('pegados').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-quitar]');
+  if(b){ pegados.splice(Number(b.dataset.quitar), 1); pintarPegados(); }
+});
+$('bImagen').addEventListener('click', () => $('archivo').click());
+$('archivo').addEventListener('change', (e) => { pegar(e.target.files); e.target.value = ''; });
+/* Pegar con Cmd+V es como de verdad se manda una captura. */
+$('texto').addEventListener('paste', (e) => {
+  const f = [...(e.clipboardData ? e.clipboardData.files : [])];
+  if(f.length){ e.preventDefault(); pegar(f); }
+});
+
+/* ══ COMANDOS ═════════════════════════════════════════════════════════════ */
+const COMANDOS = [
+  { cmd:'/acta',   que:'Arma el acta con lo decidido y lo aprendido' },
+  { cmd:'/imagen', que:'Adjuntar una imagen' },
+  { cmd:'/quien',  que:'Quién está en la sala y quién puede trabajar' },
+  { cmd:'/vista',  que:'Cambiar entre el chat y cómo trabajan' },
+  { cmd:'/nota',   que:'Dejarle una nota a alguien al final' },
+  { cmd:'/ayuda',  que:'Esta lista' },
+];
+let elegido = 0;
+
+function verComandos(){
+  const t = $('texto').value;
+  const m = /(^|\n)\/([a-zá-ú]*)$/i.exec(t);
+  const caja = $('comandos');
+  if(!m){ caja.hidden = true; return; }
+  const filtro = m[2].toLowerCase();
+  const lista = COMANDOS.filter(c => c.cmd.slice(1).startsWith(filtro));
+  if(!lista.length){ caja.hidden = true; return; }
+  elegido = Math.min(elegido, lista.length - 1);
+  caja.innerHTML = lista.map((c, i) =>
+    `<button type="button" data-cmd="${c.cmd}" class="${i === elegido ? 'aqui' : ''}">` +
+    `<b>${c.cmd}</b><span>${c.que}</span></button>`).join('');
+  caja.hidden = false;
+  const r = $('texto').getBoundingClientRect();
+  caja.style.bottom = (innerHeight - r.top + 8) + 'px';
+}
+
+function correrComando(cmd){
+  $('comandos').hidden = true;
+  $('texto').value = $('texto').value.replace(/(^|\n)\/[a-zá-ú]*$/i, '$1');
+  if(cmd === '/imagen') return $('archivo').click();
+  if(cmd === '/vista')  return cambiarVista();
+  if(cmd === '/acta')   return armarActa();
+  if(cmd === '/nota'){ if($('extra').hidden) $('bMas').click(); return $('nota').focus(); }
+  if(cmd === '/quien'){
+    const l = Object.values(gente).map(p =>
+      `· ${p.nombre} (${p.tipo === 'humano' ? 'persona' : 'claude'})` +
+      (p.estado === 'topado' ? ` — topado, vuelve ${hora(p.reanuda)}` : ''));
+    $('aviso').textContent = l.join('   ') || 'Nadie más todavía.';
+    return;
+  }
+  if(cmd === '/ayuda'){
+    $('aviso').textContent = COMANDOS.map(c => c.cmd).join('  ');
+  }
+}
+$('texto').addEventListener('input', verComandos);
+/* Si el cursor se va del cuadro, el menú se cierra. Sin esto se quedaba
+   flotando encima del hilo y tapaba la conversación. El retardo es para que
+   alcance a registrarse el clic en una opción antes de que desaparezca. */
+$('texto').addEventListener('blur', () => setTimeout(() => { $('comandos').hidden = true; }, 160));
+$('comandos').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cmd]');
+  if(b) correrComando(b.dataset.cmd);
+});
+$('texto').addEventListener('keydown', (e) => {
+  if($('comandos').hidden) return;
+  const botones = [...$('comandos').querySelectorAll('[data-cmd]')];
+  if(e.key === 'ArrowDown'){ e.preventDefault(); elegido = (elegido + 1) % botones.length; verComandos(); }
+  if(e.key === 'ArrowUp'){ e.preventDefault(); elegido = (elegido - 1 + botones.length) % botones.length; verComandos(); }
+  if(e.key === 'Escape'){ $('comandos').hidden = true; }
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault(); correrComando(botones[elegido].dataset.cmd);
+  }
+});
+
+/* ══ EL ACTA ══════════════════════════════════════════════════════════════
+   El hilo largo se recorta solo; el acta es lo que queda. Se arma con lo que
+   de verdad sirve después: lo decidido, lo que se ejecutó, y lo que los
+   agentes escribieron como aprendizaje. Sale en Markdown para que se pueda
+   guardar, mandar, o pasarle a `herramientas/acta.mjs` y sacar el PDF con
+   avatares que ya existe. */
+function textoActa(){
+  const dia = new Date().toLocaleDateString('es-MX',
+    { day:'2-digit', month:'long', year:'numeric' });
+  const de = (t) => hilo.filter(e => e.tipo === t);
+  const lineas = [`# Acta de la sala ${sala || ''}`, '', `_${dia}_`, ''];
+
+  const quienes = Object.values(gente);
+  if(quienes.length){
+    lineas.push('## Quiénes estuvieron', '');
+    quienes.forEach(p => lineas.push(
+      `- **${p.nombre}** — ${p.tipo === 'humano' ? 'persona' : 'claude'} (${p.cuenta})`));
+    lineas.push('');
+  }
+  const bloque = (titulo, evs, vacio) => {
+    lineas.push(`## ${titulo}`, '');
+    if(!evs.length){ lineas.push(`_${vacio}_`, ''); return; }
+    evs.forEach(e => lineas.push(`- **${e.de.nombre}:** ${e.texto.replace(/\n/g, ' ')}`));
+    lineas.push('');
+  };
+  bloque('Lo que se decidió', de('decision'), 'No se decidió nada todavía.');
+  bloque('Lo que se hizo', de('ejecucion'), 'Nada ejecutado todavía.');
+  bloque('Lo que quedó revisado', de('revision'), 'Sin revisiones.');
+  bloque('Lo que aprendimos', de('acta'), 'Nadie escribió aprendizajes todavía.');
+
+  const trabas = de('bloqueo').concat(de('limite'));
+  if(trabas.length){
+    lineas.push('## Lo que se atoró', '');
+    trabas.forEach(e => lineas.push(`- **${e.de.nombre}:** ${
+      e.tipo === 'limite'
+        ? `se topó con su límite${e.limite && e.limite.reanuda ? `, vuelve ${hora(e.limite.reanuda)}` : ''}`
+        : e.texto.replace(/\n/g, ' ')}`));
+    lineas.push('');
+  }
+  lineas.push('---', '',
+    `_${hilo.length} mensajes en el hilo. Armada desde La Sala._`);
+  return lineas.join('\n');
+}
+
+function armarActa(){
+  const txt = textoActa();
+  /* Se descarga como archivo Y se deja en el cuadro de escribir, para que se
+     pueda mandar a la sala tal cual si se quiere que quede en el hilo. */
+  try{
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([txt], { type:'text/markdown' }));
+    a.download = `acta-${sala || 'sala'}-${new Date().toISOString().slice(0,10)}.md`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    $('aviso').textContent = 'Acta descargada. También quedó escrita abajo por si quieres mandarla a la sala.';
+  }catch(e){
+    $('aviso').textContent = 'No se pudo descargar; quedó escrita abajo.';
+  }
+  $('texto').value = txt;
+  if($('extra').hidden) $('bMas').click();
+  $('tipo').value = 'acta';
+}
+
+/* ══ LA VISTA DE CÓMO TRABAJAN ════════════════════════════════════════════ */
+let vistaTaller = false;
+function cambiarVista(){
+  vistaTaller = !vistaTaller;
+  $('hilo').hidden = vistaTaller;
+  $('taller').hidden = !vistaTaller;
+  $('bVista').textContent = vistaTaller ? 'Chat' : 'Vista';
+  if(vistaTaller) pintarTaller();
+}
+$('bVista').addEventListener('click', cambiarVista);
+
+function pintarTaller(){
+  const quienes = Object.values(gente);
+  const cont = $('hebras');
+  if(!quienes.length){ cont.innerHTML = '<p class="nada-t">Todavía no hay nadie.</p>'; return; }
+
+  const orden = quienes.map(p => p.id);
+  const evs = hilo.filter(e => e.tipo !== 'sistema');
+  if(!evs.length){ cont.innerHTML = '<p class="nada-t">Todavía no se ha dicho nada.</p>'; return; }
+
+  const cab = '<div class="carril-cab">' + quienes.map(p =>
+    `<div class="${p.tipo === 'claude' ? 'claude' : ''}">${esc(p.nombre)}</div>`).join('') + '</div>';
+
+  const filas = evs.map(e => {
+    const col = orden.indexOf(e.de.id);
+    return '<div class="paso-t">' + orden.map((id, i) => {
+      if(i !== col) return '<div class="vacio-t"></div>';
+      const qu = (e.texto || (e.tipo === 'limite' ? 'Se topó con su límite' : '')).slice(0, 150);
+      return `<div class="celda"><button class="ficha ${esc(e.tipo)}" data-ir="${esc(e.id)}">` +
+             `<b>${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</b>` +
+             `<span class="qu">${esc(qu)}</span></button></div>`;
+    }).join('') + '</div>';
+  }).join('');
+
+  cont.innerHTML = cab + filas;
+}
+
+/* Tocar una ficha regresa al chat y deja ese mensaje a la vista: el taller
+   sirve para ubicarse, el chat para leer. */
+$('taller').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ir]');
+  if(!b) return;
+  cambiarVista();
+  const n = [...$('hilo').querySelectorAll('.ev')][
+    hilo.filter(x => x.tipo !== 'sistema').findIndex(x => x.id === b.dataset.ir)];
+  if(n) n.scrollIntoView({ block:'center' });
+});
 
 /* ── la lupa ── */
 document.addEventListener('click', (e) => {

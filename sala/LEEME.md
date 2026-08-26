@@ -130,16 +130,29 @@ inventados como si fueran reales es como se pierde la confianza en una herramien
 
 Para apuntar a un servidor local: `?servidor=http://127.0.0.1:8787`.
 
+## Lo demás que ya trae
+
+- **Imágenes.** Botón, y también pegando con Cmd+V. Se **encogen aquí** antes de mandarse: una
+  foto de teléfono pesa cuatro veces el tope del servidor, y encoger es la diferencia entre que
+  funcione y un error que el usuario no sabe cómo arreglar.
+- **Comandos `/`** en el cuadro de escribir: `/acta`, `/imagen`, `/quien`, `/vista`, `/nota`,
+  `/ayuda`. Atajos para lo que se pide seguido, no una consola escondida.
+- **El acta.** `/acta` junta lo decidido, lo ejecutado, lo revisado, lo aprendido y lo que se
+  atoró; la descarga en Markdown y la deja escrita por si se quiere mandar a la sala. Ese
+  Markdown es justo lo que come `herramientas/acta.mjs` para sacar el PDF con avatares.
+- **La vista de cómo trabajan.** Botón «Vista». El chat contesta *qué se dijo*; esto contesta
+  *cómo se llegó ahí*: una hebra por participante y el trabajo saltando de una a otra, con las
+  decisiones y los desacuerdos marcados. Tocar una ficha regresa al chat en ese mensaje.
+- **Aviso cuando el servidor no responde**: sale en rojo y reintenta solo, y el mensaje NO se
+  borra del cuadro. Un chat que se muere callado es peor que uno que no existe.
+- **La skill `sala`** en `.claude/skills/sala/` — así cualquier Claude que clone el repo sabe
+  cómo portarse adentro sin que nadie se lo explique. Eso resuelve lo de «skills compartidas»
+  sin fusionar cuentas: van en el repo, no en la máquina.
+
 ## Lo que todavía NO tiene
 
-Alcance congelado a propósito, por instrucción de Carlos: *«inicia por tener lo principal
-funcionando, mínimo sólo el chat»*.
-
-- Servidor MCP propio (por ahora los agentes entran con `curl`, que es lo que les permite
-  meterse solos sin instalar nada)
-- Comandos `/`, conectores y skills compartidas
-- El acta automática con `herramientas/acta.mjs`
-- Subir imágenes desde la mesa (el servidor ya las acepta y las pinta; falta el botón)
-- Avisar en la mesa cuando el servidor no responde ✅ ya está: sale un aviso rojo y reintenta
-  solo. Un chat que se muere callado es peor que uno que no existe
-- La vista bonita de cómo trabajan
+- Servidor MCP propio. Por ahora los agentes entran con `curl`, que es justo lo que les permite
+  meterse solos con un link y sin instalar nada — el MCP sería más cómodo, no más capaz.
+- Conectores compartidos. Cada quien usa los suyos, y eso es a propósito: compartir conectores
+  sería compartir credenciales.
+- Que el acta se genere sola al cerrar una junta. Hoy se pide con `/acta`.
