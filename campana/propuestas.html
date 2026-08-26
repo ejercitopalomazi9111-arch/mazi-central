@@ -1,0 +1,501 @@
+<title>Las Nueve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+
+<style>
+/* ══ LAS NUEVE ════════════════════════════════════════════════════════════
+   Tipografía escogida por el tema, no por gusto: Public Sans es una fuente
+   hecha para gobierno —civismo, formularios, letreros— y Instrument Serif le
+   pone la autoridad sin ponerse acartonada. Serio y formal pero cercano, que
+   es exactamente lo que pidió Carlos.
+
+   Los tres colores no son decoración: ya están medidos (contraste sobre texto
+   blanco y separación en gris para que sobrevivan a la fotocopiadora), y cada
+   verbo trae ADEMÁS su propia figura, para que se distingan sin color. */
+:root{
+  --papel:#F6F8FB;
+  --tarjeta:#FFFFFF;
+  --tinta:#101821;
+  --tenue:#4C5A6B;
+  --muy-tenue:#7A8798;
+  --linea:#D9E1EA;
+
+  --organiza:#0A3D6E;
+  --actualiza:#A81440;
+  --optimiza:#0E8350;
+
+  --display:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --cuerpo:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --dato:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papel:#0B1017;
+    --tarjeta:#131C26;
+    --tinta:#EAF0F7;
+    --tenue:#A3B2C3;
+    --muy-tenue:#74849A;
+    --linea:#22303F;
+    --organiza:#5798D6;
+    --actualiza:#F0648F;
+    --optimiza:#3FC98A;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#0B1017; --tarjeta:#131C26; --tinta:#EAF0F7; --tenue:#A3B2C3;
+  --muy-tenue:#74849A; --linea:#22303F;
+  --organiza:#5798D6; --actualiza:#F0648F; --optimiza:#3FC98A;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--papel); color:var(--tinta);
+  font-family:var(--cuerpo); font-size:16.5px; line-height:1.62;
+  -webkit-text-size-adjust:100%;
+}
+.hoja{max-width:820px; margin:0 auto; padding:0 22px 90px}
+
+/* ── portada ── */
+.portada{padding:56px 0 34px}
+.sello{
+  font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.19em;
+  text-transform:uppercase; color:var(--muy-tenue); margin:0 0 18px;
+}
+h1{
+  font-family:var(--display); font-weight:400; font-size:clamp(46px,11vw,86px);
+  line-height:.95; letter-spacing:-.02em; margin:0 0 18px;
+}
+h1 i{font-style:italic}
+.lema{
+  font-family:var(--display); font-style:italic; font-size:clamp(19px,4.2vw,25px);
+  line-height:1.3; color:var(--tenue); margin:0 0 22px; max-width:22ch;
+}
+.entrada{font-size:17px; color:var(--tenue); margin:0; max-width:62ch}
+.entrada b{color:var(--tinta); font-weight:600}
+
+/* ── secciones ── */
+section{padding-top:50px}
+h2{
+  font-family:var(--display); font-weight:400; font-size:clamp(30px,6.4vw,42px);
+  line-height:1.06; letter-spacing:-.015em; margin:0 0 10px;
+}
+.bajada{color:var(--tenue); margin:0 0 26px; max-width:60ch}
+
+/* ── el verbo ── */
+.verbo{margin-top:44px}
+.verbo-cab{display:flex; align-items:center; gap:13px; margin-bottom:6px}
+.figura{
+  width:34px; height:34px; flex:0 0 auto; display:grid; place-items:center;
+  color:#fff; font-size:14px; border-radius:6px;
+}
+.verbo h3{
+  font-family:var(--cuerpo); font-weight:700; font-size:22px; letter-spacing:-.01em;
+  margin:0; text-transform:uppercase;
+}
+.verbo .idea{color:var(--tenue); margin:0 0 20px; font-size:15.5px; max-width:56ch}
+
+.o .figura{background:var(--organiza)}  .o h3{color:var(--organiza)}
+.a .figura{background:var(--actualiza)} .a h3{color:var(--actualiza)}
+.p .figura{background:var(--optimiza)}  .p h3{color:var(--optimiza)}
+
+/* ── propuestas ── */
+.prop{
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
+  padding:20px 22px; margin-bottom:14px;
+}
+.prop-cab{display:flex; align-items:baseline; gap:10px; margin-bottom:10px}
+.num{
+  font-family:var(--dato); font-size:12px; font-weight:700; color:var(--muy-tenue);
+  font-variant-numeric:tabular-nums;
+}
+.prop h4{
+  font-family:var(--cuerpo); font-weight:700; font-size:18.5px; letter-spacing:-.012em;
+  margin:0; line-height:1.25;
+}
+.prop p{margin:0 0 12px; font-size:15.5px}
+.prop p:last-child{margin-bottom:0}
+.hoy{
+  color:var(--tenue); border-left:2px solid var(--linea); padding-left:13px;
+  font-size:14.5px;
+}
+.hoy b{
+  display:block; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--muy-tenue);
+  margin-bottom:3px;
+}
+/* La medida es lo que separa una propuesta de una promesa. Por eso va en cada
+   una y con la misma forma: si no se puede medir, no entró a la lista. */
+.medida{
+  display:flex; gap:9px; align-items:flex-start; margin-top:13px; padding-top:13px;
+  border-top:1px dashed var(--linea); font-size:14px; color:var(--tenue);
+}
+.medida span{
+  font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--muy-tenue); flex:0 0 auto; padding-top:3px;
+}
+
+/* ── cronograma ── */
+.paso{
+  display:grid; grid-template-columns:74px 1fr; gap:0 18px;
+  padding:16px 0; border-top:1px solid var(--linea);
+}
+.paso:first-of-type{border-top:none}
+.cuando{
+  font-family:var(--dato); font-size:12.5px; font-weight:700; color:var(--organiza);
+  font-variant-numeric:tabular-nums; padding-top:2px;
+}
+.paso h4{font-family:var(--cuerpo); font-weight:700; font-size:16.5px; margin:0 0 3px}
+.paso p{margin:0; font-size:15px; color:var(--tenue)}
+@media (max-width:540px){
+  .paso{grid-template-columns:1fr; gap:0}
+  .cuando{margin-bottom:4px}
+}
+
+/* ── tablas y listas ── */
+.envoltura{overflow-x:auto; border:1px solid var(--linea); border-radius:13px;
+  background:var(--tarjeta)}
+table{border-collapse:collapse; width:100%; min-width:460px; font-size:14.5px}
+th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--linea);
+  vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+td:first-child{font-weight:600}
+td:last-child{color:var(--tenue)}
+
+ul{margin:0 0 16px; padding:0; list-style:none; max-width:64ch}
+li{position:relative; padding-left:20px; margin-bottom:9px}
+li::before{content:""; position:absolute; left:2px; top:.68em; width:6px; height:6px;
+  border-radius:2px; background:var(--organiza)}
+ul.dinero li::before{background:var(--optimiza)}
+ul.ojo li::before{background:var(--actualiza)}
+
+.caja{
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
+  padding:20px 22px; margin:0 0 18px;
+}
+.caja.ojo{border-color:var(--actualiza)}
+.caja h4{font-family:var(--cuerpo); font-weight:700; font-size:17px; margin:0 0 8px}
+.caja p:last-child{margin-bottom:0}
+p{margin:0 0 14px; max-width:64ch}
+strong{font-weight:600}
+code{font-family:var(--dato); font-size:.85em; background:var(--papel);
+  border:1px solid var(--linea); padding:1.5px 5px; border-radius:4px}
+
+.pie{
+  margin-top:52px; padding-top:20px; border-top:1px solid var(--linea);
+  font-family:var(--dato); font-size:11.5px; line-height:1.75; color:var(--muy-tenue);
+}
+</style>
+
+<div class="hoja">
+
+<header class="portada">
+  <p class="sello">Comité estudiantil · Bachillerato Rembrandt</p>
+  <h1>Las <i>nueve</i></h1>
+  <p class="lema">Solo llegarás rápido. Juntos, lejos.</p>
+  <p class="entrada">Tres por cada verbo. Todas se pueden hacer con lo que ya hay en la
+  escuela, todas tocan lo académico, y <b>todas traen cómo se miden</b> — porque una propuesta
+  que no se puede comprobar no es una propuesta, es una promesa.</p>
+</header>
+
+<section>
+  <h2>Las propuestas</h2>
+  <p class="bajada">Cada una dice qué es, qué problema resuelve hoy, y con qué número se sabrá
+  en marzo si se cumplió o no.</p>
+
+  <!-- ═══ ORGANIZA ═══ -->
+  <div class="verbo o">
+    <div class="verbo-cab"><div class="figura">◼</div><h3>Organiza</h3></div>
+    <p class="idea">Que las cosas pasen a tiempo y que se sepa cuándo. La mitad de lo que
+    se siente como exceso de trabajo es en realidad falta de calendario.</p>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">01</span>
+        <h4>Un solo calendario de exámenes y entregas</h4></div>
+      <p>Un calendario por grupo con todas las fechas del mes, publicado el día 1 y avisado
+      por el canal oficial. El comité lo arma con los jefes de grupo y lo confirma con cada
+      maestro.</p>
+      <p class="hoy"><b>El problema hoy</b>Cada maestro anuncia su fecha en su clase, así que
+      nadie ve el mes completo hasta que ya se juntaron tres exámenes el mismo día.</p>
+      <div class="medida"><span>Se mide</span>
+        Días del semestre con tres o más exámenes encimados. Se cuenta antes y después.</div>
+    </div>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">02</span>
+        <h4>Ventanilla única de trámites</h4></div>
+      <p>Un solo lugar para pedir constancias, justificantes y credenciales, con un
+      responsable del comité y un acuse con fecha. El alumno pide una vez y sabe cuándo se lo
+      entregan.</p>
+      <p class="hoy"><b>El problema hoy</b>Nadie sabe con quién va cada trámite, así que se
+      pregunta en tres lados y se pierde clase caminando.</p>
+      <div class="medida"><span>Se mide</span>
+        Días que tarda un trámite desde que se pide hasta que se entrega.</div>
+    </div>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">03</span>
+        <h4>Junta abierta de treinta minutos, cada mes</h4></div>
+      <p>Fecha fija, media hora, cualquiera entra. Sale una minuta corta con lo que se acordó,
+      quién lo hace y para cuándo, publicada al día siguiente.</p>
+      <p class="hoy"><b>El problema hoy</b>Lo que pide un alumno se lo lleva el pasillo. Sin
+      minuta no hay a qué volver, y el que pidió algo nunca sabe en qué quedó.</p>
+      <div class="medida"><span>Se mide</span>
+        Minutas publicadas: deben ser una por mes, sin faltar ninguna.</div>
+    </div>
+  </div>
+
+  <!-- ═══ ACTUALIZA ═══ -->
+  <div class="verbo a">
+    <div class="verbo-cab"><div class="figura">◆</div><h3>Actualiza</h3></div>
+    <p class="idea">Traer al presente lo que ya existe pero se quedó viejo. Casi nada hay que
+    inventarlo: hay que desempolvarlo y ponerlo donde se vea.</p>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">04</span>
+        <h4>Banco de apuntes y exámenes de años pasados</h4></div>
+      <p>Una carpeta por materia con apuntes, guías y exámenes anteriores, subidos por los
+      alumnos y revisados por el comité antes de publicarse. Abierta a toda la escuela.</p>
+      <p class="hoy"><b>El problema hoy</b>Ese material existe, pero vive en el teléfono de
+      tres personas de cada generación y se pierde cuando salen.</p>
+      <div class="medida"><span>Se mide</span>
+        Materias con material completo. La meta es todas las del plan, no «varias».</div>
+    </div>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">05</span>
+        <h4>Asesorías entre alumnos</h4></div>
+      <p>El que va bien en una materia da una hora a la semana al que va mal, en la escuela y
+      con registro. A quien asesora se le entrega constancia firmada al final del semestre.</p>
+      <p class="hoy"><b>El problema hoy</b>El que se está quedando atrás lo resuelve solo o no
+      lo resuelve, y llega a extraordinario cuando ya no hay tiempo.</p>
+      <div class="medida"><span>Se mide</span>
+        Alumnos atendidos y materias cubiertas; y aparte, cuántos de los atendidos pasaron.</div>
+    </div>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">06</span>
+        <h4>El reglamento, en cristiano</h4></div>
+      <p>Una versión corta y legible del reglamento —qué se puede, qué no, y qué pasa— con el
+      texto oficial al lado para que se pueda comprobar. Revisada y autorizada por dirección.</p>
+      <p class="hoy"><b>El problema hoy</b>Se aplica un reglamento que casi nadie ha leído
+      completo, y entonces cada sanción se siente arbitraria aunque no lo sea.</p>
+      <div class="medida"><span>Se mide</span>
+        Que exista, que dirección la autorice, y que esté publicada antes de terminar el
+        primer periodo.</div>
+    </div>
+  </div>
+
+  <!-- ═══ OPTIMIZA ═══ -->
+  <div class="verbo p">
+    <div class="verbo-cab"><div class="figura">▲</div><h3>Optimiza</h3></div>
+    <p class="idea">Quitar el desperdicio de lo que ya se hace. Aquí no se agrega nada: se
+    mide dónde se va el tiempo y el dinero, y se corrige.</p>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">07</span>
+        <h4>Mapa de tiempos muertos</h4></div>
+      <p>Durante dos semanas se mide dónde se pierde el tiempo: filas, cambios de salón,
+      esperas, entradas y salidas. Con eso se proponen <strong>dos</strong> cambios concretos a
+      dirección, con el número que los justifica.</p>
+      <p class="hoy"><b>El problema hoy</b>Todos sentimos que se pierde tiempo, pero nadie
+      trae un número, así que la conversación se queda en queja.</p>
+      <div class="medida"><span>Se mide</span>
+        Minutos recuperados por alumno a la semana, contados igual antes y después.</div>
+    </div>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">08</span>
+        <h4>Un solo canal de avisos por grupo</h4></div>
+      <p>Se acaba el aviso repartido en cinco chats. Un canal oficial por grupo, con formato
+      fijo y hora fija de publicación, manejado por el jefe de grupo y el comité.</p>
+      <p class="hoy"><b>El problema hoy</b>El mismo aviso llega distinto por tres lados, y el
+      que se pierde uno no tiene dónde ir a buscarlo.</p>
+      <div class="medida"><span>Se mide</span>
+        Avisos publicados en el canal oficial contra avisos que siguieron llegando por fuera.</div>
+    </div>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">09</span>
+        <h4>Caja transparente</h4></div>
+      <p>Cada peso que entra y cada peso que sale, publicado cada mes en una sola hoja: de
+      dónde vino, en qué se fue, y cuánto queda. Con los comprobantes disponibles para quien
+      los pida.</p>
+      <p class="hoy"><b>El problema hoy</b>El dinero de las actividades se junta y se gasta sin
+      que nadie más que quien lo maneja sepa en qué. No hace falta que haya un problema para
+      que se sospeche que lo hay.</p>
+      <div class="medida"><span>Se mide</span>
+        Que el corte esté publicado el día 5 de cada mes. Uno que falte es un incumplimiento.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>El cronograma</h2>
+  <p class="bajada">Va contado hacia atrás desde el día de la elección, porque todavía no
+  tengo la fecha exacta. En cuanto la tengas, esto se convierte en fechas reales en un minuto:
+  <strong>sólo hay que sustituir el día cero</strong>.</p>
+
+  <div class="paso"><div class="cuando">D − 21</div><div>
+    <h4>Cerrar el equipo</h4>
+    <p>Publicar la convocatoria, entrevistar y elegir a los siete. Que todos cumplan el
+    requisito académico ANTES de anunciarlos: un integrante irregular tumba la planilla
+    entera.</p></div></div>
+
+  <div class="paso"><div class="cuando">D − 18</div><div>
+    <h4>Cerrar la identidad</h4>
+    <p>Logo final, los tres colores con sus figuras, y las nueve propuestas impresas. De aquí
+    en adelante ya no se cambia nada: una marca que cambia a media campaña no es una marca.</p></div></div>
+
+  <div class="paso"><div class="cuando">D − 14</div><div>
+    <h4>Arranque público</h4>
+    <p>Carteles arriba el mismo día y en toda la escuela a la vez. Antes de eso, nada — el
+    arranque disperso se siente débil.</p></div></div>
+
+  <div class="paso"><div class="cuando">D − 12 a D − 5</div><div>
+    <h4>Recorrido por salones</h4>
+    <p>Todos los grupos, dos personas por visita, cinco minutos: una propuesta de cada verbo y
+    cómo se mide. Nunca improvisar: el mismo guion en todos lados.</p></div></div>
+
+  <div class="paso"><div class="cuando">D − 4</div><div>
+    <h4>El debate</h4>
+    <p>Ensayado antes con las preguntas difíciles hechas por el propio equipo. Ver la nota de
+    abajo sobre la otra candidata.</p></div></div>
+
+  <div class="paso"><div class="cuando">D − 1</div><div>
+    <h4>Cierre</h4>
+    <p>Un solo mensaje, el mismo en todos lados: el lema y las tres palabras. Nada nuevo el
+    último día — lo nuevo al final confunde y parece desesperación.</p></div></div>
+
+  <div class="paso"><div class="cuando">D</div><div>
+    <h4>Elección</h4>
+    <p>Representante del equipo presente donde se cuenta, de principio a fin. Ver abajo.</p></div></div>
+
+  <div class="paso"><div class="cuando">D + 7</div><div>
+    <h4>La primera junta abierta</h4>
+    <p>Cumplir la propuesta 03 en la primera semana. Es la más barata de todas y es la que
+    demuestra que las otras ocho van en serio.</p></div></div>
+</section>
+
+<section>
+  <h2>Votos y simbología</h2>
+  <p class="bajada">Dos cosas distintas que conviene no mezclar: cómo se reconoce la planilla,
+  y cómo se cuentan los votos.</p>
+
+  <h3 style="font-family:var(--cuerpo);font-weight:700;font-size:18px;margin:0 0 10px">La marca en la boleta</h3>
+  <div class="envoltura">
+    <table>
+      <thead><tr><th>Elemento</th><th>Qué es</th><th>Por qué así</th></tr></thead>
+      <tbody>
+        <tr><td>Las tres figuras</td><td>◼ ◆ ▲</td>
+          <td>Se distinguen sin color. Una boleta fotocopiada en blanco y negro sigue siendo
+          legible, y hay quien no distingue el rojo del verde</td></tr>
+        <tr><td>Los tres colores</td><td>Azul, rojo, verde</td>
+          <td>Ya están medidos: contrastan con texto blanco y se separan en escala de grises</td></tr>
+        <tr><td>El nombre</td><td>Una palabra, grande</td>
+          <td>En una boleta se lee de reojo y en dos segundos</td></tr>
+        <tr><td>Las tres palabras</td><td>Organiza · Actualiza · Optimiza</td>
+          <td>Es lo único que hay que recordar. Si alguien recuerda esas tres, ganamos</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="font-family:var(--cuerpo);font-weight:700;font-size:18px;margin:30px 0 10px">El conteo</h3>
+  <p>Esto hay que <strong>preguntarlo en dirección y por escrito antes de la campaña</strong>,
+  no el día de la elección:</p>
+  <ul class="ojo">
+    <li><strong>Quién cuenta</strong> y si cada planilla puede tener un representante presente.</li>
+    <li><strong>Cómo se vota</strong>: boleta de papel, a mano alzada, o en línea. Cambia toda
+    la estrategia del último día.</li>
+    <li><strong>Quién puede votar</strong>: todos los grupos, o sólo algunos semestres.</li>
+    <li><strong>Qué pasa con un empate</strong>, y qué se considera voto nulo.</li>
+    <li><strong>Si el conteo es público</strong> y si se publica el número final por grupo.</li>
+  </ul>
+  <div class="caja ojo">
+    <h4>La regla que no se rompe</h4>
+    <p>Un representante del equipo presente donde se cuenta, <strong>de principio a fin</strong>,
+    sin salir ni un minuto. No porque se espere trampa, sino porque una elección sin testigo es
+    una elección que después no se puede defender. Y si dirección no permite testigos, eso hay
+    que saberlo <em>antes</em>, no ese día.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Tácticas de fondos</h2>
+  <p class="bajada">Para la campaña hace falta poco, y eso es una ventaja: gastar mucho en una
+  campaña de prepa se ve mal, no se ve serio.</p>
+
+  <div class="caja">
+    <h4>Para la campaña · lo mínimo</h4>
+    <ul class="dinero">
+      <li><strong>Impresión</strong>: pocos carteles grandes en los lugares por donde pasa
+      todo el mundo, en vez de muchos chicos regados. Cuesta menos y se ve mejor.</li>
+      <li><strong>Cooperación pareja del equipo</strong>: siete personas poniendo lo mismo. Que
+      nadie ponga más, para que nadie sienta que compró su lugar.</li>
+      <li><strong>Cero regalos</strong>. Ni dulces ni plumas. Regalar cosas invita a que te
+      comparen por lo que regalas, y ahí siempre pierde el que propone.</li>
+    </ul>
+  </div>
+
+  <div class="caja">
+    <h4>Para el comité, ya ganando</h4>
+    <ul class="dinero">
+      <li><strong>Una actividad grande al mes</strong>, no cinco chicas. Cinco chicas cansan a
+      la escuela y dejan menos.</li>
+      <li><strong>Preventa con lista</strong> antes de comprar nada: se compra sobre pedido y
+      no queda mercancía muerta.</li>
+      <li><strong>Patrocinio de negocios de junto</strong> —papelería, cafetería, copias— a
+      cambio de mención en los carteles del evento. Cuesta cero y a ellos les sirve.</li>
+      <li><strong>Corte publicado el día 5</strong>, sin excepción. Es la propuesta 09 y es lo
+      que hace que la gente coopere la segunda vez.</li>
+    </ul>
+  </div>
+
+  <div class="caja ojo">
+    <h4>Antes de prometer cualquier cosa de dinero</h4>
+    <p>Hay que preguntar en dirección <strong>si el comité puede manejar dinero</strong> y bajo
+    qué reglas. En muchas escuelas no puede, o sólo a través de la administración. Prometer una
+    actividad con fondos propios y que después no se permita es la forma más rápida de quedar
+    como mentiroso en el primer mes.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Sobre el debate</h2>
+  <div class="caja">
+    <p>Tu ventaja es que <strong>traes nueve propuestas con número</strong>. La mayoría de las
+    campañas de prepa llegan con adjetivos. Entonces la estrategia es simple: cada vez que te
+    pregunten algo, contesta con una propuesta y con cómo se mide.</p>
+    <p><strong>Y sobre la otra candidata: no la ataques.</strong> No es un consejo moral, es
+    táctico y lo sostengo. Tú mismo dijiste que le agrada a la gente por ser polémica — atacarla
+    la pone en el terreno donde es fuerte y a ti en el que eres débil, porque tú eres el serio y
+    el formal. Un ataque tuyo se va a ver más duro que el mismo ataque dicho por ella.</p>
+    <p>Si te atacan a ti, la respuesta es una sola línea y de vuelta a lo tuyo: <em>«no vine a
+    hablar de nadie, vine con nueve cosas que se pueden revisar en marzo»</em>. Eso te deja
+    donde eres fuerte y deja el ataque colgado.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que sigue faltando</h2>
+  <p>Dos cosas, y las dos son tuyas. Sin ellas esto queda a medias:</p>
+  <ul class="ojo">
+    <li><strong>Las fechas exactas</strong> del debate y de la elección. El cronograma de arriba
+    está contado hacia atrás justo para que no se detenga el trabajo, pero en cuanto tengas el
+    día cero se vuelve un calendario real.</li>
+    <li><strong>El reglamento.</strong> Mándame foto de las hojas y yo saco el texto. Lo
+    necesito para dos cosas: la propuesta 06, y para revisar que las otras ocho no choquen con
+    alguna regla — proponer algo que el reglamento prohíbe sería un autogol en el debate.</li>
+  </ul>
+</section>
+
+<p class="pie">
+  Comité estudiantil · Bachillerato Rembrandt · agosto 2026<br>
+  Las nueve propuestas se escogieron con tres filtros: que se puedan hacer con lo que ya hay en
+  la escuela, que toquen lo académico, y que se puedan medir. La que no pasaba los tres, no
+  entró.
+</p>
+
+</div>
