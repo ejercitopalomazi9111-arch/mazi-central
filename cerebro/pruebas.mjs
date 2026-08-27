@@ -225,5 +225,35 @@ console.log('\n· El ecosistema de modelos');
         .every(n => (n.comoCazarlo || '').length > 40));
 }
 
+
+console.log('\n· Sitios web: referencias y lo de antes de lanzar');
+{
+  const casos = [
+    ['se ve genérico, le falta algo',        'error-se-ve-hecho-por-ia'],
+    ['se ve de videojuego',                  'error-se-ve-de-juego'],
+    ['el video se va a tirones en el celular','pieza-dos-juegos-de-video'],
+    ['cómo detecto si es celular',           'pieza-el-dedo-no-el-ancho'],
+    ['qué le falta antes de publicar',       'pieza-lista-antes-de-lanzar'],
+    ['el teclado tapa el botón en iphone',   'pieza-viewport-visual-en-iphone'],
+    ['un ejemplo de sitio bonito',           'pieza-nomad-portfolio'],
+    ['replit',                               'pieza-replit'],
+  ];
+  for(const [q, esperado] of casos){
+    const r = buscar(todas, q);
+    const donde = r.findIndex(n => n.id === esperado);
+    ok(`«${q}» → ${esperado}`, donde >= 0 && donde < 3);
+    if(donde < 0) console.log(`      salió: ${r.slice(0,3).map(n=>n.id).join(', ') || 'nada'}`);
+    else if(donde >= 3) console.log(`      quedó en el lugar ${donde + 1}`);
+  }
+
+  /* Una referencia de afuera SIN decir bajo qué licencia está es una trampa
+     puesta a futuro: alguien la va a copiar creyendo que se puede. */
+  const sitios = todas.filter(n => n.area === 'sitios');
+  ok(`el área trae bastante (${sitios.length})`, sitios.length >= 8);
+  ok('la referencia de afuera dice qué se puede y qué no',
+     /NO TRAE LICENCIA|no se copia/i.test(
+       (todas.find(n => n.id === 'pieza-nomad-portfolio') || {}).ojo || ''));
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

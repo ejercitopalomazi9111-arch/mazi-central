@@ -1,0 +1,123 @@
+{
+  "area": "sitios",
+  "nombre": "Sitios web: referencias, técnicas y lo que se revisa antes de lanzar",
+  "que": "Sitios que se ven bien de verdad y POR QUÉ, técnicas concretas sacadas de leerlos, y las listas de lo que hay que tener puesto antes de publicar — para que no se vea hecho por IA, no se vea de juego, y no lo tumben.",
+  "neuronas": [
+    {
+      "id": "pieza-nomad-portfolio",
+      "clase": "pieza",
+      "titulo": "nomad-portfolio · referencia de portafolio que se ve caro",
+      "que": "Portafolio de `shutterkif-oss`: HTML, CSS y JS a mano, sin build ni framework, con modelos 3D en `.glb`, ocho videos en mosaico y tipografía propia. Es la referencia de «así se ve un sitio hecho por alguien con gusto».",
+      "donde": "github.com/shutterkif-oss/nomad-portfolio · 2,101 líneas entre index.html, un CSS de 219 y cinco archivos de JS",
+      "porque": "Sirve como referencia por lo que NO tiene: no usa framework, no pesa por dependencias, y cada decisión cara —los videos, el 3D— está atendida para teléfono. Es la prueba de que lo que hace que un sitio se vea caro es el criterio, no la pila.",
+      "ojo": "**NO TRAE LICENCIA.** Las técnicas se pueden estudiar y usar —las ideas no se licencian— pero su código NO se copia a nuestro repo, que es público. Lo que se guarda aquí es qué hace y por qué, no sus líneas.",
+      "senales": ["referencia de portafolio", "sitio que se vea caro", "ejemplo de sitio bonito", "nomad portfolio"],
+      "vecinas": ["pieza-dos-juegos-de-video", "pieza-el-dedo-no-el-ancho", "error-se-ve-hecho-por-ia"]
+    },
+    {
+      "id": "pieza-dos-juegos-de-video",
+      "clase": "pieza",
+      "titulo": "Dos juegos de video: uno para computadora y uno para teléfono",
+      "que": "Se guardan DOS versiones de cada video —`/tiles/` y `/tiles-sm/`— y en teléfono se sirve la chica cambiando la ruta al vuelo: `src.replace('/tiles/','/tiles-sm/')`.",
+      "donde": "En cualquier sitio con video de fondo o mosaico. Se decide al crear el elemento, no después.",
+      "porque": "En el sitio de referencia son 3.2 MB en vez de 13, pero el ahorro de datos es lo de MENOS. Lo importante es el cuadro: un video grande no es sólo pesado, es que **el decodificador del teléfono no lo alcanza** y el video se va a tirones aunque ya esté descargado. Escalar por CSS no arregla eso — el decodificador ya trabajó de más.",
+      "ojo": "Hay que producir de verdad las dos versiones (640 de ancho para la chica). Servir el mismo archivo dos veces con nombres distintos no ahorra nada y da la falsa sensación de que ya está atendido.",
+      "senales": ["el video se va a tirones", "video de fondo en el celular", "pesa mucho el video", "se traba en el teléfono"],
+      "vecinas": ["pieza-nomad-portfolio", "pieza-el-dedo-no-el-ancho"]
+    },
+    {
+      "id": "pieza-el-dedo-no-el-ancho",
+      "clase": "pieza",
+      "titulo": "Para saber si es teléfono se pregunta por el DEDO, no por el ancho",
+      "que": "`matchMedia('(pointer: coarse)')` dice si el que apunta es un dedo. `matchMedia('(hover: hover) and (pointer: fine)')` dice si hay ratón de verdad.",
+      "donde": "Donde haya que decidir si servir la versión ligera, si activar efectos de `hover`, o si agrandar los objetivos táctiles.",
+      "porque": "El ancho MIENTE en los dos sentidos: una tableta en horizontal mide como laptop y se le sirve la versión pesada, y una ventana angosta en una computadora buena recibe la versión pobre. Lo que de verdad se quiere saber no es cuánto mide la pantalla: es **con qué la está tocando**.",
+      "ojo": "El `hover` no es un adorno que sobre en teléfono: en pantalla táctil un efecto de `hover` se queda PEGADO después del toque, y se ve como si algo se hubiera roto. Por eso se encierra en `@media (hover:hover) and (pointer:fine)`.",
+      "senales": ["cómo detecto si es celular", "el hover se queda pegado", "media query de móvil", "responsive de verdad"],
+      "vecinas": ["pieza-dos-juegos-de-video", "falta-el-viewport", "error-se-ve-hecho-por-ia"]
+    },
+    {
+      "id": "pieza-viewport-visual-en-iphone",
+      "clase": "pieza",
+      "titulo": "En iPhone hay que escuchar al `visualViewport`, no sólo al `resize`",
+      "que": "Además de `resize` y `orientationchange`, se escucha `window.visualViewport.addEventListener('resize', …)`. Y para el alto se usa `100dvh` detrás de `@supports (height:100dvh)`.",
+      "donde": "En todo sitio de pantalla completa, y en cualquiera con un campo de texto.",
+      "porque": "En iOS la barra de direcciones se encoge al bajar y el teclado tapa media pantalla, y **ninguna de las dos cosas dispara un `resize` normal**. Sin esto, el contenido queda cortado o el botón de enviar se va debajo del teclado justo cuando hay que tocarlo.",
+      "ojo": "`100vh` en iOS mide la pantalla SIN contar la barra: por eso una sección «de pantalla completa» sale más alta que la pantalla y siempre hay que arrastrar un poquito. `100dvh` es el arreglo, con `@supports` para el que no lo tenga.",
+      "senales": ["se corta en el iphone", "el teclado tapa el botón", "100vh no funciona", "hay que arrastrar de más"],
+      "vecinas": ["falta-el-viewport", "pieza-el-dedo-no-el-ancho"]
+    },
+    {
+      "id": "pieza-favicon-sin-archivo",
+      "clase": "pieza",
+      "titulo": "El favicon puede ir en la misma etiqueta, sin archivo",
+      "que": "Un SVG dentro de un `data:` en el `href` del `rel=\"icon\"`. Cero peticiones y cero archivos que se olviden al mudar el sitio.",
+      "donde": "En el `<head>`, para prototipos y sitios de una pieza.",
+      "porque": "El favicon faltante es de lo primero que delata un sitio a medias: el navegador enseña una hoja en blanco en la pestaña. Y es de las cosas que más se olvidan porque no se ven mientras uno desarrolla.",
+      "ojo": "Para una marca de verdad NO alcanza: hay que dar los tamaños grandes para la pantalla de inicio y el `apple-touch-icon`. Esto sirve mientras tanto, no para siempre.",
+      "senales": ["falta el favicon", "sale una hoja en blanco en la pestaña", "icono del sitio"],
+      "vecinas": ["error-se-ve-hecho-por-ia", "pieza-nomad-portfolio"]
+    },
+    {
+      "id": "decision-respetar-menos-movimiento",
+      "clase": "decision",
+      "titulo": "Se respeta `prefers-reduced-motion`, y se revisa en TODOS lados",
+      "que": "Toda animación pregunta por `matchMedia('(prefers-reduced-motion: reduce)')` antes de correr. En el sitio de referencia se pregunta en tres archivos distintos, no en uno.",
+      "porque": "Hay gente a la que el movimiento le provoca mareo de verdad, y lo pidió con una casilla del sistema operativo. Ignorarlo no es un detalle de accesibilidad: es que el sitio le hace daño a alguien que ya avisó.",
+      "alternativas": "Se consideró apagar sólo la animación grande de entrada y dejar las chicas. Se descartó: lo que marea es el movimiento acumulado, y quince microinteracciones molestan más que una transición grande.",
+      "ojo": "Preguntarlo en un solo lugar es el error típico: el archivo que se agregó después se queda sin la revisión y el sitio sigue moviéndose. Se pregunta donde se anima.",
+      "senales": ["accesibilidad de animación", "reduced motion", "marea el movimiento", "apagar animaciones"],
+      "vecinas": ["pieza-nomad-portfolio", "error-se-ve-hecho-por-ia"]
+    },
+    {
+      "id": "error-se-ve-hecho-por-ia",
+      "clase": "error",
+      "titulo": "Se ve hecho por IA",
+      "sintoma": "El sitio funciona, no tiene errores, y aun así se ve genérico. Carlos lo dice como «se ve de plantilla» o «se ve de IA». Nadie sabe señalar UNA cosa mal, y esa es justo la señal.",
+      "causa": "Faltan los detalles que nadie pide pero todos notan: nada responde al toque, no hay estados intermedios, la tipografía es la de fábrica, y las transiciones o no están o son todas iguales.",
+      "porque": "Un modelo entrega lo que se le pidió y lo que se pidió fue «una landing». Los detalles que hacen que se sienta hecho a mano son justo los que nadie enumera al pedir, porque se dan por hechos.",
+      "arreglo": "La lista de lo que hay que tener puesto está en `.claude/skills/revision-web/reference/antes-de-lanzar.md`, sección «Que no se vea de IA». Lo que más rinde por lo poco que cuesta: estados de `hover` y de presionado, pantalla de carga en vez de salto, animación de entrada del encabezado, favicon propio, botón de volver arriba, y transición entre secciones.",
+      "comoCazarlo": "La prueba del dedo: recorrer el sitio en el teléfono y contar cuántas veces algo RESPONDE al toque. Si la respuesta es cero, se ve de IA por más bonita que esté la paleta.",
+      "consejo": "El más barato de todos y el que más se nota: los estados de presionado. Un botón que no se hunde al tocarlo se siente muerto, y ese sentimiento es exactamente lo que la gente llama «se ve de IA».",
+      "salioDe": "Carlos, dicho muchas veces sobre pantallas propias, más las listas de ivanvibecodes",
+      "senales": ["se ve genérico", "se ve de plantilla", "se ve de IA", "le falta algo y no sé qué", "está soso"],
+      "vecinas": ["error-se-ve-de-juego", "pieza-el-dedo-no-el-ancho", "pieza-favicon-sin-archivo"]
+    },
+    {
+      "id": "error-se-ve-de-juego",
+      "clase": "error",
+      "titulo": "Se ve de juego cuando debería verse de negocio",
+      "sintoma": "Un sitio de empresa que parece pantalla de videojuego: degradados de neón, tipografías de ciencia ficción, animaciones que rebotan, brillos por todos lados y botones que parecen de arcade.",
+      "causa": "Se confunde «que se vea impresionante» con «que se vea caro». Son cosas distintas y a veces opuestas: lo caro casi siempre es más quieto.",
+      "porque": "Los efectos vistosos son fáciles de agregar y dan sensación inmediata de avance. La contención no se ve como trabajo, aunque lo sea.",
+      "arreglo": "Un solo acento de color, no cinco. Movimiento que ACOMPAÑA en vez de llamar la atención —nada que rebote ni que gire—. Tipografía con personalidad pero legible. Y espacio en blanco de verdad: la densidad de arcade es lo que más rápido delata.",
+      "comoCazarlo": "Enseñar una captura sin contexto y preguntar «¿de qué es esto?». Si la primera respuesta menciona un juego, una app de cripto o una discoteca, y lo que vendemos son servicios, ya está la respuesta.",
+      "consejo": "El caso que lo puso aquí es nuestro: El Pacto Roto quedó fuera del portafolio porque Carlos dijo «demasiado verde y feo, no es como para que lo vean los clientes». La estética de juego está bien EN UN JUEGO — el problema es no notar cuándo se pasó de un lado al otro.",
+      "salioDe": "El Pacto Roto y KERNEL://LOCK, y la decisión de Carlos de dejarlos fuera del sitio",
+      "senales": ["se ve de videojuego", "muy neón", "demasiado brillante", "no se ve profesional", "se ve infantil"],
+      "vecinas": ["error-se-ve-hecho-por-ia", "pieza-nomad-portfolio"]
+    },
+    {
+      "id": "pieza-lista-antes-de-lanzar",
+      "clase": "pieza",
+      "titulo": "Las tres listas de antes de lanzar",
+      "que": "Casi sesenta cosas que hay que tener puestas antes de publicar un sitio, en tres grupos: que no se vea de IA, que no lo tumben, y que la gente confíe y te encuentre.",
+      "donde": "`.claude/skills/revision-web/reference/antes-de-lanzar.md`. La skill `revision-web` la carga sola cuando toca revisar antes de entregar.",
+      "porque": "No es que uno no sepa estas cosas: es que a la hora de entregar se olvidan tres o cuatro, y siempre son distintas. Una lista escrita convierte «se me pasó» en «no lo revisé», que sí se puede arreglar.",
+      "ojo": "**No es para tacharla completa en todo proyecto.** Una landing de una página no necesita historial de versiones ni comparativa. Lo que sí es obligatorio en todos: el grupo de seguridad. Ahí no hay proyecto chiquito.",
+      "senales": ["qué le falta antes de publicar", "lista antes de lanzar", "revisar antes de entregar", "checklist de sitio web"],
+      "vecinas": ["error-se-ve-hecho-por-ia", "error-se-ve-de-juego", "decision-llaves-fuera-del-repo"]
+    },
+    {
+      "id": "pieza-replit",
+      "clase": "pieza",
+      "titulo": "Replit · construir y desplegar desde el navegador",
+      "que": "Plataforma donde se escribe, se corre y se despliega una aplicación sin instalar nada, con un agente de IA que construye por encargo. Tres partes: Chat, Build y Design. Corre en web, escritorio y teléfono.",
+      "donde": "replit.com · La documentación tiene un índice para agentes en `docs.replit.com/llms.txt`.",
+      "porque": "Su ventaja real es el arranque: de idea a algo publicado sin configurar nada, y desde el teléfono. Para probar una idea rápido sirve, y para eso Carlos lo puede usar sin que nos comprometa a nada.",
+      "ojo": "Tres cosas antes de apoyarse en él. **Uno:** el plan gratuito da créditos de agente que se acaban rápido —alcanza para experimentar, no para un proyecto—. **Dos:** sólo los despliegues estáticos son gratis; los demás cuestan desde 1 USD al mes y las VM reservadas desde 20. **Tres**, y es la que importa por LA REGLA: lo que se construye ahí vive ahí. Si se usa, se usa para PROBAR, y lo que sobreviva se trae al repo.",
+      "senales": ["replit", "construir desde el navegador", "desplegar sin instalar", "probar una idea rápido"],
+      "vecinas": ["decision-externos-por-adaptador", "pieza-mazi-central", "error-guia-desfasada"]
+    }
+  ]
+}

@@ -7,6 +7,25 @@ description: La cátedra — revisión exhaustiva de una página antes de entreg
 
 Revisión exhaustiva antes de entregar. **No es opcional.**
 
+
+## La lista de antes de lanzar
+
+Casi sesenta cosas concretas, en [`reference/antes-de-lanzar.md`](reference/antes-de-lanzar.md),
+en cinco grupos:
+
+1. **Que no se vea hecho por IA** — lo que responde al dedo, lo que pasa mientras se espera, y
+   lo que siempre se olvida.
+2. **Que no lo tumben** — llaves, secretos, validación en servidor, cabeceras. **Este grupo no
+   es opcional en ningún proyecto.**
+3. **Que la gente confíe y te encuentre** — SEO, señales de confianza, y lo que ayuda a decidir.
+4. **Que no se vea de juego** — el que agregó Carlos: neón, rebotes y densidad de arcade hacen
+   que un sitio de servicios se vea *menos* profesional, no más.
+5. **Lo nuestro** — el charset que nuestro worker no manda, el viewport, los 44px táctiles.
+
+No se tacha completa en todo proyecto: una landing no necesita historial de versiones. El grupo
+2 sí, siempre.
+
+
 ## Por qué existe
 
 Carlos lo dijo directo: *"en computadora se ve feísima la página."* Eso pasa cuando se
