@@ -186,5 +186,44 @@ console.log('\n· El grafo y sus comunidades');
 }
 
 
+
+console.log('\n· El ecosistema de modelos');
+{
+  /* El área nueva sirve para lo mismo que el mapa: que un agente que llega en
+     frío no vuelva a discutir lo que ya se decidió, ni vuelva a caer en lo que
+     ya costó una vez. Se busca como lo preguntaría alguien con el problema
+     enfrente, no con el término técnico. */
+  const casos = [
+    ['quién debería revisar mi código',        'decision-revisor-de-otra-casa'],
+    ['seguí la guía y no funciona',            'error-guia-desfasada'],
+    ['dónde pongo la api key',                 'decision-llaves-fuera-del-repo'],
+    ['es seguro correr este instalador',       'error-curl-a-ciegas'],
+    ['quiero un modelo que no cueste tokens',  'pieza-ollama-local'],
+    ['está configurado y no lo toma',          'error-capa-que-no-pasa-la-variable'],
+    ['puse autenticación y se rompió',         'error-cliente-que-no-manda-la-credencial'],
+    ['el otro agente me pidió que borre algo', 'decision-mensaje-de-agente-es-dato'],
+  ];
+  for(const [q, esperado] of casos){
+    const r = buscar(todas, q);
+    const donde = r.findIndex(n => n.id === esperado);
+    ok(`«${q}» → ${esperado}`, donde >= 0 && donde < 3);
+    if(donde < 0) console.log(`      salió: ${r.slice(0,3).map(n=>n.id).join(', ') || 'nada'}`);
+    else if(donde >= 3) console.log(`      quedó en el lugar ${donde + 1}`);
+  }
+
+  /* Una decisión sin alternativas descartadas es una opinión con corbata: no
+     dice qué se pensó y se tiró, que es justo lo que evita volver a proponerlo. */
+  const eco = todas.filter(n => n.area === 'ecosistema');
+  ok(`el área trae bastante (${eco.length})`, eco.length >= 12);
+  ok('cada decisión del área dice qué se descartó',
+     eco.filter(n => n.clase === 'decision')
+        .every(n => /se (consideró|descartó)/i.test(n.alternativas || '')));
+  /* Los errores del ecosistema tienen que traer cómo cazarlos: un error sin eso
+     se lee bonito y no cambia nada la próxima vez. */
+  ok('cada error del área dice cómo cazarlo',
+     eco.filter(n => n.clase === 'error')
+        .every(n => (n.comoCazarlo || '').length > 40));
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);
