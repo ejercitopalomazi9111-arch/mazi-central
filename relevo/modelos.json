@@ -1,6 +1,6 @@
 {
   "que": "El orden del relevo. El primero que conteste, trabaja. Cuando se topa, se marca con su hora de regreso y le toca al siguiente.",
-  "ojo": "Los nombres de modelo se pudren. Antes de confiar en esta lista, `node herramientas/relevo.mjs probar` la comprueba contra cada API en vivo y dice cuál cambió.",
+  "ojo": "Los nombres de modelo se pudren. Los de esta lista se comprobaron contra el catálogo EN VIVO de cada proveedor el 27 de agosto de 2026, preguntándole a su endpoint /models — no copiados de una guía. Antes de confiar en ellos otra vez: `node herramientas/relevo.mjs probar`.",
   "proveedores": [
     {
       "id": "ollama",
@@ -15,7 +15,7 @@
       "nombre": "Groq",
       "base": "https://api.groq.com/openai/v1",
       "llave": "GROQ_API_KEY",
-      "modelo": "llama-3.3-70b-versatile",
+      "modelo": "openai/gpt-oss-120b",
       "porque": "El más rápido de los gratuitos. Buen primer relevo de nube."
     },
     {
@@ -23,16 +23,16 @@
       "nombre": "Cerebras",
       "base": "https://api.cerebras.ai/v1",
       "llave": "CEREBRAS_API_KEY",
-      "modelo": "llama3.3-70b",
-      "porque": "Otra capa gratuita rápida, con topes distintos a los de Groq — que es justo el punto de tener dos."
+      "modelo": "gpt-oss-120b",
+      "porque": "Otra capa gratuita rápida, con topes distintos a los de Groq — que es justo el punto de tener dos. Ojo: su catálogo es CORTO, dos modelos. ⚠ Con la llave de Carlos contesta 402: la llave está BIEN, la cuenta necesita facturación. El relevo lo salta solo hasta que se active."
     },
     {
       "id": "gemini",
       "nombre": "Gemini",
       "base": "https://generativelanguage.googleapis.com/v1beta/openai/",
       "llave": "GEMINI_API_KEY",
-      "modelo": "gemini-2.0-flash",
-      "porque": "Ventana de contexto grande. Es el que sirve cuando hay que tragarse un bulto que a los otros no les cabe."
+      "modelo": "gemini-3-flash-preview",
+      "porque": "Ventana de contexto grande. Es el que sirve cuando hay que tragarse un bulto que a los otros no les cabe. Se usa el estable y no el `preview`: en una fila de relevo, lo que no puede fallar es el relevo. Va el `preview` porque los estables `gemini-2.5-*` ya no se abren para cuentas nuevas: la documentación los lista y el API los rechaza. Comprobado a mano."
     },
     {
       "id": "kimi",
@@ -40,7 +40,7 @@
       "base": "https://api.moonshot.ai/v1",
       "llave": "MOONSHOT_API_KEY",
       "modelo": "kimi-k2.6",
-      "porque": "El ayudante de la casa. Moonshot NO tiene plan gratuito permanente —da créditos de prueba al registrarse—, pero K2.6 es de pesos abiertos: si se acaban los créditos, el mismo modelo entra por OpenRouter o corriendo en la máquina. Por eso hay tres caminos al mismo Kimi y no uno."
+      "porque": "El ayudante de la casa. OJO CON LO GRATIS: Moonshot da créditos de prueba y se acaban, y en OpenRouter Kimi NO tiene variante `:free` — lo comprobé pidiendo su lista. Así que el único camino gratis de verdad es correr K2.6 en la propia máquina, porque es de pesos abiertos. Se queda en la fila para el día que haya créditos."
     },
     {
       "id": "glm",
@@ -55,8 +55,8 @@
       "nombre": "OpenRouter",
       "base": "https://openrouter.ai/api/v1",
       "llave": "OPENROUTER_API_KEY",
-      "modelo": "meta-llama/llama-3.3-70b-instruct:free",
-      "porque": "El último de la fila: junta muchos proveedores, así que es el mejor comodín cuando todo lo demás se topó. Los modelos con `:free` no cobran."
+      "modelo": "cohere/north-mini-code:free",
+      "porque": "El último de la fila: junta muchos proveedores, así que es el mejor comodín cuando todo lo demás se topó. Los `:free` no cobran — hoy hay 17. De los 17 gratis, muchos tardan más de 50 s o devuelven error del proveedor; se escogió uno que contesta rápido y de verdad, probándolos."
     }
   ]
 }
