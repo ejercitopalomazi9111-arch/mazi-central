@@ -93,7 +93,15 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
    un iPhone —64x5 más los huecos no caben en 334 px de ancho útil— y una mano
    partida se lee como si algo se hubiera roto. Con `1fr` se encogen juntas
    hasta caber, y el `aspect-ratio` mantiene la forma de carta. */
-.mano{display:grid; grid-template-columns:repeat(5, 1fr); gap:7px; align-items:end}
+/* ── LA MANO ───────────────────────────────────────────────────────────────
+   Cinco en un renglón daban 64 px por carta en un iPhone: alcanzaba para un
+   número, no para una ilustración. Y debajo sobraba media pantalla vacía.
+
+   Tres por renglón —dos renglones para cinco cartas— las lleva a ~118 px, casi
+   el doble, y usa el hueco que ya estaba ahí. Cuando la pantalla da para más
+   ancho, caben las cinco de un tirón y siguen grandes. */
+.mano{display:grid; grid-template-columns:repeat(3, 1fr); gap:9px; align-items:end}
+@media (min-width:560px){ .mano{grid-template-columns:repeat(5, 1fr)} }
 .carta{
   position:relative; width:100%; aspect-ratio:64/92; border-radius:11px;
   border:3px solid var(--tinta); background:var(--hueso);
@@ -140,22 +148,19 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
    El número lleva su propia sombra en vez de fiarse del contraste del arte:
    hay cartas de fondo negro y cartas de fondo blanco, y un solo color de
    texto no puede con las dos. */
-.carta.con-arte{ background:var(--tinta); overflow:hidden }
+/* ── LA CARTA CON SU CARA ──────────────────────────────────────────────────
+   Se enseña la carta y NADA MÁS. Yo le había puesto el número y el nivel
+   encima, y Carlos lo cortó de raíz: «las cartas ya lo traen, sólo hazlas más
+   grandes». Tenía razón — el valor está impreso en la ilustración desde el
+   principio, así que superponerlo era taparle el dibujo a la carta para
+   repetir un dato que ya estaba ahí. */
+.carta.con-arte{ background:var(--tinta); overflow:hidden; padding:0 }
 .carta .ilustra{
-  position:absolute; inset:0; background-size:cover; background-position:center 26%;
+  position:absolute; inset:0; background-size:cover; background-position:center;
   border-radius:8px;
 }
-.carta.con-arte::after{
-  content:''; position:absolute; inset:auto 0 0 0; height:52%; z-index:1;
-  background:linear-gradient(transparent, rgba(0,0,0,.86));
-  border-radius:0 0 8px 8px; pointer-events:none;
-}
-.carta.con-arte .valor{
-  position:relative; z-index:2; color:#fff;
-  margin-top:auto; margin-bottom:2px;
-  text-shadow:0 2px 0 #000, 0 0 10px rgba(0,0,0,.95);
-}
-.carta.con-arte .niv{ z-index:3 }
+.carta.con-arte .valor,
+.carta.con-arte .niv{ display:none }
 .n-S{background:var(--S)} .n-A{background:var(--A)} .n-B{background:var(--B)}
 .n-C{background:var(--C)} .n-D{background:var(--D)}
 
