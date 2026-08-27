@@ -123,6 +123,39 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   background:var(--rosa-hondo); background-image:
     repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 6px, transparent 6px 12px);
 }
+/* El reverso REAL de la baraja. Si no descargó, se queda el rayado de arriba,
+   que nunca se ve roto. Una carta tapada es media mesa. */
+.carta.dorso{
+  background-image:url(arte/web/reverso.webp),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 6px, transparent 6px 12px);
+  background-size:cover; background-position:center;
+}
+
+/* ── LA CARTA CON SU CARA ──────────────────────────────────────────────────
+   La ilustración va DEBAJO y el número ENCIMA, no al revés. En la mano hay
+   cinco cartas en 390 px: cada una mide ~64, y a ese tamaño el dibujo sirve
+   para reconocerla de un vistazo, pero el VALOR es lo que se juega. Si el
+   número compite con el dibujo, se pierde la partida por no poder leer.
+
+   El número lleva su propia sombra en vez de fiarse del contraste del arte:
+   hay cartas de fondo negro y cartas de fondo blanco, y un solo color de
+   texto no puede con las dos. */
+.carta.con-arte{ background:var(--tinta); overflow:hidden }
+.carta .ilustra{
+  position:absolute; inset:0; background-size:cover; background-position:center 26%;
+  border-radius:8px;
+}
+.carta.con-arte::after{
+  content:''; position:absolute; inset:auto 0 0 0; height:52%; z-index:1;
+  background:linear-gradient(transparent, rgba(0,0,0,.86));
+  border-radius:0 0 8px 8px; pointer-events:none;
+}
+.carta.con-arte .valor{
+  position:relative; z-index:2; color:#fff;
+  margin-top:auto; margin-bottom:2px;
+  text-shadow:0 2px 0 #000, 0 0 10px rgba(0,0,0,.95);
+}
+.carta.con-arte .niv{ z-index:3 }
 .n-S{background:var(--S)} .n-A{background:var(--A)} .n-B{background:var(--B)}
 .n-C{background:var(--C)} .n-D{background:var(--D)}
 
@@ -717,13 +750,64 @@ function fase(cual){
 }
 
 /* ── dibujar una carta ── */
+/* ══════════════════════════════════════════════════════════════════════════
+   EL CATÁLOGO · las 100 cartas de verdad
+   ──────────────────────────────────────────────────────────────────────────
+   El motor arma el mazo con valores y niveles, sin nombres, y eso está bien:
+   las reglas no saben de Pacman ni de Cthulhu. Pero una carta sin cara es una
+   ficha, y este juego se juega con ILUSTRACIONES.
+
+   Aquí se le pone cara a cada carta buscando en `cartas.json` una real del
+   mismo nivel y el mismo valor. Si no hay con ese valor exacto —el mazo
+   generado cubre los rangos completos y las 100 reales no— se toma otra del
+   mismo nivel, SIEMPRE la misma para el mismo valor: una carta que cambia de
+   cara a media mano se lee como un error del juego.
+
+   Y si el catálogo no carga, todo sigue funcionando con la carta de siempre.
+   El arte es una mejora, no un requisito.
+   ═════════════════════════════════════════════════════════════════════════ */
+const CAT = { porNivel:{}, exacta:{}, todas:[], listo:false };
+
+async function cargarCatalogo(){
+  try{
+    const r = await fetch('cartas.json');
+    if(!r.ok) return;
+    const d = await r.json();
+    for(const c of d.cartas || []){
+      const web = c.arte.replace('arte/cartas/', 'arte/web/').replace('.jpeg', '.webp');
+      const ficha = { n:c.n, nombre:c.nombre, puntos:c.puntos, nivel:c.nivel, arte:web };
+      CAT.todas.push(ficha);
+      if(!'SABCD'.includes(c.nivel) || c.nivel.length !== 1) continue;
+      (CAT.porNivel[c.nivel] = CAT.porNivel[c.nivel] || []).push(ficha);
+      const llave = c.nivel + ':' + c.puntos;
+      if(!CAT.exacta[llave]) CAT.exacta[llave] = ficha;   /* la primera gana: estable */
+    }
+    CAT.listo = CAT.todas.length > 0;
+  }catch(e){ /* sin catálogo se juega igual */ }
+}
+
+function fichaDe(c){
+  if(!CAT.listo) return null;
+  const exacta = CAT.exacta[c.nivel + ':' + c.valor];
+  if(exacta) return exacta;
+  const lista = CAT.porNivel[c.nivel];
+  if(!lista || !lista.length) return null;
+  return lista[c.valor % lista.length];
+}
+
 function laCarta(c, opciones = {}){
   const b = document.createElement('button');
   b.type = 'button';
   b.className = 'carta' + (opciones.chica ? ' chica' : '');
   b.dataset.id = c.id;
-  b.innerHTML = '<span class="niv n-' + c.nivel + '">' + c.nivel + '</span>'
+  const f = fichaDe(c);
+  b.innerHTML = (f ? '<span class="ilustra" style="background-image:url(' + f.arte + ')"></span>' : '')
+              + '<span class="niv n-' + c.nivel + '">' + c.nivel + '</span>'
               + '<span class="valor">' + c.valor + '</span>';
+  if(f){
+    b.classList.add('con-arte');
+    b.title = f.nombre + ' · ' + f.puntos + ' pts · nivel ' + f.nivel;
+  }
   if(opciones.estatica){ b.disabled = true; b.classList.add('revelada'); }
   return b;
 }
@@ -1178,6 +1262,20 @@ $('#bSeguir').addEventListener('click', () => {
   if(modo === 'dos'){
     cortina('Pásale el teléfono a ' + NOMBRES.dos.a, 'Ronda ' + J.ronda + '.', pedirJugada);
   } else pedirJugada();
+});
+
+/* ── el catálogo se trae al arrancar ───────────────────────────────────────
+   No bloquea: la portada ya está pintada y el juego funciona sin él.
+
+   ⚠ Y AL LLEGAR SE REPINTA, que es la línea que de verdad importa. Sin ella
+   el arte no aparecía en la primera partida: la mano se pinta en cuanto se
+   pica «jugar» y el catálogo llega un parpadeo después, así que las cartas
+   salían en blanco hasta la ronda siguiente — justo cuando uno concluye «no
+   sirve». Se cazó capturando la pantalla, no leyendo el código. */
+cargarCatalogo().then(() => {
+  if(!CAT.listo) return;
+  document.body.classList.add('hay-arte');
+  try{ if(typeof J === 'object' && J && J.a && J.a.mano) pintarMano(); }catch(e){}
 });
 </script>
 </body>

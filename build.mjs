@@ -76,7 +76,13 @@ const NO_VA = (ruta) => {
      El repositorio las guarda porque son el material de trabajo del juego y
      el catálogo se arma con ellas. Publicarlas es otra decisión, y es de
      Carlos y de su amiga, no una consecuencia de haberlas subido. */
-  if(/(^|\/)juegos\/guerra-de-puercos\/arte\//.test(ruta)) return true;
+  /* …salvo `arte/web/`, que SÍ va: son las mismas cartas a 420 px en webp,
+     6.5 MB en vez de 50, y son las que el juego enseña en la mano y en la
+     colección. Un juego de cartas sin las cartas es una calculadora con
+     fondo rosa. Los originales de 50 MB se quedan en el repositorio como
+     material de trabajo. */
+  if(/(^|\/)juegos\/guerra-de-puercos\/arte\//.test(ruta)
+     && !/(^|\/)juegos\/guerra-de-puercos\/arte\/web(\/|$)/.test(ruta)) return true;
   if(/^(medir|rehacer|recortar)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
