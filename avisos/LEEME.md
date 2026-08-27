@@ -21,24 +21,28 @@ que Carlos ya usaba** — esto no cambia su método, le quita el trabajo manual.
 
 ## Los datos del grupo
 
-Las materias, los maestros y los colores salen de **su horario real**, no de
-suponer. Viven en `datos.js` y en ningún otro lado: si cambia el semestre, se
-cambia ese archivo y ya. La herramienta no sabe nada de materias, sólo lee esa
-lista.
+Las materias y los colores salen de **su horario real**, no de suponer. Viven
+en `datos.js` y en ningún otro lado: si cambia el semestre, se cambia ese
+archivo y ya. La herramienta no sabe nada de materias, sólo lee esa lista.
 
-| | |
-|---|---|
-| Química y Biología III | Michelle Ramírez |
-| Geometría Analítica | Daniel Vázquez Alvarado |
-| Programación y BD | Michelle Ramírez Almaraz |
-| Física I enfoque STEAM | Daniel Vázquez |
-| Inglés III | Valentín Hernández Salazar |
-| Educación Física III | Diana Olvera Antonio |
-| Metodología Inv. I STEAM | Omar Ávila Cruz |
-| Humanidades III y Ética | Omar Ávila Cruz |
-| Mto. de equipo y SO | Fernanda Rosas |
-| TEC III | Fernanda Rosas Mendoza |
-| Admón. y estructura de redes | Ricardo Carrillo Cue |
+**Los nombres de los maestros no están, y no deben volver.** Los hubo, no los
+leía nada, y este repo es público: son datos personales de gente que no pidió
+aparecer. Para decir de quién viene un aviso basta la materia o una de las
+entradas oficiales de abajo.
+
+| Materia | Corto | Icono |
+|---|---|---|
+| Química y Biología III | Química y Bio | matraz |
+| Geometría Analítica | Geometría | escuadra |
+| Programación y BD | Programación | codigo |
+| Física I enfoque STEAM | Física | atomo |
+| Inglés III | Inglés | globo |
+| Educación Física III | Educación Física | pelota |
+| Metodología Inv. I STEAM | Metodología | lupa |
+| Humanidades III y Ética | Humanidades | balanza |
+| Mto. de equipo y SO | Mantenimiento | monitor |
+| TEC III | TEC | engrane |
+| Admón. y estructura de redes | Redes | red |
 
 Más «Proyecto STEAM» y «Aviso general», que no son clases pero sí son avisos.
 
