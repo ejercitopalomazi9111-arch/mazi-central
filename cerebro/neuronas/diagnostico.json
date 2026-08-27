@@ -238,6 +238,31 @@
         "conectado-no-es-vivo",
         "pruebas-que-no-prueban-nada"
       ]
+    },
+    {
+      "id": "identidad-nueva-en-cada-entrada",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "La mesa te convertía en otra persona cada vez que entrabas",
+      "sintoma": "La lista de gente de La Sala se llena de copias de la misma persona —«Carlos», «Carlos», «Carlos»— casi todas apagadas. Recargar la página o abrir otra pestaña crea una más.",
+      "causa": "El id se armaba con `Math.random()` en cada entrada: `web-carlos-a3f1`, `web-carlos-o94t`… Nada lo guardaba, así que cada visita era un participante nuevo para el servidor.",
+      "porque": "Con una sola sesión de prueba no se nota: el duplicado aparece hasta la SEGUNDA entrada, y las pruebas entraban una vez. Es un defecto que sólo sale usándolo dos días seguidos.",
+      "arreglo": "El id se guarda en localStorage con la llave `sala-yo:<SALA>:<nombre>` y se reutiliza. Por sala Y por nombre a propósito: entrar como «Carlos» a la misma sala siempre debe ser el mismo Carlos, pero con otro nombre es otra persona — así se puede prestar el teléfono sin robarle la identidad a nadie.",
+      "comoCazarlo": "Entrar dos veces seguidas y contar la gente. Si sale dos veces el mismo nombre, la identidad no se está recordando.",
+      "consejo": "Un identificador que se genera al azar sin guardarse no identifica: numera visitas. Si algo tiene que ser «el mismo» entre sesiones, se persiste la primera vez y se lee después.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "salgo dos veces",
+        "hay otro yo",
+        "aparezco repetido",
+        "copias de la misma persona"
+      ],
+      "vecinas": [
+        "presencia-que-se-apaga-sola",
+        "pieza-sala"
+      ]
     }
   ]
 }

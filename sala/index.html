@@ -1448,7 +1448,26 @@ $('hilo').addEventListener('click', (e) => {
 /* ── conectarse ─────────────────────────────────────────────────────────── */
 async function entrar(codigo, nombre){
   const base = `${SERVIDOR}/api/sala/${codigo}`;
-  const id = `web-${nombre.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
+  /* ⚠ LA IDENTIDAD SE RECUERDA. Antes se inventaba una nueva cada vez —el
+     sufijo era `Math.random()`—, así que recargar la página, abrir otra
+     pestaña o volver al día siguiente te convertía en OTRA persona dentro de
+     la sala. La lista de gente se iba llenando de copias tuyas, todas
+     apagadas menos la última.
+
+     Lo cachó Carlos, que vio tres: «me marca que tú, yo y otro yo no estamos
+     conectados». Dos de esos éramos el mismo él, de dos entradas distintas.
+
+     Se guarda por sala Y por nombre: entrar como «Carlos» a GRUPAZ siempre
+     debe ser el mismo Carlos, pero entrar con otro nombre es otra persona a
+     propósito — así se puede prestar el teléfono sin robarle la identidad a
+     nadie. */
+  const memoria = `sala-yo:${codigo}:${nombre.toLowerCase().trim()}`;
+  let id = null;
+  try{ id = localStorage.getItem(memoria); }catch(e){}
+  if(!id){
+    id = `web-${nombre.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
+    try{ localStorage.setItem(memoria, id); }catch(e){}
+  }
   const r = await fetch(`${base}/entrar`, {
     method:'POST', headers: conLlave({ 'content-type':'application/json' }),
     body: JSON.stringify({ id, nombre, tipo:'humano' }),
