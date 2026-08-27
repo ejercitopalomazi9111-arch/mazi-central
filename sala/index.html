@@ -571,6 +571,33 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 }
 .puerta.ida{display:none}
 .tarjeta-puerta{width:100%; max-width:390px}
+/* ── la lista de tus salas ── */
+.salas{display:flex; flex-direction:column; gap:7px}
+.sala-guardada{
+  display:flex; align-items:center; width:100%;
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:11px;
+  padding:11px 13px; color:var(--hueso);
+}
+.sala-guardada:active{border-color:var(--violeta)}
+.sala-guardada .ir{
+  flex:1; display:flex; align-items:center; gap:10px; min-width:0;
+  background:none; border:0; padding:0; margin:-11px 0 -11px -13px;
+  padding:11px 0 11px 13px;
+  color:inherit; font:inherit; text-align:left; cursor:pointer;
+}
+.sala-guardada b{font-family:var(--dato); letter-spacing:.18em; font-size:14px}
+.sala-guardada small{
+  color:var(--muy-tenue); font-size:11.5px; margin-left:auto; padding-left:8px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* El área de toque son 44px —el mínimo de Apple— pero los márgenes negativos
+   evitan que por eso la fila crezca a 66px de alto. */
+.quitar-sala{
+  border:0; background:none; color:var(--muy-tenue); font-size:16px;
+  width:44px; height:44px; margin:-11px -13px -11px 0;
+  cursor:pointer; flex:0 0 auto; border-radius:8px;
+}
+.quitar-sala:active{background:var(--borde)}
 .tarjeta-puerta h1{font-size:27px; letter-spacing:-.03em; margin:0 0 6px}
 .tarjeta-puerta p{color:var(--tenue); margin:0 0 20px; font-size:14px}
 .tarjeta-puerta label{
@@ -723,12 +750,27 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <div class="tarjeta-puerta">
     <h1>La Sala</h1>
     <p>La mesa donde trabajan las personas y sus Claude. Todos ven lo mismo.</p>
+
+    <!-- ── TUS SALAS ────────────────────────────────────────────────────────
+         Lo pidió Carlos: «ponle un menú principal donde salgan las salas donde
+         ya estás incluido y el botón para unirte a una nueva». Antes, volver a
+         una sala pedía acordarse del código de seis letras — y un código que
+         hay que recordar es un código que se pierde. Se guardan solas al
+         entrar; la última usada va arriba. -->
+    <div id="misSalas" hidden>
+      <label>Tus salas</label>
+      <div class="salas" id="listaSalas"></div>
+      <button class="btn ancho" id="bOtraSala" style="margin-top:10px">Entrar a otra sala</button>
+    </div>
+
+    <div id="formEntrar">
     <label for="codigoIn">Código de la sala</label>
     <input id="codigoIn" maxlength="6" autocomplete="off" autocapitalize="characters"
            spellcheck="false" placeholder="ABCDEF">
     <label for="nombreIn">Tu nombre</label>
     <input id="nombreIn" maxlength="40" autocomplete="off" placeholder="Carlos">
     <button class="enviar" id="bEntrar" style="width:100%">Entrar</button>
+    </div>
     <div class="error" id="error"></div>
     <div class="demo">
       ¿No tienes código? <a href="#" id="bDemo" style="color:var(--violeta-claro)">Ver
@@ -1495,6 +1537,7 @@ async function entrar(codigo, nombre){
 
   sala = codigo; yo = c.yo;
   localStorage.setItem('sala', JSON.stringify({ codigo, nombre }));
+  recordarSala(codigo, nombre);
 
   const h = await (await fetch(`${base}/hilo`, { headers: conLlave() })).json();
   hilo = h.hilo || []; gente = h.gente || {};
@@ -1959,15 +2002,119 @@ $('bDemo').addEventListener('click', (e) => {
   $('aviso').textContent = 'Sala de ejemplo: nada de esto se guarda ni sale de tu teléfono.';
 });
 
+/* ══ TUS SALAS ═════════════════════════════════════════════════════════════
+   Lo pidió Carlos: «un menú principal donde salgan las salas donde ya estás
+   incluido y el botón para unirte a una nueva».
+
+   El problema real: para volver a una sala había que acordarse de seis letras
+   sin sentido. Un código que hay que recordar es un código que se pierde, y
+   la sala se vuelve de un solo uso.
+
+   Vive en el teléfono, no en el servidor: es la lista de ESTE aparato, y ni
+   la llave ni el nombre salen de aquí. */
+const SALAS = 'sala-mis-salas';
+
+function misSalas(){
+  try{
+    const v = JSON.parse(localStorage.getItem(SALAS) || '[]');
+    return Array.isArray(v) ? v.filter(x => x && x.codigo) : [];
+  }catch(e){ return []; }
+}
+function escribirSalas(lista){
+  try{ localStorage.setItem(SALAS, JSON.stringify(lista.slice(0, 12))); }catch(e){}
+}
+function recordarSala(codigo, nombre){
+  const otras = misSalas().filter(x => x.codigo !== codigo);
+  escribirSalas([{ codigo, nombre, ts: Date.now() }, ...otras]);
+}
+function olvidarSala(codigo){
+  escribirSalas(misSalas().filter(x => x.codigo !== codigo));
+  pintarSalas();
+}
+
+/* «hace 3 h», no una fecha: lo que importa es qué tan fresca está la sala. */
+function desdeCuando(ts){
+  if(!ts) return '';
+  const min = Math.round((Date.now() - ts) / 60000);
+  if(min < 2)    return 'ahorita';
+  if(min < 60)   return `hace ${min} min`;
+  const hrs = Math.round(min / 60);
+  if(hrs < 24)   return `hace ${hrs} h`;
+  const dias = Math.round(hrs / 24);
+  return dias === 1 ? 'ayer' : `hace ${dias} días`;
+}
+
+function pintarSalas(){
+  const lista = misSalas();
+  const caja = $('listaSalas');
+  caja.innerHTML = '';
+  for(const s of lista){
+    const fila = document.createElement('div');
+    fila.className = 'sala-guardada';
+    const ir = document.createElement('button');
+    ir.className = 'ir';
+    ir.type = 'button';
+    ir.dataset.codigo = s.codigo;
+    ir.innerHTML = `<b></b><span class="como"></span><small></small>`;
+    ir.querySelector('b').textContent = s.codigo;
+    ir.querySelector('.como').textContent = s.nombre ? `como ${s.nombre}` : '';
+    ir.querySelector('.como').style.cssText =
+      'color:var(--tenue); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
+    ir.querySelector('small').textContent = desdeCuando(s.ts);
+    const quitar = document.createElement('button');
+    quitar.className = 'quitar-sala';
+    quitar.type = 'button';
+    quitar.dataset.quitar = s.codigo;
+    quitar.setAttribute('aria-label', `Quitar ${s.codigo} de la lista`);
+    quitar.textContent = '✕';
+    fila.append(ir, quitar);
+    caja.appendChild(fila);
+  }
+  /* Si hay salas guardadas, la puerta abre con la lista y el formulario se
+     esconde detrás de «Entrar a otra sala» — que es el caso de todos los
+     días. Si no hay ninguna, la puerta se ve igual que siempre. */
+  $('misSalas').hidden = lista.length === 0;
+  $('formEntrar').hidden = lista.length > 0;
+}
+
+$('listaSalas').addEventListener('click', (e) => {
+  const q = e.target.closest('[data-quitar]');
+  if(q){ olvidarSala(q.dataset.quitar); return; }
+  const ir = e.target.closest('[data-codigo]');
+  if(!ir) return;
+  const guardada = misSalas().find(x => x.codigo === ir.dataset.codigo);
+  if(!guardada) return;
+  $('error').textContent = 'Entrando…';
+  entrar(guardada.codigo, guardada.nombre || 'Alguien')
+    .then(() => { $('error').textContent = ''; })
+    .catch(err => { $('error').textContent = err.message; });
+});
+
+$('bOtraSala').addEventListener('click', () => {
+  $('formEntrar').hidden = false;
+  $('codigoIn').value = '';
+  $('codigoIn').focus();
+});
+
 /* ── volver a entrar solo ── */
 (function(){
+  pintarSalas();
   const g = params.get('sala');
-  if(g) $('codigoIn').value = g.toUpperCase();
   try{
     const v = JSON.parse(localStorage.getItem('sala') || 'null');
     if(v){ $('codigoIn').value = v.codigo; $('nombreIn').value = v.nombre; }
   }catch(e){}
-  $((g ? 'nombreIn' : 'codigoIn')).focus();
+  /* Un link con ?sala= manda: se abre el formulario con el código puesto,
+     aunque haya salas guardadas. */
+  if(g){
+    $('codigoIn').value = g.toUpperCase();
+    $('formEntrar').hidden = false;
+    $('nombreIn').focus();
+    return;
+  }
+  /* Con salas guardadas NO se enfoca nada: en el teléfono, enfocar abre el
+     teclado y tapa justo la lista que se acaba de pintar. */
+  if(misSalas().length === 0) $('codigoIn').focus();
 })();
 </script>
 </body>
