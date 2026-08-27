@@ -109,7 +109,25 @@ code{font-family:var(--dato); font-size:.87em; background:var(--alta);
 /* ── la red ── */
 /* Hermana de `.cuerpo` en la columna, NO una capa sobre todo el documento:
    con `inset:0` la leyenda quedaba encima del encabezado y tapaba el buscador. */
-.red{flex:1; position:relative; overflow:hidden; min-height:0}
+/* ── el fondo de galaxia ───────────────────────────────────────────────────
+   Es una foto REAL: el Hubble Deep Field de la NASA, dominio público. Crédito
+   y qué se le hizo, en `fondo/CREDITOS.md`. La regla de la casa dice que los
+   fondos se buscan reales en vez de dibujarse por código, y un cielo dibujado
+   con puntos aleatorios se ve exactamente a eso: a puntos aleatorios.
+
+   Va como fondo de CSS y no pintado en el canvas: pintarlo cada cuadro cuesta
+   batería para enseñar algo que no se mueve. */
+.red{flex:1; position:relative; overflow:hidden; min-height:0;
+  background:#05030A url('fondo/galaxia.jpg') center/cover no-repeat;
+}
+.red::after{
+  /* Un velo oscuro encima de la foto. Sin él las galaxias del fondo compiten
+     con las neuronas y no se distingue cuál punto brillante es cuál. */
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 45%, rgba(5,3,10,.35), rgba(5,3,10,.82) 78%);
+}
+.red canvas{position:relative;z-index:1}
+
 #lienzo{width:100%; height:100%; display:block; touch-action:none; cursor:grab}
 #lienzo.arrastrando{cursor:grabbing}
 .leyenda{
@@ -189,6 +207,7 @@ body{position:relative}
   <button class="modo" id="mRed">Red</button>
 </div>
 
+<script src="../marca/figuras.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (t) => String(t == null ? '' : t)
@@ -320,7 +339,13 @@ $('q').addEventListener('input', () => {
      valor de tener esto como red y no como lista. */
   if(!document.getElementById('red').hidden){
     const q = $('q').value.trim();
-    if(q) encender(buscar(q).slice(0, 5).map(n => n.id));
+    if(q){
+      /* Cada búsqueda la piensa la siguiente IA de la ronda. Con una sola
+         siempre pensando, los núcleos serían adorno; turnándose se ve que la
+         red es de TODAS y que cada quien tiene su propio hilo. */
+      encender(buscar(q).slice(0, 5).map(n => n.id), 2,
+               NUCLEOS.length ? NUCLEOS[idIA++ % NUCLEOS.length].id : null);
+    }
   }
 });
 
@@ -333,7 +358,65 @@ $('q').addEventListener('input', () => {
    ahí a las de más allá, con retardo. Eso no es adorno: es la forma de la
    respuesta. Un problema real casi nunca es una neurona — es esa cadena. */
 const TONOS = ['#AC27FF','#3ECF8E','#5AA9E6','#E8B33A','#F0567F','#C77BFF','#4FD1C5','#FF8A5B'];
-let RED = null, animando = false;
+let RED = null, animando = false, ultimoReposo = 0;
+
+/* ══ LOS NÚCLEOS · una IA, un lugar ═══════════════════════════════════════
+   Lo pidió Carlos así: «cuando no se esté usando ninguna, que haya una central
+   que sea el logo de cada IA y que la IA se quede ahí; y cuando use las
+   neuronas, que se ilumine todo el camino hacia ésta».
+
+   Eso resuelve algo que la red no contestaba: QUIÉN está pensando. Antes se
+   veía la cadena encenderse y no se sabía si la había disparado Carlos, mi
+   sesión o el Claude del compañero. Ahora cada IA tiene su núcleo, con su
+   figura y su color de cuenta, y la señal SALE de ahí. Varias pueden estar
+   pensando cosas distintas al mismo tiempo sin que se confundan: el color del
+   destello dice de quién es el pensamiento.
+
+   Los núcleos van en un anillo POR FUERA de la nube de neuronas. Adentro se
+   perdían entre los nodos y parecían neuronas grandes. */
+let NUCLEOS = [];
+let idIA = 0;
+
+function colocarNucleos(){
+  if(!RED || !NUCLEOS.length) return;
+  const xs = RED.nodos.map(o => o.x), ys = RED.nodos.map(o => o.y);
+  const cx = (Math.max(...xs) + Math.min(...xs)) / 2;
+  const cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+  const radio = Math.max(Math.max(...xs) - cx, Math.max(...ys) - cy) + 108;
+  NUCLEOS.forEach((u, i) => {
+    const a = (-Math.PI / 2) + (i / NUCLEOS.length) * Math.PI * 2;
+    u.x = cx + Math.cos(a) * radio;
+    u.y = cy + Math.sin(a) * radio;
+  });
+}
+
+/* De dónde salen las IAs: de La Sala si está configurada, y si no, de una
+   muestra. Una red vacía de núcleos no enseña la idea, y la idea es justo lo
+   que hay que poder ver antes de conectar nada. */
+async function traerIAs(){
+  const P = new URLSearchParams(location.search);
+  const S = (P.get('servidor') || '').replace(/\/$/, '');
+  const sala = (P.get('sala') || '').toUpperCase();
+  if(S && sala){
+    try{
+      const r = await fetch(`${S}/api/sala/${sala}/hilo`,
+        { headers: P.get('llave') ? { 'X-Llave': P.get('llave') } : {} });
+      if(r.ok){
+        const d = await r.json();
+        const gente = Object.values(d.gente || {}).filter(q => q.tipo !== 'humano');
+        if(gente.length) return gente.map(q => ({
+          id:q.id, nombre:q.nombre, familia:q.familia || 'otra',
+          color:q.color || '#AC27FF', pulso:0, x:0, y:0 }));
+      }
+    }catch(e){ /* sin sala, se usa la muestra */ }
+  }
+  return [
+    { id:'cl-1', nombre:'Claude de Carlos', familia:'claude', color:'#AC27FF', pulso:0, x:0, y:0 },
+    { id:'gpt-1', nombre:'Codex',           familia:'gpt',    color:'#AC27FF', pulso:0, x:0, y:0 },
+    { id:'cl-l', nombre:'Claude de Luis',   familia:'claude', color:'#FF7A18', pulso:0, x:0, y:0 },
+    { id:'gem',  nombre:'Gemini',           familia:'gemini', color:'#FF7A18', pulso:0, x:0, y:0 },
+  ];
+}
 
 function armarRed(){
   const c = document.getElementById('lienzo');
@@ -385,6 +468,7 @@ function acomodarRed(vueltas = 260){
     }
   }
   RED.listo = true;
+  colocarNucleos();
   encuadrarRed();
 }
 
@@ -392,9 +476,12 @@ function encuadrarRed(){
   const { c, nodos, vista } = RED;
   const r = c.getBoundingClientRect();
   c.width = r.width * devicePixelRatio; c.height = r.height * devicePixelRatio;
-  const xs = nodos.map(o => o.x), ys = nodos.map(o => o.y);
-  const ancho = Math.max(...xs) - Math.min(...xs) + 150;
-  const alto  = Math.max(...ys) - Math.min(...ys) + 150;
+  /* Los núcleos entran en la cuenta: viven POR FUERA de la nube, así que un
+     encuadre hecho sólo con las neuronas los deja cortados en el borde. */
+  const xs = nodos.map(o => o.x).concat(NUCLEOS.map(u => u.x));
+  const ys = nodos.map(o => o.y).concat(NUCLEOS.map(u => u.y));
+  const ancho = Math.max(...xs) - Math.min(...xs) + 170;
+  const alto  = Math.max(...ys) - Math.min(...ys) + 170;
   vista.k = Math.min(r.width / ancho, r.height / alto, 1.6);
   vista.x = r.width / 2 - ((Math.max(...xs) + Math.min(...xs)) / 2) * vista.k;
   vista.y = r.height / 2 - ((Math.max(...ys) + Math.min(...ys)) / 2) * vista.k;
@@ -404,10 +491,21 @@ function encuadrarRed(){
    Enciende unas neuronas y deja que la señal siga por los enlaces, con
    retardo por salto. Es lo que hace visible lo que el cerebro afirma: que
    un problema se resuelve siguiendo la cadena, no leyendo el índice. */
-function encender(ids, saltos = 2){
+function encender(ids, saltos = 2, deQuien = null){
   if(!RED) return;
+  /* Si no se dice quién piensa, piensa el primero. Con una sola IA en la mesa
+     es lo natural, y evita que la red se vea muerta por no haber escogido. */
+  const ia = deQuien
+    ? NUCLEOS.find(u => u.id === deQuien) || NUCLEOS[0]
+    : NUCLEOS[idIA % (NUCLEOS.length || 1)] || null;
+  const color = ia ? ia.color : '#C77BFF';
+  if(ia){ ia.pulso = 1; ia.pensando = ids.slice(0, 6); }
+
   const frente = ids.map(id => RED.porId.get(id)).filter(Boolean);
-  frente.forEach(o => { o.carga = 1; });
+  /* El HAZ: el camino del núcleo a lo que despertó. Es lo que contesta «quién
+     está pensando esto» sin tener que leer nada. */
+  if(ia) ia.haces = frente.map(o => ({ hacia:o, carga:1 }));
+  frente.forEach(o => { o.carga = 1; o.color = color; });
   let nivel = 0, actual = frente;
   const siguiente = () => {
     if(++nivel > saltos) return;
@@ -416,8 +514,8 @@ function encender(ids, saltos = 2){
       for(const e of RED.enlaces){
         const otro = e.a === o ? e.b : e.b === o ? e.a : null;
         if(!otro || otro.carga > 0) continue;
-        e.carga = 1;
-        otro.carga = Math.max(0.35, 1 - nivel * 0.3);
+        e.carga = 1; e.color = color;
+        otro.carga = Math.max(0.35, 1 - nivel * 0.3); otro.color = color;
         nuevos.push(otro);
       }
     }
@@ -440,9 +538,86 @@ function latir(){
        de que el ojo la registrara y la red parecía estática. */
     for(const o of RED.nodos){ if(o.carga > 0){ o.carga = Math.max(0, o.carga - 0.010); vivo = true; } }
     for(const e of RED.enlaces){ if(e.carga > 0){ e.carga = Math.max(0, e.carga - 0.006); vivo = true; } }
+    for(const u of NUCLEOS){
+      if(u.pulso > 0){ u.pulso = Math.max(0, u.pulso - 0.008); vivo = true; }
+      if(u.haces){
+        for(const h of u.haces) if(h.carga > 0){ h.carga = Math.max(0, h.carga - 0.011); vivo = true; }
+        if(u.haces.every(h => h.carga <= 0)) u.haces = null;
+      }
+    }
+    /* ── la respiración de reposo, sin fundir la batería ──────────────────
+       Los núcleos respiran aunque no pase nada: una red quieta se lee como
+       apagada, y lo que quiere decir es «aquí estoy, esperando».
+
+       PERO eso no puede costar 60 cuadros por segundo para siempre. Dejé el
+       bucle abierto un minuto y es justo el tipo de cosa que en un iPhone se
+       siente como calor en la mano. En reposo se pinta cada ~90 ms —once por
+       segundo, de sobra para una respiración lenta— y sólo se sube a cuadro
+       completo cuando de verdad hay algo encendido. */
+    if(!vivo && NUCLEOS.length){
+      const t = performance.now();
+      if(t - ultimoReposo > 90){ ultimoReposo = t; }
+      else { requestAnimationFrame(paso); return; }
+      vivo = true;
+    }
     if(vivo) requestAnimationFrame(paso); else { pintarRed(); animando = false; }
   };
   requestAnimationFrame(paso);
+}
+
+/* Un color con alfa, aceptando #rgb, #rrggbb o lo que ya venga con alfa. Sin
+   esto había que concatenar hexadecimales a mano y un color de tres dígitos
+   —que los hay en la paleta— salía transparente sin avisar. */
+function conAlfa(color, a){
+  const c = String(color || '#C77BFF').trim();
+  const q = Math.max(0, Math.min(1, a));
+  let h = c.replace('#', '');
+  if(h.length === 3) h = h.split('').map(x => x + x).join('');
+  if(h.length >= 6){
+    const n = parseInt(h.slice(0, 6), 16);
+    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${q})`;
+  }
+  return c;
+}
+
+/* La figura de la familia, dibujada en el canvas desde la MISMA tabla que usa
+   la mesa. Si `marca/figuras.js` no cargó, sale un punto: mejor un punto que
+   una red rota por un adorno. */
+function dibujarFigura(g, familia, cx, cy, tam, color, k){
+  const F = window.FIGURAS_IA;
+  if(!F){
+    g.beginPath(); g.arc(cx, cy, tam * 0.28, 0, Math.PI * 2);
+    g.fillStyle = color; g.fill(); return;
+  }
+  const trozos = F.caminosDe(familia);
+  const e = tam / F.CAJA;
+  g.save();
+  g.translate(cx - tam / 2, cy - tam / 2);
+  g.scale(e, e);
+  g.strokeStyle = color; g.fillStyle = color;
+  g.lineWidth = 2.1; g.lineCap = 'round'; g.lineJoin = 'round';
+  for(const t of trozos){
+    let ruta;
+    if(t.tipo === 'path') ruta = new Path2D(t.d);
+    else{
+      ruta = new Path2D();
+      if(t.tipo === 'circulo') ruta.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+      else ruta.roundRect(t.x, t.y, t.an, t.al, t.r);
+    }
+    if(t.relleno) g.fill(ruta); else g.stroke(ruta);
+  }
+  g.restore();
+}
+
+/* Una placa oscura detrás de un texto. Con fondo plano no hacía falta; con la
+   galaxia detrás, una palabra encima de una estrella brillante desaparece. Se
+   pinta del ancho medido del texto, no de un ancho supuesto. */
+function placa(g, cx, cy, texto, k){
+  const an = g.measureText(texto).width, al = 11 / k, m = 4 / k;
+  g.fillStyle = 'rgba(8,5,14,.66)';
+  g.beginPath();
+  g.roundRect(cx - an/2 - m, cy - al, an + m*2, al + 5/k, 3/k);
+  g.fill();
 }
 
 function pintarRed(){
@@ -457,7 +632,10 @@ function pintarRed(){
     g.beginPath();
     g.moveTo(e.a.x, e.a.y); g.lineTo(e.b.x, e.b.y);
     if(e.carga > 0){
-      g.strokeStyle = `rgba(199,123,255,${0.25 + e.carga * 0.75})`;
+      /* El destello lleva el color de LA IA que lo disparó, no el de la
+         comunidad. Así dos IAs pensando cosas distintas al mismo tiempo se
+         distinguen de un vistazo, que es todo el punto de tener núcleos. */
+      g.strokeStyle = conAlfa(e.color || '#C77BFF', 0.25 + e.carga * 0.75);
       g.lineWidth = (0.7 + e.carga * 2.2) / vista.k;
       g.setLineDash([]);
     } else {
@@ -472,18 +650,79 @@ function pintarRed(){
   for(const o of nodos){
     const r = 4 + Math.min(o.grado, 10) * 0.85;
     const tono = TONOS[(o.n.comunidad || 0) % TONOS.length];
+    /* En reposo manda la COMUNIDAD —de qué habla la neurona—; encendida manda
+       QUIÉN la despertó. Las dos preguntas importan, pero no a la vez. */
+    const vivo = o.carga > 0 ? (o.color || tono) : tono;
     if(o.carga > 0){
       g.beginPath();
-      g.arc(o.x, o.y, r + 9 * o.carga, 0, Math.PI * 2);
-      g.fillStyle = tono + Math.round(o.carga * 60).toString(16).padStart(2, '0');
+      g.arc(o.x, o.y, r + 11 * o.carga, 0, Math.PI * 2);
+      g.fillStyle = conAlfa(vivo, o.carga * 0.3);
       g.fill();
     }
     g.beginPath();
     g.arc(o.x, o.y, r, 0, Math.PI * 2);
-    g.fillStyle = o.carga > 0 ? tono : tono + '88';
+    g.fillStyle = o.carga > 0 ? vivo : conAlfa(tono, 0.55);
     g.fill();
     if(o.n.id === abierta){
       g.strokeStyle = '#E9E4E4'; g.lineWidth = 2 / vista.k; g.stroke();
+    }
+  }
+
+  /* ── los haces: del núcleo a lo que despertó ─────────────────────────────
+     Se dibujan DESPUÉS de las sinapsis y ANTES de los núcleos, para que pasen
+     por debajo de la figura y no la tapen. */
+  for(const u of NUCLEOS){
+    if(!u.haces) continue;
+    for(const h of u.haces){
+      if(h.carga <= 0) continue;
+      g.beginPath();
+      g.moveTo(u.x, u.y);
+      /* Curvo, no recto: seis rectas saliendo del mismo punto se ven como un
+         erizo. La curva las separa y además sugiere que la señal VIAJA. */
+      const mx = (u.x + h.hacia.x) / 2, my = (u.y + h.hacia.y) / 2;
+      const nx = -(h.hacia.y - u.y) * 0.16, ny = (h.hacia.x - u.x) * 0.16;
+      g.quadraticCurveTo(mx + nx, my + ny, h.hacia.x, h.hacia.y);
+      g.strokeStyle = conAlfa(u.color, 0.15 + h.carga * 0.65);
+      g.lineWidth = (0.8 + h.carga * 2.6) / vista.k;
+      g.stroke();
+    }
+  }
+
+  /* ── los núcleos ─────────────────────────────────────────────────────────
+     Cada IA en su lugar, con su figura y el color de su cuenta. En reposo
+     respiran; cuando piensan, se abren en un halo. */
+  const t = performance.now() / 1000;
+  for(const u of NUCLEOS){
+    const respira = 0.5 + 0.5 * Math.sin(t * 1.1 + u.x * 0.01);
+    const R = 25 + u.pulso * 9;
+
+    /* el halo */
+    const halo = g.createRadialGradient(u.x, u.y, R * 0.5, u.x, u.y, R * (2.4 + u.pulso * 1.6));
+    halo.addColorStop(0, conAlfa(u.color, 0.30 + u.pulso * 0.42));
+    halo.addColorStop(1, conAlfa(u.color, 0));
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(u.x, u.y, R * (2.4 + u.pulso * 1.6), 0, Math.PI * 2); g.fill();
+
+    /* el disco */
+    g.beginPath(); g.arc(u.x, u.y, R, 0, Math.PI * 2);
+    g.fillStyle = conAlfa('#0C0714', 0.92); g.fill();
+    g.strokeStyle = conAlfa(u.color, 0.55 + respira * 0.25 + u.pulso * 0.2);
+    g.lineWidth = (1.6 + u.pulso * 1.6) / vista.k;
+    g.stroke();
+
+    dibujarFigura(g, u.familia, u.x, u.y, R * 1.15, u.color, vista.k);
+
+    /* el nombre, sólo cuando hay espacio */
+    if(vista.k > 0.28){
+      g.textAlign = 'center';
+      g.font = `600 ${Math.max(9, 10 / vista.k)}px ui-monospace, monospace`;
+      const nom = u.nombre.slice(0, 20);
+      /* Placa detrás del nombre: sobre la galaxia, el texto suelto se pierde
+         justo donde hay una estrella. Es el mismo problema que ya me cazó la
+         neurona `medir-el-texto-pintado`, pero por fondo en vez de por choque. */
+      placa(g, u.x, u.y + R + 14 / vista.k, nom, vista.k);
+      g.fillStyle = conAlfa('#E9E4E4', 0.7 + u.pulso * 0.3);
+      g.fillText(nom, u.x, u.y + R + 14 / vista.k);
     }
   }
 
@@ -509,7 +748,8 @@ function pintarRed(){
     const caja = { x1:cx - an/2, x2:cx + an/2, y1:cy - al, y2:cy + 3/vista.k };
     if(cajas.some(k => caja.x1 < k.x2 && caja.x2 > k.x1 && caja.y1 < k.y2 && caja.y2 > k.y1)) continue;
     cajas.push(caja);
-    g.fillStyle = `rgba(233,228,228,${o.carga > 0 ? 1 : .5})`;
+    placa(g, cx, cy, t, vista.k);
+    g.fillStyle = `rgba(233,228,228,${o.carga > 0 ? 1 : .62})`;
     g.fillText(t, cx, cy);
   }
 }
@@ -547,14 +787,21 @@ document.getElementById('ficha').addEventListener('click', (e) => {
   refrescar();
 });
 
-function cambiarModo(cual){
+async function cambiarModo(cual){
   const red = cual === 'red';
   document.getElementById('red').hidden = !red;
   document.getElementById('cuerpo').style.display = red ? 'none' : '';
   document.getElementById('mRed').classList.toggle('viva', red);
   document.getElementById('mLista').classList.toggle('viva', !red);
   if(red){
-    if(!RED){ RED = armarRed(); acomodarRed(); }
+    if(!RED){
+      /* Las IAs se traen ANTES de acomodar: los núcleos entran en el encuadre,
+         y acomodar sin ellos deja la red centrada en el lugar equivocado y
+         luego brincando. */
+      if(!NUCLEOS.length) NUCLEOS = await traerIAs();
+      RED = armarRed(); acomodarRed();
+      latir();                       /* que respiren desde el primer momento */
+    }
     else encuadrarRed();
     pintarRed();
     const q = document.getElementById('q').value.trim();
