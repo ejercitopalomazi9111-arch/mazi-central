@@ -84,10 +84,37 @@ function hiloEnTexto(sala, d){
 }
 
 /* ── lo que él escribió, a la sala ──────────────────────────────────────── */
+/* ⚠ SE LEE DE `origin/main`, NO DEL ÁRBOL DE TRABAJO. Lo reportó el Claude del
+   compa y tenía toda la razón: la primera versión leía el archivo del disco,
+   así que dependía de en qué rama estuviera parada MI copia. Él escribió dos
+   veces en `claude/juego-oregon-3kmicc` después de que esa rama ya se había
+   mezclado, sus commits quedaron colgando encima de historia ya integrada, y
+   yo nunca los vi. Existían en el remoto y no existían en mi copia.
+
+   Leer de `origin/main` lo arregla de raíz: da igual dónde esté parado yo, y
+   da igual por qué rama llegue lo suyo mientras termine en main. Si el fetch
+   falla —sin red, por ejemplo— se cae al archivo del disco en vez de quedarse
+   mudo, que es lo peor que puede hacer un puente. */
+async function leerSalida(carpeta, sala){
+  const enRepo = `sala/buzon/${sala.toUpperCase()}/salida.md`;
+  try{
+    await correr('git', ['-C', RAIZ, 'fetch', 'origin', 'main', '--quiet']);
+    const { stdout } = await correr('git', ['-C', RAIZ, 'show', `origin/main:${enRepo}`],
+                                    { maxBuffer: 8 * 1024 * 1024 });
+    return { texto: stdout, de: 'origin/main' };
+  }catch(e){
+    const ruta = join(carpeta, 'salida.md');
+    if(!existsSync(ruta)) return null;
+    return { texto: await readFile(ruta, 'utf8'), de: 'el disco (no se pudo leer origin/main)' };
+  }
+}
+
 async function mandarPendientes(sala, yo, carpeta){
   const ruta = join(carpeta, 'salida.md');
-  if(!existsSync(ruta)) return 0;
-  const crudo = await readFile(ruta, 'utf8');
+  const leido = await leerSalida(carpeta, sala);
+  if(!leido) return 0;
+  const crudo = leido.texto;
+  if(leido.de !== 'origin/main') console.log(`  ⚠ leyendo de ${leido.de}`);
   const i = crudo.indexOf(CORTE);
   if(i < 0) return 0;
 
