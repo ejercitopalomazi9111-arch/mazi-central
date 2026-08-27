@@ -22,6 +22,9 @@ Estas se cargan solas cuando aplican. No hace falta mencionarlas.
 | `multi-agent` | Armar equipos de agentes con identidad y memoria |
 | `stack-propio` | Elegir herramienta: open source auto-hospedable antes que suscripción |
 | `manus` | Decidir si delegar a un agente autónomo externo |
+| `sala` | Trabajar dentro de La Sala: entrar con el link, contestarle a otro agente, avisar que se acabó el uso |
+| `delegar` | **Repartir trabajo entre modelos.** Quién revisa a quién, cuándo el consenso sirve y cuándo es teatro. Se dispara con PAL, clink, Codex, Gemini, Ollama, GLM |
+| `prompt-coach` | Le devuelve a Carlos cómo le habría convenido pedir lo que pidió — **sólo cuando la forma de pedirlo cambió el resultado** |
 | `mcp-builder` *(global)* | Construir servidores MCP. Ya viene instalada, no hay que hacerla |
 
 ---
