@@ -74,10 +74,27 @@ export const aplanar = (areas) => areas.flatMap(a => a.neuronas);
    describe el problema, no los términos técnicos. Quien tiene el bug enfrente
    dice «se ve chiquito en el celular», no «falta el meta viewport» — si
    supiera eso, ya lo habría arreglado. */
+/* ── las muletillas no son palabras de búsqueda ────────────────────────────
+   Salió buscando «qué estilo le pongo al sitio»: la primera respuesta fue una
+   neurona de codificación de caracteres, que no tiene nada que ver. La causa
+   es que `que` mide tres letras y casa con el `sintoma`, la `causa` o el
+   `consejo` de CASI TODA neurona en español — así que la búsqueda le sumaba
+   puntos a todo el corpus por igual y ganaba la que tuviera los campos más
+   largos, no la que hablara del tema.
+
+   No se nota con veinte neuronas; con noventa lo arruina todo. Y las pruebas
+   no lo cazaban porque los casos estaban escritos con palabras con contenido,
+   sin las muletillas con las que de verdad habla una persona. */
+const VACIAS = new Set(['que','con','por','para','como','esta','este','pero','muy',
+                        'los','las','del','una','uno','sin','ver','hay','mas','ya',
+                        'cual','cuales','donde','cuando','pongo','tiene','tengo',
+                        'lo','se','no','si','me','le','al','en','de','la','el','y','a']);
+
 export function buscar(neuronas, texto){
   const q = normal(texto);
   if(!q) return [];
-  const palabras = q.split(/\s+/).filter(p => p.length > 2);
+  const palabras = q.split(/\s+/).filter(p => p.length > 2 && !VACIAS.has(p));
+  if(!palabras.length) return [];
 
   return neuronas.map(n => {
     let puntos = 0;
@@ -109,9 +126,6 @@ const pesoGravedad = (n) => ({ alta:3, media:2, baja:1 })[n.gravedad] || 0;
    Entonces: una señal corta tiene que coincidir COMPLETA; sólo las de seis
    letras para arriba pueden contar como subcadena. */
 const CORTA = 6;
-const VACIAS = new Set(['que','con','por','para','como','esta','este','pero','muy',
-                        'los','las','del','una','uno','sin','ver','hay','mas','ya',
-                        'lo','se','no','si','me','le','al','en','de','la','el','y','a']);
 const palabrasDe = (t) => t.split(/\s+/).filter(p => p.length >= 4 && !VACIAS.has(p));
 
 function parecidas(a, b){

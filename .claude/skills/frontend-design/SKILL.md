@@ -8,6 +8,27 @@ description: Criterio de diseño para que las interfaces se vean hechas por algu
 El hueco más grande que teníamos. Carlos lo señaló solo: *"en computadora se ve feísima la
 página."*
 
+
+## Escoger la estética ANTES de pedirla
+
+Si uno no escoge, el modelo escoge — y lo que escoge es el promedio de internet. Ése es
+exactamente el aspecto que Carlos llama *"se ve de IA"*.
+
+Diez estéticas con **cuándo sí, cuándo no y cómo se portan en teléfono**, en
+[`reference/tendencias.md`](reference/tendencias.md): glassmorfismo, neumorfismo, claymorfismo,
+brutalismo, oscuro con un acento, editorial, cinemático por scroll, bento, degradado con grano
+y retro.
+
+Se decide en tres preguntas: **qué vende el cliente**, **cuánto contenido hay** y **si se ve
+primero en teléfono** — que con Carlos siempre es que sí.
+
+Dos avisos que cambian decisiones:
+- El **neumorfismo** tiene un problema de contraste de nacimiento. Si todo es del mismo color,
+  quien ve poco no distingue qué se puede tocar.
+- El **brutalismo a medias** —bordes finos, sombras suavecitas— no se ve brutalista: se ve
+  descuidado. Se compromete o no se usa.
+
+
 ## El diagnóstico de por qué algo "se ve de IA"
 
 Casi siempre son las mismas seis cosas. Revísalas en este orden — están puestas por cuánto

@@ -74,18 +74,43 @@ UNA cosa mal — y esa es justo la señal.
 
 **Que te encuentren**
 - [ ] `sitemap.xml`
+- [ ] `robots.txt`
 - [ ] Certificado SSL válido
+- [ ] **Título único en cada página.** Cinco páginas con el mismo título es el error de SEO más común y el más fácil de arreglar
+- [ ] Metadescripción por página
+- [ ] **`og:image`** — la imagen que sale al compartir el link. Sin ella, en WhatsApp aparece un rectángulo gris y el link se ve a basura
+- [ ] Texto alternativo en las imágenes *(sirve para buscadores **y** para quien no ve)*
+- [ ] Marcado de esquema (`schema.org`) donde aplique
+- [ ] Enlaces internos entre páginas
+- [ ] Migas de pan, si hay más de dos niveles
+- [ ] Mapa y cómo llegar, si hay dirección física
 - [ ] Velocidad de carga atendida — de verdad, medida, no supuesta
 - [ ] Responsividad de teléfono probada **en un teléfono**
 
+**Que no se rompa la primera impresión**
+- [ ] **Página 404 propia.** El 404 de fábrica es de lo que más barato se arregla y peor se ve
+- [ ] Página de gracias después de enviar un formulario, no un mensajito gris
+- [ ] Llamada a la acción **antes de bajar** — visible sin arrastrar
+- [ ] Llamada a la acción **fija** en teléfono
+
 **Que confíen**
 - [ ] Un "quiénes somos" **de verdad**, con gente y no con frases de relleno
+- [ ] **Foto del equipo.** Cara de persona vence a icono de persona, siempre
+- [ ] Casos de estudio: qué problema resolvimos, no qué tecnología usamos
+- [ ] Reseñas **reales**. Ver la advertencia de abajo
+- [ ] Compromiso de tiempo de respuesta *(«contestamos en menos de 24 h»)*
+- [ ] Política de privacidad
 - [ ] Datos de contacto visibles
 - [ ] Formulario de contacto simple — cada campo de más cuesta gente
 - [ ] Redes enlazadas y **vivas**. Una red muerta resta más de lo que suma
-- [ ] Testimonios, si son reales. Inventados es lo que más rápido quema
-- [ ] Políticas claras (privacidad, términos)
+- [ ] Términos claros
 - [ ] Sellos o certificaciones, **si existen**
+
+> **La advertencia que estas listas no traen, y es la que más caro sale.** Reseñas, testimonios,
+> sellos y logos de clientes inventados o "de relleno mientras" son lo que más rápido quema la
+> reputación de una empresa nueva. Es la misma regla que ya nos aplicamos con ICAMP: **no
+> presumimos clientes que no son clientes.** Si todavía no hay reseñas, la sección no va — un
+> hueco honesto se ve mejor que un elogio falso, y no te puede reventar después.
 
 **Que decidan**
 - [ ] La llamada a la acción repetida, no una sola vez hasta abajo

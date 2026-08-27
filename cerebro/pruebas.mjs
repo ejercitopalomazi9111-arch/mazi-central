@@ -66,6 +66,29 @@ console.log('\n· Buscar como habla una persona');
     else if(donde >= 3) console.log(`      quedó en el lugar ${donde + 1}`);
   }
 
+  /* ── las muletillas ────────────────────────────────────────────────────
+     Los casos de arriba están escritos con palabras con contenido, y por eso
+     no cazaron el defecto: «qué estilo le pongo al sitio» devolvía 84 de 91
+     neuronas con la de codificación de caracteres en primer lugar, porque
+     `que` casa con el síntoma, la causa o el consejo de casi toda neurona en
+     español. Una persona habla con muletillas; las pruebas tienen que hablar
+     como la persona. */
+  for(const [q, esperado] of [
+    ['qué estilo le pongo al sitio',        'decision-escoger-estetica-antes'],
+    /* Ojo con lo que se le pide: «qué tengo que hacer para publicar» se
+       contesta con la lista de ANTES de lanzar, no con la de verificar lo ya
+       publicado. Le puse la segunda y la prueba me corrigió. */
+    ['qué es lo que tengo que hacer para publicar', 'pieza-lista-antes-de-lanzar'],
+  ]){
+    const r = buscar(todas, q);
+    const donde = r.findIndex(n => n.id === esperado);
+    ok(`«${q}» → ${esperado}`, donde >= 0 && donde < 3);
+    if(donde < 0) console.log(`      salió: ${r.slice(0,3).map(n=>n.id).join(', ') || 'nada'}`);
+    else if(donde >= 3) console.log(`      quedó en el lugar ${donde + 1}`);
+  }
+  ok('una pregunta de puras muletillas no devuelve el corpus entero',
+     buscar(todas, 'y qué es lo que hay que ver de esto').length < todas.length * 0.5);
+
   ok('buscar vacío no truena', buscar(todas, '').length === 0);
   ok('algo que no existe devuelve nada',
      buscar(todas, 'zzzqqq').length === 0);
