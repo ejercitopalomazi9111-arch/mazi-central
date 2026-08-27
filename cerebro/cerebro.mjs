@@ -34,10 +34,26 @@ import { fileURLToPath } from 'node:url';
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const NEURONAS = join(AQUI, 'neuronas');
 
-/* Campos que toda neurona debe traer. Si falta uno, no sirve: una neurona sin
-   `porque` es un apunte, y los apuntes no evitan que vuelva a pasar. */
-export const OBLIGATORIOS = ['id', 'titulo', 'sintoma', 'causa', 'porque',
-                             'arreglo', 'comoCazarlo', 'consejo', 'senales'];
+/* ── Tres clases de neurona, y no es un capricho ───────────────────────────
+   Un cerebro que sólo guarda errores deja al que llega en frío reconstruyendo
+   qué ES el proyecto, y luego tirando ese mapa al terminar la sesión. Por eso
+   hay tres:
+
+     error     lo que ya nos costó caro y no queremos volver a pagar
+     pieza     qué es cada parte del proyecto y con qué hay que tener cuidado
+     decision  qué se decidió, POR QUÉ, y qué se descartó
+
+   Las tres piden `porque` y `senales`. Lo demás cambia porque las preguntas
+   son distintas: de un error uno quiere el arreglo; de una pieza, dónde vive
+   y qué la rompe; de una decisión, qué se descartó — que casi siempre vale
+   más que lo que se aprobó. */
+export const CAMPOS = {
+  error:    ['id','titulo','sintoma','causa','porque','arreglo','comoCazarlo','consejo','senales'],
+  pieza:    ['id','titulo','que','donde','porque','ojo','senales'],
+  decision: ['id','titulo','que','porque','alternativas','ojo','senales'],
+};
+export const claseDe = (n) => CAMPOS[n.clase] ? n.clase : 'error';
+export const OBLIGATORIOS = CAMPOS.error;
 
 export async function cargar(){
   const areas = [];
@@ -70,8 +86,8 @@ export function buscar(neuronas, texto){
       if(q.includes(sn)) puntos += 12;                     /* la señal completa */
       else if(palabras.filter(p => sn.includes(p)).length >= 2) puntos += 6;
     }
-    const campos = [['titulo', 5], ['sintoma', 3], ['causa', 2],
-                    ['consejo', 1], ['id', 4], ['area', 3]];
+    const campos = [['titulo', 5], ['sintoma', 3], ['que', 3], ['causa', 2],
+                    ['consejo', 1], ['ojo', 1], ['donde', 2], ['id', 4], ['area', 3]];
     for(const [c, peso] of campos){
       const v = normal(n[c] || '');
       for(const p of palabras) if(v.includes(p)) puntos += peso;
@@ -84,6 +100,32 @@ export function buscar(neuronas, texto){
 }
 
 const pesoGravedad = (n) => ({ alta:3, media:2, baja:1 })[n.gravedad] || 0;
+
+/* ── cuándo dos señales cuentan como la misma ──────────────────────────────
+   Con `includes` a secas todo se conectaba con todo y el grafo salía en UNA
+   sola comunidad, inservible. La causa era bonita: la señal «Â» se normaliza
+   a «a» —se le quita el acento— y «a» es subcadena de casi cualquier frase.
+
+   Entonces: una señal corta tiene que coincidir COMPLETA; sólo las de seis
+   letras para arriba pueden contar como subcadena. */
+const CORTA = 6;
+const VACIAS = new Set(['que','con','por','para','como','esta','este','pero','muy',
+                        'los','las','del','una','uno','sin','ver','hay','mas','ya',
+                        'lo','se','no','si','me','le','al','en','de','la','el','y','a']);
+const palabrasDe = (t) => t.split(/\s+/).filter(p => p.length >= 4 && !VACIAS.has(p));
+
+function parecidas(a, b){
+  if(a === b) return true;
+  /* Subcadena, sólo entre señales largas: con las cortas todo se conecta con
+     todo — la señal «Â» se normaliza a «a» y es subcadena de casi cualquier
+     frase, y el grafo salía en UNA comunidad, inservible. */
+  if(a.length >= CORTA && b.length >= CORTA && (a.includes(b) || b.includes(a))) return true;
+  /* Y dos palabras de contenido en común. Sin esto el descubrimiento casi no
+     disparaba (4 de 49): «se ve chiquito en el celular» y «se ve chiquito en
+     el teléfono» son la misma señal y no compartían subcadena. */
+  const pa = palabrasDe(a), pb = palabrasDe(b);
+  return pa.filter(p => pb.includes(p)).length >= 2;
+}
 
 /* Sin acentos y en minúsculas: nadie escribe «codificación» con tilde cuando
    está apurado buscando por qué se le rompió algo. */
@@ -103,12 +145,12 @@ export function vecinas(neuronas, id){
     .map(n => ({ ...n, porQue: 'declarada' }));
 
   const mias = new Set((yo.senales || []).map(normal));
-  const parecidas = neuronas
+  const similares = neuronas
     .filter(n => n.id !== id && !(yo.vecinas || []).includes(n.id))
     .map(n => {
       const comunes = (n.senales || []).filter(s => {
         const sn = normal(s);
-        return [...mias].some(m => m.includes(sn) || sn.includes(m));
+        return [...mias].some(m => parecidas(m, sn));
       });
       return { n, comunes };
     })
@@ -117,7 +159,7 @@ export function vecinas(neuronas, id){
     .slice(0, 4)
     .map(x => ({ ...x.n, porQue: `comparten señal: ${x.comunes.join(', ')}` }));
 
-  return { yo, vecinas: dichas.concat(parecidas) };
+  return { yo, vecinas: dichas.concat(similares) };
 }
 
 /* ── revisar ───────────────────────────────────────────────────────────────
@@ -129,7 +171,7 @@ export function revisar(areas){
   const fallas = [];
 
   for(const n of todas){
-    for(const c of OBLIGATORIOS){
+    for(const c of CAMPOS[claseDe(n)]){
       const v = n[c];
       if(v == null || (typeof v === 'string' && !v.trim()) ||
          (Array.isArray(v) && !v.length)){
@@ -161,7 +203,7 @@ export async function agregar(neurona, area){
   if(aplanar(areas).some(n => n.id === neurona.id)){
     return { error: `Ya hay una neurona con id "${neurona.id}".` };
   }
-  const faltan = OBLIGATORIOS.filter(c => {
+  const faltan = CAMPOS[claseDe(neurona)].filter(c => {
     const v = neurona[c];
     return v == null || (typeof v === 'string' && !v.trim()) ||
            (Array.isArray(v) && !v.length);
@@ -176,14 +218,110 @@ export async function agregar(neurona, area){
   return { bien: true, en: destino.archivo, total: crudo.neuronas.length };
 }
 
+/* ── el grafo y sus comunidades ────────────────────────────────────────────
+   Las áreas las escogí yo al crear los archivos. Las COMUNIDADES las descubre
+   el grafo: quién habla con quién de verdad. Casi nunca coinciden, y ahí está
+   lo interesante — «charset» vive en despliegue y su comunidad real incluye
+   piezas del sitio y neuronas de diseño, porque es con esas con las que
+   aparece junto en un problema.
+
+   El método es propagación de etiquetas: cada nodo toma la etiqueta más común
+   entre sus vecinos, y se repite hasta que deja de moverse. Es el más simple
+   que funciona y no necesita librerías — que aquí importa, porque el cerebro
+   tiene que poder correr sin instalar nada.
+
+   Se ordena por id antes de propagar para que el resultado sea SIEMPRE el
+   mismo. Un grafo que se reagrupa distinto en cada carga no se puede leer. */
+export function grafo(neuronas){
+  const porId = new Map(neuronas.map(n => [n.id, n]));
+  const enlaces = [];
+  const vistos = new Set();
+
+  const poner = (a, b, tipo, porQue) => {
+    if(a === b) return;
+    const llave = a < b ? `${a}|${b}` : `${b}|${a}`;
+    if(vistos.has(llave)) return;
+    vistos.add(llave);
+    enlaces.push({ de:a, a:b, tipo, porQue });
+  };
+
+  for(const n of neuronas){
+    for(const v of (n.vecinas || [])) if(porId.has(v)) poner(n.id, v, 'dicha', 'la menciona');
+  }
+  /* Y los que nadie escribió: los que se describen con las mismas palabras. */
+  for(let i = 0; i < neuronas.length; i++){
+    for(let j = i + 1; j < neuronas.length; j++){
+      const a = neuronas[i], b = neuronas[j];
+      const sa = (a.senales || []).map(normal), sb = (b.senales || []).map(normal);
+      const comunes = sa.filter(x => sb.some(y => parecidas(x, y)));
+      if(comunes.length) poner(a.id, b.id, 'hallada', `se describen igual: «${comunes[0]}»`);
+    }
+  }
+
+  const vecinasDe = new Map(neuronas.map(n => [n.id, []]));
+  for(const e of enlaces){ vecinasDe.get(e.de).push(e.a); vecinasDe.get(e.a).push(e.de); }
+
+  const orden = [...neuronas].map(n => n.id).sort();
+  const etiqueta = new Map(orden.map(id => [id, id]));
+  for(let vuelta = 0; vuelta < 25; vuelta++){
+    let movio = false;
+    for(const id of orden){
+      const cuenta = new Map();
+      for(const v of vecinasDe.get(id)){
+        const e = etiqueta.get(v);
+        cuenta.set(e, (cuenta.get(e) || 0) + 1);
+      }
+      if(!cuenta.size) continue;
+      /* En empate gana la etiqueta menor por orden alfabético: sin esa regla
+         el resultado cambia entre corridas y el mapa se vuelve inservible. */
+      let mejor = null, mas = -1;
+      for(const [e, c] of [...cuenta].sort((x, y) => String(x[0]).localeCompare(String(y[0])))){
+        if(c > mas){ mas = c; mejor = e; }
+      }
+      if(mejor && mejor !== etiqueta.get(id)){ etiqueta.set(id, mejor); movio = true; }
+    }
+    if(!movio) break;
+  }
+
+  const grupos = new Map();
+  for(const id of orden){
+    const e = etiqueta.get(id);
+    if(!grupos.has(e)) grupos.set(e, []);
+    grupos.get(e).push(id);
+  }
+
+  /* A cada comunidad se le pone de nombre el título de su nodo más conectado:
+     un número no le dice nada a nadie. */
+  const comunidades = [...grupos.entries()]
+    .map(([_, ids]) => {
+      const centro = ids.slice().sort((a, b) =>
+        vecinasDe.get(b).length - vecinasDe.get(a).length || a.localeCompare(b))[0];
+      return { centro, nombre: porId.get(centro).titulo, ids };
+    })
+    .sort((a, b) => b.ids.length - a.ids.length);
+
+  comunidades.forEach((c, i) => c.ids.forEach(id => { porId.get(id).comunidad = i; }));
+
+  return {
+    enlaces,
+    comunidades,
+    grados: Object.fromEntries(neuronas.map(n => [n.id, vecinasDe.get(n.id).length])),
+  };
+}
+
 /* ── armar ─────────────────────────────────────────────────────────────────
    Un solo archivo para servirlo y para que un agente lo baje de un jalón. */
 export async function armar(){
   const areas = await cargar();
+  const todas = aplanar(areas);
+  const g = grafo(todas);            /* marca `comunidad` en cada neurona */
   const todo = {
     hecho: new Date().toISOString(),
-    total: aplanar(areas).length,
+    total: todas.length,
     areas: areas.map(({ archivo, ...a }) => a),
+    enlaces: g.enlaces,
+    comunidades: g.comunidades,
+    grados: g.grados,
   };
   await writeFile(join(AQUI, 'todo.json'), JSON.stringify(todo) + '\n');
   return todo;
@@ -255,7 +393,21 @@ if(process.argv[1] && process.argv[1].endsWith('cerebro.mjs')){
   }
   else if(orden === 'armar'){
     const t = await armar();
-    console.log(`\n  ✓ cerebro/todo.json · ${t.total} neuronas\n`);
+    console.log(`\n  ✓ cerebro/todo.json · ${t.total} neuronas · ${
+      t.enlaces.length} enlaces · ${t.comunidades.length} comunidades\n`);
+  }
+  else if(orden === 'comunidades'){
+    const g = grafo(todas);
+    console.log(`\n  ${g.comunidades.length} comunidades · ${g.enlaces.length} enlaces`);
+    console.log('  (las descubre el grafo, no las escogí yo al crear los archivos)\n');
+    g.comunidades.forEach((c, i) => {
+      console.log(`  ${i + 1}. ${c.nombre}  — ${c.ids.length} neuronas`);
+      c.ids.forEach(id => {
+        const n = todas.find(x => x.id === id);
+        console.log(`       ${String(g.grados[id]).padStart(2)} enlaces · ${n.area.padEnd(12)} ${id}`);
+      });
+      console.log('');
+    });
   }
   else {
     console.log(`
@@ -265,6 +417,7 @@ if(process.argv[1] && process.argv[1].endsWith('cerebro.mjs')){
     area <nombre>                      ${areas.map(a => a.area).join(' · ')}
     ver <id>                           una completa
     vecinas <id>                       a qué otras lleva
+    comunidades                        cómo se agrupan de verdad
     revisar                            ligas rotas y campos faltantes
     armar                              todo.json para servirlo
 `);

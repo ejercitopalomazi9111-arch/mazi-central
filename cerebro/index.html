@@ -106,6 +106,56 @@ body{
   margin-top:3px}
 code{font-family:var(--dato); font-size:.87em; background:var(--alta);
   border:1px solid var(--borde); padding:1px 5px; border-radius:4px}
+/* ── la red ── */
+/* Hermana de `.cuerpo` en la columna, NO una capa sobre todo el documento:
+   con `inset:0` la leyenda quedaba encima del encabezado y tapaba el buscador. */
+.red{flex:1; position:relative; overflow:hidden; min-height:0}
+#lienzo{width:100%; height:100%; display:block; touch-action:none; cursor:grab}
+#lienzo.arrastrando{cursor:grabbing}
+.leyenda{
+  position:absolute; left:0; right:0; top:8px; display:flex; gap:6px;
+  padding:0 10px; overflow-x:auto; scrollbar-width:none; pointer-events:none;
+}
+.leyenda::-webkit-scrollbar{display:none}
+.leyenda span{
+  display:flex; align-items:center; gap:7px; font-family:var(--dato); font-size:9.5px;
+  letter-spacing:.05em; color:var(--tenue); background:rgba(16,10,24,.7);
+  padding:3px 9px; border-radius:99px; white-space:nowrap; flex:0 0 auto;
+  max-width:60vw; overflow:hidden; text-overflow:ellipsis;
+}
+.leyenda i{width:8px; height:8px; border-radius:50%; flex:0 0 auto}
+.ficha{
+  position:absolute; left:10px; right:10px; bottom:calc(58px + env(safe-area-inset-bottom));
+  background:var(--superficie); border:1px solid var(--borde-vivo); border-radius:14px;
+  padding:14px 15px; max-height:44dvh; overflow-y:auto;
+}
+.ficha h3{margin:0 0 3px; font-size:16.5px; line-height:1.25}
+.ficha .m{font-family:var(--dato); font-size:9.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muy-tenue); margin-bottom:10px}
+.ficha p{margin:0 0 9px; font-size:13.5px; color:var(--tenue)}
+.ficha p b{color:var(--hueso); font-weight:600; display:block; font-family:var(--dato);
+  font-size:8.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muy-tenue); margin-bottom:2px}
+.ficha .abrirla{
+  font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:8px 12px; border-radius:9px; cursor:pointer;
+  background:transparent; color:var(--violeta-claro); border:1px solid var(--violeta);
+}
+.modos{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:calc(12px + env(safe-area-inset-bottom)); z-index:20;
+  display:flex; gap:0; background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:99px; overflow:hidden;
+}
+.modo{
+  font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.11em;
+  text-transform:uppercase; padding:9px 18px; cursor:pointer; border:none;
+  background:transparent; color:var(--tenue);
+}
+.modo.viva{background:var(--violeta); color:#fff}
+body{position:relative}
+.cuerpo{position:relative}
+
 .n:focus-visible,.v:focus-visible,.pista:focus-visible{
   outline:2px solid var(--violeta); outline-offset:2px}
 </style>
@@ -121,6 +171,23 @@ code{font-family:var(--dato); font-size:.87em; background:var(--alta);
 </div>
 
 <div class="cuerpo" id="cuerpo"></div>
+
+<!-- ── LA RED ────────────────────────────────────────────────────────────
+     No es un adorno: la lista enseña QUÉ hay, la red enseña CÓMO se llama
+     entre sí — que es lo único que convierte apuntes sueltos en un cerebro.
+     Y las sinapsis se ven encenderse: al buscar o al tocar una, la señal se
+     propaga a sus vecinas, que es exactamente cómo se resuelve un problema
+     de verdad. -->
+<div class="red" id="red" hidden>
+  <canvas id="lienzo"></canvas>
+  <div class="leyenda" id="leyenda"></div>
+  <div class="ficha" id="ficha" hidden></div>
+</div>
+
+<div class="modos">
+  <button class="modo viva" id="mLista">Lista</button>
+  <button class="modo" id="mRed">Red</button>
+</div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -248,12 +315,303 @@ $('q').addEventListener('input', () => {
   filtroArea = null;
   [...$('pistas').children].forEach(p => p.classList.remove('viva'));
   refrescar();
+  /* Si estás en la red, buscar ENCIENDE: las que aciertan prenden y la señal
+     se propaga a sus vecinas. Ver la respuesta expandirse es la mitad del
+     valor de tener esto como red y no como lista. */
+  if(!document.getElementById('red').hidden){
+    const q = $('q').value.trim();
+    if(q) encender(buscar(q).slice(0, 5).map(n => n.id));
+  }
 });
+
+/* ══ LA RED ═══════════════════════════════════════════════════════════════
+   Un grafo dirigido por fuerzas, dibujado en canvas. Las comunidades las
+   calcula el motor —no las escogí yo— y aquí sólo se pintan.
+
+   Lo que de verdad importa: LAS SINAPSIS SE VEN ENCENDERSE. Al buscar o al
+   tocar una neurona, la señal viaja por sus enlaces hasta las vecinas, y de
+   ahí a las de más allá, con retardo. Eso no es adorno: es la forma de la
+   respuesta. Un problema real casi nunca es una neurona — es esa cadena. */
+const TONOS = ['#AC27FF','#3ECF8E','#5AA9E6','#E8B33A','#F0567F','#C77BFF','#4FD1C5','#FF8A5B'];
+let RED = null, animando = false;
+
+function armarRed(){
+  const c = document.getElementById('lienzo');
+  const g = c.getContext('2d');
+  const nodos = TODAS.map((n, i) => {
+    /* Semilla fija: el mismo cerebro se dibuja igual siempre. Un mapa que se
+       reacomoda en cada carga no se puede aprender de memoria. */
+    const a = (i * 2.399963) % (Math.PI * 2), r = 60 + (i % 9) * 34;
+    return { n, x: Math.cos(a) * r, y: Math.sin(a) * r, vx:0, vy:0,
+             carga: 0, grado: (GRADOS[n.id] || 0) };
+  });
+  const porId = new Map(nodos.map(o => [o.n.id, o]));
+  const enlaces = ENLACES
+    .map(e => ({ a: porId.get(e.de), b: porId.get(e.a), tipo: e.tipo, carga: 0 }))
+    .filter(e => e.a && e.b);
+
+  return { c, g, nodos, porId, enlaces, vista:{ x:0, y:0, k:1 }, listo:false };
+}
+
+function acomodarRed(vueltas = 260){
+  const { nodos, enlaces } = RED;
+  for(let v = 0; v < vueltas; v++){
+    const frio = 1 - v / vueltas;
+    for(let i = 0; i < nodos.length; i++){
+      for(let j = i + 1; j < nodos.length; j++){
+        const a = nodos[i], b = nodos[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let d2 = dx*dx + dy*dy || 0.01;
+        const f = 2600 / d2;
+        const d = Math.sqrt(d2);
+        a.vx -= (dx/d)*f; a.vy -= (dy/d)*f;
+        b.vx += (dx/d)*f; b.vy += (dy/d)*f;
+      }
+    }
+    for(const e of enlaces){
+      const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+      const d = Math.hypot(dx, dy) || 0.01;
+      /* Los enlaces escritos a mano jalan más que los descubiertos: son los
+         que alguien afirmó, no los que se parecen. */
+      const largo = e.tipo === 'dicha' ? 78 : 128;
+      const f = (d - largo) * (e.tipo === 'dicha' ? 0.035 : 0.014);
+      e.a.vx += (dx/d)*f; e.a.vy += (dy/d)*f;
+      e.b.vx -= (dx/d)*f; e.b.vy -= (dy/d)*f;
+    }
+    for(const o of nodos){
+      o.vx -= o.x * 0.0022; o.vy -= o.y * 0.0022;   /* al centro */
+      o.x += o.vx * frio; o.y += o.vy * frio;
+      o.vx *= 0.82; o.vy *= 0.82;
+    }
+  }
+  RED.listo = true;
+  encuadrarRed();
+}
+
+function encuadrarRed(){
+  const { c, nodos, vista } = RED;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * devicePixelRatio; c.height = r.height * devicePixelRatio;
+  const xs = nodos.map(o => o.x), ys = nodos.map(o => o.y);
+  const ancho = Math.max(...xs) - Math.min(...xs) + 150;
+  const alto  = Math.max(...ys) - Math.min(...ys) + 150;
+  vista.k = Math.min(r.width / ancho, r.height / alto, 1.6);
+  vista.x = r.width / 2 - ((Math.max(...xs) + Math.min(...xs)) / 2) * vista.k;
+  vista.y = r.height / 2 - ((Math.max(...ys) + Math.min(...ys)) / 2) * vista.k;
+}
+
+/* ── encender · la propagación ────────────────────────────────────────────
+   Enciende unas neuronas y deja que la señal siga por los enlaces, con
+   retardo por salto. Es lo que hace visible lo que el cerebro afirma: que
+   un problema se resuelve siguiendo la cadena, no leyendo el índice. */
+function encender(ids, saltos = 2){
+  if(!RED) return;
+  const frente = ids.map(id => RED.porId.get(id)).filter(Boolean);
+  frente.forEach(o => { o.carga = 1; });
+  let nivel = 0, actual = frente;
+  const siguiente = () => {
+    if(++nivel > saltos) return;
+    const nuevos = [];
+    for(const o of actual){
+      for(const e of RED.enlaces){
+        const otro = e.a === o ? e.b : e.b === o ? e.a : null;
+        if(!otro || otro.carga > 0) continue;
+        e.carga = 1;
+        otro.carga = Math.max(0.35, 1 - nivel * 0.3);
+        nuevos.push(otro);
+      }
+    }
+    actual = nuevos;
+    if(nuevos.length) setTimeout(siguiente, 260);
+  };
+  setTimeout(siguiente, 220);
+  latir();
+}
+
+function latir(){
+  if(animando) return;
+  animando = true;
+  const paso = () => {
+    if(!RED || document.getElementById('red').hidden){ animando = false; return; }
+    pintarRed();
+    let vivo = false;
+    /* El destello del ENLACE dura más que el del nodo a propósito: la sinapsis
+       es lo que hay que alcanzar a ver. Con el apagado parejo se apagaba antes
+       de que el ojo la registrara y la red parecía estática. */
+    for(const o of RED.nodos){ if(o.carga > 0){ o.carga = Math.max(0, o.carga - 0.010); vivo = true; } }
+    for(const e of RED.enlaces){ if(e.carga > 0){ e.carga = Math.max(0, e.carga - 0.006); vivo = true; } }
+    if(vivo) requestAnimationFrame(paso); else { pintarRed(); animando = false; }
+  };
+  requestAnimationFrame(paso);
+}
+
+function pintarRed(){
+  if(!RED || !RED.listo) return;
+  const { c, g, nodos, enlaces, vista } = RED;
+  const P = devicePixelRatio;
+  g.setTransform(1,0,0,1,0,0);
+  g.clearRect(0, 0, c.width, c.height);
+  g.setTransform(vista.k*P, 0, 0, vista.k*P, vista.x*P, vista.y*P);
+
+  for(const e of enlaces){
+    g.beginPath();
+    g.moveTo(e.a.x, e.a.y); g.lineTo(e.b.x, e.b.y);
+    if(e.carga > 0){
+      g.strokeStyle = `rgba(199,123,255,${0.25 + e.carga * 0.75})`;
+      g.lineWidth = (0.7 + e.carga * 2.2) / vista.k;
+      g.setLineDash([]);
+    } else {
+      g.strokeStyle = e.tipo === 'dicha' ? 'rgba(74,49,103,.85)' : 'rgba(74,49,103,.4)';
+      g.lineWidth = (e.tipo === 'dicha' ? 1 : 0.7) / vista.k;
+      g.setLineDash(e.tipo === 'dicha' ? [] : [3/vista.k, 4/vista.k]);
+    }
+    g.stroke();
+  }
+  g.setLineDash([]);
+
+  for(const o of nodos){
+    const r = 4 + Math.min(o.grado, 10) * 0.85;
+    const tono = TONOS[(o.n.comunidad || 0) % TONOS.length];
+    if(o.carga > 0){
+      g.beginPath();
+      g.arc(o.x, o.y, r + 9 * o.carga, 0, Math.PI * 2);
+      g.fillStyle = tono + Math.round(o.carga * 60).toString(16).padStart(2, '0');
+      g.fill();
+    }
+    g.beginPath();
+    g.arc(o.x, o.y, r, 0, Math.PI * 2);
+    g.fillStyle = o.carga > 0 ? tono : tono + '88';
+    g.fill();
+    if(o.n.id === abierta){
+      g.strokeStyle = '#E9E4E4'; g.lineWidth = 2 / vista.k; g.stroke();
+    }
+  }
+
+  /* ── los rótulos, en segunda pasada y sin encimarse ──────────────────────
+     Dibujados junto al nodo se apilaban en el centro y quedaba una mancha
+     ilegible. Es EXACTAMENTE la neurona `medir-el-texto-pintado`, así que se
+     aplica su propio consejo: medir el texto ya pintado y saltar el que
+     choca. Se ordenan por importancia para que si algo se cae, se caiga lo
+     menos importante. */
+  const cajas = [];
+  const conRotulo = nodos
+    .filter(o => o.carga > .35 || o.n.id === abierta || o.grado >= 7)
+    .sort((a, b) => (b.carga - a.carga) || (b.grado - a.grado));
+
+  g.textAlign = 'center';
+  g.font = `${Math.max(9, 10 / vista.k)}px ui-monospace, monospace`;
+  for(const o of conRotulo){
+    const t = o.n.titulo.slice(0, 24);
+    const an = g.measureText(t).width;
+    const al = 12 / vista.k;
+    const r = 4 + Math.min(o.grado, 10) * 0.85;
+    const cx = o.x, cy = o.y - r - 6 / vista.k;
+    const caja = { x1:cx - an/2, x2:cx + an/2, y1:cy - al, y2:cy + 3/vista.k };
+    if(cajas.some(k => caja.x1 < k.x2 && caja.x2 > k.x1 && caja.y1 < k.y2 && caja.y2 > k.y1)) continue;
+    cajas.push(caja);
+    g.fillStyle = `rgba(233,228,228,${o.carga > 0 ? 1 : .5})`;
+    g.fillText(t, cx, cy);
+  }
+}
+
+function nodoEn(px, py){
+  const { nodos, vista } = RED;
+  let cerca = null, min = 22;
+  for(const o of nodos){
+    const d = Math.hypot(px - (o.x * vista.k + vista.x), py - (o.y * vista.k + vista.y));
+    if(d < min){ min = d; cerca = o; }
+  }
+  return cerca;
+}
+
+function verFicha(o){
+  const n = o.n;
+  const f = document.getElementById('ficha');
+  const cual = (n.clase === 'pieza') ? [['Qué es', n.que], ['Dónde vive', n.donde], ['Ojo con', n.ojo]]
+             : (n.clase === 'decision') ? [['Qué se decidió', n.que], ['Por qué', n.porque], ['Qué se descartó', n.alternativas]]
+             : [['Qué se ve', n.sintoma], ['Qué lo causa', n.causa], ['Cómo se arregla', n.arreglo]];
+  f.innerHTML = `<h3>${esc(n.titulo)}</h3>
+    <div class="m">${esc(n.area)} · ${esc(n.clase || 'error')} · ${
+      (GRADOS[n.id]||0)} enlaces</div>
+    ${cual.filter(([,v]) => v).map(([r, v]) =>
+      `<p><b>${r}</b>${conCodigo(v)}</p>`).join('')}
+    <button class="abrirla" data-abrirla="${esc(n.id)}">Verla completa en la lista →</button>`;
+  f.hidden = false;
+}
+
+document.getElementById('ficha').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-abrirla]');
+  if(!b) return;
+  abierta = b.dataset.abrirla;
+  cambiarModo('lista');
+  refrescar();
+});
+
+function cambiarModo(cual){
+  const red = cual === 'red';
+  document.getElementById('red').hidden = !red;
+  document.getElementById('cuerpo').style.display = red ? 'none' : '';
+  document.getElementById('mRed').classList.toggle('viva', red);
+  document.getElementById('mLista').classList.toggle('viva', !red);
+  if(red){
+    if(!RED){ RED = armarRed(); acomodarRed(); }
+    else encuadrarRed();
+    pintarRed();
+    const q = document.getElementById('q').value.trim();
+    if(q) encender(buscar(q).slice(0, 5).map(n => n.id));
+    else if(abierta) encender([abierta]);
+  }
+}
+document.getElementById('mRed').addEventListener('click', () => cambiarModo('red'));
+document.getElementById('mLista').addEventListener('click', () => cambiarModo('lista'));
+
+(function mandosRed(){
+  const c = document.getElementById('lienzo');
+  let arrastra = false, ax = 0, ay = 0, movio = false;
+  c.addEventListener('pointerdown', (e) => {
+    arrastra = true; movio = false; ax = e.clientX; ay = e.clientY;
+    c.classList.add('arrastrando'); c.setPointerCapture(e.pointerId);
+  });
+  c.addEventListener('pointermove', (e) => {
+    if(!arrastra) return;
+    const dx = e.clientX - ax, dy = e.clientY - ay;
+    if(Math.abs(dx) + Math.abs(dy) > 4) movio = true;
+    RED.vista.x += dx; RED.vista.y += dy;
+    ax = e.clientX; ay = e.clientY; pintarRed();
+  });
+  c.addEventListener('pointerup', (e) => {
+    arrastra = false; c.classList.remove('arrastrando');
+    if(movio) return;
+    const r = c.getBoundingClientRect();
+    const o = nodoEn(e.clientX - r.left, e.clientY - r.top);
+    if(o){ abierta = o.n.id; verFicha(o); encender([o.n.id]); }
+    else { document.getElementById('ficha').hidden = true; }
+  });
+  c.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = c.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    const f = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const k = Math.max(.25, Math.min(3, RED.vista.k * f));
+    RED.vista.x = mx - (mx - RED.vista.x) * (k / RED.vista.k);
+    RED.vista.y = my - (my - RED.vista.y) * (k / RED.vista.k);
+    RED.vista.k = k; pintarRed();
+  }, { passive:false });
+  addEventListener('resize', () => { if(RED && !document.getElementById('red').hidden){
+    encuadrarRed(); pintarRed(); } });
+})();
+
+let ENLACES = [], GRADOS = {}, COMUNIDADES = [];
 
 fetch('todo.json').then(r => r.json()).then(d => {
   AREAS = d.areas;
   TODAS = AREAS.flatMap(a => a.neuronas.map(n => ({ ...n, area: a.area })));
-  $('cuantas').textContent = `${d.total} neuronas · ${AREAS.length} áreas`;
+  ENLACES = d.enlaces || []; GRADOS = d.grados || {}; COMUNIDADES = d.comunidades || [];
+  $('cuantas').textContent = `${d.total} neuronas · ${ENLACES.length} enlaces`;
+  /* La leyenda nombra cada comunidad por su neurona más conectada. Un número
+     no le dice nada a nadie. */
+  document.getElementById('leyenda').innerHTML = COMUNIDADES.slice(0, 6).map((c, i) =>
+    `<span><i style="background:${TONOS[i % TONOS.length]}"></i>${esc(c.nombre)}</span>`).join('');
   $('pistas').innerHTML = AREAS.map(a =>
     `<button class="pista" data-area="${esc(a.area)}">${esc(a.nombre)}</button>`).join('');
   $('pistas').addEventListener('click', (e) => {

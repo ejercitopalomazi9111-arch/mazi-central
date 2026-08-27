@@ -7,7 +7,8 @@
    encuentre lo que uno describe con sus palabras, que las ligas apunten a
    nada, o que se pueda meter una neurona a medias.
    ═════════════════════════════════════════════════════════════════════════ */
-import { cargar, aplanar, buscar, vecinas, revisar, agregar, OBLIGATORIOS } from './cerebro.mjs';
+import { cargar, aplanar, buscar, vecinas, revisar, agregar, grafo, claseDe,
+         CAMPOS, OBLIGATORIOS } from './cerebro.mjs';
 
 let bien = 0, mal = 0;
 const ok = (q, cierto) => {
@@ -27,8 +28,12 @@ console.log('\n· Integridad');
 
   ok('todas traen señales en lenguaje de persona',
      todas.every(n => (n.senales || []).length >= 2));
-  ok('todas dicen de dónde salieron',
-     todas.every(n => typeof n.salioDe === 'string' && n.salioDe.length > 3));
+  /* `salioDe` se le pide a los ERRORES: de un bug uno quiere saber dónde nos
+     mordió. A una pieza del proyecto o a una decisión no aplica — ésas no
+     «salieron» de ningún lado, son el proyecto. */
+  const errores = todas.filter(n => claseDe(n) === 'error');
+  ok(`cada error dice dónde nos mordió (${errores.length})`,
+     errores.every(n => typeof n.salioDe === 'string' && n.salioDe.length > 3));
 
   /* Que se llamen entre sí es la mitad del punto: una neurona suelta es un
      apunte, y los apuntes no evitan que vuelva a pasar. */
@@ -76,9 +81,19 @@ console.log('\n· Que se llamen entre sí');
   ok('ninguna vecina es ella misma', !r.vecinas.some(v => v.id === 'renombrar-de-un-lado'));
 
   /* Lo que hace que el cerebro sirva de verdad: descubre parentescos que
-     nadie escribió a mano. */
-  const halladas = r.vecinas.filter(v => v.porQue !== 'declarada');
-  ok('encuentra parecidas por señal, no sólo las declaradas', halladas.length > 0);
+     nadie escribió a mano. Se mide sobre TODO el corpus y no sobre una sola
+     neurona: que una en concreto no tenga parecidas es normal, que ninguna
+     tenga sería que el mecanismo está muerto. */
+  const conHalladas = todas.filter(n => {
+    const v = vecinas(todas, n.id);
+    return !v.error && v.vecinas.some(x => x.porQue !== 'declarada');
+  }).length;
+  /* El número correcto NO es «lo más alto posible». Descubrir de más fue el
+     defecto original: todo se conectó con todo y el grafo salió en una sola
+     comunidad, inservible. Lo que hay que exigir es un rango — que el
+     mecanismo dispare, y que no dispare tanto que deje de significar algo. */
+  ok(`descubre parecidas sin conectar todo con todo (${conHalladas}/${todas.length})`,
+     conHalladas >= 4 && conHalladas <= todas.length * 0.5);
 
   const mala = vecinas(todas, 'no-existe-esta');
   ok('pedir vecinas de una que no existe da error claro', !!mala.error);
@@ -99,6 +114,77 @@ console.log('\n· Que no entre basura');
   const r3 = await agregar(completa, 'area-inventada');
   ok('un área que no existe se rechaza', !!r3.error && /no existe el área/i.test(r3.error));
 }
+
+
+console.log('\n· El mapa del proyecto');
+{
+  const piezas = todas.filter(n => n.clase === 'pieza');
+  const decisiones = todas.filter(n => n.clase === 'decision');
+  ok(`hay piezas del proyecto (${piezas.length})`, piezas.length >= 8);
+  ok(`hay decisiones con su porqué (${decisiones.length})`, decisiones.length >= 4);
+
+  /* Lo que hace que el mapa sirva: cada pieza dice DÓNDE vive y con qué hay
+     que tener cuidado. Sin eso es un índice, y un índice no evita que alguien
+     rompa algo. */
+  ok('cada pieza dice dónde vive', piezas.every(n => n.donde && n.donde.length > 3));
+  ok('cada pieza dice con qué tener cuidado', piezas.every(n => n.ojo && n.ojo.length > 10));
+  ok('cada decisión dice qué se descartó',
+     decisiones.every(n => n.alternativas && n.alternativas.length > 20));
+
+  /* La razón de ser del mapa: que un agente que llega en frío no reconstruya
+     el proyecto leyendo ochocientos archivos. */
+  const casos = [
+    ['dónde vive el sitio y cómo se publica', 'pieza-mazi-central'],
+    ['qué es la sala', 'pieza-sala'],
+    ['por qué el repo es público', 'decision-repos-publicos'],
+    ['podemos usar un servicio externo', 'decision-externos-por-adaptador'],
+    ['ligas se ve mal en computadora', 'pieza-ligas-mazi'],
+  ];
+  for(const [q, esperado] of casos){
+    const r = buscar(todas, q);
+    const donde = r.findIndex(n => n.id === esperado);
+    ok(`«${q}» → ${esperado}`, donde >= 0 && donde < 3);
+    if(donde < 0) console.log(`      salió: ${r.slice(0,3).map(n=>n.id).join(', ') || 'nada'}`);
+  }
+
+  /* Cada clase pide sus propios campos: de un error uno quiere el arreglo, de
+     una pieza dónde vive, de una decisión qué se descartó. */
+  ok('las tres clases piden campos distintos',
+     CAMPOS.error.includes('arreglo') && CAMPOS.pieza.includes('donde') &&
+     CAMPOS.decision.includes('alternativas'));
+  ok('una neurona sin clase cuenta como error', claseDe({ id:'x' }) === 'error');
+}
+
+console.log('\n· El grafo y sus comunidades');
+{
+  const g = grafo(todas);
+  ok(`hay enlaces (${g.enlaces.length})`, g.enlaces.length > 40);
+  ok('ninguno se apunta a sí mismo', !g.enlaces.some(e => e.de === e.a));
+  ok('ninguno está repetido',
+     new Set(g.enlaces.map(e => [e.de, e.a].sort().join('|'))).size === g.enlaces.length);
+  ok('hay enlaces escritos y descubiertos',
+     g.enlaces.some(e => e.tipo === 'dicha') && g.enlaces.some(e => e.tipo === 'hallada'));
+
+  /* El defecto que tuve: la señal «Â» se normaliza a «a», que es subcadena de
+     casi todo, y TODO quedó en una sola comunidad. Si vuelve a pasar, esta
+     prueba lo caza. */
+  ok(`se agrupa en varias comunidades (${g.comunidades.length})`,
+     g.comunidades.length >= 3 && g.comunidades.length <= 15);
+  ok('ninguna comunidad se traga a todas',
+     g.comunidades[0].ids.length < todas.length * 0.6);
+  ok('todas las neuronas caen en alguna comunidad',
+     g.comunidades.reduce((s, c) => s + c.ids.length, 0) === todas.length);
+  ok('cada comunidad se llama como su neurona más conectada',
+     g.comunidades.every(c => c.nombre && c.centro && c.ids.includes(c.centro)));
+
+  /* Un grafo que se reagrupa distinto en cada carga no se puede leer ni
+     aprender de memoria. */
+  const otra = grafo(todas);
+  ok('el agrupamiento es el mismo cada vez',
+     JSON.stringify(g.comunidades.map(c => c.ids)) ===
+     JSON.stringify(otra.comunidades.map(c => c.ids)));
+}
+
 
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

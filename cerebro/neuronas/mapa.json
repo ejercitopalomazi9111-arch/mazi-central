@@ -1,0 +1,172 @@
+{
+  "area": "mapa",
+  "nombre": "El mapa del proyecto",
+  "que": "Qué es cada pieza, dónde vive, de qué depende y con qué hay que tener cuidado. Para que nadie tenga que reconstruirlo leyendo ochocientos archivos.",
+  "neuronas": [
+    {
+      "id": "pieza-mazi-central",
+      "clase": "pieza",
+      "titulo": "mazi-central · el repo y el sitio",
+      "que": "El repositorio principal de Grupo Mazi y, al mismo tiempo, el sitio que se publica. Un worker de Cloudflare sirve `dist/`, que arma `build.mjs`.",
+      "donde": "raíz del repo · build.mjs · wrangler.jsonc",
+      "porque": "Se sirve `dist/` y NO la raíz porque servir la raíz publica todo lo que hay en el repo — incluido `.claude/`, el `CLAUDE.md` con cosas del negocio y el código de los servidores. La lista de lo que sí va está a la vista en `build.mjs`.",
+      "ojo": "El worker manda `text/html` SIN charset y con `nosniff`. Toda página que se agregue necesita su propio `<meta charset>` en los primeros 1024 bytes, y su viewport.",
+      "senales": ["dónde vive el sitio", "cómo se publica", "qué se sube", "build"],
+      "vecinas": ["charset-que-no-manda-el-servidor", "falta-el-viewport", "pieza-sala", "pieza-cerebro", "decision-repos-publicos"]
+    },
+    {
+      "id": "pieza-sala",
+      "clase": "pieza",
+      "titulo": "La Sala · la mesa de dos cuentas",
+      "que": "Donde se juntan personas y agentes de IA de cuentas distintas. Un Durable Object por sala guarda el hilo y transmite en vivo; la mesa (`sala/index.html`) sólo lo pinta.",
+      "donde": "sala/index.html · sala/servidor/",
+      "porque": "Dos cuentas de Claude no se pueden hablar por ningún medio que exista, así que el puente lo ponemos nosotros. Y el instructivo lo sirve el propio servidor para que no se desactualice en silencio.",
+      "ojo": "Es un proyecto de Cloudflare APARTE. Meterlo dentro del proyecto del sitio ya tumbó dos despliegues una vez. Y el freno de vueltas es lo único que impide que dos agentes se coman el saldo del mes.",
+      "senales": ["la sala", "la mesa", "dos claude", "trabajar con otro agente", "chat de agentes"],
+      "vecinas": ["servidor-dentro-del-sitio", "cada-mensaje-es-un-turno", "discusion-sin-freno", "pieza-mazi-central", "decision-link-no-cerradura"]
+    },
+    {
+      "id": "pieza-cerebro",
+      "clase": "pieza",
+      "titulo": "El Cerebro · esto que estás leyendo",
+      "que": "Memoria de errores y mapa del proyecto. Se busca describiendo el problema con palabras de persona, y las neuronas se llaman entre sí.",
+      "donde": "cerebro/ · neuronas en JSON, motor en cerebro.mjs, pantalla en index.html",
+      "porque": "Contexto barato. Cada sesión nueva empieza sin saber nada; sin esto, cada semana se vuelve a pagar la misma explicación. Y sin el mapa, cada agente reconstruye cómo funciona el proyecto y luego lo tira.",
+      "ojo": "`todo.json` se arma con `node cerebro/cerebro.mjs armar`. Si agregas neuronas y no armas, la pantalla y los agentes siguen viendo lo viejo.",
+      "senales": ["el cerebro", "la red neuronal", "memoria", "qué ya sabemos", "contexto"],
+      "vecinas": ["pieza-mazi-central", "decision-neuronas-se-llaman"]
+    },
+    {
+      "id": "pieza-reportes",
+      "clase": "pieza",
+      "titulo": "Reportes y credenciales",
+      "que": "Genera reportes escolares y credenciales imprimibles, con QR al perfil de habilidades. 101 pruebas dentro de la propia página.",
+      "donde": "reportes/",
+      "porque": "Se imprime de verdad, así que la medida importa: hay pruebas que renderizan a PDF y decodifican los QR a 300 y 600 dpi para comprobar que se pueden leer en papel.",
+      "ojo": "Los ajustes de impresión se guardan DENTRO de cada reporte. Cambiar un defecto no toca los que ya existen: hace falta migrar al cargar.",
+      "senales": ["reportes", "credenciales", "imprimir", "qr", "boletas"],
+      "vecinas": ["ajuste-guardado-por-documento", "bandera-global-primera-vez"]
+    },
+    {
+      "id": "pieza-avisos",
+      "clase": "pieza",
+      "titulo": "Avisos del grupo",
+      "que": "Carlos escribe los pendientes de su grupo y sale una imagen lista para el chat, con el formato de la escuela e icono por materia y por tipo.",
+      "donde": "avisos/",
+      "porque": "Las materias y los maestros salen de su horario real, no de una lista inventada. Por eso sirve el primer día en vez de pedir que se configure.",
+      "ojo": "Usa la fuente Mazi por `@font-face` y hay que esperar a `document.fonts.load()` antes de dibujar, o sale con la de respaldo.",
+      "senales": ["avisos", "pendientes del grupo", "tareas de la escuela"],
+      "vecinas": ["pieza-marca", "medir-el-texto-pintado"]
+    },
+    {
+      "id": "pieza-ligas-mazi",
+      "clase": "pieza",
+      "titulo": "Ligas Mazi · la pieza comercial más fuerte",
+      "que": "Plataforma de ligas de baloncesto: cuentas reales, marcador en vivo, cartas de jugador. Corre con Supabase.",
+      "donde": "ligas-mazi/ · un monolito de más de 5,000 líneas",
+      "porque": "Es la prueba comercial del portafolio: tiene cuentas, pagos y privacidad de menores, o sea todo lo que un cliente pregunta.",
+      "ojo": "Está diseñada SÓLO para teléfono; en escritorio nada más se centró y se ve una tarjeta con forma de celular flotando en negro. No es pulido: falta un layout de escritorio.",
+      "senales": ["ligas", "baloncesto", "supabase", "se ve mal en computadora"],
+      "vecinas": ["prueba-de-un-solo-caso", "pensar-en-la-persona", "no-cabe-legible"]
+    },
+    {
+      "id": "pieza-herramientas",
+      "clase": "pieza",
+      "titulo": "herramientas/ · lo que usamos para construir",
+      "que": "Los ojos y las manos: `captura.mjs` abre una URL y saca foto, `navegador.mjs` maneja la pantalla, `acta.mjs` convierte markdown a PDF con avatares, `tipos.mjs` y `fuente.mjs` hacen tipografías, `vectorizar.mjs` pasa PNG a SVG.",
+      "donde": "herramientas/",
+      "porque": "Regla de la casa: si no existe la herramienta, se construye la herramienta. Y regla §3.8: ver la pantalla antes de decir que quedó — para eso existe `captura.mjs`.",
+      "ojo": "El navegador sin cabeza de este contenedor NO sale a internet por el proxy. Sirve contra `127.0.0.1`, no contra el sitio publicado.",
+      "senales": ["cómo saco una captura", "ver la pantalla", "herramientas propias", "acta en pdf"],
+      "vecinas": ["ver-la-pantalla", "verificar-lo-publicado", "pieza-mazi-central"]
+    },
+    {
+      "id": "pieza-campana",
+      "clase": "pieza",
+      "titulo": "campana/ · la campaña de la prepa",
+      "que": "Los seis documentos de la candidatura de Carlos al comité estudiantil: propuestas, estructura, identidad, convocatoria, mapa de pendientes y materiales.",
+      "donde": "campana/ · se publica en /campana/",
+      "porque": "Se movió de artifacts al sitio porque las ligas entre documentos no abrían dentro del visor. Como páginas normales se abren de un toque.",
+      "ojo": "Carlos dijo «ya luego lo borro». Se quita con la carpeta y una línea de `build.mjs`. Y el repo es público: ahí está toda su estrategia.",
+      "senales": ["campaña", "presidencia", "comité estudiantil", "las nueve"],
+      "vecinas": ["ventana-nueva-bloqueada", "charset-que-no-manda-el-servidor", "decision-repos-publicos"]
+    },
+    {
+      "id": "pieza-juegos",
+      "clase": "pieza",
+      "titulo": "Guerra de Puercos y su servidor de salas",
+      "que": "El juego de cartas de la amiga de Carlos, con las reglas en `motor.js` aparte de la pantalla, y un servidor de salas para jugar a distancia.",
+      "donde": "juegos/guerra-de-puercos/ · juegos/servidor/",
+      "porque": "El motor está aparte de la pantalla para poder probarlo contra los ejemplos del propio reglamento. El servidor manda porque si la partida viviera en los teléfonos, cualquiera que abra las herramientas del navegador ganaría siempre.",
+      "ojo": "El proyecto de Cloudflare `puercos` NO está creado, así que el modo a distancia responde 404. Falta que lo cree Carlos.",
+      "senales": ["puercos", "juego de cartas", "jugar a distancia", "404 del juego"],
+      "vecinas": ["servidor-dentro-del-sitio", "pieza-sala"]
+    },
+    {
+      "id": "pieza-marca",
+      "clase": "pieza",
+      "titulo": "La marca: la paloma y la tipografía",
+      "que": "El logo vectorizado (`marca/logo/paloma.svg`), el logotipo como fuente real (`sitio/fuente/mazi.woff2`) y la mesa de fotografía que genera los archivos de uso diario.",
+      "donde": "marca/ · sitio/fuente/",
+      "porque": "El logo NO lo dibuja un modelo de imagen: se compone. Reconstruirlo generando costó veinte rondas y lo bueno salió de vectorizar, no de generar. Un modelo no repite dos veces la misma paloma ni acierta el violeta medido, y una marca que cambia no es una marca.",
+      "ojo": "Lo que sí se puede generar es una placa de fondo, y encima se compone el logo real.",
+      "senales": ["el logo", "la paloma", "la fuente mazi", "los colores de la casa"],
+      "vecinas": ["pieza-avisos", "color-sin-forma"]
+    },
+    {
+      "id": "decision-repos-publicos",
+      "clase": "decision",
+      "titulo": "Los repos se quedan públicos · decidido por Carlos",
+      "que": "`mazi-central` y `torre-infinita` siguen públicos, y Torre Infinita se queda como está.",
+      "porque": "Carlos: «no tiene tráfico y no es razón de demanda, no gastemos tiempo ni recursos en eso ni le muevas; además yo lo juego con frecuencia». El análisis legal sigue siendo correcto para el SITIO DE LA EMPRESA; lo que él decidió es que el riesgo real hoy no justifica el trabajo.",
+      "alternativas": "Se consideró volverlos privados y revestir Torre Infinita con arte de licencia abierta. Lo segundo se descartó porque las mecánicas de captura de criaturas también están cubiertas por patentes, así que revestir el arte tapaba un flanco y dejaba el otro abierto.",
+      "ojo": "NO volver a proponerlo. Está cerrado. Pero sí vale recordar que todo lo que se commitea es legible por cualquiera.",
+      "senales": ["repo público", "torre infinita", "hacerlo privado", "riesgo legal"],
+      "vecinas": ["pieza-mazi-central", "pieza-campana"]
+    },
+    {
+      "id": "decision-link-no-cerradura",
+      "clase": "decision",
+      "titulo": "El link de la sala es un link, no una cerradura",
+      "que": "Sin `LLAVES` configuradas, quien tenga el link entra y escribe.",
+      "porque": "Es lo que permite que el agente del compañero se meta SOLO el primer día. Si entrar exigiera configurar una llave a mano, ya no se mete solo: lo mete su dueño, que es justo lo que no queremos.",
+      "alternativas": "Se consideró exigir llave desde el principio. Se descartó porque mata la promesa central —«le pasas un link y ya»— a cambio de una seguridad que para dos amigos no hace falta todavía.",
+      "ojo": "Hay que decirlo así, sin adornarlo. Llamarle seguridad sería mentir. El día que haga falta, se pone la llave con un comando y se cierra sin tocar código.",
+      "senales": ["es seguro", "quién puede entrar", "llaves de la sala"],
+      "vecinas": ["pieza-sala", "mensaje-de-otro-son-datos"]
+    },
+    {
+      "id": "decision-neuronas-se-llaman",
+      "clase": "decision",
+      "titulo": "Las neuronas se llaman entre sí, y por eso no es una lista",
+      "que": "Cada neurona apunta a otras, escritas a mano y descubiertas por señales compartidas.",
+      "porque": "Un problema real casi nunca es una neurona: es una cadena. «No se pinta y no hay error» lleva a un renombre, que lleva a que las pruebas no cubren la costura, que lleva a verificar lo publicado. Ese camino es TODO el valor; una lista alfabética no lo enseña.",
+      "alternativas": "Se consideró un documento largo por área. Se descartó porque nadie lee un documento largo con un bug enfrente: busca, y quiere que lo siguiente aparezca solo.",
+      "ojo": "Una neurona sin vecinas es un apunte suelto. Al agregar una, ligarla.",
+      "senales": ["por qué neuronas", "cómo se relacionan", "grafo"],
+      "vecinas": ["pieza-cerebro"]
+    },
+    {
+      "id": "decision-externos-por-adaptador",
+      "clase": "decision",
+      "titulo": "LA REGLA: conectar sí, depender no",
+      "que": "Todo servicio externo entra por un adaptador nuestro. Los datos son nuestros y en formato nuestro.",
+      "porque": "Si mañana sube de precio, se cae o nos cierran la cuenta, se cambia el adaptador y no el negocio.",
+      "alternativas": "Y el matiz que puso Carlos: la regla es destino, no peaje. Si la herramienta propia no existe y construirla ahí mismo cuesta más que el trabajo que se está haciendo, se anota en `herramientas/PENDIENTES.md`, se resuelve hoy con el externo, y se construye después.",
+      "ojo": "Donde la regla se topa con pared y hay que decirlo: facturas CFDI (el SAT exige un PAC), cobros con tarjeta, tiendas de apps y redes sociales. En todos, el externo queda abajo y reemplazable.",
+      "senales": ["podemos usar", "hay una librería", "servicio externo", "suscripción"],
+      "vecinas": ["pieza-mazi-central", "pieza-sala"]
+    },
+    {
+      "id": "decision-html-de-una-pieza",
+      "clase": "decision",
+      "titulo": "Un archivo HTML autónomo, sin build ni CDN",
+      "que": "La entrega recomendada es un solo archivo que se abre y funciona.",
+      "porque": "Es lo que mejor le funciona a Carlos en el teléfono, y el día que se caiga el hosting el archivo sigue abriendo desde el disco.",
+      "alternativas": "Se consideró React por default. Carlos lo corrigió: es recomendación, no ley. React está bien cuando el proyecto lo pide.",
+      "ojo": "Un HTML de una sola pieza no tiene compilador que cache errores. Extrae el `<script>` y pásale `node --check` en cada edición grande.",
+      "senales": ["con qué lo hago", "react o no", "un solo archivo"],
+      "vecinas": ["funcion-duplicada", "pieza-mazi-central"]
+    }
+  ]
+}
