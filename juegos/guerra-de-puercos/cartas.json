@@ -717,5 +717,10 @@
    "nivel": "C",
    "arte": "arte/cartas/102-saurio.jpeg"
   }
+ ],
+ "nota": "Los dos «Troll» (048 y 088) son DOS CARTAS DISTINTAS con el mismo nombre, y es a propósito: una es el troll de internet y la otra el de mitología. Ahí está el chiste. Se tratan igual y no se corrige ninguna. Decisión de la autora, dicha por Carlos.",
+ "duplicados_reales": [
+  "Goku (023 y 047)",
+  "Terremoto (024 y 063)"
  ]
 }

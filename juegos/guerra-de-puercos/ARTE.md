@@ -5,6 +5,10 @@ que no son cartas. Llegaron a la raíz del repositorio con nombres de UUID
 (`0567c4bd-e7c7-….jpeg`), que es como los deja la subida por la web de GitHub.
 Aquí quedaron ordenados y catalogados.
 
+> **Este juego es de la amiga de Carlos, no nuestro.** Se ordena y se cataloga
+> para que se pueda trabajar con él; **no se le cambia nada al diseño**. Si algo
+> parece un error, se pregunta antes de tocarlo — ya pasó una vez y no lo era.
+
 ## Dónde está cada cosa
 
 | Carpeta | Qué hay |
@@ -16,7 +20,7 @@ Aquí quedaron ordenados y catalogados.
 ## Qué dice el catálogo
 
 **100 cartas únicas** en 102 archivos, que es exactamente lo que promete la
-caja. La cuenta cierra porque hay dos duplicados exactos.
+caja. La cuenta cierra porque hay dos archivos repetidos.
 
 | Nivel | Cuántas |
 |---|---|
@@ -30,26 +34,30 @@ caja. La cuenta cierra porque hay dos duplicados exactos.
 
 Los puntos van de **16** (*Normal*) a **100** (*Shin Godzilla*).
 
-## Tres cosas que salieron al catalogar
+## Los dos «Troll» son a propósito
 
-1. **`Goku` está dos veces** (023 y 047) con los mismos 98 pts y nivel S. Es el
-   mismo archivo subido dos veces.
-2. **`Terremoto` está dos veces** (024 y 063), 69 pts nivel B las dos. Igual.
-3. **`Troll` está dos veces con valores DISTINTOS**: la 048 vale 53 y es nivel C,
-   la 088 vale 56 y es nivel B. Éste no es un duplicado: son dos cartas que se
-   llaman igual y no valen lo mismo. **Hay que decidir cuál se queda**, porque
-   en la mesa dos cartas con el mismo nombre y distinto valor se discuten.
+La carta 048 vale 53 y es nivel C; la 088 vale 56 y es nivel B. **No es un
+error y no se corrige:** son dos cartas distintas que se llaman igual —una es
+el troll de internet y la otra el de mitología—, y ahí está el chiste. Se
+tratan igual, con su mismo nombre.
 
-## Por qué el arte NO se publica
+Queda escrito aquí porque a primera vista parece un defecto y alguien lo va a
+querer «arreglar». Yo lo reporté como defecto y Carlos me corrigió.
 
-`build.mjs` lo deja fuera a propósito, y la razón chica es que son ~55 MB.
+**Repetidos de verdad**, éstos sí son el mismo archivo subido dos veces:
 
-La grande: entre las 100 hay Pacman, Kirby, Goku, Mario, Sonic, Bugs Bunny,
-Scooby, Roblox, Minecraft, Paw Patrol, Godzilla, Alien, Terminator, Transformers,
-Bob Esponja, He-Man, Rick y Morty y una veintena más de marcas que no son
-nuestras. Colgarlas del dominio de una empresa que vende servicios es el mismo
-flanco por el que Torre Infinita salió del sitio (§7 del CLAUDE.md) — y ahí ni
-siquiera había una caja que dice «100 CARTAS» con un precio detrás.
+- `Goku` — 023 y 047, ambos 98 pts nivel S
+- `Terremoto` — 024 y 063, ambos 69 pts nivel B
 
-El repositorio sí las guarda: son el material de trabajo del juego y el catálogo
-se arma con ellas. Publicarlas es otra decisión, y es de Carlos y de su amiga.
+Son los dos que hacen que 102 archivos den 100 cartas.
+
+## El arte se queda en el repositorio, no en el sitio
+
+`build.mjs` deja fuera `juegos/guerra-de-puercos/arte/`: son ~55 MB que el
+sitio no usa, y además **el juego no es de Grupo Mazi**. Colgarlo del dominio
+de la empresa sería publicar el proyecto de alguien más sin que nadie lo haya
+pedido.
+
+Sobre las marcas que aparecen en las cartas —hay bastantes que no son de la
+casa—: **quedan como están**. Es su proyecto y Carlos habla con ella
+directamente. Aquí no se decide nada de eso.
