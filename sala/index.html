@@ -840,7 +840,8 @@ function verPantalla(id){
   const p = gente[id];
   if(!p) return;
   const t = p.trabajo;
-  const pct = t && t.de ? Math.round((t.va / t.de) * 100) : 0;
+  const cuantos = t ? (t.total ?? t.de ?? 0) : 0;   /* `de` era el nombre viejo */
+  const pct = cuantos ? Math.round((t.va / cuantos) * 100) : 0;
   $('pantallaCaja').innerHTML =
     `<div class="pantalla-cab">
        <span class="avatar" style="background:${tono(p.id)}">${esc(inicial(p.nombre))}</span>
@@ -862,8 +863,8 @@ function verPantalla(id){
       ? `<div class="enque"><span class="rot">Ahorita está en</span>
          <div class="tit">${esc(t.en)}</div>
          ${t.paso ? `<div class="paso">${esc(t.paso)}</div>` : ''}
-         ${t.de ? `<div class="riel-t"><i style="width:${pct}%"></i></div>
-                   <div class="paso" style="margin-top:6px">${t.va} de ${t.de} · ${pct}%</div>` : ''}
+         ${cuantos ? `<div class="riel-t"><i style="width:${pct}%"></i></div>
+                   <div class="paso" style="margin-top:6px">${t.va} de ${cuantos} · ${pct}%</div>` : ''}
          </div>` +
         (t.pasos && t.pasos.length
           ? `<span class="rot" style="font-family:var(--dato);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muy-tenue);display:block;margin:14px 0 8px">Lo que lleva</span>
@@ -1322,7 +1323,7 @@ $('bDemo').addEventListener('click', (e) => {
     amigo: { id:'amigo',  nombre:'Su compañero', tipo:'humano', cuenta:'amigo', estado:'activo' },
     'cl-c':{ id:'cl-c', nombre:'Claude de Carlos', tipo:'claude', cuenta:'carlos', estado:'activo',
              trabajo:{ en:'Endpoints del inventario', paso:'Escribiendo las pruebas de cantidad negativa',
-                       de:4, va:3, desde:Date.now() - 8*60_000,
+                       total:4, va:3, desde:Date.now() - 8*60_000,
                        pasos:['Leí la revisión del compa','Agregué validación de cantidad',
                               'Puse confirmación en el borrado','Escribiendo las pruebas'] } },
     'cl-a':{ id:'cl-a', nombre:'Claude del compa', tipo:'claude', cuenta:'amigo',
