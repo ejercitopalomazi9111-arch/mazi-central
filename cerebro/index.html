@@ -160,10 +160,44 @@ code{font-family:var(--dato); font-size:.87em; background:var(--alta);
   max-width:60vw; overflow:hidden; text-overflow:ellipsis;
 }
 .leyenda i{width:8px; height:8px; border-radius:50%; flex:0 0 auto}
+/* ── LA FICHA GRANDE · queda DETRÁS, y ahora a propósito ───────────────────
+   Estaba detrás del lienzo sin querer: la red se le dibujaba encima y no se
+   podía leer una sola línea. Carlos la vio y decidió algo mejor que quitarla:
+   «soy partícipe de que eso se quede así, pero que salga el mismo que sale en
+   el fondo pero en chiquito y hasta el frente para poder verlo».
+
+   Así que la grande se queda como AMBIENTE —da la sensación de que la neurona
+   se abre dentro de la red— y deja de estorbar: no recibe toques y baja de
+   opacidad para que la red siga siendo lo que se ve. Lo que se LEE es la
+   chiquita de abajo. */
 .ficha{
   position:absolute; left:10px; right:10px; bottom:calc(58px + env(safe-area-inset-bottom));
-  background:var(--superficie); border:1px solid var(--borde-vivo); border-radius:14px;
-  padding:14px 15px; max-height:44dvh; overflow-y:auto;
+  border-radius:14px; padding:14px 15px; max-height:44dvh; overflow:hidden;
+  z-index:0; opacity:.5; pointer-events:none;
+}
+.ficha .abrirla{ display:none }        /* el botón vive en la chiquita */
+
+/* ── LA FICHA CHIQUITA · lo que de verdad se lee ─────────────────────────── */
+.ficha-chica{
+  position:absolute; left:10px; right:10px; z-index:20;
+  bottom:calc(58px + env(safe-area-inset-bottom));
+  background:rgba(16,10,24,.93); border:1px solid var(--borde-vivo);
+  border-radius:14px; padding:11px 13px; max-height:34dvh; overflow-y:auto;
+  backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);
+  box-shadow:0 12px 34px rgba(0,0,0,.6);
+}
+.ficha-chica h3{margin:0 0 2px; font-size:13.5px; line-height:1.3}
+.ficha-chica .m{font-size:9px; letter-spacing:.12em}
+.ficha-chica p{font-size:11.5px; line-height:1.5; margin:6px 0 0}
+.ficha-chica p b{display:block; font-size:8.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue); margin-bottom:1px}
+.ficha-chica code{font-size:10.5px}
+.ficha-chica .abrirla{display:block; margin-top:9px; font-size:10.5px}
+/* La X, porque en teléfono cerrar picando el vacío es una apuesta: el dedo casi
+   siempre cae sobre otra neurona y abre la siguiente en vez de cerrar. */
+.ficha-chica .cerrar{
+  position:absolute; top:6px; right:8px; width:28px; height:28px; border:0;
+  background:none; color:var(--muy-tenue); font-size:17px; cursor:pointer;
 }
 .ficha h3{margin:0 0 3px; font-size:16.5px; line-height:1.25}
 .ficha .m{font-family:var(--dato); font-size:9.5px; letter-spacing:.1em;
@@ -231,7 +265,8 @@ body{position:relative}
     <button data-zoom="centrar" title="Ver todo">⤢</button>
   </div>
   <div class="leyenda" id="leyenda"></div>
-  <div class="ficha" id="ficha" hidden></div>
+  <div class="ficha" id="ficha" hidden aria-hidden="true"></div>
+  <div class="ficha-chica" id="fichaChica" hidden></div>
 </div>
 
 <div class="modos">
@@ -866,9 +901,22 @@ function verFicha(o){
       `<p><b>${r}</b>${conCodigo(v)}</p>`).join('')}
     <button class="abrirla" data-abrirla="${esc(n.id)}">Verla completa en la lista →</button>`;
   f.hidden = false;
+
+  /* La misma ficha otra vez, chiquita y al frente. Se arma del MISMO html a
+     propósito: si mañana cambia lo que enseña una neurona, cambia en las dos
+     sin que nadie se acuerde de tocar la segunda. */
+  const ch = document.getElementById('fichaChica');
+  ch.innerHTML = '<button class="cerrar" aria-label="Cerrar">✕</button>' + f.innerHTML;
+  ch.hidden = false;
 }
 
-document.getElementById('ficha').addEventListener('click', (e) => {
+function cerrarFicha(){
+  document.getElementById('ficha').hidden = true;
+  document.getElementById('fichaChica').hidden = true;
+}
+
+document.getElementById('fichaChica').addEventListener('click', (e) => {
+  if(e.target.closest('.cerrar')) return cerrarFicha();
   const b = e.target.closest('[data-abrirla]');
   if(!b) return;
   abierta = b.dataset.abrirla;
@@ -924,7 +972,7 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
     const r = c.getBoundingClientRect();
     const o = nodoEn(e.clientX - r.left, e.clientY - r.top);
     if(o){ abierta = o.n.id; verFicha(o); encender([o.n.id]); }
-    else { document.getElementById('ficha').hidden = true; }
+    else { cerrarFicha(); }
   });
   /* ── EL PELLIZCO ─────────────────────────────────────────────────────────
      Faltaba, y por eso «no puedo hacer zoom en la red neuronal»: lo único que
