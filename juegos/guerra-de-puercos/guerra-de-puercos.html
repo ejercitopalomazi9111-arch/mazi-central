@@ -206,6 +206,72 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
 .cortina h2{font-size:clamp(26px,9vw,40px); margin:0 0 6px; text-transform:uppercase}
 .cortina p{margin:0 0 20px; opacity:.72; font-weight:700; max-width:28ch}
 
+/* ── la tira de rondas ── */
+.tira{
+  grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:4px; justify-content:center;
+  margin-top:8px; min-height:0;
+}
+.tira i{
+  font-style:normal; font-size:10.5px; font-weight:900; letter-spacing:.03em;
+  padding:2px 6px; border-radius:6px; background:rgba(255,255,255,.14); color:var(--hueso);
+}
+.tira i.tuyo{background:#7BD88F; color:#10310E}    /* golpe que diste  */
+.tira i.suyo{background:#F2766A; color:#3A0A06}    /* golpe que te dio */
+.tira i.nada{opacity:.5}
+
+/* ── movimiento ────────────────────────────────────────────────────────────
+   Tres animaciones y ninguna es decorativa:
+   · el reparto, para que se vea que las cartas LLEGAN y no que aparecieron;
+   · el temblor del golpe, que es la única señal física de que perdiste vida;
+   · el número de PV contando, para que se note CUÁNTO bajó y no sólo que
+     bajó.
+   Todas se apagan con `prefers-reduced-motion`: hay gente a la que el
+   movimiento le marea, y un juego que no se puede jugar no es un juego. */
+@keyframes reparte{
+  from{ transform:translateY(26px) rotate(-6deg); opacity:0 }
+  to  { transform:none; opacity:1 }
+}
+.carta.llega{ animation:reparte .34s cubic-bezier(.2,.9,.3,1.3) both }
+@keyframes tiembla{
+  0%,100%{ transform:translateX(0) }
+  15%{ transform:translateX(-7px) } 30%{ transform:translateX(6px) }
+  45%{ transform:translateX(-5px) } 60%{ transform:translateX(4px) }
+  75%{ transform:translateX(-2px) }
+}
+.marcador.golpeado{ animation:tiembla .42s ease-out both }
+@media (prefers-reduced-motion: reduce){
+  .carta.llega, .marcador.golpeado{ animation:none }
+}
+
+/* ── la colección ── */
+.titulillo{
+  font-size:clamp(26px,8vw,38px); text-transform:uppercase; letter-spacing:-.02em;
+  margin:0 0 2px; color:var(--hueso); text-shadow:0 3px 0 var(--tinta);
+}
+.filtros{display:flex; gap:7px; overflow-x:auto; padding:2px 0 10px; scrollbar-width:none}
+.filtros::-webkit-scrollbar{display:none}
+.filtro{
+  flex:0 0 auto; border:3px solid var(--tinta); background:var(--hueso);
+  border-radius:999px; padding:7px 13px; font-weight:900; font-size:13px;
+  box-shadow:0 3px 0 var(--tinta); cursor:pointer;
+}
+.filtro.puesto{background:var(--tinta); color:var(--hueso)}
+/* Dos por renglón en teléfono: es el tamaño en el que se alcanza a LEER la
+   frase de la carta, que es la mitad del chiste de cada una. */
+.rejilla{display:grid; grid-template-columns:repeat(2, 1fr); gap:10px}
+@media (min-width:520px){ .rejilla{grid-template-columns:repeat(3, 1fr)} }
+@media (min-width:820px){ .rejilla{grid-template-columns:repeat(4, 1fr)} }
+.rejilla img{
+  width:100%; display:block; border-radius:10px; border:3px solid var(--tinta);
+  box-shadow:0 4px 0 var(--tinta); background:var(--tinta); cursor:zoom-in;
+}
+.lupa{
+  position:fixed; inset:0; z-index:60; background:rgba(20,6,14,.94);
+  display:grid; place-items:center; padding:18px; gap:10px; cursor:zoom-out;
+}
+.lupa img{max-width:100%; max-height:80vh; border-radius:14px; box-shadow:0 10px 40px #000}
+.lupa p{color:var(--hueso); font-weight:900; margin:0; text-align:center}
+
 /* ── reglas ── */
 .reglas{background:var(--hueso); border:3px solid var(--tinta); border-radius:16px;
   padding:14px 16px; margin-bottom:12px}
@@ -240,13 +306,38 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   <div class="menu">
     <button class="btn fuerte ancho" data-modo="maquina">Jugar contra la máquina</button>
     <button class="btn ancho" data-modo="dos">Dos en este teléfono</button>
-        <button class="btn ancho" id="bReglas">Cómo se juega</button>
+        <button class="btn ancho" id="bCartas">Ver las 100 cartas</button>
+    <button class="btn ancho" id="bReglas">Cómo se juega</button>
   </div>
   <p class="pie">El juego y su reglamento son de su autora.<br>Esta versión para
     teléfono la hizo Grupo Mazi.</p>
 </main>
 
 <!-- ══ REGLAS ═══════════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════
+     LA COLECCIÓN · las 100 cartas, para verlas sin jugar
+     ─────────────────────────────────────────────────────────────────────
+     Media gracia de un juego de cartas es la baraja: mirarla, buscar la
+     favorita, presumirla. Eso no existía por ningún lado — para ver una carta
+     había que jugar hasta que te tocara.
+
+     Se arma sola de `cartas.json`, así que el día que ella agregue o cambie
+     una, aquí sale sin tocar código.
+     ══════════════════════════════════════════════════════════════════════ -->
+<main id="p-cartas" class="envoltura oculto">
+  <h2 class="titulillo">La colección</h2>
+  <p class="pie" style="margin:0 0 10px" id="cCuantas">Cargando la baraja…</p>
+  <div class="filtros" id="cFiltros"></div>
+  <div class="rejilla" id="cRejilla"></div>
+  <button class="btn ancho" data-ir="portada" style="margin-top:16px">Volver</button>
+</main>
+
+<!-- una carta a pantalla completa, para verla de verdad -->
+<div class="lupa oculto" id="cLupa">
+  <img id="cLupaImg" alt="">
+  <p id="cLupaPie"></p>
+</div>
+
 <main id="p-reglas" class="envoltura oculto">
   <div style="padding-top:14px"><button class="btn chico" data-ir="portada">‹ Volver</button></div>
   <div class="reglas" style="margin-top:12px">
@@ -338,6 +429,13 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
       <div class="pv"><span id="mPvB">200</span><span class="u">PV</span></div>
       <div class="barra"><i id="mBarB" style="width:100%"></i></div>
     </div>
+    <!-- La tira de rondas: de un vistazo, quién viene ganando y por cuánto.
+         El marcador dice CÓMO VAN; esto dice CÓMO LLEGARON ahí, que es lo que
+         hace que una remontada se sienta remontada.
+         ⚠ Va al FINAL del marcador a propósito: puesta entre la ronda y el
+         lado derecho, su `grid-column:1/-1` abría un renglón nuevo y empujaba
+         a «Máquina» debajo de «Tú». Se vio en la captura, no en el código. -->
+    <div class="tira" id="mTira"></div>
   </div>
 
   <!-- elegir -->
@@ -746,7 +844,7 @@ function servidorSalas(){
 const LLAVE_SECRETO = 'puercos_secreto_';
 
 function pantalla(cual){
-  for(const p of ['portada','reglas','sala','mesa'])
+  for(const p of ['portada','reglas','sala','mesa','cartas'])
     $('#p-' + p).classList.toggle('oculto', p !== cual);
   window.scrollTo(0, 0);
 }
@@ -781,6 +879,14 @@ async function cargarCatalogo(){
     for(const c of d.cartas || []){
       const web = c.arte.replace('arte/cartas/', 'arte/web/').replace('.jpeg', '.webp');
       const ficha = { n:c.n, nombre:c.nombre, puntos:c.puntos, nivel:c.nivel, arte:web };
+      /* Los dos repetidos EXACTOS —Goku 023/047 y Terremoto 024/063, el mismo
+         archivo subido dos veces— se enseñan una sola vez: la baraja son 100,
+         no 102, y verlos dos veces parece un error del juego.
+         ⚠ Los dos «Troll» NO se tocan: valen distinto (53 nivel C y 56 nivel
+         B) y son dos cartas de verdad con el mismo nombre a propósito. Por eso
+         la llave lleva los puntos y el nivel, no sólo el nombre. */
+      const huella = ficha.nombre + '|' + ficha.puntos + '|' + ficha.nivel;
+      if(CAT.todas.some(x => x.nombre + '|' + x.puntos + '|' + x.nivel === huella)) continue;
       CAT.todas.push(ficha);
       if(!'SABCD'.includes(c.nivel) || c.nivel.length !== 1) continue;
       (CAT.porNivel[c.nivel] = CAT.porNivel[c.nivel] || []).push(ficha);
@@ -859,6 +965,11 @@ function pintarMano(){
        roto. Ahora se puede picar cualquiera siempre, y `marcar` decide qué
        significa: combinar si se puede, cambiar de carta si no. */
     b.addEventListener('click', () => marcar(c));
+    /* Escalonado, no todas de golpe: así se lee como un reparto y no como un
+       parpadeo. 45 ms por carta — cinco cartas entran en un cuarto de segundo,
+       que es lo que aguanta alguien que ya quiere jugar. */
+    b.classList.add('llega');
+    b.style.animationDelay = (m.children.length * 45) + 'ms';
     m.appendChild(b);
   }
 
@@ -934,14 +1045,49 @@ function pintarBotones(){
   $('#bJugar').textContent = elegidas.length === 2 ? 'Jugar la combinación' : 'Jugar carta';
 }
 
+/* Cuenta del número viejo al nuevo en vez de saltar. No es adorno: saltar de
+   200 a 188 no dice cuánto te pegaron; contar sí, y además da el medio segundo
+   en el que uno alcanza a asustarse. */
+const quieto = () => window.matchMedia
+  && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function contarHasta(nodo, hasta){
+  const desde = parseInt(nodo.textContent, 10);
+  if(!Number.isFinite(desde) || desde === hasta || quieto()){
+    nodo.textContent = hasta; return;
+  }
+  const arranque = performance.now(), DURA = 420;
+  const paso = (t) => {
+    const q = Math.min(1, (t - arranque) / DURA);
+    const suave = 1 - Math.pow(1 - q, 3);
+    nodo.textContent = Math.round(desde + (hasta - desde) * suave);
+    if(q < 1) requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
+}
+
+function pintarTira(){
+  const t = $('#mTira');
+  if(!t) return;
+  const hist = (J.historia || []);
+  t.innerHTML = hist.map((h, i) => {
+    if(!h.dano) return '<i class="nada" title="Ronda ' + (i+1) + ': empate">=</i>';
+    /* «tuyo» es el golpe que TÚ diste: el que perdió fue el otro. En el modo
+       de dos, el lado «a» es quien tiene el teléfono en la mano. */
+    const clase = h.perdio === 'a' ? 'suyo' : 'tuyo';
+    return '<i class="' + clase + '" title="Ronda ' + (i+1) + '">−' + h.dano + '</i>';
+  }).join('');
+}
+
 function pintarMarcador(){
   $('#mNomA').textContent = NOMBRES[modo].a;
   $('#mNomB').textContent = NOMBRES[modo].b;
-  $('#mPvA').textContent = J.a.pv;
-  $('#mPvB').textContent = J.b.pv;
+  contarHasta($('#mPvA'), J.a.pv);
+  contarHasta($('#mPvB'), J.b.pv);
   $('#mBarA').style.width = (J.a.pv / MOTOR.PV_INICIAL * 100) + '%';
   $('#mBarB').style.width = (J.b.pv / MOTOR.PV_INICIAL * 100) + '%';
   $('#mRonda').textContent = 'Ronda ' + J.ronda;
+  pintarTira();
 }
 
 /* ── LA MÁQUINA ───────────────────────────────────────────────────────────
@@ -1005,6 +1151,12 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
     g.innerHTML = '<span class="n">−' + h.dano + ' PV</span>' + frase + tope;
   }
   pintarMarcador();
+  if(h.dano && !quieto()){
+    const m = document.querySelector('.marcador');
+    m.classList.remove('golpeado');
+    void m.offsetWidth;                 /* reinicia la animación si se repite */
+    m.classList.add('golpeado');
+  }
   $('#bSeguir').textContent = despues.acabo ? 'Ver el resultado' : 'Siguiente ronda';
 }
 
@@ -1246,6 +1398,66 @@ $$('[data-modo]').forEach(b => b.addEventListener('click', () => {
 }));
 $$('[data-ir]').forEach(b => b.addEventListener('click', () => pantalla(b.dataset.ir)));
 $('#bReglas').addEventListener('click', () => pantalla('reglas'));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LA COLECCIÓN
+   ═════════════════════════════════════════════════════════════════════════ */
+let filtroCartas = 'todas';
+
+const ETIQUETAS = [
+  ['todas', 'Todas'], ['S','Nivel S'], ['A','Nivel A'], ['B','Nivel B'],
+  ['C','Nivel C'], ['D','Nivel D'], ['esp','Bono y castigo'],
+];
+
+function esEspecial(f){ return !('SABCD'.includes(f.nivel) && f.nivel.length === 1); }
+
+function cartasDelFiltro(){
+  if(filtroCartas === 'todas') return CAT.todas;
+  if(filtroCartas === 'esp')   return CAT.todas.filter(esEspecial);
+  return CAT.todas.filter(f => f.nivel === filtroCartas);
+}
+
+function pintarColeccion(){
+  const rej = $('#cRejilla'), fil = $('#cFiltros');
+  if(!CAT.listo){
+    $('#cCuantas').textContent = 'No se pudo traer la baraja. Revisa la conexión.';
+    return;
+  }
+  fil.innerHTML = '';
+  for(const [id, texto] of ETIQUETAS){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'filtro' + (filtroCartas === id ? ' puesto' : '');
+    b.textContent = texto;
+    b.addEventListener('click', () => { filtroCartas = id; pintarColeccion(); });
+    fil.appendChild(b);
+  }
+
+  const lista = cartasDelFiltro();
+  $('#cCuantas').textContent = lista.length + ' carta' + (lista.length === 1 ? '' : 's')
+    + (filtroCartas === 'todas' ? ' en la baraja' : ' con ese filtro');
+
+  rej.innerHTML = '';
+  for(const f of lista){
+    const im = document.createElement('img');
+    /* `loading=lazy` no es adorno: son cien imágenes de 64 KB. Sin esto, abrir
+       la colección en datos móviles se traga 6 MB de un jalón. */
+    im.loading = 'lazy';
+    im.decoding = 'async';
+    im.src = f.arte;
+    im.alt = f.nombre + ' · ' + f.puntos + ' puntos · nivel ' + f.nivel;
+    im.addEventListener('click', () => {
+      $('#cLupaImg').src = f.arte;
+      $('#cLupaImg').alt = im.alt;
+      $('#cLupaPie').textContent = f.nombre + ' · ' + f.puntos + ' pts · nivel ' + f.nivel;
+      $('#cLupa').classList.remove('oculto');
+    });
+    rej.appendChild(im);
+  }
+}
+
+$('#cLupa').addEventListener('click', () => $('#cLupa').classList.add('oculto'));
+$('#bCartas').addEventListener('click', () => { pantalla('cartas'); pintarColeccion(); });
 $('#bJugar').addEventListener('click', jugar);
 $('#bLimpiar').addEventListener('click', () => { elegidas = []; especial = null;
   pintarMano(); pintarBotones(); });
@@ -1281,6 +1493,7 @@ cargarCatalogo().then(() => {
   if(!CAT.listo) return;
   document.body.classList.add('hay-arte');
   try{ if(typeof J === 'object' && J && J.a && J.a.mano) pintarMano(); }catch(e){}
+  try{ if(!$('#p-cartas').classList.contains('oculto')) pintarColeccion(); }catch(e){}
 });
 </script>
 </body>
