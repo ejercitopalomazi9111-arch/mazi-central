@@ -572,5 +572,131 @@ console.log('\n· Subagentes');
   ok('el intento fallido no deja una sesión a medias', !tras.gente.colado);
 }
 
+
+/* ══ · CORS sobre una respuesta que no se deja tocar ══════════════════════
+   El defecto que estrenó la sala en producción: `conCORS` le ponía las
+   cabeceras a la respuesta que devolvía el Durable Object, y ésas son
+   INMUTABLES. `headers.set` sobre una de ésas tira
+   «Can't modify immutable headers», que el runtime convierte en un 500 pelón
+   sin decir dónde. TODA ruta que tocara el objeto reventaba.
+
+   Las 91 pruebas seguían en verde porque el almacenamiento de mentiras
+   devuelve `Response` normales, que sí se dejan tocar. Ésta usa una respuesta
+   con cabeceras congeladas a propósito, que es lo que de verdad llega. */
+console.log('\n· CORS sobre respuestas inmutables');
+{
+  const { default: puerta } = await import('./index.js');
+  const env = { ORIGENES:'https://mazi-central.palomazi9111.workers.dev',
+                VISTAS_PREVIAS:'mazi-central.palomazi9111.workers.dev' };
+
+  /* Así se ve una respuesta que ya viajó: `Response.redirect` devuelve una con
+     las cabeceras congeladas, igual que la de un Durable Object. */
+  const congelada = Response.redirect('https://x.test/', 302);
+  let inmutable = false;
+  try{ congelada.headers.set('X-Prueba', '1'); }catch(e){ inmutable = true; }
+  ok('la respuesta de prueba sí tiene las cabeceras congeladas', inmutable);
+
+  /* El objeto de mentiras devuelve una respuesta congelada, como la de verdad. */
+  const salaFalsa = { fetch: async () => {
+    const r = Response.json({ bien:true });
+    Object.defineProperty(r, 'headers', { value: new Proxy(r.headers, {
+      get(o, k){ return k === 'set'
+        ? () => { throw new TypeError("Can't modify immutable headers."); }
+        : (typeof o[k] === 'function' ? o[k].bind(o) : o[k]); } }) });
+    return r;
+  }};
+  const conObjeto = { ...env, SALA: { idFromName: () => 'x', get: () => salaFalsa } };
+
+  /* Se atrapa el error a propósito: sin esto, meter el defecto de vuelta MATA
+     la suite entera y las pruebas que vienen después nunca corren. Una suite
+     que se muere a la mitad esconde más de lo que enseña. */
+  let r = null, reventó = null;
+  try{
+    r = await puerta.fetch(new Request(
+      'https://s.test/api/sala/ABCDEF/hilo',
+      { headers:{ Origin: env.ORIGENES } }), conObjeto);
+  }catch(e){ reventó = e.message; }
+
+  ok(`la puerta NO revienta con cabeceras inmutables${reventó ? ' — reventó: ' + reventó : ''}`,
+     !reventó && r && r.status === 200);
+  ok('y aun así pone el CORS',
+     !!r && r.headers.get('access-control-allow-origin') === env.ORIGENES);
+  ok('y el Vary, para que no se cachee mal',
+     !!r && r.headers.get('vary') === 'Origin');
+  ok('el cuerpo llega entero', !!r && (await r.json()).bien === true);
+}
+
+
+/* ══ · fundar e invitar · la llave sin tocar una terminal ═════════════════
+   Carlos: «que crear la llave de sala sea fácil, nada de código, simplemente
+   desde la propia web como Zoom». Lo que se prueba aquí es que eso no abra un
+   hoyo: una sala se funda UNA vez, sólo el dueño invita, y una sala recién
+   nacida sigue abierta para que al Claude del compañero le baste el link. */
+console.log('\n· Fundar e invitar');
+{
+  const s = nueva();
+
+  const [c0, abierta] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('una sala recién nacida está ABIERTA', c0 === 200 && abierta.cerrada === false);
+  const [cEnt] = await leer(await entrar(s, 'quiensea'));
+  ok('y a cualquiera le basta el link', cEnt === 200);
+
+  const [c1, f] = await leer(await pedir(s, 'POST', 'fundar', { cuenta:'carlos' }));
+  ok('fundar devuelve una llave', c1 === 200 && typeof f.llave === 'string');
+  ok('la llave es larga de verdad', f.llave.length >= 24);
+  ok('y es del que fundó', f.cuenta === 'carlos');
+
+  /* Si se pudiera refundar, cualquiera que llegara a una sala abierta se
+     quedaría con ella y el dueño se enteraría al no poder entrar. */
+  /* Ojo con cuál puerta se está tocando, que aquí me equivoqué yo: un
+     desconocido ni siquiera LLEGA a `fundar` — lo para la llave, con 401. El
+     409 es para el que sí tiene llave y trata de refundar. Son dos defensas
+     distintas y hay que probar las dos, no una y suponer la otra. */
+  const [c2a] = await leer(await pedir(s, 'POST', 'fundar', { cuenta:'ladron' }, 'sinllave'));
+  ok('un desconocido ni llega a fundar: lo para la llave', c2a === 401);
+
+  const [c2, e2] = await leer(await pedir(s, 'POST', 'fundar', { cuenta:'ladron' }, f.llave));
+  ok('y con llave buena, refundar tampoco se puede', c2 === 409);
+  ok('y dice de quién es la sala', /carlos/.test(e2.error || ''));
+
+  /* Lo que le da sentido: en cuanto hay llave, la sala SE CIERRA sola. */
+  const [c3] = await leer(await pedir(s, 'POST', 'entrar', { id:'colado' }, 'sinllave'));
+  ok('con dueño, el que no trae llave se queda afuera', c3 === 401);
+  const [c4] = await leer(await pedir(s, 'POST', 'entrar', { id:'cl' }, f.llave));
+  ok('y el que sí la trae, entra', c4 === 200);
+
+  const [c5, inv] = await leer(await pedir(s, 'POST', 'invitar', { cuenta:'luis' }, f.llave));
+  ok('el dueño invita a otra cuenta', c5 === 200 && inv.llave && inv.llave !== f.llave);
+  const [c6] = await leer(await pedir(s, 'POST', 'entrar',
+    { id:'luis-1', nombre:'Claude de Luis' }, inv.llave));
+  ok('y el invitado entra con la suya', c6 === 200);
+
+  /* Acuñar una nueva cada vez llenaría la sala de llaves vivas que nadie
+     recuerda haber repartido, y ninguna se podría retirar con confianza. */
+  const [, otra] = await leer(await pedir(s, 'POST', 'invitar', { cuenta:'luis' }, f.llave));
+  ok('invitar dos veces a la misma cuenta devuelve LA MISMA llave',
+     otra.llave === inv.llave && otra.reusada === true);
+
+  const [c7] = await leer(await pedir(s, 'POST', 'invitar', { cuenta:'x' }, inv.llave));
+  ok('un invitado NO puede invitar', c7 === 403);
+  const [c8] = await leer(await pedir(s, 'POST', 'invitar', {}, f.llave));
+  ok('invitar sin decir a quién se rechaza', c8 === 400);
+
+  /* Dos llaves distintas tienen que dar dos cuentas distintas: si las
+     confundiera, los colores y los avisos de límite saldrían del que no es. */
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, f.llave));
+  ok('la mesa sabe que está cerrada y de quién es',
+     hilo.cerrada === true && hilo.dueno === 'carlos' && hilo.yoSoy === 'carlos');
+  const [, hiloL] = await leer(await pedir(s, 'GET', 'hilo', undefined, inv.llave));
+  ok('y a cada quien le dice SU cuenta', hiloL.yoSoy === 'luis');
+
+  /* Dos salas distintas no pueden compartir llave por casualidad. */
+  const s2 = nueva();
+  const [, g] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos' }));
+  ok('cada sala acuña su propia llave', g.llave !== f.llave);
+  const [c9] = await leer(await pedir(s2, 'POST', 'entrar', { id:'x' }, f.llave));
+  ok('la llave de una sala NO sirve en otra', c9 === 401);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

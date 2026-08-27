@@ -24,11 +24,31 @@ function origenBueno(pedido, env){
   return !!previas && new URL(origen).hostname.endsWith(previas);
 }
 
+/* ── por qué se CONSTRUYE una respuesta nueva y no se le tocan las cabeceras ──
+   Porque las de una respuesta que ya viajó son INMUTABLES. Las que arma uno
+   mismo con `Response.json(...)` se dejan modificar; la que devuelve un Durable
+   Object, no — y `headers.set` sobre ésa tira
+   `TypeError: Can't modify immutable headers`, que el runtime convierte en un
+   500 pelón (error 1101) sin decir dónde.
+
+   Ese fue exactamente el estreno de la sala en producción: TODA ruta que
+   tocaba el objeto reventaba, y las 91 pruebas seguían en verde porque mi
+   almacenamiento de mentiras devuelve `Response` normales, que sí se dejan
+   tocar. El defecto no estaba en lo que probaba: estaba en lo único que las
+   pruebas no podían ver, que es el runtime de verdad.
+
+   Se caza con `npx wrangler dev --local`, que corre workerd — el mismo motor
+   de allá— y ahí el error sale con archivo y renglón. */
 const conCORS = (respuesta, pedido) => {
   const origen = pedido.headers.get('Origin');
-  if(origen) respuesta.headers.set('Access-Control-Allow-Origin', origen);
-  respuesta.headers.set('Vary', 'Origin');
-  return respuesta;
+  const cabeceras = new Headers(respuesta.headers);
+  if(origen) cabeceras.set('Access-Control-Allow-Origin', origen);
+  cabeceras.set('Vary', 'Origin');
+  return new Response(respuesta.body, {
+    status: respuesta.status,
+    statusText: respuesta.statusText,
+    headers: cabeceras,
+  });
 };
 
 /* Seis letras. Más que las cuatro del juego de cartas porque esta sala vive

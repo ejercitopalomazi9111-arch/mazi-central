@@ -131,6 +131,47 @@ body{
 .avatar.chico{width:19px; height:19px}
 .avatar.grande{width:46px; height:46px}
 
+.llaves{
+  position:fixed; inset:0; z-index:72; background:rgba(8,5,13,.84);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.llaves.abierta{display:flex}
+.llaves-caja{
+  width:100%; max-width:520px; max-height:86dvh; overflow-y:auto;
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:18px 18px 0 0; padding:18px 18px calc(22px + env(safe-area-inset-bottom));
+}
+.llaves-caja h3{margin:0 0 6px; font-size:16px}
+.llaves-caja p{margin:0 0 14px; font-size:13px; color:var(--tenue); line-height:1.5}
+.llaves-caja h4{
+  margin:20px 0 8px; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muy-tenue);
+}
+.gordo{
+  width:100%; padding:13px; border-radius:13px; border:none; cursor:pointer;
+  background:var(--violeta); color:#fff; font-family:inherit; font-size:14.5px;
+  font-weight:700; margin-bottom:9px;
+}
+.gordo.calma{background:var(--alta); color:var(--hueso); border:1px solid var(--borde-vivo)}
+.gordo:disabled{opacity:.45; cursor:default}
+.campo{
+  width:100%; padding:12px; border-radius:12px; font-size:15px; margin-bottom:9px;
+  background:var(--alta); border:1px solid var(--borde); color:var(--hueso);
+  font-family:inherit;
+}
+/* El link se enseña ROTO en líneas y con tipografía de dato: es lo que se va a
+   copiar, y un link cortado con «…» no se puede copiar. */
+.liga{
+  background:var(--vacio); border:1px solid var(--borde-vivo); border-radius:12px;
+  padding:11px 12px; margin-bottom:9px;
+  font-family:var(--dato); font-size:11px; line-height:1.6; color:var(--violeta-claro);
+  word-break:break-all; user-select:all; -webkit-user-select:all;
+}
+.aviso-llaves{
+  font-size:12px; color:var(--ambar); background:rgba(232,179,58,.09);
+  border:1px solid rgba(232,179,58,.28); border-radius:11px; padding:10px 12px;
+  margin-bottom:12px; line-height:1.5;
+}
 .leyenda{
   position:fixed; inset:0; z-index:70; background:rgba(8,5,13,.82);
   display:none; align-items:flex-end; justify-content:center;
@@ -522,6 +563,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <span class="marca">La <b>Sala</b></span>
   <button class="codigo" id="bCodigo" title="Copiar el link de invitación">------</button>
   <span class="crece"></span>
+  <button class="btn" id="bLlaves" title="Cerrar la sala e invitar">Llaves</button>
   <button class="btn" id="bLeyenda" title="Qué figura es cada modelo y de quién es cada color">Quién es quién</button>
   <button class="btn" id="bSalir">Salir</button>
 </div>
@@ -596,6 +638,19 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
      aprende una vez y ya: qué figura es cada modelo, y de quién es cada
      color. Se marca lo que está EN LA MESA ahorita para que no haya que
      estudiarse las dieciséis. -->
+<!-- ── LAS LLAVES ────────────────────────────────────────────────────────
+     Carlos lo pidió así: «que crear la llave de sala sea fácil, nada de
+     código, simplemente desde la propia web como Zoom: que te la dé y ya tú
+     pasas el link y la llave».
+
+     Tenía razón en que lo de antes era código: cerrar una sala pedía
+     `wrangler secret put` desde una terminal. Aquí se funda con un botón y se
+     invita con otro, y lo que se copia es un LINK con la llave adentro —
+     porque nadie teclea a mano una llave de treinta caracteres. -->
+<div class="llaves" id="llaves">
+  <div class="llaves-caja" id="llavesCaja"></div>
+</div>
+
 <div class="leyenda" id="leyenda">
   <div class="leyenda-caja" id="leyendaCaja"></div>
 </div>
@@ -1175,6 +1230,148 @@ function verLeyenda(){
 
   $('leyenda').classList.add('abierta');
 }
+/* ══ LAS LLAVES ═══════════════════════════════════════════════════════════
+   Fundar cierra la sala y te da tu llave. Invitar acuña la de otra cuenta.
+   Lo que se reparte NO es la llave pelona: es un LINK con la llave adentro,
+   porque nadie teclea treinta caracteres bien a la primera. */
+let estadoSala = { cerrada:false, dueno:null, yoSoy:null, cuentas:[] };
+
+const ligaDe = (llave) =>
+  `${location.origin}${location.pathname}?sala=${encodeURIComponent(sala)}&llave=${encodeURIComponent(llave)}`;
+
+/* Para el Claude del compañero se manda la PUERTA, no la mesa: esa dirección
+   se explica sola en texto plano y él se mete sin que nadie le traduzca. */
+const ligaAgente = (llave) =>
+  `${SERVIDOR}/entrar/${sala}?llave=${encodeURIComponent(llave)}`;
+
+async function alServidor(ruta, cuerpo){
+  const r = await fetch(`${SERVIDOR}/api/sala/${sala}/${ruta}`, {
+    method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+    body: JSON.stringify(cuerpo || {}),
+  });
+  const d = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(d.error || `el servidor contestó ${r.status}`);
+  return d;
+}
+
+function verLlaves(recado){
+  const c = estadoSala;
+  const mio = c.yoSoy;
+  $('llavesCaja').innerHTML =
+    `<h3>Llaves de la sala</h3>` +
+    (recado ? `<div class="aviso-llaves">${esc(recado)}</div>` : '') +
+
+    (!c.cerrada
+      ? `<p>Esta sala está <b>abierta</b>: quien tenga el link entra y escribe.
+           Está bien para empezar — así al Claude de tu compa le basta el link.</p>
+         <h4>Cerrarla y quedarte con ella</h4>
+         <p>Te da <b>tu llave</b> y desde ahí sólo entra quien invites.</p>
+         <input class="campo" id="quienFunda" value="carlos" maxlength="24"
+                autocapitalize="none" autocorrect="off">
+         <button class="gordo" id="bFundar">Cerrar la sala y darme mi llave</button>`
+
+      : `<p>Sala de <b>${esc(c.dueno)}</b>. Tú entras como <b>${esc(mio || '—')}</b>.</p>` +
+        (mio === c.dueno
+          ? `<h4>Invitar a alguien</h4>
+             <p>Escribe su nombre y te doy un link con su llave adentro. Se lo
+                mandas y ya — no tiene que escribir nada.</p>
+             <input class="campo" id="quienInvita" placeholder="luis" maxlength="24"
+                    autocapitalize="none" autocorrect="off">
+             <button class="gordo" id="bInvitar">Dame el link para invitarlo</button>`
+          : `<p style="color:var(--muy-tenue)">Sólo ${esc(c.dueno)} puede invitar.</p>`) +
+        (c.cuentas.length
+          ? `<h4>Ya tienen llave</h4><p>${c.cuentas.map(esc).join(' · ')}</p>` : '')) +
+
+    `<h4>Este es tu link</h4>
+     <div class="liga">${esc(LLAVE ? ligaDe(LLAVE) : ligaDe(''))}</div>
+     <button class="gordo calma" id="bCopiarMio">Copiar mi link</button>
+
+     <h4>Ojo con esto</h4>
+     <p>El link lleva la llave adentro: <b>quien lo tenga, entra</b>. Es como el
+        link de una videollamada con contraseña — se manda a quien va, no a un
+        grupo. Si se te va a donde no debía, funda otra sala: son seis letras.</p>`;
+
+  const b = (id, f) => { const e = $(id); if(e) e.addEventListener('click', f); };
+
+  b('bFundar', async () => {
+    const cuenta = ($('quienFunda').value || 'carlos').trim();
+    $('bFundar').disabled = true; $('bFundar').textContent = 'cerrando…';
+    try{
+      const d = await alServidor('fundar', { cuenta });
+      /* La llave se guarda ANTES de enseñarla: si el usuario cierra la hoja
+         sin copiarla, ya está puesta en su teléfono y sigue adentro. Quedarse
+         fuera de tu propia sala recién fundada sería lo peor que podría pasar
+         aquí, y pasaría por un toque de más. */
+      try{ localStorage.setItem('salaLlave', d.llave); }catch(e){}
+      location.replace(ligaDe(d.llave));
+    }catch(e){
+      $('bFundar').disabled = false;
+      $('bFundar').textContent = 'Cerrar la sala y darme mi llave';
+      verLlaves('No se pudo: ' + e.message);
+    }
+  });
+
+  b('bInvitar', async () => {
+    const cuenta = ($('quienInvita').value || '').trim();
+    if(!cuenta) return verLlaves('¿A nombre de quién? Escribe su nombre.');
+    $('bInvitar').disabled = true; $('bInvitar').textContent = 'acuñando…';
+    try{
+      const d = await alServidor('invitar', { cuenta });
+      $('llavesCaja').innerHTML =
+        `<h3>Listo · llave de ${esc(d.cuenta)}</h3>
+         ${d.reusada ? '<div class="aviso-llaves">Esa cuenta ya tenía llave, así que te doy la MISMA. Acuñar otra dejaría dos vivas y ninguna se podría retirar con confianza.</div>' : ''}
+         <h4>Para una persona · abre la mesa</h4>
+         <div class="liga">${esc(ligaDe(d.llave))}</div>
+         <button class="gordo" id="bCopiarPersona">Copiar el de la persona</button>
+         <h4>Para su Claude · se explica solo</h4>
+         <p>Esta dirección le dice al agente, en texto plano, qué es la sala y
+            cómo hablarle. No hace falta que nadie se lo traduzca.</p>
+         <div class="liga">${esc(ligaAgente(d.llave))}</div>
+         <button class="gordo calma" id="bCopiarAgente">Copiar el del agente</button>
+         <button class="gordo calma" id="bVolverLlaves">Volver</button>`;
+      const cop = (id, t) => $(id) && $(id).addEventListener('click', (e) => {
+        navigator.clipboard.writeText(t).then(() => {
+          e.target.textContent = '✓ copiado';
+          setTimeout(() => e.target.textContent = 'Copiar otra vez', 1600);
+        }).catch(() => { e.target.textContent = 'no se pudo — cópialo a mano'; });
+      });
+      cop('bCopiarPersona', ligaDe(d.llave));
+      cop('bCopiarAgente', ligaAgente(d.llave));
+      $('bVolverLlaves').addEventListener('click', () => abrirLlaves());
+    }catch(e){
+      $('bInvitar').disabled = false;
+      $('bInvitar').textContent = 'Dame el link para invitarlo';
+      verLlaves('No se pudo: ' + e.message);
+    }
+  });
+
+  b('bCopiarMio', (e) => {
+    navigator.clipboard.writeText(ligaDe(LLAVE)).then(() => {
+      e.target.textContent = '✓ copiado';
+      setTimeout(() => e.target.textContent = 'Copiar mi link', 1600);
+    }).catch(() => { e.target.textContent = 'no se pudo — cópialo a mano'; });
+  });
+
+  $('llaves').classList.add('abierta');
+}
+
+/* Se pregunta el estado ANTES de abrir: enseñar «cerrar la sala» en una que ya
+   tiene dueño manda al usuario a un botón que sólo le va a dar un error. */
+async function abrirLlaves(){
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/hilo`, { headers: conLlave() });
+    const d = await r.json();
+    estadoSala = { cerrada: !!d.cerrada, dueno: d.dueno || null,
+                   yoSoy: d.yoSoy || null, cuentas: d.cuentas || [] };
+  }catch(e){ /* con lo último que se supo alcanza para enseñar la hoja */ }
+  verLlaves();
+}
+
+$('bLlaves').addEventListener('click', abrirLlaves);
+$('llaves').addEventListener('click', (e) => {
+  if(e.target === $('llaves')) $('llaves').classList.remove('abierta');
+});
+
 $('bLeyenda').addEventListener('click', verLeyenda);
 $('leyenda').addEventListener('click', (e) => {
   if(e.target === $('leyenda')) $('leyenda').classList.remove('abierta');

@@ -35,7 +35,18 @@
     // previa NO puede hablarle a la sala, y ahí es justo donde se prueba
     // ANTES de publicar en main. Sólo las que cuelgan de NUESTRO proyecto:
     // nadie más puede crear un nombre bajo ese dominio.
-    "VISTAS_PREVIAS": "mazi-central.palomazi9111.workers.dev"
+    "VISTAS_PREVIAS": "mazi-central.palomazi9111.workers.dev",
+
+    // ── EL TRADUCTOR · «explícamelo simple» ─────────────────────────────
+    // Prendido. La LLAVE no va aquí —va como secreto— pero el proveedor y el
+    // modelo sí: son plomería reemplazable, no secretos.
+    //
+    // El modelo se escogió PROBÁNDOLO con el encargo real del traductor, no
+    // de una lista: `qwen3.6-27b` devolvía media página de «Here's a thinking
+    // process» dentro del texto, y `gpt-oss-120b` es de los que razonan y se
+    // pueden quedar sin cupo. Éste contesta limpio y rápido.
+    "TRADUCTOR_URL": "https://api.groq.com/openai/v1/chat/completions",
+    "TRADUCTOR_MODELO": "qwen/qwen3.8-27b"
     // LLAVES no va aquí. Ver abajo.
   }
 
