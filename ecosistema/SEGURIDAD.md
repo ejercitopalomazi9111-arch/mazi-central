@@ -69,4 +69,7 @@ permisos, se le pregunta a Carlos antes de hacer nada.
   a internet tal cual, no.
 - **El websocket de La Sala no pide llave**, ni siquiera con `LLAVES` puestas: quien tenga el
   link puede escuchar aunque no pueda escribir. Está anotado y no arreglado.
-- **`kit-colaborador`** sigue en PR sin fusionar, congelado por decisión de Carlos.
+- **`kit-colaborador` se sacó de la rama**, por decisión de Carlos. Estaba congelado y se había
+  quedado cargando encima 25 commits que sí van. **No se perdió:** vive en el historial, en los
+  commits `467c66e` y `feabf54`, y se recupera con
+  `git checkout 467c66e -- kit-colaborador` el día que se quiera.
