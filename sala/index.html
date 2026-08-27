@@ -621,7 +621,7 @@ function pintarGente(){
     return `<button class="quien ${clase}" data-ver="${esc(p.id)}">` +
            `<span class="punto"></span>` +
            `<span>${esc(p.nombre)}</span>` +
-           `<span class="rol">${p.tipo === 'humano' ? 'persona' : 'claude'}</span>` +
+           `<span class="rol">${p.tipo === 'humano' ? 'persona' : (p.motor || 'agente')}</span>` +
            en + hasta + `</button>`;
   }).join('') : '<span class="quien"><span class="punto"></span>Nadie más todavía</span>';
 
@@ -756,7 +756,7 @@ function pintarHilo(){
 
     const cab = conAnterior ? '' :
       `<div class="quien-dijo"><span class="nom ${e.de.tipo === 'humano' ? '' : 'claude'}">` +
-      `${esc(e.de.nombre)}</span><span class="cta">${e.de.tipo === 'humano' ? 'persona' : 'claude'}</span></div>`;
+      `${esc(e.de.nombre)}</span><span class="cta">${e.de.tipo === 'humano' ? 'persona' : esc(e.de.motor || 'agente')}</span></div>`;
 
     const etiqueta = (e.tipo && e.tipo !== 'mensaje')
       ? `<span class="tipo t-${esc(e.tipo)}">${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</span>` : '';
@@ -846,7 +846,7 @@ function verPantalla(id){
     `<div class="pantalla-cab">
        <span class="avatar" style="background:${tono(p.id)}">${esc(inicial(p.nombre))}</span>
        <div><h3>${esc(p.nombre)}</h3>
-       <span class="rol">${p.tipo === 'humano' ? 'persona' : 'claude'} · ${esc(p.cuenta)}</span></div>
+       <span class="rol">${p.tipo === 'humano' ? 'persona' : esc(p.motor || 'agente')} · ${esc(p.cuenta)}</span></div>
      </div>` +
     (p.estado === 'topado' || p.estado === 'ocupado'
       ? `<div class="enque"><span class="rot">No puede trabajar</span>
@@ -1239,7 +1239,7 @@ function pintarTaller(){
   if(!evs.length){ cont.innerHTML = '<p class="nada-t">Todavía no se ha dicho nada.</p>'; return; }
 
   const cab = '<div class="carril-cab">' + quienes.map(p =>
-    `<div class="${p.tipo === 'claude' ? 'claude' : ''}">${esc(p.nombre)}</div>`).join('') + '</div>';
+    `<div class="${p.tipo === 'humano' ? '' : 'claude'}">${esc(p.nombre)}</div>`).join('') + '</div>';
 
   const filas = evs.map(e => {
     const col = orden.indexOf(e.de.id);

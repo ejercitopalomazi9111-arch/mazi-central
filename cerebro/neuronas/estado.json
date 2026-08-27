@@ -1,0 +1,63 @@
+{
+  "area": "estado",
+  "nombre": "Estado que se ensucia",
+  "que": "Datos que sobreviven más de lo que deberían: banderas que no se apagan, valores guardados que le ganan a los nuevos, temporizadores que nadie mata.",
+  "neuronas": [
+    {
+      "id": "bandera-global-primera-vez",
+      "titulo": "Una bandera global se enciende con el primero y ya no se apaga",
+      "gravedad": "alta",
+      "sintoma": "Sólo el primer elemento de la lista salió completo. Los demás salieron a medias, y al recargar cambia cuál es el bueno.",
+      "causa": "La condición miraba una bandera puesta en un elemento COMPARTIDO (el contenedor, el módulo, una variable de arriba) en vez de en el elemento que se está pintando.",
+      "porque": "Al programar uno piensa en «ya cargó lo que hacía falta», pero eso es cierto por elemento, no para toda la tanda. La bandera contesta una pregunta distinta a la que uno cree.",
+      "arreglo": "La condición se evalúa por elemento, y el que decide repintar es el que sabe si SU dato llegó. Devolver «hubo cambios» desde la carga y repintar sólo entonces.",
+      "comoCazarlo": "Prueba con TRES elementos, nunca con uno. Un bug de este tipo es invisible con un solo caso y evidente con tres.",
+      "consejo": "Cuando alguien reporta «sólo el primero funciona», no busques en el pintado: busca qué bandera es de todos y debería ser de cada uno.",
+      "salioDe": "reportes/ · el QR salía sólo en la primera credencial",
+      "senales": ["sólo el primero", "el resto no", "al recargar cambia", "una sí y las demás no"],
+      "vecinas": ["ajuste-guardado-por-documento", "prueba-de-un-solo-caso"]
+    },
+    {
+      "id": "ajuste-guardado-por-documento",
+      "titulo": "Cambiar el valor por defecto no arregla lo que ya está guardado",
+      "gravedad": "alta",
+      "sintoma": "Arreglaste el defecto, se ve bien en documentos nuevos, y el usuario insiste en que sigue mal.",
+      "causa": "El ajuste se guarda DENTRO de cada documento. El nuevo defecto sólo aplica a los que aún no tienen valor propio.",
+      "porque": "Guardar los ajustes con el dato es correcto —hace el documento portátil— pero convierte cada cambio de defecto en una migración, y eso no se ve al escribirlo.",
+      "arreglo": "Migrar al cargar: si el valor guardado es exactamente el defecto viejo, se sube al nuevo. Comparar con tolerancia si son números con decimales.",
+      "comoCazarlo": "Prueba SIEMPRE con un documento viejo, no con uno recién creado. Guarda uno a propósito antes de cambiar el defecto.",
+      "consejo": "Si el usuario repite un reporte que ya «arreglaste», el arreglo está en el lugar equivocado. Casi siempre es dato viejo, no código nuevo.",
+      "salioDe": "reportes/ · la escala de impresión seguía en 0.86 en el reporte de Carlos",
+      "senales": ["ya lo arreglé y sigue igual", "en uno nuevo sí sirve", "me sigue saliendo mal"],
+      "vecinas": ["bandera-global-primera-vez", "sintoma-contra-causa"]
+    },
+    {
+      "id": "temporizador-que-nadie-mata",
+      "titulo": "El reloj sigue vivo aunque la promesa ya se resolvió",
+      "gravedad": "media",
+      "sintoma": "El proceso no termina, o las pruebas tardan minutos sin razón, o la memoria sube despacio.",
+      "causa": "Un `setTimeout` de respaldo que se arma junto a una espera, y no se cancela cuando la espera se resuelve por el camino bueno.",
+      "porque": "El temporizador se escribe pensando «por si nunca llega», y uno olvida el caso en que sí llega — que es el normal.",
+      "arreglo": "Guardar el id del temporizador y hacer `clearTimeout` dentro del mismo resolver que atiende el camino bueno.",
+      "comoCazarlo": "Mide el tiempo de la suite. Una prueba que debería tardar un segundo y tarda un minuto casi siempre es un temporizador vivo.",
+      "consejo": "Todo `setTimeout` que acompaña a una promesa necesita su `clearTimeout`. Si no lo ves, es un fuga.",
+      "salioDe": "sala/servidor · /esperar dejaba vivo su reloj de 50s y la suite tardaba 1m40",
+      "senales": ["no termina el proceso", "las pruebas tardan un montón", "se queda colgado"],
+      "vecinas": ["medir-antes-de-suponer"]
+    },
+    {
+      "id": "menu-que-no-se-cierra",
+      "titulo": "Un menú flotante que sólo se cierra por donde se abrió",
+      "gravedad": "baja",
+      "sintoma": "El menú se queda encima del contenido y tapa lo que uno quiere leer.",
+      "causa": "Se cierra al escoger una opción, pero no al tocar fuera ni al perder el foco.",
+      "porque": "Al probarlo uno siempre escoge una opción — que es el único camino que cierra. Nadie prueba abrir y arrepentirse.",
+      "arreglo": "Cerrar también en `blur`, con un retardo corto para que alcance a registrarse el clic en una opción.",
+      "comoCazarlo": "Ábrelo y toca otra cosa. Es una prueba de dos segundos que nadie hace.",
+      "consejo": "Todo lo que se abre necesita al menos dos maneras de cerrarse, y una tiene que ser «me arrepentí».",
+      "salioDe": "sala/index.html · el menú de comandos tapaba el hilo",
+      "senales": ["se queda abierto", "tapa el contenido", "no se quita"],
+      "vecinas": ["ver-la-pantalla"]
+    }
+  ]
+}

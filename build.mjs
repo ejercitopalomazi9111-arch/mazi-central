@@ -27,7 +27,7 @@ const VA = [
   'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   '_headers', 'kernel-lock.html',
   'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
-  'sala', 'campana',
+  'sala', 'campana', 'cerebro',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
@@ -56,6 +56,10 @@ const NO_VA = (ruta) => {
      worker— pero sí sirve como estático algo que nadie usa desde el navegador,
      y este archivo existe justo para que lo publicado sea lo que decidimos. */
   if(/(^|\/)sala\/servidor\//.test(ruta)) return true;
+  /* Del cerebro se publica `todo.json` y la pantalla; el motor y las neuronas
+     sueltas no los usa el navegador —lee el armado— y publicarlos sería
+     servir dos veces lo mismo. */
+  if(/(^|\/)cerebro\/(cerebro\.mjs|neuronas\/)/.test(ruta)) return true;
   if(/^(medir|rehacer|recortar)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;

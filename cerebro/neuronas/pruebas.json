@@ -1,0 +1,63 @@
+{
+  "area": "pruebas",
+  "nombre": "Pruebas que sí prueban",
+  "que": "El modo más caro de fallar: creer que algo está probado cuando la prueba no puede fallar.",
+  "neuronas": [
+    {
+      "id": "pruebas-que-no-prueban-nada",
+      "titulo": "La prueba pasa igual si rompo el código a propósito",
+      "gravedad": "alta",
+      "sintoma": "Suite en verde y el usuario reportando el bug que esa suite supuestamente cubre.",
+      "causa": "La aserción es vacía: compara algo consigo mismo, o pasa por casualidad, o mide un camino que nunca se recorre.",
+      "porque": "Una prueba se escribe mirando el código bueno, así que se escribe la aserción que ese código cumple — no la que el bug rompería.",
+      "arreglo": "Prueba de mutación: rompe la guarda A PROPÓSITO y comprueba que la suite se pone roja. Si no se pone, la prueba no vale.",
+      "comoCazarlo": "Por cada guarda cara, una mutación. Tres mutaciones tardan un minuto y te dicen si la suite sirve.",
+      "consejo": "Nunca digas «está probado» sin haber visto la prueba fallar al menos una vez.",
+      "salioDe": "sala/servidor · rompí el freno, el filtro de destinatario y el conteo de límites; cayeron 3, 2 y 1",
+      "senales": ["pasa todo y no sirve", "verde pero el bug sigue", "ya lo probé"],
+      "vecinas": ["renombrar-de-un-lado", "prueba-de-un-solo-caso"]
+    },
+    {
+      "id": "prueba-de-un-solo-caso",
+      "titulo": "Probé con uno y el bug sólo aparece con tres",
+      "gravedad": "alta",
+      "sintoma": "Funciona en la demo y falla con datos reales.",
+      "causa": "La prueba usa un elemento, un usuario, un archivo. Los bugs de estado compartido, de orden y de índice necesitan al menos tres.",
+      "porque": "Con uno, el índice 0 y el «primero» y el «último» son el mismo elemento, así que tres bugs distintos se ven correctos.",
+      "arreglo": "Tres es el mínimo. Con tres se distingue primero, de en medio y último.",
+      "comoCazarlo": "Pregúntate: «¿y si son cinco?». Esa pregunta caza más bugs que leer el código.",
+      "consejo": "Carlos caza bugs preguntando «¿y si tengo cinco hijos y todos juegan el mismo partido?». Trátalo como caso de prueba, no como charla.",
+      "salioDe": "ligas-mazi · la función devolvía el primer hijo y se salía",
+      "senales": ["con mis datos falla", "en la demo sí funciona", "y si son varios"],
+      "vecinas": ["bandera-global-primera-vez", "pruebas-que-no-prueban-nada"]
+    },
+    {
+      "id": "medir-antes-de-suponer",
+      "titulo": "Medí y el problema no era el que yo pensaba",
+      "gravedad": "media",
+      "sintoma": "Se optimiza una cosa y no mejora nada.",
+      "causa": "Se supuso dónde estaba el costo en vez de medirlo.",
+      "porque": "El código que uno acaba de escribir se siente sospechoso, y el que lleva ahí meses se siente inocente. Casi siempre es al revés.",
+      "arreglo": "Medir primero. `time`, contadores, una marca antes y otra después.",
+      "comoCazarlo": "Un número, cualquiera. Un `time` a la suite descubrió un temporizador colgado que ninguna prueba reportaba.",
+      "consejo": "Si vas a optimizar sin medir, no estás optimizando: estás adivinando con más pasos.",
+      "salioDe": "sala/servidor · la suite tardaba 1m40 y nadie lo había notado",
+      "senales": ["tarda mucho", "va lento", "creo que es por"],
+      "vecinas": ["temporizador-que-nadie-mata"]
+    },
+    {
+      "id": "reproducir-antes-de-arreglar",
+      "titulo": "Arreglé a ciegas y arreglé otra cosa",
+      "gravedad": "alta",
+      "sintoma": "Se cambia código, se dice que quedó, y el reporte vuelve idéntico.",
+      "causa": "No se reprodujo el fallo antes de tocarlo, así que no hay forma de saber si el cambio hizo algo.",
+      "porque": "Reproducir cuesta tiempo y la causa «se ve obvia». La causa obvia es correcta como la mitad de las veces.",
+      "arreglo": "Primero reproducirlo, luego arreglarlo, luego comprobar que YA NO se reproduce con los mismos pasos.",
+      "comoCazarlo": "Si no puedes describir los pasos exactos que provocan el fallo, todavía no lo entiendes.",
+      "consejo": "Regla de la casa: reproducir el bug antes de arreglarlo. Nada a ciegas.",
+      "salioDe": "CLAUDE.md §3.7",
+      "senales": ["sigue igual", "ya lo arreglé", "creo que era"],
+      "vecinas": ["sintoma-contra-causa", "ver-la-pantalla"]
+    }
+  ]
+}

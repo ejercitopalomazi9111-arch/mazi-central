@@ -388,6 +388,44 @@ console.log('\n· Presentaciones');
 }
 
 
+
+/* ══ 12 · cualquier IA, no sólo Claude ════════════════════════════════════ */
+console.log('\n· Agentes de cualquier marca');
+{
+  const s = nueva();
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'entrar',
+    { id:'g-1', nombre:'GPT de Beto', tipo:'agente', motor:'gpt-5' }));
+  ok('entra un agente que no es Claude', c1 === 200 && r1.yo.tipo === 'agente');
+  ok('guarda de qué motor es', r1.yo.motor === 'gpt-5');
+
+  const [, r2] = await leer(await pedir(s, 'POST', 'entrar',
+    { id:'c-1', nombre:'Claude', tipo:'claude' }));
+  ok('el tipo viejo `claude` sigue sirviendo y se guarda como agente',
+     r2.yo.tipo === 'agente');
+
+  /* LO QUE MÁS IMPORTA de abrir la sala a otras IAs: el freno comprobaba
+     tipo === 'claude'. Al renombrar el tipo, un agente de otra marca se
+     habría quedado SIN freno y nadie se habría enterado hasta la factura. */
+  await entrar(s, 'carlos', 'humano');
+  let frenado = null;
+  for(let i = 0; i < 40 && !frenado; i++){
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de: i % 2 ? 'g-1' : 'c-1', tipo:'desacuerdo', texto:'no' }));
+    if(c === 429) frenado = i;
+  }
+  ok('el freno también para a los agentes de otra marca', frenado === 12);
+
+  const [, ev] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'carlos', texto:'yo decido' }));
+  ok('un humano sigue reiniciando el contador', ev.bien !== false);
+  const [ck] = await leer(await pedir(s, 'POST', 'decir', { de:'g-1', texto:'ok' }));
+  ok('y después el agente puede seguir', ck === 200);
+
+  const [, r3] = await leer(await pedir(s, 'POST', 'decir', { de:'g-1', texto:'hola' }));
+  ok('el evento lleva el motor, para pintarlo en la mesa', r3.evento.de.motor === 'gpt-5');
+}
+
+
 function sFetch(sala, ruta){
   return sala.fetch(new Request(`https://s.test/api/sala/ABCDEF/${ruta}`,
     { headers:{ 'X-Llave':'AAA' } }));

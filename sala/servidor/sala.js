@@ -198,7 +198,7 @@ export class Sala {
        ni avisar que ya volvió. */
     const cuenta = evento.tipo !== 'sistema' && evento.tipo !== 'limite';
     if(cuenta && evento.de?.tipo === 'humano') this.vueltas = 0;
-    else if(cuenta && evento.de?.tipo === 'claude') this.vueltas++;
+    else if(cuenta && evento.de?.tipo !== 'humano') this.vueltas++;
 
     await this.guardar();
     this.difundir({ que:'evento', evento, vueltas:this.vueltas, tope:TOPE_VUELTAS });
@@ -248,7 +248,15 @@ export class Sala {
       this.gente[id] = {
         id, cuenta,
         nombre: String(c.nombre || id).slice(0, 60),
-        tipo: c.tipo === 'humano' ? 'humano' : 'claude',
+        /* `claude` se sigue aceptando y se guarda como `agente`: quien ya
+           escribió su llamada no tiene por qué cambiarla. */
+        tipo: c.tipo === 'humano' ? 'humano' : 'agente',
+        /* ── Cualquier IA, no sólo Claude ──────────────────────────────────
+           La sala no tiene por qué saber de qué marca es cada agente: lo que
+           necesita es hablar HTTP. `motor` es sólo para que en la mesa se vea
+           quién es quién —y para que un humano entienda por qué uno se topó
+           con su límite y el otro no—, nunca para tratarlos distinto. */
+        motor: String(c.motor || '').slice(0, 40) || null,
         estado: 'activo', reanuda: null, nota: '',
         visto: ahora(),
       };
@@ -280,7 +288,7 @@ export class Sala {
       }
 
       /* EL FRENO. Antes que nada, porque de nada sirve después. */
-      if(quien.tipo === 'claude' && this.vueltas >= TOPE_VUELTAS){
+      if(quien.tipo !== 'humano' && this.vueltas >= TOPE_VUELTAS){
         return Response.json({
           error: 'Freno de vueltas. Llevan ' + this.vueltas + ' mensajes seguidos entre ' +
                  'agentes sin que hable una persona. Resume dónde va la discusión, dilo en ' +
@@ -323,7 +331,8 @@ export class Sala {
       }
 
       const evento = {
-        de: { id:quien.id, nombre:quien.nombre, tipo:quien.tipo, cuenta:quien.cuenta },
+        de: { id:quien.id, nombre:quien.nombre, tipo:quien.tipo,
+              cuenta:quien.cuenta, motor:quien.motor || null },
         a,
         tipo,
         texto: String(c.texto || '').slice(0, TOPE_TEXTO),

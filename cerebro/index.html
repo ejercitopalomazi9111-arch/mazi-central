@@ -1,0 +1,275 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Cerebro · Grupo Mazi</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧠</text></svg>">
+<style>
+/* ══ EL CEREBRO ═══════════════════════════════════════════════════════════
+   El modo visual. No es adorno: la gracia del cerebro es que las neuronas se
+   llaman entre sí, y una lista no enseña eso. Aquí se ve la constelación, se
+   toca una y se ven sus vecinas — que es como de verdad se resuelve un
+   problema: siguiendo el hilo, no leyendo el índice.
+
+   Paleta de la casa (CLAUDE.md §7). Oscuro a propósito: es un instrumento. */
+:root{
+  --vacio:#100A18; --superficie:#1B1226; --alta:#241733;
+  --borde:#33224A; --borde-vivo:#4A3167;
+  --hueso:#E9E4E4; --tenue:#A395B4; --muy-tenue:#7B6B8D;
+  --violeta:#AC27FF; --violeta-claro:#C77BFF;
+  --alta-g:#F0567F; --media-g:#E8B33A; --baja-g:#7E93A8;
+  --display:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --dato:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--vacio); color:var(--hueso);
+  font-family:var(--display); font-size:15.5px; line-height:1.55;
+  display:flex; flex-direction:column; overflow:hidden; -webkit-text-size-adjust:100%;
+}
+
+.barra{
+  flex:0 0 auto; padding:calc(12px + env(safe-area-inset-top)) 14px 12px;
+  background:var(--superficie); border-bottom:1px solid var(--borde);
+}
+.cab{display:flex; align-items:center; gap:10px; margin-bottom:11px}
+.marca{font-weight:700; font-size:16.5px; letter-spacing:-.02em}
+.marca b{color:var(--violeta)}
+.cuantas{font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
+  letter-spacing:.09em; margin-left:auto}
+#q{
+  width:100%; font-family:inherit; font-size:15px; color:var(--hueso);
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:11px;
+  padding:11px 13px;
+}
+#q:focus{outline:none; border-color:var(--violeta)}
+.pistas{display:flex; gap:6px; margin-top:9px; overflow-x:auto; scrollbar-width:none}
+.pistas::-webkit-scrollbar{display:none}
+.pista{
+  flex:0 0 auto; font-size:12px; padding:5px 10px; border-radius:99px; cursor:pointer;
+  background:transparent; color:var(--tenue); border:1px solid var(--borde);
+  font-family:inherit; white-space:nowrap;
+}
+.pista:hover,.pista.viva{color:var(--hueso); border-color:var(--violeta)}
+
+.cuerpo{flex:1; overflow-y:auto; padding:14px 14px 30px; -webkit-overflow-scrolling:touch}
+
+/* ── la constelación ── */
+.mapa{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:20px}
+.n{
+  flex:1 1 150px; min-width:0; text-align:left; cursor:pointer;
+  background:var(--superficie); border:1px solid var(--borde);
+  border-left:3px solid var(--baja-g);
+  border-radius:11px; padding:11px 13px; color:inherit; font-family:inherit;
+}
+.n:hover{border-color:var(--violeta-claro)}
+.n.alta{border-left-color:var(--alta-g)}
+.n.media{border-left-color:var(--media-g)}
+.n .t{font-weight:600; font-size:13.5px; line-height:1.35; margin-bottom:5px;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+.n .a{font-family:var(--dato); font-size:9.5px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+.n.aqui{border-color:var(--violeta); background:var(--alta)}
+
+.nada{color:var(--muy-tenue); font-size:14px; padding:26px 2px; max-width:52ch}
+
+/* ── la neurona abierta ── */
+.abierta{
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:15px; padding:18px 18px 16px; margin-bottom:18px;
+}
+.abierta h2{font-size:20px; line-height:1.2; margin:0 0 4px; letter-spacing:-.015em}
+.abierta .meta{font-family:var(--dato); font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muy-tenue); margin-bottom:16px}
+.campo{margin-bottom:13px}
+.campo b{
+  display:block; font-family:var(--dato); font-size:9px; font-weight:700;
+  letter-spacing:.15em; text-transform:uppercase; color:var(--muy-tenue);
+  margin-bottom:4px;
+}
+.campo p{margin:0; font-size:14.5px}
+.campo.clave{background:var(--alta); border-radius:10px; padding:11px 13px;
+  border:1px solid var(--borde)}
+.campo.clave b{color:var(--violeta-claro)}
+.lleva{margin-top:16px; padding-top:14px; border-top:1px solid var(--borde)}
+.lleva b{display:block; font-family:var(--dato); font-size:9px; font-weight:700;
+  letter-spacing:.15em; text-transform:uppercase; color:var(--muy-tenue);
+  margin-bottom:9px}
+.hilo{display:flex; flex-direction:column; gap:7px}
+.v{
+  display:flex; align-items:flex-start; gap:9px; text-align:left; cursor:pointer;
+  background:transparent; border:1px solid var(--borde); border-radius:10px;
+  padding:9px 11px; color:inherit; font-family:inherit; font-size:13.5px;
+}
+.v:hover{border-color:var(--violeta)}
+.v .fl{color:var(--violeta); flex:0 0 auto}
+.v .pq{display:block; font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue);
+  margin-top:3px}
+code{font-family:var(--dato); font-size:.87em; background:var(--alta);
+  border:1px solid var(--borde); padding:1px 5px; border-radius:4px}
+.n:focus-visible,.v:focus-visible,.pista:focus-visible{
+  outline:2px solid var(--violeta); outline-offset:2px}
+</style>
+
+<div class="barra">
+  <div class="cab">
+    <span class="marca">El <b>Cerebro</b></span>
+    <span class="cuantas" id="cuantas">cargando…</span>
+  </div>
+  <input id="q" placeholder="Describe el problema como se lo contarías a alguien…"
+         autocomplete="off" spellcheck="false">
+  <div class="pistas" id="pistas"></div>
+</div>
+
+<div class="cuerpo" id="cuerpo"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* Los textos traen código entre acentos graves, como se escribe en markdown.
+   Escapados y sin convertir se veían literales —«Falta `<meta ...>`»— y eso
+   se lee como un error de la página, no como código citado. */
+const conCodigo = (t) => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+let AREAS = [], TODAS = [], abierta = null, filtroArea = null;
+
+const normal = (t) => String(t || '').toLowerCase()
+  .normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/* La misma manera de buscar que la del motor de línea de comandos, y a
+   propósito: si la pantalla y la terminal encontraran cosas distintas, nadie
+   confiaría en ninguna de las dos. */
+function buscar(texto){
+  const q = normal(texto);
+  if(!q) return null;
+  const palabras = q.split(/\s+/).filter(p => p.length > 2);
+  const peso = { alta:3, media:2, baja:1 };
+  return TODAS.map(n => {
+    let p = 0;
+    for(const s of (n.senales || [])){
+      const sn = normal(s);
+      if(q.includes(sn)) p += 12;
+      else if(palabras.filter(x => sn.includes(x)).length >= 2) p += 6;
+    }
+    for(const [c, w] of [['titulo',5],['sintoma',3],['causa',2],['consejo',1],['id',4],['area',3]]){
+      const v = normal(n[c] || '');
+      for(const x of palabras) if(v.includes(x)) p += w;
+    }
+    return { n, p };
+  }).filter(x => x.p > 0)
+    .sort((a,b) => b.p - a.p || (peso[b.n.gravedad]||0) - (peso[a.n.gravedad]||0))
+    .map(x => x.n);
+}
+
+function vecinasDe(n){
+  const dichas = (n.vecinas || []).map(id => TODAS.find(x => x.id === id))
+    .filter(Boolean).map(x => ({ ...x, porQue:'la mencionamos aquí' }));
+  const mias = (n.senales || []).map(normal);
+  const halladas = TODAS.filter(x => x.id !== n.id && !(n.vecinas||[]).includes(x.id))
+    .map(x => ({ x, c:(x.senales||[]).filter(s => {
+      const sn = normal(s); return mias.some(m => m.includes(sn) || sn.includes(m)); }) }))
+    .filter(o => o.c.length)
+    .sort((a,b) => b.c.length - a.c.length).slice(0, 3)
+    .map(o => ({ ...o.x, porQue:`se describen igual: «${o.c[0]}»` }));
+  return dichas.concat(halladas);
+}
+
+const tarjeta = (n) => `<button class="n ${esc(n.gravedad||'baja')} ${
+  abierta === n.id ? 'aqui' : ''}" data-ir="${esc(n.id)}">
+  <span class="t">${esc(n.titulo)}</span>
+  <span class="a">${esc(n.area)}</span></button>`;
+
+function pintar(lista, titulo){
+  const c = $('cuerpo');
+  let html = '';
+
+  if(abierta){
+    const n = TODAS.find(x => x.id === abierta);
+    if(n){
+      const campo = (rot, val, clave) => val
+        ? `<div class="campo ${clave ? 'clave' : ''}"><b>${rot}</b><p>${conCodigo(val)}</p></div>` : '';
+      const vs = vecinasDe(n);
+      html += `<div class="abierta">
+        <h2>${esc(n.titulo)}</h2>
+        <div class="meta">${esc(n.area)} · gravedad ${esc(n.gravedad || 'baja')} · ${esc(n.id)}</div>
+        ${campo('Qué se ve', n.sintoma)}
+        ${campo('Qué lo causa', n.causa)}
+        ${campo('Por qué pasa', n.porque)}
+        ${campo('Cómo se arregla', n.arreglo, true)}
+        ${campo('Cómo cazarlo', n.comoCazarlo, true)}
+        ${campo('El consejo', n.consejo, true)}
+        ${campo('De dónde salió', n.salioDe)}
+        ${vs.length ? `<div class="lleva"><b>Esto suele llevar a</b><div class="hilo">${
+          vs.map(v => `<button class="v" data-ir="${esc(v.id)}">
+            <span class="fl">→</span><span>${esc(v.titulo)}
+            <span class="pq">${esc(v.porQue)}</span></span></button>`).join('')
+        }</div></div>` : ''}
+      </div>`;
+    }
+  }
+
+  if(titulo) html += `<div class="nada" style="padding:4px 2px 14px">${esc(titulo)}</div>`;
+  html += `<div class="mapa">${(lista || TODAS).map(tarjeta).join('')}</div>`;
+  c.innerHTML = html;
+  if(abierta) c.scrollTop = 0;
+}
+
+$('cuerpo').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ir]');
+  if(!b) return;
+  abierta = abierta === b.dataset.ir ? null : b.dataset.ir;
+  refrescar();
+});
+
+function refrescar(){
+  const q = $('q').value.trim();
+  if(q){
+    const r = buscar(q);
+    pintar(r, r.length ? `${r.length} para «${q}»` : null);
+    if(!r.length){
+      $('cuerpo').innerHTML = `<div class="nada">
+        Nada para «${esc(q)}».<br><br>
+        Si acabas de resolver algo que no está aquí, agrégalo — el cerebro
+        sirve en la medida en que crece:<br>
+        <code>node cerebro/cerebro.mjs</code></div>`;
+    }
+    return;
+  }
+  if(filtroArea){
+    const a = AREAS.find(x => x.area === filtroArea);
+    pintar(a.neuronas, a.que);
+    return;
+  }
+  pintar(TODAS, null);
+}
+
+$('q').addEventListener('input', () => {
+  filtroArea = null;
+  [...$('pistas').children].forEach(p => p.classList.remove('viva'));
+  refrescar();
+});
+
+fetch('todo.json').then(r => r.json()).then(d => {
+  AREAS = d.areas;
+  TODAS = AREAS.flatMap(a => a.neuronas.map(n => ({ ...n, area: a.area })));
+  $('cuantas').textContent = `${d.total} neuronas · ${AREAS.length} áreas`;
+  $('pistas').innerHTML = AREAS.map(a =>
+    `<button class="pista" data-area="${esc(a.area)}">${esc(a.nombre)}</button>`).join('');
+  $('pistas').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-area]');
+    if(!b) return;
+    const misma = filtroArea === b.dataset.area;
+    filtroArea = misma ? null : b.dataset.area;
+    abierta = null; $('q').value = '';
+    [...$('pistas').children].forEach(p => p.classList.toggle('viva',
+      !misma && p.dataset.area === filtroArea));
+    refrescar();
+  });
+  refrescar();
+}).catch(() => {
+  $('cuerpo').innerHTML = `<div class="nada">
+    No se pudo cargar <code>todo.json</code>.<br><br>
+    Se arma con <code>node cerebro/cerebro.mjs armar</code>.</div>`;
+});
+</script>
