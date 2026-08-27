@@ -171,6 +171,7 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   width:9px; height:9px; border-radius:50%;
   background:var(--verde); border:2px solid var(--superficie);
 }
+.con-punto.sin::after{background:var(--muy-tenue)}
 .yo-panel .quien-soy{flex:1; min-width:0}
 .yo-panel .nombre{
   display:block; font-size:13px; font-weight:600; color:var(--hueso);
@@ -180,6 +181,7 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   display:block; font-family:var(--dato); font-size:9.5px; letter-spacing:.09em;
   text-transform:uppercase; color:var(--verde);
 }
+.yo-panel .estado.sin{color:var(--muy-tenue)}
 .yo-panel .salirme{
   flex:0 0 auto; width:34px; height:34px; border-radius:9px; border:0;
   background:transparent; color:var(--muy-tenue); cursor:pointer; font-size:15px;
@@ -2069,6 +2071,17 @@ function marcarVivo(ok, razon){
   vivo = ok;
   $('caido').textContent = ok ? '' :
     (razon || 'Sin conexión con la sala. Reintentando…');
+  /* ⚠ Lo cachó Carlos: «si está sin conexión el punto es gris, no verde».
+     El punto de tu panel estaba clavado en verde y el renglón decía «En
+     línea» pasara lo que pasara — o sea que la única señal de que sigues
+     conectado seguía diciendo que sí justo cuando ya no. Un indicador que no
+     puede decir que no, no es un indicador: es un adorno.
+     Ahora lo mueve el socket, que es quien sabe. */
+  pintarYo();
+  /* Y el renglón de arriba tampoco puede presumir gente en línea cuando el
+     que no está en línea eres tú: no te llegan sus señales. */
+  const pv = $('puntoVivo');
+  if(pv && !ok) pv.classList.remove('vivo');
 }
 
 
@@ -2420,9 +2433,9 @@ function pintarYo(){
   const c = $('yoPanel');
   if(!yo){ c.innerHTML = ''; return; }
   const cred = credencial(yo);
-  c.innerHTML = `<span class="con-punto">${avatarHtml(cred, '')}</span>` +
+  c.innerHTML = `<span class="con-punto${vivo ? '' : ' sin'}">${avatarHtml(cred, '')}</span>` +
     `<span class="quien-soy"><span class="nombre"></span>` +
-    `<span class="estado">En línea</span></span>` +
+    `<span class="estado${vivo ? '' : ' sin'}">${vivo ? 'En línea' : 'Sin conexión'}</span></span>` +
     `<button class="salirme" id="bSalir" title="Salir de la sala" aria-label="Salir de la sala">⏻</button>`;
   c.querySelector('.nombre').textContent = cred.nombre;
   c.querySelector('#bSalir').addEventListener('click', salirme);
