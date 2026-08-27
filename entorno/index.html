@@ -492,13 +492,101 @@ function ponerAgente(quien, indice, cuantos){
   aro.rotation.x = -Math.PI/2; aro.position.y = 0.01;
   g.add(aro);
 
+  const bocadillo = hacerBocadillo();
+  g.add(bocadillo.sprite);
+
   escena.add(g);
   const puesto = { id:quien.id, grupo:g, mesa, mezclador, acciones, aro,
-                   actual:null, quien, color };
+                   bocadillo, actual:null, quien, color };
   puestos.set(quien.id, puesto);
   cambiarAnimacion(puesto, animacionDe(quien));
   pintarPantalla(mesa, quien, '#' + color.getHexString());
   return puesto;
+}
+
+/* ══ EL BOCADILLO SOBRE LA CABEZA ══════════════════════════════════════════
+   Lo pidió Carlos: «que pueda ver las burbujas de texto de cada integrante
+   sobre su cabeza en ese entorno 3D para que esté bien chingón».
+
+   Va como Sprite y no como plano: un Sprite SIEMPRE mira a la cámara sola,
+   así que el texto se lee desde cualquier ángulo sin una línea de código que
+   lo gire. Un plano habría que orientarlo cuadro por cuadro y se vería de
+   canto justo cuando uno rodea el cuarto, que es cuando más se está mirando.
+
+   El lienzo se dibuja al DOBLE de lo que se ve y luego se escala: si se
+   dibuja al tamaño final, el texto sale borroso en cuanto uno se acerca —
+   que es exactamente lo que uno hace cuando quiere leerlo. */
+const BOCADILLO_W = 720, BOCADILLO_H = 300;
+
+function hacerBocadillo(){
+  const lienzo = document.createElement('canvas');
+  lienzo.width = BOCADILLO_W; lienzo.height = BOCADILLO_H;
+  const textura = new THREE.CanvasTexture(lienzo);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: textura, transparent:true, depthTest:false,
+  }));
+  /* `depthTest:false` a propósito: sin eso el bocadillo se mete DENTRO del
+     escritorio de quien está adelante y se ve cortado por la mitad. Lo que se
+     dice siempre va encima de los muebles. */
+  sprite.renderOrder = 10;
+  sprite.scale.set(1.5, 0.625, 1);
+  sprite.position.set(0, ALTO_AGENTE + 0.62, 0);
+  sprite.visible = false;
+  return { sprite, lienzo, textura, dice:null };
+}
+
+/* Cuánto hace que se dijo, en cristiano. Un bocadillo sin esto miente: se ve
+   igual de fresco un mensaje de hace diez segundos que uno de anteayer. */
+function haceCuanto(ts){
+  const min = Math.round((Date.now() - ts) / 60000);
+  if(min < 1)  return 'ahorita';
+  if(min < 60) return `hace ${min} min`;
+  const h = Math.round(min/60);
+  if(h < 24)   return `hace ${h} h`;
+  return `hace ${Math.round(h/24)} d`;
+}
+
+function pintarBocadillo(b, texto, color, ts){
+  const g = b.lienzo.getContext('2d');
+  g.clearRect(0, 0, BOCADILLO_W, BOCADILLO_H);
+
+  g.font = '600 30px -apple-system, system-ui, sans-serif';
+  const lineas = partir(g, texto, BOCADILLO_W - 84).slice(0, 4);
+  /* Si no cabe, se corta el ÚLTIMO renglón con puntos suspensivos en vez de
+     tragarse el resto sin avisar: un bocadillo que miente sobre lo que se
+     dijo es peor que uno corto. */
+  if(partir(g, texto, BOCADILLO_W - 84).length > 4)
+    lineas[3] = recortar(g, lineas[3], BOCADILLO_W - 120) ;
+  const alto = 92 + lineas.length * 40;
+  const y0 = BOCADILLO_H - alto - 34;
+
+  /* la caja */
+  g.fillStyle = 'rgba(12,7,20,.93)';
+  redondo(g, 12, y0, BOCADILLO_W - 24, alto, 26); g.fill();
+  g.strokeStyle = color; g.lineWidth = 4;
+  redondo(g, 12, y0, BOCADILLO_W - 24, alto, 26); g.stroke();
+
+  /* el piquito hacia la cabeza */
+  g.beginPath();
+  g.moveTo(BOCADILLO_W/2 - 20, y0 + alto - 2);
+  g.lineTo(BOCADILLO_W/2, y0 + alto + 28);
+  g.lineTo(BOCADILLO_W/2 + 20, y0 + alto - 2);
+  g.closePath();
+  g.fillStyle = 'rgba(12,7,20,.93)'; g.fill();
+  g.strokeStyle = color; g.lineWidth = 4; g.stroke();
+
+  /* cuándo */
+  g.fillStyle = color; g.font = '600 20px ui-monospace, Menlo, monospace';
+  g.fillText(haceCuanto(ts), 42, y0 + 40);
+
+  /* lo dicho */
+  g.fillStyle = '#E9E4E4'; g.font = '600 30px -apple-system, system-ui, sans-serif';
+  let y = y0 + 82;
+  for(const l of lineas){ g.fillText(l, 42, y); y += 40; }
+
+  b.textura.needsUpdate = true;
+  b.sprite.visible = true;
 }
 
 function cambiarAnimacion(p, nombre){
@@ -511,15 +599,42 @@ function cambiarAnimacion(p, nombre){
 
 /* ══ LOS DATOS ═══════════════════════════════════════════════════════════ */
 let gente = {};
+/* Lo último que dijo cada quien, que es lo que va en su bocadillo. */
+let ultimoDicho = {};
+
+/* Del hilo completo, el último mensaje DE VERDAD de cada quien. Se saltan los
+   de sistema («entró», «salió») porque poner «Carlos entró» flotando sobre la
+   cabeza de Carlos no le dice nada a nadie. */
+function deLoDicho(hilo){
+  const ult = {};
+  for(const e of hilo){
+    if(!e || !e.de || !e.de.id) continue;
+    if(e.tipo === 'sistema') continue;
+    const texto = (e.texto || '').trim();
+    if(!texto) continue;
+    const antes = ult[e.de.id];
+    if(!antes || e.ts >= antes.ts) ult[e.de.id] = { texto, ts:e.ts, tipo:e.tipo };
+  }
+  return ult;
+}
+
+/* Cuánto tiempo se queda una burbuja arriba. Media hora: lo bastante para que
+   al abrir el taller se vea de qué se está hablando, y lo bastante poco para
+   que un cuarto vacío no siga con los globos de anoche puestos. */
+const DURA_BOCADILLO = 30 * 60_000;
 
 async function traer(){
-  if(DEMO) return demo();
+  if(DEMO){ ultimoDicho = dichoDemo(); return demo(); }
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${SALA}/hilo`,
       { headers: LLAVE ? { 'X-Llave': LLAVE } : {} });
     if(!r.ok) throw new Error(`el servidor contestó ${r.status}`);
     const d = await r.json();
     $('aviso').textContent = '';
+    /* ⚠ El hilo YA VENÍA en esta misma respuesta y se estaba tirando. No hizo
+       falta una petición nueva ni un endpoint nuevo para las burbujas: hacía
+       falta dejar de tirar la mitad de lo que ya se pedía. */
+    ultimoDicho = deLoDicho(d.hilo || []);
     return d.gente || {};
   }catch(e){
     $('aviso').textContent = `Sin conexión con la sala · ${e.message}`;
@@ -559,6 +674,18 @@ function demo(){
   };
 }
 
+/* En demostración se inventa también lo dicho: si no, el taller de ejemplo
+   sale sin burbujas y no se ve la mitad de lo que hace. */
+function dichoDemo(){
+  const t = Date.now();
+  return {
+    'cl-1':{ texto:'Ya quedó el arreglo de las deudas. Falta que alguien lo pruebe con un pedido de verdad.', ts:t-90_000 },
+    'cl-2':{ texto:'Encontré 31 defectos en la plantilla. Los tengo ordenados por qué tan feo se ve.', ts:t-260_000 },
+    'cl-l':{ texto:'Voy con la privacidad de avisos/. Hay nombres reales publicados.', ts:t-40_000 },
+    'gem':{ texto:'Reviso el video cuando terminen.', ts:t-600_000 },
+  };
+}
+
 function refrescar(nueva){
   gente = nueva;
   const lista = Object.values(gente);
@@ -578,6 +705,22 @@ function refrescar(nueva){
     /* la pantalla apagada cuando no hay nada: se nota de lejos quién trabaja */
     p.mesa.brillo.intensity = quien.trabajo ? 1.5 : 0.35;
     p.aro.material.opacity  = quien.trabajo ? 0.72 : 0.28;
+
+    /* ── su burbuja ── */
+    const dijo = ultimoDicho[quien.id];
+    if(dijo && Date.now() - dijo.ts < DURA_BOCADILLO){
+      /* Se vuelve a dibujar sólo si CAMBIÓ lo dicho. Repintar un lienzo de
+         720×300 sesenta veces por segundo para escribir lo mismo es como se
+         calienta un teléfono sin que nada se vea distinto. */
+      if(p.bocadillo.dice !== dijo.ts){
+        pintarBocadillo(p.bocadillo, dijo.texto,
+                        '#' + p.color.getHexString(), dijo.ts);
+        p.bocadillo.dice = dijo.ts;
+      }
+    }else{
+      p.bocadillo.sprite.visible = false;
+      p.bocadillo.dice = null;
+    }
   });
   pintarPanel(lista);
   if(!enFoco && lista.length) enFocar(lista[0].id);
