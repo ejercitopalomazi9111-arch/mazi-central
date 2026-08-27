@@ -5,11 +5,22 @@ description: Criterio para repartir trabajo entre varios modelos de IA — cuán
 
 # Repartir trabajo entre modelos
 
-**El punto no es tener muchas IAs. Es que la que revisa no sea la que construyó.**
+**Se revisa DOS veces: primero el que construyó, después alguien de otra casa.**
 
-Todo lo demás de esta skill es detalle. Un modelo revisando su propio trabajo comparte sus
-puntos ciegos: si no vio el bug al escribirlo, tampoco lo va a ver al leerlo. Ahí es donde un
-segundo modelo paga solo — no en "hacer más rápido", que casi nunca es cierto.
+Los dos pases cazan cosas distintas y por eso no se sustituyen:
+
+| Pase | Quién | Qué caza | Qué NO puede cazar |
+|---|---|---|---|
+| **1 · el propio** | el mismo que construyó | lo que quedó a medias, el `TODO` olvidado, el número que no cuadra, la frase sin terminar | su punto ciego — por definición |
+| **2 · el ajeno** | un modelo de **otra casa** | el punto ciego: el bug que no vio al escribirlo y tampoco vería al leerlo | lo que sólo el autor sabe que dejó pendiente |
+
+**El primero es barato y el segundo es caro.** Saltarse el barato para quedarse sólo con el caro
+es exactamente al revés de como conviene: el propio pase quita la mitad de los hallazgos antes
+de que cuesten un turno de otro modelo.
+
+> **Corrección de Carlos, 27 de agosto:** *«lo de que yo construyo y alguien más revisa está
+> bien, pero que el mismo también revise».* Antes esta skill decía sólo lo segundo y sonaba a
+> que revisarse a uno mismo no servía. Sí sirve — para otra cosa.
 
 ---
 
@@ -52,13 +63,31 @@ cambia es el criterio de la columna de la derecha.
 | Papel | Qué se le pide | Qué buscar al escoger |
 |---|---|---|
 | **Constructor** | Escribir el código y las pruebas | El que mejor siga instrucciones largas y use herramientas |
-| **Revisor** | Buscar el defecto, no aprobar | **De otra casa que el constructor.** Es el requisito, no una preferencia |
+| **Revisor propio** | Releer lo suyo buscando lo que dejó a medias | Es el mismo que construyó. Cuesta un turno y quita la mitad |
+| **Revisor ajeno** | Buscar el defecto, no aprobar | **De otra casa que el constructor.** Es el requisito, no una preferencia |
+| **Ayudante de bulto** | Leer largo, clasificar, primer borrador | Que sea barato. Aquí vive Kimi (`herramientas/ayudante.mjs`) |
 | **Lector de bultos** | Tragarse un corpus enorme y resumir | Ventana de contexto grande de verdad |
 | **Barato y privado** | Clasificar, extraer, resumir a volumen | Que corra en su máquina (Ollama). Lo que no sale de la casa no se filtra |
 | **Segunda opinión de negocio** | ¿Esto vale la pena? | Aquí no toca modelo: toca [`four-judges`](../four-judges/SKILL.md) |
 
 **El error a evitar:** poner de revisor a otra sesión del MISMO modelo y creer que eso es una
-segunda opinión. No lo es. Es la misma opinión dos veces, cobrada dos veces.
+segunda opinión ajena. No lo es. Es el pase propio, cobrado como si fuera el ajeno — y encima
+sin la ventaja del propio, que es que el autor sí se acuerda de lo que dejó pendiente.
+
+## El ayudante de la casa · Kimi
+
+Carlos lo puso así: *«que lo utilices como tu asistente personal medio baboso; yo no le daré
+órdenes, tú lo harás, tú lo gestionarás y tú lo cuidarás».* Son tres cosas distintas:
+
+- **Lo dirijo.** El encargo se lo armo yo, acotado. Nunca se le reenvía lo que dijo Carlos tal
+  cual — un encargo suelto devuelve trabajo suelto.
+- **Lo gestiono.** Escojo qué se le da: trabajo de bulto donde equivocarse es barato y se nota
+  rápido. La lista de lo que NUNCA se le encarga está en `herramientas/ayudante.mjs`.
+- **Lo cuido.** Lo que devuelve es **material, no verdad**. Si se equivoca, el error es mío:
+  Carlos no le va a reclamar a Kimi.
+
+**«Medio baboso» no es un insulto, es el nivel de confianza** — y es el encuadre correcto.
+Tareas donde el error sale barato y se ve pronto, sí. Lo que sale caro y tarda en notarse, no.
 
 ---
 

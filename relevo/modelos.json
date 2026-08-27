@@ -35,6 +35,14 @@
       "porque": "Ventana de contexto grande. Es el que sirve cuando hay que tragarse un bulto que a los otros no les cabe."
     },
     {
+      "id": "kimi",
+      "nombre": "Kimi · Moonshot",
+      "base": "https://api.moonshot.ai/v1",
+      "llave": "MOONSHOT_API_KEY",
+      "modelo": "kimi-k2.6",
+      "porque": "El ayudante de la casa. Moonshot NO tiene plan gratuito permanente —da créditos de prueba al registrarse—, pero K2.6 es de pesos abiertos: si se acaban los créditos, el mismo modelo entra por OpenRouter o corriendo en la máquina. Por eso hay tres caminos al mismo Kimi y no uno."
+    },
+    {
       "id": "glm",
       "nombre": "GLM · Z.ai",
       "base": "https://api.z.ai/api/paas/v4",
