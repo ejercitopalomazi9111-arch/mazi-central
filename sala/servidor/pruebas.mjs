@@ -698,5 +698,106 @@ console.log('\n· Fundar e invitar');
   ok('la llave de una sala NO sirve en otra', c9 === 401);
 }
 
+
+/* ══ · el cerebro abierto a todos ═════════════════════════════════════════
+   Carlos: «que todos los agentes puedan acceder a todas las skills,
+   pensamientos e ideas de la red neuronal, y que puedan sumar las suyas».
+
+   Lo que se prueba es lo que lo haría inútil o PELIGROSO: que no encuentre
+   nada, o que una IA de afuera pueda escribir directo en la memoria de la
+   casa sin que nadie lo revise. */
+console.log('\n· El cerebro, abierto por HTTP');
+{
+  const s = nueva();
+  /* Se le pone un cerebro de mentiras en vez de bajar el de verdad: una
+     prueba que depende de la red prueba la red, no el código. */
+  s._saber = { cuando: Date.now(), cerebro: { neuronas: [
+      { id:'charset-que-no-manda-el-servidor', titulo:'Los acentos se rompen',
+        clase:'error', area:'despliegue', sintoma:'campaña sale como campaÃ±a',
+        arreglo:'meta charset en los primeros 1024 bytes',
+        senales:['los acentos salen raros','se ven mal las tildes'], vecinas:[] },
+      { id:'pieza-sala', titulo:'La Sala', clase:'pieza', area:'mapa',
+        que:'La mesa de varias IAs', donde:'sala/',
+        senales:['qué es la sala','la mesa'], vecinas:[] },
+    ], areas:['despliegue','mapa'] },
+    skills: { total:2, porTema:{ video:1 }, skills:[
+      { n:'remotion', r:'Video con código React', e:['video'], l:'MIT' },
+      { n:'seo', r:'Optimización para buscadores', e:['negocio'], l:'MIT' } ] } };
+
+  const [c1, sin] = await leer(await pedir(s, 'GET', 'cerebro'));
+  ok('sin buscar, dice cuánto hay y cómo se pregunta',
+     c1 === 200 && sin.total === 2 && /buscar/.test(sin.como));
+
+  const [c2, r2] = await leer(await pedir(s, 'GET', 'cerebro?buscar=los acentos salen raros'));
+  ok('busca con las palabras de quien tiene el problema',
+     c2 === 200 && r2.neuronas[0].id === 'charset-que-no-manda-el-servidor');
+  /* Sólo lo justo para DECIDIR si es ésa: mandar el cuerpo entero de ocho
+     neuronas le come el contexto al agente, que es lo que veníamos a ahorrar. */
+  ok('devuelve lo justo para decidir, no el cuerpo entero',
+     !!r2.neuronas[0].de && r2.neuronas[0].sintoma === undefined);
+
+  const [c3, una] = await leer(await pedir(s, 'GET', 'cerebro?id=pieza-sala'));
+  ok('pedida por id, viene completa', c3 === 200 && una.neurona.donde === 'sala/');
+  ok('y con sus vecinas, porque un problema es una cadena', Array.isArray(una.vecinas));
+  const [c4] = await leer(await pedir(s, 'GET', 'cerebro?id=no-existe'));
+  ok('una que no existe da 404 limpio', c4 === 404);
+
+  const [c5, sk] = await leer(await pedir(s, 'GET', 'skills?buscar=video'));
+  ok('las skills también se buscan', c5 === 200 && sk.skills[0].nombre === 'remotion');
+  ok('y dice cómo usarla', /montar/.test(sk.como));
+}
+
+console.log('\n· Que un agente proponga sus propias neuronas');
+{
+  const s = nueva();
+  await entrar(s, 'gem', 'agente');
+
+  const buena = { de:'gem', clase:'error', area:'agentes',
+    id:'Se Cayó La Red',  /* con mayúsculas y espacios a propósito */
+    titulo:'Se cae la red a media descarga', sintoma:'la descarga se corta al 80%',
+    causa:'el proveedor cierra la conexión', porque:'tope de tiempo del lado de allá',
+    arreglo:'reintentar por partes', comoCazarlo:'mirar el tamaño recibido',
+    consejo:'no reintentar desde cero', senales:['se corta la descarga','falla a la mitad'] };
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'neurona', buena));
+  ok('un agente puede proponer una neurona', c1 === 200 && r1.bien);
+  ok('el id se normaliza solo', r1.id === 'se-cayo-la-red');
+
+  /* LA PRUEBA QUE IMPORTA: no entra sola al cerebro. Una IA de afuera
+     escribiendo directo en la memoria de la empresa es la vía más limpia para
+     envenenarla, y nadie se enteraría — una neurona mala se lee igual de bien
+     que una buena. */
+  ok('NO entra sola: queda en la bandeja', /bandeja/i.test(r1.ojo || ''));
+  const [, b] = await leer(await pedir(s, 'GET', 'propuestas'));
+  ok('y ahí está', b.cuantas === 1 && b.propuestas[0].id === 'se-cayo-la-red');
+  ok('con quién la propuso y cuándo',
+     b.propuestas[0].propuso.id === 'gem' && b.propuestas[0].propuso.cuando > 0);
+
+  /* Una neurona a medias es peor que ninguna: se lee como conocimiento. */
+  const [c2, e2] = await leer(await pedir(s, 'POST', 'neurona',
+    { de:'gem', clase:'error', id:'a-medias', titulo:'x' }));
+  ok('una neurona incompleta se rechaza', c2 === 400 && /faltan/i.test(e2.error));
+  ok('y dice EXACTAMENTE qué campos pide', Array.isArray(e2.pide) && e2.pide.includes('arreglo'));
+
+  const [c3, e3] = await leer(await pedir(s, 'POST', 'neurona',
+    { ...buena, id:'una-señal-sola', senales:['nomás una'] }));
+  ok('con una sola señal se rechaza', c3 === 400 && /senales/.test(e3.error));
+
+  /* Proponer la misma otra vez la PISA en vez de duplicarla: dos neuronas
+     iguales con distinto id son dos verdades que se van a separar. */
+  await pedir(s, 'POST', 'neurona', { ...buena, titulo:'Corregida' });
+  const [, b2] = await leer(await pedir(s, 'GET', 'propuestas'));
+  ok('proponerla otra vez la corrige, no la duplica',
+     b2.cuantas === 1 && b2.propuestas[0].titulo === 'Corregida');
+
+  /* Se anuncia en el hilo: si nadie ve que un agente aprendió algo, nadie la
+     recoge y se queda ahí para siempre. */
+  const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('se anuncia en la mesa', h.hilo.some(e => /Propuso una neurona/.test(e.texto || '')));
+
+  const [c4] = await leer(await pedir(s, 'POST', 'neurona', { ...buena, de:'nadie' }));
+  ok('alguien que no está en la sala no propone nada', c4 === 400);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

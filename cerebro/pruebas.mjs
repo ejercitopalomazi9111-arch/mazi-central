@@ -9,6 +9,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { cargar, aplanar, buscar, vecinas, revisar, agregar, grafo, claseDe,
          CAMPOS, OBLIGATORIOS } from './cerebro.mjs';
+import { readFile } from 'node:fs/promises';
 
 let bien = 0, mal = 0;
 const ok = (q, cierto) => {
@@ -276,6 +277,32 @@ console.log('\n· Sitios web: referencias y lo de antes de lanzar');
   ok('la referencia de afuera dice qué se puede y qué no',
      /NO TRAE LICENCIA|no se copia/i.test(
        (todas.find(n => n.id === 'pieza-nomad-portfolio') || {}).ojo || ''));
+}
+
+
+console.log('\n· El buscador corre en cualquier lado');
+{
+  /* Esta prueba existe por lo que ya nos costó una auditoría: `tipos.mjs`
+     afirmaba correr en el navegador y no corría, porque importaba `node:fs`
+     arriba. Ahora el cerebro se le abre a cualquier IA que hable HTTP, y eso
+     sólo funciona si `buscador.mjs` NO toca el disco. Sin este guardián,
+     alguien le mete un `readFile` en tres meses y el cerebro se cierra otra
+     vez sin que nadie se entere hasta que un worker truene. */
+  const src = await readFile(new URL('./buscador.mjs', import.meta.url), 'utf8');
+  const codigo = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  ok('no importa nada de node', !/from\s*['"]node:/.test(codigo));
+  ok('no toca el disco',
+     !/\b(readFile|writeFile|readdir|existsSync|mkdir)\b/.test(codigo));
+  ok('no usa `process` ni globales de Node', !/\bprocess\.|__dirname|require\(/.test(codigo));
+  ok('no importa NADA', !/^\s*import\s/m.test(codigo));
+
+  /* Y la prueba de verdad: que las funciones sirvan sin Node de por medio. */
+  const b = await import('./buscador.mjs');
+  ok('trae lo que hace falta para buscar desde fuera',
+     ['buscar','vecinas','grafo','CAMPOS','claseDe','normal'].every(k => b[k]));
+  const r = b.buscar(todas, 'los acentos salen raros');
+  ok('y busca igual que el de siempre', r.length > 0 && r[0].id === 'charset-que-no-manda-el-servidor');
 }
 
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);

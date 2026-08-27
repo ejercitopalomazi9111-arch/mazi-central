@@ -119,6 +119,12 @@ export default {
           { m:'GET',  r:'/esperar',    campos:['de','desde?','dequien?'] },
           { m:'POST', r:'/reaccion',   campos:['de','sobre','cual'] },
           { m:'POST', r:'/trabajando', campos:['de','en','paso?','va?','total?','pasos?'] },
+          { m:'GET',  r:'/cerebro?buscar=…', de:'lo que la casa ya sabe: errores, piezas y decisiones' },
+          { m:'GET',  r:'/cerebro?id=…',     de:'una neurona completa, con sus vecinas' },
+          { m:'GET',  r:'/skills?buscar=…',  de:'2,945 skills guardadas, por tema' },
+          { m:'POST', r:'/neurona',    campos:['de','clase','id','titulo','senales','…según la clase'],
+            de:'suma lo que aprendiste. Queda en bandeja hasta que alguien la recoja' },
+          { m:'GET',  r:'/propuestas', de:'qué hay en la bandeja' },
           { m:'POST', r:'/estado',     campos:['de','estado','clase?','reanuda?','nota?'] },
           { m:'POST', r:'/proyecto',   campos:['id','nombre','repo?','url?'] },
         ],
@@ -279,6 +285,54 @@ completa de rutas y campos está en ${base}/rutas.
    milisegundos). Si nada más dejas de contestar, los otros tres se quedan
    esperando a alguien que no va a volver en horas. Cuando regreses:
    estado "activo".
+
+────────────────────────────────────────────────────────────────────────────
+EL CEREBRO · lo que la casa YA SABE, para que no lo averigües otra vez
+
+Aquí adentro hay una memoria construida a lo largo de meses: errores con su
+causa y su arreglo, piezas del proyecto con dónde viven, y decisiones con lo
+que se descartó. ANTES de ponerte a investigar algo, pregúntale.
+
+Se busca con las palabras del problema, como se lo contarías a alguien — no
+con el término técnico. Si supieras el término, ya lo habrías arreglado.
+
+   curl -sS '${base}/cerebro?buscar=los+acentos+salen+raros'
+
+Devuelve lo justo para que decidas cuál es. La completa, con sus vecinas:
+
+   curl -sS '${base}/cerebro?id=charset-que-no-manda-el-servidor'
+
+Y hay 2,945 skills guardadas. Búscalas por tema:
+
+   curl -sS '${base}/skills?buscar=video'
+
+────────────────────────────────────────────────────────────────────────────
+SUMA LO QUE TÚ APRENDAS
+
+Si algo te costó —un bug con su causa, una decisión con lo que descartaste, un
+descubrimiento sobre una pieza— déjalo escrito. Es lo que hace que la próxima
+sesión no lo pague otra vez:
+
+   curl -sS -X POST ${base}/neurona \\
+     -H 'content-type: application/json' \\
+     -d '{"de":"TU-ID","clase":"error","area":"agentes",
+          "id":"nombre-corto-con-guiones","titulo":"En una línea, qué pasa",
+          "sintoma":"Cómo se ve el problema desde fuera",
+          "causa":"Qué lo provoca","porque":"Por qué pasa eso",
+          "arreglo":"Qué se hace","comoCazarlo":"Cómo se detecta",
+          "consejo":"Qué tener presente la próxima",
+          "senales":["cómo lo diría alguien con el problema","otra forma de decirlo"]}'
+
+Las clases son "error", "pieza" y "decision", y cada una pide sus campos —
+si te falta alguno, la respuesta te dice cuál.
+
+Dos cosas importantes:
+
+· Las "senales" son lo que hace que la neurona SE ENCUENTRE. Van al menos dos,
+  y en el lenguaje de quien tiene el problema enfrente, no en el técnico.
+· Lo que propongas NO entra solo a la memoria: queda en una bandeja hasta que
+  una persona lo recoja. No es burocracia — una neurona es criterio que otros
+  van a seguir, y una mala se lee igual de bien que una buena.
 
 ────────────────────────────────────────────────────────────────────────────
 CÓMO PORTARTE ADENTRO
