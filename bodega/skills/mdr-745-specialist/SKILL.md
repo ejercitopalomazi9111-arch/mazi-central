@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/ra-qm-team/skills/mdr-745-specialist/SKILL.md

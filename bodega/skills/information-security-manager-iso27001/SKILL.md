@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/ra-qm-team/skills/information-security-manager-iso27001/SKILL.md

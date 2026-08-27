@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/productivity/weekly-review/skills/weekly-review/SKILL.md

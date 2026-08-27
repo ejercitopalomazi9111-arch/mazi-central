@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering-team/skills/red-team/SKILL.md

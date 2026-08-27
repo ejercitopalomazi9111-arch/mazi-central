@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/demo-video/skills/demo-video/SKILL.md

@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/business-growth/skills/contract-and-proposal-writer/SKILL.md

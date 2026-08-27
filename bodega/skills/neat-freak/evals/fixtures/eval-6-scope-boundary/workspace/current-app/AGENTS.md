@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/kkkkhazix-khazix-skills/neat-freak/evals/fixtures/eval-6-scope-boundary/workspace/current-app/CLAUDE.md

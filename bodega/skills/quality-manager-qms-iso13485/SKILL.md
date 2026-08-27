@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/ra-qm-team/skills/quality-manager-qms-iso13485/SKILL.md

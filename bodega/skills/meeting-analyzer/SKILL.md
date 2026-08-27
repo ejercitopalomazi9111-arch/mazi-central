@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/project-management/skills/meeting-analyzer/SKILL.md

@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering-team/skills/ms365-tenant-manager/SKILL.md

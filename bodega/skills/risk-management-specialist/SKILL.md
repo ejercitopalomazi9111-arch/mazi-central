@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/ra-qm-team/skills/risk-management-specialist/SKILL.md
