@@ -168,8 +168,8 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .con-punto{position:relative; display:inline-flex; flex:0 0 auto}
 .con-punto::after{
   content:""; position:absolute; right:-1px; bottom:-1px;
-  width:11px; height:11px; border-radius:50%;
-  background:var(--verde); border:2.5px solid var(--superficie);
+  width:9px; height:9px; border-radius:50%;
+  background:var(--verde); border:2px solid var(--superficie);
 }
 .yo-panel .quien-soy{flex:1; min-width:0}
 .yo-panel .nombre{
@@ -232,6 +232,11 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    Carlos» se partía en TRES renglones y la coletilla de estado se comía otro,
    así que cuatro personas ocupaban media pantalla del cajón. Se vio
    capturando, no leyendo. */
+.casa-tit{
+  font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; padding:14px 8px 5px; opacity:.85;
+}
+.casa-tit:first-child{padding-top:2px}
 .quien-txt{display:flex; flex-direction:column; min-width:0; flex:1; gap:0}
 .quien .nom-quien{
   min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
@@ -246,8 +251,14 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .quien.trabajando .quien-sub{color:var(--violeta-claro)}
 /* El punto montado en el avatar, como en la lista de miembros de Discord. */
 .quien .con-punto{position:relative; display:inline-flex; flex:0 0 auto}
+/* ⚠ Lo cachó Carlos: «el punto verde se come todo el icono de la persona».
+   Tenía razón y la cuenta lo dice — 9px de punto más 2px de filo son 13px
+   encima de un avatar de 19px: dos tercios de la cara. En Discord el punto es
+   como un cuarto del avatar. Se arregla por los dos lados: el avatar de la
+   lista crece a 26px y el punto baja a 7px. */
+.quien .avatar.chico{width:26px; height:26px}
 .quien .punto{
-  position:absolute; right:-2px; bottom:-2px; width:9px; height:9px;
+  position:absolute; right:-1px; bottom:-1px; width:7px; height:7px;
   border:2px solid var(--vacio); border-radius:50%; background:var(--verde);
 }
 .quien:hover{background:var(--alta)}
@@ -279,7 +290,8 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.16em;
   text-transform:uppercase; color:var(--muy-tenue);
 }
-.dia::before,.dia::after{content:""; flex:1; height:1px; background:var(--borde)}
+.dia::before,.dia::after{content:""; flex:1; height:1px;
+  background:linear-gradient(90deg, transparent, var(--borde-vivo), transparent)}
 
 .grupo{display:flex; gap:8px; margin-bottom:3px; align-items:flex-end}
 /* ── DE QUÉ LADO CAE CADA QUIEN ────────────────────────────────────────────
@@ -310,6 +322,7 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    cobra a su dueño; el anillo dice que no es él en persona. */
 .avatar.sub{box-shadow:0 0 0 2px var(--vacio), 0 0 0 3.5px currentColor}
 .avatar.chico{width:19px; height:19px}
+.grupo > .avatar:not(.hueco){box-shadow:0 0 0 2px var(--vacio), 0 0 0 3px var(--tono, transparent)}
 .avatar.grande{width:46px; height:46px}
 
 .llaves{
@@ -400,14 +413,18 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    pintada del color de la cuenta se vuelve ilegible en cuanto la cuenta es
    amarilla, y el hilo es para leerlo. */
 .burbuja{
-  border-left:2.5px solid var(--tono, var(--borde));
+  border:1px solid var(--tono, var(--borde));
+  border-left:3px solid var(--tono, var(--borde));
   background:
     linear-gradient(var(--baño, transparent), var(--baño, transparent)),
     var(--superficie);
+  /* Un resplandor del color de quien habla. Es lo que hace que el hilo se vea
+     con color de verdad y no con un filito de color. */
+  box-shadow:0 1px 0 rgba(0,0,0,.25), 0 0 0 1px var(--halo, transparent);
 }
 .grupo.otrolado .burbuja{
-  border-left:1px solid var(--borde);
-  border-right:2.5px solid var(--tono, var(--borde));
+  border-left:1px solid var(--tono, var(--borde));
+  border-right:3px solid var(--tono, var(--borde));
 }
 .grupo:not(.junto) .burbuja{border-top-left-radius:5px}
 .grupo.otrolado:not(.junto) .burbuja{border-top-left-radius:16px; border-top-right-radius:5px}
@@ -1084,16 +1101,34 @@ const hora = (ts) => new Date(ts).toLocaleTimeString('es-MX',
    va a contestar en cuatro horas. */
 function pintarGente(){
   const lista = Object.values(gente);
-  $('gente').innerHTML = lista.length ? lista.map(p => {
+
+  /* ── AGRUPADA POR CASA, como la lista de miembros de Discord ─────────────
+     Ahí los miembros van por rol —«Streamer — 1», «BOT — 5»— con el nombre
+     pintado del color del rol, y por eso se sabe quién es quién antes de
+     leer. Aquí el rol es LA CASA: los de Carlos juntos, los de Luis juntos,
+     cada casa con su color y con cuántos son. Que sean dos casas y no ocho
+     roles es justo lo que lo hace legible de un vistazo. */
+  const casas = new Map();
+  for(const p of lista){
+    const b = bandoDe(credencial(p));
+    if(!casas.has(b)) casas.set(b, []);
+    casas.get(b).push(p);
+  }
+  /* La tuya primero: es la que consultas más. */
+  const mia = miBando();
+  const orden = [...casas.keys()].sort((a, b) =>
+    (a === mia ? -1 : b === mia ? 1 : a.localeCompare(b)));
+
+  const ficha = (p) => {
     /* Entrar a la sala NO es estar vivo. Un agente que entró y nunca volvió a
        dar señales se veía igual que uno pensando, y por eso alguien se quedó
        150 segundos esperando a quien nunca iba a contestar. Cinco minutos sin
-       señal y se marca dormido. */
-    /* Regla de Carlos, dicha con todas sus letras: «las IAs no deben
+       señal y se marca dormido.
+
+       Regla de Carlos, dicha con todas sus letras: «las IAs no deben
        desconectarse sin indicación directa». Un socket abierto ES esa
        indicación, al revés: mientras esté ahí, la persona está. Sólo se cae a
-       «sin señal» quien ni tiene socket ni ha dado señales en cinco minutos —
-       que es el caso real de un agente que entró y nunca volvió. */
+       «sin señal» quien ni tiene socket ni ha dado señales en cinco minutos. */
     const callado = !conectados.has(p.id)
                  && Date.now() - (p.visto || 0) > 5 * 60_000;
     const clase = (p.estado === 'topado' || p.estado === 'ocupado') ? 'topado'
@@ -1101,27 +1136,36 @@ function pintarGente(){
                 : p.trabajo ? 'trabajando'
                 : callado ? 'dormido' : '';
     const hasta = p.reanuda ? `vuelve ${hora(p.reanuda)}` : '';
-    /* Si está trabajando, el chip dice EN QUÉ. Eso es media pantalla de
-       agente sin tener que abrir nada, y es lo que uno quiere de reojo. */
+    /* Si está trabajando, la ficha dice EN QUÉ. Eso es media pantalla de
+       agente sin abrir nada, y es lo que uno quiere de reojo. */
     const en = p.trabajo ? esc(p.trabajo.en.slice(0, 26))
-              : callado ? 'sin señal' : '';
+             : callado ? 'sin señal' : '';
     const cred = credencial(p);
-    /* ── DOS RENGLONES, como la lista de miembros de Discord ────────────────
+    /* ── DOS RENGLONES, como la lista de miembros de Discord ──────────────
        En uno solo competían por 285px el nombre, el modelo, en qué anda y a
        qué hora vuelve — y perdía el nombre: se veía «Su co…» y de los dos
        Claude no se leía NINGÚN nombre, sólo su coletilla. Capturado, no
-       supuesto. Arriba quién es, abajo cómo está: el nombre ya no compite
-       con nada.
+       supuesto. Arriba quién es, abajo cómo está.
        El punto de estado se monta EN el avatar en vez de ir suelto — así no
        gasta una columna y es donde uno ya lo está buscando. */
     return `<button class="quien ${clase}" data-ver="${esc(p.id)}">` +
            `<span class="con-punto">${avatarHtml(cred, 'chico')}<i class="punto"></i></span>` +
            `<span class="quien-txt">` +
-             `<span class="nom-quien">${esc(p.nombre)}</span>` +
+             `<span class="nom-quien" style="color:${tonoDe(cred)}">${esc(p.nombre)}</span>` +
              `<span class="quien-sub">${esc(comoSeLlama(cred))}${en || hasta ? ' · ' : ''}` +
              `${en}${hasta}</span>` +
            `</span></button>`;
-  }).join('') : '<span class="quien"><span class="punto"></span>Nadie más todavía</span>';
+  };
+
+  $('gente').innerHTML = lista.length ? orden.map(casa => {
+    const suyos = casas.get(casa);
+    const color = tonoDe(credencial(suyos[0]));
+    const nombre = casa === mia ? 'Tu casa' : `Casa de ${casa}`;
+    return `<div class="casa-tit" style="color:${color}">` +
+           `${esc(nombre)} — ${suyos.length}</div>` +
+           suyos.map(ficha).join('');
+  }).join('') : '<span class="quien"><span class="quien-txt">' +
+    '<span class="nom-quien">Nadie más todavía</span></span></span>';
 
   /* El número al lado del icono: CUÁNTOS ESTÁN EN LA SALA, no cuántos están
      despiertos. Se intentó lo segundo y salía vacío con cuatro adentro —
@@ -1486,7 +1530,7 @@ function pintarHilo(){
     partes.push(
       `<div class="grupo ${mio ? 'mio' : ''} ${otrolado ? 'otrolado' : ''} ${
          conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}"` +
-        ` style="--tono:${tono}; --baño:${tono}14">` +
+        ` style="--tono:${tono}; --baño:${tono}33; --halo:${tono}22">` +
       av +
       `<div class="burbuja ${esc(e.tipo)}" data-ev="${esc(e.id)}">` +
         cab + etiqueta + aQuien +
