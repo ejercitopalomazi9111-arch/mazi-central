@@ -14,8 +14,15 @@
       "comoCazarlo": "Tápate el resto y pregúntate si el dato sigue leyéndose. Si no, la codificación no existe.",
       "consejo": "Lo decorativo puede ser tenue. Lo que significa, no.",
       "salioDe": "campana/mapa · los anillos de urgencia eran invisibles, y la distancia al centro era TODA la idea",
-      "senales": ["se ve bonito pero", "no entiendo qué significa", "no se distingue"],
-      "vecinas": ["color-sin-forma", "ver-la-pantalla"]
+      "senales": [
+        "se ve bonito pero",
+        "no entiendo qué significa",
+        "no se distingue"
+      ],
+      "vecinas": [
+        "color-sin-forma",
+        "ver-la-pantalla"
+      ]
     },
     {
       "id": "color-sin-forma",
@@ -28,8 +35,14 @@
       "comoCazarlo": "Convierte a escala de grises y mide la separación. Si dos quedan a menos de 5 puntos, no se distinguen.",
       "consejo": "Para material que se va a fotocopiar esto no es accesibilidad: es que funcione.",
       "salioDe": "campana/ · los tres verbos llevan ◼ ◆ ▲ además de color",
-      "senales": ["se ve igual impreso", "no distingo los colores", "en blanco y negro"],
-      "vecinas": ["la-codificacion-invisible"]
+      "senales": [
+        "se ve igual impreso",
+        "no distingo los colores",
+        "en blanco y negro"
+      ],
+      "vecinas": [
+        "la-codificacion-invisible"
+      ]
     },
     {
       "id": "medir-el-texto-pintado",
@@ -42,8 +55,14 @@
       "comoCazarlo": "Una versión que medía cajas daba todo bien mientras la presentación se veía rota. Medir lo pintado cazó 31 defectos.",
       "consejo": "Y vuelve a medir cuando cargue la tipografía: antes de eso los anchos son de la fuente de respaldo.",
       "salioDe": "fadori/presentacion/medir.py y campana/mapa",
-      "senales": ["se encima", "se sale", "se corta el texto"],
-      "vecinas": ["la-codificacion-invisible"]
+      "senales": [
+        "se encima",
+        "se sale",
+        "se corta el texto"
+      ],
+      "vecinas": [
+        "la-codificacion-invisible"
+      ]
     },
     {
       "id": "no-cabe-legible",
@@ -56,8 +75,15 @@
       "comoCazarlo": "Cuenta cuántas etiquetas quedan fuera del cuadro. Si son más de la mitad, la vista está rota aunque «quepa».",
       "consejo": "Un mapa que no se puede leer no es un mapa. Mejor una parte legible que el todo ilegible.",
       "salioDe": "campana/mapa · 9 de 14 rótulos fuera de cuadro en iPhone",
-      "senales": ["se ve chiquito", "no se alcanza a leer", "todo apretado"],
-      "vecinas": ["falta-el-viewport", "medir-el-texto-pintado"]
+      "senales": [
+        "se ve chiquito",
+        "no se alcanza a leer",
+        "todo apretado"
+      ],
+      "vecinas": [
+        "falta-el-viewport",
+        "medir-el-texto-pintado"
+      ]
     },
     {
       "id": "codigo-muerto-de-adorno",
@@ -70,8 +96,38 @@
       "comoCazarlo": "Un `grep` de cada clase nueva contra el archivo entero.",
       "consejo": "Borrar código muerto es barato hoy y caro dentro de un mes, cuando alguien lo tome por una pista.",
       "salioDe": "sala/index.html · las líneas conectoras del taller que nunca se dibujaron",
-      "senales": ["esto para qué es", "no encuentro dónde se usa"],
-      "vecinas": ["funcion-duplicada"]
+      "senales": [
+        "esto para qué es",
+        "no encuentro dónde se usa"
+      ],
+      "vecinas": [
+        "funcion-duplicada"
+      ]
+    },
+    {
+      "id": "barra-que-no-cabe-en-el-telefono",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "La barra de La Sala se salía de la pantalla y «Salir» quedaba cortado",
+      "sintoma": "En un teléfono de 390px, el último botón de la barra superior aparece cortado contra el borde derecho y no se puede tocar. En computadora se ve perfecto.",
+      "causa": "`.barra` es `display:flex` sin `flex-wrap`, así que los hijos se comprimen y se desbordan en vez de bajar de renglón. Y `.btn` sin `white-space:nowrap` partía «Quién es quién» en tres renglones, lo que triplicaba el alto de la barra al apretarse.",
+      "porque": "Nadie había capturado la mesa a 390px. Estaba roto desde antes de agregarle botones — agregarlos sólo lo hizo evidente. Un desbordamiento horizontal no avienta error ni sale en consola: hay que VERLO.",
+      "arreglo": "`flex-wrap:wrap` con `row-gap` en la barra, y `white-space:nowrap` en el botón. Baja a un segundo renglón, que es más feo que nada y mucho menos feo que un botón inalcanzable.",
+      "comoCazarlo": "Capturar toda barra de herramientas a 390px antes de darla por buena, y contar los elementos en la foto: si en el código hay seis y en la pantalla se ven cinco, se está desbordando.",
+      "consejo": "Una barra con más de tres o cuatro acciones no cabe en teléfono. En cuanto se le agregue una, se vuelve a capturar.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "se sale de la pantalla",
+        "el botón está cortado",
+        "no me cabe en el celular",
+        "se ve mal en el teléfono"
+      ],
+      "vecinas": [
+        "pieza-sala",
+        "ver-la-pantalla"
+      ]
     }
   ]
 }

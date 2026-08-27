@@ -184,6 +184,32 @@
         "prueba-de-un-solo-caso",
         "reproducir-antes-de-arreglar"
       ]
+    },
+    {
+      "id": "editar-en-dist-y-perderlo",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "Edité en `dist/` y el siguiente build se llevó el trabajo",
+      "sintoma": "Haces un cambio, lo verificas, reconstruyes… y el cambio no está. `grep` en el archivo fuente devuelve 0 y parece que la edición nunca ocurrió.",
+      "causa": "La terminal conserva el directorio entre llamadas. Un `cd .../dist` de hace tres comandos —hecho para levantar un servidor estático— dejó ahí el cursor, y un guion con ruta RELATIVA (`sala/index.html`) escribió en `dist/sala/index.html`. `build.mjs` arranca con `rm -rf dist` y lo borró.",
+      "porque": "No hay error posible: `dist/sala/index.html` existe y es escribible, así que la edición «funciona» y hasta se puede capturar la pantalla y verla bien. La pérdida ocurre después, en silencio, y se confunde con «no se guardó».",
+      "arreglo": "Rutas ABSOLUTAS en todo guion que escriba archivos del repo, y `pwd` antes de editar cuando la sesión ya levantó un servidor o entró a otra carpeta. Nada se perdió de verdad: se rehace la edición sobre la fuente.",
+      "comoCazarlo": "Después de editar, comprobar en la FUENTE y no en lo construido: `grep -c \"<lo nuevo>\" ruta/del/archivo`. Si da 0, se editó en otro lado.",
+      "consejo": "`dist/` es una salida, no un lugar donde se trabaja. Todo lo que aparezca ahí y no venga de `build.mjs` está condenado.",
+      "toca": [
+        "build.mjs",
+        "dist/"
+      ],
+      "senales": [
+        "se borró mi cambio",
+        "edité y no aparece",
+        "el build se llevó el trabajo",
+        "no se guardó"
+      ],
+      "vecinas": [
+        "pieza-mazi-central",
+        "verificar-lo-publicado"
+      ]
     }
   ]
 }

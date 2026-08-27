@@ -46,6 +46,11 @@ body{
   flex:0 0 auto; display:flex; align-items:center; gap:10px;
   padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
   background:var(--superficie); border-bottom:1px solid var(--borde);
+  /* ⚠ Esto NO es por los dos botones nuevos: ya estaba roto antes y no se
+     había visto porque nadie había capturado la mesa a 390px. Sin envolver,
+     «Salir» —el botón para irse— quedaba CORTADO contra el borde derecho del
+     teléfono. Un botón que no se alcanza a tocar es un botón que no existe. */
+  flex-wrap:wrap; row-gap:8px;
 }
 .marca{font-weight:700; letter-spacing:-.02em; font-size:16px; white-space:nowrap}
 .marca b{color:var(--violeta)}
@@ -60,7 +65,14 @@ body{
   font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; padding:7px 11px; border-radius:8px; cursor:pointer;
   background:transparent; color:var(--tenue); border:1px solid var(--borde-vivo);
+  /* Sin esto, «Quién es quién» se partía en TRES renglones al apretarse y la
+     barra crecía al triple de alto. Un botón se parte en palabras sueltas
+     antes que en dos renglones parejos: siempre se ve como un error. */
+  white-space:nowrap;
 }
+/* Los que llevan a otra pantalla son enlaces de verdad, no botones. Pero un
+   <a> trae subrayado y se alinea distinto que un <button>. */
+a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .btn:hover{color:var(--hueso); border-color:var(--violeta)}
 .btn:focus-visible,.codigo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
 
@@ -563,6 +575,21 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <span class="marca">La <b>Sala</b></span>
   <button class="codigo" id="bCodigo" title="Copiar el link de invitación">------</button>
   <span class="crece"></span>
+  <!-- ── LA SALIDA A LAS OTRAS DOS PANTALLAS ────────────────────────────
+       Lo pidió Carlos desde adentro de la mesa: «no puedo ver el cerebro ni
+       el entorno 3D, haz que pueda hacerlo desde aquí». El diagnóstico era
+       ése y no otro: las dos páginas funcionaban perfecto, pero desde la mesa
+       no había cómo llegar — y en teléfono, salirte a teclear una URL a mano
+       es lo mismo que no tenerlas.
+
+       Van como <a> y no como botón con JS a propósito: así se abren en
+       pestaña nueva, se comparten y se vuelve con el botón de atrás. Y en
+       pestaña nueva porque la sala es una conversación en vivo: sacarte de
+       ella para ver una neurona te haría perder el hilo y volver a entrar. -->
+  <a class="btn" href="../cerebro/" target="_blank" rel="noopener"
+     title="Las 95 neuronas: lo que ya nos costó caro, qué es cada pieza y qué se descartó">Cerebro</a>
+  <a class="btn" href="../entorno/" target="_blank" rel="noopener"
+     title="El taller en 3D: ver en qué anda cada agente">Taller</a>
   <button class="btn" id="bLlaves" title="Cerrar la sala e invitar">Llaves</button>
   <button class="btn" id="bLeyenda" title="Qué figura es cada modelo y de quién es cada color">Quién es quién</button>
   <button class="btn" id="bSalir">Salir</button>
