@@ -1,0 +1,53 @@
+{
+  "name": "planning-with-files",
+  "version": "3.11.2",
+  "description": "Persistent file-based planning for AI coding agents: keeps task_plan.md, findings.md and progress.md on disk so the plan survives /clear, context loss and compaction. Manus-style. Ships the skill plus a Pi Coding Agent extension.",
+  "keywords": [
+    "pi-package",
+    "pi-skill",
+    "planning",
+    "manus",
+    "agent",
+    "agent-skills",
+    "claude-code",
+    "claude-skills",
+    "coding-agent",
+    "context-engineering",
+    "session-recovery",
+    "long-running-agents"
+  ],
+  "pi": {
+    "skills": [
+      "SKILL.md"
+    ],
+    "extensions": [
+      "extensions/planning-with-files/index.ts"
+    ]
+  },
+  "files": [
+    "README.md",
+    "SKILL.md",
+    "examples.md",
+    "reference.md",
+    "scripts/",
+    "templates/",
+    "extensions/",
+    "!**/node_modules",
+    "!**/__pycache__",
+    "!**/*.pyc",
+    "!extensions/planning-with-files/package-lock.json"
+  ],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OthmanAdi/planning-with-files.git"
+  },
+  "author": "Ahmad Othman Ammar Adi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/OthmanAdi/planning-with-files/issues"
+  },
+  "homepage": "https://github.com/OthmanAdi/planning-with-files#readme"
+}

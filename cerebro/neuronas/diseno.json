@@ -1,0 +1,77 @@
+{
+  "area": "diseno",
+  "nombre": "Diseño que se ve y se lee",
+  "que": "Errores de pantalla que no son de código: cosas invisibles, encimadas, o bonitas pero mentirosas.",
+  "neuronas": [
+    {
+      "id": "la-codificacion-invisible",
+      "titulo": "Lo que codifica el significado no se veía",
+      "gravedad": "alta",
+      "sintoma": "El gráfico se ve bonito y no comunica. La gente pregunta qué significa.",
+      "causa": "El elemento que carga el significado —una línea guía, una escala, un eje— quedó tan tenue que desapareció.",
+      "porque": "Al diseñar uno lo baja para que «no estorbe», y termina bajándolo por debajo del umbral de verse.",
+      "arreglo": "Subirle contraste al elemento que codifica, aunque sea el que menos «adorna».",
+      "comoCazarlo": "Tápate el resto y pregúntate si el dato sigue leyéndose. Si no, la codificación no existe.",
+      "consejo": "Lo decorativo puede ser tenue. Lo que significa, no.",
+      "salioDe": "campana/mapa · los anillos de urgencia eran invisibles, y la distancia al centro era TODA la idea",
+      "senales": ["se ve bonito pero", "no entiendo qué significa", "no se distingue"],
+      "vecinas": ["color-sin-forma", "ver-la-pantalla"]
+    },
+    {
+      "id": "color-sin-forma",
+      "titulo": "Distinguirlo sólo por color deja fuera a mucha gente",
+      "gravedad": "media",
+      "sintoma": "Impreso en blanco y negro, o para quien no distingue rojo y verde, dos categorías se vuelven una.",
+      "causa": "El color es el único canal que separa las categorías.",
+      "porque": "En la pantalla del que diseña se distinguen perfecto, y ahí termina la prueba.",
+      "arreglo": "Cada categoría lleva ADEMÁS su figura, su posición o su etiqueta.",
+      "comoCazarlo": "Convierte a escala de grises y mide la separación. Si dos quedan a menos de 5 puntos, no se distinguen.",
+      "consejo": "Para material que se va a fotocopiar esto no es accesibilidad: es que funcione.",
+      "salioDe": "campana/ · los tres verbos llevan ◼ ◆ ▲ además de color",
+      "senales": ["se ve igual impreso", "no distingo los colores", "en blanco y negro"],
+      "vecinas": ["la-codificacion-invisible"]
+    },
+    {
+      "id": "medir-el-texto-pintado",
+      "titulo": "Los rótulos se encimaban porque medí la caja y no el texto",
+      "gravedad": "media",
+      "sintoma": "Dos etiquetas se pisan, o una se sale del papel, aunque «según el código» caben.",
+      "causa": "Se midió lo declarado —la caja, el ancho reservado— y no lo que de verdad se pintó.",
+      "porque": "La tipografía real, el ajuste de línea y el idioma cambian el ancho, y nada de eso está en el XML ni en el CSS.",
+      "arreglo": "Medir el texto ya pintado, con la fuente cargada, y resolver colisiones con ese número.",
+      "comoCazarlo": "Una versión que medía cajas daba todo bien mientras la presentación se veía rota. Medir lo pintado cazó 31 defectos.",
+      "consejo": "Y vuelve a medir cuando cargue la tipografía: antes de eso los anchos son de la fuente de respaldo.",
+      "salioDe": "fadori/presentacion/medir.py y campana/mapa",
+      "senales": ["se encima", "se sale", "se corta el texto"],
+      "vecinas": ["la-codificacion-invisible"]
+    },
+    {
+      "id": "no-cabe-legible",
+      "titulo": "Todo cabía en el teléfono, ilegible",
+      "gravedad": "media",
+      "sintoma": "En el celular se ve completo y no se puede leer nada.",
+      "causa": "Se encogió hasta que cupo, sin piso de legibilidad.",
+      "porque": "«Que quepa» es fácil de comprobar; «que se lea» no tiene una comprobación automática.",
+      "arreglo": "Poner piso al acercamiento y enseñar una parte legible, con manera de moverse al resto.",
+      "comoCazarlo": "Cuenta cuántas etiquetas quedan fuera del cuadro. Si son más de la mitad, la vista está rota aunque «quepa».",
+      "consejo": "Un mapa que no se puede leer no es un mapa. Mejor una parte legible que el todo ilegible.",
+      "salioDe": "campana/mapa · 9 de 14 rótulos fuera de cuadro en iPhone",
+      "senales": ["se ve chiquito", "no se alcanza a leer", "todo apretado"],
+      "vecinas": ["falta-el-viewport", "medir-el-texto-pintado"]
+    },
+    {
+      "id": "codigo-muerto-de-adorno",
+      "titulo": "Dejé estilos de algo que nunca llegué a dibujar",
+      "gravedad": "baja",
+      "sintoma": "Reglas que no aplican a nada, y quien lo lea después va a buscar el elemento que las usa.",
+      "causa": "Se planeó una pieza, se escribió su estilo, y la pieza no se construyó.",
+      "porque": "El estilo se escribe primero porque es fácil, y luego se olvida que quedó huérfano.",
+      "arreglo": "Buscar la clase en el código que pinta. Si no aparece, se borra.",
+      "comoCazarlo": "Un `grep` de cada clase nueva contra el archivo entero.",
+      "consejo": "Borrar código muerto es barato hoy y caro dentro de un mes, cuando alguien lo tome por una pista.",
+      "salioDe": "sala/index.html · las líneas conectoras del taller que nunca se dibujaron",
+      "senales": ["esto para qué es", "no encuentro dónde se usa"],
+      "vecinas": ["funcion-duplicada"]
+    }
+  ]
+}

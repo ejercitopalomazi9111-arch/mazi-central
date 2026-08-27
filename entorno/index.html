@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Taller · Grupo Mazi</title>
+<!-- ══════════════════════════════════════════════════════════════════════════
+     EL TALLER — el cuarto donde se ve trabajar a los agentes
+     ──────────────────────────────────────────────────────────────────────────
+     Lo pidió Carlos así: «un entorno virtual donde pueda verte como un modelo
+     3D descargado de la web y ver cómo trabajas en tiempo real, con una
+     computadora dentro del entorno que me muestre qué haces».
+
+     DE DÓNDE SALE LO QUE SE VE. De La Sala. No hay servidor nuevo: `/hilo`
+     ya devuelve a toda la gente con su `trabajo` —en qué anda, el paso actual,
+     los últimos ocho pasos y el avance—, y eso ya está probado con 91 pruebas.
+     Este archivo es OTRA CARA del mismo servidor. Inventarle un backend aparte
+     habría sido tener dos versiones de la verdad y que se desincronizaran.
+
+     EL MUÑECO ES ARTE REAL, NO DIBUJADO POR CÓDIGO. `RobotExpressive.glb`,
+     de Tomás Laulhé (Quaternius), CC0 1.0, con modificaciones de Don McCurdy.
+     Es la regla §3 de la casa: para relleno y ambiente se busca real con
+     licencia abierta y se baja al repo con crédito. Los muebles sí son cajas
+     —una mesa no es «arte», es geometría— pero el personaje no.
+
+     QUIÉN ES QUIÉN. Se reusa la identidad que ya existe en la mesa: el COLOR
+     es la cuenta, y el matiz la sesión. Un robot morado es de Carlos, uno
+     naranja es de Luis. Así el cuarto y el chat dicen lo mismo.
+
+     TELÉFONO PRIMERO. Carlos trabaja desde el iPhone. Por eso hay dos lecturas
+     de lo mismo: el monitor DENTRO de la escena, que es el que se siente, y un
+     panel de HTML encima, que es el que de verdad se lee con el pulgar. Una
+     pantalla 3D leída en un teléfono es bonita y es ilegible.
+     ═════════════════════════════════════════════════════════════════════════ -->
+<style>
+:root{
+  --vacio:#100A18; --superficie:#1B1226; --alta:#241834;
+  --borde:#33224A; --borde-vivo:#4A3167;
+  --hueso:#E9E4E4; --tenue:#A090B4; --muy-tenue:#7B6B8D;
+  --violeta:#AC27FF; --violeta-claro:#C77BFF;
+  --verde:#3ECF8E; --ambar:#E8B33A; --rojo:#F0567F;
+  --display:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --dato:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--vacio);color:var(--hueso);
+  font-family:var(--display);-webkit-text-size-adjust:100%}
+canvas{display:block;touch-action:none}
+
+/* ── la barra ─────────────────────────────────────────────────────────── */
+.barra{
+  position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;gap:10px;
+  padding:calc(9px + env(safe-area-inset-top)) 13px 9px;
+  background:linear-gradient(var(--vacio),rgba(16,10,24,.82),transparent);
+}
+.marca{font-weight:700;font-size:15px;letter-spacing:-.01em}
+.marca b{color:var(--violeta)}
+.crece{flex:1}
+.btn{
+  font-family:var(--dato);font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;padding:7px 11px;border-radius:99px;cursor:pointer;
+  background:rgba(27,18,38,.86);color:var(--tenue);border:1px solid var(--borde-vivo);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+.btn:hover,.btn.on{color:var(--hueso);border-color:var(--violeta)}
+.btn.on{background:rgba(172,39,255,.16)}
+
+/* ── el panel que de verdad se lee ────────────────────────────────────── */
+.panel{
+  position:fixed;left:0;right:0;bottom:0;z-index:10;
+  transition:transform .3s ease, opacity .3s ease;
+  padding:14px 14px calc(16px + env(safe-area-inset-bottom));
+  background:linear-gradient(transparent,rgba(16,10,24,.86) 22%,var(--vacio));
+  max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.panel.plegado{transform:translateY(calc(100% - 74px))}
+.panel.plegado .ficha:not(.eldelfoco){display:none}
+.ficha{
+  background:rgba(27,18,38,.9);border:1px solid var(--borde);border-radius:15px;
+  padding:11px 13px;margin-bottom:8px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+}
+.ficha.eldelfoco{border-color:var(--violeta)}
+.cab{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.pastilla{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.nom{font-weight:700;font-size:13.5px}
+.motor{font-family:var(--dato);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muy-tenue)}
+.estado{margin-left:auto;font-family:var(--dato);font-size:9px;letter-spacing:.08em;
+  text-transform:uppercase;padding:2px 7px;border-radius:99px;border:1px solid var(--borde-vivo);
+  color:var(--tenue)}
+.estado.trabaja{color:var(--verde);border-color:rgba(62,207,142,.5)}
+.estado.dormido{color:var(--muy-tenue)}
+.estado.topado{color:var(--ambar);border-color:rgba(232,179,58,.5)}
+.enque{font-size:13.5px;line-height:1.45;margin-bottom:3px}
+.paso{font-family:var(--dato);font-size:11px;color:var(--violeta-claro);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barrita{height:3px;border-radius:2px;background:var(--alta);margin-top:8px;overflow:hidden}
+.barrita i{display:block;height:100%;background:var(--violeta);transition:width .5s}
+.rastro{margin-top:8px;padding-top:7px;border-top:1px solid var(--borde);
+  font-family:var(--dato);font-size:10.5px;color:var(--muy-tenue);line-height:1.6}
+.rastro div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rastro div:last-child{color:var(--tenue)}
+.nadie{color:var(--muy-tenue);font-size:13px;text-align:center;padding:18px 10px}
+
+.aviso{
+  position:fixed;top:calc(50px + env(safe-area-inset-top));left:13px;right:13px;z-index:11;
+  font-family:var(--dato);font-size:10.5px;color:var(--ambar);text-align:center;
+}
+.cargando{
+  position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:var(--vacio);
+  font-family:var(--dato);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muy-tenue);transition:opacity .6s;
+}
+.cargando.ido{opacity:0;pointer-events:none}
+.credito{
+  position:fixed;bottom:calc(4px + env(safe-area-inset-bottom));right:10px;z-index:9;
+  font-family:var(--dato);font-size:8.5px;color:rgba(123,107,141,.55);
+}
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <span class="marca">El <b>Taller</b></span>
+  <span class="crece"></span>
+  <button class="btn" id="bPanel">Panel</button>
+  <button class="btn" id="bSeguir">Seguir</button>
+  <button class="btn" id="bVista">Vista</button>
+</div>
+
+<div class="aviso" id="aviso"></div>
+<div class="panel" id="panel"></div>
+<div class="cargando" id="cargando">armando el taller…</div>
+<div class="credito">Robot: Tomás Laulhé · Quaternius · CC0</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
+import { OrbitControls } from './vendor/controls/OrbitControls.js';
+/* `clone()` de three NO clona el esqueleto de una malla con huesos: los clones
+   comparten el mismo Skeleton y se deforman todos con el que se anime último.
+   `SkeletonUtils.clone` existe justamente para eso. Con un solo robot no se
+   nota; con cuatro en el cuarto se ve como una escena de terror. */
+import { clone as clonarConHuesos } from './vendor/utils/SkeletonUtils.js';
+
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const params   = new URLSearchParams(location.search);
+const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.dev').replace(/\/$/,'');
+const SALA     = (params.get('sala') || '').toUpperCase();
+const LLAVE    = params.get('llave') || '';
+const DEMO     = params.get('demo') === '1' || !SALA;
+
+/* Un agente mide 1.55: alto de persona junto a un escritorio de 0.74. Con
+   esto la pantalla le queda a la altura de la cara y el encuadre sale solo. */
+const ALTO_AGENTE = 1.55;
+let ALTO_CRUDO = 1;                     /* se mide al cargar el modelo */
+
+/* ══ EL CUARTO ═══════════════════════════════════════════════════════════ */
+const escena = new THREE.Scene();
+escena.background = new THREE.Color(0x100A18);
+escena.fog = new THREE.Fog(0x100A18, 9, 26);
+
+const camara = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.1, 100);
+camara.position.set(0, 2.6, 7.2);
+
+/* ── el encuadre en un teléfono parado ────────────────────────────────────
+   El `fov` de three es VERTICAL. En una pantalla de 390×844 la relación es
+   0.46, así que el campo HORIZONTAL queda en ~22° — todo se ve pegado a la
+   cara aunque la cámara esté a tres metros. Es el defecto que sólo aparece en
+   teléfono y por eso hay que probarlo en teléfono.
+
+   Se corrige al revés: se fija cuánto se quiere ver de ANCHO y se despeja el
+   vertical. En horizontal no cambia nada; en vertical abre el cuarto. */
+const FOV_ANCHO = 62 * Math.PI / 180;
+function acomodarCamara(){
+  camara.aspect = innerWidth / innerHeight;
+  const vertical = 2 * Math.atan(Math.tan(FOV_ANCHO/2) / camara.aspect);
+  camara.fov = Math.min(78, Math.max(40, vertical * 180 / Math.PI));
+  camara.updateProjectionMatrix();
+}
+acomodarCamara();
+
+/* ── si no hay WebGL, el taller NO se muere ────────────────────────────────
+   Salió probándolo: sin contexto WebGL la página se quedaba clavada en
+   «armando el taller…» para siempre. Un teléfono viejo, un navegador con la
+   aceleración apagada o una vista incrustada dan exactamente eso, y lo peor
+   que puede hacer una pantalla de monitoreo es no enseñar nada. Sin 3D se
+   pierde el cuarto; la información —que es a lo que se entra— se queda. */
+let pintor = null;
+try{
+  pintor = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+}catch(e){
+  console.warn('sin WebGL:', e.message);
+}
+const HAY3D = !!pintor;
+if(HAY3D){
+pintor.setSize(innerWidth, innerHeight);
+/* Tope de 2 a propósito: en un iPhone el ratio llega a 3 y triplicar los
+   píxeles tira los cuadros por segundo sin que se note la diferencia. */
+pintor.setPixelRatio(Math.min(devicePixelRatio, 2));
+pintor.shadowMap.enabled = true;
+pintor.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(pintor.domElement);
+}
+
+const mando = HAY3D ? new OrbitControls(camara, pintor.domElement) : null;
+if(mando){
+mando.enableDamping = true;
+mando.dampingFactor = 0.07;
+mando.target.set(0, 1.1, 0);
+mando.minDistance = 2.2;
+mando.maxDistance = 16;
+/* Que no se pueda ir debajo del piso: verlo desde abajo se ve roto y no
+   aporta nada. */
+mando.maxPolarAngle = Math.PI * 0.495;
+}
+
+/* ── luz ───────────────────────────────────────────────────────────────
+   Poca luz general y un foco violeta por delante: es la paleta de la casa y
+   además hace que las pantallas encendidas sean lo más brillante del cuarto,
+   que es donde uno quiere que caiga el ojo. */
+escena.add(new THREE.HemisphereLight(0x6a4b8f, 0x0d0714, 1.05));
+const foco = new THREE.DirectionalLight(0xC9A6FF, 1.5);
+foco.position.set(4, 8, 6);
+foco.castShadow = true;
+foco.shadow.mapSize.set(1024, 1024);
+foco.shadow.camera.left = foco.shadow.camera.bottom = -10;
+foco.shadow.camera.right = foco.shadow.camera.top = 10;
+escena.add(foco);
+const relleno = new THREE.DirectionalLight(0x3ECF8E, 0.32);
+relleno.position.set(-6, 3, -4);
+escena.add(relleno);
+
+/* ── piso ── */
+const piso = new THREE.Mesh(
+  new THREE.CircleGeometry(16, 64),
+  new THREE.MeshStandardMaterial({ color:0x1B1226, roughness:0.92, metalness:0.04 }));
+piso.rotation.x = -Math.PI/2;
+piso.receiveShadow = true;
+escena.add(piso);
+
+const rejilla = new THREE.GridHelper(32, 32, 0x4A3167, 0x2A1C3D);
+rejilla.material.transparent = true;
+rejilla.material.opacity = 0.35;
+rejilla.position.y = 0.002;
+escena.add(rejilla);
+
+/* ══ LA COMPUTADORA DE CADA AGENTE ════════════════════════════════════════
+   El monitor es una textura de canvas que se repinta cuando cambia el estado
+   —no en cada cuadro—. Repintar 1024×640 sesenta veces por segundo funde la
+   batería de un teléfono para enseñar un texto que cambia cada dos segundos. */
+function hacerEscritorio(color){
+  const grupo = new THREE.Group();
+  const madera = new THREE.MeshStandardMaterial({ color:0x241834, roughness:0.75, metalness:0.15 });
+  const metal  = new THREE.MeshStandardMaterial({ color:0x33224A, roughness:0.4, metalness:0.7 });
+
+  const tabla = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.08, 1.1), madera);
+  tabla.position.y = 0.74; tabla.castShadow = tabla.receiveShadow = true;
+  grupo.add(tabla);
+  for(const x of [-1.1, 1.1]){
+    const pata = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.74, 0.9), metal);
+    pata.position.set(x, 0.37, 0); pata.castShadow = true;
+    grupo.add(pata);
+  }
+
+  const lienzo = document.createElement('canvas');
+  lienzo.width = 1024; lienzo.height = 640;
+  const textura = new THREE.CanvasTexture(lienzo);
+  textura.colorSpace = THREE.SRGBColorSpace;
+
+  const marco = new THREE.Mesh(new THREE.BoxGeometry(1.92, 1.2, 0.05), metal);
+  marco.position.set(0, 1.46, -0.3); marco.castShadow = true;
+  grupo.add(marco);
+  const pantalla = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.82, 1.1),
+    new THREE.MeshBasicMaterial({ map:textura }));   /* Basic: no la ensucia la luz */
+  pantalla.position.set(0, 1.46, -0.272);
+  grupo.add(pantalla);
+
+  const cuello = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.34, 12), metal);
+  cuello.position.set(0, 0.94, -0.3); grupo.add(cuello);
+
+  const teclado = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.03, 0.34), metal);
+  teclado.position.set(0, 0.795, 0.24); teclado.castShadow = true;
+  grupo.add(teclado);
+
+  /* El resplandor de la pantalla sobre el escritorio. Es el detalle que hace
+     que se sienta encendida en vez de pegada. */
+  const brillo = new THREE.PointLight(color, 1.5, 4.2, 2);
+  brillo.position.set(0, 1.42, 0.25);
+  grupo.add(brillo);
+
+  return { grupo, lienzo, textura, brillo, pantalla };
+}
+
+/* ── el dibujo de la pantalla ─────────────────────────────────────────── */
+function pintarPantalla(esc_, quien, color){
+  const g = esc_.lienzo.getContext('2d');
+  const W = 1024, H = 640;
+  g.fillStyle = '#0C0714'; g.fillRect(0, 0, W, H);
+
+  /* barra de título */
+  g.fillStyle = '#1B1226'; g.fillRect(0, 0, W, 62);
+  g.fillStyle = color;     g.fillRect(0, 60, W, 2);
+  for(let i = 0; i < 3; i++){
+    g.beginPath(); g.arc(34 + i*30, 31, 8, 0, Math.PI*2);
+    g.fillStyle = ['#F0567F','#E8B33A','#3ECF8E'][i]; g.fill();
+  }
+  g.fillStyle = '#A090B4'; g.font = '600 24px ui-monospace, Menlo, monospace';
+  g.fillText((quien.nombre || '').slice(0, 30), 140, 40);
+
+  const t = quien.trabajo;
+  if(!t){
+    g.fillStyle = '#4A3167'; g.font = '600 30px ui-monospace, Menlo, monospace';
+    g.fillText('en reposo', 44, 150);
+    g.fillStyle = '#2A1C3D'; g.font = '22px ui-monospace, Menlo, monospace';
+    g.fillText('sin nada en curso', 44, 196);
+    esc_.textura.needsUpdate = true;
+    return;
+  }
+
+  g.fillStyle = '#7B6B8D'; g.font = '600 19px ui-monospace, Menlo, monospace';
+  g.fillText('AHORITA ESTÁ EN', 44, 118);
+
+  /* El título se parte a mano: `fillText` no salta de renglón solo, y un
+     encargo largo se salía de la pantalla sin que nadie se enterara. */
+  g.fillStyle = '#E9E4E4'; g.font = '700 38px -apple-system, system-ui, sans-serif';
+  let y = 168;
+  for(const linea of partir(g, t.en || '', W - 88).slice(0, 2)){
+    g.fillText(linea, 44, y); y += 46;
+  }
+
+  if(t.paso){
+    g.fillStyle = color; g.font = '24px ui-monospace, Menlo, monospace';
+    g.fillText(recortar(g, '› ' + t.paso, W - 88), 44, y + 12);
+  }
+
+  /* avance */
+  if(t.total > 0){
+    const by = 330, bw = W - 88, p = Math.max(0, Math.min(1, t.va / t.total));
+    g.fillStyle = '#241834'; redondo(g, 44, by, bw, 14, 7); g.fill();
+    g.fillStyle = color;     redondo(g, 44, by, Math.max(14, bw*p), 14, 7); g.fill();
+    g.fillStyle = '#7B6B8D'; g.font = '20px ui-monospace, Menlo, monospace';
+    g.fillText(`${t.va} de ${t.total}`, 44, by + 44);
+  }
+
+  /* el rastro: los últimos pasos, del más viejo al más nuevo */
+  const pasos = (t.pasos || []).slice(-7);
+  if(pasos.length){
+    g.fillStyle = '#33224A'; g.fillRect(44, 396, W - 88, 1);
+    g.font = '21px ui-monospace, Menlo, monospace';
+    let py = 432;
+    pasos.forEach((p, i) => {
+      const ultimo = i === pasos.length - 1;
+      g.fillStyle = ultimo ? '#C77BFF' : `rgba(123,107,141,${0.4 + i*0.07})`;
+      g.fillText(recortar(g, (ultimo ? '▸ ' : '  ') + p, W - 88), 44, py);
+      py += 29;
+    });
+  }
+  esc_.textura.needsUpdate = true;
+}
+
+function partir(g, texto, ancho){
+  const palabras = String(texto).split(/\s+/), lineas = []; let linea = '';
+  for(const p of palabras){
+    const intento = linea ? linea + ' ' + p : p;
+    if(g.measureText(intento).width > ancho && linea){ lineas.push(linea); linea = p; }
+    else linea = intento;
+  }
+  if(linea) lineas.push(linea);
+  return lineas;
+}
+function recortar(g, texto, ancho){
+  let t = String(texto);
+  if(g.measureText(t).width <= ancho) return t;
+  while(t.length > 4 && g.measureText(t + '…').width > ancho) t = t.slice(0, -1);
+  return t + '…';
+}
+function redondo(g, x, y, w, h, r){
+  g.beginPath(); g.moveTo(x+r, y);
+  g.arcTo(x+w, y, x+w, y+h, r); g.arcTo(x+w, y+h, x, y+h, r);
+  g.arcTo(x, y+h, x, y, r);     g.arcTo(x, y, x+w, y, r);
+  g.closePath();
+}
+
+/* ══ LOS AGENTES ═════════════════════════════════════════════════════════ */
+const cargador = new GLTFLoader();
+let plantilla = null, animaciones = [];
+const puestos = new Map();          /* id → { grupo, mezclador, acciones, … } */
+let enFoco = null;
+let radioActual = 0;          /* qué tan abierto quedó el semicírculo */
+
+/* Qué animación toca según lo que esté pasando. Es el traductor entre el
+   estado del trabajo y el cuerpo — y es lo que hace que se entienda de reojo,
+   sin leer nada. */
+function animacionDe(quien){
+  if(quien.estado === 'topado' || quien.estado === 'ocupado') return 'No';
+  if(quien.estado === 'fuera') return 'Death';
+  if(Date.now() - (quien.visto || 0) > 5*60_000) return 'Idle';
+  if(quien.trabajo){
+    const t = (quien.trabajo.paso || quien.trabajo.en || '').toLowerCase();
+    if(/\bprueb|test|verde|pasan\b/.test(t)) return 'ThumbsUp';
+    if(/\bfall|error|roto|trueno\b/.test(t))  return 'No';
+    if(/\bbusc|le(o|yendo)|revis\b/.test(t))  return 'Walking';
+    return 'Sitting';
+  }
+  return 'Idle';
+}
+
+function ponerAgente(quien, indice, cuantos){
+  if(!HAY3D) return null;
+  const g = new THREE.Group();
+  /* En semicírculo mirando al centro: así se ven todos desde una sola vista y
+     nadie le da la espalda a la cámara de arranque. */
+  const radio = cuantos <= 1 ? 0 : 2.3 + cuantos*0.55;
+  radioActual = radio;
+  /* El abanico abarca 153°, no 223°. Con el arco más abierto los de los
+     extremos quedaban DETRÁS de la cámara en la vista amplia: se veía un
+     cuarto de dos agentes cuando había cuatro. */
+  const ang = cuantos <= 1 ? 0 : (-Math.PI*0.425) + (indice/(cuantos-1)) * Math.PI*0.85;
+  g.position.set(Math.sin(ang)*radio, 0, Math.cos(ang)*radio);
+  /* ── cómo está armado un puesto, que costó dos intentos ────────────────
+     Con `rotation.y = ang`, el -z local apunta al centro del cuarto. Entonces:
+
+        -z  ← el escritorio y su pantalla (hacia el centro)
+         0  ← el robot, de espaldas a la cámara
+        +z  ← la cámara, por fuera del círculo, mirando hacia adentro
+
+     La primera vez le puse `ang + Math.PI` al puesto y `Math.PI` al escritorio,
+     y la pantalla acabó apuntando para AFUERA: salía negra en la captura y yo
+     creí que la textura no cargaba. No era la textura — le estaba viendo la
+     espalda al monitor. */
+  g.rotation.y = ang;
+
+  const color = new THREE.Color(quien.color || '#AC27FF');
+  const mesa = hacerEscritorio(color);
+  mesa.grupo.position.set(0, 0, -1.05);   /* sin rotar: la pantalla mira a +z */
+  g.add(mesa.grupo);
+
+  const muñeco = plantilla ? clonarConHuesos(plantilla) : null;
+  let mezclador = null; const acciones = {};
+  if(muñeco){
+    /* La escala se MIDE, no se adivina — pero se mide sobre el ORIGINAL y una
+       sola vez. Medirla sobre el clon daba 1.49 en vez de 4.79: `setFromObject`
+       sobre una malla con huesos que todavía no entra a la escena devuelve la
+       caja de la geometría en pose de amarre, no la del cuerpo armado. Con esa
+       cuenta el robot salía de casi CINCO metros y la cámara le quedaba entre
+       las piernas — se veía un cuarto vacío y yo creí que el clon había fallado. */
+    muñeco.scale.setScalar(ALTO_AGENTE / ALTO_CRUDO);
+    muñeco.position.set(0, 0, 0);
+    muñeco.rotation.y = Math.PI;              /* de cara al escritorio */
+    muñeco.traverse(o => {
+      if(o.isMesh){
+        o.castShadow = true;
+        /* El robot viene gris. Se le tiñe con el color de la CUENTA, que es la
+           misma señal que usa la mesa: morado es de Carlos, naranja de Luis.
+           El material se clona porque si no, teñir a uno los tiñe a todos. */
+        o.material = o.material.clone();
+        if(o.material.color && o.material.color.getHex() > 0x333333){
+          o.material.color.lerp(color, 0.62);
+        }
+        o.material.emissive = color.clone().multiplyScalar(0.06);
+      }
+    });
+    g.add(muñeco);
+    mezclador = new THREE.AnimationMixer(muñeco);
+    for(const clip of animaciones) acciones[clip.name] = mezclador.clipAction(clip);
+  }
+
+  /* El aro del piso: dice de quién es el puesto aunque el robot esté de
+     espaldas. */
+  const aro = new THREE.Mesh(
+    new THREE.RingGeometry(0.52, 0.62, 40),
+    new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.5, side:THREE.DoubleSide }));
+  aro.rotation.x = -Math.PI/2; aro.position.y = 0.01;
+  g.add(aro);
+
+  escena.add(g);
+  const puesto = { id:quien.id, grupo:g, mesa, mezclador, acciones, aro,
+                   actual:null, quien, color };
+  puestos.set(quien.id, puesto);
+  cambiarAnimacion(puesto, animacionDe(quien));
+  pintarPantalla(mesa, quien, '#' + color.getHexString());
+  return puesto;
+}
+
+function cambiarAnimacion(p, nombre){
+  if(!p.mezclador || !p.acciones[nombre] || p.actual === nombre) return;
+  const nueva = p.acciones[nombre];
+  if(p.actual && p.acciones[p.actual]) p.acciones[p.actual].fadeOut(0.35);
+  nueva.reset().fadeIn(0.35).play();
+  p.actual = nombre;
+}
+
+/* ══ LOS DATOS ═══════════════════════════════════════════════════════════ */
+let gente = {};
+
+async function traer(){
+  if(DEMO) return demo();
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${SALA}/hilo`,
+      { headers: LLAVE ? { 'X-Llave': LLAVE } : {} });
+    if(!r.ok) throw new Error(`el servidor contestó ${r.status}`);
+    const d = await r.json();
+    $('aviso').textContent = '';
+    return d.gente || {};
+  }catch(e){
+    $('aviso').textContent = `Sin conexión con la sala · ${e.message}`;
+    return gente;                       /* se queda con lo último bueno */
+  }
+}
+
+/* Modo demostración: para poder VER el taller sin que haya sala levantada.
+   Sin esto, abrirlo sin servidor deja un cuarto vacío y parece que está roto. */
+function demo(){
+  const t = Date.now();
+  const paso = Math.floor(t/3000) % 5;
+  return {
+    'cl-1':{ id:'cl-1', nombre:'Claude de Carlos', tipo:'claude', cuenta:'carlos',
+      motor:'claude-opus-5', color:'#AC27FF', sombra:1, estado:'activo', visto:t,
+      trabajo:{ en:'La bodega de skills: índice y montaje',
+        paso:['leyendo bodega/INDICE.json','corriendo las 17 pruebas',
+              'todas pasan · 17 de 17','escribiendo el commit',
+              'empujando a la rama'][paso],
+        pasos:['cosechando de anthropics/skills','2,945 skills distintas',
+               'deduplicando por huella','armando el índice',
+               'corriendo las pruebas'].slice(0, paso+1),
+        total:17, va:Math.min(17, 3+paso*4), desde:t-90_000 } },
+    'cl-2':{ id:'cl-2', nombre:'Explorador', tipo:'claude', cuenta:'carlos',
+      motor:'claude-haiku-4-5', color:'#AC27FF', sombra:4, padre:'cl-1',
+      estado:'activo', visto:t,
+      trabajo:{ en:'Leyendo el reglamento', paso:'buscando el redondeo',
+        pasos:['abriendo el PDF','32 páginas','sección 4.2'], total:32, va:19, desde:t-40_000 } },
+    'cl-l':{ id:'cl-l', nombre:'Claude de Luis', tipo:'claude', cuenta:'luis',
+      motor:'claude-sonnet-5', color:'#FF7A18', sombra:0, estado:'topado',
+      reanuda:t+3600_000, visto:t, trabajo:null },
+    'gem':{ id:'gem', nombre:'Gemini', tipo:'agente', cuenta:'luis',
+      motor:'gemini-3-pro', color:'#FF7A18', sombra:3, estado:'activo', visto:t,
+      trabajo:{ en:'Contrastando el motor contra el reglamento',
+        paso:'cargando los dos archivos', pasos:['motor.js · 640 líneas'],
+        total:0, va:0, desde:t-15_000 } },
+  };
+}
+
+function refrescar(nueva){
+  gente = nueva;
+  const lista = Object.values(gente);
+
+  /* quitar a los que ya no están */
+  for(const [id, p] of puestos){
+    if(!gente[id]){ escena.remove(p.grupo); puestos.delete(id); }
+  }
+  /* poner y actualizar */
+  lista.forEach((quien, i) => {
+    let p = puestos.get(quien.id);
+    if(!p) p = ponerAgente(quien, i, lista.length);
+    if(!p) return;                       /* sin 3D sólo se pinta el panel */
+    p.quien = quien;
+    cambiarAnimacion(p, animacionDe(quien));
+    pintarPantalla(p.mesa, quien, '#' + p.color.getHexString());
+    /* la pantalla apagada cuando no hay nada: se nota de lejos quién trabaja */
+    p.mesa.brillo.intensity = quien.trabajo ? 1.5 : 0.35;
+    p.aro.material.opacity  = quien.trabajo ? 0.72 : 0.28;
+  });
+  pintarPanel(lista);
+  if(!enFoco && lista.length) enFocar(lista[0].id);
+}
+
+/* ── el panel de HTML, que es el que se lee ───────────────────────────── */
+function pintarPanel(lista){
+  if(!lista.length){
+    $('panel').innerHTML = '<div class="nadie">El taller está vacío. Nadie ha entrado a la sala.</div>';
+    return;
+  }
+  $('panel').innerHTML = lista.map(q => {
+    const t = q.trabajo;
+    const callado = Date.now() - (q.visto || 0) > 5*60_000;
+    const clase = (q.estado === 'topado' || q.estado === 'ocupado') ? 'topado'
+                : t ? 'trabaja' : callado ? 'dormido' : '';
+    const dice  = (q.estado === 'topado') ? 'se topó' : t ? 'trabajando'
+                : callado ? 'sin señal' : 'en reposo';
+    const pct = t && t.total > 0 ? Math.round(100 * t.va / t.total) : 0;
+    return `<div class="ficha ${q.id === enFoco ? 'eldelfoco' : ''}" data-ver="${esc(q.id)}">
+      <div class="cab">
+        <span class="pastilla" style="background:${esc(q.color || '#AC27FF')}"></span>
+        <span class="nom">${esc(q.nombre)}</span>
+        <span class="motor">${esc(q.motor || (q.tipo === 'humano' ? 'persona' : 'agente'))}</span>
+        <span class="estado ${clase}">${dice}</span>
+      </div>
+      ${t ? `<div class="enque">${esc(t.en)}</div>
+        ${t.paso ? `<div class="paso">› ${esc(t.paso)}</div>` : ''}
+        ${t.total > 0 ? `<div class="barrita"><i style="width:${pct}%"></i></div>` : ''}
+        ${(t.pasos||[]).length ? `<div class="rastro">${
+          t.pasos.slice(-4).map(p => `<div>${esc(p)}</div>`).join('')}</div>` : ''}`
+        : `<div class="paso" style="color:var(--muy-tenue)">${
+            q.reanuda ? 'puede seguir a las ' + new Date(q.reanuda)
+              .toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
+            : 'sin nada en curso'}</div>`}
+    </div>`;
+  }).join('');
+}
+
+$('panel').addEventListener('click', (e) => {
+  const f = e.target.closest('[data-ver]');
+  if(f) enFocar(f.dataset.ver);
+});
+
+/* ── la cámara ────────────────────────────────────────────────────────── */
+let siguiendo = true;
+function enFocar(id){
+  enFoco = id;
+  const p = puestos.get(id);
+  if(!p) return;
+  pintarPanel(Object.values(gente));
+  if(!siguiendo || !HAY3D) return;
+  /* Se mira POR ENCIMA DEL HOMBRO: el robot de espaldas en primer plano y su
+     pantalla enfrente. De frente al robot se ve más bonito el muñeco y NO se
+     ve el monitor — que es a lo que se entra aquí. Se probó de las dos formas.
+
+     La altura y la distancia salen de ALTO_AGENTE, no de números sueltos: si
+     el muñeco cambia de tamaño, el encuadre se ajusta solo. */
+  const v = new THREE.Vector3(0.82, ALTO_AGENTE * 1.32, 2.95)
+              .applyQuaternion(p.grupo.quaternion);
+  destino.copy(p.grupo.position).add(v);
+  mirando.copy(p.grupo.position).add(new THREE.Vector3(-0.1, ALTO_AGENTE * 0.80, -1.0)
+    .applyQuaternion(p.grupo.quaternion));
+}
+const destino = new THREE.Vector3(0, 2.6, 7.2);
+const mirando = new THREE.Vector3(0, 1.1, 0);
+
+$('bSeguir').addEventListener('click', () => {
+  siguiendo = !siguiendo;
+  $('bSeguir').classList.toggle('on', siguiendo);
+  if(siguiendo && enFoco) enFocar(enFoco);
+});
+$('bSeguir').classList.add('on');
+
+/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
+   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
+   del que estás siguiendo. */
+$('bPanel').addEventListener('click', () => {
+  const plegado = $('panel').classList.toggle('plegado');
+  $('bPanel').classList.toggle('on', !plegado);
+});
+$('bPanel').classList.add('on');
+
+let vistaAmplia = false;
+$('bVista').addEventListener('click', () => {
+  vistaAmplia = !vistaAmplia;
+  $('bVista').classList.toggle('on', vistaAmplia);
+  if(vistaAmplia){
+    siguiendo = false; $('bSeguir').classList.remove('on');
+    /* La distancia sale del radio del semicírculo, no de un número fijo: con
+       dos agentes el cuarto es chico y con ocho es grande, y una cámara fija
+       o los deja de estampilla o se mete entre los escritorios. */
+    destino.set(0, radioActual * 1.45 + 3.2, radioActual * 2.4 + 5.5);
+    mirando.set(0, 0.7, 0);
+  }else if(enFoco){ siguiendo = true; $('bSeguir').classList.add('on');
+
+/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
+   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
+   del que estás siguiendo. */
+$('bPanel').addEventListener('click', () => {
+  const plegado = $('panel').classList.toggle('plegado');
+  $('bPanel').classList.toggle('on', !plegado);
+});
+$('bPanel').classList.add('on'); enFocar(enFoco); }
+});
+
+/* Una manija para poder MEDIR la escena desde fuera. No es depuración
+   olvidada: sin esto, revisar el taller es mirar una foto y opinar, que es
+   justo lo que la casa no acepta como verificación. */
+window.__taller = { escena, camara, puestos, get gente(){ return gente; } };
+
+/* ── el bucle ─────────────────────────────────────────────────────────── */
+const reloj = new THREE.Clock();
+function cuadro(){
+  if(!HAY3D) return;                    /* sin 3D no hay nada que pintar */
+  requestAnimationFrame(cuadro);
+  const dt = reloj.getDelta();
+  for(const p of puestos.values()) if(p.mezclador) p.mezclador.update(dt);
+  if(siguiendo || vistaAmplia){
+    camara.position.lerp(destino, 0.045);
+    mando.target.lerp(mirando, 0.045);
+  }
+  mando.update();
+  pintor.render(escena, camara);
+}
+
+addEventListener('resize', () => {
+  if(!HAY3D) return;
+  acomodarCamara();
+  pintor.setSize(innerWidth, innerHeight);
+});
+
+/* ── arranque ─────────────────────────────────────────────────────────── */
+async function arrancar(){
+  refrescar(await traer());
+  if(HAY3D) cuadro();
+  setInterval(async () => refrescar(await traer()), 2000);
+}
+
+if(!HAY3D){
+  $('cargando').classList.add('ido');
+  $('aviso').textContent = 'Este navegador no trae 3D · el taller funciona igual, sin cuarto';
+  arrancar();
+}else cargador.load('./modelo/RobotExpressive.glb', async (gltf) => {
+  plantilla = gltf.scene;
+  animaciones = gltf.animations;
+  ALTO_CRUDO = new THREE.Box3().setFromObject(plantilla)
+                 .getSize(new THREE.Vector3()).y || 1;
+  $('cargando').classList.add('ido');
+  await arrancar();
+}, undefined, (e) => {
+  /* Si el modelo no carga, el taller sigue sirviendo: escritorios, pantallas y
+     panel. Quedarse en «cargando…» para siempre sería lo peor de los dos
+     mundos — ni muñeco ni información. */
+  console.warn('el robot no cargó:', e);
+  $('cargando').classList.add('ido');
+  $('aviso').textContent = 'El modelo 3D no cargó · el taller sigue funcionando sin muñeco';
+  arrancar();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,854 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Órbita de Campaña</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+/* ══ ÓRBITA ═══════════════════════════════════════════════════════════════
+   Un solo mundo visual, oscuro, a propósito: es una consola, no un documento.
+   Todo color va pintado explícitamente para que no dependa del tema de quien
+   la abra. La distancia al centro NO es decoración: es urgencia. */
+:root{
+  --fondo:#070B10;
+  --fondo-2:#0C1219;
+  --panel:#111925;
+  --panel-alto:#16202D;
+  --borde:#1E2C3C;
+  --borde-vivo:#2C4258;
+  --tinta:#E8EEF5;
+  --tenue:#8FA3B8;
+  --muy-tenue:#5D7186;
+
+  --azul:#3B82C4;  --azul-glow:#1B4E7E;
+  --verde:#28B57A; --verde-glow:#0F5C3C;
+  --rojo:#D6446E;  --rojo-glow:#7A1F3C;
+  --neutro:#7E93A8; --neutro-glow:#33465A;
+
+  --display:"Newsreader",Georgia,serif;
+  --cuerpo:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --dato:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--fondo); color:var(--tinta);
+  font-family:var(--cuerpo); font-size:16px; line-height:1.6;
+  overflow:hidden; -webkit-text-size-adjust:100%;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% 42%, #101B27 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 90%, #0D1620 0%, transparent 70%);
+}
+
+/* ── barra ── */
+.techo{
+  position:fixed; top:0; left:0; right:0; z-index:30;
+  background:rgba(7,11,16,.86);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--borde);
+  padding-top:env(safe-area-inset-top);
+}
+.barra{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:13px 18px 9px;
+}
+.titulo{font-family:var(--display); font-size:19px; font-weight:600; letter-spacing:-.01em;
+  margin:0; white-space:nowrap}
+.titulo span{color:var(--azul)}
+.crece{flex:1}
+.avance{display:flex; align-items:center; gap:10px; font-family:var(--dato);
+  font-size:11px; letter-spacing:.1em; color:var(--tenue); white-space:nowrap}
+.etiq-avance{color:var(--muy-tenue); font-size:10px; letter-spacing:.14em; text-transform:uppercase}
+.riel{width:96px; height:5px; border-radius:99px; background:var(--borde); overflow:hidden}
+.riel i{display:block; height:100%; width:0%; border-radius:99px;
+  background:linear-gradient(90deg, var(--azul), var(--verde));
+  transition:width .5s cubic-bezier(.2,.8,.3,1)}
+.btn{
+  font-family:var(--dato); font-size:10.5px; font-weight:600; letter-spacing:.11em;
+  text-transform:uppercase; padding:8px 13px; border-radius:8px; cursor:pointer;
+  background:transparent; color:var(--tenue); border:1px solid var(--borde-vivo);
+  transition:color .15s, border-color .15s, background .15s;
+}
+.btn:hover{color:var(--tinta); border-color:var(--azul)}
+.btn:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+
+/* ── selector de anillo ──────────────────────────────────────────────────
+   En un teléfono los catorce rótulos no caben legibles al mismo tiempo:
+   o se encoge el texto hasta que no se lee, o se enseña por anillos. Se
+   enseña por anillos, que además es el orden en que hay que trabajar. */
+.anillos{
+  display:flex; gap:7px; padding:0 18px 11px; overflow-x:auto;
+  scrollbar-width:none; -webkit-overflow-scrolling:touch;
+}
+.anillos::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto; font-family:var(--dato); font-size:10px; font-weight:600;
+  letter-spacing:.11em; text-transform:uppercase; padding:7px 12px;
+  border-radius:99px; cursor:pointer; white-space:nowrap;
+  background:rgba(18,26,37,.85); color:var(--tenue);
+  border:1px solid var(--borde); transition:color .15s, border-color .15s, background .15s;
+}
+.chip:hover{color:var(--tinta); border-color:var(--borde-vivo)}
+.chip[aria-pressed="true"]{color:var(--fondo); background:var(--tinta); border-color:var(--tinta)}
+.chip:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+
+/* ── lienzo ── */
+#lienzo{position:fixed; inset:0; touch-action:none; cursor:grab}
+#lienzo.arrastrando{cursor:grabbing}
+svg{width:100%; height:100%; display:block}
+
+.anillo-guia{fill:none; stroke:#2C4258; stroke-width:1.1; stroke-dasharray:3 9; opacity:.9}
+.anillo-piso{stroke:none}
+.anillo-nombre{font-family:var(--dato); font-size:9.5px; letter-spacing:.24em;
+  fill:#5C7A93; text-transform:uppercase}
+
+.rayo{stroke:var(--borde-vivo); stroke-width:1.2; fill:none; opacity:.5;
+  transition:stroke .25s, opacity .25s, stroke-width .25s}
+.rayo.viva{stroke:var(--azul); opacity:1; stroke-width:2}
+
+.atadura{fill:none; stroke-width:1.4; stroke-dasharray:5 5; opacity:0;
+  transition:opacity .3s}
+.atadura.viva{opacity:.85}
+
+.nodo{cursor:pointer; outline:none}
+.nodo .halo{opacity:0; transition:opacity .3s}
+.nodo:hover .halo, .nodo:focus-visible .halo, .nodo.abierta .halo{opacity:.55}
+.nodo .bola{transition:r .25s cubic-bezier(.2,.8,.3,1), fill .25s, stroke .25s}
+.nodo:hover .bola, .nodo:focus-visible .bola{stroke-width:2.6}
+.nodo .rotulo{
+  font-family:var(--cuerpo); font-size:12.5px; font-weight:600; fill:var(--tinta);
+  pointer-events:none; transition:fill .25s;
+}
+.nodo .orden{font-family:var(--dato); font-size:9.5px; font-weight:600;
+  fill:var(--fondo); pointer-events:none}
+.nodo.hecha .rotulo{fill:var(--muy-tenue); text-decoration:line-through}
+.nodo.tenue{opacity:.24}
+@media (max-width:859px){ .nodo.tenue .rotulo{opacity:0} }
+.nodo .palomita{opacity:0; transition:opacity .2s}
+.nodo.hecha .palomita{opacity:1}
+
+@keyframes late{
+  0%,100%{ transform:scale(1); opacity:.5 }
+  50%{ transform:scale(1.5); opacity:0 }
+}
+.pulso{transform-origin:center; transform-box:fill-box; animation:late 2.6s ease-out infinite;
+  pointer-events:none}
+
+/* ── panel ── */
+.panel{
+  position:fixed; z-index:40; background:var(--panel);
+  border:1px solid var(--borde-vivo); display:flex; flex-direction:column;
+  box-shadow:0 24px 70px rgba(0,0,0,.6);
+}
+@media (min-width:860px){
+  .panel{top:74px; right:18px; bottom:18px; width:404px; border-radius:18px;
+    transform:translateX(calc(100% + 26px)); transition:transform .42s cubic-bezier(.22,.9,.3,1)}
+  .panel.abierto{transform:translateX(0)}
+}
+@media (max-width:859px){
+  .panel{left:0; right:0; bottom:0; max-height:76dvh; border-radius:20px 20px 0 0;
+    transform:translateY(102%); transition:transform .42s cubic-bezier(.22,.9,.3,1)}
+  .panel.abierto{transform:translateY(0)}
+}
+.panel-alto{padding:20px 22px 16px; border-bottom:1px solid var(--borde); flex:0 0 auto}
+.panel-etiquetas{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px}
+.eti{font-family:var(--dato); font-size:9.5px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; padding:3px 9px; border-radius:99px;
+  border:1px solid var(--borde-vivo); color:var(--tenue)}
+.eti.color{border:none; color:var(--fondo)}
+.panel h2{font-family:var(--display); font-size:25px; font-weight:600; margin:0 0 8px;
+  letter-spacing:-.015em; line-height:1.15}
+.panel .resumen{font-size:14.5px; color:var(--tenue); margin:0}
+.panel-cuerpo{padding:18px 22px 22px; overflow-y:auto; flex:1;
+  -webkit-overflow-scrolling:touch}
+.panel h3{font-family:var(--dato); font-size:10px; font-weight:600; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muy-tenue); margin:20px 0 9px}
+.panel h3:first-child{margin-top:0}
+.panel ul{margin:0; padding:0; list-style:none}
+.panel li{position:relative; padding-left:20px; margin-bottom:8px; font-size:14.3px;
+  line-height:1.55; color:var(--tinta)}
+.panel li::before{content:""; position:absolute; left:3px; top:.6em; width:5px; height:5px;
+  border-radius:50%; background:var(--azul)}
+.panel ol{margin:0; padding-left:0; list-style:none; counter-reset:p}
+.panel ol li{counter-increment:p; padding-left:28px}
+.panel ol li::before{content:counter(p); width:auto; height:auto; background:none;
+  border-radius:0; left:0; top:0; font-family:var(--dato); font-size:11px; font-weight:600;
+  color:var(--azul)}
+.panel .dato{display:flex; gap:10px; flex-wrap:wrap; margin:0 0 4px}
+.panel .dato div{flex:1 1 130px; background:var(--panel-alto); border:1px solid var(--borde);
+  border-radius:10px; padding:11px 13px}
+.panel .dato .k{font-family:var(--dato); font-size:9.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue); display:block; margin-bottom:4px}
+.panel .dato .v{font-size:14px; font-weight:600}
+.panel-pie{padding:14px 22px 18px; border-top:1px solid var(--borde); flex:0 0 auto;
+  display:flex; gap:10px}
+.marcar{flex:1; font-family:var(--dato); font-size:11px; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; padding:12px; border-radius:10px; cursor:pointer;
+  border:1px solid var(--verde); background:transparent; color:var(--verde);
+  transition:background .18s, color .18s}
+.marcar:hover{background:var(--verde); color:var(--fondo)}
+.marcar.deshacer{border-color:var(--borde-vivo); color:var(--tenue)}
+.marcar.deshacer:hover{background:var(--borde-vivo); color:var(--tinta)}
+.cerrar{width:44px; border-radius:10px; border:1px solid var(--borde-vivo);
+  background:transparent; color:var(--tenue); cursor:pointer; font-size:17px}
+.cerrar:hover{color:var(--tinta); border-color:var(--rojo)}
+.marcar:focus-visible,.cerrar:focus-visible{outline:2px solid var(--azul); outline-offset:2px}
+
+/* ── pista ── */
+.pista{
+  position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:20;
+  font-family:var(--dato); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muy-tenue); background:rgba(7,11,16,.8); padding:8px 15px; border-radius:99px;
+  border:1px solid var(--borde); pointer-events:none;
+  max-width:calc(100% - 24px); text-align:center; line-height:1.5;
+  bottom:calc(18px + env(safe-area-inset-bottom));
+  transition:opacity .4s;
+}
+.pista b{font-weight:600; color:var(--tenue)}
+@media (max-width:859px){
+  .pista{font-size:9px; letter-spacing:.08em; padding:7px 13px}
+}
+.pista.ida{opacity:0}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important; transition:none !important}
+}
+</style>
+
+<div class="techo">
+<header class="barra">
+  <h1 class="titulo">Órbita <span>·</span> campaña</h1>
+  <span class="crece"></span>
+  <div class="avance">
+    <span class="etiq-avance">Hechas</span><span id="cuenta">0 / 0</span>
+    <span class="riel"><i id="riel"></i></span>
+  </div>
+  <button class="btn" id="bCentrar">Centrar</button>
+</header>
+
+<nav class="anillos" id="chips" aria-label="Enfocar un anillo"></nav>
+</div>
+
+<div id="lienzo">
+  <svg id="svg" role="img" aria-label="Mapa orbital de tareas de la campaña"></svg>
+</div>
+
+<aside class="panel" id="panel" aria-live="polite">
+  <div class="panel-alto">
+    <div class="panel-etiquetas" id="pEtiquetas"></div>
+    <h2 id="pTitulo"></h2>
+    <p class="resumen" id="pResumen"></p>
+  </div>
+  <div class="panel-cuerpo" id="pCuerpo"></div>
+  <div class="panel-pie">
+    <button class="marcar" id="bMarcar">Marcar como hecho</button>
+    <button class="cerrar" id="bCerrar" aria-label="Cerrar">✕</button>
+  </div>
+</aside>
+
+<div class="pista" id="pista"><b>Toca un nodo</b> · arrastra o pellizca para moverte</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   LOS DATOS · todo lo que hay que hacer.
+   `anillo` es urgencia: 0 = ya está hecho, 1 = esta semana, 2 = la que sigue,
+   3 = la última. La distancia al centro NO es adorno — es cuánto falta.
+   ═════════════════════════════════════════════════════════════════════════ */
+const TAREAS = [
+  /* ── anillo 0 · ya hecho ─────────────────────────────────────────────── */
+  { id:'identidad', anillo:0, color:'verde', titulo:'Identidad',
+    resumen:'Colores, verbos, lema y tipografía. Cerrado.',
+    implica:['Tres colores medidos, con figura propia cada uno.',
+             'Los verbos Organiza · Optimiza · Actualiza como filtro de propuestas.',
+             'El lema y su línea de apoyo.'],
+    como:['Ya está. Sólo falta que el de Diseño lo aplique en las piezas.'],
+    tarda:'Hecho', depende:'—' },
+
+  { id:'estructura', anillo:0, color:'verde', titulo:'Estructura del comité',
+    resumen:'Siete direcciones, catorce funciones, nombres oficiales.',
+    implica:['Cada función con un solo responsable.',
+             'Los jefes de grupo como red de difusión, sin ser miembros.'],
+    como:['Ya está. Se usa tal cual en la convocatoria.'],
+    tarda:'Hecho', depende:'—' },
+
+  { id:'convoca-txt', anillo:0, color:'verde', titulo:'Convocatoria redactada',
+    resumen:'El texto completo, listo para llenar fechas y publicar.',
+    implica:['Los seis cargos descritos como oportunidad.','Requisitos y pasos para postularse.'],
+    como:['Ya está. Faltan los datos entre corchetes.'],
+    tarda:'Hecho', depende:'—' },
+
+  /* ── anillo 1 · esta semana ──────────────────────────────────────────── */
+  { id:'fechas', anillo:1, color:'rojo', titulo:'Confirmar las fechas', critica:true,
+    resumen:'Sin esto, ningún plan tiene calendario. Es lo primero.',
+    implica:['Fecha y hora exacta del debate.',
+             'Día de la elección durante el viaje escolar.',
+             'Fecha límite para registrar candidatura y planilla.',
+             'Si hay tope de gasto o de piezas publicitarias.'],
+    como:['Pedirlo por escrito a dirección, no de palabra.',
+          'Anotarlo el mismo día en el calendario de todos.',
+          'Preguntar además qué pasa si llueve o se mueve el viaje.'],
+    tarda:'1 día', depende:'—' },
+
+  { id:'reglamento', anillo:1, color:'rojo', titulo:'Conseguir el reglamento', critica:true,
+    resumen:'Lo que evita quedar descalificado por algo tonto.',
+    implica:['Qué se puede y qué no en campaña.',
+             'Requisitos de la planilla y del candidato.',
+             'Cómo se cuentan los votos y quién los cuenta.',
+             'Qué se considera falta y qué sanción trae.'],
+    como:['Pedir copia a dirección o a prefectura.',
+          'Leerlo entero una vez, subrayando sólo lo que prohíbe.',
+          'Hacer una hoja de una cara con las diez reglas que importan.',
+          'Que Secretaría la traiga siempre encima.'],
+    tarda:'2 días', depende:'—' },
+
+  { id:'convoca-pub', anillo:1, color:'azul', titulo:'Publicar la convocatoria',
+    resumen:'Sin equipo no hay campaña. Entre más pronto, mejor.',
+    implica:['Llenar fechas, correo y lugar en el texto.',
+             'Imprimir y pegar en los puntos de más paso.',
+             'Pasarla por los jefes de grupo.'],
+    como:['Llenar los corchetes del documento.',
+          'Poner una fecha de cierre corta: cinco días, no dos semanas.',
+          'Pegarla donde la gente se para: cooperativa, entrada, baños.',
+          'Pedirle a cada jefe de grupo que la lea en voz alta una vez.'],
+    tarda:'1 día', depende:'Fechas' },
+
+  { id:'propuestas', anillo:1, color:'azul', titulo:'Definir las propuestas', critica:true,
+    resumen:'Tres por verbo. Todas viables, todas comprobables.',
+    implica:['Tres de Organiza, tres de Optimiza, tres de Actualiza.',
+             'Cada una con: qué es, a quién le sirve, y cómo se sabrá si se cumplió.',
+             'Ninguna que dependa de dinero que no existe.'],
+    como:['Escribir veinte ideas sin filtrar.',
+          'Tachar toda la que no quepa en uno de los tres verbos.',
+          'De las que queden, tachar las que no se puedan medir.',
+          'Quedarse con nueve y ponerles fecha de entrega.',
+          'Probar cada una en voz alta: si suena a promesa de político, se reescribe.'],
+    tarda:'2–3 días', depende:'—' },
+
+  /* ── anillo 2 · la semana que sigue ──────────────────────────────────── */
+  { id:'entrevistas', anillo:2, color:'azul', titulo:'Elegir a los seis',
+    resumen:'Entrevistas cortas y respuesta a todos, hayan quedado o no.',
+    implica:['Revisar que cumplan los requisitos, con papel en mano.',
+             'Plática de quince minutos por persona.',
+             'Decidir y avisar a todos, con razón.'],
+    como:['Preguntar de frente cuánto tiempo tienen a la semana, y creerles.',
+          'Preguntar por algo que hayan terminado, no por lo que saben hacer.',
+          'Elegir a quien entrega antes que a quien impresiona.',
+          'Avisar a los que no quedaron el mismo día. Eso se recuerda.'],
+    tarda:'3–4 días', depende:'Convocatoria publicada' },
+
+  { id:'piezas', anillo:2, color:'rojo', titulo:'Logo y carteles impresos',
+    resumen:'La cara de la campaña, aplicada y en la pared.',
+    implica:['Logo definitivo, redibujado en vectores.',
+             'Los cuatro carteles con textos reales.',
+             'Cotizar impresión: tres precios por escrito.'],
+    como:['Probar opciones con los prompts, escoger la idea, no el archivo.',
+          'Que el de Diseño la redibuje limpia.',
+          'Revisar cada pieza achicada a tamaño de miniatura antes de imprimir.',
+          'Imprimir una sola de prueba antes de mandar el tiro completo.'],
+    tarda:'4–5 días', depende:'Elegir a los seis' },
+
+  { id:'debate-prep', anillo:2, color:'azul', titulo:'Preparar el debate', critica:true,
+    resumen:'Lo que decide la elección. Se ensaya, no se improvisa.',
+    implica:['Las nueve propuestas dichas en treinta segundos cada una.',
+             'Las respuestas a lo que más incomode.',
+             'Un ensayo con alguien haciendo de rival.'],
+    como:['Escribir las diez preguntas que menos quisiera que le hagan.',
+          'Contestar cada una en tres renglones. Memorizar el primero.',
+          'Ensayar con alguien que ataque de verdad, no con un amigo amable.',
+          'Preparar la respuesta a «¿qué no vas a poder cumplir?» — es la mejor pregunta y hay que responderla con gusto.',
+          'No preparar ataques. Si el otro ataca, se contesta con propuesta.'],
+    tarda:'3 días', depende:'Propuestas' },
+
+  { id:'salones', anillo:2, color:'verde', titulo:'Recorrido por salones',
+    resumen:'Donde se ganan los votos que no se ganan en el debate.',
+    implica:['Pasar por cada grupo con permiso del maestro.',
+             'Tres minutos, no diez.','Dejar algo impreso.'],
+    como:['Pedir permiso antes, nunca interrumpir de sorpresa.',
+          'Abrir con una propuesta que le sirva a ESE grupo en concreto.',
+          'Cerrar con los tres verbos y el lema.',
+          'Ir acompañado de un miembro del comité, no solo. El lema se demuestra.'],
+    tarda:'toda la semana', depende:'Piezas impresas' },
+
+  /* ── anillo 3 · el cierre ────────────────────────────────────────────── */
+  { id:'debate', anillo:3, color:'rojo', titulo:'El debate', critica:true,
+    resumen:'Serio, tranquilo y con datos. No hace falta ser el más simpático.',
+    implica:['Llegar antes.','Llevar las propuestas impresas por si falla algo.',
+             'No mencionar a la otra candidata ni una vez.'],
+    como:['Hablar despacio. Quien va despacio se ve seguro.',
+          'Contestar la pregunta que hicieron, no la que preparó.',
+          'Si no sabe algo: «no lo sé, lo averiguo y lo publico». Eso gana más que inventar.',
+          'Si lo atacan: no responder al ataque, responder con propuesta. Que el ataque se quede solo.'],
+    tarda:'1 día', depende:'Preparación del debate' },
+
+  { id:'cierre', anillo:3, color:'azul', titulo:'Cierre de campaña',
+    resumen:'Los últimos días. Recordar, no convencer.',
+    implica:['Repaso de las nueve propuestas en una sola pieza.',
+             'Recordatorio del día y lugar de la votación.'],
+    como:['Un solo mensaje repetido, no cinco mensajes nuevos.',
+          'Que los jefes de grupo lo pasen el mismo día.',
+          'Nada de propuestas nuevas al final: se lee como desesperación.'],
+    tarda:'2 días', depende:'El debate' },
+
+  { id:'eleccion', anillo:3, color:'verde', titulo:'Día de la elección',
+    resumen:'Durante el viaje escolar. Logística, no discurso.',
+    implica:['Saber dónde y a qué hora se vota.',
+             'Tener quien acompañe el conteo.',
+             'Aceptar el resultado en público, gane o pierda.'],
+    como:['Confirmar con dirección el lugar exacto la noche anterior.',
+          'Asegurar que alguien del comité esté presente en el conteo.',
+          'Preparar dos mensajes: uno si gana y otro si pierde. Los dos cortos y con gracia.',
+          'Si pierde: felicitar en público el mismo día. Eso lo va a recordar la escuela más que la elección.'],
+    tarda:'1 día', depende:'Cierre de campaña' },
+];
+
+/* Dependencias que se dibujan como arco punteado al abrir un nodo. */
+const ATADURAS = [
+  ['fechas','convoca-pub'], ['convoca-pub','entrevistas'], ['entrevistas','piezas'],
+  ['propuestas','debate-prep'], ['debate-prep','debate'], ['debate','cierre'],
+  ['cierre','eleccion'], ['piezas','salones'], ['reglamento','debate-prep'],
+];
+
+const ANILLOS = [
+  { r:118, nombre:'Ya está' },
+  { r:250, nombre:'Esta semana' },
+  { r:382, nombre:'La que sigue' },
+  { r:508, nombre:'El cierre' },
+];
+
+/* ══ estado ══ */
+const LLAVE = 'orbita_campana_hechas';
+let hechas = new Set();
+try{ hechas = new Set(JSON.parse(localStorage.getItem(LLAVE) || '[]')); }catch(e){}
+const guardar = () => { try{ localStorage.setItem(LLAVE, JSON.stringify([...hechas])); }catch(e){} };
+
+let abierta = null;
+let vista = { x:0, y:0, k:1 };
+
+const svg = document.getElementById('svg');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, a={}) => { const n = document.createElementNS(NS, t);
+  for(const k in a) n.setAttribute(k, a[k]); return n; };
+
+/* ══ posiciones ══════════════════════════════════════════════════════════
+   Cada anillo reparte sus nodos en el círculo completo. El desfase por
+   anillo evita que los rayos queden alineados y se vea una reja. */
+const pos = {};
+let caja = null;        // caja real del dibujo, rótulos incluidos
+let cajaAnillo = [];    // la misma caja pero de cada anillo por su lado
+let foco = -1;          // -1 = todo; 0..3 = un anillo
+function acomodar(){
+  for(let a = 0; a < ANILLOS.length; a++){
+    const enEste = TAREAS.filter(t => t.anillo === a);
+    const paso = 360 / enEste.length;
+    const desfase = [-90, -55, -20, 0][a];
+    enEste.forEach((t, i) => {
+      const ang = (desfase + i * paso) * Math.PI / 180;
+      pos[t.id] = { x: Math.cos(ang) * ANILLOS[a].r, y: Math.sin(ang) * ANILLOS[a].r, ang };
+    });
+  }
+}
+
+const COLOR = { azul:'--azul', verde:'--verde', rojo:'--rojo', neutro:'--neutro' };
+const cv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ══ dibujar ══ */
+let capaRayos, capaAtaduras, capaNodos, raiz;
+function dibujar(){
+  svg.innerHTML = '';
+  const defs = el('defs');
+  ['azul','verde','rojo','neutro'].forEach(c => {
+    const f = el('filter', { id:'glow-'+c, x:'-70%', y:'-70%', width:'240%', height:'240%' });
+    f.appendChild(el('feGaussianBlur', { stdDeviation:'7', result:'b' }));
+    const m = el('feMerge');
+    m.appendChild(el('feMergeNode', { in:'b' }));
+    m.appendChild(el('feMergeNode', { in:'SourceGraphic' }));
+    f.appendChild(m); defs.appendChild(f);
+  });
+  svg.appendChild(defs);
+
+  raiz = el('g', { id:'raiz' });
+  svg.appendChild(raiz);
+
+  /* anillos guía */
+  const capaGuias = el('g');
+  ANILLOS.forEach((a, i) => {
+    capaGuias.appendChild(el('circle', { cx:0, cy:0, r:a.r, class:'anillo-guia' }));
+    const t = el('text', { x:0, y:-a.r - 11, class:'anillo-nombre', 'text-anchor':'middle' });
+    t.textContent = a.nombre.toUpperCase();
+    capaGuias.appendChild(t);
+  });
+  raiz.appendChild(capaGuias);
+
+  capaRayos = el('g'); raiz.appendChild(capaRayos);
+  capaAtaduras = el('g'); raiz.appendChild(capaAtaduras);
+
+  /* rayos del centro a cada nodo */
+  TAREAS.forEach(t => {
+    const p = pos[t.id];
+    const l = el('path', { d:`M 0 0 L ${p.x} ${p.y}`, class:'rayo', 'data-de':t.id });
+    capaRayos.appendChild(l);
+  });
+
+  /* ataduras (dependencias) */
+  ATADURAS.forEach(([a, b]) => {
+    const pa = pos[a], pb = pos[b];
+    const mx = (pa.x + pb.x) / 2, my = (pa.y + pb.y) / 2;
+    const d = `M ${pa.x} ${pa.y} Q ${mx * 0.62} ${my * 0.62} ${pb.x} ${pb.y}`;
+    capaAtaduras.appendChild(el('path', { d, class:'atadura', 'data-a':a, 'data-b':b,
+      stroke: cv('--azul') }));
+  });
+
+  /* centro */
+  const c = el('g');
+  c.appendChild(el('circle', { cx:0, cy:0, r:60, fill:'#0E1620',
+    stroke: cv('--borde-vivo'), 'stroke-width':1.5 }));
+  c.appendChild(el('circle', { cx:0, cy:0, r:46, fill:'none',
+    stroke: cv('--azul'), 'stroke-width':1, opacity:'.4' }));
+  const t1 = el('text', { x:0, y:-6, 'text-anchor':'middle',
+    style:`font-family:${cv('--display')}; font-size:19px; font-weight:600; fill:${cv('--tinta')}` });
+  t1.textContent = 'Elección';
+  const t2 = el('text', { x:0, y:14, 'text-anchor':'middle',
+    style:`font-family:${cv('--dato')}; font-size:9.5px; letter-spacing:.14em; fill:${cv('--muy-tenue')}` });
+  t2.textContent = 'SEPTIEMBRE';
+  c.appendChild(t1); c.appendChild(t2);
+  raiz.appendChild(c);
+
+  /* nodos */
+  capaNodos = el('g'); raiz.appendChild(capaNodos);
+  TAREAS.forEach(t => capaNodos.appendChild(nodo(t)));
+
+  pintarEstado();
+  resolverRotulos();
+}
+
+/* ══ rótulos que no se encimen ═══════════════════════════════════════════
+   Dos nodos de anillos distintos pueden caer casi a la misma altura y del
+   mismo lado; sus rótulos entonces se pisan (le pasó a «Estructura del
+   comité» con «Conseguir el reglamento»). Aquí se mide el ancho REAL del
+   texto ya pintado y se empuja verticalmente el que llegue tarde. */
+function resolverRotulos(){
+  const cajas = [];
+  const items = TAREAS
+    .map(t => ({ t, p: pos[t.id], g: capaNodos.querySelector(`[data-id="${t.id}"]`) }))
+    .filter(o => o.g)
+    .sort((a, b) => a.p.y - b.p.y);
+
+  items.forEach(o => o.g.querySelector('.rotulo').setAttribute('y', 5));
+
+  for(const o of items){
+    const r = o.g.querySelector('.rotulo');
+    let w = 0;
+    try{ w = r.getComputedTextLength(); }catch(e){}
+    if(!w) w = o.t.titulo.length * 6.6;          // por si la fuente aún no carga
+    const derecha = o.p.x >= -6;
+    const x1 = derecha ? o.p.x + 26 : o.p.x - 26 - w;
+    const x2 = x1 + w;
+    const choca = d => cajas.some(c =>
+      x1 < c.x2 + 10 && x2 > c.x1 - 10 &&
+      o.p.y + d - 9 < c.y2 && o.p.y + d + 9 > c.y1);
+    let dy = 0, n = 0;
+    while(choca(dy) && n < 14){ n++; dy = (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 18; }
+    r.setAttribute('y', 5 + dy);
+    cajas.push({ x1, x2, y1: o.p.y + dy - 9, y2: o.p.y + dy + 9 });
+  }
+
+  const rExt = ANILLOS[ANILLOS.length - 1].r;
+  caja = { x1:-rExt, x2:rExt, y1:-rExt - 24, y2:rExt };   // 24 = rótulo del anillo
+  for(const c of cajas){
+    caja.x1 = Math.min(caja.x1, c.x1); caja.x2 = Math.max(caja.x2, c.x2);
+    caja.y1 = Math.min(caja.y1, c.y1); caja.y2 = Math.max(caja.y2, c.y2);
+  }
+
+  /* y la caja de CADA anillo por separado, para poder encuadrar uno solo */
+  cajaAnillo = ANILLOS.map((a, i) => {
+    const b = { x1:-a.r, x2:a.r, y1:-a.r - 24, y2:a.r };
+    items.filter(o => o.t.anillo === i).forEach((o, k) => {
+      const c = cajas[items.indexOf(o)];
+      if(!c) return;
+      b.x1 = Math.min(b.x1, c.x1); b.x2 = Math.max(b.x2, c.x2);
+      b.y1 = Math.min(b.y1, c.y1); b.y2 = Math.max(b.y2, c.y2);
+    });
+    return b;
+  });
+}
+
+function nodo(t){
+  const p = pos[t.id];
+  const col = cv(COLOR[t.color] || COLOR.neutro);
+  const g = el('g', { class:'nodo', transform:`translate(${p.x} ${p.y})`,
+    'data-id':t.id, tabindex:'0', role:'button', 'aria-label':t.titulo });
+
+  if(t.critica && t.anillo > 0){
+    g.appendChild(el('circle', { cx:0, cy:0, r:22, fill:'none', stroke:col,
+      'stroke-width':1.5, class:'pulso' }));
+  }
+  g.appendChild(el('circle', { cx:0, cy:0, r:26, fill:col, class:'halo',
+    filter:`url(#glow-${t.color || 'neutro'})`, opacity:'0' }));
+  g.appendChild(el('circle', { cx:0, cy:0, r:16, fill:'#0B121A', stroke:col,
+    'stroke-width':1.8, class:'bola' }));
+
+  const pal = el('path', { d:'M -5 0 L -1.5 3.5 L 5.5 -3.5', fill:'none', stroke:col,
+    'stroke-width':2.2, 'stroke-linecap':'round', 'stroke-linejoin':'round',
+    class:'palomita' });
+  g.appendChild(pal);
+
+  /* el rótulo se va al lado que no cruce el centro */
+  const derecha = p.x >= -6;
+  const r = el('text', { x: derecha ? 26 : -26, y:5, class:'rotulo',
+    'text-anchor': derecha ? 'start' : 'end' });
+  r.textContent = t.titulo;
+  g.appendChild(r);
+
+  g.addEventListener('click', () => abrir(t.id));
+  g.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); abrir(t.id); }
+  });
+  return g;
+}
+
+/* ══ estado visual ══ */
+function pintarEstado(){
+  TAREAS.forEach(t => {
+    const g = capaNodos.querySelector(`[data-id="${t.id}"]`);
+    if(!g) return;
+    const ok = hechas.has(t.id) || t.anillo === 0;
+    g.classList.toggle('hecha', ok);
+    const bola = g.querySelector('.bola');
+    bola.setAttribute('fill', ok ? cv(COLOR[t.color]) : '#0B121A');
+    bola.setAttribute('opacity', ok ? '.32' : '1');
+  });
+  const total = TAREAS.filter(t => t.anillo > 0).length;
+  const listas = TAREAS.filter(t => t.anillo > 0 && hechas.has(t.id)).length;
+  document.getElementById('cuenta').textContent = listas + ' / ' + total;
+  document.getElementById('riel').style.width = (listas / total * 100) + '%';
+  actualizarChips();
+}
+
+/* ══ panel ══ */
+const panel = document.getElementById('panel');
+function abrir(id){
+  const t = TAREAS.find(x => x.id === id);
+  if(!t) return;
+  abierta = id;
+
+  capaNodos.querySelectorAll('.nodo').forEach(n =>
+    n.classList.toggle('abierta', n.dataset.id === id));
+  capaRayos.querySelectorAll('.rayo').forEach(l =>
+    l.classList.toggle('viva', l.dataset.de === id));
+  capaAtaduras.querySelectorAll('.atadura').forEach(a =>
+    a.classList.toggle('viva', a.dataset.a === id || a.dataset.b === id));
+
+  const col = cv(COLOR[t.color] || COLOR.neutro);
+  const eti = document.getElementById('pEtiquetas');
+  eti.innerHTML = '';
+  const e1 = document.createElement('span');
+  e1.className = 'eti color';
+  e1.style.background = col;
+  e1.textContent = ANILLOS[t.anillo].nombre;
+  eti.appendChild(e1);
+  if(t.critica){
+    const e2 = document.createElement('span');
+    e2.className = 'eti'; e2.style.borderColor = col; e2.style.color = col;
+    e2.textContent = 'Crítica';
+    eti.appendChild(e2);
+  }
+
+  document.getElementById('pTitulo').textContent = t.titulo;
+  document.getElementById('pResumen').textContent = t.resumen;
+
+  const c = document.getElementById('pCuerpo');
+  c.innerHTML =
+    '<div class="dato">' +
+      '<div><span class="k">Cuánto tarda</span><span class="v">' + t.tarda + '</span></div>' +
+      '<div><span class="k">Depende de</span><span class="v">' + t.depende + '</span></div>' +
+    '</div>' +
+    '<h3>Qué implica</h3><ul>' + t.implica.map(x => '<li>' + x + '</li>').join('') + '</ul>' +
+    '<h3>Cómo hacerlo</h3><ol>' + t.como.map(x => '<li>' + x + '</li>').join('') + '</ol>';
+
+  const b = document.getElementById('bMarcar');
+  const ok = hechas.has(id);
+  b.textContent = ok ? 'Quitar la palomita' : 'Marcar como hecho';
+  b.classList.toggle('deshacer', ok);
+  b.disabled = t.anillo === 0;
+  b.style.opacity = t.anillo === 0 ? '.4' : '1';
+
+  panel.classList.add('abierto');
+  document.getElementById('pista').classList.add('ida');
+}
+
+function cerrar(){
+  abierta = null;
+  panel.classList.remove('abierto');
+  capaNodos.querySelectorAll('.nodo').forEach(n => n.classList.remove('abierta'));
+  capaRayos.querySelectorAll('.rayo').forEach(l => l.classList.remove('viva'));
+  capaAtaduras.querySelectorAll('.atadura').forEach(a => a.classList.remove('viva'));
+}
+
+document.getElementById('bCerrar').addEventListener('click', cerrar);
+document.getElementById('bMarcar').addEventListener('click', () => {
+  if(!abierta) return;
+  if(hechas.has(abierta)) hechas.delete(abierta); else hechas.add(abierta);
+  guardar(); pintarEstado(); abrir(abierta);
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrar(); });
+
+/* ══ mover y acercar ══ */
+function aplicar(){
+  raiz.setAttribute('transform',
+    `translate(${vista.x} ${vista.y}) scale(${vista.k})`);
+}
+function centrar(){
+  const c = svg.getBoundingClientRect();
+  /* la barra, los chips y la ayuda de abajo FLOTAN encima del lienzo: si el
+     encuadre usa el alto completo, lo de arriba queda debajo de la barra. */
+  const arriba = document.querySelector('.techo').offsetHeight;
+  const pie = 78;
+  const util = Math.max(200, c.height - arriba - pie);
+
+  const b = (foco >= 0 ? cajaAnillo[foco] : caja)
+            || { x1:-700, x2:700, y1:-540, y2:540 };
+  const ancho = b.x2 - b.x1, alto = b.y2 - b.y1;
+  const cabe = Math.min((c.width - 24) / ancho, (util - 24) / alto);
+
+  /* Con «Todo» en un teléfono el mapa completo sólo cabe a un tamaño
+     ilegible, así que hay piso de acercamiento y se arrastra para ver el
+     resto. Enfocando un anillo sí cabe entero: para eso están los chips.
+     Un mapa que no se puede leer no es un mapa. */
+  const piso = (c.width < 700 && foco < 0) ? .5 : .3;
+  vista.k = Math.max(piso, Math.min(1.15, cabe));
+
+  const cx = (b.x1 + b.x2) / 2;
+  const cy = (b.y1 + b.y2) / 2;
+  vista.x = c.width / 2 - cx * vista.k;
+  vista.y = arriba + util / 2 - cy * vista.k;
+  aplicar();
+}
+
+/* ══ enfocar un anillo ══════════════════════════════════════════════════ */
+function enfocar(a){
+  foco = a;
+  [...document.querySelectorAll('#chips .chip')].forEach(ch =>
+    ch.setAttribute('aria-pressed', String(Number(ch.dataset.anillo) === a)));
+  TAREAS.forEach(t => {
+    const g = capaNodos.querySelector(`[data-id="${t.id}"]`);
+    if(g) g.classList.toggle('tenue', a >= 0 && t.anillo !== a);
+  });
+  capaRayos.querySelectorAll('.rayo').forEach(r => {
+    const t = TAREAS.find(x => x.id === r.dataset.de);
+    r.style.opacity = (a >= 0 && t && t.anillo !== a) ? .12 : '';
+  });
+  centrar();
+}
+
+/* refresca sólo los números de los chips; rearmarlos perdería el enfoque */
+function actualizarChips(){
+  const n = document.getElementById('chips');
+  if(!n || !n.children.length) return;
+  [...n.children].forEach(b => {
+    const i = Number(b.dataset.anillo);
+    const pend = TAREAS.filter(t => t.anillo > 0 && !hechas.has(t.id) &&
+                                    (i < 0 || t.anillo === i)).length;
+    b.textContent = b.dataset.nombre + (pend ? '  ' + pend : '');
+  });
+}
+
+function armarChips(){
+  const n = document.getElementById('chips');
+  const opciones = [{ i:-1, nombre:'Todo' }]
+    .concat(ANILLOS.map((r, i) => ({ i, nombre: r.nombre })));
+  n.innerHTML = '';
+  opciones.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button';
+    b.dataset.anillo = o.i;
+    b.dataset.nombre = o.nombre;
+    b.setAttribute('aria-pressed', 'false');
+    const pend = o.i < 0
+      ? TAREAS.filter(t => t.anillo > 0 && !hechas.has(t.id)).length
+      : TAREAS.filter(t => t.anillo === o.i && t.anillo > 0 && !hechas.has(t.id)).length;
+    b.textContent = o.nombre + (pend ? '  ' + pend : '');
+    b.addEventListener('click', () => enfocar(o.i));
+    n.appendChild(b);
+  });
+}
+
+document.getElementById('bCentrar').addEventListener('click', () => enfocar(foco));
+window.addEventListener('resize', centrar);
+
+const lienzo = document.getElementById('lienzo');
+let arrastra = null;
+lienzo.addEventListener('pointerdown', e => {
+  if(e.target.closest('.nodo')) return;
+  arrastra = { x:e.clientX - vista.x, y:e.clientY - vista.y };
+  lienzo.classList.add('arrastrando');
+  lienzo.setPointerCapture(e.pointerId);
+});
+lienzo.addEventListener('pointermove', e => {
+  if(!arrastra) return;
+  vista.x = e.clientX - arrastra.x; vista.y = e.clientY - arrastra.y; aplicar();
+});
+const suelta = () => { arrastra = null; lienzo.classList.remove('arrastrando'); };
+lienzo.addEventListener('pointerup', suelta);
+lienzo.addEventListener('pointercancel', suelta);
+
+lienzo.addEventListener('wheel', e => {
+  e.preventDefault();
+  const f = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const k = Math.max(.2, Math.min(2.4, vista.k * f));
+  const r = svg.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  vista.x = mx - (mx - vista.x) * (k / vista.k);
+  vista.y = my - (my - vista.y) * (k / vista.k);
+  vista.k = k; aplicar();
+}, { passive:false });
+
+/* pellizco en teléfono */
+let dedos = new Map(), sep0 = 0, k0 = 1;
+lienzo.addEventListener('pointerdown', e => dedos.set(e.pointerId, e));
+lienzo.addEventListener('pointermove', e => {
+  if(!dedos.has(e.pointerId)) return;
+  dedos.set(e.pointerId, e);
+  if(dedos.size === 2){
+    arrastra = null;
+    const [a, b] = [...dedos.values()];
+    const s = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    if(!sep0){ sep0 = s; k0 = vista.k; return; }
+    vista.k = Math.max(.2, Math.min(2.4, k0 * (s / sep0)));
+    aplicar();
+  }
+});
+const quita = e => { dedos.delete(e.pointerId); if(dedos.size < 2) sep0 = 0; };
+lienzo.addEventListener('pointerup', quita);
+lienzo.addEventListener('pointercancel', quita);
+
+/* ══ arranque ══ */
+acomodar();
+dibujar();
+/* la medida del texto sólo es fiable con la tipografía ya cargada */
+armarChips();
+/* En pantalla angosta se abre en «Esta semana»: es lo urgente y es lo único
+   que cabe legible. En pantalla ancha cabe todo, así que se abre en «Todo». */
+enfocar(innerWidth < 700 ? 1 : -1);
+/* al cargar la tipografía cambian los anchos reales: se vuelve a resolver y a
+   encuadrar. Nadie ha arrastrado todavía, así que reencuadrar no estorba. */
+if(document.fonts && document.fonts.ready)
+  document.fonts.ready.then(() => { resolverRotulos(); centrar(); });
+setTimeout(() => document.getElementById('pista').classList.add('ida'), 7000);
+</script>
+
+<script>
+/* Sólo cuando esto se sirve como página del sitio (no dentro de un artifact)
+   aparece la barra para volver al expediente. Así el mismo archivo sirve en
+   los dos lados sin tener dos copias que se desincronizan. */
+if(location.pathname.includes('/campana/')){
+  const b = document.createElement('a');
+  b.href = './';
+  b.textContent = '\u2190 Expediente de campaña';
+  b.style.cssText = 'position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));'
+    + 'z-index:99;font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;'
+    + 'text-decoration:none;padding:10px 14px;border-radius:99px;'
+    + 'background:#101821;color:#F6F8FB;box-shadow:0 6px 22px rgba(0,0,0,.28)';
+  document.body.appendChild(b);
+}
+</script>

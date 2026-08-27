@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/book-to-skill/skills/book-to-skill/SKILL.md

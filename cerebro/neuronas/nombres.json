@@ -1,0 +1,63 @@
+{
+  "area": "nombres",
+  "nombre": "Nombres que chocan",
+  "que": "Dos cosas distintas llamadas igual, o una cosa renombrada en un lado y no en el otro. Silencioso, y por eso caro.",
+  "neuronas": [
+    {
+      "id": "campo-que-choca-consigo",
+      "titulo": "El mismo nombre para dos cosas dentro del mismo objeto",
+      "gravedad": "alta",
+      "sintoma": "Un valor se queda clavado en su valor por defecto y no hay forma de asignarlo desde fuera.",
+      "causa": "El campo de entrada y el de salida se llaman igual. Uno pisa al otro y el de afuera no puede ganar.",
+      "porque": "Nombres cortos y naturales chocan seguido: `de`, `id`, `tipo`, `total`. En español pasa más porque `de` es a la vez «de quién» y «de cuántos».",
+      "arreglo": "Renombrar el menos usado, y aceptar el nombre viejo un tiempo para no romperle la llamada a quien ya la escribió.",
+      "comoCazarlo": "Que alguien de FUERA use tu interfaz. Uno no lo ve porque conoce la intención de cada campo.",
+      "consejo": "Si un campo se queda en cero y no entiendes por qué, busca si ese nombre existe dos veces en la misma llamada.",
+      "salioDe": "sala/servidor · el denominador del avance se llamaba `de`, igual que el id del emisor. La barra decía «3 de 0»",
+      "senales": ["se queda en cero", "no puedo asignarlo", "lo mando y no llega"],
+      "vecinas": ["renombrar-de-un-lado", "probar-con-alguien-de-fuera"]
+    },
+    {
+      "id": "renombrar-de-un-lado",
+      "titulo": "Renombré el campo en el servidor y el cliente siguió leyendo el viejo",
+      "gravedad": "alta",
+      "sintoma": "Todo verde y una parte de la pantalla simplemente no aparece. Sin error, sin nada en la consola.",
+      "causa": "El renombre se hizo donde estaba el bug y no se buscó el nombre viejo en el otro lado.",
+      "porque": "Las pruebas del servidor prueban el servidor contra sí mismo: renombrar los dos lados a la vez las deja verdes. La costura entre las dos mitades es justo donde nadie prueba.",
+      "arreglo": "Buscar el nombre viejo en TODO el repo antes de dar por hecho el renombre. Y aceptar los dos nombres un rato.",
+      "comoCazarlo": "Después de renombrar, `grep` del nombre viejo. Si aparece fuera del archivo que tocaste, ahí está.",
+      "consejo": "Un renombre no es una edición: es una migración de contrato. Trátalo como tal aunque sean tres letras.",
+      "salioDe": "sala · el servidor pasó a `total` y la mesa siguió leyendo `de`; las 62 pruebas quedaron verdes",
+      "senales": ["no se pinta y no hay error", "las pruebas pasan pero no sirve", "funcionaba antes"],
+      "vecinas": ["campo-que-choca-consigo", "pruebas-que-no-prueban-nada", "verificar-lo-publicado"]
+    },
+    {
+      "id": "marcador-que-existe-dos-veces",
+      "titulo": "Busqué un marcador de texto y agarré el equivocado",
+      "gravedad": "media",
+      "sintoma": "Un bloque de código apareció como texto al principio del documento, o una sustitución se metió en un lugar absurdo.",
+      "causa": "El texto que se usó de ancla existe más de una vez en el archivo — típico: el mismo comentario en el CSS y en el JS. Se tomó el primero.",
+      "porque": "Uno escribe comentarios bonitos y repetidos a propósito, y luego los usa de ancla sin acordarse de que los repitió.",
+      "arreglo": "Buscar el ancla A PARTIR de una posición conocida, no desde el principio. Y comprobar que el corte devuelto no esté vacío.",
+      "comoCazarlo": "Si una sustitución da un resultado vacío o negativo, es esto. Cuenta las apariciones antes de cortar.",
+      "consejo": "Ancla con algo que sea único de verdad: un nombre de función, no un comentario decorativo.",
+      "salioDe": "sala/index.html · «── la lupa ──» estaba en el CSS y en el JS; el bloque se insertó al inicio del documento",
+      "senales": ["salió código como texto", "se insertó al principio", "la sustitución quedó rara"],
+      "vecinas": ["ver-la-pantalla", "funcion-duplicada"]
+    },
+    {
+      "id": "funcion-duplicada",
+      "titulo": "Reescribí un bloque y quedaron dos versiones de la misma función",
+      "gravedad": "alta",
+      "sintoma": "El archivo deja de cargar. En JavaScript: «Identifier X has already been declared».",
+      "causa": "Se reemplazó desde la función B hasta el final, pero la función A —que también se reescribió— vivía antes del corte.",
+      "porque": "Al reescribir se piensa en lo nuevo, no en lo que queda huérfano detrás.",
+      "arreglo": "Después de reescribir un bloque grande, correr un chequeo de sintaxis sobre el script entero.",
+      "comoCazarlo": "`node --check`. Un segundo, y caza esto siempre. La vista NO lo caza: la página simplemente se queda en blanco.",
+      "consejo": "Extrae el `<script>` a un archivo y pásale el chequeo de sintaxis en cada edición grande de un HTML de una sola pieza.",
+      "salioDe": "sala/index.html · dos `tarjetaAdjunto` tras rehacer el pintado",
+      "senales": ["already been declared", "la página no carga", "se quedó en blanco"],
+      "vecinas": ["marcador-que-existe-dos-veces"]
+    }
+  ]
+}

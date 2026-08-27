@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/product-team/skills/ux-researcher-designer/SKILL.md

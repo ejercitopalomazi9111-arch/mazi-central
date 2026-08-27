@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/compliance-os/skills/fda-qsr-audit-prep/SKILL.md

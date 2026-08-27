@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/ra-qm-team/skills/eu-ai-act-specialist/SKILL.md

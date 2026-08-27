@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/marketing-skill/skills/content-creator/SKILL.md

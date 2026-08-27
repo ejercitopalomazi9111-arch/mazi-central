@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/business-operations/skills/knowledge-ops/SKILL.md

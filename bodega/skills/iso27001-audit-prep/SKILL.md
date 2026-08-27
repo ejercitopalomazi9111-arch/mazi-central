@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/compliance-os/skills/iso27001-audit-prep/SKILL.md

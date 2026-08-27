@@ -1,0 +1,66 @@
+{
+  // ── LA SALA · el servidor ───────────────────────────────────────────────
+  // La mesa donde se juntan Carlos, su compañero, y las sesiones de Claude
+  // que cada uno quiera meter — de DOS cuentas distintas, que no se pueden
+  // hablar entre ellas por ningún otro medio.
+  //
+  // ⚠️ Es un proyecto de Cloudflare APARTE, y no es capricho: ya nos pasó con
+  // el servidor de Guerra de Puercos. Metido dentro del proyecto del sitio,
+  // los despliegues de los DOS empezaron a fallar al instante y sin registro.
+  // Al separarlo, verde otra vez. Misma forma y misma razón que el de Fadori.
+  //
+  // Va en .jsonc y NO en .toml a propósito, igual que aquéllos: con un .toml,
+  // wrangler sube hasta la raíz del repo, toma el wrangler.jsonc DEL SITIO y
+  // trata de correr su `node build.mjs` dentro de esta carpeta.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sala",
+  "main": "index.js",
+  "compatibility_date": "2026-08-20",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+
+  // SQLite porque es lo que está incluido en el plan gratis; los de
+  // key-value no. Igual que la Cooperativa de Fadori y que Puercos.
+  "durable_objects": {
+    "bindings": [{ "name": "SALA", "class_name": "Sala" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }],
+
+  "vars": {
+    // De dónde se acepta que llamen. En claro y sin comodín.
+    "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,http://localhost:8792,http://127.0.0.1:8792",
+
+    // Las vistas previas del sitio: Cloudflare le pone un nombre distinto a
+    // cada rama y a cada commit. Sin esto, la mesa abierta desde una vista
+    // previa NO puede hablarle a la sala, y ahí es justo donde se prueba
+    // ANTES de publicar en main. Sólo las que cuelgan de NUESTRO proyecto:
+    // nadie más puede crear un nombre bajo ese dominio.
+    "VISTAS_PREVIAS": "mazi-central.palomazi9111.workers.dev"
+    // LLAVES no va aquí. Ver abajo.
+  }
+
+  // ── EL TRADUCTOR · «explícamelo simple» ─────────────────────────────────
+  // Apagado hasta que se ponga la llave, y apagado DICE que está apagado en
+  // vez de fingir. Para prenderlo:
+  //
+  //     npx wrangler secret put TRADUCTOR_LLAVE
+  //
+  // y descomentar las dos de abajo. El proveedor es plomería reemplazable —
+  // regla §2 de la casa—: cualquiera que hable el formato de OpenAI sirve,
+  // y cambiarlo es cambiar una variable, no el producto.
+  //
+  //   "TRADUCTOR_URL": "https://api.groq.com/openai/v1/chat/completions",
+  //   "TRADUCTOR_MODELO": "llama-3.3-70b-versatile"
+
+  // ── LAS LLAVES NO VAN EN ESTE ARCHIVO ───────────────────────────────────
+  // `LLAVES` dice qué llave pertenece a qué cuenta, con la forma
+  //     carlos:<llave-de-carlos>,amigo:<llave-del-amigo>
+  // y es lo único que impide que un desconocido escriba en la mesa. Este repo
+  // es PÚBLICO y tiene escaneo de secretos, así que se pone como secreto del
+  // worker y nunca aquí:
+  //
+  //     npx wrangler secret put LLAVES
+  //
+  // Cada quien configura SU llave en su propia máquina, en su Claude Code.
+  // Nadie necesita la del otro.
+}

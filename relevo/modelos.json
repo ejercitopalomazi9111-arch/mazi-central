@@ -1,0 +1,62 @@
+{
+  "que": "El orden del relevo. El primero que conteste, trabaja. Cuando se topa, se marca con su hora de regreso y le toca al siguiente.",
+  "ojo": "Los nombres de modelo se pudren. Antes de confiar en esta lista, `node herramientas/relevo.mjs probar` la comprueba contra cada API en vivo y dice cuál cambió.",
+  "proveedores": [
+    {
+      "id": "ollama",
+      "nombre": "Ollama · en tu máquina",
+      "base": "http://127.0.0.1:11434/v1",
+      "llave": null,
+      "modelo": "llama3.2",
+      "porque": "Va PRIMERO cuando está prendido: no cuesta, no se topa y no sale de la casa. Si no está corriendo, el relevo lo salta en un segundo y sigue."
+    },
+    {
+      "id": "groq",
+      "nombre": "Groq",
+      "base": "https://api.groq.com/openai/v1",
+      "llave": "GROQ_API_KEY",
+      "modelo": "llama-3.3-70b-versatile",
+      "porque": "El más rápido de los gratuitos. Buen primer relevo de nube."
+    },
+    {
+      "id": "cerebras",
+      "nombre": "Cerebras",
+      "base": "https://api.cerebras.ai/v1",
+      "llave": "CEREBRAS_API_KEY",
+      "modelo": "llama3.3-70b",
+      "porque": "Otra capa gratuita rápida, con topes distintos a los de Groq — que es justo el punto de tener dos."
+    },
+    {
+      "id": "gemini",
+      "nombre": "Gemini",
+      "base": "https://generativelanguage.googleapis.com/v1beta/openai/",
+      "llave": "GEMINI_API_KEY",
+      "modelo": "gemini-2.0-flash",
+      "porque": "Ventana de contexto grande. Es el que sirve cuando hay que tragarse un bulto que a los otros no les cabe."
+    },
+    {
+      "id": "kimi",
+      "nombre": "Kimi · Moonshot",
+      "base": "https://api.moonshot.ai/v1",
+      "llave": "MOONSHOT_API_KEY",
+      "modelo": "kimi-k2.6",
+      "porque": "El ayudante de la casa. Moonshot NO tiene plan gratuito permanente —da créditos de prueba al registrarse—, pero K2.6 es de pesos abiertos: si se acaban los créditos, el mismo modelo entra por OpenRouter o corriendo en la máquina. Por eso hay tres caminos al mismo Kimi y no uno."
+    },
+    {
+      "id": "glm",
+      "nombre": "GLM · Z.ai",
+      "base": "https://api.z.ai/api/paas/v4",
+      "llave": "ZAI_API_KEY",
+      "modelo": "glm-5.3-flash",
+      "porque": "De pago pero barato. Va después de los gratuitos a propósito: primero se gasta lo que no cuesta."
+    },
+    {
+      "id": "openrouter",
+      "nombre": "OpenRouter",
+      "base": "https://openrouter.ai/api/v1",
+      "llave": "OPENROUTER_API_KEY",
+      "modelo": "meta-llama/llama-3.3-70b-instruct:free",
+      "porque": "El último de la fila: junta muchos proveedores, así que es el mejor comodín cuando todo lo demás se topó. Los modelos con `:free` no cobran."
+    }
+  ]
+}

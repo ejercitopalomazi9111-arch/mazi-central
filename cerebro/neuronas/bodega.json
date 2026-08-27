@@ -1,0 +1,254 @@
+{
+  "area": "bodega",
+  "nombre": "La bodega de skills",
+  "que": "Catálogo de 2945 skills guardadas sin cargarlas. Un agente busca en el índice, pone la que le sirve, la usa y la guarda de vuelta.",
+  "neuronas": [
+    {
+      "id": "bodega-codigo",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de codigo (2072)",
+      "que": "2072 skills de codigo guardadas y listas para poner a trabajar. Algunas: a11y-audit, ab-test-setup, ab-testing, ablation-planner, ablation-planner-2, abusing-dpapi-for-credential-access, abusing-shadow-credentials-for-privesc, academic-paper, academic-paper-reviewer, academic-pipeline, academy-guide, accessibility-3.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"codigo\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de codigo",
+        "algo que haga codigo",
+        "hay algo para codigo",
+        "necesito codigo"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-datos",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de datos (1622)",
+      "que": "1622 skills de datos guardadas y listas para poner a trabajar. Algunas: ab-test-setup, ab-testing, abusing-dpapi-for-credential-access, academic-paper, academic-paper-reviewer, academic-pipeline, academic-plotting, accessibility-3, ad-creative, ad-creative-2, adaptyv, ads.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"datos\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de datos",
+        "algo que haga datos",
+        "hay algo para datos",
+        "necesito datos"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-infra",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de infra (983)",
+      "que": "983 skills de infra guardadas y listas para poner a trabajar. Algunas: a11y-audit, ablation-planner, ablation-planner-2, abusing-dpapi-for-credential-access, acestep, adaptyv, agent-decision-receipts, agent-eval, agent-eval-2, agent-eval-3, agent-harness-construction-3, agent-launcher-orchestrator.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"infra\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de infra",
+        "algo que haga infra",
+        "hay algo para infra",
+        "necesito infra"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-documentos",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de documentos (918)",
+      "que": "918 skills de documentos guardadas y listas para poner a trabajar. Algunas: a11y-audit, a11y-audit-2, ab-test-setup, abusing-dpapi-for-credential-access, academic-paper, academic-paper-reviewer, academy-guide, achieving-cmmc-level-2-compliance, adversarial-reviewer, aeo, agent-architecture-audit-2, agent-designer.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"documentos\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de documentos",
+        "algo que haga documentos",
+        "hay algo para documentos",
+        "necesito documentos"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-web",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de web (887)",
+      "que": "887 skills de web guardadas y listas para poner a trabajar. Algunas: a11y-audit, a11y-audit-2, abusing-dpapi-for-credential-access, accessibility, accessibility-2, accessibility-3, ad-creative-2, ads, agent-harness-construction, agent-harness-construction-2, agent-harness-construction-3, agent-payment-x402.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"web\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de web",
+        "algo que haga web",
+        "hay algo para web",
+        "necesito web"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-agentes",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de agentes (820)",
+      "que": "820 skills de agentes guardadas y listas para poner a trabajar. Algunas: ab-testing, ablation-planner, ablation-planner-2, academic-paper, academic-paper-reviewer, academic-pipeline, academic-plotting, academy-guide, account-executive, ad-creative-2, adopt, ads.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"agentes\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de agentes",
+        "algo que haga agentes",
+        "hay algo para agentes",
+        "necesito agentes"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-imagen",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de imagen (789)",
+      "que": "789 skills de imagen guardadas y listas para poner a trabajar. Algunas: a11y-audit-2, ab-test-setup, ab-testing, ablation-planner, ablation-planner-2, abusing-shadow-credentials-for-privesc, academic-plotting, accessibility-3, acquiring-disk-image-with-dd-and-dcfldd, adaptyv, adopt, agent-designer.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"imagen\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de imagen",
+        "algo que haga imagen",
+        "hay algo para imagen",
+        "necesito imagen"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-video",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de video (559)",
+      "que": "559 skills de video guardadas y listas para poner a trabajar. Algunas: ablation-planner, ablation-planner-2, academic-paper-reviewer, acestep, ad-creative-2, aeon, agent-architecture-audit, agent-architecture-audit-2, agent-decision-receipts, agent-eval, agent-eval-2, agent-eval-3.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"video\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de video",
+        "algo que haga video",
+        "hay algo para video",
+        "necesito video"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-redes",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de redes (535)",
+      "que": "535 skills de redes guardadas y listas para poner a trabajar. Algunas: abusing-dpapi-for-credential-access, achieving-cmmc-level-2-compliance, ad-creative, ad-creative-2, ads, agent-decision-receipts, ai-act-readiness, analyzing-cobalt-strike-beacon-configuration, analyzing-cobaltstrike-malleable-c2-profiles, analyzing-cyber-kill-chain, analyzing-malicious-url-with-urlscan, analyzing-powershell-empire-artifacts.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"redes\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de redes",
+        "algo que haga redes",
+        "hay algo para redes",
+        "necesito redes"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-negocio",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de negocio (384)",
+      "que": "384 skills de negocio guardadas y listas para poner a trabajar. Algunas: ab-test-setup, ab-testing, account-executive, ad-creative, ad-creative-2, adr, ads, adversarial-reviewer, agent-harness, agent-introspection-debugging, agent-introspection-debugging-4, agent-protocol.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"negocio\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de negocio",
+        "algo que haga negocio",
+        "hay algo para negocio",
+        "necesito negocio"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-movil",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de movil (252)",
+      "que": "252 skills de movil guardadas y listas para poner a trabajar. Algunas: a11y-audit, accessibility, accessibility-2, accessibility-3, analyzing-android-malware-with-apktool, analyzing-ios-app-security-with-objection, analyzing-lnk-file-and-jump-list-artifacts, analyzing-threat-actor-ttps-with-mitre-attack, analyzing-uefi-bootkit-persistence, android-accessibility, android-architecture, android-clean-architecture.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"movil\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de movil",
+        "algo que haga movil",
+        "hay algo para movil",
+        "necesito movil"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-audio",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de audio (153)",
+      "que": "153 skills de audio guardadas y listas para poner a trabajar. Algunas: academic-paper, acestep, andreessen, article-writing, article-writing-2, article-writing-3, article-writing-5, asset-audit, asset-spec, audiocraft-audio-generation, benchmark-methodology, benchmark-methodology-2.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"audio\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de audio",
+        "algo que haga audio",
+        "hay algo para audio",
+        "necesito audio"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    },
+    {
+      "id": "bodega-otras",
+      "clase": "pieza",
+      "titulo": "Bodega · skills de otras (46)",
+      "que": "46 skills de otras guardadas y listas para poner a trabajar. Algunas: ai-first-engineering, ai-first-engineering-2, analyzing-active-directory-acl-abuse, analyzing-golang-malware-with-ghidra, architecture-decision-records, building-automated-malware-submission-pipeline, business-name-fit, chef-assistant, config-reader, dashboard-builder, dashboard-builder-2, defi-amm-security.",
+      "donde": "bodega/skills/ · se busca con `node herramientas/bodega.mjs buscar \"otras\"` y se pone con `montar <nombre>`",
+      "porque": "Están DORMIDAS a propósito. Claude Code lee la descripción de todo lo que esté en `.claude/skills/` en cada turno; con miles adentro la sesión se ahoga antes de trabajar y el enrutador escoge peor. En la bodega no cuestan nada hasta que se ponen.",
+      "ojo": "Son de otra gente. Cada una trae su `fuente` y su `licencia` en el índice — antes de apoyarse en una, se mira de dónde salió. Y se desmonta al terminar: dejarlas puestas devuelve el problema que la bodega resuelve.",
+      "senales": [
+        "skill de otras",
+        "algo que haga otras",
+        "hay algo para otras",
+        "necesito otras"
+      ],
+      "vecinas": [
+        "pieza-skills-como-unidad",
+        "pieza-cerebro"
+      ]
+    }
+  ]
+}

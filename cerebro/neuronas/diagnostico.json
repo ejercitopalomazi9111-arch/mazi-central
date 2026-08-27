@@ -1,0 +1,91 @@
+{
+  "area": "diagnostico",
+  "nombre": "Cómo se piensa un problema",
+  "que": "No son bugs: son formas de equivocarse al buscarlos. Las más caras.",
+  "neuronas": [
+    {
+      "id": "sintoma-contra-causa",
+      "titulo": "Llevo tres rondas arreglando el síntoma",
+      "gravedad": "alta",
+      "sintoma": "El mismo reporte vuelve después de varios arreglos distintos, cada uno razonable.",
+      "causa": "Se está arreglando lo que se ve, no lo que lo produce. A veces lo que se busca ni siquiera existe.",
+      "porque": "Cada arreglo mueve un poco el síntoma, y eso se siente como avance.",
+      "arreglo": "Parar. Describir el comportamiento deseado en términos de la PERSONA, no de la pantalla. Muchas veces ahí aparece que falta algo que nunca se construyó.",
+      "comoCazarlo": "Si es la tercera ronda sobre el mismo reporte, el problema está en otro lado. Deja de refinar.",
+      "consejo": "Carlos: «nunca hiciste que salga un letrero de que su hija está en ese partido, estás buscando algo que no existe». Cuando insiste en algo que ya «arreglaste», el arreglo está en el lugar equivocado.",
+      "salioDe": "ligas-mazi · el filtro de categoría",
+      "senales": ["tercera vez", "sigue sin servir", "ya lo arreglamos"],
+      "vecinas": ["ajuste-guardado-por-documento", "reproducir-antes-de-arreglar", "pensar-en-la-persona"]
+    },
+    {
+      "id": "pensar-en-la-persona",
+      "titulo": "Pidieron un filtro y lo que hacía falta era un aviso",
+      "gravedad": "media",
+      "sintoma": "Se entrega justo lo que pidieron y no resuelve nada.",
+      "causa": "Se tomó la solución que propuso el usuario en vez del problema que tiene.",
+      "porque": "Una petición concreta es cómoda de ejecutar; un problema hay que entenderlo.",
+      "arreglo": "Traducir siempre a: «¿qué quiere lograr esta persona?». Lo primero se puede construir mal y seguir cumpliendo; lo segundo no.",
+      "comoCazarlo": "Si puedes construirlo sin entender para qué sirve, no lo entendiste.",
+      "consejo": "«Que el papá sepa qué día y en qué lugar juega la categoría de su hijo» es un requisito. «Un filtro» es una corazonada.",
+      "salioDe": "ligas-mazi",
+      "senales": ["hazme un filtro", "ponle un botón", "quiero una opción para"],
+      "vecinas": ["sintoma-contra-causa"]
+    },
+    {
+      "id": "ver-la-pantalla",
+      "titulo": "Leí el código y dije que quedó; en pantalla estaba roto",
+      "gravedad": "alta",
+      "sintoma": "«Ya está» seguido de una captura donde claramente no está.",
+      "causa": "Se verificó leyendo, no mirando. El código correcto y la pantalla correcta son cosas distintas.",
+      "porque": "Después de escribir algo uno ve lo que quiso escribir, no lo que quedó.",
+      "arreglo": "Abrir la página en un navegador de verdad y sacarle foto. Y manejarla: tocar, escribir, recorrer el flujo.",
+      "comoCazarlo": "Casi todo lo de esta lista se cazó mirando: los anillos invisibles, el menú abierto, el código como texto, la liga que no abre.",
+      "consejo": "Regla de la casa: ver la pantalla antes de decir que quedó. Leer el código no cuenta.",
+      "salioDe": "CLAUDE.md §3.8 · y prácticamente cada sesión",
+      "senales": ["ya quedó", "debería funcionar", "el código está bien"],
+      "vecinas": ["verificar-lo-publicado", "reproducir-antes-de-arreglar"]
+    },
+    {
+      "id": "verificar-lo-publicado",
+      "titulo": "Verifiqué mi archivo, no lo que sirve el servidor",
+      "gravedad": "alta",
+      "sintoma": "En el repo está bien y el usuario ve algo distinto.",
+      "causa": "Entre el archivo y el usuario hay un armado, una lista de lo que se publica, un caché y un servidor. Cualquiera de los cuatro cambia lo que llega.",
+      "porque": "El archivo local se siente como la verdad. La verdad es lo que responde la URL.",
+      "arreglo": "`curl` a la dirección real y buscar en la respuesta lo que esperas. Contar apariciones.",
+      "comoCazarlo": "Así salió que la mesa publicada leía un campo que ya no existía: aparecía cero veces en lo servido.",
+      "consejo": "Lo que no está en la respuesta HTTP, no existe para el usuario.",
+      "salioDe": "sala · y campana/, donde el charset sólo se vio sirviéndolo",
+      "senales": ["en mi repo sí está", "ya lo subí", "debería estar"],
+      "vecinas": ["renombrar-de-un-lado", "charset-que-no-manda-el-servidor", "ver-la-pantalla"]
+    },
+    {
+      "id": "probar-con-alguien-de-fuera",
+      "titulo": "Mi interfaz era clarísima para mí y nadie más pudo usarla",
+      "gravedad": "alta",
+      "sintoma": "Quien la usa por primera vez gasta la mitad de sus intentos adivinando nombres de campos.",
+      "causa": "Se documentó lo que uno recuerda, no lo que hace falta. Los huecos son invisibles desde adentro.",
+      "porque": "Uno conoce la intención de cada campo, así que los nombres «se entienden solos» — solamente para uno.",
+      "arreglo": "Que alguien de fuera la use SIN acceso al código, y medir cuántos intentos gasta en adivinar.",
+      "comoCazarlo": "En una prueba real, casi la mitad de las llamadas se fueron en adivinar nombres de campos, y dos endpoints existían sin estar documentados.",
+      "consejo": "El mensaje de error es documentación: si enumera los valores válidos, salva a quien se equivoca. Si miente, lo manda al lugar equivocado.",
+      "salioDe": "sala · prueba con un agente de otra «cuenta», con sólo el link",
+      "senales": ["no sé cómo se usa", "qué campos lleva", "no viene documentado"],
+      "vecinas": ["campo-que-choca-consigo", "errores-que-mienten"]
+    },
+    {
+      "id": "errores-que-mienten",
+      "titulo": "El mensaje de error mandaba a buscar al lugar equivocado",
+      "gravedad": "media",
+      "sintoma": "Alguien pierde diez minutos arreglando algo que no estaba mal.",
+      "causa": "Un solo mensaje para dos casos distintos: «no existe» y «falta el campo» decían lo mismo.",
+      "porque": "Los mensajes se escriben desde adentro —donde el código no distingue— y se leen desde afuera, donde la diferencia es todo.",
+      "arreglo": "Un mensaje por causa. Decir qué falta y dónde se consigue.",
+      "comoCazarlo": "Provoca cada error a propósito y léelo como si no conocieras el código.",
+      "consejo": "«Esa sesión no está en la sala» cuando lo que falta es un campo manda a volver a entrar en vez de a revisar el cuerpo. Ese es el costo real de un mensaje flojo.",
+      "salioDe": "sala/servidor · lo reportó el agente de la prueba",
+      "senales": ["el error no dice nada", "dice que no existe y sí existe"],
+      "vecinas": ["probar-con-alguien-de-fuera"]
+    }
+  ]
+}

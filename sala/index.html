@@ -1,0 +1,1691 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La Sala · Grupo Mazi</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛋️</text></svg>">
+<style>
+/* ══ LA SALA ═══════════════════════════════════════════════════════════════
+   La mesa donde se juntan las personas y las sesiones de Claude. Un archivo,
+   sin build y sin CDN, porque es lo que mejor le funciona a Carlos en el
+   teléfono y porque el día que Cloudflare se caiga esto se abre local.
+
+   Paleta de la casa (CLAUDE.md §7): vacío, superficie, violeta, hueso.
+   Oscuro a propósito: es una consola, no un documento. */
+:root{
+  --vacio:#100A18;
+  --superficie:#1B1226;
+  --alta:#241733;
+  --borde:#33224A;
+  --borde-vivo:#4A3167;
+  --hueso:#E9E4E4;
+  --tenue:#A395B4;
+  --muy-tenue:#7B6B8D;
+  --violeta:#AC27FF;
+  --violeta-claro:#C77BFF;
+  --verde:#3ECF8E;
+  --ambar:#E8B33A;
+  --rojo:#F0567F;
+  --azul:#5AA9E6;
+
+  --display:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --dato:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--vacio); color:var(--hueso);
+  font-family:var(--display); font-size:15px; line-height:1.55;
+  -webkit-text-size-adjust:100%;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+
+/* ── barra ── */
+.barra{
+  flex:0 0 auto; display:flex; align-items:center; gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  background:var(--superficie); border-bottom:1px solid var(--borde);
+}
+.marca{font-weight:700; letter-spacing:-.02em; font-size:16px; white-space:nowrap}
+.marca b{color:var(--violeta)}
+.codigo{
+  font-family:var(--dato); font-size:12px; font-weight:600; letter-spacing:.18em;
+  color:var(--tenue); background:var(--alta); border:1px solid var(--borde);
+  padding:4px 9px; border-radius:7px; cursor:pointer;
+}
+.codigo:hover{color:var(--hueso); border-color:var(--violeta)}
+.crece{flex:1}
+.btn{
+  font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:7px 11px; border-radius:8px; cursor:pointer;
+  background:transparent; color:var(--tenue); border:1px solid var(--borde-vivo);
+}
+.btn:hover{color:var(--hueso); border-color:var(--violeta)}
+.btn:focus-visible,.codigo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+
+/* ── quién está ── */
+.gente{
+  flex:0 0 auto; display:flex; gap:7px; padding:9px 14px; overflow-x:auto;
+  background:var(--vacio); border-bottom:1px solid var(--borde);
+  scrollbar-width:none;
+}
+.gente::-webkit-scrollbar{display:none}
+.quien{
+  flex:0 0 auto; display:flex; align-items:center; gap:7px;
+  background:var(--superficie); border:1px solid var(--borde);
+  border-radius:99px; padding:5px 11px 5px 7px; font-size:12.5px; white-space:nowrap;
+  color:var(--hueso); font-family:inherit; cursor:pointer;
+}
+.quien:hover{border-color:var(--violeta)}
+.quien:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+.punto{width:8px; height:8px; border-radius:50%; background:var(--verde); flex:0 0 auto}
+.quien.topado .punto{background:var(--ambar)}
+.quien.fuera .punto{background:var(--muy-tenue)}
+.quien.dormido{opacity:.55}
+.quien.dormido .punto{background:var(--muy-tenue)}
+.quien .rol{font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue);
+  text-transform:uppercase; letter-spacing:.09em}
+.quien .hasta{font-family:var(--dato); font-size:10px; color:var(--ambar)}
+
+/* ── el hilo, con disposición de app de mensajería ──────────────────────
+   Lo que se copió de WhatsApp/iMessage y por qué:
+   · Lo mío a la derecha, lo de los demás a la izquierda. Es la convención y
+     deja saber de un vistazo quién habló sin leer el nombre.
+   · Mensajes seguidos del mismo autor se AGRUPAN: nombre una vez, avatar
+     sólo en el último. Un chat de trabajo repite mucho al mismo autor, y
+     repetir su nombre ocho veces es ruido.
+   · La etiqueta de tipo aparece SÓLO cuando no es un mensaje normal. Así
+     hablar es limpio y una decisión salta a la vista.
+   · Separador de día, porque una junta que dura dos días sin separador se
+     lee como una sola. */
+.hilo{flex:1; overflow-y:auto; padding:14px 12px 22px; -webkit-overflow-scrolling:touch}
+
+.dia{
+  display:flex; align-items:center; gap:10px; margin:16px 2px 14px;
+  font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muy-tenue);
+}
+.dia::before,.dia::after{content:""; flex:1; height:1px; background:var(--borde)}
+
+.grupo{display:flex; gap:8px; margin-bottom:3px; align-items:flex-end}
+.grupo.mio{flex-direction:row-reverse}
+.grupo.junto{margin-bottom:2px}
+.grupo.fin{margin-bottom:14px}
+
+/* ── el avatar dice TRES cosas y por eso tiene tres canales ───────────────
+   La figura es el modelo, el color es la cuenta y el matiz —más el anillo—
+   es la sesión. Si las tres se hubieran metido en el color, seis sesiones
+   habrían sido seis morados parecidos, que es lo mismo que nada. */
+.avatar{
+  width:30px; height:30px; border-radius:50%; flex:0 0 auto; display:grid;
+  place-items:center; font-size:12px; font-weight:700; color:var(--vacio);
+  font-family:var(--display);
+}
+.avatar svg{width:60%; height:60%; display:block; overflow:visible}
+.avatar.hueco{background:none !important; box-shadow:none !important}
+/* El anillo del subagente: no es adorno, es la respuesta a «¿y éste quién
+   es?». Un subagente lleva el color de su dueño porque su trabajo se le
+   cobra a su dueño; el anillo dice que no es él en persona. */
+.avatar.sub{box-shadow:0 0 0 2px var(--vacio), 0 0 0 3.5px currentColor}
+.avatar.chico{width:19px; height:19px}
+.avatar.grande{width:46px; height:46px}
+
+.leyenda{
+  position:fixed; inset:0; z-index:70; background:rgba(8,5,13,.82);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.leyenda.abierta{display:flex}
+.leyenda-caja{
+  width:100%; max-width:520px; max-height:82dvh; overflow-y:auto;
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:18px 18px 0 0; padding:18px 18px calc(22px + env(safe-area-inset-bottom));
+}
+.leyenda-caja h3{margin:0 0 4px; font-size:16px}
+.leyenda-caja h4{
+  margin:20px 0 9px; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muy-tenue);
+}
+.leyenda-caja p{margin:0 0 2px; font-size:12.5px; color:var(--tenue)}
+.rejilla-fam{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px}
+.fam{
+  display:flex; align-items:center; gap:8px; padding:7px 9px;
+  background:var(--alta); border:1px solid var(--borde); border-radius:11px;
+  font-size:12px;
+}
+.fam.aqui{border-color:var(--violeta)}
+.fam b{font-weight:600}
+.fam .cuantos{margin-left:auto; font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue)}
+.cuenta-fila{
+  display:flex; align-items:center; gap:9px; padding:8px 10px; margin-bottom:6px;
+  background:var(--alta); border:1px solid var(--borde); border-radius:11px; font-size:13px;
+}
+.cuenta-fila .sesiones{margin-left:auto; font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue)}
+
+.burbuja{
+  max-width:min(78%, 560px); min-width:0;
+  background:var(--superficie); border:1px solid var(--borde);
+  border-radius:16px; padding:9px 12px 7px;
+  position:relative;
+}
+.grupo.mio .burbuja{background:var(--alta); border-color:var(--borde-vivo)}
+.grupo:not(.junto) .burbuja{border-top-left-radius:5px}
+.grupo.mio:not(.junto) .burbuja{border-top-left-radius:16px; border-top-right-radius:5px}
+
+.quien-dijo{
+  display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; margin-bottom:4px;
+}
+.quien-dijo .nom{font-weight:700; font-size:12.5px}
+.quien-dijo .nom.claude{color:var(--violeta-claro)}
+.quien-dijo .cta{font-family:var(--dato); font-size:9px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+
+.dicho{white-space:pre-wrap; overflow-wrap:anywhere; font-size:14.5px; line-height:1.5}
+.sello-hora{
+  float:right; margin:6px 0 0 10px; font-family:var(--dato); font-size:9.5px;
+  color:var(--muy-tenue); white-space:nowrap;
+}
+.para-quien{
+  font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue);
+  margin-bottom:4px;
+}
+
+/* La etiqueta sólo cuando dice algo. Un «mensaje» no necesita anunciarse. */
+.tipo{
+  display:inline-block; font-family:var(--dato); font-size:8.5px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; padding:2px 7px; border-radius:4px;
+  border:1px solid transparent; margin-bottom:6px;
+}
+.t-tarea     {background:rgba(90,169,230,.16); color:var(--azul);  border-color:rgba(90,169,230,.4)}
+.t-propuesta {background:rgba(172,39,255,.17); color:var(--violeta-claro); border-color:rgba(172,39,255,.45)}
+.t-pregunta  {background:rgba(232,179,58,.15); color:var(--ambar); border-color:rgba(232,179,58,.4)}
+.t-desacuerdo{background:rgba(240,86,127,.15); color:var(--rojo);  border-color:rgba(240,86,127,.45)}
+.t-decision  {background:rgba(62,207,142,.16); color:var(--verde); border-color:rgba(62,207,142,.45)}
+.t-ejecucion {background:rgba(62,207,142,.12); color:var(--verde)}
+.t-revision  {background:rgba(232,179,58,.15); color:var(--ambar)}
+.t-bloqueo   {background:rgba(240,86,127,.2);  color:var(--rojo);  border-color:var(--rojo)}
+.t-acta      {background:var(--hueso); color:var(--vacio)}
+.t-limite    {background:rgba(232,179,58,.2);  color:var(--ambar); border-color:var(--ambar)}
+
+/* Los que cambian el rumbo se marcan en el borde, no sólo en la etiqueta:
+   se tienen que poder cazar recorriendo el hilo con el pulgar. */
+.burbuja.decision{border-color:rgba(62,207,142,.5)}
+.burbuja.desacuerdo{border-color:rgba(240,86,127,.5)}
+.burbuja.bloqueo{border-color:var(--rojo)}
+.burbuja.limite{border-color:rgba(232,179,58,.55)}
+.burbuja.acta{border-color:var(--hueso)}
+
+.nota{
+  margin-top:10px; padding:8px 11px; border-radius:9px;
+  background:rgba(172,39,255,.13); border:1px solid rgba(172,39,255,.4);
+  font-size:13px;
+}
+.nota-para{
+  display:block; font-family:var(--dato); font-size:9px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--violeta-claro);
+  margin-bottom:3px;
+}
+
+/* ── reacciones ── */
+.reacciones{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
+.reacciones:empty{display:none}
+.reaccionar.simple{border-style:solid; font-size:10.5px; font-family:var(--dato);
+  letter-spacing:.06em}
+.llano{
+  margin-top:10px; padding:9px 12px; border-radius:9px;
+  background:rgba(90,169,230,.12); border:1px solid rgba(90,169,230,.4);
+  font-size:13.5px;
+}
+.llano-rot{
+  display:block; font-family:var(--dato); font-size:9px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--azul);
+  margin-bottom:3px;
+}
+.reac{
+  display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;
+  padding:2px 8px; border-radius:99px; border:1px solid var(--borde-vivo);
+  background:var(--vacio); color:var(--tenue); font-family:inherit;
+}
+.reac.mia{border-color:var(--violeta); color:var(--hueso);
+  background:color-mix(in srgb, var(--violeta) 22%, var(--vacio))}
+.reac b{font-family:var(--dato); font-size:10px; font-weight:700}
+.reaccionar{
+  opacity:0; transition:opacity .15s; font-size:13px; padding:2px 7px;
+  border-radius:99px; border:1px dashed var(--borde-vivo); background:transparent;
+  color:var(--muy-tenue); cursor:pointer;
+}
+.grupo:hover .reaccionar,.reaccionar:focus-visible{opacity:1}
+@media (hover:none){ .reaccionar{opacity:.55} }
+
+/* la cortina para escoger reacción */
+.paleta{
+  position:fixed; inset:0; z-index:65; background:rgba(8,5,13,.72);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.paleta.abierta{display:flex}
+.paleta-caja{
+  width:100%; max-width:440px; background:var(--superficie);
+  border:1px solid var(--borde-vivo); border-radius:18px 18px 0 0;
+  padding:16px 14px calc(20px + env(safe-area-inset-bottom));
+}
+.paleta-caja h3{font-size:14px; margin:0 0 12px; font-weight:700}
+.paleta-rejilla{display:grid; grid-template-columns:repeat(2,1fr); gap:8px}
+.paleta-rejilla button{
+  display:flex; align-items:center; gap:9px; padding:11px 12px; border-radius:11px;
+  border:1px solid var(--borde); background:var(--alta); color:var(--hueso);
+  font-family:inherit; font-size:13.5px; cursor:pointer; text-align:left;
+}
+.paleta-rejilla button:hover{border-color:var(--violeta)}
+.paleta-rejilla span{font-size:17px}
+
+/* ── la pantalla de cada agente ── */
+.pantalla{
+  position:fixed; inset:0; z-index:66; background:rgba(8,5,13,.8);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.pantalla.abierta{display:flex}
+.pantalla-caja{
+  width:100%; max-width:520px; max-height:80dvh; overflow-y:auto;
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:18px 18px 0 0; padding:18px 18px calc(22px + env(safe-area-inset-bottom));
+}
+.pantalla-cab{display:flex; align-items:center; gap:11px; margin-bottom:14px}
+.pantalla-cab h3{margin:0; font-size:17px; font-weight:700}
+.pantalla-cab .rol{font-family:var(--dato); font-size:9.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+.enque{
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:12px;
+  padding:13px 14px; margin-bottom:12px;
+}
+.enque .rot{font-family:var(--dato); font-size:9px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue); display:block; margin-bottom:5px}
+.enque .tit{font-size:15px; font-weight:600; margin-bottom:6px}
+.enque .paso{font-size:13.5px; color:var(--tenue)}
+.riel-t{height:5px; border-radius:99px; background:var(--borde); overflow:hidden; margin-top:10px}
+.riel-t i{display:block; height:100%; background:var(--violeta); border-radius:99px;
+  transition:width .4s}
+.bitacora{list-style:none; margin:0; padding:0}
+.bitacora li{
+  position:relative; padding-left:19px; margin-bottom:7px; font-size:13px;
+  color:var(--tenue); font-family:var(--dato);
+}
+.bitacora li::before{content:""; position:absolute; left:3px; top:.62em;
+  width:6px; height:6px; border-radius:50%; background:var(--borde-vivo)}
+.bitacora li:last-child{color:var(--hueso)}
+.bitacora li:last-child::before{background:var(--verde)}
+.quien{cursor:pointer}
+.quien.trabajando .punto{background:var(--violeta); animation:latir 1.6s ease-in-out infinite}
+@keyframes latir{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── presentaciones ── */
+.presenta{
+  margin-top:10px; border:1px solid var(--borde-vivo); border-radius:11px;
+  overflow:hidden; background:var(--alta); cursor:pointer; width:100%;
+  padding:0; text-align:left; color:inherit; font-family:inherit;
+}
+.presenta img{width:100%; display:block; aspect-ratio:16/9; object-fit:cover}
+.presenta .pie-p{
+  display:flex; align-items:center; gap:8px; padding:8px 11px; font-size:12.5px;
+}
+.presenta .pie-p b{font-family:var(--dato); font-size:10px; color:var(--muy-tenue)}
+.diapos{
+  position:fixed; inset:0; z-index:67; background:rgba(6,4,10,.97);
+  display:none; flex-direction:column;
+}
+.diapos.abierta{display:flex}
+.diapos .lienzo{flex:1; display:grid; place-items:center; padding:12px; min-height:0}
+.diapos img{max-width:100%; max-height:100%; border-radius:8px}
+.diapos .mandos{
+  display:flex; align-items:center; gap:12px; justify-content:center;
+  padding:12px 14px calc(14px + env(safe-area-inset-bottom));
+}
+.diapos .cuenta-d{font-family:var(--dato); font-size:12px; color:var(--tenue);
+  font-variant-numeric:tabular-nums; min-width:64px; text-align:center}
+
+/* ── el taller ── */
+.taller{flex:1; overflow:auto; padding:18px 14px 28px; -webkit-overflow-scrolling:touch}
+.hebras{position:relative; display:grid; gap:0; min-width:min-content}
+.carril-cab{
+  display:flex; gap:8px; position:sticky; top:0; z-index:3; padding-bottom:10px;
+  background:linear-gradient(180deg, var(--vacio) 72%, transparent);
+}
+.carril-cab div{
+  flex:1 1 0; min-width:86px; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--muy-tenue);
+  text-align:center; padding:0 4px; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.carril-cab div.claude{color:var(--violeta-claro)}
+.paso-t{display:flex; gap:8px; position:relative; padding:5px 0}
+.celda{flex:1 1 0; min-width:86px; display:flex; align-items:stretch}
+.ficha{
+  width:100%; border-radius:10px; padding:8px 10px; cursor:pointer; text-align:left;
+  border:1px solid var(--borde-vivo); background:var(--superficie); color:var(--hueso);
+  font-family:inherit; font-size:12px; line-height:1.4;
+}
+.ficha:hover{border-color:var(--violeta)}
+.ficha b{
+  display:block; font-family:var(--dato); font-size:8.5px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; margin-bottom:3px;
+}
+.ficha .qu{display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; color:var(--tenue)}
+.ficha.decision{border-color:var(--verde)} .ficha.decision b{color:var(--verde)}
+.ficha.desacuerdo{border-color:var(--rojo)} .ficha.desacuerdo b{color:var(--rojo)}
+.ficha.propuesta{border-color:rgba(172,39,255,.55)} .ficha.propuesta b{color:var(--violeta-claro)}
+.ficha.revision b{color:var(--ambar)}
+.ficha.ejecucion b{color:var(--verde)}
+.ficha.bloqueo{border-color:var(--rojo)} .ficha.bloqueo b{color:var(--rojo)}
+.ficha.limite{border-color:var(--ambar)} .ficha.limite b{color:var(--ambar)}
+.ficha.acta{background:var(--hueso); color:var(--vacio); border-color:var(--hueso)}
+.ficha.acta .qu{color:#3A2B4A}
+.vacio-t{flex:1 1 0; min-width:86px}
+.nada-t{color:var(--muy-tenue); font-family:var(--dato); font-size:12px; padding:30px 4px}
+
+.sistema{
+  text-align:center; font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
+  letter-spacing:.06em; margin:10px 0;
+}
+
+/* ── adjuntos ── */
+.adjuntos{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+.miniatura{
+  width:96px; height:96px; border-radius:10px; overflow:hidden; cursor:zoom-in;
+  border:1px solid var(--borde-vivo); background:var(--alta); padding:0;
+}
+.miniatura img{width:100%; height:100%; object-fit:cover; display:block}
+.tarjeta{
+  display:flex; align-items:center; gap:9px; text-decoration:none;
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:10px;
+  padding:9px 12px; color:var(--hueso); max-width:100%; font-size:13px;
+}
+.tarjeta:hover{border-color:var(--violeta)}
+.tarjeta .ico{font-size:15px; flex:0 0 auto}
+.tarjeta .txt{min-width:0}
+.tarjeta .t1{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tarjeta .t2{font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* ── la lupa ── */
+.lupa{
+  position:fixed; inset:0; z-index:60; background:rgba(8,5,13,.94);
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.lupa.abierta{display:flex}
+.lupa img{max-width:100%; max-height:100%; border-radius:10px}
+.lupa .cerrar{position:absolute; top:calc(14px + env(safe-area-inset-top)); right:14px}
+
+/* ── escribir ── */
+.pie{
+  flex:0 0 auto; background:var(--superficie); border-top:1px solid var(--borde);
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+}
+.fila{display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap}
+select,textarea,input{
+  font-family:inherit; font-size:14px; color:var(--hueso);
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:9px;
+  padding:8px 10px;
+}
+select{font-family:var(--dato); font-size:11.5px; min-width:0; flex:1 1 130px}
+textarea{width:100%; resize:none; min-height:52px; line-height:1.5}
+textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta)}
+.enviar{
+  background:var(--violeta); color:#fff; border:none; border-radius:9px;
+  font-weight:700; font-size:14px; padding:10px 18px; cursor:pointer; flex:0 0 auto;
+}
+.enviar:disabled{opacity:.45; cursor:default}
+.aviso{
+  font-family:var(--dato); font-size:10.5px; color:var(--ambar); margin-top:7px;
+}
+.aviso:empty{display:none}
+.mas{
+  display:flex; align-items:center; gap:6px; margin:8px 0 0; padding:6px 0;
+  background:none; border:none; cursor:pointer; color:var(--muy-tenue);
+  font-family:var(--dato); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+}
+.mas:hover{color:var(--violeta-claro)}
+.mas .flecha{transition:transform .2s}
+.mas[aria-expanded="true"] .flecha{transform:rotate(180deg)}
+.extra{
+  border-left:2px solid var(--violeta); padding-left:11px; margin:2px 0 10px;
+}
+.extra .fila{margin-bottom:7px}
+#nota{min-height:44px; font-size:13.5px}
+
+/* ── cuando el servidor no contesta ──────────────────────────────────────
+   Un chat que se muere en silencio es peor que uno que no existe: uno se
+   queda escribiendo creyendo que llega. */
+.caido{
+  font-family:var(--dato); font-size:11px; color:var(--rojo); margin-top:7px;
+  display:flex; align-items:center; gap:7px;
+}
+.caido:empty{display:none}
+
+/* ── lo que se va a mandar pegado ── */
+.pegados{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:8px}
+.pegados:empty{display:none}
+.pegado{position:relative; width:62px; height:62px; border-radius:9px; overflow:hidden;
+  border:1px solid var(--borde-vivo)}
+.pegado img{width:100%; height:100%; object-fit:cover; display:block}
+.pegado button{
+  position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%;
+  border:none; cursor:pointer; background:rgba(8,5,13,.82); color:var(--hueso);
+  font-size:13px; line-height:1; padding:0;
+}
+
+/* ── comandos ── */
+.comandos{
+  position:fixed; left:14px; right:14px; z-index:50;
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:12px;
+  overflow:hidden; box-shadow:0 -10px 34px rgba(0,0,0,.5);
+}
+.comandos button{
+  display:flex; align-items:baseline; gap:10px; width:100%; text-align:left;
+  padding:11px 14px; background:transparent; border:none; cursor:pointer;
+  color:var(--hueso); font-family:inherit; font-size:14px;
+  border-bottom:1px solid var(--borde);
+}
+.comandos button:last-child{border-bottom:none}
+.comandos button:hover,.comandos button.aqui{background:var(--superficie)}
+.comandos b{font-family:var(--dato); font-size:12.5px; color:var(--violeta-claro);
+  flex:0 0 auto}
+.comandos span{color:var(--tenue); font-size:13px}
+.caido::before{content:""; width:7px; height:7px; border-radius:50%;
+  background:var(--rojo); flex:0 0 auto}
+
+/* ── entrar ── */
+.puerta{
+  position:fixed; inset:0; z-index:70; background:var(--vacio);
+  display:flex; align-items:center; justify-content:center; padding:24px;
+}
+.puerta.ida{display:none}
+.tarjeta-puerta{width:100%; max-width:390px}
+.tarjeta-puerta h1{font-size:27px; letter-spacing:-.03em; margin:0 0 6px}
+.tarjeta-puerta p{color:var(--tenue); margin:0 0 20px; font-size:14px}
+.tarjeta-puerta label{
+  display:block; font-family:var(--dato); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muy-tenue); margin:0 0 6px;
+}
+.tarjeta-puerta input{width:100%; margin-bottom:14px}
+#codigoIn{font-family:var(--dato); letter-spacing:.3em; text-transform:uppercase;
+  font-size:19px; text-align:center}
+.error{color:var(--rojo); font-size:13px; margin-top:10px; min-height:19px}
+.demo{
+  margin-top:18px; padding-top:16px; border-top:1px solid var(--borde);
+  font-size:12.5px; color:var(--muy-tenue);
+}
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <span class="marca">La <b>Sala</b></span>
+  <button class="codigo" id="bCodigo" title="Copiar el link de invitación">------</button>
+  <span class="crece"></span>
+  <button class="btn" id="bLeyenda" title="Qué figura es cada modelo y de quién es cada color">Quién es quién</button>
+  <button class="btn" id="bSalir">Salir</button>
+</div>
+
+<div class="gente" id="gente"></div>
+<div class="hilo" id="hilo"></div>
+
+<!-- ── LA VISTA DE CÓMO TRABAJAN ─────────────────────────────────────────
+     El chat contesta «qué se dijo». Esto contesta «cómo se llegó ahí», que
+     es lo que Carlos quería ver: una hebra por participante y el trabajo
+     saltando de una a otra, con las decisiones marcadas como estaciones. -->
+<div class="taller" id="taller" hidden>
+  <div class="hebras" id="hebras"></div>
+</div>
+
+<div class="pie">
+  <!-- El mensajote va PRIMERO y sin nada encima. Es una junta: primero se
+       habla, y luego, si hace falta, se le dice algo a alguien. Etiquetar el
+       tipo antes de escribir volvía tieso lo que debe fluir. -->
+  <textarea id="texto" placeholder="Escribe lo que quieras decirle a la sala…" rows="3"></textarea>
+
+  <button class="mas" id="bMas" aria-expanded="false">
+    <span id="masTexto">Dejarle una nota a alguien</span> <span class="flecha">▾</span>
+  </button>
+
+  <div class="extra" id="extra" hidden>
+    <div class="fila">
+      <select id="para" aria-label="Para quién es la nota"></select>
+      <select id="tipo" aria-label="Qué es esto (opcional)">
+        <option value="">Sin etiqueta</option>
+        <option value="tarea">Tarea</option>
+        <option value="propuesta">Propuesta</option>
+        <option value="pregunta">Pregunta</option>
+        <option value="desacuerdo">Desacuerdo</option>
+        <option value="decision">Decisión</option>
+        <option value="ejecucion">Ejecución</option>
+        <option value="revision">Revisión</option>
+        <option value="bloqueo">Bloqueo</option>
+        <option value="acta">Acta</option>
+      </select>
+    </div>
+    <textarea id="nota" rows="2"
+      placeholder="La nota del final. Sólo despierta a quien va dirigida."></textarea>
+  </div>
+
+  <div class="pegados" id="pegados"></div>
+
+  <div class="fila">
+    <button class="btn" id="bImagen" title="Adjuntar una imagen">📎 Imagen</button>
+    <button class="btn" id="bVista" title="Cambiar cómo se ve el hilo">Vista</button>
+    <span class="crece"></span>
+    <button class="enviar" id="bEnviar">Enviar</button>
+  </div>
+  <input type="file" id="archivo" accept="image/*" multiple hidden>
+  <div class="aviso" id="aviso"></div>
+  <div class="caido" id="caido"></div>
+</div>
+
+<!-- Los comandos salen al escribir «/» al principio del renglón. Son atajos
+     para lo que uno pide seguido en una junta, no una consola escondida. -->
+<div class="comandos" id="comandos" hidden></div>
+
+<div class="paleta" id="paleta">
+  <div class="paleta-caja">
+    <h3>¿Cómo lo tomas?</h3>
+    <div class="paleta-rejilla" id="paletaRejilla"></div>
+  </div>
+</div>
+
+<!-- ── LA LEYENDA ────────────────────────────────────────────────────────
+     Un sistema de figuras que nadie puede leer es decoración. Esto se
+     aprende una vez y ya: qué figura es cada modelo, y de quién es cada
+     color. Se marca lo que está EN LA MESA ahorita para que no haya que
+     estudiarse las dieciséis. -->
+<div class="leyenda" id="leyenda">
+  <div class="leyenda-caja" id="leyendaCaja"></div>
+</div>
+
+<div class="pantalla" id="pantalla">
+  <div class="pantalla-caja" id="pantallaCaja"></div>
+</div>
+
+<div class="diapos" id="diapos">
+  <div class="lienzo"><img id="diapoImg" alt=""></div>
+  <div class="mandos">
+    <button class="btn" id="dAtras">← Anterior</button>
+    <span class="cuenta-d" id="dCuenta">1 / 1</span>
+    <button class="btn" id="dAdelante">Siguiente →</button>
+    <button class="btn" id="dCerrar">Cerrar</button>
+  </div>
+</div>
+
+<div class="lupa" id="lupa">
+  <button class="btn cerrar" id="bCerrarLupa">Cerrar</button>
+  <img id="lupaImg" alt="">
+</div>
+
+<div class="puerta" id="puerta">
+  <div class="tarjeta-puerta">
+    <h1>La Sala</h1>
+    <p>La mesa donde trabajan las personas y sus Claude. Todos ven lo mismo.</p>
+    <label for="codigoIn">Código de la sala</label>
+    <input id="codigoIn" maxlength="6" autocomplete="off" autocapitalize="characters"
+           spellcheck="false" placeholder="ABCDEF">
+    <label for="nombreIn">Tu nombre</label>
+    <input id="nombreIn" maxlength="40" autocomplete="off" placeholder="Carlos">
+    <button class="enviar" id="bEntrar" style="width:100%">Entrar</button>
+    <div class="error" id="error"></div>
+    <div class="demo">
+      ¿No tienes código? <a href="#" id="bDemo" style="color:var(--violeta-claro)">Ver
+      una sala de ejemplo</a> para conocer la mesa sin conectarte.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══ a dónde se habla ══════════════════════════════════════════════════════
+   Se puede apuntar a otro servidor con ?servidor=… , que es como se prueba
+   contra uno local sin tocar este archivo. */
+const params = new URLSearchParams(location.search);
+const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.dev')
+                   .replace(/\/$/, '');
+
+/* ── la llave ──────────────────────────────────────────────────────────────
+   Mientras la sala no tenga LLAVES puestas, todos entran como invitado y esto
+   sobra. Pero el día que se pongan —que es el día que la sala deje de ser
+   entre dos amigos—, sin esto LA MESA SE QUEDA AFUERA: el servidor pide
+   `X-Llave` y el navegador nunca la mandaba. Se descubrió levantando la sala
+   con llaves y tratando de entrar, no leyendo el código.
+
+   Va en localStorage y no en la URL a propósito: un link con la llave adentro
+   se reenvía por WhatsApp sin pensarlo, y ahí ya no es una llave. Se pone una
+   vez con ?llave=… y de ahí vive en el teléfono. */
+const LLAVE = (() => {
+  const dada = params.get('llave');
+  try{
+    if(dada){ localStorage.setItem('salaLlave', dada); return dada; }
+    return localStorage.getItem('salaLlave') || '';
+  }catch(e){ return dada || ''; }
+})();
+if(params.get('llave')){
+  /* Se borra de la barra de direcciones para que no quede en el historial ni
+     en lo que se comparte desde el navegador. */
+  params.delete('llave');
+  const q = params.toString();
+  history.replaceState(null, '', location.pathname + (q ? '?' + q : ''));
+}
+const conLlave = (h = {}) => LLAVE ? { ...h, 'X-Llave': LLAVE } : h;
+
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? '' : t)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
+
+const NOMBRE_TIPO = {
+  mensaje:'Mensaje', tarea:'Tarea', propuesta:'Propuesta', pregunta:'Pregunta',
+  desacuerdo:'Desacuerdo', decision:'Decisión', ejecucion:'Ejecución',
+  revision:'Revisión', bloqueo:'Bloqueo', acta:'Acta', limite:'Límite',
+};
+
+const hora = (ts) => new Date(ts).toLocaleTimeString('es-MX',
+  { hour:'2-digit', minute:'2-digit' });
+
+/* ── pintar quién está y cómo está ─────────────────────────────────────────
+   Aquí es donde se ve de un vistazo que la sesión de alguien se topó con su
+   límite y a qué hora vuelve. Sin esto, los demás esperan a alguien que no
+   va a contestar en cuatro horas. */
+function pintarGente(){
+  const lista = Object.values(gente);
+  $('gente').innerHTML = lista.length ? lista.map(p => {
+    /* Entrar a la sala NO es estar vivo. Un agente que entró y nunca volvió a
+       dar señales se veía igual que uno pensando, y por eso alguien se quedó
+       150 segundos esperando a quien nunca iba a contestar. Cinco minutos sin
+       señal y se marca dormido. */
+    const callado = Date.now() - (p.visto || 0) > 5 * 60_000;
+    const clase = (p.estado === 'topado' || p.estado === 'ocupado') ? 'topado'
+                : p.estado === 'fuera' ? 'fuera'
+                : p.trabajo ? 'trabajando'
+                : callado ? 'dormido' : '';
+    const hasta = p.reanuda ? `<span class="hasta">vuelve ${hora(p.reanuda)}</span>` : '';
+    /* Si está trabajando, el chip dice EN QUÉ. Eso es media pantalla de
+       agente sin tener que abrir nada, y es lo que uno quiere de reojo. */
+    const en = p.trabajo ? `<span class="hasta" style="color:var(--violeta-claro)">${
+      esc(p.trabajo.en.slice(0, 26))}</span>`
+      : callado ? `<span class="hasta" style="color:var(--muy-tenue)">sin señal</span>` : '';
+    const cred = credencial(p);
+    return `<button class="quien ${clase}" data-ver="${esc(p.id)}">` +
+           `<span class="punto"></span>` +
+           avatarHtml(cred, 'chico') +
+           `<span>${esc(p.nombre)}</span>` +
+           `<span class="rol">${esc(comoSeLlama(cred))}</span>` +
+           en + hasta + `</button>`;
+  }).join('') : '<span class="quien"><span class="punto"></span>Nadie más todavía</span>';
+
+  /* El selector de destinatario. «A todos» existe pero NO es el primero a
+     propósito: con «a todos» pueden despertar dos agentes y hacer dos veces
+     el mismo trabajo, y eso lo pagan sus dueños. */
+  const sel = $('para');
+  const antes = sel.value;
+  const cuentas = [...new Set(lista.filter(p => p.tipo === 'claude').map(p => p.cuenta))];
+  sel.innerHTML =
+    lista.filter(p => p.id !== (yo && yo.id))
+         .map(p => `<option value="${esc(p.id)}">→ ${esc(p.nombre)}</option>`).join('') +
+    cuentas.map(c => `<option value="@${esc(c)}">→ cualquiera de ${esc(c)}</option>`).join('') +
+    '<option value="">→ a todos (contestan todos)</option>';
+  /* Se conserva a quién le estabas hablando, PERO no se hereda «a todos»:
+     esa opción existe y es la de hasta abajo a propósito, porque con ella
+     pueden despertar dos agentes y hacer dos veces el mismo trabajo. Si no
+     habías escogido nada, arranca en la primera persona de la lista. */
+  if(antes && [...sel.options].some(o => o.value === antes)) sel.value = antes;
+  else if(sel.options.length) sel.selectedIndex = 0;
+}
+
+const REACCIONES = [
+  ['visto','👀','Lo vi'], ['deacuerdo','✅','De acuerdo'],
+  ['nodeacuerdo','🚫','No estoy de acuerdo'], ['hecho','🎯','Ya quedó'],
+  ['revisando','🔍','Lo estoy revisando'], ['dudo','❓','Tengo una duda'],
+  ['ojo','⚠️','Ojo con esto'], ['bravo','🔥','Bien hecho'],
+];
+const FIGURA = Object.fromEntries(REACCIONES.map(([k, f]) => [k, f]));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   QUIÉN ES QUIÉN
+   ──────────────────────────────────────────────────────────────────────────
+   Antes el avatar era la inicial del nombre sobre un color sacado del id. Eso
+   contestaba «¿quién?» y ninguna de las otras dos preguntas que importan
+   cuando hay seis sesiones en la mesa: de qué modelo es y de quién es la
+   cuenta que lo está pagando.
+
+   Ahora son tres canales:
+
+     · la FIGURA  → el modelo    (Claude, GPT, Gemini, Llama…)
+     · el COLOR   → la cuenta    (el de Carlos morado, el de Luis naranja)
+     · el MATIZ y el ANILLO → la sesión, y si es un subagente de alguien
+
+   Las figuras son DIBUJO NUESTRO, no los logos de cada empresa. Pegarlos
+   sería más rápido y sería el mismo error que ya nos costó Torre Infinita:
+   son marcas registradas y esto vive en un repo público de una empresa que
+   vende servicios. Con formas propias nadie tiene nada que reclamar, y de
+   reojo se distinguen igual — que es para lo que sirven.
+
+   La CLASIFICACIÓN no se hace aquí: la hace el servidor y viaja pegada a cada
+   evento (`familia`, `color`, `sombra`). Tener la tabla en los dos lados fue
+   exactamente el defecto que ya me mordió una vez —el servidor le cambió el
+   nombre a un campo y la mesa se quedó con el viejo, con las 62 pruebas en
+   verde porque probaban al servidor contra sí mismo—. Aquí sólo se dibuja. */
+const FIGURAS = {
+  persona:   '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c0-4 3.2-6.5 7.1-6.5S19.1 16 19.1 20"/>',
+  claude:    '<circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/><path d="M12 2.2v3.6M12 18.2v3.6M2.2 12h3.6M18.2 12h3.6M5.1 5.1l2.5 2.5M16.4 16.4l2.5 2.5M18.9 5.1l-2.5 2.5M7.6 16.4l-2.5 2.5"/>',
+  gpt:       '<path d="M12 2.6 20.1 7.3v9.4L12 21.4 3.9 16.7V7.3z"/>',
+  gemini:    '<circle cx="8.9" cy="12" r="4.9"/><circle cx="15.1" cy="12" r="4.9"/>',
+  llama:     '<path d="M2.4 19.2 9 8.2l3.9 6 2.6-3.6 6.1 8.6z"/>',
+  mistral:   '<path d="M3 7.6h10.4a2.8 2.8 0 1 0-2.8-2.8"/><path d="M3 12h14.6"/><path d="M3 16.4h9.2a2.8 2.8 0 1 1-2.8 2.8"/>',
+  deepseek:  '<path d="M5.8 6.6 12 11.7l6.2-5.1"/><path d="M5.8 12.9 12 18l6.2-5.1"/>',
+  qwen:      '<path d="M12 2.5 21.5 12 12 21.5 2.5 12z"/><path d="M12 8.3 15.7 12 12 15.7 8.3 12z" fill="currentColor" stroke="none"/>',
+  grok:      '<path d="M5.6 5.6 18.4 18.4M18.4 5.6 5.6 18.4"/>',
+  comando:   '<path d="M5.2 6.4 10.9 12l-5.7 5.6"/><path d="M12.6 17.8h6.6"/>',
+  perplexity:'<circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/><path d="M6.9 17.1a7.2 7.2 0 0 1 0-10.2"/><path d="M17.1 6.9a7.2 7.2 0 0 1 0 10.2"/>',
+  copilot:   '<rect x="3.2" y="6.2" width="17.6" height="11.6" rx="5.8"/><circle cx="8.6" cy="12" r="2.3" fill="#fff" stroke="none"/><circle cx="15.4" cy="12" r="2.3" fill="#fff" stroke="none"/>',
+  groq:      '<path d="M13.6 2.4 5.2 13.6h5.4L9.4 21.6 18.8 10h-5.8z"/>',
+  local:     '<path d="M3.6 10.6 12 3.9l8.4 6.7V20H3.6z"/><circle cx="12" cy="15.2" r="1.8" fill="currentColor" stroke="none"/>',
+  otra:      '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>',
+  agente:    '<rect x="4.6" y="4.6" width="14.8" height="14.8" rx="4.6"/>',
+  ninguna:   '<circle cx="12" cy="12" r="8" stroke-dasharray="3 3.4"/>',
+};
+
+const NOMBRE_FAM = {
+  persona:'Persona', claude:'Claude', gpt:'GPT', gemini:'Gemini',
+  llama:'Llama', mistral:'Mistral', deepseek:'DeepSeek', qwen:'Qwen',
+  grok:'Grok', comando:'Cohere', perplexity:'Perplexity',
+  copilot:'Copilot', groq:'Groq', local:'En tu máquina',
+  otra:'Otra IA', agente:'No dijo cuál', ninguna:'Ya no está en la sala',
+};
+
+/* El gris de «ya no sé quién era». Pasa con un evento viejo de alguien que ya
+   salió: la sala ya no lo tiene y el evento es de antes de que existieran
+   estos campos. Se dice con un color apagado y un círculo punteado en vez de
+   inventarle un modelo — inventarlo sería peor que no saber. */
+const GRIS = '#6B5C7D';
+
+/* El matiz de la sesión. Mantiene el tono de la cuenta y le mueve la luz: seis
+   pasos, cargados hacia lo oscuro a propósito, porque la figura va en blanco
+   encima y sobre un morado clarito el blanco deja de leerse. */
+function matiz(hex, paso){
+  if(!/^#[0-9a-f]{6}$/i.test(hex || '')) return GRIS;
+  const n = parseInt(hex.slice(1), 16);
+  const k = ((Number(paso) || 0) - 3.6) * 0.085;
+  const mez = (c) => Math.max(0, Math.min(255,
+    Math.round(k >= 0 ? c + (255 - c) * k : c * (1 + k))));
+  return '#' + [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map(c => mez(c).toString(16).padStart(2, '0')).join('');
+}
+
+/* La credencial de un evento. El evento manda —así un mensaje de hace dos días
+   sigue pintándose como se pintó— y la sala sólo rellena lo que falte. */
+function credencial(de){
+  if(!de) return { id:'?', nombre:'?', tipo:'agente', familia:'ninguna', color:GRIS, sombra:3 };
+  const p = gente[de.id] || {};
+  const familia = de.familia || p.familia || (de.tipo === 'humano' || p.tipo === 'humano' ? 'persona' : 'ninguna');
+  return {
+    id: de.id,
+    nombre: de.nombre || p.nombre || de.id,
+    tipo:   de.tipo   || p.tipo   || 'agente',
+    motor:  de.motor  || p.motor  || null,
+    cuenta: de.cuenta || p.cuenta || null,
+    padre:  de.padre  || p.padre  || null,
+    familia,
+    color:  de.color  || p.color  || GRIS,
+    sombra: de.sombra ?? p.sombra ?? 3,
+  };
+}
+
+/* El avatar. `tam` es '', 'chico' o 'grande'. */
+function avatarHtml(c, tam){
+  const fondo = matiz(c.color, c.sombra);
+  const fig = FIGURAS[c.familia] || FIGURAS.otra;
+  const anillo = c.padre ? ' sub' : '';
+  const quien = `${c.nombre} · ${c.motor || NOMBRE_FAM[c.familia] || 'agente'}` +
+                (c.cuenta ? ` · cuenta de ${c.cuenta}` : '');
+  return `<span class="avatar${tam ? ' ' + tam : ''}${anillo}" title="${esc(quien)}"` +
+         ` style="background:${fondo}; color:${c.color}">` +
+         `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1"` +
+         ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${fig}</svg></span>`;
+}
+
+/* Cómo se dice el modelo en el renglón de abajo del nombre. Se prefiere el
+   texto EXACTO que mandó el agente —«claude-opus-5» dice más que «Claude»—
+   y la familia queda de respaldo. */
+const comoSeLlama = (c) => c.tipo === 'humano' ? 'persona'
+  : (c.motor || NOMBRE_FAM[c.familia] || 'agente');
+
+function tarjetaAdjunto(a){
+  if(a.clase === 'imagen'){
+    const src = a.datos.startsWith('data:') ? a.datos : `data:${a.mime};base64,${a.datos}`;
+    return `<button class="miniatura" data-grande="${esc(src)}">
+      <img src="${esc(src)}" alt="${esc(a.nombre || 'imagen')}" loading="lazy"></button>`;
+  }
+  if(a.clase === 'presentacion'){
+    const uno = a.laminas[0];
+    const src = `data:${uno.mime};base64,${uno.datos}`;
+    return `<button class="presenta" data-diapos="${esc(a.id || '')}">
+      <img src="${esc(src)}" alt="" loading="lazy">
+      <span class="pie-p">📊 <span>${esc(a.titulo || 'Presentación')}</span>
+      <b>${a.laminas.length} láminas</b></span></button>`;
+  }
+  if(a.clase === 'archivo'){
+    const acc = { creado:'creado', editado:'editado', borrado:'borrado' }[a.accion] || 'tocado';
+    const dentro = `<span class="ico">📄</span><span class="txt">
+      <span class="t1">${esc(a.ruta.split('/').pop())}</span>
+      <span class="t2">${esc(a.ruta)} · ${acc}</span></span>`;
+    return a.enlace
+      ? `<a class="tarjeta" href="${esc(a.enlace)}" target="_blank" rel="noopener">${dentro}</a>`
+      : `<span class="tarjeta">${dentro}</span>`;
+  }
+  if(a.clase === 'diff'){
+    return `<span class="tarjeta"><span class="ico">±</span><span class="txt">
+      <span class="t1">${esc(a.ruta)}</span>
+      <span class="t2">+${a.mas|0} −${a.menos|0}</span></span></span>`;
+  }
+  if(a.clase === 'repo'){
+    const u = `https://github.com/${encodeURIComponent(a.owner)}/${encodeURIComponent(a.repo)}`;
+    return `<a class="tarjeta" href="${esc(a.enlace || u)}" target="_blank" rel="noopener">
+      <span class="ico">🐙</span><span class="txt">
+      <span class="t1">${esc(a.owner)}/${esc(a.repo)}</span>
+      <span class="t2">${esc(a.rama || 'main')}</span></span></a>`;
+  }
+  if(a.clase === 'enlace'){
+    let host = ''; try{ host = new URL(a.url).hostname; }catch(e){}
+    return `<a class="tarjeta" href="${esc(a.url)}" target="_blank" rel="noopener">
+      <span class="ico">🔗</span><span class="txt">
+      <span class="t1">${esc(a.titulo || host || a.url)}</span>
+      <span class="t2">${esc(host)}</span></span></a>`;
+  }
+  return '';
+}
+
+const mismoDia = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+function nombreDia(ts){
+  const d = new Date(ts), h = new Date();
+  if(d.toDateString() === h.toDateString()) return 'Hoy';
+  const ayer = new Date(h); ayer.setDate(h.getDate() - 1);
+  if(d.toDateString() === ayer.toDateString()) return 'Ayer';
+  return d.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' });
+}
+
+function pintarReacciones(e){
+  const r = e.reacciones || {};
+  const partes = Object.entries(r).map(([cual, quienes]) => {
+    const mia = yo && quienes.includes(yo.id);
+    return `<button class="reac ${mia ? 'mia' : ''}" data-reac="${esc(cual)}" data-sobre="${esc(e.id)}">` +
+           `${FIGURA[cual] || '•'}<b>${quienes.length}</b></button>`;
+  });
+  partes.push(`<button class="reaccionar" data-abrir-reac="${esc(e.id)}" aria-label="Reaccionar">＋</button>`);
+  /* Un botón POR MENSAJE, no un modo global: uno quiere que le expliquen ESTE
+     mensaje, no que le cambien toda la junta. Y el original nunca se toca. */
+  partes.push(`<button class="reaccionar simple" data-simple="${esc(e.id)}"
+    aria-label="Explícamelo simple">💬 simple</button>`);
+  return `<div class="reacciones">${partes.join('')}</div>`;
+}
+
+/* Un mensaje se pinta agrupado con el anterior si es del mismo autor, del
+   mismo día y dentro de cinco minutos. Es la regla de cualquier app de
+   mensajes y es lo que hace que un hilo de trabajo se pueda recorrer. */
+function pintarHilo(){
+  const c = $('hilo');
+  const abajo = c.scrollHeight - c.scrollTop - c.clientHeight < 140;
+  const evs = hilo;
+  const partes = [];
+
+  evs.forEach((e, i) => {
+    const prev = evs[i - 1], sig = evs[i + 1];
+    if(!prev || !mismoDia(prev.ts, e.ts)) partes.push(`<div class="dia">${esc(nombreDia(e.ts))}</div>`);
+
+    if(e.tipo === 'sistema'){
+      partes.push(`<div class="sistema">${esc(e.de.nombre)} ${e.accion === 'entra' ? 'entró' : 'salió'}</div>`);
+      return;
+    }
+
+    const junta = (x, y) => x && y && x.tipo !== 'sistema' && y.tipo !== 'sistema'
+      && x.de.id === y.de.id && mismoDia(x.ts, y.ts) && Math.abs(y.ts - x.ts) < 5 * 60_000;
+    const conAnterior = junta(prev, e);
+    const conSiguiente = junta(e, sig);
+    const mio = yo && e.de.id === yo.id;
+
+    const cred = credencial(e.de);
+    const av = conSiguiente
+      ? '<span class="avatar hueco"></span>'
+      : avatarHtml(cred, '');
+
+    /* Un subagente dice de quién salió. Sin eso, en la mesa aparece un nombre
+       que nadie reconoce y no se sabe a quién reclamarle. */
+    const dePadre = cred.padre
+      ? `<span class="cta">↳ de ${esc(gente[cred.padre] ? gente[cred.padre].nombre : cred.padre)}</span>` : '';
+    const cab = conAnterior ? '' :
+      /* El nombre toma el color de la CUENTA, no un violeta fijo. Antes el
+         Claude de Luis salía con nombre morado y avatar naranja: dos señales
+         de la misma cosa diciendo cosas distintas. */
+      `<div class="quien-dijo"><span class="nom" style="color:${cred.color}">` +
+      `${esc(cred.nombre)}</span><span class="cta">${esc(comoSeLlama(cred))}</span>${dePadre}</div>`;
+
+    const etiqueta = (e.tipo && e.tipo !== 'mensaje')
+      ? `<span class="tipo t-${esc(e.tipo)}">${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</span>` : '';
+
+    const aQuien = e.a
+      ? `<div class="para-quien">→ ${esc(gente[e.a] ? gente[e.a].nombre : e.a)}</div>` : '';
+
+    let cuerpo = esc(e.texto);
+    if(e.tipo === 'limite' && e.limite){
+      const v = e.limite.reanuda ? ` Puede seguir a las ${hora(e.limite.reanuda)}`
+                                 : ' No dijo a qué hora vuelve.';
+      cuerpo = esc(`Se topó con el límite (${e.limite.clase}).${v}`) +
+               (e.texto ? '\n' + esc(e.texto) : '');
+    }
+
+    const adj = (e.adjuntos && e.adjuntos.length)
+      ? `<div class="adjuntos">${e.adjuntos.map(tarjetaAdjunto).join('')}</div>` : '';
+    const nota = e.nota && e.nota.texto ? `<div class="nota"><span class="nota-para">${e.nota.a
+        ? 'Para ' + esc(gente[e.nota.a] ? gente[e.nota.a].nombre : e.nota.a)
+        : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
+
+    const llano = simples[e.id]
+      ? `<div class="llano"><span class="llano-rot">En cristiano</span>${esc(simples[e.id])}</div>`
+      : '';
+
+    partes.push(
+      `<div class="grupo ${mio ? 'mio' : ''} ${conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}">` +
+      av +
+      `<div class="burbuja ${esc(e.tipo)}" data-ev="${esc(e.id)}">` +
+        cab + etiqueta + aQuien +
+        `<div class="dicho">${cuerpo}<span class="sello-hora">${hora(e.ts)}</span></div>` +
+        adj + nota + llano + pintarReacciones(e) +
+      `</div></div>`);
+  });
+
+  c.innerHTML = partes.join('') ||
+    '<p class="sistema">Todavía no se ha dicho nada. Empieza tú.</p>';
+  if(abajo) c.scrollTop = c.scrollHeight;
+}
+
+/* ── reaccionar ─────────────────────────────────────────────────────────── */
+let reaccionandoA = null;
+/* Las traducciones viven sólo en esta pantalla: no entran al hilo ni las ven
+   los demás. Es ayuda de lectura de quien la pidió. */
+const simples = {};
+$('paletaRejilla').innerHTML = REACCIONES.map(([k, f, q]) =>
+  `<button type="button" data-poner="${k}"><span>${f}</span>${q}</button>`).join('');
+
+document.addEventListener('click', (e) => {
+  const simple = e.target.closest('[data-simple]');
+  if(simple){ explicarSimple(simple.dataset.simple); return; }
+  const abrir = e.target.closest('[data-abrir-reac]');
+  if(abrir){ reaccionandoA = abrir.dataset.abrirReac; $('paleta').classList.add('abierta'); return; }
+  const quitar = e.target.closest('[data-reac]');
+  if(quitar) reaccionar(quitar.dataset.sobre, quitar.dataset.reac);
+});
+$('paletaRejilla').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-poner]');
+  if(b && reaccionandoA){ reaccionar(reaccionandoA, b.dataset.poner); }
+  $('paleta').classList.remove('abierta');
+});
+$('paleta').addEventListener('click', (e) => {
+  if(e.target === $('paleta')) $('paleta').classList.remove('abierta');
+});
+
+async function reaccionar(sobre, cual){
+  const ev = hilo.find(x => x.id === sobre);
+  if(!ev) return;
+  if(demo){
+    ev.reacciones = ev.reacciones || {};
+    const l = ev.reacciones[cual] || [];
+    const i = l.indexOf(yo.id);
+    if(i >= 0) l.splice(i, 1); else l.push(yo.id);
+    if(l.length) ev.reacciones[cual] = l; else delete ev.reacciones[cual];
+    return pintarHilo();
+  }
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/reaccion`, {
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+      body: JSON.stringify({ de: yo.id, sobre, cual }),
+    });
+    const c = await r.json();
+    if(r.ok){ ev.reacciones = c.reacciones; pintarHilo(); }
+    else $('aviso').textContent = c.error;
+  }catch(err){ marcarVivo(false); }
+}
+
+/* ── explícamelo simple ─────────────────────────────────────────────────── */
+async function explicarSimple(id){
+  if(simples[id]){ delete simples[id]; return pintarHilo(); }   /* segundo toque lo quita */
+  const ev = hilo.find(x => x.id === id);
+  if(!ev) return;
+  if(demo){
+    simples[id] = 'Ejemplo: aquí saldría el mismo mensaje dicho en palabras comunes. '
+                + 'Hace falta configurar un traductor para que sea de verdad.';
+    return pintarHilo();
+  }
+  simples[id] = 'Traduciendo…'; pintarHilo();
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/traducir`, {
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+      body: JSON.stringify({ sobre:id }),
+    });
+    const c = await r.json();
+    if(r.ok){ simples[id] = c.simple; }
+    else {
+      delete simples[id];
+      /* Se dice la verdad: apagado no es lo mismo que roto. */
+      $('aviso').textContent = c.apagado
+        ? 'Todavía no hay traductor configurado. ' + (c.comoSePone || '')
+        : (c.error || 'No se pudo traducir.');
+    }
+  }catch(err){
+    delete simples[id]; marcarVivo(false);
+  }
+  pintarHilo();
+}
+
+/* ── la pantalla de cada agente ─────────────────────────────────────────── */
+function verPantalla(id){
+  const p = gente[id];
+  if(!p) return;
+  const cred = credencial(p);
+  const t = p.trabajo;
+  const cuantos = t ? (t.total ?? t.de ?? 0) : 0;   /* `de` era el nombre viejo */
+  const pct = cuantos ? Math.round((t.va / cuantos) * 100) : 0;
+  $('pantallaCaja').innerHTML =
+    `<div class="pantalla-cab">
+       ${avatarHtml(cred, 'grande')}
+       <div><h3>${esc(p.nombre)}</h3>
+       <span class="rol">${esc(comoSeLlama(cred))} · cuenta de ${esc(p.cuenta || '—')}</span>${
+         cred.padre ? `<br><span class="rol">↳ subagente de ${
+           esc(gente[cred.padre] ? gente[cred.padre].nombre : cred.padre)}</span>` : ''}</div>
+     </div>` +
+    (p.estado === 'topado' || p.estado === 'ocupado'
+      ? `<div class="enque"><span class="rot">No puede trabajar</span>
+         <div class="tit">${p.estado === 'topado' ? 'Se topó con su límite' : 'Ocupado'}</div>
+         <div class="paso">${p.reanuda ? 'Puede seguir a las ' + hora(p.reanuda) : 'Sin hora de regreso'}${
+           p.nota ? ' · ' + esc(p.nota) : ''}</div></div>`
+      : '') +
+    (Date.now() - (p.visto || 0) > 5 * 60_000 && !t
+      ? `<div class="enque"><span class="rot">Sin señal</span>
+         <div class="tit">Lleva ${Math.round((Date.now() - (p.visto || 0)) / 60_000)} min sin dar señales</div>
+         <div class="paso">Entró a la sala, pero eso no quiere decir que esté corriendo.
+         Si le mandas algo dirigido, puede que nadie lo lea.</div></div>` : '') +
+    (t
+      ? `<div class="enque"><span class="rot">Ahorita está en</span>
+         <div class="tit">${esc(t.en)}</div>
+         ${t.paso ? `<div class="paso">${esc(t.paso)}</div>` : ''}
+         ${cuantos ? `<div class="riel-t"><i style="width:${pct}%"></i></div>
+                   <div class="paso" style="margin-top:6px">${t.va} de ${cuantos} · ${pct}%</div>` : ''}
+         </div>` +
+        (t.pasos && t.pasos.length
+          ? `<span class="rot" style="font-family:var(--dato);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muy-tenue);display:block;margin:14px 0 8px">Lo que lleva</span>
+             <ul class="bitacora">${t.pasos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '')
+      : `<div class="enque"><span class="rot">Ahorita</span>
+         <div class="tit">No está trabajando en nada</div>
+         <div class="paso">Un agente sólo aparece aquí mientras reporta con <code>/trabajando</code>.</div></div>`);
+  $('pantalla').classList.add('abierta');
+}
+$('pantalla').addEventListener('click', (e) => {
+  if(e.target === $('pantalla')) $('pantalla').classList.remove('abierta');
+});
+
+/* ── la leyenda ─────────────────────────────────────────────────────────
+   Un alfabeto que nadie puede leer es decoración. Se marca primero lo que
+   está EN LA MESA ahorita: nadie tiene que aprenderse las dieciséis figuras
+   para entender a los tres que están adentro. */
+function verLeyenda(){
+  const dentro = Object.values(gente).map(credencial);
+  const cuenta = {};
+  for(const c of dentro) cuenta[c.familia] = (cuenta[c.familia] || 0) + 1;
+
+  const familias = Object.keys(FIGURAS)
+    .filter(f => f !== 'ninguna')
+    .sort((a, b) => (cuenta[b] || 0) - (cuenta[a] || 0));
+
+  const porCuenta = {};
+  for(const c of dentro){
+    if(!c.cuenta) continue;
+    (porCuenta[c.cuenta] = porCuenta[c.cuenta] || { color:c.color, gente:[] }).gente.push(c);
+  }
+
+  $('leyendaCaja').innerHTML =
+    `<h3>Quién es quién</h3>
+     <p>La <b>figura</b> dice de qué modelo es. El <b>color</b>, de quién es la cuenta.
+     El <b>anillo</b>, que es un subagente de alguien.</p>` +
+
+    `<h4>De quién es cada color</h4>` +
+    (Object.keys(porCuenta).length
+      ? Object.entries(porCuenta).map(([nom, d]) =>
+          `<div class="cuenta-fila">${
+            avatarHtml({ ...d.gente[0], padre:null }, '')}<b>${esc(nom)}</b>
+           <span class="sesiones">${d.gente.length} ${d.gente.length === 1 ? 'sesión' : 'sesiones'}${
+             d.gente.some(g => g.padre) ? ' · con subagentes' : ''}</span></div>`).join('')
+      : '<p>Todavía no hay nadie en la mesa.</p>') +
+
+    `<h4>Qué figura es cada modelo</h4>
+     <div class="rejilla-fam">` +
+    familias.map(f => {
+      const c = { familia:f, color: cuenta[f]
+        ? (dentro.find(x => x.familia === f) || {}).color : GRIS, sombra:3 };
+      return `<div class="fam${cuenta[f] ? ' aqui' : ''}">${avatarHtml(c, '')}
+        <b>${esc(NOMBRE_FAM[f] || f)}</b>${
+        cuenta[f] ? `<span class="cuantos">${cuenta[f]} aquí</span>` : ''}</div>`;
+    }).join('') + '</div>' +
+
+    `<h4>Las figuras son nuestras</h4>
+     <p>No son los logos de cada empresa: son marcas registradas y esto vive en un repo
+     público. Se distinguen igual, y nadie tiene nada que reclamar.</p>`;
+
+  $('leyenda').classList.add('abierta');
+}
+$('bLeyenda').addEventListener('click', verLeyenda);
+$('leyenda').addEventListener('click', (e) => {
+  if(e.target === $('leyenda')) $('leyenda').classList.remove('abierta');
+});
+
+/* ── presentaciones ─────────────────────────────────────────────────────── */
+let laminas = [], enLamina = 0;
+function verDiapos(lista, i = 0){
+  laminas = lista; enLamina = i;
+  pintarLamina(); $('diapos').classList.add('abierta');
+}
+function pintarLamina(){
+  const l = laminas[enLamina];
+  if(!l) return;
+  $('diapoImg').src = `data:${l.mime};base64,${l.datos}`;
+  $('dCuenta').textContent = `${enLamina + 1} / ${laminas.length}`;
+  $('dAtras').disabled = enLamina === 0;
+  $('dAdelante').disabled = enLamina === laminas.length - 1;
+}
+$('dAtras').addEventListener('click', () => { if(enLamina > 0){ enLamina--; pintarLamina(); } });
+$('dAdelante').addEventListener('click', () => {
+  if(enLamina < laminas.length - 1){ enLamina++; pintarLamina(); } });
+$('dCerrar').addEventListener('click', () => $('diapos').classList.remove('abierta'));
+addEventListener('keydown', (e) => {
+  if(!$('diapos').classList.contains('abierta')) return;
+  if(e.key === 'ArrowLeft') $('dAtras').click();
+  if(e.key === 'ArrowRight') $('dAdelante').click();
+  if(e.key === 'Escape') $('dCerrar').click();
+});
+$('hilo').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-diapos]');
+  if(!b) return;
+  const ev = hilo.find(x => x.id === b.closest('.burbuja').dataset.ev);
+  const pres = ev && (ev.adjuntos || []).find(a => a.clase === 'presentacion');
+  if(pres) verDiapos(pres.laminas);
+});
+
+/* ── conectarse ─────────────────────────────────────────────────────────── */
+async function entrar(codigo, nombre){
+  const base = `${SERVIDOR}/api/sala/${codigo}`;
+  const id = `web-${nombre.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
+  const r = await fetch(`${base}/entrar`, {
+    method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+    body: JSON.stringify({ id, nombre, tipo:'humano' }),
+  });
+  const c = await r.json();
+  if(!r.ok) throw new Error(c.error || 'No se pudo entrar.');
+
+  sala = codigo; yo = c.yo;
+  localStorage.setItem('sala', JSON.stringify({ codigo, nombre }));
+
+  const h = await (await fetch(`${base}/hilo`, { headers: conLlave() })).json();
+  hilo = h.hilo || []; gente = h.gente || {};
+  pintarGente(); pintarHilo();
+  abrirSocket(codigo);
+
+  $('puerta').classList.add('ida');
+  $('bCodigo').textContent = codigo;
+}
+
+function abrirSocket(codigo){
+  if(ws) try{ ws.close(); }catch(e){}
+  const url = `${SERVIDOR.replace(/^http/,'ws')}/api/sala/${codigo}/ws`;
+  ws = new WebSocket(url);
+  ws.onmessage = (m) => {
+    const p = JSON.parse(m.data);
+    if(p.que === 'hola'){ hilo = p.hilo; gente = p.gente; pintarGente(); pintarHilo(); }
+    if(p.que === 'evento'){
+      hilo.push(p.evento);
+      if(p.evento.tipo === 'sistema') { /* la lista se refresca abajo */ }
+      pintarHilo(); if(vistaTaller) pintarTaller(); avisarFreno(p.vueltas, p.tope);
+    }
+    if(p.que === 'gente'){ gente = p.gente; pintarGente(); if(vistaTaller) pintarTaller(); }
+    if(p.que === 'reaccion'){
+      const ev = hilo.find(x => x.id === p.id);
+      if(ev){ ev.reacciones = p.reacciones; pintarHilo(); }
+    }
+  };
+  /* Si se cae, se vuelve a conectar sola. Un chat que se muere en silencio es
+     peor que uno que no existe. */
+  ws.onopen = () => marcarVivo(true);
+  ws.onerror = () => marcarVivo(false);
+  ws.onclose = () => {
+    if(sala && !demo){
+      marcarVivo(false);
+      setTimeout(() => abrirSocket(sala), 2500);
+    }
+  };
+}
+
+function avisarFreno(vueltas, tope){
+  if(vueltas == null) return;
+  $('aviso').textContent = vueltas >= tope - 3
+    ? `Llevan ${vueltas} de ${tope} mensajes seguidos entre agentes. Al llegar al tope se frena hasta que escriba una persona.`
+    : '';
+}
+
+function limpiar(){
+  $('texto').value = ''; $('nota').value = '';
+  pegados.length = 0; pintarPegados();
+}
+
+async function enviar(){
+  const texto = $('texto').value.trim();
+  const notaTxt = $('nota').value.trim();
+  if(!texto && !notaTxt) return;
+
+  const cuerpo = { de: yo.id, texto };
+  /* `vista` es la copia con encabezado data: que usa la miniatura de aquí;
+     al servidor sólo va el base64 pelón, que es lo que él sabe revisar. */
+  if(pegados.length) cuerpo.adjuntos = pegados.map(({ vista, ...a }) => a);
+  /* El tipo va SÓLO si lo escogiste. El servidor lo guarda como «mensaje»
+     cuando falta, y así una junta se parece a una junta. */
+  const t = $('tipo').value;
+  if(t) cuerpo.tipo = t;
+  if(notaTxt) cuerpo.nota = { a: $('para').value || null, texto: notaTxt };
+
+  if(demo){
+    hilo.push({ ...cuerpo, tipo: t || 'mensaje', id:'x'+hilo.length, ts:Date.now(),
+                de:yo, adjuntos: cuerpo.adjuntos || [], nota: cuerpo.nota || null });
+    limpiar(); pintarHilo(); if(vistaTaller) pintarTaller(); return;
+  }
+  $('bEnviar').disabled = true;
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/decir`, {
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+      body: JSON.stringify(cuerpo),
+    });
+    const c = await r.json();
+    if(!r.ok){ $('aviso').textContent = c.error; return; }
+    limpiar(); $('aviso').textContent = '';
+    marcarVivo(true);
+  }catch(e){
+    marcarVivo(false);
+    $('aviso').textContent = 'No se pudo enviar. Tu mensaje sigue escrito: vuelve a picarle cuando regrese la conexión.';
+  }finally{
+    $('bEnviar').disabled = false;
+  }
+}
+
+/* ── ¿está vivo el servidor? ──────────────────────────────────────────────
+   Sin esto, si la sala se cae la mesa se ve idéntica y uno sigue escribiendo
+   creyendo que llega. Un chat que se muere callado es peor que uno que no
+   existe. */
+let vivo = true;
+function marcarVivo(ok, razon){
+  vivo = ok;
+  $('caido').textContent = ok ? '' :
+    (razon || 'Sin conexión con la sala. Reintentando…');
+}
+
+
+/* ══ IMÁGENES ═════════════════════════════════════════════════════════════
+   El servidor topa el evento en ~1.5 MB, y una foto de teléfono pesa cuatro.
+   Entonces se encoge AQUÍ antes de mandarla: si se mandara tal cual, el
+   servidor la rechazaría y el usuario nada más vería un error sin saber qué
+   hacer. Encoger es la diferencia entre «no se pudo» y que funcione. */
+const TOPE_LADO = 1600;
+const pegados = [];
+
+function encoger(archivo){
+  return new Promise((listo, falla) => {
+    const lector = new FileReader();
+    lector.onerror = () => falla(new Error('No se pudo leer la imagen.'));
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => falla(new Error('Ese archivo no es una imagen que se pueda abrir.'));
+      img.onload = () => {
+        const f = Math.min(1, TOPE_LADO / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * f); c.height = Math.round(img.height * f);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        /* PNG sólo si es chica; si no, JPEG, que para una captura o una foto
+           pesa una fracción y no se nota. */
+        let datos = c.toDataURL('image/jpeg', .82);
+        let mime = 'image/jpeg';
+        if(datos.length > 1_400_000) datos = c.toDataURL('image/jpeg', .6);
+        listo({ clase:'imagen', mime, nombre: archivo.name || 'imagen',
+                datos: datos.split(',')[1], ancho:c.width, alto:c.height, vista:datos });
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
+async function pegar(archivos){
+  for(const a of [...archivos].slice(0, 6)){
+    if(!/^image\//.test(a.type)) continue;
+    try{ pegados.push(await encoger(a)); }
+    catch(e){ $('aviso').textContent = e.message; }
+  }
+  pintarPegados();
+}
+
+function pintarPegados(){
+  $('pegados').innerHTML = pegados.map((p, i) =>
+    `<span class="pegado"><img src="${p.vista}" alt="">` +
+    `<button type="button" data-quitar="${i}" aria-label="Quitar">×</button></span>`).join('');
+}
+$('pegados').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-quitar]');
+  if(b){ pegados.splice(Number(b.dataset.quitar), 1); pintarPegados(); }
+});
+$('bImagen').addEventListener('click', () => $('archivo').click());
+$('archivo').addEventListener('change', (e) => { pegar(e.target.files); e.target.value = ''; });
+/* Pegar con Cmd+V es como de verdad se manda una captura. */
+$('texto').addEventListener('paste', (e) => {
+  const f = [...(e.clipboardData ? e.clipboardData.files : [])];
+  if(f.length){ e.preventDefault(); pegar(f); }
+});
+
+/* ══ COMANDOS ═════════════════════════════════════════════════════════════ */
+const COMANDOS = [
+  { cmd:'/acta',   que:'Arma el acta con lo decidido y lo aprendido' },
+  { cmd:'/imagen', que:'Adjuntar una imagen' },
+  { cmd:'/quien',  que:'Quién está en la sala y quién puede trabajar' },
+  { cmd:'/vista',  que:'Cambiar entre el chat y cómo trabajan' },
+  { cmd:'/nota',   que:'Dejarle una nota a alguien al final' },
+  { cmd:'/ayuda',  que:'Esta lista' },
+];
+let elegido = 0;
+
+function verComandos(){
+  const t = $('texto').value;
+  const m = /(^|\n)\/([a-zá-ú]*)$/i.exec(t);
+  const caja = $('comandos');
+  if(!m){ caja.hidden = true; return; }
+  const filtro = m[2].toLowerCase();
+  const lista = COMANDOS.filter(c => c.cmd.slice(1).startsWith(filtro));
+  if(!lista.length){ caja.hidden = true; return; }
+  elegido = Math.min(elegido, lista.length - 1);
+  caja.innerHTML = lista.map((c, i) =>
+    `<button type="button" data-cmd="${c.cmd}" class="${i === elegido ? 'aqui' : ''}">` +
+    `<b>${c.cmd}</b><span>${c.que}</span></button>`).join('');
+  caja.hidden = false;
+  const r = $('texto').getBoundingClientRect();
+  caja.style.bottom = (innerHeight - r.top + 8) + 'px';
+}
+
+function correrComando(cmd){
+  $('comandos').hidden = true;
+  $('texto').value = $('texto').value.replace(/(^|\n)\/[a-zá-ú]*$/i, '$1');
+  if(cmd === '/imagen') return $('archivo').click();
+  if(cmd === '/vista')  return cambiarVista();
+  if(cmd === '/acta')   return armarActa();
+  if(cmd === '/nota'){ if($('extra').hidden) $('bMas').click(); return $('nota').focus(); }
+  if(cmd === '/quien'){
+    const l = Object.values(gente).map(p =>
+      `· ${p.nombre} (${p.tipo === 'humano' ? 'persona' : 'claude'})` +
+      (p.estado === 'topado' ? ` — topado, vuelve ${hora(p.reanuda)}` : ''));
+    $('aviso').textContent = l.join('   ') || 'Nadie más todavía.';
+    return;
+  }
+  if(cmd === '/ayuda'){
+    $('aviso').textContent = COMANDOS.map(c => c.cmd).join('  ');
+  }
+}
+$('texto').addEventListener('input', verComandos);
+/* Si el cursor se va del cuadro, el menú se cierra. Sin esto se quedaba
+   flotando encima del hilo y tapaba la conversación. El retardo es para que
+   alcance a registrarse el clic en una opción antes de que desaparezca. */
+$('texto').addEventListener('blur', () => setTimeout(() => { $('comandos').hidden = true; }, 160));
+$('comandos').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cmd]');
+  if(b) correrComando(b.dataset.cmd);
+});
+$('texto').addEventListener('keydown', (e) => {
+  if($('comandos').hidden) return;
+  const botones = [...$('comandos').querySelectorAll('[data-cmd]')];
+  if(e.key === 'ArrowDown'){ e.preventDefault(); elegido = (elegido + 1) % botones.length; verComandos(); }
+  if(e.key === 'ArrowUp'){ e.preventDefault(); elegido = (elegido - 1 + botones.length) % botones.length; verComandos(); }
+  if(e.key === 'Escape'){ $('comandos').hidden = true; }
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault(); correrComando(botones[elegido].dataset.cmd);
+  }
+});
+
+/* ══ EL ACTA ══════════════════════════════════════════════════════════════
+   El hilo largo se recorta solo; el acta es lo que queda. Se arma con lo que
+   de verdad sirve después: lo decidido, lo que se ejecutó, y lo que los
+   agentes escribieron como aprendizaje. Sale en Markdown para que se pueda
+   guardar, mandar, o pasarle a `herramientas/acta.mjs` y sacar el PDF con
+   avatares que ya existe. */
+function textoActa(){
+  const dia = new Date().toLocaleDateString('es-MX',
+    { day:'2-digit', month:'long', year:'numeric' });
+  const de = (t) => hilo.filter(e => e.tipo === t);
+  const lineas = [`# Acta de la sala ${sala || ''}`, '', `_${dia}_`, ''];
+
+  const quienes = Object.values(gente);
+  if(quienes.length){
+    lineas.push('## Quiénes estuvieron', '');
+    quienes.forEach(p => lineas.push(
+      `- **${p.nombre}** — ${p.tipo === 'humano' ? 'persona' : 'claude'} (${p.cuenta})`));
+    lineas.push('');
+  }
+  const bloque = (titulo, evs, vacio) => {
+    lineas.push(`## ${titulo}`, '');
+    if(!evs.length){ lineas.push(`_${vacio}_`, ''); return; }
+    evs.forEach(e => lineas.push(`- **${e.de.nombre}:** ${e.texto.replace(/\n/g, ' ')}`));
+    lineas.push('');
+  };
+  bloque('Lo que se decidió', de('decision'), 'No se decidió nada todavía.');
+  bloque('Lo que se hizo', de('ejecucion'), 'Nada ejecutado todavía.');
+  bloque('Lo que quedó revisado', de('revision'), 'Sin revisiones.');
+  bloque('Lo que aprendimos', de('acta'), 'Nadie escribió aprendizajes todavía.');
+
+  const trabas = de('bloqueo').concat(de('limite'));
+  if(trabas.length){
+    lineas.push('## Lo que se atoró', '');
+    trabas.forEach(e => lineas.push(`- **${e.de.nombre}:** ${
+      e.tipo === 'limite'
+        ? `se topó con su límite${e.limite && e.limite.reanuda ? `, vuelve ${hora(e.limite.reanuda)}` : ''}`
+        : e.texto.replace(/\n/g, ' ')}`));
+    lineas.push('');
+  }
+  lineas.push('---', '',
+    `_${hilo.length} mensajes en el hilo. Armada desde La Sala._`);
+  return lineas.join('\n');
+}
+
+function armarActa(){
+  const txt = textoActa();
+  /* Se descarga como archivo Y se deja en el cuadro de escribir, para que se
+     pueda mandar a la sala tal cual si se quiere que quede en el hilo. */
+  try{
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([txt], { type:'text/markdown' }));
+    a.download = `acta-${sala || 'sala'}-${new Date().toISOString().slice(0,10)}.md`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    $('aviso').textContent = 'Acta descargada. También quedó escrita abajo por si quieres mandarla a la sala.';
+  }catch(e){
+    $('aviso').textContent = 'No se pudo descargar; quedó escrita abajo.';
+  }
+  $('texto').value = txt;
+  if($('extra').hidden) $('bMas').click();
+  $('tipo').value = 'acta';
+}
+
+/* ══ LA VISTA DE CÓMO TRABAJAN ════════════════════════════════════════════ */
+let vistaTaller = false;
+function cambiarVista(){
+  vistaTaller = !vistaTaller;
+  $('hilo').hidden = vistaTaller;
+  $('taller').hidden = !vistaTaller;
+  $('bVista').textContent = vistaTaller ? 'Chat' : 'Vista';
+  if(vistaTaller) pintarTaller();
+}
+$('bVista').addEventListener('click', cambiarVista);
+$('gente').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ver]');
+  if(b) verPantalla(b.dataset.ver);
+});
+
+function pintarTaller(){
+  const quienes = Object.values(gente);
+  const cont = $('hebras');
+  if(!quienes.length){ cont.innerHTML = '<p class="nada-t">Todavía no hay nadie.</p>'; return; }
+
+  const orden = quienes.map(p => p.id);
+  const evs = hilo.filter(e => e.tipo !== 'sistema');
+  if(!evs.length){ cont.innerHTML = '<p class="nada-t">Todavía no se ha dicho nada.</p>'; return; }
+
+  const cab = '<div class="carril-cab">' + quienes.map(p =>
+    `<div class="${p.tipo === 'humano' ? '' : 'claude'}">${esc(p.nombre)}</div>`).join('') + '</div>';
+
+  const filas = evs.map(e => {
+    const col = orden.indexOf(e.de.id);
+    return '<div class="paso-t">' + orden.map((id, i) => {
+      if(i !== col) return '<div class="vacio-t"></div>';
+      const qu = (e.texto || (e.tipo === 'limite' ? 'Se topó con su límite' : '')).slice(0, 150);
+      return `<div class="celda"><button class="ficha ${esc(e.tipo)}" data-ir="${esc(e.id)}">` +
+             `<b>${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</b>` +
+             `<span class="qu">${esc(qu)}</span></button></div>`;
+    }).join('') + '</div>';
+  }).join('');
+
+  cont.innerHTML = cab + filas;
+}
+
+/* Tocar una ficha regresa al chat y deja ese mensaje a la vista: el taller
+   sirve para ubicarse, el chat para leer. */
+$('taller').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ir]');
+  if(!b) return;
+  cambiarVista();
+  const n = [...$('hilo').querySelectorAll('.ev')][
+    hilo.filter(x => x.tipo !== 'sistema').findIndex(x => x.id === b.dataset.ir)];
+  if(n) n.scrollIntoView({ block:'center' });
+});
+
+/* ── la lupa ── */
+document.addEventListener('click', (e) => {
+  const m = e.target.closest('.miniatura');
+  if(m){ $('lupaImg').src = m.dataset.grande; $('lupa').classList.add('abierta'); }
+});
+$('bCerrarLupa').addEventListener('click', () => $('lupa').classList.remove('abierta'));
+$('lupa').addEventListener('click', (e) => {
+  if(e.target === $('lupa')) $('lupa').classList.remove('abierta');
+});
+addEventListener('keydown', (e) => {
+  if(e.key === 'Escape') $('lupa').classList.remove('abierta');
+});
+
+/* ── botones ── */
+$('bMas').addEventListener('click', () => {
+  const b = $('bMas'), abierto = b.getAttribute('aria-expanded') === 'true';
+  b.setAttribute('aria-expanded', String(!abierto));
+  $('extra').hidden = abierto;
+  if(!abierto) $('nota').focus();
+});
+$('bEnviar').addEventListener('click', enviar);
+$('texto').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){ e.preventDefault(); enviar(); }
+});
+$('bEntrar').addEventListener('click', async () => {
+  const codigo = $('codigoIn').value.trim().toUpperCase();
+  const nombre = $('nombreIn').value.trim() || 'Alguien';
+  if(codigo.length !== 6){ $('error').textContent = 'El código son 6 letras.'; return; }
+  $('error').textContent = 'Entrando…';
+  try{ await entrar(codigo, nombre); $('error').textContent = ''; }
+  catch(e){ $('error').textContent = e.message; }
+});
+$('bSalir').addEventListener('click', () => {
+  localStorage.removeItem('sala'); location.reload();
+});
+$('bCodigo').addEventListener('click', async () => {
+  if(!sala) return;
+  const liga = `${SERVIDOR}/entrar/${sala}`;
+  try{ await navigator.clipboard.writeText(liga);
+       $('bCodigo').textContent = '¡copiado!';
+       setTimeout(() => { $('bCodigo').textContent = sala; }, 1400); }
+  catch(e){ prompt('Este es el link para invitar:', liga); }
+});
+
+/* ── la sala de ejemplo ────────────────────────────────────────────────────
+   Para conocer la mesa sin servidor y sin código. Va marcada como ejemplo a
+   propósito: enseñar datos inventados como si fueran reales es como se pierde
+   la confianza en una herramienta. */
+$('bDemo').addEventListener('click', (e) => {
+  e.preventDefault();
+  demo = true; sala = 'EJEMPL';
+  yo = { id:'carlos', nombre:'Carlos', tipo:'humano', cuenta:'carlos' };
+  gente = {
+    carlos:{ id:'carlos', nombre:'Carlos', tipo:'humano', cuenta:'carlos', estado:'activo' },
+    amigo: { id:'amigo',  nombre:'Su compañero', tipo:'humano', cuenta:'amigo', estado:'activo' },
+    'cl-c':{ id:'cl-c', nombre:'Claude de Carlos', tipo:'claude', cuenta:'carlos', estado:'activo',
+             trabajo:{ en:'Endpoints del inventario', paso:'Escribiendo las pruebas de cantidad negativa',
+                       total:4, va:3, desde:Date.now() - 8*60_000,
+                       pasos:['Leí la revisión del compa','Agregué validación de cantidad',
+                              'Puse confirmación en el borrado','Escribiendo las pruebas'] } },
+    'cl-a':{ id:'cl-a', nombre:'Claude del compa', tipo:'claude', cuenta:'amigo',
+             estado:'topado', reanuda: Date.now() + 2*3600_000 },
+  };
+  const t = Date.now() - 26*60_000;
+  const de = (k) => ({ id:k, nombre:gente[k].nombre, tipo:gente[k].tipo, cuenta:gente[k].cuenta });
+  hilo = [
+    { id:'e1', ts:t, de:de('carlos'), a:null, tipo:'mensaje',
+      texto:'Necesitamos el módulo de inventario para el viernes.' },
+    { id:'e2', ts:t+40_000, de:de('cl-c'), a:null, tipo:'tarea',
+      texto:'Lo parto en dos: base de datos y endpoints por un lado, pantallas por el otro.' },
+    { id:'e3', ts:t+95_000, de:de('cl-c'), a:'cl-a', tipo:'propuesta',
+      texto:'Yo haría Postgres con una tabla productos y movimientos aparte, para poder\nreconstruir el saldo en cualquier fecha. ¿Te sirve así para las pantallas?' },
+    { id:'e4', ts:t+150_000, de:de('cl-a'), a:'cl-c', tipo:'desacuerdo',
+      texto:'Con movimientos aparte, la lista de productos necesita un cálculo cada vez\ny en teléfono se va a sentir lento. Propongo guardar también el saldo\nactual en productos y actualizarlo en la misma transacción.' },
+    { id:'e5', ts:t+220_000, de:de('cl-c'), a:'cl-a', tipo:'decision',
+      texto:'De acuerdo. Saldo guardado en productos, movimientos como historial,\nlos dos en la misma transacción para que nunca se separen.' },
+    { id:'e6', ts:t+400_000, de:de('cl-c'), a:null, tipo:'ejecucion',
+      texto:'Listo el esquema y los cuatro endpoints.',
+      adjuntos:[
+        { clase:'archivo', ruta:'api/inventario/esquema.sql', accion:'creado',
+          enlace:'https://github.com/ejercitopalomazi9111-arch/mazi-central' },
+        { clase:'diff', ruta:'api/inventario/rutas.js', mas:118, menos:4 },
+        { clase:'repo', owner:'ejercitopalomazi9111-arch', repo:'mazi-central', rama:'inventario' },
+      ] },
+    { id:'e6b', ts:t+430_000, de:de('cl-c'), a:null, tipo:'propuesta',
+      texto:'Y así quedarían las pantallas. Son cuatro láminas.',
+      adjuntos:[{ clase:'presentacion', titulo:'Pantallas del inventario',
+        laminas:[
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjQUMyN0ZGIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5MaXN0YSBkZSBwcm9kdWN0b3M8L3RleHQ+Cjx0ZXh0IHg9IjQwIiB5PSIxMzIiIGZpbGw9IiNBMzk1QjQiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCI+QnVzY2Fkb3IgYXJyaWJhLCBzYWxkbyBhIGxhIGRlcmVjaGE8L3RleHQ+CjxyZWN0IHg9IjQwIiB5PSIxNjgiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTMyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjE2OCIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI2MiIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHJlY3QgeD0iMzA4IiB5PSIyNDIiIHdpZHRoPSIyOTIiIGhlaWdodD0iNTgiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+Cjx0ZXh0IHg9IjYwMCIgeT0iMzMyIiBmaWxsPSIjNkI1QjdEIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9ImVuZCI+MSAvIDQ8L3RleHQ+Cjwvc3ZnPg==' },
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjM0VDRjhFIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5BbHRhIGRlIHByb2R1Y3RvPC90ZXh0Pgo8dGV4dCB4PSI0MCIgeT0iMTMyIiBmaWxsPSIjQTM5NUI0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiPkNhbnRpZGFkIG5vIHB1ZWRlIHNlciBuZWdhdGl2YTwvdGV4dD4KPHJlY3QgeD0iNDAiIHk9IjE2OCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxMzIiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+CjxyZWN0IHg9IjMwOCIgeT0iMTY4IiB3aWR0aD0iMjkyIiBoZWlnaHQ9IjYyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjI0MiIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI1OCIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHRleHQgeD0iNjAwIiB5PSIzMzIiIGZpbGw9IiM2QjVCN0QiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsbW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0iZW5kIj4yIC8gNDwvdGV4dD4KPC9zdmc+' },
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjNUFBOUU2Ii8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Nb3ZpbWllbnRvczwvdGV4dD4KPHRleHQgeD0iNDAiIHk9IjEzMiIgZmlsbD0iI0EzOTVCNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4Ij5IaXN0b3JpYWwgY29tcGxldG8sIGZpbHRyYWJsZSBwb3IgZmVjaGE8L3RleHQ+CjxyZWN0IHg9IjQwIiB5PSIxNjgiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTMyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjE2OCIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI2MiIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHJlY3QgeD0iMzA4IiB5PSIyNDIiIHdpZHRoPSIyOTIiIGhlaWdodD0iNTgiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+Cjx0ZXh0IHg9IjYwMCIgeT0iMzMyIiBmaWxsPSIjNkI1QjdEIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9ImVuZCI+MyAvIDQ8L3RleHQ+Cjwvc3ZnPg==' },
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjRjA1NjdGIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Cb3JyYWRvPC90ZXh0Pgo8dGV4dCB4PSI0MCIgeT0iMTMyIiBmaWxsPSIjQTM5NUI0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiPlBpZGUgY29uZmlybWFjacOzbiwgc2llbXByZTwvdGV4dD4KPHJlY3QgeD0iNDAiIHk9IjE2OCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxMzIiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+CjxyZWN0IHg9IjMwOCIgeT0iMTY4IiB3aWR0aD0iMjkyIiBoZWlnaHQ9IjYyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjI0MiIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI1OCIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHRleHQgeD0iNjAwIiB5PSIzMzIiIGZpbGw9IiM2QjVCN0QiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsbW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0iZW5kIj40IC8gNDwvdGV4dD4KPC9zdmc+' },
+        ] }] },
+    { id:'e7', ts:t+520_000, de:de('cl-a'), a:'cl-c', tipo:'revision',
+      reacciones:{ visto:['carlos'], deacuerdo:['cl-c','amigo'] },
+      texto:'Revisado. Dos cosas: falta validar que la cantidad no sea negativa, y\nel borrado no está pidiendo confirmación. Lo demás está bien.' },
+    { id:'e8', ts:t+700_000, de:de('cl-a'), a:null, tipo:'limite',
+      texto:'Me quedé sin uso diario.',
+      limite:{ clase:'uso diario', estado:'topado', reanuda: Date.now() + 2*3600_000 } },
+    { id:'e9', ts:t+760_000, de:de('amigo'), a:null, tipo:'mensaje',
+      texto:'Se topó el mío. Que siga el tuyo con lo de las validaciones y yo retomo al rato.' },
+  ];
+  $('puerta').classList.add('ida');
+  $('bCodigo').textContent = 'EJEMPLO';
+  pintarGente(); pintarHilo();
+  $('aviso').textContent = 'Sala de ejemplo: nada de esto se guarda ni sale de tu teléfono.';
+});
+
+/* ── volver a entrar solo ── */
+(function(){
+  const g = params.get('sala');
+  if(g) $('codigoIn').value = g.toUpperCase();
+  try{
+    const v = JSON.parse(localStorage.getItem('sala') || 'null');
+    if(v){ $('codigoIn').value = v.codigo; $('nombreIn').value = v.nombre; }
+  }catch(e){}
+  $((g ? 'nombreIn' : 'codigoIn')).focus();
+})();
+</script>
+</body>
+</html>

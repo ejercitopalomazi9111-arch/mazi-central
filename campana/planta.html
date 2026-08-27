@@ -1,0 +1,488 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planta del Comité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+:root{
+  --azul:#0A3D6E; --azul-txt:#0A3D6E; --azul-suave:#E7EDF4;
+  --verde:#0E8350; --verde-txt:#0E8350; --verde-suave:#E4F3EB;
+  --rojo:#A81440;  --rojo-txt:#A81440;  --rojo-suave:#FAE8EE;
+  --papel:#FAF9F6; --tarjeta:#FFFFFF;
+  --tinta:#161A1E; --tenue:#59606A; --muy-tenue:#88909A;
+  --linea:#E4E3DE; --linea-fuerte:#CBCAC4;
+  --display:"Newsreader",Georgia,"Times New Roman",serif;
+  --cuerpo:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --dato:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --azul:#2E6FA8; --azul-txt:#5B9BD8; --azul-suave:#111E2B;
+    --verde:#118A55; --verde-txt:#3FBE83; --verde-suave:#0F2419;
+    --rojo:#B82650; --rojo-txt:#E8677F; --rojo-suave:#2A141C;
+    --papel:#12161A; --tarjeta:#1A1F24; --tinta:#E9EBEE; --tenue:#A5ACB4;
+    --muy-tenue:#7B838C; --linea:#282E34; --linea-fuerte:#3A424A;
+  }
+}
+:root[data-theme="dark"]{
+  --azul:#2E6FA8; --azul-txt:#5B9BD8; --azul-suave:#111E2B;
+  --verde:#118A55; --verde-txt:#3FBE83; --verde-suave:#0F2419;
+  --rojo:#B82650; --rojo-txt:#E8677F; --rojo-suave:#2A141C;
+  --papel:#12161A; --tarjeta:#1A1F24; --tinta:#E9EBEE; --tenue:#A5ACB4;
+  --muy-tenue:#7B838C; --linea:#282E34; --linea-fuerte:#3A424A;
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--papel); color:var(--tinta);
+  font-family:var(--cuerpo); font-size:16px; line-height:1.62; -webkit-text-size-adjust:100%}
+.envoltura{max-width:1020px; margin:0 auto; padding:0 20px 72px}
+.angosto{max-width:64ch}
+
+.cabeza{padding:54px 0 30px; border-bottom:1px solid var(--linea-fuerte); margin-bottom:40px}
+.marca{font-family:var(--dato); font-size:11px; font-weight:500; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--azul-txt); margin:0 0 18px}
+h1{font-family:var(--display); font-weight:500; font-size:clamp(32px,5.8vw,50px);
+  line-height:1.08; letter-spacing:-.015em; margin:0 0 18px; text-wrap:balance}
+.entrada{font-size:clamp(17px,2.4vw,19px); color:var(--tenue); margin:0; text-wrap:pretty}
+.entrada b{color:var(--tinta); font-weight:600}
+
+section{margin:0 0 54px}
+h2{font-family:var(--display); font-weight:500; font-size:clamp(24px,4vw,32px);
+  line-height:1.2; letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance}
+.sub{color:var(--tenue); margin:0 0 26px; font-size:15.5px; max-width:62ch}
+h3{font-family:var(--cuerpo); font-weight:600; font-size:17px; margin:30px 0 10px}
+p{margin:0 0 16px; text-wrap:pretty}
+.rotulo{font-family:var(--dato); font-size:10.5px; font-weight:600; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+
+.cuenta{display:flex; flex-wrap:wrap; gap:1px; background:var(--linea);
+  border:1px solid var(--linea); border-radius:10px; overflow:hidden; margin:0 0 30px}
+.cuenta div{flex:1 1 150px; background:var(--tarjeta); padding:18px 20px}
+.cuenta .n{font-family:var(--dato); font-size:30px; font-weight:600; line-height:1;
+  color:var(--azul-txt); font-variant-numeric:tabular-nums; display:block; margin-bottom:6px}
+.cuenta .q{font-size:13.5px; color:var(--tenue); line-height:1.4}
+
+.grupo{display:flex; flex-direction:column; gap:16px}
+.cargo{background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
+  padding:0; overflow:hidden}
+.cargo .franja{height:5px; background:var(--linea-fuerte)}
+.cargo.a .franja{background:var(--azul)}
+.cargo.v .franja{background:var(--verde)}
+.cargo.m .franja{background:var(--rojo)}
+.cargo .dentro{padding:22px 24px 20px}
+.cargo.jefe{border-color:var(--azul); border-width:2px}
+
+.cargo-alto{display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; margin-bottom:4px}
+.cargo h4{font-family:var(--display); font-weight:600; font-size:clamp(20px,3vw,24px);
+  letter-spacing:-.015em; margin:0; line-height:1.14}
+.corto{font-family:var(--dato); font-size:11px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muy-tenue); margin:0 0 14px}
+.chapa{font-family:var(--dato); font-size:10px; font-weight:600; letter-spacing:.11em;
+  text-transform:uppercase; padding:3px 9px; border-radius:99px;
+  background:var(--azul-suave); color:var(--azul-txt); white-space:nowrap}
+.cargo > .dentro > p{font-size:15.5px; margin:0 0 14px}
+
+.absorbe{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 16px}
+.absorbe span{font-family:var(--dato); font-size:11.5px; padding:3px 9px; border-radius:5px;
+  background:var(--azul-suave); color:var(--azul-txt); white-space:nowrap}
+
+.hace{margin:0 0 16px}
+.hace .rotulo{display:block; margin-bottom:8px}
+.hace ul{margin:0; padding:0; list-style:none}
+.hace li{position:relative; padding-left:20px; margin-bottom:7px; font-size:14.5px;
+  color:var(--tenue); line-height:1.5}
+.hace li::before{content:""; position:absolute; left:3px; top:.6em; width:5px; height:5px;
+  border-radius:50%; background:var(--verde)}
+.hace li b{color:var(--tinta); font-weight:600}
+
+.detalle{display:grid; gap:1px; background:var(--linea);
+  border:1px solid var(--linea); border-radius:9px; overflow:hidden}
+@media (min-width:620px){ .detalle{grid-template-columns:1fr 1fr 1fr} }
+.detalle > div{background:var(--tarjeta); padding:13px 15px}
+.detalle .rotulo{display:block; margin-bottom:5px}
+.detalle p{font-size:14px; margin:0; line-height:1.5; color:var(--tenue)}
+.detalle .horas{font-family:var(--dato); font-size:14px; color:var(--tinta);
+  font-variant-numeric:tabular-nums}
+.detalle .cae p{color:var(--rojo-txt)}
+
+.nota{border-left:3px solid var(--azul); background:var(--azul-suave);
+  padding:16px 18px; border-radius:0 10px 10px 0; margin:0 0 22px}
+.nota.dura{border-left-color:var(--rojo-txt); background:var(--rojo-suave)}
+.nota.buena{border-left-color:var(--verde-txt); background:var(--verde-suave)}
+.nota .rotulo{display:block; margin-bottom:7px}
+.nota p:last-child{margin-bottom:0}
+
+ul.lista{margin:0 0 18px; padding-left:0; list-style:none}
+ul.lista li{position:relative; padding-left:22px; margin-bottom:9px; font-size:15.5px}
+ul.lista li::before{content:""; position:absolute; left:4px; top:.62em; width:6px; height:6px;
+  border-radius:50%; background:var(--azul)}
+
+.tabla-envuelta{overflow-x:auto; border:1px solid var(--linea); border-radius:10px}
+table{width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px}
+th,td{padding:12px 15px; text-align:left; border-bottom:1px solid var(--linea); vertical-align:top}
+th{font-family:var(--dato); font-size:10.5px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muy-tenue); background:var(--papel)}
+tbody tr:last-child td{border-bottom:none}
+td:first-child{font-weight:500}
+
+.pie{margin-top:56px; padding-top:22px; border-top:1px solid var(--linea);
+  font-size:13.5px; color:var(--muy-tenue)}
+</style>
+
+<div class="envoltura">
+
+<header class="cabeza">
+  <p class="marca">Comité estudiantil · estructura</p>
+  <h1>Siete direcciones, catorce funciones, un solo responsable por cada una</h1>
+  <p class="entrada angosto">La presidencia coordina, piensa, planea y ejecuta. Las otras
+    seis direcciones existen para que <b>eso alcance</b> — no para repartir el trabajo del
+    presidente, sino para multiplicarlo.</p>
+</header>
+
+<section>
+  <div class="cuenta">
+    <div><span class="n">7</span><span class="q">direcciones, contando la presidencia</span></div>
+    <div><span class="n">14</span><span class="q">funciones, todas con dueño único</span></div>
+    <div><span class="n">0</span><span class="q">cargos temporales: todos son permanentes</span></div>
+    <div><span class="n">+8</span><span class="q">jefes de grupo como red de difusión, sin ser miembros</span></div>
+  </div>
+
+  <div class="nota">
+    <span class="rotulo">La regla que hace que esto funcione</span>
+    <p><b>Una función, un nombre.</b> Casi todos llevan dos o tres funciones, pero ninguna
+      función tiene dos dueños ni cero. Cuando algo no sale, hay exactamente una persona a
+      quien preguntarle — y esa persona nunca es «el comité».</p>
+  </div>
+</section>
+
+<section>
+  <h2>Las siete direcciones</h2>
+  <p class="sub">El nombre largo es el oficial, para actas y oficios. El corto es el de
+    diario.</p>
+
+  <div class="grupo">
+
+    <article class="cargo jefe a">
+      <div class="franja"></div>
+      <div class="dentro">
+        <div class="cargo-alto">
+          <h4>Presidencia Ejecutiva</h4>
+          <span class="chapa">Carlos</span>
+        </div>
+        <p class="corto">La presidencia</p>
+        <div class="absorbe"><span>Presidente</span></div>
+        <p><b>Fija el rumbo y responde por todo.</b> Define qué se hace este mes y qué no,
+          negocia con dirección y con los maestros, y firma lo que sale a nombre del comité.
+          Encabeza el debate, la asamblea y cualquier acto donde el comité dé la cara.</p>
+        <p>Es la única dirección que <b>además ejecuta</b>: toma para sí los proyectos que
+          marcan la gestión y los lleva hasta el final. Las otras seis direcciones no
+          existen para quitarle trabajo — existen para que su trabajo llegue a más lados de
+          los que alcanzaría solo.</p>
+        <div class="hace">
+          <span class="rotulo">Lo que sólo hace la presidencia</span>
+          <ul>
+            <li><b>Decide</b> cuando el comité no se pone de acuerdo, y el acuerdo queda escrito.</li>
+            <li><b>Trata con dirección</b> y con la planta docente. Nadie más negocia en nombre del comité.</li>
+            <li><b>Encabeza</b> los proyectos grandes de la gestión, de principio a fin.</li>
+            <li><b>Aprueba</b> cada gasto por encima del monto que se fije, junto con Finanzas.</li>
+            <li><b>Convoca</b> la junta semanal y la asamblea general.</li>
+          </ul>
+        </div>
+        <div class="detalle">
+          <div><span class="rotulo">Entrega</span><p>Junta semanal con acuerdos escritos, e informe público al cierre de cada periodo.</p></div>
+          <div><span class="rotulo">Cuesta</span><p class="horas">5–7 h/semana<br>10–12 en campaña</p></div>
+          <div class="cae"><span class="rotulo">Si falla</span><p>Es el único cargo sin suplente real: la vicepresidencia cubre, pero no reemplaza.</p></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cargo a">
+      <div class="franja"></div>
+      <div class="dentro">
+        <div class="cargo-alto">
+          <h4>Vicepresidencia de Operaciones</h4>
+          <span class="chapa">Segundo al mando</span>
+        </div>
+        <p class="corto">Operaciones</p>
+        <div class="absorbe"><span>Sub presidente</span><span>Organización general</span></div>
+        <p><b>Convierte las decisiones en cosas que pasan.</b> La presidencia dice qué; esta
+          dirección arma el cómo, el cuándo y el con quién, y persigue a cada responsable
+          hasta que entrega.</p>
+        <div class="hace">
+          <span class="rotulo">Lo que le concierne</span>
+          <ul>
+            <li><b>El tablero de pendientes:</b> quién quedó de hacer qué y para cuándo.</li>
+            <li><b>La logística de cada evento:</b> permisos, espacios, montaje, horarios.</li>
+            <li><b>Sustituye</b> a la presidencia en ausencias, con las mismas facultades.</li>
+            <li><b>Coordina</b> a las demás direcciones cuando un proyecto toca a varias.</li>
+          </ul>
+        </div>
+        <div class="detalle">
+          <div><span class="rotulo">Entrega</span><p>El tablero al día y el plan de cada evento por escrito, una semana antes.</p></div>
+          <div><span class="rotulo">Cuesta</span><p class="horas">4–5 h/semana</p></div>
+          <div class="cae"><span class="rotulo">Si falla</span><p>Se acuerda en la junta y no pasa nada en toda la semana.</p></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cargo a">
+      <div class="franja"></div>
+      <div class="dentro">
+        <div class="cargo-alto">
+          <h4>Secretaría General y de Gobierno Interno</h4>
+        </div>
+        <p class="corto">Secretaría</p>
+        <div class="absorbe"><span>Secretario</span><span>Organización interna</span></div>
+        <p><b>La memoria y el orden del comité.</b> Es quien puede contestar «¿eso ya se
+          había acordado?» sin depender de que alguien se acuerde.</p>
+        <div class="hace">
+          <span class="rotulo">Lo que le concierne</span>
+          <ul>
+            <li><b>Actas</b> de cada junta, el mismo día, con acuerdos y responsables.</li>
+            <li><b>Convocatorias</b> y el registro de quién entra y quién sale del comité.</li>
+            <li><b>El archivo:</b> que cualquier documento se encuentre en menos de un minuto.</li>
+            <li><b>El calendario interno</b> y el control de asistencia a juntas.</li>
+            <li><b>Vigila el reglamento:</b> avisa cuando algo que se va a hacer no se puede.</li>
+          </ul>
+        </div>
+        <div class="detalle">
+          <div><span class="rotulo">Entrega</span><p>Acta el mismo día de cada junta, y el archivo ordenado y accesible.</p></div>
+          <div><span class="rotulo">Cuesta</span><p class="horas">3–4 h/semana</p></div>
+          <div class="cae"><span class="rotulo">Si falla</span><p>Se discute dos veces lo mismo y nadie recuerda quién se comprometió a qué.</p></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cargo v">
+      <div class="franja"></div>
+      <div class="dentro">
+        <div class="cargo-alto">
+          <h4>Dirección de Finanzas y Transparencia</h4>
+          <span class="chapa">No cotiza</span>
+        </div>
+        <p class="corto">Finanzas</p>
+        <div class="absorbe"><span>Finanzas</span></div>
+        <p><b>Cuida el dinero y lo enseña.</b> Recibe, resguarda, paga y publica. El apellido
+          «y Transparencia» no es adorno: publicar es parte del cargo, no un favor que se
+          pide.</p>
+        <div class="hace">
+          <span class="rotulo">Lo que le concierne</span>
+          <ul>
+            <li><b>Corte de cada evento</b> a los tres días: entró, salió, quedó.</li>
+            <li><b>Resguardo</b> del efectivo y registro de cada movimiento con comprobante.</li>
+            <li><b>Presupuesto</b> de cada actividad antes de aprobarla.</li>
+            <li><b>Autoriza el gasto</b> junto con la presidencia, nunca solo.</li>
+            <li><b>No consigue precios ni negocia con proveedores.</b> Eso es de Vinculación.</li>
+          </ul>
+        </div>
+        <div class="detalle">
+          <div><span class="rotulo">Entrega</span><p>Corte público a los tres días de cada evento, sin que nadie lo pida.</p></div>
+          <div><span class="rotulo">Cuesta</span><p class="horas">2–3 h/semana<br>6–8 en semana de evento</p></div>
+          <div class="cae"><span class="rotulo">Si falla</span><p>Es el único cargo capaz de acabar con el comité entero. Sin corte no hay confianza.</p></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cargo m">
+      <div class="franja"></div>
+      <div class="dentro">
+        <div class="cargo-alto">
+          <h4>Dirección de Comunicación y Vocería</h4>
+          <span class="chapa">Voz única</span>
+        </div>
+        <p class="corto">Comunicación</p>
+        <div class="absorbe"><span>Vocero</span><span>Redes</span><span>Difusión</span></div>
+        <p><b>Un solo vocero, y una sola voz.</b> Todo lo que el comité dice hacia afuera sale
+          de aquí: anuncios, redes, carteles publicados y lo que se contesta cuando algo sale
+          mal.</p>
+        <div class="hace">
+          <span class="rotulo">Lo que le concierne</span>
+          <ul>
+            <li><b>El aviso semanal fijo</b>, siempre el mismo día. La constancia vale más que el ingenio.</li>
+            <li><b>Las redes del comité</b> y el tono con que se contesta.</li>
+            <li><b>Entrega a los jefes de grupo</b> lo que deben pasar a su salón, ya redactado.</li>
+            <li><b>Responde</b> las dudas públicas el mismo día, aunque la respuesta sea «lo estoy averiguando».</li>
+          </ul>
+        </div>
+        <div class="detalle">
+          <div><span class="rotulo">Entrega</span><p>Un aviso semanal el mismo día, y el paquete listo para los jefes de grupo.</p></div>
+          <div><span class="rotulo">Cuesta</span><p class="horas">4–5 h/semana</p></div>
+          <div class="cae"><span class="rotulo">Si falla</span><p>El comité trabaja y nadie se entera. Se vuelve invisible y luego «no hacen nada».</p></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cargo m">
+      <div class="franja"></div>
+      <div class="dentro">
+        <div class="cargo-alto">
+          <h4>Dirección de Enlace Estudiantil y Convivencia</h4>
+          <span class="chapa">El apaciguador</span>
+        </div>
+        <p class="corto">Enlace</p>
+        <div class="absorbe"><span>Apaciguador</span><span>Ambiente</span><span>Enlace con grupos</span></div>
+        <p><b>El oído del comité.</b> Escucha quejas antes de que se vuelvan pleito, media
+          entre grupos, y mantiene el trato con los jefes de grupo. Trae lo que se está
+          diciendo, no lo que sería agradable oír.</p>
+        <div class="hace">
+          <span class="rotulo">Lo que le concierne</span>
+          <ul>
+            <li><b>Ronda quincenal</b> con los jefes de grupo, uno por uno.</li>
+            <li><b>Media</b> en conflictos entre alumnos o entre grupos, antes de que lleguen a dirección.</li>
+            <li><b>Recoge propuestas</b> de quien no se atreve a decirlas en público.</li>
+            <li><b>El ambiente</b> de los eventos: que la gente la pase bien y quiera volver.</li>
+          </ul>
+        </div>
+        <div class="detalle">
+          <div><span class="rotulo">Entrega</span><p>Reporte quincenal de lo que se está diciendo en los salones, sin filtrar.</p></div>
+          <div><span class="rotulo">Cuesta</span><p class="horas">3–4 h/semana</p></div>
+          <div class="cae"><span class="rotulo">Si falla</span><p>Se enteran del problema cuando ya llegó a dirección.</p></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="cargo v">
+      <div class="franja"></div>
+      <div class="dentro">
+        <div class="cargo-alto">
+          <h4>Dirección de Estrategia, Imagen y Vinculación</h4>
+          <span class="chapa">Los tres fusionados</span>
+        </div>
+        <p class="corto">Estrategia</p>
+        <div class="absorbe"><span>Estratega</span><span>Encargado de campaña</span><span>Diseños</span><span>Cotizaciones</span><span>Fondos</span></div>
+        <p><b>Cómo se ve el comité y cómo consigue lo que necesita.</b> Es la dirección que
+          más funciones absorbe, y las tres se sostienen juntas porque todas miran hacia
+          afuera: la imagen, los aliados y el plan.</p>
+        <div class="hace">
+          <span class="rotulo">Lo que le concierne</span>
+          <ul>
+            <li><b>Identidad y piezas:</b> carteles, publicaciones y plantillas, con reglas escritas para que otro pueda hacer una sin empezar de cero.</li>
+            <li><b>Cotizaciones:</b> tres por compra grande, por escrito, antes de decidir. <b>Nunca toca efectivo.</b></li>
+            <li><b>Alianzas y patrocinios</b> con papelerías, imprentas y negocios de la zona.</li>
+            <li><b>Tácticas de fondos</b> para cada evento.</li>
+            <li><b>Durante la campaña:</b> calendario, preparación del debate y respuesta a lo que diga el otro equipo.</li>
+          </ul>
+        </div>
+        <div class="detalle">
+          <div><span class="rotulo">Entrega</span><p>Piezas cinco días antes de cada evento, y tres cotizaciones por escrito en cada compra grande.</p></div>
+          <div><span class="rotulo">Cuesta</span><p class="horas">5–6 h/semana<br>8–10 en campaña</p></div>
+          <div class="cae"><span class="rotulo">Si falla</span><p>Se compra caro y a última hora, y cada cartel se ve distinto.</p></div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="nota dura" style="margin-top:22px">
+    <span class="rotulo">La única que carga de más</span>
+    <p>Estrategia lleva cinco funciones y es la más pesada de las siete. Si aparece una
+      octava persona buena, <b>lo primero que se separa es Imagen</b> — se vuelve Dirección de
+      Imagen y Diseño, y Estrategia se queda con vinculación y plan. No se separa antes
+      porque siete cargos con dueño valen más que ocho con uno vacío.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Los jefes de grupo: alcance sin plantilla</h2>
+  <p class="sub">Decisión suya, y es de las más inteligentes de toda la estructura.</p>
+
+  <div class="nota buena">
+    <span class="rotulo">Por qué funciona</span>
+    <p>Un vocero por salón serían ocho o diez miembros más, con ocho o diez versiones del
+      mensaje. <b>Un solo vocero que le entrega el texto ya redactado a los jefes de grupo</b>
+      llega a los mismos salones con una sola voz y sin crecer el comité.</p>
+    <p>Y hay un beneficio que no se ve al principio: los jefes de grupo <b>no son miembros</b>,
+      así que no le deben nada al comité ni el comité a ellos. Es colaboración, no clientela.</p>
+  </div>
+
+  <ul class="lista">
+    <li><b>Reciben</b> el aviso ya redactado, no una instrucción de «avisen algo».</li>
+    <li><b>Pasan</b> lo que se les da, tal cual. No editan ni interpretan.</li>
+    <li><b>No hablan</b> en nombre del comité. Si les preguntan algo que no está en el aviso,
+      lo remiten a Comunicación.</li>
+    <li><b>Enlace los visita</b> cada quince días — es la vía por la que su salón sube lo que
+      quiere decir.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Requisitos para entrar</h2>
+  <p class="sub">Los suyos, más tres que le sugiero.</p>
+
+  <h3>Los suyos, sin cambios</h3>
+  <ul class="lista">
+    <li><b>Regular a nivel académico.</b> Sin materias reprobadas ni pendientes.</li>
+    <li><b>Buena asistencia.</b> Quien no viene, no coordina.</li>
+    <li><b>Buena conducta.</b> Sin reportes vigentes.</li>
+    <li><b>Buena actitud.</b> Es lo que más se nota y lo que menos se mide; por eso hay
+      entrevista y no sólo papel.</li>
+  </ul>
+
+  <h3>Los tres que le agrego</h3>
+  <ul class="lista">
+    <li><b>Que sepa decir que no.</b> El que acepta todo es el que después no entrega y no
+      avisa. Pregúntele de frente cuánto tiempo tiene a la semana, y créale.</li>
+    <li><b>Que entregue en fecha, aunque entregue menos.</b> Una pieza sencilla a tiempo vale
+      más que una buenísima al día siguiente.</li>
+    <li><b>Que no esté ya en otras dos comisiones.</b> No es falta de ganas: no alcanza el día.</li>
+  </ul>
+
+  <div class="nota dura">
+    <span class="rotulo">La trampa clásica</span>
+    <p><b>No prometa cargos a cambio de apoyo en campaña.</b> Se gana con un equipo y se
+      gobierna con otro; quien apoyó esperando un puesto se vuelve el primer opositor cuando
+      no lo recibe. Dígalo desde el primer día: <b>los cargos se definen después de ganar y
+      con requisitos</b>, y quien quiera quedarse se postula como todos.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Suplencias</h2>
+  <p class="sub">Quién cubre a quién. Se define ahora, no cuando pase.</p>
+
+  <div class="tabla-envuelta">
+    <table>
+      <thead>
+        <tr><th>Si falta</th><th>Cubre</th><th>Qué se hace</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Presidencia</td><td>Vicepresidencia</td><td>Asume completo hasta terminar el ciclo</td></tr>
+        <tr><td>Vicepresidencia</td><td>Secretaría</td><td>Se convoca en dos semanas</td></tr>
+        <tr><td>Secretaría</td><td>Vicepresidencia</td><td>Se convoca en dos semanas</td></tr>
+        <tr><td>Finanzas</td><td>Presidencia</td><td><b>Corte y entrega firmada antes de soltar</b>, siempre</td></tr>
+        <tr><td>Comunicación</td><td>Presidencia</td><td>Nadie más habla mientras tanto</td></tr>
+        <tr><td>Enlace</td><td>Vicepresidencia</td><td>Se convoca sin prisa</td></tr>
+        <tr><td>Estrategia</td><td>Vicepresidencia</td><td>Sin comprar nada grande mientras; se usan las plantillas</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:18px"><b>Finanzas es la única con regla dura:</b> nadie recibe ni
+    entrega esa dirección sin un corte firmado por quien sale y quien entra. Si algo se
+    pierde, que se sepa exactamente en qué turno.</p>
+</section>
+
+<footer class="pie">
+  <p>Estructura para la candidatura a la presidencia del comité estudiantil. Los tiempos en
+    horas son estimaciones para calibrar cargas, no compromisos.</p>
+</footer>
+
+</div>
+
+<script>
+/* Sólo cuando esto se sirve como página del sitio (no dentro de un artifact)
+   aparece la barra para volver al expediente. Así el mismo archivo sirve en
+   los dos lados sin tener dos copias que se desincronizan. */
+if(location.pathname.includes('/campana/')){
+  const b = document.createElement('a');
+  b.href = './';
+  b.textContent = '\u2190 Expediente de campaña';
+  b.style.cssText = 'position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));'
+    + 'z-index:99;font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;'
+    + 'text-decoration:none;padding:10px 14px;border-radius:99px;'
+    + 'background:#101821;color:#F6F8FB;box-shadow:0 6px 22px rgba(0,0,0,.28)';
+  document.body.appendChild(b);
+}
+</script>

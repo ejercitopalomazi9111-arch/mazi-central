@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering-team/google-workspace-cli/skills/google-workspace-cli/SKILL.md

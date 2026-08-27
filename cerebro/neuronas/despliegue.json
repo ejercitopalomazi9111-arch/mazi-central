@@ -1,0 +1,77 @@
+{
+  "area": "despliegue",
+  "nombre": "Publicar y que llegue",
+  "que": "Lo que pasa entre «funciona en mi máquina» y «lo abrió el usuario». Casi nunca es el código.",
+  "neuronas": [
+    {
+      "id": "servidor-dentro-del-sitio",
+      "titulo": "Meter un servidor dentro del proyecto del sitio tumbó los dos despliegues",
+      "gravedad": "alta",
+      "sintoma": "Los despliegues de dos proyectos empiezan a fallar al instante y sin registro, justo en el commit que juntó las cosas.",
+      "causa": "Un proyecto de despliegue con dos configuraciones adentro. La herramienta sube hasta la raíz, toma la configuración equivocada y corre el armado del otro.",
+      "porque": "Juntarlos parece un ahorro —un proyecto menos que crear— y el costo aparece en otro lado, sin mensaje de error que lo explique.",
+      "arreglo": "Un proyecto de despliegue por servicio. Y el archivo de configuración en el formato que NO sube buscando en carpetas de arriba.",
+      "comoCazarlo": "Si dos cosas empiezan a fallar el mismo día y una de ellas ni la tocaste, busca qué configuración empezaron a compartir.",
+      "consejo": "Un juego de cartas no puede tumbar el despliegue del tablero. Si puede, están mal separados.",
+      "salioDe": "juegos/servidor · y por eso sala/servidor nació aparte",
+      "senales": ["fallan los dos", "sin registro", "no toqué ese proyecto"],
+      "vecinas": ["origenes-sin-la-vista-previa"]
+    },
+    {
+      "id": "charset-que-no-manda-el-servidor",
+      "titulo": "Los acentos se rompen porque el servidor no dice en qué está escrito",
+      "gravedad": "alta",
+      "sintoma": "«campaña» sale como «campaÃ±a». En local se ve bien y publicado no, o al revés.",
+      "causa": "El servidor manda `text/html` SIN `charset`, y con `nosniff` el navegador ni siquiera puede adivinar. Cae a la codificación vieja de Windows.",
+      "porque": "En desarrollo casi siempre hay un servidor que sí manda charset, así que el error nace ya publicado.",
+      "arreglo": "`<meta charset=\"utf-8\">` hasta arriba del archivo. El navegador sólo lo busca en los primeros 1024 bytes.",
+      "comoCazarlo": "`curl -sI` a la página y mira el `content-type`. Si no dice charset, ya sabes. Y sirve local con un servidor que TAMPOCO lo mande, para reproducirlo.",
+      "consejo": "Prueba contra un servidor tan tonto como el de producción, no contra el más listo que tengas a mano.",
+      "salioDe": "campana/ · siete páginas habrían salido con los acentos rotos",
+      "senales": ["Ã±", "Â", "acentos raros", "en local sí se ve"],
+      "vecinas": ["falta-el-viewport", "verificar-lo-publicado"]
+    },
+    {
+      "id": "falta-el-viewport",
+      "titulo": "Sin meta viewport, el teléfono abre la página a 980 píxeles",
+      "gravedad": "alta",
+      "sintoma": "Todo microscópico en el celular. En la computadora se ve perfecto.",
+      "causa": "Falta `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">`.",
+      "porque": "Los envoltorios (artifacts, plantillas, frameworks) suelen ponerlo por ti, así que el archivo suelto lo hereda sin traerlo, y al servirlo solo se cae.",
+      "arreglo": "Ponerlo en el archivo, no confiar en el envoltorio.",
+      "comoCazarlo": "Abre con un navegador de 390px y mide `innerWidth` desde la consola. Si dice 980, es esto.",
+      "consejo": "Cuando un archivo pueda servirse solo Y dentro de un envoltorio, tiene que traer sus propios metas.",
+      "salioDe": "campana/ · seis de siete páginas lo traían sólo por el envoltorio de artifacts",
+      "senales": ["se ve chiquito en el celular", "980", "en compu sí se ve"],
+      "vecinas": ["charset-que-no-manda-el-servidor"]
+    },
+    {
+      "id": "origenes-sin-la-vista-previa",
+      "titulo": "El servidor acepta al sitio de producción pero no a la vista previa de la rama",
+      "gravedad": "media",
+      "sintoma": "Todo funciona en local, y desde la vista previa cada llamada la bloquea CORS. Parece que el servidor no sirve.",
+      "causa": "La lista de orígenes permitidos tiene el dominio de producción y no los nombres que la plataforma inventa por rama y por commit.",
+      "porque": "Uno prueba en local y publica a producción; el paso de en medio —la vista previa— es justo donde se prueba antes de publicar, y es el que se olvida.",
+      "arreglo": "Permitir además los subdominios que cuelgan de TU propio proyecto, que nadie más puede crear. Sin comodines.",
+      "comoCazarlo": "Abre la página desde la vista previa, no desde local. Es el único lugar donde sale.",
+      "consejo": "La lista de orígenes tiene que cubrir los tres lugares donde vive la página: local, vista previa y producción.",
+      "salioDe": "sala/servidor · faltaba VISTAS_PREVIAS y la mesa no habría podido hablarle",
+      "senales": ["CORS", "bloqueado", "en local sí funciona"],
+      "vecinas": ["servidor-dentro-del-sitio"]
+    },
+    {
+      "id": "ventana-nueva-bloqueada",
+      "titulo": "Las ligas no abren: el visor no deja abrir ventanas nuevas",
+      "gravedad": "media",
+      "sintoma": "Se toca la tarjeta, se ilumina, y no pasa nada. Sin error.",
+      "causa": "`target=\"_blank\"` dentro de un marco con permisos recortados. La navegación se descarta en silencio.",
+      "porque": "En un navegador normal funciona, así que el problema sólo existe donde el usuario de verdad lo abre.",
+      "arreglo": "No depender de abrir ventana: enseñar la dirección como texto y dar un botón de copiar. Y si el portapapeles tampoco está permitido, seleccionar el texto.",
+      "comoCazarlo": "Ábrelo donde lo va a abrir el usuario, no en tu navegador.",
+      "consejo": "Falla hacia algo que el usuario SÍ pueda hacer, nunca hacia el silencio.",
+      "salioDe": "campana/ · el expediente publicado como artifact",
+      "senales": ["se ilumina y no abre", "no pasa nada al tocar", "no me deja entrar"],
+      "vecinas": ["ver-la-pantalla"]
+    }
+  ]
+}

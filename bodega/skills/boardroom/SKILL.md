@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/c-level-agents/skills/boardroom/SKILL.md

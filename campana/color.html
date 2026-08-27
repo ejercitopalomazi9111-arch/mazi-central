@@ -1,0 +1,403 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Organiza Optimiza Actualiza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+:root{
+  --azul:#0A3D6E;   --azul-txt:#0A3D6E;   --azul-suave:#E7EDF4;
+  --verde:#0E8350;  --verde-txt:#0E8350;   --verde-suave:#E4F3EB;
+  --rojo:#A81440;   --rojo-txt:#A81440;    --rojo-suave:#FAE8EE;
+
+  --papel:#FAF9F6; --tarjeta:#FFFFFF;
+  --tinta:#161A1E; --tenue:#59606A; --muy-tenue:#88909A;
+  --linea:#E4E3DE; --linea-fuerte:#CBCAC4;
+
+  --display:"Newsreader",Georgia,"Times New Roman",serif;
+  --cuerpo:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --dato:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --azul:#2E6FA8; --azul-txt:#5B9BD8; --azul-suave:#111E2B;
+    --verde:#118A55; --verde-txt:#3FBE83; --verde-suave:#0F2419;
+    --rojo:#B82650; --rojo-txt:#E8677F; --rojo-suave:#2A141C;
+    --papel:#12161A; --tarjeta:#1A1F24; --tinta:#E9EBEE; --tenue:#A5ACB4;
+    --muy-tenue:#7B838C; --linea:#282E34; --linea-fuerte:#3A424A;
+  }
+}
+:root[data-theme="dark"]{
+  --azul:#2E6FA8; --azul-txt:#5B9BD8; --azul-suave:#111E2B;
+  --verde:#118A55; --verde-txt:#3FBE83; --verde-suave:#0F2419;
+  --rojo:#B82650; --rojo-txt:#E8677F; --rojo-suave:#2A141C;
+  --papel:#12161A; --tarjeta:#1A1F24; --tinta:#E9EBEE; --tenue:#A5ACB4;
+  --muy-tenue:#7B838C; --linea:#282E34; --linea-fuerte:#3A424A;
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--papel); color:var(--tinta);
+  font-family:var(--cuerpo); font-size:16px; line-height:1.62; -webkit-text-size-adjust:100%}
+.envoltura{max-width:1020px; margin:0 auto; padding:0 20px 72px}
+.angosto{max-width:64ch}
+
+.cabeza{padding:54px 0 30px; border-bottom:1px solid var(--linea-fuerte); margin-bottom:40px}
+.marca{font-family:var(--dato); font-size:11px; font-weight:500; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--azul-txt); margin:0 0 18px}
+h1{font-family:var(--display); font-weight:500; font-size:clamp(32px,5.8vw,50px);
+  line-height:1.08; letter-spacing:-.015em; margin:0 0 18px; text-wrap:balance}
+h1 em{font-style:normal; color:var(--azul-txt)}
+.entrada{font-size:clamp(17px,2.4vw,19px); color:var(--tenue); margin:0; text-wrap:pretty}
+.entrada b{color:var(--tinta); font-weight:600}
+
+section{margin:0 0 54px}
+h2{font-family:var(--display); font-weight:500; font-size:clamp(24px,4vw,32px);
+  line-height:1.2; letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance}
+.sub{color:var(--tenue); margin:0 0 26px; font-size:15.5px; max-width:62ch}
+h3{font-family:var(--cuerpo); font-weight:600; font-size:17px; margin:30px 0 10px}
+p{margin:0 0 16px; text-wrap:pretty}
+.rotulo{font-family:var(--dato); font-size:10.5px; font-weight:600; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+
+/* ── el lema en tres ── */
+.tres{display:grid; gap:14px; margin:0 0 30px}
+@media (min-width:760px){ .tres{grid-template-columns:repeat(3,1fr)} }
+.uno{border-radius:14px; overflow:hidden; border:1px solid var(--linea)}
+.uno .tapa{padding:26px 22px 22px}
+.uno.a .tapa{background:var(--azul); color:#fff}
+.uno.v .tapa{background:var(--verde); color:#fff}
+.uno.m .tapa{background:var(--rojo); color:#fff}
+.uno .verbo{font-family:var(--display); font-size:clamp(28px,4.4vw,36px); font-weight:600;
+  line-height:1; letter-spacing:-.02em; margin:0 0 8px; text-transform:uppercase}
+.uno .que{font-size:14.5px; margin:0; opacity:.92; line-height:1.45}
+.uno .abajo{padding:18px 22px 20px; background:var(--tarjeta)}
+.uno .abajo p{font-size:14.5px; margin:0 0 10px}
+.uno .abajo p:last-child{margin:0}
+.uno .hex{font-family:var(--dato); font-size:11.5px; letter-spacing:.06em;
+  color:var(--muy-tenue); font-variant-numeric:tabular-nums}
+
+/* ── medición ── */
+.tabla-envuelta{overflow-x:auto; border:1px solid var(--linea); border-radius:12px}
+table{width:100%; border-collapse:collapse; font-size:14.5px; min-width:560px}
+th,td{padding:12px 15px; text-align:left; border-bottom:1px solid var(--linea); vertical-align:top}
+th{font-family:var(--dato); font-size:10.5px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muy-tenue); background:var(--papel)}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-family:var(--dato); font-variant-numeric:tabular-nums}
+.pastilla{display:inline-block; width:11px; height:11px; border-radius:3px;
+  margin-right:8px; vertical-align:-1px}
+.pastilla.a{background:var(--azul)} .pastilla.v{background:var(--verde)}
+.pastilla.m{background:var(--rojo)}
+
+/* la tira de fotocopia */
+.fotocopia{display:flex; border:1px solid var(--linea); border-radius:10px;
+  overflow:hidden; margin:14px 0 0}
+.fotocopia div{flex:1; padding:16px 12px; text-align:center; font-family:var(--dato);
+  font-size:11px; font-weight:600; letter-spacing:.08em; color:#161A1E}
+.fotocopia .g1{background:#3F3F3F; color:#fff}
+.fotocopia .g2{background:#555555; color:#fff}
+.fotocopia .g3{background:#737373; color:#fff}
+.fotocopia b{display:block; font-size:15px; margin-bottom:3px; letter-spacing:.02em}
+
+.nota{border-left:3px solid var(--azul); background:var(--azul-suave);
+  padding:16px 18px; border-radius:0 10px 10px 0; margin:0 0 20px}
+.nota.dura{border-left-color:var(--rojo-txt); background:var(--rojo-suave)}
+.nota .rotulo{display:block; margin-bottom:7px}
+.nota p:last-child{margin-bottom:0}
+
+ul{margin:0 0 18px; padding-left:0; list-style:none}
+ul li{position:relative; padding-left:22px; margin-bottom:9px; font-size:15.5px}
+ul li::before{content:""; position:absolute; left:4px; top:.62em; width:6px; height:6px;
+  border-radius:50%; background:var(--azul)}
+
+.lemas{display:flex; flex-direction:column; gap:12px}
+.lema{border:1px solid var(--linea); border-radius:12px; padding:18px 20px; background:var(--tarjeta)}
+.lema .frase{font-family:var(--display); font-size:clamp(20px,3.2vw,25px); font-weight:600;
+  line-height:1.25; margin:0 0 8px; letter-spacing:-.01em}
+.lema p{font-size:14.5px; color:var(--tenue); margin:0}
+.lema.eleccion{border-color:var(--azul); border-width:2px}
+.lema .chapa{font-family:var(--dato); font-size:10px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--azul-txt); display:block; margin-bottom:9px}
+
+.pie{margin-top:56px; padding-top:22px; border-top:1px solid var(--linea);
+  font-size:13.5px; color:var(--muy-tenue)}
+</style>
+
+<div class="envoltura">
+
+<header class="cabeza">
+  <p class="marca">Identidad de campaña · propuesta</p>
+  <h1>Tres verbos, tres colores, <em>tres promesas que se pueden cobrar</em></h1>
+  <p class="entrada angosto">Dirección pidió que cada color signifique algo. Aquí cada uno
+    significa <b>un verbo y un tipo de propuesta</b> — no un estado de ánimo. Así el
+    significado no depende de que alguien se lo crea: se ve en qué hicimos.</p>
+</header>
+
+<section>
+  <h2>Organiza · Optimiza · Actualiza</h2>
+  <p class="sub">Los tres verbos son suyos. Cada uno se queda con un color y con una
+    familia de propuestas, y no se mezclan nunca.</p>
+
+  <div class="tres">
+
+    <article class="uno a">
+      <div class="tapa">
+        <p class="verbo">Organiza</p>
+        <p class="que">Poner orden donde hoy hay desorden</p>
+      </div>
+      <div class="abajo">
+        <p><b>Qué propuestas van aquí:</b> calendario de entregas y exámenes a la vista,
+          eventos que empiezan a la hora, trámites que no se repiten tres veces.</p>
+        <p><b>Por qué azul:</b> es el color que se lee como serio y formal sin esfuerzo.
+          Es la mitad «institución» de lo que somos.</p>
+        <p class="hex">#0A3D6E</p>
+      </div>
+    </article>
+
+    <article class="uno v">
+      <div class="tapa">
+        <p class="verbo">Optimiza</p>
+        <p class="que">Que lo que ya existe funcione mejor</p>
+      </div>
+      <div class="abajo">
+        <p><b>Qué propuestas van aquí:</b> la cooperativa sin filas, los espacios que ya
+          hay pero nadie usa, el tiempo muerto entre clases.</p>
+        <p><b>Por qué verde:</b> en la escuela el verde ya significa «vas bien, aprobado».
+          Ese significado ya está en la cabeza de quien vota; no hay que enseñárselo.</p>
+        <p class="hex">#0E8350</p>
+      </div>
+    </article>
+
+    <article class="uno m">
+      <div class="tapa">
+        <p class="verbo">Actualiza</p>
+        <p class="que">Traer al día lo que se quedó atrás</p>
+      </div>
+      <div class="abajo">
+        <p><b>Qué propuestas van aquí:</b> información que llega tarde o no llega,
+          reglamentos que nadie ha leído, avisos que se pierden en el camino.</p>
+        <p><b>Por qué rojo:</b> es el único de los tres que transmite urgencia. Lo
+          atrasado no es un dato neutral — es lo que hay que resolver ya, y el color lo
+          dice antes que la letra.</p>
+        <p><b>Y es un vino, no el rojo del escudo.</b> Están a 16° de tono: se distingue a
+          simple vista, así que no parece que el comité se vistió de institucional antes de
+          ganar.</p>
+        <p class="hex">#A81440</p>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="nota">
+    <span class="rotulo">La regla que los mantiene con significado</span>
+    <p><b>Cada propuesta lleva el color de su verbo, y sólo uno.</b> Si una propuesta no cabe
+      en ninguno de los tres, no es que le falte color: es que no es de este comité y hay que
+      dejarla fuera. Los tres verbos son también el filtro para decidir qué prometemos.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Están medidos, no escogidos a ojo</h2>
+  <p class="sub">Porque estos colores van a acabar fotocopiados en blanco y negro, y ahí es
+    donde casi todas las paletas se caen.</p>
+
+  <div class="tabla-envuelta">
+    <table>
+      <thead>
+        <tr><th>Color</th><th>Contraste</th><th>Lleva texto</th><th>En fotocopia gris</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pastilla a"></span>Azul <b>#0A3D6E</b></td>
+          <td class="num">11.0 : 1</td><td>blanco</td><td class="num">5 %</td>
+        </tr>
+        <tr>
+          <td><span class="pastilla m"></span>Rojo <b>#A81440</b></td>
+          <td class="num">7.4 : 1</td><td>blanco</td><td class="num">9 %</td>
+        </tr>
+        <tr>
+          <td><span class="pastilla v"></span>Verde <b>#0E8350</b></td>
+          <td class="num">4.8 : 1</td><td>blanco</td><td class="num">17 %</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="fotocopia">
+    <div class="g1"><b>◼</b> ORGANIZA · 5%</div>
+    <div class="g2"><b>◆</b> ACTUALIZA · 9%</div>
+    <div class="g3"><b>▲</b> OPTIMIZA · 17%</div>
+  </div>
+  <p style="margin-top:12px; font-size:14px; color:var(--tenue)">Esos son los grises reales,
+    calculados de la luminancia de cada color — no una aproximación. <b>Mire los dos primeros:</b>
+    ahí está el problema, dicho de frente.</p>
+
+  <div class="nota dura">
+    <span class="rotulo">Lo que cuesta que sean oscuros y saturados</span>
+    <p>Al oscurecerlos, <b>el azul y el rojo quedaron a 4 puntos de gris</b> (5 % y 9 %). En
+      una fotocopia en blanco y negro se van a parecer. Es el mismo defecto que la paleta
+      anterior tenía entre azul y verde, sólo que ahora entre otra pareja.</p>
+    <p><b>No se puede arreglar con color</b> sin deshacer lo que usted pidió: un rojo lo
+      bastante claro para separarse del azul ya no se ve oscuro ni saturado. Así que se
+      arregla por otro lado.</p>
+  </div>
+
+  <h3>La solución: el color nunca viaja solo</h3>
+  <p>Cada verbo lleva <b>una figura propia</b> además del color. En pantalla se ven los dos;
+    en fotocopia, en blanco y negro o para alguien que no distingue colores, la figura sigue
+    ahí y sigue diciendo cuál es.</p>
+  <ul>
+    <li><b>◼ Cuadrado — Organiza.</b> Orden, cuadrícula, casillas en su lugar.</li>
+    <li><b>▲ Triángulo hacia arriba — Optimiza.</b> Mejora, sube.</li>
+    <li><b>◆ Rombo — Actualiza.</b> Gira, se pone al día.</li>
+  </ul>
+  <p><b>Regla:</b> ninguna pieza usa el color como única señal. Siempre color + figura +
+    la palabra. Suena a exceso hasta el día que alguien fotocopia el cartel en gris — que
+    en una escuela pasa siempre.</p>
+
+  <div class="nota">
+    <span class="rotulo">Una prueba que sí pasó, y no era obvia</span>
+    <p>Rojo y verde juntos son <b>la colisión clásica del daltonismo</b>, y afecta a cerca de
+      uno de cada doce hombres. Se simularon las dos formas más comunes —deuteranopia y
+      protanopia— y <b>las tres parejas se siguen distinguiendo</b>. Se salva porque el rojo
+      tira a vino y el azul es muy oscuro; con un rojo anaranjado se habría caído.</p>
+  </div>
+
+  <h3>Regla de uso que sale de la medición</h3>
+  <ul>
+    <li><b>Los tres llevan texto blanco encima.</b> Ninguno aguanta texto oscuro.</li>
+    <li><b>Los tres sirven como texto de color sobre papel</b> — 10.5, 7.0 y 4.6 de contraste.
+      No hacen falta versiones aparte, que es una ventaja de haberlos oscurecido.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>El tono: serios y formales, pero cercanos</h2>
+  <p class="sub">Las dos mitades tienen que verse, o una se come a la otra.</p>
+
+  <ul>
+    <li><b>Lo serio lo cargan el azul y la tipografía.</b> Frases completas, sin abreviar,
+      sin emojis en lo oficial.</li>
+    <li><b>Lo cercano lo cargan el rojo y el trato.</b> Nombres de personas en los avisos,
+      responder siempre, y decir «no sé» cuando no se sabe.</li>
+    <li><b>Y lo familiar no es hacerse el chistoso.</b> Es que cualquiera sepa a quién
+      preguntarle y reciba respuesta el mismo día. Eso se siente más cercano que cualquier
+      broma.</li>
+  </ul>
+
+  <div class="nota">
+    <span class="rotulo">Por qué esto le conviene a usted en particular</span>
+    <p>Usted mismo dijo que es serio y formal. <b>Eso no es un defecto que haya que
+      disimular:</b> es exactamente la mitad difícil de conseguir. Lo cercano se construye
+      con reglas —responder el mismo día, publicar las cuentas, poner nombres— y las reglas
+      sí se pueden cumplir aunque uno no sea el más carismático del salón.</p>
+  </div>
+</section>
+
+<section>
+  <h2>El lema</h2>
+  <p class="sub">El que usted eligió, con el riesgo que trae y cómo se tapa.</p>
+
+  <div class="lemas">
+
+    <div class="lema eleccion">
+      <span class="chapa">El elegido</span>
+      <p class="frase">Solo llegarás rápido, juntos lejos</p>
+      <p>Hace algo que ningún otro lograba: <b>convierte en virtud que el candidato no sea
+        la cara.</b> Si la campaña no va sobre una persona, esta frase dice que nunca se
+        trató de eso. Y contra alguien que compite con carisma personal, mueve la elección
+        a un terreno distinto sin nombrar a nadie.</p>
+    </div>
+
+  </div>
+
+  <div class="nota dura">
+    <span class="rotulo">El riesgo, y ya le pasó antes</span>
+    <p>El proverbio <b>regala la velocidad a propósito</b>: dice que ir juntos es ir más
+      lento. En una gestión de un año, eso es justo lo que un alumno no quiere oír — él
+      quiere ver algo <em>este semestre</em>.</p>
+    <p>Es el mismo defecto que mató el lema anterior de Grupo Mazi. <b>«No lo hacemos en
+      corto, lo hacemos a la larga»</b> se retiró porque decía «nos tardamos» cuando la
+      empresa justamente entrega rápido. La idea era buena y las palabras decían lo
+      contrario. Aquí puede pasar igual.</p>
+  </div>
+
+  <h3>Cómo se tapa sin cambiar el lema</h3>
+  <p>La frase se queda; lo que se le añade abajo es lo que recupera la velocidad. El lema
+    dice <b>cómo</b>; los tres verbos dicen <b>qué</b>, y son verbos en presente — cosas que
+    ya están pasando, no que van a pasar algún día.</p>
+
+  <div class="lemas">
+    <div class="lema">
+      <span class="chapa">La firma completa, como va en todo</span>
+      <p class="frase">Solo llegarás rápido, juntos lejos</p>
+      <p style="font-family:var(--dato); font-size:13px; letter-spacing:.1em; color:var(--tinta); margin-top:8px">
+        <span style="color:var(--azul-txt)">◼ ORGANIZA</span> ·
+        <span style="color:var(--verde-txt)">▲ OPTIMIZA</span> ·
+        <span style="color:var(--rojo-txt)">◆ ACTUALIZA</span></p>
+      <p style="margin-top:10px">Nunca va el lema solo. Los tres verbos son la prueba de que
+        «lejos» no significa «después».</p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <span class="rotulo">Y donde este lema es imbatible</span>
+    <p><b>En la convocatoria para miembros.</b> Ahí la frase deja de ser una promesa y se
+      vuelve literalmente lo que se está pidiendo: acompáñame. Ningún otro lema del mundo
+      encaja mejor con un cartel que dice «buscamos siete personas». Úselo ahí en grande.</p>
+  </div>
+
+  <h3>Una advertencia de uso</h3>
+  <p>Es un proverbio muy conocido, así que <b>cualquiera puede decirlo</b> — y si el otro
+    equipo lo usa primero, queda como copia. Dos protecciones:</p>
+  <ul>
+    <li><b>Sáquelo temprano y no lo suelte.</b> El primero que se apropia de una frase
+      conocida se queda con ella.</li>
+    <li><b>Que nunca aparezca sin los tres verbos debajo.</b> El lema se puede copiar; el
+      lema con los tres verbos y sus colores, ya no.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Dos cosas que hay que revisar antes de imprimir</h2>
+  <ul>
+    <li><b>Qué colores usa el otro equipo.</b> Si coinciden, el sistema no se cae: se cambian
+      los tres tonos y se conservan los verbos y la regla. Lo que vale aquí es la regla, no
+      el color.</li>
+    <li><b>No usar el rojo del escudo.</b> Vestirse de institucional antes de ganar se lee
+      como creerse ya electo. Después de ganar es otra cosa.</li>
+  </ul>
+
+  <div class="nota dura">
+    <span class="rotulo">Y una que no es de color</span>
+    <p><b>No usar el violeta de Grupo Mazi.</b> Mezclar su empresa con la candidatura regala
+      la frase más fácil del debate: que se está haciendo publicidad. Su trabajo previo es su
+      mejor argumento — pero como <em>prueba de que usted entrega</em>, no como marca en un
+      cartel.</p>
+  </div>
+</section>
+
+<footer class="pie">
+  <p>Propuesta de identidad para la candidatura a la presidencia del comité estudiantil.
+    Los contrastes están medidos con la fórmula de luminancia relativa de la WCAG; los
+    porcentajes de gris son la luminancia de cada color, que es lo que ve una fotocopiadora.</p>
+</footer>
+
+</div>
+
+<script>
+/* Sólo cuando esto se sirve como página del sitio (no dentro de un artifact)
+   aparece la barra para volver al expediente. Así el mismo archivo sirve en
+   los dos lados sin tener dos copias que se desincronizan. */
+if(location.pathname.includes('/campana/')){
+  const b = document.createElement('a');
+  b.href = './';
+  b.textContent = '\u2190 Expediente de campaña';
+  b.style.cssText = 'position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));'
+    + 'z-index:99;font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;'
+    + 'text-decoration:none;padding:10px 14px;border-radius:99px;'
+    + 'background:#101821;color:#F6F8FB;box-shadow:0 6px 22px rgba(0,0,0,.28)';
+  document.body.appendChild(b);
+}
+</script>

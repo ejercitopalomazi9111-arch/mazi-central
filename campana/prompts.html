@@ -1,0 +1,303 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prompts de Campaña</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+:root{
+  --azul:#0A3D6E; --azul-txt:#0A3D6E; --azul-suave:#E7EDF4;
+  --verde:#0E8350; --verde-txt:#0E8350; --verde-suave:#E4F3EB;
+  --rojo:#A81440;  --rojo-txt:#A81440;  --rojo-suave:#FAE8EE;
+  --papel:#FAF9F6; --tarjeta:#FFFFFF; --codigo:#F2F1EC;
+  --tinta:#161A1E; --tenue:#59606A; --muy-tenue:#88909A;
+  --linea:#E4E3DE; --linea-fuerte:#CBCAC4;
+  --display:"Newsreader",Georgia,"Times New Roman",serif;
+  --cuerpo:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --dato:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --azul:#2E6FA8; --azul-txt:#5B9BD8; --azul-suave:#111E2B;
+    --verde:#118A55; --verde-txt:#3FBE83; --verde-suave:#0F2419;
+    --rojo:#B82650; --rojo-txt:#E8677F; --rojo-suave:#2A141C;
+    --papel:#12161A; --tarjeta:#1A1F24; --codigo:#141A1F;
+    --tinta:#E9EBEE; --tenue:#A5ACB4; --muy-tenue:#7B838C;
+    --linea:#282E34; --linea-fuerte:#3A424A;
+  }
+}
+:root[data-theme="dark"]{
+  --azul:#2E6FA8; --azul-txt:#5B9BD8; --azul-suave:#111E2B;
+  --verde:#118A55; --verde-txt:#3FBE83; --verde-suave:#0F2419;
+  --rojo:#B82650; --rojo-txt:#E8677F; --rojo-suave:#2A141C;
+  --papel:#12161A; --tarjeta:#1A1F24; --codigo:#141A1F;
+  --tinta:#E9EBEE; --tenue:#A5ACB4; --muy-tenue:#7B838C;
+  --linea:#282E34; --linea-fuerte:#3A424A;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--papel); color:var(--tinta);
+  font-family:var(--cuerpo); font-size:16px; line-height:1.62; -webkit-text-size-adjust:100%}
+.envoltura{max-width:900px; margin:0 auto; padding:0 20px 72px}
+.angosto{max-width:64ch}
+
+.cabeza{padding:52px 0 28px; border-bottom:1px solid var(--linea-fuerte); margin-bottom:38px}
+.marca{font-family:var(--dato); font-size:11px; font-weight:500; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--azul-txt); margin:0 0 16px}
+h1{font-family:var(--display); font-weight:500; font-size:clamp(30px,5.6vw,46px);
+  line-height:1.08; letter-spacing:-.015em; margin:0 0 16px; text-wrap:balance}
+.entrada{font-size:clamp(16.5px,2.3vw,18.5px); color:var(--tenue); margin:0; text-wrap:pretty}
+.entrada b{color:var(--tinta); font-weight:600}
+
+section{margin:0 0 50px}
+h2{font-family:var(--display); font-weight:500; font-size:clamp(23px,3.8vw,31px);
+  line-height:1.2; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+.sub{color:var(--tenue); margin:0 0 24px; font-size:15.5px; max-width:62ch}
+h3{font-family:var(--cuerpo); font-weight:600; font-size:16.5px; margin:26px 0 10px}
+p{margin:0 0 15px; text-wrap:pretty}
+.rotulo{font-family:var(--dato); font-size:10.5px; font-weight:600; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+
+.bloque{border:1px solid var(--linea); border-radius:14px; overflow:hidden;
+  background:var(--tarjeta); margin:0 0 18px}
+.bloque .alto{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+  justify-content:space-between; padding:16px 18px 14px; border-bottom:1px solid var(--linea)}
+.bloque h4{font-family:var(--display); font-size:19px; font-weight:600; margin:0;
+  letter-spacing:-.01em}
+.bloque .para{font-size:13.5px; color:var(--tenue); margin:6px 0 0; width:100%}
+.copiar{font-family:var(--dato); font-size:11px; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; padding:8px 14px; border-radius:8px; cursor:pointer;
+  border:1px solid var(--azul); background:var(--azul); color:#fff; white-space:nowrap;
+  transition:background .15s, color .15s}
+.copiar:hover{background:transparent; color:var(--azul-txt)}
+.copiar:focus-visible{outline:3px solid var(--verde); outline-offset:2px}
+.copiar.listo{background:var(--verde); border-color:var(--verde)}
+pre{margin:0; padding:18px; background:var(--codigo); overflow-x:auto;
+  font-family:var(--dato); font-size:13.2px; line-height:1.65; white-space:pre-wrap;
+  word-break:break-word; color:var(--tinta)}
+
+.nota{border-left:3px solid var(--azul); background:var(--azul-suave);
+  padding:16px 18px; border-radius:0 10px 10px 0; margin:0 0 20px}
+.nota.dura{border-left-color:var(--rojo-txt); background:var(--rojo-suave)}
+.nota .rotulo{display:block; margin-bottom:7px}
+.nota p:last-child{margin-bottom:0}
+
+ul{margin:0 0 16px; padding-left:0; list-style:none}
+ul li{position:relative; padding-left:22px; margin-bottom:8px; font-size:15px}
+ul li::before{content:""; position:absolute; left:4px; top:.62em; width:6px; height:6px;
+  border-radius:50%; background:var(--azul)}
+
+.pie{margin-top:48px; padding-top:20px; border-top:1px solid var(--linea);
+  font-size:13px; color:var(--muy-tenue)}
+</style>
+
+<div class="envoltura">
+
+<header class="cabeza">
+  <p class="marca">Campaña · herramientas</p>
+  <h1>Prompts para el logo y los carteles</h1>
+  <p class="entrada angosto">Listos para copiar y pegar. Todos traen ya la paleta medida, los
+    tres verbos y sus figuras, para que <b>lo que salga ya vaya en la identidad</b> y no haya
+    que corregirlo después.</p>
+</header>
+
+<section>
+  <h2>El logo</h2>
+  <p class="sub">Para probar opciones mientras llega el encargado de diseño.</p>
+
+  <div class="nota dura">
+    <span class="rotulo">Léalo antes de usarlo</span>
+    <p><b>Esto es un provisional, y conviene tratarlo como tal.</b> Un modelo de imagen no
+      repite dos veces la misma figura ni acierta el color exacto — y una marca que cambia
+      cada vez que se genera no es una marca. Sirve perfecto para ver por dónde va la cosa y
+      para enseñarle referencias a quien lo vaya a dibujar de verdad.</p>
+    <p>Cuando llegue el de Diseño, lo que se hace es <b>redibujarlo en vectores</b> tomando
+      la mejor idea de estas pruebas. Eso sí queda fijo.</p>
+  </div>
+
+  <div class="bloque">
+    <div class="alto">
+      <h4>Logo · versión símbolo</h4>
+      <button class="copiar" data-copia="p1">Copiar</button>
+      <p class="para">La apuesta principal: un emblema construido con las tres figuras.</p>
+    </div>
+    <pre id="p1">Emblema vectorial plano para un comité estudiantil de preparatoria. Composición geométrica que integra tres figuras en una sola marca compacta: un cuadrado, un triángulo apuntando hacia arriba y un rombo, entrelazados o encajados de forma equilibrada dentro de una silueta circular o de escudo simplificado.
+
+Colores exactos y planos, sin degradados: azul marino profundo #0A3D6E, verde esmeralda oscuro #0E8350, rojo vino #A81440. Fondo blanco puro.
+
+Estilo: institucional y serio pero accesible, geometría limpia, líneas de grosor uniforme, esquinas ligeramente redondeadas. Referencia de aire: identidad de institución cívica moderna, señalética suiza, escudo universitario reducido a lo esencial.
+
+Requisitos: legible a 16 píxeles, funciona en una sola tinta, sin texto, sin letras, sin degradados, sin sombras, sin efectos 3D, sin brillo, sin marcas de agua, sin mascotas ni personas, sin elementos decorativos sobrantes. Vector plano, contornos nítidos, fondo blanco liso.</pre>
+  </div>
+
+  <div class="bloque">
+    <div class="alto">
+      <h4>Logo · versión monograma</h4>
+      <button class="copiar" data-copia="p2">Copiar</button>
+      <p class="para">Alternativa más sobria, por si el emblema sale recargado.</p>
+    </div>
+    <pre id="p2">Monograma vectorial plano para un comité estudiantil de preparatoria. Un escudo o sello circular muy simplificado, dividido en tres franjas o sectores iguales.
+
+Cada sector lleva una figura geométrica simple: cuadrado, triángulo hacia arriba, rombo. Colores planos exactos: azul marino #0A3D6E, verde esmeralda oscuro #0E8350, rojo vino #A81440, sobre fondo blanco.
+
+Estilo: sello institucional contemporáneo, simetría, proporciones equilibradas, trazo firme y uniforme. Sensación de seriedad y confianza sin rigidez.
+
+Requisitos: sin texto ni letras, sin degradados, sin sombras, sin texturas, sin efectos 3D, sin brillos. Debe seguir siendo reconocible en blanco y negro y a tamaño muy pequeño. Vector plano, fondo blanco liso.</pre>
+  </div>
+
+  <h3>Cómo elegir entre lo que salga</h3>
+  <ul>
+    <li><b>Achíquelo a 16 píxeles.</b> Si a ese tamaño se vuelve una mancha, no sirve por
+      bonito que se vea en grande.</li>
+    <li><b>Pásele un filtro de blanco y negro.</b> Si sin color deja de entenderse, tampoco.</li>
+    <li><b>Descarte lo que traiga letras.</b> Los modelos escriben mal y va a salir con
+      faltas de ortografía inventadas.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Los carteles</h2>
+  <p class="sub">Cuatro, uno por momento de la campaña. Todos llevan la misma firma abajo.</p>
+
+  <div class="bloque">
+    <div class="alto">
+      <h4>Cartel 1 · Convocatoria de miembros</h4>
+      <button class="copiar" data-copia="c1">Copiar</button>
+      <p class="para">El primero que sale. Es donde el lema pega más fuerte.</p>
+    </div>
+    <pre id="c1">Cartel vertical tamaño carta para un comité estudiantil de preparatoria, estilo editorial moderno y limpio.
+
+Fondo azul marino profundo #0A3D6E ocupando la mayor parte. En la parte superior, en tipografía serif de gran tamaño y color blanco, el texto en dos renglones: "Solo llegarás rápido," / "juntos lejos".
+
+Debajo, una línea horizontal de tres elementos pequeños separados por puntos: un cuadrado, un triángulo hacia arriba y un rombo, en blanco, con mucho espacio entre ellos.
+
+En el tercio inferior, sobre una banda blanca o crema #FAF9F6, texto oscuro en tipografía sans serif limpia: "Buscamos seis personas" en grande, y debajo espacio en blanco para tres o cuatro renglones de texto pequeño.
+
+Estilo: mucho aire, jerarquía tipográfica clara, márgenes amplios, composición asimétrica pero equilibrada. Sin fotografías, sin personas, sin degradados, sin sombras, sin elementos decorativos, sin texturas. Diseño gráfico plano y sobrio. Los colores deben ser planos y exactos.</pre>
+  </div>
+
+  <div class="bloque">
+    <div class="alto">
+      <h4>Cartel 2 · Las propuestas</h4>
+      <button class="copiar" data-copia="c2">Copiar</button>
+      <p class="para">Tres columnas, una por verbo. El caballo de batalla de la campaña.</p>
+    </div>
+    <pre id="c2">Cartel vertical tamaño carta, diseño gráfico plano y editorial, para una campaña estudiantil de preparatoria.
+
+Fondo blanco cálido #FAF9F6. La página dividida en tres franjas verticales de igual ancho que ocupan los dos tercios centrales.
+
+Franja izquierda azul marino #0A3D6E con un cuadrado blanco arriba y la palabra "ORGANIZA" en blanco, tipografía sans serif, mayúsculas, espaciada.
+Franja central verde esmeralda oscuro #0E8350 con un triángulo blanco apuntando hacia arriba y la palabra "OPTIMIZA".
+Franja derecha rojo vino #A81440 con un rombo blanco y la palabra "ACTUALIZA".
+
+Debajo de cada franja, espacio vacío para tres renglones de texto pequeño en tinta oscura.
+
+Arriba de las franjas, en tipografía serif oscura y grande, espacio para un titular de dos renglones.
+
+Estilo: rigor tipográfico, colores planos exactos, mucho aire, sin degradados, sin sombras, sin fotografías, sin personas, sin texturas, sin adornos.</pre>
+  </div>
+
+  <div class="bloque">
+    <div class="alto">
+      <h4>Cartel 3 · Anuncio del debate</h4>
+      <button class="copiar" data-copia="c3">Copiar</button>
+      <p class="para">Sobrio y sin fanfarria: quien anuncia un debate con calma se ve seguro.</p>
+    </div>
+    <pre id="c3">Cartel vertical tamaño carta, diseño gráfico institucional sobrio, para el anuncio de un debate estudiantil de preparatoria.
+
+Fondo blanco cálido #FAF9F6 con un marco delgado azul marino #0A3D6E a unos milímetros del borde.
+
+En el centro, alineado a la izquierda con márgenes amplios: espacio para la palabra "DEBATE" en tipografía serif muy grande en azul marino, y debajo espacio para fecha, hora y lugar en tipografía sans serif pequeña.
+
+En la esquina inferior, tres figuras geométricas pequeñas en fila —cuadrado azul marino #0A3D6E, triángulo verde #0E8350, rombo rojo vino #A81440— separadas por puntos.
+
+Estilo: sobriedad, simetría vertical, mucho espacio en blanco, sensación de documento oficial bien diseñado. Sin fotografías, sin personas, sin degradados, sin sombras, sin adornos, sin texturas. Colores planos y exactos.</pre>
+  </div>
+
+  <div class="bloque">
+    <div class="alto">
+      <h4>Cartel 4 · Día de la elección</h4>
+      <button class="copiar" data-copia="c4">Copiar</button>
+      <p class="para">Una sola cosa que decir: ve y vota. Cero adorno.</p>
+    </div>
+    <pre id="c4">Cartel vertical tamaño carta, diseño gráfico plano y muy legible, para el día de una elección estudiantil de preparatoria.
+
+Fondo dividido horizontalmente: dos tercios superiores en rojo vino #A81440, un tercio inferior en blanco cálido #FAF9F6.
+
+En la parte roja, centrado, un rombo blanco grande y debajo espacio para una palabra corta en tipografía serif blanca de gran tamaño.
+
+En la parte blanca, espacio para dos renglones de texto oscuro en sans serif: fecha y lugar, y una línea con tres figuras pequeñas —cuadrado, triángulo, rombo— en sus colores.
+
+Estilo: máxima legibilidad a distancia, contraste fuerte, composición centrada y estable, mucho aire. Sin fotografías, sin personas, sin degradados, sin sombras, sin texturas, sin elementos decorativos. Colores planos exactos.</pre>
+  </div>
+
+  <div class="nota">
+    <span class="rotulo">La firma que llevan todos</span>
+    <p>Cualquier pieza, salga de donde salga, cierra con lo mismo abajo:
+      <b>◼ ORGANIZA · ▲ OPTIMIZA · ◆ ACTUALIZA</b>. Es lo que hace que veinte carteles
+      distintos se vean de la misma campaña — y lo que el otro equipo no puede copiar sin
+      que se note.</p>
+  </div>
+
+  <div class="nota dura">
+    <span class="rotulo">Dos cosas que los modelos hacen mal</span>
+    <p><b>La ortografía.</b> Casi siempre inventan letras o acentos. Si el cartel lleva texto
+      de verdad, mejor genere la composición sin texto y póngaselo encima usted, aunque sea
+      con la herramienta más sencilla.</p>
+    <p><b>Los colores exactos.</b> Aunque venga el código en el prompt, salen aproximados.
+      Para lo que se vaya a imprimir en serio, hay que corregirlos a mano.</p>
+  </div>
+</section>
+
+<footer class="pie">
+  <p>Prompts para la campaña al comité estudiantil. Paleta y figuras según el documento de
+    identidad.</p>
+</footer>
+
+</div>
+
+<script>
+/* Copiar al portapapeles, con respaldo por si el navegador no deja. */
+document.querySelectorAll('.copiar').forEach(function(b){
+  b.addEventListener('click', function(){
+    var pre = document.getElementById(b.dataset.copia);
+    if(!pre) return;
+    var texto = pre.textContent;
+    var listo = function(){
+      var antes = b.textContent;
+      b.textContent = 'Copiado';
+      b.classList.add('listo');
+      setTimeout(function(){ b.textContent = antes; b.classList.remove('listo'); }, 1600);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(texto).then(listo, function(){ viejo(texto, listo); });
+    } else { viejo(texto, listo); }
+  });
+});
+/* El camino de antes, para navegadores que no tienen la API moderna. */
+function viejo(texto, luego){
+  var t = document.createElement('textarea');
+  t.value = texto;
+  t.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.appendChild(t);
+  t.select();
+  try{ document.execCommand('copy'); luego(); }catch(e){}
+  document.body.removeChild(t);
+}
+</script>
+
+<script>
+/* Sólo cuando esto se sirve como página del sitio (no dentro de un artifact)
+   aparece la barra para volver al expediente. Así el mismo archivo sirve en
+   los dos lados sin tener dos copias que se desincronizan. */
+if(location.pathname.includes('/campana/')){
+  const b = document.createElement('a');
+  b.href = './';
+  b.textContent = '\u2190 Expediente de campaña';
+  b.style.cssText = 'position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));'
+    + 'z-index:99;font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;'
+    + 'text-decoration:none;padding:10px 14px;border-radius:99px;'
+    + 'background:#101821;color:#F6F8FB;box-shadow:0 6px 22px rgba(0,0,0,.28)';
+  document.body.appendChild(b);
+}
+</script>

@@ -1,0 +1,1 @@
+/home/user/mazi-central/bodega/.clones/kkkkhazix-khazix-skills/neat-freak/evals/fixtures/eval-2-memory-conflict/workspace/notesapp/CLAUDE.md
