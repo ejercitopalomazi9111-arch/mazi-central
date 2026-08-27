@@ -26,7 +26,10 @@ function hacerCtx(){
       async get(k){ return datos.get(k); },
       async put(o){ for(const k in o) datos.set(k, o[k]); },
       async deleteAll(){ datos.clear(); },
-      async setAlarm(){},
+      /* La alarma se guarda de verdad: sin esto no se puede probar que una
+         sala viva no se borre sola, que es lo que se comió la sala de Carlos. */
+      async setAlarm(t){ datos.set('__alarma', t); },
+      async getAlarm(){ return datos.get('__alarma') ?? null; },
     },
     blockConcurrencyWhile: (f) => f(),
   };
@@ -812,6 +815,53 @@ globalThis.WebSocketPair = function(){
   });
   return { 0: hacer(), 1: hacer() };
 };
+
+console.log('\n· Una sala viva no se borra sola');
+await olvido();
+async function olvido(){
+  /* Pasó de verdad: Carlos estrenó GRUPAZ, se fue un rato y al volver la sala
+     estaba VACÍA — sin hilo, sin gente, sin dueño. El olvido era de una hora,
+     sólo lo empujaba hablar, y borraba hasta las llaves. */
+  const s = nueva();
+  await pedir(s, 'POST', 'entrar', { id:'a', nombre:'Ana', tipo:'humano' });
+  await pedir(s, 'POST', 'decir', { de:'a', texto:'hola' });
+
+  const puesta = await s.ctx.storage.getAlarm();
+  ok('hablar deja la sala viva por semanas, no por una hora',
+     puesta - Date.now() > 20 * 24 * 60 * 60 * 1000);
+
+  /* ESCUCHAR también la mantiene viva: es el caso que la mató. */
+  s._alarmaPuesta = 0;               /* como si hubiera pasado el rearme */
+  await s.ctx.storage.setAlarm(0);
+  await pedir(s, 'GET', 'hilo');
+  ok('leer el hilo también la mantiene viva',
+     (await s.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
+
+  s._alarmaPuesta = 0;
+  await s.ctx.storage.setAlarm(0);
+  await pedir(s, 'GET', 'esperar?de=a&desde=');
+  ok('y esperar callado también',
+     (await s.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
+
+  /* Y lo más caro: una sala FUNDADA no puede perder su cerradura. */
+  const s2 = nueva();
+  await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
+  const [, f] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
+  await pedir(s2, 'POST', 'decir', { de:'d', texto:'algo' }, f.llave);
+  await s2.alarm();
+  ok('al olvidar, la sala fundada CONSERVA su dueño y sus llaves',
+     s2.dueno === 'carlos' && Object.keys(s2.llaves).length === 1);
+  ok('pero sí olvida la conversación', s2.hilo.length === 0);
+  ok('y se vuelve a dar cuerda sola',
+     (await s2.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
+
+  /* Una sala que nadie fundó sí se borra entera: es basura. */
+  const s3 = nueva();
+  await pedir(s3, 'POST', 'entrar', { id:'x', nombre:'X', tipo:'humano' });
+  await s3.alarm();
+  ok('una sala que nadie fundó sí se borra completa',
+     (await s3.ctx.storage.get('hilo')) === undefined);
+}
 
 console.log('\n· El socket dice quién está, y nadie se apaga solo');
 await presenciaPorSocket();

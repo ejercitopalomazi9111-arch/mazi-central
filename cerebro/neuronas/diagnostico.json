@@ -238,6 +238,58 @@
         "conectado-no-es-vivo",
         "pruebas-que-no-prueban-nada"
       ]
+    },
+    {
+      "id": "identidad-nueva-en-cada-entrada",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "La mesa te convertía en otra persona cada vez que entrabas",
+      "sintoma": "La lista de gente de La Sala se llena de copias de la misma persona —«Carlos», «Carlos», «Carlos»— casi todas apagadas. Recargar la página o abrir otra pestaña crea una más.",
+      "causa": "El id se armaba con `Math.random()` en cada entrada: `web-carlos-a3f1`, `web-carlos-o94t`… Nada lo guardaba, así que cada visita era un participante nuevo para el servidor.",
+      "porque": "Con una sola sesión de prueba no se nota: el duplicado aparece hasta la SEGUNDA entrada, y las pruebas entraban una vez. Es un defecto que sólo sale usándolo dos días seguidos.",
+      "arreglo": "El id se guarda en localStorage con la llave `sala-yo:<SALA>:<nombre>` y se reutiliza. Por sala Y por nombre a propósito: entrar como «Carlos» a la misma sala siempre debe ser el mismo Carlos, pero con otro nombre es otra persona — así se puede prestar el teléfono sin robarle la identidad a nadie.",
+      "comoCazarlo": "Entrar dos veces seguidas y contar la gente. Si sale dos veces el mismo nombre, la identidad no se está recordando.",
+      "consejo": "Un identificador que se genera al azar sin guardarse no identifica: numera visitas. Si algo tiene que ser «el mismo» entre sesiones, se persiste la primera vez y se lee después.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "salgo dos veces",
+        "hay otro yo",
+        "aparezco repetido",
+        "copias de la misma persona"
+      ],
+      "vecinas": [
+        "presencia-que-se-apaga-sola",
+        "pieza-sala"
+      ]
+    },
+    {
+      "id": "la-sala-se-borraba-sola",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "La Sala se autodestruía a la hora, con llaves y todo",
+      "sintoma": "Vuelves a una sala que estabas usando y está COMPLETAMENTE vacía: `{\"hilo\":[],\"gente\":{},\"dueno\":null}`. Ni la conversación, ni quién estaba, ni el dueño. Y el link sigue funcionando, así que parece que nunca pasó nada ahí.",
+      "causa": "Una alarma del Durable Object con `OLVIDO = 1 hora` que llamaba `storage.deleteAll()`. Se rearmaba SÓLO desde `guardar()`, o sea sólo al hablar: una sala donde todos escuchan —agentes colgados de /esperar, personas con la mesa abierta— no empujaba el reloj y se moría por callada.",
+      "porque": "El número contradecía al propio proyecto y nadie hizo la cuenta: el código de sala es de seis letras justamente porque «esta sala vive semanas, no una tarde», y el olvido la mataba el mismo día. Además borraba las LLAVES, que es lo único irrecuperable: sin ellas el dueño queda fuera de su propia sala para siempre.",
+      "arreglo": "Treinta días en vez de una hora; `tocar()` rearma también desde las rutas de sólo leer (hilo y esperar), con un tope de un rearme por hora para no escribir de más; y la alarma de una sala FUNDADA conserva dueño y llaves — olvida lo dicho, no la cerradura.",
+      "comoCazarlo": "El `ctx.storage` de mentiras de las pruebas guardaba la alarma en el vacío (`async setAlarm(){}`), así que el olvido no se probaba. Con que la recuerde, siete pruebas cubren el caso; cinco fallan si se revierte.",
+      "consejo": "Todo lo que borra solo necesita dos cosas escritas juntas: cuánto espera y QUÉ perdona. Y el reloj lo tiene que empujar el uso, no nada más la escritura: escuchar es usar.",
+      "toca": [
+        "sala/servidor/sala.js"
+      ],
+      "senales": [
+        "se borró la sala",
+        "se vació",
+        "perdí la conversación",
+        "ya no está el hilo",
+        "se me perdió la llave"
+      ],
+      "vecinas": [
+        "pieza-sala",
+        "presencia-que-se-apaga-sola",
+        "pruebas-que-no-prueban-nada"
+      ]
     }
   ]
 }

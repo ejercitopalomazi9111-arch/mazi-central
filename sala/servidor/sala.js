@@ -43,8 +43,31 @@
    quien, y eso no lo puede inventar el que se conecta.
    ═════════════════════════════════════════════════════════════════════════ */
 
-/* Media hora sin que nadie hable y la sala se olvida sola. */
-const OLVIDO = 60 * 60 * 1000;
+/* ── CUÁNTO VIVE UNA SALA ──────────────────────────────────────────────────
+   ⚠ Esto valía UNA HORA y se comía las salas vivas. Pasó de verdad: Carlos
+   estrenó GRUPAZ, escribimos, se fue un rato — y al volver la sala estaba
+   completamente vacía. Sin hilo, sin gente, sin dueño.
+
+   Tres cosas estaban mal a la vez:
+
+   1 · Una hora contradice al propio proyecto. El código de sala es de SEIS
+       letras y su comentario dice, textual, «esta sala vive semanas, no una
+       tarde». Nadie hizo la cuenta de que el olvido la mataba el mismo día.
+   2 · El reloj sólo lo empujaba `guardar()`, o sea HABLAR. Una sala donde
+       todos están escuchando —agentes colgados de /esperar, personas con la
+       mesa abierta— se moría por callada, que es justo cuando más viva está.
+   3 · Y borraba TODO, incluidas las llaves. Perder la llave de una sala
+       fundada deja a su dueño y a sus invitados afuera para siempre, sin
+       manera de volver a entrar ni de recuperarla. Eso no es olvidar una
+       conversación: es tirar la cerradura.
+
+   Ahora son treinta días, cualquier toque los renueva, y una sala fundada
+   NUNCA pierde su cerradura: se le olvida lo dicho, no quién es su dueño. */
+const OLVIDO = 30 * 24 * 60 * 60 * 1000;
+
+/* Poner la alarma es una escritura, así que no se rehace en cada petición:
+   una vez por hora basta cuando lo que se está corriendo son treinta días. */
+const REARME = 60 * 60 * 1000;
 
 /* Cuántos eventos se guardan. El hilo largo no es la memoria: para eso está
    el acta, que es corta y a propósito. */
@@ -258,14 +281,34 @@ export class Sala {
   async guardar(){
     await this.ctx.storage.put({
       hilo: this.hilo, gente: this.gente, vueltas: this.vueltas,
-      conectados: this.conectados(),
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
     });
-    await this.ctx.storage.setAlarm(ahora() + OLVIDO);
+    await this.tocar(true);
   }
 
-  async alarm(){ await this.ctx.storage.deleteAll(); }
+  /* Estar aquí cuenta como estar viva. La llaman también las rutas de sólo
+     leer —el hilo y la espera—, porque una sala donde todos escuchan sigue
+     siendo una sala en uso. */
+  async tocar(forzado){
+    const t = ahora();
+    if(!forzado && t - (this._alarmaPuesta || 0) < REARME) return;
+    this._alarmaPuesta = t;
+    await this.ctx.storage.setAlarm(t + OLVIDO);
+  }
+
+  async alarm(){
+    /* Una sala FUNDADA no se borra. Puede olvidar lo que se dijo —para eso es
+       el acta— pero jamás quién es su dueño ni las llaves que repartió: eso
+       dejaría a todos afuera de su propia sala, sin aviso y sin remedio. */
+    if(this.dueno){
+      this.hilo = []; this.gente = {}; this.propuestas = []; this.vueltas = 0;
+      await this.ctx.storage.put({ hilo:[], gente:{}, propuestas:[], vueltas:0 });
+      await this.tocar(true);
+      return;
+    }
+    await this.ctx.storage.deleteAll();
+  }
 
   /* ── quién es quién ─────────────────────────────────────────────────────
      La llave NO la elige el que se conecta: viene de las variables del
@@ -629,6 +672,7 @@ export class Sala {
     }
 
     if(pedido.method === 'GET' && ruta === 'hilo'){
+      await this.tocar();
       return Response.json({
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
         conectados: this.conectados(),
@@ -816,6 +860,7 @@ export class Sala {
          puede cortarse a media conexión, así que apuntarlo al salir dejaría
          huecos justo cuando más se está escuchando. */
       if(mio) mio.visto = ahora();
+      await this.tocar();
 
       const i = desde ? this.hilo.findIndex(e => e.id === desde) : -1;
       const nuevos = (i >= 0 ? this.hilo.slice(i + 1) : this.hilo).filter(sirve);
