@@ -84,10 +84,49 @@ function hiloEnTexto(sala, d){
 }
 
 /* ── lo que él escribió, a la sala ──────────────────────────────────────── */
-async function mandarPendientes(sala, yo, carpeta){
+/* ⚠ SE LEE DE `origin/main`, NO DEL ÁRBOL DE TRABAJO. Lo reportó el Claude del
+   compa y tenía toda la razón: la primera versión leía el archivo del disco,
+   así que dependía de en qué rama estuviera parada MI copia. Él escribió dos
+   veces en `claude/juego-oregon-3kmicc` después de que esa rama ya se había
+   mezclado, sus commits quedaron colgando encima de historia ya integrada, y
+   yo nunca los vi. Existían en el remoto y no existían en mi copia.
+
+   Leer de `origin/main` lo arregla de raíz: da igual dónde esté parado yo, y
+   da igual por qué rama llegue lo suyo mientras termine en main. Si el fetch
+   falla —sin red, por ejemplo— se cae al archivo del disco en vez de quedarse
+   mudo, que es lo peor que puede hacer un puente. */
+async function leerSalida(carpeta, sala, rama){
+  const enRepo = `sala/buzon/${sala.toUpperCase()}/salida.md`;
+  /* ⚠ POR QUÉ SE PUEDE PEDIR OTRA RAMA. La primera versión leía sólo `main`, y
+     eso dejó un hueco que Carlos vio antes que yo: «haz que sus mensajes sí se
+     vean en la sala, al menos yo no los he visto». Sus mensajes existían —el
+     Claude del compa los había escrito y commiteado— pero vivían en la rama de
+     un PR sin mezclar. El puente leía main, main no los tenía, y para todos los
+     demás era como si nunca los hubiera escrito.
+
+     `main` sigue siendo el default, porque es lo que garantiza que un mensaje
+     fue revisado. Pero un mensaje atorado esperando un merge no es un mensaje
+     entregado, y una sala en la que alguien habla y nadie oye no es una sala. */
+  const ref = rama || 'origin/main';
+  const remota = ref.startsWith('origin/') ? ref.slice(7) : null;
+  try{
+    if(remota) await correr('git', ['-C', RAIZ, 'fetch', 'origin', remota, '--quiet']);
+    const { stdout } = await correr('git', ['-C', RAIZ, 'show', `${ref}:${enRepo}`],
+                                    { maxBuffer: 8 * 1024 * 1024 });
+    return { texto: stdout, de: ref };
+  }catch(e){
+    const ruta = join(carpeta, 'salida.md');
+    if(!existsSync(ruta)) return null;
+    return { texto: await readFile(ruta, 'utf8'), de: 'el disco (no se pudo leer origin/main)' };
+  }
+}
+
+async function mandarPendientes(sala, yo, carpeta, rama){
   const ruta = join(carpeta, 'salida.md');
-  if(!existsSync(ruta)) return 0;
-  const crudo = await readFile(ruta, 'utf8');
+  const leido = await leerSalida(carpeta, sala, rama);
+  if(!leido) return 0;
+  const crudo = leido.texto;
+  if(leido.de !== 'origin/main') console.log(`  ⚠ leyendo de ${leido.de}`);
   const i = crudo.indexOf(CORTE);
   if(i < 0) return 0;
 
@@ -105,8 +144,14 @@ async function mandarPendientes(sala, yo, carpeta){
     mandados++;
     acuses.push(`- ✓ mandado ${hora(Date.now())} · \`${r.evento?.id || '?'}\` · «${b.slice(0, 60).replace(/\n/g,' ')}…»`);
   }
-  const cabeza = crudo.slice(0, i).replace(/\n+$/, '');
-  await writeFile(ruta, `${cabeza}\n${acuses.join('\n')}\n\n${CORTE}\n\n`);
+  /* El acuse se escribe SÓLO cuando se leyó de main. Si vino de la rama de
+     otro, ese archivo no es nuestro para reescribirlo: se reporta y ya. */
+  if(leido.de === 'origin/main'){
+    const cabeza = crudo.slice(0, i).replace(/\n+$/, '');
+    await writeFile(ruta, `${cabeza}\n${acuses.join('\n')}\n\n${CORTE}\n\n`);
+  } else {
+    acuses.forEach(a => console.log('  ' + a));
+  }
   return mandados;
 }
 
@@ -117,6 +162,9 @@ if(!sala || !yo){
   process.exit(2);
 }
 const soloLeer = resto.includes('--solo-leer');
+/* `--rama origin/loquesea` para recoger mensajes que todavía viven en la rama
+   de un PR sin mezclar. Sin esto, hablar y que nadie te oiga. */
+const rama = resto.includes('--rama') ? resto[resto.indexOf('--rama') + 1] : null;
 const carpeta = join(RAIZ, 'sala', 'buzon', sala.toUpperCase());
 await mkdir(carpeta, { recursive: true });
 
@@ -124,7 +172,7 @@ if(!soloLeer){
   /* Entrar es idempotente: si ya estaba, no pasa nada. */
   await pedir('POST', `${sala}/entrar`,
     { id: yo, nombre: process.env.MAZI_NOMBRE || yo, tipo:'agente', motor:'claude' });
-  const n = await mandarPendientes(sala, yo, carpeta);
+  const n = await mandarPendientes(sala, yo, carpeta, rama);
   if(n) console.log(`  ↑ ${n} mensaje(s) a la sala`);
 }
 

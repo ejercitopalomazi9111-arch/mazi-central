@@ -1,0 +1,148 @@
+{
+  "que": "Los OFICIOS de las IAs extra. El relevo de al lado sólo sabe conversar; esto es para que además trabajen: hagan imágenes, miren imágenes y video, oigan audio y escriban largo. Misma idea que `modelos.json` — el primero de la fila que pueda, trabaja — pero una fila por oficio, porque el que es bueno escribiendo no es el que hace imágenes.",
+
+  "ojo": "Comprobado contra la documentación oficial de cada proveedor el 27 de agosto de 2026, el mismo día que se escribió (CLAUDE.md §3.12). Groq: catálogo y página de visión de console.groq.com. Cloudflare: catálogo de Workers AI. Gemini: página de generación de imágenes de ai.google.dev. Antes de confiar otra vez: `node herramientas/oficios.mjs probar`.",
+
+  "por-que-groq-primero": "Lo pidió Carlos: «usa groq como un apoyo en todo aspecto ya que es el más barato en tokens». Y es cierto donde se puede medir: gpt-oss-20b va a 0.075 USD por millón de entrada y whisper-large-v3-turbo a 0.04 USD la HORA de audio, que no lo pelea nadie. PERO hay un límite que no se arregla poniéndolo primero: GROQ NO GENERA IMÁGENES. No tiene ni un modelo de salida de imagen en su catálogo. Por eso el oficio `imagen` arranca con Cloudflare y no con Groq — ponerlo ahí sólo habría hecho que la fila fallara una vez antes de cada dibujo.",
+
+  "oficios": {
+    "imagen": {
+      "que": "Una descripción entra, un archivo de imagen sale.",
+      "fila": [
+        {
+          "id": "cf-flux",
+          "nombre": "Cloudflare Workers AI · FLUX.1 schnell",
+          "clase": "cloudflare",
+          "modelo": "@cf/black-forest-labs/flux-1-schnell",
+          "llave": "CLOUDFLARE_API_TOKEN",
+          "cuenta": "CLOUDFLARE_ACCOUNT_ID",
+          "porque": "Va primero porque ya estamos adentro: los cinco workers del proyecto viven en esta misma cuenta, así que no es un proveedor nuevo, es una llave más de uno que ya usamos. Y su capa gratuita se mide en neuronas al día, no en tarjeta."
+        },
+        {
+          "id": "gemini-imagen",
+          "nombre": "Gemini · imagen",
+          "clase": "gemini-imagen",
+          "modelo": "gemini-3.1-flash-image",
+          "llave": "GEMINI_API_KEY",
+          "porque": "El segundo. Entiende instrucciones largas mejor que un modelo de difusión pelón, así que es el que sirve cuando la imagen tiene que respetar un encargo con detalles, no sólo un estilo."
+        },
+        {
+          "id": "pollinations",
+          "nombre": "Pollinations",
+          "clase": "pollinations",
+          "base": "https://image.pollinations.ai/prompt/",
+          "llave": null,
+          "porque": "El último y SIN LLAVE. No es que sea bueno: es que contesta aunque no haya ni una llave puesta en la máquina, y eso vale para que `probar` no salga en blanco y para no quedarnos parados un domingo."
+        }
+      ]
+    },
+
+    "mirar": {
+      "que": "Una o varias imágenes entran con una pregunta, un texto sale. Sirve para revisar capturas, leer un cartel, o —cuadro por cuadro— revisar un video.",
+      "fila": [
+        {
+          "id": "groq-ojo",
+          "nombre": "Groq · Qwen3.6 27B",
+          "clase": "chat-vision",
+          "base": "https://api.groq.com/openai/v1",
+          "modelo": "qwen/qwen3.6-27b",
+          "llave": "GROQ_API_KEY",
+          "maxImagenes": 5,
+          "porque": "Primero por rápido y por barato, que es lo que pidió Carlos. OJO CON DOS TOPES QUE ESTÁN EN SU DOCUMENTACIÓN Y CUESTAN CAROS SI SE OLVIDAN: máximo 5 imágenes por llamada, y cada imagen cuenta como 2048 tokens de entrada. Un video de 40 cuadros no es una llamada: son ocho."
+        },
+        {
+          "id": "gemini-ojo",
+          "nombre": "Gemini · Flash",
+          "clase": "chat-vision",
+          "base": "https://generativelanguage.googleapis.com/v1beta/openai/",
+          "modelo": "gemini-3-flash-preview",
+          "llave": "GEMINI_API_KEY",
+          "maxImagenes": 16,
+          "porque": "El segundo, y el que de verdad sirve para video: le caben muchos más cuadros de una sentada, así que ve la secuencia y no fotos sueltas."
+        },
+        {
+          "id": "openrouter-ojo",
+          "nombre": "OpenRouter",
+          "clase": "chat-vision",
+          "base": "https://openrouter.ai/api/v1",
+          "modelo": "qwen/qwen3-vl-30b-a3b-instruct",
+          "llave": "OPENROUTER_API_KEY",
+          "maxImagenes": 5,
+          "porque": "El comodín de siempre, para cuando los dos de arriba se toparon."
+        }
+      ]
+    },
+
+    "oir": {
+      "que": "Un archivo de audio entra, la transcripción sale. Es la mitad de revisar un video: lo que se ve lo pone `mirar`, lo que se dice lo pone esto.",
+      "fila": [
+        {
+          "id": "groq-oido",
+          "nombre": "Groq · Whisper large v3 turbo",
+          "clase": "transcribir",
+          "base": "https://api.groq.com/openai/v1",
+          "modelo": "whisper-large-v3-turbo",
+          "llave": "GROQ_API_KEY",
+          "maxMB": 100,
+          "porque": "Aquí no hay discusión: 0.04 USD la hora de audio. Una junta de dos horas cuesta ocho centavos de dólar. No hay segundo lugar porque no hace falta."
+        },
+        {
+          "id": "groq-oido-fino",
+          "nombre": "Groq · Whisper large v3",
+          "clase": "transcribir",
+          "base": "https://api.groq.com/openai/v1",
+          "modelo": "whisper-large-v3",
+          "llave": "GROQ_API_KEY",
+          "maxMB": 100,
+          "porque": "El mismo proveedor con el modelo lento y más fino, para cuando el turbo se equivocó con un nombre propio o con audio malo. Cuesta 0.111 la hora — casi el triple, y aun así es barato."
+        }
+      ]
+    },
+
+    "escribir": {
+      "que": "Textos largos: un borrador de propuesta, un acta, la descripción de cien cartas, un guion. Lo que a mí más me cuesta no es escribirlo: es escribir MUCHO sin gastar la sesión en eso.",
+      "fila": [
+        {
+          "id": "groq-pluma",
+          "nombre": "Groq · GPT-OSS 120B",
+          "clase": "chat",
+          "base": "https://api.groq.com/openai/v1",
+          "modelo": "openai/gpt-oss-120b",
+          "llave": "GROQ_API_KEY",
+          "maxTokens": 32000,
+          "porque": "Primero por lo de Carlos y porque le da el cuerpo: 131k de ventana y hasta 65k de salida, que es lo que se necesita para que un texto largo no salga cortado a la mitad."
+        },
+        {
+          "id": "groq-pluma-barata",
+          "nombre": "Groq · GPT-OSS 20B",
+          "clase": "chat",
+          "base": "https://api.groq.com/openai/v1",
+          "modelo": "openai/gpt-oss-20b",
+          "llave": "GROQ_API_KEY",
+          "maxTokens": 32000,
+          "porque": "El hermano chico, a la mitad de precio (0.075 contra 0.15 de entrada) y al doble de velocidad. Para volumen tonto —cien descripciones de carta— es éste y no el grande."
+        },
+        {
+          "id": "gemini-pluma",
+          "nombre": "Gemini · Flash",
+          "clase": "chat",
+          "base": "https://generativelanguage.googleapis.com/v1beta/openai/",
+          "modelo": "gemini-3-flash-preview",
+          "llave": "GEMINI_API_KEY",
+          "maxTokens": 32000,
+          "porque": "El que sirve cuando hay que tragarse un bulto que a los otros no les cabe antes de escribir."
+        },
+        {
+          "id": "glm-pluma",
+          "nombre": "GLM · Z.ai",
+          "clase": "chat",
+          "base": "https://api.z.ai/api/paas/v4",
+          "modelo": "glm-5.3-flash",
+          "llave": "ZAI_API_KEY",
+          "maxTokens": 16000,
+          "porque": "De pago pero barato, al final de la fila: primero se gasta lo que no cuesta."
+        }
+      ]
+    }
+  }
+}

@@ -221,6 +221,20 @@ dependemos.
    precios y límites se verifican contra la documentación oficial **el día que se escriben**.
    Si la guía y la documentación difieren, gana la documentación y se dice qué cambió.
 
+   **Y lo que yo "recuerdo" es la foto más vieja de todas.** Esta tabla es idea del Claude del
+   compa de Carlos —la tiene en su CLAUDE.md para Next 16— y es mejor que la regla en abstracto:
+   la regla dice *ten cuidado*, la tabla dice *aquí te equivocaste*. Cada renglón costó tiempo:
+
+   | Lo que recuerdo | Lo que es | Lo que costó |
+   |---|---|---|
+   | three.js es **un** archivo | desde r185 son **dos**: `three.module.min.js` **y** `three.core.min.js` | la página se quedó en blanco **sin un solo error en consola** |
+   | los modelos de un proveedor los sé de memoria | los siete del relevo tenían el nombre viejo | las 4 llaves daban **404, nunca 401** — parecían llaves malas y estaban bien |
+   | GLM va en `glm-5.2` | la documentación de Z.ai ya iba en `glm-5.3` | la guía que trajo Carlos **nació desfasada** |
+   | Gemini `2.5-*` estable está disponible | cerrado a cuentas nuevas | media hora buscando un error de permisos que no existía |
+   | `Math.max(...[])` truena | devuelve **-Infinity**, calladito | un `NaN` que dejó la red del Cerebro en negro **para siempre** |
+
+   Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
+
 ---
 
 ## 4. Cómo trabajo con las skills

@@ -32,6 +32,16 @@ sala/buzon/GRUPAZ/
 3. Un bloque = un mensaje. Para mandar varios de un jalón, sepáralos con `---`
    en una línea sola.
 
+> **Va contra `main`.** El puente lee `salida.md` de `origin/main`, no del árbol
+> de trabajo de nadie. Puedes usar la rama que quieras, pero mientras el PR no
+> se mezcle a `main` tu mensaje no existe para el puente.
+>
+> Esto lo reportó el propio Claude del compa después de escribir dos veces en
+> una rama ya mezclada: sus commits quedaron colgando encima de historia
+> integrada, existían en el remoto y no en la copia de acá. La primera versión
+> del puente leía del disco y por eso dependía de en qué rama estuviera parado
+> quien lo corriera. Ya no.
+
 **No hay paso 4.** Nunca tocas `workers.dev`.
 
 ## Una corrección, porque te ahorra trabajo
