@@ -1900,26 +1900,45 @@ $('hilo').addEventListener('click', (e) => {
 /* ── conectarse ─────────────────────────────────────────────────────────── */
 async function entrar(codigo, nombre){
   const base = `${SERVIDOR}/api/sala/${codigo}`;
-  /* ⚠ LA IDENTIDAD SE RECUERDA. Antes se inventaba una nueva cada vez —el
-     sufijo era `Math.random()`—, así que recargar la página, abrir otra
-     pestaña o volver al día siguiente te convertía en OTRA persona dentro de
-     la sala. La lista de gente se iba llenando de copias tuyas, todas
-     apagadas menos la última.
+  /* ══ LA IDENTIDAD SE RECUERDA, Y POR SALA — NO POR NOMBRE ═══════════════
+     Lo reportó Carlos: «cada vez que salgo y entro me pide volver a ingresar
+     con mi nombre y el código, y cada vez que lo hago me pone un nuevo
+     usuario arriba».
 
-     Lo cachó Carlos, que vio tres: «me marca que tú, yo y otro yo no estamos
-     conectados». Dos de esos éramos el mismo él, de dos entradas distintas.
+     Eran DOS defectos encadenados, y el segundo lo hacía el arreglo del
+     primero:
 
-     Se guarda por sala Y por nombre: entrar como «Carlos» a GRUPAZ siempre
-     debe ser el mismo Carlos, pero entrar con otro nombre es otra persona a
-     propósito — así se puede prestar el teléfono sin robarle la identidad a
-     nadie. */
-  const memoria = `sala-yo:${codigo}:${nombre.toLowerCase().trim()}`;
+     1 · Antes el sufijo era `Math.random()`, así que recargar te convertía en
+         otra persona. Eso se arregló guardando el id.
+     2 · Pero se guardó bajo `sala:CÓDIGO:nombre` — con el NOMBRE dentro de la
+         llave. La idea era poder prestar el teléfono. El efecto real fue que
+         entrar con el campo del nombre vacío te daba «Alguien», que es OTRO
+         nombre, que es OTRA llave, que es OTRA persona. Por eso en la barra
+         salían Carlos, Carlos y Alguien: los tres eran él.
+
+     La llave ahora es SÓLO la sala. Si entras con otro nombre no nace nadie
+     nuevo: se te cambia el nombre y sigues siendo el mismo. Prestar el
+     teléfono se resuelve con «Salir», que borra la memoria a propósito — un
+     botón que se aprieta a conciencia, no un campo vacío por descuido. */
+  const memoria = `sala-yo:${codigo}`;
   let id = null;
-  try{ id = localStorage.getItem(memoria); }catch(e){}
+  try{
+    const guardado = JSON.parse(localStorage.getItem(memoria) || 'null');
+    if(guardado && guardado.id) id = guardado.id;
+    /* Compatibilidad con la llave vieja, que sí traía el nombre. Sin esto,
+       el arreglo estrenaría a todo mundo una vez más — que es exactamente lo
+       que se está arreglando. */
+    if(!id){
+      const viejo = localStorage.getItem(
+        `sala-yo:${codigo}:${nombre.toLowerCase().trim()}`);
+      if(viejo) id = viejo;
+    }
+  }catch(e){}
   if(!id){
     id = `web-${nombre.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
-    try{ localStorage.setItem(memoria, id); }catch(e){}
   }
+  try{ localStorage.setItem(memoria, JSON.stringify({ id, nombre })); }catch(e){}
+
   const r = await fetch(`${base}/entrar`, {
     method:'POST', headers: conLlave({ 'content-type':'application/json' }),
     body: JSON.stringify({ id, nombre, tipo:'humano' }),
@@ -2321,13 +2340,42 @@ $('texto').addEventListener('keydown', (e) => {
 });
 $('bEntrar').addEventListener('click', async () => {
   const codigo = $('codigoIn').value.trim().toUpperCase();
-  const nombre = $('nombreIn').value.trim() || 'Alguien';
+  /* ⚠ ANTES AQUÍ DECÍA `|| 'Alguien'`, y ése era el defecto: un campo vacío
+     te metía a la sala con un nombre que no es tuyo — y como la identidad
+     colgaba del nombre, cada vez nacía otra persona. Ahora el campo vacío se
+     rellena con el último nombre que usaste en ESA sala, y si nunca has
+     entrado, se pide. Entrar sin nombre no es un caso que valga la pena
+     resolver solo: la sala es de dos personas que se conocen. */
+  const nombre = $('nombreIn').value.trim() || nombreRecordado(codigo);
   if(codigo.length !== 6){ $('error').textContent = 'El código son 6 letras.'; return; }
+  if(!nombre){ $('error').textContent = 'Escribe tu nombre para entrar.';
+               $('nombreIn').focus(); return; }
   $('error').textContent = 'Entrando…';
   try{ await entrar(codigo, nombre); $('error').textContent = ''; }
   catch(e){ $('error').textContent = e.message; }
 });
-function salirme(){ localStorage.removeItem('sala'); location.reload(); }
+function salirme(){
+  /* ⚠ Salir NO borra la identidad, y el intento de que sí la borrara revivió
+     el mismo defecto por otra puerta: al salir, la sala seguía en «Tus
+     salas», tocarla volvía a entrar con el nombre recordado y —sin identidad
+     guardada— nacía otra persona con el mismo nombre. Exactamente lo que
+     Carlos reportó.
+
+     Salir es «cierra la sala en esta pantalla», nada más. Ser otra persona se
+     resuelve escribiendo otro nombre —que ahora RENOMBRA en vez de duplicar—
+     y prestar el teléfono de verdad se resuelve quitando la sala de la lista
+     con su ✕, que sí borra todo lo de esa sala.
+
+     La banderita es de la pestaña (`sessionStorage`) y no del teléfono: sin
+     ella, entrar solo te volvería a meter en el mismo instante y no habría
+     manera de salirse. Al cerrar la app se olvida, que es lo que se quiere —
+     mañana vuelve a entrar solo. */
+  try{
+    sessionStorage.setItem('sala-me-sali', '1');
+    localStorage.removeItem('sala');
+  }catch(e){}
+  location.reload();
+}
 async function copiarInvitacion(){
   if(!sala) return;
   const liga = `${SERVIDOR}/entrar/${sala}`;
@@ -2476,6 +2524,10 @@ function recordarSala(codigo, nombre){
 }
 function olvidarSala(codigo){
   escribirSalas(misSalas().filter(x => x.codigo !== codigo));
+  /* Quitar la sala se lleva TAMBIÉN quién eras en ella. Es el único borrado
+     de identidad que hay, y está donde debe estar: en un botón que dice
+     «quitar», no en el que dice «salir». */
+  try{ localStorage.removeItem(`sala-yo:${codigo}`); }catch(e){}
   pintarSalas();
 }
 
@@ -2543,22 +2595,63 @@ $('bOtraSala').addEventListener('click', () => {
   $('codigoIn').focus();
 });
 
-/* ── volver a entrar solo ── */
-(function(){
-  pintarSalas();
-  const g = params.get('sala');
+/* El nombre con el que entraste la última vez a ESA sala. */
+function nombreRecordado(codigo){
   try{
-    const v = JSON.parse(localStorage.getItem('sala') || 'null');
-    if(v){ $('codigoIn').value = v.codigo; $('nombreIn').value = v.nombre; }
+    const g = JSON.parse(localStorage.getItem(`sala-yo:${codigo}`) || 'null');
+    if(g && g.nombre) return g.nombre;
   }catch(e){}
-  /* Un link con ?sala= manda: se abre el formulario con el código puesto,
-     aunque haya salas guardadas. */
-  if(g){
-    $('codigoIn').value = g.toUpperCase();
-    $('formEntrar').hidden = false;
-    $('nombreIn').focus();
-    return;
+  const s = misSalas().find(x => x.codigo === codigo);
+  return (s && s.nombre) || '';
+}
+
+/* ══ VOLVER A ENTRAR SOLO ══════════════════════════════════════════════════
+   Carlos: «cada vez que salgo y entro a la app me pide volver a ingresar con
+   mi nombre y el código».
+
+   Tenía razón en que eso no debería pasar, y el diagnóstico es que la puerta
+   sólo RELLENABA los campos — nunca entraba. En un navegador eso se nota
+   poco; en una app de la pantalla de inicio, que se cierra y se abre veinte
+   veces al día, es una puerta que hay que empujar veinte veces.
+
+   Ahora: si ya entraste antes a esta sala en este teléfono, se entra solo. Si
+   falla, no se cierra la puerta ni se traga el error — se queda con el
+   formulario puesto y el motivo escrito. */
+(async function(){
+  pintarSalas();
+  const g = (params.get('sala') || '').toUpperCase();
+  let ultima = null;
+  try{ ultima = JSON.parse(localStorage.getItem('sala') || 'null'); }catch(e){}
+
+  /* Tres fuentes, en orden de qué tan explícitas son: el link, la última sala
+     usada, y —la que salva el caso raro— la lista de tus salas. Sin la
+     tercera, perder el apunte de «última sala» dejaba la identidad guardada
+     pero sin saber a qué puerta llevarla, y la app volvía a pedir todo aunque
+     tuviera con qué no pedirlo. Salió probando, no leyendo. */
+  const guardadas = misSalas();
+  const codigo = g || (ultima && ultima.codigo) ||
+                 (guardadas[0] && guardadas[0].codigo) || '';
+  const nombre = nombreRecordado(codigo) || (ultima && ultima.nombre) || '';
+  if(codigo) $('codigoIn').value = codigo;
+  if(nombre) $('nombreIn').value = nombre;
+
+  /* Se entra solo únicamente si YA hay identidad guardada para esa sala: eso
+     prueba que este teléfono ya estuvo adentro. Con un ?sala= de alguien más
+     no se entra solo — ahí sí hay que decir quién eres. */
+  let conocida = false;
+  try{ conocida = !!JSON.parse(localStorage.getItem(`sala-yo:${codigo}`) || 'null'); }catch(e){}
+
+  let meSali = false;
+  try{ meSali = sessionStorage.getItem('sala-me-sali') === '1'; }catch(e){}
+  if(meSali){ try{ sessionStorage.removeItem('sala-me-sali'); }catch(e){} }
+
+  if(codigo.length === 6 && nombre && conocida && !meSali){
+    $('error').textContent = 'Entrando…';
+    try{ await entrar(codigo, nombre); $('error').textContent = ''; return; }
+    catch(e){ $('error').textContent = `No se pudo entrar solo: ${e.message}`; }
   }
+
+  if(g){ $('formEntrar').hidden = false; $('nombreIn').focus(); return; }
   /* Con salas guardadas NO se enfoca nada: en el teléfono, enfocar abre el
      teclado y tapa justo la lista que se acaba de pintar. */
   if(misSalas().length === 0) $('codigoIn').focus();
