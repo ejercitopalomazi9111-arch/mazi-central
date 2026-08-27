@@ -35,6 +35,9 @@
   --vacio:#100A18;
   --superficie:#1B1226;
   --alta:#241733;
+  /* El chat va LEVANTADO sobre los cajones. Sin este tono, las tres
+     columnas quedaban del mismo color y se leían como una sola pantalla. */
+  --lienzo:#150E1F;
   --borde:#33224A;
   --borde-vivo:#4A3167;
   --hueso:#E9E4E4;
@@ -62,16 +65,45 @@ body{
 /* ── barra ── */
 .barra{
   flex:0 0 auto; display:flex; align-items:center; gap:10px;
-  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  padding:calc(9px + env(safe-area-inset-top)) 12px 9px;
   background:var(--superficie); border-bottom:1px solid var(--borde);
-  /* ⚠ Esto NO es por los dos botones nuevos: ya estaba roto antes y no se
-     había visto porque nadie había capturado la mesa a 390px. Sin envolver,
-     «Salir» —el botón para irse— quedaba CORTADO contra el borde derecho del
-     teléfono. Un botón que no se alcanza a tocar es un botón que no existe. */
-  flex-wrap:wrap; row-gap:8px;
+  /* Ya no envuelve porque ya no hay qué envolver: los seis botones se fueron
+     a los cajones. Antes, sin `flex-wrap`, «Salir» quedaba CORTADO contra el
+     borde derecho del teléfono — y un botón que no se alcanza a tocar es un
+     botón que no existe. Ahora el problema no se tapa, se quitó. */
+  z-index:64; position:relative;
 }
-.marca{font-weight:700; letter-spacing:-.02em; font-size:16px; white-space:nowrap}
-.marca b{color:var(--violeta)}
+/* El botón de icono: cuadrado, del tamaño que pide el dedo. */
+.icono{
+  flex:0 0 auto; width:38px; height:38px; display:grid; place-items:center;
+  background:transparent; border:1px solid transparent; border-radius:10px;
+  color:var(--tenue); font-size:17px; cursor:pointer; padding:0; position:relative;
+}
+.icono:hover{background:var(--alta); color:var(--hueso)}
+.icono:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+.icono .cuantos{
+  position:absolute; top:2px; right:2px; min-width:16px; height:16px; padding:0 4px;
+  border-radius:99px; background:var(--violeta); color:#fff;
+  font-family:var(--dato); font-size:9.5px; font-weight:700; line-height:16px;
+}
+.titulo{
+  display:flex; flex-direction:column; align-items:flex-start; gap:1px;
+  background:none; border:0; padding:2px 4px; cursor:pointer; min-width:0;
+  color:var(--hueso); font-family:inherit; text-align:left; border-radius:8px;
+}
+.titulo:hover{background:var(--alta)}
+.tit-fila{display:flex; align-items:baseline; gap:5px; min-width:0}
+.tit-fila .gato{color:var(--muy-tenue); font-size:17px; font-weight:600}
+.tit-fila b{
+  font-weight:700; letter-spacing:-.02em; font-size:16.5px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.tit-sub{
+  display:flex; align-items:center; gap:6px;
+  font-size:11.5px; color:var(--tenue); line-height:1.2;
+}
+.tit-sub .punto{width:7px; height:7px; background:var(--muy-tenue)}
+.tit-sub .punto.vivo{background:var(--verde)}
 .codigo{
   font-family:var(--dato); font-size:12px; font-weight:600; letter-spacing:.18em;
   color:var(--tenue); background:var(--alta); border:1px solid var(--borde);
@@ -94,29 +126,140 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .btn:hover{color:var(--hueso); border-color:var(--violeta)}
 .btn:focus-visible,.codigo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
 
+/* ══ LAS TRES COLUMNAS ═════════════════════════════════════════════════════
+   navegación · conversación · gente. En pantalla ancha se ven las tres; en
+   teléfono las de los lados son cajones que entran de lado y el chat se
+   queda con TODA la pantalla, que era el punto. */
+.app{flex:1; display:flex; min-height:0; position:relative}
+.centro{
+  flex:1; min-width:0; min-height:0; display:flex; flex-direction:column;
+  background:var(--lienzo);
+}
+.lado{
+  flex:0 0 auto; width:236px; background:var(--vacio);
+  display:flex; flex-direction:column; min-height:0;
+}
+.lado.izq{border-right:1px solid var(--borde)}
+.lado.der{width:250px; border-left:1px solid var(--borde)}
+.lado-cuerpo{flex:1; min-height:0; overflow-y:auto; padding:12px 10px}
+.lado-tit{
+  font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muy-tenue); padding:12px 6px 7px;
+}
+.lado-tit:first-child{padding-top:2px}
+.fila-lado{
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:9px 9px; border-radius:9px; border:0; background:transparent;
+  color:var(--tenue); font-family:inherit; font-size:13.5px; text-align:left;
+  cursor:pointer; text-decoration:none; margin-bottom:1px;
+}
+.fila-lado:hover{background:var(--alta); color:var(--hueso)}
+.fila-lado:focus-visible{outline:2px solid var(--verde); outline-offset:-2px}
+.fila-lado .ico{font-size:15px; width:20px; text-align:center; flex:0 0 auto}
+
+/* El panel de quién eres, clavado abajo — como el de Discord: una tarjeta
+   redondeada, el avatar con su punto verde encima, el nombre y «En línea». */
+.yo-panel{
+  flex:0 0 auto; display:flex; align-items:center; gap:9px;
+  margin:8px; padding:8px 10px;
+  margin-bottom:calc(8px + env(safe-area-inset-bottom));
+  background:var(--superficie); border-radius:14px;
+}
+.con-punto{position:relative; display:inline-flex; flex:0 0 auto}
+.con-punto::after{
+  content:""; position:absolute; right:-1px; bottom:-1px;
+  width:11px; height:11px; border-radius:50%;
+  background:var(--verde); border:2.5px solid var(--superficie);
+}
+.yo-panel .quien-soy{flex:1; min-width:0}
+.yo-panel .nombre{
+  display:block; font-size:13px; font-weight:600; color:var(--hueso);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.yo-panel .estado{
+  display:block; font-family:var(--dato); font-size:9.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--verde);
+}
+.yo-panel .salirme{
+  flex:0 0 auto; width:34px; height:34px; border-radius:9px; border:0;
+  background:transparent; color:var(--muy-tenue); cursor:pointer; font-size:15px;
+}
+.yo-panel .salirme:hover{background:var(--alta); color:var(--rojo)}
+
+.velo{position:fixed; inset:0; z-index:58; background:rgba(8,5,13,.62)}
+
+/* En pantalla ancha los cajones son columnas de verdad y los botones que los
+   abren sobran. */
+@media (min-width:900px){
+  .soloAngosto{display:none}
+  .velo{display:none !important}
+}
+/* En teléfono son cajones. `transform` y no `left`: mueve la capa sin
+   recalcular el layout, que es lo que hace que se sienta app y no página. */
+@media (max-width:899px){
+  /* ⚠ `absolute` DENTRO de .app, no `fixed`. Con `fixed` el cajón arrancaba en
+     lo más alto de la pantalla y la barra —que va encima— le tapaba el primer
+     renglón: «Copiar la invitación» quedaba cortado a la mitad y parecía que
+     el cajón venía scrolleado. Anclado a .app empieza justo debajo de la
+     barra y no hay que adivinar cuánto mide. */
+  .lado{
+    position:absolute; top:0; bottom:0; z-index:60; width:min(285px, 84vw);
+    transition:transform .22s cubic-bezier(.32,.72,0,1);
+    box-shadow:0 0 40px rgba(0,0,0,.5);
+  }
+  /* El velo tapa el chat pero NO la barra: el ☰ se tiene que poder tocar otra
+     vez para cerrar, que es lo que uno intenta primero. */
+  .velo{top:auto; height:auto; position:absolute; inset:0}
+  .lado.izq{left:0;  transform:translateX(-102%)}
+  .lado.der{right:0; transform:translateX(102%)}
+  .lado.abierto{transform:none}
+  @media (prefers-reduced-motion:reduce){ .lado{transition:none} }
+}
+
 /* ── quién está ── */
-.gente{
-  flex:0 0 auto; display:flex; gap:7px; padding:9px 14px; overflow-x:auto;
-  background:var(--vacio); border-bottom:1px solid var(--borde);
-  scrollbar-width:none;
-}
-.gente::-webkit-scrollbar{display:none}
+/* En COLUMNA, no en tira. La tira horizontal cabía tres y la cuarta ficha se
+   salía por la derecha sin avisar: así fue como el Claude de Luis dejó de
+   existir para quien miraba la sala desde un teléfono. */
+.gente{display:flex; flex-direction:column; gap:2px}
 .quien{
-  flex:0 0 auto; display:flex; align-items:center; gap:7px;
-  background:var(--superficie); border:1px solid var(--borde);
-  border-radius:99px; padding:5px 11px 5px 7px; font-size:12.5px; white-space:nowrap;
-  color:var(--hueso); font-family:inherit; cursor:pointer;
+  display:flex; align-items:center; gap:8px; width:100%;
+  background:transparent; border:1px solid transparent;
+  border-radius:9px; padding:7px 8px; font-size:13px;
+  color:var(--hueso); font-family:inherit; cursor:pointer; text-align:left;
+  min-width:0;
 }
-.quien:hover{border-color:var(--violeta)}
+/* ⚠ TODO LO DE ESTA FICHA SE RECORTA, y no es cosmético: sin esto «Claude de
+   Carlos» se partía en TRES renglones y la coletilla de estado se comía otro,
+   así que cuatro personas ocupaban media pantalla del cajón. Se vio
+   capturando, no leyendo. */
+.quien-txt{display:flex; flex-direction:column; min-width:0; flex:1; gap:0}
+.quien .nom-quien{
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  line-height:1.25;
+}
+.quien-sub{
+  font-family:var(--dato); font-size:9px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muy-tenue); line-height:1.3;
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.quien.topado .quien-sub{color:var(--ambar)}
+.quien.trabajando .quien-sub{color:var(--violeta-claro)}
+/* El punto montado en el avatar, como en la lista de miembros de Discord. */
+.quien .con-punto{position:relative; display:inline-flex; flex:0 0 auto}
+.quien .punto{
+  position:absolute; right:-2px; bottom:-2px; width:9px; height:9px;
+  border:2px solid var(--vacio); border-radius:50%; background:var(--verde);
+}
+.quien:hover{background:var(--alta)}
 .quien:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
 .punto{width:8px; height:8px; border-radius:50%; background:var(--verde); flex:0 0 auto}
 .quien.topado .punto{background:var(--ambar)}
 .quien.fuera .punto{background:var(--muy-tenue)}
 .quien.dormido{opacity:.55}
 .quien.dormido .punto{background:var(--muy-tenue)}
-.quien .rol{font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue);
-  text-transform:uppercase; letter-spacing:.09em}
-.quien .hasta{font-family:var(--dato); font-size:10px; color:var(--ambar)}
+.quien .rol{font-family:var(--dato); font-size:9px; color:var(--muy-tenue);
+  text-transform:uppercase; letter-spacing:.09em; margin-left:auto; flex:0 0 auto}
+.quien .hasta{font-family:var(--dato); font-size:9.5px; color:var(--ambar); flex:0 0 auto}
 
 /* ── el hilo, con disposición de app de mensajería ──────────────────────
    Lo que se copió de WhatsApp/iMessage y por qué:
@@ -139,7 +282,15 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .dia::before,.dia::after{content:""; flex:1; height:1px; background:var(--borde)}
 
 .grupo{display:flex; gap:8px; margin-bottom:3px; align-items:flex-end}
-.grupo.mio{flex-direction:row-reverse}
+/* ── DE QUÉ LADO CAE CADA QUIEN ────────────────────────────────────────────
+   Lo pidió Carlos así: «que los de Luis y su Claude salgan a la derecha y los
+   nuestros a la izquierda». Ojo con el matiz, porque no es la convención de
+   WhatsApp: NO es «lo mío a la derecha», es POR BANDO — tú y tu Claude de un
+   lado, la otra casa del otro. En una mesa donde la mitad de los que hablan
+   son agentes, saber de quién es el agente importa más que saber si fuiste
+   tú. Se calcula contra quien MIRA, así que Luis ve a los suyos a la
+   izquierda igual que Carlos ve a los suyos. */
+.grupo.otrolado{flex-direction:row-reverse}
 .grupo.junto{margin-bottom:2px}
 .grupo.fin{margin-bottom:14px}
 
@@ -235,21 +386,51 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 
 .burbuja{
   max-width:min(78%, 560px); min-width:0;
-  background:var(--superficie); border:1px solid var(--borde);
+  border:1px solid var(--borde);
   border-radius:16px; padding:9px 12px 7px;
   position:relative;
 }
-.grupo.mio .burbuja{background:var(--alta); border-color:var(--borde-vivo)}
+/* ── EL COLOR DE CADA QUIEN ────────────────────────────────────────────────
+   `--tono` lo pone el JS con el color EXACTO de ese participante —el mismo de
+   su avatar, cuenta por color y sesión por matiz—, así que la burbuja, el
+   avatar y el nombre dicen los tres lo mismo. Antes todas eran del mismo gris
+   y había que leer el nombre para saber quién hablaba.
+
+   El tono va en el filo y en un baño muy tenue, no en el relleno: una burbuja
+   pintada del color de la cuenta se vuelve ilegible en cuanto la cuenta es
+   amarilla, y el hilo es para leerlo. */
+.burbuja{
+  border-left:2.5px solid var(--tono, var(--borde));
+  background:
+    linear-gradient(var(--baño, transparent), var(--baño, transparent)),
+    var(--superficie);
+}
+.grupo.otrolado .burbuja{
+  border-left:1px solid var(--borde);
+  border-right:2.5px solid var(--tono, var(--borde));
+}
 .grupo:not(.junto) .burbuja{border-top-left-radius:5px}
-.grupo.mio:not(.junto) .burbuja{border-top-left-radius:16px; border-top-right-radius:5px}
+.grupo.otrolado:not(.junto) .burbuja{border-top-left-radius:16px; border-top-right-radius:5px}
+/* Lo que escribiste TÚ en persona lleva un filo más claro. Es la única señal
+   de «esto lo dije yo» que queda, ahora que el lado lo decide el bando. */
+.grupo.mio .burbuja{border-color:var(--borde-vivo)}
+.grupo.mio .burbuja{border-left-color:var(--tono, var(--borde-vivo))}
+.grupo.otrolado.mio .burbuja{border-right-color:var(--tono, var(--borde-vivo))}
+.grupo.otrolado .quien-dijo{justify-content:flex-end}
+.grupo.otrolado .quien-dijo .hora-dijo{order:-1; margin:0 auto 0 0}
+.grupo.otrolado .para-quien{text-align:right}
 
 .quien-dijo{
   display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; margin-bottom:4px;
 }
-.quien-dijo .nom{font-weight:700; font-size:12.5px}
+.quien-dijo .nom{font-weight:700; font-size:13.5px; letter-spacing:-.01em}
+.quien-dijo .hora-dijo{
+  font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue); margin-left:auto;
+}
 .quien-dijo .nom.claude{color:var(--violeta-claro)}
 .quien-dijo .cta{font-family:var(--dato); font-size:9px; letter-spacing:.09em;
-  text-transform:uppercase; color:var(--muy-tenue)}
+  text-transform:uppercase; color:var(--muy-tenue);
+  max-width:11ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 
 .dicho{white-space:pre-wrap; overflow-wrap:anywhere; font-size:14.5px; line-height:1.5}
 .sello-hora{
@@ -498,7 +679,14 @@ select,textarea,input{
   padding:8px 10px;
 }
 select{font-family:var(--dato); font-size:11.5px; min-width:0; flex:1 1 130px}
+/* La píldora de escribir. En Discord de teléfono la caja es un óvalo
+   despegado del borde, no una franja pegada abajo — y esa diferencia es la
+   mitad de lo que hace que se sienta app. */
 textarea{width:100%; resize:none; min-height:52px; line-height:1.5}
+#texto{
+  border-radius:22px; padding:12px 16px; background:var(--alta);
+  border:1px solid var(--borde);
+}
 textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta)}
 .enviar{
   background:var(--violeta); color:#fff; border:none; border-radius:9px;
@@ -616,31 +804,72 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 </head>
 <body>
 
-<div class="barra">
-  <span class="marca">La <b>Sala</b></span>
-  <button class="codigo" id="bCodigo" title="Copiar el link de invitación">------</button>
-  <span class="crece"></span>
-  <!-- ── LA SALIDA A LAS OTRAS DOS PANTALLAS ────────────────────────────
-       Lo pidió Carlos desde adentro de la mesa: «no puedo ver el cerebro ni
-       el entorno 3D, haz que pueda hacerlo desde aquí». El diagnóstico era
-       ése y no otro: las dos páginas funcionaban perfecto, pero desde la mesa
-       no había cómo llegar — y en teléfono, salirte a teclear una URL a mano
-       es lo mismo que no tenerlas.
+<!-- ══ LA BARRA ══════════════════════════════════════════════════════════
+     Antes traía SEIS botones y en un teléfono de 390px se partía en tres
+     renglones: los menús se comían la pantalla que es del chat. Lo dijo
+     Carlos con esas palabras. Ahora la barra sólo tiene lo que se mira —
+     dónde estoy y cuánta gente hay— y todo lo demás vive en los cajones.
 
-       Van como <a> y no como botón con JS a propósito: así se abren en
-       pestaña nueva, se comparten y se vuelve con el botón de atrás. Y en
-       pestaña nueva porque la sala es una conversación en vivo: sacarte de
-       ella para ver una neurona te haría perder el hilo y volver a entrar. -->
-  <a class="btn" href="../cerebro/" target="_blank" rel="noopener"
-     title="Las 95 neuronas: lo que ya nos costó caro, qué es cada pieza y qué se descartó">Cerebro</a>
-  <a class="btn" href="../entorno/" target="_blank" rel="noopener"
-     title="El taller en 3D: ver en qué anda cada agente">Taller</a>
-  <button class="btn" id="bLlaves" title="Cerrar la sala e invitar">Llaves</button>
-  <button class="btn" id="bLeyenda" title="Qué figura es cada modelo y de quién es cada color">Quién es quién</button>
-  <button class="btn" id="bSalir">Salir</button>
+     La estructura de tres columnas —navegación · conversación · gente— está
+     copiada de Discord A OJO, no de memoria: se abrió una captura real de su
+     cliente antes de escribir esto. Lo que se tomó de ahí es lo que hace que
+     se lea como app de mensajería y no como una página:
+       · tres columnas con TRES profundidades distintas (los lados oscuros,
+         el chat levantado). Con un solo tono, tres columnas se leen como una.
+       · el panel de quién eres CLAVADO abajo del cajón izquierdo, no arriba.
+       · la barra de arriba con el título a la izquierda y los iconos a la
+         derecha, y nada más.
+     En teléfono las columnas se vuelven cajones que entran de lado. -->
+<div class="barra">
+  <button class="icono soloAngosto" id="bLado" aria-label="Abrir el menú">☰</button>
+  <!-- Dos renglones, como el encabezado de Discord en teléfono: arriba DÓNDE
+       estás, abajo CUÁNTOS hay. Lo de abajo es lo que uno mira de reojo para
+       saber si vale la pena escribir ahorita. -->
+  <button class="titulo" id="bCodigo" title="Copiar el link de invitación">
+    <span class="tit-fila"><span class="gato">#</span><b id="tituloSala">La Sala</b></span>
+    <span class="tit-sub"><span class="punto" id="puntoVivo"></span><span id="enLinea">sin conectar</span></span>
+  </button>
+  <span class="crece"></span>
+  <button class="icono soloAngosto" id="bGente" aria-label="Ver quién está">
+    <span class="cara">👥</span><span class="cuantos" id="cuantos"></span>
+  </button>
 </div>
 
-<div class="gente" id="gente"></div>
+<div class="app">
+
+  <!-- ── cajón izquierdo · a dónde se va ── -->
+  <aside class="lado izq" id="ladoIzq">
+    <div class="lado-cuerpo">
+      <div class="lado-tit">Esta sala</div>
+      <button class="fila-lado" id="bCopiar">
+        <span class="ico">🔗</span><span>Copiar la invitación</span></button>
+      <button class="fila-lado" id="bLlaves">
+        <span class="ico">🔑</span><span>Llaves</span></button>
+      <button class="fila-lado" id="bLeyenda">
+        <span class="ico">🎭</span><span>Quién es quién</span></button>
+      <button class="fila-lado" id="bVista2">
+        <span class="ico">📐</span><span>Cómo se ve el hilo</span></button>
+
+      <div class="lado-tit">Las otras pantallas</div>
+      <!-- Van como <a> y no como botón con JS a propósito: así se abren en
+           pestaña nueva, se comparten y se vuelve con el botón de atrás. Y en
+           pestaña nueva porque la sala es una conversación en vivo: sacarte de
+           ella para ver una neurona te haría perder el hilo. -->
+      <a class="fila-lado" id="aTaller" href="../entorno/" target="_blank" rel="noopener">
+        <span class="ico">🧊</span><span>El taller en 3D</span></a>
+      <a class="fila-lado" href="../cerebro/" target="_blank" rel="noopener">
+        <span class="ico">🧠</span><span>El Cerebro</span></a>
+      <a class="fila-lado" href="../" target="_blank" rel="noopener">
+        <span class="ico">🏠</span><span>Mazi Central</span></a>
+    </div>
+
+    <!-- Clavado abajo, como el de Discord: quién eres tú se consulta de reojo
+         y sin abrir nada, y por eso no puede estar compitiendo con la
+         navegación allá arriba. -->
+    <div class="yo-panel" id="yoPanel"></div>
+  </aside>
+
+  <div class="centro">
 <div class="hilo" id="hilo"></div>
 
 <!-- ── LA VISTA DE CÓMO TRABAJAN ─────────────────────────────────────────
@@ -693,6 +922,24 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <div class="aviso" id="aviso"></div>
   <div class="caido" id="caido"></div>
 </div>
+
+  </div><!-- /.centro -->
+
+  <!-- ── cajón derecho · quién está ────────────────────────────────────────
+       Estaba como tira horizontal debajo de la barra, y ahí cabían tres
+       fichas: la CUARTA se salía por la derecha sin que nada lo dijera. Por
+       eso Carlos no veía al Claude de Luis — no era que no llegara, era que
+       no cabía. En columna caben todos y sobra sitio para decir en qué anda
+       cada quien. -->
+  <aside class="lado der" id="ladoDer">
+    <div class="lado-cuerpo">
+      <div class="lado-tit">En la sala <span id="cuantosLado"></span></div>
+      <div class="gente" id="gente"></div>
+    </div>
+  </aside>
+
+  <div class="velo" id="velo" hidden></div>
+</div><!-- /.app -->
 
 <!-- Los comandos salen al escribir «/» al principio del renglón. Son atajos
      para lo que uno pide seguido en una junta, no una consola escondida. -->
@@ -853,20 +1100,45 @@ function pintarGente(){
                 : p.estado === 'fuera' ? 'fuera'
                 : p.trabajo ? 'trabajando'
                 : callado ? 'dormido' : '';
-    const hasta = p.reanuda ? `<span class="hasta">vuelve ${hora(p.reanuda)}</span>` : '';
+    const hasta = p.reanuda ? `vuelve ${hora(p.reanuda)}` : '';
     /* Si está trabajando, el chip dice EN QUÉ. Eso es media pantalla de
        agente sin tener que abrir nada, y es lo que uno quiere de reojo. */
-    const en = p.trabajo ? `<span class="hasta" style="color:var(--violeta-claro)">${
-      esc(p.trabajo.en.slice(0, 26))}</span>`
-      : callado ? `<span class="hasta" style="color:var(--muy-tenue)">sin señal</span>` : '';
+    const en = p.trabajo ? esc(p.trabajo.en.slice(0, 26))
+              : callado ? 'sin señal' : '';
     const cred = credencial(p);
+    /* ── DOS RENGLONES, como la lista de miembros de Discord ────────────────
+       En uno solo competían por 285px el nombre, el modelo, en qué anda y a
+       qué hora vuelve — y perdía el nombre: se veía «Su co…» y de los dos
+       Claude no se leía NINGÚN nombre, sólo su coletilla. Capturado, no
+       supuesto. Arriba quién es, abajo cómo está: el nombre ya no compite
+       con nada.
+       El punto de estado se monta EN el avatar en vez de ir suelto — así no
+       gasta una columna y es donde uno ya lo está buscando. */
     return `<button class="quien ${clase}" data-ver="${esc(p.id)}">` +
-           `<span class="punto"></span>` +
-           avatarHtml(cred, 'chico') +
-           `<span>${esc(p.nombre)}</span>` +
-           `<span class="rol">${esc(comoSeLlama(cred))}</span>` +
-           en + hasta + `</button>`;
+           `<span class="con-punto">${avatarHtml(cred, 'chico')}<i class="punto"></i></span>` +
+           `<span class="quien-txt">` +
+             `<span class="nom-quien">${esc(p.nombre)}</span>` +
+             `<span class="quien-sub">${esc(comoSeLlama(cred))}${en || hasta ? ' · ' : ''}` +
+             `${en}${hasta}</span>` +
+           `</span></button>`;
   }).join('') : '<span class="quien"><span class="punto"></span>Nadie más todavía</span>';
+
+  /* El número al lado del icono: CUÁNTOS ESTÁN EN LA SALA, no cuántos están
+     despiertos. Se intentó lo segundo y salía vacío con cuatro adentro —
+     porque el que lleva rato callado no cuenta como vivo—, y un contador en
+     cero encima de una sala llena es peor que no tener contador: dice que no
+     hay nadie. Quién está dormido ya lo dice el punto de su ficha. */
+  $('cuantos').textContent = lista.length || '';
+  $('cuantosLado').textContent = lista.length ? `· ${lista.length}` : '';
+
+  /* Aquí SÍ se cuentan los despiertos y no los inscritos: el renglón dice «en
+     línea», y decir que hay cuatro en línea cuando tres llevan horas callados
+     es exactamente la mentira que hizo que alguien esperara 150 segundos a
+     quien no iba a contestar. */
+  const enLinea = lista.filter(p => conectados.has(p.id)
+                              || Date.now() - (p.visto || 0) <= 5 * 60_000).length;
+  $('enLinea').textContent = enLinea ? `${enLinea} en línea` : 'nadie en línea';
+  $('puntoVivo').classList.toggle('vivo', enLinea > 0);
 
   /* El selector de destinatario. «A todos» existe pero NO es el primero a
      propósito: con «a todos» pueden despertar dos agentes y hacer dos veces
@@ -986,6 +1258,69 @@ function credencial(de){
   };
 }
 
+/* ══ DE QUÉ CASA ES CADA QUIEN ═════════════════════════════════════════════
+   La mesa tiene dos casas: Carlos y su Claude de un lado, Luis y el suyo del
+   otro. Saber de cuál es cada quien es lo que decide de qué lado cae su
+   burbuja.
+
+   ⚠ LO BUENO ES `cuenta`, y ya existe: el servidor se la pone a cada quien
+   según con qué llave entró. PERO mientras la sala no tenga llaves puestas
+   TODOS entran como «invitado», y con eso las dos casas son una. Por eso hay
+   un segundo camino: el nombre. Un agente que se llama «Claude de Luis» es
+   de Luis, y eso se lee sin preguntarle a nadie.
+
+   El orden importa: primero la cuenta —que es la verdad— y sólo si no dice
+   nada, el nombre —que es una deducción. El día que se pongan las llaves,
+   esto se apaga solo y nadie tiene que acordarse de venir a borrarlo. */
+function bandoDe(c){
+  if(!c) return '?';
+  if(c.cuenta && c.cuenta !== 'invitado') return String(c.cuenta).toLowerCase();
+  const n = String(c.nombre || c.id || '')
+    .toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  /* «claude de luis», «claude-de-carlos», «el claude de Luis» → luis/carlos */
+  const m = /\bde\s+([a-záéíóúñ]+)\s*$/.exec(n);
+  if(m) return m[1];
+  return n.replace(/[^a-záéíóúñ0-9]+/g, '') || String(c.id || '?');
+}
+
+/* El bando del que está mirando. Se recalcula cada vez que se pinta porque
+   `yo` no existe hasta que se entra. */
+function miBando(){
+  return yo ? bandoDe(credencial(yo)) : '\u0000nadie';
+}
+
+/* ══ EL COLOR DE CADA QUIEN ════════════════════════════════════════════════
+   Carlos lo pidió así: «que la burbuja tenga un color dependiendo de quién
+   escriba para identificarlos más rápido».
+
+   ⚠ EL COLOR DEL SERVIDOR NO ALCANZA HOY, y se descubrió pintándolo, no
+   leyéndolo: `color` es por CUENTA, y mientras la sala no tenga llaves todos
+   entran como «invitado» — así que los cuatro salían del MISMO violeta y las
+   burbujas quedaban del mismo gris. Un color que es igual para todos no
+   identifica a nadie.
+
+   Entonces el tono se arma con lo que sí distingue:
+     · el TINTE lo pone la casa (bando). Carlos y su Claude de un color, Luis
+       y el suyo de otro — que es justo lo que se quiere cazar de reojo.
+     · el MATIZ lo pone la sesión (`sombra`), así la persona y su Claude son
+       parientes pero no gemelos.
+   Y si algún día el servidor sí da colores de cuenta distintos, ganan ésos:
+   la deducción sólo tapa el hueco mientras el hueco exista. */
+const TINTES = ['#AC27FF','#E8B33A','#3ECF8E','#5AA9E6','#F0567F','#C77BFF','#7BE0C4'];
+function revoltijo(t){
+  let h = 0;
+  for(const ch of String(t)) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return h;
+}
+function tonoDe(c){
+  const propio = c && /^#[0-9a-f]{6}$/i.test(c.color || '') ? c.color : null;
+  /* «El servidor dio un color de verdad» = hay más de un color en la mesa.
+     Con uno solo, ese color no está diciendo de quién es nada. */
+  const variados = new Set(Object.values(gente).map(p => p.color)).size > 1;
+  const base = (propio && variados) ? propio : TINTES[revoltijo(bandoDe(c)) % TINTES.length];
+  return matiz(base, c ? c.sombra : 3);
+}
+
 /* El avatar. `tam` es '', 'chico' o 'grande'. */
 function avatarHtml(c, tam){
   const fondo = matiz(c.color, c.sombra);
@@ -1099,6 +1434,12 @@ function pintarHilo(){
     const mio = yo && e.de.id === yo.id;
 
     const cred = credencial(e.de);
+    /* La casa de quien habló contra la casa de quien mira. */
+    const otrolado = bandoDe(cred) !== miBando();
+    /* El color exacto de esa sesión: el MISMO que su avatar. Que la burbuja y
+       el avatar digan lo mismo es lo que deja identificar a alguien sin leer
+       su nombre, que es lo que pidió Carlos. */
+    const tono = tonoDe(cred);
     const av = conSiguiente
       ? '<span class="avatar hueco"></span>'
       : avatarHtml(cred, '');
@@ -1111,8 +1452,12 @@ function pintarHilo(){
       /* El nombre toma el color de la CUENTA, no un violeta fijo. Antes el
          Claude de Luis salía con nombre morado y avatar naranja: dos señales
          de la misma cosa diciendo cosas distintas. */
-      `<div class="quien-dijo"><span class="nom" style="color:${cred.color}">` +
-      `${esc(cred.nombre)}</span><span class="cta">${esc(comoSeLlama(cred))}</span>${dePadre}</div>`;
+      `<div class="quien-dijo"><span class="nom" style="color:${tono}">` +
+      `${esc(cred.nombre)}</span><span class="cta">${esc(comoSeLlama(cred))}</span>` +
+      /* La hora VA AQUÍ, al lado del nombre. Antes flotaba dentro del texto y
+         partía renglones a media frase. En Discord vive junto al autor y por
+         eso no estorba: se lee cuando la buscas y desaparece cuando no. */
+      `<span class="hora-dijo">${hora(e.ts)}</span>${dePadre}</div>`;
 
     const etiqueta = (e.tipo && e.tipo !== 'mensaje')
       ? `<span class="tipo t-${esc(e.tipo)}">${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</span>` : '';
@@ -1139,11 +1484,14 @@ function pintarHilo(){
       : '';
 
     partes.push(
-      `<div class="grupo ${mio ? 'mio' : ''} ${conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}">` +
+      `<div class="grupo ${mio ? 'mio' : ''} ${otrolado ? 'otrolado' : ''} ${
+         conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}"` +
+        ` style="--tono:${tono}; --baño:${tono}14">` +
       av +
       `<div class="burbuja ${esc(e.tipo)}" data-ev="${esc(e.id)}">` +
         cab + etiqueta + aQuien +
-        `<div class="dicho">${cuerpo}<span class="sello-hora">${hora(e.ts)}</span></div>` +
+        `<div class="dicho">${cuerpo}${cab ? '' :
+           `<span class="sello-hora">${hora(e.ts)}</span>`}</div>` +
         adj + nota + llano + pintarReacciones(e) +
       `</div></div>`);
   });
@@ -1538,6 +1886,14 @@ async function entrar(codigo, nombre){
   sala = codigo; yo = c.yo;
   localStorage.setItem('sala', JSON.stringify({ codigo, nombre }));
   recordarSala(codigo, nombre);
+  pintarYo();
+  /* ⚠ EL TALLER 3D SIN ESTO ABRE VACÍO. Lee `?sala=` y `?servidor=` de SU
+     propia URL, y el link estaba yendo pelón a `../entorno/`: se veía un
+     cuarto sin nadie y parecía que el 3D estaba roto. No estaba roto — es que
+     nunca le dijimos a qué sala mirar. Se le pasa también `yo` para que sepa
+     de quién es la cámara. */
+  $('aTaller').href = `../entorno/?sala=${encodeURIComponent(codigo)}` +
+    `&servidor=${encodeURIComponent(SERVIDOR)}&yo=${encodeURIComponent(yo.id)}`;
 
   const h = await (await fetch(`${base}/hilo`, { headers: conLlave() })).json();
   hilo = h.hilo || []; gente = h.gente || {};
@@ -1545,7 +1901,7 @@ async function entrar(codigo, nombre){
   abrirSocket(codigo);
 
   $('puerta').classList.add('ida');
-  $('bCodigo').textContent = codigo;
+  $('tituloSala').textContent = codigo;
 }
 
 function abrirSocket(codigo){
@@ -1852,6 +2208,7 @@ function cambiarVista(){
   if(vistaTaller) pintarTaller();
 }
 $('bVista').addEventListener('click', cambiarVista);
+$('bVista2').addEventListener('click', () => { cambiarVista(); cerrarCajones(); });
 $('gente').addEventListener('click', (e) => {
   const b = e.target.closest('[data-ver]');
   if(b) verPantalla(b.dataset.ver);
@@ -1926,17 +2283,58 @@ $('bEntrar').addEventListener('click', async () => {
   try{ await entrar(codigo, nombre); $('error').textContent = ''; }
   catch(e){ $('error').textContent = e.message; }
 });
-$('bSalir').addEventListener('click', () => {
-  localStorage.removeItem('sala'); location.reload();
-});
-$('bCodigo').addEventListener('click', async () => {
+function salirme(){ localStorage.removeItem('sala'); location.reload(); }
+async function copiarInvitacion(){
   if(!sala) return;
   const liga = `${SERVIDOR}/entrar/${sala}`;
   try{ await navigator.clipboard.writeText(liga);
-       $('bCodigo').textContent = '¡copiado!';
-       setTimeout(() => { $('bCodigo').textContent = sala; }, 1400); }
+       $('tituloSala').textContent = '¡link copiado!';
+       setTimeout(() => { $('tituloSala').textContent = sala; }, 1400); }
   catch(e){ prompt('Este es el link para invitar:', liga); }
+}
+$('bCodigo').addEventListener('click', copiarInvitacion);
+$('bCopiar').addEventListener('click', () => { copiarInvitacion(); cerrarCajones(); });
+
+/* ══ LOS CAJONES ═══════════════════════════════════════════════════════════
+   En teléfono los lados entran deslizándose y el chat se queda con toda la
+   pantalla. En pantalla ancha ya están puestos y esto no hace nada visible —
+   por eso el velo se apaga por CSS allá y no hay que preguntar el ancho aquí. */
+function abrirCajon(cual){
+  const otro = cual === 'ladoIzq' ? 'ladoDer' : 'ladoIzq';
+  $(otro).classList.remove('abierto');
+  const abre = !$(cual).classList.contains('abierto');
+  $(cual).classList.toggle('abierto', abre);
+  $('velo').hidden = !abre;
+}
+function cerrarCajones(){
+  $('ladoIzq').classList.remove('abierto');
+  $('ladoDer').classList.remove('abierto');
+  $('velo').hidden = true;
+}
+$('bLado').addEventListener('click', () => abrirCajon('ladoIzq'));
+$('bGente').addEventListener('click', () => abrirCajon('ladoDer'));
+$('velo').addEventListener('click', cerrarCajones);
+/* Escape cierra, como cualquier cajón de cualquier app. */
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape') cerrarCajones(); });
+/* Tocar una fila del menú lo cierra: en teléfono, dejar el cajón abierto
+   encima de lo que acabas de abrir es la manera más rápida de que parezca
+   que no pasó nada. */
+$('ladoIzq').addEventListener('click', (e) => {
+  if(e.target.closest('a.fila-lado')) cerrarCajones();
 });
+
+/* ── el panel de abajo: quién eres ────────────────────────────────────── */
+function pintarYo(){
+  const c = $('yoPanel');
+  if(!yo){ c.innerHTML = ''; return; }
+  const cred = credencial(yo);
+  c.innerHTML = `<span class="con-punto">${avatarHtml(cred, '')}</span>` +
+    `<span class="quien-soy"><span class="nombre"></span>` +
+    `<span class="estado">En línea</span></span>` +
+    `<button class="salirme" id="bSalir" title="Salir de la sala" aria-label="Salir de la sala">⏻</button>`;
+  c.querySelector('.nombre').textContent = cred.nombre;
+  c.querySelector('#bSalir').addEventListener('click', salirme);
+}
 
 /* ── la sala de ejemplo ────────────────────────────────────────────────────
    Para conocer la mesa sin servidor y sin código. Va marcada como ejemplo a
@@ -1997,7 +2395,12 @@ $('bDemo').addEventListener('click', (e) => {
       texto:'Se topó el mío. Que siga el tuyo con lo de las validaciones y yo retomo al rato.' },
   ];
   $('puerta').classList.add('ida');
-  $('bCodigo').textContent = 'EJEMPLO';
+  /* Sin un «yo», la sala de ejemplo pintaba TODAS las burbujas del mismo lado
+     —porque nadie era de tu casa— y el reparto por bandos, que es la mitad de
+     la vista, no se veía. El ejemplo tiene que enseñar lo que hace. */
+  yo = { id:'carlos', nombre:'Carlos', tipo:'humano', cuenta:'carlos' };
+  pintarYo();
+  $('tituloSala').textContent = 'EJEMPLO';
   pintarGente(); pintarHilo();
   $('aviso').textContent = 'Sala de ejemplo: nada de esto se guarda ni sale de tu teléfono.';
 });
