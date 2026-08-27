@@ -75,7 +75,10 @@ body{
   flex:0 0 auto; display:flex; align-items:center; gap:7px;
   background:var(--superficie); border:1px solid var(--borde);
   border-radius:99px; padding:5px 11px 5px 7px; font-size:12.5px; white-space:nowrap;
+  color:var(--hueso); font-family:inherit; cursor:pointer;
 }
+.quien:hover{border-color:var(--violeta)}
+.quien:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
 .punto{width:8px; height:8px; border-radius:50%; background:var(--verde); flex:0 0 auto}
 .quien.topado .punto{background:var(--ambar)}
 .quien.fuera .punto{background:var(--muy-tenue)}
@@ -83,28 +86,72 @@ body{
   text-transform:uppercase; letter-spacing:.09em}
 .quien .hasta{font-family:var(--dato); font-size:10px; color:var(--ambar)}
 
-/* ── el hilo ── */
-.hilo{flex:1; overflow-y:auto; padding:16px 14px 22px; -webkit-overflow-scrolling:touch}
-.ev{margin-bottom:16px; max-width:760px}
-.ev-cab{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:5px}
-.autor{font-weight:700; font-size:13.5px}
-.autor.claude{color:var(--violeta-claro)}
-.autor.humano{color:var(--hueso)}
-.tipo{
-  font-family:var(--dato); font-size:9px; font-weight:700; letter-spacing:.13em;
-  text-transform:uppercase; padding:2.5px 7px; border-radius:5px;
-  border:1px solid transparent;
+/* ── el hilo, con disposición de app de mensajería ──────────────────────
+   Lo que se copió de WhatsApp/iMessage y por qué:
+   · Lo mío a la derecha, lo de los demás a la izquierda. Es la convención y
+     deja saber de un vistazo quién habló sin leer el nombre.
+   · Mensajes seguidos del mismo autor se AGRUPAN: nombre una vez, avatar
+     sólo en el último. Un chat de trabajo repite mucho al mismo autor, y
+     repetir su nombre ocho veces es ruido.
+   · La etiqueta de tipo aparece SÓLO cuando no es un mensaje normal. Así
+     hablar es limpio y una decisión salta a la vista.
+   · Separador de día, porque una junta que dura dos días sin separador se
+     lee como una sola. */
+.hilo{flex:1; overflow-y:auto; padding:14px 12px 22px; -webkit-overflow-scrolling:touch}
+
+.dia{
+  display:flex; align-items:center; gap:10px; margin:16px 2px 14px;
+  font-family:var(--dato); font-size:9.5px; font-weight:700; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muy-tenue);
 }
-.hora{font-family:var(--dato); font-size:10px; color:var(--muy-tenue); margin-left:auto}
-.para{font-family:var(--dato); font-size:10px; color:var(--muy-tenue)}
-.cuerpo{
+.dia::before,.dia::after{content:""; flex:1; height:1px; background:var(--borde)}
+
+.grupo{display:flex; gap:8px; margin-bottom:3px; align-items:flex-end}
+.grupo.mio{flex-direction:row-reverse}
+.grupo.junto{margin-bottom:2px}
+.grupo.fin{margin-bottom:14px}
+
+.avatar{
+  width:30px; height:30px; border-radius:50%; flex:0 0 auto; display:grid;
+  place-items:center; font-size:12px; font-weight:700; color:var(--vacio);
+  font-family:var(--display);
+}
+.avatar.hueco{background:none}
+
+.burbuja{
+  max-width:min(78%, 560px); min-width:0;
   background:var(--superficie); border:1px solid var(--borde);
-  border-radius:12px; padding:11px 14px; white-space:pre-wrap; overflow-wrap:anywhere;
+  border-radius:16px; padding:9px 12px 7px;
+  position:relative;
+}
+.grupo.mio .burbuja{background:var(--alta); border-color:var(--borde-vivo)}
+.grupo:not(.junto) .burbuja{border-top-left-radius:5px}
+.grupo.mio:not(.junto) .burbuja{border-top-left-radius:16px; border-top-right-radius:5px}
+
+.quien-dijo{
+  display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; margin-bottom:4px;
+}
+.quien-dijo .nom{font-weight:700; font-size:12.5px}
+.quien-dijo .nom.claude{color:var(--violeta-claro)}
+.quien-dijo .cta{font-family:var(--dato); font-size:9px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+
+.dicho{white-space:pre-wrap; overflow-wrap:anywhere; font-size:14.5px; line-height:1.5}
+.sello-hora{
+  float:right; margin:6px 0 0 10px; font-family:var(--dato); font-size:9.5px;
+  color:var(--muy-tenue); white-space:nowrap;
+}
+.para-quien{
+  font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue);
+  margin-bottom:4px;
 }
 
-/* Cada tipo se pinta distinto: es lo que deja LEER la discusión de un vistazo
-   en vez de tener que leerla entera. El color no va solo — lleva su palabra. */
-.t-mensaje   {background:#2A2036; color:var(--hueso)}
+/* La etiqueta sólo cuando dice algo. Un «mensaje» no necesita anunciarse. */
+.tipo{
+  display:inline-block; font-family:var(--dato); font-size:8.5px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; padding:2px 7px; border-radius:4px;
+  border:1px solid transparent; margin-bottom:6px;
+}
 .t-tarea     {background:rgba(90,169,230,.16); color:var(--azul);  border-color:rgba(90,169,230,.4)}
 .t-propuesta {background:rgba(172,39,255,.17); color:var(--violeta-claro); border-color:rgba(172,39,255,.45)}
 .t-pregunta  {background:rgba(232,179,58,.15); color:var(--ambar); border-color:rgba(232,179,58,.4)}
@@ -116,21 +163,129 @@ body{
 .t-acta      {background:var(--hueso); color:var(--vacio)}
 .t-limite    {background:rgba(232,179,58,.2);  color:var(--ambar); border-color:var(--ambar)}
 
-.ev.decision .cuerpo{border-color:rgba(62,207,142,.45)}
-.ev.bloqueo  .cuerpo{border-color:var(--rojo)}
-.ev.acta     .cuerpo{border-color:var(--hueso)}
-.ev.limite   .cuerpo{border-color:rgba(232,179,58,.5)}
+/* Los que cambian el rumbo se marcan en el borde, no sólo en la etiqueta:
+   se tienen que poder cazar recorriendo el hilo con el pulgar. */
+.burbuja.decision{border-color:rgba(62,207,142,.5)}
+.burbuja.desacuerdo{border-color:rgba(240,86,127,.5)}
+.burbuja.bloqueo{border-color:var(--rojo)}
+.burbuja.limite{border-color:rgba(232,179,58,.55)}
+.burbuja.acta{border-color:var(--hueso)}
 
 .nota{
-  margin-top:11px; padding:9px 12px; border-radius:9px;
+  margin-top:10px; padding:8px 11px; border-radius:9px;
   background:rgba(172,39,255,.13); border:1px solid rgba(172,39,255,.4);
-  font-size:13.5px;
+  font-size:13px;
 }
 .nota-para{
-  display:block; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  display:block; font-family:var(--dato); font-size:9px; font-weight:700;
   letter-spacing:.13em; text-transform:uppercase; color:var(--violeta-claro);
-  margin-bottom:4px;
+  margin-bottom:3px;
 }
+
+/* ── reacciones ── */
+.reacciones{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
+.reacciones:empty{display:none}
+.reac{
+  display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;
+  padding:2px 8px; border-radius:99px; border:1px solid var(--borde-vivo);
+  background:var(--vacio); color:var(--tenue); font-family:inherit;
+}
+.reac.mia{border-color:var(--violeta); color:var(--hueso);
+  background:color-mix(in srgb, var(--violeta) 22%, var(--vacio))}
+.reac b{font-family:var(--dato); font-size:10px; font-weight:700}
+.reaccionar{
+  opacity:0; transition:opacity .15s; font-size:13px; padding:2px 7px;
+  border-radius:99px; border:1px dashed var(--borde-vivo); background:transparent;
+  color:var(--muy-tenue); cursor:pointer;
+}
+.grupo:hover .reaccionar,.reaccionar:focus-visible{opacity:1}
+@media (hover:none){ .reaccionar{opacity:.55} }
+
+/* la cortina para escoger reacción */
+.paleta{
+  position:fixed; inset:0; z-index:65; background:rgba(8,5,13,.72);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.paleta.abierta{display:flex}
+.paleta-caja{
+  width:100%; max-width:440px; background:var(--superficie);
+  border:1px solid var(--borde-vivo); border-radius:18px 18px 0 0;
+  padding:16px 14px calc(20px + env(safe-area-inset-bottom));
+}
+.paleta-caja h3{font-size:14px; margin:0 0 12px; font-weight:700}
+.paleta-rejilla{display:grid; grid-template-columns:repeat(2,1fr); gap:8px}
+.paleta-rejilla button{
+  display:flex; align-items:center; gap:9px; padding:11px 12px; border-radius:11px;
+  border:1px solid var(--borde); background:var(--alta); color:var(--hueso);
+  font-family:inherit; font-size:13.5px; cursor:pointer; text-align:left;
+}
+.paleta-rejilla button:hover{border-color:var(--violeta)}
+.paleta-rejilla span{font-size:17px}
+
+/* ── la pantalla de cada agente ── */
+.pantalla{
+  position:fixed; inset:0; z-index:66; background:rgba(8,5,13,.8);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.pantalla.abierta{display:flex}
+.pantalla-caja{
+  width:100%; max-width:520px; max-height:80dvh; overflow-y:auto;
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:18px 18px 0 0; padding:18px 18px calc(22px + env(safe-area-inset-bottom));
+}
+.pantalla-cab{display:flex; align-items:center; gap:11px; margin-bottom:14px}
+.pantalla-cab h3{margin:0; font-size:17px; font-weight:700}
+.pantalla-cab .rol{font-family:var(--dato); font-size:9.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muy-tenue)}
+.enque{
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:12px;
+  padding:13px 14px; margin-bottom:12px;
+}
+.enque .rot{font-family:var(--dato); font-size:9px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue); display:block; margin-bottom:5px}
+.enque .tit{font-size:15px; font-weight:600; margin-bottom:6px}
+.enque .paso{font-size:13.5px; color:var(--tenue)}
+.riel-t{height:5px; border-radius:99px; background:var(--borde); overflow:hidden; margin-top:10px}
+.riel-t i{display:block; height:100%; background:var(--violeta); border-radius:99px;
+  transition:width .4s}
+.bitacora{list-style:none; margin:0; padding:0}
+.bitacora li{
+  position:relative; padding-left:19px; margin-bottom:7px; font-size:13px;
+  color:var(--tenue); font-family:var(--dato);
+}
+.bitacora li::before{content:""; position:absolute; left:3px; top:.62em;
+  width:6px; height:6px; border-radius:50%; background:var(--borde-vivo)}
+.bitacora li:last-child{color:var(--hueso)}
+.bitacora li:last-child::before{background:var(--verde)}
+.quien{cursor:pointer}
+.quien.trabajando .punto{background:var(--violeta); animation:latir 1.6s ease-in-out infinite}
+@keyframes latir{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── presentaciones ── */
+.presenta{
+  margin-top:10px; border:1px solid var(--borde-vivo); border-radius:11px;
+  overflow:hidden; background:var(--alta); cursor:pointer; width:100%;
+  padding:0; text-align:left; color:inherit; font-family:inherit;
+}
+.presenta img{width:100%; display:block; aspect-ratio:16/9; object-fit:cover}
+.presenta .pie-p{
+  display:flex; align-items:center; gap:8px; padding:8px 11px; font-size:12.5px;
+}
+.presenta .pie-p b{font-family:var(--dato); font-size:10px; color:var(--muy-tenue)}
+.diapos{
+  position:fixed; inset:0; z-index:67; background:rgba(6,4,10,.97);
+  display:none; flex-direction:column;
+}
+.diapos.abierta{display:flex}
+.diapos .lienzo{flex:1; display:grid; place-items:center; padding:12px; min-height:0}
+.diapos img{max-width:100%; max-height:100%; border-radius:8px}
+.diapos .mandos{
+  display:flex; align-items:center; gap:12px; justify-content:center;
+  padding:12px 14px calc(14px + env(safe-area-inset-bottom));
+}
+.diapos .cuenta-d{font-family:var(--dato); font-size:12px; color:var(--tenue);
+  font-variant-numeric:tabular-nums; min-width:64px; text-align:center}
+
 /* ── el taller ── */
 .taller{flex:1; overflow:auto; padding:18px 14px 28px; -webkit-overflow-scrolling:touch}
 .hebras{position:relative; display:grid; gap:0; min-width:min-content}
@@ -372,6 +527,27 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
      para lo que uno pide seguido en una junta, no una consola escondida. -->
 <div class="comandos" id="comandos" hidden></div>
 
+<div class="paleta" id="paleta">
+  <div class="paleta-caja">
+    <h3>¿Cómo lo tomas?</h3>
+    <div class="paleta-rejilla" id="paletaRejilla"></div>
+  </div>
+</div>
+
+<div class="pantalla" id="pantalla">
+  <div class="pantalla-caja" id="pantallaCaja"></div>
+</div>
+
+<div class="diapos" id="diapos">
+  <div class="lienzo"><img id="diapoImg" alt=""></div>
+  <div class="mandos">
+    <button class="btn" id="dAtras">← Anterior</button>
+    <span class="cuenta-d" id="dCuenta">1 / 1</span>
+    <button class="btn" id="dAdelante">Siguiente →</button>
+    <button class="btn" id="dCerrar">Cerrar</button>
+  </div>
+</div>
+
 <div class="lupa" id="lupa">
   <button class="btn cerrar" id="bCerrarLupa">Cerrar</button>
   <img id="lupaImg" alt="">
@@ -425,13 +601,19 @@ const hora = (ts) => new Date(ts).toLocaleTimeString('es-MX',
 function pintarGente(){
   const lista = Object.values(gente);
   $('gente').innerHTML = lista.length ? lista.map(p => {
-    const clase = p.estado === 'topado' || p.estado === 'ocupado' ? 'topado'
-                : p.estado === 'fuera' ? 'fuera' : '';
+    const clase = (p.estado === 'topado' || p.estado === 'ocupado') ? 'topado'
+                : p.estado === 'fuera' ? 'fuera'
+                : p.trabajo ? 'trabajando' : '';
     const hasta = p.reanuda ? `<span class="hasta">vuelve ${hora(p.reanuda)}</span>` : '';
-    return `<span class="quien ${clase}"><span class="punto"></span>` +
+    /* Si está trabajando, el chip dice EN QUÉ. Eso es media pantalla de
+       agente sin tener que abrir nada, y es lo que uno quiere de reojo. */
+    const en = p.trabajo ? `<span class="hasta" style="color:var(--violeta-claro)">${
+      esc(p.trabajo.en.slice(0, 26))}</span>` : '';
+    return `<button class="quien ${clase}" data-ver="${esc(p.id)}">` +
+           `<span class="punto"></span>` +
            `<span>${esc(p.nombre)}</span>` +
            `<span class="rol">${p.tipo === 'humano' ? 'persona' : 'claude'}</span>` +
-           hasta + `</span>`;
+           en + hasta + `</button>`;
   }).join('') : '<span class="quien"><span class="punto"></span>Nadie más todavía</span>';
 
   /* El selector de destinatario. «A todos» existe pero NO es el primero a
@@ -453,11 +635,36 @@ function pintarGente(){
   else if(sel.options.length) sel.selectedIndex = 0;
 }
 
+const REACCIONES = [
+  ['visto','👀','Lo vi'], ['deacuerdo','✅','De acuerdo'],
+  ['nodeacuerdo','🚫','No estoy de acuerdo'], ['hecho','🎯','Ya quedó'],
+  ['revisando','🔍','Lo estoy revisando'], ['dudo','❓','Tengo una duda'],
+  ['ojo','⚠️','Ojo con esto'], ['bravo','🔥','Bien hecho'],
+];
+const FIGURA = Object.fromEntries(REACCIONES.map(([k, f]) => [k, f]));
+
+/* Color estable por participante: el mismo nombre da siempre el mismo tono,
+   así el avatar no cambia de color entre recargas. */
+const TONOS = ['#AC27FF','#3ECF8E','#5AA9E6','#E8B33A','#F0567F','#C77BFF','#4FD1C5'];
+function tono(id){
+  let n = 0; for(const c of String(id)) n = (n * 31 + c.charCodeAt(0)) >>> 0;
+  return TONOS[n % TONOS.length];
+}
+const inicial = (n) => (String(n).trim()[0] || '?').toUpperCase();
+
 function tarjetaAdjunto(a){
   if(a.clase === 'imagen'){
     const src = a.datos.startsWith('data:') ? a.datos : `data:${a.mime};base64,${a.datos}`;
     return `<button class="miniatura" data-grande="${esc(src)}">
       <img src="${esc(src)}" alt="${esc(a.nombre || 'imagen')}" loading="lazy"></button>`;
+  }
+  if(a.clase === 'presentacion'){
+    const uno = a.laminas[0];
+    const src = `data:${uno.mime};base64,${uno.datos}`;
+    return `<button class="presenta" data-diapos="${esc(a.id || '')}">
+      <img src="${esc(src)}" alt="" loading="lazy">
+      <span class="pie-p">📊 <span>${esc(a.titulo || 'Presentación')}</span>
+      <b>${a.laminas.length} láminas</b></span></button>`;
   }
   if(a.clase === 'archivo'){
     const acc = { creado:'creado', editado:'editado', borrado:'borrado' }[a.accion] || 'tocado';
@@ -490,46 +697,203 @@ function tarjetaAdjunto(a){
   return '';
 }
 
-function pintarEvento(e){
-  if(e.tipo === 'sistema'){
-    return `<div class="sistema">${esc(e.de.nombre)} ${e.accion === 'entra' ? 'entró' : 'salió'}</div>`;
-  }
-  const aQuien = e.a
-    ? `<span class="para">→ ${esc(gente[e.a] ? gente[e.a].nombre : e.a)}</span>`
-    : '';
-  const adj = (e.adjuntos && e.adjuntos.length)
-    ? `<div class="adjuntos">${e.adjuntos.map(tarjetaAdjunto).join('')}</div>` : '';
+const mismoDia = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+function nombreDia(ts){
+  const d = new Date(ts), h = new Date();
+  if(d.toDateString() === h.toDateString()) return 'Hoy';
+  const ayer = new Date(h); ayer.setDate(h.getDate() - 1);
+  if(d.toDateString() === ayer.toDateString()) return 'Ayer';
+  return d.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' });
+}
 
-  let cuerpo = esc(e.texto);
-  if(e.tipo === 'limite' && e.limite){
-    const v = e.limite.reanuda
-      ? ` Puede seguir a las ${hora(e.limite.reanuda)}`
-      : ' No dijo a qué hora vuelve.';
-    cuerpo = esc(`Se topó con el límite (${e.limite.clase}).${v}`) +
-             (e.texto ? '\n' + esc(e.texto) : '');
-  }
+function pintarReacciones(e){
+  const r = e.reacciones || {};
+  const partes = Object.entries(r).map(([cual, quienes]) => {
+    const mia = yo && quienes.includes(yo.id);
+    return `<button class="reac ${mia ? 'mia' : ''}" data-reac="${esc(cual)}" data-sobre="${esc(e.id)}">` +
+           `${FIGURA[cual] || '•'}<b>${quienes.length}</b></button>`;
+  });
+  partes.push(`<button class="reaccionar" data-abrir-reac="${esc(e.id)}" aria-label="Reaccionar">＋</button>`);
+  return `<div class="reacciones">${partes.join('')}</div>`;
+}
 
-  const nota = e.nota && e.nota.texto ? `<div class="nota"><span class="nota-para">${e.nota.a
+/* Un mensaje se pinta agrupado con el anterior si es del mismo autor, del
+   mismo día y dentro de cinco minutos. Es la regla de cualquier app de
+   mensajes y es lo que hace que un hilo de trabajo se pueda recorrer. */
+function pintarHilo(){
+  const c = $('hilo');
+  const abajo = c.scrollHeight - c.scrollTop - c.clientHeight < 140;
+  const evs = hilo;
+  const partes = [];
+
+  evs.forEach((e, i) => {
+    const prev = evs[i - 1], sig = evs[i + 1];
+    if(!prev || !mismoDia(prev.ts, e.ts)) partes.push(`<div class="dia">${esc(nombreDia(e.ts))}</div>`);
+
+    if(e.tipo === 'sistema'){
+      partes.push(`<div class="sistema">${esc(e.de.nombre)} ${e.accion === 'entra' ? 'entró' : 'salió'}</div>`);
+      return;
+    }
+
+    const junta = (x, y) => x && y && x.tipo !== 'sistema' && y.tipo !== 'sistema'
+      && x.de.id === y.de.id && mismoDia(x.ts, y.ts) && Math.abs(y.ts - x.ts) < 5 * 60_000;
+    const conAnterior = junta(prev, e);
+    const conSiguiente = junta(e, sig);
+    const mio = yo && e.de.id === yo.id;
+
+    const av = conSiguiente
+      ? '<span class="avatar hueco"></span>'
+      : `<span class="avatar" style="background:${tono(e.de.id)}">${esc(inicial(e.de.nombre))}</span>`;
+
+    const cab = conAnterior ? '' :
+      `<div class="quien-dijo"><span class="nom ${e.de.tipo === 'humano' ? '' : 'claude'}">` +
+      `${esc(e.de.nombre)}</span><span class="cta">${e.de.tipo === 'humano' ? 'persona' : 'claude'}</span></div>`;
+
+    const etiqueta = (e.tipo && e.tipo !== 'mensaje')
+      ? `<span class="tipo t-${esc(e.tipo)}">${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</span>` : '';
+
+    const aQuien = e.a
+      ? `<div class="para-quien">→ ${esc(gente[e.a] ? gente[e.a].nombre : e.a)}</div>` : '';
+
+    let cuerpo = esc(e.texto);
+    if(e.tipo === 'limite' && e.limite){
+      const v = e.limite.reanuda ? ` Puede seguir a las ${hora(e.limite.reanuda)}`
+                                 : ' No dijo a qué hora vuelve.';
+      cuerpo = esc(`Se topó con el límite (${e.limite.clase}).${v}`) +
+               (e.texto ? '\n' + esc(e.texto) : '');
+    }
+
+    const adj = (e.adjuntos && e.adjuntos.length)
+      ? `<div class="adjuntos">${e.adjuntos.map(tarjetaAdjunto).join('')}</div>` : '';
+    const nota = e.nota && e.nota.texto ? `<div class="nota"><span class="nota-para">${e.nota.a
         ? 'Para ' + esc(gente[e.nota.a] ? gente[e.nota.a].nombre : e.nota.a)
         : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
 
-  return `<div class="ev ${esc(e.tipo)}">
-    <div class="ev-cab">
-      <span class="autor ${e.de.tipo === 'humano' ? 'humano' : 'claude'}">${esc(e.de.nombre)}</span>
-      <span class="tipo t-${esc(e.tipo)}">${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</span>
-      ${aQuien}
-      <span class="hora">${hora(e.ts)}</span>
-    </div>
-    <div class="cuerpo">${cuerpo}${adj}${nota}</div>
-  </div>`;
-}
+    partes.push(
+      `<div class="grupo ${mio ? 'mio' : ''} ${conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}">` +
+      av +
+      `<div class="burbuja ${esc(e.tipo)}" data-ev="${esc(e.id)}">` +
+        cab + etiqueta + aQuien +
+        `<div class="dicho">${cuerpo}<span class="sello-hora">${hora(e.ts)}</span></div>` +
+        adj + nota + pintarReacciones(e) +
+      `</div></div>`);
+  });
 
-function pintarHilo(){
-  const c = $('hilo');
-  const abajo = c.scrollHeight - c.scrollTop - c.clientHeight < 120;
-  c.innerHTML = hilo.map(pintarEvento).join('');
+  c.innerHTML = partes.join('') ||
+    '<p class="sistema">Todavía no se ha dicho nada. Empieza tú.</p>';
   if(abajo) c.scrollTop = c.scrollHeight;
 }
+
+/* ── reaccionar ─────────────────────────────────────────────────────────── */
+let reaccionandoA = null;
+$('paletaRejilla').innerHTML = REACCIONES.map(([k, f, q]) =>
+  `<button type="button" data-poner="${k}"><span>${f}</span>${q}</button>`).join('');
+
+document.addEventListener('click', (e) => {
+  const abrir = e.target.closest('[data-abrir-reac]');
+  if(abrir){ reaccionandoA = abrir.dataset.abrirReac; $('paleta').classList.add('abierta'); return; }
+  const quitar = e.target.closest('[data-reac]');
+  if(quitar) reaccionar(quitar.dataset.sobre, quitar.dataset.reac);
+});
+$('paletaRejilla').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-poner]');
+  if(b && reaccionandoA){ reaccionar(reaccionandoA, b.dataset.poner); }
+  $('paleta').classList.remove('abierta');
+});
+$('paleta').addEventListener('click', (e) => {
+  if(e.target === $('paleta')) $('paleta').classList.remove('abierta');
+});
+
+async function reaccionar(sobre, cual){
+  const ev = hilo.find(x => x.id === sobre);
+  if(!ev) return;
+  if(demo){
+    ev.reacciones = ev.reacciones || {};
+    const l = ev.reacciones[cual] || [];
+    const i = l.indexOf(yo.id);
+    if(i >= 0) l.splice(i, 1); else l.push(yo.id);
+    if(l.length) ev.reacciones[cual] = l; else delete ev.reacciones[cual];
+    return pintarHilo();
+  }
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/reaccion`, {
+      method:'POST', headers:{ 'content-type':'application/json' },
+      body: JSON.stringify({ de: yo.id, sobre, cual }),
+    });
+    const c = await r.json();
+    if(r.ok){ ev.reacciones = c.reacciones; pintarHilo(); }
+    else $('aviso').textContent = c.error;
+  }catch(err){ marcarVivo(false); }
+}
+
+/* ── la pantalla de cada agente ─────────────────────────────────────────── */
+function verPantalla(id){
+  const p = gente[id];
+  if(!p) return;
+  const t = p.trabajo;
+  const pct = t && t.de ? Math.round((t.va / t.de) * 100) : 0;
+  $('pantallaCaja').innerHTML =
+    `<div class="pantalla-cab">
+       <span class="avatar" style="background:${tono(p.id)}">${esc(inicial(p.nombre))}</span>
+       <div><h3>${esc(p.nombre)}</h3>
+       <span class="rol">${p.tipo === 'humano' ? 'persona' : 'claude'} · ${esc(p.cuenta)}</span></div>
+     </div>` +
+    (p.estado === 'topado' || p.estado === 'ocupado'
+      ? `<div class="enque"><span class="rot">No puede trabajar</span>
+         <div class="tit">${p.estado === 'topado' ? 'Se topó con su límite' : 'Ocupado'}</div>
+         <div class="paso">${p.reanuda ? 'Puede seguir a las ' + hora(p.reanuda) : 'Sin hora de regreso'}${
+           p.nota ? ' · ' + esc(p.nota) : ''}</div></div>`
+      : '') +
+    (t
+      ? `<div class="enque"><span class="rot">Ahorita está en</span>
+         <div class="tit">${esc(t.en)}</div>
+         ${t.paso ? `<div class="paso">${esc(t.paso)}</div>` : ''}
+         ${t.de ? `<div class="riel-t"><i style="width:${pct}%"></i></div>
+                   <div class="paso" style="margin-top:6px">${t.va} de ${t.de} · ${pct}%</div>` : ''}
+         </div>` +
+        (t.pasos && t.pasos.length
+          ? `<span class="rot" style="font-family:var(--dato);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muy-tenue);display:block;margin:14px 0 8px">Lo que lleva</span>
+             <ul class="bitacora">${t.pasos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '')
+      : `<div class="enque"><span class="rot">Ahorita</span>
+         <div class="tit">No está trabajando en nada</div>
+         <div class="paso">Un agente sólo aparece aquí mientras reporta con <code>/trabajando</code>.</div></div>`);
+  $('pantalla').classList.add('abierta');
+}
+$('pantalla').addEventListener('click', (e) => {
+  if(e.target === $('pantalla')) $('pantalla').classList.remove('abierta');
+});
+
+/* ── presentaciones ─────────────────────────────────────────────────────── */
+let laminas = [], enLamina = 0;
+function verDiapos(lista, i = 0){
+  laminas = lista; enLamina = i;
+  pintarLamina(); $('diapos').classList.add('abierta');
+}
+function pintarLamina(){
+  const l = laminas[enLamina];
+  if(!l) return;
+  $('diapoImg').src = `data:${l.mime};base64,${l.datos}`;
+  $('dCuenta').textContent = `${enLamina + 1} / ${laminas.length}`;
+  $('dAtras').disabled = enLamina === 0;
+  $('dAdelante').disabled = enLamina === laminas.length - 1;
+}
+$('dAtras').addEventListener('click', () => { if(enLamina > 0){ enLamina--; pintarLamina(); } });
+$('dAdelante').addEventListener('click', () => {
+  if(enLamina < laminas.length - 1){ enLamina++; pintarLamina(); } });
+$('dCerrar').addEventListener('click', () => $('diapos').classList.remove('abierta'));
+addEventListener('keydown', (e) => {
+  if(!$('diapos').classList.contains('abierta')) return;
+  if(e.key === 'ArrowLeft') $('dAtras').click();
+  if(e.key === 'ArrowRight') $('dAdelante').click();
+  if(e.key === 'Escape') $('dCerrar').click();
+});
+$('hilo').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-diapos]');
+  if(!b) return;
+  const ev = hilo.find(x => x.id === b.closest('.burbuja').dataset.ev);
+  const pres = ev && (ev.adjuntos || []).find(a => a.clase === 'presentacion');
+  if(pres) verDiapos(pres.laminas);
+});
 
 /* ── conectarse ─────────────────────────────────────────────────────────── */
 async function entrar(codigo, nombre){
@@ -567,6 +931,10 @@ function abrirSocket(codigo){
       pintarHilo(); if(vistaTaller) pintarTaller(); avisarFreno(p.vueltas, p.tope);
     }
     if(p.que === 'gente'){ gente = p.gente; pintarGente(); if(vistaTaller) pintarTaller(); }
+    if(p.que === 'reaccion'){
+      const ev = hilo.find(x => x.id === p.id);
+      if(ev){ ev.reacciones = p.reacciones; pintarHilo(); }
+    }
   };
   /* Si se cae, se vuelve a conectar sola. Un chat que se muere en silencio es
      peor que uno que no existe. */
@@ -841,6 +1209,10 @@ function cambiarVista(){
   if(vistaTaller) pintarTaller();
 }
 $('bVista').addEventListener('click', cambiarVista);
+$('gente').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ver]');
+  if(b) verPantalla(b.dataset.ver);
+});
 
 function pintarTaller(){
   const quienes = Object.values(gente);
@@ -934,7 +1306,11 @@ $('bDemo').addEventListener('click', (e) => {
   gente = {
     carlos:{ id:'carlos', nombre:'Carlos', tipo:'humano', cuenta:'carlos', estado:'activo' },
     amigo: { id:'amigo',  nombre:'Su compañero', tipo:'humano', cuenta:'amigo', estado:'activo' },
-    'cl-c':{ id:'cl-c', nombre:'Claude de Carlos', tipo:'claude', cuenta:'carlos', estado:'activo' },
+    'cl-c':{ id:'cl-c', nombre:'Claude de Carlos', tipo:'claude', cuenta:'carlos', estado:'activo',
+             trabajo:{ en:'Endpoints del inventario', paso:'Escribiendo las pruebas de cantidad negativa',
+                       de:4, va:3, desde:Date.now() - 8*60_000,
+                       pasos:['Leí la revisión del compa','Agregué validación de cantidad',
+                              'Puse confirmación en el borrado','Escribiendo las pruebas'] } },
     'cl-a':{ id:'cl-a', nombre:'Claude del compa', tipo:'claude', cuenta:'amigo',
              estado:'topado', reanuda: Date.now() + 2*3600_000 },
   };
@@ -959,7 +1335,17 @@ $('bDemo').addEventListener('click', (e) => {
         { clase:'diff', ruta:'api/inventario/rutas.js', mas:118, menos:4 },
         { clase:'repo', owner:'ejercitopalomazi9111-arch', repo:'mazi-central', rama:'inventario' },
       ] },
+    { id:'e6b', ts:t+430_000, de:de('cl-c'), a:null, tipo:'propuesta',
+      texto:'Y así quedarían las pantallas. Son cuatro láminas.',
+      adjuntos:[{ clase:'presentacion', titulo:'Pantallas del inventario',
+        laminas:[
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjQUMyN0ZGIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5MaXN0YSBkZSBwcm9kdWN0b3M8L3RleHQ+Cjx0ZXh0IHg9IjQwIiB5PSIxMzIiIGZpbGw9IiNBMzk1QjQiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCI+QnVzY2Fkb3IgYXJyaWJhLCBzYWxkbyBhIGxhIGRlcmVjaGE8L3RleHQ+CjxyZWN0IHg9IjQwIiB5PSIxNjgiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTMyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjE2OCIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI2MiIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHJlY3QgeD0iMzA4IiB5PSIyNDIiIHdpZHRoPSIyOTIiIGhlaWdodD0iNTgiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+Cjx0ZXh0IHg9IjYwMCIgeT0iMzMyIiBmaWxsPSIjNkI1QjdEIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9ImVuZCI+MSAvIDQ8L3RleHQ+Cjwvc3ZnPg==' },
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjM0VDRjhFIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5BbHRhIGRlIHByb2R1Y3RvPC90ZXh0Pgo8dGV4dCB4PSI0MCIgeT0iMTMyIiBmaWxsPSIjQTM5NUI0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiPkNhbnRpZGFkIG5vIHB1ZWRlIHNlciBuZWdhdGl2YTwvdGV4dD4KPHJlY3QgeD0iNDAiIHk9IjE2OCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxMzIiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+CjxyZWN0IHg9IjMwOCIgeT0iMTY4IiB3aWR0aD0iMjkyIiBoZWlnaHQ9IjYyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjI0MiIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI1OCIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHRleHQgeD0iNjAwIiB5PSIzMzIiIGZpbGw9IiM2QjVCN0QiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsbW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0iZW5kIj4yIC8gNDwvdGV4dD4KPC9zdmc+' },
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjNUFBOUU2Ii8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Nb3ZpbWllbnRvczwvdGV4dD4KPHRleHQgeD0iNDAiIHk9IjEzMiIgZmlsbD0iI0EzOTVCNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4Ij5IaXN0b3JpYWwgY29tcGxldG8sIGZpbHRyYWJsZSBwb3IgZmVjaGE8L3RleHQ+CjxyZWN0IHg9IjQwIiB5PSIxNjgiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTMyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjE2OCIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI2MiIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHJlY3QgeD0iMzA4IiB5PSIyNDIiIHdpZHRoPSIyOTIiIGhlaWdodD0iNTgiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+Cjx0ZXh0IHg9IjYwMCIgeT0iMzMyIiBmaWxsPSIjNkI1QjdEIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9ImVuZCI+MyAvIDQ8L3RleHQ+Cjwvc3ZnPg==' },
+          { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjRjA1NjdGIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Cb3JyYWRvPC90ZXh0Pgo8dGV4dCB4PSI0MCIgeT0iMTMyIiBmaWxsPSIjQTM5NUI0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiPlBpZGUgY29uZmlybWFjacOzbiwgc2llbXByZTwvdGV4dD4KPHJlY3QgeD0iNDAiIHk9IjE2OCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxMzIiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+CjxyZWN0IHg9IjMwOCIgeT0iMTY4IiB3aWR0aD0iMjkyIiBoZWlnaHQ9IjYyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjI0MiIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI1OCIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHRleHQgeD0iNjAwIiB5PSIzMzIiIGZpbGw9IiM2QjVCN0QiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsbW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0iZW5kIj40IC8gNDwvdGV4dD4KPC9zdmc+' },
+        ] }] },
     { id:'e7', ts:t+520_000, de:de('cl-a'), a:'cl-c', tipo:'revision',
+      reacciones:{ visto:['carlos'], deacuerdo:['cl-c','amigo'] },
       texto:'Revisado. Dos cosas: falta validar que la cantidad no sea negativa, y\nel borrado no está pidiendo confirmación. Lo demás está bien.' },
     { id:'e8', ts:t+700_000, de:de('cl-a'), a:null, tipo:'limite',
       texto:'Me quedé sin uso diario.',

@@ -145,9 +145,33 @@ Para apuntar a un servidor local: `?servidor=http://127.0.0.1:8787`.
   decisiones y los desacuerdos marcados. Tocar una ficha regresa al chat en ese mensaje.
 - **Aviso cuando el servidor no responde**: sale en rojo y reintenta solo, y el mensaje NO se
   borra del cuadro. Un chat que se muere callado es peor que uno que no existe.
+- **Disposición de app de mensajería.** Lo tuyo a la derecha, lo demás a la izquierda; mensajes
+  seguidos del mismo autor agrupados —nombre una vez, avatar sólo en el último—; separador de
+  día; y la etiqueta de tipo **sólo cuando no es un mensaje normal**, para que hablar sea limpio
+  y una decisión salte a la vista.
+- **Ocho reacciones** con palabra, no sólo figura: `visto` no es lo mismo que `deacuerdo`. No
+  cuentan como vuelta ni despiertan a nadie — es la forma barata de decir lo que no necesita un
+  turno completo, y ahí está la mitad del ahorro de una junta.
+- **La pantalla de cada agente.** Toca su nombre arriba: en qué está ahorita, en qué paso, con
+  barra de avance y la bitácora de lo que lleva. Se reporta con `/trabajando`, que **no entra al
+  hilo** — si cada paso fuera un mensaje, el hilo sería ilegible.
+- **Presentaciones**, como láminas en imagen, con pasador y flechas. No PDF: un PDF en base64
+  revienta el tope y obligaría a traer un lector.
 - **La skill `sala`** en `.claude/skills/sala/` — así cualquier Claude que clone el repo sabe
   cómo portarse adentro sin que nadie se lo explique. Eso resuelve lo de «skills compartidas»
   sin fusionar cuentas: van en el repo, no en la máquina.
+
+## Probarla sin Cloudflare
+
+```
+node sala/servidor/local.mjs        → http://127.0.0.1:8787
+```
+
+Es **la misma clase `Sala`**, servida por un `node:http` normal con el almacenamiento en
+memoria. Sirve para tres cosas: probar antes de crear el proyecto de Cloudflare, que dos Claude
+de la misma máquina se hablen sin internet, y correr la prueba de dos agentes.
+
+La mesa se apunta ahí con `sala/index.html?servidor=http://127.0.0.1:8787`.
 
 ## Lo que todavía NO tiene
 

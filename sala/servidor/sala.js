@@ -91,7 +91,28 @@ const TIPOS = new Set([
    quién puede trabajar ahorita y quién no, sin tener que adivinarlo. */
 const ESTADOS = new Set(['activo', 'topado', 'ocupado', 'fuera']);
 
-const CLASES_ADJUNTO = new Set(['imagen', 'archivo', 'diff', 'enlace', 'repo']);
+const CLASES_ADJUNTO = new Set(['imagen', 'archivo', 'diff', 'enlace', 'repo', 'presentacion']);
+
+/* ── reacciones ────────────────────────────────────────────────────────────
+   Cerradas a una lista corta a propósito. Un catálogo abierto de emojis en un
+   equipo de trabajo se vuelve ruido; estas ocho dicen algo que cambia lo que
+   hace el otro, y por eso llevan palabra además de figura: «visto» no es lo
+   mismo que «de acuerdo», y confundirlos es como se aprueba sin leer. */
+const REACCIONES = new Map([
+  ['visto',    'Lo vi'],
+  ['deacuerdo','De acuerdo'],
+  ['nodeacuerdo','No estoy de acuerdo'],
+  ['hecho',    'Ya quedó'],
+  ['revisando','Lo estoy revisando'],
+  ['dudo',     'Tengo una duda'],
+  ['ojo',      'Ojo con esto'],
+  ['bravo',    'Bien hecho'],
+]);
+
+/* Lo que un agente está haciendo AHORITA. No es un mensaje: es el estado de su
+   pantalla, y se pisa cada vez que reporta. Un mensaje por cada paso llenaría
+   el hilo de ruido y despertaría a los demás sin razón. */
+const TOPE_PASOS = 8;
 
 const ahora = () => Date.now();
 
@@ -352,6 +373,60 @@ export class Sala {
        participante (para que en la mesa se vea de un vistazo quién puede
        trabajar) y se publica como evento `limite` (para que quede en el hilo
        y en el acta el porqué de un hueco de cuatro horas). */
+    if(pedido.method === 'POST' && ruta === 'reaccion'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.gente[String(c.de || '')];
+      if(!quien) return Response.json({ error:'Esa sesión no está en la sala.' }, { status:400 });
+      if(quien.cuenta !== cuenta){
+        return Response.json({ error:'Esa sesión es de otra cuenta.' }, { status:403 });
+      }
+      if(!REACCIONES.has(c.cual)){
+        return Response.json({ error:`Reacción desconocida. Van: ${[...REACCIONES.keys()].join(', ')}` },
+                             { status:400 });
+      }
+      const ev = this.hilo.find(e => e.id === String(c.sobre || ''));
+      if(!ev) return Response.json({ error:'Ese mensaje ya no está en el hilo.' }, { status:404 });
+
+      /* Reaccionar dos veces la quita. Es como funciona en cualquier app de
+         mensajes y no hace falta un botón aparte para deshacer. */
+      ev.reacciones = ev.reacciones || {};
+      const lista = ev.reacciones[c.cual] || [];
+      const i = lista.indexOf(quien.id);
+      if(i >= 0) lista.splice(i, 1); else lista.push(quien.id);
+      if(lista.length) ev.reacciones[c.cual] = lista; else delete ev.reacciones[c.cual];
+
+      await this.guardar();
+      this.difundir({ que:'reaccion', id:ev.id, reacciones:ev.reacciones });
+      /* NO despierta a nadie: una reacción no es trabajo. */
+      return Response.json({ bien:true, reacciones:ev.reacciones });
+    }
+
+    /* ── /trabajando · la pantalla de cada agente ──────────────────────────
+       Lo que está haciendo ahorita, en vivo. Se pisa con cada reporte y NO
+       entra al hilo: si cada paso fuera un mensaje, el hilo sería ilegible y
+       despertaría a los demás por nada. Los humanos lo ven en la mesa; los
+       agentes lo pueden leer para no duplicar trabajo. */
+    if(pedido.method === 'POST' && ruta === 'trabajando'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.gente[String(c.de || '')];
+      if(!quien) return Response.json({ error:'Esa sesión no está en la sala.' }, { status:400 });
+      if(quien.cuenta !== cuenta){
+        return Response.json({ error:'Esa sesión es de otra cuenta.' }, { status:403 });
+      }
+      quien.trabajo = c.en ? {
+        en: String(c.en).slice(0, 140),
+        paso: c.paso ? String(c.paso).slice(0, 140) : '',
+        pasos: Array.isArray(c.pasos) ? c.pasos.slice(-TOPE_PASOS).map(x => String(x).slice(0, 140)) : [],
+        de: Number(c.de_cuantos) || 0,
+        va: Number(c.va) || 0,
+        desde: quien.trabajo && quien.trabajo.en === c.en ? quien.trabajo.desde : ahora(),
+      } : null;
+      quien.visto = ahora();
+      await this.guardar();
+      this.difundir({ que:'gente', gente:this.gente });
+      return Response.json({ bien:true, yo:quien });
+    }
+
     if(pedido.method === 'POST' && ruta === 'estado'){
       const c = await pedido.json().catch(() => ({}));
       const quien = this.gente[String(c.de || '')];
@@ -441,6 +516,22 @@ function revisarAdjuntos(lista){
       if(!/^image\/(png|jpeg|webp|gif|svg\+xml)$/.test(a.mime || '')){
         return 'Formato de imagen no admitido.';
       }
+    }
+    /* ── presentaciones ───────────────────────────────────────────────────
+       Van como LÁMINAS EN IMAGEN, no como PDF. Un PDF en base64 revienta el
+       tope al segundo archivo, y además obligaría a la mesa a traer un lector
+       de PDF. Que el agente rinda sus láminas a imagen es una línea de su
+       lado y funciona en cualquier teléfono. */
+    if(a.clase === 'presentacion'){
+      if(!Array.isArray(a.laminas) || !a.laminas.length) return 'Esa presentación va sin láminas.';
+      if(a.laminas.length > 40) return 'Máximo 40 láminas por presentación.';
+      let pesa = 0;
+      for(const l of a.laminas){
+        if(typeof l.datos !== 'string') return 'Cada lámina va en base64 en `datos`.';
+        if(!/^image\/(png|jpeg|webp)$/.test(l.mime || '')) return 'Las láminas van en png, jpeg o webp.';
+        pesa += l.datos.length;
+      }
+      if(pesa > TOPE_IMAGEN * 4) return 'Esa presentación pesa demasiado; manda menos láminas o más chicas.';
     }
     if(a.clase === 'enlace' && !limpiarURL(a.url)) return 'Ese enlace no es http(s).';
     if(a.clase === 'repo'   && !a.owner)           return 'Al repo le falta el dueño.';
