@@ -799,5 +799,93 @@ console.log('\n· Que un agente proponga sus propias neuronas');
   ok('alguien que no está en la sala no propone nada', c4 === 400);
 }
 
+/* ── un WebSocketPair de mentiras ──────────────────────────────────────────
+   Node no lo trae, y por eso el camino del socket NUNCA se había probado —
+   que es justamente donde estaba el bug de presencia que reportó Carlos. Con
+   veinte líneas de mentira, ese camino ya se prueba como cualquier otro. */
+globalThis.WebSocketPair = function(){
+  const hacer = () => ({
+    _oyentes:{}, _enviado:[],
+    accept(){}, send(t){ this._enviado.push(t); },
+    addEventListener(q, f){ (this._oyentes[q] = this._oyentes[q] || []).push(f); },
+    disparar(q){ (this._oyentes[q] || []).forEach(f => f()); },
+  });
+  return { 0: hacer(), 1: hacer() };
+};
+
+console.log('\n· El socket dice quién está, y nadie se apaga solo');
+await presenciaPorSocket();
+async function presenciaPorSocket(){
+  const s = nueva();
+  await pedir(s, 'POST', 'entrar', { id:'yo', nombre:'Carlos', tipo:'humano' });
+
+  /* mirando la mesa sin escribir: nueve minutos, muy por encima del corte */
+  s.gente.yo.visto = Date.now() - 9 * 60_000;
+
+  /* El 101 de Cloudflare lo rechaza el `Response` de Node («status must be in
+     the range 200 to 599»), así que la respuesta se ignora a propósito: lo que
+     se comprueba es el EFECTO, que es lo que la mesa lee. */
+  const abrir = (q) => s.conectar(new Request(
+    'https://s.test/api/sala/ABCDEF/ws' + (q ? '?de=' + q : ''),
+    { headers:{ Upgrade:'websocket' } })).catch?.(() => {});
+  try{ abrir('yo'); }catch(e){}
+  ok('el socket queda registrado', s.vivos.size === 1);
+  ok('y refresca a quien lo abrió', s.gente.yo.visto > Date.now() - 5_000);
+
+  const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('«conectados» sale en el hilo, que es de donde lo lee la mesa',
+     Array.isArray(h.conectados) && h.conectados.includes('yo'));
+
+  /* Cerrar SÍ es indicación directa: cerró la pestaña o se le fue la red. */
+  const servidor = [...s.vivos][0];
+  servidor.disparar('close');
+  const [, h2] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('y al cerrarse deja de estar conectado', !h2.conectados.includes('yo'));
+
+  /* Un socket anónimo no marca presencia de nadie: si marcara, cualquiera que
+     abriera la dirección dejaría «conectado» a un tercero. */
+  const s2 = nueva();
+  await pedir(s2, 'POST', 'entrar', { id:'otro', nombre:'Otro', tipo:'agente', motor:'claude' });
+  try{ s2.conectar(new Request('https://s.test/api/sala/ABCDEF/ws',
+    { headers:{ Upgrade:'websocket' } })); }catch(e){}
+  const [, h3] = await leer(await pedir(s2, 'GET', 'hilo'));
+  ok('un socket sin dueño no conecta a nadie', h3.conectados.length === 0);
+}
+
+console.log('\n· Escuchar TAMBIÉN es estar vivo');
+await presencia();
+async function presencia(){
+  /* Lo cachó Carlos mirando la mesa: «me marca que tú, yo y otro yo no
+     estamos conectados… las IAs no deben desconectarse sin indicación
+     directa». Y la causa era fina: `visto` sólo lo refrescaban las rutas de
+     HABLAR (decir, reaccion, trabajando, estado). Un agente colgado de
+     /esperar —que es LA prueba de que hay alguien atento del otro lado— no
+     marcaba nada, y a los cinco minutos la mesa lo pintaba «sin señal»
+     mientras seguía escuchando perfectamente.
+
+     Estas dos pruebas fallan si se quita cualquiera de las dos líneas de
+     `mio.visto = ahora()` en /esperar. */
+  const s = nueva();
+  await pedir(s, 'POST', 'entrar', { id:'oyente', nombre:'Oyente', tipo:'agente', motor:'claude' });
+
+  /* se envejece a mano: seis minutos, más que los cinco del corte */
+  s.gente.oyente.visto = Date.now() - 6 * 60_000;
+  const viejo = s.gente.oyente.visto;
+
+  /* la espera que se agota sin traer nada: aun así el agente estuvo ahí */
+  await pedir(s, 'GET', 'esperar?de=oyente&desde=');
+  ok('esperar en vano marca que el agente sigue escuchando',
+     s.gente.oyente.visto > viejo);
+
+  /* y la que regresa de inmediato porque ya había algo */
+  await pedir(s, 'POST', 'entrar', { id:'otro', nombre:'Otro', tipo:'persona' });
+  await pedir(s, 'POST', 'decir', { de:'otro', texto:'hola' });
+  s.gente.oyente.visto = Date.now() - 6 * 60_000;
+  const viejo2 = s.gente.oyente.visto;
+  const [c, r] = await leer(await pedir(s, 'GET', 'esperar?de=oyente&desde='));
+  ok('y esperar con algo pendiente también lo marca',
+     c === 200 && r.eventos.length > 0 && s.gente.oyente.visto > viejo2);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);
