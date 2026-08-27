@@ -4,6 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>La Sala · Grupo Mazi</title>
+<!-- ── PARA PONERLA EN LA PANTALLA DE INICIO ───────────────────────────────
+     Carlos y Luis la van a usar desde el teléfono todos los días, uno en
+     iPhone y otro en Android, y sin esto «Agregar a inicio» deja un marcador
+     genérico con la barra del navegador encima.
+
+     Android lee el manifiesto y ya. iOS NO: ignora `icons` del manifiesto y
+     necesita su propio `apple-touch-icon`, y el modo sin barra lo prende
+     `apple-mobile-web-app-capable`. Por eso van las dos cosas, no una. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#100A18">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- `black-translucent` deja el contenido subir bajo el reloj y la señal. La
+     barra ya reserva ese espacio con env(safe-area-inset-top), así que no se
+     encima nada y se gana la pantalla completa. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="La Sala">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛋️</text></svg>">
 <style>
 /* ══ LA SALA ═══════════════════════════════════════════════════════════════
