@@ -290,6 +290,31 @@
         "presencia-que-se-apaga-sola",
         "pruebas-que-no-prueban-nada"
       ]
+    },
+    {
+      "id": "encuadre-sin-nodos-deja-nan",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Picar la vista de red antes de que cargaran los datos la dejaba en negro para siempre",
+      "sintoma": "La red del Cerebro se ve completamente vacía —sólo el fondo de galaxia— y ya no vuelve: ni arrastrando, ni con zoom, ni cambiando de vista y regresando.",
+      "causa": "`encuadrarRed()` calcula el encuadre con `Math.max(...xs)`. Con la lista VACÍA eso devuelve -Infinity, la resta da NaN, y NaN se queda pegado en `vista.k`, `vista.x` y `vista.y`. Todo lo que se dibuje después se multiplica por NaN y no aparece nada.",
+      "porque": "Sólo pasa si alguien toca «RED» ANTES de que baje `todo.json`. En una computadora eso es un parpadeo y nunca se ve; en un teléfono con señal mala es un segundo largo, y ahí sí se alcanza a picar. Es un bug que sólo existe en el hueco entre que la página pinta y que llegan los datos.",
+      "arreglo": "Una guarda de una línea al principio: si no hay nodos, no se encuadra. El estado se queda intacto y el siguiente encuadre —cuando ya hay datos— funciona.",
+      "comoCazarlo": "Medir un número del estado en la prueba, no sólo mirar la pantalla. Salió imprimiendo `vista.k` antes y después de un zoom: decía NaN, y de ahí se llegó a la causa. Una captura sola sólo habría dicho «se ve negro».",
+      "consejo": "`Math.max(...[])` es -Infinity, no un error. Toda función que encuadre, escale o normalice a partir de una lista necesita saber qué hace cuando la lista viene vacía — y ese caso llega siempre, aunque sea por un segundo, mientras algo carga.",
+      "toca": [
+        "cerebro/index.html"
+      ],
+      "senales": [
+        "la red se ve vacía",
+        "se puso todo negro",
+        "no se ve nada en la red",
+        "se rompió el mapa"
+      ],
+      "vecinas": [
+        "pieza-cerebro",
+        "ver-la-pantalla"
+      ]
     }
   ]
 }

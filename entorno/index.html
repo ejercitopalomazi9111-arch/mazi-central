@@ -54,6 +54,13 @@ canvas{display:block;touch-action:none}
   background:linear-gradient(var(--vacio),rgba(16,10,24,.82),transparent);
 }
 .marca{font-weight:700;font-size:15px;letter-spacing:-.01em}
+.volver{
+  display:grid; place-items:center; width:34px; height:34px; margin:-4px 8px -4px -4px;
+  border-radius:10px; border:1px solid var(--borde-vivo, rgba(255,255,255,.2));
+  color:var(--tenue, #bbb); text-decoration:none; font-size:21px; line-height:1;
+  flex:0 0 auto;
+}
+.volver:active{background:rgba(255,255,255,.12)}
 .marca b{color:var(--violeta)}
 .crece{flex:1}
 .btn{
@@ -122,6 +129,9 @@ canvas{display:block;touch-action:none}
 <body>
 
 <div class="barra">
+  <!-- El mismo botón que faltaba en el Cerebro, por la misma razón: desde La
+       Sala esto se abre en pestaña nueva y no había cómo volver. -->
+  <a class="volver" id="volver" href="../" title="Volver">‹</a>
   <span class="marca">El <b>Taller</b></span>
   <span class="crece"></span>
   <button class="btn" id="bPanel">Panel</button>
@@ -727,6 +737,22 @@ if(!HAY3D){
   $('aviso').textContent = 'El modelo 3D no cargó · el taller sigue funcionando sin muñeco';
   arrancar();
 });
+
+/* A dónde vuelve: de donde vino, y si no se sabe, al tablero. No es
+   `history.back()` porque desde La Sala esto abre en pestaña nueva y ahí no
+   hay historia. */
+(function elVolver(){
+  const b = document.getElementById('volver');
+  if(!b) return;
+  try{
+    const r = document.referrer;
+    if(r && new URL(r).origin === location.origin
+         && !new URL(r).pathname.startsWith('/entorno')){
+      b.href = r;
+      if(/\/sala\//.test(new URL(r).pathname)) b.title = 'Volver a La Sala';
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

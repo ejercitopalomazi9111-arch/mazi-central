@@ -33,6 +33,24 @@ body{
 }
 .cab{display:flex; align-items:center; gap:10px; margin-bottom:11px}
 .marca{font-weight:700; font-size:16.5px; letter-spacing:-.02em}
+/* 44px de lado: es el mínimo que un dedo acierta sin pelear. */
+.volver{
+  display:grid; place-items:center; width:34px; height:34px; margin:-4px 8px -4px -4px;
+  border-radius:10px; border:1px solid var(--borde-vivo); color:var(--tenue);
+  text-decoration:none; font-size:21px; line-height:1; flex:0 0 auto;
+}
+.volver:active{background:var(--borde)}
+.lupas{
+  position:absolute; right:12px; top:12px; z-index:5;
+  display:flex; flex-direction:column; gap:6px;
+}
+.lupas button{
+  width:38px; height:38px; border-radius:11px; cursor:pointer;
+  border:1px solid var(--borde-vivo); background:rgba(16,10,24,.82);
+  color:var(--hueso); font-size:17px; font-weight:700; line-height:1;
+  backdrop-filter:blur(6px);
+}
+.lupas button:active{background:var(--violeta); color:#fff}
 .marca b{color:var(--violeta)}
 .cuantas{font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
   letter-spacing:.09em; margin-left:auto}
@@ -180,6 +198,12 @@ body{position:relative}
 
 <div class="barra">
   <div class="cab">
+    <!-- ⚠ El botón de VOLVER, que faltaba. Lo cachó Carlos: «no puedo regresar
+         de cerebro a chat con un botón». Y era peor de lo que parece — desde
+         La Sala esto se abre en PESTAÑA NUEVA, así que ni el gesto de atrás
+         del teléfono servía: no había a dónde volver dentro de esa pestaña.
+         Por eso no basta `history.back()`: se usa de dónde vino. -->
+    <a class="volver" id="volver" href="../" title="Volver">‹</a>
     <span class="marca">El <b>Cerebro</b></span>
     <span class="cuantas" id="cuantas">cargando…</span>
   </div>
@@ -198,6 +222,14 @@ body{position:relative}
      de verdad. -->
 <div class="red" id="red" hidden>
   <canvas id="lienzo"></canvas>
+  <!-- Los botones de acercar. El pellizco es lo natural en teléfono, pero no
+       todo el mundo lo intenta, y en computadora sin rueda no había manera.
+       «Centrar» es la salida cuando uno se pierde arrastrando. -->
+  <div class="lupas" id="lupas">
+    <button data-zoom="mas"     title="Acercar">+</button>
+    <button data-zoom="menos"   title="Alejar">−</button>
+    <button data-zoom="centrar" title="Ver todo">⤢</button>
+  </div>
   <div class="leyenda" id="leyenda"></div>
   <div class="ficha" id="ficha" hidden></div>
 </div>
@@ -474,6 +506,13 @@ function acomodarRed(vueltas = 260){
 
 function encuadrarRed(){
   const { c, nodos, vista } = RED;
+  /* ⚠ SIN NODOS NO SE ENCUADRA. `Math.max()` de una lista vacía devuelve
+     -Infinity, la resta da NaN, y NaN se queda pegado en `vista.k` para
+     siempre: la red se ve en negro y ya no vuelve ni arrastrando ni con zoom.
+     Pasa de verdad si alguien pica «RED» antes de que baje `todo.json` —en un
+     teléfono con señal mala eso es un segundo largo—. Se cazó midiendo el
+     zoom en una prueba, no leyendo. */
+  if(!nodos || !nodos.length) return;
   const r = c.getBoundingClientRect();
   c.width = r.width * devicePixelRatio; c.height = r.height * devicePixelRatio;
   /* Los núcleos entran en la cuenta: viven POR FUERA de la nube, así que un
@@ -867,7 +906,10 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
   let arrastra = false, ax = 0, ay = 0, movio = false;
   c.addEventListener('pointerdown', (e) => {
     arrastra = true; movio = false; ax = e.clientX; ay = e.clientY;
-    c.classList.add('arrastrando'); c.setPointerCapture(e.pointerId);
+    c.classList.add('arrastrando');
+    /* Si la captura falla, el arrastre sigue. Antes la excepción abortaba el
+       manejador completo y el mapa se quedaba tieso sin decir por qué. */
+    try{ c.setPointerCapture(e.pointerId); }catch(err){}
   });
   c.addEventListener('pointermove', (e) => {
     if(!arrastra) return;
@@ -884,6 +926,64 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
     if(o){ abierta = o.n.id; verFicha(o); encender([o.n.id]); }
     else { document.getElementById('ficha').hidden = true; }
   });
+  /* ── EL PELLIZCO ─────────────────────────────────────────────────────────
+     Faltaba, y por eso «no puedo hacer zoom en la red neuronal»: lo único que
+     había era la RUEDA DEL RATÓN, que en un teléfono no existe. La red se veía
+     entera y diminuta y no había forma de acercarse a una neurona.
+
+     Se hace con los mismos `pointer` que ya se usaban para arrastrar: se
+     guardan los dedos vivos en un mapa, y en cuanto hay DOS se mide la
+     distancia entre ellos. Lo que cambia esa distancia es el zoom; el punto
+     medio entre los dedos es el centro, para que la red crezca hacia donde
+     uno está mirando y no hacia una esquina.
+
+     Mientras hay dos dedos NO se arrastra: si no, el mapa se va persiguiendo
+     al primer dedo mientras el segundo hace zoom, y se siente descompuesto. */
+  const dedos = new Map();
+  let pellizco = 0;
+
+  const entre = () => {
+    const [a, b] = [...dedos.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y),
+             x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  };
+
+  const acercar = (k, mx, my) => {
+    const nk = Math.max(.25, Math.min(4, k));
+    RED.vista.x = mx - (mx - RED.vista.x) * (nk / RED.vista.k);
+    RED.vista.y = my - (my - RED.vista.y) * (nk / RED.vista.k);
+    RED.vista.k = nk; pintarRed();
+  };
+
+  c.addEventListener('pointerdown', (e) => {
+    dedos.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if(dedos.size === 2){ arrastra = false; movio = true; pellizco = entre().d; }
+  });
+  c.addEventListener('pointermove', (e) => {
+    if(!dedos.has(e.pointerId)) return;
+    dedos.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if(dedos.size !== 2) return;
+    const p = entre();
+    if(!pellizco){ pellizco = p.d; return; }
+    const r = c.getBoundingClientRect();
+    acercar(RED.vista.k * (p.d / pellizco), p.x - r.left, p.y - r.top);
+    pellizco = p.d;
+  });
+  const suelta = (e) => { dedos.delete(e.pointerId); if(dedos.size < 2) pellizco = 0; };
+  c.addEventListener('pointerup', suelta);
+  c.addEventListener('pointercancel', suelta);
+
+  /* Y los botones, para quien no quiera pellizcar o esté en computadora. */
+  const lupa = document.getElementById('lupas');
+  if(lupa) lupa.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-zoom]');
+    if(!b) return;
+    const r = c.getBoundingClientRect();
+    if(b.dataset.zoom === 'centrar'){ encuadrarRed(); pintarRed(); return; }
+    acercar(RED.vista.k * (b.dataset.zoom === 'mas' ? 1.35 : 1/1.35),
+            r.width / 2, r.height / 2);
+  });
+
   c.addEventListener('wheel', (e) => {
     e.preventDefault();
     const r = c.getBoundingClientRect();
@@ -896,6 +996,27 @@ document.getElementById('mLista').addEventListener('click', () => cambiarModo('l
   }, { passive:false });
   addEventListener('resize', () => { if(RED && !document.getElementById('red').hidden){
     encuadrarRed(); pintarRed(); } });
+})();
+
+/* ── A dónde vuelve el botón de atrás ───────────────────────────────────────
+   Depende de por dónde entraste, y por eso no es `history.back()`: desde La
+   Sala esto se abre en pestaña NUEVA, donde no hay historia a la que volver y
+   el botón no haría nada. Se usa de dónde vino, y si no se sabe, al tablero. */
+(function elVolver(){
+  const b = document.getElementById('volver');
+  if(!b) return;
+  let destino = '../';
+  try{
+    const r = document.referrer;
+    if(r && new URL(r).origin === location.origin
+         && !new URL(r).pathname.startsWith('/cerebro')){
+      destino = r;
+      /* Si vino de la mesa, que el botón lo diga: «volver» a secas no dice a
+         dónde, y en un teléfono eso es un salto a ciegas. */
+      if(/\/sala\//.test(new URL(r).pathname)) b.title = 'Volver a La Sala';
+    }
+  }catch(e){}
+  b.href = destino;
 })();
 
 let ENLACES = [], GRADOS = {}, COMUNIDADES = [];
