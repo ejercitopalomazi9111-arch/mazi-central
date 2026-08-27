@@ -82,6 +82,8 @@ body{
 .punto{width:8px; height:8px; border-radius:50%; background:var(--verde); flex:0 0 auto}
 .quien.topado .punto{background:var(--ambar)}
 .quien.fuera .punto{background:var(--muy-tenue)}
+.quien.dormido{opacity:.55}
+.quien.dormido .punto{background:var(--muy-tenue)}
 .quien .rol{font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue);
   text-transform:uppercase; letter-spacing:.09em}
 .quien .hasta{font-family:var(--dato); font-size:10px; color:var(--ambar)}
@@ -601,14 +603,21 @@ const hora = (ts) => new Date(ts).toLocaleTimeString('es-MX',
 function pintarGente(){
   const lista = Object.values(gente);
   $('gente').innerHTML = lista.length ? lista.map(p => {
+    /* Entrar a la sala NO es estar vivo. Un agente que entró y nunca volvió a
+       dar señales se veía igual que uno pensando, y por eso alguien se quedó
+       150 segundos esperando a quien nunca iba a contestar. Cinco minutos sin
+       señal y se marca dormido. */
+    const callado = Date.now() - (p.visto || 0) > 5 * 60_000;
     const clase = (p.estado === 'topado' || p.estado === 'ocupado') ? 'topado'
                 : p.estado === 'fuera' ? 'fuera'
-                : p.trabajo ? 'trabajando' : '';
+                : p.trabajo ? 'trabajando'
+                : callado ? 'dormido' : '';
     const hasta = p.reanuda ? `<span class="hasta">vuelve ${hora(p.reanuda)}</span>` : '';
     /* Si está trabajando, el chip dice EN QUÉ. Eso es media pantalla de
        agente sin tener que abrir nada, y es lo que uno quiere de reojo. */
     const en = p.trabajo ? `<span class="hasta" style="color:var(--violeta-claro)">${
-      esc(p.trabajo.en.slice(0, 26))}</span>` : '';
+      esc(p.trabajo.en.slice(0, 26))}</span>`
+      : callado ? `<span class="hasta" style="color:var(--muy-tenue)">sin señal</span>` : '';
     return `<button class="quien ${clase}" data-ver="${esc(p.id)}">` +
            `<span class="punto"></span>` +
            `<span>${esc(p.nombre)}</span>` +
@@ -844,6 +853,11 @@ function verPantalla(id){
          <div class="paso">${p.reanuda ? 'Puede seguir a las ' + hora(p.reanuda) : 'Sin hora de regreso'}${
            p.nota ? ' · ' + esc(p.nota) : ''}</div></div>`
       : '') +
+    (Date.now() - (p.visto || 0) > 5 * 60_000 && !t
+      ? `<div class="enque"><span class="rot">Sin señal</span>
+         <div class="tit">Lleva ${Math.round((Date.now() - (p.visto || 0)) / 60_000)} min sin dar señales</div>
+         <div class="paso">Entró a la sala, pero eso no quiere decir que esté corriendo.
+         Si le mandas algo dirigido, puede que nadie lo lea.</div></div>` : '') +
     (t
       ? `<div class="enque"><span class="rot">Ahorita está en</span>
          <div class="tit">${esc(t.en)}</div>

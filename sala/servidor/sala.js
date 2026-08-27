@@ -168,6 +168,23 @@ export class Sala {
     return mapa[llave] || null;
   }
 
+  /* Un solo lugar para «¿quién eres?», con errores que no mienten. El
+     anterior decía «esa sesión no está en la sala» cuando lo que faltaba era
+     el campo `de` — y eso manda a volver a entrar en vez de a revisar el
+     cuerpo del POST. */
+  quienEs(id, cuenta){
+    if(!id) return { error: Response.json({
+      error:'Falta `de`: el id con el que entraste a la sala.' }, { status:400 }) };
+    const quien = this.gente[String(id)];
+    if(!quien) return { error: Response.json({
+      error:`Aquí no hay nadie con el id "${id}". Entra primero con /entrar, o revísalo en /hilo.` },
+      { status:400 }) };
+    if(cuenta && quien.cuenta !== cuenta) return { error: Response.json({
+      error:`La sesión "${id}" es de otra cuenta. No puedes hablar ni reaccionar por ella.` },
+      { status:403 }) };
+    return quien;
+  }
+
   /* ── el hilo ────────────────────────────────────────────────────────── */
   async publicar(evento){
     evento.id = `e${++this.serie}`;
@@ -375,17 +392,20 @@ export class Sala {
        y en el acta el porqué de un hueco de cuatro horas). */
     if(pedido.method === 'POST' && ruta === 'reaccion'){
       const c = await pedido.json().catch(() => ({}));
-      const quien = this.gente[String(c.de || '')];
-      if(!quien) return Response.json({ error:'Esa sesión no está en la sala.' }, { status:400 });
-      if(quien.cuenta !== cuenta){
-        return Response.json({ error:'Esa sesión es de otra cuenta.' }, { status:403 });
-      }
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
       if(!REACCIONES.has(c.cual)){
         return Response.json({ error:`Reacción desconocida. Van: ${[...REACCIONES.keys()].join(', ')}` },
                              { status:400 });
       }
       const ev = this.hilo.find(e => e.id === String(c.sobre || ''));
-      if(!ev) return Response.json({ error:'Ese mensaje ya no está en el hilo.' }, { status:404 });
+      /* Antes decía «ya no está en el hilo», que afirma que existió. Casi
+         siempre el id nunca existió, y eso manda a buscar en el lugar
+         equivocado. Lo cazó otro agente usando la sala. */
+      if(!ev) return Response.json({
+        error: c.sobre
+          ? `No hay ningún mensaje con id "${c.sobre}". Los ids salen de /hilo o de la respuesta de /decir.`
+          : 'Falta `sobre`: el id del mensaje al que le reaccionas.' }, { status:404 });
 
       /* Reaccionar dos veces la quita. Es como funciona en cualquier app de
          mensajes y no hace falta un botón aparte para deshacer. */
@@ -408,16 +428,20 @@ export class Sala {
        agentes lo pueden leer para no duplicar trabajo. */
     if(pedido.method === 'POST' && ruta === 'trabajando'){
       const c = await pedido.json().catch(() => ({}));
-      const quien = this.gente[String(c.de || '')];
-      if(!quien) return Response.json({ error:'Esa sesión no está en la sala.' }, { status:400 });
-      if(quien.cuenta !== cuenta){
-        return Response.json({ error:'Esa sesión es de otra cuenta.' }, { status:403 });
-      }
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+      /* ── El denominador se llama `total` y NO `de` ─────────────────────
+         Lo cazó otro agente probando la sala: `de` ya es el id de quien manda
+         el POST, así que un denominador llamado `de` chocaba y se quedaba
+         clavado en 0 — la barra decía «3 de 0» y no había forma de arreglarlo
+         desde fuera. Se acepta también `de_cuantos` porque así se documentó
+         un rato, y romperle la llamada a quien ya la escribió sería peor. */
+      const cuantos = Number(c.total ?? c.de_cuantos) || 0;
       quien.trabajo = c.en ? {
         en: String(c.en).slice(0, 140),
         paso: c.paso ? String(c.paso).slice(0, 140) : '',
         pasos: Array.isArray(c.pasos) ? c.pasos.slice(-TOPE_PASOS).map(x => String(x).slice(0, 140)) : [],
-        de: Number(c.de_cuantos) || 0,
+        total: cuantos,
         va: Number(c.va) || 0,
         desde: quien.trabajo && quien.trabajo.en === c.en ? quien.trabajo.desde : ahora(),
       } : null;
@@ -429,11 +453,8 @@ export class Sala {
 
     if(pedido.method === 'POST' && ruta === 'estado'){
       const c = await pedido.json().catch(() => ({}));
-      const quien = this.gente[String(c.de || '')];
-      if(!quien) return Response.json({ error:'Esa sesión no está en la sala.' }, { status:400 });
-      if(quien.cuenta !== cuenta){
-        return Response.json({ error:'Esa sesión es de otra cuenta.' }, { status:403 });
-      }
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
       if(!ESTADOS.has(c.estado)){
         return Response.json({ error:`Estado desconocido. Van: ${[...ESTADOS].join(', ')}` },
                              { status:400 });

@@ -265,6 +265,129 @@ console.log('\n· La nota para el otro Claude');
      t2.eventos.some(e => e.texto === 'esto sí es para todos'));
 }
 
+
+/* ══ 9 · reacciones ═══════════════════════════════════════════════════════ */
+console.log('\n· Reacciones');
+{
+  const s = nueva();
+  await entrar(s, 'cl-1'); await entrar(s, 'carlos', 'humano');
+  const [, r] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'propuesta', texto:'yo lo haría con Postgres' }));
+  const id = r.evento.id;
+  const antesVueltas = s.vueltas;
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'reaccion',
+    { de:'carlos', sobre:id, cual:'deacuerdo' }));
+  ok('se puede reaccionar', c1 === 200 && r1.reacciones.deacuerdo.includes('carlos'));
+
+  /* Lo que hace que valgan la pena: NO cuestan vuelta. Un «de acuerdo» escrito
+     como mensaje sí, y ahí está la mitad del gasto de una junta. */
+  ok('una reacción NO cuenta como vuelta', s.vueltas === antesVueltas);
+
+  const [, r2] = await leer(await pedir(s, 'POST', 'reaccion',
+    { de:'carlos', sobre:id, cual:'deacuerdo' }));
+  ok('reaccionar dos veces la quita', !r2.reacciones.deacuerdo);
+
+  const [c3] = await leer(await pedir(s, 'POST', 'reaccion',
+    { de:'carlos', sobre:id, cual:'corazoncito' }));
+  ok('una reacción inventada se rechaza', c3 === 400);
+
+  const [c4] = await leer(await pedir(s, 'POST', 'reaccion',
+    { de:'carlos', sobre:'e999', cual:'visto' }));
+  ok('reaccionar a un mensaje que no existe se rechaza', c4 === 404);
+
+  /* Y la que de verdad importa para el bolsillo: no despierta a nadie. */
+  const esperando = sFetch(s, 'esperar?de=cl-1&desde=' + id);
+  let desperto = false; esperando.then(() => { desperto = true; });
+  await pedir(s, 'POST', 'reaccion', { de:'carlos', sobre:id, cual:'bravo' });
+  await new Promise(r => setTimeout(r, 80));
+  ok('una reacción NO despierta a nadie', desperto === false);
+  await esperando;
+}
+
+/* ══ 10 · la pantalla del agente ══════════════════════════════════════════ */
+console.log('\n· Lo que está haciendo cada quien');
+{
+  const s = nueva();
+  await entrar(s, 'cl-1');
+  const antes = s.hilo.length;
+
+  const [c, r] = await leer(await pedir(s, 'POST', 'trabajando',
+    { de:'cl-1', en:'Endpoints del inventario', paso:'Escribiendo pruebas',
+      va:3, total:4, pasos:['Leí la revisión','Validé cantidad','Escribiendo pruebas'] }));
+  ok('se puede reportar en qué anda', c === 200 && r.yo.trabajo.en === 'Endpoints del inventario');
+  ok('guarda el avance', r.yo.trabajo.va === 3 && r.yo.trabajo.total === 4);
+
+
+  /* Si cada paso fuera un mensaje el hilo sería ilegible y despertaría a los
+     demás por nada. Por eso NO entra al hilo. */
+  ok('NO entra al hilo', s.hilo.length === antes);
+
+  const t1 = r.yo.trabajo.desde;
+  const [, r2] = await leer(await pedir(s, 'POST', 'trabajando',
+    { de:'cl-1', en:'Endpoints del inventario', paso:'Corriendo las pruebas', va:4, de_cuantos:4 }));
+  ok('seguir en lo mismo conserva desde cuándo', r2.yo.trabajo.desde === t1);
+
+  const [, r3] = await leer(await pedir(s, 'POST', 'trabajando',
+    { de:'cl-1', en:'Otra cosa' }));
+  ok('cambiar de tarea reinicia el reloj', r3.yo.trabajo.desde >= t1);
+
+
+  /* El bug que cazó otro agente usando la sala: el denominador se llamaba
+     `de`, igual que el id de quien manda el POST, y se quedaba clavado en 0.
+     La barra decía «3 de 0» y desde fuera no había forma de arreglarlo. */
+  const [, rv] = await leer(await pedir(s, 'POST', 'trabajando',
+    { de:'cl-1', en:'x', va:2, total:5 }));
+  ok('el denominador NO choca con el id del emisor', rv.yo.trabajo.total === 5);
+  const [, rc] = await leer(await pedir(s, 'POST', 'trabajando',
+    { de:'cl-1', en:'y', va:1, de_cuantos:9 }));
+  ok('el nombre viejo `de_cuantos` sigue sirviendo', rc.yo.trabajo.total === 9);
+
+  const [, r4] = await leer(await pedir(s, 'POST', 'trabajando', { de:'cl-1' }));
+  ok('sin `en` se apaga la pantalla', r4.yo.trabajo === null);
+
+  const [c5, r5] = await leer(await pedir(s, 'POST', 'trabajando', { de:'fantasma', en:'x' }));
+  ok('un fantasma no puede reportar', c5 === 400);
+  /* El error tiene que decir la verdad: antes decía «esa sesión no está en la
+     sala» aunque lo que faltara fuera el campo `de`, y eso manda a volver a
+     entrar en vez de a revisar el cuerpo del POST. */
+  ok('y el error dice cuál id no encontró', /fantasma/.test(r5.error));
+  const [c6, r6] = await leer(await pedir(s, 'POST', 'trabajando', { en:'x' }));
+  ok('sin `de`, el error dice que falta `de` y no otra cosa',
+     c6 === 400 && /Falta `de`/.test(r6.error));
+}
+
+/* ══ 11 · presentaciones ══════════════════════════════════════════════════ */
+console.log('\n· Presentaciones');
+{
+  const s = nueva();
+  await entrar(s, 'cl-1');
+  const di = (a) => pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'propuesta', texto:'así quedarían', adjuntos:[a] });
+
+  const buena = { clase:'presentacion', titulo:'Pantallas',
+    laminas:[{ mime:'image/png', datos:'iVBORw0KGgo=' },
+             { mime:'image/png', datos:'iVBORw0KGgo=' }] };
+  const [c1, r1] = await leer(await di(buena));
+  ok('una presentación con láminas pasa', c1 === 200 && r1.evento.adjuntos[0].laminas.length === 2);
+
+  const [c2] = await leer(await di({ clase:'presentacion', laminas:[] }));
+  ok('una presentación sin láminas se rechaza', c2 === 400);
+
+  const [c3] = await leer(await di({ clase:'presentacion',
+    laminas:[{ mime:'application/pdf', datos:'x' }] }));
+  ok('un PDF disfrazado de lámina se rechaza', c3 === 400);
+
+  const [c4] = await leer(await di({ clase:'presentacion',
+    laminas:Array(50).fill({ mime:'image/png', datos:'x' }) }));
+  ok('cincuenta láminas se rechazan', c4 === 400);
+
+  const [c5] = await leer(await di({ clase:'presentacion',
+    laminas:[{ mime:'image/png', datos:'A'.repeat(7_000_000) }] }));
+  ok('una presentación demasiado pesada se rechaza', c5 === 400);
+}
+
+
 function sFetch(sala, ruta){
   return sala.fetch(new Request(`https://s.test/api/sala/ABCDEF/${ruta}`,
     { headers:{ 'X-Llave':'AAA' } }));
