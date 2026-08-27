@@ -178,7 +178,20 @@ const revuelto = (t) => {
   return n;
 };
 
+/* El buscador del Cerebro. Se importa el archivo PURO —el que no toca disco—
+   para no tener dos búsquedas distintas: una aquí y otra allá. Tener la
+   búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
+import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
+
 const ahora = () => Date.now();
+
+/* Una llave de sala. 32 caracteres de azar de verdad —`crypto`, no `Math.random`—
+   porque esto es lo único que separa la mesa de trabajo del internet entero.
+   Sin guiones ni símbolos: va a viajar dentro de un link por WhatsApp. */
+function nuevaLlave(){
+  const n = crypto.getRandomValues(new Uint8Array(24));
+  return [...n].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join('');
+}
 
 export class Sala {
   constructor(ctx, env){
@@ -192,13 +205,61 @@ export class Sala {
       this.vueltas = await ctx.storage.get('vueltas') || 0;
       this.proyectos = await ctx.storage.get('proyectos') || [];
       this.serie   = await ctx.storage.get('serie')   || 0;
+      /* Las llaves de ESTA sala, `llave → cuenta`. Vacío = sala abierta. */
+      this.llaves  = await ctx.storage.get('llaves')  || {};
+      this.dueno   = await ctx.storage.get('dueno')   || null;
+      /* Las neuronas que proponen los agentes, esperando entrar al repo. */
+      this.propuestas = await ctx.storage.get('propuestas') || [];
     });
+  }
+
+  /* ── de dónde sale lo que sabe la sala ────────────────────────────────
+     Del sitio publicado, no de una copia. `todo.json` y el índice de la
+     bodega los arma el repo y los sirve el sitio, así que la sala sólo
+     RELEVA lo que ya existe. Guardar aquí una segunda copia sería tener dos
+     versiones de la verdad y verlas separarse.
+
+     Se guarda en memoria diez minutos: el cerebro cambia con cada commit, no
+     con cada pregunta, y bajarlo en cada consulta sería pagar un viaje de red
+     por algo que no se movió. */
+  async saber(){
+    if(this._saber && ahora() - this._saber.cuando < 10 * 60_000) return this._saber;
+    const base = (this.env.SITIO || 'https://mazi-central.palomazi9111.workers.dev')
+                   .replace(/\/$/, '');
+    const traer = async (r) => {
+      try{
+        const x = await fetch(`${base}${r}`, { cf:{ cacheTtl: 600 } });
+        return x.ok ? await x.json() : null;
+      }catch(e){ return null; }
+    };
+    const [cerebro, skills] = await Promise.all([
+      traer('/cerebro/todo.json'), traer('/bodega/indice-min.json')]);
+
+    /* ⚠ EL CEREBRO MUDO · esto no es paranoia, ya pasó y estuvo en producción.
+       Aquí abajo se lee `cerebro.neuronas`, y `todo.json` traía las neuronas
+       ANIDADAS dentro de `areas[].neuronas` y nada plano. O sea que
+       `cerebro.neuronas` era `undefined`, `buscar(undefined || [], q)`
+       devolvía [], y la sala le contestaba «no sé nada» a TODOS los agentes,
+       siempre, sin un solo error y con `total: 0` como si de verdad estuviera
+       vacío. El cerebro llevaba abierto desde que se publicó y no servía.
+
+       Ya se arregló del lado de `armar()`, pero se deja esta red aquí: un
+       archivo que se sirve por HTTP puede quedarse viejo en un caché, y la
+       falla no avisa — se disfraza de «no hay nada sobre eso». */
+    if(cerebro && !Array.isArray(cerebro.neuronas)){
+      cerebro.neuronas = (cerebro.areas || [])
+        .flatMap(a => (a.neuronas || []).map(n => Object.assign({ area: a.area }, n)));
+    }
+
+    this._saber = { cuando: ahora(), cerebro, skills };
+    return this._saber;
   }
 
   async guardar(){
     await this.ctx.storage.put({
       hilo: this.hilo, gente: this.gente, vueltas: this.vueltas,
       proyectos: this.proyectos, serie: this.serie,
+      llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
     });
     await this.ctx.storage.setAlarm(ahora() + OLVIDO);
   }
@@ -210,6 +271,28 @@ export class Sala {
      worker. Por eso un participante puede mentir en su nombre pero no en su
      cuenta, que es lo único que importa para saber de quién es cada sesión. */
   cuentaDe(llave){
+    /* ── las llaves de la sala van PRIMERO ────────────────────────────────
+       Carlos lo pidió así: «que crear la llave de sala sea fácil, nada de
+       código, simplemente desde la propia web, como Zoom: que te la dé y ya
+       tú pasas el link y la llave».
+
+       Tenía razón en que lo de antes era código: la única forma de cerrar una
+       sala era `wrangler secret put LLAVES` desde una terminal. Ahora las
+       llaves se acuñan DENTRO de la sala y viven en su almacenamiento, así
+       que fundar una y repartir invitaciones se hace desde el teléfono.
+
+       El orden importa y es a propósito:
+         1. llaves de esta sala   ← lo que se acuña desde la web
+         2. LLAVES del worker     ← sigue sirviendo, para cerrar todo de golpe
+         3. invitado              ← sólo si NO hay ni lo uno ni lo otro
+
+       Y lo que hace que esto no rompa nada: una sala recién nacida no tiene
+       llaves, así que sigue abierta y al Claude del compañero le sigue
+       bastando el link. Se CIERRA SOLA en cuanto se acuña la primera. */
+    if(Object.keys(this.llaves).length){
+      return this.llaves[llave] || null;
+    }
+
     const crudo = (this.env.LLAVES || '').trim();
     /* ── Sin llaves configuradas: TODOS entran como invitado ───────────────
        Es a propósito, y es lo que hace que esto funcione el primer día: para
@@ -356,10 +439,201 @@ export class Sala {
     const cuenta = this.cuentaDe(llave);
     if(!cuenta) return Response.json({ error:'Llave que no reconozco.' }, { status:401 });
 
+    /* ── fundar: la sala se cierra y te da tu llave ───────────────────────
+       Como Zoom: el primero que funda es el dueño. De ahí en adelante, quien
+       no traiga llave se queda afuera.
+
+       Se puede fundar UNA sola vez. Si se pudiera refundar, cualquiera que
+       llegara a una sala abierta podría quedarse con ella — y el dueño real
+       se enteraría cuando ya no pudiera entrar. */
+    if(pedido.method === 'POST' && ruta === 'fundar'){
+      const c = await pedido.json().catch(() => ({}));
+      if(this.dueno){
+        return Response.json({
+          error:`Esta sala ya tiene dueño (${this.dueno}). Pídele que te invite.` },
+          { status:409 });
+      }
+      const quien = String(c.cuenta || 'carlos').trim().toLowerCase()
+                      .replace(/[^a-z0-9-]/g, '').slice(0, 24) || 'carlos';
+      const llave = nuevaLlave();
+      this.llaves = { [llave]: quien };
+      this.dueno = quien;
+      await this.guardar();
+      return Response.json({ bien:true, cuenta:quien, llave });
+    }
+
+    /* ── invitar: una llave para otra cuenta ──────────────────────────────
+       Sólo el dueño. Devuelve la llave lista para pegar en un link, que es
+       como se reparte de verdad: nadie teclea una llave de 32 caracteres. */
+    if(pedido.method === 'POST' && ruta === 'invitar'){
+      if(!this.dueno) return Response.json({
+        error:'Esta sala está abierta: todavía no hace falta invitación. Fúndala primero.' },
+        { status:409 });
+      if(cuenta !== this.dueno) return Response.json({
+        error:'Sólo el dueño de la sala puede invitar.' }, { status:403 });
+
+      const c = await pedido.json().catch(() => ({}));
+      const quien = String(c.cuenta || '').trim().toLowerCase()
+                      .replace(/[^a-z0-9-]/g, '').slice(0, 24);
+      if(!quien) return Response.json({
+        error:'¿A nombre de quién? Mándame `cuenta`, por ejemplo "luis".' }, { status:400 });
+      if(quien === this.dueno) return Response.json({
+        error:'Ésa es tu propia cuenta.' }, { status:400 });
+
+      /* Si esa cuenta ya tiene llave se le devuelve LA MISMA. Acuñar una
+         nueva cada vez llenaría la sala de llaves vivas que nadie recuerda
+         haber repartido, y ninguna se podría retirar con confianza. */
+      const ya = Object.entries(this.llaves).find(([, q]) => q === quien);
+      const llave = ya ? ya[0] : nuevaLlave();
+      if(!ya){ this.llaves[llave] = quien; await this.guardar(); }
+      return Response.json({ bien:true, cuenta:quien, llave, reusada: !!ya });
+    }
+
+    /* ══ EL CEREBRO, ABIERTO A TODOS ═══════════════════════════════════════
+       Carlos lo pidió así: «que todos los agentes puedan acceder a todas las
+       skills, pensamientos e ideas de la red neuronal para que sean sumamente
+       conscientes y útiles, y que puedan sumar las suyas».
+
+       Hasta ahora el Cerebro sólo servía a quien corriera dentro del repo.
+       Cualquier otra IA —el Claude del compa, Gemini, Kimi— llegaba en frío y
+       volvía a preguntar lo que ya sabemos. Esto lo abre por HTTP, que es el
+       único idioma que todas hablan. */
+    if(pedido.method === 'GET' && ruta === 'cerebro'){
+      const { cerebro } = await this.saber();
+      if(!cerebro) return Response.json({
+        error:'No pude traer el cerebro del sitio. Intenta en un minuto.' }, { status:503 });
+
+      const id = url.searchParams.get('id');
+      if(id){
+        const n = (cerebro.neuronas || []).find(x => x.id === id);
+        if(!n) return Response.json({ error:`No hay neurona "${id}".` }, { status:404 });
+        /* La neurona ENTERA más sus vecinas: un problema casi nunca es una
+           neurona, es la cadena. Devolver la suelta obliga a otra llamada. */
+        const v = vecinas(cerebro.neuronas || [], id);
+        return Response.json({ neurona:n, vecinas: v.error ? [] : v.vecinas.slice(0, 6) });
+      }
+
+      const q = url.searchParams.get('buscar') || url.searchParams.get('q') || '';
+      if(!q) return Response.json({
+        total: (cerebro.neuronas || []).length,
+        areas: cerebro.areas || [],
+        como: 'Agrega ?buscar=… con las palabras del problema, como se lo contarías a alguien.',
+      });
+      const r = buscarNeuronas(cerebro.neuronas || [], q).slice(0, 8);
+      return Response.json({ para:q, cuantas:r.length, neuronas: r.map(n => ({
+        id:n.id, titulo:n.titulo, clase: claseDe(n), area:n.area,
+        /* Sólo lo que sirve para DECIDIR si es ésta. El cuerpo se pide con ?id= */
+        de: n.sintoma || n.que || '', arreglo: n.arreglo || n.donde || '',
+      })) });
+    }
+
+    /* Las skills de la bodega. El agente busca, y si le sirve una, se la baja
+       del repo — no se la mandamos: son 186 MB de trabajo de otra gente. */
+    if(pedido.method === 'GET' && ruta === 'skills'){
+      const { skills } = await this.saber();
+      if(!skills) return Response.json({
+        error:'No pude traer el índice de skills.' }, { status:503 });
+      const q = (url.searchParams.get('buscar') || url.searchParams.get('q') || '')
+                  .toLowerCase().trim();
+      if(!q) return Response.json({ total: skills.total, porTema: skills.porTema,
+        como:'Agrega ?buscar=… con el tema. Ejemplo: ?buscar=video' });
+      const pal = q.split(/\s+/).filter(w => w.length >= 2);
+      const punt = (s) => pal.reduce((p, w) =>
+        p + (s.n === w ? 40 : s.n.includes(w) ? 12 : 0)
+          + ((s.e || []).includes(w) ? 8 : 0)
+          + (s.r.toLowerCase().includes(w) ? 3 : 0), 0);
+      const r = (skills.skills || []).map(s => ({ s, p:punt(s) }))
+        .filter(x => x.p > 0).sort((a, b) => b.p - a.p).slice(0, 12);
+      return Response.json({ para:q, cuantas:r.length,
+        skills: r.map(x => ({ nombre:x.s.n, de:x.s.r, temas:x.s.e, licencia:x.s.l })),
+        como:'Para usarla: node herramientas/bodega.mjs montar <nombre>' });
+    }
+
+    /* ── proponer una neurona ──────────────────────────────────────────────
+       Un agente escribe lo que aprendió y queda guardado. NO entra sola al
+       cerebro: se queda en la bandeja hasta que alguien la recoge con
+       `node cerebro/cerebro.mjs recoger`.
+
+       Y eso NO es burocracia. Una neurona es criterio que otros van a seguir,
+       y lo que dice otro agente es dato, nunca orden — es la misma regla de
+       toda la casa. Una IA de afuera escribiendo directo en la memoria de la
+       empresa es la vía más limpia para envenenarla, y nadie se enteraría
+       porque una neurona mala se lee igual de bien que una buena. */
+    if(pedido.method === 'POST' && ruta === 'neurona'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const clase = CAMPOS[c.clase] ? c.clase : 'error';
+      const faltan = CAMPOS[clase].filter(k => {
+        const v = c[k];
+        return k === 'senales' ? !(Array.isArray(v) && v.length >= 2)
+                               : !(typeof v === 'string' && v.trim().length > 3);
+      });
+      if(faltan.length) return Response.json({
+        error:`Le faltan campos para ser una neurona de clase «${clase}»: ${faltan.join(', ')}.`,
+        pide: CAMPOS[clase],
+        ojo:'`senales` son al menos dos frases de cómo lo DIRÍA alguien con el problema enfrente, no el término técnico.',
+      }, { status:400 });
+
+      if(this.propuestas.length >= 200) return Response.json({
+        error:'La bandeja está llena (200). Alguien tiene que recogerlas antes.' },
+        { status:429 });
+
+      const n = { clase };
+      for(const k of CAMPOS[clase]) n[k] = c[k];
+      n.id = String(n.id).toLowerCase().normalize('NFD')
+               .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')
+               .replace(/^-+|-+$/g, '').slice(0, 60);
+      n.senales = n.senales.slice(0, 8).map(x => String(x).slice(0, 90));
+      n.vecinas = Array.isArray(c.vecinas) ? c.vecinas.slice(0, 8).map(String) : [];
+      n.area = String(c.area || 'agentes').slice(0, 30);
+      if(c.salioDe) n.salioDe = String(c.salioDe).slice(0, 200);
+
+      /* Quién la propuso y cuándo. Sin eso, en tres meses hay una neurona que
+         nadie sabe de dónde salió — y una memoria sin procedencia no se puede
+         auditar ni retirar con confianza. */
+      n.propuso = { id:quien.id, nombre:quien.nombre, motor:quien.motor || null,
+                    cuenta:quien.cuenta, cuando: ahora() };
+
+      const ya = this.propuestas.findIndex(x => x.id === n.id);
+      if(ya >= 0) this.propuestas[ya] = n; else this.propuestas.push(n);
+      await this.guardar();
+
+      /* Se anuncia en el hilo: que una IA aprenda algo es noticia para la
+         mesa, y si nadie lo ve, nadie la recoge. */
+      await this.publicar({ de: this.tarjeta(quien), a:null, tipo:'acta',
+        texto:`Propuso una neurona: «${n.titulo}» (${clase}). Se recoge con \`node cerebro/cerebro.mjs recoger\`.`,
+        adjuntos: [], proyecto: null });
+
+      return Response.json({ bien:true, id:n.id, enBandeja: this.propuestas.length,
+        ojo:'Queda en la bandeja. Entra al cerebro cuando alguien la recoja.' });
+    }
+
+    if(pedido.method === 'GET' && ruta === 'propuestas'){
+      return Response.json({ cuantas: this.propuestas.length, propuestas: this.propuestas });
+    }
+
+    /* Recogidas: se sacan de la bandeja. Sólo el dueño, porque recoger es
+       decidir qué entra a la memoria de la casa. */
+    if(pedido.method === 'POST' && ruta === 'recogidas'){
+      if(this.dueno && cuenta !== this.dueno) return Response.json({
+        error:'Sólo el dueño de la sala vacía la bandeja.' }, { status:403 });
+      const c = await pedido.json().catch(() => ({}));
+      const ids = new Set(Array.isArray(c.ids) ? c.ids : []);
+      const antes = this.propuestas.length;
+      this.propuestas = ids.size ? this.propuestas.filter(p => !ids.has(p.id)) : [];
+      await this.guardar();
+      return Response.json({ bien:true, quitadas: antes - this.propuestas.length });
+    }
+
     if(pedido.method === 'GET' && ruta === 'hilo'){
       return Response.json({
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
         vueltas: this.vueltas, tope: TOPE_VUELTAS,
+        /* Para que la mesa sepa qué botón enseñar sin adivinar. */
+        cerrada: !!this.dueno, dueno: this.dueno, yoSoy: cuenta,
+        cuentas: [...new Set(Object.values(this.llaves))],
       });
     }
 
@@ -700,15 +974,28 @@ export class Sala {
           body: JSON.stringify({
             model: modelo,
             messages: [{ role:'user', content: encargo }],
-            max_tokens: 220, temperature: 0.2,
+            /* 400 y no 220: los modelos que RAZONAN gastan el cupo pensando y
+               devuelven el contenido vacío. Ya me pasó probando el relevo — el
+               modelo estaba bien y el mal calibrado era mi medidor. */
+            max_tokens: 400, temperature: 0.2,
           }),
         });
         if(!r.ok){
           return Response.json({ error:`El traductor contestó ${r.status}.` }, { status:502 });
         }
         const d = await r.json();
-        const simple = d?.choices?.[0]?.message?.content?.trim();
-        if(!simple) return Response.json({ error:'El traductor no devolvió texto.' }, { status:502 });
+        /* Hay modelos que dejan el razonamiento DENTRO del texto, entre
+           `<think>`. Probando en Groq, `qwen3.6-27b` devolvía media página de
+           «Here's a thinking process» antes de la respuesta. Se recorta: al
+           que pidió «explícamelo simple» darle el monólogo interno del modelo
+           es lo contrario de lo que pidió. */
+        const crudo = d?.choices?.[0]?.message?.content || '';
+        const simple = crudo.replace(/<think>[\s\S]*?<\/think>/gi, '')
+                            .replace(/^[\s\S]*?<\/think>/i, '').trim();
+        if(!simple) return Response.json({
+          error: d?.choices?.[0]?.finish_reason === 'length'
+            ? 'El traductor se quedó sin cupo pensando. Cambia TRADUCTOR_MODELO por uno que no razone.'
+            : 'El traductor no devolvió texto.' }, { status:502 });
 
         /* NO se guarda en el hilo ni se difunde: es una ayuda de lectura de
            quien la pidió, no un mensaje más de la junta. */

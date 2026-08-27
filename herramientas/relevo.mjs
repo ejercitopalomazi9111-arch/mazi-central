@@ -158,15 +158,28 @@ async function llamar(prov, mensajes, { tiempo = 60_000, maxTokens = 900 } = {})
       ? 'no contestó a tiempo' : 'no se pudo conectar', espera: 5 * 60_000 };
   }
 
-  const texto = await r.text();
+  /* Leer el cuerpo también puede agotarse, y ese error caía FUERA del try:
+     un solo proveedor lento tumbaba `probar` completo y dejaba sin revisar a
+     los que venían después. Un revisor que se muere a la mitad es peor que no
+     tenerlo, porque además miente sobre lo que alcanzó a ver. */
+  let texto;
+  try{ texto = await r.text(); }
+  catch(e){ return { ok:false, clase:'caido', por:'se cortó al leer la respuesta',
+                     espera: 5 * 60_000 }; }
   if(!r.ok){
     const c = clasificar(r.status, texto, r.headers);
     return { ok:false, ...c, por:`${r.status} · ${recorte(texto)}` };
   }
   try{
     const d = JSON.parse(texto);
-    const dice = d.choices?.[0]?.message?.content;
-    if(!dice) return { ok:false, clase:'config', por:'contestó sin contenido' };
+    const m = d.choices?.[0]?.message || {};
+    /* Algunos modelos de razonamiento dejan el texto en otro campo. Pedirle
+       sólo `content` los daba por rotos estando bien. */
+    const dice = m.content || m.reasoning_content || m.reasoning;
+    if(!dice) return { ok:false, clase:'config',
+      por: d.choices?.[0]?.finish_reason === 'length'
+        ? 'se le acabó el cupo de tokens pensando — súbele maxTokens'
+        : 'contestó sin contenido' };
     return { ok:true, dice, modelo: d.model || prov.modelo,
              gasto: d.usage || null };
   }catch(e){
@@ -268,8 +281,12 @@ async function probar(){
       console.log(`— falta la variable ${p.llave}`);
       continue;
     }
+    /* 8 tokens NO alcanzan, y esto lo cazó Groq: los modelos que razonan
+       gastan el cupo pensando y devuelven el contenido vacío. Mi prueba decía
+       «contestó sin contenido» y el modelo estaba perfecto — el mal calibrado
+       era el medidor. Con 300 hay espacio para que piense y conteste. */
     const r = await llamar(p, [{ role:'user', content:'Contesta solo: ok' }],
-                           { tiempo:25_000, maxTokens:8 });
+                           { tiempo:45_000, maxTokens:300 });
     if(r.ok) console.log(`✓ contesta · ${r.modelo}`);
     else if(r.clase === 'llave')  console.log(`✗ LA LLAVE ESTÁ MAL · ${r.por}`);
     else if(r.clase === 'config') console.log(`✗ configuración · ${r.por}`);

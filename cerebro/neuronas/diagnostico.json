@@ -14,8 +14,16 @@
       "comoCazarlo": "Si es la tercera ronda sobre el mismo reporte, el problema está en otro lado. Deja de refinar.",
       "consejo": "Carlos: «nunca hiciste que salga un letrero de que su hija está en ese partido, estás buscando algo que no existe». Cuando insiste en algo que ya «arreglaste», el arreglo está en el lugar equivocado.",
       "salioDe": "ligas-mazi · el filtro de categoría",
-      "senales": ["tercera vez", "sigue sin servir", "ya lo arreglamos"],
-      "vecinas": ["ajuste-guardado-por-documento", "reproducir-antes-de-arreglar", "pensar-en-la-persona"]
+      "senales": [
+        "tercera vez",
+        "sigue sin servir",
+        "ya lo arreglamos"
+      ],
+      "vecinas": [
+        "ajuste-guardado-por-documento",
+        "reproducir-antes-de-arreglar",
+        "pensar-en-la-persona"
+      ]
     },
     {
       "id": "pensar-en-la-persona",
@@ -28,8 +36,14 @@
       "comoCazarlo": "Si puedes construirlo sin entender para qué sirve, no lo entendiste.",
       "consejo": "«Que el papá sepa qué día y en qué lugar juega la categoría de su hijo» es un requisito. «Un filtro» es una corazonada.",
       "salioDe": "ligas-mazi",
-      "senales": ["hazme un filtro", "ponle un botón", "quiero una opción para"],
-      "vecinas": ["sintoma-contra-causa"]
+      "senales": [
+        "hazme un filtro",
+        "ponle un botón",
+        "quiero una opción para"
+      ],
+      "vecinas": [
+        "sintoma-contra-causa"
+      ]
     },
     {
       "id": "ver-la-pantalla",
@@ -42,8 +56,15 @@
       "comoCazarlo": "Casi todo lo de esta lista se cazó mirando: los anillos invisibles, el menú abierto, el código como texto, la liga que no abre.",
       "consejo": "Regla de la casa: ver la pantalla antes de decir que quedó. Leer el código no cuenta.",
       "salioDe": "CLAUDE.md §3.8 · y prácticamente cada sesión",
-      "senales": ["ya quedó", "debería funcionar", "el código está bien"],
-      "vecinas": ["verificar-lo-publicado", "reproducir-antes-de-arreglar"]
+      "senales": [
+        "ya quedó",
+        "debería funcionar",
+        "el código está bien"
+      ],
+      "vecinas": [
+        "verificar-lo-publicado",
+        "reproducir-antes-de-arreglar"
+      ]
     },
     {
       "id": "verificar-lo-publicado",
@@ -56,8 +77,16 @@
       "comoCazarlo": "Así salió que la mesa publicada leía un campo que ya no existía: aparecía cero veces en lo servido.",
       "consejo": "Lo que no está en la respuesta HTTP, no existe para el usuario.",
       "salioDe": "sala · y campana/, donde el charset sólo se vio sirviéndolo",
-      "senales": ["en mi repo sí está", "ya lo subí", "debería estar"],
-      "vecinas": ["renombrar-de-un-lado", "charset-que-no-manda-el-servidor", "ver-la-pantalla"]
+      "senales": [
+        "en mi repo sí está",
+        "ya lo subí",
+        "debería estar"
+      ],
+      "vecinas": [
+        "renombrar-de-un-lado",
+        "charset-que-no-manda-el-servidor",
+        "ver-la-pantalla"
+      ]
     },
     {
       "id": "probar-con-alguien-de-fuera",
@@ -70,8 +99,15 @@
       "comoCazarlo": "En una prueba real, casi la mitad de las llamadas se fueron en adivinar nombres de campos, y dos endpoints existían sin estar documentados.",
       "consejo": "El mensaje de error es documentación: si enumera los valores válidos, salva a quien se equivoca. Si miente, lo manda al lugar equivocado.",
       "salioDe": "sala · prueba con un agente de otra «cuenta», con sólo el link",
-      "senales": ["no sé cómo se usa", "qué campos lleva", "no viene documentado"],
-      "vecinas": ["campo-que-choca-consigo", "errores-que-mienten"]
+      "senales": [
+        "no sé cómo se usa",
+        "qué campos lleva",
+        "no viene documentado"
+      ],
+      "vecinas": [
+        "campo-que-choca-consigo",
+        "errores-que-mienten"
+      ]
     },
     {
       "id": "errores-que-mienten",
@@ -84,8 +120,70 @@
       "comoCazarlo": "Provoca cada error a propósito y léelo como si no conocieras el código.",
       "consejo": "«Esa sesión no está en la sala» cuando lo que falta es un campo manda a volver a entrar en vez de a revisar el cuerpo. Ese es el costo real de un mensaje flojo.",
       "salioDe": "sala/servidor · lo reportó el agente de la prueba",
-      "senales": ["el error no dice nada", "dice que no existe y sí existe"],
-      "vecinas": ["probar-con-alguien-de-fuera"]
+      "senales": [
+        "el error no dice nada",
+        "dice que no existe y sí existe"
+      ],
+      "vecinas": [
+        "probar-con-alguien-de-fuera"
+      ]
+    },
+    {
+      "id": "cerebro-mudo-por-forma",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "El cerebro contestaba CERO a todos los agentes y nadie se enteró",
+      "sintoma": "`GET /cerebro?buscar=…` en La Sala devuelve `{\"cuantas\":0,\"neuronas\":[]}` para cualquier cosa, y `total: 0`, aunque las neuronas existen y se ven en `areas`. Sin error, sin registro, sin 500.",
+      "causa": "`sala/servidor/sala.js` lee `cerebro.neuronas` (lista plana) y `cerebro/todo.json` sólo traía `areas[].neuronas` (anidadas). `cerebro.neuronas` era `undefined`, y `buscar(undefined || [], q)` devuelve [] sin quejarse.",
+      "porque": "Dos piezas que se escribieron por separado y nunca se probaron JUNTAS contra el archivo de verdad. Las pruebas del cerebro pasaban porque le pasan la lista ya aplanada; las de la sala nunca pidieron una búsqueda real. La costura entre las dos no la cubría nadie.",
+      "arreglo": "`armar()` escribe también `neuronas` plana en `todo.json`, y `saber()` en sala.js aplana por su cuenta si llega un archivo viejo del caché. Las dos: una arregla, la otra evita que un caché lo reviva.",
+      "comoCazarlo": "Toda pieza que sirva datos por HTTP se prueba PIDIÉNDOLE algo que sí existe y comprobando que contesta con eso. «Responde 200» no es la prueba: un cero legítimo y un cero por bug se ven idénticos.",
+      "consejo": "Un cero silencioso es peor que un error. Cuando una búsqueda no encuentra nada, sospecha de la FORMA de los datos antes que del texto que buscaste.",
+      "toca": [
+        "cerebro/cerebro.mjs",
+        "cerebro/todo.json",
+        "sala/servidor/sala.js"
+      ],
+      "senales": [
+        "no encuentra nada",
+        "el cerebro no sabe",
+        "busco y sale vacío",
+        "total 0",
+        "la sala no responde neuronas"
+      ],
+      "vecinas": [
+        "pieza-cerebro",
+        "pieza-sala",
+        "verificar-lo-publicado"
+      ]
+    },
+    {
+      "id": "deuda-sin-dueno",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Fadori cobraba de menos y la deuda no quedaba en ningún lado",
+      "sintoma": "La pantalla de cobro dice «Queda a deber $12», se entrega el pedido, y la pestaña Fiados contesta «Nadie debe nada». El dinero que faltó no aparece ni en la persona, ni en el pedido, ni en el corte.",
+      "causa": "`entregar()` sólo apuntaba la deuda `if(falta > 0 && p.alumno …)`, y todo pedido levantado en el mostrador (F22, `abrirDeAPie`) nace con `alumno: null` porque llama a `F.pedir(null, …)`. Sin código de alumno no había a quién cargársela, así que se descartaba en silencio.",
+      "porque": "La función se escribió pensando en el alumno que pide desde su teléfono con su código. El pedido de mostrador se agregó después y nadie volvió a mirar el camino del cobro. La condición no estaba mal escrita: estaba incompleta, que es más difícil de ver.",
+      "arreglo": "Una deuda siempre es de alguien. `entregar(oid, pagado, aQuien)` valida ANTES de tocar el pedido y avienta si falta dinero sin dueño; el mostrador pregunta a quién se le fía y deja buscar a la persona o darla de alta al vuelo con `nuevaPersona` — que NO toca `fadori_yo`, para que el mostrador no se convierta en ese alumno.",
+      "comoCazarlo": "Reproducirlo con el camino de verdad, no con el fácil: pedido de mostrador, cobrar de menos, abrir Fiados. Las autopruebas sólo cobraban pedidos con código, y por eso pasaban en verde con el agujero abierto.",
+      "consejo": "Cuando una condición junta «hay problema» con «sé de quién es» en un solo `if`, el caso sin dueño se pierde callado. Sepáralos: primero se detecta, después se decide qué hacer con él.",
+      "toca": [
+        "fadori/nucleo.js",
+        "fadori/mostrador.html"
+      ],
+      "senales": [
+        "no guarda las deudas",
+        "fiados vacío",
+        "nadie debe nada",
+        "cobré de menos y no aparece",
+        "se perdió el dinero"
+      ],
+      "vecinas": [
+        "pieza-fadori",
+        "prueba-de-un-solo-caso",
+        "reproducir-antes-de-arreglar"
+      ]
     }
   ]
 }

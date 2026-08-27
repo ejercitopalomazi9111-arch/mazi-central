@@ -572,5 +572,232 @@ console.log('\n· Subagentes');
   ok('el intento fallido no deja una sesión a medias', !tras.gente.colado);
 }
 
+
+/* ══ · CORS sobre una respuesta que no se deja tocar ══════════════════════
+   El defecto que estrenó la sala en producción: `conCORS` le ponía las
+   cabeceras a la respuesta que devolvía el Durable Object, y ésas son
+   INMUTABLES. `headers.set` sobre una de ésas tira
+   «Can't modify immutable headers», que el runtime convierte en un 500 pelón
+   sin decir dónde. TODA ruta que tocara el objeto reventaba.
+
+   Las 91 pruebas seguían en verde porque el almacenamiento de mentiras
+   devuelve `Response` normales, que sí se dejan tocar. Ésta usa una respuesta
+   con cabeceras congeladas a propósito, que es lo que de verdad llega. */
+console.log('\n· CORS sobre respuestas inmutables');
+{
+  const { default: puerta } = await import('./index.js');
+  const env = { ORIGENES:'https://mazi-central.palomazi9111.workers.dev',
+                VISTAS_PREVIAS:'mazi-central.palomazi9111.workers.dev' };
+
+  /* Así se ve una respuesta que ya viajó: `Response.redirect` devuelve una con
+     las cabeceras congeladas, igual que la de un Durable Object. */
+  const congelada = Response.redirect('https://x.test/', 302);
+  let inmutable = false;
+  try{ congelada.headers.set('X-Prueba', '1'); }catch(e){ inmutable = true; }
+  ok('la respuesta de prueba sí tiene las cabeceras congeladas', inmutable);
+
+  /* El objeto de mentiras devuelve una respuesta congelada, como la de verdad. */
+  const salaFalsa = { fetch: async () => {
+    const r = Response.json({ bien:true });
+    Object.defineProperty(r, 'headers', { value: new Proxy(r.headers, {
+      get(o, k){ return k === 'set'
+        ? () => { throw new TypeError("Can't modify immutable headers."); }
+        : (typeof o[k] === 'function' ? o[k].bind(o) : o[k]); } }) });
+    return r;
+  }};
+  const conObjeto = { ...env, SALA: { idFromName: () => 'x', get: () => salaFalsa } };
+
+  /* Se atrapa el error a propósito: sin esto, meter el defecto de vuelta MATA
+     la suite entera y las pruebas que vienen después nunca corren. Una suite
+     que se muere a la mitad esconde más de lo que enseña. */
+  let r = null, reventó = null;
+  try{
+    r = await puerta.fetch(new Request(
+      'https://s.test/api/sala/ABCDEF/hilo',
+      { headers:{ Origin: env.ORIGENES } }), conObjeto);
+  }catch(e){ reventó = e.message; }
+
+  ok(`la puerta NO revienta con cabeceras inmutables${reventó ? ' — reventó: ' + reventó : ''}`,
+     !reventó && r && r.status === 200);
+  ok('y aun así pone el CORS',
+     !!r && r.headers.get('access-control-allow-origin') === env.ORIGENES);
+  ok('y el Vary, para que no se cachee mal',
+     !!r && r.headers.get('vary') === 'Origin');
+  ok('el cuerpo llega entero', !!r && (await r.json()).bien === true);
+}
+
+
+/* ══ · fundar e invitar · la llave sin tocar una terminal ═════════════════
+   Carlos: «que crear la llave de sala sea fácil, nada de código, simplemente
+   desde la propia web como Zoom». Lo que se prueba aquí es que eso no abra un
+   hoyo: una sala se funda UNA vez, sólo el dueño invita, y una sala recién
+   nacida sigue abierta para que al Claude del compañero le baste el link. */
+console.log('\n· Fundar e invitar');
+{
+  const s = nueva();
+
+  const [c0, abierta] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('una sala recién nacida está ABIERTA', c0 === 200 && abierta.cerrada === false);
+  const [cEnt] = await leer(await entrar(s, 'quiensea'));
+  ok('y a cualquiera le basta el link', cEnt === 200);
+
+  const [c1, f] = await leer(await pedir(s, 'POST', 'fundar', { cuenta:'carlos' }));
+  ok('fundar devuelve una llave', c1 === 200 && typeof f.llave === 'string');
+  ok('la llave es larga de verdad', f.llave.length >= 24);
+  ok('y es del que fundó', f.cuenta === 'carlos');
+
+  /* Si se pudiera refundar, cualquiera que llegara a una sala abierta se
+     quedaría con ella y el dueño se enteraría al no poder entrar. */
+  /* Ojo con cuál puerta se está tocando, que aquí me equivoqué yo: un
+     desconocido ni siquiera LLEGA a `fundar` — lo para la llave, con 401. El
+     409 es para el que sí tiene llave y trata de refundar. Son dos defensas
+     distintas y hay que probar las dos, no una y suponer la otra. */
+  const [c2a] = await leer(await pedir(s, 'POST', 'fundar', { cuenta:'ladron' }, 'sinllave'));
+  ok('un desconocido ni llega a fundar: lo para la llave', c2a === 401);
+
+  const [c2, e2] = await leer(await pedir(s, 'POST', 'fundar', { cuenta:'ladron' }, f.llave));
+  ok('y con llave buena, refundar tampoco se puede', c2 === 409);
+  ok('y dice de quién es la sala', /carlos/.test(e2.error || ''));
+
+  /* Lo que le da sentido: en cuanto hay llave, la sala SE CIERRA sola. */
+  const [c3] = await leer(await pedir(s, 'POST', 'entrar', { id:'colado' }, 'sinllave'));
+  ok('con dueño, el que no trae llave se queda afuera', c3 === 401);
+  const [c4] = await leer(await pedir(s, 'POST', 'entrar', { id:'cl' }, f.llave));
+  ok('y el que sí la trae, entra', c4 === 200);
+
+  const [c5, inv] = await leer(await pedir(s, 'POST', 'invitar', { cuenta:'luis' }, f.llave));
+  ok('el dueño invita a otra cuenta', c5 === 200 && inv.llave && inv.llave !== f.llave);
+  const [c6] = await leer(await pedir(s, 'POST', 'entrar',
+    { id:'luis-1', nombre:'Claude de Luis' }, inv.llave));
+  ok('y el invitado entra con la suya', c6 === 200);
+
+  /* Acuñar una nueva cada vez llenaría la sala de llaves vivas que nadie
+     recuerda haber repartido, y ninguna se podría retirar con confianza. */
+  const [, otra] = await leer(await pedir(s, 'POST', 'invitar', { cuenta:'luis' }, f.llave));
+  ok('invitar dos veces a la misma cuenta devuelve LA MISMA llave',
+     otra.llave === inv.llave && otra.reusada === true);
+
+  const [c7] = await leer(await pedir(s, 'POST', 'invitar', { cuenta:'x' }, inv.llave));
+  ok('un invitado NO puede invitar', c7 === 403);
+  const [c8] = await leer(await pedir(s, 'POST', 'invitar', {}, f.llave));
+  ok('invitar sin decir a quién se rechaza', c8 === 400);
+
+  /* Dos llaves distintas tienen que dar dos cuentas distintas: si las
+     confundiera, los colores y los avisos de límite saldrían del que no es. */
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, f.llave));
+  ok('la mesa sabe que está cerrada y de quién es',
+     hilo.cerrada === true && hilo.dueno === 'carlos' && hilo.yoSoy === 'carlos');
+  const [, hiloL] = await leer(await pedir(s, 'GET', 'hilo', undefined, inv.llave));
+  ok('y a cada quien le dice SU cuenta', hiloL.yoSoy === 'luis');
+
+  /* Dos salas distintas no pueden compartir llave por casualidad. */
+  const s2 = nueva();
+  const [, g] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos' }));
+  ok('cada sala acuña su propia llave', g.llave !== f.llave);
+  const [c9] = await leer(await pedir(s2, 'POST', 'entrar', { id:'x' }, f.llave));
+  ok('la llave de una sala NO sirve en otra', c9 === 401);
+}
+
+
+/* ══ · el cerebro abierto a todos ═════════════════════════════════════════
+   Carlos: «que todos los agentes puedan acceder a todas las skills,
+   pensamientos e ideas de la red neuronal, y que puedan sumar las suyas».
+
+   Lo que se prueba es lo que lo haría inútil o PELIGROSO: que no encuentre
+   nada, o que una IA de afuera pueda escribir directo en la memoria de la
+   casa sin que nadie lo revise. */
+console.log('\n· El cerebro, abierto por HTTP');
+{
+  const s = nueva();
+  /* Se le pone un cerebro de mentiras en vez de bajar el de verdad: una
+     prueba que depende de la red prueba la red, no el código. */
+  s._saber = { cuando: Date.now(), cerebro: { neuronas: [
+      { id:'charset-que-no-manda-el-servidor', titulo:'Los acentos se rompen',
+        clase:'error', area:'despliegue', sintoma:'campaña sale como campaÃ±a',
+        arreglo:'meta charset en los primeros 1024 bytes',
+        senales:['los acentos salen raros','se ven mal las tildes'], vecinas:[] },
+      { id:'pieza-sala', titulo:'La Sala', clase:'pieza', area:'mapa',
+        que:'La mesa de varias IAs', donde:'sala/',
+        senales:['qué es la sala','la mesa'], vecinas:[] },
+    ], areas:['despliegue','mapa'] },
+    skills: { total:2, porTema:{ video:1 }, skills:[
+      { n:'remotion', r:'Video con código React', e:['video'], l:'MIT' },
+      { n:'seo', r:'Optimización para buscadores', e:['negocio'], l:'MIT' } ] } };
+
+  const [c1, sin] = await leer(await pedir(s, 'GET', 'cerebro'));
+  ok('sin buscar, dice cuánto hay y cómo se pregunta',
+     c1 === 200 && sin.total === 2 && /buscar/.test(sin.como));
+
+  const [c2, r2] = await leer(await pedir(s, 'GET', 'cerebro?buscar=los acentos salen raros'));
+  ok('busca con las palabras de quien tiene el problema',
+     c2 === 200 && r2.neuronas[0].id === 'charset-que-no-manda-el-servidor');
+  /* Sólo lo justo para DECIDIR si es ésa: mandar el cuerpo entero de ocho
+     neuronas le come el contexto al agente, que es lo que veníamos a ahorrar. */
+  ok('devuelve lo justo para decidir, no el cuerpo entero',
+     !!r2.neuronas[0].de && r2.neuronas[0].sintoma === undefined);
+
+  const [c3, una] = await leer(await pedir(s, 'GET', 'cerebro?id=pieza-sala'));
+  ok('pedida por id, viene completa', c3 === 200 && una.neurona.donde === 'sala/');
+  ok('y con sus vecinas, porque un problema es una cadena', Array.isArray(una.vecinas));
+  const [c4] = await leer(await pedir(s, 'GET', 'cerebro?id=no-existe'));
+  ok('una que no existe da 404 limpio', c4 === 404);
+
+  const [c5, sk] = await leer(await pedir(s, 'GET', 'skills?buscar=video'));
+  ok('las skills también se buscan', c5 === 200 && sk.skills[0].nombre === 'remotion');
+  ok('y dice cómo usarla', /montar/.test(sk.como));
+}
+
+console.log('\n· Que un agente proponga sus propias neuronas');
+{
+  const s = nueva();
+  await entrar(s, 'gem', 'agente');
+
+  const buena = { de:'gem', clase:'error', area:'agentes',
+    id:'Se Cayó La Red',  /* con mayúsculas y espacios a propósito */
+    titulo:'Se cae la red a media descarga', sintoma:'la descarga se corta al 80%',
+    causa:'el proveedor cierra la conexión', porque:'tope de tiempo del lado de allá',
+    arreglo:'reintentar por partes', comoCazarlo:'mirar el tamaño recibido',
+    consejo:'no reintentar desde cero', senales:['se corta la descarga','falla a la mitad'] };
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'neurona', buena));
+  ok('un agente puede proponer una neurona', c1 === 200 && r1.bien);
+  ok('el id se normaliza solo', r1.id === 'se-cayo-la-red');
+
+  /* LA PRUEBA QUE IMPORTA: no entra sola al cerebro. Una IA de afuera
+     escribiendo directo en la memoria de la empresa es la vía más limpia para
+     envenenarla, y nadie se enteraría — una neurona mala se lee igual de bien
+     que una buena. */
+  ok('NO entra sola: queda en la bandeja', /bandeja/i.test(r1.ojo || ''));
+  const [, b] = await leer(await pedir(s, 'GET', 'propuestas'));
+  ok('y ahí está', b.cuantas === 1 && b.propuestas[0].id === 'se-cayo-la-red');
+  ok('con quién la propuso y cuándo',
+     b.propuestas[0].propuso.id === 'gem' && b.propuestas[0].propuso.cuando > 0);
+
+  /* Una neurona a medias es peor que ninguna: se lee como conocimiento. */
+  const [c2, e2] = await leer(await pedir(s, 'POST', 'neurona',
+    { de:'gem', clase:'error', id:'a-medias', titulo:'x' }));
+  ok('una neurona incompleta se rechaza', c2 === 400 && /faltan/i.test(e2.error));
+  ok('y dice EXACTAMENTE qué campos pide', Array.isArray(e2.pide) && e2.pide.includes('arreglo'));
+
+  const [c3, e3] = await leer(await pedir(s, 'POST', 'neurona',
+    { ...buena, id:'una-señal-sola', senales:['nomás una'] }));
+  ok('con una sola señal se rechaza', c3 === 400 && /senales/.test(e3.error));
+
+  /* Proponer la misma otra vez la PISA en vez de duplicarla: dos neuronas
+     iguales con distinto id son dos verdades que se van a separar. */
+  await pedir(s, 'POST', 'neurona', { ...buena, titulo:'Corregida' });
+  const [, b2] = await leer(await pedir(s, 'GET', 'propuestas'));
+  ok('proponerla otra vez la corrige, no la duplica',
+     b2.cuantas === 1 && b2.propuestas[0].titulo === 'Corregida');
+
+  /* Se anuncia en el hilo: si nadie ve que un agente aprendió algo, nadie la
+     recoge y se queda ahí para siempre. */
+  const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('se anuncia en la mesa', h.hilo.some(e => /Propuso una neurona/.test(e.texto || '')));
+
+  const [c4] = await leer(await pedir(s, 'POST', 'neurona', { ...buena, de:'nadie' }));
+  ok('alguien que no está en la sala no propone nada', c4 === 400);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

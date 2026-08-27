@@ -14,7 +14,11 @@
   // wrangler sube hasta la raíz del repo, toma el wrangler.jsonc DEL SITIO y
   // trata de correr su `node build.mjs` dentro de esta carpeta.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "puercos",
+  // Se llama ppuercos con dos pes: así quedó el proyecto de Cloudflare al
+  // crearlo y el nombre de aquí tiene que coincidir, o wrangler avisa en cada
+  // despliegue y usa el del CI de todos modos. Cambiar el archivo cuesta un
+  // renglón; volver a crear el proyecto, no.
+  "name": "ppuercos",
   "main": "index.js",
   "compatibility_date": "2026-08-20",
   "workers_dev": true,

@@ -27,7 +27,7 @@ const VA = [
   'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   '_headers', 'kernel-lock.html',
   'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
-  'sala', 'campana', 'cerebro', 'entorno',
+  'sala', 'campana', 'cerebro', 'entorno', 'bodega',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
@@ -60,6 +60,11 @@ const NO_VA = (ruta) => {
      sueltas no los usa el navegador —lee el armado— y publicarlos sería
      servir dos veces lo mismo. */
   if(/(^|\/)cerebro\/(cerebro\.mjs|neuronas\/)/.test(ruta)) return true;
+  /* De la bodega se publica SÓLO el índice flaco. Las 2,945 carpetas son 186 MB
+     de skills de otra gente: no las usa el navegador y publicarlas sería servir
+     trabajo ajeno desde nuestro dominio. El flaco es lo que un agente necesita
+     para saber QUÉ hay y pedir la que le sirva. */
+  if(/(^|\/)bodega\//.test(ruta) && !/indice-min\.json$/.test(ruta)) return true;
   if(/^(medir|rehacer|recortar)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;

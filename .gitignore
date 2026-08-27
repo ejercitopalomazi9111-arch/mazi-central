@@ -4,3 +4,8 @@ dist/
 node_modules/
 .wrangler/
 .DS_Store
+
+# Llaves. NUNCA al repo: es público y con escaneo — el proveedor las revoca solo.
+.env
+.env.local
+*.env
