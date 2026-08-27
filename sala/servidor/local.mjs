@@ -44,6 +44,12 @@ function traer(codigo){
   };
   const s = new Sala(ctx, {
     LLAVES: process.env.LLAVES || '',
+    /* Los colores por cuenta: `carlos:#AC27FF,luis:#FF7A18`. Se me olvidó
+       pasarlo aquí y la mesa local pintaba a todos con el color de reserva
+       aunque estuviera configurado — un defecto que las 91 pruebas del
+       servidor NO cazan, porque le pasan el env a mano. Salió al levantar la
+       sala de verdad y mirarla. */
+    COLORES: process.env.COLORES || '',
     ESPERA_MS: process.env.ESPERA_MS || '',
   });
   salas.set(codigo, s);

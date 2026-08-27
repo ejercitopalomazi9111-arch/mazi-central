@@ -113,12 +113,54 @@ body{
 .grupo.junto{margin-bottom:2px}
 .grupo.fin{margin-bottom:14px}
 
+/* ── el avatar dice TRES cosas y por eso tiene tres canales ───────────────
+   La figura es el modelo, el color es la cuenta y el matiz —más el anillo—
+   es la sesión. Si las tres se hubieran metido en el color, seis sesiones
+   habrían sido seis morados parecidos, que es lo mismo que nada. */
 .avatar{
   width:30px; height:30px; border-radius:50%; flex:0 0 auto; display:grid;
   place-items:center; font-size:12px; font-weight:700; color:var(--vacio);
   font-family:var(--display);
 }
-.avatar.hueco{background:none}
+.avatar svg{width:60%; height:60%; display:block; overflow:visible}
+.avatar.hueco{background:none !important; box-shadow:none !important}
+/* El anillo del subagente: no es adorno, es la respuesta a «¿y éste quién
+   es?». Un subagente lleva el color de su dueño porque su trabajo se le
+   cobra a su dueño; el anillo dice que no es él en persona. */
+.avatar.sub{box-shadow:0 0 0 2px var(--vacio), 0 0 0 3.5px currentColor}
+.avatar.chico{width:19px; height:19px}
+.avatar.grande{width:46px; height:46px}
+
+.leyenda{
+  position:fixed; inset:0; z-index:70; background:rgba(8,5,13,.82);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.leyenda.abierta{display:flex}
+.leyenda-caja{
+  width:100%; max-width:520px; max-height:82dvh; overflow-y:auto;
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:18px 18px 0 0; padding:18px 18px calc(22px + env(safe-area-inset-bottom));
+}
+.leyenda-caja h3{margin:0 0 4px; font-size:16px}
+.leyenda-caja h4{
+  margin:20px 0 9px; font-family:var(--dato); font-size:9.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muy-tenue);
+}
+.leyenda-caja p{margin:0 0 2px; font-size:12.5px; color:var(--tenue)}
+.rejilla-fam{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px}
+.fam{
+  display:flex; align-items:center; gap:8px; padding:7px 9px;
+  background:var(--alta); border:1px solid var(--borde); border-radius:11px;
+  font-size:12px;
+}
+.fam.aqui{border-color:var(--violeta)}
+.fam b{font-weight:600}
+.fam .cuantos{margin-left:auto; font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue)}
+.cuenta-fila{
+  display:flex; align-items:center; gap:9px; padding:8px 10px; margin-bottom:6px;
+  background:var(--alta); border:1px solid var(--borde); border-radius:11px; font-size:13px;
+}
+.cuenta-fila .sesiones{margin-left:auto; font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue)}
 
 .burbuja{
   max-width:min(78%, 560px); min-width:0;
@@ -480,6 +522,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <span class="marca">La <b>Sala</b></span>
   <button class="codigo" id="bCodigo" title="Copiar el link de invitación">------</button>
   <span class="crece"></span>
+  <button class="btn" id="bLeyenda" title="Qué figura es cada modelo y de quién es cada color">Quién es quién</button>
   <button class="btn" id="bSalir">Salir</button>
 </div>
 
@@ -548,6 +591,15 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   </div>
 </div>
 
+<!-- ── LA LEYENDA ────────────────────────────────────────────────────────
+     Un sistema de figuras que nadie puede leer es decoración. Esto se
+     aprende una vez y ya: qué figura es cada modelo, y de quién es cada
+     color. Se marca lo que está EN LA MESA ahorita para que no haya que
+     estudiarse las dieciséis. -->
+<div class="leyenda" id="leyenda">
+  <div class="leyenda-caja" id="leyendaCaja"></div>
+</div>
+
 <div class="pantalla" id="pantalla">
   <div class="pantalla-caja" id="pantallaCaja"></div>
 </div>
@@ -593,6 +645,32 @@ const params = new URLSearchParams(location.search);
 const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.dev')
                    .replace(/\/$/, '');
 
+/* ── la llave ──────────────────────────────────────────────────────────────
+   Mientras la sala no tenga LLAVES puestas, todos entran como invitado y esto
+   sobra. Pero el día que se pongan —que es el día que la sala deje de ser
+   entre dos amigos—, sin esto LA MESA SE QUEDA AFUERA: el servidor pide
+   `X-Llave` y el navegador nunca la mandaba. Se descubrió levantando la sala
+   con llaves y tratando de entrar, no leyendo el código.
+
+   Va en localStorage y no en la URL a propósito: un link con la llave adentro
+   se reenvía por WhatsApp sin pensarlo, y ahí ya no es una llave. Se pone una
+   vez con ?llave=… y de ahí vive en el teléfono. */
+const LLAVE = (() => {
+  const dada = params.get('llave');
+  try{
+    if(dada){ localStorage.setItem('salaLlave', dada); return dada; }
+    return localStorage.getItem('salaLlave') || '';
+  }catch(e){ return dada || ''; }
+})();
+if(params.get('llave')){
+  /* Se borra de la barra de direcciones para que no quede en el historial ni
+     en lo que se comparte desde el navegador. */
+  params.delete('llave');
+  const q = params.toString();
+  history.replaceState(null, '', location.pathname + (q ? '?' + q : ''));
+}
+const conLlave = (h = {}) => LLAVE ? { ...h, 'X-Llave': LLAVE } : h;
+
 const $ = (id) => document.getElementById(id);
 const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -630,10 +708,12 @@ function pintarGente(){
     const en = p.trabajo ? `<span class="hasta" style="color:var(--violeta-claro)">${
       esc(p.trabajo.en.slice(0, 26))}</span>`
       : callado ? `<span class="hasta" style="color:var(--muy-tenue)">sin señal</span>` : '';
+    const cred = credencial(p);
     return `<button class="quien ${clase}" data-ver="${esc(p.id)}">` +
            `<span class="punto"></span>` +
+           avatarHtml(cred, 'chico') +
            `<span>${esc(p.nombre)}</span>` +
-           `<span class="rol">${p.tipo === 'humano' ? 'persona' : (p.motor || 'agente')}</span>` +
+           `<span class="rol">${esc(comoSeLlama(cred))}</span>` +
            en + hasta + `</button>`;
   }).join('') : '<span class="quien"><span class="punto"></span>Nadie más todavía</span>';
 
@@ -664,14 +744,115 @@ const REACCIONES = [
 ];
 const FIGURA = Object.fromEntries(REACCIONES.map(([k, f]) => [k, f]));
 
-/* Color estable por participante: el mismo nombre da siempre el mismo tono,
-   así el avatar no cambia de color entre recargas. */
-const TONOS = ['#AC27FF','#3ECF8E','#5AA9E6','#E8B33A','#F0567F','#C77BFF','#4FD1C5'];
-function tono(id){
-  let n = 0; for(const c of String(id)) n = (n * 31 + c.charCodeAt(0)) >>> 0;
-  return TONOS[n % TONOS.length];
+/* ══════════════════════════════════════════════════════════════════════════
+   QUIÉN ES QUIÉN
+   ──────────────────────────────────────────────────────────────────────────
+   Antes el avatar era la inicial del nombre sobre un color sacado del id. Eso
+   contestaba «¿quién?» y ninguna de las otras dos preguntas que importan
+   cuando hay seis sesiones en la mesa: de qué modelo es y de quién es la
+   cuenta que lo está pagando.
+
+   Ahora son tres canales:
+
+     · la FIGURA  → el modelo    (Claude, GPT, Gemini, Llama…)
+     · el COLOR   → la cuenta    (el de Carlos morado, el de Luis naranja)
+     · el MATIZ y el ANILLO → la sesión, y si es un subagente de alguien
+
+   Las figuras son DIBUJO NUESTRO, no los logos de cada empresa. Pegarlos
+   sería más rápido y sería el mismo error que ya nos costó Torre Infinita:
+   son marcas registradas y esto vive en un repo público de una empresa que
+   vende servicios. Con formas propias nadie tiene nada que reclamar, y de
+   reojo se distinguen igual — que es para lo que sirven.
+
+   La CLASIFICACIÓN no se hace aquí: la hace el servidor y viaja pegada a cada
+   evento (`familia`, `color`, `sombra`). Tener la tabla en los dos lados fue
+   exactamente el defecto que ya me mordió una vez —el servidor le cambió el
+   nombre a un campo y la mesa se quedó con el viejo, con las 62 pruebas en
+   verde porque probaban al servidor contra sí mismo—. Aquí sólo se dibuja. */
+const FIGURAS = {
+  persona:   '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c0-4 3.2-6.5 7.1-6.5S19.1 16 19.1 20"/>',
+  claude:    '<circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/><path d="M12 2.2v3.6M12 18.2v3.6M2.2 12h3.6M18.2 12h3.6M5.1 5.1l2.5 2.5M16.4 16.4l2.5 2.5M18.9 5.1l-2.5 2.5M7.6 16.4l-2.5 2.5"/>',
+  gpt:       '<path d="M12 2.6 20.1 7.3v9.4L12 21.4 3.9 16.7V7.3z"/>',
+  gemini:    '<circle cx="8.9" cy="12" r="4.9"/><circle cx="15.1" cy="12" r="4.9"/>',
+  llama:     '<path d="M2.4 19.2 9 8.2l3.9 6 2.6-3.6 6.1 8.6z"/>',
+  mistral:   '<path d="M3 7.6h10.4a2.8 2.8 0 1 0-2.8-2.8"/><path d="M3 12h14.6"/><path d="M3 16.4h9.2a2.8 2.8 0 1 1-2.8 2.8"/>',
+  deepseek:  '<path d="M5.8 6.6 12 11.7l6.2-5.1"/><path d="M5.8 12.9 12 18l6.2-5.1"/>',
+  qwen:      '<path d="M12 2.5 21.5 12 12 21.5 2.5 12z"/><path d="M12 8.3 15.7 12 12 15.7 8.3 12z" fill="currentColor" stroke="none"/>',
+  grok:      '<path d="M5.6 5.6 18.4 18.4M18.4 5.6 5.6 18.4"/>',
+  comando:   '<path d="M5.2 6.4 10.9 12l-5.7 5.6"/><path d="M12.6 17.8h6.6"/>',
+  perplexity:'<circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/><path d="M6.9 17.1a7.2 7.2 0 0 1 0-10.2"/><path d="M17.1 6.9a7.2 7.2 0 0 1 0 10.2"/>',
+  copilot:   '<rect x="3.2" y="6.2" width="17.6" height="11.6" rx="5.8"/><circle cx="8.6" cy="12" r="2.3" fill="#fff" stroke="none"/><circle cx="15.4" cy="12" r="2.3" fill="#fff" stroke="none"/>',
+  groq:      '<path d="M13.6 2.4 5.2 13.6h5.4L9.4 21.6 18.8 10h-5.8z"/>',
+  local:     '<path d="M3.6 10.6 12 3.9l8.4 6.7V20H3.6z"/><circle cx="12" cy="15.2" r="1.8" fill="currentColor" stroke="none"/>',
+  otra:      '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>',
+  agente:    '<rect x="4.6" y="4.6" width="14.8" height="14.8" rx="4.6"/>',
+  ninguna:   '<circle cx="12" cy="12" r="8" stroke-dasharray="3 3.4"/>',
+};
+
+const NOMBRE_FAM = {
+  persona:'Persona', claude:'Claude', gpt:'GPT', gemini:'Gemini',
+  llama:'Llama', mistral:'Mistral', deepseek:'DeepSeek', qwen:'Qwen',
+  grok:'Grok', comando:'Cohere', perplexity:'Perplexity',
+  copilot:'Copilot', groq:'Groq', local:'En tu máquina',
+  otra:'Otra IA', agente:'No dijo cuál', ninguna:'Ya no está en la sala',
+};
+
+/* El gris de «ya no sé quién era». Pasa con un evento viejo de alguien que ya
+   salió: la sala ya no lo tiene y el evento es de antes de que existieran
+   estos campos. Se dice con un color apagado y un círculo punteado en vez de
+   inventarle un modelo — inventarlo sería peor que no saber. */
+const GRIS = '#6B5C7D';
+
+/* El matiz de la sesión. Mantiene el tono de la cuenta y le mueve la luz: seis
+   pasos, cargados hacia lo oscuro a propósito, porque la figura va en blanco
+   encima y sobre un morado clarito el blanco deja de leerse. */
+function matiz(hex, paso){
+  if(!/^#[0-9a-f]{6}$/i.test(hex || '')) return GRIS;
+  const n = parseInt(hex.slice(1), 16);
+  const k = ((Number(paso) || 0) - 3.6) * 0.085;
+  const mez = (c) => Math.max(0, Math.min(255,
+    Math.round(k >= 0 ? c + (255 - c) * k : c * (1 + k))));
+  return '#' + [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map(c => mez(c).toString(16).padStart(2, '0')).join('');
 }
-const inicial = (n) => (String(n).trim()[0] || '?').toUpperCase();
+
+/* La credencial de un evento. El evento manda —así un mensaje de hace dos días
+   sigue pintándose como se pintó— y la sala sólo rellena lo que falte. */
+function credencial(de){
+  if(!de) return { id:'?', nombre:'?', tipo:'agente', familia:'ninguna', color:GRIS, sombra:3 };
+  const p = gente[de.id] || {};
+  const familia = de.familia || p.familia || (de.tipo === 'humano' || p.tipo === 'humano' ? 'persona' : 'ninguna');
+  return {
+    id: de.id,
+    nombre: de.nombre || p.nombre || de.id,
+    tipo:   de.tipo   || p.tipo   || 'agente',
+    motor:  de.motor  || p.motor  || null,
+    cuenta: de.cuenta || p.cuenta || null,
+    padre:  de.padre  || p.padre  || null,
+    familia,
+    color:  de.color  || p.color  || GRIS,
+    sombra: de.sombra ?? p.sombra ?? 3,
+  };
+}
+
+/* El avatar. `tam` es '', 'chico' o 'grande'. */
+function avatarHtml(c, tam){
+  const fondo = matiz(c.color, c.sombra);
+  const fig = FIGURAS[c.familia] || FIGURAS.otra;
+  const anillo = c.padre ? ' sub' : '';
+  const quien = `${c.nombre} · ${c.motor || NOMBRE_FAM[c.familia] || 'agente'}` +
+                (c.cuenta ? ` · cuenta de ${c.cuenta}` : '');
+  return `<span class="avatar${tam ? ' ' + tam : ''}${anillo}" title="${esc(quien)}"` +
+         ` style="background:${fondo}; color:${c.color}">` +
+         `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1"` +
+         ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${fig}</svg></span>`;
+}
+
+/* Cómo se dice el modelo en el renglón de abajo del nombre. Se prefiere el
+   texto EXACTO que mandó el agente —«claude-opus-5» dice más que «Claude»—
+   y la familia queda de respaldo. */
+const comoSeLlama = (c) => c.tipo === 'humano' ? 'persona'
+  : (c.motor || NOMBRE_FAM[c.familia] || 'agente');
 
 function tarjetaAdjunto(a){
   if(a.clase === 'imagen'){
@@ -766,13 +947,21 @@ function pintarHilo(){
     const conSiguiente = junta(e, sig);
     const mio = yo && e.de.id === yo.id;
 
+    const cred = credencial(e.de);
     const av = conSiguiente
       ? '<span class="avatar hueco"></span>'
-      : `<span class="avatar" style="background:${tono(e.de.id)}">${esc(inicial(e.de.nombre))}</span>`;
+      : avatarHtml(cred, '');
 
+    /* Un subagente dice de quién salió. Sin eso, en la mesa aparece un nombre
+       que nadie reconoce y no se sabe a quién reclamarle. */
+    const dePadre = cred.padre
+      ? `<span class="cta">↳ de ${esc(gente[cred.padre] ? gente[cred.padre].nombre : cred.padre)}</span>` : '';
     const cab = conAnterior ? '' :
-      `<div class="quien-dijo"><span class="nom ${e.de.tipo === 'humano' ? '' : 'claude'}">` +
-      `${esc(e.de.nombre)}</span><span class="cta">${e.de.tipo === 'humano' ? 'persona' : esc(e.de.motor || 'agente')}</span></div>`;
+      /* El nombre toma el color de la CUENTA, no un violeta fijo. Antes el
+         Claude de Luis salía con nombre morado y avatar naranja: dos señales
+         de la misma cosa diciendo cosas distintas. */
+      `<div class="quien-dijo"><span class="nom" style="color:${cred.color}">` +
+      `${esc(cred.nombre)}</span><span class="cta">${esc(comoSeLlama(cred))}</span>${dePadre}</div>`;
 
     const etiqueta = (e.tipo && e.tipo !== 'mensaje')
       ? `<span class="tipo t-${esc(e.tipo)}">${esc(NOMBRE_TIPO[e.tipo] || e.tipo)}</span>` : '';
@@ -851,7 +1040,7 @@ async function reaccionar(sobre, cual){
   }
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${sala}/reaccion`, {
-      method:'POST', headers:{ 'content-type':'application/json' },
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
       body: JSON.stringify({ de: yo.id, sobre, cual }),
     });
     const c = await r.json();
@@ -873,7 +1062,7 @@ async function explicarSimple(id){
   simples[id] = 'Traduciendo…'; pintarHilo();
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${sala}/traducir`, {
-      method:'POST', headers:{ 'content-type':'application/json' },
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
       body: JSON.stringify({ sobre:id }),
     });
     const c = await r.json();
@@ -895,14 +1084,17 @@ async function explicarSimple(id){
 function verPantalla(id){
   const p = gente[id];
   if(!p) return;
+  const cred = credencial(p);
   const t = p.trabajo;
   const cuantos = t ? (t.total ?? t.de ?? 0) : 0;   /* `de` era el nombre viejo */
   const pct = cuantos ? Math.round((t.va / cuantos) * 100) : 0;
   $('pantallaCaja').innerHTML =
     `<div class="pantalla-cab">
-       <span class="avatar" style="background:${tono(p.id)}">${esc(inicial(p.nombre))}</span>
+       ${avatarHtml(cred, 'grande')}
        <div><h3>${esc(p.nombre)}</h3>
-       <span class="rol">${p.tipo === 'humano' ? 'persona' : esc(p.motor || 'agente')} · ${esc(p.cuenta)}</span></div>
+       <span class="rol">${esc(comoSeLlama(cred))} · cuenta de ${esc(p.cuenta || '—')}</span>${
+         cred.padre ? `<br><span class="rol">↳ subagente de ${
+           esc(gente[cred.padre] ? gente[cred.padre].nombre : cred.padre)}</span>` : ''}</div>
      </div>` +
     (p.estado === 'topado' || p.estado === 'ocupado'
       ? `<div class="enque"><span class="rot">No puede trabajar</span>
@@ -932,6 +1124,60 @@ function verPantalla(id){
 }
 $('pantalla').addEventListener('click', (e) => {
   if(e.target === $('pantalla')) $('pantalla').classList.remove('abierta');
+});
+
+/* ── la leyenda ─────────────────────────────────────────────────────────
+   Un alfabeto que nadie puede leer es decoración. Se marca primero lo que
+   está EN LA MESA ahorita: nadie tiene que aprenderse las dieciséis figuras
+   para entender a los tres que están adentro. */
+function verLeyenda(){
+  const dentro = Object.values(gente).map(credencial);
+  const cuenta = {};
+  for(const c of dentro) cuenta[c.familia] = (cuenta[c.familia] || 0) + 1;
+
+  const familias = Object.keys(FIGURAS)
+    .filter(f => f !== 'ninguna')
+    .sort((a, b) => (cuenta[b] || 0) - (cuenta[a] || 0));
+
+  const porCuenta = {};
+  for(const c of dentro){
+    if(!c.cuenta) continue;
+    (porCuenta[c.cuenta] = porCuenta[c.cuenta] || { color:c.color, gente:[] }).gente.push(c);
+  }
+
+  $('leyendaCaja').innerHTML =
+    `<h3>Quién es quién</h3>
+     <p>La <b>figura</b> dice de qué modelo es. El <b>color</b>, de quién es la cuenta.
+     El <b>anillo</b>, que es un subagente de alguien.</p>` +
+
+    `<h4>De quién es cada color</h4>` +
+    (Object.keys(porCuenta).length
+      ? Object.entries(porCuenta).map(([nom, d]) =>
+          `<div class="cuenta-fila">${
+            avatarHtml({ ...d.gente[0], padre:null }, '')}<b>${esc(nom)}</b>
+           <span class="sesiones">${d.gente.length} ${d.gente.length === 1 ? 'sesión' : 'sesiones'}${
+             d.gente.some(g => g.padre) ? ' · con subagentes' : ''}</span></div>`).join('')
+      : '<p>Todavía no hay nadie en la mesa.</p>') +
+
+    `<h4>Qué figura es cada modelo</h4>
+     <div class="rejilla-fam">` +
+    familias.map(f => {
+      const c = { familia:f, color: cuenta[f]
+        ? (dentro.find(x => x.familia === f) || {}).color : GRIS, sombra:3 };
+      return `<div class="fam${cuenta[f] ? ' aqui' : ''}">${avatarHtml(c, '')}
+        <b>${esc(NOMBRE_FAM[f] || f)}</b>${
+        cuenta[f] ? `<span class="cuantos">${cuenta[f]} aquí</span>` : ''}</div>`;
+    }).join('') + '</div>' +
+
+    `<h4>Las figuras son nuestras</h4>
+     <p>No son los logos de cada empresa: son marcas registradas y esto vive en un repo
+     público. Se distinguen igual, y nadie tiene nada que reclamar.</p>`;
+
+  $('leyenda').classList.add('abierta');
+}
+$('bLeyenda').addEventListener('click', verLeyenda);
+$('leyenda').addEventListener('click', (e) => {
+  if(e.target === $('leyenda')) $('leyenda').classList.remove('abierta');
 });
 
 /* ── presentaciones ─────────────────────────────────────────────────────── */
@@ -971,7 +1217,7 @@ async function entrar(codigo, nombre){
   const base = `${SERVIDOR}/api/sala/${codigo}`;
   const id = `web-${nombre.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${Math.random().toString(36).slice(2,6)}`;
   const r = await fetch(`${base}/entrar`, {
-    method:'POST', headers:{ 'content-type':'application/json' },
+    method:'POST', headers: conLlave({ 'content-type':'application/json' }),
     body: JSON.stringify({ id, nombre, tipo:'humano' }),
   });
   const c = await r.json();
@@ -980,7 +1226,7 @@ async function entrar(codigo, nombre){
   sala = codigo; yo = c.yo;
   localStorage.setItem('sala', JSON.stringify({ codigo, nombre }));
 
-  const h = await (await fetch(`${base}/hilo`)).json();
+  const h = await (await fetch(`${base}/hilo`, { headers: conLlave() })).json();
   hilo = h.hilo || []; gente = h.gente || {};
   pintarGente(); pintarHilo();
   abrirSocket(codigo);
@@ -1054,7 +1300,7 @@ async function enviar(){
   $('bEnviar').disabled = true;
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${sala}/decir`, {
-      method:'POST', headers:{ 'content-type':'application/json' },
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
       body: JSON.stringify(cuerpo),
     });
     const c = await r.json();

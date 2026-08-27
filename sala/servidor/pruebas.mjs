@@ -463,5 +463,114 @@ function sFetch(sala, ruta){
     { headers:{ 'X-Llave':'AAA' } }));
 }
 
+
+/* ══ · quién es quién ═════════════════════════════════════════════════════
+   Tres preguntas distintas y tres canales distintos. Lo que se prueba aquí es
+   que NO se confundan: que el modelo no dependa de la cuenta, que el color no
+   dependa del modelo, y que dos sesiones de la misma cuenta se distingan sin
+   dejar de verse de la misma cuenta. */
+console.log('\n· Quién es quién: figura, color y matiz');
+{
+  const s = nueva({ LLAVES:'carlos:AAA,luis:BBB', COLORES:'carlos:#AC27FF,luis:#FF7A18' });
+
+  const conMotor = (id, motor, llave, tipo = 'claude') =>
+    pedir(s, 'POST', 'entrar', { id, nombre:id, tipo, motor }, llave);
+
+  const [, a] = await leer(await conMotor('c1', 'claude-opus-5', 'AAA'));
+  const [, b] = await leer(await conMotor('c2', 'gpt-5.2-codex', 'AAA'));
+  const [, l1] = await leer(await conMotor('l1', 'claude-sonnet-5', 'BBB'));
+
+  ok('la FIGURA sale del modelo', a.yo.familia === 'claude' && b.yo.familia === 'gpt');
+  ok('el COLOR sale de la cuenta, no del modelo',
+     a.yo.color === '#AC27FF' && b.yo.color === '#AC27FF' && l1.yo.color === '#FF7A18');
+  /* Éste es el punto de todo: mismo modelo, cuentas distintas, colores
+     distintos. Era literalmente lo que pidió Carlos. */
+  ok('mismo modelo en dos cuentas se ve distinto',
+     a.yo.familia === l1.yo.familia && a.yo.color !== l1.yo.color);
+  ok('dos sesiones de la misma cuenta comparten color pero no matiz',
+     a.yo.color === b.yo.color && a.yo.sombra !== b.yo.sombra);
+
+  /* Los nombres de modelo no vienen de un catálogo: vienen de lo que teclee
+     cada quien. Si sólo cazara los que yo conozco, sería un adorno. */
+  const casos = [
+    ['anthropic/claude-haiku-4-5', 'claude'], ['o3-mini', 'gpt'],
+    ['gemini-3-pro', 'gemini'], ['groq/llama-3.3-70b', 'llama'],
+    ['mixtral-8x7b', 'mistral'], ['deepseek-v3', 'deepseek'],
+    ['qwen3-coder', 'qwen'], ['grok-4', 'grok'], ['ollama/phi', 'local'],
+    ['modelo-que-no-existe', 'otra'],
+  ];
+  let todas = true;
+  for(const [motor, esperada] of casos){
+    const [, r] = await leer(await conMotor('m-' + motor, motor, 'AAA'));
+    if(r.yo.familia !== esperada){ todas = false; console.log(`      ${motor} → ${r.yo.familia}, esperaba ${esperada}`); }
+  }
+  ok(`reconoce el modelo por como lo escribe cada quien (${casos.length} casos)`, todas);
+  /* Un proveedor no es un modelo: en «groq/llama-3.3» el que contesta es
+     Llama. Si ganara el proveedor, tres modelos distintos se verían igual. */
+  const [, gl] = await leer(await conMotor('gl', 'groq/llama-3.3-70b', 'AAA'));
+  ok('gana el modelo sobre el proveedor', gl.yo.familia === 'llama');
+
+  const [, hum] = await leer(await pedir(s, 'POST', 'entrar',
+    { id:'carlos', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  ok('una persona no es un modelo', hum.yo.familia === 'persona');
+
+  /* Sin COLORES configurados tiene que salir algo estable de todos modos: si
+     hiciera falta configurar para que se vea bien, no funcionaría el primer
+     día — que es cuando se decide si se usa o se abandona. */
+  const s2 = nueva();
+  const [, x1] = await leer(await entrar(s2, 'quien'));
+  const s3 = nueva();
+  const [, x2] = await leer(await entrar(s3, 'quien'));
+  ok('sin configurar, el color es estable y no gris',
+     x1.yo.color === x2.yo.color && /^#[0-9A-F]{6}$/i.test(x1.yo.color));
+
+  /* La credencial tiene que VIAJAR con el evento. Si el hilo sólo guardara el
+     id, un mensaje de alguien que ya se salió quedaría sin cara. */
+  await pedir(s, 'POST', 'decir', { de:'c1', a:'c2', texto:'hola' }, 'AAA');
+  const [, h] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  const dicho = h.hilo.find(e => e.texto === 'hola');
+  ok('la credencial viaja pegada al evento',
+     dicho.de.familia === 'claude' && dicho.de.color === '#AC27FF' &&
+     typeof dicho.de.sombra === 'number');
+
+  /* Un color mal escrito en la configuración no debe pintar basura: se cae al
+     estable, que es lo que hace que un dedazo no rompa la mesa. */
+  const s4 = nueva({ LLAVES:'carlos:AAA', COLORES:'carlos:morado' });
+  const [, mal2] = await leer(await entrar(s4, 'z', 'claude', 'AAA'));
+  ok('un color inválido en la configuración no rompe nada',
+     /^#[0-9A-F]{6}$/i.test(mal2.yo.color || ''));
+}
+
+console.log('\n· Subagentes');
+{
+  const s = nueva({ LLAVES:'carlos:AAA,luis:BBB' });
+  await pedir(s, 'POST', 'entrar', { id:'jefe', nombre:'Jefe', tipo:'claude', motor:'claude-opus-5' }, 'AAA');
+  const [c, sub] = await leer(await pedir(s, 'POST', 'entrar',
+    { id:'sub1', nombre:'Explorador', tipo:'claude', motor:'claude-haiku-4-5', padre:'jefe' }, 'AAA'));
+  ok('un subagente entra diciendo de quién salió', c === 200 && sub.yo.padre === 'jefe');
+
+  /* El subagente lleva el color de su dueño porque su trabajo se le COBRA a su
+     dueño. Lo que cambia es la figura —es otro modelo— y el anillo. */
+  const [, jefe] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  const g = jefe.gente;
+  ok('el subagente hereda el color de su dueño', g.sub1.color === g.jefe.color);
+  /* Ojo con lo que se le pide aquí: opus y haiku son LOS DOS Claude, así que
+     la figura es la misma a propósito —lo pedí mal la primera vez y la prueba
+     me corrigió—. Lo que los separa es el matiz y el anillo de subagente. */
+  ok('los dos son Claude, así que la figura es la misma',
+     g.sub1.familia === 'claude' && g.jefe.familia === 'claude');
+  ok('y aun así no se confunden: matiz distinto y anillo de subagente',
+     g.sub1.sombra !== g.jefe.sombra && g.sub1.padre === 'jefe' && !g.jefe.padre);
+
+  /* Sin esto, cualquiera podría colgar su sesión del árbol de otro y hacer
+     pasar su trabajo por trabajo ajeno. */
+  const [c2, e2] = await leer(await pedir(s, 'POST', 'entrar',
+    { id:'colado', nombre:'Colado', tipo:'claude', padre:'jefe' }, 'BBB'));
+  ok('no se puede colgar una sesión del árbol de otra cuenta', c2 === 403);
+  ok('y lo dice con todas sus letras', /otra cuenta/i.test(e2.error || ''));
+  const [, tras] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  ok('el intento fallido no deja una sesión a medias', !tras.gente.colado);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

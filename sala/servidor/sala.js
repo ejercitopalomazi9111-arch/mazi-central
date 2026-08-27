@@ -114,6 +114,70 @@ const REACCIONES = new Map([
    el hilo de ruido y despertaría a los demás sin razón. */
 const TOPE_PASOS = 8;
 
+/* ── QUIÉN ES QUIÉN, DE UN VISTAZO ─────────────────────────────────────────
+   Lo pidió Carlos así: «dependiendo de la IA que esté hablando tenga un icono
+   como imagen de perfil… y que también aplique para mismos modelos diferentes
+   cuentas, por ejemplo mi claude morado, el de Luis naranja o verde, y que
+   cambie cada subagente, para que siempre pueda saber quién hace qué y de qué
+   modelo de IA».
+
+   Son TRES preguntas distintas y por eso son tres canales distintos. Meterlas
+   todas en el color fue el error obvio que no cometimos: con seis sesiones
+   encima, seis tonos parecidos no dicen nada.
+
+     · ¿QUÉ modelo?  → la FIGURA del avatar   (`familia`)
+     · ¿DE QUIÉN es? → el COLOR                (`color`, por cuenta)
+     · ¿CUÁL sesión? → el MATIZ y el anillo    (`sombra`, `padre`)
+
+   Aquí se decide QUIÉN es; el dibujo lo pone la mesa. Así un cliente distinto
+   —o una libreta, o un reporte— puede pintar lo mismo sin copiar la tabla.
+
+   ── por qué las figuras son NUESTRAS y no los logos de cada empresa ───────
+   Sería más rápido pegar el logo de cada marca y sería un error del mismo tipo
+   que ya nos costó Torre Infinita: son marcas registradas, y esto vive en un
+   repo público de una empresa que vende servicios. Se dibuja una familia de
+   glifos propios, distinguibles entre sí, y nadie tiene nada que reclamar. */
+const FAMILIAS = [
+  /* Primero el MODELO y después el PROVEEDOR, a propósito: «groq/llama-3»
+     corre en Groq pero el que contesta es Llama, y es el que importa saber. */
+  /* `local` va PRIMERO porque «ollama» contiene «llama» y si no, todo lo que
+     corre en Ollama se vería como Llama. Es el único caso donde el dónde-corre
+     gana: lo que dice es «esto no sale de tu máquina», y eso importa más que
+     de qué modelo es. */
+  ['local',      /ollama|llamafile|lmstudio|localhost/],
+  ['claude',     /claude|anthropic|opus|sonnet|haiku/],
+  ['gpt',        /gpt|openai|chatgpt|codex|davinci|\bo[1-9]\b/],
+  ['gemini',     /gemini|bard|palm|gemma/],
+  ['llama',      /llama|meta[- ]?ai/],
+  ['mistral',    /mistral|mixtral|codestral|magistral/],
+  ['deepseek',   /deepseek/],
+  ['qwen',       /qwen|tongyi/],
+  ['grok',       /grok|\bxai\b/],
+  ['comando',    /cohere|command[- ]?r/],
+  ['perplexity', /perplex|sonar/],
+  ['copilot',    /copilot/],
+  ['groq',       /groq/],
+];
+
+/* `otra` NO es un insulto ni un error: es una IA que todavía no conocemos, y
+   la sala la deja trabajar igual. Lo único que cambia es el dibujo. */
+export function familiaDe(motor, tipo){
+  if(tipo === 'humano') return 'persona';
+  const m = String(motor || '').toLowerCase();
+  if(!m) return 'agente';
+  for(const [nombre, patron] of FAMILIAS) if(patron.test(m)) return nombre;
+  return 'otra';
+}
+
+/* Los colores de reserva. Se escogieron separados en el círculo de color —no
+   siete violetas— porque el punto es distinguirlos de reojo en un teléfono. */
+const PALETA = ['#AC27FF','#FF7A18','#3ECF8E','#5AA9E6','#F0567F','#E8B33A','#4FD1C5','#B4E33D'];
+
+const revuelto = (t) => {
+  let n = 0; for(const c of String(t)) n = (n * 31 + c.charCodeAt(0)) >>> 0;
+  return n;
+};
+
 const ahora = () => Date.now();
 
 export class Sala {
@@ -166,6 +230,64 @@ export class Sala {
       if(cuenta && valor) mapa[valor] = cuenta;
     }
     return mapa[llave] || null;
+  }
+
+  /* ── el color de cada cuenta ────────────────────────────────────────────
+     Configurable a mano porque «el mío morado y el de Luis naranja» es una
+     preferencia de personas, no algo que se adivine: `COLORES` va como
+     `carlos:#AC27FF,luis:#FF7A18`. Sin configurar, sale un color estable por
+     nombre de cuenta —el mismo siempre, entre recargas y entre máquinas—, que
+     es lo que hace que funcione el primer día sin tocar nada. */
+  colorDe(cuenta){
+    const crudo = (this.env.COLORES || '').trim();
+    for(const par of crudo.split(',')){
+      const [quien, valor] = par.split(':').map(x => (x || '').trim());
+      if(quien && valor && quien.toLowerCase() === String(cuenta).toLowerCase()){
+        /* Un dedazo en la configuración —«morado» en vez de «#AC27FF»— NO deja
+           a nadie sin color: se cae al estable. Antes devolvía null y la
+           credencial salía sin nada que pintar. */
+        if(/^#[0-9a-f]{6}$/i.test(valor)) return valor.toUpperCase();
+        break;
+      }
+    }
+    return PALETA[revuelto(cuenta) % PALETA.length];
+  }
+
+  /* El matiz de cada SESIÓN dentro de una misma cuenta. Dos Claude de Carlos
+     comparten el morado —son suyos— pero no son el mismo, y con subagentes
+     encima puede haber cinco.
+
+     Arranca del id, para que sea el mismo entre recargas, PERO si ese matiz ya
+     lo tiene otra sesión de la misma cuenta, se corre al siguiente libre. La
+     prueba cazó justo eso: `jefe` y `sub1` cayeron en el mismo y quedaban
+     idénticos, que es exactamente lo que este campo existe para evitar.
+
+     Se paga con que el matiz depende un poco de quién llegó antes. Es un
+     precio barato: se calcula UNA vez al entrar y se queda pegado, así que a
+     nadie que ya esté adentro se le mueve el tono. Y con más de seis sesiones
+     de una misma cuenta el choque vuelve —ahí lo que distingue es la figura y
+     el anillo, y no hay más matices que repartir sin volverlos indistinguibles. */
+  sombraDe(id, cuenta){
+    const usados = new Set(Object.values(this.gente)
+      .filter(p => p.cuenta === cuenta && p.id !== id)
+      .map(p => p.sombra));
+    const arranque = revuelto(id) % 6;
+    for(let i = 0; i < 6; i++){
+      const s = (arranque + i) % 6;
+      if(!usados.has(s)) return s;
+    }
+    return arranque;
+  }
+
+  /* La credencial que viaja pegada a cada evento. Un solo lugar: cuando el
+     hilo se recorta, los eventos viejos siguen trayendo con qué pintarse
+     aunque quien los dijo ya no esté en la sala. */
+  tarjeta(quien){
+    return {
+      id: quien.id, nombre: quien.nombre, tipo: quien.tipo, cuenta: quien.cuenta,
+      motor: quien.motor || null, familia: quien.familia,
+      color: quien.color, sombra: quien.sombra, padre: quien.padre || null,
+    };
   }
 
   /* Un solo lugar para «¿quién eres?», con errores que no mienten. El
@@ -260,7 +382,37 @@ export class Sala {
         estado: 'activo', reanuda: null, nota: '',
         visto: ahora(),
       };
-      await this.publicar({ de:{ ...this.gente[id] }, tipo:'sistema', accion:'entra', texto:'' });
+
+      /* ── el subagente dice de quién es hijo ────────────────────────────
+         Un subagente entra como cualquier otro: no hay un endpoint aparte ni
+         un permiso especial, porque no es otra cosa —es una sesión más que
+         habla HTTP. Lo único que agrega es de quién salió, y eso sirve para
+         dos cosas: que en la mesa se vea colgado de su padre en vez de
+         aparecer como un desconocido, y que uno sepa a quién reclamarle.
+
+         Se exige la MISMA cuenta. Si no, cualquiera podría colgar su sesión
+         del árbol de otro y hacer pasar su trabajo por trabajo ajeno. */
+      const padre = String(c.padre || '').slice(0, 60);
+      if(padre){
+        const suPadre = this.gente[padre];
+        if(suPadre && suPadre.cuenta !== cuenta){
+          delete this.gente[id];
+          return Response.json({
+            error:`La sesión "${padre}" es de otra cuenta: no puedes entrar como subagente suyo.` },
+            { status:403 });
+        }
+        this.gente[id].padre = padre;
+      }
+
+      /* La credencial visual. Se calcula UNA vez al entrar y se queda pegada:
+         si se recalculara al pintar, un cambio de configuración le cambiaría
+         el color a mensajes que ya se habían dicho, y el hilo dejaría de ser
+         un registro de lo que pasó. */
+      this.gente[id].familia = familiaDe(this.gente[id].motor, this.gente[id].tipo);
+      this.gente[id].color   = this.colorDe(cuenta);
+      this.gente[id].sombra  = this.sombraDe(id, cuenta);
+
+      await this.publicar({ de: this.tarjeta(this.gente[id]), tipo:'sistema', accion:'entra', texto:'' });
       return Response.json({ bien:true, yo:this.gente[id], tope:TOPE_VUELTAS });
     }
 
@@ -331,8 +483,7 @@ export class Sala {
       }
 
       const evento = {
-        de: { id:quien.id, nombre:quien.nombre, tipo:quien.tipo,
-              cuenta:quien.cuenta, motor:quien.motor || null },
+        de: this.tarjeta(quien),
         a,
         tipo,
         texto: String(c.texto || '').slice(0, TOPE_TEXTO),
@@ -485,7 +636,7 @@ export class Sala {
       }
 
       const evento = await this.publicar({
-        de: { id:quien.id, nombre:quien.nombre, tipo:quien.tipo, cuenta:quien.cuenta },
+        de: this.tarjeta(quien),
         a: null, tipo:'limite', texto: quien.nota, adjuntos: [], proyecto: null,
         limite: { clase:String(c.clase || 'uso').slice(0, 40), estado:c.estado, reanuda },
       });
