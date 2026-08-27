@@ -412,11 +412,65 @@ function abrirCobro(oid){
     '<label for="hPago">¿Con cuánto paga?</label>'+
     '<input id="hPago" type="number" inputmode="decimal" min="0" step="0.5" value="'+(p.total/100)+'">'+
     '<div id="hCambio" class="aviso" style="margin-top:12px"></div>'+
+    '<div id="hFiado" style="margin-top:12px" hidden></div>'+
     '<div class="chips" style="margin-top:16px">'+
       '<button class="btn fuerte" id="hCobrar" type="button" style="flex:1">Entregar y cobrar</button>'+
       '<button class="btn" id="hCerrar" type="button">Cancelar</button>'+
     '</div>';
   $('#velo').hidden = false;
+
+  /* A quién se le fía lo que falte. Si el pedido trae código, ya se sabe;
+     si se levantó en el mostrador (F22) NO se sabe, y ahí está justo el
+     agujero que se tapó: antes se cobraba de menos y la deuda no existía en
+     ningún lado. Aquí se elige, y sin elegir no se entrega. */
+  let deudor = p.alumno || null;
+
+  const pintarFiado = (falta) => {
+    const caja = $('#hFiado');
+    if(!caja) return;
+    if(falta <= 0){ caja.hidden = true; caja.innerHTML = ''; return; }
+    caja.hidden = false;
+    if(deudor && F.estado().alumnos[deudor]){
+      const a = F.estado().alumnos[deudor];
+      caja.innerHTML =
+        '<div class="aviso">Se le fía a <b>'+esc(a.nombre)+'</b>'+
+        (a.grupo ? ' · '+esc(a.grupo) : '')+' · código '+esc(a.codigo)+
+        (a.deuda ? '<br><small>Ya debía '+F.pesos(a.deuda)+'</small>' : '')+
+        '</div>'+
+        (p.alumno ? '' : '<button class="btn chico" id="hOtro" type="button">Es otra persona</button>');
+      const otro = $('#hOtro');
+      if(otro) otro.addEventListener('click', () => { deudor = null; pintarFiado(falta); });
+      return;
+    }
+    caja.innerHTML =
+      '<div class="aviso malo">Falta dinero. <b>¿De quién es la deuda?</b><br>'+
+        '<small>Sin esto no se apunta en ningún lado y se pierde.</small></div>'+
+      '<input id="hBuscaP" placeholder="Buscar por nombre, grupo o código" '+
+        'autocomplete="off" style="margin-top:10px">'+
+      '<div class="pila" id="hListaP" style="margin-top:8px"></div>'+
+      '<button class="btn chico" id="hNueva" type="button" style="margin-top:8px">'+
+        'Apuntar a '+esc(p.nombre || 'esta persona')+' como alguien nuevo</button>';
+
+    const lista = () => {
+      const res = F.buscarPersonas($('#hBuscaP').value || p.nombre || '');
+      $('#hListaP').innerHTML = res.length
+        ? res.map(a => '<button class="btn chico" data-fiar="'+esc(a.codigo)+'" type="button" '+
+            'style="justify-content:flex-start">'+esc(a.nombre)+
+            (a.grupo ? ' · '+esc(a.grupo) : '')+
+            (a.deuda ? ' · debe '+F.pesos(a.deuda) : '')+'</button>').join('')
+        : '<p class="sub">Nadie con ese nombre todavía.</p>';
+      $$('#hListaP [data-fiar]').forEach(b => b.addEventListener('click', () => {
+        deudor = b.dataset.fiar; pintarFiado(falta);
+      }));
+    };
+    $('#hBuscaP').addEventListener('input', lista); lista();
+    $('#hNueva').addEventListener('click', () => {
+      try{
+        const a = F.nuevaPersona(p.nombre || '', p.grupo || '');
+        deudor = a.codigo; pintarFiado(falta);
+      }catch(e){ aviso(e.message + ' Búscalo o levántalo con nombre y grupo.', 'malo'); }
+    });
+  };
 
   const calcular = () => {
     const paga = Math.round(parseFloat($('#hPago').value || 0) * 100);
@@ -426,12 +480,15 @@ function abrirCobro(oid){
     c.innerHTML = dif > 0 ? 'Cambio: <b>'+F.pesos(dif)+'</b>'
       : dif < 0 ? 'Queda a deber <b>'+F.pesos(-dif)+'</b>, y se le suma al siguiente pago.'
       : 'Pago exacto.';
+    pintarFiado(-dif);
   };
   $('#hPago').addEventListener('input', calcular); calcular();
   $('#hCerrar').addEventListener('click', () => { $('#velo').hidden = true; });
   $('#hCobrar').addEventListener('click', () => {
     const paga = Math.round(parseFloat($('#hPago').value || 0) * 100);
-    F.entregar(oid, Math.min(paga, p.total));   /* el cambio no es un abono */
+    try{
+      F.entregar(oid, Math.min(paga, p.total), deudor);   /* el cambio no es un abono */
+    }catch(e){ return aviso(e.message, 'malo'); }
     $('#velo').hidden = true;
     pintar();
   });
@@ -1426,6 +1483,35 @@ verVista('despachar');
   F.marcarListo(p.id);
   F.entregar(p.id, uno.precio);
   ok('cobrar completo no deja deuda', !F.pedido(p.id).debio);
+
+  /* F27 · EL AGUJERO QUE SE TAPÓ · un pedido de mostrador cobrado de menos
+     no dejaba deuda en ningún lado: ni en la persona, ni en el pedido, ni en
+     los eventos. La pantalla decía "queda a deber" y Fiados decía "nadie debe
+     nada". Estas cuatro pruebas son para que no vuelva. */
+  (function(){
+    const q = F.pedir(null, [{prod:uno.id, cant:1}],
+                      { origen:'mostrador', nombre:'Fiado Prueba', grupo:'9Z' });
+    F.tomar(q.id, 'prueba'); F.marcarListo(q.id);
+
+    let tronó = false;
+    try{ F.entregar(q.id, 0); }catch(e){ tronó = true; }
+    ok('cobrar de menos SIN decir de quién es la deuda no se deja pasar', tronó);
+    ok('y el pedido NO se queda marcado como entregado a medias',
+       F.pedido(q.id).estado === 'listo' && !F.pedido(q.id).entregado);
+
+    const a = F.nuevaPersona('Fiado Prueba', '9Z');
+    ok('apuntar un fiado NO le cambia la identidad al mostrador',
+       !F.yo() || F.yo().codigo !== a.codigo);
+
+    F.entregar(q.id, 0, a.codigo);
+    ok('con dueño, la deuda queda apuntada en la persona',
+       F.estado().alumnos[a.codigo].deuda === q.total);
+    ok('y queda el evento para el corte',
+       F.estado().eventos.some(x => x.tipo === 'deuda' && x.pedido === q.id));
+
+    /* se limpia lo de la prueba para no dejar a nadie debiendo de mentiras */
+    F.ajustarDeuda(a.codigo, 0, 'pruebas');
+  })();
 
   /* F36 · el corte cuenta lo del día */
   const r = F.resumenDelDia();

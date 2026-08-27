@@ -257,3 +257,119 @@ export function grafo(neuronas){
 
 /* ── armar ─────────────────────────────────────────────────────────────────
    Un solo archivo para servirlo y para que un agente lo baje de un jalón. */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EL CEREBRO POR ARCHIVO · «¿qué es esto y qué rompo si le muevo?»
+   ──────────────────────────────────────────────────────────────────────────
+   De dónde salió, y es una corrección de Carlos con toda la razón: yo me
+   acababa de gastar media sesión LEYENDO `fadori/nucleo.js`, `mostrador.html`
+   y `servidor/src/index.js` de arriba abajo para entender cómo se guardaba
+   una deuda. Él lo cachó al vuelo: «eso que acabas de hacer de leer los
+   archivos del proyecto para saber cómo funciona es lo que quiero que la red
+   neuronal elimine — con la red ya sabrías dónde está, qué hace, qué
+   apartados se pueden romper si se edita».
+
+   Tenía razón y el hueco era real: las neuronas de clase `pieza` decían
+   `donde` en PROSA («sala/index.html · sala/servidor/»), que un humano lee
+   pero un agente no puede consultar. Un agente que va a tocar un archivo no
+   pregunta «¿qué sabes de La Sala?»: tiene una RUTA en la mano.
+
+   Por eso ahora cada neurona puede traer `toca`: rutas de verdad. Y con eso
+   la pregunta se invierte — en vez de buscar por tema y esperar suerte, se
+   pregunta por el archivo que se va a editar y el cerebro contesta qué es,
+   qué ya se rompió ahí antes y con qué hay que tener cuidado.
+
+   `toca` acepta un archivo (`fadori/nucleo.js`) o una carpeta
+   (`sala/servidor/`). Una carpeta cubre todo lo que cuelga de ella.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Rutas comparables: sin `./`, sin `/` al final, sin barras de Windows. */
+export function rutaLimpia(r){
+  return String(r || '').trim().replace(/\\/g, '/')
+    .replace(/^\.\//, '').replace(/^\/+/, '').replace(/\/+$/, '');
+}
+
+/* ¿La neurona habla de este archivo? Tres formas de que sí:
+     · la ruta es exactamente la que apunta          fadori/nucleo.js
+     · la neurona apunta a una carpeta que lo contiene   sala/servidor/
+     · la neurona apunta a un archivo DENTRO de la carpeta que se preguntó
+       — que es el caso de «¿qué sé de `fadori/`?» y también importa. */
+export function tocaA(neurona, ruta){
+  const r = rutaLimpia(ruta);
+  if(!r) return false;
+  return (neurona.toca || []).some(t => {
+    const c = rutaLimpia(t);
+    if(!c) return false;
+    return c === r || r.startsWith(c + '/') || c.startsWith(r + '/');
+  });
+}
+
+/* Todo lo que el cerebro sabe de una ruta, ordenado como se necesita leerlo:
+   primero QUÉ ES (piezas), luego LO QUE YA SE ROMPIÓ AHÍ (errores), luego POR
+   QUÉ ESTÁ ASÍ (decisiones). Ese orden no es estético: si un agente sólo
+   alcanza a leer lo primero, que sea lo que le dice dónde está parado. */
+const PESO_CLASE = { pieza: 0, error: 1, decision: 2 };
+
+export function sobreArchivo(neuronas, ruta){
+  const r = rutaLimpia(ruta);
+  const dan = neuronas.filter(n => tocaA(n, r));
+  dan.sort((a, b) =>
+    (PESO_CLASE[claseDe(a)] - PESO_CLASE[claseDe(b)]) ||
+    String(a.id).localeCompare(String(b.id)));
+
+  /* El aviso es lo que de verdad se venía a buscar: qué se rompe si le mueves.
+     Sale del campo `ojo` de piezas y decisiones y del `comoCazarlo` de los
+     errores, que es lo mismo dicho desde el otro lado. */
+  const cuidado = dan.flatMap(n => {
+    const t = claseDe(n) === 'error' ? n.comoCazarlo : n.ojo;
+    return t ? [{ id: n.id, titulo: n.titulo, clase: claseDe(n), aviso: t }] : [];
+  });
+
+  return {
+    ruta: r,
+    cuantas: dan.length,
+    piezas:    dan.filter(n => claseDe(n) === 'pieza'),
+    errores:   dan.filter(n => claseDe(n) === 'error'),
+    decisiones:dan.filter(n => claseDe(n) === 'decision'),
+    cuidado,
+    /* A dónde seguir: las vecinas de todo lo que salió, sin repetir y sin
+       incluir lo que ya se está enseñando. */
+    lleva: [...new Set(dan.flatMap(n => n.vecinas || []))]
+             .filter(id => !dan.some(n => n.id === id)),
+  };
+}
+
+/* El índice al revés: ruta → ids. Sirve para pintar el mapa y para saber, de
+   un vistazo, qué parte del repo el cerebro NO conoce. */
+export function indiceDeArchivos(neuronas){
+  const ind = {};
+  for(const n of neuronas){
+    for(const t of (n.toca || [])){
+      const c = rutaLimpia(t);
+      if(!c) continue;
+      (ind[c] = ind[c] || []).push(n.id);
+    }
+  }
+  for(const k in ind) ind[k].sort();
+  return ind;
+}
+
+/* Qué carpetas del repo no tienen ni una neurona. Un cerebro que no sabe qué
+   ignora se cree completo, y ése es el estado en el que un agente vuelve a
+   leerse los archivos a mano sin saber que había atajo. */
+export function cobertura(neuronas, carpetas){
+  const ind = indiceDeArchivos(neuronas);
+  const cubiertas = Object.keys(ind);
+  const con = [], sin = [];
+  for(const c of carpetas.map(rutaLimpia).filter(Boolean)){
+    const ids = new Set();
+    for(const k of cubiertas){
+      if(k === c || k.startsWith(c + '/') || c.startsWith(k + '/')){
+        ind[k].forEach(id => ids.add(id));
+      }
+    }
+    (ids.size ? con : sin).push({ carpeta: c, neuronas: [...ids].sort() });
+  }
+  return { con, sin, porcentaje: carpetas.length
+    ? Math.round(con.length / carpetas.length * 100) : 0 };
+}

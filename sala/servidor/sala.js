@@ -234,6 +234,23 @@ export class Sala {
     };
     const [cerebro, skills] = await Promise.all([
       traer('/cerebro/todo.json'), traer('/bodega/indice-min.json')]);
+
+    /* ⚠ EL CEREBRO MUDO · esto no es paranoia, ya pasó y estuvo en producción.
+       Aquí abajo se lee `cerebro.neuronas`, y `todo.json` traía las neuronas
+       ANIDADAS dentro de `areas[].neuronas` y nada plano. O sea que
+       `cerebro.neuronas` era `undefined`, `buscar(undefined || [], q)`
+       devolvía [], y la sala le contestaba «no sé nada» a TODOS los agentes,
+       siempre, sin un solo error y con `total: 0` como si de verdad estuviera
+       vacío. El cerebro llevaba abierto desde que se publicó y no servía.
+
+       Ya se arregló del lado de `armar()`, pero se deja esta red aquí: un
+       archivo que se sirve por HTTP puede quedarse viejo en un caché, y la
+       falla no avisa — se disfraza de «no hay nada sobre eso». */
+    if(cerebro && !Array.isArray(cerebro.neuronas)){
+      cerebro.neuronas = (cerebro.areas || [])
+        .flatMap(a => (a.neuronas || []).map(n => Object.assign({ area: a.area }, n)));
+    }
+
     this._saber = { cuando: ahora(), cerebro, skills };
     return this._saber;
   }

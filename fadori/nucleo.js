@@ -875,7 +875,12 @@ function cambiarPasador(nuevo){
    ═════════════════════════════════════════════════════════════════════════ */
 const LLAVE_YO = 'fadori_yo';
 
-function registrar(nombre, grupo){
+/* Dar de alta a una persona SIN quedarse como ella en este aparato.
+   Existe aparte de `registrar` por una razón concreta: cuando la cooperativa
+   apunta un fiado desde el mostrador, el mostrador NO debe convertirse en ese
+   alumno. Antes había una sola función y guardaba `fadori_yo`: apuntar un
+   fiado le habría cambiado la identidad a la pantalla del mostrador. */
+function nuevaPersona(nombre, grupo){
   const d = estado();
   const n = limpiaNombre(nombre), g = limpiaGrupo(grupo);
   if(!n) throw new Error('Falta el nombre.');
@@ -883,8 +888,33 @@ function registrar(nombre, grupo){
   const cod = codigo(4);
   d.alumnos[cod] = { codigo:cod, nombre:n, grupo:g, deuda:0, terminos:0, creado:ahora() };
   guardar();
-  try{ localStorage.setItem(LLAVE_YO, cod); }catch(e){}
   return d.alumnos[cod];
+}
+
+function registrar(nombre, grupo){
+  const a = nuevaPersona(nombre, grupo);
+  try{ localStorage.setItem(LLAVE_YO, a.codigo); }catch(e){}
+  return a;
+}
+
+/* Buscar a alguien por nombre, grupo o código. Lo usa el mostrador para saber
+   a quién se le fía cuando el pedido se levantó sin código. */
+function buscarPersonas(texto){
+  const d = estado();
+  const q = normalizaBusqueda(texto);
+  const todos = Object.values(d.alumnos);
+  if(!q) return todos.sort((a,b) => a.nombre.localeCompare(b.nombre)).slice(0, 20);
+  return todos
+    .filter(a => normalizaBusqueda(a.nombre + ' ' + a.grupo + ' ' + a.codigo).indexOf(q) >= 0)
+    .sort((a,b) => (b.deuda - a.deuda) || a.nombre.localeCompare(b.nombre))
+    .slice(0, 20);
+}
+
+/* Sin acentos y en minúsculas: en una escuela nadie escribe "Ramírez" con
+   acento cuando trae las manos ocupadas. */
+function normalizaBusqueda(t){
+  return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim();
 }
 
 function yo(){
@@ -1460,19 +1490,42 @@ function marcarListo(oid){
   return p;
 }
 
-/* F26 · el ticket · F27 · la deuda */
-function entregar(oid, pagado){
+/* F26 · el ticket · F27 · la deuda
+   ──────────────────────────────────────────────────────────────────────────
+   ⚠ Lo que aquí se arregló, porque costó dinero de verdad: la deuda sólo se
+   apuntaba `if(falta > 0 && p.alumno …)`, y un pedido levantado en el
+   mostrador (F22) SIEMPRE nace con `alumno: null`. O sea: la pantalla de
+   cobro decía "queda a deber $12", la señora entregaba, y Fiados contestaba
+   "nadie debe nada". Lo que faltó no se apuntaba en ningún lado — ni en el
+   alumno, ni en el pedido, ni en los eventos. Se perdía en silencio.
+
+   La regla ahora es una sola: **una deuda siempre es de alguien.** Si falta
+   dinero y no se sabe de quién es, esto NO entrega el pedido: avisa. Es
+   preferible un paso más en el mostrador que dinero que se evapora. */
+function entregar(oid, pagado, aQuien){
   const d = estado();
   const p = pedido(oid); if(!p) return null;
   const paga = Math.max(0, Math.round(pagado || 0));
+  const falta = p.total - paga;
+
+  /* Se decide ANTES de tocar el pedido: si esto truena a media entrega, el
+     pedido se quedaba marcado como entregado y sin cobrar. */
+  let deudor = null;
+  if(falta > 0){
+    const cod = String(aQuien || p.alumno || '').toUpperCase();
+    deudor = (cod && d.alumnos[cod]) ? d.alumnos[cod] : null;
+    if(!deudor) throw new Error('Faltan ' + pesos(falta) +
+      ' y no se sabe a quién fiárselos. Hay que apuntar de quién es la deuda.');
+  }
+
   p.pagado = paga;
   p.estado = 'entregado';
   p.entregado = ahora();
-  const falta = p.total - paga;
-  if(falta > 0 && p.alumno && d.alumnos[p.alumno]){
-    d.alumnos[p.alumno].deuda += falta;
+  if(deudor){
+    deudor.deuda += falta;
     p.debio = falta;
-    anotar('deuda', { pedido:oid, alumno:p.alumno, monto:falta });
+    p.deudor = deudor.codigo;
+    anotar('deuda', { pedido:oid, alumno:deudor.codigo, monto:falta });
   }
   anotar('entregado', { pedido:oid, total:p.total, pagado:paga,
     dur: Math.round((p.entregado - (p.tomado || p.creado))/1000),
@@ -1817,7 +1870,7 @@ const FADORI = {
   servidor: direccionServidor, ponerServidor, elegirMotor, sync: MotorServidor,
   estadoSync: () => MotorServidor.estado(), probarServidor: (u) => MotorServidor.probar(u), alCambiar: (fn) => MOTOR.alCambiar(fn), motor: () => MOTOR.nombre,
   /* quién es */
-  registrar, yo, entrarComo, salir, aceptarTerminos,
+  registrar, nuevaPersona, buscarPersonas, yo, entrarComo, salir, aceptarTerminos,
   /* menú */
   productos, producto, marcarDisponible, guardarProducto, borrarProducto, existenciasOk,
   /* pedidos */

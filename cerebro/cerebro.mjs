@@ -50,7 +50,7 @@ const NEURONAS = join(AQUI, 'neuronas');
 /* Lo puro vive en `buscador.mjs`, que corre en cualquier lado. Aquí se
    reexporta para que todo lo que ya lo importaba de aquí siga funcionando. */
 export { CAMPOS, claseDe, OBLIGATORIOS, aplanar, buscar, vecinas, revisar, grafo,
-         normal } from './buscador.mjs';
+         normal, sobreArchivo, tocaA, indiceDeArchivos, cobertura, rutaLimpia } from './buscador.mjs';
 
 export async function cargar(){
   const areas = [];
@@ -90,7 +90,7 @@ export async function agregar(neurona, area){
 }
 
 import { CAMPOS, claseDe, OBLIGATORIOS, aplanar, buscar, vecinas, revisar, grafo,
-         normal } from './buscador.mjs';
+         normal, sobreArchivo, indiceDeArchivos, cobertura } from './buscador.mjs';
 
 
 export async function armar(){
@@ -101,6 +101,17 @@ export async function armar(){
     hecho: new Date().toISOString(),
     total: todas.length,
     areas: areas.map(({ archivo, ...a }) => a),
+    /* ⚠ La lista PLANA no es un duplicado por comodidad: es lo que consume el
+       servidor de La Sala. `sala/servidor/sala.js` lee `cerebro.neuronas`, y
+       este archivo sólo traía `areas` — así que `cerebro.neuronas` salía
+       `undefined`, `buscar([], q)` devolvía [] y **el cerebro le contestaba
+       CERO a todos los agentes, siempre**. Sin error, sin ruido, con `total:0`
+       en la respuesta. Comprobado en vivo: `?buscar=acentos` → `cuantas: 0`
+       con la neurona de los acentos existiendo. Si se quita, vuelve a pasar. */
+    neuronas: todas,
+    /* ruta del repo → ids. Es lo que permite preguntar por ARCHIVO en vez de
+       por tema: un agente que va a editar algo trae una ruta, no un tema. */
+    archivos: indiceDeArchivos(todas),
     enlaces: g.enlaces,
     comunidades: g.comunidades,
     grados: g.grados,
