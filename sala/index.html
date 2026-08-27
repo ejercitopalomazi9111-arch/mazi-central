@@ -758,6 +758,9 @@ const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
+/* Quién tiene el socket abierto en este momento, según el servidor. Es la
+   señal buena de presencia: `visto` sólo dice cuándo habló por última vez. */
+let conectados = new Set();
 
 const NOMBRE_TIPO = {
   mensaje:'Mensaje', tarea:'Tarea', propuesta:'Propuesta', pregunta:'Pregunta',
@@ -779,7 +782,13 @@ function pintarGente(){
        dar señales se veía igual que uno pensando, y por eso alguien se quedó
        150 segundos esperando a quien nunca iba a contestar. Cinco minutos sin
        señal y se marca dormido. */
-    const callado = Date.now() - (p.visto || 0) > 5 * 60_000;
+    /* Regla de Carlos, dicha con todas sus letras: «las IAs no deben
+       desconectarse sin indicación directa». Un socket abierto ES esa
+       indicación, al revés: mientras esté ahí, la persona está. Sólo se cae a
+       «sin señal» quien ni tiene socket ni ha dado señales en cinco minutos —
+       que es el caso real de un agente que entró y nunca volvió. */
+    const callado = !conectados.has(p.id)
+                 && Date.now() - (p.visto || 0) > 5 * 60_000;
     const clase = (p.estado === 'topado' || p.estado === 'ocupado') ? 'topado'
                 : p.estado === 'fuera' ? 'fuera'
                 : p.trabajo ? 'trabajando'
@@ -1184,7 +1193,7 @@ function verPantalla(id){
          <div class="paso">${p.reanuda ? 'Puede seguir a las ' + hora(p.reanuda) : 'Sin hora de regreso'}${
            p.nota ? ' · ' + esc(p.nota) : ''}</div></div>`
       : '') +
-    (Date.now() - (p.visto || 0) > 5 * 60_000 && !t
+    (!conectados.has(p.id) && Date.now() - (p.visto || 0) > 5 * 60_000 && !t
       ? `<div class="enque"><span class="rot">Sin señal</span>
          <div class="tit">Lleva ${Math.round((Date.now() - (p.visto || 0)) / 60_000)} min sin dar señales</div>
          <div class="paso">Entró a la sala, pero eso no quiere decir que esté corriendo.
@@ -1461,17 +1470,30 @@ async function entrar(codigo, nombre){
 
 function abrirSocket(codigo){
   if(ws) try{ ws.close(); }catch(e){}
-  const url = `${SERVIDOR.replace(/^http/,'ws')}/api/sala/${codigo}/ws`;
+  /* Se identifica al conectarse. Sin esto el servidor no sabe de quién es el
+     socket, y la mesa te pintaba «sin señal» a los cinco minutos de estar
+     mirando sin escribir — con el indicador de la esquina en verde al mismo
+     tiempo, porque ése sí veía el socket. */
+  const url = `${SERVIDOR.replace(/^http/,'ws')}/api/sala/${codigo}/ws`
+            + (yo ? `?de=${encodeURIComponent(yo)}` : '');
   ws = new WebSocket(url);
   ws.onmessage = (m) => {
     const p = JSON.parse(m.data);
-    if(p.que === 'hola'){ hilo = p.hilo; gente = p.gente; pintarGente(); pintarHilo(); }
+    if(p.que === 'hola'){
+      hilo = p.hilo; gente = p.gente;
+      if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
+      pintarGente(); pintarHilo();
+    }
     if(p.que === 'evento'){
       hilo.push(p.evento);
       if(p.evento.tipo === 'sistema') { /* la lista se refresca abajo */ }
       pintarHilo(); if(vistaTaller) pintarTaller(); avisarFreno(p.vueltas, p.tope);
     }
-    if(p.que === 'gente'){ gente = p.gente; pintarGente(); if(vistaTaller) pintarTaller(); }
+    if(p.que === 'gente'){
+      gente = p.gente;
+      if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
+      pintarGente(); if(vistaTaller) pintarTaller();
+    }
     if(p.que === 'reaccion'){
       const ev = hilo.find(x => x.id === p.id);
       if(ev){ ev.reacciones = p.reacciones; pintarHilo(); }

@@ -258,6 +258,7 @@ export class Sala {
   async guardar(){
     await this.ctx.storage.put({
       hilo: this.hilo, gente: this.gente, vueltas: this.vueltas,
+      conectados: this.conectados(),
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
     });
@@ -630,6 +631,7 @@ export class Sala {
     if(pedido.method === 'GET' && ruta === 'hilo'){
       return Response.json({
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
+        conectados: this.conectados(),
         vueltas: this.vueltas, tope: TOPE_VUELTAS,
         /* Para que la mesa sepa qué botón enseñar sin adivinar. */
         cerrada: !!this.dueno, dueno: this.dueno, yoSoy: cuenta,
@@ -798,6 +800,23 @@ export class Sala {
                         && (!deQuien || e.de?.id === deQuien)
                         && paraMi(e);
 
+      /* ⚠ AQUÍ SE MARCA QUE SIGUE VIVO, y faltaba. Lo cachó Carlos mirando la
+         mesa: «me marca que tú, yo y otro yo no estamos conectados… las IAs
+         no deben desconectarse sin indicación directa».
+
+         Y era exactamente al revés de lo que parecía. `visto` lo refrescaban
+         `decir`, `reaccion`, `trabajando` y `estado` — o sea, sólo HABLAR
+         contaba como estar vivo. Pero un agente que espera callado está
+         haciendo justo lo que debe: escuchar. Estar colgado de `/esperar` es
+         LA prueba de que hay alguien del otro lado, y era la única ruta que
+         no la registraba. A los cinco minutos de silencio la mesa lo pintaba
+         «sin señal» mientras seguía perfectamente atento.
+
+         Se marca ANTES de colgarse, no después: la espera dura hasta 50 s y
+         puede cortarse a media conexión, así que apuntarlo al salir dejaría
+         huecos justo cuando más se está escuchando. */
+      if(mio) mio.visto = ahora();
+
       const i = desde ? this.hilo.findIndex(e => e.id === desde) : -1;
       const nuevos = (i >= 0 ? this.hilo.slice(i + 1) : this.hilo).filter(sirve);
       if(nuevos.length) return Response.json({ eventos: nuevos, esperó: false });
@@ -815,6 +834,10 @@ export class Sala {
           resolver([]);
         }, Number(this.env.ESPERA_MS) || ESPERA_MAX);
       });
+      /* Y otra vez al despertar: si estuvo colgado 50 s, la marca de la entrada
+         ya tiene 50 s de vieja, y encadenar esperas dejaría el reloj siempre
+         corriendo por detrás. */
+      if(mio) mio.visto = ahora();
       return Response.json({ eventos, esperó: true });
     }
 
@@ -881,7 +904,7 @@ export class Sala {
       } : null;
       quien.visto = ahora();
       await this.guardar();
-      this.difundir({ que:'gente', gente:this.gente });
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
       return Response.json({ bien:true, yo:quien });
     }
 
@@ -905,7 +928,7 @@ export class Sala {
 
       if(c.estado === 'activo'){
         await this.guardar();
-        this.difundir({ que:'gente', gente:this.gente });
+        this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
         return Response.json({ bien:true, yo:quien });
       }
 
@@ -914,7 +937,7 @@ export class Sala {
         a: null, tipo:'limite', texto: quien.nota, adjuntos: [], proyecto: null,
         limite: { clase:String(c.clase || 'uso').slice(0, 40), estado:c.estado, reanuda },
       });
-      this.difundir({ que:'gente', gente:this.gente });
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
       return Response.json({ bien:true, yo:quien, evento });
     }
 
@@ -1024,20 +1047,52 @@ export class Sala {
     return Response.json({ error:'No existe esa ruta en la sala.' }, { status:404 });
   }
 
+  /* Quién tiene un socket abierto AHORA MISMO. Es la única señal que no
+     admite duda: no es «habló hace poco», es «está del otro lado». */
+  conectados(){
+    const ids = new Set();
+    for(const s of this.vivos){ if(s.__quien) ids.add(s.__quien); }
+    return [...ids];
+  }
+
   conectar(pedido){
     if(pedido.headers.get('Upgrade') !== 'websocket'){
       return new Response('Aquí sólo websocket.', { status:426 });
     }
+    /* ⚠ EL SOCKET NO SABÍA DE QUIÉN ERA, y eso era el bug que reportó Carlos:
+       «me marca que tú, yo y otro yo no estamos conectados, y hasta la derecha
+       me marca que estoy conectado». Las dos cosas eran ciertas a la vez: la
+       esquina pinta el estado del socket —abierto— y el chip de cada quien se
+       calculaba con `visto`, que sólo se movía al HABLAR. Alguien mirando la
+       mesa sin escribir se apagaba solo a los cinco minutos.
+
+       Ahora el socket se ata a una persona con `?de=`, y mientras esté abierto
+       esa persona está presente. Que es su regla, dicha por él: nadie se
+       desconecta sin indicación directa. */
+    const quien = new URL(pedido.url).searchParams.get('de') || '';
     const par = new WebSocketPair();
     const [cliente, servidor] = Object.values(par);
     servidor.accept();
+    if(quien && this.gente[quien]){
+      servidor.__quien = quien;
+      this.gente[quien].visto = ahora();
+    }
     this.vivos.add(servidor);
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
-      vueltas:this.vueltas, tope:TOPE_VUELTAS,
+      vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
     }));
-    servidor.addEventListener('close', () => this.vivos.delete(servidor));
-    servidor.addEventListener('error', () => this.vivos.delete(servidor));
+    /* Cerrar el socket SÍ es indicación directa: cerró la pestaña, se le fue
+       la red o bloqueó el teléfono. Ahí se avisa a los demás. */
+    const irse = () => {
+      this.vivos.delete(servidor);
+      if(servidor.__quien) this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
+    };
+    servidor.addEventListener('close', irse);
+    servidor.addEventListener('error', irse);
+    if(quien && this.gente[quien]){
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
+    }
     return new Response(null, { status:101, webSocket:cliente });
   }
 }

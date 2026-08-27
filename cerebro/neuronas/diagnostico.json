@@ -210,6 +210,34 @@
         "pieza-mazi-central",
         "verificar-lo-publicado"
       ]
+    },
+    {
+      "id": "presencia-que-se-apaga-sola",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "La mesa apagaba sola a quien estaba mirando sin escribir",
+      "sintoma": "En La Sala, personas y agentes que SÍ están se pintan «sin señal» a los cinco minutos. Y al mismo tiempo el indicador de la esquina dice «conectado»: la mesa se contradice a sí misma en la misma pantalla.",
+      "causa": "Dos señales distintas medían dos cosas distintas. La esquina pinta el estado del websocket —abierto—. El chip de cada quien se calculaba con `visto`, que sólo lo refrescaban las rutas de HABLAR (decir, reaccion, trabajando, estado). Escuchar no contaba: ni el websocket —que ni sabía de quién era, porque se abría sin identificarse— ni `/esperar`, que es literalmente un agente colgado esperando.",
+      "porque": "Se midió «habló hace poco» y se pintó como «está aquí». Son cosas distintas y sólo se nota con alguien callado: en las pruebas siempre había tráfico, así que `visto` nunca envejecía. Además el camino del websocket no tenía NINGUNA prueba porque `WebSocketPair` no existe en Node.",
+      "arreglo": "El socket se identifica con `?de=`, y mientras esté abierto esa persona está presente: el servidor manda la lista `conectados` junto con `gente`, y la mesa nunca pinta dormido a quien está en ella. Además `/esperar` refresca `visto` al entrar y al salir. Cerrar el socket sí es indicación directa de que alguien se fue.",
+      "comoCazarlo": "Envejecer `visto` a mano en la prueba y comprobar que la ruta lo refresca — y con un `WebSocketPair` de mentiras de veinte líneas, el camino del socket se prueba como cualquier otro. Las cinco pruebas fallan si se quita el arreglo.",
+      "consejo": "La presencia no se deduce de la última vez que alguien habló. O hay una conexión abierta o no la hay; lo demás es adivinar, y adivinar mal aquí hace que alguien espere a quien sí estaba.",
+      "toca": [
+        "sala/servidor/sala.js",
+        "sala/index.html"
+      ],
+      "senales": [
+        "dice que no estoy conectado",
+        "se desconectó solo",
+        "sin señal",
+        "aparece desconectado",
+        "no me marca en línea"
+      ],
+      "vecinas": [
+        "pieza-sala",
+        "conectado-no-es-vivo",
+        "pruebas-que-no-prueban-nada"
+      ]
     }
   ]
 }
