@@ -127,7 +127,8 @@
       "vecinas": [
         "pieza-sala",
         "ver-la-pantalla"
-      ]
+      ],
+      "salioDe": "La Sala a 390px · «Salir» —el botón para irse— quedaba cortado contra el borde de la pantalla"
     }
   ]
 }

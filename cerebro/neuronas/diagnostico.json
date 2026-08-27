@@ -155,7 +155,8 @@
         "pieza-cerebro",
         "pieza-sala",
         "verificar-lo-publicado"
-      ]
+      ],
+      "salioDe": "El Cerebro · contestaba vacío a todos los agentes en silencio, y parecía que no tenía nada guardado"
     },
     {
       "id": "deuda-sin-dueno",
@@ -183,7 +184,8 @@
         "pieza-fadori",
         "prueba-de-un-solo-caso",
         "reproducir-antes-de-arreglar"
-      ]
+      ],
+      "salioDe": "Fadori · «no está guardando las deudas» — se entregaba el pedido y el faltante se evaporaba"
     },
     {
       "id": "editar-en-dist-y-perderlo",
@@ -209,7 +211,8 @@
       "vecinas": [
         "pieza-mazi-central",
         "verificar-lo-publicado"
-      ]
+      ],
+      "salioDe": "Guerra de Puercos y La Sala · trabajo hecho que el siguiente build borró sin avisar"
     },
     {
       "id": "presencia-que-se-apaga-sola",
@@ -237,7 +240,8 @@
         "pieza-sala",
         "conectado-no-es-vivo",
         "pruebas-que-no-prueban-nada"
-      ]
+      ],
+      "salioDe": "La Sala · alguien esperó 150 segundos a un agente que la mesa pintaba dormido mientras escuchaba"
     },
     {
       "id": "identidad-nueva-en-cada-entrada",
@@ -247,9 +251,9 @@
       "sintoma": "La lista de gente de La Sala se llena de copias de la misma persona —«Carlos», «Carlos», «Carlos»— casi todas apagadas. Recargar la página o abrir otra pestaña crea una más.",
       "causa": "El id se armaba con `Math.random()` en cada entrada: `web-carlos-a3f1`, `web-carlos-o94t`… Nada lo guardaba, así que cada visita era un participante nuevo para el servidor.",
       "porque": "Con una sola sesión de prueba no se nota: el duplicado aparece hasta la SEGUNDA entrada, y las pruebas entraban una vez. Es un defecto que sólo sale usándolo dos días seguidos.",
-      "arreglo": "El id se guarda en localStorage con la llave `sala-yo:<SALA>:<nombre>` y se reutiliza. Por sala Y por nombre a propósito: entrar como «Carlos» a la misma sala siempre debe ser el mismo Carlos, pero con otro nombre es otra persona — así se puede prestar el teléfono sin robarle la identidad a nadie.",
+      "arreglo": "El id se guarda en localStorage y se reutiliza. ⚠ LA LLAVE ES SÓLO LA SALA (`sala-yo:<SALA>`), NO la sala más el nombre. Meter el nombre en la llave fue el primer intento y creó un defecto peor — está en la neurona `identidad-colgada-del-nombre`. Entrar con otro nombre RENOMBRA al mismo participante en vez de crear uno nuevo.",
       "comoCazarlo": "Entrar dos veces seguidas y contar la gente. Si sale dos veces el mismo nombre, la identidad no se está recordando.",
-      "consejo": "Un identificador que se genera al azar sin guardarse no identifica: numera visitas. Si algo tiene que ser «el mismo» entre sesiones, se persiste la primera vez y se lee después.",
+      "consejo": "Un identificador que se genera al azar sin guardarse no identifica: numera visitas. Y la llave con la que lo guardas no puede incluir un dato que el usuario puede cambiar o dejar vacío, porque entonces vuelve a numerar visitas.",
       "toca": [
         "sala/index.html"
       ],
@@ -260,9 +264,11 @@
         "copias de la misma persona"
       ],
       "vecinas": [
-        "presencia-que-se-apaga-sola",
-        "pieza-sala"
-      ]
+        "identidad-colgada-del-nombre",
+        "pieza-sala",
+        "presencia-que-se-apaga-sola"
+      ],
+      "salioDe": "La Sala · Carlos: «me marca que tú, yo y otro yo no estamos conectados» — dos de esos eran él"
     },
     {
       "id": "la-sala-se-borraba-sola",
@@ -289,7 +295,8 @@
         "pieza-sala",
         "presencia-que-se-apaga-sola",
         "pruebas-que-no-prueban-nada"
-      ]
+      ],
+      "salioDe": "La Sala · GRUPAZ se vació sola con todo y llaves una hora después de fundarse"
     },
     {
       "id": "encuadre-sin-nodos-deja-nan",
@@ -314,7 +321,115 @@
       "vecinas": [
         "pieza-cerebro",
         "ver-la-pantalla"
-      ]
+      ],
+      "salioDe": "El Cerebro · la vista de red quedó en negro PARA SIEMPRE y sin un solo error en consola"
+    },
+    {
+      "id": "identidad-colgada-del-nombre",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Arreglar los duplicados con una llave que incluye el nombre los vuelve a crear",
+      "sintoma": "La lista de gente sigue llenándose de copias aunque la identidad «ya se guarda». Entre las copias aparece una con un nombre que nadie escribió — «Alguien».",
+      "causa": "La identidad se guardó bajo `sala-yo:<SALA>:<nombre>`, con el nombre DENTRO de la llave. El campo del nombre tenía `|| 'Alguien'` como respaldo, así que entrar con el campo vacío daba otro nombre → otra llave → otro participante.",
+      "porque": "La llave con el nombre se puso por una razón buena (prestar el teléfono sin robar identidad) y el respaldo `|| 'Alguien'` por otra razón buena (que nadie se quede afuera por no escribir). Cada una está bien sola; juntas se multiplican. Y el campo se queda vacío justo cuando el usuario no está poniendo atención, que es casi siempre.",
+      "arreglo": "La llave es SÓLO la sala. Si el nombre cambia, se renombra al mismo id en vez de crear otro. Se quita el nombre por defecto: campo vacío = el último nombre usado en esa sala, y si no hay, se pide. Borrar la identidad vive en «quitar la sala», no en «salir».",
+      "comoCazarlo": "No se ve leyendo el código: se ve entrando, cerrando y volviendo a entrar cinco veces con un servidor que apunte a quién ve entrar. `sala/pruebas-identidad.mjs` hace exactamente eso.",
+      "consejo": "Cuando una llave de almacenamiento incluye un dato que el usuario escribe, la pregunta que hay que hacerse es qué pasa cuando ese dato viene vacío, con otra mayúscula o con un espacio de más. Cada variante es un registro nuevo.",
+      "toca": [
+        "sala/index.html",
+        "sala/pruebas-identidad.mjs"
+      ],
+      "senales": [
+        "me pone un nuevo usuario",
+        "aparece Alguien",
+        "sigo saliendo repetido",
+        "cada vez que entro se crea otro"
+      ],
+      "vecinas": [
+        "identidad-nueva-en-cada-entrada",
+        "puerta-que-solo-rellena",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · Carlos vio a «Carlos, Carlos y Alguien» en su propia barra, y los tres eran él"
+    },
+    {
+      "id": "puerta-que-solo-rellena",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "Una puerta que rellena los campos pero nunca entra",
+      "sintoma": "«Cada vez que salgo y entro a la app me pide volver a ingresar con mi nombre y el código», aunque los dos campos ya aparezcan llenos.",
+      "causa": "El arranque leía lo guardado y lo ponía en los campos, pero jamás llamaba a la función de entrar. Rellenar no es entrar.",
+      "porque": "En un navegador de escritorio casi no molesta: se abre una vez al día. En una app puesta en la pantalla de inicio, que se cierra y se abre veinte veces, son veinte empujones a una puerta que ya sabía quién eras.",
+      "arreglo": "Si hay identidad guardada para esa sala, se entra solo. Si falla, no se cierra la puerta ni se traga el error: se deja el formulario con el motivo escrito.",
+      "comoCazarlo": "Abrir, entrar, cerrar la pestaña y volver a abrir. Si aparece la puerta, no está entrando sola.",
+      "consejo": "Rellenar un formulario con lo que ya sabes no es lo mismo que actuar con lo que ya sabes. Si tienes todo lo necesario, haz la acción; el formulario es el respaldo, no el camino.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "me pide entrar otra vez",
+        "tengo que escribir el código cada vez",
+        "no me recuerda"
+      ],
+      "vecinas": [
+        "identidad-colgada-del-nombre",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala en la pantalla de inicio del iPhone · veinte empujones al día a una puerta que ya sabía quién era"
+    },
+    {
+      "id": "indicador-que-no-puede-decir-que-no",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "El punto de «conectado» estaba pintado en verde por CSS",
+      "sintoma": "El indicador de conexión dice que estás en línea aunque el websocket esté caído. Sigues escribiendo creyendo que llega.",
+      "causa": "El color estaba en la hoja de estilo, sin nada que lo cambiara, y el texto era una constante: «En línea». Nunca se cableó al estado real del socket.",
+      "porque": "Al construirlo se prueba con conexión. El único caso en que el indicador importa —cuando no hay— es el único que no se prueba.",
+      "arreglo": "El color y el texto los mueve `onopen`/`onerror`/`onclose`. Y el contador de «N en línea» tampoco puede presumir gente conectada cuando el desconectado eres tú: sus señales no te llegan.",
+      "comoCazarlo": "Forzar la caída desde la consola y mirar el color calculado, no la captura. Verde → gris → verde.",
+      "consejo": "Un indicador que no puede mostrar el estado malo no es un indicador: es un adorno. Antes de darlo por hecho, provoca el estado malo y míralo.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "dice conectado y no lo estoy",
+        "el punto siempre está verde",
+        "sin conexión el punto es gris no verde"
+      ],
+      "vecinas": [
+        "presencia-que-se-apaga-sola",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · «si está sin conexión el punto es gris, no verde» — y no había manera de que lo fuera"
+    },
+    {
+      "id": "lista-que-no-cabe-y-no-avisa",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "Una tira horizontal esconde a los de más allá sin decirlo",
+      "sintoma": "«El Claude de Luis no aparece» — pero sí está en la sala y el servidor sí lo manda.",
+      "causa": "La lista de gente era una tira con scroll horizontal. En 390px cabían tres fichas; la cuarta quedaba fuera de la pantalla sin ninguna señal de que hubiera más.",
+      "porque": "Se diseña con dos o tres participantes y se ve completa. El defecto nace el día que entra el cuarto, que es el día que la herramienta empieza a servir.",
+      "arreglo": "En columna, agrupada, y con el número total a la vista. Si tiene que ser tira, algo tiene que decir que hay más.",
+      "comoCazarlo": "Capturar con MÁS elementos de los que caben, no con los de siempre. Y comparar el número de elementos pintados contra los visibles.",
+      "consejo": "«No aparece» casi nunca significa que el dato no llegó. Antes de buscar en el servidor, cuenta cuántos se pintaron: si se pintaron todos, el problema es de espacio, no de datos.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "no aparece en la lista",
+        "falta uno arriba",
+        "no lo veo conectado"
+      ],
+      "vecinas": [
+        "identidad-colgada-del-nombre",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · dos días creyendo que el Claude de Luis no llegaba a la sala, cuando no cabía en la barra"
     }
   ]
 }
