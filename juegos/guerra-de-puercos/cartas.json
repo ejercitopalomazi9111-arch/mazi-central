@@ -1,0 +1,721 @@
+{
+ "juego": "Guerra de Puercos",
+ "lema": "Ni héroe ni villano, solo un puerco haciendo lo suyo.",
+ "total": 102,
+ "cartas": [
+  {
+   "n": 1,
+   "nombre": "Pacman",
+   "puntos": 86,
+   "nivel": "A",
+   "arte": "arte/cartas/001-pacman.jpeg"
+  },
+  {
+   "n": 2,
+   "nombre": "Abejita Chiquitita",
+   "puntos": 82,
+   "nivel": "A",
+   "arte": "arte/cartas/002-abejita-chiquitita.jpeg"
+  },
+  {
+   "n": 3,
+   "nombre": "Normal",
+   "puntos": 16,
+   "nivel": "D",
+   "arte": "arte/cartas/003-normal.jpeg"
+  },
+  {
+   "n": 4,
+   "nombre": "Marciano al Ataque",
+   "puntos": 36,
+   "nivel": "C",
+   "arte": "arte/cartas/004-marciano-al-ataque.jpeg"
+  },
+  {
+   "n": 5,
+   "nombre": "Vader",
+   "puntos": 87,
+   "nivel": "A",
+   "arte": "arte/cartas/005-vader.jpeg"
+  },
+  {
+   "n": 6,
+   "nombre": "Otaku",
+   "puntos": 17,
+   "nivel": "D",
+   "arte": "arte/cartas/006-otaku.jpeg"
+  },
+  {
+   "n": 7,
+   "nombre": "Haaland",
+   "puntos": 92,
+   "nivel": "A",
+   "arte": "arte/cartas/007-haaland.jpeg"
+  },
+  {
+   "n": 8,
+   "nombre": "Potter",
+   "puntos": 41,
+   "nivel": "C",
+   "arte": "arte/cartas/008-potter.jpeg"
+  },
+  {
+   "n": 9,
+   "nombre": "Kirby",
+   "puntos": 96,
+   "nivel": "S",
+   "arte": "arte/cartas/009-kirby.jpeg"
+  },
+  {
+   "n": 10,
+   "nombre": "Pool",
+   "puntos": 29,
+   "nivel": "D",
+   "arte": "arte/cartas/010-pool.jpeg"
+  },
+  {
+   "n": 11,
+   "nombre": "Gasparín",
+   "puntos": 24,
+   "nivel": "D",
+   "arte": "arte/cartas/011-gasparin.jpeg"
+  },
+  {
+   "n": 12,
+   "nombre": "RoboCop",
+   "puntos": 55,
+   "nivel": "C",
+   "arte": "arte/cartas/012-robocop.jpeg"
+  },
+  {
+   "n": 13,
+   "nombre": "Kira",
+   "puntos": 77,
+   "nivel": "A",
+   "arte": "arte/cartas/013-kira.jpeg"
+  },
+  {
+   "n": 14,
+   "nombre": "Shin Godzilla",
+   "puntos": 100,
+   "nivel": "S",
+   "arte": "arte/cartas/014-shin-godzilla.jpeg"
+  },
+  {
+   "n": 15,
+   "nombre": "Lightyear",
+   "puntos": 19,
+   "nivel": "D",
+   "arte": "arte/cartas/015-lightyear.jpeg"
+  },
+  {
+   "n": 16,
+   "nombre": "Caza Fantasmas",
+   "puntos": 40,
+   "nivel": "C",
+   "arte": "arte/cartas/016-caza-fantasmas.jpeg"
+  },
+  {
+   "n": 17,
+   "nombre": "Agujero Negro",
+   "puntos": 97,
+   "nivel": "S",
+   "arte": "arte/cartas/017-agujero-negro.jpeg"
+  },
+  {
+   "n": 18,
+   "nombre": "Ninja Adolescentes Mutantes",
+   "puntos": 54,
+   "nivel": "C",
+   "arte": "arte/cartas/018-ninja-adolescentes-mutantes.jpeg"
+  },
+  {
+   "n": 19,
+   "nombre": "Drácula",
+   "puntos": 30,
+   "nivel": "D",
+   "arte": "arte/cartas/019-dracula.jpeg"
+  },
+  {
+   "n": 20,
+   "nombre": "Doctor",
+   "puntos": 28,
+   "nivel": "D",
+   "arte": "arte/cartas/020-doctor.jpeg"
+  },
+  {
+   "n": 21,
+   "nombre": "Alien",
+   "puntos": 44,
+   "nivel": "C",
+   "arte": "arte/cartas/021-alien.jpeg"
+  },
+  {
+   "n": 22,
+   "nombre": "Gang Beast",
+   "puntos": 53,
+   "nivel": "C",
+   "arte": "arte/cartas/022-gang-beast.jpeg"
+  },
+  {
+   "n": 23,
+   "nombre": "Goku",
+   "puntos": 98,
+   "nivel": "S",
+   "arte": "arte/cartas/023-goku.jpeg"
+  },
+  {
+   "n": 24,
+   "nombre": "Terremoto",
+   "puntos": 69,
+   "nivel": "B",
+   "arte": "arte/cartas/024-terremoto.jpeg"
+  },
+  {
+   "n": 25,
+   "nombre": "Hot Wheels",
+   "puntos": 65,
+   "nivel": "B",
+   "arte": "arte/cartas/025-hot-wheels.jpeg"
+  },
+  {
+   "n": 26,
+   "nombre": "Rápidos y Furiosos",
+   "puntos": 64,
+   "nivel": "B",
+   "arte": "arte/cartas/026-rapidos-y-furiosos.jpeg"
+  },
+  {
+   "n": 27,
+   "nombre": "Lego",
+   "puntos": 63,
+   "nivel": "B",
+   "arte": "arte/cartas/027-lego.jpeg"
+  },
+  {
+   "n": 28,
+   "nombre": "Pizza",
+   "puntos": 44,
+   "nivel": "C",
+   "arte": "arte/cartas/028-pizza.jpeg"
+  },
+  {
+   "n": 29,
+   "nombre": "Backrooms",
+   "puntos": 68,
+   "nivel": "A",
+   "arte": "arte/cartas/029-backrooms.jpeg"
+  },
+  {
+   "n": 30,
+   "nombre": "Carnitas",
+   "puntos": -5,
+   "nivel": "PENALIZACION",
+   "arte": "arte/cartas/030-carnitas.jpeg"
+  },
+  {
+   "n": 31,
+   "nombre": "Gantzer",
+   "puntos": 48,
+   "nivel": "C",
+   "arte": "arte/cartas/031-gantzer.jpeg"
+  },
+  {
+   "n": 32,
+   "nombre": "Rambo",
+   "puntos": 49,
+   "nivel": "C",
+   "arte": "arte/cartas/032-rambo.jpeg"
+  },
+  {
+   "n": 33,
+   "nombre": "Boda",
+   "puntos": 60,
+   "nivel": "B",
+   "arte": "arte/cartas/033-boda.jpeg"
+  },
+  {
+   "n": 34,
+   "nombre": "Teletubbies",
+   "puntos": 88,
+   "nivel": "A",
+   "arte": "arte/cartas/034-teletubbies.jpeg"
+  },
+  {
+   "n": 35,
+   "nombre": "Heisenberg",
+   "puntos": 20,
+   "nivel": "D",
+   "arte": "arte/cartas/035-heisenberg.jpeg"
+  },
+  {
+   "n": 36,
+   "nombre": "Matrix",
+   "puntos": 76,
+   "nivel": "A",
+   "arte": "arte/cartas/036-matrix.jpeg"
+  },
+  {
+   "n": 37,
+   "nombre": "Obejo Sagrado",
+   "puntos": 91,
+   "nivel": "A",
+   "arte": "arte/cartas/037-obejo-sagrado.jpeg"
+  },
+  {
+   "n": 38,
+   "nombre": "Charizard",
+   "puntos": 78,
+   "nivel": "A",
+   "arte": "arte/cartas/038-charizard.jpeg"
+  },
+  {
+   "n": 39,
+   "nombre": "Sakura",
+   "puntos": 84,
+   "nivel": "A",
+   "arte": "arte/cartas/039-sakura.jpeg"
+  },
+  {
+   "n": 40,
+   "nombre": "Ben 10",
+   "puntos": 86,
+   "nivel": "A",
+   "arte": "arte/cartas/040-ben-10.jpeg"
+  },
+  {
+   "n": 41,
+   "nombre": "Sonic",
+   "puntos": 27,
+   "nivel": "D",
+   "arte": "arte/cartas/041-sonic.jpeg"
+  },
+  {
+   "n": 42,
+   "nombre": "IT",
+   "puntos": 87,
+   "nivel": "A",
+   "arte": "arte/cartas/042-it.jpeg"
+  },
+  {
+   "n": 43,
+   "nombre": "Meteoro",
+   "puntos": 75,
+   "nivel": "B",
+   "arte": "arte/cartas/043-meteoro.jpeg"
+  },
+  {
+   "n": 44,
+   "nombre": "Alcancía",
+   "puntos": 5,
+   "nivel": "BONIFICACION",
+   "arte": "arte/cartas/044-alcancia.jpeg"
+  },
+  {
+   "n": 45,
+   "nombre": "Alebrije",
+   "puntos": 34,
+   "nivel": "D",
+   "arte": "arte/cartas/045-alebrije.jpeg"
+  },
+  {
+   "n": 46,
+   "nombre": "Megalodón",
+   "puntos": 35,
+   "nivel": "D",
+   "arte": "arte/cartas/046-megalodon.jpeg"
+  },
+  {
+   "n": 47,
+   "nombre": "Goku",
+   "puntos": 98,
+   "nivel": "S",
+   "arte": "arte/cartas/047-goku.jpeg"
+  },
+  {
+   "n": 48,
+   "nombre": "Troll",
+   "puntos": 53,
+   "nivel": "C",
+   "arte": "arte/cartas/048-troll.jpeg"
+  },
+  {
+   "n": 49,
+   "nombre": "Laboratorio de Dexter",
+   "puntos": 73,
+   "nivel": "B",
+   "arte": "arte/cartas/049-laboratorio-de-dexter.jpeg"
+  },
+  {
+   "n": 50,
+   "nombre": "Fall Guys",
+   "puntos": 52,
+   "nivel": "C",
+   "arte": "arte/cartas/050-fall-guys.jpeg"
+  },
+  {
+   "n": 51,
+   "nombre": "Dune",
+   "puntos": 68,
+   "nivel": "B",
+   "arte": "arte/cartas/051-dune.jpeg"
+  },
+  {
+   "n": 52,
+   "nombre": "Terminator",
+   "puntos": 50,
+   "nivel": "C",
+   "arte": "arte/cartas/052-terminator.jpeg"
+  },
+  {
+   "n": 53,
+   "nombre": "La Momia",
+   "puntos": 25,
+   "nivel": "D",
+   "arte": "arte/cartas/053-la-momia.jpeg"
+  },
+  {
+   "n": 54,
+   "nombre": "Coyote",
+   "puntos": 37,
+   "nivel": "C",
+   "arte": "arte/cartas/054-coyote.jpeg"
+  },
+  {
+   "n": 55,
+   "nombre": "Skibidi Toilet",
+   "puntos": 39,
+   "nivel": "C",
+   "arte": "arte/cartas/055-skibidi-toilet.jpeg"
+  },
+  {
+   "n": 56,
+   "nombre": "NASA",
+   "puntos": 58,
+   "nivel": "B",
+   "arte": "arte/cartas/056-nasa.jpeg"
+  },
+  {
+   "n": 57,
+   "nombre": "Frankenstein",
+   "puntos": 31,
+   "nivel": "D",
+   "arte": "arte/cartas/057-frankenstein.jpeg"
+  },
+  {
+   "n": 58,
+   "nombre": "Picapiedra",
+   "puntos": 21,
+   "nivel": "D",
+   "arte": "arte/cartas/058-picapiedra.jpeg"
+  },
+  {
+   "n": 59,
+   "nombre": "Orden 66",
+   "puntos": 66,
+   "nivel": "B",
+   "arte": "arte/cartas/059-orden-66.jpeg"
+  },
+  {
+   "n": 60,
+   "nombre": "Coraje",
+   "puntos": 54,
+   "nivel": "C",
+   "arte": "arte/cartas/060-coraje.jpeg"
+  },
+  {
+   "n": 61,
+   "nombre": "Volver al Futuro",
+   "puntos": 39,
+   "nivel": "C",
+   "arte": "arte/cartas/061-volver-al-futuro.jpeg"
+  },
+  {
+   "n": 62,
+   "nombre": "Six Seven",
+   "puntos": 67,
+   "nivel": "B",
+   "arte": "arte/cartas/062-six-seven.jpeg"
+  },
+  {
+   "n": 63,
+   "nombre": "Terremoto",
+   "puntos": 69,
+   "nivel": "B",
+   "arte": "arte/cartas/063-terremoto.jpeg"
+  },
+  {
+   "n": 64,
+   "nombre": "Dr. Manhatan",
+   "puntos": 76,
+   "nivel": "A",
+   "arte": "arte/cartas/064-dr-manhatan.jpeg"
+  },
+  {
+   "n": 65,
+   "nombre": "Bob Esponja",
+   "puntos": 45,
+   "nivel": "C",
+   "arte": "arte/cartas/065-bob-esponja.jpeg"
+  },
+  {
+   "n": 66,
+   "nombre": "Volcán",
+   "puntos": 72,
+   "nivel": "B",
+   "arte": "arte/cartas/066-volcan.jpeg"
+  },
+  {
+   "n": 67,
+   "nombre": "Transformers",
+   "puntos": 71,
+   "nivel": "B",
+   "arte": "arte/cartas/067-transformers.jpeg"
+  },
+  {
+   "n": 68,
+   "nombre": "Steamboat Willie",
+   "puntos": 94,
+   "nivel": "A",
+   "arte": "arte/cartas/068-steamboat-willie.jpeg"
+  },
+  {
+   "n": 69,
+   "nombre": "Mamado",
+   "puntos": 36,
+   "nivel": "C",
+   "arte": "arte/cartas/069-mamado.jpeg"
+  },
+  {
+   "n": 70,
+   "nombre": "He-Man",
+   "puntos": 55,
+   "nivel": "C",
+   "arte": "arte/cartas/070-he-man.jpeg"
+  },
+  {
+   "n": 71,
+   "nombre": "Gizmo",
+   "puntos": 47,
+   "nivel": "C",
+   "arte": "arte/cartas/071-gizmo.jpeg"
+  },
+  {
+   "n": 72,
+   "nombre": "Pingüino",
+   "puntos": 22,
+   "nivel": "D",
+   "arte": "arte/cartas/072-pinguino.jpeg"
+  },
+  {
+   "n": 73,
+   "nombre": "Tsunami",
+   "puntos": 70,
+   "nivel": "B",
+   "arte": "arte/cartas/073-tsunami.jpeg"
+  },
+  {
+   "n": 74,
+   "nombre": "T-1000",
+   "puntos": 51,
+   "nivel": "C",
+   "arte": "arte/cartas/074-t-1000.jpeg"
+  },
+  {
+   "n": 75,
+   "nombre": "Hombres X",
+   "puntos": 88,
+   "nivel": "A",
+   "arte": "arte/cartas/075-hombres-x.jpeg"
+  },
+  {
+   "n": 76,
+   "nombre": "Woody",
+   "puntos": 18,
+   "nivel": "D",
+   "arte": "arte/cartas/076-woody.jpeg"
+  },
+  {
+   "n": 77,
+   "nombre": "Tornado",
+   "puntos": 60,
+   "nivel": "B",
+   "arte": "arte/cartas/077-tornado.jpeg"
+  },
+  {
+   "n": 78,
+   "nombre": "Trump",
+   "puntos": 74,
+   "nivel": "B",
+   "arte": "arte/cartas/078-trump.jpeg"
+  },
+  {
+   "n": 79,
+   "nombre": "Rick y Morty",
+   "puntos": 90,
+   "nivel": "A",
+   "arte": "arte/cartas/079-rick-y-morty.jpeg"
+  },
+  {
+   "n": 80,
+   "nombre": "Chicas Superpoderosas",
+   "puntos": 85,
+   "nivel": "A",
+   "arte": "arte/cartas/080-chicas-superpoderosas.jpeg"
+  },
+  {
+   "n": 81,
+   "nombre": "Cthulhu",
+   "puntos": 99,
+   "nivel": "S",
+   "arte": "arte/cartas/081-cthulhu.jpeg"
+  },
+  {
+   "n": 82,
+   "nombre": "Nintendo Switch",
+   "puntos": 46,
+   "nivel": "C",
+   "arte": "arte/cartas/082-nintendo-switch.jpeg"
+  },
+  {
+   "n": 83,
+   "nombre": "Aang",
+   "puntos": 93,
+   "nivel": "A",
+   "arte": "arte/cartas/083-aang.jpeg"
+  },
+  {
+   "n": 84,
+   "nombre": "De Negro",
+   "puntos": 37,
+   "nivel": "C",
+   "arte": "arte/cartas/084-de-negro.jpeg"
+  },
+  {
+   "n": 85,
+   "nombre": "Manada",
+   "puntos": 42,
+   "nivel": "C",
+   "arte": "arte/cartas/085-manada.jpeg"
+  },
+  {
+   "n": 86,
+   "nombre": "Tralalelo Tralala",
+   "puntos": 23,
+   "nivel": "D",
+   "arte": "arte/cartas/086-tralalelo-tralala.jpeg"
+  },
+  {
+   "n": 87,
+   "nombre": "Roblox",
+   "puntos": 83,
+   "nivel": "A",
+   "arte": "arte/cartas/087-roblox.jpeg"
+  },
+  {
+   "n": 88,
+   "nombre": "Troll",
+   "puntos": 56,
+   "nivel": "B",
+   "arte": "arte/cartas/088-troll.jpeg"
+  },
+  {
+   "n": 89,
+   "nombre": "Chavo del 8",
+   "puntos": 33,
+   "nivel": "D",
+   "arte": "arte/cartas/089-chavo-del-8.jpeg"
+  },
+  {
+   "n": 90,
+   "nombre": "con Sombrero",
+   "puntos": 62,
+   "nivel": "B",
+   "arte": "arte/cartas/090-con-sombrero.jpeg"
+  },
+  {
+   "n": 91,
+   "nombre": "Saja Boys",
+   "puntos": 38,
+   "nivel": "C",
+   "arte": "arte/cartas/091-saja-boys.jpeg"
+  },
+  {
+   "n": 92,
+   "nombre": "Scooby",
+   "puntos": 32,
+   "nivel": "D",
+   "arte": "arte/cartas/092-scooby.jpeg"
+  },
+  {
+   "n": 93,
+   "nombre": "Steve",
+   "puntos": 89,
+   "nivel": "A",
+   "arte": "arte/cartas/093-steve.jpeg"
+  },
+  {
+   "n": 94,
+   "nombre": "Bugs",
+   "puntos": 95,
+   "nivel": "A",
+   "arte": "arte/cartas/094-bugs.jpeg"
+  },
+  {
+   "n": 95,
+   "nombre": "Venom",
+   "puntos": 62,
+   "nivel": "B",
+   "arte": "arte/cartas/095-venom.jpeg"
+  },
+  {
+   "n": 96,
+   "nombre": "Zombie",
+   "puntos": 26,
+   "nivel": "D",
+   "arte": "arte/cartas/096-zombie.jpeg"
+  },
+  {
+   "n": 97,
+   "nombre": "Muzan Kibutsuji",
+   "puntos": 80,
+   "nivel": "A",
+   "arte": "arte/cartas/097-muzan-kibutsuji.jpeg"
+  },
+  {
+   "n": 98,
+   "nombre": "Fontanero",
+   "puntos": 59,
+   "nivel": "B",
+   "arte": "arte/cartas/098-fontanero.jpeg"
+  },
+  {
+   "n": 99,
+   "nombre": "Kong",
+   "puntos": 81,
+   "nivel": "A",
+   "arte": "arte/cartas/099-kong.jpeg"
+  },
+  {
+   "n": 100,
+   "nombre": "Mr Beast",
+   "puntos": 79,
+   "nivel": "A",
+   "arte": "arte/cartas/100-mr-beast.jpeg"
+  },
+  {
+   "n": 101,
+   "nombre": "Paw Patrol",
+   "puntos": 38,
+   "nivel": "C",
+   "arte": "arte/cartas/101-paw-patrol.jpeg"
+  },
+  {
+   "n": 102,
+   "nombre": "Saurio",
+   "puntos": 42,
+   "nivel": "C",
+   "arte": "arte/cartas/102-saurio.jpeg"
+  }
+ ]
+}

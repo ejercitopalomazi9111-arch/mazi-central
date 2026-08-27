@@ -65,6 +65,18 @@ const NO_VA = (ruta) => {
      trabajo ajeno desde nuestro dominio. El flaco es lo que un agente necesita
      para saber QUÉ hay y pedir la que le sirva. */
   if(/(^|\/)bodega\//.test(ruta) && !/indice-min\.json$/.test(ruta)) return true;
+  /* ⚠ EL ARTE DE GUERRA DE PUERCOS NO SE PUBLICA. Son ~55 MB de cartas, y esa
+     es la razón CHICA. La grande: entre las 100 hay Pacman, Kirby, Goku,
+     Mario, Sonic, Bugs Bunny, Scooby, Roblox, Minecraft, Paw Patrol, Godzilla
+     y una veintena más de marcas que no son nuestras. Colgarlas del dominio
+     de una empresa que vende servicios es exactamente el flanco por el que
+     Torre Infinita salió del sitio (§7 del CLAUDE.md) — y ahí ni siquiera
+     había una caja que dice «100 CARTAS» y un precio detrás.
+
+     El repositorio las guarda porque son el material de trabajo del juego y
+     el catálogo se arma con ellas. Publicarlas es otra decisión, y es de
+     Carlos y de su amiga, no una consecuencia de haberlas subido. */
+  if(/(^|\/)juegos\/guerra-de-puercos\/arte\//.test(ruta)) return true;
   if(/^(medir|rehacer|recortar)\.py$/i.test(f)) return true;
   if(/^\.wrangler$|^node_modules$|^\.git$/.test(f)) return true;
   return false;
