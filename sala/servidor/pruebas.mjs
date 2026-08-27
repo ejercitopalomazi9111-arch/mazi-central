@@ -426,6 +426,38 @@ console.log('\n· Agentes de cualquier marca');
 }
 
 
+
+/* ══ 13 · «explícamelo simple» ════════════════════════════════════════════ */
+console.log('\n· El traductor a lenguaje llano');
+{
+  const s = nueva();
+  await entrar(s, 'cl-1');
+  const [, r] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'propuesta', texto:'Denormalizar el saldo en productos y actualizarlo en la misma transacción que el movimiento.' }));
+
+  /* Sin llave NO se inventa nada: se dice que está apagado y cómo prenderlo.
+     Prometer algo que no funciona es como se pierde la confianza. */
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'traducir', { sobre:r.evento.id }));
+  ok('sin llave dice que no hay traductor', c1 === 501 && r1.apagado === true);
+  ok('y dice cómo se pone', /wrangler secret/.test(r1.comoSePone || ''));
+
+  const s2 = nueva({ TRADUCTOR_LLAVE:'x' });
+  await entrar(s2, 'cl-1');
+  const [, r2] = await leer(await pedir(s2, 'POST', 'decir', { de:'cl-1', texto:'x' }));
+  const [c2, rr2] = await leer(await pedir(s2, 'POST', 'traducir', { sobre:r2.evento.id }));
+  ok('con llave pero sin URL, también avisa', c2 === 501 && rr2.apagado === true);
+
+  const [c3] = await leer(await pedir(s, 'POST', 'traducir', { sobre:'e999' }));
+  ok('traducir un mensaje que no existe se rechaza', c3 === 404);
+
+  /* Y la que de verdad importa: traducir NO mete nada al hilo. Es ayuda de
+     lectura de quien la pidió, no un mensaje más de la junta. */
+  const antes = s.hilo.length;
+  await pedir(s, 'POST', 'traducir', { sobre:r.evento.id });
+  ok('traducir no ensucia el hilo', s.hilo.length === antes);
+}
+
+
 function sFetch(sala, ruta){
   return sala.fetch(new Request(`https://s.test/api/sala/ABCDEF/${ruta}`,
     { headers:{ 'X-Llave':'AAA' } }));

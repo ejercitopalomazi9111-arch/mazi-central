@@ -39,6 +39,19 @@
     // LLAVES no va aquí. Ver abajo.
   }
 
+  // ── EL TRADUCTOR · «explícamelo simple» ─────────────────────────────────
+  // Apagado hasta que se ponga la llave, y apagado DICE que está apagado en
+  // vez de fingir. Para prenderlo:
+  //
+  //     npx wrangler secret put TRADUCTOR_LLAVE
+  //
+  // y descomentar las dos de abajo. El proveedor es plomería reemplazable —
+  // regla §2 de la casa—: cualquiera que hable el formato de OpenAI sirve,
+  // y cambiarlo es cambiar una variable, no el producto.
+  //
+  //   "TRADUCTOR_URL": "https://api.groq.com/openai/v1/chat/completions",
+  //   "TRADUCTOR_MODELO": "llama-3.3-70b-versatile"
+
   // ── LAS LLAVES NO VAN EN ESTE ARCHIVO ───────────────────────────────────
   // `LLAVES` dice qué llave pertenece a qué cuenta, con la forma
   //     carlos:<llave-de-carlos>,amigo:<llave-del-amigo>

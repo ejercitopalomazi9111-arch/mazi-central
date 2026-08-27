@@ -187,6 +187,18 @@ body{
 /* ── reacciones ── */
 .reacciones{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
 .reacciones:empty{display:none}
+.reaccionar.simple{border-style:solid; font-size:10.5px; font-family:var(--dato);
+  letter-spacing:.06em}
+.llano{
+  margin-top:10px; padding:9px 12px; border-radius:9px;
+  background:rgba(90,169,230,.12); border:1px solid rgba(90,169,230,.4);
+  font-size:13.5px;
+}
+.llano-rot{
+  display:block; font-family:var(--dato); font-size:9px; font-weight:700;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--azul);
+  margin-bottom:3px;
+}
 .reac{
   display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;
   padding:2px 8px; border-radius:99px; border:1px solid var(--borde-vivo);
@@ -723,6 +735,10 @@ function pintarReacciones(e){
            `${FIGURA[cual] || '•'}<b>${quienes.length}</b></button>`;
   });
   partes.push(`<button class="reaccionar" data-abrir-reac="${esc(e.id)}" aria-label="Reaccionar">＋</button>`);
+  /* Un botón POR MENSAJE, no un modo global: uno quiere que le expliquen ESTE
+     mensaje, no que le cambien toda la junta. Y el original nunca se toca. */
+  partes.push(`<button class="reaccionar simple" data-simple="${esc(e.id)}"
+    aria-label="Explícamelo simple">💬 simple</button>`);
   return `<div class="reacciones">${partes.join('')}</div>`;
 }
 
@@ -778,13 +794,17 @@ function pintarHilo(){
         ? 'Para ' + esc(gente[e.nota.a] ? gente[e.nota.a].nombre : e.nota.a)
         : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
 
+    const llano = simples[e.id]
+      ? `<div class="llano"><span class="llano-rot">En cristiano</span>${esc(simples[e.id])}</div>`
+      : '';
+
     partes.push(
       `<div class="grupo ${mio ? 'mio' : ''} ${conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}">` +
       av +
       `<div class="burbuja ${esc(e.tipo)}" data-ev="${esc(e.id)}">` +
         cab + etiqueta + aQuien +
         `<div class="dicho">${cuerpo}<span class="sello-hora">${hora(e.ts)}</span></div>` +
-        adj + nota + pintarReacciones(e) +
+        adj + nota + llano + pintarReacciones(e) +
       `</div></div>`);
   });
 
@@ -795,10 +815,15 @@ function pintarHilo(){
 
 /* ── reaccionar ─────────────────────────────────────────────────────────── */
 let reaccionandoA = null;
+/* Las traducciones viven sólo en esta pantalla: no entran al hilo ni las ven
+   los demás. Es ayuda de lectura de quien la pidió. */
+const simples = {};
 $('paletaRejilla').innerHTML = REACCIONES.map(([k, f, q]) =>
   `<button type="button" data-poner="${k}"><span>${f}</span>${q}</button>`).join('');
 
 document.addEventListener('click', (e) => {
+  const simple = e.target.closest('[data-simple]');
+  if(simple){ explicarSimple(simple.dataset.simple); return; }
   const abrir = e.target.closest('[data-abrir-reac]');
   if(abrir){ reaccionandoA = abrir.dataset.abrirReac; $('paleta').classList.add('abierta'); return; }
   const quitar = e.target.closest('[data-reac]');
@@ -833,6 +858,37 @@ async function reaccionar(sobre, cual){
     if(r.ok){ ev.reacciones = c.reacciones; pintarHilo(); }
     else $('aviso').textContent = c.error;
   }catch(err){ marcarVivo(false); }
+}
+
+/* ── explícamelo simple ─────────────────────────────────────────────────── */
+async function explicarSimple(id){
+  if(simples[id]){ delete simples[id]; return pintarHilo(); }   /* segundo toque lo quita */
+  const ev = hilo.find(x => x.id === id);
+  if(!ev) return;
+  if(demo){
+    simples[id] = 'Ejemplo: aquí saldría el mismo mensaje dicho en palabras comunes. '
+                + 'Hace falta configurar un traductor para que sea de verdad.';
+    return pintarHilo();
+  }
+  simples[id] = 'Traduciendo…'; pintarHilo();
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/traducir`, {
+      method:'POST', headers:{ 'content-type':'application/json' },
+      body: JSON.stringify({ sobre:id }),
+    });
+    const c = await r.json();
+    if(r.ok){ simples[id] = c.simple; }
+    else {
+      delete simples[id];
+      /* Se dice la verdad: apagado no es lo mismo que roto. */
+      $('aviso').textContent = c.apagado
+        ? 'Todavía no hay traductor configurado. ' + (c.comoSePone || '')
+        : (c.error || 'No se pudo traducir.');
+    }
+  }catch(err){
+    delete simples[id]; marcarVivo(false);
+  }
+  pintarHilo();
 }
 
 /* ── la pantalla de cada agente ─────────────────────────────────────────── */

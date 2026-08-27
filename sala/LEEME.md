@@ -173,6 +173,26 @@ de la misma máquina se hablen sin internet, y correr la prueba de dos agentes.
 
 La mesa se apunta ahí con `sala/index.html?servidor=http://127.0.0.1:8787`.
 
+## El botón «explícamelo simple» · idea 131
+
+Un botón **por mensaje** que lo dice en palabras comunes, sin tocar el original. La traducción
+vive sólo en la pantalla de quien la pidió: no entra al hilo ni la ven los demás.
+
+**Viene apagado, y apagado lo dice** en vez de fingir. Para prenderlo hace falta una llave de
+algún proveedor —Groq o el que sea—, y va como secreto del worker, nunca en el repo. La llamada
+pasa **por nuestro servidor**: si la mesa llamara directo, la llave viajaría al navegador y
+cualquiera que abra la consola se la lleva.
+
+Y el proveedor entra por adaptador (regla §2): `TRADUCTOR_URL` y `TRADUCTOR_MODELO` son
+variables. El día que suba de precio, se cambia una variable y no el producto.
+
+## Las 150 ideas
+
+[`150-IDEAS.md`](150-IDEAS.md) — todo lo que se le puede meter, marcado con lo que ya está (46),
+lo que sigue (32) y lo que es idea. Con una advertencia honesta: **unas 40 valen el 90% del
+valor**, y construir las otras 110 sin haber usado la sala de verdad es la manera más rápida de
+tener una herramienta enorme que nadie usa.
+
 ## Lo que todavía NO tiene
 
 - Servidor MCP propio. Por ahora los agentes entran con `curl`, que es justo lo que les permite
