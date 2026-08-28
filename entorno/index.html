@@ -520,21 +520,97 @@ const BICHOS = [
   { id:'capibara', nombre:'capibara' },
 ];
 
-/* Los nombres NO son de nadie: se parecen a algo por el TIPO de juego que
-   son, no por la marca. Un juego de bloques, uno táctico, uno de coches con
-   una pelota enorme y uno de ciudad de noche. */
+/* Los juegos que nombró Carlos, con su nombre. Lo que se dibuja es la FORMA
+   del género —terreno a bloques, un plano táctico, un coche con una pelota
+   enorme, un círculo de tormenta, una calle de neón— porque aquí no se baja ni
+   una captura de nadie: son cuatro trazos de canvas vistos a tres metros
+   dentro de una escena en 3D. El nombre es lo que hace el chiste. */
 const JUEGOS = [
-  { id:'bloques', nombre:'Cubos Infinitos',  hud:'madera 64 · piedra 12 · pico de hierro' },
-  { id:'arena',   nombre:'Punto de Apoyo',   hud:'ronda 7 · 3 vs 4 · plantando' },
-  { id:'coches',  nombre:'Balón Cohete',     hud:'2 — 2 · 0:38 · turbo 71%' },
-  { id:'ciudad',  nombre:'Neón 2098',        hud:'encargo: entregar el paquete · 3.2 km' },
+  { id:'bloques', nombre:'Minecraft',      tinte:'#5C9A3C',
+    hud:'madera 64 · piedra 12 · pico de hierro' },
+  { id:'arena',   nombre:'VALORANT',       tinte:'#FF4655',
+    hud:'ronda 7 · 3 vs 4 · plantando la Spike' },
+  { id:'coches',  nombre:'Rocket League',  tinte:'#00A8E1',
+    hud:'2 — 2 · 0:38 · turbo 71%' },
+  { id:'ciudad',  nombre:'Cyberpunk 2077', tinte:'#FCEE0A',
+    hud:'encargo: entregar el paquete · 3.2 km' },
+  { id:'battle',  nombre:'Fortnite',       tinte:'#9D4DFF',
+    hud:'quedan 14 · tormenta en 0:47 · 3 eliminaciones' },
 ];
 
+/* ── LOS NAVEGADORES, CON SU NOMBRE ────────────────────────────────────────
+   Carlos: «igual tú pónselos; recuerda que no es un proyecto que nos deje
+   dinero así que no importa, y tampoco es un robo de identidad — muchos juegos
+   que sí se venden lo hacen de hecho».
+
+   Es su repositorio y su llamada, y el argumento es correcto: nombrar un
+   producto para decir CUÁL es se llama referencia por nombre, y los juegos que
+   se venden lo hacen todo el tiempo. Antes estaban sin nombre y el chiste se
+   quedaba a medias: «un navegador» no da risa, «Opera GX» sí.
+
+   Lo que SIGUE sin hacerse, y no por miedo sino porque no hay de dónde: aquí
+   no se descarga ni un archivo de nadie. Todo son formas dibujadas a mano con
+   canvas — el anillo, la cuña, los cuatro colores—, aproximaciones de memoria
+   a 1024×640 que se ven a tres metros dentro de una escena en 3D. No hay
+   captura, ni logo bajado, ni tipografía ajena.
+
+   Cada pantalla de navegador escoge uno según su número, así que en el cuarto
+   se ven los cuatro distintos y no cuatro veces el mismo. */
+const NAVEGADORES = [
+  { id:'operagx', nombre:'Opera GX', tinte:'#FF1B2D', barra:'#12080C', casa:'#1E0F14' },
+  { id:'brave',   nombre:'Brave',    tinte:'#FB542B', barra:'#1B1B1F', casa:'#26262C' },
+  { id:'edge',    nombre:'Edge',     tinte:'#0F7FD4', barra:'#1A1D21', casa:'#24282D' },
+  { id:'chrome',  nombre:'Chrome',   tinte:'#4285F4', barra:'#202124', casa:'#292A2D' },
+];
+
+/* El emblema de cada uno, dibujado a mano. Son cuatro figuras de trazo, no
+   copias: lo que hace que se reconozcan a esta distancia es la FORMA general
+   —un anillo cortado, una cuña, una media luna, un círculo de cuatro colores—
+   y no el detalle, que a 26 px no existe. */
+function emblemaNavegador(g, x, y, r, cual){
+  g.save();
+  if(cual === 'operagx'){
+    g.strokeStyle = '#FF1B2D'; g.lineWidth = r * 0.42;
+    g.beginPath(); g.arc(x, y, r * 0.66, Math.PI * 0.30, Math.PI * 1.70); g.stroke();
+    g.fillStyle = '#FF1B2D';
+    g.beginPath(); g.moveTo(x + r*0.30, y - r*0.86);
+    g.lineTo(x + r*1.00, y); g.lineTo(x + r*0.30, y + r*0.86); g.closePath(); g.fill();
+  } else if(cual === 'brave'){
+    g.fillStyle = '#FB542B';
+    g.beginPath(); g.moveTo(x, y - r);
+    g.lineTo(x + r*0.86, y - r*0.34); g.lineTo(x + r*0.52, y + r);
+    g.lineTo(x - r*0.52, y + r); g.lineTo(x - r*0.86, y - r*0.34); g.closePath(); g.fill();
+    g.fillStyle = '#FFB01F';
+    g.beginPath(); g.moveTo(x, y - r*0.42);
+    g.lineTo(x + r*0.34, y + r*0.30); g.lineTo(x - r*0.34, y + r*0.30); g.closePath(); g.fill();
+  } else if(cual === 'edge'){
+    g.strokeStyle = '#0F7FD4'; g.lineWidth = r * 0.46;
+    g.beginPath(); g.arc(x, y, r * 0.66, Math.PI * 0.62, Math.PI * 1.95); g.stroke();
+    g.strokeStyle = '#3DD8B0'; g.lineWidth = r * 0.34;
+    g.beginPath(); g.arc(x, y, r * 0.66, Math.PI * 1.95, Math.PI * 2.30); g.stroke();
+  } else {
+    /* Cuatro cuartos de color y un ojo azul en medio. */
+    const tonos = ['#EA4335', '#FBBC05', '#34A853'];
+    for(let i = 0; i < 3; i++){
+      g.fillStyle = tonos[i];
+      g.beginPath(); g.moveTo(x, y);
+      g.arc(x, y, r, (-0.5 + i * 0.667) * Math.PI, (-0.5 + (i+1) * 0.667) * Math.PI);
+      g.closePath(); g.fill();
+    }
+    g.fillStyle = '#4285F4';
+    g.beginPath(); g.arc(x, y, r * 0.46, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(x, y, r * 0.30, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#4285F4';
+    g.beginPath(); g.arc(x, y, r * 0.22, 0, Math.PI*2); g.fill();
+  }
+  g.restore();
+}
+
 /* ── el marco del navegador ────────────────────────────────────────────── */
-/* Se reconoce por la FORMA: tres puntos, pestañas, barra de dirección. No
-   lleva el nombre ni el logo de ningún navegador de verdad. */
-function marcoNavegador(g, W, color, pestanas, activa, direccion){
-  g.fillStyle = '#191021'; g.fillRect(0, 0, W, 106);
+function marcoNavegador(g, W, color, pestanas, activa, direccion, nav){
+  const n = nav || NAVEGADORES[0];
+  g.fillStyle = n.barra; g.fillRect(0, 0, W, 106);
   for(let i = 0; i < 3; i++){
     g.beginPath(); g.arc(30 + i*26, 26, 7, 0, Math.PI*2);
     g.fillStyle = ['#F0567F','#E8B33A','#3ECF8E'][i]; g.fill();
@@ -545,89 +621,121 @@ function marcoNavegador(g, W, color, pestanas, activa, direccion){
   pestanas.forEach((p, i) => {
     const an = Math.min(230, g.measureText(p).width + 44);
     const viva = i === activa;
-    g.fillStyle = viva ? '#2A1B3C' : '#150E1E';
+    g.fillStyle = viva ? n.casa : 'rgba(0,0,0,.30)';
     redondo(g, x, 8, an, 38, 9); g.fill();
-    if(viva){ g.fillStyle = color; g.fillRect(x + 9, 8, an - 18, 2.5); }
-    g.fillStyle = viva ? '#E9E4E4' : '#6B5B7D';
+    if(viva){ g.fillStyle = n.tinte; g.fillRect(x + 9, 8, an - 18, 2.5); }
+    g.fillStyle = viva ? '#E9E4E4' : '#7B6B8D';
     g.fillText(recortar(g, p, an - 30), x + 15, 33);
     x += an + 6;
   });
-  /* la barra de dirección */
-  g.fillStyle = '#0F0916'; redondo(g, 26, 58, W - 52, 38, 19); g.fill();
-  g.strokeStyle = '#2A1B3C'; g.lineWidth = 1.5; g.stroke();
-  g.fillStyle = '#3ECF8E'; g.font = '17px ui-monospace, Menlo, monospace';
-  g.fillText('🔒', 42, 84);
+  /* la barra de dirección, con el emblema del navegador a la izquierda */
+  g.fillStyle = 'rgba(0,0,0,.42)'; redondo(g, 26, 58, W - 52, 38, 19); g.fill();
+  g.strokeStyle = n.casa; g.lineWidth = 1.5; g.stroke();
+  emblemaNavegador(g, 46, 77, 11, n.id);
+  g.fillStyle = '#3ECF8E'; g.font = '15px ui-monospace, Menlo, monospace';
+  g.fillText('🔒', 66, 83);
   g.fillStyle = '#A090B4'; g.font = '19px ui-monospace, Menlo, monospace';
-  g.fillText(recortar(g, direccion, W - 130), 74, 84);
+  g.fillText(recortar(g, direccion, W - 190), 92, 84);
+  /* y su nombre en la esquina, que es lo que hace el chiste */
+  g.fillStyle = n.tinte; g.font = '700 17px -apple-system, system-ui, sans-serif';
+  const anNombre = g.measureText(n.nombre).width;
+  g.fillText(n.nombre, W - anNombre - 26, 84);
 }
 
 /* ── búsqueda ──────────────────────────────────────────────────────────── */
+/* Google, con su nombre y sus colores. La página va en BLANCO y no en oscuro
+   a propósito: es lo que la hace reconocible de un vistazo dentro de un cuarto
+   que es todo morado. */
 function pantallaBusqueda(g, W, H, color, n){
   const b = BUSQUEDAS[n % BUSQUEDAS.length];
-  g.fillStyle = '#100A18'; g.fillRect(0, 0, W, H);
-  marcoNavegador(g, W, color, ['buscar', 'la mesa', 'el repo'], 0,
-                 'buscador.mazi/?q=' + encodeURIComponent(b.q).slice(0, 60));
+  const nav = NAVEGADORES[n % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['Google', 'La Sala', 'GitHub'], 0,
+                 'google.com/search?q=' + encodeURIComponent(b.q).slice(0, 48), nav);
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 106, W, H - 106);
+
+  /* El logotipo, letra por letra con sus colores. Dibujado con la tipografía
+     del sistema: lo que se reconoce es la secuencia de colores, no la fuente. */
+  const letras = [['G','#4285F4'],['o','#EA4335'],['o','#FBBC05'],
+                  ['g','#4285F4'],['l','#34A853'],['e','#EA4335']];
+  g.font = '700 40px -apple-system, system-ui, Arial, sans-serif';
+  let lx = 48;
+  for(const [c, tono] of letras){ g.fillStyle = tono; g.fillText(c, lx, 172);
+                                  lx += g.measureText(c).width; }
 
   /* la caja de búsqueda, con el cursor parpadeando al final */
-  g.fillStyle = '#181022'; redondo(g, 44, 140, W - 88, 62, 31); g.fill();
-  g.strokeStyle = color; g.lineWidth = 2; g.stroke();
-  g.fillStyle = '#E9E4E4'; g.font = '26px -apple-system, system-ui, sans-serif';
-  const q = recortar(g, b.q, W - 210);
-  g.fillText(q, 84, 180);
-  g.fillStyle = color; g.fillRect(94 + g.measureText(q).width, 158, 2, 26);
+  g.fillStyle = '#FFFFFF'; redondo(g, 48, 196, W - 96, 58, 29); g.fill();
+  g.strokeStyle = '#DFE1E5'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#202124'; g.font = '25px -apple-system, system-ui, Arial, sans-serif';
+  const q = recortar(g, b.q, W - 230);
+  g.fillText(q, 90, 233);
+  g.fillStyle = '#4285F4'; g.fillRect(100 + g.measureText(q).width, 212, 2, 26);
 
-  g.fillStyle = '#4A3167'; g.font = '18px ui-monospace, Menlo, monospace';
-  g.fillText('cerca de 4,120,000 resultados (0.32 s)', 48, 236);
+  g.fillStyle = '#70757A'; g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('Cerca de 4,120,000 resultados (0.32 segundos)', 50, 290);
 
-  let y = 288;
+  let y = 340;
   for(const r of b.res){
-    g.fillStyle = '#6B8BD8'; g.font = '25px -apple-system, system-ui, sans-serif';
-    g.fillText(recortar(g, r, W - 96), 48, y);
-    g.fillStyle = '#3E8F63'; g.font = '17px ui-monospace, Menlo, monospace';
-    g.fillText('mazi.mx › resultados › ' + (r.split(' ')[0] || '').toLowerCase(), 48, y + 26);
-    g.fillStyle = '#5B4B6D'; g.font = '18px -apple-system, system-ui, sans-serif';
-    g.fillText('Lo que estabas buscando, más o menos, aproximadamente…', 48, y + 54);
-    y += 108;
+    g.fillStyle = '#202124'; g.font = '15px -apple-system, system-ui, Arial, sans-serif';
+    g.fillText('mazi.mx › resultados › ' + (r.split(' ')[0] || '').toLowerCase(), 50, y - 22);
+    g.fillStyle = '#1A0DAB'; g.font = '25px -apple-system, system-ui, Arial, sans-serif';
+    g.fillText(recortar(g, r, W - 100), 50, y);
+    g.fillStyle = '#4D5156'; g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+    g.fillText('Lo que estabas buscando, más o menos, aproximadamente…', 50, y + 28);
+    y += 96;
   }
 }
 
 /* ── un video ──────────────────────────────────────────────────────────── */
+/* YouTube. El botón rojo redondeado con el triángulo blanco es lo que lo dice
+   todo; el resto —el título grueso, el canal, las vistas— es la forma. */
 function pantallaVideo(g, W, H, color, n){
   const v = VIDEOS[n % VIDEOS.length];
-  g.fillStyle = '#100A18'; g.fillRect(0, 0, W, H);
-  marcoNavegador(g, W, color, ['video', 'buscar'], 0, 'videos.mazi/ver?v=' + (n * 7 + 31));
+  const nav = NAVEGADORES[(n + 2) % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['YouTube', 'Google'], 0,
+                 'youtube.com/watch?v=' + (n * 7 + 31) + 'aQxKmZ', nav);
+  g.fillStyle = '#0F0F0F'; g.fillRect(0, 106, W, H - 106);
+
+  /* el logotipo */
+  g.fillStyle = '#FF0000'; redondo(g, 44, 122, 44, 31, 8); g.fill();
+  g.fillStyle = '#FFFFFF';
+  g.beginPath(); g.moveTo(60, 130); g.lineTo(76, 137.5); g.lineTo(60, 145); g.closePath(); g.fill();
+  g.fillStyle = '#FFFFFF'; g.font = '700 25px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('YouTube', 96, 147);
 
   /* el reproductor. El «fotograma» es un degradado con una silueta: a esta
      distancia una silueta se lee y un dibujo detallado no. */
-  const px = 44, py = 132, pw = W - 88, ph = 300;
+  const px = 44, py = 170, pw = W - 88, ph = 268;
   const cielo = g.createLinearGradient(0, py, 0, py + ph);
   cielo.addColorStop(0, '#2A1B4C'); cielo.addColorStop(1, '#0E1A2C');
   g.fillStyle = cielo; g.fillRect(px, py, pw, ph);
-  /* unas montañas y un sol, que es lo que hace que se lea «video» */
   g.fillStyle = '#F0A860';
-  g.beginPath(); g.arc(px + pw * 0.72, py + 96, 38, 0, Math.PI*2); g.fill();
+  g.beginPath(); g.arc(px + pw * 0.72, py + 84, 34, 0, Math.PI*2); g.fill();
   g.fillStyle = '#1A1030';
   g.beginPath(); g.moveTo(px, py + ph);
-  g.lineTo(px + pw*0.28, py + 150); g.lineTo(px + pw*0.52, py + ph); g.closePath(); g.fill();
+  g.lineTo(px + pw*0.28, py + 130); g.lineTo(px + pw*0.52, py + ph); g.closePath(); g.fill();
   g.beginPath(); g.moveTo(px + pw*0.34, py + ph);
-  g.lineTo(px + pw*0.66, py + 118); g.lineTo(px + pw, py + ph); g.closePath(); g.fill();
+  g.lineTo(px + pw*0.66, py + 104); g.lineTo(px + pw, py + ph); g.closePath(); g.fill();
 
-  /* el botón de pausa y la barra de avance */
-  g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(px, py + ph - 46, pw, 46);
-  g.fillStyle = '#E9E4E4';
-  g.fillRect(px + 18, py + ph - 34, 6, 22); g.fillRect(px + 30, py + ph - 34, 6, 22);
+  /* los mandos, con la barra roja */
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(px, py + ph - 44, pw, 44);
+  g.fillStyle = '#FFFFFF';
+  g.fillRect(px + 18, py + ph - 32, 5, 20); g.fillRect(px + 29, py + ph - 32, 5, 20);
   const avance = 0.18 + ((n * 37) % 60) / 100;
-  g.fillStyle = '#3A2A4C'; g.fillRect(px + 58, py + ph - 25, pw - 150, 5);
-  g.fillStyle = '#F0567F'; g.fillRect(px + 58, py + ph - 25, (pw - 150) * avance, 5);
-  g.beginPath(); g.arc(px + 58 + (pw - 150) * avance, py + ph - 22.5, 8, 0, Math.PI*2); g.fill();
-  g.fillStyle = '#C0B0D0'; g.font = '17px ui-monospace, Menlo, monospace';
-  g.fillText(v.dura, px + pw - 78, py + ph - 18);
+  g.fillStyle = 'rgba(255,255,255,.28)'; g.fillRect(px + 56, py + ph - 24, pw - 148, 4);
+  g.fillStyle = '#FF0000'; g.fillRect(px + 56, py + ph - 24, (pw - 148) * avance, 4);
+  g.beginPath(); g.arc(px + 56 + (pw - 148) * avance, py + ph - 22, 8, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#DDDDDD'; g.font = '16px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(v.dura, px + pw - 76, py + ph - 17);
 
-  g.fillStyle = '#E9E4E4'; g.font = '700 30px -apple-system, system-ui, sans-serif';
-  let y = py + ph + 52;
-  for(const linea of partir(g, v.t, pw).slice(0, 2)){ g.fillText(linea, px, y); y += 38; }
-  g.fillStyle = '#7B6B8D'; g.font = '20px -apple-system, system-ui, sans-serif';
-  g.fillText(v.canal + ' · ' + (120 + n * 913) + ' vistas · hace un rato', px, y + 12);
+  g.fillStyle = '#F1F1F1'; g.font = '700 27px -apple-system, system-ui, Arial, sans-serif';
+  let y = py + ph + 44;
+  for(const linea of partir(g, v.t, pw - 190).slice(0, 2)){ g.fillText(linea, px, y); y += 34; }
+  g.fillStyle = '#AAAAAA'; g.font = '18px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(v.canal + ' · ' + (120 + n * 913) + ' vistas · hace un rato', px, y + 8);
+  /* el botón de suscribirse, que es lo último que hace falta para que se lea */
+  g.fillStyle = '#FFFFFF'; redondo(g, W - 196, py + ph + 22, 152, 40, 20); g.fill();
+  g.fillStyle = '#0F0F0F'; g.font = '700 18px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('Suscribirse', W - 176, py + ph + 48);
 }
 
 /* ── imágenes de bichos ────────────────────────────────────────────────── */
@@ -690,23 +798,42 @@ function bicho(g, x, y, w, h, cual){
 
 function pantallaImagenes(g, W, H, color, n){
   const cual = BICHOS[n % BICHOS.length];
-  g.fillStyle = '#100A18'; g.fillRect(0, 0, W, H);
-  marcoNavegador(g, W, color, ['imágenes', 'buscar'], 0,
-                 'buscador.mazi/imagenes?q=' + cual.id);
+  const nav = NAVEGADORES[(n + 1) % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['Google Imágenes', 'YouTube'], 0,
+                 'google.com/search?tbm=isch&q=' + cual.id, nav);
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 106, W, H - 106);
 
-  g.fillStyle = '#181022'; redondo(g, 44, 130, W - 88, 50, 25); g.fill();
-  g.fillStyle = '#E9E4E4'; g.font = '23px -apple-system, system-ui, sans-serif';
-  g.fillText(cual.nombre, 76, 163);
-  g.fillStyle = '#4A3167'; g.font = '17px ui-monospace, Menlo, monospace';
-  g.fillText('IMÁGENES', W - 160, 163);
+  /* el logotipo chico, como en la página de resultados */
+  const letras = [['G','#4285F4'],['o','#EA4335'],['o','#FBBC05'],
+                  ['g','#4285F4'],['l','#34A853'],['e','#EA4335']];
+  g.font = '700 27px -apple-system, system-ui, Arial, sans-serif';
+  let lx = 48;
+  for(const [c, tono] of letras){ g.fillStyle = tono; g.fillText(c, lx, 152);
+                                  lx += g.measureText(c).width; }
+
+  g.fillStyle = '#FFFFFF'; redondo(g, lx + 26, 126, W - lx - 74, 44, 22); g.fill();
+  g.strokeStyle = '#DFE1E5'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#202124'; g.font = '21px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(cual.nombre, lx + 48, 155);
+  /* la fila de pestañas de Google, con «Imágenes» subrayada en azul */
+  g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  let px = 50;
+  for(const p of ['Todo', 'Imágenes', 'Videos', 'Noticias', 'Maps']){
+    const viva = p === 'Imágenes';
+    g.fillStyle = viva ? '#1A73E8' : '#5F6368';
+    g.fillText(p, px, 194);
+    const an = g.measureText(p).width;
+    if(viva){ g.fillStyle = '#1A73E8'; g.fillRect(px, 202, an, 3); }
+    px += an + 26;
+  }
 
   /* la rejilla: 4 × 2, con el fondo alternando para que se lea como galería */
-  const cols = 4, filas = 2, hx = 44, hy = 206;
-  const cw = (W - 88 - (cols-1)*12) / cols, ch = (H - hy - 56 - 12) / filas;
+  const cols = 4, filas = 2, hx = 44, hy = 222;
+  const cw = (W - 88 - (cols-1)*12) / cols, ch = (H - hy - 44 - 12) / filas;
   for(let i = 0; i < cols * filas; i++){
     const x = hx + (i % cols) * (cw + 12), y = hy + ((i / cols) | 0) * (ch + 12);
-    g.fillStyle = i % 3 === 0 ? '#1B1226' : '#170F20';
-    redondo(g, x, y, cw, ch, 10); g.fill();
+    g.fillStyle = i % 3 === 0 ? '#F1F3F4' : '#E8EAED';
+    redondo(g, x, y, cw, ch, 8); g.fill();
     /* Cada celda con su tamaño y su encuadre. Ocho dibujos idénticos se leen
        como un error de repintado; ocho parecidos se leen como resultados de
        búsqueda, que es lo que son. */
@@ -717,23 +844,40 @@ function pantallaImagenes(g, W, H, color, n){
     bicho(g, x + (cw*(1-z))/2 + dx, y + (ch*(1-z))/2 + dy, cw*z, ch*z, cual.id);
     g.restore();
   }
-  g.fillStyle = '#4A3167'; g.font = '18px ui-monospace, Menlo, monospace';
-  g.fillText('2,340,000 resultados · seguir viendo', 48, H - 22);
+  g.fillStyle = '#70757A'; g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('2,340,000 resultados · Mostrar más', 48, H - 16);
 }
 
 /* ── una hoja de cálculo ───────────────────────────────────────────────── */
 function pantallaHoja(g, W, H, color, n){
-  g.fillStyle = '#12161C'; g.fillRect(0, 0, W, H);
-  marcoNavegador(g, W, color, ['hoja', 'la mesa'], 0, 'hoja.mazi/comisiones-agosto');
+  const nav = NAVEGADORES[(n + 3) % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['comisiones-agosto.xlsx', 'Google'], 0,
+                 'excel.office.com/comisiones-agosto', nav);
+
+  /* La franja verde con el nombre: es lo que dice «Excel» antes de que uno
+     lea nada. Y el cuadrito con la X, que es el emblema. */
+  g.fillStyle = '#107C41'; g.fillRect(0, 106, W, 44);
+  g.fillStyle = '#FFFFFF'; redondo(g, 18, 116, 25, 25, 4); g.fill();
+  g.fillStyle = '#107C41'; g.font = '700 19px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('X', 25, 136);
+  g.fillStyle = '#FFFFFF'; g.font = '700 19px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('Excel', 54, 136);
+  g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  g.fillStyle = 'rgba(255,255,255,.86)';
+  g.fillText('comisiones-agosto.xlsx  ·  Guardado', 122, 136);
 
   /* la barra de fórmula: es lo que hace que se lea «hoja de cálculo» y no
      «tabla». Sin ella son puros cuadritos. */
-  g.fillStyle = '#0D1116'; g.fillRect(0, 106, W, 42);
-  g.fillStyle = '#5B6B7D'; g.font = '19px ui-monospace, Menlo, monospace';
-  g.fillText('D7', 24, 134);
-  g.fillStyle = '#2A3540'; g.fillRect(64, 112, 1, 30);
-  g.fillStyle = '#8FA8C8';
-  g.fillText('=SUMA(D2:D6)*0.15   ← la comisión, según yo', 84, 134);
+  g.fillStyle = '#F3F2F1'; g.fillRect(0, 150, W, 40);
+  g.fillStyle = '#FFFFFF'; g.fillRect(14, 156, 62, 28);
+  g.strokeStyle = '#D2D0CE'; g.lineWidth = 1; g.strokeRect(14.5, 156.5, 62, 28);
+  g.fillStyle = '#323130'; g.font = '18px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('D7', 26, 176);
+  g.fillStyle = '#8A8886'; g.fillText('fx', 92, 176);
+  g.fillStyle = '#FFFFFF'; g.fillRect(120, 156, W - 134, 28);
+  g.strokeStyle = '#D2D0CE'; g.strokeRect(120.5, 156.5, W - 134, 28);
+  g.fillStyle = '#323130'; g.font = '18px ui-monospace, Menlo, monospace';
+  g.fillText('=SUMA(D2:D6)*0.15   ← la comisión, según yo', 132, 176);
 
   /* Columnas de sobra a la derecha, vacías. Una hoja de cálculo que se acaba
      donde se acaban los datos no es una hoja: es una tabla. Lo que la hace
@@ -749,21 +893,23 @@ function pantallaHoja(g, W, H, color, n){
     ['6', 'palomas (?)',   'ehh',      '4',     '0',       '0'],
     ['7', '',              '',         '',      '80,000',  '12,000'],
   ];
-  let y = 158;
-  const altoF = 46;
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 190, W, H - 190);
+  let y = 198;
+  const altoF = 42;
   for(let f = 0; f < filas.length; f++){
     let x = 20;
     for(let c = 0; c < cols.length; c++){
       const dato = filas[f][c] == null ? '' : filas[f][c];
       const encabezado = f === 0 || c === 0;
-      g.fillStyle = encabezado ? '#1A2028' : (f === filas.length - 1 ? '#16202A' : '#0F1419');
+      g.fillStyle = encabezado ? '#F3F2F1' : '#FFFFFF';
       g.fillRect(x, y, anchos[c], altoF);
-      g.strokeStyle = '#232C36'; g.lineWidth = 1;
+      g.strokeStyle = '#D0D0D0'; g.lineWidth = 1;
       g.strokeRect(x + 0.5, y + 0.5, anchos[c], altoF);
-      g.fillStyle = encabezado ? '#7B8B9D'
-                  : (c === 5 ? '#3ECF8E' : '#C8D4E0');
-      g.font = (f === 0 ? '600 ' : '') + '20px ui-monospace, Menlo, monospace';
-      g.fillText(recortar(g, dato, anchos[c] - 16), x + 10, y + 30);
+      g.fillStyle = encabezado ? '#616161'
+                  : (c === 5 ? '#107C41' : '#242424');
+      g.font = (f === 0 || c === 0 ? '600 ' : '') +
+               '19px -apple-system, system-ui, Arial, sans-serif';
+      g.fillText(recortar(g, dato, anchos[c] - 16), x + 10, y + 27);
       x += anchos[c];
     }
     y += altoF;
@@ -773,13 +919,14 @@ function pantallaHoja(g, W, H, color, n){
   while(y < H - 6){
     let x = 20;
     for(let c = 0; c < cols.length; c++){
-      g.fillStyle = c === 0 ? '#1A2028' : '#0F1419';
+      g.fillStyle = c === 0 ? '#F3F2F1' : '#FFFFFF';
       g.fillRect(x, y, anchos[c], altoF);
-      g.strokeStyle = '#232C36'; g.lineWidth = 1;
+      g.strokeStyle = '#D0D0D0'; g.lineWidth = 1;
       g.strokeRect(x + 0.5, y + 0.5, anchos[c], altoF);
       if(c === 0){
-        g.fillStyle = '#7B8B9D'; g.font = '20px ui-monospace, Menlo, monospace';
-        g.fillText(String(8 + (y - 158 - altoF*7) / altoF), x + 10, y + 30);
+        g.fillStyle = '#616161';
+        g.font = '600 19px -apple-system, system-ui, Arial, sans-serif';
+        g.fillText(String(8 + (y - 198 - altoF*7) / altoF), x + 10, y + 27);
       }
       x += anchos[c];
     }
@@ -787,17 +934,23 @@ function pantallaHoja(g, W, H, color, n){
   }
 
   /* la celda seleccionada, con su cuadrito de arrastre */
-  g.strokeStyle = '#3ECF8E'; g.lineWidth = 2.5;
-  g.strokeRect(20 + anchos.slice(0,4).reduce((a,b)=>a+b,0), 158 + altoF*6, anchos[4], altoF);
+  g.strokeStyle = '#107C41'; g.lineWidth = 2.5;
+  g.strokeRect(20 + anchos.slice(0,4).reduce((a,b)=>a+b,0), 198 + altoF*6, anchos[4], altoF);
 }
 
 /* ── los juegos ────────────────────────────────────────────────────────── */
 function hudJuego(g, W, H, j, color){
-  g.fillStyle = 'rgba(10,6,16,.72)'; g.fillRect(0, H - 56, W, 56);
-  g.fillStyle = color; g.font = '700 22px ui-monospace, Menlo, monospace';
-  g.fillText(j.nombre, 28, H - 20);
+  /* Al borde del hueco, no al del lienzo. Ver `HUECO`. */
+  const W2 = HUECO.w, H2 = HUECO.h;
+  g.fillStyle = 'rgba(10,6,16,.72)'; g.fillRect(0, H2 - 56, W2, 56);
+  /* El color del JUEGO, no el del agente: es lo que hace que se distingan de
+     un vistazo cuando hay cuatro monitores en el cuarto. */
+  g.fillStyle = j.tinte || color;
+  g.font = '700 22px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(j.nombre, 28, H2 - 20);
+  const anNombre = g.measureText(j.nombre).width;
   g.fillStyle = '#9A8FA8'; g.font = '20px ui-monospace, Menlo, monospace';
-  g.fillText(j.hud, 28 + g.measureText(j.nombre).width + 26, H - 20);
+  g.fillText(recortar(g, j.hud, W2 - anNombre - 82), 28 + anNombre + 26, H2 - 20);
 }
 
 function juegoBloques(g, W, H, color, j){
@@ -846,11 +999,12 @@ function juegoBloques(g, W, H, color, j){
   g.moveTo(W/2, H/2 - 14); g.lineTo(W/2, H/2 + 14); g.stroke();
   for(let i = 0; i < 9; i++){
     const x = W/2 - 9*30 + i*60;
-    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x, H - 138, 56, 56);
+    const yb = HUECO.h - 138;
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x, yb, 56, 56);
     g.strokeStyle = i === 2 ? '#fff' : 'rgba(255,255,255,.35)';
-    g.lineWidth = i === 2 ? 3 : 2; g.strokeRect(x, H - 138, 56, 56);
+    g.lineWidth = i === 2 ? 3 : 2; g.strokeRect(x, yb, 56, 56);
     if(i < 4){ g.fillStyle = ['#5C9A3C','#7A5230','#6B6B6B','#C0C0C8'][i];
-               g.fillRect(x + 12, H - 126, 32, 32); }
+               g.fillRect(x + 12, yb + 12, 32, 32); }
   }
   hudJuego(g, W, H, j, color);
 }
@@ -871,6 +1025,12 @@ function juegoArena(g, W, H, color, j){
   g.fillStyle = 'rgba(232,179,58,.12)'; g.fillRect(455, 250, 170, 130);
   g.fillStyle = '#E8B33A'; g.font = '700 34px ui-monospace, Menlo, monospace';
   g.fillText('B', 528, 325);
+  /* La Spike plantada, con su cuenta atrás: es lo que dice de qué juego es. */
+  g.fillStyle = '#FF4655';
+  redondo(g, 556, 292, 14, 26, 4); g.fill();
+  g.beginPath(); g.arc(563, 288, 7, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#FF4655'; g.font = '700 19px ui-monospace, Menlo, monospace';
+  g.fillText('0:31', 580, 312);
   /* los jugadores */
   const nuestros = [[210,240],[300,300],[240,430]];
   const otros    = [[760,300],[820,260],[700,380],[880,340]];
@@ -954,6 +1114,10 @@ function juegoCiudad(g, W, H, color, j){
   g.font = '700 30px ui-monospace, Menlo, monospace';
   g.fillStyle = '#F0567F'; g.fillText('RAMEN', W*0.12 + 20, H*0.26);
   g.fillStyle = '#78DCFF'; g.fillText('24 HRS', W*0.70 + 20, H*0.20);
+  /* El amarillo es la mitad de lo que hace que se lea como este juego. */
+  g.fillStyle = '#FCEE0A'; g.font = '700 26px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('NIGHT CITY', W*0.38, H*0.16);
+  g.fillStyle = 'rgba(252,238,10,.5)'; g.fillRect(W*0.38, H*0.17, 168, 3);
   /* la calle mojada, con reflejos */
   g.fillStyle = '#0B0716'; g.fillRect(0, H*0.62, W, H*0.38);
   g.fillStyle = 'rgba(240,86,127,.20)'; g.fillRect(W*0.12, H*0.62, 8, H*0.30);
@@ -984,6 +1148,17 @@ function juegoCiudad(g, W, H, color, j){
    cada quien tiene su manía y se la queda. Los cuatro lados están, incluido el
    derecho. */
 let relojFijo = null;
+
+/* Lo que le queda a la escena después de que la barra se lleva su franja. Lo
+   pone `pintarPantalla` antes de llamarla.
+
+   ⚠ HACE FALTA POR UNA RAZÓN CONCRETA: el rótulo del juego vive pegado al
+   borde de abajo, y con la barra arriba —que corre el lienzo 56 px— ese borde
+   queda FUERA del recorte. O sea que desaparecía el nombre del juego, que es
+   justamente lo que Carlos pidió que se viera. Se vio en la captura de
+   Fortnite: mapa, tormenta, inventario… y sin nombre. */
+let HUECO = { w: 1024, h: 640 };
+
 const LADOS = ['abajo', 'arriba', 'izquierda', 'derecha'];
 function ladoDe(id){
   let h = 0;
@@ -1088,6 +1263,71 @@ function barraDeTarea(g, W, H, quien, color, lado){
   g.restore();
 }
 
+
+function juegoBattle(g, W, H, color, j){
+  /* Un mapa de battle royale con el círculo de la tormenta cerrándose. Lo que
+     dice el género de un vistazo son tres cosas: el círculo, el autobús que
+     cruza y la cuenta de los que quedan. */
+  /* Un verde de base y no casi negro: si el suelo es oscuro, lo único que se
+     lee es el morado de la tormenta y parece una mancha, no un mapa. */
+  g.fillStyle = '#24422A'; g.fillRect(0, 0, W, H);
+  /* el terreno: manchas de verde y arena */
+  const manchas = [[140,150,190,120,'#2E5A34'],[420,90,240,150,'#3A6B3E'],
+                   [720,180,230,170,'#2E5A34'],[200,380,280,150,'#4A5F2E'],
+                   [560,330,300,190,'#3A6B3E'],[60,260,150,140,'#4A5F2E']];
+  for(const [x,y,w,h,tono] of manchas){
+    g.fillStyle = tono; redondo(g, x, y, w, h, 34); g.fill();
+  }
+  /* caminos */
+  g.strokeStyle = '#6B6350'; g.lineWidth = 9;
+  g.beginPath(); g.moveTo(0, 300); g.bezierCurveTo(280, 250, 620, 380, W, 320); g.stroke();
+  g.beginPath(); g.moveTo(430, 0); g.bezierCurveTo(470, 220, 380, 380, 460, H); g.stroke();
+
+  /* la tormenta: lo de afuera del círculo, morado */
+  g.save();
+  g.beginPath(); g.rect(0, 0, W, H);
+  g.arc(560, 300, 210, 0, Math.PI*2, true);
+  g.fillStyle = 'rgba(120,60,220,.42)'; g.fill('evenodd');
+  g.restore();
+  g.strokeStyle = '#9D4DFF'; g.lineWidth = 4;
+  g.beginPath(); g.arc(560, 300, 210, 0, Math.PI*2); g.stroke();
+  /* y el círculo siguiente, punteado */
+  g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 3; g.setLineDash([10, 8]);
+  g.beginPath(); g.arc(600, 330, 118, 0, Math.PI*2); g.stroke(); g.setLineDash([]);
+
+  /* el autobús cruzando, con su estela */
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.setLineDash([14, 10]);
+  g.beginPath(); g.moveTo(60, 96); g.lineTo(W - 40, 190); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#F2C13D';
+  g.save(); g.translate(430, 143); g.rotate(0.12);
+  redondo(g, -34, -12, 68, 24, 6); g.fill();
+  g.fillStyle = '#7EC8E3'; g.fillRect(-24, -8, 40, 9);
+  g.restore();
+  /* el globo del autobús */
+  g.fillStyle = 'rgba(242,193,61,.55)';
+  g.beginPath(); g.ellipse(430, 108, 30, 22, 0, 0, Math.PI*2); g.fill();
+
+  /* los que quedan, arriba a la derecha */
+  g.fillStyle = 'rgba(0,0,0,.55)'; redondo(g, W - 210, 22, 186, 44, 8); g.fill();
+  g.fillStyle = '#FFFFFF'; g.font = '700 22px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('14 quedan', W - 192, 51);
+  g.fillStyle = '#9D4DFF'; redondo(g, W - 210, 74, 186, 10, 5); g.fill();
+
+  /* el inventario de abajo, que es la última pista del género */
+  for(let i = 0; i < 5; i++){
+    const x = W/2 - 5*36 + i*72;
+    const yb = HUECO.h - 128;
+    g.fillStyle = 'rgba(0,0,0,.5)'; redondo(g, x, yb, 66, 52, 6); g.fill();
+    g.strokeStyle = i === 1 ? '#FFFFFF' : 'rgba(255,255,255,.28)';
+    g.lineWidth = i === 1 ? 3 : 2; redondo(g, x, yb, 66, 52, 6); g.stroke();
+    if(i < 3){
+      g.fillStyle = ['#9D4DFF','#F2C13D','#4FC3F7'][i];
+      redondo(g, x + 12, yb + 12, 42, 28, 4); g.fill();
+    }
+  }
+  hudJuego(g, W, H, j, color);
+}
+
 /* ── el catálogo, y de quién es cada pantalla ──────────────────────────── */
 const OCIO = [
   (g,W,H,c,n) => pantallaBusqueda(g, W, H, c, n),
@@ -1099,6 +1339,7 @@ const OCIO = [
   (g,W,H,c,n) => juegoCoches(g, W, H, c, JUEGOS[2]),
   (g,W,H,c,n) => pantallaBusqueda(g, W, H, c, n + 3),
   (g,W,H,c,n) => juegoCiudad(g, W, H, c, JUEGOS[3]),
+  (g,W,H,c,n) => juegoBattle(g, W, H, c, JUEGOS[4]),
   (g,W,H,c,n) => pantallaVideo(g, W, H, c, n + 2),
 ];
 
@@ -1139,13 +1380,34 @@ function pintarPantalla(esc_, quien, color){
     return;
   }
 
+  /* ⚠ LA BARRA LE CORRE EL SITIO A LA PANTALLA, no se le pone encima. Con la
+     barra arriba y una página de navegador, la franja tapaba justo las
+     PESTAÑAS —lo primero que dice «esto es un navegador»— y la página parecía
+     empezar en la barra de dirección. Se vio en la captura.
+
+     Se resuelve una sola vez aquí y no en las doce escenas: se corre el lienzo
+     y se recorta al hueco que queda. Cada escena sigue dibujando como si
+     tuviera la pantalla entera, y lo que se pierde es la orilla del lado
+     contrario — que es lo mismo que hace una barra de tareas de verdad. */
+  const lado = esc_.ladoFijo || ladoDe(quien.id);
+  const hueco = GRUESO[lado];
+  const vertical = lado === 'izquierda' || lado === 'derecha';
+  HUECO = { w: W - (vertical ? hueco : 0), h: H - (vertical ? 0 : hueco) };
+  g.save();
+  g.beginPath();
+  if(lado === 'arriba'){        g.rect(0, hueco, W, H - hueco);      g.clip(); g.translate(0, hueco); }
+  else if(lado === 'abajo'){    g.rect(0, 0, W, H - hueco);          g.clip(); }
+  else if(lado === 'izquierda'){g.rect(hueco, 0, W - hueco, H);      g.clip(); g.translate(hueco, 0); }
+  else {                        g.rect(0, 0, W - hueco, H);          g.clip(); }
   OCIO[(n === 0 ? 0 : n - 1) % OCIO.length](g, W, H, color, n);
+  g.restore();
+
   /* `ladoFijo` sólo lo pone la manija de pruebas, para poder ver los cuatro
      lados sin esperar a que le toque a alguien el de la derecha. La primera
      versión de esa manija pintaba la barra ENCIMA de la que ya había puesto
      esta función: salían dos, y en la captura parecía un defecto del producto
      cuando era del andamio. */
-  barraDeTarea(g, W, H, quien, color, esc_.ladoFijo || ladoDe(quien.id));
+  barraDeTarea(g, W, H, quien, color, lado);
   esc_.textura.needsUpdate = true;
 }
 

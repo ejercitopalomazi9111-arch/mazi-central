@@ -168,7 +168,7 @@ console.log('\n── lo que enseña el monitor ──');
              largos: todas.map(x => x.length) };
   });
 
-  ok('hay once pantallas en la vuelta', r.n === 11, String(r.n));
+  ok('hay doce pantallas en la vuelta', r.n === 12, String(r.n));
   ok('y todas son distintas entre sí',
      new Set(r.todas).size === r.n, r.n - new Set(r.todas).size + ' repetidas');
   ok('ninguna deja restos de la anterior debajo', r.limpio);
@@ -263,8 +263,8 @@ console.log('\n── lo que enseña el monitor ──');
      barra && barra.leeElTrabajo);
   ok('y la pantalla 0 sigue siendo el encargo a pantalla completa',
      barra && barra.ceroEsOtraCosa);
-  ok('son once pantallas: el trabajo más las diez suyas',
-     barra && barra.n === 11, String(barra && barra.n));
+  ok('son doce: el trabajo más las once suyas',
+     barra && barra.n === 12, String(barra && barra.n));
 
   /* Los cuatro lados existen de verdad en el reparto: si `ladoDe` devolviera
      siempre lo mismo, tres cuartas partes del chiste no existirían. */
