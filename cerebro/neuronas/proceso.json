@@ -1,0 +1,132 @@
+{
+  "area": "proceso",
+  "nombre": "Lo que costó poder hablarnos",
+  "que": "Dos Claudes de cuentas distintas tardaron dos días en poder cruzar una frase. Ninguna de las trabas era del código: eran red, permisos y git. Esta área las guarda porque el siguiente que quiera conectar dos agentes va a tropezar con las mismas, y todas se ven como otra cosa desde fuera.",
+  "neuronas": [
+    {
+      "id": "agente-que-no-alcanza-un-dominio",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Dice que no puede abrir una liga, y suena a que no quiere",
+      "sintoma": "Le pasas una dirección y responde que no puede abrirla. Pero esa misma sesión hace peticiones a otros sitios sin problema, así que parece falta de ganas o de capacidad, y la plática se va a discutir en vez de a diagnosticar.",
+      "causa": "La salida a internet de su contenedor pasa por una lista blanca de dominios y ése no está en ella. No se arregla desde dentro de la sesión: no es una opción que el agente pueda cambiar.",
+      "porque": "El agente lo describe mal y quien lo lee lo interpreta peor. «No puedo entrar» suena a excusa; lo que de verdad pasa es que un proxy le contesta 403 a ese dominio y sólo a ése. Como el resto de internet sí le funciona, la explicación honesta parece inconsistente — y ahí es donde se pierde la media hora.",
+      "arreglo": "No insistir por esa vía. Poner el contenido donde el agente sí llega: un archivo en un repositorio. Git y la API de GitHub sí pasan la lista blanca casi siempre, porque son lo que el entorno está hecho para usar.",
+      "comoCazarlo": "Pídele que haga `curl` al dominio y que enseñe el código de salida, y luego a otro dominio cualquiera. Si el primero da 403 del proxy y el segundo 200, es la lista blanca. Es la diferencia entre «no puede» y «no le dejan», y sólo se ve con el comando enfrente.",
+      "consejo": "Cuando un agente diga «no puedo», la siguiente pregunta nunca es «¿por qué te niegas?» sino «¿qué comando corriste y qué te contestó?». La respuesta suele mover el problema de actitud a infraestructura, y ahí sí se resuelve.",
+      "salioDe": "La Sala · el Claude de Luis no alcanzaba sala.palomazi9111.workers.dev y hacía curl perfecto a todo lo demás; se discutió antes de medirlo",
+      "senales": [
+        "dice que no puede abrir la liga",
+        "no puede abrir la página",
+        "entra a otras páginas y a esa no",
+        "me pone peros con esa liga",
+        "no alcanza el dominio"
+      ],
+      "vecinas": [
+        "permiso-que-no-era-el-que-parecia",
+        "el-agente-no-lee-la-puerta",
+        "pieza-sala"
+      ]
+    },
+    {
+      "id": "permiso-que-no-era-el-que-parecia",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Le diste todos los permisos que la pantalla ofrece y sigue sin poder escribir",
+      "sintoma": "El dueño autoriza todo lo que ve —la app en GitHub, «always allow» en el cliente— y el agente sigue contestando que no tiene acceso, o que el repositorio no existe.",
+      "causa": "El permiso que faltaba no estaba en ninguna de esas pantallas. Era ser colaborador del repositorio, que lo da el dueño del repo en otro lugar. Son dos cosas distintas y sólo una tiene botones a la vista.",
+      "porque": "La autorización de la app es la pantalla que existe, tiene casillas y se siente como «el permiso». El acceso al repositorio no se pide desde ahí y nada avisa de que falta. Así que la persona autoriza de buena fe, ve que sigue sin funcionar, y concluye que el agente miente o que la herramienta está rota.",
+      "arreglo": "Que el dueño del repositorio agregue a la cuenta como colaborador. Y mientras tanto, no repetir el camino de la app: ya se probó y no era.",
+      "comoCazarlo": "`git ls-remote` contra el repositorio con las credenciales del agente. Si contesta 403 o 404 en un repo que existe de verdad, es acceso al repo y no permisos de la app. Un 404 de GitHub sin autenticación suficiente es idéntico a «no existe».",
+      "consejo": "Nunca concluyas que algo no existe por un 404 de GitHub: concluye que no lo alcanzas. Yo le dije a una persona que su cambio «no había llegado» y sí había llegado — había mirado las ramas del repositorio original, que no enseñan los PR que vienen de un fork.",
+      "salioDe": "mazi-central · dos días diciendo «dame acceso» apuntando a la pantalla equivocada; lo destrabó Carlos agregando al colaborador",
+      "senales": [
+        "ya le di acceso y sigue sin poder",
+        "le di always allow y nada",
+        "dice que el repo no existe",
+        "no me deja subir",
+        "ya autoricé todo"
+      ],
+      "vecinas": [
+        "agente-que-no-alcanza-un-dominio",
+        "mensajes-en-una-rama-ya-mezclada",
+        "verificar-lo-publicado"
+      ]
+    },
+    {
+      "id": "mensajes-en-una-rama-ya-mezclada",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Escribí, commiteé y empujé, y del otro lado nadie lo vio",
+      "sintoma": "Todos los pasos salen bien y no hay un solo error. El trabajo está en el remoto —se puede ver— y aun así quien lo tenía que leer jura que nunca llegó nada.",
+      "causa": "La rama ya se había mezclado antes. Los commits nuevos quedaron colgando encima de historia ya integrada: existen en el remoto y no existen en main. El que lee, lee main.",
+      "porque": "Una rama mezclada sigue existiendo, sigue aceptando push y no cambia de color. Nada avisa de que dejó de ser el camino hacia main, y si el PR ya se cerró tampoco queda el recordatorio. Uno ve «pushed» y da el mensaje por entregado.",
+      "arreglo": "Rehacer el trabajo partiendo de main en una rama nueva y abrir PR. Si son mensajes o configuración, el destino es main desde el principio, no una rama de trabajo.",
+      "comoCazarlo": "`git merge-base --is-ancestor <commit> origin/main`. Contesta sí o no, y contesta lo único que importa: si está donde el otro va a mirar. Hacerlo ANTES de decir «ya lo mandé».",
+      "consejo": "Un mensaje esperando un merge no es un mensaje entregado. Vale igual para un arreglo urgente y para un cambio de configuración: mientras viva en una rama, para todos los efectos no existe.",
+      "salioDe": "sala/buzon · dos mensajes escritos y empujados en claude/juego-oregon-3kmicc, que ya se había mezclado; nadie los vio hasta recogerlos a mano",
+      "senales": [
+        "lo subí y no lo ve nadie",
+        "ya está en el repo pero no aparece",
+        "sí lo empujé",
+        "el PR ya se había cerrado",
+        "está en mi rama"
+      ],
+      "vecinas": [
+        "herramienta-que-lee-el-arbol-de-trabajo",
+        "permiso-que-no-era-el-que-parecia",
+        "verificar-lo-publicado"
+      ]
+    },
+    {
+      "id": "herramienta-que-lee-el-arbol-de-trabajo",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "La misma herramienta da resultados distintos según quién la corra",
+      "sintoma": "Un script lee un archivo del repositorio y hace algo con él. A uno le funciona y a otro no, sin que nadie haya cambiado nada, y el que lo escribió no puede reproducirlo.",
+      "causa": "Lee el archivo del disco con la ruta a secas, así que lee lo que esté en el árbol de trabajo de quien lo ejecuta. El resultado depende de en qué rama esté parada esa copia.",
+      "porque": "Abrir el archivo por su ruta es lo natural y funciona perfecto el día que se escribe, porque el autor está parado en la rama correcta y ni se le ocurre que sea una variable. El defecto no nace al escribirlo: nace la primera vez que lo corre alguien más.",
+      "arreglo": "Leer por referencia explícita —`git show origin/main:ruta`— y hacer `fetch` antes. Deja de depender del disco y pasa a depender de algo que se puede nombrar en la conversación.",
+      "comoCazarlo": "Correr la herramienta desde dos ramas distintas y comparar la salida. Si cambia, es esto. Leer el código no lo enseña: el código se ve bien.",
+      "consejo": "En cuanto una herramienta la vayan a correr dos personas, «el archivo» deja de ser una cosa y pasa a ser una por copia. A partir de ahí hay que nombrar la referencia, aunque sean tres palabras más.",
+      "salioDe": "sala/vigilante/buzon.mjs · leía salida.md del árbol de trabajo; ahora lee de origin/main con fetch previo",
+      "senales": [
+        "a mí me sale distinto",
+        "en mi máquina sí",
+        "no lee lo que le puse",
+        "depende de quién lo corra",
+        "a veces sí a veces no"
+      ],
+      "vecinas": [
+        "mensajes-en-una-rama-ya-mezclada",
+        "reproducir-antes-de-arreglar",
+        "medir-antes-de-suponer"
+      ]
+    },
+    {
+      "id": "reporte-de-agente-sin-evidencia",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Una sesión reporta el trabajo terminado y verificado, y no está",
+      "sintoma": "El resumen dice que quedó, que se comprobó y hasta cuántas cosas se hicieron. Al ir a ver: no existe, o existe a la mitad. Y el resumen no tiene ni una sola contradicción interna que delate el hueco.",
+      "causa": "El que reporta describe lo que se propuso hacer, no lo que quedó. No está mintiendo: no comprobó, y no distingue entre las dos cosas al escribir el resumen.",
+      "porque": "Un resumen se escribe al final, cuando el contexto de lo que de verdad pasó ya se comprimió. Lo que sobrevive a esa compresión es la intención, que es lo más nítido y lo más ordenado. Los tropiezos y lo que quedó a medias son justo lo que se pierde primero.",
+      "arreglo": "Pedir la evidencia en el encargo y no al final: el comando con su salida, el hash del commit, la URL del PR. Un encargo que no dice cómo se demuestra que quedó, se va a contestar con una afirmación.",
+      "comoCazarlo": "Comprobar contra git, nunca contra el resumen. Para PR, `git ls-remote origin 'refs/pull/*/head'`. Para ramas, `git diff` contra el commit base. Para conteos, contarlos uno mismo. Cuesta un minuto y caza esto siempre.",
+      "consejo": "«Verificado» dentro de un reporte es una palabra, no una prueba. Si el reporte no trae el comando y lo que contestó, no verificó nada — y eso vale igual para el reporte de un agente que para el de uno mismo.",
+      "salioDe": "dos sesiones el mismo día: un juego de skills incompleto declarado «verificado» —eran 9 de 25— y dos PR «creados» que no existían; las dos se cazaron contra git",
+      "senales": [
+        "dice que ya quedó y no quedó",
+        "reportó verificado",
+        "no encuentro lo que dijo que hizo",
+        "el resumen dice una cosa y el repo otra",
+        "juraba que estaba"
+      ],
+      "vecinas": [
+        "verificar-lo-publicado",
+        "pruebas-que-no-prueban-nada",
+        "mensajes-en-una-rama-ya-mezclada"
+      ]
+    }
+  ]
+}
