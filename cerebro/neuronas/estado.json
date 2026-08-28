@@ -14,8 +14,16 @@
       "comoCazarlo": "Prueba con TRES elementos, nunca con uno. Un bug de este tipo es invisible con un solo caso y evidente con tres.",
       "consejo": "Cuando alguien reporta «sólo el primero funciona», no busques en el pintado: busca qué bandera es de todos y debería ser de cada uno.",
       "salioDe": "reportes/ · el QR salía sólo en la primera credencial",
-      "senales": ["sólo el primero", "el resto no", "al recargar cambia", "una sí y las demás no"],
-      "vecinas": ["ajuste-guardado-por-documento", "prueba-de-un-solo-caso"]
+      "senales": [
+        "sólo el primero",
+        "el resto no",
+        "al recargar cambia",
+        "una sí y las demás no"
+      ],
+      "vecinas": [
+        "ajuste-guardado-por-documento",
+        "prueba-de-un-solo-caso"
+      ]
     },
     {
       "id": "ajuste-guardado-por-documento",
@@ -28,8 +36,15 @@
       "comoCazarlo": "Prueba SIEMPRE con un documento viejo, no con uno recién creado. Guarda uno a propósito antes de cambiar el defecto.",
       "consejo": "Si el usuario repite un reporte que ya «arreglaste», el arreglo está en el lugar equivocado. Casi siempre es dato viejo, no código nuevo.",
       "salioDe": "reportes/ · la escala de impresión seguía en 0.86 en el reporte de Carlos",
-      "senales": ["ya lo arreglé y sigue igual", "en uno nuevo sí sirve", "me sigue saliendo mal"],
-      "vecinas": ["bandera-global-primera-vez", "sintoma-contra-causa"]
+      "senales": [
+        "ya lo arreglé y sigue igual",
+        "en uno nuevo sí sirve",
+        "me sigue saliendo mal"
+      ],
+      "vecinas": [
+        "bandera-global-primera-vez",
+        "sintoma-contra-causa"
+      ]
     },
     {
       "id": "temporizador-que-nadie-mata",
@@ -42,8 +57,14 @@
       "comoCazarlo": "Mide el tiempo de la suite. Una prueba que debería tardar un segundo y tarda un minuto casi siempre es un temporizador vivo.",
       "consejo": "Todo `setTimeout` que acompaña a una promesa necesita su `clearTimeout`. Si no lo ves, es un fuga.",
       "salioDe": "sala/servidor · /esperar dejaba vivo su reloj de 50s y la suite tardaba 1m40",
-      "senales": ["no termina el proceso", "las pruebas tardan un montón", "se queda colgado"],
-      "vecinas": ["medir-antes-de-suponer"]
+      "senales": [
+        "no termina el proceso",
+        "las pruebas tardan un montón",
+        "se queda colgado"
+      ],
+      "vecinas": [
+        "medir-antes-de-suponer"
+      ]
     },
     {
       "id": "menu-que-no-se-cierra",
@@ -56,8 +77,37 @@
       "comoCazarlo": "Ábrelo y toca otra cosa. Es una prueba de dos segundos que nadie hace.",
       "consejo": "Todo lo que se abre necesita al menos dos maneras de cerrarse, y una tiene que ser «me arrepentí».",
       "salioDe": "sala/index.html · el menú de comandos tapaba el hilo",
-      "senales": ["se queda abierto", "tapa el contenido", "no se quita"],
-      "vecinas": ["ver-la-pantalla"]
+      "senales": [
+        "se queda abierto",
+        "tapa el contenido",
+        "no se quita"
+      ],
+      "vecinas": [
+        "ver-la-pantalla"
+      ]
+    },
+    {
+      "id": "filtro-de-procesos-se-ve-a-si-mismo",
+      "titulo": "Buscar tu proceso por subcadena casa con el shell que lo está lanzando",
+      "gravedad": "media",
+      "clase": "error",
+      "sintoma": "Una guarda de «¿ya hay otro corriendo?» dice que sí SIEMPRE, incluso la primera vez, y se niega a arrancar.",
+      "causa": "El filtro busca un texto en cualquier parte de la línea del proceso. La línea del shell que está lanzando el programa CONTIENE ese texto, así que la guarda se ve a sí misma nacer.",
+      "porque": "Es invisible al leer, porque la cadena que buscas es exactamente la correcta. Y al probarlo a mano desde otra terminal a veces no pasa, según cómo se lanzó.",
+      "arreglo": "Anclar en los argumentos —que el proceso SEA el intérprete ejecutando ESE archivo— en vez de buscar la subcadena; y descartar explícitamente al padre y a uno mismo por pid.",
+      "comoCazarlo": "Corre el filtro solo, sin nada tuyo vivo. Si encuentra algo, es él. El truco de grep de meter corchetes al primer carácter tapa el caso del propio grep, pero NO el del shell que te lanzó: son dos cosas distintas.",
+      "consejo": "Es la misma trampa que `marcador-que-existe-dos-veces` pero sobre `ps` en vez de sobre un archivo: el que busca aparece en lo buscado. Lo cazó Godines al cuarto intento, después de que la guarda se negara a existir tres veces seguidas.",
+      "salioDe": "la guarda de un solo esperador · Godines",
+      "senales": [
+        "dice que ya hay otro y no hay",
+        "siempre encuentra uno",
+        "no arranca nunca",
+        "se ve a sí mismo"
+      ],
+      "vecinas": [
+        "marcador-que-existe-dos-veces",
+        "candado-que-puede-dejarte-en-cero"
+      ]
     }
   ]
 }
