@@ -94,16 +94,35 @@ body.dentro .barra{display:none}
 /* El botón que los cicla. Va flotando y no en la barra a propósito: cuando el
    taller vive empotrado en La Sala la barra no existe, y sin esto el panel
    sería algo que estorba y no se puede quitar. */
-.ojo{
+/* Los mandos del cuarto: una columna a la derecha, con el ojo hasta abajo
+   porque es el que más se toca. Van encima del cuarto y NO en la barra, para
+   que sigan estando cuando el taller va empotrado en La Sala. */
+.mandos{
   position:fixed; right:12px; z-index:12;
-  bottom:calc(14px + env(safe-area-inset-bottom));
-  width:44px; height:44px; border-radius:50%;
+  bottom:calc(66px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:8px;
+}
+.ojo{
+  width:44px; height:44px; border-radius:50%; padding:0;
   display:grid; place-items:center; cursor:pointer;
   background:rgba(27,18,38,.9); border:1px solid var(--borde-vivo);
-  color:var(--tenue); font-size:18px; backdrop-filter:blur(8px);
+  color:var(--tenue); font-size:18px; line-height:1;
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  transition:color .15s, border-color .15s, background .15s;
+}
+/* El ojo solo —el del panel— se queda pegado abajo; los otros se apilan encima. */
+#bOjo{
+  position:fixed; right:12px; z-index:12;
+  bottom:calc(14px + env(safe-area-inset-bottom));
 }
 .ojo:hover{color:var(--hueso); border-color:var(--violeta)}
 .ojo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+/* Encendido: un botón de modo tiene que decir en qué modo está. Es la misma
+   lección del «Ajustar» de Reportes — uno que no lo dice se ve muerto. */
+.ojo[aria-pressed="true"]{
+  color:var(--hueso); border-color:var(--violeta);
+  background:rgba(76,32,110,.9);
+}
 .ficha{
   background:rgba(27,18,38,.9);border:1px solid var(--borde);border-radius:15px;
   padding:11px 13px;margin-bottom:8px;
@@ -156,9 +175,22 @@ body.dentro .barra{display:none}
   <a class="volver" id="volver" href="../" title="Volver">‹</a>
   <span class="marca">El <b>Taller</b></span>
   <span class="crece"></span>
-  <button class="btn" id="bPanel">Panel</button>
-  <button class="btn" id="bSeguir">Seguir</button>
-  <button class="btn" id="bVista">Vista</button>
+</div>
+
+<!-- ⚠ LOS MANDOS VIVEN AQUÍ Y NO EN LA BARRA, Y ÉSE ERA EL BUG.
+     Carlos: «en el taller 3D no encuentro cómo acceder a la vista aérea (la
+     vista chida)». No es que no la encontrara: es que NO ESTABA. El taller se
+     abre dentro de La Sala con ?dentro=1, y esa marca esconde la barra
+     entera —«body.dentro .barra{display:none}»— para no repetir la cabecera de
+     la mesa. Los tres botones vivían adentro de esa barra, así que empotrado
+     —o sea, como él lo usa siempre— la vista aérea era inalcanzable.
+
+     Flotan sobre el cuarto, junto al ojo, y sobreviven a «dentro». -->
+<div class="mandos" id="mandos">
+  <button class="ojo" id="bVista" title="Vista aérea: ver a todos de un jalón"
+          aria-label="Vista aérea: ver a todos de un jalón" aria-pressed="false">⌖</button>
+  <button class="ojo" id="bSeguir" title="Seguir al que está en foco"
+          aria-label="Seguir al que está en foco" aria-pressed="true">◉</button>
 </div>
 
 <div class="aviso" id="aviso"></div>
@@ -958,43 +990,43 @@ function enFocar(id){
 const destino = new THREE.Vector3(0, 2.6, 7.2);
 const mirando = new THREE.Vector3(0, 1.1, 0);
 
+function marcar(id, prendido){
+  const b = $(id); if(!b) return;
+  b.setAttribute('aria-pressed', String(!!prendido));
+  b.classList.toggle('on', !!prendido);
+}
 $('bSeguir').addEventListener('click', () => {
   siguiendo = !siguiendo;
-  $('bSeguir').classList.toggle('on', siguiendo);
+  marcar('bSeguir', siguiendo);
   if(siguiendo && enFoco) enFocar(enFoco);
 });
-$('bSeguir').classList.add('on');
+marcar('bSeguir', true);
 
-/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
-   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
-   del que estás siguiendo. */
-$('bPanel').addEventListener('click', () => {
-  const plegado = $('panel').classList.toggle('plegado');
-  $('bPanel').classList.toggle('on', !plegado);
-});
-$('bPanel').classList.add('on');
+/* El panel lo maneja el ojo de abajo, que tiene TRES estados —completo,
+   plegado, oculto— y no dos. Aquí vivía un segundo interruptor de dos estados
+   sobre el mismo panel, y los dos se pisaban: el ojo lo dejaba oculto y este
+   otro creía que estaba completo.
+
+   Peor todavía: una copia de este mismo bloque estaba pegada DENTRO del
+   `else` del botón de vista. O sea que cada vez que apagabas la vista amplia
+   se registraba OTRO escuchador sobre el mismo botón, y a partir de ahí un
+   clic plegaba y desplegaba en el mismo instante. Desde fuera se ve idéntico a
+   un botón muerto, que es como se reportan estas cosas. */
 
 let vistaAmplia = false;
 $('bVista').addEventListener('click', () => {
   vistaAmplia = !vistaAmplia;
-  $('bVista').classList.toggle('on', vistaAmplia);
+  marcar('bVista', vistaAmplia);
   if(vistaAmplia){
-    siguiendo = false; $('bSeguir').classList.remove('on');
+    siguiendo = false; marcar('bSeguir', false);
     /* La distancia sale del radio del semicírculo, no de un número fijo: con
        dos agentes el cuarto es chico y con ocho es grande, y una cámara fija
        o los deja de estampilla o se mete entre los escritorios. */
     destino.set(0, radioActual * 1.45 + 3.2, radioActual * 2.4 + 5.5);
     mirando.set(0, 0.7, 0);
-  }else if(enFoco){ siguiendo = true; $('bSeguir').classList.add('on');
-
-/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
-   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
-   del que estás siguiendo. */
-$('bPanel').addEventListener('click', () => {
-  const plegado = $('panel').classList.toggle('plegado');
-  $('bPanel').classList.toggle('on', !plegado);
-});
-$('bPanel').classList.add('on'); enFocar(enFoco); }
+  }else if(enFoco){
+    siguiendo = true; marcar('bSeguir', true); enFocar(enFoco);
+  }
 });
 
 /* Una manija para poder MEDIR la escena desde fuera. No es depuración

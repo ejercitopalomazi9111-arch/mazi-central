@@ -274,6 +274,22 @@ console.log('\n· Adjuntos');
   const [s2] = await leer(await di([{ clase:'skill', porque:'sin nombre' }]));
   ok('una skill sin nombre se rechaza', s2 === 400);
 
+  const [k1] = await leer(await di([{ clase:'codigo', texto:'const a = 1;',
+    lenguaje:'js', archivo:'src/a.js' }]));
+  ok('un trozo de código pasa', k1 === 200);
+
+  const [k2, rk2] = await leer(await di([{ clase:'codigo', lenguaje:'js' }]));
+  ok('sin texto se rechaza', k2 === 400 && /texto/.test(rk2.error));
+
+  const [k3] = await leer(await di([{ clase:'codigo', texto:'x'.repeat(13000) }]));
+  ok('trece mil letras de código se rechazan: eso es un archivo', k3 === 400);
+
+  const [k4] = await leer(await di([{ clase:'codigo', texto:'x', lenguaje:'x'.repeat(30) }]));
+  ok('un «lenguaje» de treinta letras se rechaza', k4 === 400);
+
+  const [k5] = await leer(await di([{ clase:'codigo', texto:'x' }]));
+  ok('pero sin lenguaje ni archivo también pasa: lo importante es el código', k5 === 200);
+
   const [e1] = await leer(await di([{ clase:'corrida',
     orden:'node reportes/pruebas-app.mjs', codigo:0, salida:'34/34' }]));
   ok('una corrida completa pasa', e1 === 200);

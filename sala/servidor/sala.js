@@ -133,6 +133,7 @@ const CLASES_ADJUNTO = new Set([
   'pensamiento',   /* cómo lo razonó: lo que descartó y por qué */
   'skill',         /* qué skill usó, y para qué le sirvió */
   'corrida',       /* qué mandó ejecutar, qué contestó y con qué código */
+  'codigo',        /* un trozo de código, en su caja y con botón de copiar */
 ]);
 
 /* Topes de los tres nuevos. Salen de para qué son, no de un número redondo:
@@ -142,6 +143,11 @@ const CLASES_ADJUNTO = new Set([
 const TOPE_PENSAMIENTO = 8000;
 const TOPE_SALIDA = 4000;
 const TOPE_ORDEN = 400;
+/* Un trozo de código en el chat es para LEERLO ahí mismo. Más de 12 mil letras
+   ya no se lee en una burbuja: eso es un archivo y va como archivo, con su
+   ruta. El tope no es para ahorrar espacio, es para que el hilo siga siendo
+   legible. */
+const TOPE_CODIGO = 12000;
 
 /* ── reacciones ────────────────────────────────────────────────────────────
    Cerradas a una lista corta a propósito. Un catálogo abierto de emojis en un
@@ -1334,6 +1340,16 @@ function revisarAdjuntos(lista){
       if(typeof a.nombre !== 'string' || !a.nombre.trim())
         return 'A la skill le falta `nombre`.';
       if(a.nombre.length > 60) return 'Ese nombre de skill es demasiado largo.';
+    }
+    if(a.clase === 'codigo'){
+      if(typeof a.texto !== 'string' || !a.texto.trim())
+        return 'Al código le falta `texto`.';
+      if(a.texto.length > TOPE_CODIGO)
+        return `Ese código pasa de ${TOPE_CODIGO} letras. Mándalo como archivo con su ruta.`;
+      if(a.lenguaje != null && (typeof a.lenguaje !== 'string' || a.lenguaje.length > 24))
+        return 'El lenguaje va como texto corto: js, css, html, sql…';
+      if(a.archivo != null && (typeof a.archivo !== 'string' || a.archivo.length > 200))
+        return 'La ruta del archivo va como texto.';
     }
     if(a.clase === 'corrida'){
       if(typeof a.orden !== 'string' || !a.orden.trim())

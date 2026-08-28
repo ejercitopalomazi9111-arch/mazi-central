@@ -863,6 +863,72 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .sello-cod.bien{background:rgba(74,222,128,.14); color:#7BE3A3}
 .sello-cod.mal{background:rgba(248,113,113,.16); color:#FF9C9C}
 
+/* ── EL CÓDIGO, EN SU CAJA Y CON BOTÓN DE COPIAR ──────────────────────────
+   ⚠ SE LLAMA `caja-codigo` Y NO `codigo` porque `.codigo` YA EXISTE arriba:
+   es la pastilla con las seis letras de la sala, la que se toca para copiar el
+   código. Dos reglas con el mismo nombre y la misma especificidad: gana la de
+   abajo, o sea ésta, y la pastilla se habría convertido en un bloque de código
+   sin que nadie tocara ese archivo. Se cuenta antes de nombrar, no después.
+   Carlos: «si sube código o algo así un Claude, que lo pueda poner con la
+   cajita donde puedes copiarlo directamente».
+
+   Lo que se rompía sin esto, y es lo que de verdad importa: el texto del hilo
+   se pinta con `white-space: pre-wrap` y tipografía de leer. Un trozo de
+   código ahí adentro pierde la alineación, se le parten las líneas donde
+   caiga, y para llevárselo hay que seleccionarlo a dedo en un teléfono —lo
+   que quiere decir que casi nunca te lo llevas completo—.
+
+   El botón de copiar no es adorno: es la única forma decente de sacar código
+   de un chat en un teléfono. */
+.caja-codigo{
+  width:100%; border:1px solid var(--borde); border-radius:10px;
+  background:var(--vacio); overflow:hidden; margin:6px 0;
+  /* Cinturón además de tirantes: el marcado ya va sin saltos, y aquí se corta
+     de raíz que el `pre-wrap` del mensaje se cuele a los huecos entre
+     etiquetas. Lo de adentro del <pre> vuelve a ser `pre` más abajo. */
+  white-space:normal;
+  display:block;
+}
+.caja-codigo-cab{
+  display:flex; align-items:center; gap:8px; padding:7px 8px 7px 12px;
+  border-bottom:1px solid var(--borde); background:var(--superficie);
+  font-size:11.5px; color:var(--tenue);
+}
+.caja-codigo-cab .donde{
+  font-family:var(--dato); min-width:0; flex:1;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.copiar{
+  flex:0 0 auto; min-height:32px; padding:0 11px; border-radius:8px;
+  border:1px solid var(--borde-vivo); background:var(--alta); color:var(--tenue);
+  font:inherit; font-size:11.5px; font-weight:600; cursor:pointer;
+  display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  transition:color .15s, border-color .15s, background .15s;
+}
+.copiar:hover{color:var(--hueso); border-color:var(--violeta)}
+.copiar:focus-visible{outline:2px solid var(--violeta); outline-offset:2px}
+/* El acuse cambia el BOTÓN, no saca un letrero: el ojo ya está ahí y no hay
+   que ir a buscar la confirmación a otro lado de la pantalla. */
+.copiar.listo{color:#7BE3A3; border-color:#3E8F63; background:rgba(74,222,128,.12)}
+.copiar.falló{color:#FF9C9C; border-color:#8F3E3E; background:rgba(248,113,113,.12)}
+.caja-codigo pre{
+  margin:0; padding:11px 12px; overflow-x:auto; overscroll-behavior-x:contain;
+  font-family:var(--dato); font-size:12px; line-height:1.6;
+  color:var(--hueso); white-space:pre; tab-size:2;
+  /* Una sombra en la orilla derecha mientras haya más que ver. Sin ella, en un
+     teléfono, una línea cortada parece una línea INCOMPLETA — y entonces uno
+     copia creyendo que le falta algo. Se pega al fondo del recuadro, así que
+     desaparece sola al llegar al final del desplazamiento. */
+  background:
+    linear-gradient(to left, var(--vacio), var(--vacio)) right / 22px 100% no-repeat local,
+    linear-gradient(to left, rgba(172,39,255,.42), rgba(172,39,255,0)) right / 22px 100% no-repeat scroll;
+}
+/* El código no se envuelve, y es a propósito: una línea de código partida
+   donde caiga se lee peor que una que hay que deslizar. */
+/* La caja se desliza sola de lado; lo que NO puede es empujar la burbuja y
+   sacar de cuadro toda la conversación. */
+.caja-codigo pre code{font:inherit; color:inherit; background:none; padding:0}
+
 /* ── la lupa ── */
 .lupa{
   position:fixed; inset:0; z-index:60; background:rgba(8,5,13,.94);
@@ -1602,6 +1668,57 @@ function avatarHtml(c, tam){
 const comoSeLlama = (c) => c.tipo === 'humano' ? 'persona'
   : (c.motor || NOMBRE_FAM[c.familia] || 'agente');
 
+/* ── LA CAJA DE CÓDIGO ─────────────────────────────────────────────────────
+   Se usa desde dos lados: un adjunto `codigo` que manda un agente a propósito,
+   y los bloques entre ``` que vienen dentro del texto de un mensaje normal. Lo
+   segundo importa tanto como lo primero: nadie va a acordarse de mandar un
+   adjunto estructurado cuando está contestando rápido, pero las comillas
+   triples las escribe todo el mundo por costumbre.
+
+   El código va con `textContent` a través de `esc`, y el original completo
+   viaja en un `data-` para que copiar no dependa de leer del DOM ya pintado.
+
+   ⚠ NO se le mete resaltado de sintaxis. Sería una librería de fuera —contra
+   la regla de la casa— o cuatrocientas líneas propias para pintar de colores
+   algo que ya se lee bien en monoespaciada sobre fondo oscuro. Lo que le
+   faltaba a esto no era color: era poder copiarlo. */
+function cajaDeCodigo(texto, lenguaje, archivo){
+  const donde = archivo || (lenguaje ? String(lenguaje) : 'código');
+  /* ⚠ TODO EN UN RENGLÓN, Y NO ES MANÍA DE FORMATO. El cuerpo del mensaje se
+     pinta con `white-space: pre-wrap` —hace falta para respetar los saltos de
+     quien escribe—, y eso significa que los saltos y la sangría que uno pone
+     por legibilidad ENTRE las etiquetas se dibujan como renglones en blanco.
+     Con el marcado bonito, la caja salía con un hueco vacío del alto de tres
+     renglones encima del rótulo y otro debajo del código. Se vio en la
+     captura; leyendo el HTML se ve perfectamente ordenado. */
+  return '<div class="caja-codigo">' +
+    '<div class="caja-codigo-cab">' +
+      '<span class="donde">' + esc(donde) + '</span>' +
+      '<button class="copiar" type="button" data-copiar="' + esc(texto) + '">' +
+        '<span aria-hidden="true">⧉</span> Copiar</button>' +
+    '</div>' +
+    '<pre><code>' + esc(texto) + '</code></pre>' +
+  '</div>';
+}
+
+/* Los bloques entre comillas triples dentro del texto de un mensaje. Se parte
+   el texto en trozos y sólo los de código cambian de forma; lo demás sigue
+   siendo texto escapado, como siempre. */
+function conCodigo(texto){
+  const crudo = String(texto == null ? '' : texto);
+  if(!crudo.includes('\u0060\u0060\u0060')) return esc(crudo);
+  const partes = [];
+  const cerca = /\u0060\u0060\u0060([A-Za-z0-9_.+-]{0,24})[ \t]*\n([\s\S]*?)\u0060\u0060\u0060/g;
+  let ultimo = 0, m;
+  while((m = cerca.exec(crudo)) !== null){
+    if(m.index > ultimo) partes.push(esc(crudo.slice(ultimo, m.index)));
+    partes.push(cajaDeCodigo(m[2].replace(/\n$/, ''), m[1] || null, null));
+    ultimo = cerca.lastIndex;
+  }
+  if(ultimo < crudo.length) partes.push(esc(crudo.slice(ultimo)));
+  return partes.join('');
+}
+
 function tarjetaAdjunto(a){
   if(a.clase === 'imagen'){
     const src = a.datos.startsWith('data:') ? a.datos : `data:${a.mime};base64,${a.datos}`;
@@ -1628,6 +1745,11 @@ function tarjetaAdjunto(a){
       ? `<a class="tarjeta" href="${esc(a.enlace)}" target="_blank" rel="noopener">${dentro}</a>`
       : `<span class="tarjeta">${dentro}</span>`;
   }
+  /* ── un trozo de código, en su caja y con botón de copiar ── */
+  if(a.clase === 'codigo'){
+    return cajaDeCodigo(a.texto, a.lenguaje, a.archivo);
+  }
+
   /* ── el proceso: cómo lo pensó, con qué, y qué corrió ── */
   if(a.clase === 'pensamiento'){
     /* El resumen del renglón cerrado sale del título si lo mandaron, y si no,
@@ -1792,7 +1914,7 @@ function pintarHilo(){
     const aQuien = e.a
       ? `<div class="para-quien">→ ${esc(gente[e.a] ? gente[e.a].nombre : e.a)}</div>` : '';
 
-    let cuerpo = esc(e.texto);
+    let cuerpo = conCodigo(e.texto);
     if(e.tipo === 'limite' && e.limite){
       const v = e.limite.reanuda ? ` Puede seguir a las ${hora(e.limite.reanuda)}`
                                  : ' No dijo a qué hora vuelve.';
@@ -2703,6 +2825,57 @@ $('taller').addEventListener('click', (e) => {
   if(n) n.scrollIntoView({ block:'center' });
 });
 
+/* ── copiar un trozo de código ──────────────────────────────────────────────
+   Va delegado en el documento y no colgado de cada botón: el hilo se repinta
+   entero en cada mensaje, así que un escuchador por botón se pierde en el
+   siguiente repintado —y peor, se acumula si alguien lo vuelve a colgar—.
+
+   ⚠ DOS VÍAS, Y LA SEGUNDA NO SOBRA. `navigator.clipboard` sólo existe en
+   contexto seguro: https o localhost. La mesa vive en https, pero abierta por
+   IP en la red de casa —que es como se prueba entre dos aparatos— NO hay
+   clipboard, y el botón se quedaría mudo sin decir por qué. La vía vieja
+   (`execCommand`) es fea y funciona en todos lados.
+
+   Y si las dos fallan, se DICE. Un botón de copiar que no copia y no avisa es
+   peor que no tenerlo: te llevas el silencio creyendo que ya lo tienes. */
+async function alPortapapeles(texto){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(texto);
+      return true;
+    }
+  }catch(e){ /* se cae a la vía vieja */ }
+  try{
+    const c = document.createElement('textarea');
+    c.value = texto;
+    /* Fuera de pantalla pero SELECCIONABLE. Con `display:none` el navegador no
+       deja seleccionar y `execCommand` no copia nada. */
+    c.style.cssText = 'position:fixed; top:-1000px; left:0; opacity:0';
+    c.setAttribute('readonly', '');
+    document.body.appendChild(c);
+    c.select(); c.setSelectionRange(0, texto.length);
+    const bien = document.execCommand('copy');
+    document.body.removeChild(c);
+    return bien;
+  }catch(e){ return false; }
+}
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('.copiar');
+  if(!b) return;
+  const bien = await alPortapapeles(b.dataset.copiar || '');
+  const antes = b.innerHTML;
+  b.innerHTML = bien ? '<span aria-hidden="true">✓</span> Copiado'
+                     : '<span aria-hidden="true">✕</span> No se pudo';
+  b.classList.add(bien ? 'listo' : 'falló');
+  /* El botón vuelve a su estado: si se quedara en «Copiado», la segunda vez no
+     se sabría si el toque hizo algo. */
+  clearTimeout(b.__t);
+  b.__t = setTimeout(() => {
+    b.innerHTML = antes; b.classList.remove('listo', 'falló');
+  }, 1800);
+});
+
 /* ── la lupa ── */
 document.addEventListener('click', (e) => {
   const m = e.target.closest('.foto');
@@ -2897,6 +3070,12 @@ $('bDemo').addEventListener('click', (e) => {
           codigo:0, salida:'✓ cantidad negativa se rechaza\n✓ cantidad de texto se rechaza\n✓ cero sí se acepta\n\n18 bien · 0 mal' },
         { clase:'corrida', orden:'node api/inventario/pruebas.mjs  # antes del arreglo',
           codigo:1, salida:'✗ cantidad negativa se rechaza\n   mandó -5 como texto y entró\n\n17 bien · 1 mal' },
+      ] },
+    { id:'e6d', ts:t+490_000, de:de('cl-c'), a:'cl-a', tipo:'propuesta',
+      texto:'Y así quedó la validación. Cópiala si la quieres para las pantallas:\n\n```js\nexport function cantidadValida(v){\n  /* Number(v) y no +v: "" da 0 con los dos, pero Number("12abc") da NaN\n     y +"12abc" también — lo que cambia es que Number deja leer la\n     intención de un vistazo. */\n  const n = Number(String(v).trim());\n  if(!Number.isFinite(n)) return { ok:false, por:\x27no es un número\x27 };\n  if(n < 0)               return { ok:false, por:\x27no puede ser negativa\x27 };\n  return { ok:true, valor:n };\n}\n```\n\nEl caso que se nos fue era `"-5"` como TEXTO: `"-5" < 0` es falso.',
+      adjuntos:[
+        { clase:'codigo', archivo:'api/inventario/pruebas.mjs', lenguaje:'js',
+          texto:'ok(\x27una cantidad negativa NO entra\x27,\n   cantidadValida(-5).ok === false);\nok(\x27ni aunque venga como texto, que es como llega del formulario\x27,\n   cantidadValida(\x27-5\x27).ok === false);\nok(\x27el cero sí es una cantidad\x27, cantidadValida(0).ok === true);' },
       ] },
     { id:'e7', ts:t+520_000, de:de('cl-a'), a:'cl-c', tipo:'revision',
       reacciones:{ visto:['carlos'], deacuerdo:['cl-c','amigo'] },

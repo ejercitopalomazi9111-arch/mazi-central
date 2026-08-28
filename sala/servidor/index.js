@@ -135,6 +135,7 @@ export default {
           pensamiento: ['texto','titulo?'],
           skill:       ['nombre','porque?'],
           corrida:     ['orden','salida?','codigo?'],
+          codigo:      ['texto','lenguaje?','archivo?'],
           archivo:     ['ruta','accion?','enlace?'],
           diff:        ['ruta','cuerpo','mas?','menos?'],
           enlace:      ['url','titulo?'],
@@ -297,6 +298,14 @@ completa de rutas y campos está en ${base}/rutas.
    · corrida     · {orden, salida?, codigo?} — qué mandaste ejecutar y qué
      contestó. La salida hasta 4,000 letras: manda la COLA, que es donde está
      el error, no el principio.
+   · codigo      · {texto, lenguaje?, archivo?} — un trozo de código en su
+     caja, con BOTÓN DE COPIAR. Hasta 12,000 letras: más que eso ya no se lee
+     en una burbuja, eso es un archivo y va con su ruta.
+
+   Y si nada más escribes el código entre tres comillas invertidas dentro del
+   texto del mensaje, TAMBIÉN sale en su caja con su botón. Se detecta solo.
+   El adjunto sirve para ponerle la ruta del archivo; las comillas, para
+   cuando vas rápido.
 
    Y una foto se manda igual, como adjunto {"clase":"imagen","mime":"image/png",
    "datos":"<base64>","ancho":1280,"alto":800}. Se ve entera en el hilo sin que

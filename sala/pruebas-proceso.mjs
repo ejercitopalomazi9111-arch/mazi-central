@@ -152,6 +152,92 @@ console.log('\n── la vista previa de una foto ──');
   await p.context().close();
 }
 
+
+/* ── 4 · EL CÓDIGO, EN SU CAJA Y CON BOTÓN DE COPIAR ─────────────────── */
+console.log('\n── el código se copia de un toque ──');
+{
+  const ctx = await nav.newContext({ viewport:{width:390,height:844},
+    deviceScaleFactor:2, isMobile:true, hasTouch:true,
+    permissions:['clipboard-read','clipboard-write'] });
+  const p = await ctx.newPage();
+  p.__errores = [];
+  p.on('pageerror', e => p.__errores.push(String(e).slice(0,150)));
+  await p.goto(BASE, { waitUntil:'networkidle' });
+  await p.waitForTimeout(400); await p.click('#bDemo'); await p.waitForTimeout(1100);
+
+  const c = await p.evaluate(() => ({
+    cajas: document.querySelectorAll('.caja-codigo').length,
+    botones: document.querySelectorAll('.copiar').length,
+    rotulos: [...document.querySelectorAll('.caja-codigo .donde')].map(x => x.textContent),
+  }));
+  /* Dos vías y las dos tienen que servir: el adjunto `codigo` que manda un
+     agente a propósito, y las comillas triples dentro de un mensaje normal —
+     que es lo que escribe todo el mundo por costumbre. */
+  ok('salen las dos cajas: la del adjunto y la de las comillas triples',
+     c.cajas === 2 && c.botones === 2, JSON.stringify(c));
+  ok('cada una dice de dónde es', c.rotulos.includes('js') &&
+     c.rotulos.some(r => /\.mjs$/.test(r)), JSON.stringify(c.rotulos));
+
+  /* ⚠ EL DEFECTO QUE SE VIO EN LA CAPTURA Y NO EN EL CÓDIGO: el cuerpo del
+     mensaje se pinta con `white-space: pre-wrap`, así que los saltos y la
+     sangría que uno pone entre las etiquetas por legibilidad se dibujan como
+     renglones EN BLANCO. La caja salía con un hueco de tres renglones encima
+     del rótulo. Se mide comparando el alto de la caja contra lo que ocupan sus
+     partes: si sobra mucho, hay blanco de relleno. */
+  const hueco = await p.evaluate(() => {
+    const caja = document.querySelector('.caja-codigo');
+    const cab = caja.querySelector('.caja-codigo-cab').getBoundingClientRect().height;
+    const pre = caja.querySelector('pre').getBoundingClientRect().height;
+    return Math.round(caja.getBoundingClientRect().height - cab - pre);
+  });
+  ok('la caja no trae renglones en blanco de relleno', hueco <= 6, hueco + ' px de sobra');
+
+  /* Que COPIE de verdad, no que parezca. */
+  await p.locator('.copiar').first().click();
+  await p.waitForTimeout(500);
+  const pegado = await p.evaluate(() => navigator.clipboard.readText().catch(() => ''));
+  ok('el botón copia el código de verdad al portapapeles',
+     /cantidadValida/.test(pegado), pegado.slice(0,50));
+  ok('y lo copia COMPLETO, no la primera línea',
+     pegado.split('\n').length >= 6, pegado.split('\n').length + ' renglones');
+  /* Un botón de copiar que no acusa te deja creyendo que ya lo tienes. */
+  ok('y lo dice en el propio botón',
+     /Copiado/.test(await p.evaluate(() => document.querySelector('.copiar').textContent)));
+  await p.waitForTimeout(1900);
+  ok('pero vuelve a su estado, para que el segundo toque también se note',
+     /Copiar/.test(await p.evaluate(() => document.querySelector('.copiar').textContent)));
+
+  /* El código no se envuelve: se desliza. Y tiene que caber en la burbuja. */
+  const medida = await p.evaluate(() => {
+    const pre = document.querySelector('.caja-codigo pre');
+    const h = document.querySelector('#hilo').getBoundingClientRect();
+    return { seDesliza: pre.scrollWidth > pre.clientWidth,
+             seSale: pre.getBoundingClientRect().right > h.right + 2,
+             envuelve: getComputedStyle(pre).whiteSpace };
+  });
+  ok('el código se desliza dentro de su caja y no empuja el hilo',
+     medida.seDesliza && !medida.seSale, JSON.stringify(medida));
+  ok('y no se envuelve: una línea partida donde caiga se lee peor',
+     medida.envuelve === 'pre', medida.envuelve);
+
+  /* ⚠ `.codigo` YA EXISTÍA: es la pastilla con las seis letras de la sala. La
+     caja nueva se llama `caja-codigo` justo por eso. Si alguien las vuelve a
+     juntar, la pastilla se convierte en un bloque de código sin que nadie
+     toque ese archivo. */
+  const pastilla = await p.evaluate(() => {
+    const e = document.querySelector('.codigo');
+    if(!e) return null;
+    const s = getComputedStyle(e);
+    return { radio: s.borderRadius, letra: s.letterSpacing, ancho: Math.round(e.getBoundingClientRect().width) };
+  });
+  ok('la pastilla del código de sala sigue siendo una pastilla',
+     !pastilla || (parseFloat(pastilla.radio) <= 12 && pastilla.ancho < 200),
+     JSON.stringify(pastilla));
+
+  ok('sin errores', p.__errores.length === 0, p.__errores[0]);
+  await ctx.close();
+}
+
 /* ── 3 · QUE NADA SE SALGA ───────────────────────────────────────────── */
 console.log('\n── proporciones, a teléfono y a computadora ──');
 for(const ancho of [390, 1280]){
