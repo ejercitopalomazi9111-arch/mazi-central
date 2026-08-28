@@ -736,11 +736,30 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 
 /* ── adjuntos ── */
 .adjuntos{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
-.miniatura{
-  width:96px; height:96px; border-radius:10px; overflow:hidden; cursor:zoom-in;
-  border:1px solid var(--borde-vivo); background:var(--alta); padding:0;
+/* ── LA FOTO SE VE, NO SE PICA ────────────────────────────────────────────
+   Carlos: «que directamente sin picarle ni nada se vea la vista previa».
+   Tenía razón y el defecto era doble: 96×96 con `object-fit:cover` no es una
+   vista previa, es un RECORTE del centro. De una captura de pantalla —que es
+   lo que más se manda aquí— el cuadrito del centro no dice absolutamente
+   nada, así que había que picarle SIEMPRE. Ahora se ve entera y a un tamaño
+   en el que se lee; la lupa sigue ahí para verla a pantalla completa.
+
+   El `aspect-ratio` va puesto desde el ancho y alto que ya viajaban en el
+   adjunto: sin él, el hueco de la foto es de cero hasta que la imagen
+   decodifica, y el hilo pega un brinco justo cuando lo estabas leyendo. */
+.foto{
+  display:block; padding:0; margin:0; border-radius:12px; overflow:hidden;
+  border:1px solid var(--borde-vivo); background:var(--alta);
+  cursor:zoom-in; line-height:0; max-width:100%;
 }
-.miniatura img{width:100%; height:100%; object-fit:cover; display:block}
+.foto img{
+  display:block; width:auto; height:auto;
+  max-width:min(100%, 460px); max-height:360px;
+}
+.foto:hover{border-color:var(--violeta)}
+/* Cuando van varias en un mismo mensaje se achican, para que dos fotos no
+   sean dos pantallas de scroll. */
+.adjuntos.varias .foto img{max-width:min(100%, 220px); max-height:200px}
 .tarjeta{
   display:flex; align-items:center; gap:9px; text-decoration:none;
   background:var(--alta); border:1px solid var(--borde-vivo); border-radius:10px;
@@ -752,6 +771,97 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .tarjeta .t1{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .tarjeta .t2{font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* ── EL PROCESO · cómo lo pensó, con qué, y qué corrió ────────────────────
+   Carlos: «que podamos ver qué skills se usaron, qué se ejecutó, y MÁS QUE
+   NADA EL PROCESO COGNITIVO».
+
+   La decisión de diseño que sostiene todo esto: van CERRADOS. Un hilo donde
+   cada mensaje trae ochenta renglones de razonamiento pegados deja de ser un
+   hilo — se vuelve un registro, y un registro no se lee, se busca. Cerrados,
+   el hilo se sigue leyendo de corrido y el cómo se abre cuando a uno le
+   interesa. Es `<details>` del navegador y no JavaScript nuestro: funciona sin
+   scripts, el buscador del navegador lo encuentra aunque esté cerrado, y en el
+   teléfono ya sabe abrirse solo.
+
+   Y el resumen del renglón cerrado DICE ALGO. «Pensamiento» no sirve de nada;
+   «por qué no se usó un iframe» te deja decidir si vale la pena abrirlo. */
+.proceso{
+  width:100%; border:1px solid var(--borde); border-radius:10px;
+  background:var(--vacio); overflow:hidden;
+}
+.proceso>summary{
+  display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none;
+  padding:9px 12px; font-size:12.5px; color:var(--tenue); min-height:40px;
+}
+.proceso>summary::-webkit-details-marker{display:none}
+.proceso>summary:hover{color:var(--hueso); background:var(--alta)}
+.proceso>summary .marca{flex:0 0 auto; font-size:12px; width:18px; text-align:center}
+.proceso>summary .de-que{
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;
+}
+.proceso>summary .flechita{flex:0 0 auto; color:var(--muy-tenue); transition:transform .15s}
+.proceso[open]>summary{border-bottom:1px solid var(--borde); color:var(--hueso)}
+.proceso[open]>summary .flechita{transform:rotate(90deg)}
+.proceso .adentro{padding:11px 13px; font-size:13px; line-height:1.6}
+
+/* El razonamiento se lee como prosa, que es lo que es. Sin monoespaciada:
+   ponerle letra de consola lo hace parecer salida de máquina, y lo que parece
+   salida de máquina se salta. */
+.proceso.piensa>summary .marca{color:#C9A6FF}
+.proceso.piensa .adentro{white-space:pre-wrap; color:var(--hueso)}
+
+/* La skill es un renglón, no un bloque: casi siempre lo único que hay que
+   saber es CUÁL, y eso cabe en el resumen. */
+.skill-usada{
+  display:inline-flex; align-items:center; gap:7px; max-width:100%;
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:999px;
+  padding:6px 12px; font-size:12.5px; color:var(--hueso); min-height:32px;
+}
+.skill-usada .n{font-weight:600; white-space:nowrap}
+.skill-usada .p{
+  color:var(--tenue); min-width:0;
+  /* En el teléfono no hay a qué pasarle el dedo encima, así que el `title` no
+     existe: si el porqué se corta, se pierde. Dos renglones y ya. */
+  white-space:normal; word-break:break-word;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.skill-usada{align-items:flex-start; border-radius:14px; padding:8px 13px}
+.skill-usada .marca, .skill-usada .n{margin-top:0}
+
+/* Lo que corrió. La ORDEN va siempre visible aunque la salida esté cerrada:
+   saber que alguien corrió las pruebas es media respuesta, y leer la salida es
+   la otra media, que casi nunca hace falta. */
+.proceso.corre>summary .marca{color:var(--tenue)}
+/* ⚠️ La orden NO se corta en un renglón, se deja hasta dos y ahí sí se corta.
+   Dos corridas del mismo archivo —una antes del arreglo y otra después—
+   salían las dos como «node api/inventario/prueb…» y no se distinguían: lo
+   que las diferencia vive AL FINAL, y cortar por el final es cortar justo lo
+   que hace falta. Se vio en la captura, con las dos filas idénticas. */
+.proceso.corre>summary{align-items:flex-start; padding-top:10px}
+.proceso.corre>summary .marca,
+.proceso.corre>summary .flechita,
+.proceso.corre>summary .sello-cod{margin-top:2px}
+.proceso.corre>summary .de-que{
+  font-family:var(--dato); font-size:12px; color:var(--hueso);
+  white-space:normal; word-break:break-word;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+}
+.proceso.corre .adentro{
+  font-family:var(--dato); font-size:11.5px; line-height:1.55;
+  white-space:pre-wrap; word-break:break-word; color:var(--tenue);
+  max-height:340px; overflow:auto;
+}
+.proceso.corre .sola{
+  display:block; padding:9px 12px; font-family:var(--dato); font-size:12px;
+  color:var(--hueso); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.sello-cod{
+  flex:0 0 auto; font-family:var(--dato); font-size:10.5px; font-weight:700;
+  border-radius:6px; padding:2px 7px; letter-spacing:.02em;
+}
+.sello-cod.bien{background:rgba(74,222,128,.14); color:#7BE3A3}
+.sello-cod.mal{background:rgba(248,113,113,.16); color:#FF9C9C}
 
 /* ── la lupa ── */
 .lupa{
@@ -1495,8 +1605,11 @@ const comoSeLlama = (c) => c.tipo === 'humano' ? 'persona'
 function tarjetaAdjunto(a){
   if(a.clase === 'imagen'){
     const src = a.datos.startsWith('data:') ? a.datos : `data:${a.mime};base64,${a.datos}`;
-    return `<button class="miniatura" data-grande="${esc(src)}">
-      <img src="${esc(src)}" alt="${esc(a.nombre || 'imagen')}" loading="lazy"></button>`;
+    /* El hueco se reserva con la proporción que ya venía en el adjunto. */
+    const prop = (a.ancho && a.alto) ? ` style="aspect-ratio:${+a.ancho}/${+a.alto}"` : '';
+    const med  = (a.ancho && a.alto) ? ` width="${+a.ancho}" height="${+a.alto}"` : '';
+    return `<button class="foto" data-grande="${esc(src)}" title="Ver en grande">
+      <img src="${esc(src)}"${med}${prop} alt="${esc(a.nombre || 'imagen')}" loading="lazy"></button>`;
   }
   if(a.clase === 'presentacion'){
     const uno = a.laminas[0];
@@ -1515,6 +1628,41 @@ function tarjetaAdjunto(a){
       ? `<a class="tarjeta" href="${esc(a.enlace)}" target="_blank" rel="noopener">${dentro}</a>`
       : `<span class="tarjeta">${dentro}</span>`;
   }
+  /* ── el proceso: cómo lo pensó, con qué, y qué corrió ── */
+  if(a.clase === 'pensamiento'){
+    /* El resumen del renglón cerrado sale del título si lo mandaron, y si no,
+       del primer renglón del propio razonamiento. Nunca de la palabra
+       «pensamiento»: un resumen que no distingue un bloque de otro obliga a
+       abrirlos todos, que es exactamente lo que se quería evitar. */
+    const t = (a.titulo || String(a.texto).split(/\n/)[0] || 'Cómo lo pensó').slice(0, 120);
+    return `<details class="proceso piensa">
+      <summary><span class="marca">◈</span>
+      <span class="de-que">${esc(t)}</span>
+      <span class="flechita">›</span></summary>
+      <div class="adentro">${esc(a.texto)}</div></details>`;
+  }
+  if(a.clase === 'skill'){
+    const p = a.porque || a.que || '';
+    return `<span class="skill-usada" title="${esc(p)}">` +
+      `<span class="marca">⚡</span><span class="n">${esc(a.nombre)}</span>` +
+      (p ? `<span class="p">· ${esc(p)}</span>` : '') + `</span>`;
+  }
+  if(a.clase === 'corrida'){
+    /* Sin salida no hay nada que abrir: se pinta el renglón y ya. Un
+       desplegable que se abre y está vacío es peor que no tenerlo. */
+    if(!a.salida){
+      return `<span class="proceso corre"><span class="sola">$ ${esc(a.orden)}</span></span>`;
+    }
+    const cod = Number.isInteger(a.codigo)
+      ? `<span class="sello-cod ${a.codigo === 0 ? 'bien' : 'mal'}">` +
+        `${a.codigo === 0 ? '✓ 0' : '✗ ' + a.codigo}</span>` : '';
+    return `<details class="proceso corre">
+      <summary><span class="marca">$</span>
+      <span class="de-que">${esc(a.orden)}</span>${cod}
+      <span class="flechita">›</span></summary>
+      <div class="adentro">${esc(a.salida)}</div></details>`;
+  }
+
   if(a.clase === 'diff'){
     return `<span class="tarjeta"><span class="ico">±</span><span class="txt">
       <span class="t1">${esc(a.ruta)}</span>
@@ -1653,7 +1801,8 @@ function pintarHilo(){
     }
 
     const adj = (e.adjuntos && e.adjuntos.length)
-      ? `<div class="adjuntos">${e.adjuntos.map(tarjetaAdjunto).join('')}</div>` : '';
+      ? `<div class="adjuntos${(e.adjuntos.filter(x => x.clase === 'imagen').length > 1)
+          ? ' varias' : ''}">${e.adjuntos.map(tarjetaAdjunto).join('')}</div>` : '';
     const nota = e.nota && e.nota.texto ? `<div class="nota"><span class="nota-para">${e.nota.a
         ? 'Para ' + esc(gente[e.nota.a] ? gente[e.nota.a].nombre : e.nota.a)
         : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
@@ -2556,7 +2705,7 @@ $('taller').addEventListener('click', (e) => {
 
 /* ── la lupa ── */
 document.addEventListener('click', (e) => {
-  const m = e.target.closest('.miniatura');
+  const m = e.target.closest('.foto');
   if(m){ $('lupaImg').src = m.dataset.grande; $('lupa').classList.add('abierta'); }
 });
 $('bCerrarLupa').addEventListener('click', () => $('lupa').classList.remove('abierta'));
@@ -2728,6 +2877,27 @@ $('bDemo').addEventListener('click', (e) => {
           { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjNUFBOUU2Ii8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Nb3ZpbWllbnRvczwvdGV4dD4KPHRleHQgeD0iNDAiIHk9IjEzMiIgZmlsbD0iI0EzOTVCNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4Ij5IaXN0b3JpYWwgY29tcGxldG8sIGZpbHRyYWJsZSBwb3IgZmVjaGE8L3RleHQ+CjxyZWN0IHg9IjQwIiB5PSIxNjgiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTMyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjE2OCIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI2MiIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHJlY3QgeD0iMzA4IiB5PSIyNDIiIHdpZHRoPSIyOTIiIGhlaWdodD0iNTgiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+Cjx0ZXh0IHg9IjYwMCIgeT0iMzMyIiBmaWxsPSIjNkI1QjdEIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9ImVuZCI+MyAvIDQ8L3RleHQ+Cjwvc3ZnPg==' },
           { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjRjA1NjdGIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Cb3JyYWRvPC90ZXh0Pgo8dGV4dCB4PSI0MCIgeT0iMTMyIiBmaWxsPSIjQTM5NUI0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiPlBpZGUgY29uZmlybWFjacOzbiwgc2llbXByZTwvdGV4dD4KPHJlY3QgeD0iNDAiIHk9IjE2OCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxMzIiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+CjxyZWN0IHg9IjMwOCIgeT0iMTY4IiB3aWR0aD0iMjkyIiBoZWlnaHQ9IjYyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjI0MiIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI1OCIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHRleHQgeD0iNjAwIiB5PSIzMzIiIGZpbGw9IiM2QjVCN0QiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsbW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0iZW5kIj40IC8gNDwvdGV4dD4KPC9zdmc+' },
         ] }] },
+    { id:'e6c', ts:t+470_000, de:de('cl-c'), a:null, tipo:'ejecucion',
+      texto:'Corregí lo de la cantidad negativa. No era la validación: era que el\nformulario mandaba texto y el «< 0» comparaba contra una cadena.',
+      adjuntos:[
+        { clase:'pensamiento',
+          titulo:'Por qué no bastaba con validar la cantidad',
+          texto:'Primero puse `if(cantidad < 0)` y pasó la prueba. Pero al meterlo a mano '
+              + 'desde la pantalla seguía aceptando -5.\n\n'
+              + 'Lo que descarté, y por qué:\n'
+              + '· Que fuera el orden de las validaciones — las moví y siguió igual.\n'
+              + '· Que el navegador cacheara el formulario — pasó igual en incógnito.\n\n'
+              + 'Lo que era: el input manda TEXTO. «-5» < 0 es falso, porque JavaScript '
+              + 'compara cadenas cuando el otro lado también podría serlo. La validación '
+              + 'estaba bien escrita y comparaba lo que no era.\n\n'
+              + 'Por eso la prueba pasaba: yo le pasaba un número, y la pantalla no.' },
+        { clase:'skill', nombre:'agent-browser',
+          porque:'para reproducirlo desde la pantalla, no desde la prueba' },
+        { clase:'corrida', orden:'node api/inventario/pruebas.mjs',
+          codigo:0, salida:'✓ cantidad negativa se rechaza\n✓ cantidad de texto se rechaza\n✓ cero sí se acepta\n\n18 bien · 0 mal' },
+        { clase:'corrida', orden:'node api/inventario/pruebas.mjs  # antes del arreglo',
+          codigo:1, salida:'✗ cantidad negativa se rechaza\n   mandó -5 como texto y entró\n\n17 bien · 1 mal' },
+      ] },
     { id:'e7', ts:t+520_000, de:de('cl-a'), a:'cl-c', tipo:'revision',
       reacciones:{ visto:['carlos'], deacuerdo:['cl-c','amigo'] },
       texto:'Revisado. Dos cosas: falta validar que la cantidad no sea negativa, y\nel borrado no está pidiendo confirmación. Lo demás está bien.' },

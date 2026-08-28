@@ -214,6 +214,54 @@ console.log('\n· Adjuntos');
 
   const [c6] = await leer(await di(Array(20).fill({ clase:'enlace', url:'https://a.test' })));
   ok('veinte adjuntos en un evento se rechazan', c6 === 400);
+
+  /* ── el proceso cognitivo, las skills y lo que corrió ──────────────────
+     Carlos: «que podamos ver qué skills se usaron, qué se ejecutó, y más que
+     nada el proceso cognitivo». Se revisa AQUÍ y no en la página, porque la
+     página se puede cambiar desde el navegador y el servidor no. */
+  const [p1] = await leer(await di([{ clase:'pensamiento',
+    titulo:'Por qué no era el filtro', texto:'Llevaba tres rondas...' }]));
+  ok('un pensamiento con texto pasa', p1 === 200);
+
+  const [p2, rp2] = await leer(await di([{ clase:'pensamiento', titulo:'x' }]));
+  ok('un pensamiento sin texto se rechaza', p2 === 400 && /texto/.test(rp2.error));
+
+  const [p3] = await leer(await di([{ clase:'pensamiento', texto:'   ' }]));
+  ok('y uno con puros espacios tampoco', p3 === 400);
+
+  const [p4] = await leer(await di([{ clase:'pensamiento', texto:'a'.repeat(9000) }]));
+  ok('un razonamiento de nueve mil letras se rechaza', p4 === 400);
+
+  const [s1] = await leer(await di([{ clase:'skill', nombre:'agent-browser',
+    porque:'para verlo en pantalla' }]));
+  ok('una skill con nombre pasa', s1 === 200);
+
+  const [s2] = await leer(await di([{ clase:'skill', porque:'sin nombre' }]));
+  ok('una skill sin nombre se rechaza', s2 === 400);
+
+  const [e1] = await leer(await di([{ clase:'corrida',
+    orden:'node reportes/pruebas-app.mjs', codigo:0, salida:'34/34' }]));
+  ok('una corrida completa pasa', e1 === 200);
+
+  const [e2] = await leer(await di([{ clase:'corrida', orden:'ls' }]));
+  ok('y una corrida sin salida también: la orden ya dice algo', e2 === 200);
+
+  const [e3] = await leer(await di([{ clase:'corrida', salida:'algo' }]));
+  ok('una corrida sin orden se rechaza', e3 === 400);
+
+  const [e4] = await leer(await di([{ clase:'corrida', orden:'ls', salida:'x'.repeat(5000) }]));
+  ok('una salida de cinco mil letras se rechaza', e4 === 400);
+
+  const [e5, re5] = await leer(await di([{ clase:'corrida', orden:'ls', codigo:'0' }]));
+  ok('un código de salida que no es número se rechaza', e5 === 400 && /entero/.test(re5.error));
+
+  /* Lo que de verdad importa: que llegue COMPLETO al hilo. Un adjunto que se
+     acepta y luego se guarda a medias es peor que uno rechazado. */
+  const conProceso = (await (await pedir(s, 'GET', 'hilo')).json()).hilo
+    .filter(x => (x.adjuntos || []).some(a => a.clase === 'pensamiento'));
+  const uno = conProceso[0] && conProceso[0].adjuntos.find(a => a.clase === 'pensamiento');
+  ok('el pensamiento llega entero al hilo, con su título',
+     !!uno && uno.titulo === 'Por qué no era el filtro' && /tres rondas/.test(uno.texto));
 }
 
 /* ══ 7 · el hilo no crece para siempre ════════════════════════════════════ */

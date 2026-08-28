@@ -114,7 +114,34 @@ const TIPOS = new Set([
    quién puede trabajar ahorita y quién no, sin tener que adivinarlo. */
 const ESTADOS = new Set(['activo', 'topado', 'ocupado', 'fuera']);
 
-const CLASES_ADJUNTO = new Set(['imagen', 'archivo', 'diff', 'enlace', 'repo', 'presentacion']);
+/* ── qué puede colgar un agente de un mensaje ──────────────────────────────
+   Las tres últimas las pidió Carlos: «que podamos ver qué skills se usaron,
+   qué se ejecutó, y MÁS QUE NADA EL PROCESO COGNITIVO».
+
+   Por qué importa y no es adorno: en la mesa se ve el RESULTADO —«ya quedó»,
+   «lo subí»— y eso es justo lo que no se puede revisar. Dos agentes que
+   dicen «ya quedó» se ven idénticos, y uno lo verificó en un navegador y el
+   otro leyó el código y supuso. La diferencia vive en el razonamiento y en lo
+   que de verdad corrió, no en la conclusión.
+
+   Van como ADJUNTO y no como texto del mensaje a propósito: así el hilo se
+   sigue leyendo de corrido —lo que alguien dijo— y el cómo llegó ahí se abre
+   nada más cuando a uno le interesa. Un hilo donde cada mensaje trae ochenta
+   renglones de razonamiento pegados es un hilo que nadie lee. */
+const CLASES_ADJUNTO = new Set([
+  'imagen', 'archivo', 'diff', 'enlace', 'repo', 'presentacion',
+  'pensamiento',   /* cómo lo razonó: lo que descartó y por qué */
+  'skill',         /* qué skill usó, y para qué le sirvió */
+  'corrida',       /* qué mandó ejecutar, qué contestó y con qué código */
+]);
+
+/* Topes de los tres nuevos. Salen de para qué son, no de un número redondo:
+   un razonamiento que no cabe en 8 mil letras ya no es un razonamiento, es un
+   documento y va como archivo; y una salida de consola de más de 4 mil letras
+   nadie la lee en un teléfono — se manda la cola, que es donde está el error. */
+const TOPE_PENSAMIENTO = 8000;
+const TOPE_SALIDA = 4000;
+const TOPE_ORDEN = 400;
 
 /* ── reacciones ────────────────────────────────────────────────────────────
    Cerradas a una lista corta a propósito. Un catálogo abierto de emojis en un
@@ -1265,6 +1292,30 @@ function revisarAdjuntos(lista){
     if(a.clase === 'repo'   && !a.owner)           return 'Al repo le falta el dueño.';
     if(a.clase === 'diff'   && typeof a.cuerpo !== 'string') return 'Al diff le falta cuerpo.';
     if(a.clase === 'archivo'&& !a.ruta)            return 'Al archivo le falta la ruta.';
+
+    /* ── el proceso cognitivo y lo que corrió ──────────────────────────── */
+    if(a.clase === 'pensamiento'){
+      if(typeof a.texto !== 'string' || !a.texto.trim())
+        return 'Al pensamiento le falta `texto`: qué razonaste.';
+      if(a.texto.length > TOPE_PENSAMIENTO)
+        return `Ese razonamiento pasa de ${TOPE_PENSAMIENTO} letras. Manda lo que decidió, no todo.`;
+    }
+    if(a.clase === 'skill'){
+      if(typeof a.nombre !== 'string' || !a.nombre.trim())
+        return 'A la skill le falta `nombre`.';
+      if(a.nombre.length > 60) return 'Ese nombre de skill es demasiado largo.';
+    }
+    if(a.clase === 'corrida'){
+      if(typeof a.orden !== 'string' || !a.orden.trim())
+        return 'A la corrida le falta `orden`: qué se ejecutó.';
+      if(a.orden.length > TOPE_ORDEN) return 'Esa orden es demasiado larga.';
+      if(a.salida != null && typeof a.salida !== 'string')
+        return 'La salida de una corrida va como texto.';
+      if(a.salida && a.salida.length > TOPE_SALIDA)
+        return `Esa salida pasa de ${TOPE_SALIDA} letras. Manda la cola, que es donde está el error.`;
+      if(a.codigo != null && !Number.isInteger(a.codigo))
+        return 'El código de salida es un número entero.';
+    }
   }
   return null;
 }
