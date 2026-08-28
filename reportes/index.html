@@ -610,8 +610,31 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .doc hr{border:0; border-top:.3mm solid #C3C9D8; margin:4mm 0}
 
 .doc figure{margin:0 0 4mm; text-align:center; break-inside:avoid}
-.doc figure img{width:100%; height:72mm; object-fit:contain; background:#F2F4F8;
-  border:.25mm solid #C3C9D8; border-radius:1mm}
+/* ── LA FIGURA RESPETA SU FORMA ────────────────────────────────────────────
+   Antes: `width:100%; height:72mm; object-fit:contain`. Toda imagen se metía
+   a la fuerza en una caja apaisada de 72mm. Con fotos de evidencia —que salen
+   del teléfono y son más anchas que altas— funciona bien.
+
+   Se rompe con una imagen VERTICAL: la lámina de identidad de CET (1024x1536)
+   quedaba encogida al centro, ilegible, con dos franjas grises de relleno a
+   los lados. Y no es un problema de esa lámina: cualquier captura de pantalla
+   de teléfono, que también es vertical, salía igual.
+
+   Ahora la imagen decide su forma y sólo se le ponen topes: nunca más ancha
+   que la columna, nunca más alta que 148mm —que deja sitio para el pie y para
+   un párrafo—. Una vertical sube a 148mm de alto y se lee; una apaisada sigue
+   ocupando el ancho como antes.
+
+   `--ancho-fig` deja apretar una en concreto: un logotipo no quiere los 156mm
+   de la columna. */
+.doc figure img{
+  display:block; margin:0 auto;
+  width:auto; height:auto;
+  max-width:min(100%, var(--ancho-fig, 100%));
+  max-height:148mm;
+  background:#fff;
+  border:.25mm solid #C3C9D8; border-radius:1mm;
+}
 .doc figcaption{
   margin-top:1.6mm; font-size:8.8pt; color:#4A4A58; font-style:italic; text-align:center;
 }
@@ -1788,8 +1811,9 @@ function leer(texto, evidencias){
     const e = evidencias[n-1];
     if(!e) return null;
     usadas.add(n-1);
+    const tope = e.ancho ? ' style="--ancho-fig:'+(+e.ancho)+'mm"' : '';
     return { tipo:'figura', n:n, html:
-      '<figure><img src="'+e.datos+'" alt=""><figcaption><b>Imagen '+n+'.</b> '+
+      '<figure'+tope+'><img src="'+e.datos+'" alt=""><figcaption><b>Imagen '+n+'.</b> '+
       esc(e.pie||'Evidencia fotográfica')+'</figcaption></figure>' };
   };
 

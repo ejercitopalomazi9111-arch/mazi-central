@@ -10,6 +10,8 @@ I. Datos de la candidatura
 **C.c.p.:** Profesor responsable de la Sociedad de Alumnos (Omar Ávila Cruz)
 **Asunto:** Presentación de candidatura y propuesta de trabajo para la Sociedad de Alumnos
 
+[img:1]
+
 II. Presentación
 
 Por medio del presente documento se presenta a consideración de la Dirección la candidatura CET — Comprende · Ejecuta · Trasciende, encabezada por Carlos, alumno del grupo 3.1, para la Presidencia de la Sociedad de Alumnos.
@@ -295,19 +297,13 @@ La identidad visual de CET estará formada por tres conceptos, cada uno acompañ
 
 **Trasciende — rojo vino.** El rojo vino representa transformación, permanencia y relevancia. Se relaciona con la tercera etapa: procurar que aquello que se construye pueda continuar más allá de la generación que lo inició.
 
-XV. Sistema de simbología
+[img:2]
 
-La campaña utilizará simultáneamente color, figura y palabra. El color no será el único mecanismo de identificación.
+La identidad se utilizará siempre con los tres elementos a la vez —color, figura y palabra—. El color no será el único mecanismo de identificación, de modo que los materiales sigan siendo reconocibles impresos, fotocopiados en blanco y negro y en cualquier formato.
 
-El cuadrado representará Comprende. El triángulo representará Ejecuta. El rombo representará Trasciende.
+La identidad de CET será independiente de la identidad institucional del Instituto. No se utilizarán elementos de manera que puedan hacer parecer que la candidatura representa oficialmente a la Dirección o a la institución.
 
-Esta decisión permitirá que la identidad pueda seguir siendo reconocible en materiales impresos, copias en blanco y negro y diferentes formatos.
-
-La identidad de CET será independiente de la identidad institucional del Instituto.
-
-No se utilizarán elementos de manera que puedan hacer parecer que la candidatura representa oficialmente a la Dirección o a la institución.
-
-XVI. Independencia respecto de la actividad empresarial
+XV. Independencia respecto de la actividad empresarial
 
 El candidato cuenta con experiencia en actividades relacionadas con software, desarrollo web y diseño. Esta experiencia podrá ser útil para determinados proyectos tecnológicos.
 
@@ -317,7 +313,7 @@ No se utilizará la marca de la empresa del candidato como identidad de CET. Tam
 
 La finalidad es evitar cualquier conflicto entre representación estudiantil e interés empresarial.
 
-XVII. Modelo de ejecución
+XVI. Modelo de ejecución
 
 Cada proyecto deberá responder cuatro preguntas:
 
@@ -328,7 +324,7 @@ Cada proyecto deberá responder cuatro preguntas:
 
 Este sistema permitirá evaluar las propuestas con base en resultados y no únicamente en declaraciones.
 
-XVIII. Continuidad entre sociedades
+XVII. Continuidad entre sociedades
 
 CET propone que el final de una gestión no implique comenzar nuevamente desde cero.
 
@@ -346,7 +342,7 @@ La siguiente Sociedad de Alumnos podrá utilizar aquello que sea útil, modifica
 
 La finalidad no es obligar a una futura sociedad a continuar todos los proyectos, sino entregarle las herramientas necesarias para decidir con información en lugar de comenzar nuevamente desde cero.
 
-XIX. Evaluación de resultados
+XVIII. Evaluación de resultados
 
 La gestión será evaluada mediante indicadores. Entre ellos podrán encontrarse:
 
@@ -364,7 +360,7 @@ La gestión será evaluada mediante indicadores. Entre ellos podrán encontrarse
 
 Los indicadores específicos deberán establecerse de acuerdo con las características de cada proyecto y las disposiciones de la institución.
 
-XX. Solicitud de información y autorización
+XIX. Solicitud de información y autorización
 
 Para finalizar correctamente la planeación, se solicita a la Dirección indicar por escrito las disposiciones aplicables respecto de:
 
@@ -385,7 +381,7 @@ Para finalizar correctamente la planeación, se solicita a la Dirección indicar
 
 La finalidad de esta consulta es evitar que la candidatura opere bajo supuestos incorrectos y garantizar que cualquier actividad se ajuste a las disposiciones institucionales.
 
-XXI. Consideración sobre el viaje escolar
+XX. Consideración sobre el viaje escolar
 
 Debido a que la elección puede coincidir con un viaje escolar, deberá establecerse previamente el mecanismo mediante el cual participarán los estudiantes que se encuentren fuera de la escuela y aquellos que permanezcan en ella.
 
@@ -402,7 +398,7 @@ La candidatura considera indispensable que la Dirección determine oficialmente:
 
 La candidatura no pretende establecer unilateralmente estas condiciones. Se propone que sean definidas por la autoridad escolar antes de la jornada electoral.
 
-XXII. Transparencia
+XXI. Transparencia
 
 La candidatura considera que la confianza debe respaldarse mediante procedimientos verificables.
 
@@ -416,7 +412,7 @@ Cuando exista un acuerdo importante, deberá quedar registrado.
 
 La transparencia propuesta no pretende sustituir los mecanismos administrativos de la institución, sino complementarlos desde la representación estudiantil.
 
-XXIII. Compromiso institucional
+XXII. Compromiso institucional
 
 CET reconoce que la Sociedad de Alumnos forma parte de una comunidad educativa y que sus proyectos deben desarrollarse dentro de las normas establecidas.
 
@@ -431,7 +427,7 @@ Por ello, la candidatura se compromete a:
 * Informar cuando un proyecto no pueda realizarse.
 * Reconocer los límites de los recursos disponibles.
 
-XXIV. Consideración final
+XXIII. Consideración final
 
 La candidatura CET — Comprende · Ejecuta · Trasciende propone una Sociedad de Alumnos basada en una idea sencilla: escuchar al alumnado debe conducir a decisiones, las decisiones deben conducir a acciones y las acciones que valgan la pena deben dejar una base para quienes continúen.
 
@@ -443,7 +439,7 @@ Por ello, la candidatura no plantea resolver aquello que no puede controlar. Pla
 
 **Escuchar para hacer. Hacer para trascender.**
 
-XXV. Documentos complementarios
+XXIV. Documentos complementarios
 
 La presente propuesta podrá acompañarse de los siguientes documentos:
 
@@ -459,3 +455,9 @@ La presente propuesta podrá acompañarse de los siguientes documentos:
 * Propuesta de continuidad y transferencia.
 * Indicadores de seguimiento.
 * Oficio de consulta dirigido a la Dirección.
+
+XXV. Anexo · versiones del logotipo
+
+Se incluyen las versiones autorizadas de la identidad, para que cualquier material que se produzca durante la campaña o la gestión pueda armarse sin volver a empezar y sin que cada pieza se vea distinta.
+
+[img:3]
