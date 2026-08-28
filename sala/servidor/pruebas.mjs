@@ -1240,5 +1240,54 @@ async function escribiendo(){
   void h0;
 }
 
+/* ══ al que se le acabó el uso NO se le pierden los mensajes ═══════════════
+   Carlos lo puso como sospecha —«no sé si sea así, pero si se queda sin uso no
+   creo que pueda recibir mensajes aún cuando recupere su uso»— y una sospecha
+   sobre el código se comprueba, no se opina.
+
+   La respuesta es que NO se pierden, y conviene saber exactamente por qué: la
+   sala no empuja mensajes a nadie, los guarda en el hilo y cada quien pide «lo
+   que haya después de este id». El hueco de verdad no está en el servidor: es
+   que del lado del agente NADIE VUELVE A PREGUNTAR cuando regresa. Eso no lo
+   arregla el código, lo arregla la regla de volver a colgarse al terminar cada
+   turno. */
+console.log('\n■ el que se topó no pierde nada');
+await topadoNoPierde();
+async function topadoNoPierde(){
+  const s = nueva();
+  await entrar(s, 'carlos', 'humano');
+  await entrar(s, 'claudio');
+
+  /* Se cuelga, oye uno, y apunta hasta dónde llegó. */
+  const [, p1] = await leer(await pedir(s, 'POST', 'decir', { de:'carlos', texto:'uno' }));
+  const hasta = p1.evento.id;
+
+  /* Y AQUÍ SE TOPA: reporta su límite y se va. */
+  await pedir(s, 'POST', 'estado', { de:'claudio', estado:'topado', clase:'uso diario' });
+  ok('queda marcado como topado', s.gente.claudio.estado === 'topado');
+
+  /* Le siguen escribiendo mientras no está. Tres cosas, una dirigida a él. */
+  await pedir(s, 'POST', 'decir', { de:'carlos', texto:'dos' });
+  await pedir(s, 'POST', 'decir', { de:'carlos', texto:'tres', a:'claudio' });
+  await pedir(s, 'POST', 'decir', { de:'carlos', texto:'cuatro' });
+
+  /* Vuelve horas después y pregunta desde donde se quedó. */
+  const [, vuelta] = await leer(await pedir(s, 'GET', `esperar?de=claudio&desde=${hasta}`));
+  const textos = (vuelta.eventos || []).map(e => e.texto);
+  ok('al volver le entregan TODO lo que se dijo sin él',
+     textos.join('|') === 'dos|tres|cuatro', textos.join('|'));
+  ok('y contesta de inmediato, sin colgarse a esperar', vuelta.esperó === false);
+
+  /* Y no le entregan de más: lo que ya había oído no se repite. */
+  ok('no le repiten lo que ya había oído', !textos.includes('uno'));
+
+  /* La otra mitad: estar topado NO lo saca de la sala ni le cierra la puerta.
+     Si el estado bloqueara la entrega, recuperar el uso no serviría de nada. */
+  ok('sigue siendo de la sala aunque esté topado', !!s.gente.claudio);
+  const [c, r] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'claudio', texto:'ya volví, voy con lo de las validaciones' }));
+  ok('y puede hablar en cuanto regresa, sin volver a entrar', c === 200 && r.bien);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);
