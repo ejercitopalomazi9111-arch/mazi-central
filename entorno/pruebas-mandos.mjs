@@ -125,6 +125,91 @@ for(const [query, como, barraDebeVerse] of [
   await p.context().close();
 }
 
+
+/* ── 3 · LAS PANTALLAS DE CADA COMPUTADORA ───────────────────────────── */
+console.log('\n── lo que enseña el monitor ──');
+{
+  const p = await abrir('?demo=1');
+  ok('carga sin errores', p.__errores.length === 0, p.__errores[0]);
+
+  /* Todo el volcado va en UN solo `evaluate`: el reloj del ocio repinta cada
+     7 segundos, y si la prueba va de ida y vuelta el reloj le gana y salen dos
+     pantallas iguales. Ya me pasó y me hizo buscar un defecto que no existía. */
+  const r = await p.evaluate(() => {
+    const huella = () => __taller.lienzoDe(null);
+    const n = __taller.cuantasPantallas();
+    const todas = [];
+    for(let i = 0; i < n; i++){ __taller.verPantalla(null, i); todas.push(huella()); }
+    /* ⚠ LA PRUEBA QUE IMPORTA: pintar A, luego B, y volver a A. Si A no sale
+       IDÉNTICA la segunda vez, es que algo de B se quedó abajo. Así se cazó el
+       «Lo que estabas buscando…» de la búsqueda asomando por debajo del suelo
+       del juego de bloques — el terreno no llegaba al borde y nadie borraba. */
+    __taller.verPantalla(null, 0); const a1 = huella();
+    __taller.verPantalla(null, 1); huella();
+    __taller.verPantalla(null, 0); const a2 = huella();
+
+    /* ⚠ Y LA DE ARRIBA NO BASTA, lo comprobé quitándole el borrado al código
+       y viéndola pasar igual: A→B→A sólo caza el problema si LA QUE FALLA ES
+       A. El defecto real estaba en la pantalla del juego de bloques —cuyo
+       terreno no llegaba al borde de abajo—, o sea en la B.
+
+       Ésta sí: se embarra el lienzo de un magenta imposible, se pinta cada
+       pantalla encima, y se CUENTAN los píxeles del color imposible que
+       sobrevivieron. Uno solo ya es un agujero por donde se ve lo de antes.
+       Lo prueba una por una, no de a pares. */
+    const manchadas = [];
+    for(let i = 0; i < n; i++){
+      __taller.ensuciar(null);
+      __taller.verPantalla(null, i);
+      const m = __taller.manchas(null);
+      if(m > 0) manchadas.push(i + ':' + m + 'px');
+    }
+    return { n, todas, limpio: a1 === a2, manchadas,
+             largos: todas.map(x => x.length) };
+  });
+
+  ok('hay diez pantallas para cuando no hay nada que hacer', r.n === 10, String(r.n));
+  ok('y todas son distintas entre sí',
+     new Set(r.todas).size === r.n, r.n - new Set(r.todas).size + ' repetidas');
+  ok('ninguna deja restos de la anterior debajo', r.limpio);
+  ok('y cada una tapa TODO el lienzo, una por una',
+     r.manchadas.length === 0, r.manchadas.join(' · '));
+  /* Una pantalla que sale casi vacía es una que no se dibujó: el PNG de una
+     imagen plana pesa una fracción de una con contenido. */
+  ok('ninguna sale en blanco', Math.min(...r.largos) > 20000,
+     'la más chica: ' + Math.min(...r.largos) + ' bytes');
+
+  /* Y lo primero que pidió Carlos: que la pantalla enseñe lo que HACE el
+     agente. Se comprueba que el trabajo cambia el dibujo, no leyendo el código
+     sino repintando con y sin trabajo. */
+  const conSin = await p.evaluate(() => {
+    const pu = [...__taller.puestos.values()].find(x => x.quien && x.quien.trabajo);
+    if(!pu) return null;
+    const id = pu.quien.id;
+    /* ⚠ SE REPINTA SU TRABAJO PRIMERO. La prueba de arriba dejó a este mismo
+       agente enseñando una pantalla de ocio —`verPantalla(null, …)` cae en el
+       primer puesto—, así que sin esto se comparaba ocio contra ocio y salía
+       «no cambió nada» con el código perfectamente bien. La prueba se estaba
+       ensuciando su propia premisa, que es la peor clase de prueba: la que
+       falla sola y te manda a buscar un defecto que no existe. */
+    __taller.verTrabajo(id);
+    const antes = __taller.lienzoDe(id);
+    __taller.verPantalla(id, 0);            /* lo fuerza a «sin trabajo» */
+    const ocioso = __taller.lienzoDe(id);
+    __taller.verTrabajo(id);                /* y de regreso */
+    const vuelta = __taller.lienzoDe(id);
+    return { distintos: antes !== ocioso, vuelveIgual: antes === vuelta,
+             hayTrabajo: !!pu.quien.trabajo, en: pu.quien.trabajo.en };
+  });
+  ok('con trabajo, la pantalla enseña OTRA cosa que en reposo',
+     conSin && conSin.distintos, JSON.stringify(conSin));
+  ok('y al volver al trabajo queda exactamente como estaba',
+     conSin && conSin.vuelveIgual, JSON.stringify(conSin));
+
+  ok('y ni un error en toda la vuelta', p.__errores.length === 0, p.__errores[0]);
+  await p.context().close();
+}
+
 await nav.close();
 console.log('\n' + (mal ? '✗ ' : '✓ ') + bien + '/' + (bien + mal) + ' pruebas de los mandos');
 process.exit(mal ? 1 : 0);
