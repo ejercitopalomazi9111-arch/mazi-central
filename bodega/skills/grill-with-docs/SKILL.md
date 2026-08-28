@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/grill-with-docs/skills/grill-with-docs/SKILL.md

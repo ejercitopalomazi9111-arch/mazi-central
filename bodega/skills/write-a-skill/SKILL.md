@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/write-a-skill/skills/write-a-skill/SKILL.md

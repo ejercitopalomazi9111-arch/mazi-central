@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering-team/self-improving-agent/skills/extract/SKILL.md

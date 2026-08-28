@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/product-team/research-summarizer/skills/research-summarizer/SKILL.md

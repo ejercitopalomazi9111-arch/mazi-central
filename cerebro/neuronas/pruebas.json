@@ -115,6 +115,34 @@
       ],
       "area": "pruebas",
       "salioDe": "reportes/ · seis pruebas rojas acusando a un código que ya estaba bien"
+    },
+    {
+      "id": "medir-un-bloque-solo-lo-vuelve-el-ultimo",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Medí cada bloque solo, y solo siempre es el último",
+      "sintoma": "La última línea de casi cada hoja sale partida a la mitad, con el pie de página encima. En pantalla, escribiendo poco, no pasa.",
+      "causa": "El paginador mide cada bloque en una hoja fantasma, de uno en uno. Solito ahí, el bloque es `:last-child` — y la hoja de estilo dice `.doc>*:last-child{margin-bottom:0}`. El hueco de 3.2mm bajo cada bloque se reportaba CERO, siempre. Con ocho bloques por hoja, ~24mm que el paginador creía libres.",
+      "porque": "Aislar algo para medirlo suena a rigor, y le cambia el contexto: los selectores posicionales —`:last-child`, `:first-child`, `:nth-child`, `+`, `~`— dejan de valer lo mismo. La medición sale limpia y equivocada.",
+      "arreglo": "Un testigo de altura cero detrás mientras se mide, para que el bloque deje de ser el último. Mejor que sumar la constante a mano: si un día un bloque lleva otro margen, el testigo sigue bien.",
+      "comoCazarlo": "Comparar el alto del contenedor contra el de su zona (`doc.offsetHeight` vs `zona.clientHeight`). Si el contenido es más alto, lo están recortando aunque se vea entero arriba. Y probar con la página LLENA: con tres párrafos este defecto no existe.",
+      "consejo": "Cuando midas un elemento fuera de su lugar, pregúntate qué regla de CSS depende de sus vecinos. Aquí una sola línea de estilo posicional metió un párrafo de más en cada hoja impresa.",
+      "toca": [
+        "reportes/index.html"
+      ],
+      "senales": [
+        "sale cortado al imprimir",
+        "la última línea se parte",
+        "el pie tapa el texto",
+        "cabe en pantalla y no en papel"
+      ],
+      "vecinas": [
+        "medir-el-texto-pintado",
+        "medir-antes-de-suponer",
+        "prueba-de-un-solo-caso"
+      ],
+      "area": "pruebas",
+      "salioDe": "reportes/ · el documento de la candidatura, impreso y cortado en 7 de 8 hojas"
     }
   ]
 }

@@ -484,7 +484,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .hoja .zona{
   position:absolute; z-index:1;
   left:var(--lado); right:var(--lado); top:var(--tope);
-  height:calc(279.4mm - var(--tope) - var(--fondo));
+  /* ── EL RESERVE DEL PIE · el defecto que Carlos vio IMPRESO ─────────────
+     Antes la zona bajaba hasta `--fondo`, que es EXACTAMENTE donde vive el
+     pie de página. El paginador mide `.zona` para decidir cuánto cabe, así
+     que metía texto en la franja que el pie iba a tapar: la última línea de
+     casi cada hoja salía partida a la mitad con el folio encima.
+
+     No se veía escribiendo poco —hace falta que la hoja se llene— y por eso
+     llegó hasta el papel.
+
+     Los 6mm salen de medir, no de tantear: el pie mide 7.5mm de alto y su
+     borde superior queda 0.5mm ARRIBA del final de la zona. 6mm dejan ~5.5mm
+     de aire, y aguantan también un pie de tres renglones sin que se toquen.
+     Con esto el paginador corta antes solo, sin tocar el paginador. */
+  height:calc(279.4mm - var(--tope) - var(--fondo) - 6mm);
   overflow:hidden;
 }
 .hoja .folio-pie{
@@ -1067,9 +1080,9 @@ El día ...
     <label class="campo"><span>Desde dónde imprimes</span>
       <select id="oImpresion">
         <option value="0.80">iPhone o iPad · Safari</option>
-        <option value="0.90">Android · Chrome</option>
-        <option value="1">Computadora, con márgenes en «ninguno»</option>
+        <option value="0.90">Computadora o Android · Chrome</option>
         <option value="0.72">Se sigue partiendo · encoger más</option>
+        <option value="1">Aprovechar toda la hoja · SÓLO con márgenes en «ninguno»</option>
       </select></label>
     <p class="aviso">Safari en iPhone <b>se queda con un margen suyo</b> que no se puede apagar, y
       por eso una hoja completa no le cabe: se pasa por un pelo y arrastra una <b>página en blanco
@@ -1535,7 +1548,16 @@ const INSTITUCIONES = {
     compuesta: { logo:'geraldmed/logo-ambulancia.png', lema:'Atención prehospitalaria',
                  clase:'geraldmed' },
     pie:'GERALDMED · Atención prehospitalaria',
-    agua:{ logo:'geraldmed/logo-ambulancia.png', ancho:120,
+    /* La marca de agua es la ESTRELLA, no el logo de la cabecera. Lo pidió
+       Carlos y además funciona mejor: la cabecera lleva el logo apaisado y el
+       fondo lleva el emblema, en vez de repetir la misma imagen dos veces en
+       la misma hoja.
+
+       110mm y no 80 como el escudo porque el dibujo ocupa sólo el 67% de su
+       lienzo —trae aire alrededor— así que al mismo ancho se vería un tercio
+       más chico. Medido con umbral de alfa: `getbbox()` a secas devolvía el
+       lienzo completo por culpa de un halo casi invisible. */
+    agua:{ logo:'geraldmed/logo-estrella.png', ancho:110,
            leyenda:'GERALDMED · DOCUMENTO ORIGINAL' },
     tinta:'#454C78', acento:'#92D9CF',
     tope:42, fondo:30,
@@ -2066,10 +2088,37 @@ function bloqueFirmas(r){
 }
 
 function alturaCon(el, primero){
+  /* ── POR QUÉ EL TESTIGO · el defecto que salió IMPRESO ──────────────────
+     La hoja fantasma mide UN bloque a la vez, así que ese bloque siempre es
+     `:last-child` — y la hoja de estilo dice `.doc>*:last-child{margin-bottom:0}`.
+     O sea que el hueco de 3.2mm que va DEBAJO de cada bloque se reportaba
+     como CERO, siempre.
+
+     Con siete u ocho bloques por hoja eso son ~24mm que el paginador creía
+     libres y no lo estaban: metía un párrafo de más, la zona lo recortaba con
+     su `overflow:hidden` y la última línea salía partida a la mitad con el
+     folio encima. Medido: `.doc` acababa en 836px dentro de una zona de 746.
+
+     No se ve escribiendo poco. Hace falta llenar la hoja, y por eso llegó
+     hasta el papel de Carlos.
+
+     El testigo hace que el bloque deje de ser el último mientras se mide, y
+     entonces su margen real aparece. Se prefiere esto a sumar 3.2mm a mano
+     porque el día que un tipo de bloque lleve otro margen, esto sigue bien y
+     la constante no. */
+  const padre = el.parentNode;
+  let testigo = null;
+  if(padre){
+    testigo = document.createElement('div');
+    testigo.style.cssText = 'height:0;margin:0;padding:0;border:0';
+    padre.appendChild(testigo);
+  }
   const cs = getComputedStyle(el);
   const mt = primero ? 0 : parseFloat(cs.marginTop) || 0;
   const mb = parseFloat(cs.marginBottom) || 0;
-  return el.getBoundingClientRect().height + mt + mb;
+  const alto = el.getBoundingClientRect().height + mt + mb;
+  if(testigo) padre.removeChild(testigo);
+  return alto;
 }
 
 /* corta una tabla que no cabe, repitiendo su encabezado */
@@ -3517,6 +3566,25 @@ function formatoAlDia(f){
    0.86 y por eso se partía: la mitad de abajo —membrete y folio, los dos en
    posición absoluta— caía en la página siguiente y salía sola. */
 const SAFARI_COME = { arriba:22, abajo:22, lados:12.7 };
+
+/* Lo que se queda un navegador de ESCRITORIO con sus márgenes «Predeterminado»
+   —los 0.4 pulgadas de Chrome—. Es el caso que le tocó a Carlos: imprimió y le
+   salieron 30 páginas para 15 hojas, una en blanco detrás de cada una.
+
+   La opción que escogió se llamaba «Computadora, con márgenes en ninguno»: un
+   nombre que le pide RECORDAR un ajuste del diálogo de impresión. Si no lo
+   pone, la hoja de 279.4mm no cabe en los 259 que quedan y cada una arrastra
+   una página vacía. Un valor por defecto que depende de que la persona se
+   acuerde de algo no es un valor por defecto: es una trampa con instrucciones.
+
+   Ahora la opción de computadora va en 0.90 —cabe con o sin el ajuste— y la
+   de aprovechar toda la hoja dice en su propio nombre que exige el ajuste, en
+   vez de esconderlo en un aviso debajo. */
+const ESCRITORIO_COME = { arriba:10.2, abajo:10.2, lados:10.2 };
+
+/* Las escalas que se ofrecen, y cuáles tienen que caber SIN que la persona
+   toque nada. La de 1 queda fuera a propósito: su nombre ya avisa. */
+const ESCALAS_SEGURAS = [0.80, 0.90, 0.72];
 
 function aplicarEscalaImpresion(){
   document.documentElement.style.setProperty('--imp',
