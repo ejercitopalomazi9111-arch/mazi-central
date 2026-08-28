@@ -35,7 +35,7 @@ const MATERIAS = [
 
 /* El tipo dice QUÉ hay que hacer. Va aparte de la materia porque un alumno
    busca de las dos formas: «qué tengo de inglés» y «qué tengo que traer». */
-const TIPOS = [
+const TIPOS_PEND = [
   { id:'tarea',    nombre:'Tarea',        icono:'hoja',    verbo:'Hacer'   },
   { id:'material', nombre:'Material',     icono:'caja',    verbo:'Traer'   },
   { id:'examen',   nombre:'Examen',       icono:'examen',  verbo:'Estudiar'},
@@ -121,4 +121,4 @@ const DIAS   = ['domingo','lunes','martes','miércoles','jueves','viernes','sáb
 const MESES  = ['enero','febrero','marzo','abril','mayo','junio','julio',
                 'agosto','septiembre','octubre','noviembre','diciembre'];
 
-if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS, CUANDOS, DESTACADO, PLANTILLAS, FUENTES, DIAS, MESES };
+if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS_PEND, CUANDOS, DESTACADO, PLANTILLAS, FUENTES, DIAS, MESES };
