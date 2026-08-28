@@ -562,6 +562,67 @@
       "vecinas": [
         "hidden-no-esconde-un-flex"
       ]
+    },
+    {
+      "id": "offsetparent-miente-con-fixed",
+      "titulo": "`offsetParent` dice que un elemento fijo está escondido, y está a la vista",
+      "gravedad": "media",
+      "sintoma": "Una comprobación de visibilidad marca como escondidos botones que se ven perfectamente en la captura.",
+      "causa": "`offsetParent` devuelve `null` para todo lo que sea `position:fixed` —y también para `display:none`—. La prueba usa ese `null` como «no se ve», y confunde las dos cosas.",
+      "porque": "`!!el.offsetParent` es el atajo que todo el mundo usa para «¿se ve?», y funciona en el 90% de los casos. Los mandos flotantes son justo el otro 10%.",
+      "arreglo": "Medir de verdad: el recuadro tiene área, cae dentro de la pantalla, el estilo calculado no dice `none`/`hidden`/opacidad 0, y `document.elementFromPoint` en su centro devuelve ese elemento o algo suyo.",
+      "comoCazarlo": "Si la prueba dice «escondido» y la captura dice que no, mira si el elemento o su padre son `position:fixed`.",
+      "consejo": "Lo último también prueba que se puede TOCAR: un botón visible tapado por otra cosa es tan inútil como uno escondido, y `offsetParent` tampoco lo dice.",
+      "salioDe": "entorno/pruebas-mandos.mjs · los mandos del Taller",
+      "senales": [
+        "dice que no se ve y sí se ve",
+        "offsetParent null",
+        "la prueba de visibilidad miente"
+      ],
+      "vecinas": [
+        "hidden-no-esconde-un-flex"
+      ]
+    },
+    {
+      "id": "el-comentario-no-es-el-codigo",
+      "titulo": "Un comentario puede describir una capa de seguridad que el código no tiene",
+      "gravedad": "alta",
+      "sintoma": "Todo el mundo cree que existe una vía de recuperación —una llave maestra, un respaldo, un modo de emergencia— porque está documentada, y no existe.",
+      "causa": "El comentario se escribió con el diseño, el código se escribió con una salida temprana, y nadie volvió a leer los dos juntos. `if(hay) return lo_de_aquí;` nunca llega al paso 2 que el comentario enumera.",
+      "porque": "Un comentario detallado y ordenado se lee como especificación cumplida. Cuanto mejor escrito, más convence — y menos se comprueba.",
+      "arreglo": "Probar la vía documentada, no leerla. Y si de verdad no existe, escribirla: aquí era «primero la llave de la sala, y si no coincide, la maestra».",
+      "comoCazarlo": "Toma cada paso que enumere un comentario y escribe una prueba que lo ejercite. Los que no se puedan escribir son los que no existen.",
+      "consejo": "El daño no es el comentario: es que una puerta de emergencia documentada y ausente se descubre el día que hace falta.",
+      "salioDe": "sala/servidor/sala.js · `cuentaDe` y la llave maestra",
+      "senales": [
+        "el comentario dice que sí y no funciona",
+        "me quedé fuera de mi propia sala",
+        "la llave de respaldo no entra"
+      ],
+      "vecinas": [
+        "offsetparent-miente-con-fixed",
+        "campo-sin-type"
+      ]
+    },
+    {
+      "id": "pre-wrap-dibuja-la-sangria-del-html",
+      "titulo": "Dentro de `white-space: pre-wrap`, la sangría bonita del HTML se pinta",
+      "gravedad": "media",
+      "sintoma": "Un bloque insertado sale con renglones en blanco encima y debajo que nadie escribió.",
+      "causa": "El contenedor respeta los espacios en blanco para conservar los saltos de quien escribió el mensaje. Los saltos y la sangría que uno pone ENTRE etiquetas por legibilidad son texto para ese contenedor, y se dibujan.",
+      "porque": "El HTML se ve perfectamente ordenado. El defecto sólo existe por el `pre-wrap` del padre, que está en otro archivo o a mil líneas de distancia.",
+      "arreglo": "Armar ese marcado en UN solo renglón —concatenando, no con plantilla de varias líneas— y de paso `white-space:normal` en el bloque, como cinturón además de tirantes.",
+      "comoCazarlo": "Medir el alto del bloque contra la suma de sus partes: si sobra mucho, es blanco de relleno.",
+      "consejo": "Pasa siempre que se mete marcado nuevo dentro de un chat, que es donde `pre-wrap` es obligatorio.",
+      "salioDe": "sala/index.html · la caja de código con botón de copiar",
+      "senales": [
+        "salen renglones en blanco",
+        "hay un hueco arriba que no puse",
+        "se ve separado sin razón"
+      ],
+      "vecinas": [
+        "el-comentario-no-es-el-codigo"
+      ]
     }
   ]
 }

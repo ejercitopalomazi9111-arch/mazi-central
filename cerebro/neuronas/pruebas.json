@@ -143,6 +143,68 @@
       ],
       "area": "pruebas",
       "salioDe": "reportes/ · el documento de la candidatura, impreso y cortado en 7 de 8 hojas"
+    },
+    {
+      "id": "la-prueba-solo-caza-si-falla-la-primera",
+      "titulo": "Pintar A → B → A no caza el residuo si la que ensucia es B",
+      "gravedad": "alta",
+      "sintoma": "Una prueba de «no queda basura de la pantalla anterior» pasa en verde con el defecto puesto.",
+      "causa": "Comparar A antes y después de B sólo detecta el problema si A NO tapa lo que B dejó. Si A pinta un fondo completo, borra la evidencia de B y la comparación sale idéntica — con el defecto intacto.",
+      "porque": "La forma A→B→A se siente exhaustiva porque «vuelve al principio», pero lo que compara es si A es estable, no si B es limpia. Prueba a la testigo, no a la sospechosa.",
+      "arreglo": "Probar cada una CONTRA UN FONDO SUCIO: se embarra el lienzo de un color imposible —magenta puro—, se pinta la pantalla encima, y se cuentan los píxeles del color imposible que sobrevivieron. Uno solo ya es un agujero. Así se prueban una por una y no de a pares.",
+      "comoCazarlo": "Quítale el arreglo al código y corre la prueba. Si sigue verde, la prueba no era del arreglo.",
+      "consejo": "La forma más rápida de saber si una prueba sirve es reintroducir el defecto. Una prueba que nunca se ha visto fallar es una hipótesis, no una prueba.",
+      "salioDe": "entorno/pruebas-mandos.mjs · las pantallas del Taller",
+      "senales": [
+        "la prueba pasa y el bug sigue",
+        "quedan restos de lo anterior",
+        "se ve lo de antes por debajo"
+      ],
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "la-prueba-se-ensucia-su-premisa"
+      ]
+    },
+    {
+      "id": "la-prueba-se-ensucia-su-premisa",
+      "titulo": "Una prueba que deja el estado movido hace fallar a la siguiente",
+      "gravedad": "media",
+      "sintoma": "Una prueba falla con un mensaje imposible —«no cambió nada» sobre código que sí cambia— y a solas pasa.",
+      "causa": "La prueba anterior dejó al sujeto en el mismo estado que ésta iba a comparar. Se acaba comparando el estado contra sí mismo.",
+      "porque": "Las pruebas de pantalla comparten un objeto vivo —el lienzo, el DOM, el agente— y cada una lo mueve. Lo que en pruebas de función es aislamiento gratis, aquí hay que escribirlo.",
+      "arreglo": "Que cada prueba PONGA su premisa antes de medir, no que la herede. Una función que reponga el estado de partida —`verTrabajo(id)`— cuesta cinco renglones.",
+      "comoCazarlo": "Correr la prueba sola. Si pasa sola y falla en grupo, es contaminación, no un defecto.",
+      "consejo": "Duele el doble porque manda a buscar un defecto que no existe. Es de las pocas fallas que valen la pena arreglar aunque el código esté bien.",
+      "salioDe": "entorno/pruebas-mandos.mjs · el trabajo contra el ocio",
+      "senales": [
+        "pasa sola y falla en grupo",
+        "falla con un mensaje imposible",
+        "no cambió nada y sí cambia"
+      ],
+      "vecinas": [
+        "la-prueba-solo-caza-si-falla-la-primera",
+        "reloj-vivo-hace-fallar-la-prueba"
+      ]
+    },
+    {
+      "id": "reloj-vivo-hace-fallar-la-prueba",
+      "titulo": "Un reloj de verdad dentro del dibujo hace que la prueba falle sola",
+      "gravedad": "media",
+      "sintoma": "Una prueba que compara dos pintadas iguales falla una vez de cada tantas, sin patrón.",
+      "causa": "El dibujo trae la hora. Si el minuto cambia entre las dos capturas, los píxeles difieren y la comparación falla — sin que nada esté roto.",
+      "porque": "Un reloj es lo que hace que una barra se lea como barra de tareas, así que no se puede quitar. Y como falla una vez de cada muchas, se le echa la culpa a otra cosa.",
+      "arreglo": "Una costura para congelarlo: una variable que sólo pone la prueba, y que el dibujo usa si está puesta.",
+      "comoCazarlo": "Si una prueba de imagen falla sin patrón, busca en el dibujo cualquier cosa que dependa del tiempo: hora, fecha, «hace 2 min», una animación.",
+      "consejo": "Una prueba que falla sola se acaba ignorando, y una prueba ignorada es peor que no tenerla — porque además da confianza.",
+      "salioDe": "entorno/index.html · la barra de tareas del Taller",
+      "senales": [
+        "la prueba falla a veces",
+        "falla sin patrón",
+        "pasa si la vuelvo a correr"
+      ],
+      "vecinas": [
+        "la-prueba-se-ensucia-su-premisa"
+      ]
     }
   ]
 }
