@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/kkkkhazix-khazix-skills/neat-freak/evals/fixtures/eval-4-cross-project/workspace/auth-center/CLAUDE.md

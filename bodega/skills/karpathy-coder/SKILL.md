@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/karpathy-coder/skills/karpathy-coder/SKILL.md

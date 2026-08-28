@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/productivity/fable-goal/skills/fable-goal/SKILL.md

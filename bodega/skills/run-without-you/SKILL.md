@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/agent-launcher/skills/run-without-you/SKILL.md

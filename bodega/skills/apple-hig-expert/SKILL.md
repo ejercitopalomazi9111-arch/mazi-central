@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/product-team/apple-hig-expert/skills/apple-hig-expert/SKILL.md

@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering-team/skills/gcp-cloud-architect/SKILL.md

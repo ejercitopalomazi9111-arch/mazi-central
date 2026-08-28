@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/prompt-governance/skills/prompt-governance/SKILL.md

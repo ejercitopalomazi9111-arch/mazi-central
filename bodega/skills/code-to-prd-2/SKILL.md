@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/product-team/code-to-prd/skills/code-to-prd/SKILL.md

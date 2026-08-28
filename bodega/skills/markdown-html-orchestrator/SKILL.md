@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/markdown-html/skills/markdown-html-orchestrator/SKILL.md
