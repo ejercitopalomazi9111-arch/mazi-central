@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CET · manual de marca</title>
+<style>
+  :root{
+    --azul:#0A3D6E; --verde:#0E8350; --vino:#A81440;
+    --papel:#FFFFFF; --hueso:#F6F7F9; --tinta:#14171C; --suave:#5C6472; --linea:#DDE1E7;
+    --sans:"Inter","Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --serif:"Source Serif 4",Cambria,Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--papel); color:var(--tinta); font:16px/1.62 var(--sans);
+       padding:0 0 64px; -webkit-text-size-adjust:100%}
+  .caja{max-width:820px; margin:0 auto; padding:0 18px}
+
+  /* ── portada ── */
+  .portada{background:var(--azul); color:#fff; padding:38px 0 30px; margin-bottom:6px}
+  .portada .caja{padding-top:0}
+  .marca{font:800 clamp(46px,15vw,86px)/0.9 var(--sans); letter-spacing:-.03em; margin:0}
+  .verbos{margin:10px 0 0; font-weight:600; letter-spacing:.02em; font-size:clamp(14px,4vw,19px)}
+  .lema{margin:16px 0 0; font-family:var(--serif); font-style:italic; opacity:.92;
+        font-size:clamp(15px,4vw,18px)}
+  .quees{margin:22px 0 0; font-size:14px; opacity:.8; border-top:1px solid rgba(255,255,255,.28);
+         padding-top:12px}
+
+  h2{font:700 clamp(21px,5.4vw,27px)/1.2 var(--sans); letter-spacing:-.015em;
+     margin:44px 0 4px; padding-left:14px; border-left:5px solid var(--azul)}
+  h2 .num{color:var(--suave); font-weight:600; font-size:.62em; display:block; letter-spacing:.14em;
+          text-transform:uppercase; margin-bottom:3px}
+  h3{font:700 17px/1.3 var(--sans); margin:26px 0 6px}
+  h4{font:700 14px/1.3 var(--sans); margin:18px 0 4px; letter-spacing:.02em}
+  p{margin:9px 0}
+  ul,ol{margin:9px 0; padding-left:22px} li{margin:4px 0}
+  .guia{color:var(--suave); font-size:15px; margin-top:2px}
+  b,strong{font-weight:700}
+  code{font:600 13px ui-monospace,Menlo,monospace; background:var(--hueso); padding:1px 5px;
+       border-radius:4px}
+
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:14.5px; display:block;
+        overflow-x:auto; white-space:nowrap}
+  th,td{border-bottom:1px solid var(--linea); padding:8px 10px; text-align:left; vertical-align:top}
+  th{font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+     color:var(--suave)}
+  table.suelta{white-space:normal}
+
+  .nota{background:var(--hueso); border-left:4px solid var(--vino); padding:12px 14px;
+        border-radius:0 8px 8px 0; margin:14px 0; font-size:15px}
+  .nota b{color:var(--vino)}
+  .ok{border-left-color:var(--verde)} .ok b{color:var(--verde)}
+
+  .dos{display:grid; grid-template-columns:1fr; gap:14px}
+  @media(min-width:660px){ .dos{grid-template-columns:1fr 1fr} }
+
+  .ficha{border:1px solid var(--linea); border-radius:12px; padding:14px}
+  .ficha .cab{display:flex; align-items:center; gap:10px; margin-bottom:8px}
+  .ficha .nom{font-weight:800; letter-spacing:.04em}
+  .ficha .hex{margin-left:auto; font:600 12px ui-monospace,monospace; color:var(--suave)}
+
+  .barra{height:8px; border-radius:99px; margin:10px 0 6px}
+
+  .signos{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0}
+  .signo{text-align:center; border:1px solid var(--linea); border-radius:12px; padding:14px 6px}
+  .signo .et{font:700 11px/1.3 var(--sans); letter-spacing:.1em; margin-top:8px}
+
+  .iconos{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; margin:12px 0}
+  .ico{border:1px solid var(--linea); border-radius:10px; padding:12px 6px; text-align:center}
+  .ico span{display:block; font-size:11px; color:var(--suave); margin-top:6px; letter-spacing:.03em}
+
+  .cartel{border:1px solid var(--linea); border-radius:10px; overflow:hidden; background:#fff}
+  .cartel .zona{padding:14px}
+  .cartel .cinta{height:7px; display:flex}
+  .cartel .cinta i{flex:1}
+  .cartel h5{margin:0 0 4px; font:800 19px/1.15 var(--sans); letter-spacing:-.01em}
+  .cartel p{margin:0; font-size:13px; color:var(--suave)}
+  .cartel .pie{border-top:1px solid var(--linea); padding:9px 14px; font:700 10.5px/1 var(--sans);
+               letter-spacing:.11em; display:flex; align-items:center; gap:7px; flex-wrap:wrap}
+
+  .fases{border-left:2px solid var(--linea); margin:14px 0; padding-left:0}
+  .fase{position:relative; padding:0 0 16px 20px}
+  .fase::before{content:""; position:absolute; left:-6px; top:6px; width:10px; height:10px;
+                background:var(--azul); border-radius:2px}
+  .fase.e::before{background:var(--verde); border-radius:0; clip-path:polygon(50% 0,100% 100%,0 100%)}
+  .fase.t::before{background:var(--vino); border-radius:0; transform:rotate(45deg)}
+  .fase b{display:block; font-size:15px}
+  .fase span{font-size:14px; color:var(--suave)}
+
+  .mal{color:var(--vino); font-weight:700}
+  .bien{color:var(--verde); font-weight:700}
+
+  footer{margin-top:46px; border-top:1px solid var(--linea); padding-top:16px;
+         font-size:13px; color:var(--suave)}
+
+  @media print{
+    body{font-size:10.5pt} .portada{background:var(--azul) !important;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact}
+    h2{break-after:avoid} .ficha,.cartel,.nota{break-inside:avoid}
+  }
+</style></head>
+<body>
+
+<header class="portada"><div class="caja">
+  <p class="marca">CET</p>
+  <p class="verbos">COMPRENDE · EJECUTA · TRASCIENDE</p>
+  <p class="lema">“Escuchar para hacer. Hacer para trascender.”</p>
+  <p class="quees">Manual de marca · candidatura a la Presidencia de la Sociedad de Alumnos ·
+     Instituto Rembrandt de Querétaro</p>
+</div></header>
+
+<div class="caja">
+
+<div class="nota ok">
+  <b>Cómo se usa este manual.</b> Cada regla trae la razón por la que existe. Si una regla estorba,
+  se discute la razón — no la regla. Y todo lo que aquí se afirma sobre color está
+  <b>medido</b>, no escogido a ojo: los números están en el apartado 4.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ 1 -->
+<h2><span class="num">01</span>La idea</h2>
+
+<p><b>CET no es un lema: es un método, y el método es la marca.</b> Casi toda campaña estudiantil
+promete resultados. CET promete un <i>procedimiento</i> — comprender, ejecutar, trascender — y ese
+procedimiento es lo que se dibuja.</p>
+
+<p>Por eso la identidad no es un símbolo bonito con tres colores encima. Son <b>tres signos que
+significan tres momentos de un trabajo</b>, y que aparecen en ese orden siempre:</p>
+
+<div class="signos">
+  <div class="signo">
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <rect x="9" y="9" width="34" height="34" fill="#0A3D6E"/></svg>
+    <div class="et" style="color:#0A3D6E">COMPRENDE</div>
+  </div>
+  <div class="signo">
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <path d="M26 8 L45 44 L7 44 Z" fill="#0E8350"/></svg>
+    <div class="et" style="color:#0E8350">EJECUTA</div>
+  </div>
+  <div class="signo">
+    <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+      <path d="M26 6 L46 26 L26 46 L6 26 Z" fill="#A81440"/></svg>
+    <div class="et" style="color:#A81440">TRASCIENDE</div>
+  </div>
+</div>
+
+<p class="guia"><b>Por qué esas figuras y no otras.</b> El cuadrado se apoya en su base: es lo que
+está quieto y se puede examinar. El triángulo apunta: tiene dirección, es el que se mueve. El rombo
+es el mismo cuadrado <i>girado</i> — la forma que ya pasó por el proceso y sigue en pie. No es
+decoración: la tercera figura <b>sale de la primera</b>, que es exactamente lo que dice
+«trascender».</p>
+
+<div class="nota">
+  <b>Lo que la identidad NO debe prometer.</b> CET no dice que va a resolverlo todo. Dice que
+  escucha, analiza lo viable, ejecuta lo autorizado y deja una base. Toda pieza que insinúe
+  «lo lograremos todo» contradice la propuesta escrita y le regala el argumento al contrario.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ 2 -->
+<h2><span class="num">02</span>Personalidad</h2>
+
+<table class="suelta">
+<tr><th>Rasgo</th><th>Por qué es de CET</th></tr>
+<tr><td><b>Metódica</b></td><td>Todo pasa por los tres verbos. No es un adorno: es el filtro que
+  decide qué se promete y qué no.</td></tr>
+<tr><td><b>Verificable</b></td><td>Cada propuesta trae cómo se comprueba. La marca hereda eso:
+  publica números, no adjetivos.</td></tr>
+<tr><td><b>Contenida</b></td><td>Reconoce límites en voz alta. Una campaña que dice «esto no
+  depende de nosotros» gana más de lo que pierde.</td></tr>
+<tr><td><b>Ordenada</b></td><td>Una función, un responsable. Se ve en el diseño: jerarquía clara,
+  nada compitiendo por atención.</td></tr>
+<tr><td><b>Tecnológica sin presumirlo</b></td><td>Hay sistemas propios, pero son herramienta. La
+  marca no es de software.</td></tr>
+<tr><td><b>Institucional sin disfrazarse</b></td><td>Convive con el membrete de la escuela y
+  <b>nunca</b> se hace pasar por él.</td></tr>
+<tr><td><b>Cercana por conducta</b></td><td>Lo cercano no se logra con chistes: se logra
+  respondiendo el mismo día y poniendo nombres.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 3 -->
+<h2><span class="num">03</span>Voz y tono</h2>
+
+<p>La voz de CET es la de <b>una organización estudiantil responsable</b>: ni empresa, ni partido.
+La prueba rápida es que cualquier frase se pueda leer en voz alta frente a la Dirección
+<i>y</i> frente a un salón sin cambiarla.</p>
+
+<div class="dos">
+  <div class="ficha">
+    <h4 class="bien">Así sí</h4>
+    <ul>
+      <li>Frases completas y en presente.</li>
+      <li>Sujeto explícito: «el comité», no «se hará».</li>
+      <li>Fechas y números concretos.</li>
+      <li>Decir «no sé, lo averiguo y lo publico».</li>
+      <li>Nombrar al responsable de cada cosa.</li>
+    </ul>
+  </div>
+  <div class="ficha">
+    <h4 class="mal">Así no</h4>
+    <ul>
+      <li>Superlativos: «el mejor», «histórico», «nunca visto».</li>
+      <li>Promesas sin fecha ni forma de comprobarlas.</li>
+      <li>Jerga de empresa: «sinergia», «impactar», «empoderar».</li>
+      <li>Mayúsculas para gritar y signos repetidos.</li>
+      <li>Mencionar a la otra candidatura, ni de reojo.</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Tres situaciones que hay que tener resueltas de antemano</h3>
+
+<table class="suelta">
+<tr><th>Situación</th><th>Cómo responde CET</th></tr>
+<tr><td><b>Una crítica</b></td><td>Se agradece, se contesta con el dato y se dice qué sigue.
+  Nunca se discute con quien critica: <i>«tienes razón en X. Lo que podemos hacer es Y, y lo
+  publico el día Z.»</i> Si la crítica es injusta, se contesta igual de corto y se vuelve a la
+  propuesta.</td></tr>
+<tr><td><b>Un aviso</b></td><td>Qué, cuándo, dónde, quién responde. En ese orden y en cuatro
+  renglones. Sin preámbulo y sin «¡atención!».</td></tr>
+<tr><td><b>Un resultado</b></td><td>El número primero y el adjetivo nunca:
+  <i>«Se atendieron 34 de 41 solicitudes. Las 7 restantes esperan autorización de Dirección.»</i>
+  Un resultado sin la parte que falló no es un resultado, es publicidad.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 4 -->
+<h2><span class="num">04</span>Color, medido</h2>
+
+<p>Los tres colores son fijos. Lo que sigue no es una opinión estética: son las mediciones que
+deciden dónde se puede usar cada uno.</p>
+
+<div class="dos">
+  <div class="ficha">
+    <div class="cab"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="2" width="18" height="18" fill="#0A3D6E"/></svg>
+      <span class="nom" style="color:#0A3D6E">COMPRENDE</span><span class="hex">#0A3D6E</span></div>
+    <div class="barra" style="background:#0A3D6E"></div>
+    <p class="guia">Texto blanco encima <b>11.0:1</b> · como texto sobre papel <b>11.0:1</b><br>
+      En fotocopia queda un gris del <b>4.5%</b>.</p>
+    <p class="guia">Es el color de trabajo: títulos, texto largo, fondos grandes.</p>
+  </div>
+  <div class="ficha">
+    <div class="cab"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M11 3 L19 19 L3 19 Z" fill="#0E8350"/></svg>
+      <span class="nom" style="color:#0E8350">EJECUTA</span><span class="hex">#0E8350</span></div>
+    <div class="barra" style="background:#0E8350"></div>
+    <p class="guia">Texto blanco encima <b>4.8:1</b> · como texto sobre papel <b>4.8:1</b><br>
+      En fotocopia queda un gris del <b>16.9%</b>.</p>
+    <p class="guia">El más flojo de los tres. Sirve para acentos y titulares, <b>no</b> para
+      párrafos largos.</p>
+  </div>
+</div>
+
+<div class="ficha" style="margin-top:14px">
+  <div class="cab"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M11 2 L20 11 L11 20 L2 11 Z" fill="#A81440"/></svg>
+    <span class="nom" style="color:#A81440">TRASCIENDE</span><span class="hex">#A81440</span></div>
+  <div class="barra" style="background:#A81440"></div>
+  <p class="guia">Texto blanco encima <b>7.4:1</b> · como texto sobre papel <b>7.4:1</b> ·
+    en fotocopia, gris del <b>9.2%</b>.</p>
+</div>
+
+<div class="nota">
+  <b>El hallazgo que sostiene todo el sistema.</b> En fotocopia en blanco y negro, el azul queda en
+  4.5% de gris y el vino en 9.2%: <b>4.7 puntos de diferencia</b>. Eso es demasiado poco —
+  <b>Comprende y Trasciende se confunden</b> en una copia en gris. El verde sí se separa de ambos.
+  <br><br>
+  No se arregla con color: un vino lo bastante claro para separarse del azul deja de verse serio, y
+  ésa es la mitad que hace que la candidatura no parezca infantil. <b>Por eso la figura y la palabra
+  no son opcionales.</b> En una escuela, todo se fotocopia.
+</div>
+
+<div class="nota ok">
+  <b>Daltonismo: pasa.</b> Se simularon deuteranopia y protanopia — juntas, cerca de uno de cada
+  doce hombres. Las tres parejas se siguen distinguiendo; la más apretada es verde contra vino en
+  deuteranopia. Se salva porque el rojo tira a vino y el azul es muy oscuro. Con un rojo anaranjado
+  se habría caído.
+</div>
+
+<h3>Neutros auxiliares</h3>
+<table>
+<tr><th>Uso</th><th>Color</th><th>Regla</th></tr>
+<tr><td>Papel</td><td><code>#FFFFFF</code></td><td>El fondo por defecto. Siempre.</td></tr>
+<tr><td>Fondo suave</td><td><code>#F6F7F9</code></td><td>Cajas y tablas. Nunca como fondo de una pieza entera.</td></tr>
+<tr><td>Texto</td><td><code>#14171C</code></td><td>Cuerpo. El azul se reserva para títulos.</td></tr>
+<tr><td>Texto secundario</td><td><code>#5C6472</code></td><td>Pies de foto, notas, metadatos.</td></tr>
+<tr><td>Línea</td><td><code>#DDE1E7</code></td><td>Separadores. Nunca más de 1px.</td></tr>
+</table>
+
+<p><b>Prohibido como color principal:</b> el rojo del escudo del Instituto (vestirse de
+institucional antes de ganar se lee como creerse ya electo), el violeta de la empresa del candidato
+(regala la frase más fácil del debate), degradados, neones y cualquier cuarto color.</p>
+
+<!-- ══════════════════════════════════════════════════════════ 5 -->
+<h2><span class="num">05</span>La regla que no se rompe</h2>
+
+<p style="font-size:19px; font-weight:700; line-height:1.35">
+  Ningún concepto se identifica sólo por su color.<br>
+  Siempre <span style="color:#0A3D6E">COLOR</span> +
+  <span style="color:#0E8350">FIGURA</span> +
+  <span style="color:#A81440">PALABRA</span>.
+</p>
+
+<p>Suena a exceso hasta el día que alguien fotocopia el cartel en gris — y en una escuela eso pasa
+siempre. Los números del apartado 4 dicen exactamente por qué: sin la figura, Comprende y
+Trasciende son el mismo gris.</p>
+
+<div class="dos">
+  <div class="ficha"><h4 class="bien">Correcto</h4>
+    <p style="margin:6px 0"><svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-2px"><rect width="16" height="16" fill="#0A3D6E"/></svg>
+      <b style="color:#0A3D6E">COMPRENDE</b> · Buzón de propuestas</p>
+    <p class="guia">Se entiende a color, en gris y para quien no distingue colores.</p></div>
+  <div class="ficha"><h4 class="mal">Incorrecto</h4>
+    <p style="margin:6px 0"><span style="display:inline-block;width:16px;height:16px;background:#0A3D6E;vertical-align:-2px"></span>
+      Buzón de propuestas</p>
+    <p class="guia">Sólo color. Fotocopiado es indistinguible de una propuesta de Trasciende.</p></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ 6 -->
+<h2><span class="num">06</span>Tipografía</h2>
+
+<table class="suelta">
+<tr><th>Papel</th><th>Fuente</th><th>Por qué</th></tr>
+<tr><td><b>Principal</b></td><td>Inter <span class="guia">(gratis, Google Fonts)</span></td>
+  <td>Geométrica y neutra, con números tabulares — importa cuando se publican cifras. Alternativa
+    igual de válida: <b>Source Sans 3</b>.</td></tr>
+<tr><td><b>Secundaria</b></td><td>Source Serif 4 <span class="guia">(gratis)</span></td>
+  <td>Sólo para el lema y citas. Da el aire institucional sin que la pieza se vuelva un documento
+    del siglo pasado.</td></tr>
+<tr><td><b>Si no hay nada instalado</b></td><td>Arial / Calibri</td>
+  <td>Están en cualquier computadora de la escuela. Una identidad que sólo funciona con fuentes
+    que hay que instalar no funciona.</td></tr>
+</table>
+
+<h3>Jerarquía</h3>
+<table>
+<tr><th>Nivel</th><th>Peso y tamaño</th><th>Caja</th></tr>
+<tr><td>Marca «CET»</td><td>800 · muy grande</td><td>MAYÚSCULAS</td></tr>
+<tr><td>Los tres verbos</td><td>600 · 60% del anterior</td><td>MAYÚSCULAS, con espaciado</td></tr>
+<tr><td>Título de pieza</td><td>700 · 36–44pt en cartel</td><td>Normal</td></tr>
+<tr><td>Subtítulo</td><td>600 · 60% del título</td><td>Normal</td></tr>
+<tr><td>Cuerpo</td><td>400 · 14–16pt</td><td>Normal</td></tr>
+<tr><td>Etiquetas y pies</td><td>600 · 10–12pt</td><td>MAYÚSCULAS con espaciado <code>.1em</code></td></tr>
+</table>
+
+<p class="guia"><b>Mayúsculas sólo en etiquetas cortas.</b> Un párrafo en mayúsculas se lee peor y
+suena a grito. La única frase larga en mayúsculas permitida es la línea de los tres verbos.</p>
+
+<!-- ══════════════════════════════════════════════════════════ 7 -->
+<h2><span class="num">07</span>Reglas del logotipo</h2>
+
+<table class="suelta">
+<tr><th>Regla</th><th>Cuál es</th></tr>
+<tr><td><b>Área de protección</b></td><td>Alrededor del logo queda libre, por los cuatro lados, el
+  equivalente a <b>la altura de la letra E de «CET»</b>. Nada entra ahí: ni texto, ni el escudo de
+  la escuela, ni el borde de la hoja.</td></tr>
+<tr><td><b>Tamaño mínimo</b></td><td><b>22 mm de ancho</b> impreso · <b>90 px</b> en pantalla. Por
+  debajo, la línea de los tres verbos deja de leerse: en ese caso se usa sólo el isotipo.</td></tr>
+<tr><td><b>Fondos permitidos</b></td><td>Blanco, el gris <code>#F6F7F9</code>, y azul
+  <code>#0A3D6E</code> con la versión en blanco.</td></tr>
+<tr><td><b>Fondos prohibidos</b></td><td>Fotografías, texturas, degradados, verde o vino como fondo
+  del logo completo, y cualquier fondo con menos de 4.5:1 contra la tinta del logo.</td></tr>
+<tr><td><b>Monocromático</b></td><td>Todo en <code>#0A3D6E</code>, o todo en blanco. Nunca en verde
+  ni en vino solos: rompería la lectura de los tres momentos.</td></tr>
+<tr><td><b>Blanco y negro</b></td><td>Versión de una tinta, con las figuras diferenciadas por
+  <b>relleno / contorno / trama</b>, no por gris — por lo del apartado 4.</td></tr>
+</table>
+
+<h4 class="mal">Lo que nunca se le hace al logo</h4>
+<ul>
+  <li>Deformarlo, inclinarlo o rotarlo.</li>
+  <li>Cambiarle los colores o reordenar las figuras.</li>
+  <li>Ponerle sombra, contorno, brillo o efecto 3D.</li>
+  <li>Encimarlo al escudo del Instituto o ponerlo a su misma altura y tamaño.</li>
+  <li>Recortarlo para que «quepa».</li>
+  <li>Rehacerlo a mano cada vez: se usa el archivo, siempre el mismo.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════ 8 -->
+<h2><span class="num">08</span>Iconografía</h2>
+
+<p>Una sola familia, construida con las tres primitivas y nada más: trazo de grosor constante,
+esquinas rectas, sin relleno salvo donde el signo lo pida. Si un icono necesita una forma que no
+sale del cuadrado, el triángulo o el rombo, <b>ese icono no es de CET</b>.</p>
+
+<div class="iconos">
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#0A3D6E" stroke-width="2.4">
+    <rect x="7" y="9" width="26" height="22"/><path d="M20 9v22"/></svg><span>ACADEMIA</span></div>
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#0E8350" stroke-width="2.4">
+    <path d="M12 30 L20 12 L28 30"/><path d="M20 12 v18"/></svg><span>DEPORTES</span></div>
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#0E8350" stroke-width="2.4">
+    <rect x="8" y="12" width="24" height="20"/><path d="M8 19h24M14 8v6M26 8v6"/></svg><span>EVENTOS</span></div>
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#0A3D6E" stroke-width="2.4">
+    <rect x="6" y="14" width="10" height="10"/><rect x="24" y="8" width="10" height="10"/>
+    <rect x="24" y="22" width="10" height="10"/></svg><span>PARTICIPACIÓN</span></div>
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#A81440" stroke-width="2.4">
+    <rect x="8" y="8" width="10" height="10"/><rect x="22" y="8" width="10" height="10"/>
+    <rect x="8" y="22" width="10" height="10"/><rect x="22" y="22" width="10" height="10"/></svg><span>TECNOLOGÍA</span></div>
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#0A3D6E" stroke-width="2.4">
+    <path d="M8 10h24v16H18l-8 6v-6H8z"/></svg><span>COMUNICACIÓN</span></div>
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#A81440" stroke-width="2.4">
+    <rect x="8" y="8" width="24" height="24"/><path d="M8 20h24"/></svg><span>TRANSPARENCIA</span></div>
+  <div class="ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#A81440" stroke-width="2.4">
+    <path d="M14 20 L20 14 L26 20 L20 26 Z"/><path d="M30 20 L36 14"/><path d="M4 26 L10 20"/></svg><span>CONTINUIDAD</span></div>
+</div>
+
+<p class="guia">El color del icono lo pone el verbo al que pertenece la sección, no el gusto del
+momento. Transparencia y Continuidad son de Trasciende; Deportes y Eventos, de Ejecuta; Academia,
+Participación y Comunicación, de Comprende. Tecnología es de Trasciende porque su valor está en lo
+que <i>queda</i>, no en lo que hace hoy.</p>
+
+<!-- ══════════════════════════════════════════════════════════ 9 -->
+<h2><span class="num">09</span>Cómo se marcan las propuestas</h2>
+
+<p>Su idea era clasificar cada propuesta por verbo. <b>Funciona, pero tiene una falla que hay que
+tapar antes de imprimir nada:</b> casi toda propuesta real toca los tres. El banco de apuntes se
+<i>ejecuta</i> este semestre y su valor es que <i>trasciende</i>; la ventanilla de trámites nace de
+<i>comprender</i> y se vive como <i>ejecución</i>.</p>
+
+<p>Si la clasificación se hace «a sentimiento», dos personas del comité etiquetan la misma
+propuesta distinto y el sistema se desmorona en una semana. La regla que lo evita:</p>
+
+<div class="nota ok">
+  <b>Cada propuesta lleva el verbo de su ENTREGABLE, no el de su actividad.</b><br>
+  La pregunta única es: <i>¿qué queda cuando esto termina?</i>
+  <ul style="margin:8px 0 0">
+    <li>Queda <b>información que antes no teníamos</b> → <span style="color:#0A3D6E">COMPRENDE</span></li>
+    <li>Queda <b>algo que ocurrió</b> (un evento, un torneo, un trámite resuelto) → <span style="color:#0E8350">EJECUTA</span></li>
+    <li>Queda <b>algo que la siguiente generación puede usar</b> → <span style="color:#A81440">TRASCIENDE</span></li>
+  </ul>
+</div>
+
+<p>Con esa regla el banco de apuntes es <b>Trasciende</b> sin discusión, y el torneo es
+<b>Ejecuta</b> aunque haya requerido escuchar mucho. Un verbo por propuesta, siempre; si dos
+personas dudan, gana la pregunta del entregable.</p>
+
+<p class="guia"><b>Y el reparto tiene que quedar parejo.</b> Si al terminar hay ocho de Ejecuta y
+una de Trasciende, la campaña no está diciendo lo que cree: está prometiendo actividades. El
+desbalance es una señal, no un problema de diseño.</p>
+
+<!-- ══════════════════════════════════════════════════════════ 10 -->
+<h2><span class="num">10</span>Carteles: un sistema, no siete diseños</h2>
+
+<p>Todos los carteles comparten <b>tres cosas fijas</b>, y sólo esas tres hacen que se reconozcan
+de lejos:</p>
+
+<ol>
+  <li><b>La cinta de tres colores</b> arriba, siempre en el mismo orden y grosor.</li>
+  <li><b>El bloque de título</b> alineado a la izquierda, con mucho aire alrededor.</li>
+  <li><b>La firma</b> abajo: las tres figuras con sus palabras.</li>
+</ol>
+
+<p>Lo único que cambia entre carteles es <b>qué color domina</b> y qué va en medio.</p>
+
+<div class="dos" style="margin-top:14px">
+  <div class="cartel">
+    <div class="cinta"><i style="background:#0A3D6E"></i><i style="background:#0E8350"></i><i style="background:#A81440"></i></div>
+    <div class="zona" style="min-height:120px">
+      <h5 style="color:#0A3D6E">Buzón de propuestas</h5>
+      <p>Del 3 al 14 de septiembre · entrada principal</p>
+    </div>
+    <div class="pie">
+      <svg width="11" height="11" viewBox="0 0 11 11"><rect width="11" height="11" fill="#0A3D6E"/></svg>
+      <span style="color:#0A3D6E">COMPRENDE</span>
+      <svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0 L11 11 L0 11 Z" fill="#0E8350"/></svg>
+      <span style="color:#0E8350">EJECUTA</span>
+      <svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0 L11 5.5 L5.5 11 L0 5.5 Z" fill="#A81440"/></svg>
+      <span style="color:#A81440">TRASCIENDE</span>
+    </div>
+  </div>
+  <div class="cartel">
+    <div class="cinta"><i style="background:#0A3D6E"></i><i style="background:#0E8350"></i><i style="background:#A81440"></i></div>
+    <div class="zona" style="min-height:120px">
+      <h5 style="color:#0E8350">Torneo de voleibol</h5>
+      <p>Inscripciones hasta el viernes · patio norte</p>
+    </div>
+    <div class="pie">
+      <svg width="11" height="11" viewBox="0 0 11 11"><rect width="11" height="11" fill="#0A3D6E"/></svg>
+      <span style="color:#0A3D6E">COMPRENDE</span>
+      <svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0 L11 11 L0 11 Z" fill="#0E8350"/></svg>
+      <span style="color:#0E8350">EJECUTA</span>
+      <svg width="11" height="11" viewBox="0 0 11 11"><path d="M5.5 0 L11 5.5 L5.5 11 L0 5.5 Z" fill="#A81440"/></svg>
+      <span style="color:#A81440">TRASCIENDE</span>
+    </div>
+  </div>
+</div>
+
+<table class="suelta" style="margin-top:16px">
+<tr><th>Cartel</th><th>Color que manda</th><th>Lo que cambia</th></tr>
+<tr><td>Principal</td><td>Azul</td><td>Sólo el nombre y el lema. Nada más. Es el único que puede ir a página completa de color.</td></tr>
+<tr><td>Propuestas</td><td>Tres franjas iguales</td><td>Tres columnas, una por verbo, tres propuestas cada una.</td></tr>
+<tr><td>Integrantes</td><td>Azul</td><td>Nombre, cargo y una línea de a qué se compromete. Foto opcional; si no hay para todos, no va en ninguno.</td></tr>
+<tr><td>Convocatoria</td><td>Azul</td><td>El lema en grande — es donde mejor funciona: literalmente pide acompañamiento.</td></tr>
+<tr><td>Evento</td><td>Verde</td><td>Fecha, hora y lugar más grandes que el título.</td></tr>
+<tr><td>Deportivo</td><td>Verde</td><td>Disciplina, fase y horario. Ver apartado 12.</td></tr>
+<tr><td>Resultados</td><td>Vino</td><td>El número más grande de la pieza. Y lo que no se cumplió, en el mismo tamaño de letra que lo que sí.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 11 -->
+<h2><span class="num">11</span>Redes</h2>
+
+<p>Un solo molde: <b>cinta arriba, contenido al centro, firma abajo</b>. Lo que distingue cada tipo
+de publicación es la <b>etiqueta</b> de la esquina — color + figura + palabra, como todo lo demás.</p>
+
+<table class="suelta">
+<tr><th>Publicación</th><th>Etiqueta</th><th>Regla propia</th></tr>
+<tr><td>Informativa</td><td>Azul · cuadrado</td><td>Máximo 25 palabras en la imagen. El resto va en el texto del post.</td></tr>
+<tr><td>Propuesta</td><td>La del verbo que le toca</td><td>Siempre incluye <b>cómo se mide</b>. Una propuesta publicada sin su medida no es propuesta.</td></tr>
+<tr><td>Resultado</td><td>Vino · rombo</td><td>Número grande, periodo medido y lo que faltó.</td></tr>
+<tr><td>Encuesta</td><td>Azul · cuadrado</td><td>La pregunta completa en la imagen; nunca «link en bio» para saber qué se pregunta.</td></tr>
+<tr><td>Torneo</td><td>Verde · triángulo</td><td>Disciplina y fase visibles sin abrir la imagen.</td></tr>
+<tr><td>Aviso</td><td>Azul · cuadrado</td><td>Fecha arriba a la derecha, siempre en el mismo sitio.</td></tr>
+<tr><td>Integrantes</td><td>Azul · cuadrado</td><td>Un integrante por publicación. Nombre, cargo, compromiso.</td></tr>
+<tr><td>Recordatorio</td><td>El de la pieza original</td><td>Es la misma pieza con la fecha actualizada, no un diseño nuevo.</td></tr>
+<tr><td>Historia</td><td>Cinta lateral</td><td>Vertical: la cinta va al costado izquierdo. Todo lo demás igual.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 12 -->
+<h2><span class="num">12</span>Identidad deportiva</h2>
+
+<p>No es una marca aparte: es <b>CET en modo Ejecuta</b>. Manda el verde, el triángulo se vuelve el
+signo principal, y el logo de CET sigue presente pero más chico.</p>
+
+<table class="suelta">
+<tr><th>Elemento</th><th>Regla</th></tr>
+<tr><td>Nombre</td><td><b>CET Deportes</b>. No un nombre inventado: una submarca con nombre propio
+  compite con la principal y se lleva el reconocimiento que costó ganar.</td></tr>
+<tr><td>Color</td><td>Verde dominante. Azul para datos y tablas, vino sólo para el resultado final
+  o la eliminación.</td></tr>
+<tr><td>Signo</td><td>El triángulo, usado como marcador de fase: uno para grupos, dos para
+  cuartos, tres para la final.</td></tr>
+<tr><td>Disciplinas</td><td><b>Fútbol y voleibol</b> por ahora. Cada una recibe el mismo molde: no
+  se le diseña identidad propia a cada deporte, porque entonces la cuarta disciplina no tendría a
+  quién parecerse.</td></tr>
+<tr><td>Lo que NO se anuncia</td><td>Básquetbol. No hay infraestructura, y anunciar una disciplina
+  que no se puede realizar es la manera más rápida de perder la palabra.</td></tr>
+<tr><td>Tabla de posiciones</td><td>Números tabulares, una fila por equipo, sin colores de adorno.
+  Vino sólo para quien queda fuera.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 13 -->
+<h2><span class="num">13</span>Identidad tecnológica</h2>
+
+<p>La tecnología es <b>herramienta de la Sociedad, no su identidad</b>. Se ve distinta sin ser otra
+marca: misma paleta, misma tipografía, y una sola diferencia — <b>la retícula</b>.</p>
+
+<ul>
+  <li><b>Retícula visible.</b> Los sistemas se presentan sobre una cuadrícula sutil de cuadrados.
+    Es el signo de Comprende repetido: orden, dato, casilla en su lugar.</li>
+  <li><b>Números tabulares siempre.</b> Cifras que no bailan al actualizarse.</li>
+  <li><b>Un estado por color, con su palabra.</b> Azul «registrado», verde «en curso», vino
+    «cerrado». Nunca sólo el color.</li>
+  <li><b>Nada de vocabulario de producto.</b> No hay «plataforma», «solución» ni «app»: hay
+    «el sistema de torneos». Se nombra por lo que hace.</li>
+  <li><b>Cada sistema entrega su manual.</b> La documentación es parte de la pieza, no un extra —
+    es lo que lo vuelve Trasciende y no Ejecuta.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════ 14 -->
+<h2><span class="num">14</span>Documentos</h2>
+
+<div class="nota">
+  <b>La regla que importa aquí es de fondo, no de diseño.</b> En un documento dirigido a la
+  Dirección, el membrete del Instituto manda y CET va <b>subordinado</b>: más chico, más abajo,
+  nunca a la misma altura ni del mismo tamaño. Su propio apartado XV lo dice — la identidad de CET
+  es independiente del Instituto y no debe parecer que la Dirección la respalda.
+</div>
+
+<table class="suelta">
+<tr><th>Documento</th><th>Cómo aparece CET</th></tr>
+<tr><td>Oficio a Dirección</td><td>Membrete institucional arriba. CET sólo en la firma, en una línea
+  de texto. Sin logo.</td></tr>
+<tr><td>Propuesta / plan</td><td>Logo de CET en la primera página, bajo los datos. Cinta de tres
+  colores como filo del pie.</td></tr>
+<tr><td>Convocatoria</td><td>CET manda: es una pieza de la candidatura, no de la escuela.</td></tr>
+<tr><td>Reporte y minuta</td><td>Cinta en el pie y el verbo del asunto como etiqueta. Nada más.</td></tr>
+<tr><td>Manual de sistema</td><td>Retícula de fondo, portada azul, iconos de la familia.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 15 -->
+<h2><span class="num">15</span>Merchandising, y por qué poco</h2>
+
+<p>Regalar cosas invita a que te comparen por lo que regalas, y ahí siempre pierde el que propone.
+Además, gastar mucho en una campaña de prepa <b>no se ve serio</b>. La identidad tiene que
+funcionar sin una sola prenda.</p>
+
+<table class="suelta">
+<tr><th>Pieza</th><th>Cómo</th></tr>
+<tr><td>Playera</td><td>Sólo para los siete del comité, y sólo el isotipo chico al pecho. Es
+  uniforme de trabajo, no propaganda.</td></tr>
+<tr><td>Credencial</td><td>Cinta de tres colores al canto, nombre, cargo y el verbo del área.</td></tr>
+<tr><td>Sticker</td><td>Una figura, una palabra. Tres modelos, no diez.</td></tr>
+<tr><td>Gorra / pulsera</td><td><span class="mal">No.</span> Cuesta, no comunica nada que el cartel
+  no diga mejor, y entra de lleno en «te comparo por lo que regalas».</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 16 -->
+<h2><span class="num">16</span>El signo de continuidad</h2>
+
+<p><i>«Hoy se construye lo que mañana continúa.»</i> No hace falta inventar un símbolo nuevo: la
+identidad ya lo tiene guardado y sólo hay que enseñarlo.</p>
+
+<div style="text-align:center; margin:18px 0">
+  <svg width="300" height="76" viewBox="0 0 300 76" aria-label="Módulo que se repite y sigue fuera del marco">
+    <g fill="none" stroke-width="2.6">
+      <rect x="14" y="24" width="28" height="28" stroke="#0A3D6E"/>
+      <path d="M70 52 L84 24 L98 52 Z" stroke="#0E8350"/>
+      <path d="M140 38 L154 24 L168 38 L154 52 Z" stroke="#A81440"/>
+      <rect x="196" y="24" width="28" height="28" stroke="#0A3D6E" opacity=".55"/>
+      <path d="M252 52 L266 24 L280 52 Z" stroke="#0E8350" opacity=".3"/>
+    </g>
+    <path d="M46 38 h20 M102 38 h34 M172 38 h20 M228 38 h20 M284 38 h16" stroke="#5C6472"
+          stroke-width="1.4" stroke-dasharray="3 4"/>
+  </svg>
+</div>
+
+<p><b>El módulo se repite y se sale del marco.</b> Cuadrado, triángulo, rombo — y otra vez
+cuadrado, cada vuelta más tenue, con la línea saliendo por el borde derecho. Dice tres cosas a la
+vez: que el trabajo es un ciclo, que <b>otra generación lo continúa</b>, y que la pieza no es el
+final de nada.</p>
+
+<p class="guia">Se usa en cierres de documento, en la última lámina de una presentación y en la
+credencial de entrega al comité siguiente. <b>No</b> se usa en la campaña diaria: pierde fuerza si
+se ve todos los días.</p>
+
+<p class="guia">Nada de árboles que crecen, antorchas, escaleras, manos unidas ni globos terráqueos.
+Todas dicen «continuidad» con la palabra de otro; ésta la dice con la geometría propia — que es la
+única que nadie más puede usar.</p>
+
+<!-- ══════════════════════════════════════════════════════════ 17 -->
+<h2><span class="num">17</span>Las fases</h2>
+
+<p><b>La identidad no cambia entre fases.</b> Cambia qué se enseña y cuál de los tres colores
+manda. Si la marca cambiara, cada fase habría que aprenderla de nuevo.</p>
+
+<div class="fases">
+  <div class="fase"><b>1 · Presentación</b><span>Sólo el nombre y el lema. Azul. Nada de propuestas
+    todavía: primero que la marca se reconozca.</span></div>
+  <div class="fase"><b>2 · Explicación</b><span>Qué significa CET. Aparecen los tres verbos con sus
+    figuras. Es la fase que hace legible todo lo demás.</span></div>
+  <div class="fase e"><b>3 · Propuestas</b><span>Los tres colores por igual. Cada propuesta con su
+    verbo y su medida. Es el caballo de batalla.</span></div>
+  <div class="fase"><b>4 · Integrantes</b><span>Azul. Una persona por pieza, con su compromiso. El
+    equipo es el argumento, no el adorno.</span></div>
+  <div class="fase e"><b>5 · Debate</b><span>Verde. Anuncio sobrio: quien anuncia un debate con
+    calma se ve seguro. Cero piezas nuevas ese día.</span></div>
+  <div class="fase t"><b>6 · Cierre</b><span>Un solo mensaje repetido: el lema y los tres verbos.
+    <b>Nada nuevo</b> — lo nuevo al final se lee como desesperación.</span></div>
+  <div class="fase t"><b>7 · Después</b><span>Ver el apartado siguiente. Es el que decide si CET
+    fue una campaña o una forma de trabajar.</span></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ 18 -->
+<h2><span class="num">18</span>Después de ganar</h2>
+
+<div class="nota">
+  <b>Aquí es donde casi todas las candidaturas mueren:</b> la identidad era propaganda, y al día
+  siguiente de la elección estorba. Si CET sigue viéndose igual que en campaña, cada aviso de la
+  Sociedad va a leerse como publicidad de quien ganó.
+</div>
+
+<p>Tres cambios, y ninguno toca el logo:</p>
+
+<table class="suelta">
+<tr><th>Qué</th><th>En campaña</th><th>Ya en funciones</th></tr>
+<tr><td><b>El lema</b></td><td>En casi toda pieza</td><td><b>Se retira.</b> «Escuchar para hacer»
+  pedía el voto; ya no hay voto que pedir. Se queda sólo en documentos de entrega y continuidad.</td></tr>
+<tr><td><b>El nombre</b></td><td>«CET» solo, grande</td><td><b>«Sociedad de Alumnos · CET»</b>. Manda
+  la institución estudiantil; CET queda como la forma de trabajar, no como el dueño.</td></tr>
+<tr><td><b>Qué se publica</b></td><td>Lo que se propone</td><td>Lo que se hizo, con su número — y lo
+  que no se pudo, con su razón.</td></tr>
+<tr><td><b>Los verbos</b></td><td>Identifican propuestas</td><td>Identifican <b>áreas de trabajo</b>.
+  El sistema sobrevive entero: lo único que cambia es a qué se le pega la etiqueta.</td></tr>
+<tr><td><b>El signo de continuidad</b></td><td>Casi no se usa</td><td>Cierra cada informe de
+  periodo y la entrega al comité siguiente.</td></tr>
+</table>
+
+<p class="guia">La prueba de que se hizo bien: que dentro de dos años alguien encuentre un documento
+con la cinta de tres colores y le sirva, sin saber quién fue candidato.</p>
+
+<!-- ══════════════════════════════════════════════════════════ 19 -->
+<h2><span class="num">19</span>Manual rápido</h2>
+
+<table class="suelta">
+<tr><th>Elemento</th><th>Regla</th></tr>
+<tr><td><b>Logo</b></td><td>Archivo original, sin deformar. Aire de una «E» alrededor. Mínimo 22 mm
+  o 90 px. Nunca sobre foto.</td></tr>
+<tr><td><b>Colores</b></td><td>Sólo <code>#0A3D6E</code>, <code>#0E8350</code>, <code>#A81440</code>.
+  Neutros para fondo y texto. Cero degradados.</td></tr>
+<tr><td><b>Figuras</b></td><td>Cuadrado = Comprende · Triángulo = Ejecuta · Rombo = Trasciende.
+  Siempre en ese orden.</td></tr>
+<tr><td><b>La regla madre</b></td><td>Color + figura + palabra. Las tres, siempre. Sin excepción.</td></tr>
+<tr><td><b>Tipografía</b></td><td>Inter (o Source Sans 3). Serif sólo para el lema. Arial si no hay
+  nada instalado.</td></tr>
+<tr><td><b>Eslogan</b></td><td>Nunca solo: siempre con los tres verbos debajo. Se retira al ganar.</td></tr>
+<tr><td><b>Fotografías</b></td><td>De actividades reales, nunca de banco. Si no hay foto buena, no
+  va foto. Jamás detrás del logo o de texto.</td></tr>
+<tr><td><b>Iconos</b></td><td>Sólo de la familia geométrica. Trazo constante. El color lo pone el
+  verbo de la sección.</td></tr>
+<tr><td><b>Carteles</b></td><td>Cinta arriba, título a la izquierda, firma abajo. Un color domina.
+  Pocos y grandes, no muchos y chicos.</td></tr>
+<tr><td><b>Redes</b></td><td>Un molde, etiqueta por tipo. Máximo 25 palabras en la imagen.</td></tr>
+<tr><td><b>Documentos</b></td><td>Ante la Dirección, el membrete del Instituto manda y CET va
+  subordinado.</td></tr>
+<tr><td><b>Blanco y negro</b></td><td>Figuras por relleno, contorno y trama — <b>nunca</b> por tono
+  de gris. Azul y vino son casi el mismo gris.</td></tr>
+<tr><td><b>La otra candidatura</b></td><td>No se menciona ni se alude, en ninguna pieza, nunca.</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════ 20 -->
+<h2><span class="num">20</span>Qué hace que se reconozca</h2>
+
+<p style="font-size:17px">Alguien reconoce una pieza de CET sin leer el nombre porque siempre ve lo
+mismo en el mismo sitio: <b>una cinta de tres colores en un orden que no cambia</b>, y abajo tres
+figuras con tres palabras. No es el logo lo que se reconoce — un logo se copia en una tarde. Lo que
+no se copia es el <b>sistema</b>: que el azul siempre signifique escuchar, el verde siempre hacer y
+el vino siempre lo que queda; que cada propuesta traiga su medida; que cada resultado traiga
+también lo que falló. Una pieza suelta se puede imitar. Veinte piezas coherentes, con la misma
+regla aplicada por siete personas distintas, ya no. Al final CET no se reconoce por cómo se ve,
+sino porque <b>siempre dice las cosas de la misma manera</b> — y ésa es la parte que sigue
+sirviendo cuando la campaña ya terminó.</p>
+
+<footer>
+  <p>Manual de marca de la candidatura CET · Instituto Rembrandt de Querétaro · agosto 2026.</p>
+  <p>Los contrastes y los grises de fotocopia están calculados con la fórmula de luminancia relativa
+  de la WCAG; el daltonismo se simuló con las matrices de Viénot para deuteranopia y protanopia.
+  Si un color cambia, hay que volver a medir — el sistema depende de esos números, no del gusto.</p>
+</footer>
+
+</div>
+</body></html>
