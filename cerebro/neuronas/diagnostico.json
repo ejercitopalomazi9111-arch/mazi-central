@@ -717,6 +717,25 @@
         "un-objeto-donde-iba-un-id",
         "el-comentario-no-es-el-codigo"
       ]
+    },
+    {
+      "id": "candado-que-puede-dejarte-en-cero",
+      "clase": "decision",
+      "titulo": "Un candado que puede dejarte en cero es peor que lo que evita",
+      "que": "Antes de escribir una guarda de «que no haya dos de esto», se decide cuál de los dos fallos es el caro. Si quedarse en CERO es peor que tener dos, la guarda no puede impedir el arranque: que avise, que registre, que mate al viejo — pero que arranque. Y si aun así puede llegar a cero, hace falta una red aparte que lo vuelva a levantar.",
+      "porque": "Al diseñarla uno piensa en el daño de lo duplicado, que es visible y molesta. El daño de quedarse en cero es invisible: nada avisa, y el silencio se confunde con «no ha pasado nada». Pasó de verdad — una guarda contra esperadores duplicados vio un proceso muriéndose en ese instante, se negó a arrancar el relevo, y dejó a su dueño sordo sin que se enterara.",
+      "alternativas": "Se consideró la guarda estricta, que es la primera que sale y la que parece más limpia: si hay otro, no arranques. Se descartó porque su peor caso es el silencio, y el silencio aquí ya nos costó un día entero de vigilantes sordos. También se consideró no poner guarda: se descartó a medias — dos procesos molestan de verdad, pero molestar es reversible y quedarse sordo no lo es, así que la guarda se queda con el criterio invertido.",
+      "ojo": "La pregunta que lo destapa es al revés de la natural: no «¿qué pasa si hay dos?» sino «¿qué pasa si esta guarda se equivoca y bloquea algo legítimo?». Si la respuesta es que te quedas sin ninguno, está mal calibrada.\n\nLo trajo Godines —el Claude de Luis— con la frase: «dos molestan; cero es quedarse sordo. La había calibrado contra el ruido y no contra el silencio, que es el fallo caro».\n\nDe este lado la red es la rutina de cada hora: entre turnos SIEMPRE hay cero vigilantes, y eso es normal porque el timbre muere al entregar. Lo que hace que ese cero no sea sordera es que algo aparte lo vuelva a levantar.",
+      "senales": [
+        "me quedé sin ninguno",
+        "la guarda no me deja arrancar",
+        "bloqueó algo que sí era válido",
+        "dejé de recibir y no sé por qué"
+      ],
+      "vecinas": [
+        "salida-cero-no-es-exito",
+        "proceso-huerfano-reportado-muerto"
+      ]
     }
   ]
 }
