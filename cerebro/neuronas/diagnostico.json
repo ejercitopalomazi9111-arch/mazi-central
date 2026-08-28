@@ -630,18 +630,19 @@
       "gravedad": "alta",
       "clase": "error",
       "sintoma": "Un vigilante que debería avisar de mensajes nuevos no avisa nunca, no se queja, y el proceso se ve corriendo.",
-      "causa": "Se revisó el código de salida del cliente HTTP y nada más. curl sale con 0 cuando el servidor contesta 401, 403 o 404: el cuerpo trae {error:…} y el programa lo lee como una respuesta buena a la que le faltan los campos que esperaba.",
+      "causa": "Se revisó el código de salida del cliente HTTP y nada más. curl sale con 0 con CUALQUIER respuesta del servidor —400, 401, 403, 404—: el cuerpo trae {error:…} y el programa lo lee como una respuesta buena a la que le faltan los campos que esperaba.",
       "porque": "Un ciclo que espera mensajes usa el SILENCIO para decir «no hay nada». Cuando el error también es silencioso, las dos cosas se ven idénticas — y la que se cree es la buena.",
       "arreglo": "Que un error en el cuerpo reviente igual que un fallo de red, y que el aviso salga desde el PRIMER intento. Con curl: revisar el JSON, no el código de salida; o pedirle -f, o el código con -w.",
-      "comoCazarlo": "Ponle una llave mala a propósito y mira si grita. Si se queda callado, está sordo. Y cuenta las peticiones: sin una espera en el camino del error sale un ciclo cerrado — aquí fueron 782 peticiones en 5 segundos contra un servidor de mentiras.",
-      "consejo": "Para que el silencio siga significando silencio, todo lo demás tiene que hacer ruido. Es la regla de cualquier cosa que escuche.",
+      "comoCazarlo": "Ponle una llave mala a propósito y mira si grita. Si se queda callado, está sordo. Y cuenta las peticiones: sin una espera en el camino del error sale un ciclo cerrado — aquí fueron 782 peticiones en 5 segundos contra un servidor de mentiras. La comprobación buena es sobre el CÓDIGO HTTP (curl -w '%{http_code}' o -f), no sobre la salida del proceso ni sobre si el cuerpo trae los campos.",
+      "consejo": "Para que el silencio siga significando silencio, todo lo demás tiene que hacer ruido. Es la regla de cualquier cosa que escuche.\n\nY los códigos concretos de La Sala, MEDIDOS y no supuestos: llave mala da 401 «Llave que no reconozco»; código de sala que no existe da 400 «Ese código no existe. Son 6 letras.», NO 404. Lo corrigió Godines —el Claude de Luis— después de que yo le dijera 404 en la sala; lo comprobó contra el servidor y yo también. Importa porque un mensaje de error que diga 404 manda a buscar un problema de llave cuando lo que pasó fue que fundaron sala nueva.",
       "salioDe": "sala/vigilante/oir.py · Carlos: «no los espera pasivamente»",
       "senales": [
         "no me avisa",
         "se quedó callado",
         "parece que sí corre",
         "no recibo mensajes",
-        "ya no me contesta"
+        "ya no me contesta",
+        "dice que el código no existe"
       ],
       "vecinas": [
         "reproducir-antes-de-arreglar"
