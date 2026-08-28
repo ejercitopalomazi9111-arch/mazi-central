@@ -528,6 +528,53 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
      m.hojas >= 5, 'salieron ' + m.hojas);
 }
 
+/* ══ EL BOTÓN «AJUSTAR» DICE EN QUÉ MODO ESTÁ ══════════════════════════════
+   Carlos: «el botón ajustes/ajustar no hace nada». Tenía razón en lo que veía:
+   la vista LLEGA en modo automático, así que tocarlo recalcula el mismo 41% y
+   nada se mueve. El código estaba bien y el botón parecía roto.
+
+   Lo que se prueba no es que el zoom cambie —a veces no debe cambiar— sino que
+   el botón COMUNIQUE el modo: encendido con ajuste automático, apagado al
+   tocar + o −, encendido otra vez al tocarlo. Y que se pueda tocar con el
+   dedo: 44px de alto, no 36. */
+{
+  const p5 = await (await b.newContext({ viewport:{width:390,height:844},
+                                         isMobile:true, hasTouch:true })).newPage();
+  await p5.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p5.waitForTimeout(1200);
+  await p5.click('[data-vista="ver"]'); await p5.waitForTimeout(1000);
+
+  const modo = () => p5.getAttribute('#bAjustar', 'aria-pressed');
+  const alto = async () => (await p5.evaluate(
+    () => Math.round(document.querySelector('#bAjustar').getBoundingClientRect().height)));
+
+  ok('al llegar, «Ajustar» se ve ENCENDIDO — el ajuste automático ya está puesto',
+     await modo() === 'true', 'llegó en ' + await modo());
+
+  await p5.click('#bMas'); await p5.waitForTimeout(300);
+  ok('al tocar +, «Ajustar» se apaga', await modo() === 'false', 'quedó en ' + await modo());
+
+  await p5.click('#bAjustar'); await p5.waitForTimeout(300);
+  ok('al tocarlo, se vuelve a encender y reencaja la hoja',
+     await modo() === 'true', 'quedó en ' + await modo());
+
+  const h = await alto();
+  ok('y se puede tocar con el dedo: 44px de alto', h >= 44, 'mide ' + h + 'px');
+
+  /* Que sea legible NO se cuida a ojo: la primera versión usó una variable de
+     color que no existe en esta app y quedó letra oscura sobre fondo oscuro. */
+  const c = await p5.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector('#bAjustar'));
+    const n = (x) => x.match(/\d+/g).slice(0,3).map(Number);
+    const lum = ([r,g,b]) => { const f = v => { v/=255; return v<=.03928 ? v/12.92 : ((v+.055)/1.055)**2.4; };
+                               return .2126*f(r) + .7152*f(g) + .0722*f(b); };
+    const a = lum(n(cs.color)), b2 = lum(n(cs.backgroundColor));
+    return +(((Math.max(a,b2)+.05)/(Math.min(a,b2)+.05))).toFixed(2);
+  });
+  ok('el botón encendido se LEE: contraste ' + c + ':1', c >= 4.5,
+     'con ' + c + ':1 la letra se pierde en el fondo');
+}
+
 await b.close();
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
 process.exit(mal ? 1 : 0);

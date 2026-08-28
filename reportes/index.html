@@ -84,7 +84,31 @@ body{
 .btn:active{transform:translateY(1px)}
 .btn.fuerte{background:var(--violeta); border-color:var(--violeta); color:#12061C}
 .btn.fuerte:hover{background:var(--violeta-suave); border-color:var(--violeta-suave)}
-.btn.chico{min-height:36px; padding:0 11px; font-size:13px; border-radius:9px}
+.btn.chico{min-height:44px; padding:0 12px; font-size:13px; border-radius:9px}
+
+/* ── EL BOTÓN «AJUSTAR» SE VE MUERTO, Y LO PARECÍA CON RAZÓN ───────────────
+   Carlos: «el botón ajustes/ajustar no hace nada». Tenía razón en lo que veía
+   y el código estaba bien: la vista LLEGA ya en modo automático, así que
+   tocarlo recalcula el mismo 41% y no se mueve nada. Sólo hace algo después
+   de haber tocado + o −, y ni entonces avisa de nada.
+
+   Un botón que la mayoría de las veces no puede hacer nada, y que no lo dice,
+   es indistinguible de uno roto. Ahora se enciende cuando el ajuste
+   automático está puesto: se apaga al tocar + o −, y se vuelve a encender al
+   tocarlo. Así el toque siempre tiene respuesta, aunque el zoom no cambie. */
+/* Encendido DISCRETO a propósito: el violeta lleno ya es de «Imprimir / PDF»,
+   que es la acción principal de esta barra. Un indicador de modo que grita lo
+   mismo que el botón importante deja la barra sin jerarquía. Borde y letra en
+   violeta bastan para decir «este modo está puesto».
+
+   ⚠ La primera versión usó `var(--acento)`, que NO existe en esta app —el
+   violeta se llama `--violeta`—. Sin la variable, el fondo se quedó oscuro y
+   encima quedó mi letra oscura: el botón se volvió ILEGIBLE. Se vio en la
+   captura, no leyendo el CSS. */
+.btn.chico[aria-pressed="true"]{
+  background:var(--superficie-2); border-color:var(--violeta-suave);
+  color:var(--violeta-suave); font-weight:700;
+}
 .btn[disabled]{opacity:.4; pointer-events:none}
 
 .pestanas{display:flex; gap:2px; margin-top:8px; overflow-x:auto; scrollbar-width:none}
@@ -794,7 +818,8 @@ El día ...
       <button class="btn chico" type="button" id="bMenos">−</button>
       <span class="contador" id="nivelZoom">100%</span>
       <button class="btn chico" type="button" id="bMas">+</button>
-      <button class="btn chico" type="button" id="bAjustar">Ajustar</button>
+      <button class="btn chico" type="button" id="bAjustar" aria-pressed="true"
+              title="Encajar la hoja en la pantalla">Ajustar</button>
       <button class="btn fuerte chico" type="button" id="bImprimir2">Imprimir / PDF</button>
     </div>
     <div class="escenario" id="escenario">
@@ -3368,6 +3393,9 @@ function aplicarZoom(){
   marco.style.width  = hojas ? (anchoHoja * zoom) + 'px' : '';
   marco.style.height = hojas ? (hojas * altoHoja * zoom) + 'px' : '';
   $('#nivelZoom').textContent = Math.round(zoom*100) + '%';
+  /* que el botón diga en qué modo está: encendido = ajuste automático */
+  const bAj = $('#bAjustar');
+  if(bAj) bAj.setAttribute('aria-pressed', zoomAuto ? 'true' : 'false');
 }
 
 /* ── pestañas ── */
