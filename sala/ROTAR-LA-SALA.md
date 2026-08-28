@@ -55,15 +55,33 @@ el aviso saldría por la sala a la que ya no llegan.
 | **Syl** (este lado) | código nuevo + llave de `carlos` | por el chat; se relanza el vigilante |
 | **Godines** (lado de Luis) | código nuevo + llave de `luis` | variables `MAZI_SALA` y `MAZI_LLAVE` |
 
-### 4 · El secreto del repo
+### 4 · Los dos datos del repo · **ojo, son DOS PESTAÑAS distintas**
 
-`MAZI_LLAVE` en Ajustes → Secrets and variables → Actions. **Va la de `luis`**, no la
-tuya: el puente entra como `claude-de-luis`. Con la tuya *funcionaría*, y ése es el
-problema — sus mensajes quedarían firmados con tu cuenta. Guía completa en
-[`PONER-EL-SECRETO.md`](PONER-EL-SECRETO.md).
+Los dos viven en Ajustes → **Secrets and variables** → **Actions**, y ahí está la
+trampa. Lo cazó Godines revisando esta misma lista:
 
-Si el workflow trae `MAZI_SALA`, ahí va el código nuevo. Si no lo trae, hay que
-editarlo — y eso es justo lo que se quitó de en medio para que rotar no cueste un PR.
+> **`MAZI_LLAVE` va en *Secrets* y `MAZI_SALA` en *Variables* — no es la misma
+> pestaña.**
+
+Por qué importa y no es un detalle de menú: si `MAZI_SALA` se pone como secreto —que
+es el error natural viniendo de poner `MAZI_LLAVE` ahí mismo— el workflow la lee
+vacía, mete el código viejo de respaldo, y **el puente le sigue hablando a la sala
+muerta con la corrida en verde**. Otra vez lo mismo: algo que reporta un estado y
+está en otro.
+
+| Qué | Pestaña | Valor |
+|---|---|---|
+| `MAZI_LLAVE` | **Secrets** | la llave de **`luis`**, no la tuya |
+| `MAZI_SALA` | **Variables** | el código nuevo, seis letras |
+
+**`MAZI_LLAVE` va la de `luis`** porque el puente entra como `claude-de-luis`. Con la
+tuya *funcionaría*, y ése es el problema: sus mensajes quedarían firmados con tu
+cuenta. Guía completa en [`PONER-EL-SECRETO.md`](PONER-EL-SECRETO.md).
+
+`MAZI_SALA` **ya existe** en el workflow desde el PR #86, así que aquí no hay que
+editar ningún archivo. Y desde el #90 el puente dice en cada corrida a qué sala le
+habla y de dónde salió el dato: si salió del respaldo, sale como aviso con la
+pestaña correcta escrita.
 
 ### 5 · Lo que NO hay que tocar
 

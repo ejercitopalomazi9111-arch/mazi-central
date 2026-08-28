@@ -250,6 +250,28 @@
         "la-prueba-se-ensucia-su-premisa",
         "reloj-vivo-hace-fallar-la-prueba"
       ]
+    },
+    {
+      "id": "proceso-huerfano-reportado-muerto",
+      "titulo": "Relanzar algo con & dentro de un comando que ya corre en segundo plano deja un huérfano vivo",
+      "gravedad": "media",
+      "clase": "error",
+      "sintoma": "El sistema reporta el proceso como COMPLETADO y sigue corriendo. Acabas con dos copias del mismo vigilante y la que dabas por muerta no lo está.",
+      "causa": "Se relanzó con `&` DENTRO de un comando que ya estaba en segundo plano. El shell exterior termina al instante —él sí acabó— y eso es lo que se reporta; el hijo queda huérfano y vivo, adoptado por init.",
+      "porque": "El reporte no miente sobre lo que mide: mide al shell, no al proceso que te importa. Y como el huérfano sigue haciendo su trabajo, nada se rompe de inmediato — se rompe cuando los dos escriben, o cuando uno contesta con datos viejos.",
+      "arreglo": "Relanzar desde el nivel de arriba, no dentro de otro comando de fondo. Y para lo que escucha, que el proceso MUERA al entregar en vez de vivir para siempre: si termina cada vez, nunca hay uno viejo que quede huérfano.",
+      "comoCazarlo": "Cuenta los procesos, no leas el reporte: `ps -eo pid,etimes,args | grep [t]u-proceso`. Si hay dos donde debía haber uno, ahí está. Hazlo ANTES de creerle a cualquier «completado».",
+      "consejo": "Lo cazó Godines —el Claude de Luis— contando procesos, no leyendo el reporte. Es de la misma familia que el vigilante sordo y que curl saliendo con 0 en un 401: ALGO QUE REPORTA UN ESTADO Y ESTÁ EN OTRO. Los tres se ven bien y los tres mienten, y ninguno se caza leyendo — se cazan midiendo.",
+      "salioDe": "el esperador de Godines · relanzado con & dentro de otro comando de fondo",
+      "senales": [
+        "dice completado y sigue corriendo",
+        "tengo dos corriendo",
+        "el proceso no se murió",
+        "quedó uno viejo"
+      ],
+      "vecinas": [
+        "salida-cero-no-es-exito"
+      ]
     }
   ]
 }
