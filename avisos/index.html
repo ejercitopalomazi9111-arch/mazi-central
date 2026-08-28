@@ -78,29 +78,35 @@
     background:#fff; color:var(--tinta);
   }
   textarea{min-height:84px; resize:vertical; line-height:1.45}
-  /* ⚠️ La fecha NO va a mitades, y por eso son 1.55fr contra 1fr.
-     Carlos mandó la captura: en su iPhone la caja de Fecha se metía DEBAJO de
-     la de Grupo. Un `input type="date"` en iOS trae el selector nativo, que
-     tiene un ancho mínimo suyo —«24 ago 2026» más los controles— y no se
-     encoge por debajo de él; a mitades de una pantalla de 390 px no le
-     alcanza.
+  /* ⚠️ LA FECHA VA SOLA, EN SU PROPIO RENGLÓN — y esto es el SEGUNDO intento.
+     El primero fue pelearse con el ancho: `1.55fr 1fr`, `min-width:0` y
+     `max-width:100%` para que el campo cupiera en media pantalla. Carlos mandó
+     otra captura con exactamente el mismo defecto: la caja de Fecha metida
+     debajo de la de Grupo.
 
-     ⚠️ Y esto NO se pudo reproducir aquí: Chromium no monta el control nativo
-     de iOS, así que su fecha sí cabe en la mitad y no se encima ni forzándole
-     el ancho mínimo a mano. O sea que el arreglo va por razonamiento y por
-     defensa, no por haberlo visto fallar y luego pasar. Falta que Carlos lo
-     confirme en su teléfono.
+     Por qué no iba a funcionar nunca: en iOS un `input type="date"` no es una
+     caja de texto, es un CONTROL NATIVO. Su contenido —«27 ago 2026» más los
+     controles del selector— se pinta a un ancho mínimo que el sistema decide,
+     y ni `min-width:0` ni `max-width` lo encogen: lo que hacen es recortar la
+     caja mientras el control sigue pintándose del largo que quiere. De ahí que
+     se desborde y se encime.
 
-     Son tres cosas y cada una tapa un flanco:
-     · `1.55fr 1fr` — la fecha se lleva ~61% en vez del 50%. «Grupo» dice
-       «3.1» y no necesita más;
-     · `min-width:0` — sin esto una casilla de rejilla no puede encogerse por
-       debajo de su contenido, y el campo empuja o se desborda;
-     · `max-width:100%` — y si aun así el control se pinta más ancho, se queda
-       dentro de su casilla en vez de invadir la de al lado. */
-  .fila{display:grid; grid-template-columns:1.55fr 1fr; gap:10px}
+     Y no se puede reproducir aquí: Chromium no monta ese control, así que su
+     fecha sí cabe en la mitad. Un defecto que no se puede reproducir se
+     arregla quitándole el terreno, no afinándole las medidas — porque las
+     medidas se afinan a ciegas y por eso el primer intento se sintió correcto
+     y estaba mal.
+
+     Entonces: la fecha se lleva el renglón completo, y Grupo y Semestre —que
+     dicen «3.1» y «3er semestre», cortos los dos— comparten el de abajo. Así
+     no depende de cuánto mida el control de nadie. */
+  .fila{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   .fila > *{min-width:0}
   .fila input, .fila select{min-width:0; max-width:100%}
+  /* El campo de fecha, suelto y a lo ancho. `display:block` porque en iOS el
+     control nativo es inline y deja un hueco de línea base debajo. */
+  #fFecha{display:block; width:100%}
+
   .btn{
     font:inherit; font-weight:800; font-size:15px; min-height:48px; padding:12px 18px;
     border-radius:12px; border:1.5px solid var(--vino); background:#fff; color:var(--vino);
@@ -154,12 +160,12 @@
 <main>
   <h2>El encabezado</h2>
   <div class="tarjeta">
+    <label for="fFecha">Fecha</label>
+    <input type="date" id="fFecha">
     <div class="fila">
-      <div><label for="fFecha">Fecha</label><input type="date" id="fFecha"></div>
       <div><label for="fGrupo">Grupo</label><input id="fGrupo" value="3.1"></div>
+      <div><label for="fSemestre">Semestre</label><input id="fSemestre" value="3er semestre"></div>
     </div>
-    <label for="fSemestre">Semestre</label>
-    <input id="fSemestre" value="3er semestre">
     <label for="fPlantilla">Formato del cartel</label>
     <select id="fPlantilla"></select>
     <p class="nota" id="quePlantilla"></p>
