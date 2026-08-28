@@ -418,6 +418,35 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 }
 .hoja .membrete-sup{position:absolute; top:0; left:0; width:100%; display:block}
 .hoja .membrete-inf{position:absolute; bottom:0; left:0; width:100%; display:block}
+/* ── la cabecera compuesta, para la institución que tiene logo y no membrete
+   Va con el logo a la izquierda y el nombre al lado, no centrado: un membrete
+   centrado imita el aire de un documento oficial que aquí NO existe, y esta
+   herramienta no está para fingir sellos. Con el logo alineado se lee como
+   papelería de la casa, que es lo que es. */
+.hoja .membrete-sup.compuesto{
+  display:flex; align-items:center; gap:6mm;
+  padding:9mm var(--lado) 5mm; border-bottom:.7mm solid var(--rojo);
+  background:#fff;
+}
+.hoja .membrete-sup.compuesto img{
+  height:22mm; width:auto; display:block; flex:0 0 auto;
+}
+.hoja .membrete-sup.compuesto .quien{
+  display:flex; flex-direction:column; min-width:0; margin-left:auto; text-align:right;
+}
+.hoja .membrete-sup.compuesto .quien span{
+  font-size:8.5pt; letter-spacing:.16em; text-transform:uppercase; color:var(--azul);
+}
+/* El pie: una barra fina del color de la casa. Ni logo ni datos inventados —
+   poner un domicilio o un teléfono que nadie me dio sería inventar. */
+/* ⚠ SE LLAMABA `.barra` Y SE IBA AL TECHO DE LA HOJA. `.barra` ya existía en
+   esta app: es la barra de herramientas de arriba, `position:sticky; top:0`.
+   El pie heredó ese `top:0`, y con `top` y `bottom` puestos a la vez gana
+   `top` — así que el filo del pie se pintaba como listón en la cabecera.
+   Se ve raro pero no roto, que es la peor clase de defecto: uno lo mira y
+   piensa «ha de ser el diseño». Lo cazó medir dónde caía, no verlo.
+   Nombre propio y se acabó. */
+.hoja .membrete-inf.filo-inf{height:4mm; background:var(--rojo)}
 
 /* marca de agua — la paloma de Grupo Mazi */
 .hoja .agua{
@@ -976,6 +1005,14 @@ El día ...
         </select></label>
     </div>
 
+    <h2 class="rotulo">Institución <span class="regla"></span>
+      <small>de quién es el papel</small></h2>
+    <label class="campo"><span>Membrete</span>
+      <select id="oInstitucion">
+        <option value="rembrandt" selected>Instituto Rembrandt · membrete oficial</option>
+        <option value="geraldmed">GERALDMED · compuesto con su logo</option>
+      </select></label>
+
     <h2 class="rotulo">Márgenes <span class="regla"></span>
       <small>los del formato oficial son 3 cm a los lados</small></h2>
     <div class="rejilla">
@@ -1400,13 +1437,54 @@ Qué significa lo anterior.
 /* ══════════════════════════════════════════════════════════════════════════
    2 · EL ESTADO
    ═════════════════════════════════════════════════════════════════════════ */
+/* ══ LAS DOS INSTITUCIONES ═════════════════════════════════════════════════
+   Carlos: «ahí están los logos de GERALDMED, el de la ambulancia úsalo para
+   el formato».
+
+   No se hizo una herramienta aparte, y ésa es la decisión que importa: la
+   paginación, el sello de verificación, la marca de agua, las evidencias
+   numeradas y la impresión que Safari no parte en dos ya están probadas aquí.
+   Duplicarlas para un membrete distinto habría sido duplicar también sus
+   defectos futuros. Lo único que cambia entre una institución y otra es la
+   cabecera y dos colores, así que eso es lo que se vuelve dato.
+
+   ⚠ DIFERENCIA HONESTA ENTRE LAS DOS, para que nadie la descubra a la mala:
+     · REMBRANDT trae el membrete REAL, sacado del .docx institucional. Es una
+       imagen a sangre y se usa tal cual.
+     · GERALDMED trae su LOGO, no un membrete. Aquí no existe un .docx suyo,
+       así que la cabecera se COMPONE con el logo — no se inventa un membrete
+       que finja ser oficial. Si algún día aparece el .docx de GERALDMED, se
+       cambia `membrete` por su imagen y lo demás se queda igual. */
+const INSTITUCIONES = {
+  rembrandt: {
+    nombre: 'Instituto Rembrandt',
+    membrete: { sup:'formato/membrete-superior.png', inf:'formato/membrete-inferior.png' },
+    pie:'Instituto Rembrandt · Bachillerato Tecnológico del Estado de Querétaro',
+    tinta:'#002060', acento:'#C00000',
+    tope:34, fondo:42,
+  },
+  geraldmed: {
+    nombre: 'GERALDMED',
+    /* Compuesta, no fingida. Los colores se MIDIERON del PNG que mandó Carlos
+       —turquesa #92D9CF y azul #454C78—, no se escogieron a ojo: un logo con
+       el color casi bien se ve peor que uno en blanco y negro. */
+    compuesta: { logo:'geraldmed/logo-ambulancia.png', lema:'Atención prehospitalaria' },
+    pie:'GERALDMED · Atención prehospitalaria',
+    tinta:'#454C78', acento:'#92D9CF',
+    /* 42 y no 32: la cabecera compuesta mide 36.5 mm con el logo a 22, y con
+       32 el título se montaba sobre la línea del membrete. Se midió la
+       cabecera ya pintada; a ojo se ve «casi bien», que aquí es mal. */
+    tope:42, fondo:30,
+  },
+};
+
 const LLAVE = 'reportes_mazi_v1';
 const FORMATO_OFICIAL = {
   fuente:'"Arial Narrow", "Helvetica Neue Condensed Bold", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif',
   tamano:'11pt', inter:'1.5', alinea:'justify',
   lado:30, tope:34, fondo:42,
   agua:'paloma', opacidad:6, leyenda:'GRUPO MAZI · DOCUMENTO ORIGINAL',
-  sello:'si', membrete:'todas',
+  sello:'si', membrete:'todas', institucion:'rembrandt',
   /* Cuánto se encoge la hoja al imprimir. Safari en iPhone se queda con un
      margen suyo que no se puede apagar; sin esto, cada hoja se parte en dos. */
   impresion:0.80,
@@ -1796,12 +1874,11 @@ function estilosHoja(hoja, f, primera){
 function armaHoja(f, primera){
   const h = document.createElement('div');
   h.className = 'hoja';
+  const inst = INSTITUCIONES[f.institucion] || INSTITUCIONES.rembrandt;
+  h.style.setProperty('--azul', inst.tinta);
+  h.style.setProperty('--rojo', inst.acento);
   const conMembrete = estilosHoja(h, f, primera);
-  if(conMembrete){
-    const im = document.createElement('img');
-    im.className = 'membrete-sup'; im.src = 'formato/membrete-superior.png'; im.alt = '';
-    h.appendChild(im);
-  }
+  if(conMembrete) h.appendChild(cabecera(inst));
   if(f.agua !== 'no'){
     const a = document.createElement('div'); a.className = 'agua';
     if(f.agua === 'paloma' || f.agua === 'solo'){
@@ -1827,10 +1904,52 @@ function armaHoja(f, primera){
   z.appendChild(d); h.appendChild(z);
   const pie = document.createElement('div'); pie.className = 'folio-pie';
   h.appendChild(pie);
-  const inf = document.createElement('img');
-  inf.className = 'membrete-inf'; inf.src = 'formato/membrete-inferior.png'; inf.alt = '';
-  h.appendChild(inf);
+  h.appendChild(piePagina(inst));
   return h;
+}
+
+/* La cabecera de la hoja. Una imagen si la institución tiene membrete real;
+   compuesta con su logo si no. */
+function cabecera(inst){
+  if(inst.membrete){
+    const im = document.createElement('img');
+    im.className = 'membrete-sup'; im.src = inst.membrete.sup; im.alt = '';
+    return im;
+  }
+  const c = document.createElement('div');
+  c.className = 'membrete-sup compuesto';
+  const im = document.createElement('img');
+  /* ⚠ EL LOGO YA DICE «GERALDMED». Se había puesto el nombre otra vez en texto
+     al lado, y en la primera captura se lee dos veces — que es de esas cosas
+     que uno no nota escribiéndolas y salta a la vista en cuanto se imprime.
+     Así que el logo va SOLO y más grande, y el `alt` sí lleva el nombre porque
+     ahora es el único lugar donde está escrito para un lector de pantalla. */
+  im.src = inst.compuesta.logo; im.alt = inst.nombre;
+  const t = document.createElement('div');
+  t.className = 'quien';
+  const l = document.createElement('span'); l.textContent = inst.compuesta.lema;
+  t.append(l);
+  c.append(im, t);
+  return c;
+}
+
+/* Con qué se firma el pie. Rembrandt lleva su nombre completo, que es como
+   viene en su papelería; GERALDMED lleva el suyo y su lema, que es lo único
+   que tenemos de ellos — no se inventa un domicilio ni un registro. */
+function pieDe(f){
+  const inst = INSTITUCIONES[f.institucion] || INSTITUCIONES.rembrandt;
+  return inst.pie || inst.nombre;
+}
+
+function piePagina(inst){
+  if(inst.membrete){
+    const inf = document.createElement('img');
+    inf.className = 'membrete-inf'; inf.src = inst.membrete.inf; inf.alt = '';
+    return inf;
+  }
+  const b = document.createElement('div');
+  b.className = 'membrete-inf filo-inf';
+  return b;
 }
 
 function bloqueTitulo(r){
@@ -1996,7 +2115,12 @@ function paginar(r){
     const pie = $('.folio-pie', h);
     pie.innerHTML =
       '<div><b style="color:var(--azul)">Folio</b> '+esc(fo)+
-      '<br>Instituto Rembrandt · Bachillerato Tecnológico del Estado de Querétaro</div>'+
+      /* ⚠ ESTO ESTABA CLAVADO EN «Instituto Rembrandt». Con el membrete de
+         GERALDMED arriba, el pie seguía firmando con la escuela: una hoja con
+         dos instituciones distintas, que en un documento con folio y sello de
+         verificación no es un detalle de diseño — es un papel que dice dos
+         cosas. */
+      '<br>'+esc(pieDe(f))+'</div>'+
       '<div class="sello">'+
         (f.sello === 'si' ? 'Sello de verificación <b>'+esc(sl)+'</b><br>' : '')+
         '<span class="pagina">Página '+(k+1)+' de '+hojas.length+'</span></div>';
@@ -3029,6 +3153,7 @@ function pintarCampos(){
   $('#oFondo').value = f.fondo;   $('#oAgua').value = f.agua;
   $('#oOpacidad').value = f.opacidad; $('#oLeyenda').value = f.leyenda;
   $('#oSello').value = f.sello;   $('#oMembrete').value = f.membrete;
+  $('#oInstitucion').value = f.institucion || 'rembrandt';
   $('#oImpresion').value = String(f.impresion || FORMATO_OFICIAL.impresion);
   aplicarEscalaImpresion();
   pintarEvidencias(); pintarApartados(); contarPalabras();
@@ -3222,6 +3347,19 @@ conectarFormato('#oLado','lado',1);   conectarFormato('#oTope','tope',1);
 conectarFormato('#oFondo','fondo',1); conectarFormato('#oAgua','agua');
 conectarFormato('#oOpacidad','opacidad',1); conectarFormato('#oLeyenda','leyenda');
 conectarFormato('#oSello','sello');   conectarFormato('#oMembrete','membrete');
+/* Cambiar de institución mueve además los márgenes, porque el membrete real de
+   Rembrandt es una imagen alta y la cabecera compuesta de GERALDMED no: dejar
+   los 34mm de Rembrandt sobre una cabecera de 20 deja un hueco enorme que
+   parece un error de impresión. Se respetan los valores que Carlos haya
+   tocado a mano — sólo se mueven si venían de la otra institución. */
+$('#oInstitucion').addEventListener('input', () => {
+  const antes = INSTITUCIONES[R.formato.institucion] || INSTITUCIONES.rembrandt;
+  const hoy   = INSTITUCIONES[$('#oInstitucion').value] || INSTITUCIONES.rembrandt;
+  if(R.formato.tope  === antes.tope)  { R.formato.tope  = hoy.tope;  $('#oTope').value  = hoy.tope; }
+  if(R.formato.fondo === antes.fondo) { R.formato.fondo = hoy.fondo; $('#oFondo').value = hoy.fondo; }
+  R.formato.institucion = $('#oInstitucion').value;
+  guardarLuego(); repintar();
+});
 /* La hoja mide esto y no se negocia: es tamaño carta. */
 const HOJA_MM = { alto:279.4, ancho:215.9 };
 
