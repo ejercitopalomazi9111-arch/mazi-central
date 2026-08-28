@@ -24,6 +24,7 @@
    cual, no.
    ═════════════════════════════════════════════════════════════════════════ */
 import { createServer } from 'node:http';
+import { createHash } from 'node:crypto';
 import { Sala } from './sala.js';
 
 const PUERTO = Number(process.argv[2]) || 8787;
@@ -105,7 +106,9 @@ const servidor = createServer(async (pedido, respuesta) => {
 
   const codigo = decodeURIComponent(m[1]).toUpperCase();
   if(!esCodigo(codigo)) return responder(400, { error:'Ese código no existe. Son 6 letras.' });
-  if(m[2] === 'ws') return responder(426, { error:'El servidor local no trae websocket. Recarga la mesa.' });
+  /* El websocket ya no vive aquí: se atiende en el evento `upgrade`, abajo.
+     Si algo llega a esta ruta por HTTP normal es que no pidió upgrade. */
+  if(m[2] === 'ws') return responder(426, { error:'Aquí sólo websocket.' });
 
   const cuerpo = await new Promise((listo) => {
     let t = ''; pedido.on('data', (c) => t += c); pedido.on('end', () => listo(t));
@@ -119,6 +122,89 @@ const servidor = createServer(async (pedido, respuesta) => {
       body: (pedido.method === 'GET' || pedido.method === 'HEAD') ? undefined : (cuerpo || '{}') }));
 
   responder(r.status, await r.text());
+});
+
+/* ══ EL WEBSOCKET, A MANO ══════════════════════════════════════════════════
+   Aquí decía «el servidor local no trae websocket» y eso convertía a esta
+   pieza en un simulador a medias justo donde más se necesita fidelidad: la
+   PRESENCIA de la sala sale de qué sockets hay abiertos, así que sin socket
+   la mesa local pinta a todos «sin señal» y no se puede distinguir un bug de
+   la sala de una limitación del servidor de pruebas. Con eso encima estuve a
+   punto de dar por bueno el arreglo de la presencia sin poder verlo.
+
+   Va a mano y sin dependencias porque lo que hace falta es poco: el saludo, y
+   mandar texto del servidor al cliente. No se leen mensajes del cliente —la
+   mesa nunca manda nada por el socket, habla por HTTP— así que no hay que
+   desenmascarar tramas entrantes; sólo saber cuándo se cierra.
+
+   ⚠ El GUID del saludo es el de la especificación y no un capricho: sin él el
+   navegador rechaza la conexión sin decir por qué. */
+const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+
+/* Una trama de texto del servidor NO va enmascarada (al revés que las del
+   cliente). El largo cambia de forma en tres tramos, y equivocarse ahí da un
+   cierre con código 1002 que parece un problema de red. */
+function trama(texto){
+  const datos = Buffer.from(texto, 'utf8');
+  const n = datos.length;
+  let cab;
+  if(n < 126){ cab = Buffer.from([0x81, n]); }
+  else if(n < 65536){ cab = Buffer.alloc(4); cab[0] = 0x81; cab[1] = 126; cab.writeUInt16BE(n, 2); }
+  else { cab = Buffer.alloc(10); cab[0] = 0x81; cab[1] = 127; cab.writeBigUInt64BE(BigInt(n), 2); }
+  return Buffer.concat([cab, datos]);
+}
+
+servidor.on('upgrade', (pedido, enchufe) => {
+  const url = new URL(pedido.url, `http://${pedido.headers.host}`);
+  const m = url.pathname.match(/^\/api\/sala\/([^/]+)\/ws$/);
+  const clave = pedido.headers['sec-websocket-key'];
+  if(!m || !clave){ enchufe.destroy(); return; }
+  const codigo = decodeURIComponent(m[1]).toUpperCase();
+  if(!esCodigo(codigo)){ enchufe.destroy(); return; }
+
+  const respuesta = createHash('sha1').update(clave + GUID).digest('base64');
+  enchufe.write(
+    'HTTP/1.1 101 Switching Protocols\r\n' +
+    'Upgrade: websocket\r\nConnection: Upgrade\r\n' +
+    `Sec-WebSocket-Accept: ${respuesta}\r\n\r\n`);
+
+  /* Se le da a la Sala un objeto con la misma forma que el WebSocket de
+     Cloudflare: `send`, `close`, `accept` y `addEventListener`. Así la clase
+     no sabe que está corriendo en Node, que es todo el punto de esta pieza. */
+  const oyentes = {};
+  const falso = {
+    __quien: null,
+    accept(){},
+    send(t){ try{ enchufe.write(trama(t)); }catch(e){ } },
+    close(){ try{ enchufe.end(); }catch(e){ } },
+    addEventListener(que, f){ (oyentes[que] = oyentes[que] || []).push(f); },
+  };
+  const avisar = (que) => (oyentes[que] || []).forEach(f => { try{ f({}); }catch(e){ } });
+  enchufe.on('close', () => avisar('close'));
+  enchufe.on('error', () => avisar('error'));
+  /* El cliente manda tramas de cierre y pings; no se contestan, pero sí hay
+     que leer el flujo o el enchufe se queda con datos sin consumir. */
+  enchufe.on('data', () => {});
+
+  const sala = traer(codigo);
+  const quien = url.searchParams.get('de') || '';
+  if(quien && sala.gente[quien]){
+    falso.__quien = quien;
+    sala.gente[quien].visto = Date.now();
+  }
+  sala.vivos.add(falso);
+  falso.send(JSON.stringify({
+    que:'hola', hilo:sala.hilo, gente:sala.gente, proyectos:sala.proyectos,
+    vueltas:sala.vueltas, conectados:sala.conectados(),
+    escribiendo:sala.escribiendo(),
+  }));
+  const irse = () => {
+    sala.vivos.delete(falso);
+    if(falso.__quien) sala.difundir({ que:'gente', gente:sala.gente, conectados:sala.conectados() });
+  };
+  falso.addEventListener('close', irse);
+  falso.addEventListener('error', irse);
+  if(falso.__quien) sala.difundir({ que:'gente', gente:sala.gente, conectados:sala.conectados() });
 });
 
 servidor.listen(PUERTO, () => {

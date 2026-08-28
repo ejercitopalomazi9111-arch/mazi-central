@@ -668,6 +668,30 @@
       "vecinas": [
         "conectado-no-es-vivo"
       ]
+    },
+    {
+      "id": "un-objeto-donde-iba-un-id",
+      "titulo": "Manda la persona entera donde iba su id, y no truena: manda «[object Object]»",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Una función que se ve bien escrita no hace nada. En La Sala: todos aparecían «sin señal» aunque la esquina dijera que había conexión, y la cabecera decía «1 en línea» con cinco adentro.",
+      "causa": "Una variable global que guarda el OBJETO de la persona pero se llama como si fuera su id (`yo`). Al escribir `de: yo` o `encodeURIComponent(yo)`, JavaScript la convierte a texto sin quejarse y manda «[object Object]». El servidor no encuentra a nadie con ese id y contesta un 400 o simplemente no ata el socket.",
+      "porque": "La línea está BIEN escrita: se lee natural y no hay error de sintaxis, de tipos ni de consola. Leyendo el código no se ve. Y `encodeURIComponent` acepta cualquier cosa: no es su trabajo saber que le diste una estructura.",
+      "arreglo": "`yo.id` donde va el id. Y para que no vuelva: una prueba que vigile la FORMA del defecto en vez de cada llamada — que ninguna petición, socket o consola lleve «[object Object]» en toda la sesión. Esa sí caza la próxima.",
+      "comoCazarlo": "Corre las dos mitades juntas —la página contra un servidor de verdad— y mira la red. Un id que en realidad es un objeto sólo se ve cuando alguien lo recibe. Si una global guarda un objeto, que su nombre lo diga.",
+      "consejo": "Este defecto estuvo VIVO en producción y lo reportó Carlos con una captura, no una prueba: «hay 2 Carlos» y todos sin señal. Las pruebas del servidor pasaban y las de la mesa también, porque cada una probaba su mitad con datos puestos a mano.",
+      "salioDe": "sala/index.html · el websocket de La Sala",
+      "senales": [
+        "object Object",
+        "todos sin señal",
+        "dice que no estoy conectado",
+        "la función no hace nada",
+        "manda mal el id"
+      ],
+      "vecinas": [
+        "reproducir-antes-de-arreglar",
+        "ver-la-pantalla"
+      ]
     }
   ]
 }

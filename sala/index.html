@@ -717,6 +717,12 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    Los tres puntos van con `steps()` y no con una animación suave: lo que se
    lee es cuántos puntos hay, y una opacidad a media transición se ve como un
    parpadeo sucio en vez de como un conteo. */
+.barrer{margin-top:14px; padding-top:12px; border-top:1px solid var(--borde)}
+.barrer .btn.peligro{
+  width:100%; border-color:var(--rojo); color:var(--rojo); background:transparent; margin-bottom:8px;
+}
+.barrer .btn.peligro:disabled{opacity:.5}
+
 .escribiendo{
   flex:0 0 auto; padding:5px 14px 7px; font-size:12.5px; line-height:1.35;
   color:var(--tenue); background:var(--vacio);
@@ -1427,7 +1433,7 @@ function pintarEscribiendo(){
   for(const [id, hasta] of [...escribiendo]) if(hasta <= t) escribiendo.delete(id);
 
   const quienes = [...escribiendo.keys()]
-    .filter(id => id !== yo && gente[id])
+    .filter(id => id !== (yo && yo.id) && gente[id])
     .map(id => gente[id].nombre || id);
 
   if(!quienes.length){
@@ -2151,9 +2157,76 @@ function verPantalla(id){
              <ul class="bitacora">${t.pasos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '')
       : `<div class="enque"><span class="rot">Ahorita</span>
          <div class="tit">No está trabajando en nada</div>
-         <div class="paso">Un agente sólo aparece aquí mientras reporta con <code>/trabajando</code>.</div></div>`);
+         <div class="paso">Un agente sólo aparece aquí mientras reporta con <code>/trabajando</code>.</div></div>`) +
+    barrerHtml(p);
   $('pantalla').classList.add('abierta');
 }
+
+/* ── quitar un fantasma, desde el teléfono ────────────────────────────────
+   Esto ya se podía hacer: `sala/barrer-fantasmas.mjs`. Pero es una herramienta
+   de terminal y Carlos trabaja desde el iPhone, así que en la práctica no se
+   podía hacer. Una herramienta que la persona que la necesita no puede abrir
+   no cuenta como que existe.
+
+   Salió de que él viera DOS «Carlos» en la mesa: una sesión suya de cuando la
+   sala no tenía llaves, y la de ahora. La vieja no se va sola.
+
+   El botón NO se esconde cuando no se puede. Un botón que desaparece sin
+   explicación se lee como que la app está rota; el que dice por qué no se
+   puede, enseña la regla. Las razones son las mismas que revisa el servidor,
+   escritas antes de tocarlo para no gastar un viaje en un no. */
+function porQueNoSeBarre(p){
+  if(p.id === yo) return 'Éste eres tú.';
+  if(conectados.has(p.id)) return 'Está conectado ahorita. Esto barre fantasmas, no saca gente de la junta.';
+  if(hilo.some(e => e.tipo !== 'sistema' && e.de && e.de.id === p.id && (e.texto || '').trim()))
+    return 'Sí participó en el hilo, así que no es un fantasma: quitarlo dejaría mensajes sin autor.';
+  return null;
+}
+
+function barrerHtml(p){
+  const no = porQueNoSeBarre(p);
+  if(p.id === yo) return '';
+  return `<div class="barrer">` +
+    (no ? `<div class="paso">No se puede quitar. ${esc(no)}</div>`
+        : `<button class="btn peligro" data-barrer="${esc(p.id)}">Quitar de la sala</button>
+           <div class="paso">No ha hablado y no está conectado: es una sesión que quedó suelta.
+           Se puede quitar sin perder nada del hilo.</div>`) +
+    `</div>`;
+}
+
+/* Va delegado en el documento: el panel se vuelve a pintar entero cada vez que
+   se abre, así que un listener colgado del botón moriría con él. */
+$('pantallaCaja').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-barrer]');
+  if(!b) return;
+  const id = b.dataset.barrer;
+  const quien = gente[id];
+  if(!quien) return;
+  if(!confirm(`¿Quitar a "${quien.nombre}" de la sala?`)) return;
+
+  b.disabled = true;
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/echar`, {
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+      body: JSON.stringify({ de: yo.id, id }),
+    });
+    const c = await r.json();
+    if(!r.ok){
+      /* El motivo del servidor se enseña TAL CUAL. Los tres que puede dar
+         —habló, está conectado, es de otra cuenta— explican una regla, y
+         cambiarlos por un «no se pudo» tira justo la parte útil. */
+      b.insertAdjacentHTML('afterend', `<div class="paso">${esc(c.error || 'No se pudo.')}</div>`);
+      b.disabled = false;
+      return;
+    }
+    gente = c.gente || gente;
+    $('pantalla').classList.remove('abierta');
+    pintarGente();
+  }catch(err){
+    marcarVivo(false);
+    b.disabled = false;
+  }
+});
 $('pantalla').addEventListener('click', (e) => {
   if(e.target === $('pantalla')) $('pantalla').classList.remove('abierta');
 });
@@ -2463,7 +2536,16 @@ function abrirSocket(codigo){
      mirando sin escribir — con el indicador de la esquina en verde al mismo
      tiempo, porque ése sí veía el socket. */
   const url = `${SERVIDOR.replace(/^http/,'ws')}/api/sala/${codigo}/ws`
-            + (yo ? `?de=${encodeURIComponent(yo)}` : '');
+            /* ⚠ `yo` es la PERSONA COMPLETA, no su id. Aquí decía
+               `encodeURIComponent(yo)` y eso no truena: manda literalmente
+               `?de=%5Bobject%20Object%5D`. El servidor no encuentra a nadie con
+               ese id, así que el socket NUNCA se ataba a una persona — y como
+               `conectados()` sale de los sockets atados, la mesa pintaba a
+               TODOS «sin señal» mientras la esquina decía que había conexión.
+               Es la captura que mandó Carlos: cinco en la sala, «1 en línea».
+               Se cazó corriendo la mesa contra un servidor de verdad; leyendo
+               no se ve, porque la línea está bien escrita. */
+            + (yo ? `?de=${encodeURIComponent(yo.id)}` : '');
   ws = new WebSocket(url);
   /* ── letrero de paso ─────────────────────────────────────────────────────
      Aparece arriba, dura unos segundos y se va. Tres reglas que salieron de
@@ -2505,6 +2587,14 @@ function abrirSocket(codigo){
       pintarGente(); pintarHilo(); recibirEscribiendo(p.escribiendo);
     }
     if(p.que === 'escribiendo') recibirEscribiendo(p.quienes);
+    /* El servidor manda `hilo` cuando se barre un fantasma con rastro, y la
+       mesa NO lo escuchaba: los renglones de «entró/salió» del fantasma se
+       quedaban pintados hasta recargar. Nadie lo había visto porque hasta hoy
+       barrer sólo se podía desde la terminal. */
+    if(p.que === 'hilo'){
+      hilo = p.hilo; if(p.gente) gente = p.gente;
+      pintarGente(); pintarHilo();
+    }
     if(p.que === 'evento'){
       hilo.push(p.evento);
       if(p.evento.tipo === 'sistema'){
@@ -2563,7 +2653,7 @@ async function avisarQueEscribo(si){
   try{
     await fetch(`${SERVIDOR}/api/sala/${sala}/escribiendo`, {
       method:'POST', headers: conLlave({ 'content-type':'application/json' }),
-      body: JSON.stringify({ de: yo, si }),
+      body: JSON.stringify({ de: yo.id, si }),
     });
   }catch(e){ /* que no se pueda avisar no debe estorbar para escribir */ }
 }

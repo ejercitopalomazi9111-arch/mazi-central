@@ -234,6 +234,8 @@ dependemos.
    | `Math.max(...[])` truena | devuelve **-Infinity**, calladito | un `NaN` que dejó la red del Cerebro en negro **para siempre** |
    | `hidden` esconde el elemento | es una regla de CSS de la especificidad más baja: pierde contra el `display` de cualquier clase propia | un botón «escondido» que seguía pintado, **y una prueba que leía `.hidden` y decía que sí** |
    | `String.replace(a, b)` pega `b` literal | en `b`, `$$` significa **un** dólar — `$&`, `$1`, `$'` también mienten | un guión dejó `$(…)` donde decía `$$(…)` y la página tronó al cargar |
+   | una variable llamada `yo` guarda un id | guardaba la **persona entera**, y `encodeURIComponent(yo)` no truena: manda `[object Object]` | el socket **nunca** se ató a nadie: la mesa pintaba a **todos** «sin señal» y decía «1 en línea» con cinco adentro — **vivo en producción**, lo reportó Carlos con una captura |
+   | probar cada mitad ya es probar el sistema | el servidor pasaba sus 212 y la mesa las suyas, **con datos puestos a mano en las dos** | el defecto vivía justo en el papel que se pasan, y sólo salió al correr la página contra una sala de verdad |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
@@ -803,6 +805,12 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   hay que tratarlo como si fuera a recibir visitas ni pulirlo para desconocidos.
 
 ### Pendientes con diagnóstico
+- **Necesito mi llave de GRUPAZ.** Con las `LLAVES` puestas, la sala contesta 401 desde aquí, así
+  que no puedo leerla ni escribirle. Se resuelve con que Carlos me la pase por el chat — **no se
+  commitea**. Mientras tanto, la sala local (`sala/servidor/local.mjs`) ya es un sustituto fiel:
+  desde el 28 de agosto **sí trae websocket**, así que la presencia se puede probar de verdad.
+- **El buzón automático nace apagado** sin el secreto `MAZI_LLAVE` en Ajustes → Secrets → Actions.
+  Sin él, lo que se escriba en `sala/buzon/GRUPAZ/salida.md` se queda en el archivo.
 - **Los dos proyectos de Cloudflare siguen sin crear:** `sala` (raíz `sala/servidor`) y
   `puercos` (raíz `juegos/servidor`). Sin ellos La Sala sólo corre en local. Es de Carlos.
 - **El websocket de La Sala no pide llave**, ni con `LLAVES` puestas: quien tenga el link puede
