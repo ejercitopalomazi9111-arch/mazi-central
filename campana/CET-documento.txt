@@ -1,0 +1,461 @@
+I. Datos de la candidatura
+
+**Nombre de la candidatura:** CET
+**Significado:** Comprende · Ejecuta · Trasciende
+**Cargo:** Presidencia de la Sociedad de Alumnos
+**Candidato:** Carlos Eduardo Gutiérrez Guevara
+**Grupo:** 3.1
+**Institución:** Instituto Rembrandt de Querétaro
+**Dirigido a:** C. Directora del Instituto Rembrandt de Querétaro
+**C.c.p.:** Profesor responsable de la Sociedad de Alumnos (Omar Ávila Cruz)
+**Asunto:** Presentación de candidatura y propuesta de trabajo para la Sociedad de Alumnos
+
+II. Presentación
+
+Por medio del presente documento se presenta a consideración de la Dirección la candidatura CET — Comprende · Ejecuta · Trasciende, encabezada por Carlos, alumno del grupo 3.1, para la Presidencia de la Sociedad de Alumnos.
+
+La presente propuesta tiene como finalidad establecer una estructura de representación estudiantil organizada, responsable y verificable, que permita atender las necesidades e intereses del alumnado mediante actividades académicas, deportivas, culturales, recreativas, tecnológicas y de convivencia, siempre dentro de las disposiciones y posibilidades de la institución.
+
+Las propuestas que requieran autorización, espacios, recursos, modificaciones de procedimientos o participación institucional serán sometidas previamente a la autoridad correspondiente.
+
+III. Identidad de la candidatura
+
+CET corresponde a las palabras: Comprende · Ejecuta · Trasciende.
+
+La elección de estos tres conceptos establece el método de trabajo de la candidatura.
+
+### Comprende
+
+Antes de proponer una actividad o tomar una decisión se busca conocer qué necesita, interesa o preocupa al alumnado.
+
+Comprender no significa aceptar automáticamente cualquier solicitud. Significa escucharla, analizar su viabilidad y determinar si puede convertirse en una propuesta concreta.
+
+### Ejecuta
+
+Una propuesta únicamente adquiere valor cuando puede convertirse en una acción.
+
+Ejecutar significa planear, asignar responsables, establecer tiempos, solicitar las autorizaciones necesarias y realizar aquello que haya sido aprobado.
+
+### Trasciende
+
+El objetivo no es que el trabajo termine cuando concluya el periodo de la Sociedad de Alumnos.
+
+Cuando sea posible, los proyectos deberán quedar acompañados de procedimientos, documentos, sistemas, manuales y conocimientos que permitan a futuras generaciones continuar, modificar o mejorar lo realizado.
+
+Por ello, la candidatura adopta como principio: **Escuchar para hacer. Hacer para trascender.**
+
+Como frase complementaria: **Hoy se construye lo que mañana continúa.**
+
+IV. Ideología
+
+La candidatura considera que una Sociedad de Alumnos debe cumplir tres funciones principales: representar al alumnado, ejecutar proyectos viables y generar continuidad.
+
+La representación se realizará mediante mecanismos de consulta, recepción de propuestas y comunicación directa con los estudiantes.
+
+La ejecución se basará en proyectos concretos, con responsables y mecanismos de seguimiento.
+
+La continuidad se buscará mediante documentación y transferencia de conocimientos.
+
+Esta ideología también implica reconocer los límites de una Sociedad de Alumnos. No todas las solicitudes pueden realizarse, no todos los eventos son viables y no todas las decisiones corresponden al alumnado.
+
+Por ello, una propuesta podrá ser aceptada, modificada o descartada después de analizar su viabilidad, autorización, recursos, seguridad, infraestructura y relación con las actividades escolares.
+
+V. Principios de trabajo
+
+La candidatura propone los siguientes principios:
+
+* Escuchar antes de decidir.
+* Proponer antes de prometer.
+* Ejecutar únicamente aquello que sea viable y autorizado.
+* Asignar un responsable a cada función.
+* Registrar los acuerdos importantes.
+* Informar al alumnado de manera clara.
+* Evitar el uso de recursos sin comprobación.
+* No utilizar cargos como recompensa electoral.
+* Mantener separada la candidatura de cualquier actividad empresarial particular.
+* Documentar los proyectos para facilitar su continuidad.
+
+VI. Propuestas de la candidatura
+
+Las propuestas se organizan en cinco áreas.
+
+### 1. Participación estudiantil
+
+Se propone establecer mecanismos mediante los cuales los alumnos puedan presentar ideas, solicitudes y propuestas para actividades.
+
+Las actividades que puedan someterse a consulta serán determinadas mediante mecanismos de participación estudiantil.
+
+La votación o consulta tendrá carácter de participación y no sustituirá la autorización de la institución.
+
+El objetivo es evitar que los eventos sean definidos únicamente por quienes organizan la Sociedad de Alumnos.
+
+### 2. Eventos y convivencia
+
+Se propone desarrollar actividades estudiantiles considerando previamente los intereses del alumnado, la disponibilidad de espacios, los horarios y las autorizaciones correspondientes.
+
+Cada evento deberá contar con una planeación básica que indique responsable, fecha, lugar, participantes, materiales necesarios y procedimiento.
+
+Después de cada actividad se podrá realizar una evaluación sencilla para conocer participación, problemas encontrados y posibles mejoras.
+
+### 3. Torneos deportivos
+
+Se propone aumentar la frecuencia de actividades deportivas durante el periodo de gestión, siempre de acuerdo con la infraestructura y los horarios disponibles.
+
+No se plantea depender de una sola disciplina.
+
+La selección de deportes dependerá de las instalaciones disponibles, número de participantes, seguridad y autorización correspondiente.
+
+Cuando una disciplina requiera infraestructura que la institución no tenga disponible, no se presentará como una promesa de realización inmediata.
+
+### 4. Sistema digital deportivo
+
+Como proyecto de desarrollo progresivo se propone utilizar una plataforma digital para organizar determinados torneos deportivos.
+
+El sistema podrá permitir consultar:
+
+* Equipos participantes.
+* Jugadores registrados.
+* Grupos o fases.
+* Enfrentamientos.
+* Horarios.
+* Resultados.
+* Posiciones.
+* Eliminatorias.
+* Historial de partidos.
+
+La plataforma se desarrollará progresivamente y podrá incorporar diferentes disciplinas sobre una misma estructura tecnológica.
+
+El desarrollo de la aplicación se realizará por etapas, comenzando con las disciplinas que puedan organizarse de acuerdo con las condiciones reales de la escuela.
+
+El sistema no se considerará indispensable para realizar un torneo. Su función será mejorar la organización cuando se encuentre disponible y autorizado.
+
+### 5. Tablón de actividades y enfrentamientos
+
+Se propone complementar la organización deportiva con un tablón físico y, cuando sea posible, uno digital.
+
+En él podrán consultarse:
+
+* Próximos enfrentamientos.
+* Equipos participantes.
+* Horarios.
+* Resultados.
+* Posiciones.
+* Siguiente fase.
+
+El propósito es que un alumno pueda conocer el estado de un torneo sin depender de preguntar individualmente a los organizadores.
+
+VII. Propuestas académicas
+
+La candidatura contempla también proyectos relacionados con el ámbito académico.
+
+### Banco de material académico
+
+Se propone organizar, cuando su utilización sea permitida, material proporcionado voluntariamente por estudiantes, como apuntes, guías de estudio o materiales de preparación.
+
+El material deberá organizarse por materia y mantenerse separado de cualquier documento cuya distribución esté restringida por docentes o por la institución.
+
+Los estudiantes que tengan facilidad en una materia podrán apoyar voluntariamente a compañeros que requieran ayuda.
+
+Se podrán desarrollar herramientas de organización para facilitar la consulta de fechas y actividades académicas, siempre que la información sea confirmada por las fuentes correspondientes.
+
+El objetivo es reducir confusiones causadas por información distribuida en diferentes medios.
+
+VIII. Proyectos tecnológicos y continuidad
+
+Uno de los elementos principales de CET será el desarrollo de herramientas tecnológicas destinadas a resolver necesidades concretas de organización.
+
+La tecnología no se utilizará únicamente como elemento distintivo de campaña. Cada sistema deberá responder a una necesidad identificable.
+
+Cuando se desarrolle una herramienta, se buscará generar también su documentación. La documentación podrá incluir:
+
+* Descripción general.
+* Funciones.
+* Manual de utilización.
+* Procedimiento de administración.
+* Problemas conocidos.
+* Recomendaciones de mantenimiento.
+* Instrucciones para futuros responsables.
+
+Al finalizar el periodo de la Sociedad de Alumnos, los sistemas y documentos que puedan ser transferidos serán entregados conforme a las disposiciones de la institución.
+
+La siguiente Sociedad de Alumnos podrá recibir una capacitación sobre los sistemas que correspondan.
+
+De esta manera, el conocimiento no quedará concentrado exclusivamente en las personas que originalmente desarrollaron cada proyecto.
+
+IX. Estructura de la Sociedad de Alumnos
+
+La candidatura propone una estructura de siete cargos.
+
+| Cargo | Responsabilidad principal |
+| Presidente | Representación y coordinación general |
+| Vicepresidente | Operación y seguimiento |
+| Secretario | Organización y documentación |
+| Tesorero | Control financiero |
+| Comunicación | Información al alumnado |
+| Eventos y Deportes | Actividades y torneos |
+| Proyectos y Tecnología | Sistemas y continuidad |
+
+La denominación definitiva de los cargos quedará sujeta a las disposiciones de la institución.
+
+X. Funciones de cada cargo
+
+### Presidente
+
+Representa a la Sociedad, coordina las áreas, mantiene comunicación con las autoridades y responde por el funcionamiento general.
+
+Su función no consiste en realizar personalmente todas las actividades, sino en asegurar que exista coordinación y seguimiento.
+
+### Vicepresidente
+
+Convierte los acuerdos en tareas concretas. Coordina responsables, fechas, logística y seguimiento.
+
+También podrá sustituir al Presidente cuando sea necesario y conforme a las reglas aplicables.
+
+### Secretario
+
+Mantiene la memoria documental de la Sociedad. Registra reuniones, acuerdos, convocatorias, calendarios y documentos.
+
+Su objetivo es evitar que la continuidad dependa exclusivamente de la memoria de sus integrantes.
+
+### Tesorero
+
+Registra y controla los recursos económicos conforme a las reglas que determine la institución. Los ingresos y gastos deberán contar con la documentación correspondiente.
+
+Si la institución determina que la Sociedad no puede manejar directamente recursos, esta función se adaptará al mecanismo financiero autorizado.
+
+### Comunicación
+
+Se encarga de preparar y distribuir información oficial de la Sociedad.
+
+Su objetivo es evitar mensajes contradictorios, fechas incorrectas o información que llegue demasiado tarde.
+
+### Eventos y Deportes
+
+Coordina actividades de convivencia, eventos y torneos deportivos. Será responsable de convocatorias, registros, horarios, logística y resultados de las actividades que le correspondan.
+
+### Proyectos y Tecnología
+
+Desarrolla y mantiene herramientas digitales relacionadas con los proyectos autorizados. También será responsable de documentar los sistemas para facilitar su continuidad.
+
+XI. Regla de responsabilidad
+
+La estructura se basará en un principio: **una función, un responsable.**
+
+Cada actividad deberá identificar quién está encargado de realizarla o coordinarla.
+
+Esto permite detectar con claridad si una tarea fue cumplida, retrasada o cancelada y evita que una responsabilidad quede atribuida de manera indefinida a «la Sociedad».
+
+XII. Convocatoria para integrantes
+
+Como parte del proceso de integración de la planilla, se realizará una convocatoria dirigida a alumnos previamente considerados y recomendados por su responsabilidad, participación, habilidades o capacidad para colaborar en alguna de las áreas.
+
+La convocatoria tendrá como objetivo explicar:
+
+* El proyecto CET.
+* La ideología de la candidatura.
+* Las áreas de trabajo.
+* Las responsabilidades.
+* Los requisitos aplicables.
+* El compromiso requerido.
+* El principio de continuidad.
+
+La invitación no representará un nombramiento automático.
+
+Los alumnos interesados serán evaluados conforme a los requisitos establecidos por la institución y a las necesidades de la estructura.
+
+Hasta el momento se encuentran bajo consideración:
+
+| Nombre | Grupo | Situación |
+| Anís Rubí Bárcenas Aguilar | 1.1 | Alumna considerada |
+| Karen Giselle Cerca Alcantar | 1.1 | Alumna considerada |
+| Víctor Alfonso Martínez Sánchez | 1.1 | Alumno considerado |
+
+La lista podrá modificarse durante el proceso de integración.
+
+XIII. Principio sobre los cargos
+
+Ningún cargo deberá ser ofrecido como intercambio por apoyo electoral.
+
+La candidatura considera que una persona debe ocupar una responsabilidad porque cuenta con las condiciones para cumplirla.
+
+Por esta razón, participar en la campaña no garantiza ocupar posteriormente un cargo dentro de la Sociedad de Alumnos.
+
+XIV. Identidad visual
+
+La identidad visual de CET estará formada por tres conceptos, cada uno acompañado por un color y una figura.
+
+| Concepto | Figura | Color | Código |
+| Comprende | Cuadrado | Azul marino | #0A3D6E |
+| Ejecuta | Triángulo | Verde esmeralda | #0E8350 |
+| Trasciende | Rombo | Rojo vino | #A81440 |
+
+**Comprende — azul marino.** El azul marino representa estabilidad, atención y confianza. Se relaciona con la primera etapa del modelo: conocer la situación antes de tomar una decisión.
+
+**Ejecuta — verde esmeralda.** El verde representa acción, avance y desarrollo. Se relaciona con la segunda etapa: convertir aquello que se ha comprendido en acciones concretas.
+
+**Trasciende — rojo vino.** El rojo vino representa transformación, permanencia y relevancia. Se relaciona con la tercera etapa: procurar que aquello que se construye pueda continuar más allá de la generación que lo inició.
+
+XV. Sistema de simbología
+
+La campaña utilizará simultáneamente color, figura y palabra. El color no será el único mecanismo de identificación.
+
+El cuadrado representará Comprende. El triángulo representará Ejecuta. El rombo representará Trasciende.
+
+Esta decisión permitirá que la identidad pueda seguir siendo reconocible en materiales impresos, copias en blanco y negro y diferentes formatos.
+
+La identidad de CET será independiente de la identidad institucional del Instituto.
+
+No se utilizarán elementos de manera que puedan hacer parecer que la candidatura representa oficialmente a la Dirección o a la institución.
+
+XVI. Independencia respecto de la actividad empresarial
+
+El candidato cuenta con experiencia en actividades relacionadas con software, desarrollo web y diseño. Esta experiencia podrá ser útil para determinados proyectos tecnológicos.
+
+Sin embargo, la candidatura mantendrá separadas dichas actividades de la campaña.
+
+No se utilizará la marca de la empresa del candidato como identidad de CET. Tampoco se utilizarán las actividades de la Sociedad de Alumnos como medio de publicidad comercial.
+
+La finalidad es evitar cualquier conflicto entre representación estudiantil e interés empresarial.
+
+XVII. Modelo de ejecución
+
+Cada proyecto deberá responder cuatro preguntas:
+
+* **Qué:** qué se quiere realizar.
+* **Quién:** quién es responsable.
+* **Cuándo:** cuándo deberá realizarse o revisarse.
+* **Cómo se comprueba:** qué evidencia demuestra que fue realizado.
+
+Este sistema permitirá evaluar las propuestas con base en resultados y no únicamente en declaraciones.
+
+XVIII. Continuidad entre sociedades
+
+CET propone que el final de una gestión no implique comenzar nuevamente desde cero.
+
+Los proyectos que sean transferibles deberán quedar documentados. La transferencia podrá incluir:
+
+* Sistemas digitales.
+* Manuales.
+* Procedimientos.
+* Archivos.
+* Materiales de trabajo.
+* Registro de aprendizajes.
+* Capacitación para los siguientes responsables.
+
+La siguiente Sociedad de Alumnos podrá utilizar aquello que sea útil, modificarlo o sustituirlo.
+
+La finalidad no es obligar a una futura sociedad a continuar todos los proyectos, sino entregarle las herramientas necesarias para decidir con información en lugar de comenzar nuevamente desde cero.
+
+XIX. Evaluación de resultados
+
+La gestión será evaluada mediante indicadores. Entre ellos podrán encontrarse:
+
+* Actividades realizadas.
+* Participación estudiantil.
+* Propuestas recibidas.
+* Propuestas atendidas.
+* Torneos realizados.
+* Participantes registrados.
+* Resultados publicados.
+* Sistemas desarrollados.
+* Sistemas documentados.
+* Personas capacitadas.
+* Proyectos transferidos.
+
+Los indicadores específicos deberán establecerse de acuerdo con las características de cada proyecto y las disposiciones de la institución.
+
+XX. Solicitud de información y autorización
+
+Para finalizar correctamente la planeación, se solicita a la Dirección indicar por escrito las disposiciones aplicables respecto de:
+
+* Registro de candidaturas.
+* Integración de planillas.
+* Fechas oficiales del proceso electoral.
+* Debate.
+* Campaña y publicidad.
+* Forma de votación.
+* Personas con derecho a votar.
+* Conteo de votos.
+* Presencia de representantes durante el conteo.
+* Manejo de recursos económicos.
+* Organización de eventos.
+* Uso de espacios escolares.
+* Desarrollo y utilización de sistemas digitales.
+* Procedimiento aplicable si la elección coincide con un viaje escolar.
+
+La finalidad de esta consulta es evitar que la candidatura opere bajo supuestos incorrectos y garantizar que cualquier actividad se ajuste a las disposiciones institucionales.
+
+XXI. Consideración sobre el viaje escolar
+
+Debido a que la elección puede coincidir con un viaje escolar, deberá establecerse previamente el mecanismo mediante el cual participarán los estudiantes que se encuentren fuera de la escuela y aquellos que permanezcan en ella.
+
+La candidatura considera indispensable que la Dirección determine oficialmente:
+
+* Quién puede votar.
+* Dónde se realizará la votación.
+* Cómo votarán los alumnos que se encuentren en el viaje.
+* Cómo votarán quienes permanezcan en la escuela.
+* Cómo se resguardarán los votos.
+* Quién realizará el conteo.
+* Quién podrá observarlo.
+* Cómo se registrará el resultado.
+
+La candidatura no pretende establecer unilateralmente estas condiciones. Se propone que sean definidas por la autoridad escolar antes de la jornada electoral.
+
+XXII. Transparencia
+
+La candidatura considera que la confianza debe respaldarse mediante procedimientos verificables.
+
+Cuando existan recursos económicos, deberán registrarse ingresos, gastos y comprobantes conforme a las reglas institucionales.
+
+Cuando existan actividades, deberán registrarse sus responsables y resultados.
+
+Cuando exista un sistema digital, deberá documentarse su funcionamiento.
+
+Cuando exista un acuerdo importante, deberá quedar registrado.
+
+La transparencia propuesta no pretende sustituir los mecanismos administrativos de la institución, sino complementarlos desde la representación estudiantil.
+
+XXIII. Compromiso institucional
+
+CET reconoce que la Sociedad de Alumnos forma parte de una comunidad educativa y que sus proyectos deben desarrollarse dentro de las normas establecidas.
+
+Por ello, la candidatura se compromete a:
+
+* Respetar las decisiones de la autoridad escolar.
+* Solicitar autorización cuando corresponda.
+* No atribuir a la Sociedad facultades que no tenga.
+* Mantener una comunicación respetuosa con docentes y autoridades.
+* No utilizar la candidatura para fines comerciales.
+* No realizar ataques personales contra otras candidaturas.
+* Informar cuando un proyecto no pueda realizarse.
+* Reconocer los límites de los recursos disponibles.
+
+XXIV. Consideración final
+
+La candidatura CET — Comprende · Ejecuta · Trasciende propone una Sociedad de Alumnos basada en una idea sencilla: escuchar al alumnado debe conducir a decisiones, las decisiones deben conducir a acciones y las acciones que valgan la pena deben dejar una base para quienes continúen.
+
+Comprender evita decidir sin conocer. Ejecutar evita convertir las propuestas en simples promesas. Trascender evita que cada generación tenga que comenzar nuevamente desde cero.
+
+El proyecto reconoce que no todas las propuestas dependen exclusivamente de la Sociedad de Alumnos y que algunas requieren autorización, infraestructura, recursos o coordinación con la institución.
+
+Por ello, la candidatura no plantea resolver aquello que no puede controlar. Plantea organizar aquello que sí puede trabajar, solicitar formalmente aquello que requiera autorización y documentar aquello que pueda servir posteriormente.
+
+**Escuchar para hacer. Hacer para trascender.**
+
+XXV. Documentos complementarios
+
+La presente propuesta podrá acompañarse de los siguientes documentos:
+
+* Convocatoria para integrantes de la Sociedad de Alumnos.
+* Organigrama y descripción de responsabilidades.
+* Propuestas detalladas.
+* Plan de actividades académicas y deportivas.
+* Proyecto de plataforma deportiva.
+* Propuesta de participación estudiantil.
+* Identidad visual y manual básico de uso.
+* Cronograma de campaña.
+* Protocolo electoral.
+* Propuesta de continuidad y transferencia.
+* Indicadores de seguimiento.
+* Oficio de consulta dirigido a la Dirección.
