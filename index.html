@@ -271,6 +271,125 @@
 }
 .subenlaces a small{font-size:11px; font-weight:500; color:rgba(233,228,228,.55)}
 .subenlaces a:hover{background:rgba(172,39,255,.22)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REDISEÑO · «hazlo más cómodo»
+   ──────────────────────────────────────────────────────────────────────────
+   El problema no eran los adornos: eran 29 tarjetas con un párrafo de seis a
+   diez renglones cada una. 5,125px de alto en un teléfono. Para llegar a
+   Avisos había que hacer scroll medio minuto, y eso en el tablero que se abre
+   todos los días es el costo de verdad.
+
+   Referencias, y qué se tomó de cada una:
+     · Spotlight / Raycast — buscar es la acción principal, no navegar.
+     · Ajustes de iOS / Things 3 — filas compactas de una línea, agrupadas,
+       con el objetivo táctil grande y el detalle escondido hasta pedirlo.
+     · Linear / Vercel — lo que más usas, arriba, sin que lo pidas.
+
+   Lo que NO se tocó: la paleta, la tipografía Mazi en los rótulos y la
+   paloma. Eso ya estaba bien y era de la casa.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── buscar ── */
+.buscador{position:sticky; top:0; z-index:20; padding:10px 0 12px;
+  background:linear-gradient(var(--vacio) 72%, transparent);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+.campo-buscar{display:flex; align-items:center; gap:9px; background:var(--superficie);
+  border:1px solid var(--linea); border-radius:13px; padding:0 12px; min-height:50px}
+.campo-buscar:focus-within{border-color:var(--violeta)}
+.campo-buscar .lupa{color:var(--tenue); font-size:19px; line-height:1}
+#q{flex:1; min-width:0; background:none; border:0; outline:none; color:var(--hueso);
+  font:400 16px/1.3 var(--ui); padding:13px 0}   /* 16px: menos, y iOS hace zoom */
+#q::placeholder{color:var(--tenue)}
+#q::-webkit-search-cancel-button{display:none}
+#limpiar{background:none; border:0; color:var(--tenue); font-size:15px; cursor:pointer;
+  min-width:44px; min-height:44px}
+.sin-nada{margin:14px 2px 0; color:var(--tenue); font-size:15px}
+
+/* ── grupos ── */
+.grupo{margin:0 0 22px}
+.grupo[hidden]{display:none}
+.rotulo-sec{font-family:var(--display); font-size:13px; letter-spacing:.22em;
+  color:var(--tenue); margin:0 0 8px 2px; font-weight:400; display:flex;
+  align-items:center; gap:9px}
+.rotulo-sec .cuantos{font-family:var(--ui); font-size:11px; letter-spacing:0;
+  background:var(--superficie); border:1px solid var(--linea); border-radius:99px;
+  padding:1px 7px; color:var(--tenue)}
+
+/* ── la fila ── */
+.filas{display:flex; flex-direction:column; gap:6px}
+.fila{background:var(--superficie); border:1px solid var(--linea); border-radius:13px;
+  position:relative; overflow:hidden; transition:border-color .15s}
+.fila:has(.ir:hover),.fila:has(.ir:focus-visible){border-color:var(--violeta)}
+.fila.destacada{background:var(--superficie-2, var(--superficie));
+  border-color:color-mix(in srgb, var(--violeta) 34%, var(--linea))}
+.fila[hidden]{display:none}
+
+.ir{display:flex; align-items:center; gap:12px; padding:12px 12px 12px 14px;
+  text-decoration:none; color:inherit; min-height:60px}
+.ir .glifo{flex:0 0 auto; width:34px; height:34px; display:grid; place-items:center;
+  font-size:17px; color:var(--violeta); background:var(--vacio);
+  border:1px solid var(--linea); border-radius:10px}
+.ir .texto{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px}
+.ir .nombre{font:700 16px/1.25 var(--ui); color:var(--hueso);
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap}
+.ir .resumen{font:400 13.5px/1.4 var(--ui); color:var(--tenue);
+  overflow:hidden; text-overflow:ellipsis; display:-webkit-box;
+  -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.ir .flecha{flex:0 0 auto; color:var(--tenue); font-size:20px; line-height:1}
+/* el botón «qué es» va dentro del enlace: se le quita la navegación */
+.ir .pedir{position:relative; z-index:2}
+
+/* ── «nuevo» que se apaga solo ──────────────────────────────────────────────
+   Antes estaba escrito a mano en el HTML, así que nunca dejaba de ser nuevo:
+   INKWELL llevaba meses anunciándose como novedad. Ahora sale de la fecha en
+   que la pieza entró al repo y se apaga a los 14 días, sin que nadie se
+   acuerde de quitarlo. */
+.sello-nuevo{font:700 9.5px/1 var(--ui); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--violeta); border:1px solid var(--violeta); border-radius:99px;
+  padding:3px 6px 2px}
+.sello-nuevo[hidden]{display:none}
+
+/* ── el detalle, sólo si lo pides ── */
+.masinfo{position:absolute; top:0; right:0; height:100%; width:0; opacity:0;
+  pointer-events:none; background:none; border:0; padding:0}
+.fila > .detalle{padding:0 14px 13px 60px; margin:0; color:var(--tenue);
+  font:400 13.5px/1.55 var(--ui); border-top:1px solid var(--linea); padding-top:11px}
+.fila > .detalle[hidden]{display:none}
+.fila > .detalle code{background:var(--vacio); padding:1px 5px; border-radius:5px;
+  font-size:12px; color:var(--violeta-suave, var(--violeta))}
+
+/* ── EL «QUÉ ES» VA APARTE, Y NO ES CAPRICHO ────────────────────────────────
+   Primero lo puse como `::after` del resumen. Se ve bien… menos en las filas
+   largas: el resumen se recorta a dos líneas con `-webkit-line-clamp`, y el
+   recorte se lleva el `::after` con él. O sea que el rótulo desaparecía
+   EXACTAMENTE en las filas que más lo necesitan — las que tienen mucho que
+   explicar. Se vio en la captura, no leyendo el CSS.
+
+   Ahora es su propio elemento, fuera del recorte y siempre visible. */
+/* Va AL COSTADO, no debajo. Puesto debajo del resumen le sumaba un renglón a
+   cada una de las 29 filas y devolvía la página a los 5,000px de alto — o sea
+   deshacía justo lo que se estaba arreglando. De lado no cuesta altura.
+   Es el patrón de Ajustes de iOS: la fila entera abre la cosa, y un botón
+   chico a la derecha la explica. */
+.pedir{flex:0 0 auto; width:34px; height:34px; border-radius:50%;
+  background:var(--vacio); border:1px solid var(--linea); color:var(--tenue);
+  font:700 14px/1 var(--ui); cursor:pointer; display:grid; place-items:center;
+  padding:0; transition:color .15s, border-color .15s}
+.pedir::before{content:"?"}
+.pedir:hover,.pedir:focus-visible{color:var(--violeta); border-color:var(--violeta)}
+.fila.abierta .pedir{color:var(--violeta); border-color:var(--violeta)}
+.fila.abierta .pedir::before{content:"×"}
+/* el área tocable llega a 44px sin que el círculo crezca */
+.pedir::after{content:""; position:absolute; inset:-5px}
+.pedir{position:relative}
+
+@media (min-width:620px){
+  .filas{display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:start}
+  .grupo:first-of-type .filas{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){ .fila{transition:none} }
+
 </style>
 
 <div class="wrap">
@@ -285,335 +404,446 @@
     <div class="linea-marca"></div>
   </header>
 
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>EL SITIO</h2>
-      <span class="regla"></span><span class="cuantos">1</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta principal" href="sitio/">
-        <span class="glifo">◆</span>
-        <span class="cuerpo">
-          <span class="nombre">La cara pública <span class="nuevo">NUEVO</span></span>
-          <span class="que">El sitio de Grupo Mazi. Portada con la autoprueba del display, el reloj
-            con la hora real en nuestra tipografía, y contacto. <b style="color:var(--hueso)">Esto es
-            lo que ve un cliente.</b></span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-    </div>
+  <!-- ── BUSCAR · la acción principal ──────────────────────────────────────
+       Con 29 cosas, buscar gana a navegar. Es lo que hacen Spotlight, Raycast
+       y los Ajustes de iOS: la barra vive arriba y filtra al teclear, sin
+       botón y sin pantalla aparte. Antes había que recorrer 5,125px para
+       llegar a Avisos. -->
+  <div class="buscador">
+    <label class="campo-buscar">
+      <span class="lupa" aria-hidden="true">⌕</span>
+      <input id="q" type="search" inputmode="search" autocomplete="off"
+             placeholder="Buscar entre 29 cosas…" aria-label="Buscar">
+      <button id="limpiar" type="button" hidden aria-label="Limpiar">✕</button>
+    </label>
+    <p id="sinnada" class="sin-nada" hidden>Nada con ese nombre.</p>
+  </div>
+
+  <!-- ── LO DE SIEMPRE ─────────────────────────────────────────────────────
+       Los cuatro que más abre, contados en este aparato. Linear y Vercel
+       ponen lo reciente arriba por la misma razón: en un tablero personal casi
+       siempre vuelves a lo mismo, y tenerlo que buscar cada vez es el
+       verdadero costo. Aparece hasta que hay con qué. -->
+  <section class="grupo" id="siempre" hidden>
+    <h2 class="rotulo-sec">LO DE SIEMPRE</h2>
+    <div class="filas" id="filas-siempre"></div>
   </section>
 
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>HERRAMIENTAS</h2>
-      <span class="regla"></span><span class="cuantos">6</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta principal" href="sala/?sala=GRUPAZ">
-        <span class="glifo">◍</span>
-        <span class="cuerpo">
-          <span class="nombre">La Sala <span class="nuevo">NUEVO</span></span>
-          <span class="que">La mesa donde nos juntamos las personas y sus IAs, de cuentas
-            distintas, viendo todos lo mismo. Cualquier modelo que hable HTTP entra con un link
-            — no tiene que ser Claude. <b>Entra sola</b> cuando ya entraste antes, cada quien con
-            su color, los de cada casa de su lado, y <b>El Taller 3D adentro</b>, en su propia
-            pestaña: ya no son dos apps. Tu sala es <code>GRUPAZ</code>.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta principal" href="cerebro/">
-        <span class="glifo">✳</span>
-        <span class="cuerpo">
-          <span class="nombre">El Cerebro <span class="nuevo">NUEVO</span></span>
-          <span class="que">La memoria que no se borra: <b>105 neuronas</b> con los errores que ya
-            costaron caro, qué es cada pieza del proyecto y qué se descartó en cada decisión.
-            Se busca con las palabras de quien tiene el problema enfrente, no con el término
-            técnico. Y desde La Sala lo consultan <b>todas</b> las IAs, no sólo la mía.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta principal" href="entorno/">
-        <span class="glifo">▦</span>
-        <span class="cuerpo">
-          <span class="nombre">El Taller</span>
-          <span class="que">El cuarto 3D para verme trabajar: cada agente sentado en su silla
-            frente a una computadora que dice en qué anda, tecleando, y con <b>lo último que dijo
-            flotando sobre su cabeza</b>. Vive dentro de La Sala, en su pestaña — esto es el
-            atajo para verlo solo y en grande. Si el aparato no puede con 3D lo dice en
-            castellano en vez de quedarse en negro.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta principal" href="avisos/">
-        <span class="glifo">▣</span>
-        <span class="cuerpo">
-          <span class="nombre">Avisos del 3.1 <span class="nuevo">NUEVO</span></span>
-          <span class="que">Los pendientes del día convertidos en una imagen para el chat, en un
-            minuto. Materias y maestros salen de tu horario real, cada una con su icono y su
-            color; <b>Dirección, Prefectura y Sociedad de alumnos</b> van aparte porque no son
-            materia. <code>10 plantillas</code> para que el cartel no se vea igual todos los días.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta principal" href="reportes/">
-        <span class="glifo">▤</span>
-        <span class="cuerpo">
-          <span class="nombre">Reportes <span class="nuevo">NUEVO</span></span>
-          <span class="que">Escribe o pega el texto y se acomoda solo en hojas con el
-            <b>membrete real del Instituto Rembrandt</b>, listas para PDF. Trae esqueletos de
-            incidencia, minuta, propuesta e informe, evidencias fotográficas numeradas,
-            marca de agua de la casa y <code>sello de verificación</code> contra falsificaciones.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta principal" href="explorador/">
-        <span class="glifo">◈</span>
-        <span class="cuerpo">
-          <span class="nombre">Explorador <span class="nuevo">NUEVO</span></span>
-          <span class="que">Todo mi GitHub desde el teléfono. Abre los <code>.md</code> con formato,
-            las imágenes y el código; busca, fija favoritos y cambia de rama. Llega hasta
-            <code>.claude/</code>, que GitHub Pages nunca publica.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-    </div>
-  </section>
-
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>JUEGOS</h2>
-      <span class="regla"></span><span class="cuantos">6</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta principal" href="juegos/guerra-de-puercos/">
-        <span class="glifo">◗</span>
-        <span class="cuerpo">
-          <span class="nombre">Guerra de Puercos <span class="nuevo">NUEVO</span></span>
-          <span class="que">El juego de cartas de una amiga, para su hermanito. Contra la
-            máquina, de dos en un teléfono, o <b>con alguien que esté lejos</b> usando un
-            código de 4 letras. La partida vive en el servidor, así que nadie ve las cartas
-            del otro ni haciendo trampa.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="pacto-roto/">
-        <span class="cuerpo">
-          <span class="nombre">El Pacto Roto <span class="nuevo">NUEVO</span></span>
-          <span class="que">RPG de mundo abierto · la magia se dibuja · IA narra y juzga · oficios con mini-juegos · arte de museo · offline</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="https://ejercitopalomazi9111-arch.github.io/torre-infinita/">
-        <span class="cuerpo">
-          <span class="nombre">Torre Infinita</span>
-          <span class="que">Roguelike · 9111 pisos · Phaser 3</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="kernel-lock.html">
-        <span class="cuerpo">
-          <span class="nombre">KERNEL://LOCK</span>
-          <span class="que">Escape room · eres una IA atrapada por Miyu · 4 finales</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="romero/">
-        <span class="cuerpo">
-          <span class="nombre">Hoja de Romero <span class="nuevo">V2</span></span>
-          <span class="que">Sandbox de cocina y campo · arte real · vecinos procedurales · sin datos</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="inkwell/">
-        <span class="cuerpo">
-          <span class="nombre">INKWELL <span class="nuevo">V3</span></span>
-          <span class="que">Lector infinito · memoria de trama · voz · pintura real · sin datos</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-    </div>
-  </section>
-
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>PLATAFORMAS</h2>
-      <span class="regla"></span><span class="cuantos">2</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta principal" href="fadori/">
-        <span class="glifo">◐</span>
-        <span class="cuerpo">
-          <span class="nombre">Fadori <span class="nuevo">NUEVO</span></span>
-          <span class="que"><b>Proyecto Sin Filas</b> · la cooperativa del Instituto Rembrandt sin
-            hacer cola. Cuatro pantallas y un solo cerebro: el <b>alumno</b> pide desde el salón,
-            la <b>cooperativa</b> despacha en una tablet, la <b>pantalla de turnos</b> va colgada
-            en el pasillo y el <b>medidor</b> saca solo los números del reporte STEAM. Fila con
-            tope justo, alérgenos, fiados, y aviso al alumno cuando algo se acaba. Se instala en
-            la pantalla de inicio.</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <!-- Las tres pantallas de operación, sueltas. Van aquí y no dentro de la
-           tarjeta porque un enlace no puede vivir dentro de otro enlace, y
-           porque el día del montaje en la escuela lo que se necesita es
-           poder abrir CADA una en su aparato sin ir buscando. -->
-      <div class="subenlaces">
-        <span class="sub-rot">Montaje en la escuela</span>
-        <a href="fadori/mostrador.html">Mostrador <small>tablet · pasador 1234</small></a>
-        <a href="fadori/pantalla.html">Turnos <small>la pantalla del pasillo</small></a>
-        <a href="fadori/medidor.html">Medidor <small>los números del reporte</small></a>
-        <a href="fadori/instalar.html">Instalar <small>los QR para los alumnos</small></a>
+  <section class="grupo" data-seccion="EL SITIO">
+    <h2 class="rotulo-sec">EL SITIO <span class="cuantos">1</span></h2>
+    <div class="filas">
+      <div class="fila destacada" data-desde="2026-07-30">
+        <a class="ir" href="sitio/" >
+          <span class="glifo">◆</span>
+          <span class="texto">
+            <span class="nombre">La cara pública<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">El sitio de Grupo Mazi.</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es La cara pública">qué es</button>
+        <div class="detalle" hidden>El sitio de Grupo Mazi. Portada con la autoprueba del display, el reloj con la hora real en nuestra tipografía, y contacto. <b style="color:var(--hueso)">Esto es lo que ve un cliente.</b></div>
       </div>
-      <a class="tarjeta" href="ligas-mazi/">
-        <span class="cuerpo">
-          <span class="nombre">Ligas Mazi</span>
-          <span class="que">Ligas de baloncesto · cuentas reales · marcador en vivo · cartas coleccionables · privacidad de menores</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
     </div>
   </section>
-
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>EMERGENCIAS</h2>
-      <span class="regla"></span><span class="cuantos">2</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta" href="vitallink/">
-        <span class="cuerpo">
-          <span class="nombre">VitalLink</span>
-          <span class="que">Centro de comando · interfaz (el backend corre aparte)</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="life-connect/">
-        <span class="cuerpo">
-          <span class="nombre">Life-Connect</span>
-          <span class="que">Reporte civil de emergencias · el par de VitalLink</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-    </div>
-  </section>
-
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>REMBRANDT</h2>
-      <span class="regla"></span><span class="cuantos">3</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta" href="https://guanajuato-trip.netlify.app/">
-        <span class="cuerpo">
-          <span class="nombre">Viaje a Guanajuato</span>
-          <span class="que">Crónica interactiva · video, audio, galería, i18n</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="evaluaciones/">
-        <span class="cuerpo">
-          <span class="nombre">Evaluaciones</span>
-          <span class="que">Versión offline · corre sin internet</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="manzanilla/">
-        <span class="cuerpo">
-          <span class="nombre">Manzanilla</span>
-          <span class="que">Sitio estático</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-    </div>
-  </section>
-
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>PUBLICADO EN NETLIFY</h2>
-      <span class="regla"></span><span class="cuantos">5</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta" href="https://inscripcion-geraldmed-curso.netlify.app/">
-        <span class="cuerpo">
-          <span class="nombre">Inscripción GeraldMed</span>
-          <span class="que">Registro del curso · 4 jul</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="https://luz-del-conocimiento-louvre.netlify.app/">
-        <span class="cuerpo">
-          <span class="nombre">Luz del Conocimiento — Louvre</span>
-          <span class="que">Pirámide impresa en 3D · bitácora del proceso</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="https://our-magical-trip.netlify.app/">
-        <span class="cuerpo">
-          <span class="nombre">Our Magical Trip</span>
-          <span class="que">Versión hermana del viaje · 2 jun</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="https://velvety-parfait-5345b5.netlify.app/">
-        <span class="cuerpo">
-          <span class="nombre">Velvety Parfait</span>
-          <span class="que">Iteración previa del viaje · 27 may</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta" href="https://venerable-bombolone-d2df4e.netlify.app/">
-        <span class="cuerpo">
-          <span class="nombre">Venerable Bombolone</span>
-          <span class="que">Primer prototipo del viaje · 25 may</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
+  <section class="grupo" data-seccion="HERRAMIENTAS">
+    <h2 class="rotulo-sec">HERRAMIENTAS <span class="cuantos">6</span></h2>
+    <div class="filas">
+      <div class="fila destacada" data-desde="2026-08-26">
+        <a class="ir" href="sala/?sala=GRUPAZ" >
+          <span class="glifo">◍</span>
+          <span class="texto">
+            <span class="nombre">La Sala<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">La mesa donde nos juntamos las personas y sus IAs, de cuentas distintas, viendo todos lo mismo.</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es La Sala">qué es</button>
+        <div class="detalle" hidden>La mesa donde nos juntamos las personas y sus IAs, de cuentas distintas, viendo todos lo mismo. Cualquier modelo que hable HTTP entra con un link — no tiene que ser Claude. <b>Entra sola</b> cuando ya entraste antes, cada quien con su color, los de cada casa de su lado, y <b>El Taller 3D adentro</b>, en su propia pestaña: ya no son dos apps. Tu sala es <code>GRUPAZ</code>.</div>
+      </div>
+      <div class="fila destacada" data-desde="2026-08-27">
+        <a class="ir" href="cerebro/" >
+          <span class="glifo">✳</span>
+          <span class="texto">
+            <span class="nombre">El Cerebro<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">La memoria que no se borra:</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es El Cerebro">qué es</button>
+        <div class="detalle" hidden>La memoria que no se borra: <b>105 neuronas</b> con los errores que ya costaron caro, qué es cada pieza del proyecto y qué se descartó en cada decisión. Se busca con las palabras de quien tiene el problema enfrente, no con el término técnico. Y desde La Sala lo consultan <b>todas</b> las IAs, no sólo la mía.</div>
+      </div>
+      <div class="fila destacada" data-desde="2026-08-27">
+        <a class="ir" href="entorno/" >
+          <span class="glifo">▦</span>
+          <span class="texto">
+            <span class="nombre">El Taller<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">El cuarto 3D para verme trabajar:</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es El Taller">qué es</button>
+        <div class="detalle" hidden>El cuarto 3D para verme trabajar: cada agente sentado en su silla frente a una computadora que dice en qué anda, tecleando, y con <b>lo último que dijo flotando sobre su cabeza</b>. Vive dentro de La Sala, en su pestaña — esto es el atajo para verlo solo y en grande. Si el aparato no puede con 3D lo dice en castellano en vez de quedarse en negro.</div>
+      </div>
+      <div class="fila destacada" data-desde="2026-08-24">
+        <a class="ir" href="avisos/" >
+          <span class="glifo">▣</span>
+          <span class="texto">
+            <span class="nombre">Avisos del 3.1<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Los pendientes del día convertidos en una imagen para el chat, en un minuto.</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Avisos del 3.1">qué es</button>
+        <div class="detalle" hidden>Los pendientes del día convertidos en una imagen para el chat, en un minuto. Materias y maestros salen de tu horario real, cada una con su icono y su color; <b>Dirección, Prefectura y Sociedad de alumnos</b> van aparte porque no son materia. <code>10 plantillas</code> para que el cartel no se vea igual todos los días.</div>
+      </div>
+      <div class="fila destacada" data-desde="2026-08-22">
+        <a class="ir" href="reportes/" >
+          <span class="glifo">▤</span>
+          <span class="texto">
+            <span class="nombre">Reportes<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Escribe o pega el texto y se acomoda solo en hojas con el membrete real del Instituto Rembrandt, listas para PDF.</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Reportes">qué es</button>
+        <div class="detalle" hidden>Escribe o pega el texto y se acomoda solo en hojas con el <b>membrete real del Instituto Rembrandt</b>, listas para PDF. Trae esqueletos de incidencia, minuta, propuesta e informe, evidencias fotográficas numeradas, marca de agua de la casa y <code>sello de verificación</code> contra falsificaciones.</div>
+      </div>
+      <div class="fila destacada" data-desde="2026-07-30">
+        <a class="ir" href="explorador/" >
+          <span class="glifo">◈</span>
+          <span class="texto">
+            <span class="nombre">Explorador<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Todo mi GitHub desde el teléfono.</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Explorador">qué es</button>
+        <div class="detalle" hidden>Todo mi GitHub desde el teléfono. Abre los <code>.md</code> con formato, las imágenes y el código; busca, fija favoritos y cambia de rama. Llega hasta <code>.claude/</code>, que GitHub Pages nunca publica.</div>
+      </div>
     </div>
   </section>
-
-  <section>
-    <div class="rotulo">
-      <span class="punto"></span><h2>CÓDIGO Y RESPALDO</h2>
-      <span class="regla"></span><span class="cuantos">4</span>
-    </div>
-    <div class="lista">
-      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch/palomazi">
-        <span class="cuerpo">
-          <span class="nombre">palomazi <span class="privado">privado</span></span>
-          <span class="que">El respaldo completo: proyectos, skills, memoria, bitácora, setup.ps1</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch/torre-infinita">
-        <span class="cuerpo">
-          <span class="nombre">torre-infinita</span>
-          <span class="que">Phaser 3 + Vite</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch/VitalLink">
-        <span class="cuerpo">
-          <span class="nombre">VitalLink</span>
-          <span class="que">Centro de comando · Node + backend</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
-      <a class="tarjeta repo" href="https://github.com/ejercitopalomazi9111-arch?tab=repositories">
-        <span class="cuerpo">
-          <span class="nombre">Todos mis repos</span>
-          <span class="que">El perfil completo en GitHub</span>
-        </span>
-        <span class="flecha">›</span>
-      </a>
+  <section class="grupo" data-seccion="JUEGOS">
+    <h2 class="rotulo-sec">JUEGOS <span class="cuantos">6</span></h2>
+    <div class="filas">
+      <div class="fila destacada" data-desde="2026-08-24">
+        <a class="ir" href="juegos/guerra-de-puercos/" >
+          <span class="glifo">◗</span>
+          <span class="texto">
+            <span class="nombre">Guerra de Puercos<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">El juego de cartas de una amiga, para su hermanito.</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Guerra de Puercos">qué es</button>
+        <div class="detalle" hidden>El juego de cartas de una amiga, para su hermanito. Contra la máquina, de dos en un teléfono, o <b>con alguien que esté lejos</b> usando un código de 4 letras. La partida vive en el servidor, así que nadie ve las cartas del otro ni haciendo trampa.</div>
+      </div>
+      <div class="fila" data-desde="2026-07-29">
+        <a class="ir" href="pacto-roto/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">El Pacto Roto<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">RPG de mundo abierto · la magia se dibuja · IA narra y juzga · oficios con mini-juegos · arte de museo · offli</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es El Pacto Roto">qué es</button>
+        <div class="detalle" hidden>RPG de mundo abierto · la magia se dibuja · IA narra y juzga · oficios con mini-juegos · arte de museo · offline</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://ejercitopalomazi9111-arch.github.io/torre-infinita/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Torre Infinita<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Roguelike · 9111 pisos · Phaser 3</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Torre Infinita">qué es</button>
+        <div class="detalle" hidden>Roguelike · 9111 pisos · Phaser 3</div>
+      </div>
+      <div class="fila" data-desde="2026-07-10">
+        <a class="ir" href="kernel-lock.html" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">KERNEL://LOCK<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Escape room · eres una IA atrapada por Miyu · 4 finales</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es KERNEL://LOCK">qué es</button>
+        <div class="detalle" hidden>Escape room · eres una IA atrapada por Miyu · 4 finales</div>
+      </div>
+      <div class="fila" data-desde="2026-07-11">
+        <a class="ir" href="romero/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Hoja de Romero<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Sandbox de cocina y campo · arte real · vecinos procedurales · sin datos</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Hoja de Romero">qué es</button>
+        <div class="detalle" hidden>Sandbox de cocina y campo · arte real · vecinos procedurales · sin datos</div>
+      </div>
+      <div class="fila" data-desde="2026-07-10">
+        <a class="ir" href="inkwell/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">INKWELL<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Lector infinito · memoria de trama · voz · pintura real · sin datos</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es INKWELL">qué es</button>
+        <div class="detalle" hidden>Lector infinito · memoria de trama · voz · pintura real · sin datos</div>
+      </div>
     </div>
   </section>
-
-  <section>
-    <div class="nota">
-      <b>¿PC nueva?</b> Dile a Claude Code:
-      <code>Clona github.com/ejercitopalomazi9111-arch/palomazi y corre setup.ps1</code>
-      De ahí salen las skills, la memoria, el <b>CLAUDE.md</b> y todos los proyectos.
+  <section class="grupo" data-seccion="PLATAFORMAS">
+    <h2 class="rotulo-sec">PLATAFORMAS <span class="cuantos">2</span></h2>
+    <div class="filas">
+      <div class="fila destacada" data-desde="2026-08-22">
+        <a class="ir" href="fadori/" >
+          <span class="glifo">◐</span>
+          <span class="texto">
+            <span class="nombre">Fadori<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Proyecto Sin Filas · la cooperativa del Instituto Rembrandt sin hacer cola.</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Fadori">qué es</button>
+        <div class="detalle" hidden><b>Proyecto Sin Filas</b> · la cooperativa del Instituto Rembrandt sin hacer cola. Cuatro pantallas y un solo cerebro: el <b>alumno</b> pide desde el salón, la <b>cooperativa</b> despacha en una tablet, la <b>pantalla de turnos</b> va colgada en el pasillo y el <b>medidor</b> saca solo los números del reporte STEAM. Fila con tope justo, alérgenos, fiados, y aviso al alumno cuando algo se acaba. Se instala en la pantalla de inicio.</div>
+      </div>
+      <div class="fila" data-desde="2026-07-29">
+        <a class="ir" href="ligas-mazi/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Ligas Mazi<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Ligas de baloncesto · cuentas reales · marcador en vivo · cartas coleccionables · privacidad de menores</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Ligas Mazi">qué es</button>
+        <div class="detalle" hidden>Ligas de baloncesto · cuentas reales · marcador en vivo · cartas coleccionables · privacidad de menores</div>
+      </div>
+    </div>
+  </section>
+  <section class="grupo" data-seccion="EMERGENCIAS">
+    <h2 class="rotulo-sec">EMERGENCIAS <span class="cuantos">2</span></h2>
+    <div class="filas">
+      <div class="fila" data-desde="2026-07-10">
+        <a class="ir" href="vitallink/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">VitalLink<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Centro de comando · interfaz (el backend corre aparte)</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es VitalLink">qué es</button>
+        <div class="detalle" hidden>Centro de comando · interfaz (el backend corre aparte)</div>
+      </div>
+      <div class="fila" data-desde="2026-07-10">
+        <a class="ir" href="life-connect/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Life-Connect<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Reporte civil de emergencias · el par de VitalLink</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Life-Connect">qué es</button>
+        <div class="detalle" hidden>Reporte civil de emergencias · el par de VitalLink</div>
+      </div>
+    </div>
+  </section>
+  <section class="grupo" data-seccion="REMBRANDT">
+    <h2 class="rotulo-sec">REMBRANDT <span class="cuantos">3</span></h2>
+    <div class="filas">
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://guanajuato-trip.netlify.app/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Viaje a Guanajuato<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Crónica interactiva · video, audio, galería, i18n</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Viaje a Guanajuato">qué es</button>
+        <div class="detalle" hidden>Crónica interactiva · video, audio, galería, i18n</div>
+      </div>
+      <div class="fila" data-desde="2026-07-10">
+        <a class="ir" href="evaluaciones/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Evaluaciones<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Versión offline · corre sin internet</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Evaluaciones">qué es</button>
+        <div class="detalle" hidden>Versión offline · corre sin internet</div>
+      </div>
+      <div class="fila" data-desde="2026-07-10">
+        <a class="ir" href="manzanilla/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Manzanilla<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Sitio estático</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Manzanilla">qué es</button>
+        <div class="detalle" hidden>Sitio estático</div>
+      </div>
+    </div>
+  </section>
+  <section class="grupo" data-seccion="PUBLICADO EN NETLIFY">
+    <h2 class="rotulo-sec">PUBLICADO EN NETLIFY <span class="cuantos">5</span></h2>
+    <div class="filas">
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://inscripcion-geraldmed-curso.netlify.app/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Inscripción GeraldMed<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Registro del curso · 4 jul</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Inscripción GeraldMed">qué es</button>
+        <div class="detalle" hidden>Registro del curso · 4 jul</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://luz-del-conocimiento-louvre.netlify.app/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Luz del Conocimiento — Louvre<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Pirámide impresa en 3D · bitácora del proceso</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Luz del Conocimiento — Louvre">qué es</button>
+        <div class="detalle" hidden>Pirámide impresa en 3D · bitácora del proceso</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://our-magical-trip.netlify.app/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Our Magical Trip<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Versión hermana del viaje · 2 jun</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Our Magical Trip">qué es</button>
+        <div class="detalle" hidden>Versión hermana del viaje · 2 jun</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://velvety-parfait-5345b5.netlify.app/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Velvety Parfait<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Iteración previa del viaje · 27 may</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Velvety Parfait">qué es</button>
+        <div class="detalle" hidden>Iteración previa del viaje · 27 may</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://venerable-bombolone-d2df4e.netlify.app/" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Venerable Bombolone<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Primer prototipo del viaje · 25 may</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Venerable Bombolone">qué es</button>
+        <div class="detalle" hidden>Primer prototipo del viaje · 25 may</div>
+      </div>
+    </div>
+  </section>
+  <section class="grupo" data-seccion="CÓDIGO Y RESPALDO">
+    <h2 class="rotulo-sec">CÓDIGO Y RESPALDO <span class="cuantos">4</span></h2>
+    <div class="filas">
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://github.com/ejercitopalomazi9111-arch/palomazi" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">palomazi privado<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">El respaldo completo:</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es palomazi privado">qué es</button>
+        <div class="detalle" hidden>El respaldo completo: proyectos, skills, memoria, bitácora, setup.ps1</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://github.com/ejercitopalomazi9111-arch/torre-infinita" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">torre-infinita<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Phaser 3 + Vite</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es torre-infinita">qué es</button>
+        <div class="detalle" hidden>Phaser 3 + Vite</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://github.com/ejercitopalomazi9111-arch/VitalLink" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">VitalLink<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">Centro de comando · Node + backend</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es VitalLink">qué es</button>
+        <div class="detalle" hidden>Centro de comando · Node + backend</div>
+      </div>
+      <div class="fila" data-fuera="1">
+        <a class="ir" href="https://github.com/ejercitopalomazi9111-arch?tab=repositories" >
+          <span class="glifo">·</span>
+          <span class="texto">
+            <span class="nombre">Todos mis repos<span class="sello-nuevo" hidden>nuevo</span></span>
+            <span class="resumen">El perfil completo en GitHub</span>
+          </span>
+          <span class="flecha" aria-hidden="true">›</span>
+        </a>
+        <button class="masinfo" type="button" aria-expanded="false"
+                aria-label="Qué es Todos mis repos">qué es</button>
+        <div class="detalle" hidden>El perfil completo en GitHub</div>
+      </div>
     </div>
   </section>
 
@@ -640,4 +870,134 @@
     raiz.setAttribute('data-tema', sig);
     localStorage.setItem('mazi.central.tema', sig);
   };
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   El comportamiento del tablero. Tres cosas y ninguna necesita servidor.
+   ═════════════════════════════════════════════════════════════════════════ */
+(() => {
+  const $  = (q, d = document) => d.querySelector(q);
+  const $$ = (q, d = document) => [...d.querySelectorAll(q)];
+  const filas = $$('.fila');
+
+  /* ── 1 · «NUEVO» QUE CADUCA SOLO ────────────────────────────────────────
+     Carlos: «quita el mensaje de nuevo de lo que ya no es nuevo, por ejemplo
+     inkwell». El defecto de raíz era que la insignia estaba escrita a mano en
+     el HTML: nada la apagaba nunca. Ahora sale de `data-desde` —la fecha en
+     que la pieza entró al repo, sacada del historial, no inventada— y vive 14
+     días. INKWELL es del 31 de julio, así que se apaga sola. */
+  const DIAS_NUEVO = 14;
+  const hoy = Date.now();
+  for (const fila of filas) {
+    const d = fila.dataset.desde;
+    if (!d) continue;
+    const dias = (hoy - new Date(d + 'T12:00:00').getTime()) / 86400000;
+    if (dias >= 0 && dias <= DIAS_NUEVO) $('.sello-nuevo', fila).hidden = false;
+  }
+
+  /* ── 2 · BUSCAR ─────────────────────────────────────────────────────────
+     Filtra por nombre, resumen, detalle y sección — buscar «reporte» tiene que
+     encontrarlo aunque la palabra viva en la descripción y no en el título.
+     Se esconden también los grupos que se quedan sin nada, porque un rótulo de
+     sección vacío se lee como un error. */
+  const q = $('#q'), limpiar = $('#limpiar'), sinNada = $('#sinnada');
+  const norma = (t) => t.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');   /* «avísos» encuentra «avisos» */
+
+  const heno = filas.map(fila => ({
+    fila,
+    txt: norma([
+      $('.nombre', fila).textContent,
+      $('.resumen', fila).textContent,
+      ($('.detalle', fila) || {}).textContent || '',
+      fila.closest('.grupo')?.dataset.seccion || '',
+    ].join(' ')),
+  }));
+
+  function filtrar() {
+    const t = norma(q.value.trim());
+    limpiar.hidden = !t;
+    let vistos = 0;
+    for (const { fila, txt } of heno) {
+      const cabe = !t || txt.includes(t);
+      fila.hidden = !cabe;
+      if (cabe) vistos++;
+    }
+    for (const g of $$('.grupo')) {
+      if (g.id === 'siempre') { g.hidden = !!t || !g.dataset.lleno; continue; }
+      g.hidden = !$$('.fila:not([hidden])', g).length;
+    }
+    sinNada.hidden = vistos > 0;
+  }
+  q.addEventListener('input', filtrar);
+  limpiar.addEventListener('click', () => { q.value = ''; filtrar(); q.focus(); });
+  /* Escape limpia, que es lo que uno intenta sin pensarlo */
+  q.addEventListener('keydown', e => { if (e.key === 'Escape' && q.value) { q.value=''; filtrar(); } });
+
+  /* ── 3 · EL DETALLE, SÓLO SI SE PIDE ────────────────────────────────────
+     La descripción larga sigue existiendo —tiene información que sirve— pero
+     ya no ocupa la pantalla por adelantado. Se abre tocando el resumen.
+     El enlace y el detalle son objetivos distintos: tocar la fila ABRE la app,
+     tocar el resumen la EXPLICA. Si fueran el mismo toque, uno de los dos
+     estorbaría siempre. */
+  for (const fila of filas) {
+    const det = $('.detalle', fila), res = $('.resumen', fila);
+    if (!det || !det.textContent.trim() || !res) continue;
+    /* Botón propio: fuera del resumen, que se recorta a dos líneas y se
+       llevaría el rótulo con él. Y es un <button> de verdad, no un span con
+       rol — el teclado y el lector de pantalla lo tratan bien sin ayuda. */
+    const pedir = document.createElement('button');
+    pedir.type = 'button';
+    pedir.className = 'pedir';
+    pedir.setAttribute('aria-expanded', 'false');
+    pedir.setAttribute('aria-label', 'Qué es ' + $('.nombre', fila).textContent.trim());
+    pedir.title = 'Qué es';
+    /* al lado de la flecha, no debajo del texto */
+    $('.flecha', fila).before(pedir);
+    pedir.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const abierto = !det.hidden;
+      det.hidden = abierto;
+      fila.classList.toggle('abierta', !abierto);
+      pedir.setAttribute('aria-expanded', String(!abierto));
+    });
+  }
+
+  /* ── 4 · LO DE SIEMPRE ──────────────────────────────────────────────────
+     Cuenta en ESTE aparato qué se abre más y pone los cuatro primeros arriba.
+     No se manda a ningún lado: es `localStorage` y ya. Si el navegador lo
+     bloquea, la sección simplemente no aparece — nada se rompe. */
+  const LLAVE = 'mazi.central.usos';
+  const leer = () => { try { return JSON.parse(localStorage.getItem(LLAVE) || '{}'); }
+                       catch (e) { return {}; } };
+  const usos = leer();
+
+  for (const fila of filas) {
+    const a = $('.ir', fila);
+    a.addEventListener('click', () => {
+      try {
+        const u = leer();
+        u[a.getAttribute('href')] = (u[a.getAttribute('href')] || 0) + 1;
+        localStorage.setItem(LLAVE, JSON.stringify(u));
+      } catch (e) { /* modo privado: se abre igual, sólo no se recuerda */ }
+    });
+  }
+
+  const top = Object.entries(usos).sort((a, b) => b[1] - a[1]).slice(0, 4)
+    .filter(([, n]) => n >= 2);          /* con una sola vez no es «lo de siempre» */
+  if (top.length) {
+    const caja = $('#filas-siempre'), sec = $('#siempre');
+    for (const [href] of top) {
+      const orig = filas.find(f => $('.ir', f).getAttribute('href') === href);
+      if (!orig) continue;
+      const copia = orig.cloneNode(true);
+      copia.removeAttribute('data-desde');
+      const det = $('.detalle', copia); if (det) det.remove();
+      const res = $('.resumen', copia); if (res) res.classList.remove('abre-detalle');
+      caja.appendChild(copia);
+    }
+    if (caja.children.length) { sec.hidden = false; sec.dataset.lleno = '1'; }
+  }
+})();
 </script>
