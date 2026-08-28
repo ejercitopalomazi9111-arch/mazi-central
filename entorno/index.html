@@ -220,7 +220,36 @@ const esc = (t) => String(t == null ? '' : t)
 const params   = new URLSearchParams(location.search);
 const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.dev').replace(/\/$/,'');
 const SALA     = (params.get('sala') || '').toUpperCase();
-const LLAVE    = params.get('llave') || '';
+/* ── la llave, del mismo cajón que la mesa ────────────────────────────────
+   Esto leía SÓLO `?llave=` de la URL, y el enlace que arma la mesa
+   (`../entorno/?sala=…&servidor=…&yo=…`) nunca la lleva — a propósito, porque
+   una llave dentro de un link se reenvía por WhatsApp sin pensarlo y ahí deja
+   de ser una llave.
+
+   Mientras la sala no tuvo `LLAVES` puestas no se notó: todos entraban como
+   invitado y el taller conectaba igual. En cuanto se pusieron, el taller
+   empezó a pedir el hilo sin llave y el servidor contestó **401** — «sin
+   conexión con la sala, reintentando», sin decir por qué.
+
+   El taller y la mesa viven en el MISMO origen, así que comparten
+   `localStorage`: la llave que la mesa ya guardó en `salaLlave` está aquí sin
+   pasarla por ningún lado. Y si alguien llega directo al taller con `?llave=`,
+   se guarda en el mismo cajón para que la próxima vez tampoco haga falta. */
+const LLAVE = (() => {
+  const dada = params.get('llave');
+  try{
+    if(dada){ localStorage.setItem('salaLlave', dada); return dada; }
+    return localStorage.getItem('salaLlave') || '';
+  }catch(e){ return dada || ''; }
+})();
+if(params.get('llave')){
+  /* Fuera de la barra de direcciones, para que no quede en el historial ni en
+     lo que se comparte desde el navegador. */
+  const limpios = new URLSearchParams(location.search);
+  limpios.delete('llave');
+  const q = limpios.toString();
+  history.replaceState(null, '', location.pathname + (q ? '?' + q : ''));
+}
 const DEMO     = params.get('demo') === '1' || !SALA;
 /* ── empotrado dentro de La Sala ──────────────────────────────────────────
    Cuando el taller vive en una pestaña de la mesa, su propia barra sobra: ya
@@ -1803,6 +1832,13 @@ async function traer(){
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${SALA}/hilo`,
       { headers: LLAVE ? { 'X-Llave': LLAVE } : {} });
+    /* Un 401 aquí no es «se cayó la sala»: es que la sala tiene llaves puestas
+       y esta pestaña no trae ninguna. Decirlo con el número nada más manda a
+       buscar del lado equivocado, que es lo que pasó la primera vez. */
+    if(r.status === 401){
+      throw new Error('la sala pide llave y esta pestaña no trae ninguna · '
+        + 'entra una vez por el link con ?llave=… y queda guardada');
+    }
     if(!r.ok) throw new Error(`el servidor contestó ${r.status}`);
     const d = await r.json();
     $('aviso').textContent = '';

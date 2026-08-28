@@ -7,7 +7,7 @@
   // Adivinar bien una vez no es una configuración. Esto lo deja escrito.
   //
   // El servidor de Fadori NO se despliega desde aquí: vive en `servidor/` con
-  // su propio wrangler.toml y se publica aparte. Son dos cosas distintas y
+  // su propio wrangler.jsonc y se publica aparte. Son dos cosas distintas y
   // mezclarlas es como se termina publicando el código del servidor.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mazi-central",
