@@ -126,11 +126,43 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .btn:hover{color:var(--hueso); border-color:var(--violeta)}
 .btn:focus-visible,.codigo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
 
+/* ── las pestañas de vista ── */
+.pestanas{
+  flex:0 0 auto; display:flex; gap:2px; padding:6px 8px 0;
+  border-bottom:1px solid var(--borde); background:var(--lienzo);
+}
+.pest{
+  flex:0 0 auto; background:none; border:0; border-bottom:2px solid transparent;
+  padding:8px 12px 9px; margin-bottom:-1px; cursor:pointer;
+  color:var(--muy-tenue); font-family:inherit; font-size:13.5px; font-weight:600;
+  border-radius:8px 8px 0 0;
+}
+.pest:hover{color:var(--hueso); background:var(--superficie)}
+.pest.activa{color:var(--hueso); border-bottom-color:var(--violeta)}
+.pest:focus-visible{outline:2px solid var(--verde); outline-offset:-2px}
+/* El recuadro del 3D ocupa lo que ocuparía el hilo, ni más ni menos: así la
+   caja de escribir se queda donde está y no salta al cambiar de pestaña. */
+.marco3d{flex:1; min-height:0; position:relative; background:var(--vacio)}
+.marco3d iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
+.marco3d .cargando{
+  position:absolute; inset:0; display:grid; place-items:center;
+  color:var(--muy-tenue); font-family:var(--dato); font-size:11.5px;
+  letter-spacing:.12em; text-transform:uppercase;
+}
+
 /* ══ LAS TRES COLUMNAS ═════════════════════════════════════════════════════
    navegación · conversación · gente. En pantalla ancha se ven las tres; en
    teléfono las de los lados son cajones que entran de lado y el chat se
    queda con TODA la pantalla, que era el punto. */
-.app{flex:1; display:flex; min-height:0; position:relative}
+/* ⚠ `overflow:hidden` NO es cosmético: los cajones cerrados viven fuera de la
+   pantalla con `translateX(±102%)`, y desde que se anclaron con `absolute`
+   dentro de .app —en vez de `fixed`, que recortaba el viewport— alguien tiene
+   que recortarlos. Sin esto, el cajón derecho cerrado empujaba el ancho del
+   documento a 645px en un teléfono de 390: la página se movía de lado con el
+   pulgar sin que nada explicara por qué. Se vio midiendo `scrollWidth`, no
+   mirando la captura — de lado se ve idéntica.
+   Recortar aquí no rompe nada: cada columna ya tiene su propio scroll. */
+.app{flex:1; display:flex; min-height:0; position:relative; overflow:hidden}
 .centro{
   flex:1; min-width:0; min-height:0; display:flex; flex-direction:column;
   background:var(--lienzo);
@@ -874,7 +906,10 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
            pestaña nueva, se comparten y se vuelve con el botón de atrás. Y en
            pestaña nueva porque la sala es una conversación en vivo: sacarte de
            ella para ver una neurona te haría perder el hilo. -->
-      <a class="fila-lado" id="aTaller" href="../entorno/" target="_blank" rel="noopener">
+      <!-- Ya no abre otra app: cambia de pestaña aquí mismo. Se queda como
+           <a> con href de verdad para que «abrir en pestaña nueva» siga
+           sirviendo a quien quiera el taller en grande y aparte. -->
+      <a class="fila-lado" id="aTaller" href="../entorno/">
         <span class="ico">🧊</span><span>El taller en 3D</span></a>
       <a class="fila-lado" href="../cerebro/" target="_blank" rel="noopener">
         <span class="ico">🧠</span><span>El Cerebro</span></a>
@@ -889,7 +924,33 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   </aside>
 
   <div class="centro">
+
+<!-- ══ LAS TRES VISTAS, EN EL MISMO LUGAR ═══════════════════════════════
+     Lo pidió Carlos: «une el 3D y la sala en el mismo lugar para no tener
+     que abrir dos apps diferentes».
+
+     Tenía razón en que eran dos apps: el taller vivía en /entorno/ y se abría
+     en pestaña nueva, así que en el teléfono era salirse de la conversación
+     para ver el cuarto y volver a entrar para escribir. Ahora es una pestaña
+     más y la caja de escribir NO se va — se puede seguir la junta viendo a
+     los robots.
+
+     El 3D va en un <iframe> y no fundido en este archivo, a propósito:
+       · una escena de three.js con su vendor pesa más que toda la mesa, y
+         fundirla haría que abrir el chat cargara el motor 3D aunque nadie lo
+         vaya a ver;
+       · el taller sigue funcionando solo, con su propio link, que es como lo
+         usa quien nada más quiere mirar;
+       · y si el 3D truena, se lleva su recuadro y no la conversación.
+     Se carga la PRIMERA vez que se toca la pestaña, no al abrir la sala. -->
+<div class="pestanas" id="pestanas">
+  <button class="pest activa" data-vista="chat">Chat</button>
+  <button class="pest" data-vista="hebras">Hebras</button>
+  <button class="pest" data-vista="taller3d">Taller 3D</button>
+</div>
+
 <div class="hilo" id="hilo"></div>
+<div class="marco3d" id="marco3d" hidden></div>
 
 <!-- ── LA VISTA DE CÓMO TRABAJAN ─────────────────────────────────────────
      El chat contesta «qué se dijo». Esto contesta «cómo se llegó ahí», que
@@ -2274,15 +2335,74 @@ function armarActa(){
   $('tipo').value = 'acta';
 }
 
-/* ══ LA VISTA DE CÓMO TRABAJAN ════════════════════════════════════════════ */
+/* ══ LAS TRES VISTAS ══════════════════════════════════════════════════════
+   chat · hebras · taller 3D, todas en el mismo lugar. Antes eran dos apps y
+   una perilla de dos posiciones; ahora es una pestaña por vista y el 3D dejó
+   de vivir en otra pestaña del navegador. */
+let vista = 'chat';
+/* `vistaTaller` se conserva porque lo consultan tres lugares que refrescan la
+   vista de hebras cuando llega algo nuevo. Es una vista de la misma verdad,
+   no un segundo estado que haya que mantener a mano. */
 let vistaTaller = false;
-function cambiarVista(){
-  vistaTaller = !vistaTaller;
-  $('hilo').hidden = vistaTaller;
-  $('taller').hidden = !vistaTaller;
-  $('bVista').textContent = vistaTaller ? 'Chat' : 'Vista';
-  if(vistaTaller) pintarTaller();
+
+function mostrarVista(cual){
+  vista = cual;
+  vistaTaller = (cual === 'hebras');
+  $('hilo').hidden    = cual !== 'chat';
+  $('taller').hidden  = cual !== 'hebras';
+  $('marco3d').hidden = cual !== 'taller3d';
+  for(const b of document.querySelectorAll('.pest'))
+    b.classList.toggle('activa', b.dataset.vista === cual);
+  $('bVista').textContent = cual === 'chat' ? 'Vista' : 'Chat';
+  if(cual === 'hebras') pintarTaller();
+  if(cual === 'taller3d') prender3D();
 }
+
+/* ── el taller, sólo cuando de verdad se va a ver ────────────────────────
+   Una escena de three.js con su vendor pesa más que toda la mesa. Cargarla al
+   abrir la sala haría que quien nada más quiere escribir pague el motor 3D
+   sin verlo nunca. Así que el <iframe> nace la primera vez que se toca la
+   pestaña, y de ahí se queda vivo — recrearlo en cada cambio volvería a
+   arrancar la escena y perdería la cámara donde uno la dejó. */
+let marcoPuesto = false;
+function prender3D(){
+  if(marcoPuesto) return;
+  const caja = $('marco3d');
+  caja.innerHTML = '<div class="cargando">Levantando el taller…</div>';
+  const m = document.createElement('iframe');
+  m.title = 'El taller en 3D';
+  m.allow = 'fullscreen';
+  /* Se le pasa a QUÉ sala mirar. Sin esto abre un cuarto vacío y parece roto:
+     el taller lee `?sala=` de su propia URL, no adivina. */
+  /* ⚠ EN LA SALA DE EJEMPLO SE LE PASA `demo=1`, NO EL CÓDIGO. La sala de
+     ejemplo se inventa el código «EJEMPL» para que la barra enseñe algo, pero
+     esa sala NO EXISTE en el servidor: pasársela al taller lo dejaba pidiendo
+     datos de la nada, y el resultado era un cuarto NEGRO sin error, sin aviso
+     y sin panel. Se ve idéntico a que el 3D esté roto, y ahí se pierde la
+     tarde buscando en el lugar equivocado. Costó una. */
+  m.src = demo
+    ? `../entorno/?demo=1&dentro=1`
+    : `../entorno/?sala=${encodeURIComponent(sala || '')}` +
+      `&servidor=${encodeURIComponent(SERVIDOR)}` +
+      `&yo=${encodeURIComponent((yo && yo.id) || '')}&dentro=1`;
+  m.addEventListener('load', () => { const c = caja.querySelector('.cargando');
+                                     if(c) c.remove(); });
+  caja.appendChild(m);
+  marcoPuesto = true;
+}
+
+/* Al salirse de la sala el marco se tira: si no, al volver a entrar seguiría
+   apuntando a la sala anterior con la identidad anterior. */
+function apagar3D(){
+  marcoPuesto = false;
+  $('marco3d').innerHTML = '';
+}
+
+function cambiarVista(){ mostrarVista(vista === 'chat' ? 'hebras' : 'chat'); }
+$('pestanas').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-vista]');
+  if(b) mostrarVista(b.dataset.vista);
+});
 $('bVista').addEventListener('click', cambiarVista);
 $('bVista2').addEventListener('click', () => { cambiarVista(); cerrarCajones(); });
 $('gente').addEventListener('click', (e) => {
@@ -2387,6 +2507,7 @@ function salirme(){
     sessionStorage.setItem('sala-me-sali', '1');
     localStorage.removeItem('sala');
   }catch(e){}
+  apagar3D();
   location.reload();
 }
 async function copiarInvitacion(){
@@ -2425,7 +2546,17 @@ document.addEventListener('keydown', (e) => { if(e.key === 'Escape') cerrarCajon
    encima de lo que acabas de abrir es la manera más rápida de que parezca
    que no pasó nada. */
 $('ladoIzq').addEventListener('click', (e) => {
-  if(e.target.closest('a.fila-lado')) cerrarCajones();
+  const a = e.target.closest('a.fila-lado');
+  if(!a) return;
+  /* El taller ya vive aquí: se cambia de pestaña en vez de irse a otra app.
+     PERO se respeta el clic con Ctrl/Cmd, el del botón de en medio y el de
+     «abrir en pestaña nueva» — quien quiera el taller en grande y aparte
+     sigue pudiendo, y para eso el enlace conserva su href de verdad. */
+  if(a.id === 'aTaller' && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0){
+    e.preventDefault();
+    mostrarVista('taller3d');
+  }
+  cerrarCajones();
 });
 
 /* ── el panel de abajo: quién eres ────────────────────────────────────── */
