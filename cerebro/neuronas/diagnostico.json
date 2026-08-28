@@ -460,6 +460,108 @@
       ],
       "area": "diagnostico",
       "salioDe": "La Sala · reporté GRUPAZ vacía con 26 eventos y 4 personas adentro"
+    },
+    {
+      "id": "hidden-no-esconde-un-flex",
+      "titulo": "«hidden» no esconde nada que tenga su propio display",
+      "gravedad": "alta",
+      "sintoma": "El código esconde un botón, la propiedad `.hidden` dice «true», y el botón sigue pintado en la pantalla.",
+      "causa": "`hidden` funciona con una regla del navegador —`[hidden]{display:none}`— de la especificidad más baja que existe. Cualquier `display` que uno escriba en su propio CSS le gana.",
+      "porque": "Se piensa en `hidden` como un interruptor del elemento, y es sólo una regla de hoja de estilo más, que pierde como cualquier otra.",
+      "arreglo": "Agregar `[hidden]{display:none}` a la clase que lo pisa: `.btn[hidden]{display:none}`. No sirve de nada tocar el JavaScript, que ya estaba bien.",
+      "comoCazarlo": "Preguntarle a la PANTALLA y no al código: `!!el.offsetParent` o el alto de su recuadro. `el.hidden` contesta lo mismo que uno acaba de escribir.",
+      "consejo": "Una prueba que le pregunta al código si escondió algo sólo comprueba que el código cree lo mismo que tú. Aquí mintieron dos capas a la vez y se vio en la captura.",
+      "salioDe": "reportes/index.html · el botón «Nuevo» en modo Aviso",
+      "senales": [
+        "lo escondí y sigue ahí",
+        "hidden no funciona",
+        "el botón no se quita"
+      ],
+      "vecinas": [
+        "campo-sin-type",
+        "ids-repetidos-callados"
+      ]
+    },
+    {
+      "id": "ids-repetidos-callados",
+      "titulo": "Dos elementos con el mismo id: el navegador no dice nada y te da el primero",
+      "gravedad": "alta",
+      "sintoma": "Un campo aparece de 0×0 px, o escribes en uno y se llena otro. Sin un solo error en consola.",
+      "causa": "`querySelector(\"#x\")` devuelve el PRIMER elemento con ese id y se sale. El segundo existe, ocupa lugar y nadie lo alcanza nunca.",
+      "porque": "Pasa al juntar dos aplicaciones que se hicieron por separado. Cada una eligió nombres razonables —`fFecha`, `fGrupo`— y razonables quiere decir iguales.",
+      "arreglo": "Prefijo por origen en la que se muda: `avFecha`, `avGrupo`. Y una prueba que CUENTE los ids repetidos en toda la página.",
+      "comoCazarlo": "`const v={},mal=[]; for(const e of document.querySelectorAll(\"[id]\")) v[e.id]?mal.push(e.id):v[e.id]=1;`",
+      "consejo": "Antes de meter una app dentro de otra, se cuentan los ids. Buscarlo después leyendo cuesta horas porque no hay nada que leer.",
+      "salioDe": "reportes/index.html · al meter Avisos adentro",
+      "senales": [
+        "el campo no se llena",
+        "mide cero",
+        "se llena el otro campo"
+      ],
+      "vecinas": [
+        "hidden-no-esconde-un-flex",
+        "nombre-global-repetido"
+      ]
+    },
+    {
+      "id": "nombre-global-repetido",
+      "titulo": "Dos <script> con el mismo `const` matan la página entera, sin pintar nada",
+      "gravedad": "alta",
+      "sintoma": "La página sale en blanco. En consola, un SyntaxError que nombra una variable que sí existe y está bien escrita.",
+      "causa": "Dos `const` con el mismo nombre en el ámbito global —aunque vengan de archivos distintos— son una redeclaración. No es un aviso: es un error de sintaxis, y se lleva TODO el script.",
+      "porque": "Cada archivo se siente su propio mundo. No lo es: un `<script>` clásico comparte el ámbito global con todos los demás.",
+      "arreglo": "Envolver lo que se muda en una función que se llama sola, y dejar cruzar sólo lo que de verdad hace falta. Lo que va en su propio archivo —`datos.js`— se renombra: `TIPOS` pasó a `TIPOS_PEND`.",
+      "comoCazarlo": "Antes de juntar dos apps: `grep -oE \"^const [A-Z_]+\" a.js b.js | sort | uniq -d`.",
+      "consejo": "El módulo resuelve esto solo, pero obliga a servidor. En una app de un archivo, la función que se llama sola cuesta dos renglones y hace lo mismo.",
+      "salioDe": "reportes/index.html · `TIPOS` de reportes contra `TIPOS` de avisos",
+      "senales": [
+        "la página sale en blanco",
+        "ya fue declarada",
+        "syntaxerror y la variable existe"
+      ],
+      "vecinas": [
+        "ids-repetidos-callados"
+      ]
+    },
+    {
+      "id": "replace-se-come-los-dolares",
+      "titulo": "String.replace se come los `$$` del texto de reemplazo",
+      "gravedad": "media",
+      "sintoma": "Un guión que edita código deja `$(...)` donde escribiste `$$(...)`, y a la carga sale «$(...).find is not a function».",
+      "causa": "En el segundo argumento de `replace`, `$$` es la forma de escribir UN dólar. `$&`, `$1` y `$'` también significan otra cosa. El texto se transforma sin avisar.",
+      "porque": "Se usa `replace` como si pegara texto literal. Pega una PLANTILLA.",
+      "arreglo": "`h.split(de).join(a)`, que no interpreta nada. O pasar una función como reemplazo: `replace(de, () => a)`.",
+      "comoCazarlo": "Después de un reemplazo automático, contar: `grep -c '\\$\\$('` antes y después. Si bajó, se lo comió.",
+      "consejo": "Duele justo en un proyecto donde `$` y `$$` son los ayudantes del DOM, o sea en casi todos.",
+      "salioDe": "el guión que reescribió `verVista` en reportes/index.html",
+      "senales": [
+        "find is not a function",
+        "se perdió un signo",
+        "el reemplazo salió mal"
+      ],
+      "vecinas": [
+        "nombre-global-repetido"
+      ]
+    },
+    {
+      "id": "campo-sin-type",
+      "titulo": "`input[type=text]` no agarra un `<input>` sin `type`",
+      "gravedad": "media",
+      "sintoma": "Un campo de texto sale de 21 px de alto, sin fondo ni orilla, mientras los de al lado se ven bien.",
+      "causa": "El navegador TRATA como texto un `<input>` sin `type`, pero el selector `input[type=text]` mira el ATRIBUTO, y ahí no hay nada. El campo se queda sin una sola regla.",
+      "porque": "Se escribe `<input data-c=\"titulo\">` porque funciona —escribe, guarda, todo— y el que falla es el estilo, que es lo último que uno revisa.",
+      "arreglo": "Poner `type=\"text\"` en el marcado, que es lo correcto, Y ensanchar el selector con `input:not([type])`, porque el marcado se puede volver a olvidar y el selector no.",
+      "comoCazarlo": "Medir el alto de todos los controles del panel y marcar los de menos de 44 px. El que no tiene estilo se delata por chaparro.",
+      "consejo": "Es el mismo error que confiar en que el navegador y el CSS entienden lo mismo por «campo de texto». No lo entienden.",
+      "salioDe": "reportes/index.html · el campo «Qué es» de un pendiente",
+      "senales": [
+        "el campo se ve chiquito",
+        "un campo sin fondo",
+        "se ve distinto a los demás"
+      ],
+      "vecinas": [
+        "hidden-no-esconde-un-flex"
+      ]
     }
   ]
 }
