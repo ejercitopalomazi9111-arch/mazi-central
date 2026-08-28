@@ -307,24 +307,52 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
     await p3.click('[data-vista="ver"]'); await p3.waitForTimeout(900);
   };
 
-  await cambiar('geraldmed');
-  const g = await mide();
-  ok('GERALDMED · el filo del pie va ABAJO, no de listón en la cabecera',
-     g.pieAbajo, 'quedó arriba: chocó con otra clase que trae top:0');
-  ok('GERALDMED · el pie firma con GERALDMED y no con la escuela',
-     /geraldmed/i.test(g.firma), 'firmó «' + g.firma + '»');
-  ok('GERALDMED · el texto NO se monta sobre la línea del membrete',
-     !g.seEncima, 'el margen de arriba se quedó corto para la cabecera compuesta');
-  ok('GERALDMED · su cabecera es compuesta, no una imagen que finja membrete',
-     !g.cabeceraEsImagen);
+  /* Los CUATRO papeles: jefatura con la marca de la casa, la escuela con su
+     membrete real, presidencia y GERALDMED compuestos. Se prueban todos porque
+     el defecto que importa —un papel que firma con otra institución— no se ve
+     en uno solo: se ve comparándolos. */
+  const ESPERADO = {
+    mazi:        { firma:/grupo mazi/i,   imagen:false },
+    rembrandt:   { firma:/rembrandt/i,    imagen:true  },
+    presidencia: { firma:/sociedad/i,     imagen:false },
+    geraldmed:   { firma:/geraldmed/i,    imagen:false },
+  };
+  for(const [cual, esp] of Object.entries(ESPERADO)){
+    await cambiar(cual);
+    const m = await mide();
+    ok(cual + ' · el filo del pie va ABAJO, no de listón en la cabecera',
+       m.pieAbajo, 'quedó arriba: chocó con otra clase que trae top:0');
+    ok(cual + ' · firma con su propia institución',
+       esp.firma.test(m.firma), 'firmó «' + m.firma + '»');
+    ok(cual + ' · el texto NO se monta sobre la línea del membrete',
+       !m.seEncima, 'el margen de arriba se quedó corto para su cabecera');
+    ok(cual + (esp.imagen ? ' · usa su membrete REAL, que es una imagen'
+                          : ' · se COMPONE, no finge un membrete que no existe'),
+       m.cabeceraEsImagen === esp.imagen);
+  }
 
-  await cambiar('rembrandt');
-  const r3 = await mide();
-  ok('REMBRANDT · sigue usando su membrete REAL, que es una imagen',
-     r3.cabeceraEsImagen);
-  ok('REMBRANDT · y su pie sigue firmando con la escuela',
-     /rembrandt/i.test(r3.firma), 'firmó «' + r3.firma + '»');
-  ok('REMBRANDT · con su pie abajo, como siempre', r3.pieAbajo);
+  /* Y que el papel siga al cargo sin pisarle una elección hecha a mano: ése es
+     el defecto clásico de los valores «inteligentes». */
+  /* ⚠ Se vuelve a un papel SUGERIDO antes de medir. El bucle de arriba dejó
+     GERALDMED puesto a mano, y respetarlo es justo lo que el código debe hacer
+     — así que sin este reinicio la prueba medía la regla de al lado y fallaba
+     acusando al código de algo que hacía bien. Falló primero así, y el
+     equivocado era el examen. */
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  await p3.selectOption('#oInstitucion','rembrandt'); await p3.waitForTimeout(400);
+  await p3.click('[data-vista="escribir"]'); await p3.waitForTimeout(300);
+  await p3.click('[data-tipo="minuta"]'); await p3.waitForTimeout(500);
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  ok('un reporte de la sociedad arranca en papel de Presidencia',
+     await p3.inputValue('#oInstitucion') === 'presidencia',
+     'quedó en ' + await p3.inputValue('#oInstitucion'));
+  await p3.selectOption('#oInstitucion','geraldmed'); await p3.waitForTimeout(400);
+  await p3.click('[data-vista="escribir"]'); await p3.waitForTimeout(300);
+  await p3.click('[data-tipo="incidencia"]'); await p3.waitForTimeout(500);
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  ok('pero si lo escogiste a mano, cambiar de tipo NO te lo quita',
+     await p3.inputValue('#oInstitucion') === 'geraldmed',
+     'se lo llevó el valor por defecto');
 }
 
 await b.close();
