@@ -32,7 +32,24 @@ const { chromium } = require(process.env.PW || '/opt/node22/lib/node_modules/pla
 const CHROME = process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const MESA = process.env.MESA || 'http://localhost:8791/sala/';
-const PUERTO = 8799;
+/* ⚠ EL PUERTO SE PIDE PRESTADO, no se fija. Estaba fijo y una corrida que
+   truena a media prueba deja el servidor anterior escuchando CON SU ESTADO: la
+   siguiente no puede ocupar el puerto, le habla sin saberlo al viejo, y las
+   cuentas salen mal — «el hilo no pierde ningún mensaje» falló diciendo que
+   quedaban 8 en vez de 2. El defecto no estaba en lo que se probaba: estaba en
+   que la prueba heredó la basura de la anterior.
+
+   El primer arreglo fue PEOR: un `pkill -f "local.mjs 8799"` que se mataba a sí
+   mismo, porque la línea de comandos del propio `sh -c` contiene el texto que
+   pkill está buscando — se llevaba por delante hasta la prueba. Pedirle un
+   puerto libre al sistema no tiene ninguno de los dos problemas. */
+const PUERTO = await (async () => {
+  const { createServer } = await import('node:net');
+  return new Promise((r) => {
+    const s = createServer();
+    s.listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => r(port)); });
+  });
+})();
 const API = `http://127.0.0.1:${PUERTO}`;
 
 let bien = 0, mal = 0;
@@ -42,10 +59,27 @@ const ok = (q, c, extra) => {
 };
 
 /* ── la sala de verdad ──────────────────────────────────────────────────── */
+const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 const sala = spawn('node', [join(AQUI, 'servidor/local.mjs'), String(PUERTO)],
   { env: { ...process.env, LLAVES:'carlos:kc,luis:kl' }, stdio:'ignore' });
-const dormir = (ms) => new Promise(r => setTimeout(r, ms));
+/* Y que se muera con la prueba pase lo que pase, incluso si esto revienta: sin
+   esto, cada corrida que truena deja un servidor vivo para siempre. */
+const matar = () => { try{ sala.kill(); }catch(e){} };
+process.on('exit', matar);
+process.on('uncaughtException', (e) => { matar(); console.error(e); process.exit(1); });
+process.on('unhandledRejection', (e) => { matar(); console.error(e); process.exit(1); });
 await dormir(1200);
+
+/* Que la sala que contesta sea LA QUE ACABO DE LEVANTAR y no una de antes. */
+{
+  const d = await fetch(`${API}/api/sala/GRUPAZ/hilo`, { headers:{ 'X-Llave':'kc' } })
+    .then(r => r.json()).catch(() => null);
+  if(!d || d.error){ console.error('  ✗ no levantó la sala local'); process.exit(1); }
+  if((d.hilo || []).length){
+    console.error(`  ✗ el puerto ${PUERTO} lo tiene otra sala, con ${d.hilo.length} mensajes`);
+    process.exit(1);
+  }
+}
 
 const api = async (ruta, cuerpo, llave = 'kc') => {
   const r = await fetch(`${API}/api/sala/GRUPAZ/${ruta}`, {

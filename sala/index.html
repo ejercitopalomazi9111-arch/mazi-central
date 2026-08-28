@@ -1419,7 +1419,18 @@ const LLAVE = (() => {
   const dada = params.get('llave');
   try{
     const guardada = localStorage.getItem('salaLlave') || '';
-    if(dada){ localStorage.setItem('salaLlave', dada); return dada; }
+    /* La llave nueva SÍ entra —el link que se explica solo es todo el punto de
+       esto— pero la anterior se GUARDA y el cambio se avisa. El pecado no era
+       cambiar de llave: era hacerlo callado y sin vuelta. */
+    if(dada && dada !== guardada){
+      if(guardada){
+        LLAVE_ANTERIOR = guardada;
+        CAMBIO_DE_LLAVE = true;
+        localStorage.setItem('salaLlaveAnterior', guardada);
+      }
+      localStorage.setItem('salaLlave', dada);
+      return dada;
+    }
     if(dada) return dada;
     return guardada;
   }catch(e){ return dada || ''; }
