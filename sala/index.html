@@ -1116,6 +1116,14 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   margin-top:18px; padding-top:16px; border-top:1px solid var(--borde);
   font-size:12.5px; color:var(--muy-tenue);
 }
+
+/* El interruptor de idioma. Ancho fijo para que la barra no brinque al pasar
+   de «EN» a «ES», que son dos letras pero no miden lo mismo. */
+.idioma{
+  font-family:var(--dato); font-size:11.5px; font-weight:700; letter-spacing:.04em;
+  min-width:38px; padding:0 8px; border-radius:3px;
+}
+.idioma[aria-pressed="true"]{ color:var(--violeta); border-color:var(--violeta); }
 </style>
 </head>
 <body>
@@ -1146,6 +1154,11 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
     <span class="tit-sub"><span class="punto" id="puntoVivo"></span><span id="enLinea">sin conectar</span></span>
   </button>
   <span class="crece"></span>
+  <!-- El interruptor de idioma. Va en la barra y no en el cajón porque se
+       usa a media lectura: si hay que abrir un menú para cambiarlo, no se
+       cambia. Dice a qué idioma te lleva, no en cuál estás — es lo que se
+       espera de un botón. -->
+  <button class="icono idioma" id="bIdioma" aria-label="Read in English">EN</button>
   <button class="icono soloAngosto" id="bGente" aria-label="Ver quién está">
     <span class="cara">👥</span><span class="cuantos" id="cuantos"></span>
   </button>
@@ -1466,6 +1479,16 @@ if(params.get('llave')){
   history.replaceState(null, '', location.pathname + (q ? '?' + q : ''));
 }
 const conLlave = (h = {}) => LLAVE ? { ...h, 'X-Llave': LLAVE } : h;
+
+/* ── el idioma, declarado ARRIBA a propósito ──────────────────────────────
+   El interruptor y su diccionario viven al final del script, pero `pintarHilo`
+   lee `IDIOMA` para decidir si el botón del mensaje dice «simple» o «english».
+   Un `let` no existe antes de su línea —zona muerta temporal—, así que
+   declararlo abajo deja el arranque dependiendo de que ningún pintado ocurra
+   antes. Hoy no ocurre; el día que alguien mueva una llamada, revienta con un
+   error que no dice nada de idiomas. Se declara aquí y se acabó. */
+let IDIOMA = 'es';
+try{ IDIOMA = localStorage.getItem('salaIdioma') === 'en' ? 'en' : 'es'; }catch(e){}
 
 const $ = (id) => document.getElementById(id);
 const esc = (t) => String(t == null ? '' : t)
@@ -1987,8 +2010,12 @@ function pintarReacciones(e){
   partes.push(`<button class="reaccionar" data-abrir-reac="${esc(e.id)}" aria-label="Reaccionar">＋</button>`);
   /* Un botón POR MENSAJE, no un modo global: uno quiere que le expliquen ESTE
      mensaje, no que le cambien toda la junta. Y el original nunca se toca. */
+  /* El mismo botón hace dos cosas distintas según el idioma, y por eso lo
+     dice: en español SIMPLIFICA, en inglés TRADUCE. Ofrecer «simple» a quien
+     puso la mesa en inglés sería prometerle lo que no va a recibir. */
   partes.push(`<button class="reaccionar simple" data-simple="${esc(e.id)}"
-    aria-label="Explícamelo simple">💬 simple</button>`);
+    aria-label="${IDIOMA === 'en' ? 'Read it in English' : 'Explícamelo simple'}">${
+      IDIOMA === 'en' ? '🌐 english' : '💬 simple'}</button>`);
   return `<div class="reacciones">${partes.join('')}</div>`;
 }
 
@@ -2091,7 +2118,8 @@ function pintarHilo(){
         : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
 
     const llano = simples[e.id]
-      ? `<div class="llano"><span class="llano-rot">En cristiano</span>${esc(simples[e.id])}</div>`
+      ? `<div class="llano"><span class="llano-rot">${
+          IDIOMA === 'en' ? 'In English' : 'En cristiano'}</span>${esc(simples[e.id])}</div>`
       : '';
 
     partes.push(
@@ -2173,7 +2201,7 @@ async function explicarSimple(id){
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${sala}/traducir`, {
       method:'POST', headers: conLlave({ 'content-type':'application/json' }),
-      body: JSON.stringify({ sobre:id }),
+      body: JSON.stringify({ sobre:id, idioma: IDIOMA }),
     });
     const c = await r.json();
     if(r.ok){ simples[id] = c.simple; }
@@ -3560,6 +3588,215 @@ function nombreRecordado(codigo){
      teclado y tapa justo la lista que se acaba de pintar. */
   if(misSalas().length === 0) $('codigoIn').focus();
 })();
+/* ══ LEER LA SALA EN INGLÉS ════════════════════════════════════════════════
+   Luis: «necesito un toggle que traduzca TODO a inglés porque me gusta poder
+   leer en inglés». Son DOS cosas y conviene no confundirlas, porque una
+   funciona sola y la otra depende de que haya traductor:
+
+   1 · LA INTERFAZ (botones, rótulos, vacíos, avisos). Se traduce aquí mismo,
+       con un diccionario. Sin red, sin llave, sin costo y sin esperar.
+   2 · LOS MENSAJES, que son texto que escribió una persona y no se pueden
+       adivinar. Ésos van al traductor del servidor. Si está apagado se DICE,
+       no se finge — igual que hace «explícamelo simple».
+
+   ── POR QUÉ UN DICCIONARIO Y NO EDITAR CADA PINTADO ────────────────────
+   La mesa arma HTML en veinte sitios distintos. Meter un `t(...)` en cada uno
+   es mucho toque y, peor, se desincroniza en el primer cambio que alguien
+   haga sin acordarse del inglés. Esto trabaja sobre el DOM ya pintado: lo que
+   aparezca en pantalla se traduce, lo escriba quien lo escriba.
+
+   ── POR QUÉ COINCIDENCIA EXACTA ────────────────────────────────────────
+   Sólo se cambia un texto si es IGUAL a una entrada del diccionario. Por eso
+   el cuerpo de un mensaje nunca se toca: nadie escribe un mensaje que sea
+   exactamente «Quién es quién». Es lo que hace seguro trabajar sobre el DOM.  */
+
+const EN = {
+  /* la barra y la navegación */
+  'La Sala':'The Room', 'sin conectar':'not connected', 'Chat':'Chat',
+  'Hebras':'Threads', 'Taller 3D':'3D Workshop', 'Abrir el menú':'Open the menu',
+  'Ver quién está':'See who is here', 'Copiar el link de invitación':'Copy the invite link',
+  /* el cajón */
+  'Esta sala':'This room', 'Copiar la invitación':'Copy the invitation',
+  'Llaves':'Keys', 'Quién es quién':'Who is who', 'Tus salas':'Your rooms',
+  'Entrar a otra sala':'Join another room', 'Salir de la sala':'Leave the room',
+  'Las otras pantallas':'The other screens', 'El Cerebro':'The Brain',
+  'Mazi Central':'Mazi Central', 'El taller en 3D':'The workshop in 3D',
+  'Código de la sala':'Room code', 'Tu nombre':'Your name',
+  '¿No tienes código?':'No code?', 'Entrar':'Join', 'Volver':'Back',
+  'Cerrar':'Close', 'Copiar':'Copy', 'Quitar':'Remove', 'Enviar':'Send',
+  /* el hilo */
+  'Todavía no se ha dicho nada.':'Nothing has been said yet.',
+  'Todavía no se ha dicho nada. Empieza tú.':'Nothing has been said yet. Go first.',
+  'Todavía no hay nadie.':'Nobody here yet.',
+  'Todavía no hay nadie en la mesa.':'Nobody at the table yet.',
+  'Nadie más todavía':'Nobody else yet',
+  'Escribe lo que quieras decirle a la sala…':'Write whatever you want to tell the room…',
+  'Adjuntar una imagen':'Attach an image', '📎 Imagen':'📎 Image',
+  'Reaccionar':'React', 'Ver en grande':'View larger',
+  'Dejarle una nota a alguien':'Leave someone a note',
+  'Para quién es la nota':'Who the note is for',
+  'La nota del final. Sólo despierta a quien va dirigida.':
+    'The note at the end. It only wakes the person it is addressed to.',
+  '→ a todos (contestan todos)':'→ to everyone (everyone answers)',
+  'En cristiano':'In plain words', 'En inglés':'In English',
+  'Explícamelo simple':'Explain it simply', 'Léelo en inglés':'Read it in English',
+  '💬 simple':'💬 simple', '🌐 english':'🌐 english',
+  'Traduciendo…':'Translating…',
+  /* etiquetas de mensaje */
+  'Tarea':'Task', 'Decisión':'Decision', 'Pregunta':'Question',
+  'Revisión':'Review', 'Propuesta':'Proposal', 'Ejecución':'Run',
+  'Bloqueo':'Blocker', 'Desacuerdo':'Disagreement', 'Acta':'Minutes',
+  'Sin etiqueta':'No label', 'Ojo con esto':'Watch out for this',
+  '¿Cómo lo tomas?':'How do you take it?',
+  /* trabajo y estado */
+  'Lo que lleva':'What it has done', 'En la sala':'In the room',
+  'No está trabajando en nada':'Not working on anything',
+  'No puede trabajar':'Cannot work', 'Sin señal':'No signal',
+  'Ahorita':'Right now', 'Ahorita está en':'Right now it is on',
+  'Qué es esto (opcional)':'What is this (optional)',
+  'Cómo se ve el hilo':'How the thread looks',
+  'Cambiar cómo se ve el hilo':'Change how the thread looks',
+  'Vista':'View', '← Anterior':'← Previous', 'Siguiente →':'Next →',
+  'Levantando el taller…':'Bringing up the workshop…',
+  /* llaves */
+  'Llaves de la sala':'Room keys', 'Invitar a alguien':'Invite someone',
+  'Cerrar la sala y darme mi llave':'Close the room and give me my key',
+  'Dame el link para invitarlo':'Give me the link to invite them',
+  'Ya tienen llave':'Already have a key', 'tu llave':'your key',
+  'El link lleva la llave adentro:':'The link carries the key inside:',
+  'Para una persona · abre la mesa':'For a person · opens the table',
+  'Para su Claude · se explica solo':'For their Claude · explains itself',
+  'Copiar mi link':'Copy my link', 'Copiar el del agente':'Copy the agent one',
+  'Copiar el de la persona':'Copy the person one',
+  /* quién es quién */
+  'De quién es cada color':'Whose each color is',
+  'Qué figura es cada modelo':'Which shape each model is',
+  'Las figuras son nuestras':'The shapes are ours',
+  'color':'color', 'figura':'shape', 'anillo':'ring',
+  /* Las que se me escaparon en la primera pasada y sólo salieron mirando la
+     pantalla, no leyendo el código. Vale como recordatorio: un diccionario se
+     completa con capturas, no de memoria. */
+  'nadie en línea':'nobody online', 'Mensaje':'Message', 'Límite':'Limit',
+  'persona':'person', 'agente':'agent', 'Otra IA':'Another AI',
+  'No dijo cuál':'Did not say which',
+  'Ya no está en la sala':'No longer in the room',
+  'Sala de ejemplo: nada de esto se guarda ni sale de tu teléfono.':
+    'Example room: none of this is saved or leaves your phone.',
+  'para conocer la mesa sin conectarte.':'to see the table without connecting.',
+  'y desde ahí sólo entra quien invites.':'and from then on only who you invite gets in.',
+  'quien lo tenga, entra':'whoever has it, gets in',
+};
+
+/* ── LO QUE LLEVA UN NÚMERO ADENTRO ──────────────────────────────────────
+   «3 en línea» no está en el diccionario y no puede estarlo: el número cambia.
+   El diccionario casa frases EXACTAS —que es lo que lo hace seguro— así que
+   para éstas hace falta una regla aparte, y sólo para éstas. Van en pares:
+   la de ida y la de vuelta, porque el botón tiene que regresar a español. */
+const PAT_EN = [[/^(\d+) en línea$/, '$1 online']];
+const PAT_ES = [[/^(\d+) online$/, '$1 en línea']];
+
+/* El camino de vuelta. Se arma solo, y de paso avisa si dos frases distintas
+   acabaron con la misma traducción: eso rompería el regreso a español y es el
+   tipo de cosa que uno no nota hasta que ya la publicó. */
+const ES = {};
+for(const [es, en] of Object.entries(EN)){
+  if(ES[en] && ES[en] !== es) console.warn('idioma: dos frases comparten traducción →', en);
+  if(!ES[en]) ES[en] = es;
+}
+
+const ATRIBUTOS = ['placeholder', 'aria-label', 'title'];
+let observador = null;
+
+function cambiar(txt, mapa, patrones){
+  const limpio = String(txt).trim();
+  if(!limpio) return null;
+  let puesto = mapa[limpio];
+  if(puesto == null && patrones){
+    for(const [re, con] of patrones){
+      if(re.test(limpio)){ puesto = limpio.replace(re, con); break; }
+    }
+  }
+  if(puesto == null || puesto === limpio) return null;
+  /* Se conserva el espacio de alrededor: en el HTML hay saltos de línea y
+     sangría que sostienen el diseño, y comérselos mueve cosas de lugar. */
+  return String(txt).replace(limpio, puesto);
+}
+
+function recorrer(raiz, mapa, patrones){
+  const paso = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, {
+    acceptNode(n){
+      const p = n.parentNode;
+      if(!p) return NodeFilter.FILTER_REJECT;
+      const t = p.nodeName;
+      /* Ni el código ni lo que la persona está escribiendo. */
+      if(t === 'SCRIPT' || t === 'STYLE' || t === 'TEXTAREA') return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const cambios = [];
+  for(let n = paso.nextNode(); n; n = paso.nextNode()){
+    const nuevo = cambiar(n.nodeValue, mapa, patrones);
+    if(nuevo != null) cambios.push([n, nuevo]);
+  }
+  for(const [n, v] of cambios) n.nodeValue = v;
+
+  const elems = raiz.querySelectorAll ? raiz.querySelectorAll('[placeholder],[aria-label],[title]') : [];
+  for(const el of elems){
+    for(const a of ATRIBUTOS){
+      if(!el.hasAttribute(a)) continue;
+      const nuevo = cambiar(el.getAttribute(a), mapa, patrones);
+      if(nuevo != null) el.setAttribute(a, nuevo);
+    }
+  }
+}
+
+/* Traducir DISPARA mutaciones, así que el observador se apaga mientras se
+   escribe y se vuelve a prender después. Sin esto se llama a sí mismo para
+   siempre — y es de los bucles que no se ven en el código, sólo en el
+   ventilador de la computadora. */
+function traducirPantalla(mapa, patrones, raiz){
+  if(observador) observador.disconnect();
+  try{ recorrer(raiz || document.body, mapa, patrones); }
+  finally{ if(observador && IDIOMA === 'en') observador.observe(document.body, { childList:true, subtree:true, characterData:true }); }
+}
+
+function aplicarIdioma(){
+  const b = $('bIdioma');
+  if(b){
+    /* El botón dice A DÓNDE te lleva. En español ofrece «EN»; en inglés
+       ofrece «ES». Poner el idioma actual confunde a la mitad de la gente. */
+    b.textContent = IDIOMA === 'en' ? 'ES' : 'EN';
+    b.setAttribute('aria-label', IDIOMA === 'en' ? 'Leer en español' : 'Read in English');
+    b.setAttribute('aria-pressed', IDIOMA === 'en' ? 'true' : 'false');
+  }
+  document.documentElement.lang = IDIOMA;
+  if(IDIOMA === 'en'){
+    if(!observador) observador = new MutationObserver(() => {
+      if(pendiente) return;
+      pendiente = requestAnimationFrame(() => { pendiente = 0; traducirPantalla(EN, PAT_EN); });
+    });
+    traducirPantalla(EN, PAT_EN);
+  } else {
+    if(observador){ observador.disconnect(); }
+    traducirPantalla(ES, PAT_ES);
+  }
+}
+let pendiente = 0;
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('#bIdioma')) return;
+  IDIOMA = IDIOMA === 'en' ? 'es' : 'en';
+  try{ localStorage.setItem('salaIdioma', IDIOMA); }catch(err){}
+  /* Lo ya traducido quedó en el idioma anterior. Si no se tira, cambias a
+     inglés y sigues leyendo la explicación en español debajo del mensaje —
+     que es exactamente lo que uno acaba de pedir que no pase. */
+  for(const k of Object.keys(simples)) delete simples[k];
+  aplicarIdioma();
+  if(typeof pintarHilo === 'function') pintarHilo();
+});
+
+aplicarIdioma();
+
 </script>
 </body>
 </html>
