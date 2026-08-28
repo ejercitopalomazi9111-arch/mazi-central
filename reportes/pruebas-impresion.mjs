@@ -303,10 +303,39 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
          configuración: lo que importa es lo que sale en el papel. */
       aguaSrc: (() => { const i = h.querySelector('.agua img');
                         return i ? new URL(i.src).pathname : null; })(),
-      aguaAlto: (() => { const i = h.querySelector('.agua img');
-                         return i ? Math.round(i.getBoundingClientRect().height) : 0; })(),
+      /* El ALTO DE LA TINTA, no el de la caja. Un logo con aire alrededor de
+         su dibujo se pinta más chico que otro del mismo ancho declarado, y
+         midiendo el elemento eso no se ve: los dos reportan lo mismo. Así que
+         se dibuja en un canvas y se barre el alfa para hallar dónde empieza y
+         dónde acaba el dibujo de verdad.
+         (La estrella de GERALDMED ocupa 67% de su lienzo. Con la medida vieja
+         habría pasado la prueba viéndose un tercio más chica que las otras.) */
+      aguaAlto: 0,
       leyenda: (h.querySelector('.agua .letras') || {}).textContent || '',
     };
+  });
+
+  /* Se mide aparte porque hay que esperar a que la imagen cargue de verdad:
+     una imagen a medio cargar no tiene tinta que medir. */
+  const tinta = async () => p3.evaluate(async () => {
+    const im = document.querySelector('.hoja .agua img');
+    if(!im) return 0;
+    const b = new Image(); b.src = im.src;
+    await b.decode();
+    const c = document.createElement('canvas');
+    c.width = b.naturalWidth; c.height = b.naturalHeight;
+    const cx = c.getContext('2d'); cx.drawImage(b, 0, 0);
+    const d = cx.getImageData(0, 0, c.width, c.height).data;
+    let arriba = -1, abajo = -1;
+    for(let y = 0; y < c.height; y++){
+      for(let x = 0; x < c.width; x++){
+        if(d[(y*c.width + x)*4 + 3] >= 40){ if(arriba < 0) arriba = y; abajo = y; break; }
+      }
+    }
+    if(arriba < 0) return 0;
+    /* de píxeles del archivo a milímetros pintados en la hoja */
+    const alto = im.getBoundingClientRect().height;
+    return +((abajo - arriba + 1) / c.height * alto).toFixed(1);
   });
 
   const cambiar = async (cual) => {
@@ -326,7 +355,9 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
                    leyenda:/instituto rembrandt/i },
     presidencia: { firma:/sociedad/i,     imagen:false, agua:/escudo-rembrandt\.png$/,
                    leyenda:/sociedad de alumnos/i },
-    geraldmed:   { firma:/geraldmed/i,    imagen:false, agua:/logo-ambulancia\.png$/,
+    /* La marca de agua de GERALDMED es la ESTRELLA, no el logo de la
+       cabecera: la hoja no debe repetir la misma imagen dos veces. */
+    geraldmed:   { firma:/geraldmed/i,    imagen:false, agua:/logo-estrella\.png$/,
                    leyenda:/geraldmed/i },
   };
   const altos = {};
@@ -351,17 +382,18 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
        esp.agua.test(m.aguaSrc || ''), 'trae ' + m.aguaSrc);
     ok(cual + ' · la leyenda de la marca de agua también es suya',
        esp.leyenda.test(m.leyenda), 'dice «' + m.leyenda + '»');
-    altos[cual] = m.aguaAlto;
+    altos[cual] = await tinta();
   }
 
-  /* El escudo es CUADRADO y la paloma y la ambulancia son apaisadas (1.7:1).
-     Al mismo ancho el escudo se pinta ~70% más alto y se come la hoja, así
-     que cada uno trae su propio ancho. Se comprueba midiendo lo pintado: que
-     ninguna marca de agua se dispare respecto de las otras. */
+  /* Cada logo trae su propio ancho porque son de formas distintas —la paloma
+     apaisada 1.7:1, el escudo cuadrado, la estrella cuadrada pero con 33% de
+     aire alrededor de su dibujo—. Lo que tiene que quedar parejo NO es el
+     ancho declarado sino la TINTA que cae en el papel, que es lo único que se
+     ve. Por eso se mide el dibujo y no la caja. */
   const alturas = Object.values(altos);
   ok('ninguna marca de agua se sale de escala frente a las otras',
-     Math.max(...alturas) / Math.min(...alturas) < 1.45,
-     'alturas pintadas: ' + JSON.stringify(altos));
+     Math.max(...alturas) / Math.min(...alturas) < 1.30,
+     'altos de TINTA pintada (px): ' + JSON.stringify(altos));
 
   /* Y que el papel siga al cargo sin pisarle una elección hecha a mano: ése es
      el defecto clásico de los valores «inteligentes». */

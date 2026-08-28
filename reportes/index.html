@@ -1535,7 +1535,16 @@ const INSTITUCIONES = {
     compuesta: { logo:'geraldmed/logo-ambulancia.png', lema:'Atención prehospitalaria',
                  clase:'geraldmed' },
     pie:'GERALDMED · Atención prehospitalaria',
-    agua:{ logo:'geraldmed/logo-ambulancia.png', ancho:120,
+    /* La marca de agua es la ESTRELLA, no el logo de la cabecera. Lo pidió
+       Carlos y además funciona mejor: la cabecera lleva el logo apaisado y el
+       fondo lleva el emblema, en vez de repetir la misma imagen dos veces en
+       la misma hoja.
+
+       110mm y no 80 como el escudo porque el dibujo ocupa sólo el 67% de su
+       lienzo —trae aire alrededor— así que al mismo ancho se vería un tercio
+       más chico. Medido con umbral de alfa: `getbbox()` a secas devolvía el
+       lienzo completo por culpa de un halo casi invisible. */
+    agua:{ logo:'geraldmed/logo-estrella.png', ancho:110,
            leyenda:'GERALDMED · DOCUMENTO ORIGINAL' },
     tinta:'#454C78', acento:'#92D9CF',
     tope:42, fondo:30,
