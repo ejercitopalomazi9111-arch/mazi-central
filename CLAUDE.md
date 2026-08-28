@@ -277,6 +277,7 @@ afectado**, no la skill entera.
 **Empiezo por `find-skill`**, que decide cuál toca y en qué orden.
 
 | Skill | Cuándo se dispara |
+   | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
 |---|---|
 | **`find-skill`** | El enrutador. Qué skill toca, en qué orden, y cuándo ninguna |
 | **`four-judges`** | Antes de toda decisión cara. Palabra clave: **ROAST** |

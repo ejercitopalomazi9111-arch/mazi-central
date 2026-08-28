@@ -205,6 +205,51 @@
       "vecinas": [
         "la-prueba-se-ensucia-su-premisa"
       ]
+    },
+    {
+      "id": "mutacion-sin-restaurar",
+      "titulo": "La prueba de mutación se quedó a medias y el defecto se commiteó",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Un arreglo que se probó en verde aparece roto después, y el commit que lo subió dice en su mensaje que está arreglado.",
+      "causa": "Para comprobar que una prueba caza un bug se le mete el bug a propósito, se corre, y se restaura. Si el turno se interrumpe entre el «se corre» y el «se restaura», lo que queda en el disco es la versión CON el defecto — y es la que se commitea.",
+      "porque": "El mensaje del commit se escribe pensando en el arreglo, no en lo que hay en el archivo. Suena perfecto y nadie lo contradice: la única prueba que corrió después fue la de la mutación, que por definición estaba en rojo y se dio por buena.",
+      "arreglo": "Volver a correr las pruebas DESPUÉS de restaurar y antes de commitear. Si están en rojo, no se restauró. Mejor todavía: mutar sobre una copia del archivo y no sobre el original.",
+      "comoCazarlo": "Antes de commitear un arreglo que se acaba de mutar, buscar en el archivo la línea del arreglo. Si no está, el commit va a mentir. Y desconfiar de todo commit cuyo mensaje describe algo que no se volvió a verificar después del último cambio de disco.",
+      "consejo": "El verde de antes de la mutación no vale: entre ese verde y el commit pasó una edición deliberada al código. Un commit se firma con lo que hay en el disco, no con lo que uno recuerda haber escrito.",
+      "salioDe": "sala/index.html · el arreglo de la llave que se subió mutado en d997c7b",
+      "senales": [
+        "subí lo que no era",
+        "el commit dice que está arreglado",
+        "volvió a aparecer el bug",
+        "la prueba pasaba y ya no"
+      ],
+      "vecinas": [
+        "la-prueba-solo-caza-si-falla-la-primera"
+      ]
+    },
+    {
+      "id": "puerto-fijo-hereda-la-basura",
+      "titulo": "Una prueba con puerto fijo le habla al servidor de la corrida anterior",
+      "gravedad": "media",
+      "clase": "error",
+      "sintoma": "Una prueba de integración empieza a fallar con números que no cuadran —«esperaba 2 y hay 8»— sin que nadie haya tocado lo que prueba.",
+      "causa": "La suite levanta su servidor en un puerto FIJO. Cuando una corrida truena a media prueba, el `kill` final nunca llega y ese servidor se queda escuchando CON SU ESTADO. La corrida siguiente no puede ocupar el puerto, le habla sin saberlo al viejo, y hereda todo lo que quedó dentro.",
+      "porque": "El fallo apunta al código que se está probando, no a la prueba. Se busca el bug donde no está, y encima desaparece solo cuando el proceso viejo muere por cualquier razón, lo que lo hace parecer intermitente.",
+      "arreglo": "Pedirle al sistema un puerto libre (escuchar en el 0, leer cuál tocó, soltarlo) en vez de fijarlo. Y matar al hijo desde `process.on(exit)` y desde los manejadores de excepción, para que ninguna salida lo deje vivo.",
+      "comoCazarlo": "Si una prueba de integración falla con estado de más, mira si hay un proceso viejo escuchando en su puerto antes de leer una sola línea del código.",
+      "consejo": "⚠ Y NO se arregla con pkill. El primer intento fue `pkill -f \"local.mjs 8799\"` y se mataba a sí mismo: la línea de comandos del propio `sh -c` contiene el texto que pkill está buscando, así que se lleva por delante hasta la prueba que lo llamó. Pedir un puerto libre no tiene ninguno de los dos problemas.",
+      "salioDe": "sala/pruebas-presencia.mjs",
+      "senales": [
+        "la prueba falla con datos de más",
+        "esperaba 2 y hay 8",
+        "falla sin que nadie toque nada",
+        "el puerto está ocupado"
+      ],
+      "vecinas": [
+        "la-prueba-se-ensucia-su-premisa",
+        "reloj-vivo-hace-fallar-la-prueba"
+      ]
     }
   ]
 }
