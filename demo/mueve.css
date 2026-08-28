@@ -29,9 +29,20 @@
    El contenedor recorta y el hijo sube. `overflow:hidden` corta las colas de
    las letras —la g, la j, la p— así que se le da aire abajo y se le quita por
    fuera con el margen: la caja mide lo mismo y las colas caben. */
+/* ⚠ EL RELLENO NO VA DENTRO DE `:not(.quieto)`, Y ANTES SÍ. Si sólo existe
+   cuando hay movimiento, la página con movimiento y la página quieta tienen
+   separaciones distintas entre el titular y lo que sigue. Aquí está siempre;
+   lo único que se enciende con el movimiento es el recorte. */
+html [data-mueve="mascara"]{
+  /* .14em NO ALCANZABA y no se veía a ojo: con `line-height:.86` la cola de la
+     última línea se sale .18em por debajo de su renglón, así que el punto de
+     «antes.» quedaba cortado por la mitad en los tres anchos. No lo encontré
+     mirando: lo encontró la prueba nueva de «ningún texto se sale de su caja»,
+     que compara lo que el contenido mide contra lo que la caja enseña. */
+  padding-bottom:.34em;
+}
 html:not(.quieto) [data-mueve="mascara"]{
   overflow:hidden;
-  padding-bottom:.14em;
   /* ⚠ AQUÍ HABÍA UN `margin-bottom:-.14em` PARA COMPENSAR EL RELLENO, Y ERA UN
      ERROR CARO. Este selector gana por especificidad sobre `h1` y `h2`, así
      que no compensaba nada: BORRABA el margen que el titular tenía escrito, y
@@ -95,7 +106,7 @@ html:not(.quieto) [data-mueve="mascara"].dentro > span{
   html:not(.quieto) [data-balon]{
     animation:rodar linear both;
     animation-timeline:scroll(root block);
-    will-change:transform;
+    /* sin will-change: ver la nota de abajo */
   }
 }
 @keyframes rodar{
@@ -117,11 +128,52 @@ html:not(.quieto) [data-mueve="mascara"].dentro > span{
   to  { opacity:.46; }
 }
 
+/* ══ «VOLVER ARRIBA», QUE LLEVABA TODO EL DÍA VISIBLE ═══════════════════════
+   ⚠ ESTO VIVÍA EN mueve.js Y NO CORRÍA NUNCA. Ese archivo SALE TEMPRANO
+   cuando el navegador sabe llevar el scroll él solo —que es todo Chrome, Edge
+   y Safari de hoy— y la línea que escondía el botón estaba DESPUÉS de esa
+   salida. O sea que el botón se veía desde el primer píxel, encima de la
+   portada, en la inmensa mayoría de los navegadores. Sólo se escondía en los
+   viejos, que son los únicos que llegan al respaldo.
+
+   Y LA PRUEBA LO DEJABA PASAR, que es la parte que hay que aprenderse:
+   comprobaba «al final de la página NO tiene la clase `lejos`». Si el JS que
+   pone esa clase nunca corre, la clase nunca existe, y esa comprobación es
+   cierta SIEMPRE — pasaba sin ejercitar nada. Es el mismo defecto que ya me
+   costó horas en otras cosas: algo que reporta un estado y está en otro.
+   Ahora la prueba mide la OPACIDAD PINTADA arriba y abajo, y además intenta
+   TOCARLO estando invisible.
+
+   Va aquí porque es movimiento, y aquí el movimiento lo lleva el navegador.
+   `pointer-events` se anima en pasos —no se interpola, salta— así que mientras
+   está transparente tampoco se puede tocar, que es lo que evita el botón
+   invisible pero clicable en la esquina. */
+@supports (animation-timeline: scroll()){
+  html:not(.quieto) .arriba{
+    animation:asomar linear both;
+    animation-timeline:scroll(root block);
+    /* El recorrido se mide en píxeles de scroll, no en porcentaje del
+       documento: «cuando ya bajaste una pantalla» quiere decir lo mismo en una
+       página de tres pantallas que en una de veinte. */
+    animation-range:0 100vh;
+  }
+}
+@keyframes asomar{
+  0%, 72%{ opacity:0; transform:translateY(8px); pointer-events:none; }
+  100%   { opacity:1; transform:translateY(0);   pointer-events:auto; }
+}
+
 /* ── APAGADO, EXPLÍCITO Y AL FINAL ───────────────────────────────────────
    Va al final para que gane sin pelear con especificidades. Quien pidió menos
    movimiento no pidió menos página: se queda todo, quieto y completo. */
 @media (prefers-reduced-motion: reduce){
-  html [data-mueve="mascara"]{ overflow:visible; padding-bottom:0; margin-bottom:0; }
+  /* ⚠ AQUÍ SEGUÍA VIVO EL MISMO `margin-bottom:0` QUE YA SE HABÍA ARREGLADO
+     ARRIBA. Este selector también gana sobre `h1`, así que a quien pide menos
+     movimiento se le borraba el margen del titular y «antes.» se le montaba en
+     el párrafo — el defecto de siempre, escondido en el único camino que
+     ninguna prueba recorría. Ahora se prueba, y aquí no se toca ningún margen
+     ajeno: sólo se apaga el recorte, que es lo único que sobra sin animación. */
+  html [data-mueve="mascara"]{ overflow:visible; }
   html [data-mueve="mascara"] > span{ transform:none; animation:none; transition:none; }
   html [data-balon]{ animation:none; transform:translateY(38vh); }
   html [data-linea]{ animation:none; opacity:.34; }

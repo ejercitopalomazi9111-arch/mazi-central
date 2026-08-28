@@ -79,7 +79,13 @@ body{
 body::before{
   content:''; position:fixed; inset:0; z-index:-2; pointer-events:none;
   background:
-    radial-gradient(120% 60% at 88% 4%, #E0A05018 0%, transparent 58%),
+    /* LAS VETAS DEL CORTE. Es lo que hace que un verde plano se lea como
+       PASTO: la máquina pasa de ida y de vuelta y deja franjas que reflejan
+       distinto. Están inclinadas y son anchas y suaves —no rayas de código de
+       barras— porque de cerca eso es lo que se ve. Cero archivos. */
+    repeating-linear-gradient(97deg,
+      #FFFFFF06 0 34px, #00000010 34px 68px),
+    radial-gradient(120% 60% at 88% 4%, #E0A05020 0%, transparent 58%),
     linear-gradient(178deg, var(--pasto-claro) 0%, var(--pasto) 46%, #0F150E 100%);
 }
 body::after{
@@ -100,27 +106,45 @@ body::after{
   position:fixed; inset:0; z-index:0; pointer-events:none;
 }
 .linea{
-  position:absolute; top:0; bottom:0; left:var(--linea-x); width:3px;
-  background:var(--cal);
-  /* La cal está pisada: se raspa con una máscara en vez de dibujarle
-     manchitas. Más barato y se ve menos «hecho». */
-  opacity:.34;
-  -webkit-mask-image:repeating-linear-gradient(180deg,#000 0 26px,#0006 26px 30px,#000 30px 52px,#0009 52px 55px);
-          mask-image:repeating-linear-gradient(180deg,#000 0 26px,#0006 26px 30px,#000 30px 52px,#0009 52px 55px);
+  position:absolute; top:0; bottom:0; left:var(--linea-x); width:7px;
+  /* LA CAL NO ES UNA BARRA DE COLOR. Es polvo apretado sobre pasto: tiene el
+     centro más cargado, las orillas comidas, y el pasto asomando por encima
+     donde ya la pisaron. Tres capas y ningún archivo:
+       1 · el degradado a lo ancho la hace polvo y no plástico;
+       2 · la máscara a lo largo se la come a mordidas irregulares;
+       3 · las briznas por encima son el pasto que le creció encima. */
+  background:linear-gradient(90deg,
+    #E8E4D900 0%, #E8E4D966 18%, var(--cal) 46%, var(--cal) 58%, #E8E4D95c 82%, #E8E4D900 100%);
+  opacity:.42;
+  -webkit-mask-image:repeating-linear-gradient(177deg,
+    #000 0 19px, #000a 19px 23px, #000 23px 41px, #0005 41px 44px, #000 44px 67px, #0008 67px 71px);
+          mask-image:repeating-linear-gradient(177deg,
+    #000 0 19px, #000a 19px 23px, #000 23px 41px, #0005 41px 44px, #000 44px 67px, #0008 67px 71px);
+}
+/* Las briznas: el pasto que le creció encima a la cal. Es el detalle que la
+   saca de «borde de CSS» y la mete en «cancha». */
+.linea::after{
+  content:''; position:absolute; inset:0;
+  background:repeating-linear-gradient(184deg,
+    #1D2A1B00 0 5px, #1D2A1Bcc 5px 6px, #1D2A1B00 6px 13px);
 }
 .balon{
   position:absolute; top:0; left:var(--linea-x);
-  width:var(--balon); height:var(--balon);
-  margin-left:calc(var(--balon) / -2 + 1.5px);
+  /* El lienzo es más alto que ancho porque abajo va la sombra de contacto: la
+     esfera ocupa la parte de arriba y se apoya sobre su propia sombra. Si el
+     alto fuera igual al ancho, el balón flotaría. */
+  width:var(--balon); height:calc(var(--balon) * 1.06);
+  margin-left:calc(var(--balon) / -2 + 3.5px);
   /* Sin movimiento, el balón se queda donde lo dejó el niño de la foto:
      apoyado en la línea, arriba. La página no se ve rota — se ve como la
      referencia. Es lo que hace que borrar mueve.js no rompa nada. */
   transform:translateY(38vh);
 }
-.balon svg{ width:100%; height:100%; display:block; }
-.cuero{ fill:var(--lima); }
-.gajo{ fill:var(--rojo); }
-.orilla{ fill:none; stroke:#0F150E; stroke-width:2.5; opacity:.5; }
+/* El lienzo del balón. Va en un elemento APARTE del que lleva la animación:
+   el de fuera se mueve, éste dibuja. Mezclar las dos cosas en un elemento que
+   además es lienzo de un SVG es pedirle problemas al compositor. */
+.balon-arte{ width:100%; height:100%; }
+.balon svg{ width:100%; height:100%; display:block; overflow:visible; }
 
 /* ── el texto ────────────────────────────────────────────────────────── */
 main{
@@ -190,55 +214,162 @@ p{ margin:0 0 1.1rem; font-size:clamp(1.05rem, 4.4vw, 1.35rem); max-width:30rem;
 .hoy b{ color:var(--cal); font-weight:650; }
 .remate{ color:var(--rojo-texto); font-weight:650; }
 
-/* ── la consulta · lo único que sirve ─────────────────────────────────── */
-.consulta{
-  border:1px solid #E8E4D92e; background:#0F150E80; padding:1.2rem;
-  max-width:30rem;
-}
-.consulta label{
-  display:block; font-family:var(--dato); font-size:.78rem; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--cal-tenue); margin-bottom:.5rem;
-}
-.consulta select{
-  width:100%;
-  /* 16px o más: abajo de eso iOS hace zoom al tocar el campo y saca de lugar
-     la página. Un papá revisando esto en la banqueta no necesita eso. */
-  font-size:16px; font-family:var(--display);
-  padding:.85rem .8rem; min-height:48px;      /* dedo, no cursor */
-  background:var(--pasto); color:var(--cal);
-  border:1px solid var(--cal-tenue); border-radius:0;
-  appearance:none;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23E8E4D9' stroke-width='2'/></svg>");
-  background-repeat:no-repeat; background-position:right .9rem center;
-}
-.consulta select:focus-visible{ outline:2px solid var(--lima); outline-offset:2px; }
+/* ── LA PANTALLA · aquí la página deja de contar y empieza a servir ───────
+   Carlos, textual: «que la última pantalla sea una pantalla de PRODUCTO, no un
+   formulario». Aquí había una etiqueta, un desplegable y una tabla — eso es un
+   formulario. Esto es una vista de app: barra con la marca, fichas que se
+   tocan, y los dos datos del tamaño de lo que se lee de reojo.
 
-.resultado{ margin-top:1.2rem; min-height:6.5rem; }
-.resultado .vacio{ color:var(--cal-tenue); font-size:1rem; margin:0; }
+   La construye `datos.js` leyendo la tabla; el HTML nace con el contenedor
+   vacío y escondido. */
 
-/* El resultado se lee como un DATO, no como un párrafo: mono, grande, y cada
-   cosa con su rótulo chiquito encima. Es lo que uno mira de reojo mientras
-   maneja. */
-.ficha{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#E8E4D92e; border:1px solid #E8E4D92e; }
-.ficha div{ background:var(--pasto); padding:.85rem .9rem; }
-.ficha .ancho{ grid-column:1 / -1; }
-.ficha dt{
-  font-family:var(--dato); font-size:.7rem; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--cal-tenue); margin:0 0 .3rem;
+/* EL ORDEN EN EL TELÉFONO NO ES EL DEL HTML POR CASUALIDAD. En el primer
+   intento la tabla y el aviso legal salían ANTES que la pantalla, o sea que lo
+   primero que leía alguien era la letra chica y lo último era lo único que
+   vino a usar. Por eso el HTML va: lo dicho, la pantalla, y luego la letra
+   chica — y en pantalla grande la rejilla la manda al lado. */
+.dosc{ display:grid; grid-template-columns:1fr; gap:1.7rem; }
+.lead{ color:var(--cal-tenue); }
+
+.marco{
+  border:1px solid #E8E4D93a;
+  background:linear-gradient(180deg, #0C120B 0%, #0A0F09 100%);
+  /* Sombra DURA y desplazada, no difusa: la luz de la foto es de tarde, plana
+     y baja. Una sombra suave debajo de cada caja es el tic que delata a las
+     plantillas — está escrito arriba y aquí se cumple. */
+  box-shadow:9px 9px 0 #00000047;
+  max-width:26rem;
 }
-.ficha dd{ margin:0; font-family:var(--dato); font-size:1.35rem; color:var(--cal); }
-.ficha dd.grande{ font-size:1.8rem; color:var(--lima); }
 
+.barra{
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding:.8rem .95rem; border-bottom:1px solid #E8E4D92e;
+  font-family:var(--dato); font-size:.7rem; letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.barra .marca{ color:var(--cal); font-weight:700; display:flex; align-items:center; gap:.5rem; }
+/* El cuadrito de la marca es cuadrado, como todo lo demás del documento: lo
+   único redondo aquí es el balón. */
+.barra .marca::before{ content:''; width:9px; height:9px; background:var(--lima); flex:none; }
+.barra .fecha{ color:var(--cal-tenue); }
+
+/* ── las fichas ──────────────────────────────────────────────────────────
+   El fondo del contenedor es la retícula: las fichas se separan con 1px de
+   hueco y lo que se ve por debajo es la línea. Una rejilla sin dibujar rejilla. */
+.chips{
+  display:flex; flex-wrap:wrap; gap:1px;
+  background:#E8E4D91f; border-bottom:1px solid #E8E4D92e;
+}
+.chip{
+  flex:1 1 auto; min-height:46px;          /* dedo, no cursor */
+  padding:.6rem .6rem; background:#0F150E; color:var(--cal-tenue);
+  border:0; border-radius:0; cursor:pointer;
+  font-family:var(--dato); font-size:.74rem; letter-spacing:.06em;
+  text-transform:uppercase; white-space:nowrap;
+  transition:background .14s ease, color .14s ease, transform .14s ease;
+}
+/* La escogida se pinta de lima ENTERA con letra oscura: el estado no se marca
+   sólo con la orilla, que a un metro de distancia no se ve. */
+.chip[aria-pressed="true"]{ background:var(--lima); color:#111A10; font-weight:700; }
+.chip:active{ transform:translateY(1px); }
+.chip:focus-visible{ outline:2px solid var(--lima); outline-offset:-3px; }
+
+/* ── la tarjeta · los dos datos ──────────────────────────────────────────── */
+.tarjeta{ padding:1.15rem .95rem 0; }
+.tarjeta p{ max-width:none; }
+.tarjeta .quien{
+  font-family:var(--dato); font-size:.72rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--cal-tenue); margin:0 0 .85rem;
+}
+.tarjeta .dia{
+  font-family:var(--dato); font-size:.95rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--cal); margin:0 0 .1rem;
+}
+.tarjeta .hora{
+  font-family:var(--dato); font-weight:700; line-height:1;
+  font-size:clamp(2.8rem, 13vw, 3.7rem); letter-spacing:-.03em;
+  color:var(--lima); margin:0;
+}
+.tarjeta .donde{ font-size:1.2rem; color:var(--cal); margin:.6rem 0 1.15rem; }
+
+/* Va a sangre en el pie del marco: es una alerta, no un párrafo más. */
 .cambio{
-  margin-top:1px; background:var(--rojo); color:var(--cal);
-  padding:.7rem .9rem; font-size:.95rem; font-weight:650;
+  margin:0 -.95rem; background:var(--rojo); color:var(--cal);
+  padding:.75rem .95rem; font-size:.95rem; font-weight:650; line-height:1.35;
 }
 .sinjuego{
-  border:1px solid #E8E4D92e; padding:.9rem; color:var(--cal-tenue); font-size:1rem;
+  border-top:1px solid #E8E4D92e; margin:0 -.95rem; padding:1rem .95rem;
+  color:var(--cal-tenue); font-size:1rem;
 }
+.tarjeta .donde:last-child, .tarjeta .quien:last-child{ margin-bottom:1.15rem; }
+
+/* ── la letra chica ──────────────────────────────────────────────────────── */
+.todos{ border-top:1px solid #E8E4D922; }
+.todos summary{
+  display:flex; align-items:center; gap:.7rem; min-height:48px;
+  font-family:var(--dato); font-size:.76rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--cal-tenue); cursor:pointer;
+}
+/* ⚠ `display:flex` en un <summary> BORRA el triangulito del navegador, y sin
+   él esto se leía como un rótulo y no como algo que se abre — un control que
+   no parece control es un control que nadie toca. El signo va dibujado aquí,
+   que además se ve igual en todos lados. */
+.todos summary::marker, .todos summary::-webkit-details-marker{ content:''; display:none; }
+.todos summary::before{
+  content:'+'; flex:none;
+  width:20px; height:20px; display:grid; place-items:center;
+  border:1px solid var(--cal-tenue); font-size:.9rem; line-height:1;
+}
+.todos[open] summary::before{ content:'–'; border-color:var(--cal); }
+.todos summary:focus-visible{ outline:2px solid var(--lima); outline-offset:2px; }
+.todos[open] summary{ color:var(--cal); }
+
 .aviso{
   font-family:var(--dato); font-size:.75rem; line-height:1.5;
   color:var(--cal-tenue); max-width:30rem; margin-top:1.2rem;
+}
+
+/* ── PANTALLA GRANDE ─────────────────────────────────────────────────────
+   Aquí estaba el hueco más feo y tardé en verlo porque en el teléfono no
+   existe: en 1440 la página era UNA COLUMNA ANGOSTA pegada a la izquierda con
+   el 55 % de la pantalla en pasto vacío. Se leía como un artículo, no como una
+   app — que es exactamente lo que Carlos dijo.
+
+   Dos arreglos, ninguno decorativo:
+
+   1 · La escena que sirve se parte en dos y la pantalla se va a la derecha,
+       pegada mientras se lee el texto. Ahora el lado derecho tiene lo único
+       que la persona vino a usar.
+   2 · El titular sube de tope. Con 8.5rem en una pantalla de 1440 ocupaba un
+       tercio del ancho; el resto era aire. `17vw` ya estaba escrito — lo que
+       sobraba era el techo. */
+@media (min-width:1040px){
+  .respuesta{ max-width:70rem; }
+  .dosc{
+    /* `minmax(0,1fr)` y no `1fr`: en un grid, `1fr` no baja del tamaño mínimo
+       del contenido, y con una tabla dentro eso desborda la columna. */
+    grid-template-columns:minmax(0, 1fr) 25rem;
+    column-gap:3.5rem; row-gap:2rem; align-items:start;
+  }
+  /* Se colocan a mano porque el orden del HTML es el del TELÉFONO: aquí la
+     pantalla se sube a la derecha y abarca las dos filas de la izquierda. */
+  .dicho     { grid-column:1; grid-row:1; }
+  .letrachica{ grid-column:1; grid-row:2; }
+  .app       { grid-column:2; grid-row:1 / span 2; position:sticky; top:12vh; }
+  .marco{ max-width:none; }
+
+  /* Menos aire entre escenas: 16vh arriba y abajo en una pantalla baja deja
+     huecos de media pantalla entre un párrafo y el siguiente titular. */
+  .escena{ padding:12vh 0; max-width:44rem; }
+
+  /* ⚠ EL TOPE DEL TITULAR Y EL ANCHO DE LA ESCENA ESTÁN AMARRADOS. Subí el
+     tope a 11rem para que llenara la pantalla y «El minuto» se quedó en «El
+     minut»: la palabra no cabía en 34rem y la máscara del destape, que
+     recorta, se comió la última letra. No se encimaba con nada, así que la
+     prueba de choques no la veía. Si se sube uno hay que subir el otro, y la
+     prueba de «ningún texto se sale de su caja» lo dice en el acto. */
+  h1{ font-size:clamp(3rem, 17vw, 10rem); }
+  h2{ font-size:clamp(2rem, 9vw, 4.2rem); }
 }
 
 /* ── cierre y pie ─────────────────────────────────────────────────────── */
@@ -294,15 +425,18 @@ footer .chico{ font-size:.78rem; margin:.4rem 0 0; }
    no se opera— pero lo que sí se toca tiene que hundirse, y eso cuesta cuatro
    reglas. */
 
-/* El presionado es el más barato y el que más se nota. Un control que no se
-   hunde al tocarlo se siente muerto, y ese sentimiento es lo que la gente
-   llama «se ve de IA». */
-.consulta select:active{ border-color:var(--lima); transform:translateY(1px); }
+/* El presionado es el más barato y el que más se nota — está arriba, en
+   `.chip:active`. Un control que no se hunde al tocarlo se siente muerto, y
+   ese sentimiento es lo que la gente llama «se ve de IA».
 
-/* El hover va ENCERRADO. En una pantalla táctil un `:hover` se queda pegado
+   El hover va ENCERRADO. En una pantalla táctil un `:hover` se queda pegado
    después del toque y deja el control iluminado como si siguiera apuntado. */
 @media (hover:hover) and (pointer:fine){
-  .consulta select:hover{ border-color:var(--cal); }
+  .chip:hover{ background:#1B2519; color:var(--cal); }
+  /* La escogida no cambia al pasar por encima: si el hover la apagara, movería
+     el ojo al control equivocado. */
+  .chip[aria-pressed="true"]:hover{ background:var(--lima); color:#111A10; }
+  .todos summary:hover{ color:var(--cal); }
   .arriba:hover{ background:var(--cal); color:var(--pasto); }
   .tabla tbody tr:hover td, .tabla tbody tr:hover th{ background:#E8E4D90c; }
 }
@@ -327,5 +461,5 @@ footer .chico{ font-size:.78rem; margin:.4rem 0 0; }
 
 @media (prefers-reduced-motion: reduce){
   .arriba{ transition:none; }
-  .consulta select:active, .arriba:active{ transform:none; }
+  .chip, .chip:active, .arriba:active{ transition:none; transform:none; }
 }

@@ -61,7 +61,14 @@
   /* «Volver arriba» se esconde mientras estás arriba, porque ahí estorba y no
      sirve. Va en el MISMO ciclo que el balón a propósito: dos escuchas de
      scroll haciendo cuentas por separado es como se llega a los tirones, y
-     este cálculo ya lo teníamos hecho. */
+     este cálculo ya lo teníamos hecho.
+
+     ⚠ ESTO ES SÓLO EL RESPALDO, Y ANTES NO LO ERA. Está debajo del `return`
+     de arriba, así que en un navegador moderno estas líneas NO SE EJECUTAN —
+     y durante un rato ésa fue la única manera de esconder el botón, o sea que
+     no se escondía en ningún navegador de hoy. El camino bueno vive ahora en
+     `mueve.css`, con la línea de tiempo del scroll. Los dos no se pisan por
+     construcción: si el CSS puede, aquí ya se salió. */
   const arriba = document.querySelector('[data-arriba]');
   if(arriba) arriba.classList.add('lejos');
 

@@ -48,20 +48,77 @@
 <!-- ── LA CANCHA · la línea y el balón ───────────────────────────────────
      Decorativa para quien lee con lector de pantalla: no dice nada que no
      esté en el texto. Aquí vive el único movimiento de la página. -->
+<!-- ── LA CANCHA ─────────────────────────────────────────────────────────
+     Todo dibujado. Ni una foto: la de Carlos era de un niño y no se publica.
+
+     El balón se dibuja con VOLUMEN —degradado esférico, sombra propia del lado
+     que no le da la luz, brillo especular y sombra de contacto en el pasto—
+     porque un balón de polígonos planos no parece balón, y ésa fue la crítica
+     que me hizo Carlos y tenía razón. La luz entra de arriba a la derecha, como
+     en la tarde de la foto.
+
+     Los gajos se encogen hacia la orilla en vez de repartirse parejos: es lo
+     que hace que se lea como esfera y no como círculo con dibujos. -->
 <div class="cancha" aria-hidden="true">
   <div class="linea" data-linea></div>
+
+  <!-- ── EL BALÓN, DIBUJADO CON CSS ────────────────────────────────────────
+       Estaba en SVG con degradados y en la página se pintaba NEGRO, con el DOM
+       intacto y los degradados resolviendo bien —comprobado—: el mismo archivo
+       en una página aparte se veía perfecto. Perseguí la causa un buen rato y
+       no la encontré, así que tomé la decisión de ingeniería en vez de seguir:
+       quitar el servidor de pintura de en medio.
+
+       Con degradados de CSS no hay referencia que resolver. Y de paso pesa
+       menos y se anima mejor. Lo que se pierde son los gajos con forma de
+       pentágono; lo que se gana es un balón que SE VE, que era el punto.
+
+       El volumen sale de tres capas: la esfera con la luz arriba a la
+       izquierda, la sombra propia del lado opuesto, y el brillo especular. Los
+       gajos van como manchas radiales, que a este tamaño leen igual y no
+       requieren recortes. -->
   <div class="balon" data-balon>
-    <svg viewBox="0 0 100 100" role="presentation">
-      <circle cx="50" cy="50" r="48" class="cuero"/>
-      <!-- Los gajos: geometría nuestra, no el calco de una marca. El balón de
-           la foto es amarillo y rojo y está muy usado; el desgaste se sugiere
-           con los bordes irregulares, no con una textura. -->
-      <path class="gajo" d="M50 12 L70 26 L62 50 L38 50 L30 26 Z"/>
-      <path class="gajo" d="M74 30 L88 48 L78 70 L64 54 Z"/>
-      <path class="gajo" d="M26 30 L36 54 L22 70 L12 48 Z"/>
-      <path class="gajo" d="M40 56 L60 56 L66 78 L50 88 L34 78 Z"/>
-      <circle cx="50" cy="50" r="48" class="orilla"/>
+   <div class="balon-arte">
+    <svg viewBox="0 0 120 120" role="presentation">
+      <defs>
+        <radialGradient id="esfera" cx="36%" cy="30%" r="72%">
+          <stop offset="0%"  stop-color="#EDEF6A"/>
+          <stop offset="46%" stop-color="#C9CE3A"/>
+          <stop offset="82%" stop-color="#8E9526"/>
+          <stop offset="100%" stop-color="#4C5216"/>
+        </radialGradient>
+        <radialGradient id="brillo" cx="34%" cy="26%" r="26%">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity=".5"/>
+          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="hondo" cx="50%" cy="50%" r="50%">
+          <stop offset="62%" stop-color="#000" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#0B1109" stop-opacity=".55"/>
+        </radialGradient>
+        <clipPath id="dentro"><circle cx="60" cy="58" r="44"/></clipPath>
+      </defs>
+
+      <ellipse cx="62" cy="106" rx="40" ry="7" fill="#0B1109" opacity=".45"/>
+      <circle cx="60" cy="58" r="44" fill="url(#esfera)"/>
+
+      <g clip-path="url(#dentro)" fill="#A8323A">
+        <path d="M60 30 L79 44 L72 66 L48 66 L41 44 Z" opacity=".92"/>
+        <path d="M84 40 L98 55 L90 76 L74 62 Z" opacity=".78"/>
+        <path d="M36 40 L46 62 L30 76 L22 55 Z" opacity=".78"/>
+        <path d="M50 70 L70 70 L75 90 L60 98 L45 90 Z" opacity=".85"/>
+        <path d="M60 14 L70 20 L64 26 L56 26 L50 20 Z" opacity=".5"/>
+      </g>
+
+      <g clip-path="url(#dentro)" fill="#5F6420" opacity=".28">
+        <ellipse cx="44" cy="78" rx="11" ry="5" transform="rotate(-18 44 78)"/>
+        <ellipse cx="78" cy="70" rx="8" ry="4" transform="rotate(12 78 70)"/>
+      </g>
+
+      <circle cx="60" cy="58" r="44" fill="url(#hondo)"/>
+      <circle cx="60" cy="58" r="44" fill="url(#brillo)"/>
+      <circle cx="60" cy="58" r="44" fill="none" stroke="#0B1109" stroke-width="1.5" opacity=".45"/>
     </svg>
+   </div>
   </div>
 </div>
 
@@ -108,60 +165,82 @@
   </section>
 
   <!-- ── 4 · la respuesta, que funciona ──────────────────────────────────
+       CARLOS, TEXTUAL: «que la última pantalla sea una pantalla de PRODUCTO,
+       no un formulario». Tenía razón y esto era un formulario: una etiqueta,
+       un desplegable y una tabla. Ahora es la vista que un papá abriría en
+       Ligas Mazi — la marca arriba, las categorías como fichas que se tocan,
+       y los dos datos en grande.
+
        ESTA ESCENA NO LLEVA MOVIMIENTO, A PROPÓSITO. Es la única que sirve
        para algo, y una herramienta no necesita animación: necesita contestar
        rápido. Animarla sería quitarle segundos a lo único que resuelve. -->
   <section class="escena respuesta" data-escena="4">
-    <h2 data-mueve="mascara"><span>Los dos datos</span></h2>
-    <p class="lead" data-mueve="mascara"><span>Escoge la categoría. Ya.</span></p>
+    <div class="dosc">
 
-    <!-- ── LOS DATOS VIVEN AQUÍ, EN EL HTML, Y NO EN EL JAVASCRIPT ────────
-         Sin JS el buscador no filtra, pero la tabla completa SÍ se lee: siete
-         categorías con su día, su hora y su cancha. Se pierde la comodidad,
-         no la información — que es la única forma honesta de prometer «aquí
-         sale el día y la cancha» en una página que puede quedarse sin JS.
+      <div class="dicho">
+        <h2 data-mueve="mascara"><span>Los dos datos</span></h2>
+        <p class="lead" data-mueve="mascara"><span>
+          Qué día y en qué cancha. Sin preguntar en el chat.
+        </span></p>
 
-         Y de paso hay UNA sola fuente de verdad. Con los datos en el script y
-         un respaldo en el HTML, el día que cambie un horario se cambia en uno
-         de los dos y nadie se entera del otro. -->
-    <div class="consulta">
-      <label for="cat">Categoría</label>
-      <select id="cat" autocomplete="off">
-        <option value="">— todas —</option>
-        <option value="s8v">Sub-8 varonil</option>
-        <option value="s10v">Sub-10 varonil</option>
-        <option value="s10f">Sub-10 femenil</option>
-        <option value="s12v">Sub-12 varonil</option>
-        <option value="s12f">Sub-12 femenil</option>
-        <option value="s15v">Sub-15 varonil</option>
-        <option value="libre">Libre</option>
-      </select>
-
-      <!-- role=status + aria-live: quien usa lector de pantalla se entera del
-           resultado sin tener que ir a buscarlo. -->
-      <div class="resultado" id="resultado" role="status" aria-live="polite">
-        <table class="tabla" id="tabla">
-          <caption>Próximo partido por categoría</caption>
-          <thead>
-            <tr><th scope="col">Categoría</th><th scope="col">Día</th><th scope="col">Hora</th><th scope="col">Cancha</th></tr>
-          </thead>
-          <tbody>
-            <tr data-cat="s8v"><th scope="row">Sub-8 varonil</th><td>Sábado</td><td>08:30</td><td>Cancha 3</td></tr>
-            <tr data-cat="s10v" data-cambio="Se recorrió una hora el jueves."><th scope="row">Sub-10 varonil</th><td>Sábado</td><td>10:00</td><td>Cancha 1</td></tr>
-            <tr data-cat="s10f"><th scope="row">Sub-10 femenil</th><td>Sábado</td><td>11:30</td><td>Cancha 3</td></tr>
-            <tr data-cat="s12v"><th scope="row">Sub-12 varonil</th><td>Domingo</td><td>09:00</td><td>Cancha 2</td></tr>
-            <tr data-cat="s12f" data-cambio="Cambió de cancha: era la 1."><th scope="row">Sub-12 femenil</th><td>Domingo</td><td>10:30</td><td>Cancha 4</td></tr>
-            <tr data-cat="s15v"><th scope="row">Sub-15 varonil</th><td>Domingo</td><td>12:00</td><td>Cancha 2</td></tr>
-            <tr data-cat="libre" data-sin="Esta semana descansan. Vuelven el 12."><th scope="row">Libre</th><td>—</td><td>—</td><td>—</td></tr>
-          </tbody>
-        </table>
       </div>
-    </div>
 
-    <p class="aviso">
-      Datos inventados para la demostración. Ninguna cancha, categoría ni
-      horario de aquí corresponde a una liga real.
-    </p>
+      <!-- ── LA PANTALLA ────────────────────────────────────────────────────
+           Nace vacía y ESCONDIDA, y la llena `datos.js` leyendo la tabla. No
+           está escrita aquí a propósito: sin JavaScript las fichas serían
+           siete botones muertos que no filtran nada, y un control que no hace
+           nada es peor que no tenerlo. Sin JS no hay pantalla, y la tabla de
+           al lado se queda entera. -->
+      <div class="app" id="app" hidden></div>
+
+      <!-- ── LA LETRA CHICA ────────────────────────────────────────────────
+           Va DESPUÉS de la pantalla en el teléfono y al lado de ella en una
+           pantalla grande. El orden importa: en el primer intento el aviso
+           legal y la tabla se leían ANTES que lo único que la persona vino a
+           usar, lo cual es exactamente al revés. -->
+      <div class="letrachica">
+        <!-- ── LOS DATOS VIVEN AQUÍ, EN EL HTML, Y NO EN EL JAVASCRIPT ────
+             Sin JS no hay pantalla ni fichas, pero la tabla completa SÍ se
+             lee: siete categorías con su día, su hora y su cancha. Se pierde
+             la comodidad, no la información — que es la única forma honesta
+             de prometer «aquí sale el día y la cancha» en una página que
+             puede quedarse sin JS.
+
+             Y de paso hay UNA sola fuente de verdad: la pantalla de al lado
+             se construye LEYENDO esta tabla. Con los datos en el script y un
+             respaldo en el HTML, el día que cambie un horario se cambia en
+             uno de los dos y nadie se entera del otro.
+
+             Va en un <details open>. Abierto de nacimiento: si el script no
+             llega, se queda abierto y la tabla está completa. Lo único que
+             hace el script es cerrarlo, porque con la pantalla al lado la
+             tabla pasa a ser la letra chica. -->
+        <details class="todos" id="todos" open>
+          <summary>Ver los siete horarios</summary>
+          <table class="tabla" id="tabla">
+            <caption>Próximo partido por categoría</caption>
+            <thead>
+              <tr><th scope="col">Categoría</th><th scope="col">Día</th><th scope="col">Hora</th><th scope="col">Cancha</th></tr>
+            </thead>
+            <tbody>
+              <tr data-cat="s8v"><th scope="row">Sub-8 varonil</th><td>Sábado</td><td>08:30</td><td>Cancha 3</td></tr>
+              <tr data-cat="s10v" data-cambio="Se recorrió una hora el jueves."><th scope="row">Sub-10 varonil</th><td>Sábado</td><td>10:00</td><td>Cancha 1</td></tr>
+              <tr data-cat="s10f"><th scope="row">Sub-10 femenil</th><td>Sábado</td><td>11:30</td><td>Cancha 3</td></tr>
+              <tr data-cat="s12v"><th scope="row">Sub-12 varonil</th><td>Domingo</td><td>09:00</td><td>Cancha 2</td></tr>
+              <tr data-cat="s12f" data-cambio="Cambió de cancha: era la 1."><th scope="row">Sub-12 femenil</th><td>Domingo</td><td>10:30</td><td>Cancha 4</td></tr>
+              <tr data-cat="s15v"><th scope="row">Sub-15 varonil</th><td>Domingo</td><td>12:00</td><td>Cancha 2</td></tr>
+              <tr data-cat="libre" data-sin="Esta semana descansan. Vuelven el 12."><th scope="row">Libre</th><td>—</td><td>—</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </details>
+
+        <p class="aviso">
+          Datos inventados para la demostración. Ninguna cancha, categoría ni
+          horario de aquí corresponde a una liga real.
+        </p>
+      </div>
+
+    </div>
   </section>
 
   <!-- ── 5 · cierre ──────────────────────────────────────────────────── -->
