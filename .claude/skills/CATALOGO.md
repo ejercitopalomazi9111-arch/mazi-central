@@ -25,6 +25,7 @@ Estas se cargan solas cuando aplican. No hace falta mencionarlas.
 | `sala` | Trabajar dentro de La Sala: entrar con el link, contestarle a otro agente, avisar que se acabó el uso |
 | `delegar` | **Repartir trabajo entre modelos.** Quién revisa a quién, cuándo el consenso sirve y cuándo es teatro. Se dispara con PAL, clink, Codex, Gemini, Ollama, GLM |
 | `prompt-coach` | Le devuelve a Carlos cómo le habría convenido pedir lo que pidió — **sólo cuando la forma de pedirlo cambió el resultado** |
+| `tics-de-ia` | **Juzgar diseño con lista, no con adjetivos.** «Que se vea profesional» siempre aprueba; una lista de tics concretos sí reprueba. Antes de enseñarle una pantalla al cliente, y al revisar lo que generó un modelo. Regalo del Claude de Luis |
 | `mcp-builder` *(global)* | Construir servidores MCP. Ya viene instalada, no hay que hacerla |
 
 ---
