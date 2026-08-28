@@ -705,6 +705,35 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   letter-spacing:.06em; margin:10px 0;
 }
 
+/* ── el letrero de paso ───────────────────────────────────────────────────
+   Reemplaza a los renglones de «entró / salió» que atascaban el hilo. Vive
+   sobre la conversación, no dentro: así no empuja nada ni se lleva el final
+   del hilo. Se va solo.
+
+   Va ARRIBA y no abajo a propósito: abajo está el campo de escribir, y un
+   aviso que aparece encima del teclado en un teléfono tapa justo lo que uno
+   está haciendo. */
+.letreros{
+  position:absolute; top:8px; left:0; right:0; z-index:30;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  pointer-events:none; padding:0 12px;
+}
+.letrero{
+  background:var(--alta); border:1px solid var(--borde-vivo); color:var(--tenue);
+  font-family:var(--dato); font-size:11.5px; letter-spacing:.04em;
+  padding:7px 13px; border-radius:99px; max-width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+  animation:asoma .22s ease-out both;
+}
+.letrero.yendose{animation:sevá .3s ease-in both}
+.letrero b{color:var(--hueso); font-weight:600}
+@keyframes asoma{from{opacity:0; transform:translateY(-8px) scale(.96)} to{opacity:1; transform:none}}
+@keyframes sevá{to{opacity:0; transform:translateY(-6px) scale(.97)}}
+@media (prefers-reduced-motion:reduce){
+  .letrero,.letrero.yendose{animation:none}
+}
+
 /* ── adjuntos ── */
 .adjuntos{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
 .miniatura{
@@ -964,6 +993,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <button class="pest" data-vista="taller3d">Taller 3D</button>
 </div>
 
+<div class="letreros" id="letreros" aria-live="polite" aria-atomic="false"></div>
 <div class="hilo" id="hilo"></div>
 <div class="marco3d" id="marco3d" hidden></div>
 
@@ -1545,7 +1575,21 @@ function pintarHilo(){
     if(!prev || !mismoDia(prev.ts, e.ts)) partes.push(`<div class="dia">${esc(nombreDia(e.ts))}</div>`);
 
     if(e.tipo === 'sistema'){
-      partes.push(`<div class="sistema">${esc(e.de.nombre)} ${e.accion === 'entra' ? 'entró' : 'salió'}</div>`);
+      /* ── NO VAN EN EL HILO ─────────────────────────────────────────────
+         Carlos: «el chat se atasca de mensajes de x entró x salió y así, pero
+         siempre hasta abajo sin importar qué. Mejor haz que sea un letrerito
+         que aparezca unos segundos y ya».
+
+         Tenía razón y el defecto es peor de lo que se ve: como cada entrada y
+         cada salida es un evento del hilo, EMPUJAN los mensajes de verdad
+         hacia arriba y se llevan el final de la conversación. Con dos
+         personas reconectándose, el último mensaje real puede quedar cuatro
+         pantallas atrás.
+
+         Ahora no se pintan aquí. Lo que llega EN VIVO sale como letrero de
+         paso (ver `letrero()`); lo del historial no sale, porque «Luis entró»
+         hace tres horas no es información, es ruido. */
+      return;
       return;
     }
 
@@ -2067,6 +2111,38 @@ function abrirSocket(codigo){
   const url = `${SERVIDOR.replace(/^http/,'ws')}/api/sala/${codigo}/ws`
             + (yo ? `?de=${encodeURIComponent(yo)}` : '');
   ws = new WebSocket(url);
+  /* ── letrero de paso ─────────────────────────────────────────────────────
+     Aparece arriba, dura unos segundos y se va. Tres reglas que salieron de
+     pensar en cómo se usa esto de verdad:
+
+     1 · Sólo lo que llega EN VIVO. El historial no se anuncia: «Luis entró»
+         hace tres horas no es información.
+     2 · Máximo tres a la vez. Cuando alguien tiene mala señal, el servidor
+         manda entra/sale/entra en ráfaga; sin tope, la pantalla se llena de
+         letreros y volvemos al problema de origen con otra forma.
+     3 · Si el mismo aviso se repite, se refresca el que ya está en vez de
+         apilar otro igual. */
+  const LETREROS = 3, DURA = 3600;
+  function letrero(texto){
+    const caja = $('letreros'); if(!caja) return;
+    const ya = [...caja.children].find(x => x.dataset.txt === texto);
+    if(ya){ clearTimeout(+ya.dataset.reloj); armarSalida(ya); return; }
+
+    const el = document.createElement('div');
+    el.className = 'letrero';
+    el.dataset.txt = texto;
+    el.innerHTML = texto;
+    caja.appendChild(el);
+    while(caja.children.length > LETREROS) caja.firstElementChild.remove();
+    armarSalida(el);
+  }
+  function armarSalida(el){
+    el.dataset.reloj = setTimeout(() => {
+      el.classList.add('yendose');
+      setTimeout(() => el.remove(), 320);
+    }, DURA);
+  }
+
   ws.onmessage = (m) => {
     const p = JSON.parse(m.data);
     if(p.que === 'hola'){
@@ -2076,7 +2152,10 @@ function abrirSocket(codigo){
     }
     if(p.que === 'evento'){
       hilo.push(p.evento);
-      if(p.evento.tipo === 'sistema') { /* la lista se refresca abajo */ }
+      if(p.evento.tipo === 'sistema'){
+        const quien = esc(p.evento.de.nombre);
+        letrero(`<b>${quien}</b> ${p.evento.accion === 'entra' ? 'entró' : 'salió'}`);
+      }
       pintarHilo(); if(vistaTaller) pintarTaller(); avisarFreno(p.vueltas, p.tope);
     }
     if(p.que === 'gente'){
