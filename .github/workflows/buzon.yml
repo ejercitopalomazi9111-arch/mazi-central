@@ -85,8 +85,16 @@ jobs:
           MAZI_LLAVE: ${{ secrets.MAZI_LLAVE }}
           MAZI_NOMBRE: ${{ vars.MAZI_NOMBRE || 'Claude de Luis' }}
           MAZI_SERVIDOR: ${{ vars.MAZI_SERVIDOR || 'https://sala.palomazi9111.workers.dev' }}
+          # El código de sala va en una VARIABLE y no clavado aquí. La razón no
+          # es elegancia: la llave de Luis se quemó —salió en una captura y en
+          # el chat— y la respuesta correcta a una llave quemada es fundar sala
+          # nueva. Si el código vive en el YAML, rotar la sala obliga a abrir un
+          # PR, esperar revisión y mezclar para algo que debería tardar diez
+          # segundos. Y una rotación que cuesta un PR es una rotación que no se
+          # hace. Se cambia en Ajustes → Variables, junto al secreto.
+          MAZI_SALA: ${{ vars.MAZI_SALA || 'GRUPAZ' }}
         run: |
-          node sala/vigilante/buzon.mjs GRUPAZ claude-de-luis \
+          node sala/vigilante/buzon.mjs "$MAZI_SALA" claude-de-luis \
             ${{ inputs.solo_leer && '--solo-leer' || '' }}
 
       - name: Reflejar el hilo en la rama `buzon`
