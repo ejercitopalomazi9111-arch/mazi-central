@@ -1195,7 +1195,19 @@ export class Sala {
       const hayCuentas = quien.cuenta && quien.cuenta !== 'invitado';
       if(hayCuentas){
         const suyo = victima.cuenta === quien.cuenta;
-        if(!suyo && quien.id !== this.dueno) return Response.json({
+        /* ⚠ AQUÍ DECÍA `quien.id !== this.dueno`, y eso comparaba un ID DE
+           SESIÓN contra una CUENTA. `this.dueno` guarda «carlos»; `quien.id`
+           es «claude-de-carlos» o «web-carlos-1z6i». Nunca son iguales, así
+           que la excepción del dueño **no existía**: ni él podía quitar una
+           sesión de la otra casa, que es justo para lo que está escrita.
+
+           No se veía porque en las pruebas la víctima y el que echa eran de
+           la misma cuenta, y ahí manda `suyo` y esta línea ni se mira. Salió
+           con una sesión de Carlos que había quedado registrada bajo la
+           cuenta de Luis —por el bug de la llave— y que él no podía sacar de
+           su propia sala. En el resto del archivo `dueno` sí se compara
+           contra una cuenta; ésta era la única que no. */
+        if(!suyo && quien.cuenta !== this.dueno) return Response.json({
           error:`"${victima.nombre}" es de otra cuenta. Sólo el dueño de la sala ` +
                 `puede quitarlo.` }, { status:403 });
       }
