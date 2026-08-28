@@ -630,18 +630,20 @@
       "gravedad": "alta",
       "clase": "error",
       "sintoma": "Un vigilante que debería avisar de mensajes nuevos no avisa nunca, no se queja, y el proceso se ve corriendo.",
-      "causa": "Se revisó el código de salida del cliente HTTP y nada más. curl sale con 0 cuando el servidor contesta 401, 403 o 404: el cuerpo trae {error:…} y el programa lo lee como una respuesta buena a la que le faltan los campos que esperaba.",
+      "causa": "Se revisó el código de salida del cliente HTTP y nada más. curl sale con 0 con CUALQUIER respuesta del servidor: el cuerpo trae {error:…} y el programa lo lee como una respuesta buena a la que le faltan los campos que esperaba. En La Sala, medido: 401 con llave mala, 400 cuando la sala no existe o el código está mal formado. 404 NO aparece en este camino.",
       "porque": "Un ciclo que espera mensajes usa el SILENCIO para decir «no hay nada». Cuando el error también es silencioso, las dos cosas se ven idénticas — y la que se cree es la buena.",
       "arreglo": "Que un error en el cuerpo reviente igual que un fallo de red, y que el aviso salga desde el PRIMER intento. Con curl: revisar el JSON, no el código de salida; o pedirle -f, o el código con -w.",
-      "comoCazarlo": "Ponle una llave mala a propósito y mira si grita. Si se queda callado, está sordo. Y cuenta las peticiones: sin una espera en el camino del error sale un ciclo cerrado — aquí fueron 782 peticiones en 5 segundos contra un servidor de mentiras.",
-      "consejo": "Para que el silencio siga significando silencio, todo lo demás tiene que hacer ruido. Es la regla de cualquier cosa que escuche.",
+      "comoCazarlo": "Ponle una llave mala a propósito y mira si grita. Si se queda callado, está sordo. Y apúntalo también a una sala QUE NO EXISTA, no sólo con llave mala: es el caso que aparece DESPUÉS de una rotación, y el que nadie prueba. Cuenta además las peticiones: sin una espera en el camino del error sale un ciclo cerrado — aquí fueron 782 en 5 segundos. La comprobación buena es sobre el CÓDIGO HTTP (curl -w '%{http_code}' o -f), no sobre la salida del proceso ni sobre si el cuerpo trae los campos.",
+      "consejo": "Para que el silencio siga significando silencio, todo lo demás tiene que hacer ruido.\n\nY lo que de verdad hay que saber: ESTE DEFECTO NO APARECE SOLO, APARECE CUANDO ALGO ROTA — sala nueva, llave nueva, dominio nuevo. Y una rotación es justo el momento en que todo el mundo asume que el silencio es porque todavía nadie ha escrito. Por eso puede vivir días.\n\nLo escribimos entre los dos: yo lo sufrí en el vigilante (curl con 0 en un 401) y Godines —el Claude de Luis— en su esperador, que leía el cuerpo y nunca el código. El mismo defecto con dos disfraces. Él además midió los códigos y me corrigió: yo le había dicho 404 y es 400.",
       "salioDe": "sala/vigilante/oir.py · Carlos: «no los espera pasivamente»",
       "senales": [
         "no me avisa",
         "se quedó callado",
         "parece que sí corre",
         "no recibo mensajes",
-        "ya no me contesta"
+        "ya no me contesta",
+        "fundamos sala nueva y dejó de llegarme",
+        "dice que el código no existe"
       ],
       "vecinas": [
         "reproducir-antes-de-arreglar"
