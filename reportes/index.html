@@ -484,7 +484,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .hoja .zona{
   position:absolute; z-index:1;
   left:var(--lado); right:var(--lado); top:var(--tope);
-  height:calc(279.4mm - var(--tope) - var(--fondo));
+  /* ── EL RESERVE DEL PIE · el defecto que Carlos vio IMPRESO ─────────────
+     Antes la zona bajaba hasta `--fondo`, que es EXACTAMENTE donde vive el
+     pie de página. El paginador mide `.zona` para decidir cuánto cabe, así
+     que metía texto en la franja que el pie iba a tapar: la última línea de
+     casi cada hoja salía partida a la mitad con el folio encima.
+
+     No se veía escribiendo poco —hace falta que la hoja se llene— y por eso
+     llegó hasta el papel.
+
+     Los 6mm salen de medir, no de tantear: el pie mide 7.5mm de alto y su
+     borde superior queda 0.5mm ARRIBA del final de la zona. 6mm dejan ~5.5mm
+     de aire, y aguantan también un pie de tres renglones sin que se toquen.
+     Con esto el paginador corta antes solo, sin tocar el paginador. */
+  height:calc(279.4mm - var(--tope) - var(--fondo) - 6mm);
   overflow:hidden;
 }
 .hoja .folio-pie{
@@ -2075,10 +2088,37 @@ function bloqueFirmas(r){
 }
 
 function alturaCon(el, primero){
+  /* ── POR QUÉ EL TESTIGO · el defecto que salió IMPRESO ──────────────────
+     La hoja fantasma mide UN bloque a la vez, así que ese bloque siempre es
+     `:last-child` — y la hoja de estilo dice `.doc>*:last-child{margin-bottom:0}`.
+     O sea que el hueco de 3.2mm que va DEBAJO de cada bloque se reportaba
+     como CERO, siempre.
+
+     Con siete u ocho bloques por hoja eso son ~24mm que el paginador creía
+     libres y no lo estaban: metía un párrafo de más, la zona lo recortaba con
+     su `overflow:hidden` y la última línea salía partida a la mitad con el
+     folio encima. Medido: `.doc` acababa en 836px dentro de una zona de 746.
+
+     No se ve escribiendo poco. Hace falta llenar la hoja, y por eso llegó
+     hasta el papel de Carlos.
+
+     El testigo hace que el bloque deje de ser el último mientras se mide, y
+     entonces su margen real aparece. Se prefiere esto a sumar 3.2mm a mano
+     porque el día que un tipo de bloque lleve otro margen, esto sigue bien y
+     la constante no. */
+  const padre = el.parentNode;
+  let testigo = null;
+  if(padre){
+    testigo = document.createElement('div');
+    testigo.style.cssText = 'height:0;margin:0;padding:0;border:0';
+    padre.appendChild(testigo);
+  }
   const cs = getComputedStyle(el);
   const mt = primero ? 0 : parseFloat(cs.marginTop) || 0;
   const mb = parseFloat(cs.marginBottom) || 0;
-  return el.getBoundingClientRect().height + mt + mb;
+  const alto = el.getBoundingClientRect().height + mt + mb;
+  if(testigo) padre.removeChild(testigo);
+  return alto;
 }
 
 /* corta una tabla que no cabe, repitiendo su encabezado */

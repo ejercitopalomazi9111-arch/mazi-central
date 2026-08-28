@@ -434,6 +434,60 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
      'se la comió: quedó «' + await p3.inputValue('#oLeyenda') + '»');
 }
 
+/* ══ EL TEXTO NO SE MONTA SOBRE EL PIE ═════════════════════════════════════
+   Carlos imprimió el documento de la candidatura y la última línea de casi
+   cada hoja salió partida a la mitad con el folio encima.
+
+   La causa NO era el diseño del pie: era que la hoja fantasma mide un bloque
+   a la vez, ese bloque siempre resulta `:last-child`, y la hoja de estilo le
+   pone `margin-bottom:0`. El hueco de 3.2mm bajo cada bloque se contaba como
+   cero, así que el paginador metía ~24mm de más por hoja —un párrafo entero—
+   y la zona lo recortaba con su `overflow:hidden`.
+
+   Sólo aparece con la hoja LLENA, que es justo lo que ninguna prueba hacía.
+   Por eso esta prueba escribe un cuerpo largo a propósito. */
+{
+  const p4 = await (await b.newContext()).newPage();
+  await p4.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p4.waitForTimeout(1000);
+
+  const parr = [];
+  for(let i = 1; i <= 40; i++)
+    parr.push('Párrafo ' + i + '. ' +
+      'Texto de relleno para llenar la hoja y ver si la última línea se monta sobre el pie. '.repeat(3));
+
+  await p4.click('[data-vista="escribir"]'); await p4.waitForTimeout(300);
+  await p4.fill('#fCuerpo', parr.join('\n\n'));
+  await p4.dispatchEvent('#fCuerpo', 'input'); await p4.waitForTimeout(2500);
+  await p4.click('[data-vista="ver"]'); await p4.waitForTimeout(2500);
+
+  const m = await p4.evaluate(() => {
+    const hojas = [...document.querySelectorAll('.hoja')];
+    let choques = 0, desborde = 0;
+    for(const h of hojas){
+      const pie = h.querySelector('.folio-pie');
+      const z = h.querySelector('.zona');
+      const doc = h.querySelector('.doc');
+      if(!pie || !z || !doc) continue;
+      /* el .doc no puede ser más alto que su zona: si lo es, lo recortan */
+      if(doc.offsetHeight > z.clientHeight) desborde++;
+      const rp = pie.getBoundingClientRect();
+      for(const el of h.querySelectorAll('.zona .doc *')){
+        if(!el.textContent.trim() || el.children.length) continue;
+        if(el.getBoundingClientRect().bottom > rp.top + 1){ choques++; break; }
+      }
+    }
+    return { hojas: hojas.length, choques, desborde };
+  });
+
+  ok('con la hoja llena, el texto NO se monta sobre el pie de página',
+     m.choques === 0, m.choques + ' de ' + m.hojas + ' hojas con el texto encima del folio');
+  ok('y el contenido no desborda su zona, que es lo que lo partía a la mitad',
+     m.desborde === 0, m.desborde + ' de ' + m.hojas + ' hojas con el .doc más alto que su zona');
+  ok('el cuerpo largo sí se repartió en varias hojas',
+     m.hojas >= 5, 'salieron ' + m.hojas);
+}
+
 await b.close();
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
 process.exit(mal ? 1 : 0);
