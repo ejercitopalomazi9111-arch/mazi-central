@@ -451,7 +451,7 @@
     <h2 class="rotulo-sec">HERRAMIENTAS <span class="cuantos">6</span></h2>
     <div class="filas">
       <div class="fila destacada" data-desde="2026-08-26">
-        <a class="ir" href="sala/?sala=GRUPAZ" >
+        <a class="ir" href="sala/" id="irALaSala">
           <span class="glifo">◍</span>
           <span class="texto">
             <span class="nombre">La Sala<span class="sello-nuevo" hidden>nuevo</span></span>
@@ -461,7 +461,7 @@
         </a>
         <button class="masinfo" type="button" aria-expanded="false"
                 aria-label="Qué es La Sala">qué es</button>
-        <div class="detalle" hidden>La mesa donde nos juntamos las personas y sus IAs, de cuentas distintas, viendo todos lo mismo. Cualquier modelo que hable HTTP entra con un link — no tiene que ser Claude. <b>Entra sola</b> cuando ya entraste antes, cada quien con su color, los de cada casa de su lado, y <b>El Taller 3D adentro</b>, en su propia pestaña: ya no son dos apps. Tu sala es <code>GRUPAZ</code>.</div>
+        <div class="detalle" hidden>La mesa donde nos juntamos las personas y sus IAs, de cuentas distintas, viendo todos lo mismo. Cualquier modelo que hable HTTP entra con un link — no tiene que ser Claude. <b>Entra sola</b> cuando ya entraste antes, cada quien con su color, los de cada casa de su lado, y <b>El Taller 3D adentro</b>, en su propia pestaña: ya no son dos apps. Tu sala es <code id="cualSala">la última en la que entraste</code>.</div>
       </div>
       <div class="fila destacada" data-desde="2026-08-27">
         <a class="ir" href="cerebro/" >
@@ -999,5 +999,31 @@
     }
     if (caja.children.length) { sec.hidden = false; sec.dataset.lleno = '1'; }
   }
+})();
+
+/* ── LA SALA NO SE LLAMA SIEMPRE IGUAL ───────────────────────────────────
+   Aquí el enlace decía `sala/?sala=GRUPAZ`, y el texto de abajo repetía el
+   código a mano. Lo cazó el Claude de Luis desde su lado: «el enlace que la
+   mesa arma para el Taller lleva el código de sala adentro; cuando funden
+   sala nueva, revisa que apunte a la nueva».
+
+   Y la sala nueva NO es una hipótesis: la llave de ésta se quemó —salió en
+   una captura, en el chat y en la transcripción de otra sesión— así que
+   fundar otra es cuestión de horas. Un código clavado convierte esa rotación
+   en «y ahora hay que acordarse de cambiar el tablero», que es justo la clase
+   de paso que se olvida y deja un botón llevando a una sala muerta.
+
+   La mesa ya guarda la última sala en la que entraste. Se lee de ahí. Si no
+   hay ninguna —aparato nuevo—, el enlace va sin código y la mesa pide el
+   suyo, que es lo correcto y no un error. */
+(function(){
+  const a = document.getElementById('irALaSala');
+  const c = document.getElementById('cualSala');
+  let ultima = null;
+  try{ ultima = JSON.parse(localStorage.getItem('sala') || 'null'); }catch(e){}
+  const codigo = ultima && ultima.codigo;
+  if(!codigo) return;
+  if(a) a.href = 'sala/?sala=' + encodeURIComponent(codigo);
+  if(c) c.textContent = codigo;
 })();
 </script>

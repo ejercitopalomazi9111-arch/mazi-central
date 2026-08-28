@@ -1149,6 +1149,39 @@ console.log('\n· Echar fantasmas');
     { de:'c1', id:'l1' }, 'kc'));
   ok('con llaves, no se echa a alguien de otra cuenta', e5 === 403);
   ok('y sigue ahí', (await leer(await pedir(s3, 'GET', 'hilo', undefined, 'kc')))[1].gente.l1);
+
+  /* Regla 4 · PERO EL DUEÑO SÍ PUEDE, y esta excepción estaba muerta.
+     La condición decía `quien.id !== this.dueno`: comparaba un ID DE SESIÓN
+     («claude-de-carlos», «web-carlos-1z6i») contra una CUENTA («carlos»).
+     Nunca son iguales, así que ni el dueño podía quitar una sesión de la otra
+     casa — que es exactamente para lo que la excepción está escrita.
+
+     No se veía con las pruebas de antes porque ahí el que echa y la víctima
+     eran de la misma cuenta, y en ese caso manda `suyo` y esta línea ni se
+     mira. Salió en la sala de verdad: una sesión de Carlos había quedado
+     registrada bajo la cuenta de Luis —por el bug del link que cambiaba de
+     llave en silencio— y él no la podía sacar de su propia sala. */
+  const s4 = nueva({ LLAVES:'carlos:kc,luis:kl' });
+  await leer(await pedir(s4, 'POST', 'fundar', { cuenta:'carlos' }, 'kc'));
+  await entrar(s4, 'claude-de-carlos', 'claude', 'kc');
+  await entrar(s4, 'sesion-perdida', 'humano', 'kl');
+  ok('la sala tiene dueño y es una cuenta, no una sesión', s4.dueno === 'carlos');
+
+  const [e6, r6] = await leer(await pedir(s4, 'POST', 'echar',
+    { de:'claude-de-carlos', id:'sesion-perdida' }, 'kc'));
+  ok('el dueño SÍ puede quitar una sesión de la otra casa', e6 === 200, JSON.stringify(r6));
+  ok('y de verdad se va', !s4.gente['sesion-perdida']);
+
+  /* Y la otra mitad: que esto no le abra la puerta a cualquiera. Una sesión
+     de Luis sigue sin poder tocar a una de Carlos. */
+  const s5 = nueva({ LLAVES:'carlos:kc,luis:kl' });
+  await leer(await pedir(s5, 'POST', 'fundar', { cuenta:'carlos' }, 'kc'));
+  await entrar(s5, 'claude-de-luis', 'claude', 'kl');
+  await entrar(s5, 'algo-de-carlos', 'humano', 'kc');
+  const [e7] = await leer(await pedir(s5, 'POST', 'echar',
+    { de:'claude-de-luis', id:'algo-de-carlos' }, 'kl'));
+  ok('pero el que NO es dueño sigue sin poder', e7 === 403);
+  ok('y esa sesión sigue en la sala', !!s5.gente['algo-de-carlos']);
 }
 
 /* ══ «está escribiendo…» ═══════════════════════════════════════════════════

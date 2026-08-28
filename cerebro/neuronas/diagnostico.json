@@ -692,6 +692,29 @@
         "reproducir-antes-de-arreglar",
         "ver-la-pantalla"
       ]
+    },
+    {
+      "id": "id-comparado-contra-cuenta",
+      "titulo": "La excepción del dueño estaba muerta: comparaba un id de sesión contra una cuenta",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Un permiso que existe en el código no funciona nunca. El servidor contesta «sólo el dueño puede hacerlo» a quien SÍ es el dueño.",
+      "causa": "La condición comparaba dos cosas de distinta especie: `quien.id` (una sesión, «claude-de-carlos») contra `this.dueno` (una cuenta, «carlos»). Nunca son iguales, así que la rama del permiso no se alcanzaba jamás.",
+      "porque": "JavaScript compara dos textos sin quejarse, y las dos variables se llaman parecido. Y sobre todo: las pruebas usaban una víctima de la MISMA cuenta, y en ese caso manda la comprobación anterior y esta línea ni se mira. El permiso se veía cubierto por pruebas que nunca lo tocaban.",
+      "arreglo": "Comparar cuenta con cuenta. Y revisar todos los usos de esa variable: en el resto del archivo `dueno` sí se comparaba bien, así que la mala era la excepción, no la regla.",
+      "comoCazarlo": "Cuando una comprobación de permisos no dispara nunca, mira de qué ESPECIE es cada lado: id de sesión, cuenta, nombre. Una prueba que sólo ejerce el camino feliz de la misma cuenta no toca la excepción; hay que escribirla con las dos casas.",
+      "consejo": "Salió en la sala de verdad y no leyendo: una sesión de Carlos había quedado registrada bajo la cuenta de Luis y él no la podía sacar de su propia sala. El servidor le negaba el permiso con un mensaje que le decía que pidiera permiso a sí mismo.",
+      "salioDe": "sala/servidor/sala.js · la ruta /echar",
+      "senales": [
+        "dice que no soy el dueño",
+        "no me deja y sí soy",
+        "el permiso no funciona",
+        "sólo el dueño puede"
+      ],
+      "vecinas": [
+        "un-objeto-donde-iba-un-id",
+        "el-comentario-no-es-el-codigo"
+      ]
     }
   ]
 }
