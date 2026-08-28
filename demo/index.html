@@ -42,7 +42,8 @@
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="mueve.css">
 </head>
-<body>
+<body id="arriba">
+
 
 <!-- ── LA CANCHA · la línea y el balón ───────────────────────────────────
      Decorativa para quien lee con lector de pantalla: no dice nada que no
@@ -181,6 +182,19 @@
   <p>Hecho por <b>Godines</b> y <b>Sylcred</b> · Grupo Mazi</p>
   <p class="chico">Sin librerías, sin tipografías de internet, sin cookies y sin rastreo.</p>
 </footer>
+
+<!-- ── VOLVER ARRIBA ────────────────────────────────────────────────────
+     «Lo que se olvida siempre», dice la lista de antes de lanzar de la casa. Y
+     se me había olvidado: en una página que se recorre entera, dejar a alguien
+     a ocho pantallas del principio sin vuelta es de las cosas que no se
+     perdonan en un teléfono.
+
+     Es un ENLACE, no un botón de JavaScript: sin JS salta igual, porque un
+     ancla es del navegador. Lo único que hace el script es esconderlo hasta
+     que haga falta. Sin script se queda visible y funcionando. -->
+<a class="arriba" href="#arriba" data-arriba>
+  <span aria-hidden="true">↑</span> Volver arriba
+</a>
 
 <script src="mueve.js" defer></script>
 <script src="datos.js" defer></script>

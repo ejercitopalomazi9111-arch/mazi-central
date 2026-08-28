@@ -284,3 +284,48 @@ footer .chico{ font-size:.78rem; margin:.4rem 0 0; }
   .tabla{ font-size:.74rem; }
   .tabla th, .tabla td{ padding:.5rem .25rem; }
 }
+
+/* ── LO QUE RESPONDE AL DEDO ──────────────────────────────────────────────
+   De la lista de antes de lanzar de la casa: «recorrer el sitio en el teléfono
+   y contar cuántas veces algo RESPONDE al toque. Si la respuesta es cero, se
+   ve de IA por bonita que esté la paleta.»
+
+   Esta página respondía UNA vez. Es poco interactiva por naturaleza —se lee,
+   no se opera— pero lo que sí se toca tiene que hundirse, y eso cuesta cuatro
+   reglas. */
+
+/* El presionado es el más barato y el que más se nota. Un control que no se
+   hunde al tocarlo se siente muerto, y ese sentimiento es lo que la gente
+   llama «se ve de IA». */
+.consulta select:active{ border-color:var(--lima); transform:translateY(1px); }
+
+/* El hover va ENCERRADO. En una pantalla táctil un `:hover` se queda pegado
+   después del toque y deja el control iluminado como si siguiera apuntado. */
+@media (hover:hover) and (pointer:fine){
+  .consulta select:hover{ border-color:var(--cal); }
+  .arriba:hover{ background:var(--cal); color:var(--pasto); }
+  .tabla tbody tr:hover td, .tabla tbody tr:hover th{ background:#E8E4D90c; }
+}
+
+/* ── volver arriba ────────────────────────────────────────────────────── */
+.arriba{
+  position:fixed; right:14px; bottom:14px; z-index:2;
+  display:inline-flex; align-items:center; gap:.4rem;
+  /* 48 de alto: dedo, no cursor. */
+  min-height:48px; padding:0 1rem;
+  background:var(--pasto-claro); color:var(--cal);
+  border:1px solid var(--cal-tenue); border-radius:0;
+  font-family:var(--dato); font-size:.78rem; letter-spacing:.08em;
+  text-transform:uppercase; text-decoration:none;
+  transition:transform .18s ease, background .18s ease, color .18s ease, opacity .18s ease;
+}
+.arriba:active{ transform:translateY(2px); }
+.arriba:focus-visible{ outline:2px solid var(--lima); outline-offset:2px; }
+/* Escondido sólo cuando hay JS y estamos arriba: la clase la pone `mueve.js`.
+   Sin JS nunca se pone, así que el enlace se queda visible y sirve igual. */
+.arriba.lejos{ opacity:0; pointer-events:none; transform:translateY(8px); }
+
+@media (prefers-reduced-motion: reduce){
+  .arriba{ transition:none; }
+  .consulta select:active, .arriba:active{ transform:none; }
+}

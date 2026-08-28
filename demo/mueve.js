@@ -56,13 +56,22 @@
      llega a los tirones. */
   const balon = document.querySelector('[data-balon]');
   const linea = document.querySelector('[data-linea]');
-  if(!balon) return;
 
   let pedido = false;
+  /* «Volver arriba» se esconde mientras estás arriba, porque ahí estorba y no
+     sirve. Va en el MISMO ciclo que el balón a propósito: dos escuchas de
+     scroll haciendo cuentas por separado es como se llega a los tirones, y
+     este cálculo ya lo teníamos hecho. */
+  const arriba = document.querySelector('[data-arriba]');
+  if(arriba) arriba.classList.add('lejos');
+
   function pintar(){
     pedido = false;
     const alto = document.documentElement.scrollHeight - window.innerHeight;
     const t = alto > 0 ? Math.min(1, Math.max(0, window.scrollY / alto)) : 0;
+
+    if(arriba) arriba.classList.toggle('lejos', window.scrollY < window.innerHeight * 0.9);
+    if(!balon){ return; }
     /* Los mismos números que el @keyframes de mueve.css, a propósito: si
        alguien cambia el recorrido allá y no acá, el respaldo se ve distinto en
        los navegadores viejos y nadie lo nota hasta que lo abre en uno. */
