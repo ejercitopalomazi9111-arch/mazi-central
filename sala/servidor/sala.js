@@ -986,6 +986,91 @@ export class Sala {
       return Response.json({ bien:true, yo:quien, evento });
     }
 
+    /* ══ /echar · barrer los fantasmas ═══════════════════════════════════
+       Lo pidió Carlos: «elimina a los viejos... con viejos hablo de Carlos
+       clon y eso». En su sala quedaron tres identidades suyas y una llamada
+       «Alguien», todas creadas por el defecto de la identidad que ya está
+       arreglado. El arreglo evita que nazcan nuevas; NO borra las que ya
+       nacieron, y ésas se quedan ahí ocupando la lista.
+
+       ── LAS TRES REGLAS, y por qué cada una ────────────────────────────
+       Esto BORRA en una sala viva, así que no puede ser un botón que hace lo
+       que le pidan:
+
+       1 · NO SE PUEDE ECHAR A QUIEN HABLÓ. Si tiene un solo mensaje de
+           verdad en el hilo, se rechaza. El hilo es el registro de lo que
+           pasó y quitar a su autor lo convierte en un registro con huecos.
+           Un fantasma, por definición, no dijo nada — así que la regla no
+           estorba para lo que sirve y sí impide lo que no debe.
+
+       2 · NO SE PUEDE ECHAR A QUIEN ESTÁ CONECTADO. Con el socket abierto
+           está ahí de verdad; echarlo sería sacar a alguien de la junta, no
+           barrer un fantasma. Y sin esto la ruta sería un «expulsar» para
+           cualquiera que tenga el link.
+
+       3 · CON LLAVES PUESTAS, sólo el dueño de la sala o alguien de la misma
+           cuenta. Mientras no haya llaves todos son «invitado» y esto no
+           filtra nada — pero la sala es de dos amigos y las dos reglas de
+           arriba ya impiden lo que de verdad importa.
+
+       Los mensajes de sistema («entró», «salió») del fantasma sí se pueden
+       llevar con `conRastro`, y sólo ésos: son el residuo visible del mismo
+       defecto y no le dicen nada a nadie. Lo que dijo una persona NUNCA se
+       toca. */
+    if(pedido.method === 'POST' && ruta === 'echar'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const id = String(c.id || '');
+      const victima = this.gente[id];
+      if(!victima) return Response.json(
+        { error:`Aquí no hay nadie con el id "${id}".` }, { status:404 });
+
+      /* Regla 1 · el que habló se queda */
+      const dijoAlgo = this.hilo.some(e =>
+        e.tipo !== 'sistema' && e.de && e.de.id === id && (e.texto || '').trim());
+      if(dijoAlgo) return Response.json({
+        error:`"${victima.nombre}" sí participó en el hilo, así que no es un ` +
+              `fantasma y no se echa: quitarlo dejaría mensajes sin autor.` },
+        { status:409 });
+
+      /* Regla 2 · el que está conectado se queda */
+      if(this.conectados().includes(id)) return Response.json({
+        error:`"${victima.nombre}" está conectado ahorita. Esto barre fantasmas, ` +
+              `no saca gente de la junta.` }, { status:409 });
+
+      /* Regla 3 · con cuentas de verdad, sólo el dueño o su misma cuenta.
+         ⚠ La condición NO puede ser `this.llaves`: ése es el mapa de llaves
+         que se pone al FUNDAR la sala, y está vacío cuando las llaves vienen
+         del entorno (`LLAVES`) — que es como corren hoy. Con esa condición la
+         regla no se activaba nunca y se podía echar a alguien de otra cuenta.
+         Lo cazó la prueba, no la lectura.
+         Lo que de verdad dice «aquí las cuentas significan algo» es que la
+         cuenta no sea «invitado», que es el comodín de sala abierta. */
+      const hayCuentas = quien.cuenta && quien.cuenta !== 'invitado';
+      if(hayCuentas){
+        const suyo = victima.cuenta === quien.cuenta;
+        if(!suyo && quien.id !== this.dueno) return Response.json({
+          error:`"${victima.nombre}" es de otra cuenta. Sólo el dueño de la sala ` +
+                `puede quitarlo.` }, { status:403 });
+      }
+
+      delete this.gente[id];
+      let rastro = 0;
+      if(c.conRastro){
+        const antes = this.hilo.length;
+        this.hilo = this.hilo.filter(e =>
+          !(e.tipo === 'sistema' && e.de && e.de.id === id));
+        rastro = antes - this.hilo.length;
+      }
+      await this.guardar();
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
+      this.difundir({ que:'hilo', hilo:this.hilo, gente:this.gente });
+      return Response.json({ bien:true, echado:victima.nombre, rastro,
+                             gente:this.gente });
+    }
+
     /* ── /traducir · «explícamelo simple» ─────────────────────────────────
        Convierte un mensaje técnico a lenguaje llano SIN tocar el original.
        Sirve para que Carlos o su compa entiendan de qué hablan los agentes

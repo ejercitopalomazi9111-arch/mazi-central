@@ -937,5 +937,62 @@ async function presencia(){
      c === 200 && r.eventos.length > 0 && s.gente.oyente.visto > viejo2);
 }
 
+/* ══ ECHAR FANTASMAS ══════════════════════════════════════════════════════
+   La sala de Carlos acabó con tres identidades suyas y una llamada «Alguien»,
+   todas del defecto de identidad ya arreglado. Echarlas toca datos de una
+   sala VIVA, así que lo que se prueba aquí no es que funcione: es que NO
+   funcione cuando no debe. */
+console.log('\n· Echar fantasmas');
+{
+  const s1 = nueva();
+  await entrar(s1, 'carlos', 'humano');
+  await entrar(s1, 'fantasma', 'humano');
+  await entrar(s1, 'hablador', 'humano');
+  await pedir(s1, 'POST', 'decir', { de:'hablador', texto:'yo sí dije algo' });
+
+  /* Lo que se quiere: el fantasma se va. */
+  const [e1, r1] = await leer(await pedir(s1, 'POST', 'echar',
+    { de:'carlos', id:'fantasma', conRastro:true }));
+  ok('el fantasma se va', e1 === 200 && r1.bien && !r1.gente.fantasma);
+  ok('y se lleva sus «entró» del hilo', r1.rastro >= 1);
+
+  /* Regla 1 · quien habló NO se va, aunque se lo pidan. */
+  const [e2, r2] = await leer(await pedir(s1, 'POST', 'echar',
+    { de:'carlos', id:'hablador' }));
+  ok('quien habló NO se puede echar', e2 === 409);
+  ok('y el motivo lo dice en cristiano, no con un código',
+     /particip|fantasma/i.test(r2.error || ''));
+  const [, hilo] = await leer(await pedir(s1, 'GET', 'hilo'));
+  ok('su mensaje sigue en el hilo', hilo.hilo.some(x => (x.texto||'').includes('yo sí dije algo')));
+  ok('y él sigue en la sala', !!hilo.gente.hablador);
+
+  /* Regla 2 · quien está conectado NO se va. Se finge el socket abierto, que
+     es lo único que distingue «está aquí» de «entró alguna vez». */
+  const s2 = nueva();
+  await entrar(s2, 'carlos', 'humano');
+  await entrar(s2, 'vivo', 'humano');
+  s2.vivos.add({ __quien:'vivo', send(){}, close(){},
+                 readyState:1, addEventListener(){} });
+  const [e3, r3] = await leer(await pedir(s2, 'POST', 'echar',
+    { de:'carlos', id:'vivo' }));
+  ok('quien está conectado NO se puede echar', e3 === 409);
+  ok('y se dice que esto barre fantasmas, no saca gente',
+     /junta|fantasma/i.test(r3.error || ''));
+
+  /* Un id que no existe se contesta con 404, no con un «bien» falso. */
+  const [e4] = await leer(await pedir(s2, 'POST', 'echar',
+    { de:'carlos', id:'nadie-asi' }));
+  ok('un id que no existe da 404', e4 === 404);
+
+  /* Regla 3 · con llaves puestas, la cuenta ajena no se toca. */
+  const s3 = nueva({ LLAVES:'carlos:kc,luis:kl' });
+  await entrar(s3, 'c1', 'humano', 'kc');
+  await entrar(s3, 'l1', 'humano', 'kl');
+  const [e5, r5] = await leer(await pedir(s3, 'POST', 'echar',
+    { de:'c1', id:'l1' }, 'kc'));
+  ok('con llaves, no se echa a alguien de otra cuenta', e5 === 403);
+  ok('y sigue ahí', (await leer(await pedir(s3, 'GET', 'hilo', undefined, 'kc')))[1].gente.l1);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);
