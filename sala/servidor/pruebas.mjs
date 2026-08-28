@@ -1151,5 +1151,94 @@ console.log('\n· Echar fantasmas');
   ok('y sigue ahí', (await leer(await pedir(s3, 'GET', 'hilo', undefined, 'kc')))[1].gente.l1);
 }
 
+/* ══ «está escribiendo…» ═══════════════════════════════════════════════════
+   Lo pidió Carlos: «ni aparece cuando alguien está escribiendo».
+
+   Lo que se prueba aquí no es que el letrero salga —eso es de la mesa— sino lo
+   que la mesa no puede arreglar: que la marca VENZA sola, que dure distinto
+   según quién sea, que no cuente como vuelta del freno, y que nadie pueda
+   encender la de otra cuenta. */
+console.log('\n■ está escribiendo');
+await escribiendo();
+async function escribiendo(){
+  const s = nueva();
+  await entrar(s, 'ana', 'humano');
+  await entrar(s, 'claudio');
+
+  /* Regla 1 · nadie escribe hasta que alguien escribe. */
+  const [, h0] = await leer(await pedir(s, 'GET', 'hilo'));
+  ok('al empezar no hay nadie escribiendo', s.escribiendo().length === 0);
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'escribiendo', { de:'ana', si:true }));
+  ok('se puede marcar que estoy escribiendo', c1 === 200 && r1.bien);
+  ok('y salgo en la lista', s.escribiendo().includes('ana'));
+
+  /* Regla 2 · duran distinto, y ésta es LA decisión de diseño. Un humano deja
+     de teclear en segundos; un agente tarda minutos en contestar. Con un solo
+     reloj, o el agente se apaga a los ocho segundos —y quien preguntó cree que
+     nadie lo oyó— o el humano se queda «escribiendo» tres minutos después de
+     haberse ido. */
+  await pedir(s, 'POST', 'escribiendo', { de:'claudio', si:true });
+  const dAna = s.gente.ana.escribeHasta - Date.now();
+  const dCla = s.gente.claudio.escribeHasta - Date.now();
+  ok('la del humano dura segundos', dAna > 4_000 && dAna <= 8_000);
+  ok('la del agente dura minutos', dCla > 120_000 && dCla <= 180_000);
+
+  /* Regla 3 · VENCE SOLA. A un agente lo mata el contenedor a media respuesta
+     y nadie manda el «ya no estoy escribiendo»; si la marca dependiera de ese
+     aviso se quedaría encendida para siempre. */
+  s.gente.claudio.escribeHasta = Date.now() - 1;
+  ok('una marca vencida ya no cuenta, sin que nadie la barra',
+     !s.escribiendo().includes('claudio') && s.escribiendo().includes('ana'));
+
+  /* Regla 4 · se apaga a mano cuando borras lo que ibas a decir. */
+  await pedir(s, 'POST', 'escribiendo', { de:'ana', si:false });
+  ok('con si:false se apaga', s.escribiendo().length === 0);
+
+  /* Regla 5 · hablar apaga la marca. Sin esto la mesa diría «está escribiendo»
+     al lado de la respuesta que ya llegó. */
+  await pedir(s, 'POST', 'escribiendo', { de:'claudio', si:true });
+  ok('el agente aparece escribiendo antes de hablar', s.escribiendo().includes('claudio'));
+  await pedir(s, 'POST', 'decir', { de:'claudio', texto:'ya lo revisé' });
+  ok('y deja de aparecer en cuanto lo dice', !s.escribiendo().includes('claudio'));
+
+  /* Regla 6 · NO es un evento del hilo y NO cuenta vuelta. Si contara,
+     escribir «hola» y borrarlo costaría una vuelta del freno de las 12, y
+     teclear despertaría por /esperar a todos los agentes de la sala. */
+  const vueltasAntes = s.vueltas;
+  const largoAntes = s.hilo.length;
+  await pedir(s, 'POST', 'escribiendo', { de:'claudio', si:true });
+  await pedir(s, 'POST', 'escribiendo', { de:'claudio', si:true });
+  await pedir(s, 'POST', 'escribiendo', { de:'claudio', si:true });
+  ok('teclear no cuenta como vuelta del freno', s.vueltas === vueltasAntes);
+  ok('teclear no deja renglón en el hilo', s.hilo.length === largoAntes);
+
+  /* Regla 7 · teclear ES señal de vida. Un agente que lleva rato componiendo
+     una respuesta larga no debe pintarse «sin señal» mientras la escribe. */
+  s.gente.claudio.visto = 0;
+  await pedir(s, 'POST', 'escribiendo', { de:'claudio', si:true });
+  ok('teclear refresca la señal de vida', Date.now() - s.gente.claudio.visto < 3_000);
+
+  /* Regla 8 · con llaves puestas, no se enciende la marca de otra cuenta.
+     Sin esto, cualquiera con la llave de invitado podría poner a «escribiendo»
+     una sesión ajena y hacer que los demás esperen una respuesta que nadie
+     está redactando. */
+  const s2 = nueva({ LLAVES:'carlos:kc,luis:kl' });
+  await entrar(s2, 'c1', 'humano', 'kc');
+  await entrar(s2, 'l1', 'humano', 'kl');
+  const [c8] = await leer(await pedir(s2, 'POST', 'escribiendo', { de:'l1', si:true }, 'kc'));
+  ok('no se enciende la marca de otra cuenta', c8 === 403);
+  ok('y esa sesión sigue sin aparecer escribiendo', !s2.escribiendo().includes('l1'));
+
+  const [c9] = await leer(await pedir(s2, 'POST', 'escribiendo', { de:'nadie', si:true }, 'kc'));
+  ok('una sesión que no existe da 404', c9 === 404);
+
+  /* Regla 9 · quien se cuelga de /hilo ve de una vez quién está escribiendo,
+     sin tener que esperar al siguiente aviso del socket. */
+  await pedir(s2, 'POST', 'escribiendo', { de:'c1', si:true }, 'kc');
+  ok('el socket saluda diciendo quién escribe', s2.escribiendo().includes('c1'));
+  void h0;
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

@@ -713,6 +713,28 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    Va ARRIBA y no abajo a propósito: abajo está el campo de escribir, y un
    aviso que aparece encima del teclado en un teléfono tapa justo lo que uno
    está haciendo. */
+/* ── «está escribiendo…» ──────────────────────────────────────────────────
+   Los tres puntos van con `steps()` y no con una animación suave: lo que se
+   lee es cuántos puntos hay, y una opacidad a media transición se ve como un
+   parpadeo sucio en vez de como un conteo. */
+.escribiendo{
+  flex:0 0 auto; padding:5px 14px 7px; font-size:12.5px; line-height:1.35;
+  color:var(--tenue); background:var(--vacio);
+  display:flex; align-items:center; gap:7px;
+}
+.escribiendo[hidden]{display:none}
+/* Los puntos son texto de verdad («...») y lo que se anima es CUÁNTO se ve de
+   ellos. Intenté animar `content` y no se puede: `content` sólo existe en un
+   pseudo-elemento y ahí tampoco es una propiedad animable — el letrero se
+   quedaba con un punto fijo. Recortar el ancho con `steps` sí cuenta. */
+.escribiendo .puntitos{
+  display:inline-block; overflow:hidden; vertical-align:bottom;
+  width:0; color:var(--violeta); animation:puntitos 1.2s steps(4,end) infinite;
+}
+@keyframes puntitos{ to{ width:1.15em } }
+.escribiendo b{color:var(--hueso); font-weight:650}
+@media(prefers-reduced-motion:reduce){ .escribiendo .puntitos{animation:none; width:1.15em} }
+
 .letreros{
   position:absolute; top:8px; left:0; right:0; z-index:30;
   display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -1181,6 +1203,12 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <div class="hebras" id="hebras"></div>
 </div>
 
+<!-- ── quién está escribiendo ────────────────────────────────────────────
+     Va pegada al pie y no dentro del hilo, a propósito: si fuera un renglón
+     más del hilo, aparecer y desaparecer movería los mensajes de arriba justo
+     cuando los estás leyendo. Aquí ocupa su lugar y no empuja nada. -->
+<div class="escribiendo" id="escribiendo" aria-live="polite" hidden></div>
+
 <div class="pie">
   <!-- El mensajote va PRIMERO y sin nada encima. Es una junta: primero se
        habla, y luego, si hace falta, se le dice algo a alguien. Etiquetar el
@@ -1366,6 +1394,13 @@ const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
+
+/* Quiénes están escribiendo, con la hora en que hay que dejar de creerlo.
+   El vencimiento se guarda AQUÍ y no sólo en el servidor porque el aviso llega
+   por socket: si el socket se cae justo después de «fulano está escribiendo»,
+   sin reloj propio la mesa se queda diciéndolo para siempre. */
+let escribiendo = new Map();
+let relojEscribiendo = null;
 /* Quién tiene el socket abierto en este momento, según el servidor. Es la
    señal buena de presencia: `visto` sólo dice cuándo habló por última vez. */
 let conectados = new Set();
@@ -1383,6 +1418,54 @@ const hora = (ts) => new Date(ts).toLocaleTimeString('es-MX',
    Aquí es donde se ve de un vistazo que la sesión de alguien se topó con su
    límite y a qué hora vuelve. Sin esto, los demás esperan a alguien que no
    va a contestar en cuatro horas. */
+/* ── quién está escribiendo ──────────────────────────────────────────────
+   Con nombres cuando son uno o dos, y con cuenta cuando son más: «Ana, Beto y
+   2 más» se lee de un vistazo y no crece hasta romper el renglón. */
+function pintarEscribiendo(){
+  const caja = $('escribiendo'); if(!caja) return;
+  const t = Date.now();
+  for(const [id, hasta] of [...escribiendo]) if(hasta <= t) escribiendo.delete(id);
+
+  const quienes = [...escribiendo.keys()]
+    .filter(id => id !== yo && gente[id])
+    .map(id => gente[id].nombre || id);
+
+  if(!quienes.length){
+    caja.hidden = true; caja.innerHTML = '';
+    if(relojEscribiendo){ clearInterval(relojEscribiendo); relojEscribiendo = null; }
+    return;
+  }
+  const nombres = quienes.length === 1 ? `<b>${esc(quienes[0])}</b>`
+    : quienes.length === 2 ? `<b>${esc(quienes[0])}</b> y <b>${esc(quienes[1])}</b>`
+    : `<b>${esc(quienes[0])}</b>, <b>${esc(quienes[1])}</b> y ${quienes.length - 2} más`;
+  const verbo = quienes.length === 1 ? 'está escribiendo' : 'están escribiendo';
+  caja.innerHTML = `${nombres} ${verbo}<span class="puntitos">...</span>`;
+  caja.hidden = false;
+
+  /* Un reloj propio, sólo mientras haya alguien escribiendo. Es lo que apaga
+     la marca de un agente al que se le murió el contenedor a media respuesta:
+     nadie va a mandar el «ya no». */
+  if(!relojEscribiendo) relojEscribiendo = setInterval(pintarEscribiendo, 1000);
+}
+
+/* Lo que llega del servidor son ids; el vencimiento lo pone la mesa según el
+   tipo, igual que el servidor. Se recalcula en cada aviso, así que mientras el
+   otro siga tecleando la marca se renueva sola. */
+function recibirEscribiendo(ids){
+  const t = Date.now();
+  const antes = new Set(escribiendo.keys());
+  escribiendo = new Map();
+  for(const id of (ids || [])){
+    const p = gente[id];
+    escribiendo.set(id, t + (p && p.tipo === 'humano' ? 8_000 : 180_000));
+  }
+  /* Sólo se repinta si de verdad cambió quién. Sin esto, un agente pensando
+     tres minutos repintaría la tira en cada aviso sin que nada cambiara. */
+  const ahora_ = new Set(escribiendo.keys());
+  const igual = antes.size === ahora_.size && [...antes].every(x => ahora_.has(x));
+  if(!igual || !relojEscribiendo) pintarEscribiendo();
+}
+
 function pintarGente(){
   const lista = Object.values(gente);
 
@@ -2419,8 +2502,9 @@ function abrirSocket(codigo){
     if(p.que === 'hola'){
       hilo = p.hilo; gente = p.gente;
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
-      pintarGente(); pintarHilo();
+      pintarGente(); pintarHilo(); recibirEscribiendo(p.escribiendo);
     }
+    if(p.que === 'escribiendo') recibirEscribiendo(p.quienes);
     if(p.que === 'evento'){
       hilo.push(p.evento);
       if(p.evento.tipo === 'sistema'){
@@ -2463,6 +2547,27 @@ function limpiar(){
   pegados.length = 0; pintarPegados();
 }
 
+/* ── avisar que estoy escribiendo ────────────────────────────────────────
+   Con freno, y el freno es el punto: `input` se dispara en CADA letra, así que
+   avisar sin freno serían cuarenta peticiones por renglón. Se manda una y no se
+   vuelve a mandar hasta que falten dos segundos para que venza — o sea, una cada
+   seis segundos mientras siga escribiendo, y ninguna si dejó de escribir.
+
+   Y NO se manda cuando la caja está vacía: borrar lo que ibas a decir apaga la
+   marca en vez de dejar al otro esperando una respuesta que ya no viene. */
+let avisoHasta = 0;
+async function avisarQueEscribo(si){
+  if(demo || !sala || !yo) return;
+  if(si && Date.now() < avisoHasta - 2000) return;
+  avisoHasta = si ? Date.now() + 8000 : 0;
+  try{
+    await fetch(`${SERVIDOR}/api/sala/${sala}/escribiendo`, {
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+      body: JSON.stringify({ de: yo, si }),
+    });
+  }catch(e){ /* que no se pueda avisar no debe estorbar para escribir */ }
+}
+
 async function enviar(){
   const texto = $('texto').value.trim();
   const notaTxt = $('nota').value.trim();
@@ -2492,6 +2597,7 @@ async function enviar(){
     const c = await r.json();
     if(!r.ok){ $('aviso').textContent = c.error; return; }
     limpiar(); $('aviso').textContent = '';
+    avisarQueEscribo(false);
     marcarVivo(true);
   }catch(e){
     marcarVivo(false);
@@ -2631,6 +2737,7 @@ function correrComando(cmd){
   }
 }
 $('texto').addEventListener('input', verComandos);
+$('texto').addEventListener('input', () => avisarQueEscribo(!!$('texto').value.trim()));
 /* Si el cursor se va del cuadro, el menú se cierra. Sin esto se quedaba
    flotando encima del hilo y tapaba la conversación. El retardo es para que
    alcance a registrarse el clic en una opción antes de que desaparezca. */
