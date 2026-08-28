@@ -356,7 +356,7 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    cobra a su dueño; el anillo dice que no es él en persona. */
 .avatar.sub{box-shadow:0 0 0 2px var(--vacio), 0 0 0 3.5px currentColor}
 .avatar.chico{width:19px; height:19px}
-.grupo > .avatar:not(.hueco){box-shadow:0 0 0 2px var(--vacio), 0 0 0 3px var(--tono, transparent)}
+/* (el avatar suelto de la columna se retiró: ahora vive dentro del encabezado) */
 .avatar.grande{width:46px; height:46px}
 
 .llaves{
@@ -432,7 +432,10 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .cuenta-fila .sesiones{margin-left:auto; font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue)}
 
 .burbuja{
-  max-width:min(78%, 560px); min-width:0;
+  /* 88% y no 78%: se recuperó el ancho de la columna del avatar, que ya no
+     existe. El escalón entre un lado y otro lo sigue marcando la alineación,
+     que es lo que de verdad se lee. */
+  max-width:min(88%, 620px); min-width:0;
   border:1px solid var(--borde);
   border-radius:16px; padding:9px 12px 7px;
   position:relative;
@@ -469,11 +472,23 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .grupo.otrolado.mio .burbuja{border-right-color:var(--tono, var(--borde-vivo))}
 .grupo.otrolado .quien-dijo{justify-content:flex-end}
 .grupo.otrolado .quien-dijo .hora-dijo{order:-1; margin:0 auto 0 0}
+/* En el lado derecho la cara se va al filo EXTERIOR, igual que en cualquier
+   chat: la identidad queda del lado por el que entra el mensaje, y eso
+   refuerza el reparto en vez de pelearse con él. */
+.grupo.otrolado .quien-dijo .avatar{order:9}
+.grupo.otrolado .quien-dijo .cta{order:1}
+.grupo.otrolado .quien-dijo .nom{order:2}
 .grupo.otrolado .para-quien{text-align:right}
 
 .quien-dijo{
-  display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; margin-bottom:4px;
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:5px;
 }
+/* La cara, pegada al nombre y del tamaño de una letra grande: tiene que
+   identificar de reojo sin robarle el renglón al nombre. */
+.quien-dijo .avatar{width:20px; height:20px; flex:0 0 auto}
+/* Y con el anillo de su propio tono, que es la misma señal que trae el filo de
+   la burbuja: dos veces lo mismo se aprende sin querer. */
+.quien-dijo .avatar:not(.hueco){box-shadow:0 0 0 1.5px var(--tono, transparent)}
 .quien-dijo .nom{font-weight:700; font-size:13.5px; letter-spacing:-.01em}
 .quien-dijo .hora-dijo{
   font-family:var(--dato); font-size:9.5px; color:var(--muy-tenue); margin-left:auto;
@@ -1547,9 +1562,21 @@ function pintarHilo(){
        el avatar digan lo mismo es lo que deja identificar a alguien sin leer
        su nombre, que es lo que pidió Carlos. */
     const tono = tonoDe(cred);
-    const av = conSiguiente
-      ? '<span class="avatar hueco"></span>'
-      : avatarHtml(cred, '');
+    /* ⚠ EL AVATAR SE MUDÓ ADENTRO DE LA BURBUJA. Lo pidió Carlos: «mete el
+       icono de perfil al mensaje para que se note la separación de qué mensaje
+       va de qué lado».
+
+       Estaba afuera, en su propia columna, y eso tenía dos problemas que sólo
+       se ven en un teléfono:
+        · en los mensajes AGRUPADOS la columna quedaba vacía a propósito —así
+          se hace en cualquier chat—, así que la mayoría de las burbujas no
+          traía ninguna cara y había que subir a buscar de quién eran;
+        · y la columna se comía ~38px de ancho en una pantalla de 390, que es
+          justo lo que le falta a un mensaje largo para no partirse feo.
+
+       Adentro del encabezado lo resuelve de los dos lados: cada mensaje con
+       nombre trae su cara pegada al nombre, y el ancho vuelve al texto. */
+    const av = '';
 
     /* Un subagente dice de quién salió. Sin eso, en la mesa aparece un nombre
        que nadie reconoce y no se sabe a quién reclamarle. */
@@ -1559,7 +1586,8 @@ function pintarHilo(){
       /* El nombre toma el color de la CUENTA, no un violeta fijo. Antes el
          Claude de Luis salía con nombre morado y avatar naranja: dos señales
          de la misma cosa diciendo cosas distintas. */
-      `<div class="quien-dijo"><span class="nom" style="color:${tono}">` +
+      `<div class="quien-dijo">` + avatarHtml(cred, 'chico') +
+      `<span class="nom" style="color:${tono}">` +
       `${esc(cred.nombre)}</span><span class="cta">${esc(comoSeLlama(cred))}</span>` +
       /* La hora VA AQUÍ, al lado del nombre. Antes flotaba dentro del texto y
          partía renglones a media frase. En Discord vive junto al autor y por

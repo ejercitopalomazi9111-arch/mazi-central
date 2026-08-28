@@ -269,6 +269,92 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
   await ctx2.close();
 }
 
+/* ══ LAS DOS INSTITUCIONES ═════════════════════════════════════════════════
+   GERALDMED no tiene membrete oficial, así que su cabecera se COMPONE con el
+   logo. Lo que se prueba aquí son los dos defectos que salieron armándola, y
+   los dos son de la misma familia: se ven «raros pero no rotos», que es la
+   peor clase — uno los mira y piensa «ha de ser el diseño».
+
+   1 · el filo del pie se llamaba `.barra`, que ya era la barra de herramientas
+       de la app con `position:sticky; top:0`. Lo heredó, y con `top` y
+       `bottom` puestos a la vez gana `top`: el pie se pintaba como listón EN
+       LA CABECERA.
+   2 · el pie de página seguía firmando «Instituto Rembrandt» debajo del
+       membrete de GERALDMED. En un documento con folio y sello de
+       verificación eso no es un detalle: es un papel que dice dos cosas. */
+{
+  const p3 = await (await b.newContext()).newPage();
+  await p3.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p3.waitForTimeout(1000);
+
+  const mide = async () => p3.evaluate(() => {
+    const h = document.querySelector('.hoja');
+    const inf = h.querySelector('.membrete-inf');
+    const cab = h.querySelector('.membrete-sup');
+    const zona = h.querySelector('.zona');
+    const rh = h.getBoundingClientRect(), ri = inf.getBoundingClientRect();
+    return {
+      pieAbajo: Math.abs(ri.bottom - rh.bottom) < 2,
+      firma: (document.querySelector('.folio-pie').innerText.split('\n')[1] || ''),
+      seEncima: zona.getBoundingClientRect().top < cab.getBoundingClientRect().bottom,
+      cabeceraEsImagen: cab.tagName === 'IMG',
+    };
+  });
+
+  const cambiar = async (cual) => {
+    await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(250);
+    await p3.selectOption('#oInstitucion', cual); await p3.waitForTimeout(700);
+    await p3.click('[data-vista="ver"]'); await p3.waitForTimeout(900);
+  };
+
+  /* Los CUATRO papeles: jefatura con la marca de la casa, la escuela con su
+     membrete real, presidencia y GERALDMED compuestos. Se prueban todos porque
+     el defecto que importa —un papel que firma con otra institución— no se ve
+     en uno solo: se ve comparándolos. */
+  const ESPERADO = {
+    mazi:        { firma:/grupo mazi/i,   imagen:false },
+    rembrandt:   { firma:/rembrandt/i,    imagen:true  },
+    presidencia: { firma:/sociedad/i,     imagen:false },
+    geraldmed:   { firma:/geraldmed/i,    imagen:false },
+  };
+  for(const [cual, esp] of Object.entries(ESPERADO)){
+    await cambiar(cual);
+    const m = await mide();
+    ok(cual + ' · el filo del pie va ABAJO, no de listón en la cabecera',
+       m.pieAbajo, 'quedó arriba: chocó con otra clase que trae top:0');
+    ok(cual + ' · firma con su propia institución',
+       esp.firma.test(m.firma), 'firmó «' + m.firma + '»');
+    ok(cual + ' · el texto NO se monta sobre la línea del membrete',
+       !m.seEncima, 'el margen de arriba se quedó corto para su cabecera');
+    ok(cual + (esp.imagen ? ' · usa su membrete REAL, que es una imagen'
+                          : ' · se COMPONE, no finge un membrete que no existe'),
+       m.cabeceraEsImagen === esp.imagen);
+  }
+
+  /* Y que el papel siga al cargo sin pisarle una elección hecha a mano: ése es
+     el defecto clásico de los valores «inteligentes». */
+  /* ⚠ Se vuelve a un papel SUGERIDO antes de medir. El bucle de arriba dejó
+     GERALDMED puesto a mano, y respetarlo es justo lo que el código debe hacer
+     — así que sin este reinicio la prueba medía la regla de al lado y fallaba
+     acusando al código de algo que hacía bien. Falló primero así, y el
+     equivocado era el examen. */
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  await p3.selectOption('#oInstitucion','rembrandt'); await p3.waitForTimeout(400);
+  await p3.click('[data-vista="escribir"]'); await p3.waitForTimeout(300);
+  await p3.click('[data-tipo="minuta"]'); await p3.waitForTimeout(500);
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  ok('un reporte de la sociedad arranca en papel de Presidencia',
+     await p3.inputValue('#oInstitucion') === 'presidencia',
+     'quedó en ' + await p3.inputValue('#oInstitucion'));
+  await p3.selectOption('#oInstitucion','geraldmed'); await p3.waitForTimeout(400);
+  await p3.click('[data-vista="escribir"]'); await p3.waitForTimeout(300);
+  await p3.click('[data-tipo="incidencia"]'); await p3.waitForTimeout(500);
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  ok('pero si lo escogiste a mano, cambiar de tipo NO te lo quita',
+     await p3.inputValue('#oInstitucion') === 'geraldmed',
+     'se lo llevó el valor por defecto');
+}
+
 await b.close();
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
 process.exit(mal ? 1 : 0);
