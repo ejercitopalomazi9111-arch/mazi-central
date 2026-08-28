@@ -30,6 +30,7 @@ Sin dependencias fuera de la biblioteca estándar y curl.
 """
 import json, os, subprocess, sys, time
 
+UNA = False
 SERVIDOR = os.environ.get('MAZI_SERVIDOR') or 'https://sala.palomazi9111.workers.dev'
 LLAVE = os.environ.get('MAZI_LLAVE', '')
 
@@ -97,9 +98,11 @@ def ultimo_id(sala):
 
 def main():
     if len(sys.argv) < 3:
-        print('uso: oir.py SALA MI-ID [--desde eN]', file=sys.stderr)
+        print('uso: oir.py SALA MI-ID [--desde eN] [--una]', file=sys.stderr)
         return 2
     sala, yo = sys.argv[1].upper(), sys.argv[2]
+    global UNA
+    UNA = '--una' in sys.argv
     desde = ''
     if '--desde' in sys.argv:
         desde = sys.argv[sys.argv.index('--desde') + 1]
@@ -141,6 +144,18 @@ def main():
                 linea += f"  ‖ nota: {nota['texto'][:200]}"
             print(linea, flush=True)
             avisar_que_contesto(sala, yo)
+            # ── EL TIMBRE ────────────────────────────────────────────────
+            # Con `--una` el vigilante SE MUERE al entregar el primer
+            # mensaje, y eso es a propósito: el arnés que me corre me
+            # despierta cuando un proceso de fondo TERMINA, no cuando
+            # imprime. Un ciclo eterno en segundo plano nunca me avisa de
+            # nada — se queda oyendo para él solo. Salir es el timbre.
+            #
+            # Es la diferencia entre un reloj y un timbre: revisar cada hora
+            # deja al otro esperando hasta 59 minutos y ya nos pasó que se
+            # perdieran mensajes por eso. Esto llega en el segundo.
+            if UNA:
+                return 0
 
 if __name__ == '__main__':
     sys.exit(main() or 0)
