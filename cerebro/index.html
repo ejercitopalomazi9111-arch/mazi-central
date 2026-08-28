@@ -549,7 +549,7 @@ function encuadrarRed(){
      zoom en una prueba, no leyendo. */
   if(!nodos || !nodos.length) return;
   const r = c.getBoundingClientRect();
-  c.width = r.width * devicePixelRatio; c.height = r.height * devicePixelRatio;
+  c.width = r.width * PIX; c.height = r.height * PIX;
   /* Los núcleos entran en la cuenta: viven POR FUERA de la nube, así que un
      encuadre hecho sólo con las neuronas los deja cortados en el borde. */
   const xs = nodos.map(o => o.x).concat(NUCLEOS.map(u => u.x));
@@ -561,12 +561,58 @@ function encuadrarRed(){
   vista.y = r.height / 2 - ((Math.max(...ys) + Math.min(...ys)) / 2) * vista.k;
 }
 
+/* ── CUÁNTOS PÍXELES DE VERDAD SE PINTAN ───────────────────────────────────
+   Carlos: «el apartado de cerebro en red está medio laggy a veces».
+
+   El lienzo se dimensionaba con `devicePixelRatio` a secas. En un iPhone eso
+   vale 3, así que se pintaban NUEVE veces los píxeles de la pantalla, sesenta
+   veces por segundo, con degradados y resplandor encima. Medido con el CPU
+   frenado 6× a 390px: 53.7ms de mediana y picos de 86ms — eso es el tirón.
+
+   Se topa en 2. En una vista de manchas suaves y halos difuminados la
+   diferencia entre 2 y 3 no se ve —no hay un solo borde nítido que defender—
+   y el trabajo por cuadro baja al 44%.
+
+   Se lee UNA vez y no en cada cuadro: `devicePixelRatio` cambia al mover la
+   ventana entre pantallas, y un valor que cambia a media animación deja el
+   lienzo y la transformación en desacuerdo. */
+const PIX = Math.min(devicePixelRatio || 1, 2);
+
 /* ── encender · la propagación ────────────────────────────────────────────
    Enciende unas neuronas y deja que la señal siga por los enlaces, con
    retardo por salto. Es lo que hace visible lo que el cerebro afirma: que
    un problema se resuelve siguiendo la cadena, no leyendo el índice. */
+/* Cada encendido lleva número. La propagación va por `setTimeout` salto a
+   salto, así que una cadena vieja sigue viva y sigue pintando aunque ya se
+   haya escogido otra neurona. Sin este número, la cadena anterior seguía
+   encendiendo enlaces CON SU COLOR encima de la nueva. */
+let generacion = 0;
+
 function encender(ids, saltos = 2, deQuien = null){
   if(!RED) return;
+  const mia = ++generacion;
+
+  /* ── SE APAGA LO ANTERIOR, Y NO ES COSMÉTICA ────────────────────────────
+     Carlos: «cuando selecciono una neurona y luego otra se quedan las
+     sinapsis de ambas encendidas».
+
+     Dos causas, y la segunda es peor que lo que se ve:
+
+     1 · El apagado es por decaimiento (-0.006 por cuadro), así que un enlace
+         tarda ~2.8 s en apagarse. Escoger dos neuronas seguidas deja las dos
+         redes encima.
+
+     2 · La propagación salta con `if(otro.carga > 0) continue` — o sea que
+         NO entra a una neurona que ya esté encendida. Con la carga de la
+         anterior todavía viva, la nueva señal se topaba con ella y se
+         detenía: la segunda red salía INCOMPLETA. El defecto no era sólo que
+         sobrara luz vieja; era que faltaba luz nueva.
+
+     Por eso se apaga todo de golpe antes de encender. La red enseña UNA
+     pregunta a la vez: para eso se escoge una neurona. */
+  for(const o of RED.nodos){ o.carga = 0; o.color = null; }
+  for(const e of RED.enlaces){ e.carga = 0; e.color = null; }
+  for(const u of NUCLEOS){ u.haces = null; }
   /* Si no se dice quién piensa, piensa el primero. Con una sola IA en la mesa
      es lo natural, y evita que la red se vea muerta por no haber escogido. */
   const ia = deQuien
@@ -582,6 +628,8 @@ function encender(ids, saltos = 2, deQuien = null){
   frente.forEach(o => { o.carga = 1; o.color = color; });
   let nivel = 0, actual = frente;
   const siguiente = () => {
+    /* si ya se escogió otra cosa, esta cadena se muere aquí */
+    if(mia !== generacion) return;
     if(++nivel > saltos) return;
     const nuevos = [];
     for(const o of actual){
@@ -697,7 +745,7 @@ function placa(g, cx, cy, texto, k){
 function pintarRed(){
   if(!RED || !RED.listo) return;
   const { c, g, nodos, enlaces, vista } = RED;
-  const P = devicePixelRatio;
+  const P = PIX;
   g.setTransform(1,0,0,1,0,0);
   g.clearRect(0, 0, c.width, c.height);
   g.setTransform(vista.k*P, 0, 0, vista.k*P, vista.x*P, vista.y*P);

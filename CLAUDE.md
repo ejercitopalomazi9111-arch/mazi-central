@@ -232,6 +232,8 @@ dependemos.
    | GLM va en `glm-5.2` | la documentación de Z.ai ya iba en `glm-5.3` | la guía que trajo Carlos **nació desfasada** |
    | Gemini `2.5-*` estable está disponible | cerrado a cuentas nuevas | media hora buscando un error de permisos que no existía |
    | `Math.max(...[])` truena | devuelve **-Infinity**, calladito | un `NaN` que dejó la red del Cerebro en negro **para siempre** |
+   | `hidden` esconde el elemento | es una regla de CSS de la especificidad más baja: pierde contra el `display` de cualquier clase propia | un botón «escondido» que seguía pintado, **y una prueba que leía `.hidden` y decía que sí** |
+   | `String.replace(a, b)` pega `b` literal | en `b`, `$$` significa **un** dólar — `$&`, `$1`, `$'` también mienten | un guión dejó `$(…)` donde decía `$$(…)` y la página tronó al cargar |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
@@ -348,7 +350,8 @@ sin skill que la cubra, ahí sí se propone.
 | `herramientas/mapa.mjs` | Índice de líneas de un monolito (`ligas-mazi/index.html` tiene 5,124) | pendiente |
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
-| `avisos/` | **El aviso del grupo, hecho en un minuto.** Carlos es jefe del 3.1: escribe los pendientes y sale una imagen para el chat, con el formato de la escuela e icono por materia y por tipo. Materias y maestros salen de su horario real | ✅ probada, 19/19 |
+| `reportes/` · modo **Aviso** | **El aviso del grupo, hecho en un minuto.** Carlos es jefe del 3.1: escribe los pendientes y sale una imagen para el chat, con el formato de la escuela e icono por materia y por tipo. **Vive dentro de Reportes desde el 28 de agosto**; `avisos/` quedó de redirección y sigue guardando `datos.js` e `iconos.js`, que son la verdad del horario | ✅ probada, 54/54 |
+| `reportes/pruebas-app.mjs` | **El metro de la pantalla.** Mide las PROPORCIONES en un navegador de verdad, a 390 y a 1100 px: que nada se salga de su panel, que ningún botón parta su nombre en dos renglones, que ningún control quede de menos de 44 px y que **ningún id esté repetido**. Los cinco defectos que cazó la mudanza de Avisos, ninguno se veía leyendo | ✅ 34/34 |
 | auto-guardado | Commit automático de trabajo en curso | pendiente |
 
 ---

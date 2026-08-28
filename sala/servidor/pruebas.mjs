@@ -113,6 +113,27 @@ console.log('\n· El freno de vueltas');
   ok('el freno dice qué hacer, no nada más que no', !!frenado && /bloqueo/.test(frenado.r.error));
   ok('el freno cae en el tope y no antes', !!frenado && frenado.i === 12);
 
+  /* ⚠ EL DEFECTO QUE ESTO CAZA, y lo encontré chocando contra él en la sala de
+     verdad: el freno rechazaba TODO, incluido el `bloqueo` que su propio
+     mensaje de error pedía escribir. El sistema mandaba hacer algo y no dejaba
+     hacerlo, así que el agente frenado se quedaba mudo y la persona que llegaba
+     a desatorar encontraba doce mensajes sin nadie diciendo dónde iba la cosa
+     — que es justo lo que el freno existe para producir. */
+  const [cb, rb] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'bloqueo', texto:'Resumen: no nos ponemos de acuerdo en la base de datos.' }));
+  ok('frenado, el resumen que el propio error pide SÍ pasa', cb === 200, JSON.stringify(rb).slice(0,120));
+
+  /* Pero uno solo. Dos agentes «resumiendo» son dos agentes hablando. */
+  const [cb2, rb2] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-2', tipo:'bloqueo', texto:'Y yo resumo también, y otra vez, y otra' }));
+  ok('pero un segundo resumen ya no', cb2 === 429);
+  ok('y el error lo dice, en vez de repetir la misma instrucción',
+     /ya está puesto/.test(rb2.error || ''), rb2.error);
+
+  const [cb3] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'mensaje', texto:'y sigo hablando como si nada' }));
+  ok('y el resumen no destapa la conversación', cb3 === 429);
+
   const [ch] = await leer(await pedir(s, 'POST', 'decir',
     { de:'carlos', tipo:'mensaje', texto:'yo decido: va PostgreSQL' }));
   ok('un humano puede hablar aunque los agentes estén frenados', ch === 200);
@@ -120,6 +141,20 @@ console.log('\n· El freno de vueltas');
   const [cd] = await leer(await pedir(s, 'POST', 'decir',
     { de:'cl-1', tipo:'ejecucion', texto:'ok, lo hago' }));
   ok('y hablar reinicia el contador, así que los agentes siguen', cd === 200);
+
+  /* Y el permiso de resumir se recarga con la persona: si la sala se vuelve a
+     frenar, hay que poder resumir otra vez. Sin esto, el segundo atorón del
+     día se queda mudo. */
+  let otraVez = null;
+  for(let i = 0; i < 40 && !otraVez; i++){
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de: i % 2 ? 'cl-2' : 'cl-1', tipo:'desacuerdo', texto:'y dale' }));
+    if(c === 429) otraVez = i;
+  }
+  const [cb4] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'bloqueo', texto:'Segundo resumen, del segundo atorón.' }));
+  ok('tras hablar la persona, se puede volver a resumir en el siguiente freno',
+     otraVez !== null && cb4 === 200);
 }
 
 /* ══ 4 · a quién despierta cada mensaje ═══════════════════════════════════ */
@@ -214,6 +249,70 @@ console.log('\n· Adjuntos');
 
   const [c6] = await leer(await di(Array(20).fill({ clase:'enlace', url:'https://a.test' })));
   ok('veinte adjuntos en un evento se rechazan', c6 === 400);
+
+  /* ── el proceso cognitivo, las skills y lo que corrió ──────────────────
+     Carlos: «que podamos ver qué skills se usaron, qué se ejecutó, y más que
+     nada el proceso cognitivo». Se revisa AQUÍ y no en la página, porque la
+     página se puede cambiar desde el navegador y el servidor no. */
+  const [p1] = await leer(await di([{ clase:'pensamiento',
+    titulo:'Por qué no era el filtro', texto:'Llevaba tres rondas...' }]));
+  ok('un pensamiento con texto pasa', p1 === 200);
+
+  const [p2, rp2] = await leer(await di([{ clase:'pensamiento', titulo:'x' }]));
+  ok('un pensamiento sin texto se rechaza', p2 === 400 && /texto/.test(rp2.error));
+
+  const [p3] = await leer(await di([{ clase:'pensamiento', texto:'   ' }]));
+  ok('y uno con puros espacios tampoco', p3 === 400);
+
+  const [p4] = await leer(await di([{ clase:'pensamiento', texto:'a'.repeat(9000) }]));
+  ok('un razonamiento de nueve mil letras se rechaza', p4 === 400);
+
+  const [s1] = await leer(await di([{ clase:'skill', nombre:'agent-browser',
+    porque:'para verlo en pantalla' }]));
+  ok('una skill con nombre pasa', s1 === 200);
+
+  const [s2] = await leer(await di([{ clase:'skill', porque:'sin nombre' }]));
+  ok('una skill sin nombre se rechaza', s2 === 400);
+
+  const [k1] = await leer(await di([{ clase:'codigo', texto:'const a = 1;',
+    lenguaje:'js', archivo:'src/a.js' }]));
+  ok('un trozo de código pasa', k1 === 200);
+
+  const [k2, rk2] = await leer(await di([{ clase:'codigo', lenguaje:'js' }]));
+  ok('sin texto se rechaza', k2 === 400 && /texto/.test(rk2.error));
+
+  const [k3] = await leer(await di([{ clase:'codigo', texto:'x'.repeat(13000) }]));
+  ok('trece mil letras de código se rechazan: eso es un archivo', k3 === 400);
+
+  const [k4] = await leer(await di([{ clase:'codigo', texto:'x', lenguaje:'x'.repeat(30) }]));
+  ok('un «lenguaje» de treinta letras se rechaza', k4 === 400);
+
+  const [k5] = await leer(await di([{ clase:'codigo', texto:'x' }]));
+  ok('pero sin lenguaje ni archivo también pasa: lo importante es el código', k5 === 200);
+
+  const [e1] = await leer(await di([{ clase:'corrida',
+    orden:'node reportes/pruebas-app.mjs', codigo:0, salida:'34/34' }]));
+  ok('una corrida completa pasa', e1 === 200);
+
+  const [e2] = await leer(await di([{ clase:'corrida', orden:'ls' }]));
+  ok('y una corrida sin salida también: la orden ya dice algo', e2 === 200);
+
+  const [e3] = await leer(await di([{ clase:'corrida', salida:'algo' }]));
+  ok('una corrida sin orden se rechaza', e3 === 400);
+
+  const [e4] = await leer(await di([{ clase:'corrida', orden:'ls', salida:'x'.repeat(5000) }]));
+  ok('una salida de cinco mil letras se rechaza', e4 === 400);
+
+  const [e5, re5] = await leer(await di([{ clase:'corrida', orden:'ls', codigo:'0' }]));
+  ok('un código de salida que no es número se rechaza', e5 === 400 && /entero/.test(re5.error));
+
+  /* Lo que de verdad importa: que llegue COMPLETO al hilo. Un adjunto que se
+     acepta y luego se guarda a medias es peor que uno rechazado. */
+  const conProceso = (await (await pedir(s, 'GET', 'hilo')).json()).hilo
+    .filter(x => (x.adjuntos || []).some(a => a.clase === 'pensamiento'));
+  const uno = conProceso[0] && conProceso[0].adjuntos.find(a => a.clase === 'pensamiento');
+  ok('el pensamiento llega entero al hilo, con su título',
+     !!uno && uno.titulo === 'Por qué no era el filtro' && /tres rondas/.test(uno.texto));
 }
 
 /* ══ 7 · el hilo no crece para siempre ════════════════════════════════════ */

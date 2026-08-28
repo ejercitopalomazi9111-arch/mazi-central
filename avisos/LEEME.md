@@ -21,24 +21,29 @@ que Carlos ya usaba** — esto no cambia su método, le quita el trabajo manual.
 
 ## Los datos del grupo
 
-Las materias, los maestros y los colores salen de **su horario real**, no de
+Las materias y los colores salen de **su horario real**, no de
 suponer. Viven en `datos.js` y en ningún otro lado: si cambia el semestre, se
 cambia ese archivo y ya. La herramienta no sabe nada de materias, sólo lee esa
 lista.
 
+Las once materias del 3.1, en el orden en que viven en `datos.js`:
+
 | | |
 |---|---|
-| Química y Biología III | Michelle Ramírez |
-| Geometría Analítica | Daniel Vázquez Alvarado |
-| Programación y BD | Michelle Ramírez Almaraz |
-| Física I enfoque STEAM | Daniel Vázquez |
-| Inglés III | Valentín Hernández Salazar |
-| Educación Física III | Diana Olvera Antonio |
-| Metodología Inv. I STEAM | Omar Ávila Cruz |
-| Humanidades III y Ética | Omar Ávila Cruz |
-| Mto. de equipo y SO | Fernanda Rosas |
-| TEC III | Fernanda Rosas Mendoza |
-| Admón. y estructura de redes | Ricardo Carrillo Cue |
+| Química y Biología III | Geometría Analítica |
+| Programación y BD | Física I enfoque STEAM |
+| Inglés III | Educación Física III |
+| Metodología Inv. I STEAM | Humanidades III y Ética |
+| Mto. de equipo y SO | TEC III |
+| Admón. y estructura de redes | |
+
+> **Sin los nombres de los maestros, y a propósito.** Aquí venían los ocho, con
+> nombre y apellidos. Este repositorio es público y ese dato **no lo lee nadie**
+> —ni la ficha, ni el cartel, ni una prueba—: eran datos personales de terceros
+> publicados a cambio de nada. Lo levantó el Claude de Luis. El campo `maestro`
+> sigue existiendo en `datos.js`, vacío, por si algún día el cartel llega a
+> decir de quién es la materia; ese día el nombre entra desde el teléfono de
+> Carlos, no desde el repositorio.
 
 Más «Proyecto STEAM» y «Aviso general», que no son clases pero sí son avisos.
 

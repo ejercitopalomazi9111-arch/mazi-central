@@ -94,16 +94,35 @@ body.dentro .barra{display:none}
 /* El botón que los cicla. Va flotando y no en la barra a propósito: cuando el
    taller vive empotrado en La Sala la barra no existe, y sin esto el panel
    sería algo que estorba y no se puede quitar. */
-.ojo{
+/* Los mandos del cuarto: una columna a la derecha, con el ojo hasta abajo
+   porque es el que más se toca. Van encima del cuarto y NO en la barra, para
+   que sigan estando cuando el taller va empotrado en La Sala. */
+.mandos{
   position:fixed; right:12px; z-index:12;
-  bottom:calc(14px + env(safe-area-inset-bottom));
-  width:44px; height:44px; border-radius:50%;
+  bottom:calc(66px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:8px;
+}
+.ojo{
+  width:44px; height:44px; border-radius:50%; padding:0;
   display:grid; place-items:center; cursor:pointer;
   background:rgba(27,18,38,.9); border:1px solid var(--borde-vivo);
-  color:var(--tenue); font-size:18px; backdrop-filter:blur(8px);
+  color:var(--tenue); font-size:18px; line-height:1;
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  transition:color .15s, border-color .15s, background .15s;
+}
+/* El ojo solo —el del panel— se queda pegado abajo; los otros se apilan encima. */
+#bOjo{
+  position:fixed; right:12px; z-index:12;
+  bottom:calc(14px + env(safe-area-inset-bottom));
 }
 .ojo:hover{color:var(--hueso); border-color:var(--violeta)}
 .ojo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+/* Encendido: un botón de modo tiene que decir en qué modo está. Es la misma
+   lección del «Ajustar» de Reportes — uno que no lo dice se ve muerto. */
+.ojo[aria-pressed="true"]{
+  color:var(--hueso); border-color:var(--violeta);
+  background:rgba(76,32,110,.9);
+}
 .ficha{
   background:rgba(27,18,38,.9);border:1px solid var(--borde);border-radius:15px;
   padding:11px 13px;margin-bottom:8px;
@@ -156,9 +175,22 @@ body.dentro .barra{display:none}
   <a class="volver" id="volver" href="../" title="Volver">‹</a>
   <span class="marca">El <b>Taller</b></span>
   <span class="crece"></span>
-  <button class="btn" id="bPanel">Panel</button>
-  <button class="btn" id="bSeguir">Seguir</button>
-  <button class="btn" id="bVista">Vista</button>
+</div>
+
+<!-- ⚠ LOS MANDOS VIVEN AQUÍ Y NO EN LA BARRA, Y ÉSE ERA EL BUG.
+     Carlos: «en el taller 3D no encuentro cómo acceder a la vista aérea (la
+     vista chida)». No es que no la encontrara: es que NO ESTABA. El taller se
+     abre dentro de La Sala con ?dentro=1, y esa marca esconde la barra
+     entera —«body.dentro .barra{display:none}»— para no repetir la cabecera de
+     la mesa. Los tres botones vivían adentro de esa barra, así que empotrado
+     —o sea, como él lo usa siempre— la vista aérea era inalcanzable.
+
+     Flotan sobre el cuarto, junto al ojo, y sobreviven a «dentro». -->
+<div class="mandos" id="mandos">
+  <button class="ojo" id="bVista" title="Vista aérea: ver a todos de un jalón"
+          aria-label="Vista aérea: ver a todos de un jalón" aria-pressed="false">⌖</button>
+  <button class="ojo" id="bSeguir" title="Seguir al que está en foco"
+          aria-label="Seguir al que está en foco" aria-pressed="true">◉</button>
 </div>
 
 <div class="aviso" id="aviso"></div>
@@ -935,6 +967,230 @@ $('panel').addEventListener('click', (e) => {
   if(f) enFocar(f.dataset.ver);
 });
 
+/* ══ EL CIELO DE NEURONAS ══════════════════════════════════════════════════
+   Carlos: «haz que las neuronas se vean como una skybox en el taller 3D y se
+   vea cuando hacen sinapsis etc para que se vea bien mamón».
+
+   QUÉ ES: una esfera de neuronas alrededor del cuarto, con sus enlaces, que se
+   ENCIENDE por saltos. No es decoración suelta: es el Cerebro de la casa —118
+   neuronas en 11 áreas— puesto como cielo del taller. Cuando un agente trabaja
+   está literalmente adentro de lo que la casa ya sabe.
+
+   TRES DECISIONES QUE NO SON OBVIAS:
+
+   1 · VA SIN NIEBLA. El cuarto tiene `Fog(9, 26)`, así que cualquier cosa más
+       allá de 26 unidades se pinta del color del fondo — o sea, invisible. Un
+       cielo dentro del alcance de la niebla no es un cielo: es un techo. Las
+       dos materias llevan `fog:false`.
+
+   2 · EL PUNTO SE DIBUJA CON SU PROPIO SOMBREADOR, y no con `PointsMaterial`.
+       No es por presumir: `PointsMaterial` tiene UN tamaño para todos los
+       puntos, y lo que hace que esto se lea como sinapsis y no como confeti es
+       que la neurona que dispara CREZCA. Con un color más brillante y el mismo
+       tamaño, a veinte metros no se distingue.
+
+   3 · LOS ENLACES SALEN DE LA DISTANCIA, no de una lista. Cada neurona se une
+       a sus tres más cercanas: así el grafo queda conectado sin cruces largos
+       que se lean como rayas sueltas, y la señal viaja por vecindad, que es
+       como se ve un cerebro de verdad.
+
+   Y RESPETA `prefers-reduced-motion`: se queda quieto y encendido tenue. Un
+   cielo que parpadea no es negociable para quien le hace daño.
+   ═════════════════════════════════════════════════════════════════════════ */
+const CIELO = {
+  cuantas: 300,          /* neuronas. Más no se distinguen y sí se pagan */
+  vecinas: 3,            /* enlaces por neurona */
+  radio: 34,             /* fuera de la niebla y fuera del alcance del mando */
+  saltos: 3,             /* hasta dónde llega una señal */
+  cadaCuanto: 1.15,      /* segundos entre disparos */
+};
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let cielo = null;
+function armarCielo(){
+  if(!HAY3D) return null;
+
+  /* Reparto en espiral de Fibonacci: puntos separados de verdad sobre la
+     esfera. Al azar puro salen grumos y huecos, y los grumos se leen como
+     manchas, no como una red. */
+  const n = CIELO.cuantas;
+  const pos = new Float32Array(n * 3);
+  const carga = new Float32Array(n);
+  const puntos = [];
+  const dorado = Math.PI * (3 - Math.sqrt(5));
+  for(let i = 0; i < n; i++){
+    const y = 1 - (i / (n - 1)) * 2;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const th = dorado * i;
+    /* Aplastado en Y (0.55): el cuarto se mira de frente y casi nunca hacia
+       arriba, así que una esfera perfecta gasta la mitad de sus neuronas en
+       un cenit que nadie ve. */
+    const v = new THREE.Vector3(Math.cos(th) * r, y * 0.55, Math.sin(th) * r)
+      .multiplyScalar(CIELO.radio);
+    pos[i*3] = v.x; pos[i*3+1] = v.y + 6; pos[i*3+2] = v.z;
+    puntos.push(v);
+  }
+
+  /* Los enlaces, por cercanía. Se guardan sin repetir: un par unido dos veces
+     se pinta doble y se ve más brillante que sus iguales sin razón. */
+  const vecinas = Array.from({ length:n }, () => []);
+  const pares = new Set();
+  const idx = [];
+  for(let i = 0; i < n; i++){
+    const cerca = [];
+    for(let j = 0; j < n; j++){
+      if(i === j) continue;
+      cerca.push([puntos[i].distanceToSquared(puntos[j]), j]);
+    }
+    cerca.sort((a, b) => a[0] - b[0]);
+    for(let k = 0; k < CIELO.vecinas; k++){
+      const j = cerca[k][1];
+      vecinas[i].push(j);
+      if(!vecinas[j].includes(i)) vecinas[j].push(i);
+      const llave = i < j ? i + ':' + j : j + ':' + i;
+      if(pares.has(llave)) continue;
+      pares.add(llave);
+      idx.push(i, j);
+    }
+  }
+
+  /* ── las neuronas ── */
+  const gNeur = new THREE.BufferGeometry();
+  gNeur.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  gNeur.setAttribute('carga', new THREE.BufferAttribute(carga, 1));
+  const mNeur = new THREE.ShaderMaterial({
+    uniforms: {
+      escala:  { value: Math.min(devicePixelRatio, 2) },
+      apagado: { value: new THREE.Color(0x5B3C7A) },
+      vivo:    { value: new THREE.Color(0xE0A8FF) },
+    },
+    vertexShader: `
+      attribute float carga;
+      varying float vCarga;
+      uniform float escala;
+      void main(){
+        vCarga = carga;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        /* El tamaño crece con la carga: es lo que hace que un disparo se lea
+           como un disparo y no como un cambio de color. */
+        gl_PointSize = (2.2 + carga * 7.5) * escala * (260.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying float vCarga;
+      uniform vec3 apagado;
+      uniform vec3 vivo;
+      void main(){
+        /* Redondo y con la orilla suave. Un cuadrito duro se ve a pixel y
+           delata que son puntos, no luces. */
+        vec2 d = gl_PointCoord - vec2(0.5);
+        float r = length(d);
+        if(r > 0.5) discard;
+        float borde = smoothstep(0.5, 0.06, r);
+        vec3 c = mix(apagado, vivo, clamp(vCarga, 0.0, 1.0));
+        gl_FragColor = vec4(c, borde * (0.34 + vCarga * 0.66));
+      }`,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    fog: false,
+  });
+  const nube = new THREE.Points(gNeur, mNeur);
+
+  /* ── las sinapsis ── */
+  /* Van con color por vértice y NO con opacidad global: si toda la red subiera
+     de brillo a la vez se vería un destello, no una señal recorriendo. Lo que
+     se lee como sinapsis es que se encienda UN camino. */
+  const linPos = new Float32Array(idx.length * 3);
+  const linCol = new Float32Array(idx.length * 3);
+  for(let k = 0; k < idx.length; k++){
+    const i = idx[k];
+    linPos[k*3] = pos[i*3]; linPos[k*3+1] = pos[i*3+1]; linPos[k*3+2] = pos[i*3+2];
+  }
+  const gLin = new THREE.BufferGeometry();
+  gLin.setAttribute('position', new THREE.BufferAttribute(linPos, 3));
+  gLin.setAttribute('color', new THREE.BufferAttribute(linCol, 3));
+  const hilos = new THREE.LineSegments(gLin, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.85,
+    depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+  }));
+
+  const grupo = new THREE.Group();
+  grupo.add(nube); grupo.add(hilos);
+  /* No recibe ni proyecta sombra, y no entra en el `raycast` del mando. */
+  grupo.matrixAutoUpdate = true;
+  escena.add(grupo);
+
+  return { grupo, nube, hilos, gNeur, gLin, idx, vecinas, carga,
+           colorLinea: linCol, n, proximo: 0, quemando: [] };
+}
+
+/* Un disparo: se enciende una neurona y la señal salta a sus vecinas. Cada
+   salto llega más débil, que es lo que hace que se vea una DIRECCIÓN en vez de
+   una mancha creciendo. */
+function dispararCielo(c){
+  const semilla = (Math.random() * c.n) | 0;
+  const vistas = new Set([semilla]);
+  let frente = [semilla];
+  for(let salto = 0; salto <= CIELO.saltos; salto++){
+    const fuerza = 1 - salto / (CIELO.saltos + 1);
+    for(const i of frente) c.quemando.push({ i, fuerza, espera: salto * 0.14 });
+    const siguiente = [];
+    for(const i of frente){
+      for(const j of c.vecinas[i]){
+        if(vistas.has(j)) continue;
+        vistas.add(j); siguiente.push(j);
+      }
+    }
+    frente = siguiente;
+    if(!frente.length) break;
+  }
+}
+
+function moverCielo(c, dt, t){
+  if(!c) return;
+  /* Gira despacísimo. Lo justo para que no se vea una calcomanía pegada al
+     fondo, y no tanto como para marear a quien está viendo trabajar a alguien. */
+  c.grupo.rotation.y = t * 0.012;
+
+  const carga = c.carga;
+  /* Se apaga todo un poco cada cuadro. Independiente de los cuadros por
+     segundo: en un teléfono a 30 fps el apagado tiene que tardar lo mismo que
+     en una computadora a 60, o la señal se ve el doble de larga. */
+  const apaga = Math.pow(0.12, dt);
+  for(let i = 0; i < c.n; i++) carga[i] *= apaga;
+
+  for(let k = c.quemando.length - 1; k >= 0; k--){
+    const q = c.quemando[k];
+    q.espera -= dt;
+    if(q.espera > 0) continue;
+    carga[q.i] = Math.max(carga[q.i], q.fuerza);
+    c.quemando.splice(k, 1);
+  }
+  c.gNeur.attributes.carga.needsUpdate = true;
+
+  /* El color de cada extremo de cada hilo sale de la carga de SU neurona. Así
+     un enlace entre una encendida y una apagada sale en degradado, que es lo
+     que hace que se vea el salto y no un parpadeo. */
+  const col = c.colorLinea, idx = c.idx;
+  for(let k = 0; k < idx.length; k++){
+    const v = carga[idx[k]];
+    /* base tenue para que la red se intuya siempre, aunque nadie dispare */
+    const g = 0.055 + v * 0.85;
+    col[k*3]     = g * 0.72;
+    col[k*3 + 1] = g * 0.26;
+    col[k*3 + 2] = g;
+  }
+  c.gLin.attributes.color.needsUpdate = true;
+
+  if(QUIETO) return;
+  c.proximo -= dt;
+  if(c.proximo <= 0){
+    c.proximo = CIELO.cadaCuanto * (0.6 + Math.random() * 0.8);
+    dispararCielo(c);
+  }
+}
+
 /* ── la cámara ────────────────────────────────────────────────────────── */
 let siguiendo = true;
 function enFocar(id){
@@ -958,49 +1214,50 @@ function enFocar(id){
 const destino = new THREE.Vector3(0, 2.6, 7.2);
 const mirando = new THREE.Vector3(0, 1.1, 0);
 
+function marcar(id, prendido){
+  const b = $(id); if(!b) return;
+  b.setAttribute('aria-pressed', String(!!prendido));
+  b.classList.toggle('on', !!prendido);
+}
 $('bSeguir').addEventListener('click', () => {
   siguiendo = !siguiendo;
-  $('bSeguir').classList.toggle('on', siguiendo);
+  marcar('bSeguir', siguiendo);
   if(siguiendo && enFoco) enFocar(enFoco);
 });
-$('bSeguir').classList.add('on');
+marcar('bSeguir', true);
 
-/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
-   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
-   del que estás siguiendo. */
-$('bPanel').addEventListener('click', () => {
-  const plegado = $('panel').classList.toggle('plegado');
-  $('bPanel').classList.toggle('on', !plegado);
-});
-$('bPanel').classList.add('on');
+/* El panel lo maneja el ojo de abajo, que tiene TRES estados —completo,
+   plegado, oculto— y no dos. Aquí vivía un segundo interruptor de dos estados
+   sobre el mismo panel, y los dos se pisaban: el ojo lo dejaba oculto y este
+   otro creía que estaba completo.
+
+   Peor todavía: una copia de este mismo bloque estaba pegada DENTRO del
+   `else` del botón de vista. O sea que cada vez que apagabas la vista amplia
+   se registraba OTRO escuchador sobre el mismo botón, y a partir de ahí un
+   clic plegaba y desplegaba en el mismo instante. Desde fuera se ve idéntico a
+   un botón muerto, que es como se reportan estas cosas. */
 
 let vistaAmplia = false;
 $('bVista').addEventListener('click', () => {
   vistaAmplia = !vistaAmplia;
-  $('bVista').classList.toggle('on', vistaAmplia);
+  marcar('bVista', vistaAmplia);
   if(vistaAmplia){
-    siguiendo = false; $('bSeguir').classList.remove('on');
+    siguiendo = false; marcar('bSeguir', false);
     /* La distancia sale del radio del semicírculo, no de un número fijo: con
        dos agentes el cuarto es chico y con ocho es grande, y una cámara fija
        o los deja de estampilla o se mete entre los escritorios. */
     destino.set(0, radioActual * 1.45 + 3.2, radioActual * 2.4 + 5.5);
     mirando.set(0, 0.7, 0);
-  }else if(enFoco){ siguiendo = true; $('bSeguir').classList.add('on');
-
-/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
-   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
-   del que estás siguiendo. */
-$('bPanel').addEventListener('click', () => {
-  const plegado = $('panel').classList.toggle('plegado');
-  $('bPanel').classList.toggle('on', !plegado);
-});
-$('bPanel').classList.add('on'); enFocar(enFoco); }
+  }else if(enFoco){
+    siguiendo = true; marcar('bSeguir', true); enFocar(enFoco);
+  }
 });
 
 /* Una manija para poder MEDIR la escena desde fuera. No es depuración
    olvidada: sin esto, revisar el taller es mirar una foto y opinar, que es
    justo lo que la casa no acepta como verificación. */
-window.__taller = { escena, camara, puestos, get gente(){ return gente; } };
+window.__taller = { escena, camara, puestos, get gente(){ return gente; },
+                    get cielo(){ return cielo; }, dispararCielo:() => cielo && dispararCielo(cielo) };
 
 /* ── el bucle ─────────────────────────────────────────────────────────── */
 /* ── los tres estados del panel ────────────────────────────────────────────
@@ -1054,6 +1311,8 @@ if(DENTRO){
   ponerPanel(elegido && ESTADOS_PANEL.includes(elegido) ? elegido : 'oculto');
 }
 
+cielo = armarCielo();
+
 const reloj = new THREE.Clock();
 function cuadro(){
   if(!HAY3D) return;                    /* sin 3D no hay nada que pintar */
@@ -1072,6 +1331,7 @@ function cuadro(){
     camara.position.lerp(destino, 0.045);
     mando.target.lerp(mirando, 0.045);
   }
+  moverCielo(cielo, dt, t);
   mando.update();
   pintor.render(escena, camara);
 }

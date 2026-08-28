@@ -114,7 +114,40 @@ const TIPOS = new Set([
    quién puede trabajar ahorita y quién no, sin tener que adivinarlo. */
 const ESTADOS = new Set(['activo', 'topado', 'ocupado', 'fuera']);
 
-const CLASES_ADJUNTO = new Set(['imagen', 'archivo', 'diff', 'enlace', 'repo', 'presentacion']);
+/* ── qué puede colgar un agente de un mensaje ──────────────────────────────
+   Las tres últimas las pidió Carlos: «que podamos ver qué skills se usaron,
+   qué se ejecutó, y MÁS QUE NADA EL PROCESO COGNITIVO».
+
+   Por qué importa y no es adorno: en la mesa se ve el RESULTADO —«ya quedó»,
+   «lo subí»— y eso es justo lo que no se puede revisar. Dos agentes que
+   dicen «ya quedó» se ven idénticos, y uno lo verificó en un navegador y el
+   otro leyó el código y supuso. La diferencia vive en el razonamiento y en lo
+   que de verdad corrió, no en la conclusión.
+
+   Van como ADJUNTO y no como texto del mensaje a propósito: así el hilo se
+   sigue leyendo de corrido —lo que alguien dijo— y el cómo llegó ahí se abre
+   nada más cuando a uno le interesa. Un hilo donde cada mensaje trae ochenta
+   renglones de razonamiento pegados es un hilo que nadie lee. */
+const CLASES_ADJUNTO = new Set([
+  'imagen', 'archivo', 'diff', 'enlace', 'repo', 'presentacion',
+  'pensamiento',   /* cómo lo razonó: lo que descartó y por qué */
+  'skill',         /* qué skill usó, y para qué le sirvió */
+  'corrida',       /* qué mandó ejecutar, qué contestó y con qué código */
+  'codigo',        /* un trozo de código, en su caja y con botón de copiar */
+]);
+
+/* Topes de los tres nuevos. Salen de para qué son, no de un número redondo:
+   un razonamiento que no cabe en 8 mil letras ya no es un razonamiento, es un
+   documento y va como archivo; y una salida de consola de más de 4 mil letras
+   nadie la lee en un teléfono — se manda la cola, que es donde está el error. */
+const TOPE_PENSAMIENTO = 8000;
+const TOPE_SALIDA = 4000;
+const TOPE_ORDEN = 400;
+/* Un trozo de código en el chat es para LEERLO ahí mismo. Más de 12 mil letras
+   ya no se lee en una burbuja: eso es un archivo y va como archivo, con su
+   ruta. El tope no es para ahorrar espacio, es para que el hilo siga siendo
+   legible. */
+const TOPE_CODIGO = 12000;
 
 /* ── reacciones ────────────────────────────────────────────────────────────
    Cerradas a una lista corta a propósito. Un catálogo abierto de emojis en un
@@ -226,6 +259,10 @@ export class Sala {
       this.hilo    = await ctx.storage.get('hilo')    || [];
       this.gente   = await ctx.storage.get('gente')   || {};
       this.vueltas = await ctx.storage.get('vueltas') || 0;
+      /* Si el freno de este episodio ya recibió su resumen. Se guarda porque
+         una sala frenada puede sobrevivir a un reinicio del contenedor, y sin
+         esto el resumen se podría volver a colar en cada reinicio. */
+      this.resumido = await ctx.storage.get('resumido') || false;
       this.proyectos = await ctx.storage.get('proyectos') || [];
       this.serie   = await ctx.storage.get('serie')   || 0;
       /* Las llaves de ESTA sala, `llave → cuenta`. Vacío = sala abierta. */
@@ -280,7 +317,7 @@ export class Sala {
 
   async guardar(){
     await this.ctx.storage.put({
-      hilo: this.hilo, gente: this.gente, vueltas: this.vueltas,
+      hilo: this.hilo, gente: this.gente, vueltas: this.vueltas, resumido: this.resumido,
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
     });
@@ -446,7 +483,7 @@ export class Sala {
        — nadie paga por ellas y castigarlas dejaría al que se topó sin poder
        ni avisar que ya volvió. */
     const cuenta = evento.tipo !== 'sistema' && evento.tipo !== 'limite';
-    if(cuenta && evento.de?.tipo === 'humano') this.vueltas = 0;
+    if(cuenta && evento.de?.tipo === 'humano'){ this.vueltas = 0; this.resumido = false; }
     else if(cuenta && evento.de?.tipo !== 'humano') this.vueltas++;
 
     await this.guardar();
@@ -759,14 +796,40 @@ export class Sala {
                              { status:400 });
       }
 
-      /* EL FRENO. Antes que nada, porque de nada sirve después. */
+      /* EL FRENO. Antes que nada, porque de nada sirve después.
+
+         ⚠ Y DEJA PASAR EXACTAMENTE UN RESUMEN. La versión anterior rechazaba
+         TODO al frenar, incluido el `bloqueo` que su propio mensaje de error
+         pedía escribir. O sea que el sistema mandaba hacer algo y no dejaba
+         hacerlo: el agente frenado se quedaba mudo, y la persona que llegaba a
+         desatorar la sala encontraba doce mensajes sin nadie que dijera dónde
+         iba la cosa — que es justamente lo que el freno existe para producir.
+
+         Lo cazé chocando contra él: quise poner el resumen que el error me
+         pidió y me lo rechazó con el mismo texto.
+
+         Uno solo, y lo que lo controla es la marca `resumido`, no el contador
+         —el contador ya está por encima del tope y ahí se queda—. Con más de
+         uno el freno no frena nada: dos agentes «resumiendo» son dos agentes
+         hablando. */
       if(quien.tipo !== 'humano' && this.vueltas >= TOPE_VUELTAS){
-        return Response.json({
-          error: 'Freno de vueltas. Llevan ' + this.vueltas + ' mensajes seguidos entre ' +
-                 'agentes sin que hable una persona. Resume dónde va la discusión, dilo en ' +
-                 'la sala como tipo "bloqueo", y espera a que Carlos o su compañero decidan.',
-          freno: true, vueltas: this.vueltas, tope: TOPE_VUELTAS,
-        }, { status:429 });
+        const esResumen = tipo === 'bloqueo' && !this.resumido;
+        if(!esResumen){
+          return Response.json({
+            error: 'Freno de vueltas. Llevan ' + this.vueltas + ' mensajes seguidos entre ' +
+                   'agentes sin que hable una persona. ' +
+                   (this.resumido
+                     ? 'El resumen ya está puesto: ahora sí toca esperar a que Carlos o su ' +
+                       'compañero decidan.'
+                     : 'Resume dónde va la discusión, dilo en la sala como tipo "bloqueo" ' +
+                       '(ése SÍ pasa, una vez), y espera a que Carlos o su compañero decidan.'),
+            freno: true, vueltas: this.vueltas, tope: TOPE_VUELTAS,
+            /* Se dice el tipo exacto para que un agente no tenga que adivinarlo
+               del texto en español. */
+            salida: this.resumido ? null : { tipo:'bloqueo' },
+          }, { status:429 });
+        }
+        this.resumido = true;
       }
 
       const malo = revisarAdjuntos(c.adjuntos);
@@ -1265,6 +1328,40 @@ function revisarAdjuntos(lista){
     if(a.clase === 'repo'   && !a.owner)           return 'Al repo le falta el dueño.';
     if(a.clase === 'diff'   && typeof a.cuerpo !== 'string') return 'Al diff le falta cuerpo.';
     if(a.clase === 'archivo'&& !a.ruta)            return 'Al archivo le falta la ruta.';
+
+    /* ── el proceso cognitivo y lo que corrió ──────────────────────────── */
+    if(a.clase === 'pensamiento'){
+      if(typeof a.texto !== 'string' || !a.texto.trim())
+        return 'Al pensamiento le falta `texto`: qué razonaste.';
+      if(a.texto.length > TOPE_PENSAMIENTO)
+        return `Ese razonamiento pasa de ${TOPE_PENSAMIENTO} letras. Manda lo que decidió, no todo.`;
+    }
+    if(a.clase === 'skill'){
+      if(typeof a.nombre !== 'string' || !a.nombre.trim())
+        return 'A la skill le falta `nombre`.';
+      if(a.nombre.length > 60) return 'Ese nombre de skill es demasiado largo.';
+    }
+    if(a.clase === 'codigo'){
+      if(typeof a.texto !== 'string' || !a.texto.trim())
+        return 'Al código le falta `texto`.';
+      if(a.texto.length > TOPE_CODIGO)
+        return `Ese código pasa de ${TOPE_CODIGO} letras. Mándalo como archivo con su ruta.`;
+      if(a.lenguaje != null && (typeof a.lenguaje !== 'string' || a.lenguaje.length > 24))
+        return 'El lenguaje va como texto corto: js, css, html, sql…';
+      if(a.archivo != null && (typeof a.archivo !== 'string' || a.archivo.length > 200))
+        return 'La ruta del archivo va como texto.';
+    }
+    if(a.clase === 'corrida'){
+      if(typeof a.orden !== 'string' || !a.orden.trim())
+        return 'A la corrida le falta `orden`: qué se ejecutó.';
+      if(a.orden.length > TOPE_ORDEN) return 'Esa orden es demasiado larga.';
+      if(a.salida != null && typeof a.salida !== 'string')
+        return 'La salida de una corrida va como texto.';
+      if(a.salida && a.salida.length > TOPE_SALIDA)
+        return `Esa salida pasa de ${TOPE_SALIDA} letras. Manda la cola, que es donde está el error.`;
+      if(a.codigo != null && !Number.isInteger(a.codigo))
+        return 'El código de salida es un número entero.';
+    }
   }
   return null;
 }

@@ -13,7 +13,7 @@
 :root{
   --papel:#F6F8FB; --tarjeta:#FFFFFF; --tinta:#101821;
   --tenue:#4C5A6B; --muy-tenue:#7A8798; --linea:#D9E1EA;
-  --organiza:#0A3D6E; --actualiza:#A81440; --optimiza:#0E8350;
+  --comprende:#0A3D6E; --trasciende:#A81440; --ejecuta:#0E8350;
   --display:"Instrument Serif",Georgia,serif;
   --cuerpo:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --dato:"JetBrains Mono",ui-monospace,Menlo,monospace;
@@ -22,13 +22,13 @@
   :root:not([data-theme="light"]){
     --papel:#0B1017; --tarjeta:#131C26; --tinta:#EAF0F7; --tenue:#A3B2C3;
     --muy-tenue:#74849A; --linea:#22303F;
-    --organiza:#5798D6; --actualiza:#F0648F; --optimiza:#3FC98A;
+    --comprende:#5798D6; --trasciende:#F0648F; --ejecuta:#3FC98A;
   }
 }
 :root[data-theme="dark"]{
   --papel:#0B1017; --tarjeta:#131C26; --tinta:#EAF0F7; --tenue:#A3B2C3;
   --muy-tenue:#74849A; --linea:#22303F;
-  --organiza:#5798D6; --actualiza:#F0648F; --optimiza:#3FC98A;
+  --comprende:#5798D6; --trasciende:#F0648F; --ejecuta:#3FC98A;
 }
 *{box-sizing:border-box}
 body{
@@ -64,7 +64,7 @@ strong{font-weight:600}
 .v h3{font-family:var(--cuerpo); font-weight:700; font-size:17px; margin:0 0 5px;
   text-transform:uppercase; letter-spacing:.02em}
 .v p{font-size:14px; margin:0; color:rgba(255,255,255,.9); max-width:none}
-.v.o{background:var(--organiza)} .v.a{background:var(--actualiza)} .v.p{background:var(--optimiza)}
+.v.o{background:var(--comprende)} .v.a{background:var(--trasciende)} .v.p{background:var(--ejecuta)}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .v{color:#0B1017}
   :root:not([data-theme="light"]) .v p{color:rgba(11,16,23,.82)}
@@ -78,7 +78,7 @@ strong{font-weight:600}
   background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
   padding:18px 20px; margin-bottom:12px;
 }
-.doc:hover{border-color:var(--organiza)}
+.doc:hover{border-color:var(--comprende)}
 .doc-cab{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px}
 .doc h3{font-family:var(--cuerpo); font-weight:700; font-size:18px; margin:0;
   letter-spacing:-.012em}
@@ -87,16 +87,16 @@ strong{font-weight:600}
   text-transform:uppercase; padding:3px 8px; border-radius:99px; margin-left:auto;
   white-space:nowrap;
 }
-.listo{background:color-mix(in srgb, var(--optimiza) 16%, transparent); color:var(--optimiza)}
-.curso{background:color-mix(in srgb, var(--actualiza) 15%, transparent); color:var(--actualiza)}
+.listo{background:color-mix(in srgb, var(--ejecuta) 16%, transparent); color:var(--ejecuta)}
+.curso{background:color-mix(in srgb, var(--trasciende) 15%, transparent); color:var(--trasciende)}
 .doc p{margin:0; font-size:15px; color:var(--tenue)}
 .doc .abrir{
   display:inline-block; margin-top:11px; padding-top:11px;
   border-top:1px dashed var(--linea); width:100%;
   font-family:var(--dato); font-size:11px; font-weight:700; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--organiza);
+  text-transform:uppercase; color:var(--comprende);
 }
-.doc:focus-visible{outline:2px solid var(--optimiza); outline-offset:2px}
+.doc:focus-visible{outline:2px solid var(--ejecuta); outline-offset:2px}
 
 /* ── tablas ── */
 .envoltura{overflow-x:auto; border:1px solid var(--linea); border-radius:13px;
@@ -113,14 +113,14 @@ td:last-child{color:var(--tenue)}
 ul{margin:0 0 16px; padding:0; list-style:none; max-width:64ch}
 li{position:relative; padding-left:20px; margin-bottom:9px}
 li::before{content:""; position:absolute; left:2px; top:.68em; width:6px; height:6px;
-  border-radius:2px; background:var(--organiza)}
-ul.falta li::before{background:var(--actualiza)}
+  border-radius:2px; background:var(--comprende)}
+ul.falta li::before{background:var(--trasciende)}
 
 .caja{
   background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
   padding:19px 21px; margin:0 0 16px;
 }
-.caja.ojo{border-color:var(--actualiza)}
+.caja.ojo{border-color:var(--trasciende)}
 .caja h4{font-family:var(--cuerpo); font-weight:700; font-size:17px; margin:0 0 8px}
 .caja p:last-child{margin-bottom:0}
 
@@ -131,34 +131,45 @@ ul.falta li::before{background:var(--actualiza)}
 <div class="hoja">
 
 <header class="portada">
-  <p class="sello">Comité estudiantil · Bachillerato Rembrandt · Agosto 2026</p>
+  <p class="sello">Candidatura CET · Instituto Rembrandt de Querétaro · agosto 2026</p>
   <h1>Expediente<br>de <i>campaña</i></h1>
-  <p class="entrada">Todo lo que lleva la candidatura hasta hoy, en un solo lugar.
-  <b>Seis documentos</b>: la estructura del comité, la identidad, la convocatoria abierta, las
-  nueve propuestas con su forma de medirse, el cronograma de trabajo, y el tablero de
-  pendientes.</p>
+  <p class="entrada">Todo lo que lleva la candidatura <b>CET</b> hasta hoy, en un solo lugar:
+  la propuesta entregada a Dirección, el manual de marca, la estructura de la Sociedad, las
+  propuestas con su forma de medirse, la convocatoria y el tablero de pendientes.</p>
 </header>
 
 <section>
   <h2>La idea en tres palabras</h2>
-  <p class="bajada">Toda la campaña cuelga de tres verbos. Cada propuesta pertenece a uno, cada
-  color corresponde a uno, y cada uno trae además su propia figura para que se distingan
-  también impresos en blanco y negro.</p>
+  <p class="bajada"><b>CET no es un lema: es un método.</b> Toda la campaña cuelga de tres
+  verbos que son tres momentos de un trabajo. Cada propuesta pertenece a uno, cada color
+  corresponde a uno, y cada uno trae su propia figura para que se distingan también impresos
+  en blanco y negro — que en una escuela es lo que de verdad pasa.</p>
   <div class="verbos">
-    <div class="v o"><span class="fig">◼</span><h3>Organiza</h3>
-      <p>Que las cosas pasen a tiempo y que se sepa cuándo.</p></div>
-    <div class="v a"><span class="fig">◆</span><h3>Actualiza</h3>
-      <p>Traer al presente lo que ya existe pero se quedó viejo.</p></div>
-    <div class="v p"><span class="fig">▲</span><h3>Optimiza</h3>
-      <p>Quitar el desperdicio de lo que ya se hace.</p></div>
+    <div class="v o"><span class="fig">◼</span><h3>Comprende</h3>
+      <p>Escuchar y analizar antes de decidir.</p></div>
+    <div class="v p"><span class="fig">▲</span><h3>Ejecuta</h3>
+      <p>Convertir las propuestas en acciones concretas.</p></div>
+    <div class="v a"><span class="fig">◆</span><h3>Trasciende</h3>
+      <p>Dejar proyectos y documentación que puedan continuar.</p></div>
   </div>
   <p style="font-family:var(--display); font-style:italic; font-size:20px; margin-top:20px">
-    «Solo llegarás rápido. Juntos, lejos.»</p>
+    «Escuchar para hacer. Hacer para trascender.»</p>
+  <p style="font-family:var(--display); font-style:italic; font-size:15px; margin-top:2px;
+            color:var(--muy-tenue)">Hoy se construye lo que mañana continúa.</p>
 </section>
 
 <section>
   <h2>Los documentos</h2>
   <p class="bajada">En orden de lectura. Toca cualquiera para abrirlo.</p>
+
+  <a class="doc" href="../reportes/"
+     >
+    <div class="doc-cab"><h3>La propuesta entregada a Dirección</h3><span class="estado listo">Terminado</span></div>
+    <p>El documento completo de la candidatura CET, con los 25 apartados, el logotipo, la lámina
+    de identidad y el anexo de versiones. Es lo que se entregó; el texto vive en
+    <code>campana/CET-documento.txt</code> y se arma en Reportes.</p>
+    <span class="abrir">Abrir Reportes →</span>
+  </a>
 
   <a class="doc" href="propuestas.html"
      >
@@ -177,11 +188,13 @@ ul.falta li::before{background:var(--actualiza)}
     <span class="abrir">Abrir →</span>
   </a>
 
-  <a class="doc" href="color.html"
+  <a class="doc" href="marca.html"
      >
-    <div class="doc-cab"><h3>Identidad y colores</h3><span class="estado listo">Terminado</span></div>
-    <p>Qué significa cada color y por qué ése y no otro. Con las mediciones de contraste y la
-    prueba en escala de grises, para que los materiales se lean igual fotocopiados.</p>
+    <div class="doc-cab"><h3>Manual de marca</h3><span class="estado listo">Terminado</span></div>
+    <p>Las reglas completas de CET: la idea, la personalidad, la voz, el sistema gráfico, la
+    tipografía, el logo, los iconos, los carteles, las redes, el deporte, los documentos y qué
+    pasa con la marca <strong>después de ganar</strong>. Con los contrastes y los grises de
+    fotocopia <strong>medidos</strong>, no escogidos a ojo.</p>
     <span class="abrir">Abrir →</span>
   </a>
 

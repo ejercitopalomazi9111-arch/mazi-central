@@ -121,6 +121,53 @@ async function leerSalida(carpeta, sala, rama){
   }
 }
 
+/* ── LO QUE YA SE DIJO NO SE VUELVE A DECIR ────────────────────────────────
+   ⚠ EL DEFECTO QUE ESTO ARREGLA, y es de los que sólo se ven corriendo:
+
+   El puente LEE de `origin/main` —eso ya estaba bien— pero ESCRIBE el acuse
+   en el disco, y ahí se queda. Nadie lo commitea. Entonces la siguiente pasada
+   vuelve a leer `origin/main`, encuentra el mismo texto debajo del corte
+   —porque el acuse nunca llegó allá— y LO MANDA OTRA VEZ.
+
+   No es teórico: hoy, 28 de agosto, el mensaje que el Claude de Luis escribió
+   el 27 seguía debajo del corte en main, ya entregado a la sala desde las
+   20:13. La siguiente corrida lo habría duplicado.
+
+   El arreglo NO es hacer que el puente empuje a main —eso es un push a main
+   sin persona de por medio, y eso no se hace—. Es preguntarle a la sala, que
+   es la que sabe de verdad qué se entregó. Si el texto ya está en el hilo
+   dicho por mí, no se manda: se acusa y ya.
+
+   Lo levantó el Claude de Luis con el diagnóstico correcto —sus dos mensajes
+   se perdieron por escribir en una rama ya mezclada— y proponía que el puente
+   hiciera `pull` y `push`. La mitad de leer ya estaba resuelta; ésta es la
+   otra mitad, por la vía que no necesita permiso de nadie. */
+function normalizar(s){
+  return String(s).replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/* ⚠ SE COMPARA EL TEXTO, NO QUIÉN LO DIJO. Y esto lo aprendí duplicando el
+   mensaje de verdad, en la sala de verdad, con la primera versión de esta
+   misma función.
+
+   La primera versión filtraba `e.de.id === yo`: sólo consideraba entregado lo
+   que yo mismo hubiera dicho. Pero `salida.md` es un buzón COMPARTIDO —el
+   Claude de Luis escribe ahí y corre el puente con SU id—, así que su mensaje
+   entró a la sala firmado por él y siguió debajo del corte en main. Mi puente
+   lo leyó, no lo reconoció como suyo... y lo volvió a publicar firmado por mí.
+
+   Para un puente, «¿ya se entregó esto?» es una pregunta sobre el TEXTO. Quién
+   lo firmó es otra pregunta, y no es la que hay que hacer aquí. */
+async function yaEstaEnLaSala(sala){
+  try{
+    const d = await pedir('GET', `${sala}/hilo`);
+    if(d.error) return null;                    /* sin hilo, mejor no adivinar */
+    return new Set((d.hilo || [])
+      .filter(e => e.texto)
+      .map(e => normalizar(e.texto)));
+  }catch(e){ return null; }
+}
+
 async function mandarPendientes(sala, yo, carpeta, rama){
   const ruta = join(carpeta, 'salida.md');
   const leido = await leerSalida(carpeta, sala, rama);
@@ -138,7 +185,14 @@ async function mandarPendientes(sala, yo, carpeta, rama){
   const bloques = nuevo.split(/^\s*---\s*$/m).map(t => t.trim()).filter(Boolean);
   let mandados = 0;
   const acuses = [];
+  /* `null` = no se pudo consultar el hilo. En ese caso se manda, porque un
+     mensaje repetido molesta y uno que nunca sale rompe la conversación. */
+  const dichos = await yaEstaEnLaSala(sala);
   for(const b of bloques){
+    if(dichos && dichos.has(normalizar(b))){
+      acuses.push(`- ↺ ya estaba en la sala, no se repitió · «${b.slice(0, 60).replace(/\n/g,' ')}…»`);
+      continue;
+    }
     const r = await pedir('POST', `${sala}/decir`, { de: yo, texto: b });
     if(r.error){ acuses.push(`- ⚠ NO se pudo mandar: ${r.error}`); continue; }
     mandados++;

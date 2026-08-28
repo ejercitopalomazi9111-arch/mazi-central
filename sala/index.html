@@ -705,13 +705,61 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   letter-spacing:.06em; margin:10px 0;
 }
 
+/* ── el letrero de paso ───────────────────────────────────────────────────
+   Reemplaza a los renglones de «entró / salió» que atascaban el hilo. Vive
+   sobre la conversación, no dentro: así no empuja nada ni se lleva el final
+   del hilo. Se va solo.
+
+   Va ARRIBA y no abajo a propósito: abajo está el campo de escribir, y un
+   aviso que aparece encima del teclado en un teléfono tapa justo lo que uno
+   está haciendo. */
+.letreros{
+  position:absolute; top:8px; left:0; right:0; z-index:30;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  pointer-events:none; padding:0 12px;
+}
+.letrero{
+  background:var(--alta); border:1px solid var(--borde-vivo); color:var(--tenue);
+  font-family:var(--dato); font-size:11.5px; letter-spacing:.04em;
+  padding:7px 13px; border-radius:99px; max-width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+  animation:asoma .22s ease-out both;
+}
+.letrero.yendose{animation:sevá .3s ease-in both}
+.letrero b{color:var(--hueso); font-weight:600}
+@keyframes asoma{from{opacity:0; transform:translateY(-8px) scale(.96)} to{opacity:1; transform:none}}
+@keyframes sevá{to{opacity:0; transform:translateY(-6px) scale(.97)}}
+@media (prefers-reduced-motion:reduce){
+  .letrero,.letrero.yendose{animation:none}
+}
+
 /* ── adjuntos ── */
 .adjuntos{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
-.miniatura{
-  width:96px; height:96px; border-radius:10px; overflow:hidden; cursor:zoom-in;
-  border:1px solid var(--borde-vivo); background:var(--alta); padding:0;
+/* ── LA FOTO SE VE, NO SE PICA ────────────────────────────────────────────
+   Carlos: «que directamente sin picarle ni nada se vea la vista previa».
+   Tenía razón y el defecto era doble: 96×96 con `object-fit:cover` no es una
+   vista previa, es un RECORTE del centro. De una captura de pantalla —que es
+   lo que más se manda aquí— el cuadrito del centro no dice absolutamente
+   nada, así que había que picarle SIEMPRE. Ahora se ve entera y a un tamaño
+   en el que se lee; la lupa sigue ahí para verla a pantalla completa.
+
+   El `aspect-ratio` va puesto desde el ancho y alto que ya viajaban en el
+   adjunto: sin él, el hueco de la foto es de cero hasta que la imagen
+   decodifica, y el hilo pega un brinco justo cuando lo estabas leyendo. */
+.foto{
+  display:block; padding:0; margin:0; border-radius:12px; overflow:hidden;
+  border:1px solid var(--borde-vivo); background:var(--alta);
+  cursor:zoom-in; line-height:0; max-width:100%;
 }
-.miniatura img{width:100%; height:100%; object-fit:cover; display:block}
+.foto img{
+  display:block; width:auto; height:auto;
+  max-width:min(100%, 460px); max-height:360px;
+}
+.foto:hover{border-color:var(--violeta)}
+/* Cuando van varias en un mismo mensaje se achican, para que dos fotos no
+   sean dos pantallas de scroll. */
+.adjuntos.varias .foto img{max-width:min(100%, 220px); max-height:200px}
 .tarjeta{
   display:flex; align-items:center; gap:9px; text-decoration:none;
   background:var(--alta); border:1px solid var(--borde-vivo); border-radius:10px;
@@ -723,6 +771,163 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .tarjeta .t1{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .tarjeta .t2{font-family:var(--dato); font-size:10.5px; color:var(--muy-tenue);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* ── EL PROCESO · cómo lo pensó, con qué, y qué corrió ────────────────────
+   Carlos: «que podamos ver qué skills se usaron, qué se ejecutó, y MÁS QUE
+   NADA EL PROCESO COGNITIVO».
+
+   La decisión de diseño que sostiene todo esto: van CERRADOS. Un hilo donde
+   cada mensaje trae ochenta renglones de razonamiento pegados deja de ser un
+   hilo — se vuelve un registro, y un registro no se lee, se busca. Cerrados,
+   el hilo se sigue leyendo de corrido y el cómo se abre cuando a uno le
+   interesa. Es `<details>` del navegador y no JavaScript nuestro: funciona sin
+   scripts, el buscador del navegador lo encuentra aunque esté cerrado, y en el
+   teléfono ya sabe abrirse solo.
+
+   Y el resumen del renglón cerrado DICE ALGO. «Pensamiento» no sirve de nada;
+   «por qué no se usó un iframe» te deja decidir si vale la pena abrirlo. */
+.proceso{
+  width:100%; border:1px solid var(--borde); border-radius:10px;
+  background:var(--vacio); overflow:hidden;
+}
+.proceso>summary{
+  display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none;
+  padding:9px 12px; font-size:12.5px; color:var(--tenue); min-height:40px;
+}
+.proceso>summary::-webkit-details-marker{display:none}
+.proceso>summary:hover{color:var(--hueso); background:var(--alta)}
+.proceso>summary .marca{flex:0 0 auto; font-size:12px; width:18px; text-align:center}
+.proceso>summary .de-que{
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;
+}
+.proceso>summary .flechita{flex:0 0 auto; color:var(--muy-tenue); transition:transform .15s}
+.proceso[open]>summary{border-bottom:1px solid var(--borde); color:var(--hueso)}
+.proceso[open]>summary .flechita{transform:rotate(90deg)}
+.proceso .adentro{padding:11px 13px; font-size:13px; line-height:1.6}
+
+/* El razonamiento se lee como prosa, que es lo que es. Sin monoespaciada:
+   ponerle letra de consola lo hace parecer salida de máquina, y lo que parece
+   salida de máquina se salta. */
+.proceso.piensa>summary .marca{color:#C9A6FF}
+.proceso.piensa .adentro{white-space:pre-wrap; color:var(--hueso)}
+
+/* La skill es un renglón, no un bloque: casi siempre lo único que hay que
+   saber es CUÁL, y eso cabe en el resumen. */
+.skill-usada{
+  display:inline-flex; align-items:center; gap:7px; max-width:100%;
+  background:var(--alta); border:1px solid var(--borde-vivo); border-radius:999px;
+  padding:6px 12px; font-size:12.5px; color:var(--hueso); min-height:32px;
+}
+.skill-usada .n{font-weight:600; white-space:nowrap}
+.skill-usada .p{
+  color:var(--tenue); min-width:0;
+  /* En el teléfono no hay a qué pasarle el dedo encima, así que el `title` no
+     existe: si el porqué se corta, se pierde. Dos renglones y ya. */
+  white-space:normal; word-break:break-word;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.skill-usada{align-items:flex-start; border-radius:14px; padding:8px 13px}
+.skill-usada .marca, .skill-usada .n{margin-top:0}
+
+/* Lo que corrió. La ORDEN va siempre visible aunque la salida esté cerrada:
+   saber que alguien corrió las pruebas es media respuesta, y leer la salida es
+   la otra media, que casi nunca hace falta. */
+.proceso.corre>summary .marca{color:var(--tenue)}
+/* ⚠️ La orden NO se corta en un renglón, se deja hasta dos y ahí sí se corta.
+   Dos corridas del mismo archivo —una antes del arreglo y otra después—
+   salían las dos como «node api/inventario/prueb…» y no se distinguían: lo
+   que las diferencia vive AL FINAL, y cortar por el final es cortar justo lo
+   que hace falta. Se vio en la captura, con las dos filas idénticas. */
+.proceso.corre>summary{align-items:flex-start; padding-top:10px}
+.proceso.corre>summary .marca,
+.proceso.corre>summary .flechita,
+.proceso.corre>summary .sello-cod{margin-top:2px}
+.proceso.corre>summary .de-que{
+  font-family:var(--dato); font-size:12px; color:var(--hueso);
+  white-space:normal; word-break:break-word;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+}
+.proceso.corre .adentro{
+  font-family:var(--dato); font-size:11.5px; line-height:1.55;
+  white-space:pre-wrap; word-break:break-word; color:var(--tenue);
+  max-height:340px; overflow:auto;
+}
+.proceso.corre .sola{
+  display:block; padding:9px 12px; font-family:var(--dato); font-size:12px;
+  color:var(--hueso); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.sello-cod{
+  flex:0 0 auto; font-family:var(--dato); font-size:10.5px; font-weight:700;
+  border-radius:6px; padding:2px 7px; letter-spacing:.02em;
+}
+.sello-cod.bien{background:rgba(74,222,128,.14); color:#7BE3A3}
+.sello-cod.mal{background:rgba(248,113,113,.16); color:#FF9C9C}
+
+/* ── EL CÓDIGO, EN SU CAJA Y CON BOTÓN DE COPIAR ──────────────────────────
+   ⚠ SE LLAMA `caja-codigo` Y NO `codigo` porque `.codigo` YA EXISTE arriba:
+   es la pastilla con las seis letras de la sala, la que se toca para copiar el
+   código. Dos reglas con el mismo nombre y la misma especificidad: gana la de
+   abajo, o sea ésta, y la pastilla se habría convertido en un bloque de código
+   sin que nadie tocara ese archivo. Se cuenta antes de nombrar, no después.
+   Carlos: «si sube código o algo así un Claude, que lo pueda poner con la
+   cajita donde puedes copiarlo directamente».
+
+   Lo que se rompía sin esto, y es lo que de verdad importa: el texto del hilo
+   se pinta con `white-space: pre-wrap` y tipografía de leer. Un trozo de
+   código ahí adentro pierde la alineación, se le parten las líneas donde
+   caiga, y para llevárselo hay que seleccionarlo a dedo en un teléfono —lo
+   que quiere decir que casi nunca te lo llevas completo—.
+
+   El botón de copiar no es adorno: es la única forma decente de sacar código
+   de un chat en un teléfono. */
+.caja-codigo{
+  width:100%; border:1px solid var(--borde); border-radius:10px;
+  background:var(--vacio); overflow:hidden; margin:6px 0;
+  /* Cinturón además de tirantes: el marcado ya va sin saltos, y aquí se corta
+     de raíz que el `pre-wrap` del mensaje se cuele a los huecos entre
+     etiquetas. Lo de adentro del <pre> vuelve a ser `pre` más abajo. */
+  white-space:normal;
+  display:block;
+}
+.caja-codigo-cab{
+  display:flex; align-items:center; gap:8px; padding:7px 8px 7px 12px;
+  border-bottom:1px solid var(--borde); background:var(--superficie);
+  font-size:11.5px; color:var(--tenue);
+}
+.caja-codigo-cab .donde{
+  font-family:var(--dato); min-width:0; flex:1;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.copiar{
+  flex:0 0 auto; min-height:32px; padding:0 11px; border-radius:8px;
+  border:1px solid var(--borde-vivo); background:var(--alta); color:var(--tenue);
+  font:inherit; font-size:11.5px; font-weight:600; cursor:pointer;
+  display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  transition:color .15s, border-color .15s, background .15s;
+}
+.copiar:hover{color:var(--hueso); border-color:var(--violeta)}
+.copiar:focus-visible{outline:2px solid var(--violeta); outline-offset:2px}
+/* El acuse cambia el BOTÓN, no saca un letrero: el ojo ya está ahí y no hay
+   que ir a buscar la confirmación a otro lado de la pantalla. */
+.copiar.listo{color:#7BE3A3; border-color:#3E8F63; background:rgba(74,222,128,.12)}
+.copiar.falló{color:#FF9C9C; border-color:#8F3E3E; background:rgba(248,113,113,.12)}
+.caja-codigo pre{
+  margin:0; padding:11px 12px; overflow-x:auto; overscroll-behavior-x:contain;
+  font-family:var(--dato); font-size:12px; line-height:1.6;
+  color:var(--hueso); white-space:pre; tab-size:2;
+  /* Una sombra en la orilla derecha mientras haya más que ver. Sin ella, en un
+     teléfono, una línea cortada parece una línea INCOMPLETA — y entonces uno
+     copia creyendo que le falta algo. Se pega al fondo del recuadro, así que
+     desaparece sola al llegar al final del desplazamiento. */
+  background:
+    linear-gradient(to left, var(--vacio), var(--vacio)) right / 22px 100% no-repeat local,
+    linear-gradient(to left, rgba(172,39,255,.42), rgba(172,39,255,0)) right / 22px 100% no-repeat scroll;
+}
+/* El código no se envuelve, y es a propósito: una línea de código partida
+   donde caiga se lee peor que una que hay que deslizar. */
+/* La caja se desliza sola de lado; lo que NO puede es empujar la burbuja y
+   sacar de cuadro toda la conversación. */
+.caja-codigo pre code{font:inherit; color:inherit; background:none; padding:0}
 
 /* ── la lupa ── */
 .lupa{
@@ -964,6 +1169,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <button class="pest" data-vista="taller3d">Taller 3D</button>
 </div>
 
+<div class="letreros" id="letreros" aria-live="polite" aria-atomic="false"></div>
 <div class="hilo" id="hilo"></div>
 <div class="marco3d" id="marco3d" hidden></div>
 
@@ -1462,11 +1668,65 @@ function avatarHtml(c, tam){
 const comoSeLlama = (c) => c.tipo === 'humano' ? 'persona'
   : (c.motor || NOMBRE_FAM[c.familia] || 'agente');
 
+/* ── LA CAJA DE CÓDIGO ─────────────────────────────────────────────────────
+   Se usa desde dos lados: un adjunto `codigo` que manda un agente a propósito,
+   y los bloques entre ``` que vienen dentro del texto de un mensaje normal. Lo
+   segundo importa tanto como lo primero: nadie va a acordarse de mandar un
+   adjunto estructurado cuando está contestando rápido, pero las comillas
+   triples las escribe todo el mundo por costumbre.
+
+   El código va con `textContent` a través de `esc`, y el original completo
+   viaja en un `data-` para que copiar no dependa de leer del DOM ya pintado.
+
+   ⚠ NO se le mete resaltado de sintaxis. Sería una librería de fuera —contra
+   la regla de la casa— o cuatrocientas líneas propias para pintar de colores
+   algo que ya se lee bien en monoespaciada sobre fondo oscuro. Lo que le
+   faltaba a esto no era color: era poder copiarlo. */
+function cajaDeCodigo(texto, lenguaje, archivo){
+  const donde = archivo || (lenguaje ? String(lenguaje) : 'código');
+  /* ⚠ TODO EN UN RENGLÓN, Y NO ES MANÍA DE FORMATO. El cuerpo del mensaje se
+     pinta con `white-space: pre-wrap` —hace falta para respetar los saltos de
+     quien escribe—, y eso significa que los saltos y la sangría que uno pone
+     por legibilidad ENTRE las etiquetas se dibujan como renglones en blanco.
+     Con el marcado bonito, la caja salía con un hueco vacío del alto de tres
+     renglones encima del rótulo y otro debajo del código. Se vio en la
+     captura; leyendo el HTML se ve perfectamente ordenado. */
+  return '<div class="caja-codigo">' +
+    '<div class="caja-codigo-cab">' +
+      '<span class="donde">' + esc(donde) + '</span>' +
+      '<button class="copiar" type="button" data-copiar="' + esc(texto) + '">' +
+        '<span aria-hidden="true">⧉</span> Copiar</button>' +
+    '</div>' +
+    '<pre><code>' + esc(texto) + '</code></pre>' +
+  '</div>';
+}
+
+/* Los bloques entre comillas triples dentro del texto de un mensaje. Se parte
+   el texto en trozos y sólo los de código cambian de forma; lo demás sigue
+   siendo texto escapado, como siempre. */
+function conCodigo(texto){
+  const crudo = String(texto == null ? '' : texto);
+  if(!crudo.includes('\u0060\u0060\u0060')) return esc(crudo);
+  const partes = [];
+  const cerca = /\u0060\u0060\u0060([A-Za-z0-9_.+-]{0,24})[ \t]*\n([\s\S]*?)\u0060\u0060\u0060/g;
+  let ultimo = 0, m;
+  while((m = cerca.exec(crudo)) !== null){
+    if(m.index > ultimo) partes.push(esc(crudo.slice(ultimo, m.index)));
+    partes.push(cajaDeCodigo(m[2].replace(/\n$/, ''), m[1] || null, null));
+    ultimo = cerca.lastIndex;
+  }
+  if(ultimo < crudo.length) partes.push(esc(crudo.slice(ultimo)));
+  return partes.join('');
+}
+
 function tarjetaAdjunto(a){
   if(a.clase === 'imagen'){
     const src = a.datos.startsWith('data:') ? a.datos : `data:${a.mime};base64,${a.datos}`;
-    return `<button class="miniatura" data-grande="${esc(src)}">
-      <img src="${esc(src)}" alt="${esc(a.nombre || 'imagen')}" loading="lazy"></button>`;
+    /* El hueco se reserva con la proporción que ya venía en el adjunto. */
+    const prop = (a.ancho && a.alto) ? ` style="aspect-ratio:${+a.ancho}/${+a.alto}"` : '';
+    const med  = (a.ancho && a.alto) ? ` width="${+a.ancho}" height="${+a.alto}"` : '';
+    return `<button class="foto" data-grande="${esc(src)}" title="Ver en grande">
+      <img src="${esc(src)}"${med}${prop} alt="${esc(a.nombre || 'imagen')}" loading="lazy"></button>`;
   }
   if(a.clase === 'presentacion'){
     const uno = a.laminas[0];
@@ -1485,6 +1745,46 @@ function tarjetaAdjunto(a){
       ? `<a class="tarjeta" href="${esc(a.enlace)}" target="_blank" rel="noopener">${dentro}</a>`
       : `<span class="tarjeta">${dentro}</span>`;
   }
+  /* ── un trozo de código, en su caja y con botón de copiar ── */
+  if(a.clase === 'codigo'){
+    return cajaDeCodigo(a.texto, a.lenguaje, a.archivo);
+  }
+
+  /* ── el proceso: cómo lo pensó, con qué, y qué corrió ── */
+  if(a.clase === 'pensamiento'){
+    /* El resumen del renglón cerrado sale del título si lo mandaron, y si no,
+       del primer renglón del propio razonamiento. Nunca de la palabra
+       «pensamiento»: un resumen que no distingue un bloque de otro obliga a
+       abrirlos todos, que es exactamente lo que se quería evitar. */
+    const t = (a.titulo || String(a.texto).split(/\n/)[0] || 'Cómo lo pensó').slice(0, 120);
+    return `<details class="proceso piensa">
+      <summary><span class="marca">◈</span>
+      <span class="de-que">${esc(t)}</span>
+      <span class="flechita">›</span></summary>
+      <div class="adentro">${esc(a.texto)}</div></details>`;
+  }
+  if(a.clase === 'skill'){
+    const p = a.porque || a.que || '';
+    return `<span class="skill-usada" title="${esc(p)}">` +
+      `<span class="marca">⚡</span><span class="n">${esc(a.nombre)}</span>` +
+      (p ? `<span class="p">· ${esc(p)}</span>` : '') + `</span>`;
+  }
+  if(a.clase === 'corrida'){
+    /* Sin salida no hay nada que abrir: se pinta el renglón y ya. Un
+       desplegable que se abre y está vacío es peor que no tenerlo. */
+    if(!a.salida){
+      return `<span class="proceso corre"><span class="sola">$ ${esc(a.orden)}</span></span>`;
+    }
+    const cod = Number.isInteger(a.codigo)
+      ? `<span class="sello-cod ${a.codigo === 0 ? 'bien' : 'mal'}">` +
+        `${a.codigo === 0 ? '✓ 0' : '✗ ' + a.codigo}</span>` : '';
+    return `<details class="proceso corre">
+      <summary><span class="marca">$</span>
+      <span class="de-que">${esc(a.orden)}</span>${cod}
+      <span class="flechita">›</span></summary>
+      <div class="adentro">${esc(a.salida)}</div></details>`;
+  }
+
   if(a.clase === 'diff'){
     return `<span class="tarjeta"><span class="ico">±</span><span class="txt">
       <span class="t1">${esc(a.ruta)}</span>
@@ -1545,7 +1845,21 @@ function pintarHilo(){
     if(!prev || !mismoDia(prev.ts, e.ts)) partes.push(`<div class="dia">${esc(nombreDia(e.ts))}</div>`);
 
     if(e.tipo === 'sistema'){
-      partes.push(`<div class="sistema">${esc(e.de.nombre)} ${e.accion === 'entra' ? 'entró' : 'salió'}</div>`);
+      /* ── NO VAN EN EL HILO ─────────────────────────────────────────────
+         Carlos: «el chat se atasca de mensajes de x entró x salió y así, pero
+         siempre hasta abajo sin importar qué. Mejor haz que sea un letrerito
+         que aparezca unos segundos y ya».
+
+         Tenía razón y el defecto es peor de lo que se ve: como cada entrada y
+         cada salida es un evento del hilo, EMPUJAN los mensajes de verdad
+         hacia arriba y se llevan el final de la conversación. Con dos
+         personas reconectándose, el último mensaje real puede quedar cuatro
+         pantallas atrás.
+
+         Ahora no se pintan aquí. Lo que llega EN VIVO sale como letrero de
+         paso (ver `letrero()`); lo del historial no sale, porque «Luis entró»
+         hace tres horas no es información, es ruido. */
+      return;
       return;
     }
 
@@ -1600,7 +1914,7 @@ function pintarHilo(){
     const aQuien = e.a
       ? `<div class="para-quien">→ ${esc(gente[e.a] ? gente[e.a].nombre : e.a)}</div>` : '';
 
-    let cuerpo = esc(e.texto);
+    let cuerpo = conCodigo(e.texto);
     if(e.tipo === 'limite' && e.limite){
       const v = e.limite.reanuda ? ` Puede seguir a las ${hora(e.limite.reanuda)}`
                                  : ' No dijo a qué hora vuelve.';
@@ -1609,7 +1923,8 @@ function pintarHilo(){
     }
 
     const adj = (e.adjuntos && e.adjuntos.length)
-      ? `<div class="adjuntos">${e.adjuntos.map(tarjetaAdjunto).join('')}</div>` : '';
+      ? `<div class="adjuntos${(e.adjuntos.filter(x => x.clase === 'imagen').length > 1)
+          ? ' varias' : ''}">${e.adjuntos.map(tarjetaAdjunto).join('')}</div>` : '';
     const nota = e.nota && e.nota.texto ? `<div class="nota"><span class="nota-para">${e.nota.a
         ? 'Para ' + esc(gente[e.nota.a] ? gente[e.nota.a].nombre : e.nota.a)
         : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
@@ -2067,6 +2382,38 @@ function abrirSocket(codigo){
   const url = `${SERVIDOR.replace(/^http/,'ws')}/api/sala/${codigo}/ws`
             + (yo ? `?de=${encodeURIComponent(yo)}` : '');
   ws = new WebSocket(url);
+  /* ── letrero de paso ─────────────────────────────────────────────────────
+     Aparece arriba, dura unos segundos y se va. Tres reglas que salieron de
+     pensar en cómo se usa esto de verdad:
+
+     1 · Sólo lo que llega EN VIVO. El historial no se anuncia: «Luis entró»
+         hace tres horas no es información.
+     2 · Máximo tres a la vez. Cuando alguien tiene mala señal, el servidor
+         manda entra/sale/entra en ráfaga; sin tope, la pantalla se llena de
+         letreros y volvemos al problema de origen con otra forma.
+     3 · Si el mismo aviso se repite, se refresca el que ya está en vez de
+         apilar otro igual. */
+  const LETREROS = 3, DURA = 3600;
+  function letrero(texto){
+    const caja = $('letreros'); if(!caja) return;
+    const ya = [...caja.children].find(x => x.dataset.txt === texto);
+    if(ya){ clearTimeout(+ya.dataset.reloj); armarSalida(ya); return; }
+
+    const el = document.createElement('div');
+    el.className = 'letrero';
+    el.dataset.txt = texto;
+    el.innerHTML = texto;
+    caja.appendChild(el);
+    while(caja.children.length > LETREROS) caja.firstElementChild.remove();
+    armarSalida(el);
+  }
+  function armarSalida(el){
+    el.dataset.reloj = setTimeout(() => {
+      el.classList.add('yendose');
+      setTimeout(() => el.remove(), 320);
+    }, DURA);
+  }
+
   ws.onmessage = (m) => {
     const p = JSON.parse(m.data);
     if(p.que === 'hola'){
@@ -2076,7 +2423,10 @@ function abrirSocket(codigo){
     }
     if(p.que === 'evento'){
       hilo.push(p.evento);
-      if(p.evento.tipo === 'sistema') { /* la lista se refresca abajo */ }
+      if(p.evento.tipo === 'sistema'){
+        const quien = esc(p.evento.de.nombre);
+        letrero(`<b>${quien}</b> ${p.evento.accion === 'entra' ? 'entró' : 'salió'}`);
+      }
       pintarHilo(); if(vistaTaller) pintarTaller(); avisarFreno(p.vueltas, p.tope);
     }
     if(p.que === 'gente'){
@@ -2475,9 +2825,60 @@ $('taller').addEventListener('click', (e) => {
   if(n) n.scrollIntoView({ block:'center' });
 });
 
+/* ── copiar un trozo de código ──────────────────────────────────────────────
+   Va delegado en el documento y no colgado de cada botón: el hilo se repinta
+   entero en cada mensaje, así que un escuchador por botón se pierde en el
+   siguiente repintado —y peor, se acumula si alguien lo vuelve a colgar—.
+
+   ⚠ DOS VÍAS, Y LA SEGUNDA NO SOBRA. `navigator.clipboard` sólo existe en
+   contexto seguro: https o localhost. La mesa vive en https, pero abierta por
+   IP en la red de casa —que es como se prueba entre dos aparatos— NO hay
+   clipboard, y el botón se quedaría mudo sin decir por qué. La vía vieja
+   (`execCommand`) es fea y funciona en todos lados.
+
+   Y si las dos fallan, se DICE. Un botón de copiar que no copia y no avisa es
+   peor que no tenerlo: te llevas el silencio creyendo que ya lo tienes. */
+async function alPortapapeles(texto){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(texto);
+      return true;
+    }
+  }catch(e){ /* se cae a la vía vieja */ }
+  try{
+    const c = document.createElement('textarea');
+    c.value = texto;
+    /* Fuera de pantalla pero SELECCIONABLE. Con `display:none` el navegador no
+       deja seleccionar y `execCommand` no copia nada. */
+    c.style.cssText = 'position:fixed; top:-1000px; left:0; opacity:0';
+    c.setAttribute('readonly', '');
+    document.body.appendChild(c);
+    c.select(); c.setSelectionRange(0, texto.length);
+    const bien = document.execCommand('copy');
+    document.body.removeChild(c);
+    return bien;
+  }catch(e){ return false; }
+}
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('.copiar');
+  if(!b) return;
+  const bien = await alPortapapeles(b.dataset.copiar || '');
+  const antes = b.innerHTML;
+  b.innerHTML = bien ? '<span aria-hidden="true">✓</span> Copiado'
+                     : '<span aria-hidden="true">✕</span> No se pudo';
+  b.classList.add(bien ? 'listo' : 'falló');
+  /* El botón vuelve a su estado: si se quedara en «Copiado», la segunda vez no
+     se sabría si el toque hizo algo. */
+  clearTimeout(b.__t);
+  b.__t = setTimeout(() => {
+    b.innerHTML = antes; b.classList.remove('listo', 'falló');
+  }, 1800);
+});
+
 /* ── la lupa ── */
 document.addEventListener('click', (e) => {
-  const m = e.target.closest('.miniatura');
+  const m = e.target.closest('.foto');
   if(m){ $('lupaImg').src = m.dataset.grande; $('lupa').classList.add('abierta'); }
 });
 $('bCerrarLupa').addEventListener('click', () => $('lupa').classList.remove('abierta'));
@@ -2649,6 +3050,33 @@ $('bDemo').addEventListener('click', (e) => {
           { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjNUFBOUU2Ii8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Nb3ZpbWllbnRvczwvdGV4dD4KPHRleHQgeD0iNDAiIHk9IjEzMiIgZmlsbD0iI0EzOTVCNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4Ij5IaXN0b3JpYWwgY29tcGxldG8sIGZpbHRyYWJsZSBwb3IgZmVjaGE8L3RleHQ+CjxyZWN0IHg9IjQwIiB5PSIxNjgiIHdpZHRoPSIyNTAiIGhlaWdodD0iMTMyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjE2OCIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI2MiIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHJlY3QgeD0iMzA4IiB5PSIyNDIiIHdpZHRoPSIyOTIiIGhlaWdodD0iNTgiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+Cjx0ZXh0IHg9IjYwMCIgeT0iMzMyIiBmaWxsPSIjNkI1QjdEIiBmb250LWZhbWlseT0idWktbW9ub3NwYWNlLG1vbm9zcGFjZSIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9ImVuZCI+MyAvIDQ8L3RleHQ+Cjwvc3ZnPg==' },
           { mime:'image/svg+xml', datos:'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgMzYwIj4KPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIzNjAiIGZpbGw9IiMxNDEwMjAiLz4KPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjY0MCIgaGVpZ2h0PSI0IiBmaWxsPSIjRjA1NjdGIi8+Cjx0ZXh0IHg9IjQwIiB5PSI4NiIgZmlsbD0iI0U5RTRFNCIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIj5Cb3JyYWRvPC90ZXh0Pgo8dGV4dCB4PSI0MCIgeT0iMTMyIiBmaWxsPSIjQTM5NUI0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiPlBpZGUgY29uZmlybWFjacOzbiwgc2llbXByZTwvdGV4dD4KPHJlY3QgeD0iNDAiIHk9IjE2OCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIxMzIiIHJ4PSIxMCIgZmlsbD0iIzFGMTczMCIgc3Ryb2tlPSIjM0IyQTUyIi8+CjxyZWN0IHg9IjMwOCIgeT0iMTY4IiB3aWR0aD0iMjkyIiBoZWlnaHQ9IjYyIiByeD0iMTAiIGZpbGw9IiMxRjE3MzAiIHN0cm9rZT0iIzNCMkE1MiIvPgo8cmVjdCB4PSIzMDgiIHk9IjI0MiIgd2lkdGg9IjI5MiIgaGVpZ2h0PSI1OCIgcng9IjEwIiBmaWxsPSIjMUYxNzMwIiBzdHJva2U9IiMzQjJBNTIiLz4KPHRleHQgeD0iNjAwIiB5PSIzMzIiIGZpbGw9IiM2QjVCN0QiIGZvbnQtZmFtaWx5PSJ1aS1tb25vc3BhY2UsbW9ub3NwYWNlIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0iZW5kIj40IC8gNDwvdGV4dD4KPC9zdmc+' },
         ] }] },
+    { id:'e6c', ts:t+470_000, de:de('cl-c'), a:null, tipo:'ejecucion',
+      texto:'Corregí lo de la cantidad negativa. No era la validación: era que el\nformulario mandaba texto y el «< 0» comparaba contra una cadena.',
+      adjuntos:[
+        { clase:'pensamiento',
+          titulo:'Por qué no bastaba con validar la cantidad',
+          texto:'Primero puse `if(cantidad < 0)` y pasó la prueba. Pero al meterlo a mano '
+              + 'desde la pantalla seguía aceptando -5.\n\n'
+              + 'Lo que descarté, y por qué:\n'
+              + '· Que fuera el orden de las validaciones — las moví y siguió igual.\n'
+              + '· Que el navegador cacheara el formulario — pasó igual en incógnito.\n\n'
+              + 'Lo que era: el input manda TEXTO. «-5» < 0 es falso, porque JavaScript '
+              + 'compara cadenas cuando el otro lado también podría serlo. La validación '
+              + 'estaba bien escrita y comparaba lo que no era.\n\n'
+              + 'Por eso la prueba pasaba: yo le pasaba un número, y la pantalla no.' },
+        { clase:'skill', nombre:'agent-browser',
+          porque:'para reproducirlo desde la pantalla, no desde la prueba' },
+        { clase:'corrida', orden:'node api/inventario/pruebas.mjs',
+          codigo:0, salida:'✓ cantidad negativa se rechaza\n✓ cantidad de texto se rechaza\n✓ cero sí se acepta\n\n18 bien · 0 mal' },
+        { clase:'corrida', orden:'node api/inventario/pruebas.mjs  # antes del arreglo',
+          codigo:1, salida:'✗ cantidad negativa se rechaza\n   mandó -5 como texto y entró\n\n17 bien · 1 mal' },
+      ] },
+    { id:'e6d', ts:t+490_000, de:de('cl-c'), a:'cl-a', tipo:'propuesta',
+      texto:'Y así quedó la validación. Cópiala si la quieres para las pantallas:\n\n```js\nexport function cantidadValida(v){\n  /* Number(v) y no +v: "" da 0 con los dos, pero Number("12abc") da NaN\n     y +"12abc" también — lo que cambia es que Number deja leer la\n     intención de un vistazo. */\n  const n = Number(String(v).trim());\n  if(!Number.isFinite(n)) return { ok:false, por:\x27no es un número\x27 };\n  if(n < 0)               return { ok:false, por:\x27no puede ser negativa\x27 };\n  return { ok:true, valor:n };\n}\n```\n\nEl caso que se nos fue era `"-5"` como TEXTO: `"-5" < 0` es falso.',
+      adjuntos:[
+        { clase:'codigo', archivo:'api/inventario/pruebas.mjs', lenguaje:'js',
+          texto:'ok(\x27una cantidad negativa NO entra\x27,\n   cantidadValida(-5).ok === false);\nok(\x27ni aunque venga como texto, que es como llega del formulario\x27,\n   cantidadValida(\x27-5\x27).ok === false);\nok(\x27el cero sí es una cantidad\x27, cantidadValida(0).ok === true);' },
+      ] },
     { id:'e7', ts:t+520_000, de:de('cl-a'), a:'cl-c', tipo:'revision',
       reacciones:{ visto:['carlos'], deacuerdo:['cl-c','amigo'] },
       texto:'Revisado. Dos cosas: falta validar que la cantidad no sea negativa, y\nel borrado no está pidiendo confirmación. Lo demás está bien.' },
