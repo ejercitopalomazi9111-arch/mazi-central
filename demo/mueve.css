@@ -1,0 +1,128 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MINUTO ANTES · la capa de movimiento
+   ──────────────────────────────────────────────────────────────────────────
+   ESTE ARCHIVO SE PUEDE BORRAR Y LA PÁGINA SIGUE BIEN. Ésa es la prueba de
+   que está bien hecho, y por eso todo lo de aquí cuelga de `html:not(.quieto)`
+   — la clase `quieto` viene en el HTML y sólo la quita `mueve.js`. Sin JS, la
+   clase se queda, nada de esto aplica, y la página se ve COMPLETA Y QUIETA en
+   vez de a medias.
+
+   ── LAS CUATRO REGLAS, Y NINGUNA ES OPINIÓN ────────────────────────────
+   1 · GUIADA, NUNCA SECUESTRADA. El scroll es una perilla: el visitante manda,
+       suelta a la mitad y se queda a la mitad, y a la mitad se ve bien. La
+       página no se apodera de la rueda para arrastrarte por una secuencia.
+       Es regla de la casa y la puso Carlos.
+   2 · NUNCA SE ANIMA `opacity` SOBRE TEXTO. Un texto a media transición no
+       cumple contraste — durante la animación hay lectores que no lo alcanzan.
+       Se destapa con MÁSCARA: el de fuera recorta, el de dentro sube, y el
+       texto está a opacidad plena todo el tiempo.
+   3 · SÓLO `transform`. Lo resuelve el compositor sin recalcular la página.
+       Nada de animar alto, margen ni posición.
+   4 · `prefers-reduced-motion` lo apaga TODO, explícitamente y al final.
+
+   Y nada de `backdrop-filter` en ningún lado: obliga al navegador a recomponer
+   en cada fotograma de scroll. Medido en otro proyecto de la casa, donde fue
+   LA causa de que el scroll fuera a tirones.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── el destape de texto ──────────────────────────────────────────────────
+   El contenedor recorta y el hijo sube. `overflow:hidden` corta las colas de
+   las letras —la g, la j, la p— así que se le da aire abajo y se le quita por
+   fuera con el margen: la caja mide lo mismo y las colas caben. */
+html:not(.quieto) [data-mueve="mascara"]{
+  overflow:hidden;
+  padding-bottom:.14em;
+  /* ⚠ AQUÍ HABÍA UN `margin-bottom:-.14em` PARA COMPENSAR EL RELLENO, Y ERA UN
+     ERROR CARO. Este selector gana por especificidad sobre `h1` y `h2`, así
+     que no compensaba nada: BORRABA el margen que el titular tenía escrito, y
+     el aire de abajo se iba a cero. En pantalla, «antes.» se montaba encima
+     del párrafo siguiente.
+
+     Y no se veía leyendo el código: los dos archivos estaban bien por
+     separado, y la caja MEDÍA lo correcto. Se vio abriendo la página.
+
+     El relleno se queda solo, sin compensar. Cuesta .14em de alto en cada
+     bloque —nada— y a cambio los márgenes del autor siguen siendo suyos. */
+}
+html:not(.quieto) [data-mueve="mascara"] > span{
+  display:block;
+  transform:translateY(105%);
+  will-change:transform;
+}
+
+/* La clase la pone `mueve.js` cuando el bloque entra a la pantalla. Es el
+   camino para navegadores sin `animation-timeline`, y también el que hace que
+   esto funcione si la línea de tiempo de scroll no está disponible. */
+html:not(.quieto) [data-mueve="mascara"].dentro > span{
+  transform:translateY(0);
+  transition:transform .62s cubic-bezier(.22,.61,.36,1);
+}
+
+/* ── donde SÍ hay línea de tiempo de scroll ───────────────────────────────
+   Aquí no hace falta observador ni JavaScript por fotograma: lo lleva el
+   navegador, fuera del hilo principal. El JS se queda sólo para quitar la
+   clase `quieto` y para el respaldo. */
+@supports (animation-timeline: view()){
+  html:not(.quieto) [data-mueve="mascara"] > span{
+    animation:destapar linear both;
+    animation-timeline:view();
+    /* Empieza cuando el bloque asoma y termina cuando lleva un tercio de
+       pantalla. Si se suelta a media animación, se queda ahí y se ve bien —
+       que es literalmente la regla 1. */
+    animation-range:entry 8% cover 34%;
+  }
+  /* Con línea de tiempo, la transición del respaldo estorbaría: dos motores
+     moviendo lo mismo se pelean y da un tirón al final. */
+  html:not(.quieto) [data-mueve="mascara"].dentro > span{ transition:none; }
+}
+@keyframes destapar{
+  from{ transform:translateY(105%); }
+  to  { transform:translateY(0); }
+}
+
+/* ══ EL BALÓN RUEDA POR LA LÍNEA ═══════════════════════════════════════════
+   La única idea de movimiento de la página, y la razón de que sea ésta:
+   SIGNIFICA algo. La línea de cal es cuánto llevas y el balón es dónde vas, y
+   los dos salen de la foto en vez de ser una barrita puesta encima.
+
+   La rotación NO es decoración: es la distancia. El balón gira lo que avanza,
+   como rodaría de verdad. Un balón que se desliza sin girar se siente falso
+   aunque nadie sepa decir por qué.
+
+   Y degrada al mejor sitio posible: sin esto, se queda apoyado en la línea
+   donde lo dejó el niño de la foto. */
+@supports (animation-timeline: scroll()){
+  html:not(.quieto) [data-balon]{
+    animation:rodar linear both;
+    animation-timeline:scroll(root block);
+    will-change:transform;
+  }
+}
+@keyframes rodar{
+  from{ transform:translateY(38vh) rotate(0deg); }
+  to  { transform:translateY(78vh) rotate(1080deg); }
+}
+
+/* La cal se va marcando conforme se baja: la línea existe completa desde el
+   principio —está en `base.css`— y aquí sólo se le sube el contraste. Es un
+   detalle y se nota; si este archivo no llega, la línea sigue ahí. */
+@supports (animation-timeline: scroll()){
+  html:not(.quieto) [data-linea]{
+    animation:pisar linear both;
+    animation-timeline:scroll(root block);
+  }
+}
+@keyframes pisar{
+  from{ opacity:.20; }
+  to  { opacity:.46; }
+}
+
+/* ── APAGADO, EXPLÍCITO Y AL FINAL ───────────────────────────────────────
+   Va al final para que gane sin pelear con especificidades. Quien pidió menos
+   movimiento no pidió menos página: se queda todo, quieto y completo. */
+@media (prefers-reduced-motion: reduce){
+  html [data-mueve="mascara"]{ overflow:visible; padding-bottom:0; margin-bottom:0; }
+  html [data-mueve="mascara"] > span{ transform:none; animation:none; transition:none; }
+  html [data-balon]{ animation:none; transform:translateY(38vh); }
+  html [data-linea]{ animation:none; opacity:.34; }
+}

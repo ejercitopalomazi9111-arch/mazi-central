@@ -27,7 +27,7 @@ const VA = [
   'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   '_headers', 'kernel-lock.html',
   'fadori', 'sitio', 'marca', 'explorador', 'reportes', 'evaluaciones', 'avisos',
-  'sala', 'campana', 'cerebro', 'entorno', 'bodega',
+  'sala', 'campana', 'cerebro', 'entorno', 'bodega', 'demo',
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
