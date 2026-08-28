@@ -168,7 +168,7 @@ console.log('\n── lo que enseña el monitor ──');
              largos: todas.map(x => x.length) };
   });
 
-  ok('hay diez pantallas para cuando no hay nada que hacer', r.n === 10, String(r.n));
+  ok('hay once pantallas en la vuelta', r.n === 11, String(r.n));
   ok('y todas son distintas entre sí',
      new Set(r.todas).size === r.n, r.n - new Set(r.todas).size + ' repetidas');
   ok('ninguna deja restos de la anterior debajo', r.limpio);
@@ -186,25 +186,95 @@ console.log('\n── lo que enseña el monitor ──');
     const pu = [...__taller.puestos.values()].find(x => x.quien && x.quien.trabajo);
     if(!pu) return null;
     const id = pu.quien.id;
-    /* ⚠ SE REPINTA SU TRABAJO PRIMERO. La prueba de arriba dejó a este mismo
-       agente enseñando una pantalla de ocio —`verPantalla(null, …)` cae en el
-       primer puesto—, así que sin esto se comparaba ocio contra ocio y salía
-       «no cambió nada» con el código perfectamente bien. La prueba se estaba
-       ensuciando su propia premisa, que es la peor clase de prueba: la que
-       falla sola y te manda a buscar un defecto que no existe. */
-    __taller.verTrabajo(id);
-    const antes = __taller.lienzoDe(id);
-    __taller.verPantalla(id, 0);            /* lo fuerza a «sin trabajo» */
-    const ocioso = __taller.lienzoDe(id);
-    __taller.verTrabajo(id);                /* y de regreso */
-    const vuelta = __taller.lienzoDe(id);
-    return { distintos: antes !== ocioso, vuelveIgual: antes === vuelta,
+    /* El reloj de la barra corre de verdad, así que dos pintadas de la MISMA
+       pantalla salen distintas si el minuto cambió entre una y otra. Se
+       congela para que lo único que se compare sea el dibujo. */
+    __taller.congelarReloj('12:34');
+    /* Con trabajo, la 0 es el encargo a pantalla completa y la 4 una suya. */
+    __taller.verPantalla(id, 4);  const suya1 = __taller.lienzoDe(id);
+    __taller.verPantalla(id, 0);  const trabajo = __taller.lienzoDe(id);
+    __taller.verPantalla(id, 4);  const suya2 = __taller.lienzoDe(id);
+    __taller.congelarReloj(null);
+    return { distintos: trabajo !== suya1, vuelveIgual: suya1 === suya2,
              hayTrabajo: !!pu.quien.trabajo, en: pu.quien.trabajo.en };
   });
   ok('con trabajo, la pantalla enseña OTRA cosa que en reposo',
      conSin && conSin.distintos, JSON.stringify(conSin));
-  ok('y al volver al trabajo queda exactamente como estaba',
+  ok('y volver a la misma pantalla la deja EXACTAMENTE igual',
      conSin && conSin.vuelveIgual, JSON.stringify(conSin));
+
+
+  /* ── LA BARRA QUE NUNCA SE VA ────────────────────────────────────────
+     Carlos: «que las pantallas no dejen de mostrar… el chiste es que siga
+     viendo el desarrollo de su tarea y me entretenga viendo eso como si
+     realmente hicieran algo». O sea: las dos cosas a la vez, no una u otra. */
+  const barra = await p.evaluate(() => {
+    const pu = [...__taller.puestos.values()].find(x => x.quien && x.quien.trabajo);
+    if(!pu) return null;
+    const id = pu.quien.id;
+    const n = __taller.cuantasPantallas();
+
+    /* Cada lado tiene que dar una imagen DISTINTA: si la de la derecha saliera
+       igual que la de arriba sería que el lado no se está aplicando. */
+    const porLado = {};
+    for(const lado of ['arriba','abajo','izquierda','derecha']){
+      __taller.verBarra(id, lado, 5);
+      porLado[lado] = __taller.lienzoDe(id);
+    }
+
+    /* Y el lado de cada quien no cambia entre pintadas: una barra que se
+       cambia de lado sola no es una barra, es un parpadeo. */
+    const antes = __taller.ladoDe(id);
+    __taller.verPantalla(id, 3); __taller.verPantalla(id, 7);
+    const despues = __taller.ladoDe(id);
+
+    /* La barra lleva el trabajo DE VERDAD: si se le quita el trabajo al agente
+       y la pantalla no cambia, es que la barra no lo estaba leyendo. */
+    __taller.verPantalla(id, 4);
+    const conTrabajo = __taller.lienzoDe(id);
+    const guardado = pu.quien.trabajo;
+    pu.quien.trabajo = null;
+    __taller.verPantalla(id, 4);
+    const sinTrabajo = __taller.lienzoDe(id);
+    pu.quien.trabajo = guardado;
+
+    /* Y con trabajo, la pantalla 0 sigue siendo el encargo a pantalla completa
+       —sin barra encima, porque ahí TODO es la barra—. */
+    __taller.verPantalla(id, 0);
+    const cero = __taller.lienzoDe(id);
+    __taller.verPantalla(id, 4);
+    const otra = __taller.lienzoDe(id);
+
+    return {
+      lados: Object.values(porLado),
+      distintos: new Set(Object.values(porLado)).size,
+      ladoEstable: antes === despues, lado: antes,
+      leeElTrabajo: conTrabajo !== sinTrabajo,
+      ceroEsOtraCosa: cero !== otra,
+      n,
+    };
+  });
+
+  ok('la barra se pinta en los cuatro lados, y cada uno se ve distinto',
+     barra && barra.distintos === 4, JSON.stringify(barra && barra.distintos));
+  ok('el lado de cada agente no se le mueve entre pintadas',
+     barra && barra.ladoEstable, barra && barra.lado);
+  ok('la barra lee el trabajo DE VERDAD, no un letrero fijo',
+     barra && barra.leeElTrabajo);
+  ok('y la pantalla 0 sigue siendo el encargo a pantalla completa',
+     barra && barra.ceroEsOtraCosa);
+  ok('son once pantallas: el trabajo más las diez suyas',
+     barra && barra.n === 11, String(barra && barra.n));
+
+  /* Los cuatro lados existen de verdad en el reparto: si `ladoDe` devolviera
+     siempre lo mismo, tres cuartas partes del chiste no existirían. */
+  const reparto = await p.evaluate(() => {
+    const vistos = new Set();
+    for(let i = 0; i < 200; i++) vistos.add(__taller.ladoDe('agente-' + i));
+    return [...vistos].sort();
+  });
+  ok('el reparto usa los cuatro lados, incluido el de la derecha',
+     reparto.length === 4 && reparto.includes('derecha'), reparto.join(' · '));
 
   ok('y ni un error en toda la vuelta', p.__errores.length === 0, p.__errores[0]);
   await p.context().close();

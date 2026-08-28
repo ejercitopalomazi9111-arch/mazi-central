@@ -377,7 +377,7 @@ function hacerEscritorio(color){
      que cuatro agentes en reposo NO estén viendo los cuatro lo mismo — eso se
      lee como una falla, no como cuatro personas aburridas. */
   return { grupo, lienzo, textura, brillo, pantalla,
-           ocio: (Math.random() * 10) | 0 };
+           ocio: (Math.random() * 11) | 0 };
 }
 
 /* ── la silla ──────────────────────────────────────────────────────────────
@@ -963,6 +963,131 @@ function juegoCiudad(g, W, H, color, j){
   hudJuego(g, W, H, j, color);
 }
 
+
+/* ── LA BARRA QUE NUNCA SE VA ──────────────────────────────────────────────
+   Carlos: «que las pantallas no dejen de mostrar en la parte de arriba como si
+   fuese la barra de búsqueda, o en la de abajo como si fuese la de tareas, o
+   en la de tareas pero del lado izquierdo como un psicópata, o peor aún del
+   lado derecho jajaja. El chiste es que siga viendo el desarrollo de su tarea
+   y me entretenga viendo eso como si realmente hicieran algo».
+
+   Y ahí está el diseño entero en una frase suya: LAS DOS COSAS A LA VEZ. El
+   agente está viendo capibaras y su tarea sigue avanzando en la barra, que es
+   exactamente lo que uno ve cuando alguien «está trabajando».
+
+   Por eso la rotación de pantallas ya NO espera a que el agente esté ocioso:
+   corre siempre, y la barra lleva el trabajo de verdad encima. La pantalla del
+   trabajo completo sigue existiendo y es la primera de la vuelta.
+
+   EL LADO ES FIJO POR AGENTE, no al azar en cada pintada: una barra que se
+   cambia de lado sola no es una barra, es un parpadeo. Sale del id, así que
+   cada quien tiene su manía y se la queda. Los cuatro lados están, incluido el
+   derecho. */
+let relojFijo = null;
+const LADOS = ['abajo', 'arriba', 'izquierda', 'derecha'];
+function ladoDe(id){
+  let h = 0;
+  for(const c of String(id || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return LADOS[h % LADOS.length];
+}
+
+/* El grueso de la barra. Las de los lados son más anchas porque el texto va
+   girado y necesita respirar. */
+const GRUESO = { arriba: 56, abajo: 62, izquierda: 74, derecha: 74 };
+
+function barraDeTarea(g, W, H, quien, color, lado){
+  const t = quien.trabajo;
+  const grueso = GRUESO[lado];
+  const vertical = lado === 'izquierda' || lado === 'derecha';
+
+  /* El fondo. Va casi opaco: media barra transparente sobre un juego de
+     colores es una barra que no se lee, y ésta existe justamente para leerse. */
+  g.save();
+  /* Casi opaca. A .88 se alcanzaba a leer POR DEBAJO el rótulo del juego,
+     que también vive abajo — dos textos encimados en la franja que existe
+     justamente para leerse. Se vio en la captura. */
+  g.fillStyle = 'rgba(10,6,16,.965)';
+  if(lado === 'arriba')      g.fillRect(0, 0, W, grueso);
+  else if(lado === 'abajo')  g.fillRect(0, H - grueso, W, grueso);
+  else if(lado === 'izquierda') g.fillRect(0, 0, grueso, H);
+  else                       g.fillRect(W - grueso, 0, grueso, H);
+
+  /* Una línea del color del agente pegada al borde de adentro: es lo que la
+     separa del contenido sin gastar espacio. */
+  g.fillStyle = color;
+  if(lado === 'arriba')      g.fillRect(0, grueso - 2, W, 2);
+  else if(lado === 'abajo')  g.fillRect(0, H - grueso, W, 2);
+  else if(lado === 'izquierda') g.fillRect(grueso - 2, 0, 2, H);
+  else                       g.fillRect(W - grueso, 0, 2, H);
+
+  /* Se dibuja siempre en horizontal y se GIRA el lienzo para los lados. Es la
+     mitad de código y, sobre todo, la misma barra en los cuatro lados: escrita
+     cuatro veces, la de la derecha se habría quedado atrás a la tercera. */
+  const largo = vertical ? H : W;
+  if(lado === 'izquierda'){ g.translate(0, H); g.rotate(-Math.PI/2); }
+  else if(lado === 'derecha'){ g.translate(W, 0); g.rotate(Math.PI/2); }
+  else if(lado === 'abajo'){ g.translate(0, H - grueso); }
+
+  /* De aquí para abajo se pinta como si la barra fuera de arriba y midiera
+     `largo` × `grueso`. */
+  const my = grueso / 2;
+  let x = 14;
+
+  /* El botón de inicio: el cuadrito con el color del agente. Es lo que hace
+     que se lea «barra de tareas» y no «letrero». */
+  g.fillStyle = color;
+  redondo(g, x, my - 13, 26, 26, 7); g.fill();
+  g.fillStyle = 'rgba(0,0,0,.55)';
+  g.fillRect(x + 7, my - 6, 5, 5); g.fillRect(x + 14, my - 6, 5, 5);
+  g.fillRect(x + 7, my + 1, 5, 5); g.fillRect(x + 14, my + 1, 5, 5);
+  x += 40;
+
+  if(!t){
+    g.fillStyle = '#5B4B6D'; g.font = '20px ui-monospace, Menlo, monospace';
+    g.fillText('sin nada en curso · matando el rato', x, my + 7);
+    g.restore();
+    return;
+  }
+
+  /* La «ventana abierta»: el encargo. Ocupa lo que sobre, para que se lea
+     completo cuando cabe y se recorte sólo cuando de verdad no. */
+  const finReloj = largo - 118;
+  const anchoVentana = Math.max(140, finReloj - x - 190);
+  g.fillStyle = 'rgba(255,255,255,.06)';
+  redondo(g, x, my - 17, anchoVentana, 34, 8); g.fill();
+  g.fillStyle = color; g.fillRect(x, my + 13, anchoVentana, 3);
+  g.fillStyle = '#E9E4E4'; g.font = '600 20px -apple-system, system-ui, sans-serif';
+  g.fillText(recortar(g, t.en || 'trabajando', anchoVentana - 22), x + 11, my + 3);
+  x += anchoVentana + 16;
+
+  /* El avance, que es lo que hace que se vea AVANZAR y no sólo estar. */
+  if(t.total > 0){
+    const p = Math.max(0, Math.min(1, t.va / t.total));
+    const bw = 120;
+    g.fillStyle = 'rgba(255,255,255,.10)'; redondo(g, x, my - 6, bw, 12, 6); g.fill();
+    g.fillStyle = color; redondo(g, x, my - 6, Math.max(12, bw * p), 12, 6); g.fill();
+    g.fillStyle = '#9A8FA8'; g.font = '17px ui-monospace, Menlo, monospace';
+    g.fillText(`${t.va}/${t.total}`, x + bw + 10, my + 6);
+  } else if(t.paso){
+    g.fillStyle = '#9A8FA8'; g.font = '18px ui-monospace, Menlo, monospace';
+    g.fillText(recortar(g, '› ' + t.paso, 170), x, my + 6);
+  }
+
+  /* El reloj, pegado a la esquina. Sin él no se lee como barra de tareas.
+     `relojFijo` sólo lo pone una prueba: sin poder congelarlo, dos pintadas
+     de la MISMA pantalla salen distintas si el minuto cambió entre una y otra,
+     y entonces la prueba de que repintar es idempotente falla sola una vez de
+     cada tantas. Una prueba que falla sola se acaba ignorando, y una prueba
+     que se ignora es peor que no tenerla. */
+  const d = new Date();
+  const reloj = relojFijo || (String(d.getHours()).padStart(2,'0') + ':' +
+                String(d.getMinutes()).padStart(2,'0'));
+  g.fillStyle = '#C0B0D0'; g.font = '19px ui-monospace, Menlo, monospace';
+  g.fillText(reloj, largo - 74, my + 6);
+
+  g.restore();
+}
+
 /* ── el catálogo, y de quién es cada pantalla ──────────────────────────── */
 const OCIO = [
   (g,W,H,c,n) => pantallaBusqueda(g, W, H, c, n),
@@ -978,34 +1103,54 @@ const OCIO = [
 ];
 
 /* ── el dibujo de la pantalla ─────────────────────────────────────────── */
-/* Dos pantallas, y la que toca la decide UNA cosa: si el agente tiene trabajo.
-   Con trabajo se ve SU TRABAJO —que es a lo que se entra aquí— dentro de un
-   navegador. Sin trabajo, se pone a hacer sus cosas (ver §EL TEATRO). */
+/* Once pantallas en la vuelta. La 0 es EL TRABAJO A PANTALLA COMPLETA; las
+   otras diez son las suyas —buscar, ver videos, jugar— y todas llevan la barra
+   con el trabajo de verdad encima.
+
+   La vuelta corre TRABAJE O NO, y ése es el encargo de Carlos entero: «el
+   chiste es que siga viendo el desarrollo de su tarea y me entretenga viendo
+   eso como si realmente hicieran algo». Sin la barra, la parte chistosa
+   escondería la parte útil; sin la rotación, la parte útil sería lo único. */
+const PANTALLAS_TOTAL = 1 + OCIO.length;
+
 function pintarPantalla(esc_, quien, color){
   const g = esc_.lienzo.getContext('2d');
   const W = 1024, H = 640;
   /* ⚠ SE BORRA TODO ANTES DE CADA PANTALLA, y no dentro de cada una. Cada
      escena pinta su propio fondo, así que parecía innecesario — hasta que en
-     la del mundo de bloques, donde el terreno sólo llega hasta donde llega,
+     la del mundo de bloques, donde el terreno sólo llegaba hasta donde llegaba,
      asomó por abajo el «Lo que estabas buscando…» de la BÚSQUEDA anterior. Se
-     vio en la captura. Confiar en que cada escena tape todo es confiar en
-     nueve funciones a la vez; borrar aquí es una línea. */
+     vio en la captura. Confiar en que cada escena tape todo es confiar en diez
+     funciones a la vez; borrar aquí es una línea. */
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.globalAlpha = 1;
   g.clearRect(0, 0, W, H);
   g.fillStyle = '#0C0714'; g.fillRect(0, 0, W, H);
-  const t = quien.trabajo;
 
-  if(!t){
-    /* Antes aquí decía «en reposo · sin nada en curso» sobre negro, y era la
-       mitad de las pantallas del cuarto la mayor parte del tiempo. */
-    const n = esc_.ocio | 0;
-    OCIO[n % OCIO.length](g, W, H, color, n);
+  const t = quien.trabajo;
+  const n = ((esc_.ocio | 0) % PANTALLAS_TOTAL + PANTALLAS_TOTAL) % PANTALLAS_TOTAL;
+
+  /* La 0 con trabajo es la pantalla completa del encargo. Sin trabajo no hay
+     pantalla completa que enseñar, así que se va a la primera de las suyas —y
+     la barra dirá que anda matando el rato, que es la verdad. */
+  if(n === 0 && t){
+    pantallaTrabajo(g, W, H, quien, color, t);
     esc_.textura.needsUpdate = true;
     return;
   }
 
-  g.fillStyle = '#0C0714'; g.fillRect(0, 0, W, H);
+  OCIO[(n === 0 ? 0 : n - 1) % OCIO.length](g, W, H, color, n);
+  /* `ladoFijo` sólo lo pone la manija de pruebas, para poder ver los cuatro
+     lados sin esperar a que le toque a alguien el de la derecha. La primera
+     versión de esa manija pintaba la barra ENCIMA de la que ya había puesto
+     esta función: salían dos, y en la captura parecía un defecto del producto
+     cuando era del andamio. */
+  barraDeTarea(g, W, H, quien, color, esc_.ladoFijo || ladoDe(quien.id));
+  esc_.textura.needsUpdate = true;
+}
+
+/* El encargo a pantalla completa, dentro de un navegador. */
+function pantallaTrabajo(g, W, H, quien, color, t){
   /* El encargo va como PESTAÑA ABIERTA. Es el detalle que hace que se lea
      «está trabajando en esto» y no «hay un letrero pegado en la pared». */
   marcoNavegador(g, W, color,
@@ -1050,7 +1195,6 @@ function pintarPantalla(esc_, quien, color){
       py += 29;
     });
   }
-  esc_.textura.needsUpdate = true;
 }
 
 /* Recorta a un ancho en píxeles conservando la fuente que ya esté puesta. Va
@@ -1825,15 +1969,14 @@ $('bVista').addEventListener('click', () => {
    justo lo que la casa no acepta como verificación. */
 window.__taller = { escena, camara, puestos, get gente(){ return gente; },
                     get cielo(){ return cielo; }, dispararCielo:() => cielo && dispararCielo(cielo),
-                    cuantasPantallas: () => OCIO.length,
+                    cuantasPantallas: () => PANTALLAS_TOTAL,
                     /* Poner una pantalla concreta, para poder VERLAS todas en
                        una prueba en vez de esperar setenta segundos. */
                     verPantalla(id, n){
                       const p = puestos.get(id) || [...puestos.values()][0];
                       if(!p) return false;
-                      p.mesa.ocio = n % OCIO.length;
-                      const sinTrabajo = { ...p.quien, trabajo:null };
-                      pintarPantalla(p.mesa, sinTrabajo, '#' + p.color.getHexString());
+                      p.mesa.ocio = n % PANTALLAS_TOTAL;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
                       return true;
                     },
                     /* Repintar con SU estado de verdad. Hace falta para probar el
@@ -1863,6 +2006,20 @@ window.__taller = { escena, camara, puestos, get gente(){ return gente; },
                         if(d[i] > 240 && d[i+1] < 40 && d[i+2] > 240) n++;
                       }
                       return n;
+                    },
+                    /* De qué lado tiene su barra cada quien. Es fijo por agente. */
+                    ladoDe: (id) => ladoDe(id),
+                    congelarReloj(h){ relojFijo = h; },
+                    /* Forzar un lado, para poder VER los cuatro en una prueba en vez
+                       de esperar a que le toque a alguien el de la derecha. */
+                    verBarra(id, lado, pantalla){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      p.mesa.ocio = (pantalla == null ? p.mesa.ocio : pantalla);
+                      p.mesa.ladoFijo = lado;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+                      p.mesa.ladoFijo = null;
+                      return true;
                     },
                     verTrabajo(id){
                       const p = puestos.get(id) || [...puestos.values()][0];
@@ -1939,10 +2096,14 @@ cielo = armarCielo();
    unísono se lee como un fallo del cuarto. Se pasan el turno. */
 let turnoOcio = 0;
 setInterval(() => {
-  const ociosos = [...puestos.values()].filter(p => p.quien && !p.quien.trabajo);
-  if(!ociosos.length) return;
-  const p = ociosos[turnoOcio++ % ociosos.length];
-  p.mesa.ocio = (p.mesa.ocio + 1) % OCIO.length;
+  /* ⚠ YA NO SE FILTRA POR «ocioso». Al principio sólo rotaban los que no
+     tenían nada que hacer, y eso dejaba fuera justo lo que Carlos quería ver:
+     el agente jugando MIENTRAS su tarea avanza en la barra. Rotan todos; la
+     pantalla 0 es su trabajo completo y sigue apareciendo en cada vuelta. */
+  const todos = [...puestos.values()].filter(p => p.quien);
+  if(!todos.length) return;
+  const p = todos[turnoOcio++ % todos.length];
+  p.mesa.ocio = (p.mesa.ocio + 1) % PANTALLAS_TOTAL;
   pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
 }, 7000);
 
