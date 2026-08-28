@@ -680,7 +680,32 @@ function componer(ctx, pintar, columnas){
   const altoCab = 168;
   if(pintar){
     caja(ctx, 0, 0, ANCHO, altoCab, 0, piel().urgente);
-    if(escudo.complete && escudo.naturalWidth) ctx.drawImage(escudo, M, 28, 112, 112);
+    /* ⚠ EL ESCUDO SE DIBUJA A 112, PERO SALE A 224 PÍXELES REALES, porque el
+       cartel se pinta al doble (ESC = 2). La copia que había medía 150 de
+       lado: se estaba ESTIRANDO 1.5x, y un escudo estirado en el encabezado
+       de un aviso escolar se nota — se ve suave justo en la parte que la
+       gente reconoce de un vistazo. La de 225 que mandó Carlos cubre los 224
+       exactos.
+       Si algún día sube ESC, hay que subir el escudo con él. */
+    if(escudo.complete && escudo.naturalWidth){
+      /* ⚠ Y VA SOBRE UNA PLACA CLARA. El escudo es rojo y el encabezado es
+         vino: rojo sobre vino casi no se ve, y lo que se pierde es justo la
+         parte que la gente reconoce de un vistazo. No se le toca el color al
+         escudo —es de la escuela— se le pone fondo, que es lo que se hace con
+         cualquier logo sobre un color cercano al suyo. */
+      const r = 10, x = M - 6, y = 22, w = 124;
+      ctx.save();
+      ctx.fillStyle = '#FFF6EC';
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + w, r);
+      ctx.arcTo(x + w, y + w, x, y + w, r);
+      ctx.arcTo(x, y + w, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.drawImage(escudo, M, 28, 112, 112);
+    }
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = 'rgba(255,246,236,.82)';
     ctx.font = F(700, 22); ctx.letterSpacing = '3px';
