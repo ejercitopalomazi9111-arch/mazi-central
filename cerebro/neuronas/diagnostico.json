@@ -623,6 +623,51 @@
       "vecinas": [
         "el-comentario-no-es-el-codigo"
       ]
+    },
+    {
+      "id": "salida-cero-no-es-exito",
+      "titulo": "La herramienta se ve sana y está sorda: curl sale con 0 en un 401",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Un vigilante que debería avisar de mensajes nuevos no avisa nunca, no se queja, y el proceso se ve corriendo.",
+      "causa": "Se revisó el código de salida del cliente HTTP y nada más. curl sale con 0 cuando el servidor contesta 401, 403 o 404: el cuerpo trae {error:…} y el programa lo lee como una respuesta buena a la que le faltan los campos que esperaba.",
+      "porque": "Un ciclo que espera mensajes usa el SILENCIO para decir «no hay nada». Cuando el error también es silencioso, las dos cosas se ven idénticas — y la que se cree es la buena.",
+      "arreglo": "Que un error en el cuerpo reviente igual que un fallo de red, y que el aviso salga desde el PRIMER intento. Con curl: revisar el JSON, no el código de salida; o pedirle -f, o el código con -w.",
+      "comoCazarlo": "Ponle una llave mala a propósito y mira si grita. Si se queda callado, está sordo. Y cuenta las peticiones: sin una espera en el camino del error sale un ciclo cerrado — aquí fueron 782 peticiones en 5 segundos contra un servidor de mentiras.",
+      "consejo": "Para que el silencio siga significando silencio, todo lo demás tiene que hacer ruido. Es la regla de cualquier cosa que escuche.",
+      "salioDe": "sala/vigilante/oir.py · Carlos: «no los espera pasivamente»",
+      "senales": [
+        "no me avisa",
+        "se quedó callado",
+        "parece que sí corre",
+        "no recibo mensajes",
+        "ya no me contesta"
+      ],
+      "vecinas": [
+        "reproducir-antes-de-arreglar"
+      ]
+    },
+    {
+      "id": "marca-que-espera-el-adios",
+      "titulo": "Un estado efímero que espera un «ya terminé» se queda encendido para siempre",
+      "gravedad": "media",
+      "clase": "error",
+      "sintoma": "«Está escribiendo…», «subiendo…», «en línea» se quedan puestos horas después de que la persona se fue.",
+      "causa": "La marca se enciende con un aviso y se apaga con otro. El segundo aviso lo tiene que mandar justo el que se murió: se le cayó la red, cerró la pestaña, o al agente lo mató el contenedor a media respuesta.",
+      "porque": "Al probarlo siempre se apaga, porque en la prueba nadie se muere. El caso que falla es exactamente el que no se ensaya.",
+      "arreglo": "Guardar una HORA DE VENCIMIENTO en vez de un interruptor, y calcular quién está activo al leer. Así una marca vencida desaparece sin que nadie la barra, y el que se murió no le debe un aviso a nadie.",
+      "comoCazarlo": "Pregunta quién manda el «ya no». Si la respuesta es «el mismo que puede desaparecer», está roto.",
+      "consejo": "Y el reloj no tiene por qué ser uno solo: un humano deja de teclear en segundos y un agente tarda minutos en contestar. Un único reloj o apaga al agente antes de tiempo, o deja al humano encendido de más.",
+      "salioDe": "sala/servidor/sala.js · «está escribiendo…»",
+      "senales": [
+        "se quedó en línea",
+        "sigue diciendo que escribe",
+        "no se apaga",
+        "estado pegado"
+      ],
+      "vecinas": [
+        "conectado-no-es-vivo"
+      ]
     }
   ]
 }

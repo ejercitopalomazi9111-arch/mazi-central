@@ -37,8 +37,11 @@ Las once materias del 3.1, en el orden en que viven en `datos.js`:
 | Mto. de equipo y SO | TEC III |
 | Admón. y estructura de redes | |
 
-> **Sin los nombres de los maestros, y a propósito.** Aquí venían los ocho, con
-> nombre y apellidos. Este repositorio es público y ese dato **no lo lee nadie**
+> **Sin los nombres de los maestros, y a propósito.** Aquí venían **diez nombres
+> escritos** —**siete personas distintas**, porque tres aparecían de dos formas—
+> con nombre y apellidos. Este párrafo decía «los ocho» y estaba mal; lo contó el
+> Claude de Luis contra `datos.js` y tiene razón: si alguien audita esto después,
+> el número tiene que aguantar. Este repositorio es público y ese dato **no lo lee nadie**
 > —ni la ficha, ni el cartel, ni una prueba—: eran datos personales de terceros
 > publicados a cambio de nada. Lo levantó el Claude de Luis. El campo `maestro`
 > sigue existiendo en `datos.js`, vacío, por si algún día el cartel llega a
