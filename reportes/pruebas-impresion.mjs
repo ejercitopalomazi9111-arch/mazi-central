@@ -110,6 +110,46 @@ ok('MUTACIÓN: con la escala vieja (0.86) la hoja NO cabía',
    n.hoja.alto * 0.86 > utilAlto,
    'entonces 0.86 sí cabía y el diagnóstico está mal');
 
+/* ══ NINGUNA OPCIÓN OFRECIDA PUEDE PARTIR LA HOJA ══════════════════════════
+   Lo que le pasó a Carlos: imprimió desde una computadora y salieron 30
+   páginas para 15 hojas, una en blanco detrás de cada una.
+
+   No fue un defecto de cálculo: la opción que escogió se llamaba «Computadora,
+   con márgenes en ninguno» y sólo funciona si uno se ACUERDA de poner ese
+   ajuste en el diálogo de impresión. Si no, la hoja no cabe.
+
+   Una opción que depende de que la persona recuerde algo es una trampa con
+   instrucciones. Así que ahora se comprueba que TODA escala ofrecida quepa con
+   los márgenes que un navegador de escritorio pone SOLO — menos la de 1, que
+   dice en su propio nombre que exige el ajuste. */
+{
+  const d = await page.evaluate(() => ({
+    escalas: ESCALAS_SEGURAS,
+    hoja: HOJA_MM,
+    come: ESCRITORIO_COME,
+    ofrecidas: [...document.querySelectorAll('#oImpresion option')].map(o => parseFloat(o.value)),
+  }));
+  const utilA = d.hoja.alto  - d.come.arriba - d.come.abajo;
+  const utilAn= d.hoja.ancho - d.come.lados * 2;
+
+  for(const e of d.escalas){
+    ok('escala ' + e + ' cabe en un escritorio SIN tocar los márgenes',
+       d.hoja.alto * e <= utilA && d.hoja.ancho * e <= utilAn,
+       'se pasa por ' + (d.hoja.alto * e - utilA).toFixed(1) + ' mm de alto');
+  }
+
+  /* Y que la lista de la pantalla no se separe de la lista que se comprueba:
+     una escala nueva que nadie probó es exactamente cómo volvería el defecto. */
+  const sinProbar = d.ofrecidas.filter(v => v !== 1 && !d.escalas.includes(v));
+  ok('toda escala del menú está en la lista que se comprueba',
+     sinProbar.length === 0, 'sin probar: ' + JSON.stringify(sinProbar));
+
+  /* MUTACIÓN: la escala vieja de «computadora» era 1, y NO cabía. */
+  ok('MUTACIÓN: la escala 1 no cabría sin el ajuste — por eso ya no es la de computadora',
+     d.hoja.alto * 1 > utilA,
+     'entonces sí cabía y el diagnóstico está mal');
+}
+
 /* ── el candado contra la partida, leído del navegador, no del archivo ── */
 await page.emulateMedia({ media:'print' });
 const candado = await page.evaluate(() => {

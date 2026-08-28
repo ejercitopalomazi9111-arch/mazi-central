@@ -1080,9 +1080,9 @@ El día ...
     <label class="campo"><span>Desde dónde imprimes</span>
       <select id="oImpresion">
         <option value="0.80">iPhone o iPad · Safari</option>
-        <option value="0.90">Android · Chrome</option>
-        <option value="1">Computadora, con márgenes en «ninguno»</option>
+        <option value="0.90">Computadora o Android · Chrome</option>
         <option value="0.72">Se sigue partiendo · encoger más</option>
+        <option value="1">Aprovechar toda la hoja · SÓLO con márgenes en «ninguno»</option>
       </select></label>
     <p class="aviso">Safari en iPhone <b>se queda con un margen suyo</b> que no se puede apagar, y
       por eso una hoja completa no le cabe: se pasa por un pelo y arrastra una <b>página en blanco
@@ -3566,6 +3566,25 @@ function formatoAlDia(f){
    0.86 y por eso se partía: la mitad de abajo —membrete y folio, los dos en
    posición absoluta— caía en la página siguiente y salía sola. */
 const SAFARI_COME = { arriba:22, abajo:22, lados:12.7 };
+
+/* Lo que se queda un navegador de ESCRITORIO con sus márgenes «Predeterminado»
+   —los 0.4 pulgadas de Chrome—. Es el caso que le tocó a Carlos: imprimió y le
+   salieron 30 páginas para 15 hojas, una en blanco detrás de cada una.
+
+   La opción que escogió se llamaba «Computadora, con márgenes en ninguno»: un
+   nombre que le pide RECORDAR un ajuste del diálogo de impresión. Si no lo
+   pone, la hoja de 279.4mm no cabe en los 259 que quedan y cada una arrastra
+   una página vacía. Un valor por defecto que depende de que la persona se
+   acuerde de algo no es un valor por defecto: es una trampa con instrucciones.
+
+   Ahora la opción de computadora va en 0.90 —cabe con o sin el ajuste— y la
+   de aprovechar toda la hoja dice en su propio nombre que exige el ajuste, en
+   vez de esconderlo en un aviso debajo. */
+const ESCRITORIO_COME = { arriba:10.2, abajo:10.2, lados:10.2 };
+
+/* Las escalas que se ofrecen, y cuáles tienen que caber SIN que la persona
+   toque nada. La de 1 queda fuera a propósito: su nombre ya avisa. */
+const ESCALAS_SEGURAS = [0.80, 0.90, 0.72];
 
 function aplicarEscalaImpresion(){
   document.documentElement.style.setProperty('--imp',
