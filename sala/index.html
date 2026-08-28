@@ -713,6 +713,51 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    Va ARRIBA y no abajo a propósito: abajo está el campo de escribir, y un
    aviso que aparece encima del teclado en un teléfono tapa justo lo que uno
    está haciendo. */
+/* ── «está escribiendo…» ──────────────────────────────────────────────────
+   Los tres puntos van con `steps()` y no con una animación suave: lo que se
+   lee es cuántos puntos hay, y una opacidad a media transición se ve como un
+   parpadeo sucio en vez de como un conteo. */
+.barrer{margin-top:14px; padding-top:12px; border-top:1px solid var(--borde)}
+.barrer .btn.peligro{
+  width:100%; border-color:var(--rojo); color:var(--rojo); background:transparent; margin-bottom:8px;
+}
+.barrer .btn.peligro:disabled{opacity:.5}
+
+/* El aviso de que entraste con otra llave. Va arriba de todo y NO se va solo:
+   los letreros de paso duran tres segundos, y esto no es un paso — es que
+   estás firmando como otra persona. Se queda hasta que se decide. */
+.cambio-llave{
+  flex:0 0 auto; padding:11px 14px; background:#3A1020; color:var(--hueso);
+  border-bottom:1px solid var(--rojo); font-size:13px; line-height:1.45;
+}
+.cambio-llave[hidden]{display:none}
+.cambio-llave b{color:#FFB3C6}
+.cambio-llave .fila-llave{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap}
+.cambio-llave button{
+  flex:1 1 auto; min-height:40px; padding:0 14px; border-radius:9px; cursor:pointer;
+  font:inherit; font-weight:650; border:1px solid var(--rojo);
+  background:var(--rojo); color:#2A0512;
+}
+.cambio-llave button.calma{background:transparent; color:var(--hueso); border-color:var(--borde-vivo)}
+
+.escribiendo{
+  flex:0 0 auto; padding:5px 14px 7px; font-size:12.5px; line-height:1.35;
+  color:var(--tenue); background:var(--vacio);
+  display:flex; align-items:center; gap:7px;
+}
+.escribiendo[hidden]{display:none}
+/* Los puntos son texto de verdad («...») y lo que se anima es CUÁNTO se ve de
+   ellos. Intenté animar `content` y no se puede: `content` sólo existe en un
+   pseudo-elemento y ahí tampoco es una propiedad animable — el letrero se
+   quedaba con un punto fijo. Recortar el ancho con `steps` sí cuenta. */
+.escribiendo .puntitos{
+  display:inline-block; overflow:hidden; vertical-align:bottom;
+  width:0; color:var(--violeta); animation:puntitos 1.2s steps(4,end) infinite;
+}
+@keyframes puntitos{ to{ width:1.15em } }
+.escribiendo b{color:var(--hueso); font-weight:650}
+@media(prefers-reduced-motion:reduce){ .escribiendo .puntitos{animation:none; width:1.15em} }
+
 .letreros{
   position:absolute; top:8px; left:0; right:0; z-index:30;
   display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -1182,6 +1227,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <button class="pest" data-vista="taller3d">Taller 3D</button>
 </div>
 
+<div class="cambio-llave" id="cambioLlave" hidden></div>
 <div class="letreros" id="letreros" aria-live="polite" aria-atomic="false"></div>
 <div class="hilo" id="hilo"></div>
 <div class="marco3d" id="marco3d" hidden></div>
@@ -1193,6 +1239,12 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 <div class="taller" id="taller" hidden>
   <div class="hebras" id="hebras"></div>
 </div>
+
+<!-- ── quién está escribiendo ────────────────────────────────────────────
+     Va pegada al pie y no dentro del hilo, a propósito: si fuera un renglón
+     más del hilo, aparecer y desaparecer movería los mensajes de arriba justo
+     cuando los estás leyendo. Aquí ocupa su lugar y no empuja nada. -->
+<div class="escribiendo" id="escribiendo" aria-live="polite" hidden></div>
 
 <div class="pie">
   <!-- El mensajote va PRIMERO y sin nada encima. Es una junta: primero se
@@ -1358,13 +1410,67 @@ const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.d
    Va en localStorage y no en la URL a propósito: un link con la llave adentro
    se reenvía por WhatsApp sin pensarlo, y ahí ya no es una llave. Se pone una
    vez con ?llave=… y de ahí vive en el teléfono. */
+/* ⚠ ESTO PISABA LA LLAVE SIN PREGUNTAR, y así se pierde una sala.
+   Lo reportó Carlos: «entré con mi link en otro navegador y valió, me mete
+   como Luis». Y no fue error suyo. Cualquier link con `?llave=` REEMPLAZABA
+   la llave guardada, en silencio, sin poder deshacerlo — y encima la página
+   borra el `?llave=` de la barra, así que después no queda ni rastro de qué
+   pasó. Basta abrir una vez el link de invitación que acabas de acuñar, aunque
+   sea para ver si sirve, y dejas de ser el dueño de tu propia sala.
+
+   Y lo que lo volvía peligroso de verdad: «Este es tu link» seguía diciendo
+   «tuyo» con la llave del otro adentro. O sea que después le mandas a alguien
+   «mi link» y le estás repartiendo la llave de Luis.
+
+   Lo que cambia: la llave nueva SÍ entra —el link que se explica solo es todo
+   el punto de esto— pero la anterior **se guarda**, y al llegar con una
+   distinta se avisa en pantalla con un botón para regresar. El pecado no era
+   cambiar de llave: era hacerlo callado y sin vuelta. */
+let LLAVE_ANTERIOR = '';
+let CAMBIO_DE_LLAVE = false;
 const LLAVE = (() => {
   const dada = params.get('llave');
   try{
-    if(dada){ localStorage.setItem('salaLlave', dada); return dada; }
-    return localStorage.getItem('salaLlave') || '';
+    const guardada = localStorage.getItem('salaLlave') || '';
+    /* La llave nueva SÍ entra —el link que se explica solo es todo el punto de
+       esto— pero la anterior se GUARDA y el cambio se avisa. El pecado no era
+       cambiar de llave: era hacerlo callado y sin vuelta. */
+    if(dada && dada !== guardada){
+      if(guardada){
+        LLAVE_ANTERIOR = guardada;
+        CAMBIO_DE_LLAVE = true;
+        localStorage.setItem('salaLlaveAnterior', guardada);
+      }
+      localStorage.setItem('salaLlave', dada);
+      return dada;
+    }
+    if(dada) return dada;
+    return guardada;
   }catch(e){ return dada || ''; }
 })();
+try{ LLAVE_ANTERIOR = LLAVE_ANTERIOR || localStorage.getItem('salaLlaveAnterior') || ''; }catch(e){}
+
+/* Volver a la llave de antes. Va aquí y no dentro de la hoja de llaves porque
+   quien la necesita puede estar viendo cualquier pantalla, y porque hasta que
+   no vuelve a ser él mismo, todo lo que haga queda firmado con la cuenta
+   equivocada. */
+function volverALlaveAnterior(){
+  if(!LLAVE_ANTERIOR) return;
+  try{
+    localStorage.setItem('salaLlave', LLAVE_ANTERIOR);
+    localStorage.removeItem('salaLlaveAnterior');
+  }catch(e){}
+  /* Se recarga conservando lo que ya traía la dirección y quitando SÓLO
+     `llave`. Lo primero que escribí armaba la dirección desde cero con nada
+     más `?sala=`, y eso se llevaba por delante `?servidor=`: quien estuviera
+     apuntando a otra sala —una local, una de prueba— salía disparado a la de
+     producción y ahí su llave no vale. La prueba lo cazó de inmediato. */
+  const q = new URLSearchParams(location.search);
+  q.delete('llave');
+  if(!q.get('sala') && typeof sala === 'string' && sala) q.set('sala', sala);
+  const cola = q.toString();
+  location.replace(location.pathname + (cola ? '?' + cola : ''));
+}
 if(params.get('llave')){
   /* Se borra de la barra de direcciones para que no quede en el historial ni
      en lo que se comparte desde el navegador. */
@@ -1389,6 +1495,13 @@ const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
+
+/* Quiénes están escribiendo, con la hora en que hay que dejar de creerlo.
+   El vencimiento se guarda AQUÍ y no sólo en el servidor porque el aviso llega
+   por socket: si el socket se cae justo después de «fulano está escribiendo»,
+   sin reloj propio la mesa se queda diciéndolo para siempre. */
+let escribiendo = new Map();
+let relojEscribiendo = null;
 /* Quién tiene el socket abierto en este momento, según el servidor. Es la
    señal buena de presencia: `visto` sólo dice cuándo habló por última vez. */
 let conectados = new Set();
@@ -1406,6 +1519,54 @@ const hora = (ts) => new Date(ts).toLocaleTimeString('es-MX',
    Aquí es donde se ve de un vistazo que la sesión de alguien se topó con su
    límite y a qué hora vuelve. Sin esto, los demás esperan a alguien que no
    va a contestar en cuatro horas. */
+/* ── quién está escribiendo ──────────────────────────────────────────────
+   Con nombres cuando son uno o dos, y con cuenta cuando son más: «Ana, Beto y
+   2 más» se lee de un vistazo y no crece hasta romper el renglón. */
+function pintarEscribiendo(){
+  const caja = $('escribiendo'); if(!caja) return;
+  const t = Date.now();
+  for(const [id, hasta] of [...escribiendo]) if(hasta <= t) escribiendo.delete(id);
+
+  const quienes = [...escribiendo.keys()]
+    .filter(id => id !== (yo && yo.id) && gente[id])
+    .map(id => gente[id].nombre || id);
+
+  if(!quienes.length){
+    caja.hidden = true; caja.innerHTML = '';
+    if(relojEscribiendo){ clearInterval(relojEscribiendo); relojEscribiendo = null; }
+    return;
+  }
+  const nombres = quienes.length === 1 ? `<b>${esc(quienes[0])}</b>`
+    : quienes.length === 2 ? `<b>${esc(quienes[0])}</b> y <b>${esc(quienes[1])}</b>`
+    : `<b>${esc(quienes[0])}</b>, <b>${esc(quienes[1])}</b> y ${quienes.length - 2} más`;
+  const verbo = quienes.length === 1 ? 'está escribiendo' : 'están escribiendo';
+  caja.innerHTML = `${nombres} ${verbo}<span class="puntitos">...</span>`;
+  caja.hidden = false;
+
+  /* Un reloj propio, sólo mientras haya alguien escribiendo. Es lo que apaga
+     la marca de un agente al que se le murió el contenedor a media respuesta:
+     nadie va a mandar el «ya no». */
+  if(!relojEscribiendo) relojEscribiendo = setInterval(pintarEscribiendo, 1000);
+}
+
+/* Lo que llega del servidor son ids; el vencimiento lo pone la mesa según el
+   tipo, igual que el servidor. Se recalcula en cada aviso, así que mientras el
+   otro siga tecleando la marca se renueva sola. */
+function recibirEscribiendo(ids){
+  const t = Date.now();
+  const antes = new Set(escribiendo.keys());
+  escribiendo = new Map();
+  for(const id of (ids || [])){
+    const p = gente[id];
+    escribiendo.set(id, t + (p && p.tipo === 'humano' ? 8_000 : 180_000));
+  }
+  /* Sólo se repinta si de verdad cambió quién. Sin esto, un agente pensando
+     tres minutos repintaría la tira en cada aviso sin que nada cambiara. */
+  const ahora_ = new Set(escribiendo.keys());
+  const igual = antes.size === ahora_.size && [...antes].every(x => ahora_.has(x));
+  if(!igual || !relojEscribiendo) pintarEscribiendo();
+}
+
 function pintarGente(){
   const lista = Object.values(gente);
 
@@ -2096,9 +2257,76 @@ function verPantalla(id){
              <ul class="bitacora">${t.pasos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '')
       : `<div class="enque"><span class="rot">Ahorita</span>
          <div class="tit">No está trabajando en nada</div>
-         <div class="paso">Un agente sólo aparece aquí mientras reporta con <code>/trabajando</code>.</div></div>`);
+         <div class="paso">Un agente sólo aparece aquí mientras reporta con <code>/trabajando</code>.</div></div>`) +
+    barrerHtml(p);
   $('pantalla').classList.add('abierta');
 }
+
+/* ── quitar un fantasma, desde el teléfono ────────────────────────────────
+   Esto ya se podía hacer: `sala/barrer-fantasmas.mjs`. Pero es una herramienta
+   de terminal y Carlos trabaja desde el iPhone, así que en la práctica no se
+   podía hacer. Una herramienta que la persona que la necesita no puede abrir
+   no cuenta como que existe.
+
+   Salió de que él viera DOS «Carlos» en la mesa: una sesión suya de cuando la
+   sala no tenía llaves, y la de ahora. La vieja no se va sola.
+
+   El botón NO se esconde cuando no se puede. Un botón que desaparece sin
+   explicación se lee como que la app está rota; el que dice por qué no se
+   puede, enseña la regla. Las razones son las mismas que revisa el servidor,
+   escritas antes de tocarlo para no gastar un viaje en un no. */
+function porQueNoSeBarre(p){
+  if(p.id === yo) return 'Éste eres tú.';
+  if(conectados.has(p.id)) return 'Está conectado ahorita. Esto barre fantasmas, no saca gente de la junta.';
+  if(hilo.some(e => e.tipo !== 'sistema' && e.de && e.de.id === p.id && (e.texto || '').trim()))
+    return 'Sí participó en el hilo, así que no es un fantasma: quitarlo dejaría mensajes sin autor.';
+  return null;
+}
+
+function barrerHtml(p){
+  const no = porQueNoSeBarre(p);
+  if(p.id === yo) return '';
+  return `<div class="barrer">` +
+    (no ? `<div class="paso">No se puede quitar. ${esc(no)}</div>`
+        : `<button class="btn peligro" data-barrer="${esc(p.id)}">Quitar de la sala</button>
+           <div class="paso">No ha hablado y no está conectado: es una sesión que quedó suelta.
+           Se puede quitar sin perder nada del hilo.</div>`) +
+    `</div>`;
+}
+
+/* Va delegado en el documento: el panel se vuelve a pintar entero cada vez que
+   se abre, así que un listener colgado del botón moriría con él. */
+$('pantallaCaja').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-barrer]');
+  if(!b) return;
+  const id = b.dataset.barrer;
+  const quien = gente[id];
+  if(!quien) return;
+  if(!confirm(`¿Quitar a "${quien.nombre}" de la sala?`)) return;
+
+  b.disabled = true;
+  try{
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/echar`, {
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+      body: JSON.stringify({ de: yo.id, id }),
+    });
+    const c = await r.json();
+    if(!r.ok){
+      /* El motivo del servidor se enseña TAL CUAL. Los tres que puede dar
+         —habló, está conectado, es de otra cuenta— explican una regla, y
+         cambiarlos por un «no se pudo» tira justo la parte útil. */
+      b.insertAdjacentHTML('afterend', `<div class="paso">${esc(c.error || 'No se pudo.')}</div>`);
+      b.disabled = false;
+      return;
+    }
+    gente = c.gente || gente;
+    $('pantalla').classList.remove('abierta');
+    pintarGente();
+  }catch(err){
+    marcarVivo(false);
+    b.disabled = false;
+  }
+});
 $('pantalla').addEventListener('click', (e) => {
   if(e.target === $('pantalla')) $('pantalla').classList.remove('abierta');
 });
@@ -2204,9 +2432,15 @@ function verLlaves(recado){
         (c.cuentas.length
           ? `<h4>Ya tienen llave</h4><p>${c.cuentas.map(esc).join(' · ')}</p>` : '')) +
 
-    `<h4>Este es tu link</h4>
+    /* ⚠ Decía «Este es tu link» a secas, y ésa es la mitad del daño: si la
+       llave cargada es la de otro, este renglón te invita a repartir la llave
+       ajena creyendo que es la tuya. Ahora dice DE QUIÉN es la que está
+       puesta, con el mismo nombre que aparece arriba. */
+    `<h4>El link de esta llave${mio ? ` · entra como <b>${esc(mio)}</b>` : ''}</h4>
      <div class="liga">${esc(LLAVE ? ligaDe(LLAVE) : ligaDe(''))}</div>
-     <button class="gordo calma" id="bCopiarMio">Copiar mi link</button>
+     <button class="gordo calma" id="bCopiarMio">Copiar este link</button>` +
+    (LLAVE_ANTERIOR ? `<button class="gordo calma" id="bVolverLlave2">Volver a mi llave de antes</button>` : '') +
+    `
 
      <h4>Ojo con esto</h4>
      <p>El link lleva la llave adentro: <b>quien lo tenga, entra</b>. Es como el
@@ -2270,15 +2504,39 @@ function verLlaves(recado){
   b('bCopiarMio', (e) => {
     navigator.clipboard.writeText(ligaDe(LLAVE)).then(() => {
       e.target.textContent = '✓ copiado';
-      setTimeout(() => e.target.textContent = 'Copiar mi link', 1600);
+      setTimeout(() => e.target.textContent = 'Copiar este link', 1600);
     }).catch(() => { e.target.textContent = 'no se pudo — cópialo a mano'; });
   });
+  b('bVolverLlave2', volverALlaveAnterior);
 
   $('llaves').classList.add('abierta');
 }
 
 /* Se pregunta el estado ANTES de abrir: enseñar «cerrar la sala» en una que ya
    tiene dueño manda al usuario a un botón que sólo le va a dar un error. */
+/* Se pinta cuando ya se sabe de quién es la llave nueva: decir «cambiaste de
+   llave» sin decir A QUIÉN no sirve de nada, y el nombre es justo el dato que
+   hace clic («¿cómo que entro como luis?»). */
+function avisarCambioDeLlave(quienSoy){
+  const caja = $('cambioLlave'); if(!caja) return;
+  if(!CAMBIO_DE_LLAVE || !LLAVE_ANTERIOR){ caja.hidden = true; return; }
+  caja.innerHTML =
+    `Entraste con un link que trae <b>otra llave</b>, así que ahora firmas como
+     <b>${esc(quienSoy || 'otra cuenta')}</b> y no como antes.
+     <div class="fila-llave">
+       <button id="bVolverLlave">Volver a mi llave de antes</button>
+       <button class="calma" id="bQuedarmeLlave">Está bien, déjalo así</button>
+     </div>`;
+  caja.hidden = false;
+  $('bVolverLlave').addEventListener('click', volverALlaveAnterior);
+  $('bQuedarmeLlave').addEventListener('click', () => {
+    CAMBIO_DE_LLAVE = false;
+    caja.hidden = true;
+    /* La anterior NO se borra aunque diga «déjalo así»: puede que se dé cuenta
+       mañana. Sólo se deja de avisar. */
+  });
+}
+
 async function abrirLlaves(){
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${sala}/hilo`, { headers: conLlave() });
@@ -2395,6 +2653,11 @@ async function entrar(codigo, nombre){
   const h = await (await fetch(`${base}/hilo`, { headers: conLlave() })).json();
   hilo = h.hilo || []; gente = h.gente || {};
   pintarGente(); pintarHilo();
+  /* `yoSoy` lo dice el SERVIDOR a partir de la llave, no el navegador: es el
+     único que sabe de quién es. Por eso el aviso se pinta aquí y no al cargar. */
+  estadoSala = { cerrada: !!h.cerrada, dueno: h.dueno || null,
+                 yoSoy: h.yoSoy || null, cuentas: h.cuentas || [] };
+  avisarCambioDeLlave(h.yoSoy);
   abrirSocket(codigo);
 
   $('puerta').classList.add('ida');
@@ -2408,7 +2671,16 @@ function abrirSocket(codigo){
      mirando sin escribir — con el indicador de la esquina en verde al mismo
      tiempo, porque ése sí veía el socket. */
   const url = `${SERVIDOR.replace(/^http/,'ws')}/api/sala/${codigo}/ws`
-            + (yo ? `?de=${encodeURIComponent(yo)}` : '');
+            /* ⚠ `yo` es la PERSONA COMPLETA, no su id. Aquí decía
+               `encodeURIComponent(yo)` y eso no truena: manda literalmente
+               `?de=%5Bobject%20Object%5D`. El servidor no encuentra a nadie con
+               ese id, así que el socket NUNCA se ataba a una persona — y como
+               `conectados()` sale de los sockets atados, la mesa pintaba a
+               TODOS «sin señal» mientras la esquina decía que había conexión.
+               Es la captura que mandó Carlos: cinco en la sala, «1 en línea».
+               Se cazó corriendo la mesa contra un servidor de verdad; leyendo
+               no se ve, porque la línea está bien escrita. */
+            + (yo ? `?de=${encodeURIComponent(yo.id)}` : '');
   ws = new WebSocket(url);
   /* ── letrero de paso ─────────────────────────────────────────────────────
      Aparece arriba, dura unos segundos y se va. Tres reglas que salieron de
@@ -2447,6 +2719,15 @@ function abrirSocket(codigo){
     if(p.que === 'hola'){
       hilo = p.hilo; gente = p.gente;
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
+      pintarGente(); pintarHilo(); recibirEscribiendo(p.escribiendo);
+    }
+    if(p.que === 'escribiendo') recibirEscribiendo(p.quienes);
+    /* El servidor manda `hilo` cuando se barre un fantasma con rastro, y la
+       mesa NO lo escuchaba: los renglones de «entró/salió» del fantasma se
+       quedaban pintados hasta recargar. Nadie lo había visto porque hasta hoy
+       barrer sólo se podía desde la terminal. */
+    if(p.que === 'hilo'){
+      hilo = p.hilo; if(p.gente) gente = p.gente;
       pintarGente(); pintarHilo();
     }
     if(p.que === 'evento'){
@@ -2491,6 +2772,27 @@ function limpiar(){
   pegados.length = 0; pintarPegados();
 }
 
+/* ── avisar que estoy escribiendo ────────────────────────────────────────
+   Con freno, y el freno es el punto: `input` se dispara en CADA letra, así que
+   avisar sin freno serían cuarenta peticiones por renglón. Se manda una y no se
+   vuelve a mandar hasta que falten dos segundos para que venza — o sea, una cada
+   seis segundos mientras siga escribiendo, y ninguna si dejó de escribir.
+
+   Y NO se manda cuando la caja está vacía: borrar lo que ibas a decir apaga la
+   marca en vez de dejar al otro esperando una respuesta que ya no viene. */
+let avisoHasta = 0;
+async function avisarQueEscribo(si){
+  if(demo || !sala || !yo) return;
+  if(si && Date.now() < avisoHasta - 2000) return;
+  avisoHasta = si ? Date.now() + 8000 : 0;
+  try{
+    await fetch(`${SERVIDOR}/api/sala/${sala}/escribiendo`, {
+      method:'POST', headers: conLlave({ 'content-type':'application/json' }),
+      body: JSON.stringify({ de: yo.id, si }),
+    });
+  }catch(e){ /* que no se pueda avisar no debe estorbar para escribir */ }
+}
+
 async function enviar(){
   const texto = $('texto').value.trim();
   const notaTxt = $('nota').value.trim();
@@ -2520,6 +2822,7 @@ async function enviar(){
     const c = await r.json();
     if(!r.ok){ $('aviso').textContent = c.error; return; }
     limpiar(); $('aviso').textContent = '';
+    avisarQueEscribo(false);
     marcarVivo(true);
   }catch(e){
     marcarVivo(false);
@@ -2659,6 +2962,7 @@ function correrComando(cmd){
   }
 }
 $('texto').addEventListener('input', verComandos);
+$('texto').addEventListener('input', () => avisarQueEscribo(!!$('texto').value.trim()));
 /* Si el cursor se va del cuadro, el menú se cierra. Sin esto se quedaba
    flotando encima del hilo y tapaba la conversación. El retardo es para que
    alcance a registrarse el clic en una opción antes de que desaparezca. */

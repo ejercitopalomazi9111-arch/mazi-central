@@ -157,6 +157,25 @@
       ],
       "area": "diseno",
       "salioDe": "avisos/ · dos intentos hasta entender que el control no obedece"
+    },
+    {
+      "id": "content-no-se-anima",
+      "titulo": "Los puntos suspensivos animados: content no es una propiedad animable",
+      "gravedad": "baja",
+      "clase": "error",
+      "sintoma": "Un «escribiendo…» con puntos que deberían contar se queda con un punto fijo. Sin error en consola.",
+      "causa": "Se intentó animar la propiedad content en unos keyframes. content sólo existe en un pseudo-elemento y ahí tampoco se interpola: el navegador se queda con el primer valor y no avisa de nada.",
+      "porque": "Es de las que se leen bien y no funcionan, así que uno va a buscar el problema a la duración, al infinite o a la especificidad.",
+      "arreglo": "Poner los puntos como texto de verdad y animar CUÁNTO se ve de ellos: un inline-block con overflow oculto y el ancho de 0 a 1.15em, con pasos.",
+      "comoCazarlo": "Si una animación de CSS no hace nada y no hay error, revisa que la propiedad esté en la lista de animables. content, display y position no lo están.",
+      "consejo": "Y con pasos, no con una transición suave: lo que se lee es cuántos puntos hay, y una opacidad a media transición se ve como un parpadeo sucio en vez de como un conteo.",
+      "salioDe": "sala/index.html · la tira de «está escribiendo»",
+      "senales": [
+        "la animación no hace nada",
+        "se queda en el primer cuadro",
+        "los puntitos no se mueven"
+      ],
+      "vecinas": []
     }
   ]
 }

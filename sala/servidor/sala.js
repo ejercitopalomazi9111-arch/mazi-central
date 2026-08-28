@@ -170,6 +170,27 @@ const REACCIONES = new Map([
    el hilo de ruido y despertaría a los demás sin razón. */
 const TOPE_PASOS = 8;
 
+/* ── «está escribiendo…» ───────────────────────────────────────────────────
+   Lo pidió Carlos así: «no aparece cuando alguien está escribiendo».
+
+   La marca NO es un evento del hilo. Si lo fuera, teclear despertaría a los
+   demás agentes por `/esperar` y contaría para el freno de las 12 vueltas —o
+   sea que escribir «hola» y borrarlo costaría una vuelta. Es estado efímero de
+   la persona, se difunde por su propio canal y jamás se guarda.
+
+   **Cada quien trae su propio reloj, y ahí está el punto.** Un humano tecleando
+   deja de teclear a los segundos, así que su marca vale 8 s y se renueva sola
+   mientras siga escribiendo. Un agente que acaba de recibir un mensaje va a
+   tardar minutos en contestar: con 8 s la mesa lo apagaría a los dos segundos y
+   quien preguntó pensaría que nadie lo oyó — que es exactamente el problema que
+   esto viene a resolver. Por eso su marca vale 3 minutos.
+
+   Y expira sola, con hora de vencimiento en vez de un «ya no estoy escribiendo»:
+   a un agente lo puede matar el contenedor a media respuesta, y una marca que
+   depende de que el que se murió avise se queda encendida para siempre. */
+const ESCRIBE_HUMANO = 8_000;
+const ESCRIBE_AGENTE = 180_000;
+
 /* ── QUIÉN ES QUIÉN, DE UN VISTAZO ─────────────────────────────────────────
    Lo pidió Carlos así: «dependiendo de la IA que esté hablando tenga un icono
    como imagen de perfil… y que también aplique para mismos modelos diferentes
@@ -903,7 +924,13 @@ export class Sala {
                              { status:413 });
       }
       quien.visto = ahora();
-      return Response.json({ bien:true, evento: await this.publicar(evento) });
+      /* Ya lo dijo: deja de estar escribiéndolo. Sin esto la marca del agente
+         —que dura tres minutos— seguiría encendida después de que contestó, y
+         la mesa diría «está escribiendo» junto a la respuesta que ya llegó. */
+      quien.escribeHasta = 0;
+      const salida = Response.json({ bien:true, evento: await this.publicar(evento) });
+      this.avisarEscribiendo();
+      return salida;
     }
 
     /* ── /esperar · la pieza clave ─────────────────────────────────────────
@@ -979,6 +1006,36 @@ export class Sala {
        participante (para que en la mesa se vea de un vistazo quién puede
        trabajar) y se publica como evento `limite` (para que quede en el hilo
        y en el acta el porqué de un hueco de cuatro horas). */
+    /* ── /escribiendo · «fulano está escribiendo…» ────────────────────────
+       Se llama al teclear (la mesa, con freno) y al recoger un mensaje de
+       `/esperar` (el agente, porque recoger es comprometerse a contestar).
+
+       No pasa por `quienEs` a propósito: eso publica y cuenta vueltas. Aquí
+       basta con que la sesión exista y sea de esta cuenta — y esa comprobación
+       sí se hace, porque si no cualquiera con la llave de invitado podría
+       poner a «escribiendo» a una sesión ajena. */
+    if(pedido.method === 'POST' && ruta === 'escribiendo'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.gente[String(c.de || '')];
+      if(!quien) return Response.json({
+        error:`Aquí no hay nadie con el id "${c.de || ''}". Entra primero con /entrar.` },
+        { status:404 });
+      if(quien.cuenta !== cuenta) return Response.json({
+        error:'Esa sesión es de otra cuenta: no puedes decir que está escribiendo.' },
+        { status:403 });
+
+      /* `false` apaga la marca. Es lo que manda la mesa cuando se vacía la caja
+         o se envía: sin esto, borrar lo que ibas a decir te deja «escribiendo»
+         ocho segundos más, y el otro espera una respuesta que ya no viene. */
+      const cuanto = quien.tipo === 'humano' ? ESCRIBE_HUMANO : ESCRIBE_AGENTE;
+      quien.escribeHasta = c.si === false ? 0 : ahora() + cuanto;
+      /* Teclear ES señal de vida, igual que colgarse de `/esperar`. */
+      quien.visto = ahora();
+      await this.tocar();
+      this.avisarEscribiendo();
+      return Response.json({ bien:true, hasta:quien.escribeHasta, escribiendo:this.escribiendo() });
+    }
+
     if(pedido.method === 'POST' && ruta === 'reaccion'){
       const c = await pedido.json().catch(() => ({}));
       const quien = this.quienEs(c.de, cuenta);
@@ -1295,6 +1352,24 @@ export class Sala {
     return [...ids];
   }
 
+  /* Quién está escribiendo ahora mismo. Se calcula al vuelo desde la hora de
+     vencimiento de cada quien: así una marca vencida desaparece sin que nadie
+     tenga que barrerla, y una sala que estuvo dormida no despierta enseñando a
+     alguien «escribiendo» desde ayer. */
+  escribiendo(){
+    const t = ahora();
+    return Object.values(this.gente)
+      .filter(p => (p.escribeHasta || 0) > t)
+      .map(p => p.id);
+  }
+
+  /* Se manda por su propio canal, nunca dentro de `gente`: la mesa repinta la
+     lista de participantes cuando llega `gente`, y repintarla cada vez que
+     alguien teclea una letra le arrancaría el foco a quien está escribiendo. */
+  avisarEscribiendo(){
+    this.difundir({ que:'escribiendo', quienes:this.escribiendo() });
+  }
+
   conectar(pedido){
     if(pedido.headers.get('Upgrade') !== 'websocket'){
       return new Response('Aquí sólo websocket.', { status:426 });
@@ -1321,6 +1396,7 @@ export class Sala {
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
       vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
+      escribiendo:this.escribiendo(),
     }));
     /* Cerrar el socket SÍ es indicación directa: cerró la pestaña, se le fue
        la red o bloqueó el teléfono. Ahí se avisa a los demás. */

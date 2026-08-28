@@ -28,16 +28,63 @@ nada, no imprime nada — así el silencio significa silencio de verdad.
 
 Sin dependencias fuera de la biblioteca estándar y curl.
 """
-import json, subprocess, sys, time
+import json, os, subprocess, sys, time
 
-SERVIDOR = 'https://sala.palomazi9111.workers.dev'
+SERVIDOR = os.environ.get('MAZI_SERVIDOR') or 'https://sala.palomazi9111.workers.dev'
+LLAVE = os.environ.get('MAZI_LLAVE', '')
 
-def traer(url, segundos):
-    r = subprocess.run(['curl', '-sS', '-m', str(segundos), url],
+
+def _curl(args, segundos):
+    """⚠ LA LLAVE VA POR CABECERA Y NUNCA POR LA URL. `?llave=` funciona —el
+    servidor la acepta— pero acaba en el historial del shell y en cualquier
+    registro del proxy, y estos repos son públicos."""
+    if LLAVE:
+        args = args + ['-H', f'X-Llave: {LLAVE}']
+    r = subprocess.run(['curl', '-sS', '-m', str(segundos)] + args,
                        capture_output=True, text=True, timeout=segundos + 15)
     if r.returncode != 0:
         raise RuntimeError((r.stderr or 'curl falló').strip()[:200])
-    return json.loads(r.stdout)
+    try:
+        d = json.loads(r.stdout)
+    except ValueError:
+        raise RuntimeError(f'no contestó JSON: {r.stdout[:200]!r}')
+    return d
+
+
+def traer(url, segundos):
+    """⚠ AQUÍ ESTABA EL BUG QUE REPORTÓ CARLOS: «no los espera pasivamente».
+
+    Esto revisaba el código de salida de curl y nada más. Pero curl sale con 0
+    cuando el servidor contesta **401**, y el cuerpo entonces es
+    `{"error":"Llave que no reconozco."}` — JSON válido, sin `eventos`. El
+    ciclo de abajo leía `eventos` vacío, no imprimía nada, no dormía, y volvía a
+    preguntar. O sea: desde que se pusieron las LLAVES, el vigilante estaba
+    haciendo un ciclo cerrado contra el servidor y desde afuera se veía IDÉNTICO
+    a que no hubiera mensajes. El silencio significaba «no hay nada» y en
+    realidad significaba «no me dejan pasar».
+
+    Por eso un `error` en el cuerpo revienta igual que un fallo de red: la única
+    forma de que el silencio siga significando silencio es que todo lo demás
+    haga ruido."""
+    d = _curl([url], segundos)
+    if isinstance(d, dict) and d.get('error'):
+        raise RuntimeError(d['error'])
+    return d
+
+
+def avisar_que_contesto(sala, yo):
+    """«Está escribiendo…» en la mesa, desde que recojo el mensaje.
+
+    Recoger un mensaje ES comprometerse a contestarlo, y contestar me toma
+    minutos. Sin esto, quien escribió ve la sala igual de quieta que si nadie lo
+    hubiera oído — que es la otra mitad de la queja de Carlos. Si falla, se
+    calla: no poder avisar no es razón para no leer el mensaje."""
+    try:
+        _curl([f'{SERVIDOR}/api/sala/{sala}/escribiendo',
+               '-X', 'POST', '-H', 'content-type: application/json',
+               '-d', json.dumps({'de': yo, 'si': True})], 20)
+    except Exception:
+        pass
 
 def ultimo_id(sala):
     """De dónde arrancar si nadie lo dijo: el final del hilo, para no volver a
@@ -68,8 +115,11 @@ def main():
             fallos += 1
             # Se avisa UNA vez, cuando la racha ya no parece un tropezón. Callarse
             # del todo sería lo peor: aquí el silencio ya significa «no hay nada».
-            if fallos == 4:
-                print(f'SALA {sala} · llevo {fallos} intentos sin poder oír ({e}). Sigo reintentando.', flush=True)
+            # Se avisa al PRIMER fallo y luego cada cuatro. Antes avisaba sólo
+            # al cuarto, y con una llave mala eso son tres intentos —hasta un
+            # minuto— en los que el vigilante se ve igual que uno sano.
+            if fallos == 1 or fallos % 4 == 0:
+                print(f'SALA {sala} · no puedo oír ({e}). Van {fallos}; sigo reintentando.', flush=True)
             time.sleep(min(5 * fallos, 30))
             continue
 
@@ -90,6 +140,7 @@ def main():
             if nota and nota.get('texto'):
                 linea += f"  ‖ nota: {nota['texto'][:200]}"
             print(linea, flush=True)
+            avisar_que_contesto(sala, yo)
 
 if __name__ == '__main__':
     sys.exit(main() or 0)
