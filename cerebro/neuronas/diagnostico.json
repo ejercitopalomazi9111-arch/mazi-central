@@ -430,6 +430,36 @@
       ],
       "area": "diagnostico",
       "salioDe": "La Sala · dos días creyendo que el Claude de Luis no llegaba a la sala, cuando no cabía en la barra"
+    },
+    {
+      "id": "lector-con-respaldo-oculta-el-error",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Le pegué a una ruta que no existe y me contestó «la sala está vacía»",
+      "sintoma": "Una consulta a un servidor vivo devuelve cero de todo. Parece que se borraron los datos, y están intactos.",
+      "causa": "La ruta estaba mal —era `/api/sala/<código>/hilo` y pedí `/sala/<código>/hilo`— así que el servidor contestó `{\"error\":\"No existe esa ruta.\"}`. Mi lector hacía `j.gente || []` y `j.mensajes || []`: sobre un objeto de error los dos respaldos ganan y salen listas vacías.",
+      "porque": "El respaldo se pone para que el lector no truene con datos incompletos, y hace exactamente eso: no truena. Un error deja de verse como error y pasa por un dato legítimo, que es el peor resultado posible.",
+      "arreglo": "Antes de leer nada, revisar `j.error` y el código HTTP. Si el cuerpo trae `error`, se grita; no se sigue leyendo. Y cuando no se conocen las rutas, se sacan del enrutador —`grep` a los `pathname.match` del worker— en vez de adivinarlas.",
+      "comoCazarlo": "Cuando una consulta devuelva CERO de todo, imprime el cuerpo crudo antes de creerle. Cero es sospechoso: los datos rara vez desaparecen todos juntos.",
+      "consejo": "Un valor por defecto convierte «no sé» en «no hay». Eso está bien para pintar una pantalla y está muy mal para reportar un hecho. Yo estuve a punto de decirle a Carlos que la sala se había borrado.",
+      "toca": [
+        "sala/servidor/index.js",
+        "sala/servidor/sala.js"
+      ],
+      "senales": [
+        "contesta vacío",
+        "se borró la sala",
+        "cero mensajes",
+        "no hay nadie",
+        "ruta que no existe"
+      ],
+      "vecinas": [
+        "errores-que-mienten",
+        "verificar-lo-publicado",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · reporté GRUPAZ vacía con 26 eventos y 4 personas adentro"
     }
   ]
 }

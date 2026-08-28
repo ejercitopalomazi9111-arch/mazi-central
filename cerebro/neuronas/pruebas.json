@@ -14,8 +14,15 @@
       "comoCazarlo": "Por cada guarda cara, una mutación. Tres mutaciones tardan un minuto y te dicen si la suite sirve.",
       "consejo": "Nunca digas «está probado» sin haber visto la prueba fallar al menos una vez.",
       "salioDe": "sala/servidor · rompí el freno, el filtro de destinatario y el conteo de límites; cayeron 3, 2 y 1",
-      "senales": ["pasa todo y no sirve", "verde pero el bug sigue", "ya lo probé"],
-      "vecinas": ["renombrar-de-un-lado", "prueba-de-un-solo-caso"]
+      "senales": [
+        "pasa todo y no sirve",
+        "verde pero el bug sigue",
+        "ya lo probé"
+      ],
+      "vecinas": [
+        "renombrar-de-un-lado",
+        "prueba-de-un-solo-caso"
+      ]
     },
     {
       "id": "prueba-de-un-solo-caso",
@@ -28,8 +35,15 @@
       "comoCazarlo": "Pregúntate: «¿y si son cinco?». Esa pregunta caza más bugs que leer el código.",
       "consejo": "Carlos caza bugs preguntando «¿y si tengo cinco hijos y todos juegan el mismo partido?». Trátalo como caso de prueba, no como charla.",
       "salioDe": "ligas-mazi · la función devolvía el primer hijo y se salía",
-      "senales": ["con mis datos falla", "en la demo sí funciona", "y si son varios"],
-      "vecinas": ["bandera-global-primera-vez", "pruebas-que-no-prueban-nada"]
+      "senales": [
+        "con mis datos falla",
+        "en la demo sí funciona",
+        "y si son varios"
+      ],
+      "vecinas": [
+        "bandera-global-primera-vez",
+        "pruebas-que-no-prueban-nada"
+      ]
     },
     {
       "id": "medir-antes-de-suponer",
@@ -42,8 +56,14 @@
       "comoCazarlo": "Un número, cualquiera. Un `time` a la suite descubrió un temporizador colgado que ninguna prueba reportaba.",
       "consejo": "Si vas a optimizar sin medir, no estás optimizando: estás adivinando con más pasos.",
       "salioDe": "sala/servidor · la suite tardaba 1m40 y nadie lo había notado",
-      "senales": ["tarda mucho", "va lento", "creo que es por"],
-      "vecinas": ["temporizador-que-nadie-mata"]
+      "senales": [
+        "tarda mucho",
+        "va lento",
+        "creo que es por"
+      ],
+      "vecinas": [
+        "temporizador-que-nadie-mata"
+      ]
     },
     {
       "id": "reproducir-antes-de-arreglar",
@@ -56,8 +76,45 @@
       "comoCazarlo": "Si no puedes describir los pasos exactos que provocan el fallo, todavía no lo entiendes.",
       "consejo": "Regla de la casa: reproducir el bug antes de arreglarlo. Nada a ciegas.",
       "salioDe": "CLAUDE.md §3.7",
-      "senales": ["sigue igual", "ya lo arreglé", "creo que era"],
-      "vecinas": ["sintoma-contra-causa", "ver-la-pantalla"]
+      "senales": [
+        "sigue igual",
+        "ya lo arreglé",
+        "creo que era"
+      ],
+      "vecinas": [
+        "sintoma-contra-causa",
+        "ver-la-pantalla"
+      ]
+    },
+    {
+      "id": "probar-contra-una-copia-congelada",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Las pruebas medían una copia vieja y yo creía que medían mi trabajo",
+      "sintoma": "Cambias el código, corres las pruebas y fallan describiendo EXACTAMENTE el comportamiento viejo. O peor: pasan, y lo que pasó fue otra cosa.",
+      "causa": "Las pruebas apuntan a `dist/`, que es lo que de verdad se publica (`build.mjs`, según `wrangler.jsonc`). Eso está bien. Lo que faltó fue rearmar `dist/` después de editar. Y encima el servidor de pruebas llevaba horas clavado a un `dist/` YA BORRADO —`/proc/<pid>/cwd` decía `(deleted)`— porque `build.mjs` borra y recrea la carpeta: rearmarla no alcanza, hay que reiniciar el servidor.",
+      "porque": "Medir lo publicado y no el archivo propio es lo correcto, así que el arreglo bueno introduce el riesgo: ahora hay dos versiones y hay que acordarse de sincronizar. Y un proceso con la carpeta abierta no se entera de que se la cambiaron debajo.",
+      "arreglo": "`node build.mjs`, reiniciar el servidor de pruebas, y ENTONCES correr las pruebas. Los tres pasos, en ese orden.",
+      "comoCazarlo": "Antes de creerle a una falla, `curl` a la página servida y `grep` de algo que acabas de escribir. Si no aparece, no estás midiendo tu trabajo. Y `ls -l /proc/<pid>/cwd` del servidor: si dice `(deleted)`, está sirviendo un fantasma.",
+      "consejo": "Una prueba que falla describiendo el comportamiento ANTERIOR casi nunca es un error de la prueba: es que no está viendo tu cambio. Revisa eso antes de tocar el código.",
+      "toca": [
+        "build.mjs",
+        "wrangler.jsonc",
+        "reportes/pruebas-impresion.mjs"
+      ],
+      "senales": [
+        "las pruebas fallan y el código está bien",
+        "no ve mis cambios",
+        "sigue con lo viejo",
+        "dist viejo"
+      ],
+      "vecinas": [
+        "editar-en-dist-y-perderlo",
+        "verificar-lo-publicado",
+        "reproducir-antes-de-arreglar"
+      ],
+      "area": "pruebas",
+      "salioDe": "reportes/ · seis pruebas rojas acusando a un código que ya estaba bien"
     }
   ]
 }

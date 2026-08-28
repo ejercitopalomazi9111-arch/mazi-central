@@ -14,8 +14,15 @@
       "comoCazarlo": "Que alguien de FUERA use tu interfaz. Uno no lo ve porque conoce la intención de cada campo.",
       "consejo": "Si un campo se queda en cero y no entiendes por qué, busca si ese nombre existe dos veces en la misma llamada.",
       "salioDe": "sala/servidor · el denominador del avance se llamaba `de`, igual que el id del emisor. La barra decía «3 de 0»",
-      "senales": ["se queda en cero", "no puedo asignarlo", "lo mando y no llega"],
-      "vecinas": ["renombrar-de-un-lado", "probar-con-alguien-de-fuera"]
+      "senales": [
+        "se queda en cero",
+        "no puedo asignarlo",
+        "lo mando y no llega"
+      ],
+      "vecinas": [
+        "renombrar-de-un-lado",
+        "probar-con-alguien-de-fuera"
+      ]
     },
     {
       "id": "renombrar-de-un-lado",
@@ -28,8 +35,16 @@
       "comoCazarlo": "Después de renombrar, `grep` del nombre viejo. Si aparece fuera del archivo que tocaste, ahí está.",
       "consejo": "Un renombre no es una edición: es una migración de contrato. Trátalo como tal aunque sean tres letras.",
       "salioDe": "sala · el servidor pasó a `total` y la mesa siguió leyendo `de`; las 62 pruebas quedaron verdes",
-      "senales": ["no se pinta y no hay error", "las pruebas pasan pero no sirve", "funcionaba antes"],
-      "vecinas": ["campo-que-choca-consigo", "pruebas-que-no-prueban-nada", "verificar-lo-publicado"]
+      "senales": [
+        "no se pinta y no hay error",
+        "las pruebas pasan pero no sirve",
+        "funcionaba antes"
+      ],
+      "vecinas": [
+        "campo-que-choca-consigo",
+        "pruebas-que-no-prueban-nada",
+        "verificar-lo-publicado"
+      ]
     },
     {
       "id": "marcador-que-existe-dos-veces",
@@ -42,8 +57,15 @@
       "comoCazarlo": "Si una sustitución da un resultado vacío o negativo, es esto. Cuenta las apariciones antes de cortar.",
       "consejo": "Ancla con algo que sea único de verdad: un nombre de función, no un comentario decorativo.",
       "salioDe": "sala/index.html · «── la lupa ──» estaba en el CSS y en el JS; el bloque se insertó al inicio del documento",
-      "senales": ["salió código como texto", "se insertó al principio", "la sustitución quedó rara"],
-      "vecinas": ["ver-la-pantalla", "funcion-duplicada"]
+      "senales": [
+        "salió código como texto",
+        "se insertó al principio",
+        "la sustitución quedó rara"
+      ],
+      "vecinas": [
+        "ver-la-pantalla",
+        "funcion-duplicada"
+      ]
     },
     {
       "id": "funcion-duplicada",
@@ -56,8 +78,71 @@
       "comoCazarlo": "`node --check`. Un segundo, y caza esto siempre. La vista NO lo caza: la página simplemente se queda en blanco.",
       "consejo": "Extrae el `<script>` a un archivo y pásale el chequeo de sintaxis en cada edición grande de un HTML de una sola pieza.",
       "salioDe": "sala/index.html · dos `tarjetaAdjunto` tras rehacer el pintado",
-      "senales": ["already been declared", "la página no carga", "se quedó en blanco"],
-      "vecinas": ["marcador-que-existe-dos-veces"]
+      "senales": [
+        "already been declared",
+        "la página no carga",
+        "se quedó en blanco"
+      ],
+      "vecinas": [
+        "marcador-que-existe-dos-veces"
+      ]
+    },
+    {
+      "id": "clase-css-que-ya-existia",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "El pie de página se pintó en la cabecera porque su clase ya existía",
+      "sintoma": "Un elemento aparece en un lugar donde nadie lo puso. Se ve raro, pero nada está «roto» y no hay error en consola.",
+      "causa": "Llamé `.barra` al filo del pie, y `.barra` ya era la barra de herramientas de esa misma app: `position:sticky; top:0`. Heredó las dos reglas, y con `top` y `bottom` puestos a la vez gana `top`.",
+      "porque": "En un archivo de una sola pieza —que es como entregamos— todo el CSS vive en el mismo costal. Un nombre genérico (`barra`, `caja`, `punto`, `ficha`) ya está tomado casi siempre, y el navegador junta las reglas en silencio en vez de avisar del choque.",
+      "arreglo": "Nombre con apellido de sección: `filo-inf`, no `barra`. Y antes de estrenar una clase, `grep` de ese nombre en el archivo.",
+      "comoCazarlo": "Medir dónde CAE el elemento, no mirarlo. En el navegador, `getBoundingClientRect()` del elemento y comparar contra donde debería estar. Mirándolo se piensa «ha de ser el diseño».",
+      "consejo": "Esto ya me pasó dos veces en la misma semana: con `.barra` en reportes y con `.punto` en la sala. Es el mismo defecto y ninguna de las dos veces salió leyendo el código.",
+      "toca": [
+        "reportes/index.html",
+        "sala/index.html"
+      ],
+      "senales": [
+        "se ve raro pero no roto",
+        "aparece arriba y va abajo",
+        "la clase se pisa",
+        "no le hace caso al css"
+      ],
+      "vecinas": [
+        "marcador-que-existe-dos-veces",
+        "campo-que-choca-consigo",
+        "medir-antes-de-suponer"
+      ],
+      "area": "nombres",
+      "salioDe": "reportes/ · el filo del pie salió de listón en el membrete"
+    },
+    {
+      "id": "regla-escrita-dos-veces-se-desfasa",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Le agregué una regla al camino de a mano y el otro camino se quedó atrás",
+      "sintoma": "La herramienta hace lo correcto cuando llegas por un lado y lo incorrecto cuando llegas por el otro. Nadie lo nota hasta que sale un documento mezclado.",
+      "causa": "Cambiar de papel se podía por dos caminos —escogerlo a mano o que lo moviera el tipo de reporte— y la lógica estaba COPIADA en los dos. Al agregarle a la leyenda la regla de «sigue al papel», se la puse a uno solo. El otro dejaba papel de GERALDMED con la leyenda del Rembrandt.",
+      "porque": "Copiar diez renglones es más rápido que sacarlos a una función, y el día que se copian los dos caminos hacen lo mismo. El defecto no nace al copiar: nace en el cambio SIGUIENTE, cuando ya nadie recuerda que hay dos.",
+      "arreglo": "Una sola función que los dos caminos llaman —`cambiarPapel(cual)`—. No es limpieza: es que la regla no se pueda aplicar a medias.",
+      "comoCazarlo": "Probar el MISMO efecto por los dos caminos, no por el que uno acaba de tocar. La prueba que lo cazó llegaba por el camino del tipo de reporte, que es el que yo no había tocado.",
+      "consejo": "Cuando vayas a agregarle una regla a algo, primero `grep` de la línea de al lado. Si aparece dos veces, sácala a una función ANTES de agregar nada.",
+      "toca": [
+        "reportes/index.html"
+      ],
+      "senales": [
+        "funciona de un lado y del otro no",
+        "a veces sí a veces no",
+        "depende de cómo llegues",
+        "lógica copiada"
+      ],
+      "vecinas": [
+        "funcion-duplicada",
+        "marcador-que-existe-dos-veces",
+        "clase-css-que-ya-existia"
+      ],
+      "area": "nombres",
+      "salioDe": "reportes/ · papel de GERALDMED con la leyenda del Rembrandt"
     }
   ]
 }

@@ -129,6 +129,34 @@
         "ver-la-pantalla"
       ],
       "salioDe": "La Sala a 390px · «Salir» —el botón para irse— quedaba cortado contra el borde de la pantalla"
+    },
+    {
+      "id": "control-nativo-que-no-se-encoge",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "El campo de fecha se encimaba y ningún ancho lo arreglaba",
+      "sintoma": "En iPhone el campo de fecha se monta sobre el de al lado. Se le baja el ancho, se le pone `max-width`, y sigue igual.",
+      "causa": "`input[type=date]` en iOS es un control NATIVO, no una caja de texto. Trae un ancho intrínseco propio —el que necesita para dd/mm/aaaa— y `min-width`/`max-width` no se lo bajan.",
+      "porque": "En el escritorio sí se deja encoger, así que el arreglo «funciona» donde uno lo prueba. El defecto sólo existe en el teléfono, que es donde Carlos trabaja.",
+      "arreglo": "No pelearle el ancho: darle su propio renglón, completo. Es la única solución que no depende de cuánto mida el control en la versión de iOS de cada quien.",
+      "comoCazarlo": "Medir el ancho pintado del control contra el que se le declaró. Si no coinciden, no es un problema de layout: el control no obedece.",
+      "consejo": "Mi primer arreglo fue a pelear el ancho (`1.55fr`, `min-width:0`, `max-width:100%`) y Carlos me mandó exactamente la misma captura otra vez. Cuando el mismo reporte vuelve, el arreglo estaba en el lugar equivocado.",
+      "toca": [
+        "avisos/index.html"
+      ],
+      "senales": [
+        "la fecha se encima",
+        "se monta sobre el otro campo",
+        "no le baja el ancho",
+        "en el iphone se ve mal"
+      ],
+      "vecinas": [
+        "medir-el-texto-pintado",
+        "no-cabe-legible",
+        "barra-que-no-cabe-en-el-telefono"
+      ],
+      "area": "diseno",
+      "salioDe": "avisos/ · dos intentos hasta entender que el control no obedece"
     }
   ]
 }

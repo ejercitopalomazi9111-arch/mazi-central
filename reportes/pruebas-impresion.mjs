@@ -298,6 +298,14 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
       firma: (document.querySelector('.folio-pie').innerText.split('\n')[1] || ''),
       seEncima: zona.getBoundingClientRect().top < cab.getBoundingClientRect().bottom,
       cabeceraEsImagen: cab.tagName === 'IMG',
+      /* La marca de agua: de quién es la imagen, qué tan grande se pinta, y
+         qué dice la leyenda. Se lee del DOM ya pintado, no de la
+         configuración: lo que importa es lo que sale en el papel. */
+      aguaSrc: (() => { const i = h.querySelector('.agua img');
+                        return i ? new URL(i.src).pathname : null; })(),
+      aguaAlto: (() => { const i = h.querySelector('.agua img');
+                         return i ? Math.round(i.getBoundingClientRect().height) : 0; })(),
+      leyenda: (h.querySelector('.agua .letras') || {}).textContent || '',
     };
   });
 
@@ -312,11 +320,16 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
      el defecto que importa —un papel que firma con otra institución— no se ve
      en uno solo: se ve comparándolos. */
   const ESPERADO = {
-    mazi:        { firma:/grupo mazi/i,   imagen:false },
-    rembrandt:   { firma:/rembrandt/i,    imagen:true  },
-    presidencia: { firma:/sociedad/i,     imagen:false },
-    geraldmed:   { firma:/geraldmed/i,    imagen:false },
+    mazi:        { firma:/grupo mazi/i,   imagen:false, agua:/paloma-simple\.svg$/,
+                   leyenda:/grupo mazi/i },
+    rembrandt:   { firma:/rembrandt/i,    imagen:true,  agua:/escudo-rembrandt\.png$/,
+                   leyenda:/instituto rembrandt/i },
+    presidencia: { firma:/sociedad/i,     imagen:false, agua:/escudo-rembrandt\.png$/,
+                   leyenda:/sociedad de alumnos/i },
+    geraldmed:   { firma:/geraldmed/i,    imagen:false, agua:/logo-ambulancia\.png$/,
+                   leyenda:/geraldmed/i },
   };
+  const altos = {};
   for(const [cual, esp] of Object.entries(ESPERADO)){
     await cambiar(cual);
     const m = await mide();
@@ -329,7 +342,26 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
     ok(cual + (esp.imagen ? ' · usa su membrete REAL, que es una imagen'
                           : ' · se COMPONE, no finge un membrete que no existe'),
        m.cabeceraEsImagen === esp.imagen);
+
+    /* ── LA MARCA DE AGUA ─────────────────────────────────────────────────
+       El defecto que reportó Carlos: los cuatro papeles llevaban la paloma de
+       Grupo Mazi. En el suyo tiene sentido; debajo del membrete de GERALDMED
+       dice que Mazi firmó la papelería de otro. */
+    ok(cual + ' · la marca de agua es SUYA, no la de la casa',
+       esp.agua.test(m.aguaSrc || ''), 'trae ' + m.aguaSrc);
+    ok(cual + ' · la leyenda de la marca de agua también es suya',
+       esp.leyenda.test(m.leyenda), 'dice «' + m.leyenda + '»');
+    altos[cual] = m.aguaAlto;
   }
+
+  /* El escudo es CUADRADO y la paloma y la ambulancia son apaisadas (1.7:1).
+     Al mismo ancho el escudo se pinta ~70% más alto y se come la hoja, así
+     que cada uno trae su propio ancho. Se comprueba midiendo lo pintado: que
+     ninguna marca de agua se dispare respecto de las otras. */
+  const alturas = Object.values(altos);
+  ok('ninguna marca de agua se sale de escala frente a las otras',
+     Math.max(...alturas) / Math.min(...alturas) < 1.45,
+     'alturas pintadas: ' + JSON.stringify(altos));
 
   /* Y que el papel siga al cargo sin pisarle una elección hecha a mano: ése es
      el defecto clásico de los valores «inteligentes». */
@@ -353,6 +385,21 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
   ok('pero si lo escogiste a mano, cambiar de tipo NO te lo quita',
      await p3.inputValue('#oInstitucion') === 'geraldmed',
      'se lo llevó el valor por defecto');
+
+  /* La leyenda se mueve sola con el papel, PERO una que Carlos haya escrito no
+     se toca. Es la misma regla del papel-sigue-al-cargo, y el mismo defecto
+     clásico si se hace mal: un valor «inteligente» que borra texto ajeno. */
+  await p3.selectOption('#oInstitucion','mazi'); await p3.waitForTimeout(400);
+  ok('la leyenda sigue al papel cuando venía de la institución anterior',
+     /grupo mazi/i.test(await p3.inputValue('#oLeyenda')),
+     'quedó «' + await p3.inputValue('#oLeyenda') + '»');
+
+  const MIA = 'ESTO LO ESCRIBIÓ CARLOS';
+  await p3.fill('#oLeyenda', MIA); await p3.waitForTimeout(400);
+  await p3.selectOption('#oInstitucion','geraldmed'); await p3.waitForTimeout(500);
+  ok('pero una leyenda escrita a mano NO se la lleva el cambio de papel',
+     await p3.inputValue('#oLeyenda') === MIA,
+     'se la comió: quedó «' + await p3.inputValue('#oLeyenda') + '»');
 }
 
 await b.close();

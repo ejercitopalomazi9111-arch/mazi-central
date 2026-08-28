@@ -466,12 +466,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 
 .hoja .membrete-sup.compuesto.geraldmed img{height:22mm}
 
-/* marca de agua — la paloma de Grupo Mazi */
+/* Marca de agua. Cada institución trae la suya: la imagen, su ancho y su
+   leyenda salen de INSTITUCIONES, no de aquí. El ancho tiene que ser por
+   institución porque la paloma y la ambulancia son apaisadas (1.7:1) y el
+   escudo es cuadrado: al mismo ancho, el escudo se pinta 70% más alto y
+   parece otra cosa. */
 .hoja .agua{
   position:absolute; inset:0; display:grid; place-items:center;
   pointer-events:none; z-index:0;
 }
-.hoja .agua svg{width:118mm; height:auto; transform:rotate(-21deg); opacity:.055}
 .hoja .agua .letras{
   position:absolute; font-family:var(--ui); font-weight:800; letter-spacing:.32em;
   font-size:8.5pt; color:#000; opacity:.055; transform:rotate(-21deg) translateY(38mm);
@@ -1043,10 +1046,10 @@ El día ...
     </div>
 
     <h2 class="rotulo">Marca de agua y sello <span class="regla"></span></h2>
-    <label class="campo"><span>Marca de agua de Grupo Mazi</span>
+    <label class="campo"><span>Marca de agua <b id="aguaDeQuien"></b></span>
       <select id="oAgua">
-        <option value="paloma" selected>Paloma + leyenda</option>
-        <option value="solo">Sólo la paloma</option>
+        <option value="paloma" selected>Logo + leyenda</option>
+        <option value="solo">Sólo el logo</option>
         <option value="texto">Sólo la leyenda</option>
         <option value="no">Sin marca de agua</option>
       </select></label>
@@ -1486,6 +1489,8 @@ const INSTITUCIONES = {
     compuesta: { logo:'../marca/logo/paloma-simple.svg', lema:'Jefatura de grupo · 3.1',
                  clase:'mazi' },
     pie:'Grupo Mazi · si no existe la herramienta, se construye la herramienta',
+    agua:{ logo:'../marca/logo/paloma-simple.svg', ancho:118,
+           leyenda:'GRUPO MAZI · DOCUMENTO ORIGINAL' },
     tinta:'#2B1B3D', acento:'#AC27FF',
     tope:40, fondo:30,
   },
@@ -1497,6 +1502,8 @@ const INSTITUCIONES = {
     nombre: 'Instituto Rembrandt',
     membrete: { sup:'formato/membrete-superior.png', inf:'formato/membrete-inferior.png' },
     pie:'Instituto Rembrandt · Bachillerato Tecnológico del Estado de Querétaro',
+    agua:{ logo:'escudo-rembrandt.png', ancho:80,
+           leyenda:'INSTITUTO REMBRANDT · DOCUMENTO ORIGINAL' },
     tinta:'#002060', acento:'#C00000',
     tope:34, fondo:42,
   },
@@ -1513,6 +1520,8 @@ const INSTITUCIONES = {
     compuesta: { logo:'escudo-rembrandt.png', lema:'Instituto Rembrandt · Presidencia',
                  clase:'presidencia' },
     pie:'Sociedad de Alumnos · Instituto Rembrandt',
+    agua:{ logo:'escudo-rembrandt.png', ancho:80,
+           leyenda:'SOCIEDAD DE ALUMNOS · DOCUMENTO ORIGINAL' },
     tinta:'#5A1319', acento:'#CA2229',
     tope:40, fondo:30,
   },
@@ -1526,6 +1535,8 @@ const INSTITUCIONES = {
     compuesta: { logo:'geraldmed/logo-ambulancia.png', lema:'Atención prehospitalaria',
                  clase:'geraldmed' },
     pie:'GERALDMED · Atención prehospitalaria',
+    agua:{ logo:'geraldmed/logo-ambulancia.png', ancho:120,
+           leyenda:'GERALDMED · DOCUMENTO ORIGINAL' },
     tinta:'#454C78', acento:'#92D9CF',
     tope:42, fondo:30,
   },
@@ -1543,7 +1554,11 @@ const FORMATO_OFICIAL = {
   fuente:'"Arial Narrow", "Helvetica Neue Condensed Bold", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif',
   tamano:'11pt', inter:'1.5', alinea:'justify',
   lado:30, tope:34, fondo:42,
-  agua:'paloma', opacidad:6, leyenda:'GRUPO MAZI · DOCUMENTO ORIGINAL',
+  /* La leyenda arranca en la de la institución con la que arranca el papel.
+     Antes decía GRUPO MAZI con `institucion:'rembrandt'` puesto dos renglones
+     abajo: un documento de la escuela firmado con la marca de agua de la
+     empresa. */
+  agua:'paloma', opacidad:6, leyenda:'INSTITUTO REMBRANDT · DOCUMENTO ORIGINAL',
   sello:'si', membrete:'todas', institucion:'rembrandt',
   /* Cuánto se encoge la hoja al imprimir. Safari en iPhone se queda con un
      margen suyo que no se puede apagar; sin esto, cada hoja se parte en dos. */
@@ -1941,10 +1956,11 @@ function armaHoja(f, primera){
   if(conMembrete) h.appendChild(cabecera(inst));
   if(f.agua !== 'no'){
     const a = document.createElement('div'); a.className = 'agua';
+    const marca = inst.agua || INSTITUCIONES.mazi.agua;
     if(f.agua === 'paloma' || f.agua === 'solo'){
       const p = document.createElement('img');
-      p.src = '../marca/logo/paloma-simple.svg'; p.alt = '';
-      p.style.width = '118mm'; p.style.transform = 'rotate(-21deg)';
+      p.src = marca.logo; p.alt = '';
+      p.style.width = marca.ancho + 'mm'; p.style.transform = 'rotate(-21deg)';
       p.style.opacity = (f.opacidad/100);
       p.style.filter = 'grayscale(1) brightness(.35)';
       a.appendChild(p);
@@ -3416,6 +3432,15 @@ conectarFormato('#oSello','sello');   conectarFormato('#oMembrete','membrete');
 /* El aviso de qué papel es y qué le falta. Se dice en la pantalla y no sólo en
    el código, porque quien va a imprimirlo es Carlos y no yo. */
 function avisoPapel(){
+  /* De quién es la marca de agua, escrito donde se escoge. Es el defecto que
+     reportó Carlos: los cuatro papeles llevaban la paloma de Mazi, y en un
+     documento que le entrega a GERALDMED eso no se lee como un sello de
+     origen, se lee como que Mazi firmó su papelería. */
+  const q = $('#aguaDeQuien');
+  if(q){
+    const i = INSTITUCIONES[R.formato.institucion] || INSTITUCIONES.rembrandt;
+    q.textContent = '· ' + i.nombre;
+  }
   const el = $('#avisoPapel'); if(!el) return;
   const cual = R.formato.institucion;
   el.innerHTML =
@@ -3429,13 +3454,39 @@ function avisoPapel(){
       : 'Compuesto con su logo. GERALDMED no nos ha dado un .docx con membrete.';
 }
 
-$('#oInstitucion').addEventListener('input', () => {
+/* ══ CAMBIAR DE PAPEL · UNA SOLA VEZ, EN UN SOLO LUGAR ═════════════════════
+   Se llega aquí por dos caminos —Carlos escoge el papel a mano, o lo mueve el
+   tipo de reporte (PAPEL_POR_AREA)— y los dos tienen que hacer LO MISMO.
+
+   Estaba escrito dos veces, y por eso nació un defecto: cuando le agregué a la
+   leyenda la regla de «sigue al papel», se la puse sólo al camino de a mano.
+   El otro camino dejaba papel de GERALDMED con la leyenda del Rembrandt: un
+   documento con dos instituciones encima, que es exactamente lo que Carlos
+   reportó. Lo cazó una prueba, no la vista.
+
+   Lo que se mueve solo se mueve SÓLO si seguía siendo lo que traía el papel
+   anterior. Lo que Carlos tocó a mano no se toca: pisarle una elección —o
+   peor, un texto que él redactó— es el defecto clásico de los valores
+   «inteligentes». */
+function cambiarPapel(cual){
   const antes = INSTITUCIONES[R.formato.institucion] || INSTITUCIONES.rembrandt;
-  const hoy   = INSTITUCIONES[$('#oInstitucion').value] || INSTITUCIONES.rembrandt;
+  const hoy   = INSTITUCIONES[cual] || INSTITUCIONES.rembrandt;
+  /* Los márgenes: el membrete real de Rembrandt es una imagen alta y la
+     cabecera compuesta de GERALDMED no. Dejar los 34mm de Rembrandt sobre una
+     cabecera de 20 deja un hueco que parece error de impresión. */
   if(R.formato.tope  === antes.tope)  { R.formato.tope  = hoy.tope;  $('#oTope').value  = hoy.tope; }
   if(R.formato.fondo === antes.fondo) { R.formato.fondo = hoy.fondo; $('#oFondo').value = hoy.fondo; }
-  R.formato.institucion = $('#oInstitucion').value;
+  if(R.formato.leyenda === (antes.agua && antes.agua.leyenda)){
+    R.formato.leyenda = hoy.agua.leyenda;
+    $('#oLeyenda').value = hoy.agua.leyenda;
+  }
+  R.formato.institucion = cual;
+  $('#oInstitucion').value = cual;
   avisoPapel();
+}
+
+$('#oInstitucion').addEventListener('input', () => {
+  cambiarPapel($('#oInstitucion').value);
   guardarLuego(); repintar();
 });
 /* La hoja mide esto y no se negocia: es tamaño carta. */
@@ -3501,13 +3552,7 @@ $('#tipos').addEventListener('click', e => {
   const sugerido = PAPEL_POR_AREA[T.area];
   const eraSugerido = Object.values(PAPEL_POR_AREA).includes(R.formato.institucion);
   if(sugerido && eraSugerido && R.formato.institucion !== sugerido){
-    const antes = INSTITUCIONES[R.formato.institucion] || INSTITUCIONES.rembrandt;
-    const hoy   = INSTITUCIONES[sugerido];
-    if(R.formato.tope  === antes.tope)  { R.formato.tope  = hoy.tope;  $('#oTope').value  = hoy.tope; }
-    if(R.formato.fondo === antes.fondo) { R.formato.fondo = hoy.fondo; $('#oFondo').value = hoy.fondo; }
-    R.formato.institucion = sugerido;
-    $('#oInstitucion').value = sugerido;
-    avisoPapel();
+    cambiarPapel(sugerido);
   }
 
   pintarTipos(); guardar(); repintar();
