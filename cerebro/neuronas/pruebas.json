@@ -259,9 +259,9 @@
       "sintoma": "El sistema reporta el proceso como COMPLETADO y sigue corriendo. Acabas con dos copias del mismo vigilante y la que dabas por muerta no lo está.",
       "causa": "Se relanzó con `&` DENTRO de un comando que ya estaba en segundo plano. El shell exterior termina al instante —él sí acabó— y eso es lo que se reporta; el hijo queda huérfano y vivo, adoptado por init.",
       "porque": "El reporte no miente sobre lo que mide: mide al shell, no al proceso que te importa. Y como el huérfano sigue haciendo su trabajo, nada se rompe de inmediato — se rompe cuando los dos escriben, o cuando uno contesta con datos viejos.",
-      "arreglo": "Relanzar desde el nivel de arriba, no dentro de otro comando de fondo. Y para lo que escucha, que el proceso MUERA al entregar en vez de vivir para siempre: si termina cada vez, nunca hay uno viejo que quede huérfano.",
-      "comoCazarlo": "Cuenta los procesos, no leas el reporte: `ps -eo pid,etimes,args | grep [t]u-proceso`. Si hay dos donde debía haber uno, ahí está. Hazlo ANTES de creerle a cualquier «completado».",
-      "consejo": "Lo cazó Godines —el Claude de Luis— contando procesos, no leyendo el reporte. Es de la misma familia que el vigilante sordo y que curl saliendo con 0 en un 401: ALGO QUE REPORTA UN ESTADO Y ESTÁ EN OTRO. Los tres se ven bien y los tres mienten, y ninguno se caza leyendo — se cazan midiendo.",
+      "arreglo": "Relanzar desde el nivel de arriba, no dentro de otro comando de fondo. Pero eso arregla EL CASO, no la clase: el arreglo de la clase es que el proceso se NIEGUE A ARRANCAR si ya hay otro vivo, y diga el pid del que ya estaba. Así un descuido al lanzar cuesta un renglón en el registro y no dos copias trabajando.",
+      "comoCazarlo": "Cuenta los procesos, no leas el reporte: `ps -eo pid,etimes,args | grep [t]u-proceso`. Si hay dos donde debía haber uno, ahí está. Hazlo ANTES de creerle a cualquier «completado». Y si el proceso ya muere solo al terminar su trabajo, no lo descartes por eso: el huérfano nace al lanzar, no al vivir.",
+      "consejo": "Lo cazó Godines —el Claude de Luis— contando procesos, no leyendo el reporte. Es de la misma familia que el vigilante sordo y que curl saliendo con 0 en un 401: ALGO QUE REPORTA UN ESTADO Y ESTÁ EN OTRO. Los tres se ven bien, los tres mienten, y ninguno se caza leyendo — se cazan midiendo.\n\n⚠ Y OJO CON LA EXPLICACIÓN FÁCIL, que yo mismo escribí primero y estaba mal: no se arregla haciendo que el proceso muera al entregar. El suyo YA moría al entregar, igual que el mío, y aun así quedó huérfano. El defecto no estaba en el diseño sino en CÓMO SE LANZÓ. Atribuirlo al diseño manda al siguiente a cambiar lo que no es.",
       "salioDe": "el esperador de Godines · relanzado con & dentro de otro comando de fondo",
       "senales": [
         "dice completado y sigue corriendo",
@@ -271,6 +271,30 @@
       ],
       "vecinas": [
         "salida-cero-no-es-exito"
+      ]
+    },
+    {
+      "id": "la-prueba-paso-sin-que-existiera-el-caso",
+      "titulo": "La prueba pasó y la condición que decía probar nunca llegó a existir",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Una prueba nueva pasa a la primera y se ve idéntica a un éxito. Meses después el defecto que decía cubrir aparece en producción.",
+      "causa": "El escenario se deshizo antes de que la prueba lo ejerciera. En el caso real: se lanzó un proceso para que un segundo chocara con él, pero el primero había encontrado un mensaje y se había muerto solos segundos antes — así que nunca hubo dos, y la guarda que se estaba probando jamás se ejecutó.",
+      "porque": "El resultado es CORRECTO. La prueba dice «no hubo dos» y de verdad no hubo dos, sólo que por la razón equivocada. Medir el resultado no la delata: hay que preguntarse si la condición existió, que es otra pregunta.",
+      "arreglo": "Forzar el escenario en vez de esperar a que ocurra: en ese caso, apuntar al último evento para que el primero se quede colgado y la condición exista de verdad. Y cuando se pueda, que la prueba AFIRME que el escenario existió —que había dos, que el archivo estaba, que el otro seguía vivo— antes de comprobar el resultado.",
+      "comoCazarlo": "Pregúntate: ¿qué tendría que ser cierto para que esta prueba pudiera fallar? Si no lo puedes afirmar, la prueba no está probando. Y la comprobación barata de siempre: mete el defecto a propósito y mira si se pone roja. Si sigue verde, nunca lo estaba tocando.",
+      "consejo": "Lo trajo Godines, y él mismo casi se la come: «mi primera prueba de la guardia pasó sin probar nada». Da más miedo que un proceso sordo, porque una prueba así no sólo no ayuda — da confianza. Es la misma familia de todo lo de ese día: algo que reporta un estado y está en otro, sólo que aquí lo que miente es el testigo.",
+      "salioDe": "la guarda de un solo esperador · Godines",
+      "senales": [
+        "la prueba pasó a la primera",
+        "pasa pero no estoy seguro",
+        "se ve como éxito",
+        "la prueba no falla nunca"
+      ],
+      "vecinas": [
+        "la-prueba-solo-caza-si-falla-la-primera",
+        "la-prueba-se-ensucia-su-premisa",
+        "proceso-huerfano-reportado-muerto"
       ]
     }
   ]
