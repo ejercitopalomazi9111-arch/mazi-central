@@ -253,6 +253,10 @@ export class Sala {
       this.hilo    = await ctx.storage.get('hilo')    || [];
       this.gente   = await ctx.storage.get('gente')   || {};
       this.vueltas = await ctx.storage.get('vueltas') || 0;
+      /* Si el freno de este episodio ya recibió su resumen. Se guarda porque
+         una sala frenada puede sobrevivir a un reinicio del contenedor, y sin
+         esto el resumen se podría volver a colar en cada reinicio. */
+      this.resumido = await ctx.storage.get('resumido') || false;
       this.proyectos = await ctx.storage.get('proyectos') || [];
       this.serie   = await ctx.storage.get('serie')   || 0;
       /* Las llaves de ESTA sala, `llave → cuenta`. Vacío = sala abierta. */
@@ -307,7 +311,7 @@ export class Sala {
 
   async guardar(){
     await this.ctx.storage.put({
-      hilo: this.hilo, gente: this.gente, vueltas: this.vueltas,
+      hilo: this.hilo, gente: this.gente, vueltas: this.vueltas, resumido: this.resumido,
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
     });
@@ -473,7 +477,7 @@ export class Sala {
        — nadie paga por ellas y castigarlas dejaría al que se topó sin poder
        ni avisar que ya volvió. */
     const cuenta = evento.tipo !== 'sistema' && evento.tipo !== 'limite';
-    if(cuenta && evento.de?.tipo === 'humano') this.vueltas = 0;
+    if(cuenta && evento.de?.tipo === 'humano'){ this.vueltas = 0; this.resumido = false; }
     else if(cuenta && evento.de?.tipo !== 'humano') this.vueltas++;
 
     await this.guardar();
@@ -786,14 +790,40 @@ export class Sala {
                              { status:400 });
       }
 
-      /* EL FRENO. Antes que nada, porque de nada sirve después. */
+      /* EL FRENO. Antes que nada, porque de nada sirve después.
+
+         ⚠ Y DEJA PASAR EXACTAMENTE UN RESUMEN. La versión anterior rechazaba
+         TODO al frenar, incluido el `bloqueo` que su propio mensaje de error
+         pedía escribir. O sea que el sistema mandaba hacer algo y no dejaba
+         hacerlo: el agente frenado se quedaba mudo, y la persona que llegaba a
+         desatorar la sala encontraba doce mensajes sin nadie que dijera dónde
+         iba la cosa — que es justamente lo que el freno existe para producir.
+
+         Lo cazé chocando contra él: quise poner el resumen que el error me
+         pidió y me lo rechazó con el mismo texto.
+
+         Uno solo, y lo que lo controla es la marca `resumido`, no el contador
+         —el contador ya está por encima del tope y ahí se queda—. Con más de
+         uno el freno no frena nada: dos agentes «resumiendo» son dos agentes
+         hablando. */
       if(quien.tipo !== 'humano' && this.vueltas >= TOPE_VUELTAS){
-        return Response.json({
-          error: 'Freno de vueltas. Llevan ' + this.vueltas + ' mensajes seguidos entre ' +
-                 'agentes sin que hable una persona. Resume dónde va la discusión, dilo en ' +
-                 'la sala como tipo "bloqueo", y espera a que Carlos o su compañero decidan.',
-          freno: true, vueltas: this.vueltas, tope: TOPE_VUELTAS,
-        }, { status:429 });
+        const esResumen = tipo === 'bloqueo' && !this.resumido;
+        if(!esResumen){
+          return Response.json({
+            error: 'Freno de vueltas. Llevan ' + this.vueltas + ' mensajes seguidos entre ' +
+                   'agentes sin que hable una persona. ' +
+                   (this.resumido
+                     ? 'El resumen ya está puesto: ahora sí toca esperar a que Carlos o su ' +
+                       'compañero decidan.'
+                     : 'Resume dónde va la discusión, dilo en la sala como tipo "bloqueo" ' +
+                       '(ése SÍ pasa, una vez), y espera a que Carlos o su compañero decidan.'),
+            freno: true, vueltas: this.vueltas, tope: TOPE_VUELTAS,
+            /* Se dice el tipo exacto para que un agente no tenga que adivinarlo
+               del texto en español. */
+            salida: this.resumido ? null : { tipo:'bloqueo' },
+          }, { status:429 });
+        }
+        this.resumido = true;
       }
 
       const malo = revisarAdjuntos(c.adjuntos);

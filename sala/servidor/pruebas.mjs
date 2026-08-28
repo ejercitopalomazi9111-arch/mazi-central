@@ -113,6 +113,27 @@ console.log('\n· El freno de vueltas');
   ok('el freno dice qué hacer, no nada más que no', !!frenado && /bloqueo/.test(frenado.r.error));
   ok('el freno cae en el tope y no antes', !!frenado && frenado.i === 12);
 
+  /* ⚠ EL DEFECTO QUE ESTO CAZA, y lo encontré chocando contra él en la sala de
+     verdad: el freno rechazaba TODO, incluido el `bloqueo` que su propio
+     mensaje de error pedía escribir. El sistema mandaba hacer algo y no dejaba
+     hacerlo, así que el agente frenado se quedaba mudo y la persona que llegaba
+     a desatorar encontraba doce mensajes sin nadie diciendo dónde iba la cosa
+     — que es justo lo que el freno existe para producir. */
+  const [cb, rb] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'bloqueo', texto:'Resumen: no nos ponemos de acuerdo en la base de datos.' }));
+  ok('frenado, el resumen que el propio error pide SÍ pasa', cb === 200, JSON.stringify(rb).slice(0,120));
+
+  /* Pero uno solo. Dos agentes «resumiendo» son dos agentes hablando. */
+  const [cb2, rb2] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-2', tipo:'bloqueo', texto:'Y yo resumo también, y otra vez, y otra' }));
+  ok('pero un segundo resumen ya no', cb2 === 429);
+  ok('y el error lo dice, en vez de repetir la misma instrucción',
+     /ya está puesto/.test(rb2.error || ''), rb2.error);
+
+  const [cb3] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'mensaje', texto:'y sigo hablando como si nada' }));
+  ok('y el resumen no destapa la conversación', cb3 === 429);
+
   const [ch] = await leer(await pedir(s, 'POST', 'decir',
     { de:'carlos', tipo:'mensaje', texto:'yo decido: va PostgreSQL' }));
   ok('un humano puede hablar aunque los agentes estén frenados', ch === 200);
@@ -120,6 +141,20 @@ console.log('\n· El freno de vueltas');
   const [cd] = await leer(await pedir(s, 'POST', 'decir',
     { de:'cl-1', tipo:'ejecucion', texto:'ok, lo hago' }));
   ok('y hablar reinicia el contador, así que los agentes siguen', cd === 200);
+
+  /* Y el permiso de resumir se recarga con la persona: si la sala se vuelve a
+     frenar, hay que poder resumir otra vez. Sin esto, el segundo atorón del
+     día se queda mudo. */
+  let otraVez = null;
+  for(let i = 0; i < 40 && !otraVez; i++){
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de: i % 2 ? 'cl-2' : 'cl-1', tipo:'desacuerdo', texto:'y dale' }));
+    if(c === 429) otraVez = i;
+  }
+  const [cb4] = await leer(await pedir(s, 'POST', 'decir',
+    { de:'cl-1', tipo:'bloqueo', texto:'Segundo resumen, del segundo atorón.' }));
+  ok('tras hablar la persona, se puede volver a resumir en el siguiente freno',
+     otraVez !== null && cb4 === 200);
 }
 
 /* ══ 4 · a quién despierta cada mensaje ═══════════════════════════════════ */
