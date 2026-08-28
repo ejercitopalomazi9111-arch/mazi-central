@@ -649,7 +649,26 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
 ## 9. Git
 
 - Repo principal: `mazi-central` · rama de trabajo: `claude/juego-oregon-3kmicc`
-- `main` es lo que sirve GitHub Pages. Se publica ahí **a propósito**, no por accidente.
+- **`main` es lo que se publica**, **a propósito** y no por accidente. Pero el que publica ya no es
+  GitHub Pages: **es Cloudflare**. No hay `.github/workflows/` en este repo; lo que hay es
+  `wrangler.jsonc` en la raíz, y está ahí justo para esto.
+- **Nunca se sirve la raíz del repo.** Cloudflare corre `node build.mjs`, que arma `dist/` con una
+  lista explícita de lo que sí va. Servir la raíz publicaría `.claude/`, **este archivo** —que trae
+  cosas del negocio— y el código del servidor. Si algo no apareció publicado, la lista está a la
+  vista en `build.mjs` y ahí se acaba el misterio.
+- **La dirección de verdad es `mazi-central.palomazi9111.workers.dev`**, no `github.io`. La de
+  GitHub sigue en pie sólo mientras el repo sea público y **se apaga sola** en cuanto pase a
+  privado —servir un repo privado es función de paga de GitHub y Cloudflare lo hace gratis: por eso
+  la mudanza—. Así que **`github.io` no se escribe en ningún metadato, manual ni enlace**: ya pasó
+  una vez y hubo que corregir las etiquetas de `sitio/index.html` que mandaban a Google y a
+  WhatsApp a la dirección que está por apagarse.
+- **El servidor de Fadori no se despliega desde aquí.** Vive en `servidor/` con su propio
+  `wrangler.jsonc` y se publica aparte. Son dos cosas y mezclarlas es como se termina publicando el
+  código del servidor.
+- Los pasos que sólo puede dar Carlos —crear el proyecto en Cloudflare, conectar el servidor, pasar
+  el repo a privado— y **qué se rompe con cada uno**, en [`DESPLIEGUE.md`](DESPLIEGUE.md). Si el
+  despliegue todavía no está en pie o el repo sigue público, falta un paso de ahí; no es que esto
+  esté mal configurado.
 - Repo aparte: `torre-infinita` (misma rama).
 - El entorno se reinicia y retrocede la rama local. Si pasa: `git fetch origin <rama>` y rebase
   encima. **Lo empujado sobrevive; lo no commiteado no.**
