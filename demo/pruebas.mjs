@@ -21,7 +21,27 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 const OUT = process.env.SALIDA || '/tmp';
-const b=await chromium.launch({ args:['--use-gl=swiftshader','--enable-unsafe-swiftshader'] });
+/* La dirección se puede cambiar para correr esto CONTRA LO PUBLICADO y no sólo
+   contra el disco. No es un lujo: ya me pasó dar por bueno un despliegue
+   leyendo el reporte del merge en vez de lo que el servidor entrega.
+
+   ⚠ DESDE EL CONTENEDOR DEL CLAUDE DE LUIS ESTO NO CORRE CONTRA INTERNET, y lo
+   digo aquí para que nadie pierda la tarde que perdí yo. La salida pasa por un
+   proxy que abre el TLS con su propia autoridad (/root/.ccr/ca-bundle.crt);
+   `curl` la trae del sistema, pero Chromium tiene su propio almacén y no la
+   conoce, así que contesta ERR_CONNECTION_RESET. No se arregla apagando la
+   verificación — eso no se hace. Desde ahí lo publicado se comprueba con
+   `curl` y se mira que los bytes servidos sean los nuevos; el navegador corre
+   contra el disco, que es el mismo archivo. En un runner con salida directa
+   esta variable sí sirve tal cual. */
+const SITIO = process.env.SITIO || 'http://127.0.0.1:8792/demo/';
+/* El proxy sólo hace falta para correr esto contra lo publicado: la salida a
+   internet del contenedor pasa por ahí, y Chromium no lee HTTPS_PROXY solo. */
+const PROXY = process.env.HTTPS_PROXY || process.env.https_proxy;
+const b=await chromium.launch({
+  args:['--use-gl=swiftshader','--enable-unsafe-swiftshader'],
+  ...(SITIO.startsWith('http://127.') || !PROXY ? {} : { proxy:{ server:PROXY } }),   /* ver la nota de arriba */
+});
 let fallas=0;
 const ok=(c,t)=>{ console.log((c?'  ✓ ':'  ✗ ')+t); if(!c) fallas++; };
 
@@ -29,7 +49,7 @@ for(const [n,w,h] of [['390',390,844],['320',320,720],['1440',1440,900]]){
   console.log('\n── '+n+' px ──');
   const pg=await (await b.newContext({viewport:{width:w,height:h},deviceScaleFactor:2})).newPage();
   const err=[]; pg.on('console',m=>m.type()==='error'&&err.push(m.text())); pg.on('pageerror',e=>err.push('PAGEERROR '+e.message));
-  await pg.goto('http://127.0.0.1:8792/demo/',{waitUntil:'networkidle'});
+  await pg.goto(SITIO,{waitUntil:'networkidle'});
   await pg.waitForTimeout(1000);
 
   /* MEDIR LO PINTADO, NO LA CAJA — la neurona medir-el-texto-pintado. Se toma
@@ -190,7 +210,7 @@ console.log('\n── con «menos movimiento» ──');
 {
   const ctx=await b.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
   const pg=await ctx.newPage();
-  await pg.goto('http://127.0.0.1:8792/demo/',{waitUntil:'networkidle'});
+  await pg.goto(SITIO,{waitUntil:'networkidle'});
   await pg.waitForTimeout(400);
   const r=await pg.evaluate(()=>{
     const h1=document.querySelector('h1');
@@ -220,7 +240,7 @@ console.log('\n── con «menos movimiento» ──');
 console.log('\n── sin JavaScript ──');
 const ctx=await b.newContext({viewport:{width:390,height:844},javaScriptEnabled:false});
 const pg=await ctx.newPage();
-await pg.goto('http://127.0.0.1:8792/demo/',{waitUntil:'load'});
+await pg.goto(SITIO,{waitUntil:'load'});
 const sin=await pg.evaluate(()=>({
   quieto:document.documentElement.classList.contains('quieto'),
   filas:document.querySelectorAll('#tabla tbody tr').length,
