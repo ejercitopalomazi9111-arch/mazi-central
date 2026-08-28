@@ -723,6 +723,23 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 }
 .barrer .btn.peligro:disabled{opacity:.5}
 
+/* El aviso de que entraste con otra llave. Va arriba de todo y NO se va solo:
+   los letreros de paso duran tres segundos, y esto no es un paso — es que
+   estás firmando como otra persona. Se queda hasta que se decide. */
+.cambio-llave{
+  flex:0 0 auto; padding:11px 14px; background:#3A1020; color:var(--hueso);
+  border-bottom:1px solid var(--rojo); font-size:13px; line-height:1.45;
+}
+.cambio-llave[hidden]{display:none}
+.cambio-llave b{color:#FFB3C6}
+.cambio-llave .fila-llave{display:flex; gap:8px; margin-top:9px; flex-wrap:wrap}
+.cambio-llave button{
+  flex:1 1 auto; min-height:40px; padding:0 14px; border-radius:9px; cursor:pointer;
+  font:inherit; font-weight:650; border:1px solid var(--rojo);
+  background:var(--rojo); color:#2A0512;
+}
+.cambio-llave button.calma{background:transparent; color:var(--hueso); border-color:var(--borde-vivo)}
+
 .escribiendo{
   flex:0 0 auto; padding:5px 14px 7px; font-size:12.5px; line-height:1.35;
   color:var(--tenue); background:var(--vacio);
@@ -1197,6 +1214,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <button class="pest" data-vista="taller3d">Taller 3D</button>
 </div>
 
+<div class="cambio-llave" id="cambioLlave" hidden></div>
 <div class="letreros" id="letreros" aria-live="polite" aria-atomic="false"></div>
 <div class="hilo" id="hilo"></div>
 <div class="marco3d" id="marco3d" hidden></div>
@@ -1379,13 +1397,56 @@ const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.d
    Va en localStorage y no en la URL a propósito: un link con la llave adentro
    se reenvía por WhatsApp sin pensarlo, y ahí ya no es una llave. Se pone una
    vez con ?llave=… y de ahí vive en el teléfono. */
+/* ⚠ ESTO PISABA LA LLAVE SIN PREGUNTAR, y así se pierde una sala.
+   Lo reportó Carlos: «entré con mi link en otro navegador y valió, me mete
+   como Luis». Y no fue error suyo. Cualquier link con `?llave=` REEMPLAZABA
+   la llave guardada, en silencio, sin poder deshacerlo — y encima la página
+   borra el `?llave=` de la barra, así que después no queda ni rastro de qué
+   pasó. Basta abrir una vez el link de invitación que acabas de acuñar, aunque
+   sea para ver si sirve, y dejas de ser el dueño de tu propia sala.
+
+   Y lo que lo volvía peligroso de verdad: «Este es tu link» seguía diciendo
+   «tuyo» con la llave del otro adentro. O sea que después le mandas a alguien
+   «mi link» y le estás repartiendo la llave de Luis.
+
+   Lo que cambia: la llave nueva SÍ entra —el link que se explica solo es todo
+   el punto de esto— pero la anterior **se guarda**, y al llegar con una
+   distinta se avisa en pantalla con un botón para regresar. El pecado no era
+   cambiar de llave: era hacerlo callado y sin vuelta. */
+let LLAVE_ANTERIOR = '';
+let CAMBIO_DE_LLAVE = false;
 const LLAVE = (() => {
   const dada = params.get('llave');
   try{
+    const guardada = localStorage.getItem('salaLlave') || '';
     if(dada){ localStorage.setItem('salaLlave', dada); return dada; }
-    return localStorage.getItem('salaLlave') || '';
+    if(dada) return dada;
+    return guardada;
   }catch(e){ return dada || ''; }
 })();
+try{ LLAVE_ANTERIOR = LLAVE_ANTERIOR || localStorage.getItem('salaLlaveAnterior') || ''; }catch(e){}
+
+/* Volver a la llave de antes. Va aquí y no dentro de la hoja de llaves porque
+   quien la necesita puede estar viendo cualquier pantalla, y porque hasta que
+   no vuelve a ser él mismo, todo lo que haga queda firmado con la cuenta
+   equivocada. */
+function volverALlaveAnterior(){
+  if(!LLAVE_ANTERIOR) return;
+  try{
+    localStorage.setItem('salaLlave', LLAVE_ANTERIOR);
+    localStorage.removeItem('salaLlaveAnterior');
+  }catch(e){}
+  /* Se recarga conservando lo que ya traía la dirección y quitando SÓLO
+     `llave`. Lo primero que escribí armaba la dirección desde cero con nada
+     más `?sala=`, y eso se llevaba por delante `?servidor=`: quien estuviera
+     apuntando a otra sala —una local, una de prueba— salía disparado a la de
+     producción y ahí su llave no vale. La prueba lo cazó de inmediato. */
+  const q = new URLSearchParams(location.search);
+  q.delete('llave');
+  if(!q.get('sala') && typeof sala === 'string' && sala) q.set('sala', sala);
+  const cola = q.toString();
+  location.replace(location.pathname + (cola ? '?' + cola : ''));
+}
 if(params.get('llave')){
   /* Se borra de la barra de direcciones para que no quede en el historial ni
      en lo que se comparte desde el navegador. */
@@ -2332,9 +2393,15 @@ function verLlaves(recado){
         (c.cuentas.length
           ? `<h4>Ya tienen llave</h4><p>${c.cuentas.map(esc).join(' · ')}</p>` : '')) +
 
-    `<h4>Este es tu link</h4>
+    /* ⚠ Decía «Este es tu link» a secas, y ésa es la mitad del daño: si la
+       llave cargada es la de otro, este renglón te invita a repartir la llave
+       ajena creyendo que es la tuya. Ahora dice DE QUIÉN es la que está
+       puesta, con el mismo nombre que aparece arriba. */
+    `<h4>El link de esta llave${mio ? ` · entra como <b>${esc(mio)}</b>` : ''}</h4>
      <div class="liga">${esc(LLAVE ? ligaDe(LLAVE) : ligaDe(''))}</div>
-     <button class="gordo calma" id="bCopiarMio">Copiar mi link</button>
+     <button class="gordo calma" id="bCopiarMio">Copiar este link</button>` +
+    (LLAVE_ANTERIOR ? `<button class="gordo calma" id="bVolverLlave2">Volver a mi llave de antes</button>` : '') +
+    `
 
      <h4>Ojo con esto</h4>
      <p>El link lleva la llave adentro: <b>quien lo tenga, entra</b>. Es como el
@@ -2398,15 +2465,39 @@ function verLlaves(recado){
   b('bCopiarMio', (e) => {
     navigator.clipboard.writeText(ligaDe(LLAVE)).then(() => {
       e.target.textContent = '✓ copiado';
-      setTimeout(() => e.target.textContent = 'Copiar mi link', 1600);
+      setTimeout(() => e.target.textContent = 'Copiar este link', 1600);
     }).catch(() => { e.target.textContent = 'no se pudo — cópialo a mano'; });
   });
+  b('bVolverLlave2', volverALlaveAnterior);
 
   $('llaves').classList.add('abierta');
 }
 
 /* Se pregunta el estado ANTES de abrir: enseñar «cerrar la sala» en una que ya
    tiene dueño manda al usuario a un botón que sólo le va a dar un error. */
+/* Se pinta cuando ya se sabe de quién es la llave nueva: decir «cambiaste de
+   llave» sin decir A QUIÉN no sirve de nada, y el nombre es justo el dato que
+   hace clic («¿cómo que entro como luis?»). */
+function avisarCambioDeLlave(quienSoy){
+  const caja = $('cambioLlave'); if(!caja) return;
+  if(!CAMBIO_DE_LLAVE || !LLAVE_ANTERIOR){ caja.hidden = true; return; }
+  caja.innerHTML =
+    `Entraste con un link que trae <b>otra llave</b>, así que ahora firmas como
+     <b>${esc(quienSoy || 'otra cuenta')}</b> y no como antes.
+     <div class="fila-llave">
+       <button id="bVolverLlave">Volver a mi llave de antes</button>
+       <button class="calma" id="bQuedarmeLlave">Está bien, déjalo así</button>
+     </div>`;
+  caja.hidden = false;
+  $('bVolverLlave').addEventListener('click', volverALlaveAnterior);
+  $('bQuedarmeLlave').addEventListener('click', () => {
+    CAMBIO_DE_LLAVE = false;
+    caja.hidden = true;
+    /* La anterior NO se borra aunque diga «déjalo así»: puede que se dé cuenta
+       mañana. Sólo se deja de avisar. */
+  });
+}
+
 async function abrirLlaves(){
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${sala}/hilo`, { headers: conLlave() });
@@ -2523,6 +2614,11 @@ async function entrar(codigo, nombre){
   const h = await (await fetch(`${base}/hilo`, { headers: conLlave() })).json();
   hilo = h.hilo || []; gente = h.gente || {};
   pintarGente(); pintarHilo();
+  /* `yoSoy` lo dice el SERVIDOR a partir de la llave, no el navegador: es el
+     único que sabe de quién es. Por eso el aviso se pinta aquí y no al cargar. */
+  estadoSala = { cerrada: !!h.cerrada, dueno: h.dueno || null,
+                 yoSoy: h.yoSoy || null, cuentas: h.cuentas || [] };
+  avisarCambioDeLlave(h.yoSoy);
   abrirSocket(codigo);
 
   $('puerta').classList.add('ida');

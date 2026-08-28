@@ -154,8 +154,8 @@ await A.waitForTimeout(1500);
 ok('el fantasma se va', await A.evaluate(() => !gente['carlos-viejo']));
 ok('el panel se cierra solo',
    await A.evaluate(() => !document.getElementById('pantalla').classList.contains('abierta')));
-ok('y el hilo no pierde ningún mensaje',
-   await A.evaluate(() => hilo.filter(e => (e.texto || '').trim()).length) === 2);
+const cuantosQuedan = await A.evaluate(() => hilo.filter(e => (e.texto || '').trim()).length);
+ok('y el hilo no pierde ningún mensaje', cuantosQuedan === 2, 'quedan: ' + cuantosQuedan);
 ok('el otro navegador también lo ve irse',
    await B.evaluate(() => !gente['carlos-viejo']));
 
@@ -164,7 +164,72 @@ ok('el otro navegador también lo ve irse',
 const no = await api('echar', { de: await A.evaluate(() => yo.id), id:'claude-de-luis' });
 ok('forzarlo contra quien habló lo rechaza el servidor', !!no.error, JSON.stringify(no));
 
-/* ── 4 · la forma del defecto, en toda la sesión ────────────────────────── */
+/* ── 4 · una llave NO pisa a la otra en silencio ────────────────────────
+   El reporte de Carlos, textual: «entré con mi link en otro navegador y valió,
+   me mete como Luis». Cualquier link con `?llave=` reemplazaba la llave
+   guardada sin preguntar y sin poder deshacerlo — y como la página borra el
+   `?llave=` de la barra, después no quedaba ni rastro de qué había pasado.
+   Basta abrir una vez el link de invitación recién acuñado, aunque sea para
+   ver si sirve, y dejas de ser el dueño de tu propia sala. */
+{
+  const ctx = await nave.newContext({ viewport:{ width:390, height:800 } });
+  const p = await ctx.newPage();
+  p.on('pageerror', e => errores.push('llaves: ' + e.message));
+
+  /* Entra como carlos y se queda con su llave. */
+  await p.goto(`${MESA}?servidor=${API}&llave=kc`);
+  await p.waitForTimeout(700);
+  await p.fill('#codigoIn', 'GRUPAZ'); await p.fill('#nombreIn', 'Carlos'); await p.click('#bEntrar');
+  await p.waitForTimeout(2200);
+  ok('entra con su llave y es quien debe ser',
+     await p.evaluate(() => estadoSala.yoSoy) === 'carlos');
+  ok('y sin llave anterior no se avisa nada',
+     await p.evaluate(() => document.getElementById('cambioLlave').hidden) === true);
+
+  /* Y ahora abre, en el MISMO navegador, un link con la llave de luis. */
+  await p.goto(`${MESA}?servidor=${API}&llave=kl&sala=GRUPAZ`);
+  await p.waitForTimeout(2600);
+  ok('la llave del link sí entra (el link que se explica solo sigue sirviendo)',
+     await p.evaluate(() => estadoSala.yoSoy) === 'luis');
+
+  const aviso = await p.evaluate(() => {
+    const c = document.getElementById('cambioLlave');
+    return { oculto: c.hidden, txt: c.textContent.replace(/\s+/g,' ').trim() };
+  });
+  ok('pero se AVISA, en vez de cambiarte de cuenta callado',
+     aviso.oculto === false, JSON.stringify(aviso));
+  ok('y el aviso dice como QUIÉN quedaste', /luis/.test(aviso.txt), aviso.txt);
+
+  /* Lo que convertía el susto en pérdida: no había vuelta. */
+  ok('hay botón para volver a la llave de antes',
+     await p.evaluate(() => !!document.getElementById('bVolverLlave')));
+  ok('y la llave anterior quedó guardada, no pisada',
+     await p.evaluate(() => localStorage.getItem('salaLlaveAnterior')) === 'kc');
+
+  /* La otra mitad del daño: «Este es tu link» seguía diciendo «tuyo» con la
+     llave del otro adentro, así que le repartías a alguien la llave de Luis
+     creyendo que era la tuya. */
+  const hoja = await p.evaluate(async () => {
+    await abrirLlaves();
+    return document.getElementById('llavesCaja').textContent.replace(/\s+/g,' ');
+  });
+  ok('la hoja de llaves dice de QUIÉN es la llave puesta',
+     /entra como luis/i.test(hoja), hoja.slice(0, 200));
+  ok('y ya no la llama «tu link» a secas', !/Este es tu link/i.test(hoja));
+
+  /* Se usa el botón de la hoja porque la hoja está abierta encima del letrero.
+     Es el mismo camino de vuelta, y así se prueban los dos botones. */
+  ok('la hoja también ofrece volver',
+     await p.evaluate(() => !!document.getElementById('bVolverLlave2')));
+  await p.click('#bVolverLlave2');
+  await p.waitForTimeout(2600);
+  ok('y al volver, uno vuelve a ser quien era',
+     await p.evaluate(() => estadoSala.yoSoy) === 'carlos',
+     'yoSoy: ' + await p.evaluate(() => estadoSala.yoSoy));
+  await ctx.close();
+}
+
+/* ── 5 · la forma del defecto, en toda la sesión ────────────────────────── */
 ok('ninguna petición mandó un objeto donde iba un id',
    sospechosas.length === 0, sospechosas.slice(0, 3).join('\n      '));
 ok('y no hubo un solo error de JavaScript',
