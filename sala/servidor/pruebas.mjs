@@ -157,6 +157,64 @@ console.log('\n· El freno de vueltas');
      otraVez !== null && cb4 === 200);
 }
 
+
+/* ══ 3-bis · la llave maestra · volver a entrar a tu propia sala ═══════════ */
+console.log('\n· La llave maestra');
+{
+  /* ⚠ ESTO ESTABA ESCRITO EN UN COMENTARIO Y NO EXISTÍA EN EL CÓDIGO. Decía
+     que la llave del worker era la segunda capa, y el código se salía antes de
+     llegar a ella en cuanto la sala tenía dueño. Consecuencia: el dueño que
+     perdiera su llave —teléfono nuevo, datos del navegador borrados— quedaba
+     FUERA DE SU PROPIA SALA para siempre, porque `fundar` la rechaza si ya hay
+     dueño y sólo el dueño puede invitar. */
+
+  /* Primero, sin maestra: así es como está GRUPAZ hoy. */
+  const abierta = new Sala(hacerCtx(), { ESPERA_MS:250 });
+  const [ca] = await leer(await pedir(abierta, 'POST', 'entrar',
+    { id:'x', nombre:'Quien sea', tipo:'humano' }, 'sin-llave'));
+  ok('una sala nueva sin llaves sigue abierta: basta el link', ca === 200);
+
+  const [cf, rf] = await leer(await pedir(abierta, 'POST', 'fundar',
+    { cuenta:'carlos' }, 'sin-llave'));
+  ok('se puede fundar desde la web, sin terminal', cf === 200 && !!rf.llave);
+  const suya = rf.llave;
+
+  const [cn] = await leer(await pedir(abierta, 'POST', 'entrar',
+    { id:'y', nombre:'Colado', tipo:'humano' }, 'llave-inventada'));
+  ok('ya cerrada, una llave inventada NO entra', cn === 403 || cn === 401);
+
+  const [cs] = await leer(await pedir(abierta, 'POST', 'entrar',
+    { id:'carlos', nombre:'Carlos', tipo:'humano' }, suya));
+  ok('la llave que le dio la sala sí entra', cs === 200);
+
+  /* Sin maestra puesta, cerrada es cerrada: y el dueño que pierda su llave se
+     queda afuera. Es lo que hay que saber ANTES de cerrar una sala. */
+  ok('y sin maestra, perder la llave deja al dueño afuera para siempre',
+     cn === 403 || cn === 401);
+
+  /* Ahora CON maestra: la misma sala, pero el worker trae `LLAVES`. */
+  const ctx2 = hacerCtx();
+  const conMaestra = new Sala(ctx2, { ESPERA_MS:250, LLAVES:'carlos:MAESTRA' });
+  /* Se funda usando la maestra, que aquí es la única que entra. */
+  const [cf2, rf2] = await leer(await pedir(conMaestra, 'POST', 'fundar',
+    { cuenta:'carlos' }, 'MAESTRA'));
+  ok('con maestra puesta, se funda con ella', cf2 === 200 && !!rf2.llave);
+
+  const [cm] = await leer(await pedir(conMaestra, 'POST', 'entrar',
+    { id:'carlos-2', nombre:'Carlos otra vez', tipo:'humano' }, 'MAESTRA'));
+  ok('y la maestra sigue entrando aunque la sala ya tenga dueño', cm === 200);
+
+  const g = Object.values((await (await pedir(conMaestra, 'GET', 'hilo',
+    undefined, 'MAESTRA')).json()).gente);
+  const yo = g.find(p => p.id === 'carlos-2');
+  ok('y entra como SU cuenta, no como invitado', !!yo && yo.cuenta === 'carlos',
+     yo && yo.cuenta);
+
+  const [cx] = await leer(await pedir(conMaestra, 'POST', 'entrar',
+    { id:'z', nombre:'Colado', tipo:'humano' }, 'nada-que-ver'));
+  ok('pero una llave cualquiera sigue sin entrar', cx === 403 || cx === 401);
+}
+
 /* ══ 4 · a quién despierta cada mensaje ═══════════════════════════════════ */
 console.log('\n· A quién despierta cada mensaje');
 {

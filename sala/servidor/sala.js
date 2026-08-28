@@ -364,14 +364,30 @@ export class Sala {
 
        El orden importa y es a propósito:
          1. llaves de esta sala   ← lo que se acuña desde la web
-         2. LLAVES del worker     ← sigue sirviendo, para cerrar todo de golpe
+         2. LLAVES del worker     ← la MAESTRA, para volver a entrar a tu sala
          3. invitado              ← sólo si NO hay ni lo uno ni lo otro
 
        Y lo que hace que esto no rompa nada: una sala recién nacida no tiene
        llaves, así que sigue abierta y al Claude del compañero le sigue
-       bastando el link. Se CIERRA SOLA en cuanto se acuña la primera. */
+       bastando el link. Se CIERRA SOLA en cuanto se acuña la primera.
+
+       ⚠ EL PASO 2 ESTABA ESCRITO Y NO EXISTÍA. Este comentario decía que la
+       llave del worker «sigue sirviendo» y el código de abajo se salía antes
+       de llegar a ella: en cuanto una sala tenía dueño, `LLAVES` no se
+       consultaba nunca más. O sea que si el dueño perdía su llave —cambió de
+       teléfono, borró los datos del navegador— se quedaba FUERA DE SU PROPIA
+       SALA para siempre: `fundar` la rechaza porque ya tiene dueño, y sólo el
+       dueño puede invitar. Sin aviso y sin remedio, que es justo lo que el
+       comentario de veinte líneas más arriba dice que hay que evitar.
+
+       Ahora sí es una segunda capa: primero la llave de la sala, y si no
+       coincide, la maestra del worker. Y si tampoco, se queda afuera — que es
+       lo que significa cerrar una sala. */
     if(Object.keys(this.llaves).length){
-      return this.llaves[llave] || null;
+      const suya = this.llaves[llave];
+      if(suya) return suya;
+      const maestra = this.deLaMaestra(llave);
+      return maestra || null;
     }
 
     const crudo = (this.env.LLAVES || '').trim();
@@ -388,6 +404,14 @@ export class Sala {
        `wrangler secret put LLAVES` y esto se cierra solo, sin tocar código. */
     if(!crudo) return 'invitado';
 
+    return this.deLaMaestra(llave);
+  }
+
+  /* Las llaves del worker: `carlos:xxxx,luis:yyyy`. Se leen aquí y no en dos
+     sitios para que no puedan discrepar. */
+  deLaMaestra(llave){
+    const crudo = (this.env.LLAVES || '').trim();
+    if(!crudo) return null;
     const mapa = {};
     for(const par of crudo.split(',')){
       const [cuenta, valor] = par.split(':').map(x => (x || '').trim());

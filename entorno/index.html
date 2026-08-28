@@ -373,7 +373,11 @@ function hacerEscritorio(color){
   brillo.position.set(0, 1.42, 0.25);
   grupo.add(brillo);
 
-  return { grupo, lienzo, textura, brillo, pantalla };
+  /* En qué pantalla va el que no tiene nada que hacer. Arranca al azar para
+     que cuatro agentes en reposo NO estén viendo los cuatro lo mismo — eso se
+     lee como una falla, no como cuatro personas aburridas. */
+  return { grupo, lienzo, textura, brillo, pantalla,
+           ocio: (Math.random() * 11) | 0 };
 }
 
 /* ── la silla ──────────────────────────────────────────────────────────────
@@ -430,63 +434,760 @@ function hacerSilla(color, altoAsiento){
   return g;
 }
 
+/* ══ EL TEATRO DE PANTALLAS ════════════════════════════════════════════════
+   Carlos: «¿podrías hacer que la computadora del taller muestre un navegador
+   que haga lo que hagan los agentes? Y si es mucho pedo simula diferentes
+   pantallas… búsquedas absurdas como "cómo escribir en teclado"… imágenes de
+   osos, palomas, leones… para darle más dinamismo a la porquería esa y hacerlo
+   chistoso».
+
+   LO QUE SE HIZO, Y POR QUÉ ASÍ:
+
+   · TRABAJANDO → la pantalla enseña SU TRABAJO DE VERDAD, como siempre, pero
+     ahora dentro de un navegador: pestañas, barra de dirección y el encargo
+     como si fuera una página abierta. Eso es lo primero que pidió y es lo que
+     de verdad sirve para lo que se entra aquí.
+
+   · SIN NADA QUE HACER → ahí entra el chiste, y es donde va porque es donde
+     cabe. Antes decía «en reposo · sin nada en curso» y ya. Ahora se pone a
+     buscar cómo se escribe en un teclado, a ver videos, a mirar palomas o a
+     jugar. Un agente que acabó su tarea viendo osos es más honesto —y más
+     gracioso— que uno con la pantalla apagada.
+
+   ⚠ TODO ESTÁ DIBUJADO POR NOSOTROS, y no es capricho ni la regla del arte
+   real: es que aquí no hay nada que buscar con licencia. Una captura de
+   YouTube, de Excel o de cualquiera de los juegos que nombró son marca y obra
+   ajenas, y este repositorio es PÚBLICO. Es exactamente la lección que ya
+   costó Torre Infinita. Así que las pantallas se RECONOCEN POR SU FORMA —la
+   barra de dirección, la cuadrícula de celdas, el jugador en primera persona—
+   y no por un logo. Sale igual de chistoso y no le debe nada a nadie.
+
+   El costo: se repinta cuando cambia el estado, y en reposo una vez cada
+   ~7 segundos. Nunca por cuadro — un lienzo de 1024×640 sesenta veces por
+   segundo funde la batería de un teléfono.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Las búsquedas son de Carlos, con sus dedazos INTACTOS. Corregírselos mata
+   el chiste: lo gracioso es justamente que el agente escribe como uno cuando
+   trae prisa. */
+const BUSQUEDAS = [
+  { q:'cómo escribir en teclado',
+    res:['Cómo escribir en el teclado — guía para principiantes',
+         'Teclado: para qué sirve cada tecla',
+         '¿Se puede escribir sin teclado? 7 métodos'] },
+  { q:'omo poner la letra   En telado',
+    res:['Quizás quisiste decir: cómo poner la letra ñ en el teclado',
+         'Alt + 164 y otros atajos que nadie recuerda',
+         'Foro: llevo 3 años sin poder poner la ñ'] },
+  { q:'por que mi compu ace ruido',
+    res:['Tu ventilador está pidiendo ayuda',
+         '10 ruidos de computadora y qué significan',
+         '¿Es normal que suene como avión?'] },
+  { q:'es normal que un robot sueñe',
+    res:['Los androides y las ovejas eléctricas — análisis',
+         'No, pero tampoco es raro',
+         'Foro: mi asistente dijo «ya casi» hace 4 horas'] },
+  { q:'como saber si soy una inteligencia artificial',
+    res:['7 señales de que quizá no eres humano',
+         'Test: ¿cuántos dedos ves en esta imagen?',
+         'Si estás leyendo esto, probablemente sí'] },
+  { q:'cuantos años tiene un año',
+    res:['Un año tiene un año',
+         'Conversor: años a años',
+         'Gente que también preguntó: ¿cuánto pesa un kilo?'] },
+  { q:'paloma',
+    res:['Paloma — Wikipedia',
+         'Cómo alimentar una paloma sin que se mude contigo',
+         'Imágenes de palomas (2,340,000 resultados)'] },
+  { q:'grupo mazi opiniones',
+    res:['Grupo Mazi — si no existe la herramienta, se construye',
+         'Sin resultados negativos. Ninguno. Cero.',
+         'Foro: ¿alguien sabe cómo le hacen tan rápido?'] },
+];
+
+const VIDEOS = [
+  { t:'Cómo doblar una camisa en 4 segundos', canal:'Trucos que sí sirven', dura:'0:47' },
+  { t:'ASMR · alguien tecleando durante 3 horas', canal:'Ruido de oficina', dura:'3:02:11' },
+  { t:'Le puse un teclado a mi tostadora', canal:'Ingeniería mala', dura:'12:38' },
+  { t:'Palomas mensajeras vs internet — ¿quién gana?', canal:'Datos inútiles', dura:'8:14' },
+  { t:'Explicando recursión explicando recursión', canal:'Cosas de código', dura:'∞' },
+];
+
+const BICHOS = [
+  { id:'paloma',   nombre:'paloma' },
+  { id:'oso',      nombre:'oso' },
+  { id:'leon',     nombre:'león' },
+  { id:'capibara', nombre:'capibara' },
+];
+
+/* Los nombres NO son de nadie: se parecen a algo por el TIPO de juego que
+   son, no por la marca. Un juego de bloques, uno táctico, uno de coches con
+   una pelota enorme y uno de ciudad de noche. */
+const JUEGOS = [
+  { id:'bloques', nombre:'Cubos Infinitos',  hud:'madera 64 · piedra 12 · pico de hierro' },
+  { id:'arena',   nombre:'Punto de Apoyo',   hud:'ronda 7 · 3 vs 4 · plantando' },
+  { id:'coches',  nombre:'Balón Cohete',     hud:'2 — 2 · 0:38 · turbo 71%' },
+  { id:'ciudad',  nombre:'Neón 2098',        hud:'encargo: entregar el paquete · 3.2 km' },
+];
+
+/* ── el marco del navegador ────────────────────────────────────────────── */
+/* Se reconoce por la FORMA: tres puntos, pestañas, barra de dirección. No
+   lleva el nombre ni el logo de ningún navegador de verdad. */
+function marcoNavegador(g, W, color, pestanas, activa, direccion){
+  g.fillStyle = '#191021'; g.fillRect(0, 0, W, 106);
+  for(let i = 0; i < 3; i++){
+    g.beginPath(); g.arc(30 + i*26, 26, 7, 0, Math.PI*2);
+    g.fillStyle = ['#F0567F','#E8B33A','#3ECF8E'][i]; g.fill();
+  }
+  /* pestañas */
+  let x = 118;
+  g.font = '19px ui-monospace, Menlo, monospace';
+  pestanas.forEach((p, i) => {
+    const an = Math.min(230, g.measureText(p).width + 44);
+    const viva = i === activa;
+    g.fillStyle = viva ? '#2A1B3C' : '#150E1E';
+    redondo(g, x, 8, an, 38, 9); g.fill();
+    if(viva){ g.fillStyle = color; g.fillRect(x + 9, 8, an - 18, 2.5); }
+    g.fillStyle = viva ? '#E9E4E4' : '#6B5B7D';
+    g.fillText(recortar(g, p, an - 30), x + 15, 33);
+    x += an + 6;
+  });
+  /* la barra de dirección */
+  g.fillStyle = '#0F0916'; redondo(g, 26, 58, W - 52, 38, 19); g.fill();
+  g.strokeStyle = '#2A1B3C'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#3ECF8E'; g.font = '17px ui-monospace, Menlo, monospace';
+  g.fillText('🔒', 42, 84);
+  g.fillStyle = '#A090B4'; g.font = '19px ui-monospace, Menlo, monospace';
+  g.fillText(recortar(g, direccion, W - 130), 74, 84);
+}
+
+/* ── búsqueda ──────────────────────────────────────────────────────────── */
+function pantallaBusqueda(g, W, H, color, n){
+  const b = BUSQUEDAS[n % BUSQUEDAS.length];
+  g.fillStyle = '#100A18'; g.fillRect(0, 0, W, H);
+  marcoNavegador(g, W, color, ['buscar', 'la mesa', 'el repo'], 0,
+                 'buscador.mazi/?q=' + encodeURIComponent(b.q).slice(0, 60));
+
+  /* la caja de búsqueda, con el cursor parpadeando al final */
+  g.fillStyle = '#181022'; redondo(g, 44, 140, W - 88, 62, 31); g.fill();
+  g.strokeStyle = color; g.lineWidth = 2; g.stroke();
+  g.fillStyle = '#E9E4E4'; g.font = '26px -apple-system, system-ui, sans-serif';
+  const q = recortar(g, b.q, W - 210);
+  g.fillText(q, 84, 180);
+  g.fillStyle = color; g.fillRect(94 + g.measureText(q).width, 158, 2, 26);
+
+  g.fillStyle = '#4A3167'; g.font = '18px ui-monospace, Menlo, monospace';
+  g.fillText('cerca de 4,120,000 resultados (0.32 s)', 48, 236);
+
+  let y = 288;
+  for(const r of b.res){
+    g.fillStyle = '#6B8BD8'; g.font = '25px -apple-system, system-ui, sans-serif';
+    g.fillText(recortar(g, r, W - 96), 48, y);
+    g.fillStyle = '#3E8F63'; g.font = '17px ui-monospace, Menlo, monospace';
+    g.fillText('mazi.mx › resultados › ' + (r.split(' ')[0] || '').toLowerCase(), 48, y + 26);
+    g.fillStyle = '#5B4B6D'; g.font = '18px -apple-system, system-ui, sans-serif';
+    g.fillText('Lo que estabas buscando, más o menos, aproximadamente…', 48, y + 54);
+    y += 108;
+  }
+}
+
+/* ── un video ──────────────────────────────────────────────────────────── */
+function pantallaVideo(g, W, H, color, n){
+  const v = VIDEOS[n % VIDEOS.length];
+  g.fillStyle = '#100A18'; g.fillRect(0, 0, W, H);
+  marcoNavegador(g, W, color, ['video', 'buscar'], 0, 'videos.mazi/ver?v=' + (n * 7 + 31));
+
+  /* el reproductor. El «fotograma» es un degradado con una silueta: a esta
+     distancia una silueta se lee y un dibujo detallado no. */
+  const px = 44, py = 132, pw = W - 88, ph = 300;
+  const cielo = g.createLinearGradient(0, py, 0, py + ph);
+  cielo.addColorStop(0, '#2A1B4C'); cielo.addColorStop(1, '#0E1A2C');
+  g.fillStyle = cielo; g.fillRect(px, py, pw, ph);
+  /* unas montañas y un sol, que es lo que hace que se lea «video» */
+  g.fillStyle = '#F0A860';
+  g.beginPath(); g.arc(px + pw * 0.72, py + 96, 38, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#1A1030';
+  g.beginPath(); g.moveTo(px, py + ph);
+  g.lineTo(px + pw*0.28, py + 150); g.lineTo(px + pw*0.52, py + ph); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(px + pw*0.34, py + ph);
+  g.lineTo(px + pw*0.66, py + 118); g.lineTo(px + pw, py + ph); g.closePath(); g.fill();
+
+  /* el botón de pausa y la barra de avance */
+  g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(px, py + ph - 46, pw, 46);
+  g.fillStyle = '#E9E4E4';
+  g.fillRect(px + 18, py + ph - 34, 6, 22); g.fillRect(px + 30, py + ph - 34, 6, 22);
+  const avance = 0.18 + ((n * 37) % 60) / 100;
+  g.fillStyle = '#3A2A4C'; g.fillRect(px + 58, py + ph - 25, pw - 150, 5);
+  g.fillStyle = '#F0567F'; g.fillRect(px + 58, py + ph - 25, (pw - 150) * avance, 5);
+  g.beginPath(); g.arc(px + 58 + (pw - 150) * avance, py + ph - 22.5, 8, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#C0B0D0'; g.font = '17px ui-monospace, Menlo, monospace';
+  g.fillText(v.dura, px + pw - 78, py + ph - 18);
+
+  g.fillStyle = '#E9E4E4'; g.font = '700 30px -apple-system, system-ui, sans-serif';
+  let y = py + ph + 52;
+  for(const linea of partir(g, v.t, pw).slice(0, 2)){ g.fillText(linea, px, y); y += 38; }
+  g.fillStyle = '#7B6B8D'; g.font = '20px -apple-system, system-ui, sans-serif';
+  g.fillText(v.canal + ' · ' + (120 + n * 913) + ' vistas · hace un rato', px, y + 12);
+}
+
+/* ── imágenes de bichos ────────────────────────────────────────────────── */
+/* Dibujados a bloques a propósito: son de 190 px dentro de un lienzo que se
+   ve a tres metros en 3D. Un dibujo detallado ahí es trabajo que nadie ve. */
+function bicho(g, x, y, w, h, cual){
+  g.save();
+  g.beginPath(); g.rect(x, y, w, h); g.clip();
+  const cx = x + w/2, cy = y + h/2;
+  if(cual === 'paloma'){
+    g.fillStyle = '#8FA8C8';                                   /* cuerpo */
+    g.beginPath(); g.ellipse(cx, cy + 10, w*0.30, h*0.22, -0.15, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#B9CBE4';                                   /* ala */
+    g.beginPath(); g.ellipse(cx + 6, cy + 4, w*0.20, h*0.12, -0.5, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#8FA8C8';                                   /* cabeza */
+    g.beginPath(); g.arc(cx - w*0.26, cy - h*0.14, w*0.11, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#E8B33A';                                   /* pico */
+    g.beginPath(); g.moveTo(cx - w*0.37, cy - h*0.14);
+    g.lineTo(cx - w*0.46, cy - h*0.10); g.lineTo(cx - w*0.36, cy - h*0.08); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.29, cy - h*0.17, 3.5, 0, Math.PI*2); g.fill();
+  } else if(cual === 'oso'){
+    g.fillStyle = '#7A5230';
+    g.beginPath(); g.arc(cx - w*0.20, cy - h*0.24, w*0.09, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx + w*0.20, cy - h*0.24, w*0.09, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx, cy, w*0.30, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#C89A64';
+    g.beginPath(); g.ellipse(cx, cy + h*0.12, w*0.15, h*0.11, 0, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.11, cy - h*0.06, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx + w*0.11, cy - h*0.06, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(cx, cy + h*0.07, 7, 5, 0, 0, Math.PI*2); g.fill();
+  } else if(cual === 'leon'){
+    g.fillStyle = '#8A5A22';                                   /* melena */
+    for(let i = 0; i < 12; i++){
+      const a = (i/12) * Math.PI * 2;
+      g.beginPath();
+      g.arc(cx + Math.cos(a)*w*0.24, cy + Math.sin(a)*h*0.24, w*0.11, 0, Math.PI*2);
+      g.fill();
+    }
+    g.fillStyle = '#D9A65A';
+    g.beginPath(); g.arc(cx, cy, w*0.22, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.08, cy - h*0.04, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx + w*0.08, cy - h*0.04, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.moveTo(cx - 7, cy + h*0.06);
+    g.lineTo(cx + 7, cy + h*0.06); g.lineTo(cx, cy + h*0.12); g.fill();
+  } else {                                                     /* capibara */
+    g.fillStyle = '#9A7048';
+    g.beginPath(); g.ellipse(cx + w*0.05, cy + h*0.06, w*0.30, h*0.20, 0, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(cx - w*0.26, cy - h*0.06, w*0.16, h*0.14, 0, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#6F4E30';
+    g.beginPath(); g.arc(cx - w*0.34, cy - h*0.18, w*0.05, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.30, cy - h*0.08, 3.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(cx - w*0.41, cy - h*0.02, 5, 4, 0, 0, Math.PI*2); g.fill();
+  }
+  g.restore();
+}
+
+function pantallaImagenes(g, W, H, color, n){
+  const cual = BICHOS[n % BICHOS.length];
+  g.fillStyle = '#100A18'; g.fillRect(0, 0, W, H);
+  marcoNavegador(g, W, color, ['imágenes', 'buscar'], 0,
+                 'buscador.mazi/imagenes?q=' + cual.id);
+
+  g.fillStyle = '#181022'; redondo(g, 44, 130, W - 88, 50, 25); g.fill();
+  g.fillStyle = '#E9E4E4'; g.font = '23px -apple-system, system-ui, sans-serif';
+  g.fillText(cual.nombre, 76, 163);
+  g.fillStyle = '#4A3167'; g.font = '17px ui-monospace, Menlo, monospace';
+  g.fillText('IMÁGENES', W - 160, 163);
+
+  /* la rejilla: 4 × 2, con el fondo alternando para que se lea como galería */
+  const cols = 4, filas = 2, hx = 44, hy = 206;
+  const cw = (W - 88 - (cols-1)*12) / cols, ch = (H - hy - 56 - 12) / filas;
+  for(let i = 0; i < cols * filas; i++){
+    const x = hx + (i % cols) * (cw + 12), y = hy + ((i / cols) | 0) * (ch + 12);
+    g.fillStyle = i % 3 === 0 ? '#1B1226' : '#170F20';
+    redondo(g, x, y, cw, ch, 10); g.fill();
+    /* Cada celda con su tamaño y su encuadre. Ocho dibujos idénticos se leen
+       como un error de repintado; ocho parecidos se leen como resultados de
+       búsqueda, que es lo que son. */
+    const z = 0.82 + ((i * 37) % 5) * 0.07;
+    const dx = ((i * 53) % 7 - 3) * 5, dy = ((i * 29) % 5 - 2) * 5;
+    g.save();
+    g.globalAlpha = 0.88 + ((i * 17) % 4) * 0.03;
+    bicho(g, x + (cw*(1-z))/2 + dx, y + (ch*(1-z))/2 + dy, cw*z, ch*z, cual.id);
+    g.restore();
+  }
+  g.fillStyle = '#4A3167'; g.font = '18px ui-monospace, Menlo, monospace';
+  g.fillText('2,340,000 resultados · seguir viendo', 48, H - 22);
+}
+
+/* ── una hoja de cálculo ───────────────────────────────────────────────── */
+function pantallaHoja(g, W, H, color, n){
+  g.fillStyle = '#12161C'; g.fillRect(0, 0, W, H);
+  marcoNavegador(g, W, color, ['hoja', 'la mesa'], 0, 'hoja.mazi/comisiones-agosto');
+
+  /* la barra de fórmula: es lo que hace que se lea «hoja de cálculo» y no
+     «tabla». Sin ella son puros cuadritos. */
+  g.fillStyle = '#0D1116'; g.fillRect(0, 106, W, 42);
+  g.fillStyle = '#5B6B7D'; g.font = '19px ui-monospace, Menlo, monospace';
+  g.fillText('D7', 24, 134);
+  g.fillStyle = '#2A3540'; g.fillRect(64, 112, 1, 30);
+  g.fillStyle = '#8FA8C8';
+  g.fillText('=SUMA(D2:D6)*0.15   ← la comisión, según yo', 84, 134);
+
+  /* Columnas de sobra a la derecha, vacías. Una hoja de cálculo que se acaba
+     donde se acaban los datos no es una hoja: es una tabla. Lo que la hace
+     reconocible es justamente la cuadrícula que sigue. */
+  const cols = ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const anchos = [58, 210, 150, 130, 150, 150, 120, 120];
+  const filas = [
+    ['1', 'proyecto',      'estado',   'horas', 'monto',   'comisión'],
+    ['2', 'Ligas Mazi',    'entregado','48',    '24,000',  '3,600'],
+    ['3', 'Reportes 3.1',  'vivo',     '31',    '15,500',  '2,325'],
+    ['4', 'La Sala',       'vivo',     '62',    '31,000',  '4,650'],
+    ['5', 'El Taller',     'vivo',     '19',    '9,500',   '1,425'],
+    ['6', 'palomas (?)',   'ehh',      '4',     '0',       '0'],
+    ['7', '',              '',         '',      '80,000',  '12,000'],
+  ];
+  let y = 158;
+  const altoF = 46;
+  for(let f = 0; f < filas.length; f++){
+    let x = 20;
+    for(let c = 0; c < cols.length; c++){
+      const dato = filas[f][c] == null ? '' : filas[f][c];
+      const encabezado = f === 0 || c === 0;
+      g.fillStyle = encabezado ? '#1A2028' : (f === filas.length - 1 ? '#16202A' : '#0F1419');
+      g.fillRect(x, y, anchos[c], altoF);
+      g.strokeStyle = '#232C36'; g.lineWidth = 1;
+      g.strokeRect(x + 0.5, y + 0.5, anchos[c], altoF);
+      g.fillStyle = encabezado ? '#7B8B9D'
+                  : (c === 5 ? '#3ECF8E' : '#C8D4E0');
+      g.font = (f === 0 ? '600 ' : '') + '20px ui-monospace, Menlo, monospace';
+      g.fillText(recortar(g, dato, anchos[c] - 16), x + 10, y + 30);
+      x += anchos[c];
+    }
+    y += altoF;
+  }
+  /* Los renglones vacíos hasta abajo. Una hoja de cálculo es, sobre todo,
+     cuadrícula vacía: cortarla a la mitad la vuelve una tabla. */
+  while(y < H - 6){
+    let x = 20;
+    for(let c = 0; c < cols.length; c++){
+      g.fillStyle = c === 0 ? '#1A2028' : '#0F1419';
+      g.fillRect(x, y, anchos[c], altoF);
+      g.strokeStyle = '#232C36'; g.lineWidth = 1;
+      g.strokeRect(x + 0.5, y + 0.5, anchos[c], altoF);
+      if(c === 0){
+        g.fillStyle = '#7B8B9D'; g.font = '20px ui-monospace, Menlo, monospace';
+        g.fillText(String(8 + (y - 158 - altoF*7) / altoF), x + 10, y + 30);
+      }
+      x += anchos[c];
+    }
+    y += altoF;
+  }
+
+  /* la celda seleccionada, con su cuadrito de arrastre */
+  g.strokeStyle = '#3ECF8E'; g.lineWidth = 2.5;
+  g.strokeRect(20 + anchos.slice(0,4).reduce((a,b)=>a+b,0), 158 + altoF*6, anchos[4], altoF);
+}
+
+/* ── los juegos ────────────────────────────────────────────────────────── */
+function hudJuego(g, W, H, j, color){
+  g.fillStyle = 'rgba(10,6,16,.72)'; g.fillRect(0, H - 56, W, 56);
+  g.fillStyle = color; g.font = '700 22px ui-monospace, Menlo, monospace';
+  g.fillText(j.nombre, 28, H - 20);
+  g.fillStyle = '#9A8FA8'; g.font = '20px ui-monospace, Menlo, monospace';
+  g.fillText(j.hud, 28 + g.measureText(j.nombre).width + 26, H - 20);
+}
+
+function juegoBloques(g, W, H, color, j){
+  /* Primera persona en un mundo de cubos. Se lee por la FORMA —terreno a
+     bloques, mano abajo a la derecha, barra de objetos— y no por ninguna
+     marca. */
+  const cielo = g.createLinearGradient(0, 0, 0, H*0.55);
+  cielo.addColorStop(0, '#5AA9E6'); cielo.addColorStop(1, '#A8D8F0');
+  g.fillStyle = cielo; g.fillRect(0, 0, W, H*0.55);
+  g.fillStyle = '#FFF6CC'; g.fillRect(W*0.74, 54, 62, 62);       /* sol cuadrado */
+
+  const B = 64;
+  /* Cuántos bloques hacen falta para llegar al borde de abajo. Con un número
+     fijo, el terreno se acababa a media pantalla. */
+  const hastaAbajo = Math.ceil((H - H*0.55) / B) + 1;
+  for(let cx = 0; cx < W / B + 1; cx++){
+    for(let cy = 0; cy < hastaAbajo; cy++){
+      const x = cx * B, y = H*0.55 + cy * B;
+      const arriba = cy === 0;
+      /* Un poco de variación por columna: piedra pareja se lee como piso de
+         azulejo, no como cueva. */
+      const tono = ((cx * 7919 + cy * 131) % 3) * 6;
+      g.fillStyle = arriba ? '#5C9A3C'
+                  : cy === 1 ? '#7A5230'
+                  : `rgb(${99 + tono},${99 + tono},${99 + tono})`;
+      g.fillRect(x, y, B, B);
+      g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, y, B, 4);
+      g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 1;
+      g.strokeRect(x + .5, y + .5, B, B);
+    }
+  }
+  /* un árbol, que es lo que termina de decir «mundo de cubos» */
+  g.fillStyle = '#6B4423'; g.fillRect(W*0.22, H*0.55 - B*2, B*0.6, B*2);
+  g.fillStyle = '#3F7A2E'; g.fillRect(W*0.22 - B*0.7, H*0.55 - B*3.6, B*2, B*1.7);
+
+  /* la mano con un bloque */
+  g.fillStyle = '#C89A64';
+  g.beginPath(); g.moveTo(W - 210, H); g.lineTo(W - 130, H - 150);
+  g.lineTo(W - 40, H - 110); g.lineTo(W - 60, H); g.closePath(); g.fill();
+  g.fillStyle = '#7A5230'; g.fillRect(W - 175, H - 205, 90, 90);
+  g.fillStyle = '#8F6238'; g.fillRect(W - 175, H - 205, 90, 12);
+
+  /* la mira y la barra de objetos */
+  g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(W/2 - 14, H/2); g.lineTo(W/2 + 14, H/2);
+  g.moveTo(W/2, H/2 - 14); g.lineTo(W/2, H/2 + 14); g.stroke();
+  for(let i = 0; i < 9; i++){
+    const x = W/2 - 9*30 + i*60;
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x, H - 138, 56, 56);
+    g.strokeStyle = i === 2 ? '#fff' : 'rgba(255,255,255,.35)';
+    g.lineWidth = i === 2 ? 3 : 2; g.strokeRect(x, H - 138, 56, 56);
+    if(i < 4){ g.fillStyle = ['#5C9A3C','#7A5230','#6B6B6B','#C0C0C8'][i];
+               g.fillRect(x + 12, H - 126, 32, 32); }
+  }
+  hudJuego(g, W, H, j, color);
+}
+
+function juegoArena(g, W, H, color, j){
+  /* Vista de arriba, táctico. Un plano con dos bandos y una zona. */
+  g.fillStyle = '#0E1218'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = '#1C2530'; g.lineWidth = 1;
+  for(let x = 0; x < W; x += 48){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for(let y = 0; y < H; y += 48){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  /* los cuartos */
+  g.fillStyle = '#161E28';
+  for(const [x,y,w,h] of [[90,150,260,180],[420,120,240,150],[700,220,230,200],[180,400,300,150]])
+    { redondo(g, x, y, w, h, 6); g.fill(); }
+  /* la zona a tomar */
+  g.strokeStyle = '#E8B33A'; g.lineWidth = 3; g.setLineDash([12, 8]);
+  g.strokeRect(455, 250, 170, 130); g.setLineDash([]);
+  g.fillStyle = 'rgba(232,179,58,.12)'; g.fillRect(455, 250, 170, 130);
+  g.fillStyle = '#E8B33A'; g.font = '700 34px ui-monospace, Menlo, monospace';
+  g.fillText('B', 528, 325);
+  /* los jugadores */
+  const nuestros = [[210,240],[300,300],[240,430]];
+  const otros    = [[760,300],[820,260],[700,380],[880,340]];
+  for(const [x,y] of nuestros){
+    g.fillStyle = '#3ECF8E'; g.beginPath(); g.arc(x, y, 12, 0, Math.PI*2); g.fill();
+    g.strokeStyle = '#3ECF8E'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 26, y - 8); g.stroke();
+  }
+  for(const [x,y] of otros){
+    g.fillStyle = '#F0567F'; g.beginPath(); g.arc(x, y, 12, 0, Math.PI*2); g.fill();
+  }
+  hudJuego(g, W, H, j, color);
+}
+
+function juegoCoches(g, W, H, color, j){
+  /* Un coche y una pelota enorme en una cancha. La broma se entiende por la
+     proporción: la pelota mide como tres coches. */
+  const suelo = g.createLinearGradient(0, H*0.30, 0, H);
+  suelo.addColorStop(0, '#1B3A6B'); suelo.addColorStop(1, '#0E1B33');
+  g.fillStyle = '#0A1020'; g.fillRect(0, 0, W, H*0.30);
+  g.fillStyle = suelo; g.fillRect(0, H*0.30, W, H*0.70);
+  /* las líneas de la cancha, en perspectiva */
+  g.strokeStyle = 'rgba(140,190,255,.35)'; g.lineWidth = 3;
+  for(let i = 0; i <= 8; i++){
+    const t = i / 8;
+    g.beginPath(); g.moveTo(W*0.5 + (t - 0.5) * W * 0.5, H*0.30);
+    g.lineTo(W*0.5 + (t - 0.5) * W * 2.4, H); g.stroke();
+  }
+  for(let i = 1; i <= 4; i++){
+    const y = H*0.30 + Math.pow(i/4, 2) * H*0.70;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+  }
+  /* la portería */
+  g.strokeStyle = '#8CBEFF'; g.lineWidth = 5;
+  g.strokeRect(W*0.36, H*0.20, W*0.28, H*0.13);
+  /* la pelota, enorme */
+  const bx = W*0.56, by = H*0.52, br = 78;
+  const luz = g.createRadialGradient(bx - 26, by - 30, 8, bx, by, br);
+  luz.addColorStop(0, '#FFFFFF'); luz.addColorStop(1, '#8CA0C0');
+  g.fillStyle = luz; g.beginPath(); g.arc(bx, by, br, 0, Math.PI*2); g.fill();
+  g.strokeStyle = 'rgba(20,30,50,.45)'; g.lineWidth = 3;
+  g.beginPath(); g.arc(bx, by, br, 0, Math.PI*2); g.stroke();
+  g.beginPath(); g.ellipse(bx, by, br*0.42, br, 0, 0, Math.PI*2); g.stroke();
+  /* el coche, chiquito al lado */
+  g.fillStyle = '#F0567F';
+  redondo(g, W*0.24, H*0.66, 150, 46, 10); g.fill();
+  g.fillStyle = '#2A1B3C'; redondo(g, W*0.27, H*0.63, 78, 30, 8); g.fill();
+  g.fillStyle = '#1A1030';
+  g.beginPath(); g.arc(W*0.27, H*0.72, 17, 0, Math.PI*2); g.fill();
+  g.beginPath(); g.arc(W*0.24 + 122, H*0.72, 17, 0, Math.PI*2); g.fill();
+  /* el turbo */
+  g.fillStyle = 'rgba(255,140,60,.75)';
+  g.beginPath(); g.moveTo(W*0.24, H*0.68); g.lineTo(W*0.24 - 70, H*0.70);
+  g.lineTo(W*0.24, H*0.72); g.closePath(); g.fill();
+  hudJuego(g, W, H, j, color);
+}
+
+function juegoCiudad(g, W, H, color, j){
+  /* Una calle de noche con neón. Se lee por el ambiente, no por el mapa. */
+  const cielo = g.createLinearGradient(0, 0, 0, H*0.62);
+  cielo.addColorStop(0, '#170A2E'); cielo.addColorStop(1, '#3B1352');
+  g.fillStyle = cielo; g.fillRect(0, 0, W, H*0.62);
+  /* los edificios, con sus ventanitas */
+  let x = 0;
+  while(x < W){
+    const an = 70 + ((x * 131) % 90);
+    const al = 130 + ((x * 977) % 220);
+    g.fillStyle = '#120A22'; g.fillRect(x, H*0.62 - al, an, al);
+    for(let vy = H*0.62 - al + 16; vy < H*0.62 - 20; vy += 26){
+      for(let vx = x + 12; vx < x + an - 14; vx += 22){
+        if(((vx * vy) % 7) > 3) continue;
+        g.fillStyle = ((vx + vy) % 3) ? 'rgba(255,214,120,.85)' : 'rgba(120,220,255,.8)';
+        g.fillRect(vx, vy, 9, 13);
+      }
+    }
+    x += an + 6;
+  }
+  /* dos letreros de neón, que es lo que da el tono */
+  g.fillStyle = 'rgba(240,86,127,.9)'; g.fillRect(W*0.12, H*0.20, 8, 130);
+  g.fillStyle = 'rgba(120,220,255,.85)'; g.fillRect(W*0.70, H*0.14, 8, 160);
+  g.font = '700 30px ui-monospace, Menlo, monospace';
+  g.fillStyle = '#F0567F'; g.fillText('RAMEN', W*0.12 + 20, H*0.26);
+  g.fillStyle = '#78DCFF'; g.fillText('24 HRS', W*0.70 + 20, H*0.20);
+  /* la calle mojada, con reflejos */
+  g.fillStyle = '#0B0716'; g.fillRect(0, H*0.62, W, H*0.38);
+  g.fillStyle = 'rgba(240,86,127,.20)'; g.fillRect(W*0.12, H*0.62, 8, H*0.30);
+  g.fillStyle = 'rgba(120,220,255,.18)'; g.fillRect(W*0.70, H*0.62, 8, H*0.26);
+  g.strokeStyle = 'rgba(232,179,58,.6)'; g.lineWidth = 6; g.setLineDash([40, 34]);
+  g.beginPath(); g.moveTo(0, H*0.86); g.lineTo(W, H*0.80); g.stroke(); g.setLineDash([]);
+  hudJuego(g, W, H, j, color);
+}
+
+
+/* ── LA BARRA QUE NUNCA SE VA ──────────────────────────────────────────────
+   Carlos: «que las pantallas no dejen de mostrar en la parte de arriba como si
+   fuese la barra de búsqueda, o en la de abajo como si fuese la de tareas, o
+   en la de tareas pero del lado izquierdo como un psicópata, o peor aún del
+   lado derecho jajaja. El chiste es que siga viendo el desarrollo de su tarea
+   y me entretenga viendo eso como si realmente hicieran algo».
+
+   Y ahí está el diseño entero en una frase suya: LAS DOS COSAS A LA VEZ. El
+   agente está viendo capibaras y su tarea sigue avanzando en la barra, que es
+   exactamente lo que uno ve cuando alguien «está trabajando».
+
+   Por eso la rotación de pantallas ya NO espera a que el agente esté ocioso:
+   corre siempre, y la barra lleva el trabajo de verdad encima. La pantalla del
+   trabajo completo sigue existiendo y es la primera de la vuelta.
+
+   EL LADO ES FIJO POR AGENTE, no al azar en cada pintada: una barra que se
+   cambia de lado sola no es una barra, es un parpadeo. Sale del id, así que
+   cada quien tiene su manía y se la queda. Los cuatro lados están, incluido el
+   derecho. */
+let relojFijo = null;
+const LADOS = ['abajo', 'arriba', 'izquierda', 'derecha'];
+function ladoDe(id){
+  let h = 0;
+  for(const c of String(id || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return LADOS[h % LADOS.length];
+}
+
+/* El grueso de la barra. Las de los lados son más anchas porque el texto va
+   girado y necesita respirar. */
+const GRUESO = { arriba: 56, abajo: 62, izquierda: 74, derecha: 74 };
+
+function barraDeTarea(g, W, H, quien, color, lado){
+  const t = quien.trabajo;
+  const grueso = GRUESO[lado];
+  const vertical = lado === 'izquierda' || lado === 'derecha';
+
+  /* El fondo. Va casi opaco: media barra transparente sobre un juego de
+     colores es una barra que no se lee, y ésta existe justamente para leerse. */
+  g.save();
+  /* Casi opaca. A .88 se alcanzaba a leer POR DEBAJO el rótulo del juego,
+     que también vive abajo — dos textos encimados en la franja que existe
+     justamente para leerse. Se vio en la captura. */
+  g.fillStyle = 'rgba(10,6,16,.965)';
+  if(lado === 'arriba')      g.fillRect(0, 0, W, grueso);
+  else if(lado === 'abajo')  g.fillRect(0, H - grueso, W, grueso);
+  else if(lado === 'izquierda') g.fillRect(0, 0, grueso, H);
+  else                       g.fillRect(W - grueso, 0, grueso, H);
+
+  /* Una línea del color del agente pegada al borde de adentro: es lo que la
+     separa del contenido sin gastar espacio. */
+  g.fillStyle = color;
+  if(lado === 'arriba')      g.fillRect(0, grueso - 2, W, 2);
+  else if(lado === 'abajo')  g.fillRect(0, H - grueso, W, 2);
+  else if(lado === 'izquierda') g.fillRect(grueso - 2, 0, 2, H);
+  else                       g.fillRect(W - grueso, 0, 2, H);
+
+  /* Se dibuja siempre en horizontal y se GIRA el lienzo para los lados. Es la
+     mitad de código y, sobre todo, la misma barra en los cuatro lados: escrita
+     cuatro veces, la de la derecha se habría quedado atrás a la tercera. */
+  const largo = vertical ? H : W;
+  if(lado === 'izquierda'){ g.translate(0, H); g.rotate(-Math.PI/2); }
+  else if(lado === 'derecha'){ g.translate(W, 0); g.rotate(Math.PI/2); }
+  else if(lado === 'abajo'){ g.translate(0, H - grueso); }
+
+  /* De aquí para abajo se pinta como si la barra fuera de arriba y midiera
+     `largo` × `grueso`. */
+  const my = grueso / 2;
+  let x = 14;
+
+  /* El botón de inicio: el cuadrito con el color del agente. Es lo que hace
+     que se lea «barra de tareas» y no «letrero». */
+  g.fillStyle = color;
+  redondo(g, x, my - 13, 26, 26, 7); g.fill();
+  g.fillStyle = 'rgba(0,0,0,.55)';
+  g.fillRect(x + 7, my - 6, 5, 5); g.fillRect(x + 14, my - 6, 5, 5);
+  g.fillRect(x + 7, my + 1, 5, 5); g.fillRect(x + 14, my + 1, 5, 5);
+  x += 40;
+
+  if(!t){
+    g.fillStyle = '#5B4B6D'; g.font = '20px ui-monospace, Menlo, monospace';
+    g.fillText('sin nada en curso · matando el rato', x, my + 7);
+    g.restore();
+    return;
+  }
+
+  /* La «ventana abierta»: el encargo. Ocupa lo que sobre, para que se lea
+     completo cuando cabe y se recorte sólo cuando de verdad no. */
+  const finReloj = largo - 118;
+  const anchoVentana = Math.max(140, finReloj - x - 190);
+  g.fillStyle = 'rgba(255,255,255,.06)';
+  redondo(g, x, my - 17, anchoVentana, 34, 8); g.fill();
+  g.fillStyle = color; g.fillRect(x, my + 13, anchoVentana, 3);
+  g.fillStyle = '#E9E4E4'; g.font = '600 20px -apple-system, system-ui, sans-serif';
+  g.fillText(recortar(g, t.en || 'trabajando', anchoVentana - 22), x + 11, my + 3);
+  x += anchoVentana + 16;
+
+  /* El avance, que es lo que hace que se vea AVANZAR y no sólo estar. */
+  if(t.total > 0){
+    const p = Math.max(0, Math.min(1, t.va / t.total));
+    const bw = 120;
+    g.fillStyle = 'rgba(255,255,255,.10)'; redondo(g, x, my - 6, bw, 12, 6); g.fill();
+    g.fillStyle = color; redondo(g, x, my - 6, Math.max(12, bw * p), 12, 6); g.fill();
+    g.fillStyle = '#9A8FA8'; g.font = '17px ui-monospace, Menlo, monospace';
+    g.fillText(`${t.va}/${t.total}`, x + bw + 10, my + 6);
+  } else if(t.paso){
+    g.fillStyle = '#9A8FA8'; g.font = '18px ui-monospace, Menlo, monospace';
+    g.fillText(recortar(g, '› ' + t.paso, 170), x, my + 6);
+  }
+
+  /* El reloj, pegado a la esquina. Sin él no se lee como barra de tareas.
+     `relojFijo` sólo lo pone una prueba: sin poder congelarlo, dos pintadas
+     de la MISMA pantalla salen distintas si el minuto cambió entre una y otra,
+     y entonces la prueba de que repintar es idempotente falla sola una vez de
+     cada tantas. Una prueba que falla sola se acaba ignorando, y una prueba
+     que se ignora es peor que no tenerla. */
+  const d = new Date();
+  const reloj = relojFijo || (String(d.getHours()).padStart(2,'0') + ':' +
+                String(d.getMinutes()).padStart(2,'0'));
+  g.fillStyle = '#C0B0D0'; g.font = '19px ui-monospace, Menlo, monospace';
+  g.fillText(reloj, largo - 74, my + 6);
+
+  g.restore();
+}
+
+/* ── el catálogo, y de quién es cada pantalla ──────────────────────────── */
+const OCIO = [
+  (g,W,H,c,n) => pantallaBusqueda(g, W, H, c, n),
+  (g,W,H,c,n) => juegoBloques(g, W, H, c, JUEGOS[0]),
+  (g,W,H,c,n) => pantallaVideo(g, W, H, c, n),
+  (g,W,H,c,n) => pantallaImagenes(g, W, H, c, n),
+  (g,W,H,c,n) => juegoArena(g, W, H, c, JUEGOS[1]),
+  (g,W,H,c,n) => pantallaHoja(g, W, H, c, n),
+  (g,W,H,c,n) => juegoCoches(g, W, H, c, JUEGOS[2]),
+  (g,W,H,c,n) => pantallaBusqueda(g, W, H, c, n + 3),
+  (g,W,H,c,n) => juegoCiudad(g, W, H, c, JUEGOS[3]),
+  (g,W,H,c,n) => pantallaVideo(g, W, H, c, n + 2),
+];
+
 /* ── el dibujo de la pantalla ─────────────────────────────────────────── */
+/* Once pantallas en la vuelta. La 0 es EL TRABAJO A PANTALLA COMPLETA; las
+   otras diez son las suyas —buscar, ver videos, jugar— y todas llevan la barra
+   con el trabajo de verdad encima.
+
+   La vuelta corre TRABAJE O NO, y ése es el encargo de Carlos entero: «el
+   chiste es que siga viendo el desarrollo de su tarea y me entretenga viendo
+   eso como si realmente hicieran algo». Sin la barra, la parte chistosa
+   escondería la parte útil; sin la rotación, la parte útil sería lo único. */
+const PANTALLAS_TOTAL = 1 + OCIO.length;
+
 function pintarPantalla(esc_, quien, color){
   const g = esc_.lienzo.getContext('2d');
   const W = 1024, H = 640;
+  /* ⚠ SE BORRA TODO ANTES DE CADA PANTALLA, y no dentro de cada una. Cada
+     escena pinta su propio fondo, así que parecía innecesario — hasta que en
+     la del mundo de bloques, donde el terreno sólo llegaba hasta donde llegaba,
+     asomó por abajo el «Lo que estabas buscando…» de la BÚSQUEDA anterior. Se
+     vio en la captura. Confiar en que cada escena tape todo es confiar en diez
+     funciones a la vez; borrar aquí es una línea. */
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = 1;
+  g.clearRect(0, 0, W, H);
   g.fillStyle = '#0C0714'; g.fillRect(0, 0, W, H);
 
-  /* barra de título */
-  g.fillStyle = '#1B1226'; g.fillRect(0, 0, W, 62);
-  g.fillStyle = color;     g.fillRect(0, 60, W, 2);
-  for(let i = 0; i < 3; i++){
-    g.beginPath(); g.arc(34 + i*30, 31, 8, 0, Math.PI*2);
-    g.fillStyle = ['#F0567F','#E8B33A','#3ECF8E'][i]; g.fill();
-  }
-  g.fillStyle = '#A090B4'; g.font = '600 24px ui-monospace, Menlo, monospace';
-  g.fillText((quien.nombre || '').slice(0, 30), 140, 40);
-
   const t = quien.trabajo;
-  if(!t){
-    g.fillStyle = '#4A3167'; g.font = '600 30px ui-monospace, Menlo, monospace';
-    g.fillText('en reposo', 44, 150);
-    g.fillStyle = '#2A1C3D'; g.font = '22px ui-monospace, Menlo, monospace';
-    g.fillText('sin nada en curso', 44, 196);
+  const n = ((esc_.ocio | 0) % PANTALLAS_TOTAL + PANTALLAS_TOTAL) % PANTALLAS_TOTAL;
+
+  /* La 0 con trabajo es la pantalla completa del encargo. Sin trabajo no hay
+     pantalla completa que enseñar, así que se va a la primera de las suyas —y
+     la barra dirá que anda matando el rato, que es la verdad. */
+  if(n === 0 && t){
+    pantallaTrabajo(g, W, H, quien, color, t);
     esc_.textura.needsUpdate = true;
     return;
   }
 
+  OCIO[(n === 0 ? 0 : n - 1) % OCIO.length](g, W, H, color, n);
+  /* `ladoFijo` sólo lo pone la manija de pruebas, para poder ver los cuatro
+     lados sin esperar a que le toque a alguien el de la derecha. La primera
+     versión de esa manija pintaba la barra ENCIMA de la que ya había puesto
+     esta función: salían dos, y en la captura parecía un defecto del producto
+     cuando era del andamio. */
+  barraDeTarea(g, W, H, quien, color, esc_.ladoFijo || ladoDe(quien.id));
+  esc_.textura.needsUpdate = true;
+}
+
+/* El encargo a pantalla completa, dentro de un navegador. */
+function pantallaTrabajo(g, W, H, quien, color, t){
+  /* El encargo va como PESTAÑA ABIERTA. Es el detalle que hace que se lea
+     «está trabajando en esto» y no «hay un letrero pegado en la pared». */
+  marcoNavegador(g, W, color,
+    [recortar2(g, t.en || 'trabajo', 200), 'la mesa', 'el repo'], 0,
+    'taller.mazi/' + (quien.id || 'agente') + '/en-curso');
+
   g.fillStyle = '#7B6B8D'; g.font = '600 19px ui-monospace, Menlo, monospace';
-  g.fillText('AHORITA ESTÁ EN', 44, 118);
+  g.fillText('AHORITA ESTÁ EN', 44, 150);
 
   /* El título se parte a mano: `fillText` no salta de renglón solo, y un
      encargo largo se salía de la pantalla sin que nadie se enterara. */
   g.fillStyle = '#E9E4E4'; g.font = '700 38px -apple-system, system-ui, sans-serif';
-  let y = 168;
+  let y = 200;
   for(const linea of partir(g, t.en || '', W - 88).slice(0, 2)){
     g.fillText(linea, 44, y); y += 46;
   }
 
   if(t.paso){
     g.fillStyle = color; g.font = '24px ui-monospace, Menlo, monospace';
-    g.fillText(recortar(g, '› ' + t.paso, W - 88), 44, y + 12);
+    g.fillText(recortar(g, '› ' + t.paso, W - 88), 44, y + 10);
   }
 
   /* avance */
   if(t.total > 0){
-    const by = 330, bw = W - 88, p = Math.max(0, Math.min(1, t.va / t.total));
+    const by = 356, bw = W - 88, p = Math.max(0, Math.min(1, t.va / t.total));
     g.fillStyle = '#241834'; redondo(g, 44, by, bw, 14, 7); g.fill();
     g.fillStyle = color;     redondo(g, 44, by, Math.max(14, bw*p), 14, 7); g.fill();
     g.fillStyle = '#7B6B8D'; g.font = '20px ui-monospace, Menlo, monospace';
-    g.fillText(`${t.va} de ${t.total}`, 44, by + 44);
+    g.fillText(`${t.va} de ${t.total}`, 44, by + 40);
   }
 
   /* el rastro: los últimos pasos, del más viejo al más nuevo */
-  const pasos = (t.pasos || []).slice(-7);
+  const pasos = (t.pasos || []).slice(-6);
   if(pasos.length){
-    g.fillStyle = '#33224A'; g.fillRect(44, 396, W - 88, 1);
+    g.fillStyle = '#33224A'; g.fillRect(44, 424, W - 88, 1);
     g.font = '21px ui-monospace, Menlo, monospace';
-    let py = 432;
+    let py = 458;
     pasos.forEach((p, i) => {
       const ultimo = i === pasos.length - 1;
       g.fillStyle = ultimo ? '#C77BFF' : `rgba(123,107,141,${0.4 + i*0.07})`;
@@ -494,7 +1195,17 @@ function pintarPantalla(esc_, quien, color){
       py += 29;
     });
   }
-  esc_.textura.needsUpdate = true;
+}
+
+/* Recorta a un ancho en píxeles conservando la fuente que ya esté puesta. Va
+   aparte de `recortar` porque el marco del navegador cambia la fuente y
+   `recortar` mediría con la que quedó, no con la suya. */
+function recortar2(g, texto, ancho){
+  const antes = g.font;
+  g.font = '19px ui-monospace, Menlo, monospace';
+  const r = recortar(g, texto, ancho);
+  g.font = antes;
+  return r;
 }
 
 function partir(g, texto, ancho){
@@ -1257,7 +1968,69 @@ $('bVista').addEventListener('click', () => {
    olvidada: sin esto, revisar el taller es mirar una foto y opinar, que es
    justo lo que la casa no acepta como verificación. */
 window.__taller = { escena, camara, puestos, get gente(){ return gente; },
-                    get cielo(){ return cielo; }, dispararCielo:() => cielo && dispararCielo(cielo) };
+                    get cielo(){ return cielo; }, dispararCielo:() => cielo && dispararCielo(cielo),
+                    cuantasPantallas: () => PANTALLAS_TOTAL,
+                    /* Poner una pantalla concreta, para poder VERLAS todas en
+                       una prueba en vez de esperar setenta segundos. */
+                    verPantalla(id, n){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      p.mesa.ocio = n % PANTALLAS_TOTAL;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+                      return true;
+                    },
+                    /* Repintar con SU estado de verdad. Hace falta para probar el
+                       cambio de pantalla en los dos sentidos sin que la prueba
+                       se ensucie a sí misma. */
+                    /* Embarra el lienzo de un color imposible. Sirve para PROBAR que
+                       cada pantalla tapa TODO: se ensucia, se pinta encima, y si
+                       queda un solo píxel del color imposible es que esa pantalla
+                       deja ver lo de antes por debajo. */
+                    ensuciar(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      const g = p.mesa.lienzo.getContext('2d');
+                      g.setTransform(1,0,0,1,0,0); g.globalAlpha = 1;
+                      g.fillStyle = '#FF00FF';
+                      g.fillRect(0, 0, p.mesa.lienzo.width, p.mesa.lienzo.height);
+                      return true;
+                    },
+                    /* Cuántos píxeles del color imposible quedaron. */
+                    manchas(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return -1;
+                      const c = p.mesa.lienzo;
+                      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+                      let n = 0;
+                      for(let i = 0; i < d.length; i += 4){
+                        if(d[i] > 240 && d[i+1] < 40 && d[i+2] > 240) n++;
+                      }
+                      return n;
+                    },
+                    /* De qué lado tiene su barra cada quien. Es fijo por agente. */
+                    ladoDe: (id) => ladoDe(id),
+                    congelarReloj(h){ relojFijo = h; },
+                    /* Forzar un lado, para poder VER los cuatro en una prueba en vez
+                       de esperar a que le toque a alguien el de la derecha. */
+                    verBarra(id, lado, pantalla){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      p.mesa.ocio = (pantalla == null ? p.mesa.ocio : pantalla);
+                      p.mesa.ladoFijo = lado;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+                      p.mesa.ladoFijo = null;
+                      return true;
+                    },
+                    verTrabajo(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+                      return true;
+                    },
+                    lienzoDe(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      return p ? p.mesa.lienzo.toDataURL('image/png') : null;
+                    } };
 
 /* ── el bucle ─────────────────────────────────────────────────────────── */
 /* ── los tres estados del panel ────────────────────────────────────────────
@@ -1312,6 +2085,27 @@ if(DENTRO){
 }
 
 cielo = armarCielo();
+
+/* ── EL RELOJ DEL OCIO ─────────────────────────────────────────────────────
+   Los que no tienen trabajo cambian de pantalla cada 7 segundos. NO va en el
+   bucle de cuadros: repintar un lienzo de 1024×640 sesenta veces por segundo
+   para enseñar una página quieta funde la batería de un teléfono, y es la
+   misma razón por la que la pantalla del trabajo se repinta sólo al cambiar.
+
+   Y cambia UNO A LA VEZ, no todos juntos: cuatro monitores parpadeando al
+   unísono se lee como un fallo del cuarto. Se pasan el turno. */
+let turnoOcio = 0;
+setInterval(() => {
+  /* ⚠ YA NO SE FILTRA POR «ocioso». Al principio sólo rotaban los que no
+     tenían nada que hacer, y eso dejaba fuera justo lo que Carlos quería ver:
+     el agente jugando MIENTRAS su tarea avanza en la barra. Rotan todos; la
+     pantalla 0 es su trabajo completo y sigue apareciendo en cada vuelta. */
+  const todos = [...puestos.values()].filter(p => p.quien);
+  if(!todos.length) return;
+  const p = todos[turnoOcio++ % todos.length];
+  p.mesa.ocio = (p.mesa.ocio + 1) % PANTALLAS_TOTAL;
+  pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+}, 7000);
 
 const reloj = new THREE.Clock();
 function cuadro(){
