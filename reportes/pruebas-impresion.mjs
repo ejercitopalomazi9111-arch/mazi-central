@@ -269,6 +269,64 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
   await ctx2.close();
 }
 
+/* ══ LAS DOS INSTITUCIONES ═════════════════════════════════════════════════
+   GERALDMED no tiene membrete oficial, así que su cabecera se COMPONE con el
+   logo. Lo que se prueba aquí son los dos defectos que salieron armándola, y
+   los dos son de la misma familia: se ven «raros pero no rotos», que es la
+   peor clase — uno los mira y piensa «ha de ser el diseño».
+
+   1 · el filo del pie se llamaba `.barra`, que ya era la barra de herramientas
+       de la app con `position:sticky; top:0`. Lo heredó, y con `top` y
+       `bottom` puestos a la vez gana `top`: el pie se pintaba como listón EN
+       LA CABECERA.
+   2 · el pie de página seguía firmando «Instituto Rembrandt» debajo del
+       membrete de GERALDMED. En un documento con folio y sello de
+       verificación eso no es un detalle: es un papel que dice dos cosas. */
+{
+  const p3 = await (await b.newContext()).newPage();
+  await p3.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p3.waitForTimeout(1000);
+
+  const mide = async () => p3.evaluate(() => {
+    const h = document.querySelector('.hoja');
+    const inf = h.querySelector('.membrete-inf');
+    const cab = h.querySelector('.membrete-sup');
+    const zona = h.querySelector('.zona');
+    const rh = h.getBoundingClientRect(), ri = inf.getBoundingClientRect();
+    return {
+      pieAbajo: Math.abs(ri.bottom - rh.bottom) < 2,
+      firma: (document.querySelector('.folio-pie').innerText.split('\n')[1] || ''),
+      seEncima: zona.getBoundingClientRect().top < cab.getBoundingClientRect().bottom,
+      cabeceraEsImagen: cab.tagName === 'IMG',
+    };
+  });
+
+  const cambiar = async (cual) => {
+    await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(250);
+    await p3.selectOption('#oInstitucion', cual); await p3.waitForTimeout(700);
+    await p3.click('[data-vista="ver"]'); await p3.waitForTimeout(900);
+  };
+
+  await cambiar('geraldmed');
+  const g = await mide();
+  ok('GERALDMED · el filo del pie va ABAJO, no de listón en la cabecera',
+     g.pieAbajo, 'quedó arriba: chocó con otra clase que trae top:0');
+  ok('GERALDMED · el pie firma con GERALDMED y no con la escuela',
+     /geraldmed/i.test(g.firma), 'firmó «' + g.firma + '»');
+  ok('GERALDMED · el texto NO se monta sobre la línea del membrete',
+     !g.seEncima, 'el margen de arriba se quedó corto para la cabecera compuesta');
+  ok('GERALDMED · su cabecera es compuesta, no una imagen que finja membrete',
+     !g.cabeceraEsImagen);
+
+  await cambiar('rembrandt');
+  const r3 = await mide();
+  ok('REMBRANDT · sigue usando su membrete REAL, que es una imagen',
+     r3.cabeceraEsImagen);
+  ok('REMBRANDT · y su pie sigue firmando con la escuela',
+     /rembrandt/i.test(r3.firma), 'firmó «' + r3.firma + '»');
+  ok('REMBRANDT · con su pie abajo, como siempre', r3.pieAbajo);
+}
+
 await b.close();
 console.log('\n' + bien + ' bien · ' + mal + ' mal');
 process.exit(mal ? 1 : 0);
