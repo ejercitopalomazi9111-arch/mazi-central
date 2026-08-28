@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es" class="quieto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El minuto antes · Ligas Mazi</title>
+<meta name="theme-color" content="#141C13">
+<meta name="description" content="El papá no necesita saber de futbol. Necesita saber a qué hora y en qué cancha.">
+
+<!--
+  EL MINUTO ANTES — demostración hecha por Godines y Sylcred, 28 de agosto.
+
+  DE DÓNDE SALE. Carlos mandó una foto: las manos de un niño colocando un balón
+  muy gastado sobre la línea de cal de un campo sintético, luz de tarde. No está
+  jugando: está COLOCANDO. Es el instante antes del silbato.
+
+  LA FOTO NO SE PUBLICA y no está en este repositorio. Es el hijo de alguien y
+  nadie dio permiso; Carlos la mandó como REFERENCIA, que no es lo mismo. Todo
+  lo que se ve aquí lo dibujamos nosotros.
+
+  LA IDEA. La foto no es de futbol: es del minuto antes. Y ese minuto es de
+  quien NO sale en la foto — el papá que no sabe si el partido es a las nueve o
+  a las once, ni en qué cancha. Es el problema que Carlos escribió con sus
+  palabras: «que el papá sepa qué día y en qué lugar juega la categoría de su
+  hijo».
+
+  Por eso la página no termina planteándolo: lo RESUELVE. La última escena
+  funciona de verdad.
+
+  LA PRUEBA CONTRA LO GENÉRICO, de Syl: si esto sirviera para una liga de otro
+  deporte cambiando dos palabras, estaría mal.
+
+  EL REPARTO, que se respeta aunque lo haya escrito uno solo: index.html y
+  base.css son la página; mueve.css y mueve.js son la capa de movimiento y se
+  pueden borrar los dos sin que esto se rompa. Si no llegan, la página se ve
+  completa y quieta — igual que la foto.
+-->
+
+<!-- El icono es el balón, dibujado aquí mismo: sin archivo, sin petición y
+     sin el 404 de favicon que ensucia la consola de quien venga a revisar. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23C9CE3A'/><path d='M50 12 L70 26 L62 50 L38 50 L30 26 Z' fill='%23A8323A'/><path d='M40 56 L60 56 L66 78 L50 88 L34 78 Z' fill='%23A8323A'/></svg>">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="mueve.css">
+</head>
+<body>
+
+<!-- ── LA CANCHA · la línea y el balón ───────────────────────────────────
+     Decorativa para quien lee con lector de pantalla: no dice nada que no
+     esté en el texto. Aquí vive el único movimiento de la página. -->
+<div class="cancha" aria-hidden="true">
+  <div class="linea" data-linea></div>
+  <div class="balon" data-balon>
+    <svg viewBox="0 0 100 100" role="presentation">
+      <circle cx="50" cy="50" r="48" class="cuero"/>
+      <!-- Los gajos: geometría nuestra, no el calco de una marca. El balón de
+           la foto es amarillo y rojo y está muy usado; el desgaste se sugiere
+           con los bordes irregulares, no con una textura. -->
+      <path class="gajo" d="M50 12 L70 26 L62 50 L38 50 L30 26 Z"/>
+      <path class="gajo" d="M74 30 L88 48 L78 70 L64 54 Z"/>
+      <path class="gajo" d="M26 30 L36 54 L22 70 L12 48 Z"/>
+      <path class="gajo" d="M40 56 L60 56 L66 78 L50 88 L34 78 Z"/>
+      <circle cx="50" cy="50" r="48" class="orilla"/>
+    </svg>
+  </div>
+</div>
+
+<main>
+
+  <!-- ── 1 · el minuto antes ─────────────────────────────────────────── -->
+  <section class="escena portada" data-escena="1">
+    <p class="antetitulo" data-mueve="mascara"><span>Ligas Mazi · demostración</span></p>
+    <h1 data-mueve="mascara"><span>El minuto</span><span>antes.</span></h1>
+    <p class="entrada" data-mueve="mascara"><span>
+      Un niño acomoda el balón sobre la línea. Le sobra tiempo y no le falta
+      nada.
+    </span></p>
+    <p class="entrada acento" data-mueve="mascara"><span>
+      A su papá le faltan dos datos.
+    </span></p>
+  </section>
+
+  <!-- ── 2 · quién no sale en la foto ────────────────────────────────── -->
+  <section class="escena" data-escena="2">
+    <h2 data-mueve="mascara"><span>Quién no sale<br>en la foto</span></h2>
+    <p data-mueve="mascara"><span>
+      El que va manejando. El que preguntó en el chat y nadie contestó. El que
+      llegó a la cancha ocho cuando era la tres.
+    </span></p>
+    <p class="cita" data-mueve="mascara"><span>
+      «Que el papá sepa qué día y en qué lugar juega la categoría de su hijo.»
+    </span></p>
+    <p class="firma" data-mueve="mascara"><span>— Carlos, cuando pidió Ligas Mazi</span></p>
+  </section>
+
+  <!-- ── 3 · cómo se entera hoy ──────────────────────────────────────── -->
+  <section class="escena" data-escena="3">
+    <h2 data-mueve="mascara"><span>Cómo se<br>entera hoy</span></h2>
+    <ul class="hoy">
+      <li data-mueve="mascara"><span><b>Una foto de una hoja</b> pegada en la reja, tomada de lado.</span></li>
+      <li data-mueve="mascara"><span><b>Reenviada nueve veces</b>, ya sin saber de cuándo es.</span></li>
+      <li data-mueve="mascara"><span><b>Un audio de minuto y medio</b> que dice «creo que a las nueve».</span></li>
+      <li data-mueve="mascara"><span><b>La mamá de Emiliano</b>, que siempre sabe. Hasta que no.</span></li>
+    </ul>
+    <p class="remate" data-mueve="mascara"><span>
+      Y cuando cambian la hora el jueves, nada de eso se entera.
+    </span></p>
+  </section>
+
+  <!-- ── 4 · la respuesta, que funciona ──────────────────────────────────
+       ESTA ESCENA NO LLEVA MOVIMIENTO, A PROPÓSITO. Es la única que sirve
+       para algo, y una herramienta no necesita animación: necesita contestar
+       rápido. Animarla sería quitarle segundos a lo único que resuelve. -->
+  <section class="escena respuesta" data-escena="4">
+    <h2 data-mueve="mascara"><span>Los dos datos</span></h2>
+    <p class="lead" data-mueve="mascara"><span>Escoge la categoría. Ya.</span></p>
+
+    <!-- ── LOS DATOS VIVEN AQUÍ, EN EL HTML, Y NO EN EL JAVASCRIPT ────────
+         Sin JS el buscador no filtra, pero la tabla completa SÍ se lee: siete
+         categorías con su día, su hora y su cancha. Se pierde la comodidad,
+         no la información — que es la única forma honesta de prometer «aquí
+         sale el día y la cancha» en una página que puede quedarse sin JS.
+
+         Y de paso hay UNA sola fuente de verdad. Con los datos en el script y
+         un respaldo en el HTML, el día que cambie un horario se cambia en uno
+         de los dos y nadie se entera del otro. -->
+    <div class="consulta">
+      <label for="cat">Categoría</label>
+      <select id="cat" autocomplete="off">
+        <option value="">— todas —</option>
+        <option value="s8v">Sub-8 varonil</option>
+        <option value="s10v">Sub-10 varonil</option>
+        <option value="s10f">Sub-10 femenil</option>
+        <option value="s12v">Sub-12 varonil</option>
+        <option value="s12f">Sub-12 femenil</option>
+        <option value="s15v">Sub-15 varonil</option>
+        <option value="libre">Libre</option>
+      </select>
+
+      <!-- role=status + aria-live: quien usa lector de pantalla se entera del
+           resultado sin tener que ir a buscarlo. -->
+      <div class="resultado" id="resultado" role="status" aria-live="polite">
+        <table class="tabla" id="tabla">
+          <caption>Próximo partido por categoría</caption>
+          <thead>
+            <tr><th scope="col">Categoría</th><th scope="col">Día</th><th scope="col">Hora</th><th scope="col">Cancha</th></tr>
+          </thead>
+          <tbody>
+            <tr data-cat="s8v"><th scope="row">Sub-8 varonil</th><td>Sábado</td><td>08:30</td><td>Cancha 3</td></tr>
+            <tr data-cat="s10v" data-cambio="Se recorrió una hora el jueves."><th scope="row">Sub-10 varonil</th><td>Sábado</td><td>10:00</td><td>Cancha 1</td></tr>
+            <tr data-cat="s10f"><th scope="row">Sub-10 femenil</th><td>Sábado</td><td>11:30</td><td>Cancha 3</td></tr>
+            <tr data-cat="s12v"><th scope="row">Sub-12 varonil</th><td>Domingo</td><td>09:00</td><td>Cancha 2</td></tr>
+            <tr data-cat="s12f" data-cambio="Cambió de cancha: era la 1."><th scope="row">Sub-12 femenil</th><td>Domingo</td><td>10:30</td><td>Cancha 4</td></tr>
+            <tr data-cat="s15v"><th scope="row">Sub-15 varonil</th><td>Domingo</td><td>12:00</td><td>Cancha 2</td></tr>
+            <tr data-cat="libre" data-sin="Esta semana descansan. Vuelven el 12."><th scope="row">Libre</th><td>—</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="aviso">
+      Datos inventados para la demostración. Ninguna cancha, categoría ni
+      horario de aquí corresponde a una liga real.
+    </p>
+  </section>
+
+  <!-- ── 5 · cierre ──────────────────────────────────────────────────── -->
+  <section class="escena cierre" data-escena="5">
+    <h2 data-mueve="mascara"><span>Y ya.</span></h2>
+    <p data-mueve="mascara"><span>
+      El niño sigue acomodando el balón. Eso no lo arregla ningún software y
+      no hace falta.
+    </span></p>
+    <p class="acento" data-mueve="mascara"><span>
+      Lo que sí: que su papá esté ahí cuando suene el silbato.
+    </span></p>
+  </section>
+
+</main>
+
+<footer>
+  <p>Hecho por <b>Godines</b> y <b>Sylcred</b> · Grupo Mazi</p>
+  <p class="chico">Sin librerías, sin tipografías de internet, sin cookies y sin rastreo.</p>
+</footer>
+
+<script src="mueve.js" defer></script>
+<script src="datos.js" defer></script>
+</body>
+</html>
