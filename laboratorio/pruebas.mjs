@@ -540,6 +540,69 @@ console.log('\n── los defectos que reportó Carlos ──');
    física y que el sistema no se destruya solo, que es lo que le pasó a mis
    tres primeras versiones —de cinco cuerpos quedaban tres en diez segundos—.
    Una demo que se acaba antes de que la miren no es una demo. */
+/* ══ LA CONSOLA SE APARTA DE LO QUE ESTÉ ARRIBA ═══════════════════════════
+   Carlos, e183: «si subo la hoja y luego mando un aviso la consola baja».
+
+   Eran dos reglas peleándose por el mismo `transform` con la misma
+   especificidad: ganaba la escrita después, o sea la del aviso, y la consola
+   caía de 14rem a 4.5rem — encima de la hoja, que es lo que esas reglas
+   venían a evitar. Se mide el transform PINTADO, porque el defecto vive
+   justo en cuál de las dos reglas gana. */
+/* ══ LA ONDA CONTESTA TAMBIÉN CON MOVIMIENTO REDUCIDO ═════════════════════
+   Carlos: «el botón de tócame donde sea en teléfono sólo se pulsa, no hay
+   más». La causa más probable en un iPhone es «Reducir movimiento», que aquí
+   hacía que la función se saliera sin dibujar nada. Un botón que se llama
+   «tócame donde sea» y no contesta al toque incumple su propio nombre.
+
+   Se prueba en un contexto con la preferencia PUESTA, que es el único donde
+   el defecto existe: sin ella, esto pasaba en verde todo el tiempo. */
+console.log('\n── el toque contesta aunque se pida menos movimiento ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:390, height:844 },
+                                   hasTouch:true, isMobile:true, reducedMotion:'reduce' });
+  const { pg, err } = await nuevaPagina(ctx);
+  await pg.locator('[data-onda]').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(300);
+  await pg.locator('[data-onda]').tap();
+  await pg.waitForTimeout(60);
+  const o = await pg.evaluate(() => {
+    const s = document.querySelector('[data-onda] .onda');
+    if(!s) return null;
+    const e = getComputedStyle(s), r = s.getBoundingClientRect();
+    return { quieta:s.classList.contains('onda--quieta'),
+             ancho:Math.round(r.width), opacidad:+e.opacity };
+  });
+  ok(!!o, 'el toque deja una onda aunque se pida menos movimiento');
+  ok(o && o.quieta, 'y es la versión que no se desplaza ni crece');
+  ok(o && o.ancho > 40, `y se ve: nace ya del tamaño final (${o && o.ancho}px)`);
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
+console.log('\n── la consola no baja cuando hay hoja y aviso ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:1100, height:800 } });
+  const { pg, err } = await nuevaPagina(ctx);
+  const subida = () => pg.evaluate(() => {
+    const m = new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.consola')).transform);
+    return Math.round(m.m42);          /* negativo = apartada hacia arriba */
+  });
+  await pg.locator('[data-abrir-hoja]').scrollIntoViewIfNeeded();
+  await pg.click('[data-abrir-hoja]');
+  await pg.waitForTimeout(700);
+  const conHoja = await subida();
+  ok(conHoja < -100, `con la hoja arriba, la consola se aparta (${conHoja}px)`);
+
+  await pg.evaluate(() => document.querySelector('[data-avisar]')?.click());
+  await pg.waitForTimeout(700);
+  const conAviso = await subida();
+  ok(conAviso <= conHoja + 2,
+     `y al llegar un aviso NO baja: sigue apartada lo que pide la hoja (${conHoja} → ${conAviso})`);
+
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
 console.log('\n── el sistema solar ──');
 {
   const ctx = await b.newContext({ viewport:{ width:1100, height:800 } });
@@ -568,6 +631,53 @@ console.log('\n── el sistema solar ──');
      dibujados, no órbitas integradas. */
   const movio = b2.some((c, i) => a[i] && Math.abs(c.d - a[i].d) > 2);
   ok(movio, 'y las distancias al sol cambian: son elipses, no círculos fijos');
+
+  /* ── SE PUEDE TOCAR ──────────────────────────────────────────────────
+     Carlos: «no hay modo de interactuar con el sistema solar haz que le pueda
+     poner cometas al pulsar o algo así». */
+  const antesDeTocar = (await estado()).length;
+  const caja = await pg.locator('[data-lienzo]').boundingBox();
+  await pg.mouse.click(caja.x + caja.width * 0.22, caja.y + caja.height * 0.30);
+  await pg.waitForTimeout(300);
+  const trasTocar = await estado();
+  ok(trasTocar.length === antesDeTocar + 1,
+     `tocar el lienzo pone un cuerpo (${antesDeTocar} → ${trasTocar.length})`);
+  ok(trasTocar.filter(c => c.cometa).length >= 2, 'y el que aparece es un cometa');
+
+  /* ── LA LUNA CHOCA ───────────────────────────────────────────────────
+     Carlos: «una luna chocó con otro planeta y no explotó eso está mal».
+     Se provoca a propósito: se pone un cometa EXACTAMENTE donde está la luna
+     —que es lo que hace `cometaEn` con el punto que se toca— y se comprueba
+     que la luna desaparece y que hay destello. Sin el destello, «chocó» y
+     «se esfumó» se ven igual, que era la queja. */
+  ok((await estado()).some(c => c.luna), 'hay un planeta con luna');
+  if((await estado()).some(c => c.luna)){
+    /* ⚠ LEER DÓNDE ESTÁ LA LUNA Y APUNTARLE TIENEN QUE PASAR EN EL MISMO
+       TICK. La luna ORBITA: entre un `evaluate` que devuelve su posición y un
+       `mouse.click` que viaja de vuelta al navegador pasan decenas de
+       milisegundos y ya no está ahí. Así escrita, la prueba fallaba unas
+       veces sí y otras no — y una prueba que va y viene no sirve ni para
+       aprobar ni para reprobar. Aquí se mide y se dispara sin soltar el hilo. */
+    await pg.evaluate(() => {
+      const l = document.querySelector('[data-lienzo]');
+      const p = l.__estado().find(c => c.luna);
+      const r = l.getBoundingClientRect(), esc = r.width / l.width;
+      l.dispatchEvent(new PointerEvent('pointerup', { bubbles:true,
+        clientX: r.left + p.luna.x * esc, clientY: r.top + p.luna.y * esc }));
+    });
+    /* ⚠ EL DESTELLO DURA 420 ms Y HAY QUE MIRARLO DENTRO DE ESA VENTANA. La
+       primera versión esperaba 500 y luego preguntaba: para entonces ya se
+       había apagado, y la prueba acusaba de no explotar a algo que sí
+       explotó. Se mira pronto, y la desaparición de la luna —que es
+       permanente— se comprueba después. */
+    await pg.waitForTimeout(140);
+    const huboDestello = await pg.evaluate(() =>
+      document.querySelector('[data-lienzo]').__destellos());
+    await pg.waitForTimeout(400);
+    const despues = await estado();
+    ok(!despues.some(c => c.luna), 'la luna desaparece al estrellarse contra otro cuerpo');
+    ok(huboDestello > 0, `y deja destello: se ve que chocó, no que se esfumó (${huboDestello})`);
+  }
 
   ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
   await pg.close(); await ctx.close();

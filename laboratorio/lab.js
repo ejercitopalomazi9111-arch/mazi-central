@@ -110,8 +110,29 @@
       if(metas[i].getBoundingClientRect().top <= innerHeight * 0.34){ actual = i; break; }
     }
     vias.forEach((a, i) => a.setAttribute('aria-current', i === actual ? 'true' : 'false'));
+    moverGuia(actual == null ? null : vias[actual]);
     return false;                     /* una pasada por evento, y se duerme */
   }
+  /* ── EL SUBRAYADO QUE SE DESLIZA ────────────────────────────────────────
+     Carlos: «haz que en lugar de que la línea se teletransporte de apartado
+     que se deslice suavemente hasta la objetivo».
+
+     Se mide contra el CONTENIDO de la cinta y no contra la pantalla:
+     `offsetLeft` ya viene en coordenadas del contenedor, así que la guía sigue
+     puesta aunque la fila esté desplazada de lado —cabe en pantallas donde los
+     diez enlaces no caben— y no hay que sumarle `scrollLeft` a mano.
+
+     `scaleX` sobre un elemento de 1 px: así el ancho es el propio factor y no
+     hay que animar `width`, que recalcularía la maqueta en cada fotograma. */
+  const guia = $('[data-guia]');
+  let guiaEn = null;
+  function moverGuia(a){
+    if(!guia || a === guiaEn) return;          /* sin cambio, sin trabajo */
+    guiaEn = a;
+    if(!a){ guia.style.transform = 'translateX(0) scaleX(0)'; return; }
+    guia.style.transform = `translateX(${a.offsetLeft}px) scaleX(${a.offsetWidth})`;
+  }
+
   function alScroll(){ if(!pedidoScroll){ pedidoScroll = true; sumar(medirScroll); } }
   addEventListener('scroll', alScroll, { passive:true });
   addEventListener('resize', alScroll, { passive:true });
@@ -269,8 +290,15 @@
            contrario: «manteniendo la forma». Con 60 % la silueta está ahí casi
            entera y lo que corre es el HUECO, que es lo que hace que se note el
            movimiento sin perder la marca. Un cargador que no deja reconocer la
-           marca no está usando la marca. */
-        const guion = Math.max(8, Math.round(largo * 0.6));
+           marca no está usando la marca.
+
+           Y sube de 60 % a 82 %: Carlos, después del primer arreglo, pidió
+           «deja menos distancia entre las puntas de él cargando». Las «puntas»
+           son los dos extremos del trazo dibujado, y lo que las separa es el
+           HUECO — el resto del camino. Alargando el guion, el hueco se
+           encoge: la paloma se lee casi entera y lo que corre es una ranura
+           estrecha en vez de medio dibujo faltando. */
+        const guion = Math.max(8, Math.round(largo * 0.82));
         t.style.setProperty('--guion', guion);
         t.style.setProperty('--hueco', largo - guion);
         /* El desfase es por POSICIÓN en el camino, no un retardo de tiempo: un
@@ -393,10 +421,18 @@
 
   function onda(e){
     const b = e.currentTarget;
-    if(menos.matches) return;
+    /* ⚠ ANTES AQUÍ SE SALÍA SIN HACER NADA CON `prefers-reduced-motion`, y de
+       ahí salía lo de Carlos: «el botón de tócame donde sea en teléfono sólo
+       se pulsa, no hay más». Un botón que se llama «tócame donde sea» y no
+       contesta nada al toque está incumpliendo su propio nombre.
+
+       La preferencia pide MENOS MOVIMIENTO, no menos respuesta. Así que con
+       ella puesta la onda sigue saliendo: nace ya del tamaño final y sólo se
+       apaga. No se desplaza, no crece, y sigue diciendo dónde tocaste. */
+    const quieta = menos.matches;
     const r = b.getBoundingClientRect();
     const s = document.createElement('span');
-    s.className = 'onda';
+    s.className = quieta ? 'onda onda--quieta' : 'onda';
     /* El círculo se mide DESDE EL BOTÓN: con un tamaño fijo de 360 px, en un
        botón chico casi todo quedaba recortado y el efecto se perdía; en uno
        ancho no alcanzaba a cubrirlo. Dos veces la distancia a la esquina más

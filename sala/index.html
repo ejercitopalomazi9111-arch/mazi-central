@@ -491,6 +491,37 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   border:1px solid rgba(232,179,58,.28); border-radius:11px; padding:10px 12px;
   margin-bottom:12px; line-height:1.5;
 }
+/* ══ PREGUNTAR SIN EL DIÁLOGO DEL NAVEGADOR ════════════════════════════════
+   Carlos, e197: «al fusionar me da diálogo del navegador, una regla de grupo
+   Mazi es jamás usar esa porquería».
+
+   Regla suya y con razón de sobra: `confirm()` pinta una caja del sistema
+   —tipografía del sistema, botones del sistema, el nombre del dominio en el
+   título— encima de una app que se cuidó entera. Además BLOQUEA el hilo: los
+   mensajes que llegan mientras esa caja está abierta se quedan esperando a
+   que alguien la conteste.
+
+   Ésta es de la casa, no bloquea nada y devuelve una promesa, así que en el
+   sitio donde se usa se lee igual de corto que el `confirm` que sustituye. */
+.pregunta{
+  position:fixed; inset:0; z-index:76; background:rgba(8,5,13,.86);
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.pregunta.abierta{display:flex}
+.pregunta-caja{
+  width:100%; max-width:400px;
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:14px; padding:18px;
+}
+.pregunta-caja h3{margin:0 0 8px; font-size:16px}
+.pregunta-caja p{
+  margin:0 0 16px; font-size:13.5px; color:var(--tenue); line-height:1.45;
+  /* Se puede seleccionar y no se sale de la caja: a veces lo que va aquí es
+     un link que hay que copiar a mano. */
+  user-select:text; overflow-wrap:anywhere;
+}
+.pregunta-bts{display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap}
+
 .leyenda{
   position:fixed; inset:0; z-index:70; background:rgba(8,5,13,.82);
   display:none; align-items:flex-end; justify-content:center;
@@ -1579,6 +1610,17 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <div class="llaves-caja" id="llavesCaja"></div>
 </div>
 
+<div class="pregunta" id="pregunta" role="dialog" aria-modal="true" aria-labelledby="preguntaTit">
+  <div class="pregunta-caja">
+    <h3 id="preguntaTit"></h3>
+    <p id="preguntaTxt"></p>
+    <div class="pregunta-bts">
+      <button class="btn" id="preguntaNo">Cancelar</button>
+      <button class="btn" id="preguntaSi">Sí</button>
+    </div>
+  </div>
+</div>
+
 <div class="leyenda" id="leyenda">
   <div class="leyenda-caja" id="leyendaCaja"></div>
 </div>
@@ -2585,6 +2627,59 @@ function pintarHilo(){
   if(b) c.scrollTop += b.getBoundingClientRect().top - ancla.y;
 }
 
+/* ══ PREGUNTAR ═════════════════════════════════════════════════════════════
+   Sustituye a `confirm()`. Devuelve una promesa que da true o false, así que
+   quien la usa se lee igual de corto que antes — con un `await` delante.
+
+   Lo que `confirm()` da gratis y aquí hay que poner a mano: Escape cancela,
+   tocar el fondo cancela, el foco entra en la caja y VUELVE a donde estaba, y
+   el resto de la página queda inerte mientras tanto. Es la parte que se
+   olvida y la que hace que un modal casero sea peor que el del sistema.
+
+   El botón que confirma NO se enfoca al abrir: enfocar el destructivo hace
+   que un Enter de inercia —el mismo con el que acabas de mandar un mensaje—
+   confirme lo que no querías. Se enfoca el de cancelar. */
+function preguntar({ titulo, texto, si = 'Sí', peligro = false }){
+  return new Promise((listo) => {
+    const caja = $('pregunta'), bSi = $('preguntaSi'), bNo = $('preguntaNo');
+    const antes = document.activeElement;
+    $('preguntaTit').textContent = titulo;
+    $('preguntaTxt').textContent = texto || '';
+    $('preguntaTxt').hidden = !texto;
+    bSi.textContent = si;
+    bSi.classList.toggle('peligro', !!peligro);
+    caja.classList.add('abierta');
+    document.querySelector('.app')?.setAttribute('inert', '');
+    bNo.focus();
+
+    const cerrar = (r) => {
+      caja.classList.remove('abierta');
+      document.querySelector('.app')?.removeAttribute('inert');
+      bSi.removeEventListener('click', aSi);
+      bNo.removeEventListener('click', aNo);
+      caja.removeEventListener('click', aFondo);
+      removeEventListener('keydown', aTecla);
+      if(antes && document.contains(antes)) antes.focus();
+      listo(r);
+    };
+    const aSi = () => cerrar(true);
+    const aNo = () => cerrar(false);
+    const aFondo = (e) => { if(e.target === caja) cerrar(false); };
+    const aTecla = (e) => {
+      if(e.key === 'Escape'){ e.preventDefault(); cerrar(false); }
+      /* Tabular no se sale de la caja: son dos botones y se da la vuelta. */
+      if(e.key === 'Tab'){
+        e.preventDefault();
+        (document.activeElement === bNo ? bSi : bNo).focus();
+      }
+    };
+    bSi.addEventListener('click', aSi);
+    bNo.addEventListener('click', aNo);
+    caja.addEventListener('click', aFondo);
+    addEventListener('keydown', aTecla);
+  });
+}
+
 /* ── reaccionar ─────────────────────────────────────────────────────────── */
 let reaccionandoA = null;
 /* Las traducciones viven sólo en esta pantalla: no entran al hilo ni las ven
@@ -2770,8 +2865,10 @@ $('pantallaCaja').addEventListener('click', async (e) => {
   if(fu){
     const id = fu.dataset.fusionar, quien = gente[id];
     if(!quien) return;
-    if(!confirm(`¿Juntar la sesión "${quien.nombre}" con la tuya?\n\n` +
-                `Sus mensajes se verán como tuyos. El hilo no se reescribe.`)) return;
+    if(!await preguntar({
+      titulo: `¿Juntar "${quien.nombre}" con tu sesión?`,
+      texto: 'Sus mensajes se verán con tu nombre y tu figura. El hilo no se reescribe: cada mensaje sigue guardando con qué sesión se dijo.',
+      si: 'Juntarlas' })) return;
     fu.disabled = true;
     try{
       const d = await alServidor('fusionar', { de: yo.id, cual: id });
@@ -2790,7 +2887,10 @@ $('pantallaCaja').addEventListener('click', async (e) => {
   const id = b.dataset.barrer;
   const quien = gente[id];
   if(!quien) return;
-  if(!confirm(`¿Quitar a "${quien.nombre}" de la sala?`)) return;
+  if(!await preguntar({
+    titulo: `¿Quitar a "${quien.nombre}" de la sala?`,
+    texto: 'No ha hablado y no está conectado. No se pierde nada del hilo.',
+    si: 'Quitar', peligro: true })) return;
 
   b.disabled = true;
   try{
@@ -4040,7 +4140,17 @@ async function copiarInvitacion(){
   try{ await navigator.clipboard.writeText(liga);
        $('tituloSala').textContent = '¡link copiado!';
        setTimeout(() => { $('tituloSala').textContent = sala; }, 1400); }
-  catch(e){ prompt('Este es el link para invitar:', liga); }
+  catch(e){
+    /* El portapapeles falla más de lo que parece —permiso denegado, http sin
+       s, una webview rara—, y aquí se caía en un `prompt()` del navegador:
+       misma porquería que el `confirm`, y encima uno que la gente cierra por
+       reflejo sin copiar nada. Ahora el link se enseña en la propia mesa,
+       seleccionado, listo para el gesto de copiar de siempre. */
+    await preguntar({ titulo:'Este es el link para invitar', texto: liga,
+                      si:'Entendido' });
+    /* Seleccionar el texto del párrafo deja el link listo para copiar con el
+       menú del sistema, que en un teléfono es cómo se copia de verdad. */
+  }
 }
 $('bCodigo').addEventListener('click', copiarInvitacion);
 $('bCopiar').addEventListener('click', () => { copiarInvitacion(); cerrarCajones(); });

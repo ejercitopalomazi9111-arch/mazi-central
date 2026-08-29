@@ -66,9 +66,21 @@ await nueva.pg.waitForTimeout(400);
 const hayBoton = await nueva.pg.locator('[data-fusionar]').count();
 ok(hayBoton === 1, 'el panel de esa sesión ofrece fusionarla');
 
-nueva.pg.on('dialog', d => d.accept());
+/* ⚠ SI SALE UN DIÁLOGO DEL NAVEGADOR, LA PRUEBA REPRUEBA. Carlos, e197: «una
+   regla de grupo Mazi es jamás usar esa porquería». Antes esto lo ACEPTABA
+   —`d.accept()`— y con eso la prueba tapaba justo lo que él vino a
+   reclamar. Ahora se apunta y se falla. */
+const dialogos = [];
+nueva.pg.on('dialog', d => { dialogos.push(d.type()); d.dismiss(); });
 await nueva.pg.locator('[data-fusionar]').click();
+await nueva.pg.waitForTimeout(400);
+
+/* La pregunta es de la casa: se confirma tocando su botón. */
+ok(await nueva.pg.locator('#pregunta.abierta').count() === 1,
+   'la confirmación es una capa de la app, no del navegador');
+await nueva.pg.locator('#preguntaSi').click();
 await nueva.pg.waitForTimeout(900);
+ok(dialogos.length === 0, 'y no salió ningún diálogo del navegador: ' + (dialogos.join(', ') || 'ninguno'));
 await luis.pg.waitForTimeout(700);
 
 const despues = await luis.pg.evaluate(() =>

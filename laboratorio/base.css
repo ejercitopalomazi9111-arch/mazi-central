@@ -201,20 +201,43 @@ body{
    lee como fondo de plantilla y dos se leen como hoja técnica. Y el grano
    encima, para que el papel no sea un plano de color.
 
-   Todo sobre el `body` y NO en una capa `position:fixed`: esa capa aparte es
-   lo que iOS vuelve a rasterizar en cada cambio, y era el parpadeo que Carlos
-   reportó al pulsar cualquier botón. */
-body{
+   ── POR QUÉ LA RETÍCULA VA APARTE Y EL GRANO NO ──────────────────────────
+   Carlos, después: «la cuadrícula de atrás hazla fija y haz que todos los
+   otros elementos se muevan pero la cuadrícula no».
+
+   Aquí decía, con todas sus letras, que la capa `position:fixed` era lo que
+   iOS volvía a rasterizar en cada cambio y la causa del parpadeo que él mismo
+   había reportado. Eso era cierto, pero el culpable no era ser fija: era el
+   GRANO. El grano es un SVG con `feTurbulence` dentro, y una capa fija con un
+   filtro dentro es lo que iOS no perdona.
+
+   Así que se parten en dos, y cada mitad se queda donde no molesta:
+   · la retícula —cuatro gradientes lineales, que se rasterizan una vez en un
+     mosaico de 96 px y ya— se va a la capa fija, y ahí se queda quieta
+     mientras todo lo demás sube;
+   · el grano se queda en el `body` y sube con la página. Que la textura del
+     papel viaje con el papel no es un defecto: es lo que hace el papel.
+
+   `background-attachment:fixed` habría sido un renglón, y es justo el que no
+   sirve: Safari de iOS lo trata como `scroll` en unas versiones y provoca
+   repintado en otras. Se vería bien aquí y mal en su teléfono. */
+.reticula{
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
   background-image:
     linear-gradient(var(--reticula) 1px, transparent 1px),
     linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
     linear-gradient(var(--reticula) 1px, transparent 1px),
-    linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
+    linear-gradient(90deg, var(--reticula) 1px, transparent 1px);
+  background-size:96px 96px, 96px 96px, 24px 24px, 24px 24px;
+  background-repeat:repeat;
+}
+body{
+  background-image:
     url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>\
 <filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/></filter>\
 <rect width='160' height='160' filter='url(%23g)' opacity='.05'/></svg>");
-  background-size:96px 96px, 96px 96px, 24px 24px, 24px 24px, 160px 160px;
+  background-size:160px 160px;
   background-repeat:repeat;
 }
 
@@ -229,6 +252,28 @@ h2{ font-size:clamp(1.9rem, 4.4vw, 2.75rem); }
 h3{ font-size:1.05rem; font-weight:700; letter-spacing:-.01em; line-height:1.35; }
 p{ margin:0 0 1.05rem; max-width:64ch; color:var(--texto-2); }
 b, strong{ color:var(--texto); font-weight:650; }
+/* ── LO QUE SE SELECCIONA ─────────────────────────────────────────────────
+   Carlos: «si pego con mis llaves en el recuadro de texto donde puedo poner
+   nombre y correo se queda iluminado con un tipo marcatextos blanco y eso se
+   ve mal en su defecto haz que sea morado».
+
+   Era el azul-blanco de fábrica del navegador, que no sabe nada de esta
+   paleta y encima cambia según el sistema operativo: la misma pantalla se
+   veía distinta en su teléfono y en el mío. El acento sí es de la casa.
+
+   Va sobre todo el documento y no sólo sobre los campos: seleccionar un
+   párrafo tenía el mismo problema y nadie lo había mirado. Y el color del
+   texto se fija junto con el fondo — dejar sólo el fondo hereda la tinta de
+   cada sitio y en los sitios oscuros la selección quedaba ilegible. */
+/* El claro es `:root` a secas y sólo el oscuro lleva atributo — así está todo
+   el archivo, y salirse de eso deja un tema definido en un solo sitio.
+   Sobre papel manda el violeta OSCURO: el pleno con letra blanca se queda
+   corto para texto pequeño. */
+::selection{ background:var(--acento-texto); color:#fff; }
+/* Y sobre tinta manda el pleno: ahí `--acento-texto` es el violeta CLARO, y
+   letra blanca encima no se lee. */
+:root[data-tema="oscuro"] ::selection{ background:var(--acento); color:#fff; }
+
 code{ font-family:var(--mono); font-size:.9em; color:var(--acento-texto); }
 
 /* El rótulo va en la columna del margen, como el folio de una hoja técnica.
@@ -326,6 +371,7 @@ section[id].liviana{ padding:3.5rem 0 3rem; }   /* las de apoyo */
 .cinta-vias{
   display:flex; gap:0 1.1rem; margin-left:auto; overflow-x:auto;
   scrollbar-width:none;
+  position:relative;                 /* la guía se coloca contra esto */
 }
 .cinta-vias::-webkit-scrollbar{ display:none; }
 .cinta-vias a{
@@ -337,7 +383,30 @@ section[id].liviana{ padding:3.5rem 0 3rem; }   /* las de apoyo */
   transition:color var(--micro) var(--curva-suave),
              border-color var(--micro) var(--curva-suave);
 }
-.cinta-vias a[aria-current="true"]{ color:var(--texto); border-bottom-color:var(--acento); }
+/* ⚠ EL SUBRAYADO YA NO ES DE CADA ENLACE. Carlos: «haz que en lugar de que
+   la línea se teletransporte de apartado que se deslice suavemente hasta la
+   objetivo». Con un `border-bottom` por enlace no hay nada que deslizar: la
+   línea se apaga en uno y se enciende en otro, y eso es un salto por
+   definición, por mucha transición que se le ponga al color.
+
+   Ahora hay UNA sola línea que se mueve. Va con `transform` —regla de la
+   casa: lo resuelve el compositor— y por eso mide 1 px de ancho y se estira
+   con `scaleX`, en vez de animar `left` y `width`, que obligan a recalcular
+   la maqueta en cada fotograma. */
+.cinta-vias a[aria-current="true"]{ color:var(--texto); }
+.cinta-guia{
+  position:absolute; left:0; bottom:0; width:1px; height:2px;
+  background:var(--acento); transform-origin:0 50%;
+  transform:translateX(0) scaleX(0);
+  transition:transform var(--corta) var(--curva-suave);
+  pointer-events:none;
+}
+/* Sin JS no hay quién la mueva: entonces vuelve el borde por enlace, que no
+   se desliza pero SÍ dice dónde estás. Un indicador que no existe es peor
+   que uno que salta. */
+html:not(.js) .cinta-guia{ display:none; }
+html:not(.js) .cinta-vias a[aria-current="true"]{ border-bottom-color:var(--acento); }
+@media (prefers-reduced-motion:reduce){ .cinta-guia{ transition:none; } }
 @media (hover:hover) and (pointer:fine){ .cinta-vias a:hover{ color:var(--texto); } }
 .cinta-pct{
   font-family:var(--mono); font-size:.72rem; color:var(--texto-3);
@@ -416,6 +485,15 @@ section[id].liviana{ padding:3.5rem 0 3rem; }   /* las de apoyo */
 }
 .bt--suave, .bt--desnudo{ --onda-color:var(--acento); }
 @keyframes ondear{ to{ transform:translate(-50%,-50%) scale(1); opacity:0; } }
+/* La versión que no se mueve: nace del tamaño final y sólo se apaga. Se le
+   deja apagarse porque desvanecer una mancha decorativa no es movimiento —
+   lo que la preferencia pide es que no se desplacen ni crezcan las cosas— y
+   porque quitarle también esto la dejaría pegada en la pantalla. */
+.onda--quieta{
+  transform:translate(-50%,-50%) scale(1);
+  animation:apagar var(--corta) ease-out forwards;
+}
+@keyframes apagar{ from{ opacity:.28 } to{ opacity:0 } }
 
 /* ── el número ────────────────────────────────────────────────────────────
    Mono porque es un dato y se compara en columna, no porque quede «técnico».

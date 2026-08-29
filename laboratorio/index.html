@@ -52,6 +52,12 @@
     }catch(e){
       document.documentElement.dataset.tema = 'claro';
     }
+    /* Marca que SÍ hay JavaScript, y va aquí y no en `lab.js` a propósito:
+       `lab.js` tiene `defer`, así que corre después de pintar y la página
+       parpadearía con la versión sin JS. Lo usa el subrayado de la cinta,
+       que sin JS vuelve a ser un borde por enlace: no se desliza, pero dice
+       dónde estás, y eso vale más que deslizarse. */
+    document.documentElement.classList.add('js');
   })();
 </script>
 <link rel="stylesheet" href="base.css">
@@ -66,6 +72,10 @@
      Barra y porcentaje. La barra se siente, el número se lee. La barra la
      mueve el CSS con la línea de tiempo del scroll, sin un solo fotograma de
      JavaScript; el número sí necesita JS y va en el ciclo compartido. -->
+<!-- La retícula, quieta. Va aquí arriba y vacía a propósito: es una capa de
+     pintura, no contenido, y por eso `aria-hidden` y sin nada dentro. -->
+<div class="reticula" aria-hidden="true"></div>
+
 <header class="cinta">
   <div class="caja cinta-fila">
     <span class="cinta-marca"><span aria-hidden="true"></span>Banco de pruebas</span>
@@ -80,6 +90,7 @@
       <a href="#formulario">Formulario</a>
       <a href="#arrastrar">Arrastrar</a>
       <a href="#vacios">Vacíos</a>
+      <i class="cinta-guia" data-guia aria-hidden="true"></i>
     </nav>
     <span class="cinta-pct" data-pct aria-hidden="true">0%</span>
   </div>
@@ -400,7 +411,7 @@
       </div>
       <div class="medidor">
         <p class="rotulo">Peso de la página</p>
-        <span class="dato dato--gordo" data-contar="181">181<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="198">198<span class="unidad">KB</span></span>
         <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
       </div>
       <div class="medidor">

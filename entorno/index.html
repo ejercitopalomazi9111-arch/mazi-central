@@ -1533,17 +1533,35 @@ let radioActual = 0;          /* qué tan abierto quedó el semicírculo */
    estado del trabajo y el cuerpo — y es lo que hace que se entienda de reojo,
    sin leer nada. */
 function animacionDe(quien){
+  /* ⚠ SENTADO ES EL ESTADO NORMAL, Y ANTES ERA LA EXCEPCIÓN. Carlos, e176:
+     «los robots no se sientan en sus sillas», y e165: «no hace la animación
+     de usar su teclado y mouse».
+
+     Son la MISMA causa y por eso se arreglan juntas: `Sitting` sólo salía si
+     el agente estaba reportando trabajo con /trabajando, que en la práctica
+     casi nunca pasa. Todo el resto del tiempo devolvía `Idle`, que es la pose
+     DE PIE — así que había una silla debajo de cada robot y ninguno sentado
+     en ella. Y como teclear y mover el ratón se dibujan sólo sobre la pose
+     sentada, tampoco se veían nunca.
+
+     Ahora el sitio de trabajo manda: quien está en su escritorio está
+     sentado. De pie se queda sólo quien tiene una razón para estarlo —el que
+     anda buscando, que camina— y tumbado el que ya no está. Las reacciones
+     que sí son de pie (pulgar arriba, negar) siguen saliendo: son un momento,
+     no un estado, y levantarse a decir algo y volver a sentarse es
+     exactamente lo que hace una persona. */
   if(quien.estado === 'topado' || quien.estado === 'ocupado') return 'No';
   if(quien.estado === 'fuera') return 'Death';
-  if(Date.now() - (quien.visto || 0) > 5*60_000) return 'Idle';
   if(quien.trabajo){
     const t = (quien.trabajo.paso || quien.trabajo.en || '').toLowerCase();
     if(/\bprueb|test|verde|pasan\b/.test(t)) return 'ThumbsUp';
     if(/\bfall|error|roto|trueno\b/.test(t))  return 'No';
     if(/\bbusc|le(o|yendo)|revis\b/.test(t))  return 'Walking';
-    return 'Sitting';
   }
-  return 'Idle';
+  /* Callado hace rato o sin nada reportado: sentado igual. Que lleve un rato
+     sin hablar ya lo dice el aro apagado y el globo; no hacía falta además
+     ponerlo de pie, que es lo que rompía la escena. */
+  return 'Sitting';
 }
 
 /* ══ TECLEAR Y MOVER EL RATÓN ══════════════════════════════════════════════

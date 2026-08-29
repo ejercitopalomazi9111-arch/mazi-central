@@ -164,4 +164,17 @@ html:not([data-quieto]) [data-iman][data-cerca="si"]{
      acaba de borrar. El orden importa: primero se apaga todo, luego se
      rescata lo que informa. */
   html .giro{ animation-duration:2.4s !important; animation-iteration-count:infinite !important; }
+
+  /* ⚠ Y LA ONDA QUIETA, POR LA MISMA RAZÓN Y CON EL MISMO TRUCO. La barrida
+     de arriba le deja 1 ms de vida, así que nace y se borra antes de que nada
+     llegue a pintarse: desde fuera es idéntico a que no pasara nada, y era
+     exactamente lo que Carlos veía —«el botón de tócame donde sea sólo se
+     pulsa, no hay más»—.
+
+     Que dure 220 ms no contradice la preferencia: no se desplaza ni crece,
+     sólo se apaga en el sitio. Lo que molesta de una animación es el
+     movimiento, y ésta no tiene. */
+  html .onda--quieta{
+    animation-duration:var(--corta) !important; animation-iteration-count:1 !important;
+  }
 }

@@ -191,6 +191,38 @@
     if(elCuenta) elCuenta.textContent = particulas.length;
   }
 
+  /* ── UN COMETA DONDE SE TOQUE ────────────────────────────────────────────
+     Carlos: «no hay modo de interactuar con el sistema solar haz que le pueda
+     poner cometas al pulsar o algo así».
+
+     Nace justo donde cae el dedo y con la velocidad CIRCULAR de esa distancia
+     multiplicada por 0.45 — el mismo 0.45 del cometa de la siembra, y de ahí
+     sale la órbita muy alargada sin una sola línea que diga «cometa». Se le
+     da perpendicular al sol, que es lo que hace que orbite en vez de caerse
+     de frente.
+
+     ⚠ EL DEDO CAE EN PANTALLA Y LA FÍSICA VIVE SIN ACHATAR. Hay que
+     deshacer `pantallaY` al entrar; si no, todo lo que se toque arriba o
+     abajo del sol nace más cerca de lo que se ve y la órbita sale distinta de
+     donde se pidió. */
+  function cometaEn(px, py){
+    if(!sol) return;
+    const y = sol.y + (py - sol.y) / ACHATA;          /* pantalla → física */
+    const dx = px - sol.x, dy = y - sol.y;
+    const d = Math.max(sol.r * 2.2, Math.hypot(dx, dy));
+    const v = Math.sqrt(G * sol.m / d) * 0.45;
+    const ang = Math.atan2(dy, dx);
+    particulas.push({
+      x: sol.x + Math.cos(ang) * d, y: sol.y + Math.sin(ang) * d,
+      vx: -Math.sin(ang) * v, vy: Math.cos(ang) * v,
+      r:2.2, rc:0.7, m:6, giro:0, gv:0, luna:null, cometa:true, cola:[],
+    });
+    /* Un destello donde nació: sin él, en una pantalla con doce cuerpos no se
+       distingue cuál acabas de poner tú. */
+    destellos.push({ x:px, y, r:6, t:420 });
+    if(elCuenta) elCuenta.textContent = particulas.length;
+  }
+
   function pasoSolar(k){
     if(!sol) sembrarSolar();
     for(const p of particulas){
@@ -262,6 +294,42 @@
         destellos.push({ x:a.x, y:a.y, r:a.r, t:420 });   /* --media */
         particulas.splice(j, 1); j--;
         if(elCuenta) elCuenta.textContent = particulas.length;
+      }
+    }
+    chocarLunas();
+  }
+
+  /* ── LA LUNA TAMBIÉN CHOCA ───────────────────────────────────────────────
+     Carlos: «una luna chocó con otro planeta y no explotó eso está mal».
+
+     Tenía razón, y la causa es que la luna NO ERA UN CUERPO. Es un adorno
+     colgado de su planeta —ángulo, distancia y velocidad—, dibujado aparte y
+     fuera de la física; se hizo así a propósito, porque meterla como cuerpo
+     de pleno derecho desarma el sistema en diez segundos con este paso fijo.
+     Pero el precio era éste: la luna atraviesa un planeta y no pasa nada, que
+     es exactamente lo que se lee como error.
+
+     Ahora choca. Y la cuenta se hace en coordenadas de PANTALLA y no de la
+     física, que es lo correcto aquí y no un atajo: la luna se dibuja con el
+     achatamiento aplicado, así que su sitio en la física no es donde se ve —y
+     lo que Carlos llamó «chocó» es lo que VIO. Comprobarlo en el otro espacio
+     daría explosiones donde no se tocan y ninguna donde sí. */
+  function chocarLunas(){
+    for(const p of particulas){
+      if(!p.luna) continue;
+      const lx = p.x + Math.cos(p.luna.ang) * p.luna.d;
+      const ly = pantallaY(p.y) + Math.sin(p.luna.ang) * p.luna.d * ACHATA;
+      for(const o of particulas){
+        if(o === p) continue;
+        const oy = pantallaY(o.y);
+        if(Math.hypot(lx - o.x, ly - oy) >= p.luna.r + o.r) continue;
+        /* Se la queda el que la embistió: masa que se conserva, y un destello
+           del tamaño de la luna — no del planeta, o parecería que reventó el
+           planeta entero. */
+        o.m += p.luna.r * p.luna.r * 3;
+        destellos.push({ x:lx, y:o.y, r:p.luna.r + 2, t:420 });
+        p.luna = null;
+        break;
       }
     }
   }
@@ -573,6 +641,18 @@
       const r = lienzo.getBoundingClientRect();
       raton = { x:e.clientX - r.left, y:e.clientY - r.top };
     }, { passive:true });
+    /* Tocar el lienzo en el sistema solar pone un cometa ahí. En los otros
+       modos el dedo ya hace algo —atrae o repele— y no se le añade nada. */
+    lienzo.addEventListener('pointerup', (e) => {
+      if(modo !== 'solar') return;
+      const r = lienzo.getBoundingClientRect();
+      /* El lienzo se dibuja en su propia resolución y se estira por CSS: sin
+         esta regla de tres, el cometa nace desplazado justo cuando la
+         pantalla es más chica que el lienzo, o sea en el teléfono. */
+      cometaEn((e.clientX - r.left) * (an / r.width),
+               (e.clientY - r.top)  * (al / r.height));
+    });
+
     /* En táctil no hay `pointerleave` al levantar el dedo: el puntero deja de
        existir sin salir de nada. Sin esto, la última posición del dedo se
        quedaba tirando de las partículas para siempre. */
@@ -617,7 +697,18 @@
   lienzo.__estado = () => particulas.map(p => ({
     d: Math.round(Math.hypot(p.x - (sol ? sol.x : 0), p.y - (sol ? sol.y : 0))),
     r: +p.r.toFixed(1), cometa: !!p.cometa,
+    /* La luna, en coordenadas de PANTALLA — que es donde choca y donde se
+       dibuja. Sin esto no hay forma de comprobar desde fuera que se estrelló:
+       no es un cuerpo de la lista, es un adorno colgado de su planeta. */
+    luna: p.luna ? {
+      x: p.x + Math.cos(p.luna.ang) * p.luna.d,
+      y: pantallaY(p.y) + Math.sin(p.luna.ang) * p.luna.d * ACHATA,
+      r: p.luna.r,
+    } : null,
   }));
+  /* Cuántos destellos hay ahorita. Es lo único que distingue «chocó y
+     explotó» de «desapareció», que es justo lo que Carlos reclamó. */
+  lienzo.__destellos = () => destellos.length;
 
   for(const b of document.querySelectorAll('[data-modo]')){
     b.addEventListener('click', () => {
@@ -629,6 +720,42 @@
         o.setAttribute('aria-pressed', String(o === b));
       if(elModo) elModo.textContent = modo;
       for(const p of particulas) p.libre = false;
+
+      /* ⚠ AQUÍ ESTABA EL «NO ME DEJA CAMBIAR AL TOCAR». Carlos: «en magnético
+         y repelente no me deja cambiar a conectado inmediatamente al tocar
+         sino que se espera un segundo y cuando le vuelvo a picar ahora sí se
+         cambia».
+
+         El modo SÍ cambiaba en el primer toque —lo comprobé con toques de
+         verdad: la lectura y el `aria-pressed` cambian en el mismo cuadro—.
+         Lo que no cambiaba era el DIBUJO, y por eso desde fuera es idéntico a
+         que no hubiera pasado nada.
+
+         Dos causas, las dos aquí:
+         · El dedo seguía tirando. En táctil, tocar un BOTÓN no dispara ningún
+           `pointerup` sobre el lienzo, así que la última posición del dedo se
+           quedaba atrayendo partículas incluso después de cambiar de modo.
+         · El grumo no se deshacía. Al venir de magnético todas están apiladas
+           en un punto, y `conectado` sólo les da un empujón de ±0.3 px con
+           rozamiento .94: la pila tarda MUCHÍSIMO en abrirse, y hasta que se
+           abre las líneas de «conectado» no se distinguen de una mancha.
+         Ahora se suelta el dedo y se le da a la pila un empujón hacia afuera
+         desde su propio centro. La forma nueva se lee en el primer cuadro. */
+      raton = null;
+      if(modo !== 'solar' && particulas.length){
+        let cx = 0, cy = 0;
+        for(const p of particulas){ cx += p.x; cy += p.y; }
+        cx /= particulas.length; cy /= particulas.length;
+        for(const p of particulas){
+          const dx = p.x - cx, dy = p.y - cy;
+          const d = Math.hypot(dx, dy) || 1;
+          /* Hacia afuera, y con un mínimo: las que caen justo en el centro no
+             tienen dirección propia y se quedarían ahí clavadas. */
+          const ang = d < 2 ? Math.random() * Math.PI * 2 : Math.atan2(dy, dx);
+          p.vx += Math.cos(ang) * 2.4;
+          p.vy += Math.sin(ang) * 2.4;
+        }
+      }
       releerColores();
       if(menos.matches){ paso(16.7); pintar(); }
     });

@@ -83,9 +83,28 @@
     abierta = si;
     consola.dataset.abierta = si ? 'si' : 'no';
     bt.setAttribute('aria-expanded', String(si));
+    reservarSitio();
     if(si){ ultimo = 0; acum = 0; cuadros = 0;
             if(window.bancoSumar) window.bancoSumar(latido); }
   }
+
+  /* ── LA CONSOLA NO SE COME LA HOJA ───────────────────────────────────────
+     Carlos: «la consola aún se come un poco de la hoja cuando está sale».
+
+     Es lo que hace cualquier cosa `position:fixed`: se pone encima y el texto
+     que tapa no hay forma de leerlo. El botón ya tenía su hueco reservado
+     abajo del documento; el panel abierto es bastante más alto y no.
+
+     Se le reserva su alto real al final de la página, así que lo que tapa se
+     puede sacar de debajo desplazando. No se mide una vez y se guarda: el
+     panel cambia de alto con lo que muestra y con el ancho de la pantalla, y
+     un número guardado deja de ser verdad en cuanto se gira el teléfono. */
+  const PIE_BASE = 6 * 16;                 /* los 6rem que ya tenía el body */
+  function reservarSitio(){
+    const alto = abierta ? consola.getBoundingClientRect().height + 24 : 0;
+    document.body.style.paddingBottom = Math.round(PIE_BASE + alto) + 'px';
+  }
+  addEventListener('resize', () => { if(abierta) reservarSitio(); }, { passive:true });
   bt.addEventListener('click', () => abrir(!abierta));
 
   addEventListener('pointermove', (e) => {
