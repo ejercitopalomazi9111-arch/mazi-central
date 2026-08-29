@@ -45,13 +45,35 @@
      privada, y el tema no puede depender de que se pueda guardar. -->
 <script>
   (() => {
-    try{
-      const g = localStorage.getItem('banco-tema');
-      const claro = g ? g === 'claro' : matchMedia('(prefers-color-scheme: light)').matches;
-      document.documentElement.dataset.tema = claro ? 'claro' : 'oscuro';
-    }catch(e){
-      document.documentElement.dataset.tema = 'claro';
-    }
+    /* ── LA MEMORIA DEL BANCO, EN UN SOLO SITIO ──────────────────────────
+       `lab.js` y `particulas.js` son dos archivos independientes y los dos
+       guardan cosas. Sin esto, el try/catch —que no es opcional: en una
+       ventana privada `localStorage` LANZA nada más tocarlo, y una excepción
+       suelta se lleva por delante el resto del archivo— se copia en cada uno,
+       y el día que haya un tercero se copia otra vez. Va aquí porque aquí ya
+       vive el único script que corre antes del primer pintado.
+
+       Devuelve siempre algo usable: quien la llama no tiene que saber si se
+       pudo guardar. Un banco de pruebas que se rompe en una ventana privada
+       es un banco que no sirve para probar. */
+    window.memoria = {
+      leer(clave, siNo = null){
+        try{
+          const v = localStorage.getItem('banco-' + clave);
+          return v === null ? siNo : v;
+        }catch(e){ return siNo; }
+      },
+      guardar(clave, valor){
+        try{ localStorage.setItem('banco-' + clave, String(valor)); return true; }
+        catch(e){ return false; }
+      },
+      olvidar(clave){
+        try{ localStorage.removeItem('banco-' + clave); }catch(e){}
+      },
+    };
+    const g = memoria.leer('tema');
+    const claro = g ? g === 'claro' : matchMedia('(prefers-color-scheme: light)').matches;
+    document.documentElement.dataset.tema = claro ? 'claro' : 'oscuro';
     /* Marca que SÍ hay JavaScript, y va aquí y no en `lab.js` a propósito:
        `lab.js` tiene `defer`, así que corre después de pintar y la página
        parpadearía con la versión sin JS. Lo usa el subrayado de la cinta,
@@ -121,6 +143,16 @@
       No es una colección de animaciones: es un instrumento.
     </p>
     <p class="revuelto dato dato--gordo" data-revolver="medir · comparar · decidir">medir · comparar · decidir</p>
+    <!-- ⚠ SE OFRECE, NO SE SALTA. El banco recuerda dónde ibas, pero llevarte
+         ahí solo al recargar le quita el control a quien recargó justamente
+         para empezar de cero — y de paso rompe el enlace que alguien te pasó.
+         Nace `hidden` y sólo aparece si hay algo que recordar, así que sin
+         JavaScript no existe. -->
+    <p class="reanudar" data-reanudar hidden>
+      <a class="bt bt--desnudo" href="#gramatica" data-reanudar-liga>Seguir donde ibas</a>
+      <button class="reanudar-no" type="button" data-reanudar-no
+              aria-label="Olvidar dónde iba y empezar del principio">Empezar de cero</button>
+    </p>
   </section>
 
   <!-- ══ 1 · GRAMÁTICA DE MOVIMIENTO ══════════════════════════════════ -->
@@ -412,7 +444,7 @@
     <div class="tablero">
       <div class="medidor">
         <p class="rotulo">Responde al toque en</p>
-        <span class="dato dato--gordo" data-contar="65">65</span>
+        <span class="dato dato--gordo" data-contar="67">67</span>
         <small>lugares. Los cuenta la prueba, uno por uno</small>
       </div>
       <div class="medidor">
@@ -422,7 +454,7 @@
       </div>
       <div class="medidor">
         <p class="rotulo">Peso de la página</p>
-        <span class="dato dato--gordo" data-contar="214">214<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="223">223<span class="unidad">KB</span></span>
         <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
       </div>
       <div class="medidor">
