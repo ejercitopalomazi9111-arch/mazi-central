@@ -1,0 +1,318 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL BANCO DE PRUEBAS · las piezas
+   ──────────────────────────────────────────────────────────────────────────
+   Cada bloque de aquí es una pieza del banco. Todas comparten los tokens de
+   `base.css` — ninguna trae una duración, una curva ni un color propios. Si
+   una pieza necesitara un número nuevo, el número está mal o el token falta.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · LA GRAMÁTICA, PARA SENTIRLA ───────────────────────────────────────
+   El punto 4 pide definir un lenguaje de movimiento. Definirlo en un archivo
+   no sirve de nada si nadie puede COMPARAR 110 ms contra 420 ms; nadie tiene
+   eso en la cabeza. Aquí los cinco escalones se disparan a la vez y se ven
+   correr uno al lado del otro, con su número encima. Es la única forma de
+   escoger una duración por razones y no por gusto. */
+.pista{
+  display:grid; grid-template-columns:minmax(0,7rem) 1fr; align-items:center;
+  gap:1rem; padding:.6rem 0; border-top:1px solid var(--raya);
+}
+.pista:last-of-type{ border-bottom:1px solid var(--raya); }
+.pista-nombre{
+  font-family:var(--mono); font-size:.74rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--texto-2);
+}
+.pista-nombre b{ display:block; color:var(--medida); font-size:.9rem; letter-spacing:0; }
+.pista-riel{
+  position:relative; height:34px; background:var(--fondo-2);
+  border:1px solid var(--raya); border-radius:var(--r); overflow:hidden;
+}
+/* Las marcas del riel son la regla graduada: sin ellas, «rápido» y «lento»
+   son impresiones; con ellas, son distancias. */
+.pista-riel::before{
+  content:''; position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg, var(--raya) 0 1px, transparent 1px 10%);
+}
+.pista-carro{
+  position:absolute; top:50%; left:4px; width:22px; height:22px;
+  margin-top:-11px; background:var(--senal); border-radius:2px;
+}
+.corriendo .pista-carro{ animation:cruzar var(--dur) var(--curva-salida) forwards; }
+@keyframes cruzar{ to{ transform:translateX(var(--viaje)); } }
+
+/* ── 2 · LA MATRIZ DE ESTADOS ──────────────────────────────────────────────
+   El punto 3 es el más fácil de prometer y el que casi nadie entrega, porque
+   `loading`, `success` y `error` viven medio segundo dentro de una petición y
+   no se pueden revisar así. Aquí se congelan: se escoge el estado y el botón
+   se queda ahí. Es lo que permite que alguien mire el `error` con calma y vea
+   que el contraste no alcanza. */
+.matriz{ display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.2rem; }
+.pastilla{
+  min-height:40px; padding:0 .8rem;
+  background:transparent; color:var(--texto-3);
+  border:1px solid var(--raya); border-radius:var(--r);
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.06em;
+  text-transform:uppercase; cursor:pointer;
+  transition:color var(--micro) var(--curva-suave),
+             border-color var(--micro) var(--curva-suave),
+             background var(--micro) var(--curva-suave);
+}
+/* ⚠ BLANCO, NO `--fondo`. Con el color del fondo daba 4.20:1 en oscuro y
+   4.18:1 en claro sobre el violeta de marca — reprobado en los DOS temas, y
+   ninguno de los dos se ve mal a ojo. Blanco sobre ese mismo violeta da
+   4.67:1 y pasa en ambos. Lo dijo la prueba de contraste, no mi criterio. */
+.pastilla[aria-pressed="true"]{ color:#FFF; background:var(--senal); border-color:var(--senal); }
+.pastilla:focus-visible{ outline:2px solid var(--senal-texto); outline-offset:2px; }
+@media (hover:hover) and (pointer:fine){
+  .pastilla:hover{ color:var(--texto); border-color:var(--texto-3); }
+  .pastilla[aria-pressed="true"]:hover{ color:#FFF; }
+}
+.escaparate{
+  display:flex; flex-wrap:wrap; align-items:center; gap:1rem;
+  padding:1.6rem; background:var(--fondo-2);
+  border:1px solid var(--raya); border-radius:var(--r);
+}
+
+/* ── 3 · CAMPOS (puntos 34 y 35) ───────────────────────────────────────────
+   La etiqueta NO desaparece al escribir. La etiqueta flotante que se convierte
+   en placeholder es bonita en una captura y cruel de verdad: quien vuelve al
+   formulario a los dos minutos ya no sabe qué iba en ese campo, y quien usa
+   un lector de pantalla con zoom tampoco. */
+.campo{ display:block; margin-bottom:1rem; }
+.campo > span{
+  display:block; font-family:var(--mono); font-size:.7rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--texto-3); margin-bottom:.4rem;
+}
+.campo input, .campo textarea{
+  width:100%; min-height:var(--dedo);
+  /* 16px como piso: abajo de eso iOS hace zoom al enfocar y saca de sitio la
+     página entera. Es un defecto que sólo aparece en el aparato de alguien. */
+  font-size:16px; font-family:var(--letra);
+  padding:.7rem .8rem; background:var(--fondo); color:var(--texto);
+  border:1px solid var(--raya-fuerte); border-radius:var(--r);
+  transition:border-color var(--corta) var(--curva-suave),
+             box-shadow var(--corta) var(--curva-suave);
+}
+.campo input:focus-visible, .campo textarea:focus-visible{
+  outline:none; border-color:var(--senal);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--senal) 30%, transparent);
+}
+.campo[data-mal] input{ border-color:var(--alarma); }
+.campo .aviso-campo{
+  display:block; margin-top:.35rem; font-size:.82rem; color:var(--alarma);
+  /* ⚠ EL RENGLÓN SE RESERVA COMPLETO, Y `1.2em` NO ALCANZABA. Con la altura
+     de línea heredada (1.55) el aviso ocupaba más que su hueco reservado y el
+     botón bajaba 9.2 px al aparecer los errores — justo cuando la persona ya
+     apuntó el dedo. Se fija la altura de línea Y el mínimo al mismo número
+     para que uno no pueda desfasarse del otro. */
+  line-height:1.35; min-height:1.35em;
+}
+/* El aviso entra con altura ya reservada: si apareciera empujando, cada error
+   movería el botón justo cuando la persona va a tocarlo. */
+
+.deslizador{ width:100%; accent-color:var(--senal); min-height:var(--dedo); }
+
+/* ── 4 · SUPERFICIES (puntos 27, 28, 29, 32) ───────────────────────────────
+   Modal, hoja, globito y avisos. Los cuatro son la misma idea con distinta
+   urgencia, así que comparten curva y sólo cambian de duración y de dirección.
+
+   El modal usa <dialog> nativo: trampa de foco, Escape y `inert` sobre el
+   resto de la página vienen del navegador y son mejores que los míos. */
+dialog{
+  padding:0; border:1px solid var(--raya-fuerte); border-radius:var(--r);
+  background:var(--fondo-2); color:var(--texto);
+  max-width:min(30rem, calc(100vw - 2rem));
+}
+dialog::backdrop{ background:#000000a8; }
+.tapa{ padding:1.3rem; }
+.tapa h3{ margin-bottom:.6rem; }
+.tapa-pie{ display:flex; gap:.5rem; justify-content:flex-end; margin-top:1.2rem; }
+
+/* La hoja sube desde abajo: en un teléfono el pulgar está abajo, y una hoja
+   que aparece donde ya está la mano se toca sin recolocar el aparato. */
+.hoja{
+  position:fixed; inset:auto 0 0 0; z-index:70;
+  background:var(--fondo-2); border-top:1px solid var(--raya-fuerte);
+  border-radius:var(--r) var(--r) 0 0; padding:1.2rem;
+  transform:translateY(101%);
+  transition:transform var(--media) var(--curva-salida);
+}
+.hoja[data-abierta="si"]{ transform:translateY(0); }
+.hoja-asa{
+  width:38px; height:4px; border-radius:2px; background:var(--raya-fuerte);
+  margin:0 auto .9rem;
+}
+
+/* El globito se abre en `--corta` y se cierra en `--micro`: lo que informa
+   entra con calma y se quita de encima rápido. */
+.globo{ position:relative; display:inline-block; }
+.globo-texto{
+  position:absolute; left:50%; bottom:calc(100% + 8px);
+  transform:translate(-50%, 4px); transform-origin:50% 100%;
+  background:var(--texto); color:var(--fondo);
+  padding:.4rem .6rem; border-radius:var(--r);
+  font-size:.8rem; white-space:nowrap; pointer-events:none;
+  opacity:0; visibility:hidden;
+  transition:opacity var(--micro) var(--curva-entrada),
+             transform var(--micro) var(--curva-entrada),
+             visibility 0s linear var(--micro);
+}
+.globo:hover .globo-texto, .globo:focus-within .globo-texto{
+  opacity:1; visibility:visible; transform:translate(-50%, 0);
+  transition:opacity var(--corta) var(--curva-salida),
+             transform var(--corta) var(--curva-salida),
+             visibility 0s;
+}
+
+/* Los avisos se apilan y se van solos. `role=status` y no `alert`: un aviso
+   de «guardado» no debe interrumpir a quien está escribiendo. */
+.avisos{
+  position:fixed; right:1rem; bottom:1rem; z-index:80;
+  display:flex; flex-direction:column; gap:.5rem; align-items:flex-end;
+  pointer-events:none;
+}
+.aviso{
+  pointer-events:auto;
+  display:flex; align-items:center; gap:.6rem;
+  background:var(--fondo-3); color:var(--texto);
+  border:1px solid var(--raya-fuerte); border-left:3px solid var(--senal);
+  border-radius:var(--r); padding:.7rem .9rem; font-size:.9rem;
+  max-width:min(22rem, calc(100vw - 2rem));
+  animation:asomar-aviso var(--corta) var(--curva-salida) both;
+}
+.aviso[data-tipo="logro"]{ border-left-color:var(--logro); }
+.aviso[data-tipo="error"]{ border-left-color:var(--alarma); }
+.aviso.yendose{ animation:irse-aviso var(--corta) var(--curva-entrada) forwards; }
+@keyframes asomar-aviso{ from{ opacity:0; transform:translateX(14px); } }
+@keyframes irse-aviso{ to{ opacity:0; transform:translateX(14px); } }
+
+/* ── 5 · LO QUE PASA CUANDO NO HAY NADA (puntos 49, 50, 51, 52, 53) ────────
+   Es la parte que separa una demo de un producto: cargando, vacío, error y
+   sin conexión. Un hueco en blanco se lee como «se rompió», y entonces la
+   persona recarga, y si recargar tampoco dice nada, se va. */
+.esqueleto{ display:grid; gap:.55rem; }
+.hueso{
+  height:12px; border-radius:2px;
+  background:linear-gradient(90deg, var(--fondo-3) 0%, var(--raya) 40%, var(--fondo-3) 80%);
+  background-size:220% 100%;
+  animation:barrer var(--cine) linear infinite;
+}
+.hueso--titulo{ height:22px; width:56%; }
+.hueso--corto{ width:72%; }
+@keyframes barrer{ to{ background-position:-220% 0; } }
+
+.vacio{
+  display:grid; place-items:center; text-align:center; gap:.7rem;
+  padding:2.4rem 1rem; border:1px dashed var(--raya-fuerte); border-radius:var(--r);
+  color:var(--texto-2);
+}
+.vacio svg{ width:44px; height:44px; opacity:.65; }
+.vacio p{ margin:0; }
+
+/* ── 6 · DATOS (puntos 15, 16, 17, 18, 19) ─────────────────────────────────
+   El tablero. Los contadores no aparecen con el número final: suben. Y no es
+   decoración — un número que sube dice «esto se está midiendo ahorita», que es
+   justo la diferencia entre un tablero y una captura de pantalla. */
+.tablero{ display:grid; gap:1rem; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); }
+.medidor{ padding:1rem; }
+.medidor .rotulo{ margin-bottom:.45rem; }
+.medidor small{ display:block; color:var(--texto-3); font-size:.78rem; margin-top:.3rem; }
+
+/* La barra de progreso: se ve el porcentaje Y se oye, porque lleva
+   `role=progressbar` con sus valores. Una barra sin valores no existe para
+   quien no la ve. */
+.progreso{
+  height:8px; background:var(--fondo-3); border-radius:2px; overflow:hidden;
+}
+.progreso i{
+  display:block; height:100%; width:0; background:var(--senal);
+  transition:width var(--media) var(--curva-salida);
+}
+
+/* La gráfica se dibuja con la rejilla del banco: barras que salen del suelo,
+   con su valor encima. Sin librería y sin canvas: son <div> con altura. */
+.grafica{
+  display:flex; align-items:flex-end; gap:.4rem; height:150px;
+  padding-top:1.2rem; border-bottom:1px solid var(--raya-fuerte);
+}
+.grafica div{
+  flex:1; position:relative; background:var(--senal);
+  border-radius:2px 2px 0 0; min-height:2px;
+  height:var(--alto); transform-origin:50% 100%;
+  transition:height var(--media) var(--curva-salida);
+}
+.grafica div::after{
+  content:attr(data-v); position:absolute; inset:auto 0 calc(100% + 4px) 0;
+  text-align:center; font-family:var(--mono); font-size:.62rem; color:var(--texto-3);
+}
+
+/* ── 7 · TARJETAS QUE SE APILAN (punto 9) ──────────────────────────────────
+   Se quedan pegadas y la siguiente se monta encima. El scroll deja de ser
+   desplazamiento y pasa a ser una baraja: cada tarjeta se lee completa antes
+   de que llegue la de arriba. */
+.baraja{ display:grid; gap:1rem; }
+.baraja > article{
+  position:sticky; top:96px;
+  padding:1.4rem; border-radius:var(--r);
+  background:var(--fondo-2); border:1px solid var(--raya-fuerte);
+}
+.baraja > article:nth-child(1){ top:96px; }
+.baraja > article:nth-child(2){ top:116px; }
+.baraja > article:nth-child(3){ top:136px; }
+.baraja > article:nth-child(4){ top:156px; }
+.baraja h3 span{ color:var(--senal-texto); font-family:var(--mono); font-size:.8rem; }
+
+/* ── 8 · ARRASTRAR Y SOLTAR (punto 31) ─────────────────────────────────────
+   Con teclado también. Un arrastrar-y-soltar que sólo funciona con el ratón
+   es media función: aquí cada pieza se puede mover con las flechas, y eso
+   además lo hace probable por una máquina. */
+.cajones{ display:grid; gap:1rem; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); }
+.cajon{
+  min-height:140px; padding:.7rem; border-radius:var(--r);
+  background:var(--fondo-2); border:1px dashed var(--raya-fuerte);
+  transition:border-color var(--corta) var(--curva-suave), background var(--corta) var(--curva-suave);
+}
+.cajon[data-encima="si"]{ border-color:var(--senal); background:var(--fondo-3); }
+.cajon h3{ font-size:.74rem; font-family:var(--mono); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--texto-3); margin-bottom:.6rem; }
+.pieza{
+  display:block; width:100%; text-align:left;
+  min-height:44px; padding:.55rem .7rem; margin-bottom:.4rem;
+  background:var(--fondo-3); color:var(--texto);
+  border:1px solid var(--raya-fuerte); border-radius:var(--r);
+  font-family:var(--letra); font-size:.9rem; cursor:grab;
+  transition:transform var(--micro) var(--curva-salida),
+             border-color var(--micro) var(--curva-suave);
+}
+.pieza:focus-visible{ outline:2px solid var(--senal-texto); outline-offset:2px; }
+.pieza[data-volando="si"]{ opacity:.4; cursor:grabbing; }
+@media (hover:hover) and (pointer:fine){ .pieza:hover{ border-color:var(--texto-3); transform:translateX(2px); } }
+
+/* ── 9 · PARTÍCULAS (punto 8) ──────────────────────────────────────────────
+   El lienzo es decorativo y lo dice: los cuatro comportamientos se explican
+   en texto al lado, así que quien no ve el lienzo no se pierde nada. */
+.lienzo-caja{ position:relative; border:1px solid var(--raya); border-radius:var(--r); overflow:hidden; background:var(--fondo-2); }
+.lienzo-caja canvas{ display:block; width:100%; height:300px; }
+.lienzo-datos{
+  position:absolute; left:.7rem; bottom:.7rem;
+  font-family:var(--mono); font-size:.68rem; color:var(--texto-3);
+  background:color-mix(in srgb, var(--fondo) 78%, transparent);
+  padding:.3rem .5rem; border-radius:2px; pointer-events:none;
+}
+.lienzo-datos b{ color:var(--medida); }
+
+/* ── 10 · TIPOGRAFÍA EN MOVIMIENTO (puntos 41 y 42) ────────────────────────
+   El texto que se revuelve NO se anima con opacidad: se cambian los
+   caracteres. Un texto a media opacidad no cumple contraste ni un instante, y
+   además se lee peor que uno revuelto — el revuelto se ve nítido, sólo que
+   todavía no dice nada. */
+.revuelto{ font-family:var(--mono); font-weight:700; letter-spacing:-.01em; }
+
+.pie-lab{
+  border-top:1px solid var(--raya); padding:2rem 0 3rem;
+  color:var(--texto-3); font-size:.88rem;
+}
+.pie-lab b{ color:var(--texto); }
+.pie-lab .firma::after{
+  content:''; display:inline-block; width:7px; height:7px;
+  background:var(--senal); margin-left:.5rem; vertical-align:middle;
+}
