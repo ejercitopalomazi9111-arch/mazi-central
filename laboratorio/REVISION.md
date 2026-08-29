@@ -31,6 +31,11 @@ Nada de esto es opinión. Todo lo reprueba `pruebas.mjs` si deja de ser cierto.
 
 ## Los «no». Son siete, y el corte de la skill son seis
 
+> Al 29 de agosto queda **uno hecho** —el nº 2, la navegación en teléfono—
+> y se marca dentro de su propio apartado en vez de borrarlo: una lista de
+> defectos de la que se van quitando renglones acaba diciendo que nunca hubo
+> ninguno.
+
 ### 1 · No hay un solo flujo. Sigue siendo un catálogo. (apartados 135–140)
 
 El curso termina pidiendo una arquitectura de app: **HOME, NAVEGACIÓN,
@@ -50,6 +55,21 @@ rediseño real. Mobile: bottom navigation»*.
 Lo que hice fue `display:none` a los diez enlaces abajo de 640 px. Eso no es
 rediseño: es **desktop reducido con el paso extra de borrar cosas**. Lo peor de
 la ronda, porque además me lo señalaron y lo tapé.
+
+> **HECHO — 29 de agosto, después de escribir esto.** La misma lista se movió
+> abajo, al alcance del pulgar: barra fija, los diez enlaces deslizándose de
+> lado (encogerlos habría roto los 44 px), la línea de sección en el borde de
+> arriba y dos flechas para ir a la sección de al lado sin buscarla. Es el
+> **mismo HTML** —un envoltorio con `display:contents` que en escritorio no
+> pinta caja—, no una segunda navegación «para móvil»: dos listas se
+> desincronizan en cuanto alguien añade una sección, y la va a añadir en la de
+> arriba, que es la que ve.
+>
+> Lo comprueba `pruebas.mjs`, y la primera comprobación es que los enlaces **se
+> pinten**: una prueba que sólo mirara «existe la barra» pasaría con la barra
+> escondida, que es justo el defecto que se estaba arreglando. Sin JavaScript
+> las flechas no aparecen —un control muerto se lee como roto— y la lista sigue
+> sirviendo sola, porque son enlaces.
 
 ### 3 · Nada se guarda. (apartados 112, 113, 114)
 
