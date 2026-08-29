@@ -414,6 +414,24 @@ dialog::backdrop{ background:#01010199; }
   border:1px solid currentColor; padding:0 .3rem;
 }
 .consola-bt[aria-expanded="true"]{ background:var(--texto); color:var(--fondo); }
+.consola-bt-icono{ display:none; }
+/* ── EN TELÉFONO EL BOTÓN SE ENCOGE ───────────────────────────────────────
+   Y no es por elegancia: 230 px de botón flotando sobre la primera pantalla
+   tapan justo lo que se está leyendo — lo vi en una captura, encima de las
+   entradas de «por dónde empezar», que es lo primero que alguien lee. Es la
+   misma queja de Carlos, «todo se encima en todo», en un sitio nuevo.
+
+   Y de paso se va la tecla: en un teléfono no hay tecla D. Un atajo de
+   teclado impreso en una pantalla táctil no es información, es ruido con
+   aspecto de información. */
+@media (max-width:640px){
+  .consola-bt{ width:48px; padding:0; justify-content:center; }
+  .consola-bt-texto, .consola-bt kbd{ display:none; }
+  .consola-bt-icono{
+    display:block; font-family:var(--mono); font-size:.95rem;
+    letter-spacing:.04em; line-height:1;
+  }
+}
 .consola-bt:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 
 .consola{
@@ -653,3 +671,45 @@ html[data-hay-avisos]{ --aparta-aviso:4.5rem; }
 }
 .reanudar-no:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 @media (hover:hover) and (pointer:fine){ .reanudar-no:hover{ color:var(--texto); } }
+
+/* ── POR DÓNDE EMPEZAR ─────────────────────────────────────────────────────
+   Tres entradas por INTENCIÓN. Se ven como lo que son —una lista de accesos,
+   no tres tarjetas más— porque la portada no puede competir consigo misma: si
+   esto pesara como una sección, el titular dejaría de ser el titular.
+
+   La regla vertical a la izquierda es la misma del resto del documento: aquí
+   agrupa, que es exactamente para lo que sirve una regla en un plano. */
+.empezar{ margin-top:2.6rem; border-left:2px solid var(--acento); padding-left:1.2rem; }
+.empezar .rotulo{ margin-bottom:.7rem; }
+.empezar-lista{ list-style:none; margin:0; padding:0; display:grid; gap:.2rem; }
+.empezar-lista a{
+  display:block; padding:.55rem 0; min-height:44px;
+  color:var(--texto); text-decoration:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.empezar-lista b{
+  /* `fit-content` y no `block` a secas: el subrayado es del TÍTULO, y un
+     subrayado que llega hasta el borde de la columna se lee como una regla de
+     separación, no como un enlace. */
+  display:block; width:fit-content; max-width:100%; font-size:1.02rem;
+  /* Subrayado propio, no el del navegador: éste se puede mover al acento sin
+     tocar el color del texto, que ya está medido contra el fondo. */
+  box-shadow:inset 0 -2px 0 var(--raya-fuerte);
+  transition:box-shadow var(--micro) var(--curva-suave);
+}
+.empezar-lista span{
+  display:block; margin-top:.2rem;
+  font-size:.86rem; color:var(--texto-2); max-width:52ch;
+}
+.empezar-lista a:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+.empezar-lista a:active b{ box-shadow:inset 0 -2px 0 var(--acento); }
+@media (hover:hover) and (pointer:fine){
+  .empezar-lista a:hover b{ box-shadow:inset 0 -2px 0 var(--acento); }
+}
+.empezar-nota{
+  margin:1.1rem 0 0; font-size:.84rem; color:var(--texto-3); max-width:52ch;
+}
+.empezar-nota kbd{
+  font-family:var(--mono); font-size:.76rem;
+  border:1px solid var(--raya-fuerte); padding:0 .3rem;
+}

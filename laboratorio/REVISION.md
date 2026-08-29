@@ -31,10 +31,11 @@ Nada de esto es opinión. Todo lo reprueba `pruebas.mjs` si deja de ser cierto.
 
 ## Los «no». Son siete, y el corte de la skill son seis
 
-> Al 29 de agosto quedan **dos hechos** —el nº 2, la navegación en teléfono,
-> y el nº 3, que se guarde lo que hiciste— y se marcan dentro de su propio
-> apartado en vez de borrarlos: una lista de defectos de la que se van
-> quitando renglones acaba diciendo que nunca hubo ninguno.
+> Al 29 de agosto quedan **tres hechos** —el nº 2 (la navegación en
+> teléfono), el nº 3 (que se guarde lo que hiciste) y el nº 6 (por dónde
+> empezar)— y se marcan dentro de su propio apartado en vez de borrarlos:
+> una lista de defectos de la que se van quitando renglones acaba diciendo
+> que nunca hubo ninguno.
 
 ### 1 · No hay un solo flujo. Sigue siendo un catálogo. (apartados 135–140)
 
@@ -114,6 +115,26 @@ es algo, pero la forma no cambia nunca.
 
 Se entra y hay once secciones. Nadie dice qué es esto ni por dónde empezar. La
 portada lo explica en prosa, que no es lo mismo.
+
+> **HECHO — 29 de agosto.** Tres entradas **por intención** en la portada —lo
+> que quieres hacer— en vez de por orden de sección, que es el orden en que yo
+> lo escribí y a nadie más le sirve. Cada una dice qué vas a encontrar, no sólo
+> a dónde va.
+>
+> **No es un tour ni un modal**: un recorrido de bienvenida que tapa la página
+> le cobra a todo el mundo la duda de unos pocos, y encima hay que cerrarlo
+> antes de ver nada. Son enlaces normales, así que sin JavaScript funcionan
+> igual — y esta parte es justo la que no se puede permitir no aparecer.
+>
+> La prueba comprueba que las tres **lleven a una sección que existe**: tres
+> enlaces bonitos apuntando a un ancla que alguien renombró son peores que no
+> tener entradas.
+>
+> Y salió un defecto de rebote, visto en una captura y no en el código: el
+> botón de la consola —230 px flotando abajo a la izquierda— tapaba justo estas
+> entradas. En teléfono ahora es un cuadro de 48 px con el glifo `>_`, sin la
+> tecla `D` impresa: en una pantalla táctil un atajo de teclado no es
+> información, es ruido con aspecto de información.
 
 ### 7 · El display y el cuerpo comparten familia.
 

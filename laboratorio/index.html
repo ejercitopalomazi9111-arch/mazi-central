@@ -143,6 +143,34 @@
       No es una colección de animaciones: es un instrumento.
     </p>
     <p class="revuelto dato dato--gordo" data-revolver="medir · comparar · decidir">medir · comparar · decidir</p>
+
+    <!-- ══ POR DÓNDE EMPEZAR ═════════════════════════════════════════════
+         El apartado 20 del curso pide onboarding, y aquí no había: se entraba
+         y había once secciones en fila. La portada lo EXPLICABA en prosa, que
+         no es lo mismo — explicar qué es esto no le dice a nadie qué hacer.
+
+         No es un tour ni un modal. Un recorrido de bienvenida que tapa la
+         página le cobra a todo el mundo la duda de unos pocos, y encima hay
+         que cerrarlo antes de ver nada. Esto es lo contrario: tres entradas
+         POR INTENCIÓN —lo que quieres hacer— en vez de por orden de sección,
+         que es el orden en que YO lo escribí y a nadie más le sirve.
+
+         Son enlaces normales: sin JavaScript funcionan igual, y esta parte es
+         justo la que no se puede permitir el lujo de no aparecer. -->
+    <div class="empezar">
+      <p class="rotulo" id="t-empezar">Por dónde empezar</p>
+      <ul class="empezar-lista" aria-labelledby="t-empezar">
+        <li><a href="#gramatica"><b>Comparar duraciones</b><span>cinco velocidades corriendo a la vez, con sus milisegundos</span></a></li>
+        <li><a href="#estados"><b>Ver los ocho estados de un botón</b><span>congelados, incluidos los dos que con el ratón no se dejan mirar</span></a></li>
+        <li><a href="#particulas"><b>Toquetear algo</b><span>cinco sistemas de partículas sobre el mismo motor; el solar tiene gravedad de verdad</span></a></li>
+      </ul>
+      <p class="empezar-nota">
+        Cada pieza enseña sus propios números mientras se mueve. La consola de
+        abajo a la izquierda —tecla <kbd>D</kbd>— dice lo que está midiendo el
+        banco ahorita.
+      </p>
+    </div>
+
     <!-- ⚠ SE OFRECE, NO SE SALTA. El banco recuerda dónde ibas, pero llevarte
          ahí solo al recargar le quita el control a quien recargó justamente
          para empezar de cero — y de paso rompe el enlace que alguien te pasó.
@@ -444,7 +472,7 @@
     <div class="tablero">
       <div class="medidor">
         <p class="rotulo">Responde al toque en</p>
-        <span class="dato dato--gordo" data-contar="67">67</span>
+        <span class="dato dato--gordo" data-contar="70">70</span>
         <small>lugares. Los cuenta la prueba, uno por uno</small>
       </div>
       <div class="medidor">
@@ -454,7 +482,7 @@
       </div>
       <div class="medidor">
         <p class="rotulo">Peso de la página</p>
-        <span class="dato dato--gordo" data-contar="223">223<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="229">229<span class="unidad">KB</span></span>
         <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
       </div>
       <div class="medidor">
@@ -683,9 +711,15 @@
 
      Va en el HTML y no la crea el script: así existe el botón aunque el JS
      tarde, y el atajo de teclado se anuncia desde el primer píxel. -->
-<button class="consola-bt" type="button" data-consola-bt
+<!-- ⚠ EL NOMBRE ACCESIBLE VA FIJO EN `aria-label` PORQUE LO VISIBLE CAMBIA:
+     en teléfono el botón se queda en el glifo, y sin esto el nombre pasaría a
+     ser «>_», que no se puede decir en voz alta ni buscar. Dice «Consola», que
+     es lo mismo que se lee en escritorio: quien maneje esto por voz pide lo
+     que ve. -->
+<button class="consola-bt" type="button" data-consola-bt aria-label="Consola"
         aria-expanded="false" aria-controls="consola">
-  Consola <kbd>D</kbd>
+  <span class="consola-bt-icono" aria-hidden="true">&gt;_</span><span
+        class="consola-bt-texto">Consola</span> <kbd>D</kbd>
 </button>
 
 <aside class="consola" id="consola" data-consola data-abierta="no" aria-label="Consola del banco">
