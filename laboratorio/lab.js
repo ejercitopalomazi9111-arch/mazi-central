@@ -963,9 +963,41 @@
         <li style="padding:.7rem 0; border-bottom:1px solid var(--raya)"><b>Recorrerlo con teclado</b> · 0 trampas de foco</li>
         <li style="padding:.7rem 0"><b>Movimiento reducido</b> · apagado y completo</li></ul>`,
   };
+  /* ── EL OTRO LADO DEL COMPARADOR ────────────────────────────────────────
+     Lo que se ve cuando nadie diseñó el estado. No son ejemplos inventados
+     para quedar bien: son literalmente lo que sale por defecto —un hueco, el
+     mensaje del error tal como lo escupe la red, o «Algo salió mal», que esta
+     misma sección llama «la forma educada de no decir nada»—.
+
+     ⚠ NO LLEVA BOTONES NI ENLACES, y el panel entero va `aria-hidden`: es una
+     ILUSTRACIÓN de lo que no hay que hacer, no una interfaz. Un botón de
+     mentira ahí dentro sería un control muerto —y encima uno que el lector de
+     pantalla anunciaría como si sirviera—. */
+  const CRUDAS = {
+    cargando: '',
+    vacio: '',
+    error: `<p class="crudo-texto">Algo salió mal.</p>`,
+    sinred: `<p class="crudo-texto">Error: NetworkError when attempting to fetch resource.</p>`,
+    /* Con datos NO hay diferencia, y decirlo vale más que fabricar una: el
+       estado que todo el mundo diseña es justamente el único que no necesita
+       que nadie lo defienda. */
+    lleno: `<ul class="crudo-lista">
+        <li>Medir el contraste · 12 parejas, todas pasan</li>
+        <li>Probar sin JavaScript · la página se lee entera</li>
+        <li>Recorrerlo con teclado · 0 trampas de foco</li>
+        <li>Movimiento reducido · apagado y completo</li></ul>
+      <p class="crudo-nota">Aquí no hay diferencia. Con datos, la lista se ve
+        bien sola: por eso es el único estado que todo el mundo revisa.</p>`,
+  };
+  const cajaCruda = $('[data-caja-cruda]');
+  const ponerLista = (cual) => {
+    if(cajaLista) cajaLista.innerHTML = VISTAS[cual] || '';
+    if(cajaCruda) cajaCruda.innerHTML = CRUDAS[cual] || '';
+  };
+  ponerLista('cargando');
   for(const b of $$('[data-lista]')) b.addEventListener('click', () => {
     for(const o of $$('[data-lista]')) o.setAttribute('aria-pressed', String(o === b));
-    if(cajaLista) cajaLista.innerHTML = VISTAS[b.dataset.lista] || '';
+    ponerLista(b.dataset.lista);
   });
 
   /* ────────────────────────────────────────────────────────────────────────

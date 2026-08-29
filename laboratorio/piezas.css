@@ -250,6 +250,17 @@ dialog::backdrop{ background:#01010199; }
 }
 .vacio p{ margin:0; }
 .vacio .bt{ margin-top:.6rem; }
+/* ⚠ EL ICONO MEDÍA 544 px. Un `<svg>` sin `width`, sin `height` y sin CSS que
+   lo sujete toma el tamaño por defecto de un elemento reemplazado —300×150—
+   y de ahí se estira con la caja; dentro de un `grid` con `justify-items`
+   acabó ocupando media pantalla. Llevaba así desde que se escribió.
+
+   Y esto es lo que hay que aprender del defecto, no el `28px`: NINGUNA prueba
+   lo vio, ni las de desbordes ni las de encimarse. El icono sólo existe en
+   tres de los cinco estados de esta sección, y el que se pinta al cargar es el
+   otro — el esqueleto—. Todo lo que hay que tocar para verlo lo veía sólo una
+   persona mirando, y nadie miró. La prueba nueva recorre los cinco. */
+.vacio svg{ width:28px; height:28px; flex:0 0 auto; }
 
 /* ── 6 · DATOS ─────────────────────────────────────────────────────────────
    El tablero no son tarjetas: son columnas de una hoja de datos, separadas
@@ -712,4 +723,54 @@ html[data-hay-avisos]{ --aparta-aviso:4.5rem; }
 .empezar-nota kbd{
   font-family:var(--mono); font-size:.76rem;
   border:1px solid var(--raya-fuerte); padding:0 .3rem;
+}
+
+/* ── EL COMPARADOR ─────────────────────────────────────────────────────────
+   Dos paneles del MISMO ancho y la MISMA altura mínima. Si no fueran iguales,
+   la comparación diría algo del tamaño de las cajas en vez de decirlo del
+   contenido, que es la trampa clásica de poner dos cosas juntas.
+
+   En teléfono no se encogen a la mitad: se deslizan con enganche. Dos
+   columnas de 165 px convierten los dos lados en dos ilegibles, y comparar dos
+   cosas que no se leen no es comparar. Deslizando, cada lado se ve completo y
+   el borde del otro asoma —que es lo que dice «hay otro»—. */
+.comparador{
+  display:grid; grid-template-columns:1fr 1fr; gap:1.4rem;
+  align-items:start;
+}
+.comparador-lado{ min-width:0; }
+.comparador-lado .rotulo{ margin-bottom:.6rem; }
+.comparador-caja{
+  min-height:190px;
+  border-top:1px solid var(--raya-fuerte); padding-top:1.1rem;
+}
+/* El hueco vacío es EL EJEMPLO: se marca con una trama para que se vea que
+   está ahí y que no es un fallo de la página. Sin esto, el lado izquierdo del
+   comparador se lee como que el comparador se rompió — que es exactamente el
+   defecto del que habla la sección, y sería gracioso si no fuera un defecto. */
+.comparador-caja:empty::after,
+.comparador-caja > .crudo-texto:only-child{ display:block; }
+.comparador-caja:empty{
+  background:repeating-linear-gradient(135deg,
+    var(--raya) 0 1px, transparent 1px 9px);
+}
+.crudo-texto{
+  margin:0; font-family:var(--mono); font-size:.86rem; color:var(--texto-2);
+}
+.crudo-lista{ list-style:none; margin:0; padding:0; font-size:.9rem; color:var(--texto-2); }
+.crudo-lista li{ padding:.7rem 0; border-bottom:1px solid var(--raya); }
+.crudo-lista li:last-child{ border-bottom:0; }
+.crudo-nota{ margin:.9rem 0 0; font-size:.8rem; color:var(--texto-3); }
+
+@media (max-width:640px){
+  .comparador{
+    display:flex; gap:1rem;
+    overflow-x:auto; scroll-snap-type:x mandatory;
+    overscroll-behavior-x:contain; scrollbar-width:none;
+    /* El respiro de la derecha deja asomar el borde del otro panel: es lo que
+       dice «hay más» sin escribirlo. */
+    padding-right:2.5rem;
+  }
+  .comparador::-webkit-scrollbar{ display:none; }
+  .comparador-lado{ flex:0 0 86%; scroll-snap-align:start; }
 }
