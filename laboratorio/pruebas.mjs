@@ -1108,6 +1108,110 @@ console.log('\n── por dónde empezar ──');
   await pg.close(); await ctx.close();
 }
 
+/* ══ 4-quinquies · EL COMPARADOR DE «VACÍOS» ═════════════════════════════
+   La sección AFIRMABA que «un hueco en blanco se lee como se rompió» y nunca
+   enseñaba el hueco. Ahora están los dos lados juntos.
+
+   ⚠ Y AQUÍ SE CAZÓ EL DEFECTO MÁS VIEJO QUE HE ENCONTRADO EN ESTE BANCO: el
+   icono de los estados vacío/error/sin conexión medía 544×544 px. Un `<svg>`
+   sin medidas toma el tamaño por defecto de un elemento reemplazado y de ahí
+   se estira. Estaba EN PRODUCCIÓN, y ninguna prueba lo veía: el icono sólo
+   existe en tres de los cinco estados de esta sección, y el que se pinta al
+   cargar es el otro. Por eso esta prueba RECORRE LOS CINCO — un estado que
+   nadie pinta es un estado que nadie mide.
+   ═══════════════════════════════════════════════════════════════════════ */
+console.log('\n── el comparador de vacíos ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:1440, height:900 } });
+  const { pg, err } = await nuevaPagina(ctx);
+  await pg.locator('#vacios').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(400);
+
+  const lados = await pg.evaluate(() => {
+    const ls = [...document.querySelectorAll('.comparador-lado')];
+    return ls.map(l => Math.round(l.getBoundingClientRect().width));
+  });
+  ok(lados.length === 2, `hay dos lados (${lados.length})`);
+  ok(lados.length === 2 && Math.abs(lados[0] - lados[1]) <= 1,
+     `y miden lo mismo, o la comparación hablaría del tamaño de las cajas (${lados.join(' vs ')})`);
+
+  /* Los cinco estados, uno por uno. */
+  const medidas = [];
+  for(const cual of ['cargando', 'vacio', 'error', 'sinred', 'lleno']){
+    await pg.click(`[data-lista="${cual}"]`);
+    await pg.waitForTimeout(220);
+    medidas.push(await pg.evaluate((c) => {
+      const caja = document.querySelector('[data-caja-lista]');
+      const cruda = document.querySelector('[data-caja-cruda]');
+      const ancho = caja.getBoundingClientRect().width;
+      /* Lo que se desborda de su propio panel. Es la pregunta que ninguna
+         prueba estaba haciendo dentro de estas cajas. */
+      const anchos = [...caja.querySelectorAll('*')].map(e => e.getBoundingClientRect().width);
+      const icono = caja.querySelector('svg');
+      return {
+        cual: c,
+        disenado: caja.innerHTML.trim().length > 0,
+        crudo: cruda.innerHTML.trim().length,
+        desborda: Math.round(Math.max(0, Math.max(0, ...anchos) - ancho)),
+        icono: icono ? Math.round(icono.getBoundingClientRect().width) : null,
+      };
+    }, cual));
+  }
+  ok(medidas.every(m => m.disenado),
+     'los cinco estados pintan algo del lado diseñado');
+  ok(medidas.every(m => m.desborda === 0),
+     'y en ninguno se desborda nada de su panel: ' +
+     medidas.map(m => `${m.cual} +${m.desborda}px`).join(', '));
+  const conIcono = medidas.filter(m => m.icono !== null);
+  ok(conIcono.length === 3, `tres estados llevan icono (${conIcono.map(m => m.cual).join(', ')})`);
+  ok(conIcono.every(m => m.icono <= 64),
+     'y el icono es un icono, no media pantalla: ' +
+     conIcono.map(m => `${m.cual} ${m.icono}px`).join(', '));
+
+  /* El lado sin diseñar: vacío CUANDO ÉSE ES EL EJEMPLO, con texto cuando lo
+     que sale por defecto es un mensaje de máquina. */
+  const porEstado = Object.fromEntries(medidas.map(m => [m.cual, m]));
+  ok(porEstado.cargando.crudo === 0 && porEstado.vacio.crudo === 0,
+     'cargando y vacío no enseñan nada del lado crudo, que es justo el ejemplo');
+  ok(porEstado.error.crudo > 0 && porEstado.sinred.crudo > 0,
+     'error y sin conexión enseñan lo que escupe la máquina');
+  ok(porEstado.lleno.crudo > 0, 'y con datos se dice que ahí no hay diferencia');
+
+  /* Es una ilustración, no una interfaz: ni un control dentro. */
+  const controles = await pg.evaluate(() => ({
+    dentro: document.querySelectorAll('[data-caja-cruda] button, [data-caja-cruda] a, [data-caja-cruda] input').length,
+    escondido: document.querySelector('[data-caja-cruda]').getAttribute('aria-hidden'),
+  }));
+  ok(controles.dentro === 0, `ni un control de mentira dentro (${controles.dentro})`);
+  ok(controles.escondido === 'true',
+     'y va oculto al lector de pantalla: es un ejemplo de lo que NO hay que hacer');
+
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
+/* En teléfono no se encogen a la mitad: se deslizan con enganche. Dos columnas
+   de 165 px convierten los dos lados en dos ilegibles. */
+{
+  const ctx = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const { pg } = await nuevaPagina(ctx);
+  await pg.locator('#vacios').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(400);
+  const tel = await pg.evaluate(() => {
+    const c = document.querySelector('.comparador');
+    const l = document.querySelector('.comparador-lado');
+    return { desliza: c.scrollWidth > c.clientWidth + 1,
+             enganche: getComputedStyle(c).scrollSnapType.startsWith('x'),
+             anchoLado: Math.round(l.getBoundingClientRect().width),
+             anchoCaja: Math.round(c.getBoundingClientRect().width) };
+  });
+  ok(tel.desliza, 'en teléfono el comparador se desliza en vez de partirse en dos');
+  ok(tel.enganche, 'y con enganche, para que cada lado quede completo');
+  ok(tel.anchoLado > tel.anchoCaja * 0.7,
+     `cada lado se ve entero (${tel.anchoLado} de ${tel.anchoCaja}px)`);
+  await pg.close(); await ctx.close();
+}
+
 /* ══ 5 · LOS NÚMEROS DEL TABLERO SON CIERTOS ═════════════════════════════
    Ésta es la prueba que le da derecho a existir al tablero. Los primeros
    números que puse me los inventé —«48 piezas»— y un banco de pruebas que

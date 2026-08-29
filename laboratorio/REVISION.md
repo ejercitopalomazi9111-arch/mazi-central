@@ -33,9 +33,11 @@ Nada de esto es opinión. Todo lo reprueba `pruebas.mjs` si deja de ser cierto.
 
 > Al 29 de agosto quedan **tres hechos** —el nº 2 (la navegación en
 > teléfono), el nº 3 (que se guarde lo que hiciste) y el nº 6 (por dónde
-> empezar)— y se marcan dentro de su propio apartado en vez de borrarlos:
-> una lista de defectos de la que se van quitando renglones acaba diciendo
-> que nunca hubo ninguno.
+> empezar)—, **uno a medias** —el nº 5— y **tres sin tocar**. Se marcan
+> dentro de su propio apartado en vez de borrarlos: una lista de defectos
+> de la que se van quitando renglones acaba diciendo que nunca hubo
+> ninguno. El «a medias» dice qué falta y por qué, que es lo único que
+> distingue una tarea a medias de una tarea abandonada.
 
 ### 1 · No hay un solo flujo. Sigue siendo un catálogo. (apartados 135–140)
 
@@ -110,6 +112,28 @@ lenguaje visual no se puede cambiar entero sin tocar la estructura, no lo es.
 Sin bento, sin comparadores, sin carruseles, sin scroll horizontal. El
 documento va de arriba abajo y de arriba abajo. El ritmo vertical cambia, que
 es algo, pero la forma no cambia nunca.
+
+> **A MEDIAS — 29 de agosto, y se dice a medias a propósito.** Hay dos formas
+> nuevas y las dos entraron porque el CONTENIDO las pedía, no porque tocara
+> variar: el **rail que se desliza** de la navegación en teléfono, y un
+> **comparador** en «vacíos» —el hueco sin diseñar al lado del estado
+> diseñado— que en teléfono es un par de paneles con enganche.
+>
+> Lo que queda de este apartado **no se puede separar del nº 1**. El «bento» y
+> las tarjetas desiguales que pide el curso chocan de frente con una decisión
+> ya tomada y escrita en `piezas.css`: *«el tablero no son tarjetas: son
+> columnas de una hoja de datos… la rejilla de tres tarjetas iguales era otro
+> de los diez tics»*. Variar la forma por variar es justo el pulido que el
+> corte de la skill prohíbe. La forma cambia de verdad cuando cambie la
+> arquitectura, que es el nº 1.
+>
+> **Y salió un defecto viejo, que es lo que más vale de esta ronda.** El icono
+> de los estados vacío/error/sin conexión medía **544×544 px**, en producción,
+> desde que se escribió. Un `<svg>` sin medidas toma el tamaño por defecto de
+> un elemento reemplazado y de ahí se estira. Ninguna prueba lo veía: ese icono
+> sólo existe en tres de los cinco estados de la sección, y el que se pinta al
+> cargar es el otro. **Un estado que nadie pinta es un estado que nadie mide** —
+> la prueba nueva recorre los cinco.
 
 ### 6 · Sin onboarding. (apartado 20)
 

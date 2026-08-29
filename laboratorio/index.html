@@ -482,7 +482,7 @@
       </div>
       <div class="medidor">
         <p class="rotulo">Peso de la página</p>
-        <span class="dato dato--gordo" data-contar="229">229<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="234">234<span class="unidad">KB</span></span>
         <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
       </div>
       <div class="medidor">
@@ -674,12 +674,30 @@
       <button class="pastilla" type="button" data-lista="lleno"    aria-pressed="false">con datos</button>
     </div>
 
-    <div data-caja-lista aria-live="polite" style="min-height:190px">
-      <div class="esqueleto">
-        <span class="hueso hueso--titulo"></span>
-        <span class="hueso"></span>
-        <span class="hueso hueso--corto"></span>
-        <span class="hueso"></span>
+    <!-- ══ EL COMPARADOR ════════════════════════════════════════════════
+         Esta sección AFIRMABA que «un hueco en blanco se lee como se rompió»
+         y nunca enseñaba el hueco. Una afirmación sin el contraejemplo al
+         lado es una opinión con buena letra: se lee, se asiente y no cambia
+         nada. Puestos uno junto a otro, la diferencia no hay que creerla.
+
+         Y de paso es la forma que le faltaba al documento —comparar en vez de
+         apilar—: es el «no» nº 5 de la revisión, y aquí entra porque el
+         CONTENIDO lo pide, no porque tocara variar. -->
+    <div class="comparador">
+      <div class="comparador-lado">
+        <p class="rotulo">Sin diseñar</p>
+        <div data-caja-cruda aria-hidden="true" class="comparador-caja"></div>
+      </div>
+      <div class="comparador-lado">
+        <p class="rotulo">Diseñado</p>
+        <div data-caja-lista aria-live="polite" class="comparador-caja">
+          <div class="esqueleto">
+            <span class="hueso hueso--titulo"></span>
+            <span class="hueso"></span>
+            <span class="hueso hueso--corto"></span>
+            <span class="hueso"></span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
