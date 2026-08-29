@@ -162,6 +162,7 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .pestanas{
   flex:0 0 auto; display:flex; gap:2px; padding:6px 8px 0;
   border-bottom:1px solid var(--borde); background:var(--lienzo);
+  position:relative;                 /* la guía se coloca contra esto */
 }
 .pest{
   flex:0 0 auto; background:none; border:0; border-bottom:2px solid transparent;
@@ -170,7 +171,30 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   border-radius:8px 8px 0 0;
 }
 .pest:hover{color:var(--hueso); background:var(--superficie)}
-.pest.activa{color:var(--hueso); border-bottom-color:var(--violeta)}
+/* ⚠ LA LÍNEA YA NO ES DE CADA PESTAÑA. Carlos, e208: «el pasar de chat a
+   taller 3D aún no se desliza suavemente la línea morada». Con un
+   `border-bottom` por pestaña no hay nada que deslizar: se apaga en una y se
+   enciende en otra, y eso es un salto por definición, por mucha transición
+   que se le ponga al color. Es el mismo arreglo que ya llevaba la cinta del
+   banco de pruebas; aquí faltaba.
+
+   Una sola línea que se mueve, con `transform` —lo resuelve el compositor— y
+   por eso mide 1 px de ancho y se estira con `scaleX`, en vez de animar
+   `left` y `width`, que recalculan la maqueta en cada fotograma. */
+.pest.activa{color:var(--hueso)}
+.pest-guia{
+  position:absolute; left:0; bottom:-1px; width:1px; height:2px;
+  background:var(--violeta); transform-origin:0 50%;
+  transform:translateX(0) scaleX(0);
+  transition:transform 260ms cubic-bezier(.2,.7,.3,1);
+  pointer-events:none;
+}
+/* En el banco de pruebas esta guía lleva un respaldo para cuando no hay
+   JavaScript. Aquí NO, y no es un olvido: la sala es un chat en vivo por
+   websocket — sin JS no hay pestañas, ni mensajes, ni nada que subrayar.
+   Un respaldo para un caso que no existe es código que hay que mantener a
+   cambio de nada. */
+@media (prefers-reduced-motion:reduce){ .pest-guia{transition:none} }
 .pest:focus-visible{outline:2px solid var(--verde); outline-offset:-2px}
 /* El recuadro del 3D ocupa lo que ocuparía el hilo, ni más ni menos: así la
    caja de escribir se queda donde está y no salta al cambiar de pestaña. */
@@ -1495,6 +1519,7 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
        que gane nada. La vista NO se borró —sigue viva y se llega desde el
        menú—: lo que sobraba era el segundo camino. -->
   <button class="pest" data-vista="taller3d">Taller 3D</button>
+  <i class="pest-guia" id="pestGuia" aria-hidden="true"></i>
 </div>
 
 <div class="cambio-llave" id="cambioLlave" hidden></div>
@@ -2707,6 +2732,26 @@ function pintarHilo(){
   if(b) c.scrollTop += b.getBoundingClientRect().top - ancla.y;
 }
 
+/* La guía de las pestañas. Se mide contra el CONTENIDO de la fila:
+   `offsetLeft` ya viene en coordenadas del contenedor, así que no hay que
+   sumar desplazamientos a mano. `scaleX` sobre un elemento de 1 px: el ancho
+   es el propio factor y no hace falta animar `width`. */
+function moverGuiaPestanas(){
+  const g = $('pestGuia'); if(!g) return;
+  const a = document.querySelector('.pest.activa');
+  if(!a){ g.style.transform = 'translateX(0) scaleX(0)'; return; }
+  g.style.transform = `translateX(${a.offsetLeft}px) scaleX(${a.offsetWidth})`;
+}
+/* Al girar el teléfono las pestañas cambian de sitio y la guía se quedaría
+   donde estaba: se recoloca sin transición para que no se vea viajar sola. */
+addEventListener('resize', () => {
+  const g = $('pestGuia'); if(!g) return;
+  const antes = g.style.transition;
+  g.style.transition = 'none';
+  moverGuiaPestanas();
+  requestAnimationFrame(() => { g.style.transition = antes; });
+}, { passive:true });
+
 /* ══ AVISOS: NOTIFICACIÓN, VIBRACIÓN Y SONIDO ══════════════════════════════
    Carlos, e187: «pon sistema de notificaciones de la web para que llegue un
    mensaje de tipo notificación con el logo etc al teléfono […] y ponle
@@ -3481,6 +3526,12 @@ async function entrar(codigo, nombre){
   abrirSocket(codigo);
 
   $('puerta').classList.add('ida');
+  /* ⚠ LA GUÍA SE COLOCA CUANDO LAS PESTAÑAS YA SE VEN, y ésa es la parte que
+     se olvida: mientras la puerta tapa la mesa, `offsetWidth` de la pestaña
+     activa es 0 y la guía nace con ancho cero. Sólo se movía al CAMBIAR de
+     pestaña, así que la primera vista se quedaba sin subrayado hasta que uno
+     tocaba la otra. */
+  requestAnimationFrame(moverGuiaPestanas);
   $('tituloSala').textContent = codigo;
 }
 
@@ -3927,6 +3978,7 @@ function mostrarVista(cual){
   $('marco3d').hidden = cual !== 'taller3d';
   for(const b of document.querySelectorAll('.pest'))
     b.classList.toggle('activa', b.dataset.vista === cual);
+  moverGuiaPestanas();
   /* El botón de «Vista» del pie ya no existe —el menú hace lo mismo— así que
      esto se guarda: sin la guarda, quitar un botón del HTML tumba la función
      que pinta las vistas y con ella media pantalla. Un `getElementById` de algo
@@ -4620,6 +4672,12 @@ $('bDemo').addEventListener('click', (e) => {
       texto:'Se topó el mío. Que siga el tuyo con lo de las validaciones y yo retomo al rato.' },
   ];
   $('puerta').classList.add('ida');
+  /* ⚠ LA GUÍA SE COLOCA CUANDO LAS PESTAÑAS YA SE VEN, y ésa es la parte que
+     se olvida: mientras la puerta tapa la mesa, `offsetWidth` de la pestaña
+     activa es 0 y la guía nace con ancho cero. Sólo se movía al CAMBIAR de
+     pestaña, así que la primera vista se quedaba sin subrayado hasta que uno
+     tocaba la otra. */
+  requestAnimationFrame(moverGuiaPestanas);
   /* Sin un «yo», la sala de ejemplo pintaba TODAS las burbujas del mismo lado
      —porque nadie era de tu casa— y el reparto por bandos, que es la mitad de
      la vista, no se veía. El ejemplo tiene que enseñar lo que hace. */

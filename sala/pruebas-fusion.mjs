@@ -160,6 +160,40 @@ ok(encima.despues !== null, 'el mensaje que se estaba leyendo sigue ahí');
 ok(Math.abs(encima.despues - encima.antes) < 4,
    `y se queda a la misma altura aunque crezca lo de arriba (${Math.round(encima.antes)} → ${Math.round(encima.despues)})`);
 
+console.log('\n■ la línea de las pestañas se desliza');
+/* Carlos, e208: «el pasar de chat a taller 3D aún no se desliza suavemente la
+   línea morada». Con un borde por pestaña no hay nada que deslizar: se apaga
+   en una y se enciende en otra. Se mide el transform PINTADO de la guía, que
+   es lo único que dice si se movió o si saltó. */
+{
+  const donde = () => luis.pg.evaluate(() => {
+    const g = document.getElementById('pestGuia');
+    if(!g) return null;
+    const m = new DOMMatrixReadOnly(getComputedStyle(g).transform);
+    return { x: Math.round(m.m41), ancho: +m.a.toFixed(1) };
+  });
+  const enChat = await donde();
+  ok(!!enChat, 'hay una sola guía para las dos pestañas');
+  ok(enChat && enChat.ancho > 20, `y mide lo que la pestaña activa (${enChat && enChat.ancho}px)`);
+
+  await luis.pg.click('.pest[data-vista="taller3d"]');
+  await luis.pg.waitForTimeout(500);
+  const enTaller = await donde();
+  ok(enTaller && enTaller.x > enChat.x + 10,
+     `al cambiar de pestaña la guía se MUEVE (${enChat.x} → ${enTaller && enTaller.x})`);
+  ok(enTaller && Math.abs(enTaller.ancho - enChat.ancho) > 3,
+     `y se estira al ancho de la nueva (${enChat.ancho} → ${enTaller && enTaller.ancho})`);
+
+  /* Que se deslice y no salte: a mitad de la transición tiene que estar ENTRE
+     las dos posiciones. Sin esto, esto pasaría igual con un salto. */
+  await luis.pg.click('.pest[data-vista="chat"]');
+  await luis.pg.waitForTimeout(90);
+  const aMedias = await donde();
+  ok(aMedias && aMedias.x < enTaller.x - 3 && aMedias.x > enChat.x + 3,
+     `y hace el camino: a media transición está en medio (${aMedias && aMedias.x})`);
+  await luis.pg.waitForTimeout(400);
+}
+
 console.log('\n■ avisos: notificación, vibración y sonido');
 /* Carlos, e187. Lo que se comprueba —y lo que NO— importa tanto como el
    código: aquí no hay forma de oír un tono ni de sentir una vibración, así
