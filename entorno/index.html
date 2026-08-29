@@ -1683,7 +1683,33 @@ function ponerAgente(quien, indice, cuantos){
     });
     g.add(muñeco);
     mezclador = new THREE.AnimationMixer(muñeco);
-    for(const clip of animaciones) acciones[clip.name] = mezclador.clipAction(clip);
+    /* ⚠ HAY DOS CLASES DE CLIP Y TRATARLOS IGUAL FUE EL DEFECTO. Carlos:
+       «los robots se sientan y se paran y se sientan y se paran, parece que es
+       error de loop con el inicio de la animación». Tenía razón hasta en el
+       diagnóstico.
+
+       Lo MEDÍ en vez de suponerlo, y el corte es limpio: `Idle` dura 3.33 s y
+       `Walking` 0.96 — son ciclos, y en bucle se ven bien. `Sitting` y
+       `Standing` duran 0.417 y NO son poses: son la TRANSICIÓN de estar de
+       pie a estar sentado. En bucle, el robot se sienta y se vuelve a
+       levantar dos veces por segundo. Lo confirmé mirando la altura de la
+       cadera: oscilaba entre 0.26 y 0.42 sin parar.
+
+       Y lo hice yo: antes `Sitting` casi no salía —sólo con trabajo
+       reportado— y al ponerla de estado por defecto, el defecto quedó a la
+       vista todo el rato.
+
+       Una transición se toca UNA VEZ y se queda en el último cuadro. `Death`
+       igual, por la misma razón y porque un robot no se muere en bucle. */
+    const POSES = new Set(['Sitting', 'Standing', 'Death']);
+    for(const clip of animaciones){
+      const a = mezclador.clipAction(clip);
+      if(POSES.has(clip.name)){
+        a.setLoop(THREE.LoopOnce, 1);
+        a.clampWhenFinished = true;      /* se queda sentado, no rebota */
+      }
+      acciones[clip.name] = a;
+    }
     /* Se apartan los huesos de los brazos: son los que se van a mover a mano
        para teclear. El modelo NO trae animación de teclear —sus catorce clips
        son Dance, Idle, Sitting, Wave y compañía—, así que o se inventa con

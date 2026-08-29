@@ -280,6 +280,48 @@ console.log('\n── lo que enseña el monitor ──');
   await p.context().close();
 }
 
+/* ══ EL QUE SE SIENTA SE QUEDA SENTADO ═════════════════════════════════════
+   Carlos: «los robots se sientan y se paran y se sientan y se paran, parece
+   que es error de loop con el inicio de la animación».
+
+   `Sitting` dura 0.417 s y NO es una pose: es la transición de estar de pie a
+   estar sentado. En bucle, el robot se sienta y se levanta dos veces por
+   segundo.
+
+   ⚠ SE MIDE LA ALTURA DE LA CADERA, no la configuración del clip. Comprobar
+   que `loop === LoopOnce` sería comprobar que escribí lo que escribí; lo que
+   Carlos ve es un robot que sube y baja, y eso son centímetros. Antes del
+   arreglo la cadera oscilaba entre 0.264 y 0.423; ahora se queda quieta. */
+{
+  const p = await abrir('?demo=1');
+  await p.waitForTimeout(6000);
+
+  const cadera = () => p.evaluate(() => {
+    const puesto = [...__taller.puestos.values()].find(x => x.actual === 'Sitting');
+    if(!puesto) return null;
+    let y = null;
+    puesto.grupo.traverse(o => {
+      if(o.isBone && /hip|pelvis|root/i.test(o.name) && y === null){
+        const v = o.getWorldPosition(new o.position.constructor());
+        y = +v.y.toFixed(3);
+      }
+    });
+    return y;
+  });
+
+  const alturas = [];
+  for(let k = 0; k < 8; k++){ alturas.push(await cadera()); await p.waitForTimeout(160); }
+  const buenas = alturas.filter(y => y !== null);
+  ok('hay algún robot sentado para mirar', buenas.length >= 5, `muestras: ${buenas.length}`);
+  if(buenas.length >= 5){
+    const salto = Math.max(...buenas) - Math.min(...buenas);
+    ok('y se queda sentado: la cadera no sube y baja',
+       salto < 0.02, `oscilación de ${salto.toFixed(3)} (antes del arreglo: 0.159)`);
+  }
+  ok('sin errores mirando al que se sienta', p.__errores.length === 0, p.__errores[0]);
+  await p.context().close();
+}
+
 await nav.close();
 console.log('\n' + (mal ? '✗ ' : '✓ ') + bien + '/' + (bien + mal) + ' pruebas de los mandos');
 process.exit(mal ? 1 : 0);
