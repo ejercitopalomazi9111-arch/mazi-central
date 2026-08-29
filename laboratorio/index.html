@@ -154,6 +154,12 @@
 
     <div class="matriz" role="group" aria-label="Estados del botón">
       <button class="pastilla" type="button" data-estado-bt="normal"   aria-pressed="true">normal</button>
+      <!-- ⚠ `encima` y `hundido` FALTABAN, y el título de la sección decía
+           «son ocho». Enseñaba seis. Los dos que faltaban son justo los que no
+           se pueden congelar con el ratón —al soltar, se van—, que es la misma
+           razón por la que existe esta matriz. Lo cazó el comité. -->
+      <button class="pastilla" type="button" data-estado-bt="encima"   aria-pressed="false">encima</button>
+      <button class="pastilla" type="button" data-estado-bt="hundido"  aria-pressed="false">hundido</button>
       <button class="pastilla" type="button" data-estado-bt="foco"     aria-pressed="false">foco</button>
       <button class="pastilla" type="button" data-estado-bt="cargando" aria-pressed="false">cargando</button>
       <button class="pastilla" type="button" data-estado-bt="logro"    aria-pressed="false">logrado</button>
@@ -327,7 +333,7 @@
     <div class="tablero">
       <div class="ficha medidor">
         <p class="rotulo">Responde al toque en</p>
-        <span class="dato dato--gordo" data-contar="51">51</span>
+        <span class="dato dato--gordo" data-contar="53">53</span>
         <small>lugares. Los cuenta la prueba, uno por uno</small>
       </div>
       <div class="ficha medidor">
@@ -337,7 +343,7 @@
       </div>
       <div class="ficha medidor">
         <p class="rotulo">Peso</p>
-        <span class="dato dato--gordo" data-contar="109">109<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="113">113<span class="unidad">KB</span></span>
         <small>todo el laboratorio, sin comprimir</small>
       </div>
       <div class="ficha medidor">
@@ -558,7 +564,7 @@
     <p style="margin:.4rem 0 0">
       Sin librerías, sin tipografías de internet, sin cookies y sin rastreo.
       <button class="bt bt--fantasma" type="button" data-cambiar-tema
-              style="min-height:40px; margin-left:.6rem; font-size:.82rem">
+              style="min-height:44px; margin-left:.6rem; font-size:.82rem">
         Cambiar a tema claro
       </button>
     </p>

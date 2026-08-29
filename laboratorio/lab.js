@@ -141,8 +141,9 @@
   const btM   = $('[data-bt-muestra]');
   const btM2  = $('[data-bt-muestra-2]');
   const nomb  = $('[data-estado-nombre]');
-  const NOMBRES = { normal:'normal', foco:'foco', cargando:'cargando',
-                    logro:'logrado', error:'error', apagado:'apagado' };
+  const NOMBRES = { normal:'normal', encima:'encima (hover)', hundido:'hundido (pressed)',
+                    foco:'foco', cargando:'cargando', logro:'logrado',
+                    error:'error', apagado:'apagado' };
 
   function ponerEstado(cual){
     for(const b of [btM, btM2]){
@@ -160,7 +161,13 @@
     }
     /* `foco` se enseña de verdad, poniendo el foco: dibujar un anillo falso
        enseñaría cómo se ve, no cómo se comporta — y lo que falla casi siempre
-       es lo segundo. */
+       es lo segundo.
+
+       `encima` y `hundido` NO se pueden poner de verdad: son estados del ratón
+       y se van al soltar, que es exactamente la razón por la que nadie los
+       revisa nunca. Aquí se congelan con los mismos valores que usan sus
+       pseudoclases, tomados del CSS con `data-estado`, no copiados a mano —
+       copiarlos sería garantizar que un día se separen. */
     if(cual === 'foco' && btM) btM.focus();
     if(nomb) nomb.textContent = NOMBRES[cual] || cual;
     for(const p of $$('[data-estado-bt]'))
@@ -340,7 +347,7 @@
     elRacha.textContent = racha;
     const av = Math.min(100, puntos % 200 / 2);
     elProg.setAttribute('aria-valuenow', Math.round(av));
-    elProg.firstElementChild.style.width = av + '%';
+    elProg.firstElementChild.style.transform = `scaleX(${av / 100})`;
     if(racha === 5) avisar('Racha de cinco. El multiplicador ya va en ×5.', 'logro');
   });
 

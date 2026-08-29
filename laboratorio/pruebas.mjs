@@ -159,14 +159,18 @@ for(const [n, w, h] of [['390', 390, 844], ['768', 768, 1024], ['1440', 1440, 90
       /* Los enlaces dentro de un párrafo de texto corrido no cuentan: el
          mínimo táctil es para controles, no para palabras subrayadas. */
       if(e.tagName === 'A' && e.closest('p')) return false;
-      return r.height > 0 && r.height < 40;
+      /* ⚠ 44 Y NO 40. Tenía 40 «porque así pasaba», y el comité de UI/UX lo
+         reprobó: el número que esta página CITA en su propio texto es 44. Una
+         prueba que se afloja para que pase lo que ya está hecho deja de ser
+         una prueba y pasa a ser un adorno. Eran 26 controles justo debajo. */
+      return r.height > 0 && r.height < 44;
     }).map(e => (e.textContent||'').trim().slice(0,16) + ':' + Math.round(e.getBoundingClientRect().height)),
   }));
   ok(m.h1 === 1, 'un solo h1');
   ok(!m.desborde, 'sin desbordamiento horizontal');
   ok(m.charset === 'UTF-8', 'charset UTF-8');
   ok(m.lang === 'es', 'lang declarado');
-  ok(m.chicos.length === 0, 'todo control mide ≥40px de alto' + (m.chicos.length ? ': ' + m.chicos.slice(0,4).join(', ') : ''));
+  ok(m.chicos.length === 0, 'todo control mide ≥44px de alto' + (m.chicos.length ? ': ' + m.chicos.slice(0,4).join(', ') : ''));
   ok(m.tocables >= 30, `responde al dedo en ${m.tocables} lugares`);
   ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
 
@@ -324,6 +328,70 @@ console.log('\n── las piezas ──');
   ok(pintado > 200, `el lienzo pinta de verdad (${pintado} píxeles con tinta)`);
 
   ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
+/* ══ LO QUE LA PÁGINA PREDICA, LA PÁGINA LO CUMPLE ═══════════════════════
+   La tarjeta 02 del relato dice «nunca opacidad sobre texto» y la 03 dice
+   «sólo transform y opacity». Las dos estaban ROTAS en el CSS de al lado: el
+   aviso entraba desvaneciéndose con texto dentro, y la barra del marcador
+   animaba `width`. Lo cazó el comité de UI/UX, no mis ojos — y llevaba tres
+   pasadas mirando esos archivos.
+
+   Predicar una regla en la pantalla y romperla en el archivo de al lado es
+   peor que no predicarla, así que ahora hay quien lo vigile. */
+console.log('\n── las reglas que la página predica ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:1280, height:900 } });
+  const { pg } = await nuevaPagina(ctx);
+  const rotas = await pg.evaluate(() => {
+    /* ⚠ `transitionProperty` DEVUELVE «all» EN TODO ELEMENTO que no declare
+       transición, así que preguntar por él a secas señala el documento entero.
+       Mi primera versión reprobó 200 elementos y ninguno era el defecto. Hay
+       que cruzarlo con la DURACIÓN, emparejada por índice: sin duración no hay
+       animación, por mucho que la propiedad diga «all». */
+    const malos = [];
+    const conTexto = (el) => [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
+    const lista = (v) => v.split(',').map(x => x.trim());
+    const ms = (x) => x.endsWith('ms') ? parseFloat(x) : parseFloat(x) * 1000;
+
+    /* Qué @keyframes tocan la opacidad. Se leen de las hojas de verdad: es la
+       única forma de saber si una animación por NOMBRE desvanece algo. */
+    const desvanecen = new Set();
+    for(const hoja of document.styleSheets){
+      let reglas; try{ reglas = hoja.cssRules; }catch(e){ continue; }
+      for(const r of reglas || []){
+        if(r.type !== CSSRule.KEYFRAMES_RULE) continue;
+        for(const k of r.cssRules) if(k.style.opacity !== '') { desvanecen.add(r.name); break; }
+      }
+    }
+
+    const CAJA = ['width','height','top','left','right','bottom','margin','padding','filter','inset'];
+    for(const el of document.querySelectorAll('body *')){
+      const s = getComputedStyle(el);
+      const nombre = (el.tagName.toLowerCase() + '.' + (el.className||'').toString().split(' ')[0]).replace(/\.$/, '');
+
+      const props = lista(s.transitionProperty), dur = lista(s.transitionDuration);
+      props.forEach((p, i) => {
+        if(ms(dur[i % dur.length] || '0s') <= 0) return;      /* sin duración, no anima */
+        if(CAJA.some(c => p === c || p.startsWith(c + '-'))) malos.push(`${nombre} anima «${p}»`);
+        if((p === 'opacity' || p === 'all') && conTexto(el)) malos.push(`${nombre} desvanece TEXTO (transición)`);
+      });
+
+      const anims = lista(s.animationName), aDur = lista(s.animationDuration);
+      anims.forEach((a, i) => {
+        if(a === 'none' || ms(aDur[i % aDur.length] || '0s') <= 0) return;
+        if(desvanecen.has(a) && conTexto(el)) malos.push(`${nombre} desvanece TEXTO (@keyframes ${a})`);
+      });
+    }
+    return [...new Set(malos)];
+  });
+  ok(rotas.length === 0, 'sólo se anima lo que resuelve el compositor, y nunca opacidad sobre texto'
+     + (rotas.length ? ': ' + rotas.slice(0,4).join(' · ') : ''));
+
+  /* Y los ocho estados son ocho, no seis: el título lo dice. */
+  const n = await pg.evaluate(() => document.querySelectorAll('[data-estado-bt]').length);
+  ok(n === 8, `los ocho estados del botón están los ocho (hay ${n})`);
   await pg.close(); await ctx.close();
 }
 

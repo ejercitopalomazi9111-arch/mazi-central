@@ -198,9 +198,12 @@ section[id]{ padding:clamp(4rem, 9vh, 7rem) 0; scroll-margin-top:76px; }
 .cinta-vias a{
   font-family:var(--mono); font-size:.7rem; letter-spacing:.08em;
   text-transform:uppercase; color:var(--texto-3); text-decoration:none;
-  /* 40px de alto, no 35: la barra mide 60 y hay sitio de sobra. Un enlace de
-     navegación es un control, y un control de 35px se falla con el pulgar. */
-  display:flex; align-items:center; min-height:40px;
+  /* ⚠ 44 Y NO 40. Primero puse 40 «porque ya no eran 35», y el comité de
+     UI/UX lo reprobó con razón: el número que este proyecto CITA en su propio
+     texto es 44, y una regla que se afloja para que pase lo que ya está hecho
+     no es una regla. Eran 26 controles justo por debajo. La barra mide 60: el
+     sitio estaba, faltaba la disciplina. */
+  display:flex; align-items:center; min-height:44px;
   padding:0 .55rem; white-space:nowrap; border-bottom:2px solid transparent;
   transition:color var(--micro) var(--curva-suave), border-color var(--micro) var(--curva-suave);
 }
@@ -300,3 +303,13 @@ section[id]{ padding:clamp(4rem, 9vh, 7rem) 0; scroll-margin-top:76px; }
   background:var(--senal); color:#FFF; padding:.7rem 1rem; z-index:100;
 }
 .saltar:focus{ left:.5rem; top:.5rem; }
+
+/* ── LOS DOS ESTADOS QUE NADIE REVISA ─────────────────────────────────────
+   `hover` y `pressed` se van en cuanto sueltas, así que en la práctica nunca
+   se miran con calma. Aquí se congelan — y comparten declaración con sus
+   pseudoclases en vez de repetir los valores, porque dos copias del mismo
+   color acaban separándose y entonces la matriz enseña un `hover` que la
+   página ya no tiene. */
+.bt[data-estado="encima"],
+.bt--senal[data-estado="encima"]{ --bt-fondo:#BA45FF; --bt-orilla:var(--texto); }
+.bt[data-estado="hundido"]{ transform:translateY(2px); --bt-orilla:var(--texto); }

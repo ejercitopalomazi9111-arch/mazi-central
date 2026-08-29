@@ -47,7 +47,7 @@
    que el contraste no alcanza. */
 .matriz{ display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.2rem; }
 .pastilla{
-  min-height:40px; padding:0 .8rem;
+  min-height:44px; padding:0 .8rem;   /* 44, no 40: ver la nota de base.css */
   background:transparent; color:var(--texto-3);
   border:1px solid var(--raya); border-radius:var(--r);
   font-family:var(--mono); font-size:.72rem; letter-spacing:.06em;
@@ -151,16 +151,20 @@ dialog::backdrop{ background:#000000a8; }
   background:var(--texto); color:var(--fondo);
   padding:.4rem .6rem; border-radius:var(--r);
   font-size:.8rem; white-space:nowrap; pointer-events:none;
-  opacity:0; visibility:hidden;
-  transition:opacity var(--micro) var(--curva-entrada),
-             transform var(--micro) var(--curva-entrada),
+  /* ⚠ ESTO SE DESVANECÍA, Y ADENTRO HAY TEXTO. Es la regla que la tarjeta 02
+     de esta misma página predica, rota en el archivo de al lado. Lo cazó el
+     comité de UI/UX; yo llevaba tres pasadas mirando este bloque.
+
+     Ahora aparece a opacidad plena y lo único que se mueve es su posición:
+     4 px de deslizamiento y `visibility` en salto seco. Se siente igual de
+     suave y el texto nunca existe a media tinta. */
+  visibility:hidden;
+  transition:transform var(--micro) var(--curva-entrada),
              visibility 0s linear var(--micro);
 }
 .globo:hover .globo-texto, .globo:focus-within .globo-texto{
-  opacity:1; visibility:visible; transform:translate(-50%, 0);
-  transition:opacity var(--corta) var(--curva-salida),
-             transform var(--corta) var(--curva-salida),
-             visibility 0s;
+  visibility:visible; transform:translate(-50%, 0);
+  transition:transform var(--corta) var(--curva-salida), visibility 0s;
 }
 
 /* Los avisos se apilan y se van solos. `role=status` y no `alert`: un aviso
@@ -179,11 +183,17 @@ dialog::backdrop{ background:#000000a8; }
   max-width:min(22rem, calc(100vw - 2rem));
   animation:asomar-aviso var(--corta) var(--curva-salida) both;
 }
+/* ⚠ ESTO ENTRABA CON OPACIDAD, Y ADENTRO HAY TEXTO. La regla de la casa —y
+   una de las cuatro tarjetas de esta misma página— dice que nunca se anima
+   `opacity` sobre texto, porque a media transición no cumple contraste en
+   ningún instante. Predicarlo en la tarjeta 02 y romperlo en el aviso de al
+   lado es peor que no predicarlo. Ahora entra DESLIZÁNDOSE desde fuera del
+   borde: no hace falta desvanecer nada si viene de donde no se ve. */
 .aviso[data-tipo="logro"]{ border-left-color:var(--logro); }
 .aviso[data-tipo="error"]{ border-left-color:var(--alarma); }
 .aviso.yendose{ animation:irse-aviso var(--corta) var(--curva-entrada) forwards; }
-@keyframes asomar-aviso{ from{ opacity:0; transform:translateX(14px); } }
-@keyframes irse-aviso{ to{ opacity:0; transform:translateX(14px); } }
+@keyframes asomar-aviso{ from{ transform:translateX(calc(100% + 1.5rem)); } }
+@keyframes irse-aviso{   to{ transform:translateX(calc(100% + 1.5rem)); } }
 
 /* ── 5 · LO QUE PASA CUANDO NO HAY NADA (puntos 49, 50, 51, 52, 53) ────────
    Es la parte que separa una demo de un producto: cargando, vacío, error y
@@ -223,9 +233,15 @@ dialog::backdrop{ background:#000000a8; }
 .progreso{
   height:8px; background:var(--fondo-3); border-radius:2px; overflow:hidden;
 }
+/* ⚠ ESTO ANIMABA `width`, Y LA PÁGINA DICE EN SU PROPIO TEXTO QUE SÓLO SE
+   ANIMAN `transform` Y `opacity`. Animar el ancho obliga al navegador a
+   recalcular la caja en cada fotograma; `scaleX` lo resuelve el compositor.
+   Que la regla estuviera escrita en la pantalla y rota en el CSS de al lado es
+   exactamente lo que un comité existe para cazar: yo no lo vi en tres pasadas. */
 .progreso i{
-  display:block; height:100%; width:0; background:var(--senal);
-  transition:width var(--media) var(--curva-salida);
+  display:block; height:100%; width:100%; background:var(--senal);
+  transform:scaleX(0); transform-origin:0 50%;
+  transition:transform var(--media) var(--curva-salida);
 }
 
 /* La gráfica se dibuja con la rejilla del banco: barras que salen del suelo,
@@ -238,7 +254,11 @@ dialog::backdrop{ background:#000000a8; }
   flex:1; position:relative; background:var(--senal);
   border-radius:2px 2px 0 0; min-height:2px;
   height:var(--alto); transform-origin:50% 100%;
-  transition:height var(--media) var(--curva-salida);
+  /* ⚠ AQUÍ HABÍA UN `transition:height`, contra la regla que esta misma página
+     predica dos secciones más arriba. Y lo peor: NO ANIMABA NADA — ningún
+     código cambia el alto de estas barras, así que era una transición que sólo
+     servía para contradecir el texto. Se quita, que es más barato que
+     convertirla a `scaleY` y además es lo honesto: aquí no hay animación. */
 }
 .grafica div::after{
   content:attr(data-v); position:absolute; inset:auto 0 calc(100% + 4px) 0;
