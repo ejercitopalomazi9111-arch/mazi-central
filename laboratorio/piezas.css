@@ -404,7 +404,12 @@ html[data-cajas] body *:hover{ outline:1px solid var(--senal); }
    propio viewport y las consultas responden de verdad. */
 .probador{
   position:fixed; inset:0; z-index:95; display:none;
-  background:color-mix(in srgb, var(--fondo) 92%, transparent);
+  /* ⚠ OPACO, y al 92 % se veía mal. La idea de dejar asomar la página de
+     atrás suena elegante y en la pantalla es basura: la barra de navegación y
+     los titulares se transparentaban DETRÁS del marco y competían con la
+     página que se estaba probando, que es justo lo que uno vino a mirar. Una
+     superficie que tapa, tapa. */
+  background:var(--fondo);
   padding:1rem; overflow:auto;
 }
 .probador[data-abierto="si"]{ display:grid; grid-template-rows:auto 1fr; gap:1rem; }
