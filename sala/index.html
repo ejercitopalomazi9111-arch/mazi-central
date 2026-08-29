@@ -410,6 +410,14 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   background:#00000030; color:var(--hueso);
   border:1px solid var(--borde-vivo); border-radius:8px;
 }
+.liga-msj{
+  color:#C9A0FF; text-decoration:underline; text-underline-offset:2px;
+  word-break:break-word;
+}
+/* La referencia se ve como lo que es: una liga corta, en la tipografía de los
+   datos, para que no se confunda con una palabra del texto. */
+.liga-msj.ref{ font-family:var(--dato); text-decoration:none; background:#AD21ED26;
+  padding:1px 5px; border-radius:5px; }
 .aviso-llaves{
   font-size:12px; color:var(--ambar); background:rgba(232,179,58,.09);
   border:1px solid rgba(232,179,58,.28); border-radius:11px; padding:10px 12px;
@@ -1004,12 +1012,24 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   padding:10px 14px calc(10px + env(safe-area-inset-bottom));
 }
 .fila{display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap}
+/* ⚠ 16px DE PISO, Y NO ES CAPRICHO DE DISEÑO. Carlos: «al escribir en el text
+   box siempre se me hace un zoom in innecesario y molesto que debo deshacer
+   cada vez». Es Safari de iOS: cuando un campo tiene menos de 16 px, al
+   enfocarlo el navegador hace zoom para «ayudar» a leerlo, y deja la página
+   descuadrada hasta que la persona la vuelve a ajustar a mano. No hay opción
+   para apagarlo — la única forma de que no pase es que el campo mida 16.
+
+   Estaba en 14. Trece caracteres de diferencia entre una app que se usa y una
+   que estorba, y sólo se nota en un iPhone. */
 select,textarea,input{
-  font-family:inherit; font-size:14px; color:var(--hueso);
+  font-family:inherit; font-size:16px; color:var(--hueso);
   background:var(--alta); border:1px solid var(--borde-vivo); border-radius:9px;
   padding:8px 10px;
 }
+/* Los desplegables se ven mejor chicos, PERO en táctil suben a 16 por lo
+   mismo de arriba: un `select` también dispara el zoom. */
 select{font-family:var(--dato); font-size:11.5px; min-width:0; flex:1 1 130px}
+@media (hover:none), (pointer:coarse){ select{ font-size:16px } }
 /* La píldora de escribir. En Discord de teléfono la caja es un óvalo
    despegado del borde, no una franja pegada abajo — y esa diferencia es la
    mitad de lo que hace que se sienta app. */
@@ -1023,6 +1043,31 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   background:var(--violeta); color:#fff; border:none; border-radius:9px;
   font-weight:700; font-size:14px; padding:10px 18px; cursor:pointer; flex:0 0 auto;
 }
+
+/* ── LA LÍNEA DE ESCRIBIR ─────────────────────────────────────────────────
+   Clip, caja y enviar, alineados por abajo para que al crecer la caja los dos
+   botones se queden pegados al último renglón en vez de flotar a media
+   altura. */
+.linea-escribir{ display:flex; align-items:flex-end; gap:8px; }
+.linea-escribir #texto{
+  flex:1 1 auto; min-height:44px; max-height:9.5rem; overflow-y:auto;
+  padding:11px 15px; border-radius:22px;
+}
+.linea-escribir .enviar{ min-height:44px; border-radius:22px; padding:0 16px; }
+.clip{
+  flex:0 0 auto; width:44px; height:44px; display:grid; place-items:center;
+  background:transparent; color:var(--tenue); border:1px solid var(--borde);
+  border-radius:50%; cursor:pointer; padding:0;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .14s ease, border-color .14s ease;
+}
+.clip svg{ width:19px; height:19px; }
+/* Monocromático, como lo pidió: un emoji 📎 se dibuja distinto en cada aparato
+   —y en color— así que el pie se veía diferente en el iPhone de Carlos y en la
+   computadora de Luis. Dibujado, se ve igual en los dos. */
+.clip:hover{ color:var(--hueso); border-color:var(--borde-vivo); }
+.clip:focus-visible{ outline:2px solid var(--violeta); outline-offset:2px; }
+.clip.tiene{ color:var(--violeta); border-color:var(--violeta); }
 .enviar:disabled{opacity:.45; cursor:default}
 .aviso{
   font-family:var(--dato); font-size:10.5px; color:var(--ambar); margin-top:7px;
@@ -1040,7 +1085,11 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   border-left:2px solid var(--violeta); padding-left:11px; margin:2px 0 10px;
 }
 .extra .fila{margin-bottom:7px}
-#nota{min-height:44px; font-size:13.5px}
+/* ⚠ 16 TAMBIÉN AQUÍ. Se me escapó al arreglar el zoom: bajé el piso en la
+   regla general y esta línea lo volvía a romper para un campo. La prueba lo
+   dijo, no mis ojos — y ése es justo el tipo de defecto que se cuela en un
+   arreglo, porque uno da el problema por cerrado al ver el primer campo bien. */
+#nota{min-height:44px; font-size:16px}
 
 /* ── cuando el servidor no contesta ──────────────────────────────────────
    Un chat que se muere en silencio es peor que uno que no existe: uno se
@@ -1238,7 +1287,11 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
      Se carga la PRIMERA vez que se toca la pestaña, no al abrir la sala. -->
 <div class="pestanas" id="pestanas">
   <button class="pest activa" data-vista="chat">Chat</button>
-  <button class="pest" data-vista="hebras">Hebras</button>
+  <!-- ⚠ SIN PESTAÑA DE «HEBRAS». Carlos: «arriba quita hebras porque el menú
+       ya tiene cómo se ve este hilo y hacen lo mismo». Tenía razón: dos
+       caminos a la misma vista es una decisión que se le pide a la persona sin
+       que gane nada. La vista NO se borró —sigue viva y se llega desde el
+       menú—: lo que sobraba era el segundo camino. -->
   <button class="pest" data-vista="taller3d">Taller 3D</button>
 </div>
 
@@ -1265,7 +1318,31 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <!-- El mensajote va PRIMERO y sin nada encima. Es una junta: primero se
        habla, y luego, si hace falta, se le dice algo a alguien. Etiquetar el
        tipo antes de escribir volvía tieso lo que debe fluir. -->
-  <textarea id="texto" placeholder="Escribe lo que quieras decirle a la sala…" rows="3"></textarea>
+  <!-- ⚠ TODO EN UNA LÍNEA. Carlos: «quiero que el text box sea más chico, el
+       botoncito de imagen transfórmalo en sólo el icono monocromático del
+       clip, el botón de vista quítalo porque arriba puedo cambiarlo
+       exactamente igual, y haz que el de enviar quede a la derecha del box
+       para que todo quede en una sola línea, más chiquito y cómodo».
+
+       Los tres cambios apuntan a lo mismo y tiene razón: el pie ocupaba tres
+       renglones —caja, botón de nota, fila de botones— para una acción que es
+       una sola. En un teléfono eso es un tercio de la pantalla gastado en
+       marco. Ahora es una fila: clip, caja que crece con lo que escribes, y
+       enviar.
+
+       La caja arranca en un renglón y CRECE hasta cinco: empezar en tres deja
+       un hueco vacío casi siempre, y no crecer obliga a escribir mirando por
+       una rendija. -->
+  <div class="linea-escribir">
+    <button class="clip" id="bImagen" aria-label="Adjuntar imagen o documento" title="Adjuntar">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+           stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.2a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.6-2.6l8.5-8.48"/>
+      </svg>
+    </button>
+    <textarea id="texto" placeholder="Escribe a la sala…" rows="1"></textarea>
+    <button class="enviar" id="bEnviar" aria-label="Enviar">Enviar</button>
+  </div>
 
   <button class="mas" id="bMas" aria-expanded="false">
     <span id="masTexto">Dejarle una nota a alguien</span> <span class="flecha">▾</span>
@@ -1293,13 +1370,11 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 
   <div class="pegados" id="pegados"></div>
 
-  <div class="fila">
-    <button class="btn" id="bImagen" title="Adjuntar una imagen">📎 Imagen</button>
-    <button class="btn" id="bVista" title="Cambiar cómo se ve el hilo">Vista</button>
-    <span class="crece"></span>
-    <button class="enviar" id="bEnviar">Enviar</button>
-  </div>
-  <input type="file" id="archivo" accept="image/*" multiple hidden>
+  <!-- El botón de «Vista» se fue: hacía exactamente lo mismo que el menú de
+       arriba, y dos caminos a lo mismo le piden a la persona una decisión a
+       cambio de nada. El de imagen y el de enviar subieron a la línea de
+       escribir. -->
+  <input type="file" id="archivo" accept="image/*,application/pdf,.txt,.md,.csv,.json" multiple hidden>
   <div class="aviso" id="aviso"></div>
   <div class="caido" id="caido"></div>
 </div>
@@ -1934,17 +2009,48 @@ function cajaDeCodigo(texto, lenguaje, archivo){
    siendo texto escapado, como siempre. */
 function conCodigo(texto){
   const crudo = String(texto == null ? '' : texto);
-  if(!crudo.includes('\u0060\u0060\u0060')) return esc(crudo);
+  if(!crudo.includes('\u0060\u0060\u0060')) return conEnlaces(esc(crudo));
   const partes = [];
   const cerca = /\u0060\u0060\u0060([A-Za-z0-9_.+-]{0,24})[ \t]*\n([\s\S]*?)\u0060\u0060\u0060/g;
   let ultimo = 0, m;
   while((m = cerca.exec(crudo)) !== null){
-    if(m.index > ultimo) partes.push(esc(crudo.slice(ultimo, m.index)));
+    if(m.index > ultimo) partes.push(conEnlaces(esc(crudo.slice(ultimo, m.index))));
     partes.push(cajaDeCodigo(m[2].replace(/\n$/, ''), m[1] || null, null));
     ultimo = cerca.lastIndex;
   }
-  if(ultimo < crudo.length) partes.push(esc(crudo.slice(ultimo)));
+  if(ultimo < crudo.length) partes.push(conEnlaces(esc(crudo.slice(ultimo))));
   return partes.join('');
+}
+
+/* ══ LO QUE SE PUEDE TOCAR DENTRO DE UN MENSAJE ═══════════════════════════
+   Carlos: «haz que los enlaces que pegues en tu mensaje pueda abrirlos con
+   sólo presionarlos, y lo mismo con los hipervínculos que a veces hacen donde
+   escriben #63 y sale en otro color representando que es una liga».
+
+   ⚠ VA DESPUÉS DE ESCAPAR, NUNCA ANTES. Es la única forma segura de hacer esto:
+   se escapa el texto entero primero —así cualquier `<script>` que alguien
+   escriba ya es texto muerto— y sólo entonces se buscan direcciones sobre el
+   resultado ya escapado. Al revés, un mensaje con `<img onerror=...>` metido
+   dentro de una dirección se convertiría en HTML de verdad. En una sala donde
+   escriben agentes y personas de dos cuentas, eso no es teórico.
+
+   Y por eso el patrón de dirección es RESTRICTIVO: sólo http y https, y sin
+   comillas ni signos de menor. Lo que no cabe ahí se queda como texto. */
+const REF_REPO = 'ejercitopalomazi9111-arch/mazi-central';
+function conEnlaces(html){
+  return String(html)
+    /* Direcciones. El cierre recorta la puntuación final, que casi siempre es
+       del renglón y no de la dirección: «mira https://x.dev/a.» */
+    .replace(/(https?:\/\/[^\s<>"']+)/g, (u) => {
+      const limpio = u.replace(/[.,;:)\]}]+$/, '');
+      const cola = u.slice(limpio.length);
+      return `<a class="liga-msj" href="${limpio}" target="_blank" rel="noopener noreferrer">${limpio}</a>${cola}`;
+    })
+    /* Referencias tipo #63 → el PR o issue de este repo. Se exige que vaya
+       suelta —precedida de espacio o principio de renglón— para no convertir
+       en liga el «#3» de «canal #3» ni un color como #63a. */
+    .replace(/(^|[\s(])#(\d{1,5})\b/g,
+      (_, antes, n) => `${antes}<a class="liga-msj ref" href="https://github.com/${REF_REPO}/pull/${n}" target="_blank" rel="noopener noreferrer">#${n}</a>`);
 }
 
 function tarjetaAdjunto(a){
@@ -2943,6 +3049,12 @@ async function pegar(archivos){
 }
 
 function pintarPegados(){
+  /* El clip se enciende cuando hay algo pegado. Con la fila de botones vieja
+     se veía la miniatura y ya; ahora que el clip es un icono suelto, sin esta
+     marca no habría forma de saber que llevas una imagen puesta hasta que la
+     mandas. */
+  const clip = $('bImagen');
+  if(clip) clip.classList.toggle('tiene', pegados.length > 0);
   $('pegados').innerHTML = pegados.map((p, i) =>
     `<span class="pegado"><img src="${p.vista}" alt="">` +
     `<button type="button" data-quitar="${i}" aria-label="Quitar">×</button></span>`).join('');
@@ -3107,7 +3219,11 @@ function mostrarVista(cual){
   $('marco3d').hidden = cual !== 'taller3d';
   for(const b of document.querySelectorAll('.pest'))
     b.classList.toggle('activa', b.dataset.vista === cual);
-  $('bVista').textContent = cual === 'chat' ? 'Vista' : 'Chat';
+  /* El botón de «Vista» del pie ya no existe —el menú hace lo mismo— así que
+     esto se guarda: sin la guarda, quitar un botón del HTML tumba la función
+     que pinta las vistas y con ella media pantalla. Un `getElementById` de algo
+     que no está devuelve `null`, y `null.textContent` no perdona. */
+  const bv = $('bVista'); if(bv) bv.textContent = cual === 'chat' ? 'Vista' : 'Chat';
   if(cual === 'hebras') pintarTaller();
   if(cual === 'taller3d') prender3D();
 }
@@ -3157,7 +3273,23 @@ $('pestanas').addEventListener('click', (e) => {
   const b = e.target.closest('[data-vista]');
   if(b) mostrarVista(b.dataset.vista);
 });
-$('bVista').addEventListener('click', cambiarVista);
+$('bVista') && $('bVista').addEventListener('click', cambiarVista);
+
+/* ── LA CAJA CRECE CON LO QUE SE ESCRIBE ──────────────────────────────────
+   Arranca en un renglón, que es lo que Carlos pidió («más chiquito y cómodo»),
+   y sube hasta el tope que fija el CSS. Sin esto, «más chico» querría decir
+   escribir un párrafo por una rendija de un renglón, que es peor que la caja
+   de tres que había.
+
+   Se baja a `auto` antes de medir: sin ese paso, `scrollHeight` devuelve el
+   alto que YA tiene y la caja nunca se encoge al borrar texto. */
+function estirarCaja(){
+  const t = $('texto'); if(!t) return;
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 152) + 'px';
+}
+$('texto') && $('texto').addEventListener('input', estirarCaja);
+estirarCaja();
 $('bVista2').addEventListener('click', () => { cambiarVista(); cerrarCajones(); });
 $('gente').addEventListener('click', (e) => {
   const b = e.target.closest('[data-ver]');
