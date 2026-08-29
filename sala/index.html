@@ -997,14 +997,98 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    sacar de cuadro toda la conversación. */
 .caja-codigo pre code{font:inherit; color:inherit; background:none; padding:0}
 
-/* ── la lupa ── */
+/* ── la lupa · ahora es una galería ────────────────────────────────────────
+   Carlos: «haz que si alguien incluyéndote pone varias imágenes en su mensaje
+   pueda pasar entre ellas deslizando izquierda o derecha y salir de estas
+   deslizando de arriba hacia abajo».
+
+   Las láminas se pintan TODAS en una pista y la pista se mueve. La otra forma
+   —una sola <img> a la que se le cambia el src al soltar— es menos código y se
+   siente falsa: mientras arrastras no asoma la imagen de al lado, así que el
+   dedo no está moviendo nada, sólo esperando. Lo que hace que un carrusel se
+   sienta real es ver llegar a la vecina, y eso pide que exista.
+
+   ⚠ `touch-action:none` sobre la pista y NO sobre la lupa entera. Apaga el
+   gesto del navegador —sin él, Chrome de Android se queda con el deslizamiento
+   horizontal para su «atrás» y el vertical para recargar, y los `pointermove`
+   dejan de llegar a media caricia—. Pero apagarlo en toda la lupa mataría
+   también el desplazamiento de los botones de arriba. */
 .lupa{
-  position:fixed; inset:0; z-index:60; background:rgba(8,5,13,.94);
-  display:none; align-items:center; justify-content:center; padding:20px;
+  /* ⚠ 68 Y NO 60. La cabecera vive en 64, así que con 60 la lupa se pintaba
+     DEBAJO de ella: la barra con el botón de cerrar quedaba escondida detrás
+     del título y las pestañas seguían encima de la foto. Venía de antes —el
+     botón «Cerrar» viejo, pegado arriba a la derecha, caía en el mismo sitio—
+     y no se había visto porque nadie había mirado la lupa abierta en una
+     captura. Se queda por debajo de 70 a propósito: la puerta de entrada
+     manda sobre todo lo demás. */
+  position:fixed; inset:0; z-index:68; background:rgba(8,5,13,.985);
+  display:none; flex-direction:column;
 }
 .lupa.abierta{display:flex}
-.lupa img{max-width:100%; max-height:100%; border-radius:10px}
-.lupa .cerrar{position:absolute; top:calc(14px + env(safe-area-inset-top)); right:14px}
+
+.lupa-barra{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+  gap:10px; padding:calc(12px + env(safe-area-inset-top)) 14px 10px;
+}
+.lupa-cuenta{
+  font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* En `--tenue` el contador se leía peor que el título de la página que
+     asoma por detrás, y los dos textos se montaban en la misma esquina. Aquí
+     el fondo es casi negro: el hueso tiene sitio de sobra. */
+  color:var(--hueso); letter-spacing:.06em;
+}
+/* Con una sola imagen el contador no dice nada: «1 / 1» es ruido. */
+.lupa-cuenta:empty{display:none}
+
+.lupa-vista{position:relative; flex:1 1 auto; overflow:hidden}
+.lupa-pista{
+  display:flex; height:100%; width:100%;
+  touch-action:none; will-change:transform;
+}
+/* La transición se enciende con una clase y NO vive en la regla base: durante
+   el arrastre el transform se pisa en cada `pointermove`, y con transición
+   puesta cada fotograma persigue al anterior y el dedo va por delante de la
+   imagen. Se prende sólo al soltar, que es cuando hay algo que animar. */
+.lupa-pista.suelta{transition:transform 260ms cubic-bezier(.2,.7,.3,1)}
+@media (prefers-reduced-motion:reduce){ .lupa-pista.suelta{transition:none} }
+
+.lupa-dia{
+  flex:0 0 100%; height:100%;
+  display:flex; align-items:center; justify-content:center; padding:0 20px 20px;
+}
+.lupa-dia img{
+  max-width:100%; max-height:100%; border-radius:10px;
+  /* Que el arrastre mueva la pista y no la imagen: sin esto el navegador
+     ofrece «arrastrar la imagen» y se lleva el gesto a la mitad. */
+  user-select:none; -webkit-user-drag:none; pointer-events:none;
+}
+
+/* Las flechas son para ratón y teclado. En el teléfono estorban encima de la
+   foto y el gesto ya está, así que ahí no salen. */
+.lupa-flecha{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:44px; height:44px; display:none; place-items:center;
+  border:1px solid var(--borde-vivo); border-radius:50%;
+  background:rgba(8,5,13,.7); color:var(--hueso); font-size:19px; cursor:pointer;
+}
+.lupa-flecha:hover{border-color:var(--violeta); color:var(--violeta)}
+.lupa-flecha:focus-visible{outline:2px solid var(--violeta); outline-offset:2px}
+.lupa-flecha[hidden]{display:none}
+.lupa-flecha.izq{left:12px}
+.lupa-flecha.der{right:12px}
+@media (hover:hover) and (pointer:fine){ .lupa-flecha{display:grid} }
+
+/* Los puntitos de abajo: dicen cuántas hay y en cuál vas sin ocupar renglón. */
+.lupa-puntos{
+  flex:0 0 auto; display:flex; gap:7px; justify-content:center;
+  padding:0 14px calc(16px + env(safe-area-inset-bottom));
+}
+.lupa-puntos span{
+  width:7px; height:7px; border-radius:50%; background:var(--borde-vivo);
+  transition:background 180ms, transform 180ms;
+}
+.lupa-puntos span.hoy{background:var(--violeta); transform:scale(1.35)}
+@media (prefers-reduced-motion:reduce){ .lupa-puntos span{transition:none} }
 
 /* ── escribir ── */
 .pie{
@@ -1444,9 +1528,24 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   </div>
 </div>
 
-<div class="lupa" id="lupa">
-  <button class="btn cerrar" id="bCerrarLupa">Cerrar</button>
-  <img id="lupaImg" alt="">
+<!-- ══ LA LUPA · galería ════════════════════════════════════════════════
+     `aria-modal` y `role=dialog` van a mano porque esto es un <div>: el resto
+     de las capas de esta app (la puerta, los paneles) también lo son, y meter
+     un <dialog> suelto traería sus estilos de agente de usuario a discutir con
+     los de aquí. Lo que <dialog> da gratis —foco atrapado, volver el foco a
+     donde estaba, el resto de la página inerte— se pone abajo a mano, que son
+     seis renglones y ninguna sorpresa de estilos. -->
+<div class="lupa" id="lupa" role="dialog" aria-modal="true" aria-label="Imagen en grande">
+  <div class="lupa-barra">
+    <span class="lupa-cuenta" id="lupaCuenta"></span>
+    <button class="btn" id="bCerrarLupa">Cerrar</button>
+  </div>
+  <div class="lupa-vista">
+    <div class="lupa-pista" id="lupaPista"></div>
+    <button class="lupa-flecha izq" id="lupaIzq" aria-label="Imagen anterior">‹</button>
+    <button class="lupa-flecha der" id="lupaDer" aria-label="Imagen siguiente">›</button>
+  </div>
+  <div class="lupa-puntos" id="lupaPuntos"></div>
 </div>
 
 <div class="puerta" id="puerta">
@@ -3384,18 +3483,190 @@ document.addEventListener('click', async (e) => {
   }, 1800);
 });
 
-/* ── la lupa ── */
+/* ══ LA LUPA · galería que se pasa con el dedo ══════════════════════════════
+   Carlos, e151: «haz que si alguien incluyendo­te pone varias imágenes en su
+   mensaje pueda pasar entre ellas deslizando izquierda o derecha y salir de
+   estas deslizando de arriba hacia abajo».
+
+   ── LO QUE HAY QUE SABER ANTES DE TOCAR ESTO ─────────────────────────────
+   · Se usa `pointerdown/move/up` y NO `dragstart`. `dragstart` sencillamente
+     NO EXISTE en un dedo: es la API de arrastrar-y-soltar de escritorio. Con
+     ella el gesto funciona con ratón y no hace absolutamente nada en el
+     teléfono, que es donde Carlos lo pidió.
+   · `setPointerCapture` para que el dedo siga mandando aunque se salga de la
+     pista. Sin él, arrastrar hasta el borde de la pantalla suelta el gesto a
+     medias y la imagen se queda torcida.
+   · SÓLO se mueve con `transform`, regla de la casa: lo resuelve el
+     compositor y no obliga a recalcular la maqueta en cada fotograma.
+   · El eje se DECIDE UNA VEZ, pasados 8 px, y ya no cambia. Sin ese candado
+     una diagonal mueve la pista de lado Y baja la lupa a la vez, y al soltar
+     se van las dos cosas: cambias de imagen y además se cierra. */
+const lupa = {
+  fotos: [], i: 0, abierta: false, quienAbrio: null,
+  x0: 0, y0: 0, dx: 0, dy: 0, eje: null, t0: 0, arrastrando: false, movió: false,
+};
+
+const $lupa   = $('lupa');
+const $pista  = $('lupaPista');
+const $puntos = $('lupaPuntos');
+
+/* Ancho de UNA lámina. Se pregunta al contenedor y no se guarda: la pantalla
+   gira, la ventana se arrastra, y un ancho guardado al abrir deja las láminas
+   descuadradas justo después de girar el teléfono. */
+const anchoLupa = () => $pista.parentElement.clientWidth || innerWidth;
+
+function pintarLupa(){
+  $pista.innerHTML = lupa.fotos
+    .map(src => `<div class="lupa-dia"><img src="${esc(src)}" alt=""></div>`).join('');
+  $puntos.innerHTML = lupa.fotos.length > 1
+    ? lupa.fotos.map((_, k) => `<span class="${k === lupa.i ? 'hoy' : ''}"></span>`).join('')
+    : '';
+  $('lupaCuenta').textContent = lupa.fotos.length > 1
+    ? `${lupa.i + 1} / ${lupa.fotos.length}` : '';
+  const una = lupa.fotos.length < 2;
+  $('lupaIzq').hidden = una;
+  $('lupaDer').hidden = una;
+}
+
+function colocar(animando){
+  $pista.classList.toggle('suelta', !!animando);
+  $pista.style.transform =
+    `translate3d(${-lupa.i * anchoLupa() + lupa.dx}px, ${lupa.dy}px, 0)`;
+  /* Al bajar, el fondo se va aclarando: dice que soltar ahí cierra, antes de
+     que la persona suelte. Sin eso el gesto es una apuesta a ciegas. */
+  $lupa.style.background = `rgba(8,5,13,${(.985 * (1 - Math.min(lupa.dy / 420, .8))).toFixed(3)})`;
+}
+
+function irA(k, animando = true){
+  lupa.i = Math.max(0, Math.min(lupa.fotos.length - 1, k));
+  lupa.dx = 0; lupa.dy = 0;
+  colocar(animando);
+  const p = [...$puntos.children];
+  p.forEach((s, j) => s.classList.toggle('hoy', j === lupa.i));
+  $('lupaCuenta').textContent = lupa.fotos.length > 1
+    ? `${lupa.i + 1} / ${lupa.fotos.length}` : '';
+}
+
+function abrirLupa(fotos, i, quienAbrio){
+  lupa.fotos = fotos; lupa.i = i; lupa.dx = 0; lupa.dy = 0;
+  lupa.abierta = true; lupa.quienAbrio = quienAbrio || null;
+  pintarLupa();
+  $lupa.classList.add('abierta');
+  colocar(false);
+  /* Lo que <dialog> daría gratis, a mano: el resto de la página deja de
+     existir para el teclado y para el lector de pantalla mientras la lupa
+     está encima. Sin esto se puede tabular hacia los mensajes de atrás, que
+     siguen ahí aunque no se vean. */
+  document.querySelector('.app')?.setAttribute('inert', '');
+  $('bCerrarLupa').focus();
+}
+
+function cerrarLupa(){
+  if(!lupa.abierta) return;
+  lupa.abierta = false;
+  $lupa.classList.remove('abierta');
+  $lupa.style.background = '';
+  $pista.innerHTML = '';                       /* suelta las imágenes grandes */
+  document.querySelector('.app')?.removeAttribute('inert');
+  /* Y el foco vuelve a la foto desde la que se abrió, no al principio de la
+     página. Es la mitad del trabajo de un modal y la que siempre se olvida. */
+  if(lupa.quienAbrio && document.contains(lupa.quienAbrio)) lupa.quienAbrio.focus();
+  lupa.quienAbrio = null;
+}
+
 document.addEventListener('click', (e) => {
   const m = e.target.closest('.foto');
-  if(m){ $('lupaImg').src = m.dataset.grande; $('lupa').classList.add('abierta'); }
+  if(!m) return;
+  /* Las hermanas del MISMO mensaje, en el orden en que se ven. Si el mensaje
+     trae una sola, la galería sigue siendo galería: no se pasa de lado, pero
+     el deslizar hacia abajo para salir funciona igual. */
+  const caja = m.closest('.adjuntos') || m.parentElement;
+  const todas = [...caja.querySelectorAll('.foto')];
+  abrirLupa(todas.map(b => b.dataset.grande), Math.max(0, todas.indexOf(m)), m);
 });
-$('bCerrarLupa').addEventListener('click', () => $('lupa').classList.remove('abierta'));
-$('lupa').addEventListener('click', (e) => {
-  if(e.target === $('lupa')) $('lupa').classList.remove('abierta');
-});
+
+$('bCerrarLupa').addEventListener('click', cerrarLupa);
+$('lupaIzq').addEventListener('click', () => irA(lupa.i - 1));
+$('lupaDer').addEventListener('click', () => irA(lupa.i + 1));
+
 addEventListener('keydown', (e) => {
-  if(e.key === 'Escape') $('lupa').classList.remove('abierta');
+  if(!lupa.abierta) return;
+  if(e.key === 'Escape'){ cerrarLupa(); return; }
+  if(e.key === 'ArrowLeft'){ e.preventDefault(); irA(lupa.i - 1); }
+  if(e.key === 'ArrowRight'){ e.preventDefault(); irA(lupa.i + 1); }
 });
+
+/* Tocar el fondo cierra, como antes. Va sobre la pista y comprueba que no
+   hubo arrastre: sin eso, terminar un deslizamiento cuenta además como clic
+   en el fondo y la lupa se cierra cada vez que pasas de imagen. */
+$pista.addEventListener('click', (e) => {
+  /* ⚠ El objetivo del clic es la LÁMINA, no la pista: la <img> lleva
+     `pointer-events:none` para no robarse el arrastre, así que el toque
+     aterriza en el <div> de la lámina. Comparando contra la pista esto no
+     cerraba nunca, y el fondo dejaba de responder al toque. */
+  if((e.target === $pista || e.target.classList.contains('lupa-dia')) && !lupa.movió) cerrarLupa();
+});
+
+$pista.addEventListener('pointerdown', (e) => {
+  if(!lupa.abierta || e.button > 0) return;
+  lupa.arrastrando = true; lupa.movió = false; lupa.eje = null;
+  lupa.x0 = e.clientX; lupa.y0 = e.clientY; lupa.t0 = e.timeStamp;
+  lupa.dx = 0; lupa.dy = 0;
+  $pista.setPointerCapture(e.pointerId);
+  $pista.classList.remove('suelta');
+});
+
+$pista.addEventListener('pointermove', (e) => {
+  if(!lupa.arrastrando) return;
+  const dx = e.clientX - lupa.x0, dy = e.clientY - lupa.y0;
+
+  if(!lupa.eje){
+    if(Math.hypot(dx, dy) < 8) return;         /* aún no se sabe qué quiere */
+    lupa.eje = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    lupa.movió = true;
+  }
+
+  if(lupa.eje === 'x'){
+    /* En los extremos el arrastre pesa: se mueve un tercio. Es cómo se dice
+       «por aquí ya no hay más» sin un mensaje, y es lo que hace cualquier
+       galería del teléfono. */
+    const tope = (lupa.i === 0 && dx > 0) || (lupa.i === lupa.fotos.length - 1 && dx < 0);
+    lupa.dx = tope ? dx / 3 : dx;
+    lupa.dy = 0;
+  }else{
+    /* Sólo hacia ABAJO. Carlos pidió salir «deslizando de arriba hacia
+       abajo»; hacia arriba no cierra, y por eso se frena igual que un tope. */
+    lupa.dx = 0;
+    lupa.dy = dy > 0 ? dy : dy / 4;
+  }
+  colocar(false);
+});
+
+function soltar(e){
+  if(!lupa.arrastrando) return;
+  lupa.arrastrando = false;
+  const ms  = Math.max(1, e.timeStamp - lupa.t0);
+  const vel = (lupa.eje === 'y' ? lupa.dy : lupa.dx) / ms;   /* px por ms */
+
+  if(lupa.eje === 'y'){
+    /* O llegó lejos, o iba rápido. Sólo la distancia obliga a arrastrar media
+       pantalla para cerrar; sólo la velocidad cierra con un roce sin querer. */
+    if(lupa.dy > 110 || vel > .55){ cerrarLupa(); lupa.dx = lupa.dy = 0; return; }
+  }else if(lupa.eje === 'x'){
+    const salto = Math.abs(lupa.dx) > anchoLupa() * .22 || Math.abs(vel) > .5;
+    if(salto){ irA(lupa.i + (lupa.dx < 0 ? 1 : -1)); return; }
+  }
+  irA(lupa.i);                                  /* no alcanzó: vuelve a su sitio */
+}
+$pista.addEventListener('pointerup', soltar);
+/* `pointercancel` NO es opcional: lo dispara el sistema cuando entra una
+   llamada o el navegador decide quedarse con el gesto. Sin esto la pista se
+   queda con el `transform` a medio camino y ya no vuelve nunca. */
+$pista.addEventListener('pointercancel', soltar);
+
+/* Girar el teléfono cambia el ancho de la lámina, y la pista estaba corrida
+   con el ancho viejo: quedaba a caballo entre dos imágenes. */
+addEventListener('resize', () => { if(lupa.abierta) irA(lupa.i, false); });
 
 /* ── botones ── */
 $('bMas').addEventListener('click', () => {
