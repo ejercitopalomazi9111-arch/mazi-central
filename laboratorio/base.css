@@ -91,9 +91,22 @@
      más brillante deslumbra — es la misma diferencia que hay entre el blanco
      del papel y el brillo de la lámpara sobre el papel. Se baja un escalón y
      se calienta: sigue siendo el hueso, ya no es una lámpara. */
-  --papel:#E2DDD6;
-  --papel-hondo:#D9D3CB;
-  --papel-hueco:#CCC5BC;
+  /* ⚠ GRIS NEUTRO Y NO PAPEL CÁLIDO — SEGUNDA CORRECCIÓN DEL MISMO SITIO.
+     Arriba está la primera: «no uses ESE tono de blanco, es demasiado
+     brillante», y se bajó un escalón manteniendo el calor. Carlos volvió:
+     «no uses blanco para el tono claro sino gris». O sea que lo que sobraba
+     no era brillo, era el AMARILLO.
+
+     Se quita el tinte y se deja EXACTAMENTE la misma luminancia, calculada,
+     no ajustada a ojo: 0.7274 → 0.7305, 0.6565 → 0.6584, 0.5640 → 0.5647.
+     Eso importa porque todos los ratios de contraste de este archivo se
+     midieron contra estos tres fondos; moviendo el brillo habría que volver a
+     medirlos todos, y alguno habría bajado de 4.5 sin que nadie lo notara.
+     La prueba de contraste los recalcula igual, pero no se le dan a revisar
+     cambios que uno ya sabe que no debía hacer. */
+  --papel:#DEDEDE;
+  --papel-hondo:#D4D4D4;
+  --papel-hueco:#C6C6C6;
   --tinta:#010101;
   --tinta-2:#3A3540;
   /* ⚠ #6B6470 daba 4.08:1 sobre el papel hondo — pasaba sobre el papel liso y
@@ -114,6 +127,44 @@
   --texto-3:var(--tinta-3);
   --acento:var(--violeta);
   --acento-texto:var(--violeta-texto);
+  /* ══ LA PROFUNDIDAD ══════════════════════════════════════════════════
+     Carlos: «haz que el fondo de la app y todos sus elementos hagan parecer
+     que es un entorno semi 3D, dale profundidad, ponle sombras, contrastes».
+
+     ⚠ ESTO REVIERTE UNA DECISIÓN ANTERIOR DE ESTE MISMO ARCHIVO, y se dice
+     para que nadie la vuelva a poner por costumbre: la hoja era plana a
+     propósito y la única sombra del documento era la de la pieza en el aire
+     —«es lo único que de verdad está por encima de la hoja»—. Era coherente,
+     y él la vio y la descartó. Manda él.
+
+     Se hace con TRES ESCALONES y no con una sombra por sitio, porque una
+     sombra suelta por componente es exactamente como se llega a que cada caja
+     flote a una altura distinta y nada se lea como una escena.
+
+     Cada escalón lleva DOS capas: una pegada al objeto —el contacto, lo que
+     dice que toca la hoja— y otra ancha y suave —la que da el volumen—. Con
+     una sola, o el objeto parece pegado con cinta o parece un globo.
+
+     Y todas caen HACIA ABAJO, sin desplazarse de lado: una sola fuente de luz
+     arriba. Sombras en direcciones distintas es lo que hace que un diseño se
+     vea armado por partes. */
+  --tinta-sombra:1, 1, 1;
+  --alto-1:
+    0 1px 1px rgba(var(--tinta-sombra), .05),
+    0 2px 6px -2px rgba(var(--tinta-sombra), .12);
+  --alto-2:
+    0 1px 1px rgba(var(--tinta-sombra), .06),
+    0 6px 14px -6px rgba(var(--tinta-sombra), .16),
+    0 18px 34px -18px rgba(var(--tinta-sombra), .20);
+  --alto-3:
+    0 2px 3px rgba(var(--tinta-sombra), .08),
+    0 14px 28px -12px rgba(var(--tinta-sombra), .24),
+    0 34px 60px -30px rgba(var(--tinta-sombra), .30);
+  /* El filo de luz de arriba. Es la mitad del efecto y la que casi nadie
+     pone: una caja con sombra y sin filo se lee como un agujero; con el filo
+     se lee como algo levantado. */
+  --filo:inset 0 1px 0 rgba(255,255,255,.55);
+
   --raya:#0101011f;
   --raya-fuerte:#01010140;
   /* La retícula es MÁS TENUE que las reglas del documento, y tiene token
@@ -144,6 +195,22 @@
   --texto-2:#C4BCC9;
   --texto-3:#948C9C;
   --acento-texto:#C86BF5;
+  /* Sobre tinta hay que apretar: una sombra negra sobre un fondo casi negro
+     no existe. Y el filo se apaga casi del todo — un filo blanco marcado en
+     el tema oscuro es el borde de plástico que delata el diseño hecho para
+     el claro y pintado de negro después. */
+  --alto-1:
+    0 1px 1px rgba(var(--tinta-sombra), .30),
+    0 2px 8px -2px rgba(var(--tinta-sombra), .40);
+  --alto-2:
+    0 1px 2px rgba(var(--tinta-sombra), .34),
+    0 8px 18px -6px rgba(var(--tinta-sombra), .48),
+    0 22px 40px -18px rgba(var(--tinta-sombra), .55);
+  --alto-3:
+    0 2px 4px rgba(var(--tinta-sombra), .40),
+    0 16px 32px -12px rgba(var(--tinta-sombra), .58),
+    0 40px 70px -30px rgba(var(--tinta-sombra), .66);
+  --filo:inset 0 1px 0 rgba(255,255,255,.07);
   /* ⚠ ROJO DE VERDAD, NO ROSA. Carlos: «en el tono oscuro los avisos en rojo
      déjalos con el rojo tradicional, no lo hagas rosado raro». El rosa salió
      de aclarar el rojo hasta que pasara contraste sobre el fondo oscuro, que
@@ -221,15 +288,38 @@ body{
    `background-attachment:fixed` habría sido un renglón, y es justo el que no
    sirve: Safari de iOS lo trata como `scroll` en unas versiones y provoca
    repintado en otras. Se vería bien aquí y mal en su teléfono. */
+/* La luz sobre el plano. Un degradado muy suave desde arriba: es lo que
+   convierte un color plano en una superficie iluminada, y es lo que hace que
+   las sombras de encima tengan de dónde caer. Va en la capa fija —con la
+   retícula— para que no viaje con el papel: una luz que se desplaza con el
+   contenido delata que es un dibujo. */
 .reticula{
   position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-color:transparent;
   background-image:
     linear-gradient(var(--reticula) 1px, transparent 1px),
     linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
     linear-gradient(var(--reticula) 1px, transparent 1px),
-    linear-gradient(90deg, var(--reticula) 1px, transparent 1px);
-  background-size:96px 96px, 96px 96px, 24px 24px, 24px 24px;
-  background-repeat:repeat;
+    linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
+    radial-gradient(120% 85% at 50% -10%,
+      rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, rgba(var(--tinta-sombra),0) 55%,
+      rgba(var(--tinta-sombra),.055) 100%);
+  background-size:96px 96px, 96px 96px, 24px 24px, 24px 24px, 100% 100%, 100% 100%;
+  background-repeat:repeat, repeat, repeat, repeat, no-repeat, no-repeat;
+}
+/* Sobre tinta el mismo gesto, mucho más flojo: un brillo blanco marcado en el
+   tema oscuro es el reflejo de plástico que delata el diseño hecho para el
+   claro y pintado de negro después. */
+:root[data-tema="oscuro"] .reticula{
+  background-image:
+    linear-gradient(var(--reticula) 1px, transparent 1px),
+    linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
+    linear-gradient(var(--reticula) 1px, transparent 1px),
+    linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
+    radial-gradient(120% 85% at 50% -10%,
+      rgba(173,33,237,.10) 0%, rgba(173,33,237,0) 55%),
+    linear-gradient(180deg, rgba(1,1,1,0) 50%, rgba(1,1,1,.28) 100%);
 }
 body{
   background-image:
@@ -448,7 +538,11 @@ html:not(.js) .cinta-vias a[aria-current="true"]{ border-bottom-color:var(--acen
   background:transparent; color:var(--acento-texto); border-color:transparent;
   border-bottom:2px solid var(--acento); padding:0 .25rem; min-height:44px;
 }
-.bt:active{ transform:translateY(2px); }
+/* El botón está POSADO sobre la hoja, y al hundirlo pierde la sombra: es lo
+   que hace que los 2 px se sientan como apretar y no como un salto. Los dos
+   cambios van juntos o no se lee ninguno. */
+.bt{ box-shadow:var(--alto-1); }
+.bt:active{ transform:translateY(2px); box-shadow:none; }
 .bt:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 @media (hover:hover) and (pointer:fine){
   .bt:hover{ background:#8E19C6; border-color:#8E19C6; }

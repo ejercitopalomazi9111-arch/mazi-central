@@ -1547,5 +1547,43 @@ console.log('\n· La presencia, avisada');
      oido.filter(x => x.que === 'presencia').length === cuantos);
 }
 
+/* ══ los vistos ═══════════════════════════════════════════════════════════ */
+console.log('\n· Hasta dónde ha leído cada quien');
+{
+  const s = nueva({ LLAVES: 'carlos:AAA,luis:BBB' });
+  await leer(await pedir(s, 'POST', 'entrar', { id:'carlos', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'luis', nombre:'Luis', tipo:'humano' }, 'BBB'));
+  const dichos = [];
+  for(let k = 0; k < 4; k++){
+    const [, r] = await leer(await pedir(s, 'POST', 'decir', { de:'carlos', texto:'uno '+k }, 'AAA'));
+    dichos.push(r.evento.id);
+  }
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:dichos[2] }, 'BBB'));
+  ok('se puede marcar hasta dónde se leyó', c1 === 200 && r1.vistos.luis === dichos[2]);
+
+  /* La regla que evita que la marca vaya y venga con el desplazamiento. */
+  const [c2, r2] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:dichos[0] }, 'BBB'));
+  ok('volver a leer hacia arriba NO des-lee', c2 === 200 && r2.vistos.luis === dichos[2]);
+  ok('y lo dice, en vez de fingir que hizo algo', r2.sinCambio === true);
+
+  const [c3, r3] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:dichos[3] }, 'BBB'));
+  ok('pero seguir leyendo sí avanza', c3 === 200 && r3.vistos.luis === dichos[3]);
+
+  const [c4] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:'e9999' }, 'BBB'));
+  ok('no se puede marcar un mensaje que no existe', c4 === 404);
+
+  /* Que viaje: un visto que no llega al otro no sirve para nada. */
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  ok('el que pide el hilo recibe los vistos', hilo.vistos && hilo.vistos.luis === dichos[3]);
+
+  /* Y que NO despierte a nadie: leer no es trabajo y despertar a un agente
+     por eso le gasta uso a su dueño. */
+  let despertado = false;
+  s.esperando = [{ filtro: () => { despertado = true; return true; }, responder: () => {} }];
+  await pedir(s, 'POST', 'visto', { de:'carlos', hasta:dichos[3] }, 'AAA');
+  ok('marcar un visto no despierta a los que esperan', !despertado);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

@@ -164,7 +164,8 @@ dialog{
   padding:0; border:0; border-top:3px solid var(--acento); border-radius:0;
   background:var(--fondo); color:var(--texto);
   max-width:min(32rem, calc(100vw - 2rem));
-  box-shadow:0 24px 60px -20px #01010138;
+  /* La sombra se la pone la escala, más abajo. Tenerla aquí con su propio
+     número era como se acaba con cinco alturas distintas y ninguna igual. */
 }
 dialog::backdrop{ background:#01010199; }
 .tapa{ padding:1.6rem; }
@@ -179,7 +180,6 @@ dialog::backdrop{ background:#01010199; }
   padding:1.4rem 1.4rem 2rem;
   transform:translateY(101%);
   transition:transform var(--media) var(--curva-salida);
-  box-shadow:0 -24px 60px -24px #01010138;
 }
 .hoja[data-abierta="si"]{ transform:translateY(0); }
 .hoja-asa{
@@ -304,8 +304,12 @@ dialog::backdrop{ background:#01010199; }
 .baraja{ display:grid; gap:1.2rem; }
 .baraja > article{
   position:sticky; top:88px;
-  padding:1.6rem 0 1.8rem; background:var(--fondo);
+  padding:1.6rem 1.4rem 1.8rem; background:var(--fondo);
   border-top:2px solid var(--acento);
+  /* Se apilan de verdad: cada una tapa a la anterior y la sombra es lo que
+     dice cuál está encima. Sin ella, al pegarse arriba parecían el mismo
+     bloque partido por una raya. */
+  box-shadow:var(--alto-2), var(--filo);
 }
 .baraja > article:nth-child(2){ top:104px; }
 .baraja > article:nth-child(3){ top:120px; }
@@ -330,6 +334,7 @@ dialog::backdrop{ background:#01010199; }
   min-height:44px; padding:.6rem .7rem; margin-bottom:.5rem;
   background:var(--fondo-2); color:var(--texto);
   border:0; border-left:2px solid var(--texto); border-radius:0;
+  box-shadow:var(--alto-1);
   font-family:var(--letra); font-size:.92rem; cursor:grab;
   -webkit-tap-highlight-color:transparent;
   touch-action:none;              /* para poder arrastrar con el dedo */
@@ -341,16 +346,23 @@ dialog::backdrop{ background:#01010199; }
   cursor:grabbing; border-left-color:var(--acento);
   /* Mientras va en el aire se levanta del papel y no se desvanece: lleva
      texto, y la regla de la casa dice que la opacidad no se anima sobre
-     texto. La sombra dura aquí sí tiene sentido — es lo único del documento
-     que de verdad está por encima de la hoja. */
-  position:relative; z-index:5; box-shadow:6px 6px 0 #01010122;
+     texto. Antes llevaba una sombra DURA porque era la única del documento;
+     ahora que todo tiene altura, se le da el escalón más alto y se lee sola
+     contra lo que deja abajo. */
+  position:relative; z-index:5; box-shadow:var(--alto-3);
 }
 @media (hover:hover) and (pointer:fine){ .pieza:hover{ border-left-color:var(--acento); transform:translateX(3px); } }
 
 /* ── 9 · PARTÍCULAS ────────────────────────────────────────────────────────
    El lienzo es decorativo y lo dice: los comportamientos se explican en texto
    al lado, así que quien no lo ve no se pierde nada. */
-.lienzo-caja{ position:relative; background:var(--fondo-2); }
+.lienzo-caja{
+  position:relative; background:var(--fondo-2);
+  /* Hundido y no levantado: es una ventana a otra cosa, no un objeto encima
+     de la hoja. El filo va abajo, que es como se lee un hueco. */
+  box-shadow:inset 0 2px 10px -4px rgba(var(--tinta-sombra), .30),
+             inset 0 -1px 0 rgba(255,255,255,.35);
+}
 .lienzo-caja canvas{ display:block; width:100%; height:300px; }
 .lienzo-datos{
   position:absolute; left:.8rem; bottom:.8rem;
@@ -553,6 +565,23 @@ html[data-marco] .consola-bt, html[data-marco] .consola, html[data-marco] .proba
              border-color var(--corta) var(--curva-suave),
              transform var(--micro) var(--curva-salida);
 }
+/* Lo que de verdad flota encima de todo va al escalón más alto. Al `.hoja` y
+   al `dialog` ya les habían puesto una sombra suelta cada uno, con números
+   distintos: se cambian por el escalón, que es de lo que se trata tener una
+   escala. */
+.consola, dialog, .aviso{ box-shadow:var(--alto-3), var(--filo); }
+/* ⚠ LA HOJA VA AL REVÉS Y NO ES UN DETALLE: sube desde abajo y se pega al
+   borde inferior, así que su sombra tiene que caer HACIA ARRIBA — sobre lo
+   que tapa. Con el escalón normal la sombra se iba por debajo de la pantalla
+   y la hoja quedaba recortada contra el contenido, sin volumen ninguno. Es
+   la misma luz: lo que cambia es de qué lado está la superficie. */
+.hoja{
+  box-shadow:0 -2px 3px rgba(var(--tinta-sombra), .08),
+             0 -14px 28px -12px rgba(var(--tinta-sombra), .24),
+             0 -34px 60px -30px rgba(var(--tinta-sombra), .30),
+             var(--filo);
+}
+
 .consola, .hoja, dialog, .aviso, .lienzo-caja, .progreso, .grafica div, .hueso{
   transition:background var(--media) var(--curva-suave),
              color var(--media) var(--curva-suave),

@@ -18,6 +18,7 @@ const API  = 'http://127.0.0.1:8787';
 const SALA = Array.from({ length:6 }, () =>
   'ABCDEFGHJKMNPQRSTUVWXYZ'[Math.floor(Math.random() * 23)]).join('');
 const b = await chromium.launch({ args:['--use-gl=swiftshader','--enable-unsafe-swiftshader'] });
+const numeroDe = (id) => parseInt(String(id || '').replace(/^e/, ''), 10) || 0;
 let f = 0;
 const ok = (c, t) => { console.log((c ? '  ✓ ' : '  ✗ ') + t); if(!c) f++; };
 
@@ -158,6 +159,73 @@ ok(encima.alto > encima.visible + 200, `el hilo desborda de verdad (${encima.alt
 ok(encima.despues !== null, 'el mensaje que se estaba leyendo sigue ahí');
 ok(Math.abs(encima.despues - encima.antes) < 4,
    `y se queda a la misma altura aunque crezca lo de arriba (${Math.round(encima.antes)} → ${Math.round(encima.despues)})`);
+
+console.log('\n■ los vistos se marcan solos al leer');
+/* Carlos, e187. Se prueba con DOS pestañas: lo que importa no es que la mía
+   sepa hasta dónde leí —eso ya lo sé— sino que al OTRO le llegue y vea de
+   quién es. Con una sola pestaña esto pasaría con la difusión rota. */
+{
+  const conocido = await luis.pg.evaluate(() =>
+    hilo.find(e => (e.texto || '').includes('pestaña vieja')).id);
+
+  /* Se pone ese mensaje a la vista y se espera al freno de medio segundo. */
+  await luis.pg.evaluate((id) => {
+    const b = document.querySelector(`[data-ev="${id}"]`);
+    b.scrollIntoView({ block:'center', behavior:'instant' });
+  }, conocido);
+  await luis.pg.waitForTimeout(1400);
+
+  const marcado = await luis.pg.evaluate(() => vistos[yo.id] || null);
+  ok(!!marcado, `al ver un mensaje se marca solo (${marcado})`);
+
+  await nueva.pg.waitForTimeout(700);
+  const alla = await nueva.pg.evaluate(() => {
+    const luisId = Object.keys(gente).find(k => gente[k].nombre === 'Luis');
+    return { marca: vistos[luisId] || null,
+             fila: document.querySelectorAll('.leido').length,
+             dice: document.querySelector('.leido')?.getAttribute('title') || '' };
+  });
+  ok(!!alla.marca, 'y le llega al otro por el socket, sin recargar');
+  ok(alla.fila > 0, 'que lo pinta como una fila de «visto por»');
+  ok(/Luis/.test(alla.dice), `y dice de quién es: «${alla.dice}»`);
+
+  /* La regla que evita que la marca vaya y venga con el desplazamiento. */
+  await luis.pg.evaluate(() => { document.getElementById('hilo').scrollTop = 0; });
+  await luis.pg.waitForTimeout(1400);
+  const trasSubir = await luis.pg.evaluate(() => vistos[yo.id]);
+  ok(numeroDe(trasSubir) >= numeroDe(marcado),
+     `y subir a releer no des-lee (${marcado} → ${trasSubir})`);
+}
+
+console.log('\n■ de quién es cada reacción');
+/* Carlos, e187: «haz que pueda ver de quién es una reacción a un mensaje».
+   El dato ya viajaba —el servidor guarda la lista de ids, no un contador—:
+   lo que faltaba era enseñarlo. Se prueba con DOS personas reaccionando a lo
+   mismo, que es el único caso donde un contador y una lista se distinguen. */
+/* ⚠ UN MENSAJE DE VERDAD, no el último del hilo: unas líneas más arriba se
+   le inyectan al hilo mensajes de relleno que sólo existen en el navegador,
+   así que `hilo[hilo.length-1]` es uno que el servidor no conoce y la
+   reacción se rechaza con «no hay ningún mensaje con ese id». */
+const suyo = await luis.pg.evaluate(() =>
+  hilo.find(e => (e.texto || '').includes('pestaña vieja')).id);
+for(const p of [luis.pg, nueva.pg]){
+  await p.evaluate(async (id) => {
+    await alServidor('reaccion', { de: yo.id, sobre: id, cual: 'visto' });
+  }, suyo);
+  await p.waitForTimeout(300);
+}
+await luis.pg.waitForTimeout(600);
+const chip = await luis.pg.evaluate((id) => {
+  const b = document.querySelector(`.reac[data-sobre="${id}"][data-reac="visto"]`);
+  return b ? { titulo:b.title, etiqueta:b.getAttribute('aria-label'),
+               cuenta:b.querySelector('b').textContent } : null;
+}, suyo);
+ok(!!chip, 'la reacción se pinta');
+ok(chip && chip.cuenta === '2', `y cuenta las dos (${chip && chip.cuenta})`);
+ok(chip && /Carlos/.test(chip.titulo) && /Luis/.test(chip.titulo),
+   `y dice de quién es cada una: «${chip && chip.titulo}»`);
+ok(chip && chip.etiqueta === chip.titulo,
+   'y lo dice igual para el lector de pantalla, no sólo al pasar el ratón');
 
 console.log('\n■ la caja de escribir');
 /* Carlos, e190: «después de escribir y enviar un mensaje la caja no regresa a

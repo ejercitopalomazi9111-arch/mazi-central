@@ -667,6 +667,19 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 }
 
 /* ── reacciones ── */
+/* La fila de «visto por». Chiquita y alineada al final, como en cualquier
+   app de mensajes: es información de rabillo del ojo, no un renglón más de
+   la conversación. */
+.leido{
+  display:flex; align-items:center; gap:4px;
+  justify-content:flex-end; margin:2px 0 8px; padding:0 2px;
+}
+.leido-txt{
+  font-family:var(--dato); font-size:8.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue); margin-right:2px;
+}
+.leido .avatar{width:15px; height:15px}
+
 .reacciones{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
 .reacciones:empty{display:none}
 .reaccionar.simple{border-style:solid; font-size:10.5px; font-family:var(--dato);
@@ -1827,6 +1840,8 @@ let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
 /* Los retratos de las cuentas, `cuenta → data:image/…`. Llegan en el `hola` y
    se pisan enteros cuando alguien cambia el suyo. */
 let retratos = {};
+/* Hasta dónde ha leído cada quien, `id de sesión → id del evento`. */
+let vistos = {};
 /* Sesiones absorbidas, `id viejo → id que se quedó`. El hilo NO se reescribe:
    los eventos viejos guardan a su autor de entonces y esto los resuelve al
    pintarlos, que es donde importa. */
@@ -2014,6 +2029,9 @@ const REACCIONES = [
   ['ojo','⚠️','Ojo con esto'], ['bravo','🔥','Bien hecho'],
 ];
 const FIGURA = Object.fromEntries(REACCIONES.map(([k, f]) => [k, f]));
+/* Cómo se dice cada una con palabras. Hace falta para decir de quién es la
+   reacción sin obligar a nadie a descifrar un emoji: «Lo vi: Carlos, Luis». */
+const NOMBRE_REAC = Object.fromEntries(REACCIONES.map(([k, , q]) => [k, q]));
 
 /* ══════════════════════════════════════════════════════════════════════════
    QUIÉN ES QUIÉN
@@ -2462,7 +2480,20 @@ function pintarReacciones(e){
   const r = e.reacciones || {};
   const partes = Object.entries(r).map(([cual, quienes]) => {
     const mia = yo && quienes.includes(yo.id);
-    return `<button class="reac ${mia ? 'mia' : ''}" data-reac="${esc(cual)}" data-sobre="${esc(e.id)}">` +
+    /* ⚠ DE QUIÉN ES CADA REACCIÓN. Carlos, e187: «haz que pueda ver de quién
+       es una reacción a un mensaje». El dato ya venía —el servidor guarda la
+       LISTA de ids por reacción, no un contador— y la mesa se quedaba con
+       `.length`. O sea que la parte cara ya estaba hecha y lo que faltaba era
+       enseñarla.
+
+       Va en el `title` y en el `aria-label`, no en un panel aparte: son dos o
+       tres nombres, caben en el sitio donde ya está el dedo, y así lo dice
+       igual el que pasa el ratón que el que usa lector de pantalla. Un panel
+       para leer dos nombres es una pantalla más que cerrar. */
+    const nombres = quienes.map(id => (gente[id] && gente[id].nombre) || id);
+    const dicho = `${NOMBRE_REAC[cual] || cual}: ${nombres.join(', ')}`;
+    return `<button class="reac ${mia ? 'mia' : ''}" data-reac="${esc(cual)}"` +
+           ` data-sobre="${esc(e.id)}" title="${esc(dicho)}" aria-label="${esc(dicho)}">` +
            `${FIGURA[cual] || '•'}<b>${quienes.length}</b></button>`;
   });
   partes.push(`<button class="reaccionar" data-abrir-reac="${esc(e.id)}" aria-label="Reaccionar">＋</button>`);
@@ -2602,6 +2633,22 @@ function pintarHilo(){
           IDIOMA === 'en' ? 'In English' : 'En cristiano'}</span>${esc(simples[e.id])}</div>`
       : '';
 
+    /* ── HASTA AQUÍ LEYÓ QUIÉN ────────────────────────────────────────
+       Carlos, e187: «que la propia app cuando tú scroll haga que veas el
+       mensaje lo marque como visto tipo WhatsApp […] y haz que los vistos
+       también se pueda ver de quién son».
+
+       La marca va DESPUÉS del mensaje donde se quedó cada quien, con su
+       cara. Así el «de quién es» no necesita ni un panel ni un toque: se ve
+       en el sitio, que es como lo hacen las apps de mensajes.
+
+       No se pinta la tuya. Saber hasta dónde has leído tú no le sirve a
+       nadie —lo tienes en la pantalla— y ocuparía un renglón en cada vuelta
+       de la conversación. */
+    const leyeronAqui = Object.entries(vistos)
+      .filter(([id, ev]) => ev === e.id && id !== (yo && yo.id) && gente[id])
+      .map(([id]) => credencial(gente[id]));
+
     partes.push(
       `<div class="grupo ${mio ? 'mio' : ''} ${otrolado ? 'otrolado' : ''} ${
          conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}"` +
@@ -2612,11 +2659,18 @@ function pintarHilo(){
         `<div class="dicho">${cuerpo}${cab ? '' :
            `<span class="sello-hora">${hora(e.ts)}</span>`}</div>` +
         adj + nota + llano + pintarReacciones(e) +
-      `</div></div>`);
+      `</div></div>` +
+      (leyeronAqui.length
+        ? `<div class="leido" title="${esc('Leyeron hasta aquí: ' + leyeronAqui.map(c => c.nombre).join(', '))}">` +
+          `<span class="leido-txt">visto por</span>` +
+          leyeronAqui.map(c => avatarHtml(c, 'chico')).join('') + `</div>`
+        : ''));
   });
 
   c.innerHTML = partes.join('') ||
     '<p class="sistema">Todavía no se ha dicho nada. Empieza tú.</p>';
+
+  mirarLoLeido();
 
   if(abajo){ c.scrollTop = c.scrollHeight; return; }
   if(!ancla) return;
@@ -2625,6 +2679,58 @@ function pintarHilo(){
      igual cuánto haya crecido lo de arriba. Si el mensaje del ancla ya no
      está —lo borraron, o se recortó el hilo por el tope— no se inventa nada. */
   if(b) c.scrollTop += b.getBoundingClientRect().top - ancla.y;
+}
+
+/* ══ MARCAR LO LEÍDO AL DESPLAZARSE ════════════════════════════════════════
+   Carlos, e187: «que la propia app cuando tú scroll haga que veas el mensaje
+   lo marque como visto tipo WhatsApp».
+
+   Un `IntersectionObserver` y no una escucha de scroll: el observador lo
+   resuelve el navegador fuera del hilo principal y avisa sólo cuando algo
+   entra o sale. Con `scroll` habría que recorrer los mensajes en cada
+   fotograma, que es exactamente cómo se llega a que el chat vaya a tirones.
+
+   ⚠ SE MANDA UNA SOLA VEZ Y CON RETRASO. Bajar de golpe por veinte mensajes
+   dispara veinte entradas; sin el freno serían veinte peticiones para decir
+   veinte veces lo mismo, y la última ya lo dice todo — la marca es «hasta
+   dónde», no «cuáles». Medio segundo después de que la vista se calma.
+
+   ⚠ Y NO SE MARCA LO QUE NO SE HA VISTO DE VERDAD: `threshold` alto y
+   `document.hidden` mirado antes de mandar. Un mensaje que entró en pantalla
+   con la pestaña en segundo plano no lo ha leído nadie, y un «visto» falso es
+   peor que no tener vistos: hace que el otro se quede esperando respuesta. */
+let vistoMandado = '', relojVisto = null;
+const numeroEv = (id) => parseInt(String(id || '').replace(/^e/, ''), 10) || 0;
+
+const ojoVistos = ('IntersectionObserver' in window)
+  ? new IntersectionObserver((entradas) => {
+      if(document.hidden) return;
+      let alto = vistoMandado;
+      for(const en of entradas){
+        if(!en.isIntersecting) continue;
+        const id = en.target.dataset.ev;
+        if(numeroEv(id) > numeroEv(alto)) alto = id;
+      }
+      if(numeroEv(alto) <= numeroEv(vistoMandado)) return;
+      clearTimeout(relojVisto);
+      relojVisto = setTimeout(() => {
+        /* Se vuelve a mirar aquí y no sólo arriba: entre que se programó y
+           que toca, la persona pudo cambiar de pestaña. */
+        if(document.hidden || !sala || demo || !yo) return;
+        if(numeroEv(alto) <= numeroEv(vistoMandado)) return;
+        vistoMandado = alto;
+        alServidor('visto', { de: yo.id, hasta: alto })
+          .catch(() => { vistoMandado = ''; });   /* si falló, que reintente */
+      }, 500);
+    }, { threshold: 0.75 })
+  : null;
+
+/* El hilo se repinta entero, así que los nodos que observaba el observador ya
+   no existen. Se vuelve a enganchar después de cada pintada. */
+function mirarLoLeido(){
+  if(!ojoVistos) return;
+  ojoVistos.disconnect();
+  for(const b of $('hilo').querySelectorAll('[data-ev]')) ojoVistos.observe(b);
 }
 
 /* ══ PREGUNTAR ═════════════════════════════════════════════════════════════
@@ -3310,6 +3416,7 @@ function abrirSocket(codigo){
     const p = JSON.parse(m.data);
     if(p.que === 'hola'){
       hilo = p.hilo; gente = p.gente; retratos = p.retratos || {}; fusiones = p.fusiones || {};
+      vistos = p.vistos || {};
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
       pintarGente(); pintarHilo(); recibirEscribiendo(p.escribiendo);
     }
@@ -3356,6 +3463,10 @@ function abrirSocket(codigo){
       for(const id in (p.estados || {})) if(gente[id]) gente[id].estado = p.estados[id];
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
       pintarGente(); pintarYo();
+    }
+    if(p.que === 'vistos'){
+      vistos = p.vistos || {};
+      pintarHilo();
     }
     if(p.que === 'reaccion'){
       const ev = hilo.find(x => x.id === p.id);

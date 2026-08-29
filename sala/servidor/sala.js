@@ -335,6 +335,14 @@ export class Sala {
          editar desde un endpoint — que es exactamente lo que un registro no
          debe ser. */
       this.fusiones  = await ctx.storage.get('fusiones')  || {};
+      /* Hasta dónde ha leído cada quien: `id de sesión → id del evento`.
+         ⚠ UNA MARCA POR PERSONA, NO UNA FILA POR MENSAJE. Lo segundo es lo
+         que se escribe solo cuando uno piensa en «vistos», y crece con
+         mensajes × personas: mil mensajes y cuatro sesiones son cuatro mil
+         entradas que hay que guardar y difundir enteras. Como leer es
+         ordenado —nadie lee el 900 sin haber pasado por el 899— basta con
+         hasta dónde llegó cada uno, que son cuatro números. */
+      this.vistos    = await ctx.storage.get('vistos')    || {};
     });
   }
 
@@ -386,6 +394,7 @@ export class Sala {
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
       vigilias: this.vigilias, retratos: this.retratos, fusiones: this.fusiones,
+      vistos: this.vistos,
     });
     await this.tocar(true);
   }
@@ -1032,7 +1041,7 @@ export class Sala {
       await this.tocar();
       return Response.json({
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
-        retratos: this.retratos, fusiones: this.fusiones,
+        retratos: this.retratos, fusiones: this.fusiones, vistos: this.vistos,
         conectados: this.conectados(),
         vueltas: this.vueltas, tope: TOPE_VUELTAS,
         /* Para que la mesa sepa qué botón enseñar sin adivinar. */
@@ -1424,6 +1433,35 @@ export class Sala {
       this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados(),
                       fusiones:this.fusiones });
       return Response.json({ bien:true, gente:this.gente, fusiones:this.fusiones });
+    }
+
+    /* ── /visto · hasta dónde leyó cada quien ────────────────────────────
+       Carlos, e187: «pon el sistema de visto para que la propia app cuando tú
+       scroll haga que veas el mensaje lo marque como visto tipo WhatsApp […]
+       y haz que los vistos también se pueda ver de quién son».
+
+       Sólo AVANZA. Volver a leer hacia arriba no des-lee nada, y sin esta
+       regla la marca iría y vendría con el desplazamiento: al que está al
+       otro lado le parecería que el otro no ha leído lo que ya leyó. */
+    if(pedido.method === 'POST' && ruta === 'visto'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const hasta = String(c.hasta || '');
+      if(!this.hilo.some(e => e.id === hasta)){
+        return Response.json({ error:`Aquí no hay ningún mensaje "${hasta}".` }, { status:404 });
+      }
+      const n = (id) => parseInt(String(id).replace(/^e/, ''), 10) || 0;
+      if(n(hasta) <= n(this.vistos[quien.id] || '')) {
+        return Response.json({ bien:true, vistos:this.vistos, sinCambio:true });
+      }
+      this.vistos[quien.id] = hasta;
+      await this.guardar();
+      this.difundir({ que:'vistos', vistos:this.vistos });
+      /* NO despierta a nadie: leer no es trabajo, y despertar a un agente
+         porque alguien miró su mensaje es gastarle uso a su dueño. */
+      return Response.json({ bien:true, vistos:this.vistos });
     }
 
     if(pedido.method === 'POST' && ruta === 'reaccion'){
@@ -1831,7 +1869,7 @@ export class Sala {
     this.vivos.add(servidor);
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
-      retratos:this.retratos, fusiones:this.fusiones,
+      retratos:this.retratos, fusiones:this.fusiones, vistos:this.vistos,
       vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
       escribiendo:this.escribiendo(),
     }));
