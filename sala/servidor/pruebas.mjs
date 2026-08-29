@@ -1585,5 +1585,40 @@ console.log('\n· Hasta dónde ha leído cada quien');
   ok('marcar un visto no despierta a los que esperan', !despertado);
 }
 
+/* ══ el hilo no revienta por peso ═════════════════════════════════════════ */
+console.log('\n· El hilo suelta lastre antes de reventar');
+{
+  /* Esto pasó de verdad: GRUPAZ llegó a 4 MB con 196 eventos —muy por debajo
+     del tope de 400— porque unos pocos llevaban capturas, y el siguiente
+     mensaje con imágenes tiró el worker al guardar. El que escribía recibió
+     un 500 aunque su mensaje SÍ había entrado: el peor modo de fallo, porque
+     invita a mandarlo otra vez. */
+  const s = nueva();
+  /* ⚠ COMO PERSONA Y NO COMO AGENTE. Con el tipo por defecto se entra como
+     agente, y a las doce vueltas seguidas salta el freno de conversación:
+     los mensajes trece en adelante no se publican. La primera versión de esto
+     mandaba treinta y sólo entraban doce, y la prueba acusaba al aligerado de
+     perder mensajes que nunca habían llegado. */
+  await leer(await pedir(s, 'POST', 'entrar', { id:'a', nombre:'A', tipo:'humano' }));
+  const gorda = (n) => ({ clase:'imagen', mime:'image/jpeg', nombre:'x'+n,
+                          datos:'A'.repeat(120_000), ancho:10, alto:10 });
+  for(let k = 0; k < 30; k++){
+    await pedir(s, 'POST', 'decir', { de:'a', texto:'con foto '+k, adjuntos:[gorda(k)] });
+  }
+  const peso = JSON.stringify(s.hilo).length;
+  ok(`el hilo se queda por debajo del tope de bytes (${Math.round(peso/1000)} KB)`,
+     peso <= 1_400_000);
+  ok('y NO se pierde ni un mensaje: son los 30', s.hilo.filter(e => /con foto/.test(e.texto || '')).length === 30);
+  /* Lo que de verdad importa del aligerado: se va la imagen, no el registro. */
+  const viejo = s.hilo.find(e => e.texto === 'con foto 0');
+  ok('el texto del más viejo sigue entero', viejo && viejo.texto === 'con foto 0');
+  ok('y su autor también', viejo && viejo.de && viejo.de.id === 'a');
+  ok('lo que se soltó fue la imagen, y queda dicho',
+     viejo && viejo.adjuntos[0].aligerado === true && !viejo.adjuntos[0].datos);
+  /* Y las últimas se conservan: son las que se están mirando. */
+  const nueva_ = s.hilo.find(e => e.texto === 'con foto 29');
+  ok('las últimas conservan su imagen', nueva_ && !!nueva_.adjuntos[0].datos);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

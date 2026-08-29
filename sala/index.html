@@ -916,6 +916,10 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 
 /* ── adjuntos ── */
 .adjuntos{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+/* El adjunto que ya no está: apagado y sin cursor de «tócame», porque no hay
+   nada que abrir. Se ve que hubo algo y que se fue, que es la verdad. */
+.tarjeta.ida{opacity:.6}
+.tarjeta.ida .t2{font-style:italic}
 /* ── LA FOTO SE VE, NO SE PICA ────────────────────────────────────────────
    Carlos: «que directamente sin picarle ni nada se vea la vista previa».
    Tenía razón y el defecto era doble: 96×96 con `object-fit:cover` no es una
@@ -2391,6 +2395,17 @@ function conEnlaces(html){
 }
 
 function tarjetaAdjunto(a){
+  /* ⚠ UN ADJUNTO PUEDE VENIR SIN SUS DATOS, y hay que dibujarlo diciéndolo.
+     Cuando el hilo pasa del tope de bytes, el servidor suelta los datos de
+     las imágenes más viejas para poder seguir guardando —el mensaje y su
+     autor se quedan, la imagen no—. Sin este caso, el `src` salía vacío y la
+     mesa pintaba el icono de imagen rota del navegador: eso se lee como un
+     error de la app, no como «esto se retiró por espacio». */
+  if(a.aligerado){
+    return `<span class="tarjeta ida"><span class="ico">🗄️</span><span class="txt">
+      <span class="t1">${esc(a.nombre || 'imagen')}</span>
+      <span class="t2">se retiró para que la sala siguiera cabiendo</span></span></span>`;
+  }
   if(a.clase === 'imagen'){
     const src = a.datos.startsWith('data:') ? a.datos : `data:${a.mime};base64,${a.datos}`;
     /* El hueco se reserva con la proporción que ya venía en el adjunto. */

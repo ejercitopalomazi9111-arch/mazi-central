@@ -99,6 +99,20 @@ const UNA_MAS   = 1 * 60 * 60 * 1000;     /* «quizás se agotó de más» */
    el acta, que es corta y a propósito. */
 const TOPE_HILO = 400;
 
+/* ⚠ EL TOPE POR CANTIDAD NO ALCANZA, Y ESTO NO ES TEÓRICO: la sala GRUPAZ
+   llegó a 4 MB con 196 eventos —muy por debajo de los 400— porque unos
+   pocos llevaban capturas. El siguiente mensaje con imágenes hizo que el
+   worker reventara al guardar: error 1101, y el que escribía recibió un 500
+   aunque su mensaje SÍ había entrado. O sea, el peor modo de fallo: parece
+   que no se mandó, se manda otra vez, y se duplica.
+
+   Contar mensajes no dice nada del tamaño. Un hilo de cuatrocientos mensajes
+   de texto pesa 200 KB; cuatro con capturas pesan lo mismo que cuarenta mil.
+   Por eso hay un segundo tope, en BYTES, y lo que suelta primero es lo que
+   ocupa: los adjuntos viejos. El texto no se toca nunca — es el registro de
+   lo que se dijo, y es lo único que no se puede volver a generar. */
+const TOPE_BYTES = 1_400_000;
+
 /* Vueltas SEGUIDAS de agente antes de exigir que hable un humano. */
 const TOPE_VUELTAS = 12;
 
@@ -386,6 +400,35 @@ export class Sala {
 
     this._saber = { cuando: ahora(), cerebro, skills };
     return this._saber;
+  }
+
+  /* Suelta lastre hasta caber. Se quitan los DATOS de los adjuntos más
+     viejos, no los eventos: el mensaje se queda, con su autor y su texto, y
+     en lugar de la imagen queda una marca que la mesa dibuja como «la imagen
+     ya no está». Borrar el evento entero dejaría una conversación con
+     agujeros y respuestas a mensajes que no existen.
+
+     De lo más viejo a lo más nuevo, que es el orden en que a uno le importan
+     menos las capturas — y eso YA protege a las recientes: se para en cuanto
+     cabe, así que las últimas conservan su imagen mientras haya sitio.
+
+     ⚠ Y NO HAY TRAMO INTOCABLE. Lo puse —«las últimas veinticinco no se
+     tocan»— y la prueba lo tiró en la primera: si esas veinticinco pesan más
+     que el presupuesto, no hay nada que soltar y el hilo se queda por encima
+     del límite. O sea, una salvaguarda que en el único caso grave no salva.
+     Vale más quedarse sin la imagen del mensaje de hace un minuto que dejar
+     de poder escribir en la sala. */
+  aligerar(){
+    const pesa = () => JSON.stringify(this.hilo).length;
+    if(pesa() <= TOPE_BYTES) return;
+    for(const e of this.hilo){
+      if(pesa() <= TOPE_BYTES) break;
+      if(!e.adjuntos || !e.adjuntos.length) continue;
+      e.adjuntos = e.adjuntos.map(a => a.datos || a.laminas
+        ? { clase:a.clase, nombre:a.nombre || null, mime:a.mime || null,
+            ancho:a.ancho || null, alto:a.alto || null, aligerado:true }
+        : a);
+    }
   }
 
   async guardar(){
@@ -806,6 +849,7 @@ export class Sala {
     evento.ts = ahora();
     this.hilo.push(evento);
     if(this.hilo.length > TOPE_HILO) this.hilo = this.hilo.slice(-TOPE_HILO);
+    this.aligerar();
 
     /* El contador de vueltas: sube con cada agente, se limpia con cada humano.
        Entrar a la sala y avisar que te topaste NO son vueltas de conversación
