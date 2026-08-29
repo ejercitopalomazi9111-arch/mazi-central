@@ -1032,6 +1032,82 @@ console.log('\n── lo que hiciste sigue ahí al volver ──');
   await pg.close(); await ctx.close();
 }
 
+/* ══ 4-quater · POR DÓNDE EMPEZAR ════════════════════════════════════════
+   Apartado 20 del curso, «no» nº 6 de mi propia revisión: se entraba y había
+   once secciones en fila, sin que nadie dijera por dónde. La portada lo
+   EXPLICABA en prosa, que no es lo mismo — explicar qué es esto no le dice a
+   nadie qué hacer.
+
+   Se comprueba que las entradas LLEVEN A ALGÚN SITIO QUE EXISTE. Tres enlaces
+   bonitos apuntando a un ancla que alguien renombró son peores que no tener
+   entradas: prometen y no cumplen, y nadie se entera hasta que un visitante
+   los toca.
+   ═══════════════════════════════════════════════════════════════════════ */
+console.log('\n── por dónde empezar ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const { pg, err } = await nuevaPagina(ctx);
+  const entradas = await pg.evaluate(() => {
+    const as = [...document.querySelectorAll('.empezar-lista a')];
+    return as.map(a => {
+      const c = a.getBoundingClientRect();
+      const destino = document.querySelector(a.getAttribute('href'));
+      return { texto: (a.querySelector('b') || {}).textContent?.trim(),
+               pista: !!a.querySelector('span'),
+               hacia: a.getAttribute('href'), existe: !!destino,
+               alto: Math.round(c.height), ancho: Math.round(c.width) };
+    });
+  });
+  /* ⚠ LOS TRES `length === 3` NO SOBRAN, Y LO SÉ PORQUE LO VI FALLAR. Corrí
+     esto contra la portada SIN las entradas y las tres comprobaciones de
+     abajo pasaron en verde: `[].every(...)` es `true`, así que «todas llevan a
+     una sección que existe» se cumple de sobra cuando no hay ninguna. Una
+     comprobación sobre una lista vacía no comprueba nada y encima tranquiliza,
+     que es lo peor que puede hacer. */
+  const tres = entradas.length === 3;
+  ok(tres, `hay tres entradas por intención (${entradas.length})`);
+  ok(tres && entradas.every(e => e.existe),
+     'y las tres llevan a una sección que existe: ' + entradas.map(e => e.hacia).join(' '));
+  ok(tres && entradas.every(e => e.pista),
+     'cada una dice qué vas a encontrar, no sólo a dónde va');
+  ok(tres && entradas.every(e => e.alto >= 44),
+     `y ninguna baja de 44 px de alto (${entradas.map(e => e.alto).join(', ') || '—'})`);
+
+  /* Se pregunta si está antes de tocarla: un `click` sobre algo que no existe
+     LANZA a los 30 segundos y se lleva por delante el resto del archivo de
+     pruebas, así que el día que las entradas desaparezcan esta suite no diría
+     «faltan las entradas» — diría un error de tiempo agotado y dejaría sin
+     correr todo lo que viene después. */
+  const hayEstados = await pg.locator('.empezar-lista a[href="#estados"]').count();
+  if(hayEstados){
+    await pg.click('.empezar-lista a[href="#estados"]');
+    await pg.waitForTimeout(1400);
+  }
+  const llego = await pg.evaluate(() =>
+    Math.round(document.getElementById('estados').getBoundingClientRect().top));
+  ok(hayEstados > 0 && Math.abs(llego) < 140,
+     `y al tocar una, lleva (la sección a ${llego}px de arriba)`);
+
+  /* El botón de la consola, encogido en teléfono. Se mide el ANCHO porque el
+     defecto era que 230 px de botón tapaban las entradas de esta misma
+     sección — lo vi en una captura, no en el código. */
+  const bt = await pg.evaluate(() => {
+    const e = document.querySelector('.consola-bt');
+    const c = e.getBoundingClientRect();
+    return { ancho: Math.round(c.width), alto: Math.round(c.height),
+             nombre: e.getAttribute('aria-label'),
+             tecla: !!(e.querySelector('kbd')?.getBoundingClientRect().width) };
+  });
+  ok(bt.ancho <= 64, `en teléfono el botón de la consola es un cuadro (${bt.ancho}px de ancho)`);
+  ok(bt.alto >= 44, `y sigue siendo tocable (${bt.alto}px de alto)`);
+  ok(!bt.tecla, 'sin la tecla D impresa, que en un teléfono no existe');
+  ok((bt.nombre || '').trim() === 'Consola',
+     `pero conserva su nombre para quien no lo ve («${bt.nombre}»)`);
+
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
 /* ══ 5 · LOS NÚMEROS DEL TABLERO SON CIERTOS ═════════════════════════════
    Ésta es la prueba que le da derecho a existir al tablero. Los primeros
    números que puse me los inventé —«48 piezas»— y un banco de pruebas que
@@ -1161,6 +1237,11 @@ console.log('\n── sin JavaScript ──');
        lee como roto, y quien lo toque va a pensar que la página falló. */
     enlacesAbajo: [...document.querySelectorAll('.cinta-vias a')]
       .filter(a => a.getBoundingClientRect().width > 0).length,
+    /* Las entradas de «por dónde empezar» son enlaces normales a propósito:
+       la parte que orienta a quien acaba de llegar es la última que se puede
+       permitir no aparecer. */
+    empezar: [...document.querySelectorAll('.empezar-lista a')]
+      .filter(a => a.getBoundingClientRect().height > 0).length,
     flechasAbajo: [...document.querySelectorAll('.rail-flecha')]
       .filter(f => f.getBoundingClientRect().width > 0).length,
   }));
@@ -1176,6 +1257,7 @@ console.log('\n── sin JavaScript ──');
   ok(r.ocultos === 0, 'nada queda invisible');
   ok(r.enlacesAbajo === 10, `sin script la barra de abajo sigue sirviendo (${r.enlacesAbajo} enlaces)`);
   ok(r.flechasAbajo === 0, `y las flechas no se pintan, que no habría quién las moviera (${r.flechasAbajo})`);
+  ok(r.empezar === 3, `y las tres entradas de «por dónde empezar» siguen ahí (${r.empezar})`);
   await pg.screenshot({ path:`${SALIDA}/lab-sinjs.png`, fullPage:false });
   await pg.close(); await ctx.close();
 }
