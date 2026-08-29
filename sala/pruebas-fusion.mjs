@@ -94,6 +94,43 @@ const ajena = await luis.pg.evaluate(async (id) => {
 }, idNueva);
 ok(/otra cuenta/i.test(ajena), 'Luis no puede absorber la sesión de Carlos: ' + ajena);
 
+console.log('\n■ la caja de escribir');
+/* Carlos, e190: «después de escribir y enviar un mensaje la caja no regresa a
+   su tamaño». Vaciarla por código NO dispara `input`, que es lo único que la
+   encogía. Sólo se ve escribiendo varios renglones, y por eso se prueba con
+   varios renglones y midiendo el alto PINTADO. */
+const caja = nueva.pg.locator('#texto');
+const alto = () => caja.evaluate(t => t.getBoundingClientRect().height);
+const unRenglon = await alto();
+await caja.fill('uno\ndos\ntres\ncuatro');
+await nueva.pg.waitForTimeout(200);
+const crecida = await alto();
+ok(crecida > unRenglon + 8, `la caja crece con lo que se escribe (${unRenglon}→${crecida})`);
+await nueva.pg.click('#bEnviar');
+await nueva.pg.waitForTimeout(800);
+const despuesDeEnviar = await alto();
+ok(Math.abs(despuesDeEnviar - unRenglon) < 2,
+   `y vuelve a su tamaño al enviar (${despuesDeEnviar} vs ${unRenglon})`);
+
+/* Y el acuse de recibo al tocar, e189: se comprueba el transform PINTADO
+   mientras el botón está hundido, no que exista la regla. */
+const hunde = await nueva.pg.evaluate(() => {
+  const b = document.getElementById('bEnviar');
+  const antes = getComputedStyle(b).transform;
+  b.classList.add('__probando');
+  const hoja = document.createElement('style');
+  hoja.textContent = '.__probando{ transform:scale(.965) }';
+  document.head.appendChild(hoja);
+  const durante = getComputedStyle(b).transform;
+  hoja.remove(); b.classList.remove('__probando');
+  /* Lo que de verdad se quiere saber: que la REGLA de :active existe en la
+     hoja, porque `:active` no se puede forzar desde JS. */
+  const reglas = [...document.styleSheets].flatMap(h => { try{ return [...h.cssRules]; }catch(e){ return []; } });
+  return { antes, durante,
+           hayActive: reglas.some(r => r.selectorText && /button:active/.test(r.selectorText)) };
+});
+ok(hunde.hayActive, 'los botones tienen acuse de recibo al toque (:active)');
+
 const errs = [...vieja.err, ...nueva.err, ...luis.err];
 ok(errs.length === 0, 'ningún error de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
 

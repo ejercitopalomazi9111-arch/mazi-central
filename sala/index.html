@@ -111,6 +111,38 @@ body{
 }
 .codigo:hover{color:var(--hueso); border-color:var(--violeta)}
 .crece{flex:1}
+
+/* ══ ACUSE DE RECIBO AL TOCAR ══════════════════════════════════════════════
+   Carlos: «haz que todos los botones de la sala tengan feedback como los de
+   laboratorio».
+
+   Por qué hacía falta: en un teléfono el `:hover` no existe —y aquí encima
+   está apagado el resaltado de toque de Safari en varios sitios— así que un
+   botón que SÍ funcionó se siente exactamente igual que uno perdido. Y lo
+   que hace uno entonces es volver a picarle, que es de lo que se quejó en el
+   laboratorio.
+
+   Va con `transform` y nada más: lo resuelve el compositor sin recalcular la
+   maqueta, y no toca ni color ni sombra —que obligarían a repintar cada
+   botón—. Hundir un poco es la señal que ya entiende todo el mundo.
+
+   La transición va SÓLO en la vuelta: al presionar tiene que ser instantáneo
+   —una transición de entrada es precisamente el retraso que se quiere
+   quitar— y al soltar, suave, para que no dé un tirón. Por eso la duración
+   vive en la regla base y el `:active` no la toca. */
+button, .fila-lado{ transition:transform 120ms cubic-bezier(.2,.7,.3,1); }
+button:active, .fila-lado:active{ transform:scale(.965); }
+/* Las filas anchas se hunden menos: un 3.5 % sobre una fila de 285 px se ve
+   como un salto, y sobre un botón de 38 px ni se nota. */
+.fila-lado:active, .quien:active{ transform:scale(.99); }
+@media (prefers-reduced-motion:reduce){
+  button, .fila-lado{ transition:none; }
+  /* Se queda SIN escala: quien pide menos movimiento no quiere que las cosas
+     cambien de tamaño bajo el dedo. El acuse lo da el propio navegador con
+     el foco, y el resultado —que la acción ocurra— sigue estando. */
+  button:active, .fila-lado:active, .quien:active{ transform:none; }
+}
+
 .btn{
   font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; padding:7px 11px; border-radius:8px; cursor:pointer;
@@ -3222,6 +3254,12 @@ function avisarFreno(vueltas, tope){
 
 function limpiar(){
   $('texto').value = ''; $('nota').value = '';
+  /* ⚠ VACIAR POR CÓDIGO NO DISPARA `input`, y por eso la caja se quedaba con
+     el alto del mensaje que acababa de irse. Carlos: «después de escribir y
+     enviar un mensaje la caja no regresa a su tamaño». El defecto es de los
+     que se ven una sola vez y se olvidan: sólo pasa si escribiste varios
+     renglones. */
+  estirarCaja();
   pegados.length = 0; pintarPegados();
 }
 
