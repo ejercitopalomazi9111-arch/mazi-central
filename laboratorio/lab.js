@@ -122,18 +122,45 @@
      Las cinco corren a la vez y recorren la MISMA distancia: si cada una
      viajara distinto, la comparación no diría nada de la duración.
      ──────────────────────────────────────────────────────────────────────── */
+  /* ⚠ EL VIAJE DE VUELTA NO ES UN SALTO, Y ANTES SÍ LO ERA. Carlos: «correr
+     las 5 una vez se ve bien, pero al presionarlo de nuevo se teletransportan
+     hacia atrás y repiten la animación; haz que se regresen haciendo su
+     trayecto con su tiempo y todo, pero invertido, y si lo picó de nuevo sea
+     como volverlo a mandar a la derecha».
+
+     Tenía razón por partida doble: el salto se ve mal, y además CONTRADECÍA lo
+     que esta sección enseña. Un carro que se teletransporta no demuestra
+     ninguna duración; el regreso instantáneo era 0 ms colado entre los cinco
+     escalones que la página presume de respetar.
+
+     La ida y la vuelta son la MISMA transición y sólo cambia el destino: así
+     tardan exactamente igual, con la misma curva, sin un segundo juego de
+     fotogramas que se pueda desfasar del primero.
+
+     Y el tema cambia AL MISMO TIEMPO, también porque lo pidió: «haz que al
+     mandarlo a la derecha cambie el tema a claro gradualmente a la misma
+     velocidad que esos 5». La transición del `body` usa `--cine`, que es la
+     pista más larga — o sea que el tema termina de cambiar cuando el último
+     carro llega. No está copiado el número: es el mismo token. */
   const correr = $('[data-correr-pistas]');
-  if(correr) correr.addEventListener('click', () => {
-    for(const p of $$('.pista')){
-      const riel  = $('.pista-riel', p);
-      const carro = $('.pista-carro', p);
-      p.classList.remove('corriendo');
-      carro.style.setProperty('--viaje', (riel.clientWidth - 30) + 'px');
-      void carro.offsetWidth;         /* reinicia la animación: sin esto, la
-                                         segunda vez no vuelve a arrancar */
-      p.classList.add('corriendo');
-    }
-  });
+  let pistasIdas = false;
+  if(correr){
+    const pistas = $$('.pista');
+    correr.addEventListener('click', () => {
+      pistasIdas = !pistasIdas;
+      for(const p of pistas){
+        const riel  = $('.pista-riel', p);
+        const carro = $('.pista-carro', p);
+        p.classList.add('corriendo');
+        carro.style.setProperty('--donde', pistasIdas ? (riel.clientWidth - 18) + 'px' : '0px');
+      }
+      correr.textContent = pistasIdas ? 'Regresarlas' : 'Correr las cinco';
+      /* El tema va atado al viaje: a la derecha, claro; de regreso, oscuro. */
+      claro = pistasIdas;
+      ponerTema();
+      try{ localStorage.setItem('banco-tema', claro ? 'claro' : 'oscuro'); }catch(e){}
+    });
+  }
 
   /* ────────────────────────────────────────────────────────────────────────
      2 · LA MATRIZ DE ESTADOS
@@ -153,8 +180,7 @@
       const base = b === btM ? 'Enviar' : 'Secundario';
       b.replaceChildren();
       if(cual === 'cargando'){
-        const g = document.createElement('span'); g.className = 'giro';
-        b.append(g, document.createTextNode('Enviando…'));
+        b.append(palomita(), document.createTextNode('Enviando…'));
       }else if(cual === 'logro'){ b.textContent = '✓ Listo';
       }else if(cual === 'error'){ b.textContent = '✕ No se pudo';
       }else{ b.textContent = base; }
@@ -188,6 +214,82 @@
            bien ? 'logro' : 'error');
     setTimeout(() => ponerEstado('normal'), 1800);
   });
+
+  /* ══ LA PALOMA QUE SE DIBUJA ═════════════════════════════════════════════
+     Carlos: «tu cargando es demasiado simple, ¿una U dando vueltas? ¿Qué es
+     esto, el siglo 3? Haz algo nuevo… una paloma dibujándose su contorno».
+
+     Es la mejor de sus ideas y arregla algo más grande que el adorno: era el
+     único sitio del laboratorio donde no había NADA de la casa. Un giro
+     infinito dice «espera»; una marca dibujándose dice «esto lo está haciendo
+     alguien».
+
+     ⚠ ES LA PALOMA DE VERDAD, NO UNA QUE YO DIBUJE. `marca/PLACA.md` lo dice
+     con todas sus letras: reconstruir esta paloma costó veinte rondas y una
+     marca que cambia no es una marca. Así que se baja el vector real
+     (`paloma.svg`, copiado de `marca/logo/paloma-simple.svg`) y se le anima el
+     contorno con `stroke-dashoffset`, que es lo que hace una pluma.
+
+     Se baja UNA VEZ y sólo cuando de verdad hace falta: si el cargando nunca
+     aparece, esos 12 KB nunca se piden. Y si la petición falla, se devuelve un
+     trazo simple en vez de dejar el botón mudo — un cargador que no carga es
+     peor que uno feo. */
+  let palomaCache = null, palomaPidiendo = null;
+  function palomita(){
+    const caja = document.createElement('span');
+    caja.className = 'paloma-caja';
+    caja.setAttribute('aria-hidden', 'true');
+
+    const poner = (svg) => {
+      caja.replaceChildren(svg.cloneNode(true));
+      /* Cada trazo se mide para que su animación dure lo mismo aunque midan
+         distinto: sin esto, el ala larga terminaría mucho después que la
+         estrella y se vería como un error. */
+      const trazos = [...caja.querySelectorAll('path, polygon')];
+      trazos.forEach((t, i) => {
+        /* Cada trazo se MIDE para que su animación dure lo mismo aunque midan
+           distinto: sin esto, el ala larga terminaría mucho después que la
+           estrella y se vería como un error, no como un dibujo. */
+        t.style.setProperty('--largo', Math.ceil(t.getTotalLength ? t.getTotalLength() : 400));
+        /* Y se escalonan, que es lo que hace que parezca una mano dibujando y
+           no nueve trazos apareciendo a la vez. El retardo sale de `--cine`,
+           repartido entre los trazos que haya: si el vector cambia de número
+           de piezas, esto sigue cuadrando solo. */
+        t.style.animationDelay = `calc(var(--cine) * ${(i / Math.max(trazos.length, 1) * 0.35).toFixed(3)})`;
+      });
+    };
+
+    if(palomaCache){ poner(palomaCache); return caja; }
+    if(!palomaPidiendo){
+      palomaPidiendo = fetch(new URL('paloma.svg', location.href))
+        .then(r => r.ok ? r.text() : Promise.reject(new Error('no llegó')))
+        .then(txt => {
+          const doc = new DOMParser().parseFromString(txt, 'image/svg+xml');
+          const svg = doc.documentElement;
+          if(svg.nodeName !== 'svg') throw new Error('eso no es un svg');
+          svg.setAttribute('class', 'paloma');
+          svg.removeAttribute('width'); svg.removeAttribute('height');
+          /* El relleno se quita aquí y no en el CSS: el archivo trae
+             `fill` en el grupo, y un atributo de presentación gana sobre
+             cualquier regla de hoja por especificidad. */
+          for(const g of svg.querySelectorAll('[fill]')) g.removeAttribute('fill');
+          palomaCache = svg;
+          return svg;
+        })
+        .catch(() => {
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('viewBox', '0 0 40 40');
+          svg.setAttribute('class', 'paloma');
+          const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          p.setAttribute('d', 'M4 22 Q20 4 36 22 Q20 30 4 22');
+          svg.append(p);
+          palomaCache = svg;
+          return svg;
+        });
+    }
+    palomaPidiendo.then(poner);
+    return caja;
+  }
 
   /* ────────────────────────────────────────────────────────────────────────
      3 · MICROINTERACCIONES
@@ -242,6 +344,18 @@
       if(!pedidoIman){ pedidoIman = true; sumar(moverIman); }
     }, { passive:true });
   }
+
+  /* ⚠ EL ICONO VIVO NO RESPONDÍA AL DEDO, y Carlos lo notó: la animación
+     colgaba de `:hover` y de `:focus-visible`, y en un teléfono no hay ninguno
+     de los dos. Tocar no da `focus-visible` —bien que no lo dé, es para
+     teclado— así que el icono se quedaba muerto justo en el aparato donde más
+     se usa. Con una clase puesta al tocar, responde en los dos. */
+  const flecha = $('[data-flecha]');
+  if(flecha) flecha.addEventListener('click', () => {
+    flecha.classList.remove('adelanta');
+    void flecha.offsetWidth;                    /* reinicia la animación */
+    flecha.classList.add('adelanta');
+  });
 
   /* La onda. Nace donde de verdad se tocó, no en el centro: una onda centrada
      delata que el efecto es un adorno y no una respuesta. */
@@ -320,8 +434,16 @@
       if(andando){ acumulado += performance.now() - t0Crono; andando = false; b.textContent = 'Iniciar'; }
       else       { t0Crono = performance.now(); andando = true; b.textContent = 'Pausar'; sumar(pintarCrono); }
     }else{
-      andando = false; acumulado = 0;
+      /* ⚠ AQUÍ HABÍA DÉCIMAS DE RETRASO ENTRE DETENERLO Y PONERLO EN CERO, y
+         lo reportó Carlos. La causa: `pintarCrono` devuelve `andando`, y al
+         poner `andando=false` la tarea del ciclo se daba de baja — pero la
+         baja ocurre DESPUÉS de que la función termina, así que el último
+         fotograma todavía pintaba el tiempo viejo. Se veía como un tirón.
+         Se escribe el cero a mano y no se espera al ciclo para nada. */
+      andando = false; acumulado = 0; t0Crono = 0;
       const otro = $('[data-crono-bt="correr"]'); if(otro) otro.textContent = 'Iniciar';
+      if(crono) crono.textContent = formato(0);
+      return;
     }
     pintarCrono();
   });
@@ -444,8 +566,32 @@
       const r = $('[data-rango]'), sal = $('[data-valor-rango]');
       if(r && sal) sal.textContent = r.value;
     });
+    /* ⚠ EL RELLENO Y EL PULGAR TIENEN QUE DECIR EL MISMO NÚMERO, y no lo
+       decían. Carlos: «la barra es totalmente llena pero la palanquera se
+       estancó antes de llegar». Pasa en todo deslizador nativo y casi nadie lo
+       arregla: el pulgar NO recorre el ancho completo, recorre `ancho−pulgar`,
+       porque a los extremos le queda medio pulgar de cada lado. Si el relleno
+       se pinta al 100 % y el centro del pulgar sólo llega a `ancho−pulgar/2`,
+       los dos están dibujando valores distintos del mismo dato.
+
+       Se pinta hasta el CENTRO DEL PULGAR, con esa misma resta. Los dos salen
+       de una sola cuenta, así que no se pueden volver a separar. */
     const rango = $('[data-rango]'), salida = $('[data-valor-rango]');
-    if(rango && salida) rango.addEventListener('input', () => { salida.textContent = rango.value; });
+    function pintarRango(){
+      if(!rango) return;
+      const pulgar = parseFloat(getComputedStyle(rango).getPropertyValue('--pulgar')) || 22;
+      const min = Number(rango.min || 0), max = Number(rango.max || 100);
+      const t = max === min ? 0 : (Number(rango.value) - min) / (max - min);
+      const util = rango.clientWidth - pulgar;
+      const centro = pulgar / 2 + t * util;
+      rango.style.setProperty('--llena', (rango.clientWidth ? centro / rango.clientWidth * 100 : t * 100) + '%');
+      if(salida) salida.textContent = rango.value;
+    }
+    if(rango){
+      rango.addEventListener('input', pintarRango);
+      addEventListener('resize', pintarRango, { passive:true });
+      pintarRango();
+    }
   }
 
   /* ────────────────────────────────────────────────────────────────────────
@@ -484,6 +630,60 @@
       });
       p.addEventListener('dragend', () => { delete p.dataset.volando; });
     }
+    /* ══ ARRASTRAR CON EL DEDO ═══════════════════════════════════════════
+       Carlos: «tu arrastrar en teléfono no funciona». Y no funcionaba en
+       absoluto: `dragstart` es de la API de arrastre de HTML, que en táctil
+       simplemente NO EXISTE. No es que fallara — es que en un teléfono ese
+       código nunca corría, y la sección presumía justo de lo contrario.
+
+       Se hace con eventos de puntero, que sí llegan de los dos lados. Y hay
+       un umbral de 8 px antes de considerar que es un arrastre: sin él, cada
+       toque se volvería un micro-arrastre y la pieza ya no se podría enfocar
+       con el dedo para moverla con el teclado.
+
+       `touch-action:none` en `.pieza` es obligatorio y va en el CSS: sin eso
+       el navegador se queda el gesto para hacer scroll y aquí no llega nada. */
+    let llevando = null, desdeX = 0, desdeY = 0, arrastrando = false;
+    for(const p of $$('.pieza', zonaCajones)){
+      p.addEventListener('pointerdown', (e) => {
+        if(e.pointerType === 'mouse' && e.button !== 0) return;
+        llevando = p; desdeX = e.clientX; desdeY = e.clientY; arrastrando = false;
+      });
+    }
+    addEventListener('pointermove', (e) => {
+      if(!llevando) return;
+      if(!arrastrando){
+        if(Math.hypot(e.clientX - desdeX, e.clientY - desdeY) < 8) return;
+        arrastrando = true;
+        llevando.dataset.volando = 'si';
+        /* Se captura el puntero para que el arrastre siga aunque el dedo se
+           salga de la pieza — que es lo normal, porque la pieza se mueve. */
+        try{ llevando.setPointerCapture(e.pointerId); }catch(err){}
+      }
+      llevando.style.transform =
+        `translate(${e.clientX - desdeX}px, ${e.clientY - desdeY}px)`;
+      const bajo = document.elementFromPoint(e.clientX, e.clientY);
+      const caja = bajo && bajo.closest('[data-cajon]');
+      for(const c of cajones) c.toggleAttribute('data-encima', c === caja);
+    }, { passive:true });
+    const soltar = (e) => {
+      if(!llevando) return;
+      const pieza = llevando; llevando = null;
+      pieza.style.transform = '';
+      delete pieza.dataset.volando;
+      for(const c of cajones) c.removeAttribute('data-encima');
+      if(!arrastrando) return;          /* fue un toque, no un arrastre */
+      arrastrando = false;
+      const bajo = document.elementFromPoint(e.clientX, e.clientY);
+      const caja = bajo && bajo.closest('[data-cajon]');
+      if(caja && caja !== pieza.closest('[data-cajon]')){
+        caja.append(pieza);
+        decir(`«${pieza.textContent.trim()}» → ${nombreDe(caja)}.`);
+      }
+    };
+    addEventListener('pointerup', soltar);
+    addEventListener('pointercancel', soltar);
+
     for(const c of cajones){
       c.addEventListener('dragover', (e) => { e.preventDefault(); c.dataset.encima = 'si'; });
       c.addEventListener('dragleave', () => { delete c.dataset.encima; });
@@ -544,9 +744,11 @@
      pasaba nada, con todo en verde. Un atributo que significa dos cosas es un
      defecto aunque hoy no se note. */
   const btTema = $('[data-cambiar-tema]');
-  const guardado = (() => { try{ return localStorage.getItem('banco-tema'); }catch(e){ return null; } })();
-  const claroDelSistema = matchMedia('(prefers-color-scheme: light)').matches;
-  let claro = guardado ? guardado === 'claro' : claroDelSistema;
+  /* El tema YA lo puso el script en línea de la cabecera, antes del primer
+     pintado. Aquí sólo se lee lo que quedó puesto: volver a calcularlo abriría
+     la puerta a que las dos cuentas se separen y a que la página cambie de
+     tema sola un instante después de cargar. */
+  let claro = document.documentElement.dataset.tema !== 'oscuro';
   function ponerTema(){
     raiz.dataset.tema = claro ? 'claro' : 'oscuro';
     if(btTema){

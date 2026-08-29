@@ -110,7 +110,13 @@ html:not([data-quieto]) [data-revelar].dentro > .tapada{ transform:translateY(0)
     animation:adelantarse var(--corta) var(--curva-salida);
   }
 }
-html:not([data-quieto]) [data-flecha]:focus-visible [data-punta]{
+/* ⚠ `.adelanta` LA PONE EL CLIC, y sin ella esto no existía en un teléfono:
+   la animación colgaba de `:hover` y de `:focus-visible`, y tocar no da
+   ninguno de los dos —`focus-visible` es para teclado y hace bien en no
+   dispararse con el dedo—. El icono se quedaba muerto justo en el aparato
+   donde más se usa. Lo notó Carlos. */
+html:not([data-quieto]) [data-flecha]:focus-visible [data-punta],
+html:not([data-quieto]) [data-flecha].adelanta [data-punta]{
   animation:adelantarse var(--corta) var(--curva-salida);
 }
 @keyframes adelantarse{

@@ -32,6 +32,28 @@
 -->
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230B0B10'/><rect x='5' y='5' width='9' height='9' fill='%23AC27FF'/><rect x='18' y='18' width='9' height='9' fill='%233BE0AE'/></svg>">
+<!-- ⚠ EL TEMA SE PONE ANTES DEL PRIMER PINTADO, Y TIENE QUE SER AQUÍ.
+     `lab.js` va con `defer`, o sea que corre DESPUÉS de armar el documento: si
+     el tema se pusiera allá, quien lo tiene en oscuro vería la página nacer en
+     claro y desvanecerse al oscuro durante 1.8 segundos —que es lo que tarda
+     `--cine`, porque el cambio de tema va atado al recorrido de las cinco
+     pistas—. Un parpadeo de tema al cargar es de las cosas que se ven feas y
+     nadie sabe nombrar.
+
+     Son ocho líneas y van en línea a propósito: un archivo aparte volvería a
+     llegar tarde. El `try` no es adorno — `localStorage` truena en una ventana
+     privada, y el tema no puede depender de que se pueda guardar. -->
+<script>
+  (() => {
+    try{
+      const g = localStorage.getItem('banco-tema');
+      const claro = g ? g === 'claro' : matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.tema = claro ? 'claro' : 'oscuro';
+    }catch(e){
+      document.documentElement.dataset.tema = 'claro';
+    }
+  })();
+</script>
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="piezas.css">
 <link rel="stylesheet" href="movimiento.css">
@@ -68,7 +90,7 @@
 <div class="caja">
 
   <!-- ══ PORTADA ══════════════════════════════════════════════════════ -->
-  <section id="portada" aria-labelledby="t-portada">
+  <section id="portada" class="pesa" aria-labelledby="t-portada">
     <p class="rotulo">Grupo Mazi · laboratorio</p>
     <h1 id="t-portada" data-revelar>El banco<br>de pruebas.</h1>
     <p style="margin-top:1.4rem; font-size:1.15rem; max-width:46ch">
@@ -80,9 +102,14 @@
   </section>
 
   <!-- ══ 1 · GRAMÁTICA DE MOVIMIENTO ══════════════════════════════════ -->
-  <section id="gramatica" aria-labelledby="t-gram">
+  <section id="gramatica" class="pesa" aria-labelledby="t-gram">
+    <p class="rotulo">01 · Gramática de movimiento</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
     <div class="cabecilla">
-      <p class="rotulo">01 · Gramática de movimiento</p>
       <h2 id="t-gram">Cinco duraciones, y ninguna más</h2>
       <p>
         Nadie tiene en la cabeza la diferencia entre 110 y 420 milisegundos, así
@@ -93,33 +120,35 @@
       </p>
     </div>
 
+    <div class="pistas">
     <div class="pista" style="--dur:var(--micro)">
-      <span class="pista-nombre">micro<b>110 ms</b></span>
-      <span class="pista-riel"><span class="pista-carro"></span></span>
-    </div>
-    <div class="pista" style="--dur:var(--corta)">
-      <span class="pista-nombre">corta<b>220 ms</b></span>
-      <span class="pista-riel"><span class="pista-carro"></span></span>
-    </div>
-    <div class="pista" style="--dur:var(--media)">
-      <span class="pista-nombre">media<b>420 ms</b></span>
-      <span class="pista-riel"><span class="pista-carro"></span></span>
-    </div>
-    <div class="pista" style="--dur:var(--larga)">
-      <span class="pista-nombre">larga<b>820 ms</b></span>
-      <span class="pista-riel"><span class="pista-carro"></span></span>
-    </div>
-    <div class="pista" style="--dur:var(--cine)">
-      <span class="pista-nombre">cine<b>1800 ms</b></span>
-      <span class="pista-riel"><span class="pista-carro"></span></span>
+        <span class="pista-nombre">micro<b>110 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--corta)">
+        <span class="pista-nombre">corta<b>220 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--media)">
+        <span class="pista-nombre">media<b>420 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--larga)">
+        <span class="pista-nombre">larga<b>820 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--cine)">
+        <span class="pista-nombre">cine<b>1800 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
     </div>
 
     <p style="margin-top:1.2rem">
-      <button class="bt bt--senal" data-correr-pistas type="button">Correr las cinco</button>
+      <button class="bt" data-correr-pistas type="button">Correr las cinco</button>
     </p>
 
-    <div class="rejilla" style="margin-top:2rem">
-      <div class="ficha">
+    <div class="notas" style="margin-top:2.5rem">
+      <div class="nota">
         <p class="rotulo">Para qué sirve cada una</p>
         <p style="margin:0; font-size:.92rem">
           <b>micro</b> hover e iconos · <b>corta</b> globitos y tarjetas ·
@@ -127,7 +156,7 @@
           <b>cine</b> escenas y partículas.
         </p>
       </div>
-      <div class="ficha">
+      <div class="nota">
         <p class="rotulo">Y tres curvas, que también son vocabulario</p>
         <p style="margin:0; font-size:.92rem">
           <b>salida</b> arranca rápido y frena: se siente «llegó».
@@ -141,8 +170,8 @@
 
   <!-- ══ 2 · ESTADOS ══════════════════════════════════════════════════ -->
   <section id="estados" aria-labelledby="t-est">
+    <p class="rotulo">02 · Estados</p>
     <div class="cabecilla">
-      <p class="rotulo">02 · Estados</p>
       <h2 id="t-est">Un botón no es un botón: son ocho</h2>
       <p>
         <b>Cargando</b>, <b>logrado</b> y <b>error</b> viven medio segundo dentro
@@ -168,8 +197,8 @@
     </div>
 
     <div class="escaparate">
-      <button class="bt bt--senal" type="button" data-bt-muestra data-estado="normal">Enviar</button>
-      <button class="bt" type="button" data-bt-muestra-2 data-estado="normal">Secundario</button>
+      <button class="bt" type="button" data-bt-muestra data-estado="normal">Enviar</button>
+      <button class="bt bt--suave" type="button" data-bt-muestra-2 data-estado="normal">Secundario</button>
       <p style="margin:0; font-size:.88rem; color:var(--texto-3); font-family:var(--mono)">
         estado: <b class="dato" data-estado-nombre>normal</b>
       </p>
@@ -180,13 +209,13 @@
       <b class="dato">1200<span class="unidad">ms</span></b> y falla una de cada
       tres veces — porque un flujo que siempre sale bien no prueba nada:
     </p>
-    <p><button class="bt" type="button" data-ciclo>Probar el ciclo completo</button></p>
+    <p><button class="bt bt--suave" type="button" data-ciclo>Probar el ciclo completo</button></p>
   </section>
 
   <!-- ══ 3 · MICROINTERACCIONES ═══════════════════════════════════════ -->
   <section id="micro" aria-labelledby="t-micro">
+    <p class="rotulo">03 · Microinteracciones</p>
     <div class="cabecilla">
-      <p class="rotulo">03 · Microinteracciones</p>
       <h2 id="t-micro">Lo que se siente sin que nadie lo note</h2>
       <p>
         Tres detalles de los que nadie habla y que son la diferencia entre una
@@ -196,36 +225,49 @@
       </p>
     </div>
 
-    <div class="rejilla">
-      <div class="ficha">
+    <div class="instrumentos">
+      <div class="nota">
         <p class="rotulo">Botón magnético</p>
         <p style="font-size:.9rem">
           A menos de <b class="dato">80<span class="unidad">px</span></b> se
           inclina hacia el cursor. Tope: <b class="dato">12<span class="unidad">px</span></b>.
         </p>
-        <button class="bt bt--senal" type="button" data-iman>Acércate</button>
+        <button class="bt" type="button" data-iman>Acércate</button>
         <p style="margin:.7rem 0 0; font-family:var(--mono); font-size:.7rem; color:var(--texto-3)">
           desvío <b class="dato" data-iman-lectura>0.0 px</b>
         </p>
+        <!-- ⚠ CON EL DEDO ESTO NO PUEDE FUNCIONAR, Y SE DICE. Un botón
+             magnético necesita saber dónde está el cursor ANTES de que lo
+             toquen, y en una pantalla táctil esa información no existe: el
+             dedo aparece ya encima. Carlos reportó que «no sirve en
+             teléfono» — y es cierto, pero el defecto no era que no
+             funcionara: era que la página no lo decía y parecía roto. Un
+             control muerto sin explicación se lee como un error; explicado,
+             es una limitación del aparato. -->
+        <p class="solo-dedo">
+          Con el dedo no hay imán que valga: necesita saber dónde está el
+          cursor <em>antes</em> de que llegue, y en una pantalla táctil el dedo
+          aparece ya encima. Aquí abajo sí responde al toque.
+        </p>
       </div>
 
-      <div class="ficha">
+      <div class="nota">
         <p class="rotulo">Onda al tocar</p>
         <p style="font-size:.9rem">
           Nace en las coordenadas reales del toque, no en el centro.
           <b class="dato">0→180<span class="unidad">px</span></b>,
           opacidad .35→0, <b class="dato">500<span class="unidad">ms</span></b>, ease-out.
         </p>
-        <button class="bt" type="button" data-onda>Tócame donde sea</button>
+        <button class="bt bt--suave" type="button" data-onda>Tócame donde sea</button>
       </div>
 
-      <div class="ficha">
+      <div class="nota">
         <p class="rotulo">Icono vivo</p>
         <p style="font-size:.9rem">
           La flecha se adelanta y regresa. Se mueve <em>hacia donde lleva</em>:
           un icono que se mueve para otro lado es ruido.
         </p>
-        <button class="bt bt--fantasma" type="button" data-flecha>
+        <button class="bt bt--desnudo" type="button" data-flecha>
           Continuar <span aria-hidden="true" data-punta>→</span>
         </button>
       </div>
@@ -234,8 +276,8 @@
 
   <!-- ══ 4 · PARTÍCULAS ═══════════════════════════════════════════════ -->
   <section id="particulas" aria-labelledby="t-part">
+    <p class="rotulo">04 · Sistema de partículas</p>
     <div class="cabecilla">
-      <p class="rotulo">04 · Sistema de partículas</p>
       <h2 id="t-part">Cuatro comportamientos, un solo ciclo</h2>
       <p>
         No son puntos flotando. Son cuatro sistemas distintos sobre el mismo
@@ -264,9 +306,14 @@
   </section>
 
   <!-- ══ 5 · RELATO ═══════════════════════════════════════════════════ -->
-  <section id="relato" aria-labelledby="t-rel">
+  <section id="relato" class="pesa" aria-labelledby="t-rel">
+    <p class="rotulo">05 · El scroll como relato</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
     <div class="cabecilla">
-      <p class="rotulo">05 · El scroll como relato</p>
       <h2 id="t-rel">Bajar tiene que significar algo</h2>
       <p>
         Las tarjetas se quedan pegadas y la siguiente se monta encima: el scroll
@@ -276,7 +323,7 @@
     </div>
 
     <div class="baraja">
-      <article class="vidrio" data-subir>
+      <article data-subir>
         <h3><span>01 —</span> El movimiento es información</h3>
         <p style="margin:.5rem 0 0">
           Si algo se mueve y no dice nada, sobra. La dirección dice de dónde
@@ -284,7 +331,7 @@
           está yendo.
         </p>
       </article>
-      <article class="vidrio" data-subir>
+      <article data-subir>
         <h3><span>02 —</span> Nunca opacidad sobre texto</h3>
         <p style="margin:.5rem 0 0">
           Un texto a media transición no cumple contraste en ningún momento de
@@ -292,7 +339,7 @@
           los caracteres. En lo decorativo sí se puede.
         </p>
       </article>
-      <article class="vidrio" data-subir>
+      <article data-subir>
         <h3><span>03 —</span> Sólo transform y opacity</h3>
         <p style="margin:.5rem 0 0">
           Son las dos que resuelve el compositor sin recalcular la página.
@@ -300,7 +347,7 @@
           scroll es como se llega a los tirones.
         </p>
       </article>
-      <article class="vidrio" data-subir>
+      <article data-subir>
         <h3><span>04 —</span> Y todo se puede apagar</h3>
         <p style="margin:.5rem 0 0">
           Con <code>prefers-reduced-motion</code> no queda nada a medias: la
@@ -313,8 +360,13 @@
 
   <!-- ══ 6 · TABLERO ══════════════════════════════════════════════════ -->
   <section id="tablero" aria-labelledby="t-tab">
+    <p class="rotulo">06 · Tablero</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
     <div class="cabecilla">
-      <p class="rotulo">06 · Tablero</p>
       <h2 id="t-tab">Números que se están midiendo ahorita</h2>
       <p>
         Los contadores no aparecen con el número final: suben. No es decoración
@@ -331,35 +383,35 @@
          no tener tablero. Si alguno deja de ser cierto, `pruebas.mjs` se pone
          roja y dice cuál. -->
     <div class="tablero">
-      <div class="ficha medidor">
+      <div class="medidor">
         <p class="rotulo">Responde al toque en</p>
         <span class="dato dato--gordo" data-contar="62">62</span>
         <small>lugares. Los cuenta la prueba, uno por uno</small>
       </div>
-      <div class="ficha medidor">
+      <div class="medidor">
         <p class="rotulo">Dependencias</p>
         <span class="dato dato--gordo" data-contar="0">0</span>
         <small>cero peticiones fuera de este dominio. También medido</small>
       </div>
-      <div class="ficha medidor">
-        <p class="rotulo">Peso</p>
-        <span class="dato dato--gordo" data-contar="128">128<span class="unidad">KB</span></span>
-        <small>todo el laboratorio, sin comprimir</small>
+      <div class="medidor">
+        <p class="rotulo">Peso de la página</p>
+        <span class="dato dato--gordo" data-contar="154">154<span class="unidad">KB</span></span>
+        <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
       </div>
-      <div class="ficha medidor">
+      <div class="medidor">
         <p class="rotulo">Ciclos de animación</p>
         <span class="dato dato--gordo" data-contar="1">1</span>
         <small>uno solo, compartido por todo lo que se mueve</small>
       </div>
     </div>
 
-    <div class="rejilla" style="margin-top:1rem">
-      <div class="ficha">
+    <div class="instrumentos">
+      <div class="instrumento">
         <p class="rotulo">Cronómetro</p>
         <span class="dato dato--gordo" data-crono role="timer" aria-live="off">00:00.0</span>
         <p style="display:flex; gap:.5rem; margin:.9rem 0 0">
-          <button class="bt" type="button" data-crono-bt="correr">Iniciar</button>
-          <button class="bt bt--fantasma" type="button" data-crono-bt="cero">A cero</button>
+          <button class="bt bt--suave" type="button" data-crono-bt="correr">Iniciar</button>
+          <button class="bt bt--desnudo" type="button" data-crono-bt="cero">A cero</button>
         </p>
         <small style="display:block; color:var(--texto-3); font-size:.78rem; margin-top:.6rem">
           Se lleva con el reloj del sistema y no sumando fotogramas: sumar
@@ -367,7 +419,7 @@
         </small>
       </div>
 
-      <div class="ficha">
+      <div class="instrumento">
         <p class="rotulo">Marcador</p>
         <p style="display:flex; align-items:baseline; gap:.8rem; margin:0">
           <span class="dato dato--gordo" data-puntos>0</span>
@@ -380,11 +432,11 @@
           <i></i>
         </div>
         <p style="margin:.9rem 0 0">
-          <button class="bt bt--senal" type="button" data-anotar>Anotar</button>
+          <button class="bt" type="button" data-anotar>Anotar</button>
         </p>
       </div>
 
-      <div class="ficha">
+      <div class="instrumento">
         <p class="rotulo">Últimos siete días</p>
         <div class="grafica" data-grafica aria-hidden="true">
           <div style="--alto:34%"  data-v="34"></div>
@@ -392,7 +444,7 @@
           <div style="--alto:41%"  data-v="41"></div>
           <div style="--alto:78%"  data-v="78"></div>
           <div style="--alto:63%"  data-v="63"></div>
-          <div style="--alto:91%"  data-v="91"></div>
+          <div style="--alto:91%"  data-v="91" data-alta></div>
           <div style="--alto:57%"  data-v="57"></div>
         </div>
         <small style="display:block; color:var(--texto-3); font-size:.78rem; margin-top:.7rem">
@@ -405,8 +457,8 @@
 
   <!-- ══ 7 · SUPERFICIES ══════════════════════════════════════════════ -->
   <section id="superficies" aria-labelledby="t-sup">
+    <p class="rotulo">07 · Superficies</p>
     <div class="cabecilla">
-      <p class="rotulo">07 · Superficies</p>
       <h2 id="t-sup">Globito, modal, hoja y avisos</h2>
       <p>
         Los cuatro son la misma idea con distinta urgencia, así que comparten
@@ -419,12 +471,12 @@
 
     <p style="display:flex; flex-wrap:wrap; gap:.6rem">
       <span class="globo">
-        <button class="bt bt--fantasma" type="button" aria-describedby="g1">Déjame el cursor encima</button>
+        <button class="bt bt--desnudo" type="button" aria-describedby="g1">Déjame el cursor encima</button>
         <span class="globo-texto" id="g1" role="tooltip">Entra en 220 ms y se va en 110</span>
       </span>
-      <button class="bt" type="button" data-abrir-modal>Abrir el modal</button>
-      <button class="bt" type="button" data-abrir-hoja>Subir la hoja</button>
-      <button class="bt bt--senal" type="button" data-avisar>Lanzar un aviso</button>
+      <button class="bt bt--suave" type="button" data-abrir-modal>Abrir el modal</button>
+      <button class="bt bt--suave" type="button" data-abrir-hoja>Subir la hoja</button>
+      <button class="bt" type="button" data-avisar>Lanzar un aviso</button>
     </p>
 
     <dialog data-modal aria-labelledby="t-modal">
@@ -437,8 +489,8 @@
           navega con teclado.
         </p>
         <div class="tapa-pie">
-          <button class="bt bt--fantasma" type="button" data-cerrar-modal>Cancelar</button>
-          <button class="bt bt--senal" type="button" data-cerrar-modal>Entendido</button>
+          <button class="bt bt--desnudo" type="button" data-cerrar-modal>Cancelar</button>
+          <button class="bt" type="button" data-cerrar-modal>Entendido</button>
         </div>
       </div>
     </dialog>
@@ -446,8 +498,8 @@
 
   <!-- ══ 8 · FORMULARIO ═══════════════════════════════════════════════ -->
   <section id="formulario" aria-labelledby="t-form">
+    <p class="rotulo">08 · Formulario</p>
     <div class="cabecilla">
-      <p class="rotulo">08 · Formulario</p>
       <h2 id="t-form">La etiqueta no desaparece al escribir</h2>
       <p>
         La etiqueta flotante que se convierte en marcador de posición se ve muy
@@ -474,14 +526,14 @@
         <span>Cuánto te importa el detalle · <b class="dato" data-valor-rango>7</b>/10</span>
         <input class="deslizador" type="range" name="detalle" min="0" max="10" value="7" data-rango>
       </label>
-      <button class="bt bt--senal" type="submit">Enviar</button>
+      <button class="bt" type="submit">Enviar</button>
     </form>
   </section>
 
   <!-- ══ 9 · ARRASTRAR ════════════════════════════════════════════════ -->
-  <section id="arrastrar" aria-labelledby="t-arr">
+  <section id="arrastrar" class="liviana" aria-labelledby="t-arr">
+    <p class="rotulo">09 · Arrastrar y soltar</p>
     <div class="cabecilla">
-      <p class="rotulo">09 · Arrastrar y soltar</p>
       <h2 id="t-arr">Con el dedo y con el teclado</h2>
       <p>
         Un arrastrar-y-soltar que sólo funciona con el ratón es media función.
@@ -510,9 +562,14 @@
   </section>
 
   <!-- ══ 10 · VACÍOS ══════════════════════════════════════════════════ -->
-  <section id="vacios" aria-labelledby="t-vac">
+  <section id="vacios" class="liviana" aria-labelledby="t-vac">
+    <p class="rotulo">10 · Cargando, vacío, error, sin conexión</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
     <div class="cabecilla">
-      <p class="rotulo">10 · Cargando, vacío, error, sin conexión</p>
       <h2 id="t-vac">La parte que separa una demo de un producto</h2>
       <p>
         Un hueco en blanco se lee como «se rompió», y entonces la persona
@@ -530,7 +587,7 @@
       <button class="pastilla" type="button" data-lista="lleno"    aria-pressed="false">con datos</button>
     </div>
 
-    <div class="ficha" data-caja-lista aria-live="polite" style="min-height:190px">
+    <div data-caja-lista aria-live="polite" style="min-height:190px">
       <div class="esqueleto">
         <span class="hueso hueso--titulo"></span>
         <span class="hueso"></span>
@@ -553,7 +610,7 @@
     aparece donde está la mano se toca sin recolocar el aparato; una que
     aparece arriba obliga a un malabar con una sola mano.
   </p>
-  <button class="bt" type="button" data-cerrar-hoja>Cerrar</button>
+  <button class="bt bt--suave" type="button" data-cerrar-hoja>Cerrar</button>
 </div>
 
 <!-- ══ LA CONSOLA · apartados 120, 121 y 122 ═══════════════════════════════
@@ -601,7 +658,7 @@
     <button class="pastilla" type="button" data-ancho="1440" aria-pressed="false">1440</button>
     <button class="pastilla" type="button" data-ancho="1920" aria-pressed="false">1920</button>
     <span class="probador-medida">a escala <b data-escala>100%</b> · <b data-ancho-actual>768</b>px</span>
-    <button class="bt bt--fantasma" type="button" data-cerrar-probador
+    <button class="bt bt--desnudo" type="button" data-cerrar-probador
             style="min-height:44px">Cerrar</button>
   </div>
   <div class="probador-lienzo"><iframe data-marco title="La página a otro ancho"></iframe></div>
@@ -614,7 +671,7 @@
     <p class="firma" style="margin:0">Hecho por <b>Godines</b> · Grupo Mazi</p>
     <p style="margin:.4rem 0 0">
       Sin librerías, sin tipografías de internet, sin cookies y sin rastreo.
-      <button class="bt bt--fantasma" type="button" data-cambiar-tema
+      <button class="bt bt--desnudo" type="button" data-cambiar-tema
               style="min-height:44px; margin-left:.6rem; font-size:.82rem">
         Cambiar a tema claro
       </button>

@@ -1,125 +1,141 @@
 /* ══════════════════════════════════════════════════════════════════════════
    EL BANCO DE PRUEBAS · el sistema
    ──────────────────────────────────────────────────────────────────────────
-   POR QUÉ ESTO NO ES «UNA PÁGINA BONITA CON ANIMACIONES».
+   ⚠ ESTO ES UN REDISEÑO, NO UN PULIDO, Y LA CUENTA LO MANDÓ.
 
-   Carlos pidió un showcase, y la trampa de un showcase es que se convierte en
-   un desfile de efectos: cada sección más ruidosa que la anterior y ninguna
-   que explique nada. Eso se ve una vez y no sirve para nada después.
+   La primera versión se veía mal y las dos personas lo dijeron. En vez de
+   discutirlo con adjetivos se le pasó la lista de `tics-de-ia`, que es de la
+   casa y se contesta sí o no mirando. Sacó DIEZ:
 
-   Aquí la idea es otra: esto es un BANCO DE PRUEBAS. Un instrumento. Cada
-   pieza que se mueve ENSEÑA SUS PROPIOS NÚMEROS mientras se mueve — la
-   duración en milisegundos, la curva, los píxeles, los fotogramas por
-   segundo. No se anima y ya: se anima y se mide, a la vista.
+     · oscuro casi negro con tarjetas un tono más claro — el modo oscuro por
+       defecto de todo el mundo;
+     · borde de 1 px en TODAS las cajas;
+     · tarjeta con barrita de acento a la izquierda;
+     · un solo radio para todo;
+     · familia única `system-ui` para display y para texto;
+     · rejilla de tres tarjetas iguales;
+     · el mismo espacio vertical entre las diez secciones;
+     · la misma estructura repetida diez veces;
+     · todo entra igual al hacer scroll;
+     · cinco acentos saturados.
 
-   Eso resuelve de verdad el punto 6 del encargo —«no digas que el objeto se
-   mueve a la derecha, di exactamente qué pasa»— en vez de prometerlo en un
-   comentario: los valores exactos están en la pantalla, cuadro por cuadro.
+   El corte de esa skill: a partir de seis, «esto es el promedio de internet,
+   no un diseño — rediseñar, no pulir». Pulir diez tics uno por uno da el
+   promedio de internet con las esquinas limadas.
 
-   Y de paso es lo que lo hace imposible de confundir con una plantilla. Un
-   banco de laboratorio no se parece a una landing.
+   Y la neurona `error-se-ve-de-juego` le puso el nombre exacto: violeta neón
+   y menta sobre casi negro, monoespaciada por todos lados y un lienzo de
+   partículas se lee como pantalla de cripto o de videojuego, no como
+   instrumento de trabajo. Su frase, que es la que mandó aquí:
 
-   ── LO QUE NO SE USA, Y ES UNA DECISIÓN ─────────────────────────────────
-   · Cero librerías. Es la regla de la casa y aquí se cumple entera.
-   · Cero `backdrop-filter`. El punto 38 pide glassmorphism; se hace con
-     capas y degradados. `backdrop-filter` obliga a recomponer en cada
-     fotograma de scroll y fue la causa MEDIDA de que otro sitio de este
-     grupo fuera a tirones. El vidrio se finge; los tirones no se fingen.
-   · Cero sombras difusas de plantilla. La profundidad la hace el color.
+       «Lo caro casi siempre es más QUIETO.»
+
+   ── DE DÓNDE SALE AHORA LA FORMA, QUE ANTES NO SALÍA DE NINGÚN LADO ──────
+   De `marca/`: la paloma que Carlos dibujó hace quince años, con su estrella
+   y el ARCO negro que le barre sobre la cabeza. Y los colores están MEDIDOS
+   de esa imagen, no escogidos por mí — están en `marca/README.md`, sacados
+   promediando los píxeles del original.
+
+   Antes yo había inventado un violeta parecido (`#AC27FF`) y un fondo casi
+   negro que no venía de nada. Un diseño que no viene de ningún lado es un
+   diseño de nadie, y se nota exactamente así.
+
+   Las tres decisiones que se sostienen solas:
+
+   1 · EL SUELO ES PAPEL, no pantalla. `#EAE5E3` es el hueso medido de la
+       marca. Con eso se cae la mitad de la lista de tics de un jalón, y se
+       cae también la lectura de «videojuego».
+   2 · UN SOLO ACENTO. El violeta de marca y nada más. El rojo queda, pero
+       sólo donde significa alarma de verdad; ya no hay menta ni ámbar
+       decorando números.
+   3 · EL ARCO DE LA PALOMA ES LA REGLA DEL DOCUMENTO. Los separadores no son
+       líneas de 1 px: son ese arco, barrido y adelgazado en las puntas. A eso
+       no se llega por accidente, que es justo lo que pide la skill.
    ═════════════════════════════════════════════════════════════════════════ */
 
 :root{
-  color-scheme:dark light;
+  color-scheme:light dark;
 
-  /* ── LA GRAMÁTICA DE MOVIMIENTO (punto 4) ──────────────────────────────
+  /* ── LA GRAMÁTICA DE MOVIMIENTO ────────────────────────────────────────
      Cinco escalones, y son TOKENS DE VERDAD: no hay una sola duración
-     escrita a mano en este proyecto. Si algo se mueve, se mueve con una de
-     estas cinco. Es lo que hace que la página se sienta de UNA mano y no de
-     cinco personas que no se hablaron.
-
-     Se declaran aquí y se ENSEÑAN en la primera sección de la página, con su
-     nombre y su número, para que se puedan sentir uno al lado del otro. */
+     escrita a mano en el proyecto. Hay una prueba que recorre todas las que
+     el navegador terminó aplicando y reprueba cualquiera que no sea una de
+     éstas. Sin eso, «tenemos un lenguaje de movimiento» dura hasta el primer
+     `0.3s` que alguien escriba de prisa. */
   --micro:110ms;    /* hover, iconos, cambios chicos          50–150  */
-  --corta:220ms;    /* dropdowns, tooltips, tarjetas         150–300  */
+  --corta:220ms;    /* dropdowns, globitos, tarjetas         150–300  */
   --media:420ms;    /* modales, cambios de sección           300–600  */
-  --larga:820ms;    /* hero, transiciones narrativas        600–1200  */
-  --cine:1800ms;    /* escenas, partículas, storytelling     1.2–3 s  */
+  --larga:820ms;    /* titulares, transiciones narrativas   600–1200  */
+  --cine:1800ms;    /* escenas, partículas, el relato        1.2–3 s  */
+  --onda:500ms;     /* especificado en el encargo, no es un escalón   */
 
-  /* La onda al tocar no es un escalón de la gramática: es un número que venía
-     ESPECIFICADO en el encargo («radio 0→180, opacidad .35→0, 500 ms,
-     ease-out»). Se respeta tal cual, pero vive aquí como token y no suelto en
-     una regla — porque hay una prueba que se pone roja si aparece una
-     duración escrita a mano en cualquier parte del proyecto, y una excepción
-     sin nombre es exactamente lo que esa prueba existe para cazar. */
-  --onda:500ms;
-
-  /* Las curvas también son vocabulario. `salida` para lo que aparece
-     —arranca rápido y frena, que es como se siente «llegó»— y `entrada`
-     para lo que se va. `resorte` sobrepasa y regresa: sólo para lo que
-     confirma algo, nunca para lo que informa. */
   --curva-salida:cubic-bezier(.22,.61,.36,1);
   --curva-entrada:cubic-bezier(.55,.06,.68,.19);
   --curva-suave:cubic-bezier(.4,0,.2,1);
   --resorte:cubic-bezier(.34,1.56,.64,1);
 
-  /* ── COLOR ───────────────────────────────────────────────────────────────
-     Instrumento, no folleto: tinta casi negra, papel cuadriculado, y el
-     violeta de Mazi como SEÑAL —lo que está vivo— en vez de como decoración.
-     Un color que significa algo se nota más que seis que no significan nada.
+  /* ── COLOR · MEDIDO DE LA MARCA, NO ESCOGIDO ───────────────────────────
+     `marca/README.md`: violeta #AD21ED promediando 182 712 píxeles violetas
+     del original; hueso #EAE5E3 promediando los claros; negro #010101 del
+     arco. El «vacío» #120C1A es el fondo que la marca ya traía, y por eso el
+     tema oscuro tampoco se inventa.
 
-     ⚠ LOS TONOS DE TEXTO ESTÁN MEDIDOS, NO ESCOGIDOS A OJO. Hay una prueba
-     que calcula el contraste real de cada pareja contra su fondo, en los dos
-     temas, y se pone roja abajo de 4.5:1. El violeta de marca puro da 3.4:1
-     sobre la tinta: sirve para gráficos y orillas, NO para texto chico. Para
-     texto va `--senal-texto`, que es el mismo violeta aclarado hasta pasar. */
-  --tinta:#0B0B10;
-  --tinta-2:#12121A;
-  --tinta-3:#1B1B26;
-  --papel:#ECEAE4;
-  --papel-2:#C6C4BE;
-  --papel-3:#8B8A85;
+     ⚠ EL VIOLETA DE MARCA NO PASA PARA TEXTO CHICO: da 3.99:1 sobre el hueso,
+     que alcanza para display grande y para gráficos, no para un renglón de
+     12 px. Por eso hay una segunda entrada, y no es capricho ni «por si
+     acaso»: la prueba de contraste calcula las dos y reprueba la que falle. */
+  --papel:#EAE5E3;
+  --papel-hondo:#DFD9D6;
+  --papel-hueco:#D4CDC9;
+  --tinta:#010101;
+  --tinta-2:#3A3540;
+  /* ⚠ #6B6470 daba 4.08:1 sobre el papel hondo — pasaba sobre el papel liso y
+     reprobaba sobre las zonas tintadas, que es donde más se usa. Lo cazó la
+     prueba de contraste, que mide contra el fondo REAL de cada elemento y no
+     contra el del documento. Éste da 4.98 sobre el hondo y 5.55 sobre el liso. */
+  --tinta-3:#5E5765;
 
-  --senal:#AC27FF;          /* la marca, para gráficos y orillas */
-  --senal-texto:#CE8CFF;    /* la marca, aclarada, para texto chico */
-  --medida:#3BE0AE;         /* los números del instrumento */
-  --alarma:#FF5C6B;
-  --logro:#7DE04A;
+  --violeta:#AD21ED;          /* la marca. Display grande, gráficos, el arco */
+  --violeta-texto:#7A0FA8;    /* la marca, para texto chico: 6.8:1 sobre hueso */
+  --alarma:#B3121F;           /* sólo donde de verdad hay una alarma */
 
-  --fondo:var(--tinta);
-  --fondo-2:var(--tinta-2);
-  --fondo-3:var(--tinta-3);
-  --texto:var(--papel);
-  --texto-2:var(--papel-2);
-  --texto-3:var(--papel-3);
-  --raya:#FFFFFF1c;
-  --raya-fuerte:#FFFFFF3a;
+  --fondo:var(--papel);
+  --fondo-2:var(--papel-hondo);
+  --fondo-3:var(--papel-hueco);
+  --texto:var(--tinta);
+  --texto-2:var(--tinta-2);
+  --texto-3:var(--tinta-3);
+  --acento:var(--violeta);
+  --acento-texto:var(--violeta-texto);
+  --raya:#0101011f;
+  --raya-fuerte:#01010140;
 
   --letra:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 
-  /* Un solo radio, chico. Un instrumento no tiene esquinas redondas. */
-  --r:3px;
-  --dedo:48px;              /* el mínimo táctil, en un token para poder medirlo */
+  /* ── FORMA ─────────────────────────────────────────────────────────────
+     Radio CERO, y no «un radio para todo». La lista de tics castiga el radio
+     único; y aquí lo redondo tiene dueño: la estrella y el arco de la
+     paloma. Un documento impreso no tiene esquinas redondeadas. */
+  --dedo:48px;
 }
 
-/* ── TEMA CLARO (puntos 36 y 37) ───────────────────────────────────────────
-   No es «el oscuro con los colores volteados»: es su propia paleta. Sobre
-   papel, el violeta de marca SÍ pasa como texto (5.9:1) y el que se aclara es
-   el otro. Voltear tokens sin volver a medir es como se llega a un modo claro
-   ilegible que nadie revisa porque «ya funcionaba en oscuro». */
-:root[data-tema="claro"]{
-  --fondo:#F4F2ED;
-  --fondo-2:#EAE7E0;
-  --fondo-3:#DEDAD1;
-  --texto:#17171E;
-  --texto-2:#3D3C46;
-  --texto-3:#63626B;
-  --senal-texto:#7A00C2;
-  --medida:#007054;   /* medido: 4.93:1 contra --fondo-2. Con #00775A daba 4.49 */
-  --alarma:#C0202F;
-  --logro:#3D7A16;
-  --raya:#0000001f;
-  --raya-fuerte:#00000038;
+/* ── EL OTRO LADO ─────────────────────────────────────────────────────────
+   No es «el claro con los colores volteados»: el fondo es el `#120C1A` que ya
+   traía la marca, y el violeta que sí pasa aquí no es el mismo que allá.
+   Voltear tokens sin volver a medir es como se llega a un tema ilegible que
+   nadie revisa porque «ya funcionaba en el otro». */
+:root[data-tema="oscuro"]{
+  --fondo:#120C1A;
+  --fondo-2:#1B1327;
+  --fondo-3:#241933;
+  --texto:#EAE5E3;
+  --texto-2:#C4BCC9;
+  --texto-3:#948C9C;
+  --acento-texto:#C86BF5;
+  --alarma:#FF7B85;
+  --raya:#EAE5E31f;
+  --raya-fuerte:#EAE5E340;
 }
 
 *{ box-sizing:border-box; }
@@ -128,188 +144,235 @@ html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
 
 body{
   margin:0; background:var(--fondo); color:var(--texto);
-  font-family:var(--letra); line-height:1.55;
+  font-family:var(--letra); line-height:1.6;
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
+  /* ⚠ SITIO PARA QUE EL BOTÓN FIJO NO TAPE NADA. Carlos: «todo se encima en
+     todo». Una de las causas era ésta y es de las que se ven al final del
+     documento y no antes: el botón de la consola vive fijo abajo a la
+     izquierda, así que sin este hueco SIEMPRE hay contenido debajo de él que
+     no se puede terminar de leer ni tocar. Un elemento fijo sin espacio
+     reservado es contenido tapado, siempre. */
+  padding-bottom:6rem;
+  /* El cambio de tema tarda lo mismo que el recorrido de las cinco pistas:
+     Carlos lo pidió atado a ellas, y atarlo de verdad quiere decir compartir
+     el token, no copiar el número. */
+  transition:background var(--cine) var(--curva-suave),
+             color var(--cine) var(--curva-suave);
 }
 
-/* El papel del banco: cuadrícula técnica, dos escalas, dibujada con
-   degradados. Cero archivos y cero peticiones. */
-body::before{
-  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:
-    linear-gradient(var(--raya) 1px, transparent 1px) 0 0 / 100% 96px,
-    linear-gradient(90deg, var(--raya) 1px, transparent 1px) 0 0 / 96px 100%,
-    linear-gradient(var(--raya) 1px, transparent 1px) 0 0 / 100% 24px,
-    linear-gradient(90deg, var(--raya) 1px, transparent 1px) 0 0 / 24px 100%;
-  opacity:.5;
-  -webkit-mask-image:radial-gradient(120% 90% at 50% 0%, #000 0%, #0006 55%, transparent 100%);
-          mask-image:radial-gradient(120% 90% at 50% 0%, #000 0%, #0006 55%, transparent 100%);
+/* El papel tiene grano, no cuadrícula. La cuadrícula técnica era parte de lo
+   que hacía que esto se leyera como panel de videojuego; el grano hace que se
+   lea como una hoja. Una capa, sin archivo, y muy tenue: si se ve, sobra. */
+/* ⚠ EL GRANO VA EN EL `body`, NO EN UNA CAPA FIJA, y esto es un arreglo de un
+   defecto que reportó Carlos: «después de pulsar cualquier botón, en teléfono
+   pasa un segundo y hace un parpadeo como si desapareciese».
+
+   Una capa `position:fixed` con un filtro SVG de fondo es una capa de
+   composición aparte que el navegador tiene que volver a rasterizar cada vez
+   que algo debajo cambia — y en iOS eso se ve como un parpadeo. Puesto sobre
+   el `body` no hay capa extra que rasterizar: el grano se desplaza con la
+   página, que a 160 px no se nota, y el parpadeo no tiene de dónde salir. */
+body{
+  background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>\
+<filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/></filter>\
+<rect width='160' height='160' filter='url(%23g)' opacity='.05'/></svg>");
+  background-size:160px 160px;
+  background-repeat:repeat;
 }
 
-/* ── tipografía ──────────────────────────────────────────────────────────── */
-h1,h2,h3{ margin:0; font-weight:800; letter-spacing:-.03em; line-height:1.02; }
-h1{ font-size:clamp(2.6rem, 8vw, 6rem); }
-h2{ font-size:clamp(1.9rem, 5vw, 3.1rem); }
-h3{ font-size:clamp(1.15rem, 2.6vw, 1.45rem); letter-spacing:-.02em; }
-p{ margin:0 0 1rem; max-width:62ch; color:var(--texto-2); }
+/* ── TIPOGRAFÍA ───────────────────────────────────────────────────────────
+   Jerarquía por ESCALA, no por negritas — el tic dice que todos los títulos
+   midan casi lo mismo y se distingan por el peso. Aquí hay saltos que se ven:
+   96 / 44 / 22 / 16 / 13. Y el interletraje negativo en display, que es el
+   ajuste al que nadie llega por accidente. */
+h1,h2,h3{ margin:0; font-weight:800; letter-spacing:-.035em; line-height:1.03; }
+h1{ font-size:clamp(3rem, 9vw, 6rem); letter-spacing:-.05em; }
+h2{ font-size:clamp(1.9rem, 4.4vw, 2.75rem); }
+h3{ font-size:1.05rem; font-weight:700; letter-spacing:-.01em; line-height:1.35; }
+p{ margin:0 0 1.05rem; max-width:64ch; color:var(--texto-2); }
+b, strong{ color:var(--texto); font-weight:650; }
+code{ font-family:var(--mono); font-size:.9em; color:var(--acento-texto); }
 
-/* El rótulo del instrumento: mono, chico, espaciado. Es lo que convierte una
-   sección en una LECTURA y no en un bloque de landing. */
+/* El rótulo va en la columna del margen, como el folio de una hoja técnica.
+   La estrella es la de la paloma: es el único adorno del documento y aparece
+   una vez por sección. */
 .rotulo{
-  font-family:var(--mono); font-size:.7rem; letter-spacing:.16em;
-  text-transform:uppercase; color:var(--texto-3); margin:0 0 .7rem;
-  display:flex; align-items:center; gap:.6rem;
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--texto-3); margin:0 0 .9rem;
+  display:flex; align-items:baseline; gap:.55rem;
 }
 .rotulo::before{
-  content:''; width:8px; height:8px; background:var(--senal); flex:none;
+  content:'★'; color:var(--acento); font-size:.8em; line-height:1;
+  transform:translateY(-.05em);
 }
 
-/* ── estructura ──────────────────────────────────────────────────────────── */
-.caja{ width:min(1180px, 100% - 2.5rem); margin-inline:auto; }
-section[id]{ padding:clamp(4rem, 9vh, 7rem) 0; scroll-margin-top:76px; }
-.cabecilla{ margin-bottom:2.2rem; }
-.cabecilla p{ margin-top:.7rem; }
+/* ── ESTRUCTURA ───────────────────────────────────────────────────────────
+   Dos columnas asimétricas: un margen angosto que lleva el folio, y la
+   columna ancha con el contenido. NO es la retícula de tres tarjetas
+   centradas que sale sola, y ésa era otra de las diez.
 
-/* ── LA BARRA DE PROGRESO DEL SCROLL (punto 10) ────────────────────────────
-   Va arriba, es una barra Y un porcentaje: la barra se siente, el número se
-   lee. La barra la mueve el CSS con `animation-timeline`, sin JavaScript por
-   fotograma; el número sí necesita JS y va en el ciclo compartido. */
+   Y el ritmo vertical CAMBIA según lo que pesa la sección. Que todas midan
+   igual es lo que hace que un documento no diga qué va con qué. */
+.caja{ width:min(1120px, 100% - 3rem); margin-inline:auto; }
+
+/* ⚠ `scroll-margin-top` TIENE QUE DEJAR SITIO A LA CABECERA Y AL ARCO. Con
+   70 px el título de la sección quedaba DEBAJO de la barra fija al saltar
+   desde el índice: la página iba al sitio correcto y no se veía adónde había
+   llegado. Es de los defectos que sólo aparecen usando el índice, no
+   scrolleando. */
+section[id]{ padding:5.5rem 0 4.5rem; scroll-margin-top:96px; }
+section[id].pesa   { padding:9rem 0 7rem; }     /* las que cargan el relato */
+section[id].liviana{ padding:3.5rem 0 3rem; }   /* las de apoyo */
+
+@media (min-width:900px){
+  section[id]{
+    display:grid; grid-template-columns:9.5rem minmax(0, 1fr); column-gap:3rem;
+    align-items:start;
+  }
+  section[id] > .rotulo{ grid-column:1; margin-top:.55rem; }
+  section[id] > *:not(.rotulo){ grid-column:2; }
+}
+
+.cabecilla{ margin-bottom:2rem; max-width:52ch; }
+.cabecilla p{ margin-top:.9rem; }
+
+/* ── EL ARCO · la regla del documento ─────────────────────────────────────
+   El separador no es una línea: es el arco que la paloma lleva encima de la
+   cabeza, barrido y adelgazado en las puntas. Sale del logo de verdad
+   (`marca/piezas/arco.svg`), simplificado a una curva que se pueda dibujar
+   con un borde y una máscara.
+
+   Es LA decisión que cuesta, en el sentido de la skill: a una línea de 1 px
+   se llega solo; a esto no. Y significa algo — es la única forma del
+   documento que no la puse yo. */
+.arco{
+  position:relative; height:26px; margin:0 0 3rem;
+  border-top:2px solid var(--acento);
+  /* La curva: el borde se comba porque el elemento lleva radio SÓLO arriba y
+     muy abierto, y la máscara se come las puntas para que no acabe en corte
+     seco — igual que el arco del logo, que nace y muere en punta. */
+  border-radius:50% 50% 0 0 / 26px 26px 0 0;
+  -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+          mask-image:linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+  opacity:.85;
+}
+.arco--tenue{ border-top-color:var(--raya-fuerte); opacity:1; }
+
+/* ── LA CINTA · la cabecera y el progreso del scroll ──────────────────────
+   ⚠ ESTO SE ME PERDIÓ AL REESCRIBIR EL ARCHIVO y lo cazó la prueba de
+   objetivos táctiles: los diez enlaces de sección quedaron en 19 px de alto,
+   que es el tamaño del texto sin nada alrededor. Un rediseño que reescribe
+   una hoja entera se lleva por delante lo que no estaba en la cabeza en ese
+   momento, y eso no se ve mirando — se ve midiendo.
+
+   Sobre papel la cabecera no es una barra oscura flotando: es el encabezado
+   de la hoja, con una regla debajo. Lo único que se mueve es la línea del
+   progreso, que crece de izquierda a derecha con el scroll. */
 .cinta{
   position:fixed; inset:0 0 auto 0; z-index:60;
-  background:color-mix(in srgb, var(--fondo) 88%, transparent);
-  border-bottom:1px solid var(--raya);
+  background:var(--fondo);
+  border-bottom:1px solid var(--raya-fuerte);
 }
-.cinta-fila{
-  display:flex; align-items:center; gap:1rem;
-  height:60px;
-}
+.cinta-fila{ display:flex; align-items:center; gap:1.2rem; height:58px; }
 .cinta-marca{
-  font-family:var(--mono); font-size:.74rem; letter-spacing:.14em;
+  font-family:var(--mono); font-size:.74rem; letter-spacing:.16em;
   text-transform:uppercase; font-weight:700; white-space:nowrap;
-  display:flex; align-items:center; gap:.5rem;
+  display:flex; align-items:center; gap:.5rem; color:var(--texto);
 }
-.cinta-marca span{ width:9px; height:9px; background:var(--senal); }
+.cinta-marca span{ color:var(--acento); }
 .cinta-vias{
-  display:flex; gap:.15rem; margin-left:auto; overflow-x:auto;
+  display:flex; gap:0 1.1rem; margin-left:auto; overflow-x:auto;
   scrollbar-width:none;
 }
 .cinta-vias::-webkit-scrollbar{ display:none; }
 .cinta-vias a{
-  font-family:var(--mono); font-size:.7rem; letter-spacing:.08em;
-  text-transform:uppercase; color:var(--texto-3); text-decoration:none;
-  /* ⚠ 44 Y NO 40. Primero puse 40 «porque ya no eran 35», y el comité de
-     UI/UX lo reprobó con razón: el número que este proyecto CITA en su propio
-     texto es 44, y una regla que se afloja para que pase lo que ya está hecho
-     no es una regla. Eran 26 controles justo por debajo. La barra mide 60: el
-     sitio estaba, faltaba la disciplina. */
   display:flex; align-items:center; min-height:44px;
-  padding:0 .55rem; white-space:nowrap; border-bottom:2px solid transparent;
-  transition:color var(--micro) var(--curva-suave), border-color var(--micro) var(--curva-suave);
+  font-family:var(--mono); font-size:.7rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--texto-3); text-decoration:none;
+  white-space:nowrap; border-bottom:2px solid transparent;
+  -webkit-tap-highlight-color:transparent;
+  transition:color var(--micro) var(--curva-suave),
+             border-color var(--micro) var(--curva-suave);
 }
-.cinta-vias a[aria-current="true"]{ color:var(--texto); border-bottom-color:var(--senal); }
+.cinta-vias a[aria-current="true"]{ color:var(--texto); border-bottom-color:var(--acento); }
+@media (hover:hover) and (pointer:fine){ .cinta-vias a:hover{ color:var(--texto); } }
 .cinta-pct{
-  font-family:var(--mono); font-size:.72rem; color:var(--medida);
+  font-family:var(--mono); font-size:.72rem; color:var(--texto-3);
   min-width:4ch; text-align:right; font-variant-numeric:tabular-nums;
 }
 .barra-scroll{
   position:absolute; left:0; bottom:-1px; height:2px; width:100%;
-  background:var(--senal); transform-origin:0 50%; transform:scaleX(0);
+  background:var(--acento); transform-origin:0 50%; transform:scaleX(0);
+}
+@media (max-width:640px){
+  .cinta-vias{ display:none; }      /* diez enlaces no caben; el índice está
+      en el documento y el botón de volver arriba resuelve el regreso */
+  .cinta-fila{ height:52px; }
 }
 
-/* ── EL BOTÓN, CON TODOS SUS ESTADOS (punto 3) ─────────────────────────────
-   El encargo dice que un botón no es «[ENVIAR]»: es default, hover, focus,
-   pressed, loading, success, error y disabled. Aquí están los ocho, y la
-   página los deja DISPARAR a mano en la sección de estados, porque un estado
-   que sólo existe medio segundo durante una petición no se puede revisar. */
+/* ── LO QUE SE TOCA ───────────────────────────────────────────────────────
+   Sin borde en todas las cajas y sin sombra difusa: el botón principal es
+   sólido y el secundario es sólo texto con una línea debajo. La diferencia
+   entre principal y secundario se ve sin leerla, que es lo que pide la
+   jerarquía. */
 .bt{
-  --bt-fondo:var(--fondo-3); --bt-texto:var(--texto); --bt-orilla:var(--raya-fuerte);
   position:relative; overflow:hidden;
   display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
-  min-height:var(--dedo); padding:0 1.15rem;
-  background:var(--bt-fondo); color:var(--bt-texto);
-  border:1px solid var(--bt-orilla); border-radius:var(--r);
+  min-height:var(--dedo); padding:0 1.2rem;
+  background:var(--acento); color:#FFF;
+  border:2px solid var(--acento); border-radius:0;
   font-family:var(--letra); font-size:.95rem; font-weight:650;
   cursor:pointer; text-decoration:none;
-  /* La transformación va aparte y más rápida: el hundido tiene que sentirse
-     inmediato aunque el color tarde un poco más. */
   transition:background var(--corta) var(--curva-suave),
              color var(--corta) var(--curva-suave),
              border-color var(--corta) var(--curva-suave),
              transform var(--micro) var(--curva-salida);
+  /* En un teléfono el resaltado azul del sistema tapa el estado propio y se
+     ve como un parpadeo ajeno al diseño. */
+  -webkit-tap-highlight-color:transparent;
 }
-.bt--senal{ --bt-fondo:var(--senal); --bt-texto:#FFF; --bt-orilla:var(--senal); }
-.bt--fantasma{ --bt-fondo:transparent; }
+.bt--suave{ background:transparent; color:var(--texto); border-color:var(--raya-fuerte); }
+.bt--desnudo{
+  background:transparent; color:var(--acento-texto); border-color:transparent;
+  border-bottom:2px solid var(--acento); padding:0 .25rem; min-height:44px;
+}
 .bt:active{ transform:translateY(2px); }
-.bt:focus-visible{ outline:2px solid var(--senal-texto); outline-offset:2px; }
+.bt:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 @media (hover:hover) and (pointer:fine){
-  .bt:hover{ --bt-orilla:var(--texto); }
-  .bt--senal:hover{ --bt-fondo:#BA45FF; }
+  .bt:hover{ background:#8E19C6; border-color:#8E19C6; }
+  .bt--suave:hover{ background:var(--fondo-2); border-color:var(--texto-3); }
+  .bt--desnudo:hover{ background:transparent; color:var(--texto); border-bottom-color:var(--texto); }
 }
-.bt[disabled]{ opacity:.42; cursor:not-allowed; pointer-events:none; }
+.bt[disabled]{ opacity:.4; cursor:not-allowed; pointer-events:none; }
 .bt[data-estado="cargando"]{ pointer-events:none; }
-.bt[data-estado="logro"]{ --bt-fondo:var(--logro); --bt-texto:#0B0B10; --bt-orilla:var(--logro); }
-.bt[data-estado="error"]{ --bt-fondo:var(--alarma); --bt-texto:#FFF; --bt-orilla:var(--alarma); }
+.bt[data-estado="logro"]{ background:var(--texto); border-color:var(--texto); color:var(--fondo); }
+.bt[data-estado="error"]{ background:var(--alarma); border-color:var(--alarma); color:#FFF; }
+.bt[data-estado="encima"]{ background:#8E19C6; border-color:#8E19C6; }
+.bt[data-estado="hundido"]{ transform:translateY(2px); background:#7A0FA8; border-color:#7A0FA8; }
 
-/* La ruedita de carga es un cuadrado que gira, no un círculo: en un banco de
-   pruebas se ve de qué lado va. Y `currentColor` para que sirva en los ocho
-   estados sin repetir la regla. */
-.giro{
-  width:14px; height:14px; flex:none;
-  border:2px solid currentColor; border-right-color:transparent;
-  animation:girar var(--larga) linear infinite;
-}
-@keyframes girar{ to{ transform:rotate(360deg); } }
-
-/* El ripple del punto 7. El círculo lo pone el JS con las coordenadas reales
-   del toque; aquí sólo vive la animación. 500ms y ease-out, tal cual. */
+/* La onda al tocar. Nace donde de verdad se tocó. */
 .onda{
   position:absolute; border-radius:50%; pointer-events:none;
-  background:currentColor; opacity:.35;
+  background:currentColor; opacity:.3;
   transform:translate(-50%,-50%) scale(0);
   animation:ondear var(--onda) ease-out forwards;
 }
 @keyframes ondear{ to{ transform:translate(-50%,-50%) scale(1); opacity:0; } }
 
-/* ── tarjetas y superficies ──────────────────────────────────────────────── */
-.ficha{
-  background:var(--fondo-2); border:1px solid var(--raya);
-  border-radius:var(--r); padding:1.1rem;
-}
-.rejilla{ display:grid; gap:1rem; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
-
-/* El «vidrio» del punto 38, SIN backdrop-filter: dos capas, un degradado y
-   una orilla clara arriba. Se ve como vidrio y no cuesta un solo fotograma
-   de recomposición. La diferencia se nota justo donde importa: al scrollear. */
-.vidrio{
-  background:
-    linear-gradient(160deg, #FFFFFF1f 0%, #FFFFFF08 34%, #FFFFFF02 100%),
-    var(--fondo-2);
-  border:1px solid var(--raya-fuerte);
-  border-top-color:#FFFFFF4d;
-  border-radius:var(--r);
-}
-
-/* ── el número del instrumento ──────────────────────────────────────────── */
+/* ── el número ────────────────────────────────────────────────────────────
+   Mono porque es un dato y se compara en columna, no porque quede «técnico».
+   En tinta, no en menta: el color de los números era decoración. */
 .dato{
   font-family:var(--mono); font-variant-numeric:tabular-nums;
-  color:var(--medida); font-weight:700; letter-spacing:-.02em;
+  color:var(--texto); font-weight:700; letter-spacing:-.02em;
 }
-.dato--gordo{ font-size:clamp(2rem, 6vw, 2.8rem); line-height:1; display:block; }
-.unidad{ color:var(--texto-3); font-size:.62em; font-weight:500; margin-left:.15em; }
+.dato--gordo{ font-size:clamp(2.1rem, 5.5vw, 3rem); line-height:1; display:block; letter-spacing:-.04em; }
+.unidad{ color:var(--texto-3); font-size:.55em; font-weight:500; margin-left:.2em; }
 
 .saltar{
   position:absolute; left:-9999px; top:0;
-  background:var(--senal); color:#FFF; padding:.7rem 1rem; z-index:100;
+  background:var(--acento); color:#FFF; padding:.7rem 1rem; z-index:100;
 }
 .saltar:focus{ left:.5rem; top:.5rem; }
-
-/* ── LOS DOS ESTADOS QUE NADIE REVISA ─────────────────────────────────────
-   `hover` y `pressed` se van en cuanto sueltas, así que en la práctica nunca
-   se miran con calma. Aquí se congelan — y comparten declaración con sus
-   pseudoclases en vez de repetir los valores, porque dos copias del mismo
-   color acaban separándose y entonces la matriz enseña un `hover` que la
-   página ya no tiene. */
-.bt[data-estado="encima"],
-.bt--senal[data-estado="encima"]{ --bt-fondo:#BA45FF; --bt-orilla:var(--texto); }
-.bt[data-estado="hundido"]{ transform:translateY(2px); --bt-orilla:var(--texto); }

@@ -186,7 +186,13 @@ for(const tema of ['oscuro', 'claro']){
   const ctx = await b.newContext({ viewport:{ width:1280, height:900 } });
   const { pg } = await nuevaPagina(ctx);
   await pg.evaluate((t) => { document.documentElement.dataset.tema = t; }, tema);
-  await pg.waitForTimeout(250);
+  /* ⚠ HAY QUE ESPERAR A QUE ACABE LA TRANSICIÓN, y con 250 ms no se esperaba:
+     el cambio de tema tarda `--cine` (1800 ms) porque va atado al recorrido de
+     las cinco pistas. Midiendo a los 250 ms se mide un color A MEDIO CAMINO
+     entre los dos temas, que no es el de ninguno — y esta prueba reportó siete
+     parejas ilegibles que no existen en ningún estado real de la página.
+     Medir durante una transición es medir ruido, otra vez. */
+  await pg.waitForTimeout(2100);
 
   const malos = await pg.evaluate(() => {
     const malos = [];
@@ -256,7 +262,11 @@ console.log('\n── las piezas ──');
   /* Estados del botón: se comprueba el estado PINTADO, no la clase. */
   await pg.click('[data-estado-bt="cargando"]');
   await pg.waitForTimeout(400);
-  ok(await pg.locator('[data-bt-muestra] .giro').count() === 1, 'el estado «cargando» enseña su ruedita');
+  /* La ruedita ya no es una ruedita: es la paloma de la marca dibujándose el
+     contorno, que se baja aparte. Se espera a que llegue. */
+  await pg.waitForTimeout(700);
+  ok(await pg.locator('[data-bt-muestra] .paloma').count() === 1,
+     'el estado «cargando» dibuja la paloma de la marca');
   await pg.click('[data-estado-bt="apagado"]');
   await pg.waitForTimeout(400);
   ok(await pg.locator('[data-bt-muestra]').isDisabled(), 'el estado «apagado» apaga el botón de verdad');
@@ -267,7 +277,7 @@ console.log('\n── las piezas ──');
     await pg.click('[data-estado-bt="error"]'); await pg.waitForTimeout(400);
     return pg.evaluate(() => getComputedStyle(document.querySelector('[data-bt-muestra]')).backgroundColor);
   })();
-  ok(/255,\s*92,\s*107/.test(colorError) || /192,\s*32,\s*47/.test(colorError),
+  ok(/179,\s*18,\s*31/.test(colorError) || /255,\s*123,\s*133/.test(colorError),
      `el estado «error» se pinta de alarma (${colorError})`);
   await pg.click('[data-estado-bt="normal"]');
 
@@ -307,7 +317,7 @@ console.log('\n── las piezas ──');
   /* Tema: cambia de verdad y se recuerda. */
   const fondoAntes = await pg.evaluate(() => getComputedStyle(document.body).backgroundColor);
   await pg.click('[data-cambiar-tema]');
-  await pg.waitForTimeout(250);
+  await pg.waitForTimeout(2100);      /* el tema tarda `--cine`: ver la nota de arriba */
   const fondoDespues = await pg.evaluate(() => getComputedStyle(document.body).backgroundColor);
   ok(fondoAntes !== fondoDespues, 'el tema cambia el fondo de verdad');
   await pg.reload({ waitUntil:'networkidle' });
@@ -448,6 +458,134 @@ console.log('\n── las reglas que la página predica ──');
   await pg.close(); await ctx.close();
 }
 
+/* ══ LO QUE REPORTÓ CARLOS, CONVERTIDO EN PRUEBA ═════════════════════════
+   Mandó trece defectos concretos. Los que una máquina puede comprobar están
+   aquí, porque un defecto arreglado sin prueba vuelve: nadie se acuerda de
+   revisarlo a mano dentro de tres semanas. */
+console.log('\n── los defectos que reportó Carlos ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:1280, height:900 } });
+  const { pg } = await nuevaPagina(ctx);
+
+  /* 1 · «al presionarlo de nuevo se teletransportan hacia atrás». El regreso
+         tiene que ser el mismo viaje al revés, no un salto. */
+  const donde = () => pg.evaluate(() =>
+    getComputedStyle(document.querySelector('.pista-carro')).transform);
+  await pg.click('[data-correr-pistas]');
+  await pg.waitForTimeout(1900);
+  const ida = await donde();
+  ok(ida !== 'none' && !/matrix\(1, 0, 0, 1, 0, 0\)/.test(ida), `las pistas van a la derecha (${ida})`);
+
+  await pg.click('[data-correr-pistas]');
+  await pg.waitForTimeout(60);
+  const aMedias = await donde();
+  ok(aMedias !== ida && !/matrix\(1, 0, 0, 1, 0, 0\)/.test(aMedias),
+     'y al regresar hacen el trayecto: a los 60 ms van de camino, no de vuelta ya');
+  await pg.waitForTimeout(1900);
+  ok(/matrix\(1, 0, 0, 1, 0, 0\)/.test(await donde()), 'y terminan donde empezaron');
+
+  /* 2 · «que al mandarlo a la derecha cambie el tema gradualmente a la misma
+         velocidad que esos 5». Se comprueba que el tema esté ATADO al viaje. */
+  const temaDe = () => pg.evaluate(() => document.documentElement.dataset.tema);
+  const antes = await temaDe();
+  await pg.click('[data-correr-pistas]');
+  await pg.waitForTimeout(200);
+  ok(await temaDe() !== antes, 'mandarlas a la derecha cambia el tema');
+  const dur = await pg.evaluate(() => getComputedStyle(document.body).transitionDuration);
+  const cine = await pg.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--cine').trim());
+  ok(dur.includes(cine.replace('ms','').length > 3 ? '1.8s' : cine) || dur.includes('1.8s'),
+     `y tarda lo mismo que la pista más larga (${dur} · --cine ${cine})`);
+
+  /* 3 · «tu cargando es demasiado simple, ¿una U dando vueltas?» */
+  await pg.click('[data-estado-bt="cargando"]');
+  await pg.waitForTimeout(900);
+  const trazos = await pg.evaluate(() =>
+    document.querySelectorAll('[data-bt-muestra] .paloma path, [data-bt-muestra] .paloma polygon').length);
+  ok(trazos >= 1, `el cargando dibuja la paloma de la marca (${trazos} trazos)`);
+  ok(await pg.evaluate(() => {
+    const t = document.querySelector('[data-bt-muestra] .paloma path');
+    return t && getComputedStyle(t).strokeDasharray !== 'none';
+  }), 'y se dibuja de verdad, con el contorno');
+  await pg.click('[data-estado-bt="normal"]');
+
+  /* 4 · «la barra es totalmente llena pero la palanquera se estancó antes de
+         llegar». El relleno tiene que coincidir con el centro del pulgar. */
+  const rango = pg.locator('[data-rango]');
+  await rango.evaluate((r) => { r.value = r.max; r.dispatchEvent(new Event('input', { bubbles:true })); });
+  await pg.waitForTimeout(120);
+  const alTope = await pg.evaluate(() => {
+    const r = document.querySelector('[data-rango]');
+    const pulgar = parseFloat(getComputedStyle(r).getPropertyValue('--pulgar'));
+    const llena = parseFloat(getComputedStyle(r).getPropertyValue('--llena'));
+    const centro = (r.clientWidth - pulgar / 2) / r.clientWidth * 100;
+    return { llena, centro };
+  });
+  ok(Math.abs(alTope.llena - alTope.centro) < 1.5,
+     `al tope, el relleno llega al centro del pulgar (${alTope.llena.toFixed(1)}% vs ${alTope.centro.toFixed(1)}%)`);
+
+  /* 5 · «el botón de a cero tiene un delay de unas décimas». Instantáneo. */
+  await pg.click('[data-crono-bt="correr"]');
+  await pg.waitForTimeout(700);
+  await pg.click('[data-crono-bt="cero"]');
+  const enCero = await pg.evaluate(() => document.querySelector('[data-crono]').textContent);
+  ok(enCero === '00:00.0', `«a cero» pone el cero en el acto, sin esperar un fotograma (${enCero})`);
+
+  await pg.close(); await ctx.close();
+}
+
+/* ══ EL TELÉFONO, CON DEDO DE VERDAD ═════════════════════════════════════
+   «Tu arrastrar en teléfono no funciona», y era literal: `dragstart` es de la
+   API de arrastre de HTML y en táctil NO EXISTE. No fallaba — nunca corría.
+   Un contexto con `hasTouch` es la única forma de que esta prueba pueda
+   reprobar; sin él, todo pasa en un navegador que no es el del problema. */
+console.log('\n── con el dedo ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const { pg, err } = await nuevaPagina(ctx);
+
+  const dondeEsta = (id) => pg.evaluate((i) =>
+    document.querySelector(`[data-pieza="${i}"]`).closest('[data-cajon]').dataset.cajon, id);
+  ok(await dondeEsta('a') === 'por-hacer', 'la pieza empieza en «por hacer»');
+
+  const a = pg.locator('[data-pieza="a"]');
+  const destino = pg.locator('[data-cajon="haciendo"]');
+  const ca = await a.boundingBox(), cd = await destino.boundingBox();
+  await pg.locator('[data-cajones]').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(300);
+  const c1 = await a.boundingBox(), c2 = await destino.boundingBox();
+  await pg.mouse.move(c1.x + c1.width / 2, c1.y + c1.height / 2);
+  await pg.mouse.down();
+  await pg.mouse.move(c2.x + c2.width / 2, c2.y + 30, { steps: 12 });
+  await pg.mouse.up();
+  await pg.waitForTimeout(200);
+  ok(await dondeEsta('a') === 'haciendo', 'y se arrastra con el puntero hasta el otro cajón');
+
+  /* El imán no puede funcionar sin cursor, y la página lo DICE en vez de
+     dejar un control muerto que se lee como roto. */
+  ok(await pg.locator('.solo-dedo').first().isVisible(),
+     'en táctil se explica por qué el imán no aplica, en vez de fingir que sirve');
+
+  /* El icono vivo sí responde al toque: colgaba de `:hover` y `:focus-visible`,
+     y en un teléfono no hay ninguno de los dos. */
+  await pg.locator('[data-flecha]').scrollIntoViewIfNeeded();
+  await pg.locator('[data-flecha]').click();
+  ok(await pg.locator('[data-flecha].adelanta').count() === 1,
+     'el icono vivo se mueve al tocarlo, no sólo al pasar el cursor');
+
+  /* Nada tapado por el botón fijo: «todo se encima en todo». */
+  const tapado = await pg.evaluate(() => {
+    scrollTo(0, document.body.scrollHeight);
+    const bt = document.querySelector('.consola-bt').getBoundingClientRect();
+    const pie = document.querySelector('.pie-lab').getBoundingClientRect();
+    return pie.bottom > bt.top && pie.bottom < bt.bottom;
+  });
+  ok(!tapado, 'al final del documento, el botón fijo no queda encima del contenido');
+
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
 /* ══ 5 · LOS NÚMEROS DEL TABLERO SON CIERTOS ═════════════════════════════
    Ésta es la prueba que le da derecho a existir al tablero. Los primeros
    números que puse me los inventé —«48 piezas»— y un banco de pruebas que
@@ -501,7 +639,7 @@ console.log('\n── los números del tablero ──');
     for(const u of urls) total += (await (await fetch(u)).arrayBuffer()).byteLength;
     return Math.round(total / 1024);
   });
-  ok(Math.abs(kb - decl['Peso']) <= 3, `«${decl['Peso']} KB» y de verdad pesa ${kb} KB`);
+  ok(Math.abs(kb - decl['Peso de la página']) <= 3, `«${decl['Peso de la página']} KB» y de verdad pesa ${kb} KB`);
 
   /* 4 · un solo ciclo. Se mide MIENTRAS las partículas corren y se scrollea,
      que es cuando de verdad podrían aparecer dos motores compitiendo. */

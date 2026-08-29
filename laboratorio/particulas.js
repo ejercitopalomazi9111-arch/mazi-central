@@ -82,7 +82,27 @@
      calculara por fotograma, el sistema iría al doble de rápido en una
      pantalla de 120 Hz que en una de 60. Es el error clásico de las
      animaciones a mano y sólo se nota cuando alguien lo abre en otro aparato. */
+  /* ⚠ TRES GUARDAS QUE SALEN DE UN DEFECTO REPORTADO: Carlos dijo que en
+     teléfono «magnético, repelente y conectado funcionan fatal: explotan y
+     luego se quedan completamente estáticos en posición 0».
+
+     Las dos mitades del síntoma tienen causas distintas y las dos hay que
+     taparlas:
+
+     · EXPLOTAN — la fuerza es 2600/d², y con `d` chico eso se dispara. Basta
+       que dos queden casi encima (pasa al sembrar, y ahora también al
+       fundirse) para que salgan lanzadas. Ahora la velocidad tiene TOPE: por
+       muy fuerte que sea el tirón, nada se mueve más de lo que se puede
+       seguir con el ojo.
+     · SE QUEDAN EN CERO — si el lienzo mide 0 de ancho, el recorte
+       `min(an, max(0, x))` deja TODO en 0 y ya no vuelve. Y mide 0 más veces
+       de las que uno cree en un teléfono: la barra del navegador que aparece
+       y desaparece dispara `resize`, y entre medida y medida hay fotogramas
+       donde el rectángulo todavía no está. Ahora si no hay tamaño no se pisa
+       nada: se sale y se vuelve a medir. */
+  const V_MAX = 3.2;
   function paso(dt){
+    if(an < 8 || al < 8){ medir(); return; }
     const k = Math.min(dt, 34) / 16.7;      /* topado: si la pestaña estuvo
         dormida, dt llega enorme y sin tope todo saldría disparado de golpe */
     const cx = an / 2, cy = al / 2;
@@ -117,6 +137,10 @@
       }
 
       p.vx *= 0.94; p.vy *= 0.94;            /* rozamiento */
+      /* El tope va sobre la MAGNITUD, no sobre cada eje por separado: topar
+         los ejes de uno en uno deforma la dirección y las manda en diagonal. */
+      const v = Math.hypot(p.vx, p.vy);
+      if(v > V_MAX){ p.vx = p.vx / v * V_MAX; p.vy = p.vy / v * V_MAX; }
       p.x += p.vx * k; p.y += p.vy * k;
 
       if(p.x < 0 || p.x > an) p.vx *= -1;
@@ -124,7 +148,75 @@
       p.x = Math.min(an, Math.max(0, p.x));
       p.y = Math.min(al, Math.max(0, p.y));
     }
+
+    fundir();
   }
+
+  /* ══ QUE NO SE ENCIMEN ═══════════════════════════════════════════════════
+     Carlos, y tenía toda la razón: «tu orbital se lleva un 6, pero a veces las
+     partículas se enciman entre sí, eso está mal; dos partículas no deben
+     fusionarse ni encimarse si no es la intención, ponles un poco de física
+     para que si chocan exploten y se unan en una un poco más grande».
+
+     Dos puntos que se atraviesan delatan que no hay sistema: son dos dibujos
+     en la misma capa, no dos cosas en un espacio. Así que ahora sí chocan, y
+     al chocar se FUNDEN — con la masa conservada, que es lo que hace que se
+     vea a propósito y no como un error:
+
+       · el radio nuevo sale de sumar ÁREAS (r = √(r₁²+r₂²)), no radios. Si se
+         sumaran radios, dos chicas darían una absurdamente grande y se vería
+         como un fallo;
+       · la velocidad nueva es el promedio pesado por área — la cantidad de
+         movimiento se conserva, así que la fusión no acelera ni frena el
+         sistema entero;
+       · y hay un TOPE de radio. Sin él, en un minuto queda una sola bola
+         gigante y el sistema se acaba solo. Al llegar al tope se parte en dos,
+         que además le devuelve vida al lienzo.
+
+     El bucle es O(n²) sobre 90 partículas: 4 005 parejas por fotograma, que en
+     un teléfono es barato. Con 400 no lo sería, y por eso el conteo está
+     topado arriba. */
+  const R_MAX = 7;
+  function fundir(){
+    for(let i = 0; i < particulas.length; i++){
+      const a = particulas[i];
+      for(let j = i + 1; j < particulas.length; j++){
+        const b = particulas[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.hypot(dx, dy);
+        if(d >= a.r + b.r) continue;
+
+        const areaA = a.r * a.r, areaB = b.r * b.r;
+        const nuevo = Math.sqrt(areaA + areaB);
+        if(nuevo > R_MAX){
+          /* Demasiado grande: en vez de crecer, se separan de verdad. Se las
+             empuja hasta dejar de tocarse y se invierte la componente que las
+             acercaba, que es un rebote elástico simple. */
+          const nx = dx / (d || 1), ny = dy / (d || 1);
+          const encaje = (a.r + b.r - d) / 2 + 0.1;
+          a.x -= nx * encaje; a.y -= ny * encaje;
+          b.x += nx * encaje; b.y += ny * encaje;
+          const rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if(rel < 0){ a.vx += rel * nx; a.vy += rel * ny; b.vx -= rel * nx; b.vy -= rel * ny; }
+          continue;
+        }
+
+        const total = areaA + areaB;
+        a.x = (a.x * areaA + b.x * areaB) / total;
+        a.y = (a.y * areaA + b.y * areaB) / total;
+        a.vx = (a.vx * areaA + b.vx * areaB) / total;
+        a.vy = (a.vy * areaA + b.vy * areaB) / total;
+        a.r = nuevo;
+        /* Se queda con el sitio de origen de la más grande: si heredara el de
+           la chica, el resorte la mandaría a un hueco que ya no le toca. */
+        if(areaB > areaA){ a.ang = b.ang; a.radio = b.radio; }
+        a.fundida = ahoraMs();
+        particulas.splice(j, 1); j--;
+        if(elCuenta) elCuenta.textContent = particulas.length;
+      }
+    }
+  }
+  const ahoraMs = () => (performance && performance.now ? performance.now() : Date.now());
 
   const color = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   let tintaSenal = '#AC27FF', tintaMedida = '#3BE0AE';
@@ -195,7 +287,10 @@
     if('IntersectionObserver' in window){
       new IntersectionObserver((es) => {
         visible = es[0].isIntersecting;
-        if(visible) arrancar();
+        /* Se vuelve a medir al entrar en pantalla: la primera medida puede
+           haber caído antes de que el lienzo tuviera tamaño, y de ahí salía
+           lo de «se quedan en cero». */
+        if(visible){ if(an < 8 || al < 8){ medir(); sembrar(); } arrancar(); }
       }, { threshold:.05 }).observe(lienzo);
     }else{ visible = true; arrancar(); }
 
@@ -205,7 +300,11 @@
       const r = lienzo.getBoundingClientRect();
       raton = { x:e.clientX - r.left, y:e.clientY - r.top };
     }, { passive:true });
-    lienzo.addEventListener('pointerleave', () => { raton = null; }, { passive:true });
+    /* En táctil no hay `pointerleave` al levantar el dedo: el puntero deja de
+       existir sin salir de nada. Sin esto, la última posición del dedo se
+       quedaba tirando de las partículas para siempre. */
+    for(const ev of ['pointerleave', 'pointerup', 'pointercancel'])
+      lienzo.addEventListener(ev, () => { raton = null; }, { passive:true });
 
     let tiempoMedida;
     addEventListener('resize', () => {
