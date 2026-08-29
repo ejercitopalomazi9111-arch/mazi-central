@@ -331,6 +331,59 @@ console.log('\n── las piezas ──');
   await pg.close(); await ctx.close();
 }
 
+/* ══ LA CONSOLA · que sea una herramienta y no un adorno ═════════════════ */
+console.log('\n── la consola ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:1280, height:900 } });
+  const { pg, err } = await nuevaPagina(ctx);
+
+  ok(await pg.evaluate(() => document.querySelector('[data-consola]').dataset.abierta === 'no'),
+     'nace apagada, como pide el apartado 121');
+
+  /* El atajo de teclado, y que NO se dispare escribiendo: un atajo de una
+     letra dentro de un campo de texto es un campo que no se puede usar. */
+  await pg.click('[data-form] input[name="nombre"]');
+  await pg.keyboard.type('david');
+  ok(await pg.inputValue('[data-form] input[name="nombre"]') === 'david',
+     'la «d» del atajo se puede escribir dentro de un campo');
+  ok(await pg.evaluate(() => document.querySelector('[data-consola]').dataset.abierta === 'no'),
+     'y ahí el atajo no la abre');
+
+  await pg.evaluate(() => document.activeElement.blur());
+  await pg.keyboard.press('d');
+  await pg.waitForTimeout(350);
+  ok(await pg.evaluate(() => document.querySelector('[data-consola]').dataset.abierta === 'si'),
+     'fuera de un campo, la «d» sí la abre');
+
+  /* Y que MIDA: los fps tienen que dejar de ser un guion. */
+  await pg.locator('[data-lienzo]').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(1200);
+  const lect = await pg.evaluate(() => ({
+    fps: document.querySelector('[data-c-fps]').textContent,
+    nodos: Number(document.querySelector('[data-c-nodos]').textContent),
+  }));
+  ok(Number(lect.fps) > 0, `el monitor mide de verdad (${lect.fps} fps)`);
+  ok(lect.nodos > 100, `y cuenta los nodos (${lect.nodos})`);
+
+  /* El probador mete la MISMA página en un marco, y dentro del marco la
+     consola no existe: si existiera, se abriría dentro de sí misma. */
+  await pg.click('[data-probador]');
+  await pg.waitForTimeout(1400);
+  const marco = pg.frameLocator('[data-marco]');
+  ok(await marco.locator('h1').count() === 1, 'el probador carga la página dentro del marco');
+  ok(await marco.locator('[data-consola-bt]').evaluate(e => getComputedStyle(e).display) === 'none',
+     'y dentro del marco la consola se esconde, para que no se abra dentro de sí misma');
+  await pg.keyboard.press('Escape');
+  await pg.waitForTimeout(300);
+  ok(await pg.evaluate(() => document.querySelector('[data-probador-caja]').hidden),
+     'Escape cierra el probador');
+  ok(await pg.evaluate(() => !document.querySelector('[data-marco]').getAttribute('src')),
+     'y descarga el marco al cerrarlo, en vez de dejar una copia animando detrás');
+
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
 /* ══ LO QUE LA PÁGINA PREDICA, LA PÁGINA LO CUMPLE ═══════════════════════
    La tarjeta 02 del relato dice «nunca opacidad sobre texto» y la 03 dice
    «sólo transform y opacity». Las dos estaban ROTAS en el CSS de al lado: el
@@ -436,12 +489,16 @@ console.log('\n── los números del tablero ──');
 
   /* 3 · el peso, sumando lo que el servidor entrega de verdad */
   const kb = await pg0.evaluate(async () => {
-    const archivos = ['', 'base.css', 'piezas.css', 'movimiento.css', 'lab.js', 'particulas.js'];
+    /* ⚠ LA LISTA NO SE ESCRIBE A MANO: SE LEE DEL DOCUMENTO. La tenía escrita
+       y se me quedó vieja en cuanto añadí un archivo — el peso salía 7 KB
+       bajo y la prueba señalaba al tablero cuando la equivocada era ella.
+       Preguntándole al documento qué hojas y qué scripts cargó, la lista no
+       puede desfasarse de la página. */
+    const urls = new Set([location.href]);
+    for(const l of document.querySelectorAll('link[rel="stylesheet"][href]')) urls.add(l.href);
+    for(const t of document.querySelectorAll('script[src]')) urls.add(t.src);
     let total = 0;
-    for(const f of archivos){
-      const r = await fetch(new URL(f, location.href));
-      total += (await r.arrayBuffer()).byteLength;
-    }
+    for(const u of urls) total += (await (await fetch(u)).arrayBuffer()).byteLength;
     return Math.round(total / 1024);
   });
   ok(Math.abs(kb - decl['Peso']) <= 3, `«${decl['Peso']} KB» y de verdad pesa ${kb} KB`);

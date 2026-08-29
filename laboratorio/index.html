@@ -333,7 +333,7 @@
     <div class="tablero">
       <div class="ficha medidor">
         <p class="rotulo">Responde al toque en</p>
-        <span class="dato dato--gordo" data-contar="53">53</span>
+        <span class="dato dato--gordo" data-contar="62">62</span>
         <small>lugares. Los cuenta la prueba, uno por uno</small>
       </div>
       <div class="ficha medidor">
@@ -343,7 +343,7 @@
       </div>
       <div class="ficha medidor">
         <p class="rotulo">Peso</p>
-        <span class="dato dato--gordo" data-contar="113">113<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="128">128<span class="unidad">KB</span></span>
         <small>todo el laboratorio, sin comprimir</small>
       </div>
       <div class="ficha medidor">
@@ -556,6 +556,57 @@
   <button class="bt" type="button" data-cerrar-hoja>Cerrar</button>
 </div>
 
+<!-- ══ LA CONSOLA · apartados 120, 121 y 122 ═══════════════════════════════
+     Modo depuración, monitor de rendimiento y probador de anchos. Es lo que
+     convierte esto de un catálogo en una herramienta: hasta aquí la página se
+     miraba, de aquí en adelante se opera.
+
+     Nace APAGADA porque el curso lo pide (121: «no debe estar activo
+     permanentemente en producción») y porque un monitor encendido siempre
+     cuesta fotogramas justo cuando se están midiendo fotogramas.
+
+     Va en el HTML y no la crea el script: así existe el botón aunque el JS
+     tarde, y el atajo de teclado se anuncia desde el primer píxel. -->
+<button class="consola-bt" type="button" data-consola-bt
+        aria-expanded="false" aria-controls="consola">
+  Consola <kbd>D</kbd>
+</button>
+
+<aside class="consola" id="consola" data-consola data-abierta="no" aria-label="Consola del banco">
+  <dl>
+    <dt>fps</dt>              <dd data-c-fps>—</dd>
+    <dt>nodos</dt>            <dd data-c-nodos>—</dd>
+    <dt>ventana</dt>          <dd data-c-ventana>—</dd>
+    <dt>cursor</dt>           <dd data-c-cursor>—</dd>
+    <dt>scroll</dt>           <dd data-c-scroll>—</dd>
+    <dt>animando</dt>         <dd data-c-anim>—</dd>
+  </dl>
+
+  <h4>Depuración</h4>
+  <p class="fila">
+    <button class="pastilla" type="button" data-cajas aria-pressed="false">ver cajas</button>
+    <button class="pastilla" type="button" data-probador aria-pressed="false">anchos</button>
+  </p>
+</aside>
+
+<!-- El probador mete la MISMA página en un marco. Es la única forma honesta de
+     probar un ancho: encoger un contenedor no cambia las media queries y
+     enseñaría un diseño que en ese teléfono no existe. -->
+<div class="probador" data-probador-caja data-abierto="no" role="dialog"
+     aria-modal="true" aria-label="Probador de anchos" hidden>
+  <div class="probador-barra">
+    <button class="pastilla" type="button" data-ancho="375"  aria-pressed="false">375</button>
+    <button class="pastilla" type="button" data-ancho="768"  aria-pressed="true">768</button>
+    <button class="pastilla" type="button" data-ancho="1024" aria-pressed="false">1024</button>
+    <button class="pastilla" type="button" data-ancho="1440" aria-pressed="false">1440</button>
+    <button class="pastilla" type="button" data-ancho="1920" aria-pressed="false">1920</button>
+    <span class="probador-medida">a escala <b data-escala>100%</b> · <b data-ancho-actual>768</b>px</span>
+    <button class="bt bt--fantasma" type="button" data-cerrar-probador
+            style="min-height:44px">Cerrar</button>
+  </div>
+  <div class="probador-lienzo"><iframe data-marco title="La página a otro ancho"></iframe></div>
+</div>
+
 <div class="avisos" data-avisos aria-live="polite" aria-relevant="additions"></div>
 
 <footer class="pie-lab">
@@ -571,7 +622,10 @@
   </div>
 </footer>
 
+<!-- `lab.js` primero: es quien define el ciclo compartido al que la consola
+     se engancha. Los dos son `defer`, así que corren en este orden. -->
 <script src="lab.js" defer></script>
+<script src="consola.js" defer></script>
 <script src="particulas.js" defer></script>
 </body>
 </html>

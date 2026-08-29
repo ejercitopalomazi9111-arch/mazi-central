@@ -336,3 +336,90 @@ dialog::backdrop{ background:#000000a8; }
   content:''; display:inline-block; width:7px; height:7px;
   background:var(--senal); margin-left:.5rem; vertical-align:middle;
 }
+
+/* ══ LA CONSOLA · apartados 120, 121 y 122 ═════════════════════════════════
+   Modo depuración, monitor de rendimiento y probador de anchos. Es lo que
+   convierte esto de un CATÁLOGO en una HERRAMIENTA: hasta aquí la página se
+   miraba; a partir de aquí se opera.
+
+   Nace APAGADA y el curso lo pide así (apartado 121: «no debe estar activo
+   permanentemente en producción»). Un monitor encendido siempre cuesta
+   fotogramas justo cuando se están midiendo fotogramas — el instrumento
+   alterando lo que mide. */
+.consola-bt{
+  position:fixed; left:1rem; bottom:1rem; z-index:90;
+  min-height:44px; padding:0 .9rem;
+  background:var(--fondo-3); color:var(--texto);
+  border:1px solid var(--raya-fuerte); border-radius:var(--r);
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.08em;
+  text-transform:uppercase; cursor:pointer;
+  display:inline-flex; align-items:center; gap:.5rem;
+  transition:background var(--micro) var(--curva-suave),
+             border-color var(--micro) var(--curva-suave);
+}
+.consola-bt kbd{
+  font-family:var(--mono); font-size:.66rem; color:var(--texto-3);
+  border:1px solid var(--raya); border-radius:2px; padding:0 .3rem;
+}
+.consola-bt[aria-expanded="true"]{ border-color:var(--senal); }
+.consola-bt:focus-visible{ outline:2px solid var(--senal-texto); outline-offset:2px; }
+
+.consola{
+  position:fixed; left:1rem; bottom:calc(1rem + 44px + .5rem); z-index:90;
+  width:min(20rem, calc(100vw - 2rem));
+  background:var(--fondo-2); border:1px solid var(--raya-fuerte);
+  border-radius:var(--r); padding:.9rem;
+  font-family:var(--mono); font-size:.72rem;
+  /* Entra deslizándose, sin desvanecer: adentro hay puros números y los
+     números a media tinta no se leen. */
+  transform:translateY(8px); visibility:hidden;
+  transition:transform var(--corta) var(--curva-entrada),
+             visibility 0s linear var(--corta);
+}
+.consola[data-abierta="si"]{
+  transform:translateY(0); visibility:visible;
+  transition:transform var(--corta) var(--curva-salida), visibility 0s;
+}
+.consola dl{ display:grid; grid-template-columns:auto 1fr; gap:.25rem .8rem; margin:0 0 .8rem; }
+.consola dt{ color:var(--texto-3); letter-spacing:.08em; text-transform:uppercase; font-size:.66rem; }
+.consola dd{ margin:0; color:var(--medida); font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
+.consola h4{
+  margin:.9rem 0 .5rem; font-size:.66rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--texto-3); font-weight:500;
+}
+.consola .fila{ display:flex; flex-wrap:wrap; gap:.3rem; }
+
+/* ── modo cajas (apartado 120) ────────────────────────────────────────────
+   Un contorno sobre TODO. Se pinta con `outline` y no con `border` a
+   propósito: el borde entra en el cálculo de la caja y movería la página
+   entera al encenderlo, o sea que el modo de depurar cambiaría justo lo que
+   se está depurando. `outline` se dibuja encima y no ocupa espacio. */
+html[data-cajas] body *{ outline:1px solid #AC27FF55; }
+html[data-cajas] body *:hover{ outline:1px solid var(--senal); }
+
+/* ── el probador de anchos (apartado 122) ─────────────────────────────────
+   Un <iframe> con la MISMA página dentro. Es la única forma honesta de
+   probar un ancho: encoger un div no cambia las media queries, así que
+   enseñaría un layout que en ese teléfono no existe. El marco sí tiene su
+   propio viewport y las consultas responden de verdad. */
+.probador{
+  position:fixed; inset:0; z-index:95; display:none;
+  background:color-mix(in srgb, var(--fondo) 92%, transparent);
+  padding:1rem; overflow:auto;
+}
+.probador[data-abierto="si"]{ display:grid; grid-template-rows:auto 1fr; gap:1rem; }
+.probador-barra{ display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
+.probador-lienzo{ display:grid; place-items:start center; overflow:auto; }
+.probador iframe{
+  border:1px solid var(--raya-fuerte); background:var(--fondo);
+  transform-origin:50% 0; display:block;
+}
+.probador-medida{
+  font-family:var(--mono); font-size:.72rem; color:var(--texto-3);
+  margin-left:auto;
+}
+.probador-medida b{ color:var(--medida); }
+
+/* Dentro del marco la consola sobra: se esconde con `?marco=1`, que además
+   evita que el probador se abra dentro de sí mismo hasta el infinito. */
+html[data-marco] .consola-bt, html[data-marco] .consola, html[data-marco] .probador{ display:none; }
