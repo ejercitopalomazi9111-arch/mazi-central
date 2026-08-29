@@ -180,6 +180,14 @@
      único; y aquí lo redondo tiene dueño: la estrella y el arco de la
      paloma. Un documento impreso no tiene esquinas redondeadas. */
   --dedo:48px;
+
+  /* ── SITIO PARA LA BARRA DE ABAJO ──────────────────────────────────────
+     Vale 0 en escritorio, donde la barra no existe. Todo lo que vive fijo
+     abajo —el botón de la consola, los avisos, la hoja— se levanta sumando
+     ESTE token, y por eso están en un solo sitio: la primera versión de la
+     barra tapó el botón de la consola porque cada elemento fijo llevaba su
+     propio número escrito a mano. */
+  --baja:0px;
 }
 
 /* ── EL OTRO LADO ─────────────────────────────────────────────────────────
@@ -541,10 +549,83 @@ html:not(.js) .cinta-vias a[aria-current="true"]{ border-bottom-color:var(--acen
   position:absolute; left:0; bottom:-1px; height:2px; width:100%;
   background:var(--acento); transform-origin:0 50%; transform:scaleX(0);
 }
+/* ── EN ESCRITORIO EL RAIL NO EXISTE ──────────────────────────────────────
+   `display:contents` = no genera caja: los enlaces siguen siendo hijos de la
+   fila y la cabecera queda igual que antes de que esto existiera. */
+.rail{ display:contents; }
+.rail-flecha{ display:none; }
+
+/* ══ TELÉFONO · LA NAVEGACIÓN BAJA, NO SE ESCONDE ═════════════════════════
+   Aquí decía `display:none` sobre los diez enlaces, con la excusa de que «no
+   caben». Eso no es diseño para teléfono: es el de escritorio con el paso
+   extra de BORRAR la navegación, y deja al teléfono —que es donde de verdad
+   se lee esto— sin manera de saltar de una sección a otra.
+
+   Lo que se hace en su lugar es lo que pide el curso en el apartado 54:
+   navegación INFERIOR. La misma lista, movida al alcance del pulgar, que es
+   la mitad de la pantalla que la mano alcanza sin recolocar el aparato.
+
+   Tres decisiones, y las tres tienen porqué:
+
+   1 · Es el MISMO HTML. Una segunda navegación «para móvil» son dos listas
+       que se desincronizan en cuanto alguien añade una sección — y quien la
+       añada va a tocar la de arriba, porque es la que ve.
+   2 · Los diez enlaces se deslizan de lado en vez de encogerse hasta caber:
+       encogerlos rompe el objetivo táctil de 44 px, que es la regla que más
+       veces ha reprobado en este banco.
+   3 · Las flechas son el atajo real: con una lista que se desliza, ir a la
+       sección de al lado costaba buscarla. Con ellas es un toque, y quedan a
+       los lados —donde cae el pulgar— y no en medio.
+   ═══════════════════════════════════════════════════════════════════════ */
 @media (max-width:640px){
-  .cinta-vias{ display:none; }      /* diez enlaces no caben; el índice está
-      en el documento y el botón de volver arriba resuelve el regreso */
+  :root{ --baja:calc(56px + env(safe-area-inset-bottom, 0px)); }
   .cinta-fila{ height:52px; }
+  body{ padding-bottom:calc(6rem + var(--baja)); }
+
+  .rail{
+    display:flex; align-items:stretch;
+    position:fixed; inset:auto 0 0 0; z-index:72;
+    height:var(--baja);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+    background:var(--fondo);
+    border-top:1px solid var(--raya-fuerte);
+  }
+  .cinta-vias{
+    flex:1 1 auto; margin-left:0; gap:0;
+    /* Sin esto el rail rebota contra el documento al llegar a un extremo. */
+    overscroll-behavior-x:contain;
+    scroll-behavior:smooth;
+  }
+  .cinta-vias a{
+    flex:0 0 auto; padding:0 .85rem; min-height:56px;
+    border-bottom:0;                 /* el indicador va ARRIBA, ver abajo */
+  }
+  /* La línea va en el BORDE SUPERIOR de la barra: abajo del todo la tapa el
+     gesto de inicio del teléfono, y además una barra inferior se lee como
+     pestañas —el indicador pertenece al lado por el que entra el contenido. */
+  .cinta-guia{ bottom:auto; top:0; }
+
+  .rail-flecha{
+    display:flex; align-items:center; justify-content:center;
+    flex:0 0 auto; width:44px; min-height:56px;
+    background:none; border:0; color:var(--texto);
+    font-size:1.5rem; line-height:1; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:transform var(--micro) var(--curva-suave);
+  }
+  .rail-flecha:active{ transform:scale(.9); }
+  /* Apagada con COLOR y no con `opacity`: bajarle la opacidad a un glifo le
+     baja el contraste a un número que nadie calculó. `--texto-3` está medido
+     contra los dos fondos. */
+  .rail-flecha[disabled]{ color:var(--texto-3); cursor:default; }
+  .rail-flecha:focus-visible{ outline:2px solid var(--acento); outline-offset:-3px; }
+  /* Sin JavaScript no hay quién las mueva, y un control muerto se lee como
+     roto. La lista de al lado sigue funcionando sola: son enlaces. */
+  html:not(.js) .rail-flecha{ display:none; }
+}
+@media (max-width:640px) and (prefers-reduced-motion:reduce){
+  .cinta-vias{ scroll-behavior:auto; }
+  .rail-flecha:active{ transform:none; }
 }
 
 /* ── LO QUE SE TOCA ───────────────────────────────────────────────────────

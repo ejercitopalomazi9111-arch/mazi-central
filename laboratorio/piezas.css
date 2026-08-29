@@ -177,7 +177,10 @@ dialog::backdrop{ background:#01010199; }
 .hoja{
   position:fixed; inset:auto 0 0 0; z-index:70;
   background:var(--fondo); border-top:3px solid var(--acento);
-  padding:1.4rem 1.4rem 2rem;
+  /* El hueco de abajo cuenta con la barra de navegación del teléfono: la
+     hoja sube DETRÁS de ella —la barra no se va porque se abra una hoja— y
+     sin este sitio su último renglón queda debajo, ilegible e intocable. */
+  padding:1.4rem 1.4rem calc(2rem + var(--baja));
   transform:translateY(101%);
   transition:transform var(--media) var(--curva-salida);
 }
@@ -209,7 +212,7 @@ dialog::backdrop{ background:#01010199; }
    que era otro de los diez tics — y sin desvanecer, porque llevan texto:
    entran deslizándose desde fuera del borde, que no necesita opacidad. */
 .avisos{
-  position:fixed; right:1rem; bottom:1rem; z-index:80;
+  position:fixed; right:1rem; bottom:calc(1rem + var(--baja)); z-index:80;
   display:flex; flex-direction:column; gap:.6rem; align-items:flex-end;
   pointer-events:none;
 }
@@ -396,7 +399,7 @@ dialog::backdrop{ background:#01010199; }
    salía BLANCO — un rectángulo de papel flotando sobre una página oscura, que
    es justo lo que no debe hacer un control. Va con el acento en los dos temas. */
 .consola-bt{
-  position:fixed; left:1rem; bottom:1rem; z-index:90;
+  position:fixed; left:1rem; bottom:calc(1rem + var(--baja)); z-index:90;
   min-height:44px; padding:0 .9rem;
   background:var(--acento); color:#FFF;
   border:0; border-radius:0;
@@ -414,7 +417,7 @@ dialog::backdrop{ background:#01010199; }
 .consola-bt:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 
 .consola{
-  position:fixed; left:1rem; bottom:calc(1rem + 44px + .6rem); z-index:90;
+  position:fixed; left:1rem; bottom:calc(1rem + 44px + .6rem + var(--baja)); z-index:90;
   width:min(19rem, calc(100vw - 2rem));
   background:var(--texto); color:var(--fondo);
   padding:1rem;

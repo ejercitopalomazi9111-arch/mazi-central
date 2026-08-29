@@ -749,6 +749,185 @@ console.log('\n── con el dedo ──');
   await pg.close(); await ctx.close();
 }
 
+/* ══ 4-bis · LA NAVEGACIÓN DE TELÉFONO ═══════════════════════════════════
+   Ésta nace de mi propia revisión, apartado 54 del curso: «no quiero desktop
+   reducido, quiero rediseño real. Mobile: bottom navigation». Lo que había
+   era `display:none` sobre los diez enlaces, o sea el diseño de escritorio
+   con el paso extra de BORRAR la navegación.
+
+   ⚠ Y POR ESO LA PRIMERA COMPROBACIÓN ES QUE LOS ENLACES SE VEAN. Una prueba
+   que sólo mirara «existe la barra» pasaría con la barra escondida, que es
+   exactamente el defecto que se está arreglando.
+   ═══════════════════════════════════════════════════════════════════════ */
+console.log('\n── la navegación de abajo, en teléfono ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:390, height:844 }, hasTouch:true, isMobile:true });
+  const { pg, err } = await nuevaPagina(ctx);
+
+  /* ⚠ TODO LO QUE SE MIDA AQUÍ TIENE QUE ESPERAR A QUE SE PARE. `html` lleva
+     `scroll-behavior:smooth` y el rail también: nada de lo que se pide llega
+     al sitio en el mismo cuadro. Dos comprobaciones de este bloque reprobaron
+     por medir a medio viaje —una de ellas pasando y fallando en corridas
+     seguidas, que es lo peor que puede hacer una prueba—. Se espera a que dos
+     lecturas seguidas den lo mismo, que es lo único que significa «se paró». */
+  const quieto = async () => {
+    /* ⚠ LOS 200 ms DE ANTES NO SON UN PARCHE, SON EL DEFECTO DE LA PRIMERA
+       VERSIÓN. «Dos lecturas iguales» también es cierto ANTES de que el viaje
+       empiece: entre el clic y el primer cuadro del desplazamiento suave no se
+       ha movido nada, y la espera se daba por cumplida ahí mismo. Salía
+       «anterior sube (604 → 604)» — la flecha funcionaba, la prueba miraba
+       demasiado pronto. Se le da tiempo a arrancar y DESPUÉS se espera a que
+       se pare; así un 604 → 604 significa de verdad que no se movió. */
+    await pg.waitForTimeout(200);
+    await pg.waitForFunction(() => {
+      const lista = document.querySelector('.cinta-vias');
+      const ahora = Math.round(scrollY) + ':' + Math.round(lista.scrollLeft);
+      const igual = window.__quieto === ahora;
+      window.__quieto = ahora;
+      return igual;
+    }, null, { timeout: 6000, polling: 120 });
+  };
+
+  const barra = await pg.evaluate(() => {
+    const rail = document.querySelector('.rail');
+    const r = rail.getBoundingClientRect();
+    const s = getComputedStyle(rail);
+    const enlaces = [...document.querySelectorAll('.cinta-vias a')];
+    const cajas = enlaces.map(a => a.getBoundingClientRect());
+    /* Tocable de verdad: quien recibe el toque en el centro del enlace es el
+       enlace. `isVisible` no lo contesta —un elemento tapado sigue siendo
+       «visible»— y ya me mordió una vez con la lupa de la sala. */
+    const tocables = enlaces.filter((a, i) => {
+      const c = cajas[i];
+      if(c.width < 1 || c.left > innerWidth - 1 || c.right < 1) return false;
+      const q = document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2);
+      return q === a || a.contains(q);
+    }).length;
+    return {
+      fija: s.position === 'fixed',
+      abajo: Math.round(innerHeight - r.bottom),
+      alto: Math.round(r.height),
+      enlaces: enlaces.length,
+      pintados: cajas.filter(c => c.width > 0 && c.height > 0).length,
+      tocables,
+      bajos: cajas.filter(c => Math.round(c.height) < 44).length,
+      /* La lista es más ancha que la pantalla: por eso se desliza. */
+      desliza: document.querySelector('.cinta-vias').scrollWidth >
+               document.querySelector('.cinta-vias').clientWidth + 1,
+    };
+  });
+  ok(barra.pintados === 10, `los diez enlaces se PINTAN en teléfono (${barra.pintados})`);
+  ok(barra.fija && barra.abajo === 0, `y viven pegados al borde de abajo (${barra.abajo}px del fondo)`);
+  ok(barra.alto >= 44, `la barra da altura de dedo (${barra.alto}px)`);
+  ok(barra.bajos === 0, `ningún enlace baja de 44 px de alto (${barra.bajos} bajos)`);
+  ok(barra.tocables > 0, `y los que están en pantalla reciben el toque (${barra.tocables})`);
+  ok(barra.desliza, 'la lista se desliza de lado en vez de encogerse hasta no caber');
+
+  /* Las flechas: el atajo a la sección de al lado. */
+  const estado = () => pg.evaluate(() => ({
+    atras: document.querySelector('.rail-flecha[data-ir="-1"]').disabled,
+    adelante: document.querySelector('.rail-flecha[data-ir="1"]').disabled,
+    donde: (document.querySelector('.cinta-vias a[aria-current="true"]') || {}).hash || null,
+    y: Math.round(scrollY),
+  }));
+  const arriba = await estado();
+  ok(arriba.atras && !arriba.adelante,
+     'en el principio del documento «anterior» está apagada y «siguiente» no');
+
+  await pg.click('.rail-flecha[data-ir="1"]');
+  await quieto();
+  const uno = await estado();
+  ok(uno.y > arriba.y, `«siguiente» baja el documento (${arriba.y} → ${uno.y})`);
+  ok(uno.donde === '#gramatica', `y deja marcada la sección a la que llevó (${uno.donde})`);
+  ok(!uno.atras, 'y ya se puede volver');
+
+  await pg.click('.rail-flecha[data-ir="-1"]');
+  await quieto();
+  const dos = await estado();
+  ok(dos.y < uno.y, `«anterior» sube (${uno.y} → ${dos.y})`);
+
+  /* El rail se sigue solo: la sección donde estás tiene que VERSE en la
+     barra. Una línea que marca algo fuera de pantalla no marca nada. */
+  await pg.evaluate(() => document.getElementById('vacios').scrollIntoView());
+  await quieto();
+  const seVeElActivo = await pg.evaluate(() => {
+    const a = document.querySelector('.cinta-vias a[aria-current="true"]');
+    if(!a) return { hay:false };
+    const c = a.getBoundingClientRect(), r = document.querySelector('.cinta-vias').getBoundingClientRect();
+    /* ⚠ EL `c.width > 0` NO SOBRA. Con la barra escondida —el defecto que
+       esto vigila— el enlace mide 0×0 en el origen y «está dentro» del rail,
+       que también mide 0: la comprobación pasaba por vacía. Lo vi al correr
+       la prueba CONTRA el defecto, que es la única manera de verlo. */
+    return { hay:true, cual:a.hash,
+             dentro: c.width > 0 && c.left >= r.left - 1 && c.right <= r.right + 1 };
+  });
+  ok(seVeElActivo.hay && seVeElActivo.dentro,
+     `al llegar a la última sección, su enlace se ve dentro del rail (${seVeElActivo.cual})`);
+
+  /* Y lo de siempre, que es lo que más se rompe al añadir algo fijo abajo. */
+  await pg.evaluate(() => scrollTo(0, document.body.scrollHeight));
+  await quieto();
+  const encima = await pg.evaluate(() => {
+    const r = document.querySelector('.rail').getBoundingClientRect();
+    const pie = document.querySelector('.pie-lab').getBoundingClientRect();
+    const bt = document.querySelector('.consola-bt').getBoundingClientRect();
+    /* Encimarse es cruzarse por los DOS lados: un elemento que quedó fuera de
+       la pantalla también está «por debajo del borde de arriba» de la barra. */
+    const cruza = (c) => c.bottom > r.top + 1 && c.top < r.bottom - 1;
+    return { pie: cruza(pie), consola: cruza(bt),
+             piePor: Math.round(r.top - pie.bottom) };
+  });
+  ok(!encima.pie, `al final del documento la barra no tapa el pie (${encima.piePor}px de aire)`);
+  ok(!encima.consola, 'ni al botón de la consola, que también vive fijo abajo');
+
+  /* Girar el aparato: la línea tiene que seguir cuadrando con su enlace.
+
+     ⚠ HONESTAMENTE: ESTA COMPROBACIÓN NO PUEDE REPROBAR HOY, y se dice porque
+     una prueba que pasa igual con y sin el arreglo enseña a no hacerle caso.
+     La escribí para un defecto que razoné —la guía quedándose en la medida
+     vieja— y que al correrla contra el código sin arreglar resultó no existir:
+     `offsetLeft` es relativo al contenido del rail y ese contenido no se
+     re-maqueta al cambiar el ancho. El arreglo se quitó; la comprobación se
+     queda porque la invariante sí importa y deja de cumplirse el día que
+     alguien haga que el rail no sea el contenedor de referencia. */
+  await pg.setViewportSize({ width: 640, height: 360 });
+  await quieto();
+  const girado = await pg.evaluate(() => {
+    const a = document.querySelector('.cinta-vias a[aria-current="true"]');
+    if(!a) return { hay:false };
+    const m = new DOMMatrixReadOnly(getComputedStyle(document.querySelector('[data-guia]')).transform);
+    return { hay:true, x:Math.round(m.m41), escala:Math.round(m.a),
+             izq:Math.round(a.offsetLeft), ancho:Math.round(a.offsetWidth) };
+  });
+  ok(girado.hay && Math.abs(girado.x - girado.izq) <= 1 && Math.abs(girado.escala - girado.ancho) <= 1,
+     `al girar el aparato la línea se vuelve a medir (x ${girado.x} vs ${girado.izq}, ancho ${girado.escala} vs ${girado.ancho})`);
+
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
+/* Y en escritorio NO existe: el envoltorio lleva `display:contents`, así que
+   la cabecera tiene que quedar exactamente como estaba. */
+{
+  const ctx = await b.newContext({ viewport:{ width:1440, height:900 } });
+  const { pg } = await nuevaPagina(ctx);
+  const esc = await pg.evaluate(() => {
+    const rail = document.querySelector('.rail');
+    const nav = document.querySelector('.cinta-vias').getBoundingClientRect();
+    const cinta = document.querySelector('.cinta').getBoundingClientRect();
+    return {
+      contenido: getComputedStyle(rail).display === 'contents',
+      flechas: [...document.querySelectorAll('.rail-flecha')]
+        .filter(f => f.getBoundingClientRect().width > 0).length,
+      navEnLaCabecera: nav.top >= cinta.top - 1 && nav.bottom <= cinta.bottom + 1,
+    };
+  });
+  ok(esc.contenido, 'en escritorio el envoltorio no pinta caja (`display:contents`)');
+  ok(esc.flechas === 0, `y las flechas no se ven (${esc.flechas})`);
+  ok(esc.navEnLaCabecera, 'los enlaces siguen dentro de la cabecera, como siempre');
+  await pg.close(); await ctx.close();
+}
+
 /* ══ 5 · LOS NÚMEROS DEL TABLERO SON CIERTOS ═════════════════════════════
    Ésta es la prueba que le da derecho a existir al tablero. Los primeros
    números que puse me los inventé —«48 piezas»— y un banco de pruebas que
@@ -873,6 +1052,13 @@ console.log('\n── sin JavaScript ──');
       const r = e.getBoundingClientRect();
       return r.height > 0 && getComputedStyle(e).visibility === 'hidden';
     }).length,
+    /* La barra de abajo sin script: los enlaces sirven —son enlaces— y las
+       flechas NO se pintan, porque nadie puede moverlas. Un control muerto se
+       lee como roto, y quien lo toque va a pensar que la página falló. */
+    enlacesAbajo: [...document.querySelectorAll('.cinta-vias a')]
+      .filter(a => a.getBoundingClientRect().width > 0).length,
+    flechasAbajo: [...document.querySelectorAll('.rail-flecha')]
+      .filter(f => f.getBoundingClientRect().width > 0).length,
   }));
   ok(r.quieto, 'el interruptor se queda puesto: nada de movimiento');
   ok(r.titulos === 10, `las diez secciones se leen (${r.titulos})`);
@@ -884,6 +1070,8 @@ console.log('\n── sin JavaScript ──');
   ok(r.numeros.every(x => x.escrito.replace(/\D/g,'') === x.debe.replace(/\D/g,'')),
      `los números del tablero ya están escritos (${r.numeros.map(x => x.escrito).join(', ')})`);
   ok(r.ocultos === 0, 'nada queda invisible');
+  ok(r.enlacesAbajo === 10, `sin script la barra de abajo sigue sirviendo (${r.enlacesAbajo} enlaces)`);
+  ok(r.flechasAbajo === 0, `y las flechas no se pintan, que no habría quién las moviera (${r.flechasAbajo})`);
   await pg.screenshot({ path:`${SALIDA}/lab-sinjs.png`, fullPage:false });
   await pg.close(); await ctx.close();
 }

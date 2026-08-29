@@ -111,6 +111,7 @@
     }
     vias.forEach((a, i) => a.setAttribute('aria-current', i === actual ? 'true' : 'false'));
     moverGuia(actual == null ? null : vias[actual]);
+    ponerFlechas(actual == null ? 0 : actual + 1);
     return false;                     /* una pasada por evento, y se duerme */
   }
   /* ── EL SUBRAYADO QUE SE DESLIZA ────────────────────────────────────────
@@ -125,16 +126,76 @@
      `scaleX` sobre un elemento de 1 px: así el ancho es el propio factor y no
      hay que animar `width`, que recalcularía la maqueta en cada fotograma. */
   const guia = $('[data-guia]');
+  const lista = $('.cinta-vias');
   let guiaEn = null;
   function moverGuia(a){
     if(!guia || a === guiaEn) return;          /* sin cambio, sin trabajo */
     guiaEn = a;
     if(!a){ guia.style.transform = 'translateX(0) scaleX(0)'; return; }
     guia.style.transform = `translateX(${a.offsetLeft}px) scaleX(${a.offsetWidth})`;
+    seguirRail(a);
   }
+  /* ── EL RAIL SE SIGUE SOLO ──────────────────────────────────────────────
+     En teléfono la lista es más ancha que la pantalla. Sin esto, la sección
+     donde estás puede quedar fuera del rail: la línea la marca, pero marca
+     algo que no se ve, que es peor que no marcar nada.
+
+     El desplazamiento se le pide al CONTENEDOR, no con `scrollIntoView`: ése
+     puede mover también la página, y aquí se está leyendo. `offsetLeft` no
+     cambia al desplazar el rail —es relativo a su contenido—, así que la guía
+     sigue puesta sin recalcularla.
+
+     La suavidad la decide el CSS (`scroll-behavior`), que ya sabe apagarla
+     con «menos movimiento». Escribirla también aquí serían dos sitios
+     decidiendo lo mismo, y uno de los dos se olvida. */
+  function seguirRail(a){
+    if(!lista || lista.scrollWidth <= lista.clientWidth + 1) return;
+    lista.scrollLeft = Math.max(0, a.offsetLeft - (lista.clientWidth - a.offsetWidth) / 2);
+  }
+
+  /* ── LAS FLECHAS DE LA BARRA DE ABAJO ───────────────────────────────────
+     Sólo se ven en teléfono (lo decide el CSS), pero se enganchan siempre:
+     un `if` de ancho aquí se desincroniza con la media query el día que
+     alguien mueva los 640 px, y además el teléfono se puede girar.
+
+     Las paradas son las once: la portada y las diez secciones. La portada NO
+     está en la lista de enlaces —ir al principio es `#arriba`— pero sí es una
+     parada, porque «anterior» desde la primera sección tiene que llevar a
+     algún sitio y ese sitio es el principio del documento. */
+  const paradas = [$('#portada'), ...metas].filter(Boolean);
+  const flechaAtras = $('.rail-flecha[data-ir="-1"]');
+  const flechaAdelante = $('.rail-flecha[data-ir="1"]');
+  let parada = 0;
+  function ponerFlechas(i){
+    parada = Math.min(paradas.length - 1, Math.max(0, i));
+    if(flechaAtras) flechaAtras.disabled = parada === 0;
+    if(flechaAdelante) flechaAdelante.disabled = parada === paradas.length - 1;
+  }
+  $$('.rail-flecha').forEach(f => f.addEventListener('click', () => {
+    const i = Math.min(paradas.length - 1, Math.max(0, parada + (+f.dataset.ir)));
+    paradas[i].scrollIntoView({ behavior: menos.matches ? 'auto' : 'smooth', block:'start' });
+    /* No se toca `parada` a mano: la manda el scroll, que es quien sabe dónde
+       se acabó parando. Adelantarla aquí la desincroniza si el viaje se
+       interrumpe —y en un teléfono se interrumpe con el dedo. */
+  }));
 
   function alScroll(){ if(!pedidoScroll){ pedidoScroll = true; sumar(medirScroll); } }
   addEventListener('scroll', alScroll, { passive:true });
+  /* ⚠ AQUÍ HUBO UN ARREGLO Y SE QUITÓ, MEDIDO. Razoné que al cambiar de ancho
+     la guía se quedaría en la medida vieja: `moverGuia` se salta el trabajo
+     cuando le dan el mismo enlace —correcto al scrollear, porque no se ha
+     movido— y con el mismo enlace en una pantalla distinta eso sonaba a línea
+     descuadrada. Escribí `() => { guiaEn = null; alScroll(); }`.
+
+     No hacía nada. Comprobado a 380, 370 y 360 px en teléfono y a 1100, 900 y
+     800 en escritorio, con la misma sección activa a los dos lados del cambio:
+     la línea siguió cuadrando al píxel CON el arreglo y SIN él. La razón es que
+     `offsetLeft` es relativo al contenido del rail, y ese contenido no se
+     re-maqueta al estrechar la ventana —los diez enlaces miden lo que miden y
+     lo que cambia es cuánto se ve de ellos—.
+
+     Se queda escrito para que no se vuelva a añadir «por si acaso». La prueba
+     del giro sí se queda: comprueba la invariante, no este arreglo. */
   addEventListener('resize', alScroll, { passive:true });
   medirScroll();
 

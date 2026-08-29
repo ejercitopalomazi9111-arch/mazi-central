@@ -79,6 +79,14 @@
 <header class="cinta">
   <div class="caja cinta-fila">
     <span class="cinta-marca"><span aria-hidden="true"></span>Banco de pruebas</span>
+    <!-- ⚠ ESTE ENVOLTORIO NO PINTA NADA EN ESCRITORIO: lleva `display:contents`,
+         así que los enlaces siguen siendo hijos directos de la fila y la
+         cabecera se ve exactamente igual que antes. Abajo de 640 px se
+         convierte en la barra de navegación inferior. Es el mismo HTML
+         haciendo dos cosas, en vez de dos navegaciones que se contradicen. -->
+    <div class="rail">
+      <button class="rail-flecha" type="button" data-ir="-1"
+              aria-label="Sección anterior">‹</button>
     <nav class="cinta-vias" aria-label="Secciones">
       <a href="#gramatica">Gramática</a>
       <a href="#estados">Estados</a>
@@ -92,6 +100,9 @@
       <a href="#vacios">Vacíos</a>
       <i class="cinta-guia" data-guia aria-hidden="true"></i>
     </nav>
+      <button class="rail-flecha" type="button" data-ir="1"
+              aria-label="Sección siguiente">›</button>
+    </div>
     <span class="cinta-pct" data-pct aria-hidden="true">0%</span>
   </div>
   <div class="barra-scroll" data-barra></div>
@@ -401,7 +412,7 @@
     <div class="tablero">
       <div class="medidor">
         <p class="rotulo">Responde al toque en</p>
-        <span class="dato dato--gordo" data-contar="63">63</span>
+        <span class="dato dato--gordo" data-contar="65">65</span>
         <small>lugares. Los cuenta la prueba, uno por uno</small>
       </div>
       <div class="medidor">
@@ -411,7 +422,7 @@
       </div>
       <div class="medidor">
         <p class="rotulo">Peso de la página</p>
-        <span class="dato dato--gordo" data-contar="205">205<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="214">214<span class="unidad">KB</span></span>
         <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
       </div>
       <div class="medidor">
