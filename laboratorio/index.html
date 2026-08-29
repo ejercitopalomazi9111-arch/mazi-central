@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="es" data-quieto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El banco de pruebas · Grupo Mazi</title>
+<meta name="theme-color" content="#0B0B10">
+<meta name="description" content="Laboratorio de interfaz, movimiento e interacción. Cada pieza enseña sus propios números mientras se mueve.">
+
+<!--
+  EL BANCO DE PRUEBAS — laboratorio de interfaz, movimiento e interacción.
+
+  DE DÓNDE SALE. Carlos pidió un showcase: «que parezca hecho por un equipo de
+  UX + UI + motion + frontend», con una lista de 56 puntos.
+
+  LA DECISIÓN QUE LO DEFINE, y es una decisión, no un adorno: un showcase se
+  convierte solo en un desfile de efectos, cada sección más ruidosa que la
+  anterior y ninguna que explique nada. Eso se ve una vez.
+
+  Así que esto no es un desfile: es un BANCO DE PRUEBAS. Cada pieza que se
+  mueve ENSEÑA SUS NÚMEROS mientras se mueve — la duración, la curva, los
+  píxeles, los fotogramas por segundo. Es la única forma honesta de cumplir el
+  punto 6 del encargo («no digas que se mueve a la derecha, di exactamente qué
+  pasa»): los valores exactos están en la pantalla.
+
+  LO QUE NO SE USA: ni una librería, ni un `backdrop-filter`, ni una
+  tipografía de internet. Las tres cosas por la misma razón: cuestan algo que
+  se siente al tocar la página, y esto se juzga tocándolo.
+
+  SIN JAVASCRIPT la página se lee entera y quieta. Lo que necesita JS —las
+  partículas, el cronómetro, arrastrar— no aparece en vez de aparecer muerto.
+-->
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230B0B10'/><rect x='5' y='5' width='9' height='9' fill='%23AC27FF'/><rect x='18' y='18' width='9' height='9' fill='%233BE0AE'/></svg>">
+<!-- ⚠ EL TEMA SE PONE ANTES DEL PRIMER PINTADO, Y TIENE QUE SER AQUÍ.
+     `lab.js` va con `defer`, o sea que corre DESPUÉS de armar el documento: si
+     el tema se pusiera allá, quien lo tiene en oscuro vería la página nacer en
+     claro y desvanecerse al oscuro durante 1.8 segundos —que es lo que tarda
+     `--cine`, porque el cambio de tema va atado al recorrido de las cinco
+     pistas—. Un parpadeo de tema al cargar es de las cosas que se ven feas y
+     nadie sabe nombrar.
+
+     Son ocho líneas y van en línea a propósito: un archivo aparte volvería a
+     llegar tarde. El `try` no es adorno — `localStorage` truena en una ventana
+     privada, y el tema no puede depender de que se pueda guardar. -->
+<script>
+  (() => {
+    try{
+      const g = localStorage.getItem('banco-tema');
+      const claro = g ? g === 'claro' : matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.dataset.tema = claro ? 'claro' : 'oscuro';
+    }catch(e){
+      document.documentElement.dataset.tema = 'claro';
+    }
+    /* Marca que SÍ hay JavaScript, y va aquí y no en `lab.js` a propósito:
+       `lab.js` tiene `defer`, así que corre después de pintar y la página
+       parpadearía con la versión sin JS. Lo usa el subrayado de la cinta,
+       que sin JS vuelve a ser un borde por enlace: no se desliza, pero dice
+       dónde estás, y eso vale más que deslizarse. */
+    document.documentElement.classList.add('js');
+  })();
+</script>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="piezas.css">
+<link rel="stylesheet" href="movimiento.css">
+</head>
+<body id="arriba">
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<!-- ── LA CINTA · progreso del scroll (punto 10) ─────────────────────────
+     Barra y porcentaje. La barra se siente, el número se lee. La barra la
+     mueve el CSS con la línea de tiempo del scroll, sin un solo fotograma de
+     JavaScript; el número sí necesita JS y va en el ciclo compartido. -->
+<!-- La retícula, quieta. Va aquí arriba y vacía a propósito: es una capa de
+     pintura, no contenido, y por eso `aria-hidden` y sin nada dentro. -->
+<div class="reticula" aria-hidden="true"></div>
+
+<header class="cinta">
+  <div class="caja cinta-fila">
+    <span class="cinta-marca"><span aria-hidden="true"></span>Banco de pruebas</span>
+    <nav class="cinta-vias" aria-label="Secciones">
+      <a href="#gramatica">Gramática</a>
+      <a href="#estados">Estados</a>
+      <a href="#micro">Micro</a>
+      <a href="#particulas">Partículas</a>
+      <a href="#relato">Relato</a>
+      <a href="#tablero">Tablero</a>
+      <a href="#superficies">Superficies</a>
+      <a href="#formulario">Formulario</a>
+      <a href="#arrastrar">Arrastrar</a>
+      <a href="#vacios">Vacíos</a>
+      <i class="cinta-guia" data-guia aria-hidden="true"></i>
+    </nav>
+    <span class="cinta-pct" data-pct aria-hidden="true">0%</span>
+  </div>
+  <div class="barra-scroll" data-barra></div>
+</header>
+
+<main id="contenido">
+<div class="caja">
+
+  <!-- ══ PORTADA ══════════════════════════════════════════════════════ -->
+  <section id="portada" class="pesa" aria-labelledby="t-portada">
+    <p class="rotulo">Grupo Mazi · laboratorio</p>
+    <h1 id="t-portada" data-revelar>El banco<br>de pruebas.</h1>
+    <p style="margin-top:1.4rem; font-size:1.15rem; max-width:46ch">
+      Un catálogo de interfaz, movimiento e interacción donde
+      <b>cada pieza enseña sus propios números mientras se mueve</b>.
+      No es una colección de animaciones: es un instrumento.
+    </p>
+    <p class="revuelto dato dato--gordo" data-revolver="medir · comparar · decidir">medir · comparar · decidir</p>
+  </section>
+
+  <!-- ══ 1 · GRAMÁTICA DE MOVIMIENTO ══════════════════════════════════ -->
+  <section id="gramatica" class="pesa" aria-labelledby="t-gram">
+    <p class="rotulo">01 · Gramática de movimiento</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
+    <div class="cabecilla">
+      <h2 id="t-gram">Cinco duraciones, y ninguna más</h2>
+      <p>
+        Nadie tiene en la cabeza la diferencia entre 110 y 420 milisegundos, así
+        que escoger una duración «a sentimiento» es escogerla al azar. Aquí los
+        cinco escalones corren <b>a la vez y al lado</b>, con su número encima.
+        Todo lo que se mueve en esta página usa uno de estos cinco tokens: no
+        hay una sola duración escrita a mano.
+      </p>
+    </div>
+
+    <div class="pistas">
+    <div class="pista" style="--dur:var(--micro)">
+        <span class="pista-nombre">micro<b>110 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--corta)">
+        <span class="pista-nombre">corta<b>220 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--media)">
+        <span class="pista-nombre">media<b>420 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--larga)">
+        <span class="pista-nombre">larga<b>820 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+      <div class="pista" style="--dur:var(--cine)">
+        <span class="pista-nombre">cine<b>1800 ms</b></span>
+        <span class="pista-riel"><span class="pista-carro"></span></span>
+      </div>
+    </div>
+
+    <p style="margin-top:1.2rem">
+      <button class="bt" data-correr-pistas type="button">Correr las cinco</button>
+    </p>
+
+    <div class="notas" style="margin-top:2.5rem">
+      <div class="nota">
+        <p class="rotulo">Para qué sirve cada una</p>
+        <p style="margin:0; font-size:.92rem">
+          <b>micro</b> hover e iconos · <b>corta</b> globitos y tarjetas ·
+          <b>media</b> modales y hojas · <b>larga</b> el relato ·
+          <b>cine</b> escenas y partículas.
+        </p>
+      </div>
+      <div class="nota">
+        <p class="rotulo">Y tres curvas, que también son vocabulario</p>
+        <p style="margin:0; font-size:.92rem">
+          <b>salida</b> arranca rápido y frena: se siente «llegó».
+          <b>entrada</b> al revés, para lo que se va.
+          <b>resorte</b> sobrepasa y regresa — sólo para lo que <em>confirma</em>,
+          nunca para lo que informa.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 2 · ESTADOS ══════════════════════════════════════════════════ -->
+  <section id="estados" aria-labelledby="t-est">
+    <p class="rotulo">02 · Estados</p>
+    <div class="cabecilla">
+      <h2 id="t-est">Un botón no es un botón: son ocho</h2>
+      <p>
+        <b>Cargando</b>, <b>logrado</b> y <b>error</b> viven medio segundo dentro
+        de una petición, y por eso casi nadie los revisa de verdad. Aquí se
+        congelan: se escoge el estado y el botón se queda ahí, para poder
+        mirarlo con calma y ver si el contraste alcanza.
+      </p>
+    </div>
+
+    <div class="matriz" role="group" aria-label="Estados del botón">
+      <button class="pastilla" type="button" data-estado-bt="normal"   aria-pressed="true">normal</button>
+      <!-- ⚠ `encima` y `hundido` FALTABAN, y el título de la sección decía
+           «son ocho». Enseñaba seis. Los dos que faltaban son justo los que no
+           se pueden congelar con el ratón —al soltar, se van—, que es la misma
+           razón por la que existe esta matriz. Lo cazó el comité. -->
+      <button class="pastilla" type="button" data-estado-bt="encima"   aria-pressed="false">encima</button>
+      <button class="pastilla" type="button" data-estado-bt="hundido"  aria-pressed="false">hundido</button>
+      <button class="pastilla" type="button" data-estado-bt="foco"     aria-pressed="false">foco</button>
+      <button class="pastilla" type="button" data-estado-bt="cargando" aria-pressed="false">cargando</button>
+      <button class="pastilla" type="button" data-estado-bt="logro"    aria-pressed="false">logrado</button>
+      <button class="pastilla" type="button" data-estado-bt="error"    aria-pressed="false">error</button>
+      <button class="pastilla" type="button" data-estado-bt="apagado"  aria-pressed="false">apagado</button>
+    </div>
+
+    <div class="escaparate">
+      <button class="bt" type="button" data-bt-muestra data-estado="normal">Enviar</button>
+      <button class="bt bt--suave" type="button" data-bt-muestra-2 data-estado="normal">Secundario</button>
+      <p style="margin:0; font-size:.88rem; color:var(--texto-3); font-family:var(--mono)">
+        estado: <b class="dato" data-estado-nombre>normal</b>
+      </p>
+    </div>
+
+    <p style="margin-top:1.4rem">
+      Y el ciclo de verdad, con una petición fingida que tarda
+      <b class="dato">1200<span class="unidad">ms</span></b> y falla una de cada
+      tres veces — porque un flujo que siempre sale bien no prueba nada:
+    </p>
+    <p><button class="bt bt--suave" type="button" data-ciclo>Probar el ciclo completo</button></p>
+  </section>
+
+  <!-- ══ 3 · MICROINTERACCIONES ═══════════════════════════════════════ -->
+  <section id="micro" aria-labelledby="t-micro">
+    <p class="rotulo">03 · Microinteracciones</p>
+    <div class="cabecilla">
+      <h2 id="t-micro">Lo que se siente sin que nadie lo note</h2>
+      <p>
+        Tres detalles de los que nadie habla y que son la diferencia entre una
+        interfaz que responde y una que parece una imagen. Los tres están
+        acotados: <b>ninguno persigue al cursor del todo</b>, porque un elemento
+        que persigue se siente descompuesto, no vivo.
+      </p>
+    </div>
+
+    <div class="instrumentos">
+      <div class="nota">
+        <p class="rotulo">Botón magnético</p>
+        <p style="font-size:.9rem">
+          A menos de <b class="dato">80<span class="unidad">px</span></b> se
+          inclina hacia el cursor. Tope: <b class="dato">12<span class="unidad">px</span></b>.
+        </p>
+        <button class="bt" type="button" data-iman>Acércate</button>
+        <p style="margin:.7rem 0 0; font-family:var(--mono); font-size:.7rem; color:var(--texto-3)">
+          desvío <b class="dato" data-iman-lectura>0.0 px</b>
+        </p>
+        <!-- ⚠ CON EL DEDO ESTO NO PUEDE FUNCIONAR, Y SE DICE. Un botón
+             magnético necesita saber dónde está el cursor ANTES de que lo
+             toquen, y en una pantalla táctil esa información no existe: el
+             dedo aparece ya encima. Carlos reportó que «no sirve en
+             teléfono» — y es cierto, pero el defecto no era que no
+             funcionara: era que la página no lo decía y parecía roto. Un
+             control muerto sin explicación se lee como un error; explicado,
+             es una limitación del aparato. -->
+        <p class="solo-dedo">
+          Con el dedo no hay imán que valga: necesita saber dónde está el
+          cursor <em>antes</em> de que llegue, y en una pantalla táctil el dedo
+          aparece ya encima. Aquí abajo sí responde al toque.
+        </p>
+      </div>
+
+      <div class="nota">
+        <p class="rotulo">Onda al tocar</p>
+        <p style="font-size:.9rem">
+          Nace en las coordenadas reales del toque, no en el centro.
+          <b class="dato">0→180<span class="unidad">px</span></b>,
+          opacidad .35→0, <b class="dato">500<span class="unidad">ms</span></b>, ease-out.
+        </p>
+        <button class="bt bt--suave" type="button" data-onda>Tócame donde sea</button>
+      </div>
+
+      <div class="nota">
+        <p class="rotulo">Icono vivo</p>
+        <p style="font-size:.9rem">
+          La flecha se adelanta y regresa. Se mueve <em>hacia donde lleva</em>:
+          un icono que se mueve para otro lado es ruido.
+        </p>
+        <button class="bt bt--desnudo" type="button" data-flecha>
+          Continuar <span aria-hidden="true" data-punta>→</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 4 · PARTÍCULAS ═══════════════════════════════════════════════ -->
+  <section id="particulas" aria-labelledby="t-part">
+    <p class="rotulo">04 · Sistema de partículas</p>
+    <div class="cabecilla">
+      <h2 id="t-part">Cuatro comportamientos, un solo ciclo</h2>
+      <p>
+        No son puntos flotando. Son cinco sistemas sobre el mismo motor:
+        <b>orbital</b>, <b>magnético</b>, <b>repelente</b>, <b>conectado</b>
+        —que traza una línea cuando dos quedan a menos de 120 px— y un
+        <b>sistema solar</b> con gravedad de verdad: las órbitas no están
+        dibujadas, <b>salen</b> de integrar la fuerza en cada paso, y por eso
+        hay elipses, lunas y cometas sin que nadie los haya trazado. Cuando dos
+        cuerpos chocan se funden conservando masa y cantidad de movimiento, y
+        la órbita nueva sale de esa misma cuenta. Un solo <code>requestAnimationFrame</code> para todo, y se
+        <b>detiene cuando no está a la vista</b>: animar algo que nadie ve es
+        gastar batería de alguien a cambio de nada.
+      </p>
+    </div>
+
+    <div class="matriz" role="group" aria-label="Comportamiento de las partículas">
+      <button class="pastilla" type="button" data-modo="orbital"   aria-pressed="true">orbital</button>
+      <button class="pastilla" type="button" data-modo="magnetico" aria-pressed="false">magnético</button>
+      <button class="pastilla" type="button" data-modo="repelente" aria-pressed="false">repelente</button>
+      <button class="pastilla" type="button" data-modo="conectado" aria-pressed="false">conectado</button>
+      <button class="pastilla" type="button" data-modo="solar"     aria-pressed="false">sistema solar</button>
+    </div>
+
+    <div class="lienzo-caja">
+      <canvas data-lienzo width="1200" height="300" role="img"
+              aria-label="Animación decorativa de partículas. Los cuatro comportamientos se explican en el texto de arriba."></canvas>
+      <p class="lienzo-datos">
+        <b data-cuenta>0</b> partículas · <b data-fps>—</b> fps · <b data-modo-lectura>orbital</b>
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 5 · RELATO ═══════════════════════════════════════════════════ -->
+  <section id="relato" class="pesa" aria-labelledby="t-rel">
+    <p class="rotulo">05 · El scroll como relato</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
+    <div class="cabecilla">
+      <h2 id="t-rel">Bajar tiene que significar algo</h2>
+      <p>
+        Las tarjetas se quedan pegadas y la siguiente se monta encima: el scroll
+        deja de ser desplazamiento y pasa a ser una baraja. Cada una se lee
+        completa antes de que llegue la de arriba.
+      </p>
+    </div>
+
+    <div class="baraja">
+      <article data-subir>
+        <h3><span>01 —</span> El movimiento es información</h3>
+        <p style="margin:.5rem 0 0">
+          Si algo se mueve y no dice nada, sobra. La dirección dice de dónde
+          viene, la duración dice cuánto pesa, y la curva dice si llegó o si se
+          está yendo.
+        </p>
+      </article>
+      <article data-subir>
+        <h3><span>02 —</span> Nunca opacidad sobre texto</h3>
+        <p style="margin:.5rem 0 0">
+          Un texto a media transición no cumple contraste en ningún momento de
+          esa transición. Se destapa con máscara, a opacidad plena, o se cambian
+          los caracteres. En lo decorativo sí se puede.
+        </p>
+      </article>
+      <article data-subir>
+        <h3><span>03 —</span> Sólo transform y opacity</h3>
+        <p style="margin:.5rem 0 0">
+          Son las dos que resuelve el compositor sin recalcular la página.
+          Animar <code>width</code>, <code>top</code> o <code>filter</code> en
+          scroll es como se llega a los tirones.
+        </p>
+      </article>
+      <article data-subir>
+        <h3><span>04 —</span> Y todo se puede apagar</h3>
+        <p style="margin:.5rem 0 0">
+          Con <code>prefers-reduced-motion</code> no queda nada a medias: la
+          página se ve completa y quieta. Quien pidió menos movimiento no pidió
+          menos página.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ 6 · TABLERO ══════════════════════════════════════════════════ -->
+  <section id="tablero" aria-labelledby="t-tab">
+    <p class="rotulo">06 · Tablero</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
+    <div class="cabecilla">
+      <h2 id="t-tab">Números que se están midiendo ahorita</h2>
+      <p>
+        Los contadores no aparecen con el número final: suben. No es decoración
+        — un número que sube dice «esto se está midiendo ahorita», que es la
+        diferencia entre un tablero y una captura de pantalla. Sin JavaScript
+        el número final se lee igual, escrito en el HTML.
+      </p>
+    </div>
+
+    <!-- ⚠ CADA NÚMERO DE AQUÍ LO COMPRUEBA LA SUITE DE PRUEBAS, y no es un
+         adorno de proceso: los primeros que escribí me los inventé —«48
+         piezas»— y eso es exactamente lo que este banco existe para no hacer.
+         Un tablero que presume de medir y trae cifras inventadas es peor que
+         no tener tablero. Si alguno deja de ser cierto, `pruebas.mjs` se pone
+         roja y dice cuál. -->
+    <div class="tablero">
+      <div class="medidor">
+        <p class="rotulo">Responde al toque en</p>
+        <span class="dato dato--gordo" data-contar="63">63</span>
+        <small>lugares. Los cuenta la prueba, uno por uno</small>
+      </div>
+      <div class="medidor">
+        <p class="rotulo">Dependencias</p>
+        <span class="dato dato--gordo" data-contar="0">0</span>
+        <small>cero peticiones fuera de este dominio. También medido</small>
+      </div>
+      <div class="medidor">
+        <p class="rotulo">Peso de la página</p>
+        <span class="dato dato--gordo" data-contar="205">205<span class="unidad">KB</span></span>
+        <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
+      </div>
+      <div class="medidor">
+        <p class="rotulo">Ciclos de animación</p>
+        <span class="dato dato--gordo" data-contar="1">1</span>
+        <small>uno solo, compartido por todo lo que se mueve</small>
+      </div>
+    </div>
+
+    <div class="instrumentos">
+      <div class="instrumento">
+        <p class="rotulo">Cronómetro</p>
+        <span class="dato dato--gordo" data-crono role="timer" aria-live="off">00:00.0</span>
+        <p style="display:flex; gap:.5rem; margin:.9rem 0 0">
+          <button class="bt bt--suave" type="button" data-crono-bt="correr">Iniciar</button>
+          <button class="bt bt--desnudo" type="button" data-crono-bt="cero">A cero</button>
+        </p>
+        <small style="display:block; color:var(--texto-3); font-size:.78rem; margin-top:.6rem">
+          Se lleva con el reloj del sistema y no sumando fotogramas: sumar
+          fotogramas se atrasa en cuanto el aparato se ocupa en otra cosa.
+        </small>
+      </div>
+
+      <div class="instrumento">
+        <p class="rotulo">Marcador</p>
+        <p style="display:flex; align-items:baseline; gap:.8rem; margin:0">
+          <span class="dato dato--gordo" data-puntos>0</span>
+          <span style="font-family:var(--mono); font-size:.76rem; color:var(--texto-3)">
+            racha <b class="dato" data-racha>0</b>
+          </span>
+        </p>
+        <div class="progreso" style="margin-top:.9rem" role="progressbar"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Avance al siguiente nivel" data-progreso>
+          <i></i>
+        </div>
+        <p style="margin:.9rem 0 0">
+          <button class="bt" type="button" data-anotar>Anotar</button>
+        </p>
+      </div>
+
+      <div class="instrumento">
+        <p class="rotulo">Últimos siete días</p>
+        <div class="grafica" data-grafica aria-hidden="true">
+          <div style="--alto:34%"  data-v="34"></div>
+          <div style="--alto:52%"  data-v="52"></div>
+          <div style="--alto:41%"  data-v="41"></div>
+          <div style="--alto:78%"  data-v="78"></div>
+          <div style="--alto:63%"  data-v="63"></div>
+          <div style="--alto:91%"  data-v="91" data-alta></div>
+          <div style="--alto:57%"  data-v="57"></div>
+        </div>
+        <small style="display:block; color:var(--texto-3); font-size:.78rem; margin-top:.7rem">
+          34, 52, 41, 78, 63, 91 y 57. Van escritos aquí porque una gráfica sin
+          sus números es un dibujo.
+        </small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 7 · SUPERFICIES ══════════════════════════════════════════════ -->
+  <section id="superficies" aria-labelledby="t-sup">
+    <p class="rotulo">07 · Superficies</p>
+    <div class="cabecilla">
+      <h2 id="t-sup">Globito, modal, hoja y avisos</h2>
+      <p>
+        Los cuatro son la misma idea con distinta urgencia, así que comparten
+        curva y sólo cambian de duración y de dirección. El modal es un
+        <code>&lt;dialog&gt;</code> nativo: la trampa de foco, el Escape y el
+        <code>inert</code> sobre el resto de la página los pone el navegador, y
+        los suyos son mejores que los míos.
+      </p>
+    </div>
+
+    <p style="display:flex; flex-wrap:wrap; gap:.6rem">
+      <span class="globo">
+        <button class="bt bt--desnudo" type="button" aria-describedby="g1">Déjame el cursor encima</button>
+        <span class="globo-texto" id="g1" role="tooltip">Entra en 220 ms y se va en 110</span>
+      </span>
+      <button class="bt bt--suave" type="button" data-abrir-modal>Abrir el modal</button>
+      <button class="bt bt--suave" type="button" data-abrir-hoja>Subir la hoja</button>
+      <button class="bt" type="button" data-avisar>Lanzar un aviso</button>
+    </p>
+
+    <dialog data-modal aria-labelledby="t-modal">
+      <div class="tapa">
+        <h3 id="t-modal">Esto es un diálogo de verdad</h3>
+        <p style="margin:0">
+          El foco está atrapado aquí dentro: prueba con Tab. Escape lo cierra, y
+          al cerrarse el foco regresa exactamente al botón que lo abrió — que es
+          la parte que casi siempre se olvida y la que deja perdido a quien
+          navega con teclado.
+        </p>
+        <div class="tapa-pie">
+          <button class="bt bt--desnudo" type="button" data-cerrar-modal>Cancelar</button>
+          <button class="bt" type="button" data-cerrar-modal>Entendido</button>
+        </div>
+      </div>
+    </dialog>
+  </section>
+
+  <!-- ══ 8 · FORMULARIO ═══════════════════════════════════════════════ -->
+  <section id="formulario" aria-labelledby="t-form">
+    <p class="rotulo">08 · Formulario</p>
+    <div class="cabecilla">
+      <h2 id="t-form">La etiqueta no desaparece al escribir</h2>
+      <p>
+        La etiqueta flotante que se convierte en marcador de posición se ve muy
+        bien en una captura y es cruel de verdad: quien vuelve al formulario a
+        los dos minutos ya no sabe qué iba en ese campo. Aquí la etiqueta se
+        queda. Y el error <b>no empuja el botón</b>: su renglón está reservado
+        desde el principio, porque si apareciera empujando movería el botón
+        justo cuando la persona va a tocarlo.
+      </p>
+    </div>
+
+    <form data-form novalidate style="max-width:32rem">
+      <label class="campo">
+        <span>Nombre</span>
+        <input type="text" name="nombre" autocomplete="name" required>
+        <span class="aviso-campo" data-error-de="nombre" role="status"></span>
+      </label>
+      <label class="campo">
+        <span>Correo</span>
+        <input type="email" name="correo" autocomplete="email" required>
+        <span class="aviso-campo" data-error-de="correo" role="status"></span>
+      </label>
+      <label class="campo">
+        <span>Cuánto te importa el detalle · <b class="dato" data-valor-rango>7</b>/10</span>
+        <input class="deslizador" type="range" name="detalle" min="0" max="10" value="7" data-rango>
+      </label>
+      <button class="bt" type="submit">Enviar</button>
+    </form>
+  </section>
+
+  <!-- ══ 9 · ARRASTRAR ════════════════════════════════════════════════ -->
+  <section id="arrastrar" class="liviana" aria-labelledby="t-arr">
+    <p class="rotulo">09 · Arrastrar y soltar</p>
+    <div class="cabecilla">
+      <h2 id="t-arr">Con el dedo y con el teclado</h2>
+      <p>
+        Un arrastrar-y-soltar que sólo funciona con el ratón es media función.
+        Cada pieza se puede mover también con <b>las flechas del teclado</b>, y
+        eso además lo vuelve comprobable por una máquina — que es la razón de
+        que aquí sí esté hecho y en otros lados no.
+      </p>
+    </div>
+
+    <div class="cajones" data-cajones>
+      <div class="cajon" data-cajon="por-hacer">
+        <h3>Por hacer</h3>
+        <button class="pieza" type="button" draggable="true" data-pieza="a">Medir el contraste</button>
+        <button class="pieza" type="button" draggable="true" data-pieza="b">Probar sin JavaScript</button>
+      </div>
+      <div class="cajon" data-cajon="haciendo">
+        <h3>Haciendo</h3>
+        <button class="pieza" type="button" draggable="true" data-pieza="c">Recorrerlo con teclado</button>
+      </div>
+      <div class="cajon" data-cajon="hecho">
+        <h3>Hecho</h3>
+      </div>
+    </div>
+    <p style="margin-top:.8rem; font-family:var(--mono); font-size:.72rem; color:var(--texto-3)"
+       role="status" data-arrastre-lectura>Enfoca una pieza y usa ← → para moverla.</p>
+  </section>
+
+  <!-- ══ 10 · VACÍOS ══════════════════════════════════════════════════ -->
+  <section id="vacios" class="liviana" aria-labelledby="t-vac">
+    <p class="rotulo">10 · Cargando, vacío, error, sin conexión</p>
+    <!-- El arco de la paloma, que es la regla de este documento. Va sólo en
+         las secciones que pesan: cuatro veces es un motivo, diez es papel
+         tapiz. -->
+    <div class="arco" aria-hidden="true"></div>
+
+    <div class="cabecilla">
+      <h2 id="t-vac">La parte que separa una demo de un producto</h2>
+      <p>
+        Un hueco en blanco se lee como «se rompió», y entonces la persona
+        recarga; si al recargar tampoco dice nada, se va. Los cuatro estados
+        <b>dicen qué pasó y qué se puede hacer</b>, y ninguno culpa a quien está
+        del otro lado.
+      </p>
+    </div>
+
+    <div class="matriz" role="group" aria-label="Estado de la lista">
+      <button class="pastilla" type="button" data-lista="cargando" aria-pressed="true">cargando</button>
+      <button class="pastilla" type="button" data-lista="vacio"    aria-pressed="false">vacío</button>
+      <button class="pastilla" type="button" data-lista="error"    aria-pressed="false">error</button>
+      <button class="pastilla" type="button" data-lista="sinred"   aria-pressed="false">sin conexión</button>
+      <button class="pastilla" type="button" data-lista="lleno"    aria-pressed="false">con datos</button>
+    </div>
+
+    <div data-caja-lista aria-live="polite" style="min-height:190px">
+      <div class="esqueleto">
+        <span class="hueso hueso--titulo"></span>
+        <span class="hueso"></span>
+        <span class="hueso hueso--corto"></span>
+        <span class="hueso"></span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<!-- La hoja vive fuera del main porque tapa la página entera. -->
+<div class="hoja" data-hoja data-abierta="no" role="dialog" aria-modal="true"
+     aria-labelledby="t-hoja" hidden>
+  <span class="hoja-asa" aria-hidden="true"></span>
+  <h3 id="t-hoja">La hoja sube desde abajo</h3>
+  <p style="margin:.5rem 0 1rem">
+    Y no es capricho: en un teléfono el pulgar ya está abajo. Una hoja que
+    aparece donde está la mano se toca sin recolocar el aparato; una que
+    aparece arriba obliga a un malabar con una sola mano.
+  </p>
+  <button class="bt bt--suave" type="button" data-cerrar-hoja>Cerrar</button>
+</div>
+
+<!-- ══ LA CONSOLA · apartados 120, 121 y 122 ═══════════════════════════════
+     Modo depuración, monitor de rendimiento y probador de anchos. Es lo que
+     convierte esto de un catálogo en una herramienta: hasta aquí la página se
+     miraba, de aquí en adelante se opera.
+
+     Nace APAGADA porque el curso lo pide (121: «no debe estar activo
+     permanentemente en producción») y porque un monitor encendido siempre
+     cuesta fotogramas justo cuando se están midiendo fotogramas.
+
+     Va en el HTML y no la crea el script: así existe el botón aunque el JS
+     tarde, y el atajo de teclado se anuncia desde el primer píxel. -->
+<button class="consola-bt" type="button" data-consola-bt
+        aria-expanded="false" aria-controls="consola">
+  Consola <kbd>D</kbd>
+</button>
+
+<aside class="consola" id="consola" data-consola data-abierta="no" aria-label="Consola del banco">
+  <dl>
+    <dt>fps</dt>              <dd data-c-fps>—</dd>
+    <dt>nodos</dt>            <dd data-c-nodos>—</dd>
+    <dt>ventana</dt>          <dd data-c-ventana>—</dd>
+    <dt>cursor</dt>           <dd data-c-cursor>—</dd>
+    <dt>scroll</dt>           <dd data-c-scroll>—</dd>
+    <dt>animando</dt>         <dd data-c-anim>—</dd>
+  </dl>
+
+  <h4>Depuración</h4>
+  <p class="fila">
+    <button class="pastilla" type="button" data-cajas aria-pressed="false">ver cajas</button>
+    <button class="pastilla" type="button" data-probador aria-pressed="false">anchos</button>
+  </p>
+</aside>
+
+<!-- El probador mete la MISMA página en un marco. Es la única forma honesta de
+     probar un ancho: encoger un contenedor no cambia las media queries y
+     enseñaría un diseño que en ese teléfono no existe. -->
+<div class="probador" data-probador-caja data-abierto="no" role="dialog"
+     aria-modal="true" aria-label="Probador de anchos" hidden>
+  <div class="probador-barra">
+    <button class="pastilla" type="button" data-ancho="375"  aria-pressed="false">375</button>
+    <button class="pastilla" type="button" data-ancho="768"  aria-pressed="true">768</button>
+    <button class="pastilla" type="button" data-ancho="1024" aria-pressed="false">1024</button>
+    <button class="pastilla" type="button" data-ancho="1440" aria-pressed="false">1440</button>
+    <button class="pastilla" type="button" data-ancho="1920" aria-pressed="false">1920</button>
+    <span class="probador-medida">a escala <b data-escala>100%</b> · <b data-ancho-actual>768</b>px</span>
+    <button class="bt bt--desnudo" type="button" data-cerrar-probador
+            style="min-height:44px">Cerrar</button>
+  </div>
+  <div class="probador-lienzo"><iframe data-marco title="La página a otro ancho"></iframe></div>
+</div>
+
+<div class="avisos" data-avisos aria-live="polite" aria-relevant="additions"></div>
+
+<footer class="pie-lab">
+  <div class="caja">
+    <p class="firma" style="margin:0">Hecho por <b>Godines</b> · Grupo Mazi</p>
+    <p style="margin:.4rem 0 0">
+      Sin librerías, sin tipografías de internet, sin cookies y sin rastreo.
+      <button class="bt bt--desnudo" type="button" data-cambiar-tema
+              style="min-height:44px; margin-left:.6rem; font-size:.82rem">
+        Cambiar a tema claro
+      </button>
+    </p>
+  </div>
+</footer>
+
+<!-- `lab.js` primero: es quien define el ciclo compartido al que la consola
+     se engancha. Los dos son `defer`, así que corren en este orden. -->
+<script src="lab.js" defer></script>
+<script src="consola.js" defer></script>
+<script src="particulas.js" defer></script>
+</body>
+</html>

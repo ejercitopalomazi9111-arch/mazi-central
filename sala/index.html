@@ -111,6 +111,38 @@ body{
 }
 .codigo:hover{color:var(--hueso); border-color:var(--violeta)}
 .crece{flex:1}
+
+/* ══ ACUSE DE RECIBO AL TOCAR ══════════════════════════════════════════════
+   Carlos: «haz que todos los botones de la sala tengan feedback como los de
+   laboratorio».
+
+   Por qué hacía falta: en un teléfono el `:hover` no existe —y aquí encima
+   está apagado el resaltado de toque de Safari en varios sitios— así que un
+   botón que SÍ funcionó se siente exactamente igual que uno perdido. Y lo
+   que hace uno entonces es volver a picarle, que es de lo que se quejó en el
+   laboratorio.
+
+   Va con `transform` y nada más: lo resuelve el compositor sin recalcular la
+   maqueta, y no toca ni color ni sombra —que obligarían a repintar cada
+   botón—. Hundir un poco es la señal que ya entiende todo el mundo.
+
+   La transición va SÓLO en la vuelta: al presionar tiene que ser instantáneo
+   —una transición de entrada es precisamente el retraso que se quiere
+   quitar— y al soltar, suave, para que no dé un tirón. Por eso la duración
+   vive en la regla base y el `:active` no la toca. */
+button, .fila-lado{ transition:transform 120ms cubic-bezier(.2,.7,.3,1); }
+button:active, .fila-lado:active{ transform:scale(.965); }
+/* Las filas anchas se hunden menos: un 3.5 % sobre una fila de 285 px se ve
+   como un salto, y sobre un botón de 38 px ni se nota. */
+.fila-lado:active, .quien:active{ transform:scale(.99); }
+@media (prefers-reduced-motion:reduce){
+  button, .fila-lado{ transition:none; }
+  /* Se queda SIN escala: quien pide menos movimiento no quiere que las cosas
+     cambien de tamaño bajo el dedo. El acuse lo da el propio navegador con
+     el foco, y el resultado —que la acción ocurra— sigue estando. */
+  button:active, .fila-lado:active, .quien:active{ transform:none; }
+}
+
 .btn{
   font-family:var(--dato); font-size:10.5px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; padding:7px 11px; border-radius:8px; cursor:pointer;
@@ -285,6 +317,15 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .quien.trabajando .quien-sub{color:var(--violeta-claro)}
 /* El punto montado en el avatar, como en la lista de miembros de Discord. */
 .quien .con-punto{position:relative; display:inline-flex; flex:0 0 auto}
+/* ⚠ AQUÍ HABÍA DOS PUNTOS, UNO ENCIMA DEL OTRO. `.con-punto::after` pinta un
+   punto VERDE FIJO —sirve para el panel de abajo, donde el verde se apaga con
+   la clase `.sin`— y en la lista se le montaba encima el `<i class="punto">`,
+   que sí sabe el estado. Como el de abajo mide 9 px y el de arriba 7, el verde
+   asomaba alrededor: por eso alguien dormido o topado seguía teniendo un
+   filito verde de «en línea». Carlos: «el punto verde sigue marcando que
+   están en línea cuando en realidad están Offline». En la lista manda el que
+   sabe. */
+.quien .con-punto::after{display:none}
 /* ⚠ Lo cachó Carlos: «el punto verde se come todo el icono de la persona».
    Tenía razón y la cuenta lo dice — 9px de punto más 2px de filo son 13px
    encima de un avatar de 19px: dos tercios de la cara. En Discord el punto es
@@ -351,6 +392,33 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 }
 .avatar svg{width:60%; height:60%; display:block; overflow:visible}
 .avatar.hueco{background:none !important; box-shadow:none !important}
+/* Con foto el avatar es la foto: sin fondo de color debajo —se vería un borde
+   de otro color en las esquinas— y recortada en cuadrado desde el centro, que
+   es lo que hace que caras de proporciones distintas se vean parejas. */
+.avatar.conFoto{background:none; overflow:hidden}
+.avatar.conFoto img{width:100%; height:100%; object-fit:cover; display:block}
+
+/* ── cambiarse la foto, desde el propio avatar de abajo ── */
+.yo-retrato{
+  position:relative; display:inline-flex; padding:0; border:0; background:none;
+  cursor:pointer; border-radius:50%;
+}
+.yo-retrato:focus-visible{outline:2px solid var(--violeta); outline-offset:3px}
+/* El lápiz sólo asoma al apuntarle o al enfocarlo: encima de un avatar de
+   38 px, permanente, tapa media cara. */
+.yo-retrato::after{
+  content:'✎'; position:absolute; right:-3px; bottom:-3px;
+  width:16px; height:16px; border-radius:50%;
+  background:var(--violeta); color:#fff; font-size:9px;
+  display:grid; place-items:center; opacity:0; transition:opacity 140ms;
+}
+.yo-retrato:hover::after, .yo-retrato:focus-visible::after{opacity:1}
+@media (prefers-reduced-motion:reduce){ .yo-retrato::after{transition:none} }
+.quitar-foto{
+  margin-left:auto; border:0; background:none; color:var(--tenue);
+  font-size:11px; cursor:pointer; padding:4px 6px;
+}
+.quitar-foto:hover{color:var(--alarma, #ff6b6b)}
 /* El anillo del subagente: no es adorno, es la respuesta a «¿y éste quién
    es?». Un subagente lleva el color de su dueño porque su trabajo se le
    cobra a su dueño; el anillo dice que no es él en persona. */
@@ -395,11 +463,65 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   font-family:var(--dato); font-size:11px; line-height:1.6; color:var(--violeta-claro);
   word-break:break-all; user-select:all; -webkit-user-select:all;
 }
+.pegar-llave{
+  margin-top:14px; padding:14px; border:1px solid var(--borde-vivo);
+  border-radius:10px; background:#ffffff08; text-align:left;
+}
+.pegar-llave[hidden]{display:none}
+.pegar-llave h4{margin:0 0 6px; font-size:15px}
+.pegar-llave p{margin:0 0 10px; font-size:13px; color:var(--tenue); line-height:1.5}
+.pegar-llave input{
+  width:100%; margin-bottom:10px;
+  /* 16px: abajo de eso iOS hace zoom al enfocar, y este campo existe
+     precisamente para quien está en un iPhone. */
+  font-size:16px; padding:11px 12px; min-height:46px;
+  background:#00000030; color:var(--hueso);
+  border:1px solid var(--borde-vivo); border-radius:8px;
+}
+.liga-msj{
+  color:#C9A0FF; text-decoration:underline; text-underline-offset:2px;
+  word-break:break-word;
+}
+/* La referencia se ve como lo que es: una liga corta, en la tipografía de los
+   datos, para que no se confunda con una palabra del texto. */
+.liga-msj.ref{ font-family:var(--dato); text-decoration:none; background:#AD21ED26;
+  padding:1px 5px; border-radius:5px; }
 .aviso-llaves{
   font-size:12px; color:var(--ambar); background:rgba(232,179,58,.09);
   border:1px solid rgba(232,179,58,.28); border-radius:11px; padding:10px 12px;
   margin-bottom:12px; line-height:1.5;
 }
+/* ══ PREGUNTAR SIN EL DIÁLOGO DEL NAVEGADOR ════════════════════════════════
+   Carlos, e197: «al fusionar me da diálogo del navegador, una regla de grupo
+   Mazi es jamás usar esa porquería».
+
+   Regla suya y con razón de sobra: `confirm()` pinta una caja del sistema
+   —tipografía del sistema, botones del sistema, el nombre del dominio en el
+   título— encima de una app que se cuidó entera. Además BLOQUEA el hilo: los
+   mensajes que llegan mientras esa caja está abierta se quedan esperando a
+   que alguien la conteste.
+
+   Ésta es de la casa, no bloquea nada y devuelve una promesa, así que en el
+   sitio donde se usa se lee igual de corto que el `confirm` que sustituye. */
+.pregunta{
+  position:fixed; inset:0; z-index:76; background:rgba(8,5,13,.86);
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.pregunta.abierta{display:flex}
+.pregunta-caja{
+  width:100%; max-width:400px;
+  background:var(--superficie); border:1px solid var(--borde-vivo);
+  border-radius:14px; padding:18px;
+}
+.pregunta-caja h3{margin:0 0 8px; font-size:16px}
+.pregunta-caja p{
+  margin:0 0 16px; font-size:13.5px; color:var(--tenue); line-height:1.45;
+  /* Se puede seleccionar y no se sale de la caja: a veces lo que va aquí es
+     un link que hay que copiar a mano. */
+  user-select:text; overflow-wrap:anywhere;
+}
+.pregunta-bts{display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap}
+
 .leyenda{
   position:fixed; inset:0; z-index:70; background:rgba(8,5,13,.82);
   display:none; align-items:flex-end; justify-content:center;
@@ -545,6 +667,19 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 }
 
 /* ── reacciones ── */
+/* La fila de «visto por». Chiquita y alineada al final, como en cualquier
+   app de mensajes: es información de rabillo del ojo, no un renglón más de
+   la conversación. */
+.leido{
+  display:flex; align-items:center; gap:4px;
+  justify-content:flex-end; margin:2px 0 8px; padding:0 2px;
+}
+.leido-txt{
+  font-family:var(--dato); font-size:8.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muy-tenue); margin-right:2px;
+}
+.leido .avatar{width:15px; height:15px}
+
 .reacciones{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
 .reacciones:empty{display:none}
 .reaccionar.simple{border-style:solid; font-size:10.5px; font-family:var(--dato);
@@ -781,6 +916,10 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 
 /* ── adjuntos ── */
 .adjuntos{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+/* El adjunto que ya no está: apagado y sin cursor de «tócame», porque no hay
+   nada que abrir. Se ve que hubo algo y que se fue, que es la verdad. */
+.tarjeta.ida{opacity:.6}
+.tarjeta.ida .t2{font-style:italic}
 /* ── LA FOTO SE VE, NO SE PICA ────────────────────────────────────────────
    Carlos: «que directamente sin picarle ni nada se vea la vista previa».
    Tenía razón y el defecto era doble: 96×96 con `object-fit:cover` no es una
@@ -974,14 +1113,98 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
    sacar de cuadro toda la conversación. */
 .caja-codigo pre code{font:inherit; color:inherit; background:none; padding:0}
 
-/* ── la lupa ── */
+/* ── la lupa · ahora es una galería ────────────────────────────────────────
+   Carlos: «haz que si alguien incluyéndote pone varias imágenes en su mensaje
+   pueda pasar entre ellas deslizando izquierda o derecha y salir de estas
+   deslizando de arriba hacia abajo».
+
+   Las láminas se pintan TODAS en una pista y la pista se mueve. La otra forma
+   —una sola <img> a la que se le cambia el src al soltar— es menos código y se
+   siente falsa: mientras arrastras no asoma la imagen de al lado, así que el
+   dedo no está moviendo nada, sólo esperando. Lo que hace que un carrusel se
+   sienta real es ver llegar a la vecina, y eso pide que exista.
+
+   ⚠ `touch-action:none` sobre la pista y NO sobre la lupa entera. Apaga el
+   gesto del navegador —sin él, Chrome de Android se queda con el deslizamiento
+   horizontal para su «atrás» y el vertical para recargar, y los `pointermove`
+   dejan de llegar a media caricia—. Pero apagarlo en toda la lupa mataría
+   también el desplazamiento de los botones de arriba. */
 .lupa{
-  position:fixed; inset:0; z-index:60; background:rgba(8,5,13,.94);
-  display:none; align-items:center; justify-content:center; padding:20px;
+  /* ⚠ 68 Y NO 60. La cabecera vive en 64, así que con 60 la lupa se pintaba
+     DEBAJO de ella: la barra con el botón de cerrar quedaba escondida detrás
+     del título y las pestañas seguían encima de la foto. Venía de antes —el
+     botón «Cerrar» viejo, pegado arriba a la derecha, caía en el mismo sitio—
+     y no se había visto porque nadie había mirado la lupa abierta en una
+     captura. Se queda por debajo de 70 a propósito: la puerta de entrada
+     manda sobre todo lo demás. */
+  position:fixed; inset:0; z-index:68; background:rgba(8,5,13,.985);
+  display:none; flex-direction:column;
 }
 .lupa.abierta{display:flex}
-.lupa img{max-width:100%; max-height:100%; border-radius:10px}
-.lupa .cerrar{position:absolute; top:calc(14px + env(safe-area-inset-top)); right:14px}
+
+.lupa-barra{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+  gap:10px; padding:calc(12px + env(safe-area-inset-top)) 14px 10px;
+}
+.lupa-cuenta{
+  font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* En `--tenue` el contador se leía peor que el título de la página que
+     asoma por detrás, y los dos textos se montaban en la misma esquina. Aquí
+     el fondo es casi negro: el hueso tiene sitio de sobra. */
+  color:var(--hueso); letter-spacing:.06em;
+}
+/* Con una sola imagen el contador no dice nada: «1 / 1» es ruido. */
+.lupa-cuenta:empty{display:none}
+
+.lupa-vista{position:relative; flex:1 1 auto; overflow:hidden}
+.lupa-pista{
+  display:flex; height:100%; width:100%;
+  touch-action:none; will-change:transform;
+}
+/* La transición se enciende con una clase y NO vive en la regla base: durante
+   el arrastre el transform se pisa en cada `pointermove`, y con transición
+   puesta cada fotograma persigue al anterior y el dedo va por delante de la
+   imagen. Se prende sólo al soltar, que es cuando hay algo que animar. */
+.lupa-pista.suelta{transition:transform 260ms cubic-bezier(.2,.7,.3,1)}
+@media (prefers-reduced-motion:reduce){ .lupa-pista.suelta{transition:none} }
+
+.lupa-dia{
+  flex:0 0 100%; height:100%;
+  display:flex; align-items:center; justify-content:center; padding:0 20px 20px;
+}
+.lupa-dia img{
+  max-width:100%; max-height:100%; border-radius:10px;
+  /* Que el arrastre mueva la pista y no la imagen: sin esto el navegador
+     ofrece «arrastrar la imagen» y se lleva el gesto a la mitad. */
+  user-select:none; -webkit-user-drag:none; pointer-events:none;
+}
+
+/* Las flechas son para ratón y teclado. En el teléfono estorban encima de la
+   foto y el gesto ya está, así que ahí no salen. */
+.lupa-flecha{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:44px; height:44px; display:none; place-items:center;
+  border:1px solid var(--borde-vivo); border-radius:50%;
+  background:rgba(8,5,13,.7); color:var(--hueso); font-size:19px; cursor:pointer;
+}
+.lupa-flecha:hover{border-color:var(--violeta); color:var(--violeta)}
+.lupa-flecha:focus-visible{outline:2px solid var(--violeta); outline-offset:2px}
+.lupa-flecha[hidden]{display:none}
+.lupa-flecha.izq{left:12px}
+.lupa-flecha.der{right:12px}
+@media (hover:hover) and (pointer:fine){ .lupa-flecha{display:grid} }
+
+/* Los puntitos de abajo: dicen cuántas hay y en cuál vas sin ocupar renglón. */
+.lupa-puntos{
+  flex:0 0 auto; display:flex; gap:7px; justify-content:center;
+  padding:0 14px calc(16px + env(safe-area-inset-bottom));
+}
+.lupa-puntos span{
+  width:7px; height:7px; border-radius:50%; background:var(--borde-vivo);
+  transition:background 180ms, transform 180ms;
+}
+.lupa-puntos span.hoy{background:var(--violeta); transform:scale(1.35)}
+@media (prefers-reduced-motion:reduce){ .lupa-puntos span{transition:none} }
 
 /* ── escribir ── */
 .pie{
@@ -989,12 +1212,24 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   padding:10px 14px calc(10px + env(safe-area-inset-bottom));
 }
 .fila{display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap}
+/* ⚠ 16px DE PISO, Y NO ES CAPRICHO DE DISEÑO. Carlos: «al escribir en el text
+   box siempre se me hace un zoom in innecesario y molesto que debo deshacer
+   cada vez». Es Safari de iOS: cuando un campo tiene menos de 16 px, al
+   enfocarlo el navegador hace zoom para «ayudar» a leerlo, y deja la página
+   descuadrada hasta que la persona la vuelve a ajustar a mano. No hay opción
+   para apagarlo — la única forma de que no pase es que el campo mida 16.
+
+   Estaba en 14. Trece caracteres de diferencia entre una app que se usa y una
+   que estorba, y sólo se nota en un iPhone. */
 select,textarea,input{
-  font-family:inherit; font-size:14px; color:var(--hueso);
+  font-family:inherit; font-size:16px; color:var(--hueso);
   background:var(--alta); border:1px solid var(--borde-vivo); border-radius:9px;
   padding:8px 10px;
 }
+/* Los desplegables se ven mejor chicos, PERO en táctil suben a 16 por lo
+   mismo de arriba: un `select` también dispara el zoom. */
 select{font-family:var(--dato); font-size:11.5px; min-width:0; flex:1 1 130px}
+@media (hover:none), (pointer:coarse){ select{ font-size:16px } }
 /* La píldora de escribir. En Discord de teléfono la caja es un óvalo
    despegado del borde, no una franja pegada abajo — y esa diferencia es la
    mitad de lo que hace que se sienta app. */
@@ -1008,6 +1243,31 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   background:var(--violeta); color:#fff; border:none; border-radius:9px;
   font-weight:700; font-size:14px; padding:10px 18px; cursor:pointer; flex:0 0 auto;
 }
+
+/* ── LA LÍNEA DE ESCRIBIR ─────────────────────────────────────────────────
+   Clip, caja y enviar, alineados por abajo para que al crecer la caja los dos
+   botones se queden pegados al último renglón en vez de flotar a media
+   altura. */
+.linea-escribir{ display:flex; align-items:flex-end; gap:8px; }
+.linea-escribir #texto{
+  flex:1 1 auto; min-height:44px; max-height:9.5rem; overflow-y:auto;
+  padding:11px 15px; border-radius:22px;
+}
+.linea-escribir .enviar{ min-height:44px; border-radius:22px; padding:0 16px; }
+.clip{
+  flex:0 0 auto; width:44px; height:44px; display:grid; place-items:center;
+  background:transparent; color:var(--tenue); border:1px solid var(--borde);
+  border-radius:50%; cursor:pointer; padding:0;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .14s ease, border-color .14s ease;
+}
+.clip svg{ width:19px; height:19px; }
+/* Monocromático, como lo pidió: un emoji 📎 se dibuja distinto en cada aparato
+   —y en color— así que el pie se veía diferente en el iPhone de Carlos y en la
+   computadora de Luis. Dibujado, se ve igual en los dos. */
+.clip:hover{ color:var(--hueso); border-color:var(--borde-vivo); }
+.clip:focus-visible{ outline:2px solid var(--violeta); outline-offset:2px; }
+.clip.tiene{ color:var(--violeta); border-color:var(--violeta); }
 .enviar:disabled{opacity:.45; cursor:default}
 .aviso{
   font-family:var(--dato); font-size:10.5px; color:var(--ambar); margin-top:7px;
@@ -1025,7 +1285,11 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   border-left:2px solid var(--violeta); padding-left:11px; margin:2px 0 10px;
 }
 .extra .fila{margin-bottom:7px}
-#nota{min-height:44px; font-size:13.5px}
+/* ⚠ 16 TAMBIÉN AQUÍ. Se me escapó al arreglar el zoom: bajé el piso en la
+   regla general y esta línea lo volvía a romper para un campo. La prueba lo
+   dijo, no mis ojos — y ése es justo el tipo de defecto que se cuela en un
+   arreglo, porque uno da el problema por cerrado al ver el primer campo bien. */
+#nota{min-height:44px; font-size:16px}
 
 /* ── cuando el servidor no contesta ──────────────────────────────────────
    Un chat que se muere en silencio es peor que uno que no existe: uno se
@@ -1176,6 +1440,8 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
         <span class="ico">🔑</span><span>Llaves</span></button>
       <button class="fila-lado" id="bLeyenda">
         <span class="ico">🎭</span><span>Quién es quién</span></button>
+      <button class="fila-lado" id="bAvisos">
+        <span class="ico">🔔</span><span>Avisos al teléfono</span></button>
       <button class="fila-lado" id="bVista2">
         <span class="ico">📐</span><span>Cómo se ve el hilo</span></button>
 
@@ -1223,7 +1489,11 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
      Se carga la PRIMERA vez que se toca la pestaña, no al abrir la sala. -->
 <div class="pestanas" id="pestanas">
   <button class="pest activa" data-vista="chat">Chat</button>
-  <button class="pest" data-vista="hebras">Hebras</button>
+  <!-- ⚠ SIN PESTAÑA DE «HEBRAS». Carlos: «arriba quita hebras porque el menú
+       ya tiene cómo se ve este hilo y hacen lo mismo». Tenía razón: dos
+       caminos a la misma vista es una decisión que se le pide a la persona sin
+       que gane nada. La vista NO se borró —sigue viva y se llega desde el
+       menú—: lo que sobraba era el segundo camino. -->
   <button class="pest" data-vista="taller3d">Taller 3D</button>
 </div>
 
@@ -1250,7 +1520,31 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <!-- El mensajote va PRIMERO y sin nada encima. Es una junta: primero se
        habla, y luego, si hace falta, se le dice algo a alguien. Etiquetar el
        tipo antes de escribir volvía tieso lo que debe fluir. -->
-  <textarea id="texto" placeholder="Escribe lo que quieras decirle a la sala…" rows="3"></textarea>
+  <!-- ⚠ TODO EN UNA LÍNEA. Carlos: «quiero que el text box sea más chico, el
+       botoncito de imagen transfórmalo en sólo el icono monocromático del
+       clip, el botón de vista quítalo porque arriba puedo cambiarlo
+       exactamente igual, y haz que el de enviar quede a la derecha del box
+       para que todo quede en una sola línea, más chiquito y cómodo».
+
+       Los tres cambios apuntan a lo mismo y tiene razón: el pie ocupaba tres
+       renglones —caja, botón de nota, fila de botones— para una acción que es
+       una sola. En un teléfono eso es un tercio de la pantalla gastado en
+       marco. Ahora es una fila: clip, caja que crece con lo que escribes, y
+       enviar.
+
+       La caja arranca en un renglón y CRECE hasta cinco: empezar en tres deja
+       un hueco vacío casi siempre, y no crecer obliga a escribir mirando por
+       una rendija. -->
+  <div class="linea-escribir">
+    <button class="clip" id="bImagen" aria-label="Adjuntar imagen o documento" title="Adjuntar">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+           stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.2a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.6-2.6l8.5-8.48"/>
+      </svg>
+    </button>
+    <textarea id="texto" placeholder="Escribe a la sala…" rows="1"></textarea>
+    <button class="enviar" id="bEnviar" aria-label="Enviar">Enviar</button>
+  </div>
 
   <button class="mas" id="bMas" aria-expanded="false">
     <span id="masTexto">Dejarle una nota a alguien</span> <span class="flecha">▾</span>
@@ -1278,13 +1572,12 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
 
   <div class="pegados" id="pegados"></div>
 
-  <div class="fila">
-    <button class="btn" id="bImagen" title="Adjuntar una imagen">📎 Imagen</button>
-    <button class="btn" id="bVista" title="Cambiar cómo se ve el hilo">Vista</button>
-    <span class="crece"></span>
-    <button class="enviar" id="bEnviar">Enviar</button>
-  </div>
-  <input type="file" id="archivo" accept="image/*" multiple hidden>
+  <!-- El botón de «Vista» se fue: hacía exactamente lo mismo que el menú de
+       arriba, y dos caminos a lo mismo le piden a la persona una decisión a
+       cambio de nada. El de imagen y el de enviar subieron a la línea de
+       escribir. -->
+  <input type="file" id="archivo" accept="image/*,application/pdf,.txt,.md,.csv,.json" multiple hidden>
+<input type="file" id="archivoRetrato" accept="image/*" hidden>
   <div class="aviso" id="aviso"></div>
   <div class="caido" id="caido"></div>
 </div>
@@ -1336,6 +1629,17 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   <div class="llaves-caja" id="llavesCaja"></div>
 </div>
 
+<div class="pregunta" id="pregunta" role="dialog" aria-modal="true" aria-labelledby="preguntaTit">
+  <div class="pregunta-caja">
+    <h3 id="preguntaTit"></h3>
+    <p id="preguntaTxt"></p>
+    <div class="pregunta-bts">
+      <button class="btn" id="preguntaNo">Cancelar</button>
+      <button class="btn" id="preguntaSi">Sí</button>
+    </div>
+  </div>
+</div>
+
 <div class="leyenda" id="leyenda">
   <div class="leyenda-caja" id="leyendaCaja"></div>
 </div>
@@ -1354,9 +1658,24 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
   </div>
 </div>
 
-<div class="lupa" id="lupa">
-  <button class="btn cerrar" id="bCerrarLupa">Cerrar</button>
-  <img id="lupaImg" alt="">
+<!-- ══ LA LUPA · galería ════════════════════════════════════════════════
+     `aria-modal` y `role=dialog` van a mano porque esto es un <div>: el resto
+     de las capas de esta app (la puerta, los paneles) también lo son, y meter
+     un <dialog> suelto traería sus estilos de agente de usuario a discutir con
+     los de aquí. Lo que <dialog> da gratis —foco atrapado, volver el foco a
+     donde estaba, el resto de la página inerte— se pone abajo a mano, que son
+     seis renglones y ninguna sorpresa de estilos. -->
+<div class="lupa" id="lupa" role="dialog" aria-modal="true" aria-label="Imagen en grande">
+  <div class="lupa-barra">
+    <span class="lupa-cuenta" id="lupaCuenta"></span>
+    <button class="btn" id="bCerrarLupa">Cerrar</button>
+  </div>
+  <div class="lupa-vista">
+    <div class="lupa-pista" id="lupaPista"></div>
+    <button class="lupa-flecha izq" id="lupaIzq" aria-label="Imagen anterior">‹</button>
+    <button class="lupa-flecha der" id="lupaDer" aria-label="Imagen siguiente">›</button>
+  </div>
+  <div class="lupa-puntos" id="lupaPuntos"></div>
 </div>
 
 <div class="puerta" id="puerta">
@@ -1385,6 +1704,35 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
     <button class="enviar" id="bEntrar" style="width:100%">Entrar</button>
     </div>
     <div class="error" id="error"></div>
+
+    <!-- ⚠ PEGAR LA LLAVE A MANO, PORQUE HAY UN CASO DONDE LA URL NO SIRVE.
+         Carlos: «no puedo acceder desde la de inicio de mi iPhone porque
+         necesita la llave, y como no puedo meterle llave con URL me trata como
+         un externo y no me deja entrar ni crear salas».
+
+         La causa no es la sala: es que en iOS una app añadida a la pantalla de
+         inicio corre en su PROPIO almacenamiento, separado del de Safari. La
+         llave guardada en el navegador no viaja al acceso directo, y el acceso
+         directo no puede llevar `?llave=` porque su dirección ya quedó fija el
+         día que se creó. O sea que el único camino que teníamos para dar una
+         llave —la URL— es justo el que ahí no existe.
+
+         Esto se abre SOLO cuando el servidor rechaza por la llave, no siempre:
+         un campo de llave visible en la pantalla de entrar invita a que
+         cualquiera piense que necesita una, y casi nadie la necesita.
+
+         Y acepta el LINK COMPLETO además de la llave pelada, que es lo que la
+         persona de verdad tiene a mano: el mensaje donde se lo pasaron. Pedir
+         que recorte a mano treinta caracteres de una dirección es pedirle que
+         se equivoque. -->
+    <div class="pegar-llave" id="pegarLlave" hidden>
+      <h4>Esta sala pide llave</h4>
+      <p>Pega aquí <b>el link que te pasaron</b> o la llave sola. Se guarda en
+        este aparato y no vuelve a pedirse.</p>
+      <input id="llaveIn" type="text" inputmode="text" autocomplete="off"
+             spellcheck="false" placeholder="https://… o la llave">
+      <button class="gordo" id="bGuardarLlave">Guardar la llave y entrar</button>
+    </div>
     <div class="demo">
       ¿No tienes código? <a href="#" id="bDemo" style="color:var(--violeta-claro)">Ver
       una sala de ejemplo</a> para conocer la mesa sin conectarte.
@@ -1495,6 +1843,15 @@ const esc = (t) => String(t == null ? '' : t)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
 let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
+/* Los retratos de las cuentas, `cuenta → data:image/…`. Llegan en el `hola` y
+   se pisan enteros cuando alguien cambia el suyo. */
+let retratos = {};
+/* Hasta dónde ha leído cada quien, `id de sesión → id del evento`. */
+let vistos = {};
+/* Sesiones absorbidas, `id viejo → id que se quedó`. El hilo NO se reescribe:
+   los eventos viejos guardan a su autor de entonces y esto los resuelve al
+   pintarlos, que es donde importa. */
+let fusiones = {};
 
 /* Quiénes están escribiendo, con la hora en que hay que dejar de creerlo.
    El vencimiento se guarda AQUÍ y no sólo en el servidor porque el aviso llega
@@ -1565,6 +1922,15 @@ function recibirEscribiendo(ids){
   const ahora_ = new Set(escribiendo.keys());
   const igual = antes.size === ahora_.size && [...antes].every(x => ahora_.has(x));
   if(!igual || !relojEscribiendo) pintarEscribiendo();
+
+  /* ⚠ VIBRA SÓLO CUANDO ALGUIEN EMPIEZA, no mientras sigue. Carlos pidió
+     «vibración cuando alguien escribe», y el servidor manda este aviso cada
+     pocos segundos mientras el otro teclea: vibrando en cada uno, escribir un
+     párrafo le pondría el teléfono a temblar un minuto seguido. Se compara
+     con quién estaba antes y sólo se avisa de los que no estaban.
+     Un pulso corto — el de mensaje son dos, y así se distinguen sin mirar. */
+  const nuevos = [...ahora_].filter(id => !antes.has(id) && id !== (yo && yo.id));
+  if(nuevos.length) vibrar([22]);
 }
 
 function pintarGente(){
@@ -1678,6 +2044,9 @@ const REACCIONES = [
   ['ojo','⚠️','Ojo con esto'], ['bravo','🔥','Bien hecho'],
 ];
 const FIGURA = Object.fromEntries(REACCIONES.map(([k, f]) => [k, f]));
+/* Cómo se dice cada una con palabras. Hace falta para decir de quién es la
+   reacción sin obligar a nadie a descifrar un emoji: «Lo vi: Carlos, Luis». */
+const NOMBRE_REAC = Object.fromEntries(REACCIONES.map(([k, , q]) => [k, q]));
 
 /* ══════════════════════════════════════════════════════════════════════════
    QUIÉN ES QUIÉN
@@ -1724,6 +2093,64 @@ const FIGURAS = {
   ninguna:   '<circle cx="12" cy="12" r="8" stroke-dasharray="3 3.4"/>',
 };
 
+/* ══ EL SELLO DE CADA QUIEN ════════════════════════════════════════════════
+   Carlos, e151: «pon iconos de perfil variados para cada integrante los
+   actuales parece que son por defecto por no tener imagen de perfil y se ven
+   feos».
+
+   Tenía razón y el diagnóstico exacto importa: el avatar dibujaba la FAMILIA
+   —de qué modelo era—, así que las dos personas de la mesa salían con la
+   misma silueta de cabeza y hombros, que es literalmente el icono universal
+   de «esta persona no ha puesto foto». Y los dos Claude salían con la misma
+   estrella. Cuatro integrantes, dos dibujos.
+
+   Ahora la figura es de la PERSONA, no del modelo. Lo de qué modelo es no se
+   pierde: estaba cifrado en un glifo de 19 px que nadie sabe descifrar, y
+   ahora se lee con todas sus letras —«claude-opus-5»— debajo del nombre y en
+   «Quién es quién», que es donde se busca cuando de verdad se quiere saber.
+
+   ⚠ LA CLAVE ES EL NOMBRE, NO EL ID DE SESIÓN. Es lo único de aquí que se
+   puede equivocar en silencio: el id de una sesión de agente cambia CADA VEZ
+   que se abre, así que anclarlo ahí le daría a Godines un dibujo distinto
+   cada mañana — justo lo contrario de un icono de perfil. El nombre es lo que
+   se mantiene, y es además lo que la gente reconoce. De regalo, las dos
+   cuentas de Carlos que se llaman igual salen con el mismo sello, que es la
+   verdad: es la misma persona. */
+const SELLOS = [
+  '<path d="M12 4.2 20 19H4z"/>',
+  '<path d="M12 3.4 20.6 12 12 20.6 3.4 12z"/><path d="M7.6 12h8.8"/>',
+  '<path d="M12 3.2 19.6 7.6v8.8L12 20.8 4.4 16.4V7.6z"/>',
+  '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.4" fill="currentColor" stroke="none"/>',
+  '<path d="M13.4 3.2 6 13.4h5.2L10.6 20.8 18 10.6h-5.2z"/>',
+  '<path d="M9.6 4.2h4.8v5.4h5.4v4.8h-5.4v5.4H9.6v-5.4H4.2V9.6h5.4z"/>',
+  '<path d="M4.4 19.2v-5h5v-5h5v-5h5.2"/>',
+  '<path d="M4.2 19.4V12a7.8 7.8 0 0 1 15.6 0v7.4"/>',
+  '<path d="M16.6 15.8A7.4 7.4 0 0 1 9 4.6a8 8 0 1 0 7.6 11.2z"/>',
+  '<path d="M12 3 14 10 21 12 14 14 12 21 10 14 3 12 10 10z"/>',
+  '<path d="M6.6 20.4V8.2L12 4l5.4 4.2v12.2z"/><path d="M10 20.4v-5h4v5"/>',
+  '<path d="M12 20.2V4.4"/><path d="M6.4 10 12 4.4 17.6 10"/>',
+  '<path d="M12 3.9a8.1 8.1 0 1 1-5.7 13.8"/><path d="M3.9 12h5.2"/>',
+  '<path d="M6.4 4.2h11.2L12 12l5.6 7.8H6.4L12 12z"/>',
+  '<path d="M3.4 14.4c2.6-6 5.6-6 8.6 0s6 6 8.6 0"/>',
+  '<circle cx="12" cy="5.8" r="2.3"/><path d="M12 8.1v11.8"/><path d="M6 13.4a6 6 0 0 0 12 0"/>',
+  '<rect x="4.2" y="4.2" width="6.4" height="6.4"/><rect x="13.4" y="4.2" width="6.4" height="6.4"/><rect x="4.2" y="13.4" width="6.4" height="6.4"/><rect x="13.4" y="13.4" width="6.4" height="6.4" fill="currentColor" stroke="none"/>',
+  '<path d="M12 3.6 17.4 11a6.2 6.2 0 1 1-10.8 0z"/>',
+  '<path d="M5.6 8.4 12 4.2l6.4 4.2M5.6 14 12 9.8l6.4 4.2M5.6 19.6 12 15.4l6.4 4.2"/>',
+  '<circle cx="12" cy="12" r="4.4"/><path d="M12 2.6v3.6M12 17.8v3.6M2.6 12h3.6M17.8 12h3.6"/>',
+];
+
+/* El nombre, aplanado: «Claude de Luis», «claude-de-luis» y «CLAUDE DE LUIS»
+   son el mismo integrante y tienen que dar el mismo sello. */
+const claveDeSello = (c) => String(c && (c.nombre || c.id) || '?')
+  .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, ' ').trim();
+
+const selloDe = (c) => SELLOS[revoltijo(claveDeSello(c)) % SELLOS.length];
+
+/* El que ya no está en la sala conserva su círculo punteado: ahí el dibujo no
+   está diciendo quién es —no se sabe—, está diciendo que se fue. */
+const figuraDe = (c) => c.familia === 'ninguna' ? FIGURAS.ninguna : selloDe(c);
+
 const NOMBRE_FAM = {
   persona:'Persona', claude:'Claude', gpt:'GPT', gemini:'Gemini',
   llama:'Llama', mistral:'Mistral', deepseek:'DeepSeek', qwen:'Qwen',
@@ -1755,7 +2182,18 @@ function matiz(hex, paso){
    sigue pintándose como se pintó— y la sala sólo rellena lo que falte. */
 function credencial(de){
   if(!de) return { id:'?', nombre:'?', tipo:'agente', familia:'ninguna', color:GRIS, sombra:3 };
-  const p = gente[de.id] || {};
+  /* Si esta sesión fue absorbida, quien la pinta es la que se quedó: mismo
+     nombre, mismo color, mismo sello. El `de` del evento no se toca — lo que
+     cambia es de dónde se sacan los datos para dibujarlo. */
+  const vive = fusiones[de.id];
+  const p = gente[vive || de.id] || {};
+  if(vive && gente[vive]){
+    const q = gente[vive];
+    return { id: de.id, nombre:q.nombre, tipo:q.tipo, motor:q.motor || null,
+             cuenta:q.cuenta || null, padre:q.padre || null,
+             familia:q.familia || (q.tipo === 'humano' ? 'persona' : 'ninguna'),
+             color:q.color || GRIS, sombra: q.sombra ?? 3 };
+  }
   const familia = de.familia || p.familia || (de.tipo === 'humano' || p.tipo === 'humano' ? 'persona' : 'ninguna');
   return {
     id: de.id,
@@ -1769,6 +2207,14 @@ function credencial(de){
     sombra: de.sombra ?? p.sombra ?? 3,
   };
 }
+
+
+/* ⚠ ENVEJECER TAMBIÉN ES UN CAMBIO, y no llega por el socket. «Sin señal» se
+   calcula comparando `visto` contra el reloj de ESTE navegador, así que a los
+   cinco minutos alguien deja de estar en línea sin que el servidor mande
+   nada — y si nadie repinta, la lista se queda diciendo que sigue ahí. Medio
+   minuto es suficiente: el umbral son cinco. */
+setInterval(() => { if(sala && !demo && Object.keys(gente).length) pintarGente(); }, 30_000);
 
 /* ══ DE QUÉ CASA ES CADA QUIEN ═════════════════════════════════════════════
    La mesa tiene dos casas: Carlos y su Claude de un lado, Luis y el suyo del
@@ -1833,17 +2279,31 @@ function tonoDe(c){
   return matiz(base, c ? c.sombra : 3);
 }
 
-/* El avatar. `tam` es '', 'chico' o 'grande'. */
+/* El avatar. `tam` es '', 'chico' o 'grande'.
+   Tres capas, y ganan en este orden:
+     1. el retrato que subió la persona (sólo lo tienen las personas),
+     2. su sello, dibujado a partir del nombre — lo tienen todos, siempre,
+     3. el círculo punteado del que ya no está en la sala. */
 function avatarHtml(c, tam){
-  const fondo = matiz(c.color, c.sombra);
-  const fig = FIGURAS[c.familia] || FIGURAS.otra;
+  const fondo  = matiz(c.color, c.sombra);
   const anillo = c.padre ? ' sub' : '';
-  const quien = `${c.nombre} · ${c.motor || NOMBRE_FAM[c.familia] || 'agente'}` +
-                (c.cuenta ? ` · cuenta de ${c.cuenta}` : '');
-  return `<span class="avatar${tam ? ' ' + tam : ''}${anillo}" title="${esc(quien)}"` +
+  const quien  = `${c.nombre} · ${c.motor || NOMBRE_FAM[c.familia] || 'agente'}` +
+                 (c.cuenta ? ` · cuenta de ${c.cuenta}` : '');
+  const clase  = `avatar${tam ? ' ' + tam : ''}${anillo}`;
+
+  /* El retrato es de la CUENTA y sólo se le pone a la persona: la cuenta
+     «carlos» la comparten Carlos y su Claude, y ponerle a Sylcred la cara de
+     Carlos sería decir que hablaron ellos. */
+  const retrato = c.tipo === 'humano' ? retratos[c.cuenta] : null;
+  if(retrato){
+    return `<span class="${clase} conFoto" title="${esc(quien)}" style="color:${c.color}">` +
+           `<img src="${esc(retrato)}" alt=""></span>`;
+  }
+
+  return `<span class="${clase}" title="${esc(quien)}"` +
          ` style="background:${fondo}; color:${c.color}">` +
          `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1"` +
-         ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${fig}</svg></span>`;
+         ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${figuraDe(c)}</svg></span>`;
 }
 
 /* Cómo se dice el modelo en el renglón de abajo del nombre. Se prefiere el
@@ -1890,20 +2350,62 @@ function cajaDeCodigo(texto, lenguaje, archivo){
    siendo texto escapado, como siempre. */
 function conCodigo(texto){
   const crudo = String(texto == null ? '' : texto);
-  if(!crudo.includes('\u0060\u0060\u0060')) return esc(crudo);
+  if(!crudo.includes('\u0060\u0060\u0060')) return conEnlaces(esc(crudo));
   const partes = [];
   const cerca = /\u0060\u0060\u0060([A-Za-z0-9_.+-]{0,24})[ \t]*\n([\s\S]*?)\u0060\u0060\u0060/g;
   let ultimo = 0, m;
   while((m = cerca.exec(crudo)) !== null){
-    if(m.index > ultimo) partes.push(esc(crudo.slice(ultimo, m.index)));
+    if(m.index > ultimo) partes.push(conEnlaces(esc(crudo.slice(ultimo, m.index))));
     partes.push(cajaDeCodigo(m[2].replace(/\n$/, ''), m[1] || null, null));
     ultimo = cerca.lastIndex;
   }
-  if(ultimo < crudo.length) partes.push(esc(crudo.slice(ultimo)));
+  if(ultimo < crudo.length) partes.push(conEnlaces(esc(crudo.slice(ultimo))));
   return partes.join('');
 }
 
+/* ══ LO QUE SE PUEDE TOCAR DENTRO DE UN MENSAJE ═══════════════════════════
+   Carlos: «haz que los enlaces que pegues en tu mensaje pueda abrirlos con
+   sólo presionarlos, y lo mismo con los hipervínculos que a veces hacen donde
+   escriben #63 y sale en otro color representando que es una liga».
+
+   ⚠ VA DESPUÉS DE ESCAPAR, NUNCA ANTES. Es la única forma segura de hacer esto:
+   se escapa el texto entero primero —así cualquier `<script>` que alguien
+   escriba ya es texto muerto— y sólo entonces se buscan direcciones sobre el
+   resultado ya escapado. Al revés, un mensaje con `<img onerror=...>` metido
+   dentro de una dirección se convertiría en HTML de verdad. En una sala donde
+   escriben agentes y personas de dos cuentas, eso no es teórico.
+
+   Y por eso el patrón de dirección es RESTRICTIVO: sólo http y https, y sin
+   comillas ni signos de menor. Lo que no cabe ahí se queda como texto. */
+const REF_REPO = 'ejercitopalomazi9111-arch/mazi-central';
+function conEnlaces(html){
+  return String(html)
+    /* Direcciones. El cierre recorta la puntuación final, que casi siempre es
+       del renglón y no de la dirección: «mira https://x.dev/a.» */
+    .replace(/(https?:\/\/[^\s<>"']+)/g, (u) => {
+      const limpio = u.replace(/[.,;:)\]}]+$/, '');
+      const cola = u.slice(limpio.length);
+      return `<a class="liga-msj" href="${limpio}" target="_blank" rel="noopener noreferrer">${limpio}</a>${cola}`;
+    })
+    /* Referencias tipo #63 → el PR o issue de este repo. Se exige que vaya
+       suelta —precedida de espacio o principio de renglón— para no convertir
+       en liga el «#3» de «canal #3» ni un color como #63a. */
+    .replace(/(^|[\s(])#(\d{1,5})\b/g,
+      (_, antes, n) => `${antes}<a class="liga-msj ref" href="https://github.com/${REF_REPO}/pull/${n}" target="_blank" rel="noopener noreferrer">#${n}</a>`);
+}
+
 function tarjetaAdjunto(a){
+  /* ⚠ UN ADJUNTO PUEDE VENIR SIN SUS DATOS, y hay que dibujarlo diciéndolo.
+     Cuando el hilo pasa del tope de bytes, el servidor suelta los datos de
+     las imágenes más viejas para poder seguir guardando —el mensaje y su
+     autor se quedan, la imagen no—. Sin este caso, el `src` salía vacío y la
+     mesa pintaba el icono de imagen rota del navegador: eso se lee como un
+     error de la app, no como «esto se retiró por espacio». */
+  if(a.aligerado){
+    return `<span class="tarjeta ida"><span class="ico">🗄️</span><span class="txt">
+      <span class="t1">${esc(a.nombre || 'imagen')}</span>
+      <span class="t2">se retiró para que la sala siguiera cabiendo</span></span></span>`;
+  }
   if(a.clase === 'imagen'){
     const src = a.datos.startsWith('data:') ? a.datos : `data:${a.mime};base64,${a.datos}`;
     /* El hueco se reserva con la proporción que ya venía en el adjunto. */
@@ -2004,7 +2506,20 @@ function pintarReacciones(e){
   const r = e.reacciones || {};
   const partes = Object.entries(r).map(([cual, quienes]) => {
     const mia = yo && quienes.includes(yo.id);
-    return `<button class="reac ${mia ? 'mia' : ''}" data-reac="${esc(cual)}" data-sobre="${esc(e.id)}">` +
+    /* ⚠ DE QUIÉN ES CADA REACCIÓN. Carlos, e187: «haz que pueda ver de quién
+       es una reacción a un mensaje». El dato ya venía —el servidor guarda la
+       LISTA de ids por reacción, no un contador— y la mesa se quedaba con
+       `.length`. O sea que la parte cara ya estaba hecha y lo que faltaba era
+       enseñarla.
+
+       Va en el `title` y en el `aria-label`, no en un panel aparte: son dos o
+       tres nombres, caben en el sitio donde ya está el dedo, y así lo dice
+       igual el que pasa el ratón que el que usa lector de pantalla. Un panel
+       para leer dos nombres es una pantalla más que cerrar. */
+    const nombres = quienes.map(id => (gente[id] && gente[id].nombre) || id);
+    const dicho = `${NOMBRE_REAC[cual] || cual}: ${nombres.join(', ')}`;
+    return `<button class="reac ${mia ? 'mia' : ''}" data-reac="${esc(cual)}"` +
+           ` data-sobre="${esc(e.id)}" title="${esc(dicho)}" aria-label="${esc(dicho)}">` +
            `${FIGURA[cual] || '•'}<b>${quienes.length}</b></button>`;
   });
   partes.push(`<button class="reaccionar" data-abrir-reac="${esc(e.id)}" aria-label="Reaccionar">＋</button>`);
@@ -2025,6 +2540,28 @@ function pintarReacciones(e){
 function pintarHilo(){
   const c = $('hilo');
   const abajo = c.scrollHeight - c.scrollTop - c.clientHeight < 140;
+
+  /* ⚠ EL HILO SE REPINTA ENTERO, Y ESO TIRA EL SCROLL AL PRINCIPIO.
+     Carlos, e192: «cada que alguien responde te manda el scroll hacia arriba
+     eso está mal». Tenía razón y la causa es de una línea: abajo se hace
+     `c.innerHTML = …`, y reemplazar el contenido pone `scrollTop` en cero.
+     Sólo se recuperaba en el caso de estar ya pegado al final; el que estaba
+     leyendo hacia atrás se iba al principio cada vez que alguien escribía.
+
+     Se guarda un ANCLA y no el `scrollTop` a secas: el número sólo vale si lo
+     que hay por encima mide igual después, y no siempre —una traducción que
+     se abre, una fusión, una imagen que acaba de cargar—. Anclando al primer
+     mensaje visible, lo que estabas leyendo se queda donde estaba aunque lo
+     de arriba haya cambiado de alto. */
+  let ancla = null;
+  if(!abajo){
+    const arriba = c.getBoundingClientRect().top;
+    for(const b of c.querySelectorAll('[data-ev]')){
+      const r = b.getBoundingClientRect();
+      if(r.bottom > arriba){ ancla = { id:b.dataset.ev, y:r.top }; break; }
+    }
+  }
+
   const evs = hilo;
   const partes = [];
 
@@ -2122,6 +2659,22 @@ function pintarHilo(){
           IDIOMA === 'en' ? 'In English' : 'En cristiano'}</span>${esc(simples[e.id])}</div>`
       : '';
 
+    /* ── HASTA AQUÍ LEYÓ QUIÉN ────────────────────────────────────────
+       Carlos, e187: «que la propia app cuando tú scroll haga que veas el
+       mensaje lo marque como visto tipo WhatsApp […] y haz que los vistos
+       también se pueda ver de quién son».
+
+       La marca va DESPUÉS del mensaje donde se quedó cada quien, con su
+       cara. Así el «de quién es» no necesita ni un panel ni un toque: se ve
+       en el sitio, que es como lo hacen las apps de mensajes.
+
+       No se pinta la tuya. Saber hasta dónde has leído tú no le sirve a
+       nadie —lo tienes en la pantalla— y ocuparía un renglón en cada vuelta
+       de la conversación. */
+    const leyeronAqui = Object.entries(vistos)
+      .filter(([id, ev]) => ev === e.id && id !== (yo && yo.id) && gente[id])
+      .map(([id]) => credencial(gente[id]));
+
     partes.push(
       `<div class="grupo ${mio ? 'mio' : ''} ${otrolado ? 'otrolado' : ''} ${
          conAnterior ? 'junto' : ''} ${conSiguiente ? '' : 'fin'}"` +
@@ -2132,12 +2685,227 @@ function pintarHilo(){
         `<div class="dicho">${cuerpo}${cab ? '' :
            `<span class="sello-hora">${hora(e.ts)}</span>`}</div>` +
         adj + nota + llano + pintarReacciones(e) +
-      `</div></div>`);
+      `</div></div>` +
+      (leyeronAqui.length
+        ? `<div class="leido" title="${esc('Leyeron hasta aquí: ' + leyeronAqui.map(c => c.nombre).join(', '))}">` +
+          `<span class="leido-txt">visto por</span>` +
+          leyeronAqui.map(c => avatarHtml(c, 'chico')).join('') + `</div>`
+        : ''));
   });
 
   c.innerHTML = partes.join('') ||
     '<p class="sistema">Todavía no se ha dicho nada. Empieza tú.</p>';
-  if(abajo) c.scrollTop = c.scrollHeight;
+
+  mirarLoLeido();
+
+  if(abajo){ c.scrollTop = c.scrollHeight; return; }
+  if(!ancla) return;
+  const b = c.querySelector(`[data-ev="${CSS.escape(ancla.id)}"]`);
+  /* Se corrige por DIFERENCIA y no se calcula una posición absoluta: así da
+     igual cuánto haya crecido lo de arriba. Si el mensaje del ancla ya no
+     está —lo borraron, o se recortó el hilo por el tope— no se inventa nada. */
+  if(b) c.scrollTop += b.getBoundingClientRect().top - ancla.y;
+}
+
+/* ══ AVISOS: NOTIFICACIÓN, VIBRACIÓN Y SONIDO ══════════════════════════════
+   Carlos, e187: «pon sistema de notificaciones de la web para que llegue un
+   mensaje de tipo notificación con el logo etc al teléfono […] y ponle
+   vibración cuando alguien escribe y un sonidito».
+
+   ── LO QUE ESTO HACE Y LO QUE NO, DICHO AQUÍ PARA NO PROMETER DE MÁS ─────
+   SÍ: avisa con la app ABIERTA aunque esté en otra pestaña o de fondo — que
+   es el caso de todos los días, uno deja la sala abierta y se va a otra cosa.
+   NO: no avisa con la app CERRADA. Eso es Web Push y necesita tres cosas que
+   no dependen de este archivo: un service worker, un par de llaves VAPID
+   —la privada como secreto del worker— y que el servidor firme y mande cada
+   aviso. Se puede hacer, y hace falta la llave de alguien. Media
+   implementación que a veces avisa y a veces no es peor que ninguna, porque
+   uno deja de mirar el chat confiando en algo que no llega.
+
+   El permiso se pide con un GESTO y nunca al cargar: un navegador rechaza el
+   que se pide solo, y aunque lo aceptara, pedirle permiso a alguien que
+   acaba de abrir la página es cómo se consigue que lo niegue para siempre. */
+const PUEDE_AVISAR = 'Notification' in window;
+const quiereAvisos = () => { try{ return localStorage.getItem('sala-avisos') === 'si'; }catch(e){ return false; } };
+
+let audio = null;
+/* El sonido se SINTETIZA, no se descarga: un archivo son dos peticiones más
+   —una por tema— y aquí no hay ninguna. Dos notas cortas, la segunda una
+   quinta arriba: se reconoce sin ser un timbre de teléfono. */
+function sonar(){
+  if(!quiereAvisos()) return;
+  try{
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if(audio.state === 'suspended') audio.resume();
+    const t = audio.currentTime;
+    [587.33, 880].forEach((hz, i) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = 'sine'; o.frequency.value = hz;
+      o.connect(g); g.connect(audio.destination);
+      const d = t + i * 0.09;
+      /* La envolvente importa: una onda que arranca y para en seco hace un
+         chasquido que se oye peor que la nota. */
+      g.gain.setValueAtTime(0.0001, d);
+      g.gain.exponentialRampToValueAtTime(0.09, d + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, d + 0.16);
+      o.start(d); o.stop(d + 0.18);
+    });
+  }catch(e){ /* sin audio no pasa nada: el aviso ya salió por otros dos lados */ }
+}
+
+/* Vibrar es lo único que se nota con el teléfono en el bolsillo. Un pulso
+   corto para «alguien está escribiendo» y dos para «llegó un mensaje»: sin
+   mirar, ya se sabe cuál de las dos cosas pasó.
+   `navigator.vibrate` no existe en iOS y no se finge que sí; ahí quedan la
+   notificación y el sonido. */
+function vibrar(patron){
+  if(!quiereAvisos()) return;
+  try{ navigator.vibrate && navigator.vibrate(patron); }catch(e){}
+}
+
+function avisar(evento){
+  if(!quiereAvisos() || !PUEDE_AVISAR) return;
+  if(Notification.permission !== 'granted') return;
+  /* Con la sala delante NO se avisa: la persona lo está viendo. Avisar de lo
+     que ya se tiene en pantalla es lo que hace que se apaguen los avisos. */
+  if(!document.hidden) return;
+  const c = credencial(evento.de);
+  try{
+    const n = new Notification(c.nombre, {
+      body: (evento.texto || '(adjunto)').slice(0, 140),
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+      tag: 'sala-' + sala,          /* uno solo, que se pisa: no una torre */
+      renotify: true,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  }catch(e){}
+}
+
+async function pedirAvisos(){
+  if(!PUEDE_AVISAR){ letrero('Este navegador no sabe avisar.'); return false; }
+  let p = Notification.permission;
+  if(p === 'default') p = await Notification.requestPermission();
+  if(p !== 'granted'){
+    letrero('El navegador no dio permiso para avisar.');
+    return false;
+  }
+  try{ localStorage.setItem('sala-avisos', 'si'); }catch(e){}
+  /* Se prueba en el momento: así se sabe que funciona y, de paso, el gesto
+     que acaba de hacer desbloquea el audio, que si no queda mudo hasta el
+     primer toque. */
+  sonar(); vibrar([40]);
+  letrero('Avisos encendidos.');
+  return true;
+}
+function apagarAvisos(){
+  try{ localStorage.setItem('sala-avisos', 'no'); }catch(e){}
+  letrero('Avisos apagados.');
+}
+
+/* ══ MARCAR LO LEÍDO AL DESPLAZARSE ════════════════════════════════════════
+   Carlos, e187: «que la propia app cuando tú scroll haga que veas el mensaje
+   lo marque como visto tipo WhatsApp».
+
+   Un `IntersectionObserver` y no una escucha de scroll: el observador lo
+   resuelve el navegador fuera del hilo principal y avisa sólo cuando algo
+   entra o sale. Con `scroll` habría que recorrer los mensajes en cada
+   fotograma, que es exactamente cómo se llega a que el chat vaya a tirones.
+
+   ⚠ SE MANDA UNA SOLA VEZ Y CON RETRASO. Bajar de golpe por veinte mensajes
+   dispara veinte entradas; sin el freno serían veinte peticiones para decir
+   veinte veces lo mismo, y la última ya lo dice todo — la marca es «hasta
+   dónde», no «cuáles». Medio segundo después de que la vista se calma.
+
+   ⚠ Y NO SE MARCA LO QUE NO SE HA VISTO DE VERDAD: `threshold` alto y
+   `document.hidden` mirado antes de mandar. Un mensaje que entró en pantalla
+   con la pestaña en segundo plano no lo ha leído nadie, y un «visto» falso es
+   peor que no tener vistos: hace que el otro se quede esperando respuesta. */
+let vistoMandado = '', relojVisto = null;
+const numeroEv = (id) => parseInt(String(id || '').replace(/^e/, ''), 10) || 0;
+
+const ojoVistos = ('IntersectionObserver' in window)
+  ? new IntersectionObserver((entradas) => {
+      if(document.hidden) return;
+      let alto = vistoMandado;
+      for(const en of entradas){
+        if(!en.isIntersecting) continue;
+        const id = en.target.dataset.ev;
+        if(numeroEv(id) > numeroEv(alto)) alto = id;
+      }
+      if(numeroEv(alto) <= numeroEv(vistoMandado)) return;
+      clearTimeout(relojVisto);
+      relojVisto = setTimeout(() => {
+        /* Se vuelve a mirar aquí y no sólo arriba: entre que se programó y
+           que toca, la persona pudo cambiar de pestaña. */
+        if(document.hidden || !sala || demo || !yo) return;
+        if(numeroEv(alto) <= numeroEv(vistoMandado)) return;
+        vistoMandado = alto;
+        alServidor('visto', { de: yo.id, hasta: alto })
+          .catch(() => { vistoMandado = ''; });   /* si falló, que reintente */
+      }, 500);
+    }, { threshold: 0.75 })
+  : null;
+
+/* El hilo se repinta entero, así que los nodos que observaba el observador ya
+   no existen. Se vuelve a enganchar después de cada pintada. */
+function mirarLoLeido(){
+  if(!ojoVistos) return;
+  ojoVistos.disconnect();
+  for(const b of $('hilo').querySelectorAll('[data-ev]')) ojoVistos.observe(b);
+}
+
+/* ══ PREGUNTAR ═════════════════════════════════════════════════════════════
+   Sustituye a `confirm()`. Devuelve una promesa que da true o false, así que
+   quien la usa se lee igual de corto que antes — con un `await` delante.
+
+   Lo que `confirm()` da gratis y aquí hay que poner a mano: Escape cancela,
+   tocar el fondo cancela, el foco entra en la caja y VUELVE a donde estaba, y
+   el resto de la página queda inerte mientras tanto. Es la parte que se
+   olvida y la que hace que un modal casero sea peor que el del sistema.
+
+   El botón que confirma NO se enfoca al abrir: enfocar el destructivo hace
+   que un Enter de inercia —el mismo con el que acabas de mandar un mensaje—
+   confirme lo que no querías. Se enfoca el de cancelar. */
+function preguntar({ titulo, texto, si = 'Sí', peligro = false }){
+  return new Promise((listo) => {
+    const caja = $('pregunta'), bSi = $('preguntaSi'), bNo = $('preguntaNo');
+    const antes = document.activeElement;
+    $('preguntaTit').textContent = titulo;
+    $('preguntaTxt').textContent = texto || '';
+    $('preguntaTxt').hidden = !texto;
+    bSi.textContent = si;
+    bSi.classList.toggle('peligro', !!peligro);
+    caja.classList.add('abierta');
+    document.querySelector('.app')?.setAttribute('inert', '');
+    bNo.focus();
+
+    const cerrar = (r) => {
+      caja.classList.remove('abierta');
+      document.querySelector('.app')?.removeAttribute('inert');
+      bSi.removeEventListener('click', aSi);
+      bNo.removeEventListener('click', aNo);
+      caja.removeEventListener('click', aFondo);
+      removeEventListener('keydown', aTecla);
+      if(antes && document.contains(antes)) antes.focus();
+      listo(r);
+    };
+    const aSi = () => cerrar(true);
+    const aNo = () => cerrar(false);
+    const aFondo = (e) => { if(e.target === caja) cerrar(false); };
+    const aTecla = (e) => {
+      if(e.key === 'Escape'){ e.preventDefault(); cerrar(false); }
+      /* Tabular no se sale de la caja: son dos botones y se da la vuelta. */
+      if(e.key === 'Tab'){
+        e.preventDefault();
+        (document.activeElement === bNo ? bSi : bNo).focus();
+      }
+    };
+    bSi.addEventListener('click', aSi);
+    bNo.addEventListener('click', aNo);
+    caja.addEventListener('click', aFondo);
+    addEventListener('keydown', aTecla);
+  });
 }
 
 /* ── reaccionar ─────────────────────────────────────────────────────────── */
@@ -2276,33 +3044,81 @@ function verPantalla(id){
    puede, enseña la regla. Las razones son las mismas que revisa el servidor,
    escritas antes de tocarlo para no gastar un viaje en un no. */
 function porQueNoSeBarre(p){
-  if(p.id === yo) return 'Éste eres tú.';
+  /* ⚠ `yo` es un OBJETO, no un id. La comparación decía `p.id === yo` y por
+     tanto era siempre falsa: mirándote a ti mismo, el panel contestaba
+     «Está conectado ahorita» en vez de «Éste eres tú». Se veía razonable y
+     estaba mal. */
+  if(yo && p.id === yo.id) return 'Éste eres tú.';
   if(conectados.has(p.id)) return 'Está conectado ahorita. Esto barre fantasmas, no saca gente de la junta.';
   if(hilo.some(e => e.tipo !== 'sistema' && e.de && e.de.id === p.id && (e.texto || '').trim()))
     return 'Sí participó en el hilo, así que no es un fantasma: quitarlo dejaría mensajes sin autor.';
   return null;
 }
 
+/* ¿Ésta es otra sesión MÍA? Mismo tipo y misma cuenta que la mía, y no soy
+   yo. Es el caso de Carlos: dos pestañas suyas, las dos «Carlos», contadas
+   como dos personas en la mesa. */
+function esOtraSesionMia(p){
+  if(!yo || p.id === yo.id) return false;
+  const mio = gente[yo.id]; if(!mio) return false;
+  return !!mio.cuenta && p.cuenta === mio.cuenta && p.tipo === mio.tipo;
+}
+
 function barrerHtml(p){
   const no = porQueNoSeBarre(p);
-  if(p.id === yo) return '';
+  if(yo && p.id === yo.id) return '';
+
+  /* Se ofrece justo donde antes sólo había un «no se puede»: la sesión que
+     habló no es un fantasma y por eso no se barre — pero si es tuya, lo que
+     querías no era borrarla, era juntarla con la tuya. */
+  const fusion = esOtraSesionMia(p)
+    ? `<button class="btn" data-fusionar="${esc(p.id)}">Es una sesión mía: fusionar</button>
+       <div class="paso">Sus mensajes pasan a verse con tu nombre y tu figura, y deja de
+       contarse aparte en la sala. <b>El hilo no se reescribe</b>: cada mensaje sigue
+       guardando con qué sesión se dijo.</div>`
+    : '';
+
   return `<div class="barrer">` +
-    (no ? `<div class="paso">No se puede quitar. ${esc(no)}</div>`
+    (no ? `<div class="paso">No se puede quitar. ${esc(no)}</div>` + fusion
         : `<button class="btn peligro" data-barrer="${esc(p.id)}">Quitar de la sala</button>
            <div class="paso">No ha hablado y no está conectado: es una sesión que quedó suelta.
-           Se puede quitar sin perder nada del hilo.</div>`) +
+           Se puede quitar sin perder nada del hilo.</div>` + fusion) +
     `</div>`;
 }
 
 /* Va delegado en el documento: el panel se vuelve a pintar entero cada vez que
    se abre, así que un listener colgado del botón moriría con él. */
 $('pantallaCaja').addEventListener('click', async (e) => {
+  const fu = e.target.closest('[data-fusionar]');
+  if(fu){
+    const id = fu.dataset.fusionar, quien = gente[id];
+    if(!quien) return;
+    if(!await preguntar({
+      titulo: `¿Juntar "${quien.nombre}" con tu sesión?`,
+      texto: 'Sus mensajes se verán con tu nombre y tu figura. El hilo no se reescribe: cada mensaje sigue guardando con qué sesión se dijo.',
+      si: 'Juntarlas' })) return;
+    fu.disabled = true;
+    try{
+      const d = await alServidor('fusionar', { de: yo.id, cual: id });
+      gente = d.gente || gente; fusiones = d.fusiones || fusiones;
+      $('pantalla').classList.remove('abierta');
+      pintarGente(); pintarHilo();
+    }catch(err){
+      fu.insertAdjacentHTML('afterend', `<div class="paso">${esc(err.message)}</div>`);
+      fu.disabled = false;
+    }
+    return;
+  }
+
   const b = e.target.closest('[data-barrer]');
   if(!b) return;
   const id = b.dataset.barrer;
   const quien = gente[id];
   if(!quien) return;
-  if(!confirm(`¿Quitar a "${quien.nombre}" de la sala?`)) return;
+  if(!await preguntar({
+    titulo: `¿Quitar a "${quien.nombre}" de la sala?`,
+    texto: 'No ha hablado y no está conectado. No se pierde nada del hilo.',
+    si: 'Quitar', peligro: true })) return;
 
   b.disabled = true;
   try{
@@ -2332,18 +3148,12 @@ $('pantalla').addEventListener('click', (e) => {
 });
 
 /* ── la leyenda ─────────────────────────────────────────────────────────
-   Un alfabeto que nadie puede leer es decoración. Se marca primero lo que
-   está EN LA MESA ahorita: nadie tiene que aprenderse las dieciséis figuras
-   para entender a los tres que están adentro. */
+   Un alfabeto que nadie puede leer es decoración — y ése era exactamente el
+   problema de la versión anterior, que pedía aprenderse dieciséis figuras de
+   modelo para entender a los cuatro que están adentro. Ahora sólo se lista a
+   los que están, con su cara y su modelo escrito. */
 function verLeyenda(){
   const dentro = Object.values(gente).map(credencial);
-  const cuenta = {};
-  for(const c of dentro) cuenta[c.familia] = (cuenta[c.familia] || 0) + 1;
-
-  const familias = Object.keys(FIGURAS)
-    .filter(f => f !== 'ninguna')
-    .sort((a, b) => (cuenta[b] || 0) - (cuenta[a] || 0));
-
   const porCuenta = {};
   for(const c of dentro){
     if(!c.cuenta) continue;
@@ -2352,8 +3162,11 @@ function verLeyenda(){
 
   $('leyendaCaja').innerHTML =
     `<h3>Quién es quién</h3>
-     <p>La <b>figura</b> dice de qué modelo es. El <b>color</b>, de quién es la cuenta.
-     El <b>anillo</b>, que es un subagente de alguien.</p>` +
+     <p>La <b>figura</b> es de cada quien y sale de su nombre, así que es la
+     misma todos los días. El <b>color</b> dice de quién es la cuenta. El
+     <b>anillo</b>, que es un subagente de alguien. De qué modelo es cada uno
+     va escrito con su nombre — antes iba cifrado en la figura, que es como
+     decirlo sin decirlo.</p>` +
 
     `<h4>De quién es cada color</h4>` +
     (Object.keys(porCuenta).length
@@ -2364,19 +3177,26 @@ function verLeyenda(){
              d.gente.some(g => g.padre) ? ' · con subagentes' : ''}</span></div>`).join('')
       : '<p>Todavía no hay nadie en la mesa.</p>') +
 
-    `<h4>Qué figura es cada modelo</h4>
+    /* ⚠ AQUÍ HABÍA UNA REJILLA DE «QUÉ FIGURA ES CADA MODELO», y se quitó
+       porque al hacer la figura de cada persona dejó de decir la verdad:
+       pintaba quince casillas llamando a `avatarHtml` con entradas que no
+       tienen nombre, así que las quince salían con EL MISMO dibujo. Una
+       leyenda que explica algo que ya no existe es peor que no tenerla — y
+       ésta además se veía rota en la captura, que es como se cazó.
+
+       En su lugar va lo que la gente venía a buscar aquí: quién está en la
+       mesa, con qué cara sale y qué modelo trae, escrito. */
+    `<h4>Quién está aquí</h4>
      <div class="rejilla-fam">` +
-    familias.map(f => {
-      const c = { familia:f, color: cuenta[f]
-        ? (dentro.find(x => x.familia === f) || {}).color : GRIS, sombra:3 };
-      return `<div class="fam${cuenta[f] ? ' aqui' : ''}">${avatarHtml(c, '')}
-        <b>${esc(NOMBRE_FAM[f] || f)}</b>${
-        cuenta[f] ? `<span class="cuantos">${cuenta[f]} aquí</span>` : ''}</div>`;
-    }).join('') + '</div>' +
+    (dentro.length
+      ? dentro.map(c => `<div class="fam aqui">${avatarHtml({ ...c, padre:null }, '')}
+          <b>${esc(c.nombre)}</b><span class="cuantos">${esc(comoSeLlama(c))}</span></div>`).join('')
+      : '<p>Todavía no hay nadie en la mesa.</p>') + '</div>' +
 
     `<h4>Las figuras son nuestras</h4>
-     <p>No son los logos de cada empresa: son marcas registradas y esto vive en un repo
-     público. Se distinguen igual, y nadie tiene nada que reclamar.</p>`;
+     <p>Son geometría dibujada aquí, no logos de nadie: los de las empresas son
+     marcas registradas y esto vive en un repo público. Y no hay dos personas
+     con la misma porque la figura sale del nombre, no del modelo.</p>`;
 
   $('leyenda').classList.add('abierta');
 }
@@ -2717,9 +3537,18 @@ function abrirSocket(codigo){
   ws.onmessage = (m) => {
     const p = JSON.parse(m.data);
     if(p.que === 'hola'){
-      hilo = p.hilo; gente = p.gente;
+      hilo = p.hilo; gente = p.gente; retratos = p.retratos || {}; fusiones = p.fusiones || {};
+      vistos = p.vistos || {};
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
       pintarGente(); pintarHilo(); recibirEscribiendo(p.escribiendo);
+    }
+    /* Que alguien se cambie la foto repinta el hilo entero, y tiene que ser
+       así: su cara sale en cada mensaje que dijo, no sólo en la lista de
+       gente. Repintar sólo la lista dejaba la cara vieja en la conversación
+       hasta recargar. */
+    if(p.que === 'retratos'){
+      retratos = p.retratos || {};
+      pintarGente(); pintarHilo(); pintarYo();
     }
     if(p.que === 'escribiendo') recibirEscribiendo(p.quienes);
     /* El servidor manda `hilo` cuando se barre un fantasma con rastro, y la
@@ -2732,6 +3561,11 @@ function abrirSocket(codigo){
     }
     if(p.que === 'evento'){
       hilo.push(p.evento);
+      /* Aviso sólo de lo que dice otra persona. Los de sistema —entró, salió—
+         y los míos no valen un zumbido en el bolsillo. */
+      if(p.evento.tipo !== 'sistema' && p.evento.de && yo && p.evento.de.id !== yo.id){
+        avisar(p.evento); sonar(); vibrar([28, 60, 28]);
+      }
       if(p.evento.tipo === 'sistema'){
         const quien = esc(p.evento.de.nombre);
         letrero(`<b>${quien}</b> ${p.evento.accion === 'entra' ? 'entró' : 'salió'}`);
@@ -2741,7 +3575,25 @@ function abrirSocket(codigo){
     if(p.que === 'gente'){
       gente = p.gente;
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
+      /* Una fusión llega por aquí, y además de la lista hay que repintar el
+         HILO: los mensajes de la sesión absorbida se pintan con la
+         credencial de la que quedó, y si no se repintan se quedan con el
+         nombre viejo hasta recargar. */
+      if(p.fusiones){ fusiones = p.fusiones; pintarHilo(); }
       pintarGente(); if(vistaTaller) pintarTaller();
+    }
+    /* La presencia llega por su propio canal y NO repinta el hilo: es la
+       lista de gente la que cambia, y repintar el hilo cada 45 segundos
+       tiraría la posición de lectura de quien está leyendo hacia arriba. */
+    if(p.que === 'presencia'){
+      for(const id in (p.visto || {}))   if(gente[id]) gente[id].visto  = p.visto[id];
+      for(const id in (p.estados || {})) if(gente[id]) gente[id].estado = p.estados[id];
+      if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
+      pintarGente(); pintarYo();
+    }
+    if(p.que === 'vistos'){
+      vistos = p.vistos || {};
+      pintarHilo();
     }
     if(p.que === 'reaccion'){
       const ev = hilo.find(x => x.id === p.id);
@@ -2769,6 +3621,12 @@ function avisarFreno(vueltas, tope){
 
 function limpiar(){
   $('texto').value = ''; $('nota').value = '';
+  /* ⚠ VACIAR POR CÓDIGO NO DISPARA `input`, y por eso la caja se quedaba con
+     el alto del mensaje que acababa de irse. Carlos: «después de escribir y
+     enviar un mensaje la caja no regresa a su tamaño». El defecto es de los
+     que se ven una sola vez y se olvidan: sólo pasa si escribiste varios
+     renglones. */
+  estirarCaja();
   pegados.length = 0; pintarPegados();
 }
 
@@ -2899,6 +3757,12 @@ async function pegar(archivos){
 }
 
 function pintarPegados(){
+  /* El clip se enciende cuando hay algo pegado. Con la fila de botones vieja
+     se veía la miniatura y ya; ahora que el clip es un icono suelto, sin esta
+     marca no habría forma de saber que llevas una imagen puesta hasta que la
+     mandas. */
+  const clip = $('bImagen');
+  if(clip) clip.classList.toggle('tiene', pegados.length > 0);
   $('pegados').innerHTML = pegados.map((p, i) =>
     `<span class="pegado"><img src="${p.vista}" alt="">` +
     `<button type="button" data-quitar="${i}" aria-label="Quitar">×</button></span>`).join('');
@@ -3063,7 +3927,11 @@ function mostrarVista(cual){
   $('marco3d').hidden = cual !== 'taller3d';
   for(const b of document.querySelectorAll('.pest'))
     b.classList.toggle('activa', b.dataset.vista === cual);
-  $('bVista').textContent = cual === 'chat' ? 'Vista' : 'Chat';
+  /* El botón de «Vista» del pie ya no existe —el menú hace lo mismo— así que
+     esto se guarda: sin la guarda, quitar un botón del HTML tumba la función
+     que pinta las vistas y con ella media pantalla. Un `getElementById` de algo
+     que no está devuelve `null`, y `null.textContent` no perdona. */
+  const bv = $('bVista'); if(bv) bv.textContent = cual === 'chat' ? 'Vista' : 'Chat';
   if(cual === 'hebras') pintarTaller();
   if(cual === 'taller3d') prender3D();
 }
@@ -3113,7 +3981,39 @@ $('pestanas').addEventListener('click', (e) => {
   const b = e.target.closest('[data-vista]');
   if(b) mostrarVista(b.dataset.vista);
 });
-$('bVista').addEventListener('click', cambiarVista);
+$('bVista') && $('bVista').addEventListener('click', cambiarVista);
+
+/* ── LA CAJA CRECE CON LO QUE SE ESCRIBE ──────────────────────────────────
+   Arranca en un renglón, que es lo que Carlos pidió («más chiquito y cómodo»),
+   y sube hasta el tope que fija el CSS. Sin esto, «más chico» querría decir
+   escribir un párrafo por una rendija de un renglón, que es peor que la caja
+   de tres que había.
+
+   Se baja a `auto` antes de medir: sin ese paso, `scrollHeight` devuelve el
+   alto que YA tiene y la caja nunca se encoge al borrar texto. */
+function estirarCaja(){
+  const t = $('texto'); if(!t) return;
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 152) + 'px';
+}
+$('texto') && $('texto').addEventListener('input', estirarCaja);
+estirarCaja();
+/* El botón dice en qué estado está, no qué hace: «apagar» cuando están
+   encendidos. Un interruptor que siempre dice lo mismo obliga a probarlo. */
+function pintarBotonAvisos(){
+  const b = $('bAvisos'); if(!b) return;
+  const si = quiereAvisos() && PUEDE_AVISAR && Notification.permission === 'granted';
+  b.querySelector('span:last-child').textContent =
+    si ? 'Apagar los avisos' : 'Avisos al teléfono';
+  b.querySelector('.ico').textContent = si ? '🔕' : '🔔';
+}
+$('bAvisos').addEventListener('click', async () => {
+  if(quiereAvisos() && Notification.permission === 'granted') apagarAvisos();
+  else await pedirAvisos();
+  pintarBotonAvisos(); cerrarCajones();
+});
+pintarBotonAvisos();
+
 $('bVista2').addEventListener('click', () => { cambiarVista(); cerrarCajones(); });
 $('gente').addEventListener('click', (e) => {
   const b = e.target.closest('[data-ver]');
@@ -3208,18 +4108,190 @@ document.addEventListener('click', async (e) => {
   }, 1800);
 });
 
-/* ── la lupa ── */
+/* ══ LA LUPA · galería que se pasa con el dedo ══════════════════════════════
+   Carlos, e151: «haz que si alguien incluyendo­te pone varias imágenes en su
+   mensaje pueda pasar entre ellas deslizando izquierda o derecha y salir de
+   estas deslizando de arriba hacia abajo».
+
+   ── LO QUE HAY QUE SABER ANTES DE TOCAR ESTO ─────────────────────────────
+   · Se usa `pointerdown/move/up` y NO `dragstart`. `dragstart` sencillamente
+     NO EXISTE en un dedo: es la API de arrastrar-y-soltar de escritorio. Con
+     ella el gesto funciona con ratón y no hace absolutamente nada en el
+     teléfono, que es donde Carlos lo pidió.
+   · `setPointerCapture` para que el dedo siga mandando aunque se salga de la
+     pista. Sin él, arrastrar hasta el borde de la pantalla suelta el gesto a
+     medias y la imagen se queda torcida.
+   · SÓLO se mueve con `transform`, regla de la casa: lo resuelve el
+     compositor y no obliga a recalcular la maqueta en cada fotograma.
+   · El eje se DECIDE UNA VEZ, pasados 8 px, y ya no cambia. Sin ese candado
+     una diagonal mueve la pista de lado Y baja la lupa a la vez, y al soltar
+     se van las dos cosas: cambias de imagen y además se cierra. */
+const lupa = {
+  fotos: [], i: 0, abierta: false, quienAbrio: null,
+  x0: 0, y0: 0, dx: 0, dy: 0, eje: null, t0: 0, arrastrando: false, movió: false,
+};
+
+const $lupa   = $('lupa');
+const $pista  = $('lupaPista');
+const $puntos = $('lupaPuntos');
+
+/* Ancho de UNA lámina. Se pregunta al contenedor y no se guarda: la pantalla
+   gira, la ventana se arrastra, y un ancho guardado al abrir deja las láminas
+   descuadradas justo después de girar el teléfono. */
+const anchoLupa = () => $pista.parentElement.clientWidth || innerWidth;
+
+function pintarLupa(){
+  $pista.innerHTML = lupa.fotos
+    .map(src => `<div class="lupa-dia"><img src="${esc(src)}" alt=""></div>`).join('');
+  $puntos.innerHTML = lupa.fotos.length > 1
+    ? lupa.fotos.map((_, k) => `<span class="${k === lupa.i ? 'hoy' : ''}"></span>`).join('')
+    : '';
+  $('lupaCuenta').textContent = lupa.fotos.length > 1
+    ? `${lupa.i + 1} / ${lupa.fotos.length}` : '';
+  const una = lupa.fotos.length < 2;
+  $('lupaIzq').hidden = una;
+  $('lupaDer').hidden = una;
+}
+
+function colocar(animando){
+  $pista.classList.toggle('suelta', !!animando);
+  $pista.style.transform =
+    `translate3d(${-lupa.i * anchoLupa() + lupa.dx}px, ${lupa.dy}px, 0)`;
+  /* Al bajar, el fondo se va aclarando: dice que soltar ahí cierra, antes de
+     que la persona suelte. Sin eso el gesto es una apuesta a ciegas. */
+  $lupa.style.background = `rgba(8,5,13,${(.985 * (1 - Math.min(lupa.dy / 420, .8))).toFixed(3)})`;
+}
+
+function irA(k, animando = true){
+  lupa.i = Math.max(0, Math.min(lupa.fotos.length - 1, k));
+  lupa.dx = 0; lupa.dy = 0;
+  colocar(animando);
+  const p = [...$puntos.children];
+  p.forEach((s, j) => s.classList.toggle('hoy', j === lupa.i));
+  $('lupaCuenta').textContent = lupa.fotos.length > 1
+    ? `${lupa.i + 1} / ${lupa.fotos.length}` : '';
+}
+
+function abrirLupa(fotos, i, quienAbrio){
+  lupa.fotos = fotos; lupa.i = i; lupa.dx = 0; lupa.dy = 0;
+  lupa.abierta = true; lupa.quienAbrio = quienAbrio || null;
+  pintarLupa();
+  $lupa.classList.add('abierta');
+  colocar(false);
+  /* Lo que <dialog> daría gratis, a mano: el resto de la página deja de
+     existir para el teclado y para el lector de pantalla mientras la lupa
+     está encima. Sin esto se puede tabular hacia los mensajes de atrás, que
+     siguen ahí aunque no se vean. */
+  document.querySelector('.app')?.setAttribute('inert', '');
+  $('bCerrarLupa').focus();
+}
+
+function cerrarLupa(){
+  if(!lupa.abierta) return;
+  lupa.abierta = false;
+  $lupa.classList.remove('abierta');
+  $lupa.style.background = '';
+  $pista.innerHTML = '';                       /* suelta las imágenes grandes */
+  document.querySelector('.app')?.removeAttribute('inert');
+  /* Y el foco vuelve a la foto desde la que se abrió, no al principio de la
+     página. Es la mitad del trabajo de un modal y la que siempre se olvida. */
+  if(lupa.quienAbrio && document.contains(lupa.quienAbrio)) lupa.quienAbrio.focus();
+  lupa.quienAbrio = null;
+}
+
 document.addEventListener('click', (e) => {
   const m = e.target.closest('.foto');
-  if(m){ $('lupaImg').src = m.dataset.grande; $('lupa').classList.add('abierta'); }
+  if(!m) return;
+  /* Las hermanas del MISMO mensaje, en el orden en que se ven. Si el mensaje
+     trae una sola, la galería sigue siendo galería: no se pasa de lado, pero
+     el deslizar hacia abajo para salir funciona igual. */
+  const caja = m.closest('.adjuntos') || m.parentElement;
+  const todas = [...caja.querySelectorAll('.foto')];
+  abrirLupa(todas.map(b => b.dataset.grande), Math.max(0, todas.indexOf(m)), m);
 });
-$('bCerrarLupa').addEventListener('click', () => $('lupa').classList.remove('abierta'));
-$('lupa').addEventListener('click', (e) => {
-  if(e.target === $('lupa')) $('lupa').classList.remove('abierta');
-});
+
+$('bCerrarLupa').addEventListener('click', cerrarLupa);
+$('lupaIzq').addEventListener('click', () => irA(lupa.i - 1));
+$('lupaDer').addEventListener('click', () => irA(lupa.i + 1));
+
 addEventListener('keydown', (e) => {
-  if(e.key === 'Escape') $('lupa').classList.remove('abierta');
+  if(!lupa.abierta) return;
+  if(e.key === 'Escape'){ cerrarLupa(); return; }
+  if(e.key === 'ArrowLeft'){ e.preventDefault(); irA(lupa.i - 1); }
+  if(e.key === 'ArrowRight'){ e.preventDefault(); irA(lupa.i + 1); }
 });
+
+/* Tocar el fondo cierra, como antes. Va sobre la pista y comprueba que no
+   hubo arrastre: sin eso, terminar un deslizamiento cuenta además como clic
+   en el fondo y la lupa se cierra cada vez que pasas de imagen. */
+$pista.addEventListener('click', (e) => {
+  /* ⚠ El objetivo del clic es la LÁMINA, no la pista: la <img> lleva
+     `pointer-events:none` para no robarse el arrastre, así que el toque
+     aterriza en el <div> de la lámina. Comparando contra la pista esto no
+     cerraba nunca, y el fondo dejaba de responder al toque. */
+  if((e.target === $pista || e.target.classList.contains('lupa-dia')) && !lupa.movió) cerrarLupa();
+});
+
+$pista.addEventListener('pointerdown', (e) => {
+  if(!lupa.abierta || e.button > 0) return;
+  lupa.arrastrando = true; lupa.movió = false; lupa.eje = null;
+  lupa.x0 = e.clientX; lupa.y0 = e.clientY; lupa.t0 = e.timeStamp;
+  lupa.dx = 0; lupa.dy = 0;
+  $pista.setPointerCapture(e.pointerId);
+  $pista.classList.remove('suelta');
+});
+
+$pista.addEventListener('pointermove', (e) => {
+  if(!lupa.arrastrando) return;
+  const dx = e.clientX - lupa.x0, dy = e.clientY - lupa.y0;
+
+  if(!lupa.eje){
+    if(Math.hypot(dx, dy) < 8) return;         /* aún no se sabe qué quiere */
+    lupa.eje = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    lupa.movió = true;
+  }
+
+  if(lupa.eje === 'x'){
+    /* En los extremos el arrastre pesa: se mueve un tercio. Es cómo se dice
+       «por aquí ya no hay más» sin un mensaje, y es lo que hace cualquier
+       galería del teléfono. */
+    const tope = (lupa.i === 0 && dx > 0) || (lupa.i === lupa.fotos.length - 1 && dx < 0);
+    lupa.dx = tope ? dx / 3 : dx;
+    lupa.dy = 0;
+  }else{
+    /* Sólo hacia ABAJO. Carlos pidió salir «deslizando de arriba hacia
+       abajo»; hacia arriba no cierra, y por eso se frena igual que un tope. */
+    lupa.dx = 0;
+    lupa.dy = dy > 0 ? dy : dy / 4;
+  }
+  colocar(false);
+});
+
+function soltar(e){
+  if(!lupa.arrastrando) return;
+  lupa.arrastrando = false;
+  const ms  = Math.max(1, e.timeStamp - lupa.t0);
+  const vel = (lupa.eje === 'y' ? lupa.dy : lupa.dx) / ms;   /* px por ms */
+
+  if(lupa.eje === 'y'){
+    /* O llegó lejos, o iba rápido. Sólo la distancia obliga a arrastrar media
+       pantalla para cerrar; sólo la velocidad cierra con un roce sin querer. */
+    if(lupa.dy > 110 || vel > .55){ cerrarLupa(); lupa.dx = lupa.dy = 0; return; }
+  }else if(lupa.eje === 'x'){
+    const salto = Math.abs(lupa.dx) > anchoLupa() * .22 || Math.abs(vel) > .5;
+    if(salto){ irA(lupa.i + (lupa.dx < 0 ? 1 : -1)); return; }
+  }
+  irA(lupa.i);                                  /* no alcanzó: vuelve a su sitio */
+}
+$pista.addEventListener('pointerup', soltar);
+/* `pointercancel` NO es opcional: lo dispara el sistema cuando entra una
+   llamada o el navegador decide quedarse con el gesto. Sin esto la pista se
+   queda con el `transform` a medio camino y ya no vuelve nunca. */
+$pista.addEventListener('pointercancel', soltar);
+
+/* Girar el teléfono cambia el ancho de la lámina, y la pista estaba corrida
+   con el ancho viejo: quedaba a caballo entre dos imágenes. */
+addEventListener('resize', () => { if(lupa.abierta) irA(lupa.i, false); });
 
 /* ── botones ── */
 $('bMas').addEventListener('click', () => {
@@ -3245,8 +4317,53 @@ $('bEntrar').addEventListener('click', async () => {
   if(!nombre){ $('error').textContent = 'Escribe tu nombre para entrar.';
                $('nombreIn').focus(); return; }
   $('error').textContent = 'Entrando…';
-  try{ await entrar(codigo, nombre); $('error').textContent = ''; }
-  catch(e){ $('error').textContent = e.message; }
+  try{ await entrar(codigo, nombre); $('error').textContent = ''; $('pegarLlave').hidden = true; }
+  catch(e){ $('error').textContent = e.message; asomarPegarLlave(e); }
+});
+
+/* Se enseña el campo SÓLO si el rechazo huele a llave. Enseñarlo ante
+   cualquier error mandaría a pegar una llave a quien tiene un código mal
+   escrito, y esa persona se quedaría atorada buscando algo que no le falta. */
+function asomarPegarLlave(e){
+  const m = String((e && e.message) || '').toLowerCase();
+  if(/llave|401|403|autoriz|externo|permiso/.test(m)) $('pegarLlave').hidden = false;
+}
+
+/* Acepta el link entero o la llave pelada. Lo primero es lo que la persona
+   tiene a mano; lo segundo es lo que uno cree que va a pegar. */
+function llaveDePegado(txt){
+  const t = String(txt || '').trim();
+  if(!t) return '';
+  try{
+    const u = new URL(t);
+    const dada = u.searchParams.get('llave');
+    if(dada) return dada.trim();
+    /* El link de agente la lleva igual, y el de la mesa también: si es una
+       dirección y no trae `llave`, no hay nada que sacar. */
+  }catch(err){ /* no era una dirección: se toma tal cual */ }
+  /* Una llave suelta puede venir con espacios o comillas de un copiado torpe. */
+  return t.replace(/^["'\s]+|["'\s]+$/g, '').split(/\s+/)[0];
+}
+
+$('bGuardarLlave') && $('bGuardarLlave').addEventListener('click', async () => {
+  const llave = llaveDePegado($('llaveIn').value);
+  if(!llave){ $('error').textContent = 'Pega el link o la llave.'; return; }
+  /* ⚠ SE GUARDA Y SE RECARGA, no se reasigna la variable. Escribí
+     `LLAVE = llave` y la prueba lo tumbó en el acto: `LLAVE` es `const`.
+
+     Y menos mal, porque reasignarla habría sido peor que un error: la llave la
+     capturan varias cosas al arrancar —las cabeceras, la dirección del socket,
+     la lista de salas—, así que cambiar la variable a media sesión habría
+     dejado la mitad de la página hablando con la llave vieja. Eso no truena:
+     falla a ratos, que es lo caro. Recargar es una línea y deja TODO
+     consistente, y como la llave ya está guardada, al volver a cargar entra
+     sola. */
+  try{ localStorage.setItem('salaLlave', llave); }catch(err){}
+  $('error').textContent = 'Entrando…';
+  const codigo = ($('codigoIn').value || '').trim().toUpperCase();
+  const nombre = $('nombreIn').value.trim() || nombreRecordado(codigo);
+  try{ if(codigo && nombre) localStorage.setItem('sala', JSON.stringify({ codigo, nombre })); }catch(err){}
+  location.reload();
 });
 function salirme(){
   /* ⚠ Salir NO borra la identidad, y el intento de que sí la borrara revivió
@@ -3277,7 +4394,17 @@ async function copiarInvitacion(){
   try{ await navigator.clipboard.writeText(liga);
        $('tituloSala').textContent = '¡link copiado!';
        setTimeout(() => { $('tituloSala').textContent = sala; }, 1400); }
-  catch(e){ prompt('Este es el link para invitar:', liga); }
+  catch(e){
+    /* El portapapeles falla más de lo que parece —permiso denegado, http sin
+       s, una webview rara—, y aquí se caía en un `prompt()` del navegador:
+       misma porquería que el `confirm`, y encima uno que la gente cierra por
+       reflejo sin copiar nada. Ahora el link se enseña en la propia mesa,
+       seleccionado, listo para el gesto de copiar de siempre. */
+    await preguntar({ titulo:'Este es el link para invitar', texto: liga,
+                      si:'Entendido' });
+    /* Seleccionar el texto del párrafo deja el link listo para copiar con el
+       menú del sistema, que en un teléfono es cómo se copia de verdad. */
+  }
 }
 $('bCodigo').addEventListener('click', copiarInvitacion);
 $('bCopiar').addEventListener('click', () => { copiarInvitacion(); cerrarCajones(); });
@@ -3325,13 +4452,87 @@ function pintarYo(){
   const c = $('yoPanel');
   if(!yo){ c.innerHTML = ''; return; }
   const cred = credencial(yo);
-  c.innerHTML = `<span class="con-punto${vivo ? '' : ' sin'}">${avatarHtml(cred, '')}</span>` +
+  /* Sólo una persona se cambia la cara: el retrato es de la cuenta, y la
+     cuenta la comparte con su Claude. La regla vive también en el servidor
+     —que es donde manda—; aquí sólo se evita ofrecer un botón que iba a
+     contestar 403. */
+  const miafoto = cred.tipo === 'humano';
+  const tengo   = miafoto && !!retratos[cred.cuenta];
+  const cara = `<span class="con-punto${vivo ? '' : ' sin'}">${avatarHtml(cred, '')}</span>`;
+  c.innerHTML =
+    (miafoto
+      ? `<button class="yo-retrato" id="bRetrato" title="Cambiar mi foto"
+           aria-label="Cambiar mi foto de perfil">${cara}</button>`
+      : cara) +
     `<span class="quien-soy"><span class="nombre"></span>` +
     `<span class="estado${vivo ? '' : ' sin'}">${vivo ? 'En línea' : 'Sin conexión'}</span></span>` +
+    (tengo ? `<button class="quitar-foto" id="bQuitarFoto" title="Quitar mi foto">quitar foto</button>` : '') +
     `<button class="salirme" id="bSalir" title="Salir de la sala" aria-label="Salir de la sala">⏻</button>`;
   c.querySelector('.nombre').textContent = cred.nombre;
   c.querySelector('#bSalir').addEventListener('click', salirme);
+  c.querySelector('#bRetrato')?.addEventListener('click', () => $('archivoRetrato').click());
+  c.querySelector('#bQuitarFoto')?.addEventListener('click', () => ponerRetrato(null));
 }
+
+/* ══ EL RETRATO ════════════════════════════════════════════════════════════
+   Carlos: «haz que Luis y yo podamos subir una personalizada».
+
+   La foto se achica AQUÍ, antes de salir, y no en el servidor. Una foto de
+   iPhone son cuatro megas; la sala la guardaría entera en cada salvado y la
+   mandaría entera a cada quien que abre la mesa, para pintarla de 26 px. Se
+   recorta al cuadrado del centro y se baja a 256, que es el doble de lo más
+   grande que se dibuja — así se ve nítida en pantalla de retina y pesa unas
+   decenas de kilobytes. */
+const LADO_RETRATO = 256;
+
+function achicarRetrato(archivo){
+  return new Promise((listo, falla) => {
+    const lector = new FileReader();
+    lector.onerror = () => falla(new Error('No se pudo leer ese archivo.'));
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => falla(new Error('Ese archivo no es una imagen que se pueda abrir.'));
+      img.onload = () => {
+        /* El cuadrado del centro. Sin esto, una foto apaisada sale aplastada
+           al meterla en un avatar redondo. */
+        const lado = Math.min(img.width, img.height);
+        const cx = (img.width - lado) / 2, cy = (img.height - lado) / 2;
+        const l = document.createElement('canvas');
+        l.width = l.height = LADO_RETRATO;
+        const p = l.getContext('2d');
+        p.imageSmoothingQuality = 'high';
+        p.drawImage(img, cx, cy, lado, lado, 0, 0, LADO_RETRATO, LADO_RETRATO);
+        /* WebP si el navegador lo sabe hacer, y si no, JPEG. `toDataURL` con
+           un tipo que no soporta NO falla: devuelve un PNG callado, que aquí
+           pesaría cuatro veces más. Por eso se comprueba lo que salió en vez
+           de confiar en lo que se pidió. */
+        let datos = l.toDataURL('image/webp', .82);
+        if(!datos.startsWith('data:image/webp')) datos = l.toDataURL('image/jpeg', .82);
+        listo(datos);
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+
+async function ponerRetrato(datos){
+  try{
+    await alServidor('retrato', { de: yo.id, datos });
+    /* No se pinta a mano: el servidor difunde `retratos` y por ahí se repinta
+       todo —el hilo incluido—. Pintarlo aquí además dejaría la mesa de quien
+       sube la foto adelantada respecto a la del otro, y esa diferencia es la
+       que hace creer que algo no se guardó. */
+  }catch(e){ letrero(`No se pudo cambiar la foto: ${esc(e.message)}`); }
+}
+
+$('archivoRetrato').addEventListener('change', async (e) => {
+  const archivo = e.target.files && e.target.files[0];
+  e.target.value = '';                    /* que elegir la misma otra vez cuente */
+  if(!archivo) return;
+  try{ await ponerRetrato(await achicarRetrato(archivo)); }
+  catch(err){ letrero(esc(err.message)); }
+});
 
 /* ── la sala de ejemplo ────────────────────────────────────────────────────
    Para conocer la mesa sin servidor y sin código. Va marcada como ejemplo a
