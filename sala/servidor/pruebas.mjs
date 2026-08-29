@@ -1426,5 +1426,47 @@ async function topadoNoPierde(){
   ok('y puede hablar en cuanto regresa, sin volver a entrar', c === 200 && r.bien);
 }
 
+/* ══ el retrato ═══════════════════════════════════════════════════════════ */
+console.log('\n· El retrato de perfil');
+{
+  const UNA  = 'data:image/png;base64,' + 'A'.repeat(400);
+  const s = nueva({ LLAVES: 'carlos:AAA,luis:BBB' });
+  await leer(await pedir(s, 'POST', 'entrar', { id:'carlos', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'syl', nombre:'Sylcred', tipo:'claude' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'luis', nombre:'Luis', tipo:'humano' }, 'BBB'));
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'retrato', { de:'carlos', datos:UNA }, 'AAA'));
+  ok('una persona puede poner su retrato', c1 === 200 && r1.retratos.carlos === UNA);
+
+  /* Lo que de verdad importa de la clave por cuenta: sobrevive a la sesión. */
+  ok('y queda guardado en la cuenta, no en la sesión', s.retratos.carlos === UNA);
+
+  const [c2] = await leer(await pedir(s, 'POST', 'retrato', { de:'syl', datos:UNA }, 'AAA'));
+  ok('un agente NO puede ponerle cara a la cuenta de su persona', c2 === 403);
+
+  /* El que muerde de verdad: sin esto se puede meter una URL de fuera y la
+     mesa la pediría al pintar. «Cero peticiones externas» dejaría de ser
+     cierto y el dueño de esa URL sabría cuándo mira cada quien. */
+  const [c3] = await leer(await pedir(s, 'POST', 'retrato',
+    { de:'carlos', datos:'https://rastreador.example/quien-mira.png' }, 'AAA'));
+  ok('no acepta una URL de fuera como retrato', c3 === 400);
+  const [c4] = await leer(await pedir(s, 'POST', 'retrato',
+    { de:'carlos', datos:'data:text/html;base64,PHNjcmlwdD4=' }, 'AAA'));
+  ok('ni un data: que no sea imagen', c4 === 400);
+
+  const [c5] = await leer(await pedir(s, 'POST', 'retrato',
+    { de:'carlos', datos:'data:image/png;base64,' + 'A'.repeat(300_000) }, 'AAA'));
+  ok('ni uno que pase del tope', c5 === 413);
+  ok('y ninguno de los rechazados pisó el que ya estaba', s.retratos.carlos === UNA);
+
+  const [c6, r6] = await leer(await pedir(s, 'POST', 'retrato', { de:'carlos', datos:null }, 'AAA'));
+  ok('mandar vacío lo quita', c6 === 200 && !r6.retratos.carlos);
+
+  /* Y que viaje: de nada sirve guardarlo si el que llega no lo recibe. */
+  await leer(await pedir(s, 'POST', 'retrato', { de:'luis', datos:UNA }, 'BBB'));
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  ok('el que pide el hilo recibe los retratos', hilo.retratos && hilo.retratos.luis === UNA);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

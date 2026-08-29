@@ -113,6 +113,11 @@ const ESPERA_MAX = 50_000;
 
 /* Topes de tamaño. Una imagen viaja en base64 dentro del evento; más de esto
    y hay que mandar liga en vez de archivo. */
+/* El retrato se achica en el navegador a 256 px antes de subirlo, así que
+   200 KB es holgado. El tope existe igual: el que sube no siempre es la mesa
+   —cualquiera con la llave puede llamar al endpoint— y un retrato de un mega
+   se guarda en CADA salvado de la sala. */
+const TOPE_RETRATO = 200_000;
 const TOPE_IMAGEN = 1_500_000;
 const TOPE_EVENTO = 2_000_000;
 const TOPE_TEXTO  = 20_000;
@@ -318,6 +323,11 @@ export class Sala {
       /* Las neuronas que proponen los agentes, esperando entrar al repo. */
       this.propuestas = await ctx.storage.get('propuestas') || [];
       this.vigilias  = await ctx.storage.get('vigilias')  || {};
+      /* El retrato de cada CUENTA. Por cuenta y no por sesión a propósito:
+         las sesiones de un agente nacen y mueren todo el día, pero la cara de
+         una persona no. Con la clave puesta en el id de sesión, Carlos
+         tendría que volver a subir su foto cada vez que abre la mesa. */
+      this.retratos  = await ctx.storage.get('retratos')  || {};
     });
   }
 
@@ -368,7 +378,7 @@ export class Sala {
       hilo: this.hilo, gente: this.gente, vueltas: this.vueltas, resumido: this.resumido,
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
-      vigilias: this.vigilias,
+      vigilias: this.vigilias, retratos: this.retratos,
     });
     await this.tocar(true);
   }
@@ -1014,6 +1024,7 @@ export class Sala {
       await this.tocar();
       return Response.json({
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
+        retratos: this.retratos,
         conectados: this.conectados(),
         vueltas: this.vueltas, tope: TOPE_VUELTAS,
         /* Para que la mesa sepa qué botón enseñar sin adivinar. */
@@ -1303,6 +1314,59 @@ export class Sala {
       await this.tocar();
       this.avisarEscribiendo();
       return Response.json({ bien:true, hasta:quien.escribeHasta, escribiendo:this.escribiendo() });
+    }
+
+    /* ── /retrato · la foto de perfil de una persona ────────────────────
+       Carlos, e151: «pon iconos de perfil variados para cada integrante los
+       actuales parece que son por defecto por no tener imagen de perfil y se
+       ven feos haz que Luis y yo podamos subir una personalizada».
+
+       Son dos cosas y sólo una vive aquí. El icono variado se dibuja solo en
+       la mesa a partir del nombre —no necesita servidor ni que nadie suba
+       nada, y por eso lo tienen TODOS desde el primer momento, agentes
+       incluidos—. Esto de aquí es la otra mitad: la foto de verdad.
+
+       ⚠ SÓLO PERSONAS. No es una restricción de permisos, es que la clave es
+       la CUENTA: la foto de la cuenta «carlos» es la cara de Carlos, y si su
+       Claude pudiera escribir ahí le pondría su cara a Carlos. Cada agente ya
+       tiene su propio sello por nombre, que es lo que lo distingue. */
+    if(pedido.method === 'POST' && ruta === 'retrato'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+      if(quien.tipo !== 'humano'){
+        return Response.json({ error:'El retrato es de la persona de la cuenta. Un agente tiene su propio sello.' },
+                             { status:403 });
+      }
+
+      /* Quitarlo es mandar datos vacíos: no hace falta un DELETE aparte para
+         una cosa que la mesa ofrece como «quitar la foto». */
+      if(!c.datos){
+        delete this.retratos[quien.cuenta];
+        await this.guardar();
+        this.difundir({ que:'retratos', retratos:this.retratos });
+        return Response.json({ bien:true, retratos:this.retratos });
+      }
+
+      const datos = String(c.datos);
+      /* Se exige data: de imagen y NADA más. Sin esto, aquí se puede meter
+         cualquier URL —incluida una de fuera— y la mesa la pediría al pintar:
+         cero peticiones externas dejaría de ser cierto, y quien pusiera la
+         URL sabría cuándo y desde dónde mira cada quien. */
+      if(!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(datos)){
+        return Response.json({ error:'El retrato tiene que ser una imagen incrustada (data:image/…;base64).' },
+                             { status:400 });
+      }
+      if(datos.length > TOPE_RETRATO){
+        return Response.json({ error:`Ese retrato pesa ${Math.round(datos.length/1000)} KB y el tope son ${TOPE_RETRATO/1000}.` },
+                             { status:413 });
+      }
+
+      this.retratos[quien.cuenta] = datos;
+      await this.guardar();
+      this.difundir({ que:'retratos', retratos:this.retratos });
+      /* NO despierta a nadie: cambiarse la foto no es trabajo. */
+      return Response.json({ bien:true, retratos:this.retratos });
     }
 
     if(pedido.method === 'POST' && ruta === 'reaccion'){
@@ -1683,6 +1747,7 @@ export class Sala {
     this.vivos.add(servidor);
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
+      retratos:this.retratos,
       vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
       escribiendo:this.escribiendo(),
     }));
