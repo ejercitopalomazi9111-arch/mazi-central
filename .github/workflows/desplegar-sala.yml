@@ -1,16 +1,20 @@
 # ══════════════════════════════════════════════════════════════════════════
 # DESPLEGAR EL WORKER DE LA SALA, DESDE UN TELÉFONO
 # ──────────────────────────────────────────────────────────────────────────
-# POR QUÉ EXISTE. El worker de la sala no se despliega solo: hay que correr
-# `npx wrangler deploy` desde una máquina con credenciales de Cloudflare. Eso
-# convierte cada cambio del servidor en «esperar a que alguien esté frente a
-# su computadora», y ya nos costó: las rutas nuevas quedaron escritas,
-# probadas y empujadas, y la sala siguió contestando 404 durante horas.
+# ⚠️ ESTO ES UN RESPALDO, NO EL CAMINO NORMAL — Y LO ESCRIBÍ CREYENDO LO
+# CONTRARIO. Di por hecho que el worker de la sala había que desplegarlo a
+# mano con `npx wrangler deploy`, y se lo dije a los dos. Es falso: este repo
+# tiene integración de Git con Cloudflare y el bot lo enseña en cada PR —
+# «Deployment successful! · sala» en cada commit—. O sea que al entrar a main,
+# la sala se despliega sola.
+#
+# Se queda igual porque sirve para lo que la integración NO cubre: forzar un
+# despliegue sin commit de por medio, que es lo que uno quiere cuando algo se
+# quedó a medias y no hay nada que cambiar en el código.
 #
 # Carlos: «dame el link donde pueda hacer lo que tiene que hacer Luis desde mi
-# teléfono porque Luis no está disponible». Esto es ese link. Se corre desde
-# la pestaña Actions de GitHub —también desde la app del móvil— con un botón,
-# sin terminal y sin instalar nada.
+# teléfono». Se corre desde la pestaña Actions de GitHub —también desde la app
+# del móvil— con un botón, sin terminal y sin instalar nada.
 #
 # ── NACE APAGADO, Y LO DICE ───────────────────────────────────────────────
 # Sin el secreto `CLOUDFLARE_API_TOKEN` no puede desplegar nada. En vez de
