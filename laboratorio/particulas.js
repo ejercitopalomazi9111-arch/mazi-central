@@ -710,8 +710,17 @@
      explotó» de «desapareció», que es justo lo que Carlos reclamó. */
   lienzo.__destellos = () => destellos.length;
 
-  for(const b of document.querySelectorAll('[data-modo]')){
-    b.addEventListener('click', () => {
+  /* ⚠ ESTO ERA EL CUERPO DEL `click` Y SE SACÓ A UNA FUNCIÓN. El modo ahora
+     se guarda y se repone al volver, y reponerlo tiene que pasar por el mismo
+     camino que pulsarlo: si el restaurador pusiera `modo = ...` por su cuenta,
+     el día que este cuerpo cambie —y ya cambió dos veces, por dos defectos que
+     reportó Carlos— la versión restaurada se quedaría con la lógica vieja.
+
+     `porToque` es lo único que se diferencia: al restaurar no hay dedo del
+     que soltarse ni grumo que deshacer, y empujar las partículas desde el
+     centro al cargar la página es un movimiento que nadie pidió. */
+  function ponerModo(b, porToque){
+    {
       const antes = modo;
       modo = b.dataset.modo;
       if(modo === 'solar' && antes !== 'solar') sembrarSolar();
@@ -742,7 +751,7 @@
          Ahora se suelta el dedo y se le da a la pila un empujón hacia afuera
          desde su propio centro. La forma nueva se lee en el primer cuadro. */
       raton = null;
-      if(modo !== 'solar' && particulas.length){
+      if(porToque && modo !== 'solar' && particulas.length){
         let cx = 0, cy = 0;
         for(const p of particulas){ cx += p.x; cy += p.y; }
         cx /= particulas.length; cy /= particulas.length;
@@ -758,7 +767,19 @@
       }
       releerColores();
       if(menos.matches){ paso(16.7); pintar(); }
-    });
+    }
+    memoria.guardar('modo', modo);
+  }
+  for(const b of document.querySelectorAll('[data-modo]')){
+    b.addEventListener('click', () => ponerModo(b, true));
+  }
+  /* Se repone el modo al volver. Va DESPUÉS de enganchar los botones para que
+     no haya un instante con el modo puesto y los botones sin enterarse. */
+  {
+    const guardado = memoria.leer('modo');
+    const b = guardado &&
+      document.querySelector(`[data-modo="${CSS.escape(guardado)}"]`);
+    if(b && guardado !== modo) ponerModo(b, false);
   }
 
   /* Al cambiar de tema hay que releer los colores: están en variables CSS y

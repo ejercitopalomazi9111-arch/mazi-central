@@ -112,8 +112,17 @@
     vias.forEach((a, i) => a.setAttribute('aria-current', i === actual ? 'true' : 'false'));
     moverGuia(actual == null ? null : vias[actual]);
     ponerFlechas(actual == null ? 0 : actual + 1);
+    /* Dónde iba. Se escribe SÓLO cuando cambia de sección, no en cada evento
+       de scroll: escribir en `localStorage` es síncrono y bloquea el hilo que
+       está pintando, y a sesenta veces por segundo eso se siente. */
+    const ahora = actual == null ? '' : vias[actual].hash.slice(1);
+    if(ahora !== seccionGuardada){
+      seccionGuardada = ahora;
+      if(ahora) memoria.guardar('seccion', ahora); else memoria.olvidar('seccion');
+    }
     return false;                     /* una pasada por evento, y se duerme */
   }
+  let seccionGuardada = memoria.leer('seccion', '');
   /* ── EL SUBRAYADO QUE SE DESLIZA ────────────────────────────────────────
      Carlos: «haz que en lugar de que la línea se teletransporte de apartado
      que se deslice suavemente hasta la objetivo».
@@ -179,6 +188,36 @@
        interrumpe —y en un teléfono se interrumpe con el dedo. */
   }));
 
+  /* ── «SEGUIR DONDE IBAS» ────────────────────────────────────────────────
+     El banco recuerda la sección, pero NO salta solo al cargar. Saltar le
+     quita el control a quien recargó justamente para empezar de cero, y de
+     paso pisa el enlace con ancla que alguien te haya pasado. Se ofrece, con
+     el nombre de la sección para que la oferta se pueda juzgar antes de
+     aceptarla: «seguir donde ibas» a secas es pedir fe.
+
+     Y se lee ANTES de que el scroll empiece a escribir: en cuanto la persona
+     se mueve, `medirScroll` machaca la memoria con la sección de ahora. */
+  const pastilla = $('[data-reanudar]');
+  if(pastilla && seccionGuardada){
+    const enlace = vias.find(a => a.hash.slice(1) === seccionGuardada);
+    /* Sólo si hay a dónde volver Y vale la pena: desde la primera sección
+       nadie necesita que le ofrezcan volver a la primera sección. */
+    if(enlace && vias.indexOf(enlace) > 0){
+      const liga = $('[data-reanudar-liga]', pastilla);
+      liga.href = enlace.hash;
+      liga.textContent = `Seguir donde ibas · ${enlace.textContent.trim()}`;
+      pastilla.hidden = false;
+      /* Al usarla desaparece: ya cumplió, y quedarse ahí ofreciendo volver al
+         sitio donde estás parado es ruido. */
+      liga.addEventListener('click', () => { pastilla.hidden = true; });
+      $('[data-reanudar-no]', pastilla).addEventListener('click', () => {
+        pastilla.hidden = true;
+        memoria.olvidar('seccion');
+        seccionGuardada = '';
+      });
+    }
+  }
+
   function alScroll(){ if(!pedidoScroll){ pedidoScroll = true; sumar(medirScroll); } }
   addEventListener('scroll', alScroll, { passive:true });
   /* ⚠ AQUÍ HUBO UN ARREGLO Y SE QUITÓ, MEDIDO. Razoné que al cambiar de ancho
@@ -240,7 +279,7 @@
       /* El tema va atado al viaje: a la derecha, claro; de regreso, oscuro. */
       claro = pistasIdas;
       ponerTema();
-      try{ localStorage.setItem('banco-tema', claro ? 'claro' : 'oscuro'); }catch(e){}
+      memoria.guardar('tema', claro ? 'claro' : 'oscuro');
     });
   }
 
@@ -749,12 +788,47 @@
     const decir = (t) => { if(lectura) lectura.textContent = t; };
     const nombreDe = (c) => $('h3', c).textContent.trim();
 
+    /* ── EL TABLERO SE ACUERDA ──────────────────────────────────────────
+       Esto no es un ajuste como el tema: es TRABAJO de quien lo hizo. Mover
+       cinco piezas y que se deshaga al recargar es la diferencia entre una
+       demostración y algo que sirve, y era el reproche número 3 de mi propia
+       revisión.
+
+       Se guarda «qué pieza en qué cajón» y no el orden dentro del cajón: el
+       orden no lo decide la persona —lo decide dónde soltó— y guardarlo
+       obligaría a reconstruirlo, que es más código para reponer algo que
+       nadie recuerda haber elegido. */
+    const guardarCajones = () => memoria.guardar('cajones', JSON.stringify(
+      $$('[data-pieza]', zonaCajones).map(p =>
+        [p.dataset.pieza, p.closest('[data-cajon]').dataset.cajon])));
+    (() => {
+      const crudo = memoria.leer('cajones');
+      if(!crudo) return;
+      let guardado;
+      /* ⚠ LO GUARDADO ES TEXTO DE FUERA. Puede venir de una versión anterior
+         del banco, o de alguien que lo editó a mano en las herramientas del
+         navegador. Un `JSON.parse` suelto aquí tumba el archivo entero y con
+         él todo lo demás de la página. */
+      try{ guardado = JSON.parse(crudo); }catch(e){ memoria.olvidar('cajones'); return; }
+      if(!Array.isArray(guardado)) return;
+      for(const par of guardado){
+        if(!Array.isArray(par) || par.length !== 2) continue;
+        const pieza = $(`[data-pieza="${CSS.escape(String(par[0]))}"]`, zonaCajones);
+        const caja = $(`[data-cajon="${CSS.escape(String(par[1]))}"]`, zonaCajones);
+        /* Si una pieza o un cajón ya no existen, se ignora ese renglón y los
+           demás se reponen igual. Todo o nada castigaría a la persona por un
+           cambio del código. */
+        if(pieza && caja) caja.append(pieza);
+      }
+    })();
+
     const mover = (pieza, dir) => {
       const caja = pieza.closest('[data-cajon]');
       const i = cajones.indexOf(caja);
       const j = i + dir;
       if(j < 0 || j >= cajones.length){ decir('Ya no hay a dónde moverla por ese lado.'); return; }
       cajones[j].append(pieza);
+      guardarCajones();
       pieza.focus();                  /* el foco viaja con la pieza: si se
                                          quedara atrás, el teclado perdería el hilo */
       decir(`«${pieza.textContent.trim()}» → ${nombreDe(cajones[j])}.`);
@@ -841,6 +915,7 @@
       const caja = cajonBajo(e.clientX, e.clientY);
       if(caja && caja !== pieza.closest('[data-cajon]')){
         caja.append(pieza);
+        guardarCajones();
         decir(`«${pieza.textContent.trim()}» → ${nombreDe(caja)}.`);
       }
     };
@@ -854,7 +929,7 @@
         e.preventDefault(); delete c.dataset.encima;
         const id = e.dataTransfer.getData('text/plain');
         const p = $(`[data-pieza="${CSS.escape(id)}"]`, zonaCajones);
-        if(p){ c.append(p); decir(`«${p.textContent.trim()}» → ${nombreDe(c)}.`); }
+        if(p){ c.append(p); guardarCajones(); decir(`«${p.textContent.trim()}» → ${nombreDe(c)}.`); }
       });
     }
   }
@@ -926,7 +1001,7 @@
     claro = !claro; ponerTema();
     /* El almacenamiento puede tronar —ventana privada, permisos— y eso no
        puede tumbar el cambio de tema, que ya funcionó. */
-    try{ localStorage.setItem('banco-tema', claro ? 'claro' : 'oscuro'); }catch(e){}
+    memoria.guardar('tema', claro ? 'claro' : 'oscuro');
   });
 
   /* ────────────────────────────────────────────────────────────────────────

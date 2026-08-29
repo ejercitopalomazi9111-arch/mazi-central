@@ -928,6 +928,110 @@ console.log('\n── la navegación de abajo, en teléfono ──');
   await pg.close(); await ctx.close();
 }
 
+/* ══ 4-ter · EL BANCO SE ACUERDA ═════════════════════════════════════════
+   También de mi propia revisión, «no» nº 3, apartados 112-114: sólo se
+   guardaba el tema. El modo de partículas, el tablero de arrastrar y dónde
+   ibas se perdían al recargar — «un laboratorio que olvida lo que hiciste es
+   una demo».
+
+   Se prueba con DOS pestañas de la misma sesión y no con `reload()`: al
+   recargar, el navegador repone el scroll por su cuenta y la página nace a
+   media altura, que no es la visita que importa. La segunda pestaña llega
+   como llega cualquiera: arriba del todo, con la memoria puesta.
+   ═══════════════════════════════════════════════════════════════════════ */
+console.log('\n── lo que hiciste sigue ahí al volver ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:1280, height:900 } });
+  const { pg, err } = await nuevaPagina(ctx);
+
+  await pg.locator('[data-modo="solar"]').scrollIntoViewIfNeeded();
+  await pg.click('[data-modo="solar"]');
+  await pg.locator('[data-cajones]').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(300);
+  await pg.focus('[data-pieza="a"]');
+  await pg.keyboard.press('ArrowRight');
+  await pg.waitForTimeout(250);
+  const hecho = await pg.evaluate(() => ({
+    modo: document.querySelector('[data-modo][aria-pressed="true"]').dataset.modo,
+    cajon: document.querySelector('[data-pieza="a"]').closest('[data-cajon]').dataset.cajon,
+  }));
+  ok(hecho.modo === 'solar' && hecho.cajon !== 'por-hacer',
+     `se cambió el modo y se movió una pieza (${hecho.modo}, ${hecho.cajon})`);
+  await pg.close();
+
+  /* Otra pestaña, misma sesión: la visita de vuelta. */
+  const { pg: pg2, err: err2 } = await nuevaPagina(ctx);
+  const vuelta = await pg2.evaluate(() => ({
+    modo: document.querySelector('[data-modo][aria-pressed="true"]').dataset.modo,
+    lectura: (document.querySelector('[data-modo-lectura]') || {}).textContent,
+    cajon: document.querySelector('[data-pieza="a"]').closest('[data-cajon]').dataset.cajon,
+    y: Math.round(scrollY),
+    ofrece: !document.querySelector('[data-reanudar]').hidden,
+    dice: document.querySelector('[data-reanudar-liga]').textContent.trim(),
+    lleva: document.querySelector('[data-reanudar-liga]').getAttribute('href'),
+  }));
+  ok(vuelta.modo === 'solar', `el modo de partículas vuelve puesto (${vuelta.modo})`);
+  ok((vuelta.lectura || '').trim() === 'solar',
+     `y la lectura de al lado dice lo mismo, no lo de antes (${vuelta.lectura})`);
+  ok(vuelta.cajon === hecho.cajon, `la pieza sigue en su cajón (${vuelta.cajon})`);
+  /* ⚠ LO QUE NO DEBE PASAR, y por eso es una comprobación y no un detalle:
+     que te lleve. Saltar al cargar le quita el control a quien recargó
+     justamente para empezar de cero, y pisa el enlace con ancla que alguien
+     te pasó. */
+  ok(vuelta.y === 0, `pero NO te lleva solo: la página abre arriba (scrollY ${vuelta.y})`);
+  ok(vuelta.ofrece, 'te lo ofrece con una pastilla en la portada');
+  ok(/Arrastrar/.test(vuelta.dice) && vuelta.lleva === '#arrastrar',
+     `y dice A DÓNDE, para poder juzgarlo antes de aceptar («${vuelta.dice}» → ${vuelta.lleva})`);
+
+  await pg2.click('[data-reanudar-liga]');
+  await pg2.waitForTimeout(1200);
+  const tras = await pg2.evaluate(() => ({
+    y: Math.round(scrollY),
+    arriba: Math.round(document.getElementById('arrastrar').getBoundingClientRect().top),
+    sigue: !document.querySelector('[data-reanudar]').hidden,
+  }));
+  ok(tras.y > 0 && Math.abs(tras.arriba) < 140,
+     `al tocarla sí lleva (scrollY ${tras.y}, la sección a ${tras.arriba}px de arriba)`);
+  ok(!tras.sigue, 'y desaparece: ya cumplió');
+  ok(err.length === 0 && err2.length === 0,
+     'cero errores de consola' + ((err[0] || err2[0]) ? ': ' + (err[0] || err2[0]) : ''));
+  await pg2.close(); await ctx.close();
+}
+
+/* ── Y con la memoria ROTA la página sigue viva ──────────────────────────
+   En una ventana privada `localStorage` LANZA nada más tocarlo. Una excepción
+   ahí no deja «sin memoria»: se lleva por delante el resto del archivo, o sea
+   las partículas, el cronómetro y el arrastre. Se prueba rompiéndolo de
+   verdad, no confiando en el try/catch. */
+{
+  const ctx = await b.newContext({ viewport:{ width:1280, height:900 } });
+  const pg = await ctx.newPage();
+  const err = [];
+  pg.on('console', m => m.type() === 'error' && err.push(m.text()));
+  pg.on('pageerror', e => err.push('PAGEERROR ' + e.message));
+  await pg.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get(){ throw new DOMException('bloqueado', 'SecurityError'); },
+    });
+  });
+  await pg.addInitScript(HERRAMIENTAS);
+  await pg.goto(SITIO, { waitUntil:'networkidle' });
+  await pg.waitForTimeout(900);
+  const vivo = await pg.evaluate(() => ({
+    tema: document.documentElement.dataset.tema,
+    lienzos: document.querySelectorAll('canvas').length,
+    piezas: document.querySelectorAll('[data-pieza]').length,
+    ofrece: !document.querySelector('[data-reanudar]').hidden,
+  }));
+  ok(err.length === 0, 'con `localStorage` prohibido no truena nada' + (err.length ? ': ' + err[0] : ''));
+  ok(!!vivo.tema, `y el tema se pone igual (${vivo.tema})`);
+  ok(vivo.lienzos > 0 && vivo.piezas > 0,
+     `la página sigue entera (${vivo.lienzos} lienzos, ${vivo.piezas} piezas)`);
+  ok(!vivo.ofrece, 'y no ofrece seguir donde ibas, porque no hay dónde');
+  await pg.close(); await ctx.close();
+}
+
 /* ══ 5 · LOS NÚMEROS DEL TABLERO SON CIERTOS ═════════════════════════════
    Ésta es la prueba que le da derecho a existir al tablero. Los primeros
    números que puse me los inventé —«48 piezas»— y un banco de pruebas que

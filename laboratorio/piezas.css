@@ -633,3 +633,23 @@ html[data-hay-avisos]{ --aparta-aviso:4.5rem; }
 .consola-bt{
   transform:translateY(calc(-1 * max(var(--aparta-hoja), var(--aparta-aviso))));
 }
+
+/* ── SEGUIR DONDE IBAS ─────────────────────────────────────────────────────
+   No es un aviso ni un modal: es un renglón más de la portada, con el mismo
+   peso que tiene una nota al pie. Lo que ofrece —volver a media lectura— vale
+   la pena OFRECERLO y no vale la pena interrumpir por ello. Un banner que
+   tapa la portada por esto es cobrarle a todo el mundo el favor que le hace a
+   uno. */
+.reanudar{
+  display:flex; flex-wrap:wrap; align-items:center; gap:.2rem 1.1rem;
+  margin-top:1.6rem;
+}
+.reanudar-no{
+  background:none; border:0; padding:0 .25rem; min-height:44px;
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--texto-3); cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:color var(--micro) var(--curva-suave);
+}
+.reanudar-no:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+@media (hover:hover) and (pointer:fine){ .reanudar-no:hover{ color:var(--texto); } }

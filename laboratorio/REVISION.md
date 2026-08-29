@@ -31,10 +31,10 @@ Nada de esto es opinión. Todo lo reprueba `pruebas.mjs` si deja de ser cierto.
 
 ## Los «no». Son siete, y el corte de la skill son seis
 
-> Al 29 de agosto queda **uno hecho** —el nº 2, la navegación en teléfono—
-> y se marca dentro de su propio apartado en vez de borrarlo: una lista de
-> defectos de la que se van quitando renglones acaba diciendo que nunca hubo
-> ninguno.
+> Al 29 de agosto quedan **dos hechos** —el nº 2, la navegación en teléfono,
+> y el nº 3, que se guarde lo que hiciste— y se marcan dentro de su propio
+> apartado en vez de borrarlos: una lista de defectos de la que se van
+> quitando renglones acaba diciendo que nunca hubo ninguno.
 
 ### 1 · No hay un solo flujo. Sigue siendo un catálogo. (apartados 135–140)
 
@@ -76,6 +76,23 @@ la ronda, porque además me lo señalaron y lo tapé.
 Se recuerda el tema y nada más. El marcador, el tablero de arrastrar, el modo
 de partículas, la sección donde ibas: todo se pierde al recargar. Un
 laboratorio que olvida lo que hiciste es una demo.
+
+> **HECHO — 29 de agosto.** Se guardan el **modo de partículas** y el **tablero
+> de arrastrar**, callados, porque el segundo es TRABAJO de quien lo hizo. Y la
+> **sección donde ibas se ofrece, no se salta**: una pastilla en la portada que
+> dice a dónde lleva. Saltar al cargar le quita el control a quien recargó
+> justamente para empezar de cero, y pisa el enlace con ancla que alguien te
+> haya pasado.
+>
+> Lo que **no** se guarda son los contadores del tablero: son medidas del
+> momento, no estado, y reponerlas sería enseñar un número viejo como si se
+> acabara de medir.
+>
+> El try/catch vive en un solo sitio, `window.memoria`, junto al script que ya
+> corría antes del primer pintado. En una ventana privada `localStorage`
+> **lanza** nada más tocarlo, y una excepción suelta no deja «sin memoria»: se
+> lleva por delante el resto del archivo. Hay una prueba que lo rompe de
+> verdad —`localStorage` prohibido— y exige que la página siga entera.
 
 ### 4 · Un solo lenguaje visual. El curso pide ocho. (apartados 123–129)
 
