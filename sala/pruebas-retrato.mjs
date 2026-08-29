@@ -28,8 +28,13 @@ const ok = (c, t) => { console.log((c ? '  ✓ ' : '  ✗ ') + t); if(!c) f++; }
    correcto: mismo nombre, misma persona). La primera versión de esto
    comparaba sellos por SESIÓN y se ponía roja sola en la segunda corrida,
    acusando al código de un acierto suyo. */
-const SALA = 'ABCDEF'.split('').map(() =>
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]).join('');
+/* ⚠ EL ALFABETO ES EL DE LA SALA, NO LA A–Z. Le faltan la I, la L y la O a
+   propósito —se confunden con el 1 y el 0 al dictar un código por teléfono—,
+   así que un generador con las 26 produce códigos que el servidor rechaza con
+   «Ese código no existe». Salía una de cada tres corridas y parecía flojera
+   del arranque; lo era del alfabeto. */
+const SALA = Array.from({ length:6 }, () =>
+  'ABCDEFGHJKMNPQRSTUVWXYZ'[Math.floor(Math.random() * 23)]).join('');
 const abrir = async (llave, nombre) => {
   const pg = await (await b.newContext({ viewport:{ width:1100, height:820 } })).newPage();
   const err = []; pg.on('pageerror', e => err.push(e.message));

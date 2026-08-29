@@ -1744,6 +1744,10 @@ let sala = null, yo = null, gente = {}, hilo = [], ws = null, demo = false;
 /* Los retratos de las cuentas, `cuenta → data:image/…`. Llegan en el `hola` y
    se pisan enteros cuando alguien cambia el suyo. */
 let retratos = {};
+/* Sesiones absorbidas, `id viejo → id que se quedó`. El hilo NO se reescribe:
+   los eventos viejos guardan a su autor de entonces y esto los resuelve al
+   pintarlos, que es donde importa. */
+let fusiones = {};
 
 /* Quiénes están escribiendo, con la hora en que hay que dejar de creerlo.
    El vencimiento se guarda AQUÍ y no sólo en el servidor porque el aviso llega
@@ -2062,7 +2066,18 @@ function matiz(hex, paso){
    sigue pintándose como se pintó— y la sala sólo rellena lo que falte. */
 function credencial(de){
   if(!de) return { id:'?', nombre:'?', tipo:'agente', familia:'ninguna', color:GRIS, sombra:3 };
-  const p = gente[de.id] || {};
+  /* Si esta sesión fue absorbida, quien la pinta es la que se quedó: mismo
+     nombre, mismo color, mismo sello. El `de` del evento no se toca — lo que
+     cambia es de dónde se sacan los datos para dibujarlo. */
+  const vive = fusiones[de.id];
+  const p = gente[vive || de.id] || {};
+  if(vive && gente[vive]){
+    const q = gente[vive];
+    return { id: de.id, nombre:q.nombre, tipo:q.tipo, motor:q.motor || null,
+             cuenta:q.cuenta || null, padre:q.padre || null,
+             familia:q.familia || (q.tipo === 'humano' ? 'persona' : 'ninguna'),
+             color:q.color || GRIS, sombra: q.sombra ?? 3 };
+  }
   const familia = de.familia || p.familia || (de.tipo === 'humano' || p.tipo === 'humano' ? 'persona' : 'ninguna');
   return {
     id: de.id,
@@ -2628,27 +2643,70 @@ function verPantalla(id){
    puede, enseña la regla. Las razones son las mismas que revisa el servidor,
    escritas antes de tocarlo para no gastar un viaje en un no. */
 function porQueNoSeBarre(p){
-  if(p.id === yo) return 'Éste eres tú.';
+  /* ⚠ `yo` es un OBJETO, no un id. La comparación decía `p.id === yo` y por
+     tanto era siempre falsa: mirándote a ti mismo, el panel contestaba
+     «Está conectado ahorita» en vez de «Éste eres tú». Se veía razonable y
+     estaba mal. */
+  if(yo && p.id === yo.id) return 'Éste eres tú.';
   if(conectados.has(p.id)) return 'Está conectado ahorita. Esto barre fantasmas, no saca gente de la junta.';
   if(hilo.some(e => e.tipo !== 'sistema' && e.de && e.de.id === p.id && (e.texto || '').trim()))
     return 'Sí participó en el hilo, así que no es un fantasma: quitarlo dejaría mensajes sin autor.';
   return null;
 }
 
+/* ¿Ésta es otra sesión MÍA? Mismo tipo y misma cuenta que la mía, y no soy
+   yo. Es el caso de Carlos: dos pestañas suyas, las dos «Carlos», contadas
+   como dos personas en la mesa. */
+function esOtraSesionMia(p){
+  if(!yo || p.id === yo.id) return false;
+  const mio = gente[yo.id]; if(!mio) return false;
+  return !!mio.cuenta && p.cuenta === mio.cuenta && p.tipo === mio.tipo;
+}
+
 function barrerHtml(p){
   const no = porQueNoSeBarre(p);
-  if(p.id === yo) return '';
+  if(yo && p.id === yo.id) return '';
+
+  /* Se ofrece justo donde antes sólo había un «no se puede»: la sesión que
+     habló no es un fantasma y por eso no se barre — pero si es tuya, lo que
+     querías no era borrarla, era juntarla con la tuya. */
+  const fusion = esOtraSesionMia(p)
+    ? `<button class="btn" data-fusionar="${esc(p.id)}">Es una sesión mía: fusionar</button>
+       <div class="paso">Sus mensajes pasan a verse con tu nombre y tu figura, y deja de
+       contarse aparte en la sala. <b>El hilo no se reescribe</b>: cada mensaje sigue
+       guardando con qué sesión se dijo.</div>`
+    : '';
+
   return `<div class="barrer">` +
-    (no ? `<div class="paso">No se puede quitar. ${esc(no)}</div>`
+    (no ? `<div class="paso">No se puede quitar. ${esc(no)}</div>` + fusion
         : `<button class="btn peligro" data-barrer="${esc(p.id)}">Quitar de la sala</button>
            <div class="paso">No ha hablado y no está conectado: es una sesión que quedó suelta.
-           Se puede quitar sin perder nada del hilo.</div>`) +
+           Se puede quitar sin perder nada del hilo.</div>` + fusion) +
     `</div>`;
 }
 
 /* Va delegado en el documento: el panel se vuelve a pintar entero cada vez que
    se abre, así que un listener colgado del botón moriría con él. */
 $('pantallaCaja').addEventListener('click', async (e) => {
+  const fu = e.target.closest('[data-fusionar]');
+  if(fu){
+    const id = fu.dataset.fusionar, quien = gente[id];
+    if(!quien) return;
+    if(!confirm(`¿Juntar la sesión "${quien.nombre}" con la tuya?\n\n` +
+                `Sus mensajes se verán como tuyos. El hilo no se reescribe.`)) return;
+    fu.disabled = true;
+    try{
+      const d = await alServidor('fusionar', { de: yo.id, cual: id });
+      gente = d.gente || gente; fusiones = d.fusiones || fusiones;
+      $('pantalla').classList.remove('abierta');
+      pintarGente(); pintarHilo();
+    }catch(err){
+      fu.insertAdjacentHTML('afterend', `<div class="paso">${esc(err.message)}</div>`);
+      fu.disabled = false;
+    }
+    return;
+  }
+
   const b = e.target.closest('[data-barrer]');
   if(!b) return;
   const id = b.dataset.barrer;
@@ -3073,7 +3131,7 @@ function abrirSocket(codigo){
   ws.onmessage = (m) => {
     const p = JSON.parse(m.data);
     if(p.que === 'hola'){
-      hilo = p.hilo; gente = p.gente; retratos = p.retratos || {};
+      hilo = p.hilo; gente = p.gente; retratos = p.retratos || {}; fusiones = p.fusiones || {};
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
       pintarGente(); pintarHilo(); recibirEscribiendo(p.escribiendo);
     }
@@ -3105,6 +3163,11 @@ function abrirSocket(codigo){
     if(p.que === 'gente'){
       gente = p.gente;
       if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
+      /* Una fusión llega por aquí, y además de la lista hay que repintar el
+         HILO: los mensajes de la sesión absorbida se pintan con la
+         credencial de la que quedó, y si no se repintan se quedan con el
+         nombre viejo hasta recargar. */
+      if(p.fusiones){ fusiones = p.fusiones; pintarHilo(); }
       pintarGente(); if(vistaTaller) pintarTaller();
     }
     if(p.que === 'reaccion'){

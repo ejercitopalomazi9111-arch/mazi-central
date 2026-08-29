@@ -1468,5 +1468,46 @@ console.log('\n· El retrato de perfil');
   ok('el que pide el hilo recibe los retratos', hilo.retratos && hilo.retratos.luis === UNA);
 }
 
+/* ══ fusionar dos sesiones ════════════════════════════════════════════════ */
+console.log('\n· Fusionar dos sesiones de la misma persona');
+{
+  const s = nueva({ LLAVES: 'carlos:AAA,luis:BBB' });
+  await leer(await pedir(s, 'POST', 'entrar', { id:'c-viejo', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'c-nuevo', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'syl',     nombre:'Sylcred', tipo:'claude' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'luis',    nombre:'Luis',    tipo:'humano' }, 'BBB'));
+  await leer(await pedir(s, 'POST', 'decir', { de:'c-viejo', texto:'esto lo dije con la sesión vieja' }, 'AAA'));
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'c-viejo' }, 'AAA'));
+  ok('una persona fusiona su propia sesión vieja', c1 === 200);
+  ok('la vieja desaparece de la lista de gente', !r1.gente['c-viejo']);
+  ok('y queda el alias apuntando a la que se queda', r1.fusiones['c-viejo'] === 'c-nuevo');
+
+  /* LO QUE MÁS IMPORTA: el hilo NO se tocó. */
+  const dicho = s.hilo.find(e => (e.texto || '').includes('sesión vieja'));
+  ok('el mensaje viejo conserva a su autor original en el registro',
+     dicho && dicho.de.id === 'c-viejo');
+
+  /* La regla que, mal hecha, no se ve. */
+  const [c2] = await leer(await pedir(s, 'POST', 'fusionar', { de:'luis', cual:'c-nuevo' }, 'BBB'));
+  ok('nadie puede absorber la sesión de OTRA cuenta', c2 === 403);
+  const [c3] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'syl' }, 'AAA'));
+  ok('ni fusionar a una persona con un agente de su misma cuenta', c3 === 400);
+  const [c4] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'c-nuevo' }, 'AAA'));
+  ok('ni consigo misma', c4 === 400);
+  const [c5] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'no-existe' }, 'AAA'));
+  ok('ni con una sesión que no existe', c5 === 404);
+
+  /* Cadenas: si mañana entra otra y se fusiona, lo que apuntaba a la de en
+     medio tiene que acabar apuntando a la última, no quedarse a mitad. */
+  await leer(await pedir(s, 'POST', 'entrar', { id:'c-hoy', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'fusionar', { de:'c-hoy', cual:'c-nuevo' }, 'AAA'));
+  ok('las cadenas se repuntan: la más vieja apunta a la que quedó viva',
+     s.fusiones['c-viejo'] === 'c-hoy' && s.fusiones['c-nuevo'] === 'c-hoy');
+
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  ok('y las fusiones viajan al que pide el hilo', hilo.fusiones && hilo.fusiones['c-viejo'] === 'c-hoy');
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

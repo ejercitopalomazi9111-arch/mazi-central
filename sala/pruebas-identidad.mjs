@@ -17,13 +17,27 @@
      node sala/pruebas-identidad.mjs
    ═════════════════════════════════════════════════════════════════════════ */
 /* Playwright puede estar instalado local o global. Se busca en los dos lados
-   antes de rendirse, como hace `herramientas/captura.mjs`. */
-let chromium;
+   antes de rendirse, como hace `herramientas/captura.mjs`.
+
+   ⚠ NO BASTA CON QUE EL MÓDULO IMPORTE. Una instalación de playwright puede
+   existir SIN sus navegadores bajados —pasa siempre que alguien hizo
+   `npm install` y no `npx playwright install`— y entonces el import va bien y
+   el `launch()` truena. Esta prueba llevaba tiempo muerta por eso: encontraba
+   el playwright del repo, que no tiene navegador, y ni siquiera intentaba el
+   de al lado que sí lo tiene. Ahora la que decide es la que ARRANCA. */
+let chromium, navegador;
 for(const d of ['playwright', '/opt/node22/lib/node_modules/playwright/index.mjs',
                 '/usr/lib/node_modules/playwright/index.mjs']){
-  try{ chromium = (await import(d)).chromium; break; }catch(e){ /* el siguiente */ }
+  try{
+    const c = (await import(d)).chromium;
+    navegador = await c.launch({ args:['--use-gl=swiftshader','--enable-unsafe-swiftshader'] });
+    chromium = c; break;
+  }catch(e){ /* el siguiente */ }
 }
-if(!chromium){ console.error('No encontré playwright. `npm i -D playwright`'); process.exit(1); }
+if(!chromium){
+  console.error('No encontré un playwright CON navegador. `npm i -D playwright && npx playwright install chromium`');
+  process.exit(1);
+}
 /* Un servidor de sala de mentiras: se puede probar el ciclo completo de
    entrar/salir/volver sin tocar la sala de producción ni inventar gente en
    ella. Guarda a quién ha visto entrar, que es justo lo que se quiere medir. */
@@ -59,7 +73,7 @@ const srv = http.createServer((req, res) => {
 await new Promise(r => srv.listen(8137, r));
 
 const B = 'http://127.0.0.1:8123/sala/?servidor=http://127.0.0.1:8137';
-const b = await chromium.launch();
+const b = navegador;                    /* ya arrancó arriba, al escogerlo */
 const ctx = await b.newContext({ viewport:{width:390,height:844} });
 
 async function abrir(){ const p = await ctx.newPage();

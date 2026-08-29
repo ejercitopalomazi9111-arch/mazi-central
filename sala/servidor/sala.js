@@ -328,6 +328,13 @@ export class Sala {
          una persona no. Con la clave puesta en el id de sesión, Carlos
          tendría que volver a subir su foto cada vez que abre la mesa. */
       this.retratos  = await ctx.storage.get('retratos')  || {};
+      /* Sesiones absorbidas: `id viejo → id que se queda`. Es una tabla de
+         alias, NO una reescritura: los eventos del hilo conservan su autor
+         original y la mesa lo resuelve al pintar. Rehacer los eventos sería
+         más «limpio» de leer y convertiría el registro en algo que se puede
+         editar desde un endpoint — que es exactamente lo que un registro no
+         debe ser. */
+      this.fusiones  = await ctx.storage.get('fusiones')  || {};
     });
   }
 
@@ -378,7 +385,7 @@ export class Sala {
       hilo: this.hilo, gente: this.gente, vueltas: this.vueltas, resumido: this.resumido,
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
-      vigilias: this.vigilias, retratos: this.retratos,
+      vigilias: this.vigilias, retratos: this.retratos, fusiones: this.fusiones,
     });
     await this.tocar(true);
   }
@@ -1024,7 +1031,7 @@ export class Sala {
       await this.tocar();
       return Response.json({
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
-        retratos: this.retratos,
+        retratos: this.retratos, fusiones: this.fusiones,
         conectados: this.conectados(),
         vueltas: this.vueltas, tope: TOPE_VUELTAS,
         /* Para que la mesa sepa qué botón enseñar sin adivinar. */
@@ -1367,6 +1374,55 @@ export class Sala {
       this.difundir({ que:'retratos', retratos:this.retratos });
       /* NO despierta a nadie: cambiarse la foto no es trabajo. */
       return Response.json({ bien:true, retratos:this.retratos });
+    }
+
+    /* ── /fusionar · dos sesiones que son la misma persona ───────────────
+       Carlos, e156: «Esa cuenta vieja y la mía se llaman igual fusionalas».
+
+       No eran dos cuentas: eran dos SESIONES suyas en la cuenta `carlos`,
+       las dos llamadas «Carlos», con 59 y 25 mensajes. En la lista salían
+       como dos personas y se contaban dos veces.
+
+       ⚠ SE FUSIONA LA IDENTIDAD, NO SE REESCRIBE EL HILO. Los eventos viejos
+       conservan el autor con el que se dijeron; lo que se guarda es un alias
+       y la mesa lo resuelve al pintar. La otra forma —recorrer el hilo y
+       cambiarle el `de` a ochenta y cuatro mensajes— deja el registro igual
+       de bonito y convierte «quién dijo esto» en algo que se puede cambiar
+       con una llamada. Un hilo que se puede editar no sirve para lo único
+       para lo que existe.
+
+       ⚠ Y SÓLO ENTRE SESIONES DE TU PROPIA CUENTA. Sin esa regla, cualquiera
+       con llave podría absorber las sesiones de otro y quedarse con lo que
+       dijo. Es la única parte de esto que, mal hecha, no se ve. */
+    if(pedido.method === 'POST' && ruta === 'fusionar'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const cual = String(c.cual || '');
+      if(!cual) return Response.json({ error:'Falta `cual`: la sesión que se absorbe.' }, { status:400 });
+      if(cual === quien.id) return Response.json(
+        { error:'Ésa es la sesión en la que estás. Se fusiona la OTRA dentro de ésta.' }, { status:400 });
+
+      const otra = this.gente[cual];
+      if(!otra) return Response.json(
+        { error:`Aquí no hay ninguna sesión "${cual}".` }, { status:404 });
+      if(otra.cuenta !== quien.cuenta) return Response.json(
+        { error:'Esa sesión es de otra cuenta. Sólo se fusionan sesiones tuyas.' }, { status:403 });
+      if(otra.tipo !== quien.tipo) return Response.json(
+        { error:'Una es persona y la otra es agente: no son la misma.' }, { status:400 });
+
+      this.fusiones[cual] = quien.id;
+      /* Si algo ya apuntaba a la que se acaba de absorber, se repunta: sin
+         esto quedan cadenas (a→b, b→c) y la mesa tendría que perseguirlas al
+         pintar cada mensaje. */
+      for(const k in this.fusiones) if(this.fusiones[k] === cual) this.fusiones[k] = quien.id;
+      delete this.gente[cual];
+
+      await this.guardar();
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados(),
+                      fusiones:this.fusiones });
+      return Response.json({ bien:true, gente:this.gente, fusiones:this.fusiones });
     }
 
     if(pedido.method === 'POST' && ruta === 'reaccion'){
@@ -1747,7 +1803,7 @@ export class Sala {
     this.vivos.add(servidor);
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
-      retratos:this.retratos,
+      retratos:this.retratos, fusiones:this.fusiones,
       vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
       escribiendo:this.escribiendo(),
     }));
