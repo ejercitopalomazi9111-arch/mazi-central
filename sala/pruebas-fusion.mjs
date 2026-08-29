@@ -94,6 +94,59 @@ const ajena = await luis.pg.evaluate(async (id) => {
 }, idNueva);
 ok(/otra cuenta/i.test(ajena), 'Luis no puede absorber la sesión de Carlos: ' + ajena);
 
+console.log('\n■ el hilo no se mueve bajo el dedo al repintarse');
+/* Carlos, e192: «cada que alguien responde te manda el scroll hacia arriba».
+
+   ⚠ LO QUE AQUÍ NO SE PUEDE PROBAR, Y HAY QUE DECIRLO. La causa que yo di por
+   buena —que reemplazar el `innerHTML` pone `scrollTop` en cero— la medí y es
+   FALSA en Chromium: conserva la posición él solo. Así que el salto que él ve
+   en su iPhone no se reproduce aquí, y una prueba que dijera que sí lo
+   reproduce estaría mintiendo.
+
+   Lo que SÍ se puede probar, y es lo que el ancla arregla de verdad, es el
+   caso general: que crezca algo POR ENCIMA de lo que estás leyendo. Ahí
+   Chromium tampoco compensa si se apaga `overflow-anchor` —que es lo que
+   Safari no tiene en absoluto—, y sin ancla el texto se te va de debajo del
+   dedo. */
+const encima = await luis.pg.evaluate(() => {
+  const c = document.getElementById('hilo');
+  for(let k = 0; k < 30; k++)
+    hilo.push({ id:'x'+k, ts:Date.now(), tipo:'mensaje',
+                de:{ id:'relleno', nombre:'Relleno', tipo:'humano', cuenta:'luis' },
+                texto:'renglón de relleno número ' + k });
+  pintarHilo();
+  c.style.overflowAnchor = 'none';   /* así se comporta Safari */
+  c.scrollTop = Math.round(c.scrollHeight * 0.5);
+
+  /* Qué mensaje estoy leyendo, y a qué altura de la pantalla lo tengo. */
+  const arriba = c.getBoundingClientRect().top;
+  const visible = [...c.querySelectorAll('[data-ev]')]
+    .find(b => b.getBoundingClientRect().bottom > arriba);
+  const id = visible.dataset.ev, y = visible.getBoundingClientRect().top;
+
+  /* Y ahora crece algo por encima: un mensaje viejo de veinte renglones.
+     Pasa de verdad —una traducción que se abre, una imagen que carga.
+
+     ⚠ TIENE QUE SER UN MENSAJE QUE SE PINTE Y QUE ESTÉ ARRIBA DEL ANCLA. La
+     primera versión engordaba `hilo[0]`, que es un evento de SISTEMA y no se
+     dibuja —Carlos los sacó del hilo—: no crecía nada, y la prueba pasaba
+     igual con el arreglo quitado. Se busca el primero que de verdad esté
+     pintado por encima del que estoy leyendo. */
+  const orden = [...c.querySelectorAll('[data-ev]')].map(b => b.dataset.ev);
+  const cual = orden[Math.max(0, orden.indexOf(id) - 3)];
+  const viejo = hilo.find(e => e.id === cual);
+  viejo.texto = Array.from({length:20}, (_, n) => 'renglón viejo ' + n).join('\n');
+  pintarHilo();
+
+  const b = c.querySelector('[data-ev="' + id + '"]');
+  return { id, antes:y, despues:b ? b.getBoundingClientRect().top : null,
+           alto:c.scrollHeight, visible:c.clientHeight };
+});
+ok(encima.alto > encima.visible + 200, `el hilo desborda de verdad (${encima.alto} > ${encima.visible})`);
+ok(encima.despues !== null, 'el mensaje que se estaba leyendo sigue ahí');
+ok(Math.abs(encima.despues - encima.antes) < 4,
+   `y se queda a la misma altura aunque crezca lo de arriba (${Math.round(encima.antes)} → ${Math.round(encima.despues)})`);
+
 console.log('\n■ la caja de escribir');
 /* Carlos, e190: «después de escribir y enviar un mensaje la caja no regresa a
    su tamaño». Vaciarla por código NO dispara `input`, que es lo único que la

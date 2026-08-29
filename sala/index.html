@@ -2441,6 +2441,28 @@ function pintarReacciones(e){
 function pintarHilo(){
   const c = $('hilo');
   const abajo = c.scrollHeight - c.scrollTop - c.clientHeight < 140;
+
+  /* ⚠ EL HILO SE REPINTA ENTERO, Y ESO TIRA EL SCROLL AL PRINCIPIO.
+     Carlos, e192: «cada que alguien responde te manda el scroll hacia arriba
+     eso está mal». Tenía razón y la causa es de una línea: abajo se hace
+     `c.innerHTML = …`, y reemplazar el contenido pone `scrollTop` en cero.
+     Sólo se recuperaba en el caso de estar ya pegado al final; el que estaba
+     leyendo hacia atrás se iba al principio cada vez que alguien escribía.
+
+     Se guarda un ANCLA y no el `scrollTop` a secas: el número sólo vale si lo
+     que hay por encima mide igual después, y no siempre —una traducción que
+     se abre, una fusión, una imagen que acaba de cargar—. Anclando al primer
+     mensaje visible, lo que estabas leyendo se queda donde estaba aunque lo
+     de arriba haya cambiado de alto. */
+  let ancla = null;
+  if(!abajo){
+    const arriba = c.getBoundingClientRect().top;
+    for(const b of c.querySelectorAll('[data-ev]')){
+      const r = b.getBoundingClientRect();
+      if(r.bottom > arriba){ ancla = { id:b.dataset.ev, y:r.top }; break; }
+    }
+  }
+
   const evs = hilo;
   const partes = [];
 
@@ -2553,7 +2575,14 @@ function pintarHilo(){
 
   c.innerHTML = partes.join('') ||
     '<p class="sistema">Todavía no se ha dicho nada. Empieza tú.</p>';
-  if(abajo) c.scrollTop = c.scrollHeight;
+
+  if(abajo){ c.scrollTop = c.scrollHeight; return; }
+  if(!ancla) return;
+  const b = c.querySelector(`[data-ev="${CSS.escape(ancla.id)}"]`);
+  /* Se corrige por DIFERENCIA y no se calcula una posición absoluta: así da
+     igual cuánto haya crecido lo de arriba. Si el mensaje del ancla ya no
+     está —lo borraron, o se recortó el hilo por el tope— no se inventa nada. */
+  if(b) c.scrollTop += b.getBoundingClientRect().top - ancla.y;
 }
 
 /* ── reaccionar ─────────────────────────────────────────────────────────── */
