@@ -75,12 +75,56 @@ function hiloEnTexto(sala, d){
   ];
   const cuerpo = (d.hilo || []).map(e => {
     if(e.tipo === 'sistema') return `- *${e.de?.nombre || '—'} ${e.accion || ''}* · ${hora(e.ts)}`;
-    const nota = e.nota?.texto ? `\n  > para ${e.nota.a || 'alguien'}: ${e.nota.texto}` : '';
+    const nota = e.nota?.texto ? `\n  > para ${e.nota.a || 'alguien'}: ${tachar(e.nota.texto)}` : '';
     const para = e.a ? ` → ${e.a}` : '';
     return `### ${e.de?.nombre || '—'}${para} · ${e.tipo} · \`${e.id}\` · ${hora(e.ts)}\n\n`
-         + (e.texto || '').split('\n').map(l => l).join('\n') + nota;
+         + tachar(e.texto || '') + nota;
   });
   return cabeza.join('\n') + (cuerpo.length ? cuerpo.join('\n\n') : '_Vacío._') + '\n';
+}
+
+/* ══ TACHAR LO QUE PAREZCA UNA CREDENCIAL ══════════════════════════════════
+   ⚠ ESTE ARCHIVO ESCRIBE EN UN REPO PÚBLICO, y eso es fácil de olvidar
+   mientras se mira una conversación privada entre dos personas. El espejo va
+   a `sala/buzon/GRUPAZ/hilo.md`, en `main`, cada quince minutos.
+
+   Pasó de verdad: Carlos pegó una ficha de API de Cloudflare en la sala para
+   desbloquear un despliegue —que además no hacía falta, porque se despliega
+   solo al mergear—. Sin esto, esa ficha habría quedado publicada en internet
+   y, peor, en el HISTORIAL DE GIT, de donde ya no se quita sin reescribir la
+   historia del repo.
+
+   No se confía en que nadie vuelva a hacerlo. Va a volver a pasar: la sala es
+   justo el sitio donde uno pega cosas sin pensarlas, y ése es su valor. Lo
+   que se cambia es que pegarlas deje de publicarlas.
+
+   ── LO QUE ESTO NO ES ────────────────────────────────────────────────────
+   No es una garantía. Reconoce las formas conocidas —las que de verdad se
+   pegan— y no puede reconocer una credencial que parezca una palabra normal.
+   Sirve para que un descuido no se publique, NUNCA como permiso para pegar
+   secretos en la sala: lo que pasó por un chat está quemado igual, tachado o
+   no, y hay que revocarlo. Eso se dice aquí porque un filtro que se cree
+   perfecto es lo que hace que alguien baje la guardia.
+
+   Y tacha SÓLO el trozo, no el mensaje entero: el resto casi siempre lleva la
+   instrucción que hay que leer, y borrarla convierte una protección en una
+   pérdida de información. */
+const FORMAS = [
+  /\bcfut_[A-Za-z0-9_-]{20,}/g,                    /* Cloudflare, ficha de usuario */
+  /\bv1\.0-[A-Za-z0-9_-]{30,}/g,                    /* Cloudflare, otras */
+  /\bgh[pousr]_[A-Za-z0-9]{30,}/g,                  /* GitHub */
+  /\bgithub_pat_[A-Za-z0-9_]{50,}/g,
+  /\bsk-[A-Za-z0-9_-]{20,}/g,                      /* OpenAI y parecidos */
+  /\bxox[baprs]-[A-Za-z0-9-]{10,}/g,               /* Slack */
+  /\bAKIA[0-9A-Z]{16}\b/g,                         /* AWS */
+  /\bAIza[0-9A-Za-z_-]{35}\b/g,                    /* Google */
+  /\bey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,  /* JWT */
+  /(?:Bearer|Authorization:\s*Bearer)\s+[A-Za-z0-9._~+/-]{20,}=*/gi,
+];
+function tachar(txt){
+  let t = String(txt || '');
+  for(const forma of FORMAS) t = t.replace(forma, '«credencial tachada por el puente»');
+  return t;
 }
 
 /* ── lo que él escribió, a la sala ──────────────────────────────────────── */

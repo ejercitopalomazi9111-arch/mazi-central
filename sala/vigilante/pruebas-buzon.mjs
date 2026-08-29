@@ -93,8 +93,8 @@ await mkdir(destino, { recursive: true });
 await writeFile(join(destino, 'buzon.mjs'),
   await readFile(join(AQUI, 'buzon.mjs'), 'utf8'));
 
-const pasada = (yo) => correr(process.execPath,
-  [join(destino, 'buzon.mjs'), 'PRUEBA', yo],
+const pasada = (yo, ...extra) => correr(process.execPath,
+  [join(destino, 'buzon.mjs'), 'PRUEBA', yo, ...extra],
   { env: { ...process.env, MAZI_SERVIDOR: `http://127.0.0.1:${PUERTO}` } });
 
 /* ── 1 · la primera pasada sí manda ─────────────────────────────────────── */
@@ -141,6 +141,40 @@ await git('fetch', '-q', 'origin', 'main');
 await pasada('claude-de-carlos');
 ok('cambiar espacios NO lo convierte en un mensaje nuevo', dichos.length === 0,
    JSON.stringify(dichos.map(d => d.texto)));
+
+/* ── 6 · lo que parece una credencial no se publica ──────────────────────── */
+/* `hilo.md` va a `main`, en un repo público. Se prueba de punta a punta —el
+   ARCHIVO ESCRITO, no la función— porque el defecto que importa no es que
+   `tachar()` funcione: es que alguien la deje de llamar en un renglón. */
+console.log('\n── el espejo es un archivo público: las fichas se tachan ──');
+/* Las fichas de mentira se arman partiendo el prefijo. No es remilgo: el
+   escáner de secretos de GitHub mira el ARCHIVO, no si la ficha sirve, y una
+   falsa entera puede bloquear el push de estas mismas pruebas. */
+const FICHA_CF = 'cfut' + '_' + 'estaFichaEsDeMentiraYSoloViveEnLaPrueba00';
+const FICHA_GH = 'ghp' + '_' + 'estaOtraTambienEsDeMentira0000000000';
+const LIMPIO = 'aquí se habla de un cfut pero no viene ninguno: sale entero';
+hilo = [
+  { id:'c1', ts:Date.now(), tipo:'mensaje',
+    de:{ id:'carlos', nombre:'Carlos', tipo:'persona' },
+    texto:`corre curl -H "Authorization: Bearer ${FICHA_CF}" y luego mergea el 94` },
+  { id:'c2', ts:Date.now(), tipo:'mensaje',
+    de:{ id:'carlos', nombre:'Carlos', tipo:'persona' }, texto:'la otra va aparte',
+    nota:{ a:'godines', texto:`si falla usa ${FICHA_GH}` } },
+  { id:'c3', ts:Date.now(), tipo:'mensaje',
+    de:{ id:'carlos', nombre:'Carlos', tipo:'persona' }, texto:LIMPIO },
+];
+/* `--solo-leer` para que esta prueba mire SÓLO el espejo: sin ella el puente
+   reenviaría los bloques de las pruebas de arriba y ensuciaría el hilo. */
+await pasada('claude-de-carlos', '--solo-leer');
+const espejo = await readFile(join(carpeta, 'hilo.md'), 'utf8');
+ok('la ficha pegada en un mensaje NO llega al espejo',
+   !espejo.includes(FICHA_CF), espejo.slice(0, 400));
+ok('la pegada en una nota tampoco', !espejo.includes(FICHA_GH));
+ok('y queda dicho que ahí había algo', espejo.includes('credencial tachada'));
+/* Lo que de verdad distingue esta implementación de «borrar el mensaje»: */
+ok('se tacha el trozo, no el mensaje: la instrucción sobrevive',
+   /y luego mergea el 94/.test(espejo));
+ok('un mensaje sin credenciales pasa intacto', espejo.includes(LIMPIO));
 
 srv.close();
 console.log('\n' + (mal ? '✗ ' : '✓ ') + bien + '/' + (bien + mal) + ' pruebas del puente');
