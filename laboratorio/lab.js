@@ -178,12 +178,16 @@
       b.dataset.estado = cual;
       b.disabled = (cual === 'apagado');
       const base = b === btM ? 'Enviar' : 'Secundario';
-      b.replaceChildren();
+      /* Todo lo que escribe el botón va DENTRO de una capa propia, para que la
+         onda del toque pase por debajo y no por encima de la palabra. */
+      const capa = document.createElement('span');
+      capa.className = 'bt-txt';
       if(cual === 'cargando'){
-        b.append(palomita(), document.createTextNode('Enviando…'));
-      }else if(cual === 'logro'){ b.textContent = '✓ Listo';
-      }else if(cual === 'error'){ b.textContent = '✕ No se pudo';
-      }else{ b.textContent = base; }
+        capa.append(palomita(), document.createTextNode('Enviando…'));
+      }else if(cual === 'logro'){ capa.textContent = '✓ Listo';
+      }else if(cual === 'error'){ capa.textContent = '✕ No se pudo';
+      }else{ capa.textContent = base; }
+      b.replaceChildren(capa);
     }
     /* `foco` se enseña de verdad, poniendo el foco: dibujar un anillo falso
        enseñaría cómo se ve, no cómo se comporta — y lo que falla casi siempre
@@ -247,15 +251,33 @@
          estrella y se vería como un error. */
       const trazos = [...caja.querySelectorAll('path, polygon')];
       trazos.forEach((t, i) => {
-        /* Cada trazo se MIDE para que su animación dure lo mismo aunque midan
-           distinto: sin esto, el ala larga terminaría mucho después que la
-           estrella y se vería como un error, no como un dibujo. */
-        t.style.setProperty('--largo', Math.ceil(t.getTotalLength ? t.getTotalLength() : 400));
-        /* Y se escalonan, que es lo que hace que parezca una mano dibujando y
-           no nueve trazos apareciendo a la vez. El retardo sale de `--cine`,
-           repartido entre los trazos que haya: si el vector cambia de número
-           de piezas, esto sigue cuadrando solo. */
-        t.style.animationDelay = `calc(var(--cine) * ${(i / Math.max(trazos.length, 1) * 0.35).toFixed(3)})`;
+        /* ⚠ CADA TRAZO SE MIDE, y aquí está la mitad de lo que Carlos llamó
+           «desincronizada». Los nueve caminos de la paloma miden cosas muy
+           distintas —un ala es diez veces el ojo—, así que un mismo guion en
+           píxeles se ve enorme en el corto y minúsculo en el largo. El guion
+           se calcula como FRACCIÓN de cada camino: así el segmento que corre
+           se ve del mismo tamaño relativo en los nueve, que es lo que hace
+           que se lean como un solo sistema.
+
+           Y el hueco es el resto exacto del camino. Eso es lo que garantiza
+           que el ciclo cierre sin costura: al desplazarse guion+hueco, el
+           patrón cae exactamente donde empezó. Si el hueco fuera un número
+           redondo, al final de cada vuelta habría un salto. */
+        const largo = Math.max(1, Math.ceil(t.getTotalLength ? t.getTotalLength() : 400));
+        /* ⚠ EL GUION ES LARGO, NO CORTO. Con 16 % se veía una chispa
+           corriendo y la paloma NO SE LEÍA — y Carlos había pedido lo
+           contrario: «manteniendo la forma». Con 60 % la silueta está ahí casi
+           entera y lo que corre es el HUECO, que es lo que hace que se note el
+           movimiento sin perder la marca. Un cargador que no deja reconocer la
+           marca no está usando la marca. */
+        const guion = Math.max(8, Math.round(largo * 0.6));
+        t.style.setProperty('--guion', guion);
+        t.style.setProperty('--hueco', largo - guion);
+        /* El desfase es por POSICIÓN en el camino, no un retardo de tiempo: un
+           retardo deja los primeros trazos quietos al arrancar y se ve como si
+           la animación empezara mal. Así los nueve están corriendo desde el
+           primer fotograma, cada uno por un punto distinto de su recorrido. */
+        t.style.animationDelay = `calc(var(--cine) * 3 * ${-(i / Math.max(trazos.length, 1)).toFixed(3)})`;
       });
     };
 
@@ -359,13 +381,30 @@
 
   /* La onda. Nace donde de verdad se tocó, no en el centro: una onda centrada
      delata que el efecto es un adorno y no una respuesta. */
+  /* La etiqueta de cada botón se envuelve una vez, al arrancar: sin la capa,
+     la onda se dibuja encima del texto. */
+  for(const b of $$('.bt')){
+    if(b.querySelector('.bt-txt')) continue;
+    const capa = document.createElement('span');
+    capa.className = 'bt-txt';
+    while(b.firstChild) capa.append(b.firstChild);
+    b.append(capa);
+  }
+
   function onda(e){
     const b = e.currentTarget;
     if(menos.matches) return;
     const r = b.getBoundingClientRect();
     const s = document.createElement('span');
     s.className = 'onda';
-    const lado = 360;
+    /* El círculo se mide DESDE EL BOTÓN: con un tamaño fijo de 360 px, en un
+       botón chico casi todo quedaba recortado y el efecto se perdía; en uno
+       ancho no alcanzaba a cubrirlo. Dos veces la distancia a la esquina más
+       lejana es lo justo para que la onda salga del punto tocado y llegue a
+       todos los rincones exactamente al terminar. */
+    const dx = Math.max(e.clientX - r.left, r.right - e.clientX);
+    const dy = Math.max(e.clientY - r.top, r.bottom - e.clientY);
+    const lado = Math.ceil(Math.hypot(dx, dy) * 2);
     s.style.cssText = `left:${e.clientX - r.left}px; top:${e.clientY - r.top}px;` +
                       `width:${lado}px; height:${lado}px; margin:${-lado/2}px 0 0 ${-lado/2}px;`;
     /* El margen negativo y el translate del CSS hacen lo mismo a propósito:
@@ -373,7 +412,7 @@
     b.append(s);
     s.addEventListener('animationend', () => s.remove(), { once:true });
   }
-  for(const b of $$('[data-onda], .bt--senal')) b.addEventListener('click', onda);
+  for(const b of $$('.bt')) b.addEventListener('click', onda);
 
   /* ────────────────────────────────────────────────────────────────────────
      4 · CONTADORES (arrancan al entrar, no al cargar)
@@ -492,6 +531,7 @@
   if(hoja && abrirHoja){
     let quienAbrio = null;
     const cerrarHoja = () => {
+      raiz.removeAttribute('data-hoja-abierta');
       hoja.dataset.abierta = 'no';
       /* Se esconde de verdad DESPUÉS de la transición: si se escondiera de
          inmediato, la animación de salida no se vería; y si no se escondiera
@@ -501,6 +541,7 @@
     };
     abrirHoja.addEventListener('click', () => {
       quienAbrio = abrirHoja;
+      raiz.setAttribute('data-hoja-abierta', '');
       hoja.hidden = false;
       requestAnimationFrame(() => { hoja.dataset.abierta = 'si'; $('[data-cerrar-hoja]').focus(); });
     });
@@ -515,11 +556,15 @@
     a.className = 'aviso'; a.dataset.tipo = tipo || 'nota';
     a.textContent = texto;
     cajaAvisos.append(a);
+    raiz.setAttribute('data-hay-avisos', '');
     /* Se va solo a los 4 s. `role=status` en el contenedor y no `alert`: un
        «guardado» no debe interrumpir a quien está escribiendo. */
     setTimeout(() => {
       a.classList.add('yendose');
-      a.addEventListener('animationend', () => a.remove(), { once:true });
+      a.addEventListener('animationend', () => {
+        a.remove();
+        if(!cajaAvisos.children.length) raiz.removeAttribute('data-hay-avisos');
+      }, { once:true });
     }, 4000);
   }
   const btAvisar = $('[data-avisar]');
@@ -643,6 +688,29 @@
 
        `touch-action:none` en `.pieza` es obligatorio y va en el CSS: sin eso
        el navegador se queda el gesto para hacer scroll y aquí no llega nada. */
+    /* ⚠ EL BLANCO DE SOLTAR ES MÁS GRANDE QUE EL CAJÓN. Carlos: «muchas veces
+       está en el lugar, la suelto y se regresa al anterior». Pasaba porque se
+       preguntaba qué hay EXACTAMENTE bajo el dedo, y el dedo tapa lo que
+       señala: se suelta creyendo que está dentro y el punto cae un píxel
+       fuera, o sobre el hueco entre dos cajones. Ahora, si no cae dentro de
+       ninguno, se busca el cajón MÁS CERCANO dentro de un margen — que es lo
+       que la persona quiso decir. */
+    const MARGEN = 44;
+    function cajonBajo(x, y){
+      const bajo = document.elementFromPoint(x, y);
+      const dentro = bajo && bajo.closest('[data-cajon]');
+      if(dentro) return dentro;
+      let mejor = null, cerca = MARGEN;
+      for(const c of cajones){
+        const r = c.getBoundingClientRect();
+        const dx = Math.max(r.left - x, 0, x - r.right);
+        const dy = Math.max(r.top - y, 0, y - r.bottom);
+        const d = Math.hypot(dx, dy);
+        if(d < cerca){ cerca = d; mejor = c; }
+      }
+      return mejor;
+    }
+
     let llevando = null, desdeX = 0, desdeY = 0, arrastrando = false;
     for(const p of $$('.pieza', zonaCajones)){
       p.addEventListener('pointerdown', (e) => {
@@ -662,8 +730,7 @@
       }
       llevando.style.transform =
         `translate(${e.clientX - desdeX}px, ${e.clientY - desdeY}px)`;
-      const bajo = document.elementFromPoint(e.clientX, e.clientY);
-      const caja = bajo && bajo.closest('[data-cajon]');
+      const caja = cajonBajo(e.clientX, e.clientY);
       for(const c of cajones) c.toggleAttribute('data-encima', c === caja);
     }, { passive:true });
     const soltar = (e) => {
@@ -674,8 +741,7 @@
       for(const c of cajones) c.removeAttribute('data-encima');
       if(!arrastrando) return;          /* fue un toque, no un arrastre */
       arrastrando = false;
-      const bajo = document.elementFromPoint(e.clientX, e.clientY);
-      const caja = bajo && bajo.closest('[data-cajon]');
+      const caja = cajonBajo(e.clientX, e.clientY);
       if(caja && caja !== pieza.closest('[data-cajon]')){
         caja.append(pieza);
         decir(`«${pieza.textContent.trim()}» → ${nombreDe(caja)}.`);

@@ -84,9 +84,16 @@
      que alcanza para display grande y para gráficos, no para un renglón de
      12 px. Por eso hay una segunda entrada, y no es capricho ni «por si
      acaso»: la prueba de contraste calcula las dos y reprueba la que falle. */
-  --papel:#EAE5E3;
-  --papel-hondo:#DFD9D6;
-  --papel-hueco:#D4CDC9;
+  /* ⚠ EL HUESO DE LA MARCA, BAJADO DE BRILLO. Carlos: «no uses ESE tono de
+     blanco, es demasiado brillante». Tenía razón y el dato de la marca no lo
+     contradice: #EAE5E3 es el promedio de los píxeles CLAROS del original, o
+     sea el punto más alto del papel, no el papel. Una hoja entera de su punto
+     más brillante deslumbra — es la misma diferencia que hay entre el blanco
+     del papel y el brillo de la lámpara sobre el papel. Se baja un escalón y
+     se calienta: sigue siendo el hueso, ya no es una lámpara. */
+  --papel:#E2DDD6;
+  --papel-hondo:#D9D3CB;
+  --papel-hueco:#CCC5BC;
   --tinta:#010101;
   --tinta-2:#3A3540;
   /* ⚠ #6B6470 daba 4.08:1 sobre el papel hondo — pasaba sobre el papel liso y
@@ -109,6 +116,10 @@
   --acento-texto:var(--violeta-texto);
   --raya:#0101011f;
   --raya-fuerte:#01010140;
+  /* La retícula es MÁS TENUE que las reglas del documento, y tiene token
+     propio por eso: si compartiera `--raya`, subir el contraste de una regla
+     subiría también el del papel milimétrico y el fondo se comería el texto. */
+  --reticula:#01010110;
 
   --letra:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -133,8 +144,14 @@
   --texto-2:#C4BCC9;
   --texto-3:#948C9C;
   --acento-texto:#C86BF5;
-  --alarma:#FF7B85;
+  /* ⚠ ROJO DE VERDAD, NO ROSA. Carlos: «en el tono oscuro los avisos en rojo
+     déjalos con el rojo tradicional, no lo hagas rosado raro». El rosa salió
+     de aclarar el rojo hasta que pasara contraste sobre el fondo oscuro, que
+     es la salida fácil y le quita al color lo único que hacía: decir alarma.
+     Éste da 4.87:1 sobre el fondo oscuro y sigue siendo rojo. */
+  --alarma:#EE3B33;
   --raya:#EAE5E31f;
+  --reticula:#EAE5E30f;
   --raya-fuerte:#EAE5E340;
 }
 
@@ -173,12 +190,31 @@ body{
    que algo debajo cambia — y en iOS eso se ve como un parpadeo. Puesto sobre
    el `body` no hay capa extra que rasterizar: el grano se desplaza con la
    página, que a 160 px no se nota, y el parpadeo no tiene de dónde salir. */
+/* ── LA CUADRÍCULA, QUE VUELVE ────────────────────────────────────────────
+   Carlos: «quitaste la cuadrícula que ponías atrás, se veía bien porque le
+   daba dinamismo por el fondo mate». La había quitado con el rediseño porque
+   sobre casi-negro era parte de lo que hacía que esto se leyera como panel de
+   videojuego. Sobre papel es otra cosa distinta: es PAPEL MILIMÉTRICO, que es
+   exactamente donde se anota una medición. Encaja mejor aquí que antes.
+
+   Dos escalas —la fina de 24 y la gruesa de 96— porque una sola retícula se
+   lee como fondo de plantilla y dos se leen como hoja técnica. Y el grano
+   encima, para que el papel no sea un plano de color.
+
+   Todo sobre el `body` y NO en una capa `position:fixed`: esa capa aparte es
+   lo que iOS vuelve a rasterizar en cada cambio, y era el parpadeo que Carlos
+   reportó al pulsar cualquier botón. */
 body{
-  background-image:url("data:image/svg+xml;utf8,\
+  background-image:
+    linear-gradient(var(--reticula) 1px, transparent 1px),
+    linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
+    linear-gradient(var(--reticula) 1px, transparent 1px),
+    linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
+    url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>\
 <filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/></filter>\
 <rect width='160' height='160' filter='url(%23g)' opacity='.05'/></svg>");
-  background-size:160px 160px;
+  background-size:96px 96px, 96px 96px, 24px 24px, 24px 24px, 160px 160px;
   background-repeat:repeat;
 }
 
@@ -203,8 +239,13 @@ code{ font-family:var(--mono); font-size:.9em; color:var(--acento-texto); }
   text-transform:uppercase; color:var(--texto-3); margin:0 0 .9rem;
   display:flex; align-items:baseline; gap:.55rem;
 }
+/* ⚠ LA ESTRELLA VA CON EL VIOLETA DE TEXTO Y NO CON EL DE MARCA. Carlos:
+   «los puntos de los switches no se ven en el tono claro». El violeta de marca
+   da 3.69:1 sobre el papel, que alcanza para una superficie grande y NO para
+   un glifo de 8 px: a ese tamaño el contraste que cuenta es el del trazo, no
+   el de la mancha. */
 .rotulo::before{
-  content:'★'; color:var(--acento); font-size:.8em; line-height:1;
+  content:'★'; color:var(--acento-texto); font-size:.8em; line-height:1;
   transform:translateY(-.05em);
 }
 
@@ -352,13 +393,28 @@ section[id].liviana{ padding:3.5rem 0 3rem; }   /* las de apoyo */
 .bt[data-estado="encima"]{ background:#8E19C6; border-color:#8E19C6; }
 .bt[data-estado="hundido"]{ transform:translateY(2px); background:#7A0FA8; border-color:#7A0FA8; }
 
-/* La onda al tocar. Nace donde de verdad se tocó. */
+/* ── LA ONDA AL TOCAR ─────────────────────────────────────────────────────
+   ⚠ CARLOS DIJO DOS VECES QUE «NO SIRVE», Y SÍ SE DISPARABA. Lo comprobé con
+   un toque de verdad: el círculo nacía, con su animación y todo. Eran otras
+   dos cosas, y ninguna se ve leyendo el código:
+
+   1 · SE PINTABA ENCIMA DE LA ETIQUETA. Un elemento posicionado se dibuja
+       sobre el contenido en flujo, así que la onda pasaba por delante de la
+       palabra del botón. En vez de leerse como una respuesta al toque se leía
+       como un borrón sobre el texto. Ahora la etiqueta va en su propia capa,
+       que es la razón por la que `ponerEstado` envuelve lo que escribe.
+   2 · ERA DEL COLOR DEL TEXTO. En el botón suave, `currentColor` es tinta
+       casi negra sobre papel: una mancha gris. La onda tiene color propio y
+       cada variante dice el suyo. */
+.bt{ isolation:isolate; }
+.bt-txt{ position:relative; z-index:1; display:inline-flex; align-items:center; gap:.5rem; }
 .onda{
-  position:absolute; border-radius:50%; pointer-events:none;
-  background:currentColor; opacity:.3;
+  position:absolute; z-index:0; border-radius:50%; pointer-events:none;
+  background:var(--onda-color, #FFF); opacity:.34;
   transform:translate(-50%,-50%) scale(0);
   animation:ondear var(--onda) ease-out forwards;
 }
+.bt--suave, .bt--desnudo{ --onda-color:var(--acento); }
 @keyframes ondear{ to{ transform:translate(-50%,-50%) scale(1); opacity:0; } }
 
 /* ── el número ────────────────────────────────────────────────────────────

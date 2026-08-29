@@ -280,10 +280,14 @@
     <div class="cabecilla">
       <h2 id="t-part">Cuatro comportamientos, un solo ciclo</h2>
       <p>
-        No son puntos flotando. Son cuatro sistemas distintos sobre el mismo
-        motor: <b>orbital</b>, <b>magnético</b>, <b>repelente</b> y
-        <b>conectado</b> — que traza una línea cuando dos quedan a menos de
-        120 px. Un solo <code>requestAnimationFrame</code> para todo, y se
+        No son puntos flotando. Son cinco sistemas sobre el mismo motor:
+        <b>orbital</b>, <b>magnético</b>, <b>repelente</b>, <b>conectado</b>
+        —que traza una línea cuando dos quedan a menos de 120 px— y un
+        <b>sistema solar</b> con gravedad de verdad: las órbitas no están
+        dibujadas, <b>salen</b> de integrar la fuerza en cada paso, y por eso
+        hay elipses, lunas y cometas sin que nadie los haya trazado. Cuando dos
+        cuerpos chocan se funden conservando masa y cantidad de movimiento, y
+        la órbita nueva sale de esa misma cuenta. Un solo <code>requestAnimationFrame</code> para todo, y se
         <b>detiene cuando no está a la vista</b>: animar algo que nadie ve es
         gastar batería de alguien a cambio de nada.
       </p>
@@ -294,6 +298,7 @@
       <button class="pastilla" type="button" data-modo="magnetico" aria-pressed="false">magnético</button>
       <button class="pastilla" type="button" data-modo="repelente" aria-pressed="false">repelente</button>
       <button class="pastilla" type="button" data-modo="conectado" aria-pressed="false">conectado</button>
+      <button class="pastilla" type="button" data-modo="solar"     aria-pressed="false">sistema solar</button>
     </div>
 
     <div class="lienzo-caja">
@@ -385,7 +390,7 @@
     <div class="tablero">
       <div class="medidor">
         <p class="rotulo">Responde al toque en</p>
-        <span class="dato dato--gordo" data-contar="62">62</span>
+        <span class="dato dato--gordo" data-contar="63">63</span>
         <small>lugares. Los cuenta la prueba, uno por uno</small>
       </div>
       <div class="medidor">
@@ -395,7 +400,7 @@
       </div>
       <div class="medidor">
         <p class="rotulo">Peso de la página</p>
-        <span class="dato dato--gordo" data-contar="154">154<span class="unidad">KB</span></span>
+        <span class="dato dato--gordo" data-contar="181">181<span class="unidad">KB</span></span>
         <small>el documento y sus hojas y scripts, sin comprimir. La paloma del cargador se baja aparte y sólo si hace falta</small>
       </div>
       <div class="medidor">

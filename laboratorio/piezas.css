@@ -71,7 +71,7 @@
 }
 /* La escogida se marca con la línea del acento debajo, no con una pastilla
    rellena: sobre papel, seis rectángulos de color seguidos son un arcoíris. */
-.pastilla[aria-pressed="true"]{ color:var(--texto); border-bottom-color:var(--acento); }
+.pastilla[aria-pressed="true"]{ color:var(--texto); border-bottom-color:var(--acento-texto); }
 .pastilla:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 @media (hover:hover) and (pointer:fine){ .pastilla:hover{ color:var(--texto); } }
 
@@ -371,10 +371,15 @@ dialog::backdrop{ background:#01010199; }
    Es lo ÚNICO del documento que sí se ve como un aparato —fondo de tinta
    sobre la hoja—, y a propósito: un instrumento encima de un papel se
    distingue de la hoja. Que todo lo demás se viera así era el problema. */
+/* ⚠ EL BOTÓN NUNCA VA BLANCO. Carlos: «los botones jamás los hagas blancos
+   como el de consola, siempre ponles un color». Y era peor de lo que parece:
+   estaba pintado con `--texto` sobre `--fondo`, o sea que en el tema oscuro
+   salía BLANCO — un rectángulo de papel flotando sobre una página oscura, que
+   es justo lo que no debe hacer un control. Va con el acento en los dos temas. */
 .consola-bt{
   position:fixed; left:1rem; bottom:1rem; z-index:90;
   min-height:44px; padding:0 .9rem;
-  background:var(--texto); color:var(--fondo);
+  background:var(--acento); color:#FFF;
   border:0; border-radius:0;
   font-family:var(--mono); font-size:.72rem; letter-spacing:.12em;
   text-transform:uppercase; cursor:pointer;
@@ -386,7 +391,7 @@ dialog::backdrop{ background:#01010199; }
   font-family:var(--mono); font-size:.66rem; opacity:.6;
   border:1px solid currentColor; padding:0 .3rem;
 }
-.consola-bt[aria-expanded="true"]{ background:var(--acento); color:#FFF; }
+.consola-bt[aria-expanded="true"]{ background:var(--texto); color:var(--fondo); }
 .consola-bt:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
 
 .consola{
@@ -440,38 +445,48 @@ html[data-cajas] body *:hover{ outline:1px solid var(--acento); }
 
 html[data-marco] .consola-bt, html[data-marco] .consola, html[data-marco] .probador{ display:none; }
 
-/* ── LA PALOMA QUE SE DIBUJA · el estado de carga ══════════════════════════
-   Carlos: «tu cargando es demasiado simple, ¿una U dando vueltas? ¿Qué es
-   esto, el siglo 3? Haz algo nuevo… una paloma dibujándose su contorno».
+/* ── LA PALOMA · el estado de carga ═══════════════════════════════════════
+   Carlos, primera vez: «una U dando vueltas, ¿qué es esto, el siglo 3?».
+   Carlos, segunda: «va bien, pero la animación se hace muy rápido y
+   desincronizada, todo se carga medio a la vez rápido y medio mal, y al
+   finalizar se detiene de golpe e inicia de 0 otra vez».
 
-   Es la mejor de sus ideas y además arregla algo más grande: era el único
-   sitio del laboratorio donde no había NADA de la casa. La paloma es la marca
-   de verdad —la que Carlos dibujó hace quince años— y se dibuja sola trazo a
-   trazo con `stroke-dashoffset`, que es lo mismo que hace una pluma.
+   Las dos son correctas, y la segunda apunta a un problema de principio y no
+   de números. Yo la había hecho DIBUJARSE: cada trazo se llena de cero a
+   completo y vuelve a empezar. Eso tiene un final, y un final que se repite se
+   ve como un corte — sobre todo si el botón se queda cargando un rato, que es
+   justo cuando un cargador tiene que aguantar que lo miren.
 
-   Un giro infinito dice «espera»; una marca dibujándose dice «esto lo está
-   haciendo alguien». Tarda `--cine` y se repite. */
-/* ⚠ EL GROSOR VA EN UNIDADES DEL `viewBox`, NO EN PÍXELES DE PANTALLA. El
-   archivo de la marca mide 1068 de ancho y se dibuja a 40: un `stroke-width:5`
-   se ve a 0.16 px, o sea que la paloma «se dibujaba» y no se veía nada. Y la
-   caja es apaisada porque la paloma lo es (1068 × 625): en una caja cuadrada
-   quedaba diminuta en medio de dos franjas vacías. */
+   La salida es suya y es mejor que la mía: «que todos recorran un circuito
+   persiguiendo su cola para hacer la imagen, manteniendo la forma sin
+   tocarse». O sea: no se dibuja, CIRCULA. Cada trazo lleva un segmento corto
+   que recorre su propio camino sin fin. La paloma nunca se completa y nunca se
+   reinicia, porque no hay principio ni final que ver.
+
+   Cómo: `stroke-dasharray` con guion corto y hueco largo, y el desplazamiento
+   animado UN CICLO EXACTO del patrón en lineal. Al terminar, el dibujo es
+   idéntico al del principio — ahí está toda la diferencia con lo de antes: el
+   bucle no tiene costura.
+
+   Y va lento. `--cine` son 1.8 s y para esto es un parpadeo; se usan tres
+   vueltas de `--cine`, que es la duración más larga del sistema sin inventar
+   un número que se salga de la gramática. */
 .paloma{ width:40px; height:24px; flex:none; display:block; overflow:visible; }
 .paloma path, .paloma polygon{
   fill:none; stroke:currentColor; stroke-width:16;
   stroke-linecap:round; stroke-linejoin:round;
-  stroke-dasharray:var(--largo, 400); stroke-dashoffset:var(--largo, 400);
-  animation:trazar var(--cine) var(--curva-suave) infinite;
+  /* El guion es una fracción corta del camino. Si fuera largo, los segmentos
+     se tocarían entre sí y se leería como una paloma parpadeando en vez de
+     como una luz recorriéndola — que es lo que él pidió que NO pasara. */
+  stroke-dasharray:var(--guion, 60) var(--hueco, 340);
+  animation:circular calc(var(--cine) * 3) linear infinite;
 }
-/* El escalonado lo pone `lab.js` trazo por trazo: el archivo de la marca no
-   trae clases, y ponérselas a mano sería atarse a un orden que puede cambiar
-   si algún día se regenera el vector. */
-@keyframes trazar{
-  0%   { stroke-dashoffset:var(--largo, 400); }
-  55%  { stroke-dashoffset:0; }
-  85%  { stroke-dashoffset:0; }
-  100% { stroke-dashoffset:calc(var(--largo, 400) * -1); }
+@keyframes circular{
+  from{ stroke-dashoffset:0; }
+  to  { stroke-dashoffset:calc((var(--guion, 60) + var(--hueco, 340)) * -1); }
 }
+.paloma-caja{ display:inline-flex; align-items:center; }
+
 .cargando-caja{
   display:flex; align-items:center; gap:1rem; padding:1.4rem 0;
   color:var(--acento);
@@ -497,3 +512,64 @@ html[data-marco] .consola-bt, html[data-marco] .consola, html[data-marco] .proba
   .solo-dedo{ display:block; }
   [data-iman-lectura]{ opacity:.4; }
 }
+
+/* ══ EL TEMA CAMBIA ESCALONADO, CADA PIEZA CON SU MEDIDOR ══════════════════
+   Carlos: «la parte de arriba se cambia de golpe; haz que ese se cambie al
+   ritmo del primero, el más rápido, y lo mismo con el resto de componentes que
+   se ven en ese momento, que cada uno cambie a la par con uno de los medidores
+   esos».
+
+   Es mejor idea de lo que parece a primera vista, y no es adorno: convierte el
+   cambio de tema en una DEMOSTRACIÓN de la propia sección uno. Los cinco
+   escalones dejan de ser una tabla y pasan a ser algo que se ve pasar por la
+   página entera — la cabecera a 110 ms, los controles a 220, las superficies a
+   420, el texto a 820 y el papel a 1800. Se ve una ola cruzando de arriba
+   abajo, y la ola son los tokens.
+
+   Ninguna duración nueva: son los cinco de siempre. */
+.cinta, .cinta-vias a, .cinta-pct, .cinta-marca{
+  transition:background var(--micro) var(--curva-suave),
+             color var(--micro) var(--curva-suave),
+             border-color var(--micro) var(--curva-suave);
+}
+.pastilla, .bt, .pieza, .deslizador, .consola-bt{
+  transition:background var(--corta) var(--curva-suave),
+             color var(--corta) var(--curva-suave),
+             border-color var(--corta) var(--curva-suave),
+             transform var(--micro) var(--curva-salida);
+}
+.consola, .hoja, dialog, .aviso, .lienzo-caja, .progreso, .grafica div, .hueso{
+  transition:background var(--media) var(--curva-suave),
+             color var(--media) var(--curva-suave),
+             border-color var(--media) var(--curva-suave);
+}
+h1, h2, h3, p, .dato, .rotulo, .medidor small, .cabecilla{
+  transition:color var(--larga) var(--curva-suave);
+}
+/* El papel es el último en girar, con `--cine`: está en `base.css`, sobre el
+   `body`, y es la misma duración que la pista más larga. */
+
+/* ── LA FLECHA, MÁS LEJOS Y MÁS DESPACIO ──────────────────────────────────
+   Carlos: «podrías mejorarlo haciendo que la flechita se separe más despacio y
+   un poco más lejos, además de que el botón baje y regrese a posición un poco
+   más lento y notorio, porque al hacerlo normal se desincronizan».
+
+   Lo de «se desincronizan» es lo que importa: el hundido del botón iba en
+   `--micro` (110 ms) y la flecha en `--corta` (220), así que el botón ya había
+   vuelto cuando la flecha seguía fuera y se leían como dos cosas distintas.
+   Ahora los dos van en `--corta` y salen del mismo tiempo. */
+[data-flecha]{ transition:transform var(--corta) var(--curva-salida) !important; }
+[data-flecha]:active{ transform:translateY(3px); }
+
+/* ── EL BOTÓN FIJO NO TAPA LO QUE ESTÁ ABIERTO ────────────────────────────
+   Carlos: «la consola se encima al botón de cerrar la hoja y se encima al
+   aviso». Es lo de siempre con lo fijo: dos cosas ancladas a la misma esquina
+   acaban una encima de la otra. Cuando hay una hoja o un aviso arriba, la
+   consola se aparta — no se esconde, porque desaparecer un control también
+   confunde: se corre a un lado. */
+html[data-hoja-abierta] .consola-bt, html[data-hoja-abierta] .consola{
+  transform:translateY(-14rem);
+  transition:transform var(--media) var(--curva-salida);
+}
+html[data-hay-avisos] .consola-bt{ transform:translateY(-4.5rem); }
+html[data-hay-avisos] .consola{ transform:translateY(-4.5rem); }

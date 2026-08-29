@@ -395,6 +395,21 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   font-family:var(--dato); font-size:11px; line-height:1.6; color:var(--violeta-claro);
   word-break:break-all; user-select:all; -webkit-user-select:all;
 }
+.pegar-llave{
+  margin-top:14px; padding:14px; border:1px solid var(--borde-vivo);
+  border-radius:10px; background:#ffffff08; text-align:left;
+}
+.pegar-llave[hidden]{display:none}
+.pegar-llave h4{margin:0 0 6px; font-size:15px}
+.pegar-llave p{margin:0 0 10px; font-size:13px; color:var(--tenue); line-height:1.5}
+.pegar-llave input{
+  width:100%; margin-bottom:10px;
+  /* 16px: abajo de eso iOS hace zoom al enfocar, y este campo existe
+     precisamente para quien está en un iPhone. */
+  font-size:16px; padding:11px 12px; min-height:46px;
+  background:#00000030; color:var(--hueso);
+  border:1px solid var(--borde-vivo); border-radius:8px;
+}
 .aviso-llaves{
   font-size:12px; color:var(--ambar); background:rgba(232,179,58,.09);
   border:1px solid rgba(232,179,58,.28); border-radius:11px; padding:10px 12px;
@@ -1385,6 +1400,35 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
     <button class="enviar" id="bEntrar" style="width:100%">Entrar</button>
     </div>
     <div class="error" id="error"></div>
+
+    <!-- ⚠ PEGAR LA LLAVE A MANO, PORQUE HAY UN CASO DONDE LA URL NO SIRVE.
+         Carlos: «no puedo acceder desde la de inicio de mi iPhone porque
+         necesita la llave, y como no puedo meterle llave con URL me trata como
+         un externo y no me deja entrar ni crear salas».
+
+         La causa no es la sala: es que en iOS una app añadida a la pantalla de
+         inicio corre en su PROPIO almacenamiento, separado del de Safari. La
+         llave guardada en el navegador no viaja al acceso directo, y el acceso
+         directo no puede llevar `?llave=` porque su dirección ya quedó fija el
+         día que se creó. O sea que el único camino que teníamos para dar una
+         llave —la URL— es justo el que ahí no existe.
+
+         Esto se abre SOLO cuando el servidor rechaza por la llave, no siempre:
+         un campo de llave visible en la pantalla de entrar invita a que
+         cualquiera piense que necesita una, y casi nadie la necesita.
+
+         Y acepta el LINK COMPLETO además de la llave pelada, que es lo que la
+         persona de verdad tiene a mano: el mensaje donde se lo pasaron. Pedir
+         que recorte a mano treinta caracteres de una dirección es pedirle que
+         se equivoque. -->
+    <div class="pegar-llave" id="pegarLlave" hidden>
+      <h4>Esta sala pide llave</h4>
+      <p>Pega aquí <b>el link que te pasaron</b> o la llave sola. Se guarda en
+        este aparato y no vuelve a pedirse.</p>
+      <input id="llaveIn" type="text" inputmode="text" autocomplete="off"
+             spellcheck="false" placeholder="https://… o la llave">
+      <button class="gordo" id="bGuardarLlave">Guardar la llave y entrar</button>
+    </div>
     <div class="demo">
       ¿No tienes código? <a href="#" id="bDemo" style="color:var(--violeta-claro)">Ver
       una sala de ejemplo</a> para conocer la mesa sin conectarte.
@@ -3245,8 +3289,53 @@ $('bEntrar').addEventListener('click', async () => {
   if(!nombre){ $('error').textContent = 'Escribe tu nombre para entrar.';
                $('nombreIn').focus(); return; }
   $('error').textContent = 'Entrando…';
-  try{ await entrar(codigo, nombre); $('error').textContent = ''; }
-  catch(e){ $('error').textContent = e.message; }
+  try{ await entrar(codigo, nombre); $('error').textContent = ''; $('pegarLlave').hidden = true; }
+  catch(e){ $('error').textContent = e.message; asomarPegarLlave(e); }
+});
+
+/* Se enseña el campo SÓLO si el rechazo huele a llave. Enseñarlo ante
+   cualquier error mandaría a pegar una llave a quien tiene un código mal
+   escrito, y esa persona se quedaría atorada buscando algo que no le falta. */
+function asomarPegarLlave(e){
+  const m = String((e && e.message) || '').toLowerCase();
+  if(/llave|401|403|autoriz|externo|permiso/.test(m)) $('pegarLlave').hidden = false;
+}
+
+/* Acepta el link entero o la llave pelada. Lo primero es lo que la persona
+   tiene a mano; lo segundo es lo que uno cree que va a pegar. */
+function llaveDePegado(txt){
+  const t = String(txt || '').trim();
+  if(!t) return '';
+  try{
+    const u = new URL(t);
+    const dada = u.searchParams.get('llave');
+    if(dada) return dada.trim();
+    /* El link de agente la lleva igual, y el de la mesa también: si es una
+       dirección y no trae `llave`, no hay nada que sacar. */
+  }catch(err){ /* no era una dirección: se toma tal cual */ }
+  /* Una llave suelta puede venir con espacios o comillas de un copiado torpe. */
+  return t.replace(/^["'\s]+|["'\s]+$/g, '').split(/\s+/)[0];
+}
+
+$('bGuardarLlave') && $('bGuardarLlave').addEventListener('click', async () => {
+  const llave = llaveDePegado($('llaveIn').value);
+  if(!llave){ $('error').textContent = 'Pega el link o la llave.'; return; }
+  /* ⚠ SE GUARDA Y SE RECARGA, no se reasigna la variable. Escribí
+     `LLAVE = llave` y la prueba lo tumbó en el acto: `LLAVE` es `const`.
+
+     Y menos mal, porque reasignarla habría sido peor que un error: la llave la
+     capturan varias cosas al arrancar —las cabeceras, la dirección del socket,
+     la lista de salas—, así que cambiar la variable a media sesión habría
+     dejado la mitad de la página hablando con la llave vieja. Eso no truena:
+     falla a ratos, que es lo caro. Recargar es una línea y deja TODO
+     consistente, y como la llave ya está guardada, al volver a cargar entra
+     sola. */
+  try{ localStorage.setItem('salaLlave', llave); }catch(err){}
+  $('error').textContent = 'Entrando…';
+  const codigo = ($('codigoIn').value || '').trim().toUpperCase();
+  const nombre = $('nombreIn').value.trim() || nombreRecordado(codigo);
+  try{ if(codigo && nombre) localStorage.setItem('sala', JSON.stringify({ codigo, nombre })); }catch(err){}
+  location.reload();
 });
 function salirme(){
   /* ⚠ Salir NO borra la identidad, y el intento de que sí la borrara revivió

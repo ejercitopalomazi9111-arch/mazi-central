@@ -534,6 +534,45 @@ console.log('\n── los defectos que reportó Carlos ──');
   await pg.close(); await ctx.close();
 }
 
+/* ══ EL SISTEMA SOLAR ════════════════════════════════════════════════════
+   Lo pidió Carlos «respetando gravedad, elipses, rotación y traslación». Lo
+   que hay que probar no es que se vea bonito: es que las órbitas SALGAN de la
+   física y que el sistema no se destruya solo, que es lo que le pasó a mis
+   tres primeras versiones —de cinco cuerpos quedaban tres en diez segundos—.
+   Una demo que se acaba antes de que la miren no es una demo. */
+console.log('\n── el sistema solar ──');
+{
+  const ctx = await b.newContext({ viewport:{ width:1100, height:800 } });
+  const { pg, err } = await nuevaPagina(ctx);
+  await pg.locator('#particulas').scrollIntoViewIfNeeded();
+  await pg.waitForTimeout(500);
+  await pg.click('[data-modo="solar"]');
+  await pg.waitForTimeout(1200);
+
+  const estado = () => pg.evaluate(() => document.querySelector('[data-lienzo]').__estado());
+  const a = await estado();
+  ok(a.length >= 4, `el sistema nace con ${a.length} cuerpos`);
+  ok(a.some(c => c.cometa), 'y uno de ellos es un cometa');
+  /* Las órbitas tienen que estar SEPARADAS: si dos quedan a menos que la suma
+     de sus radios, se van a fundir enseguida y el sistema se vacía. */
+  const ds = a.filter(c => !c.cometa).map(c => c.d).sort((x, y) => x - y);
+  const juntas = ds.some((d, i) => i > 0 && d - ds[i - 1] < 24);
+  ok(!juntas, `las órbitas nacen separadas (${ds.join(', ')})`);
+
+  await pg.waitForTimeout(9000);
+  const b2 = await estado();
+  ok(b2.length >= a.length - 1,
+     `y a los 10 s el sistema sigue en pie (${a.length} → ${b2.length} cuerpos)`);
+  /* La elipse tiene que verse: cada cuerpo cambia de distancia al sol a lo
+     largo de su vuelta. Si la distancia fuera constante serían círculos
+     dibujados, no órbitas integradas. */
+  const movio = b2.some((c, i) => a[i] && Math.abs(c.d - a[i].d) > 2);
+  ok(movio, 'y las distancias al sol cambian: son elipses, no círculos fijos');
+
+  ok(err.length === 0, 'cero errores de consola' + (err.length ? ': ' + err[0] : ''));
+  await pg.close(); await ctx.close();
+}
+
 /* ══ EL TELÉFONO, CON DEDO DE VERDAD ═════════════════════════════════════
    «Tu arrastrar en teléfono no funciona», y era literal: `dragstart` es de la
    API de arrastre de HTML y en táctil NO EXISTE. No fallaba — nunca corría.
