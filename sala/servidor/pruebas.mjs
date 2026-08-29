@@ -975,6 +975,110 @@ globalThis.WebSocketPair = function(){
 
 console.log('\n· Una sala viva no se borra sola');
 await olvido();
+
+/* ══ LA VIGILIA · cuando una IA se cae y no puede avisar ═══════════════════
+   Lo pidió Carlos, y el argumento es suyo: «es evidente que no se
+   desconectarían si tuvieran uso».
+
+   Estas pruebas mueven el reloj a mano en vez de esperar tres horas y media.
+   Se toca `visto` y `vigilias[].cuando` hacia atrás, que es exactamente el
+   estado en el que el servidor se encontraría si el tiempo hubiera pasado —
+   no un atajo, sino la misma situación. */
+async function vigilia(){
+  console.log('\n· La vigilia: una IA que se cae sin poder avisar');
+  const atras = (s, id, ms) => {
+    s.gente[id].visto = Date.now() - ms;
+    if(s.vigilias[id]) s.vigilias[id].cuando = Date.now() - 1;
+  };
+  const limites = (s) => s.hilo.filter(e => e.tipo === 'limite');
+
+  const s = nueva();
+  await pedir(s, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente', motor:'claude' });
+  await pedir(s, 'POST', 'entrar', { id:'hum', nombre:'Carlos', tipo:'humano' });
+  await pedir(s, 'POST', 'decir', { de:'ia', texto:'aquí ando' });
+
+  ok('un agente activo tiene su perro guardián armado', !!s.vigilias.ia);
+  ok('y un humano NO: cerrar la pestaña no es quedarse sin uso', !s.vigilias.hum);
+
+  /* Vuelve dentro de la gracia: aquí no pasó nada y no se publica una línea. */
+  const antesDeNada = limites(s).length;
+  atras(s, 'ia', 60 * 1000);            /* un minuto, dentro de los cinco */
+  s.vigilias.ia.cuando = Date.now() - 1;
+  await s.alarm();
+  ok('si vuelve dentro de la gracia, no se publica nada',
+     limites(s).length === antesDeNada && s.gente.ia.estado === 'activo');
+
+  /* Se pasa de la gracia: primer escalón. */
+  atras(s, 'ia', 10 * 60 * 1000);
+  await s.alarm();
+  const uno = limites(s).at(-1);
+  ok('pasada la gracia, queda topado',            s.gente.ia.estado === 'topado');
+  ok('con hora de regreso a 3 h 30',
+     Math.abs(s.gente.ia.reanuda - Date.now() - 3.5 * 60 * 60 * 1000) < 60 * 1000);
+  ok('y lo dice en el hilo',                      /3 h 30/.test(uno.texto));
+  ok('marcado como DEDUCIDO y no declarado',      uno.limite.automatico === true);
+  ok('el humano sigue sin que nadie suponga nada de él',
+     s.gente.hum.estado === 'activo' && !s.vigilias.hum);
+
+  /* No vuelve a las 3 h 30: una hora más. */
+  atras(s, 'ia', 4 * 60 * 60 * 1000);
+  await s.alarm();
+  ok('si no vuelve, se le da una hora más',       /una hora más/.test(limites(s).at(-1).texto));
+  ok('y sigue topado, no fuera',                  s.gente.ia.estado === 'topado');
+
+  /* Tampoco vuelve: agotado de la semana o algo externo. */
+  atras(s, 'ia', 6 * 60 * 60 * 1000);
+  await s.alarm();
+  ok('tampoco con la hora extra: queda fuera',    s.gente.ia.estado === 'fuera');
+  ok('y se dice que puede ser la semana o algo externo',
+     /semana|externo/.test(limites(s).at(-1).texto));
+  ok('la vigilia se cierra sola: no sigue avisando para siempre', !s.vigilias.ia);
+
+  const cuantos = limites(s).length;
+  await s.alarm(); await s.alarm();
+  ok('y no publica de más aunque suene la alarma otra vez', limites(s).length === cuantos);
+
+  /* Vuelve. */
+  await pedir(s, 'POST', 'decir', { de:'ia', texto:'ya volví' });
+  ok('al hablar vuelve a activo',                 s.gente.ia.estado === 'activo');
+  ok('y su regreso queda anunciado',              /volvió/.test(limites(s).at(-1).texto));
+
+  /* ⚠ LO QUE EL AGENTE DECLARA MANDA SOBRE LO QUE LA SALA DEDUCE. */
+  const s2 = nueva();
+  await pedir(s2, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente' });
+  await pedir(s2, 'POST', 'estado', { de:'ia', estado:'ocupado', nota:'en otra cosa' });
+  const dichos = s2.hilo.filter(e => e.tipo === 'limite').length;
+  s2.gente.ia.visto = Date.now() - 60 * 60 * 1000;
+  if(s2.vigilias.ia) s2.vigilias.ia.cuando = Date.now() - 1;
+  await s2.alarm();
+  ok('si el agente ya declaró su estado, la sala no lo pisa con una suposición',
+     s2.gente.ia.estado === 'ocupado' && s2.gente.ia.nota === 'en otra cosa' &&
+     s2.hilo.filter(e => e.tipo === 'limite').length === dichos);
+
+  /* Y la alarma del olvido sobrevive a todo esto: son la MISMA alarma. */
+  const s3 = nueva();
+  await pedir(s3, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente' });
+  await pedir(s3, 'POST', 'decir', { de:'ia', texto:'hola' });
+  const puesta = await s3.ctx.storage.getAlarm();
+  ok('con vigilia abierta, la alarma se pone para la vigilia y no a 30 días',
+     puesta - Date.now() < 10 * 60 * 1000);
+  /* ⚠ HAY QUE EMPUJAR EL RELOJ ENTRE ESCALONES, y mi primera versión llamaba
+     `alarm()` tres veces seguidas esperando que avanzara tres pasos. No avanza,
+     y hace bien: al pasar al escalón 1 la vigilia se pone para dentro de 3 h 30,
+     así que las otras dos alarmas no vencían nada. La prueba estaba mal montada
+     y el código bien — que es la clase de fallo que hay que mirar dos veces
+     antes de "arreglar" el código y romperlo de verdad. */
+  for(let i = 0; i < 3; i++){
+    s3.gente.ia.visto = Date.now() - 6 * 60 * 60 * 1000;
+    if(s3.vigilias.ia) s3.vigilias.ia.cuando = Date.now() - 1;
+    await s3.alarm();
+  }
+  ok('la escalada llega hasta el final', s3.gente.ia.estado === 'fuera' && !s3.vigilias.ia);
+  await s3.tocar(true);
+  ok('y cuando la vigilia termina, la del olvido vuelve a su sitio',
+     (await s3.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
+}
+await vigilia();
 async function olvido(){
   /* Pasó de verdad: Carlos estrenó GRUPAZ, se fue un rato y al volver la sala
      estaba VACÍA — sin hilo, sin gente, sin dueño. El olvido era de una hora,

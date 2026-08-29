@@ -39,7 +39,14 @@ function traer(codigo){
       async get(k){ return datos.get(k); },
       async put(o){ for(const k in o) datos.set(k, o[k]); },
       async deleteAll(){ datos.clear(); },
-      async setAlarm(){},              /* aquí nada se olvida solo */
+      /* ⚠ `getAlarm` HACE FALTA AUNQUE AQUÍ NADA SE OLVIDE SOLO. La clase lo
+         lee antes de escribir la alarma —para no reescribirla si la puesta ya
+         sirve— y sin este método el servidor local truena en la PRIMERA
+         petición con «getAlarm is not a function». Es el clásico decorado que
+         se queda corto: las 217 pruebas del servidor traen el suyo completo y
+         pasaban, mientras el servidor de desarrollo estaba roto. */
+      async setAlarm(t){ datos.set('__alarma', t); },
+      async getAlarm(){ return datos.get('__alarma') ?? null; },
     },
     blockConcurrencyWhile: (f) => f(),
   };
