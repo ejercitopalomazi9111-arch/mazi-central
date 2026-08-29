@@ -398,6 +398,41 @@ code{ font-family:var(--mono); font-size:.9em; color:var(--acento-texto); }
    desde el índice: la página iba al sitio correcto y no se veía adónde había
    llegado. Es de los defectos que sólo aparecen usando el índice, no
    scrolleando. */
+/* ── LOS MÁRGENES DEJAN DE ESTAR VACÍOS ───────────────────────────────────
+   Carlos: «en bastantes intermedios entre cuadros de texto hay muchos
+   espacios donde podrías poner cosas para decorar o incluso interactivas».
+
+   Tenía razón en que sobraba aire, y la respuesta NO era meter adornos: era
+   que ese aire dijera algo. La página es una hoja técnica, y en una hoja
+   técnica los márgenes llevan marcas de medida. Así que en el canal de la
+   izquierda hay ahora una escalilla —una marca cada 24 px, que es el paso de
+   la retícula fina— y en cada sección el número de la sección.
+
+   Cuesta cero: son dos gradientes repetidos sobre un pseudo-elemento que ya
+   existía en el flujo. Ni una petición, ni un nodo, ni un byte de JS. Meter
+   «cosas interactivas» en cada hueco habría sido lo contrario de lo que este
+   banco defiende — el movimiento que no dice nada, sobra.
+
+   Sólo donde hay canal: por debajo de 1000 px el texto ya usa todo el ancho
+   y una escalilla encima de una palabra es basura, no medida. */
+@media (min-width:1000px){
+  section[id]{ position:relative; }
+  section[id]::before{
+    content:''; position:absolute; left:-2.2rem; top:5.5rem; bottom:4.5rem;
+    width:9px; pointer-events:none;
+    background:
+      repeating-linear-gradient(180deg,
+        var(--raya) 0 1px, transparent 1px 24px),
+      repeating-linear-gradient(180deg,
+        var(--raya-fuerte) 0 1px, transparent 1px 96px);
+    background-size:5px 24px, 9px 96px;
+    background-repeat:repeat-y;
+    background-position:0 0, 0 0;
+  }
+  section[id].pesa::before{ top:9rem; bottom:7rem; }
+  section[id].liviana::before{ top:3.5rem; bottom:3rem; }
+}
+
 section[id]{ padding:5.5rem 0 4.5rem; scroll-margin-top:96px; }
 section[id].pesa   { padding:9rem 0 7rem; }     /* las que cargan el relato */
 section[id].liviana{ padding:3.5rem 0 3rem; }   /* las de apoyo */

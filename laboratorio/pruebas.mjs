@@ -476,11 +476,25 @@ console.log('\n── los defectos que reportó Carlos ──');
   const ida = await donde();
   ok(ida !== 'none' && !/matrix\(1, 0, 0, 1, 0, 0\)/.test(ida), `las pistas van a la derecha (${ida})`);
 
+  /* ⚠ SE MUESTREA VARIAS VECES, NO UNA. Esto miraba a los 60 ms exactos, y
+     la pista más rápida dura 110: o sea que preguntaba «¿arrancó ya?» en el
+     filo, y con la máquina ocupada unas veces sí y otras no. Se ponía roja
+     sola, sin que nada estuviera mal — y una prueba que va y viene enseña a
+     no hacerle caso, que es peor que no tenerla.
+
+     Y de paso medía lo que no era. Lo que Carlos pidió no es «que arranque
+     rápido», es «que no se teletransporte»: que en algún momento del camino
+     esté ENTRE los dos extremos. Eso es lo que se comprueba ahora. */
   await pg.click('[data-correr-pistas]');
-  await pg.waitForTimeout(60);
-  const aMedias = await donde();
-  ok(aMedias !== ida && !/matrix\(1, 0, 0, 1, 0, 0\)/.test(aMedias),
-     'y al regresar hacen el trayecto: a los 60 ms van de camino, no de vuelta ya');
+  const camino = [];
+  for(let k = 0; k < 12; k++){
+    await pg.waitForTimeout(20);
+    camino.push(await donde());
+  }
+  const x = (t) => { const m = /matrix\(1, 0, 0, 1, ([-\d.]+), 0\)/.exec(t); return m ? +m[1] : null; };
+  const medio = camino.some(t => { const v = x(t); return v !== null && v > 4 && v < x(ida) - 4; });
+  ok(medio, 'y al regresar HACEN el trayecto: se les ve a media pista, no saltan (' +
+     camino.map(x).join(', ') + ')');
   await pg.waitForTimeout(1900);
   ok(/matrix\(1, 0, 0, 1, 0, 0\)/.test(await donde()), 'y terminan donde empezaron');
 
