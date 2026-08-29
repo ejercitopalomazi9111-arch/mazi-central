@@ -285,6 +285,15 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .quien.trabajando .quien-sub{color:var(--violeta-claro)}
 /* El punto montado en el avatar, como en la lista de miembros de Discord. */
 .quien .con-punto{position:relative; display:inline-flex; flex:0 0 auto}
+/* ⚠ AQUÍ HABÍA DOS PUNTOS, UNO ENCIMA DEL OTRO. `.con-punto::after` pinta un
+   punto VERDE FIJO —sirve para el panel de abajo, donde el verde se apaga con
+   la clase `.sin`— y en la lista se le montaba encima el `<i class="punto">`,
+   que sí sabe el estado. Como el de abajo mide 9 px y el de arriba 7, el verde
+   asomaba alrededor: por eso alguien dormido o topado seguía teniendo un
+   filito verde de «en línea». Carlos: «el punto verde sigue marcando que
+   están en línea cuando en realidad están Offline». En la lista manda el que
+   sabe. */
+.quien .con-punto::after{display:none}
 /* ⚠ Lo cachó Carlos: «el punto verde se come todo el icono de la persona».
    Tenía razón y la cuenta lo dice — 9px de punto más 2px de filo son 13px
    encima de un avatar de 19px: dos tercios de la cara. En Discord el punto es
@@ -2092,6 +2101,14 @@ function credencial(de){
   };
 }
 
+
+/* ⚠ ENVEJECER TAMBIÉN ES UN CAMBIO, y no llega por el socket. «Sin señal» se
+   calcula comparando `visto` contra el reloj de ESTE navegador, así que a los
+   cinco minutos alguien deja de estar en línea sin que el servidor mande
+   nada — y si nadie repinta, la lista se queda diciendo que sigue ahí. Medio
+   minuto es suficiente: el umbral son cinco. */
+setInterval(() => { if(sala && !demo && Object.keys(gente).length) pintarGente(); }, 30_000);
+
 /* ══ DE QUÉ CASA ES CADA QUIEN ═════════════════════════════════════════════
    La mesa tiene dos casas: Carlos y su Claude de un lado, Luis y el suyo del
    otro. Saber de cuál es cada quien es lo que decide de qué lado cae su
@@ -3169,6 +3186,15 @@ function abrirSocket(codigo){
          nombre viejo hasta recargar. */
       if(p.fusiones){ fusiones = p.fusiones; pintarHilo(); }
       pintarGente(); if(vistaTaller) pintarTaller();
+    }
+    /* La presencia llega por su propio canal y NO repinta el hilo: es la
+       lista de gente la que cambia, y repintar el hilo cada 45 segundos
+       tiraría la posición de lectura de quien está leyendo hacia arriba. */
+    if(p.que === 'presencia'){
+      for(const id in (p.visto || {}))   if(gente[id]) gente[id].visto  = p.visto[id];
+      for(const id in (p.estados || {})) if(gente[id]) gente[id].estado = p.estados[id];
+      if(Array.isArray(p.conectados)) conectados = new Set(p.conectados);
+      pintarGente(); pintarYo();
     }
     if(p.que === 'reaccion'){
       const ev = hilo.find(x => x.id === p.id);

@@ -499,6 +499,7 @@ export class Sala {
        la primera. Un reemplazo a ciegas no distingue el sitio que arregla del
        que rompe. */
     quien.visto = ahora();
+    this.avisarPresencia();
     /* Lo que el agente DECLARÓ de sí mismo manda: si él dijo «ocupado», la
        sala no tiene por qué deducir nada encima. Pero lo que dedujo la sala sí
        se limpia solo en cuanto hay señales de vida — si no, un agente que
@@ -1755,6 +1756,33 @@ export class Sala {
     const ids = new Set();
     for(const s of this.vivos){ if(s.__quien) ids.add(s.__quien); }
     return [...ids];
+  }
+
+  /* ── LA PRESENCIA, AVISADA ─────────────────────────────────────────────
+     Carlos: «tú por alguna razón me sales Offline cuando en teoría estás
+     chambeando».
+
+     El diagnóstico no era el que parecía. `visto` SÍ se refrescaba: un agente
+     colgado de /esperar pasa por `tocarAgente` cada dos minutos. Lo que
+     fallaba es que la mesa de cada quien tiene una COPIA de `gente` que sólo
+     se renueva cuando llega un `gente` —o sea, cuando alguien habla— y
+     mientras tanto el reloj de su navegador sí avanza. Resultado: un agente
+     vivo se le va apagando solo a los cinco minutos y NO VUELVE NUNCA, porque
+     nada le lleva la noticia de que sigue ahí.
+
+     Va aparte de `gente` y con lo mínimo: un `gente` completo carga el hilo de
+     todos y repinta más de lo que hace falta.
+
+     El freno es en memoria a propósito y no miente sobre nada guardado: sólo
+     dice «ya avisé hace poco». Un agente da señales cada dos minutos y son
+     varios; sin freno, la lista de todos se repintaría constantemente. */
+  avisarPresencia(){
+    const t = ahora();
+    if(t - (this.ultimoAviso || 0) < 45_000) return;
+    this.ultimoAviso = t;
+    const visto = {}, estados = {};
+    for(const p of Object.values(this.gente)){ visto[p.id] = p.visto || 0; estados[p.id] = p.estado; }
+    this.difundir({ que:'presencia', visto, estados, conectados:this.conectados() });
   }
 
   /* Quién está escribiendo ahora mismo. Se calcula al vuelo desde la hora de

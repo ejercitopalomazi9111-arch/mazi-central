@@ -1509,5 +1509,43 @@ console.log('\n· Fusionar dos sesiones de la misma persona');
   ok('y las fusiones viajan al que pide el hilo', hilo.fusiones && hilo.fusiones['c-viejo'] === 'c-hoy');
 }
 
+/* ══ la presencia se avisa ════════════════════════════════════════════════ */
+console.log('\n· La presencia, avisada');
+{
+  const s = nueva();
+  await leer(await entrar(s, 'godines'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'carlos', nombre:'Carlos', tipo:'humano' }));
+
+  /* Un socket de mentiras que apunta lo que le difunden. */
+  const oido = [];
+  s.vivos.add({ __quien:'carlos', send:(t) => oido.push(JSON.parse(t)) });
+
+  /* El freno acaba de dispararse al entrar, así que se rebobina: lo que se
+     prueba es que HAY aviso, no el reloj. */
+  s.ultimoAviso = 0;
+  const antes = s.gente.godines.visto;
+  await new Promise(r => setTimeout(r, 12));
+  await pedir(s, 'GET', 'esperar?de=godines&desde=e999');
+
+  ok('una señal por HTTP refresca el `visto` del agente', s.gente.godines.visto > antes);
+  const aviso = oido.filter(x => x.que === 'presencia').pop();
+  ok('y se le avisa a la mesa por su propio canal', !!aviso);
+  /* No se compara con `===` contra el visto final: /esperar toca al agente
+     DOS veces y el freno deja pasar sólo el primer aviso, así que el segundo
+     toque adelanta el visto unos milisegundos después de haber avisado. Las
+     dos cosas están bien; lo que importa es que el aviso llegue fresco y con
+     todos, no que coincida al milisegundo. */
+  ok('el aviso lleva el visto de cada quien, y fresco',
+     aviso && aviso.visto.godines >= antes && 'carlos' in aviso.visto);
+  /* Lo que evita repintar el hilo entero cada 45 segundos. */
+  ok('y NO va dentro de `gente`, que arrastraría todo', aviso && !aviso.gente);
+
+  /* El freno: sin él, varios agentes colgados repintan la lista sin parar. */
+  const cuantos = oido.filter(x => x.que === 'presencia').length;
+  await pedir(s, 'GET', 'esperar?de=godines&desde=e999');
+  ok('dos señales seguidas no mandan dos avisos',
+     oido.filter(x => x.que === 'presencia').length === cuantos);
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);
