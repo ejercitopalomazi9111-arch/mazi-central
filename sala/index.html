@@ -1436,6 +1436,8 @@ textarea:focus,select:focus,input:focus{outline:none; border-color:var(--violeta
         <span class="ico">🔑</span><span>Llaves</span></button>
       <button class="fila-lado" id="bLeyenda">
         <span class="ico">🎭</span><span>Quién es quién</span></button>
+      <button class="fila-lado" id="bAvisos">
+        <span class="ico">🔔</span><span>Avisos al teléfono</span></button>
       <button class="fila-lado" id="bVista2">
         <span class="ico">📐</span><span>Cómo se ve el hilo</span></button>
 
@@ -1916,6 +1918,15 @@ function recibirEscribiendo(ids){
   const ahora_ = new Set(escribiendo.keys());
   const igual = antes.size === ahora_.size && [...antes].every(x => ahora_.has(x));
   if(!igual || !relojEscribiendo) pintarEscribiendo();
+
+  /* ⚠ VIBRA SÓLO CUANDO ALGUIEN EMPIEZA, no mientras sigue. Carlos pidió
+     «vibración cuando alguien escribe», y el servidor manda este aviso cada
+     pocos segundos mientras el otro teclea: vibrando en cada uno, escribir un
+     párrafo le pondría el teléfono a temblar un minuto seguido. Se compara
+     con quién estaba antes y sólo se avisa de los que no estaban.
+     Un pulso corto — el de mensaje son dos, y así se distinguen sin mirar. */
+  const nuevos = [...ahora_].filter(id => !antes.has(id) && id !== (yo && yo.id));
+  if(nuevos.length) vibrar([22]);
 }
 
 function pintarGente(){
@@ -2681,6 +2692,102 @@ function pintarHilo(){
   if(b) c.scrollTop += b.getBoundingClientRect().top - ancla.y;
 }
 
+/* ══ AVISOS: NOTIFICACIÓN, VIBRACIÓN Y SONIDO ══════════════════════════════
+   Carlos, e187: «pon sistema de notificaciones de la web para que llegue un
+   mensaje de tipo notificación con el logo etc al teléfono […] y ponle
+   vibración cuando alguien escribe y un sonidito».
+
+   ── LO QUE ESTO HACE Y LO QUE NO, DICHO AQUÍ PARA NO PROMETER DE MÁS ─────
+   SÍ: avisa con la app ABIERTA aunque esté en otra pestaña o de fondo — que
+   es el caso de todos los días, uno deja la sala abierta y se va a otra cosa.
+   NO: no avisa con la app CERRADA. Eso es Web Push y necesita tres cosas que
+   no dependen de este archivo: un service worker, un par de llaves VAPID
+   —la privada como secreto del worker— y que el servidor firme y mande cada
+   aviso. Se puede hacer, y hace falta la llave de alguien. Media
+   implementación que a veces avisa y a veces no es peor que ninguna, porque
+   uno deja de mirar el chat confiando en algo que no llega.
+
+   El permiso se pide con un GESTO y nunca al cargar: un navegador rechaza el
+   que se pide solo, y aunque lo aceptara, pedirle permiso a alguien que
+   acaba de abrir la página es cómo se consigue que lo niegue para siempre. */
+const PUEDE_AVISAR = 'Notification' in window;
+const quiereAvisos = () => { try{ return localStorage.getItem('sala-avisos') === 'si'; }catch(e){ return false; } };
+
+let audio = null;
+/* El sonido se SINTETIZA, no se descarga: un archivo son dos peticiones más
+   —una por tema— y aquí no hay ninguna. Dos notas cortas, la segunda una
+   quinta arriba: se reconoce sin ser un timbre de teléfono. */
+function sonar(){
+  if(!quiereAvisos()) return;
+  try{
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if(audio.state === 'suspended') audio.resume();
+    const t = audio.currentTime;
+    [587.33, 880].forEach((hz, i) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = 'sine'; o.frequency.value = hz;
+      o.connect(g); g.connect(audio.destination);
+      const d = t + i * 0.09;
+      /* La envolvente importa: una onda que arranca y para en seco hace un
+         chasquido que se oye peor que la nota. */
+      g.gain.setValueAtTime(0.0001, d);
+      g.gain.exponentialRampToValueAtTime(0.09, d + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, d + 0.16);
+      o.start(d); o.stop(d + 0.18);
+    });
+  }catch(e){ /* sin audio no pasa nada: el aviso ya salió por otros dos lados */ }
+}
+
+/* Vibrar es lo único que se nota con el teléfono en el bolsillo. Un pulso
+   corto para «alguien está escribiendo» y dos para «llegó un mensaje»: sin
+   mirar, ya se sabe cuál de las dos cosas pasó.
+   `navigator.vibrate` no existe en iOS y no se finge que sí; ahí quedan la
+   notificación y el sonido. */
+function vibrar(patron){
+  if(!quiereAvisos()) return;
+  try{ navigator.vibrate && navigator.vibrate(patron); }catch(e){}
+}
+
+function avisar(evento){
+  if(!quiereAvisos() || !PUEDE_AVISAR) return;
+  if(Notification.permission !== 'granted') return;
+  /* Con la sala delante NO se avisa: la persona lo está viendo. Avisar de lo
+     que ya se tiene en pantalla es lo que hace que se apaguen los avisos. */
+  if(!document.hidden) return;
+  const c = credencial(evento.de);
+  try{
+    const n = new Notification(c.nombre, {
+      body: (evento.texto || '(adjunto)').slice(0, 140),
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+      tag: 'sala-' + sala,          /* uno solo, que se pisa: no una torre */
+      renotify: true,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  }catch(e){}
+}
+
+async function pedirAvisos(){
+  if(!PUEDE_AVISAR){ letrero('Este navegador no sabe avisar.'); return false; }
+  let p = Notification.permission;
+  if(p === 'default') p = await Notification.requestPermission();
+  if(p !== 'granted'){
+    letrero('El navegador no dio permiso para avisar.');
+    return false;
+  }
+  try{ localStorage.setItem('sala-avisos', 'si'); }catch(e){}
+  /* Se prueba en el momento: así se sabe que funciona y, de paso, el gesto
+     que acaba de hacer desbloquea el audio, que si no queda mudo hasta el
+     primer toque. */
+  sonar(); vibrar([40]);
+  letrero('Avisos encendidos.');
+  return true;
+}
+function apagarAvisos(){
+  try{ localStorage.setItem('sala-avisos', 'no'); }catch(e){}
+  letrero('Avisos apagados.');
+}
+
 /* ══ MARCAR LO LEÍDO AL DESPLAZARSE ════════════════════════════════════════
    Carlos, e187: «que la propia app cuando tú scroll haga que veas el mensaje
    lo marque como visto tipo WhatsApp».
@@ -3439,6 +3546,11 @@ function abrirSocket(codigo){
     }
     if(p.que === 'evento'){
       hilo.push(p.evento);
+      /* Aviso sólo de lo que dice otra persona. Los de sistema —entró, salió—
+         y los míos no valen un zumbido en el bolsillo. */
+      if(p.evento.tipo !== 'sistema' && p.evento.de && yo && p.evento.de.id !== yo.id){
+        avisar(p.evento); sonar(); vibrar([28, 60, 28]);
+      }
       if(p.evento.tipo === 'sistema'){
         const quien = esc(p.evento.de.nombre);
         letrero(`<b>${quien}</b> ${p.evento.accion === 'entra' ? 'entró' : 'salió'}`);
@@ -3871,6 +3983,22 @@ function estirarCaja(){
 }
 $('texto') && $('texto').addEventListener('input', estirarCaja);
 estirarCaja();
+/* El botón dice en qué estado está, no qué hace: «apagar» cuando están
+   encendidos. Un interruptor que siempre dice lo mismo obliga a probarlo. */
+function pintarBotonAvisos(){
+  const b = $('bAvisos'); if(!b) return;
+  const si = quiereAvisos() && PUEDE_AVISAR && Notification.permission === 'granted';
+  b.querySelector('span:last-child').textContent =
+    si ? 'Apagar los avisos' : 'Avisos al teléfono';
+  b.querySelector('.ico').textContent = si ? '🔕' : '🔔';
+}
+$('bAvisos').addEventListener('click', async () => {
+  if(quiereAvisos() && Notification.permission === 'granted') apagarAvisos();
+  else await pedirAvisos();
+  pintarBotonAvisos(); cerrarCajones();
+});
+pintarBotonAvisos();
+
 $('bVista2').addEventListener('click', () => { cambiarVista(); cerrarCajones(); });
 $('gente').addEventListener('click', (e) => {
   const b = e.target.closest('[data-ver]');

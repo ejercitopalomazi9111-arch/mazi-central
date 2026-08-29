@@ -160,6 +160,69 @@ ok(encima.despues !== null, 'el mensaje que se estaba leyendo sigue ahí');
 ok(Math.abs(encima.despues - encima.antes) < 4,
    `y se queda a la misma altura aunque crezca lo de arriba (${Math.round(encima.antes)} → ${Math.round(encima.despues)})`);
 
+console.log('\n■ avisos: notificación, vibración y sonido');
+/* Carlos, e187. Lo que se comprueba —y lo que NO— importa tanto como el
+   código: aquí no hay forma de oír un tono ni de sentir una vibración, así
+   que se comprueba que se PIDEN, con qué argumentos y en qué momento. Lo que
+   sí se puede probar del todo es la regla que decide cuándo: con la sala
+   delante no se avisa, y vibra al EMPEZAR alguien a escribir, no mientras
+   sigue — que es lo que pondría el teléfono a temblar un minuto. */
+{
+  await luis.pg.evaluate(() => {
+    /* Se apuntan las llamadas en vez de fingir el navegador entero. */
+    window.__vibro = []; navigator.vibrate = (p) => { window.__vibro.push(p); return true; };
+    window.__avisos = [];
+    window.Notification = function(t, o){ window.__avisos.push({ t, cuerpo:o.body, icono:o.icon }); };
+    window.Notification.permission = 'granted';
+    window.Notification.requestPermission = async () => 'granted';
+    localStorage.setItem('sala-avisos', 'si');
+  });
+
+  /* Con la sala a la vista NO se avisa. */
+  await nueva.pg.fill('#texto', 'esto lo estás viendo');
+  await nueva.pg.click('#bEnviar');
+  await luis.pg.waitForTimeout(900);
+  const mirando = await luis.pg.evaluate(() => window.__avisos.length);
+  ok(mirando === 0, 'con la sala delante no se manda notificación');
+
+  /* Escondida sí. `document.hidden` no se puede poner a mano, así que se
+     redefine la propiedad: es lo que el navegador va a decir de verdad
+     cuando la persona cambie de pestaña. */
+  await luis.pg.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { get: () => true, configurable:true });
+  });
+  await nueva.pg.fill('#texto', 'esto NO lo estás viendo');
+  await nueva.pg.click('#bEnviar');
+  await luis.pg.waitForTimeout(900);
+  const av = await luis.pg.evaluate(() => window.__avisos);
+  ok(av.length === 1, `con la sala detrás sí (${av.length})`);
+  ok(av[0] && av[0].t === 'Carlos', `y dice quién habló (${av[0] && av[0].t})`);
+  ok(av[0] && /NO lo estás viendo/.test(av[0].cuerpo), 'y qué dijo');
+  ok(av[0] && /icon-192/.test(av[0].icono), `y lleva el logo (${av[0] && av[0].icono})`);
+
+  const vib = await luis.pg.evaluate(() => window.__vibro);
+  ok(vib.some(p => Array.isArray(p) && p.length === 3),
+     `el mensaje vibra con dos pulsos (${JSON.stringify(vib)})`);
+
+  /* Y lo de escribir: sólo al empezar. */
+  await luis.pg.evaluate(() => { window.__vibro = []; });
+  await luis.pg.evaluate(() => recibirEscribiendo(['x-alguien']));
+  await luis.pg.waitForTimeout(120);
+  const unaVez = await luis.pg.evaluate(() => window.__vibro.length);
+  await luis.pg.evaluate(() => recibirEscribiendo(['x-alguien']));
+  await luis.pg.evaluate(() => recibirEscribiendo(['x-alguien']));
+  await luis.pg.waitForTimeout(120);
+  const trasRepetir = await luis.pg.evaluate(() => window.__vibro.length);
+  ok(unaVez === 1, `vibra cuando alguien empieza a escribir (${unaVez})`);
+  ok(trasRepetir === unaVez,
+     `y NO vuelve a vibrar mientras sigue escribiendo (${trasRepetir})`);
+
+  await luis.pg.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { get: () => false, configurable:true });
+    localStorage.setItem('sala-avisos', 'no');
+  });
+}
+
 console.log('\n■ los vistos se marcan solos al leer');
 /* Carlos, e187. Se prueba con DOS pestañas: lo que importa no es que la mía
    sepa hasta dónde leí —eso ya lo sé— sino que al OTRO le llegue y vea de
