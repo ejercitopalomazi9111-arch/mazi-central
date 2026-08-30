@@ -1,251 +1,422 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   El motor de la lámina. Sin dependencias.
-
-   Lo único que necesita JavaScript es la CONSULTA. Todo lo demás —el atlas,
-   los instrumentos, las fuentes y el índice de las 350— es HTML de verdad y se
-   lee entero con el JavaScript apagado. Está dicho en la propia página, no en
-   una nota al pie.
-
-   ── DOS TRAMPAS QUE ESTÁN AQUÍ POR ALGO ────────────────────────────────
-   · La preferencia de tema se aplica ANTES de pintar, en el <head>. Si se
-     aplica aquí, hay un destello del tema equivocado en cada carga.
-   · El texto de la persona nunca toca innerHTML. Lo que sí lo toca es el
-     contenido propio de las neuronas, que trae negritas escritas por mí.
+   EL MOTOR DE LA LÁMINA
+   Sin dependencias, sin librería de animación y sin una sola petición.
+   ──────────────────────────────────────────────────────────────────────────
+   Tres cosas y nada más:
+   1 · LA CÁMARA. Tres niveles de menú —sistema, área, pieza— que se recorren
+       bajando y subiendo. Bajar acerca; subir aleja. No hay salto lateral
+       entre niveles del mismo rango: es un árbol, no una rueda.
+   2 · EL DESTAPE. Un solo IntersectionObserver para toda la página. Uno por
+       elemento serían trescientos observadores mirando la misma pantalla.
+   3 · EL CAMPO. Un punto por pieza, a la deriva, encendiéndose los del
+       sistema en curso. Un solo requestAnimationFrame, pausado fuera de
+       pantalla y con la resolución topada — lo que cuesta un fondo vivo es
+       exactamente lo que hay que vigilar, no lo que hay que suponer.
    ═════════════════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
 
-var $ = function(s){ return document.querySelector(s); };
+var $  = function(s){ return document.querySelector(s); };
+var $$ = function(s){ return [].slice.call(document.querySelectorAll(s)); };
+var crear = function(t, c){ var e = document.createElement(t); if(c) e.className = c; return e; };
+var texto = function(t, c, s){ var e = crear(t, c); e.textContent = s; return e; };
 
-/* Las piezas están escritas con el marcado del cerebro: `código` entre acentos
-   graves y **negritas**. Se escapa PRIMERO y se convierte después, en ese
-   orden: al revés, un título con un signo de menor que se convierte en
-   etiqueta. El texto es mío, no de nadie que escriba en la página, pero el
-   orden correcto no cuesta nada y el incorrecto se paga una sola vez. */
-function marcado(s){
-  return String(s == null ? '' : s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-}
-var crear = function(t,c){ var e=document.createElement(t); if(c) e.className=c; return e; };
+document.documentElement.classList.add('con-js');
 
-/* ── el tema ──────────────────────────────────────────────────────────── */
-$('#bTema').addEventListener('click', function(){
-  var raiz = document.documentElement;
-  var ahora = raiz.getAttribute('data-tema');
-  var oscuroPorSistema = matchMedia('(prefers-color-scheme: dark)').matches;
-  var siguiente = ahora ? (ahora === 'oscuro' ? 'claro' : 'oscuro')
-                        : (oscuroPorSistema ? 'claro' : 'oscuro');
-  raiz.setAttribute('data-tema', siguiente);
-  try{ localStorage.setItem('lamina_tema', siguiente); }catch(e){}
-  etiquetaTema();
-});
-/* el botón dice a DÓNDE lleva, no dónde estás: es lo que la gente lee */
-function etiquetaTema(){
-  var raiz = document.documentElement, puesto = raiz.getAttribute('data-tema');
-  var enOscuro = puesto ? puesto === 'oscuro' : matchMedia('(prefers-color-scheme: dark)').matches;
-  $('#temaTexto').textContent = enOscuro ? 'Papel' : 'Carbón';
-  $('#bTema').setAttribute('aria-label', enOscuro ? 'Cambiar a papel claro' : 'Cambiar a carbón oscuro');
-}
-etiquetaTema();
-
-/* ── la consulta ──────────────────────────────────────────────────────── */
-var NORM = function(s){
-  return String(s).toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g,'');   /* sin acentos: casi nadie los teclea */
+/* ── índice ───────────────────────────────────────────────────────────── */
+var PORAREA = {};
+NEURONAS.forEach(function(n){ (PORAREA[n.area] = PORAREA[n.area] || []).push(n); });
+var AREA = {};
+AREAS.forEach(function(a){ AREA[a.a] = a; });
+var DESIS = {};
+SISTEMAS.forEach(function(s){ s.areas.forEach(function(a){ DESIS[a] = s; }); });
+var cuantasDe = function(s){
+  return s.areas.reduce(function(t, a){ return t + ((PORAREA[a] || []).length); }, 0);
 };
 
-/* El texto sobre el que se busca, preparado una sola vez. Buscar sobre el
-   objeto entero en cada tecla es lo que hace que un buscador se sienta lento. */
-var INDICE = NEURONAS.map(function(n){
-  return NORM([n.titulo, n.area, n.sintoma, n.causa, (n.senales||[]).join(' ')].join(' '));
-});
+$('#cPiezas').textContent = NEURONAS.length;
+$('#cAreas').textContent  = SISTEMAS.reduce(function(t,s){ return t + s.areas.length; }, 0);
+$('#pieCifras').textContent = NEURONAS.length + ' piezas · ' +
+  SISTEMAS.reduce(function(t,s){ return t + s.areas.length; }, 0) + ' áreas · 6 sistemas';
 
-/* Rareza: una palabra que sale en 200 piezas no distingue nada; una que sale en
-   dos, sí. Sin esto, cinco resultados empatan y la lista deja de ser un orden. */
-var RAREZA = (function(){
-  var doc = {}, total = NEURONAS.length;
-  INDICE.forEach(function(t){
-    var vistas = {};
-    t.split(/[^a-z0-9]+/).forEach(function(p){
-      if(p.length < 3 || vistas[p]) return;
-      vistas[p] = 1; doc[p] = (doc[p]||0) + 1;
-    });
+/* ── el tono, que es lo que hereda todo ───────────────────────────────── */
+function ponerTono(t){ document.documentElement.style.setProperty('--tono', String(t)); }
+
+/* ── estado de navegación ─────────────────────────────────────────────── */
+var EN = { nivel:'sistemas', sistema:null, area:null };
+
+/* ── LA CÁMARA ────────────────────────────────────────────────────────────
+   El plano que se va y el que llega se cruzan en el mismo hueco. `hidden` no
+   sirve solo: un elemento con `display:none` no anima, así que el CSS lo deja
+   colocado y sólo invisible, y aquí se orquestan las clases. */
+var PLANOS = { sistemas:$('#pSistemas'), areas:$('#pAreas'), piezas:$('#pPiezas') };
+var ORDEN  = ['sistemas','areas','piezas'];
+var moviendo = false;
+
+function irA(nivel){
+  if(moviendo || nivel === EN.nivel) return;
+  var de = PLANOS[EN.nivel], a = PLANOS[nivel];
+  var baja = ORDEN.indexOf(nivel) > ORDEN.indexOf(EN.nivel);
+  moviendo = true;
+
+  de.classList.remove('vivo');
+  de.classList.add(baja ? 'sale-cerca' : 'sale-hondo');
+
+  a.hidden = false;
+  a.classList.remove('vivo','sale-cerca','sale-hondo');
+  a.classList.add(baja ? 'entra-hondo' : 'entra-cerca');
+  /* dos cuadros: uno para que el navegador tome la posición de partida y otro
+     para que la transición arranque desde ella. Con uno solo el navegador
+     agrupa los dos estilos y no hay transición: aparece de golpe. */
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    a.classList.remove('entra-hondo','entra-cerca');
+    a.classList.add('vivo');
+  }); });
+
+  setTimeout(function(){
+    de.hidden = true;
+    de.classList.remove('sale-cerca','sale-hondo');
+    moviendo = false;
+  }, 320);
+
+  EN.nivel = nivel;
+  pintarMigas();
+}
+
+/* ── migas ────────────────────────────────────────────────────────────── */
+function pintarMigas(){
+  var m = $('#migas'); m.textContent = '';
+  var pon = function(t, alDar, aqui){
+    if(aqui){ m.appendChild(texto('span', 'aqui', t)); return; }
+    var b = crear('button'); b.type = 'button'; b.textContent = t;
+    b.addEventListener('click', alDar); m.appendChild(b);
+  };
+  pon('Lámina', function(){ subirA('sistemas'); }, EN.nivel === 'sistemas' && !EN.sistema);
+  if(EN.sistema){
+    m.appendChild(texto('span','sep','/'));
+    pon(EN.sistema.nombre, function(){ subirA('areas'); }, EN.nivel === 'areas');
+  }
+  if(EN.area && EN.nivel === 'piezas'){
+    m.appendChild(texto('span','sep','/'));
+    pon(AREA[EN.area].nombre, null, true);
+  }
+  var n = EN.nivel === 'piezas' ? (PORAREA[EN.area]||[]).length
+        : EN.nivel === 'areas'  ? cuantasDe(EN.sistema) : NEURONAS.length;
+  $('#cuenta').textContent = n + (n === 1 ? ' pieza' : ' piezas');
+}
+
+function subirA(nivel){
+  if(nivel === 'sistemas'){ EN.sistema = null; EN.area = null; ponerTono(168); }
+  if(nivel === 'areas' && EN.sistema){ EN.area = null; ponerTono(EN.sistema.tono); }
+  irA(nivel);
+  $('#atlas').scrollIntoView({ block:'start' });
+}
+
+/* ── NIVEL 1 · los seis sistemas ──────────────────────────────────────── */
+(function(){
+  var z = $('#listaSistemas');
+  SISTEMAS.forEach(function(s, i){
+    var b = crear('sis' === '' ? 'div' : 'button', 'sis surge d' + (i+1));
+    b.type = 'button';
+    b.style.setProperty('--t', String(s.tono));
+    b.setAttribute('aria-label', s.nombre + ', ' + s.areas.length + ' áreas, ' +
+                   cuantasDe(s) + ' piezas');
+    b.appendChild(texto('span','num', String(s.n).padStart(2,'0')));
+    b.appendChild(texto('h3', null, s.nombre));
+    b.appendChild(texto('p', null, s.lema));
+    var pie = crear('div','pie');
+    pie.appendChild(texto('b', null, s.areas.length + ' áreas'));
+    pie.appendChild(texto('span', null, cuantasDe(s) + ' piezas'));
+    b.appendChild(pie);
+    b.addEventListener('click', function(){ abrirSistema(s); });
+    z.appendChild(b);
   });
-  var r = {};
-  for(var p in doc) r[p] = Math.log(total / doc[p]);
-  return r;
 })();
 
-/* Palabras que no distinguen nada. Sin esta lista, «mexico sin acentos ni
-   nada» devolvía 228 de 350 piezas: «sin», «ni» y «nada» salen en casi todas y
-   el resultado dejaba de ser una búsqueda para ser la lista entera. */
-var VACIAS = {a:1,al:1,de:1,del:1,la:1,el:1,los:1,las:1,en:1,y:1,o:1,un:1,una:1,
-  unos:1,unas:1,se:1,que:1,no:1,ni:1,si:1,sin:1,con:1,por:1,para:1,es:1,son:1,
-  mas:1,muy:1,ya:1,lo:1,su:1,sus:1,me:1,te:1,le:1,nada:1,todo:1,toda:1,esta:1,
-  este:1,eso:1,esa:1,ese:1,como:1,cuando:1,donde:1,pero:1,hay:1};
-
-function buscar(consulta){
-  var crudas = NORM(consulta).split(/[^a-z0-9]+/).filter(function(p){ return p.length >= 3; });
-  /* fuera las vacías y las que salen en más de un tercio del registro: una
-     palabra que aparece en 120 piezas no separa nada */
-  var partes = crudas.filter(function(p){
-    return !VACIAS[p] && (RAREZA[p] === undefined || RAREZA[p] > 1.1);
+function abrirSistema(s){
+  EN.sistema = s; EN.area = null;
+  ponerTono(s.tono);
+  $('#tAreas').firstElementChild.textContent = s.nombre;
+  $('#dAreas').textContent = s.lema;
+  var z = $('#listaAreas'); z.textContent = '';
+  s.areas.forEach(function(a, i){
+    var d = AREA[a] || { nombre:a, que:'' };
+    var b = crear('button','area');
+    b.type = 'button';
+    b.appendChild(texto('span','n', String(i+1).padStart(2,'0')));
+    b.appendChild(texto('span','nom', d.nombre));
+    b.appendChild(texto('span','q', d.que || ''));
+    b.appendChild(texto('span','cuantas', (PORAREA[a]||[]).length + ' piezas'));
+    b.addEventListener('click', function(){ abrirArea(a); });
+    z.appendChild(b);
   });
-  if(!crudas.length) return null;      /* campo vacío: se enseña el arranque */
-  if(!partes.length) return [];        /* sólo palabras que no distinguen */
-  var res = [];
-  for(var i = 0; i < NEURONAS.length; i++){
-    var t = INDICE[i], punto = 0, todas = true;
-    for(var k = 0; k < partes.length; k++){
-      var p = partes[k];
-      if(t.indexOf(p) < 0){ todas = false; continue; }
-      var peso = RAREZA[p] || 2.5;
-      punto += peso;
-      /* que aparezca en el título vale más que en el cuerpo */
-      if(NORM(NEURONAS[i].titulo).indexOf(p) >= 0) punto += peso * 1.6;
-      if(NORM(NEURONAS[i].area).indexOf(p) >= 0) punto += peso * 1.2;
-    }
-    if(punto > 0){ res.push({ n:NEURONAS[i], punto:punto, todas:todas }); }
-  }
-  /* las que traen TODAS las palabras van primero; dentro, por rareza */
-  res.sort(function(a,b){
-    if(a.todas !== b.todas) return a.todas ? -1 : 1;
-    return b.punto - a.punto;
-  });
-  /* y se corta por debajo de una cuarta parte de la mejor: lo que queda muy
-     lejos del primero es ruido, y una lista larga de ruido esconde el acierto */
-  if(res.length){
-    var piso = res[0].punto * 0.25;
-    res = res.filter(function(x){ return x.punto >= piso; });
-  }
-  return res;
+  irA('areas');
+  $('#tAreas').classList.add('visible');
+  $('#atlas').scrollIntoView({ block:'start' });
 }
 
-/* Filtrar por área es otra cosa que buscar el nombre del área: «sombras»
-   aparece como palabra en 21 piezas y el área tiene 15. Tocar un área del
-   atlas tiene que dar las 15, no las 21. */
-function porArea(area){
-  return NEURONAS.filter(function(n){ return n.area === area; })
-                 .map(function(n){ return { n:n, punto:1, todas:true }; });
+/* ── NIVEL 3 · las piezas ─────────────────────────────────────────────── */
+function abrirArea(a){
+  EN.area = a;
+  var d = AREA[a] || { nombre:a, que:'' };
+  $('#tPiezas').firstElementChild.textContent = d.nombre;
+  $('#dPiezas').textContent = d.que || '';
+  $('#volverAreas').textContent = EN.sistema ? EN.sistema.nombre : 'Las áreas';
+  var z = $('#listaPiezas'); z.textContent = '';
+  (PORAREA[a] || []).forEach(function(n){
+    var b = crear('button','pieza');
+    b.type = 'button';
+    b.appendChild(crear('span','grav ' + (n.gravedad || 'media')));
+    var t = crear('span','tit');
+    t.appendChild(document.createTextNode(n.titulo));
+    t.appendChild(texto('span','sin', n.sintoma || ''));
+    b.appendChild(t);
+    b.addEventListener('click', function(){ abrirFicha(n, b); });
+    z.appendChild(b);
+  });
+  irA('piezas');
+  $('#tPiezas').classList.add('visible');
+  $('#atlas').scrollIntoView({ block:'start' });
 }
 
-var GRAVEDAD = { alta:'alta', media:'media', baja:'baja' };
+$$('.volver').forEach(function(b){
+  b.addEventListener('click', function(){ subirA(b.dataset.sube); });
+});
 
-function pintarFicha(n, pos){
-  var el = crear('div','ficha');
-  var cab = crear('button','cab');
-  cab.type = 'button';
-  cab.setAttribute('aria-expanded','false');
+/* ── LA FICHA ─────────────────────────────────────────────────────────────
+   Capa de detalle, no un cuarto nivel de menú: se abre encima y se cierra al
+   mismo sitio del que salió. Devuelve el foco a quien la abrió, que es lo que
+   espera quien navega con teclado. */
+var ficha = $('#ficha'), fondo = $('#fichaFondo'), quienAbrio = null;
 
-  var m = crear('span','marca'); m.textContent = ('00'+pos).slice(-3);
-  var t = crear('span','tit');   t.innerHTML = marcado(n.titulo);
-  var g = crear('span','gr ' + (GRAVEDAD[n.gravedad]||''));
-  g.title = 'gravedad ' + (n.gravedad||'');
-  cab.appendChild(m); cab.appendChild(t); cab.appendChild(g);
+function abrirFicha(n, origen){
+  quienAbrio = origen || null;
+  ficha.textContent = '';
+  var cab = crear('div','cab');
+  var col = crear('div');
+  col.appendChild(texto('p','marca-grav', 'Gravedad ' + (n.gravedad || 'media')));
+  var h = texto('h3', null, n.titulo); h.id = 'fTitulo';
+  col.appendChild(h);
+  cab.appendChild(col);
+  var x = crear('button','cerrar'); x.type = 'button'; x.textContent = '×';
+  x.setAttribute('aria-label','Cerrar');
+  x.addEventListener('click', cerrarFicha);
+  cab.appendChild(x);
 
-  var cuerpo = crear('div','cuerpo');
-  cuerpo.hidden = true;
+  var caja = crear('div','ancho');
+  caja.appendChild(cab);
   var dl = crear('dl');
-  [['Área', n.area], ['Síntoma', n.sintoma], ['Causa', n.causa],
-   ['Por qué', n.porque], ['Arreglo', n.arreglo], ['Cómo cazarlo', n.comoCazarlo],
-   ['Consejo', n.consejo], ['Salió de', n.salioDe]].forEach(function(par){
+  [['Síntoma', n.sintoma], ['Causa', n.causa], ['Por qué se comete', n.porque],
+   ['Arreglo', n.arreglo], ['Cómo cazarlo', n.comoCazarlo], ['Consejo', n.consejo]
+  ].forEach(function(par){
     if(!par[1]) return;
-    var dt = crear('dt'); dt.textContent = par[0];
-    var dd = crear('dd'); dd.innerHTML = marcado(par[1]);
-    dl.appendChild(dt); dl.appendChild(dd);
+    dl.appendChild(texto('dt', null, par[0]));
+    var dd = crear('dd'); dd.innerHTML = par[1];   /* texto propio, con negritas mías */
+    dl.appendChild(dd);
   });
-  cuerpo.appendChild(dl);
   if(n.senales && n.senales.length){
-    var s = crear('div','senales');
-    n.senales.forEach(function(x){ var e = crear('span'); e.textContent = '«' + x + '»'; s.appendChild(e); });
-    cuerpo.appendChild(s);
+    dl.appendChild(texto('dt', null, 'Se oye así'));
+    var dd2 = crear('dd');
+    n.senales.forEach(function(s){ dd2.appendChild(texto('span','senal', '«' + s + '»')); });
+    dl.appendChild(dd2);
   }
+  caja.appendChild(dl);
+  if(n.salioDe) caja.appendChild(texto('p','salio', 'Salió de: ' + n.salioDe));
+  ficha.appendChild(caja);
 
-  cab.addEventListener('click', function(){
-    var abierto = !cuerpo.hidden;
-    cuerpo.hidden = abierto;
-    cab.setAttribute('aria-expanded', String(!abierto));
+  fondo.hidden = false; ficha.hidden = false;
+  requestAnimationFrame(function(){
+    fondo.classList.add('viva'); ficha.classList.add('viva');
   });
-  el.appendChild(cab); el.appendChild(cuerpo);
-  return el;
+  document.body.style.overflow = 'hidden';
+  x.focus();
 }
+function cerrarFicha(){
+  fondo.classList.remove('viva'); ficha.classList.remove('viva');
+  document.body.style.overflow = '';
+  setTimeout(function(){ fondo.hidden = true; ficha.hidden = true; }, 400);
+  if(quienAbrio) quienAbrio.focus();
+}
+fondo.addEventListener('click', cerrarFicha);
+addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !ficha.hidden) cerrarFicha();
+});
 
-var zFichas = $('#fichas'), zCuantos = $('#cuantos'), campo = $('#q'), bLimpiar = $('#bLimpiar');
+/* ── EL DIAGNÓSTICO ───────────────────────────────────────────────────────
+   Se marcan síntomas y se van cerrando las piezas que los explican. Las
+   señales salen de las propias piezas, así que no hay una lista escrita a
+   mano que se quede vieja. */
+(function(){
+  var cuenta = {};
+  NEURONAS.forEach(function(n){
+    (n.senales || []).forEach(function(s){
+      var k = String(s).toLowerCase().trim();
+      if(k.length < 4) return;
+      (cuenta[k] = cuenta[k] || { n:0, piezas:[] });
+      cuenta[k].n++; cuenta[k].piezas.push(n);
+    });
+  });
+  /* ⚠ NI LAS MÁS RARAS NI LAS MÁS COMUNES. Una señal que aparece una sola vez
+     devuelve siempre la misma pieza —no es un diagnóstico, es un atajo— y una
+     que aparece en cuarenta no descarta nada. El rango de en medio es el que
+     tiene poder de discriminación. */
+  var elegidas = Object.keys(cuenta)
+    .filter(function(k){ return cuenta[k].n >= 2 && cuenta[k].n <= 14; })
+    .sort(function(a,b){ return cuenta[b].n - cuenta[a].n; })
+    .slice(0, 18)
+    .sort();
 
-function pintar(consulta, area){
-  var res = area ? porArea(area) : buscar(consulta);
-  zFichas.textContent = '';
-  bLimpiar.hidden = !consulta;
+  var marcadas = {};
+  var z = $('#sintomas');
+  elegidas.forEach(function(k){
+    var b = crear('button','sintoma');
+    b.type = 'button'; b.textContent = '«' + k + '»';
+    b.setAttribute('aria-pressed','false');
+    b.addEventListener('click', function(){
+      marcadas[k] = !marcadas[k];
+      b.setAttribute('aria-pressed', marcadas[k] ? 'true' : 'false');
+      pintar();
+    });
+    z.appendChild(b);
+  });
 
-  if(res === null){
-    /* Una herramienta que arranca vacía obliga a adivinar qué escribir. Se
-       enseñan las de gravedad alta, que son con las que conviene empezar. */
-    var altas = NEURONAS.filter(function(n){ return n.gravedad === 'alta'; });
-    zCuantos.textContent = NEURONAS.length + ' piezas en el registro · abajo, las '
-      + altas.length + ' de gravedad alta · escribe para buscar en todas';
-    for(var j = 0; j < altas.length; j++) zFichas.appendChild(pintarFicha(altas[j], j + 1));
+  function pintar(){
+    var claves = Object.keys(marcadas).filter(function(k){ return marcadas[k]; });
+    var r = $('#resultado'); r.textContent = '';
+    if(!claves.length){
+      r.appendChild(texto('p','vacio',
+        'Marca al menos un síntoma. Sin ninguno esto no es una lista vacía: ' +
+        'es que todavía no le has dicho nada.'));
+      return;
+    }
+    var punto = {};
+    claves.forEach(function(k){
+      cuenta[k].piezas.forEach(function(n){ punto[n.id] = (punto[n.id] || 0) + 1; });
+    });
+    var lista = NEURONAS.filter(function(n){ return punto[n.id]; })
+      .sort(function(a,b){ return punto[b.id] - punto[a.id]; })
+      .slice(0, 12);
+
+    r.appendChild(texto('p','contador',
+      lista.length + ' de ' + NEURONAS.length + ' piezas explican ' +
+      (claves.length === 1 ? 'ese síntoma' : 'esos ' + claves.length + ' síntomas')));
+    var caja = crear('div','piezas');
+    lista.forEach(function(n){
+      var b = crear('button','pieza');
+      b.type = 'button';
+      b.appendChild(crear('span','grav ' + (n.gravedad || 'media')));
+      var t = crear('span','tit');
+      t.appendChild(document.createTextNode(n.titulo));
+      var s = DESIS[n.area];
+      t.appendChild(texto('span','sin',
+        (AREA[n.area] ? AREA[n.area].nombre : n.area) + (s ? ' · ' + s.nombre : '')));
+      b.appendChild(t);
+      b.addEventListener('click', function(){
+        if(s) ponerTono(s.tono);
+        abrirFicha(n, b);
+      });
+      caja.appendChild(b);
+    });
+    r.appendChild(caja);
+  }
+})();
+
+/* ── EL DESTAPE · un observador para toda la página ───────────────────── */
+(function(){
+  if(!('IntersectionObserver' in window)){
+    $$('.destapa, .surge, .maquina').forEach(function(e){ e.classList.add('visible'); });
     return;
   }
-  if(!res.length){
-    zCuantos.textContent = 'ninguna pieza coincide con «' + consulta + '»';
-    var v = crear('div','anota');
-    v.innerHTML = '<b>Nada con esas palabras.</b> Prueba con el síntoma en vez '
-      + 'del término técnico: «se ve sucio», «va a tirones», «no se lee», «salta '
-      + 'al cargar». O toca un área del atlas de arriba.';
-    zFichas.appendChild(v);
-    return;
+  var ob = new IntersectionObserver(function(filas){
+    filas.forEach(function(f){
+      if(!f.isIntersecting) return;
+      f.target.classList.add('visible');
+      ob.unobserve(f.target);          /* una vez destapado, deja de mirarse */
+    });
+  }, { rootMargin:'0px 0px -12% 0px', threshold:0.02 });
+  $$('section, .destapa, .surge, .maquina').forEach(function(e){ ob.observe(e); });
+  /* lo que ya está en pantalla al cargar se destapa en el primer cuadro: si
+     esperara al observador, el pórtico entraría con un parpadeo */
+  requestAnimationFrame(function(){
+    $$('#portico .destapa, #portico .surge').forEach(function(e){ e.classList.add('visible'); });
+  });
+})();
+
+/* ── EL CAMPO ─────────────────────────────────────────────────────────────
+   Un punto por pieza. Deriva lenta, se encienden los del sistema en curso.
+   Un solo rAF, resolución topada a 1.5 y parado cuando la pestaña no se ve:
+   un fondo vivo que cuesta batería es un fondo que hay que quitar. */
+(function(){
+  var c = $('#campo');
+  if(!c || !c.getContext) return;
+  var g = c.getContext('2d', { alpha:true });
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  var puntos = [], dpr = 1, an = 0, al = 0, corriendo = false, t0 = 0;
+
+  function medir(){
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
+    an = innerWidth; al = innerHeight;
+    c.width = Math.round(an*dpr); c.height = Math.round(al*dpr);
+    c.style.width = an + 'px'; c.style.height = al + 'px';
+    g.setTransform(dpr,0,0,dpr,0,0);
   }
-  zCuantos.textContent = area
-    ? res.length + ' piezas del área «' + area + '»'
-    : res.length + ' de ' + NEURONAS.length + ' piezas';
-  var tope = Math.min(res.length, 40);
-  for(var i = 0; i < tope; i++) zFichas.appendChild(pintarFicha(res[i].n, i + 1));
-  if(res.length > tope){
-    var mas = crear('p','cuantos');
-    mas.textContent = 'y ' + (res.length - tope) + ' más — afina la búsqueda';
-    zFichas.appendChild(mas);
+  function sembrar(){
+    puntos = NEURONAS.map(function(n, i){
+      var s = DESIS[n.area];
+      /* posición determinista: la misma pieza cae siempre en el mismo sitio,
+         así que el fondo no baila entre recargas */
+      var a = (i * 2.39996);                      /* ángulo áureo */
+      var r = Math.sqrt(i / NEURONAS.length);
+      return { x:.5 + Math.cos(a)*r*.62, y:.5 + Math.sin(a)*r*.52,
+               t:s ? s.tono : 168, sis:s ? s.id : null,
+               f:(i % 37) / 37, v:.12 + (i % 11)/70 };
+    });
   }
-}
+  function cuadro(ms){
+    if(!corriendo) return;
+    var t = (ms - t0) / 1000;
+    g.clearRect(0,0,an,al);
+    var actual = EN.sistema ? EN.sistema.id : null;
+    for(var i = 0; i < puntos.length; i++){
+      var p = puntos[i];
+      var ox = Math.sin(t*p.v + p.f*6.283) * 9;
+      var oy = Math.cos(t*p.v*0.8 + p.f*6.283) * 7;
+      var x = p.x*an + ox, y = p.y*al + oy;
+      var suyo = !actual || p.sis === actual;
+      g.beginPath();
+      g.arc(x, y, suyo ? 1.7 : 1.05, 0, 6.2832);
+      g.fillStyle = suyo ? 'hsla(' + p.t + ',70%,62%,' + (0.16 + 0.1*Math.sin(t*p.v*2+p.f*6)) + ')'
+                         : 'hsla(180,12%,60%,.05)';
+      g.fill();
+    }
+    requestAnimationFrame(cuadro);
+  }
+  function arrancar(){
+    if(corriendo || reduce.matches) return;
+    corriendo = true; t0 = performance.now();
+    requestAnimationFrame(function(ms){ t0 = ms; cuadro(ms); });
+  }
+  function parar(){ corriendo = false; }
 
-var espera = null;
-campo.addEventListener('input', function(){
-  /* se espera a que deje de escribir: una consulta por tecla parpadea */
-  clearTimeout(espera);
-  espera = setTimeout(function(){ pintar(campo.value.trim()); }, 90);
-});
-campo.addEventListener('keydown', function(ev){
-  if(ev.key === 'Escape' && campo.value){ ev.preventDefault(); limpiar(); }
-});
-function limpiar(){ campo.value = ''; pintar(''); campo.focus(); }
-bLimpiar.addEventListener('click', limpiar);
+  medir(); sembrar();
+  var esperando;
+  addEventListener('resize', function(){
+    clearTimeout(esperando); esperando = setTimeout(function(){ medir(); }, 140);
+  });
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden) parar(); else arrancar();
+  });
+  if(reduce.matches){                 /* quieto, pero dibujado una vez */
+    corriendo = true; t0 = performance.now(); cuadroUnico();
+    function cuadroUnico(){ corriendo = true; var m = t0; corriendo = false;
+      g.clearRect(0,0,an,al);
+      puntos.forEach(function(p){
+        g.beginPath(); g.arc(p.x*an, p.y*al, 1.4, 0, 6.2832);
+        g.fillStyle = 'hsla(' + p.t + ',70%,62%,.16)'; g.fill();
+      });
+    }
+  } else arrancar();
+})();
 
-/* ── el atlas manda a la consulta ─────────────────────────────────────── */
-$('#rejillaAtlas').addEventListener('click', function(ev){
-  var b = ev.target.closest('[data-area]');
-  if(!b) return;
-  campo.value = b.dataset.area;
-  pintar(b.dataset.area, b.dataset.area);
-  $('#consulta').scrollIntoView({ block:'start' });
-  campo.focus({ preventScroll:true });
-});
-
-/* ── el índice también ────────────────────────────────────────────────── */
-$('#indice').addEventListener('click', function(ev){
-  var a = ev.target.closest('a[data-id]');
-  if(!a) return;
-  ev.preventDefault();
-  var n = NEURONAS.filter(function(x){ return x.id === a.dataset.id; })[0];
-  if(!n) return;
-  campo.value = n.titulo;
-  zFichas.textContent = '';
-  zCuantos.textContent = 'una pieza';
-  var f = pintarFicha(n, 1);
-  zFichas.appendChild(f);
-  f.querySelector('.cab').click();
-  $('#consulta').scrollIntoView({ block:'start' });
-});
-
-pintar('');
+pintarMigas();
 })();

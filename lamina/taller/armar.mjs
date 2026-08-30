@@ -1,105 +1,82 @@
-/* Arma la lámina: un archivo autónomo con las fuentes y las 350 piezas
-   dentro. Sin build, sin CDN, sin una sola petición ajena.
-     node lamina/taller/armar.mjs <raíz del repo> <salida.html> */
+/* Arma la lámina: un archivo autónomo con las fuentes y las piezas dentro.
+     node lamina/taller/armar.mjs <raíz del repo> <salida.html>
+
+   ⚠ LAS ÁREAS YA NO SE DEDUCEN DE UNA RAMA. La versión anterior las sacaba
+   comparando contra `origin/main` con un `git ls-tree`: servía mientras las
+   áreas nuevas estuvieran sin fusionar, y el día que se fusionaron el atlas se
+   habría quedado vacío sin que nada avisara. Ahora la agrupación está escrita
+   en `sistemas.js`, que además es lo correcto: qué área pertenece a qué
+   sistema es una decisión editorial, no un efecto secundario de git. */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { execSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
+import { SISTEMAS } from './sistemas.js';
 
 const RAIZ = process.argv[2], SALIDA = process.argv[3];
+if(!RAIZ || !SALIDA){ console.error('uso: node armar.mjs <raíz> <salida.html>'); process.exit(1); }
 const AQUI = dirname(new URL(import.meta.url).pathname);
-const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-/* ── las 350 · sólo las áreas nuevas del departamento de diseño ───────── */
-const yaEstaban = execSync('git ls-tree --name-only origin/main cerebro/neuronas/', { cwd:RAIZ })
-  .toString().trim().split('\n').map(x => x.split('/').pop());
+/* ── las piezas: sólo las áreas que algún sistema reclama ─────────────── */
+const QUIERE = new Set(SISTEMAS.flatMap(s => s.areas));
 const areas = [], neuronas = [];
 for(const f of readdirSync(join(RAIZ,'cerebro/neuronas')).sort()){
-  if(yaEstaban.includes(f)) continue;
+  if(!f.endsWith('.json')) continue;
   const j = JSON.parse(readFileSync(join(RAIZ,'cerebro/neuronas',f),'utf8'));
+  if(!QUIERE.has(j.area)) continue;
   areas.push({ a:j.area, nombre:j.nombre, que:j.que, n:j.neuronas.length });
   j.neuronas.forEach(n => neuronas.push(Object.assign({ area:j.area }, n)));
 }
-if(neuronas.length < 350) throw new Error('esperaba 350 piezas y hay ' + neuronas.length);
+/* ⚠ QUE REVIENTE SI FALTA UN ÁREA. Si `sistemas.js` nombra un área que no
+   existe, el menú se queda con un hueco silencioso: una tarjeta que no lleva a
+   ningún sitio y que nadie relaciona con un fichero renombrado. */
+const faltan = [...QUIERE].filter(a => !areas.some(x => x.a === a));
+if(faltan.length) throw new Error('sistemas.js nombra áreas que no existen: ' + faltan.join(', '));
+if(neuronas.length < 300) throw new Error('esperaba 300+ piezas y hay ' + neuronas.length);
 
-/* ── el atlas, en HTML de verdad ─────────────────────────────────────── */
-const atlas = areas.map((x,i) =>
-  `<button class="area" type="button" data-area="${esc(x.a)}">`
-  + `<span class="n">${('0'+(i+1)).slice(-2)}</span>`
-  + `<span class="nom">${esc(x.nombre)}</span>`
-  + `<span class="cuenta">${x.n} ${x.n===1?'pieza':'piezas'}</span></button>`).join('');
-
-/* ── el índice de las 350, agrupado por área ─────────────────────────── */
-const indice = areas.map(x => {
-  const suyas = neuronas.filter(n => n.area === x.a);
-  return `<a class="clase" style="border:0;color:var(--tenue);margin-top:1rem" href="#consulta">${esc(x.a)}</a>`
-       + suyas.map(n => `<a href="#consulta" data-id="${esc(n.id)}">${esc(n.titulo)}</a>`).join('');
-}).join('');
-
-/* ── los instrumentos, leídos de las skills ──────────────────────────── */
-const DEL_DEPARTAMENTO = ['entrega-de-diseno','color-que-se-lee','tipografia-de-oficio',
-  'reticula-y-ritmo','jerarquia-que-guia','profundidad-y-sombra','movimiento-honesto',
-  'estados-completos','pantalla-vacia','formulario-que-no-pierde','foco-y-teclado',
-  'imagen-que-no-empuja','rendimiento-que-se-siente','modo-oscuro','sistema-de-iconos',
-  'tabla-en-un-telefono','texto-de-interfaz','marca-en-la-interfaz',
-  'antes-de-copiar-un-estilo','detalles-finales','ojos'];
-const skills = DEL_DEPARTAMENTO.map(nombre => {
-  const t = readFileSync(join(RAIZ,'.claude/skills',nombre,'SKILL.md'),'utf8');
-  const d = /^description:\s*(.+)$/m.exec(t)[1];
-  /* del «description» se toma sólo la primera frase: la lista de disparadores
-     es para el enrutador, no para una tabla que alguien lee */
-  const corta = d.split(/\s+Úsala\s/)[0].replace(/\s*—\s*$/,'');
-  return `<tr><td><code>${esc(nombre)}</code></td><td>${esc(corta)}</td></tr>`;
-}).join('');
-
-/* ── las fuentes, con el conteo real de la cosecha ───────────────────── */
-const FUENTES = [
-  ['W3C · WAI', 'Norma', 262], ['MDN', 'Motor', 718], ['web.dev', 'Motor', 52],
-  ['Smashing Magazine', 'Oficio', 1268], ['CSS-Tricks', 'Oficio', 2855],
-  ['A List Apart', 'Oficio', 61], ['Nielsen Norman Group', 'Oficio', 298],
-  ['Practical Typography', 'Oficio', 156],
-];
-const fuentes = FUENTES.map(([casa,papel,n]) =>
-  `<tr><td>${esc(casa)}</td><td>${esc(papel)}</td><td class="cifra">${n.toLocaleString('es-MX')}</td></tr>`).join('');
-
-/* ── las tres fuentes, dentro del archivo ────────────────────────────────
-   Van empotradas en base64 para que la lámina siga siendo UN archivo que se
-   abre sin red. Son Gloock y Crimson Pro, las dos SIL OFL, subconjuntadas a
-   latín + español; la licencia de cada una viaja en `taller/fuentes/`.
-
-   ⚠ AQUÍ ESTABA LA TIPOGRAFÍA DE LA CASA Y NO DEBÍA ESTAR. Carlos, e262:
-   «no uses mi tipografía sin mi petición explícita». Y en e261, sobre esta
-   misma página: «en tu portafolio está mal porque no respetas una sola de tus
-   reglas de diseño». Las dos son la misma falta — vestir un trabajo propio con
-   la marca de la casa— y por eso también se fue el logo del colofón. La
-   autoría se dice con letras, que es como se dice la autoría. */
+/* ── las cuatro caras, dentro del archivo ─────────────────────────────── */
 const empotrar = (n) => readFileSync(join(AQUI,'fuentes',n)).toString('base64');
-
 const css = readFileSync(join(AQUI,'estilo.css'),'utf8')
-  .replace('__GLOOCK__',    empotrar('gloock.woff2'))
-  .replace('__CRIMSON__',   empotrar('crimson.woff2'))
-  .replace('__CRIMSON_I__', empotrar('crimson-i.woff2'))
-  .replace('__CRIMSON_B__', empotrar('crimson-b.woff2'));
+  .replace('__ROTULO__',  empotrar('rotulo.woff2'))
+  .replace('__TEXTO__',   empotrar('texto.woff2'))
+  .replace('__TEXTO_B__', empotrar('texto-b.woff2'))
+  .replace('__CIFRA__',   empotrar('cifra.woff2'));
+
+/* ── EL ATLAS SIN JAVASCRIPT ───────────────────────────────────────────
+   ⚠ SIN ESTO LA PÁGINA SE QUEDA VACÍA CON EL JS APAGADO, y la regla de la casa
+   es que el contenido se vea completo y quieto, nunca a medias. Los tres
+   niveles del menú los pinta el motor, así que sin motor no hay ni una pieza:
+   ni se lee, ni se busca con Ctrl+F, ni sale en un buscador.
+
+   Se hornea el atlas entero —los seis sistemas, sus áreas y las 353 piezas con
+   su síntoma— en HTML de verdad. Las fichas completas sí necesitan JavaScript
+   y la propia página lo dice: prometer menos y cumplirlo es mejor que
+   prometerlo todo. */
+const atlasPlano = SISTEMAS.map(s => {
+  const suyas = s.areas.map(a => {
+    const d = areas.find(x => x.a === a);
+    const piezas = neuronas.filter(n => n.area === a);
+    return `<h4>${esc(d.nombre)} <span>${piezas.length} piezas</span></h4>`
+      + `<ul>${piezas.map(n =>
+          `<li><b>${esc(n.titulo)}</b><br>${esc(n.sintoma || '')}</li>`).join('')}</ul>`;
+  }).join('');
+  return `<section><h3>${s.n} · ${esc(s.nombre)}</h3><p>${esc(s.lema)}</p>${suyas}</section>`;
+}).join('');
+
 const cuerpo = readFileSync(join(AQUI,'cuerpo.html'),'utf8')
-  .replace('__ATLAS__', atlas).replace('__INDICE__', indice)
-  .replace('__SKILLS__', skills).replace('__FUENTES__', fuentes);
-const motor = readFileSync(join(AQUI,'motor.js'),'utf8');
+  .replace('__ATLAS_PLANO__', atlasPlano);
+const motor  = readFileSync(join(AQUI,'motor.js'),'utf8');
 
 const html = `<!doctype html>
 <html lang="es-MX">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Lámina · Atlas de los defectos del diseño web · Grupo Mazi</title>
-<meta name="description" content="350 piezas de conocimiento sobre lo que se rompe en una pantalla, por qué se rompe y cómo se caza antes de que llegue al papel. Departamento de diseño de Grupo Mazi.">
-<meta name="theme-color" content="#F4F1EA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
-<script>
-/* El tema se aplica ANTES de pintar. Aplicarlo después deja un destello del
-   tema equivocado en cada carga, y ese destello se ve siempre. */
-try{ var t = localStorage.getItem('lamina_tema');
-     if(t) document.documentElement.setAttribute('data-tema', t); }catch(e){}
-</script>
+<title>Lámina · Atlas de los defectos del diseño web</title>
+<meta name="description" content="${esc(neuronas.length)} piezas de conocimiento sobre lo que se rompe en una pantalla, por qué se rompe y cómo se caza antes de que llegue al papel. Departamento de diseño de Grupo Mazi.">
+<meta name="theme-color" content="#050D0C">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="%23050D0C"/><circle cx="16" cy="16" r="9" fill="none" stroke="%2352D9C0" stroke-width="2"/><circle cx="16" cy="16" r="3" fill="%2352D9C0"/></svg>'>
 <style>
 ${css}
 </style>
@@ -107,14 +84,20 @@ ${css}
 <body>
 ${cuerpo}
 <script>
+var SISTEMAS = ${JSON.stringify(SISTEMAS)};
+var AREAS    = ${JSON.stringify(areas)};
 var NEURONAS = ${JSON.stringify(neuronas)};
+</script>
+<script>
 ${motor}
 </script>
 </body>
 </html>
 `;
-
 writeFileSync(SALIDA, html);
-console.log('lámina escrita · ' + (html.length/1024).toFixed(0) + ' KB'
-  + ' · comprimida ' + (gzipSync(html).length/1024).toFixed(0) + ' KB'
-  + ' · ' + neuronas.length + ' piezas en ' + areas.length + ' áreas');
+const kb = (n) => (n/1024).toFixed(0) + ' KB';
+console.log(`lámina escrita · ${kb(Buffer.byteLength(html))} · comprimida ${kb(gzipSync(html).length)}`);
+console.log(`  ${neuronas.length} piezas · ${areas.length} áreas · ${SISTEMAS.length} sistemas`);
+for(const s of SISTEMAS)
+  console.log(`  ${s.n} · ${s.nombre.padEnd(20)} ${String(s.areas.length).padStart(2)} áreas · ` +
+    s.areas.reduce((t,a) => t + (areas.find(x => x.a === a)?.n || 0), 0) + ' piezas');
