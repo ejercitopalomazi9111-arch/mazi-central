@@ -1,0 +1,1475 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrenamiento ISTQB CTFL · Grupo Mazi</title>
+<meta name="description" content="Cincuenta niveles para llegar preparado al examen ISTQB Foundation Level. Entrenamiento interno de Grupo Mazi.">
+<meta name="theme-color" content="#120C1A">
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   ENTRENAMIENTO ISTQB CTFL · Grupo Mazi
+   Un archivo, sin build y sin CDN: se abre desde el teléfono y funciona.
+   Los colores están medidos del logo (marca/README.md), no inventados.
+   ═════════════════════════════════════════════════════════════════════════ */
+@font-face{ font-family:"Mazi"; src:url(data:font/woff2;base64,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) format("woff2");
+            font-weight:400; font-display:swap }
+
+:root{
+  --violeta:#AD21ED;        /* medido: promedio de los píxeles violetas del logo */
+  --violeta-hondo:#7A16A8;
+  --hueso:#EAE5E3;
+  --vacio:#120C1A;
+  --panel:#1B1226;
+  --panel-alto:#241733;
+  --linea:#33244A;
+  --tenue:#A99CB8;
+  --ok:#3ED598;
+  --mal:#FF6B87;
+  --aviso:#FFC65C;
+  --ui:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radio:14px;
+}
+
+*{ box-sizing:border-box }
+/* `hidden` es la regla de CSS de menor especificidad que existe: pierde contra
+   el `display` de cualquier clase propia. Sin este !important, `.btn.ancho`
+   —que pone display:block— dejaba PINTADOS el botón de constancias desde el
+   nivel cero y el de «enséñame cómo se resuelve» después de usarlo. Lo cazó la
+   prueba, no la lectura del código. */
+[hidden]{ display:none !important }
+html{ -webkit-text-size-adjust:100% }
+body{
+  margin:0; background:var(--vacio); color:var(--hueso);
+  font:400 17px/1.55 var(--ui);
+  padding:0 0 env(safe-area-inset-bottom);
+  overflow-x:hidden;
+}
+h1,h2,h3{ line-height:1.2; margin:0 0 12px }
+h1{ font-family:"Mazi", var(--ui); font-size:30px; font-weight:400; letter-spacing:.01em }
+h2{ font-size:22px }
+h3{ font-size:18px }
+p{ margin:0 0 14px }
+b,strong{ font-weight:700 }
+i,em{ font-style:italic; color:var(--tenue) }
+
+.envoltura{ max-width:720px; margin:0 auto; padding:0 18px }
+.pantalla{ display:none; padding:22px 0 40px; animation:entra .28s ease both }
+.pantalla.viva{ display:block }
+@keyframes entra{ from{ transform:translateY(10px) } to{ transform:none } }
+@media (prefers-reduced-motion: reduce){ .pantalla{ animation:none } }
+
+/* ── barra de arriba ─────────────────────────────────────────────────── */
+.barra{
+  position:sticky; top:0; z-index:20; background:var(--vacio);
+  border-bottom:1px solid var(--linea);
+  padding-top:env(safe-area-inset-top);
+}
+.barra .fila{ display:flex; align-items:center; gap:12px; min-height:56px }
+.barra .logo{ width:34px; height:34px; flex:none }
+.barra .quien{ flex:1; min-width:0; font-size:14px; color:var(--tenue);
+               overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.barra .quien b{ color:var(--hueso); font-weight:600 }
+
+/* ── botones ─────────────────────────────────────────────────────────── */
+.btn{
+  font:600 17px/1 var(--ui); color:#fff; background:var(--violeta);
+  border:0; border-radius:var(--radio); padding:16px 22px; min-height:52px;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+  transition:transform .12s ease, background .12s ease;
+}
+.btn:active{ transform:scale(.98) }
+.btn:disabled{ opacity:.45; cursor:not-allowed }
+.btn.ancho{ display:block; width:100% }
+.btn.calma{ background:var(--panel-alto); color:var(--hueso); border:1px solid var(--linea) }
+.btn.chico{ font-size:15px; padding:12px 16px; min-height:46px }
+.btn:focus-visible, input:focus-visible, .opcion:focus-visible{
+  outline:3px solid var(--violeta); outline-offset:2px }
+
+/* ── formulario de entrada ───────────────────────────────────────────── */
+label.campo{ display:block; margin:0 0 16px }
+label.campo span{ display:block; font-size:14px; color:var(--tenue); margin-bottom:6px }
+input[type=text], input[type=number]{
+  width:100%; font:400 17px/1.3 var(--ui);   /* 17px: menos y iOS hace zoom solo */
+  color:var(--hueso); background:var(--panel); border:1px solid var(--linea);
+  border-radius:var(--radio); padding:15px 16px; min-height:52px;
+}
+input::placeholder{ color:#6D6080 }
+
+/* ── mapa de niveles ─────────────────────────────────────────────────── */
+.avance{ background:var(--panel); border-radius:var(--radio); padding:16px; margin:0 0 20px;
+         border:1px solid var(--linea) }
+.avance .cifra{ font:700 34px/1 var(--ui); color:var(--violeta) }
+.avance .riel{ height:10px; border-radius:6px; background:var(--panel-alto); overflow:hidden; margin:12px 0 8px }
+.avance .riel i{ display:block; height:100%; background:var(--violeta); border-radius:6px;
+                 transition:width .4s ease }
+.avance .nota{ font-size:14px; color:var(--tenue) }
+
+.bloque-tit{ display:flex; align-items:baseline; gap:10px; margin:24px 0 10px }
+.bloque-tit h3{ margin:0; font-size:16px; letter-spacing:.04em; text-transform:uppercase; color:var(--tenue) }
+.bloque-tit .raya{ flex:1; height:1px; background:var(--linea) }
+
+.rejilla{ display:grid; grid-template-columns:repeat(auto-fill, minmax(58px,1fr)); gap:10px }
+.casilla{
+  aspect-ratio:1; min-height:58px; border-radius:var(--radio);
+  background:var(--panel); border:1px solid var(--linea); color:var(--hueso);
+  font:600 17px/1 var(--ui); cursor:pointer; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  -webkit-tap-highlight-color:transparent; transition:transform .12s ease;
+}
+.casilla:active{ transform:scale(.95) }
+.casilla.hecho{ background:var(--violeta); border-color:var(--violeta); color:#fff }
+.casilla.hecho::after{ content:"✓"; position:absolute; top:3px; right:6px; font-size:11px; opacity:.85 }
+.casilla.cerrado{ opacity:.55; cursor:not-allowed }
+.casilla.siguiente{ border-color:var(--violeta); box-shadow:0 0 0 2px rgba(173,33,237,.35) }
+
+/* ── un nivel ────────────────────────────────────────────────────────── */
+.migaja{ font-size:13px; color:var(--tenue); letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px }
+.enunciado{ background:var(--panel); border:1px solid var(--linea); border-radius:var(--radio);
+            padding:18px; margin:0 0 18px }
+.enunciado p:last-child{ margin-bottom:0 }
+.enunciado table{ width:100%; border-collapse:collapse; font-size:14px; margin:12px 0 }
+.enunciado th, .enunciado td{ border:1px solid var(--linea); padding:7px 9px; text-align:left }
+.enunciado th{ background:var(--panel-alto); font-weight:600 }
+
+.codigo{ background:#0B0710; border:1px solid var(--linea); border-radius:var(--radio);
+         padding:14px 8px; margin:0 0 18px; overflow-x:auto }
+.codigo ol{ margin:0; padding:0 0 0 44px; font:400 15px/1.75 var(--mono); color:#D7CDE4 }
+.codigo li{ padding-left:8px }
+.codigo li::marker{ color:#6D6080; font-size:13px }
+.codigo .sangria{ color:#6D6080 }
+
+.opciones{ display:flex; flex-direction:column; gap:10px; margin:0 0 18px }
+.opcion{
+  display:flex; gap:12px; align-items:flex-start; text-align:left;
+  background:var(--panel); border:1px solid var(--linea); border-radius:var(--radio);
+  padding:15px 16px; min-height:52px; color:var(--hueso);
+  font:400 16px/1.45 var(--ui); cursor:pointer; width:100%;
+  -webkit-tap-highlight-color:transparent;
+}
+.opcion .marca{ flex:none; width:26px; height:26px; border-radius:8px; border:2px solid var(--linea);
+                display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700 }
+.opcion.sel{ border-color:var(--violeta) }
+.opcion.sel .marca{ background:var(--violeta); border-color:var(--violeta); color:#fff }
+.opcion.buena{ border-color:var(--ok) }
+.opcion.buena .marca{ background:var(--ok); border-color:var(--ok); color:#0B0710 }
+.opcion.mala{ border-color:var(--mal) }
+.opcion.mala .marca{ background:var(--mal); border-color:var(--mal); color:#0B0710 }
+
+.acciones{ display:flex; gap:10px; flex-wrap:wrap; margin:0 0 18px }
+.acciones .btn{ flex:1; min-width:140px }
+
+.veredicto{ border-radius:var(--radio); padding:16px; margin:0 0 18px; border:1px solid }
+.veredicto.bien{ background:rgba(62,213,152,.10); border-color:var(--ok) }
+.veredicto.bien h3{ color:var(--ok) }
+.veredicto.mal{ background:rgba(255,107,135,.10); border-color:var(--mal) }
+.veredicto.mal h3{ color:var(--mal) }
+.veredicto p:last-child{ margin-bottom:0 }
+
+.ayuda{ background:var(--panel); border:1px solid var(--linea); border-radius:var(--radio);
+        padding:16px; margin:0 0 18px }
+.ayuda h3{ font-size:16px; color:var(--violeta) }
+.ayuda ol{ margin:0; padding-left:22px }
+.ayuda li{ margin:0 0 10px }
+.ayuda li:last-child{ margin:0 }
+.ayuda .pista{ border-left:3px solid var(--aviso); padding-left:12px; margin:0 0 12px; color:var(--hueso) }
+.ayuda .pista:last-child{ margin-bottom:0 }
+
+.pie-nav{ display:flex; gap:10px; margin-top:26px }
+.pie-nav .btn{ flex:1 }
+
+/* ── certificados ────────────────────────────────────────────────────── */
+.diploma{
+  background:#fff; color:#171021; border-radius:var(--radio); padding:30px 26px;
+  margin:0 0 20px; border:6px solid var(--violeta); position:relative; overflow:hidden;
+}
+.diploma .sello{ position:absolute; right:-30px; top:-30px; width:150px; opacity:.07 }
+.diploma .casa{ font:400 13px/1 var(--ui); letter-spacing:.22em; text-transform:uppercase;
+                color:var(--violeta-hondo); margin:0 0 14px }
+.diploma h2{ font-family:"Mazi", var(--ui); font-weight:400; font-size:26px; color:#171021; margin:0 0 6px }
+.diploma .nombre{ font-size:25px; font-weight:700; margin:16px 0 6px; line-height:1.2 }
+.diploma .raya{ height:3px; background:var(--violeta); width:70px; margin:0 0 16px }
+.diploma p{ font-size:15px; line-height:1.55; color:#3B3048 }
+.diploma .datos{ display:flex; flex-wrap:wrap; gap:8px 26px; margin-top:20px;
+                 padding-top:16px; border-top:1px solid #E2DCE9; font-size:13px; color:#6A5E78 }
+.diploma .datos b{ color:#171021; display:block; font-size:14px }
+.diploma .letra-chica{ margin-top:16px; font-size:12px; line-height:1.5; color:#6A5E78 }
+
+.aviso-legal{ background:var(--panel); border:1px solid var(--aviso); border-left-width:4px;
+              border-radius:var(--radio); padding:14px 16px; margin:0 0 20px; font-size:15px }
+
+@media print{
+  body{ background:#fff; color:#000 }
+  .barra, .pantalla:not(.viva), .acciones, .pie-nav, .no-imprime{ display:none !important }
+  .envoltura{ max-width:none; padding:0 }
+  .pantalla{ animation:none; padding:0 }
+  .diploma{ break-after:page; border-width:4px; box-shadow:none }
+  .diploma:last-of-type{ break-after:auto }
+}
+
+@media (min-width:640px){
+  body{ font-size:18px }
+  h1{ font-size:38px }
+  .envoltura{ padding:0 24px }
+}
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="envoltura fila">
+    <span class="logo" aria-hidden="true"><svg style="width:100%;height:100%;display:block" xmlns="http://www.w3.org/2000/svg" viewBox="170 86.92 1068.47 625.41">
+  <g fill="#AD21ED">
+    <path d="M 209.83 93 L 213.83 93.67 L 218.67 98.17 Q 225.87 109.13 235.5 117.67 Q 252.41 134.59 274.83 146 Q 317.46 166.88 361.5 186.33 L 373.83 192.67 L 397.83 203 L 411.17 210 L 432.5 219 L 451.83 229 L 468.83 236 L 487.83 246 L 506.83 254 L 520.17 261 L 567.17 282.33 Q 573.95 285.22 578.67 290.17 L 582 294.17 L 591.33 308.5 L 601.83 320.33 Q 615.37 333.29 639.83 335.33 Q 654.13 333.46 661 324.17 Q 665.56 318.39 668 310.5 L 676.33 280.17 Q 679.2 273.37 684.17 268.67 Q 692.76 259.1 710.83 259 Q 717.85 259.49 723.17 261.67 L 728.5 264.67 L 737.5 271.67 L 743.17 274 L 750.5 275.67 L 757.33 280.17 Q 760 281.84 759.67 286.5 L 756.5 290 L 746.17 292.67 Q 741.65 294.49 739 298.17 Q 736.17 301.67 736.67 308.5 Q 738.27 322.39 746.17 330 Q 753.22 336.28 767.17 335.67 Q 781.04 334.21 792.17 330 Q 802.97 325.31 810 316.83 L 818.67 306.5 L 827 293.17 L 832.17 288 L 840.5 283 L 914.17 249 L 924.83 243.33 L 945.17 234.67 L 962.17 225.67 L 980.5 218 L 1001.17 207.33 L 1024.5 197.33 L 1039.5 189.67 L 1096.83 163.67 L 1134.17 145.67 Q 1146.47 139.3 1157.17 131.33 Q 1170.12 121.12 1181.33 109.17 L 1189.67 98.17 L 1193.5 94.33 Q 1194.92 92.92 1197.83 93 Q 1201.18 93.99 1202.67 96.83 Q 1206.72 103.12 1206.33 113.83 Q 1204.67 127.17 1199.67 137.17 Q 1192.33 149.66 1182.17 159.33 Q 1171.46 169.29 1158.83 177.33 L 1128.5 194.67 L 1087.83 215 Q 1067.08 222.58 1048.83 232.67 L 1025.83 241.67 Q 1021.54 243.21 1019 246.5 L 1018.67 248.5 L 1020.83 251 L 1023.17 251.33 L 1035.83 248 L 1063.83 238 L 1083.5 232.67 L 1109.83 223.33 L 1129.17 218 L 1191.83 197.33 Q 1208.21 193.38 1222.83 187.67 L 1227.5 187 L 1230.67 188.83 Q 1232.47 189.87 1232 193.17 Q 1225.83 205.33 1216.17 214 Q 1189.9 236.9 1153.5 249.67 Q 1131.11 255.95 1110.5 264 L 1082.5 270.67 L 1059.83 277.67 L 1029.5 284.33 L 1010.5 289.67 L 1007.67 291.83 Q 1007.18 294.49 1008.5 295.33 Q 1009.72 296.44 1012.5 296 L 1024.5 294 L 1047.83 291.33 L 1078.5 285.67 L 1098.17 283.67 L 1133.17 277.67 L 1168.83 273 L 1198.5 267.67 L 1221.83 264.33 L 1227.5 264.33 L 1230.67 266.83 Q 1231.87 267.8 1231.33 270.5 Q 1228.49 275.99 1223.83 279.67 Q 1197.62 302.29 1157.5 311 L 1127.5 316.67 L 1094.83 320.67 L 1085.5 322.33 L 1019.17 328.67 L 996.83 330 Q 994.13 330.46 993 332.5 Q 992.5 335.83 994.83 336.33 L 1003.5 337 L 1075.83 337.67 L 1088.83 338.67 L 1128.17 338.67 L 1167.17 339.67 L 1195.17 339.67 Q 1198.81 340.03 1200.33 342.5 L 1201 345.83 L 1197.5 350.33 Q 1178.43 363.93 1151.5 369.67 Q 1139.89 372.23 1126.83 373.33 Q 1118.29 372.96 1111.5 374.33 L 1084.83 374.67 L 1069.17 373.33 L 1056.5 373.33 L 1032.5 371.33 L 1018.17 371 L 1002.83 369.33 L 990.5 369 Q 978.7 366.97 965.5 366.33 L 962.33 368.17 L 962 370.5 L 963.17 372 L 969.17 374 L 1127.5 402.67 Q 1133.01 403.16 1135.67 406.5 L 1136.33 409.5 L 1133.17 413.33 Q 1122.43 419.1 1108.5 421.67 L 1083.17 424.67 L 1073.17 424.67 L 1023.17 418.33 L 987.83 410 L 956.83 403.67 L 937.83 398 L 933.83 397.67 L 932.33 398.83 L 931.67 401.17 L 933.83 403.67 Q 956.09 410.91 976.83 419.67 L 1004.5 428.67 L 1027.83 438.33 L 1044.17 443.33 L 1051.83 446.67 L 1055 449.17 Q 1056.58 450.09 1056.33 452.83 L 1053.83 456 L 1048.5 458 L 1037.83 459.67 L 1031.17 460.33 L 1015.17 460.67 L 997.83 458 L 966.5 450.33 L 914.5 430.33 L 899.17 423 L 896.5 422.67 L 894.67 424.17 L 894.33 425.83 L 896.83 428.67 L 925.17 445.67 L 943.17 455.33 L 959.83 466 L 968.5 470.33 L 975 475.5 L 976 478.5 L 972.83 482.33 L 968.83 483.33 L 949.5 483.33 Q 925.93 479.4 906.83 471 L 869.5 450 L 850.5 437 L 846.17 435 L 844.17 435 L 842 436.83 L 841.33 439.5 Q 844.56 445.44 849.83 449.33 L 864.67 463.5 L 873.83 473.33 L 879.67 478.83 Q 881.83 480.34 881.67 484.17 L 879.83 486.67 Q 878.41 488.08 875.5 488 Q 862.84 486.16 852.5 482 L 835.5 474.33 L 823.17 466 L 807.17 453 L 800.33 446.5 L 782.67 426.83 L 773 414.17 L 766.83 407.67 Q 765.33 405.83 761.83 406 L 758.67 408.17 L 756.33 412.83 Q 752.92 430.09 747 444.83 L 737.67 465.17 Q 736.44 467.94 737 472.5 L 738 475.83 L 747.67 494.5 L 763.33 520.5 L 772.33 537.83 L 781 551.5 Q 789.46 569.37 800 585.17 L 805.67 596.5 L 830.67 639.83 Q 832.83 642.67 833.33 647.17 L 831.5 650 Q 830.33 651.5 827.17 651 Q 807.59 641.58 794.33 625.83 L 775 600.5 L 765.67 584.83 L 762.17 580.67 L 759.83 579.67 L 757.33 581.17 Q 755.96 582.13 756.33 584.83 L 787.33 678.5 L 787.67 682.17 L 785.17 685.33 L 782.5 686 Q 774.76 682.24 769.67 675.83 Q 755.87 660.13 746.33 640.17 Q 735.08 615.75 727.67 587.5 L 725.5 584.33 L 723.17 583.67 L 721.33 584.83 L 720.33 586.5 L 720.33 622.5 L 719.33 630.83 L 719.33 637.5 L 718 654.5 L 716.33 669.17 Q 714.39 684.22 710.67 697.5 L 708.33 703.5 L 706.17 705.67 L 703.17 706.33 L 700.67 704.5 L 698.67 701.17 L 695.67 690.83 L 691.33 665.17 L 689.67 648.17 L 688.67 624.83 L 687.67 616.17 L 687.67 593.5 L 688 588.17 L 686.17 585.33 L 683.83 584.67 L 681.67 586.17 L 679.67 590.17 L 672 615.5 Q 665.87 632.54 658 647.83 Q 648.78 665.95 634.83 679.33 L 627.83 685 L 623.83 685.67 L 621 683.17 L 620.67 679.17 Q 630.14 653.31 638 625.83 L 643.33 611.5 L 646 601.5 L 652 585.17 L 652.67 580.5 L 650.5 578 L 648.83 577.67 L 645.33 580.5 Q 635.31 599.31 622.67 615.5 Q 615.45 625.28 606.5 633.33 Q 599.35 640.35 590.83 646 L 583.17 650.33 L 578.83 651.33 L 576.33 650 Q 574.58 648.98 575 645.5 L 597.33 604.83 L 640.67 529.5 L 649.67 512.17 L 660.67 494.17 L 670 476.5 Q 671.89 473.56 671.67 468.5 L 670.33 464.17 Q 664 453.16 659.67 440.17 Q 654.46 426.38 651.33 410.5 L 648.17 406.33 L 645.5 405.33 Q 640.3 406.97 637.67 411.17 L 627 425.5 L 612 442.5 L 603.5 451 L 584.5 466.67 L 573.17 474 Q 560.33 481 545.17 485.67 L 535.17 488 L 530.17 488 L 527 485.5 L 526.33 482.17 Q 529.31 476.31 534.5 472.67 L 543 464.5 L 555.83 451 L 567.33 440.17 L 568.67 436.17 L 566.5 433.67 L 563.83 433.33 L 559.17 435.67 L 540.17 449 L 510.17 466.67 L 499.5 472 L 468.17 482 L 459.83 483.33 L 445.5 483.67 L 437.5 483 Q 434.48 482.18 433 479.83 L 432.33 477.17 L 434.33 474 L 439.17 470.67 L 453.5 463 L 469.5 452.67 L 495.83 438.33 L 502.67 432.83 L 503.33 431.17 L 501.83 428.67 Q 500.97 427.53 498.5 428 Q 477.99 435.15 459.17 444 L 442.17 450 L 414.17 457.33 L 404.17 459.33 Q 394.39 461.39 381.83 460.67 L 359.5 458 Q 355.07 457.26 352.67 454.5 L 351.67 451.5 L 355.17 447.33 L 364.5 443.33 L 386.17 436.33 L 423.17 422 L 448.83 413.33 Q 460.85 407.35 474.83 403.33 L 477.67 401.17 L 478 399.17 L 476.5 397.33 L 475.17 397 L 455.17 402.67 L 445.5 404.33 L 412.5 412.33 L 382.17 418.67 L 350.83 423 L 334.83 424.33 L 320.83 424.33 Q 304.83 423.33 291.5 419.67 L 279.83 415.67 Q 275.03 414.14 272.33 410.5 L 271.67 407.83 L 274.17 404.67 L 276.83 403.33 L 319.83 395.33 L 440.17 374 L 444.83 373 L 447.67 370.83 L 448 368.83 L 446.5 367 L 445.5 366.33 L 440.83 366.33 L 387.5 371.33 L 377.5 371.33 L 357.83 373 L 339.17 373.33 L 330.83 374.33 L 300.83 374.67 L 271.83 372.33 L 255.17 369.33 L 244.83 366.67 Q 232.92 362.92 222.5 357.67 Q 214.52 353.98 208.67 348.17 Q 207.03 347.14 207.33 344.17 L 210.17 340.67 L 213.5 339.67 L 228.17 339.33 L 332.17 338.67 L 340.5 337.67 L 352.17 337.33 L 413.83 337 L 417 334.83 L 417.33 332.83 L 416.17 331.33 L 411.17 329.67 L 399.5 329.33 L 379.83 327.33 L 374.5 327.33 L 339.5 323.33 L 317.83 321.67 L 273.17 315.33 L 251.17 311 L 229.5 305 Q 217.44 300.72 206.83 295 Q 191.43 287.07 180 275.17 L 177 270.83 L 176.67 268.17 L 179.5 264.67 Q 181.5 263.17 185.83 264 L 219.5 269.33 L 236.5 272.67 L 261.83 275.67 L 294.5 281.33 L 317.17 283.67 L 344.5 289 L 366.83 291.33 L 400.5 297.33 L 405.5 297.67 L 407.67 295.83 L 408 293.5 L 404.17 290.67 L 386.83 287.33 L 365.5 281 L 332.83 273.67 Q 313.24 266.09 290.5 261.67 L 243.5 245.33 Q 226.17 237.99 211.17 228.33 Q 197.1 219.9 186.33 208.17 L 178.33 197.5 Q 176.34 195.16 176 191.17 L 177.83 188.33 Q 179.06 186.72 182.17 187 Q 196.78 192.38 213.17 196 L 265.5 213.67 L 287.83 219.67 L 311.17 228.33 L 329.83 233 L 348.83 240.33 Q 361.29 244.87 375.5 247.67 L 398.5 256.33 L 402.5 256.67 L 404 255.5 L 404.33 252.83 L 400.17 249.67 L 385.5 244.33 L 367.5 235.33 L 346.17 227 L 326.17 216.67 L 308.83 209.67 Q 295.43 201.57 280.5 195 L 246.5 175.33 Q 231.77 165.56 220 152.83 Q 211.84 144.33 206.67 132.83 Q 202.11 123.39 202 109.5 L 204 99.83 Q 205.25 96.08 208.17 94 L 209.83 93 Z M 704.67 357.67 L 703.33 358.33 L 698.33 375.67 L 697.33 377 L 685.67 376.67 L 679.33 376.67 L 677.67 377.67 L 693 389.33 L 693 391 L 687.67 408 L 704.33 397 L 718 407 L 720.67 408 L 715 390.67 L 715.33 388.33 L 730.67 377.67 L 729 376.67 L 711.33 377 L 710 376 L 704.67 357.67 Z "/>
+    <path d="M 704.5 357.67 L 710 375.83 L 711.17 377 L 728.83 376.67 L 730.67 377.5 L 715.33 388.33 L 715 390.5 L 720.67 408 L 717.83 407 L 704.17 397 L 687.67 408 L 693 390.83 L 693 389.17 L 677.67 377.5 L 679.17 376.67 L 685.5 376.67 L 697.17 377 L 698.33 375.5 L 703.33 358.33 L 704.5 357.67 Z "/>
+  </g>
+  <g fill="#EAE5E3">
+    <path d="M 704.7 342.57 L 713.5 371.63 L 715.37 373.5 L 743.63 372.97 L 746.57 374.3 L 722.03 391.63 L 721.5 395.1 L 730.57 423.1 L 726.03 421.5 L 704.17 405.5 L 677.77 423.1 L 686.3 395.63 L 686.3 392.97 L 661.77 374.3 L 664.17 372.97 L 674.3 372.97 L 692.97 373.5 L 694.83 371.1 L 702.83 343.63 L 704.7 342.57 Z "/>
+  </g>
+  <g fill="#010101">
+    <path d="M 696.59 123.23 L 705.48 123.23 L 708.5 124.65 L 708.15 126.96 L 708.5 127.32 L 708.5 134.43 L 708.15 134.78 L 708.15 143.67 L 708.5 144.04 L 708.5 148.66 L 708.15 150.07 L 708.5 150.97 L 705.13 152.39 L 688.05 152.74 L 667.42 155.24 L 659.6 157.01 L 654.98 157.37 L 633.99 162.34 L 609.1 170.53 L 598.06 175.15 L 578.16 185.11 L 563.57 193.65 Q 542.73 207.67 525.69 225.48 L 520.89 230.99 Q 519.34 233 515.2 232.41 L 466.47 213.56 L 446.73 204.49 L 447.27 202.89 L 453.67 203.6 L 463.63 207.16 L 475.36 209.29 L 497.77 215.34 L 510.57 217.83 L 520.89 217.83 Q 524.56 216.34 526.76 213.39 L 533.16 204.85 L 553.61 183.33 Q 565.88 172.13 579.93 162.71 L 594.51 153.46 Q 604.47 149.36 613 143.85 L 638.26 134.25 L 662.8 127.5 L 678.09 125 L 682.36 125 L 688.76 123.58 L 696.23 123.58 L 696.59 123.23 Z "/>
+  </g>
+  <g fill="#F2F2F2">
+    <path d="M 709.21 125 L 724.68 125 L 732.5 126.07 L 738.2 126.07 L 741.4 127.13 L 744.96 127.13 L 746.02 127.85 L 751.36 128.2 L 752.43 128.92 L 760.61 130.34 L 761.31 131.05 L 764.88 131.4 L 765.58 132.12 L 769.14 132.47 L 771.28 133.54 L 776.97 134.6 L 777.68 135.32 L 786.57 137.8 L 787.99 138.87 L 789.42 138.87 L 801.15 144.21 L 802.57 144.21 L 808.26 147.41 L 811.82 148.47 L 822.49 154.88 L 823.56 154.88 L 832.8 161.28 L 835.65 162.34 L 842.4 167.68 L 843.3 167.68 L 843.83 168.75 L 846.5 170.35 L 847.57 171.41 L 856.1 177.82 L 856.64 178.35 L 858.24 179.42 L 858.77 180.48 L 860.72 181.55 L 861.97 183.33 L 864.28 184.75 L 865.88 186.89 Q 867.06 186.49 866.77 187.42 L 867.84 187.95 L 869.44 190.09 L 869.97 190.62 L 871.04 191.15 Q 870.51 192.49 871.58 192.22 L 873.18 193.29 L 873.71 194.35 L 874.78 195.42 L 875.31 196.49 L 876.38 197.02 L 883.85 206.09 L 884.91 206.62 L 891.85 215.69 L 892.91 216.76 L 893.98 217.83 L 897.18 218.89 L 907.85 218.89 Q 911.63 217.53 916.74 217.48 L 917.81 216.76 L 920.29 216.76 L 927.06 214.63 L 929.54 214.63 L 931.68 213.56 L 935.95 213.21 L 940.21 211.43 L 943.06 211.43 L 944.83 210.36 L 950.17 209.29 L 952.3 208.22 L 954.08 208.22 L 961.2 205.74 L 961.73 207.34 L 953.73 211.07 L 942.35 214.99 L 941.28 216.06 L 939.15 216.41 L 928.48 221.39 L 924.21 222.46 L 923.14 223.53 L 921.01 223.53 L 919.94 224.59 L 914.96 226.73 L 903.58 230.99 L 899.32 231.7 L 895.75 227.79 L 894.69 227.08 L 893.8 225.66 Q 892.73 226.1 893.09 224.76 L 892.02 224.23 L 891.48 223.53 L 890.95 222.46 L 889.88 221.92 L 889.35 221.03 L 888.28 220.32 L 886.15 217.83 L 884.55 217.12 L 884.02 216.06 L 882.95 214.99 L 881 213.39 L 880.28 212.32 L 877.8 210.54 L 877.26 210.01 L 870.15 203.6 L 868.54 202.89 L 868.01 202.19 Q 862.52 197.01 855.74 193.65 L 855.21 192.93 L 844.9 186.18 L 826.76 176.58 L 804.36 167.33 L 784.43 160.93 Q 779.37 160.66 775.9 158.79 L 772.35 158.44 L 769.85 157.37 L 767.01 157.37 L 765.94 156.66 L 747.81 153.46 L 730.02 151.67 L 709.75 150.97 L 709.21 150.44 L 708.86 149.37 L 709.21 149.01 L 709.21 126.96 L 708.86 126.25 L 709.21 125 Z "/>
+  </g>
+  <g fill="#010101">
+    <path d="M 754.22 442.12 Q 765.59 479.48 800.25 484.33 C 812.18 492.87 824.99 474.98 813.07 466.44 Q 774.03 467.69 758.3 436.43 Z"/>
+    <path d="M 744.13 452.17 Q 746.96 491.12 779.7 503.5 C 789.44 514.46 805.89 499.85 796.15 488.89 Q 757.8 481.49 749.36 447.52 Z"/>
+    <path d="M 654.25 442.12 Q 642.88 479.48 608.22 484.33 C 596.29 492.87 583.48 474.98 595.4 466.44 Q 634.44 467.69 650.17 436.43 Z"/>
+    <path d="M 664.34 452.17 Q 661.51 491.12 628.77 503.5 C 619.03 514.46 602.58 499.85 612.32 488.89 Q 650.67 481.49 659.11 447.52 Z"/>
+  </g>
+</svg></span>
+    <span class="quien" id="quien"></span>
+    <button class="btn calma chico no-imprime" id="bSalir" type="button" hidden>Salir</button>
+  </div>
+</header>
+
+<main class="envoltura">
+
+<!-- ── 1 · PORTADA ──────────────────────────────────────────────────────── -->
+<section class="pantalla viva" id="pPortada">
+  <h1>Entrenamiento ISTQB<br>Foundation Level</h1>
+  <p><b>Cincuenta niveles</b> para llegar al examen sabiendo, no cruzando los dedos. Cada
+  nivel es un problema de los que salen de verdad: contar particiones, calcular cobertura,
+  encontrar la línea donde está el defecto.</p>
+  <p>Si te atoras, hay <b>tres pistas</b> que te acercan sin darte la respuesta, y un
+  <b>paso a paso</b> completo cuando lo pidas. No hay reloj y no hay castigo: puedes
+  intentarlo las veces que quieras.</p>
+  <p>Al terminar los cincuenta se emiten <b>dos constancias</b> a tu nombre.</p>
+
+  <div class="aviso-legal">
+    <b>Antes de empezar, con claridad:</b> esto es <b>formación interna de Grupo Mazi</b>.
+    Las constancias que emite las firma Grupo Mazi y acreditan que completaste este
+    entrenamiento. <b>No son la certificación ISTQB ni la sustituyen</b>: esa se presenta con
+    un proveedor acreditado, y en la guía viene el directorio de a quién llamar.
+  </div>
+
+  <form id="fEntrar" novalidate>
+    <label class="campo"><span>Tu nombre completo · va impreso en las constancias</span>
+      <input type="text" id="fNombre" autocomplete="name" placeholder="María Fernanda Reyes Ortega" required></label>
+    <label class="campo"><span>Puesto o área (opcional)</span>
+      <input type="text" id="fPuesto" autocomplete="organization-title" placeholder="Aseguramiento de calidad"></label>
+    <p id="errNombre" class="veredicto mal" hidden style="margin-bottom:16px"><b>Escribe tu nombre completo</b> — es lo que va impreso en las constancias, así que conviene que esté bien.</p>
+    <button class="btn ancho" type="submit">Empezar</button>
+  </form>
+</section>
+
+<!-- ── 2 · MAPA ─────────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pMapa">
+  <div class="avance">
+    <div class="cifra"><span id="mHechos">0</span> <span style="font-size:18px;color:var(--tenue)">de 50</span></div>
+    <div class="riel"><i id="mRiel" style="width:0%"></i></div>
+    <div class="nota" id="mNota"></div>
+  </div>
+  <div id="mBloques"></div>
+  <button class="btn ancho no-imprime" id="bCertificados" type="button" hidden style="margin-top:24px">Ver mis constancias</button>
+  <button class="btn calma ancho chico no-imprime" id="bReiniciar" type="button" style="margin-top:12px">Empezar de cero</button>
+</section>
+
+<!-- ── 3 · NIVEL ────────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pNivel">
+  <div class="migaja" id="nMigaja"></div>
+  <h2 id="nTitulo"></h2>
+  <div class="enunciado" id="nEnunciado"></div>
+  <div id="nCodigo"></div>
+  <div id="nRespuesta"></div>
+  <div class="acciones no-imprime">
+    <button class="btn" id="bComprobar" type="button">Comprobar</button>
+    <button class="btn calma" id="bPista" type="button">Dame una pista</button>
+  </div>
+  <div id="nPistas"></div>
+  <div id="nVeredicto"></div>
+  <div id="nPasos"></div>
+  <button class="btn calma ancho no-imprime" id="bManual" type="button">Enséñame cómo se resuelve</button>
+  <div class="pie-nav no-imprime">
+    <button class="btn calma" id="bVolver" type="button">Al mapa</button>
+    <button class="btn" id="bSiguiente" type="button">Siguiente</button>
+  </div>
+</section>
+
+<!-- ── 4 · CONSTANCIAS ──────────────────────────────────────────────────── -->
+<section class="pantalla" id="pFin">
+  <h1 class="no-imprime">Terminaste los cincuenta</h1>
+  <p class="no-imprime">Aquí están tus dos constancias. El botón las manda a imprimir, y desde
+  el diálogo de impresión puedes guardarlas como PDF.</p>
+  <div class="acciones no-imprime">
+    <button class="btn" id="bImprimir" type="button">Imprimir o guardar en PDF</button>
+    <button class="btn calma" id="bVolverMapa" type="button">Volver al mapa</button>
+  </div>
+  <div id="nDiplomas"></div>
+</section>
+
+</main>
+
+<script>
+var LOGO = "<svg style=\"width:100%;height:100%;display:block\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"170 86.92 1068.47 625.41\">\n  <g fill=\"#AD21ED\">\n    <path d=\"M 209.83 93 L 213.83 93.67 L 218.67 98.17 Q 225.87 109.13 235.5 117.67 Q 252.41 134.59 274.83 146 Q 317.46 166.88 361.5 186.33 L 373.83 192.67 L 397.83 203 L 411.17 210 L 432.5 219 L 451.83 229 L 468.83 236 L 487.83 246 L 506.83 254 L 520.17 261 L 567.17 282.33 Q 573.95 285.22 578.67 290.17 L 582 294.17 L 591.33 308.5 L 601.83 320.33 Q 615.37 333.29 639.83 335.33 Q 654.13 333.46 661 324.17 Q 665.56 318.39 668 310.5 L 676.33 280.17 Q 679.2 273.37 684.17 268.67 Q 692.76 259.1 710.83 259 Q 717.85 259.49 723.17 261.67 L 728.5 264.67 L 737.5 271.67 L 743.17 274 L 750.5 275.67 L 757.33 280.17 Q 760 281.84 759.67 286.5 L 756.5 290 L 746.17 292.67 Q 741.65 294.49 739 298.17 Q 736.17 301.67 736.67 308.5 Q 738.27 322.39 746.17 330 Q 753.22 336.28 767.17 335.67 Q 781.04 334.21 792.17 330 Q 802.97 325.31 810 316.83 L 818.67 306.5 L 827 293.17 L 832.17 288 L 840.5 283 L 914.17 249 L 924.83 243.33 L 945.17 234.67 L 962.17 225.67 L 980.5 218 L 1001.17 207.33 L 1024.5 197.33 L 1039.5 189.67 L 1096.83 163.67 L 1134.17 145.67 Q 1146.47 139.3 1157.17 131.33 Q 1170.12 121.12 1181.33 109.17 L 1189.67 98.17 L 1193.5 94.33 Q 1194.92 92.92 1197.83 93 Q 1201.18 93.99 1202.67 96.83 Q 1206.72 103.12 1206.33 113.83 Q 1204.67 127.17 1199.67 137.17 Q 1192.33 149.66 1182.17 159.33 Q 1171.46 169.29 1158.83 177.33 L 1128.5 194.67 L 1087.83 215 Q 1067.08 222.58 1048.83 232.67 L 1025.83 241.67 Q 1021.54 243.21 1019 246.5 L 1018.67 248.5 L 1020.83 251 L 1023.17 251.33 L 1035.83 248 L 1063.83 238 L 1083.5 232.67 L 1109.83 223.33 L 1129.17 218 L 1191.83 197.33 Q 1208.21 193.38 1222.83 187.67 L 1227.5 187 L 1230.67 188.83 Q 1232.47 189.87 1232 193.17 Q 1225.83 205.33 1216.17 214 Q 1189.9 236.9 1153.5 249.67 Q 1131.11 255.95 1110.5 264 L 1082.5 270.67 L 1059.83 277.67 L 1029.5 284.33 L 1010.5 289.67 L 1007.67 291.83 Q 1007.18 294.49 1008.5 295.33 Q 1009.72 296.44 1012.5 296 L 1024.5 294 L 1047.83 291.33 L 1078.5 285.67 L 1098.17 283.67 L 1133.17 277.67 L 1168.83 273 L 1198.5 267.67 L 1221.83 264.33 L 1227.5 264.33 L 1230.67 266.83 Q 1231.87 267.8 1231.33 270.5 Q 1228.49 275.99 1223.83 279.67 Q 1197.62 302.29 1157.5 311 L 1127.5 316.67 L 1094.83 320.67 L 1085.5 322.33 L 1019.17 328.67 L 996.83 330 Q 994.13 330.46 993 332.5 Q 992.5 335.83 994.83 336.33 L 1003.5 337 L 1075.83 337.67 L 1088.83 338.67 L 1128.17 338.67 L 1167.17 339.67 L 1195.17 339.67 Q 1198.81 340.03 1200.33 342.5 L 1201 345.83 L 1197.5 350.33 Q 1178.43 363.93 1151.5 369.67 Q 1139.89 372.23 1126.83 373.33 Q 1118.29 372.96 1111.5 374.33 L 1084.83 374.67 L 1069.17 373.33 L 1056.5 373.33 L 1032.5 371.33 L 1018.17 371 L 1002.83 369.33 L 990.5 369 Q 978.7 366.97 965.5 366.33 L 962.33 368.17 L 962 370.5 L 963.17 372 L 969.17 374 L 1127.5 402.67 Q 1133.01 403.16 1135.67 406.5 L 1136.33 409.5 L 1133.17 413.33 Q 1122.43 419.1 1108.5 421.67 L 1083.17 424.67 L 1073.17 424.67 L 1023.17 418.33 L 987.83 410 L 956.83 403.67 L 937.83 398 L 933.83 397.67 L 932.33 398.83 L 931.67 401.17 L 933.83 403.67 Q 956.09 410.91 976.83 419.67 L 1004.5 428.67 L 1027.83 438.33 L 1044.17 443.33 L 1051.83 446.67 L 1055 449.17 Q 1056.58 450.09 1056.33 452.83 L 1053.83 456 L 1048.5 458 L 1037.83 459.67 L 1031.17 460.33 L 1015.17 460.67 L 997.83 458 L 966.5 450.33 L 914.5 430.33 L 899.17 423 L 896.5 422.67 L 894.67 424.17 L 894.33 425.83 L 896.83 428.67 L 925.17 445.67 L 943.17 455.33 L 959.83 466 L 968.5 470.33 L 975 475.5 L 976 478.5 L 972.83 482.33 L 968.83 483.33 L 949.5 483.33 Q 925.93 479.4 906.83 471 L 869.5 450 L 850.5 437 L 846.17 435 L 844.17 435 L 842 436.83 L 841.33 439.5 Q 844.56 445.44 849.83 449.33 L 864.67 463.5 L 873.83 473.33 L 879.67 478.83 Q 881.83 480.34 881.67 484.17 L 879.83 486.67 Q 878.41 488.08 875.5 488 Q 862.84 486.16 852.5 482 L 835.5 474.33 L 823.17 466 L 807.17 453 L 800.33 446.5 L 782.67 426.83 L 773 414.17 L 766.83 407.67 Q 765.33 405.83 761.83 406 L 758.67 408.17 L 756.33 412.83 Q 752.92 430.09 747 444.83 L 737.67 465.17 Q 736.44 467.94 737 472.5 L 738 475.83 L 747.67 494.5 L 763.33 520.5 L 772.33 537.83 L 781 551.5 Q 789.46 569.37 800 585.17 L 805.67 596.5 L 830.67 639.83 Q 832.83 642.67 833.33 647.17 L 831.5 650 Q 830.33 651.5 827.17 651 Q 807.59 641.58 794.33 625.83 L 775 600.5 L 765.67 584.83 L 762.17 580.67 L 759.83 579.67 L 757.33 581.17 Q 755.96 582.13 756.33 584.83 L 787.33 678.5 L 787.67 682.17 L 785.17 685.33 L 782.5 686 Q 774.76 682.24 769.67 675.83 Q 755.87 660.13 746.33 640.17 Q 735.08 615.75 727.67 587.5 L 725.5 584.33 L 723.17 583.67 L 721.33 584.83 L 720.33 586.5 L 720.33 622.5 L 719.33 630.83 L 719.33 637.5 L 718 654.5 L 716.33 669.17 Q 714.39 684.22 710.67 697.5 L 708.33 703.5 L 706.17 705.67 L 703.17 706.33 L 700.67 704.5 L 698.67 701.17 L 695.67 690.83 L 691.33 665.17 L 689.67 648.17 L 688.67 624.83 L 687.67 616.17 L 687.67 593.5 L 688 588.17 L 686.17 585.33 L 683.83 584.67 L 681.67 586.17 L 679.67 590.17 L 672 615.5 Q 665.87 632.54 658 647.83 Q 648.78 665.95 634.83 679.33 L 627.83 685 L 623.83 685.67 L 621 683.17 L 620.67 679.17 Q 630.14 653.31 638 625.83 L 643.33 611.5 L 646 601.5 L 652 585.17 L 652.67 580.5 L 650.5 578 L 648.83 577.67 L 645.33 580.5 Q 635.31 599.31 622.67 615.5 Q 615.45 625.28 606.5 633.33 Q 599.35 640.35 590.83 646 L 583.17 650.33 L 578.83 651.33 L 576.33 650 Q 574.58 648.98 575 645.5 L 597.33 604.83 L 640.67 529.5 L 649.67 512.17 L 660.67 494.17 L 670 476.5 Q 671.89 473.56 671.67 468.5 L 670.33 464.17 Q 664 453.16 659.67 440.17 Q 654.46 426.38 651.33 410.5 L 648.17 406.33 L 645.5 405.33 Q 640.3 406.97 637.67 411.17 L 627 425.5 L 612 442.5 L 603.5 451 L 584.5 466.67 L 573.17 474 Q 560.33 481 545.17 485.67 L 535.17 488 L 530.17 488 L 527 485.5 L 526.33 482.17 Q 529.31 476.31 534.5 472.67 L 543 464.5 L 555.83 451 L 567.33 440.17 L 568.67 436.17 L 566.5 433.67 L 563.83 433.33 L 559.17 435.67 L 540.17 449 L 510.17 466.67 L 499.5 472 L 468.17 482 L 459.83 483.33 L 445.5 483.67 L 437.5 483 Q 434.48 482.18 433 479.83 L 432.33 477.17 L 434.33 474 L 439.17 470.67 L 453.5 463 L 469.5 452.67 L 495.83 438.33 L 502.67 432.83 L 503.33 431.17 L 501.83 428.67 Q 500.97 427.53 498.5 428 Q 477.99 435.15 459.17 444 L 442.17 450 L 414.17 457.33 L 404.17 459.33 Q 394.39 461.39 381.83 460.67 L 359.5 458 Q 355.07 457.26 352.67 454.5 L 351.67 451.5 L 355.17 447.33 L 364.5 443.33 L 386.17 436.33 L 423.17 422 L 448.83 413.33 Q 460.85 407.35 474.83 403.33 L 477.67 401.17 L 478 399.17 L 476.5 397.33 L 475.17 397 L 455.17 402.67 L 445.5 404.33 L 412.5 412.33 L 382.17 418.67 L 350.83 423 L 334.83 424.33 L 320.83 424.33 Q 304.83 423.33 291.5 419.67 L 279.83 415.67 Q 275.03 414.14 272.33 410.5 L 271.67 407.83 L 274.17 404.67 L 276.83 403.33 L 319.83 395.33 L 440.17 374 L 444.83 373 L 447.67 370.83 L 448 368.83 L 446.5 367 L 445.5 366.33 L 440.83 366.33 L 387.5 371.33 L 377.5 371.33 L 357.83 373 L 339.17 373.33 L 330.83 374.33 L 300.83 374.67 L 271.83 372.33 L 255.17 369.33 L 244.83 366.67 Q 232.92 362.92 222.5 357.67 Q 214.52 353.98 208.67 348.17 Q 207.03 347.14 207.33 344.17 L 210.17 340.67 L 213.5 339.67 L 228.17 339.33 L 332.17 338.67 L 340.5 337.67 L 352.17 337.33 L 413.83 337 L 417 334.83 L 417.33 332.83 L 416.17 331.33 L 411.17 329.67 L 399.5 329.33 L 379.83 327.33 L 374.5 327.33 L 339.5 323.33 L 317.83 321.67 L 273.17 315.33 L 251.17 311 L 229.5 305 Q 217.44 300.72 206.83 295 Q 191.43 287.07 180 275.17 L 177 270.83 L 176.67 268.17 L 179.5 264.67 Q 181.5 263.17 185.83 264 L 219.5 269.33 L 236.5 272.67 L 261.83 275.67 L 294.5 281.33 L 317.17 283.67 L 344.5 289 L 366.83 291.33 L 400.5 297.33 L 405.5 297.67 L 407.67 295.83 L 408 293.5 L 404.17 290.67 L 386.83 287.33 L 365.5 281 L 332.83 273.67 Q 313.24 266.09 290.5 261.67 L 243.5 245.33 Q 226.17 237.99 211.17 228.33 Q 197.1 219.9 186.33 208.17 L 178.33 197.5 Q 176.34 195.16 176 191.17 L 177.83 188.33 Q 179.06 186.72 182.17 187 Q 196.78 192.38 213.17 196 L 265.5 213.67 L 287.83 219.67 L 311.17 228.33 L 329.83 233 L 348.83 240.33 Q 361.29 244.87 375.5 247.67 L 398.5 256.33 L 402.5 256.67 L 404 255.5 L 404.33 252.83 L 400.17 249.67 L 385.5 244.33 L 367.5 235.33 L 346.17 227 L 326.17 216.67 L 308.83 209.67 Q 295.43 201.57 280.5 195 L 246.5 175.33 Q 231.77 165.56 220 152.83 Q 211.84 144.33 206.67 132.83 Q 202.11 123.39 202 109.5 L 204 99.83 Q 205.25 96.08 208.17 94 L 209.83 93 Z M 704.67 357.67 L 703.33 358.33 L 698.33 375.67 L 697.33 377 L 685.67 376.67 L 679.33 376.67 L 677.67 377.67 L 693 389.33 L 693 391 L 687.67 408 L 704.33 397 L 718 407 L 720.67 408 L 715 390.67 L 715.33 388.33 L 730.67 377.67 L 729 376.67 L 711.33 377 L 710 376 L 704.67 357.67 Z \"/>\n    <path d=\"M 704.5 357.67 L 710 375.83 L 711.17 377 L 728.83 376.67 L 730.67 377.5 L 715.33 388.33 L 715 390.5 L 720.67 408 L 717.83 407 L 704.17 397 L 687.67 408 L 693 390.83 L 693 389.17 L 677.67 377.5 L 679.17 376.67 L 685.5 376.67 L 697.17 377 L 698.33 375.5 L 703.33 358.33 L 704.5 357.67 Z \"/>\n  </g>\n  <g fill=\"#EAE5E3\">\n    <path d=\"M 704.7 342.57 L 713.5 371.63 L 715.37 373.5 L 743.63 372.97 L 746.57 374.3 L 722.03 391.63 L 721.5 395.1 L 730.57 423.1 L 726.03 421.5 L 704.17 405.5 L 677.77 423.1 L 686.3 395.63 L 686.3 392.97 L 661.77 374.3 L 664.17 372.97 L 674.3 372.97 L 692.97 373.5 L 694.83 371.1 L 702.83 343.63 L 704.7 342.57 Z \"/>\n  </g>\n  <g fill=\"#010101\">\n    <path d=\"M 696.59 123.23 L 705.48 123.23 L 708.5 124.65 L 708.15 126.96 L 708.5 127.32 L 708.5 134.43 L 708.15 134.78 L 708.15 143.67 L 708.5 144.04 L 708.5 148.66 L 708.15 150.07 L 708.5 150.97 L 705.13 152.39 L 688.05 152.74 L 667.42 155.24 L 659.6 157.01 L 654.98 157.37 L 633.99 162.34 L 609.1 170.53 L 598.06 175.15 L 578.16 185.11 L 563.57 193.65 Q 542.73 207.67 525.69 225.48 L 520.89 230.99 Q 519.34 233 515.2 232.41 L 466.47 213.56 L 446.73 204.49 L 447.27 202.89 L 453.67 203.6 L 463.63 207.16 L 475.36 209.29 L 497.77 215.34 L 510.57 217.83 L 520.89 217.83 Q 524.56 216.34 526.76 213.39 L 533.16 204.85 L 553.61 183.33 Q 565.88 172.13 579.93 162.71 L 594.51 153.46 Q 604.47 149.36 613 143.85 L 638.26 134.25 L 662.8 127.5 L 678.09 125 L 682.36 125 L 688.76 123.58 L 696.23 123.58 L 696.59 123.23 Z \"/>\n  </g>\n  <g fill=\"#F2F2F2\">\n    <path d=\"M 709.21 125 L 724.68 125 L 732.5 126.07 L 738.2 126.07 L 741.4 127.13 L 744.96 127.13 L 746.02 127.85 L 751.36 128.2 L 752.43 128.92 L 760.61 130.34 L 761.31 131.05 L 764.88 131.4 L 765.58 132.12 L 769.14 132.47 L 771.28 133.54 L 776.97 134.6 L 777.68 135.32 L 786.57 137.8 L 787.99 138.87 L 789.42 138.87 L 801.15 144.21 L 802.57 144.21 L 808.26 147.41 L 811.82 148.47 L 822.49 154.88 L 823.56 154.88 L 832.8 161.28 L 835.65 162.34 L 842.4 167.68 L 843.3 167.68 L 843.83 168.75 L 846.5 170.35 L 847.57 171.41 L 856.1 177.82 L 856.64 178.35 L 858.24 179.42 L 858.77 180.48 L 860.72 181.55 L 861.97 183.33 L 864.28 184.75 L 865.88 186.89 Q 867.06 186.49 866.77 187.42 L 867.84 187.95 L 869.44 190.09 L 869.97 190.62 L 871.04 191.15 Q 870.51 192.49 871.58 192.22 L 873.18 193.29 L 873.71 194.35 L 874.78 195.42 L 875.31 196.49 L 876.38 197.02 L 883.85 206.09 L 884.91 206.62 L 891.85 215.69 L 892.91 216.76 L 893.98 217.83 L 897.18 218.89 L 907.85 218.89 Q 911.63 217.53 916.74 217.48 L 917.81 216.76 L 920.29 216.76 L 927.06 214.63 L 929.54 214.63 L 931.68 213.56 L 935.95 213.21 L 940.21 211.43 L 943.06 211.43 L 944.83 210.36 L 950.17 209.29 L 952.3 208.22 L 954.08 208.22 L 961.2 205.74 L 961.73 207.34 L 953.73 211.07 L 942.35 214.99 L 941.28 216.06 L 939.15 216.41 L 928.48 221.39 L 924.21 222.46 L 923.14 223.53 L 921.01 223.53 L 919.94 224.59 L 914.96 226.73 L 903.58 230.99 L 899.32 231.7 L 895.75 227.79 L 894.69 227.08 L 893.8 225.66 Q 892.73 226.1 893.09 224.76 L 892.02 224.23 L 891.48 223.53 L 890.95 222.46 L 889.88 221.92 L 889.35 221.03 L 888.28 220.32 L 886.15 217.83 L 884.55 217.12 L 884.02 216.06 L 882.95 214.99 L 881 213.39 L 880.28 212.32 L 877.8 210.54 L 877.26 210.01 L 870.15 203.6 L 868.54 202.89 L 868.01 202.19 Q 862.52 197.01 855.74 193.65 L 855.21 192.93 L 844.9 186.18 L 826.76 176.58 L 804.36 167.33 L 784.43 160.93 Q 779.37 160.66 775.9 158.79 L 772.35 158.44 L 769.85 157.37 L 767.01 157.37 L 765.94 156.66 L 747.81 153.46 L 730.02 151.67 L 709.75 150.97 L 709.21 150.44 L 708.86 149.37 L 709.21 149.01 L 709.21 126.96 L 708.86 126.25 L 709.21 125 Z \"/>\n  </g>\n  <g fill=\"#010101\">\n    <path d=\"M 754.22 442.12 Q 765.59 479.48 800.25 484.33 C 812.18 492.87 824.99 474.98 813.07 466.44 Q 774.03 467.69 758.3 436.43 Z\"/>\n    <path d=\"M 744.13 452.17 Q 746.96 491.12 779.7 503.5 C 789.44 514.46 805.89 499.85 796.15 488.89 Q 757.8 481.49 749.36 447.52 Z\"/>\n    <path d=\"M 654.25 442.12 Q 642.88 479.48 608.22 484.33 C 596.29 492.87 583.48 474.98 595.4 466.44 Q 634.44 467.69 650.17 436.43 Z\"/>\n    <path d=\"M 664.34 452.17 Q 661.51 491.12 628.77 503.5 C 619.03 514.46 602.58 499.85 612.32 488.89 Q 650.67 481.49 659.11 447.52 Z\"/>\n  </g>\n</svg>";
+var NIVELES = [
+/* ── BLOQUE 1 · FUNDAMENTOS ─────────────────────────────────────────────── */
+{ n:1, bloque:1, titulo:'La cadena de tres', tipo:'opcion',
+  enunciado:'Una programadora escribe <b>&gt;</b> donde iba <b>&gt;=</b>. El sistema acepta pedidos de cero piezas. Tres semanas después el almacén se queda sin inventario registrado y un cliente reclama.\n\n¿Cuál de estas listas nombra las tres cosas <b>en orden</b>?',
+  opciones:['Error → defecto → fallo','Defecto → error → fallo','Fallo → defecto → causa raíz','Error → fallo → defecto'],
+  correcta:0,
+  pistas:['Empieza por la persona: ¿qué hizo un ser humano?',
+          'Lo que quedó escrito en el código no se llama igual que la equivocación de la persona.',
+          'El almacén vacío es lo último de los tres, y sólo aparece al ejecutar.'],
+  pasos:['La persona se equivocó al teclear. Eso es el <b>error</b> (en inglés, <i>error</i> o <i>mistake</i>).',
+         'Esa equivocación dejó algo mal dentro del código: el <b>&gt;</b> que debía ser <b>&gt;=</b>. Eso es el <b>defecto</b>.',
+         'Al ejecutarse, el sistema se comporta mal y alguien lo ve. Eso es el <b>fallo</b>.',
+         'La razón de fondo —prisa, especificación ambigua, falta de revisión— sería la <b>causa raíz</b>, que es una cuarta cosa y no entra en la cadena de tres.'],
+  porque:'Si te aprendes la cadena en ese orden, tres o cuatro preguntas del examen real se contestan solas. Es el concepto más preguntado del capítulo 1.' },
+
+{ n:2, bloque:1, titulo:'El fallo sin defecto', tipo:'multi',
+  enunciado:'Marca <b>todas</b> las afirmaciones que sean ciertas según el temario.',
+  opciones:['Todo fallo tiene forzosamente un defecto detrás.',
+            'Un fallo puede deberse a condiciones ambientales: radiación, campos magnéticos, contaminación.',
+            'Un defecto puede estar años en el código sin provocar ningún fallo.',
+            'Encontrar un defecto en una revisión, sin ejecutar nada, es imposible.'],
+  correctas:[1,2],
+  pistas:['Dos son falsas y las dos suenan a regla de oro. Desconfía justo de ésas.',
+          'El temario menciona expresamente unas causas físicas de fallo.',
+          'Piensa en un defecto en una rama de código que nadie ejecuta nunca.'],
+  pasos:['La primera es falsa: el temario reconoce fallos por condiciones ambientales, sin defecto en el software.',
+         'La segunda es la excepción exacta que menciona el temario.',
+         'La tercera es cierta y es la base de la agrupación de defectos: un defecto existe aunque nadie lo ejecute.',
+         'La cuarta es falsa: eso es precisamente la prueba estática, que encuentra defectos <b>sin</b> ejecutar.'],
+  porque:'Las dos falsas son las trampas típicas: absolutos que suenan bien. En el examen, un «todo» o un «nunca» merece una segunda lectura.' },
+
+{ n:3, bloque:1, titulo:'Dónde cae cada actividad', tipo:'opcion',
+  enunciado:'El equipo está evaluando el documento de requisitos para escribir la lista de lo que hay que probar. Todavía no hay ni un caso de prueba escrito.\n\n¿En qué actividad del proceso de prueba están?',
+  opciones:['Planificación','Análisis','Diseño','Implementación'],
+  correcta:1,
+  pistas:['Ordena mentalmente: planificar, analizar, diseñar, implementar, ejecutar, completar.',
+          'La pregunta clave es: ¿estamos decidiendo QUÉ probar o CÓMO probarlo?',
+          'Todavía no hay casos, sólo condiciones.'],
+  pasos:['El <b>análisis</b> contesta <b>qué</b> probar: identifica las condiciones de prueba a partir de la base de prueba.',
+         'El <b>diseño</b> contesta <b>cómo</b>: convierte esas condiciones en casos concretos con entradas y resultados esperados.',
+         'La <b>implementación</b> es la carpintería: procedimientos, datos, entorno.',
+         'La <b>planificación</b> ocurre antes de todo y define alcance, riesgos y criterios.'],
+  porque:'Análisis y diseño se confunden constantemente. El truco: análisis = condiciones, diseño = casos.' },
+
+{ n:4, bloque:1, titulo:'Qué principio explica esto', tipo:'opcion',
+  enunciado:'Un equipo lleva catorce meses ejecutando la misma suite de 340 pruebas automatizadas en cada versión. Los últimos siete meses no ha encontrado un solo defecto nuevo. En producción, mientras tanto, siguen apareciendo.\n\n¿Qué principio de las pruebas explica lo que pasa?',
+  opciones:['Las pruebas exhaustivas son imposibles','Los defectos se agrupan','La paradoja del pesticida','La ausencia de defectos es una falacia'],
+  correcta:2,
+  pistas:['El dato clave no es que no encuentren nada: es que llevan catorce meses con LAS MISMAS pruebas.',
+          'Piensa en un insecticida que se usa siempre igual.',
+          'La solución no es ejecutarlas más veces.'],
+  pasos:['Los mismos casos dejan de encontrar defectos porque ya mataron los que sabían matar. Eso es la <b>paradoja del pesticida</b>.',
+         'La solución es revisar y <b>ampliar</b> los casos, no repetirlos con más frecuencia.',
+         'No es agrupación de defectos: ésa dice que los defectos se concentran en pocos módulos.',
+         'No es la falacia de ausencia de defectos: ésa habla de un producto sin defectos que aun así no sirve.'],
+  porque:'Es el principio que justifica el mantenimiento de la suite. En el examen se reconoce por «las mismas pruebas» + «ya no encuentran nada».' },
+
+{ n:5, bloque:1, titulo:'Verificar o validar', tipo:'multi',
+  enunciado:'Marca las actividades que son de <b>validación</b> (no de verificación).',
+  opciones:['Comprobar que el cálculo del IVA coincide con lo que dice la especificación.',
+            'Sentar a tres personas usuarias reales a completar una compra y ver si lo logran.',
+            'Revisar que el diseño de la base de datos cumple el modelo aprobado.',
+            'Preguntarle al dueño del negocio si el reporte que sale le sirve para decidir.'],
+  correctas:[1,3],
+  pistas:['Verificar mira hacia el documento. Validar mira hacia la persona.',
+          '«¿Lo construimos bien?» contra «¿construimos lo correcto?».',
+          'Dos de las cuatro comparan contra una especificación escrita.'],
+  pasos:['<b>Verificación</b>: ¿lo construimos conforme a lo especificado? Se compara contra un documento.',
+         '<b>Validación</b>: ¿esto le sirve a quien lo va a usar? Se compara contra la necesidad real.',
+         'La 1 y la 3 comparan contra especificación y modelo: verificación.',
+         'La 2 y la 4 preguntan si sirve de verdad: validación.',
+         'Ojo: las dos pueden ser estáticas o dinámicas. No es «verificar = estático».'],
+  porque:'La opción tramposa del examen suele ser «verificar es estático y validar es dinámico». Es falsa.' },
+
+{ n:6, bloque:1, titulo:'El objetivo cambia con el nivel', tipo:'opcion',
+  enunciado:'¿Cuál de estos objetivos es propio de las <b>pruebas de aceptación</b> y no de las de componente?',
+  opciones:['Encontrar el mayor número de defectos posible','Medir la cobertura de sentencias',
+            'Generar confianza en que el producto sirve para lo que se necesita',
+            'Verificar que cada función interna devuelve lo esperado'],
+  correcta:2,
+  pistas:['¿Quién ejecuta las pruebas de aceptación y qué decisión toma después?',
+          'Dos opciones hablan de código interno. Ésas son de componente.',
+          'La aceptación produce una decisión de negocio, no una métrica técnica.'],
+  pasos:['En componente el objetivo es encontrar defectos y medir cobertura estructural.',
+         'En aceptación el objetivo es <b>generar confianza</b> y dar evidencia para decidir si se acepta el producto.',
+         'La cobertura de sentencias es una métrica de caja blanca: no se pide en aceptación.'],
+  porque:'El temario insiste en que los objetivos dependen del nivel y del momento. Es el sustento de media docena de preguntas.' },
+
+{ n:7, bloque:1, titulo:'Probar no es depurar', tipo:'multi',
+  enunciado:'Marca las que son actividades de <b>prueba</b>. Las demás son depuración.',
+  opciones:['Ejecutar un caso y registrar que el resultado no coincide con el esperado.',
+            'Poner puntos de interrupción y recorrer el código hasta encontrar la línea culpable.',
+            'Escribir el reporte de defecto con los pasos para reproducirlo.',
+            'Corregir la condición y volver a compilar.',
+            'Volver a ejecutar el caso que fallaba para comprobar que ya pasa.'],
+  correctas:[0,2,4],
+  pistas:['La frontera está en el verbo: si estás cambiando código, ya no estás probando.',
+          'Reportar es prueba. Localizar y corregir es depuración.',
+          'La última es una prueba de confirmación, y las pruebas de confirmación son prueba.'],
+  pasos:['Probar = ejecutar, comparar, registrar y reportar.',
+         'Depurar = localizar la causa en el código y corregirla. La hace quien desarrolla.',
+         'Volver a ejecutar el caso tras la corrección es <b>prueba de confirmación</b>: prueba, no depuración.'],
+  porque:'El examen pregunta esta frontera de varias formas. Quien depura no está probando, aunque sea la misma persona.' },
+
+{ n:8, bloque:1, titulo:'El agujero de la trazabilidad', tipo:'numero',
+  enunciado:'Una matriz de trazabilidad tiene cinco requisitos. Los casos de prueba cubren así:\n\n• R1 → CP-01, CP-02\n• R2 → CP-03\n• R3 → (ninguno)\n• R4 → CP-04, CP-05, CP-06\n• R5 → (ninguno)\n\n¿Cuál es el <b>porcentaje de cobertura de requisitos</b>? Escribe sólo el número.',
+  respuesta:60, unidad:'%',
+  pistas:['La cobertura de requisitos no cuenta casos: cuenta requisitos.',
+          'Un requisito está cubierto si tiene AL MENOS un caso. Tener tres no cuenta más que tener uno.',
+          'Cuenta cuántos de los cinco tienen al menos un caso.'],
+  pasos:['Requisitos con al menos un caso: R1, R2 y R4. Son <b>3</b>.',
+         'Requisitos totales: <b>5</b>.',
+         '3 ÷ 5 = 0,6 → <b>60 %</b>.',
+         'El error frecuente es contar los seis casos de prueba y dividir por algo. La cobertura de requisitos se mide en requisitos.'],
+  porque:'Es exactamente para esto que sirve la trazabilidad: R3 y R5 no los prueba nadie, y sin la matriz nadie se entera.' },
+
+/* ── BLOQUE 2 · PRUEBAS A LO LARGO DEL CICLO DE VIDA ────────────────────── */
+{ n:9, bloque:2, titulo:'Cada prueba en su nivel', tipo:'opcion',
+  enunciado:'Tu sistema de facturación manda los datos del comprobante a un <b>servicio externo del SAT</b> y espera un folio de vuelta. Estás comprobando que el intercambio funciona y que los campos llegan como el otro sistema los espera.\n\n¿En qué nivel de prueba estás?',
+  opciones:['Prueba de componente','Prueba de integración de componentes','Prueba de integración de sistemas','Prueba de aceptación de usuario'],
+  correcta:2,
+  pistas:['La palabra que decide está en negritas en el enunciado.',
+          '¿El otro extremo es un módulo tuyo o un sistema de alguien más?',
+          'Integración de componentes y de sistemas se distinguen por dónde está la frontera.'],
+  pasos:['<b>Integración de componentes</b>: interfaces entre módulos <b>del mismo sistema</b>.',
+         '<b>Integración de sistemas</b>: interfaces con <b>otros sistemas</b> o servicios externos.',
+         'El SAT es otro sistema, así que es integración de sistemas.',
+         'No es aceptación: no estás decidiendo si el negocio acepta el producto, estás comprobando un intercambio técnico.'],
+  porque:'Es de las preguntas que más caen, y siempre se juega con la misma distinción: dentro del sistema o fuera de él.' },
+
+{ n:10, bloque:2, titulo:'Alfa, beta y quién está dónde', tipo:'opcion',
+  enunciado:'La empresa invita a doce clientes a sus oficinas, les presta computadoras y les pide que usen la nueva versión durante una tarde, con gente de desarrollo a un lado tomando notas.\n\n¿Qué prueba es?',
+  opciones:['Prueba beta, porque la hacen clientes','Prueba alfa, porque se hace en las instalaciones de quien desarrolla',
+            'Prueba de aceptación operativa','Prueba de humo'],
+  correcta:1,
+  pistas:['Lo que separa alfa de beta no es quién la hace.',
+          'Es el sitio.',
+          'Los clientes están en las oficinas de la empresa que desarrolla.'],
+  pasos:['<b>Alfa</b>: en las instalaciones de quien desarrolla, aunque la ejecuten personas usuarias invitadas.',
+         '<b>Beta</b>: en el entorno real de quien usa, en su propia casa u oficina.',
+         'Aquí los clientes están en las oficinas de la empresa: es alfa.',
+         'La trampa está en «la hacen clientes»: eso no basta para que sea beta.'],
+  porque:'La definición se recuerda mal en la mitad de los cursos. El criterio es el LUGAR, no la persona.' },
+
+{ n:11, bloque:2, titulo:'Confirmación y regresión', tipo:'multi',
+  enunciado:'Se corrigió el defecto DEF-118 en el módulo de descuentos. Marca <b>todo lo que corresponde hacer</b> y clasifícalo bien: marca sólo las afirmaciones <b>correctas</b>.',
+  opciones:['Volver a ejecutar el caso que detectó DEF-118 es una prueba de confirmación.',
+            'Ejecutar la suite del módulo de carrito, que usa descuentos, es una prueba de regresión.',
+            'La prueba de regresión sirve para comprobar que la corrección funcionó.',
+            'Si el módulo de descuentos lo usan cinco módulos más, el análisis de impacto dice cuánta regresión hace falta.'],
+  correctas:[0,1,3],
+  pistas:['Confirmación = «¿ya quedó?». Regresión = «¿rompí algo más?».',
+          'Una de las cuatro intercambia las dos definiciones.',
+          'El análisis de impacto es lo que dimensiona el alcance de la regresión.'],
+  pasos:['Confirmación: volver a ejecutar el caso que falló, para ver si la corrección sirvió. Afirmación 1: correcta.',
+         'Regresión: ejecutar otras pruebas para ver si el cambio rompió algo que funcionaba. Afirmación 2: correcta.',
+         'Afirmación 3 es <b>falsa</b>: eso es confirmación, no regresión.',
+         'Afirmación 4: correcta. Sin análisis de impacto sólo quedan dos opciones malas: probar todo o probar a ciegas.'],
+  porque:'En la práctica se hacen juntas, y por eso se confunden. En el examen se preguntan por separado.' },
+
+{ n:12, bloque:2, titulo:'Funcional o no funcional', tipo:'multi',
+  enunciado:'Marca las comprobaciones <b>no funcionales</b>.',
+  opciones:['Que el sistema responda en menos de 2 segundos con 500 usuarios simultáneos.',
+            'Que el descuento de socio se aplique sólo si el monto supera 1000 pesos.',
+            'Que una persona nueva complete el alta sin ayuda en menos de tres minutos.',
+            'Que la app funcione igual en Android 12 y en Android 15.',
+            'Que el botón «guardar» guarde.'],
+  correctas:[0,2,3],
+  pistas:['Funcional es QUÉ hace. No funcional es CÓMO DE BIEN lo hace.',
+          'Rendimiento, usabilidad, compatibilidad, seguridad, portabilidad y fiabilidad son no funcionales.',
+          'Dos de las cinco describen una regla de negocio.'],
+  pasos:['1 es rendimiento → no funcional.',
+         '2 es una regla de negocio → funcional.',
+         '3 es usabilidad → no funcional.',
+         '4 es compatibilidad → no funcional.',
+         '5 es comportamiento esperado → funcional.'],
+  porque:'La pregunta se contesta en dos segundos si tienes la lista de características no funcionales en la cabeza.' },
+
+{ n:13, bloque:2, titulo:'Shift left, en un caso real', tipo:'opcion',
+  enunciado:'Un requisito decía «el sistema notificará al usuario oportunamente». Nadie preguntó qué significa «oportunamente». Se implementó como 24 horas; el cliente esperaba 5 minutos. Se descubrió en la prueba de aceptación, a tres días de salir, y costó rehacer el módulo de notificaciones.\n\n¿Qué actividad, aplicando <i>shift left</i>, lo habría evitado más barato?',
+  opciones:['Automatizar las pruebas de aceptación desde el primer sprint',
+            'Revisar el documento de requisitos y marcar «oportunamente» como ambiguo',
+            'Aumentar la cobertura de ramas del módulo de notificaciones',
+            'Ejecutar pruebas de rendimiento antes de la aceptación'],
+  correcta:1,
+  pistas:['El defecto no está en el código: está en el requisito.',
+          'Shift left significa llevar la actividad de prueba lo más temprano posible.',
+          'La actividad más temprana posible aquí no ejecuta nada.'],
+  pasos:['El defecto se introdujo en el requisito, con una palabra ambigua.',
+         'La actividad de prueba más temprana que existe es la <b>prueba estática</b>: revisar el documento.',
+         'Una revisión habría marcado «oportunamente» como no comprobable y habría costado minutos.',
+         'Las otras tres opciones actúan sobre el código, es decir, después de que el defecto ya existe.'],
+  porque:'Es el argumento económico del temario: un defecto de requisitos corregido en revisión cuesta minutos; descubierto en aceptación, una versión de emergencia.' },
+
+{ n:14, bloque:2, titulo:'Qué dispara el mantenimiento', tipo:'multi',
+  enunciado:'Marca los <b>desencadenantes de pruebas de mantenimiento</b>.',
+  opciones:['La primera versión del producto sale a producción.',
+            'Se migra la base de datos a otro motor.',
+            'Se actualiza el sistema operativo de los servidores.',
+            'Se retira del aire un módulo y hay que archivar sus datos.',
+            'Se está diseñando la arquitectura de un producto nuevo.'],
+  correctas:[1,2,3],
+  pistas:['Mantenimiento es lo que pasa DESPUÉS de que el producto ya está en operación.',
+          'Modificación, migración y retiro son las tres familias.',
+          'Dos de las cinco ocurren antes de que el producto exista en operación.'],
+  pasos:['Los desencadenantes son <b>modificaciones</b> (correcciones, mejoras), <b>migraciones</b> (de plataforma, de datos) y el <b>retiro</b> del sistema.',
+         'La primera versión es desarrollo, no mantenimiento.',
+         'Diseñar la arquitectura es todavía más temprano.'],
+  porque:'El retiro sorprende a mucha gente: archivar y migrar datos al apagar un sistema también se prueba.' },
+
+{ n:15, bloque:2, titulo:'Cuánta regresión hace falta', tipo:'numero',
+  enunciado:'Se cambia el módulo <b>M3</b>. El mapa de dependencias dice quién llama a quién:\n\n• M1 → llama a M3\n• M2 → llama a M1\n• M4 → llama a M3\n• M5 → no llama a nadie\n• M6 → llama a M4\n\nSin contar M3, ¿cuántos módulos hay que meter en la regresión porque dependen de él <b>directa o indirectamente</b>?',
+  respuesta:4,
+  pistas:['No basta con mirar quién llama a M3: también hay que subir un nivel más.',
+          'Si M2 llama a M1 y M1 llama a M3, un cambio en M3 puede llegar hasta M2.',
+          'M5 no llama a nadie: queda fuera.'],
+  pasos:['Directos sobre M3: <b>M1</b> y <b>M4</b>.',
+         'Quien depende de M1: <b>M2</b>. Quien depende de M4: <b>M6</b>.',
+         'M5 no depende de nada, queda fuera.',
+         'Total: M1, M2, M4 y M6 = <b>4 módulos</b>.'],
+  porque:'Esto es el análisis de impacto hecho a mano. El error típico es quedarse en los llamadores directos y perder la cadena.' },
+
+/* ── BLOQUE 3 · PRUEBAS ESTÁTICAS ───────────────────────────────────────── */
+{ n:16, bloque:3, titulo:'Sin ejecutar nada', tipo:'multi',
+  enunciado:'Marca las que son <b>pruebas estáticas</b>.',
+  opciones:['Una inspección del documento de requisitos.',
+            'Ejecutar la prueba de humo después del despliegue.',
+            'Pasar una herramienta de análisis de código que marca variables sin usar.',
+            'Una revisión técnica del diseño de arquitectura.',
+            'Revisar entre dos personas los casos de prueba antes de ejecutarlos.'],
+  correctas:[0,2,3,4],
+  pistas:['Estática significa una sola cosa: sin ejecutar el software.',
+          'Sólo una de las cinco ejecuta algo.',
+          'Los casos de prueba también son un producto de trabajo revisable.'],
+  pasos:['Estática = examinar sin ejecutar. Dinámica = ejecutar.',
+         'La prueba de humo se ejecuta: es la única dinámica de la lista.',
+         'El análisis de código con herramienta es estático aunque lo haga una máquina.',
+         'Revisar los casos de prueba también es estática: cualquier producto de trabajo legible se puede revisar.'],
+  porque:'La pregunta es fácil y se falla por leer de prisa. Lo que se revisa puede ser cualquier cosa, no sólo código.' },
+
+{ n:17, bloque:3, titulo:'Qué revisión es', tipo:'opcion',
+  enunciado:'Reunión con roles definidos y un moderador formado que la conduce. Hay criterios de entrada y de salida, se recogen métricas de defectos encontrados por hora y el autor <b>no</b> dirige la sesión.\n\n¿Qué tipo de revisión es?',
+  opciones:['Revisión informal','Walkthrough (revisión guiada)','Revisión técnica','Inspección'],
+  correcta:3,
+  pistas:['Ordena de menos a más formal: informal, walkthrough, técnica, inspección.',
+          'Las métricas y los criterios de entrada y salida sólo aparecen en la más formal.',
+          'Que el autor no dirija es una pista fuerte: en el walkthrough sí dirige.'],
+  pasos:['La <b>inspección</b> es la más formal: moderador, roles definidos, métricas, criterios de entrada y salida.',
+         'El <b>walkthrough</b> lo conduce el autor y sirve para evaluar, formar y consensuar.',
+         'La <b>revisión técnica</b> la hacen pares técnicos, con documentación, pero sin toda la maquinaria de la inspección.',
+         'La <b>informal</b> no tiene proceso ni deja documentación obligatoria.'],
+  porque:'La oposición que más cae es «en el walkthrough dirige el autor, en la inspección no».' },
+
+{ n:18, bloque:3, titulo:'El orden de una revisión formal', tipo:'opcion',
+  enunciado:'Ordena las etapas de una revisión formal según el temario.',
+  opciones:['Inicio → planificación → revisión individual → corrección → comunicación',
+            'Planificación → revisión individual → inicio → corrección → comunicación',
+            'Planificación → inicio → revisión individual → comunicación y análisis → corrección y reporte',
+            'Revisión individual → planificación → inicio → comunicación → corrección'],
+  correcta:2,
+  pistas:['La planificación siempre va primero: decide qué se revisa y con quién.',
+          'La revisión individual va DESPUÉS del inicio (donde se reparte el material) y ANTES de la reunión.',
+          'La corrección es lo último, no lo penúltimo.'],
+  pasos:['1 · <b>Planificación</b>: alcance, personas, criterios de entrada y salida.',
+         '2 · <b>Inicio</b>: se reparte el material y se explica el objetivo.',
+         '3 · <b>Revisión individual</b>: cada quien revisa por su cuenta y anota hallazgos.',
+         '4 · <b>Comunicación y análisis</b>: la reunión, donde se juntan y clasifican los hallazgos.',
+         '5 · <b>Corrección y reporte</b>: el autor corrige y se cierra.'],
+  porque:'La señal para descartar opciones: la revisión individual va entre el inicio y la reunión. Si una opción la pone en otro sitio, se cae.' },
+
+{ n:19, bloque:3, titulo:'Lo que una herramienta sí puede ver', tipo:'multi',
+  enunciado:'Marca lo que un <b>analizador estático de código</b> puede detectar por sí solo.',
+  opciones:['Una variable declarada y nunca usada.',
+            'Que el cálculo del IVA da 15 % en vez de 16 %.',
+            'Código inalcanzable después de un return.',
+            'Que la interfaz le resulta confusa a la persona usuaria.',
+            'Un incumplimiento del estándar de codificación de la casa.',
+            'Complejidad ciclomática por encima del umbral.'],
+  correctas:[0,2,4,5],
+  pistas:['La herramienta lee la estructura, no entiende el negocio.',
+          'Nada que dependa de saber qué DEBERÍA hacer el sistema está a su alcance.',
+          'Dos de las seis requieren una persona.'],
+  pasos:['El análisis estático ve la <b>estructura</b>: variables sin usar, código muerto, complejidad, estándares, tipos.',
+         'No ve la <b>corrección de la lógica de negocio</b>: no sabe que el IVA es 16 %.',
+         'Y no ve nada de experiencia de uso: para eso hace falta una persona.'],
+  porque:'Es el límite que hay que tener claro para no confiar de más en las herramientas ni de menos.' },
+
+{ n:20, bloque:3, titulo:'Los dos que se confunden', tipo:'opcion',
+  enunciado:'¿Cuál es la diferencia entre el <b>líder de revisión</b> y el <b>moderador</b>?',
+  opciones:['Son sinónimos; cambia el nombre según el país.',
+            'El líder decide qué se revisa y organiza; el moderador conduce la reunión y media.',
+            'El moderador escribe el producto de trabajo; el líder lo revisa.',
+            'El líder sólo aparece en revisiones informales.'],
+  correcta:1,
+  pistas:['Uno decide y organiza antes. El otro conduce durante.',
+          'En equipos pequeños los junta la misma persona, pero el temario los distingue.',
+          'Ninguno de los dos escribe el producto de trabajo: ése es el autor.'],
+  pasos:['<b>Líder de revisión</b>: decide el alcance, las personas y el momento. Trabaja antes.',
+         '<b>Moderador</b>: conduce la sesión, cuida el tono, media si hay fricción. Trabaja durante.',
+         'Los otros roles son <b>autor</b> (escribió el producto), <b>escriba</b> (registra hallazgos), <b>revisores</b> y <b>gerencia</b>.'],
+  porque:'En la vida real los junta la misma persona y por eso se olvida que son dos roles. En el examen se preguntan separados.' },
+
+/* ── BLOQUE 4 · TÉCNICAS DE DISEÑO · aquí se gana o se pierde el examen ─── */
+{ n:21, bloque:4, titulo:'Contar particiones', tipo:'numero',
+  enunciado:'Un campo «cantidad de boletos» acepta de <b>1 a 10</b>. Cualquier otro valor entero se rechaza.\n\n¿Cuántas particiones de equivalencia hay, contando válidas e inválidas?',
+  respuesta:3,
+  pistas:['Una partición es un grupo de valores que el sistema trata igual.',
+          'Hay una partición válida. ¿Cuántas maneras hay de estar fuera?',
+          'Se puede estar por debajo o por encima, y son dos grupos distintos.'],
+  pasos:['Válida: de 1 a 10. Es <b>1</b> partición.',
+         'Inválida por abajo: menor que 1. Es <b>1</b>.',
+         'Inválida por arriba: mayor que 10. Es <b>1</b>.',
+         'Total: <b>3</b> particiones.',
+         'El error clásico es contar sólo la válida, o inventar una cuarta («vacío») que la especificación no menciona.'],
+  porque:'Contar particiones es el paso 1 de media docena de preguntas del examen. Si lo cuentas mal, todo lo que sigue sale mal.' },
+
+{ n:22, bloque:4, titulo:'Límites de dos valores', tipo:'multi',
+  enunciado:'Para el mismo campo de <b>1 a 10</b>, marca los valores que hay que probar con el método de <b>dos valores</b>.',
+  opciones:['0','1','2','9','10','11'],
+  correctas:[0,1,4,5],
+  pistas:['Dos valores por límite: el límite mismo y su vecino de fuera.',
+          'Hay dos límites: el de abajo y el de arriba.',
+          'Los vecinos de dentro (2 y 9) son del método de TRES valores.'],
+  pasos:['Límite inferior: <b>1</b> (el límite) y <b>0</b> (su vecino de fuera).',
+         'Límite superior: <b>10</b> (el límite) y <b>11</b> (su vecino de fuera).',
+         'Total con el método de dos valores: 0, 1, 10, 11.',
+         'Si además metieras 2 y 9 estarías usando el método de <b>tres valores</b>.'],
+  porque:'La confusión entre dos y tres valores cuesta puntos. Dos valores = 4 números por rango; tres valores = 6.' },
+
+{ n:23, bloque:4, titulo:'Límites de tres valores', tipo:'numero',
+  enunciado:'Un campo de edad válido acepta de <b>18 a 65</b>.\n\nCon el método de <b>tres valores</b>, ¿cuántos valores distintos hay que probar en total, contando los dos límites de esa partición?',
+  respuesta:6,
+  pistas:['Tres valores por límite: el límite y sus dos vecinos, uno de cada lado.',
+          'La partición válida tiene dos límites: el 18 y el 65.',
+          'Comprueba que ninguno se repita entre los dos grupos.'],
+  pasos:['Límite inferior <b>18</b>: se prueban <b>17, 18, 19</b>.',
+         'Límite superior <b>65</b>: se prueban <b>64, 65, 66</b>.',
+         'Ninguno se repite: son <b>6</b> valores distintos.',
+         'Con el método de <b>dos valores</b> serían sólo 4: 17, 18, 65 y 66.'],
+  porque:'Dos valores da 4 números por partición; tres valores da 6. Confundirlos es el error más común de esta técnica.' },
+
+{ n:24, bloque:4, titulo:'Casos mínimos por particiones', tipo:'numero',
+  enunciado:'Un sistema de envíos cobra así, según el peso:\n\n• 0 a 5 kg → tarifa fija\n• 5.01 a 20 kg → tarifa por kilo\n• más de 20 kg → no se acepta\n\nSegún esa especificación, ¿cuántos casos hacen falta <b>como mínimo</b> para el 100 % de cobertura de particiones?',
+  respuesta:3,
+  pistas:['Cobertura de particiones = al menos un caso por partición.',
+          'Cuenta cuántas particiones define la especificación, ni una más.',
+          'No inventes particiones que el enunciado no menciona.'],
+  pasos:['La especificación define tres particiones: 0–5, 5.01–20 y más de 20.',
+         'Un caso por partición: <b>3 casos</b>.',
+         'Si también consideraras el peso negativo serían 4, pero la especificación no lo menciona.',
+         'Regla de oro del examen: se cuenta lo que la especificación dice, no lo que uno imagina.'],
+  porque:'La tentación de añadir particiones «obvias» es el error más caro de esta técnica. La especificación manda.' },
+
+{ n:25, bloque:4, titulo:'Columnas de una tabla de decisión', tipo:'numero',
+  enunciado:'Una promoción depende de <b>cinco</b> condiciones booleanas: es socio, monto mayor a 1000, primera compra del mes, tiene cupón, y compra en fin de semana.\n\nSin colapsar, ¿cuántas columnas tiene la tabla de decisión?',
+  respuesta:32,
+  pistas:['Cada condición booleana tiene dos valores posibles.',
+          'La fórmula es 2 elevado a n.',
+          '2⁵.'],
+  pasos:['Cada condición booleana admite dos valores: verdadero o falso.',
+         'Con n condiciones, las combinaciones son <b>2ⁿ</b>.',
+         '2⁵ = <b>32 columnas</b>.',
+         'Por eso se colapsan: con seis condiciones ya serían 64, y con ocho, 256.'],
+  porque:'La fórmula 2ⁿ es de las pocas que hay que saber de memoria. Con tres condiciones son 8, con cuatro 16, con cinco 32.' },
+
+{ n:26, bloque:4, titulo:'Leer una tabla colapsada', tipo:'numero',
+  enunciado:'Una tabla de decisión colapsada de un cajero:\n\n<table><tr><th>Condición</th><th>R1</th><th>R2</th><th>R3</th><th>R4</th></tr><tr><td>Tarjeta válida</td><td>N</td><td>S</td><td>S</td><td>S</td></tr><tr><td>PIN correcto</td><td>–</td><td>N</td><td>S</td><td>S</td></tr><tr><td>Saldo suficiente</td><td>–</td><td>–</td><td>N</td><td>S</td></tr><tr><td><b>Entrega efectivo</b></td><td>No</td><td>No</td><td>No</td><td>Sí</td></tr></table>\n\n¿Cuántos <b>casos de prueba</b> hacen falta como mínimo para cubrir todas las reglas de esta tabla?',
+  respuesta:4,
+  pistas:['Cada columna de la tabla es una regla.',
+          'Cada regla necesita al menos un caso de prueba.',
+          'Los guiones no añaden casos: significan «da igual».'],
+  pasos:['Cada <b>columna</b> es una regla, y cada regla necesita al menos <b>un caso</b>.',
+         'Hay 4 columnas → <b>4 casos</b>.',
+         'El guion significa «no aplica, no afecta al resultado en esta regla». No suma casos: es justo lo que permite colapsar.',
+         'Sin colapsar serían 2³ = 8 columnas, y la tabla dice lo mismo con la mitad.'],
+  porque:'La cobertura de tabla de decisión se mide en columnas ejecutadas, no en condiciones.' },
+
+{ n:27, bloque:4, titulo:'Contar transiciones válidas', tipo:'numero',
+  enunciado:'Una puerta automática tiene tres estados y estas transiciones válidas:\n\n• Cerrada + «detecta persona» → Abriendo\n• Abriendo + «termina apertura» → Abierta\n• Abierta + «pasan 5 s sin nadie» → Cerrando\n• Cerrando + «termina cierre» → Cerrada\n• Cerrando + «detecta persona» → Abriendo\n\n¿Cuántas transiciones válidas hay que ejercer para el <b>100 % de cobertura 0-switch</b>?',
+  respuesta:5,
+  pistas:['0-switch quiere decir: cada transición válida, al menos una vez.',
+          'No cuentes estados: cuenta flechas.',
+          'Las flechas están listadas una por renglón.'],
+  pasos:['La cobertura <b>0-switch</b> exige ejercer cada transición válida al menos una vez.',
+         'El enunciado lista <b>5</b> transiciones.',
+         'Respuesta: 5.',
+         'Ojo con la trampa habitual: el número de <b>estados</b> (aquí serían 4 contando Abriendo y Cerrando) no es la respuesta.'],
+  porque:'La confusión estados/transiciones es la trampa número uno de esta técnica.' },
+
+{ n:28, bloque:4, titulo:'1-switch: pares consecutivos', tipo:'numero',
+  enunciado:'Una máquina de estados con tres transiciones:\n\n• T1 · A + x → B\n• T2 · B + y → C\n• T3 · B + z → A\n\nDesde C no sale ninguna transición.\n\nPara la cobertura <b>1-switch</b> hay que ejercer cada <b>par de transiciones consecutivas</b> posible. ¿Cuántos pares distintos hay?',
+  respuesta:3,
+  pistas:['Un par (Ti, Tj) es válido si el estado donde TERMINA Ti es el estado donde EMPIEZA Tj.',
+          'Prueba las nueve combinaciones posibles y descarta las que no encajan.',
+          'No olvides los pares que vuelven sobre una transición ya usada: T3 termina en A, y desde A sale algo.'],
+  pasos:['Regla: (Ti, Tj) vale si el estado final de Ti es el inicial de Tj.',
+         '<b>T1</b> termina en B. Desde B salen T2 y T3 → pares <b>(T1,T2)</b> y <b>(T1,T3)</b>.',
+         '<b>T2</b> termina en C. Desde C no sale nada → ningún par.',
+         '<b>T3</b> termina en A. Desde A sale T1 → par <b>(T3,T1)</b>.',
+         'Total: <b>3</b> pares.'],
+  porque:'1-switch encuentra defectos de secuencia: el sistema hace bien cada paso suelto y se rompe cuando dos van seguidos. La trampa es olvidar los pares que regresan.' },
+
+{ n:29, bloque:4, titulo:'Cobertura de sentencias', tipo:'numero',
+  enunciado:'Con el único caso <b>edad = 30</b>, ¿qué porcentaje de <b>cobertura de sentencias</b> obtienes? Cuenta como sentencias ejecutables las líneas 1, 2, 3, 5 y 7. Escribe sólo el número.',
+  codigo:['leer edad','si edad >= 18 entonces','· acceso = "permitido"','si no','· acceso = "denegado"','fin si','imprimir acceso'],
+  respuesta:80, unidad:'%',
+  pistas:['Recorre el código con edad = 30 y anota qué líneas se ejecutan.',
+          'La línea 5 sólo se ejecuta si la condición es falsa.',
+          'Divide las líneas ejecutadas entre las 5 ejecutables.'],
+  pasos:['Con edad = 30 se ejecutan las líneas <b>1, 2, 3 y 7</b>.',
+         'La línea <b>5</b> no se ejecuta: es la rama del «si no».',
+         '4 de 5 sentencias = <b>80 %</b>.',
+         'Las líneas 4 y 6 («si no», «fin si») no son sentencias ejecutables: son marcas de estructura.'],
+  porque:'Contar bien qué es una sentencia ejecutable decide el resultado. Las palabras de cierre no cuentan.' },
+
+{ n:30, bloque:4, titulo:'Cobertura de ramas', tipo:'numero',
+  enunciado:'Con ese <b>mismo</b> caso único (edad = 30) y ese mismo código, ¿qué porcentaje de <b>cobertura de ramas</b> obtienes?',
+  codigo:['leer edad','si edad >= 18 entonces','· acceso = "permitido"','si no','· acceso = "denegado"','fin si','imprimir acceso'],
+  respuesta:50, unidad:'%',
+  pistas:['Cuenta salidas de decisión, no líneas.',
+          'Hay una sola decisión, y toda decisión tiene dos salidas.',
+          '¿Cuántas de esas dos recorriste?'],
+  pasos:['Hay <b>una</b> decisión (línea 2) y por tanto <b>dos</b> ramas: verdadera y falsa.',
+         'Con edad = 30 sólo recorriste la verdadera.',
+         '1 de 2 = <b>50 %</b>.',
+         'Para llegar al 100 % hace falta un segundo caso, por ejemplo edad = 15.'],
+  porque:'Este par de niveles (29 y 30) es la demostración de que ramas es más fuerte que sentencias: 80 % de sentencias con 50 % de ramas.' },
+
+{ n:31, bloque:4, titulo:'Casos mínimos para 100 % de ramas', tipo:'numero',
+  enunciado:'¿Cuántos casos hacen falta <b>como mínimo</b> para el 100 % de cobertura de ramas de este código?',
+  codigo:['leer A, B','si A > 0 entonces','· si B > 0 entonces','· · imprimir "ambos"','· fin si','fin si','imprimir "fin"'],
+  respuesta:3,
+  pistas:['Hay dos decisiones, así que hay cuatro salidas que cubrir.',
+          'Para llegar a la decisión interna, la externa tiene que ser verdadera.',
+          '¿Puedes cubrir la salida falsa de la interna con A ≤ 0? Piénsalo bien.'],
+  pasos:['Decisiones: <b>A &gt; 0</b> y <b>B &gt; 0</b>. Cuatro salidas en total.',
+         'Caso 1 — A = 5, B = 5: externa <b>verdadera</b>, interna <b>verdadera</b>.',
+         'Caso 2 — A = 5, B = −1: externa verdadera, interna <b>falsa</b>.',
+         'Caso 3 — A = −1: externa <b>falsa</b>. La interna ni se evalúa.',
+         'Con dos casos siempre queda una salida sin recorrer, porque para llegar a la interna hace falta que la externa sea verdadera. Mínimo: <b>3</b>.'],
+  porque:'El anidamiento es lo que hace que la respuesta no sea 2. Es la variante que más se falla.' },
+
+{ n:32, bloque:4, titulo:'Depurar: el límite corrido', tipo:'linea',
+  enunciado:'La especificación dice: «se aplica descuento a partir de 1000 pesos <b>inclusive</b>». Una prueba con monto = 1000 falla: no aplica descuento.\n\n¿En qué <b>número de línea</b> está el defecto?',
+  codigo:['leer monto','descuento = 0','si monto > 1000 entonces','· descuento = monto * 0.10','fin si','total = monto - descuento','imprimir total'],
+  respuesta:3,
+  pistas:['El caso que falla es exactamente el valor del límite.',
+          'Busca la línea donde se compara el monto con 1000.',
+          '¿El operador incluye el 1000 o lo deja fuera?'],
+  pasos:['Con monto = 1000, la línea 3 evalúa <b>1000 &gt; 1000</b>, que es <b>falso</b>.',
+         'La especificación dice «a partir de 1000 <b>inclusive</b>», así que el 1000 debería entrar.',
+         'El operador correcto es <b>&gt;=</b>. El defecto está en la <b>línea 3</b>.',
+         'Éste es el defecto de límite por excelencia, y es exactamente lo que caza el análisis de valores límite.'],
+  porque:'El defecto de «uno de más o uno de menos» vive en el borde. Por eso la técnica de valores límite existe.' },
+
+{ n:33, bloque:4, titulo:'Depurar: la rama que nunca corre', tipo:'linea',
+  enunciado:'La especificación: menores de 18 pagan tarifa infantil; de 18 a 64, tarifa normal; 65 o más, tarifa de adulto mayor. Con edad = 70 el sistema cobra <b>tarifa normal</b>.\n\n¿En qué línea está el defecto?',
+  codigo:['leer edad','si edad < 18 entonces','· tarifa = "infantil"','si no si edad >= 18 entonces','· tarifa = "normal"','si no si edad >= 65 entonces','· tarifa = "adulto mayor"','fin si','imprimir tarifa'],
+  respuesta:4,
+  pistas:['Recorre el código con edad = 70 y mira en qué rama se detiene.',
+          'Una cadena de «si no si» evalúa en orden y se detiene en la primera que se cumple.',
+          '¿Puede llegar el flujo alguna vez a la línea 6?'],
+  pasos:['Con edad = 70: la línea 2 (70 &lt; 18) es falsa.',
+         'La línea 4 (70 &gt;= 18) es <b>verdadera</b>, así que se asigna «normal» y la cadena termina ahí.',
+         'La línea 6 es <b>inalcanzable</b> para cualquier edad: todo lo que llega a ella ya se quedó en la línea 4.',
+         'El defecto está en la <b>línea 4</b>: la condición debería ser <b>edad &gt;= 18 y edad &lt; 65</b>, o bien invertir el orden poniendo el 65 primero.',
+         'Se marca la línea 4 y no la 6 porque la 6 está bien escrita: lo que está mal es la condición que le roba el paso.'],
+  porque:'Un analizador estático marcaría la línea 6 como código inalcanzable. Ése es justo el tipo de hallazgo que la herramienta sí ve.' },
+
+{ n:34, bloque:4, titulo:'Depurar: el bucle que no termina', tipo:'linea',
+  enunciado:'Esta función debe sumar los primeros N enteros. Con N = 3 el programa se queda colgado.\n\n¿En qué línea está el defecto?',
+  codigo:['leer N','suma = 0','i = 1','mientras i <= N hacer','· suma = suma + i','· imprimir suma','fin mientras','imprimir "listo"'],
+  respuesta:6,
+  pistas:['Un bucle necesita que algo cambie para poder terminar.',
+          '¿Qué variable controla la condición de la línea 4?',
+          'Busca dónde debería incrementarse esa variable… y no se incrementa.'],
+  pasos:['La condición del bucle es <b>i &lt;= N</b> (línea 4).',
+         'Dentro del bucle, <b>i</b> nunca cambia: se suma a <b>suma</b> pero no se incrementa.',
+         'La línea 6 debería ser <b>i = i + 1</b> y en su lugar imprime.',
+         'El defecto está en la <b>línea 6</b>: falta el incremento del contador.',
+         'Con i fijo en 1 y N = 3, la condición 1 &lt;= 3 es verdadera para siempre.'],
+  porque:'Es el defecto de bucle infinito clásico. Ninguna cobertura de sentencias lo detecta: la línea se ejecuta, y muchas veces.' },
+
+{ n:35, bloque:4, titulo:'Depurar: la condición combinada', tipo:'linea',
+  enunciado:'La regla de negocio: «se aplica la promoción sólo si el cliente es socio <b>y además</b> el monto supera 1000». Con un cliente que <b>no</b> es socio y compra por 5000, el sistema aplica la promoción.\n\n¿En qué línea está el defecto?',
+  codigo:['leer socio, monto','promo = "no"','si socio = verdadero o monto > 1000 entonces','· promo = "si"','fin si','descuento = calcular(promo, monto)','imprimir descuento'],
+  respuesta:3,
+  pistas:['Compara la regla de negocio con lo que dice el código, palabra por palabra.',
+          'La regla dice «y además». El código dice otra cosa.',
+          'Con un solo operador cambiado, la regla se vuelve mucho más generosa.'],
+  pasos:['La regla exige <b>las dos</b> condiciones: socio <b>Y</b> monto &gt; 1000.',
+         'La línea 3 usa <b>o</b> en vez de <b>y</b>: basta con que se cumpla una.',
+         'Por eso el no socio con 5000 pesos entra: la segunda condición es verdadera.',
+         'El defecto está en la <b>línea 3</b>.',
+         'Una <b>tabla de decisión</b> con las dos condiciones habría destapado esto en la primera fila: la combinación (no socio, monto alto) tiene resultado distinto en la especificación y en el código.'],
+  porque:'Los defectos de operador lógico se cazan combinando condiciones, no probando una a la vez. Para eso existe la tabla de decisión.' },
+
+{ n:36, bloque:4, titulo:'Depurar: el índice fuera de rango', tipo:'linea',
+  enunciado:'Esta rutina recorre una lista de 5 elementos, con posiciones del <b>1 al 5</b>. Al ejecutarla revienta con «posición inválida».\n\n¿En qué línea está el defecto?',
+  codigo:['leer lista','total = 5','i = 1','mientras i <= total + 1 hacer','· imprimir lista[i]','· i = i + 1','fin mientras','imprimir "fin"'],
+  respuesta:4,
+  pistas:['¿Hasta qué valor llega i antes de salir del bucle?',
+          'Las posiciones válidas van de 1 a 5.',
+          'Sustituye total por 5 en la condición y calcula el último valor de i que entra.'],
+  pasos:['Con total = 5, la condición es <b>i &lt;= 6</b>.',
+         'Así que i llega a valer 6, y la línea 5 pide <b>lista[6]</b>, que no existe.',
+         'La condición correcta es <b>i &lt;= total</b>. El defecto está en la <b>línea 4</b>.',
+         'Se marca la 4 y no la 5 porque la línea 5 está bien: lo que está mal es cuántas veces se le deja entrar.'],
+  porque:'Es otro defecto de límite, esta vez en un bucle. Con probar sólo el elemento del medio nunca aparece.' },
+
+{ n:37, bloque:4, titulo:'Qué técnica escoger', tipo:'opcion',
+  enunciado:'Un sistema de reservas se comporta distinto según si la reserva está <b>pendiente</b>, <b>confirmada</b>, <b>en curso</b> o <b>cancelada</b>, y sólo permite ciertos movimientos entre esos situaciones. Sospechas que hay huecos en los movimientos permitidos.\n\n¿Qué técnica modela mejor este problema?',
+  opciones:['Análisis de valores límite','Tabla de decisión','Prueba de transición de estados','Cobertura de sentencias'],
+  correcta:2,
+  pistas:['La palabra clave del enunciado se repite cuatro veces: son situaciones en las que puede estar el sistema.',
+          'Cuando el comportamiento depende de en qué situación está y qué evento llega, hay una técnica exacta.',
+          'La tabla de decisión sirve cuando el resultado depende de condiciones combinadas, no de una historia previa.'],
+  pasos:['Cuatro situaciones + movimientos permitidos entre ellas = <b>estados y transiciones</b>.',
+         'La técnica es <b>prueba de transición de estados</b>: se dibuja el diagrama y se cubren las transiciones.',
+         'La <b>tabla de decisión</b> serviría si el resultado dependiera de varias condiciones combinadas en un mismo momento, sin memoria de lo anterior.',
+         'Los <b>valores límite</b> sirven para rangos numéricos.',
+         'La <b>cobertura de sentencias</b> es caja blanca y mide, no diseña.'],
+  porque:'Escoger la técnica es media pregunta del examen. La señal de estados es «depende de en qué situación está».' },
+
+{ n:38, bloque:4, titulo:'Colaborativo: las tres C y ATDD', tipo:'multi',
+  enunciado:'Marca las afirmaciones <b>correctas</b> sobre el enfoque colaborativo.',
+  opciones:['Las tres C son Card, Conversation y Confirmation.',
+            'En ATDD los casos de prueba se derivan de los criterios de aceptación antes de implementar.',
+            'Los criterios de aceptación los debería escribir sólo la persona de negocio.',
+            'El formato Dado / Cuando / Entonces corresponde a criterios orientados a escenarios.',
+            'La I de INVEST significa «Implementable».'],
+  correctas:[0,1,3],
+  pistas:['Dos de las cinco son falsas.',
+          'Si los criterios los escribe una sola parte, vuelve el problema que el enfoque colaborativo quiere evitar.',
+          'INVEST: Independiente, Negociable, Valiosa, Estimable, Small, Testeable.'],
+  pasos:['Las tres C: <b>Card</b> (la tarjeta), <b>Conversation</b> (la conversación) y <b>Confirmation</b> (los criterios). Correcta.',
+         'ATDD deriva los casos de los criterios <b>antes</b> de escribir código. Correcta.',
+         'Los criterios salen de la conversación entre negocio, desarrollo y pruebas. La 3 es <b>falsa</b>.',
+         'Dado / Cuando / Entonces describe un escenario concreto. Correcta.',
+         'La I de INVEST es <b>Independiente</b>, no «Implementable». La 5 es falsa.'],
+  porque:'INVEST y las tres C se preguntan casi literalmente. Vale la pena aprenderse las seis palabras de INVEST.' },
+
+/* ── BLOQUE 5 · GESTIÓN ─────────────────────────────────────────────────── */
+{ n:39, bloque:5, titulo:'Entrada o salida', tipo:'multi',
+  enunciado:'Marca los que son <b>criterios de salida</b> (no de entrada).',
+  opciones:['El entorno de prueba está disponible y configurado.',
+            'Se ejecutó el 100 % de la cobertura planificada.',
+            'La base de prueba está revisada y aprobada.',
+            'No quedan defectos abiertos de severidad alta.',
+            'Los datos de prueba están cargados.',
+            'El informe de finalización está firmado.'],
+  correctas:[1,3,5],
+  pistas:['Entrada = lo que hace falta para EMPEZAR. Salida = lo que hace falta para DAR POR TERMINADO.',
+          'Todo lo que habla de preparación es entrada.',
+          'Todo lo que habla de resultados conseguidos es salida.'],
+  pasos:['Entrada: entorno, base de prueba aprobada, datos cargados. Son requisitos previos.',
+         'Salida: cobertura ejecutada, defectos abiertos bajo el umbral acordado, informe de finalización.',
+         'A los criterios de salida también se les llama <b>definition of done</b> en entornos ágiles.'],
+  porque:'La pregunta se contesta con una sola idea: ¿esto se necesita antes o se consigue después?' },
+
+{ n:40, bloque:5, titulo:'Estimación de tres puntos', tipo:'numero',
+  enunciado:'El equipo estima el esfuerzo de probar un módulo:\n\n• optimista: 8 días\n• más probable: 12 días\n• pesimista: 22 días\n\n¿Cuál es la estimación de tres puntos, en días? Escribe sólo el número.',
+  respuesta:13,
+  pistas:['La fórmula pondera el valor más probable cuatro veces.',
+          '(O + 4M + P) ÷ 6.',
+          'Cuidado: el promedio simple daría 14, y no es la respuesta.'],
+  pasos:['Fórmula: <b>(optimista + 4 × probable + pesimista) ÷ 6</b>.',
+         '(8 + 4 × 12 + 22) ÷ 6',
+         '= (8 + 48 + 22) ÷ 6 = 78 ÷ 6 = <b>13 días</b>.',
+         'El promedio simple sería (8 + 12 + 22) ÷ 3 = 14. Es la trampa habitual.'],
+  porque:'Es la única fórmula de gestión que hay que saber de memoria, y cae casi siempre con números distintos.' },
+
+{ n:41, bloque:5, titulo:'Ordenar por riesgo', tipo:'opcion',
+  enunciado:'Cuatro funciones, con su probabilidad de fallo y su impacto (ambos de 1 a 5):\n\n• Cobro con tarjeta → probabilidad 2, impacto 5\n• Buscador de productos → probabilidad 4, impacto 2\n• Cambio de foto de perfil → probabilidad 3, impacto 1\n• Cálculo de impuestos → probabilidad 3, impacto 5\n\n¿Cuál se prueba primero en un enfoque basado en riesgo?',
+  opciones:['Cobro con tarjeta','Buscador de productos','Cambio de foto de perfil','Cálculo de impuestos'],
+  correcta:3,
+  pistas:['El nivel de riesgo es probabilidad por impacto.',
+          'Calcula los cuatro productos antes de decidir.',
+          'El impacto alto solo no basta si la probabilidad es baja.'],
+  pasos:['Cobro con tarjeta: 2 × 5 = <b>10</b>.',
+         'Buscador: 4 × 2 = <b>8</b>.',
+         'Foto de perfil: 3 × 1 = <b>3</b>.',
+         'Cálculo de impuestos: 3 × 5 = <b>15</b>.',
+         'El mayor es el cálculo de impuestos. Va primero.'],
+  porque:'Riesgo = probabilidad × impacto. Es lo que ordena el trabajo cuando no alcanza el tiempo para probar todo, que es siempre.' },
+
+{ n:42, bloque:5, titulo:'Severidad no es prioridad', tipo:'opcion',
+  enunciado:'La portada del sitio, que ven cien mil personas al día, tiene el nombre de la empresa mal escrito. Todo lo demás funciona perfecto.\n\n¿Cómo se clasifica el defecto?',
+  opciones:['Severidad alta y prioridad alta','Severidad baja y prioridad posiblemente alta',
+            'Severidad alta y prioridad baja','No es un defecto, es una mejora'],
+  correcta:1,
+  pistas:['Severidad mide el daño técnico que causa el fallo. ¿Se rompió alguna función?',
+          'Prioridad mide la urgencia de corregirlo, y la decide el negocio.',
+          'Las dos no tienen por qué coincidir.'],
+  pasos:['El sistema funciona: no hay pérdida de función ni de datos. La <b>severidad es baja</b>.',
+         'Lo ven cien mil personas y afecta la imagen de la empresa. El negocio va a querer que se corrija ya: la <b>prioridad es alta</b>.',
+         'Es el ejemplo canónico de severidad baja con prioridad alta.',
+         'El caso inverso también existe: un fallo grave en una función que nadie usa hasta dentro de seis meses.'],
+  porque:'Severidad la evalúa quien prueba; prioridad la decide el negocio. Que no coincidan es normal, no un error.' },
+
+{ n:43, bloque:5, titulo:'Qué le falta al reporte', tipo:'multi',
+  enunciado:'Un reporte de defecto dice sólo esto:\n\n<i>«El sistema truena al guardar. Ya le dije a Miguel que lo arregle porque él escribió esa parte. Adjunto captura.»</i>\n\nMarca <b>todo lo que le falta o le sobra</b> según el temario.',
+  opciones:['Faltan los pasos para reproducirlo.',
+            'Falta el resultado esperado y el resultado real.',
+            'Falta el entorno donde ocurrió (versión, navegador, datos).',
+            'Sobra señalar a la persona que escribió el código.',
+            'Falta la severidad y la prioridad.',
+            'Sobra la captura de pantalla.'],
+  correctas:[0,1,2,3,4],
+  pistas:['Un reporte tiene que permitir dos cosas: reproducir y decidir.',
+          'Una sola de las seis opciones es falsa.',
+          'La evidencia gráfica nunca sobra.'],
+  pasos:['Un buen reporte lleva: identificador, título, <b>pasos para reproducir</b>, <b>resultado esperado y real</b>, <b>entorno</b>, <b>severidad</b> y <b>prioridad</b>, evidencia y referencias.',
+         'Lo que sobra es el señalamiento personal: el reporte habla del producto, no de quién lo escribió.',
+         'La captura de pantalla es evidencia: no sobra, ayuda.'],
+  porque:'Nombrar culpables en un reporte es exactamente lo que la psicología de las pruebas del capítulo 1 pide evitar.' },
+
+{ n:44, bloque:5, titulo:'La pirámide', tipo:'opcion',
+  enunciado:'Un equipo tiene 4 pruebas unitarias, 30 de integración y 260 de interfaz de usuario. La suite tarda cuatro horas y cada cambio de diseño rompe decenas de pruebas.\n\n¿Qué está pasando y qué dice el modelo?',
+  opciones:['Está bien: más pruebas de interfaz significa más cobertura de lo que ve el usuario.',
+            'Es una pirámide invertida: la base debería ser de pruebas unitarias, muchas, rápidas y baratas.',
+            'Faltan pruebas de aceptación de usuario.',
+            'El problema es la herramienta de automatización, no el reparto.'],
+  correcta:1,
+  pistas:['Dibuja las tres cifras como una figura: ¿qué forma sale?',
+          '¿Cuáles son las pruebas lentas y frágiles, y cuáles las rápidas y baratas?',
+          'Cuatro horas y roturas constantes son el síntoma clásico.'],
+  pasos:['La <b>pirámide de pruebas</b> quiere una base ancha de pruebas unitarias —muchas, rápidas, baratas— y una punta estrecha de pruebas de interfaz —pocas, lentas, frágiles—.',
+         'Aquí es al revés: 260 de interfaz sobre 4 unitarias. Es el antipatrón de la <b>pirámide invertida</b> o «cono de helado».',
+         'Los síntomas coinciden: suite lenta y roturas masivas ante cualquier cambio de diseño.'],
+  porque:'La pirámide se pregunta por la forma y por los síntomas. Cuatro horas de suite es la pista.' },
+
+{ n:45, bloque:5, titulo:'Densidad de defectos', tipo:'numero',
+  enunciado:'Dos módulos del mismo sistema:\n\n• Módulo A: 30 defectos encontrados en 6000 líneas de código\n• Módulo B: 12 defectos encontrados en 1000 líneas\n\n¿Cuántos defectos por cada mil líneas tiene el <b>módulo B</b>?',
+  respuesta:12,
+  pistas:['Densidad de defectos = defectos ÷ (líneas ÷ 1000).',
+          'El módulo B tiene exactamente mil líneas.',
+          'La cuenta es más simple de lo que parece.'],
+  pasos:['Módulo B: 12 defectos en 1000 líneas → <b>12 defectos por cada mil líneas</b>.',
+         'Módulo A, para comparar: 30 ÷ 6 = 5 por cada mil líneas.',
+         'Aunque A tiene más defectos en total, B está <b>más de dos veces peor</b> por línea.',
+         'Eso es agrupación de defectos, medida: B es donde hay que meter más pruebas.'],
+  porque:'El número absoluto de defectos engaña. La densidad es lo que señala dónde se están escondiendo.' },
+
+{ n:46, bloque:5, titulo:'Sin gestión de configuración', tipo:'opcion',
+  enunciado:'Quien prueba reporta que el defecto DEF-204 ya no aparece. Desarrollo dice que no ha tocado ese módulo. Nadie sabe qué versión del sistema, de los datos ni de los scripts se usó en cada ejecución.\n\n¿Qué falló?',
+  opciones:['Falta un criterio de salida bien definido',
+            'Falta gestión de la configuración: no se puede saber qué se probó ni reproducirlo',
+            'Falta análisis de riesgo',
+            'Falta trazabilidad entre requisitos y casos'],
+  correcta:1,
+  pistas:['El problema no es qué se probó, sino que nadie puede reconstruirlo.',
+          'La palabra clave del enunciado es «no sabe qué versión».',
+          'Un resultado que no se puede reproducir no sirve como evidencia.'],
+  pasos:['La <b>gestión de la configuración</b> garantiza que se sepa exactamente qué versión de qué elemento se probó.',
+         'Sin ella, un resultado no es reproducible, y un resultado no reproducible no vale como evidencia.',
+         'La <b>trazabilidad</b> es otra cosa: conecta requisitos con casos, no versiones con ejecuciones.'],
+  porque:'Es el tema del capítulo 5 que más se subestima, y el que más discusiones estériles evita en la vida real.' },
+
+/* ── BLOQUE 6 · HERRAMIENTAS Y CIERRE ───────────────────────────────────── */
+{ n:47, bloque:6, titulo:'Qué automatizar', tipo:'multi',
+  enunciado:'Marca los <b>buenos candidatos</b> a automatizar.',
+  opciones:['La suite de regresión que se ejecuta en cada versión.',
+            'Una prueba exploratoria de una pantalla nueva que cambia cada semana.',
+            'Cálculos con muchas combinaciones de datos.',
+            'La prueba de humo posterior a cada despliegue.',
+            'Una comprobación que se va a ejecutar una sola vez en la vida.',
+            'La evaluación de si la interfaz «se siente» cómoda.'],
+  correctas:[0,2,3],
+  pistas:['Automatizar sale a cuenta cuando algo se repite muchas veces y no cambia todo el tiempo.',
+          'Lo que exige criterio humano no se automatiza.',
+          'Lo que se ejecuta una sola vez cuesta más automatizarlo que hacerlo a mano.'],
+  pasos:['Buenos candidatos: <b>regresión</b>, <b>humo</b>, cálculos con muchos datos, cargas repetitivas.',
+         'Malos candidatos: lo que se ejecuta una vez, lo que cambia cada semana, lo exploratorio y todo lo que pide juicio humano.',
+         'La automatización no sustituye a las personas: les cambia el trabajo, de repetir a pensar.'],
+  porque:'La pregunta se contesta con dos criterios: ¿se repite mucho? y ¿es estable?' },
+
+{ n:48, bloque:6, titulo:'El costo escondido', tipo:'opcion',
+  enunciado:'Un equipo automatizó 900 pruebas en seis meses. Un año después la mitad está desactivada, la suite tarda dos horas y nadie confía en los resultados porque «siempre falla algo».\n\n¿Cuál es el riesgo del temario que se materializó?',
+  opciones:['Automatizar demasiado rápido al principio',
+            'Subestimar el mantenimiento de los scripts y confiar de más en la herramienta',
+            'No comprar suficientes licencias',
+            'Haber elegido la herramienta equivocada'],
+  correcta:1,
+  pistas:['El síntoma es que la suite envejeció con el producto y nadie la mantuvo al día.',
+          'El segundo síntoma es que dejaron de mirar los resultados.',
+          'El temario nombra los dos juntos.'],
+  pasos:['La suite envejece con el producto: cada cambio rompe scripts, y mantenerlos cuesta trabajo real que casi nadie presupuesta.',
+         'El segundo riesgo es <b>confiar de más</b>: si la herramienta pasa, se asume que todo está bien, y se deja de mirar.',
+         'Las otras opciones describen problemas reales pero no son los riesgos que el temario enumera.'],
+  porque:'Es la pregunta del capítulo 6 que más cae, porque es la lección que todo el mundo aprende pagando.' },
+
+{ n:49, bloque:6, titulo:'Diseñar la suite completa', tipo:'numero',
+  enunciado:'Un formulario de préstamo tiene dos campos:\n\n• <b>Monto</b>: válido de 1000 a 50000. Fuera de rango se rechaza.\n• <b>Plazo</b>: sólo acepta 12, 24 o 36 meses. Cualquier otro valor se rechaza.\n\nSe aplica la regla habitual del diseño de casos: <b>un solo valor inválido por caso</b>, porque si metes dos, el primer rechazo enmascara al segundo y no sabes si el otro se comprobó.\n\n¿Cuántos casos hacen falta como mínimo para el 100 % de cobertura de particiones de los dos campos?',
+  respuesta:4,
+  pistas:['Cuenta primero las particiones de cada campo por separado.',
+          'Monto: una válida y dos inválidas. Plazo: una válida y una inválida.',
+          'Con la regla de un solo inválido por caso, cada caso inválido tiene que llevar el otro campo válido.'],
+  pasos:['<b>Monto</b>: válida (1000–50000), inválida por abajo, inválida por arriba → <b>3</b> particiones.',
+         '<b>Plazo</b>: válida (12, 24 o 36) e inválida (cualquier otro) → <b>2</b> particiones.',
+         'Caso 1 — monto válido + plazo válido: cubre las dos particiones válidas.',
+         'Caso 2 — monto por debajo de 1000 + plazo válido.',
+         'Caso 3 — monto por encima de 50000 + plazo válido.',
+         'Caso 4 — monto válido + plazo inválido.',
+         'Las 3 particiones de monto y las 2 de plazo quedan cubiertas con <b>4 casos</b>. Sin la regla del inválido único podrías intentarlo con 3, pero el rechazo temprano dejaría una partición sin comprobar de verdad.'],
+  porque:'Es el ejercicio que junta todo: contar particiones, combinar campos y entender por qué no se meten dos valores inválidos en el mismo caso.' },
+
+{ n:50, bloque:6, titulo:'El último: encontrar el defecto', tipo:'linea',
+  enunciado:'La regla completa del cobro de envío:\n\n• hasta 5 kg inclusive → 50 pesos fijos\n• más de 5 y hasta 20 kg → 10 pesos por kilo\n• más de 20 kg → se rechaza\n\nLa prueba con <b>peso = 5</b> devuelve 50 pesos: bien. La prueba con <b>peso = 20</b> devuelve «rechazado»: mal, debería cobrar 200.\n\n¿En qué línea está el defecto?',
+  codigo:['leer peso','si peso <= 5 entonces','· costo = 50','si no si peso < 20 entonces','· costo = peso * 10','si no','· costo = "rechazado"','fin si','imprimir costo'],
+  respuesta:4,
+  pistas:['Recorre el código con peso = 20 y anota qué rama toma.',
+          'La regla dice «hasta 20 inclusive». El código dice otra cosa.',
+          'Compara el operador de la línea 4 con las palabras de la especificación.'],
+  pasos:['Con peso = 20: la línea 2 (20 &lt;= 5) es falsa.',
+         'La línea 4 evalúa <b>20 &lt; 20</b>, que es <b>falso</b>, así que cae en el «si no» y devuelve «rechazado».',
+         'La especificación dice «hasta 20 <b>inclusive</b>»: el operador correcto es <b>&lt;=</b>.',
+         'El defecto está en la <b>línea 4</b>.',
+         'Fíjate en que la línea 2 sí está bien (&lt;= 5 para «hasta 5 inclusive»): el defecto es sólo el segundo límite, y por eso la primera prueba pasaba.'],
+  porque:'Éste es el examen completo en un ejercicio: leer la especificación palabra por palabra, aplicar valores límite y localizar la línea. Un caso pasaba y el otro no, que es como se ven los defectos de límite en la vida real.' },
+
+];
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MOTOR
+   Sin dependencias. Todo el estado vive en un objeto y en localStorage.
+
+   ── TRES COSAS QUE YA MORDIERON Y ESTÁN AQUÍ POR ESO ───────────────────
+   1 · `localStorage` truena en Safari privado y con las cookies bloqueadas.
+       No es teórico: es el navegador de la mitad de la gente. Cada lectura y
+       cada escritura van dentro de try/catch, y si no se puede guardar la app
+       SIGUE funcionando — se pierde el avance al cerrar, y se avisa.
+   2 · El enunciado lleva HTML mío (negritas, tablas) y por eso va con
+       innerHTML. Lo que escribe la persona NUNCA: eso va con textContent. Si
+       algún día se mezclan los dos caminos, un nombre con `<script>` se
+       ejecuta en su propia constancia.
+   3 · Los botones se pintan desde el estado, no al revés. Antes de esto había
+       un «Siguiente» que quedaba activo en el nivel 50 y no llevaba a ningún
+       lado.
+   ═════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+var LLAVE = 'mazi_istqb_v1';
+var TOTAL = NIVELES.length;
+var BLOQUES = [
+  { n:1, nombre:'Fundamentos de las pruebas' },
+  { n:2, nombre:'Pruebas a lo largo del ciclo de vida' },
+  { n:3, nombre:'Pruebas estáticas' },
+  { n:4, nombre:'Técnicas de diseño' },
+  { n:5, nombre:'Gestión de las pruebas' },
+  { n:6, nombre:'Herramientas y cierre' }
+];
+
+var E = { nombre:'', puesto:'', hechos:[], folio:'', fecha:'', pistasUsadas:{}, manuales:{} };
+var actual = null, seleccion = [], resuelto = false, pistasVistas = 0;
+var guardaSirve = true;
+
+var $ = function(s){ return document.querySelector(s); };
+var crear = function(t, c){ var e = document.createElement(t); if(c) e.className = c; return e; };
+
+/* ── estado ───────────────────────────────────────────────────────────── */
+function cargar(){
+  try{
+    var crudo = localStorage.getItem(LLAVE);
+    if(crudo){ var d = JSON.parse(crudo); for(var k in d) if(d.hasOwnProperty(k)) E[k] = d[k]; }
+  }catch(err){ guardaSirve = false; }
+}
+function guardar(){
+  try{ localStorage.setItem(LLAVE, JSON.stringify(E)); }
+  catch(err){ guardaSirve = false; }
+}
+function hecho(n){ return E.hechos.indexOf(n) >= 0; }
+function abierto(n){ return n === 1 || hecho(n) || hecho(n - 1); }
+
+/* Un folio corto y estable: sale del nombre y de la fecha, así que la misma
+   persona el mismo día ve siempre el mismo número. Nada de aleatorio: un
+   folio que cambia cada vez que abres la página no sirve para verificar. */
+function folioDe(nombre, fecha){
+  var s = 0, t = String(nombre).toUpperCase() + '|' + fecha;
+  for(var i = 0; i < t.length; i++){ s = (s * 31 + t.charCodeAt(i)) >>> 0; }
+  var letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', out = '';
+  for(var j = 0; j < 6; j++){ out += letras[s % letras.length]; s = Math.floor(s / letras.length) + 7; }
+  return 'GM-CTFL-' + fecha.replace(/-/g, '') + '-' + out;
+}
+function hoyISO(){
+  var d = new Date(), m = ('0' + (d.getMonth() + 1)).slice(-2), a = ('0' + d.getDate()).slice(-2);
+  return d.getFullYear() + '-' + m + '-' + a;
+}
+function fechaLarga(iso){
+  var MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+             'septiembre','octubre','noviembre','diciembre'];
+  var p = iso.split('-');
+  return Number(p[2]) + ' de ' + MES[Number(p[1]) - 1] + ' de ' + p[0];
+}
+
+/* ── pantallas ────────────────────────────────────────────────────────── */
+function ver(id){
+  var todas = document.querySelectorAll('.pantalla');
+  for(var i = 0; i < todas.length; i++) todas[i].classList.remove('viva');
+  $(id).classList.add('viva');
+  window.scrollTo(0, 0);
+  $('#bSalir').hidden = (id === '#pPortada');
+  /* textContent y no innerHTML: aquí va lo que escribió la persona */
+  $('#quien').textContent = (id === '#pPortada') ? '' : (E.nombre || '');
+}
+
+/* ── mapa ─────────────────────────────────────────────────────────────── */
+function pintarMapa(){
+  var n = E.hechos.length;
+  $('#mHechos').textContent = n;
+  $('#mRiel').style.width = Math.round(n * 100 / TOTAL) + '%';
+  $('#mNota').textContent = n === 0 ? 'Empieza por el nivel 1. Se abren en orden.'
+    : n === TOTAL ? 'Los cincuenta. Tus constancias están listas.'
+    : 'Te faltan ' + (TOTAL - n) + '. El siguiente se abre al resolver el anterior.'
+      + (guardaSirve ? '' : ' · Este navegador no deja guardar: si cierras la página se pierde el avance.');
+
+  var cont = $('#mBloques');
+  cont.innerHTML = '';
+  BLOQUES.forEach(function(b){
+    var deBloque = NIVELES.filter(function(x){ return x.bloque === b.n; });
+    if(!deBloque.length) return;
+    var tit = crear('div', 'bloque-tit');
+    var h = crear('h3'); h.textContent = b.n + ' · ' + b.nombre;
+    tit.appendChild(h); tit.appendChild(crear('span', 'raya'));
+    cont.appendChild(tit);
+
+    var rej = crear('div', 'rejilla');
+    deBloque.forEach(function(x){
+      var btn = crear('button', 'casilla');
+      btn.type = 'button';
+      btn.textContent = x.n;
+      var puedo = abierto(x.n);
+      if(hecho(x.n)) btn.classList.add('hecho');
+      else if(!puedo) btn.classList.add('cerrado');
+      else if(x.n === proximo()) btn.classList.add('siguiente');
+      btn.disabled = !puedo;
+      btn.setAttribute('aria-label', 'Nivel ' + x.n + ': ' + x.titulo
+        + (hecho(x.n) ? ' · resuelto' : puedo ? '' : ' · todavía cerrado'));
+      if(puedo) btn.addEventListener('click', function(){ abrirNivel(x.n); });
+      rej.appendChild(btn);
+    });
+    cont.appendChild(rej);
+  });
+
+  $('#bCertificados').hidden = (n < TOTAL);
+}
+function proximo(){
+  for(var i = 1; i <= TOTAL; i++) if(!hecho(i)) return i;
+  return TOTAL;
+}
+
+/* ── un nivel ─────────────────────────────────────────────────────────── */
+function abrirNivel(n){
+  actual = NIVELES[n - 1];
+  seleccion = [];
+  resuelto = hecho(n);
+  pistasVistas = E.pistasUsadas[n] || 0;
+
+  var b = BLOQUES.filter(function(x){ return x.n === actual.bloque; })[0];
+  $('#nMigaja').textContent = 'Nivel ' + n + ' de ' + TOTAL + ' · ' + b.nombre;
+  $('#nTitulo').textContent = actual.titulo;
+  $('#nEnunciado').innerHTML = actual.enunciado.split('\n\n')
+      .map(function(p){ return '<p>' + p.replace(/\n/g, '<br>') + '</p>'; }).join('');
+
+  /* código con números de línea de verdad, para que «la línea 4» signifique
+     lo mismo en el enunciado, en el código y en la respuesta */
+  var zc = $('#nCodigo'); zc.innerHTML = '';
+  if(actual.codigo){
+    var caja = crear('div', 'codigo'), ol = crear('ol');
+    actual.codigo.forEach(function(l){
+      var li = crear('li');
+      var m = /^((?:· )+)(.*)$/.exec(l);
+      if(m){
+        var s = crear('span', 'sangria'); s.textContent = m[1];
+        li.appendChild(s); li.appendChild(document.createTextNode(m[2]));
+      } else li.textContent = l;
+      ol.appendChild(li);
+    });
+    caja.appendChild(ol); zc.appendChild(caja);
+  }
+
+  pintarRespuesta();
+  $('#nPistas').innerHTML = '';
+  $('#nVeredicto').innerHTML = '';
+  $('#nPasos').innerHTML = '';
+  if(pistasVistas > 0) pintarPistas();
+  if(resuelto){ mostrarVeredicto(true, true); }
+  /* si ya había pedido el paso a paso, se le devuelve: le costó pedirlo */
+  if(E.manuales[n]) verManual();
+  pintarBotones();
+  ver('#pNivel');
+}
+
+function pintarRespuesta(){
+  var z = $('#nRespuesta'); z.innerHTML = '';
+  if(actual.tipo === 'opcion' || actual.tipo === 'multi'){
+    var cont = crear('div', 'opciones');
+    cont.setAttribute('role', actual.tipo === 'opcion' ? 'radiogroup' : 'group');
+    actual.opciones.forEach(function(txt, i){
+      var b = crear('button', 'opcion');
+      b.type = 'button';
+      var m = crear('span', 'marca');
+      m.textContent = actual.tipo === 'opcion' ? 'abcdefgh'[i].toUpperCase() : '';
+      b.appendChild(m);
+      var t = crear('span'); t.innerHTML = txt; b.appendChild(t);
+      b.addEventListener('click', function(){
+        if(resuelto) return;
+        if(actual.tipo === 'opcion') seleccion = [i];
+        else {
+          var k = seleccion.indexOf(i);
+          if(k >= 0) seleccion.splice(k, 1); else seleccion.push(i);
+        }
+        pintarSeleccion();
+        pintarBotones();
+      });
+      cont.appendChild(b);
+    });
+    z.appendChild(cont);
+    pintarSeleccion();
+  } else {
+    var etq = crear('label', 'campo');
+    var s = crear('span');
+    s.textContent = actual.tipo === 'linea'
+      ? 'Número de línea' : 'Tu respuesta' + (actual.unidad ? ' (en ' + actual.unidad + ', sólo el número)' : '');
+    var inp = crear('input'); inp.type = 'number'; inp.id = 'nNum';
+    inp.setAttribute('inputmode', 'numeric');
+    inp.placeholder = actual.tipo === 'linea' ? 'ej. 3' : 'ej. 12';
+    inp.addEventListener('input', pintarBotones);
+    inp.addEventListener('keydown', function(ev){ if(ev.key === 'Enter') comprobar(); });
+    etq.appendChild(s); etq.appendChild(inp);
+    z.appendChild(etq);
+  }
+}
+function pintarSeleccion(){
+  var b = document.querySelectorAll('#nRespuesta .opcion');
+  for(var i = 0; i < b.length; i++){
+    b[i].classList.toggle('sel', seleccion.indexOf(i) >= 0);
+    b[i].setAttribute('aria-pressed', seleccion.indexOf(i) >= 0 ? 'true' : 'false');
+  }
+}
+function hayRespuesta(){
+  if(actual.tipo === 'opcion' || actual.tipo === 'multi') return seleccion.length > 0;
+  var i = $('#nNum');
+  return !!(i && i.value !== '');
+}
+function pintarBotones(){
+  $('#bComprobar').disabled = resuelto || !hayRespuesta();
+  $('#bComprobar').textContent = resuelto ? 'Ya lo resolviste' : 'Comprobar';
+  $('#bPista').hidden = resuelto || pistasVistas >= actual.pistas.length;
+  $('#bPista').textContent = pistasVistas === 0 ? 'Dame una pista'
+      : 'Otra pista (' + (actual.pistas.length - pistasVistas) + ')';
+  $('#bManual').hidden = !!$('#nPasos').firstChild;
+  $('#bSiguiente').disabled = !resuelto;
+  var ultimo = actual.n === TOTAL;
+  $('#bSiguiente').textContent = ultimo ? 'Ver mis constancias' : 'Siguiente nivel';
+  if(ultimo && E.hechos.length < TOTAL) $('#bSiguiente').textContent = 'Al mapa';
+}
+
+/* ── comprobación ─────────────────────────────────────────────────────── */
+function acierta(){
+  if(actual.tipo === 'opcion') return seleccion.length === 1 && seleccion[0] === actual.correcta;
+  if(actual.tipo === 'multi'){
+    var a = seleccion.slice().sort(function(x, y){ return x - y; }).join(',');
+    var b = actual.correctas.slice().sort(function(x, y){ return x - y; }).join(',');
+    return a === b;
+  }
+  var v = Number($('#nNum').value);
+  return !isNaN(v) && v === actual.respuesta;
+}
+function comprobar(){
+  if(resuelto || !hayRespuesta()) return;
+  var bien = acierta();
+  if(bien){
+    resuelto = true;
+    if(!hecho(actual.n)){ E.hechos.push(actual.n); guardar(); }
+  }
+  mostrarVeredicto(bien, false);
+  pintarBotones();
+  if(bien) $('#nVeredicto').scrollIntoView({ block:'nearest' });
+}
+function mostrarVeredicto(bien, silencioso){
+  var z = $('#nVeredicto'); z.innerHTML = '';
+  var caja = crear('div', 'veredicto ' + (bien ? 'bien' : 'mal'));
+  var h = crear('h3');
+  h.textContent = bien ? (silencioso ? 'Ya lo tenías resuelto' : '¡Correcto!') : 'Todavía no';
+  caja.appendChild(h);
+  var p = crear('p');
+  if(bien) p.innerHTML = actual.porque;
+  else p.textContent = actual.tipo === 'multi'
+      ? 'Ojo: hay que marcar TODAS las correctas y ninguna de las otras. Pide una pista, o el paso a paso.'
+      : 'Vuelve a intentarlo. Si te atoras, pide una pista — y si sigues atorado, el paso a paso te lo explica entero.';
+  caja.appendChild(p);
+  z.appendChild(caja);
+
+  if(bien && (actual.tipo === 'opcion' || actual.tipo === 'multi')){
+    var b = document.querySelectorAll('#nRespuesta .opcion');
+    var buenas = actual.tipo === 'opcion' ? [actual.correcta] : actual.correctas;
+    for(var i = 0; i < b.length; i++){
+      b[i].disabled = true;
+      if(buenas.indexOf(i) >= 0) b[i].classList.add('buena');
+    }
+  }
+}
+
+/* ── pistas y manual ──────────────────────────────────────────────────── */
+function pedirPista(){
+  if(pistasVistas >= actual.pistas.length) return;
+  pistasVistas++;
+  E.pistasUsadas[actual.n] = pistasVistas;
+  guardar();
+  pintarPistas();
+  pintarBotones();
+}
+function pintarPistas(){
+  var z = $('#nPistas'); z.innerHTML = '';
+  if(!pistasVistas) return;
+  var caja = crear('div', 'ayuda');
+  var h = crear('h3'); h.textContent = pistasVistas === 1 ? 'Pista' : 'Pistas';
+  caja.appendChild(h);
+  for(var i = 0; i < pistasVistas; i++){
+    var p = crear('p', 'pista'); p.innerHTML = actual.pistas[i]; caja.appendChild(p);
+  }
+  z.appendChild(caja);
+}
+function verManual(){
+  E.manuales[actual.n] = true; guardar();
+  var z = $('#nPasos'); z.innerHTML = '';
+  var caja = crear('div', 'ayuda');
+  var h = crear('h3'); h.textContent = 'Cómo se resuelve, paso a paso';
+  caja.appendChild(h);
+  var ol = crear('ol');
+  actual.pasos.forEach(function(t){ var li = crear('li'); li.innerHTML = t; ol.appendChild(li); });
+  caja.appendChild(ol);
+  var p = crear('p'); p.style.margin = '14px 0 0';
+  p.innerHTML = '<b>Por qué importa:</b> ' + actual.porque;
+  caja.appendChild(p);
+  z.appendChild(caja);
+  pintarBotones();
+  caja.scrollIntoView({ block:'nearest' });
+}
+
+/* ── constancias ──────────────────────────────────────────────────────── */
+function pintarDiplomas(){
+  if(!E.fecha){ E.fecha = hoyISO(); }
+  if(!E.folio){ E.folio = folioDe(E.nombre, E.fecha); }
+  guardar();
+
+  var sinPista = 0;
+  for(var i = 1; i <= TOTAL; i++) if(!E.pistasUsadas[i] && !E.manuales[i]) sinPista++;
+
+  var z = $('#nDiplomas'); z.innerHTML = '';
+  z.appendChild(diploma({
+    casa:'Grupo Mazi · Departamento de formación',
+    titulo:'Constancia de curso completado',
+    texto:'completó el entrenamiento <b>ISTQB Foundation Level (CTFL)</b> de Grupo Mazi, '
+        + 'resolviendo los <b>cincuenta niveles</b> del programa: fundamentos, ciclo de vida, '
+        + 'pruebas estáticas, técnicas de diseño, gestión y herramientas.',
+    datos:[['Niveles resueltos', TOTAL + ' de ' + TOTAL],
+           ['Resueltos sin ayuda', sinPista + ' de ' + TOTAL],
+           ['Fecha', fechaLarga(E.fecha)],
+           ['Folio', E.folio]],
+    chica:'Documento de formación interna de Grupo Mazi. No es la certificación ISTQB '
+        + 'ni la sustituye. La certificación oficial se presenta con un proveedor acreditado.'
+  }));
+  z.appendChild(diploma({
+    casa:'Grupo Mazi · Departamento de formación',
+    titulo:'Constancia de preparación para el examen',
+    texto:'está <b>preparado para presentar el examen de certificación ISTQB Foundation '
+        + 'Level (CTFL)</b>. Domina las seis áreas del temario oficial v4.0 y resolvió los '
+        + 'ejercicios de cálculo y de localización de defectos del entrenamiento.',
+    datos:[['Temario', 'ISTQB CTFL v4.0'],
+           ['Formato del examen', '40 preguntas · 60 minutos · 26 para aprobar'],
+           ['Fecha', fechaLarga(E.fecha)],
+           ['Folio', E.folio + '-P']],
+    chica:'Esta constancia expresa la valoración de Grupo Mazi sobre la preparación de la '
+        + 'persona. No garantiza el resultado del examen ni tiene validez ante ISTQB.'
+  }));
+  ver('#pFin');
+}
+function diploma(d){
+  var el = crear('div', 'diploma');
+  var sello = crear('span', 'sello'); sello.innerHTML = LOGO; el.appendChild(sello);
+  var casa = crear('div', 'casa'); casa.textContent = d.casa; el.appendChild(casa);
+  var h = crear('h2'); h.textContent = d.titulo; el.appendChild(h);
+  el.appendChild(crear('div', 'raya'));
+  var pre = crear('p'); pre.textContent = 'Se hace constar que'; el.appendChild(pre);
+  var nom = crear('div', 'nombre');
+  nom.textContent = E.nombre;                       /* textContent: es texto de la persona */
+  el.appendChild(nom);
+  if(E.puesto){ var pu = crear('p'); pu.style.marginTop = '-8px';
+                pu.textContent = E.puesto; el.appendChild(pu); }
+  var cuerpo = crear('p'); cuerpo.innerHTML = d.texto; el.appendChild(cuerpo);
+  var datos = crear('div', 'datos');
+  d.datos.forEach(function(par){
+    var c = crear('div');
+    var b = crear('b'); b.textContent = par[1];
+    c.appendChild(b); c.appendChild(document.createTextNode(par[0]));
+    datos.appendChild(c);
+  });
+  el.appendChild(datos);
+  var ch = crear('p', 'letra-chica'); ch.textContent = d.chica; el.appendChild(ch);
+  return el;
+}
+
+/* ── arranque ─────────────────────────────────────────────────────────── */
+cargar();
+
+$('#fEntrar').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var n = $('#fNombre').value.trim().replace(/\s+/g, ' ');
+  if(n.length < 3 || n.indexOf(' ') < 0){ $('#errNombre').hidden = false; $('#fNombre').focus(); return; }
+  $('#errNombre').hidden = true;
+  E.nombre = n;
+  E.puesto = $('#fPuesto').value.trim();
+  guardar();
+  pintarMapa(); ver('#pMapa');
+});
+$('#bSalir').addEventListener('click', function(){
+  pintarMapa();
+  ver(E.hechos.length ? '#pMapa' : '#pPortada');
+});
+$('#bComprobar').addEventListener('click', comprobar);
+$('#bPista').addEventListener('click', pedirPista);
+$('#bManual').addEventListener('click', verManual);
+$('#bVolver').addEventListener('click', function(){ pintarMapa(); ver('#pMapa'); });
+$('#bSiguiente').addEventListener('click', function(){
+  if(actual.n < TOTAL){ abrirNivel(actual.n + 1); return; }
+  if(E.hechos.length >= TOTAL) pintarDiplomas();
+  else { pintarMapa(); ver('#pMapa'); }
+});
+$('#bCertificados').addEventListener('click', pintarDiplomas);
+$('#bVolverMapa').addEventListener('click', function(){ pintarMapa(); ver('#pMapa'); });
+$('#bImprimir').addEventListener('click', function(){ window.print(); });
+$('#bReiniciar').addEventListener('click', function(){
+  if(!confirm('Se borra tu avance de los cincuenta niveles y no se puede deshacer. ¿Seguro?')) return;
+  E.hechos = []; E.pistasUsadas = {}; E.manuales = {}; E.folio = ''; E.fecha = '';
+  guardar(); pintarMapa();
+});
+
+if(E.nombre){
+  $('#fNombre').value = E.nombre;
+  $('#fPuesto').value = E.puesto || '';
+  pintarMapa();
+  ver('#pMapa');
+}
+})();
+
+</script>
+</body>
+</html>

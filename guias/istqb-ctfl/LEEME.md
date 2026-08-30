@@ -16,6 +16,7 @@ rehacerlo.
 | `fuente/` | los trece pedazos en los que está escrita la guía, con saltos de línea para leerlos |
 | `proveedores.json` | los 31 centros acreditados sacados del padrón de HASTQB, con teléfono y correo |
 | `taller/` | los cinco programas que arman y revisan el documento |
+| `entrenamiento/` | la **app de 50 niveles** que sale de esta guía, con sus dos constancias. Tiene su propio LEEME |
 
 ## Cómo se rehace
 

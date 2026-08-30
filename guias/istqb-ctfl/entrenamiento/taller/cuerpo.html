@@ -1,0 +1,84 @@
+<header class="barra">
+  <div class="envoltura fila">
+    <span class="logo" aria-hidden="true">__LOGO__</span>
+    <span class="quien" id="quien"></span>
+    <button class="btn calma chico no-imprime" id="bSalir" type="button" hidden>Salir</button>
+  </div>
+</header>
+
+<main class="envoltura">
+
+<!-- ── 1 · PORTADA ──────────────────────────────────────────────────────── -->
+<section class="pantalla viva" id="pPortada">
+  <h1>Entrenamiento ISTQB<br>Foundation Level</h1>
+  <p><b>Cincuenta niveles</b> para llegar al examen sabiendo, no cruzando los dedos. Cada
+  nivel es un problema de los que salen de verdad: contar particiones, calcular cobertura,
+  encontrar la línea donde está el defecto.</p>
+  <p>Si te atoras, hay <b>tres pistas</b> que te acercan sin darte la respuesta, y un
+  <b>paso a paso</b> completo cuando lo pidas. No hay reloj y no hay castigo: puedes
+  intentarlo las veces que quieras.</p>
+  <p>Al terminar los cincuenta se emiten <b>dos constancias</b> a tu nombre.</p>
+
+  <div class="aviso-legal">
+    <b>Antes de empezar, con claridad:</b> esto es <b>formación interna de Grupo Mazi</b>.
+    Las constancias que emite las firma Grupo Mazi y acreditan que completaste este
+    entrenamiento. <b>No son la certificación ISTQB ni la sustituyen</b>: esa se presenta con
+    un proveedor acreditado, y en la guía viene el directorio de a quién llamar.
+  </div>
+
+  <form id="fEntrar" novalidate>
+    <label class="campo"><span>Tu nombre completo · va impreso en las constancias</span>
+      <input type="text" id="fNombre" autocomplete="name" placeholder="María Fernanda Reyes Ortega" required></label>
+    <label class="campo"><span>Puesto o área (opcional)</span>
+      <input type="text" id="fPuesto" autocomplete="organization-title" placeholder="Aseguramiento de calidad"></label>
+    <p id="errNombre" class="veredicto mal" hidden style="margin-bottom:16px"><b>Escribe tu nombre completo</b> — es lo que va impreso en las constancias, así que conviene que esté bien.</p>
+    <button class="btn ancho" type="submit">Empezar</button>
+  </form>
+</section>
+
+<!-- ── 2 · MAPA ─────────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pMapa">
+  <div class="avance">
+    <div class="cifra"><span id="mHechos">0</span> <span style="font-size:18px;color:var(--tenue)">de 50</span></div>
+    <div class="riel"><i id="mRiel" style="width:0%"></i></div>
+    <div class="nota" id="mNota"></div>
+  </div>
+  <div id="mBloques"></div>
+  <button class="btn ancho no-imprime" id="bCertificados" type="button" hidden style="margin-top:24px">Ver mis constancias</button>
+  <button class="btn calma ancho chico no-imprime" id="bReiniciar" type="button" style="margin-top:12px">Empezar de cero</button>
+</section>
+
+<!-- ── 3 · NIVEL ────────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pNivel">
+  <div class="migaja" id="nMigaja"></div>
+  <h2 id="nTitulo"></h2>
+  <div class="enunciado" id="nEnunciado"></div>
+  <div id="nCodigo"></div>
+  <div id="nRespuesta"></div>
+  <div class="acciones no-imprime">
+    <button class="btn" id="bComprobar" type="button">Comprobar</button>
+    <button class="btn calma" id="bPista" type="button">Dame una pista</button>
+  </div>
+  <div id="nPistas"></div>
+  <div id="nVeredicto"></div>
+  <div id="nPasos"></div>
+  <button class="btn calma ancho no-imprime" id="bManual" type="button">Enséñame cómo se resuelve</button>
+  <div class="pie-nav no-imprime">
+    <button class="btn calma" id="bVolver" type="button">Al mapa</button>
+    <button class="btn" id="bSiguiente" type="button">Siguiente</button>
+  </div>
+</section>
+
+<!-- ── 4 · CONSTANCIAS ──────────────────────────────────────────────────── -->
+<section class="pantalla" id="pFin">
+  <h1 class="no-imprime">Terminaste los cincuenta</h1>
+  <p class="no-imprime">Aquí están tus dos constancias. El botón las manda a imprimir, y desde
+  el diálogo de impresión puedes guardarlas como PDF.</p>
+  <div class="acciones no-imprime">
+    <button class="btn" id="bImprimir" type="button">Imprimir o guardar en PDF</button>
+    <button class="btn calma" id="bVolverMapa" type="button">Volver al mapa</button>
+  </div>
+  <div id="nDiplomas"></div>
+</section>
+
+</main>
