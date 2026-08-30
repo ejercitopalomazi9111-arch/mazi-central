@@ -1,0 +1,177 @@
+{
+  "area": "profundidad",
+  "nombre": "Profundidad: sombra, capa y desenfoque",
+  "que": "Lo que dice qué está encima de qué. Y lo que cuesta decirlo: repintados, contextos de apilado y efectos que se ven en una captura y se sienten al mover.",
+  "neuronas": [
+    {
+      "id": "sombra-difusa-para-todo",
+      "titulo": "Todas las sombras son la misma sombra difusa",
+      "gravedad": "media",
+      "sintoma": "La página se ve blanda y genérica; nada parece estar de verdad encima de nada.",
+      "causa": "Se usa una sola sombra suave y grande en todos los elementos, así que no codifica altura: sólo decora.",
+      "porque": "Es el valor por defecto de casi todos los marcos y se copia sin preguntarse qué está diciendo.",
+      "arreglo": "Decidir cuántos niveles de altura existen —dos o tres bastan— y darle a cada uno su sombra. Una sombra que no distingue niveles se puede quitar entera.",
+      "comoCazarlo": "Contar cuántas sombras distintas hay en la hoja. Si hay una sola, o si hay quince sin sistema, las dos cosas son el mismo defecto.",
+      "consejo": "Una sombra dura y desplazada dice «hoja sobre hoja»; una difusa y centrada dice «flota». Son dos idiomas y conviene hablar uno.",
+      "senales": [
+        "se ve blandito",
+        "todo tiene la misma sombra",
+        "no se distingue qué está encima"
+      ],
+      "salioDe": "El sistema del banco de pruebas: sombras duras desplazadas, y las difusas de Tailwind anuladas a none."
+    },
+    {
+      "id": "sombra-oscura-sobre-fondo-oscuro",
+      "titulo": "En el tema oscuro las sombras desaparecen",
+      "gravedad": "media",
+      "sintoma": "Las tarjetas se distinguen en claro y en oscuro quedan pegadas al fondo.",
+      "causa": "La profundidad se construyó con sombra negra, y sobre un fondo casi negro una sombra negra no existe.",
+      "porque": "El tema oscuro se hace volteando colores, y la sombra no es un color que se pueda voltear: es ausencia de luz.",
+      "arreglo": "En oscuro, separar por CLARIDAD de la superficie: la capa de arriba es más clara. La sombra pasa a ser un filo, no una mancha.",
+      "comoCazarlo": "Mirar el tema oscuro y preguntarse qué está diciendo que una tarjeta está encima. Si la respuesta es «nada», ahí está.",
+      "consejo": "Un filo de un píxel claro arriba —como un reflejo— hace en oscuro lo que la sombra hace en claro.",
+      "senales": [
+        "en oscuro no se ven las tarjetas",
+        "se pierde la profundidad de noche",
+        "todo se ve plano en el modo oscuro"
+      ],
+      "salioDe": "El banco de pruebas: los tokens de altura y el `--filo` cambian de definición entre los dos temas."
+    },
+    {
+      "id": "backdrop-filter-y-el-scroll-a-tirones",
+      "titulo": "El efecto vidrio hace que el scroll vaya a tirones",
+      "gravedad": "alta",
+      "sintoma": "La página se mueve a tirones al desplazarse, sobre todo en un teléfono de gama media.",
+      "causa": "Un `backdrop-filter` obliga al navegador a recomponer lo que hay detrás en cada fotograma del scroll.",
+      "porque": "Se ve espectacular en una captura y el costo sólo aparece moviéndose, que es justo lo que no se prueba.",
+      "arreglo": "Quitarlo. Si hace falta la sensación de capa translúcida, un color con alfa cuesta cero y se acerca bastante.",
+      "comoCazarlo": "Medir fotogramas por segundo durante el scroll con la CPU ralentizada. Con el efecto puesto y quitado, en el mismo aparato.",
+      "consejo": "Es de las pocas cosas donde la mejora se ve en el número antes que en el ojo.",
+      "senales": [
+        "el scroll va a tirones",
+        "la página se siente pesada al bajar",
+        "se traba al desplazar"
+      ],
+      "salioDe": "El banco de pruebas: era la causa principal de que el sitio fuera a tirones. Medido, no opinado."
+    },
+    {
+      "id": "filtros-que-obligan-a-repintar",
+      "titulo": "El filtro CSS ahorró bytes y gastó cuadros",
+      "gravedad": "media",
+      "sintoma": "Se sustituyó una imagen pesada por otra ligera más un filtro, y ahora la interacción se siente lenta.",
+      "causa": "Los filtros disparan repintado. Lo que se ahorró en descarga se paga en cada cuadro que haya que volver a pintar.",
+      "porque": "El peso de la imagen se mide fácil y el costo de pintar no, así que la mitad de la ecuación queda invisible.",
+      "arreglo": "Medir las dos mitades antes de decidir: bytes ahorrados contra tiempo de pintado. Si el filtro es estático, aplicarlo en la imagen y servirla ya filtrada.",
+      "comoCazarlo": "Perfilar la página con el filtro puesto y quitado, mirando el tiempo de pintado, no sólo la red.",
+      "consejo": "Un filtro que no cambia nunca no tiene por qué calcularse en el navegador de cada visitante.",
+      "senales": [
+        "cambié la imagen por un filtro y va peor",
+        "se siente lento al mover",
+        "ahorré peso y ahora arrastra"
+      ],
+      "salioDe": "CSS-Tricks, «The Contrast Swap Technique»: los filtros disparan repintado, y ahí mismo lo perfilan."
+    },
+    {
+      "id": "mezclas-que-parpadean-al-animar",
+      "titulo": "El zoom sobre la imagen parpadea",
+      "gravedad": "media",
+      "sintoma": "Al hacer un acercamiento suave sobre una imagen con mezcla de capas, la imagen parpadea.",
+      "causa": "Combinar `mix-blend-mode` con una transformación anima hace que el navegador no repinte de forma consistente.",
+      "porque": "Cada efecto por separado funciona; el problema aparece sólo al juntarlos, que es cuando ya nadie sospecha del primero.",
+      "arreglo": "Separar los dos: o la mezcla, o el movimiento. Si hacen falta los dos, mover un contenedor y dejar la mezcla en un hijo quieto.",
+      "comoCazarlo": "Quitar la mezcla y repetir la animación. Si deja de parpadear, era eso.",
+      "consejo": "Regla general: dos efectos que obligan a recomponer, juntos, casi nunca salen gratis.",
+      "senales": [
+        "la imagen parpadea al animar",
+        "el zoom da un flash",
+        "se ve un parpadeo raro al pasar el ratón"
+      ],
+      "salioDe": "Smashing, «Create Responsive Image Effects With CSS Gradients And aspect-ratio»."
+    },
+    {
+      "id": "z-index-que-no-sube",
+      "titulo": "Le subí el z-index y sigue debajo",
+      "gravedad": "media",
+      "sintoma": "Un elemento se queda detrás de otro por más que se le suba el `z-index`.",
+      "causa": "Está dentro de un contexto de apilado creado por un ancestro —una transformación, un filtro, una opacidad menor que 1—, y ahí dentro su número no compite con los de fuera.",
+      "porque": "Se piensa el `z-index` como una escala global y no lo es: cada contexto es un mundo aparte.",
+      "arreglo": "Encontrar el ancestro que crea el contexto y decidir ahí, o sacar el elemento de ese subárbol.",
+      "comoCazarlo": "Subir por los ancestros buscando `transform`, `filter`, `opacity` distinta de 1, `will-change` o `position` con z-index.",
+      "consejo": "Una opacidad de 0.99 puesta «para suavizar» crea contexto de apilado, y es de los más difíciles de ver.",
+      "senales": [
+        "le subo el z-index y no pasa nada",
+        "se queda atrás aunque tenga 9999",
+        "el modal sale debajo"
+      ],
+      "salioDe": "web.dev, «Grid», sobre orden de apilado, y la mecánica de contextos de apilado de CSS."
+    },
+    {
+      "id": "lo-fijo-siempre-tapa-algo",
+      "titulo": "El botón flotante tapa justo lo que hay que leer",
+      "gravedad": "alta",
+      "sintoma": "Un botón o barra fija se encima con el contenido, y casi siempre con el más importante.",
+      "causa": "Un elemento fijo no ocupa sitio en el flujo: por definición está encima de lo que haya debajo.",
+      "porque": "Se prueba a media página, donde tapa un párrafo cualquiera, y no al principio ni al final, donde tapa el titular o el pie.",
+      "arreglo": "Reservar el hueco en el documento —relleno del alto de lo fijo— y en teléfono encogerlo a lo mínimo o llevarlo a una barra que sí ocupe sitio.",
+      "comoCazarlo": "Mirar el principio y el final del documento, no el medio. Y en teléfono antes que en escritorio.",
+      "consejo": "Un elemento fijo sin espacio reservado es contenido tapado, siempre; la pregunta es sólo qué tapa.",
+      "senales": [
+        "todo se encima en todo",
+        "el botón tapa el texto",
+        "no puedo leer lo de abajo"
+      ],
+      "salioDe": "Carlos, «todo se encima en todo», y el botón de consola de 230 px que tapaba las entradas de la portada."
+    },
+    {
+      "id": "profundidad-sin-fuente-de-luz",
+      "titulo": "Las sombras van en direcciones distintas",
+      "gravedad": "baja",
+      "sintoma": "La pantalla se ve inquieta sin que nadie sepa decir por qué.",
+      "causa": "Cada componente trae la sombra de su origen y unas caen a la derecha, otras abajo y otras centradas: hay varias fuentes de luz a la vez.",
+      "porque": "Los componentes se copian de sitios distintos y la sombra viaja pegada al componente.",
+      "arreglo": "Declarar una sola dirección de luz para todo el sistema y derivar de ahí cada nivel.",
+      "comoCazarlo": "Mirar sólo las sombras, sin el contenido. Deberían caer todas hacia el mismo lado.",
+      "consejo": "Es un defecto que casi nadie nombra y que todo el mundo siente.",
+      "senales": [
+        "se ve inquieto",
+        "algo no cuadra visualmente",
+        "las tarjetas se ven de distintos sitios"
+      ],
+      "salioDe": "La revisión del sistema del banco: la escala de alturas se derivó de una sola decisión de luz."
+    },
+    {
+      "id": "el-desenfoque-como-adorno",
+      "titulo": "Se difumina el fondo para que 'se vea profesional'",
+      "gravedad": "media",
+      "sintoma": "Hay desenfoques por todas partes y la página no se ve mejor, sólo más lenta.",
+      "causa": "El desenfoque se usa como textura y no como jerarquía: no está separando un plano de otro, está adornando.",
+      "porque": "En una referencia bonita el desenfoque aparece y se copia el efecto sin copiar la razón — que allí era separar el primer plano del fondo.",
+      "arreglo": "Usarlo sólo cuando separa dos planos con contenido en los dos. Si detrás no hay nada que valga la pena, un color plano hace lo mismo gratis.",
+      "comoCazarlo": "Quitarlo. Si nadie nota la diferencia salvo que va más rápido, sobraba.",
+      "consejo": "Vale la misma pregunta para el grano, los degradados y las texturas: ¿qué está diciendo?",
+      "senales": [
+        "le puse blur para que se vea pro",
+        "hay desenfoque en todo",
+        "se ve cargado"
+      ],
+      "salioDe": "La lista de tics de este grupo, y la decisión de no usar backdrop-filter en el banco."
+    },
+    {
+      "id": "capas-que-no-existen-en-el-html",
+      "titulo": "El diseño tiene tres planos y el documento uno",
+      "gravedad": "baja",
+      "sintoma": "La maqueta enseña capas superpuestas y el código las consigue a base de posiciones absolutas y números mágicos.",
+      "causa": "La superposición se resolvió elemento por elemento en vez de con una retícula donde dos cosas comparten celda.",
+      "porque": "`position:absolute` resuelve el primer caso en dos minutos y cada caso siguiente cuesta otros dos.",
+      "arreglo": "Poner los dos elementos en la misma celda de la retícula y ordenar con el orden del documento. Se mantiene solo al cambiar de tamaño.",
+      "comoCazarlo": "Contar los `position:absolute` que existen sólo para superponer. Cada uno es una posición que hay que volver a calcular en cada ancho.",
+      "consejo": "Con la retícula, lo que viene después en el documento se pinta encima, y eso ya es una decisión legible.",
+      "senales": [
+        "está lleno de position absolute",
+        "se descuadra al cambiar de tamaño",
+        "tuve que poner números a mano"
+      ],
+      "salioDe": "web.dev, «Grid»: dos elementos en la misma celda se apilan por orden de documento."
+    }
+  ]
+}
