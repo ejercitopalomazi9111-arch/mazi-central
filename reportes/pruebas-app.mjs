@@ -218,6 +218,36 @@ async function barrer(p, ancho){
   }, ancho);
 }
 
+/* ── 4 · EL LECTOR DE MARCADO, EN LOS CASOS QUE YA SALIERON MAL ───────── */
+/* Éste salió IMPRESO: un directorio de empresas donde media docena de nombres
+   van en mayúsculas —«### ECOSISTEMAS»— apareció con los tres gatos delante.
+   La causa es de orden: la regla de «renglón corto TODO EN MAYÚSCULAS es un
+   apartado» corre antes que la de `###`, y «###» no tiene minúsculas, así que
+   la línea entera pasaba por mayúsculas y se pintaba tal cual.
+   No se ve leyendo el marcado: hay que pedirle el HTML al lector. */
+console.log('\n── el lector de marcado ──');
+{
+  const p = await abrir(1100, 900, false);
+  const r = await p.evaluate(() => {
+    const html = (t) => leer(t, []).map(b => b.html || '').join('');
+    return {
+      mayus:   html('### ECOSISTEMAS'),
+      mixto:   html('### Creativa Consultores'),
+      apartado:html('## GESTIÓN DE RIESGOS'),
+      suelto:  html('AVISO IMPORTANTE'),
+    };
+  });
+  ok('«### ECOSISTEMAS» sale como subtítulo, sin los gatos',
+     /^<h3>ECOSISTEMAS<\/h3>$/.test(r.mayus), r.mayus);
+  ok('«### Creativa Consultores» sigue saliendo como subtítulo',
+     /^<h3>Creativa Consultores<\/h3>$/.test(r.mixto), r.mixto);
+  ok('«## GESTIÓN DE RIESGOS» sigue saliendo como apartado',
+     /^<h2>GESTIÓN DE RIESGOS<\/h2>$/.test(r.apartado), r.apartado);
+  ok('un renglón suelto en mayúsculas SIGUE siendo apartado',
+     /^<h2>AVISO IMPORTANTE<\/h2>$/.test(r.suelto), r.suelto);
+  await p.context().close();
+}
+
 for(const [ancho, alto, movil, como] of [[390,844,true,'teléfono'],[1100,900,false,'computadora']]){
   console.log('  · a ' + ancho + ' px (' + como + ')');
   const p = await abrir(ancho, alto, movil);
