@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La cafetera · tres piezas, una rosca y nada de electricidad</title>
+<meta name="description" content="Página de producto sobre la cafetera moka: sus tres piezas, qué pasa dentro mientras el café sube, los tamaños de verdad y las cinco cosas que la estropean. Pieza de práctica del departamento de diseño de Grupo Mazi.">
+<meta name="theme-color" content="#140D08">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="%23140D08"/><path d="M8 20 h16 l2 8 H6 z" fill="%23F2A63B"/><path d="M11 6 h10 v12 H11 z" fill="%23D4C4B2"/></svg>'>
+<link rel="stylesheet" href="estilo.css">
+<link rel="preload" as="image" href="img/jarra.webp">
+<link rel="preload" as="image" href="img/caldera.webp">
+</head>
+<body>
+<!-- ══ PORTADA ═══════════════════════════════════════════════════════════ -->
+<header class="portada">
+  <div class="ancho rejilla">
+    <div>
+      <p class="marca destapa"><span>Objeto · 1933 · Aluminio</span></p>
+      <h1 class="destapa d1"><span>La cafetera</span></h1>
+      <p class="subtitulo destapa d2"><span>Tres piezas, una rosca y nada de electricidad.</span></p>
+      <p class="subtitulo surge d3" style="margin-top:.6rem">Noventa años después se
+      fabrica igual — y sigue en la colección de diseño del MoMA. Esto es lo que
+      hace por dentro, y lo que casi todo el mundo hace mal por fuera.</p>
+
+      <div class="ficha-rapida surge d4">
+        <div><b>3</b><span>piezas</span></div>
+        <div><b>1–2 bar</b><span>de presión</span></div>
+        <div><b>1:10</b><span>café y agua</span></div>
+        <div><b>50 ml</b><span>por taza</span></div>
+      </div>
+    </div>
+
+    <!-- ⚠ LAS TRES PIEZAS SE MONTAN AL CARGAR, y es el recorte hecho a mano
+         lo que lo permite: son tres PNG con fondo transparente sacados de una
+         sola fotografía. -->
+    <div class="montaje" id="montaje">
+      <span class="brasa" aria-hidden="true"></span>
+      <img class="jarra"   src="img/jarra.webp"   alt="La jarra: el cuerpo de arriba, donde se junta el café." width="840" height="1220">
+      <img class="embudo"  src="img/embudo.webp"  alt="El embudo: la canastilla donde va el café molido."      width="398" height="471">
+      <img class="caldera" src="img/caldera.webp" alt="La caldera: el depósito de agua, con su válvula."       width="680" height="741">
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ 1 · LAS TRES PIEZAS ═══════════════════════════════════════════════ -->
+<section id="piezas" class="ancho">
+  <p class="epi destapa"><span>Uno</span></p>
+  <h2 class="destapa d1"><span>Tres piezas y una goma</span></h2>
+  <p class="dice surge d2">No hay más. Se monta metiendo el embudo en la caldera
+  y enroscando la jarra encima: al apretar, la rosca aplasta una goma contra el
+  labio del embudo y eso —sólo eso— es lo que cierra la caldera.</p>
+
+  <div class="piezas">
+    <article class="pieza surge d1">
+      <div class="foto"><img src="img/caldera.webp" alt="" width="680" height="741" loading="lazy"></div>
+      <span class="letra">A</span><h3>La caldera</h3>
+      <p>El depósito de abajo. Lleva una <b>válvula de seguridad</b> por si la
+      presión se dispara — y por eso conviene comprobar que no esté tapada.</p>
+    </article>
+    <article class="pieza surge d2">
+      <div class="foto"><img src="img/embudo.webp" alt="" width="398" height="471" loading="lazy"></div>
+      <span class="letra">B</span><h3>El embudo</h3>
+      <p>La canastilla del café molido, con su tubo hasta el fondo del agua.
+      Cuánto se aprieta el café cambia la velocidad y la fuerza del resultado.</p>
+    </article>
+    <article class="pieza surge d3">
+      <div class="foto"><img src="img/jarra.webp" alt="" width="840" height="1220" loading="lazy"></div>
+      <span class="letra">C</span><h3>La jarra</h3>
+      <p>Donde se junta el café. Debajo lleva un disco filtro que la goma
+      sujeta como un anillo elástico, para que no suba el poso.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ══ 2 · CÓMO FUNCIONA ═════════════════════════════════════════════════ -->
+<section id="funciona" class="ancho">
+  <p class="epi destapa"><span>Dos</span></p>
+  <h2 class="destapa d1"><span>Qué pasa ahí dentro</span></h2>
+  <p class="dice surge d2">No sube por capilaridad ni por magia: sube porque el
+  aire encerrado se dilata y el agua caliente aporta su presión de vapor. Cuando
+  esa presión gana, empuja el agua tubo arriba. Toca un paso o dale al botón.</p>
+
+  <div class="corte">
+    <div class="surge d1">
+      <svg id="corte" viewBox="0 0 240 380" role="img"
+           aria-label="Corte de la cafetera: el agua de la caldera sube por el embudo, atraviesa el café y sale a la jarra.">
+        <defs>
+          <clipPath id="cJarra"><path d="M62 22 h116 v122 a12 12 0 0 1 -12 12 h-92 a12 12 0 0 1 -12 -12 z"/></clipPath>
+          <clipPath id="cCaldera"><path d="M52 226 h136 l14 122 a14 14 0 0 1 -14 16 h-136 a14 14 0 0 1 -14 -16 z"/></clipPath>
+        </defs>
+        <!-- jarra -->
+        <path d="M62 22 h116 v122 a12 12 0 0 1 -12 12 h-92 a12 12 0 0 1 -12 -12 z"
+              fill="#2A1D13" stroke="#54402D" stroke-width="2"/>
+        <g clip-path="url(#cJarra)">
+          <rect id="cafeArriba" x="60" y="156" width="120" height="0" fill="#8A4A22"/>
+        </g>
+        <!-- columna -->
+        <rect x="112" y="150" width="16" height="80" fill="#2A1D13" stroke="#54402D" stroke-width="2"/>
+        <rect id="columna" x="115" y="230" width="10" height="0" fill="#8A4A22"/>
+        <!-- lecho de café -->
+        <rect x="86" y="186" width="68" height="30" rx="4" fill="#3A281B" stroke="#54402D" stroke-width="2"/>
+        <text x="120" y="206" text-anchor="middle" font-size="11" fill="#B5A08B" font-family="monospace">café</text>
+        <!-- caldera -->
+        <path d="M52 226 h136 l14 122 a14 14 0 0 1 -14 16 h-136 a14 14 0 0 1 -14 -16 z"
+              fill="#2A1D13" stroke="#54402D" stroke-width="2"/>
+        <g clip-path="url(#cCaldera)">
+          <rect id="agua" x="30" y="250" width="180" height="120" fill="#5E8FA8"/>
+        </g>
+        <!-- llama -->
+        <g id="llama" opacity="0">
+          <path d="M92 372 q12 -22 28 -30 q16 8 28 30 z" fill="#F2A63B" opacity=".85"/>
+          <path d="M104 372 q8 -14 16 -19 q8 5 16 19 z" fill="#D9573B"/>
+        </g>
+        <!-- vapor -->
+        <g id="vapor" opacity="0" stroke="#B5A08B" stroke-width="2.5" fill="none"
+           stroke-linecap="round" opacity="0">
+          <path d="M104 20 c-7 -9 3 -14 -3 -23 c-5 -7 2 -11 -1 -17"/>
+          <path d="M120 16 c7 -9 -3 -14 3 -23 c5 -7 -2 -11 1 -17"/>
+          <path d="M136 20 c-6 -8 3 -13 -2 -21"/>
+        </g>
+      </svg>
+    </div>
+
+    <div>
+      <div class="pasos" id="pasos">
+        <button class="paso" type="button" data-paso="0" aria-current="true">
+          <span class="n">01</span><span><b>Agua fría hasta la marca</b>
+          <span>Por debajo de la válvula de seguridad. Ni un dedo más.</span></span></button>
+        <button class="paso" type="button" data-paso="1">
+          <span class="n">02</span><span><b>Sube la presión</b>
+          <span>El aire encerrado se dilata y el agua aporta su presión de vapor.</span></span></button>
+        <button class="paso" type="button" data-paso="2">
+          <span class="n">03</span><span><b>El agua atraviesa el café</b>
+          <span>Empujada tubo arriba. Una sola vez: esto no recircula.</span></span></button>
+        <button class="paso" type="button" data-paso="3">
+          <span class="n">04</span><span><b>Y llena la jarra</b>
+          <span>A 1–2 bar. Un espresso son 9, y por eso esto no es un espresso.</span></span></button>
+        <button class="paso" type="button" data-paso="4">
+          <span class="n">05</span><span><b>El gorgoteo: apaga</b>
+          <span>Es vapor pasando por el café. A partir de ahí sólo se estropea.</span></span></button>
+      </div>
+      <div class="mandos">
+        <button class="btn" id="bJugar" type="button">Ver el ciclo</button>
+        <button class="btn calma" id="bReiniciar" type="button">Volver al principio</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 3 · LOS TAMAÑOS ═══════════════════════════════════════════════════ -->
+<section id="tamanos" class="ancho">
+  <p class="epi destapa"><span>Tres</span></p>
+  <h2 class="destapa d1"><span>De una a dieciocho</span></h2>
+  <p class="dice surge d2">La talla se cuenta en tazas pequeñas de unos 50 ml,
+  no en tazas de desayuno. Es la confusión más cara del producto: una de tres
+  no llena una taza grande.</p>
+
+  <div class="tallas" id="tallas"></div>
+</section>
+
+<!-- ══ 4 · LO QUE SALE MAL ═══════════════════════════════════════════════ -->
+<section id="errores" class="ancho">
+  <p class="epi destapa"><span>Cuatro</span></p>
+  <h2 class="destapa d1"><span>Cinco cosas que la estropean</span></h2>
+  <p class="dice surge d2">Ninguna es una opinión: las cinco salen del propio
+  manual del objeto y de lo que se ha medido sobre él.</p>
+
+  <div class="errores">
+    <article class="error surge d1"><h3>Lavarla en el lavavajillas</h3>
+      <p>Se midió: la migración de aluminio se queda por debajo del 1 % del
+      límite semanal con uso normal, y sube hasta casi el 4 % después de un
+      lavavajillas. Se friega a mano y sin detergente.</p></article>
+    <article class="error surge d2"><h3>Dejarla hasta que deje de sonar</h3>
+      <p>El gorgoteo es vapor atravesando el café. Es sobreextracción en
+      directo, y es lo que da el amargo que la gente le achaca al objeto.</p></article>
+    <article class="error surge d3"><h3>Molienda de espresso</h3>
+      <p>Aquí hay 1–2 bar, no 9. Con molienda demasiado fina el agua no
+      atraviesa el lecho y lo que sube es vapor.</p></article>
+    <article class="error surge d4"><h3>No cambiar la goma</h3>
+      <p>Es la única pieza que cierra la caldera y se reseca. Cuando deja de
+      sellar, la presión no sube y el café sale aguado.</p></article>
+    <article class="error surge d1"><h3>No mirar la válvula</h3>
+      <p>La válvula de seguridad existe para que la caldera no reviente. Si el
+      poso la tapa, deja de existir.</p></article>
+  </div>
+</section>
+
+<!-- ══ 5 · EN USO ════════════════════════════════════════════════════════ -->
+<section id="enuso" class="ancho">
+  <p class="epi destapa"><span>Cinco</span></p>
+  <h2 class="destapa d1"><span>Y así se ve de verdad</span></h2>
+  <p class="dice surge d2">Sin fondo recortado ni luz de estudio: el café
+  subiendo, la espuma, y el vapor que avisa de que ya está.</p>
+  <figure class="enuso surge d3" style="margin:0">
+    <img src="img/accion.webp" alt="Una cafetera moka sobre una placa encendida, con el café ya en la jarra y vapor saliendo." width="1610" height="1973" loading="lazy">
+    <figcaption>Fotografía de Berteun Damman · dominio público · Wikimedia Commons</figcaption>
+  </figure>
+</section>
+
+</main>
+
+<footer class="ancho">
+  <p><b>Pieza de práctica del departamento de diseño de Grupo Mazi.</b>
+  No es una tienda ni está a la venta nada: es una página de producto hecha
+  para enseñar oficio.</p>
+  <p><b>Las imágenes.</b> Salen de Wikimedia Commons. El despiece —la jarra, el
+  embudo y la caldera— es una sola fotografía a la que <b>se le quitó el fondo
+  aquí</b> y se separó en sus tres cuerpos; esa obra derivada se publica bajo la
+  misma licencia <b>CC BY-SA 4.0</b> del original, de Shisma. La foto en uso es
+  de Berteun Damman, dominio público. Autores, licencias y qué se le hizo a cada
+  una, en <a href="CREDITOS.md">CREDITOS.md</a>.</p>
+  <p><b>Los datos</b> —tres piezas, 1–2 bar contra los 9 del espresso, la
+  proporción 1:10, los 50 ml por taza, el gorgoteo, la migración de aluminio—
+  salen del artículo <i>Moka pot</i> de Wikipedia y de las fuentes que cita. No
+  hay ni una cifra inventada; donde no había dato, no hay frase.</p>
+  <p>Letras: Italiana, IBM Plex Serif y DM Mono, las tres SIL OFL.</p>
+</footer>
+
+<script src="motor.js" defer></script>
+</body>
+</html>

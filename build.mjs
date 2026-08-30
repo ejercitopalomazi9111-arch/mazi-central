@@ -34,6 +34,9 @@ const VA = [
   /* La lámina: el atlas del departamento de diseño. Sin esta línea la carpeta
      existe en el repo y NO en el sitio, y el enlace devuelve 404. */
   'lamina',
+  /* La cafetera: pieza de práctica del departamento. Se publica entera —CSS,
+     motor, fuentes e imágenes— porque es un sitio normal de varios archivos. */
+  'moka',
   /* El año en luz. Se publica ENTERA —CSS, módulos y fuentes— porque no es un
      archivo suelto como la lámina: es un sitio normal de varios archivos, y si
      falta uno la página carga a medias sin decir por qué. */
@@ -58,6 +61,10 @@ const NO_VA = (ruta) => {
      publicar y no lo que se quedó en la carpeta. Se colaban diez. */
   if(/^pruebas[^/]*\.(mjs|js|py)$/i.test(f)) return true;
   if(/^armar-suelto\.mjs$/i.test(f)) return true;
+  /* El taller de la cafetera guarda el PNG de origen —tres megas— y los
+     guiones de recorte: material de trabajo, no sitio. Los CREDITOS.md sí se
+     publican, y por eso la regla de los .md de arriba lleva su excepción. */
+  if(/(^|\/)moka\/taller(\/|$)/.test(ruta)) return true;
   /* el taller de la lámina arma el HTML: es material de trabajo, no sitio.
      OJO: `ruta` llega SIN barra al final cuando lo que se mira es la carpeta
      misma, así que el patrón acepta el fin de cadena — igual que `arte/web`. */
