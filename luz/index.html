@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El año en luz · cuánto dura el día y cómo cambia</title>
+<meta name="description" content="Cuántas horas de luz hay hoy y cómo cambian a lo largo del año, calculado en tu propio aparato. Sin peticiones, sin cuentas y sin rastreo.">
+<meta name="theme-color" content="#FBF8F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0E15" media="(prefers-color-scheme: dark)">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="%230D1220"/><circle cx="16" cy="20" r="9" fill="%23E8B04B"/><rect y="20" width="32" height="12" fill="%230D1220"/><rect y="19" width="32" height="1.6" fill="%23C8794A"/></svg>'>
+<link rel="stylesheet" href="estilo.css">
+<script>
+/* El tema, ANTES de pintar: aplicarlo después deja un destello del tema
+   equivocado en cada carga, y ese destello se ve siempre. */
+try{ var t = localStorage.getItem('luz_tema');
+     if(t) document.documentElement.setAttribute('data-tema', t); }catch(e){}
+</script>
+</head>
+<body>
+<a class="salta" href="#hoy">Saltar al dato</a>
+
+<header class="ancho">
+  <div class="marca">
+    <h1>El año en luz</h1>
+    <p class="sub">Cuánto dura el día, y cómo cambia</p>
+  </div>
+
+  <form class="mandos" onsubmit="return false">
+    <div class="campo">
+      <label for="lugar">Lugar</label>
+      <select id="lugar" name="lugar"></select>
+    </div>
+    <div class="campo">
+      <label for="fecha">Fecha</label>
+      <input type="date" id="fecha" name="fecha">
+    </div>
+    <button type="button" class="boton" id="hoyBtn">Hoy</button>
+  </form>
+  <div class="aviso" id="avisoUbi" hidden></div>
+</header>
+
+<main class="ancho">
+
+  <section id="hoy" style="padding-top:0">
+    <div class="hoy">
+      <p class="sub" id="dondeCuando">Ciudad de México · 21 de junio de 2026</p>
+      <p class="gran"><span id="horas">13</span><span class="u">h</span><span
+         id="mins">18</span><span class="u">m</span> <span class="u">de luz</span></p>
+      <p class="pie-gran"><span class="delta" id="delta">igual que ayer</span></p>
+      <div class="barra" id="barraDia"></div>
+      <div class="reglaHoras" id="reglaHoras"></div>
+      <p class="pie-gran" id="salePone">Sale 05:59 · mediodía solar 12:38 · se pone 19:17</p>
+    </div>
+    <div class="aviso" id="avisoPolar" hidden>
+      <b>Aquí hoy el sol no cruza el horizonte.</b>
+      Por encima del círculo polar hay semanas en las que no sale y semanas en
+      las que no se pone. No es un fallo de la cuenta: es el sitio.
+    </div>
+  </section>
+
+  <section id="ano">
+    <h2>El año entero</h2>
+    <p class="dice">Una columna por día. De abajo arriba, los cuatro tramos que
+    la astronomía distingue: noche cerrada, crepúsculo astronómico, náutico y
+    civil, y el día. Pasa el dedo o el ratón por encima.</p>
+
+    <div class="grafica">
+      <div class="horas" id="ejeHoras" aria-hidden="true"></div>
+      <div class="banda" id="lienzo">
+        <canvas id="banda" role="img"
+                aria-label="Banda de luz del año: la franja del día se ensancha hacia el verano y se estrecha hacia el invierno."></canvas>
+        <div class="cruz" id="cruz"></div>
+        <div class="globo" id="globo"></div>
+      </div>
+      <div class="meses" id="meses" aria-hidden="true"></div>
+    </div>
+    <p class="leyenda">
+      <span><i style="background:var(--dia)"></i> día</span>
+      <span><i style="background:var(--civil)"></i> crepúsculo civil</span>
+      <span><i style="background:var(--nautico)"></i> náutico</span>
+      <span><i style="background:var(--astro)"></i> astronómico</span>
+      <span><i style="background:var(--noche)"></i> noche cerrada</span>
+    </p>
+  </section>
+
+  <section id="extremosSec">
+    <h2>Los dos extremos</h2>
+    <p class="dice">El día más largo y el más corto del año, y cuánto hay entre
+    los dos. Es la cifra que más cambia de un sitio a otro: en Quito son
+    minutos; en Ushuaia, casi diez horas.</p>
+    <div class="rejilla">
+      <table>
+        <caption class="sub" style="text-align:left;padding-bottom:.6rem">Ciudad de México, 2026</caption>
+        <tbody id="extremos"><tr><th scope="row">Día más largo</th><td>21 de junio</td><td class="n">13 h 18 m</td></tr><tr><th scope="row">Día más corto</th><td>21 de diciembre</td><td class="n">10 h 57 m</td></tr><tr><th scope="row">Diferencia</th><td>entre uno y otro</td><td class="n">2 h 21 m</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="mensualSec">
+    <h2>Mes a mes</h2>
+    <p class="dice">El día 15 de cada mes.</p>
+    <div class="rejilla">
+      <table>
+        <thead><tr><th scope="col">Fecha</th><th scope="col" class="n">Sale</th>
+          <th scope="col" class="n">Se pone</th><th scope="col" class="n">Luz</th></tr></thead>
+        <tbody id="mensual"><tr><th scope="row">Enero 15</th><td class="n">07:13</td><td class="n">18:19</td><td class="n">11 h 05 m</td></tr><tr><th scope="row">Febrero 15</th><td class="n">07:05</td><td class="n">18:36</td><td class="n">11 h 31 m</td></tr><tr><th scope="row">Marzo 15</th><td class="n">06:44</td><td class="n">18:46</td><td class="n">12 h 02 m</td></tr><tr><th scope="row">Abril 15</th><td class="n">06:19</td><td class="n">18:54</td><td class="n">12 h 36 m</td></tr><tr><th scope="row">Mayo 15</th><td class="n">06:01</td><td class="n">19:05</td><td class="n">13 h 03 m</td></tr><tr><th scope="row">Junio 15</th><td class="n">05:58</td><td class="n">19:16</td><td class="n">13 h 18 m</td></tr><tr><th scope="row">Julio 15</th><td class="n">06:07</td><td class="n">19:18</td><td class="n">13 h 11 m</td></tr><tr><th scope="row">Agosto 15</th><td class="n">06:17</td><td class="n">19:05</td><td class="n">12 h 47 m</td></tr><tr><th scope="row">Septiembre 15</th><td class="n">06:24</td><td class="n">18:39</td><td class="n">12 h 15 m</td></tr><tr><th scope="row">Octubre 15</th><td class="n">06:31</td><td class="n">18:13</td><td class="n">11 h 42 m</td></tr><tr><th scope="row">Noviembre 15</th><td class="n">06:45</td><td class="n">17:58</td><td class="n">11 h 13 m</td></tr><tr><th scope="row">Diciembre 15</th><td class="n">07:03</td><td class="n">18:01</td><td class="n">10 h 58 m</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="ancho">
+  <p><b>Cómo se calcula.</b> Con el algoritmo solar de la NOAA, el mismo de sus
+  hojas de cálculo públicas: setenta líneas de aritmética que corren en tu
+  aparato. No hay ninguna petición a ningún servidor — ni para la hora, ni para
+  el mapa, ni para las letras.</p>
+
+  <p><b>Qué tan exacto es.</b> Da el minuto correcto entre los paralelos 60 y
+  −60. Más cerca de los polos el error crece, porque ahí el sol roza el
+  horizonte durante horas y un minuto de cuenta son varios de cielo. La salida
+  y la puesta se toman con el sol a −0°50′, que es como se definen: el borde
+  del disco asomando, contando la refracción del aire.</p>
+
+  <p><b>Las horas son las del reloj de pared, en horario estándar.</b> Los
+  lugares de la lista están elegidos porque ninguno adelanta el reloj en
+  verano. Para cualquier otro sitio está «mi ubicación», que toma el huso del
+  propio aparato: esa posición no sale de esta página, no se guarda y no se
+  envía a nadie.</p>
+
+  <p>Las coordenadas son las del centro de cada ciudad, redondeadas a dos
+  decimales. Letras: Young Serif, Work Sans e IBM Plex Mono, las tres bajo
+  licencia SIL OFL, en <span style="font-family:var(--cifra)">fuentes/</span>.</p>
+</footer>
+
+<button class="tema" id="tema" type="button">Oscuro</button>
+
+<script type="module" src="motor.js"></script>
+</body>
+</html>
