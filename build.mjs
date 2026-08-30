@@ -31,6 +31,13 @@ const VA = [
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
+  /* La lámina: el atlas del departamento de diseño. Sin esta línea la carpeta
+     existe en el repo y NO en el sitio, y el enlace devuelve 404. */
+  'lamina',
+  /* El año en luz. Se publica ENTERA —CSS, módulos y fuentes— porque no es un
+     archivo suelto como la lámina: es un sitio normal de varios archivos, y si
+     falta uno la página carga a medias sin decir por qué. */
+  'luz',
   /* las guías de formación: el PDF de estudio y la app de entrenamiento. Sin
      esta línea la carpeta existe en el repo y NO en el sitio, y el enlace que
      se le pasa a alguien devuelve 404 — que es exactamente lo que pasó. */
@@ -55,6 +62,14 @@ const NO_VA = (ruta) => {
      publicar y no lo que se quedó en la carpeta. Se colaban diez. */
   if(/^pruebas[^/]*\.(mjs|js|py)$/i.test(f)) return true;
   if(/^armar-suelto\.mjs$/i.test(f)) return true;
+  /* el taller de la lámina arma el HTML: es material de trabajo, no sitio.
+     OJO: `ruta` llega SIN barra al final cuando lo que se mira es la carpeta
+     misma, así que el patrón acepta el fin de cadena — igual que `arte/web`. */
+  if(/(^|\/)lamina\/taller(\/|$)/.test(ruta)) return true;
+  /* El taller del año en luz hornea su index.html: mismo caso. Las licencias
+     OFL sí se publican —viajan con las fuentes, que es donde tienen que estar—
+     y por eso la regla de los .md de arriba no las toca: son .txt. */
+  if(/(^|\/)luz\/taller(\/|$)/.test(ruta)) return true;
   /* el taller de las guías arma el HTML y el PDF: es material de trabajo.
      OJO con el final: `ruta` llega SIN barra al final cuando lo que se está
      mirando es la carpeta misma, así que el patrón tiene que aceptar el fin de

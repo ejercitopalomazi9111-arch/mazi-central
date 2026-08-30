@@ -1590,20 +1590,51 @@ function moverBrazos(p, t){
   const b = p.brazos;
   if(!b || !b.LowerArmL) return;
 
-  /* Sólo cuando de verdad está en algo. Un agente en reposo con las manos
-     tecleando es una mentira que se ve a la primera. */
-  const trabajando = !!(p.quien && p.quien.trabajo)
+  /* ⚠ ESTO DEPENDÍA DE `trabajo` Y POR ESO NO SE VEÍA NUNCA. Es la MISMA
+     causa que ya se había arreglado tres párrafos más arriba para sentarse, y
+     se quedó a medias: `quien.trabajo` sólo existe si el agente reporta con
+     /trabajando, «que en la práctica casi nunca pasa» —lo dice el comentario
+     de al lado—. Así que los robots se sentaban y no tecleaban jamás.
+     Carlos, e226: «los bots no escriben ni usan el teclado pero ya están
+     sentados», y otra vez en e263.
+
+     El criterio correcto es el mismo que el de la silla: quien está en su
+     escritorio está tecleando. La excepción es quien tiene una razón para no
+     estarlo —el que camina buscando, el que está topado, el que ya no está—.
+     Un agente sentado y quieto delante de una pantalla encendida se lee como
+     descompuesto, no como en reposo. */
+  const pose = p.quien ? animacionDe(p.quien) : 'Idle';
+  const trabajando = pose === 'Sitting'
                   && p.quien.estado !== 'topado' && p.quien.estado !== 'fuera';
 
-  /* Se guarda la pose que dejó el mezclador ANTES de tocarla, y se vuelve a
-     ella al soltar. Sin esto, al dejar de trabajar los brazos se quedan
-     doblados donde los dejamos y el robot parece descompuesto. */
-  const suave = (hueso, dx, dy) => {
-    hueso.rotation.x += dx;
-    hueso.rotation.y += dy;
+  /* ⚠ EL DESPLAZAMIENTO SE APLICA COMO DIFERENCIA, NO COMO SUMA.
+     Antes era `rotation.x += dx` en cada cuadro. Para un hueso que el clip SÍ
+     anima da igual, porque el mezclador lo vuelve a escribir; pero para uno
+     que el clip NO anima —y en `Sitting` son casi todos los del brazo— la
+     rotación se ACUMULA para siempre: medido, el brazo derecho giraba 0.28
+     radianes en 0.8 segundos y seguía. A los treinta segundos el robot tiene
+     el brazo detrás de la cabeza.
+
+     Guardando lo último que pusimos y restando, el desfase neto contra la
+     pose del mezclador es siempre exactamente `dx`, y al soltar vuelve a
+     cero solo — que es lo que este comentario prometía y no hacía. */
+  if(!p.desfase) p.desfase = {};
+  const suave = (nombre, hueso, dx, dy) => {
+    const a = p.desfase[nombre] || { x:0, y:0 };
+    hueso.rotation.x += dx - a.x;
+    hueso.rotation.y += dy - a.y;
+    p.desfase[nombre] = { x:dx, y:dy };
   };
 
-  if(!trabajando) return;
+  if(!trabajando){
+    /* al dejar de teclear se devuelve la pose, en el mismo cuadro */
+    for(const nombre in p.desfase){
+      const h = b[nombre], a = p.desfase[nombre];
+      if(h){ h.rotation.x -= a.x; h.rotation.y -= a.y; }
+    }
+    p.desfase = {};
+    return;
+  }
 
   const f = t * 9 + p.fase;
   /* Las ráfagas: teclea un rato y para. `Math.max(0, sin)` da pausas de la
@@ -1613,14 +1644,14 @@ function moverBrazos(p, t){
   const golpe  = Math.sin(f) * 0.075 * rafaga;
   const golpe2 = Math.sin(f * 1.17 + 1.1) * 0.065 * rafaga;
 
-  suave(b.LowerArmL, golpe, 0);
-  if(b.UpperArmL) suave(b.UpperArmL, golpe * 0.35, 0);
-  suave(b.LowerArmR, golpe2 * 0.4, 0);
+  suave('LowerArmL', b.LowerArmL, golpe, 0);
+  if(b.UpperArmL) suave('UpperArmL', b.UpperArmL, golpe * 0.35, 0);
+  suave('LowerArmR', b.LowerArmR, golpe2 * 0.4, 0);
 
   /* El ratón: la derecha deriva despacio y ancho, en dos ejes distintos para
      que el recorrido no sea una recta. */
   if(b.UpperArmR){
-    suave(b.UpperArmR,
+    suave('UpperArmR', b.UpperArmR,
           Math.sin(t * 0.55 + p.fase) * 0.05,
           Math.cos(t * 0.38 + p.fase) * 0.09);
   }
@@ -2309,7 +2340,12 @@ $('bVista').addEventListener('click', () => {
 /* Una manija para poder MEDIR la escena desde fuera. No es depuración
    olvidada: sin esto, revisar el taller es mirar una foto y opinar, que es
    justo lo que la casa no acepta como verificación. */
-window.__taller = { escena, camara, puestos, get gente(){ return gente; },
+window.__taller = { escena, camara, puestos, animacionDe,
+                    /* Corta el sondeo a la sala. Sin esto una prueba que fuerce
+                       un estado mide una carrera contra el servidor: entre un
+                       sondeo y el siguiente forzado pasan varios cuadros con el
+                       estado DE VERDAD, y esos cuadros salen como fallos. */
+                    congelarSala(){ clearInterval(latido); latido = 0; return true; }, get gente(){ return gente; },
                     get cielo(){ return cielo; }, dispararCielo:() => cielo && dispararCielo(cielo),
                     cuantasPantallas: () => PANTALLAS_TOTAL,
                     /* Poner una pantalla concreta, para poder VERLAS todas en
@@ -2479,6 +2515,12 @@ addEventListener('resize', () => {
 });
 
 /* ── arranque ─────────────────────────────────────────────────────────── */
+/* El sondeo a la sala vive aquí arriba para que se pueda PARAR. No es un
+   adorno de prueba: la sala es real y reescribe `quien` cada dos segundos, así
+   que cualquier medición que dure más que eso está corriendo contra el
+   servidor. Es exactamente lo que hacía fallar 2 de 27 muestras y parecía un
+   defecto del taller. */
+let latido = 0;
 async function arrancar(){
   /* ⚠ SIN ESTE try/catch, cualquier tropiezo aquí adentro desaparece: se llama
      desde el callback asíncrono del cargador de modelos, y una promesa rota
@@ -2490,7 +2532,7 @@ async function arrancar(){
   try{
     refrescar(await traer());
     if(HAY3D) cuadro();
-    setInterval(async () => {
+    latido = setInterval(async () => {
       try{ refrescar(await traer()); }
       catch(e){ $('aviso').textContent = `El taller se atoró: ${e.message}`; }
     }, 2000);

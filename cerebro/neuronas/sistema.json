@@ -1,0 +1,177 @@
+{
+  "area": "sistema",
+  "nombre": "Sistema de diseño: que se sostenga solo",
+  "que": "Tokens, nombres, componentes y decisiones escritas. Lo que hace que un estilo sobreviva a quien lo hizo.",
+  "neuronas": [
+    {
+      "id": "tokens-en-dos-sitios",
+      "titulo": "El sistema de diseño vive en dos archivos que no coinciden",
+      "gravedad": "alta",
+      "sintoma": "Se cambia un color y sigue apareciendo el viejo en la mitad de los sitios.",
+      "causa": "Los valores están declarados en dos lugares —una configuración y una hoja— y sólo se actualizó uno.",
+      "porque": "Cada herramienta trae su sitio para lo mismo, y añadir el segundo cuesta menos que migrar.",
+      "arreglo": "Un solo sitio donde vive cada valor. Si la herramienta obliga a otro, que lo lea del primero.",
+      "comoCazarlo": "Cambiar un token a un color estridente y recorrer la interfaz. Lo que no cambie está leyendo del otro sitio.",
+      "consejo": "Un sistema partido en dos no es un sistema: son dos sistemas que se parecen.",
+      "senales": [
+        "cambié el color y no se aplica",
+        "hay dos configuraciones",
+        "sigue saliendo el color viejo"
+      ],
+      "salioDe": "Regla del sitio del Instituto: los tokens viven en `@theme` de la hoja y no se crea un archivo de configuración aparte."
+    },
+    {
+      "id": "nombres-que-dicen-como-se-ve",
+      "titulo": "El token se llama `azul-claro` y ahora es verde",
+      "gravedad": "media",
+      "sintoma": "Los nombres de los valores contradicen lo que valen.",
+      "causa": "Se nombraron por apariencia y no por papel: `azul-claro` en vez de `superficie-elevada`.",
+      "porque": "Al crearlos, la apariencia es lo único que se conoce; el papel se descubre usándolos.",
+      "arreglo": "Nombrar por función. Un nombre de papel sobrevive a un cambio de marca; uno de apariencia, no.",
+      "comoCazarlo": "Buscar tokens con nombre de color, tamaño o forma. Cada uno es una mentira futura.",
+      "consejo": "Conviven bien dos niveles: una capa de valores con nombre de apariencia y otra de papeles que apunta a ella.",
+      "senales": [
+        "el token se llama azul y es verde",
+        "los nombres ya no cuadran",
+        "hay que renombrar todo"
+      ],
+      "salioDe": "Práctica estándar de sistemas de diseño; en este grupo, la separación entre `--violeta` y `--acento`."
+    },
+    {
+      "id": "prefijo-que-distingue-lo-del-sistema",
+      "titulo": "No se distingue lo que es del sistema de lo que alguien improvisó",
+      "gravedad": "baja",
+      "sintoma": "Con el tiempo hay valores sueltos mezclados con los del sistema y nadie sabe cuáles son cuáles.",
+      "causa": "No hay prefijo ni espacio de nombres, así que un valor local se ve igual que uno compartido.",
+      "porque": "Al principio son cuatro y se distinguen de memoria.",
+      "arreglo": "Un prefijo consistente para lo compartido. Se lee de un vistazo y evita choques.",
+      "comoCazarlo": "Listar los valores usados y separar los que siguen la convención de los que no.",
+      "consejo": "Ayuda sobre todo a quien llega nuevo: el prefijo dice «esto es del sistema» sin tener que preguntar.",
+      "senales": [
+        "no sé cuáles son del sistema",
+        "hay valores sueltos",
+        "alguien inventó un token"
+      ],
+      "salioDe": "Smashing, «Keyframes Tokens»: un prefijo hace obvio qué es token y qué es local, y evita choques."
+    },
+    {
+      "id": "la-escala-que-nadie-obliga-a-usar",
+      "titulo": "Hay escala y aun así aparecen valores sueltos",
+      "gravedad": "media",
+      "sintoma": "La escala de espaciado tiene seis pasos y en el código hay treinta valores distintos.",
+      "causa": "La escala es una recomendación: nada impide escribir un número a mano.",
+      "porque": "En el momento, el valor exacto que hace falta no está en la escala, y añadirlo parece más caro que escribirlo.",
+      "arreglo": "Una comprobación que recorra los valores realmente aplicados y repruebe los que no sean de la escala.",
+      "comoCazarlo": "Sacar del navegador todos los valores aplicados de una propiedad y contar cuántos distintos hay.",
+      "consejo": "Sin esa comprobación, «tenemos un sistema» dura hasta el primer valor que alguien escriba de prisa.",
+      "senales": [
+        "hay muchos valores distintos",
+        "no se respeta la escala",
+        "cada quien pone lo que quiere"
+      ],
+      "salioDe": "El banco de pruebas: cinco duraciones y una prueba que reprueba cualquier otra."
+    },
+    {
+      "id": "componente-que-solo-sirve-donde-nacio",
+      "titulo": "El componente lleva dentro los márgenes de su primera pantalla",
+      "gravedad": "media",
+      "sintoma": "Reutilizar un componente exige pelear con su espacio exterior en cada sitio nuevo.",
+      "causa": "El componente trae márgenes propios, que son una decisión del CONTEXTO y no suya.",
+      "porque": "Al crearlo sólo existe un contexto, y ahí el margen forma parte de que se vea bien.",
+      "arreglo": "El componente controla su interior; el espacio entre él y sus vecinos lo pone quien lo coloca.",
+      "comoCazarlo": "Poner dos copias seguidas y ver si el espacio entre ellas tiene sentido sin ajustes.",
+      "consejo": "Es la diferencia entre una pieza y un recorte de una pantalla concreta.",
+      "senales": [
+        "tengo que quitarle el margen",
+        "no encaja en el otro sitio",
+        "hay que sobrescribir estilos"
+      ],
+      "salioDe": "Práctica de composición documentada en web.dev, «Micro layouts»."
+    },
+    {
+      "id": "documentacion-que-no-se-puede-reprobar",
+      "titulo": "La guía de estilo describe lo que debería pasar",
+      "gravedad": "media",
+      "sintoma": "Hay documentación bonita y el producto no se parece a ella.",
+      "causa": "La guía es prosa: no hay nada que compare lo escrito con lo que la interfaz hace.",
+      "porque": "Escribir la guía es un trabajo acotado y comprobarla no tiene fin visible.",
+      "arreglo": "Que lo comprobable se compruebe —valores, contraste, tamaños— y que la prosa se quede con lo que no se puede automatizar: el porqué.",
+      "comoCazarlo": "Por cada regla de la guía, preguntar qué la reprueba. Si nada, es una intención.",
+      "consejo": "Una biblioteca de componentes documenta estados y atributos; la prosa documenta decisiones.",
+      "senales": [
+        "la guía dice otra cosa",
+        "nadie sigue el sistema",
+        "la documentación está desactualizada"
+      ],
+      "salioDe": "NN/g, «Design Systems vs. Style Guides», y la práctica de este grupo de comprobar lo comprobable."
+    },
+    {
+      "id": "copiar-el-efecto-sin-la-razon",
+      "titulo": "Se copió el efecto de una referencia y no lo que resolvía",
+      "gravedad": "media",
+      "sintoma": "Un recurso que en la referencia se veía espectacular aquí se ve fuera de lugar.",
+      "causa": "Se copió la forma sin el contexto: allí resolvía algo que aquí no existe.",
+      "porque": "Lo que se guarda de una referencia es la captura, no el problema que estaba resolviendo.",
+      "arreglo": "Al guardar una referencia, anotar qué problema resuelve. Sin eso, sólo se puede copiar la apariencia.",
+      "comoCazarlo": "Preguntar de cada elemento tomado prestado qué está resolviendo aquí. Si la respuesta es «se veía bien allá», no está resolviendo nada.",
+      "consejo": "Es la diferencia entre estudiar referencias y hacer un collage.",
+      "senales": [
+        "lo saqué de una página que me gustó",
+        "aquí no se ve igual",
+        "copié el estilo y no funciona"
+      ],
+      "salioDe": "El vidrio sin nada detrás y el desenfoque decorativo, dos casos de esto mismo en este proyecto."
+    },
+    {
+      "id": "un-solo-lenguaje-visual-y-llamarlo-sistema",
+      "titulo": "El sistema sólo se ha probado consigo mismo",
+      "gravedad": "baja",
+      "sintoma": "Se dice que hay un sistema de diseño y en realidad hay un estilo.",
+      "causa": "Nunca se ha cambiado el lenguaje visual sin tocar la estructura, que es la prueba de si el sistema existe.",
+      "porque": "Mientras haya un solo aspecto, la estructura y la apariencia pueden estar mezcladas sin que se note.",
+      "arreglo": "Intentar cambiar el lenguaje visual entero —color, forma, tipo, densidad— sin tocar el marcado. Lo que se resista es lo que estaba mezclado.",
+      "comoCazarlo": "Dos temas del mismo lenguaje no cuentan: hay que cambiar el lenguaje, no la paleta.",
+      "consejo": "Es la prueba más dura y la más honesta: si no se puede cambiar sin tocar estructura, es un estilo con buena letra.",
+      "senales": [
+        "¿esto es un sistema o un estilo?",
+        "tenemos tema claro y oscuro",
+        "no sé si se puede retematizar"
+      ],
+      "salioDe": "La autorrevisión del banco de pruebas, «no» nº 4: dos temas del MISMO lenguaje son el mínimo, no lo pedido."
+    },
+    {
+      "id": "dependencia-nueva-por-setenta-lineas",
+      "titulo": "Se añadió una librería para algo que cabía en setenta líneas",
+      "gravedad": "media",
+      "sintoma": "El proyecto arrastra dependencias grandes para funciones pequeñas.",
+      "causa": "Se resolvió con lo que existe en vez de escribir lo justo.",
+      "porque": "Instalar es un comando y escribir es una tarde; el costo aparece meses después, en actualizaciones y en peso.",
+      "arreglo": "Si cabe en setenta líneas propias, se escribe. Y se documenta por qué, para que nadie proponga la librería otra vez.",
+      "comoCazarlo": "Por cada dependencia, mirar cuántas de sus funciones se usan. Si es una, casi siempre cabía escribirla.",
+      "consejo": "Cada dependencia es también una superficie de seguridad y una cadena de actualizaciones.",
+      "senales": [
+        "instalé una librería para eso",
+        "pesa mucho el bundle",
+        "¿hace falta esa dependencia?"
+      ],
+      "salioDe": "Regla de este grupo: el motor de movimiento y la validación se resolvieron con código propio."
+    },
+    {
+      "id": "decidido-y-vuelto-a-proponer",
+      "titulo": "Cada sesión propone lo que ya se descartó",
+      "gravedad": "media",
+      "sintoma": "Vuelve la misma propuesta cada pocas semanas, con argumentos que suenan bien.",
+      "causa": "Lo que se descartó no quedó escrito con su motivo, así que quien llega nuevo no sabe que se discutió.",
+      "porque": "Al descartar algo, escribir por qué se siente como burocracia: la razón está fresca y parece obvia.",
+      "arreglo": "Una lista de lo decidido y cerrado, con lo que se descartó al lado. De una decisión, lo que más vale es qué se descartó.",
+      "comoCazarlo": "Si la misma idea vuelve dos veces, es que falta escribirla.",
+      "consejo": "Y si hay que reabrir algo, se reabre con el argumento que lo tiró enfrente, no como idea nueva.",
+      "senales": [
+        "esto ya lo habíamos hablado",
+        "¿por qué no usamos X?",
+        "otra vez la misma propuesta"
+      ],
+      "salioDe": "La sección «decidido y cerrado» del sitio del Instituto, escrita justo por esto."
+    }
+  ]
+}

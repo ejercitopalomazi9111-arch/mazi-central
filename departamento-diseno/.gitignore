@@ -1,0 +1,6 @@
+# El volcado crudo del descubrimiento: 5 670 URLs, 700 KB, y se regenera en
+# unos minutos con `cosechar.mjs descubrir`. Lo que sí se commitea es
+# `elegidos.json` —los 336 que de verdad se van a leer, con su casa y su
+# puntuación—, porque de dónde salió cada cosa es parte del trabajo y tiene que
+# poder revisarse. Un diff con 5 670 enlaces ajenos no se revisa: se aprueba.
+cosecha.json

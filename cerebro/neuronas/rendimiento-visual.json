@@ -1,0 +1,177 @@
+{
+  "area": "rendimiento-visual",
+  "nombre": "Lo que cuesta que se vea bien",
+  "que": "El precio de los efectos: cuadros, capas, memoria y primer pintado. Y cómo medirlo donde duele, no donde va bien.",
+  "neuronas": [
+    {
+      "id": "treinta-estables-mejor-que-sesenta-a-saltos",
+      "titulo": "Vale más una velocidad constante que una alta e irregular",
+      "gravedad": "media",
+      "sintoma": "La animación va a veces muy fluida y a veces no, y se siente peor que si fuera siempre más lenta.",
+      "causa": "El presupuesto por cuadro no alcanza siempre, así que la velocidad fluctúa. Lo que el ojo detecta es el cambio, no el número.",
+      "porque": "Se persigue el número máximo porque es el que se puede presumir, y la variación no aparece en ninguna métrica de una sola cifra.",
+      "arreglo": "Si no se puede sostener el máximo, fijar deliberadamente la mitad y no soltarlo. Constante gana a alto.",
+      "comoCazarlo": "Mirar la gráfica de cuadros, no el promedio. Un promedio bueno puede esconder tirones.",
+      "consejo": "Es la misma idea que en audio: la irregularidad se nota más que el nivel.",
+      "senales": [
+        "va fluido y de repente no",
+        "se siente irregular",
+        "a ratos se traba"
+      ],
+      "salioDe": "Smashing, «Gone In 60 Frames Per Second»: con velocidad variable conviene fijar 30 antes que fluctuar entre 30 y 60."
+    },
+    {
+      "id": "capas-de-composicion-de-mas",
+      "titulo": "Se promovieron a capa tantos elementos que ahora va más lento",
+      "gravedad": "media",
+      "sintoma": "Se aplicó el truco de promover a capa para acelerar y el resultado es peor, sobre todo en móvil.",
+      "causa": "Cada capa hay que subirla a memoria de vídeo y gestionarla. Muchas capas cuestan más de lo que ahorran.",
+      "porque": "El truco funciona espectacularmente con un elemento, y de ahí se generaliza a todos.",
+      "arreglo": "Promover sólo lo que de verdad se repinta mucho y aislarlo a propósito. Y quitar la promoción cuando deja de animarse.",
+      "comoCazarlo": "Contar las capas de composición en las herramientas del navegador y mirar la memoria de vídeo.",
+      "consejo": "Subir texturas de memoria de sistema a memoria de vídeo no es gratis ni rápido.",
+      "senales": [
+        "puse will-change en todo",
+        "va peor en el celular",
+        "se come la memoria"
+      ],
+      "salioDe": "Smashing, «Gone In 60 Frames Per Second»: cuantas más capas, más texturas que subir y gestionar."
+    },
+    {
+      "id": "la-fuente-bloquea-el-primer-texto",
+      "titulo": "No se ve nada de texto hasta que llega la tipografía",
+      "gravedad": "alta",
+      "sintoma": "En una red lenta la página está en blanco un buen rato aunque el texto ya haya llegado.",
+      "causa": "La hoja que declara las fuentes bloquea el pintado, así que el navegador espera antes de dibujar una letra.",
+      "porque": "En desarrollo la fuente está en caché y el bloqueo dura cero.",
+      "arreglo": "Que el texto se pinte con la de respaldo desde el primer momento y la real entre después.",
+      "comoCazarlo": "Cargar con la caché vacía y la red ralentizada, mirando cuándo aparece el primer texto.",
+      "consejo": "El costo de que el texto cambie de letra a media carga es menor que el de no tener texto.",
+      "senales": [
+        "se queda en blanco al cargar",
+        "tarda en salir el texto",
+        "la fuente bloquea todo"
+      ],
+      "salioDe": "Smashing, «How To Optimize Mobile Performance»: diferir la carga de fuentes para que el contenido llegue primero."
+    },
+    {
+      "id": "medir-en-la-maquina-del-que-lo-hizo",
+      "titulo": "Va rápido en la computadora de quien lo programó",
+      "gravedad": "alta",
+      "sintoma": "Nadie del equipo reproduce la lentitud que reporta la gente.",
+      "causa": "Se mide en un aparato caro con red buena, que es el peor sitio para medir.",
+      "porque": "Es el aparato que se tiene a mano, y ahí todo va bien por definición.",
+      "arreglo": "Medir con la CPU ralentizada varias veces y la red limitada, o en un teléfono de gama media de verdad.",
+      "comoCazarlo": "Repetir la misma prueba con la CPU a 6× más lenta. Lo que se rompe ahí es lo que la gente ve.",
+      "consejo": "Es la misma disciplina que mirar la pantalla en vez del código: hay que ponerse donde está quien lo sufre.",
+      "senales": [
+        "a mí me va bien",
+        "no puedo reproducirlo",
+        "en mi compu vuela"
+      ],
+      "salioDe": "Las mediciones del sitio del Instituto: 48–51 cuadros con la CPU seis veces más lenta."
+    },
+    {
+      "id": "un-requestanimationframe-por-componente",
+      "titulo": "Cada pieza animada tiene su propio ciclo",
+      "gravedad": "media",
+      "sintoma": "Con varias animaciones a la vez, la página se arrastra aunque cada una por separado vaya bien.",
+      "causa": "Cada componente pide su propio ciclo de cuadro, así que hay diez ciclos compitiendo por el mismo hilo.",
+      "porque": "Cada componente se escribe aislado y su ciclo propio es lo que lo hace autónomo.",
+      "arreglo": "Un solo ciclo compartido al que las piezas se apuntan y del que se dan de baja cuando terminan.",
+      "comoCazarlo": "Contar cuántos ciclos activos hay a la vez. Debería ser uno.",
+      "consejo": "Con un ciclo compartido también sale gratis pausar todo lo que está fuera de pantalla.",
+      "senales": [
+        "con varias animaciones se traba",
+        "cada componente anima por su cuenta",
+        "va lento con todo junto"
+      ],
+      "salioDe": "El motor del banco de pruebas: un solo requestAnimationFrame para todos los lienzos, con pausa fuera de pantalla."
+    },
+    {
+      "id": "animar-lo-que-no-se-ve",
+      "titulo": "Lo que está fuera de pantalla sigue animándose",
+      "gravedad": "media",
+      "sintoma": "La batería baja y el ventilador se enciende en una página que parece quieta.",
+      "causa": "Las animaciones siguen corriendo aunque su elemento esté fuera de la vista o la pestaña oculta.",
+      "porque": "Nada avisa de que dejó de verse: hay que preguntarlo a propósito.",
+      "arreglo": "Observar la intersección con la pantalla y pausar lo que no se ve. Y comprobar también si la pestaña está oculta.",
+      "comoCazarlo": "Bajar hasta que el elemento salga de la vista y mirar si sigue gastando cuadros.",
+      "consejo": "Cero cuadros dos segundos después de salir de pantalla es una comprobación fácil de automatizar.",
+      "senales": [
+        "se calienta el teléfono",
+        "gasta batería",
+        "sigue trabajando aunque no se vea"
+      ],
+      "salioDe": "El banco de pruebas: pausa fuera de pantalla, comprobada con cero cuadros tras dos segundos."
+    },
+    {
+      "id": "densidad-de-pixel-sin-tope",
+      "titulo": "En una pantalla muy densa el lienzo cuesta el triple",
+      "gravedad": "media",
+      "sintoma": "Una animación con lienzo va bien en un monitor normal y se arrastra en una pantalla de alta densidad.",
+      "causa": "El lienzo se dimensiona por la densidad real del aparato, que puede ser 3, así que hay nueve veces más píxeles que pintar.",
+      "porque": "Multiplicar por la densidad es lo correcto para que no se vea borroso, y el costo crece al cuadrado sin que nadie lo note.",
+      "arreglo": "Topar la densidad en 1.5 o 2 para lo decorativo. La diferencia visual es mínima y la de costo es enorme.",
+      "comoCazarlo": "Comparar cuadros por segundo en una pantalla de densidad 1 y en una de 3.",
+      "consejo": "Para gráficos con texto o líneas finas conviene no topar; para partículas y fondos, sí.",
+      "senales": [
+        "va lento en la pantalla retina",
+        "en el monitor bueno se arrastra",
+        "el lienzo cuesta mucho"
+      ],
+      "salioDe": "El motor del banco: `devicePixelRatio` topado a 1.5 y presupuesto de ~30 cuadros para el fondo."
+    },
+    {
+      "id": "la-metrica-que-nadie-vuelve-a-medir",
+      "titulo": "Los números de rendimiento son de una medición que ya nadie repite",
+      "gravedad": "media",
+      "sintoma": "Se citan cifras de velocidad o accesibilidad que nadie ha vuelto a comprobar en meses.",
+      "causa": "Se midió una vez a mano y el resultado se escribió como si fuera una propiedad permanente.",
+      "porque": "Medir a mano cuesta y automatizar cuesta más; el número, una vez escrito, se cita solo.",
+      "arreglo": "O se automatiza y puede reprobar, o se marca con fecha y se dice que es una foto de ese día.",
+      "comoCazarlo": "Por cada cifra publicada, buscar qué comando la vuelve a producir. Si no existe, es un reporte, no una medición.",
+      "consejo": "Un dato medido sin cómo ni cuándo no es una medición: es un reporte, y de esos no hay que fiarse.",
+      "senales": [
+        "¿sigue siendo cierto ese número?",
+        "lo medimos hace tiempo",
+        "dice que pasa accesibilidad"
+      ],
+      "salioDe": "La sección de lo medido del sitio del Instituto, reescrita para separar lo que comprueba una máquina de lo que se midió una vez."
+    },
+    {
+      "id": "optimizar-lo-que-no-se-midio",
+      "titulo": "Se optimizó lo que parecía lento y no lo era",
+      "gravedad": "baja",
+      "sintoma": "Se invirtió tiempo en acelerar algo y la página sigue igual.",
+      "causa": "Se escogió el sospechoso por intuición, no por perfil. El cuello de botella estaba en otro sitio.",
+      "porque": "La intuición señala lo que uno acaba de escribir o lo que se ve más complejo, que casi nunca es lo que cuesta.",
+      "arreglo": "Perfilar primero. Y volver a perfilar después, para saber si el arreglo hizo algo.",
+      "comoCazarlo": "Si no hay una medición antes y otra después, no se sabe si se optimizó o sólo se cambió.",
+      "consejo": "Es el mismo error que revertir sin medir, con el signo cambiado.",
+      "senales": [
+        "optimicé y sigue igual",
+        "creí que era eso",
+        "no mejoró nada"
+      ],
+      "salioDe": "La disciplina de medir con y sin el cambio aplicada en el banco de pruebas."
+    },
+    {
+      "id": "peticiones-fuera-del-dominio",
+      "titulo": "La página depende de servidores de otros para pintarse",
+      "gravedad": "media",
+      "sintoma": "La página va lenta o se queda a medias cuando un servicio ajeno responde tarde.",
+      "causa": "Fuentes, iconos o scripts se traen de dominios de terceros, que no se controlan.",
+      "porque": "Enlazar es más rápido que alojar, y funciona el día que se prueba.",
+      "arreglo": "Alojar lo que se pueda en el propio dominio. Cero peticiones fuera es una meta alcanzable en un sitio pequeño.",
+      "comoCazarlo": "Listar los dominios que la página contacta al cargar. Cada uno es una dependencia de disponibilidad y de privacidad.",
+      "consejo": "Además, cada tercero ve la visita: si el aviso de privacidad dice que no hay terceros, esto lo contradice.",
+      "senales": [
+        "se queda cargando por una fuente externa",
+        "depende de google fonts",
+        "tarda por un script de fuera"
+      ],
+      "salioDe": "El sitio del Instituto y el banco: tipografías auto-hospedadas y cero peticiones fuera del dominio, medido."
+    }
+  ]
+}

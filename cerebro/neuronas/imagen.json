@@ -1,0 +1,177 @@
+{
+  "area": "imagen",
+  "nombre": "Imagen: la que pesa y la que miente",
+  "que": "Fotografía, SVG e iconos: cuánto cuestan, cómo se recortan, cómo suenan para quien no las ve, y cuándo una imagen bonita está mintiendo.",
+  "neuronas": [
+    {
+      "id": "lazy-en-la-imagen-principal",
+      "titulo": "La imagen de la portada carga tarde a propósito",
+      "gravedad": "alta",
+      "sintoma": "La imagen grande de arriba tarda en aparecer, y la métrica de pintado más grande empeora.",
+      "causa": "Se aplicó carga diferida a todas las imágenes, incluida la que ya está a la vista al abrir.",
+      "porque": "Se pone en el componente de imagen «porque es buena práctica», y ahí aplica a todas por igual.",
+      "arreglo": "La imagen visible al abrir se carga normal, con prioridad. Lo diferido es para lo que hay que bajar a ver.",
+      "comoCazarlo": "Mirar el atributo de carga de la primera imagen visible. Si dice diferida, se está retrasando a propósito lo que más corre prisa.",
+      "consejo": "Vale también al revés: diferir sin reservar el hueco cambia un problema de velocidad por uno de saltos.",
+      "senales": [
+        "la imagen de arriba tarda",
+        "el LCP salió mal",
+        "se ve el hueco antes de la foto"
+      ],
+      "salioDe": "web.dev, «Responsive images»: para una imagen principal por encima del pliegue, no usar `loading`."
+    },
+    {
+      "id": "una-sola-imagen-para-todos-los-anchos",
+      "titulo": "El teléfono se baja la imagen del escritorio",
+      "gravedad": "alta",
+      "sintoma": "La página pesa mucho en móvil aunque las imágenes «están optimizadas».",
+      "causa": "Hay un solo archivo, dimensionado para la pantalla más grande, y el teléfono lo baja entero para pintarlo pequeño.",
+      "porque": "Optimizar se entiende como comprimir, y comprimir no cambia que se manden píxeles que nadie va a ver.",
+      "arreglo": "Varias medidas con `srcset` y un `sizes` que diga cuánto espacio va a ocupar de verdad. Sin `sizes` correcto, el navegador escoge mal.",
+      "comoCazarlo": "Cargar en un teléfono y mirar qué archivo se bajó y cuánto pesó, no cuánto pesa el original.",
+      "consejo": "La sintaxis es incómoda —lo dicen hasta quienes la documentan— y aun así es lo que separa una página ligera de una pesada.",
+      "senales": [
+        "pesa mucho en el celular",
+        "la imagen tarda en móvil",
+        "optimicé las imágenes y sigue lento"
+      ],
+      "salioDe": "Smashing, sobre `srcset` y `sizes`, y el generador de puntos de corte de imágenes."
+    },
+    {
+      "id": "svg-en-linea-sin-nombre",
+      "titulo": "El icono en SVG no existe para el lector de pantalla",
+      "gravedad": "media",
+      "sintoma": "Un botón con sólo un icono se anuncia como «botón», sin decir de qué.",
+      "causa": "El SVG va en línea y sin nombre accesible, y las ayudas técnicas lo saltan.",
+      "porque": "El icono se ve clarísimo, así que nadie se pregunta cómo suena.",
+      "arreglo": "O el SVG es decorativo y se marca como tal, y el nombre lo pone el botón; o el SVG es el contenido y lleva título.",
+      "comoCazarlo": "Recorrer los controles leyendo su nombre accesible. Cualquiera que se llame sólo «botón» o «enlace» está sin nombre.",
+      "consejo": "Un SVG en línea es más accesible que un lienzo —el texto de dentro se puede leer— pero sólo si se le dice qué es.",
+      "senales": [
+        "el lector no dice qué hace el botón",
+        "sólo dice botón",
+        "el icono no se anuncia"
+      ],
+      "salioDe": "web.dev, «Images» sobre SVG en línea, y A List Apart sobre animación accesible con SVG."
+    },
+    {
+      "id": "la-imagen-decorativa-que-se-lee",
+      "titulo": "El lector de pantalla lee el nombre del archivo",
+      "gravedad": "media",
+      "sintoma": "Se oye «imagen guion bajo hero dos punto jpg» en medio de un párrafo.",
+      "causa": "Una imagen decorativa sin texto alternativo: al no haber alternativa, se recurre al nombre del archivo.",
+      "porque": "Se piensa que el alt es opcional, cuando lo que es opcional es su CONTENIDO: vacío es una decisión válida y ausente no.",
+      "arreglo": "Alternativa vacía para lo decorativo. Y para lo que informa, describir la información, no la imagen.",
+      "comoCazarlo": "Buscar imágenes sin atributo `alt`. Y en las que lo tienen, comprobar que no repitan el pie de foto.",
+      "consejo": "«Foto de» sobra: quien escucha ya sabe que es una imagen.",
+      "senales": [
+        "lee el nombre del archivo",
+        "dice cosas raras entre el texto",
+        "el alt está vacío ¿está mal?"
+      ],
+      "salioDe": "web.dev, «Images», y las reglas de imagen del sitio del Instituto."
+    },
+    {
+      "id": "foto-que-pretende-ser-el-sitio",
+      "titulo": "La foto de archivo pasa por foto del lugar",
+      "gravedad": "alta",
+      "sintoma": "Alguien llega esperando lo que vio en la web y se encuentra otra cosa.",
+      "causa": "Se rellenó el hueco con una imagen de catálogo porque «se veía vacío».",
+      "porque": "Un marcador se lee como algo sin terminar y una foto bonita se lee como algo terminado, aunque mienta.",
+      "arreglo": "Un marcador honesto, con la proporción ya fijada para que sustituirlo por la foto real no mueva nada.",
+      "comoCazarlo": "Preguntar de cada imagen si es del sitio o de un banco. Si no se puede contestar, ya es un problema.",
+      "consejo": "Y con personas identificables hace falta permiso; con menores, permiso por escrito de quien corresponda.",
+      "senales": [
+        "esa foto no es de aquí",
+        "¿de dónde salió esa imagen?",
+        "parece otro lugar"
+      ],
+      "salioDe": "El sitio del Instituto Rembrandt: sin `src`, se dibuja un marcador honesto y jamás una imagen que pretenda ser el plantel."
+    },
+    {
+      "id": "formato-viejo-por-costumbre",
+      "titulo": "Se sirven JPEG y PNG donde cabía la mitad",
+      "gravedad": "media",
+      "sintoma": "Las imágenes pesan el doble de lo necesario sin que se note ninguna diferencia visual.",
+      "causa": "Se exporta en el formato de siempre, sin comparar contra los modernos.",
+      "porque": "El de siempre funciona en todas partes, y comparar formatos es un paso que nadie tiene en su rutina.",
+      "arreglo": "Servir formato moderno con respaldo, y comparar el peso en cada tipo de imagen: en fotografía y en gráficos planos la ganancia es muy distinta.",
+      "comoCazarlo": "Exportar la misma imagen en dos formatos a calidad equivalente y comparar bytes. Es un minuto por imagen.",
+      "consejo": "Para gráficos planos, con frecuencia lo que gana no es un formato de mapa de bits sino un SVG.",
+      "senales": [
+        "las imágenes pesan mucho",
+        "¿vale la pena cambiar de formato?",
+        "tarda en cargar la galería"
+      ],
+      "salioDe": "El sitio del Instituto: las diez ilustraciones se sirven ya en WebP y sin optimizador en el export."
+    },
+    {
+      "id": "recorte-que-decapita",
+      "titulo": "El recorte automático corta justo la cara",
+      "gravedad": "media",
+      "sintoma": "En algunas medidas, la foto queda encuadrada en el sitio equivocado.",
+      "causa": "Se usa un ajuste que llena el hueco recortando desde el centro, y el centro geométrico casi nunca es el centro de interés.",
+      "porque": "Con la foto de ejemplo el centro funciona, y las demás llegan después.",
+      "arreglo": "Declarar el punto de interés por imagen, para que el recorte se haga alrededor de lo que importa.",
+      "comoCazarlo": "Probar el mismo componente con una foto horizontal, una vertical y una con el sujeto descentrado.",
+      "consejo": "Si no hay quién marque el punto de interés, es mejor no recortar: encajar la imagen entera y aceptar el aire.",
+      "senales": [
+        "corta la cara",
+        "el recorte queda mal",
+        "se ve descentrada la foto"
+      ],
+      "salioDe": "La práctica de `object-fit` y `object-position` documentada en MDN, y los casos de tarjeta de Smashing."
+    },
+    {
+      "id": "animar-el-svg-y-perder-el-texto",
+      "titulo": "Se pasó el gráfico a lienzo y dejó de poder leerse",
+      "gravedad": "media",
+      "sintoma": "Un gráfico animado es invisible para las ayudas técnicas y no se puede seleccionar ni buscar.",
+      "causa": "Se dibujó en un lienzo, que es una superficie de dibujo sin contenido: lo que hay dentro no existe para el navegador.",
+      "porque": "El lienzo rinde mejor con muchos elementos y esa es la única variable que se compara.",
+      "arreglo": "Si el gráfico lleva texto o datos, SVG en línea: sus elementos y su texto sí son alcanzables.",
+      "comoCazarlo": "Intentar seleccionar con el ratón una etiqueta del gráfico. Si no se puede, tampoco la puede leer nadie más.",
+      "consejo": "El lienzo sigue siendo la respuesta para miles de partículas; no para un gráfico con seis etiquetas.",
+      "senales": [
+        "no se puede seleccionar el texto del gráfico",
+        "el lector no ve la gráfica",
+        "no sale en la búsqueda"
+      ],
+      "salioDe": "A List Apart, «More Resources for Accessible Animations»: el SVG en línea es inherentemente más accesible que el lienzo."
+    },
+    {
+      "id": "el-icono-que-crece-hasta-llenar",
+      "titulo": "Un SVG sin medidas ocupó media pantalla",
+      "gravedad": "alta",
+      "sintoma": "Un icono aparece gigante, y sólo en algunos estados de la interfaz.",
+      "causa": "El SVG no trae `width` ni `height` ni CSS que lo sujete: toma el tamaño por defecto de un elemento reemplazado y se estira con la caja.",
+      "porque": "El `viewBox` parece decir el tamaño y no lo dice; y el icono suele estar en un contenedor que sí tenía medida, hasta que aparece en otro que no.",
+      "arreglo": "Darle medida al icono en la hoja de estilos, no confiar en el contenedor.",
+      "comoCazarlo": "Medir el recuadro real de los iconos en TODOS los estados, no sólo en el que se pinta al cargar.",
+      "consejo": "Y ojo: una prueba de desborde no lo caza, porque el icono se estira hasta el ancho de su caja y ni un píxel más.",
+      "senales": [
+        "el icono se ve gigante",
+        "ocupa media pantalla",
+        "sólo pasa en el estado de error"
+      ],
+      "salioDe": "El banco de pruebas: el icono de los estados vacíos medía 544×544 px, en producción, desde que se escribió."
+    },
+    {
+      "id": "grano-que-pesa-mas-que-la-foto",
+      "titulo": "La textura de grano es una imagen enorme",
+      "gravedad": "baja",
+      "sintoma": "El fondo con grano añade cientos de kilobytes por una textura que casi no se ve.",
+      "causa": "El grano se exportó como imagen grande en vez de generarse.",
+      "porque": "Exportar del programa de diseño es el camino directo, y el peso de un PNG de ruido no se intuye.",
+      "arreglo": "Generarlo —un filtro de ruido en SVG embebido, o un mosaico pequeño que se repite— y aplicarlo con opacidad baja.",
+      "comoCazarlo": "Pesar los recursos del fondo. Si la textura pesa más que una fotografía, algo va mal.",
+      "consejo": "Un mosaico de 160×160 con ruido y opacidad 0.05 se repite sin costura y ocupa unos cientos de bytes.",
+      "senales": [
+        "el fondo pesa mucho",
+        "la textura es enorme",
+        "tarda en cargar el fondo"
+      ],
+      "salioDe": "El banco de pruebas: el grano va como SVG con feTurbulence embebido en la hoja."
+    }
+  ]
+}
