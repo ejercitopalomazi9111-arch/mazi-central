@@ -78,6 +78,8 @@ function ver(id){
   $(id).classList.add('viva');
   window.scrollTo(0, 0);
   $('#bSalir').hidden = (id === '#pPortada');
+  $('#bSalir').textContent = (id === '#pMapa') ? 'Menú principal'
+                           : (id === '#pExamen') ? 'Salir del examen' : 'Al mapa';
   /* textContent y no innerHTML: aquí va lo que escribió la persona */
   $('#quien').textContent = (id === '#pPortada') ? '' : (E.nombre || '');
 }
@@ -417,6 +419,7 @@ $('#fEntrar').addEventListener('submit', function(ev){
        único que hiciste fue hojear.
    ═════════════════════════════════════════════════════════════════════════ */
 var PREGUNTAS_EXAMEN = 40;
+var PREGUNTAS_PRUEBA = 10;
 var PASA = 0.65;              /* el corte real del CTFL: 26 de 40 */
 var X = null;                 /* el examen en curso, o null */
 var repasoCola = [];          /* los fallos que se van a repasar, en orden */
@@ -446,10 +449,21 @@ function prepararPregunta(nivel){
   return p;
 }
 
-function arrancarExamen(){
-  var cuantas = Math.min(PREGUNTAS_EXAMEN, TOTAL);
+/* ⚠ DOS MODOS, Y SE DIFERENCIAN EN UNA COSA SOLA: si la pantalla habla.
+   · «prueba» corrige en cuanto contestas y deja pedir pistas. Sirve para
+     aprender el formato, y para eso hace falta que responda.
+   · «formal» no dice nada hasta el final. Sirve para medir, y para eso hace
+     falta que calle: en cuanto te dice si acertaste, lo que mide deja de ser
+     lo que sabes y pasa a ser lo que puedes corregir mirando.
+   El resto —barajado de preguntas y de opciones, barra por contestadas,
+   índice, corrección— es idéntico, y por eso es el MISMO código con una
+   bandera y no dos exámenes que se van separando con los meses. */
+function arrancarExamen(modo){
+  modo = (modo === 'prueba') ? 'prueba' : 'formal';
+  var cuantas = Math.min(modo === 'prueba' ? PREGUNTAS_PRUEBA : PREGUNTAS_EXAMEN, TOTAL);
   var elegidos = barajar(NIVELES).slice(0, cuantas);
-  X = { preguntas: elegidos.map(prepararPregunta), idx:0, desde: Date.now(), tic:null };
+  X = { modo:modo, preguntas: elegidos.map(prepararPregunta), idx:0,
+        desde: Date.now(), tic:null, pistas:{}, comprobadas:{} };
   $('#xTotal').textContent = String(cuantas);
   X.tic = setInterval(pintarReloj, 1000);
   pintarReloj();
@@ -509,6 +523,7 @@ function pintarExamen(){
         p.respuesta = sel.length ? sel : null;
         pintarSeleccionX();
         pintarAvanceX();
+        if(X.modo === 'prueba') pintarVeredictoX();
       });
       cont.appendChild(bt);
     });
@@ -525,7 +540,14 @@ function pintarExamen(){
     inp.addEventListener('input', function(){
       p.respuesta = inp.value === '' ? null : Number(inp.value);
       pintarAvanceX();
+      /* ⚠ TAMBIÉN AQUÍ. Sin esta línea el botón de comprobar no aparecía nunca
+         en las preguntas numéricas —sólo en las de opción—, y la persona se
+         quedaba con la respuesta escrita y sin forma de comprobarla. El
+         repintado NO califica: sólo decide si el botón se ve. */
+      if(X.modo === 'prueba') pintarVeredictoX();
     });
+    if(X.modo === 'prueba')
+      inp.addEventListener('keydown', function(ev){ if(ev.key === 'Enter') comprobarX(); });
     etq.appendChild(sp2); etq.appendChild(inp);
     z.appendChild(etq);
   }
@@ -534,7 +556,65 @@ function pintarExamen(){
   $('#xSiguiente').disabled = X.idx >= X.preguntas.length - 1;
   pintarAvanceX();
   pintarIndiceX();
+  pintarVeredictoX();
   window.scrollTo(0, 0);
+}
+
+/* Sólo en el de prueba: corrige en cuanto hay respuesta, y ofrece pistas. */
+function pintarVeredictoX(){
+  var z = $('#xVeredicto'), zp = $('#xPistas'), bp = $('#xPista');
+  z.textContent = ''; zp.textContent = '';
+  if(X.modo !== 'prueba'){ bp.hidden = true; return; }
+
+  var p = X.preguntas[X.idx];
+  var nivel = NIVELES[p.n - 1];
+  var vistas = X.pistas[X.idx] || 0;
+  bp.hidden = X.comprobadas[X.idx] || vistas >= nivel.pistas.length;
+  bp.textContent = vistas === 0 ? 'Dame una pista'
+                 : 'Otra pista (' + (nivel.pistas.length - vistas) + ')';
+  if(vistas){
+    var ca = crear('div', 'ayuda');
+    var h = crear('h3'); h.textContent = vistas === 1 ? 'Pista' : 'Pistas';
+    ca.appendChild(h);
+    for(var i = 0; i < vistas; i++){
+      var pp = crear('p', 'pista'); pp.innerHTML = nivel.pistas[i]; ca.appendChild(pp);
+    }
+    zp.appendChild(ca);
+  }
+
+  /* ⚠ EL VEREDICTO SALE CUANDO SE PIDE, NO AL PRIMER CLIC. La primera versión
+     corregía en cuanto había respuesta, y en una pregunta de opción MÚLTIPLE
+     eso califica —y bloquea los botones— después de marcar la primera de las
+     dos correctas: te dice que fallaste antes de que termines de contestar.
+     En el numérico era lo mismo con el primer dígito: escribir «12» se
+     calificaba como «1». Un botón explícito quita la clase entera de fallo. */
+  $('#xComprobar').hidden = X.comprobadas[X.idx] ||
+                            p.respuesta === null || p.respuesta === undefined;
+  if(!X.comprobadas[X.idx]) return;
+  var bien = aciertaX(p);
+  var caja = crear('div', 'veredicto ' + (bien ? 'bien' : 'mal'));
+  var t = crear('h3'); t.textContent = bien ? '¡Correcto!' : 'No es ésa';
+  caja.appendChild(t);
+  var d = crear('p');
+  if(bien) d.innerHTML = nivel.porque;
+  else {
+    /* ⚠ SE DICE CUÁL ERA, Y AQUÍ SÍ. En el de presentar sería hacer trampa;
+       en el de prueba, callarlo sería dejar a la persona sin lo único que
+       venía a buscar. Son dos exámenes distintos justo por esto. */
+    d.innerHTML = 'La correcta ' + (p.correctas && p.correctas.length > 1 ? 'eran' : 'era') + ' <b>' +
+      (p.opciones ? p.correctas.map(function(i){ return 'abcdefgh'[i].toUpperCase(); }).join(' y ')
+                  : String(nivel.respuesta)) + '</b>. ' + nivel.porque;
+  }
+  caja.appendChild(d);
+  z.appendChild(caja);
+
+  if(p.opciones){
+    var bs = document.querySelectorAll('#xRespuesta .opcion');
+    for(var k = 0; k < bs.length; k++){
+      bs[k].disabled = true;
+      if(p.correctas.indexOf(k) >= 0) bs[k].classList.add('buena');
+    }
+  }
 }
 
 function pintarSeleccionX(){
@@ -591,9 +671,15 @@ function entregar(){
   var pasa = buenas / total >= PASA;
   var segundos = Math.floor((Date.now() - X.desde) / 1000);
 
-  if(!E.examenes) E.examenes = [];
-  E.examenes.push({ fecha:hoyISO(), buenas:buenas, total:total, pasa:pasa, segundos:segundos });
-  guardar();
+  /* ⚠ SÓLO EL FORMAL ENTRA EN EL HISTORIAL. Guardar los de prueba ahí subiría
+     la cuenta de «lo has presentado N veces» con ensayos en los que la app te
+     iba diciendo la respuesta: el historial dejaría de significar nada. */
+  var esFormal = X.modo === 'formal';
+  if(esFormal){
+    if(!E.examenes) E.examenes = [];
+    E.examenes.push({ fecha:hoyISO(), buenas:buenas, total:total, pasa:pasa, segundos:segundos });
+    guardar();
+  }
 
   var m = $('#xMarcador');
   m.innerHTML = '';
@@ -601,9 +687,14 @@ function entregar(){
   var de = crear('div', 'de'); de.textContent = buenas + ' de ' + total + ' · ' +
     Math.floor(segundos / 60) + ' min ' + (segundos % 60) + ' s';
   var se = crear('div', 'sello ' + (pasa ? 'pasa' : 'no'));
-  se.textContent = pasa ? 'Habrías aprobado' : 'Todavía no';
+  se.textContent = esFormal ? (pasa ? 'Habrías aprobado' : 'Todavía no')
+                            : (pasa ? 'Vas bien' : 'Repásalo');
   var nota = crear('p');
-  nota.textContent = pasa
+  if(!esFormal){
+    nota.textContent = 'Esto era el de prueba: la app te iba corrigiendo, así que este ' +
+      'porcentaje no mide lo que sabes — mide que ya conoces el formato. El que cuenta es ' +
+      'el de presentar, y no aparece en tu historial hasta que lo hagas.';
+  } else nota.textContent = pasa
     ? 'El corte del examen real es 65 %. Con este resultado lo pasarías — pero cada simulacro saca 40 de las 50, así que repítelo hasta que te salga tres veces seguidas.'
     : 'El corte del examen real es 65 %, o sea 26 de 40. Abajo está exactamente qué fallaste, y el botón te lleva a repasarlo con pistas y paso a paso.';
   m.appendChild(pt); m.appendChild(de); m.appendChild(se); m.appendChild(nota);
@@ -652,7 +743,23 @@ function pintarResultadoHistoria(){
     Math.round(u.buenas * 100 / u.total) + ' % · aprobados: ' + mejores;
 }
 
-$('#bExamen').addEventListener('click', arrancarExamen);
+$('#bExamen').addEventListener('click', function(){ arrancarExamen('formal'); });
+$('#bExamenPrueba').addEventListener('click', function(){ arrancarExamen('prueba'); });
+function comprobarX(){
+  var p = X.preguntas[X.idx];
+  if(p.respuesta === null || p.respuesta === undefined) return;
+  X.comprobadas[X.idx] = true;
+  pintarVeredictoX();
+  $('#xVeredicto').scrollIntoView({ block:'nearest' });
+}
+$('#xComprobar').addEventListener('click', comprobarX);
+$('#xPista').addEventListener('click', function(){
+  var nivel = NIVELES[X.preguntas[X.idx].n - 1];
+  var vistas = X.pistas[X.idx] || 0;
+  if(vistas >= nivel.pistas.length) return;
+  X.pistas[X.idx] = vistas + 1;
+  pintarVeredictoX();
+});
 $('#xAnterior').addEventListener('click', function(){ if(X.idx > 0){ X.idx--; pintarExamen(); } });
 $('#xSiguiente').addEventListener('click', function(){
   if(X.idx < X.preguntas.length - 1){ X.idx++; pintarExamen(); } });
@@ -662,12 +769,27 @@ $('#xAbandonar').addEventListener('click', function(){
   clearInterval(X.tic); X = null; pintarMapa(); ver('#pMapa');
 });
 $('#xRepasar').addEventListener('click', siguienteDelRepaso);
-$('#xOtraVez').addEventListener('click', arrancarExamen);
+$('#xOtraVez').addEventListener('click', function(){ arrancarExamen('formal'); });
 $('#xAlMapa').addEventListener('click', function(){ pintarMapa(); ver('#pMapa'); });
 
+/* ⚠ ESTE BOTÓN NO HACÍA NADA DESDE EL MAPA. Carlos, e280: «El botón de salir
+   en el examen en el menú del mapa no hace nada». Y era verdad: llevaba al
+   mapa, así que desde el mapa se quedaba donde estaba — un botón que se pinta,
+   se pulsa y no pasa nada, que es peor que no tenerlo.
+   Ahora dice a dónde va y siempre va a algún lado: desde el mapa, al menú
+   principal; desde cualquier otro sitio, al mapa. Y desde el examen avisa,
+   porque salir de ahí tira lo contestado. */
 $('#bSalir').addEventListener('click', function(){
-  pintarMapa();
-  ver(E.hechos.length ? '#pMapa' : '#pPortada');
+  var donde = document.querySelector('.pantalla.viva');
+  var id = donde ? '#' + donde.id : '#pMapa';
+  if(id === '#pExamen'){
+    if(!confirm('Se pierde lo contestado y no se guarda ningún resultado. ¿Sales?')) return;
+    if(X && X.tic) clearInterval(X.tic);
+    X = null;
+    pintarMapa(); ver('#pMapa'); return;
+  }
+  if(id === '#pMapa'){ ver('#pPortada'); return; }
+  pintarMapa(); ver('#pMapa');
 });
 $('#bComprobar').addEventListener('click', comprobar);
 $('#bPista').addEventListener('click', pedirPista);

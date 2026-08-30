@@ -48,14 +48,34 @@
   <!-- El examen no se gana: se presenta cuando uno quiera. Bloquearlo hasta
        los cincuenta niveles convertiría la única medida honesta de si estás
        listo en un premio por terminar. -->
+  <!-- ⚠ DOS EXÁMENES Y NO UNO. Carlos, e278: «Pon en el examen el de prueba y
+       uno para presentar». Son dos cosas distintas y por eso están separadas:
+       el de prueba enseña el FORMATO —te corrige sobre la marcha, con lo que
+       sales sabiendo cómo funciona—, y el de presentar MIDE, que sólo se puede
+       hacer callando hasta el final. Meter las dos en una sola pantalla habría
+       roto la segunda. -->
   <div class="tarjeta-examen no-imprime">
-    <h3>Simulacro de examen</h3>
-    <p><b>40 preguntas de las 50, en orden distinto cada vez</b>, y con las opciones
-    barajadas. Sin pistas, sin paso a paso y sin decirte si vas bien: igual que el de
-    verdad. Al terminar ves la calificación, qué fallaste, y puedes repasar cada
-    fallo con todas las ayudas.</p>
+    <h3>El examen</h3>
+    <p>Dos, y no son lo mismo. Empieza por el de prueba: sales sabiendo cómo
+    funciona el formato. El de presentar es el que te dice si estás listo.</p>
+
+    <div class="dos-examenes">
+      <div class="caja-examen">
+        <span class="etiq">De prueba</span>
+        <p><b>10 preguntas.</b> Te dice si acertaste en cuanto contestas, con la
+        explicación, y puedes pedir pistas. Es para aprender el formato, no para
+        medirte.</p>
+        <button class="btn calma ancho" id="bExamenPrueba" type="button">Hacer el de prueba</button>
+      </div>
+      <div class="caja-examen">
+        <span class="etiq viva">Para presentar</span>
+        <p><b>40 preguntas de las 50</b>, en orden distinto cada vez y con las
+        opciones barajadas. Sin pistas y sin decirte nada hasta el final. Corte
+        al 65 %, como el de verdad.</p>
+        <button class="btn ancho" id="bExamen" type="button">Presentar el examen</button>
+      </div>
+    </div>
     <p class="nota" id="xHistoria"></p>
-    <button class="btn ancho" id="bExamen" type="button">Presentar el simulacro</button>
   </div>
 
   <button class="btn ancho no-imprime" id="bCertificados" type="button" hidden style="margin-top:24px">Ver mis constancias</button>
@@ -98,6 +118,10 @@
   <div class="enunciado" id="xEnunciado"></div>
   <div id="xCodigo"></div>
   <div id="xRespuesta"></div>
+  <button class="btn ancho no-imprime" id="xComprobar" type="button" hidden>Comprobar</button>
+  <div id="xVeredicto"></div>
+  <div id="xPistas"></div>
+  <button class="btn calma ancho no-imprime" id="xPista" type="button" hidden>Dame una pista</button>
 
   <div class="pie-nav no-imprime">
     <button class="btn calma" id="xAnterior" type="button">Anterior</button>

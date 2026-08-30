@@ -12,8 +12,16 @@
    Un archivo, sin build y sin CDN: se abre desde el teléfono y funciona.
    Los colores están medidos del logo (marca/README.md), no inventados.
    ═════════════════════════════════════════════════════════════════════════ */
-@font-face{ font-family:"Mazi"; src:url(data:font/woff2;base64,__FUENTE__) format("woff2");
+/* ⚠ LA TIPOGRAFÍA DE LA CASA SALIÓ DE AQUÍ. Carlos, e278: «Mi tipografía
+   tampoco va ahí pero el resto del diseño Mazi si». Así que se queda todo lo
+   demás —el violeta, la paloma, el negro— y sólo cambia la letra del rótulo.
+   Va Outfit, SIL OFL, subconjuntada y empotrada; la licencia viaja en
+   `taller/fuentes/`. La negrita va de verdad y no sintetizada: engordar una
+   redonda borra el contraste de trazo, y en un título grande se ve. */
+@font-face{ font-family:"Rotulo"; src:url(data:font/woff2;base64,__TITULO__) format("woff2");
             font-weight:400; font-display:swap }
+@font-face{ font-family:"Rotulo"; src:url(data:font/woff2;base64,__TITULO_B__) format("woff2");
+            font-weight:700; font-display:swap }
 
 :root{
   --violeta:#AD21ED;        /* medido: promedio de los píxeles violetas del logo */
@@ -40,14 +48,14 @@
    prueba, no la lectura del código. */
 [hidden]{ display:none !important }
 html{ -webkit-text-size-adjust:100% }
-body{
+body{ font-synthesis-weight:none;
   margin:0; background:var(--vacio); color:var(--hueso);
   font:400 17px/1.55 var(--ui);
   padding:0 0 env(safe-area-inset-bottom);
   overflow-x:hidden;
 }
 h1,h2,h3{ line-height:1.2; margin:0 0 12px }
-h1{ font-family:"Mazi", var(--ui); font-size:30px; font-weight:400; letter-spacing:.01em }
+h1{ font-family:"Rotulo", var(--ui); font-size:30px; font-weight:700; letter-spacing:-.015em }
 h2{ font-size:22px }
 h3{ font-size:18px }
 p{ margin:0 0 14px }
@@ -187,7 +195,7 @@ input::placeholder{ color:#6D6080 }
 .diploma .sello{ position:absolute; right:-30px; top:-30px; width:150px; opacity:.07 }
 .diploma .casa{ font:400 13px/1 var(--ui); letter-spacing:.22em; text-transform:uppercase;
                 color:var(--violeta-hondo); margin:0 0 14px }
-.diploma h2{ font-family:"Mazi", var(--ui); font-weight:400; font-size:26px; color:#171021; margin:0 0 6px }
+.diploma h2{ font-family:"Rotulo", var(--ui); font-weight:700; font-size:26px; color:#171021; margin:0 0 6px }
 .diploma .nombre{ font-size:25px; font-weight:700; margin:16px 0 6px; line-height:1.2 }
 .diploma .raya{ height:3px; background:var(--violeta); width:70px; margin:0 0 16px }
 .diploma p{ font-size:15px; line-height:1.55; color:#3B3048 }
@@ -219,6 +227,14 @@ input::placeholder{ color:#6D6080 }
 .tarjeta-examen h3{ margin:0 0 8px; font-size:18px }
 .tarjeta-examen p{ margin:0 0 14px; font-size:15px }
 .tarjeta-examen .nota{ font-size:14px; color:var(--tenue) }
+.dos-examenes{ display:grid; gap:12px; margin:0 0 14px }
+@media (min-width:640px){ .dos-examenes{ grid-template-columns:1fr 1fr } }
+.caja-examen{ border:1px solid var(--linea); border-radius:12px; padding:16px;
+  background:var(--vacio); display:flex; flex-direction:column; gap:10px }
+.caja-examen p{ flex:1; margin:0; font-size:14px }
+.caja-examen .etiq{ font:600 11px/1 var(--mono); letter-spacing:.16em;
+  text-transform:uppercase; color:var(--tenue) }
+.caja-examen .etiq.viva{ color:var(--violeta) }
 
 /* ⚠ EL RELOJ CUENTA, PERO NO CORRE HACIA NINGÚN LADO. Es tiempo transcurrido,
    no cuenta atrás: el examen real da tiempo de sobra y una cuenta atrás aquí

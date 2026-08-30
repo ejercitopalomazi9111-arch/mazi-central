@@ -394,6 +394,98 @@ const correrExamen = async (p, bien) => {
   await p.context().close();
 }
 
+/* ── 9 · EL EXAMEN DE PRUEBA, QUE ES EL OTRO ─────────────────────────
+   Carlos, e278: «Pon en el examen el de prueba y uno para presentar». Los dos
+   se diferencian en UNA cosa —si la pantalla habla— y eso es exactamente lo
+   que hay que poder reprobar: que el de prueba corrija y el de presentar calle.
+   Si algún día se cruzan, el de presentar deja de medir y nadie lo nota. */
+console.log('\n── el examen de prueba ──');
+{
+  const p = await abrir(900, 1200);
+  await entrar(p);
+  await p.click('#bExamenPrueba');
+  await p.waitForTimeout(80);
+
+  const total = Number(await p.locator('#xTotal').textContent());
+  ok('el de prueba son 10 preguntas', total === 10, String(total));
+  ok('y ofrece pistas antes de contestar', await p.locator('#xPista').isVisible());
+  ok('y todavía no dice nada', (await p.locator('#xVeredicto').innerHTML()) === '');
+
+  await p.click('#xPista');
+  await p.waitForTimeout(40);
+  ok('la pista aparece al pedirla', (await p.locator('#xPistas .pista').count()) >= 1);
+
+  /* se contesta bien la primera y tiene que decirlo en el acto */
+  const q = await contestar(p, true);
+  await p.waitForTimeout(60);
+  ok('el botón de comprobar aparece al haber respuesta', await p.locator('#xComprobar').isVisible());
+  await p.click('#xComprobar'); await p.waitForTimeout(80);
+  ok('al comprobar corrige en el acto', await p.locator('#xVeredicto .veredicto').isVisible());
+  ok('y dice que es correcto', /correcto/i.test(await p.locator('#xVeredicto h3').textContent()),
+     await p.locator('#xVeredicto h3').textContent());
+  ok('y ya no ofrece pista para esa', !(await p.locator('#xPista').isVisible()));
+
+  /* y una mal: tiene que decir cuál era */
+  await p.click('#xSiguiente'); await p.waitForTimeout(40);
+  await contestar(p, false);
+  await p.click('#xComprobar'); await p.waitForTimeout(80);
+  const malo = await p.locator('#xVeredicto').textContent();
+  ok('al fallar dice cuál era la correcta', /La correcta (era|eran)/.test(malo), malo.slice(0,60));
+
+  /* el de prueba NO entra en el historial */
+  /* ⚠ AVANZAR ANTES DE CONTESTAR. Venimos de la pregunta 2, que ya está
+     comprobada y con los botones deshabilitados: contestar «la actual» aquí
+     es intentar pulsar un botón muerto y esperar treinta segundos a que
+     reviva. */
+  for(let i = 2; i < total; i++){
+    await p.click('#xSiguiente'); await p.waitForTimeout(20);
+    await contestar(p, true);
+    await p.click('#xComprobar').catch(() => {});
+    await p.waitForTimeout(20);
+  }
+  await p.click('#xEntregar');
+  await p.waitForTimeout(120);
+  ok('el marcador dice que esto no mide', /no mide lo que sabes/.test(await p.locator('#xMarcador p').textContent()));
+  await p.click('#xAlMapa'); await p.waitForTimeout(60);
+  const hist = await p.locator('#xHistoria').textContent();
+  ok('y no aparece en el historial de exámenes', hist.trim() === '', hist);
+  ok('sin errores de JavaScript', p.__errores.length === 0, p.__errores[0]);
+  await p.context().close();
+}
+
+/* ── 10 · EL BOTÓN DE SALIR, QUE NO HACÍA NADA ───────────────────────
+   Carlos, e280. Desde el mapa llevaba al mapa: se pintaba, se pulsaba y no
+   pasaba nada. Un botón inerte es peor que ninguno, porque el que lo pulsa
+   cree que la app se rompió. */
+console.log('\n── el botón de salir ──');
+{
+  const p = await abrir(900, 1200);
+  await entrar(p);
+  ok('en el mapa dice «Menú principal»',
+     (await p.locator('#bSalir').textContent()).trim() === 'Menú principal',
+     await p.locator('#bSalir').textContent());
+  await p.click('#bSalir'); await p.waitForTimeout(60);
+  ok('y desde el mapa SÍ lleva a algún lado', await p.locator('#pPortada').isVisible());
+
+  await p.click('#fEntrar button[type=submit]'); await p.waitForTimeout(60);
+  await p.locator('.casilla').nth(0).click(); await p.waitForTimeout(40);
+  ok('en un nivel dice «Al mapa»',
+     (await p.locator('#bSalir').textContent()).trim() === 'Al mapa',
+     await p.locator('#bSalir').textContent());
+  await p.click('#bSalir'); await p.waitForTimeout(60);
+  ok('y lleva al mapa', await p.locator('#pMapa').isVisible());
+
+  await p.click('#bExamen'); await p.waitForTimeout(80);
+  ok('en el examen dice «Salir del examen»',
+     (await p.locator('#bSalir').textContent()).trim() === 'Salir del examen',
+     await p.locator('#bSalir').textContent());
+  p.once('dialog', d => d.accept());
+  await p.click('#bSalir'); await p.waitForTimeout(120);
+  ok('y salir del examen avisa y devuelve al mapa', await p.locator('#pMapa').isVisible());
+  ok('sin errores de JavaScript', p.__errores.length === 0, p.__errores[0]);
+  await p.context().close();
+}
+
 await nav.close();
 console.log('\n' + (mal ? '✗ ' : '✓ ') + bien + '/' + (bien + mal) + ' pruebas de la app de entrenamiento');
 process.exit(mal ? 1 : 0);
