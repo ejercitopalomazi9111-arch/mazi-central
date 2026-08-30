@@ -1,0 +1,177 @@
+{
+  "area": "interfaz",
+  "nombre": "Controles que responden y no mienten",
+  "que": "Botones, formularios y estados: lo que pasa cuando alguien de verdad los usa, con el dedo, con teclado o con la red lenta.",
+  "neuronas": [
+    {
+      "id": "los-estados-que-nadie-pinta",
+      "titulo": "Se diseñó el estado normal y se olvidaron los otros siete",
+      "gravedad": "alta",
+      "sintoma": "En producción aparecen botones sin foco visible, sin estado de carga o deshabilitados ilegibles.",
+      "causa": "Sólo se diseñó el estado que se ve al abrir. Los demás los puso el navegador o los improvisó quien programó.",
+      "porque": "Los estados de un botón viven medio segundo dentro de una petición, así que casi nadie los revisa con calma.",
+      "arreglo": "Congelarlos y mirarlos: normal, encima, hundido, foco, cargando, logrado, error y apagado. Los ocho, en los dos temas.",
+      "comoCazarlo": "Una matriz que fije cada estado sin necesidad de provocarlo. Los que no se pueden congelar con el ratón son justo los que faltan.",
+      "consejo": "«Encima» y «hundido» son los que más se olvidan porque al soltar se van.",
+      "senales": [
+        "no se ve el foco",
+        "el botón deshabilitado no se lee",
+        "falta el estado de carga"
+      ],
+      "salioDe": "El banco de pruebas: la matriz enseñaba seis de ocho y el título decía ocho. Lo cazó el comité."
+    },
+    {
+      "id": "deshabilitado-que-no-se-lee",
+      "titulo": "El botón apagado no cumple contraste y nadie lo revisa",
+      "gravedad": "media",
+      "sintoma": "Un control deshabilitado es casi invisible y no se entiende si está ahí o no.",
+      "causa": "Se apaga bajándole la opacidad, que arrastra el contraste a un número que nadie calculó.",
+      "porque": "La opacidad es la forma rápida de decir «esto no va», y el resultado se parece bastante a lo que uno esperaba.",
+      "arreglo": "Apagar con COLOR —un tono medido contra su fondo— en vez de con opacidad.",
+      "comoCazarlo": "Medir el contraste del estado apagado, igual que el del normal.",
+      "consejo": "Y mejor que apagar: no ofrecer el control, o decir qué falta para poder usarlo.",
+      "senales": [
+        "no se ve el botón deshabilitado",
+        "¿está ahí o no?",
+        "apagado no se lee"
+      ],
+      "salioDe": "El banco de pruebas: las flechas de la barra inferior se apagan con `--texto-3`, medido, y no con opacidad."
+    },
+    {
+      "id": "control-muerto-sin-explicacion",
+      "titulo": "El control existe, no hace nada, y parece roto",
+      "gravedad": "alta",
+      "sintoma": "En un teléfono hay un botón que al tocarlo no responde.",
+      "causa": "El control depende de algo que en ese aparato no existe —un cursor, un teclado, una API— y se dejó puesto igual.",
+      "porque": "Se prueba donde sí funciona, y un control que no responde se lee como un fallo, no como una limitación.",
+      "arreglo": "O no aparece, o dice por qué no aplica. Las dos son mejores que dejarlo mudo.",
+      "comoCazarlo": "Recorrer la interfaz en el aparato más limitado que se soporte y tocar todo.",
+      "consejo": "Un control muerto sin explicación se lee como un error; explicado, es una limitación del aparato, y eso se perdona.",
+      "senales": [
+        "le doy y no pasa nada",
+        "parece que está roto",
+        "no sirve en el celular"
+      ],
+      "salioDe": "El banco de pruebas: el botón magnético no puede funcionar sin cursor, y la página lo dice en vez de fingir."
+    },
+    {
+      "id": "objetivo-tactil-del-tamano-del-texto",
+      "titulo": "El enlace mide lo que mide su letra",
+      "gravedad": "alta",
+      "sintoma": "En el teléfono hay que apuntar con cuidado para dar a un enlace, y a veces se falla.",
+      "causa": "El área tocable es la del texto —unos 14 o 19 px de alto— y un dedo necesita bastante más.",
+      "porque": "En escritorio con ratón el objetivo pequeño funciona, y el diseño se hace en escritorio.",
+      "arreglo": "Que el área tocable incluya el espacio alrededor del texto, no sólo el texto. Y que se note dónde acaba.",
+      "comoCazarlo": "Medir el alto real de cada control tocable. Cualquiera por debajo de 44 px es un objetivo que se falla.",
+      "consejo": "Si con eso no caben todas las opciones, el problema no es el tamaño: es que hay demasiadas opciones ahí.",
+      "senales": [
+        "no le atino en el celular",
+        "es difícil darle",
+        "tengo que apuntar mucho"
+      ],
+      "salioDe": "Smashing sobre navegación móvil, citando los 44 puntos de Apple; y las pruebas de objetivo táctil del banco."
+    },
+    {
+      "id": "mas-de-cinco-en-la-barra",
+      "titulo": "La barra inferior lleva ocho destinos y ninguno se toca bien",
+      "gravedad": "media",
+      "sintoma": "Los destinos de la barra están apretados y cuesta darle al que uno quiere.",
+      "causa": "Se metieron todas las secciones en una barra que da para cuatro o cinco con tamaño de dedo.",
+      "porque": "Todas las secciones parecen igual de importantes cuando se hace la lista, y ninguna se quiere dejar fuera.",
+      "arreglo": "Escoger los pocos destinos que de verdad se usan y dar acceso al resto por otro camino. O una cinta que se desliza, sabiendo lo que cuesta.",
+      "comoCazarlo": "Medir el ancho de cada destino. Si baja de 44 px, ya no se puede tocar bien.",
+      "consejo": "Lo que se sale de la vista se olvida: si algo va escondido, tiene que haber una pista de que existe.",
+      "senales": [
+        "están muy apretados los botones",
+        "no le doy al que quiero",
+        "caben mal las secciones"
+      ],
+      "salioDe": "NN/g, «Basic Patterns for Mobile Navigation»: por encima de cinco opciones no caben con tamaño táctil óptimo."
+    },
+    {
+      "id": "el-formulario-que-borra-lo-escrito",
+      "titulo": "Falla el envío y se pierde todo lo que la persona escribió",
+      "gravedad": "alta",
+      "sintoma": "Hay un error, la página vuelve y el formulario está vacío.",
+      "causa": "El error se maneja recargando o reinicializando, sin devolver lo que ya se había escrito.",
+      "porque": "El camino feliz se prueba mucho y el de error se prueba una vez, con un campo.",
+      "arreglo": "Devolver siempre los valores. Y si el envío no se puede completar, ofrecer una salida —otro canal— con el mensaje ya redactado.",
+      "comoCazarlo": "Llenar el formulario entero, provocar el error y contar cuántos campos sobreviven.",
+      "consejo": "Es de las cosas que más enfadan y de las más baratas de arreglar.",
+      "senales": [
+        "se borró todo lo que escribí",
+        "tuve que llenarlo de nuevo",
+        "perdí el mensaje"
+      ],
+      "salioDe": "El sitio del Instituto: si falla el envío se devuelve el estado con enlaces de correo, WhatsApp y teléfono y el mensaje ya escrito."
+    },
+    {
+      "id": "error-que-culpa-a-quien-lee",
+      "titulo": "El mensaje de error no dice qué pasó ni qué hacer",
+      "gravedad": "media",
+      "sintoma": "«Algo salió mal.» La persona recarga, vuelve a salir, y se va.",
+      "causa": "El mensaje describe el sentimiento del sistema y no el hecho ni la salida.",
+      "porque": "Es el texto por defecto y suena educado; decir qué pasó exige saberlo, y a veces no se sabe.",
+      "arreglo": "Decir qué pasó, si es culpa de quien lee o no, y qué puede hacer ahora. Aunque sea «vuelve a intentar en un minuto».",
+      "comoCazarlo": "Leer cada mensaje de error preguntando: ¿qué hago ahora? Si no se puede contestar, falta la mitad.",
+      "consejo": "«El servidor tardó más de diez segundos. No es tu conexión» hace más por la confianza que cualquier ilustración.",
+      "senales": [
+        "dice algo salió mal y ya",
+        "no sé qué hacer con el error",
+        "no explica nada"
+      ],
+      "salioDe": "El banco de pruebas: la sección de estados vacíos, y el comparador que enseña el mensaje crudo al lado."
+    },
+    {
+      "id": "validar-solo-al-enviar",
+      "titulo": "Todos los errores aparecen de golpe al final",
+      "gravedad": "media",
+      "sintoma": "Se llena un formulario largo y al enviarlo salen cinco errores juntos.",
+      "causa": "La validación ocurre sólo al enviar, así que los problemas se acumulan lejos de donde se cometieron.",
+      "porque": "Validar al enviar es un solo sitio en el código; validar por campo son varios y hay que decidir cuándo.",
+      "arreglo": "Avisar por campo cuando se sale de él, no mientras se escribe —que interrumpe— y no sólo al final.",
+      "comoCazarlo": "Llenar mal un formulario largo y contar cuántas veces hay que subir a buscar el campo.",
+      "consejo": "Y al enviar con errores, llevar el foco al primero: sin eso, quien navega con teclado no sabe dónde mirar.",
+      "senales": [
+        "me salieron todos los errores juntos",
+        "no sé cuál campo está mal",
+        "tengo que buscar el error"
+      ],
+      "salioDe": "Las reglas de formulario del sitio del Instituto y del banco de pruebas."
+    },
+    {
+      "id": "placeholder-como-etiqueta",
+      "titulo": "El campo pierde su nombre en cuanto se escribe",
+      "gravedad": "alta",
+      "sintoma": "Al revisar el formulario ya no se sabe qué iba en cada campo.",
+      "causa": "Se usó el texto de ejemplo como etiqueta, y desaparece al escribir.",
+      "porque": "Ahorra espacio y se ve limpio en la maqueta, que está vacía.",
+      "arreglo": "Etiqueta siempre visible. El texto de ejemplo, si se queda, es un ejemplo de FORMATO, no el nombre.",
+      "comoCazarlo": "Llenar el formulario y mirarlo. Si ya no se sabe qué es cada cosa, la etiqueta era el placeholder.",
+      "consejo": "Además suele tener contraste bajo a propósito, así que era una etiqueta ilegible incluso antes de desaparecer.",
+      "senales": [
+        "no sé qué iba en ese campo",
+        "desaparece el texto de ayuda",
+        "¿esto qué era?"
+      ],
+      "salioDe": "Práctica documentada en web.dev y NN/g sobre etiquetas persistentes en formularios."
+    },
+    {
+      "id": "acuse-de-recibo-al-toque",
+      "titulo": "Se toca y no pasa nada durante medio segundo",
+      "gravedad": "media",
+      "sintoma": "En el teléfono da la sensación de que el toque no registró, y la gente toca dos veces.",
+      "causa": "No hay respuesta inmediata al toque: el cambio llega cuando responde la red.",
+      "porque": "En escritorio el hover ya da esa respuesta, y en táctil no hay hover.",
+      "arreglo": "Una respuesta inmediata y propia —un hundido de 2 px, una escala del 96 %— que ocurra en el mismo cuadro del toque.",
+      "comoCazarlo": "Tocar con la red ralentizada. Si entre el dedo y el primer cambio visible pasa algo perceptible, falta acuse.",
+      "consejo": "Y ese acuse tiene que sobrevivir a «menos movimiento»: quien pide menos movimiento no pidió menos respuesta.",
+      "senales": [
+        "no sé si le di",
+        "tengo que picarle dos veces",
+        "no responde al toque"
+      ],
+      "salioDe": "Carlos: «haz que todos los botones tengan feedback como los de laboratorio», y el rescate bajo prefers-reduced-motion."
+    }
+  ]
+}

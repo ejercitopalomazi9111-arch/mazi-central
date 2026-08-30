@@ -1,0 +1,177 @@
+{
+  "area": "accesibilidad",
+  "nombre": "Que se pueda usar sin ver ni apuntar",
+  "que": "Teclado, lector de pantalla y modos del sistema. Lo que la auditoría automática no caza y la gente sí sufre.",
+  "neuronas": [
+    {
+      "id": "aria-encima-de-html-que-ya-servia",
+      "titulo": "Se le puso ARIA a algo que ya lo decía solo",
+      "gravedad": "media",
+      "sintoma": "Un control con roles y atributos por todas partes se anuncia raro o duplicado.",
+      "causa": "Se añadió ARIA sobre elementos nativos que ya comunicaban lo mismo, y ahora hay dos fuentes que se contradicen.",
+      "porque": "ARIA se lee como «lo que hace accesible una página», cuando es lo que se usa CUANDO el HTML no alcanza.",
+      "arreglo": "Empezar por el elemento nativo. ARIA sólo para lo que el HTML no puede decir.",
+      "comoCazarlo": "Por cada atributo ARIA, preguntar qué añade que el elemento no diga ya. Si no añade nada, sobra.",
+      "consejo": "La primera regla de ARIA es no usar ARIA si hay un elemento que ya sirve.",
+      "senales": [
+        "lo anuncia dos veces",
+        "le puse todos los aria",
+        "suena raro en el lector"
+      ],
+      "salioDe": "web.dev, «ARIA and HTML», y las referencias de roles de MDN."
+    },
+    {
+      "id": "div-que-hace-de-boton",
+      "titulo": "Es un `div` con un clic encima",
+      "gravedad": "alta",
+      "sintoma": "Un control no se alcanza con teclado, no se activa con Enter ni con espacio, y el lector no lo anuncia.",
+      "causa": "Se usó un contenedor genérico con un manejador de clic en vez de un botón.",
+      "porque": "Un botón trae estilos por defecto que hay que quitar, y el contenedor viene limpio.",
+      "arreglo": "Usar `<button>` y quitarle los estilos. Se queda gratis con el foco, el teclado, el rol y los estados.",
+      "comoCazarlo": "Contar elementos con manejador de clic que no sean enlaces ni botones. Debería dar cero.",
+      "consejo": "Reproducir a mano lo que trae un botón cuesta más código que quitarle el borde.",
+      "senales": [
+        "no funciona con teclado",
+        "el lector no lo ve",
+        "no se puede tabular hasta ahí"
+      ],
+      "salioDe": "El banco de pruebas mide esto: cero `<div>` haciendo de botón."
+    },
+    {
+      "id": "foco-que-desaparece-al-quitarle-el-contorno",
+      "titulo": "Se quitó el contorno feo y con él el foco",
+      "gravedad": "alta",
+      "sintoma": "Navegando con teclado no se sabe dónde se está.",
+      "causa": "Se anuló el contorno por estética y no se puso nada en su lugar.",
+      "porque": "El contorno del navegador es feo y aparece también al hacer clic con el ratón, lo que molesta al diseñar.",
+      "arreglo": "Sustituirlo por un indicador propio con `:focus-visible`, que aparece con teclado y no con ratón.",
+      "comoCazarlo": "Recorrer la página con el tabulador. Cada parada tiene que verse.",
+      "consejo": "`:focus-visible` resuelve la queja original —que salía al hacer clic— sin quitarle el foco a nadie.",
+      "senales": [
+        "no se ve dónde está el foco",
+        "quité el outline",
+        "no sé por dónde voy con tab"
+      ],
+      "salioDe": "El recorrido de teclado del banco: 24 paradas, todas con anillo visible."
+    },
+    {
+      "id": "anuncio-que-no-llega",
+      "titulo": "Algo cambió en la pantalla y nadie lo anunció",
+      "gravedad": "media",
+      "sintoma": "Se envía un formulario, aparece un mensaje de éxito, y quien usa lector de pantalla no se entera.",
+      "causa": "El cambio se pintó sin ninguna región que lo anuncie.",
+      "porque": "Visualmente el mensaje es imposible de no ver, así que no parece que falte nada.",
+      "arreglo": "Una región viva y educada para lo que informa, y llevar el foco cuando el cambio exige actuar.",
+      "comoCazarlo": "Encender un lector de pantalla y hacer las tres acciones más comunes con los ojos cerrados.",
+      "consejo": "Cuidado con anunciarlo todo: una región que grita cada cambio es tan inútil como una muda.",
+      "senales": [
+        "no se entera de que se envió",
+        "el lector no dice nada",
+        "no anuncia el error"
+      ],
+      "salioDe": "Las regiones vivas del banco de pruebas en el arrastre y en la lista de estados."
+    },
+    {
+      "id": "orden-de-encabezados-roto",
+      "titulo": "Los encabezados se escogieron por tamaño",
+      "gravedad": "media",
+      "sintoma": "El esquema de la página no tiene sentido: se salta de nivel uno a nivel cuatro.",
+      "causa": "Se eligió el nivel por cómo se veía, no por la estructura.",
+      "porque": "Cada nivel trae un tamaño por defecto y es más rápido cambiar de etiqueta que de estilo.",
+      "arreglo": "El nivel lo decide la jerarquía; el tamaño lo decide el CSS. Son dos decisiones distintas.",
+      "comoCazarlo": "Sacar la lista de encabezados. Debería leerse como un índice.",
+      "consejo": "Mucha gente navega saltando entre encabezados: el esquema es su mapa.",
+      "senales": [
+        "el índice sale raro",
+        "salté de h1 a h4",
+        "no hay estructura"
+      ],
+      "salioDe": "Las comprobaciones de un solo `<h1>` por ruta del sitio del Instituto."
+    },
+    {
+      "id": "solo-el-raton-sabe-hacerlo",
+      "titulo": "La función existe sólo para quien tiene ratón",
+      "gravedad": "alta",
+      "sintoma": "Arrastrar, pasar el cursor o mantener pulsado son la única forma de hacer algo.",
+      "causa": "El gesto se implementó como interacción principal y no hay camino equivalente.",
+      "porque": "El gesto es lo llamativo y lo que se enseña en la demostración.",
+      "arreglo": "Todo lo que se pueda hacer con gesto tiene que poder hacerse con teclado, y decirse.",
+      "comoCazarlo": "Desconectar el ratón y hacer las tareas principales.",
+      "consejo": "Una función que se puede manejar con teclado también se puede PROBAR por una máquina: sale gratis dos veces.",
+      "senales": [
+        "sólo funciona arrastrando",
+        "no puedo hacerlo sin mouse",
+        "el hover es la única forma"
+      ],
+      "salioDe": "El tablero de arrastrar del banco: se mueve con teclado y por eso tiene prueba automática."
+    },
+    {
+      "id": "tiempo-que-corre-sin-poder-pararse",
+      "titulo": "El carrusel avanza solo y no se puede detener",
+      "gravedad": "media",
+      "sintoma": "El contenido cambia cada pocos segundos y quien lee despacio no llega a terminar.",
+      "causa": "El movimiento automático no tiene pausa ni respeta la preferencia de movimiento reducido.",
+      "porque": "El automático se pone para que «se vea vivo» en la portada, mirándolo dos segundos.",
+      "arreglo": "Pausa visible, parada al recibir foco o el cursor, y nada de automático con movimiento reducido.",
+      "comoCazarlo": "Cronometrar cuánto dura cada paso y leer el contenido más largo en voz alta. Si no da tiempo, va rápido.",
+      "consejo": "Casi siempre la respuesta correcta es que no avance solo.",
+      "senales": [
+        "no me da tiempo de leer",
+        "cambia solo y me pierdo",
+        "no puedo pararlo"
+      ],
+      "salioDe": "Criterios de WCAG sobre contenido en movimiento y control del tiempo."
+    },
+    {
+      "id": "contraste-alto-que-rompe-el-diseno",
+      "titulo": "En modo de contraste alto la interfaz se deshace",
+      "gravedad": "baja",
+      "sintoma": "Con el modo de contraste forzado del sistema desaparecen bordes, iconos o estados.",
+      "causa": "La información se codificaba con colores de fondo o imágenes que ese modo sustituye.",
+      "porque": "Es un modo que casi nadie prueba porque casi nadie del equipo lo usa.",
+      "arreglo": "Que la estructura sobreviva sin color: bordes reales, texto real, y comprobarlo en ese modo.",
+      "comoCazarlo": "Activar el contraste forzado del sistema y recorrer la interfaz.",
+      "consejo": "Lo que sobrevive a la escala de grises casi siempre sobrevive también a esto.",
+      "senales": [
+        "en alto contraste se ve mal",
+        "desaparecen los bordes",
+        "no se distinguen los botones"
+      ],
+      "salioDe": "Prácticas de contraste forzado documentadas en MDN y web.dev."
+    },
+    {
+      "id": "la-auditoria-automatica-como-certificado",
+      "titulo": "Pasó la auditoría automática y sigue sin poder usarse",
+      "gravedad": "media",
+      "sintoma": "Cero violaciones en la herramienta y aun así alguien no puede completar la tarea.",
+      "causa": "Las herramientas automáticas cazan una parte —contrastes, nombres, etiquetas— y no cazan si el flujo tiene sentido.",
+      "porque": "Un cero es un resultado limpio y cierra la conversación.",
+      "arreglo": "Usar la automática como piso y probar a mano las tareas principales con teclado y con lector.",
+      "comoCazarlo": "Hacer la tarea más importante del sitio sin ratón y sin mirar. Si no se puede, no está.",
+      "consejo": "El cero automático es necesario y no es suficiente, y decirlo evita que se use como certificado.",
+      "senales": [
+        "pasamos la auditoría",
+        "cero violaciones",
+        "¿entonces ya es accesible?"
+      ],
+      "salioDe": "La sección de lo medido del sitio del Instituto: axe-core da cero y aun así se dice qué no comprueba."
+    },
+    {
+      "id": "el-idioma-sin-declarar",
+      "titulo": "El lector lee el español con acento inglés",
+      "gravedad": "baja",
+      "sintoma": "El texto se escucha mal pronunciado, hasta incomprensible.",
+      "causa": "El documento no declara su idioma, o lo declara mal, y el lector usa el del sistema.",
+      "porque": "Es un atributo que se pone una vez al empezar y se copia de una plantilla en inglés.",
+      "arreglo": "Declarar el idioma del documento, y el de los fragmentos que estén en otro.",
+      "comoCazarlo": "Mirar el atributo del elemento raíz y escuchar un párrafo con lector.",
+      "consejo": "Cuesta un atributo y cambia por completo cómo suena la página.",
+      "senales": [
+        "lee raro el texto",
+        "suena a inglés",
+        "no se entiende cuando lo lee"
+      ],
+      "salioDe": "Requisito básico de WCAG sobre el idioma de la página."
+    }
+  ]
+}

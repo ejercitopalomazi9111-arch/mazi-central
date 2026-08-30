@@ -31,6 +31,43 @@ Estas se cargan solas cuando aplican. No hace falta mencionarlas.
 
 ---
 
+## El departamento de diseño — 21 skills
+
+Carlos las pidió en e224: *«que construyas todo un departamento de diseño»*, con
+mínimo 20 skills. Salieron de **350 neuronas** escritas contra una cosecha de 313
+artículos de ocho casas —W3C, MDN, web.dev, Smashing, CSS-Tricks, A List Apart,
+Nielsen Norman Group y Practical Typography—.
+
+**No son resúmenes: son procedimientos.** Cada una tiene comprobaciones que
+pueden **reprobar**, y cada punto se verifica mirando o midiendo, no leyendo el
+código.
+
+| Skill | Qué dispara |
+|---|---|
+| `entrega-de-diseno` | **La compuerta.** Siempre antes de decir «ya quedó». Lo que tiene que ser cierto, punto por punto |
+| `color-que-se-lee` | Paleta, contraste contra el fondo REAL, escala de grises, contraste forzado |
+| `tipografia-de-oficio` | Escala, medida de línea, cifras tabulares, comillas y rayas del español |
+| `reticula-y-ritmo` | Columnas, escala de espacio, ritmo vertical, alineación óptica, el vacío como material |
+| `jerarquia-que-guia` | Cuando todo parece igual de importante. La prueba de entrecerrar los ojos |
+| `profundidad-y-sombra` | Elevación en capas, sombra teñida, el difuminado que cuesta y el que no |
+| `movimiento-honesto` | Las cinco reglas de animar sin romper contraste, marear ni ir a tirones |
+| `estados-completos` | Los ocho estados de todo componente. Los cuatro que siempre faltan |
+| `pantalla-vacia` | Los tres vacíos que se ven iguales y significan cosas distintas |
+| `formulario-que-no-pierde` | Etiquetas, teclado correcto, errores útiles, salida cuando el envío falla |
+| `foco-y-teclado` | El recorrido con Tab. Diez minutos y la revisión que más encuentra |
+| `imagen-que-no-empuja` | Dimensiones, proporción, formatos, srcset, el marcador honesto |
+| `rendimiento-que-se-siente` | «Va lento», «va a saltos». Los tres culpables del scroll a tirones |
+| `modo-oscuro` | Tema oscuro como sistema, no invirtiendo la paleta |
+| `sistema-de-iconos` | Una colección, una rejilla, un grosor, el nombre accesible que falta |
+| `tabla-en-un-telefono` | Datos tabulares en 390 px. Las tres salidas y cuál toca |
+| `texto-de-interfaz` | Botones, errores, confirmaciones y vacíos en español mexicano |
+| `marca-en-la-interfaz` | Meter una identidad sin que quede plantilla teñida |
+| `antes-de-copiar-un-estilo` | Qué cobra cada corriente. Vidrio, brutalismo, neomorfismo, suizo, editorial |
+| `detalles-finales` | La última pasada. Lo que separa lo profesional de lo genérico |
+| `ojos` | **Mirar la pantalla.** El código no te va a decir que está mal |
+
+---
+
 ## El mapa de 42 skills — de dónde salió y qué es
 
 De un carrusel público (`juanbertorello.ia`), premisa: *"Claude por defecto diseña horrible.

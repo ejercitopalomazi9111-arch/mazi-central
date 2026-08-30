@@ -1,0 +1,92 @@
+{
+  "area": "acceso",
+  "nombre": "Entrar, permisos y roles",
+  "que": "Registro, sesión y lo que cada quien puede ver: el sitio donde más gente se cae antes de empezar.",
+  "neuronas": [
+    {
+      "id": "registro-antes-de-ver-nada",
+      "titulo": "Hay que registrarse para saber si sirve",
+      "gravedad": "alta",
+      "sintoma": "Mucha gente se va en la pantalla de registro.",
+      "causa": "Se pide la cuenta antes de enseñar el valor.",
+      "porque": "La cuenta es lo que se mide y lo que permite recordar a la persona.",
+      "arreglo": "Dejar ver, probar o usar algo antes de pedir la cuenta, y pedirla cuando ya haya algo que perder.",
+      "comoCazarlo": "Contar cuántas pantallas hay entre entrar y ver algo útil.",
+      "consejo": "Pedir la cuenta después de que alguien haya hecho algo convierte mucho mejor.",
+      "senales": [
+        "se van en el registro",
+        "hay que crear cuenta para todo",
+        "no puedo ni mirar"
+      ],
+      "salioDe": "Práctica de registro diferido documentada por NN/g."
+    },
+    {
+      "id": "error-de-sesion-que-parece-otra-cosa",
+      "titulo": "Caducó la sesión y el mensaje habla de otra cosa",
+      "gravedad": "media",
+      "sintoma": "Aparece un error genérico y la gente cree que la aplicación está rota.",
+      "causa": "La sesión expiró y el fallo se reporta como error del servidor.",
+      "porque": "Los dos llegan como un fallo de petición y se tratan juntos.",
+      "arreglo": "Decir que la sesión caducó, ofrecer entrar otra vez y volver donde se estaba con el trabajo intacto.",
+      "comoCazarlo": "Dejar la sesión caducar y seguir usando la aplicación.",
+      "consejo": "Perder el trabajo por caducidad es de las peores experiencias posibles: el borrador local lo evita.",
+      "senales": [
+        "me sacó y perdí todo",
+        "dice error y era la sesión",
+        "tuve que entrar de nuevo"
+      ],
+      "salioDe": "La neurona de errores que distinguen de quién es el problema."
+    },
+    {
+      "id": "opciones-visibles-que-no-se-pueden-usar",
+      "titulo": "Se ven botones que el rol no puede usar",
+      "gravedad": "media",
+      "sintoma": "Se toca una acción y sale un error de permisos.",
+      "causa": "La interfaz es la misma para todos los roles y el permiso se comprueba al final.",
+      "porque": "Una sola interfaz es más fácil de mantener.",
+      "arreglo": "O no mostrar lo que no se puede, o mostrarlo apagado diciendo qué haría falta.",
+      "comoCazarlo": "Entrar con cada rol y tocar todo.",
+      "consejo": "Enseñar lo que no se puede usar tiene sentido si sirve para pedir el permiso; si no, estorba.",
+      "senales": [
+        "me sale sin permisos",
+        "¿para qué está ese botón?",
+        "no puedo hacer nada de eso"
+      ],
+      "salioDe": "La neurona del control muerto sin explicación, aplicada a permisos."
+    },
+    {
+      "id": "contrasena-con-reglas-que-no-se-dicen",
+      "titulo": "La contraseña se rechaza y no se dice por qué",
+      "gravedad": "media",
+      "sintoma": "Se intenta varias veces hasta acertar con los requisitos.",
+      "causa": "Las reglas se comprueban al enviar y no se muestran antes.",
+      "porque": "Enseñarlas ocupa sitio y se piensa que son obvias.",
+      "arreglo": "Enseñar los requisitos desde el principio y marcarlos conforme se cumplen.",
+      "comoCazarlo": "Crear una cuenta con una contraseña sencilla y contar los intentos.",
+      "consejo": "Y permitir ver lo escrito: escribir a ciegas una contraseña larga es la causa de la mitad de los fallos.",
+      "senales": [
+        "no acepta mi contraseña",
+        "no dice qué falta",
+        "tuve que intentar varias veces"
+      ],
+      "salioDe": "Prácticas de formularios de registro recogidas en web.dev."
+    },
+    {
+      "id": "cerrar-sesion-escondido",
+      "titulo": "Salir cuesta más que entrar",
+      "gravedad": "baja",
+      "sintoma": "La gente no encuentra cómo cerrar la sesión, sobre todo en un equipo compartido.",
+      "causa": "La opción está enterrada en un menú de perfil sin etiqueta.",
+      "porque": "Salir se ve como una acción rara que no merece sitio.",
+      "arreglo": "Que salir sea alcanzable en uno o dos toques desde cualquier pantalla.",
+      "comoCazarlo": "Pedirle a alguien que cierre la sesión sin ayuda.",
+      "consejo": "En equipos compartidos —una escuela, una biblioteca— es una cuestión de privacidad, no de comodidad.",
+      "senales": [
+        "no encuentro cómo salir",
+        "¿dónde se cierra sesión?",
+        "se quedó abierta mi cuenta"
+      ],
+      "salioDe": "Práctica de sesión en equipos compartidos."
+    }
+  ]
+}

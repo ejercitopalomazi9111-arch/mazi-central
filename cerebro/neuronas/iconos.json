@@ -1,0 +1,92 @@
+{
+  "area": "iconos",
+  "nombre": "Iconos que dicen algo",
+  "que": "Familias, tamaños ópticos y cuándo un dibujo necesita su palabra al lado.",
+  "neuronas": [
+    {
+      "id": "iconos-de-tres-familias",
+      "titulo": "Los iconos vienen de tres juegos distintos",
+      "gravedad": "media",
+      "sintoma": "La interfaz se ve descuidada sin que se pueda señalar qué está mal.",
+      "causa": "Se tomaron iconos de varias bibliotecas: distinto grosor de línea, distinta rejilla, distinto redondeo.",
+      "porque": "Se busca el icono que falta y se coge el primero que aparece, que casi nunca es de la familia que ya se usa.",
+      "arreglo": "Un solo juego. Y si falta uno, se dibuja con las mismas reglas: misma rejilla, mismo grosor, mismos remates.",
+      "comoCazarlo": "Poner todos los iconos juntos en una fila, grandes. Los intrusos se ven al instante.",
+      "consejo": "El grosor de línea es lo que más delata: dos iconos de 1.5 y 2 px juntos se ven como un error.",
+      "senales": [
+        "se ve descuidado",
+        "los iconos no combinan",
+        "alguno se ve más grueso"
+      ],
+      "salioDe": "Práctica de sistemas de iconos; el banco usa un solo trazo de 1.5 en todos."
+    },
+    {
+      "id": "icono-sin-etiqueta-que-nadie-entiende",
+      "titulo": "El icono solo no significa lo que uno cree",
+      "gravedad": "media",
+      "sintoma": "La gente no encuentra una función o la usa creyendo que hace otra cosa.",
+      "causa": "El icono va sin texto y su significado no es una convención compartida fuera del equipo.",
+      "porque": "Con la función en la cabeza, el icono es evidentísimo. Sin ella, es un dibujo.",
+      "arreglo": "Icono con texto siempre que quepa. Sin texto sólo para lo que es convención de verdad: cerrar, buscar, atrás.",
+      "comoCazarlo": "Tapar el texto de la interfaz y pedirle a alguien de fuera que diga qué hace cada botón.",
+      "consejo": "Y aunque sea convención, el nombre accesible tiene que estar igual.",
+      "senales": [
+        "no sé qué hace ese icono",
+        "nadie encuentra la función",
+        "¿ese dibujo qué es?"
+      ],
+      "salioDe": "NN/g sobre etiquetas y reconocimiento; y el `aria-label` fijo del botón de consola del banco."
+    },
+    {
+      "id": "icono-que-cambia-de-tamano-optico",
+      "titulo": "El mismo icono se ve más chico que sus vecinos",
+      "gravedad": "baja",
+      "sintoma": "En una fila de iconos del mismo tamaño, uno parece más pequeño.",
+      "causa": "El tamaño de la caja es igual pero el área pintada no: un círculo dentro de una caja se ve menor que un cuadrado.",
+      "porque": "Se ajusta por la caja, que es lo que el código controla, y el ojo mide el área.",
+      "arreglo": "Ajustar ópticamente: dar un poco más de tamaño a las formas redondas y a las diagonales.",
+      "comoCazarlo": "Mirar la fila entrecerrando los ojos. El que desaparece antes es el que está corto.",
+      "consejo": "Es el mismo principio que hace que una O tipográfica se dibuje sobresaliendo de la línea de base.",
+      "senales": [
+        "ese icono se ve más chico",
+        "no están alineados ópticamente",
+        "uno se ve raro"
+      ],
+      "salioDe": "Principio de compensación óptica, común en tipografía y en iconografía."
+    },
+    {
+      "id": "icono-decorativo-que-el-lector-anuncia",
+      "titulo": "El lector de pantalla lee un icono que no significa nada",
+      "gravedad": "baja",
+      "sintoma": "Se escucha una descripción absurda en medio de una frase.",
+      "causa": "Un icono decorativo tiene título o texto alternativo, así que se anuncia.",
+      "porque": "Se añade el título «por accesibilidad», sin distinguir entre lo que informa y lo que adorna.",
+      "arreglo": "Lo decorativo se oculta a las ayudas técnicas; lo que informa lleva nombre.",
+      "comoCazarlo": "Escuchar un párrafo con iconos. Lo que se anuncie y no aporte, sobra.",
+      "consejo": "Añadir accesibilidad sin criterio genera ruido, y el ruido también es una barrera.",
+      "senales": [
+        "lee cosas raras",
+        "anuncia los iconos",
+        "hay demasiado texto alternativo"
+      ],
+      "salioDe": "La regla de `aria-hidden` en los elementos decorativos del banco y de la sala."
+    },
+    {
+      "id": "el-icono-como-unico-boton-en-movil",
+      "titulo": "En teléfono todo son iconos y nada tiene nombre",
+      "gravedad": "media",
+      "sintoma": "La barra inferior es una fila de dibujos que hay que aprenderse.",
+      "causa": "Se quitaron los textos para que cupieran más destinos.",
+      "porque": "Sin texto caben cinco en vez de tres, y la barra se ve más limpia.",
+      "arreglo": "Menos destinos con su nombre. Si hay que escoger entre cantidad y claridad, gana claridad.",
+      "comoCazarlo": "Preguntarle a alguien nuevo qué hace cada uno.",
+      "consejo": "Los iconos con texto se aprenden una vez; los iconos solos se adivinan cada vez.",
+      "senales": [
+        "no sé qué son esos iconos",
+        "hay que aprenderse la barra",
+        "¿cuál es cuál?"
+      ],
+      "salioDe": "NN/g, «Basic Patterns for Mobile Navigation», sobre etiquetas y reconocimiento."
+    }
+  ]
+}

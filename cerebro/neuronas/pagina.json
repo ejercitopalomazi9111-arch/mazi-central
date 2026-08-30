@@ -1,0 +1,177 @@
+{
+  "area": "pagina",
+  "nombre": "Anatomía de una página",
+  "que": "Portada, recorrido y salidas: qué hace alguien que acaba de llegar, y qué pasa cuando el script no llega.",
+  "neuronas": [
+    {
+      "id": "portada-que-explica-en-vez-de-orientar",
+      "titulo": "La portada cuenta qué es esto y no dice qué hacer",
+      "gravedad": "media",
+      "sintoma": "Se entra, se lee un párrafo bonito y no se sabe por dónde empezar.",
+      "causa": "El texto describe el producto en lugar de ofrecer entradas por intención.",
+      "porque": "Describir es lo que uno sabe de su propio proyecto; adivinar qué quiere quien llega exige salir de uno mismo.",
+      "arreglo": "Dos o tres entradas por lo que la persona quiere HACER, con una línea de qué va a encontrar en cada una.",
+      "comoCazarlo": "Tapar todo menos la primera pantalla y preguntar a alguien qué haría ahora.",
+      "consejo": "Explicar qué es esto no le dice a nadie qué hacer, y son dos trabajos distintos.",
+      "senales": [
+        "no sé por dónde empezar",
+        "¿qué hago aquí?",
+        "se entiende qué es pero no qué hacer"
+      ],
+      "salioDe": "La autorrevisión del banco de pruebas, «no» nº 6, y las tres entradas por intención que lo cerraron."
+    },
+    {
+      "id": "tour-de-bienvenida-que-tapa",
+      "titulo": "El recorrido de bienvenida hay que cerrarlo antes de ver nada",
+      "gravedad": "media",
+      "sintoma": "Al entrar aparece una serie de globos que explican la interfaz y nadie los lee.",
+      "causa": "Se resolvió la orientación con una capa encima, que cobra a todo el mundo la duda de unos pocos.",
+      "porque": "Es la solución que se ve más completa y la más fácil de aprobar: parece que se ocupó del problema.",
+      "arreglo": "Orientar dentro de la propia página, con entradas y con textos en su sitio. Lo que hay que cerrar antes de empezar, estorba.",
+      "comoCazarlo": "Medir cuánta gente lo completa. Si la mayoría lo cierra en el primer paso, no está orientando.",
+      "consejo": "Y si de verdad hace falta un tour, que se pueda pedir, no que aparezca.",
+      "senales": [
+        "cierro el tour siempre",
+        "estorba lo que sale al entrar",
+        "nadie lee la bienvenida"
+      ],
+      "salioDe": "La decisión del banco de pruebas: entradas por intención en la portada en vez de un tour."
+    },
+    {
+      "id": "seguir-donde-ibas-que-te-lleva-solo",
+      "titulo": "Recuerda dónde ibas y te lleva sin preguntar",
+      "gravedad": "media",
+      "sintoma": "Se recarga la página y en vez de empezar de cero aparece a media lectura.",
+      "causa": "El sitio restaura la posición automáticamente, incluso cuando quien recargó lo hacía justo para empezar de nuevo.",
+      "porque": "Restaurar suena a comodidad y en la mayoría de los casos lo es; el resto no se prueba.",
+      "arreglo": "Ofrecerlo, no hacerlo: una pastilla que diga a dónde lleva. Y no pisar el enlace con ancla que alguien pasó.",
+      "comoCazarlo": "Abrir un enlace con ancla en una sesión que tenga posición guardada. Si acaba en otro sitio, el guardado está pisando el enlace.",
+      "consejo": "La comodidad que quita control se siente como que el sitio decide por uno.",
+      "senales": [
+        "recargué y me llevó a otro lado",
+        "quería empezar de cero",
+        "el enlace no me llevó donde decía"
+      ],
+      "salioDe": "El banco de pruebas: la sección se guarda y se OFRECE con el nombre a la vista, nunca se salta sola."
+    },
+    {
+      "id": "la-primera-pantalla-sin-nada-que-hacer",
+      "titulo": "El primer pantallazo es sólo un titular grande",
+      "gravedad": "baja",
+      "sintoma": "Hay que bajar para encontrar la primera cosa accionable.",
+      "causa": "La portada se diseñó como cartel: ocupa toda la pantalla con una frase y una imagen.",
+      "porque": "Se ve impresionante en la presentación, donde nadie tiene que hacer nada.",
+      "arreglo": "Que en la primera pantalla quepa al menos una acción o una entrada real, aunque el titular pierda tamaño.",
+      "comoCazarlo": "Mirar la primera pantalla en un teléfono. Contar cuántas cosas se pueden tocar.",
+      "consejo": "El titular más impresionante del mundo no compensa que no haya nada que hacer.",
+      "senales": [
+        "hay que bajar para todo",
+        "la portada es sólo el título",
+        "no hay nada que tocar arriba"
+      ],
+      "salioDe": "Práctica de anatomía de portada; la revisión del banco lo cazó al mirar la primera pantalla en teléfono."
+    },
+    {
+      "id": "secciones-sin-final",
+      "titulo": "Se llega al final de una sección y no hay a dónde ir",
+      "gravedad": "baja",
+      "sintoma": "Al terminar de leer, la única opción es volver a subir.",
+      "causa": "Las secciones se diseñaron como bloques independientes, sin salida.",
+      "porque": "Cada bloque se aprueba por separado y el recorrido completo no lo mira nadie.",
+      "arreglo": "Que cada final ofrezca el paso siguiente. Aunque sea un enlace a la sección de al lado.",
+      "comoCazarlo": "Leer el documento entero de arriba abajo y anotar dónde se para.",
+      "consejo": "Un catálogo con mejores modales sigue siendo un catálogo si nada tiene principio y final.",
+      "senales": [
+        "se acaba y ya",
+        "no sé qué sigue",
+        "tengo que volver a subir"
+      ],
+      "salioDe": "La autorrevisión del banco, «no» nº 1: once secciones en fila, sin recorrido."
+    },
+    {
+      "id": "todo-igual-de-importante-en-la-portada",
+      "titulo": "La portada da el mismo peso a ocho cosas",
+      "gravedad": "media",
+      "sintoma": "Nadie sabe qué se espera que haga primero.",
+      "causa": "Cada área metió su bloque y todos quedaron del mismo tamaño.",
+      "porque": "Repartir por igual es la salida diplomática cuando hay varios interesados.",
+      "arreglo": "Decidir la acción principal y darle peso de verdad. Las demás pueden estar, más abajo y más pequeñas.",
+      "comoCazarlo": "Entrecerrar los ojos ante la portada. Si no destaca una sola cosa, no hay acción principal.",
+      "consejo": "Repartir por igual no es neutral: es decidir que nada importa.",
+      "senales": [
+        "¿qué quieren que haga?",
+        "todo se ve igual de importante",
+        "hay demasiadas opciones"
+      ],
+      "salioDe": "Principio de jerarquía visual del comité de UI/UX de este grupo."
+    },
+    {
+      "id": "el-pie-como-cajon-de-sastre",
+      "titulo": "En el pie hay cuarenta enlaces que nadie ordenó",
+      "gravedad": "baja",
+      "sintoma": "El pie de página creció hasta ser un directorio ilegible.",
+      "causa": "Cada cosa que no cabía en la navegación acabó ahí.",
+      "porque": "El pie es el sitio donde nada estorba, así que nunca hay presión para decidir.",
+      "arreglo": "Agrupar por tema con encabezados, y quitar lo que no se usa. El pie también es navegación.",
+      "comoCazarlo": "Mirar las visitas de cada enlace del pie. Lo que nadie toca en meses, sobra.",
+      "consejo": "Un pie ordenado es de los sitios donde la gente busca lo legal y el contacto: merece estructura.",
+      "senales": [
+        "el pie tiene de todo",
+        "nadie encuentra nada abajo",
+        "hay demasiados enlaces"
+      ],
+      "salioDe": "Práctica de arquitectura de información aplicada al pie."
+    },
+    {
+      "id": "la-pagina-que-solo-funciona-con-javascript",
+      "titulo": "Sin JavaScript no hay nada, ni el texto",
+      "gravedad": "alta",
+      "sintoma": "Con los scripts bloqueados o fallando, la página queda en blanco.",
+      "causa": "Todo el contenido se pinta desde el cliente, así que sin script no hay documento.",
+      "porque": "Es lo que sale por defecto de muchas herramientas y en desarrollo siempre hay script.",
+      "arreglo": "Que el contenido exista en el documento y el script lo mejore. Lo que necesite script, que no aparezca en vez de aparecer muerto.",
+      "comoCazarlo": "Desactivar JavaScript y recorrer la página. Se tiene que leer entera, aunque esté quieta.",
+      "consejo": "No es sólo por quien lo desactiva: es por el script que no llegó, el que falló y el que tardó.",
+      "senales": [
+        "sin javascript no carga",
+        "se ve en blanco",
+        "depende de los scripts para todo"
+      ],
+      "salioDe": "El banco de pruebas y el sitio del Instituto: sin JS la página se lee entera y quieta."
+    },
+    {
+      "id": "interruptor-que-hay-que-encender",
+      "titulo": "El movimiento se activa con una clase que a veces no llega",
+      "gravedad": "media",
+      "sintoma": "Si el script falla, la página se queda a medias: elementos invisibles esperando una animación que nunca llegó.",
+      "causa": "El estado inicial es «oculto» y el script lo destapa. Si el script no corre, se queda oculto.",
+      "porque": "Es la forma directa de animar entradas y funciona siempre que el script llegue.",
+      "arreglo": "Al revés: el documento nace completo y visible, y el script AÑADE el movimiento quitando un interruptor.",
+      "comoCazarlo": "Bloquear el script y mirar si falta contenido, no sólo si falta animación.",
+      "consejo": "Un interruptor que hay que encender deja la página rota el día que nadie lo enciende.",
+      "senales": [
+        "no se ve el contenido si falla el js",
+        "se quedó a medias",
+        "faltan secciones al cargar"
+      ],
+      "salioDe": "El banco de pruebas: el `<html>` nace con `data-quieto` y el script se lo quita."
+    },
+    {
+      "id": "enlace-compartido-que-no-lleva-al-sitio",
+      "titulo": "El enlace que alguien comparte no abre lo que veía",
+      "gravedad": "media",
+      "sintoma": "Se comparte una URL y quien la abre ve otra cosa: otra pestaña, otro filtro, el principio.",
+      "causa": "El estado de la interfaz no está en la dirección: vive sólo en memoria.",
+      "porque": "Guardar el estado en la URL exige decidir qué es estado compartible, y es más trabajo que una variable.",
+      "arreglo": "Lo que cambia lo que se ve —pestaña, filtro, sección— va en la dirección.",
+      "comoCazarlo": "Cambiar la interfaz, copiar la URL y abrirla en otra ventana. Si no se ve lo mismo, falta estado.",
+      "consejo": "Es también lo que hace que el botón de atrás funcione y que se pueda guardar en favoritos.",
+      "senales": [
+        "le mandé el link y vio otra cosa",
+        "no puedo compartir esta vista",
+        "se pierde el filtro al recargar"
+      ],
+      "salioDe": "La regla de no pisar el enlace con ancla, del banco de pruebas."
+    }
+  ]
+}

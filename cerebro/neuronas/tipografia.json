@@ -1,0 +1,177 @@
+{
+  "area": "tipografia",
+  "nombre": "Tipografía que se lee",
+  "que": "Componer texto: medida, interlineado, escala, carga de fuentes y jerarquía. Casi nada de esto se arregla cambiando de letra.",
+  "neuronas": [
+    {
+      "id": "la-tipografia-buena-mal-compuesta",
+      "titulo": "Se escogió una tipografía legible y se compuso ilegible",
+      "gravedad": "alta",
+      "sintoma": "Se pagó o se buscó una tipografía «muy legible» y el texto sigue costando leerlo.",
+      "causa": "La legibilidad no la decide la letra: la deciden el ancho de línea, el interlineado, el tamaño y el color con que se compone.",
+      "porque": "Escoger la letra es una decisión visible y se discute en reunión; componerla son cuatro números que nadie mira.",
+      "arreglo": "Fijar primero la composición —ancho de línea, interlineado, tamaño y contraste— y sólo después discutir la familia.",
+      "comoCazarlo": "Medir el ancho de línea en caracteres y el interlineado. Si la línea pasa de ~90 caracteres o el interlineado es menor que el tamaño, ya no importa qué letra sea.",
+      "consejo": "Con 100 caracteres por línea e interlineado negativo, la tipografía más legible del mundo queda inservible.",
+      "senales": [
+        "la letra es buena pero no se lee",
+        "cuesta seguir el renglón",
+        "me pierdo al saltar de línea"
+      ],
+      "salioDe": "Smashing, «Measuring The Performance Of Typefaces For Users»: cómo se compone importa más que la familia."
+    },
+    {
+      "id": "linea-demasiado-larga",
+      "titulo": "El ojo se pierde al saltar de renglón",
+      "gravedad": "media",
+      "sintoma": "La gente relee la misma línea o se salta una sin darse cuenta.",
+      "causa": "La medida —caracteres por línea— es demasiado larga, así que el ojo pierde el punto de retorno al bajar.",
+      "porque": "El texto se pone en un contenedor que ocupa el ancho disponible, y el ancho disponible de un monitor no tiene nada que ver con lo que un ojo puede recorrer.",
+      "arreglo": "Topar la medida con `max-width` en unidades de texto (`ch` o `em`), no del contenedor. El texto manda su propio ancho.",
+      "comoCazarlo": "Contar caracteres de una línea llena en la pantalla más ancha que se soporte.",
+      "consejo": "Topar por `ch` sobrevive a cambiar de tipografía; topar por píxeles, no.",
+      "senales": [
+        "se pierde el renglón",
+        "releo la misma línea",
+        "el texto se ve muy ancho en la compu"
+      ],
+      "salioDe": "El tope de 64ch en los párrafos del banco de pruebas, y el caso de 100 caracteres de Smashing."
+    },
+    {
+      "id": "tipografia-fluida-donde-no-hace-falta",
+      "titulo": "El cuerpo de texto escala con la ventana y no debería",
+      "gravedad": "baja",
+      "sintoma": "Se montó tipografía fluida en todo y el texto normal se ve casi igual en todos los anchos.",
+      "causa": "Entre el mínimo y el máximo del cuerpo hay dos o tres píxeles: escalarlo cuesta complejidad y no se nota.",
+      "porque": "La técnica es elegante y se aplica a todo por coherencia, sin preguntarse dónde la diferencia se ve.",
+      "arreglo": "Fluido para lo que de verdad cambia mucho —titulares, espaciados grandes—; escalones normales para el cuerpo.",
+      "comoCazarlo": "Comparar el tamaño calculado del cuerpo a 390 y a 1440 px. Si difieren en menos de ~3 px, el fluido sobra ahí.",
+      "consejo": "Y si se usa, en unidades relativas: con píxeles duros se ignora el tamaño de letra que la persona configuró.",
+      "senales": [
+        "puse clamp en todo",
+        "el texto no cambia aunque sea fluido",
+        "¿para qué sirve esto?"
+      ],
+      "salioDe": "Smashing, «Modern Fluid Typography Using CSS Clamp»: el fluido no sirve cuando la diferencia es de unos píxeles."
+    },
+    {
+      "id": "viewport-units-y-el-zoom-de-la-persona",
+      "titulo": "El texto no crece aunque la persona suba el tamaño de letra",
+      "gravedad": "alta",
+      "sintoma": "Alguien sube el tamaño de fuente del navegador y la página se queda igual.",
+      "causa": "Los tamaños están en unidades de ventana o en píxeles duros, que no dependen de la preferencia de la persona.",
+      "porque": "`vw` da un fluido bonito a la primera y nadie prueba la página con el zoom de texto subido.",
+      "arreglo": "Que la parte que manda del cálculo vaya en `rem`, para que la preferencia entre en la cuenta.",
+      "comoCazarlo": "Subir el tamaño de letra del navegador al 200 % y medir. Si el texto no crece, hay `vw` o píxeles mandando.",
+      "consejo": "Es de las pocas comprobaciones que se hacen en diez segundos y cazan un problema serio.",
+      "senales": [
+        "subí el tamaño de letra y no pasa nada",
+        "no puedo agrandar el texto",
+        "se queda chiquito aunque lo agrande"
+      ],
+      "salioDe": "Smashing, sobre clamp: usar unidades relativas para que la tipografía fluida respete la preferencia."
+    },
+    {
+      "id": "una-sola-familia-para-todo",
+      "titulo": "El titular y el párrafo son la misma voz",
+      "gravedad": "baja",
+      "sintoma": "La página se ve correcta y anónima; nada tiene carácter.",
+      "causa": "Display y cuerpo comparten familia, así que la única diferencia entre el titular y el texto es el tamaño.",
+      "porque": "Una familia es más fácil de mantener y suena a coherencia. La coherencia sin contraste se lee como falta de decisión.",
+      "arreglo": "Dar al display una voz propia —otra familia, u otro eje del mismo variable: ancho, peso alto, versalitas—.",
+      "comoCazarlo": "Tapar el contenido y mirar sólo los titulares. Si podrían ser de cualquier sitio, falta voz.",
+      "consejo": "Si no se puede añadir otra familia, un eje de ancho en una variable da carácter sin pesar un byte más.",
+      "senales": [
+        "se ve genérico",
+        "le falta personalidad",
+        "los títulos no destacan"
+      ],
+      "salioDe": "La lista de tics de este grupo, y el punto 7 de la revisión del banco de pruebas."
+    },
+    {
+      "id": "variable-con-todos-los-ejes-cargados",
+      "titulo": "La fuente variable pesa más que las estáticas que sustituye",
+      "gravedad": "media",
+      "sintoma": "Se cambió a una variable «para ahorrar peticiones» y la página tarda más en pintar texto.",
+      "causa": "Se cargó el archivo completo con todos los ejes y todo el juego de caracteres, cuando se usan dos pesos y el alfabeto latino.",
+      "porque": "La variable se vende como ahorro, y lo es sólo cuando de verdad se usan varios pesos y se recorta el resto.",
+      "arreglo": "Subconjuntar por idioma y limitar los ejes a los que se usan. Si sólo hacen falta dos pesos, comparar contra dos estáticas.",
+      "comoCazarlo": "Pesar el archivo servido y contar cuántos pesos distintos aparecen de verdad en la página.",
+      "consejo": "El ahorro real de la variable no es el peso: es poder ajustar el ancho o el peso a la medida sin otro archivo.",
+      "senales": [
+        "la fuente variable pesa mucho",
+        "tarda en aparecer el texto",
+        "cambié a variable y va peor"
+      ],
+      "salioDe": "A List Apart, «Variable Fonts for Responsive Design»: el «piso de cristal» de la tipografía responsiva."
+    },
+    {
+      "id": "la-letra-llega-tarde-y-el-texto-salta",
+      "titulo": "El texto salta cuando por fin carga la tipografía",
+      "gravedad": "alta",
+      "sintoma": "Al cargar, el texto aparece con otra letra y de pronto se recoloca todo.",
+      "causa": "La fuente de respaldo tiene métricas distintas —altura de x, anchos— así que al llegar la real cambia el alto de cada bloque.",
+      "porque": "Se mira el resultado final con la fuente ya en caché y nunca el primer segundo de una visita nueva.",
+      "arreglo": "Escoger un respaldo con métricas parecidas y ajustarlas (`size-adjust`, `ascent-override`, `descent-override`) para que ocupen lo mismo.",
+      "comoCazarlo": "Cargar con la caché vacía y la red lenta, y mirar si algo se mueve al llegar la fuente.",
+      "consejo": "Es una de las causas más comunes de salto de maqueta y casi nunca se le atribuye a la tipografía.",
+      "senales": [
+        "el texto salta al cargar",
+        "cambia de letra a media carga",
+        "se recoloca todo solo"
+      ],
+      "salioDe": "web.dev, «Text and typography»: los descriptores de ajuste de métricas existen exactamente para esto."
+    },
+    {
+      "id": "jerarquia-por-tamano-nada-mas",
+      "titulo": "Todo se distingue sólo por el tamaño",
+      "gravedad": "media",
+      "sintoma": "Hay seis tamaños de letra y aun así no se sabe qué es más importante.",
+      "causa": "La jerarquía se construyó moviendo un solo parámetro. Seis escalones de tamaño se leen como seis cosas parecidas.",
+      "porque": "El tamaño es el parámetro más obvio y el único que casi todas las herramientas ponen a mano.",
+      "arreglo": "Usar varios ejes a la vez —peso, color, espacio alrededor, mayúsculas, posición— para que dos niveles se distingan aunque midan casi lo mismo.",
+      "comoCazarlo": "Entrecerrar los ojos: deberían quedar tres pesos claros. Si queda una masa gris pareja, no hay jerarquía.",
+      "consejo": "El aire alrededor jerarquiza más que dos puntos de tamaño, y no le quita legibilidad a nada.",
+      "senales": [
+        "no se sabe qué es más importante",
+        "todo se ve igual de importante",
+        "tengo seis tamaños y no se nota"
+      ],
+      "salioDe": "El comité de UI/UX del grupo: la jerarquía se mira entrecerrando los ojos, no leyendo."
+    },
+    {
+      "id": "mayusculas-para-parrafos",
+      "titulo": "Un párrafo entero en versalitas o mayúsculas",
+      "gravedad": "media",
+      "sintoma": "Un bloque de texto en mayúsculas que nadie lee entero.",
+      "causa": "Las mayúsculas quitan la silueta de las palabras, que es por donde se reconocen sin deletrear.",
+      "porque": "En un rótulo corto se ven bien y se generaliza al párrafo, donde el costo aparece.",
+      "arreglo": "Mayúsculas sólo para etiquetas cortas, y con más espacio entre letras. Nunca para leer.",
+      "comoCazarlo": "Si el bloque en mayúsculas pasa de tres o cuatro palabras, ya está pidiendo deletreo.",
+      "consejo": "Y con `text-transform` el contenido sigue en minúsculas para quien lo lea con lector de pantalla, que es lo correcto.",
+      "senales": [
+        "nadie lee ese bloque",
+        "se ve gritado",
+        "cuesta leer las mayúsculas"
+      ],
+      "salioDe": "Practical Typography, sobre el uso de versalitas y mayúsculas."
+    },
+    {
+      "id": "numeros-que-bailan-en-una-tabla",
+      "titulo": "Los números de la tabla no alinean",
+      "gravedad": "baja",
+      "sintoma": "En una columna de cifras las comas y los puntos no quedan en la misma vertical, y comparar cuesta.",
+      "causa": "La tipografía usa cifras proporcionales: el 1 ocupa menos que el 8.",
+      "porque": "Las proporcionales se ven mejor dentro de una frase, que es donde se prueba la fuente, y se dejan puestas para todo.",
+      "arreglo": "`font-variant-numeric: tabular-nums` en tablas, contadores y cualquier cifra que cambie en vivo.",
+      "comoCazarlo": "Mirar una columna de números de distinta longitud: si los separadores no alinean, son proporcionales.",
+      "consejo": "En un contador que sube, además evita que el bloque cambie de ancho en cada cuadro.",
+      "senales": [
+        "los números no alinean",
+        "la tabla se ve desordenada",
+        "el contador brinca de ancho"
+      ],
+      "salioDe": "Practical Typography, «Grids of numbers», y el uso de `tabular-nums` en el tablero del banco."
+    }
+  ]
+}
