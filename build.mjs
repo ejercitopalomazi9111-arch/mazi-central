@@ -38,6 +38,10 @@ const VA = [
      archivo suelto como la lámina: es un sitio normal de varios archivos, y si
      falta uno la página carga a medias sin decir por qué. */
   'luz',
+  /* las guías de formación: el PDF de estudio y la app de entrenamiento. Sin
+     esta línea la carpeta existe en el repo y NO en el sitio, y el enlace que
+     se le pasa a alguien devuelve 404 — que es exactamente lo que pasó. */
+  'guias',
 ];
 
 /* Lo que NO va, aunque esté dentro de algo que sí va. Los .md son notas de
@@ -66,6 +70,12 @@ const NO_VA = (ruta) => {
      OFL sí se publican —viajan con las fuentes, que es donde tienen que estar—
      y por eso la regla de los .md de arriba no las toca: son .txt. */
   if(/(^|\/)luz\/taller(\/|$)/.test(ruta)) return true;
+  /* el taller de las guías arma el HTML y el PDF: es material de trabajo.
+     OJO con el final: `ruta` llega SIN barra al final cuando lo que se está
+     mirando es la carpeta misma, así que el patrón tiene que aceptar el fin de
+     cadena. Con `\/` a secas la carpeta pasaba y se publicaba entera —igual
+     que ya estaba resuelto arriba para `arte/web`. */
+  if(/(^|\/)guias\/.*\/(taller|fuente)(\/|$)/.test(ruta)) return true;
   /* El código del worker de La Sala NO es parte del sitio: es otro proyecto de
      Cloudflare. Publicarlo aquí no filtra secretos —las llaves son secretos del
      worker— pero sí sirve como estático algo que nadie usa desde el navegador,
