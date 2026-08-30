@@ -1,4 +1,4 @@
-/* Arma la lámina: un archivo autónomo con la fuente, el logo y las 350 piezas
+/* Arma la lámina: un archivo autónomo con las fuentes y las 350 piezas
    dentro. Sin build, sin CDN, sin una sola petición ajena.
      node lamina/taller/armar.mjs <raíz del repo> <salida.html> */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
@@ -62,18 +62,27 @@ const FUENTES = [
 const fuentes = FUENTES.map(([casa,papel,n]) =>
   `<tr><td>${esc(casa)}</td><td>${esc(papel)}</td><td class="cifra">${n.toLocaleString('es-MX')}</td></tr>`).join('');
 
-/* ── la fuente y el logo, dentro del archivo ─────────────────────────── */
-const fuente = readFileSync(join(RAIZ,'sitio/fuente/mazi.woff2')).toString('base64');
-const logo = readFileSync(join(RAIZ,'marca/logo/paloma-simple.svg'),'utf8')
-  .replace(/<\?xml[^>]*\?>/g,'').replace(/<!--[\s\S]*?-->/g,'')
-  .replace(/\s*width="[^"]*"/,'').replace(/\s*height="[^"]*"/,'')
-  .replace(/<svg /,'<svg style="width:100%;height:100%;display:block;fill:currentColor" ').trim();
+/* ── las tres fuentes, dentro del archivo ────────────────────────────────
+   Van empotradas en base64 para que la lámina siga siendo UN archivo que se
+   abre sin red. Son Gloock y Crimson Pro, las dos SIL OFL, subconjuntadas a
+   latín + español; la licencia de cada una viaja en `taller/fuentes/`.
 
-const css = readFileSync(join(AQUI,'estilo.css'),'utf8').replace('__FUENTE__', fuente);
+   ⚠ AQUÍ ESTABA LA TIPOGRAFÍA DE LA CASA Y NO DEBÍA ESTAR. Carlos, e262:
+   «no uses mi tipografía sin mi petición explícita». Y en e261, sobre esta
+   misma página: «en tu portafolio está mal porque no respetas una sola de tus
+   reglas de diseño». Las dos son la misma falta — vestir un trabajo propio con
+   la marca de la casa— y por eso también se fue el logo del colofón. La
+   autoría se dice con letras, que es como se dice la autoría. */
+const empotrar = (n) => readFileSync(join(AQUI,'fuentes',n)).toString('base64');
+
+const css = readFileSync(join(AQUI,'estilo.css'),'utf8')
+  .replace('__GLOOCK__',    empotrar('gloock.woff2'))
+  .replace('__CRIMSON__',   empotrar('crimson.woff2'))
+  .replace('__CRIMSON_I__', empotrar('crimson-i.woff2'))
+  .replace('__CRIMSON_B__', empotrar('crimson-b.woff2'));
 const cuerpo = readFileSync(join(AQUI,'cuerpo.html'),'utf8')
   .replace('__ATLAS__', atlas).replace('__INDICE__', indice)
-  .replace('__SKILLS__', skills).replace('__FUENTES__', fuentes)
-  .replace('__LOGO__', logo);
+  .replace('__SKILLS__', skills).replace('__FUENTES__', fuentes);
 const motor = readFileSync(join(AQUI,'motor.js'),'utf8');
 
 const html = `<!doctype html>
@@ -83,8 +92,8 @@ const html = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lámina · Atlas de los defectos del diseño web · Grupo Mazi</title>
 <meta name="description" content="350 piezas de conocimiento sobre lo que se rompe en una pantalla, por qué se rompe y cómo se caza antes de que llegue al papel. Departamento de diseño de Grupo Mazi.">
-<meta name="theme-color" content="#F2EFE9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#12101A" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F1EA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <script>
 /* El tema se aplica ANTES de pintar. Aplicarlo después deja un destello del
    tema equivocado en cada carga, y ese destello se ve siempre. */

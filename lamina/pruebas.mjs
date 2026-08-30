@@ -6,7 +6,8 @@
    · que el buscador devuelva la pieza equivocada arriba
    · que la lámina NO se lea con el JavaScript apagado
    · que el tema no sobreviva a recargar, o que parpadee al cargar
-   · que algo se salga de la pantalla o quede por debajo de 44 px */
+   · que algo se salga de la pantalla o quede por debajo de 44 px
+   · que la identidad sea prestada: un color, una letra o un logo de otro */
 const BASE = process.argv[2] || 'http://127.0.0.1:8791';
 const RUTA = BASE + '/lamina/';
 const pw = await import('/opt/node22/lib/node_modules/playwright/index.js');
@@ -249,6 +250,85 @@ for(const tema of ['light','dark']){
   ok(tema + ': el rótulo chico pasa 4.5:1', r.clase >= 4.5, String(r.clase));
   ok(tema + ': el número de lámina (texto grande) pasa 3:1', r.marca >= 3, String(r.marca));
   await p.context().close();
+}
+
+/* ── 8 · LA IDENTIDAD ES SUYA, Y ESTO PUEDE REPROBAR ─────────────────
+   Esta es la prueba que faltaba y que costó una reprobada. Carlos, e261:
+   «en tu portafolio está mal porque no respetas una sola de tus reglas de
+   diseño», y e262: «no uses mi tipografía sin mi petición explícita».
+
+   Las dos faltas eran INVISIBLES para las otras siete pruebas: el contraste
+   pasaba, nada se desbordaba, ningún control bajaba de 44 px, y la página
+   iba vestida con el violeta y la letra de otro. Una batería que no puede
+   reprobar por lo que sí estaba mal es una batería que da falsa calma.
+
+   Se mira la PÁGINA PINTADA, no el CSS: así también caza lo que se cuele por
+   un estilo en línea o por una variable que alguien redefina más abajo. */
+console.log('\n── la identidad ──');
+{
+  const p = await abrir({ viewport:{ width:1280, height:900 } });
+  const r = await p.evaluate(() => {
+    /* violetas de la casa, y su vecindario: no basta con prohibir el hex
+       exacto, porque un tono a un punto de distancia es la misma falta. */
+    const VETADOS = ['173,33,237','196,100,255','138,26,192','201,124,255'];
+    const esVioleta = (c) => {
+      const m = c.match(/\d+/g); if(!m || m.length < 3) return false;
+      const [r,g,b] = m.map(Number);
+      if(m.length > 3 && Number(m[3]) === 0) return false;   /* transparente */
+      /* violeta = azul y rojo altos, verde hundido, y saturado */
+      return b > 120 && r > 90 && g < Math.min(r,b) - 45 && b - g > 60 && r - g > 40;
+    };
+    const familias = new Set(), violetas = [];
+    /* ⚠ SÓLO LO QUE SE PINTA, Y DENTRO DEL <body>. La primera versión barría
+       `document.querySelectorAll('*')`, que incluye <html>, <head>, <title>,
+       <style> y <script> — todos con `textContent` y todos con la letra por
+       defecto del navegador. La prueba reprobaba por «Times New Roman» sin
+       que hubiera un solo Times en la página. Se exige además que el elemento
+       tenga texto PROPIO: si no, un <div> contenedor reporta la letra de sus
+       hijos y todo elemento del árbol cuenta dos veces. */
+    const MUDOS = { SCRIPT:1, STYLE:1, TEMPLATE:1, NOSCRIPT:1, LINK:1, META:1, TITLE:1 };
+    const propio = (el) => [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
+    document.body.querySelectorAll('*').forEach(el => {
+      if(MUDOS[el.tagName]) return;
+      const cs = getComputedStyle(el);
+      const primera = (cs.fontFamily || '').split(',')[0].trim().replace(/^["']|["']$/g,'');
+      if(propio(el) && cs.display !== 'none') familias.add(primera);
+      for(const prop of ['color','backgroundColor','borderTopColor','borderBottomColor',
+                         'borderLeftColor','borderRightColor','outlineColor',
+                         'textDecorationColor','fill']){
+        const v = cs[prop];
+        if(!v) continue;
+        if(VETADOS.some(x => v.includes(x)) || esVioleta(v))
+          violetas.push((el.tagName + '.' + (el.className||'')).slice(0,40) + ' ' + prop + ' ' + v);
+      }
+    });
+    /* las @font-face que la página declara, leídas del propio documento */
+    const caras = [];
+    for(const h of document.styleSheets){
+      let reglas; try{ reglas = h.cssRules; }catch(e){ continue; }
+      for(const g of reglas || []) if(g.constructor.name === 'CSSFontFaceRule')
+        caras.push(g.style.fontFamily.replace(/["']/g,''));
+    }
+    return { familias:[...familias].sort(), violetas:violetas.slice(0,6),
+             caras:[...new Set(caras)].sort(),
+             logos: document.querySelectorAll('.paloma, [class*="logo"]').length };
+  });
+  console.log('  · familias en uso: ' + r.familias.join(', '));
+  console.log('  · caras declaradas: ' + r.caras.join(', '));
+
+  ok('ni un violeta de la casa en toda la página pintada',
+     r.violetas.length === 0, r.violetas.join(' · '));
+  ok('no se declara ninguna cara tipográfica ajena',
+     !r.caras.some(c => /mazi/i.test(c)), r.caras.join(', '));
+  ok('no queda ningún logo de la casa incrustado', r.logos === 0, String(r.logos));
+
+  /* La que habría cachado la sans genérica: TRES registros, ni uno más. La
+     cuarta familia siempre entra igual —una regla suelta que tira del stack
+     del sistema— y es la parte que hace que un trabajo se vea de nadie. */
+  const PROPIAS = ['Gloock', 'Crimson Pro'];
+  const intrusas = r.familias.filter(f => !PROPIAS.includes(f) && !/mono/i.test(f) && f);
+  ok('sólo hay tres registros: la didona, la serif y la mono',
+     intrusas.length === 0, 'intrusas: ' + intrusas.join(', '));
 }
 
 await nav.close();
