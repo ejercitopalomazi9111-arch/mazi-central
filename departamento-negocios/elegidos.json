@@ -1,0 +1,2603 @@
+{
+  "cuando": "2026-08-30",
+  "cupoPorCasa": 70,
+  "total": 517,
+  "porCasa": {
+    "gitlab": 70,
+    "basecamp": 30,
+    "atlassian": 70,
+    "ycombinator": 70,
+    "sloan": 70,
+    "wharton": 70,
+    "hbr": 54,
+    "farnam": 13,
+    "wikipedia": 70
+  },
+  "articulos": [
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-strategy/cs-monthly-metrics-dashboard/",
+      "casa": "gitlab",
+      "p": 19
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/cs-ops-programs/nps-csat-scores/",
+      "casa": "gitlab",
+      "p": 15
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/cs-rep-assignment-process/",
+      "casa": "gitlab",
+      "p": 15
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/gainsight/gainsight-user-management/",
+      "casa": "gitlab",
+      "p": 15
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-strategy/customer-success-strategy-analytics/",
+      "casa": "gitlab",
+      "p": 15
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/risk-mitigation/self-managed-vs-saas/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-assigned-scope/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-tm-onboarding/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/customer-onboarding-best-practices/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/education-services/gitlab-education-services-support/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/gitlab-certified-engagement-manager/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/gitlab-certified-trainer-process/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/iteration-planning-per-service-offering/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/manage-risk/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-operations/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-operations/mavenlink-processes/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/remote-training-session-setup/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/remote-training-tips/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/marketing/developer-relations/engineering/innovation-pitch-competition/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/marketing/growth-marketing/digital-agency/digital-strategy-management/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/marketing/growth-marketing/partner-and-industry-marketing/mdf-operations-process/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/cs-ops-programs/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/cs-ops-programs/all-customer-csat-cs/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/cs-ops-programs/cs-content-guide/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/customer-success-operations/cs-ops-programs/getting-help-from-dcs/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/sales-operations/deal-desk-order-mgmt-kpis/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/sales/field-operations/sales-strategy/fy22-field-planning/",
+      "casa": "gitlab",
+      "p": 13
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/company/culture/all-remote/being-a-great-remote-manager/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/company/culture/all-remote/live-doc-meetings/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/company/working-groups/pipeline-validation-service-operations/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/company/working-groups/teamops-sales-marketing/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/aspiring-leaders-program/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/csm-manager/risk-renewal/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/csm-manager/roles/operations-manager/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/engagement/non-engaged-customer-strategies/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/leadership-recurring-checkin/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-assigned-assessments-ctas/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-assigned-engagement/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-assigned-operating-rhythm/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-assigned-qa/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-assigned-roles-responsibilities/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-assigned-tools/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/cse-operating-rhythm/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/segment/cse/csm-to-cse-handover/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/service-ping-faq/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/csm/services/infrastructure-upgrade/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/demo-systems/tutorials/integrations/create-jenkins-pipeline/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/pre-sales-post-sales-transition/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/product-usage-data/metrics-based-playbooks/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/aws-marketplace/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/scoping-information/ci-pipeline/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/scoping-information/migrations/sm-to-saas/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/engagement-mgmt/sow-processing/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/gitlab-certified-migration-services-engineer/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/gitlab-certified-training-partner-award/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/gitlab-technical-certifications/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/positioning/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/processes/delivery-checklists/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/agile-to-gitlab-terminology/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/backlog-management/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/definition-of-done/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/definition-of-ready/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/discovery/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/gitlab-best-practices/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/good-estimation-techniques/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/good-user-stories/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://handbook.gitlab.com/handbook/customer-success/professional-services-engineering/professional-services-delivery-methodology/iteration-0-fundamentals/",
+      "casa": "gitlab",
+      "p": 11
+    },
+    {
+      "url": "https://basecamp.com/gettingreal/02.4-fix-time-and-budget-flex-scope/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/gettingreal/04.4-hire-the-right-customers/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/gettingreal/04.5-scale-later/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/gettingreal/07.3-meetings-are-toxic/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/gettingreal/10.2-optimize-for-happiness/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/gettingreal/10.4-manage-debt/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/gettingreal/15.3-better-not-beta/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/0.3-chapter-01/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/1.1-chapter-02/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/1.2-chapter-03/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/1.3-chapter-04/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/1.4-chapter-05/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/1.5-chapter-06/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/2.1-chapter-07/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/2.2-chapter-08/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/2.3-chapter-09/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/3.1-chapter-10/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/3.2-chapter-11/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/3.3-chapter-12/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/3.4-chapter-13/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/3.5-chapter-14/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/3.6-chapter-15/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/4.0-appendix-01/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/4.1-appendix-02/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/4.2-appendix-03/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/4.5-appendix-06/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/4.6-appendix-07/",
+      "casa": "basecamp",
+      "p": 5
+    },
+    {
+      "url": "https://basecamp.com/shapeup/0.1-foreword/",
+      "casa": "basecamp",
+      "p": 3
+    },
+    {
+      "url": "https://basecamp.com/shapeup/0.2-acknowledgements/",
+      "casa": "basecamp",
+      "p": 3
+    },
+    {
+      "url": "https://basecamp.com/shapeup/3.7-conclusion/",
+      "casa": "basecamp",
+      "p": 3
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-teams/crm-jira-cloud-close-customer-feedback-loop-sales-support-development/",
+      "casa": "atlassian",
+      "p": 15
+    },
+    {
+      "url": "https://www.atlassian.com/blog/customer-service-management/loom-ai-support-growth-engine/",
+      "casa": "atlassian",
+      "p": 13
+    },
+    {
+      "url": "https://www.atlassian.com/blog/customer-service-management/ai-first-customer-support-transformation-lessons/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-teams/data-residency-is-coming-soon-in-beta-to-forge-hosted-storage-take-action-now-to-support-your-customers/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/how-it-leaders-can-help-hr-deliver-exceptional-support/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/optimize-jsm-for-software-development-teams/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/rovo-automation-customer-stories/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/manage-growing-pains-during-team-growth/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/loom/how-loom-supports-better-employee-onboarding-and-customer-training/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/running-successful-one-on-one-meetings/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/work-management/orchestrating-success-how-atlassians-marketing-team-plays-in-sync/",
+      "casa": "atlassian",
+      "p": 11
+    },
+    {
+      "url": "https://www.atlassian.com/blog/ai-at-work/ai-efficiency-paradox-why-productivity-gains-dont-mean-better-results/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/announcements/customer-service-management/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/bitbucket/automate-and-scale-your-android-deployment-with-bitbucket-pipelines/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/bitbucket/bitbucket-pipelines-oidc-now-supports-multiple-audiences/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/bitbucket/upcoming-changes-to-pipelines-log-retention-policy/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/confluence/how-atlassian-automation-accelerates-work-across-confluence-jira-jira-service-management/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/development/discussing-growth-and-acquisition-with-the-appfire-team/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/development/diversity-teams-key-customer-success/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/development/extend-jira-service-desk-customer-support-new-capabilities/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/development/how-tech-leaders-can-turn-ai-hype-into-real-team-productivity/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/development/maintaining-company-culture-agile-teams-scale/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/development/product-manager-dev-manager-walk-planning-meeting/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/development/using-scrum-balance-operations-and-innovation-atlassian-support/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-service-management/10-tips-for-creating-a-knowledge-powered-it-service-culture/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-service-management/separating-signal-noise-atlassian-proactive-support/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-service-management/stem-the-chaos-of-remote-work-with-these-itsm-best-practices/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-teams/atlassian-marketplace-developers-in-the-spotlight-celebrating-achievements-and-success/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-teams/guide-to-customer-conversations-about-server-end-of-support-and-cloud-migration/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/it-teams/it-kpis-for-an-effective-it-dashboard/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-desk/graduate-email-support-managing-teams-effectively/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/announcing-aiops-partnerships-with-dynatrace-new-relic-and-bigpanda/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/australian-economic-growth/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/elevating-digital-culture-with-atlas/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/how-24-hour-fitness-transformed-it-operations/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/how-atlassian-williams-f1-team-manages-assets/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/how-vuori-manages-the-employee-lifecycle-with-jira-service-management/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/jira-hr-workforce-planning/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/jira-service-management/lucid-motors-drives-innovation-with-assets-in-jira-service-management/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/empathy-remote-teams/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/guide-to-effective-succession-planning/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/how-6-seasoned-managers-tackle-the-biggest-challenges-of-teamwork/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/how-to-give-manager-feedback/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/how-to-handle-team-conflict-as-a-first-time-manager/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/how-to-manage-work-life-integrators-and-segmentors/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/how-to-structure-motivate-team-to-be-more-collaborative/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/improve-manager-onboarding/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/manage-teams-with-5-things/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/managers-boost-team-morale/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/leadership/managing-remote-teams/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/loom/5-strategies-revenue-team-roi/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/loom/how-dabadus-customer-success-team-uses-loom/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/loom/successful-remote-teams/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/marketing-teams/how-jira-core-helps-social-media-marketing-process/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/statuspage/smart-sales-marketing-teams-celebrate-uptime/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/10x-meetings-build-company-culture/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/async-practices-for-decision-making/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/building-successful-dei-partnerships/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/continuous-feedback-experiment/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/decision-making-process/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/how-ai4all-is-reprogramming-remotely-for-success/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/how-to-structure-an-all-company-meeting/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/manager-check-in-experiment/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/remote-team-culture/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/remote-work-productivity/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/shared-mental-models-improve-team-performance/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/teamwork/supportive-company-culture/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/trello/how-to-use-trello-for-customer-support-teams/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/trello/manage-sales-funnel-trello/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.atlassian.com/blog/trello/tips-for-using-trello-to-manage-a-sales-team/",
+      "casa": "atlassian",
+      "p": 9
+    },
+    {
+      "url": "https://www.ycombinator.com/library/59-how-to-set-up-hire-and-scale-a-growth-strategy-and-team/",
+      "casa": "ycombinator",
+      "p": 11
+    },
+    {
+      "url": "https://www.ycombinator.com/library/7q-post-product-market-fit-people-customers-sales/",
+      "casa": "ycombinator",
+      "p": 11
+    },
+    {
+      "url": "https://www.ycombinator.com/library/68-product-and-design-process-for-remote-teams/",
+      "casa": "ycombinator",
+      "p": 9
+    },
+    {
+      "url": "https://www.ycombinator.com/library/86-how-to-start-a-startup-finding-product-market-fit/",
+      "casa": "ycombinator",
+      "p": 9
+    },
+    {
+      "url": "https://www.ycombinator.com/library/IZ-dalton-michael-the-student-s-guide-to-becoming-a-successful-startup-founder/",
+      "casa": "ycombinator",
+      "p": 9
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Jl-garry-s-channel-6-skills-for-successful-startup-founders/",
+      "casa": "ycombinator",
+      "p": 9
+    },
+    {
+      "url": "https://www.ycombinator.com/library/3j-how-to-measure-leadership/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/3O-why-big-deals-are-bad-for-startups/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4s-navigating-success-for-your-startup/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4T-how-to-design-a-better-pitch-deck/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4v-best-practices-for-managing-a-remote-team/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/5x-how-to-split-equity-among-co-founders/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/5z-the-real-product-market-fit/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/61-order-of-operations-for-starting-a-startup/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/6a-on-starting-and-scaling-direct-mail-automation-startup-lob/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/6h-startup-pricing-101/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/6k-growth-for-startups/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/6m-understanding-safes-and-priced-equity-rounds/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/6q-how-to-pitch-your-startup/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/7g-how-to-build-and-manage-teams/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/7u-how-pitching-investors-is-different-than-pitching-customers/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/7V-how-to-find-product-market-fit/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/8s-startup-growth/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/9i-how-to-choose-a-metric-and-set-your-kpi/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/CP-one-order-of-operations-for-starting-a-startup/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/DV-dalton-michael-successful-founders-are-ok-with-rejection/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/DY-dalton-michael-yc-founders-made-these-fundraising-mistakes/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Gu-snapdocs-aaron-king-on-navigating-market-cycles/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Ii-dalton-michael-most-important-lifestyle-habits-of-successful-founders/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Il-how-startup-fundraising-works/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Im-keys-to-successful-co-founder-relationships/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Is-tips-for-technical-startup-founders/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/J5-inside-the-group-partner-lounge-the-ideal-customer/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/J6-inside-the-group-partner-lounge-advantages-of-a-first-time-founder/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/JE-founder-faq-how-did-you-get-your-first-customer/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/JL-how-to-start-a-startup-getting-started-getting-press-and-doing-things-that-don-t-scale/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Jn-garry-s-channel-billion-dollar-startups-are-better-faster-or-cheaper/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/JN-how-to-start-a-startup-building-company-culture-part-i/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/JO-how-to-start-a-startup-building-company-culture-part-ii/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Jz-founder-faq-40-ai-startup-founders-on-the-current-state-of-ai-tech/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Ke-the-secrets-of-y-combinator-s-early-success-with-yc-co-founder-jessica-livingston/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/KL-33-ai-startup-founders-debate-the-creation-of-artificial-general-intelligence/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/KO-does-your-tech-startup-really-need-a-technical-co-founder-yes/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/KR-key-startup-metrics/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/KT-consumer-startup-metrics/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/L9-better-ai-models-better-startups-lightcone-podcast-ep-7/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/LF-enterprise-sales-for-founders/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/LG-why-startup-founders-should-launch-companies-sooner-than-they-think/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/LO-how-nothing-founder-carl-pei-built-a-multi-million-dollar-smartphone-brand-in-just-2-years/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/LP-co-founder-equity-mistakes-to-avoid/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Ls-twitter-vs-x-product-lessons-for-startup-founders/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Mk-brand-design-tips-from-linear-founder-karri-saarinen/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Mo-the-sales-playbook-for-founders/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/MO-windsurf-ceo-betting-on-ai-agents-pivoting-in-48-hours-and-the-future-of-coding/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Mx-the-7-most-powerful-moats-for-ai-startup/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/Uu-sam-altman-never-a-better-time-to-do-a-startup/",
+      "casa": "ycombinator",
+      "p": 7
+    },
+    {
+      "url": "https://www.ycombinator.com/library/2q-yc-startup-library/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/2s-advice-for-new-managers/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/3i-how-to-find-a-technical-co-founder/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/3k-the-second-job-of-a-startup-ceo/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/3S-when-to-shut-down-a-startup/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/3w-how-to-create-and-manage-a-board/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/47-product-advice-for-hardware-founders/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4b-how-to-pitch-your-company/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4c-getting-press-for-your-startup/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4D-yc-s-essential-startup-advice/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4G-convincing-engineers-to-join-your-team/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://www.ycombinator.com/library/4g-the-scientific-method-for-startups/",
+      "casa": "ycombinator",
+      "p": 5
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/innovative-work-cultures-know-the-difference-between-leader-and-manager/",
+      "casa": "sloan",
+      "p": 13
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/can-customers-find-your-brand-marketing-strategies-for-ai-driven-search/",
+      "casa": "sloan",
+      "p": 11
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/marketinginformation-technology-successful-customerrelationship-management/",
+      "casa": "sloan",
+      "p": 11
+    },
+    {
+      "url": "https://sloanreview.mit.edu/video/performance-management-for-successful-teams/",
+      "casa": "sloan",
+      "p": 11
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/a-stakeholder-approach-to-strategic-performance-measurement/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/a-structured-approach-to-strategic-decisions/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/ai-related-risks-test-the-limits-of-organizational-risk-management/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/analyzing-performance-in-service-organizations/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/best-of-this-week-successful-innovation-productivity-hacks/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/breaking-the-cycle-of-bias-that-works-against-women-leaders/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/creating-better-innovation-measurement-practices/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/creating-new-markets-through-service-innovation/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/customer-relationships-evolve-so-must-your-crm-strategy/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/customers-and-service-innovation/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/design-your-marketing-organization-to-fit-your-companys-growth-stage/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/developing-successful-strategic-partnerships-with-universities/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/does-your-supply-chain-risk-management-strategy-hold-water/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/dump-traditional-reviews-to-better-measure-performance/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/embrace-delegation-as-a-skill-to-strengthen-remote-teams/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/five-essentials-for-marketing-performance-measurement-systems/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/five-robotic-process-automation-risks-to-avoid/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/five-ways-leaders-can-support-remote-work/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/five-ways-predictive-ai-can-improve-sales-performance-management/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/for-ai-productivity-gains-let-team-leaders-write-the-rules/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/ge-talent-management-aligning-hiring-with-strategy/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/how-a-startup-mindset-brews-innovation-at-a-global-scale/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/how-customer-connections-can-help-drive-decision-making-for-marketers/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/how-leaders-can-optimize-teams-emotional-landscapes/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/how-leaders-help-teams-manage-stress/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/how-nonprofit-organizations-use-reputational-risk-management/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/how-scenario-planning-influences-strategic-decisions/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/how-to-sustain-your-organizations-culture-when-everyone-is-remote/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/improving-the-performance-of-top-management-teams/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/inclusive-hiring-to-build-better-teams-period/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/innovation-in-organizational-structure/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/integrating-sales-and-operations-to-create-higher-value-for-customers/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/knowledge-management-building-better-teams/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/leadership-comparing-the-performance-of-external-successors/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/manage-boundaries-better-with-your-team/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/market-management-to-transform-the-it-organization/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/marketing-dueling-pricing-strategies/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/marketing-the-globalbrand-advantage/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/marketing-using-choice-modeling-in-service-management/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/marketingoperations-what-really-makes-customers-happy/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/monitor-measure-incentive-is-management-as-simple-as-that/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/optimizing-return-to-office-strategies-with-organizational-network-analysis/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/organizational-learning-the-key-to-management-innovation/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/organizations-management-mistakes-squelch-employee-innovation/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/planning-for-a-restructured-revitalized-organization/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/providing-performance-feedback-to-support-neurodiverse-employees/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/rethinking-performance-management-for-post-pandemic-success/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/saturns-supplychain-innovation-high-value-in-aftersales-service/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/strategy-issue-selling-in-the-organization/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/strategy-risk-management-in-practice/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/strategy-selling-product-vs-selling-customers/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/successful-buildtoorder-strategies-start-with-the-customer/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/sustainability-reporting-as-a-tool-for-better-risk-management/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/the-big-deal-about-a-big-data-culture-and-innovation/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/the-high-price-of-customer-satisfaction/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/the-processes-of-organization-and-management/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/the-surprising-science-behind-successful-remote-meetings/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/three-cultures-of-management-the-key-to-organizational-learning/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/turn-customer-complaints-into-innovation-blueprints/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/use-strategic-market-models-to-predict-customer-behavior/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/using-scenario-analysis-to-manage-the-strategic-risks-of-reengineering/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/want-to-make-better-decisions-start-experimenting/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/what-leaders-still-get-wrong-about-customer-portfolio-management/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/why-pricing-decisions-need-more-than-management-intuition/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/article/why-salespeople-fear-pitching-radical-innovation/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://sloanreview.mit.edu/projects/scholars/the-future-of-strategic-measurement-enhancing-kpis-with-ai/",
+      "casa": "sloan",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/tarnished-brands-at-bargain-prices-will-the-tech-sectors-latest-growth-strategy-pay-off/",
+      "casa": "wharton",
+      "p": 11
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/the-hiring-trade-off-behind-startup-growth/",
+      "casa": "wharton",
+      "p": 11
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/podcast/marketing-matters/cheryl-guerin-evp-of-global-brand-strategy-innovation-at-mastercard/",
+      "casa": "wharton",
+      "p": 11
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/podcast/marketing-matters/creating-a-category-mike-kurtz-founder-of-mikes-hot-honey-on-brand-building-community-and-growth/",
+      "casa": "wharton",
+      "p": 11
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/a-closer-look-at-helping-employees-better-manage-investment-risk/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/adobe-co-founder-john-warnock-on-the-competitive-advantages-of-aesthetics-and-the-right-technology/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/aegiss-sandip-sen-on-bpo-strategies-go-global-and-span-the-customer-lifecycle/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/aligning-the-organization-with-the-market-focusing-on-the-customers-total-experience/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/amwal-alkhaleej-private-equity-and-the-mena-region-best-postacquisition-practices-for-growth-capital/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/automation-make-teams-less-efficient-less-cooperative/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/bringing-new-apps-market-five-innovators-outshone-competition/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/can-ai-manage-an-entire-medical-decision-process/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/china-evergrande-group-strategic-repositioning-toward-sustainable-growth-model/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/clayton-christensen-chinas-growth-will-force-an-innovation-competition-with-the-west/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/connecting-the-dots-between-innovation-and-leadership/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/creating-internet-strategies-for-competitive-advantage/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/customers-competition-and-cost-sams-club-ceo-brian-cornell-on-the-essential-cs-of-leadership/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/delving-into-the-mystery-of-customer-satisfaction-a-toyota-for-the-retail-market/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/despite-economic-uncertainty-chinas-asset-managers-face-optimistic-prospects/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/emerging-market-slowdown-hits-private-equity-improves-pricing/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/executives-speak-up-in-real-time-on-innovation-financial-risk-hiring-and-other-concern/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/executives-speak-up-in-real-time-on-innovation-financial-risk-hiring-and-other-concerns/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/from-recession-to-recovery-a-focus-on-higher-productivity-new-partnerships-cost-competitiveness/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/from-recession-to-recovery-focus-on-higher-productivity-new-partnerships-cost-competitiveness/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/from-star-power-to-branding-firms-look-for-new-ways-to-court-private-equity-deals/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/ges-jeff-immelt-on-leadership-global-risk-and-growth/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/hand-to-hand-combat-can-competitive-markets-knock-out-central-planning/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/hedging-their-risk-creating-a-market-for-managerial-stock-options/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/how-disaster-risk-is-priced-into-the-stock-market/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/how-dynamic-electricity-pricing-can-improve-market-efficiency/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/hungry-for-growth-arabic-foods-taste-success-in-global-markets/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/in-international-private-equity-deals-finding-the-right-managers-is-key/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/innovation-prowess-george-s-day-on-what-distinguishes-growth-leaders/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/knack-innovation-drives-israels-startup-success/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/leadership-by-the-numbers-its-one-part-of-todd-thomsons-management-strategy-at-citigroup/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/leadership-startup-success/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/leadership-strategies-for-dealing-with-the-crisis/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/luxury-brands-marketing-the-upscale-during-a-downturn/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/management-101-the-marriage-of-strategy-and-leadership/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/measures-that-matter-aligning-performance-measures-with-corporate-strategy/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/measuring-the-trade-offs-between-economic-growth-and-unequal-distribution-of-the-benefits/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/moving-beyond-direct-selling-eureka-forbes-embraces-digital-customer-service/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/now-that-competition-in-chinas-auto-market-has-revved-up-what-strategy-should-the-drivers-follow/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/oliver-wyman-ceo-john-drzik-the-middle-east-needs-a-comprehensive-risk-management-strategy/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/panamas-dash-for-growth-super-tankers-skyscrapers-and-putting-strategic-advantages-first/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/price-pliant-considering-risks-rewards-dynamic-pricing/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/pricing-and-positioning-for-entrepreneurial-marketers/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/research-roundup-cross-subsidization-at-hospitals-building-better-teams-and-the-alcohol-bias/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/research-roundup-team-performance-demystifying-market-composition-and-the-reality-vs-hype-of-sponsored-search/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/research-roundup-the-flip-side-of-open-innovation-productivity-losses-from-bad-weather-and-assessing-the-risks-of-outsourcing/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/scanning-and-product-innovation-advice-from-a-consumer-market-leader/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/smart-growth-innovating-to-meet-the-needs-of-the-market-without-feeding-the-beast-of-complexity/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/strategy-top-management-talent-get-new-emphasis-in-private-equity-2/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/strategy-top-management-talent-get-new-emphasis-in-private-equity/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/tata-group-infosys-and-others-the-painful-but-necessary-succession-planning-process/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/team-leadership-at-wipro-are-two-ceos-better-than-one/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/the-feedback-effect-how-the-financial-markets-affect-decisions-in-the-real-economy/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/the-growth-equation-avoid-customer-segment-collisions/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/the-innovation-gap-as-product-cycles-turn-nokia-and-rim-scramble-for-market-share/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/the-innovation-through-acquisition-strategy-why-the-pay-off-isnt-always-there-2/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/the-innovation-through-acquisition-strategy-why-the-pay-off-isnt-always-there/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/todays-marketing-challenge-turning-the-data-deluge-into-competitive-advantage/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/tqm-iso-9000-six-sigma-do-process-management-programs-discourage-innovation/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/u-s-shifts-to-strong-support-for-public-private-infrastructure-deals/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/using-incentives-calibrate-ceos-risk-appetite/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/want-to-improve-customer-service-treat-your-employees-better/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/whartons-karl-ulrich-analyzes-the-strategies-of-todays-most-successfully-innovative-companies/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/why-disruptive-innovation-doesnt-always-hurt-market-leaders/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/article/why-some-founders-in-startup-accelerators-do-better-than-others/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://knowledge.wharton.upenn.edu/podcast/knowledge-at-wharton-podcast/a-matter-of-metrics-using-web-data-to-improve-sales-performance/",
+      "casa": "wharton",
+      "p": 9
+    },
+    {
+      "url": "https://hbr.org/2026/08/a-new-way-to-measure-customer-referrals/",
+      "casa": "hbr",
+      "p": 9
+    },
+    {
+      "url": "https://hbr.org/2026/09/ai-is-revolutionizing-strategic-decision-making/",
+      "casa": "hbr",
+      "p": 9
+    },
+    {
+      "url": "https://hbr.org/podcast/2026/07/how-a-museum-marketing-team-used-ai-to-bring-people-closer-to-art/",
+      "casa": "hbr",
+      "p": 9
+    },
+    {
+      "url": "https://hbr.org/podcast/2026/08/the-innovation-strategy-most-companies-miss/",
+      "casa": "hbr",
+      "p": 9
+    },
+    {
+      "url": "https://store.hbr.org/product/blue-ocean-strategy-enhanced-edition-how-to-create-uncontested-market-space-and-make-the-competition-irrelevant/10876/",
+      "casa": "hbr",
+      "p": 9
+    },
+    {
+      "url": "https://hbr.org/2026/07/research-roundup-the-death-of-the-cover-letter-boring-meetings-wide-salary-ranges-and-more/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/08/do-your-b2b-customers-see-the-value-you-deliver/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/08/how-to-recognize-when-your-customers-want-you-to-act/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/08/research-the-innovation-problems-ai-cant-solve/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/08/strategy-making-gets-an-ai-boost/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/08/what-slows-innovation-down/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/09/dont-underestimate-the-power-of-customer-referrals/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/09/the-ceo-of-hcltech-on-pivoting-for-the-ai-era/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/2026/09/why-cash-rewards-dont-always-produce-better-ideas/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/topic/subject/sales-and-marketing/",
+      "casa": "hbr",
+      "p": 7
+    },
+    {
+      "url": "https://hbr.org/store/landing/20-minute-managers/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://hbr.org/topic/subject/brand-management/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://hbr.org/topic/subject/competitive-strategy/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://hbr.org/topic/subject/decision-making-and-problem-solving/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://hbr.org/topic/subject/pricing-strategy/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://hbr.org/topic/subject/risk-management/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://store.hbr.org/product/hbr-s-10-must-reads-2027-the-definitive-management-ideas-of-the-year-from-harvard-business-review-featuring-the-hidden-beliefs-that-hold-leaders-back-by-muriel-m-wilkins/10890/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://store.hbr.org/product/llao-llao-setting-a-pricing-strategy/527003/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://store.hbr.org/product/should-i-swipe-right-on-this-customer-segment/9068/",
+      "casa": "hbr",
+      "p": 5
+    },
+    {
+      "url": "https://hbr.org/hbr-advertising-sales/",
+      "casa": "hbr",
+      "p": 4
+    },
+    {
+      "url": "https://hbr.org/hbr-analytic-services/",
+      "casa": "hbr",
+      "p": 4
+    },
+    {
+      "url": "https://hbr.org/corporate/cookie-policy/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/innovation/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/leadership/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/strategy/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/business-management/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/change-management/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/corporate-strategy/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/customer-experience/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/disruptive-innovation/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/experimentation/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/innovation/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/leadership-development/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/leadership-qualities/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/leadership-styles/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/leadership-transitions/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/leadership-vision/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/leadership/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/market-research/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/marketing/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/open-innovation/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/sales/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/social-marketing/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/strategy-formulation/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://hbr.org/topic/subject/strategy/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://store.hbr.org/product/ai-customers-will-buy-revitalz-will-anyone-else/9079/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://store.hbr.org/product/clipmyhorse-tv-galloping-from-niche-to-scale-in-equestrian-media/527004/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://store.hbr.org/product/harvard-business-review-board-member-s-handbook-how-to-win-your-seat-build-value-and-lead-with-impact/10733/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://store.hbr.org/product/resilient-optimism-the-science-of-sustaining-a-positive-mindset-in-tough-times/10858/",
+      "casa": "hbr",
+      "p": 3
+    },
+    {
+      "url": "https://fs.blog/bias-incentives-reinforcement/",
+      "casa": "farnam",
+      "p": 6
+    },
+    {
+      "url": "https://fs.blog/mental-model-availability-bias/",
+      "casa": "farnam",
+      "p": 6
+    },
+    {
+      "url": "https://fs.blog/mental-model-bias-envy-jealousy/",
+      "casa": "farnam",
+      "p": 6
+    },
+    {
+      "url": "https://fs.blog/mental-model-bias-from-insensitivity-to-base-rates/",
+      "casa": "farnam",
+      "p": 6
+    },
+    {
+      "url": "https://fs.blog/mental-model-bias-from-insensitivity-to-sample-size/",
+      "casa": "farnam",
+      "p": 6
+    },
+    {
+      "url": "https://fs.blog/mental-model-bias-from-liking-loving/",
+      "casa": "farnam",
+      "p": 6
+    },
+    {
+      "url": "https://fs.blog/mental-model-feedback-loops/",
+      "casa": "farnam",
+      "p": 6
+    },
+    {
+      "url": "https://fs.blog/commitment-consistency-bias/",
+      "casa": "farnam",
+      "p": 4
+    },
+    {
+      "url": "https://fs.blog/mental-model-hanlons-razor/",
+      "casa": "farnam",
+      "p": 4
+    },
+    {
+      "url": "https://fs.blog/mental-model-social-proof/",
+      "casa": "farnam",
+      "p": 4
+    },
+    {
+      "url": "https://fs.blog/michael-abrashoff-leadership/",
+      "casa": "farnam",
+      "p": 4
+    },
+    {
+      "url": "https://fs.blog/what-is-hindsight-bias/",
+      "casa": "farnam",
+      "p": 4
+    },
+    {
+      "url": "https://fs.blog/wp-content/plugins/jetpack/jetpack_vendor/automattic/jetpack-search/build/instant-search/",
+      "casa": "farnam",
+      "p": 3
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Operations_management_for_services/",
+      "casa": "wikipedia",
+      "p": 7
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Product_life-cycle_management_(marketing)/",
+      "casa": "wikipedia",
+      "p": 7
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Segmenting-targeting-positioning/",
+      "casa": "wikipedia",
+      "p": 7
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Agricultural_Marketing_Service/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Brand_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Business_process_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Cash_conversion_cycle/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Category:Customer_service/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Category:Services_marketing/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Category:Strategic_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Competitive_advantage/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Competitive_Advantage/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Competitive_Strategy/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_acquisition_cost/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_experience_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_relationship_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_retention/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_satisfaction/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_Service_Assurance/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_service_representative/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_service_training/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_service/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Customer_support/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Diversification_(marketing_strategy)/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Enterprise_risk_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Financial_risk_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Innovation_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Intelligence_cycle_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Japanese_management_culture/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Manufacturing_process_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Market_segmentation/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Marketing_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Marketing_strategies_for_product_software/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Marketing_strategies/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Marketing_strategy/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Marketing_warfare_strategies/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Operations_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Organizational_behavior_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Organizational_culture/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Organizational_leadership/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Organizational_structure/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Performance_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Performance_measurement/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Porter_generic_strategies/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Porter's_generic_strategies/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Positioning_(marketing)/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Price_based_selling/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Pro-innovation_bias/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Process_management_(computing)/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Process_management_(Project_Management)/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Product_life-cycle_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Professional_services_automation/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Profit_impact_of_marketing_strategy/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Prospect_(marketing)/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Risk_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Sales_force_management_system/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Sales_incentive_plan/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Sales_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Sales_operations/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Sales_pipeline/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Sales_process_engineering/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Service_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Services_marketing/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:RecentChangesLinked/Customer_service/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:RecentChangesLinked/Strategic_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:WhatLinksHere/Customer_service/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Special:WhatLinksHere/Strategic_management/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Strategic_leadership/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Strategic_Management_Journal/",
+      "casa": "wikipedia",
+      "p": 5
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Strategic_Management_Society/",
+      "casa": "wikipedia",
+      "p": 5
+    }
+  ]
+}

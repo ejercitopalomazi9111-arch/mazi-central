@@ -1,0 +1,193 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL TALLER · diez instrumentos de negocio
+   ──────────────────────────────────────────────────────────────────────────
+   Deliberadamente DISTINTO de la Lámina, que es papel, serif y atlas. Esto es
+   un instrumento: tinta oscura, monoespaciada, cifras tabulares, cantos duros
+   y el violeta reservado para la LECTURA VIVA — el número que cambia cuando
+   mueves algo. Si el violeta apareciera también en el marco, dejaría de
+   señalar dónde mirar.
+   ═════════════════════════════════════════════════════════════════════════ */
+/* ⚠ AQUÍ NO VA LA TIPOGRAFÍA DE LA CASA. Carlos, e262: «no uses mi tipografía
+   sin mi petición explícita». La guía del ISTQB sí la lleva porque él pidió esa
+   con la marca de agua de Grupo Mazi; el taller no se pidió así, y una regla
+   que sólo se aplica cuando conviene no es una regla.
+   Van Bricolage Grotesque y Geist Mono, las dos SIL OFL, subconjuntadas y
+   empotradas —cero peticiones—, con su licencia en `taller/fuentes/`. */
+@font-face{ font-family:"Bricolage"; src:url(data:font/woff2;base64,__UI__) format("woff2");
+            font-weight:400; font-display:swap }
+@font-face{ font-family:"Bricolage"; src:url(data:font/woff2;base64,__UI_B__) format("woff2");
+            font-weight:700; font-display:swap }
+@font-face{ font-family:"Geist Mono"; src:url(data:font/woff2;base64,__CIFRA__) format("woff2");
+            font-weight:400; font-display:swap }
+@font-face{ font-family:"Geist Mono"; src:url(data:font/woff2;base64,__CIFRA_B__) format("woff2");
+            font-weight:700; font-display:swap }
+
+:root{
+  --vacio:#0E0A14; --panel:#161020; --panel-alto:#1E1630;
+  --linea:#2C2340; --linea-viva:#3D3155;
+  --hueso:#E9E5EE; --tenue:#9A90AA;
+  --viva:#C464FF;            /* la lectura viva */
+  --viva-hondo:#AD21ED;      /* el violeta medido del logo */
+  --bien:#4FD8A4; --aviso:#FFC65C; --mal:#FF6B87;
+  --sans:"Bricolage", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono:"Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --filete:1px;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-tema="oscuro"]){
+    --vacio:#F3F1F5; --panel:#FFFFFF; --panel-alto:#EDE9F2;
+    --linea:#D6CFE0; --linea-viva:#BCB1CC;
+    --hueso:#171021; --tenue:#5D5470;
+    --viva:#8A1AC0; --viva-hondo:#7A16A8;
+    --bien:#0E7A54; --aviso:#8A5B00; --mal:#B3153A;
+  }
+}
+:root[data-tema="claro"]{
+  --vacio:#F3F1F5; --panel:#FFFFFF; --panel-alto:#EDE9F2;
+  --linea:#D6CFE0; --linea-viva:#BCB1CC;
+  --hueso:#171021; --tenue:#5D5470;
+  --viva:#8A1AC0; --viva-hondo:#7A16A8;
+  --bien:#0E7A54; --aviso:#8A5B00; --mal:#B3153A;
+}
+
+*{ box-sizing:border-box }
+[hidden]{ display:none !important }
+html{ -webkit-text-size-adjust:100% }
+body{ margin:0; background:var(--vacio); color:var(--hueso);
+      font-synthesis-weight:none;  /* la negrita va empotrada; nada de engordar */
+      font:400 1rem/1.55 var(--sans); overflow-x:hidden;
+      padding:0 0 env(safe-area-inset-bottom) }
+
+.caja{ max-width:56rem; margin:0 auto; padding:0 1.1rem }
+
+/* ── cabecera ────────────────────────────────────────────────────────── */
+header.tapa{ border-bottom:var(--filete) solid var(--linea); background:var(--vacio);
+             padding-top:env(safe-area-inset-top) }
+header.tapa .fila{ display:flex; align-items:center; gap:.9rem; min-height:3.5rem }
+header.tapa .paloma{ width:1.7rem; height:1.7rem; flex:none; color:var(--viva-hondo) }
+header.tapa .casa{ font:600 .64rem/1 var(--mono); letter-spacing:.2em;
+                   text-transform:uppercase; color:var(--tenue) }
+header.tapa a{ color:inherit; text-decoration:none }
+header.tapa .volver{ margin-left:auto; font:600 .7rem/1 var(--mono); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--tenue); border:var(--filete) solid var(--linea);
+  padding:.7rem .8rem; min-height:2.75rem; display:flex; align-items:center }
+
+/* ── título del instrumento ──────────────────────────────────────────── */
+.encabeza{ padding:2.2rem 0 1.4rem; border-bottom:2px solid var(--hueso); margin-bottom:1.8rem }
+.encabeza .num{ font:600 .66rem/1 var(--mono); letter-spacing:.22em; color:var(--viva);
+                text-transform:uppercase; margin:0 0 .7rem }
+.encabeza h1{ font-family:var(--sans); font-weight:700; letter-spacing:-.015em;
+              font-size:clamp(1.9rem,6.5vw,3rem); line-height:1.05; margin:0 0 .7rem }
+.encabeza p{ margin:0; color:var(--tenue); max-width:44ch }
+
+/* ── bloques ─────────────────────────────────────────────────────────── */
+h2{ font:600 .7rem/1 var(--mono); letter-spacing:.2em; text-transform:uppercase;
+    color:var(--tenue); margin:2.4rem 0 .9rem }
+h3{ font:600 1.02rem/1.3 var(--sans); margin:1.6rem 0 .5rem }
+p{ margin:0 0 1rem }
+b,strong{ font-weight:700 }
+code{ font:400 .9em/1.4 var(--mono); background:var(--panel-alto); padding:.1em .3em }
+
+.nota{ border-left:2px solid var(--linea-viva); padding:.1rem 0 .1rem .9rem;
+       margin:0 0 1.3rem; color:var(--tenue); font-size:.94rem }
+.nota b{ color:var(--hueso) }
+
+/* ── el panel de entrada ─────────────────────────────────────────────── */
+.grupo{ border:var(--filete) solid var(--linea); background:var(--panel);
+        padding:1.1rem; margin:0 0 1rem }
+.grupo > .tit{ font:600 .95rem/1.35 var(--sans); margin:0 0 .25rem }
+.grupo > .ay{ font-size:.88rem; color:var(--tenue); margin:0 0 .9rem }
+
+label.campo{ display:block; margin:0 0 .9rem }
+label.campo > span{ display:block; font:600 .66rem/1.4 var(--mono); letter-spacing:.12em;
+                    text-transform:uppercase; color:var(--tenue); margin:0 0 .35rem }
+input[type=text], input[type=number], textarea, select{
+  width:100%; font:400 1.0625rem/1.4 var(--sans); color:var(--hueso);
+  background:var(--vacio); border:var(--filete) solid var(--linea); border-radius:0;
+  padding:.75rem .8rem; min-height:2.9rem;
+}
+textarea{ min-height:5rem; resize:vertical; font-size:1rem }
+input:focus, textarea:focus, select:focus{ outline:0; border-color:var(--viva) }
+input::placeholder, textarea::placeholder{ color:var(--tenue); opacity:.75 }
+
+/* la escala de 1 a 5, con el dedo en mente */
+.escala{ display:flex; gap:var(--filete); background:var(--linea);
+         border:var(--filete) solid var(--linea) }
+.escala button{ flex:1; min-height:2.9rem; border:0; background:var(--panel);
+  color:var(--tenue); font:600 .95rem/1 var(--mono); cursor:pointer;
+  -webkit-tap-highlight-color:transparent }
+.escala button[aria-pressed="true"]{ background:var(--viva-hondo); color:#fff }
+.escala + .pies{ display:flex; justify-content:space-between; margin:.35rem 0 0;
+                 font:400 .7rem/1.3 var(--mono); color:var(--tenue) }
+
+/* ── la lectura ──────────────────────────────────────────────────────── */
+.lectura{ border:var(--filete) solid var(--linea-viva); background:var(--panel);
+          padding:1.2rem; margin:1.6rem 0 }
+.lectura .dato{ display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap;
+                border-bottom:var(--filete) solid var(--linea); padding:.6rem 0 }
+.lectura .dato:last-of-type{ border-bottom:0 }
+.lectura .dato .et{ font:600 .66rem/1.4 var(--mono); letter-spacing:.12em;
+                    text-transform:uppercase; color:var(--tenue); flex:1; min-width:9rem }
+.lectura .dato .va{ font:600 1.5rem/1 var(--mono); color:var(--viva);
+                    font-variant-numeric:tabular-nums }
+.lectura .dato .un{ font:400 .8rem/1 var(--mono); color:var(--tenue) }
+.lectura .veredicto{ margin-top:1rem; padding-top:1rem;
+                     border-top:2px solid var(--hueso); font-size:1.05rem }
+/* ⚠ LA NEGRITA VA EN LÍNEA, NO EN BLOQUE. Estaba como `display:block` para
+   que el titular del veredicto quedara en su renglón — y funcionaba, hasta que
+   un veredicto usó una negrita a MITAD de frase: «hay que escribir <b>qué</b>
+   es» se partió en tres renglones y la frase se leía rota. El titular se
+   consigue con su propia clase, no cambiando cómo se comporta toda la negrita
+   del bloque. */
+.lectura .veredicto b{ font-weight:700 }
+.lectura .veredicto .cabeza{ display:block; font-weight:700; margin-bottom:.3rem }
+.lectura .veredicto p{ margin:0 0 1rem }
+.lectura .veredicto p:last-child{ margin-bottom:0 }
+.lectura.bien{ border-color:var(--bien) }
+.lectura.aviso{ border-color:var(--aviso) }
+.lectura.mal{ border-color:var(--mal) }
+
+/* la barra de una fuerza / un paso */
+.barra{ height:.5rem; background:var(--panel-alto); margin:.3rem 0 0 }
+.barra i{ display:block; height:100%; background:var(--viva);
+          transition:width .25s ease }
+@media (prefers-reduced-motion: reduce){ .barra i{ transition:none } }
+
+/* ── tablas ──────────────────────────────────────────────────────────── */
+table{ width:100%; border-collapse:collapse; font:400 .92rem/1.45 var(--sans); margin:0 0 1.2rem }
+th,td{ text-align:left; padding:.6rem .65rem; border-bottom:var(--filete) solid var(--linea);
+       vertical-align:top }
+thead th{ font:600 .64rem/1 var(--mono); letter-spacing:.14em; text-transform:uppercase;
+          color:var(--tenue) }
+td.num{ font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right;
+        white-space:nowrap; color:var(--viva) }
+
+/* ── botones ─────────────────────────────────────────────────────────── */
+.btn{ font:600 .88rem/1 var(--sans); color:var(--vacio); background:var(--hueso);
+      border:0; padding:.95rem 1.2rem; min-height:2.9rem; cursor:pointer }
+.btn.hueco{ background:transparent; color:var(--hueso); border:var(--filete) solid var(--linea) }
+.acciones{ display:flex; gap:.7rem; flex-wrap:wrap; margin:1.4rem 0 }
+.acciones .btn{ flex:1; min-width:9rem }
+
+/* ── el índice de los diez ───────────────────────────────────────────── */
+.rejilla{ display:grid; grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));
+          gap:var(--filete); background:var(--linea); border:var(--filete) solid var(--linea);
+          margin:0 0 2rem }
+.pieza{ background:var(--panel); padding:1.1rem; text-decoration:none; color:inherit;
+        display:flex; flex-direction:column; gap:.35rem; min-height:8rem }
+.pieza:hover, .pieza:focus-visible{ background:var(--panel-alto) }
+.pieza .n{ font:600 .66rem/1 var(--mono); letter-spacing:.18em; color:var(--viva) }
+.pieza .m{ font:600 1.05rem/1.25 var(--sans) }
+.pieza .q{ font-size:.88rem; color:var(--tenue); margin-top:auto }
+
+footer{ border-top:var(--filete) solid var(--linea); margin-top:4rem; padding:1.6rem 0 3rem;
+        font:400 .8rem/1.6 var(--mono); color:var(--tenue) }
+
+:focus-visible{ outline:2px solid var(--viva); outline-offset:2px }
+
+@media print{
+  body{ background:#fff; color:#000 }
+  header.tapa .volver, .acciones, .escala button[aria-pressed="false"]{ display:none !important }
+  .grupo, .lectura{ break-inside:avoid; border-color:#999 }
+  .lectura .dato .va{ color:#000 }
+}

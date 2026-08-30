@@ -31,6 +31,8 @@ const VA = [
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
+  /* El taller de negocios: diez instrumentos, uno por materia. */
+  'taller-negocios',
 ];
 
 /* Lo que NO va, aunque esté dentro de algo que sí va. Los .md son notas de
@@ -51,6 +53,8 @@ const NO_VA = (ruta) => {
      publicar y no lo que se quedó en la carpeta. Se colaban diez. */
   if(/^pruebas[^/]*\.(mjs|js|py)$/i.test(f)) return true;
   if(/^armar-suelto\.mjs$/i.test(f)) return true;
+  /* El taller del taller de negocios arma los diez HTML: material de trabajo. */
+  if(/(^|\/)taller-negocios\/taller(\/|$)/.test(ruta)) return true;
   /* El código del worker de La Sala NO es parte del sitio: es otro proyecto de
      Cloudflare. Publicarlo aquí no filtra secretos —las llaves son secretos del
      worker— pero sí sirve como estático algo que nadie usa desde el navegador,
