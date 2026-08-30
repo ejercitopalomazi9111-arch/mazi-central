@@ -27,8 +27,58 @@ const VACIAS = new Set(['the','and','for','with','that','this','you','are','not'
   'de','la','el','los','las','un','una','que','por','para','con','del','al','se','su','sus',
   'lo','le','es','y','o','en','no','si','más','como','esto','esta','ese','esa']);
 
-const palabras = (q) => q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .split(/[^a-z0-9-]+/).filter(p => p.length > 2 && !VACIAS.has(p));
+/* ── EL PUENTE ESPAÑOL → INGLÉS ─────────────────────────────────────────────
+   ⚠ ESTO NO ES UN ADORNO, ES EL DEFECTO QUE TENÍA LA PRIMERA VERSIÓN. La
+   bodega está en inglés y aquí se pregunta en español: buscando «contraste de
+   color texto pequeño» sólo casaba la palabra «color» —que está en todas las
+   páginas de color de MDN— y los cinco resultados empataban en 4.0. O sea:
+   contestaba, y contestaba cualquier cosa, que es peor que no contestar.
+
+   Y va a hacer falta siempre, no sólo para mí: quien va a buscar aquí es
+   alguien que dice «se ve chiquito en el celular», y lo dice en español. */
+const PUENTE = {
+  contraste:['contrast'], color:['color','colour'], colores:['color','colour'],
+  tipografia:['typography','typeface','font'], letra:['font','typeface'],
+  fuente:['font','typeface'], tamano:['size','scale'], texto:['text','type'],
+  pequeno:['small','tiny'], chico:['small'], grande:['large','big'],
+  sombra:['shadow'], sombras:['shadow'], profundidad:['depth','elevation'],
+  elevacion:['elevation'], capa:['layer'], capas:['layer'],
+  difuminado:['blur'], desenfoque:['blur'], vidrio:['glass','glassmorphism'],
+  paralaje:['parallax'], parallax:['parallax'],
+  movimiento:['motion','animation'], animacion:['animation'],
+  transicion:['transition'], curva:['easing','curve'], duracion:['duration','timing'],
+  reticula:['grid'], rejilla:['grid'], columna:['column'], columnas:['column'],
+  maqueta:['layout'], maquetacion:['layout'], espaciado:['spacing'],
+  aire:['whitespace','space'], ritmo:['rhythm'], linea:['line','baseline'],
+  boton:['button'], botones:['button'], formulario:['form'], campo:['input','field'],
+  tarjeta:['card'], modal:['modal','dialog'], dialogo:['dialog'],
+  navegacion:['navigation','nav'], menu:['menu','navigation'],
+  imagen:['image','picture'], imagenes:['image','picture'], foto:['photo','image'],
+  icono:['icon'], iconos:['icon'],
+  accesibilidad:['accessibility','a11y'], foco:['focus'], teclado:['keyboard'],
+  lector:['screen reader'], pantalla:['screen','viewport'],
+  telefono:['mobile','phone'], movil:['mobile'], escritorio:['desktop'],
+  oscuro:['dark'], claro:['light'], tema:['theme','dark mode'],
+  rendimiento:['performance'], carga:['loading','load'], salto:['shift','jump'],
+  desborde:['overflow'], recorte:['crop','clip'], borde:['border','edge'],
+  jerarquia:['hierarchy'], legible:['legible','readable'], legibilidad:['legibility','readability'],
+  degradado:['gradient'], gradiente:['gradient'], grano:['grain','noise'],
+  textura:['texture'], superficie:['surface'], relieve:['emboss','relief'],
+  estado:['state'], vacio:['empty'], error:['error'], cargando:['loading','skeleton'],
+  toque:['touch','tap'], dedo:['touch','finger'], desplazamiento:['scroll'],
+  desliza:['scroll','swipe'], deslizar:['scroll','swipe'],
+};
+
+const palabras = (q) => {
+  const crudas = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9-]+/).filter(p => p.length > 2 && !VACIAS.has(p));
+  const salida = new Set();
+  for(const p of crudas){
+    salida.add(p);
+    for(const eq of (PUENTE[p] || [])) salida.add(eq);
+  }
+  return [...salida];
+};
 
 async function cargar(){
   const nombres = (await readdir(BODEGA).catch(() => [])).filter(n => n.endsWith('.txt'));
@@ -50,14 +100,29 @@ async function cargar(){
 
 /* Cuántas veces aparece cada palabra, con tope por palabra: sin el tope, un
    artículo que repite «color» ochenta veces le gana a uno que explica el
-   problema una vez y bien. */
-function puntuar(doc, ps){
+   problema una vez y bien.
+
+   ⚠ Y CADA PALABRA VALE LO QUE ES DE RARA. Sin esto —lo vi— «color» pesaba
+   igual que «contrast ratio», y como «color» está en las cien páginas de
+   color de MDN, todos los resultados empataban con la misma nota y el orden
+   lo decidía el azar. Una palabra que está en todas partes no distingue
+   nada: es ruido con forma de dato. */
+function rarezas(docs, ps){
+  const r = {};
+  for(const w of ps){
+    const en = docs.filter(d => d.bajo.includes(w)).length;
+    r[w] = Math.log((docs.length + 1) / (en + 1)) + 0.2;
+  }
+  return r;
+}
+
+function puntuar(doc, ps, raro){
   let p = 0;
   for(const w of ps){
     let n = 0, i = 0;
     while((i = doc.bajo.indexOf(w, i)) !== -1){ n++; i += w.length; if(n >= 8) break; }
-    if(n) p += 1 + Math.min(n, 8) / 8;          /* estar cuenta más que repetirse */
-    if(doc.titulo.toLowerCase().includes(w)) p += 2;
+    if(n) p += (1 + Math.min(n, 8) / 8) * raro[w];   /* estar cuenta más que repetirse */
+    if(doc.titulo.toLowerCase().includes(w)) p += 2 * raro[w];
   }
   return p;
 }
@@ -66,7 +131,8 @@ async function buscar(q, cuantos = 8){
   const ps = palabras(q);
   if(!ps.length){ console.log('Dame palabras con contenido, no muletillas.'); return; }
   const docs = await cargar();
-  const r = docs.map(d => ({ d, p: puntuar(d, ps) })).filter(x => x.p > 0)
+  const raro = rarezas(docs, ps);
+  const r = docs.map(d => ({ d, p: puntuar(d, ps, raro) })).filter(x => x.p > 0)
                 .sort((a, b) => b.p - a.p).slice(0, cuantos);
   console.log(`${r.length} de ${docs.length} artículos para «${q}»\n`);
   for(const { d, p } of r) console.log(`  ${p.toFixed(1).padStart(5)}  ${d.titulo}\n         ${d.url}`);
