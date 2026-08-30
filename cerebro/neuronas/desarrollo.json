@@ -1,0 +1,247 @@
+{
+ "area": "desarrollo",
+ "nombre": "Desarrollo de negocios",
+ "que": "De dónde salen los tratos, cómo se sostienen y por qué se pierden después de firmar.",
+ "neuronas": [
+  {
+   "id": "origen-de-tratos-por-suerte",
+   "titulo": "Los tratos llegan cuando llegan",
+   "gravedad": "alta",
+   "sintoma": "No hay un método para generar oportunidades: se depende de quien conozca a alguien.",
+   "causa": "La generación de oportunidades no se trató como un proceso con inversión y medida, sino como suerte con contactos.",
+   "porque": "Cuando hay un trato en la mesa nadie echa de menos el método; se echa de menos el trimestre en que no hay ninguno.",
+   "arreglo": "Elegir dos o tres vías —red propia, intermediarios, contacto directo— y medir cuántas oportunidades da cada una y a qué coste.",
+   "comoCazarlo": "Pregunta de dónde salieron los últimos cinco tratos. Si la respuesta es cinco historias distintas, no hay método.",
+   "consejo": "Lo que más paga a la larga son los enfoques de largo plazo, no el fichaje de un nombre famoso.",
+   "salioDe": "«From Star-power to Branding, Firms Look for New Ways to Court Prospects» · Knowledge at Wharton",
+   "senales": [
+    "nos llegó",
+    "conocía a alguien"
+   ]
+  },
+  {
+   "id": "la-alianza-sin-objetivo",
+   "titulo": "Firmamos una alianza y nadie sabe para qué",
+   "gravedad": "alta",
+   "sintoma": "Hay convenio, foto y nota de prensa, y a los seis meses ninguna actividad concreta.",
+   "causa": "Se firmó la relación y no el trabajo. Una alianza sin proyecto es una intención con membrete.",
+   "porque": "Firmar es rápido y luce; definir el proyecto obliga a poner recursos.",
+   "arreglo": "Que el convenio incluya el primer proyecto concreto, con responsable de cada lado y fecha. Sin eso, no se firma.",
+   "comoCazarlo": "Pregunta qué se hizo con la alianza el último trimestre. Si la respuesta es «seguimos en contacto», no hay alianza.",
+   "consejo": "Las colaboraciones que funcionan tienen a alguien cuyo trabajo ES esa relación, no un anexo del trabajo de alguien.",
+   "salioDe": "«Developing Successful Strategic Partnerships With Universities» · MIT Sloan Management Review",
+   "senales": [
+    "firmamos el convenio",
+    "somos socios"
+   ]
+  },
+  {
+   "id": "comprar-y-suponer",
+   "titulo": "La compra se cerró y ahí empezó el problema",
+   "gravedad": "alta",
+   "sintoma": "Se adquiere una empresa y el valor prometido no aparece.",
+   "causa": "El trabajo duro empieza DESPUÉS de cerrar, y casi todo el esfuerzo se gastó antes.",
+   "porque": "Cerrar tiene fecha, titular y bonus; integrar no tiene ninguna de las tres.",
+   "arreglo": "Planear la integración antes de firmar, con nombres y calendario, y contarla en el precio. Si no cabe en el precio, el precio está mal.",
+   "comoCazarlo": "Pregunta quién dirige la integración y desde cuándo lo sabe. Si se decide después de firmar, ya se va tarde.",
+   "consejo": "Las empresas maduras lo aprenden comprando gangas: una marca caída barata sigue siendo una empresa que hay que levantar.",
+   "salioDe": "«Tarnished Brands at Bargain Prices» · Knowledge at Wharton",
+   "senales": [
+    "cerramos la compra",
+    "la integración"
+   ]
+  },
+  {
+   "id": "expandir-sin-gente-local",
+   "titulo": "Entramos a otro mercado desde aquí",
+   "gravedad": "alta",
+   "sintoma": "Se abre un mercado nuevo dirigiéndolo a distancia, con viajes.",
+   "causa": "Sin gente en el terreno no hay origen de oportunidades ni acompañamiento, que son las dos cosas por las que se entra.",
+   "porque": "Contratar allá es caro y lento; viajar es barato y empieza el lunes.",
+   "arreglo": "Si el mercado merece entrar, merece a alguien viviendo ahí. Si no lo merece, no se entra.",
+   "comoCazarlo": "Cuenta cuántas oportunidades salieron del mercado nuevo sin que las trajera un viaje. Si son cero, no hay presencia.",
+   "consejo": "La conclusión del panel es literal: para aprovechar el crecimiento de fuera hacen falta personas fuertes en el terreno.",
+   "salioDe": "«In International Private Equity Deals, Finding the Right Manager» · Knowledge at Wharton",
+   "senales": [
+    "abrimos mercado",
+    "lo llevamos desde aquí"
+   ]
+  },
+  {
+   "id": "el-uso-como-senal",
+   "titulo": "No sabemos si el cliente usa lo que compró",
+   "gravedad": "alta",
+   "sintoma": "La renovación llega y es la primera vez que se mira si el producto se usaba.",
+   "causa": "No hay señal de uso. La factura no dice nada sobre si el cliente obtuvo valor, y la renovación llega tarde para descubrirlo.",
+   "porque": "Medir el uso exige instrumentar el producto y acordar qué significa cada métrica.",
+   "arreglo": "Una o dos métricas de uso por caso de uso, con un umbral que dispare una conversación —no un correo automático—.",
+   "comoCazarlo": "Si el número que dispara la conversación se queda en cero y nadie llama, no hay señal: hay un tablero.",
+   "consejo": "GitLab lo tiene escrito: cada métrica dispara un guion con preguntas concretas para entender por qué está donde está.",
+   "salioDe": "«Product usage playbooks with usage metrics» · The GitLab Handbook",
+   "senales": [
+    "renovación",
+    "no lo estaban usando"
+   ]
+  },
+  {
+   "id": "crecer-por-donde-se-puede",
+   "titulo": "Crecemos donde es fácil, no donde conviene",
+   "gravedad": "media",
+   "sintoma": "La expansión sigue el camino de menor resistencia y acaba lejos de la estrategia.",
+   "causa": "Cada oportunidad concreta se justifica sola; la suma dibuja una empresa que nadie decidió.",
+   "porque": "Decir que no a un negocio que se puede cerrar cuesta mucho más que decir que sí.",
+   "arreglo": "Un criterio escrito de qué negocio se acepta y cuál no, decidido antes de tener el trato delante.",
+   "comoCazarlo": "Mira los últimos cinco clientes nuevos. Si no se parecen entre sí, la expansión la está dirigiendo la casualidad.",
+   "consejo": "El criterio no sirve si se escribe con el trato en la mesa: para eso hay que escribirlo antes.",
+   "salioDe": "Síntesis de desarrollo de negocio · Knowledge at Wharton",
+   "senales": [
+    "nos salió",
+    "era fácil"
+   ]
+  },
+  {
+   "id": "el-piloto-eterno",
+   "titulo": "Llevamos un año de piloto",
+   "gravedad": "media",
+   "sintoma": "Una prueba con un cliente se prolonga sin decisión de escalar ni de parar.",
+   "causa": "No se acordó qué resultado convertiría el piloto en negocio. Sin criterio de salida, un piloto dura lo que dure la paciencia.",
+   "porque": "Mientras es piloto nadie tiene que decidir, y decidir da miedo en las dos direcciones.",
+   "arreglo": "Todo piloto con fecha y con el número que lo convierte en negocio, escrito al empezar.",
+   "comoCazarlo": "Pregunta qué tendría que pasar para escalarlo. Si no hay número, es un piloto perpetuo.",
+   "consejo": "Un piloto que no puede fracasar tampoco puede tener éxito.",
+   "salioDe": "Síntesis de desarrollo de negocio · MIT Sloan Management Review",
+   "senales": [
+    "seguimos en piloto",
+    "estamos probando"
+   ]
+  },
+  {
+   "id": "la-referencia-que-no-se-pide",
+   "titulo": "Tenemos clientes contentos y ninguna referencia",
+   "gravedad": "media",
+   "sintoma": "Los clientes están satisfechos y nadie les ha pedido nunca que lo digan por escrito o que presenten a alguien.",
+   "causa": "La referencia no se pide porque da apuro, y es la vía de origen más barata que existe.",
+   "porque": "Pedir se siente como cobrar un favor; no pedir se siente como profesionalidad.",
+   "arreglo": "Pedirlo en el momento en que el cliente expresa satisfacción, no en el trimestre en que hacen falta oportunidades.",
+   "comoCazarlo": "Cuenta cuántos clientes actuales han presentado a alguien. Si es menos de uno de cada diez, no se está pidiendo.",
+   "consejo": "El mejor momento es el mismo día en que algo salió bien, y ese día casi nunca se aprovecha.",
+   "salioDe": "Síntesis de origen de oportunidades · Knowledge at Wharton",
+   "senales": [
+    "dar referencias",
+    "nos recomiendan"
+   ]
+  },
+  {
+   "id": "la-propuesta-de-catalogo",
+   "titulo": "Mandamos la misma propuesta a todos",
+   "gravedad": "media",
+   "sintoma": "La propuesta cambia el nombre del cliente y poco más.",
+   "causa": "Se optimizó el coste de producir propuestas y se perdió lo único que las hace ganar: que hablen del problema de ese cliente.",
+   "porque": "Personalizar cuesta horas y no siempre se cierra, así que se recorta ahí.",
+   "arreglo": "Dos párrafos propios por propuesta: el problema de ese cliente con sus palabras y qué cambia el lunes. El resto puede ser plantilla.",
+   "comoCazarlo": "Tapa el nombre del cliente en tu última propuesta. Si podría ser de otro, es catálogo.",
+   "consejo": "No hace falta reescribirla entera: hacen falta dos párrafos que sólo valgan para uno.",
+   "salioDe": "Síntesis de propuesta comercial · Knowledge at Wharton",
+   "senales": [
+    "la propuesta tipo",
+    "mandamos el mismo"
+   ]
+  },
+  {
+   "id": "la-reputacion-tambien-se-gestiona",
+   "titulo": "Como hacemos el bien, no tenemos riesgo",
+   "gravedad": "media",
+   "sintoma": "Una organización con misión social supone que su causa la protege de la crítica.",
+   "causa": "Es al revés: cuanto más alto es el propósito declarado, más caro sale cualquier desvío entre lo dicho y lo hecho.",
+   "porque": "La misión se siente como un escudo, y funciona hasta el día que no.",
+   "arreglo": "La misma gestión de riesgo reputacional que en cualquier empresa: dónde puede fallar lo prometido y quién responde.",
+   "comoCazarlo": "Pregunta qué titular sería el peor posible sobre vosotros. Si nadie lo ha pensado, no hay gestión.",
+   "consejo": "La pregunta del artículo es literal: ¿el riesgo reputacional es sólo cosa de las empresas con ánimo de lucro? No.",
+   "salioDe": "«How Nonprofit Organizations Use Reputational Risk Management» · MIT Sloan Management Review",
+   "senales": [
+    "hacemos el bien",
+    "no nos pasaría"
+   ]
+  },
+  {
+   "id": "el-contacto-unico",
+   "titulo": "Todo el cliente pasa por una persona",
+   "gravedad": "alta",
+   "sintoma": "La relación con una cuenta grande depende de un solo contacto de cada lado.",
+   "causa": "Un cambio de trabajo de cualquiera de los dos borra la relación entera.",
+   "porque": "Es cómodo mientras dura y nadie quiere multiplicar reuniones.",
+   "arreglo": "Al menos dos relaciones por cuenta y en dos niveles distintos, y que lo hablado quede escrito donde lo vea el equipo.",
+   "comoCazarlo": "Pregunta qué pasa si esa persona se va mañana. Si la respuesta es «lo perdemos», ya está el riesgo medido.",
+   "consejo": "La relación es de la empresa o no es de nadie.",
+   "salioDe": "Síntesis de gestión de cuentas · The GitLab Handbook",
+   "senales": [
+    "sólo habla con él",
+    "se cambió de empresa"
+   ]
+  },
+  {
+   "id": "precio-por-costumbre",
+   "titulo": "El precio sale de lo que cobrábamos antes",
+   "gravedad": "media",
+   "sintoma": "Se cotiza con el precio del año pasado más un ajuste, sin mirar el valor entregado.",
+   "causa": "El precio se ancló en la historia propia y no en lo que el cliente ahorra o gana.",
+   "porque": "Calcular el valor obliga a hablar con el cliente de sus números, y eso da vértigo.",
+   "arreglo": "Estimar con el cliente qué le ahorra o le aporta, y poner el precio como una fracción de eso. Si no se puede estimar, ahí está el problema.",
+   "comoCazarlo": "Pregunta cuánto vale para el cliente lo que le vendes. Si nadie lo sabe, el precio es un recuerdo.",
+   "consejo": "Un precio anclado en la historia baja en términos reales todos los años sin que nadie lo decida.",
+   "salioDe": "Síntesis de precio y valor · MIT Sloan Management Review",
+   "senales": [
+    "nuestro precio",
+    "lo de siempre"
+   ]
+  },
+  {
+   "id": "el-canal-que-compite",
+   "titulo": "Nuestro socio nos compite",
+   "gravedad": "media",
+   "sintoma": "Se firma un canal de distribución que acaba vendiendo a los mismos clientes que la venta directa.",
+   "causa": "No se delimitó el terreno. Dos fuerzas de venta sobre la misma cuenta se quitan margen entre ellas.",
+   "porque": "Al firmar, el canal es todo ventajas y el conflicto es hipotético.",
+   "arreglo": "Escribir en el acuerdo qué cuentas y qué territorio son de cada uno, y qué pasa cuando coinciden.",
+   "comoCazarlo": "Mira las cuentas donde han entrado los dos. Si hay más de una, el reparto no existe.",
+   "consejo": "El conflicto de canal no se resuelve con buena voluntad: se resuelve con una lista.",
+   "salioDe": "Síntesis de canal y alianzas · MIT Sloan Management Review",
+   "senales": [
+    "nuestro socio",
+    "el mismo cliente"
+   ]
+  },
+  {
+   "id": "la-oportunidad-sin-fecha",
+   "titulo": "El trato lleva ocho meses «a punto de cerrarse»",
+   "gravedad": "media",
+   "sintoma": "Hay oportunidades en el embudo que llevan más de dos trimestres sin moverse.",
+   "causa": "Nadie las cierra ni las descarta, así que abultan el embudo y esconden que faltan oportunidades nuevas.",
+   "porque": "Descartar una oportunidad se siente como perderla; dejarla ahí no se siente como nada.",
+   "arreglo": "Regla de caducidad: sin movimiento en dos trimestres, se descarta o se reabre con una razón escrita.",
+   "comoCazarlo": "Mide la edad media de tu embudo. Si sube trimestre a trimestre, está lleno de fantasmas.",
+   "consejo": "Un embudo con fantasmas es peor que uno vacío, porque el vacío sí avisa.",
+   "salioDe": "Síntesis de gestión del embudo · Atlassian y MIT SMR",
+   "senales": [
+    "está a punto",
+    "sigue vivo"
+   ]
+  },
+  {
+   "id": "universidad-como-cantera",
+   "titulo": "Buscamos a la universidad sólo cuando necesitamos gente",
+   "gravedad": "media",
+   "sintoma": "La relación con una universidad se limita a contratar recién egresados.",
+   "causa": "Se está usando una parte pequeña de lo que una universidad puede aportar: conocimiento de base, banco de trabajo para problemas concretos y acceso a un ecosistema regional.",
+   "porque": "Contratar es la vía conocida y no requiere acuerdo.",
+   "arreglo": "Definir qué se busca —conocimiento, capacidad de resolver, o gente— y montar la relación para eso. Son tres relaciones distintas.",
+   "comoCazarlo": "Pregunta qué se hizo con la universidad además de contratar. Si nada, hay tres cuartas partes sin usar.",
+   "consejo": "Las relaciones que funcionan anclan actividades de innovación, no sólo la cantera.",
+   "salioDe": "«Developing Successful Strategic Partnerships With Universities» · MIT Sloan Management Review",
+   "senales": [
+    "recién egresados",
+    "convenio con la universidad"
+   ]
+  }
+ ]
+}

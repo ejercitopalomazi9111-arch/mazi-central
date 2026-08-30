@@ -1,0 +1,279 @@
+{
+  "area": "ventas",
+  "nombre": "Ventas",
+  "que": "Por qué un trato se atasca, se cierra con el margen roto, o no vuelve a repetirse.",
+  "neuronas": [
+    {
+      "id": "territorio-viejo-mata-al-vendedor",
+      "titulo": "El mapa de territorios lleva años sin moverse",
+      "gravedad": "alta",
+      "sintoma": "Varios vendedores se pelean las mismas cuentas mientras zonas enteras no las visita nadie, y los mejores se van.",
+      "causa": "El reparto de territorios se hizo una vez, con el mercado de entonces, y desde entonces sólo se hereda. La cuota se calcula sobre el territorio, así que un territorio saturado es una cuota imposible.",
+      "porque": "Rehacer territorios enfada a todo el equipo a la vez: cada quien pierde cuentas que considera suyas. Es más cómodo dejarlo.",
+      "arreglo": "Volver a trazar territorios, cuotas e incentivos juntos —los tres son la misma decisión— con la demanda medida, no con la de hace tres años. En el caso de NovaMed la caída de ingresos de tres años seguidos y el 20 % por debajo del objetivo se explicaban ahí.",
+      "comoCazarlo": "Cuenta cuentas activas por vendedor y por zona. Si la dispersión entre el más cargado y el menos cargado pasa de 2×, el mapa ya no describe el mercado.",
+      "consejo": "Cuando se van los que más venden, el problema casi nunca es la motivación: es que les tocó un territorio en el que su cuota no cabe.",
+      "salioDe": "«Five Ways Predictive AI Can Improve Sales Performance Management» · MIT Sloan Management Review",
+      "senales": [
+        "los mejores se están yendo",
+        "no llegamos a la cuota",
+        "nos pisamos las cuentas"
+      ]
+    },
+    {
+      "id": "cuota-inventada",
+      "titulo": "La cuota salió de un porcentaje, no de un pronóstico",
+      "gravedad": "alta",
+      "sintoma": "«Este año, 15 % más que el pasado» — el mismo número para todo el mundo.",
+      "causa": "La cuota se fija por crecimiento deseado, no por potencial medido de cada territorio. El resultado es que unos la baten en junio y otros no la tocan nunca.",
+      "porque": "Un porcentaje plano se defiende en una diapositiva y no obliga a discutir cuenta por cuenta.",
+      "arreglo": "Pronosticar por territorio con los datos que ya existen —histórico, cuentas abiertas, tamaño del mercado— y repartir desde ahí. El pronóstico preciso es lo que hace que territorios, cuotas e incentivos se alineen.",
+      "comoCazarlo": "Mira la distribución de cumplimiento. Si es en forma de U —muchos muy arriba y muchos muy abajo, pocos en medio—, la cuota no está midiendo desempeño, está midiendo suerte de territorio.",
+      "consejo": "Una cuota que casi nadie alcanza deja de motivar y empieza a seleccionar: se quedan los que aguantan, no los que venden.",
+      "salioDe": "«Five Ways Predictive AI Can Improve Sales Performance Management» · MIT Sloan Management Review",
+      "senales": [
+        "la cuota del año",
+        "crecer un 15 %",
+        "nadie llega al número"
+      ]
+    },
+    {
+      "id": "miedo-a-quedar-en-ridiculo",
+      "titulo": "El vendedor no presenta el producto nuevo porque teme quedar mal",
+      "gravedad": "alta",
+      "sintoma": "El producto nuevo se lanza y el embudo se atasca. El equipo sigue vendiendo el catálogo viejo, que sí domina.",
+      "causa": "Ante algo radicalmente nuevo el vendedor anticipa la consulta que no va a poder contestar: dar un dato falso, no saber responder, prometer algo que la empresa aún no puede cumplir. Ese miedo a parecer incompetente frena la conversación antes de empezarla.",
+      "porque": "Se supone que el problema es el cliente —que es reacio al riesgo— o el producto —que está verde—. Casi nadie mira el lado del proveedor.",
+      "arreglo": "Cambiar el papel del vendedor de experto a orquestador: no tiene que saberlo todo, tiene que traer a quien sabe. Parejas con un especialista y un canal de respuesta rápida para las dudas en vivo.",
+      "comoCazarlo": "Compara qué porcentaje de las visitas menciona el producto nuevo contra qué porcentaje del catálogo representa. Si el producto nuevo aparece mucho menos de lo que pesa, no es el mercado.",
+      "consejo": "Investigación con 69 entrevistas y 400 gerentes: la formación tradicional no arregla esto, porque el problema no es de conocimiento sino de exposición. Salesforce lo vivió con Einstein en 2016.",
+      "salioDe": "«Why Salespeople Fear Pitching Radical Innovation» · MIT Sloan Management Review",
+      "senales": [
+        "el producto nuevo no despega",
+        "no se atreven a presentarlo",
+        "se atascó el pipeline"
+      ]
+    },
+    {
+      "id": "embudo-de-libro",
+      "titulo": "El embudo dibujado no es el embudo real",
+      "gravedad": "media",
+      "sintoma": "Las etapas son las de la plantilla —conocer, interesar, decidir, comprar— y ningún vendedor sabe qué hacer en cada una.",
+      "causa": "El embudo genérico sirve para diseñar contenido, no para seguir una venta. En cuanto alguien llena un formulario o empieza una conversación uno a uno, la realidad se abre en más pasos de los que el dibujo tiene.",
+      "porque": "Copiar el embudo de cuatro cajas es gratis y se ve ordenado.",
+      "arreglo": "Escribir las etapas propias y, en cada una, tres cosas: qué hace el vendedor, cómo se comunica y cuál es el paso siguiente. Sin eso una etapa es una etiqueta.",
+      "comoCazarlo": "Pregunta a dos vendedores qué significa exactamente una etapa intermedia. Si dan respuestas distintas, el embudo no está definido.",
+      "consejo": "La ficha útil no es el trato, es la persona: contacto, qué producto le atrae, fechas, límites, preocupaciones y el precio del que se habló.",
+      "salioDe": "«How to manage a strong sales funnel at every stage with Trello» · Atlassian",
+      "senales": [
+        "en qué etapa está",
+        "el embudo",
+        "mover el lead"
+      ]
+    },
+    {
+      "id": "seguimiento-sin-fecha",
+      "titulo": "El seguimiento vive en la memoria de alguien",
+      "gravedad": "alta",
+      "sintoma": "Un prospecto interesado se enfría porque nadie recordó volver a escribirle.",
+      "causa": "No hay fecha ni dueño del siguiente paso. La lista de leads dice en qué etapa está cada uno, pero no quién espera respuesta de quién.",
+      "porque": "Cuando hay pocos leads la memoria alcanza, y para cuando deja de alcanzar ya nadie nota lo que se está perdiendo: un lead frío no reclama.",
+      "arreglo": "Cada trato con fecha de seguimiento y una etiqueta que distinga «me toca a mí» de «estoy esperando». Que la entrada de leads sea automática, del formulario o del correo al tablero, para que ninguno dependa de que alguien lo capture.",
+      "comoCazarlo": "Cuenta los tratos abiertos sin actividad en 14 días. Ésos ya se perdieron aunque sigan en el tablero.",
+      "consejo": "El sistema tiene que funcionar el día que estás de viaje. Si depende de que tú te acuerdes, no es un sistema.",
+      "salioDe": "«How to manage a strong sales funnel at every stage with Trello» · Atlassian",
+      "senales": [
+        "se me pasó escribirle",
+        "quedó en que me avisaba",
+        "leads fríos"
+      ]
+    },
+    {
+      "id": "descuento-como-reflejo",
+      "titulo": "Bajar el precio es lo primero que se propone",
+      "gravedad": "alta",
+      "sintoma": "Ante cualquier objeción de precio, descuento. Y al mes siguiente, otro.",
+      "causa": "El descuento es la palanca más fácil de mover — y por eso también es la más fácil de copiar para el competidor. Un peso de descuento es un peso menos para el fabricante y un peso más para el cliente: no crea valor, lo traslada.",
+      "porque": "Cierra el trato hoy y el margen se ve el trimestre que viene.",
+      "arreglo": "Antes del descuento, la promoción que no es precio: un accesorio o un servicio cuyo valor percibido por el cliente sea mayor que su costo para ti. Un extra que el cliente valora en 2 000 puede costarte 800.",
+      "comoCazarlo": "Compara margen medio por trato de este trimestre contra el del año pasado. Si baja y el volumen no sube en la misma proporción, el descuento se volvió el producto.",
+      "consejo": "Si eres rápido con los recortes de precio, tendrás que vivir con lo que haga la competencia cuando responda igual.",
+      "salioDe": "«Now that Competition in China’s Auto Market Has Revved Up, What Strategy Should the Drivers Follow?» · Knowledge at Wharton",
+      "senales": [
+        "dame un descuento",
+        "está caro",
+        "ajustamos el precio"
+      ]
+    },
+    {
+      "id": "precio-bajo-de-entrada",
+      "titulo": "Se entró barato y ya no se puede subir",
+      "gravedad": "alta",
+      "sintoma": "El precio de lanzamiento se volvió el precio, y cada intento de subirlo enfada a los clientes que llegaron primero.",
+      "causa": "Se fijó un precio bajo para conseguir los primeros usuarios sin decir nunca cuál era el precio normal. El cliente ancló ahí.",
+      "porque": "El precio bajo consigue los primeros sí, y los primeros sí es lo que más urge.",
+      "arreglo": "Anunciar el precio regular desde el primer día y llamar al bajo lo que es: descuento de lanzamiento o tarifa de fundador, con fecha. Subir después es entonces volver al precio, no un abuso.",
+      "comoCazarlo": "Pregunta a un cliente nuevo cuál cree que es tu precio de lista. Si no lo sabe, no lo has publicado.",
+      "consejo": "La gente no perdona una subida de precio que le parece arbitraria, pero sí acepta una explicada por costos. No es lo mismo «subimos» que «se acabó el descuento».",
+      "salioDe": "«Pricing and Positioning for Entrepreneurial Marketers» · Knowledge at Wharton",
+      "senales": [
+        "precio de lanzamiento",
+        "subir precios",
+        "los primeros clientes"
+      ]
+    },
+    {
+      "id": "promocion-sin-mirar-al-sector",
+      "titulo": "La política de promociones se copia del vecino",
+      "gravedad": "media",
+      "sintoma": "Se descuenta porque el competidor descuenta, sin saber si en este sector conviene.",
+      "causa": "Si conviene el precio bajo permanente o la promoción frecuente depende de dos rasgos del sector: cuánto se parecen los surtidos entre competidores y qué tan rápido pierde valor el surtido. La promoción cabe donde el inventario caduca; el precio estable, donde no.",
+      "porque": "La promoción del competidor es visible y la estructura del sector no.",
+      "arreglo": "Puntuar la propia política en tres ejes —variación de precio, volumen de publicidad promocional y profundidad del descuento— y contrastarla contra el solapamiento y la vida útil del surtido. Es lo que hicieron Seiders y Voss con 38 minoristas en 11 sectores.",
+      "comoCazarlo": "Si tu surtido se parece mucho al del competidor y además caduca rápido, la promoción tiene sentido. Si no cumple ninguna de las dos, estás regalando margen por costumbre.",
+      "consejo": "Adelantar las rebajas de temporada cada año es la señal de que la política ya no la decides tú.",
+      "salioDe": "«Dueling Pricing Strategies» · MIT Sloan Management Review",
+      "senales": [
+        "todos están descontando",
+        "rebajas de temporada",
+        "cuánto descuento pongo"
+      ]
+    },
+    {
+      "id": "precio-que-se-mueve-sin-historia",
+      "titulo": "El precio se mueve sin acordarse de dónde venía",
+      "gravedad": "media",
+      "sintoma": "Quien compró el martes ve su compra en oferta el jueves, y no vuelve.",
+      "causa": "El precio dinámico se optimiza contra la demanda del momento e ignora que el cliente recuerda el precio anterior. Lo que molesta no es el precio: es la secuencia.",
+      "porque": "El modelo de demanda es fácil de escribir; la reacción humana a la secuencia de precios, no.",
+      "arreglo": "Tratar la trayectoria como parte del producto: dónde empiezas, para qué funciones bajas y para cuáles subes. En la orquesta estudiada, la historia de precios pesaba tanto como el nivel.",
+      "comoCazarlo": "Mide la recompra de quienes compraron justo antes de una bajada. Si cae contra el resto, el descuento se está pagando con clientes.",
+      "consejo": "Descontar siempre al final enseña a esperar. La lección la aprende el cliente aunque no la digas.",
+      "salioDe": "«The Price Is Pliant: The Risks and Rewards of Dynamic Pricing» · Knowledge at Wharton",
+      "senales": [
+        "precio dinámico",
+        "lo compré antes de la oferta",
+        "ajustar precios"
+      ]
+    },
+    {
+      "id": "mismo-crm-en-todas-las-etapas",
+      "titulo": "Al cliente de diez años se le trata igual que al de diez días",
+      "gravedad": "alta",
+      "sintoma": "Se invierte fuerte en una cuenta que aún compra a distancia, y se descuida a la que ya depende de ti.",
+      "causa": "La relación con un cliente evoluciona —confianza, compromiso, dependencia y normas cambian con el tiempo— y no todas las acciones de relación funcionan igual en todas las etapas. Un surtido amplio capta interés al principio y deja de importar después; una inversión dedicada rinde en una relación madura y se desperdicia en una nueva.",
+      "porque": "Ventas y ganancias son las métricas fáciles, y no distinguen etapa. La salud de una relación no se ve en la factura del mes.",
+      "arreglo": "Clasificar cada cuenta por etapa antes de decidir en qué gastar. Seis años de datos de un mayorista Fortune 500 dicen que ahí está el retorno del CRM, no en el software.",
+      "comoCazarlo": "Toma tus cinco cuentas más grandes y pregunta por cada una: ¿esto es un cliente que compra o un socio que depende? Si el plan de cuenta es el mismo, no estás midiendo la relación.",
+      "consejo": "Se gastan más de 12 000 millones de dólares al año en CRM y el retorno es difícil de medir justo por esto: se mide el gasto, no la etapa.",
+      "salioDe": "«Customer Relationships Evolve — So Must Your CRM Strategy» · MIT Sloan Management Review",
+      "senales": [
+        "plan de cuenta",
+        "nuestro mejor cliente",
+        "invertir en la relación"
+      ]
+    },
+    {
+      "id": "satisfaccion-como-meta",
+      "titulo": "La satisfacción es la meta y nadie mira qué produce",
+      "gravedad": "media",
+      "sintoma": "El bono va atado a la encuesta de satisfacción y el equipo trabaja para la encuesta.",
+      "causa": "La satisfacción del cliente en un año explica alrededor del 1 % de la variación del rendimiento bursátil de ese mismo año. No es que no importe: es que como número suelto no dice lo que se cree que dice.",
+      "porque": "Es una métrica que sube si se le empuja y que suena indiscutible en una junta. Nadie va a decir que no quiere clientes satisfechos.",
+      "arreglo": "Atar la satisfacción a un comportamiento —recompra, ampliación, referencia— y medir contra eso. Si el cliente está contento y no vuelve a comprar, la encuesta está midiendo cortesía.",
+      "comoCazarlo": "Cruza la nota de satisfacción con la recompra a doce meses del mismo cliente. Si no correlacionan, tienes dos números y ninguna señal.",
+      "consejo": "Una métrica que se puede subir directamente —siendo más simpático, insistiendo en la encuesta— deja de ser una medición en cuanto se le cuelga un bono.",
+      "salioDe": "«The High Price of Customer Satisfaction» · MIT Sloan Management Review",
+      "senales": [
+        "la encuesta de satisfacción",
+        "tenemos 4.8",
+        "el bono por satisfacción"
+      ]
+    },
+    {
+      "id": "conversion-sin-referencia",
+      "titulo": "«Las ventas subieron 150 %» sin nada contra qué compararlo",
+      "gravedad": "media",
+      "sintoma": "Se celebra el crecimiento sin saber qué habría pasado sin hacer nada.",
+      "causa": "Un porcentaje de crecimiento no significa nada sin una referencia razonable de lo que habría ocurrido igual. Y las conversiones se calculan sobre visitantes totales del periodo, no sobre la probabilidad de compra de cada visitante en cada visita.",
+      "porque": "La cifra grande es la que se pide para el reporte, y no hay que discutirla con nadie.",
+      "arreglo": "Fijar una referencia antes de la campaña —lo esperado sin ella— y separar clientes nuevos de recurrentes. Lo que hay que saber es cada cuánto vuelve a comprar quien ya compró.",
+      "comoCazarlo": "Si tu tasa de conversión sube y el número de visitantes nuevos también, probablemente no cambiaste nada: sólo llegó más gente.",
+      "consejo": "Más del 70 % de los minoristas de internet en 1999 convertía por debajo del 2 %, y el flujo constante de usuarios nuevos tapó el problema durante años. Un mercado que crece disimula un embudo que no funciona.",
+      "salioDe": "«A Matter of Metrics: Using Web Data to Improve Sales Performance» · Knowledge at Wharton",
+      "senales": [
+        "subimos 150 %",
+        "tasa de conversión",
+        "este mes vendimos más"
+      ]
+    },
+    {
+      "id": "caso-vivido-contra-tasa-base",
+      "titulo": "Un caso vívido pesa más que la tasa de todo el año",
+      "gravedad": "media",
+      "sintoma": "«A éste seguro le cerramos» — por un detalle memorable de la reunión, no por el histórico.",
+      "causa": "Cuando hay información específica y llamativa sobre un caso, la tasa base se ignora, aunque la persona sepa que es relevante. Es el sesgo de insensibilidad a las tasas base: sin descripción individual la gente usa bien las bases; con ella, las descarta.",
+      "porque": "Una reunión que salió bien es concreta y reciente; que en tu histórico cierra el 12 % es una abstracción.",
+      "arreglo": "Empezar todo pronóstico por la tasa base de esa etapa —de cada diez tratos así, cuántos cerraron— y sólo después ajustar por lo particular. La base es el punto de partida, no un dato más.",
+      "comoCazarlo": "Pide el pronóstico y luego el histórico de esa misma etapa. Si el pronóstico está muy por encima, lo que estás midiendo es el entusiasmo de la última reunión.",
+      "consejo": "El pronóstico optimista no es mentira, es sesgo: por eso hay que traer la base al principio, no ponerla a discutir contra la anécdota.",
+      "salioDe": "«Insensitivity To Base Rates» · Farnam Street",
+      "senales": [
+        "éste seguro cierra",
+        "me dijo que sí",
+        "pronóstico del trimestre"
+      ]
+    },
+    {
+      "id": "cuenta-callada-sin-plan",
+      "titulo": "La cuenta lleva meses sin contestar y nadie escala",
+      "gravedad": "media",
+      "sintoma": "El correo mensual sale, nadie responde, y se repite igual hasta la renovación.",
+      "causa": "No hay plan de escalada: mismo remitente, mismo canal, mismo mensaje. El silencio se trata como falta de interés cuando muchas veces es la persona equivocada.",
+      "porque": "Insistir por el mismo canal cuesta cero y deja constancia de que «se intentó».",
+      "arreglo": "Escalada escrita y con reloj: buscar en el historial a quien sí respondió alguna vez y contestarle a ese hilo; si tras un mes sigue el silencio, meter a alguien más veterano —el nivel según el tamaño de la cuenta— y darle contexto de los objetivos del cliente antes de que escriba.",
+      "comoCazarlo": "Cuenta los correos enviados a una cuenta muda y cuántos remitentes distintos hubo. Si es uno solo, no hubo escalada, hubo repetición.",
+      "consejo": "El mensaje que reengancha no pregunta cómo van: recuerda cuál era el objetivo del cliente y ofrece algo concreto para llegar a él.",
+      "salioDe": "«Strategies for Non-Engaged Customers» · The GitLab Handbook",
+      "senales": [
+        "no contestan",
+        "la cuenta está muda",
+        "llevo meses sin respuesta"
+      ]
+    },
+    {
+      "id": "demo-en-vivo-obligatoria",
+      "titulo": "Todo pasa por una llamada que hay que agendar",
+      "gravedad": "media",
+      "sintoma": "El trato se detiene semanas esperando hueco en la agenda del que decide.",
+      "causa": "El proceso obliga a sincronía para cosas que no la necesitan: la introducción, la respuesta a una duda, el repaso de la propuesta. Mientras tanto el comprador ya se informó por su cuenta.",
+      "porque": "La llamada es donde el vendedor se siente cómodo, y agendarla parece avance.",
+      "arreglo": "Grabar una vez lo que se repite —demo, propuesta, alta— y mandarlo en asíncrono, dejando la llamada para lo que sí requiere ida y vuelta. Un vídeo previo dos días antes de la reunión hace que lleguen las personas correctas.",
+      "comoCazarlo": "Mide días de trato en «esperando agenda». Si es el tramo más largo del embudo, el cuello de botella es el calendario, no el cliente.",
+      "consejo": "Intercom vio subir 19 % las respuestas a correo frío al meter vídeo; Forrester reporta hasta 300 % más clics con vídeo en el correo. Y en la encuesta de Wyzowl, 66 % prefiere una demo corta en vídeo frente al 2 % que quiere escuchar un pitch en vivo.",
+      "salioDe": "«5 Strategies to Unlock ROI with Loom for Revenue Teams» · Atlassian",
+      "senales": [
+        "agendamos una llamada",
+        "no encuentro hueco",
+        "mandar la demo"
+      ]
+    },
+    {
+      "id": "reorganizar-ventas-sin-preparar-a-nadie",
+      "titulo": "Se reorganiza la fuerza de ventas y se da por hecho que sabrán vender lo nuevo",
+      "gravedad": "alta",
+      "sintoma": "Se cambia el discurso —de producto a solución— y las cuentas de siempre se enfrían.",
+      "causa": "Se reasignó a los vendedores por industria y se les pidió venderle a un interlocutor distinto sin formarlos para ese interlocutor. Y el cliente tampoco estaba preparado para el cambio: algunos no querían una solución, querían la máquina.",
+      "porque": "La reorganización se planea desde la estrategia y se supone que la ejecución es cuestión de comunicarla.",
+      "arreglo": "Antes de mover a nadie: quién es el nuevo interlocutor, qué formación necesita el vendedor para hablar con él, y qué pasa con las relaciones de cuenta que se rompen al reasignar. Xerox no lo hizo, la implantación se arruinó y le costó el puesto a un director general.",
+      "comoCazarlo": "Pregunta a un vendedor qué le diría al nuevo tipo de interlocutor en los primeros dos minutos. Si repite el discurso viejo, la reorganización no ha ocurrido.",
+      "consejo": "La queja «paso más tiempo en juntas que con clientes» es el primer síntoma de que la reorganización se está ejecutando sobre el papel y no en la calle.",
+      "salioDe": "«Aligning the Organization with the Market: Focusing on “The Customer’s Total Experience”» · Knowledge at Wharton",
+      "senales": [
+        "reorganizar ventas",
+        "vender soluciones",
+        "cambiar el discurso"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,247 @@
+{
+ "area": "atencion",
+ "nombre": "Atención al cliente",
+ "que": "Lo que pasa cuando alguien se atasca — y por qué el mismo problema vuelve el mes siguiente.",
+ "neuronas": [
+  {
+   "id": "sacar-al-cliente-para-ayudarlo",
+   "titulo": "Para pedir ayuda hay que salirse del producto",
+   "gravedad": "alta",
+   "sintoma": "El cliente tiene que abandonar lo que estaba haciendo, ir a otro sitio y abrir un ticket.",
+   "causa": "El soporte está fuera del producto. Cada salto es una oportunidad de abandonar, y el equipo recibe la pregunta sin el contexto de lo que la persona estaba haciendo.",
+   "porque": "Montar el soporte aparte es más fácil de organizar y de medir.",
+   "arreglo": "Meter la ayuda donde ocurre el problema, con el contexto ya adjunto. Loom lo hizo y pasó a resolver el 80 % de las consultas sin agente, con la rotación bajando 11 puntos.",
+   "comoCazarlo": "Cuenta los clics desde que alguien se atasca hasta que puede preguntar. Más de dos y se pierde gente por el camino.",
+   "consejo": "La medida que importa no es cuántos tickets se cierran: es cuántos no hicieron falta.",
+   "salioDe": "«How Loom turns customer support into a driver of business growth» · Atlassian",
+   "senales": [
+    "abrir un ticket",
+    "ir al centro de ayuda"
+   ]
+  },
+  {
+   "id": "lo-repetitivo-como-castigo",
+   "titulo": "El equipo se pasa el día contestando lo mismo",
+   "gravedad": "alta",
+   "sintoma": "Miles de tickets al mes, muchos casi idénticos, con unos diez minutos cada uno.",
+   "causa": "Lo repetitivo no se está tratando como un defecto del producto o de la documentación, sino como carga de trabajo.",
+   "porque": "Contestar es medible y se agradece hoy; arreglar la causa no aparece en la métrica de nadie.",
+   "arreglo": "Agrupar los tickets por pregunta y atacar las cinco primeras en el producto o en la ayuda. Un ticket repetido mil veces es un defecto, no mil consultas.",
+   "comoCazarlo": "Ordena los tickets del mes por parecido. Si las cinco primeras familias son más de la mitad, ahí está el trabajo.",
+   "consejo": "Una asistencia automática que no resuelve y escala igual sólo añade un paso: el problema no era la velocidad de respuesta.",
+   "salioDe": "«How Loom turns customer support into a driver of business growth» · Atlassian",
+   "senales": [
+    "siempre preguntan lo mismo",
+    "tickets repetidos"
+   ]
+  },
+  {
+   "id": "soporte-separado-de-producto",
+   "titulo": "Soporte no habla con quien construye",
+   "gravedad": "alta",
+   "sintoma": "El equipo de atención sabe perfectamente qué falla y esa información no llega a producto.",
+   "causa": "Están en silos. Soporte tiene el dato más caro de la empresa —lo que la gente no consigue hacer— y no hay tubería hacia quien puede arreglarlo.",
+   "porque": "Cada equipo se mide por lo suyo y nadie es dueño del camino entre los dos.",
+   "arreglo": "Un canal fijo y periódico: las cinco causas principales del mes, con números, en la planificación de producto. Y respuesta escrita sobre qué se hará.",
+   "comoCazarlo": "Pregunta qué cambió en el producto el último trimestre por algo que dijo soporte. Si nada, el canal no existe.",
+   "consejo": "Los equipos de atención suelen estar separados de producto, desarrollo y operaciones, y por eso les cuesta dar una buena experiencia por más que quieran.",
+   "salioDe": "«Introducing Atlassian’s Customer Service Management app» · Atlassian",
+   "senales": [
+    "ya lo habíamos dicho",
+    "soporte lo sabía"
+   ]
+  },
+  {
+   "id": "medir-satisfaccion-sin-preguntar-lo-util",
+   "titulo": "La encuesta no enseña nada",
+   "gravedad": "media",
+   "sintoma": "Se manda una encuesta de satisfacción y el resultado es un número que no sugiere ninguna acción.",
+   "causa": "La pregunta se copió de otro sitio. No hay estándar de qué preguntar: depende enteramente de qué quiere aprender la empresa.",
+   "porque": "Copiar una escala conocida evita tener que decidir qué se quiere saber.",
+   "arreglo": "Decidir primero qué decisión va a cambiar la respuesta, y escribir la pregunta para eso. Una pregunta propia vale más que una comparable.",
+   "comoCazarlo": "Pregunta qué se hizo distinto por el último resultado de la encuesta. Si nada, la pregunta estaba mal.",
+   "consejo": "El CSAT es transaccional: sirve para entender cómo fue una acción concreta, no el estado del mundo.",
+   "salioDe": "«Customer Satisfaction Surveys» · The GitLab Handbook",
+   "senales": [
+    "nuestro csat",
+    "la encuesta"
+   ]
+  },
+  {
+   "id": "la-ayuda-enterrada",
+   "titulo": "La ayuda existe y nadie la encuentra",
+   "gravedad": "alta",
+   "sintoma": "Hay documentación buena y los clientes preguntan igual porque no la ven.",
+   "causa": "Está enterrada en el sitio y desconectada de donde ocurre la duda. Existir no es lo mismo que estar.",
+   "porque": "Escribirla es el trabajo visible; colocarla donde hace falta es otro trabajo que nadie asignó.",
+   "arreglo": "Unificar: buscador, base de conocimiento y tickets en el mismo sitio, y enlazarla desde donde surge la pregunta.",
+   "comoCazarlo": "Pídele a alguien de fuera que busque una respuesta que sí está escrita. Cronometra.",
+   "consejo": "El caso de Leadership Circle es literal: la ayuda estaba enterrada en la web, los casos vivían en otro sistema y nada estaba conectado.",
+   "salioDe": "«From cost center to growth engine: 5 lessons from Leadership Circle» · Atlassian",
+   "senales": [
+    "está en la documentación",
+    "no lo encuentran"
+   ]
+  },
+  {
+   "id": "contenido-viejo-que-nadie-marca",
+   "titulo": "La ayuda dice algo que ya no es cierto",
+   "gravedad": "alta",
+   "sintoma": "Un artículo de ayuda describe una pantalla que cambió hace meses.",
+   "causa": "No hay dueño ni fecha de revisión. Documentación desactualizada es peor que ninguna: manda a la gente con confianza en la dirección equivocada.",
+   "porque": "Escribir se aplaude, mantener no se ve.",
+   "arreglo": "Fecha de revisión visible y un dueño por artículo. Lo que caduca se marca como caducado, no se deja tal cual.",
+   "comoCazarlo": "Mira la fecha de los diez artículos más leídos. Los de más de seis meses son sospechosos por defecto.",
+   "consejo": "Y en varios idiomas el problema se multiplica: hay que saber cuál es la versión aprobada y actual.",
+   "salioDe": "«From cost center to growth engine» · Atlassian, y GitLab Handbook",
+   "senales": [
+    "está desactualizado",
+    "esa pantalla ya no existe"
+   ]
+  },
+  {
+   "id": "la-ia-que-no-resuelve",
+   "titulo": "Pusimos un asistente y sólo añadió un paso",
+   "gravedad": "alta",
+   "sintoma": "Se implanta una asistencia automática y casi todo sigue escalando a una persona, ahora más tarde.",
+   "causa": "Se automatizó la respuesta sin conectarla al conocimiento ni al producto. Si no puede resolver, sólo retrasa.",
+   "porque": "Anunciar la automatización es rápido; conectarla a los datos y a los permisos es el proyecto de verdad.",
+   "arreglo": "Medir la tasa de resolución SIN escalado, no la de respuesta. Si no llega a la mitad, está estorbando.",
+   "comoCazarlo": "Compara el tiempo hasta la solución antes y después. Si sube, el asistente es un peaje.",
+   "consejo": "A Loom le pasó con un asistente anterior: no resolvía y casi todo acababa en un agente igual.",
+   "salioDe": "«How Loom turns customer support into a driver of business growth» · Atlassian",
+   "senales": [
+    "pusimos un bot",
+    "sigue escalando"
+   ]
+  },
+  {
+   "id": "atencion-como-centro-de-coste",
+   "titulo": "Atención se mide sólo por lo que cuesta",
+   "gravedad": "media",
+   "sintoma": "Los objetivos del área son tiempo por caso y coste por ticket, y nada más.",
+   "causa": "Medir sólo el coste empuja a cerrar rápido, no a resolver — y lo no resuelto vuelve, con más coste.",
+   "porque": "El coste es fácil de calcular y de comparar; el efecto en retención tarda trimestres.",
+   "arreglo": "Añadir una medida de resultado: reapertura, retención de quien contactó, expansión después del contacto.",
+   "comoCazarlo": "Mira cuántos casos se reabren. Si suben mientras baja el tiempo por caso, se está cerrando, no resolviendo.",
+   "consejo": "Los casos donde atención pasa de centro de coste a motor de crecimiento empiezan siempre por cambiar lo que se mide.",
+   "salioDe": "«From cost center to growth engine» · Atlassian",
+   "senales": [
+    "coste por ticket",
+    "tiempo de resolución"
+   ]
+  },
+  {
+   "id": "el-cliente-cuenta-su-historia-tres-veces",
+   "titulo": "Hay que explicarlo otra vez en cada paso",
+   "gravedad": "alta",
+   "sintoma": "Cada vez que el caso cambia de persona, el cliente vuelve a contarlo desde el principio.",
+   "causa": "El contexto no viaja con el caso. Está en la cabeza de quien atendió, no en el caso.",
+   "porque": "Escribir el contexto cuesta minutos a quien atiende y los ahorra a otro, que es el reparto que garantiza que no se haga.",
+   "arreglo": "Que el traspaso exija un resumen escrito. Sin resumen, no hay traspaso.",
+   "comoCazarlo": "Escucha una llamada de un caso escalado. Si empieza con «cuénteme desde el principio», ya está.",
+   "consejo": "Es la queja que más aparece y la más barata de arreglar.",
+   "salioDe": "Síntesis de gestión de casos · Atlassian y GitLab Handbook",
+   "senales": [
+    "ya lo expliqué",
+    "otra vez desde el principio"
+   ]
+  },
+  {
+   "id": "medir-el-sentimiento-y-no-el-camino",
+   "titulo": "Sabemos el CSAT y no dónde se atascan",
+   "gravedad": "media",
+   "sintoma": "Hay medida de satisfacción y ninguna del recorrido: dónde entra el cliente, dónde se traba, dónde se va.",
+   "causa": "El sentimiento es el resultado y el recorrido es la causa. Con sólo el resultado no se sabe qué tocar.",
+   "porque": "La encuesta es fácil de mandar; instrumentar el recorrido es un proyecto.",
+   "arreglo": "Definir el recorrido en cuatro o cinco pasos y medir la caída entre ellos, como un embudo. Y cruzarlo con la satisfacción.",
+   "comoCazarlo": "Pregunta en qué paso del recorrido se pierde más gente. Si no hay respuesta, sólo se está midiendo el humor.",
+   "consejo": "Los equipos que lo hacen bien tienen a alguien cuyo trabajo es cruzar los datos del recorrido con la acción.",
+   "salioDe": "«Customer Success Strategy & Analytics» · The GitLab Handbook",
+   "senales": [
+    "nuestro csat",
+    "satisfacción del cliente"
+   ]
+  },
+  {
+   "id": "prometer-en-la-campana",
+   "titulo": "Atención paga lo que prometió marketing",
+   "gravedad": "alta",
+   "sintoma": "Después de una campaña suben las quejas por algo que la empresa no puede cumplir.",
+   "causa": "La promesa se diseñó sin quien la cumple. La publicidad no cambia la capacidad de operación.",
+   "porque": "Prometer más funciona en la métrica de la campaña; el coste aparece un mes después y en otra área.",
+   "arreglo": "Que cualquier promesa que salga en un anuncio la firme antes quien tiene que cumplirla.",
+   "comoCazarlo": "Mira las quejas de incumplimiento del mes siguiente a cada campaña. La correlación es el diagnóstico.",
+   "consejo": "La campaña se mide en semanas y la confianza en años. No es el mismo reloj.",
+   "salioDe": "Síntesis de servicio y marca · Atlassian y MIT SMR",
+   "senales": [
+    "lo prometimos",
+    "no llegamos"
+   ]
+  },
+  {
+   "id": "sin-autoservicio",
+   "titulo": "Todo pasa por una persona",
+   "gravedad": "media",
+   "sintoma": "No hay forma de que el cliente resuelva solo ni lo más simple.",
+   "causa": "No se ha separado lo que se puede autoservir de lo que necesita juicio. Todo entra por el mismo tubo.",
+   "porque": "Montar autoservicio es un proyecto; contestar es lo que ya se hace.",
+   "arreglo": "Sacar las tres consultas más frecuentes a autoservicio con la respuesta donde ocurre la duda. Con tres se nota.",
+   "comoCazarlo": "Ordena por frecuencia. Si las tres primeras son más de un tercio del volumen, el autoservicio se paga solo.",
+   "consejo": "El autoservicio no quita trabajo humano: lo desplaza a los casos donde hace falta una persona.",
+   "salioDe": "Síntesis de servicio · Atlassian",
+   "senales": [
+    "todo por correo",
+    "siempre contestamos nosotros"
+   ]
+  },
+  {
+   "id": "el-agradecimiento-sin-arreglo",
+   "titulo": "Contestamos muy bien y no arreglamos nada",
+   "gravedad": "media",
+   "sintoma": "La atención es amable y rápida y el problema de fondo sigue ahí el mes siguiente.",
+   "causa": "Se optimizó el trato y no la resolución. La amabilidad tapa el síntoma y retrasa el arreglo.",
+   "porque": "La satisfacción del contacto sube con el trato, así que la métrica premia exactamente eso.",
+   "arreglo": "Contar cuántos casos vuelven por la misma causa, y llevar esa lista a quien puede arreglarla.",
+   "comoCazarlo": "Si el mismo cliente escribe tres veces por lo mismo con tres respuestas amables, no se resolvió ninguna.",
+   "consejo": "Un buen trato con un mal producto retiene menos de lo que parece, y cuesta más.",
+   "salioDe": "Síntesis de servicio · Atlassian y GitLab Handbook",
+   "senales": [
+    "muy amables",
+    "volvió a pasar"
+   ]
+  },
+  {
+   "id": "idiomas-a-medias",
+   "titulo": "La ayuda existe en un idioma y los clientes están en veinte",
+   "gravedad": "media",
+   "sintoma": "La documentación buena está en un idioma y el resto son traducciones viejas o no existen.",
+   "causa": "Se trató la traducción como un extra y no como parte del contenido, así que envejece a otro ritmo.",
+   "porque": "Traducir cuesta y no se ve, y el idioma principal siempre parece suficiente desde dentro.",
+   "arreglo": "Marcar en cada artículo si su traducción está al día. Es más honesto tener menos artículos traducidos y saber cuáles.",
+   "comoCazarlo": "Compara las fechas del original y de la traducción de los cinco más leídos. La diferencia es el riesgo.",
+   "consejo": "Leadership Circle lo resuelve exactamente así: saber que lo que hay es actual y está aprobado, en los 21 idiomas.",
+   "salioDe": "«From cost center to growth engine» · Atlassian",
+   "senales": [
+    "en inglés",
+    "no está traducido"
+   ]
+  },
+  {
+   "id": "el-caso-cerrado-sin-preguntar",
+   "titulo": "Se cierra el caso sin comprobar que se resolvió",
+   "gravedad": "media",
+   "sintoma": "Los casos se cierran por inactividad y se cuentan como resueltos.",
+   "causa": "Se confundió cerrar con resolver. El silencio del cliente no es conformidad: muchas veces es que se fue.",
+   "porque": "Cerrar por inactividad limpia la cola y mejora todas las métricas de una vez.",
+   "arreglo": "Separar «cerrado» de «resuelto» y contar sólo lo segundo. Y preguntar antes de cerrar.",
+   "comoCazarlo": "Compara los cerrados por inactividad con la rotación de esos mismos clientes tres meses después.",
+   "consejo": "Es la métrica más fácil de inflar de toda el área, y por eso la que más hay que vigilar.",
+   "salioDe": "Síntesis de gestión de casos · Atlassian",
+   "senales": [
+    "cerrado por inactividad",
+    "no contestó"
+   ]
+  }
+ ]
+}

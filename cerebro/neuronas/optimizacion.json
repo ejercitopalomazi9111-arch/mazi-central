@@ -1,0 +1,247 @@
+{
+ "area": "optimizacion",
+ "nombre": "Optimización",
+ "que": "Hacer lo mismo con menos — y las maneras de acelerar justo lo que no importaba.",
+ "neuronas": [
+  {
+   "id": "automatizar-lo-que-sobra",
+   "titulo": "Automatizamos una tarea que no debía existir",
+   "gravedad": "alta",
+   "sintoma": "Se monta una automatización para una tarea repetitiva y el proceso no mejora.",
+   "causa": "Se aceleró un paso que sobraba. Automatizar un desperdicio da un desperdicio más rápido y ahora, además, con mantenimiento.",
+   "porque": "Automatizar es visible y se puede enseñar; eliminar un paso hay que negociarlo con quien lo pidió.",
+   "arreglo": "Antes de automatizar, preguntar por qué existe ese paso y qué pasaría si no estuviera. Sólo si sobrevive a esa pregunta se automatiza.",
+   "comoCazarlo": "Si nadie sabe quién pidió ese paso ni cuándo, es candidato a quitarse antes que a automatizarse.",
+   "consejo": "Los propios directivos calculan que sólo el 24 % del trabajo de sus equipos es crítico para la misión. El resto es donde hay que mirar.",
+   "salioDe": "«How Atlassian Automation accelerates work across Confluence, Jira and Jira Service Management» · Atlassian, State of Teams",
+   "senales": [
+    "automatizamos",
+    "es repetitivo"
+   ]
+  },
+  {
+   "id": "el-ahorro-que-no-se-cobra",
+   "titulo": "Ahorramos horas y no se nota en ningún lado",
+   "gravedad": "media",
+   "sintoma": "Una mejora ahorra cuatro horas a la semana y el equipo sigue igual de saturado.",
+   "causa": "El tiempo liberado se rellena solo si no se decide en qué gastarlo. Un ahorro sin destino no es un ahorro: es holgura que desaparece.",
+   "porque": "Decidir el destino obliga a decir qué se va a hacer y qué no, y eso es una conversación incómoda.",
+   "arreglo": "Antes de la mejora, escribir en qué se va a usar el tiempo que libere. Después, comprobar que se usó en eso.",
+   "comoCazarlo": "Pregunta qué se dejó de hacer o qué se empezó a hacer con las horas ahorradas. Si no hay respuesta, se evaporaron.",
+   "consejo": "Es el mismo error que en el presupuesto: liberar recursos y no reasignarlos es no haber liberado nada.",
+   "salioDe": "Síntesis de automatización y productividad · Atlassian",
+   "senales": [
+    "ahorramos tiempo",
+    "seguimos igual"
+   ]
+  },
+  {
+   "id": "medir-y-premiar",
+   "titulo": "Se mide mucho y no se hace nada con la medida",
+   "gravedad": "media",
+   "sintoma": "Hay tableros por todos lados y las decisiones se toman igual que antes.",
+   "causa": "Medir sin incentivo no cambia comportamiento. Lo que se comprobó en 30 000 fábricas es que las dos prácticas que separan a las bien gestionadas son SEGUIMIENTO E INCENTIVOS, juntas.",
+   "porque": "Poner el tablero es un proyecto acotado; cambiar el incentivo toca sueldos y política.",
+   "arreglo": "Por cada indicador que se sigue, decidir a quién le cambia algo. Si a nadie, se deja de medir — el tablero cuesta trabajo mantenerlo.",
+   "comoCazarlo": "Pregunta qué decisión cambió el mes pasado por culpa de un indicador. Si ninguna, el tablero es decoración cara.",
+   "consejo": "Bloom lo midió en 30 000 fábricas de Estados Unidos, y la misma pareja aparece en el trabajo remoto.",
+   "salioDe": "Nicholas Bloom, vía «Monitor, Measure, Incentivize: Is Management as Simple as That?» · MIT Sloan Management Review",
+   "senales": [
+    "tenemos el tablero",
+    "se mide todo"
+   ]
+  },
+  {
+   "id": "comparar-con-uno-mismo",
+   "titulo": "Sólo nos comparamos con nosotros mismos",
+   "gravedad": "media",
+   "sintoma": "La mejora se mide contra el mes anterior y siempre sale bien.",
+   "causa": "Sin una referencia externa no se sabe si el 5 % de mejora es mucho o es lo que hace todo el mundo.",
+   "porque": "Compararse por fuera exige datos que no se tienen y admitir que otros lo hacen mejor.",
+   "arreglo": "Buscar una referencia externa aunque sea imperfecta. El análisis envolvente de datos existe justo para comparar unidades parecidas y encontrar las que hacen más con lo mismo.",
+   "comoCazarlo": "Si el objetivo de este año es «mejorar un 5 %» y no «llegar a X», nadie ha mirado fuera.",
+   "consejo": "El estudio de franquicias deportivas es el ejemplo claro: la eficiencia sale de comparar unidades comparables, no de la intuición.",
+   "salioDe": "«Analyzing Performance in Service Organizations» · MIT Sloan Management Review",
+   "senales": [
+    "mejoramos un 5%",
+    "vamos mejor que antes"
+   ]
+  },
+  {
+   "id": "optimizar-la-parte",
+   "titulo": "Optimizamos un área y el conjunto va peor",
+   "gravedad": "alta",
+   "sintoma": "Un departamento mejora sus números y el tiempo total de entrega sube.",
+   "causa": "Se optimizó un tramo y se movió el cuello de botella a otro sitio. La suma de óptimos locales no es el óptimo del conjunto.",
+   "porque": "Cada área sólo puede medir lo suyo, y lo suyo es lo que le premian.",
+   "arreglo": "Medir el tiempo de punta a punta ANTES de tocar nada, y volver a medirlo después. Si no baja, la mejora local no era una mejora.",
+   "comoCazarlo": "Cronometra una petición real de principio a fin. Casi todo el tiempo está en las esperas entre áreas, no dentro de ellas.",
+   "consejo": "La pregunta que ordena la conversación: ¿esto reduce el tiempo total o sólo el nuestro?",
+   "salioDe": "«The Processes of Organization and Management» · MIT Sloan Management Review",
+   "senales": [
+    "nuestro tiempo bajó",
+    "seguimos entregando tarde"
+   ]
+  },
+  {
+   "id": "el-precio-plano",
+   "titulo": "Cobramos igual cuando cuesta distinto",
+   "gravedad": "media",
+   "sintoma": "El precio es el mismo a cualquier hora y en cualquier condición, aunque el coste no lo sea.",
+   "causa": "Un precio plano desconecta a quien consume de lo que cuesta producir en ese momento, y eso deja eficiencia sobre la mesa.",
+   "porque": "El precio variable es impopular y técnicamente incómodo, así que se pospone.",
+   "arreglo": "Empezar por los tramos, no por el precio en tiempo real: capturan parte del desajuste sin el coste político de todo lo demás.",
+   "comoCazarlo": "Compara tu coste unitario por franja con tu precio por franja. Si el coste varía y el precio no, ahí está el margen.",
+   "consejo": "Medido en electricidad: las tarifas por franja corrigen alrededor del 10 % del desajuste, y las estructuras complicadas basadas en precios históricos SUELEN SALIR AL REVÉS.",
+   "salioDe": "«How Dynamic Electricity Pricing Can Improve Market Efficiency» · Knowledge at Wharton",
+   "senales": [
+    "precio único",
+    "tarifa plana"
+   ]
+  },
+  {
+   "id": "la-cola-invisible",
+   "titulo": "El trabajo espera y nadie lo ve",
+   "gravedad": "alta",
+   "sintoma": "Todo el mundo está ocupado y las cosas tardan semanas.",
+   "causa": "La ocupación alta y la entrega rápida son contrarias: a más ocupación, más cola. El tiempo se va esperando, no trabajando.",
+   "porque": "La ocupación se ve y la cola no. Un equipo al 100 % parece bien gestionado.",
+   "arreglo": "Limitar el trabajo en curso. Menos cosas empezadas a la vez terminan antes, aunque se sienta que se hace menos.",
+   "comoCazarlo": "Cuenta cuántas cosas están empezadas y sin terminar. Si son más que personas, la cola es el problema.",
+   "consejo": "Es contraintuitivo y por eso hay que medirlo: bajar la ocupación baja el tiempo de entrega.",
+   "salioDe": "Síntesis de flujo y trabajo en curso · Atlassian y Basecamp",
+   "senales": [
+    "estamos a tope",
+    "todo tarda"
+   ]
+  },
+  {
+   "id": "mejorar-sin-linea-base",
+   "titulo": "Mejoramos algo que nunca medimos",
+   "gravedad": "media",
+   "sintoma": "Se hace una mejora y no hay forma de saber si funcionó porque no se midió antes.",
+   "causa": "Sin línea base cualquier resultado se puede contar como éxito, y se cuenta.",
+   "porque": "Medir antes retrasa el arranque y quien propone la mejora tiene prisa por empezarla.",
+   "arreglo": "Dos semanas de medición antes de tocar nada. Si no se puede esperar dos semanas, tampoco se va a poder demostrar que sirvió.",
+   "comoCazarlo": "Pregunta cuál era el número antes. Si nadie lo tiene, la mejora es una creencia.",
+   "consejo": "La línea base es además lo único que protege a quien hizo la mejora cuando alguien dude de ella.",
+   "salioDe": "Síntesis de práctica de medición · MIT Sloan Management Review",
+   "senales": [
+    "va mejor",
+    "se nota"
+   ]
+  },
+  {
+   "id": "la-herramienta-en-vez-del-proceso",
+   "titulo": "Compramos la herramienta y el problema sigue",
+   "gravedad": "alta",
+   "sintoma": "Se implanta una plataforma nueva y a los seis meses el equipo trabaja igual con otra pantalla.",
+   "causa": "La herramienta no trae el proceso. Si el trabajo llegaba por cinco canales antes, sigue llegando por cinco canales.",
+   "porque": "Comprar tiene un presupuesto, una fecha y un proveedor que ayuda; rediseñar el proceso no tiene nada de eso.",
+   "arreglo": "Definir el proceso primero —de dónde entra el trabajo, quién decide, qué lo cierra— y elegir la herramienta después, para ese proceso.",
+   "comoCazarlo": "Pregunta por cuántos caminos entra hoy el trabajo. Si son más de dos, la herramienta no lo va a arreglar.",
+   "consejo": "Centralizar la entrada es lo que da el salto; la herramienta sólo lo hace cómodo.",
+   "salioDe": "«How to optimize Jira Service Management for development teams» · Atlassian",
+   "senales": [
+    "la nueva plataforma",
+    "ya lo tenemos en la herramienta"
+   ]
+  },
+  {
+   "id": "automatizacion-sin-dueno",
+   "titulo": "La automatización se rompió y nadie lo sabía",
+   "gravedad": "alta",
+   "sintoma": "Una regla automática deja de dispararse y se descubre semanas después, por una queja.",
+   "causa": "Se automatizó sin poner a nadie a vigilarlo. Lo automático falla en silencio: ésa es justo su ventaja y su peligro.",
+   "porque": "Mientras funciona no da trabajo, así que sale del radar de todos.",
+   "arreglo": "Cada automatización con dueño y con una alarma que salte cuando NO se dispara — no sólo cuando falla.",
+   "comoCazarlo": "Haz la lista de automatizaciones vivas y pregunta quién sabría que una se paró. Las que no tienen respuesta son deuda.",
+   "consejo": "La alarma que hace falta no es «esto falló»: es «esto lleva tres días sin ocurrir».",
+   "salioDe": "Síntesis de automatización · Atlassian",
+   "senales": [
+    "dejó de funcionar",
+    "nadie se dio cuenta"
+   ]
+  },
+  {
+   "id": "traducir-a-mano",
+   "titulo": "El equipo copia y pega entre dos herramientas",
+   "gravedad": "media",
+   "sintoma": "Alguien pasa a mano información de un sistema a otro varias veces al día.",
+   "causa": "Los dos sistemas no se hablan y el puente es una persona. Es lento, se equivoca y no deja rastro.",
+   "porque": "Es el arreglo que funciona el primer día y nadie vuelve a mirarlo.",
+   "arreglo": "Medir cuántos minutos al día se van en el puente. Con ese número la automatización se justifica sola o se descarta sola.",
+   "comoCazarlo": "Busca a quien tenga dos pestañas abiertas todo el día. Ahí está el puente.",
+   "consejo": "El caso de Axpo es exactamente éste: los tickets en alemán se copiaban a un traductor y se volvían a pegar, con la espera en medio.",
+   "salioDe": "«3 ways teams use Rovo and automation in Jira Service Management» · Atlassian",
+   "senales": [
+    "copio y pego",
+    "lo paso a mano"
+   ]
+  },
+  {
+   "id": "ir-mas-rapido-en-lo-que-no-importa",
+   "titulo": "Corremos en la parte que no manda",
+   "gravedad": "media",
+   "sintoma": "Se invierte en acelerar una etapa que ocupa el 5 % del tiempo total.",
+   "causa": "Se optimizó lo que era fácil de optimizar, no lo que dominaba el tiempo.",
+   "porque": "La etapa fácil suele ser la técnica, y es la que el equipo sabe arreglar.",
+   "arreglo": "Repartir el tiempo total por etapas antes de decidir dónde invertir. La etapa que se lleva más tiempo es la única que mueve el resultado.",
+   "comoCazarlo": "Si la mejora ahorra un 30 % de una etapa que era el 5 %, el efecto total es 1.5 %. Haz la cuenta antes.",
+   "consejo": "La cuenta cabe en un renglón y evita trimestres enteros de trabajo bien hecho en el sitio equivocado.",
+   "salioDe": "Síntesis de mejora de procesos · MIT Sloan Management Review",
+   "senales": [
+    "lo hicimos más rápido",
+    "optimizamos"
+   ]
+  },
+  {
+   "id": "el-informe-que-nadie-lee",
+   "titulo": "Se genera un informe que no abre nadie",
+   "gravedad": "media",
+   "sintoma": "Un reporte semanal automático lleva meses generándose y no aparece en ninguna conversación.",
+   "causa": "Se automatizó su producción y nunca se comprobó su consumo. Lo automático sobrevive a su utilidad.",
+   "porque": "Quitarlo requiere que alguien se atreva a decir que no sirve; mantenerlo no requiere nada.",
+   "arreglo": "Mirar quién lo abre. Si en un mes no lo abrió nadie, se apaga y se espera a ver si alguien lo reclama.",
+   "comoCazarlo": "Apágalo sin avisar. Si en dos semanas nadie pregunta, no hacía falta.",
+   "consejo": "Es la prueba más barata que existe y casi nadie se atreve a hacerla.",
+   "salioDe": "Síntesis de gobierno de la información · GitLab Handbook",
+   "senales": [
+    "el reporte semanal",
+    "lo generamos automáticamente"
+   ]
+  },
+  {
+   "id": "lo-urgente-come-a-lo-importante",
+   "titulo": "Nunca hay tiempo para arreglar la causa",
+   "gravedad": "alta",
+   "sintoma": "Cada semana se apagan los mismos fuegos y nunca se llega a la reparación de fondo.",
+   "causa": "El trabajo reactivo se come el 100 % de la capacidad si no se le pone un tope, porque siempre es más urgente.",
+   "porque": "Apagar el fuego se agradece hoy; arreglar la causa se agradece dentro de tres meses y sin público.",
+   "arreglo": "Reservar una fracción fija —no negociable— de la capacidad para causas raíz. Si se puede canjear por urgencias, no está reservada.",
+   "comoCazarlo": "Mira el reparto real de horas del trimestre. Si lo reactivo pasa del 70 %, la fracción reservada no existe.",
+   "consejo": "La reserva funciona sólo si es un número escrito y alguien la defiende cuando llega la urgencia.",
+   "salioDe": "Síntesis de operación y mejora continua · Atlassian",
+   "senales": [
+    "no hay tiempo",
+    "otra vez lo mismo"
+   ]
+  },
+  {
+   "id": "el-tiempo-de-arranque",
+   "titulo": "Cada tarea empieza con veinte minutos de buscar",
+   "gravedad": "media",
+   "sintoma": "Antes de trabajar hay que localizar el contexto: dónde está el archivo, quién lo pidió, qué se decidió.",
+   "causa": "El coste de arranque no aparece en ninguna estimación y se paga en cada tarea.",
+   "porque": "Es tiempo repartido en trocitos, así que nunca se ve entero.",
+   "arreglo": "Poner el contexto donde se trabaja, no en otro sitio: la decisión pegada a la tarea. Ahorra el arranque cada vez, y son muchas veces.",
+   "comoCazarlo": "Cronometra desde que alguien abre una tarea hasta que escribe la primera línea de trabajo real.",
+   "consejo": "Multiplicado por las tareas de un trimestre, suele ser la mejora más grande y la que menos se propone.",
+   "salioDe": "Síntesis de flujo de trabajo · GitLab Handbook y Atlassian",
+   "senales": [
+    "dónde estaba",
+    "busco el contexto"
+   ]
+  }
+ ]
+}
