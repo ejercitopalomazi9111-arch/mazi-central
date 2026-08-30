@@ -1,0 +1,92 @@
+{
+  "area": "privacidad",
+  "nombre": "Confianza: terceros, datos y permisos",
+  "que": "Lo que la página promete y lo que de verdad hace. Decisiones de diseño con consecuencias fuera de la pantalla.",
+  "neuronas": [
+    {
+      "id": "el-mapa-que-carga-siempre",
+      "titulo": "Un servicio de terceros carga aunque nadie lo pida",
+      "gravedad": "alta",
+      "sintoma": "El aviso de privacidad dice que no hay terceros y la página contacta a varios al abrir.",
+      "causa": "Un mapa, un vídeo o una fuente se incrustan directamente y se cargan siempre.",
+      "porque": "Incrustar es un copiar y pegar, y el costo de privacidad no se ve en la pantalla.",
+      "arreglo": "Cargar el servicio SÓLO si la persona lo pide, con un marcador que explique qué va a pasar.",
+      "comoCazarlo": "Listar los dominios contactados al abrir y compararlos con lo que promete el aviso legal.",
+      "consejo": "Un aviso de privacidad que la propia página contradice es un problema legal, no de diseño.",
+      "senales": [
+        "el mapa carga solo",
+        "hay peticiones a terceros",
+        "el aviso dice que no hay rastreo"
+      ],
+      "salioDe": "El sitio del Instituto: el mapa de Google se carga sólo si el visitante lo pide."
+    },
+    {
+      "id": "analitica-que-contradice-el-aviso",
+      "titulo": "Se añadió medición y nadie miró el aviso legal",
+      "gravedad": "alta",
+      "sintoma": "El sitio declara cero cookies y cero terceros, y lleva un script de analítica.",
+      "causa": "La medición se añade como tarea técnica, sin revisar los documentos publicados.",
+      "porque": "Medir parece neutro y el aviso legal lo escribió otra persona hace meses.",
+      "arreglo": "Antes de añadir cualquier script externo, leer lo que el sitio promete. Si se contradice, se cambia el documento o no se añade.",
+      "comoCazarlo": "Comparar la lista de dominios contactados con el aviso, cada vez que se añade algo.",
+      "consejo": "Es de las pocas decisiones de una página que tienen consecuencias fuera de la pantalla.",
+      "senales": [
+        "¿podemos poner analytics?",
+        "el aviso dice que no hay cookies",
+        "añadí un pixel"
+      ],
+      "salioDe": "La lista de decidido y cerrado del sitio del Instituto: analítica descartada por contradecir el aviso publicado."
+    },
+    {
+      "id": "foto-de-persona-sin-permiso",
+      "titulo": "Se publicó la foto de alguien sin permiso",
+      "gravedad": "alta",
+      "sintoma": "Aparecen personas identificables en la web sin que conste autorización.",
+      "causa": "La foto estaba en la carpeta y se usó.",
+      "porque": "Una foto real siempre se ve mejor que un marcador, y el permiso es un trámite que frena.",
+      "arreglo": "No se publica sin permiso. Con menores, permiso por escrito de quien tenga la tutela.",
+      "comoCazarlo": "Por cada persona reconocible, buscar dónde consta la autorización.",
+      "consejo": "El marcador honesto es siempre mejor que una foto que no se puede defender.",
+      "senales": [
+        "¿tenemos permiso de esa foto?",
+        "salen alumnos",
+        "es una foto del evento"
+      ],
+      "salioDe": "El sitio del Instituto: publicar fotos de menores identificables exige consentimiento por escrito."
+    },
+    {
+      "id": "datos-que-se-piden-y-no-se-cuidan",
+      "titulo": "Se recogen datos que después nadie protege",
+      "gravedad": "alta",
+      "sintoma": "Hay formularios que guardan datos personales sin que nadie sepa dónde acaban.",
+      "causa": "Se pidió el dato porque cabía en el formulario, sin decidir quién lo custodia.",
+      "porque": "Recoger es fácil y las obligaciones aparecen después.",
+      "arreglo": "Pedir lo mínimo. Y por cada dato, saber dónde vive, quién lo ve y cuánto se guarda.",
+      "comoCazarlo": "Por cada campo, contestar esas tres preguntas. Lo que no tenga respuesta, no se pide.",
+      "consejo": "El dato que no se recoge es el único que no hay que proteger.",
+      "senales": [
+        "¿dónde acaban estos datos?",
+        "pedimos muchos datos",
+        "nadie sabe quién los ve"
+      ],
+      "salioDe": "Los formularios del Instituto: sin base de datos, el mensaje va por correo y nada se almacena."
+    },
+    {
+      "id": "el-secreto-en-el-repo",
+      "titulo": "Una llave acabó en el historial de git",
+      "gravedad": "alta",
+      "sintoma": "Un token o contraseña aparece en un archivo del repositorio.",
+      "causa": "Se pegó para probar y se commiteó.",
+      "porque": "Pegar la llave es lo que desbloquea el trabajo en ese momento, y borrarla después parece suficiente.",
+      "arreglo": "Las llaves salen del entorno y nunca de un archivo. Y si una se commiteó, se revoca: borrarla no la saca del historial.",
+      "comoCazarlo": "Escaneo de secretos en el repositorio, y revisar el historial y no sólo el estado actual.",
+      "consejo": "Una llave que pasó por un chat o por un commit está quemada aunque se borre.",
+      "senales": [
+        "puse la llave para probar",
+        "está en el commit anterior",
+        "ya la borré"
+      ],
+      "salioDe": "Este grupo: nada de llaves ni secretos en el código, y el puente que tacha credenciales antes de publicar el espejo."
+    }
+  ]
+}
