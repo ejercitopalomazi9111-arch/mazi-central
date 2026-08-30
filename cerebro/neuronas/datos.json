@@ -1,0 +1,177 @@
+{
+  "area": "datos",
+  "nombre": "Datos que se leen y no engañan",
+  "que": "Tablas, cifras y gráficos: cuándo la forma comunica el valor y cuándo lo deforma.",
+  "neuronas": [
+    {
+      "id": "display-block-en-una-tabla",
+      "titulo": "La tabla responsiva dejó de ser una tabla",
+      "gravedad": "alta",
+      "sintoma": "Una tabla que en teléfono se convierte en bloques deja de anunciarse como tabla y se pierde la relación entre celda y encabezado.",
+      "causa": "Cambiarle el `display` a las filas anula la semántica nativa de tabla.",
+      "porque": "Es el patrón responsivo más difundido, funciona visualmente y nadie sospecha que apaga la semántica.",
+      "arreglo": "Conservar la semántica —o restituirla con roles— y resolver el ancho de otra forma: desplazamiento horizontal con encabezado fijo, o priorizar columnas.",
+      "comoCazarlo": "Recorrer la tabla en el teléfono con lector de pantalla y comprobar si sigue diciendo fila y columna.",
+      "consejo": "Es de los casos donde un patrón muy repetido está mal y la repetición lo volvió invisible.",
+      "senales": [
+        "la tabla no se lee bien en el celular",
+        "el lector no dice las columnas",
+        "perdí los encabezados"
+      ],
+      "salioDe": "Smashing, «Accessible Front-End Patterns For Responsive Tables»: `display:block` anula la semántica nativa."
+    },
+    {
+      "id": "tabla-que-no-cabe-y-se-encoge-hasta-lo-ilegible",
+      "titulo": "La tabla cabe porque la letra es diminuta",
+      "gravedad": "media",
+      "sintoma": "En pantalla chica la tabla entra entera y no se puede leer.",
+      "causa": "Se resolvió el ancho reduciendo el tamaño del texto en vez de decidir qué columnas importan.",
+      "porque": "Que quepa se siente como haber resuelto el problema.",
+      "arreglo": "Escoger las columnas esenciales para la pantalla chica y dar acceso al resto: expandir la fila o desplazar de lado.",
+      "comoCazarlo": "Medir el tamaño de letra de la tabla en el ancho más pequeño soportado.",
+      "consejo": "Una tabla es una comparación: si no se pueden comparar dos filas de un vistazo, no está sirviendo.",
+      "senales": [
+        "la tabla se ve chiquita",
+        "no se lee en el teléfono",
+        "tuve que reducir la letra"
+      ],
+      "salioDe": "Smashing, sobre patrones de tabla responsiva y priorización de columnas."
+    },
+    {
+      "id": "cifras-sin-unidad-ni-referencia",
+      "titulo": "El número está solo y no dice nada",
+      "gravedad": "media",
+      "sintoma": "Un tablero lleno de cifras grandes que nadie sabe si son buenas o malas.",
+      "causa": "Se muestra el valor sin unidad, sin comparación y sin qué se esperaba.",
+      "porque": "El número grande se ve impresionante y ocupa poco; el contexto ocupa más y se recorta al maquetar.",
+      "arreglo": "Cada cifra con su unidad y con al menos una referencia: contra qué se compara o qué sería normal.",
+      "comoCazarlo": "Leer cada dato y preguntarse «¿y eso es bueno?». Si no se puede contestar, falta contexto.",
+      "consejo": "Un número sin referencia es decoración con forma de dato.",
+      "senales": [
+        "¿esto es bueno o malo?",
+        "no sé qué significa ese número",
+        "falta contexto"
+      ],
+      "salioDe": "El tablero del banco de pruebas: cada medidor lleva su unidad y una línea que dice qué está contando."
+    },
+    {
+      "id": "grafico-sin-eje-cero",
+      "titulo": "La gráfica exagera la diferencia porque no arranca en cero",
+      "gravedad": "alta",
+      "sintoma": "Un cambio pequeño se ve como un salto enorme.",
+      "causa": "El eje empieza donde conviene y no en cero, así que la altura de las barras deja de ser proporcional al valor.",
+      "porque": "Recortar el eje hace que la gráfica «se lea mejor», y a veces es legítimo; en barras casi nunca lo es.",
+      "arreglo": "En barras, eje desde cero. Si la diferencia es pequeña y hay que verla, usar líneas o decirlo con un número.",
+      "comoCazarlo": "Comparar la proporción entre dos barras con la proporción entre sus valores. Si no coincide, la gráfica miente.",
+      "consejo": "El área y la altura comunican magnitud sin que nadie lo decida: por eso deforman tan fácil.",
+      "senales": [
+        "la gráfica exagera",
+        "parece más diferencia de la que hay",
+        "el cambio se ve enorme"
+      ],
+      "salioDe": "Principio clásico de representación proporcional en gráficos de barras."
+    },
+    {
+      "id": "el-color-que-codifica-el-valor-y-no-se-ve",
+      "titulo": "La escala de color del gráfico no se distingue",
+      "gravedad": "media",
+      "sintoma": "En un mapa o mapa de calor no se ve la diferencia entre categorías vecinas.",
+      "causa": "La escala se escogió por bonita, con pasos que no son perceptualmente parejos, o con tonos que se confunden en daltonismo.",
+      "porque": "Las escalas por defecto de muchas herramientas son así, y en la leyenda se ven bien porque los chips están juntos.",
+      "arreglo": "Escalas perceptualmente parejas y comprobadas en escala de grises y en simulación de daltonismo.",
+      "comoCazarlo": "Poner el gráfico en blanco y negro. Si el orden deja de leerse, la escala sólo funciona en color.",
+      "consejo": "Y añadir una segunda señal —posición, etiqueta, patrón— para lo que sea crítico.",
+      "senales": [
+        "no se distinguen los colores del mapa",
+        "los tonos se parecen",
+        "no se entiende la leyenda"
+      ],
+      "salioDe": "La neurona de color sobre escalas perceptuales, aplicada a datos."
+    },
+    {
+      "id": "elemento-que-codifica-y-esta-tenue",
+      "titulo": "Lo que carga el significado quedó casi invisible",
+      "gravedad": "alta",
+      "sintoma": "El gráfico se ve limpio y no comunica; la gente pregunta qué significa.",
+      "causa": "La línea guía, el eje o la escala —lo que codifica el significado— se bajó tanto que desapareció.",
+      "porque": "Al diseñar uno lo baja para que «no estorbe» y termina bajándolo por debajo del umbral de verse.",
+      "arreglo": "Subirlo hasta que se vea. Si estorba, el problema es la densidad, no el contraste.",
+      "comoCazarlo": "Tapar el gráfico y preguntarse qué queda visible. Si el eje no aparece, no hay referencia.",
+      "consejo": "Lo decorativo puede ser tenue; lo que codifica, no.",
+      "senales": [
+        "se ve bonito y no se entiende",
+        "¿qué significa esto?",
+        "no se ven los ejes"
+      ],
+      "salioDe": "Neurona ya existente del área de diseño de este cerebro, «color-sin-forma» y «la-codificacion-invisible»."
+    },
+    {
+      "id": "contador-que-crece-y-mueve-la-maqueta",
+      "titulo": "El contador cambia de ancho en cada cuadro",
+      "gravedad": "baja",
+      "sintoma": "Un número que sube hace que lo de al lado se mueva.",
+      "causa": "Las cifras son proporcionales y cambian de ancho al cambiar de dígito.",
+      "porque": "Se ve bien parado y el problema sólo aparece en movimiento.",
+      "arreglo": "Cifras tabulares y, si el número puede crecer de dígitos, reservar el ancho máximo.",
+      "comoCazarlo": "Animar el contador y mirar el borde derecho del bloque.",
+      "consejo": "Es el mismo arreglo que alinea las columnas de una tabla.",
+      "senales": [
+        "el contador brinca",
+        "se mueve lo de al lado",
+        "baila el número"
+      ],
+      "salioDe": "El tablero del banco: `tabular-nums` en los contadores."
+    },
+    {
+      "id": "el-cero-que-parece-un-fallo",
+      "titulo": "Un dato que vale cero se lee como que no cargó",
+      "gravedad": "media",
+      "sintoma": "Una cifra en cero hace pensar que algo se rompió.",
+      "causa": "No se distingue «cero» de «sin datos» ni de «error».",
+      "porque": "Los tres se pintan igual porque los tres son «no hay nada que enseñar».",
+      "arreglo": "Tres estados distintos y explícitos: cero es un valor, sin datos es una ausencia, y error es un fallo.",
+      "comoCazarlo": "Forzar los tres casos y comprobar que se distinguen sin leer el código.",
+      "consejo": "Y ojo con las comprobaciones: una que exija «distinto de cero» reprueba un cero legítimo.",
+      "senales": [
+        "¿está en cero o no cargó?",
+        "parece que falló",
+        "sale cero y no sé si es real"
+      ],
+      "salioDe": "El banco de pruebas: la comprobación del tablero reprobaba el «0 dependencias» por acertar."
+    },
+    {
+      "id": "leyenda-lejos-de-lo-que-explica",
+      "titulo": "Hay que ir y volver entre la leyenda y el gráfico",
+      "gravedad": "baja",
+      "sintoma": "Leer el gráfico obliga a mirar arriba, memorizar un color y volver.",
+      "causa": "La leyenda está separada de las marcas que nombra.",
+      "porque": "Es la disposición por defecto de casi todas las librerías.",
+      "arreglo": "Etiquetar directamente sobre las marcas cuando quepa. La leyenda es el último recurso.",
+      "comoCazarlo": "Contar cuántas veces hay que mover la vista para leer un valor. Más de una ya cuesta.",
+      "consejo": "En una gráfica de pocas series, etiquetar directamente casi siempre cabe.",
+      "senales": [
+        "tengo que mirar la leyenda cada vez",
+        "cuesta seguir qué es cada línea",
+        "me pierdo entre los colores"
+      ],
+      "salioDe": "Práctica de etiquetado directo en visualización de datos."
+    },
+    {
+      "id": "precision-falsa",
+      "titulo": "Se publican decimales que nadie midió",
+      "gravedad": "baja",
+      "sintoma": "Cifras con tres decimales en datos que vienen de una estimación.",
+      "causa": "Se muestra lo que devuelve el cálculo sin redondear a la precisión real del dato.",
+      "porque": "Redondear parece perder información, cuando lo que se pierde es la falsa.",
+      "arreglo": "Mostrar tantos dígitos como precisión tenga la fuente, y ni uno más.",
+      "comoCazarlo": "Preguntar de cada decimal si el dato de origen lo soporta.",
+      "consejo": "Los decimales de más comunican una confianza que el dato no tiene.",
+      "senales": [
+        "salen muchos decimales",
+        "¿por qué tanta precisión?",
+        "el número se ve raro"
+      ],
+      "salioDe": "Principio de precisión significativa aplicado a la presentación de datos."
+    }
+  ]
+}
