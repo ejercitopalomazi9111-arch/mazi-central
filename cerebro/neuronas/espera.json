@@ -1,0 +1,92 @@
+{
+  "area": "espera",
+  "nombre": "La espera y cómo se siente",
+  "que": "Lo que pasa entre que alguien pide algo y lo recibe: señales, progreso y percepción del tiempo.",
+  "neuronas": [
+    {
+      "id": "la-espera-sin-avisar",
+      "titulo": "Se toca algo y no pasa nada visible durante segundos",
+      "gravedad": "alta",
+      "sintoma": "La gente toca dos o tres veces creyendo que no registró.",
+      "causa": "La respuesta llega cuando responde el servidor, sin ninguna señal antes.",
+      "porque": "En desarrollo la respuesta es instantánea y el hueco no existe.",
+      "arreglo": "Una señal en el mismo cuadro del toque, y un estado de carga si va a tardar más de un instante.",
+      "comoCazarlo": "Ralentizar la red y contar cuánto tiempo pasa entre el toque y el primer cambio visible.",
+      "consejo": "Si tocar dos veces hace la acción dos veces, la falta de señal también es un defecto de datos.",
+      "senales": [
+        "le pico dos veces",
+        "no sé si se envió",
+        "no responde"
+      ],
+      "salioDe": "El acuse de recibo al toque de la sala y del banco de pruebas."
+    },
+    {
+      "id": "progreso-que-miente",
+      "titulo": "La barra de progreso llega al 90 % y se queda ahí",
+      "gravedad": "media",
+      "sintoma": "El progreso avanza rápido y se detiene cerca del final durante mucho rato.",
+      "causa": "La barra no mide progreso real: es una animación que simula avance.",
+      "porque": "El progreso real muchas veces no se conoce, y una barra que no avanza parece rota.",
+      "arreglo": "Si no se conoce el progreso, usar un indicador indeterminado y decir qué se está haciendo. Mentir con una barra gasta la confianza.",
+      "comoCazarlo": "Comparar lo que marca la barra con el tiempo que de verdad falta.",
+      "consejo": "Decir en qué paso va —«subiendo la imagen 2 de 5»— informa más que cualquier porcentaje inventado.",
+      "senales": [
+        "se queda en 90",
+        "la barra no avanza",
+        "dice que falta poco y tarda mucho"
+      ],
+      "salioDe": "Principio de honestidad en indicadores de progreso; el banco usa progreso real o indeterminado."
+    },
+    {
+      "id": "esqueleto-que-no-se-parece",
+      "titulo": "El esqueleto no tiene la forma de lo que va a llegar",
+      "gravedad": "baja",
+      "sintoma": "Al llegar el contenido, todo se recoloca.",
+      "causa": "El marcador de carga tiene otro tamaño que el contenido real.",
+      "porque": "El esqueleto se dibuja a ojo y el contenido llega después.",
+      "arreglo": "Que el esqueleto ocupe exactamente lo mismo. Así, además, no hay salto.",
+      "comoCazarlo": "Superponer una captura del esqueleto y otra del contenido. Deberían coincidir.",
+      "consejo": "Un esqueleto que no coincide es un salto de maqueta con mejor aspecto.",
+      "senales": [
+        "salta al cargar",
+        "el esqueleto no coincide",
+        "se mueve todo cuando llegan los datos"
+      ],
+      "salioDe": "El banco de pruebas: el esqueleto replica la silueta del contenido de la sección."
+    },
+    {
+      "id": "todo-o-nada-al-cargar",
+      "titulo": "No se ve nada hasta que ha llegado todo",
+      "gravedad": "media",
+      "sintoma": "La página está en blanco varios segundos y luego aparece completa.",
+      "causa": "Se espera a tener todos los datos para pintar.",
+      "porque": "Pintar por partes exige decidir qué se pinta primero y manejar estados intermedios.",
+      "arreglo": "Pintar lo que ya está, en el orden en que importa. Lo de arriba primero.",
+      "comoCazarlo": "Grabar la carga con la red lenta y mirar cuándo aparece el primer contenido útil.",
+      "consejo": "Que aparezca antes lo importante cambia la percepción aunque el total tarde igual.",
+      "senales": [
+        "tarda en aparecer todo",
+        "se queda en blanco y luego sale entero",
+        "carga lento"
+      ],
+      "salioDe": "Smashing, «How To Optimize Mobile Performance», sobre carga por etapas."
+    },
+    {
+      "id": "el-tiempo-que-se-siente-mas-largo",
+      "titulo": "La misma espera se siente más larga sin nada que mirar",
+      "gravedad": "baja",
+      "sintoma": "La gente se queja de lentitud en un proceso que tarda lo mismo que otro del que no se queja.",
+      "causa": "La espera vacía se percibe más larga que la espera ocupada o explicada.",
+      "porque": "Se optimiza el tiempo medido y no el percibido, que es el que genera la queja.",
+      "arreglo": "Decir qué está pasando y, si se puede, dejar hacer otra cosa mientras.",
+      "comoCazarlo": "Comparar el tiempo real con el que la gente dice que tarda.",
+      "consejo": "No es una excusa para no optimizar: es lo que hace que la optimización se note.",
+      "senales": [
+        "se siente lento",
+        "tarda mucho",
+        "¿está haciendo algo?"
+      ],
+      "salioDe": "Investigación de percepción del tiempo recogida por NN/g, y el cargador con pistas del banco."
+    }
+  ]
+}
