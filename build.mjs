@@ -31,6 +31,10 @@ const VA = [
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
+  /* las guías de formación: el PDF de estudio y la app de entrenamiento. Sin
+     esta línea la carpeta existe en el repo y NO en el sitio, y el enlace que
+     se le pasa a alguien devuelve 404 — que es exactamente lo que pasó. */
+  'guias',
 ];
 
 /* Lo que NO va, aunque esté dentro de algo que sí va. Los .md son notas de
@@ -51,6 +55,12 @@ const NO_VA = (ruta) => {
      publicar y no lo que se quedó en la carpeta. Se colaban diez. */
   if(/^pruebas[^/]*\.(mjs|js|py)$/i.test(f)) return true;
   if(/^armar-suelto\.mjs$/i.test(f)) return true;
+  /* el taller de las guías arma el HTML y el PDF: es material de trabajo.
+     OJO con el final: `ruta` llega SIN barra al final cuando lo que se está
+     mirando es la carpeta misma, así que el patrón tiene que aceptar el fin de
+     cadena. Con `\/` a secas la carpeta pasaba y se publicaba entera —igual
+     que ya estaba resuelto arriba para `arte/web`. */
+  if(/(^|\/)guias\/.*\/(taller|fuente)(\/|$)/.test(ruta)) return true;
   /* El código del worker de La Sala NO es parte del sitio: es otro proyecto de
      Cloudflare. Publicarlo aquí no filtra secretos —las llaves son secretos del
      worker— pero sí sirve como estático algo que nadie usa desde el navegador,
