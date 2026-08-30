@@ -1,0 +1,177 @@
+{
+  "area": "superficie",
+  "nombre": "Superficie: forma, textura y marca",
+  "que": "Radios, bordes, degradados, texturas y el uso de la marca. Lo que hace que algo se vea propio o se vea plantilla.",
+  "neuronas": [
+    {
+      "id": "radio-unico-para-todo",
+      "titulo": "Todo tiene el mismo redondeo y nada tiene forma",
+      "gravedad": "baja",
+      "sintoma": "La interfaz se ve suave, correcta y exactamente igual a otras cien.",
+      "causa": "Un solo radio aplicado a botones, tarjetas, avatares y campos: el redondeo dejó de significar nada.",
+      "porque": "Es un token que se define una vez y se reutiliza, y la reutilización se siente como sistema.",
+      "arreglo": "Decidir qué significa lo redondo en este sistema y dárselo sólo a eso. Cero radio también es una decisión, y más fuerte que el radio medio.",
+      "comoCazarlo": "Mirar las esquinas sin el contenido. Si todas son iguales, no están diciendo nada.",
+      "consejo": "En un documento impreso no hay esquinas redondeadas: si el sistema imita papel, el radio tiene que justificarse.",
+      "senales": [
+        "se ve genérico",
+        "todo tiene el mismo redondeo",
+        "parece plantilla"
+      ],
+      "salioDe": "La lista de tics de este grupo; el banco de pruebas topa el radio a 3 px en todo el espacio de nombres."
+    },
+    {
+      "id": "degradado-como-relleno-por-defecto",
+      "titulo": "Hay degradados donde bastaba un color",
+      "gravedad": "baja",
+      "sintoma": "Casi todas las superficies tienen degradado y la pantalla se ve inquieta.",
+      "causa": "El degradado se usa como relleno bonito y no como indicación de nada.",
+      "porque": "Un degradado suave levanta cualquier maqueta a la primera mirada, y esa mirada es la que se aprueba.",
+      "arreglo": "Guardarlo para cuando dice algo —dirección, profundidad, transición entre dos zonas— y usar color plano para el resto.",
+      "comoCazarlo": "Cambiar cada degradado por su color medio. Los que no se echan de menos sobraban.",
+      "consejo": "Un degradado que nadie nota está gastando atención y bytes sin devolver nada.",
+      "senales": [
+        "puse degradados para que se vea mejor",
+        "se ve cargado",
+        "hay mucho color"
+      ],
+      "salioDe": "La lista de tics: los degradados por defecto son uno de los diez."
+    },
+    {
+      "id": "borde-de-un-pixel-que-desaparece",
+      "titulo": "El borde de separación no se ve en algunas pantallas",
+      "gravedad": "media",
+      "sintoma": "Las líneas que separan secciones se ven en un monitor y no en otro.",
+      "causa": "Un borde de 1 px con muy poco contraste desaparece según la densidad de píxeles y el brillo.",
+      "porque": "Se ajusta a ojo en un monitor bueno, con la luz de la oficina, y ahí se ve perfecto.",
+      "arreglo": "Medir el contraste de la línea como se mide el del texto: si separa, es información.",
+      "comoCazarlo": "Mirar la pantalla con el brillo bajo y de día. Lo que desaparece no estaba separando nada.",
+      "consejo": "Dos reglas —una tenue para dividir dentro, otra fuerte para separar bloques— dicen más que una sola a medias.",
+      "senales": [
+        "no se ven las líneas",
+        "se pierde la separación",
+        "en mi monitor sí se ve"
+      ],
+      "salioDe": "El banco de pruebas: `--raya` y `--raya-fuerte` son dos tokens distintos justo por esto."
+    },
+    {
+      "id": "textura-que-tapa-el-texto",
+      "titulo": "El grano del fondo le come contraste al texto",
+      "gravedad": "media",
+      "sintoma": "Con textura de fondo, el texto pequeño se lee peor aunque el contraste calculado sea el mismo.",
+      "causa": "El ruido cambia el fondo píxel a píxel: el contraste real varía por debajo y por encima del número calculado.",
+      "porque": "El contraste se calcula entre dos colores planos, y una textura no es un color plano.",
+      "arreglo": "Mantener la textura muy por debajo del umbral de percepción —opacidad baja— o quitarla detrás de los bloques de texto pequeño.",
+      "comoCazarlo": "Ampliar una captura y mirar el texto sobre la textura. Y medir contra el punto más claro Y el más oscuro del ruido.",
+      "consejo": "Una opacidad de 0.05 se nota como material y no compite con nada.",
+      "senales": [
+        "cuesta leer sobre el fondo",
+        "el texto chico se pierde",
+        "con la textura se lee peor"
+      ],
+      "salioDe": "El banco de pruebas: el grano va a 0.05 de opacidad, sobre el fondo y no sobre las capas de texto."
+    },
+    {
+      "id": "el-fondo-que-se-mueve-con-el-contenido",
+      "titulo": "La retícula de fondo se desplaza al hacer scroll",
+      "gravedad": "baja",
+      "sintoma": "El patrón del fondo viaja con el contenido y la página se siente barata.",
+      "causa": "El fondo está pintado sobre un elemento que scrollea, en vez de estar fijo detrás.",
+      "porque": "Es lo que sale de aplicarle un fondo al `body` sin pensar en la capa.",
+      "arreglo": "Una capa fija detrás de todo, sin eventos de puntero, para que el fondo se quede quieto.",
+      "comoCazarlo": "Hacer scroll y mirar el patrón. Si viaja, no es fondo: es contenido.",
+      "consejo": "Además, una capa fija se puede pintar una vez y no en cada cuadro.",
+      "senales": [
+        "el fondo se mueve al bajar",
+        "la cuadrícula viaja",
+        "se ve raro al hacer scroll"
+      ],
+      "salioDe": "Carlos: «la cuadrícula del fondo debe quedarse fija», y la capa `.reticula` del banco."
+    },
+    {
+      "id": "vidrio-sin-nada-detras",
+      "titulo": "El efecto vidrio no deja ver nada porque detrás no hay nada",
+      "gravedad": "baja",
+      "sintoma": "Una superficie translúcida sobre un fondo plano: sale un color raro y ya.",
+      "causa": "El efecto sólo dice algo cuando detrás hay contenido que se adivina. Sobre un color plano es un color plano más caro.",
+      "porque": "Se copia el efecto de una referencia donde detrás había una foto, y en la copia el fondo es liso.",
+      "arreglo": "Si detrás no hay nada que valga la pena adivinar, un color sólido con la mezcla ya calculada.",
+      "comoCazarlo": "Tapar lo que hay detrás con un color plano. Si el efecto se ve igual, no estaba haciendo nada.",
+      "consejo": "Vale para el desenfoque, la transparencia y las sombras: el efecto necesita algo que revelar.",
+      "senales": [
+        "puse glassmorphism y no se ve",
+        "el efecto no luce",
+        "se ve un color raro"
+      ],
+      "salioDe": "La decisión de no usar backdrop-filter en el banco, y la revisión de qué estaba diciendo el efecto."
+    },
+    {
+      "id": "la-marca-usada-como-decoracion",
+      "titulo": "El logo se estira, se recorta y se pone de fondo",
+      "gravedad": "media",
+      "sintoma": "El símbolo de la marca aparece deformado, en marca de agua o como textura.",
+      "causa": "Se trata el logo como un elemento gráfico más y no como una firma con reglas.",
+      "porque": "Es el único activo gráfico que suele haber, así que se usa para rellenar donde falta.",
+      "arreglo": "Sacar del logo la GEOMETRÍA —un ángulo, una curva, una proporción— y decorar con eso. El logo se queda donde firma.",
+      "comoCazarlo": "Contar cuántas veces aparece el símbolo en una pantalla. Más de una vez casi siempre es una de más.",
+      "consejo": "Un sistema derivado de la papelería se ve de la marca sin repetir el logo ni una vez de más.",
+      "senales": [
+        "puse el logo de fondo",
+        "se ve estirado el símbolo",
+        "el logo está en todos lados"
+      ],
+      "salioDe": "El sistema «Geometría tecnológica» del Instituto: la cuña y la doble regla salen del membrete, no del logo repetido."
+    },
+    {
+      "id": "escudo-a-baja-resolucion-en-grande",
+      "titulo": "El único archivo del símbolo es chico y se puso grande",
+      "gravedad": "media",
+      "sintoma": "El emblema se ve pixelado o borroso en la cabecera.",
+      "causa": "El archivo que existe es un recorte de baja resolución y se está usando por encima de su tamaño real.",
+      "porque": "Es el único que hay, y ampliarlo parece menos malo que no ponerlo.",
+      "arreglo": "Diseñar el sistema para no necesitarlo grande, hasta que exista un vector. Un símbolo borroso dice más de la marca que su ausencia.",
+      "comoCazarlo": "Comparar el tamaño pintado con el tamaño real del archivo. Si el pintado es mayor, se está ampliando.",
+      "consejo": "Y si hace falta grande, se redibuja en vector: no se «mejora» con un filtro.",
+      "senales": [
+        "el logo se ve pixelado",
+        "se ve borroso el escudo",
+        "no tenemos el logo en grande"
+      ],
+      "salioDe": "El sitio del Instituto: el escudo sólo existe a baja resolución y el sistema está diseñado para no mostrarlo grande."
+    },
+    {
+      "id": "sombra-difusa-anulada-a-medias",
+      "titulo": "El marco trae sus sombras y el sistema trae las suyas",
+      "gravedad": "baja",
+      "sintoma": "Conviven dos lenguajes de sombra: unos componentes con sombra difusa y otros con sombra dura.",
+      "causa": "Se adoptó un sistema propio pero no se anularon las utilidades del marco, así que quien escribe la clase de siempre trae la sombra de siempre.",
+      "porque": "Anular lo que ya funciona parece innecesario hasta que alguien usa la clase por costumbre.",
+      "arreglo": "Anular explícitamente las utilidades que contradicen el sistema, para que el camino fácil sea el correcto.",
+      "comoCazarlo": "Buscar en la página sombras que no sean ninguna de las declaradas en el sistema.",
+      "consejo": "Un sistema que no anula sus alternativas es una recomendación, no un sistema.",
+      "senales": [
+        "hay dos tipos de sombra",
+        "unos componentes se ven distintos",
+        "se coló el estilo del framework"
+      ],
+      "salioDe": "El banco de pruebas: las sombras difusas del marco están anuladas a `none` a propósito."
+    },
+    {
+      "id": "el-blanco-puro-y-el-negro-puro",
+      "titulo": "El fondo es blanco puro y el texto negro puro",
+      "gravedad": "baja",
+      "sintoma": "La pantalla cansa la vista y se ve dura, aunque el contraste sea altísimo.",
+      "causa": "Contraste máximo no es lo mismo que legibilidad cómoda: el salto de #FFF a #000 deslumbra en superficies grandes.",
+      "porque": "Son los valores por defecto y además sacan la mejor nota en cualquier medidor de contraste.",
+      "arreglo": "Bajar un escalón los dos extremos: un blanco con algo de cuerpo y una tinta que no sea negro absoluto.",
+      "comoCazarlo": "Mirar una pantalla llena de texto durante un minuto largo, con poca luz alrededor.",
+      "consejo": "Es de las pocas cosas donde el número mejor no es la mejor decisión.",
+      "senales": [
+        "cansa la vista",
+        "se ve muy duro",
+        "deslumbra"
+      ],
+      "salioDe": "El banco de pruebas: el papel y la tinta salen de la marca, y el papel se bajó un escalón por brillo."
+    }
+  ]
+}
