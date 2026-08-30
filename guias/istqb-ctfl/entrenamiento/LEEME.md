@@ -21,6 +21,36 @@ node pruebas.mjs http://127.0.0.1:8791
 cáscara y el motor. **No se edita `index.html` a mano**: se edita el taller y se
 vuelve a armar.
 
+## El simulacro de examen
+
+Aparte de los cincuenta niveles hay un **simulacro**: 40 preguntas de las 50, en
+orden distinto cada vez y con las opciones barajadas. Sin pistas, sin paso a
+paso y **sin decir nada hasta el final**. Al entregar sale la calificación con
+el corte real del CTFL —65 %—, la lista de qué se falló, y un botón que lleva a
+repasar cada fallo en la pantalla de práctica, esa sí con todas las ayudas.
+
+No se desbloquea: se presenta cuando uno quiera. Bloquearlo hasta los cincuenta
+niveles convertiría la única medida honesta de si estás listo en un premio por
+terminar.
+
+### Las tres reglas que hacen que el simulacro mida algo
+
+1. **Aquí no se dice nada.** Ni «correcto», ni un color, ni una casilla verde en
+   el índice. En cuanto la pantalla te dice si acertaste, deja de medir lo que
+   sabes y pasa a medir lo que puedes corregir mirando.
+2. **Las opciones se barajan y la respuesta viaja con ellas.** Es el punto
+   delicado: si se barajan los textos y `correcta` se queda apuntando al índice
+   viejo, el examen califica mal y **nadie lo nota**, porque el número sigue
+   siendo un número válido. Por eso la permutación se guarda entera y la
+   corrección se hace siempre contra ella.
+3. **El avance se mide por contestadas, no por visitadas.** Una barra que se
+   llena al pasar de pregunta miente: dice que vas por la mitad cuando lo único
+   que hiciste fue hojear.
+
+La prueba de la regla 2 no contesta por índice sino **por el texto de la opción
+correcta**, que es lo único que no cambia al barajar. Con la permutación mal
+llevada, contestar todo bien da 48 % — un número creíble, y por eso peligroso.
+
 ## Los niveles
 
 Cincuenta, repartidos como el examen real: 8 de fundamentos, 7 de ciclo de

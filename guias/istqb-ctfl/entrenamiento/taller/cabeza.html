@@ -213,6 +213,61 @@ input::placeholder{ color:#6D6080 }
   h1{ font-size:38px }
   .envoltura{ padding:0 24px }
 }
+/* ══ EL SIMULACRO DE EXAMEN ═════════════════════════════════════════════ */
+.tarjeta-examen{ border:1px solid var(--linea); border-radius:var(--radio);
+  background:var(--panel); padding:20px; margin-top:28px }
+.tarjeta-examen h3{ margin:0 0 8px; font-size:18px }
+.tarjeta-examen p{ margin:0 0 14px; font-size:15px }
+.tarjeta-examen .nota{ font-size:14px; color:var(--tenue) }
+
+/* ⚠ EL RELOJ CUENTA, PERO NO CORRE HACIA NINGÚN LADO. Es tiempo transcurrido,
+   no cuenta atrás: el examen real da tiempo de sobra y una cuenta atrás aquí
+   sólo enseñaría a tener prisa. Va en cifras tabulares porque si no, el ancho
+   baila con cada segundo y el renglón entero se mueve. */
+.reloj{ font-family:var(--mono); font-variant-numeric:tabular-nums }
+
+/* El índice de preguntas: dónde estás y qué te falta, de un vistazo. */
+.rejilla-x{ display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr));
+  gap:6px; margin-top:20px }
+/* ⚠ LA DIFERENCIA ENTRE CONTESTADA Y NO ESTÁ EN EL NÚMERO, NO EN EL FONDO.
+   Antes eran `--panel` contra `--panel-alto`: nueve puntos de luminancia entre
+   los dos, invisibles en una pantalla al sol y en la miniatura de una captura.
+   Y el índice existe justo para ver de un golpe qué falta — si hay que
+   entrecerrar los ojos para distinguirlo, no sirve para nada.
+   La cifra apagada dice «sin contestar» y la encendida «hecha». Las dos pasan
+   el contraste: 6.9:1 la apagada, 12.8:1 la encendida. */
+.rejilla-x button{ min-height:44px; border-radius:10px; border:1px solid var(--linea);
+  background:var(--panel); color:var(--tenue); font:400 14px/1 var(--ui); cursor:pointer;
+  -webkit-tap-highlight-color:transparent }
+.rejilla-x button.contestada{ background:var(--panel-alto); border-color:var(--tenue);
+  color:var(--hueso); font-weight:700 }
+.rejilla-x button.aqui{ border-color:var(--violeta); box-shadow:0 0 0 2px rgba(173,33,237,.35) }
+
+/* ⚠ NI UN COLOR DE ACIERTO NI DE ERROR EN ESTA PANTALLA. Durante el examen no
+   se sabe nada: si el índice pintara de verde lo acertado, el examen dejaría
+   de medir lo que sabes y pasaría a medir lo que puedes corregir mirando. */
+
+.marcador{ border:1px solid var(--linea); border-radius:var(--radio); padding:24px;
+  background:var(--panel); text-align:center; margin-bottom:24px }
+.marcador .puntos{ font:700 clamp(56px,18vw,92px)/1 var(--ui); letter-spacing:-.02em }
+.marcador .de{ font-size:18px; color:var(--tenue); margin-top:2px }
+.marcador .sello{ display:inline-block; margin-top:14px; padding:8px 16px; border-radius:999px;
+  font:600 14px/1 var(--ui); letter-spacing:.06em; text-transform:uppercase }
+.marcador .sello.pasa{ background:rgba(62,213,152,.16); color:var(--ok); border:1px solid var(--ok) }
+.marcador .sello.no{ background:rgba(255,107,135,.14); color:var(--mal); border:1px solid var(--mal) }
+.marcador p{ margin:14px 0 0; font-size:15px; color:var(--tenue) }
+
+.repaso-fila{ display:flex; gap:12px; align-items:flex-start; padding:14px 0;
+  border-bottom:1px solid var(--linea) }
+.repaso-fila:last-child{ border-bottom:0 }
+.repaso-fila .señal{ flex:none; width:26px; height:26px; border-radius:8px;
+  display:grid; place-items:center; font:700 14px/1 var(--ui) }
+.repaso-fila .señal.si{ background:rgba(62,213,152,.16); color:var(--ok) }
+.repaso-fila .señal.no{ background:rgba(255,107,135,.14); color:var(--mal) }
+.repaso-fila .qué{ min-width:0 }
+.repaso-fila .qué b{ display:block; font-size:15px }
+.repaso-fila .qué span{ font-size:13px; color:var(--tenue) }
+
 </style>
 </head>
 <body>

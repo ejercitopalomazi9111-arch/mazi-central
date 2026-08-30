@@ -231,6 +231,169 @@ for(const [ancho, como] of [[390,'teléfono'], [1100,'computadora']]){
   await p.context().close();
 }
 
+/* ── 8 · EL SIMULACRO DE EXAMEN ──────────────────────────────────────
+   Carlos, e261. Lo que hay que poder reprobar aquí no es que la pantalla se
+   vea: es que el examen CALIFIQUE BIEN con las opciones barajadas.
+
+   ⚠ EL FALLO QUE ESTA PRUEBA EXISTE PARA CAZAR. Si se barajan los textos de
+   a/b/c/d y `correcta` se queda apuntando al índice viejo, el examen califica
+   mal y NADIE lo nota: el índice sigue siendo un número válido, la pantalla no
+   protesta, y el alumno sale con un porcentaje inventado. Por eso aquí no se
+   contesta por índice: se contesta por el TEXTO de la opción correcta, que es
+   lo único que no cambia al barajar. Si la permutación estuviera mal llevada,
+   contestar todo bien no daría 100 %. */
+console.log('\n── el simulacro de examen ──');
+
+/* Lee la pregunta en pantalla y la casa con su nivel por el enunciado, que es
+   único. Devuelve qué hay que tocar para acertar — o para fallar. */
+const leerPregunta = (p) => p.evaluate(() => {
+  /* ⚠ SE CASA POR TEXTO PLANO, NO POR innerHTML. El navegador REESCRIBE el
+     HTML que se le da: entidades, comillas de atributo, espacios duros. Con
+     `innerHTML` la comparación acertaba en la mayoría de los niveles y fallaba
+     en unos pocos — y como el examen saca 40 de 50 al azar, la prueba pasaba o
+     reventaba según el sorteo. Una prueba que depende del sorteo no es una
+     prueba: es una moneda. */
+  /* Y SIN NINGÚN ESPACIO. El enunciado se parte en <p> por los saltos dobles,
+     y el `textContent` de dos <p> seguidos se pega sin nada en medio:
+     «reclama.¿Cuál». La fuente sí tiene el salto. Comparar con los espacios
+     normalizados hacía fallar justo los enunciados de dos párrafos —los más
+     largos, o sea los más importantes— y como el examen sortea 40 de 50, la
+     prueba pasaba o reventaba según la tirada. */
+  const aTexto = (h) => { const d = document.createElement('div');
+                          d.innerHTML = h; return d.textContent.replace(/\s+/g,''); };
+  const enPantallaTxt = aTexto(document.querySelector('#xEnunciado').innerHTML);
+  const nivel = NIVELES.find(x => aTexto(x.enunciado) === enPantallaTxt);
+  if(!nivel) return { error:'no casa con ningún nivel' };
+  /* ⚠ SE COMPARA EL TEXTO PLANO, NO EL innerHTML. Las opciones llevan HTML
+     mío —negritas, `&gt;`— y el navegador NORMALIZA al reescribirlo: un `>`
+     suelto en la fuente vuelve como `&gt;`. Comparando innerHTML contra la
+     cadena original, seis opciones no casaban, la prueba no marcaba nada, y
+     el examen salía «sin contestar» sin que nada dijera por qué. */
+  const plano = (html) => { const d = document.createElement('div');
+                            d.innerHTML = html; return d.textContent.trim(); };
+  const enPantalla = [...document.querySelectorAll('#xRespuesta .opcion')]
+      .map(b => plano(b.lastElementChild.innerHTML));
+  let buenas = [], malas = [];
+  if(nivel.tipo === 'opcion' || nivel.tipo === 'multi'){
+    const claves = nivel.tipo === 'opcion' ? [nivel.correcta] : nivel.correctas;
+    const textos = claves.map(i => plano(nivel.opciones[i]));
+    buenas = enPantalla.map((t, i) => textos.includes(t) ? i : -1).filter(i => i >= 0);
+    malas  = enPantalla.map((t, i) => textos.includes(t) ? -1 : i).filter(i => i >= 0);
+  }
+  return { n:nivel.n, tipo:nivel.tipo, respuesta:nivel.respuesta, buenas, malas,
+           mismoOrden: (nivel.tipo === 'opcion' || nivel.tipo === 'multi')
+             ? enPantalla.join('|') === nivel.opciones.map(plano).join('|') : null };
+});
+
+const contestar = async (p, bien) => {
+  const q = await leerPregunta(p);
+  /* ⚠ QUE REVIENTE, Y NO EN SILENCIO. La primera versión devolvía y seguía: el
+     examen quedaba a medio contestar, saltaba el «¿entregas así?», Playwright
+     lo descartaba por omisión, la entrega no ocurría y lo único que se veía era
+     un timeout esperando el marcador — a treinta segundos y a mil kilómetros de
+     la causa. */
+  if(q.error) throw new Error('la pregunta en pantalla no casa con ningún nivel');
+  if(q.tipo === 'opcion' || q.tipo === 'multi'){
+    const cuales = bien ? q.buenas : (q.malas.length ? [q.malas[0]] : q.buenas);
+    for(const i of cuales) await p.locator('#xRespuesta .opcion').nth(i).click();
+  } else {
+    await p.fill('#xNum', String(bien ? q.respuesta : q.respuesta + 7));
+  }
+  return q;
+};
+
+/* corre el examen entero contestando bien o mal, y devuelve lo observado */
+const correrExamen = async (p, bien) => {
+  await p.click('#bExamen');
+  await p.waitForTimeout(60);
+  const vistas = [], ordenes = [];
+  const total = Number(await p.locator('#xTotal').textContent());
+  const anchoInicial = await p.evaluate(() => document.querySelector('#xRiel').style.width);
+  for(let i = 0; i < total; i++){
+    const q = await contestar(p, bien);
+    vistas.push(q.n); ordenes.push(q.mismoOrden);
+    if(i < total - 1){ await p.click('#xSiguiente'); await p.waitForTimeout(15); }
+  }
+  const anchoFinal = await p.evaluate(() => document.querySelector('#xRiel').style.width);
+  const durante = await p.evaluate(() => ({
+    veredictos: document.querySelectorAll('#pExamen .veredicto').length,
+    buenasPintadas: document.querySelectorAll('#pExamen .opcion.buena').length,
+    pista: !!document.querySelector('#pExamen #bPista'),
+    manual: !!document.querySelector('#pExamen #bManual'),
+  }));
+  await p.click('#xEntregar');
+  await p.waitForTimeout(80);
+  return { total, vistas, ordenes, anchoInicial, anchoFinal, durante,
+           puntos: await p.locator('#xMarcador .puntos').textContent(),
+           sello:  await p.locator('#xMarcador .sello').textContent() };
+};
+
+{
+  const p = await abrir(900, 1200);
+  await entrar(p);
+  const a = await correrExamen(p, true);
+
+  ok('el simulacro saca 40 preguntas', a.total === 40, String(a.total));
+  ok('sin repetir ninguna', new Set(a.vistas).size === a.total,
+     'distintas: ' + new Set(a.vistas).size);
+  ok('la barra arranca en cero y acaba llena',
+     a.anchoInicial === '0%' && a.anchoFinal === '100%', a.anchoInicial + ' → ' + a.anchoFinal);
+
+  /* LA QUE IMPORTA */
+  ok('contestando por el TEXTO correcto, la calificación es 100 %',
+     a.puntos.trim() === '100%', a.puntos);
+  ok('y dice que habría aprobado', /aprobado/i.test(a.sello), a.sello);
+
+  ok('las opciones se barajan de verdad',
+     a.ordenes.filter(x => x === false).length >= 5,
+     'con el orden original: ' + a.ordenes.filter(x => x === true).length + ' de ' +
+     a.ordenes.filter(x => x !== null).length);
+
+  ok('durante el examen no se dice ni un veredicto', a.durante.veredictos === 0, String(a.durante.veredictos));
+  ok('ni se pinta la opción buena', a.durante.buenasPintadas === 0, String(a.durante.buenasPintadas));
+  ok('ni hay pistas ni paso a paso', !a.durante.pista && !a.durante.manual);
+  ok('sin errores de JavaScript', p.__errores.length === 0, p.__errores[0]);
+  await p.context().close();
+}
+
+/* ── el reverso: todo mal tiene que dar cero, y abrir el repaso ─────── */
+{
+  const p = await abrir(900, 1200);
+  await entrar(p);
+  const b = await correrExamen(p, false);
+  ok('contestando todo mal, la calificación es 0 %', b.puntos.trim() === '0%', b.puntos);
+  ok('y dice que todavía no', /todavía no/i.test(b.sello), b.sello);
+  ok('el repaso ofrece los 40 fallos',
+     /40 fallos/.test(await p.locator('#xRepasar').textContent()),
+     await p.locator('#xRepasar').textContent());
+
+  /* «volver a presentarlo después con las ayudas», que es lo que se pidió */
+  await p.click('#xRepasar');
+  await p.waitForTimeout(60);
+  ok('repasar lleva a la pantalla de práctica', await p.locator('#pNivel').isVisible());
+  ok('y ahí sí hay pistas', await p.locator('#bPista').isVisible());
+  ok('y paso a paso', await p.locator('#bManual').isVisible());
+  await p.context().close();
+}
+
+/* ── que el orden de las preguntas cambie de una vez a otra ─────────── */
+{
+  const p = await abrir(900, 1200);
+  await entrar(p);
+  const uno = await correrExamen(p, true);
+  await p.click('#xOtraVez');
+  await p.waitForTimeout(60);
+  const dos = [];
+  for(let i = 0; i < 8; i++){
+    dos.push((await leerPregunta(p)).n);
+    await p.click('#xSiguiente'); await p.waitForTimeout(15);
+  }
+  ok('dos exámenes seguidos no traen las preguntas en el mismo orden',
+     uno.vistas.slice(0,8).join(',') !== dos.join(','),
+     uno.vistas.slice(0,8).join(',') + ' vs ' + dos.join(','));
+  await p.context().close();
+}
+
 await nav.close();
 console.log('\n' + (mal ? '✗ ' : '✓ ') + bien + '/' + (bien + mal) + ' pruebas de la app de entrenamiento');
 process.exit(mal ? 1 : 0);

@@ -29,7 +29,7 @@ var BLOQUES = [
   { n:6, nombre:'Herramientas y cierre' }
 ];
 
-var E = { nombre:'', puesto:'', hechos:[], folio:'', fecha:'', pistasUsadas:{}, manuales:{} };
+var E = { nombre:'', puesto:'', hechos:[], folio:'', fecha:'', pistasUsadas:{}, manuales:{}, examenes:[] };
 var actual = null, seleccion = [], resuelto = false, pistasVistas = 0;
 var guardaSirve = true;
 
@@ -121,6 +121,7 @@ function pintarMapa(){
   });
 
   $('#bCertificados').hidden = (n < TOTAL);
+  pintarResultadoHistoria();
 }
 function proximo(){
   for(var i = 1; i <= TOTAL; i++) if(!hecho(i)) return i;
@@ -393,6 +394,277 @@ $('#fEntrar').addEventListener('submit', function(ev){
   guardar();
   pintarMapa(); ver('#pMapa');
 });
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EL SIMULACRO DE EXAMEN
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos, e261: barra que se llena conforme contestas, el orden de a/b/c/d
+   cambiando, las preguntas en orden aleatorio, sin decir nada hasta el final,
+   y poder repasarlo después con las ayudas.
+
+   ── LAS TRES REGLAS QUE HACEN QUE ESTO MIDA ALGO ───────────────────────
+   1 · AQUÍ NO SE DICE NADA. Ni «correcto», ni un color, ni una casilla verde
+       en el índice. En cuanto la pantalla te dice si acertaste, deja de medir
+       lo que sabes y pasa a medir lo que puedes corregir mirando. La práctica
+       —los cincuenta niveles— es el sitio de las pistas; esto no.
+   2 · LAS OPCIONES SE BARAJAN Y LA RESPUESTA VIAJA CON ELLAS. Es el punto
+       delicado: si se barajan los textos y se deja `correcta` apuntando al
+       índice viejo, el examen califica mal y NADIE lo nota, porque el número
+       sigue siendo un número válido. Por eso la permutación se guarda entera
+       y la corrección se hace SIEMPRE contra ella, nunca contra el nivel.
+   3 · EL AVANCE SE MIDE POR CONTESTADAS, NO POR VISITADAS. Una barra que se
+       llena al pasar de pregunta miente: dice que vas por la mitad cuando lo
+       único que hiciste fue hojear.
+   ═════════════════════════════════════════════════════════════════════════ */
+var PREGUNTAS_EXAMEN = 40;
+var PASA = 0.65;              /* el corte real del CTFL: 26 de 40 */
+var X = null;                 /* el examen en curso, o null */
+var repasoCola = [];          /* los fallos que se van a repasar, en orden */
+
+function barajar(a){
+  a = a.slice();
+  for(var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+/* Una pregunta del examen: el nivel + su permutación de opciones y la
+   respuesta ya traducida a esa permutación. */
+function prepararPregunta(nivel){
+  var p = { n:nivel.n, tipo:nivel.tipo, respuesta:null };
+  if(nivel.tipo === 'opcion' || nivel.tipo === 'multi'){
+    var orden = barajar(nivel.opciones.map(function(_, i){ return i; }));
+    p.opciones = orden.map(function(i){ return nivel.opciones[i]; });
+    /* `orden[k]` es el índice ORIGINAL que quedó en la posición k. Así que la
+       posición nueva de una respuesta original `o` es `orden.indexOf(o)`. */
+    if(nivel.tipo === 'opcion') p.correctas = [orden.indexOf(nivel.correcta)];
+    else p.correctas = nivel.correctas.map(function(o){ return orden.indexOf(o); }).sort(
+      function(a, b){ return a - b; });
+  }
+  return p;
+}
+
+function arrancarExamen(){
+  var cuantas = Math.min(PREGUNTAS_EXAMEN, TOTAL);
+  var elegidos = barajar(NIVELES).slice(0, cuantas);
+  X = { preguntas: elegidos.map(prepararPregunta), idx:0, desde: Date.now(), tic:null };
+  $('#xTotal').textContent = String(cuantas);
+  X.tic = setInterval(pintarReloj, 1000);
+  pintarReloj();
+  pintarExamen();
+  ver('#pExamen');
+}
+
+function pintarReloj(){
+  if(!X) return;
+  var s = Math.floor((Date.now() - X.desde) / 1000);
+  $('#xReloj').textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+}
+
+function contestadas(){
+  return X.preguntas.filter(function(p){ return p.respuesta !== null; }).length;
+}
+
+function pintarExamen(){
+  var p = X.preguntas[X.idx];
+  var nivel = NIVELES[p.n - 1];
+  var b = BLOQUES.filter(function(x){ return x.n === nivel.bloque; })[0];
+
+  $('#xMigaja').textContent = 'Pregunta ' + (X.idx + 1) + ' de ' + X.preguntas.length
+    + ' · ' + b.nombre;
+  $('#xEnunciado').innerHTML = nivel.enunciado.split('\n\n')
+      .map(function(t){ return '<p>' + t.replace(/\n/g, '<br>') + '</p>'; }).join('');
+
+  var zc = $('#xCodigo'); zc.innerHTML = '';
+  if(nivel.codigo){
+    var caja = crear('div', 'codigo'), ol = crear('ol');
+    nivel.codigo.forEach(function(l){
+      var li = crear('li');
+      var m = /^((?:· )+)(.*)$/.exec(l);
+      if(m){ var sp = crear('span', 'sangria'); sp.textContent = m[1];
+             li.appendChild(sp); li.appendChild(document.createTextNode(m[2])); }
+      else li.textContent = l;
+      ol.appendChild(li);
+    });
+    caja.appendChild(ol); zc.appendChild(caja);
+  }
+
+  var z = $('#xRespuesta'); z.innerHTML = '';
+  if(p.tipo === 'opcion' || p.tipo === 'multi'){
+    var cont = crear('div', 'opciones');
+    cont.setAttribute('role', p.tipo === 'opcion' ? 'radiogroup' : 'group');
+    p.opciones.forEach(function(txt, i){
+      var bt = crear('button', 'opcion');
+      bt.type = 'button';
+      var mk = crear('span', 'marca');
+      mk.textContent = p.tipo === 'opcion' ? 'abcdefgh'[i].toUpperCase() : '';
+      bt.appendChild(mk);
+      var tx = crear('span'); tx.innerHTML = txt; bt.appendChild(tx);
+      bt.addEventListener('click', function(){
+        var sel = p.respuesta ? p.respuesta.slice() : [];
+        if(p.tipo === 'opcion') sel = [i];
+        else { var k = sel.indexOf(i); if(k >= 0) sel.splice(k, 1); else sel.push(i); }
+        p.respuesta = sel.length ? sel : null;
+        pintarSeleccionX();
+        pintarAvanceX();
+      });
+      cont.appendChild(bt);
+    });
+    z.appendChild(cont);
+    pintarSeleccionX();
+  } else {
+    var etq = crear('label', 'campo');
+    var sp2 = crear('span');
+    sp2.textContent = p.tipo === 'linea' ? 'Número de línea'
+      : 'Tu respuesta' + (nivel.unidad ? ' (en ' + nivel.unidad + ', sólo el número)' : '');
+    var inp = crear('input'); inp.type = 'number'; inp.id = 'xNum';
+    inp.setAttribute('inputmode', 'numeric');
+    inp.value = (p.respuesta === null || p.respuesta === undefined) ? '' : p.respuesta;
+    inp.addEventListener('input', function(){
+      p.respuesta = inp.value === '' ? null : Number(inp.value);
+      pintarAvanceX();
+    });
+    etq.appendChild(sp2); etq.appendChild(inp);
+    z.appendChild(etq);
+  }
+
+  $('#xAnterior').disabled = X.idx === 0;
+  $('#xSiguiente').disabled = X.idx >= X.preguntas.length - 1;
+  pintarAvanceX();
+  pintarIndiceX();
+  window.scrollTo(0, 0);
+}
+
+function pintarSeleccionX(){
+  var p = X.preguntas[X.idx];
+  var sel = p.respuesta || [];
+  var bs = document.querySelectorAll('#xRespuesta .opcion');
+  for(var i = 0; i < bs.length; i++){
+    bs[i].classList.toggle('sel', sel.indexOf(i) >= 0);
+    bs[i].setAttribute('aria-pressed', sel.indexOf(i) >= 0 ? 'true' : 'false');
+  }
+}
+
+function pintarAvanceX(){
+  var c = contestadas();
+  $('#xContadas').textContent = String(c);
+  $('#xRiel').style.width = Math.round(c * 100 / X.preguntas.length) + '%';
+  $('#xEntregar').textContent = c === X.preguntas.length
+    ? 'Entregar el examen' : 'Entregar así (' + (X.preguntas.length - c) + ' sin contestar)';
+  pintarIndiceX();
+}
+
+function pintarIndiceX(){
+  var z = $('#xIndice'); z.innerHTML = '';
+  X.preguntas.forEach(function(p, i){
+    var bt = crear('button');
+    bt.type = 'button';
+    bt.textContent = String(i + 1);
+    if(p.respuesta !== null && p.respuesta !== undefined) bt.classList.add('contestada');
+    if(i === X.idx) bt.classList.add('aqui');
+    bt.setAttribute('aria-label', 'Pregunta ' + (i + 1)
+      + (p.respuesta !== null && p.respuesta !== undefined ? ', contestada' : ', sin contestar'));
+    bt.addEventListener('click', function(){ X.idx = i; pintarExamen(); });
+    z.appendChild(bt);
+  });
+}
+
+function aciertaX(p){
+  var nivel = NIVELES[p.n - 1];
+  if(p.respuesta === null || p.respuesta === undefined) return false;
+  if(p.tipo === 'opcion' || p.tipo === 'multi'){
+    var a = p.respuesta.slice().sort(function(x, y){ return x - y; }).join(',');
+    return a === p.correctas.join(',');
+  }
+  return Number(p.respuesta) === nivel.respuesta;
+}
+
+function entregar(){
+  var faltan = X.preguntas.length - contestadas();
+  if(faltan > 0 && !confirm('Te quedan ' + faltan + ' sin contestar y cuentan como falladas. ¿Entregas así?')) return;
+  clearInterval(X.tic);
+
+  var buenas = X.preguntas.filter(aciertaX).length;
+  var total = X.preguntas.length;
+  var pasa = buenas / total >= PASA;
+  var segundos = Math.floor((Date.now() - X.desde) / 1000);
+
+  if(!E.examenes) E.examenes = [];
+  E.examenes.push({ fecha:hoyISO(), buenas:buenas, total:total, pasa:pasa, segundos:segundos });
+  guardar();
+
+  var m = $('#xMarcador');
+  m.innerHTML = '';
+  var pt = crear('div', 'puntos'); pt.textContent = Math.round(buenas * 100 / total) + '%';
+  var de = crear('div', 'de'); de.textContent = buenas + ' de ' + total + ' · ' +
+    Math.floor(segundos / 60) + ' min ' + (segundos % 60) + ' s';
+  var se = crear('div', 'sello ' + (pasa ? 'pasa' : 'no'));
+  se.textContent = pasa ? 'Habrías aprobado' : 'Todavía no';
+  var nota = crear('p');
+  nota.textContent = pasa
+    ? 'El corte del examen real es 65 %. Con este resultado lo pasarías — pero cada simulacro saca 40 de las 50, así que repítelo hasta que te salga tres veces seguidas.'
+    : 'El corte del examen real es 65 %, o sea 26 de 40. Abajo está exactamente qué fallaste, y el botón te lleva a repasarlo con pistas y paso a paso.';
+  m.appendChild(pt); m.appendChild(de); m.appendChild(se); m.appendChild(nota);
+
+  var z = $('#xRepaso'); z.innerHTML = '';
+  var h = crear('h3'); h.textContent = 'Pregunta por pregunta';
+  h.style.margin = '0 0 8px'; z.appendChild(h);
+  X.preguntas.forEach(function(p, i){
+    var nivel = NIVELES[p.n - 1];
+    var bien = aciertaX(p);
+    var fila = crear('div', 'repaso-fila');
+    var se2 = crear('div', 'señal ' + (bien ? 'si' : 'no'));
+    se2.textContent = bien ? '✓' : '✗';
+    var q = crear('div', 'qué');
+    var b1 = crear('b'); b1.textContent = (i + 1) + ' · ' + nivel.titulo;
+    var s1 = crear('span');
+    s1.textContent = 'Nivel ' + nivel.n +
+      (p.respuesta === null || p.respuesta === undefined ? ' · la dejaste en blanco' : '');
+    q.appendChild(b1); q.appendChild(s1);
+    fila.appendChild(se2); fila.appendChild(q);
+    z.appendChild(fila);
+  });
+
+  repasoCola = X.preguntas.filter(function(p){ return !aciertaX(p); })
+                          .map(function(p){ return p.n; });
+  $('#xRepasar').hidden = repasoCola.length === 0;
+  $('#xRepasar').textContent = 'Repasar los ' + repasoCola.length +
+    (repasoCola.length === 1 ? ' fallo' : ' fallos') + ' con las ayudas';
+  X = null;
+  ver('#pResultado');
+}
+
+/* ── el repaso: los fallos, uno detrás de otro, en la pantalla de práctica
+   con TODAS las ayudas — que es lo que pidió Carlos y lo que sirve. ── */
+function siguienteDelRepaso(){
+  if(!repasoCola.length){ pintarResultadoHistoria(); ver('#pResultado'); return; }
+  abrirNivel(repasoCola.shift());
+}
+
+function pintarResultadoHistoria(){
+  if(!E.examenes || !E.examenes.length){ $('#xHistoria').textContent = ''; return; }
+  var u = E.examenes[E.examenes.length - 1];
+  var mejores = E.examenes.filter(function(x){ return x.pasa; }).length;
+  $('#xHistoria').textContent = 'Lo has presentado ' + E.examenes.length +
+    (E.examenes.length === 1 ? ' vez' : ' veces') + ' · último: ' +
+    Math.round(u.buenas * 100 / u.total) + ' % · aprobados: ' + mejores;
+}
+
+$('#bExamen').addEventListener('click', arrancarExamen);
+$('#xAnterior').addEventListener('click', function(){ if(X.idx > 0){ X.idx--; pintarExamen(); } });
+$('#xSiguiente').addEventListener('click', function(){
+  if(X.idx < X.preguntas.length - 1){ X.idx++; pintarExamen(); } });
+$('#xEntregar').addEventListener('click', entregar);
+$('#xAbandonar').addEventListener('click', function(){
+  if(!confirm('Se pierde lo contestado y no se guarda ningún resultado. ¿Sales?')) return;
+  clearInterval(X.tic); X = null; pintarMapa(); ver('#pMapa');
+});
+$('#xRepasar').addEventListener('click', siguienteDelRepaso);
+$('#xOtraVez').addEventListener('click', arrancarExamen);
+$('#xAlMapa').addEventListener('click', function(){ pintarMapa(); ver('#pMapa'); });
+
 $('#bSalir').addEventListener('click', function(){
   pintarMapa();
   ver(E.hechos.length ? '#pMapa' : '#pPortada');
@@ -402,6 +674,10 @@ $('#bPista').addEventListener('click', pedirPista);
 $('#bManual').addEventListener('click', verManual);
 $('#bVolver').addEventListener('click', function(){ pintarMapa(); ver('#pMapa'); });
 $('#bSiguiente').addEventListener('click', function(){
+  /* Si venimos de un examen, «Siguiente» sigue la cola de fallos y no el orden
+     de los niveles: encadenar el repaso con el nivel 27 porque el fallo era el
+     26 manda a estudiar lo que sí sabías. */
+  if(repasoCola.length || $('#bVolver').dataset.repaso){ siguienteDelRepaso(); return; }
   if(actual.n < TOTAL){ abrirNivel(actual.n + 1); return; }
   if(E.hechos.length >= TOTAL) pintarDiplomas();
   else { pintarMapa(); ver('#pMapa'); }
@@ -412,6 +688,7 @@ $('#bImprimir').addEventListener('click', function(){ window.print(); });
 $('#bReiniciar').addEventListener('click', function(){
   if(!confirm('Se borra tu avance de los cincuenta niveles y no se puede deshacer. ¿Seguro?')) return;
   E.hechos = []; E.pistasUsadas = {}; E.manuales = {}; E.folio = ''; E.fecha = '';
+  E.examenes = [];
   guardar(); pintarMapa();
 });
 

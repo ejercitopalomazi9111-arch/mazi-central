@@ -213,6 +213,61 @@ input::placeholder{ color:#6D6080 }
   h1{ font-size:38px }
   .envoltura{ padding:0 24px }
 }
+/* ══ EL SIMULACRO DE EXAMEN ═════════════════════════════════════════════ */
+.tarjeta-examen{ border:1px solid var(--linea); border-radius:var(--radio);
+  background:var(--panel); padding:20px; margin-top:28px }
+.tarjeta-examen h3{ margin:0 0 8px; font-size:18px }
+.tarjeta-examen p{ margin:0 0 14px; font-size:15px }
+.tarjeta-examen .nota{ font-size:14px; color:var(--tenue) }
+
+/* ⚠ EL RELOJ CUENTA, PERO NO CORRE HACIA NINGÚN LADO. Es tiempo transcurrido,
+   no cuenta atrás: el examen real da tiempo de sobra y una cuenta atrás aquí
+   sólo enseñaría a tener prisa. Va en cifras tabulares porque si no, el ancho
+   baila con cada segundo y el renglón entero se mueve. */
+.reloj{ font-family:var(--mono); font-variant-numeric:tabular-nums }
+
+/* El índice de preguntas: dónde estás y qué te falta, de un vistazo. */
+.rejilla-x{ display:grid; grid-template-columns:repeat(auto-fill,minmax(40px,1fr));
+  gap:6px; margin-top:20px }
+/* ⚠ LA DIFERENCIA ENTRE CONTESTADA Y NO ESTÁ EN EL NÚMERO, NO EN EL FONDO.
+   Antes eran `--panel` contra `--panel-alto`: nueve puntos de luminancia entre
+   los dos, invisibles en una pantalla al sol y en la miniatura de una captura.
+   Y el índice existe justo para ver de un golpe qué falta — si hay que
+   entrecerrar los ojos para distinguirlo, no sirve para nada.
+   La cifra apagada dice «sin contestar» y la encendida «hecha». Las dos pasan
+   el contraste: 6.9:1 la apagada, 12.8:1 la encendida. */
+.rejilla-x button{ min-height:44px; border-radius:10px; border:1px solid var(--linea);
+  background:var(--panel); color:var(--tenue); font:400 14px/1 var(--ui); cursor:pointer;
+  -webkit-tap-highlight-color:transparent }
+.rejilla-x button.contestada{ background:var(--panel-alto); border-color:var(--tenue);
+  color:var(--hueso); font-weight:700 }
+.rejilla-x button.aqui{ border-color:var(--violeta); box-shadow:0 0 0 2px rgba(173,33,237,.35) }
+
+/* ⚠ NI UN COLOR DE ACIERTO NI DE ERROR EN ESTA PANTALLA. Durante el examen no
+   se sabe nada: si el índice pintara de verde lo acertado, el examen dejaría
+   de medir lo que sabes y pasaría a medir lo que puedes corregir mirando. */
+
+.marcador{ border:1px solid var(--linea); border-radius:var(--radio); padding:24px;
+  background:var(--panel); text-align:center; margin-bottom:24px }
+.marcador .puntos{ font:700 clamp(56px,18vw,92px)/1 var(--ui); letter-spacing:-.02em }
+.marcador .de{ font-size:18px; color:var(--tenue); margin-top:2px }
+.marcador .sello{ display:inline-block; margin-top:14px; padding:8px 16px; border-radius:999px;
+  font:600 14px/1 var(--ui); letter-spacing:.06em; text-transform:uppercase }
+.marcador .sello.pasa{ background:rgba(62,213,152,.16); color:var(--ok); border:1px solid var(--ok) }
+.marcador .sello.no{ background:rgba(255,107,135,.14); color:var(--mal); border:1px solid var(--mal) }
+.marcador p{ margin:14px 0 0; font-size:15px; color:var(--tenue) }
+
+.repaso-fila{ display:flex; gap:12px; align-items:flex-start; padding:14px 0;
+  border-bottom:1px solid var(--linea) }
+.repaso-fila:last-child{ border-bottom:0 }
+.repaso-fila .señal{ flex:none; width:26px; height:26px; border-radius:8px;
+  display:grid; place-items:center; font:700 14px/1 var(--ui) }
+.repaso-fila .señal.si{ background:rgba(62,213,152,.16); color:var(--ok) }
+.repaso-fila .señal.no{ background:rgba(255,107,135,.14); color:var(--mal) }
+.repaso-fila .qué{ min-width:0 }
+.repaso-fila .qué b{ display:block; font-size:15px }
+.repaso-fila .qué span{ font-size:13px; color:var(--tenue) }
+
 </style>
 </head>
 <body>
@@ -282,6 +337,20 @@ input::placeholder{ color:#6D6080 }
     <div class="nota" id="mNota"></div>
   </div>
   <div id="mBloques"></div>
+
+  <!-- El examen no se gana: se presenta cuando uno quiera. Bloquearlo hasta
+       los cincuenta niveles convertiría la única medida honesta de si estás
+       listo en un premio por terminar. -->
+  <div class="tarjeta-examen no-imprime">
+    <h3>Simulacro de examen</h3>
+    <p><b>40 preguntas de las 50, en orden distinto cada vez</b>, y con las opciones
+    barajadas. Sin pistas, sin paso a paso y sin decirte si vas bien: igual que el de
+    verdad. Al terminar ves la calificación, qué fallaste, y puedes repasar cada
+    fallo con todas las ayudas.</p>
+    <p class="nota" id="xHistoria"></p>
+    <button class="btn ancho" id="bExamen" type="button">Presentar el simulacro</button>
+  </div>
+
   <button class="btn ancho no-imprime" id="bCertificados" type="button" hidden style="margin-top:24px">Ver mis constancias</button>
   <button class="btn calma ancho chico no-imprime" id="bReiniciar" type="button" style="margin-top:12px">Empezar de cero</button>
 </section>
@@ -307,7 +376,43 @@ input::placeholder{ color:#6D6080 }
   </div>
 </section>
 
-<!-- ── 4 · CONSTANCIAS ──────────────────────────────────────────────────── -->
+<!-- ── 4 · EXAMEN ───────────────────────────────────────────────────────
+     Una pregunta a la vez y NADA de veredicto hasta el final. Es la diferencia
+     entera entre practicar y presentar: si la app te dice «correcto» sobre la
+     marcha, lo que mides ya no es lo que sabes. -->
+<section class="pantalla" id="pExamen">
+  <div class="avance">
+    <div class="riel"><i id="xRiel" style="width:0%"></i></div>
+    <div class="nota"><span id="xContadas">0</span> de <span id="xTotal">40</span> contestadas
+      · <span id="xReloj" class="reloj">0:00</span></div>
+  </div>
+
+  <div class="migaja" id="xMigaja"></div>
+  <div class="enunciado" id="xEnunciado"></div>
+  <div id="xCodigo"></div>
+  <div id="xRespuesta"></div>
+
+  <div class="pie-nav no-imprime">
+    <button class="btn calma" id="xAnterior" type="button">Anterior</button>
+    <button class="btn" id="xSiguiente" type="button">Siguiente</button>
+  </div>
+  <div class="rejilla-x" id="xIndice"></div>
+  <button class="btn calma ancho chico no-imprime" id="xEntregar" type="button" style="margin-top:16px">Entregar el examen</button>
+  <button class="btn calma ancho chico no-imprime" id="xAbandonar" type="button" style="margin-top:10px">Abandonar y volver al mapa</button>
+</section>
+
+<!-- ── 5 · RESULTADO ────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pResultado">
+  <div class="marcador" id="xMarcador"></div>
+  <div id="xRepaso"></div>
+  <div class="acciones no-imprime">
+    <button class="btn" id="xRepasar" type="button">Repasar los fallos con las ayudas</button>
+    <button class="btn calma" id="xOtraVez" type="button">Presentar otro</button>
+    <button class="btn calma" id="xAlMapa" type="button">Al mapa</button>
+  </div>
+</section>
+
+<!-- ── 6 · CONSTANCIAS ──────────────────────────────────────────────────── -->
 <section class="pantalla" id="pFin">
   <h1 class="no-imprime">Terminaste los cincuenta</h1>
   <p class="no-imprime">Aquí están tus dos constancias. El botón las manda a imprimir, y desde
@@ -1076,7 +1181,7 @@ var BLOQUES = [
   { n:6, nombre:'Herramientas y cierre' }
 ];
 
-var E = { nombre:'', puesto:'', hechos:[], folio:'', fecha:'', pistasUsadas:{}, manuales:{} };
+var E = { nombre:'', puesto:'', hechos:[], folio:'', fecha:'', pistasUsadas:{}, manuales:{}, examenes:[] };
 var actual = null, seleccion = [], resuelto = false, pistasVistas = 0;
 var guardaSirve = true;
 
@@ -1168,6 +1273,7 @@ function pintarMapa(){
   });
 
   $('#bCertificados').hidden = (n < TOTAL);
+  pintarResultadoHistoria();
 }
 function proximo(){
   for(var i = 1; i <= TOTAL; i++) if(!hecho(i)) return i;
@@ -1440,6 +1546,277 @@ $('#fEntrar').addEventListener('submit', function(ev){
   guardar();
   pintarMapa(); ver('#pMapa');
 });
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EL SIMULACRO DE EXAMEN
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos, e261: barra que se llena conforme contestas, el orden de a/b/c/d
+   cambiando, las preguntas en orden aleatorio, sin decir nada hasta el final,
+   y poder repasarlo después con las ayudas.
+
+   ── LAS TRES REGLAS QUE HACEN QUE ESTO MIDA ALGO ───────────────────────
+   1 · AQUÍ NO SE DICE NADA. Ni «correcto», ni un color, ni una casilla verde
+       en el índice. En cuanto la pantalla te dice si acertaste, deja de medir
+       lo que sabes y pasa a medir lo que puedes corregir mirando. La práctica
+       —los cincuenta niveles— es el sitio de las pistas; esto no.
+   2 · LAS OPCIONES SE BARAJAN Y LA RESPUESTA VIAJA CON ELLAS. Es el punto
+       delicado: si se barajan los textos y se deja `correcta` apuntando al
+       índice viejo, el examen califica mal y NADIE lo nota, porque el número
+       sigue siendo un número válido. Por eso la permutación se guarda entera
+       y la corrección se hace SIEMPRE contra ella, nunca contra el nivel.
+   3 · EL AVANCE SE MIDE POR CONTESTADAS, NO POR VISITADAS. Una barra que se
+       llena al pasar de pregunta miente: dice que vas por la mitad cuando lo
+       único que hiciste fue hojear.
+   ═════════════════════════════════════════════════════════════════════════ */
+var PREGUNTAS_EXAMEN = 40;
+var PASA = 0.65;              /* el corte real del CTFL: 26 de 40 */
+var X = null;                 /* el examen en curso, o null */
+var repasoCola = [];          /* los fallos que se van a repasar, en orden */
+
+function barajar(a){
+  a = a.slice();
+  for(var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+/* Una pregunta del examen: el nivel + su permutación de opciones y la
+   respuesta ya traducida a esa permutación. */
+function prepararPregunta(nivel){
+  var p = { n:nivel.n, tipo:nivel.tipo, respuesta:null };
+  if(nivel.tipo === 'opcion' || nivel.tipo === 'multi'){
+    var orden = barajar(nivel.opciones.map(function(_, i){ return i; }));
+    p.opciones = orden.map(function(i){ return nivel.opciones[i]; });
+    /* `orden[k]` es el índice ORIGINAL que quedó en la posición k. Así que la
+       posición nueva de una respuesta original `o` es `orden.indexOf(o)`. */
+    if(nivel.tipo === 'opcion') p.correctas = [orden.indexOf(nivel.correcta)];
+    else p.correctas = nivel.correctas.map(function(o){ return orden.indexOf(o); }).sort(
+      function(a, b){ return a - b; });
+  }
+  return p;
+}
+
+function arrancarExamen(){
+  var cuantas = Math.min(PREGUNTAS_EXAMEN, TOTAL);
+  var elegidos = barajar(NIVELES).slice(0, cuantas);
+  X = { preguntas: elegidos.map(prepararPregunta), idx:0, desde: Date.now(), tic:null };
+  $('#xTotal').textContent = String(cuantas);
+  X.tic = setInterval(pintarReloj, 1000);
+  pintarReloj();
+  pintarExamen();
+  ver('#pExamen');
+}
+
+function pintarReloj(){
+  if(!X) return;
+  var s = Math.floor((Date.now() - X.desde) / 1000);
+  $('#xReloj').textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+}
+
+function contestadas(){
+  return X.preguntas.filter(function(p){ return p.respuesta !== null; }).length;
+}
+
+function pintarExamen(){
+  var p = X.preguntas[X.idx];
+  var nivel = NIVELES[p.n - 1];
+  var b = BLOQUES.filter(function(x){ return x.n === nivel.bloque; })[0];
+
+  $('#xMigaja').textContent = 'Pregunta ' + (X.idx + 1) + ' de ' + X.preguntas.length
+    + ' · ' + b.nombre;
+  $('#xEnunciado').innerHTML = nivel.enunciado.split('\n\n')
+      .map(function(t){ return '<p>' + t.replace(/\n/g, '<br>') + '</p>'; }).join('');
+
+  var zc = $('#xCodigo'); zc.innerHTML = '';
+  if(nivel.codigo){
+    var caja = crear('div', 'codigo'), ol = crear('ol');
+    nivel.codigo.forEach(function(l){
+      var li = crear('li');
+      var m = /^((?:· )+)(.*)$/.exec(l);
+      if(m){ var sp = crear('span', 'sangria'); sp.textContent = m[1];
+             li.appendChild(sp); li.appendChild(document.createTextNode(m[2])); }
+      else li.textContent = l;
+      ol.appendChild(li);
+    });
+    caja.appendChild(ol); zc.appendChild(caja);
+  }
+
+  var z = $('#xRespuesta'); z.innerHTML = '';
+  if(p.tipo === 'opcion' || p.tipo === 'multi'){
+    var cont = crear('div', 'opciones');
+    cont.setAttribute('role', p.tipo === 'opcion' ? 'radiogroup' : 'group');
+    p.opciones.forEach(function(txt, i){
+      var bt = crear('button', 'opcion');
+      bt.type = 'button';
+      var mk = crear('span', 'marca');
+      mk.textContent = p.tipo === 'opcion' ? 'abcdefgh'[i].toUpperCase() : '';
+      bt.appendChild(mk);
+      var tx = crear('span'); tx.innerHTML = txt; bt.appendChild(tx);
+      bt.addEventListener('click', function(){
+        var sel = p.respuesta ? p.respuesta.slice() : [];
+        if(p.tipo === 'opcion') sel = [i];
+        else { var k = sel.indexOf(i); if(k >= 0) sel.splice(k, 1); else sel.push(i); }
+        p.respuesta = sel.length ? sel : null;
+        pintarSeleccionX();
+        pintarAvanceX();
+      });
+      cont.appendChild(bt);
+    });
+    z.appendChild(cont);
+    pintarSeleccionX();
+  } else {
+    var etq = crear('label', 'campo');
+    var sp2 = crear('span');
+    sp2.textContent = p.tipo === 'linea' ? 'Número de línea'
+      : 'Tu respuesta' + (nivel.unidad ? ' (en ' + nivel.unidad + ', sólo el número)' : '');
+    var inp = crear('input'); inp.type = 'number'; inp.id = 'xNum';
+    inp.setAttribute('inputmode', 'numeric');
+    inp.value = (p.respuesta === null || p.respuesta === undefined) ? '' : p.respuesta;
+    inp.addEventListener('input', function(){
+      p.respuesta = inp.value === '' ? null : Number(inp.value);
+      pintarAvanceX();
+    });
+    etq.appendChild(sp2); etq.appendChild(inp);
+    z.appendChild(etq);
+  }
+
+  $('#xAnterior').disabled = X.idx === 0;
+  $('#xSiguiente').disabled = X.idx >= X.preguntas.length - 1;
+  pintarAvanceX();
+  pintarIndiceX();
+  window.scrollTo(0, 0);
+}
+
+function pintarSeleccionX(){
+  var p = X.preguntas[X.idx];
+  var sel = p.respuesta || [];
+  var bs = document.querySelectorAll('#xRespuesta .opcion');
+  for(var i = 0; i < bs.length; i++){
+    bs[i].classList.toggle('sel', sel.indexOf(i) >= 0);
+    bs[i].setAttribute('aria-pressed', sel.indexOf(i) >= 0 ? 'true' : 'false');
+  }
+}
+
+function pintarAvanceX(){
+  var c = contestadas();
+  $('#xContadas').textContent = String(c);
+  $('#xRiel').style.width = Math.round(c * 100 / X.preguntas.length) + '%';
+  $('#xEntregar').textContent = c === X.preguntas.length
+    ? 'Entregar el examen' : 'Entregar así (' + (X.preguntas.length - c) + ' sin contestar)';
+  pintarIndiceX();
+}
+
+function pintarIndiceX(){
+  var z = $('#xIndice'); z.innerHTML = '';
+  X.preguntas.forEach(function(p, i){
+    var bt = crear('button');
+    bt.type = 'button';
+    bt.textContent = String(i + 1);
+    if(p.respuesta !== null && p.respuesta !== undefined) bt.classList.add('contestada');
+    if(i === X.idx) bt.classList.add('aqui');
+    bt.setAttribute('aria-label', 'Pregunta ' + (i + 1)
+      + (p.respuesta !== null && p.respuesta !== undefined ? ', contestada' : ', sin contestar'));
+    bt.addEventListener('click', function(){ X.idx = i; pintarExamen(); });
+    z.appendChild(bt);
+  });
+}
+
+function aciertaX(p){
+  var nivel = NIVELES[p.n - 1];
+  if(p.respuesta === null || p.respuesta === undefined) return false;
+  if(p.tipo === 'opcion' || p.tipo === 'multi'){
+    var a = p.respuesta.slice().sort(function(x, y){ return x - y; }).join(',');
+    return a === p.correctas.join(',');
+  }
+  return Number(p.respuesta) === nivel.respuesta;
+}
+
+function entregar(){
+  var faltan = X.preguntas.length - contestadas();
+  if(faltan > 0 && !confirm('Te quedan ' + faltan + ' sin contestar y cuentan como falladas. ¿Entregas así?')) return;
+  clearInterval(X.tic);
+
+  var buenas = X.preguntas.filter(aciertaX).length;
+  var total = X.preguntas.length;
+  var pasa = buenas / total >= PASA;
+  var segundos = Math.floor((Date.now() - X.desde) / 1000);
+
+  if(!E.examenes) E.examenes = [];
+  E.examenes.push({ fecha:hoyISO(), buenas:buenas, total:total, pasa:pasa, segundos:segundos });
+  guardar();
+
+  var m = $('#xMarcador');
+  m.innerHTML = '';
+  var pt = crear('div', 'puntos'); pt.textContent = Math.round(buenas * 100 / total) + '%';
+  var de = crear('div', 'de'); de.textContent = buenas + ' de ' + total + ' · ' +
+    Math.floor(segundos / 60) + ' min ' + (segundos % 60) + ' s';
+  var se = crear('div', 'sello ' + (pasa ? 'pasa' : 'no'));
+  se.textContent = pasa ? 'Habrías aprobado' : 'Todavía no';
+  var nota = crear('p');
+  nota.textContent = pasa
+    ? 'El corte del examen real es 65 %. Con este resultado lo pasarías — pero cada simulacro saca 40 de las 50, así que repítelo hasta que te salga tres veces seguidas.'
+    : 'El corte del examen real es 65 %, o sea 26 de 40. Abajo está exactamente qué fallaste, y el botón te lleva a repasarlo con pistas y paso a paso.';
+  m.appendChild(pt); m.appendChild(de); m.appendChild(se); m.appendChild(nota);
+
+  var z = $('#xRepaso'); z.innerHTML = '';
+  var h = crear('h3'); h.textContent = 'Pregunta por pregunta';
+  h.style.margin = '0 0 8px'; z.appendChild(h);
+  X.preguntas.forEach(function(p, i){
+    var nivel = NIVELES[p.n - 1];
+    var bien = aciertaX(p);
+    var fila = crear('div', 'repaso-fila');
+    var se2 = crear('div', 'señal ' + (bien ? 'si' : 'no'));
+    se2.textContent = bien ? '✓' : '✗';
+    var q = crear('div', 'qué');
+    var b1 = crear('b'); b1.textContent = (i + 1) + ' · ' + nivel.titulo;
+    var s1 = crear('span');
+    s1.textContent = 'Nivel ' + nivel.n +
+      (p.respuesta === null || p.respuesta === undefined ? ' · la dejaste en blanco' : '');
+    q.appendChild(b1); q.appendChild(s1);
+    fila.appendChild(se2); fila.appendChild(q);
+    z.appendChild(fila);
+  });
+
+  repasoCola = X.preguntas.filter(function(p){ return !aciertaX(p); })
+                          .map(function(p){ return p.n; });
+  $('#xRepasar').hidden = repasoCola.length === 0;
+  $('#xRepasar').textContent = 'Repasar los ' + repasoCola.length +
+    (repasoCola.length === 1 ? ' fallo' : ' fallos') + ' con las ayudas';
+  X = null;
+  ver('#pResultado');
+}
+
+/* ── el repaso: los fallos, uno detrás de otro, en la pantalla de práctica
+   con TODAS las ayudas — que es lo que pidió Carlos y lo que sirve. ── */
+function siguienteDelRepaso(){
+  if(!repasoCola.length){ pintarResultadoHistoria(); ver('#pResultado'); return; }
+  abrirNivel(repasoCola.shift());
+}
+
+function pintarResultadoHistoria(){
+  if(!E.examenes || !E.examenes.length){ $('#xHistoria').textContent = ''; return; }
+  var u = E.examenes[E.examenes.length - 1];
+  var mejores = E.examenes.filter(function(x){ return x.pasa; }).length;
+  $('#xHistoria').textContent = 'Lo has presentado ' + E.examenes.length +
+    (E.examenes.length === 1 ? ' vez' : ' veces') + ' · último: ' +
+    Math.round(u.buenas * 100 / u.total) + ' % · aprobados: ' + mejores;
+}
+
+$('#bExamen').addEventListener('click', arrancarExamen);
+$('#xAnterior').addEventListener('click', function(){ if(X.idx > 0){ X.idx--; pintarExamen(); } });
+$('#xSiguiente').addEventListener('click', function(){
+  if(X.idx < X.preguntas.length - 1){ X.idx++; pintarExamen(); } });
+$('#xEntregar').addEventListener('click', entregar);
+$('#xAbandonar').addEventListener('click', function(){
+  if(!confirm('Se pierde lo contestado y no se guarda ningún resultado. ¿Sales?')) return;
+  clearInterval(X.tic); X = null; pintarMapa(); ver('#pMapa');
+});
+$('#xRepasar').addEventListener('click', siguienteDelRepaso);
+$('#xOtraVez').addEventListener('click', arrancarExamen);
+$('#xAlMapa').addEventListener('click', function(){ pintarMapa(); ver('#pMapa'); });
+
 $('#bSalir').addEventListener('click', function(){
   pintarMapa();
   ver(E.hechos.length ? '#pMapa' : '#pPortada');
@@ -1449,6 +1826,10 @@ $('#bPista').addEventListener('click', pedirPista);
 $('#bManual').addEventListener('click', verManual);
 $('#bVolver').addEventListener('click', function(){ pintarMapa(); ver('#pMapa'); });
 $('#bSiguiente').addEventListener('click', function(){
+  /* Si venimos de un examen, «Siguiente» sigue la cola de fallos y no el orden
+     de los niveles: encadenar el repaso con el nivel 27 porque el fallo era el
+     26 manda a estudiar lo que sí sabías. */
+  if(repasoCola.length || $('#bVolver').dataset.repaso){ siguienteDelRepaso(); return; }
   if(actual.n < TOTAL){ abrirNivel(actual.n + 1); return; }
   if(E.hechos.length >= TOTAL) pintarDiplomas();
   else { pintarMapa(); ver('#pMapa'); }
@@ -1459,6 +1840,7 @@ $('#bImprimir').addEventListener('click', function(){ window.print(); });
 $('#bReiniciar').addEventListener('click', function(){
   if(!confirm('Se borra tu avance de los cincuenta niveles y no se puede deshacer. ¿Seguro?')) return;
   E.hechos = []; E.pistasUsadas = {}; E.manuales = {}; E.folio = ''; E.fecha = '';
+  E.examenes = [];
   guardar(); pintarMapa();
 });
 

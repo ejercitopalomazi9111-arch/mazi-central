@@ -44,6 +44,20 @@
     <div class="nota" id="mNota"></div>
   </div>
   <div id="mBloques"></div>
+
+  <!-- El examen no se gana: se presenta cuando uno quiera. Bloquearlo hasta
+       los cincuenta niveles convertiría la única medida honesta de si estás
+       listo en un premio por terminar. -->
+  <div class="tarjeta-examen no-imprime">
+    <h3>Simulacro de examen</h3>
+    <p><b>40 preguntas de las 50, en orden distinto cada vez</b>, y con las opciones
+    barajadas. Sin pistas, sin paso a paso y sin decirte si vas bien: igual que el de
+    verdad. Al terminar ves la calificación, qué fallaste, y puedes repasar cada
+    fallo con todas las ayudas.</p>
+    <p class="nota" id="xHistoria"></p>
+    <button class="btn ancho" id="bExamen" type="button">Presentar el simulacro</button>
+  </div>
+
   <button class="btn ancho no-imprime" id="bCertificados" type="button" hidden style="margin-top:24px">Ver mis constancias</button>
   <button class="btn calma ancho chico no-imprime" id="bReiniciar" type="button" style="margin-top:12px">Empezar de cero</button>
 </section>
@@ -69,7 +83,43 @@
   </div>
 </section>
 
-<!-- ── 4 · CONSTANCIAS ──────────────────────────────────────────────────── -->
+<!-- ── 4 · EXAMEN ───────────────────────────────────────────────────────
+     Una pregunta a la vez y NADA de veredicto hasta el final. Es la diferencia
+     entera entre practicar y presentar: si la app te dice «correcto» sobre la
+     marcha, lo que mides ya no es lo que sabes. -->
+<section class="pantalla" id="pExamen">
+  <div class="avance">
+    <div class="riel"><i id="xRiel" style="width:0%"></i></div>
+    <div class="nota"><span id="xContadas">0</span> de <span id="xTotal">40</span> contestadas
+      · <span id="xReloj" class="reloj">0:00</span></div>
+  </div>
+
+  <div class="migaja" id="xMigaja"></div>
+  <div class="enunciado" id="xEnunciado"></div>
+  <div id="xCodigo"></div>
+  <div id="xRespuesta"></div>
+
+  <div class="pie-nav no-imprime">
+    <button class="btn calma" id="xAnterior" type="button">Anterior</button>
+    <button class="btn" id="xSiguiente" type="button">Siguiente</button>
+  </div>
+  <div class="rejilla-x" id="xIndice"></div>
+  <button class="btn calma ancho chico no-imprime" id="xEntregar" type="button" style="margin-top:16px">Entregar el examen</button>
+  <button class="btn calma ancho chico no-imprime" id="xAbandonar" type="button" style="margin-top:10px">Abandonar y volver al mapa</button>
+</section>
+
+<!-- ── 5 · RESULTADO ────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pResultado">
+  <div class="marcador" id="xMarcador"></div>
+  <div id="xRepaso"></div>
+  <div class="acciones no-imprime">
+    <button class="btn" id="xRepasar" type="button">Repasar los fallos con las ayudas</button>
+    <button class="btn calma" id="xOtraVez" type="button">Presentar otro</button>
+    <button class="btn calma" id="xAlMapa" type="button">Al mapa</button>
+  </div>
+</section>
+
+<!-- ── 6 · CONSTANCIAS ──────────────────────────────────────────────────── -->
 <section class="pantalla" id="pFin">
   <h1 class="no-imprime">Terminaste los cincuenta</h1>
   <p class="no-imprime">Aquí están tus dos constancias. El botón las manda a imprimir, y desde
