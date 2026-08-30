@@ -1,0 +1,177 @@
+{
+  "area": "navegacion",
+  "nombre": "Navegación: encontrar y no perderse",
+  "que": "Menús, etiquetas y orientación. Casi todo lo que falla aquí falla porque no se ve, no porque no exista.",
+  "neuronas": [
+    {
+      "id": "lo-escondido-se-usa-menos",
+      "titulo": "La navegación cabe porque está escondida, y por eso se usa menos",
+      "gravedad": "alta",
+      "sintoma": "La gente entra, ve una pantalla y se va sin visitar nada más.",
+      "causa": "Los destinos están detrás de un menú que hay que abrir. Lo que no se ve no se considera.",
+      "porque": "Esconder resuelve el problema de espacio de un plumazo y la pantalla queda limpia, que es lo que se aprueba en la maqueta.",
+      "arreglo": "Dejar a la vista los pocos destinos que de verdad importan y esconder el resto, no al revés. Y si hay que esconder, que se note que hay más.",
+      "comoCazarlo": "Comparar cuántos destinos se ven sin tocar nada, en teléfono y en escritorio. Si en teléfono es cero, se está pagando ese costo.",
+      "consejo": "Además de la visita, se pierde el vistazo: ver la navegación es ver de qué va el sitio.",
+      "senales": [
+        "nadie entra a las otras secciones",
+        "no encuentran esa página",
+        "sólo ven la portada"
+      ],
+      "salioDe": "NN/g, «Supporting Mobile Navigation in Spite of a Hamburger Menu»: esconder sube el costo de interacción y reduce el movimiento por el sitio."
+    },
+    {
+      "id": "la-palabra-menu-frente-al-icono",
+      "titulo": "El icono de tres rayas se entiende menos que la palabra",
+      "gravedad": "baja",
+      "sintoma": "Gente que no encuentra la navegación aunque está ahí.",
+      "causa": "El icono solo depende de que ya se conozca la convención, y no todo el público la tiene.",
+      "porque": "El icono es más limpio y ya es un estándar entre quienes diseñan, que no son el público.",
+      "arreglo": "Poner la palabra, o el icono con la palabra. Ocupa unos píxeles más y se entiende más.",
+      "comoCazarlo": "Preguntarle a alguien que no trabaje en esto dónde está el menú.",
+      "consejo": "La investigación apunta a que la palabra funciona algo mejor que el icono solo.",
+      "senales": [
+        "no encuentro el menú",
+        "¿dónde están las secciones?",
+        "no sabía que se podía tocar ahí"
+      ],
+      "salioDe": "NN/g, «Basic Patterns for Mobile Navigation»: la palabra «Menu» resulta algo más popular que el icono."
+    },
+    {
+      "id": "etiquetas-por-formato-y-no-por-tema",
+      "titulo": "El menú dice «Vídeos» y nadie sabe de qué",
+      "gravedad": "media",
+      "sintoma": "Secciones enteras con muy pocas visitas aunque tengan buen contenido.",
+      "causa": "Las etiquetas nombran el FORMATO —vídeos, descargas, blog— y no el tema, así que no dicen qué hay dentro.",
+      "porque": "El formato es como está organizado el trabajo por dentro, y la navegación acaba copiando el organigrama.",
+      "arreglo": "Nombrar por lo que la persona busca: «Precios», «Cómo funciona», «Opiniones». Aunque dentro haya vídeos.",
+      "comoCazarlo": "Leer cada etiqueta y preguntarse qué se espera encontrar. Si la respuesta es «no sé», la etiqueta no da pistas.",
+      "consejo": "La navegación no puede ser una caja de sorpresas: hay que saber qué toca antes de morder.",
+      "senales": [
+        "nadie entra a esa sección",
+        "no saben qué hay ahí",
+        "la gente no encuentra los testimonios"
+      ],
+      "salioDe": "NN/g, «Avoid Format-Based Primary Navigation»."
+    },
+    {
+      "id": "donde-estoy-en-el-sitio",
+      "titulo": "No se sabe en qué sección se está",
+      "gravedad": "media",
+      "sintoma": "La gente pierde el hilo al navegar y vuelve a la portada para reorientarse.",
+      "causa": "Nada marca la sección actual, o lo marca de una forma que no se distingue.",
+      "porque": "Al diseñar se mira una pantalla aislada, donde saber dónde se está es obvio porque uno lo acaba de decidir.",
+      "arreglo": "Marcar la sección actual de forma que sobreviva en gris: no sólo con color.",
+      "comoCazarlo": "Abrir una página interior en frío y preguntarse dónde se está.",
+      "consejo": "Es la misma marca que necesita el lector de pantalla, y se resuelve con el mismo atributo.",
+      "senales": [
+        "me pierdo en el sitio",
+        "no sé dónde estoy",
+        "tengo que volver al inicio"
+      ],
+      "salioDe": "El banco de pruebas: `aria-current` más la guía deslizante marcan la sección activa."
+    },
+    {
+      "id": "la-marca-de-seccion-fuera-de-pantalla",
+      "titulo": "La sección activa está marcada donde no se ve",
+      "gravedad": "baja",
+      "sintoma": "La barra de navegación se desliza y el elemento marcado quedó fuera de la vista.",
+      "causa": "La lista es más ancha que la pantalla y la marca no arrastra la lista hasta donde está.",
+      "porque": "En escritorio caben todos y el caso no existe; aparece sólo en el ancho donde la lista se desplaza.",
+      "arreglo": "Al cambiar de sección, centrar el elemento activo dentro del carril.",
+      "comoCazarlo": "Ir a la última sección en un teléfono y mirar si su enlace se ve en la barra.",
+      "consejo": "Una marca que señala algo fuera de pantalla no marca nada, y encima da la impresión de que no hay nada marcado.",
+      "senales": [
+        "no veo cuál está seleccionado",
+        "la barra no se mueve sola",
+        "se queda marcado atrás"
+      ],
+      "salioDe": "El banco de pruebas: el rail de la barra inferior se centra en el enlace activo."
+    },
+    {
+      "id": "volver-atras-que-no-vuelve",
+      "titulo": "El botón de atrás del navegador no deshace lo que se ve",
+      "gravedad": "alta",
+      "sintoma": "Se abre un panel o una galería, se pulsa atrás y se sale del sitio entero.",
+      "causa": "El estado visual cambió sin tocar el historial, así que para el navegador nunca pasó nada.",
+      "porque": "Abrir un panel es un cambio de estado local y añadirlo al historial parece exagerado.",
+      "arreglo": "Lo que ocupa la pantalla y se cierra —galería, panel, modal a pantalla completa— entra en el historial.",
+      "comoCazarlo": "Abrir cada superficie que tape la pantalla y pulsar atrás. Si sale del sitio, falta el estado.",
+      "consejo": "En un teléfono, «atrás» es el gesto por defecto para cerrar: es lo primero que la gente intenta.",
+      "senales": [
+        "le doy atrás y me saca",
+        "se cierra todo",
+        "perdí la página al cerrar la foto"
+      ],
+      "salioDe": "Patrón de galería y paneles a pantalla completa; la salida por gesto tiene que coincidir con el gesto del sistema."
+    },
+    {
+      "id": "saltar-al-contenido",
+      "titulo": "Con teclado hay que pasar por todo el menú en cada página",
+      "gravedad": "media",
+      "sintoma": "Quien navega con teclado tabula veinte veces antes de llegar al contenido, en cada página.",
+      "causa": "No hay un enlace de salto al contenido, o existe y está escondido de forma que nunca recibe foco.",
+      "porque": "Nadie navega con teclado durante el diseño, así que el costo es invisible.",
+      "arreglo": "Un enlace de salto que sea la primera parada y que se vea al recibir foco.",
+      "comoCazarlo": "Pulsar Tab una vez en una página recién cargada. Lo primero que aparezca debería ser el salto.",
+      "consejo": "Esconderlo con `display:none` lo saca del recorrido: hay que sacarlo de la vista sin sacarlo del foco.",
+      "senales": [
+        "tengo que tabular mil veces",
+        "no puedo saltar al contenido",
+        "el teclado pasa por todo el menú"
+      ],
+      "salioDe": "Prácticas de WCAG sobre bloques repetidos, y el enlace `#contenido` del banco de pruebas."
+    },
+    {
+      "id": "la-navegacion-que-no-cabe-y-se-encoge",
+      "titulo": "Los enlaces se achican hasta caber y dejan de tocarse",
+      "gravedad": "media",
+      "sintoma": "En pantalla chica los enlaces caben todos y ninguno se puede tocar bien.",
+      "causa": "Se resolvió el espacio encogiendo el texto y el relleno, así que el objetivo táctil bajó de lo mínimo.",
+      "porque": "Que quepan se ve como el éxito, y el tamaño del dedo no aparece en la maqueta.",
+      "arreglo": "Si no caben con tamaño de dedo, se deslizan de lado o se reparten en dos niveles. Encoger no es una opción.",
+      "comoCazarlo": "Medir el alto y el ancho tocable de cada enlace en el ancho más pequeño soportado.",
+      "consejo": "Deslizar de lado tiene su propio costo —lo que queda fuera se olvida— y aun así es mejor que un objetivo que se falla.",
+      "senales": [
+        "se ven muy chiquitos los enlaces",
+        "no le atino",
+        "caben pero no se tocan"
+      ],
+      "salioDe": "El banco de pruebas: los diez enlaces de la barra inferior se deslizan en vez de encogerse."
+    },
+    {
+      "id": "buscador-como-excusa-de-arquitectura",
+      "titulo": "«Que lo busquen» sustituyó a organizar el contenido",
+      "gravedad": "media",
+      "sintoma": "Hay buscador y aun así la gente no encuentra cosas que existen.",
+      "causa": "La estructura no ayuda y se delegó en el buscador, que sólo sirve a quien ya sabe qué palabra usar.",
+      "porque": "Añadir un buscador es una tarea acotada; reorganizar el contenido es una discusión larga con más gente.",
+      "arreglo": "Arreglar la estructura y dejar el buscador para el atajo de quien ya sabe, no para el rescate de quien se perdió.",
+      "comoCazarlo": "Mirar qué se busca más. Si son cosas que deberían estar a un toque, la estructura está fallando.",
+      "consejo": "Quien no sabe cómo se llama lo que busca no puede buscarlo.",
+      "senales": [
+        "para eso está el buscador",
+        "no encuentran nada aunque busquen",
+        "la gente pregunta por cosas que sí están"
+      ],
+      "salioDe": "Principios de arquitectura de información de NN/g sobre olor de la información."
+    },
+    {
+      "id": "menu-que-tapa-y-no-atrapa-el-foco",
+      "titulo": "El menú abierto tapa la página y el teclado sigue detrás",
+      "gravedad": "alta",
+      "sintoma": "Con el menú abierto, tabular lleva el foco a enlaces que están debajo y no se ven.",
+      "causa": "El panel se pinta encima pero el resto de la página sigue siendo alcanzable.",
+      "porque": "Visualmente el problema no existe: lo de detrás está tapado.",
+      "arreglo": "Atrapar el foco dentro mientras esté abierto, cerrar con Escape, marcar el resto como inerte y devolver el foco al abrir y cerrar.",
+      "comoCazarlo": "Abrir el menú y tabular hasta dar la vuelta. Si el foco se va a lo de detrás, falta la trampa.",
+      "consejo": "Un `<dialog>` nativo trae esto puesto, y sus mecanismos son mejores que los que uno escribe.",
+      "senales": [
+        "el foco se va detrás del menú",
+        "no puedo cerrar con escape",
+        "se pierde el foco al abrir"
+      ],
+      "salioDe": "La navegación móvil del sitio del Instituto: trampa de foco, cierre con Escape e `inert` sobre el resto."
+    }
+  ]
+}
