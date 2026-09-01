@@ -17,9 +17,17 @@ const BASE = process.argv[2] || 'http://localhost:8791';
 const pw = await import('/opt/node22/lib/node_modules/playwright/index.js');
 const chromium = pw.chromium || pw.default.chromium;
 import { execFileSync } from 'node:child_process';
-import { writeFileSync, unlinkSync } from 'node:fs';
+import { writeFileSync, unlinkSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-let bien = 0, mal = 0;
+let bien = 0, mal = 0, saltadas = 0;
+/* ⚠ Una comprobación que no se puede correr NO cuenta como buena. Se dice, se
+   cuenta aparte y sale en el resumen: si desaparece en silencio, el día que
+   falte la herramienta la suite dirá que todo está bien sin haberlo mirado. */
+const salta = (que, porque) => { saltadas++; console.log('  ~ ' + que + '  → ' + porque); };
+const hay = (cmd) => { try{ execFileSync('which', [cmd], {stdio:'ignore'}); return true; }
+                       catch{ return false; } };
 const ok = (que, cond, detalle='') => {
   if(cond){ bien++; console.log('  ✓ ' + que); }
   else { mal++; console.log('  ✗ ' + que + (detalle ? '  → ' + detalle : '')); }
@@ -31,16 +39,35 @@ const ok = (que, cond, detalle='') => {
 const SAFARI_PEOR = { top:'22mm', bottom:'22mm', left:'12.7mm', right:'12.7mm' };
 const SAFARI_LIMPIO = { top:'12.7mm', bottom:'12.7mm', left:'12.7mm', right:'12.7mm' };
 
+/* ⚠ ESTO ERA UNA RUTA DE UNA SESIÓN CONCRETA, con su identificador dentro. En
+   cualquier otra máquina la prueba se caía con ENOENT antes de llegar a la
+   mitad, y el error no decía «ruta de otra sesión», decía «no such file». */
+/* ⚠ Y `pdfinfo` no está en todas las máquinas: aquí no está, y sin él la
+   prueba moría a la mitad con un ENOENT que no explicaba nada. Si está, manda
+   él; si no, se cuentan las páginas en los bytes. Comprobado contra un PDF de
+   161 hojas: las dos cuentas dan lo mismo. */
+const contarEnBytes = (buf) =>
+  (buf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+
 const paginasDe = (buf) => {
-  const f = '/tmp/claude-0/-home-user-mazi-central/617efe1d-4733-537e-8ae2-f3b050e50e7a/scratchpad/imp.pdf';
+  const f = join(tmpdir(), 'reportes-imp.pdf');
   writeFileSync(f, buf);
-  const info = execFileSync('pdfinfo', [f], { encoding:'utf-8' });
-  const n = Number(/Pages:\s+(\d+)/.exec(info)[1]);
+  let n;
+  try{
+    const info = execFileSync('pdfinfo', [f], { encoding:'utf-8', stdio:['ignore','pipe','ignore'] });
+    n = Number(/Pages:\s+(\d+)/.exec(info)[1]);
+  }catch{
+    n = contarEnBytes(buf);
+  }
   unlinkSync(f);
   return n;
 };
 
-const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
+/* la ruta del navegador, buscada y no clavada: hoy `/opt/pw-browsers/chromium`
+   es un enlace a la carpeta con versión, y si un día no está, esto sigue */
+const NAVEGADOR = ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+                   '/opt/pw-browsers/chromium'].find(existsSync);
+const b = await chromium.launch({ executablePath:NAVEGADOR });
 const ctx = await b.newContext({ viewport:{ width:390, height:844 } });
 const page = await ctx.newPage();
 const errores = [];
@@ -235,12 +262,18 @@ await page.waitForTimeout(700);
 {
   const pdf = await page.pdf({ format:'Letter', printBackground:true,
     margin:{ top:'10mm', bottom:'10mm', left:'10mm', right:'10mm' } });
-  const f = '/tmp/claude-0/-home-user-mazi-central/617efe1d-4733-537e-8ae2-f3b050e50e7a/scratchpad/mezcla.pdf';
+  const f = join(tmpdir(), 'reportes-mezcla.pdf');
   writeFileSync(f, pdf);
-  const t = execFileSync('pdftotext', ['-layout', f, '-'], { encoding:'utf-8' });
-  ok('imprimiendo credenciales, el reporte NO se cuela',
-     !/PALABRACLAVEREPORTE/.test(t));
-  ok('y las credenciales sí salen', /PM-1/.test(t) && /PM-2/.test(t));
+  if(hay('pdftotext')){
+    const t = execFileSync('pdftotext', ['-layout', f, '-'], { encoding:'utf-8' });
+    ok('imprimiendo credenciales, el reporte NO se cuela',
+       !/PALABRACLAVEREPORTE/.test(t));
+    ok('y las credenciales sí salen', /PM-1/.test(t) && /PM-2/.test(t));
+  }else{
+    salta('imprimiendo credenciales, el reporte NO se cuela',
+          'falta pdftotext (poppler-utils) para leer el PDF');
+    salta('y las credenciales sí salen', 'lo mismo');
+  }
   try{ unlinkSync(f); }catch(e){}
 }
 
@@ -575,6 +608,75 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
      'con ' + c + ':1 la letra se pierde en el fondo');
 }
 
+/* ── UNA TABLA MÁS ALTA QUE UNA HOJA ENTERA ────────────────────────────────
+   Salió armando un expediente de 161 hojas: once tablas largas se salían por
+   abajo de su hoja, y como `.hoja` recorta con `overflow:hidden`, no se veía
+   como un error sino como una fila cortada por el pie. La peor acababa
+   9 565 px por debajo.
+
+   La causa: el corte de tablas sólo se intentaba cuando ya había algo en la
+   hoja y con lo que quedaba libre. Si en ese hueco no cabía ni una fila,
+   `partirTabla` devolvía null, se abría hoja nueva y la tabla entera se pegaba
+   sin volver a intentar el corte.
+
+   Esta prueba se comprueba a sí misma: al final anula `partirTabla` y exige
+   que el desbordamiento REAPAREZCA. Una prueba que nadie ha visto fallar no
+   demuestra nada. */
+console.log('\n── Una tabla más alta que una hoja entera ──');
+{
+  const p6 = await (await b.newContext({ viewport:{ width:1440, height:1000 } })).newPage();
+  await p6.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+
+  /* un párrafo que casi llena la hoja, y detrás una tabla de 120 filas: así
+     la tabla llega con un hueco donde no cabe ni una fila */
+  const relleno = ('Un párrafo largo que ocupa casi toda la hoja para que la '
+    + 'tabla que viene detrás llegue con muy poco sitio libre. ').repeat(28);
+  const filas = Array.from({length:120}, (_,k) =>
+    '| Artículo número ' + (k+1) + ' con un título largo de los que ocupan dos '
+    + 'renglones | https://ejemplo.example/articulo/' + (k+1)
+    + '/con-una-ruta-larga-de-las-que-se-parten-en-dos/ |').join('\n');
+  const cuerpo = '## Prueba\n\n' + relleno + '\n\n| Artículo | Dirección |\n' + filas + '\n';
+
+  const medir = () => p6.evaluate(() => {
+    const out = [];
+    document.querySelectorAll('.hoja').forEach((h, i) => {
+      const rh = h.getBoundingClientRect();
+      const pie = h.querySelector('.folio-pie');
+      const tope = pie ? Math.min(rh.bottom, pie.getBoundingClientRect().top) : rh.bottom;
+      h.querySelectorAll('td').forEach(e => {
+        const r = e.getBoundingClientRect();
+        if(r.bottom > tope + 1) out.push({ hoja:i+1, sobra:Math.round(r.bottom - tope) });
+      });
+    });
+    return { cuantas:out.length, peor:out.reduce((m,x)=>Math.max(m,x.sobra), 0),
+             hojas:document.querySelectorAll('.hoja').length };
+  });
+
+  const imprimir = async (texto) => {
+    await p6.evaluate(t => { const c = document.querySelector('#fCuerpo');
+      c.value = t; c.dispatchEvent(new Event('input', { bubbles:true })); }, texto);
+    await p6.waitForTimeout(500);
+    await p6.evaluate(() => document.querySelector('#bImprimir').click());
+    await p6.waitForTimeout(2500);
+  };
+
+  await imprimir(cuerpo);
+  const r1 = await medir();
+  ok('la tabla larga se parte y ninguna fila se sale de su hoja',
+     r1.cuantas === 0, r1.cuantas + ' celdas cortadas, la peor por ' + r1.peor + 'px');
+  ok('y la tabla ocupa varias hojas, no una sola recortada',
+     r1.hojas >= 4, 'salieron ' + r1.hojas + ' hojas');
+
+  /* MUTACIÓN: sin el corte, el defecto tiene que volver */
+  await p6.evaluate(() => { window.__partir = partirTabla; partirTabla = () => null; });
+  await imprimir(cuerpo + '\n');
+  const r2 = await medir();
+  ok('MUTACIÓN: sin partirTabla, las filas vuelven a salirse',
+     r2.cuantas > 0, 'con el corte anulado seguía sin desbordarse: la prueba no mide nada');
+  await p6.evaluate(() => { partirTabla = window.__partir; });
+}
+
 await b.close();
-console.log('\n' + bien + ' bien · ' + mal + ' mal');
+console.log('\n' + bien + ' bien · ' + mal + ' mal' +
+            (saltadas ? ' · ' + saltadas + ' sin poder comprobarse' : ''));
 process.exit(mal ? 1 : 0);

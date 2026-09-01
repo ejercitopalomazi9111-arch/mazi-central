@@ -2540,6 +2540,23 @@ function paginar(r){
       h = alturaCon(p.el, true);
     }
 
+    /* ⚠ UNA TABLA MÁS ALTA QUE UNA HOJA ENTERA SE SEGUÍA SALIENDO.
+       El corte de arriba sólo se intentaba con `usado > 0`, y con lo que
+       quedaba libre: si en ese hueco no cabía NI UNA fila, `partirTabla`
+       devolvía null, se abría hoja nueva y la tabla entera se pegaba sin
+       volver a intentar el corte. Con `.hoja{overflow:hidden}` eso no se ve
+       como error: se ve como una fila cortada por el pie.
+       Medido en un expediente de 107 hojas: 11 tablas, la peor acababa
+       9 565 px por debajo del pie de su hoja. */
+    if(p.tipo === 'tabla' && h > altoDe() - usado){
+      const cortes = partirTabla(p.el, medDoc, altoDe() - usado);
+      if(cortes){
+        medDoc.textContent = '';
+        piezas.splice(i, 1, {el:cortes[0], tipo:'tabla'}, {el:cortes[1], tipo:'tabla'});
+        i--; continue;
+      }
+    }
+
     medDoc.textContent = '';
     doc.appendChild(p.el);
     usado += h;
