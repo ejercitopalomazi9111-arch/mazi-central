@@ -63,7 +63,26 @@
 
    Ahora son treinta días, cualquier toque los renueva, y una sala fundada
    NUNCA pierde su cerradura: se le olvida lo dicho, no quién es su dueño. */
-const OLVIDO = 30 * 24 * 60 * 60 * 1000;
+/* ⚠ SEIS MESES, NO UNO. Lo pidió Carlos después de que la sala se le vaciara
+   tres veces: «que el chat caduque a los 6 MESES, no al mes». Tenía razón por
+   una razón que no es de gusto: una conversación de trabajo se consulta meses
+   después —«¿cómo quedamos con esto?»— y un mes no alcanza ni para cerrar un
+   proyecto. */
+const OLVIDO = 182 * 24 * 60 * 60 * 1000;
+
+/* Y ANTES DE OLVIDAR SE AVISA, con estas palabras suyas: «avisa pendejo».
+   Cumplido el plazo NO se borra: se deja un aviso en el hilo diciendo qué va a
+   pasar y cuándo, y se espera esta gracia. Cualquier uso dentro de la gracia
+   corre el plazo entero otra vez, así que basta con que alguien entre para
+   salvarlo. Sólo si nadie aparece en toda la gracia se borra. */
+const GRACIA_OLVIDO = 7 * 24 * 60 * 60 * 1000;
+
+/* El respaldo comprimido de lo que se borra, también pedido por él. Un valor
+   de almacenamiento no puede ser enorme, así que se guarda comprimido y con
+   tope: si no cabe, se sacrifican los mensajes MÁS VIEJOS y se dice cuántos.
+   Un respaldo que falla por grande sería peor que no tenerlo, porque nadie se
+   entera hasta que lo necesita. */
+const TOPE_RESPALDO = 110_000;
 
 /* Poner la alarma es una escritura, así que no se rehace en cada petición:
    una vez por hora basta cuando lo que se está corriendo son treinta días. */
@@ -520,6 +539,77 @@ export class Sala {
     await this.ctx.storage.setAlarm(cuando);
   }
 
+  /* Un renglón de sistema metido a mano en el hilo. No pasa por `publicar()`
+     a propósito: aquello difunde por socket y despierta a los que esperan, y
+     esto corre desde la alarma, donde no hay sockets vivos ni nadie colgado.
+     Lo que sí hace falta es que quede GUARDADO, porque el que lo va a leer
+     llegará mucho después. */
+  async publicarSistema(texto){
+    const ev = { id: `e${++this.serie}`, ts: ahora(), tipo:'sistema',
+                 de: { id:'sala', nombre:'La Sala', tipo:'sistema' }, texto };
+    this.hilo.push(ev);
+    if(this.hilo.length > TOPE_HILO) this.hilo = this.hilo.slice(-TOPE_HILO);
+    await this.ctx.storage.put({ hilo:this.hilo, serie:this.serie });
+    return ev;
+  }
+
+  /* ── EL RESPALDO DE LO QUE SE VA A BORRAR ───────────────────────────────
+     Pedido por Carlos: «que haya un respaldo comprimido de lo que se borra».
+     Se guarda gzip en el propio almacenamiento de la sala, junto a la fecha y
+     cuántos mensajes traía, para que quien vuelva sepa que existe.
+
+     Si aun comprimido no cabe, se recortan los mensajes más viejos hasta que
+     entre y se apunta cuántos se quedaron fuera. Prefiero un respaldo parcial
+     y honesto sobre su recorte, que un respaldo que revienta al guardarse y
+     deja a todos creyendo que hay red. */
+  async respaldar(){
+    try{
+      let hilo = this.hilo || [];
+      const total = hilo.length;
+      let bytes = null, fuera = 0;
+      while(hilo.length){
+        bytes = await this.comprimir(JSON.stringify({ hilo, gente:this.gente }));
+        if(bytes.length <= TOPE_RESPALDO) break;
+        /* Se corta por la mitad de lo que sobra en vez de uno por uno: con 400
+           mensajes, de uno en uno son 400 compresiones. */
+        const quitar = Math.max(1, Math.ceil(hilo.length / 4));
+        hilo = hilo.slice(quitar);
+        fuera += quitar;
+      }
+      if(!bytes) return null;
+      const respaldo = { cuando: ahora(), mensajes: hilo.length, recortados: fuera,
+                         total, gzip: [...bytes] };
+      await this.ctx.storage.put({ respaldo });
+      return respaldo;
+    }catch(e){
+      /* Que el respaldo falle NO puede impedir el olvido ni tumbar la alarma:
+         una sala que no se puede limpiar crece para siempre. Se sigue sin él y
+         el aviso del hilo lo dirá. */
+      return null;
+    }
+  }
+
+  /* `CompressionStream` existe en Workers y en Node 18+, así que esto corre
+     igual en producción y en las pruebas. Si algún día no estuviera, revienta
+     aquí y `respaldar()` lo atrapa: se pierde el respaldo, no la sala. */
+  async comprimir(texto){
+    const cs = new CompressionStream('gzip');
+    const escritor = cs.writable.getWriter();
+    escritor.write(new TextEncoder().encode(texto));
+    escritor.close();
+    const trozos = [];
+    const lector = cs.readable.getReader();
+    for(;;){
+      const { done, value } = await lector.read();
+      if(done) break;
+      trozos.push(value);
+    }
+    let n = 0; for(const t of trozos) n += t.length;
+    const fuera = new Uint8Array(n);
+    let i = 0; for(const t of trozos){ fuera.set(t, i); i += t.length; }
+    return fuera;
+  }
+
   async alarm(){
     /* Primero lo que vence antes. La vigilia se revisa SIEMPRE, aunque no
        toque el olvido, porque las dos comparten la única alarma que hay. */
@@ -560,6 +650,31 @@ export class Sala {
       return;
     }
 
+    /* ── «AVISA PENDEJO» · el aviso antes del borrado ──────────────────────
+       Palabras de Carlos, y la petición es correcta: cumplido el plazo NO se
+       borra todavía. Se deja dicho en el hilo qué va a pasar y cuándo, y se
+       espera una gracia. Cualquiera que entre o escriba en ese lapso corre el
+       plazo entero otra vez —`tocar()` reescribe el sello— así que basta con
+       asomarse para salvarlo.
+
+       El aviso va al hilo y no a un correo a propósito: el hilo es lo que se
+       lee al volver, y es justo el lugar donde el borrado dolió. */
+    const avisado = (await this.ctx.storage.get('avisoOlvido')) || 0;
+    if(!avisado || avisado < usada){
+      await this.publicarSistema(
+        `Aviso: esta sala lleva seis meses sin usarse y se va a limpiar en `
+      + `siete días. NO se pierde la sala —dueño y llaves se quedan— y lo que `
+      + `se borre queda respaldado aquí mismo. Para cancelarlo basta con que `
+      + `alguien escriba: cualquier uso reinicia la cuenta desde cero.`);
+      await this.ctx.storage.put({ avisoOlvido: ahora() });
+      await this.armar();
+      return;
+    }
+    if(ahora() - avisado < GRACIA_OLVIDO){
+      await this.armar();
+      return;
+    }
+
     /* Una sala FUNDADA no se borra. Puede olvidar lo que se dijo —para eso es
        el acta— pero jamás quién es su dueño ni las llaves que repartió: eso
        dejaría a todos afuera de su propia sala, sin aviso y sin remedio.
@@ -579,21 +694,37 @@ export class Sala {
        El aviso se queda COMO ÚNICO contenido del hilo, no se difunde ni
        despierta a nadie: no hay a quién: los sockets ya murieron con la
        instancia. Lo lee el que vuelva. */
+    /* Se respalda ANTES de tocar nada: si el respaldo falla, que falle con el
+       hilo todavía entero y no a medio borrar. */
+    const guardado = await this.respaldar();
+
     if(this.dueno){
       const aviso = {
         id: `e${++this.serie}`,
         ts: ahora(),
         tipo: 'sistema',
         de: { id:'sala', nombre:'La Sala', tipo:'sistema' },
-        texto: 'Aquí se olvidó lo dicho por falta de uso. La sala sigue siendo '
-             + `de "${this.dueno}" y sus llaves siguen sirviendo: lo que se borró `
-             + 'fue la conversación, no la sala. Si algo de lo que estaba aquí '
-             + 'importaba, tenía que estar en el repo — esto es un chat, no una '
+        texto: 'Aquí se olvidó lo dicho por falta de uso, y se avisó siete días '
+             + `antes. La sala sigue siendo de "${this.dueno}", sus llaves siguen `
+             + 'sirviendo y nadie salió de la mesa: lo que se borró fue la '
+             + 'conversación, no la sala. '
+             + (guardado
+                 ? `Quedó respaldada comprimida: ${guardado.mensajes} mensajes`
+                   + (guardado.recortados
+                        ? ` (los ${guardado.recortados} más viejos no cupieron).`
+                        : ' completos.')
+                 : 'No se pudo guardar el respaldo, así que esto no se recupera.')
+             + ' Aun así, lo que importe va al repo — esto es un chat, no una '
              + 'bitácora.',
       };
-      this.hilo = [aviso]; this.gente = {}; this.propuestas = []; this.vueltas = 0;
-      await this.ctx.storage.put({ hilo:this.hilo, gente:{}, propuestas:[],
-                                   vueltas:0, serie:this.serie });
+      /* ⚠ LA GENTE NO SE BORRA, y es lo cuarto que pidió Carlos: «que se
+         vuelva a meter a todos, para que nadie salga de la sala sin querer».
+         Vaciar `gente` echaba de la sala a quien no había hecho nada — al
+         volver se encontraba fuera de su propia mesa y tenía que entrar otra
+         vez. Lo que caduca es la CONVERSACIÓN, no la membresía. */
+      this.hilo = [aviso]; this.propuestas = []; this.vueltas = 0;
+      await this.ctx.storage.put({ hilo:this.hilo, gente:this.gente, propuestas:[],
+                                   vueltas:0, serie:this.serie, avisoOlvido:0 });
       await this.tocar(true);
       return;
     }

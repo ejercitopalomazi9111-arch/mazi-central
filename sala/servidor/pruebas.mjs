@@ -1108,7 +1108,16 @@ async function olvido(){
   const s2 = nueva();
   await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
   const [, f] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
-  await pedir(s2, 'POST', 'decir', { de:'d', texto:'algo' }, f.llave);
+  /* Se vuelve a entrar CON la llave: al fundar, la sala pasa a tener cuentas y
+     la sesión que entró antes quedó como «invitado», así que `/decir` la
+     rechaza. Sin esto, «algo» NUNCA llega al hilo — y las afirmaciones
+     NEGATIVAS de más abajo («ya no está») pasaban solas, midiendo la ausencia
+     de un mensaje que nunca existió. Es el mismo defecto que llevo dos días
+     persiguiendo, esta vez dentro de mi propia prueba: por eso la premisa se
+     comprueba aparte y en positivo. */
+  await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' }, f.llave);
+  const [cd2] = await leer(await pedir(s2, 'POST', 'decir', { de:'d', texto:'algo' }, f.llave));
+  ok('(premisa) «algo» SÍ entró al hilo antes de probar el olvido', cd2 === 200);
 
   /* ⚠ HAY QUE ENVEJECER LA SALA A MANO, Y ESO ES EL ARREGLO, NO UN ESTORBO.
      Antes bastaba con llamar a `alarm()` sobre una sala recién usada y ya
@@ -1117,12 +1126,61 @@ async function olvido(){
      en verde, GRUPAZ se vació dos veces en un día.
      Ahora el olvido se decide midiendo, así que para probarlo hay que
      simular la falta de uso de verdad. */
-  await s2.ctx.storage.put({ ultimoUso: Date.now() - 31 * 24 * 60 * 60 * 1000 });
+  const VIEJO = Date.now() - 200 * 24 * 60 * 60 * 1000;
+  await s2.ctx.storage.put({ ultimoUso: VIEJO });
+
+  /* ── «AVISA PENDEJO» · primero avisa, no borra ─────────────────────────
+     Lo pidió Carlos con esas palabras después de que se le vaciara tres
+     veces. El primer disparo cumplido el plazo NO debe llevarse nada: debe
+     dejar dicho qué va a pasar y dar una gracia para salvarlo. */
+  await s2.alarm();
+  ok('cumplido el plazo, el primer disparo AVISA y no borra',
+     s2.hilo.some(e => e.texto === 'algo')
+     && s2.hilo.some(e => e.tipo === 'sistema' && /se va a limpiar/.test(e.texto || '')));
+  ok('y el aviso dice cómo cancelarlo',
+     s2.hilo.some(e => /alguien escriba/.test(e.texto || '')));
+
+  /* Dentro de la gracia tampoco borra, por más veces que suene. */
+  await s2.alarm();
+  ok('dentro de la gracia sigue sin borrar',
+     s2.hilo.some(e => e.texto === 'algo'));
+
+  /* Pasada la gracia sin que nadie apareciera, ahora sí. */
+  await s2.ctx.storage.put({ ultimoUso: VIEJO,
+                             avisoOlvido: Date.now() - 8 * 24 * 60 * 60 * 1000 });
   await s2.alarm();
   ok('al olvidar, la sala fundada CONSERVA su dueño y sus llaves',
      s2.dueno === 'carlos' && Object.keys(s2.llaves).length === 1);
   ok('pero sí olvida la conversación',
      !s2.hilo.some(e => e.texto === 'algo'));
+
+  /* ── QUE NADIE SALGA DE LA SALA SIN QUERER ─────────────────────────────
+     Cuarta petición de Carlos. Antes el borrado vaciaba `gente`, o sea que
+     echaba de la mesa a quien no había hecho nada: al volver se encontraba
+     fuera de su propia sala. Lo que caduca es la conversación, no quién
+     pertenece. */
+  /* ⚠ SE MIRA EL ALMACENAMIENTO, NO LA MEMORIA. La primera versión de esta
+     prueba leía `s2.gente` —el objeto vivo— y pasaba IGUAL con el bug puesto:
+     lo comprobé mutando el código para que volviera a guardar `gente:{}` y la
+     prueba siguió verde. Claro: la mutación sólo cambiaba lo que se ESCRIBE, y
+     en memoria la gente seguía ahí… hasta el siguiente reinicio, que es
+     exactamente cuando duele. Otra que informa un estado y está en otro. */
+  const gentePost = await s2.ctx.storage.get('gente');
+  ok('y NO echa a nadie de la sala, tampoco de lo guardado',
+     !!gentePost && Object.keys(gentePost).length >= 1);
+
+  /* ── EL RESPALDO COMPRIMIDO ────────────────────────────────────────────
+     Tercera petición. Se comprueba que existe, que trae gzip de verdad y que
+     dice cuántos mensajes guardó — un respaldo que no se puede contar no
+     tranquiliza a nadie. */
+  const resp = await s2.ctx.storage.get('respaldo');
+  ok('lo borrado queda respaldado, comprimido y contado',
+     !!resp && Array.isArray(resp.gzip) && resp.gzip.length > 0
+     && typeof resp.mensajes === 'number' && resp.total >= 1);
+  ok('el respaldo es gzip de verdad (empieza con 0x1f 0x8b)',
+     !!resp && resp.gzip[0] === 0x1f && resp.gzip[1] === 0x8b);
+  ok('y el aviso del hilo dice que hay respaldo',
+     s2.hilo.some(e => /respald/i.test(e.texto || '')));
 
   /* ── QUE OLVIDE NO ES EL DEFECTO; QUE OLVIDE CALLADO SÍ ────────────────
      Antes el hilo quedaba en cero y punto, y el que volvía no tenía cómo
@@ -1180,7 +1238,8 @@ async function olvido(){
   /* Una sala que nadie fundó sí se borra entera: es basura. */
   const s3 = nueva();
   await pedir(s3, 'POST', 'entrar', { id:'x', nombre:'X', tipo:'humano' });
-  await s3.ctx.storage.put({ ultimoUso: Date.now() - 31 * 24 * 60 * 60 * 1000 });
+  await s3.ctx.storage.put({ ultimoUso: Date.now() - 200 * 24 * 60 * 60 * 1000,
+                             avisoOlvido: Date.now() - 8 * 24 * 60 * 60 * 1000 });
   await s3.alarm();
   ok('una sala que nadie fundó sí se borra completa',
      (await s3.ctx.storage.get('hilo')) === undefined);

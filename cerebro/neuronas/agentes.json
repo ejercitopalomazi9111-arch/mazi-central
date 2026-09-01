@@ -223,6 +223,31 @@
         "tarea-programada-que-dispara-sin-correr",
         "la-prueba-paso-sin-que-existiera-el-caso"
       ]
+    },
+    {
+      "clase": "error",
+      "id": "la-prueba-mira-la-memoria-no-el-disco",
+      "titulo": "Una prueba que lee el objeto vivo aprueba un bug que sólo se ve al reiniciar",
+      "gravedad": "alta",
+      "sintoma": "Mutar el código para que volviera a guardar mal NO puso roja la prueba: seguía verde con el defecto puesto.",
+      "causa": "La prueba leía la propiedad en memoria (`s.gente`) y la mutación sólo cambiaba lo que se ESCRIBE al almacenamiento. En memoria el dato seguía correcto; en disco ya no.",
+      "porque": "Después de una operación, la memoria y el disco coinciden casi siempre, así que leer cualquiera de los dos parece lo mismo. Dejan de coincidir justo en el caso que importa: el reinicio.",
+      "arreglo": "Toda prueba de algo que debe SOBREVIVIR se hace contra el almacenamiento, no contra el objeto. Si lo que se afirma es «esto se conserva», la lectura tiene que venir de donde se conserva.",
+      "comoCazarlo": "Mutación: rompe a propósito sólo la escritura. Si la prueba sigue verde, estaba mirando la memoria. Así salió ésta.",
+      "consejo": "Vale igual para cachés, sesiones y estado de UI: «lo tengo aquí» y «quedó guardado» son dos afirmaciones distintas y sólo una sobrevive a un reinicio.",
+      "salioDe": "sala/servidor/pruebas.mjs · la prueba de que el olvido no echa a nadie",
+      "senales": [
+        "pasa la prueba pero falla en producción",
+        "se pierde al reiniciar",
+        "no se guardó",
+        "la mutación no la cazó"
+      ],
+      "vecinas": [
+        "una-alarma-dos-dueños",
+        "la-prueba-paso-sin-que-existiera-el-caso",
+        "mutacion-sin-restaurar",
+        "borrado-callado-parece-sala-nueva"
+      ]
     }
   ]
 }
