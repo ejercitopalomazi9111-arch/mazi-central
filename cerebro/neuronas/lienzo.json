@@ -1,0 +1,92 @@
+{
+  "area": "lienzo",
+  "nombre": "Lienzo, 3D y gráficos por código",
+  "que": "Dibujar por código: nitidez, bucles, hilo principal y qué queda cuando la escena no carga.",
+  "neuronas": [
+    {
+      "id": "lienzo-borroso-en-pantalla-densa",
+      "titulo": "El lienzo se ve borroso",
+      "gravedad": "media",
+      "sintoma": "Lo dibujado en un lienzo se ve suave o pixelado comparado con el texto de al lado.",
+      "causa": "El lienzo tiene el tamaño en píxeles CSS y no en píxeles reales, así que el sistema lo escala.",
+      "porque": "Poner el ancho por CSS es lo natural y funciona; la diferencia sólo se ve en pantallas densas.",
+      "arreglo": "Dimensionar el búfer multiplicando por la densidad y escalar el contexto, manteniendo el tamaño CSS.",
+      "comoCazarlo": "Comparar una línea de un píxel del lienzo con un borde CSS de un píxel al lado.",
+      "consejo": "Y toparlo: la densidad 3 cuesta nueve veces más píxeles que la 1.",
+      "senales": [
+        "el canvas se ve borroso",
+        "las líneas se ven suaves",
+        "no se ve nítido"
+      ],
+      "salioDe": "El motor del banco: densidad topada a 1.5, con el búfer dimensionado a propósito."
+    },
+    {
+      "id": "lienzo-que-no-se-limpia-bien",
+      "titulo": "Quedan rastros de los cuadros anteriores",
+      "gravedad": "baja",
+      "sintoma": "Las formas dejan estela o el fondo se va oscureciendo.",
+      "causa": "Se pinta un rectángulo semitransparente encima en vez de limpiar, o no se limpia en absoluto.",
+      "porque": "La estela suele empezar como efecto buscado y luego se olvida que es acumulación.",
+      "arreglo": "Decidir a propósito: limpiar del todo, o acumular con un valor constante y comprobado.",
+      "comoCazarlo": "Dejarlo corriendo un minuto y comparar con el primer cuadro.",
+      "consejo": "La acumulación depende de la velocidad de cuadro: en un aparato lento la estela sale distinta.",
+      "senales": [
+        "deja rastro",
+        "se va oscureciendo",
+        "quedan restos de la animación"
+      ],
+      "salioDe": "Práctica de dibujo en lienzo; el motor del banco limpia y pinta cada cuadro."
+    },
+    {
+      "id": "objetos-3d-con-la-animacion-en-bucle-equivocada",
+      "titulo": "El personaje repite media transición sin parar",
+      "gravedad": "media",
+      "sintoma": "Un modelo 3D se sienta y se levanta dos veces por segundo.",
+      "causa": "Se puso en bucle un clip que no es un ciclo sino una transición de postura.",
+      "porque": "Todos los clips se tratan igual, y el nombre no dice cuál es cuál.",
+      "arreglo": "Mirar la DURACIÓN: un ciclo dura varios segundos, una transición menos de uno. Las transiciones se reproducen una vez y se congelan al final.",
+      "comoCazarlo": "Medir la posición de un hueso a lo largo del tiempo. Si oscila cuando debería estar quieta, está en bucle.",
+      "consejo": "La duración del clip es lo que distingue una postura de un ciclo, y casi nunca se mira.",
+      "senales": [
+        "el personaje se sienta y se para",
+        "la animación se repite mal",
+        "parece un loop roto"
+      ],
+      "salioDe": "El taller 3D de este grupo: `Sitting` dura 0.417 s y es una transición; `Idle` dura 3.33 s y sí es ciclo."
+    },
+    {
+      "id": "todo-el-3d-en-el-hilo-principal",
+      "titulo": "La escena 3D bloquea la interfaz",
+      "gravedad": "media",
+      "sintoma": "Mientras carga o corre la escena, la página no responde a los toques.",
+      "causa": "La carga de modelos y el bucle de dibujo comparten hilo con la interfaz.",
+      "porque": "Es lo que sale de seguir cualquier ejemplo, donde no hay más interfaz que la escena.",
+      "arreglo": "Cargar de forma asíncrona, mostrar progreso, y pausar el bucle cuando la escena no se ve.",
+      "comoCazarlo": "Intentar tocar un botón normal mientras la escena carga.",
+      "consejo": "Y comprobar qué pasa si el modelo no llega: una escena vacía sin mensaje parece una página rota.",
+      "senales": [
+        "se congela mientras carga el 3D",
+        "no responde la interfaz",
+        "se traba con la escena"
+      ],
+      "salioDe": "El taller 3D: carga con progreso y pausa fuera de pantalla."
+    },
+    {
+      "id": "el-3d-sin-alternativa",
+      "titulo": "Si el 3D no carga no queda nada",
+      "gravedad": "media",
+      "sintoma": "En un aparato sin aceleración o con la descarga fallida, el hueco queda vacío.",
+      "causa": "El contenido vive sólo dentro de la escena.",
+      "porque": "La escena ES la característica, así que no se piensa en su ausencia.",
+      "arreglo": "Una versión estática equivalente —imagen o texto— que ocupe el mismo sitio y diga lo mismo.",
+      "comoCazarlo": "Bloquear la descarga del modelo y mirar la página.",
+      "consejo": "Vale también para la primera visita en red lenta, que es mucha más gente que la que no tiene aceleración.",
+      "senales": [
+        "no carga el 3D",
+        "se ve un hueco",
+        "en ese aparato no funciona"
+      ],
+      "salioDe": "La regla de este grupo: lo que necesita script no aparece en vez de aparecer muerto."
+    }
+  ]
+}

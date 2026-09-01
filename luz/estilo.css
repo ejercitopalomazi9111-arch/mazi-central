@@ -1,0 +1,214 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL AÑO EN LUZ · cuánto dura el día, y cómo cambia
+   ──────────────────────────────────────────────────────────────────────────
+   El tema es la luz, así que el color no decora: MIDE. Los cuatro tonos del
+   cielo son los cuatro tramos que la astronomía ya distingue —noche cerrada,
+   crepúsculo astronómico, náutico y civil— y el ocre es el día. La misma
+   escala pinta la banda del año, la barra de hoy y el fondo de la página, de
+   forma que un color siempre quiere decir lo mismo en cualquier sitio donde
+   aparezca.
+
+   El modo oscuro no es un filtro: es la noche del mismo cielo. Por eso los
+   tonos de noche NO cambian entre los dos temas —son el mismo cielo— y lo que
+   cambia es el papel sobre el que se dibuja.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+@font-face{ font-family:"Young Serif"; src:url(fuentes/titulo.woff2) format("woff2");
+            font-weight:400; font-display:swap }
+@font-face{ font-family:"Work Sans"; src:url(fuentes/texto.woff2) format("woff2");
+            font-weight:400; font-display:swap }
+@font-face{ font-family:"Work Sans"; src:url(fuentes/texto-b.woff2) format("woff2");
+            font-weight:700; font-display:swap }
+@font-face{ font-family:"IBM Plex Mono"; src:url(fuentes/cifra.woff2) format("woff2");
+            font-weight:400; font-display:swap }
+
+:root{
+  color-scheme:light dark;
+
+  /* ── la escala del cielo. No cambia con el tema: es el mismo cielo ──── */
+  --noche:#0D1220;
+  --astro:#152036;
+  --nautico:#25355C;
+  --civil:#4A5B86;
+  --alba:#C8794A;          /* el minuto de la salida y de la puesta */
+  --dia:#E8B04B;           /* el ocre del día */
+
+  /* ── papel y tinta ─────────────────────────────────────────────────── */
+  --papel:#FBF8F3;
+  --papel2:#F1ECE3;
+  --tinta:#161310;
+  --tenue:#5F594F;
+  --linea:#DED7CA;
+  --acento:#9A4B12;        /* el ocre oscurecido, para texto y enlaces */
+
+  --titulo:"Young Serif", Georgia, serif;
+  --texto:"Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --cifra:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  --ancho:min(72rem, 100% - 3rem);
+  --r:2px;
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-tema="claro"]){
+    --papel:#0B0E15; --papel2:#121724; --tinta:#EDE7DC; --tenue:#9E978A;
+    --linea:#232A3A; --acento:#F0B860;
+  }
+}
+:root[data-tema="oscuro"]{
+  --papel:#0B0E15; --papel2:#121724; --tinta:#EDE7DC; --tenue:#9E978A;
+  --linea:#232A3A; --acento:#F0B860;
+}
+
+*{ box-sizing:border-box }
+[hidden]{ display:none !important }
+html{ -webkit-text-size-adjust:100% }
+body{ margin:0; background:var(--papel); color:var(--tinta);
+      font:400 1.0625rem/1.6 var(--texto);
+      font-synthesis-weight:none;  /* la negrita va empotrada; nada de engordar */
+      overflow-x:hidden }
+
+.ancho{ width:var(--ancho); margin-inline:auto }
+h1,h2,h3{ font-family:var(--titulo); font-weight:400; line-height:1.08; margin:0 }
+a{ color:var(--acento) }
+:focus-visible{ outline:2px solid var(--acento); outline-offset:3px }
+
+/* El salto al contenido. Se esconde MOVIÉNDOLO, no con display:none ni con
+   visibility: las dos lo sacan del orden de tabulación y entonces el enlace
+   que existe para el teclado deja de existir justo para el teclado. */
+.salta{ position:absolute; left:.75rem; top:0; transform:translateY(-160%);
+        z-index:9; background:var(--papel); color:var(--tinta);
+        border:1px solid var(--tinta); border-radius:var(--r);
+        padding:.7rem 1rem; font:400 .9rem/1 var(--texto); text-decoration:none }
+.salta:focus{ transform:translateY(.75rem) }
+
+/* ── la cabecera ─────────────────────────────────────────────────────── */
+header{ padding:2.6rem 0 1.4rem }
+header .marca{ display:flex; align-items:baseline; gap:.75rem; flex-wrap:wrap }
+header h1{ font-size:clamp(1.6rem,4vw,2.1rem) }
+header .sub{ font:400 .8rem/1.4 var(--cifra); color:var(--tenue);
+             letter-spacing:.04em }
+
+/* ── los mandos ──────────────────────────────────────────────────────── */
+.mandos{ display:flex; gap:.6rem; flex-wrap:wrap; align-items:stretch;
+         padding:1rem 0 1.6rem; border-bottom:1px solid var(--linea) }
+.campo{ display:flex; flex-direction:column; gap:.3rem }
+.campo label{ font:400 .68rem/1 var(--cifra); letter-spacing:.12em;
+              text-transform:uppercase; color:var(--tenue) }
+select, input[type="date"], .boton{
+  font:400 1rem/1 var(--texto); color:var(--tinta); background:var(--papel2);
+  border:1px solid var(--linea); border-radius:var(--r);
+  padding:.8rem .85rem; min-height:2.9rem; cursor:pointer }
+select:hover, input[type="date"]:hover, .boton:hover{ border-color:var(--tenue) }
+.boton{ align-self:flex-end; display:inline-flex; align-items:center; gap:.5rem }
+.boton[aria-busy="true"]{ color:var(--tenue); cursor:progress }
+
+/* ── el dato de hoy ────────────────────────────────────────────────────
+   ⚠ UNA COLUMNA, NO DOS. La primera versión ponía la cifra y la barra lado a
+   lado con `grid-template-columns:auto 1fr`, y la columna «auto» se estiraba
+   con la cifra: la barra arrancaba a 430 px de la cifra que explica, y las dos
+   piezas dejaban de leerse como una sola cosa. Apiladas, la cifra es el
+   titular y la barra es la prueba, que es lo que son. */
+.hoy{ padding:1.6rem 0 1rem }
+
+/* ⚠ AQUÍ NO VAN CIFRAS TABULARES, Y ES LA CAUSA DEL HUECO. `tabular-nums`
+   mete cada dígito en el mismo ancho, y el «1» es el más estrecho de todos:
+   a 7rem le sobraban 18 px de aire a cada lado y el «12» se leía como «1  2».
+   Las tabulares son para alinear columnas —las tablas de abajo sí las
+   llevan—; un número que se lee como palabra las quiere proporcionales. */
+.gran{ font-family:var(--titulo); line-height:.9; letter-spacing:-.035em;
+       font-size:clamp(4rem, 13vw, 7rem); font-variant-numeric:proportional-nums;
+       margin:.1rem 0 0 }
+/* ⚠ EL ESPACIADO DE LA CIFRA, QUE NO ES UN CAPRICHO. Sin apretar el track, el
+   «12» de Young Serif a 7rem abre un hueco entre el 1 y el 2 mayor que el que
+   separa el «12» del «32», y la cifra se lee como dos números sueltos. La
+   unidad va pegada a SU número y con aire después: es lo que agrupa. */
+.gran .u{ font-family:var(--texto); font-size:.2em; letter-spacing:0;
+          color:var(--tenue); margin:0 .5em 0 .1em }
+.gran .u:last-child{ margin-right:0 }
+.pie-gran{ font:400 .82rem/1.5 var(--cifra); color:var(--tenue); margin:.7rem 0 0 }
+.delta{ font-family:var(--cifra); color:var(--acento) }
+
+/* ── la barra del día ────────────────────────────────────────────────── */
+.barra{ position:relative; height:3.4rem; border-radius:var(--r);
+        overflow:hidden; background:var(--noche); margin-top:1.6rem }
+.barra .marcaHora{ position:absolute; top:0; bottom:0; width:1px;
+                   background:rgba(255,255,255,.18) }
+.barra .sol{ position:absolute; top:50%; width:.7rem; height:.7rem;
+             border-radius:50%; background:#fff; box-shadow:0 0 0 3px rgba(0,0,0,.3);
+             transform:translate(-50%,-50%) }
+/* ⚠ LAS HORAS VAN FUERA DE LA BARRA. Dentro estaban en blanco a 62 % sobre el
+   ocre del día: 1.9:1, ilegible, y encima la barra se las cortaba por abajo.
+   Fuera se leen con la tinta de la página y no dependen de qué color le toque
+   detrás a cada etiqueta. */
+.reglaHoras{ position:relative; height:1.2rem; margin-top:.35rem }
+.reglaHoras span{ position:absolute; transform:translateX(-50%);
+                  font:400 .68rem/1.2 var(--cifra); color:var(--tenue) }
+
+/* ── la banda del año ────────────────────────────────────────────────── */
+section{ padding:3.4rem 0 0 }
+section > h2{ font-size:clamp(1.5rem,3.4vw,2rem); margin:0 0 .3rem }
+section > .dice{ color:var(--tenue); margin:0 0 1.4rem; max-width:44rem }
+
+/* ⚠ EN EL LIENZO NO SE ESCRIBE. Las horas y los meses iban pintados dentro,
+   en blanco translúcido, y en verano caían sobre el ocre del día: 1.9:1, que
+   no se lee. Y encima no crecen si alguien sube el tamaño de letra, porque un
+   canvas no sabe de eso. Ahora el lienzo dibuja SÓLO datos y todo el texto es
+   HTML, en su propia banda: se lee, se amplía y se selecciona. */
+.grafica{ display:grid; grid-template-columns:3.2rem 1fr; gap:.5rem;
+          align-items:stretch }
+.horas{ position:relative }
+.horas span{ position:absolute; right:0; transform:translateY(-50%);
+             font:400 .68rem/1 var(--cifra); color:var(--tenue) }
+.banda{ position:relative; border:1px solid var(--linea); border-radius:var(--r);
+        background:var(--noche); overflow:hidden }
+.banda canvas{ display:block; width:100%; height:auto }
+.meses{ grid-column:2; position:relative; height:1.2rem; margin-top:.3rem }
+.meses span{ position:absolute; font:400 .66rem/1.2 var(--cifra); color:var(--tenue);
+             letter-spacing:.06em }
+.banda .cruz{ position:absolute; top:0; bottom:0; width:1px;
+              background:rgba(255,255,255,.55); pointer-events:none; opacity:0 }
+.banda .globo{ position:absolute; top:.6rem; padding:.55rem .7rem; pointer-events:none;
+               background:var(--papel); color:var(--tinta); border:1px solid var(--linea);
+               border-radius:var(--r); font:400 .76rem/1.45 var(--cifra);
+               white-space:nowrap; opacity:0; transform:translateX(-50%) }
+.banda.viva .cruz, .banda.viva .globo{ opacity:1 }
+.leyenda{ display:flex; flex-wrap:wrap; gap:.4rem 1.1rem; margin:.9rem 0 0;
+          font:400 .74rem/1 var(--cifra); color:var(--tenue) }
+.leyenda span{ display:inline-flex; align-items:center; gap:.4rem }
+.leyenda i{ width:.85rem; height:.85rem; border-radius:1px; display:block }
+
+/* ── tablas ──────────────────────────────────────────────────────────── */
+/* ⚠ UNA TABLA DE TRES COLUMNAS NO SE ESTIRA A 1150 PX. Con `width:100%` en
+   una pantalla ancha, «21 de junio» quedaba a 400 px de su propio rótulo y el
+   ojo perdía la fila a medio camino. La medida de una tabla la fija su
+   contenido, no la ventana. */
+.rejilla{ width:100%; overflow-x:auto }
+table{ width:100%; max-width:46rem; border-collapse:collapse; font-size:.95rem;
+       min-width:min(30rem, 100%) }
+th,td{ text-align:left; padding:.72rem .6rem; border-bottom:1px solid var(--linea) }
+th{ font:400 .68rem/1 var(--cifra); letter-spacing:.1em; text-transform:uppercase;
+    color:var(--tenue) }
+td.n{ font-family:var(--cifra); font-variant-numeric:tabular-nums; text-align:right }
+tbody tr:hover{ background:var(--papel2) }
+
+/* ── avisos: la parte que casi nadie dibuja ──────────────────────────── */
+.aviso{ border:1px solid var(--linea); border-left:3px solid var(--acento);
+        border-radius:var(--r); padding:1rem 1.1rem; margin:1.2rem 0 0;
+        background:var(--papel2); font-size:.94rem }
+.aviso b{ display:block; margin-bottom:.15rem }
+
+footer{ margin-top:4rem; border-top:1px solid var(--linea); padding:1.8rem 0 5rem;
+        font:400 .82rem/1.65 var(--cifra); color:var(--tenue) }
+footer p{ margin:0 0 .9rem; max-width:46rem }
+
+.tema{ position:fixed; right:1rem; bottom:1rem; z-index:5;
+       font:400 .7rem/1 var(--cifra); letter-spacing:.1em; text-transform:uppercase;
+       background:var(--papel); color:var(--tinta); border:1px solid var(--linea);
+       border-radius:var(--r); padding:0 1rem; min-height:2.9rem; cursor:pointer }
+
+/* ── movimiento: sólo transform y opacidad de adornos, y apagable ─────── */
+@media (prefers-reduced-motion: no-preference){
+  .banda .cruz, .banda .globo{ transition:opacity .12s linear }
+  .barra .sol{ transition:left .3s cubic-bezier(.2,.7,.3,1) }
+}

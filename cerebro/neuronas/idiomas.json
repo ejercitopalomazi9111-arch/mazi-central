@@ -1,0 +1,92 @@
+{
+  "area": "idiomas",
+  "nombre": "Que aguante otro idioma",
+  "que": "Longitudes, orden de palabras, formatos y símbolos: lo que se rompe en cuanto el texto deja de ser el original.",
+  "neuronas": [
+    {
+      "id": "el-texto-que-crece-al-traducirse",
+      "titulo": "Al traducir, el botón se rompe",
+      "gravedad": "media",
+      "sintoma": "En otro idioma los textos se salen de sus cajas o se cortan.",
+      "causa": "Se maquetó con la longitud del idioma original; otras lenguas ocupan bastante más.",
+      "porque": "Se diseña en un idioma y la traducción llega después, cuando ya está aprobado.",
+      "arreglo": "Diseñar con holgura y probar con el idioma más largo del catálogo, no con el original.",
+      "comoCazarlo": "Alargar artificialmente todos los textos un 40 % y mirar qué se rompe.",
+      "consejo": "Los botones y las etiquetas cortas son lo primero que revienta.",
+      "senales": [
+        "se sale el texto en inglés",
+        "se corta la etiqueta",
+        "no cabe la traducción"
+      ],
+      "salioDe": "Práctica de internacionalización; el mismo principio que diseñar con el contenido real y no con relleno."
+    },
+    {
+      "id": "frases-armadas-por-pedazos",
+      "titulo": "El mensaje se arma concatenando trozos y en otro idioma no tiene sentido",
+      "gravedad": "media",
+      "sintoma": "Traducciones que suenan raras o quedan en desorden.",
+      "causa": "La frase se construye pegando fragmentos, y el orden de las palabras cambia entre idiomas.",
+      "porque": "Concatenar es lo directo cuando hay una variable en medio.",
+      "arreglo": "Frases completas con marcadores de posición, para que quien traduce pueda mover el orden.",
+      "comoCazarlo": "Buscar concatenaciones de texto visible en el código.",
+      "consejo": "Lo mismo con los plurales: no son dos formas en todos los idiomas.",
+      "senales": [
+        "la traducción suena rara",
+        "queda al revés",
+        "no se puede traducir bien"
+      ],
+      "salioDe": "Práctica estándar de internacionalización."
+    },
+    {
+      "id": "formato-de-fecha-y-numero-a-mano",
+      "titulo": "Las fechas y los números se formatean a mano",
+      "gravedad": "baja",
+      "sintoma": "Fechas en un formato que confunde, o separadores de miles equivocados.",
+      "causa": "Se escribió el formato del país de quien programó.",
+      "porque": "Formatear a mano es directo y da el resultado correcto en el sitio donde se prueba.",
+      "arreglo": "Usar el formateo por configuración regional del navegador y dejar que el sistema decida.",
+      "comoCazarlo": "Cambiar el idioma del navegador y mirar fechas, horas, números y monedas.",
+      "consejo": "03/04 es marzo o abril según quién lo lea: si la fecha importa, el mes va con letras.",
+      "senales": [
+        "la fecha se ve rara",
+        "los miles están mal",
+        "no sé si es marzo o abril"
+      ],
+      "salioDe": "Práctica de formateo por configuración regional."
+    },
+    {
+      "id": "iconos-que-no-viajan",
+      "titulo": "El icono significa otra cosa en otro sitio",
+      "gravedad": "baja",
+      "sintoma": "Un símbolo se malinterpreta o resulta chocante en otro país.",
+      "causa": "Se usó una metáfora local —un buzón, un gesto de mano, un color— como si fuera universal.",
+      "porque": "Dentro de una cultura la metáfora es tan obvia que no parece una elección.",
+      "arreglo": "Preferir símbolos de convención digital, y acompañar con texto lo que se pueda.",
+      "comoCazarlo": "Enseñar los iconos a alguien de otra cultura sin contexto.",
+      "consejo": "Los gestos de mano son de los que más cambian de significado.",
+      "senales": [
+        "no entienden ese icono",
+        "allá significa otra cosa",
+        "el símbolo no se usa aquí"
+      ],
+      "salioDe": "Práctica de iconografía internacional recogida por NN/g."
+    },
+    {
+      "id": "direccion-de-lectura",
+      "titulo": "En árabe o hebreo la interfaz se descoloca",
+      "gravedad": "baja",
+      "sintoma": "Al cambiar a un idioma de derecha a izquierda, iconos y flechas apuntan mal.",
+      "causa": "Los márgenes y direcciones están escritos como izquierda y derecha absolutas.",
+      "porque": "Es lo que se enseña y lo que se ve en todos los ejemplos.",
+      "arreglo": "Usar propiedades lógicas —inicio y fin— en vez de izquierda y derecha.",
+      "comoCazarlo": "Poner el documento en dirección inversa y recorrer la interfaz.",
+      "consejo": "Las propiedades lógicas no cuestan nada de más aunque nunca se traduzca.",
+      "senales": [
+        "se descoloca en árabe",
+        "las flechas apuntan al revés",
+        "los márgenes quedan mal"
+      ],
+      "salioDe": "Propiedades lógicas de CSS documentadas en MDN."
+    }
+  ]
+}

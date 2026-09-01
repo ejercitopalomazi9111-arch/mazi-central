@@ -2098,9 +2098,14 @@ function leer(texto, evidencias){
         html:'<h2><span class="rom">'+esc(mr[1])+'.</span> '+enLinea(mr[2])+'</h2>' });
       i++; continue;
     }
-    /* un renglón corto TODO EN MAYÚSCULAS también es un apartado */
+    /* un renglón corto TODO EN MAYÚSCULAS también es un apartado.
+       OJO CON EL ORDEN: esta regla corre ANTES que la de `###`, y «###» no
+       tiene minúsculas, así que «### ECOSISTEMAS» pasaba por apartado en
+       mayúsculas y salía impreso CON los tres gatos delante. Se vio en un
+       directorio de empresas, donde media docena de nombres van en mayúsculas.
+       Por eso se descarta aquí lo que ya trae marca de título. */
     if(t.length > 3 && t.length < 90 && !/[.;]$/.test(t) &&
-       t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{3}/.test(t) && !/^\||^\d+[.)]/.test(t)){
+       t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{3}/.test(t) && !/^\||^#|^\d+[.)]/.test(t)){
       bloques.push({tipo:'h2', pega:true, html:'<h2>'+enLinea(t)+'</h2>'});
       i++; continue;
     }

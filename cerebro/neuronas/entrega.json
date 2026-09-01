@@ -1,0 +1,92 @@
+{
+  "area": "entrega",
+  "nombre": "Entregar y trabajar con otros",
+  "que": "Lo que pasa entre que un diseño está listo y llega a producción, y cómo se pide una revisión que sirva.",
+  "neuronas": [
+    {
+      "id": "se-ve-bien-como-unica-revision",
+      "titulo": "La revisión fue «se ve bien»",
+      "gravedad": "media",
+      "sintoma": "Se aprueba algo y las mismas cosas vuelven a salir mal en la siguiente entrega.",
+      "causa": "La revisión no tenía preguntas que pudieran reprobar.",
+      "porque": "Revisar sin lista es más rápido y evita la incomodidad de decir que no.",
+      "arreglo": "Preguntas concretas que se contesten sí o no, y decir cuáles reprobaron.",
+      "comoCazarlo": "Si una revisión nunca reprueba nada, no es una revisión.",
+      "consejo": "Con quien juzga bien el diseño no sirve «se ve bien»: sirve una lista de qué se cambió y por qué.",
+      "senales": [
+        "me dijeron que se ve bien",
+        "no encontraron nada",
+        "aprobado sin comentarios"
+      ],
+      "salioDe": "Cómo pide las revisiones este grupo, y el comité de UI/UX con sus preguntas de sí o no."
+    },
+    {
+      "id": "el-diseno-que-no-dice-que-pasa-si",
+      "titulo": "La maqueta no dice qué pasa con el caso raro",
+      "gravedad": "media",
+      "sintoma": "Al construir aparecen diez preguntas que la maqueta no contesta.",
+      "causa": "Se entregó el estado ideal y ninguno de los bordes: texto largo, cero elementos, error, carga.",
+      "porque": "El estado ideal es el que se presenta y el que se aprueba.",
+      "arreglo": "Entregar los bordes junto al ideal. Son la mitad del trabajo y la que se descubre tarde.",
+      "comoCazarlo": "Contar cuántos estados vienen dibujados. Si es uno, faltan.",
+      "consejo": "Cada pregunta que no contesta la maqueta la contesta quien programa, a solas y deprisa.",
+      "senales": [
+        "¿y si no hay datos?",
+        "¿qué pasa si el texto es largo?",
+        "no viene ese caso"
+      ],
+      "salioDe": "La práctica de los cinco estados del banco de pruebas."
+    },
+    {
+      "id": "cambios-sin-decir-por-que",
+      "titulo": "Se entrega una versión nueva sin decir qué cambió",
+      "gravedad": "baja",
+      "sintoma": "Quien revisa tiene que buscar las diferencias.",
+      "causa": "Se entrega el resultado sin el resumen de los cambios y su motivo.",
+      "porque": "Quien lo hizo tiene los cambios frescos y no ve el costo de reconstruirlos desde fuera.",
+      "arreglo": "Una lista corta: qué cambió, por qué, y qué se descartó.",
+      "comoCazarlo": "Preguntarle a quien revisa si sabría enumerar los cambios sin ayuda.",
+      "consejo": "Lo que más vale de una decisión es qué se descartó, y eso nunca se ve en el resultado.",
+      "senales": [
+        "¿qué cambió?",
+        "no veo la diferencia",
+        "tengo que comparar a mano"
+      ],
+      "salioDe": "Cómo se escriben los mensajes de commit y los PR en este grupo."
+    },
+    {
+      "id": "el-prototipo-que-se-vuelve-produccion",
+      "titulo": "El prototipo se quedó como versión final",
+      "gravedad": "media",
+      "sintoma": "Hay código de demostración —datos falsos, atajos, controles muertos— en producción.",
+      "causa": "El prototipo funcionó, gustó, y nadie decidió rehacerlo.",
+      "porque": "Rehacer algo que ya funciona es imposible de justificar cuando hay otras cosas.",
+      "arreglo": "Marcar desde el principio qué es prototipo, y qué habría que rehacer si sobrevive.",
+      "comoCazarlo": "Buscar datos de ejemplo y atajos con nombre de prueba en el código publicado.",
+      "consejo": "Un prototipo que se publica es una deuda que nadie apuntó.",
+      "senales": [
+        "eso era temporal",
+        "quedó del prototipo",
+        "hay datos de prueba en producción"
+      ],
+      "salioDe": "Práctica de separar exploración de producción; el banco marca lo que es sólo de desarrollo."
+    },
+    {
+      "id": "lo-que-pide-quien-manda",
+      "titulo": "Se discute la decisión ya tomada en vez de ejecutarla",
+      "gravedad": "media",
+      "sintoma": "Una petición reafirmada vuelve a discutirse y no avanza.",
+      "causa": "Se confunde exponer una objeción —que se hace una vez— con seguir defendiéndola.",
+      "porque": "Cuando uno cree tener razón, insistir se siente como responsabilidad.",
+      "arreglo": "Exponer la objeción una vez, con lo que costaría; si se reafirma, ejecutar completo y sin rodeos.",
+      "comoCazarlo": "Si el mismo desacuerdo aparece dos veces en la misma conversación, ya se pasó de exponer a insistir.",
+      "consejo": "Traer un bloqueo como queja cuesta tiempo; traerlo como la cosa exacta que lo destraba, no.",
+      "senales": [
+        "ya te dije que sí",
+        "no me discutas",
+        "otra vez con lo mismo"
+      ],
+      "salioDe": "Una regla explícita de este equipo, y la corrección «no me des problemas, dime qué necesitas»."
+    }
+  ]
+}

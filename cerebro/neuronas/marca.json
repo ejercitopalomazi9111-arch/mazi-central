@@ -1,0 +1,92 @@
+{
+  "area": "marca",
+  "nombre": "Identidad: que se vea de quién es",
+  "que": "Cómo se deriva un sistema visual de una marca real, y qué hace que una página se vea propia y no plantilla.",
+  "neuronas": [
+    {
+      "id": "el-sistema-que-no-sale-de-la-marca",
+      "titulo": "El diseño no se parece a la marca en nada",
+      "gravedad": "media",
+      "sintoma": "La página se ve bien y podría ser de cualquiera.",
+      "causa": "El sistema visual se escogió por gusto y la marca sólo aparece en el logo de la esquina.",
+      "porque": "La papelería suele ser un PDF que nadie abre, y los colores se sacan de una captura.",
+      "arreglo": "Sacar la geometría, las proporciones y el color de lo que la marca YA tiene, y construir desde ahí.",
+      "comoCazarlo": "Tapar el logo. Si la página podría ser de otra organización, no hay identidad.",
+      "consejo": "Un membrete tiene más sistema del que parece: márgenes, reglas, ángulos y una jerarquía ya resuelta.",
+      "senales": [
+        "se ve genérico",
+        "no parece de nosotros",
+        "podría ser de cualquiera"
+      ],
+      "salioDe": "El sitio del Instituto: «Geometría tecnológica» sale de la cuña del pie y la doble regla del membrete."
+    },
+    {
+      "id": "color-de-marca-sacado-a-ojo",
+      "titulo": "El color de la marca se sacó con el cuentagotas de una captura",
+      "gravedad": "media",
+      "sintoma": "El color no coincide con el impreso ni con otros materiales.",
+      "causa": "Se tomó de un píxel de una imagen comprimida, que trae el color del compresor.",
+      "porque": "Es lo que hay a mano y el resultado se parece bastante.",
+      "arreglo": "Promediar una región grande del original de mayor calidad, o pedir el valor oficial. Y anotar de dónde salió.",
+      "comoCazarlo": "Tomar el color en tres puntos distintos de la misma zona. Si difieren, se está midiendo compresión.",
+      "consejo": "Anotar el método —«promedio de 182 712 píxeles del original»— convierte un gusto en un dato.",
+      "senales": [
+        "el color no coincide",
+        "no es el mismo rojo",
+        "se ve distinto al impreso"
+      ],
+      "salioDe": "El sistema del banco: el violeta sale de promediar 182 712 píxeles del original, y está escrito."
+    },
+    {
+      "id": "la-mascota-como-relleno",
+      "titulo": "La mascota aparece donde no hay nada que decir",
+      "gravedad": "baja",
+      "sintoma": "El personaje de marca sale en cada sección sin cumplir ninguna función.",
+      "causa": "Se usa para llenar huecos visuales.",
+      "porque": "Es el activo más simpático y el que más fácil se justifica.",
+      "arreglo": "Darle un papel —guiar, celebrar, explicar un estado— y sacarla donde no lo cumpla.",
+      "comoCazarlo": "Quitarla de una sección. Si no se echa de menos, estaba rellenando.",
+      "consejo": "Una mascota que aparece siempre deja de tener significado igual que un énfasis repetido.",
+      "senales": [
+        "sale la mascota en todos lados",
+        "¿para qué está ahí?",
+        "llena el hueco"
+      ],
+      "salioDe": "Práctica de uso de personajes de marca; en este grupo, el uso acotado de la mascota."
+    },
+    {
+      "id": "tono-que-cambia-de-pantalla-a-pantalla",
+      "titulo": "Cada pantalla habla con una voz distinta",
+      "gravedad": "media",
+      "sintoma": "Unos textos tutean, otros hablan de usted, unos bromean y otros son secos.",
+      "causa": "Cada texto lo escribió alguien distinto sin una guía de voz.",
+      "porque": "Los textos se escriben al final, deprisa, y cada quien escribe como habla.",
+      "arreglo": "Tres o cuatro reglas de voz escritas, con ejemplos de lo que sí y lo que no.",
+      "comoCazarlo": "Leer seguidos todos los mensajes de error de la aplicación. Si suenan a personas distintas, falta guía.",
+      "consejo": "La voz se nota más en los momentos malos —errores, límites, cobros— que en la portada.",
+      "senales": [
+        "cada pantalla habla distinto",
+        "unos textos tutean y otros no",
+        "no hay consistencia en el tono"
+      ],
+      "salioDe": "Práctica de guía de voz; los textos de estado del banco comparten un mismo registro."
+    },
+    {
+      "id": "la-marca-en-el-favicon-y-nada-mas",
+      "titulo": "La identidad se reduce a un logo pequeño",
+      "gravedad": "baja",
+      "sintoma": "La marca sólo se nota en la pestaña y en el pie.",
+      "causa": "No se derivó ningún elemento gráfico de la identidad, así que no hay nada más que la lleve.",
+      "porque": "El logo es lo único que se entrega, y aplicarlo se entiende como ponerlo.",
+      "arreglo": "Derivar un motivo —una forma, un ángulo, un remate— y usarlo como firma repetida en lugar del logo.",
+      "comoCazarlo": "Recorrer la página buscando qué elemento, además del logo, sólo podría ser de esta marca.",
+      "consejo": "Un motivo bien elegido firma mejor que el logo, porque puede aparecer sin gritar.",
+      "senales": [
+        "falta identidad",
+        "sólo se ve la marca en el logo",
+        "no se siente propio"
+      ],
+      "salioDe": "El arco y la doble regla del banco y del sitio del Instituto, derivados de la papelería."
+    }
+  ]
+}

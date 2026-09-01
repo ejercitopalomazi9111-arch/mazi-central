@@ -1,0 +1,92 @@
+{
+  "area": "cognitiva",
+  "nombre": "Carga mental",
+  "que": "Cuánto hay que recordar, decidir y entender. Lo que cansa aunque todo esté bien puesto.",
+  "neuronas": [
+    {
+      "id": "obligar-a-recordar-entre-pantallas",
+      "titulo": "Hay que recordar un dato de la pantalla anterior",
+      "gravedad": "media",
+      "sintoma": "La gente vuelve atrás a comprobar algo que ya vio.",
+      "causa": "El dato que hace falta para decidir se quedó en el paso anterior.",
+      "porque": "Cada pantalla se diseña sola y se ve completa por sí misma.",
+      "arreglo": "Repetir el dato donde se necesita. Repetir cuesta espacio; recordar cuesta errores.",
+      "comoCazarlo": "Hacer el flujo entero anotando cada vez que hay que volver.",
+      "consejo": "Reconocer es mucho más barato que recordar: enseñar el dato gana casi siempre.",
+      "senales": [
+        "tengo que volver a ver",
+        "no me acuerdo qué puse",
+        "¿cuál había elegido?"
+      ],
+      "salioDe": "Principio de reconocimiento sobre recuerdo, de las heurísticas clásicas."
+    },
+    {
+      "id": "demasiadas-opciones-a-la-vez",
+      "titulo": "Se ofrecen doce caminos y no se toma ninguno",
+      "gravedad": "media",
+      "sintoma": "Una pantalla llena de opciones donde la gente se queda parada.",
+      "causa": "Se pusieron todas las posibilidades al mismo nivel.",
+      "porque": "Quitar opciones exige decidir cuál importa, y eso se discute.",
+      "arreglo": "Una acción principal clara y el resto a un nivel más abajo o detrás de un paso.",
+      "comoCazarlo": "Contar las acciones visibles de una pantalla. Más de tres al mismo peso ya es mucho.",
+      "consejo": "Ofrecer todo no es respetar a la gente: es pasarle a ella el trabajo de priorizar.",
+      "senales": [
+        "no sé qué elegir",
+        "hay demasiadas opciones",
+        "me quedé pensando"
+      ],
+      "salioDe": "Principio de jerarquía de acciones; el mismo que la portada con ocho bloques iguales."
+    },
+    {
+      "id": "jerga-y-siglas-sin-explicar",
+      "titulo": "La pantalla usa siglas que sólo se entienden dentro",
+      "gravedad": "media",
+      "sintoma": "La gente pregunta qué significa una etiqueta.",
+      "causa": "Se usan abreviaturas internas como si fueran conocidas.",
+      "porque": "Dentro del equipo la sigla es más rápida y ya suena natural.",
+      "arreglo": "Escribirlo completo la primera vez, o cambiarlo por lo que la gente diría.",
+      "comoCazarlo": "Enseñar la pantalla a alguien de fuera y contar las preguntas.",
+      "consejo": "Es la misma causa por la que se busca por síntoma y no por término técnico.",
+      "senales": [
+        "¿qué significa eso?",
+        "no entiendo la etiqueta",
+        "son siglas de aquí"
+      ],
+      "salioDe": "El principio de búsqueda del cerebro de este grupo."
+    },
+    {
+      "id": "pasos-sin-decir-cuantos-faltan",
+      "titulo": "Un proceso largo sin decir por dónde va",
+      "gravedad": "baja",
+      "sintoma": "La gente abandona a la mitad de un flujo de varios pasos.",
+      "causa": "No se muestra el total ni el avance.",
+      "porque": "El total se conoce por dentro y parece obvio.",
+      "arreglo": "Decir cuántos pasos son y en cuál se va, desde el primero.",
+      "comoCazarlo": "Empezar el flujo y preguntarse cuánto falta.",
+      "consejo": "Saber que faltan dos pasos hace que se terminen; no saberlo hace que se abandone en el segundo.",
+      "senales": [
+        "¿cuánto falta?",
+        "abandonan a la mitad",
+        "no sé en qué paso voy"
+      ],
+      "salioDe": "Práctica de flujos por pasos; la misma idea que el progreso honesto."
+    },
+    {
+      "id": "deshacer-que-no-existe",
+      "titulo": "No se puede deshacer y por eso todo da miedo",
+      "gravedad": "media",
+      "sintoma": "La gente duda antes de tocar cualquier cosa.",
+      "causa": "Las acciones no se pueden revertir, así que cada una es una decisión definitiva.",
+      "porque": "Deshacer exige guardar el estado anterior, que es trabajo.",
+      "arreglo": "Deshacer donde se pueda. Explorar sin miedo es lo que hace que se aprenda una interfaz.",
+      "comoCazarlo": "Contar cuántas acciones tienen vuelta atrás.",
+      "consejo": "Deshacer es mejor que confirmar: no interrumpe y protege igual.",
+      "senales": [
+        "me da miedo tocar",
+        "¿esto se puede deshacer?",
+        "mejor no le muevo"
+      ],
+      "salioDe": "Heurística de control y libertad; la neurona de confirmar lo que no hace falta."
+    }
+  ]
+}

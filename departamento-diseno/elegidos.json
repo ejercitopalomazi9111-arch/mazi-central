@@ -1,0 +1,1697 @@
+{
+  "cuando": "2026-08-30",
+  "cupoPorCasa": 42,
+  "total": 336,
+  "porCasa": {
+    "mdn": 42,
+    "web.dev": 42,
+    "smashing": 42,
+    "css-tricks": 42,
+    "alistapart": 42,
+    "nngroup": 42,
+    "w3c": 42,
+    "practicaltypography": 42
+  },
+  "articulos": [
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/input_role/",
+      "casa": "mdn",
+      "p": 9
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Understanding_WCAG/Perceivable/Color_contrast/",
+      "casa": "mdn",
+      "p": 9
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-reduced-motion/",
+      "casa": "mdn",
+      "p": 9
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/color-interpolation-filters/",
+      "casa": "mdn",
+      "p": 9
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-details/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-modal/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-multiselectable/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alertdialog_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/button_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/form_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/grid_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/gridcell_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/menu_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/menubar_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/menuitem_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/menuitemcheckbox_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/menuitemradio_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/navigation_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/scrollbar_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/spinbutton_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/table_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/treegrid_role/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Accessibility/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Subgrid/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@font-face/font-variation-settings/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@font-palette-values/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@font-palette-values/override-colors/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-color-scheme/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-moz-user-input/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-text-fill-color/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-text-stroke-color/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/animation-timing-function/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-interpolation-filters/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variant-alternates/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variant-caps/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variant-east-asian/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variant-emoji/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variant-ligatures/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variant-numeric/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variant-position/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variation-settings/",
+      "casa": "mdn",
+      "p": 7
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/color-contrast/",
+      "casa": "web.dev",
+      "p": 7
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/aria-html/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/focus/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/forms/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/images/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/motion/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/test-assistive-technology/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/typography/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/css/popover-and-dialog/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/css/view-transitions-spas/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/design/micro-layouts/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/design/responsive-images/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/learn/performance/",
+      "casa": "web.dev",
+      "p": 5
+    },
+    {
+      "url": "https://web.dev/how-to-use-baseline/",
+      "casa": "web.dev",
+      "p": 4
+    },
+    {
+      "url": "https://web.dev/performance/",
+      "casa": "web.dev",
+      "p": 4
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/conclusion/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/design-ux/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/glossary/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/javascript/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/measure/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/more-html/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/patterns/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/structure/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/test-automated/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/test-manual/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/video-audio/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/welcome/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/accessibility/why/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/animations/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/color/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/container-queries/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/filters/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/flexbox/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/focus/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/gradients/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/grid/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/layout/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/shadows/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/spacing/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/transitions/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://web.dev/learn/css/typography/",
+      "casa": "web.dev",
+      "p": 3
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2012/06/responsive-menus-enhancing-navigation-on-mobile-websites/",
+      "casa": "smashing",
+      "p": 13
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2013/09/responsive-images-performance-problem-case-study/",
+      "casa": "smashing",
+      "p": 13
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2014/05/responsive-images-done-right-guide-picture-srcset/",
+      "casa": "smashing",
+      "p": 13
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2021/02/responsive-image-effects-css-gradients-aspect-ratio/",
+      "casa": "smashing",
+      "p": 13
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2022/05/accessible-design-system-themes-css-color-contrast/",
+      "casa": "smashing",
+      "p": 13
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2010/02/50-css-and-javascript-techniques-for-layouts-forms-and-visual-effects/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2011/07/seven-guidelines-for-designing-high-performance-mobile-user-experiences/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2012/10/motion-and-animation-a-new-mobile-ux-design-material/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2013/06/pinterest-paint-performance-case-study/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2013/08/creating-high-performance-mobile-websites/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2014/05/picturefill-2-0-responsive-images-and-the-perfect-polyfill/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2014/10/color-contrast-tips-and-tools-for-accessibility/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2015/03/continuous-input-in-mobile-devices-pain-or-gain/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2015/05/form-inputs-browser-support-issue/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2015/10/webp-images-and-performance/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2015/11/black-friday-ui-stack-accessibility-performance/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2016/01/responsive-image-breakpoints-generation/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2016/03/managing-mobile-performance-optimization/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2016/05/web-image-effects-performance-showdown/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2016/08/how-to-create-a-responsive-8-bit-drum-machine-using-web-audio-svg-and-multitouch/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2016/09/automating-art-direction-with-the-responsive-image-breakpoints-generator/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2016/11/css-grids-flexbox-box-alignment-new-layout-standard/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2017/05/fluid-responsive-typography-css-poly-fluid-sizing/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2017/07/enhancing-css-layout-floats-flexbox-grid/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2018/02/progressive-image-loading-user-perceived-performance/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2018/07/smashingconf-videos-web-fonts-performance/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2018/10/performance-server-timing/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2018/10/smashingconf-toronto-a11y-performance-audits/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2019/06/optimizing-google-fonts-performance/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2020/03/infinite-scroll-lazy-image-loading-react/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2020/04/new-smashing-online-workshops-css-accessibility-performance-ux/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2021/04/easing-functions-css-animations-transitions/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2022/01/modern-fluid-typography-css-clamp/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2022/06/measuring-performance-typefaces-users-part1/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2022/06/measuring-performance-typefaces-users-part2/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2022/10/fluid-typography-clamp-sass-functions/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2022/12/accessible-front-end-patterns-responsive-tables-part1/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2022/12/accessible-front-end-patterns-responsive-tables-part2/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2023/08/designing-accessible-text-over-images-part1/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2023/08/designing-accessible-text-over-images-part2/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2023/08/oklch-color-spaces-gamuts-css/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://www.smashingmagazine.com/2025/11/keyframes-tokens-standardizing-animation-across-projects/",
+      "casa": "smashing",
+      "p": 11
+    },
+    {
+      "url": "https://css-tricks.com/contrast-swap-technique-improved-image-performance-css-filters/",
+      "casa": "css-tricks",
+      "p": 12
+    },
+    {
+      "url": "https://css-tricks.com/platform-news-using-focus-visible-bbcs-new-typeface-declarative-shadow-doms-a11y-and-placeholders/",
+      "casa": "css-tricks",
+      "p": 12
+    },
+    {
+      "url": "https://css-tricks.com/snippets/css/form-validation-styling-on-input-focus/",
+      "casa": "css-tricks",
+      "p": 11
+    },
+    {
+      "url": "https://css-tricks.com/3d-layered-text-motion-and-variations/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/a-practical-use-case-for-vue-render-functions-building-a-design-system-typography-grid/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/accessibility-and-web-performance-are-not-features-theyre-the-baseline/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/better-form-inputs-for-better-mobile-user-experiences/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/fix-scrolling-performance-with-css-will-change-property/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/fluid-images-in-a-variable-proportion-layout/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/grid-for-layout-flexbox-for-components/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/platform-news-rounded-outlines-gpu-accelerated-svg-animations-how-css-variables-are-resolved/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/using-conic-gradients-css-variables-create-doughnut-chart-output-range-input/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/variable-aspect-ratio-card-with-conic-gradients-meeting-along-the-diagonal/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/weekly-platform-news-preventing-image-loads-with-the-picture-element-the-web-we-want-svg-styles-are-not-scoped/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/yet-another-mobile-context-menu-with-no-indication-it-can-scroll/",
+      "casa": "css-tricks",
+      "p": 10
+    },
+    {
+      "url": "https://css-tricks.com/almanac/rules/m/media/prefers-reduced-motion/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/snippets/css/force-file-upload-input-button-to-right-side-in-webkit/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/snippets/css/glowing-blue-input-highlights/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/snippets/html/basic-microformatted-hcard/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/snippets/javascript/input-with-disappearing-background-image/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/snippets/jquery/highlight-related-label-when-input-in-focus/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/snippets/jquery/keep-text-inputs-in-sync/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/videos/208-a-css-grid-layout-with-pictures-down-one-side-matched-up-with-paragraphs-on-the-other/",
+      "casa": "css-tricks",
+      "p": 9
+    },
+    {
+      "url": "https://css-tricks.com/a-buisness-card-microformats-site/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/a-new-responsive-font-format-for-the-web/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/a-responsive-grid-layout-with-no-media-queries/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/accessible-simple-responsive-tables/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/accessible-svgs-high-contrast-mode/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/accessible-web-animation-the-wcag-on-animation-explained/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/actually-the-san-francisco-typeface-does-ship-as-a-variable-font/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/adding-shadows-to-svg-icons-with-css-and-svg-filters/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/align-svg-icons-text-say-goodbye-font-icons/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/animate-box-shadow-silky-smooth-performance/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/better-rendering-for-variable-fonts/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/bringing-back-parallax-with-scroll-driven-css-animations/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/browser-painting-and-considerations-for-web-performance/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/color-contrast-accessibility-tools/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/color-inputs-a-deep-dive-into-cross-browser-differences/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/colrv1-and-css-font-palette-web-typography/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/component-spacing-design-system/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/consistent-fluidly-scaling-type-and-spacing/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://css-tricks.com/content-visibility-the-new-css-property-that-boosts-your-rendering-performance/",
+      "casa": "css-tricks",
+      "p": 8
+    },
+    {
+      "url": "https://alistapart.com/blog/post/variable-fonts-for-responsive-design/",
+      "casa": "alistapart",
+      "p": 9
+    },
+    {
+      "url": "https://alistapart.com/blog/post/accessible-html5-media-players-and-more/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/adobe-closes-browserlab-blames-mobile-platform-rise/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/breaking-the-1000ms-time-to-glass-mobile-barrier/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/bringing-responsive-images-to-browsers/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/bulletproof-accessible-icon-fonts/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/easy-color-contrast-testing/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/longform-content-with-craft-matrix/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/more-resources-for-accessible-animations/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/network-performance-testing/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/responsive-design-the-picture-element-comes-of-age/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/responsive-images-end-of-year-report/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/testing-responsive-images/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/the-runtime-performance-checklist/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/why-responsive-images-matter/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/why-we-need-responsive-images-72-less-image-weight/",
+      "casa": "alistapart",
+      "p": 7
+    },
+    {
+      "url": "https://alistapart.com/blog/post/apple-and-responsive-design/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/breakpoint-really-simple-organized-media-queries-with-sass/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/chrome-announces-blink-rendering-engine/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/content-out-layout-the-resources/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/context-makes-our-devices/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/device-ram-and-image-megapixel-limit/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/dive-in-resources-for-web-animation/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/dont-forget-about-contrast/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/global-accessibility-awareness-day-getting-the-word-out/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/global-accessibility-day/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/google-hides-layout-javascript-from-game-console-browsers/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/leaning-into-longform/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/learn-css-layout/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/learning-to-be-accessible/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/mailchimp-pattern-library/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/mapbox-develops-an-open-source-vector-format-for-maps/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/maps-should-be-crafted-not-plugged-in/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/measuring-the-impact-of-responsive-designs/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/microsoft-backs-away-from-flash-ban-in-ie10/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/mobile-shopping-on-native-web/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/on-styled-form-elements/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/packery-a-new-js-based-layout-library/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/picture-element-qa/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/responsible-responsive-design-scott-jehl-on-big-web-show-no-83/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/responsive-design-on-a-budget/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://alistapart.com/blog/post/responsive-web-design-easter-egg/",
+      "casa": "alistapart",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/human-body-touch-input/",
+      "casa": "nngroup",
+      "p": 9
+    },
+    {
+      "url": "https://www.nngroup.com/articles/image-vs-list-mobile-navigation/",
+      "casa": "nngroup",
+      "p": 9
+    },
+    {
+      "url": "https://www.nngroup.com/articles/mobile-input-checklist/",
+      "casa": "nngroup",
+      "p": 9
+    },
+    {
+      "url": "https://www.nngroup.com/articles/variability-in-user-performance/",
+      "casa": "nngroup",
+      "p": 9
+    },
+    {
+      "url": "https://www.nngroup.com/articles/variable-fonts-wide-screen-layout/",
+      "casa": "nngroup",
+      "p": 9
+    },
+    {
+      "url": "https://www.nngroup.com/articles/architectural-component-hypertext-systems/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/breakpoints-in-responsive-design/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/design-systems-vs-style-guides/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/details-in-study-methodology-can-give-misleading-results/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/form-design-white-space/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/format-based-navigation/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/ia-questions-navigation-menus/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/image-focused-design/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/imagery-in-visual-design/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/mobile-accessibility-research/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/mobile-navigation-patterns/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/mobile-vs-responsive/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/modal-nonmodal-dialog/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/outliers-and-luck-in-user-performance/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/right-justified-navigation-menus/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/satisfaction-vs-performance-metrics/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/split-buttons-navigation/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/support-mobile-navigation/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/text-over-images/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/video-image-details/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/visual-hierarchy-ux-definition/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/visual-treatments-accessibility/",
+      "casa": "nngroup",
+      "p": 7
+    },
+    {
+      "url": "https://www.nngroup.com/articles/1994-design-sunweb-sun-microsystems-intranet/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/1995-design-sun-microsystems-website/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/3-cs-microcopy/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/3-is-of-microcopy/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/7-tips-memorable-imagery/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/accessibility-inclusivity-study-guide/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/accessibility-is-not-enough/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/accessible-design-for-users-with-disabilities/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/ad-placement-mobile/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/after-the-buy-button-in-e-commerce/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/ai-data-prototype-testing/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/ai-generated-images/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/ai-imagegen-stages/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/ai-information-seeking-keyword-foraging/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.nngroup.com/articles/alt-text-usability/",
+      "casa": "nngroup",
+      "p": 5
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/concurrent-input-mechanisms.html",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/concurrent-input-mechanisms/",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose/",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text-no-exception.html",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text-no-exception/",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/input-modalities.html",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/input-modalities/",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast/",
+      "casa": "w3c",
+      "p": 9
+    },
+    {
+      "url": "https://www.w3.org/TR/2024/REC-WCAG22-20241212/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-enhanced.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-enhanced/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/documenting-accessibility-support/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-enhanced.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-enhanced/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/input-assistance.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/input-assistance/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/on-input.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/on-input/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color/",
+      "casa": "w3c",
+      "p": 7
+    },
+    {
+      "url": "http://www.w3.org/2000/svg/",
+      "casa": "w3c",
+      "p": 5
+    },
+    {
+      "url": "https://www.w3.org/WAI/standards-guidelines/wcag/new-in-22/",
+      "casa": "w3c",
+      "p": 5
+    },
+    {
+      "url": "https://www.w3.org/WAI/tutorials/images/informative/",
+      "casa": "w3c",
+      "p": 5
+    },
+    {
+      "url": "https://www.w3.org/WAI/tutorials/menus/application-menus-code/",
+      "casa": "w3c",
+      "p": 5
+    },
+    {
+      "url": "https://practicaltypography.com/grids-of-numbers.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/helvetica-and-arial-alternatives.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/how-to-embed-fonts-in-a-word-document.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/ligatures-in-programming-fonts-hell-no.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/maxims-of-page-layout.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/metrics-vs-optical-spacing.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/responsive-web-design.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/text-formatting.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/the-copyright-status-of-fonts.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/white-space-characters.html",
+      "casa": "practicaltypography",
+      "p": 6
+    },
+    {
+      "url": "https://practicaltypography.com/are-two-spaces-better-than-one.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/bad-fonts.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/bold-or-italic.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/bulleted-and-numbered-lists.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/business-cards.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/century-schoolbook-alternatives.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/color.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/common-accented-characters.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/drowning-the-crystal-goblet.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/economics-year-one.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/effluents-influence-affluence.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/emoticons-and-emoji.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/first-line-indents.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/font-basics.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/font-recommendations.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/foot-and-inch-marks.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/free-fonts.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/gill-sans-alternatives.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/goofy-fonts.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/grids.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/hard-line-breaks.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/hard-page-breaks.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/how-this-book-was-made.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/how-to-make-a-pdf.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/how-to-pay-for-this-book.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/how-to-use.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/how-to-work-with-a-designer.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/hyphens-and-dashes.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/identifying-fonts.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/keep-lines-together.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/keep-with-next-paragraph.html",
+      "casa": "practicaltypography",
+      "p": 4
+    },
+    {
+      "url": "https://practicaltypography.com/kerning.html",
+      "casa": "practicaltypography",
+      "p": 4
+    }
+  ]
+}

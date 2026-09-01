@@ -1,0 +1,92 @@
+{
+  "area": "edicion",
+  "nombre": "Editar y guardar",
+  "que": "Modo de edición, guardado y pérdida de trabajo: lo que la gente más recuerda cuando sale mal.",
+  "neuronas": [
+    {
+      "id": "no-se-sabe-si-esta-guardado",
+      "titulo": "No hay forma de saber si los cambios se guardaron",
+      "gravedad": "alta",
+      "sintoma": "La gente no se atreve a cerrar la pestaña.",
+      "causa": "El guardado es automático y silencioso, o manual y sin confirmación.",
+      "porque": "Quien lo programó ve la petición y sabe que funciona.",
+      "arreglo": "Un estado visible: guardando, guardado a tal hora, o sin guardar. Y avisar al salir con cambios pendientes.",
+      "comoCazarlo": "Escribir algo y preguntarse, sin mirar el código, si está a salvo.",
+      "consejo": "«Guardado hace un momento» tranquiliza más que un icono que parpadea.",
+      "senales": [
+        "¿ya se guardó?",
+        "no me atrevo a cerrar",
+        "perdí cambios"
+      ],
+      "salioDe": "La regla de no perder lo escrito, del área de interfaz."
+    },
+    {
+      "id": "modo-edicion-que-no-se-distingue",
+      "titulo": "No se nota si se está editando o mirando",
+      "gravedad": "media",
+      "sintoma": "Se escriben cosas creyendo que se está en un buscador, o se intenta escribir donde no se puede.",
+      "causa": "Los dos modos se ven casi igual.",
+      "porque": "Un modo de edición discreto se ve más limpio y elegante.",
+      "arreglo": "Que editar se vea distinto: fondo, borde, cursor, y una salida clara.",
+      "comoCazarlo": "Capturar los dos modos y compararlos. Si cuesta distinguirlos, falta señal.",
+      "consejo": "Vale también para lo contrario: un campo que parece editable y no lo es.",
+      "senales": [
+        "no sabía que podía escribir",
+        "creí que era editable",
+        "¿estoy editando?"
+      ],
+      "salioDe": "Principio de visibilidad del estado del sistema."
+    },
+    {
+      "id": "perder-el-trabajo-al-navegar",
+      "titulo": "Se toca un enlace y se pierde lo escrito",
+      "gravedad": "alta",
+      "sintoma": "Un clic accidental borra media hora de trabajo.",
+      "causa": "No hay aviso al salir con cambios sin guardar.",
+      "porque": "El aviso es molesto cuando no hay cambios, y distinguirlo exige llevar la cuenta.",
+      "arreglo": "Avisar sólo si hay cambios sin guardar, y guardar un borrador local mientras tanto.",
+      "comoCazarlo": "Escribir y navegar a otra página sin guardar.",
+      "consejo": "El borrador local es mejor que el aviso: no interrumpe y salva igual.",
+      "senales": [
+        "se perdió todo",
+        "le di sin querer y se borró",
+        "no me avisó"
+      ],
+      "salioDe": "La misma regla de los formularios: nunca se pierde lo que la persona escribió."
+    },
+    {
+      "id": "dos-personas-editando-lo-mismo",
+      "titulo": "El último que guarda pisa al otro",
+      "gravedad": "alta",
+      "sintoma": "Alguien pierde su trabajo porque otra persona guardó después.",
+      "causa": "No hay detección de conflicto: se guarda encima.",
+      "porque": "Con un solo editor el caso no existe y añadir versiones es trabajo.",
+      "arreglo": "Detectar que la versión cambió y ofrecer resolver, en vez de pisar en silencio.",
+      "comoCazarlo": "Abrir el mismo documento en dos ventanas y guardar en las dos.",
+      "consejo": "Aunque no haya edición colaborativa, dos pestañas de la misma persona ya son dos editores.",
+      "senales": [
+        "me borró los cambios",
+        "se perdió lo que hice",
+        "el otro guardó encima"
+      ],
+      "salioDe": "El mismo patrón de conflicto que se maneja al publicar sobre una versión más nueva."
+    },
+    {
+      "id": "deshacer-que-no-llega-a-lo-importante",
+      "titulo": "Deshacer sólo funciona para el texto",
+      "gravedad": "media",
+      "sintoma": "Se puede deshacer lo escrito pero no borrar un elemento por error.",
+      "causa": "El historial cubre sólo una parte de las acciones.",
+      "porque": "El texto lo deshace el navegador solo; el resto hay que implementarlo.",
+      "arreglo": "Un historial que cubra las acciones destructivas, que son las que importan.",
+      "comoCazarlo": "Hacer las cinco acciones más destructivas e intentar deshacerlas.",
+      "consejo": "Si sólo se puede implementar una, que sea la de borrar.",
+      "senales": [
+        "no puedo deshacer eso",
+        "borré sin querer",
+        "el ctrl+z no sirve aquí"
+      ],
+      "salioDe": "La neurona de deshacer mejor que confirmar, del área de carga mental."
+    }
+  ]
+}
