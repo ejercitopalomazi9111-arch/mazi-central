@@ -1008,7 +1008,25 @@ async function olvido(){
   await s2.alarm();
   ok('al olvidar, la sala fundada CONSERVA su dueño y sus llaves',
      s2.dueno === 'carlos' && Object.keys(s2.llaves).length === 1);
-  ok('pero sí olvida la conversación', s2.hilo.length === 0);
+  ok('pero sí olvida la conversación',
+     !s2.hilo.some(e => e.texto === 'algo'));
+
+  /* ── QUE OLVIDE NO ES EL DEFECTO; QUE OLVIDE CALLADO SÍ ────────────────
+     Antes el hilo quedaba en cero y punto, y el que volvía no tenía cómo
+     distinguir «aquí nunca se dijo nada» de «aquí se borró lo que se dijo».
+     Se pagó una vez: Carlos volvió a GRUPAZ, vio nueve mensajes donde había
+     una jornada entera y escribió «alv se borró toda la conversación qué
+     onda?». El servidor lo sabía y no lo dijo.
+
+     Se prueba el RASTRO, no el vacío: que quede exactamente un aviso, que
+     sea de sistema y que nombre al dueño — porque la mitad importante del
+     mensaje es «no te quedaste afuera, tus llaves siguen sirviendo». */
+  ok('y deja dicho que olvidó, en vez de verse como sala nueva',
+     s2.hilo.length === 1 && s2.hilo[0].tipo === 'sistema'
+     && /olvid/i.test(s2.hilo[0].texto) && s2.hilo[0].texto.includes('carlos'));
+  ok('el aviso del olvido tiene id propio y no repite uno ya usado',
+     s2.hilo[0].id === `e${s2.serie}`
+     && (await s2.ctx.storage.get('serie')) === s2.serie);
   ok('y se vuelve a dar cuerda sola',
      (await s2.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
 

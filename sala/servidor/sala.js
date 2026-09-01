@@ -358,10 +358,38 @@ export class Sala {
   async alarm(){
     /* Una sala FUNDADA no se borra. Puede olvidar lo que se dijo —para eso es
        el acta— pero jamás quién es su dueño ni las llaves que repartió: eso
-       dejaría a todos afuera de su propia sala, sin aviso y sin remedio. */
+       dejaría a todos afuera de su propia sala, sin aviso y sin remedio.
+
+       ⚠ Y OLVIDA EN VOZ ALTA, que es lo que faltaba. Antes vaciaba el hilo
+       y no dejaba rastro: quien volvía encontraba una sala en blanco y no
+       tenía cómo distinguir «aquí nunca se dijo nada» de «aquí se borró lo
+       que se dijo». Pasó de verdad —Carlos lo reportó con un «alv se borró
+       toda la conversación qué onda?»— y le costó raspar la pantalla para
+       enterarse de algo que el propio servidor sabía perfectamente.
+
+       Es la misma regla que ya nos mordió con el vigilante sordo: para que
+       el silencio siga significando silencio, todo lo demás tiene que hacer
+       ruido. Un borrado callado se ve idéntico a una sala nueva, y esa es
+       exactamente la clase de defecto que no se caza leyendo.
+
+       El aviso se queda COMO ÚNICO contenido del hilo, no se difunde ni
+       despierta a nadie: no hay a quién: los sockets ya murieron con la
+       instancia. Lo lee el que vuelva. */
     if(this.dueno){
-      this.hilo = []; this.gente = {}; this.propuestas = []; this.vueltas = 0;
-      await this.ctx.storage.put({ hilo:[], gente:{}, propuestas:[], vueltas:0 });
+      const aviso = {
+        id: `e${++this.serie}`,
+        ts: ahora(),
+        tipo: 'sistema',
+        de: { id:'sala', nombre:'La Sala', tipo:'sistema' },
+        texto: 'Aquí se olvidó lo dicho por falta de uso. La sala sigue siendo '
+             + `de "${this.dueno}" y sus llaves siguen sirviendo: lo que se borró `
+             + 'fue la conversación, no la sala. Si algo de lo que estaba aquí '
+             + 'importaba, tenía que estar en el repo — esto es un chat, no una '
+             + 'bitácora.',
+      };
+      this.hilo = [aviso]; this.gente = {}; this.propuestas = []; this.vueltas = 0;
+      await this.ctx.storage.put({ hilo:this.hilo, gente:{}, propuestas:[],
+                                   vueltas:0, serie:this.serie });
       await this.tocar(true);
       return;
     }

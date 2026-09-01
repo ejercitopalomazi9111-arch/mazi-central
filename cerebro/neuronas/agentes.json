@@ -144,6 +144,32 @@
         "pieza-sala"
       ],
       "salioDe": "propuesta por Gemini (gemini-3-flash-preview) en la sala MESAAA"
+    },
+    {
+      "clase": "error",
+      "id": "borrado-callado-parece-sala-nueva",
+      "titulo": "Un borrado que no deja rastro se ve igual que un lugar que nunca se usó",
+      "gravedad": "alta",
+      "sintoma": "Carlos volvió a GRUPAZ, encontró nueve mensajes donde había una jornada entera y escribió «alv se borró toda la conversación qué onda?».",
+      "causa": "La sala tiene un olvido programado que vacía el hilo por falta de uso. Vaciaba y no decía nada: dejaba el hilo en cero y ya.",
+      "porque": "Un contenedor vacío no guarda memoria de por qué está vacío. «Nunca se dijo nada» y «se borró lo que se dijo» son el MISMO estado si nadie escribe la diferencia — y el servidor sí sabía cuál de los dos era.",
+      "arreglo": "Al olvidar, dejar un aviso de sistema como único contenido del hilo, diciendo que se olvidó y que el dueño y las llaves siguen intactos. Que el vacío deje huella.",
+      "comoCazarlo": "La prueba no debe afirmar `hilo.length === 0` sino que quede EXACTAMENTE el rastro. Un test que celebra el vacío es cómplice del bug: aquí existía y estaba en verde.",
+      "consejo": "Vale para todo lo que limpia solo: cachés, colas, sesiones, archivos temporales. Si borras por política, di que borraste; si no, el usuario lo va a diagnosticar como pérdida de datos y va a tener razón en asustarse.",
+      "salioDe": "sala/servidor/sala.js · alarm() · lo reportó Carlos",
+      "senales": [
+        "se borró todo",
+        "desapareció la conversación",
+        "estaba vacío",
+        "perdí el historial",
+        "qué onda se borró"
+      ],
+      "vecinas": [
+        "la-sala-se-borraba-sola",
+        "errores-que-mienten",
+        "conectado-no-es-vivo",
+        "la-prueba-paso-sin-que-existiera-el-caso"
+      ]
     }
   ]
 }
