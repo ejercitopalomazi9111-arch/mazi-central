@@ -170,6 +170,32 @@
         "conectado-no-es-vivo",
         "la-prueba-paso-sin-que-existiera-el-caso"
       ]
+    },
+    {
+      "clase": "error",
+      "id": "tarea-programada-que-dispara-sin-correr",
+      "titulo": "Una tarea programada atada a una sesión dormida dispara sin correr",
+      "gravedad": "alta",
+      "sintoma": "La guardia de 24/7 disparó 82 veces en tres días y no corrió ni una. Las 82 llegaron de golpe cuando la sesión despertó por otra razón.",
+      "causa": "La rutina estaba atada a una sesión existente (persist_session). Eso NO despierta a la sesión: le encola el mensaje. Dormida la sesión, el mensaje se apila y nadie lo lee.",
+      "porque": "«Disparar» y «correr» son dos cosas distintas y el panel sólo enseña la primera: enabled, next_run_at y last_fired_at se ven idénticos en una guardia que trabaja y en una que no. Y como la guardia está escrita para callarse cuando no hay nada, su silencio se leía como «no había mensajes» y significaba «nunca desperté».",
+      "arreglo": "Que cada disparo cree una sesión NUEVA, que sí arranca. Pero antes hay que dejarle en el entorno lo que necesita para trabajar —la llave— porque una sesión nueva no hereda lo que se pasó a mano por el chat: si no, se cambia una guardia dormida por una sorda.",
+      "comoCazarlo": "No se caza en el panel de la rutina: ahí se ve sana. Se caza buscando su RASTRO donde debía trabajar — un renglón en el hilo, un commit, un archivo tocado. Si en tres días no dejó ninguno, no corrió.",
+      "consejo": "Vale para cualquier cosa automática: cron, webhooks, colas, respaldos. Programada, habilitada y disparada son tres estados que se cumplen enteros mientras el trabajo no ocurre ni una vez.",
+      "salioDe": "trig · Guardia de La Sala · 82 disparos encolados del 28 ago al 1 sep",
+      "senales": [
+        "no me avisó",
+        "la tarea no hizo nada",
+        "está programada y no corre",
+        "se juntaron todos los avisos",
+        "el cron no sirve"
+      ],
+      "vecinas": [
+        "borrado-callado-parece-sala-nueva",
+        "proceso-huerfano-reportado-muerto",
+        "errores-que-mienten",
+        "reporte-de-agente-sin-evidencia"
+      ]
     }
   ]
 }
