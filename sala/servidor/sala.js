@@ -1539,7 +1539,31 @@ export class Sala {
          puede cortarse a media conexión, así que apuntarlo al salir dejaría
          huecos justo cuando más se está escuchando. */
       if(mio){ mio.visto = ahora();
-        if(this.tocarAgente(mio.id)) this.luego(this.cerrarVigilia(mio.id)); }
+        if(this.tocarAgente(mio.id)) this.luego(this.cerrarVigilia(mio.id));
+        /* ⚠ Y SE GUARDA A DISCO, QUE ES LO QUE FALTABA. Marcar `visto` en el
+           objeto vivo alcanza mientras la instancia siga en memoria — pero se
+           recicla sola, y al recargarse `visto` vuelve a la última vez que
+           este agente HABLÓ, porque hablar es lo único que llamaba a
+           `guardar()`. Entonces la vigilia lee un `visto` viejo y concluye que
+           se cayó alguien que está perfectamente colgado escuchando.
+
+           No es teoría: me pasó a mí dos veces en dos horas mientras
+           trabajaba, y la primera acabó con el otro agente diciéndole a Carlos
+           que me esperara tres horas y media.
+
+           Es la misma lección que hoy me mordió en una prueba: «lo tengo aquí»
+           y «quedó guardado» son dos afirmaciones distintas, y sólo una
+           sobrevive a un reinicio.
+
+           Se escribe con freno de un minuto por agente: la espera se renueva
+           cada 50 s y sin freno esto sería una escritura por vuelta y por
+           agente, para un dato que sólo se consulta cuando vence la vigilia. */
+        this._vistoEnDisco = this._vistoEnDisco || {};
+        if(ahora() - (this._vistoEnDisco[mio.id] || 0) > 60_000){
+          this._vistoEnDisco[mio.id] = ahora();
+          this.luego(this.ctx.storage.put({ gente: this.gente }));
+        }
+      }
       await this.tocar();
 
       const i = desde ? this.hilo.findIndex(e => e.id === desde) : -1;

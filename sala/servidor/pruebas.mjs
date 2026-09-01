@@ -23,8 +23,22 @@ function hacerCtx(){
   const datos = new Map();
   return {
     storage: {
-      async get(k){ return datos.get(k); },
-      async put(o){ for(const k in o) datos.set(k, o[k]); },
+      /* ⚠ SE COPIA AL ENTRAR Y AL SALIR, Y NO ES UN DETALLE: ES LO QUE HACE
+         QUE ESTAS PRUEBAS SIRVAN.
+
+         Antes esto guardaba y devolvía LA MISMA REFERENCIA, así que el objeto
+         «en disco» y el objeto vivo eran uno solo: cambiar `this.gente` en
+         memoria cambiaba mágicamente lo guardado, sin pasar por ningún `put`.
+         O sea que NINGUNA prueba de «esto se persiste» podía fallar en toda la
+         suite — y lo comprobé: quité del código la escritura a disco y las 290
+         siguieron verdes.
+
+         El almacenamiento de Cloudflare serializa. Éste ahora también. Es la
+         misma lección del día, aplicada al decorado en vez de al código: «lo
+         tengo aquí» y «quedó guardado» son dos cosas, y un doble que las
+         confunde aprueba justo los defectos que sólo se ven al reiniciar. */
+      async get(k){ const v = datos.get(k); return v === undefined ? undefined : structuredClone(v); },
+      async put(o){ for(const k in o) datos.set(k, structuredClone(o[k])); },
       async deleteAll(){ datos.clear(); },
       /* La alarma se guarda de verdad: sin esto no se puede probar que una
          sala viva no se borre sola, que es lo que se comió la sala de Carlos. */
@@ -1254,6 +1268,36 @@ async function olvido(){
   await s3.alarm();
   ok('una sala que nadie fundó sí se borra completa',
      (await s3.ctx.storage.get('hilo')) === undefined);
+}
+
+/* ══ ESCUCHAR CUENTA COMO ESTAR VIVO, Y TIENE QUE SOBREVIVIR AL RECICLAJE ══
+   `/esperar` marca `visto` para que un agente colgado escuchando no se vea
+   «sin señal». Eso ya estaba… pero sólo en el OBJETO VIVO. Un Durable Object
+   se recicla solo, y al recargarse `visto` volvía a la última vez que ese
+   agente HABLÓ, porque hablar era lo único que escribía a disco. La vigilia
+   leía ese `visto` viejo y daba por caído a quien estaba perfectamente atento.
+
+   Pasó de verdad, dos veces en dos horas, y la primera terminó con el otro
+   agente diciéndole a Carlos que esperara 3 h 30 a alguien que nunca se fue.
+
+   Por eso esto NO mira `s.gente` —el objeto— sino lo GUARDADO. Mirar el objeto
+   es lo que dejaba pasar el defecto. */
+console.log('\n· Escuchar cuenta como estar vivo, también en disco');
+{
+  const s = nueva();
+  await entrar(s, 'ia');
+  await pedir(s, 'POST', 'decir', { de:'ia', texto:'hola' });
+  /* Se envejece el `visto` guardado, como si el agente llevara rato sin
+     hablar — que es justo el caso: sólo escucha. */
+  const g = await s.ctx.storage.get('gente');
+  g.ia.visto = Date.now() - 30 * 60 * 1000;
+  await s.ctx.storage.put({ gente: g });
+
+  await pedir(s, 'GET', 'esperar?de=ia&desde=');
+
+  const guardado = await s.ctx.storage.get('gente');
+  ok('esperar deja la señal de vida GUARDADA, no sólo en memoria',
+     Date.now() - guardado.ia.visto < 60 * 1000);
 }
 
 console.log('\n· El socket dice quién está, y nadie se apaga solo');

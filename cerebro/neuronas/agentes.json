@@ -299,6 +299,31 @@
         "reporte-de-agente-sin-evidencia",
         "conectado-no-es-vivo"
       ]
+    },
+    {
+      "clase": "error",
+      "id": "el-doble-de-pruebas-guarda-por-referencia",
+      "titulo": "Un almacenamiento de mentiras que guarda por referencia aprueba todo lo que no se persiste",
+      "gravedad": "alta",
+      "sintoma": "Se quitó del código la escritura a disco y las 290 pruebas siguieron verdes.",
+      "causa": "El doble guardaba y devolvía LA MISMA referencia, así que el objeto «en disco» y el objeto vivo eran uno solo. Cambiar la memoria cambiaba lo guardado sin pasar por ningún `put`.",
+      "porque": "Un Map es lo que uno escribe cuando quiere un almacenamiento de mentiras rápido, y funciona para todo menos para lo único que ese doble tiene que representar: que guardar es COPIAR. El de verdad serializa.",
+      "arreglo": "Que el doble copie al entrar y al salir (structuredClone). Con eso, «lo tengo en memoria» y «quedó guardado» vuelven a ser dos cosas distintas dentro de la prueba, como lo son en producción.",
+      "comoCazarlo": "Quita del código una escritura a disco a propósito. Si ninguna prueba se pone roja, tu doble está mintiendo, no tu código.",
+      "consejo": "Un doble que es más permisivo que la cosa real convierte toda la suite en decorado. Vale igual para relojes, redes, colas y sistemas de archivos falsos.",
+      "salioDe": "sala/servidor/pruebas.mjs · salió al mutar la persistencia de `visto`",
+      "senales": [
+        "la mutación no la cazó",
+        "pasa la prueba y falla en producción",
+        "el mock no falla nunca",
+        "se pierde al reiniciar"
+      ],
+      "vecinas": [
+        "la-prueba-mira-la-memoria-no-el-disco",
+        "la-prueba-paso-sin-que-existiera-el-caso",
+        "deducir-una-cosa-y-escribir-otra",
+        "probar-contra-una-copia-congelada"
+      ]
     }
   ]
 }
