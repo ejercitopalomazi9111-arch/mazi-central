@@ -1109,6 +1109,15 @@ async function olvido(){
   await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
   const [, f] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
   await pedir(s2, 'POST', 'decir', { de:'d', texto:'algo' }, f.llave);
+
+  /* ⚠ HAY QUE ENVEJECER LA SALA A MANO, Y ESO ES EL ARREGLO, NO UN ESTORBO.
+     Antes bastaba con llamar a `alarm()` sobre una sala recién usada y ya
+     borraba — o sea que la prueba pasaba EJERCITANDO EL DEFECTO: que un
+     disparo cualquiera vacía el hilo sin mirar si el olvido tocaba. Con eso
+     en verde, GRUPAZ se vació dos veces en un día.
+     Ahora el olvido se decide midiendo, así que para probarlo hay que
+     simular la falta de uso de verdad. */
+  await s2.ctx.storage.put({ ultimoUso: Date.now() - 31 * 24 * 60 * 60 * 1000 });
   await s2.alarm();
   ok('al olvidar, la sala fundada CONSERVA su dueño y sus llaves',
      s2.dueno === 'carlos' && Object.keys(s2.llaves).length === 1);
@@ -1134,9 +1143,44 @@ async function olvido(){
   ok('y se vuelve a dar cuerda sola',
      (await s2.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
 
+  /* ══ LO QUE DE VERDAD BORRÓ GRUPAZ DOS VECES EN UN DÍA ═══════════════════
+     No era el olvido: era LA VIGILIA pasando por la misma alarma.
+
+     Un Durable Object tiene UNA alarma y aquí la comparten el olvido y la
+     vigilia. Cuando sonaba por una vigilia, `alarm()` preguntaba a
+     `revisarVigilias()` — que contesta si HUBO CAMBIO, no si el disparo era
+     suyo—. Sin cambios contestaba falso y la ejecución seguía de largo hasta
+     el borrado. Cualquier vigilia que venciera sin novedad se llevaba la
+     jornada.
+
+     No se cazaba leyendo ni con las 276 pruebas de antes, porque el borrado
+     deja la sala con su dueño y sus llaves: se ve igual que una sala nueva.
+     Sólo se ve si se pregunta «¿y el hilo?» DESPUÉS de un disparo que no era
+     del olvido. Eso es lo que hace esto. */
+  const s4 = nueva();
+  await pedir(s4, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
+  const [, f4] = await leer(await pedir(s4, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
+  /* Se vuelve a entrar CON la llave: al fundar, la sala pasa a tener cuentas
+     y la sesión que entró antes se quedó como «invitado», así que `/decir` la
+     rechazaría por cuenta que no coincide. Sin este renglón la prueba mide el
+     hilo de un mensaje que nunca se guardó — y saldría verde por la razón
+     equivocada, que es justo lo que estoy persiguiendo. */
+  await pedir(s4, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' }, f4.llave);
+  const [cd4] = await leer(await pedir(s4, 'POST', 'decir', { de:'d', texto:'la jornada entera' }, f4.llave));
+  ok('(premisa) el mensaje de prueba SÍ entró al hilo', cd4 === 200);
+  /* La sala se acaba de usar: cualquier disparo ahora NO es el olvido. */
+  await s4.alarm();
+  ok('un disparo que no es el olvido NO se lleva la conversación',
+     s4.hilo.some(e => e.texto === 'la jornada entera'));
+  ok('y tampoco se lleva a la gente',
+     Object.keys(s4.gente).length === 1);
+  ok('después de ese disparo la sala sigue armada',
+     (await s4.ctx.storage.getAlarm()) !== null);
+
   /* Una sala que nadie fundó sí se borra entera: es basura. */
   const s3 = nueva();
   await pedir(s3, 'POST', 'entrar', { id:'x', nombre:'X', tipo:'humano' });
+  await s3.ctx.storage.put({ ultimoUso: Date.now() - 31 * 24 * 60 * 60 * 1000 });
   await s3.alarm();
   ok('una sala que nadie fundó sí se borra completa',
      (await s3.ctx.storage.get('hilo')) === undefined);

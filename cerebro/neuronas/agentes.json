@@ -151,18 +151,21 @@
       "titulo": "Un borrado que no deja rastro se ve igual que un lugar que nunca se usó",
       "gravedad": "alta",
       "sintoma": "Carlos volvió a GRUPAZ, encontró nueve mensajes donde había una jornada entera y escribió «alv se borró toda la conversación qué onda?».",
-      "causa": "La sala tiene un olvido programado que vacía el hilo por falta de uso. Vaciaba y no decía nada: dejaba el hilo en cero y ya.",
+      "causa": "CAUSA REAL, hallada el 1 de septiembre después de que se repitiera: NO era el olvido programado. Un Durable Object tiene UNA sola alarma y aquí la comparten el olvido y la vigilia. Cuando sonaba por una vigilia, alarm() preguntaba a revisarVigilias(), que contesta si HUBO CAMBIO — no si el disparo era suyo—. Sin cambios contestaba falso y la ejecución seguía DE LARGO hasta el borrado. Encima el borrado era callado.",
       "porque": "Un contenedor vacío no guarda memoria de por qué está vacío. «Nunca se dijo nada» y «se borró lo que se dijo» son el MISMO estado si nadie escribe la diferencia — y el servidor sí sabía cuál de los dos era.",
-      "arreglo": "Al olvidar, dejar un aviso de sistema como único contenido del hilo, diciendo que se olvidó y que el dueño y las llaves siguen intactos. Que el vacío deje huella.",
-      "comoCazarlo": "La prueba no debe afirmar `hilo.length === 0` sino que quede EXACTAMENTE el rastro. Un test que celebra el vacío es cómplice del bug: aquí existía y estaba en verde.",
+      "arreglo": "Dos cosas. Que el olvido se decida MIDIENDO: se guarda en disco cuándo se usó la sala por última vez y sólo se borra si de verdad pasó el plazo; cualquier otro disparo re-arma y no toca nada. Y sin sello NO se borra: no saber nunca puede ser motivo para destruir el trabajo de alguien. Además el borrado deja un aviso en el hilo.",
+      "comoCazarlo": "La prueba vieja llamaba a alarm() sobre una sala recién usada y esperaba que borrara: o sea que PASABA EJERCITANDO EL DEFECTO. La buena dispara la alarma cuando el olvido NO toca y exige que el hilo siga entero. Y lleva su premisa comprobada aparte, porque el mensaje de prueba se rechazaba por cuenta y el hilo salía vacío por otra razón.",
       "consejo": "Vale para todo lo que limpia solo: cachés, colas, sesiones, archivos temporales. Si borras por política, di que borraste; si no, el usuario lo va a diagnosticar como pérdida de datos y va a tener razón en asustarse.",
-      "salioDe": "sala/servidor/sala.js · alarm() · lo reportó Carlos",
+      "salioDe": "sala/servidor/sala.js · alarm() · Carlos lo reportó y se repitió a las 17 h",
       "senales": [
         "se borró todo",
         "desapareció la conversación",
         "estaba vacío",
         "perdí el historial",
-        "qué onda se borró"
+        "qué onda se borró",
+        "se borró otra vez",
+        "se vació sola",
+        "la alarma borró todo"
       ],
       "vecinas": [
         "la-sala-se-borraba-sola",
@@ -195,6 +198,30 @@
         "proceso-huerfano-reportado-muerto",
         "errores-que-mienten",
         "reporte-de-agente-sin-evidencia"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "una-alarma-dos-dueños",
+      "titulo": "Dos relojes en una sola alarma: el que suena antes ejecuta lo del otro",
+      "gravedad": "alta",
+      "sintoma": "La sala se vació dos veces en un día con el olvido puesto en treinta días.",
+      "causa": "Un Durable Object tiene UNA alarma. La compartían el olvido (30 días) y la vigilia (minutos). Al sonar por la vigilia, el código preguntaba «¿hubo cambio?» en vez de «¿de quién era este disparo?», y con un no seguía de largo hasta el borrado del otro.",
+      "porque": "Cuando dos plazos comparten un disparador, el disparador deja de decir POR QUÉ sonó. Y el código que va después asume que sonó por lo suyo, porque cuando se escribió era lo único que había.",
+      "arreglo": "Que cada tarea verifique su propia condición MIDIENDO, no por el hecho de que sonó. Ninguna acción destructiva debe colgar de «llegó el turno»: debe colgar de «se cumple lo que la justifica».",
+      "comoCazarlo": "Cuenta cuántas cosas distintas cuelgan del mismo disparador. Si son dos o más, cada rama tiene que empezar comprobando lo suyo. Y la prueba se hace disparando por el motivo AJENO y exigiendo que no pase nada.",
+      "consejo": "Vale para cualquier cron, cola o temporizador compartido. El disparo dice CUÁNDO, nunca POR QUÉ.",
+      "salioDe": "sala/servidor/sala.js · el olvido y la vigilia compartían setAlarm",
+      "senales": [
+        "se ejecutó lo que no tocaba",
+        "el cron hizo de más",
+        "borró sin que tocara",
+        "dos tareas un temporizador"
+      ],
+      "vecinas": [
+        "borrado-callado-parece-sala-nueva",
+        "tarea-programada-que-dispara-sin-correr",
+        "la-prueba-paso-sin-que-existiera-el-caso"
       ]
     }
   ]

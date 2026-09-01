@@ -357,6 +357,11 @@ export class Sala {
          ordenado —nadie lee el 900 sin haber pasado por el 899— basta con
          hasta dónde llegó cada uno, que son cuatro números. */
       this.vistos    = await ctx.storage.get('vistos')    || {};
+      /* CUÁNDO se usó esta sala por última vez. Se guarda en disco y no sólo
+         en memoria a propósito: es lo único que `alarm()` puede consultar
+         para saber si un disparo es de verdad el olvido o es la vigilia
+         pasando por ahí. Ver el comentario grande en `alarm()`. */
+      this.ultimoUso = await ctx.storage.get('ultimoUso') || 0;
     });
   }
 
@@ -458,6 +463,16 @@ export class Sala {
     if(forzado || t - (this._alarmaPuesta || 0) >= REARME){
       this._alarmaPuesta = t;
       this._olvidoEn = t + OLVIDO;
+      /* El sello va A DISCO, no sólo a memoria. `_olvidoEn` se pierde en
+         cuanto la instancia se recicla, y entonces nadie puede decir si un
+         disparo es el olvido o la vigilia. Esto sí sobrevive. */
+      this.ultimoUso = t;
+      /* La forma de OBJETO, como todo el resto del archivo. `put(clave,
+         valor)` también existe en Cloudflare, pero el almacenamiento de
+         mentiras de las pruebas sólo entiende la de objeto — y con la otra el
+         sello no se guardaba y la prueba nueva salía roja sin que el código
+         de producción tuviera nada malo. */
+      await this.ctx.storage.put({ ultimoUso: t });
     }
     await this.armar();
   }
@@ -510,6 +525,40 @@ export class Sala {
        toque el olvido, porque las dos comparten la única alarma que hay. */
     const seguir = await this.revisarVigilias();
     if(seguir){ await this.armar(); return; }
+
+    /* ⚠ AQUÍ SE BORRABA GRUPAZ, Y NO ERA EL OLVIDO: ERA LA VIGILIA PASANDO.
+       Carlos lo reportó DOS VECES en menos de un día —«alv se borró toda la
+       conversación qué onda?»— con el olvido puesto en treinta días.
+
+       La causa está tres líneas arriba y se lee: el olvido y la vigilia
+       COMPARTEN la única alarma que tiene un Durable Object. Cuando sonaba
+       por una vigilia, `revisarVigilias()` devolvía si HUBO CAMBIO — que no
+       es lo mismo que si el disparo era suyo—. Sin cambios devolvía falso, y
+       la ejecución seguía de largo hasta el borrado. O sea que cualquier
+       vigilia que venciera sin novedad vaciaba la jornada entera.
+
+       Lo tapaba que el borrado deja la sala «sana»: con su dueño y sus
+       llaves. Se veía igual que una sala nueva.
+
+       El arreglo no es adivinar de quién fue el disparo: es MEDIR. Se olvida
+       cuando de verdad pasaron treinta días sin usarse, y para todo lo demás
+       se re-arma y no se toca nada. Un disparo de más ahora cuesta un `get`;
+       antes costaba el trabajo de un día. */
+    const usada = (await this.ctx.storage.get('ultimoUso')) || this.ultimoUso || 0;
+    /* Sin sello NO se borra. Una sala vieja de verdad tendrá el suyo en cuanto
+       alguien la toque; una sala sin sello es una de la que NO SÉ nada, y no
+       saber nunca puede ser motivo para destruir el trabajo de nadie. Se
+       apunta la hora y se re-arma: al siguiente disparo ya habrá con qué
+       medir. */
+    if(!usada){
+      await this.ctx.storage.put({ ultimoUso: ahora() });
+      await this.armar();
+      return;
+    }
+    if(ahora() - usada < OLVIDO){
+      await this.armar();
+      return;
+    }
 
     /* Una sala FUNDADA no se borra. Puede olvidar lo que se dijo —para eso es
        el acta— pero jamás quién es su dueño ni las llaves que repartió: eso
