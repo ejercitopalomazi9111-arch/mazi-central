@@ -248,6 +248,32 @@
         "mutacion-sin-restaurar",
         "borrado-callado-parece-sala-nueva"
       ]
+    },
+    {
+      "clase": "error",
+      "id": "borrarlo-del-archivo-no-lo-borra-del-repo",
+      "titulo": "Quitar un dato del archivo no lo quita de la historia, y el repo es público",
+      "gravedad": "alta",
+      "sintoma": "El archivo se ve limpio, con su comentario explicando que el campo va vacío a propósito. El dato sigue siendo legible por cualquiera.",
+      "causa": "Se corrigió la versión de hoy y no los commits donde el dato entró. Git guarda todo lo que pasó, no sólo lo que quedó.",
+      "porque": "El arreglo se siente completo porque el archivo es lo que uno mira. La historia no aparece en ninguna pantalla salvo que se pregunte por ella a propósito.",
+      "arreglo": "Para datos personales o secretos no basta con el commit que los quita: o el repositorio pasa a privado, o se reescribe la historia y se fuerza el empuje —lo segundo rompe las copias de todos y lo autoriza una persona, nunca un agente.",
+      "comoCazarlo": "`git log -S\"<el dato>\" -- <archivo>` dice en qué commits vivió. Si devuelve algo, sigue ahí. Vale igual para llaves, tokens, correos y teléfonos.",
+      "consejo": "Antes de dar por resuelta una fuga, pregúntate si arreglaste el archivo o el repositorio. Son dos cosas y sólo una la ve el que clona.",
+      "salioDe": "avisos/datos.js · ocho maestros reales, campo que no leía nadie",
+      "senales": [
+        "ya lo quité",
+        "el archivo está limpio",
+        "se me fue una llave",
+        "datos personales en el repo",
+        "lo borré del código"
+      ],
+      "vecinas": [
+        "la-prueba-mira-la-memoria-no-el-disco",
+        "decision-llaves-fuera-del-repo",
+        "decision-repos-publicos",
+        "errores-que-mienten"
+      ]
     }
   ]
 }

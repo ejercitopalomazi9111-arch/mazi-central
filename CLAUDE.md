@@ -854,6 +854,27 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   estado y está en otro. **Lo arregla Carlos** en el panel de Cloudflare: al proyecto
   `ppuercos`, ponerle carpeta raíz `juegos/servidor`; y borrar `puercos`, que no sirve nada.
   El nombre con dos pes es correcto y está explicado en `juegos/servidor/wrangler.jsonc`.
+- **🔴 Los nombres de ocho maestros reales SIGUEN EN LA HISTORIA del repo público.**
+  El archivo actual está limpio —`avisos/datos.js` trae `maestro:''` y su comentario
+  explicando por qué— y por eso parece resuelto. No lo está: quitarlos de la versión de
+  hoy no los quita de los commits donde entraron, y este repositorio es público. Se
+  comprueba en un renglón, y sale la lista completa:
+
+  ```
+  git log origin/main -S"maestro:'" -- avisos/datos.js
+  git show <el commit más viejo>:avisos/datos.js
+  ```
+
+  Son datos personales de gente real que no dio permiso, publicados a cambio de nada
+  —ese campo no lo lee la ficha, ni el cartel, ni ninguna prueba—. **Quinta vez que
+  aparece el mismo defecto de estos dos días: algo que informa un estado y está en otro.**
+  Aquí el disfraz es un archivo limpio encima de una historia que no lo está.
+
+  **Lo decide Carlos y son dos caminos:** pasar el repo a privado, que es lo barato y ya
+  estaba planeado en §7 —y esto adelanta el disparador, porque ya no es sólo código
+  propio: es gente—; o reescribir la historia y forzar el empuje, que sí los borra pero
+  rompe cualquier copia que alguien tenga. **No lo hago yo:** reescribir `main` y forzar
+  un empuje lo autoriza una persona.
 - **El websocket de La Sala no pide llave**, ni con `LLAVES` puestas: quien tenga el link puede
   escuchar aunque no pueda escribir. Anotado, no arreglado.
 - **Las 16 páginas de Notion del prompt maestro piden sesión.** Se desbloquean con
