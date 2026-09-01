@@ -52,6 +52,12 @@ const pagina = (titulo, desc, cuerpo, guion) => `<!doctype html>
 <meta name="description" content="${esc(desc)}">
 <meta name="theme-color" content="#0E0A14" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F3F1F5" media="(prefers-color-scheme: light)">
+<!-- ⚠ El icono va EMPOTRADO y no es un adorno. Sin esta línea el navegador
+     pide /favicon.ico por su cuenta, se lleva un 404 y lo escribe en la
+     consola. Con eso, cualquier prueba honesta de «carga sin errores» falla
+     para siempre por un archivo que a nadie le importa — y entonces se acaba
+     relajando la prueba en vez de arreglando el 404. Ya pasó una vez. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#128207;</text></svg>">
 <style>
 ${css}
 </style>

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>El protocolo de evaluaciones mediadoras · El taller · Grupo Mazi</title>
-<meta name="description" content="Mide cómo estás juzgando una decisión estratégica: si las seis notas son seis juicios o una impresión repetida, y si la conclusión llegó antes que el análisis.">
+<title>Lo que tu encuesta no sabe · El taller · Grupo Mazi</title>
+<meta name="description" content="Calcula a qué parte de tus clientes describe de verdad tu número de satisfacción, y qué se te está quedando fuera de la foto.">
 <meta name="theme-color" content="#0E0A14" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F3F1F5" media="(prefers-color-scheme: light)">
 <!-- ⚠ El icono va EMPOTRADO y no es un adorno. Sin esta línea el navegador
@@ -238,17 +238,14 @@ footer{ border-top:var(--filete) solid var(--linea); margin-top:4rem; padding:1.
 </div></header>
 <main class="caja">
   <div class="encabeza">
-    <p class="num">01 · Estrategias</p>
-    <h1>El protocolo de evaluaciones mediadoras</h1>
-    <p>Mide cómo estás juzgando una decisión estratégica: si las seis notas son seis juicios o una impresión repetida, y si la conclusión llegó antes que el análisis.</p>
+    <p class="num">09 · Atención al cliente</p>
+    <h1>Lo que tu encuesta no sabe</h1>
+    <p>Calcula a qué parte de tus clientes describe de verdad tu número de satisfacción, y qué se te está quedando fuera de la foto.</p>
   </div>
-  <div class="nota"><b>Cómo se usa, y el orden importa.</b> Puntúa las
-  seis evaluaciones <b>de arriba abajo y sin volver atrás</b>. No mires la
-  siguiente hasta cerrar la anterior, y deja la nota global para el final —
-  ponerla antes contamina todo lo demás, que es justo lo que esto mide.
-  Si sois varios, cada uno puntúa por separado y os comparáis al terminar:
-  la distancia entre dos personas es lo que la investigación llama
-  <b>ruido</b>, y no se ve de ninguna otra manera.</div>
+  <div class="nota"><b>Cómo se usa.</b> Con los números de un mes
+  normal. Si alguno no lo tienes a mano, eso ya es parte del hallazgo — pero
+  búscalo antes de estimarlo: una tasa de respuesta inventada convierte todo
+  lo demás en adorno.</div>
   <div id="campos"></div>
   <div id="lectura"></div>
   <div class="acciones">
@@ -256,126 +253,142 @@ footer{ border-top:var(--filete) solid var(--linea); margin-top:4rem; padding:1.
     <button class="btn hueco" id="bLimpiar" type="button">Empezar de nuevo</button>
   </div>
   <h2>De dónde sale esto</h2>
-  <p>Del <b>Mediating Assessments Protocol</b> de Daniel Kahneman, Dan Lovallo y
-  Olivier Sibony, publicado en <i>MIT Sloan Management Review</i> en la primavera
-  de 2019 con el título <i>«A Structured Approach to Strategic Decisions»</i>.
-  La investigación de fondo es la de la entrevista de trabajo: la entrevista no
-  estructurada, en la que quien entrevista acumula impresiones y al final emite
-  un juicio global, es el caso mejor estudiado de juicio evaluativo poco fiable,
-  y el remedio que funciona ahí —descomponer, puntuar por separado, dejar la
-  nota global para el final— es el que este instrumento aplica.</p>
+  <p>De <i>«The High Price of Customer Satisfaction»</i>, <i>MIT Sloan
+  Management Review</i>, de Timothy Keiningham, Sunil Gupta, Lerzan Aksoy y
+  Alexander Buoye; y del manual público de GitLab sobre encuestas de
+  satisfacción, que es de los pocos sitios donde una empresa enseña el
+  procedimiento completo en vez del resultado.</p>
 
-  <h3>Los dos errores, que no son el mismo</h3>
-  <p>El <b>sesgo</b> empuja a todos los evaluadores en la misma dirección: el de
-  disponibilidad hace pesar de más lo reciente o lo llamativo —las ventas raras
-  del mes pasado en la valoración de una compra—, y el de confirmación hace
-  atender más a lo que confirma la impresión inicial. El <b>ruido</b> es otra
-  cosa: error aleatorio entre juicios. Dos personas evaluando lo mismo dan 3 y
-  4.5. El sesgo se discute en las juntas porque tiene nombre; el ruido no se ve
-  sin comparar dos juicios del mismo caso, y casi nunca se comparan.</p>
+  <h3>El 1 %</h3>
+  <p>Mirando entre industrias la correlación entre el nivel de satisfacción de
+  un año y el rendimiento bursátil de ese mismo año, la satisfacción explica de
+  media el <b>uno por ciento</b> de la variación. Los autores son los primeros
+  en decir que ese examen es <b>simplista</b>: uno esperaría que la
+  satisfacción influyera con el tiempo, no dentro del mismo año. Por eso el
+  dato no sirve para concluir que la satisfacción no importa — sirve para no
+  tratar un CSAT como si fuera el negocio.</p>
 
-  <h3>Lo que este instrumento NO hace</h3>
-  <p>No dice si la decisión es buena. No sabe nada de tu mercado, tu dinero ni tu
-  gente. Mide <b>la calidad del proceso</b> con el que la estás juzgando, que es
-  otra cosa y es la única que se puede medir desde fuera. Un proceso limpio
-  puede equivocarse y uno sucio puede acertar por suerte; lo que dice la
-  investigación es que a la larga el proceso gana.</p>
+  <h3>Por qué la tasa de respuesta va antes que la nota</h3>
+  <p>Porque la nota sin la tasa no significa nada. Un 92 sobre el 8 % de
+  respuesta y un 92 sobre el 45 % son dos afirmaciones distintas, y sólo la
+  segunda aguanta que alguien pregunte «¿y los demás?».</p>
+  <p>Y hay un sesgo encima: quien contesta una encuesta de soporte suele estar
+  en un extremo. No es una muestra pequeña, es una muestra torcida.</p>
+
+  <h3>Quién no aparece nunca</h3>
+  <p>Si sólo se encuesta al cerrar un caso, quedan fuera el que se rindió sin
+  abrirlo, el que buscó en la ayuda y no encontró, y el que se fue sin decir
+  nada. Son justo los que más te convendría oír.</p>
+
+  <h3>Lo que no mide</h3>
+  <p>No sabe si tu servicio es bueno. No sabe si los que no contestan están
+  contentos o hartos — nadie lo sabe, y ése es el punto. Sólo dice a cuánta
+  gente describe tu número y quién se queda fuera.</p>
 </main>
-<footer class="caja">Grupo Mazi · El taller · instrumento 01 de 10.</footer>
+<footer class="caja">Grupo Mazi · El taller · instrumento 09 de 10.</footer>
 <script>
-var PIEZA = {"id":"estrategia","campos":[{"grupo":"La decisión","grupoAyuda":"Una sola, concreta y con fecha. «Mejorar el negocio» no se puede evaluar.","id":"que","tipo":"texto","etiqueta":"¿Qué se está decidiendo?","ejemplo":"Abrir la segunda sucursal en Querétaro antes de marzo"},{"grupo":"Las seis evaluaciones","grupoAyuda":"Una a una, sin mirar las siguientes. 1 = muy flojo · 5 = muy sólido.","id":"e1","tipo":"escala","hasta":5,"pies":["sin probar","probado"],"etiqueta":"1 · El problema que esto resuelve, ¿está comprobado fuera de nuestra cabeza?"},{"grupo":"Las seis evaluaciones","id":"e2","tipo":"escala","hasta":5,"pies":["copiable ya","difícil de copiar"],"etiqueta":"2 · La ventaja que nos da, ¿sobrevive a que el competidor la vea?"},{"grupo":"Las seis evaluaciones","id":"e3","tipo":"escala","hasta":5,"pies":["sólo en el mejor caso","sale en el caso malo"],"etiqueta":"3 · Los números, ¿salen sin suponer el mejor escenario?"},{"grupo":"Las seis evaluaciones","id":"e4","tipo":"escala","hasta":5,"pies":["hay que crearla","ya la tenemos"],"etiqueta":"4 · La capacidad de ejecutarlo, ¿ya existe en la casa?"},{"grupo":"Las seis evaluaciones","id":"e5","tipo":"escala","hasta":5,"pies":["irreversible","se deshace fácil"],"etiqueta":"5 · Si sale mal, ¿cuánto cuesta volver atrás?"},{"grupo":"Las seis evaluaciones","id":"e6","tipo":"escala","hasta":5,"pies":["no se comparó","se comparó en serio"],"etiqueta":"6 · No hacer nada, ¿se comparó de verdad como opción?"},{"grupo":"Al final, y sólo al final","grupoAyuda":"Estas dos se contestan cuando las seis de arriba ya están puestas.","id":"global","tipo":"escala","hasta":5,"pies":["no lo haría","lo haría ya"],"etiqueta":"Nota global: ¿lo harías?"},{"grupo":"Al final, y sólo al final","id":"antes","tipo":"escala","hasta":5,"pies":["no tenía opinión","ya estaba decidido"],"etiqueta":"Sinceramente: ¿cuánta opinión tenías antes de empezar a puntuar?"}]};
+var PIEZA = {"id":"atencion","campos":[{"grupo":"El mes","grupoAyuda":"Un mes normal, no el mejor ni el peor.","id":"clientes","tipo":"numero","etiqueta":"Clientes activos en el mes","ejemplo":"p. ej. 1200"},{"grupo":"El mes","id":"casos","tipo":"numero","etiqueta":"Casos o tickets abiertos","ejemplo":"p. ej. 340"},{"grupo":"El mes","id":"encuestas","tipo":"numero","etiqueta":"Encuestas enviadas","ejemplo":"p. ej. 300"},{"grupo":"El mes","id":"respuestas","tipo":"numero","etiqueta":"Encuestas contestadas","ejemplo":"p. ej. 42"},{"grupo":"El mes","id":"csat","tipo":"numero","etiqueta":"Tu número de satisfacción (0 a 100)","ejemplo":"p. ej. 92"},{"grupo":"Cómo se pregunta","id":"cuando","tipo":"escala","hasta":5,"pies":["sólo al cerrar un caso","también a quien no abrió ninguno"],"etiqueta":"¿A quién se le pregunta?"},{"grupo":"Cómo se pregunta","id":"porQue","tipo":"escala","hasta":5,"pies":["sólo la nota","se pregunta el porqué"],"etiqueta":"¿La encuesta pide una razón?"},{"grupo":"Cómo se pregunta","id":"circuito","tipo":"escala","hasta":5,"pies":["no pasa nada","alguien contesta y se arregla"],"etiqueta":"¿Qué pasa cuando alguien puntúa mal?"}]};
 PIEZA.calcular = function(V){
-    var notas = ['e1','e2','e3','e4','e5','e6'].map(function(k){ return V[k]; })
-                  .filter(function(x){ return x > 0; });
-    if(notas.length < 6) return { tono:'',
-      datos:[['Evaluaciones puestas', notas.length + ' de 6', '', notas.length*100/6]],
-      veredicto:'<p>Faltan evaluaciones. La lectura sale con las seis, no antes — ' +
-                'y el orden importa: de arriba abajo, sin volver atrás.</p>' };
+    var n = function(x){ return (x === '' || x === undefined) ? null : Number(x); };
+    var cl = n(V.clientes), ca = n(V.casos), en = n(V.encuestas), re = n(V.respuestas), cs = n(V.csat);
+    var puestos = [cl,ca,en,re].filter(function(x){ return x !== null; }).length;
+    if(puestos < 4) return { tono:'',
+      datos:[['Datos', puestos + ' de 4', '', puestos*25]],
+      veredicto:'<p>Faltan datos del mes: clientes, casos, encuestas enviadas y contestadas. ' +
+                'Sin los cuatro no se puede saber a quién describe tu número.</p>' };
+    if(en <= 0) return { tono:'mal', datos:[['Encuestas enviadas','0','']],
+      veredicto:'<p><span class="cabeza">No se envía ninguna.</span>Entonces no hay número que ' +
+                'revisar. Y antes de montar la encuesta conviene decidir qué decisión vas a tomar ' +
+                'con ella — si no hay ninguna, no la montes.</p>' };
+    if(re > en) return { tono:'aviso', datos:[['Contestadas', re + ' de ' + en, 'imposible']],
+      veredicto:'<p><span class="cabeza">Contestadas no puede ser más que enviadas.</span>Revisa ' +
+                'los dos números.</p>' };
 
-    var suma = notas.reduce(function(a,b){ return a+b; }, 0);
-    var media = suma / 6;
-    var varianza = notas.reduce(function(a,b){ return a + (b-media)*(b-media); }, 0) / 6;
-    var desv = Math.sqrt(varianza);
+    var tasa      = re * 100 / en;
+    var deCasos   = ca > 0 ? en * 100 / ca : 0;
+    var deClientes= cl > 0 ? re * 100 / cl : 0;
+    var mudos     = cl > 0 ? cl - re : 0;
 
-    var global = V.global, antes = V.antes;
     var datos = [
-      ['Media de las seis', media.toFixed(2), 'de 5', media*20],
-      ['Dispersión entre ellas', desv.toFixed(2), 'de desviación', Math.min(100, desv*66)],
+      ['Tasa de respuesta', tasa.toFixed(1) + ' %', re + ' de ' + en + ' enviadas', tasa],
+      ['Cobertura de casos', Math.round(deCasos) + ' %', en + ' encuestas de ' + ca + ' casos', deCasos],
+      ['Habla por', deClientes.toFixed(1) + ' %', 'de tus ' + cl + ' clientes', deClientes],
+      ['No sabes nada de', mudos.toLocaleString('es-MX'), 'clientes este mes'],
     ];
-    var partes = [], tono = 'bien';
+    if(cs !== null) datos.push(['Tu número', cs + '', 'de esas ' + re + ' respuestas']);
 
-    /* ⚠ EL UMBRAL NO ES UN NÚMERO REDONDO ELEGIDO A OJO. En una escala de 1 a
-       5, seis juicios de verdad independientes sobre el mismo asunto rara vez
-       caen todos dentro de medio punto: eso pide que las seis notas sean la
-       misma o difieran en uno sola una vez. Por debajo de 0.5 lo más probable
-       no es que la decisión sea uniformemente buena — es que se puntuó una
-       impresión seis veces. */
-    if(desv < 0.5){
+    var partes = [], tono;
+
+    if(tasa < 15){
       tono = 'mal';
-      partes.push('<span class="cabeza">Las seis notas son casi la misma.</span>Con una dispersión de ' +
-        desv.toFixed(2) + ' sobre una escala de cinco, lo más probable no es que todo ' +
-        'esté igual de bien o igual de mal: es que hubo <b>una impresión global copiada ' +
-        'seis veces</b>. Es el efecto halo. Vuelve a puntuarlas por separado, o mejor, ' +
-        'que las puntúen seis personas distintas sin verse.');
-    } else if(desv > 1.4){
-      partes.push('<span class="cabeza">Las seis se separan mucho (' + desv.toFixed(2) + ').</span>Eso está ' +
-        'bien: significa que estás evaluando cosas distintas. La conversación útil es ' +
-        'sobre la más baja, no sobre el promedio.');
+      partes.push('<span class="cabeza">Contesta el ' + tasa.toFixed(1) + ' %.</span>' +
+        'Tu número no describe a tus clientes: describe a los ' + re + ' que contestan encuestas. ' +
+        'Y quien contesta una encuesta de soporte suele estar en uno de dos extremos —muy ' +
+        'agradecido o muy enojado—, así que ni siquiera es una muestra chica: es una muestra ' +
+        'torcida.');
+    } else if(tasa < 30){
+      tono = 'aviso';
+      partes.push('<span class="cabeza">Contesta el ' + tasa.toFixed(1) + ' %.</span>' +
+        'Es una tasa normal y sigue siendo poca gente. Sirve para ver tendencia mes a mes; no ' +
+        'para afirmar «nuestros clientes están contentos».');
     } else {
-      partes.push('<span class="cabeza">La dispersión es sana (' + desv.toFixed(2) + ').</span>Las seis ' +
-        'evaluaciones parecen independientes.');
+      tono = 'bien';
+      partes.push('<span class="cabeza">Contesta el ' + tasa.toFixed(1) + ' %.</span>' +
+        'Eso es alto para una encuesta de soporte. El número tiene con qué sostenerse.');
     }
 
-    if(global > 0){
-      var brecha = global - media;
-      datos.push(['Nota global', global.toFixed(0), 'de 5', global*20]);
-      datos.push(['Distancia con la media', (brecha >= 0 ? '+' : '−') + Math.abs(brecha).toFixed(2), '', Math.min(100, Math.abs(brecha)*40)]);
-      if(brecha >= 1){
-        if(tono !== 'mal') tono = 'aviso';
-        partes.push('<span class="cabeza">La nota global va ' + brecha.toFixed(1) + ' puntos por encima de las ' +
-          'partes.</span>Las seis evaluaciones dicen una cosa y la conclusión dice otra mejor. ' +
-          'Puede que la intuición sepa algo que las seis casillas no recogen — pero entonces ' +
-          'hay que escribir <b>qué</b> es, y meterlo como séptima evaluación. Si no se puede ' +
-          'escribir, es entusiasmo.');
-      } else if(brecha <= -1){
-        if(tono !== 'mal') tono = 'aviso';
-        partes.push('<span class="cabeza">La nota global va por debajo de las partes.</span>Algo te frena que no ' +
-          'está en las seis casillas. Escríbelo: casi siempre es un riesgo real que nadie ' +
-          'quiso poner por escrito.');
-      }
+    partes.push('<b>Y en cristiano:</b> tu número de satisfacción sale de ' + re + ' personas de ' +
+      cl.toLocaleString('es-MX') + ' clientes. Habla por el ' + deClientes.toFixed(1) + ' %. De los ' +
+      'otros ' + mudos.toLocaleString('es-MX') + ' no sabes nada este mes — ni que están bien, ni ' +
+      'que están mal, ni que ya se fueron.');
+
+    if(ca > 0 && deCasos < 60){
+      partes.push('<b>Ni siquiera cubres los casos.</b> Se envían ' + en + ' encuestas para ' + ca +
+        ' casos: el ' + Math.round(deCasos) + ' %. Antes de mirar la nota conviene saber por qué ' +
+        'no se envía en el resto — casi siempre hay una regla vieja que excluye justo los casos ' +
+        'que peor salieron.');
     }
 
-    if(antes >= 4){
-      tono = 'mal';
-      partes.push('<span class="cabeza">Ya estaba decidido antes de empezar.</span>Con ese nivel de opinión ' +
-        'previa, lo de arriba no es un análisis: es la documentación de una decisión ya ' +
-        'tomada. No es inútil —sirve para explicarla— pero no la está poniendo a prueba. ' +
-        'La pregunta que lo destapa en diez segundos: <b>¿qué habríamos tenido que ver ' +
-        'para no hacerlo?</b> Si no hay respuesta rápida, no había forma de que saliera «no».');
+    if(V.cuando && V.cuando <= 2){
+      partes.push('<b>Y sólo se pregunta al cerrar un caso.</b> Ése es el sesgo caro: el que se ' +
+        'rindió sin abrir ticket, el que buscó en la ayuda y no encontró, el que se fue sin decir ' +
+        'nada — ninguno aparece en tu número. Estás midiendo la satisfacción de los que llegaron ' +
+        'hasta el final, que son por definición los que aguantaron.');
     }
 
-    /* ⚠ CON EMPATE NO HAY «LA MÁS FLOJA». `indexOf(min)` devuelve la primera,
-       y con las seis en la misma nota eso señalaba siempre la primera casilla
-       como si fuera el problema — un dato inventado por un desempate ciego. */
-    var NOMBRES = ['el problema comprobado','la ventaja difícil de copiar',
-                   'los números sin el mejor caso','la capacidad de ejecutar',
-                   'el coste de volver atrás','la comparación con no hacer nada'];
-    var min = Math.min.apply(null, notas);
-    var flojas = [];
-    notas.forEach(function(v, i){ if(v === min) flojas.push(NOMBRES[i]); });
-    if(flojas.length === 6){
-      partes.push('Las seis están en la misma nota, así que no hay una «más floja»: ' +
-        'no hay por dónde empezar la conversación. Eso es otra señal de lo mismo.');
-    } else if(flojas.length === 1){
-      partes.push('Lo más flojo es <b>' + flojas[0] + '</b>. Ahí está la conversación ' +
-        'que falta, no en el promedio.');
-    } else {
-      partes.push('Lo más flojo, empatado, es <b>' + flojas.slice(0,-1).join('</b>, <b>') +
-        '</b> y <b>' + flojas[flojas.length-1] + '</b>. Ahí está la conversación que falta.');
+    if(V.porQue && V.porQue <= 2){
+      partes.push('<b>La encuesta pide una nota y no una razón.</b> Una nota sin razón sube o baja ' +
+        'y no dice qué hacer. La pregunta abierta contesta menos gente y es la única parte que ' +
+        'produce trabajo concreto.');
     }
 
-    return { tono:tono, datos:datos,
-             veredicto:'<p>' + partes.join('</p><p>') + '</p>' };
+    if(V.circuito && V.circuito <= 2){
+      partes.push('<b>Y cuando alguien puntúa mal no pasa nada.</b> Entonces la encuesta no es una ' +
+        'medición: es un formulario. Quien se molestó en contestar mal y no recibió respuesta ' +
+        'aprende que no vale la pena — y tu tasa de respuesta baja el mes siguiente, que es ' +
+        'justo lo contrario de lo que necesitas.');
+    }
+
+    if(cs !== null && cs >= 90 && tasa < 20){
+      partes.push('<b>Ojo con ese ' + cs + ' con el ' + tasa.toFixed(1) + ' % de respuesta.</b> ' +
+        'Un número alto sobre poca gente y encima autoseleccionada es la combinación más fácil de ' +
+        'presentar y la más difícil de defender. No es que esté mal: es que no aguanta el peso ' +
+        'que se le suele poner encima.');
+    }
+
+    partes.push('<b>Y el dato que conviene tener enfrente.</b> Mirando entre industrias, la ' +
+      'satisfacción de un año explica de media el <b>1 %</b> de la variación del rendimiento ' +
+      'bursátil de ese mismo año. Los propios autores dicen que ese examen es simplista —la ' +
+      'satisfacción debería influir con el tiempo, no en el acto—, y por eso el número no ' +
+      'demuestra que la satisfacción no importe. Lo que sí desmonta es tratar un CSAT como si ' +
+      'fuera el negocio.');
+
+    partes.push('<b>Lo que este instrumento NO hace.</b> No te dice si tu servicio es bueno. ' +
+      'Sólo dice a cuánta gente describe tu número y quién se queda fuera de la foto. El ' +
+      'siguiente paso no es subir la nota: es ir a buscar a los ' + mudos.toLocaleString('es-MX') +
+      ' que no contestaron.');
+
+    return { tono:tono, datos:datos, veredicto:'<p>' + partes.join('</p><p>') + '</p>' };
   };
 /* ══════════════════════════════════════════════════════════════════════════
    EL MOTOR · el mismo para los diez instrumentos

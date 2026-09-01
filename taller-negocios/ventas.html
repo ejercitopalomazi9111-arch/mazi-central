@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>El protocolo de evaluaciones mediadoras · El taller · Grupo Mazi</title>
-<meta name="description" content="Mide cómo estás juzgando una decisión estratégica: si las seis notas son seis juicios o una impresión repetida, y si la conclusión llegó antes que el análisis.">
+<title>Dónde se cae el embudo · El taller · Grupo Mazi</title>
+<meta name="description" content="Calcula la conversión de cada tramo, señala el peor, y pone tu pronóstico al lado del que sale de tu propia tasa base.">
 <meta name="theme-color" content="#0E0A14" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F3F1F5" media="(prefers-color-scheme: light)">
 <!-- ⚠ El icono va EMPOTRADO y no es un adorno. Sin esta línea el navegador
@@ -238,17 +238,14 @@ footer{ border-top:var(--filete) solid var(--linea); margin-top:4rem; padding:1.
 </div></header>
 <main class="caja">
   <div class="encabeza">
-    <p class="num">01 · Estrategias</p>
-    <h1>El protocolo de evaluaciones mediadoras</h1>
-    <p>Mide cómo estás juzgando una decisión estratégica: si las seis notas son seis juicios o una impresión repetida, y si la conclusión llegó antes que el análisis.</p>
+    <p class="num">10 · Ventas</p>
+    <h1>Dónde se cae el embudo</h1>
+    <p>Calcula la conversión de cada tramo, señala el peor, y pone tu pronóstico al lado del que sale de tu propia tasa base.</p>
   </div>
-  <div class="nota"><b>Cómo se usa, y el orden importa.</b> Puntúa las
-  seis evaluaciones <b>de arriba abajo y sin volver atrás</b>. No mires la
-  siguiente hasta cerrar la anterior, y deja la nota global para el final —
-  ponerla antes contamina todo lo demás, que es justo lo que esto mide.
-  Si sois varios, cada uno puntúa por separado y os comparáis al terminar:
-  la distancia entre dos personas es lo que la investigación llama
-  <b>ruido</b>, y no se ve de ninguna otra manera.</div>
+  <div class="nota"><b>Cómo se usa.</b> Cinco etapas, de más gente a
+  menos, con los números de un periodo completo — un trimestre, no una semana.
+  Si tus etapas no se llaman así, no importa: lo que importa es que sean las
+  TUYAS y que cada una signifique algo que el vendedor hace.</div>
   <div id="campos"></div>
   <div id="lectura"></div>
   <div class="acciones">
@@ -256,126 +253,156 @@ footer{ border-top:var(--filete) solid var(--linea); margin-top:4rem; padding:1.
     <button class="btn hueco" id="bLimpiar" type="button">Empezar de nuevo</button>
   </div>
   <h2>De dónde sale esto</h2>
-  <p>Del <b>Mediating Assessments Protocol</b> de Daniel Kahneman, Dan Lovallo y
-  Olivier Sibony, publicado en <i>MIT Sloan Management Review</i> en la primavera
-  de 2019 con el título <i>«A Structured Approach to Strategic Decisions»</i>.
-  La investigación de fondo es la de la entrevista de trabajo: la entrevista no
-  estructurada, en la que quien entrevista acumula impresiones y al final emite
-  un juicio global, es el caso mejor estudiado de juicio evaluativo poco fiable,
-  y el remedio que funciona ahí —descomponer, puntuar por separado, dejar la
-  nota global para el final— es el que este instrumento aplica.</p>
+  <p>De <i>«How to manage a strong sales funnel at every stage with Trello»</i>
+  (Atlassian), <i>«A Matter of Metrics: Using Web Data to Improve Sales
+  Performance»</i> (<i>Knowledge at Wharton</i>, con Peter Fader) y
+  <i>«Insensitivity To Base Rates»</i> (Farnam Street).</p>
 
-  <h3>Los dos errores, que no son el mismo</h3>
-  <p>El <b>sesgo</b> empuja a todos los evaluadores en la misma dirección: el de
-  disponibilidad hace pesar de más lo reciente o lo llamativo —las ventas raras
-  del mes pasado en la valoración de una compra—, y el de confirmación hace
-  atender más a lo que confirma la impresión inicial. El <b>ruido</b> es otra
-  cosa: error aleatorio entre juicios. Dos personas evaluando lo mismo dan 3 y
-  4.5. El sesgo se discute en las juntas porque tiene nombre; el ruido no se ve
-  sin comparar dos juicios del mismo caso, y casi nunca se comparan.</p>
+  <h3>Por qué el peor tramo no es el del porcentaje más bajo</h3>
+  <p>Porque el porcentaje ignora el tamaño. Un 20 % sobre 400 pierde 320
+  personas; el mismo 20 % sobre 25 pierde 20. Ordenando por porcentaje se
+  acaba arreglando el tramo pequeño, que es el que menos devuelve. Por eso
+  aquí el tramo señalado es el que <b>más gente pierde</b>.</p>
 
-  <h3>Lo que este instrumento NO hace</h3>
-  <p>No dice si la decisión es buena. No sabe nada de tu mercado, tu dinero ni tu
-  gente. Mide <b>la calidad del proceso</b> con el que la estás juzgando, que es
-  otra cosa y es la única que se puede medir desde fuera. Un proceso limpio
-  puede equivocarse y uno sucio puede acertar por suerte; lo que dice la
-  investigación es que a la larga el proceso gana.</p>
+  <h3>La tasa base contra el pronóstico</h3>
+  <p>Cuando hay información específica y vívida —una reunión que salió bien, un
+  cliente que dijo «lo vemos el lunes»— la gente descarta la tasa base aunque
+  sepa que es relevante. En ausencia de esa información la usa correctamente;
+  con ella, la deja. Por eso este instrumento calcula el pronóstico que sale de
+  tu propio histórico y lo pone al lado del que dio el equipo: no para ganar la
+  discusión, sino para que la base esté <b>antes</b> y no como réplica.</p>
+
+  <h3>El 2 % de 1999</h3>
+  <p>Más del 70 % de los minoristas de internet convertía por debajo del 2 %, y
+  el problema quedó tapado durante años por el flujo constante de usuarios
+  nuevos. Es el aviso que envejece bien: un mercado que crece disimula un
+  embudo que no funciona.</p>
+
+  <h3>Lo que no mide</h3>
+  <p>No sabe en qué etapa está cada trato abierto — por eso el pronóstico de la
+  tasa base es un rango y no un número. No sabe el tamaño de los tratos: cerrar
+  ocho pequeños no es lo mismo que cerrar dos grandes. Y no compara con nadie:
+  un 4 % puede ser excelente o pésimo según el sector.</p>
 </main>
-<footer class="caja">Grupo Mazi · El taller · instrumento 01 de 10.</footer>
+<footer class="caja">Grupo Mazi · El taller · instrumento 10 de 10.</footer>
 <script>
-var PIEZA = {"id":"estrategia","campos":[{"grupo":"La decisión","grupoAyuda":"Una sola, concreta y con fecha. «Mejorar el negocio» no se puede evaluar.","id":"que","tipo":"texto","etiqueta":"¿Qué se está decidiendo?","ejemplo":"Abrir la segunda sucursal en Querétaro antes de marzo"},{"grupo":"Las seis evaluaciones","grupoAyuda":"Una a una, sin mirar las siguientes. 1 = muy flojo · 5 = muy sólido.","id":"e1","tipo":"escala","hasta":5,"pies":["sin probar","probado"],"etiqueta":"1 · El problema que esto resuelve, ¿está comprobado fuera de nuestra cabeza?"},{"grupo":"Las seis evaluaciones","id":"e2","tipo":"escala","hasta":5,"pies":["copiable ya","difícil de copiar"],"etiqueta":"2 · La ventaja que nos da, ¿sobrevive a que el competidor la vea?"},{"grupo":"Las seis evaluaciones","id":"e3","tipo":"escala","hasta":5,"pies":["sólo en el mejor caso","sale en el caso malo"],"etiqueta":"3 · Los números, ¿salen sin suponer el mejor escenario?"},{"grupo":"Las seis evaluaciones","id":"e4","tipo":"escala","hasta":5,"pies":["hay que crearla","ya la tenemos"],"etiqueta":"4 · La capacidad de ejecutarlo, ¿ya existe en la casa?"},{"grupo":"Las seis evaluaciones","id":"e5","tipo":"escala","hasta":5,"pies":["irreversible","se deshace fácil"],"etiqueta":"5 · Si sale mal, ¿cuánto cuesta volver atrás?"},{"grupo":"Las seis evaluaciones","id":"e6","tipo":"escala","hasta":5,"pies":["no se comparó","se comparó en serio"],"etiqueta":"6 · No hacer nada, ¿se comparó de verdad como opción?"},{"grupo":"Al final, y sólo al final","grupoAyuda":"Estas dos se contestan cuando las seis de arriba ya están puestas.","id":"global","tipo":"escala","hasta":5,"pies":["no lo haría","lo haría ya"],"etiqueta":"Nota global: ¿lo harías?"},{"grupo":"Al final, y sólo al final","id":"antes","tipo":"escala","hasta":5,"pies":["no tenía opinión","ya estaba decidido"],"etiqueta":"Sinceramente: ¿cuánta opinión tenías antes de empezar a puntuar?"}]};
+var PIEZA = {"id":"ventas","campos":[{"grupo":"Tu embudo, en un periodo completo","grupoAyuda":"De más a menos. Un trimestre entero, no una semana.","id":"e1","tipo":"numero","etiqueta":"Entraron: contactos o interesados nuevos","ejemplo":"p. ej. 400"},{"grupo":"Tu embudo, en un periodo completo","id":"e2","tipo":"numero","etiqueta":"Contestaron o aceptaron hablar","ejemplo":"p. ej. 120"},{"grupo":"Tu embudo, en un periodo completo","id":"e3","tipo":"numero","etiqueta":"Tuvieron una reunión de verdad","ejemplo":"p. ej. 60"},{"grupo":"Tu embudo, en un periodo completo","id":"e4","tipo":"numero","etiqueta":"Recibieron propuesta","ejemplo":"p. ej. 25"},{"grupo":"Tu embudo, en un periodo completo","id":"e5","tipo":"numero","etiqueta":"Cerraron","ejemplo":"p. ej. 8"},{"grupo":"El pronóstico","grupoAyuda":"El que dio el equipo, antes de mirar nada de arriba.","id":"pronostico","tipo":"numero","etiqueta":"¿Cuántos cierres se pronosticaron para el periodo?","ejemplo":"p. ej. 14"},{"grupo":"El pronóstico","id":"abiertos","tipo":"numero","etiqueta":"¿Cuántos tratos hay abiertos ahora mismo?","ejemplo":"p. ej. 30"},{"grupo":"Cómo está definido","id":"etapasPropias","tipo":"escala","hasta":5,"pies":["son las del manual","son las nuestras, escritas"],"etiqueta":"¿De dónde salieron tus etapas?"},{"grupo":"Cómo está definido","id":"siguientePaso","tipo":"escala","hasta":5,"pies":["no está escrito","cada etapa dice qué sigue"],"etiqueta":"¿Cada etapa dice cuál es el paso siguiente?"}]};
 PIEZA.calcular = function(V){
-    var notas = ['e1','e2','e3','e4','e5','e6'].map(function(k){ return V[k]; })
-                  .filter(function(x){ return x > 0; });
-    if(notas.length < 6) return { tono:'',
-      datos:[['Evaluaciones puestas', notas.length + ' de 6', '', notas.length*100/6]],
-      veredicto:'<p>Faltan evaluaciones. La lectura sale con las seis, no antes — ' +
-                'y el orden importa: de arriba abajo, sin volver atrás.</p>' };
+    var n = function(x){ return (x === '' || x === undefined) ? null : Number(x); };
+    var E = ['e1','e2','e3','e4','e5'].map(function(k){ return n(V[k]); });
+    var puestos = E.filter(function(x){ return x !== null; }).length;
+    if(puestos < 5) return { tono:'',
+      datos:[['Etapas', puestos + ' de 5', '', puestos*20]],
+      veredicto:'<p>Faltan etapas. Las cinco: sin el embudo completo no se puede ver dónde se cae, ' +
+                'que es justo lo que se viene a ver.</p>' };
+    if(E[0] <= 0) return { tono:'aviso', datos:[['Entraron','0','']],
+      veredicto:'<p><span class="cabeza">No entró nadie.</span>Sin entradas no hay embudo que ' +
+                'revisar — el problema está antes, en de dónde salen los contactos.</p>' };
 
-    var suma = notas.reduce(function(a,b){ return a+b; }, 0);
-    var media = suma / 6;
-    var varianza = notas.reduce(function(a,b){ return a + (b-media)*(b-media); }, 0) / 6;
-    var desv = Math.sqrt(varianza);
+    var subeAlgo = false;
+    for(var i = 1; i < 5; i++) if(E[i] > E[i-1]) subeAlgo = true;
+    if(subeAlgo) return { tono:'aviso',
+      datos:E.map(function(v,i){ return ['Etapa ' + (i+1), v + '', '']; }),
+      veredicto:'<p><span class="cabeza">Una etapa tiene más gente que la anterior.</span>' +
+        'Un embudo va de más a menos: si sube, o los números son de periodos distintos, o dos ' +
+        'etapas se están contando doble. Revísalo antes de sacar conclusiones — con esto de ' +
+        'entrada, cualquier porcentaje que te diera sería falso.</p>' };
 
-    var global = V.global, antes = V.antes;
-    var datos = [
-      ['Media de las seis', media.toFixed(2), 'de 5', media*20],
-      ['Dispersión entre ellas', desv.toFixed(2), 'de desviación', Math.min(100, desv*66)],
-    ];
-    var partes = [], tono = 'bien';
+    var nombres = ['entraron → contestaron', 'contestaron → reunión',
+                   'reunión → propuesta', 'propuesta → cierre'];
+    var tramos = [];
+    for(var j = 0; j < 4; j++){
+      tramos.push({ nombre:nombres[j], de:E[j], a:E[j+1],
+                    pc: E[j] > 0 ? E[j+1] * 100 / E[j] : 0 });
+    }
+    var global = E[4] * 100 / E[0];
 
-    /* ⚠ EL UMBRAL NO ES UN NÚMERO REDONDO ELEGIDO A OJO. En una escala de 1 a
-       5, seis juicios de verdad independientes sobre el mismo asunto rara vez
-       caen todos dentro de medio punto: eso pide que las seis notas sean la
-       misma o difieran en uno sola una vez. Por debajo de 0.5 lo más probable
-       no es que la decisión sea uniformemente buena — es que se puntuó una
-       impresión seis veces. */
-    if(desv < 0.5){
+    /* El peor tramo NO es el de menor porcentaje: es el que más gente pierde
+       en números absolutos. Un 20 % sobre 400 pierde 320; un 20 % sobre 25
+       pierde 20. El porcentaje solo manda a arreglar lo pequeño. */
+    var peor = tramos[0], mayorPerdida = -1;
+    tramos.forEach(function(t){
+      var perdidos = t.de - t.a;
+      if(perdidos > mayorPerdida){ mayorPerdida = perdidos; peor = t; }
+    });
+
+    var datos = [['Conversión total', global.toFixed(1) + ' %', E[4] + ' de ' + E[0], global]];
+    tramos.forEach(function(t){
+      datos.push([t.nombre, t.pc.toFixed(0) + ' %', 'se pierden ' + (t.de - t.a), t.pc]);
+    });
+
+    var partes = [], tono;
+    partes.push('<span class="cabeza">El tramo que más gente pierde es «' + peor.nombre + '».</span>' +
+      'Ahí se caen ' + mayorPerdida + ' de ' + peor.de + ' — el ' +
+      Math.round((peor.de - peor.a) * 100 / peor.de) + ' % de los que llegaron. Y ojo con esto, ' +
+      'porque es donde casi todo el mundo se equivoca: <b>el peor tramo no es el del porcentaje ' +
+      'más bajo, es el que pierde más gente</b>. Un 20 % sobre 400 pierde 320; el mismo 20 % sobre ' +
+      '25 pierde 20. Mirando sólo porcentajes se acaba arreglando lo pequeño.');
+
+    if(global < 2){
       tono = 'mal';
-      partes.push('<span class="cabeza">Las seis notas son casi la misma.</span>Con una dispersión de ' +
-        desv.toFixed(2) + ' sobre una escala de cinco, lo más probable no es que todo ' +
-        'esté igual de bien o igual de mal: es que hubo <b>una impresión global copiada ' +
-        'seis veces</b>. Es el efecto halo. Vuelve a puntuarlas por separado, o mejor, ' +
-        'que las puntúen seis personas distintas sin verse.');
-    } else if(desv > 1.4){
-      partes.push('<span class="cabeza">Las seis se separan mucho (' + desv.toFixed(2) + ').</span>Eso está ' +
-        'bien: significa que estás evaluando cosas distintas. La conversación útil es ' +
-        'sobre la más baja, no sobre el promedio.');
+      partes.push('<b>Y la conversión total es del ' + global.toFixed(1) + ' %.</b> Ese número ' +
+        'tiene historia: en 1999 más del 70 % de los minoristas de internet convertía por debajo ' +
+        'del 2 %, y no se notó durante años porque el flujo constante de usuarios nuevos lo tapaba. ' +
+        'Si tus entradas están creciendo, el embudo puede estar roto y no verse.');
+    } else if(global < 8){
+      tono = 'aviso';
+      partes.push('<b>Conversión total del ' + global.toFixed(1) + ' %.</b> Sin un competidor ' +
+        'enfrente ese número no es bueno ni malo. Lo que sí dice algo es su tendencia: si baja ' +
+        'mientras suben las entradas, estás comprando más para cerrar lo mismo.');
     } else {
-      partes.push('<span class="cabeza">La dispersión es sana (' + desv.toFixed(2) + ').</span>Las seis ' +
-        'evaluaciones parecen independientes.');
+      tono = 'bien';
+      partes.push('<b>Conversión total del ' + global.toFixed(1) + ' %.</b> Aguanta. Lo que toca ' +
+        'aquí no es empujar el embudo entero: es el tramo de arriba, que es el único que sigue ' +
+        'perdiendo gente en cantidad.');
     }
 
-    if(global > 0){
-      var brecha = global - media;
-      datos.push(['Nota global', global.toFixed(0), 'de 5', global*20]);
-      datos.push(['Distancia con la media', (brecha >= 0 ? '+' : '−') + Math.abs(brecha).toFixed(2), '', Math.min(100, Math.abs(brecha)*40)]);
-      if(brecha >= 1){
-        if(tono !== 'mal') tono = 'aviso';
-        partes.push('<span class="cabeza">La nota global va ' + brecha.toFixed(1) + ' puntos por encima de las ' +
-          'partes.</span>Las seis evaluaciones dicen una cosa y la conclusión dice otra mejor. ' +
-          'Puede que la intuición sepa algo que las seis casillas no recogen — pero entonces ' +
-          'hay que escribir <b>qué</b> es, y meterlo como séptima evaluación. Si no se puede ' +
-          'escribir, es entusiasmo.');
-      } else if(brecha <= -1){
-        if(tono !== 'mal') tono = 'aviso';
-        partes.push('<span class="cabeza">La nota global va por debajo de las partes.</span>Algo te frena que no ' +
-          'está en las seis casillas. Escríbelo: casi siempre es un riesgo real que nadie ' +
-          'quiso poner por escrito.');
+    /* El pronóstico contra la tasa base — la corrección que casi nadie hace */
+    var pron = n(V.pronostico), ab = n(V.abiertos);
+    if(pron !== null && ab !== null && ab > 0){
+      var base = ab * (global / 100) * (E[0] / Math.max(E[0], 1));
+      /* Con tratos ya abiertos la tasa base útil es la del tramo que les falta.
+         Sin saber en qué etapa está cada uno, lo honesto es el rango: desde la
+         conversión global hasta la del último tramo. */
+      var bajo  = ab * global / 100;
+      var alto  = ab * tramos[3].pc / 100;
+      datos.push(['Pronóstico del equipo', pron + '', 'cierres']);
+      datos.push(['Tasa base dice', bajo.toFixed(1) + ' a ' + alto.toFixed(1),
+                  'según en qué etapa estén']);
+      if(pron > alto){
+        partes.push('<b>Y el pronóstico va por encima de tu propia tasa base.</b> Se pronosticaron ' +
+          pron + ' cierres; con ' + ab + ' tratos abiertos, tu histórico da entre ' +
+          bajo.toFixed(1) + ' y ' + alto.toFixed(1) + ' —el techo sería si TODOS estuvieran ya en ' +
+          'propuesta—. Eso no es mentira, es sesgo: con casos concretos y vívidos delante, la ' +
+          'gente descarta la tasa base aunque sepa que es relevante. La corrección no es discutir ' +
+          'trato por trato: es empezar por la base y ajustar desde ahí, no al revés.');
+      } else {
+        partes.push('<b>El pronóstico cabe dentro de tu tasa base</b> (' + bajo.toFixed(1) + ' a ' +
+          alto.toFixed(1) + ' con ' + ab + ' abiertos). Que empiece por la base y no por el ' +
+          'entusiasmo de la última reunión ya es más de lo que hace casi nadie.');
       }
     }
 
-    if(antes >= 4){
-      tono = 'mal';
-      partes.push('<span class="cabeza">Ya estaba decidido antes de empezar.</span>Con ese nivel de opinión ' +
-        'previa, lo de arriba no es un análisis: es la documentación de una decisión ya ' +
-        'tomada. No es inútil —sirve para explicarla— pero no la está poniendo a prueba. ' +
-        'La pregunta que lo destapa en diez segundos: <b>¿qué habríamos tenido que ver ' +
-        'para no hacerlo?</b> Si no hay respuesta rápida, no había forma de que saliera «no».');
+    if(V.etapasPropias && V.etapasPropias <= 2){
+      partes.push('<b>Y las etapas son las del manual.</b> El embudo genérico —conocer, interesar, ' +
+        'decidir, comprar— sirve para diseñar contenido y es demasiado simple para seguir una ' +
+        'venta de verdad: en cuanto alguien llena un formulario o empieza una conversación uno a ' +
+        'uno, el embudo real se abre en más pasos de los que el dibujo tiene.');
     }
 
-    /* ⚠ CON EMPATE NO HAY «LA MÁS FLOJA». `indexOf(min)` devuelve la primera,
-       y con las seis en la misma nota eso señalaba siempre la primera casilla
-       como si fuera el problema — un dato inventado por un desempate ciego. */
-    var NOMBRES = ['el problema comprobado','la ventaja difícil de copiar',
-                   'los números sin el mejor caso','la capacidad de ejecutar',
-                   'el coste de volver atrás','la comparación con no hacer nada'];
-    var min = Math.min.apply(null, notas);
-    var flojas = [];
-    notas.forEach(function(v, i){ if(v === min) flojas.push(NOMBRES[i]); });
-    if(flojas.length === 6){
-      partes.push('Las seis están en la misma nota, así que no hay una «más floja»: ' +
-        'no hay por dónde empezar la conversación. Eso es otra señal de lo mismo.');
-    } else if(flojas.length === 1){
-      partes.push('Lo más flojo es <b>' + flojas[0] + '</b>. Ahí está la conversación ' +
-        'que falta, no en el promedio.');
-    } else {
-      partes.push('Lo más flojo, empatado, es <b>' + flojas.slice(0,-1).join('</b>, <b>') +
-        '</b> y <b>' + flojas[flojas.length-1] + '</b>. Ahí está la conversación que falta.');
+    if(V.siguientePaso && V.siguientePaso <= 2){
+      partes.push('<b>Y ninguna etapa dice cuál es el paso siguiente.</b> Entonces una etapa es una ' +
+        'etiqueta, no un estado. Cada una tiene que decir tres cosas: qué hace el vendedor ahí, ' +
+        'cómo se comunica, y cuál es el paso siguiente. Sin eso, mover un trato de columna es ' +
+        'decoración.');
     }
 
-    return { tono:tono, datos:datos,
-             veredicto:'<p>' + partes.join('</p><p>') + '</p>' };
+    partes.push('<b>Y lo que estos porcentajes NO son.</b> Un porcentaje de crecimiento no ' +
+      'significa nada sin una idea firme de qué habría pasado bajo un escenario razonable — es de ' +
+      'Peter Fader, de Wharton, y aplica igual aquí: «mejoramos la conversión un 30 %» puede ser ' +
+      'que llegó gente distinta. Antes de celebrar, separa clientes nuevos de recurrentes.');
+
+    return { tono:tono, datos:datos, veredicto:'<p>' + partes.join('</p><p>') + '</p>' };
   };
 /* ══════════════════════════════════════════════════════════════════════════
    EL MOTOR · el mismo para los diez instrumentos
