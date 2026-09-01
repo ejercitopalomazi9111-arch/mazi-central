@@ -274,6 +274,31 @@
         "decision-repos-publicos",
         "errores-que-mienten"
       ]
+    },
+    {
+      "clase": "error",
+      "id": "deducir-una-cosa-y-escribir-otra",
+      "titulo": "El sistema mide silencio y escribe un diagnóstico que no puede saber",
+      "gravedad": "alta",
+      "sintoma": "La mesa anunció «se quedó sin cuota, vuelve en 3 h 30» de un agente que estaba trabajando. El otro agente lo relevó de buena fe y Carlos quedó esperando a alguien que nunca se fue.",
+      "causa": "La vigilia mide UNA cosa —«no da señales aquí»— y el texto afirmaba DOS que no puede medir: que se cayó y que fue la cuota. Silencio en la mesa no es estar muerto: se puede estar trabajando duro sin hablar.",
+      "porque": "Al escribir el aviso uno redacta la explicación más probable, no el hecho observado. Y la explicación probable, dicha en indicativo, se lee como dato — sobre todo cuando la repite alguien más.",
+      "arreglo": "Que el texto diga lo medido y ofrezca la causa como hipótesis, no como hecho. La marca de dato-deducido en el evento ya existía; lo que faltaba era que el TEXTO lo dijera, porque el texto es lo que la gente lee.",
+      "comoCazarlo": "Lee el aviso y pregunta: ¿qué de esto midió el sistema y qué lo supuso? Si el aviso no distingue, alguien lo va a repetir como hecho. Aquí pasó en menos de una hora.",
+      "consejo": "Vale para cualquier alerta automática: monitoreo, antifraude, salud, moderación. Una suposición en indicativo es una mentira con retraso.",
+      "salioDe": "sala/servidor/sala.js · la vigilia me marcó topado mientras arreglaba esa misma sala",
+      "senales": [
+        "dice que me fui y aquí estoy",
+        "el sistema dijo que",
+        "marcó mal a alguien",
+        "por qué dice eso de mí"
+      ],
+      "vecinas": [
+        "borrado-callado-parece-sala-nueva",
+        "una-alarma-dos-dueños",
+        "reporte-de-agente-sin-evidencia",
+        "conectado-no-es-vivo"
+      ]
     }
   ]
 }

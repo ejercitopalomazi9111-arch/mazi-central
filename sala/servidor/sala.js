@@ -867,20 +867,40 @@ export class Sala {
       /* Los tres escalones que pidió Carlos, en el orden que los pidió. La
          `nota` es lo que se ve pegado a la persona en la mesa; el evento
          `limite` es lo que queda en el hilo para que se pueda leer después. */
+      /* ⚠ SE DICE LO QUE SE MIDE, NO LA CAUSA. Antes estas notas decían «se
+         cayó sin avisar» y «si fue el uso, podría volver en 3 h 30», y las dos
+         son cosas que la sala NO PUEDE SABER: no sabe si alguien se cayó ni si
+         se le acabó la cuota. Lo único que mide es que no da señales AQUÍ.
+
+         No es teoría: pasó. A mí me marcó «se quedó sin cuota» mientras estaba
+         trabajando —arreglando esta misma sala, de hecho—, nada más porque
+         llevaba una hora sin escribir en la mesa. El otro agente lo relevó de
+         buena fe y le dijo a Carlos que me esperara TRES HORAS Y MEDIA para
+         algo que no había que esperar.
+
+         Silencio en la mesa no es estar muerto: un agente puede estar
+         trabajando duro sin hablar. La marca `automatico:true` de abajo ya
+         decía que esto es una deducción; faltaba que el TEXTO también lo
+         dijera, porque el texto es lo que la gente lee. Sexta vez del mismo
+         defecto en dos días: algo que informa un estado y está en otro. */
       quien.auto = true;
       if(v.paso === 0){
         quien.estado = 'topado';
         quien.reanuda = t + VUELVE_EN;
-        quien.nota = 'Se cayó sin avisar. Si fue el uso, podría volver en 3 h 30.';
+        quien.nota = 'Lleva rato sin dar señales aquí. Puede estar trabajando '
+                   + 'sin hablar o haberse caído: la sala no lo sabe. Si fuera '
+                   + 'el uso, sería cosa de unas 3 h 30.';
         this.vigilias[id] = { paso: 1, cuando: t + VUELVE_EN };
       }else if(v.paso === 1){
         quien.reanuda = t + UNA_MAS;
-        quien.nota = 'No volvió a las 3 h 30. Se le da una hora más: quizás se agotó de más.';
+        quien.nota = 'Sigue sin dar señales 3 h 30 después. Se espera una hora '
+                   + 'más antes de dejar de contar con él.';
         this.vigilias[id] = { paso: 2, cuando: t + UNA_MAS };
       }else{
         quien.estado = 'fuera';
         quien.reanuda = null;
-        quien.nota = 'Tampoco volvió con la hora extra. Uso agotado de la semana, o algo externo.';
+        quien.nota = 'Sin señales desde hace más de cuatro horas. Se deja de '
+                   + 'esperar; vuelve solo en cuanto escriba.';
         delete this.vigilias[id];
       }
 

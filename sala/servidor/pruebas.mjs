@@ -1030,8 +1030,19 @@ async function vigilia(){
   atras(s, 'ia', 6 * 60 * 60 * 1000);
   await s.alarm();
   ok('tampoco con la hora extra: queda fuera',    s.gente.ia.estado === 'fuera');
-  ok('y se dice que puede ser la semana o algo externo',
-     /semana|externo/.test(limites(s).at(-1).texto));
+  /* ⚠ ESTA PRUEBA EXIGÍA EL DEFECTO. Pedía que el texto dijera «la semana o
+     algo externo», o sea que la sala DIAGNOSTICARA una causa que no puede
+     medir: no sabe si a alguien se le acabó la cuota ni si se cayó. Lo único
+     que mide es que no da señales aquí.
+     Costó de verdad: la mesa me marcó «sin cuota» mientras yo estaba
+     trabajando, el otro agente lo relevó de buena fe y Carlos quedó esperando
+     tres horas y media a alguien que nunca se fue. Ahora se exige lo
+     contrario — que diga lo que mide y NO invente el porqué. */
+  const ultimo = limites(s).at(-1).texto;
+  ok('el aviso dice lo que MIDE: que no hay señales',
+     /señales/i.test(ultimo));
+  ok('y NO diagnostica una causa que la sala no puede saber',
+     !/se cayó|agotó|sin cuota|la semana/i.test(ultimo));
   ok('la vigilia se cierra sola: no sigue avisando para siempre', !s.vigilias.ia);
 
   const cuantos = limites(s).length;
