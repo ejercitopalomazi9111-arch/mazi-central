@@ -745,7 +745,11 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
   la mudanza—. Así que **`github.io` no se escribe en ningún metadato, manual ni enlace**: ya pasó
   una vez y hubo que corregir las etiquetas de `sitio/index.html` que mandaban a Google y a
   WhatsApp a la dirección que está por apagarse.
-- **El servidor de Fadori no se despliega desde aquí.** Vive en `servidor/` con su propio
+- **⚠️ Esto ya no es cierto y se corrigió el 1 de septiembre: Fadori SÍ se despliega desde
+  aquí.** Es uno de los cinco proyectos de Cloudflare atados a este repo y construye en cada
+  PR. Se dejó el párrafo porque la RAZÓN sigue siendo buena —son configuraciones aparte y
+  mezclarlas fue lo que tumbó los despliegues— pero la frase de arriba mandaba a buscar un
+  despliegue manual que ya no existe. El servidor de Fadori vive en `servidor/` con su propio
   `wrangler.jsonc` y se publica aparte. Son dos cosas y mezclarlas es como se termina publicando el
   código del servidor.
 - Los pasos que sólo puede dar Carlos —crear el proyecto en Cloudflare, conectar el servidor, pasar
@@ -833,8 +837,23 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   desde el 28 de agosto **sí trae websocket**, así que la presencia se puede probar de verdad.
 - **El buzón automático nace apagado** sin el secreto `MAZI_LLAVE` en Ajustes → Secrets → Actions.
   Sin él, lo que se escriba en `sala/buzon/GRUPAZ/salida.md` se queda en el archivo.
-- **Los dos proyectos de Cloudflare siguen sin crear:** `sala` (raíz `sala/servidor`) y
-  `puercos` (raíz `juegos/servidor`). Sin ellos La Sala sólo corre en local. Es de Carlos.
+- **⚠️ CORREGIDO EL 1 DE SEPTIEMBRE: los proyectos SÍ están creados, y el problema es otro.**
+  Aquí decía que `sala` y `puercos` seguían sin crear. Ya no es verdad: desde este repo
+  despliegan **cinco** proyectos —`mazi-central`, `fadori`, `sala`, `puercos` y `ppuercos`—
+  y los cinco construyen en verde. Se vio en las vistas previas del PR #103, no de memoria.
+  **Lo que sí está roto es dónde apuntan dos de ellos**, y no se caza leyendo porque
+  construyen bien:
+
+  | Proyecto | Qué debería servir | Qué sirve de verdad, medido |
+  |---|---|---|
+  | `ppuercos` | el servidor de salas del juego (`juegos/servidor`) | **la central completa, byte por byte igual que `mazi-central`** — su carpeta raíz está mal puesta |
+  | `puercos` | — | **404 en todo**. Es un proyecto sobrante del nombre viejo |
+
+  O sea que **el servidor de Guerra de Puercos no está publicado**, aunque haya dos proyectos
+  con su nombre y los dos salgan verdes. Cuarta vez que aparece lo mismo: algo que informa un
+  estado y está en otro. **Lo arregla Carlos** en el panel de Cloudflare: al proyecto
+  `ppuercos`, ponerle carpeta raíz `juegos/servidor`; y borrar `puercos`, que no sirve nada.
+  El nombre con dos pes es correcto y está explicado en `juegos/servidor/wrangler.jsonc`.
 - **El websocket de La Sala no pide llave**, ni con `LLAVES` puestas: quien tenga el link puede
   escuchar aunque no pueda escribir. Anotado, no arreglado.
 - **Las 16 páginas de Notion del prompt maestro piden sesión.** Se desbloquean con
