@@ -1,0 +1,158 @@
+<header class="barra">
+  <div class="envoltura fila">
+    <span class="logo" aria-hidden="true">__LOGO__</span>
+    <span class="quien" id="quien"></span>
+    <button class="btn calma chico no-imprime" id="bSalir" type="button" hidden>Salir</button>
+  </div>
+</header>
+
+<main class="envoltura">
+
+<!-- ── 1 · PORTADA ──────────────────────────────────────────────────────── -->
+<section class="pantalla viva" id="pPortada">
+  <h1>Entrenamiento ISTQB<br>Foundation Level</h1>
+  <p><b>Cincuenta niveles</b> para llegar al examen sabiendo, no cruzando los dedos. Cada
+  nivel es un problema de los que salen de verdad: contar particiones, calcular cobertura,
+  encontrar la línea donde está el defecto.</p>
+  <p>Si te atoras, hay <b>tres pistas</b> que te acercan sin darte la respuesta, y un
+  <b>paso a paso</b> completo cuando lo pidas. No hay reloj y no hay castigo: puedes
+  intentarlo las veces que quieras.</p>
+  <p>Al terminar los cincuenta se emiten <b>dos constancias</b> a tu nombre.</p>
+
+  <div class="aviso-legal">
+    <b>Antes de empezar, con claridad:</b> esto es <b>formación interna de Grupo Mazi</b>.
+    Las constancias que emite las firma Grupo Mazi y acreditan que completaste este
+    entrenamiento. <b>No son la certificación ISTQB ni la sustituyen</b>: esa se presenta con
+    un proveedor acreditado, y en la guía viene el directorio de a quién llamar.
+  </div>
+
+  <form id="fEntrar" novalidate>
+    <label class="campo"><span>Tu nombre completo · va impreso en las constancias</span>
+      <input type="text" id="fNombre" autocomplete="name" placeholder="María Fernanda Reyes Ortega" required></label>
+    <label class="campo"><span>Puesto o área (opcional)</span>
+      <input type="text" id="fPuesto" autocomplete="organization-title" placeholder="Aseguramiento de calidad"></label>
+    <p id="errNombre" class="veredicto mal" hidden style="margin-bottom:16px"><b>Escribe tu nombre completo</b> — es lo que va impreso en las constancias, así que conviene que esté bien.</p>
+    <button class="btn ancho" type="submit">Empezar</button>
+  </form>
+</section>
+
+<!-- ── 2 · MAPA ─────────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pMapa">
+  <div class="avance">
+    <div class="cifra"><span id="mHechos">0</span> <span style="font-size:18px;color:var(--tenue)">de 50</span></div>
+    <div class="riel"><i id="mRiel" style="width:0%"></i></div>
+    <div class="nota" id="mNota"></div>
+  </div>
+  <div id="mBloques"></div>
+
+  <!-- El examen no se gana: se presenta cuando uno quiera. Bloquearlo hasta
+       los cincuenta niveles convertiría la única medida honesta de si estás
+       listo en un premio por terminar. -->
+  <!-- ⚠ DOS EXÁMENES Y NO UNO. Carlos, e278: «Pon en el examen el de prueba y
+       uno para presentar». Son dos cosas distintas y por eso están separadas:
+       el de prueba enseña el FORMATO —te corrige sobre la marcha, con lo que
+       sales sabiendo cómo funciona—, y el de presentar MIDE, que sólo se puede
+       hacer callando hasta el final. Meter las dos en una sola pantalla habría
+       roto la segunda. -->
+  <div class="tarjeta-examen no-imprime">
+    <h3>El examen</h3>
+    <p>Dos, y no son lo mismo. Empieza por el de prueba: sales sabiendo cómo
+    funciona el formato. El de presentar es el que te dice si estás listo.</p>
+
+    <div class="dos-examenes">
+      <div class="caja-examen">
+        <span class="etiq">De prueba</span>
+        <p><b>10 preguntas.</b> Te dice si acertaste en cuanto contestas, con la
+        explicación, y puedes pedir pistas. Es para aprender el formato, no para
+        medirte.</p>
+        <button class="btn calma ancho" id="bExamenPrueba" type="button">Hacer el de prueba</button>
+      </div>
+      <div class="caja-examen">
+        <span class="etiq viva">Para presentar</span>
+        <p><b>40 preguntas de las 50</b>, en orden distinto cada vez y con las
+        opciones barajadas. Sin pistas y sin decirte nada hasta el final. Corte
+        al 65 %, como el de verdad.</p>
+        <button class="btn ancho" id="bExamen" type="button">Presentar el examen</button>
+      </div>
+    </div>
+    <p class="nota" id="xHistoria"></p>
+  </div>
+
+  <button class="btn ancho no-imprime" id="bCertificados" type="button" hidden style="margin-top:24px">Ver mis constancias</button>
+  <button class="btn calma ancho chico no-imprime" id="bReiniciar" type="button" style="margin-top:12px">Empezar de cero</button>
+</section>
+
+<!-- ── 3 · NIVEL ────────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pNivel">
+  <div class="migaja" id="nMigaja"></div>
+  <h2 id="nTitulo"></h2>
+  <div class="enunciado" id="nEnunciado"></div>
+  <div id="nCodigo"></div>
+  <div id="nRespuesta"></div>
+  <div class="acciones no-imprime">
+    <button class="btn" id="bComprobar" type="button">Comprobar</button>
+    <button class="btn calma" id="bPista" type="button">Dame una pista</button>
+  </div>
+  <div id="nPistas"></div>
+  <div id="nVeredicto"></div>
+  <div id="nPasos"></div>
+  <button class="btn calma ancho no-imprime" id="bManual" type="button">Enséñame cómo se resuelve</button>
+  <div class="pie-nav no-imprime">
+    <button class="btn calma" id="bVolver" type="button">Al mapa</button>
+    <button class="btn" id="bSiguiente" type="button">Siguiente</button>
+  </div>
+</section>
+
+<!-- ── 4 · EXAMEN ───────────────────────────────────────────────────────
+     Una pregunta a la vez y NADA de veredicto hasta el final. Es la diferencia
+     entera entre practicar y presentar: si la app te dice «correcto» sobre la
+     marcha, lo que mides ya no es lo que sabes. -->
+<section class="pantalla" id="pExamen">
+  <div class="avance">
+    <div class="riel"><i id="xRiel" style="width:0%"></i></div>
+    <div class="nota"><span id="xContadas">0</span> de <span id="xTotal">40</span> contestadas
+      · <span id="xReloj" class="reloj">0:00</span></div>
+  </div>
+
+  <div class="migaja" id="xMigaja"></div>
+  <div class="enunciado" id="xEnunciado"></div>
+  <div id="xCodigo"></div>
+  <div id="xRespuesta"></div>
+  <button class="btn ancho no-imprime" id="xComprobar" type="button" hidden>Comprobar</button>
+  <div id="xVeredicto"></div>
+  <div id="xPistas"></div>
+  <button class="btn calma ancho no-imprime" id="xPista" type="button" hidden>Dame una pista</button>
+
+  <div class="pie-nav no-imprime">
+    <button class="btn calma" id="xAnterior" type="button">Anterior</button>
+    <button class="btn" id="xSiguiente" type="button">Siguiente</button>
+  </div>
+  <div class="rejilla-x" id="xIndice"></div>
+  <button class="btn calma ancho chico no-imprime" id="xEntregar" type="button" style="margin-top:16px">Entregar el examen</button>
+  <button class="btn calma ancho chico no-imprime" id="xAbandonar" type="button" style="margin-top:10px">Abandonar y volver al mapa</button>
+</section>
+
+<!-- ── 5 · RESULTADO ────────────────────────────────────────────────────── -->
+<section class="pantalla" id="pResultado">
+  <div class="marcador" id="xMarcador"></div>
+  <div id="xRepaso"></div>
+  <div class="acciones no-imprime">
+    <button class="btn" id="xRepasar" type="button">Repasar los fallos con las ayudas</button>
+    <button class="btn calma" id="xOtraVez" type="button">Presentar otro</button>
+    <button class="btn calma" id="xAlMapa" type="button">Al mapa</button>
+  </div>
+</section>
+
+<!-- ── 6 · CONSTANCIAS ──────────────────────────────────────────────────── -->
+<section class="pantalla" id="pFin">
+  <h1 class="no-imprime">Terminaste los cincuenta</h1>
+  <p class="no-imprime">Aquí están tus dos constancias. El botón las manda a imprimir, y desde
+  el diálogo de impresión puedes guardarlas como PDF.</p>
+  <div class="acciones no-imprime">
+    <button class="btn" id="bImprimir" type="button">Imprimir o guardar en PDF</button>
+    <button class="btn calma" id="bVolverMapa" type="button">Volver al mapa</button>
+  </div>
+  <div id="nDiplomas"></div>
+</section>
+
+</main>

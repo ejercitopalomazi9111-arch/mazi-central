@@ -1,0 +1,776 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL BANCO DE PRUEBAS · las piezas
+   ──────────────────────────────────────────────────────────────────────────
+   Todas comparten los tokens de `base.css`: ninguna trae duración, curva ni
+   color propios. Si una necesitara un número nuevo, el número está mal o el
+   token falta.
+
+   ⚠ Y NINGUNA LLEVA BORDE POR DEFECTO. Era uno de los diez tics: «borde de
+   1 px gris claro en absolutamente todas las cajas — cuando todo está
+   encerrado, nada destaca». Aquí la separación la hacen el espacio y una
+   regla horizontal donde de verdad hace falta; el fondo tintado se guarda
+   para lo que es un instrumento de verdad (la consola, la pantalla del
+   probador), que sí tiene por qué verse como un aparato sobre la hoja.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · LA GRAMÁTICA, PARA SENTIRLA ───────────────────────────────────────
+   Los cinco escalones corriendo a la vez, con su número. Nadie tiene en la
+   cabeza la diferencia entre 110 y 420 ms.
+
+   ⚠ EL VIAJE DE VUELTA NO ES UN SALTO. Carlos: «al presionarlo de nuevo se
+   teletransportan hacia atrás y repiten la animación; haz que se regresen
+   haciendo su trayecto con su tiempo y todo, pero invertido». Tenía razón, y
+   además el salto contradecía lo que la sección predica: un carro que se
+   teletransporta no enseña ninguna duración. Ahora el regreso es la misma
+   animación, con la misma curva, en sentido contrario. */
+.pistas{ margin:0 0 1.6rem; }
+.pista{
+  display:grid; grid-template-columns:minmax(0,6.5rem) 1fr; align-items:center;
+  gap:1.2rem; padding:.75rem 0;
+}
+.pista + .pista{ border-top:1px solid var(--raya); }
+.pista-nombre{
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--texto-3);
+}
+.pista-nombre b{
+  display:block; color:var(--texto); font-size:1rem; letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+}
+.pista-riel{ position:relative; height:26px; }
+/* La regla graduada: sin marcas, «rápido» y «lento» son impresiones; con
+   ellas son distancias. Va como una línea de base, no como una caja. */
+.pista-riel::before{
+  content:''; position:absolute; left:0; right:0; top:50%; height:1px;
+  background:repeating-linear-gradient(90deg,
+    var(--raya-fuerte) 0 1px, transparent 1px 10%);
+}
+.pista-carro{
+  position:absolute; top:50%; left:0; width:18px; height:18px;
+  margin-top:-9px; background:var(--acento);
+  transform:translateX(var(--donde, 0px));
+}
+/* La ida y la vuelta son la MISMA transición: sólo cambia el destino. Por eso
+   el regreso tarda exactamente lo mismo y usa la misma curva sin que haya que
+   escribir un segundo juego de fotogramas que se pueda desfasar del primero. */
+.corriendo .pista-carro{ transition:transform var(--dur) var(--curva-salida); }
+
+/* ── 2 · LA MATRIZ DE ESTADOS ──────────────────────────────────────────────
+   `cargando`, `logrado` y `error` viven medio segundo dentro de una petición
+   y por eso casi nadie los revisa. Aquí se congelan. */
+.matriz{ display:flex; flex-wrap:wrap; gap:.5rem 1.4rem; margin-bottom:1.4rem; }
+.pastilla{
+  min-height:44px; padding:0 .1rem;
+  background:none; color:var(--texto-3);
+  border:0; border-bottom:2px solid transparent; border-radius:0;
+  font-family:var(--mono); font-size:.75rem; letter-spacing:.1em;
+  text-transform:uppercase; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:color var(--micro) var(--curva-suave),
+             border-color var(--micro) var(--curva-suave);
+}
+/* La escogida se marca con la línea del acento debajo, no con una pastilla
+   rellena: sobre papel, seis rectángulos de color seguidos son un arcoíris. */
+.pastilla[aria-pressed="true"]{ color:var(--texto); border-bottom-color:var(--acento-texto); }
+/* ⚠ RESPUESTA AL TOQUE, Y NO ES ADORNO. `-webkit-tap-highlight-color` está en
+   transparente y el `:hover` vive dentro de un `@media (hover:hover)`, o sea
+   que en un teléfono esta pastilla no contestaba NADA al tocarla: el subrayado
+   aparecía, sí, pero abajo, mientras la persona mira el lienzo. Sin acuse de
+   recibo, un toque que sí funcionó se siente como un toque perdido — y se
+   vuelve a picar. `:active` sí llega en táctil y es instantáneo. */
+.pastilla:active{ color:var(--texto); border-bottom-color:var(--acento-texto); }
+.pastilla:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+@media (hover:hover) and (pointer:fine){ .pastilla:hover{ color:var(--texto); } }
+
+.escaparate{
+  display:flex; flex-wrap:wrap; align-items:center; gap:1.2rem;
+  padding:1.8rem 0; border-top:1px solid var(--raya); border-bottom:1px solid var(--raya);
+}
+
+/* ── 3 · CAMPOS ────────────────────────────────────────────────────────────
+   La etiqueta NO desaparece al escribir. La etiqueta flotante que se vuelve
+   marcador de posición se ve muy bien en una captura y es cruel de verdad:
+   quien vuelve al formulario a los dos minutos ya no sabe qué iba ahí. */
+.campo{ display:block; margin-bottom:1.4rem; max-width:34rem; }
+.campo > span{
+  display:block; font-family:var(--mono); font-size:.7rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--texto-3); margin-bottom:.5rem;
+}
+.campo input[type="text"], .campo input[type="email"], .campo textarea{
+  width:100%; min-height:var(--dedo);
+  /* 16 px de piso: abajo de eso iOS hace zoom al enfocar y saca de sitio la
+     página entera. Es un defecto que sólo aparece en el aparato de alguien. */
+  font-size:16px; font-family:var(--letra);
+  padding:.65rem .1rem; background:transparent; color:var(--texto);
+  border:0; border-bottom:2px solid var(--raya-fuerte); border-radius:0;
+  transition:border-color var(--corta) var(--curva-suave);
+}
+.campo input:focus-visible, .campo textarea:focus-visible{
+  outline:none; border-bottom-color:var(--acento);
+}
+.campo[data-mal] input{ border-bottom-color:var(--alarma); }
+.campo .aviso-campo{
+  display:block; margin-top:.4rem; font-size:.82rem; color:var(--alarma);
+  /* El renglón se reserva COMPLETO. Si apareciera empujando, cada error
+     movería el botón justo cuando la persona va a tocarlo. Con `1.2em` no
+     alcanzaba: la altura de línea heredada lo pasaba y el botón bajaba 9 px. */
+  line-height:1.35; min-height:1.35em;
+}
+
+/* ── EL DESLIZADOR ─────────────────────────────────────────────────────────
+   ⚠ AQUÍ HABÍA UN DEFECTO QUE REPORTÓ CARLOS Y QUE ES DE LOS QUE SE VEN Y NO
+   SE EXPLICAN: «la barra es totalmente llena pero la palanquera se estancó
+   antes de llegar». Pasa en todos los deslizadores nativos y casi nadie lo
+   arregla: el pulgar NO se mueve por todo el ancho, se mueve por
+   `ancho − pulgar`, porque a los extremos le queda medio pulgar de cada lado.
+   Si el relleno se pinta al 100 % del ancho y el pulgar sólo llega a
+   `ancho − pulgar/2`, los dos dicen cosas distintas del mismo número.
+
+   Se arregla pintando el relleno HASTA EL CENTRO DEL PULGAR, no hasta la
+   orilla. La posición la calcula `lab.js` con esa misma resta y la deja en
+   `--llena`. Los dos salen de la misma cuenta, así que no se pueden separar. */
+.deslizador{
+  --pulgar:22px;
+  -webkit-appearance:none; appearance:none;
+  width:100%; max-width:34rem; background:transparent;
+  min-height:var(--dedo); cursor:pointer;
+}
+.deslizador::-webkit-slider-runnable-track{
+  height:4px; border-radius:0;
+  background:linear-gradient(90deg,
+    var(--acento) 0 var(--llena, 50%), var(--raya-fuerte) var(--llena, 50%) 100%);
+}
+.deslizador::-moz-range-track{
+  height:4px;
+  background:linear-gradient(90deg,
+    var(--acento) 0 var(--llena, 50%), var(--raya-fuerte) var(--llena, 50%) 100%);
+}
+.deslizador::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none;
+  width:var(--pulgar); height:var(--pulgar); margin-top:-9px;
+  background:var(--acento); border:3px solid var(--fondo); border-radius:50%;
+}
+.deslizador::-moz-range-thumb{
+  width:var(--pulgar); height:var(--pulgar); border:3px solid var(--fondo);
+  background:var(--acento); border-radius:50%;
+}
+.deslizador:focus-visible{ outline:2px solid var(--acento); outline-offset:4px; }
+
+/* ── 4 · SUPERFICIES ───────────────────────────────────────────────────────
+   El modal es un <dialog> nativo: la trampa de foco, el Escape y el `inert`
+   sobre el resto de la página los pone el navegador, y los suyos están mejor
+   probados que los míos. */
+dialog{
+  padding:0; border:0; border-top:3px solid var(--acento); border-radius:0;
+  background:var(--fondo); color:var(--texto);
+  max-width:min(32rem, calc(100vw - 2rem));
+  /* La sombra se la pone la escala, más abajo. Tenerla aquí con su propio
+     número era como se acaba con cinco alturas distintas y ninguna igual. */
+}
+dialog::backdrop{ background:#01010199; }
+.tapa{ padding:1.6rem; }
+.tapa h3{ margin-bottom:.7rem; font-size:1.3rem; }
+.tapa-pie{ display:flex; gap:1.2rem; align-items:center; justify-content:flex-end; margin-top:1.4rem; }
+
+/* La hoja sube desde abajo: en un teléfono el pulgar ya está abajo, y una
+   hoja que aparece donde está la mano se toca sin recolocar el aparato. */
+.hoja{
+  position:fixed; inset:auto 0 0 0; z-index:70;
+  background:var(--fondo); border-top:3px solid var(--acento);
+  /* El hueco de abajo cuenta con la barra de navegación del teléfono: la
+     hoja sube DETRÁS de ella —la barra no se va porque se abra una hoja— y
+     sin este sitio su último renglón queda debajo, ilegible e intocable. */
+  padding:1.4rem 1.4rem calc(2rem + var(--baja));
+  transform:translateY(101%);
+  transition:transform var(--media) var(--curva-salida);
+}
+.hoja[data-abierta="si"]{ transform:translateY(0); }
+.hoja-asa{
+  width:44px; height:3px; background:var(--raya-fuerte);
+  margin:0 auto 1.1rem;
+}
+
+/* El globito entra en `--corta` y se va en `--micro`: lo que informa entra
+   con calma y se quita de encima rápido. NO se desvanece — adentro hay texto,
+   y un texto a media transición no cumple contraste en ningún instante. */
+.globo{ position:relative; display:inline-block; }
+.globo-texto{
+  position:absolute; left:50%; bottom:calc(100% + 10px);
+  transform:translate(-50%, 5px); transform-origin:50% 100%;
+  background:var(--texto); color:var(--fondo);
+  padding:.45rem .7rem; font-size:.82rem; white-space:nowrap; pointer-events:none;
+  visibility:hidden;
+  transition:transform var(--micro) var(--curva-entrada),
+             visibility 0s linear var(--micro);
+}
+.globo:hover .globo-texto, .globo:focus-within .globo-texto{
+  visibility:visible; transform:translate(-50%, 0);
+  transition:transform var(--corta) var(--curva-salida), visibility 0s;
+}
+
+/* Los avisos se apilan y se van solos. Sin barrita de acento a la izquierda,
+   que era otro de los diez tics — y sin desvanecer, porque llevan texto:
+   entran deslizándose desde fuera del borde, que no necesita opacidad. */
+.avisos{
+  position:fixed; right:1rem; bottom:calc(1rem + var(--baja)); z-index:80;
+  display:flex; flex-direction:column; gap:.6rem; align-items:flex-end;
+  pointer-events:none;
+}
+.aviso{
+  pointer-events:auto;
+  background:var(--texto); color:var(--fondo);
+  padding:.8rem 1rem; font-size:.9rem; line-height:1.4;
+  max-width:min(23rem, calc(100vw - 2rem));
+  animation:asomar-aviso var(--corta) var(--curva-salida) both;
+}
+.aviso[data-tipo="error"]{ background:var(--alarma); color:#FFF; }
+.aviso.yendose{ animation:irse-aviso var(--corta) var(--curva-entrada) forwards; }
+@keyframes asomar-aviso{ from{ transform:translateX(calc(100% + 1.5rem)); } }
+@keyframes irse-aviso{   to{ transform:translateX(calc(100% + 1.5rem)); } }
+
+/* ── 5 · CARGANDO, VACÍO, ERROR, SIN CONEXIÓN ──────────────────────────────
+   Es la parte que separa una demo de un producto. Un hueco en blanco se lee
+   como «se rompió», y entonces la persona recarga; si al recargar tampoco
+   dice nada, se va. */
+.esqueleto{ display:grid; gap:.7rem; max-width:34rem; }
+.hueso{
+  height:12px;
+  background:linear-gradient(90deg, var(--fondo-2) 0%, var(--fondo-3) 40%, var(--fondo-2) 80%);
+  background-size:220% 100%;
+  animation:barrer var(--cine) linear infinite;
+}
+.hueso--titulo{ height:24px; width:52%; }
+.hueso--corto{ width:74%; }
+@keyframes barrer{ to{ background-position:-220% 0; } }
+
+.vacio{
+  display:grid; justify-items:start; gap:.6rem; max-width:34rem;
+  padding:1.6rem 0; border-top:1px solid var(--raya-fuerte);
+  color:var(--texto-2);
+}
+.vacio p{ margin:0; }
+.vacio .bt{ margin-top:.6rem; }
+/* ⚠ EL ICONO MEDÍA 544 px. Un `<svg>` sin `width`, sin `height` y sin CSS que
+   lo sujete toma el tamaño por defecto de un elemento reemplazado —300×150—
+   y de ahí se estira con la caja; dentro de un `grid` con `justify-items`
+   acabó ocupando media pantalla. Llevaba así desde que se escribió.
+
+   Y esto es lo que hay que aprender del defecto, no el `28px`: NINGUNA prueba
+   lo vio, ni las de desbordes ni las de encimarse. El icono sólo existe en
+   tres de los cinco estados de esta sección, y el que se pinta al cargar es el
+   otro — el esqueleto—. Todo lo que hay que tocar para verlo lo veía sólo una
+   persona mirando, y nadie miró. La prueba nueva recorre los cinco. */
+.vacio svg{ width:28px; height:28px; flex:0 0 auto; }
+
+/* ── 6 · DATOS ─────────────────────────────────────────────────────────────
+   El tablero no son tarjetas: son columnas de una hoja de datos, separadas
+   por una regla. La rejilla de tres tarjetas iguales era otro de los diez. */
+.tablero{
+  display:grid; gap:1.6rem 2.5rem;
+  grid-template-columns:repeat(auto-fit, minmax(11rem, 1fr));
+  border-top:1px solid var(--raya-fuerte); padding-top:1.4rem;
+}
+.medidor .rotulo{ margin-bottom:.5rem; }
+.medidor small{ display:block; color:var(--texto-3); font-size:.8rem; margin-top:.4rem; max-width:22ch; }
+
+.instrumentos{
+  display:grid; gap:2.5rem; margin-top:2.5rem;
+  grid-template-columns:repeat(auto-fit, minmax(15rem, 1fr));
+}
+.instrumento{ border-top:1px solid var(--raya); padding-top:1.2rem; }
+
+/* La barra de progreso se anima con `scaleX`, no con `width`: el ancho obliga
+   a recalcular la caja en cada fotograma y la página predica lo contrario dos
+   secciones más arriba. */
+.progreso{ height:6px; background:var(--fondo-3); overflow:hidden; }
+.progreso i{
+  display:block; height:100%; width:100%; background:var(--acento);
+  transform:scaleX(0); transform-origin:0 50%;
+  transition:transform var(--media) var(--curva-salida);
+}
+
+/* La gráfica: barras que salen de la regla, con su valor encima. Sin lienzo y
+   sin librería — son <div> con altura. */
+.grafica{
+  display:flex; align-items:flex-end; gap:.5rem; height:140px;
+  padding-top:1.3rem; border-bottom:2px solid var(--texto);
+}
+/* ⚠ SIETE BARRAS DE VIOLETA LLENO SON DEMASIADO ACENTO. La neurona
+   `error-se-ve-de-juego` lo dice: «un solo acento de color, no cinco» — y aquí
+   el problema no era la cantidad de colores sino la CANTIDAD DE COLOR: una
+   mancha de marca del tamaño de un cuarto de sección. Las barras van en tinta
+   tenue y el acento se guarda para LA QUE IMPORTA, que además es lo que un
+   gráfico debería estar diciendo. */
+.grafica div{
+  flex:1; position:relative; background:var(--fondo-3); min-height:2px;
+  height:var(--alto);
+}
+.grafica div[data-alta]{ background:var(--acento); }
+.grafica div[data-alta]::after{ color:var(--texto); font-weight:700; }
+.grafica div::after{
+  content:attr(data-v); position:absolute; inset:auto 0 calc(100% + 5px) 0;
+  text-align:center; font-family:var(--mono); font-size:.65rem; color:var(--texto-3);
+}
+
+/* ── 7 · TARJETAS QUE SE APILAN ────────────────────────────────────────────
+   Se quedan pegadas y la siguiente se monta encima: el scroll deja de ser
+   desplazamiento y pasa a ser una baraja. */
+.baraja{ display:grid; gap:1.2rem; }
+.baraja > article{
+  position:sticky; top:88px;
+  padding:1.6rem 1.4rem 1.8rem; background:var(--fondo);
+  border-top:2px solid var(--acento);
+  /* Se apilan de verdad: cada una tapa a la anterior y la sombra es lo que
+     dice cuál está encima. Sin ella, al pegarse arriba parecían el mismo
+     bloque partido por una raya. */
+  box-shadow:var(--alto-2), var(--filo);
+}
+.baraja > article:nth-child(2){ top:104px; }
+.baraja > article:nth-child(3){ top:120px; }
+.baraja > article:nth-child(4){ top:136px; }
+.baraja h3 span{ color:var(--acento-texto); font-family:var(--mono); font-size:.78rem; margin-right:.4rem; }
+.baraja p{ margin:.6rem 0 0; }
+
+/* ── 8 · ARRASTRAR Y SOLTAR ────────────────────────────────────────────────
+   Con el dedo Y con el teclado. Un arrastrar que sólo funciona con el ratón
+   es media función — y en un teléfono, ninguna: el `dragstart` de HTML no
+   existe en táctil, que era otro de los defectos que reportó Carlos. */
+.cajones{ display:grid; gap:2rem; grid-template-columns:repeat(auto-fit, minmax(12rem, 1fr)); }
+.cajon{ min-height:120px; }
+.cajon[data-encima="si"]{ background:var(--fondo-2); }
+.cajon h3{
+  font-size:.72rem; font-family:var(--mono); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--texto-3); font-weight:500;
+  margin-bottom:.8rem; padding-bottom:.5rem; border-bottom:1px solid var(--raya-fuerte);
+}
+.pieza{
+  display:block; width:100%; text-align:left;
+  min-height:44px; padding:.6rem .7rem; margin-bottom:.5rem;
+  background:var(--fondo-2); color:var(--texto);
+  border:0; border-left:2px solid var(--texto); border-radius:0;
+  box-shadow:var(--alto-1);
+  font-family:var(--letra); font-size:.92rem; cursor:grab;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:none;              /* para poder arrastrar con el dedo */
+  transition:transform var(--micro) var(--curva-salida),
+             border-color var(--micro) var(--curva-suave);
+}
+.pieza:focus-visible{ outline:2px solid var(--acento); outline-offset:2px; }
+.pieza[data-volando="si"]{
+  cursor:grabbing; border-left-color:var(--acento);
+  /* Mientras va en el aire se levanta del papel y no se desvanece: lleva
+     texto, y la regla de la casa dice que la opacidad no se anima sobre
+     texto. Antes llevaba una sombra DURA porque era la única del documento;
+     ahora que todo tiene altura, se le da el escalón más alto y se lee sola
+     contra lo que deja abajo. */
+  position:relative; z-index:5; box-shadow:var(--alto-3);
+}
+@media (hover:hover) and (pointer:fine){ .pieza:hover{ border-left-color:var(--acento); transform:translateX(3px); } }
+
+/* ── 9 · PARTÍCULAS ────────────────────────────────────────────────────────
+   El lienzo es decorativo y lo dice: los comportamientos se explican en texto
+   al lado, así que quien no lo ve no se pierde nada. */
+.lienzo-caja{
+  position:relative; background:var(--fondo-2);
+  /* Hundido y no levantado: es una ventana a otra cosa, no un objeto encima
+     de la hoja. El filo va abajo, que es como se lee un hueco. */
+  box-shadow:inset 0 2px 10px -4px rgba(var(--tinta-sombra), .30),
+             inset 0 -1px 0 rgba(255,255,255,.35);
+}
+.lienzo-caja canvas{ display:block; width:100%; height:300px; }
+.lienzo-datos{
+  position:absolute; left:.8rem; bottom:.8rem;
+  font-family:var(--mono); font-size:.7rem; color:var(--texto-3);
+  pointer-events:none;
+}
+.lienzo-datos b{ color:var(--texto); }
+
+.revuelto{ font-family:var(--mono); font-weight:700; letter-spacing:-.02em; }
+
+.pie-lab{
+  border-top:1px solid var(--raya-fuerte); padding:2.5rem 0 4rem;
+  color:var(--texto-3); font-size:.9rem;
+}
+.pie-lab b{ color:var(--texto); }
+.pie-lab .firma::after{
+  content:'★'; color:var(--acento); margin-left:.5rem;
+}
+
+/* ══ LA CONSOLA · apartados 120, 121 y 122 ═════════════════════════════════
+   Modo depuración, monitor y probador de anchos. Es lo que convierte esto de
+   un catálogo en una herramienta: hasta aquí la página se mira, de aquí en
+   adelante se opera.
+
+   Es lo ÚNICO del documento que sí se ve como un aparato —fondo de tinta
+   sobre la hoja—, y a propósito: un instrumento encima de un papel se
+   distingue de la hoja. Que todo lo demás se viera así era el problema. */
+/* ⚠ EL BOTÓN NUNCA VA BLANCO. Carlos: «los botones jamás los hagas blancos
+   como el de consola, siempre ponles un color». Y era peor de lo que parece:
+   estaba pintado con `--texto` sobre `--fondo`, o sea que en el tema oscuro
+   salía BLANCO — un rectángulo de papel flotando sobre una página oscura, que
+   es justo lo que no debe hacer un control. Va con el acento en los dos temas. */
+.consola-bt{
+  position:fixed; left:1rem; bottom:calc(1rem + var(--baja)); z-index:90;
+  min-height:44px; padding:0 .9rem;
+  background:var(--acento); color:#FFF;
+  border:0; border-radius:0;
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.12em;
+  text-transform:uppercase; cursor:pointer;
+  display:inline-flex; align-items:center; gap:.6rem;
+  -webkit-tap-highlight-color:transparent;
+  transition:background var(--micro) var(--curva-suave);
+}
+.consola-bt kbd{
+  font-family:var(--mono); font-size:.66rem; opacity:.6;
+  border:1px solid currentColor; padding:0 .3rem;
+}
+.consola-bt[aria-expanded="true"]{ background:var(--texto); color:var(--fondo); }
+.consola-bt-icono{ display:none; }
+/* ── EN TELÉFONO EL BOTÓN SE ENCOGE ───────────────────────────────────────
+   Y no es por elegancia: 230 px de botón flotando sobre la primera pantalla
+   tapan justo lo que se está leyendo — lo vi en una captura, encima de las
+   entradas de «por dónde empezar», que es lo primero que alguien lee. Es la
+   misma queja de Carlos, «todo se encima en todo», en un sitio nuevo.
+
+   Y de paso se va la tecla: en un teléfono no hay tecla D. Un atajo de
+   teclado impreso en una pantalla táctil no es información, es ruido con
+   aspecto de información. */
+@media (max-width:640px){
+  .consola-bt{ width:48px; padding:0; justify-content:center; }
+  .consola-bt-texto, .consola-bt kbd{ display:none; }
+  .consola-bt-icono{
+    display:block; font-family:var(--mono); font-size:.95rem;
+    letter-spacing:.04em; line-height:1;
+  }
+}
+.consola-bt:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+
+.consola{
+  position:fixed; left:1rem; bottom:calc(1rem + 44px + .6rem + var(--baja)); z-index:90;
+  width:min(19rem, calc(100vw - 2rem));
+  background:var(--texto); color:var(--fondo);
+  padding:1rem;
+  font-family:var(--mono); font-size:.72rem;
+  /* Su propio asomo y lo que la aparta de la hoja o del aviso se SUMAN en un
+     solo `transform`: son dos cosas distintas y una sola propiedad, así que
+     escribirlas en reglas separadas hace que la segunda borre a la primera —
+     que es de dónde salía que abrirla con la hoja puesta la devolviera abajo. */
+  --asoma:10px;
+  transform:translateY(calc(var(--asoma) - max(var(--aparta-hoja), var(--aparta-aviso))));
+  visibility:hidden;
+  transition:transform var(--corta) var(--curva-entrada),
+             visibility 0s linear var(--corta);
+}
+.consola[data-abierta="si"]{
+  --asoma:0px; visibility:visible;
+  transition:transform var(--corta) var(--curva-salida), visibility 0s;
+}
+.consola dl{ display:grid; grid-template-columns:auto 1fr; gap:.3rem .9rem; margin:0 0 .9rem; }
+.consola dt{ opacity:.55; letter-spacing:.12em; text-transform:uppercase; font-size:.65rem; }
+.consola dd{ margin:0; font-weight:700; font-variant-numeric:tabular-nums; text-align:right; }
+.consola h4{
+  margin:0 0 .6rem; font-size:.65rem; letter-spacing:.14em;
+  text-transform:uppercase; opacity:.55; font-weight:500;
+}
+.consola .fila{ display:flex; flex-wrap:wrap; gap:.4rem 1.2rem; margin:0; }
+.consola .pastilla{ color:var(--fondo); opacity:.6; }
+.consola .pastilla[aria-pressed="true"]{ opacity:1; border-bottom-color:var(--fondo); }
+@media (hover:hover) and (pointer:fine){ .consola .pastilla:hover{ color:var(--fondo); opacity:1; } }
+
+/* Un contorno sobre TODO. Con `outline` y no `border`: el borde entra en el
+   cálculo de la caja y movería la página entera al encenderlo — o sea que el
+   modo de depurar cambiaría justo lo que se está depurando. */
+html[data-cajas] body *{ outline:1px solid #AD21ED55; }
+html[data-cajas] body *:hover{ outline:1px solid var(--acento); }
+
+/* El probador mete la MISMA página en un marco. Encoger un contenedor no
+   cambia las media queries: enseñaría un diseño que en ese teléfono no
+   existe, que es peor que no probar. */
+.probador{
+  position:fixed; inset:0; z-index:95; display:none;
+  background:var(--fondo); padding:1rem; overflow:auto;
+}
+.probador[data-abierto="si"]{ display:grid; grid-template-rows:auto 1fr; gap:1rem; }
+.probador-barra{ display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1.4rem; }
+.probador-lienzo{ display:grid; place-items:start center; overflow:auto; }
+.probador iframe{
+  border:0; background:var(--fondo); transform-origin:50% 0; display:block;
+  box-shadow:0 0 0 1px var(--raya-fuerte);
+}
+.probador-medida{ font-family:var(--mono); font-size:.74rem; color:var(--texto-3); margin-left:auto; }
+.probador-medida b{ color:var(--texto); }
+
+html[data-marco] .consola-bt, html[data-marco] .consola, html[data-marco] .probador{ display:none; }
+
+/* ── LA PALOMA · el estado de carga ═══════════════════════════════════════
+   Carlos, primera vez: «una U dando vueltas, ¿qué es esto, el siglo 3?».
+   Carlos, segunda: «va bien, pero la animación se hace muy rápido y
+   desincronizada, todo se carga medio a la vez rápido y medio mal, y al
+   finalizar se detiene de golpe e inicia de 0 otra vez».
+
+   Las dos son correctas, y la segunda apunta a un problema de principio y no
+   de números. Yo la había hecho DIBUJARSE: cada trazo se llena de cero a
+   completo y vuelve a empezar. Eso tiene un final, y un final que se repite se
+   ve como un corte — sobre todo si el botón se queda cargando un rato, que es
+   justo cuando un cargador tiene que aguantar que lo miren.
+
+   La salida es suya y es mejor que la mía: «que todos recorran un circuito
+   persiguiendo su cola para hacer la imagen, manteniendo la forma sin
+   tocarse». O sea: no se dibuja, CIRCULA. Cada trazo lleva un segmento corto
+   que recorre su propio camino sin fin. La paloma nunca se completa y nunca se
+   reinicia, porque no hay principio ni final que ver.
+
+   Cómo: `stroke-dasharray` con guion corto y hueco largo, y el desplazamiento
+   animado UN CICLO EXACTO del patrón en lineal. Al terminar, el dibujo es
+   idéntico al del principio — ahí está toda la diferencia con lo de antes: el
+   bucle no tiene costura.
+
+   Y va lento. `--cine` son 1.8 s y para esto es un parpadeo; se usan CINCO
+   vueltas de `--cine` —9 s—, que sigue siendo la duración más larga del
+   sistema multiplicada, sin inventar un número fuera de la gramática.
+   Eran tres, y Carlos volvió a decir que iba rápido después del primer
+   arreglo: «haz mas lento». */
+.paloma{ width:40px; height:24px; flex:none; display:block; overflow:visible; }
+.paloma path, .paloma polygon{
+  fill:none; stroke:currentColor; stroke-width:16;
+  stroke-linecap:round; stroke-linejoin:round;
+  /* El guion es una fracción corta del camino. Si fuera largo, los segmentos
+     se tocarían entre sí y se leería como una paloma parpadeando en vez de
+     como una luz recorriéndola — que es lo que él pidió que NO pasara. */
+  stroke-dasharray:var(--guion, 60) var(--hueco, 340);
+  animation:circular calc(var(--cine) * 5) linear infinite;
+}
+@keyframes circular{
+  from{ stroke-dashoffset:0; }
+  to  { stroke-dashoffset:calc((var(--guion, 60) + var(--hueco, 340)) * -1); }
+}
+.paloma-caja{ display:inline-flex; align-items:center; }
+
+.cargando-caja{
+  display:flex; align-items:center; gap:1rem; padding:1.4rem 0;
+  color:var(--acento);
+}
+.cargando-caja span{ font-family:var(--mono); font-size:.78rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--texto-3); }
+.paloma-caja{ display:inline-flex; align-items:center; }
+
+/* ── NOTAS AL MARGEN ──────────────────────────────────────────────────────
+   Lo que antes eran tarjetas con borde. Sobre papel, dos notas separadas por
+   una regla dicen lo mismo sin encerrar nada — y la rejilla de tres tarjetas
+   iguales era uno de los diez tics. El número de columnas lo decide el
+   contenido, no un `repeat(3)`. */
+.notas{ display:grid; gap:1.6rem 2.5rem; grid-template-columns:repeat(auto-fit, minmax(16rem, 1fr)); }
+.nota{ border-top:1px solid var(--raya-fuerte); padding-top:1rem; }
+.nota p{ margin:0; font-size:.94rem; }
+.nota .rotulo{ margin-bottom:.6rem; }
+
+/* Lo que sólo se enseña en pantalla táctil, y al revés. Es más honesto que
+   esconder un control muerto: quien lo toca y no pasa nada cree que se rompió. */
+.solo-dedo{ display:none; font-size:.86rem; color:var(--texto-3); margin:.8rem 0 0; }
+@media (hover:none), (pointer:coarse){
+  .solo-dedo{ display:block; }
+  [data-iman-lectura]{ opacity:.4; }
+}
+
+/* ══ EL TEMA CAMBIA ESCALONADO, CADA PIEZA CON SU MEDIDOR ══════════════════
+   Carlos: «la parte de arriba se cambia de golpe; haz que ese se cambie al
+   ritmo del primero, el más rápido, y lo mismo con el resto de componentes que
+   se ven en ese momento, que cada uno cambie a la par con uno de los medidores
+   esos».
+
+   Es mejor idea de lo que parece a primera vista, y no es adorno: convierte el
+   cambio de tema en una DEMOSTRACIÓN de la propia sección uno. Los cinco
+   escalones dejan de ser una tabla y pasan a ser algo que se ve pasar por la
+   página entera — la cabecera a 110 ms, los controles a 220, las superficies a
+   420, el texto a 820 y el papel a 1800. Se ve una ola cruzando de arriba
+   abajo, y la ola son los tokens.
+
+   Ninguna duración nueva: son los cinco de siempre. */
+.cinta, .cinta-vias a, .cinta-pct, .cinta-marca{
+  transition:background var(--micro) var(--curva-suave),
+             color var(--micro) var(--curva-suave),
+             border-color var(--micro) var(--curva-suave);
+}
+.pastilla, .bt, .pieza, .deslizador, .consola-bt{
+  transition:background var(--corta) var(--curva-suave),
+             color var(--corta) var(--curva-suave),
+             border-color var(--corta) var(--curva-suave),
+             transform var(--micro) var(--curva-salida);
+}
+/* Lo que de verdad flota encima de todo va al escalón más alto. Al `.hoja` y
+   al `dialog` ya les habían puesto una sombra suelta cada uno, con números
+   distintos: se cambian por el escalón, que es de lo que se trata tener una
+   escala. */
+.consola, dialog, .aviso{ box-shadow:var(--alto-3), var(--filo); }
+/* ⚠ LA HOJA VA AL REVÉS Y NO ES UN DETALLE: sube desde abajo y se pega al
+   borde inferior, así que su sombra tiene que caer HACIA ARRIBA — sobre lo
+   que tapa. Con el escalón normal la sombra se iba por debajo de la pantalla
+   y la hoja quedaba recortada contra el contenido, sin volumen ninguno. Es
+   la misma luz: lo que cambia es de qué lado está la superficie. */
+.hoja{
+  box-shadow:0 -2px 3px rgba(var(--tinta-sombra), .08),
+             0 -14px 28px -12px rgba(var(--tinta-sombra), .24),
+             0 -34px 60px -30px rgba(var(--tinta-sombra), .30),
+             var(--filo);
+}
+
+.consola, .hoja, dialog, .aviso, .lienzo-caja, .progreso, .grafica div, .hueso{
+  transition:background var(--media) var(--curva-suave),
+             color var(--media) var(--curva-suave),
+             border-color var(--media) var(--curva-suave);
+}
+h1, h2, h3, p, .dato, .rotulo, .medidor small, .cabecilla{
+  transition:color var(--larga) var(--curva-suave);
+}
+/* El papel es el último en girar, con `--cine`: está en `base.css`, sobre el
+   `body`, y es la misma duración que la pista más larga. */
+
+/* ── LA FLECHA, MÁS LEJOS Y MÁS DESPACIO ──────────────────────────────────
+   Carlos: «podrías mejorarlo haciendo que la flechita se separe más despacio y
+   un poco más lejos, además de que el botón baje y regrese a posición un poco
+   más lento y notorio, porque al hacerlo normal se desincronizan».
+
+   Lo de «se desincronizan» es lo que importa: el hundido del botón iba en
+   `--micro` (110 ms) y la flecha en `--corta` (220), así que el botón ya había
+   vuelto cuando la flecha seguía fuera y se leían como dos cosas distintas.
+   Ahora los dos van en `--corta` y salen del mismo tiempo. */
+[data-flecha]{ transition:transform var(--corta) var(--curva-salida) !important; }
+[data-flecha]:active{ transform:translateY(3px); }
+
+/* ── EL BOTÓN FIJO NO TAPA LO QUE ESTÁ ABIERTO ────────────────────────────
+   Carlos: «la consola se encima al botón de cerrar la hoja y se encima al
+   aviso». Es lo de siempre con lo fijo: dos cosas ancladas a la misma esquina
+   acaban una encima de la otra. Cuando hay una hoja o un aviso arriba, la
+   consola se aparta — no se esconde, porque desaparecer un control también
+   confunde: se corre a un lado. */
+/* ⚠ SE APARTA LO QUE PIDA EL MÁS ALTO DE LOS DOS, y antes ganaba el último
+   que se leyera. Carlos, e183: «si subo la hoja y luego mando un aviso la
+   consola baja». Literal: con la hoja abierta subía 14rem, y en cuanto salía
+   un aviso la regla de los avisos —misma especificidad, escrita después— la
+   dejaba en 4.5rem. O sea que la consola BAJABA hasta meterse otra vez
+   encima de la hoja, que es lo que estas reglas venían a evitar.
+
+   Con dos reglas que compiten no hay forma de decir «el mayor»: la cascada
+   sólo sabe de orden y de especificidad. Con variables sí, y `max()` lo dice
+   con todas sus letras. */
+:root{ --aparta-hoja:0rem; --aparta-aviso:0rem; }
+html[data-hoja-abierta]{ --aparta-hoja:14rem; }
+html[data-hay-avisos]{ --aparta-aviso:4.5rem; }
+.consola-bt, .consola{
+  transition:transform var(--media) var(--curva-salida);
+}
+.consola-bt{
+  transform:translateY(calc(-1 * max(var(--aparta-hoja), var(--aparta-aviso))));
+}
+
+/* ── SEGUIR DONDE IBAS ─────────────────────────────────────────────────────
+   No es un aviso ni un modal: es un renglón más de la portada, con el mismo
+   peso que tiene una nota al pie. Lo que ofrece —volver a media lectura— vale
+   la pena OFRECERLO y no vale la pena interrumpir por ello. Un banner que
+   tapa la portada por esto es cobrarle a todo el mundo el favor que le hace a
+   uno. */
+.reanudar{
+  display:flex; flex-wrap:wrap; align-items:center; gap:.2rem 1.1rem;
+  margin-top:1.6rem;
+}
+.reanudar-no{
+  background:none; border:0; padding:0 .25rem; min-height:44px;
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--texto-3); cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:color var(--micro) var(--curva-suave);
+}
+.reanudar-no:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+@media (hover:hover) and (pointer:fine){ .reanudar-no:hover{ color:var(--texto); } }
+
+/* ── POR DÓNDE EMPEZAR ─────────────────────────────────────────────────────
+   Tres entradas por INTENCIÓN. Se ven como lo que son —una lista de accesos,
+   no tres tarjetas más— porque la portada no puede competir consigo misma: si
+   esto pesara como una sección, el titular dejaría de ser el titular.
+
+   La regla vertical a la izquierda es la misma del resto del documento: aquí
+   agrupa, que es exactamente para lo que sirve una regla en un plano. */
+.empezar{ margin-top:2.6rem; border-left:2px solid var(--acento); padding-left:1.2rem; }
+.empezar .rotulo{ margin-bottom:.7rem; }
+.empezar-lista{ list-style:none; margin:0; padding:0; display:grid; gap:.2rem; }
+.empezar-lista a{
+  display:block; padding:.55rem 0; min-height:44px;
+  color:var(--texto); text-decoration:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.empezar-lista b{
+  /* `fit-content` y no `block` a secas: el subrayado es del TÍTULO, y un
+     subrayado que llega hasta el borde de la columna se lee como una regla de
+     separación, no como un enlace. */
+  display:block; width:fit-content; max-width:100%; font-size:1.02rem;
+  /* Subrayado propio, no el del navegador: éste se puede mover al acento sin
+     tocar el color del texto, que ya está medido contra el fondo. */
+  box-shadow:inset 0 -2px 0 var(--raya-fuerte);
+  transition:box-shadow var(--micro) var(--curva-suave);
+}
+.empezar-lista span{
+  display:block; margin-top:.2rem;
+  font-size:.86rem; color:var(--texto-2); max-width:52ch;
+}
+.empezar-lista a:focus-visible{ outline:2px solid var(--acento); outline-offset:3px; }
+.empezar-lista a:active b{ box-shadow:inset 0 -2px 0 var(--acento); }
+@media (hover:hover) and (pointer:fine){
+  .empezar-lista a:hover b{ box-shadow:inset 0 -2px 0 var(--acento); }
+}
+.empezar-nota{
+  margin:1.1rem 0 0; font-size:.84rem; color:var(--texto-3); max-width:52ch;
+}
+.empezar-nota kbd{
+  font-family:var(--mono); font-size:.76rem;
+  border:1px solid var(--raya-fuerte); padding:0 .3rem;
+}
+
+/* ── EL COMPARADOR ─────────────────────────────────────────────────────────
+   Dos paneles del MISMO ancho y la MISMA altura mínima. Si no fueran iguales,
+   la comparación diría algo del tamaño de las cajas en vez de decirlo del
+   contenido, que es la trampa clásica de poner dos cosas juntas.
+
+   En teléfono no se encogen a la mitad: se deslizan con enganche. Dos
+   columnas de 165 px convierten los dos lados en dos ilegibles, y comparar dos
+   cosas que no se leen no es comparar. Deslizando, cada lado se ve completo y
+   el borde del otro asoma —que es lo que dice «hay otro»—. */
+.comparador{
+  display:grid; grid-template-columns:1fr 1fr; gap:1.4rem;
+  align-items:start;
+}
+.comparador-lado{ min-width:0; }
+.comparador-lado .rotulo{ margin-bottom:.6rem; }
+.comparador-caja{
+  min-height:190px;
+  border-top:1px solid var(--raya-fuerte); padding-top:1.1rem;
+}
+/* El hueco vacío es EL EJEMPLO: se marca con una trama para que se vea que
+   está ahí y que no es un fallo de la página. Sin esto, el lado izquierdo del
+   comparador se lee como que el comparador se rompió — que es exactamente el
+   defecto del que habla la sección, y sería gracioso si no fuera un defecto. */
+.comparador-caja:empty::after,
+.comparador-caja > .crudo-texto:only-child{ display:block; }
+.comparador-caja:empty{
+  background:repeating-linear-gradient(135deg,
+    var(--raya) 0 1px, transparent 1px 9px);
+}
+.crudo-texto{
+  margin:0; font-family:var(--mono); font-size:.86rem; color:var(--texto-2);
+}
+.crudo-lista{ list-style:none; margin:0; padding:0; font-size:.9rem; color:var(--texto-2); }
+.crudo-lista li{ padding:.7rem 0; border-bottom:1px solid var(--raya); }
+.crudo-lista li:last-child{ border-bottom:0; }
+.crudo-nota{ margin:.9rem 0 0; font-size:.8rem; color:var(--texto-3); }
+
+@media (max-width:640px){
+  .comparador{
+    display:flex; gap:1rem;
+    overflow-x:auto; scroll-snap-type:x mandatory;
+    overscroll-behavior-x:contain; scrollbar-width:none;
+    /* El respiro de la derecha deja asomar el borde del otro panel: es lo que
+       dice «hay más» sin escribirlo. */
+    padding-right:2.5rem;
+  }
+  .comparador::-webkit-scrollbar{ display:none; }
+  .comparador-lado{ flex:0 0 86%; scroll-snap-align:start; }
+}

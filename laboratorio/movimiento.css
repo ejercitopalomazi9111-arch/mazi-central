@@ -1,0 +1,180 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL BANCO DE PRUEBAS · la capa de movimiento
+   ──────────────────────────────────────────────────────────────────────────
+   ESTE ARCHIVO SE PUEDE BORRAR Y LA PÁGINA SIGUE ENTERA. Es el contrato:
+   `base.css` y `piezas.css` son la página, esto es lo que se mueve. Si no
+   llega —red mala, un error antes— se ve completa y quieta, nunca a medias.
+
+   EL INTERRUPTOR es el atributo `data-quieto` del <html>, que viene puesto
+   desde el servidor y lo quita `lab.js`. Va al revés que un «encender»: si el
+   JavaScript falla, el atributo se queda y no se anima nada. Un interruptor
+   que hay que encender deja la página rota cuando nadie lo enciende.
+
+   DOS REGLAS QUE NO SE NEGOCIAN, y las dos están en el texto de la página
+   porque son la mitad del encargo:
+
+   1 · NUNCA `opacity` sobre texto. Un texto a media transición no cumple
+       contraste en ningún instante de esa transición. Se destapa con máscara,
+       a opacidad plena, o se le cambian los caracteres. En lo decorativo sí.
+   2 · Sólo `transform` y `opacity`. Son las dos que resuelve el compositor
+       sin volver a calcular la página. Animar `width`, `top`, `height` o
+       `filter` mientras se scrollea es como se llega a los tirones.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── LA BARRA DEL SCROLL, SIN UN SOLO FOTOGRAMA DE JAVASCRIPT ──────────────
+   Con `animation-timeline` la lleva el navegador fuera del hilo principal. El
+   porcentaje en número sí necesita JS, y ése va en el ciclo compartido. */
+@supports (animation-timeline: scroll()){
+  html:not([data-quieto]) [data-barra]{
+    animation:llenar linear both;
+    animation-timeline:scroll(root block);
+  }
+}
+@keyframes llenar{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+
+/* ── EL DESTAPE POR MÁSCARA ───────────────────────────────────────────────
+   El contenedor recorta y el hijo sube desde abajo. Nunca opacidad.
+
+   ⚠ EL RELLENO DE ABAJO NO ES OPCIONAL Y NO VA DENTRO DEL `:not()`. Con
+   títulos apretados las colas de las letras —la g, la j, la p, y el punto de
+   una frase— se salen de su renglón, y `overflow:hidden` se las come. Ya me
+   costó una entrega: se ve nada más abriendo la página, jamás leyendo el CSS.
+   Va fuera del `:not()` para que la página quieta y la animada midan igual;
+   si sólo existiera con movimiento, las separaciones cambiarían de una a la
+   otra y nadie sabría por qué. */
+[data-revelar]{ padding-bottom:.28em; }
+html:not([data-quieto]) [data-revelar]{ overflow:hidden; }
+html:not([data-quieto]) [data-revelar] > .tapada{
+  display:block; transform:translateY(105%);
+  transition:transform var(--larga) var(--curva-salida);
+}
+html:not([data-quieto]) [data-revelar].dentro > .tapada{ transform:translateY(0); }
+
+/* Donde el navegador sabe llevar el scroll solo, se lo lleva él: ni un
+   observador ni un fotograma nuestro. */
+@supports (animation-timeline: view()){
+  html:not([data-quieto]) [data-revelar] > .tapada{
+    animation:destapar linear both;
+    animation-timeline:view();
+    /* Termina cuando el bloque lleva un tercio de pantalla: si alguien suelta
+       el scroll a media animación, se queda destapado y se ve bien. */
+    animation-range:entry 6% cover 32%;
+    transition:none;   /* dos motores moviendo lo mismo dan un tirón al final */
+  }
+}
+@keyframes destapar{ from{ transform:translateY(105%); } to{ transform:translateY(0); } }
+
+/* ── LO QUE SUBE AL ENTRAR ────────────────────────────────────────────────
+   Para bloques que llevan varios elementos dentro. NO usa la máscara: meter un
+   <h3> y un <p> dentro de un <span> es HTML inválido, y un `div` extra por
+   cada tarjeta ensucia el documento a cambio de nada. Aquí basta con mover el
+   bloque entero — sólo `transform`, nunca opacidad, que adentro hay texto. */
+[data-subir]{ will-change:auto; }
+@supports (animation-timeline: view()){
+  html:not([data-quieto]) [data-subir]{
+    animation:subir var(--larga) var(--curva-salida) both;
+    animation-timeline:view();
+    animation-range:entry 4% cover 26%;
+  }
+}
+@keyframes subir{ from{ transform:translateY(22px); } to{ transform:translateY(0); } }
+
+/* ── LAS TARJETAS DE LA BARAJA ────────────────────────────────────────────
+   Se pegan con `position:sticky`, que es CSS puro. Lo único animado es que
+   la que ya pasó se hunde un poco: da la sensación de baraja de verdad sin
+   mover una sola caja del flujo. */
+/* ⚠ DOS ANIMACIONES SOBRE EL MISMO `transform` SE PISAN: la última declarada
+   gana y la otra desaparece sin avisar. Por eso el entrar y el hundirse de una
+   misma tarjeta van en UNA sola animación de tres tiempos, con la línea de
+   tiempo cubriendo el paso completo por la pantalla. Se ve igual y no hay
+   dos motores peleándose por la misma propiedad. */
+@supports (animation-timeline: view()){
+  html:not([data-quieto]) .baraja > article{
+    animation:pasar linear both;
+    animation-timeline:view();
+    animation-range:entry 0% exit 100%;
+  }
+}
+@keyframes pasar{
+  0%  { transform:translateY(22px) scale(1); }
+  22% { transform:translateY(0)    scale(1); }
+  70% { transform:translateY(0)    scale(1); }
+  100%{ transform:translateY(-6px) scale(.965); }
+}
+
+/* ── EL ICONO VIVO ────────────────────────────────────────────────────────
+   La flecha se adelanta y regresa. Va con `--micro` porque es un guiño, no un
+   anuncio: pasado ese tiempo deja de leerse como respuesta al toque. */
+@media (hover:hover) and (pointer:fine){
+  html:not([data-quieto]) [data-flecha]:hover [data-punta]{
+    animation:adelantarse var(--corta) var(--curva-salida);
+  }
+}
+/* ⚠ `.adelanta` LA PONE EL CLIC, y sin ella esto no existía en un teléfono:
+   la animación colgaba de `:hover` y de `:focus-visible`, y tocar no da
+   ninguno de los dos —`focus-visible` es para teclado y hace bien en no
+   dispararse con el dedo—. El icono se quedaba muerto justo en el aparato
+   donde más se usa. Lo notó Carlos. */
+html:not([data-quieto]) [data-flecha]:focus-visible [data-punta],
+html:not([data-quieto]) [data-flecha].adelanta [data-punta]{
+  animation:adelantarse var(--corta) var(--curva-salida);
+}
+@keyframes adelantarse{
+  40%{ transform:translateX(5px); }
+  100%{ transform:translateX(0); }
+}
+
+/* ── EL BOTÓN MAGNÉTICO ───────────────────────────────────────────────────
+   El desvío lo calcula `lab.js` y lo deja en dos variables. Aquí sólo se
+   aplica, y el regreso al centro lleva `--corta` con resorte: al alejarse, un
+   regreso seco se siente roto y uno con rebote se siente elástico. */
+[data-iman]{
+  transform:translate(var(--dx, 0px), var(--dy, 0px));
+}
+html:not([data-quieto]) [data-iman]{
+  transition:transform var(--corta) var(--resorte);
+}
+/* Mientras el cursor está cerca la transición se acorta a `--micro`: si
+   siguiera en `--corta`, el botón iría siempre un paso atrás del cursor y se
+   sentiría pesado en vez de magnético. */
+html:not([data-quieto]) [data-iman][data-cerca="si"]{
+  transition:transform var(--micro) linear;
+}
+
+/* ── APAGADO, EXPLÍCITO Y AL FINAL ────────────────────────────────────────
+   Va último para ganar sin pelear con especificidades. Y NO TOCA NINGÚN
+   MARGEN NI RELLENO AJENO: apaga animaciones y quita el recorte, nada más.
+   Un bloque de movimiento reducido que además reacomoda cajas es como se
+   entrega, sin saberlo, una versión rota justo a quien más la necesita. */
+@media (prefers-reduced-motion: reduce){
+  html [data-revelar]{ overflow:visible; }
+  html [data-revelar] > .tapada{ transform:none; animation:none; transition:none; }
+  html [data-barra]{ animation:none; }
+  html .baraja > article, html [data-subir]{ animation:none; transform:none; }
+  html [data-iman]{ transition:none; transform:none; }
+  html [data-punta]{ animation:none; }
+  html .hueso{ animation:none; }
+  html .giro{ animation-duration:2.4s; }   /* sigue girando: es el único que
+      informa «esto no se ha colgado». Se hace lento, no se apaga. */
+  html *, html *::before, html *::after{
+    animation-duration:1ms !important; animation-iteration-count:1 !important;
+    transition-duration:1ms !important; scroll-behavior:auto !important;
+  }
+  /* La excepción de arriba se vuelve a poner porque la barrida general la
+     acaba de borrar. El orden importa: primero se apaga todo, luego se
+     rescata lo que informa. */
+  html .giro{ animation-duration:2.4s !important; animation-iteration-count:infinite !important; }
+
+  /* ⚠ Y LA ONDA QUIETA, POR LA MISMA RAZÓN Y CON EL MISMO TRUCO. La barrida
+     de arriba le deja 1 ms de vida, así que nace y se borra antes de que nada
+     llegue a pintarse: desde fuera es idéntico a que no pasara nada, y era
+     exactamente lo que Carlos veía —«el botón de tócame donde sea sólo se
+     pulsa, no hay más»—.
+
+     Que dure 220 ms no contradice la preferencia: no se desplaza ni crece,
+     sólo se apaga en el sitio. Lo que molesta de una animación es el
+     movimiento, y ésta no tiene. */
+  html .onda--quieta{
+    animation-duration:var(--corta) !important; animation-iteration-count:1 !important;
+  }
+}

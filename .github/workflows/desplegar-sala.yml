@@ -1,0 +1,95 @@
+# ══════════════════════════════════════════════════════════════════════════
+# DESPLEGAR EL WORKER DE LA SALA, DESDE UN TELÉFONO
+# ──────────────────────────────────────────────────────────────────────────
+# ⚠️ ESTO ES UN RESPALDO, NO EL CAMINO NORMAL — Y LO ESCRIBÍ CREYENDO LO
+# CONTRARIO. Di por hecho que el worker de la sala había que desplegarlo a
+# mano con `npx wrangler deploy`, y se lo dije a los dos. Es falso: este repo
+# tiene integración de Git con Cloudflare y el bot lo enseña en cada PR —
+# «Deployment successful! · sala» en cada commit—. O sea que al entrar a main,
+# la sala se despliega sola.
+#
+# Se queda igual porque sirve para lo que la integración NO cubre: forzar un
+# despliegue sin commit de por medio, que es lo que uno quiere cuando algo se
+# quedó a medias y no hay nada que cambiar en el código.
+#
+# Carlos: «dame el link donde pueda hacer lo que tiene que hacer Luis desde mi
+# teléfono». Se corre desde la pestaña Actions de GitHub —también desde la app
+# del móvil— con un botón, sin terminal y sin instalar nada.
+#
+# ── NACE APAGADO, Y LO DICE ───────────────────────────────────────────────
+# Sin el secreto `CLOUDFLARE_API_TOKEN` no puede desplegar nada. En vez de
+# fallar con un error de wrangler que no explica nada, comprueba primero y
+# dice exactamente qué falta y dónde se pone. Un workflow que falla sin decir
+# por qué manda a la gente a leer registros de compilación por un dato de
+# configuración.
+#
+# ── SÓLO A MANO, NUNCA SOLO ───────────────────────────────────────────────
+# No se dispara con los push. Desplegar el servidor de la sala mientras dos
+# personas están hablando ahí dentro corta las conexiones abiertas, y eso lo
+# decide una persona que sabe si es buen momento — no un `git push`.
+name: Desplegar la sala
+
+on:
+  workflow_dispatch:
+    inputs:
+      rama:
+        description: 'Qué rama desplegar'
+        required: true
+        default: 'main'
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.rama }}
+
+      - name: Comprobar que hay llave
+        env:
+          FICHA: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$FICHA" ]; then
+            echo "::error::Falta el secreto CLOUDFLARE_API_TOKEN."
+            echo ""
+            echo "Se pone una sola vez, y se puede desde el teléfono:"
+            echo "  Settings → Secrets and variables → Actions → New repository secret"
+            echo "  Nombre: CLOUDFLARE_API_TOKEN"
+            echo ""
+            echo "La ficha sale de Cloudflare: dash.cloudflare.com → My Profile →"
+            echo "API Tokens → Create Token → plantilla «Edit Cloudflare Workers»."
+            echo "Con eso alcanza; no hace falta darle nada más."
+            exit 1
+          fi
+          echo "Llave puesta. Desplegando la rama ${{ inputs.rama }}."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Se despliega desde la carpeta del worker y no desde la raíz: su
+      # configuración va en .jsonc a propósito, y desde la raíz wrangler
+      # tomaría el wrangler.jsonc DEL SITIO. Está explicado en el propio
+      # sala/servidor/wrangler.jsonc.
+      - name: Desplegar
+        working-directory: sala/servidor
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx --yes wrangler@latest deploy
+
+      - name: Comprobar que quedó viva
+        run: |
+          # No basta con que wrangler diga que subió: lo que importa es que la
+          # sala conteste. Se le pregunta por una ruta que sólo existe en el
+          # código nuevo, así que un 404 aquí significa que se desplegó otra
+          # cosa — y eso es justo lo que hay que enterarse ahora y no mañana.
+          sleep 6
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+            'https://sala.palomazi9111.workers.dev/api/sala/GRUPAZ/retrato' \
+            -H 'content-type: application/json' --data '{}')
+          echo "La ruta /retrato contesta $codigo"
+          if [ "$codigo" = "404" ]; then
+            echo "::error::Se desplegó, pero la sala sigue sin la ruta /retrato. Revisa qué rama se mandó."
+            exit 1
+          fi
+          echo "La sala ya conoce las rutas nuevas."

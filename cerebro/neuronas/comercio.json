@@ -1,0 +1,92 @@
+{
+  "area": "comercio",
+  "nombre": "Convencer sin engañar",
+  "que": "Precios, llamadas a la acción y patrones que consiguen el clic a costa de la confianza.",
+  "neuronas": [
+    {
+      "id": "el-precio-que-aparece-al-final",
+      "titulo": "El precio real sale en el último paso",
+      "gravedad": "alta",
+      "sintoma": "Mucho abandono en el paso de pago.",
+      "causa": "Se muestran cargos, envío o impuestos sólo al final.",
+      "porque": "El número pequeño convierte mejor en la primera pantalla, medido a corto plazo.",
+      "arreglo": "Decir el total desde el principio, o decir claramente qué falta por sumar.",
+      "comoCazarlo": "Mirar dónde abandona la gente y comparar con dónde aparece cada cargo.",
+      "consejo": "Lo que se gana en el primer clic se pierde en la confianza y en la vuelta.",
+      "senales": [
+        "abandonan en el pago",
+        "el precio no era ese",
+        "aparecieron cargos"
+      ],
+      "salioDe": "Práctica documentada de transparencia de precios en comercio."
+    },
+    {
+      "id": "el-boton-que-no-dice-a-que-se-compromete",
+      "titulo": "«Continuar» sin decir a qué",
+      "gravedad": "media",
+      "sintoma": "La gente pulsa y se encuentra con algo que no esperaba: un cobro, un registro, un correo.",
+      "causa": "La etiqueta es neutra y esconde el compromiso.",
+      "porque": "Un botón neutro convierte más porque no da qué pensar.",
+      "arreglo": "Nombrar lo que va a pasar: «Pagar 320 pesos», «Crear la cuenta».",
+      "comoCazarlo": "Leer sólo el botón y decir qué va a ocurrir.",
+      "consejo": "Un botón honesto convierte un poco menos y devuelve mucho menos.",
+      "senales": [
+        "no sabía que me iba a cobrar",
+        "me registró sin avisar",
+        "¿qué era continuar?"
+      ],
+      "salioDe": "La neurona de microcopia: nombrar la acción por su resultado."
+    },
+    {
+      "id": "la-opcion-de-no-escondida",
+      "titulo": "Decir que no está más escondido que decir que sí",
+      "gravedad": "alta",
+      "sintoma": "La gente acepta cosas que no quería y se queja después.",
+      "causa": "El camino de rechazar es más largo, más pequeño o más difícil de ver.",
+      "porque": "Las métricas premian el sí, y hacer difícil el no lo sube sin cambiar nada más.",
+      "arreglo": "Que aceptar y rechazar tengan el mismo peso visual y el mismo número de pasos.",
+      "comoCazarlo": "Medir clics y tamaño de las dos opciones. Si no son comparables, hay empujón.",
+      "consejo": "Además de desleal, en varios sitios es ilegal para consentimientos.",
+      "senales": [
+        "no encuentro cómo rechazar",
+        "acepté sin querer",
+        "el botón de no es diminuto"
+      ],
+      "salioDe": "Prácticas engañosas documentadas; la regla de este grupo de no usar patrones oscuros."
+    },
+    {
+      "id": "urgencia-inventada",
+      "titulo": "Un contador que dice que quedan dos y siempre quedan dos",
+      "gravedad": "alta",
+      "sintoma": "Escasez o cuenta atrás que se reinicia al recargar.",
+      "causa": "La urgencia es un adorno, no un dato.",
+      "porque": "Funciona a corto plazo y es fácil de añadir.",
+      "arreglo": "Si el dato es real, mostrarlo; si no, no inventarlo.",
+      "comoCazarlo": "Recargar la página y ver si el contador vuelve a empezar.",
+      "consejo": "Basta con que una persona lo note para que se hable de ello: se pierde más de lo que se gana.",
+      "senales": [
+        "siempre dice que quedan pocos",
+        "el contador se reinicia",
+        "¿es verdad que se acaba?"
+      ],
+      "salioDe": "La regla de este grupo: los números que se publican tienen que ser ciertos."
+    },
+    {
+      "id": "testimonios-y-cifras-sin-fuente",
+      "titulo": "Cifras y opiniones que nadie puede comprobar",
+      "gravedad": "media",
+      "sintoma": "La página presume resultados sin decir de dónde salen.",
+      "causa": "Se escribieron para llenar la sección de confianza.",
+      "porque": "Es la sección que todo el mundo tiene y hay que rellenarla.",
+      "arreglo": "Con fuente y fecha, o no se pone. Menos cifras y verificables convencen más.",
+      "comoCazarlo": "Por cada dato de esa sección, buscar de dónde sale.",
+      "consejo": "Un dato sin cómo ni cuándo no es una medición: es un reporte.",
+      "senales": [
+        "¿de dónde salió ese 98 %?",
+        "los testimonios son inventados",
+        "no hay fuente"
+      ],
+      "salioDe": "La sección de lo medido del sitio del Instituto, reescrita justo por esto."
+    }
+  ]
+}

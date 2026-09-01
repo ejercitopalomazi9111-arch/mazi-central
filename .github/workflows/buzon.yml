@@ -85,8 +85,31 @@ jobs:
           MAZI_LLAVE: ${{ secrets.MAZI_LLAVE }}
           MAZI_NOMBRE: ${{ vars.MAZI_NOMBRE || 'Claude de Luis' }}
           MAZI_SERVIDOR: ${{ vars.MAZI_SERVIDOR || 'https://sala.palomazi9111.workers.dev' }}
+          # El código de sala va en una VARIABLE y no clavado aquí. La razón no
+          # es elegancia: la llave de Luis se quemó —salió en una captura y en
+          # el chat— y la respuesta correcta a una llave quemada es fundar sala
+          # nueva. Si el código vive en el YAML, rotar la sala obliga a abrir un
+          # PR, esperar revisión y mezclar para algo que debería tardar diez
+          # segundos. Y una rotación que cuesta un PR es una rotación que no se
+          # hace. Se cambia en Ajustes → Variables, junto al secreto.
+          MAZI_SALA: ${{ vars.MAZI_SALA || 'GRUPAZ' }}
         run: |
-          node sala/vigilante/buzon.mjs GRUPAZ claude-de-luis \
+          # ── DECIR A QUÉ SALA LE ESTÁ HABLANDO ────────────────────────────
+          # `MAZI_SALA` se lee de vars y `MAZI_LLAVE` de secrets: son DOS
+          # pestañas distintas de la misma pantalla. Puesta en la equivocada,
+          # `vars.MAZI_SALA` viene vacía, el respaldo mete GRUPAZ y el puente
+          # le sigue hablando a la sala muerta con la corrida EN VERDE.
+          #
+          # Eso es exactamente el defecto de la neurona salida-cero-no-es-exito
+          # —un proceso sano y sordo— aplicado a mi propio workflow. Un respaldo
+          # silencioso es una mentira cómoda, así que aquí se dice en voz alta
+          # cuál se está usando y de dónde salió.
+          if [ -z "${{ vars.MAZI_SALA }}" ]; then
+            echo "::warning::Estoy usando la sala GRUPAZ por respaldo, porque la VARIABLE MAZI_SALA no está puesta. Si ya fundaron sala nueva, ÉSTA es la razón de que no llegue nada. Va en Ajustes → Secrets and variables → Actions → pestaña Variables (no Secrets)."
+          else
+            echo "::notice::Hablándole a la sala $MAZI_SALA (de la variable MAZI_SALA)."
+          fi
+          node sala/vigilante/buzon.mjs "$MAZI_SALA" claude-de-luis \
             ${{ inputs.solo_leer && '--solo-leer' || '' }}
 
       - name: Reflejar el hilo en la rama `buzon`

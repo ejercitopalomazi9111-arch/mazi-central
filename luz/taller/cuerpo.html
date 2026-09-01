@@ -1,0 +1,117 @@
+<a class="salta" href="#hoy">Saltar al dato</a>
+
+<header class="ancho">
+  <div class="marca">
+    <h1>El año en luz</h1>
+    <p class="sub">Cuánto dura el día, y cómo cambia</p>
+  </div>
+
+  <form class="mandos" onsubmit="return false">
+    <div class="campo">
+      <label for="lugar">Lugar</label>
+      <select id="lugar" name="lugar"></select>
+    </div>
+    <div class="campo">
+      <label for="fecha">Fecha</label>
+      <input type="date" id="fecha" name="fecha">
+    </div>
+    <button type="button" class="boton" id="hoyBtn">Hoy</button>
+  </form>
+  <div class="aviso" id="avisoUbi" hidden></div>
+</header>
+
+<main class="ancho">
+
+  <section id="hoy" style="padding-top:0">
+    <div class="hoy">
+      <p class="sub" id="dondeCuando">__DONDE__</p>
+      <p class="gran"><span id="horas">__HORAS__</span><span class="u">h</span><span
+         id="mins">__MINS__</span><span class="u">m</span> <span class="u">de luz</span></p>
+      <p class="pie-gran"><span class="delta" id="delta">__DELTA__</span></p>
+      <div class="barra" id="barraDia"></div>
+      <div class="reglaHoras" id="reglaHoras"></div>
+      <p class="pie-gran" id="salePone">__SALEPONE__</p>
+    </div>
+    <div class="aviso" id="avisoPolar" hidden>
+      <b>Aquí hoy el sol no cruza el horizonte.</b>
+      Por encima del círculo polar hay semanas en las que no sale y semanas en
+      las que no se pone. No es un fallo de la cuenta: es el sitio.
+    </div>
+  </section>
+
+  <section id="ano">
+    <h2>El año entero</h2>
+    <p class="dice">Una columna por día. De abajo arriba, los cuatro tramos que
+    la astronomía distingue: noche cerrada, crepúsculo astronómico, náutico y
+    civil, y el día. Pasa el dedo o el ratón por encima.</p>
+
+    <div class="grafica">
+      <div class="horas" id="ejeHoras" aria-hidden="true"></div>
+      <div class="banda" id="lienzo">
+        <canvas id="banda" role="img"
+                aria-label="Banda de luz del año: la franja del día se ensancha hacia el verano y se estrecha hacia el invierno."></canvas>
+        <div class="cruz" id="cruz"></div>
+        <div class="globo" id="globo"></div>
+      </div>
+      <div class="meses" id="meses" aria-hidden="true"></div>
+    </div>
+    <p class="leyenda">
+      <span><i style="background:var(--dia)"></i> día</span>
+      <span><i style="background:var(--civil)"></i> crepúsculo civil</span>
+      <span><i style="background:var(--nautico)"></i> náutico</span>
+      <span><i style="background:var(--astro)"></i> astronómico</span>
+      <span><i style="background:var(--noche)"></i> noche cerrada</span>
+    </p>
+  </section>
+
+  <section id="extremosSec">
+    <h2>Los dos extremos</h2>
+    <p class="dice">El día más largo y el más corto del año, y cuánto hay entre
+    los dos. Es la cifra que más cambia de un sitio a otro: en Quito son
+    minutos; en Ushuaia, casi diez horas.</p>
+    <div class="rejilla">
+      <table>
+        <caption class="sub" style="text-align:left;padding-bottom:.6rem">__DONDE_ANO__</caption>
+        <tbody id="extremos">__EXTREMOS__</tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="mensualSec">
+    <h2>Mes a mes</h2>
+    <p class="dice">El día 15 de cada mes.</p>
+    <div class="rejilla">
+      <table>
+        <thead><tr><th scope="col">Fecha</th><th scope="col" class="n">Sale</th>
+          <th scope="col" class="n">Se pone</th><th scope="col" class="n">Luz</th></tr></thead>
+        <tbody id="mensual">__MENSUAL__</tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="ancho">
+  <p><b>Cómo se calcula.</b> Con el algoritmo solar de la NOAA, el mismo de sus
+  hojas de cálculo públicas: setenta líneas de aritmética que corren en tu
+  aparato. No hay ninguna petición a ningún servidor — ni para la hora, ni para
+  el mapa, ni para las letras.</p>
+
+  <p><b>Qué tan exacto es.</b> Da el minuto correcto entre los paralelos 60 y
+  −60. Más cerca de los polos el error crece, porque ahí el sol roza el
+  horizonte durante horas y un minuto de cuenta son varios de cielo. La salida
+  y la puesta se toman con el sol a −0°50′, que es como se definen: el borde
+  del disco asomando, contando la refracción del aire.</p>
+
+  <p><b>Las horas son las del reloj de pared, en horario estándar.</b> Los
+  lugares de la lista están elegidos porque ninguno adelanta el reloj en
+  verano. Para cualquier otro sitio está «mi ubicación», que toma el huso del
+  propio aparato: esa posición no sale de esta página, no se guarda y no se
+  envía a nadie.</p>
+
+  <p>Las coordenadas son las del centro de cada ciudad, redondeadas a dos
+  decimales. Letras: Young Serif, Work Sans e IBM Plex Mono, las tres bajo
+  licencia SIL OFL, en <span style="font-family:var(--cifra)">fuentes/</span>.</p>
+</footer>
+
+<button class="tema" id="tema" type="button">Oscuro</button>

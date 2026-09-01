@@ -1,0 +1,92 @@
+{
+  "area": "escala",
+  "nombre": "Densidad y escala",
+  "que": "Cuánta información cabe sin dejar de leerse, y qué cambia entre una pantalla llena y una vacía.",
+  "neuronas": [
+    {
+      "id": "disenado-con-tres-elementos",
+      "titulo": "Se diseñó con tres elementos y en producción hay trescientos",
+      "gravedad": "alta",
+      "sintoma": "La pantalla que se veía espaciosa en la maqueta es un muro en producción.",
+      "causa": "Se diseñó con la cantidad cómoda, no con la real.",
+      "porque": "La maqueta se llena a mano y nadie escribe trescientas filas.",
+      "arreglo": "Diseñar con la cantidad del percentil alto, no con la media. Y probar con una y con mil.",
+      "comoCazarlo": "Cargar el caso más grande que exista de verdad.",
+      "consejo": "El caso de uno solo también importa: una lista con un elemento suele verse peor que con diez.",
+      "senales": [
+        "en producción se ve distinto",
+        "con muchos datos no funciona",
+        "es un muro de información"
+      ],
+      "salioDe": "El principio de diseñar con el contenido real, aplicado a la cantidad."
+    },
+    {
+      "id": "densidad-unica-para-todos",
+      "titulo": "La misma densidad para quien mira y para quien trabaja",
+      "gravedad": "baja",
+      "sintoma": "Quien usa la herramienta ocho horas se queja de que todo está muy separado; quien entra una vez, de que está apretado.",
+      "causa": "Hay una sola densidad para dos públicos con necesidades opuestas.",
+      "porque": "Se diseña para la primera visita, que es la que se presenta.",
+      "arreglo": "Ofrecer dos densidades, o al menos escoger a propósito a quién se sirve.",
+      "comoCazarlo": "Preguntar a quien lo usa a diario y a quien entra por primera vez.",
+      "consejo": "En herramientas de uso intensivo, el aire de más es trabajo de más: más scroll por tarea.",
+      "senales": [
+        "está muy separado todo",
+        "no cabe nada en pantalla",
+        "tengo que hacer mucho scroll"
+      ],
+      "salioDe": "Práctica de densidad en interfaces de trabajo."
+    },
+    {
+      "id": "la-tarjeta-que-cabe-una-por-pantalla",
+      "titulo": "Cada elemento ocupa una pantalla entera",
+      "gravedad": "media",
+      "sintoma": "Comparar dos elementos obliga a recordar el primero.",
+      "causa": "Las tarjetas son tan grandes que no caben dos a la vez.",
+      "porque": "Cada tarjeta se diseñó sola, y sola se ve bien grande.",
+      "arreglo": "Si la tarea es comparar, que quepan al menos dos. La medida de la tarjeta sale de la tarea, no del gusto.",
+      "comoCazarlo": "Contar cuántos elementos caben en una pantalla de teléfono.",
+      "consejo": "La memoria de trabajo es corta: lo que no se ve a la vez, no se compara.",
+      "senales": [
+        "tengo que subir y bajar para comparar",
+        "cabe uno por pantalla",
+        "no puedo ver dos a la vez"
+      ],
+      "salioDe": "Principio de comparación visual; el comparador del banco nace de esto."
+    },
+    {
+      "id": "el-espacio-que-se-recorta-primero",
+      "titulo": "Cuando falta sitio se quita el aire, no el contenido",
+      "gravedad": "media",
+      "sintoma": "En pantallas chicas todo queda pegado y cuesta leer.",
+      "causa": "El espacio es lo primero que se recorta porque no es contenido.",
+      "porque": "Quitar aire no obliga a discutir con nadie; quitar contenido sí.",
+      "arreglo": "Decidir qué contenido no cabe y quitarlo o esconderlo bien, en vez de apretar todo.",
+      "comoCazarlo": "Comparar la separación entre bloques en escritorio y en teléfono. Si baja mucho, se está recortando aire.",
+      "consejo": "El aire es lo que hace legible el contenido: recortarlo no ahorra, empeora.",
+      "senales": [
+        "todo pegado en el celular",
+        "no respira",
+        "se ve apretado"
+      ],
+      "salioDe": "Principio de proximidad aplicado a la reducción responsiva."
+    },
+    {
+      "id": "la-pantalla-de-la-demo",
+      "titulo": "Todo está pensado para la pantalla de la demostración",
+      "gravedad": "media",
+      "sintoma": "En una pantalla más chica o más grande la composición se rompe.",
+      "causa": "Se ajustó a un ancho concreto, el del monitor de quien lo hizo.",
+      "porque": "Es el ancho que se mira todo el día.",
+      "arreglo": "Probar en los extremos reales del público, no en el punto medio cómodo.",
+      "comoCazarlo": "Mirar a 320, 390, 768, 1440 y en una pantalla muy ancha.",
+      "consejo": "En pantallas muy anchas el problema no es que no quepa: es que el texto se estira hasta ser ilegible.",
+      "senales": [
+        "en mi monitor se ve bien",
+        "se rompe en pantalla grande",
+        "sólo funciona en un tamaño"
+      ],
+      "salioDe": "Las comprobaciones a cuatro anchos del sitio del Instituto."
+    }
+  ]
+}

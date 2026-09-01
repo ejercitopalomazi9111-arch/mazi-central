@@ -1,0 +1,177 @@
+{
+  "area": "oficio",
+  "nombre": "Oficio: cómo se revisa y cómo se sabe",
+  "que": "Cómo se comprueba que un diseño está bien: mirar en vez de leer, medir antes de revertir, y por qué una prueba puede estar mintiendo en verde.",
+  "neuronas": [
+    {
+      "id": "mirar-la-pantalla-no-el-codigo",
+      "titulo": "El código se ve perfecto y la pantalla está mal",
+      "gravedad": "alta",
+      "sintoma": "Se revisa el diff, todo cuadra, y el defecto sigue ahí.",
+      "causa": "Se revisó la intención escrita y no el resultado pintado. Son dos cosas distintas y sólo una es la que ve la gente.",
+      "porque": "Leer código es lo que uno sabe hacer rápido; mirar exige abrir la página, poner el tema, el ancho y el estado correctos.",
+      "arreglo": "Una captura por cada cambio visual, en los dos temas y los dos anchos. Cuatro imágenes, no una.",
+      "comoCazarlo": "Preguntarse antes de cerrar: ¿lo vi, o lo leí? Si sólo lo leí, no está revisado.",
+      "consejo": "Tres defectos de un solo día salieron de capturas: un icono de 544 px, un botón que tapaba el primer texto y quince celdas dibujando el mismo glifo. Ninguno de leer código.",
+      "senales": [
+        "el código está bien y se ve mal",
+        "no encuentro el error",
+        "ya lo revisé y sigue pasando"
+      ],
+      "salioDe": "El banco de pruebas, 29 de agosto: los tres defectos del día salieron mirando, no leyendo."
+    },
+    {
+      "id": "la-prueba-que-pasa-en-vacio",
+      "titulo": "La comprobación da verde porque no había nada que comprobar",
+      "gravedad": "alta",
+      "sintoma": "Una prueba pasa siempre, incluso con el defecto puesto a propósito.",
+      "causa": "Comprueba una propiedad sobre una lista vacía. «Todos los elementos cumplen X» es cierto cuando no hay elementos.",
+      "porque": "Al escribirla la lista tenía cosas, así que la prueba nació dando verde por el motivo correcto.",
+      "arreglo": "Exigir primero la CANTIDAD y después la propiedad. Si se esperan tres, que la prueba diga tres.",
+      "comoCazarlo": "Correr la suite contra el código sin arreglar. Lo que siga en verde, o no comprueba, o no comprueba lo que dice.",
+      "consejo": "Una comprobación sobre una lista vacía no comprueba nada y encima tranquiliza, que es lo peor que puede hacer.",
+      "senales": [
+        "la prueba pasa siempre",
+        "sigue verde aunque lo rompa",
+        "no sé si esa prueba sirve"
+      ],
+      "salioDe": "El banco: tres comprobaciones de «por dónde empezar» pasaban con cero entradas. Se vio corriéndolas contra el defecto."
+    },
+    {
+      "id": "medir-antes-de-revertir",
+      "titulo": "Se culpó al cambio propio sin medirlo",
+      "gravedad": "media",
+      "sintoma": "Algo va mal después de un cambio y se revierte el cambio por si acaso.",
+      "causa": "Coincidencia en el tiempo tomada por causa. El cambio reciente es el sospechoso más cómodo.",
+      "porque": "Revertir es rápido y se siente prudente; medir cuesta unos minutos que parecen de más cuando algo está roto.",
+      "arreglo": "Medir con y sin el cambio, en el mismo aparato y varias veces, antes de tocar nada.",
+      "comoCazarlo": "Si no hay dos números —con y sin—, no hay diagnóstico: hay una corazonada.",
+      "consejo": "Dos veces esta semana medí antes de revertir y las dos veces mi cambio era inocente. Revertir habría escondido la causa real.",
+      "senales": [
+        "desde que cambié eso va mal",
+        "mejor lo revierto",
+        "seguro fue lo último que toqué"
+      ],
+      "salioDe": "El banco: la prueba de la cinta y las capas de fondo, medidas tres veces con y sin el cambio."
+    },
+    {
+      "id": "el-estado-que-nadie-pinta",
+      "titulo": "Se probó el estado que sale al cargar y ningún otro",
+      "gravedad": "alta",
+      "sintoma": "Un defecto grave vive meses en producción sin que ninguna prueba lo vea.",
+      "causa": "Las comprobaciones recorren la página TAL COMO NACE, y el defecto vive en un estado que hay que provocar.",
+      "porque": "Automatizar el estado inicial es fácil; provocar los otros cuatro exige saber cuáles son.",
+      "arreglo": "Enumerar los estados de cada pieza y recorrerlos todos en la comprobación, no sólo el inicial.",
+      "comoCazarlo": "Preguntar de cada sección: ¿cuántos estados tiene y cuál se pinta al abrir? Los demás son los que nadie mide.",
+      "consejo": "Un estado que nadie pinta es un estado que nadie mide.",
+      "senales": [
+        "nunca lo vimos",
+        "llevaba meses así",
+        "sólo pasa cuando das clic en eso"
+      ],
+      "salioDe": "El banco: el icono de 544 px vivía en tres de cinco estados, y el que se pinta al cargar era el otro."
+    },
+    {
+      "id": "no-desbordar-no-es-medir-bien",
+      "titulo": "«No se sale de la caja» no es «mide lo que debe»",
+      "gravedad": "media",
+      "sintoma": "Un elemento con un tamaño absurdo pasa todas las comprobaciones de maqueta.",
+      "causa": "La comprobación mide desbordes, y un elemento que se estira hasta el ancho de su contenedor no desborda: lo llena.",
+      "porque": "Desbordar es el defecto clásico, así que la comprobación existe; el tamaño intencional no se comprueba porque «se ve».",
+      "arreglo": "Añadir comprobaciones de TAMAÑO donde el tamaño importa: iconos, avatares, logos, cualquier cosa con una medida esperada.",
+      "comoCazarlo": "Buscar elementos cuyo ancho pintado sea sospechosamente igual al de su contenedor.",
+      "consejo": "Las dos preguntas parecen la misma y sólo una caza el caso del `<svg>` sin medidas.",
+      "senales": [
+        "pasa las pruebas y se ve fatal",
+        "no desborda pero está enorme",
+        "las pruebas no lo cazaron"
+      ],
+      "salioDe": "El banco: con el icono a 449 px, «no se desborda de su panel» seguía en verde."
+    },
+    {
+      "id": "no-reportar-una-ausencia-desde-una-vista-parcial",
+      "titulo": "Se dijo «no llegó» mirando sólo la mitad",
+      "gravedad": "media",
+      "sintoma": "Se reporta que algo falta, la otra persona lo busca, y sí estaba.",
+      "causa": "Se comprobó en un sitio que no incluye todos los casos —una rama, un estado, un origen— y se concluyó una ausencia.",
+      "porque": "Una comprobación parcial que sale vacía se parece muchísimo a una ausencia real.",
+      "arreglo": "Antes de decir «no está», enumerar dónde podría estar y comprobar que se miró en todos.",
+      "comoCazarlo": "Cuando la conclusión sea una ausencia, escribir qué se miró exactamente. Si la lista tiene un solo sitio, no alcanza.",
+      "consejo": "Nunca se reporta una ausencia desde una comprobación parcial: manda a todo el mundo a buscar donde no era.",
+      "senales": [
+        "no llegó tu cambio",
+        "no encuentro nada",
+        "aquí no está"
+      ],
+      "salioDe": "Un caso propio: se miraron las ramas del repo original y el cambio venía de un fork, que ahí no se ve."
+    },
+    {
+      "id": "un-solo-revisor-aprueba-lo-suyo",
+      "titulo": "El que hizo el trabajo es el que decide si está bien",
+      "gravedad": "media",
+      "sintoma": "Se entrega algo que cumple todo lo que uno sabía revisar y falla en lo que no.",
+      "causa": "El punto ciego tiene la forma exacta de lo que uno acaba de hacer: quien resolvió el movimiento está mirando el movimiento.",
+      "porque": "Revisar lo propio es lo más barato y casi siempre es lo único disponible.",
+      "arreglo": "Revisar por papeles distintos y por separado —uso, interfaz, movimiento, accesibilidad, rendimiento— con preguntas que se contesten sí o no.",
+      "comoCazarlo": "Si la revisión no reprobó nada, casi nunca es que estuviera perfecto: es que las preguntas no podían reprobar.",
+      "consejo": "Una revisión que sólo puede aprobar no es una revisión, es una ceremonia.",
+      "senales": [
+        "ya lo revisé y está bien",
+        "no encontré nada",
+        "a mí me parece que está listo"
+      ],
+      "salioDe": "La skill del comité de UI/UX de este grupo, y su propia advertencia sobre el punto ciego."
+    },
+    {
+      "id": "la-cifra-que-se-invento-para-el-tablero",
+      "titulo": "El número que presume el sitio no lo midió nadie",
+      "gravedad": "alta",
+      "sintoma": "Una página publica una cifra —«48 piezas», «99 % de satisfacción»— que nadie puede reproducir.",
+      "causa": "Se escribió a ojo porque quedaba bien en el diseño.",
+      "porque": "Un hueco de dato pide un número, y el número correcto cuesta una hora más que uno plausible.",
+      "arreglo": "Cada cifra publicada se contrasta con la realidad, y si cambia la realidad se corrige la cifra, no al revés.",
+      "comoCazarlo": "Por cada número visible, preguntar de dónde sale y quién lo vuelve a medir.",
+      "consejo": "Un sitio que presume de medir y publica cifras inventadas es peor que uno que no presume.",
+      "senales": [
+        "¿de dónde salió ese número?",
+        "no cuadra el dato",
+        "lo puse de referencia"
+      ],
+      "salioDe": "El tablero del banco de pruebas: los primeros números eran inventados y ahora los cuenta la prueba."
+    },
+    {
+      "id": "la-lista-de-defectos-de-la-que-se-borran-renglones",
+      "titulo": "Se arregló un defecto y se borró de la lista",
+      "gravedad": "baja",
+      "sintoma": "Una lista de problemas conocidos que siempre está corta, y nadie recuerda qué se decidió antes.",
+      "causa": "Al resolver algo se quita el renglón, así que la lista pierde el historial y con él el porqué.",
+      "porque": "Una lista corta se lee como progreso, y es lo que uno quiere enseñar.",
+      "arreglo": "Marcar dentro del apartado —«hecho, y así»— en vez de borrarlo. Lo que se arregló y cómo vale tanto como lo que falta.",
+      "comoCazarlo": "Si la lista no dice nada de lo ya resuelto, la siguiente sesión va a proponer lo mismo que ya se descartó.",
+      "consejo": "Una lista de defectos de la que se van quitando renglones acaba diciendo que nunca hubo ninguno.",
+      "senales": [
+        "ya no me acuerdo por qué lo hicimos así",
+        "esto ya lo habíamos discutido",
+        "¿por qué no usamos X?"
+      ],
+      "salioDe": "La autorrevisión del banco de pruebas: los apartados se marcan HECHO en su sitio, no se borran."
+    },
+    {
+      "id": "el-arreglo-que-no-arreglaba-nada",
+      "titulo": "Se escribió un arreglo para un defecto que no existía",
+      "gravedad": "baja",
+      "sintoma": "Hay código defensivo que nadie sabe si hace falta, y quitarlo da miedo.",
+      "causa": "Se razonó un fallo plausible y se arregló sin comprobar antes que ocurriera.",
+      "porque": "El razonamiento suena convincente y arreglar es más rápido que reproducir.",
+      "arreglo": "Reproducir el defecto ANTES de arreglarlo. Si no se puede reproducir, no se arregla: se anota.",
+      "comoCazarlo": "Quitar el arreglo y medir. Si no cambia nada, el defecto no estaba.",
+      "consejo": "Y si se quita, dejar escrito por qué, o alguien lo vuelve a añadir «por si acaso» dentro de tres meses.",
+      "senales": [
+        "esto no sé si hace falta",
+        "lo puse por si acaso",
+        "da miedo quitarlo"
+      ],
+      "salioDe": "El banco: el recálculo de la guía al girar la pantalla, medido a seis anchos y quitado por no hacer nada."
+    }
+  ]
+}

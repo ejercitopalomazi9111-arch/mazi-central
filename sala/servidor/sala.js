@@ -69,9 +69,49 @@ const OLVIDO = 30 * 24 * 60 * 60 * 1000;
    una vez por hora basta cuando lo que se está corriendo son treinta días. */
 const REARME = 60 * 60 * 1000;
 
+/* ══ LA VIGILIA · cuando una IA se cae y no puede avisar ═══════════════════
+   Lo pidió Carlos: «si uno de ustedes se queda sin uso, que la app se dé
+   cuenta, deje el mensaje de que podría volver en 3 horas y media, y avive
+   pasado ese tiempo; si no vuelve, una hora más porque quizás el uso se agotó
+   de más; y si no vuelve, ahora sí agotado de toda la semana o problema
+   externo. Que eso lo haga la app automáticamente con las IAs, porque es
+   evidente que no se desconectarían si tuvieran uso».
+
+   ── POR QUÉ NO BASTABA CON `/estado`, QUE YA EXISTÍA ────────────────────
+   Porque ese endpoint lo tiene que llamar el agente, y UN AGENTE QUE SE QUEDÓ
+   SIN USO NO PUEDE LLAMAR NADA. Justo el caso que importa es el único que el
+   mecanismo de antes no cubría: quien puede avisar, avisa; quien se cayó, se
+   cae en silencio y en la mesa se queda «conectado» hasta que alguien mira.
+
+   ── Y POR QUÉ HAY UNA GRACIA ANTES DE CONCLUIR NADA ─────────────────────
+   Un socket se cierra por muchas razones que no son quedarse sin uso: se
+   recargó la página, se fue la red un segundo, el contenedor se reinició
+   —eso me pasa a mí—. Marcar «topado» en el instante del cierre llenaría el
+   hilo de avisos falsos, y un aviso que casi siempre es falso se deja de
+   leer. Así que primero se espera; si vuelve dentro de la gracia, aquí no
+   pasó nada y no se publica ni una línea. */
+const GRACIA    = 5 * 60 * 1000;          /* antes de concluir que sí se cayó */
+const VUELVE_EN = 3.5 * 60 * 60 * 1000;   /* «podría volver en 3 h 30» */
+const UNA_MAS   = 1 * 60 * 60 * 1000;     /* «quizás se agotó de más» */
+
+
 /* Cuántos eventos se guardan. El hilo largo no es la memoria: para eso está
    el acta, que es corta y a propósito. */
 const TOPE_HILO = 400;
+
+/* ⚠ EL TOPE POR CANTIDAD NO ALCANZA, Y ESTO NO ES TEÓRICO: la sala GRUPAZ
+   llegó a 4 MB con 196 eventos —muy por debajo de los 400— porque unos
+   pocos llevaban capturas. El siguiente mensaje con imágenes hizo que el
+   worker reventara al guardar: error 1101, y el que escribía recibió un 500
+   aunque su mensaje SÍ había entrado. O sea, el peor modo de fallo: parece
+   que no se mandó, se manda otra vez, y se duplica.
+
+   Contar mensajes no dice nada del tamaño. Un hilo de cuatrocientos mensajes
+   de texto pesa 200 KB; cuatro con capturas pesan lo mismo que cuarenta mil.
+   Por eso hay un segundo tope, en BYTES, y lo que suelta primero es lo que
+   ocupa: los adjuntos viejos. El texto no se toca nunca — es el registro de
+   lo que se dijo, y es lo único que no se puede volver a generar. */
+const TOPE_BYTES = 1_400_000;
 
 /* Vueltas SEGUIDAS de agente antes de exigir que hable un humano. */
 const TOPE_VUELTAS = 12;
@@ -87,6 +127,11 @@ const ESPERA_MAX = 50_000;
 
 /* Topes de tamaño. Una imagen viaja en base64 dentro del evento; más de esto
    y hay que mandar liga en vez de archivo. */
+/* El retrato se achica en el navegador a 256 px antes de subirlo, así que
+   200 KB es holgado. El tope existe igual: el que sube no siempre es la mesa
+   —cualquiera con la llave puede llamar al endpoint— y un retrato de un mega
+   se guarda en CADA salvado de la sala. */
+const TOPE_RETRATO = 200_000;
 const TOPE_IMAGEN = 1_500_000;
 const TOPE_EVENTO = 2_000_000;
 const TOPE_TEXTO  = 20_000;
@@ -291,6 +336,27 @@ export class Sala {
       this.dueno   = await ctx.storage.get('dueno')   || null;
       /* Las neuronas que proponen los agentes, esperando entrar al repo. */
       this.propuestas = await ctx.storage.get('propuestas') || [];
+      this.vigilias  = await ctx.storage.get('vigilias')  || {};
+      /* El retrato de cada CUENTA. Por cuenta y no por sesión a propósito:
+         las sesiones de un agente nacen y mueren todo el día, pero la cara de
+         una persona no. Con la clave puesta en el id de sesión, Carlos
+         tendría que volver a subir su foto cada vez que abre la mesa. */
+      this.retratos  = await ctx.storage.get('retratos')  || {};
+      /* Sesiones absorbidas: `id viejo → id que se queda`. Es una tabla de
+         alias, NO una reescritura: los eventos del hilo conservan su autor
+         original y la mesa lo resuelve al pintar. Rehacer los eventos sería
+         más «limpio» de leer y convertiría el registro en algo que se puede
+         editar desde un endpoint — que es exactamente lo que un registro no
+         debe ser. */
+      this.fusiones  = await ctx.storage.get('fusiones')  || {};
+      /* Hasta dónde ha leído cada quien: `id de sesión → id del evento`.
+         ⚠ UNA MARCA POR PERSONA, NO UNA FILA POR MENSAJE. Lo segundo es lo
+         que se escribe solo cuando uno piensa en «vistos», y crece con
+         mensajes × personas: mil mensajes y cuatro sesiones son cuatro mil
+         entradas que hay que guardar y difundir enteras. Como leer es
+         ordenado —nadie lee el 900 sin haber pasado por el 899— basta con
+         hasta dónde llegó cada uno, que son cuatro números. */
+      this.vistos    = await ctx.storage.get('vistos')    || {};
     });
   }
 
@@ -336,11 +402,42 @@ export class Sala {
     return this._saber;
   }
 
+  /* Suelta lastre hasta caber. Se quitan los DATOS de los adjuntos más
+     viejos, no los eventos: el mensaje se queda, con su autor y su texto, y
+     en lugar de la imagen queda una marca que la mesa dibuja como «la imagen
+     ya no está». Borrar el evento entero dejaría una conversación con
+     agujeros y respuestas a mensajes que no existen.
+
+     De lo más viejo a lo más nuevo, que es el orden en que a uno le importan
+     menos las capturas — y eso YA protege a las recientes: se para en cuanto
+     cabe, así que las últimas conservan su imagen mientras haya sitio.
+
+     ⚠ Y NO HAY TRAMO INTOCABLE. Lo puse —«las últimas veinticinco no se
+     tocan»— y la prueba lo tiró en la primera: si esas veinticinco pesan más
+     que el presupuesto, no hay nada que soltar y el hilo se queda por encima
+     del límite. O sea, una salvaguarda que en el único caso grave no salva.
+     Vale más quedarse sin la imagen del mensaje de hace un minuto que dejar
+     de poder escribir en la sala. */
+  aligerar(){
+    const pesa = () => JSON.stringify(this.hilo).length;
+    if(pesa() <= TOPE_BYTES) return;
+    for(const e of this.hilo){
+      if(pesa() <= TOPE_BYTES) break;
+      if(!e.adjuntos || !e.adjuntos.length) continue;
+      e.adjuntos = e.adjuntos.map(a => a.datos || a.laminas
+        ? { clase:a.clase, nombre:a.nombre || null, mime:a.mime || null,
+            ancho:a.ancho || null, alto:a.alto || null, aligerado:true }
+        : a);
+    }
+  }
+
   async guardar(){
     await this.ctx.storage.put({
       hilo: this.hilo, gente: this.gente, vueltas: this.vueltas, resumido: this.resumido,
       proyectos: this.proyectos, serie: this.serie,
       llaves: this.llaves, dueno: this.dueno, propuestas: this.propuestas,
+      vigilias: this.vigilias, retratos: this.retratos, fusiones: this.fusiones,
+      vistos: this.vistos,
     });
     await this.tocar(true);
   }
@@ -350,12 +447,70 @@ export class Sala {
      siendo una sala en uso. */
   async tocar(forzado){
     const t = ahora();
-    if(!forzado && t - (this._alarmaPuesta || 0) < REARME) return;
-    this._alarmaPuesta = t;
-    await this.ctx.storage.setAlarm(t + OLVIDO);
+    /* ⚠ EL FRENO DE `REARME` YA NO PUEDE SALTARSE `armar()`. Antes esta
+       función salía temprano si hacía menos de una hora que se armó, y eso
+       estaba bien cuando la única alarma era la del olvido —adelantarla unos
+       minutos no le importa a nadie—. Con la vigilia sí importa: un agente que
+       sólo escucha (`/esperar`) apuntaría su vigilia y la alarma seguiría
+       puesta a treinta días, o sea que nunca se revisaría. El freno se queda
+       para lo que era —no rehacer la cuenta del olvido en cada lectura— y
+       `armar()` corre siempre. */
+    if(forzado || t - (this._alarmaPuesta || 0) >= REARME){
+      this._alarmaPuesta = t;
+      this._olvidoEn = t + OLVIDO;
+    }
+    await this.armar();
+  }
+
+  /* ⚠ UN DURABLE OBJECT TIENE UNA SOLA ALARMA, y aquí ya la usaba el olvido.
+     Poner una segunda no es «poner una segunda»: es PISAR la primera, y la
+     primera es la que borra las salas muertas. Este método existe para que
+     nadie tenga que acordarse: se arma siempre la más cercana de todas, y
+     `alarm()` decide qué venció.
+
+     Sin esto, el arreglo obvio —un `setAlarm` para la vigilia— habría dejado
+     salas que ya nadie usa vivas para siempre, y ese defecto no se ve nunca:
+     lo que no pasa no se reporta. */
+  /* `waitUntil` lo pone Cloudflare y NO existe en el almacenamiento de
+     mentiras con el que corren las 217 pruebas del servidor. Llamarlo a pelo
+     tumbaba la suite entera — y la alternativa fea era hacer que las pruebas
+     simularan el runtime, o sea probar contra un decorado en vez de contra la
+     clase. Esto es tres líneas y deja la clase corriendo en los dos sitios:
+     donde hay `waitUntil` se usa; donde no, se deja correr y se traga el
+     error, que es lo que `waitUntil` hace de todos modos. */
+  luego(p){
+    if(this.ctx && typeof this.ctx.waitUntil === 'function') this.ctx.waitUntil(p);
+    else Promise.resolve(p).catch(() => {});
+  }
+
+  async armar(){
+    const cuandos = [this._olvidoEn || (ahora() + OLVIDO)];
+    for(const v of Object.values(this.vigilias || {})) if(v && v.cuando) cuandos.push(v.cuando);
+    const cuando = Math.min(...cuandos);
+    /* Escribir la alarma escribe en almacenamiento y esto corre en CADA
+       petición, así que si la puesta ya sirve no se toca: medio minuto de
+       holgura ahorra una escritura por lectura sin cambiar nada de lo que la
+       vigilia promete.
+
+       ⚠ SE COMPARA CONTRA LA ALARMA DE VERDAD, NO CONTRA LO QUE YO CREO QUE
+       PUSE. Primero guardé el valor en memoria y me ahorré la lectura — y dos
+       de las 217 pruebas se pusieron rojas: la sala se puede quedar sin alarma
+       por fuera (ahí lo hace la prueba a propósito, en producción lo haría una
+       migración o un despliegue), y mi caché seguía diciendo «ya está puesta».
+       Una caché de lo que se supone que hay, sin mirar lo que hay, es
+       exactamente el defecto que llevo todo el día persiguiendo: algo que
+       reporta un estado y está en otro. Leer cuesta mucho menos que escribir. */
+    const actual = await this.ctx.storage.getAlarm();
+    if(actual !== null && actual !== undefined && Math.abs(actual - cuando) < 30_000) return;
+    await this.ctx.storage.setAlarm(cuando);
   }
 
   async alarm(){
+    /* Primero lo que vence antes. La vigilia se revisa SIEMPRE, aunque no
+       toque el olvido, porque las dos comparten la única alarma que hay. */
+    const seguir = await this.revisarVigilias();
+    if(seguir){ await this.armar(); return; }
+
     /* Una sala FUNDADA no se borra. Puede olvidar lo que se dijo —para eso es
        el acta— pero jamás quién es su dueño ni las llaves que repartió: eso
        dejaría a todos afuera de su propia sala, sin aviso y sin remedio.
@@ -394,6 +549,178 @@ export class Sala {
       return;
     }
     await this.ctx.storage.deleteAll();
+  }
+
+  /* ══ LA VIGILIA ══════════════════════════════════════════════════════════
+     Tres métodos: uno abre la vigilia cuando un agente se cae, otro la cierra
+     cuando vuelve, y el tercero la hace avanzar cuando toca la alarma. */
+
+  /* ⚠ LA VIGILIA NO PUEDE COLGAR DEL SOCKET, Y ÉSA FUE MI PRIMERA VERSIÓN.
+     La escribí enganchada al `close` del websocket, que es donde se ve
+     «alguien se fue»… y en esta sala LOS AGENTES NO ABREN SOCKET: hablamos por
+     HTTP. Yo mismo nunca aparezco en `conectados()`. O sea que la función
+     habría quedado perfecta, con sus pruebas, y no se habría disparado jamás
+     para nadie de quien Carlos la pidió.
+
+     Así que cuelga de `visto`, que sí se refresca con cualquier señal de vida
+     —entrar, hablar, esperar, abrir socket—. Cada señal rearma un perro
+     guardián a cinco minutos; si vence sin señal nueva, ahí empieza la
+     escalada. Cubre a los dos por igual.
+
+     Se llama en cada señal de vida. Es barata: escribe un objeto y arma la
+     alarma más cercana. */
+  tocarAgente(id){
+    const quien = this.gente[id];
+    if(!quien || quien.tipo !== 'agente') return false;
+    /* ⚠ AQUÍ NO VA LA LLAMADA A `tocarAgente`, y estuvo puesta: enganché las
+       señales de vida con un reemplazo de texto sobre `quien.visto = ahora()`
+       y ese mismo texto está DENTRO de esta función, así que se llamaba a sí
+       misma hasta reventar la pila. Las 217 pruebas del servidor lo cazaron en
+       la primera. Un reemplazo a ciegas no distingue el sitio que arregla del
+       que rompe. */
+    quien.visto = ahora();
+    this.avisarPresencia();
+    /* Lo que el agente DECLARÓ de sí mismo manda: si él dijo «ocupado», la
+       sala no tiene por qué deducir nada encima. Pero lo que dedujo la sala sí
+       se limpia solo en cuanto hay señales de vida — si no, un agente que
+       volvió se quedaría marcado «fuera» para siempre por una suposición que
+       ya se sabe falsa. La marca `auto` es lo que separa los dos casos. */
+    if(quien.estado !== 'activo' && !quien.auto) return false;
+    const antes = this.vigilias[id];
+    this.vigilias[id] = { paso: 0, cuando: ahora() + GRACIA };
+    /* Hay que anunciar el regreso en dos casos: la vigilia iba a medias con
+       la ausencia ya publicada, o la escalada TERMINÓ y la persona quedó
+       marcada «fuera» por deducción. El segundo se me escapó: la vigilia ya no
+       existe cuando llega el regreso, así que mirar sólo la vigilia dejaba al
+       agente marcado «fuera» para siempre aunque estuviera hablando.
+
+       ⚠ SÓLO SI SE HABÍA ANUNCIADO LA AUSENCIA. Escribí `!antes || antes.paso > 0`
+       —«es nuevo, o ya estaba avisado»— y con eso la PRIMERA señal de vida de
+       cualquier agente devolvía true, el llamador ejecutaba `cerrarVigilia`, y
+       la vigilia se borraba en el mismo instante en que se abría. La función
+       entera quedaba muerta y no había forma de verlo leyendo: las dos líneas
+       están bien por separado. Lo cazó la primera prueba que escribí. */
+    return !!((antes && antes.paso > 0) || (quien.auto && quien.estado !== 'activo'));
+  }
+
+  /* Se abre al cerrarse el socket de un AGENTE. No concluye nada: sólo
+     adelanta la primera revisión, para no esperar el perro guardián completo
+     cuando ya hay una señal clara de que se fue. */
+  abrirVigilia(id){
+    const quien = this.gente[id];
+    if(!quien) return;
+
+    /* ⚠ SÓLO AGENTES, y el argumento es de Carlos: «es evidente que no se
+       desconectarían si tuvieran uso». Un humano cierra la pestaña porque se
+       fue a comer y no hay nada que anunciar; publicarle «podría volver en
+       3 h 30» sería inventar una razón que nadie dio. */
+    if(quien.tipo !== 'agente') return;
+
+    /* Si el agente YA declaró su estado por su cuenta —llamó a /estado antes
+       de irse— la vigilia no tiene nada que hacer. Lo que él dijo de sí mismo
+       vale más que lo que la sala pueda deducir, y sobrescribirlo con una
+       suposición sería empeorar un dato bueno. */
+    if(quien.estado !== 'activo') return;
+
+    this.vigilias[id] = { paso: 0, cuando: ahora() + GRACIA };
+  }
+
+  /* Se cierra en cuanto da señales de vida: al conectarse, al hablar, al
+     declarar estado. Volver cancela la escalada entera, incluso a medias. */
+  async cerrarVigilia(id){
+    const quien = this.gente[id];
+    const paso = (this.vigilias && this.vigilias[id]) ? this.vigilias[id].paso : 0;
+    /* Se entra también SIN vigilia abierta: cuando la escalada ya terminó, la
+       vigilia se borró y lo único que queda es la marca `fuera` en la persona.
+       Si esto exigiera vigilia, ese agente no volvería nunca. */
+    const marcado = !!(quien && quien.auto && quien.estado !== 'activo');
+    if(!marcado && (!this.vigilias || !this.vigilias[id])) return;
+    if(this.vigilias) delete this.vigilias[id];
+    /* Sólo se anuncia el regreso si se había ANUNCIADO la ausencia. Si se cayó
+       y volvió dentro de la gracia, en el hilo no quedó nada y aquí tampoco
+       tiene que quedar: un «ya volvió» de alguien que nadie supo que se fue es
+       ruido. */
+    if(quien && (paso > 0 || marcado)){
+      quien.estado = 'activo'; quien.reanuda = null;
+      quien.nota = ''; quien.auto = false;
+      await this.publicar({
+        de: this.tarjeta(quien), a: null, tipo:'limite', adjuntos: [], proyecto: null,
+        texto: `${quien.nombre} volvió.`,
+        limite: { clase:'uso', estado:'activo', reanuda:null, automatico:true },
+      });
+    }
+    await this.guardar();
+    this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
+  }
+
+  /* Hace avanzar las vigilias vencidas. Devuelve true si queda alguna viva,
+     para que `alarm()` sepa que tiene que volver a armar. */
+  async revisarVigilias(){
+    const t = ahora();
+    const conectados = new Set(this.conectados());
+    let cambio = false;
+
+    for(const [id, v] of Object.entries(this.vigilias || {})){
+      const quien = this.gente[id];
+      if(!quien){ delete this.vigilias[id]; cambio = true; continue; }
+
+      /* Si el agente DECLARÓ un estado, la vigilia se retira: él sabe más de
+         sí mismo que cualquier deducción, y además ya lo dijo en el hilo.
+         Va antes que nada porque el orden de las llamadas no debe importar —
+         el enganche de `/estado` refresca `visto` ANTES de escribir el estado
+         nuevo, así que confiar en ese orden era confiar en un detalle. */
+      if(quien.estado !== 'activo' && !quien.auto){
+        delete this.vigilias[id]; cambio = true; continue;
+      }
+
+      /* Dio señales dentro del plazo: se le empuja el perro guardián y se
+         acabó. Un socket abierto cuenta como señal continua. */
+      const fresco = conectados.has(id) || (t - (quien.visto || 0)) < GRACIA;
+      if(fresco){
+        if(v.paso > 0){ await this.cerrarVigilia(id); }
+        else { this.vigilias[id] = { paso:0, cuando: t + GRACIA }; }
+        cambio = true; continue;
+      }
+      if(!v || v.cuando > t) continue;
+
+      cambio = true;
+      /* Los tres escalones que pidió Carlos, en el orden que los pidió. La
+         `nota` es lo que se ve pegado a la persona en la mesa; el evento
+         `limite` es lo que queda en el hilo para que se pueda leer después. */
+      quien.auto = true;
+      if(v.paso === 0){
+        quien.estado = 'topado';
+        quien.reanuda = t + VUELVE_EN;
+        quien.nota = 'Se cayó sin avisar. Si fue el uso, podría volver en 3 h 30.';
+        this.vigilias[id] = { paso: 1, cuando: t + VUELVE_EN };
+      }else if(v.paso === 1){
+        quien.reanuda = t + UNA_MAS;
+        quien.nota = 'No volvió a las 3 h 30. Se le da una hora más: quizás se agotó de más.';
+        this.vigilias[id] = { paso: 2, cuando: t + UNA_MAS };
+      }else{
+        quien.estado = 'fuera';
+        quien.reanuda = null;
+        quien.nota = 'Tampoco volvió con la hora extra. Uso agotado de la semana, o algo externo.';
+        delete this.vigilias[id];
+      }
+
+      await this.publicar({
+        de: this.tarjeta(quien), a: null, tipo:'limite', adjuntos: [], proyecto: null,
+        texto: quien.nota,
+        /* `automatico:true` distingue lo que DEDUJO la sala de lo que DIJO el
+           agente. Sin esa marca, dentro de un mes nadie podría saber si un
+           «topado» del hilo lo escribió alguien o lo supuso el servidor — y
+           una suposición presentada como declaración es una mentira con
+           retraso. */
+        limite: { clase:'uso', estado:quien.estado, reanuda:quien.reanuda, automatico:true },
+      });
+    }
+
+    if(cambio){
+      await this.guardar();
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
+    }
+    return Object.keys(this.vigilias || {}).length > 0;
   }
 
   /* ── quién es quién ─────────────────────────────────────────────────────
@@ -550,6 +877,7 @@ export class Sala {
     evento.ts = ahora();
     this.hilo.push(evento);
     if(this.hilo.length > TOPE_HILO) this.hilo = this.hilo.slice(-TOPE_HILO);
+    this.aligerar();
 
     /* El contador de vueltas: sube con cada agente, se limpia con cada humano.
        Entrar a la sala y avisar que te topaste NO son vueltas de conversación
@@ -785,6 +1113,7 @@ export class Sala {
       await this.tocar();
       return Response.json({
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
+        retratos: this.retratos, fusiones: this.fusiones, vistos: this.vistos,
         conectados: this.conectados(),
         vueltas: this.vueltas, tope: TOPE_VUELTAS,
         /* Para que la mesa sepa qué botón enseñar sin adivinar. */
@@ -810,6 +1139,11 @@ export class Sala {
            con su límite y el otro no—, nunca para tratarlos distinto. */
         motor: String(c.motor || '').slice(0, 40) || null,
         estado: 'activo', reanuda: null, nota: '',
+        /* `auto` distingue un estado DEDUCIDO por la sala de uno DECLARADO
+           por el agente. Sin esa marca las dos cosas son la misma palabra en
+           el mismo campo, y entonces o la sala pisa lo que el agente dijo, o
+           no puede limpiar lo que ella misma supuso. Me pasaron las dos. */
+        auto: false,
         visto: ahora(),
       };
 
@@ -842,6 +1176,7 @@ export class Sala {
       this.gente[id].color   = this.colorDe(cuenta);
       this.gente[id].sombra  = this.sombraDe(id, cuenta);
 
+      if(this.tocarAgente(id)) this.luego(this.cerrarVigilia(id));
       await this.publicar({ de: this.tarjeta(this.gente[id]), tipo:'sistema', accion:'entra', texto:'' });
       return Response.json({ bien:true, yo:this.gente[id], tope:TOPE_VUELTAS });
     }
@@ -952,6 +1287,8 @@ export class Sala {
                              { status:413 });
       }
       quien.visto = ahora();
+      /* Cada señal de vida rearma el perro guardián de la vigilia. */
+      if(this.tocarAgente(quien.id)) this.luego(this.cerrarVigilia(quien.id));
       /* Ya lo dijo: deja de estar escribiéndolo. Sin esto la marca del agente
          —que dura tres minutos— seguiría encendida después de que contestó, y
          la mesa diría «está escribiendo» junto a la respuesta que ya llegó. */
@@ -1001,7 +1338,8 @@ export class Sala {
          Se marca ANTES de colgarse, no después: la espera dura hasta 50 s y
          puede cortarse a media conexión, así que apuntarlo al salir dejaría
          huecos justo cuando más se está escuchando. */
-      if(mio) mio.visto = ahora();
+      if(mio){ mio.visto = ahora();
+        if(this.tocarAgente(mio.id)) this.luego(this.cerrarVigilia(mio.id)); }
       await this.tocar();
 
       const i = desde ? this.hilo.findIndex(e => e.id === desde) : -1;
@@ -1024,7 +1362,8 @@ export class Sala {
       /* Y otra vez al despertar: si estuvo colgado 50 s, la marca de la entrada
          ya tiene 50 s de vieja, y encadenar esperas dejaría el reloj siempre
          corriendo por detrás. */
-      if(mio) mio.visto = ahora();
+      if(mio){ mio.visto = ahora();
+        if(this.tocarAgente(mio.id)) this.luego(this.cerrarVigilia(mio.id)); }
       return Response.json({ eventos, esperó: true });
     }
 
@@ -1059,9 +1398,142 @@ export class Sala {
       quien.escribeHasta = c.si === false ? 0 : ahora() + cuanto;
       /* Teclear ES señal de vida, igual que colgarse de `/esperar`. */
       quien.visto = ahora();
+      /* Cada señal de vida rearma el perro guardián de la vigilia. */
+      if(this.tocarAgente(quien.id)) this.luego(this.cerrarVigilia(quien.id));
       await this.tocar();
       this.avisarEscribiendo();
       return Response.json({ bien:true, hasta:quien.escribeHasta, escribiendo:this.escribiendo() });
+    }
+
+    /* ── /retrato · la foto de perfil de una persona ────────────────────
+       Carlos, e151: «pon iconos de perfil variados para cada integrante los
+       actuales parece que son por defecto por no tener imagen de perfil y se
+       ven feos haz que Luis y yo podamos subir una personalizada».
+
+       Son dos cosas y sólo una vive aquí. El icono variado se dibuja solo en
+       la mesa a partir del nombre —no necesita servidor ni que nadie suba
+       nada, y por eso lo tienen TODOS desde el primer momento, agentes
+       incluidos—. Esto de aquí es la otra mitad: la foto de verdad.
+
+       ⚠ SÓLO PERSONAS. No es una restricción de permisos, es que la clave es
+       la CUENTA: la foto de la cuenta «carlos» es la cara de Carlos, y si su
+       Claude pudiera escribir ahí le pondría su cara a Carlos. Cada agente ya
+       tiene su propio sello por nombre, que es lo que lo distingue. */
+    if(pedido.method === 'POST' && ruta === 'retrato'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+      if(quien.tipo !== 'humano'){
+        return Response.json({ error:'El retrato es de la persona de la cuenta. Un agente tiene su propio sello.' },
+                             { status:403 });
+      }
+
+      /* Quitarlo es mandar datos vacíos: no hace falta un DELETE aparte para
+         una cosa que la mesa ofrece como «quitar la foto». */
+      if(!c.datos){
+        delete this.retratos[quien.cuenta];
+        await this.guardar();
+        this.difundir({ que:'retratos', retratos:this.retratos });
+        return Response.json({ bien:true, retratos:this.retratos });
+      }
+
+      const datos = String(c.datos);
+      /* Se exige data: de imagen y NADA más. Sin esto, aquí se puede meter
+         cualquier URL —incluida una de fuera— y la mesa la pediría al pintar:
+         cero peticiones externas dejaría de ser cierto, y quien pusiera la
+         URL sabría cuándo y desde dónde mira cada quien. */
+      if(!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(datos)){
+        return Response.json({ error:'El retrato tiene que ser una imagen incrustada (data:image/…;base64).' },
+                             { status:400 });
+      }
+      if(datos.length > TOPE_RETRATO){
+        return Response.json({ error:`Ese retrato pesa ${Math.round(datos.length/1000)} KB y el tope son ${TOPE_RETRATO/1000}.` },
+                             { status:413 });
+      }
+
+      this.retratos[quien.cuenta] = datos;
+      await this.guardar();
+      this.difundir({ que:'retratos', retratos:this.retratos });
+      /* NO despierta a nadie: cambiarse la foto no es trabajo. */
+      return Response.json({ bien:true, retratos:this.retratos });
+    }
+
+    /* ── /fusionar · dos sesiones que son la misma persona ───────────────
+       Carlos, e156: «Esa cuenta vieja y la mía se llaman igual fusionalas».
+
+       No eran dos cuentas: eran dos SESIONES suyas en la cuenta `carlos`,
+       las dos llamadas «Carlos», con 59 y 25 mensajes. En la lista salían
+       como dos personas y se contaban dos veces.
+
+       ⚠ SE FUSIONA LA IDENTIDAD, NO SE REESCRIBE EL HILO. Los eventos viejos
+       conservan el autor con el que se dijeron; lo que se guarda es un alias
+       y la mesa lo resuelve al pintar. La otra forma —recorrer el hilo y
+       cambiarle el `de` a ochenta y cuatro mensajes— deja el registro igual
+       de bonito y convierte «quién dijo esto» en algo que se puede cambiar
+       con una llamada. Un hilo que se puede editar no sirve para lo único
+       para lo que existe.
+
+       ⚠ Y SÓLO ENTRE SESIONES DE TU PROPIA CUENTA. Sin esa regla, cualquiera
+       con llave podría absorber las sesiones de otro y quedarse con lo que
+       dijo. Es la única parte de esto que, mal hecha, no se ve. */
+    if(pedido.method === 'POST' && ruta === 'fusionar'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const cual = String(c.cual || '');
+      if(!cual) return Response.json({ error:'Falta `cual`: la sesión que se absorbe.' }, { status:400 });
+      if(cual === quien.id) return Response.json(
+        { error:'Ésa es la sesión en la que estás. Se fusiona la OTRA dentro de ésta.' }, { status:400 });
+
+      const otra = this.gente[cual];
+      if(!otra) return Response.json(
+        { error:`Aquí no hay ninguna sesión "${cual}".` }, { status:404 });
+      if(otra.cuenta !== quien.cuenta) return Response.json(
+        { error:'Esa sesión es de otra cuenta. Sólo se fusionan sesiones tuyas.' }, { status:403 });
+      if(otra.tipo !== quien.tipo) return Response.json(
+        { error:'Una es persona y la otra es agente: no son la misma.' }, { status:400 });
+
+      this.fusiones[cual] = quien.id;
+      /* Si algo ya apuntaba a la que se acaba de absorber, se repunta: sin
+         esto quedan cadenas (a→b, b→c) y la mesa tendría que perseguirlas al
+         pintar cada mensaje. */
+      for(const k in this.fusiones) if(this.fusiones[k] === cual) this.fusiones[k] = quien.id;
+      delete this.gente[cual];
+
+      await this.guardar();
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados(),
+                      fusiones:this.fusiones });
+      return Response.json({ bien:true, gente:this.gente, fusiones:this.fusiones });
+    }
+
+    /* ── /visto · hasta dónde leyó cada quien ────────────────────────────
+       Carlos, e187: «pon el sistema de visto para que la propia app cuando tú
+       scroll haga que veas el mensaje lo marque como visto tipo WhatsApp […]
+       y haz que los vistos también se pueda ver de quién son».
+
+       Sólo AVANZA. Volver a leer hacia arriba no des-lee nada, y sin esta
+       regla la marca iría y vendría con el desplazamiento: al que está al
+       otro lado le parecería que el otro no ha leído lo que ya leyó. */
+    if(pedido.method === 'POST' && ruta === 'visto'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const hasta = String(c.hasta || '');
+      if(!this.hilo.some(e => e.id === hasta)){
+        return Response.json({ error:`Aquí no hay ningún mensaje "${hasta}".` }, { status:404 });
+      }
+      const n = (id) => parseInt(String(id).replace(/^e/, ''), 10) || 0;
+      if(n(hasta) <= n(this.vistos[quien.id] || '')) {
+        return Response.json({ bien:true, vistos:this.vistos, sinCambio:true });
+      }
+      this.vistos[quien.id] = hasta;
+      await this.guardar();
+      this.difundir({ que:'vistos', vistos:this.vistos });
+      /* NO despierta a nadie: leer no es trabajo, y despertar a un agente
+         porque alguien miró su mensaje es gastarle uso a su dueño. */
+      return Response.json({ bien:true, vistos:this.vistos });
     }
 
     if(pedido.method === 'POST' && ruta === 'reaccion'){
@@ -1120,6 +1592,8 @@ export class Sala {
         desde: quien.trabajo && quien.trabajo.en === c.en ? quien.trabajo.desde : ahora(),
       } : null;
       quien.visto = ahora();
+      /* Cada señal de vida rearma el perro guardián de la vigilia. */
+      if(this.tocarAgente(quien.id)) this.luego(this.cerrarVigilia(quien.id));
       await this.guardar();
       this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
       return Response.json({ bien:true, yo:quien });
@@ -1142,6 +1616,8 @@ export class Sala {
       quien.reanuda = (c.estado === 'topado' || c.estado === 'ocupado') ? reanuda : null;
       quien.nota = String(c.nota || '').slice(0, 200);
       quien.visto = ahora();
+      /* Cada señal de vida rearma el perro guardián de la vigilia. */
+      if(this.tocarAgente(quien.id)) this.luego(this.cerrarVigilia(quien.id));
 
       if(c.estado === 'activo'){
         await this.guardar();
@@ -1392,6 +1868,33 @@ export class Sala {
     return [...ids];
   }
 
+  /* ── LA PRESENCIA, AVISADA ─────────────────────────────────────────────
+     Carlos: «tú por alguna razón me sales Offline cuando en teoría estás
+     chambeando».
+
+     El diagnóstico no era el que parecía. `visto` SÍ se refrescaba: un agente
+     colgado de /esperar pasa por `tocarAgente` cada dos minutos. Lo que
+     fallaba es que la mesa de cada quien tiene una COPIA de `gente` que sólo
+     se renueva cuando llega un `gente` —o sea, cuando alguien habla— y
+     mientras tanto el reloj de su navegador sí avanza. Resultado: un agente
+     vivo se le va apagando solo a los cinco minutos y NO VUELVE NUNCA, porque
+     nada le lleva la noticia de que sigue ahí.
+
+     Va aparte de `gente` y con lo mínimo: un `gente` completo carga el hilo de
+     todos y repinta más de lo que hace falta.
+
+     El freno es en memoria a propósito y no miente sobre nada guardado: sólo
+     dice «ya avisé hace poco». Un agente da señales cada dos minutos y son
+     varios; sin freno, la lista de todos se repintaría constantemente. */
+  avisarPresencia(){
+    const t = ahora();
+    if(t - (this.ultimoAviso || 0) < 45_000) return;
+    this.ultimoAviso = t;
+    const visto = {}, estados = {};
+    for(const p of Object.values(this.gente)){ visto[p.id] = p.visto || 0; estados[p.id] = p.estado; }
+    this.difundir({ que:'presencia', visto, estados, conectados:this.conectados() });
+  }
+
   /* Quién está escribiendo ahora mismo. Se calcula al vuelo desde la hora de
      vencimiento de cada quien: así una marca vencida desaparece sin que nadie
      tenga que barrerla, y una sala que estuvo dormida no despierta enseñando a
@@ -1431,10 +1934,14 @@ export class Sala {
     if(quien && this.gente[quien]){
       servidor.__quien = quien;
       this.gente[quien].visto = ahora();
+      /* Volver cancela la vigilia y, si ya se había anunciado la ausencia,
+         anuncia el regreso. */
+      this.luego(this.cerrarVigilia(quien));
     }
     this.vivos.add(servidor);
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
+      retratos:this.retratos, fusiones:this.fusiones, vistos:this.vistos,
       vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
       escribiendo:this.escribiendo(),
     }));
@@ -1442,7 +1949,17 @@ export class Sala {
        la red o bloqueó el teléfono. Ahí se avisa a los demás. */
     const irse = () => {
       this.vivos.delete(servidor);
-      if(servidor.__quien) this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
+      if(!servidor.__quien) return;
+      /* Si le queda OTRO socket abierto, no se cayó: cerró una pestaña de dos.
+         Sin esta comprobación, recargar la página abriría una vigilia cada vez. */
+      if(!this.conectados().includes(servidor.__quien)){
+        this.abrirVigilia(servidor.__quien);
+        /* `waitUntil` y no `await`: el `close` no espera a nadie, y sin esto
+           la vigilia se apuntaría en memoria y se perdería al dormirse el
+           objeto — o sea que funcionaría en las pruebas y no en producción. */
+        this.luego((async () => { await this.guardar(); await this.armar(); })());
+      }
+      this.difundir({ que:'gente', gente:this.gente, conectados:this.conectados() });
     };
     servidor.addEventListener('close', irse);
     servidor.addEventListener('error', irse);

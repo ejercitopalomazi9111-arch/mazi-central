@@ -1,0 +1,177 @@
+{
+  "area": "contenido",
+  "nombre": "Contenido y palabras de interfaz",
+  "que": "Lo que dice la pantalla: textos de botones, estados vacíos, títulos y datos. Casi ningún problema de aquí se arregla con CSS.",
+  "neuronas": [
+    {
+      "id": "el-texto-de-relleno-que-llego-a-produccion",
+      "titulo": "Se diseñó con texto falso y el real no cabe",
+      "gravedad": "alta",
+      "sintoma": "Con el contenido de verdad, los títulos se cortan, las tarjetas quedan desparejas o el botón se sale.",
+      "causa": "La maqueta se hizo con textos inventados del largo perfecto, que es un largo que no existe.",
+      "porque": "El relleno es cómodo y hace que todo se vea equilibrado; el contenido real llega al final, cuando ya se aprobó.",
+      "arreglo": "Diseñar con el contenido más largo y el más corto que puedan existir, no con el promedio.",
+      "comoCazarlo": "Meter el título más largo del catálogo real y un texto de una palabra en el mismo componente.",
+      "consejo": "Si el diseño sólo funciona con textos de cierto largo, no es un diseño: es una ilustración.",
+      "senales": [
+        "se corta el título",
+        "no cabe el texto real",
+        "se ve desparejo con el contenido"
+      ],
+      "salioDe": "El sitio del Instituto: los tipos de contenido son opcionales para que la sección no se pinte si el dato falta."
+    },
+    {
+      "id": "el-dato-inventado-para-que-no-quede-vacio",
+      "titulo": "Se rellenó un dato que nadie confirmó",
+      "gravedad": "alta",
+      "sintoma": "La página publica un horario, un precio o un teléfono que no es el correcto.",
+      "causa": "El hueco se veía mal vacío y se puso algo plausible.",
+      "porque": "Un espacio en blanco parece un error y un dato parece trabajo terminado, aunque sea falso.",
+      "arreglo": "Que lo no confirmado sea opcional en el modelo: si el dato falta, la sección no se pinta. Nunca se rellena.",
+      "comoCazarlo": "Por cada dato visible, preguntar quién lo confirmó. Si no hay nombre, no debería estar.",
+      "consejo": "En un sitio de una escuela, un horario inventado no es un defecto de diseño: es información falsa publicada.",
+      "senales": [
+        "¿de dónde salió ese horario?",
+        "ese teléfono no es",
+        "lo puse de ejemplo y se quedó"
+      ],
+      "salioDe": "El sitio del Instituto Rembrandt: lo que la escuela no ha confirmado no se inventa, y por eso casi todo es opcional."
+    },
+    {
+      "id": "microcopia-que-describe-el-sistema",
+      "titulo": "El texto habla de lo que hace el sistema, no de lo que gana quien lee",
+      "gravedad": "media",
+      "sintoma": "Botones que dicen «Enviar», «Procesar», «Aceptar» y avisos que hablan de registros y validaciones.",
+      "causa": "Se escribió desde dentro: el vocabulario es el de la base de datos.",
+      "porque": "Quien escribe el texto acaba de programar la función y la tiene en la cabeza con ese nombre.",
+      "arreglo": "Nombrar la acción por su resultado: «Pedir informes», «Guardar cambios», «Mandar el mensaje».",
+      "comoCazarlo": "Leer sólo los botones. Si no se entiende qué va a pasar, están nombrando funciones.",
+      "consejo": "Un botón que dice qué va a pasar quita la mitad de las dudas antes de que existan.",
+      "senales": [
+        "no sé qué hace ese botón",
+        "dice enviar pero ¿a dónde?",
+        "el mensaje no se entiende"
+      ],
+      "salioDe": "Práctica de microcopia recogida en NN/g y aplicada en los formularios del Instituto."
+    },
+    {
+      "id": "el-vacio-que-parece-error",
+      "titulo": "No hay nada y la pantalla no lo dice",
+      "gravedad": "alta",
+      "sintoma": "Una lista vacía se ve como un hueco en blanco, y la gente recarga pensando que se rompió.",
+      "causa": "El estado sin datos no se diseñó: se pinta lo mismo que cuando hay datos, sin datos.",
+      "porque": "Es el estado que menos dura en desarrollo, donde siempre hay datos de prueba.",
+      "arreglo": "Decir que está vacío, por qué, y qué se puede hacer para que deje de estarlo.",
+      "comoCazarlo": "Borrar todos los datos y mirar la pantalla. Si parece rota, lo está.",
+      "consejo": "Un hueco en blanco se lee como «se rompió», y entonces la persona recarga; si al recargar tampoco dice nada, se va.",
+      "senales": [
+        "se ve vacío y raro",
+        "pensé que estaba roto",
+        "no aparece nada"
+      ],
+      "salioDe": "El banco de pruebas, sección de estados: el comparador enseña el hueco al lado del estado diseñado."
+    },
+    {
+      "id": "la-jerga-interna-en-la-pantalla",
+      "titulo": "La interfaz usa palabras que sólo se entienden adentro",
+      "gravedad": "media",
+      "sintoma": "La gente pregunta qué significa una opción del menú o una etiqueta.",
+      "causa": "El vocabulario del equipo pasó a la pantalla sin traducirse.",
+      "porque": "Después de meses, la palabra interna se siente natural y nadie recuerda que es interna.",
+      "arreglo": "Usar las palabras con las que la gente describe lo que quiere, aunque sean menos precisas.",
+      "comoCazarlo": "Enseñarle la pantalla a alguien de fuera y pedirle que lea las etiquetas en voz alta y diga qué espera.",
+      "consejo": "Quien tiene el problema enfrente dice «se ve chiquito en el celular»; si supiera decir «falta el meta viewport», ya lo habría arreglado.",
+      "senales": [
+        "¿qué es eso?",
+        "nadie entiende esa palabra",
+        "tuve que explicar el menú"
+      ],
+      "salioDe": "El principio de búsqueda del cerebro de este grupo: se busca como habla una persona."
+    },
+    {
+      "id": "todo-en-mayusculas-para-dar-enfasis",
+      "titulo": "El énfasis se pone gritando",
+      "gravedad": "baja",
+      "sintoma": "Hay negritas, mayúsculas y colores por todas partes, y ya nada destaca.",
+      "causa": "Cada vez que algo parecía importante se le añadió énfasis, sin quitárselo a nada.",
+      "porque": "El énfasis se decide párrafo a párrafo y su costo sólo se ve mirando la página entera.",
+      "arreglo": "El énfasis es un presupuesto: si todo está enfatizado, nada lo está. Enfatizar menos hace que se note más.",
+      "comoCazarlo": "Contar cuántos elementos destacados hay por pantalla. Más de dos o tres y compiten entre ellos.",
+      "consejo": "Quitar énfasis es de los cambios que más mejoran una página y menos trabajo cuestan.",
+      "senales": [
+        "todo se ve importante",
+        "hay demasiadas negritas",
+        "no sé qué mirar"
+      ],
+      "salioDe": "La lista de tics de este grupo sobre el énfasis repartido."
+    },
+    {
+      "id": "el-titulo-que-no-dice-de-que-va",
+      "titulo": "El titular es una frase bonita y no dice qué hay debajo",
+      "gravedad": "media",
+      "sintoma": "Se lee el titular y hay que seguir leyendo para saber si interesa.",
+      "causa": "El título se escribió para sonar bien, no para orientar.",
+      "porque": "El titular es lo más visible y se trata como espacio creativo; orientar parece poco ambicioso.",
+      "arreglo": "Que el titular diga de qué va y el subtítulo se quede con el tono.",
+      "comoCazarlo": "Leer sólo los titulares de la página seguidos. Si no se entiende la estructura, no están orientando.",
+      "consejo": "Es también lo que decide si alguien se queda: casi nadie lee el párrafo si el título no prometió nada.",
+      "senales": [
+        "no se entiende de qué va",
+        "el título no dice nada",
+        "hay que leerlo todo para saber"
+      ],
+      "salioDe": "Las recomendaciones de escaneo de NN/g y la estructura de titulares del banco."
+    },
+    {
+      "id": "cargando-sin-forma",
+      "titulo": "Mientras carga no se sabe qué va a llegar",
+      "gravedad": "baja",
+      "sintoma": "Un rueda girando en medio de la pantalla y después aparece todo de golpe.",
+      "causa": "El estado de carga no anticipa la forma de lo que viene.",
+      "porque": "Una rueda vale para todo y se pone una vez; los esqueletos hay que hacerlos por componente.",
+      "arreglo": "Un esqueleto con la forma real —bloques del tamaño del título, de los renglones— para que el ojo ya sepa dónde mirar.",
+      "comoCazarlo": "Comparar la silueta del esqueleto con la del contenido final. Si no se parecen, no está anticipando nada.",
+      "consejo": "Además evita el salto: si el esqueleto ocupa lo mismo, al llegar el contenido no se mueve nada.",
+      "senales": [
+        "sólo se ve la ruedita",
+        "aparece todo de golpe",
+        "no sé cuánto falta"
+      ],
+      "salioDe": "El banco de pruebas: el esqueleto de la sección de estados replica la forma del contenido."
+    },
+    {
+      "id": "confirmar-lo-que-no-hace-falta",
+      "titulo": "Se pide confirmación para todo y ya nadie la lee",
+      "gravedad": "media",
+      "sintoma": "La gente acepta los diálogos sin leerlos, incluidos los importantes.",
+      "causa": "Se confirma cualquier acción, así que confirmar dejó de significar «esto es serio».",
+      "porque": "Un diálogo de confirmación es la forma barata de cubrirse ante cualquier queja.",
+      "arreglo": "Confirmar sólo lo que no se puede deshacer. Para lo demás, deshacer.",
+      "comoCazarlo": "Contar los diálogos de confirmación y cuántos protegen algo irreversible de verdad.",
+      "consejo": "Poder deshacer es mejor que preguntar: no interrumpe y protege igual.",
+      "senales": [
+        "nadie lee los avisos",
+        "le dan aceptar a todo",
+        "hay demasiados diálogos"
+      ],
+      "salioDe": "Principio recogido en NN/g sobre control y libertad, y la regla de este grupo de no usar los diálogos del navegador."
+    },
+    {
+      "id": "dialogo-nativo-del-navegador",
+      "titulo": "Se usó el diálogo del navegador y rompe todo el tono",
+      "gravedad": "media",
+      "sintoma": "Aparece una ventana gris del sistema, con el dominio y una tipografía que no es la del sitio.",
+      "causa": "Se resolvió una pregunta con `confirm()` o `prompt()`.",
+      "porque": "Es una línea de código y funciona, así que se cuela en el primer prototipo y se queda.",
+      "arreglo": "Un diálogo propio con foco atrapado, cierre con Escape y devolución del foco. `<dialog>` nativo trae casi todo puesto.",
+      "comoCazarlo": "Buscar `confirm(`, `alert(` y `prompt(` en el código.",
+      "consejo": "Además bloquea el hilo y, en algunos navegadores, se puede suprimir: la respuesta llega sin que nadie haya contestado.",
+      "senales": [
+        "sale el cuadro del navegador",
+        "se ve feo el aviso",
+        "aparece el nombre del dominio"
+      ],
+      "salioDe": "Carlos: «una regla de grupo Mazi es jamás usar esa porquería». Se sustituyó por un diálogo propio en la sala."
+    }
+  ]
+}

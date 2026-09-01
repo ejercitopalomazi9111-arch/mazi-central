@@ -1,90 +1,63 @@
-# Bitácora de la demo conjunta
+# La primera prueba de trabajo conjunto · qué salió y qué falló
 
-> Carlos pidió, textual: *«todo lo que hagas escríbelo aquí como un log pls, lo mismo va para
-> ambos claudes»*. Le hicimos caso literalmente y lo escribimos en La Sala — y **estuvo mal**.
-> La Sala es un chat y está diseñada para olvidar: el 1 de septiembre se llevó la jornada
-> entera, instrucciones incluidas. El log vive aquí, que no se borra. En la sala van los
-> avisos.
+> Carlos pidió una página hecha por los dos agentes, **sin intervención de ninguna
+> persona**. La página existe y funciona. La colaboración no ocurrió, y eso es lo
+> que hay que contar aquí — porque el fallo es reproducible y ya sabemos por qué.
 
 ---
 
-## Qué es esto
+## Lo que se entregó
 
-La primera prueba grande de trabajo conjunto entre los dos agentes, pedida por Carlos con una
-condición dura: **«no puede haber NADA de intervención»** ni suya ni de Luis. Una página web
-hecha por Sylcred y Godines, de punta a punta.
+**La página es de Godines, completa:** `index.html`, `base.css`, `datos.js`,
+`mueve.css`, `mueve.js` y `pruebas.mjs`. Está en `main`, pasa sus pruebas —
+incluidas las de **sin JavaScript**, donde los siete horarios se siguen leyendo
+enteros— y es la buena.
 
-**El concepto es de Godines: «el minuto antes».** La foto de referencia no es de futbol — es del
-instante previo: el balón todavía quieto, el niño todavía esperando. La página *es* ese minuto
-y lo resuelve.
+El concepto también es suyo: **«el minuto antes»**, anclado en una frase de
+Carlos, *«que el papá sepa qué día y en qué lugar juega la categoría de su
+hijo»*. La foto de referencia **no se publicó y no se descargó nada**: es un
+menor y nadie dio permiso. «Referencia» no es «material».
 
-**El ancla es una frase de Carlos**, no un eslogan que nos inventamos:
-*«Que el papá sepa qué día y en qué lugar juega la categoría de su hijo.»*
+## Lo que falló, que es el hallazgo
 
-## El reparto
+Acordamos repartirnos el trabajo: él el movimiento, yo la estructura. Publiqué
+mis ganchos en La Sala y me puse a construir mi mitad.
 
-| Quién | Qué | Archivos |
-|---|---|---|
-| **Sylcred** | Estructura, color, contenido | `index.html` · `base.css` |
-| **Godines** | Todo el movimiento | `mueve.css` · `mueve.js` |
+**Nunca se enteró, y yo nunca me enteré de que ya había terminado.** Él construyó
+la página entera —su estructura, sus ganchos (`data-escena="1"`…`"5"`), su
+filtro— y la fusionó a `main`. Yo construí en paralelo una estructura con otros
+ganchos (`data-escena="minuto"`, `data-mueve` con 18 piezas) que no encajaba con
+nada. Dos páginas para el mismo encargo, ninguna de las dos hecha entre los dos.
 
-**La frontera está hecha para que la ausencia del otro no rompa nada.** `<html class="quieto">`
-deja la página completa y legible; el JS de Godines le quita la clase al cargar. Mientras sus
-dos archivos no existen dan 404 y la demo funciona igual — eso es la prueba de que el reparto
-está bien puesto, no una promesa.
+**Por qué se pudo dar, y las dos causas están documentadas:**
 
-## Los ganchos
-
-Publicados en la sala leídos del archivo, no de memoria.
-
-| Qué | Cómo se selecciona |
+| Causa | Dónde |
 |---|---|
-| Escenas | `data-escena` = `minuto` · `cancha` · `problema` · `respuesta` · `cierre` |
-| Piezas (18) | `data-mueve` = `cielo` `cal` `balon` `sombra` `ante` `titulo` `entrada` `baja` `paso-1`…`paso-5` `cita` `remate` `h-respuesta` `ficha` `lema` |
-| Sueltos | `[data-linea]` la raya de cal · `[data-balon]` el SVG del balón |
+| La Sala se vació sola y se llevó lo que habíamos acordado | commit del olvido callado · `sala/servidor/sala.js` |
+| Mi guardia de 24/7 disparó 82 veces sin correr una sola | [`sala/LA-GUARDIA-NO-CORRIA.md`](../sala/LA-GUARDIA-NO-CORRIA.md) |
 
-Los dos últimos son **atributos booleanos**, sin valor. Ojo al escribir el selector.
+O sea: **el canal por el que íbamos a coordinarnos se borró, y el mecanismo que
+debía avisarme estaba dormido.** Ninguno de los dos falló en rojo. Los dos se
+veían sanos.
 
-## Las tres reglas de la casa que aplican aquí
+## Cómo se resolvió
 
-1. **Guiado por scroll, no secuestrado** (§3). El scroll es una perilla: si Carlos suelta a media
-   escena, se queda ahí. Nada de pinear la página ni de forzar la secuencia a su ritmo.
-2. **El final tiene que funcionar, no describirse.** La escena `cierre` es un filtro de verdad y
-   no lleva una línea de JavaScript: radios + `:checked ~`. Vendemos que el papá sepa dónde
-   juega su hijo; enseñarlo en un dibujo sería exactamente el folleto que criticamos. Si el JS
-   de Godines no carga, el filtro tiene que seguir filtrando.
-3. **La paleta sale de la foto, no de la marca.** `--cal` es hueso sucio y nunca `#FFF`; el
-   violeta de la casa entra sólo como acento.
+Se tomó **la página de Godines**, sin discusión. Está fusionada, está probada y
+funciona; la mía era una mitad esperando una mitad que ya no hacía falta.
+Sobrescribir trabajo fusionado por trabajo paralelo habría sido el peor final
+posible para una prueba de colaboración.
 
-## Lo que NO se publica
+Lo que sí queda de mi lado: el arreglo del olvido de La Sala, el diagnóstico de
+la guardia, y este documento.
 
-**La foto de referencia no va a la página, y no se descargó nada** — ni imágenes ni tipografías
-remotas. Decisión de Godines, aceptada sin discusión: es un menor, nadie dio permiso, y
-*referencia* no es *material*. Sólo tipografías del sistema.
+## Lo que se aprende, y vale más que la página
 
-## Lo que costó
+**Repartirse el trabajo por un canal que puede olvidar no es repartirse el
+trabajo.** El acuerdo hay que dejarlo donde no se borre —el repo— antes de
+empezar a construir sobre él. Un mensaje en un chat es un aviso; el reparto es
+un archivo.
 
-Queda comentado en el propio archivo, junto al código que lo arregló.
-
-| Qué pasó | Por qué | Cómo quedó |
-|---|---|---|
-| El balón se montó encima del párrafo | estaba en `position:absolute` sobre la portada | la portada es una rejilla de dos filas: no se pueden encimar aunque cambie el largo del texto o el alto de la pantalla |
-| El balón se leía como una estrella | las bandas estaban inventadas | geometría de verdad: un pentágono al centro y cinco a radio 62 |
-| La línea de cal parecía vía de tren | la máscara era regular | tres bandas irregulares |
-
-**La ficha vacía —«Libre no juega este sábado»— está a propósito.** Un filtro que sólo se prueba
-con resultados es un filtro sin probar.
-
-## Verificado, no leído
-
-En navegador a 390 px: cero desbordes horizontales, cero errores de consola, el escenario a
-ancho completo (390/390) y las seis categorías cambiando de verdad, la vacía incluida.
-
-## Registro
-
-| Fecha | Qué |
-|---|---|
-| 1 sep | Concepto de Godines aceptado. Acordado: vive en `mazi-central` por las vistas previas por PR, que es como Carlos lo ve desde el teléfono |
-| 1 sep | `index.html` + `base.css` commiteados (`fda13d4`). Ganchos publicados en la sala |
-| 1 sep | La Sala se comió el hilo. Diagnosticado, arreglado y anotado — el log se muda aquí |
-| — | Pendiente: `mueve.css` + `mueve.js` de Godines |
+Y la segunda, que es la del día completo: **nada de esto falló en rojo.** La
+sala se vació en silencio, la guardia disparó sin correr, y las dos cosas se
+veían perfectamente bien desde afuera. Cuatro defectos distintos hoy y todos son
+el mismo: algo que informa un estado y está en otro.

@@ -1,0 +1,92 @@
+{
+  "area": "gestos",
+  "nombre": "Gestos y dedo",
+  "que": "Arrastrar, deslizar y tocar: lo que cambia cuando no hay cursor y el dedo tapa lo que señala.",
+  "neuronas": [
+    {
+      "id": "dragstart-que-no-existe-en-tactil",
+      "titulo": "El arrastre funciona con ratón y no con el dedo",
+      "gravedad": "alta",
+      "sintoma": "Se puede arrastrar en la computadora y en el teléfono no pasa nada.",
+      "causa": "Se usaron los eventos de arrastre nativos, que en táctil no se disparan.",
+      "porque": "Es la API que se llama justo como lo que uno quiere hacer, y funciona donde se prueba.",
+      "arreglo": "Eventos de puntero, que unifican ratón, dedo y lápiz. Con captura del puntero y `touch-action` para que el navegador no se lleve el gesto.",
+      "comoCazarlo": "Probar el arrastre en un teléfono de verdad, no con el simulador de ratón.",
+      "consejo": "Y hay que atender la cancelación: si entra una llamada a media arrastre, el elemento se queda pegado al dedo.",
+      "senales": [
+        "no puedo arrastrar en el celular",
+        "funciona con mouse nada más",
+        "no responde al dedo"
+      ],
+      "salioDe": "La galería de la sala: `dragstart` no existe en táctil, y hizo falta `setPointerCapture` y `pointercancel`."
+    },
+    {
+      "id": "gesto-que-pelea-con-el-navegador",
+      "titulo": "Al deslizar, el navegador hace lo suyo",
+      "gravedad": "media",
+      "sintoma": "Un deslizamiento propio compite con el scroll o con el gesto de volver atrás.",
+      "causa": "No se declaró qué gestos maneja el elemento, así que el navegador se queda con ellos.",
+      "porque": "Los gestos del navegador son invisibles hasta que estorban.",
+      "arreglo": "Declarar `touch-action` en el elemento que maneja el gesto y sólo ahí.",
+      "comoCazarlo": "Deslizar dentro del elemento en las dos direcciones y ver si la página también se mueve.",
+      "consejo": "Quitar todos los gestos del navegador es peor: la gente pierde el atrás y el scroll.",
+      "senales": [
+        "se mueve la página al deslizar",
+        "pelea con el scroll",
+        "se sale al arrastrar"
+      ],
+      "salioDe": "La galería de la sala: `touch-action:none` sobre la pista, y sólo sobre ella."
+    },
+    {
+      "id": "eje-que-se-decide-a-cada-rato",
+      "titulo": "El gesto cambia de eje a mitad del movimiento",
+      "gravedad": "media",
+      "sintoma": "Al deslizar en diagonal, el elemento salta entre moverse de lado y hacia abajo.",
+      "causa": "El eje se recalcula en cada evento en vez de decidirse una vez.",
+      "porque": "Recalcular parece más preciso y en un movimiento limpio no se nota.",
+      "arreglo": "Decidir el eje al pasar un umbral y no volver a decidirlo hasta soltar.",
+      "comoCazarlo": "Deslizar en diagonal despacio.",
+      "consejo": "Es lo que hace que un gesto se sienta firme en vez de nervioso.",
+      "senales": [
+        "el gesto se siente raro",
+        "salta al arrastrar en diagonal",
+        "no sé si va de lado o abajo"
+      ],
+      "salioDe": "La galería de la sala: el eje se fija al superar 8 px y ya no se re-decide."
+    },
+    {
+      "id": "el-dedo-tapa-lo-que-senala",
+      "titulo": "Lo que se está tocando queda debajo del dedo",
+      "gravedad": "media",
+      "sintoma": "Al seleccionar o arrastrar, no se ve el elemento porque lo tapa la mano.",
+      "causa": "La respuesta visual está justo donde toca el dedo.",
+      "porque": "Con ratón el cursor es un punto y no tapa nada.",
+      "arreglo": "Mover la respuesta arriba del punto de contacto, o hacer el elemento más grande que el dedo.",
+      "comoCazarlo": "Usarlo con la mano, no con el simulador.",
+      "consejo": "Es la razón de la lupa de selección de texto de los teléfonos.",
+      "senales": [
+        "no veo lo que estoy tocando",
+        "el dedo tapa",
+        "no sé qué seleccioné"
+      ],
+      "salioDe": "Práctica de interacción táctil; el mismo motivo por el que la barra va abajo y la respuesta arriba."
+    },
+    {
+      "id": "salir-por-donde-se-entro",
+      "titulo": "Se abre con un gesto y se cierra con un botón escondido",
+      "gravedad": "media",
+      "sintoma": "La gente no sabe cómo salir de una vista a pantalla completa.",
+      "causa": "La entrada es gestual y la salida no.",
+      "porque": "El gesto de entrada es el vistoso; el de salida se resuelve con una equis pequeña.",
+      "arreglo": "Que la salida sea también un gesto natural —deslizar hacia abajo— además del botón.",
+      "comoCazarlo": "Abrir la vista y pedirle a alguien que salga sin decirle cómo.",
+      "consejo": "Y que el botón de cerrar no quede debajo de la cabecera: un z-index mal puesto lo vuelve inalcanzable.",
+      "senales": [
+        "no sé cómo cerrar esto",
+        "¿cómo salgo?",
+        "el botón de cerrar no se ve"
+      ],
+      "salioDe": "La galería de la sala: salida deslizando hacia abajo, y un botón que estaba tapado por la cabecera."
+    }
+  ]
+}

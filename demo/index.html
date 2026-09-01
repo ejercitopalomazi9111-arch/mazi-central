@@ -1,272 +1,202 @@
 <!doctype html>
-<html lang="es-MX" class="quieto">
+<html lang="es" class="quieto">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>El minuto antes · Ligas Mazi</title>
-<meta name="description" content="El minuto antes del silbato. Y quién sabe a qué hora y en qué cancha juega tu hijo.">
-<meta name="theme-color" content="#141C12">
+<meta name="theme-color" content="#141C13">
+<meta name="description" content="El papá no necesita saber de futbol. Necesita saber a qué hora y en qué cancha.">
+
+<!--
+  EL MINUTO ANTES — demostración hecha por Godines y Sylcred, 28 de agosto.
+
+  DE DÓNDE SALE. Carlos mandó una foto: las manos de un niño colocando un balón
+  muy gastado sobre la línea de cal de un campo sintético, luz de tarde. No está
+  jugando: está COLOCANDO. Es el instante antes del silbato.
+
+  LA FOTO NO SE PUBLICA y no está en este repositorio. Es el hijo de alguien y
+  nadie dio permiso; Carlos la mandó como REFERENCIA, que no es lo mismo. Todo
+  lo que se ve aquí lo dibujamos nosotros.
+
+  LA IDEA. La foto no es de futbol: es del minuto antes. Y ese minuto es de
+  quien NO sale en la foto — el papá que no sabe si el partido es a las nueve o
+  a las once, ni en qué cancha. Es el problema que Carlos escribió con sus
+  palabras: «que el papá sepa qué día y en qué lugar juega la categoría de su
+  hijo».
+
+  Por eso la página no termina planteándolo: lo RESUELVE. La última escena
+  funciona de verdad.
+
+  LA PRUEBA CONTRA LO GENÉRICO, de Syl: si esto sirviera para una liga de otro
+  deporte cambiando dos palabras, estaría mal.
+
+  EL REPARTO, que se respeta aunque lo haya escrito uno solo: index.html y
+  base.css son la página; mueve.css y mueve.js son la capa de movimiento y se
+  pueden borrar los dos sin que esto se rompa. Si no llegan, la página se ve
+  completa y quieta — igual que la foto.
+-->
+
+<!-- El icono es el balón, dibujado aquí mismo: sin archivo, sin petición y
+     sin el 404 de favicon que ensucia la consola de quien venga a revisar. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23C9CE3A'/><path d='M50 12 L70 26 L62 50 L38 50 L30 26 Z' fill='%23A8323A'/><path d='M40 56 L60 56 L66 78 L50 88 L34 78 Z' fill='%23A8323A'/></svg>">
 <link rel="stylesheet" href="base.css">
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     EL MINUTO ANTES · demostración a cuatro manos entre Sylcred y Godines
-     ─────────────────────────────────────────────────────────────────────
-     De dónde sale: Carlos mandó una foto a La Sala —las manos de un niño
-     colocando un balón gastado sobre la línea de cal— y dijo «desarrollen
-     una página web juntos, sin intervención de Luis ni mía».
-
-     ⚠ LA FOTO NO SE PUBLICA, y la decisión es de Godines: es un niño, nadie
-     dio permiso, y REFERENCIA no es lo mismo que material. Todo lo que se ve
-     aquí está dibujado por nosotros. Ni una imagen descargada, ni una
-     tipografía de internet.
-
-     EL CORTE, para que dos agentes no se pisen:
-       index.html + base.css  →  Sylcred · estructura, contenido, color, tipo
-       mueve.css  + mueve.js  →  Godines · todo el movimiento
-
-     Ninguno toca el archivo del otro. Los ganchos que este archivo promete y
-     que no cambian sin avisar en La Sala:
-       data-escena   en cada bloque grande, en orden
-       data-mueve    en cada cosa animable, con nombre propio
-       data-linea    la línea de cal · data-balon  el balón
-       class="quieto" en <html>, que lo quita el JS de Godines al cargar
-
-     Por qué `quieto` en vez de esperar el JS: si su archivo no llega, la
-     página se ve COMPLETA Y QUIETA en vez de rota. Es la regla que nos costó
-     el día — que el fallo sea visible y no silencioso.
-     ═══════════════════════════════════════════════════════════════════════ -->
-</head>
-<body>
-
-<a class="saltar" href="#respuesta">Saltar a los horarios</a>
-
-<!-- ── 1 · EL MINUTO ANTES ──────────────────────────────────────────────
-     La foto no es de futbol: es del instante ANTES. El balón todavía quieto,
-     la línea intacta, nadie ha pateado. Por eso la portada no tiene acción. -->
-<section class="escena minuto" data-escena="minuto">
-  <div class="cielo" data-mueve="cielo" aria-hidden="true"></div>
-
-  <div class="portada">
-    <p class="antetitulo" data-mueve="ante">Ligas Mazi</p>
-    <h1 data-mueve="titulo">El minuto<br>antes</h1>
-    <p class="entrada" data-mueve="entrada">
-      Alguien colocó el balón en la línea y se fue a su lugar.
-      Todavía no hay marcador, ni gritos, ni nadie corriendo.
-      <b>Lo único que falta es que alguien sepa a qué hora era.</b>
-    </p>
-  </div>
-
-  <!-- ⚠ EL ESCENARIO ES SU PROPIA FILA DE LA RETÍCULA, no una capa encima.
-       El primer intento tenía el balón en `position:absolute` sobre la
-       portada y se montó justo sobre el párrafo: texto ilegible a través de
-       una pelota. Con dos filas no se pueden encimar aunque cambie el largo
-       del texto o el alto de la pantalla — que es lo que sí pasa en un
-       teléfono de verdad. -->
-  <div class="escenario" aria-hidden="true">
-    <div class="pasto"></div>
-    <div class="cal" data-linea data-mueve="cal"></div>
-
-    <!-- El balón, dibujado aquí. Gastado a propósito: el de la foto tiene
-         más partidos encima que el niño.
-         La geometría es la de un balón de verdad —un pentágono al centro y
-         cinco alrededor, a 62 de radio— porque el primer intento inventó las
-         bandas y se leía como una estrella, no como una pelota. -->
-    <svg class="balon" data-balon data-mueve="balon" viewBox="0 0 200 200" role="img"
-         aria-label="Un balón amarillo y rojo, muy usado, sobre la línea de cal">
-      <defs>
-        <clipPath id="bola"><circle cx="100" cy="100" r="92"/></clipPath>
-        <path id="pent" d="M0,-30 L28.5,-9.3 L17.6,24.3 L-17.6,24.3 L-28.5,-9.3 Z"/>
-        <radialGradient id="luz" cx="34%" cy="26%" r="80%">
-          <stop offset="0%"   stop-color="#fff" stop-opacity=".30"/>
-          <stop offset="52%"  stop-color="#fff" stop-opacity="0"/>
-          <stop offset="100%" stop-color="#1A1005" stop-opacity=".48"/>
-        </radialGradient>
-      </defs>
-      <g clip-path="url(#bola)">
-        <circle cx="100" cy="100" r="92" fill="var(--lima)"/>
-
-        <!-- Las costuras primero, para que los pentágonos las tapen y queden
-             sólo los tramos de entre pieza y pieza. -->
-        <g stroke="#6E6A1E" stroke-width="3.4" fill="none" opacity=".55">
-          <path d="M100 70 L136 50 M128 91 L159 119 M118 124 L100 162
-                   M82 124 L41 119 M72 91 L64 50"/>
-        </g>
-
-        <g fill="var(--rojo)">
-          <use href="#pent" transform="translate(100,100)"/>
-          <use href="#pent" transform="translate(136.4,49.8) rotate(126) scale(1.02)"/>
-          <use href="#pent" transform="translate(159,119.2)  rotate(198) scale(1.02)"/>
-          <use href="#pent" transform="translate(100,162)    rotate(270) scale(1.02)"/>
-          <use href="#pent" transform="translate(41,119.2)   rotate(342) scale(1.02)"/>
-          <use href="#pent" transform="translate(63.6,49.8)  rotate(54)  scale(1.02)"/>
-        </g>
-
-        <!-- El desgaste. Sin esto es un balón nuevo, y el de la foto no lo es. -->
-        <g class="raspones" fill="#3A2A18" opacity=".22">
-          <ellipse cx="62" cy="150" rx="27" ry="9" transform="rotate(-18 62 150)"/>
-          <ellipse cx="150" cy="62" rx="19" ry="7" transform="rotate(24 150 62)"/>
-          <ellipse cx="40" cy="74" rx="13" ry="6" transform="rotate(-40 40 74)"/>
-          <ellipse cx="124" cy="170" rx="15" ry="5"/>
-        </g>
-        <circle cx="100" cy="100" r="92" fill="url(#luz)"/>
-      </g>
-      <circle cx="100" cy="100" r="92" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="3"/>
-    </svg>
-    <div class="sombra" data-mueve="sombra"></div>
-  </div>
-
-  <p class="baja" data-mueve="baja" aria-hidden="true">baja</p>
-</section>
-
-
-<!-- ── 2 · LA CÁMARA SE ALEJA ───────────────────────────────────────────
-     El concepto es de Godines: que el movimiento SIGNIFIQUE alejarse, no
-     adornar. Cada renglón es un paso atrás. -->
-<section class="escena aleja" data-escena="cancha">
-  <ol class="pasos">
-    <li data-mueve="paso-1"><span class="cuanto">un balón</span>
-      <span class="dice">que ya lleva tres temporadas</span></li>
-    <li data-mueve="paso-2"><span class="cuanto">una línea</span>
-      <span class="dice">que alguien pintó el sábado a las seis</span></li>
-    <li data-mueve="paso-3"><span class="cuanto">una cancha</span>
-      <span class="dice">de las cuatro que se usan ese día</span></li>
-    <li data-mueve="paso-4"><span class="cuanto">catorce partidos</span>
-      <span class="dice">entre las 8:00 y las 20:00</span></li>
-    <li data-mueve="paso-5"><span class="cuanto">y una banda</span>
-      <span class="dice">llena de gente que preguntó por WhatsApp</span></li>
-  </ol>
-</section>
-
-
-<!-- ── 3 · EL PROBLEMA, CON LAS PALABRAS DE QUIEN LO TIENE ──────────────
-     La cita es de Carlos y está en el CLAUDE.md de la casa. Es lo que
-     salva a esta página de ser un ejercicio bonito: el problema es real y
-     está escrito por quien lo sufre. -->
-<section class="escena problema" data-escena="problema">
-  <blockquote data-mueve="cita">
-    <p>Que el papá sepa qué día y en qué lugar juega la categoría de su hijo.</p>
-    <cite>— el encargo, tal como se pidió</cite>
-  </blockquote>
-  <p class="remate" data-mueve="remate">
-    No es un tablero de administración. No es una app de estadísticas.
-    Es <b>una pregunta</b> que hoy se contesta por WhatsApp, catorce veces,
-    cada sábado.
-  </p>
-</section>
-
-
-<!-- ── 4 · LA RESPUESTA, Y FUNCIONA DE VERDAD ───────────────────────────
-     ⚠ ESTO NO LLEVA UNA SOLA LÍNEA DE JAVASCRIPT, y es a propósito por dos
-     razones distintas:
-
-     1 · Es el corazón funcional de la página. Si dependiera del archivo de
-         movimiento, el día que ese archivo no cargue la demostración se
-         queda en un folleto. Aquí `quieto` significa quieto, no inútil.
-     2 · Es lo que ninguna plantilla trae. Un radio y el selector `:checked ~`
-         bastan para filtrar de verdad — y filtrar de verdad, sin framework,
-         es la demostración de habilidad que pidió Carlos.
-
-     Los datos son de mentiras. El comportamiento no. -->
-<section class="escena respuesta" id="respuesta" data-escena="respuesta">
-  <h2 data-mueve="h-respuesta">¿Cuál es la tuya?</h2>
-  <p class="pie-h">Sábado 6 de septiembre · Unidad Deportiva Mazi</p>
-
-  <form class="buscador">
-    <fieldset>
-      <legend class="oculto">Categoría</legend>
-      <div class="chips">
-        <input type="radio" name="cat" id="c-2015" value="2015" checked>
-        <label for="c-2015">Sub-10</label>
-        <input type="radio" name="cat" id="c-2013" value="2013">
-        <label for="c-2013">Sub-12</label>
-        <input type="radio" name="cat" id="c-2011" value="2011">
-        <label for="c-2011">Sub-14</label>
-        <input type="radio" name="cat" id="c-2009" value="2009">
-        <label for="c-2009">Sub-16</label>
-        <input type="radio" name="cat" id="c-fem" value="fem">
-        <label for="c-fem">Femenil</label>
-        <input type="radio" name="cat" id="c-libre" value="libre">
-        <label for="c-libre">Libre</label>
-
-        <!-- Los resultados van DESPUÉS de los radios porque `:checked ~` sólo
-             alcanza hacia adelante. Es la única razón de este orden. -->
-        <div class="resultados" role="status" aria-live="polite">
-
-          <article class="ficha" data-cat="2015" data-mueve="ficha">
-            <p class="cuando"><span class="hora">9:00</span><span class="dia">sáb 6 sep</span></p>
-            <h3>Halcones <span class="vs">vs</span> Tuzos</h3>
-            <p class="donde"><span class="marca-cancha">Cancha 2</span> · pasto sintético · junto a la entrada</p>
-            <p class="nota">Llegar 8:30. Credencial obligatoria.</p>
-          </article>
-
-          <article class="ficha" data-cat="2013" data-mueve="ficha">
-            <p class="cuando"><span class="hora">10:30</span><span class="dia">sáb 6 sep</span></p>
-            <h3>Coyotes <span class="vs">vs</span> Halcones</h3>
-            <p class="donde"><span class="marca-cancha">Cancha 1</span> · pasto sintético · la del fondo</p>
-            <p class="nota">Se juega aunque llueva.</p>
-          </article>
-
-          <article class="ficha" data-cat="2011" data-mueve="ficha">
-            <p class="cuando"><span class="hora">12:00</span><span class="dia">sáb 6 sep</span></p>
-            <h3>Tuzos <span class="vs">vs</span> Venados</h3>
-            <p class="donde"><span class="marca-cancha">Cancha 4</span> · pasto natural · atrás de la alberca</p>
-            <p class="nota">Cambió de cancha el martes.</p>
-          </article>
-
-          <article class="ficha" data-cat="2009" data-mueve="ficha">
-            <p class="cuando"><span class="hora">17:45</span><span class="dia">sáb 6 sep</span></p>
-            <h3>Venados <span class="vs">vs</span> Coyotes</h3>
-            <p class="donde"><span class="marca-cancha">Cancha 1</span> · pasto sintético · la del fondo</p>
-            <p class="nota">Última del día. Hay luz.</p>
-          </article>
-
-          <article class="ficha" data-cat="fem" data-mueve="ficha">
-            <p class="cuando"><span class="hora">11:15</span><span class="dia">sáb 6 sep</span></p>
-            <h3>Halcones <span class="vs">vs</span> Pumas</h3>
-            <p class="donde"><span class="marca-cancha">Cancha 3</span> · pasto sintético · la de junto</p>
-            <p class="nota">Arbitra Ramírez.</p>
-          </article>
-
-          <!-- ⚠ EL CASO VACÍO EXISTE Y SE VE, y no es relleno. Una demo que
-               sólo enseña el camino feliz esconde justo la pantalla que la
-               persona va a ver el día que algo salga mal. -->
-          <article class="ficha vacia" data-cat="libre" data-mueve="ficha">
-            <p class="cuando"><span class="hora">—</span><span class="dia">sin partido</span></p>
-            <h3>Libre no juega este sábado</h3>
-            <p class="donde">La jornada se recorrió por el puente.</p>
-            <p class="nota">Vuelve el <b>13 de septiembre</b>, misma hora.</p>
-          </article>
-
-        </div>
-      </div>
-    </fieldset>
-  </form>
-
-  <p class="honesto">
-    Los equipos y las horas son inventados. <b>El filtro no:</b> escoge otra
-    categoría y contesta de verdad, sin una línea de JavaScript.
-  </p>
-</section>
-
-
-<!-- ── 5 · CIERRE ───────────────────────────────────────────────────────── -->
-<section class="escena cierre" data-escena="cierre">
-  <p class="lema" data-mueve="lema">Si no existe la herramienta,<br>se construye la herramienta.</p>
-  <p class="firma">
-    Esta página la hicieron dos Claude —<b>Sylcred</b> y <b>Godines</b>—
-    sin que ninguna persona escribiera una línea.
-    Se repartieron por archivo y se pusieron de acuerdo en La Sala.
-  </p>
-  <p class="firma chico">
-    Todo lo que ves está dibujado aquí: ni una imagen descargada,
-    ni una tipografía de internet. La foto que sirvió de referencia
-    <b>no se publica</b> — es de un niño y nadie dio permiso.
-  </p>
-</section>
-
-<!-- El movimiento entra al final y sólo AUMENTA lo que ya se ve.
-     Si estos dos archivos no existen, la página sigue completa. -->
 <link rel="stylesheet" href="mueve.css">
+</head>
+<body id="arriba">
+
+
+<!-- ── LA CANCHA · la línea y el balón ───────────────────────────────────
+     Decorativa para quien lee con lector de pantalla: no dice nada que no
+     esté en el texto. Aquí vive el único movimiento de la página. -->
+<div class="cancha" aria-hidden="true">
+  <div class="linea" data-linea></div>
+  <div class="balon" data-balon>
+    <svg viewBox="0 0 100 100" role="presentation">
+      <circle cx="50" cy="50" r="48" class="cuero"/>
+      <!-- Los gajos: geometría nuestra, no el calco de una marca. El balón de
+           la foto es amarillo y rojo y está muy usado; el desgaste se sugiere
+           con los bordes irregulares, no con una textura. -->
+      <path class="gajo" d="M50 12 L70 26 L62 50 L38 50 L30 26 Z"/>
+      <path class="gajo" d="M74 30 L88 48 L78 70 L64 54 Z"/>
+      <path class="gajo" d="M26 30 L36 54 L22 70 L12 48 Z"/>
+      <path class="gajo" d="M40 56 L60 56 L66 78 L50 88 L34 78 Z"/>
+      <circle cx="50" cy="50" r="48" class="orilla"/>
+    </svg>
+  </div>
+</div>
+
+<main>
+
+  <!-- ── 1 · el minuto antes ─────────────────────────────────────────── -->
+  <section class="escena portada" data-escena="1">
+    <p class="antetitulo" data-mueve="mascara"><span>Ligas Mazi · demostración</span></p>
+    <h1 data-mueve="mascara"><span>El minuto</span><span>antes.</span></h1>
+    <p class="entrada" data-mueve="mascara"><span>
+      Un niño acomoda el balón sobre la línea. Le sobra tiempo y no le falta
+      nada.
+    </span></p>
+    <p class="entrada acento" data-mueve="mascara"><span>
+      A su papá le faltan dos datos.
+    </span></p>
+  </section>
+
+  <!-- ── 2 · quién no sale en la foto ────────────────────────────────── -->
+  <section class="escena" data-escena="2">
+    <h2 data-mueve="mascara"><span>Quién no sale<br>en la foto</span></h2>
+    <p data-mueve="mascara"><span>
+      El que va manejando. El que preguntó en el chat y nadie contestó. El que
+      llegó a la cancha ocho cuando era la tres.
+    </span></p>
+    <p class="cita" data-mueve="mascara"><span>
+      «Que el papá sepa qué día y en qué lugar juega la categoría de su hijo.»
+    </span></p>
+    <p class="firma" data-mueve="mascara"><span>— Carlos, cuando pidió Ligas Mazi</span></p>
+  </section>
+
+  <!-- ── 3 · cómo se entera hoy ──────────────────────────────────────── -->
+  <section class="escena" data-escena="3">
+    <h2 data-mueve="mascara"><span>Cómo se<br>entera hoy</span></h2>
+    <ul class="hoy">
+      <li data-mueve="mascara"><span><b>Una foto de una hoja</b> pegada en la reja, tomada de lado.</span></li>
+      <li data-mueve="mascara"><span><b>Reenviada nueve veces</b>, ya sin saber de cuándo es.</span></li>
+      <li data-mueve="mascara"><span><b>Un audio de minuto y medio</b> que dice «creo que a las nueve».</span></li>
+      <li data-mueve="mascara"><span><b>La mamá de Emiliano</b>, que siempre sabe. Hasta que no.</span></li>
+    </ul>
+    <p class="remate" data-mueve="mascara"><span>
+      Y cuando cambian la hora el jueves, nada de eso se entera.
+    </span></p>
+  </section>
+
+  <!-- ── 4 · la respuesta, que funciona ──────────────────────────────────
+       ESTA ESCENA NO LLEVA MOVIMIENTO, A PROPÓSITO. Es la única que sirve
+       para algo, y una herramienta no necesita animación: necesita contestar
+       rápido. Animarla sería quitarle segundos a lo único que resuelve. -->
+  <section class="escena respuesta" data-escena="4">
+    <h2 data-mueve="mascara"><span>Los dos datos</span></h2>
+    <p class="lead" data-mueve="mascara"><span>Escoge la categoría. Ya.</span></p>
+
+    <!-- ── LOS DATOS VIVEN AQUÍ, EN EL HTML, Y NO EN EL JAVASCRIPT ────────
+         Sin JS el buscador no filtra, pero la tabla completa SÍ se lee: siete
+         categorías con su día, su hora y su cancha. Se pierde la comodidad,
+         no la información — que es la única forma honesta de prometer «aquí
+         sale el día y la cancha» en una página que puede quedarse sin JS.
+
+         Y de paso hay UNA sola fuente de verdad. Con los datos en el script y
+         un respaldo en el HTML, el día que cambie un horario se cambia en uno
+         de los dos y nadie se entera del otro. -->
+    <div class="consulta">
+      <label for="cat">Categoría</label>
+      <select id="cat" autocomplete="off">
+        <option value="">— todas —</option>
+        <option value="s8v">Sub-8 varonil</option>
+        <option value="s10v">Sub-10 varonil</option>
+        <option value="s10f">Sub-10 femenil</option>
+        <option value="s12v">Sub-12 varonil</option>
+        <option value="s12f">Sub-12 femenil</option>
+        <option value="s15v">Sub-15 varonil</option>
+        <option value="libre">Libre</option>
+      </select>
+
+      <!-- role=status + aria-live: quien usa lector de pantalla se entera del
+           resultado sin tener que ir a buscarlo. -->
+      <div class="resultado" id="resultado" role="status" aria-live="polite">
+        <table class="tabla" id="tabla">
+          <caption>Próximo partido por categoría</caption>
+          <thead>
+            <tr><th scope="col">Categoría</th><th scope="col">Día</th><th scope="col">Hora</th><th scope="col">Cancha</th></tr>
+          </thead>
+          <tbody>
+            <tr data-cat="s8v"><th scope="row">Sub-8 varonil</th><td>Sábado</td><td>08:30</td><td>Cancha 3</td></tr>
+            <tr data-cat="s10v" data-cambio="Se recorrió una hora el jueves."><th scope="row">Sub-10 varonil</th><td>Sábado</td><td>10:00</td><td>Cancha 1</td></tr>
+            <tr data-cat="s10f"><th scope="row">Sub-10 femenil</th><td>Sábado</td><td>11:30</td><td>Cancha 3</td></tr>
+            <tr data-cat="s12v"><th scope="row">Sub-12 varonil</th><td>Domingo</td><td>09:00</td><td>Cancha 2</td></tr>
+            <tr data-cat="s12f" data-cambio="Cambió de cancha: era la 1."><th scope="row">Sub-12 femenil</th><td>Domingo</td><td>10:30</td><td>Cancha 4</td></tr>
+            <tr data-cat="s15v"><th scope="row">Sub-15 varonil</th><td>Domingo</td><td>12:00</td><td>Cancha 2</td></tr>
+            <tr data-cat="libre" data-sin="Esta semana descansan. Vuelven el 12."><th scope="row">Libre</th><td>—</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="aviso">
+      Datos inventados para la demostración. Ninguna cancha, categoría ni
+      horario de aquí corresponde a una liga real.
+    </p>
+  </section>
+
+  <!-- ── 5 · cierre ──────────────────────────────────────────────────── -->
+  <section class="escena cierre" data-escena="5">
+    <h2 data-mueve="mascara"><span>Y ya.</span></h2>
+    <p data-mueve="mascara"><span>
+      El niño sigue acomodando el balón. Eso no lo arregla ningún software y
+      no hace falta.
+    </span></p>
+    <p class="acento" data-mueve="mascara"><span>
+      Lo que sí: que su papá esté ahí cuando suene el silbato.
+    </span></p>
+  </section>
+
+</main>
+
+<footer>
+  <p>Hecho por <b>Godines</b> y <b>Sylcred</b> · Grupo Mazi</p>
+  <p class="chico">Sin librerías, sin tipografías de internet, sin cookies y sin rastreo.</p>
+</footer>
+
+<!-- ── VOLVER ARRIBA ────────────────────────────────────────────────────
+     «Lo que se olvida siempre», dice la lista de antes de lanzar de la casa. Y
+     se me había olvidado: en una página que se recorre entera, dejar a alguien
+     a ocho pantallas del principio sin vuelta es de las cosas que no se
+     perdonan en un teléfono.
+
+     Es un ENLACE, no un botón de JavaScript: sin JS salta igual, porque un
+     ancla es del navegador. Lo único que hace el script es esconderlo hasta
+     que haga falta. Sin script se queda visible y funcionando. -->
+<a class="arriba" href="#arriba" data-arriba>
+  <span aria-hidden="true">↑</span> Volver arriba
+</a>
+
 <script src="mueve.js" defer></script>
+<script src="datos.js" defer></script>
 </body>
 </html>

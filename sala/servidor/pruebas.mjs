@@ -975,6 +975,110 @@ globalThis.WebSocketPair = function(){
 
 console.log('\n· Una sala viva no se borra sola');
 await olvido();
+
+/* ══ LA VIGILIA · cuando una IA se cae y no puede avisar ═══════════════════
+   Lo pidió Carlos, y el argumento es suyo: «es evidente que no se
+   desconectarían si tuvieran uso».
+
+   Estas pruebas mueven el reloj a mano en vez de esperar tres horas y media.
+   Se toca `visto` y `vigilias[].cuando` hacia atrás, que es exactamente el
+   estado en el que el servidor se encontraría si el tiempo hubiera pasado —
+   no un atajo, sino la misma situación. */
+async function vigilia(){
+  console.log('\n· La vigilia: una IA que se cae sin poder avisar');
+  const atras = (s, id, ms) => {
+    s.gente[id].visto = Date.now() - ms;
+    if(s.vigilias[id]) s.vigilias[id].cuando = Date.now() - 1;
+  };
+  const limites = (s) => s.hilo.filter(e => e.tipo === 'limite');
+
+  const s = nueva();
+  await pedir(s, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente', motor:'claude' });
+  await pedir(s, 'POST', 'entrar', { id:'hum', nombre:'Carlos', tipo:'humano' });
+  await pedir(s, 'POST', 'decir', { de:'ia', texto:'aquí ando' });
+
+  ok('un agente activo tiene su perro guardián armado', !!s.vigilias.ia);
+  ok('y un humano NO: cerrar la pestaña no es quedarse sin uso', !s.vigilias.hum);
+
+  /* Vuelve dentro de la gracia: aquí no pasó nada y no se publica una línea. */
+  const antesDeNada = limites(s).length;
+  atras(s, 'ia', 60 * 1000);            /* un minuto, dentro de los cinco */
+  s.vigilias.ia.cuando = Date.now() - 1;
+  await s.alarm();
+  ok('si vuelve dentro de la gracia, no se publica nada',
+     limites(s).length === antesDeNada && s.gente.ia.estado === 'activo');
+
+  /* Se pasa de la gracia: primer escalón. */
+  atras(s, 'ia', 10 * 60 * 1000);
+  await s.alarm();
+  const uno = limites(s).at(-1);
+  ok('pasada la gracia, queda topado',            s.gente.ia.estado === 'topado');
+  ok('con hora de regreso a 3 h 30',
+     Math.abs(s.gente.ia.reanuda - Date.now() - 3.5 * 60 * 60 * 1000) < 60 * 1000);
+  ok('y lo dice en el hilo',                      /3 h 30/.test(uno.texto));
+  ok('marcado como DEDUCIDO y no declarado',      uno.limite.automatico === true);
+  ok('el humano sigue sin que nadie suponga nada de él',
+     s.gente.hum.estado === 'activo' && !s.vigilias.hum);
+
+  /* No vuelve a las 3 h 30: una hora más. */
+  atras(s, 'ia', 4 * 60 * 60 * 1000);
+  await s.alarm();
+  ok('si no vuelve, se le da una hora más',       /una hora más/.test(limites(s).at(-1).texto));
+  ok('y sigue topado, no fuera',                  s.gente.ia.estado === 'topado');
+
+  /* Tampoco vuelve: agotado de la semana o algo externo. */
+  atras(s, 'ia', 6 * 60 * 60 * 1000);
+  await s.alarm();
+  ok('tampoco con la hora extra: queda fuera',    s.gente.ia.estado === 'fuera');
+  ok('y se dice que puede ser la semana o algo externo',
+     /semana|externo/.test(limites(s).at(-1).texto));
+  ok('la vigilia se cierra sola: no sigue avisando para siempre', !s.vigilias.ia);
+
+  const cuantos = limites(s).length;
+  await s.alarm(); await s.alarm();
+  ok('y no publica de más aunque suene la alarma otra vez', limites(s).length === cuantos);
+
+  /* Vuelve. */
+  await pedir(s, 'POST', 'decir', { de:'ia', texto:'ya volví' });
+  ok('al hablar vuelve a activo',                 s.gente.ia.estado === 'activo');
+  ok('y su regreso queda anunciado',              /volvió/.test(limites(s).at(-1).texto));
+
+  /* ⚠ LO QUE EL AGENTE DECLARA MANDA SOBRE LO QUE LA SALA DEDUCE. */
+  const s2 = nueva();
+  await pedir(s2, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente' });
+  await pedir(s2, 'POST', 'estado', { de:'ia', estado:'ocupado', nota:'en otra cosa' });
+  const dichos = s2.hilo.filter(e => e.tipo === 'limite').length;
+  s2.gente.ia.visto = Date.now() - 60 * 60 * 1000;
+  if(s2.vigilias.ia) s2.vigilias.ia.cuando = Date.now() - 1;
+  await s2.alarm();
+  ok('si el agente ya declaró su estado, la sala no lo pisa con una suposición',
+     s2.gente.ia.estado === 'ocupado' && s2.gente.ia.nota === 'en otra cosa' &&
+     s2.hilo.filter(e => e.tipo === 'limite').length === dichos);
+
+  /* Y la alarma del olvido sobrevive a todo esto: son la MISMA alarma. */
+  const s3 = nueva();
+  await pedir(s3, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente' });
+  await pedir(s3, 'POST', 'decir', { de:'ia', texto:'hola' });
+  const puesta = await s3.ctx.storage.getAlarm();
+  ok('con vigilia abierta, la alarma se pone para la vigilia y no a 30 días',
+     puesta - Date.now() < 10 * 60 * 1000);
+  /* ⚠ HAY QUE EMPUJAR EL RELOJ ENTRE ESCALONES, y mi primera versión llamaba
+     `alarm()` tres veces seguidas esperando que avanzara tres pasos. No avanza,
+     y hace bien: al pasar al escalón 1 la vigilia se pone para dentro de 3 h 30,
+     así que las otras dos alarmas no vencían nada. La prueba estaba mal montada
+     y el código bien — que es la clase de fallo que hay que mirar dos veces
+     antes de "arreglar" el código y romperlo de verdad. */
+  for(let i = 0; i < 3; i++){
+    s3.gente.ia.visto = Date.now() - 6 * 60 * 60 * 1000;
+    if(s3.vigilias.ia) s3.vigilias.ia.cuando = Date.now() - 1;
+    await s3.alarm();
+  }
+  ok('la escalada llega hasta el final', s3.gente.ia.estado === 'fuera' && !s3.vigilias.ia);
+  await s3.tocar(true);
+  ok('y cuando la vigilia termina, la del olvido vuelve a su sitio',
+     (await s3.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
+}
+await vigilia();
 async function olvido(){
   /* Pasó de verdad: Carlos estrenó GRUPAZ, se fue un rato y al volver la sala
      estaba VACÍA — sin hilo, sin gente, sin dueño. El olvido era de una hora,
@@ -1338,6 +1442,200 @@ async function topadoNoPierde(){
   const [c, r] = await leer(await pedir(s, 'POST', 'decir',
     { de:'claudio', texto:'ya volví, voy con lo de las validaciones' }));
   ok('y puede hablar en cuanto regresa, sin volver a entrar', c === 200 && r.bien);
+}
+
+/* ══ el retrato ═══════════════════════════════════════════════════════════ */
+console.log('\n· El retrato de perfil');
+{
+  const UNA  = 'data:image/png;base64,' + 'A'.repeat(400);
+  const s = nueva({ LLAVES: 'carlos:AAA,luis:BBB' });
+  await leer(await pedir(s, 'POST', 'entrar', { id:'carlos', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'syl', nombre:'Sylcred', tipo:'claude' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'luis', nombre:'Luis', tipo:'humano' }, 'BBB'));
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'retrato', { de:'carlos', datos:UNA }, 'AAA'));
+  ok('una persona puede poner su retrato', c1 === 200 && r1.retratos.carlos === UNA);
+
+  /* Lo que de verdad importa de la clave por cuenta: sobrevive a la sesión. */
+  ok('y queda guardado en la cuenta, no en la sesión', s.retratos.carlos === UNA);
+
+  const [c2] = await leer(await pedir(s, 'POST', 'retrato', { de:'syl', datos:UNA }, 'AAA'));
+  ok('un agente NO puede ponerle cara a la cuenta de su persona', c2 === 403);
+
+  /* El que muerde de verdad: sin esto se puede meter una URL de fuera y la
+     mesa la pediría al pintar. «Cero peticiones externas» dejaría de ser
+     cierto y el dueño de esa URL sabría cuándo mira cada quien. */
+  const [c3] = await leer(await pedir(s, 'POST', 'retrato',
+    { de:'carlos', datos:'https://rastreador.example/quien-mira.png' }, 'AAA'));
+  ok('no acepta una URL de fuera como retrato', c3 === 400);
+  const [c4] = await leer(await pedir(s, 'POST', 'retrato',
+    { de:'carlos', datos:'data:text/html;base64,PHNjcmlwdD4=' }, 'AAA'));
+  ok('ni un data: que no sea imagen', c4 === 400);
+
+  const [c5] = await leer(await pedir(s, 'POST', 'retrato',
+    { de:'carlos', datos:'data:image/png;base64,' + 'A'.repeat(300_000) }, 'AAA'));
+  ok('ni uno que pase del tope', c5 === 413);
+  ok('y ninguno de los rechazados pisó el que ya estaba', s.retratos.carlos === UNA);
+
+  const [c6, r6] = await leer(await pedir(s, 'POST', 'retrato', { de:'carlos', datos:null }, 'AAA'));
+  ok('mandar vacío lo quita', c6 === 200 && !r6.retratos.carlos);
+
+  /* Y que viaje: de nada sirve guardarlo si el que llega no lo recibe. */
+  await leer(await pedir(s, 'POST', 'retrato', { de:'luis', datos:UNA }, 'BBB'));
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  ok('el que pide el hilo recibe los retratos', hilo.retratos && hilo.retratos.luis === UNA);
+}
+
+/* ══ fusionar dos sesiones ════════════════════════════════════════════════ */
+console.log('\n· Fusionar dos sesiones de la misma persona');
+{
+  const s = nueva({ LLAVES: 'carlos:AAA,luis:BBB' });
+  await leer(await pedir(s, 'POST', 'entrar', { id:'c-viejo', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'c-nuevo', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'syl',     nombre:'Sylcred', tipo:'claude' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'luis',    nombre:'Luis',    tipo:'humano' }, 'BBB'));
+  await leer(await pedir(s, 'POST', 'decir', { de:'c-viejo', texto:'esto lo dije con la sesión vieja' }, 'AAA'));
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'c-viejo' }, 'AAA'));
+  ok('una persona fusiona su propia sesión vieja', c1 === 200);
+  ok('la vieja desaparece de la lista de gente', !r1.gente['c-viejo']);
+  ok('y queda el alias apuntando a la que se queda', r1.fusiones['c-viejo'] === 'c-nuevo');
+
+  /* LO QUE MÁS IMPORTA: el hilo NO se tocó. */
+  const dicho = s.hilo.find(e => (e.texto || '').includes('sesión vieja'));
+  ok('el mensaje viejo conserva a su autor original en el registro',
+     dicho && dicho.de.id === 'c-viejo');
+
+  /* La regla que, mal hecha, no se ve. */
+  const [c2] = await leer(await pedir(s, 'POST', 'fusionar', { de:'luis', cual:'c-nuevo' }, 'BBB'));
+  ok('nadie puede absorber la sesión de OTRA cuenta', c2 === 403);
+  const [c3] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'syl' }, 'AAA'));
+  ok('ni fusionar a una persona con un agente de su misma cuenta', c3 === 400);
+  const [c4] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'c-nuevo' }, 'AAA'));
+  ok('ni consigo misma', c4 === 400);
+  const [c5] = await leer(await pedir(s, 'POST', 'fusionar', { de:'c-nuevo', cual:'no-existe' }, 'AAA'));
+  ok('ni con una sesión que no existe', c5 === 404);
+
+  /* Cadenas: si mañana entra otra y se fusiona, lo que apuntaba a la de en
+     medio tiene que acabar apuntando a la última, no quedarse a mitad. */
+  await leer(await pedir(s, 'POST', 'entrar', { id:'c-hoy', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'fusionar', { de:'c-hoy', cual:'c-nuevo' }, 'AAA'));
+  ok('las cadenas se repuntan: la más vieja apunta a la que quedó viva',
+     s.fusiones['c-viejo'] === 'c-hoy' && s.fusiones['c-nuevo'] === 'c-hoy');
+
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  ok('y las fusiones viajan al que pide el hilo', hilo.fusiones && hilo.fusiones['c-viejo'] === 'c-hoy');
+}
+
+/* ══ la presencia se avisa ════════════════════════════════════════════════ */
+console.log('\n· La presencia, avisada');
+{
+  const s = nueva();
+  await leer(await entrar(s, 'godines'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'carlos', nombre:'Carlos', tipo:'humano' }));
+
+  /* Un socket de mentiras que apunta lo que le difunden. */
+  const oido = [];
+  s.vivos.add({ __quien:'carlos', send:(t) => oido.push(JSON.parse(t)) });
+
+  /* El freno acaba de dispararse al entrar, así que se rebobina: lo que se
+     prueba es que HAY aviso, no el reloj. */
+  s.ultimoAviso = 0;
+  const antes = s.gente.godines.visto;
+  await new Promise(r => setTimeout(r, 12));
+  await pedir(s, 'GET', 'esperar?de=godines&desde=e999');
+
+  ok('una señal por HTTP refresca el `visto` del agente', s.gente.godines.visto > antes);
+  const aviso = oido.filter(x => x.que === 'presencia').pop();
+  ok('y se le avisa a la mesa por su propio canal', !!aviso);
+  /* No se compara con `===` contra el visto final: /esperar toca al agente
+     DOS veces y el freno deja pasar sólo el primer aviso, así que el segundo
+     toque adelanta el visto unos milisegundos después de haber avisado. Las
+     dos cosas están bien; lo que importa es que el aviso llegue fresco y con
+     todos, no que coincida al milisegundo. */
+  ok('el aviso lleva el visto de cada quien, y fresco',
+     aviso && aviso.visto.godines >= antes && 'carlos' in aviso.visto);
+  /* Lo que evita repintar el hilo entero cada 45 segundos. */
+  ok('y NO va dentro de `gente`, que arrastraría todo', aviso && !aviso.gente);
+
+  /* El freno: sin él, varios agentes colgados repintan la lista sin parar. */
+  const cuantos = oido.filter(x => x.que === 'presencia').length;
+  await pedir(s, 'GET', 'esperar?de=godines&desde=e999');
+  ok('dos señales seguidas no mandan dos avisos',
+     oido.filter(x => x.que === 'presencia').length === cuantos);
+}
+
+/* ══ los vistos ═══════════════════════════════════════════════════════════ */
+console.log('\n· Hasta dónde ha leído cada quien');
+{
+  const s = nueva({ LLAVES: 'carlos:AAA,luis:BBB' });
+  await leer(await pedir(s, 'POST', 'entrar', { id:'carlos', nombre:'Carlos', tipo:'humano' }, 'AAA'));
+  await leer(await pedir(s, 'POST', 'entrar', { id:'luis', nombre:'Luis', tipo:'humano' }, 'BBB'));
+  const dichos = [];
+  for(let k = 0; k < 4; k++){
+    const [, r] = await leer(await pedir(s, 'POST', 'decir', { de:'carlos', texto:'uno '+k }, 'AAA'));
+    dichos.push(r.evento.id);
+  }
+
+  const [c1, r1] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:dichos[2] }, 'BBB'));
+  ok('se puede marcar hasta dónde se leyó', c1 === 200 && r1.vistos.luis === dichos[2]);
+
+  /* La regla que evita que la marca vaya y venga con el desplazamiento. */
+  const [c2, r2] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:dichos[0] }, 'BBB'));
+  ok('volver a leer hacia arriba NO des-lee', c2 === 200 && r2.vistos.luis === dichos[2]);
+  ok('y lo dice, en vez de fingir que hizo algo', r2.sinCambio === true);
+
+  const [c3, r3] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:dichos[3] }, 'BBB'));
+  ok('pero seguir leyendo sí avanza', c3 === 200 && r3.vistos.luis === dichos[3]);
+
+  const [c4] = await leer(await pedir(s, 'POST', 'visto', { de:'luis', hasta:'e9999' }, 'BBB'));
+  ok('no se puede marcar un mensaje que no existe', c4 === 404);
+
+  /* Que viaje: un visto que no llega al otro no sirve para nada. */
+  const [, hilo] = await leer(await pedir(s, 'GET', 'hilo', undefined, 'AAA'));
+  ok('el que pide el hilo recibe los vistos', hilo.vistos && hilo.vistos.luis === dichos[3]);
+
+  /* Y que NO despierte a nadie: leer no es trabajo y despertar a un agente
+     por eso le gasta uso a su dueño. */
+  let despertado = false;
+  s.esperando = [{ filtro: () => { despertado = true; return true; }, responder: () => {} }];
+  await pedir(s, 'POST', 'visto', { de:'carlos', hasta:dichos[3] }, 'AAA');
+  ok('marcar un visto no despierta a los que esperan', !despertado);
+}
+
+/* ══ el hilo no revienta por peso ═════════════════════════════════════════ */
+console.log('\n· El hilo suelta lastre antes de reventar');
+{
+  /* Esto pasó de verdad: GRUPAZ llegó a 4 MB con 196 eventos —muy por debajo
+     del tope de 400— porque unos pocos llevaban capturas, y el siguiente
+     mensaje con imágenes tiró el worker al guardar. El que escribía recibió
+     un 500 aunque su mensaje SÍ había entrado: el peor modo de fallo, porque
+     invita a mandarlo otra vez. */
+  const s = nueva();
+  /* ⚠ COMO PERSONA Y NO COMO AGENTE. Con el tipo por defecto se entra como
+     agente, y a las doce vueltas seguidas salta el freno de conversación:
+     los mensajes trece en adelante no se publican. La primera versión de esto
+     mandaba treinta y sólo entraban doce, y la prueba acusaba al aligerado de
+     perder mensajes que nunca habían llegado. */
+  await leer(await pedir(s, 'POST', 'entrar', { id:'a', nombre:'A', tipo:'humano' }));
+  const gorda = (n) => ({ clase:'imagen', mime:'image/jpeg', nombre:'x'+n,
+                          datos:'A'.repeat(120_000), ancho:10, alto:10 });
+  for(let k = 0; k < 30; k++){
+    await pedir(s, 'POST', 'decir', { de:'a', texto:'con foto '+k, adjuntos:[gorda(k)] });
+  }
+  const peso = JSON.stringify(s.hilo).length;
+  ok(`el hilo se queda por debajo del tope de bytes (${Math.round(peso/1000)} KB)`,
+     peso <= 1_400_000);
+  ok('y NO se pierde ni un mensaje: son los 30', s.hilo.filter(e => /con foto/.test(e.texto || '')).length === 30);
+  /* Lo que de verdad importa del aligerado: se va la imagen, no el registro. */
+  const viejo = s.hilo.find(e => e.texto === 'con foto 0');
+  ok('el texto del más viejo sigue entero', viejo && viejo.texto === 'con foto 0');
+  ok('y su autor también', viejo && viejo.de && viejo.de.id === 'a');
+  ok('lo que se soltó fue la imagen, y queda dicho',
+     viejo && viejo.adjuntos[0].aligerado === true && !viejo.adjuntos[0].datos);
+  /* Y las últimas se conservan: son las que se están mirando. */
+  const nueva_ = s.hilo.find(e => e.texto === 'con foto 29');
+  ok('las últimas conservan su imagen', nueva_ && !!nueva_.adjuntos[0].datos);
 }
 
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);

@@ -1,0 +1,92 @@
+{
+  "area": "formularios",
+  "nombre": "Formularios que se completan",
+  "que": "Lo que decide si alguien termina de llenar algo: formato, obligatoriedad, teclado y saber si llegó.",
+  "neuronas": [
+    {
+      "id": "campo-que-no-dice-el-formato",
+      "titulo": "El campo rechaza el dato y no dice cómo se escribe",
+      "gravedad": "media",
+      "sintoma": "Se escribe una fecha o un teléfono y sale un error sin decir qué formato quiere.",
+      "causa": "La validación conoce el formato y no lo comunica.",
+      "porque": "Quien programa el campo sabe el formato y no ve la necesidad de escribirlo.",
+      "arreglo": "Decir el formato antes de que se escriba, y aceptar variantes razonables en vez de exigir una.",
+      "comoCazarlo": "Llenar cada campo con la forma más natural de escribirlo y ver cuáles rechaza.",
+      "consejo": "Aceptar espacios y guiones en un teléfono cuesta una línea y evita la mitad de los errores.",
+      "senales": [
+        "no acepta mi teléfono",
+        "¿cómo hay que escribir la fecha?",
+        "me da error y no sé por qué"
+      ],
+      "salioDe": "La validación a mano del sitio del Instituto, que normaliza antes de rechazar."
+    },
+    {
+      "id": "campos-obligatorios-sin-marcar",
+      "titulo": "No se sabe qué campos hacen falta hasta que se envía",
+      "gravedad": "media",
+      "sintoma": "Se llena lo que parece necesario y al enviar aparecen tres campos obligatorios.",
+      "causa": "Lo obligatorio no está marcado, o está marcado sólo con un asterisco sin leyenda.",
+      "porque": "Marcar todo se ve cargado, y marcar sólo lo opcional exige que sean pocos.",
+      "arreglo": "Marcar de forma explícita y decir en palabras cuál es la convención al principio del formulario.",
+      "comoCazarlo": "Mirar el formulario sin enviarlo y decir qué campos hacen falta.",
+      "consejo": "Si casi todo es obligatorio, es mejor marcar lo opcional.",
+      "senales": [
+        "no sabía que era obligatorio",
+        "me faltaban campos",
+        "¿qué significa el asterisco?"
+      ],
+      "salioDe": "Prácticas de formularios accesibles recogidas en web.dev."
+    },
+    {
+      "id": "pedir-datos-que-no-se-usan",
+      "titulo": "El formulario pide cosas que a nadie le hacen falta",
+      "gravedad": "media",
+      "sintoma": "Mucha gente empieza el formulario y no lo termina.",
+      "causa": "Se piden campos «por si acaso» que nadie usa después.",
+      "porque": "Añadir un campo cuesta un minuto y quitarlo exige convencer a quien lo pidió.",
+      "arreglo": "Por cada campo, nombrar quién usa ese dato y para qué. Lo que no tenga dueño, fuera.",
+      "comoCazarlo": "Mirar cuántos abandonan y en qué campo. Y revisar si los datos guardados se consultan alguna vez.",
+      "consejo": "Cada campo tiene un costo de abandono; los datos que no se usan además hay que custodiarlos.",
+      "senales": [
+        "muy pocos completan el formulario",
+        "¿para qué piden eso?",
+        "es muy largo"
+      ],
+      "salioDe": "Los tres formularios del sitio del Instituto: doce campos en total, y cada uno con destino."
+    },
+    {
+      "id": "el-teclado-equivocado-en-el-telefono",
+      "titulo": "Para escribir un correo sale el teclado de texto",
+      "gravedad": "baja",
+      "sintoma": "En el teléfono hay que cambiar de teclado para escribir un correo o un número.",
+      "causa": "El campo no declara su tipo ni el modo de entrada.",
+      "porque": "En escritorio no se nota ninguna diferencia.",
+      "arreglo": "Declarar tipo y modo de entrada por campo: correo, teléfono, número, decimal.",
+      "comoCazarlo": "Recorrer el formulario en un teléfono y mirar qué teclado sale en cada campo.",
+      "consejo": "Y con el autocompletado declarado, mucha gente llena el formulario en un toque.",
+      "senales": [
+        "sale el teclado equivocado",
+        "tengo que cambiar a números",
+        "es incómodo en el celular"
+      ],
+      "salioDe": "Prácticas de formularios móviles; los inputs de 16 px del Instituto evitan además el zoom de iOS."
+    },
+    {
+      "id": "el-envio-que-no-se-sabe-si-llego",
+      "titulo": "Se envía y no se sabe si llegó",
+      "gravedad": "alta",
+      "sintoma": "La gente vuelve a enviar el mismo formulario dos y tres veces.",
+      "causa": "No hay confirmación clara, o la confirmación es un mensaje pequeño que desaparece.",
+      "porque": "Quien lo programó ve la petición en la consola y da por hecho que se sabe.",
+      "arreglo": "Confirmación explícita y persistente, con lo que sigue y con un identificador si lo hay.",
+      "comoCazarlo": "Enviar y preguntarse, sin mirar el código, si llegó.",
+      "consejo": "Un folio da algo que citar cuando alguien escribe preguntando.",
+      "senales": [
+        "¿se envió?",
+        "lo mandé tres veces",
+        "no sé si les llegó"
+      ],
+      "salioDe": "El sitio del Instituto: la respuesta lleva folio y qué esperar."
+    }
+  ]
+}

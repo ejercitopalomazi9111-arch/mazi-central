@@ -1,0 +1,92 @@
+{
+  "area": "avisos",
+  "nombre": "Avisos y notificaciones",
+  "que": "Interrumpir a alguien: cuándo vale la pena, cuánto dura, y qué pasa cuando llegan varios.",
+  "neuronas": [
+    {
+      "id": "aviso-que-desaparece-antes-de-leerse",
+      "titulo": "El mensaje se va antes de terminar de leerlo",
+      "gravedad": "media",
+      "sintoma": "Aparece un aviso, se empieza a leer y desaparece.",
+      "causa": "La duración es fija y corta, sin relación con la longitud del texto.",
+      "porque": "Se ajusta con un texto de prueba corto.",
+      "arreglo": "Duración según la longitud, con un mínimo. Y lo importante no se va solo: se cierra.",
+      "comoCazarlo": "Leer el aviso más largo en voz alta y cronometrar.",
+      "consejo": "Si el aviso lleva una acción, no puede desaparecer solo.",
+      "senales": [
+        "no me dio tiempo de leer",
+        "desapareció muy rápido",
+        "¿qué decía?"
+      ],
+      "salioDe": "Práctica de avisos temporales; la duración por longitud es la regla mínima."
+    },
+    {
+      "id": "avisos-que-se-apilan-y-tapan",
+      "titulo": "Llegan cinco avisos y tapan la interfaz",
+      "gravedad": "media",
+      "sintoma": "Una racha de mensajes cubre la esquina y no deja usar nada.",
+      "causa": "No hay tope ni agrupación: cada evento crea su aviso.",
+      "porque": "Uno a uno funciona, y la racha sólo aparece en producción.",
+      "arreglo": "Tope de avisos visibles, agrupación de los repetidos y una salida para verlos todos.",
+      "comoCazarlo": "Provocar diez eventos seguidos.",
+      "consejo": "«3 archivos subidos» dice lo mismo que tres avisos y ocupa un tercio.",
+      "senales": [
+        "se llenó de avisos",
+        "no puedo tocar nada",
+        "salen muchos mensajes"
+      ],
+      "salioDe": "La pila de avisos del banco de pruebas, con tope y salida por deslizamiento."
+    },
+    {
+      "id": "aviso-que-empuja-el-contenido",
+      "titulo": "El aviso mueve lo que estaba leyendo",
+      "gravedad": "media",
+      "sintoma": "Aparece una barra arriba y todo el contenido baja de golpe.",
+      "causa": "El aviso ocupa sitio en el flujo en vez de superponerse.",
+      "porque": "Ponerlo en el flujo es lo más simple y no tapa nada.",
+      "arreglo": "Superponer, o reservar el hueco desde el principio.",
+      "comoCazarlo": "Provocar el aviso mientras se lee algo y mirar si el texto salta.",
+      "consejo": "Es la misma causa que el salto de imagen: algo que llega y ocupa sitio que no estaba reservado.",
+      "senales": [
+        "salta el contenido cuando sale el aviso",
+        "se mueve todo",
+        "perdí el renglón"
+      ],
+      "salioDe": "El caso de la consola del banco, que se aparta con transform y no empuja."
+    },
+    {
+      "id": "notificacion-para-lo-que-no-urge",
+      "titulo": "Se notifica todo y la gente lo apaga",
+      "gravedad": "media",
+      "sintoma": "El permiso de notificaciones se revoca o se ignoran todas.",
+      "causa": "Se usa el canal más intrusivo para cosas que podían esperar.",
+      "porque": "Cada área quiere su notificación y ninguna se siente prescindible por sí sola.",
+      "arreglo": "Reservar la interrupción para lo que la persona necesita saber AHORA. El resto, dentro de la aplicación.",
+      "comoCazarlo": "Contar cuántas notificaciones se mandan por semana y cuántas provocan una acción.",
+      "consejo": "Pedir el permiso al entrar, sin contexto, es la forma más rápida de perderlo.",
+      "senales": [
+        "apagué las notificaciones",
+        "son demasiadas",
+        "no sirven de nada"
+      ],
+      "salioDe": "La sala: el permiso se pide con un gesto de la persona y sólo se avisa si la pestaña no está delante."
+    },
+    {
+      "id": "vibrar-y-sonar-sin-medida",
+      "titulo": "Vibra y suena en cada evento",
+      "gravedad": "baja",
+      "sintoma": "El teléfono vibra tanto que se silencia la aplicación entera.",
+      "causa": "Cada mensaje dispara vibración y sonido, sin distinguir importancia ni repetición.",
+      "porque": "El efecto se prueba con un evento y se siente bien.",
+      "arreglo": "Distinguir: patrón corto para lo secundario, sólo la primera vez para lo repetido, y nada si la persona ya está mirando.",
+      "comoCazarlo": "Simular una racha y contar vibraciones.",
+      "consejo": "Que alguien esté escribiendo no merece el mismo aviso que un mensaje entregado.",
+      "senales": [
+        "vibra demasiado",
+        "silencié la app",
+        "suena por todo"
+      ],
+      "salioDe": "La sala: vibración distinta para mensaje y para «está escribiendo», y sólo la primera vez."
+    }
+  ]
+}
