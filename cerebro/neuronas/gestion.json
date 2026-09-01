@@ -1,247 +1,344 @@
 {
- "area": "gestion",
- "nombre": "Gestión de empresas",
- "que": "Planificar, medir y repartir recursos — y las maneras de que el tablero diga que todo va bien.",
- "neuronas": [
-  {
-   "id": "kpi-que-se-despego",
-   "titulo": "El indicador sube y el resultado no",
-   "gravedad": "alta",
-   "sintoma": "El KPI del trimestre se cumple y el ingreso, la retención o el coste no se mueven.",
-   "causa": "El indicador dejó de representar lo que representaba. Pasa siempre que se premia: la gente lo optimiza directamente.",
-   "porque": "Un indicador claro da juntas cortas. Uno correcto da juntas incómodas.",
-   "arreglo": "Llevar en la misma gráfica el indicador y el resultado que representa. Si se separan dos periodos seguidos, el indicador caducó.",
-   "comoCazarlo": "Calcula la correlación entre las dos series de los últimos seis periodos. Si baja de 0.3, ya no están midiendo lo mismo.",
-   "consejo": "Los indicadores heredados fallan en lo que más se les pide: seguir el avance, alinear a la gente y priorizar recursos.",
-   "salioDe": "«The Future of Strategic Measurement: Enhancing KPIs With AI» · MIT Sloan Management Review",
-   "senales": [
-    "cumplimos el kpi",
-    "el indicador va bien"
-   ]
-  },
-  {
-   "id": "objetivos-que-nadie-baja",
-   "titulo": "Los objetivos de arriba no llegan al lunes",
-   "gravedad": "alta",
-   "sintoma": "Hay objetivos anuales bien redactados y nadie sabe qué hace distinto esta semana por ellos.",
-   "causa": "Falta la traducción. Un objetivo que no cambia una decisión concreta es una declaración.",
-   "porque": "Redactar objetivos es barato y se hace en una tarde; traducirlos obliga a cancelar cosas.",
-   "arreglo": "Por cada objetivo, escribir una decisión que se toma distinto por su culpa. Sin esa decisión, el objetivo no está operando.",
-   "comoCazarlo": "Pregunta a tres personas qué hacen distinto por el objetivo. Tres respuestas distintas o ninguna: no bajó.",
-   "consejo": "Un objetivo sin dueño y sin fecha es una intención con formato de objetivo.",
-   "salioDe": "Síntesis de OKR y planes operativos · GitLab Handbook y MIT SMR",
-   "senales": [
-    "okr",
-    "objetivos del año"
-   ]
-  },
-  {
-   "id": "riesgo-sin-cifra",
-   "titulo": "Todos hablan del riesgo y nadie lo cuantifica",
-   "gravedad": "alta",
-   "sintoma": "Se menciona el riesgo en cada junta y no hay una exposición máxima aceptada por escrito.",
-   "causa": "Conciencia sin instrumentos. Está medido: los directivos lo tienen muy presente y casi ninguno usa las herramientas.",
-   "porque": "Poner una cifra obliga a decir cuánto se está dispuesto a perder, y eso queda escrito.",
-   "arreglo": "Una sola cifra: la pérdida máxima aceptable en esta apuesta. Con eso ya se puede decidir; sin eso no.",
-   "comoCazarlo": "Pide la exposición máxima aceptada. Si no hay una cifra, no hay gestión de riesgo: hay preocupación.",
-   "consejo": "De 93 directivos encuestados, casi ninguno usaba frontera eficiente ni exposición máxima, y casi todos decían tenerlo presente.",
-   "salioDe": "Noy y Ellis, vía «Risk Management in Practice» · MIT Sloan Management Review",
-   "senales": [
-    "es arriesgado",
-    "hay que valorarlo"
-   ]
-  },
-  {
-   "id": "riesgo-nuevo-marco-viejo",
-   "titulo": "El riesgo nuevo se mide con el marco de antes",
-   "gravedad": "alta",
-   "sintoma": "Aparece una tecnología o un proveedor nuevo y se le aplica el mismo cuestionario de riesgo de siempre.",
-   "causa": "La capacidad de gestión de riesgo no crece al ritmo de lo que hay que gestionar. En el panel de expertos, el 62 % dijo que las organizaciones NO están ampliando esa capacidad lo suficiente.",
-   "porque": "El marco existente ya está aprobado y auditado; ampliarlo cuesta un proyecto.",
-   "arreglo": "Preguntar de cada riesgo nuevo si el marco actual puede siquiera nombrarlo. Si no tiene casilla, no se está midiendo: se está archivando.",
-   "comoCazarlo": "Busca el riesgo nuevo en el registro de riesgos. Si no aparece con nombre propio, no está gestionado.",
-   "consejo": "La velocidad del cambio, lo ambiguo del riesgo y el límite de la regulación son las tres razones que dieron los expertos.",
-   "salioDe": "«AI-Related Risks Test the Limits of Organizational Risk Management» · MIT SMR y BCG",
-   "senales": [
-    "ya tenemos un proceso",
-    "está en el registro"
-   ]
-  },
-  {
-   "id": "la-junta-sin-salida",
-   "titulo": "Salimos de la junta sin nada decidido",
-   "gravedad": "media",
-   "sintoma": "Cuatro horas de planificación y al terminar cada quien recuerda una conclusión distinta.",
-   "causa": "No se acordó de antemano con qué se sale. Sin salida definida, la junta se llena de lo que traiga cada uno.",
-   "porque": "Definir la salida obliga a decir que algo no cabe, y eso se pospone.",
-   "arreglo": "Escribir antes de entrar qué se tiene que poder decir al salir. En Atlassian nadie sale hasta tener un plan realista de dos o tres hitos con fecha aproximada.",
-   "comoCazarlo": "Al terminar, pide a dos asistentes que escriban la conclusión por separado. Si no coinciden, la junta no terminó.",
-   "consejo": "No hace falta un objetivo formal en papel: hace falta que los dos que la convocan sepan lo mismo.",
-   "salioDe": "«A product manager and a dev manager walk into a product planning meeting» · Atlassian",
-   "senales": [
-    "quedamos en",
-    "otra junta"
-   ]
-  },
-  {
-   "id": "consistencia-sin-quien",
-   "titulo": "Cada equipo lo hace distinto y nadie es dueño de que no",
-   "gravedad": "media",
-   "sintoma": "Tres equipos de la misma región operan con tres procesos y nadie lo nota hasta que un cliente cambia de equipo.",
-   "causa": "La consistencia entre equipos no es de nadie: cada responsable optimiza el suyo, que es su trabajo.",
-   "porque": "Ser consistente cuesta coordinación y no aparece en la métrica de ningún equipo.",
-   "arreglo": "Nombrar a alguien responsable de la consistencia REGIONAL, no de un equipo, con acceso a los tres y sin gestionar a ninguno.",
-   "comoCazarlo": "Pregunta el mismo procedimiento a tres equipos. Tres respuestas distintas: no hay dueño.",
-   "consejo": "GitLab le pone nombre al puesto: el gerente de operaciones de la región existe para eso y para nada más.",
-   "salioDe": "«CSM Operations Manager» · The GitLab Handbook",
-   "senales": [
-    "cada quien lo hace",
-    "depende del equipo"
-   ]
-  },
-  {
-   "id": "la-estrategia-sin-talento",
-   "titulo": "El plan no tiene quién lo haga",
-   "gravedad": "alta",
-   "sintoma": "La estrategia está aprobada y seis meses después no arrancó ninguna de sus cinco líneas.",
-   "causa": "Se planeó dirección y no gente. La implantación depende de a quién se atrae, se desarrolla y se coloca.",
-   "porque": "La dirección se decide en una semana; la gente tarda un año y no cabe en la misma presentación.",
-   "arreglo": "Por cada línea del plan, un nombre y una respuesta a «¿ya está en la casa?». Sin nombre, la línea no arrancó.",
-   "comoCazarlo": "Recorre el plan preguntando «¿quién?». Los huecos son el calendario real.",
-   "consejo": "GE trata su sistema de talento como su herramienta de implantación más potente, no como un anexo.",
-   "salioDe": "«GE Talent Management: Aligning Hiring With Strategy» · MIT Sloan Management Review",
-   "senales": [
-    "no arrancó",
-    "falta alguien"
-   ]
-  },
-  {
-   "id": "presupuesto-que-no-se-mueve",
-   "titulo": "El presupuesto es el del año pasado más un porcentaje",
-   "gravedad": "media",
-   "sintoma": "La asignación de recursos repite la del año anterior con un ajuste, sin volver a comparar las opciones.",
-   "causa": "La inercia presupuestaria. Reasignar obliga a quitarle a alguien, y quitarle a alguien tiene nombre y cara.",
-   "porque": "Repetir no requiere justificación; mover sí.",
-   "arreglo": "Una vez al año, poner a competir todas las partidas desde cero con el mismo criterio, incluidas las heredadas.",
-   "comoCazarlo": "Compara el reparto de este año con el de hace tres. Si la forma es la misma, no se está asignando: se está repitiendo.",
-   "consejo": "La asignación de recursos es uno de los pocos actos donde la estrategia se vuelve verificable.",
-   "salioDe": "Síntesis de asignación de recursos · MIT Sloan Management Review",
-   "senales": [
-    "más un diez por ciento",
-    "como el año pasado"
-   ]
-  },
-  {
-   "id": "metrica-solo-hacia-arriba",
-   "titulo": "El reporte sólo enseña lo que va bien",
-   "gravedad": "alta",
-   "sintoma": "El tablero de dirección tiene ocho indicadores y los ocho están en verde.",
-   "causa": "Los indicadores se eligieron después de saber los resultados, o se cambiaron cuando uno se puso rojo.",
-   "porque": "Un tablero verde hace juntas cortas y agradables. Uno honesto las hace largas.",
-   "arreglo": "Fijar los indicadores al principio del periodo y no tocarlos hasta el final. Si uno hay que cambiarlo, se dice en el reporte.",
-   "comoCazarlo": "Mira si algún indicador cambió de definición a mitad del año. Uno solo ya invalida la serie entera.",
-   "consejo": "Un tablero donde nunca hay rojo no está midiendo: está informando.",
-   "salioDe": "Síntesis de medición estratégica · MIT Sloan Management Review",
-   "senales": [
-    "todo en verde",
-    "cambiamos la métrica"
-   ]
-  },
-  {
-   "id": "delegar-el-resultado-no",
-   "titulo": "Deleguemos la tarea pero no la decisión",
-   "gravedad": "media",
-   "sintoma": "Se reparte el trabajo y todas las decisiones siguen subiendo al mismo escritorio.",
-   "causa": "Se delegó ejecución sin delegar criterio. El cuello de botella no es la carga: es la autoridad.",
-   "porque": "Delegar decisiones expone a que se decidan distinto de como uno lo haría.",
-   "arreglo": "Delegar por rango: hasta tal cifra o tal alcance, decide quien está. Por encima, sube. El rango se escribe, no se supone.",
-   "comoCazarlo": "Cuenta las decisiones que pasaron por ti esta semana y que podrías haber leído después. Ése es el cuello.",
-   "consejo": "Si todo lo que baja vuelve a subir, no se delegó: se repartió el tecleo.",
-   "salioDe": "Síntesis de delegación · Wharton y GitLab Handbook",
-   "senales": [
-    "tengo que aprobarlo",
-    "pregúntame"
-   ]
-  },
-  {
-   "id": "plan-sin-escenario-malo",
-   "titulo": "El plan sólo contempla que salga bien",
-   "gravedad": "alta",
-   "sintoma": "El caso de negocio tiene una columna y es la buena.",
-   "causa": "Se planeó sobre la media. Los proyectos grandes no fallan por la media sino por la cola.",
-   "porque": "El escenario malo hace que el número final no sea aprobable, y quien presenta quiere que se apruebe.",
-   "arreglo": "Tres escenarios, y en el malo la pregunta que importa: ¿esto se puede deshacer y a qué coste?",
-   "comoCazarlo": "Pide el escenario en que sale mal. Si no existe en papel, no se ha analizado.",
-   "consejo": "Después de un proyecto grande no quedan ni ganas ni dinero para el segundo intento.",
-   "salioDe": "«Using Scenario Analysis to Manage the Strategic Risks of Reengineering» · MIT Sloan Management Review",
-   "senales": [
-    "el caso base",
-    "saldrá bien"
-   ]
-  },
-  {
-   "id": "la-reunion-que-sustituye-al-documento",
-   "titulo": "Hay que estar en la junta para enterarse",
-   "gravedad": "media",
-   "sintoma": "La información importante sólo existe en juntas, así que quien falta se queda fuera y quien está pierde la tarde.",
-   "causa": "No hay documento. La junta se usa para transmitir, que es lo que peor hace.",
-   "porque": "Escribir cuesta más que hablar, y el coste lo paga quien escribe mientras el ahorro lo reciben veinte.",
-   "arreglo": "Documento primero, junta después y sólo para lo que no se resolvió leyendo. Es el orden, no una preferencia.",
-   "comoCazarlo": "Si alguien que faltó no puede ponerse al día en diez minutos leyendo, la junta era el único registro.",
-   "consejo": "Una junta de veinte personas y una hora cuesta veinte horas. Casi nunca se cuenta así.",
-   "salioDe": "«GitLab Meeting Best Practices» · The GitLab Handbook",
-   "senales": [
-    "te lo cuento en la junta",
-    "no estuviste"
-   ]
-  },
-  {
-   "id": "contratar-para-tapar-el-proceso",
-   "titulo": "Contratamos porque el proceso no aguanta",
-   "gravedad": "media",
-   "sintoma": "Cada trimestre hace falta más gente para el mismo volumen de trabajo.",
-   "causa": "El coste del proceso se está pagando con plantilla. Es el arreglo más caro y el más rápido de aprobar.",
-   "porque": "Contratar tiene presupuesto y un proceso claro; rediseñar no tiene ni una cosa ni la otra.",
-   "arreglo": "Antes de abrir una vacante, medir cuánto del trabajo del puesto es coordinación, reproceso o espera. Si pasa de un tercio, el puesto está tapando un proceso.",
-   "comoCazarlo": "Pregunta en qué se va el día de las últimas tres contrataciones. Si es en coordinar, no hacía falta gente.",
-   "consejo": "Reconocer un problema estructural cuesta: lo primero que se piensa siempre es que falta gente.",
-   "salioDe": "Síntesis de diseño organizativo · MIT Sloan Management Review",
-   "senales": [
-    "necesitamos más gente",
-    "no damos abasto"
-   ]
-  },
-  {
-   "id": "la-excepcion-permanente",
-   "titulo": "La excepción de hace un año sigue viva",
-   "gravedad": "media",
-   "sintoma": "Se saltó el proceso «sólo esta vez» y ese camino sigue abierto y ya lo usan tres equipos.",
-   "causa": "Las excepciones no caducan solas. Nadie tiene el trabajo de cerrarlas.",
-   "porque": "Abrir la excepción resolvió un problema real y visible; cerrarla no resuelve nada visible.",
-   "arreglo": "Toda excepción se aprueba CON fecha de caducidad. Al llegar la fecha, o se cierra o se convierte en proceso, y las dos cosas se deciden.",
-   "comoCazarlo": "Haz la lista de excepciones vivas. Las que no tienen fecha son procesos no escritos.",
-   "consejo": "Un proceso con cinco excepciones permanentes ya no es el proceso.",
-   "salioDe": "Síntesis de gobierno operativo · GitLab Handbook",
-   "senales": [
-    "sólo esta vez",
-    "hacemos una excepción"
-   ]
-  },
-  {
-   "id": "medir-al-que-mide",
-   "titulo": "El dueño del número también lo calcula",
-   "gravedad": "alta",
-   "sintoma": "La misma persona fija la meta, mide el avance y presenta el resultado.",
-   "causa": "No hace falta mala fe: quien define la medición define la conclusión.",
-   "porque": "Es lo más eficiente en tiempo, y por eso se organiza así casi siempre.",
-   "arreglo": "Separar quién define la métrica de quién la calcula. No hace falta un departamento: basta con que sean dos personas distintas.",
-   "comoCazarlo": "Pregunta quién puede cambiar la definición del indicador. Si es la misma persona a la que evalúa, el número es una opinión.",
-   "consejo": "La separación no es desconfianza: es la única forma de que el número sirva para decidir.",
-   "salioDe": "Síntesis de gobierno de métricas · MIT Sloan Management Review",
-   "senales": [
-    "yo llevo ese número",
-    "mi reporte"
-   ]
-  }
- ]
+  "area": "gestion",
+  "nombre": "Gestión de empresas",
+  "que": "Planificar, medir y repartir recursos — y las maneras de que el tablero diga que todo va bien.",
+  "neuronas": [
+    {
+      "id": "kpi-que-se-despego",
+      "titulo": "El indicador sube y el resultado no",
+      "gravedad": "alta",
+      "sintoma": "El KPI del trimestre se cumple y el ingreso, la retención o el coste no se mueven.",
+      "causa": "El indicador dejó de representar lo que representaba. Pasa siempre que se premia: la gente lo optimiza directamente.",
+      "porque": "Un indicador claro da juntas cortas. Uno correcto da juntas incómodas.",
+      "arreglo": "Llevar en la misma gráfica el indicador y el resultado que representa. Si se separan dos periodos seguidos, el indicador caducó.",
+      "comoCazarlo": "Calcula la correlación entre las dos series de los últimos seis periodos. Si baja de 0.3, ya no están midiendo lo mismo.",
+      "consejo": "Los indicadores heredados fallan en lo que más se les pide: seguir el avance, alinear a la gente y priorizar recursos.",
+      "salioDe": "«The Future of Strategic Measurement: Enhancing KPIs With AI» · MIT Sloan Management Review",
+      "senales": [
+        "cumplimos el kpi",
+        "el indicador va bien"
+      ],
+      "vecinas": [
+        "la-metrica-que-se-volvio-el-fin",
+        "medir-y-premiar",
+        "satisfaccion-como-meta",
+        "metrica-antes-que-pregunta",
+        "medir-al-que-mide"
+      ]
+    },
+    {
+      "id": "objetivos-que-nadie-baja",
+      "titulo": "Los objetivos de arriba no llegan al lunes",
+      "gravedad": "alta",
+      "sintoma": "Hay objetivos anuales bien redactados y nadie sabe qué hace distinto esta semana por ellos.",
+      "causa": "Falta la traducción. Un objetivo que no cambia una decisión concreta es una declaración.",
+      "porque": "Redactar objetivos es barato y se hace en una tarde; traducirlos obliga a cancelar cosas.",
+      "arreglo": "Por cada objetivo, escribir una decisión que se toma distinto por su culpa. Sin esa decisión, el objetivo no está operando.",
+      "comoCazarlo": "Pregunta a tres personas qué hacen distinto por el objetivo. Tres respuestas distintas o ninguna: no bajó.",
+      "consejo": "Un objetivo sin dueño y sin fecha es una intención con formato de objetivo.",
+      "salioDe": "Síntesis de OKR y planes operativos · GitLab Handbook y MIT SMR",
+      "senales": [
+        "okr",
+        "objetivos del año"
+      ],
+      "vecinas": [
+        "la-lista-de-deseos",
+        "la-transformacion-que-no-transforma",
+        "plan-sin-escenario-malo",
+        "la-visión-que-no-se-repite",
+        "lider-por-organigrama"
+      ]
+    },
+    {
+      "id": "riesgo-sin-cifra",
+      "titulo": "Todos hablan del riesgo y nadie lo cuantifica",
+      "gravedad": "alta",
+      "sintoma": "Se menciona el riesgo en cada junta y no hay una exposición máxima aceptada por escrito.",
+      "causa": "Conciencia sin instrumentos. Está medido: los directivos lo tienen muy presente y casi ninguno usa las herramientas.",
+      "porque": "Poner una cifra obliga a decir cuánto se está dispuesto a perder, y eso queda escrito.",
+      "arreglo": "Una sola cifra: la pérdida máxima aceptable en esta apuesta. Con eso ya se puede decidir; sin eso no.",
+      "comoCazarlo": "Pide la exposición máxima aceptada. Si no hay una cifra, no hay gestión de riesgo: hay preocupación.",
+      "consejo": "De 93 directivos encuestados, casi ninguno usaba frontera eficiente ni exposición máxima, y casi todos decían tenerlo presente.",
+      "salioDe": "Noy y Ellis, vía «Risk Management in Practice» · MIT Sloan Management Review",
+      "senales": [
+        "es arriesgado",
+        "hay que valorarlo"
+      ],
+      "vecinas": [
+        "riesgo-que-todos-ven-y-nadie-mide",
+        "riesgo-nuevo-marco-viejo",
+        "reversible-o-no"
+      ]
+    },
+    {
+      "id": "riesgo-nuevo-marco-viejo",
+      "titulo": "El riesgo nuevo se mide con el marco de antes",
+      "gravedad": "alta",
+      "sintoma": "Aparece una tecnología o un proveedor nuevo y se le aplica el mismo cuestionario de riesgo de siempre.",
+      "causa": "La capacidad de gestión de riesgo no crece al ritmo de lo que hay que gestionar. En el panel de expertos, el 62 % dijo que las organizaciones NO están ampliando esa capacidad lo suficiente.",
+      "porque": "El marco existente ya está aprobado y auditado; ampliarlo cuesta un proyecto.",
+      "arreglo": "Preguntar de cada riesgo nuevo si el marco actual puede siquiera nombrarlo. Si no tiene casilla, no se está midiendo: se está archivando.",
+      "comoCazarlo": "Busca el riesgo nuevo en el registro de riesgos. Si no aparece con nombre propio, no está gestionado.",
+      "consejo": "La velocidad del cambio, lo ambiguo del riesgo y el límite de la regulación son las tres razones que dieron los expertos.",
+      "salioDe": "«AI-Related Risks Test the Limits of Organizational Risk Management» · MIT SMR y BCG",
+      "senales": [
+        "ya tenemos un proceso",
+        "está en el registro"
+      ],
+      "vecinas": [
+        "riesgo-que-todos-ven-y-nadie-mide",
+        "riesgo-sin-cifra",
+        "reversible-o-no",
+        "la-reputacion-tambien-se-gestiona",
+        "la-promesa-que-no-cumple-operaciones"
+      ]
+    },
+    {
+      "id": "la-junta-sin-salida",
+      "titulo": "Salimos de la junta sin nada decidido",
+      "gravedad": "media",
+      "sintoma": "Cuatro horas de planificación y al terminar cada quien recuerda una conclusión distinta.",
+      "causa": "No se acordó de antemano con qué se sale. Sin salida definida, la junta se llena de lo que traiga cada uno.",
+      "porque": "Definir la salida obliga a decir que algo no cabe, y eso se pospone.",
+      "arreglo": "Escribir antes de entrar qué se tiene que poder decir al salir. En Atlassian nadie sale hasta tener un plan realista de dos o tres hitos con fecha aproximada.",
+      "comoCazarlo": "Al terminar, pide a dos asistentes que escriban la conclusión por separado. Si no coinciden, la junta no terminó.",
+      "consejo": "No hace falta un objetivo formal en papel: hace falta que los dos que la convocan sepan lo mismo.",
+      "salioDe": "«A product manager and a dev manager walk into a product planning meeting» · Atlassian",
+      "senales": [
+        "quedamos en",
+        "otra junta"
+      ],
+      "vecinas": [
+        "junta-sin-agenda",
+        "la-resaca-de-la-junta",
+        "la-lista-de-invitados-crece",
+        "sin-dueno-del-proceso",
+        "reunion-que-debio-ser-documento"
+      ]
+    },
+    {
+      "id": "consistencia-sin-quien",
+      "titulo": "Cada equipo lo hace distinto y nadie es dueño de que no",
+      "gravedad": "media",
+      "sintoma": "Tres equipos de la misma región operan con tres procesos y nadie lo nota hasta que un cliente cambia de equipo.",
+      "causa": "La consistencia entre equipos no es de nadie: cada responsable optimiza el suyo, que es su trabajo.",
+      "porque": "Ser consistente cuesta coordinación y no aparece en la métrica de ningún equipo.",
+      "arreglo": "Nombrar a alguien responsable de la consistencia REGIONAL, no de un equipo, con acceso a los tres y sin gestionar a ninguno.",
+      "comoCazarlo": "Pregunta el mismo procedimiento a tres equipos. Tres respuestas distintas: no hay dueño.",
+      "consejo": "GitLab le pone nombre al puesto: el gerente de operaciones de la región existe para eso y para nada más.",
+      "salioDe": "«CSM Operations Manager» · The GitLab Handbook",
+      "senales": [
+        "cada quien lo hace",
+        "depende del equipo"
+      ],
+      "vecinas": [
+        "sin-dueno-del-proceso",
+        "automatizacion-sin-dueno",
+        "la-idea-sin-dueno",
+        "embudo-de-libro",
+        "el-embudo-sin-etapas"
+      ]
+    },
+    {
+      "id": "la-estrategia-sin-talento",
+      "titulo": "El plan no tiene quién lo haga",
+      "gravedad": "alta",
+      "sintoma": "La estrategia está aprobada y seis meses después no arrancó ninguna de sus cinco líneas.",
+      "causa": "Se planeó dirección y no gente. La implantación depende de a quién se atrae, se desarrolla y se coloca.",
+      "porque": "La dirección se decide en una semana; la gente tarda un año y no cabe en la misma presentación.",
+      "arreglo": "Por cada línea del plan, un nombre y una respuesta a «¿ya está en la casa?». Sin nombre, la línea no arrancó.",
+      "comoCazarlo": "Recorre el plan preguntando «¿quién?». Los huecos son el calendario real.",
+      "consejo": "GE trata su sistema de talento como su herramienta de implantación más potente, no como un anexo.",
+      "salioDe": "«GE Talent Management: Aligning Hiring With Strategy» · MIT Sloan Management Review",
+      "senales": [
+        "no arrancó",
+        "falta alguien"
+      ],
+      "vecinas": [
+        "la-estrategia-sin-quien-la-hace",
+        "contratar-para-tapar-el-proceso",
+        "la-idea-sin-dueno"
+      ]
+    },
+    {
+      "id": "presupuesto-que-no-se-mueve",
+      "titulo": "El presupuesto es el del año pasado más un porcentaje",
+      "gravedad": "media",
+      "sintoma": "La asignación de recursos repite la del año anterior con un ajuste, sin volver a comparar las opciones.",
+      "causa": "La inercia presupuestaria. Reasignar obliga a quitarle a alguien, y quitarle a alguien tiene nombre y cara.",
+      "porque": "Repetir no requiere justificación; mover sí.",
+      "arreglo": "Una vez al año, poner a competir todas las partidas desde cero con el mismo criterio, incluidas las heredadas.",
+      "comoCazarlo": "Compara el reparto de este año con el de hace tres. Si la forma es la misma, no se está asignando: se está repitiendo.",
+      "consejo": "La asignación de recursos es uno de los pocos actos donde la estrategia se vuelve verificable.",
+      "salioDe": "Síntesis de asignación de recursos · MIT Sloan Management Review",
+      "senales": [
+        "más un diez por ciento",
+        "como el año pasado"
+      ],
+      "vecinas": [
+        "territorio-viejo-mata-al-vendedor",
+        "cuota-inventada",
+        "precio-por-costumbre"
+      ]
+    },
+    {
+      "id": "metrica-solo-hacia-arriba",
+      "titulo": "El reporte sólo enseña lo que va bien",
+      "gravedad": "alta",
+      "sintoma": "El tablero de dirección tiene ocho indicadores y los ocho están en verde.",
+      "causa": "Los indicadores se eligieron después de saber los resultados, o se cambiaron cuando uno se puso rojo.",
+      "porque": "Un tablero verde hace juntas cortas y agradables. Uno honesto las hace largas.",
+      "arreglo": "Fijar los indicadores al principio del periodo y no tocarlos hasta el final. Si uno hay que cambiarlo, se dice en el reporte.",
+      "comoCazarlo": "Mira si algún indicador cambió de definición a mitad del año. Uno solo ya invalida la serie entera.",
+      "consejo": "Un tablero donde nunca hay rojo no está midiendo: está informando.",
+      "salioDe": "Síntesis de medición estratégica · MIT Sloan Management Review",
+      "senales": [
+        "todo en verde",
+        "cambiamos la métrica"
+      ],
+      "vecinas": [
+        "el-informe-que-nadie-lee",
+        "medir-lo-que-la-agencia-mide",
+        "medir-al-que-mide",
+        "la-nota-global-por-delante",
+        "el-que-decide-habla-primero"
+      ]
+    },
+    {
+      "id": "delegar-el-resultado-no",
+      "titulo": "Deleguemos la tarea pero no la decisión",
+      "gravedad": "media",
+      "sintoma": "Se reparte el trabajo y todas las decisiones siguen subiendo al mismo escritorio.",
+      "causa": "Se delegó ejecución sin delegar criterio. El cuello de botella no es la carga: es la autoridad.",
+      "porque": "Delegar decisiones expone a que se decidan distinto de como uno lo haría.",
+      "arreglo": "Delegar por rango: hasta tal cifra o tal alcance, decide quien está. Por encima, sube. El rango se escribe, no se supone.",
+      "comoCazarlo": "Cuenta las decisiones que pasaron por ti esta semana y que podrías haber leído después. Ése es el cuello.",
+      "consejo": "Si todo lo que baja vuelve a subir, no se delegó: se repartió el tecleo.",
+      "salioDe": "Síntesis de delegación · Wharton y GitLab Handbook",
+      "senales": [
+        "tengo que aprobarlo",
+        "pregúntame"
+      ],
+      "vecinas": [
+        "delegar-la-tarea-sin-el-porque",
+        "proteger-al-equipo-de-todo",
+        "la-distancia-de-afinidad",
+        "objetivos-que-nadie-baja",
+        "la-visión-que-no-se-repite"
+      ]
+    },
+    {
+      "id": "plan-sin-escenario-malo",
+      "titulo": "El plan sólo contempla que salga bien",
+      "gravedad": "alta",
+      "sintoma": "El caso de negocio tiene una columna y es la buena.",
+      "causa": "Se planeó sobre la media. Los proyectos grandes no fallan por la media sino por la cola.",
+      "porque": "El escenario malo hace que el número final no sea aprobable, y quien presenta quiere que se apruebe.",
+      "arreglo": "Tres escenarios, y en el malo la pregunta que importa: ¿esto se puede deshacer y a qué coste?",
+      "comoCazarlo": "Pide el escenario en que sale mal. Si no existe en papel, no se ha analizado.",
+      "consejo": "Después de un proyecto grande no quedan ni ganas ni dinero para el segundo intento.",
+      "salioDe": "«Using Scenario Analysis to Manage the Strategic Risks of Reengineering» · MIT Sloan Management Review",
+      "senales": [
+        "el caso base",
+        "saldrá bien"
+      ],
+      "vecinas": [
+        "la-lista-de-deseos",
+        "la-transformacion-que-no-transforma",
+        "objetivos-que-nadie-baja",
+        "el-escenario-unico",
+        "modelar-al-competidor"
+      ]
+    },
+    {
+      "id": "la-reunion-que-sustituye-al-documento",
+      "titulo": "Hay que estar en la junta para enterarse",
+      "gravedad": "media",
+      "sintoma": "La información importante sólo existe en juntas, así que quien falta se queda fuera y quien está pierde la tarde.",
+      "causa": "No hay documento. La junta se usa para transmitir, que es lo que peor hace.",
+      "porque": "Escribir cuesta más que hablar, y el coste lo paga quien escribe mientras el ahorro lo reciben veinte.",
+      "arreglo": "Documento primero, junta después y sólo para lo que no se resolvió leyendo. Es el orden, no una preferencia.",
+      "comoCazarlo": "Si alguien que faltó no puede ponerse al día en diez minutos leyendo, la junta era el único registro.",
+      "consejo": "Una junta de veinte personas y una hora cuesta veinte horas. Casi nunca se cuenta así.",
+      "salioDe": "«GitLab Meeting Best Practices» · The GitLab Handbook",
+      "senales": [
+        "te lo cuento en la junta",
+        "no estuviste"
+      ],
+      "vecinas": [
+        "reunion-que-debio-ser-documento",
+        "asincrono-de-nombre",
+        "demo-en-vivo-obligatoria"
+      ]
+    },
+    {
+      "id": "contratar-para-tapar-el-proceso",
+      "titulo": "Contratamos porque el proceso no aguanta",
+      "gravedad": "media",
+      "sintoma": "Cada trimestre hace falta más gente para el mismo volumen de trabajo.",
+      "causa": "El coste del proceso se está pagando con plantilla. Es el arreglo más caro y el más rápido de aprobar.",
+      "porque": "Contratar tiene presupuesto y un proceso claro; rediseñar no tiene ni una cosa ni la otra.",
+      "arreglo": "Antes de abrir una vacante, medir cuánto del trabajo del puesto es coordinación, reproceso o espera. Si pasa de un tercio, el puesto está tapando un proceso.",
+      "comoCazarlo": "Pregunta en qué se va el día de las últimas tres contrataciones. Si es en coordinar, no hacía falta gente.",
+      "consejo": "Reconocer un problema estructural cuesta: lo primero que se piensa siempre es que falta gente.",
+      "salioDe": "Síntesis de diseño organizativo · MIT Sloan Management Review",
+      "senales": [
+        "necesitamos más gente",
+        "no damos abasto"
+      ],
+      "vecinas": [
+        "la-estrategia-sin-quien-la-hace",
+        "la-estrategia-sin-talento",
+        "la-idea-sin-dueno",
+        "la-herramienta-en-vez-del-proceso",
+        "gastar-en-ia-sin-plan"
+      ]
+    },
+    {
+      "id": "la-excepcion-permanente",
+      "titulo": "La excepción de hace un año sigue viva",
+      "gravedad": "media",
+      "sintoma": "Se saltó el proceso «sólo esta vez» y ese camino sigue abierto y ya lo usan tres equipos.",
+      "causa": "Las excepciones no caducan solas. Nadie tiene el trabajo de cerrarlas.",
+      "porque": "Abrir la excepción resolvió un problema real y visible; cerrarla no resuelve nada visible.",
+      "arreglo": "Toda excepción se aprueba CON fecha de caducidad. Al llegar la fecha, o se cierra o se convierte en proceso, y las dos cosas se deciden.",
+      "comoCazarlo": "Haz la lista de excepciones vivas. Las que no tienen fecha son procesos no escritos.",
+      "consejo": "Un proceso con cinco excepciones permanentes ya no es el proceso.",
+      "salioDe": "Síntesis de gobierno operativo · GitLab Handbook",
+      "senales": [
+        "sólo esta vez",
+        "hacemos una excepción"
+      ],
+      "vecinas": [
+        "la-excepcion-que-se-quedo",
+        "el-piloto-eterno",
+        "matar-tarde",
+        "urgencia-permanente",
+        "lo-urgente-come-a-lo-importante"
+      ]
+    },
+    {
+      "id": "medir-al-que-mide",
+      "titulo": "El dueño del número también lo calcula",
+      "gravedad": "alta",
+      "sintoma": "La misma persona fija la meta, mide el avance y presenta el resultado.",
+      "causa": "No hace falta mala fe: quien define la medición define la conclusión.",
+      "porque": "Es lo más eficiente en tiempo, y por eso se organiza así casi siempre.",
+      "arreglo": "Separar quién define la métrica de quién la calcula. No hace falta un departamento: basta con que sean dos personas distintas.",
+      "comoCazarlo": "Pregunta quién puede cambiar la definición del indicador. Si es la misma persona a la que evalúa, el número es una opinión.",
+      "consejo": "La separación no es desconfianza: es la única forma de que el número sirva para decidir.",
+      "salioDe": "Síntesis de gobierno de métricas · MIT Sloan Management Review",
+      "senales": [
+        "yo llevo ese número",
+        "mi reporte"
+      ],
+      "vecinas": [
+        "la-metrica-que-se-volvio-el-fin",
+        "kpi-que-se-despego",
+        "medir-y-premiar",
+        "satisfaccion-como-meta",
+        "metrica-antes-que-pregunta"
+      ]
+    }
+  ]
 }

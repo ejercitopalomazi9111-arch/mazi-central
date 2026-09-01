@@ -1,250 +1,342 @@
 {
- "area": "marketing",
- "nombre": "Marketing",
- "que": "Qué hace que a un cliente le llegue algo — y las formas de gastar bien el dinero en que no le llegue.",
- "neuronas": [
-  {
-   "id": "segmentos-que-chocan",
-   "titulo": "Dos clientes distintos quieren cosas contrarias",
-   "gravedad": "alta",
-   "sintoma": "Un grupo pide exclusividad y otro accesibilidad, y la marca les habla a los dos con el mismo mensaje.",
-   "causa": "Crecer trajo un segundo segmento cuyo motivo de compra contradice al primero. El choque no se ve el primer trimestre: aparece cuando los dos coinciden en el mismo sitio.",
-   "porque": "Cada segmento por separado tiene buenos números, y sumar clientes siempre parece bueno.",
-   "arreglo": "Nombrar cada segmento por su MOTIVO, no por su edad o su código postal, y escribir qué quiere de la marca. Después, mirar dónde se cruzan: tienda, redes, atención. Ahí es donde chocan.",
-   "comoCazarlo": "Si el mismo mensaje suena mal a un segmento cuando le funciona al otro, ya están chocando.",
-   "consejo": "Segmentar por demografía esconde el choque; segmentar por el valor que cada uno saca lo enseña.",
-   "salioDe": "«The Growth Equation: Avoid Customer-segment Collisions» · Nano Tools for Leaders, Wharton",
-   "senales": [
-    "no les gustó a los de siempre",
-    "estamos confundiendo al cliente"
-   ]
-  },
-  {
-   "id": "la-marca-que-no-estira",
-   "titulo": "La marca no llega hasta donde la queremos llevar",
-   "gravedad": "alta",
-   "sintoma": "Se lanza una línea nueva bajo la misma marca y el cliente de siempre no la reconoce como suya.",
-   "causa": "El significado de una marca se puede estirar, pero tiene un límite, y ese límite lo pone el cliente, no la empresa.",
-   "porque": "Dentro de la casa la marca se siente elástica porque uno conoce la intención; fuera sólo se ve el producto.",
-   "arreglo": "Antes de estirar, preguntar a clientes de los dos segmentos qué significa la marca en una frase. Si las dos frases no admiten el producto nuevo, hace falta otra marca.",
-   "comoCazarlo": "Enseña el producto nuevo con la marca puesta a diez clientes actuales. Si tres preguntan «¿y esto por qué lo hacen ustedes?», no estira.",
-   "consejo": "Una marca que estira demasiado no se rompe de golpe: se vuelve borrosa, que es peor porque no avisa.",
-   "salioDe": "«The Growth Equation» · Wharton, y «What Leaders Still Get Wrong About Customer Portfolio Management» · MIT SMR",
-   "senales": [
-    "no parece de la marca",
-    "no lo entienden"
-   ]
-  },
-  {
-   "id": "global-es-calidad",
-   "titulo": "Lo «global» vende porque se lee como calidad",
-   "gravedad": "media",
-   "sintoma": "Se invierte en parecer internacional pensando que lo que atrae es el prestigio.",
-   "causa": "La investigación dice otra cosa: más del 90 % del valor añadido por percibirse como marca global viene de que se le atribuye CALIDAD, no prestigio.",
-   "porque": "El prestigio es lo que se ve en la campaña; la calidad percibida es lo que se construye en el producto y tarda más.",
-   "arreglo": "Mover el presupuesto de señalar prestigio a señalar calidad comprobable: garantías, procesos, datos, terceros que verifiquen.",
-   "comoCazarlo": "Pregunta a diez clientes por qué compran. Si contestan «porque es buena» y no «porque es de fuera», el prestigio no es lo que está vendiendo.",
-   "consejo": "El prestigio además caduca: cuando la novedad se va, se va con ella. La calidad percibida no.",
-   "salioDe": "Steenkamp y Batra, «How Perceived Brand Globalness Creates Brand Value», Journal of International Business Studies, 2003 · vía MIT SMR",
-   "senales": [
-    "marca internacional",
-    "prestigio"
-   ]
-  },
-  {
-   "id": "buscador-que-no-devuelve-clics",
-   "titulo": "Aparecemos en la búsqueda y nadie llega",
-   "gravedad": "alta",
-   "sintoma": "Las posiciones son buenas y las visitas caen: el buscador contesta con la respuesta y ya nadie entra.",
-   "causa": "La búsqueda con IA responde en la misma pantalla. La búsqueda sin clic quita puntos de contacto y los algoritmos priorizan distinto que el buscador clásico.",
-   "porque": "Las métricas de posición siguen viéndose bien, así que el tablero no avisa: sólo baja el tráfico y parece estacional.",
-   "arreglo": "Comprobar qué contesta una plataforma de IA cuando le preguntan por tu categoría, y reordenar el presupuesto hacia ser la fuente que cita, no el resultado que enlaza.",
-   "comoCazarlo": "Haz cinco preguntas de tu categoría en dos plataformas de IA. Si un competidor pequeño sale y tú no, ya perdiste ese canal.",
-   "consejo": "Le pasó a una de las mayores cadenas de gimnasios de Estados Unidos: un negocio local de Houston salía mejor que ellos.",
-   "salioDe": "«Can Customers Find Your Brand? Marketing Strategies for AI-Driven Search» · MIT Sloan Management Review",
-   "senales": [
-    "bajó el tráfico",
-    "seo",
-    "no nos encuentran"
-   ]
-  },
-  {
-   "id": "segmentar-por-demografia",
-   "titulo": "Segmentamos por edad y no explica nada",
-   "gravedad": "media",
-   "sintoma": "Los segmentos son «25-34» y «35-50», y dentro de cada uno la gente se comporta de forma opuesta.",
-   "causa": "La demografía es fácil de obtener y no es la causa de la compra. El motivo sí lo es.",
-   "porque": "Los datos demográficos vienen ya medidos y los motivos hay que preguntarlos.",
-   "arreglo": "Rehacer los segmentos por el valor que cada grupo saca del producto, y ponerle a cada uno un nombre que diga su motivo.",
-   "comoCazarlo": "Si dentro de un segmento hay dos comportamientos de compra distintos, no es un segmento: son dos.",
-   "consejo": "Un segmento bien nombrado permite anticipar con quién va a chocar el siguiente. Uno demográfico no permite nada.",
-   "salioDe": "«The Growth Equation» · Wharton",
-   "senales": [
-    "nuestro público objetivo",
-    "25 a 34"
-   ]
-  },
-  {
-   "id": "la-cartera-con-fugas",
-   "titulo": "Traemos clientes nuevos y perdemos los de antes",
-   "gravedad": "alta",
-   "sintoma": "La captación sube cada mes y el total de clientes se mueve poco.",
-   "causa": "Se gestiona la entrada del cubo y no el agujero. La cartera de clientes es un balance, no un flujo.",
-   "porque": "La captación tiene campaña, presupuesto y responsable; la fuga no tiene ninguna de las tres.",
-   "arreglo": "Mirar la cartera entera por FUERZA DE LA RELACIÓN, no por volumen: cuánto vale cada grupo a lo largo del tiempo y cuál se está yendo.",
-   "comoCazarlo": "Compara altas y bajas del mismo periodo. Si las bajas son más de la mitad de las altas, la campaña está tapando una fuga.",
-   "consejo": "Se puede crecer en captación y decrecer en negocio durante mucho tiempo sin que ningún tablero lo diga.",
-   "salioDe": "«What Leaders Still Get Wrong About Customer Portfolio Management» · MIT Sloan Management Review",
-   "senales": [
-    "captación",
-    "se nos van",
-    "churn"
-   ]
-  },
-  {
-   "id": "el-embudo-sin-etapas",
-   "titulo": "No sabemos en qué punto se cae la gente",
-   "gravedad": "alta",
-   "sintoma": "Se mide la entrada y la venta, y en medio no hay nada.",
-   "causa": "Sin etapas intermedias no se puede saber dónde está el problema, así que se optimiza a ciegas la que se ve.",
-   "porque": "Medir las etapas de en medio obliga a definirlas, y definirlas obliga a ponerse de acuerdo entre marketing y ventas.",
-   "arreglo": "Definir tres o cuatro etapas con criterio de paso explícito, y medir la caída entre cada dos. La etapa con más caída es la única que merece presupuesto este mes.",
-   "comoCazarlo": "Pide el porcentaje de paso entre dos etapas consecutivas. Si no existe el número, el embudo es un dibujo.",
-   "consejo": "Los equipos que sí lo llevan tienen una persona dueña del número de cada etapa, no del total.",
-   "salioDe": "«Digital Strategy Management» · The GitLab Handbook",
-   "senales": [
-    "embudo",
-    "conversión",
-    "no sé dónde se caen"
-   ]
-  },
-  {
-   "id": "estructura-para-otra-etapa",
-   "titulo": "El equipo de marketing es de otra empresa",
-   "gravedad": "media",
-   "sintoma": "La estructura que funcionaba con quince personas se rompió con cuarenta, y se leyó como problema de personas.",
-   "causa": "Es un problema de diseño de organización, no de plantilla. La forma óptima cambia con la etapa de crecimiento.",
-   "porque": "Reconocer un problema estructural es raro: lo primero que se piensa siempre es que falta gente o que alguien no rinde.",
-   "arreglo": "Diagnosticar por etapa antes de contratar. Cambiar la estructura cuesta semanas; cambiar personas cuesta años y no arregla la estructura.",
-   "comoCazarlo": "Si el mismo puesto se ha llenado dos veces y ha fallado dos veces, no es la persona: es el puesto.",
-   "consejo": "Los directivos suelen enfrentarse a su primer rediseño de organización ya siendo directivos, sin haberlo hecho nunca.",
-   "salioDe": "«Design Your Marketing Organization to Fit Your Company’s Growth Stage» · MIT Sloan Management Review",
-   "senales": [
-    "no da abasto",
-    "hay que contratar"
-   ]
-  },
-  {
-   "id": "campana-sin-hipotesis",
-   "titulo": "La campaña salió y no sabemos qué aprendimos",
-   "gravedad": "media",
-   "sintoma": "Terminó, dio unos números, y nadie puede decir qué se sabe ahora que no se supiera antes.",
-   "causa": "Se lanzó sin escribir qué se esperaba. Sin expectativa previa, cualquier resultado se explica después.",
-   "porque": "Escribir la expectativa expone a fallar en público.",
-   "arreglo": "Antes de lanzar, una frase: «esperamos X; si sale menos de Y, la hipótesis era falsa». Guardarla y compararla.",
-   "comoCazarlo": "Pregunta qué resultado habría hecho apagar la campaña. Si no hay número, no había hipótesis.",
-   "consejo": "Una campaña sin hipótesis puede repetirse diez veces sin enseñar nada la décima.",
-   "salioDe": "Síntesis de la práctica de campañas · GitLab Handbook y MIT SMR",
-   "senales": [
-    "salió bien",
-    "a ver qué pasa"
-   ]
-  },
-  {
-   "id": "el-mensaje-de-la-empresa",
-   "titulo": "El mensaje habla de nosotros, no de ellos",
-   "gravedad": "media",
-   "sintoma": "La página y el material describen la empresa, su historia y su tecnología.",
-   "causa": "Se escribió desde dentro. El cliente no compra la historia: compra lo que le cambia el lunes.",
-   "porque": "Lo de dentro se conoce y se puede escribir sin investigar; lo del cliente hay que ir a preguntarlo.",
-   "arreglo": "Reescribir cada bloque empezando por el problema del cliente, con sus palabras. La empresa aparece después, como quien lo resuelve.",
-   "comoCazarlo": "Cuenta las frases que empiezan por «somos», «nuestra» o «contamos con». Si son más de un tercio, el texto habla de la empresa.",
-   "consejo": "La prueba rápida: tapa el nombre de la empresa. Si el texto podría ser de tres competidores, no dice nada.",
-   "salioDe": "Síntesis de posicionamiento y mensaje · Wharton y MIT SMR",
-   "senales": [
-    "somos líderes",
-    "nuestra tecnología"
-   ]
-  },
-  {
-   "id": "canal-por-costumbre",
-   "titulo": "Seguimos en ese canal porque siempre estuvimos",
-   "gravedad": "media",
-   "sintoma": "Una parte del presupuesto va a un canal que nadie ha evaluado en dos años.",
-   "causa": "La inercia. Un canal que funcionó se convierte en un renglón fijo y deja de compararse con las alternativas.",
-   "porque": "Quitar un canal tiene un responsable identificable; mantenerlo no tiene ninguno.",
-   "arreglo": "Revisar la mezcla por trimestre con el mismo criterio para todos los canales, incluido el heredado. Un canal que no se compara no se está gestionando.",
-   "comoCazarlo": "Pregunta cuándo fue la última vez que se evaluó ese canal. Si la respuesta es «siempre lo hemos hecho», ahí está el dinero suelto.",
-   "consejo": "La validación de términos y mercado direccionable se hace ANTES de repartir el presupuesto, no después.",
-   "salioDe": "«Digital Strategy Management» · The GitLab Handbook",
-   "senales": [
-    "siempre lo hemos hecho",
-    "ese canal"
-   ]
-  },
-  {
-   "id": "medir-lo-que-la-agencia-mide",
-   "titulo": "El informe lo hace quien cobra por el resultado",
-   "gravedad": "alta",
-   "sintoma": "Las métricas del canal las define, mide y presenta la misma agencia que lo gestiona.",
-   "causa": "Conflicto de interés estructural. No hace falta mala fe: quien elige la métrica elige la conclusión.",
-   "porque": "Es cómodo y barato, y el informe siempre llega a tiempo y bonito.",
-   "arreglo": "Definir la métrica del negocio en casa —ingresos, clientes nuevos que repiten— y pedirle a la agencia que reporte contra ésa, no contra la suya.",
-   "comoCazarlo": "Compara el informe de la agencia con el dato del sistema propio del mismo mes. La distancia es el tamaño del problema.",
-   "consejo": "No es que mientan: es que optimizan lo que se les pide, y lo que se les pide lo escribieron ellos.",
-   "salioDe": "Síntesis de gobierno de marketing · MIT Sloan Management Review",
-   "senales": [
-    "el informe de la agencia",
-    "impresiones"
-   ]
-  },
-  {
-   "id": "la-promesa-que-no-cumple-operaciones",
-   "titulo": "Prometemos algo que la empresa no puede dar",
-   "gravedad": "alta",
-   "sintoma": "La campaña promete entrega en 24 horas y operaciones tarda tres días.",
-   "causa": "El mensaje se diseñó sin operaciones en la sala. La publicidad no cambia la capacidad.",
-   "porque": "Prometer más funciona en la métrica de la campaña —más clics, más ventas— y el coste aparece después, en atención al cliente.",
-   "arreglo": "Cualquier promesa que salga en un anuncio se firma antes por quien tiene que cumplirla.",
-   "comoCazarlo": "Mira las quejas del mes siguiente a una campaña. Si suben las de incumplimiento, el problema estaba en el anuncio.",
-   "consejo": "La campaña se mide en semanas y el daño a la confianza en años. No es el mismo reloj.",
-   "salioDe": "Síntesis de servicio y marca · MIT SMR y GitLab Handbook",
-   "senales": [
-    "prometimos",
-    "no llegamos"
-   ]
-  },
-  {
-   "id": "todo-a-la-marca",
-   "titulo": "Todo lo bueno se lo lleva «la marca»",
-   "gravedad": "media",
-   "sintoma": "Cuando sube el negocio, la explicación es la marca; cuando baja, es el mercado.",
-   "causa": "La marca es la variable que no se mide, y por eso se le atribuye lo que sobra. Es una cuenta de resultados sin control.",
-   "porque": "Nadie puede contradecir una atribución a algo que no tiene número.",
-   "arreglo": "Separar en el reporte lo atribuible con datos y lo no atribuible, y decir cuánto es cada uno. La parte no atribuible es honesta; llamarla «marca» no lo es.",
-   "comoCazarlo": "Pregunta cuánto del crecimiento es atribuible con datos. Si la respuesta es «todo» o «nada», el modelo de atribución no existe.",
-   "consejo": "Reconocer que un porcentaje no se sabe da más credibilidad que atribuirlo entero.",
-   "salioDe": "Síntesis de medición de marketing · MIT Sloan Management Review",
-   "senales": [
-    "gracias a la marca",
-    "fue el mercado"
-   ]
-  },
-  {
-   "id": "lanzar-sin-el-de-ventas",
-   "titulo": "Marketing genera interesados que ventas no puede cerrar",
-   "gravedad": "alta",
-   "sintoma": "Suben los contactos y no suben las oportunidades, y cada equipo culpa al otro.",
-   "causa": "Los dos equipos tienen números distintos y ninguno tiene el del otro. El criterio de qué es un contacto útil nunca se acordó por escrito.",
-   "porque": "Cada equipo cumple su meta, así que desde dentro los dos van bien.",
-   "arreglo": "Un solo criterio escrito de qué pasa de un equipo al otro, firmado por los dos, y una métrica compartida en la que los dos ganan o pierden juntos.",
-   "comoCazarlo": "Pregunta a los dos equipos qué es un contacto bueno. Si dan dos definiciones, ahí está la fuga entera.",
-   "consejo": "La discusión no se resuelve con más contactos: se resuelve con la definición.",
-   "salioDe": "«Digital Strategy Management» · The GitLab Handbook",
-   "senales": [
-    "los leads son malos",
-    "no cierran"
-   ]
-  }
- ]
+  "area": "marketing",
+  "nombre": "Marketing",
+  "que": "Qué hace que a un cliente le llegue algo — y las formas de gastar bien el dinero en que no le llegue.",
+  "neuronas": [
+    {
+      "id": "segmentos-que-chocan",
+      "titulo": "Dos clientes distintos quieren cosas contrarias",
+      "gravedad": "alta",
+      "sintoma": "Un grupo pide exclusividad y otro accesibilidad, y la marca les habla a los dos con el mismo mensaje.",
+      "causa": "Crecer trajo un segundo segmento cuyo motivo de compra contradice al primero. El choque no se ve el primer trimestre: aparece cuando los dos coinciden en el mismo sitio.",
+      "porque": "Cada segmento por separado tiene buenos números, y sumar clientes siempre parece bueno.",
+      "arreglo": "Nombrar cada segmento por su MOTIVO, no por su edad o su código postal, y escribir qué quiere de la marca. Después, mirar dónde se cruzan: tienda, redes, atención. Ahí es donde chocan.",
+      "comoCazarlo": "Si el mismo mensaje suena mal a un segmento cuando le funciona al otro, ya están chocando.",
+      "consejo": "Segmentar por demografía esconde el choque; segmentar por el valor que cada uno saca lo enseña.",
+      "salioDe": "«The Growth Equation: Avoid Customer-segment Collisions» · Nano Tools for Leaders, Wharton",
+      "senales": [
+        "no les gustó a los de siempre",
+        "estamos confundiendo al cliente"
+      ],
+      "vecinas": [
+        "segmentar-por-demografia",
+        "mismo-crm-en-todas-las-etapas",
+        "la-cartera-con-fugas"
+      ]
+    },
+    {
+      "id": "la-marca-que-no-estira",
+      "titulo": "La marca no llega hasta donde la queremos llevar",
+      "gravedad": "alta",
+      "sintoma": "Se lanza una línea nueva bajo la misma marca y el cliente de siempre no la reconoce como suya.",
+      "causa": "El significado de una marca se puede estirar, pero tiene un límite, y ese límite lo pone el cliente, no la empresa.",
+      "porque": "Dentro de la casa la marca se siente elástica porque uno conoce la intención; fuera sólo se ve el producto.",
+      "arreglo": "Antes de estirar, preguntar a clientes de los dos segmentos qué significa la marca en una frase. Si las dos frases no admiten el producto nuevo, hace falta otra marca.",
+      "comoCazarlo": "Enseña el producto nuevo con la marca puesta a diez clientes actuales. Si tres preguntan «¿y esto por qué lo hacen ustedes?», no estira.",
+      "consejo": "Una marca que estira demasiado no se rompe de golpe: se vuelve borrosa, que es peor porque no avisa.",
+      "salioDe": "«The Growth Equation» · Wharton, y «What Leaders Still Get Wrong About Customer Portfolio Management» · MIT SMR",
+      "senales": [
+        "no parece de la marca",
+        "no lo entienden"
+      ],
+      "vecinas": [
+        "todo-a-la-marca",
+        "global-es-calidad",
+        "la-ventaja-que-caduca"
+      ]
+    },
+    {
+      "id": "global-es-calidad",
+      "titulo": "Lo «global» vende porque se lee como calidad",
+      "gravedad": "media",
+      "sintoma": "Se invierte en parecer internacional pensando que lo que atrae es el prestigio.",
+      "causa": "La investigación dice otra cosa: más del 90 % del valor añadido por percibirse como marca global viene de que se le atribuye CALIDAD, no prestigio.",
+      "porque": "El prestigio es lo que se ve en la campaña; la calidad percibida es lo que se construye en el producto y tarda más.",
+      "arreglo": "Mover el presupuesto de señalar prestigio a señalar calidad comprobable: garantías, procesos, datos, terceros que verifiquen.",
+      "comoCazarlo": "Pregunta a diez clientes por qué compran. Si contestan «porque es buena» y no «porque es de fuera», el prestigio no es lo que está vendiendo.",
+      "consejo": "El prestigio además caduca: cuando la novedad se va, se va con ella. La calidad percibida no.",
+      "salioDe": "Steenkamp y Batra, «How Perceived Brand Globalness Creates Brand Value», Journal of International Business Studies, 2003 · vía MIT SMR",
+      "senales": [
+        "marca internacional",
+        "prestigio"
+      ],
+      "vecinas": [
+        "la-marca-que-no-estira",
+        "todo-a-la-marca",
+        "la-ventaja-que-caduca",
+        "expandir-sin-gente-local",
+        "copiar-al-que-ya-llego"
+      ]
+    },
+    {
+      "id": "buscador-que-no-devuelve-clics",
+      "titulo": "Aparecemos en la búsqueda y nadie llega",
+      "gravedad": "alta",
+      "sintoma": "Las posiciones son buenas y las visitas caen: el buscador contesta con la respuesta y ya nadie entra.",
+      "causa": "La búsqueda con IA responde en la misma pantalla. La búsqueda sin clic quita puntos de contacto y los algoritmos priorizan distinto que el buscador clásico.",
+      "porque": "Las métricas de posición siguen viéndose bien, así que el tablero no avisa: sólo baja el tráfico y parece estacional.",
+      "arreglo": "Comprobar qué contesta una plataforma de IA cuando le preguntan por tu categoría, y reordenar el presupuesto hacia ser la fuente que cita, no el resultado que enlaza.",
+      "comoCazarlo": "Haz cinco preguntas de tu categoría en dos plataformas de IA. Si un competidor pequeño sale y tú no, ya perdiste ese canal.",
+      "consejo": "Le pasó a una de las mayores cadenas de gimnasios de Estados Unidos: un negocio local de Houston salía mejor que ellos.",
+      "salioDe": "«Can Customers Find Your Brand? Marketing Strategies for AI-Driven Search» · MIT Sloan Management Review",
+      "senales": [
+        "bajó el tráfico",
+        "seo",
+        "no nos encuentran"
+      ],
+      "vecinas": [
+        "la-ayuda-enterrada",
+        "idiomas-a-medias"
+      ]
+    },
+    {
+      "id": "segmentar-por-demografia",
+      "titulo": "Segmentamos por edad y no explica nada",
+      "gravedad": "media",
+      "sintoma": "Los segmentos son «25-34» y «35-50», y dentro de cada uno la gente se comporta de forma opuesta.",
+      "causa": "La demografía es fácil de obtener y no es la causa de la compra. El motivo sí lo es.",
+      "porque": "Los datos demográficos vienen ya medidos y los motivos hay que preguntarlos.",
+      "arreglo": "Rehacer los segmentos por el valor que cada grupo saca del producto, y ponerle a cada uno un nombre que diga su motivo.",
+      "comoCazarlo": "Si dentro de un segmento hay dos comportamientos de compra distintos, no es un segmento: son dos.",
+      "consejo": "Un segmento bien nombrado permite anticipar con quién va a chocar el siguiente. Uno demográfico no permite nada.",
+      "salioDe": "«The Growth Equation» · Wharton",
+      "senales": [
+        "nuestro público objetivo",
+        "25 a 34"
+      ],
+      "vecinas": [
+        "segmentos-que-chocan",
+        "mismo-crm-en-todas-las-etapas",
+        "la-cartera-con-fugas",
+        "el-mensaje-de-la-empresa",
+        "innovar-sin-tocar-al-cliente"
+      ]
+    },
+    {
+      "id": "la-cartera-con-fugas",
+      "titulo": "Traemos clientes nuevos y perdemos los de antes",
+      "gravedad": "alta",
+      "sintoma": "La captación sube cada mes y el total de clientes se mueve poco.",
+      "causa": "Se gestiona la entrada del cubo y no el agujero. La cartera de clientes es un balance, no un flujo.",
+      "porque": "La captación tiene campaña, presupuesto y responsable; la fuga no tiene ninguna de las tres.",
+      "arreglo": "Mirar la cartera entera por FUERZA DE LA RELACIÓN, no por volumen: cuánto vale cada grupo a lo largo del tiempo y cuál se está yendo.",
+      "comoCazarlo": "Compara altas y bajas del mismo periodo. Si las bajas son más de la mitad de las altas, la campaña está tapando una fuga.",
+      "consejo": "Se puede crecer en captación y decrecer en negocio durante mucho tiempo sin que ningún tablero lo diga.",
+      "salioDe": "«What Leaders Still Get Wrong About Customer Portfolio Management» · MIT Sloan Management Review",
+      "senales": [
+        "captación",
+        "se nos van",
+        "churn"
+      ],
+      "vecinas": [
+        "segmentos-que-chocan",
+        "segmentar-por-demografia",
+        "mismo-crm-en-todas-las-etapas",
+        "el-uso-como-senal",
+        "el-caso-cerrado-sin-preguntar"
+      ]
+    },
+    {
+      "id": "el-embudo-sin-etapas",
+      "titulo": "No sabemos en qué punto se cae la gente",
+      "gravedad": "alta",
+      "sintoma": "Se mide la entrada y la venta, y en medio no hay nada.",
+      "causa": "Sin etapas intermedias no se puede saber dónde está el problema, así que se optimiza a ciegas la que se ve.",
+      "porque": "Medir las etapas de en medio obliga a definirlas, y definirlas obliga a ponerse de acuerdo entre marketing y ventas.",
+      "arreglo": "Definir tres o cuatro etapas con criterio de paso explícito, y medir la caída entre cada dos. La etapa con más caída es la única que merece presupuesto este mes.",
+      "comoCazarlo": "Pide el porcentaje de paso entre dos etapas consecutivas. Si no existe el número, el embudo es un dibujo.",
+      "consejo": "Los equipos que sí lo llevan tienen una persona dueña del número de cada etapa, no del total.",
+      "salioDe": "«Digital Strategy Management» · The GitLab Handbook",
+      "senales": [
+        "embudo",
+        "conversión",
+        "no sé dónde se caen"
+      ],
+      "vecinas": [
+        "embudo-de-libro",
+        "seguimiento-sin-fecha",
+        "la-oportunidad-sin-fecha",
+        "lanzar-sin-el-de-ventas",
+        "origen-de-tratos-por-suerte"
+      ]
+    },
+    {
+      "id": "estructura-para-otra-etapa",
+      "titulo": "El equipo de marketing es de otra empresa",
+      "gravedad": "media",
+      "sintoma": "La estructura que funcionaba con quince personas se rompió con cuarenta, y se leyó como problema de personas.",
+      "causa": "Es un problema de diseño de organización, no de plantilla. La forma óptima cambia con la etapa de crecimiento.",
+      "porque": "Reconocer un problema estructural es raro: lo primero que se piensa siempre es que falta gente o que alguien no rinde.",
+      "arreglo": "Diagnosticar por etapa antes de contratar. Cambiar la estructura cuesta semanas; cambiar personas cuesta años y no arregla la estructura.",
+      "comoCazarlo": "Si el mismo puesto se ha llenado dos veces y ha fallado dos veces, no es la persona: es el puesto.",
+      "consejo": "Los directivos suelen enfrentarse a su primer rediseño de organización ya siendo directivos, sin haberlo hecho nunca.",
+      "salioDe": "«Design Your Marketing Organization to Fit Your Company’s Growth Stage» · MIT Sloan Management Review",
+      "senales": [
+        "no da abasto",
+        "hay que contratar"
+      ],
+      "vecinas": [
+        "reorganizar-mirando-quien-sale",
+        "reorganizar-ventas-sin-preparar-a-nadie",
+        "organigrama-que-no-coincide",
+        "contratar-para-tapar-el-proceso"
+      ]
+    },
+    {
+      "id": "campana-sin-hipotesis",
+      "titulo": "La campaña salió y no sabemos qué aprendimos",
+      "gravedad": "media",
+      "sintoma": "Terminó, dio unos números, y nadie puede decir qué se sabe ahora que no se supiera antes.",
+      "causa": "Se lanzó sin escribir qué se esperaba. Sin expectativa previa, cualquier resultado se explica después.",
+      "porque": "Escribir la expectativa expone a fallar en público.",
+      "arreglo": "Antes de lanzar, una frase: «esperamos X; si sale menos de Y, la hipótesis era falsa». Guardarla y compararla.",
+      "comoCazarlo": "Pregunta qué resultado habría hecho apagar la campaña. Si no hay número, no había hipótesis.",
+      "consejo": "Una campaña sin hipótesis puede repetirse diez veces sin enseñar nada la décima.",
+      "salioDe": "Síntesis de la práctica de campañas · GitLab Handbook y MIT SMR",
+      "senales": [
+        "salió bien",
+        "a ver qué pasa"
+      ],
+      "vecinas": [
+        "el-experimento-sin-hipotesis",
+        "prototipo-que-parece-terminado",
+        "matar-tarde",
+        "medir-lo-que-la-agencia-mide",
+        "medir-al-que-mide"
+      ]
+    },
+    {
+      "id": "el-mensaje-de-la-empresa",
+      "titulo": "El mensaje habla de nosotros, no de ellos",
+      "gravedad": "media",
+      "sintoma": "La página y el material describen la empresa, su historia y su tecnología.",
+      "causa": "Se escribió desde dentro. El cliente no compra la historia: compra lo que le cambia el lunes.",
+      "porque": "Lo de dentro se conoce y se puede escribir sin investigar; lo del cliente hay que ir a preguntarlo.",
+      "arreglo": "Reescribir cada bloque empezando por el problema del cliente, con sus palabras. La empresa aparece después, como quien lo resuelve.",
+      "comoCazarlo": "Cuenta las frases que empiezan por «somos», «nuestra» o «contamos con». Si son más de un tercio, el texto habla de la empresa.",
+      "consejo": "La prueba rápida: tapa el nombre de la empresa. Si el texto podría ser de tres competidores, no dice nada.",
+      "salioDe": "Síntesis de posicionamiento y mensaje · Wharton y MIT SMR",
+      "senales": [
+        "somos líderes",
+        "nuestra tecnología"
+      ],
+      "vecinas": [
+        "la-promesa-que-no-cumple-operaciones",
+        "prometer-en-la-campana",
+        "innovar-sin-tocar-al-cliente",
+        "segmentar-por-demografia"
+      ]
+    },
+    {
+      "id": "canal-por-costumbre",
+      "titulo": "Seguimos en ese canal porque siempre estuvimos",
+      "gravedad": "media",
+      "sintoma": "Una parte del presupuesto va a un canal que nadie ha evaluado en dos años.",
+      "causa": "La inercia. Un canal que funcionó se convierte en un renglón fijo y deja de compararse con las alternativas.",
+      "porque": "Quitar un canal tiene un responsable identificable; mantenerlo no tiene ninguno.",
+      "arreglo": "Revisar la mezcla por trimestre con el mismo criterio para todos los canales, incluido el heredado. Un canal que no se compara no se está gestionando.",
+      "comoCazarlo": "Pregunta cuándo fue la última vez que se evaluó ese canal. Si la respuesta es «siempre lo hemos hecho», ahí está el dinero suelto.",
+      "consejo": "La validación de términos y mercado direccionable se hace ANTES de repartir el presupuesto, no después.",
+      "salioDe": "«Digital Strategy Management» · The GitLab Handbook",
+      "senales": [
+        "siempre lo hemos hecho",
+        "ese canal"
+      ],
+      "vecinas": [
+        "promocion-sin-mirar-al-sector",
+        "promocion-permanente",
+        "copiar-la-estructura-de-otro",
+        "copiar-al-que-ya-llego",
+        "competir-donde-todos"
+      ]
+    },
+    {
+      "id": "medir-lo-que-la-agencia-mide",
+      "titulo": "El informe lo hace quien cobra por el resultado",
+      "gravedad": "alta",
+      "sintoma": "Las métricas del canal las define, mide y presenta la misma agencia que lo gestiona.",
+      "causa": "Conflicto de interés estructural. No hace falta mala fe: quien elige la métrica elige la conclusión.",
+      "porque": "Es cómodo y barato, y el informe siempre llega a tiempo y bonito.",
+      "arreglo": "Definir la métrica del negocio en casa —ingresos, clientes nuevos que repiten— y pedirle a la agencia que reporte contra ésa, no contra la suya.",
+      "comoCazarlo": "Compara el informe de la agencia con el dato del sistema propio del mismo mes. La distancia es el tamaño del problema.",
+      "consejo": "No es que mientan: es que optimizan lo que se les pide, y lo que se les pide lo escribieron ellos.",
+      "salioDe": "Síntesis de gobierno de marketing · MIT Sloan Management Review",
+      "senales": [
+        "el informe de la agencia",
+        "impresiones"
+      ],
+      "vecinas": [
+        "metrica-solo-hacia-arriba",
+        "el-informe-que-nadie-lee",
+        "medir-al-que-mide",
+        "campana-sin-hipotesis"
+      ]
+    },
+    {
+      "id": "la-promesa-que-no-cumple-operaciones",
+      "titulo": "Prometemos algo que la empresa no puede dar",
+      "gravedad": "alta",
+      "sintoma": "La campaña promete entrega en 24 horas y operaciones tarda tres días.",
+      "causa": "El mensaje se diseñó sin operaciones en la sala. La publicidad no cambia la capacidad.",
+      "porque": "Prometer más funciona en la métrica de la campaña —más clics, más ventas— y el coste aparece después, en atención al cliente.",
+      "arreglo": "Cualquier promesa que salga en un anuncio se firma antes por quien tiene que cumplirla.",
+      "comoCazarlo": "Mira las quejas del mes siguiente a una campaña. Si suben las de incumplimiento, el problema estaba en el anuncio.",
+      "consejo": "La campaña se mide en semanas y el daño a la confianza en años. No es el mismo reloj.",
+      "salioDe": "Síntesis de servicio y marca · MIT SMR y GitLab Handbook",
+      "senales": [
+        "prometimos",
+        "no llegamos"
+      ],
+      "vecinas": [
+        "la-reputacion-tambien-se-gestiona",
+        "riesgo-nuevo-marco-viejo",
+        "prometer-en-la-campana",
+        "el-mensaje-de-la-empresa"
+      ]
+    },
+    {
+      "id": "todo-a-la-marca",
+      "titulo": "Todo lo bueno se lo lleva «la marca»",
+      "gravedad": "media",
+      "sintoma": "Cuando sube el negocio, la explicación es la marca; cuando baja, es el mercado.",
+      "causa": "La marca es la variable que no se mide, y por eso se le atribuye lo que sobra. Es una cuenta de resultados sin control.",
+      "porque": "Nadie puede contradecir una atribución a algo que no tiene número.",
+      "arreglo": "Separar en el reporte lo atribuible con datos y lo no atribuible, y decir cuánto es cada uno. La parte no atribuible es honesta; llamarla «marca» no lo es.",
+      "comoCazarlo": "Pregunta cuánto del crecimiento es atribuible con datos. Si la respuesta es «todo» o «nada», el modelo de atribución no existe.",
+      "consejo": "Reconocer que un porcentaje no se sabe da más credibilidad que atribuirlo entero.",
+      "salioDe": "Síntesis de medición de marketing · MIT Sloan Management Review",
+      "senales": [
+        "gracias a la marca",
+        "fue el mercado"
+      ],
+      "vecinas": [
+        "la-marca-que-no-estira",
+        "global-es-calidad",
+        "la-ventaja-que-caduca"
+      ]
+    },
+    {
+      "id": "lanzar-sin-el-de-ventas",
+      "titulo": "Marketing genera interesados que ventas no puede cerrar",
+      "gravedad": "alta",
+      "sintoma": "Suben los contactos y no suben las oportunidades, y cada equipo culpa al otro.",
+      "causa": "Los dos equipos tienen números distintos y ninguno tiene el del otro. El criterio de qué es un contacto útil nunca se acordó por escrito.",
+      "porque": "Cada equipo cumple su meta, así que desde dentro los dos van bien.",
+      "arreglo": "Un solo criterio escrito de qué pasa de un equipo al otro, firmado por los dos, y una métrica compartida en la que los dos ganan o pierden juntos.",
+      "comoCazarlo": "Pregunta a los dos equipos qué es un contacto bueno. Si dan dos definiciones, ahí está la fuga entera.",
+      "consejo": "La discusión no se resuelve con más contactos: se resuelve con la definición.",
+      "salioDe": "«Digital Strategy Management» · The GitLab Handbook",
+      "senales": [
+        "los leads son malos",
+        "no cierran"
+      ],
+      "vecinas": [
+        "origen-de-tratos-por-suerte",
+        "el-embudo-sin-etapas",
+        "departamentos-aislados",
+        "miedo-a-quedar-en-ridiculo",
+        "reorganizar-ventas-sin-preparar-a-nadie"
+      ]
+    }
+  ]
 }

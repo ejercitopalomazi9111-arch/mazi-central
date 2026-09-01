@@ -1,249 +1,349 @@
 {
- "area": "liderazgo",
- "nombre": "Liderazgo",
- "que": "Lo que hace un jefe sin darse cuenta, y lo que el equipo deja de decirle por eso.",
- "neuronas": [
-  {
-   "id": "lider-por-organigrama",
-   "titulo": "Le decimos líder a quien tiene gente a cargo",
-   "gravedad": "alta",
-   "sintoma": "La palabra «líder» se usa para todo el que tiene un puesto por encima, y ya no significa nada.",
-   "causa": "Se etiqueta por jerarquía y no por lo que la persona hace. Usar el término por posición enseña que lo que se valora es el poder.",
-   "porque": "Es la forma más rápida de reconocer a alguien sin cambiarle el sueldo ni el alcance.",
-   "arreglo": "Reservar la palabra para quien abre caminos nuevos y arrastra a otros, y llamar «responsable» o «gerente» al resto, que es lo que son y no es menos.",
-   "comoCazarlo": "Pregunta a quién sigue la gente por decisión propia. Si la lista no coincide con el organigrama, la etiqueta está puesta por jerarquía.",
-   "consejo": "No es un problema de palabras: cuando la empresa etiqueta por jerarquía, le quita a la gente el incentivo de cambiar las cosas.",
-   "salioDe": "«Innovative Work Cultures Know the Difference Between “Leader” and “Manager”» · MIT Sloan Management Review",
-   "senales": [
-    "es líder del equipo",
-    "los líderes de la empresa"
-   ]
-  },
-  {
-   "id": "la-distancia-de-afinidad",
-   "titulo": "El equipo remoto funciona y no se conoce",
-   "gravedad": "alta",
-   "sintoma": "Las entregas salen, las juntas ocurren, y nadie se pide ayuda ni levanta un problema antes de que estalle.",
-   "causa": "Es distancia de afinidad: la falta de conexión mental y emocional por poca familiaridad, poca interdependencia y ningún propósito compartido. No se arregla con más llamadas.",
-   "porque": "Las otras dos distancias —la física y la operativa— se ven en el calendario y en las herramientas. Ésta no aparece en ningún tablero.",
-   "arreglo": "Delegar es la herramienta, y no por la carga: delegar bien obliga a compartir el porqué, y compartir el porqué es lo único que cierra esa distancia.",
-   "comoCazarlo": "Pregunta quién levantaría la mano si algo va mal. Si la respuesta es «se enteraría en la junta», la afinidad está lejos.",
-   "consejo": "De las tres distancias virtuales, la de afinidad es la que separa a un equipo bueno de uno excelente.",
-   "salioDe": "«Embrace Delegation as a Skill to Strengthen Remote Teams» · MIT Sloan Management Review",
-   "senales": [
-    "equipo remoto",
-    "no se conocen",
-    "no avisan"
-   ]
-  },
-  {
-   "id": "el-jefe-que-amplifica",
-   "titulo": "El jefe convierte la presión en pánico",
-   "gravedad": "alta",
-   "sintoma": "Hay una fecha apretada y el equipo entra en modo pelea o huida: se esconde información y se dejan de pedir ayudas.",
-   "causa": "Investigado: los jefes suelen INTENSIFICAR la presión que ya sienten los empleados en vez de contenerla.",
-   "porque": "Transmitir la urgencia se siente como hacer el trabajo de jefe. Contenerla parece no hacer nada.",
-   "arreglo": "Modelar confianza y empujar a que el equipo busque soluciones entre pares, no hacia arriba. La mayoría del estrés laboral es episódico y manejable con apoyo.",
-   "comoCazarlo": "Si al aparecer un problema la gente primero calcula cómo contarlo y luego cómo resolverlo, el jefe está amplificando.",
-   "consejo": "Encuesta a más de 150 directivos en Europa, Asia-Pacífico, Oriente Medio y Estados Unidos: la mayoría de las organizaciones no tiene ningún método sistemático para el estrés de equipo.",
-   "salioDe": "«How Leaders Help Teams Manage Stress» · MIT Sloan Management Review",
-   "senales": [
-    "presión",
-    "urgente",
-    "hay que apretar"
-   ]
-  },
-  {
-   "id": "delegar-la-tarea-sin-el-porque",
-   "titulo": "Delegué el trabajo y salió otra cosa",
-   "gravedad": "media",
-   "sintoma": "Se encarga algo con instrucciones claras y vuelve cumpliendo la letra y fallando la intención.",
-   "causa": "Se delegó el qué sin el para qué. Sin el propósito, quien lo hace no puede decidir en los cien detalles que no estaban en la instrucción.",
-   "porque": "Explicar el porqué tarda más que dar la instrucción, y el que delega tiene prisa justo por eso.",
-   "arreglo": "Delegar en dos partes: el resultado que se busca y por qué importa. Las instrucciones son la tercera y la menos importante.",
-   "comoCazarlo": "Pregunta a quien recibió el encargo para qué sirve. Si no lo sabe, sólo recibió instrucciones.",
-   "consejo": "Delegar bien es además la mejor herramienta que tiene un jefe remoto para cerrar la distancia con su equipo.",
-   "salioDe": "«Embrace Delegation as a Skill to Strengthen Remote Teams» · MIT Sloan Management Review",
-   "senales": [
-    "no era eso",
-    "hizo lo que le dije"
-   ]
-  },
-  {
-   "id": "seguridad-para-decir-que-no-sale",
-   "titulo": "Nadie dice que el plan no va a salir",
-   "gravedad": "alta",
-   "sintoma": "Todo el mundo asiente en la junta y en privado tres personas dicen lo mismo: que no llega.",
-   "causa": "No hay seguridad psicológica. Decir la verdad en público tiene coste y decirla en privado no.",
-   "porque": "El que calla no se equivoca en el acta.",
-   "arreglo": "Preguntar por escrito y en anónimo antes de la junta, y llevar a la junta lo que salga. Se rompe el coste social en el primer intento.",
-   "comoCazarlo": "Compara lo que se dice en la junta con lo que se dice en el pasillo. La distancia es la medida exacta.",
-   "consejo": "La política organizacional y la seguridad psicológica son las dos caras del mismo estudio: donde hay mucha de la primera, no hay nada de la segunda.",
-   "salioDe": "«How Leaders Help Teams Manage Stress» · MIT Sloan Management Review",
-   "senales": [
-    "todos de acuerdo",
-    "en privado me dijeron"
-   ]
-  },
-  {
-   "id": "reconocer-al-que-se-ve",
-   "titulo": "Se premia a quien está cerca",
-   "gravedad": "media",
-   "sintoma": "Los reconocimientos y los ascensos caen sistemáticamente en quien coincide más con la dirección.",
-   "causa": "Distancia física convertida en sesgo de evaluación. Se evalúa lo que se ve, y se ve más a quien está cerca.",
-   "porque": "Nadie lo decide: se acumula reunión a reunión.",
-   "arreglo": "Evaluar por resultados escritos y acordados de antemano, no por impresión. En equipos repartidos es la única forma que no premia la cercanía.",
-   "comoCazarlo": "Mira los últimos cinco reconocimientos y su distancia física a quien decide. Si correlacionan, ahí está el sesgo.",
-   "consejo": "En equipos remotos la distancia física se convierte en distancia de carrera si nadie la vigila.",
-   "salioDe": "Síntesis de distancia virtual · MIT Sloan Management Review",
-   "senales": [
-    "siempre los mismos",
-    "no se me ve"
-   ]
-  },
-  {
-   "id": "el-que-decide-habla-primero",
-   "titulo": "El jefe opina primero y ya nadie discrepa",
-   "gravedad": "media",
-   "sintoma": "La discusión se cierra sola después de la primera intervención de quien manda.",
-   "causa": "Anclaje. Lo primero que se oye fija el rango y el resto se mueve alrededor.",
-   "porque": "Quien manda tiene más contexto y por eso siente que debe abrir. Justo por eso no debe.",
-   "arreglo": "Regla simple: quien decide habla al final. Si tiene que abrir, que sea con la pregunta, nunca con la respuesta.",
-   "comoCazarlo": "Cuenta las opiniones distintas antes y después de que hable quien manda. Si el número cae a cero, ancló.",
-   "consejo": "Esta es la más barata de arreglar de toda esta lista y la que más cambia una junta.",
-   "salioDe": "Síntesis de dinámica de juntas · MIT SMR y Atlassian",
-   "senales": [
-    "nadie más opinó",
-    "ya lo dijo el jefe"
-   ]
-  },
-  {
-   "id": "la-puerta-abierta-que-nadie-cruza",
-   "titulo": "Digo que mi puerta está abierta y nadie entra",
-   "gravedad": "media",
-   "sintoma": "Se ofrece disponibilidad y nadie la usa, y se lee como que no hay problemas.",
-   "causa": "La puerta abierta traslada el coste al empleado: le toca decidir que su problema merece interrumpir a quien manda.",
-   "porque": "Es una oferta sincera y gratuita para quien la hace.",
-   "arreglo": "Ir uno. Preguntas concretas, en su terreno y con periodicidad. La iniciativa la pone quien tiene el poder, no quien no lo tiene.",
-   "comoCazarlo": "Cuenta cuántos entraron por su cuenta este mes. Si son menos de dos, la puerta está abierta y cerrada a la vez.",
-   "consejo": "Nadie interrumpe a su jefe para decirle algo que todavía no está seguro de que sea un problema — y ésos son justo los que sirven.",
-   "salioDe": "Síntesis de práctica directiva · MIT Sloan Management Review",
-   "senales": [
-    "mi puerta está abierta",
-    "nadie me dijo nada"
-   ]
-  },
-  {
-   "id": "el-heroe-que-tapa",
-   "titulo": "Una persona sostiene el área entera",
-   "gravedad": "alta",
-   "sintoma": "Si esa persona se va de vacaciones, el área se para.",
-   "causa": "Se premió el heroísmo en vez de arreglar el sistema. Cada rescate hace menos urgente arreglar la causa.",
-   "porque": "El héroe resuelve hoy y el sistema tarda meses. Y además el héroe recibe reconocimiento por ello.",
-   "arreglo": "Poner por escrito qué se rompió cada vez que hubo rescate, y arreglar eso. Y repartir el conocimiento aunque salga más lento el primer mes.",
-   "comoCazarlo": "Pregunta qué pasa si esa persona se enferma dos semanas. Si nadie sabe contestar, ya está.",
-   "consejo": "Premiar el rescate garantiza que siga habiendo incendios: es el incentivo puesto exactamente al revés.",
-   "salioDe": "Síntesis de riesgo operativo · GitLab Handbook y MIT SMR",
-   "senales": [
-    "sólo él sabe",
-    "se va de vacaciones"
-   ]
-  },
-  {
-   "id": "feedback-anual",
-   "titulo": "La única conversación de desempeño es en diciembre",
-   "gravedad": "media",
-   "sintoma": "La evaluación llega una vez al año y trae sorpresas para las dos partes.",
-   "causa": "Un año es demasiado tarde para corregir nada, y el sesgo de lo reciente hace que sólo pesen los últimos dos meses.",
-   "porque": "Concentrar la conversación en una fecha es cómodo de administrar.",
-   "arreglo": "Conversaciones cortas y frecuentes, con notas escritas. La evaluación anual sólo resume lo que ya se dijo, y no debería sorprender a nadie.",
-   "comoCazarlo": "Si en la evaluación anual aparece algo que la persona no sabía, el proceso falló durante once meses.",
-   "consejo": "Una evaluación que sorprende no es una evaluación: es una noticia.",
-   "salioDe": "Síntesis de gestión del desempeño · GitLab Handbook",
-   "senales": [
-    "evaluación anual",
-    "no me lo habían dicho"
-   ]
-  },
-  {
-   "id": "ascender-al-mejor-tecnico",
-   "titulo": "Ascendimos al mejor y perdimos al mejor",
-   "gravedad": "media",
-   "sintoma": "La persona más competente en su oficio pasa a jefe y ni rinde igual ni disfruta.",
-   "causa": "Se usó el ascenso como único premio disponible. Son dos trabajos distintos y ser bueno en el primero no dice nada del segundo.",
-   "porque": "No hay otra forma de subir el sueldo ni el reconocimiento.",
-   "arreglo": "Dos carreras paralelas: una técnica y una de gestión, con el mismo techo de sueldo y de respeto. Sin eso, cada ascenso es una apuesta.",
-   "comoCazarlo": "Pregunta si en la empresa se puede llegar arriba sin gente a cargo. Si no, no hay carrera técnica.",
-   "consejo": "El coste no es sólo el jefe mediocre: es el especialista que se perdió.",
-   "salioDe": "Síntesis de carrera profesional · GitLab Handbook y MIT SMR",
-   "senales": [
-    "lo ascendimos",
-    "no rinde igual"
-   ]
-  },
-  {
-   "id": "contratar-al-parecido",
-   "titulo": "Contratamos gente parecida a nosotros",
-   "gravedad": "media",
-   "sintoma": "El equipo, mirado desde fuera, piensa igual, viene de sitios parecidos y falla en las mismas cosas.",
-   "causa": "La afinidad se confunde con encaje. Se contrata a quien es agradable de entrevistar, que es a quien se parece a uno.",
-   "porque": "La entrevista no estructurada mide precisamente eso, y encima se siente como buen juicio.",
-   "arreglo": "Criterios escritos antes de entrevistar, las mismas preguntas para todos, y puntuación por separado antes de juntarse a comentar.",
-   "comoCazarlo": "Mira de dónde vienen las últimas seis contrataciones. Si el patrón se ve a simple vista, no fue casualidad.",
-   "consejo": "Un equipo que falla en las mismas cosas no tiene a quién preguntarle lo que le falta.",
-   "salioDe": "Levashina et al., «The Structured Employment Interview» · vía MIT Sloan Management Review",
-   "senales": [
-    "encaja bien",
-    "buena química"
-   ]
-  },
-  {
-   "id": "la-visión-que-no-se-repite",
-   "titulo": "Dije la visión una vez y creí que ya",
-   "gravedad": "media",
-   "sintoma": "La dirección se comunicó en una junta general y seis meses después nadie la sabe repetir.",
-   "causa": "Comunicar una vez no es comunicar. Compite con el ruido de cada semana.",
-   "porque": "Repetir se siente condescendiente para quien ya lo dijo.",
-   "arreglo": "Repetirlo hasta aburrirse, y en distintos formatos. Cuando quien la dice está harto, el equipo empieza a oírla.",
-   "comoCazarlo": "Pregunta a cinco personas cuál es la prioridad del año. Si salen cinco versiones, no se comunicó.",
-   "consejo": "La regla vieja sigue siendo la buena: cuando te canses de decirlo, apenas empiezan a escucharlo.",
-   "salioDe": "Síntesis de comunicación directiva · GitLab Handbook",
-   "senales": [
-    "ya lo dije",
-    "no se enteran"
-   ]
-  },
-  {
-   "id": "proteger-al-equipo-de-todo",
-   "titulo": "Le quito los problemas al equipo",
-   "gravedad": "media",
-   "sintoma": "El jefe absorbe todo lo desagradable y el equipo trabaja tranquilo y sin contexto.",
-   "causa": "Proteger de más quita información. El equipo deja de poder decidir bien porque no sabe qué está en juego.",
-   "porque": "Se siente como cuidar, y en el corto plazo lo es.",
-   "arreglo": "Compartir el problema y el margen de maniobra, no sólo la tarea. Proteger del ruido, no de la realidad.",
-   "comoCazarlo": "Si el equipo se sorprende cuando cambia una prioridad, estaba protegido de más.",
-   "consejo": "La diferencia está en si lo que se filtra es ruido o es contexto. El ruido sí se filtra.",
-   "salioDe": "Síntesis de liderazgo y contexto · MIT Sloan Management Review",
-   "senales": [
-    "no les preocupes",
-    "yo me encargo"
-   ]
-  },
-  {
-   "id": "urgencia-permanente",
-   "titulo": "Todo es urgente desde hace un año",
-   "gravedad": "alta",
-   "sintoma": "Cada semana hay una emergencia y el equipo ya no distingue cuál lo es de verdad.",
-   "causa": "La urgencia se usó como herramienta de motivación y se gastó. Cuando todo es urgente, nada lo es.",
-   "porque": "La urgencia funciona la primera vez y la segunda, y es gratis de declarar.",
-   "arreglo": "Racionarla. Un número máximo de urgencias por trimestre, escrito. Lo que no cabe, espera — y eso es lo que la hace significar algo.",
-   "comoCazarlo": "Cuenta las urgencias declaradas del trimestre. Más de tres y la palabra ya no informa.",
-   "consejo": "El día que haya una urgencia de verdad, nadie va a correr, y va a ser justo.",
-   "salioDe": "Síntesis de estrés y liderazgo · MIT Sloan Management Review",
-   "senales": [
-    "es urgente",
-    "para ayer"
-   ]
-  }
- ]
+  "area": "liderazgo",
+  "nombre": "Liderazgo",
+  "que": "Lo que hace un jefe sin darse cuenta, y lo que el equipo deja de decirle por eso.",
+  "neuronas": [
+    {
+      "id": "lider-por-organigrama",
+      "titulo": "Le decimos líder a quien tiene gente a cargo",
+      "gravedad": "alta",
+      "sintoma": "La palabra «líder» se usa para todo el que tiene un puesto por encima, y ya no significa nada.",
+      "causa": "Se etiqueta por jerarquía y no por lo que la persona hace. Usar el término por posición enseña que lo que se valora es el poder.",
+      "porque": "Es la forma más rápida de reconocer a alguien sin cambiarle el sueldo ni el alcance.",
+      "arreglo": "Reservar la palabra para quien abre caminos nuevos y arrastra a otros, y llamar «responsable» o «gerente» al resto, que es lo que son y no es menos.",
+      "comoCazarlo": "Pregunta a quién sigue la gente por decisión propia. Si la lista no coincide con el organigrama, la etiqueta está puesta por jerarquía.",
+      "consejo": "No es un problema de palabras: cuando la empresa etiqueta por jerarquía, le quita a la gente el incentivo de cambiar las cosas.",
+      "salioDe": "«Innovative Work Cultures Know the Difference Between “Leader” and “Manager”» · MIT Sloan Management Review",
+      "senales": [
+        "es líder del equipo",
+        "los líderes de la empresa"
+      ],
+      "vecinas": [
+        "objetivos-que-nadie-baja",
+        "la-visión-que-no-se-repite",
+        "delegar-el-resultado-no",
+        "ascender-al-mejor-tecnico",
+        "el-heroe-que-tapa"
+      ]
+    },
+    {
+      "id": "la-distancia-de-afinidad",
+      "titulo": "El equipo remoto funciona y no se conoce",
+      "gravedad": "alta",
+      "sintoma": "Las entregas salen, las juntas ocurren, y nadie se pide ayuda ni levanta un problema antes de que estalle.",
+      "causa": "Es distancia de afinidad: la falta de conexión mental y emocional por poca familiaridad, poca interdependencia y ningún propósito compartido. No se arregla con más llamadas.",
+      "porque": "Las otras dos distancias —la física y la operativa— se ven en el calendario y en las herramientas. Ésta no aparece en ningún tablero.",
+      "arreglo": "Delegar es la herramienta, y no por la carga: delegar bien obliga a compartir el porqué, y compartir el porqué es lo único que cierra esa distancia.",
+      "comoCazarlo": "Pregunta quién levantaría la mano si algo va mal. Si la respuesta es «se enteraría en la junta», la afinidad está lejos.",
+      "consejo": "De las tres distancias virtuales, la de afinidad es la que separa a un equipo bueno de uno excelente.",
+      "salioDe": "«Embrace Delegation as a Skill to Strengthen Remote Teams» · MIT Sloan Management Review",
+      "senales": [
+        "equipo remoto",
+        "no se conocen",
+        "no avisan"
+      ],
+      "vecinas": [
+        "delegar-el-resultado-no",
+        "delegar-la-tarea-sin-el-porque",
+        "proteger-al-equipo-de-todo",
+        "asincrono-de-nombre",
+        "reconocer-al-que-se-ve"
+      ]
+    },
+    {
+      "id": "el-jefe-que-amplifica",
+      "titulo": "El jefe convierte la presión en pánico",
+      "gravedad": "alta",
+      "sintoma": "Hay una fecha apretada y el equipo entra en modo pelea o huida: se esconde información y se dejan de pedir ayudas.",
+      "causa": "Investigado: los jefes suelen INTENSIFICAR la presión que ya sienten los empleados en vez de contenerla.",
+      "porque": "Transmitir la urgencia se siente como hacer el trabajo de jefe. Contenerla parece no hacer nada.",
+      "arreglo": "Modelar confianza y empujar a que el equipo busque soluciones entre pares, no hacia arriba. La mayoría del estrés laboral es episódico y manejable con apoyo.",
+      "comoCazarlo": "Si al aparecer un problema la gente primero calcula cómo contarlo y luego cómo resolverlo, el jefe está amplificando.",
+      "consejo": "Encuesta a más de 150 directivos en Europa, Asia-Pacífico, Oriente Medio y Estados Unidos: la mayoría de las organizaciones no tiene ningún método sistemático para el estrés de equipo.",
+      "salioDe": "«How Leaders Help Teams Manage Stress» · MIT Sloan Management Review",
+      "senales": [
+        "presión",
+        "urgente",
+        "hay que apretar"
+      ],
+      "vecinas": [
+        "urgencia-permanente",
+        "el-que-decide-habla-primero"
+      ]
+    },
+    {
+      "id": "delegar-la-tarea-sin-el-porque",
+      "titulo": "Delegué el trabajo y salió otra cosa",
+      "gravedad": "media",
+      "sintoma": "Se encarga algo con instrucciones claras y vuelve cumpliendo la letra y fallando la intención.",
+      "causa": "Se delegó el qué sin el para qué. Sin el propósito, quien lo hace no puede decidir en los cien detalles que no estaban en la instrucción.",
+      "porque": "Explicar el porqué tarda más que dar la instrucción, y el que delega tiene prisa justo por eso.",
+      "arreglo": "Delegar en dos partes: el resultado que se busca y por qué importa. Las instrucciones son la tercera y la menos importante.",
+      "comoCazarlo": "Pregunta a quien recibió el encargo para qué sirve. Si no lo sabe, sólo recibió instrucciones.",
+      "consejo": "Delegar bien es además la mejor herramienta que tiene un jefe remoto para cerrar la distancia con su equipo.",
+      "salioDe": "«Embrace Delegation as a Skill to Strengthen Remote Teams» · MIT Sloan Management Review",
+      "senales": [
+        "no era eso",
+        "hizo lo que le dije"
+      ],
+      "vecinas": [
+        "delegar-el-resultado-no",
+        "proteger-al-equipo-de-todo",
+        "la-distancia-de-afinidad"
+      ]
+    },
+    {
+      "id": "seguridad-para-decir-que-no-sale",
+      "titulo": "Nadie dice que el plan no va a salir",
+      "gravedad": "alta",
+      "sintoma": "Todo el mundo asiente en la junta y en privado tres personas dicen lo mismo: que no llega.",
+      "causa": "No hay seguridad psicológica. Decir la verdad en público tiene coste y decirla en privado no.",
+      "porque": "El que calla no se equivoca en el acta.",
+      "arreglo": "Preguntar por escrito y en anónimo antes de la junta, y llevar a la junta lo que salga. Se rompe el coste social en el primer intento.",
+      "comoCazarlo": "Compara lo que se dice en la junta con lo que se dice en el pasillo. La distancia es la medida exacta.",
+      "consejo": "La política organizacional y la seguridad psicológica son las dos caras del mismo estudio: donde hay mucha de la primera, no hay nada de la segunda.",
+      "salioDe": "«How Leaders Help Teams Manage Stress» · MIT Sloan Management Review",
+      "senales": [
+        "todos de acuerdo",
+        "en privado me dijeron"
+      ],
+      "vecinas": [
+        "el-escenario-unico",
+        "plan-sin-escenario-malo",
+        "modelar-al-competidor",
+        "el-que-decide-habla-primero",
+        "la-puerta-abierta-que-nadie-cruza"
+      ]
+    },
+    {
+      "id": "reconocer-al-que-se-ve",
+      "titulo": "Se premia a quien está cerca",
+      "gravedad": "media",
+      "sintoma": "Los reconocimientos y los ascensos caen sistemáticamente en quien coincide más con la dirección.",
+      "causa": "Distancia física convertida en sesgo de evaluación. Se evalúa lo que se ve, y se ve más a quien está cerca.",
+      "porque": "Nadie lo decide: se acumula reunión a reunión.",
+      "arreglo": "Evaluar por resultados escritos y acordados de antemano, no por impresión. En equipos repartidos es la única forma que no premia la cercanía.",
+      "comoCazarlo": "Mira los últimos cinco reconocimientos y su distancia física a quien decide. Si correlacionan, ahí está el sesgo.",
+      "consejo": "En equipos remotos la distancia física se convierte en distancia de carrera si nadie la vigila.",
+      "salioDe": "Síntesis de distancia virtual · MIT Sloan Management Review",
+      "senales": [
+        "siempre los mismos",
+        "no se me ve"
+      ],
+      "vecinas": [
+        "ascender-al-mejor-tecnico",
+        "feedback-anual",
+        "contratar-al-parecido",
+        "la-distancia-de-afinidad",
+        "asincrono-de-nombre"
+      ]
+    },
+    {
+      "id": "el-que-decide-habla-primero",
+      "titulo": "El jefe opina primero y ya nadie discrepa",
+      "gravedad": "media",
+      "sintoma": "La discusión se cierra sola después de la primera intervención de quien manda.",
+      "causa": "Anclaje. Lo primero que se oye fija el rango y el resto se mueve alrededor.",
+      "porque": "Quien manda tiene más contexto y por eso siente que debe abrir. Justo por eso no debe.",
+      "arreglo": "Regla simple: quien decide habla al final. Si tiene que abrir, que sea con la pregunta, nunca con la respuesta.",
+      "comoCazarlo": "Cuenta las opiniones distintas antes y después de que hable quien manda. Si el número cae a cero, ancló.",
+      "consejo": "Esta es la más barata de arreglar de toda esta lista y la que más cambia una junta.",
+      "salioDe": "Síntesis de dinámica de juntas · MIT SMR y Atlassian",
+      "senales": [
+        "nadie más opinó",
+        "ya lo dijo el jefe"
+      ],
+      "vecinas": [
+        "seguridad-para-decir-que-no-sale",
+        "la-puerta-abierta-que-nadie-cruza",
+        "miedo-a-quedar-en-ridiculo",
+        "el-jefe-que-amplifica",
+        "urgencia-permanente"
+      ]
+    },
+    {
+      "id": "la-puerta-abierta-que-nadie-cruza",
+      "titulo": "Digo que mi puerta está abierta y nadie entra",
+      "gravedad": "media",
+      "sintoma": "Se ofrece disponibilidad y nadie la usa, y se lee como que no hay problemas.",
+      "causa": "La puerta abierta traslada el coste al empleado: le toca decidir que su problema merece interrumpir a quien manda.",
+      "porque": "Es una oferta sincera y gratuita para quien la hace.",
+      "arreglo": "Ir uno. Preguntas concretas, en su terreno y con periodicidad. La iniciativa la pone quien tiene el poder, no quien no lo tiene.",
+      "comoCazarlo": "Cuenta cuántos entraron por su cuenta este mes. Si son menos de dos, la puerta está abierta y cerrada a la vez.",
+      "consejo": "Nadie interrumpe a su jefe para decirle algo que todavía no está seguro de que sea un problema — y ésos son justo los que sirven.",
+      "salioDe": "Síntesis de práctica directiva · MIT Sloan Management Review",
+      "senales": [
+        "mi puerta está abierta",
+        "nadie me dijo nada"
+      ],
+      "vecinas": [
+        "seguridad-para-decir-que-no-sale",
+        "el-que-decide-habla-primero",
+        "miedo-a-quedar-en-ridiculo",
+        "la-visión-que-no-se-repite",
+        "feedback-anual"
+      ]
+    },
+    {
+      "id": "el-heroe-que-tapa",
+      "titulo": "Una persona sostiene el área entera",
+      "gravedad": "alta",
+      "sintoma": "Si esa persona se va de vacaciones, el área se para.",
+      "causa": "Se premió el heroísmo en vez de arreglar el sistema. Cada rescate hace menos urgente arreglar la causa.",
+      "porque": "El héroe resuelve hoy y el sistema tarda meses. Y además el héroe recibe reconocimiento por ello.",
+      "arreglo": "Poner por escrito qué se rompió cada vez que hubo rescate, y arreglar eso. Y repartir el conocimiento aunque salga más lento el primer mes.",
+      "comoCazarlo": "Pregunta qué pasa si esa persona se enferma dos semanas. Si nadie sabe contestar, ya está.",
+      "consejo": "Premiar el rescate garantiza que siga habiendo incendios: es el incentivo puesto exactamente al revés.",
+      "salioDe": "Síntesis de riesgo operativo · GitLab Handbook y MIT SMR",
+      "senales": [
+        "sólo él sabe",
+        "se va de vacaciones"
+      ],
+      "vecinas": [
+        "el-contacto-unico",
+        "sin-autoservicio",
+        "sin-dueno-del-proceso",
+        "proteger-al-equipo-de-todo",
+        "urgencia-permanente"
+      ]
+    },
+    {
+      "id": "feedback-anual",
+      "titulo": "La única conversación de desempeño es en diciembre",
+      "gravedad": "media",
+      "sintoma": "La evaluación llega una vez al año y trae sorpresas para las dos partes.",
+      "causa": "Un año es demasiado tarde para corregir nada, y el sesgo de lo reciente hace que sólo pesen los últimos dos meses.",
+      "porque": "Concentrar la conversación en una fecha es cómodo de administrar.",
+      "arreglo": "Conversaciones cortas y frecuentes, con notas escritas. La evaluación anual sólo resume lo que ya se dijo, y no debería sorprender a nadie.",
+      "comoCazarlo": "Si en la evaluación anual aparece algo que la persona no sabía, el proceso falló durante once meses.",
+      "consejo": "Una evaluación que sorprende no es una evaluación: es una noticia.",
+      "salioDe": "Síntesis de gestión del desempeño · GitLab Handbook",
+      "senales": [
+        "evaluación anual",
+        "no me lo habían dicho"
+      ],
+      "vecinas": [
+        "ascender-al-mejor-tecnico",
+        "reconocer-al-que-se-ve",
+        "contratar-al-parecido",
+        "la-visión-que-no-se-repite",
+        "la-puerta-abierta-que-nadie-cruza"
+      ]
+    },
+    {
+      "id": "ascender-al-mejor-tecnico",
+      "titulo": "Ascendimos al mejor y perdimos al mejor",
+      "gravedad": "media",
+      "sintoma": "La persona más competente en su oficio pasa a jefe y ni rinde igual ni disfruta.",
+      "causa": "Se usó el ascenso como único premio disponible. Son dos trabajos distintos y ser bueno en el primero no dice nada del segundo.",
+      "porque": "No hay otra forma de subir el sueldo ni el reconocimiento.",
+      "arreglo": "Dos carreras paralelas: una técnica y una de gestión, con el mismo techo de sueldo y de respeto. Sin eso, cada ascenso es una apuesta.",
+      "comoCazarlo": "Pregunta si en la empresa se puede llegar arriba sin gente a cargo. Si no, no hay carrera técnica.",
+      "consejo": "El coste no es sólo el jefe mediocre: es el especialista que se perdió.",
+      "salioDe": "Síntesis de carrera profesional · GitLab Handbook y MIT SMR",
+      "senales": [
+        "lo ascendimos",
+        "no rinde igual"
+      ],
+      "vecinas": [
+        "reconocer-al-que-se-ve",
+        "feedback-anual",
+        "contratar-al-parecido",
+        "lider-por-organigrama",
+        "el-heroe-que-tapa"
+      ]
+    },
+    {
+      "id": "contratar-al-parecido",
+      "titulo": "Contratamos gente parecida a nosotros",
+      "gravedad": "media",
+      "sintoma": "El equipo, mirado desde fuera, piensa igual, viene de sitios parecidos y falla en las mismas cosas.",
+      "causa": "La afinidad se confunde con encaje. Se contrata a quien es agradable de entrevistar, que es a quien se parece a uno.",
+      "porque": "La entrevista no estructurada mide precisamente eso, y encima se siente como buen juicio.",
+      "arreglo": "Criterios escritos antes de entrevistar, las mismas preguntas para todos, y puntuación por separado antes de juntarse a comentar.",
+      "comoCazarlo": "Mira de dónde vienen las últimas seis contrataciones. Si el patrón se ve a simple vista, no fue casualidad.",
+      "consejo": "Un equipo que falla en las mismas cosas no tiene a quién preguntarle lo que le falta.",
+      "salioDe": "Levashina et al., «The Structured Employment Interview» · vía MIT Sloan Management Review",
+      "senales": [
+        "encaja bien",
+        "buena química"
+      ],
+      "vecinas": [
+        "ascender-al-mejor-tecnico",
+        "reconocer-al-que-se-ve",
+        "feedback-anual",
+        "todas-las-ideas-suenan-igual",
+        "innovar-en-el-mismo-sitio"
+      ]
+    },
+    {
+      "id": "la-visión-que-no-se-repite",
+      "titulo": "Dije la visión una vez y creí que ya",
+      "gravedad": "media",
+      "sintoma": "La dirección se comunicó en una junta general y seis meses después nadie la sabe repetir.",
+      "causa": "Comunicar una vez no es comunicar. Compite con el ruido de cada semana.",
+      "porque": "Repetir se siente condescendiente para quien ya lo dijo.",
+      "arreglo": "Repetirlo hasta aburrirse, y en distintos formatos. Cuando quien la dice está harto, el equipo empieza a oírla.",
+      "comoCazarlo": "Pregunta a cinco personas cuál es la prioridad del año. Si salen cinco versiones, no se comunicó.",
+      "consejo": "La regla vieja sigue siendo la buena: cuando te canses de decirlo, apenas empiezan a escucharlo.",
+      "salioDe": "Síntesis de comunicación directiva · GitLab Handbook",
+      "senales": [
+        "ya lo dije",
+        "no se enteran"
+      ],
+      "vecinas": [
+        "objetivos-que-nadie-baja",
+        "lider-por-organigrama",
+        "delegar-el-resultado-no",
+        "la-puerta-abierta-que-nadie-cruza",
+        "feedback-anual"
+      ]
+    },
+    {
+      "id": "proteger-al-equipo-de-todo",
+      "titulo": "Le quito los problemas al equipo",
+      "gravedad": "media",
+      "sintoma": "El jefe absorbe todo lo desagradable y el equipo trabaja tranquilo y sin contexto.",
+      "causa": "Proteger de más quita información. El equipo deja de poder decidir bien porque no sabe qué está en juego.",
+      "porque": "Se siente como cuidar, y en el corto plazo lo es.",
+      "arreglo": "Compartir el problema y el margen de maniobra, no sólo la tarea. Proteger del ruido, no de la realidad.",
+      "comoCazarlo": "Si el equipo se sorprende cuando cambia una prioridad, estaba protegido de más.",
+      "consejo": "La diferencia está en si lo que se filtra es ruido o es contexto. El ruido sí se filtra.",
+      "salioDe": "Síntesis de liderazgo y contexto · MIT Sloan Management Review",
+      "senales": [
+        "no les preocupes",
+        "yo me encargo"
+      ],
+      "vecinas": [
+        "delegar-el-resultado-no",
+        "delegar-la-tarea-sin-el-porque",
+        "la-distancia-de-afinidad",
+        "el-heroe-que-tapa",
+        "urgencia-permanente"
+      ]
+    },
+    {
+      "id": "urgencia-permanente",
+      "titulo": "Todo es urgente desde hace un año",
+      "gravedad": "alta",
+      "sintoma": "Cada semana hay una emergencia y el equipo ya no distingue cuál lo es de verdad.",
+      "causa": "La urgencia se usó como herramienta de motivación y se gastó. Cuando todo es urgente, nada lo es.",
+      "porque": "La urgencia funciona la primera vez y la segunda, y es gratis de declarar.",
+      "arreglo": "Racionarla. Un número máximo de urgencias por trimestre, escrito. Lo que no cabe, espera — y eso es lo que la hace significar algo.",
+      "comoCazarlo": "Cuenta las urgencias declaradas del trimestre. Más de tres y la palabra ya no informa.",
+      "consejo": "El día que haya una urgencia de verdad, nadie va a correr, y va a ser justo.",
+      "salioDe": "Síntesis de estrés y liderazgo · MIT Sloan Management Review",
+      "senales": [
+        "es urgente",
+        "para ayer"
+      ],
+      "vecinas": [
+        "lo-urgente-come-a-lo-importante",
+        "la-excepcion-permanente",
+        "el-heroe-que-tapa",
+        "proteger-al-equipo-de-todo",
+        "el-jefe-que-amplifica"
+      ]
+    }
+  ]
 }

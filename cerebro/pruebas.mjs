@@ -8,7 +8,7 @@
    nada, o que se pueda meter una neurona a medias.
    ═════════════════════════════════════════════════════════════════════════ */
 import { cargar, aplanar, buscar, vecinas, revisar, agregar, grafo, claseDe,
-         CAMPOS, OBLIGATORIOS } from './cerebro.mjs';
+         desfase, CAMPOS, OBLIGATORIOS } from './cerebro.mjs';
 import { readFile } from 'node:fs/promises';
 
 let bien = 0, mal = 0;
@@ -26,6 +26,19 @@ console.log('\n· Integridad');
   ok(`hay neuronas (${r.total})`, r.total >= 20);
   ok('ninguna liga rota ni campo faltante', r.fallas.length === 0);
   if(r.fallas.length) r.fallas.forEach(f => console.log(`      ${f}`));
+
+  /* ⚠ LA QUE FALTABA, Y COSTÓ DÍAS DE MENTIRA. Las neuronas viven en
+     `neuronas/*.json` pero la PANTALLA lee `todo.json`, que se genera aparte.
+     Se escribieron 151 neuronas nuevas, todo salió verde, y la pantalla
+     siguió diciendo 140 porque nadie corrió `armar`. Carlos lo vio dos veces
+     antes que nosotros. Desde aquí, olvidarlo revienta. */
+  const d = await desfase();
+  ok(`todo.json sirve lo mismo que las fuentes (${d.servido} de ${d.fuente})`,
+     !d.falta && d.alDia);
+  if(!d.falta && !d.alDia){
+    if(d.sinServir.length) console.log(`      sin servir: ${d.sinServir.slice(0,8).join(', ')}`);
+    if(d.deMas.length)     console.log(`      de más: ${d.deMas.slice(0,8).join(', ')}`);
+  }
 
   ok('todas traen señales en lenguaje de persona',
      todas.every(n => (n.senales || []).length >= 2));

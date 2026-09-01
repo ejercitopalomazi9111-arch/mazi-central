@@ -93,6 +93,36 @@ import { CAMPOS, claseDe, OBLIGATORIOS, aplanar, buscar, vecinas, revisar, grafo
          normal, sobreArchivo, indiceDeArchivos, cobertura } from './buscador.mjs';
 
 
+/* ══ LA COMPUERTA QUE FALTABA ═════════════════════════════════════════════
+   `todo.json` es lo que LEE la pantalla y lo que lee el servidor de La Sala.
+   Las neuronas viven en `neuronas/*.json`. Son dos cosas, y hasta hoy nadie
+   comprobaba que dijeran lo mismo.
+
+   Lo que pasó por no comprobarlo: se escribieron 151 neuronas de negocios, se
+   commitearon, `revisar` dijo «✓ sin ligas rotas» — y la pantalla siguió
+   enseñando 140 durante días, porque nadie corrió `armar`. Carlos lo vio antes
+   que yo y lo dijo dos veces: «el cerebro sigue marcando 140 neuronas».
+
+   El defecto no es que se olvide correr `armar`. Es que olvidarlo NO DUELE:
+   todo sale verde y el número queda viejo. Por eso esto va dentro de `revisar`
+   y sale con código 1 — para que el olvido reviente en vez de disimular. */
+export async function desfase(){
+  const areas = await cargar();
+  const fuente = aplanar(areas);
+  let servido;
+  try { servido = JSON.parse(await readFile(join(AQUI, 'todo.json'), 'utf8')); }
+  catch { return { falta: true, fuente: fuente.length }; }
+
+  const idsFuente  = new Set(fuente.map(n => n.id));
+  const idsServido = new Set((servido.neuronas || []).map(n => n.id));
+  const sinServir  = [...idsFuente].filter(id => !idsServido.has(id));
+  const defMas     = [...idsServido].filter(id => !idsFuente.has(id));
+
+  return { falta: false, fuente: fuente.length, servido: idsServido.size,
+           sinServir, deMas: defMas,
+           alDia: sinServir.length === 0 && defMas.length === 0 };
+}
+
 export async function armar(){
   const areas = await cargar();
   const todas = aplanar(areas);
@@ -181,8 +211,25 @@ if(process.argv[1] && process.argv[1].endsWith('cerebro.mjs')){
   else if(orden === 'revisar'){
     const r = revisar(areas);
     console.log(`\n  ${r.total} neuronas en ${r.areas} áreas`);
-    if(!r.fallas.length) console.log('  ✓ sin ligas rotas ni campos faltantes\n');
-    else { r.fallas.forEach(f => console.log(`  ✗ ${f}`)); console.log(''); process.exit(1); }
+    if(!r.fallas.length) console.log('  ✓ sin ligas rotas ni campos faltantes');
+    else { r.fallas.forEach(f => console.log(`  ✗ ${f}`)); }
+
+    /* Y lo segundo, que es lo que se veía verde mientras mentía: */
+    const d = await desfase();
+    if(d.falta){
+      console.log(`  ✗ no hay todo.json. La pantalla no tiene qué leer.`);
+      console.log('    node cerebro/cerebro.mjs armar\n');
+      process.exit(1);
+    }
+    if(!d.alDia){
+      console.log(`  ✗ todo.json está viejo: sirve ${d.servido} y las fuentes tienen ${d.fuente}.`);
+      if(d.sinServir.length) console.log(`    sin servir (${d.sinServir.length}): ${d.sinServir.slice(0,6).join(', ')}${d.sinServir.length>6?'…':''}`);
+      if(d.deMas.length)     console.log(`    de más (${d.deMas.length}): ${d.deMas.slice(0,6).join(', ')}${d.deMas.length>6?'…':''}`);
+      console.log('    node cerebro/cerebro.mjs armar, y commitear todo.json\n');
+      process.exit(1);
+    }
+    console.log(`  ✓ todo.json al día · ${d.servido} neuronas servidas\n`);
+    if(r.fallas.length) process.exit(1);
   }
   else if(orden === 'armar'){
     const t = await armar();

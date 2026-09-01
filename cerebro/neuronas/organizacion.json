@@ -1,247 +1,348 @@
 {
- "area": "organizacion",
- "nombre": "Organización",
- "que": "Cómo se reparte el trabajo entre personas — y dónde se pierde al pasar de unas a otras.",
- "neuronas": [
-  {
-   "id": "junta-sin-agenda",
-   "titulo": "Junta sin agenda, junta sin nada",
-   "gravedad": "alta",
-   "sintoma": "La invitación no trae agenda y la junta se llena de lo que traiga cada uno.",
-   "causa": "Sin agenda no hay forma de decidir quién sobra, cuánto dura ni con qué se sale.",
-   "porque": "Escribir la agenda cuesta diez minutos a una persona; no escribirla cuesta una hora a doce.",
-   "arreglo": "Regla dura y sin excepciones: sin agenda, no se asiste. En GitLab la agenda es un documento vivo pegado a la invitación, y se escribe antes.",
-   "comoCazarlo": "Cuenta las invitaciones de tu semana sin agenda. Ése es el tiempo que ya está perdido.",
-   "consejo": "«No agenda, no attenda». Es de las pocas reglas de organización que funcionan escritas tal cual.",
-   "salioDe": "«GitLab Meeting Best Practices: Live Doc Meetings» · The GitLab Handbook",
-   "senales": [
-    "sin agenda",
-    "de qué era la junta"
-   ]
-  },
-  {
-   "id": "la-resaca-de-la-junta",
-   "titulo": "Después de esa junta nadie rinde",
-   "gravedad": "media",
-   "sintoma": "Tras una junta mala, la gente tarda en volver al trabajo y ese rato no lo cuenta nadie.",
-   "causa": "Está estudiado y tiene nombre: síndrome de recuperación de reuniones. El coste no termina cuando termina la junta.",
-   "porque": "El coste de la junta se calcula en horas de calendario, y ése es sólo el visible.",
-   "arreglo": "Contar la recuperación en el coste, y usar el número para decidir si la junta se hace. Veinte minutos por persona es una estimación conservadora.",
-   "comoCazarlo": "Pregunta cuánto tardaron en volver al trabajo. Si es más de quince minutos, súmalo al coste.",
-   "consejo": "Una junta mala de doce personas puede costar más de veinte horas contando la resaca.",
-   "salioDe": "«The Surprising Science Behind Successful Remote Meetings» · MIT Sloan Management Review",
-   "senales": [
-    "qué junta",
-    "no rindo después"
-   ]
-  },
-  {
-   "id": "reorganizar-mirando-quien-sale",
-   "titulo": "En la reorganización miramos cuánta gente sale",
-   "gravedad": "alta",
-   "sintoma": "El proyecto de reestructuración se mide en cabezas reducidas y en paquetes de salida.",
-   "causa": "Se está mirando CÓMO sale la gente y no QUIÉN se queda. La calidad de los que quedan es la variable estratégica.",
-   "porque": "El ahorro es inmediato y cuantificable; la calidad del equipo restante no aparece en la hoja.",
-   "arreglo": "Empezar por la estrategia futura y por quién la va a ejecutar. La reducción de plantilla es el RESULTADO, nunca el objetivo.",
-   "comoCazarlo": "Pregunta quiénes son las diez personas imprescindibles para el plan del año que viene. Si no está en el papel de la reorganización, se está haciendo al revés.",
-   "consejo": "Las empresas pierden a sus mejores en una reestructuración: los buenos encuentran salida rápido en vez de esperar el resultado.",
-   "salioDe": "«Planning for a Restructured, Revitalized Organization» · MIT Sloan Management Review",
-   "senales": [
-    "recorte",
-    "reestructuración"
-   ]
-  },
-  {
-   "id": "tres-culturas-que-no-se-hablan",
-   "titulo": "Operaciones, técnica y dirección no se entienden",
-   "gravedad": "alta",
-   "sintoma": "Los tres grupos tienen razón por separado y la decisión conjunta sale mal.",
-   "causa": "Son tres culturas distintas y dos de ellas —la técnica y la directiva— tienen su grupo de referencia FUERA de la empresa: la comunidad profesional y el mundo de los directivos.",
-   "porque": "Cada una da por supuesto lo suyo, y lo que se da por supuesto no se dice en la junta.",
-   "arreglo": "Poner por escrito los supuestos de cada grupo antes de decidir. La discusión que sirve es sobre los supuestos, no sobre la conclusión.",
-   "comoCazarlo": "Si los tres están de acuerdo en el qué y no en el cómo, el desacuerdo es de cultura y no de datos.",
-   "consejo": "Es la razón de fondo de que las innovaciones organizativas no arraiguen: no es resistencia al cambio, son tres marcos que no comparten supuestos.",
-   "salioDe": "Edgar Schein, «Three Cultures of Management: The Key to Organizational Learning» · MIT Sloan Management Review",
-   "senales": [
-    "no se entienden",
-    "cada uno a lo suyo"
-   ]
-  },
-  {
-   "id": "departamentos-aislados",
-   "titulo": "El trabajo se rompe al pasar de un área a otra",
-   "gravedad": "alta",
-   "sintoma": "Cada departamento cumple lo suyo y el resultado llega tarde y mal.",
-   "causa": "La organización es funcional y jerárquica: el trabajo está fragmentado y la comunicación lateral es escasa.",
-   "porque": "Cada área optimiza lo suyo porque es lo único que se le mide.",
-   "arreglo": "Definir el proceso completo —el conjunto de tareas que, sólo juntas, convierten la entrada en salida— y ponerle un dueño de punta a punta.",
-   "comoCazarlo": "Sigue una petición real de principio a fin y cronometra las esperas. Casi todo el tiempo está en los pases, no en el trabajo.",
-   "consejo": "Los procesos que casi nadie trata como procesos son los que más lo necesitan: asignar recursos y decidir.",
-   "salioDe": "«The Processes of Organization and Management» · MIT Sloan Management Review",
-   "senales": [
-    "depende de otra área",
-    "se quedó esperando"
-   ]
-  },
-  {
-   "id": "la-junta-como-cultura",
-   "titulo": "Las juntas dicen cómo es la empresa",
-   "gravedad": "media",
-   "sintoma": "Se quiere cambiar la cultura con carteles y valores, y las juntas siguen igual.",
-   "causa": "La junta es el sitio donde la cultura se ve en directo: quién habla, quién interrumpe, quién no viene.",
-   "porque": "Los valores se redactan; las juntas se heredan.",
-   "arreglo": "Cambiar la junta antes que el cartel: quién decide, quién habla primero, cuánto dura, con qué se sale.",
-   "comoCazarlo": "Graba o cronometra una junta y reparte el tiempo de habla por persona. Ahí está la cultura, medida.",
-   "consejo": "Es el mejor termómetro que hay porque no se puede maquillar: pasa todas las semanas.",
-   "salioDe": "«What meetings reveal about your company culture» · Atlassian",
-   "senales": [
-    "cultura",
-    "valores"
-   ]
-  },
-  {
-   "id": "reunion-que-debio-ser-documento",
-   "titulo": "Esta junta era un documento",
-   "gravedad": "media",
-   "sintoma": "Una hora de doce personas para transmitir información que se lee en cinco minutos.",
-   "causa": "La junta se usa para transmitir, que es lo que peor hace, en vez de para lo que sólo ella hace: discutir y decidir.",
-   "porque": "Hablar cuesta menos que escribir, y el que convoca es el que se ahorra el trabajo.",
-   "arreglo": "Documento primero, junta después y sólo para lo que no se resolvió leyendo. Es el orden, no una preferencia.",
-   "comoCazarlo": "Si al terminar nadie cambió de opinión y no se decidió nada, era un documento.",
-   "consejo": "Doce personas y una hora son doce horas. Casi nunca se cuenta así.",
-   "salioDe": "«GitLab Meeting Best Practices» · The GitLab Handbook",
-   "senales": [
-    "os pongo al día",
-    "junta informativa"
-   ]
-  },
-  {
-   "id": "la-lista-de-invitados-crece",
-   "titulo": "Invitamos a todos por si acaso",
-   "gravedad": "media",
-   "sintoma": "La junta tiene catorce personas y hablan tres.",
-   "causa": "Invitar de más se hace por miedo a que alguien se ofenda, no por necesidad de su aporte.",
-   "porque": "Excluir a alguien tiene coste social inmediato; invitarlo de más tiene coste difuso y repartido.",
-   "arreglo": "Invitar sólo a quien decide o aporta, y mandar las notas a los demás. La ofensa se resuelve con las notas.",
-   "comoCazarlo": "Cuenta cuántos hablaron. Los que no hablaron y no decidieron nada estaban de más.",
-   "consejo": "La lista de invitados es una decisión de coste, y casi nunca se toma como tal.",
-   "salioDe": "Síntesis de ciencia de reuniones · MIT SMR y Atlassian",
-   "senales": [
-    "por si acaso",
-    "invita a todos"
-   ]
-  },
-  {
-   "id": "sin-dueno-del-proceso",
-   "titulo": "Todo el mundo participa y nadie es el dueño",
-   "gravedad": "media",
-   "sintoma": "Un proceso pasa por cinco áreas y cuando falla no hay a quién preguntar.",
-   "causa": "Se repartió la ejecución y no la responsabilidad. Cada área es dueña de su tramo y nadie del resultado.",
-   "porque": "Nombrar un dueño de punta a punta obliga a darle autoridad sobre áreas que no dirige.",
-   "arreglo": "Un nombre por proceso, con autoridad para convocar y para cambiar los tramos, aunque no dirija a la gente.",
-   "comoCazarlo": "Pregunta quién responde si el proceso falla. Si contestan «depende de dónde falle», no hay dueño.",
-   "consejo": "Sin dueño, un proceso se degrada solo: cada tramo se optimiza y el conjunto empeora.",
-   "salioDe": "«The Processes of Organization and Management» · MIT Sloan Management Review",
-   "senales": [
-    "no es mi parte",
-    "depende de dónde falle"
-   ]
-  },
-  {
-   "id": "lo-escrito-que-nadie-mantiene",
-   "titulo": "El manual existe y está mal",
-   "gravedad": "media",
-   "sintoma": "Hay documentación y nadie se fía porque la última vez estaba desfasada.",
-   "causa": "Se escribió una vez y no se le puso dueño ni fecha de revisión. Un documento sin mantenimiento es peor que ninguno: manda a la gente en la dirección equivocada con confianza.",
-   "porque": "Escribir se aplaude; mantener no se ve.",
-   "arreglo": "Fecha de revisión visible en cada página y un dueño. Lo que no se revisa se marca como caducado, no se deja.",
-   "comoCazarlo": "Mira la fecha de la última edición de las cinco páginas más usadas. Si pasan de seis meses, ya nadie se fía.",
-   "consejo": "GitLab mantiene su manual como parte del trabajo, no como un anexo: por eso se puede usar.",
-   "salioDe": "Síntesis del GitLab Handbook",
-   "senales": [
-    "está desactualizado",
-    "mejor pregunta"
-   ]
-  },
-  {
-   "id": "organigrama-que-no-coincide",
-   "titulo": "El organigrama no explica cómo se trabaja",
-   "gravedad": "media",
-   "sintoma": "Las decisiones reales siguen caminos que no están en ninguna caja del organigrama.",
-   "causa": "La estructura formal y la red real se separaron. La formal se cambia por decreto, la real no.",
-   "porque": "Cambiar el organigrama es visible y rápido; cambiar la red real toma trimestres.",
-   "arreglo": "Dibujar la red real —quién le pregunta a quién— y decidir si se acomoda la estructura a ella o al revés. Pero decidirlo.",
-   "comoCazarlo": "Pregunta a diez personas a quién le preguntan cuando se atoran. Ese dibujo es la organización.",
-   "consejo": "La distancia entre los dos dibujos es la cantidad de coordinación que la empresa está pagando en silencio.",
-   "salioDe": "Síntesis de diseño organizativo · MIT Sloan Management Review",
-   "senales": [
-    "organigrama",
-    "quién decide esto"
-   ]
-  },
-  {
-   "id": "copiar-la-estructura-de-otro",
-   "titulo": "Copiamos la organización de una empresa que admiramos",
-   "gravedad": "media",
-   "sintoma": "Se adopta un modelo de equipos de otra empresa y no funciona igual.",
-   "causa": "La estructura de otro resuelve los problemas de otro, en su etapa de crecimiento y con su producto.",
-   "porque": "Copiar un modelo probado se argumenta muy bien en una presentación.",
-   "arreglo": "Diagnosticar primero qué problema de coordinación se tiene, y sólo entonces mirar quién lo resolvió y en qué etapa.",
-   "comoCazarlo": "Pregunta qué problema concreto resuelve la estructura nueva. Si la respuesta es un nombre de empresa, no hay diagnóstico.",
-   "consejo": "La estructura óptima cambia con la etapa. La de una empresa de mil no sirve a una de cuarenta ni al revés.",
-   "salioDe": "«Design Your Marketing Organization to Fit Your Company’s Growth Stage» · MIT Sloan Management Review",
-   "senales": [
-    "como hacen en",
-    "modelo de equipos"
-   ]
-  },
-  {
-   "id": "asincrono-de-nombre",
-   "titulo": "Decimos que trabajamos en asíncrono y todo pasa en llamadas",
-   "gravedad": "media",
-   "sintoma": "La política dice asíncrono y las decisiones siguen tomándose en videollamada.",
-   "causa": "Trabajar en asíncrono exige escribir, y escribir es más lento para quien tiene el contexto — que suele ser quien decide.",
-   "porque": "La llamada resuelve hoy y el documento resuelve para todos, incluidos los que no estaban.",
-   "arreglo": "Que la decisión no exista hasta que esté escrita. La llamada puede ocurrir; lo que vale es lo escrito después.",
-   "comoCazarlo": "Pregunta dónde está escrita la última decisión importante. Si la respuesta es «lo hablamos», no hay asíncrono.",
-   "consejo": "Sin esa regla, el asíncrono se convierte en una etiqueta y quien no está en la llamada queda fuera.",
-   "salioDe": "Síntesis del GitLab Handbook",
-   "senales": [
-    "lo hablamos",
-    "en la llamada"
-   ]
-  },
-  {
-   "id": "coordinar-mas-que-trabajar",
-   "titulo": "Se va más tiempo en coordinar que en hacer",
-   "gravedad": "alta",
-   "sintoma": "Las semanas se llenan de sincronizaciones, actualizaciones y alineaciones.",
-   "causa": "La coordinación crece con el cuadrado de la gente si no se acota. Es matemática, no cultura.",
-   "porque": "Cada sincronización por separado está justificada.",
-   "arreglo": "Reducir las dependencias, no las juntas. Mientras dos equipos tengan que esperarse, la junta va a volver con otro nombre.",
-   "comoCazarlo": "Suma las horas de coordinación de una semana y divídelas entre las horas totales. Por encima de un tercio, el problema es de dependencias.",
-   "consejo": "Sólo el 24 % del trabajo de los equipos es crítico para la misión, según los propios directivos.",
-   "salioDe": "«How Atlassian Automation accelerates work» · Atlassian, State of Teams",
-   "senales": [
-    "alineamos",
-    "sincronizamos"
-   ]
-  },
-  {
-   "id": "la-excepcion-que-se-quedo",
-   "titulo": "La excepción de hace un año ya es el proceso",
-   "gravedad": "media",
-   "sintoma": "Se saltó el camino oficial «sólo esta vez» y hoy lo usan tres equipos.",
-   "causa": "Las excepciones no caducan solas y nadie tiene el trabajo de cerrarlas.",
-   "porque": "Abrirla resolvió algo visible; cerrarla no resuelve nada visible.",
-   "arreglo": "Toda excepción con fecha de caducidad. Al llegar la fecha, o se cierra o se convierte en proceso — y las dos cosas se deciden.",
-   "comoCazarlo": "Haz la lista de excepciones vivas. Las que no tienen fecha ya son procesos no escritos.",
-   "consejo": "Un proceso con cinco excepciones permanentes ya no es el proceso.",
-   "salioDe": "Síntesis de gobierno operativo · GitLab Handbook",
-   "senales": [
-    "sólo esta vez",
-    "hacemos la excepción"
-   ]
-  }
- ]
+  "area": "organizacion",
+  "nombre": "Organización",
+  "que": "Cómo se reparte el trabajo entre personas — y dónde se pierde al pasar de unas a otras.",
+  "neuronas": [
+    {
+      "id": "junta-sin-agenda",
+      "titulo": "Junta sin agenda, junta sin nada",
+      "gravedad": "alta",
+      "sintoma": "La invitación no trae agenda y la junta se llena de lo que traiga cada uno.",
+      "causa": "Sin agenda no hay forma de decidir quién sobra, cuánto dura ni con qué se sale.",
+      "porque": "Escribir la agenda cuesta diez minutos a una persona; no escribirla cuesta una hora a doce.",
+      "arreglo": "Regla dura y sin excepciones: sin agenda, no se asiste. En GitLab la agenda es un documento vivo pegado a la invitación, y se escribe antes.",
+      "comoCazarlo": "Cuenta las invitaciones de tu semana sin agenda. Ése es el tiempo que ya está perdido.",
+      "consejo": "«No agenda, no attenda». Es de las pocas reglas de organización que funcionan escritas tal cual.",
+      "salioDe": "«GitLab Meeting Best Practices: Live Doc Meetings» · The GitLab Handbook",
+      "senales": [
+        "sin agenda",
+        "de qué era la junta"
+      ],
+      "vecinas": [
+        "la-junta-sin-salida",
+        "la-resaca-de-la-junta",
+        "la-lista-de-invitados-crece",
+        "la-junta-como-cultura",
+        "tres-culturas-que-no-se-hablan"
+      ]
+    },
+    {
+      "id": "la-resaca-de-la-junta",
+      "titulo": "Después de esa junta nadie rinde",
+      "gravedad": "media",
+      "sintoma": "Tras una junta mala, la gente tarda en volver al trabajo y ese rato no lo cuenta nadie.",
+      "causa": "Está estudiado y tiene nombre: síndrome de recuperación de reuniones. El coste no termina cuando termina la junta.",
+      "porque": "El coste de la junta se calcula en horas de calendario, y ése es sólo el visible.",
+      "arreglo": "Contar la recuperación en el coste, y usar el número para decidir si la junta se hace. Veinte minutos por persona es una estimación conservadora.",
+      "comoCazarlo": "Pregunta cuánto tardaron en volver al trabajo. Si es más de quince minutos, súmalo al coste.",
+      "consejo": "Una junta mala de doce personas puede costar más de veinte horas contando la resaca.",
+      "salioDe": "«The Surprising Science Behind Successful Remote Meetings» · MIT Sloan Management Review",
+      "senales": [
+        "qué junta",
+        "no rindo después"
+      ],
+      "vecinas": [
+        "junta-sin-agenda",
+        "la-junta-sin-salida",
+        "la-lista-de-invitados-crece",
+        "coordinar-mas-que-trabajar",
+        "lo-urgente-come-a-lo-importante"
+      ]
+    },
+    {
+      "id": "reorganizar-mirando-quien-sale",
+      "titulo": "En la reorganización miramos cuánta gente sale",
+      "gravedad": "alta",
+      "sintoma": "El proyecto de reestructuración se mide en cabezas reducidas y en paquetes de salida.",
+      "causa": "Se está mirando CÓMO sale la gente y no QUIÉN se queda. La calidad de los que quedan es la variable estratégica.",
+      "porque": "El ahorro es inmediato y cuantificable; la calidad del equipo restante no aparece en la hoja.",
+      "arreglo": "Empezar por la estrategia futura y por quién la va a ejecutar. La reducción de plantilla es el RESULTADO, nunca el objetivo.",
+      "comoCazarlo": "Pregunta quiénes son las diez personas imprescindibles para el plan del año que viene. Si no está en el papel de la reorganización, se está haciendo al revés.",
+      "consejo": "Las empresas pierden a sus mejores en una reestructuración: los buenos encuentran salida rápido en vez de esperar el resultado.",
+      "salioDe": "«Planning for a Restructured, Revitalized Organization» · MIT Sloan Management Review",
+      "senales": [
+        "recorte",
+        "reestructuración"
+      ],
+      "vecinas": [
+        "reorganizar-ventas-sin-preparar-a-nadie",
+        "organigrama-que-no-coincide",
+        "estructura-para-otra-etapa",
+        "territorio-viejo-mata-al-vendedor",
+        "cuota-inventada"
+      ]
+    },
+    {
+      "id": "tres-culturas-que-no-se-hablan",
+      "titulo": "Operaciones, técnica y dirección no se entienden",
+      "gravedad": "alta",
+      "sintoma": "Los tres grupos tienen razón por separado y la decisión conjunta sale mal.",
+      "causa": "Son tres culturas distintas y dos de ellas —la técnica y la directiva— tienen su grupo de referencia FUERA de la empresa: la comunidad profesional y el mundo de los directivos.",
+      "porque": "Cada una da por supuesto lo suyo, y lo que se da por supuesto no se dice en la junta.",
+      "arreglo": "Poner por escrito los supuestos de cada grupo antes de decidir. La discusión que sirve es sobre los supuestos, no sobre la conclusión.",
+      "comoCazarlo": "Si los tres están de acuerdo en el qué y no en el cómo, el desacuerdo es de cultura y no de datos.",
+      "consejo": "Es la razón de fondo de que las innovaciones organizativas no arraiguen: no es resistencia al cambio, son tres marcos que no comparten supuestos.",
+      "salioDe": "Edgar Schein, «Three Cultures of Management: The Key to Organizational Learning» · MIT Sloan Management Review",
+      "senales": [
+        "no se entienden",
+        "cada uno a lo suyo"
+      ],
+      "vecinas": [
+        "la-junta-como-cultura",
+        "junta-sin-agenda",
+        "departamentos-aislados",
+        "soporte-separado-de-producto",
+        "coordinar-mas-que-trabajar"
+      ]
+    },
+    {
+      "id": "departamentos-aislados",
+      "titulo": "El trabajo se rompe al pasar de un área a otra",
+      "gravedad": "alta",
+      "sintoma": "Cada departamento cumple lo suyo y el resultado llega tarde y mal.",
+      "causa": "La organización es funcional y jerárquica: el trabajo está fragmentado y la comunicación lateral es escasa.",
+      "porque": "Cada área optimiza lo suyo porque es lo único que se le mide.",
+      "arreglo": "Definir el proceso completo —el conjunto de tareas que, sólo juntas, convierten la entrada en salida— y ponerle un dueño de punta a punta.",
+      "comoCazarlo": "Sigue una petición real de principio a fin y cronometra las esperas. Casi todo el tiempo está en los pases, no en el trabajo.",
+      "consejo": "Los procesos que casi nadie trata como procesos son los que más lo necesitan: asignar recursos y decidir.",
+      "salioDe": "«The Processes of Organization and Management» · MIT Sloan Management Review",
+      "senales": [
+        "depende de otra área",
+        "se quedó esperando"
+      ],
+      "vecinas": [
+        "lanzar-sin-el-de-ventas",
+        "origen-de-tratos-por-suerte",
+        "el-embudo-sin-etapas",
+        "tres-culturas-que-no-se-hablan",
+        "soporte-separado-de-producto"
+      ]
+    },
+    {
+      "id": "la-junta-como-cultura",
+      "titulo": "Las juntas dicen cómo es la empresa",
+      "gravedad": "media",
+      "sintoma": "Se quiere cambiar la cultura con carteles y valores, y las juntas siguen igual.",
+      "causa": "La junta es el sitio donde la cultura se ve en directo: quién habla, quién interrumpe, quién no viene.",
+      "porque": "Los valores se redactan; las juntas se heredan.",
+      "arreglo": "Cambiar la junta antes que el cartel: quién decide, quién habla primero, cuánto dura, con qué se sale.",
+      "comoCazarlo": "Graba o cronometra una junta y reparte el tiempo de habla por persona. Ahí está la cultura, medida.",
+      "consejo": "Es el mejor termómetro que hay porque no se puede maquillar: pasa todas las semanas.",
+      "salioDe": "«What meetings reveal about your company culture» · Atlassian",
+      "senales": [
+        "cultura",
+        "valores"
+      ],
+      "vecinas": [
+        "junta-sin-agenda",
+        "tres-culturas-que-no-se-hablan",
+        "departamentos-aislados"
+      ]
+    },
+    {
+      "id": "reunion-que-debio-ser-documento",
+      "titulo": "Esta junta era un documento",
+      "gravedad": "media",
+      "sintoma": "Una hora de doce personas para transmitir información que se lee en cinco minutos.",
+      "causa": "La junta se usa para transmitir, que es lo que peor hace, en vez de para lo que sólo ella hace: discutir y decidir.",
+      "porque": "Hablar cuesta menos que escribir, y el que convoca es el que se ahorra el trabajo.",
+      "arreglo": "Documento primero, junta después y sólo para lo que no se resolvió leyendo. Es el orden, no una preferencia.",
+      "comoCazarlo": "Si al terminar nadie cambió de opinión y no se decidió nada, era un documento.",
+      "consejo": "Doce personas y una hora son doce horas. Casi nunca se cuenta así.",
+      "salioDe": "«GitLab Meeting Best Practices» · The GitLab Handbook",
+      "senales": [
+        "os pongo al día",
+        "junta informativa"
+      ],
+      "vecinas": [
+        "la-reunion-que-sustituye-al-documento",
+        "asincrono-de-nombre",
+        "demo-en-vivo-obligatoria",
+        "la-junta-sin-salida",
+        "sin-dueno-del-proceso"
+      ]
+    },
+    {
+      "id": "la-lista-de-invitados-crece",
+      "titulo": "Invitamos a todos por si acaso",
+      "gravedad": "media",
+      "sintoma": "La junta tiene catorce personas y hablan tres.",
+      "causa": "Invitar de más se hace por miedo a que alguien se ofenda, no por necesidad de su aporte.",
+      "porque": "Excluir a alguien tiene coste social inmediato; invitarlo de más tiene coste difuso y repartido.",
+      "arreglo": "Invitar sólo a quien decide o aporta, y mandar las notas a los demás. La ofensa se resuelve con las notas.",
+      "comoCazarlo": "Cuenta cuántos hablaron. Los que no hablaron y no decidieron nada estaban de más.",
+      "consejo": "La lista de invitados es una decisión de coste, y casi nunca se toma como tal.",
+      "salioDe": "Síntesis de ciencia de reuniones · MIT SMR y Atlassian",
+      "senales": [
+        "por si acaso",
+        "invita a todos"
+      ],
+      "vecinas": [
+        "junta-sin-agenda",
+        "la-junta-sin-salida",
+        "la-resaca-de-la-junta",
+        "coordinar-mas-que-trabajar",
+        "asincrono-de-nombre"
+      ]
+    },
+    {
+      "id": "sin-dueno-del-proceso",
+      "titulo": "Todo el mundo participa y nadie es el dueño",
+      "gravedad": "media",
+      "sintoma": "Un proceso pasa por cinco áreas y cuando falla no hay a quién preguntar.",
+      "causa": "Se repartió la ejecución y no la responsabilidad. Cada área es dueña de su tramo y nadie del resultado.",
+      "porque": "Nombrar un dueño de punta a punta obliga a darle autoridad sobre áreas que no dirige.",
+      "arreglo": "Un nombre por proceso, con autoridad para convocar y para cambiar los tramos, aunque no dirija a la gente.",
+      "comoCazarlo": "Pregunta quién responde si el proceso falla. Si contestan «depende de dónde falle», no hay dueño.",
+      "consejo": "Sin dueño, un proceso se degrada solo: cada tramo se optimiza y el conjunto empeora.",
+      "salioDe": "«The Processes of Organization and Management» · MIT Sloan Management Review",
+      "senales": [
+        "no es mi parte",
+        "depende de dónde falle"
+      ],
+      "vecinas": [
+        "automatizacion-sin-dueno",
+        "la-idea-sin-dueno",
+        "consistencia-sin-quien",
+        "el-contacto-unico",
+        "el-heroe-que-tapa"
+      ]
+    },
+    {
+      "id": "lo-escrito-que-nadie-mantiene",
+      "titulo": "El manual existe y está mal",
+      "gravedad": "media",
+      "sintoma": "Hay documentación y nadie se fía porque la última vez estaba desfasada.",
+      "causa": "Se escribió una vez y no se le puso dueño ni fecha de revisión. Un documento sin mantenimiento es peor que ninguno: manda a la gente en la dirección equivocada con confianza.",
+      "porque": "Escribir se aplaude; mantener no se ve.",
+      "arreglo": "Fecha de revisión visible en cada página y un dueño. Lo que no se revisa se marca como caducado, no se deja.",
+      "comoCazarlo": "Mira la fecha de la última edición de las cinco páginas más usadas. Si pasan de seis meses, ya nadie se fía.",
+      "consejo": "GitLab mantiene su manual como parte del trabajo, no como un anexo: por eso se puede usar.",
+      "salioDe": "Síntesis del GitLab Handbook",
+      "senales": [
+        "está desactualizado",
+        "mejor pregunta"
+      ],
+      "vecinas": [
+        "contenido-viejo-que-nadie-marca",
+        "la-ayuda-enterrada",
+        "idiomas-a-medias",
+        "el-informe-que-nadie-lee",
+        "organigrama-que-no-coincide"
+      ]
+    },
+    {
+      "id": "organigrama-que-no-coincide",
+      "titulo": "El organigrama no explica cómo se trabaja",
+      "gravedad": "media",
+      "sintoma": "Las decisiones reales siguen caminos que no están en ninguna caja del organigrama.",
+      "causa": "La estructura formal y la red real se separaron. La formal se cambia por decreto, la real no.",
+      "porque": "Cambiar el organigrama es visible y rápido; cambiar la red real toma trimestres.",
+      "arreglo": "Dibujar la red real —quién le pregunta a quién— y decidir si se acomoda la estructura a ella o al revés. Pero decidirlo.",
+      "comoCazarlo": "Pregunta a diez personas a quién le preguntan cuando se atoran. Ese dibujo es la organización.",
+      "consejo": "La distancia entre los dos dibujos es la cantidad de coordinación que la empresa está pagando en silencio.",
+      "salioDe": "Síntesis de diseño organizativo · MIT Sloan Management Review",
+      "senales": [
+        "organigrama",
+        "quién decide esto"
+      ],
+      "vecinas": [
+        "el-informe-que-nadie-lee",
+        "lo-escrito-que-nadie-mantiene",
+        "reorganizar-mirando-quien-sale",
+        "reorganizar-ventas-sin-preparar-a-nadie",
+        "estructura-para-otra-etapa"
+      ]
+    },
+    {
+      "id": "copiar-la-estructura-de-otro",
+      "titulo": "Copiamos la organización de una empresa que admiramos",
+      "gravedad": "media",
+      "sintoma": "Se adopta un modelo de equipos de otra empresa y no funciona igual.",
+      "causa": "La estructura de otro resuelve los problemas de otro, en su etapa de crecimiento y con su producto.",
+      "porque": "Copiar un modelo probado se argumenta muy bien en una presentación.",
+      "arreglo": "Diagnosticar primero qué problema de coordinación se tiene, y sólo entonces mirar quién lo resolvió y en qué etapa.",
+      "comoCazarlo": "Pregunta qué problema concreto resuelve la estructura nueva. Si la respuesta es un nombre de empresa, no hay diagnóstico.",
+      "consejo": "La estructura óptima cambia con la etapa. La de una empresa de mil no sirve a una de cuarenta ni al revés.",
+      "salioDe": "«Design Your Marketing Organization to Fit Your Company’s Growth Stage» · MIT Sloan Management Review",
+      "senales": [
+        "como hacen en",
+        "modelo de equipos"
+      ],
+      "vecinas": [
+        "promocion-sin-mirar-al-sector",
+        "promocion-permanente",
+        "canal-por-costumbre",
+        "copiar-al-que-ya-llego",
+        "competir-donde-todos"
+      ]
+    },
+    {
+      "id": "asincrono-de-nombre",
+      "titulo": "Decimos que trabajamos en asíncrono y todo pasa en llamadas",
+      "gravedad": "media",
+      "sintoma": "La política dice asíncrono y las decisiones siguen tomándose en videollamada.",
+      "causa": "Trabajar en asíncrono exige escribir, y escribir es más lento para quien tiene el contexto — que suele ser quien decide.",
+      "porque": "La llamada resuelve hoy y el documento resuelve para todos, incluidos los que no estaban.",
+      "arreglo": "Que la decisión no exista hasta que esté escrita. La llamada puede ocurrir; lo que vale es lo escrito después.",
+      "comoCazarlo": "Pregunta dónde está escrita la última decisión importante. Si la respuesta es «lo hablamos», no hay asíncrono.",
+      "consejo": "Sin esa regla, el asíncrono se convierte en una etiqueta y quien no está en la llamada queda fuera.",
+      "salioDe": "Síntesis del GitLab Handbook",
+      "senales": [
+        "lo hablamos",
+        "en la llamada"
+      ],
+      "vecinas": [
+        "reunion-que-debio-ser-documento",
+        "la-reunion-que-sustituye-al-documento",
+        "demo-en-vivo-obligatoria",
+        "la-distancia-de-afinidad",
+        "reconocer-al-que-se-ve"
+      ]
+    },
+    {
+      "id": "coordinar-mas-que-trabajar",
+      "titulo": "Se va más tiempo en coordinar que en hacer",
+      "gravedad": "alta",
+      "sintoma": "Las semanas se llenan de sincronizaciones, actualizaciones y alineaciones.",
+      "causa": "La coordinación crece con el cuadrado de la gente si no se acota. Es matemática, no cultura.",
+      "porque": "Cada sincronización por separado está justificada.",
+      "arreglo": "Reducir las dependencias, no las juntas. Mientras dos equipos tengan que esperarse, la junta va a volver con otro nombre.",
+      "comoCazarlo": "Suma las horas de coordinación de una semana y divídelas entre las horas totales. Por encima de un tercio, el problema es de dependencias.",
+      "consejo": "Sólo el 24 % del trabajo de los equipos es crítico para la misión, según los propios directivos.",
+      "salioDe": "«How Atlassian Automation accelerates work» · Atlassian, State of Teams",
+      "senales": [
+        "alineamos",
+        "sincronizamos"
+      ],
+      "vecinas": [
+        "optimizar-la-parte",
+        "la-cola-invisible",
+        "ir-mas-rapido-en-lo-que-no-importa",
+        "departamentos-aislados",
+        "tres-culturas-que-no-se-hablan"
+      ]
+    },
+    {
+      "id": "la-excepcion-que-se-quedo",
+      "titulo": "La excepción de hace un año ya es el proceso",
+      "gravedad": "media",
+      "sintoma": "Se saltó el camino oficial «sólo esta vez» y hoy lo usan tres equipos.",
+      "causa": "Las excepciones no caducan solas y nadie tiene el trabajo de cerrarlas.",
+      "porque": "Abrirla resolvió algo visible; cerrarla no resuelve nada visible.",
+      "arreglo": "Toda excepción con fecha de caducidad. Al llegar la fecha, o se cierra o se convierte en proceso — y las dos cosas se deciden.",
+      "comoCazarlo": "Haz la lista de excepciones vivas. Las que no tienen fecha ya son procesos no escritos.",
+      "consejo": "Un proceso con cinco excepciones permanentes ya no es el proceso.",
+      "salioDe": "Síntesis de gobierno operativo · GitLab Handbook",
+      "senales": [
+        "sólo esta vez",
+        "hacemos la excepción"
+      ],
+      "vecinas": [
+        "la-excepcion-permanente",
+        "el-piloto-eterno",
+        "matar-tarde"
+      ]
+    }
+  ]
 }

@@ -1,252 +1,345 @@
 {
- "area": "estrategia",
- "nombre": "Estrategia y decisiones",
- "que": "Cómo se decide mal con buena información, y qué se puede medir para notarlo antes.",
- "neuronas": [
-  {
-   "id": "la-lista-de-deseos",
-   "titulo": "Esto no es una estrategia, es una lista de deseos",
-   "gravedad": "alta",
-   "sintoma": "El plan tiene ocho prioridades, todas «clave», y ninguna dice a qué se renuncia.",
-   "causa": "Se confundió el destino con el camino. Una lista de metas no dice qué hacer mañana ni qué dejar de hacer.",
-   "porque": "Renunciar duele y se nota; enumerar no duele y se ve completo. Un documento sin renuncias no ofende a nadie en la sala, y por eso se aprueba.",
-   "arreglo": "Por cada prioridad, escribir en la misma hoja qué se deja de hacer para financiarla — gente, dinero o semanas. Si no hay nada que dejar, esa prioridad no está financiada y no es una prioridad.",
-   "comoCazarlo": "Cuenta las renuncias explícitas del documento. Si son cero, no hay estrategia: hay presupuesto de deseos.",
-   "consejo": "Ocho prioridades es ninguna. Si todo es primero, el orden lo va a decidir la urgencia de cada lunes.",
-   "salioDe": "Rumelt, vía la discusión de formulación estratégica · HBR",
-   "senales": [
-    "todas son clave",
-    "ocho prioridades",
-    "plan estratégico"
-   ]
-  },
-  {
-   "id": "el-halo-de-seis-notas",
-   "titulo": "Las seis calificaciones dieron casi lo mismo",
-   "gravedad": "alta",
-   "sintoma": "Se evaluó una decisión en seis dimensiones y las seis salieron entre 4 y 4.5.",
-   "causa": "No hubo seis evaluaciones: hubo una impresión global copiada seis veces. Es el efecto halo, medido.",
-   "porque": "Quien puntúa ya se formó una opinión antes de empezar, y cada casilla se rellena para no contradecirla.",
-   "arreglo": "Puntuar cada dimensión por separado, idealmente cada una por una persona distinta, y NO mirar las demás hasta terminar. La nota global se pone al final, nunca antes.",
-   "comoCazarlo": "Calcula la desviación típica de las notas. Por debajo de 0.5 sobre 5, no hay seis juicios: hay uno.",
-   "consejo": "Si al leer la primera dimensión ya sabes qué vas a poner en las otras cinco, el formulario está confirmando lo que ya decidiste.",
-   "salioDe": "Kahneman, Lovallo y Sibony · «A Structured Approach to Strategic Decisions», MIT Sloan Management Review, 2019",
-   "senales": [
-    "todas salieron parecidas",
-    "evaluación",
-    "comité"
-   ]
-  },
-  {
-   "id": "ruido-no-es-sesgo",
-   "titulo": "Dos evaluadores, dos números muy distintos",
-   "gravedad": "alta",
-   "sintoma": "La misma oportunidad puntuada por dos personas da 3 y 4.5, y nadie sabe cuál vale.",
-   "causa": "Eso no es sesgo —que empuja a todos en la misma dirección—: es ruido, error aleatorio entre juicios.",
-   "porque": "El sesgo se discute en las juntas porque tiene nombre y culpable. El ruido no se ve sin comparar dos juicios del mismo caso, y casi nunca se comparan.",
-   "arreglo": "Puntuar por separado, comparar, y discutir SÓLO donde hay distancia. La discusión sobre lo que ya coincide es tiempo perdido.",
-   "comoCazarlo": "Haz que dos personas evalúen el mismo caso a ciegas. Si la distancia es mayor que un punto sobre cinco, el proceso está midiendo al evaluador, no a la oportunidad.",
-   "consejo": "El ruido no se arregla con más discusión: se arregla con más estructura.",
-   "salioDe": "Kahneman, Rosenfield, Gandhi y Blaser · «Noise», HBR, 2016; citado en MIT SMR, 2019",
-   "senales": [
-    "depende de quién lo mire",
-    "no nos ponemos de acuerdo"
-   ]
-  },
-  {
-   "id": "la-nota-global-por-delante",
-   "titulo": "La conclusión estaba escrita antes de los datos",
-   "gravedad": "alta",
-   "sintoma": "El análisis existe, es largo, y confirma exactamente lo que el jefe dijo en la primera junta.",
-   "causa": "Cierre prematuro: la evaluación global se formó al principio y todo lo demás se recogió para sostenerla.",
-   "porque": "Es cómodo para todos. Contradecir un análisis de sesenta páginas cuesta mucho más que contradecir una frase, aunque la frase sea lo único que hubo.",
-   "arreglo": "Poner por escrito, ANTES de analizar, qué resultado haría cambiar de opinión. Si no hay ninguno, no se está analizando: se está redactando.",
-   "comoCazarlo": "Pregunta qué dato habría hecho que la respuesta fuera «no». Si nadie contesta rápido, la decisión ya estaba tomada.",
-   "consejo": "La pregunta que destapa esto en diez segundos: «¿qué habríamos tenido que ver para no hacerlo?».",
-   "salioDe": "Kahneman, Lovallo y Sibony · MIT Sloan Management Review, 2019",
-   "senales": [
-    "ya lo habíamos decidido",
-    "el análisis confirma"
-   ]
-  },
-  {
-   "id": "sistema-1-en-el-precio",
-   "titulo": "Bajamos el precio porque bajó la demanda",
-   "gravedad": "alta",
-   "sintoma": "Cae la demanda y la reacción, en la misma semana, es un descuento general.",
-   "causa": "Es la respuesta rápida y automática —Sistema 1— a un problema que necesita la lenta. La caída puede ser de demanda, de acceso o de confianza, y cada una pide algo distinto.",
-   "porque": "El descuento es la única palanca que se mueve sin pedir permiso a nadie y se ve en el mismo mes.",
-   "arreglo": "Antes de tocar el precio: separar si cayó el número de compradores, la cantidad por compra o la disposición a pagar. Sólo la tercera se arregla con precio.",
-   "comoCazarlo": "Si el descuento se decidió en menos de una junta, fue Sistema 1. Pídele a alguien que argumente en contra durante diez minutos.",
-   "consejo": "Un precio se baja en una tarde y se sube en dos años. La asimetría es la razón de pensarlo despacio.",
-   "salioDe": "«Why Pricing Decisions Need More Than Management Intuition» · MIT Sloan Management Review",
-   "senales": [
-    "bajemos el precio",
-    "descuento",
-    "se cayó la demanda"
-   ]
-  },
-  {
-   "id": "riesgo-que-todos-ven-y-nadie-mide",
-   "titulo": "Sabemos el riesgo, pero no hay un número",
-   "gravedad": "media",
-   "sintoma": "En las juntas se habla de riesgo todo el tiempo y no existe ni una exposición máxima aceptada por escrito.",
-   "causa": "Conciencia del riesgo sin instrumentos de riesgo. Está estudiado: los directivos lo tienen presente y no usan ninguna de las herramientas.",
-   "porque": "Poner un número obliga a decir cuánto se está dispuesto a perder, y eso se puede citar después.",
-   "arreglo": "Fijar una sola cifra por escrito: la pérdida máxima que la empresa acepta en esta apuesta. No hace falta más aparato para empezar.",
-   "comoCazarlo": "Pregunta cuál es la exposición máxima aceptada. Si no hay respuesta en una cifra, no hay gestión de riesgo, hay preocupación.",
-   "consejo": "De 93 directivos encuestados, casi ninguno usaba herramientas de cálculo de riesgo, y casi todos decían tenerlo muy presente.",
-   "salioDe": "Noy y Ellis, «Risk: A Neglected Component of Strategy Formulation», vía «Risk Management in Practice» · MIT SMR",
-   "senales": [
-    "es arriesgado",
-    "hay que tener cuidado"
-   ]
-  },
-  {
-   "id": "la-estrategia-sin-quien-la-hace",
-   "titulo": "El plan es bueno y no hay quién lo ejecute",
-   "gravedad": "alta",
-   "sintoma": "La estrategia se aprueba y seis meses después no se movió: nadie con las manos libres, nadie con la habilidad.",
-   "causa": "Se planeó la dirección y no la gente. La ejecución depende de a quién se atrae, se desarrolla y se coloca.",
-   "porque": "Diseñar la estrategia es un ejercicio de una semana; conseguir a la gente es un ejercicio de un año, y no cabe en la misma presentación.",
-   "arreglo": "Por cada pilar del plan, nombrar a la persona responsable y decir si ya está en la casa o hay que traerla. Sin nombre, el pilar no arranca.",
-   "comoCazarlo": "Recorre el plan preguntando «¿quién?» en cada línea. Los huecos son el calendario real.",
-   "consejo": "GE trata su sistema de gestión de talento como su herramienta de implantación más potente, no como un anexo de recursos humanos.",
-   "salioDe": "«GE Talent Management: Aligning Hiring With Strategy» · MIT Sloan Management Review",
-   "senales": [
-    "no avanzó",
-    "falta gente",
-    "quién lo hace"
-   ]
-  },
-  {
-   "id": "competir-donde-todos",
-   "titulo": "Estamos peleando en el mismo sitio que todos",
-   "gravedad": "media",
-   "sintoma": "La propuesta se define por comparación con el competidor: más barato, más rápido, más funciones.",
-   "causa": "Toda la energía se va en ganar una comparación que el competidor también puede mejorar. La alternativa es cambiar los términos de la comparación.",
-   "porque": "Compararse es fácil y da métricas inmediatas. Crear una categoría no da métricas el primer trimestre.",
-   "arreglo": "Listar lo que la industria da por supuesto y preguntar, de cada cosa: ¿qué pasa si lo eliminamos? Las eliminaciones son las que abren espacio, no las adiciones.",
-   "comoCazarlo": "Si tu propuesta se puede escribir como «igual que X pero…», estás en el mismo mar.",
-   "consejo": "El éxito duradero no viene de vencer a los competidores sino de crear espacio que todavía no se disputa.",
-   "salioDe": "Kim y Mauborgne, «Blue Ocean Strategy» · Harvard Business Review Press",
-   "senales": [
-    "más barato que",
-    "como ellos pero",
-    "nuestro competidor"
-   ]
-  },
-  {
-   "id": "modelar-al-competidor",
-   "titulo": "Nadie modeló qué va a hacer el otro",
-   "gravedad": "media",
-   "sintoma": "El plan describe con detalle lo que haremos y trata a los competidores como si se quedaran quietos.",
-   "causa": "Falta la reacción. Una estrategia que sólo funciona si nadie responde no es una estrategia, es un deseo con calendario.",
-   "porque": "Modelar al otro obliga a admitir que el propio movimiento es copiable, y eso debilita la presentación.",
-   "arreglo": "Escribir la mejor respuesta del competidor a cada movimiento nuestro, y ver si el plan sigue en pie. HP construía escenarios para sí misma Y para sus competidores.",
-   "comoCazarlo": "Busca en el plan la palabra «competidor» fuera de la sección de contexto. Si no aparece, nadie modeló la respuesta.",
-   "consejo": "Lo barato de este ejercicio es que no hace falta acertar: basta con dejar de suponer quietud.",
-   "salioDe": "«Use Strategic Market Models to Predict Customer Behavior» · MIT Sloan Management Review",
-   "senales": [
-    "van a reaccionar",
-    "y si copian"
-   ]
-  },
-  {
-   "id": "el-escenario-unico",
-   "titulo": "Sólo hay un escenario y es el bueno",
-   "gravedad": "alta",
-   "sintoma": "El caso de negocio tiene una columna: la que sale bien.",
-   "causa": "Se planeó sobre la media esperada. Los proyectos grandes no fallan por la media: fallan por la cola.",
-   "porque": "Los escenarios malos hacen que el número final no sea aprobable, y quien presenta quiere que se apruebe.",
-   "arreglo": "Tres escenarios y, en el malo, la pregunta que importa: ¿esta decisión se puede deshacer? Un proyecto de reingeniería no se deshace, y por eso condiciona la empresa durante años.",
-   "comoCazarlo": "Pide el escenario en que esto sale mal. Si no existe en papel, no se ha analizado.",
-   "consejo": "Después de una reingeniería no quedan ni ganas ni dinero para una segunda: lo que se decida ahí manda durante años.",
-   "salioDe": "«Using Scenario Analysis to Manage the Strategic Risks of Reengineering» · MIT Sloan Management Review",
-   "senales": [
-    "el caso base",
-    "va a funcionar"
-   ]
-  },
-  {
-   "id": "reversible-o-no",
-   "titulo": "Nadie preguntó si esto se puede deshacer",
-   "gravedad": "alta",
-   "sintoma": "Se le dedica el mismo proceso de decisión a algo que se revierte en una semana y a algo que amarra tres años.",
-   "causa": "No se separó la decisión reversible de la irreversible. Son dos tipos de decisión y piden dos velocidades distintas.",
-   "porque": "El mismo comité, el mismo formato y la misma agenda tratan a las dos igual porque el calendario es el que manda.",
-   "arreglo": "Clasificar antes de discutir. Reversible: decide rápido quien esté más cerca. Irreversible: proceso completo, escenarios y la exposición máxima por escrito.",
-   "comoCazarlo": "Pregunta cuánto costaría volver atrás dentro de seis meses. Si nadie lo sabe, la decisión está sin clasificar.",
-   "consejo": "Gastar tres semanas en lo reversible y tres días en lo irreversible es el reparto exacto al revés, y es el más común.",
-   "salioDe": "Síntesis de la discusión de riesgo y reingeniería · MIT Sloan Management Review",
-   "senales": [
-    "se puede deshacer",
-    "ya firmamos"
-   ]
-  },
-  {
-   "id": "la-metrica-que-se-volvio-el-fin",
-   "titulo": "La métrica subió y el negocio no",
-   "gravedad": "alta",
-   "sintoma": "El indicador del trimestre se cumplió y ningún efecto se nota en ingresos, retención ni coste.",
-   "causa": "La métrica se eligió por ser medible, no por ser la que manda. En cuanto se premia, la gente la optimiza directamente y se despega de lo que representaba.",
-   "porque": "Una métrica clara da juntas cortas. Una métrica correcta da juntas incómodas.",
-   "arreglo": "Por cada indicador, escribir la frase «esto sube y el negocio mejora porque…». Si la frase necesita tres saltos, el indicador está lejos.",
-   "comoCazarlo": "Compara la serie del indicador con la del resultado que representa. Si se separan durante dos trimestres, el indicador ya no sirve.",
-   "consejo": "Ninguna métrica sobrevive a convertirse en objetivo sin vigilancia.",
-   "salioDe": "Síntesis de la práctica de medición estratégica · MIT Sloan Management Review",
-   "senales": [
-    "cumplimos el kpi",
-    "subió el indicador"
-   ]
-  },
-  {
-   "id": "la-ventaja-que-caduca",
-   "titulo": "Nuestra ventaja se copia en un trimestre",
-   "gravedad": "media",
-   "sintoma": "Lo que nos distingue es una función, un precio o una campaña — cosas que el competidor puede tener en tres meses.",
-   "causa": "Se confundió una diferencia con una ventaja. La ventaja es la que sobrevive a que el otro la vea.",
-   "porque": "Las diferencias visibles se pueden enseñar en una demostración; las difíciles de copiar —proceso, datos, relación— no se enseñan.",
-   "arreglo": "Preguntar de cada diferencia: si el competidor la ve mañana, ¿cuánto tarda en tenerla? Menos de un año no es ventaja: es ventana.",
-   "comoCazarlo": "Haz la lista de tus tres diferencias y pon al lado los meses que tardaría un rival serio. Si las tres bajan de doce, no hay foso.",
-   "consejo": "Una ventana sí sirve — pero se usa para construir el foso, no para descansar.",
-   "salioDe": "Síntesis de posicionamiento competitivo · Harvard Business Review",
-   "senales": [
-    "nos copiaron",
-    "ya lo tienen ellos"
-   ]
-  },
-  {
-   "id": "vender-producto-o-vender-publico",
-   "titulo": "No sabemos cuál de los dos negocios somos",
-   "gravedad": "media",
-   "sintoma": "Se cobra al usuario y se vende publicidad, y las dos cosas empujan en direcciones contrarias sin que nadie lo diga.",
-   "causa": "Son dos modelos con condiciones distintas. El de publicidad funciona cuando el producto vale poco para quien lo usa y la competencia es intermedia; el de producto, al revés.",
-   "porque": "Tener las dos fuentes se siente como diversificar, y en realidad es subsidiar una con la otra sin decidirlo.",
-   "arreglo": "Poner en una hoja qué decisión tomaría cada modelo en los tres puntos donde chocan: precio, cantidad de usuarios y qué se les pide. Elegir cuál manda.",
-   "comoCazarlo": "Cuando una decisión de precio se atasca sin motivo, casi siempre es esto: dos modelos tirando del mismo control.",
-   "consejo": "La mayoría de los semanarios alternativos de Estados Unidos se regalan: decidieron que el producto que venden es la atención.",
-   "salioDe": "Godes, Ofek y Sarvary, «Products vs. Advertising» · vía MIT Sloan Management Review",
-   "senales": [
-    "dos modelos",
-    "publicidad o suscripción"
-   ]
-  },
-  {
-   "id": "promocion-permanente",
-   "titulo": "Llevamos dos años en promoción",
-   "gravedad": "media",
-   "sintoma": "Los descuentos empezaron como excepción, se adelantan cada temporada y ya son el precio de verdad.",
-   "causa": "La promoción constante enseña al cliente a esperar la rebaja; el precio de lista deja de ser información y el margen se erosiona solo.",
-   "porque": "Cada promoción concreta funciona —se ve en la semana— y la suma de todas destruye el precio. El daño no aparece en la métrica de ninguna.",
-   "arreglo": "Decidir la proporción de precio promocional como política, no promoción a promoción, y medir el efecto sobre el volumen del trimestre siguiente, no el de la semana.",
-   "comoCazarlo": "Mira el porcentaje de ventas con descuento por trimestre. Si sube tres trimestres seguidos, la excepción ya es la regla.",
-   "consejo": "Precio bajo siempre y promoción constante son dos estrategias, y la peor de las tres es no haber elegido.",
-   "salioDe": "Seiders y Voss, «When Does Retail Price Promotion Make Sense?» · vía MIT Sloan Management Review",
-   "senales": [
-    "otra promoción",
-    "siempre con descuento"
-   ]
-  }
- ]
+  "area": "estrategia",
+  "nombre": "Estrategia y decisiones",
+  "que": "Cómo se decide mal con buena información, y qué se puede medir para notarlo antes.",
+  "neuronas": [
+    {
+      "id": "la-lista-de-deseos",
+      "titulo": "Esto no es una estrategia, es una lista de deseos",
+      "gravedad": "alta",
+      "sintoma": "El plan tiene ocho prioridades, todas «clave», y ninguna dice a qué se renuncia.",
+      "causa": "Se confundió el destino con el camino. Una lista de metas no dice qué hacer mañana ni qué dejar de hacer.",
+      "porque": "Renunciar duele y se nota; enumerar no duele y se ve completo. Un documento sin renuncias no ofende a nadie en la sala, y por eso se aprueba.",
+      "arreglo": "Por cada prioridad, escribir en la misma hoja qué se deja de hacer para financiarla — gente, dinero o semanas. Si no hay nada que dejar, esa prioridad no está financiada y no es una prioridad.",
+      "comoCazarlo": "Cuenta las renuncias explícitas del documento. Si son cero, no hay estrategia: hay presupuesto de deseos.",
+      "consejo": "Ocho prioridades es ninguna. Si todo es primero, el orden lo va a decidir la urgencia de cada lunes.",
+      "salioDe": "Rumelt, vía la discusión de formulación estratégica · HBR",
+      "senales": [
+        "todas son clave",
+        "ocho prioridades",
+        "plan estratégico"
+      ],
+      "vecinas": [
+        "la-transformacion-que-no-transforma",
+        "objetivos-que-nadie-baja",
+        "plan-sin-escenario-malo"
+      ]
+    },
+    {
+      "id": "el-halo-de-seis-notas",
+      "titulo": "Las seis calificaciones dieron casi lo mismo",
+      "gravedad": "alta",
+      "sintoma": "Se evaluó una decisión en seis dimensiones y las seis salieron entre 4 y 4.5.",
+      "causa": "No hubo seis evaluaciones: hubo una impresión global copiada seis veces. Es el efecto halo, medido.",
+      "porque": "Quien puntúa ya se formó una opinión antes de empezar, y cada casilla se rellena para no contradecirla.",
+      "arreglo": "Puntuar cada dimensión por separado, idealmente cada una por una persona distinta, y NO mirar las demás hasta terminar. La nota global se pone al final, nunca antes.",
+      "comoCazarlo": "Calcula la desviación típica de las notas. Por debajo de 0.5 sobre 5, no hay seis juicios: hay uno.",
+      "consejo": "Si al leer la primera dimensión ya sabes qué vas a poner en las otras cinco, el formulario está confirmando lo que ya decidiste.",
+      "salioDe": "Kahneman, Lovallo y Sibony · «A Structured Approach to Strategic Decisions», MIT Sloan Management Review, 2019",
+      "senales": [
+        "todas salieron parecidas",
+        "evaluación",
+        "comité"
+      ],
+      "vecinas": [
+        "ruido-no-es-sesgo",
+        "la-nota-global-por-delante",
+        "caso-vivido-contra-tasa-base"
+      ]
+    },
+    {
+      "id": "ruido-no-es-sesgo",
+      "titulo": "Dos evaluadores, dos números muy distintos",
+      "gravedad": "alta",
+      "sintoma": "La misma oportunidad puntuada por dos personas da 3 y 4.5, y nadie sabe cuál vale.",
+      "causa": "Eso no es sesgo —que empuja a todos en la misma dirección—: es ruido, error aleatorio entre juicios.",
+      "porque": "El sesgo se discute en las juntas porque tiene nombre y culpable. El ruido no se ve sin comparar dos juicios del mismo caso, y casi nunca se comparan.",
+      "arreglo": "Puntuar por separado, comparar, y discutir SÓLO donde hay distancia. La discusión sobre lo que ya coincide es tiempo perdido.",
+      "comoCazarlo": "Haz que dos personas evalúen el mismo caso a ciegas. Si la distancia es mayor que un punto sobre cinco, el proceso está midiendo al evaluador, no a la oportunidad.",
+      "consejo": "El ruido no se arregla con más discusión: se arregla con más estructura.",
+      "salioDe": "Kahneman, Rosenfield, Gandhi y Blaser · «Noise», HBR, 2016; citado en MIT SMR, 2019",
+      "senales": [
+        "depende de quién lo mire",
+        "no nos ponemos de acuerdo"
+      ],
+      "vecinas": [
+        "el-halo-de-seis-notas",
+        "la-nota-global-por-delante",
+        "caso-vivido-contra-tasa-base",
+        "consistencia-sin-quien",
+        "feedback-anual"
+      ]
+    },
+    {
+      "id": "la-nota-global-por-delante",
+      "titulo": "La conclusión estaba escrita antes de los datos",
+      "gravedad": "alta",
+      "sintoma": "El análisis existe, es largo, y confirma exactamente lo que el jefe dijo en la primera junta.",
+      "causa": "Cierre prematuro: la evaluación global se formó al principio y todo lo demás se recogió para sostenerla.",
+      "porque": "Es cómodo para todos. Contradecir un análisis de sesenta páginas cuesta mucho más que contradecir una frase, aunque la frase sea lo único que hubo.",
+      "arreglo": "Poner por escrito, ANTES de analizar, qué resultado haría cambiar de opinión. Si no hay ninguno, no se está analizando: se está redactando.",
+      "comoCazarlo": "Pregunta qué dato habría hecho que la respuesta fuera «no». Si nadie contesta rápido, la decisión ya estaba tomada.",
+      "consejo": "La pregunta que destapa esto en diez segundos: «¿qué habríamos tenido que ver para no hacerlo?».",
+      "salioDe": "Kahneman, Lovallo y Sibony · MIT Sloan Management Review, 2019",
+      "senales": [
+        "ya lo habíamos decidido",
+        "el análisis confirma"
+      ],
+      "vecinas": [
+        "el-halo-de-seis-notas",
+        "ruido-no-es-sesgo",
+        "caso-vivido-contra-tasa-base",
+        "el-que-decide-habla-primero",
+        "metrica-solo-hacia-arriba"
+      ]
+    },
+    {
+      "id": "sistema-1-en-el-precio",
+      "titulo": "Bajamos el precio porque bajó la demanda",
+      "gravedad": "alta",
+      "sintoma": "Cae la demanda y la reacción, en la misma semana, es un descuento general.",
+      "causa": "Es la respuesta rápida y automática —Sistema 1— a un problema que necesita la lenta. La caída puede ser de demanda, de acceso o de confianza, y cada una pide algo distinto.",
+      "porque": "El descuento es la única palanca que se mueve sin pedir permiso a nadie y se ve en el mismo mes.",
+      "arreglo": "Antes de tocar el precio: separar si cayó el número de compradores, la cantidad por compra o la disposición a pagar. Sólo la tercera se arregla con precio.",
+      "comoCazarlo": "Si el descuento se decidió en menos de una junta, fue Sistema 1. Pídele a alguien que argumente en contra durante diez minutos.",
+      "consejo": "Un precio se baja en una tarde y se sube en dos años. La asimetría es la razón de pensarlo despacio.",
+      "salioDe": "«Why Pricing Decisions Need More Than Management Intuition» · MIT Sloan Management Review",
+      "senales": [
+        "bajemos el precio",
+        "descuento",
+        "se cayó la demanda"
+      ],
+      "vecinas": [
+        "descuento-como-reflejo",
+        "promocion-permanente",
+        "precio-que-se-mueve-sin-historia"
+      ]
+    },
+    {
+      "id": "riesgo-que-todos-ven-y-nadie-mide",
+      "titulo": "Sabemos el riesgo, pero no hay un número",
+      "gravedad": "media",
+      "sintoma": "En las juntas se habla de riesgo todo el tiempo y no existe ni una exposición máxima aceptada por escrito.",
+      "causa": "Conciencia del riesgo sin instrumentos de riesgo. Está estudiado: los directivos lo tienen presente y no usan ninguna de las herramientas.",
+      "porque": "Poner un número obliga a decir cuánto se está dispuesto a perder, y eso se puede citar después.",
+      "arreglo": "Fijar una sola cifra por escrito: la pérdida máxima que la empresa acepta en esta apuesta. No hace falta más aparato para empezar.",
+      "comoCazarlo": "Pregunta cuál es la exposición máxima aceptada. Si no hay respuesta en una cifra, no hay gestión de riesgo, hay preocupación.",
+      "consejo": "De 93 directivos encuestados, casi ninguno usaba herramientas de cálculo de riesgo, y casi todos decían tenerlo muy presente.",
+      "salioDe": "Noy y Ellis, «Risk: A Neglected Component of Strategy Formulation», vía «Risk Management in Practice» · MIT SMR",
+      "senales": [
+        "es arriesgado",
+        "hay que tener cuidado"
+      ],
+      "vecinas": [
+        "riesgo-sin-cifra",
+        "riesgo-nuevo-marco-viejo",
+        "reversible-o-no"
+      ]
+    },
+    {
+      "id": "la-estrategia-sin-quien-la-hace",
+      "titulo": "El plan es bueno y no hay quién lo ejecute",
+      "gravedad": "alta",
+      "sintoma": "La estrategia se aprueba y seis meses después no se movió: nadie con las manos libres, nadie con la habilidad.",
+      "causa": "Se planeó la dirección y no la gente. La ejecución depende de a quién se atrae, se desarrolla y se coloca.",
+      "porque": "Diseñar la estrategia es un ejercicio de una semana; conseguir a la gente es un ejercicio de un año, y no cabe en la misma presentación.",
+      "arreglo": "Por cada pilar del plan, nombrar a la persona responsable y decir si ya está en la casa o hay que traerla. Sin nombre, el pilar no arranca.",
+      "comoCazarlo": "Recorre el plan preguntando «¿quién?» en cada línea. Los huecos son el calendario real.",
+      "consejo": "GE trata su sistema de gestión de talento como su herramienta de implantación más potente, no como un anexo de recursos humanos.",
+      "salioDe": "«GE Talent Management: Aligning Hiring With Strategy» · MIT Sloan Management Review",
+      "senales": [
+        "no avanzó",
+        "falta gente",
+        "quién lo hace"
+      ],
+      "vecinas": [
+        "la-estrategia-sin-talento",
+        "contratar-para-tapar-el-proceso",
+        "la-idea-sin-dueno"
+      ]
+    },
+    {
+      "id": "competir-donde-todos",
+      "titulo": "Estamos peleando en el mismo sitio que todos",
+      "gravedad": "media",
+      "sintoma": "La propuesta se define por comparación con el competidor: más barato, más rápido, más funciones.",
+      "causa": "Toda la energía se va en ganar una comparación que el competidor también puede mejorar. La alternativa es cambiar los términos de la comparación.",
+      "porque": "Compararse es fácil y da métricas inmediatas. Crear una categoría no da métricas el primer trimestre.",
+      "arreglo": "Listar lo que la industria da por supuesto y preguntar, de cada cosa: ¿qué pasa si lo eliminamos? Las eliminaciones son las que abren espacio, no las adiciones.",
+      "comoCazarlo": "Si tu propuesta se puede escribir como «igual que X pero…», estás en el mismo mar.",
+      "consejo": "El éxito duradero no viene de vencer a los competidores sino de crear espacio que todavía no se disputa.",
+      "salioDe": "Kim y Mauborgne, «Blue Ocean Strategy» · Harvard Business Review Press",
+      "senales": [
+        "más barato que",
+        "como ellos pero",
+        "nuestro competidor"
+      ],
+      "vecinas": [
+        "copiar-la-estructura-de-otro",
+        "copiar-al-que-ya-llego",
+        "canal-por-costumbre",
+        "vender-producto-o-vender-publico",
+        "la-ventaja-que-caduca"
+      ]
+    },
+    {
+      "id": "modelar-al-competidor",
+      "titulo": "Nadie modeló qué va a hacer el otro",
+      "gravedad": "media",
+      "sintoma": "El plan describe con detalle lo que haremos y trata a los competidores como si se quedaran quietos.",
+      "causa": "Falta la reacción. Una estrategia que sólo funciona si nadie responde no es una estrategia, es un deseo con calendario.",
+      "porque": "Modelar al otro obliga a admitir que el propio movimiento es copiable, y eso debilita la presentación.",
+      "arreglo": "Escribir la mejor respuesta del competidor a cada movimiento nuestro, y ver si el plan sigue en pie. HP construía escenarios para sí misma Y para sus competidores.",
+      "comoCazarlo": "Busca en el plan la palabra «competidor» fuera de la sección de contexto. Si no aparece, nadie modeló la respuesta.",
+      "consejo": "Lo barato de este ejercicio es que no hace falta acertar: basta con dejar de suponer quietud.",
+      "salioDe": "«Use Strategic Market Models to Predict Customer Behavior» · MIT Sloan Management Review",
+      "senales": [
+        "van a reaccionar",
+        "y si copian"
+      ],
+      "vecinas": [
+        "el-escenario-unico",
+        "plan-sin-escenario-malo",
+        "seguridad-para-decir-que-no-sale",
+        "competir-donde-todos",
+        "la-ventaja-que-caduca"
+      ]
+    },
+    {
+      "id": "el-escenario-unico",
+      "titulo": "Sólo hay un escenario y es el bueno",
+      "gravedad": "alta",
+      "sintoma": "El caso de negocio tiene una columna: la que sale bien.",
+      "causa": "Se planeó sobre la media esperada. Los proyectos grandes no fallan por la media: fallan por la cola.",
+      "porque": "Los escenarios malos hacen que el número final no sea aprobable, y quien presenta quiere que se apruebe.",
+      "arreglo": "Tres escenarios y, en el malo, la pregunta que importa: ¿esta decisión se puede deshacer? Un proyecto de reingeniería no se deshace, y por eso condiciona la empresa durante años.",
+      "comoCazarlo": "Pide el escenario en que esto sale mal. Si no existe en papel, no se ha analizado.",
+      "consejo": "Después de una reingeniería no quedan ni ganas ni dinero para una segunda: lo que se decida ahí manda durante años.",
+      "salioDe": "«Using Scenario Analysis to Manage the Strategic Risks of Reengineering» · MIT Sloan Management Review",
+      "senales": [
+        "el caso base",
+        "va a funcionar"
+      ],
+      "vecinas": [
+        "plan-sin-escenario-malo",
+        "modelar-al-competidor",
+        "seguridad-para-decir-que-no-sale"
+      ]
+    },
+    {
+      "id": "reversible-o-no",
+      "titulo": "Nadie preguntó si esto se puede deshacer",
+      "gravedad": "alta",
+      "sintoma": "Se le dedica el mismo proceso de decisión a algo que se revierte en una semana y a algo que amarra tres años.",
+      "causa": "No se separó la decisión reversible de la irreversible. Son dos tipos de decisión y piden dos velocidades distintas.",
+      "porque": "El mismo comité, el mismo formato y la misma agenda tratan a las dos igual porque el calendario es el que manda.",
+      "arreglo": "Clasificar antes de discutir. Reversible: decide rápido quien esté más cerca. Irreversible: proceso completo, escenarios y la exposición máxima por escrito.",
+      "comoCazarlo": "Pregunta cuánto costaría volver atrás dentro de seis meses. Si nadie lo sabe, la decisión está sin clasificar.",
+      "consejo": "Gastar tres semanas en lo reversible y tres días en lo irreversible es el reparto exacto al revés, y es el más común.",
+      "salioDe": "Síntesis de la discusión de riesgo y reingeniería · MIT Sloan Management Review",
+      "senales": [
+        "se puede deshacer",
+        "ya firmamos"
+      ],
+      "vecinas": [
+        "riesgo-que-todos-ven-y-nadie-mide",
+        "riesgo-sin-cifra",
+        "riesgo-nuevo-marco-viejo",
+        "matar-tarde",
+        "comprar-y-suponer"
+      ]
+    },
+    {
+      "id": "la-metrica-que-se-volvio-el-fin",
+      "titulo": "La métrica subió y el negocio no",
+      "gravedad": "alta",
+      "sintoma": "El indicador del trimestre se cumplió y ningún efecto se nota en ingresos, retención ni coste.",
+      "causa": "La métrica se eligió por ser medible, no por ser la que manda. En cuanto se premia, la gente la optimiza directamente y se despega de lo que representaba.",
+      "porque": "Una métrica clara da juntas cortas. Una métrica correcta da juntas incómodas.",
+      "arreglo": "Por cada indicador, escribir la frase «esto sube y el negocio mejora porque…». Si la frase necesita tres saltos, el indicador está lejos.",
+      "comoCazarlo": "Compara la serie del indicador con la del resultado que representa. Si se separan durante dos trimestres, el indicador ya no sirve.",
+      "consejo": "Ninguna métrica sobrevive a convertirse en objetivo sin vigilancia.",
+      "salioDe": "Síntesis de la práctica de medición estratégica · MIT Sloan Management Review",
+      "senales": [
+        "cumplimos el kpi",
+        "subió el indicador"
+      ],
+      "vecinas": [
+        "kpi-que-se-despego",
+        "medir-y-premiar",
+        "satisfaccion-como-meta",
+        "metrica-antes-que-pregunta",
+        "medir-al-que-mide"
+      ]
+    },
+    {
+      "id": "la-ventaja-que-caduca",
+      "titulo": "Nuestra ventaja se copia en un trimestre",
+      "gravedad": "media",
+      "sintoma": "Lo que nos distingue es una función, un precio o una campaña — cosas que el competidor puede tener en tres meses.",
+      "causa": "Se confundió una diferencia con una ventaja. La ventaja es la que sobrevive a que el otro la vea.",
+      "porque": "Las diferencias visibles se pueden enseñar en una demostración; las difíciles de copiar —proceso, datos, relación— no se enseñan.",
+      "arreglo": "Preguntar de cada diferencia: si el competidor la ve mañana, ¿cuánto tarda en tenerla? Menos de un año no es ventaja: es ventana.",
+      "comoCazarlo": "Haz la lista de tus tres diferencias y pon al lado los meses que tardaría un rival serio. Si las tres bajan de doce, no hay foso.",
+      "consejo": "Una ventana sí sirve — pero se usa para construir el foso, no para descansar.",
+      "salioDe": "Síntesis de posicionamiento competitivo · Harvard Business Review",
+      "senales": [
+        "nos copiaron",
+        "ya lo tienen ellos"
+      ],
+      "vecinas": [
+        "la-marca-que-no-estira",
+        "todo-a-la-marca",
+        "global-es-calidad",
+        "vender-producto-o-vender-publico",
+        "competir-donde-todos"
+      ]
+    },
+    {
+      "id": "vender-producto-o-vender-publico",
+      "titulo": "No sabemos cuál de los dos negocios somos",
+      "gravedad": "media",
+      "sintoma": "Se cobra al usuario y se vende publicidad, y las dos cosas empujan en direcciones contrarias sin que nadie lo diga.",
+      "causa": "Son dos modelos con condiciones distintas. El de publicidad funciona cuando el producto vale poco para quien lo usa y la competencia es intermedia; el de producto, al revés.",
+      "porque": "Tener las dos fuentes se siente como diversificar, y en realidad es subsidiar una con la otra sin decidirlo.",
+      "arreglo": "Poner en una hoja qué decisión tomaría cada modelo en los tres puntos donde chocan: precio, cantidad de usuarios y qué se les pide. Elegir cuál manda.",
+      "comoCazarlo": "Cuando una decisión de precio se atasca sin motivo, casi siempre es esto: dos modelos tirando del mismo control.",
+      "consejo": "La mayoría de los semanarios alternativos de Estados Unidos se regalan: decidieron que el producto que venden es la atención.",
+      "salioDe": "Godes, Ofek y Sarvary, «Products vs. Advertising» · vía MIT Sloan Management Review",
+      "senales": [
+        "dos modelos",
+        "publicidad o suscripción"
+      ],
+      "vecinas": [
+        "crecer-por-donde-se-puede",
+        "la-propuesta-de-catalogo",
+        "la-ventaja-que-caduca",
+        "competir-donde-todos",
+        "el-canal-que-compite"
+      ]
+    },
+    {
+      "id": "promocion-permanente",
+      "titulo": "Llevamos dos años en promoción",
+      "gravedad": "media",
+      "sintoma": "Los descuentos empezaron como excepción, se adelantan cada temporada y ya son el precio de verdad.",
+      "causa": "La promoción constante enseña al cliente a esperar la rebaja; el precio de lista deja de ser información y el margen se erosiona solo.",
+      "porque": "Cada promoción concreta funciona —se ve en la semana— y la suma de todas destruye el precio. El daño no aparece en la métrica de ninguna.",
+      "arreglo": "Decidir la proporción de precio promocional como política, no promoción a promoción, y medir el efecto sobre el volumen del trimestre siguiente, no el de la semana.",
+      "comoCazarlo": "Mira el porcentaje de ventas con descuento por trimestre. Si sube tres trimestres seguidos, la excepción ya es la regla.",
+      "consejo": "Precio bajo siempre y promoción constante son dos estrategias, y la peor de las tres es no haber elegido.",
+      "salioDe": "Seiders y Voss, «When Does Retail Price Promotion Make Sense?» · vía MIT Sloan Management Review",
+      "senales": [
+        "otra promoción",
+        "siempre con descuento"
+      ],
+      "vecinas": [
+        "sistema-1-en-el-precio",
+        "descuento-como-reflejo",
+        "precio-que-se-mueve-sin-historia",
+        "promocion-sin-mirar-al-sector",
+        "copiar-la-estructura-de-otro"
+      ]
+    }
+  ]
 }

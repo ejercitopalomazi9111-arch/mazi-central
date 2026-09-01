@@ -18,6 +18,12 @@
         "los mejores se están yendo",
         "no llegamos a la cuota",
         "nos pisamos las cuentas"
+      ],
+      "vecinas": [
+        "presupuesto-que-no-se-mueve",
+        "cuota-inventada",
+        "precio-por-costumbre",
+        "reorganizar-mirando-quien-sale"
       ]
     },
     {
@@ -35,6 +41,13 @@
         "la cuota del año",
         "crecer un 15 %",
         "nadie llega al número"
+      ],
+      "vecinas": [
+        "presupuesto-que-no-se-mueve",
+        "territorio-viejo-mata-al-vendedor",
+        "precio-por-costumbre",
+        "reorganizar-mirando-quien-sale",
+        "conversion-sin-referencia"
       ]
     },
     {
@@ -52,6 +65,13 @@
         "el producto nuevo no despega",
         "no se atreven a presentarlo",
         "se atascó el pipeline"
+      ],
+      "vecinas": [
+        "seguridad-para-decir-que-no-sale",
+        "el-que-decide-habla-primero",
+        "la-puerta-abierta-que-nadie-cruza",
+        "reorganizar-ventas-sin-preparar-a-nadie",
+        "lanzar-sin-el-de-ventas"
       ]
     },
     {
@@ -69,6 +89,12 @@
         "en qué etapa está",
         "el embudo",
         "mover el lead"
+      ],
+      "vecinas": [
+        "el-embudo-sin-etapas",
+        "seguimiento-sin-fecha",
+        "la-oportunidad-sin-fecha",
+        "consistencia-sin-quien"
       ]
     },
     {
@@ -86,6 +112,13 @@
         "se me pasó escribirle",
         "quedó en que me avisaba",
         "leads fríos"
+      ],
+      "vecinas": [
+        "el-embudo-sin-etapas",
+        "embudo-de-libro",
+        "la-oportunidad-sin-fecha",
+        "el-tiempo-de-arranque",
+        "automatizacion-sin-dueno"
       ]
     },
     {
@@ -103,6 +136,13 @@
         "dame un descuento",
         "está caro",
         "ajustamos el precio"
+      ],
+      "vecinas": [
+        "sistema-1-en-el-precio",
+        "promocion-permanente",
+        "precio-que-se-mueve-sin-historia",
+        "precio-bajo-de-entrada",
+        "precio-por-costumbre"
       ]
     },
     {
@@ -120,6 +160,11 @@
         "precio de lanzamiento",
         "subir precios",
         "los primeros clientes"
+      ],
+      "vecinas": [
+        "precio-por-costumbre",
+        "el-precio-plano",
+        "descuento-como-reflejo"
       ]
     },
     {
@@ -137,6 +182,11 @@
         "todos están descontando",
         "rebajas de temporada",
         "cuánto descuento pongo"
+      ],
+      "vecinas": [
+        "promocion-permanente",
+        "copiar-la-estructura-de-otro",
+        "canal-por-costumbre"
       ]
     },
     {
@@ -154,6 +204,11 @@
         "precio dinámico",
         "lo compré antes de la oferta",
         "ajustar precios"
+      ],
+      "vecinas": [
+        "sistema-1-en-el-precio",
+        "descuento-como-reflejo",
+        "promocion-permanente"
       ]
     },
     {
@@ -171,6 +226,12 @@
         "plan de cuenta",
         "nuestro mejor cliente",
         "invertir en la relación"
+      ],
+      "vecinas": [
+        "segmentos-que-chocan",
+        "segmentar-por-demografia",
+        "la-cartera-con-fugas",
+        "el-uso-como-senal"
       ]
     },
     {
@@ -188,6 +249,13 @@
         "la encuesta de satisfacción",
         "tenemos 4.8",
         "el bono por satisfacción"
+      ],
+      "vecinas": [
+        "la-metrica-que-se-volvio-el-fin",
+        "kpi-que-se-despego",
+        "medir-y-premiar",
+        "metrica-antes-que-pregunta",
+        "medir-al-que-mide"
       ]
     },
     {
@@ -205,6 +273,13 @@
         "subimos 150 %",
         "tasa de conversión",
         "este mes vendimos más"
+      ],
+      "vecinas": [
+        "comparar-con-uno-mismo",
+        "mejorar-sin-linea-base",
+        "kpi-que-se-despego",
+        "caso-vivido-contra-tasa-base",
+        "descuento-como-reflejo"
       ]
     },
     {
@@ -222,6 +297,13 @@
         "éste seguro cierra",
         "me dijo que sí",
         "pronóstico del trimestre"
+      ],
+      "vecinas": [
+        "el-halo-de-seis-notas",
+        "ruido-no-es-sesgo",
+        "la-nota-global-por-delante",
+        "conversion-sin-referencia",
+        "mejorar-sin-linea-base"
       ]
     },
     {
@@ -239,6 +321,11 @@
         "no contestan",
         "la cuenta está muda",
         "llevo meses sin respuesta"
+      ],
+      "vecinas": [
+        "el-uso-como-senal",
+        "la-oportunidad-sin-fecha",
+        "el-caso-cerrado-sin-preguntar"
       ]
     },
     {
@@ -256,6 +343,13 @@
         "agendamos una llamada",
         "no encuentro hueco",
         "mandar la demo"
+      ],
+      "vecinas": [
+        "reunion-que-debio-ser-documento",
+        "la-reunion-que-sustituye-al-documento",
+        "asincrono-de-nombre",
+        "prototipo-que-parece-terminado",
+        "el-piloto-eterno"
       ]
     },
     {
@@ -273,6 +367,13 @@
         "reorganizar ventas",
         "vender soluciones",
         "cambiar el discurso"
+      ],
+      "vecinas": [
+        "reorganizar-mirando-quien-sale",
+        "organigrama-que-no-coincide",
+        "estructura-para-otra-etapa",
+        "miedo-a-quedar-en-ridiculo",
+        "lanzar-sin-el-de-ventas"
       ]
     }
   ]

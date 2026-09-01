@@ -1,247 +1,344 @@
 {
- "area": "innovacion",
- "nombre": "Innovación",
- "que": "Cómo se decide qué se prueba, y las maneras de gastar un año probando lo que no era.",
- "neuronas": [
-  {
-   "id": "metrica-antes-que-pregunta",
-   "titulo": "Medimos la innovación con doce indicadores",
-   "gravedad": "alta",
-   "sintoma": "Hay tablero de innovación con ideas generadas, proyectos en curso y ventas de producto nuevo, y nadie sabe qué decidir con él.",
-   "causa": "Se empezó eligiendo métricas en vez de eligiendo la pregunta. Y no falta de dónde elegir: hay indicadores de resultado, de proceso, de entrada y de cartera.",
-   "porque": "Elegir métricas es una tarde de trabajo y produce un entregable; decidir qué problema debe resolver la medición obliga a admitir cuál es el problema.",
-   "arreglo": "Escribir primero qué decisión debería cambiar el número. La métrica correcta es la que la cambia; el resto sobran.",
-   "comoCazarlo": "Pregunta qué se haría distinto si ese indicador se duplicara. Si nadie contesta, es un indicador de escaparate.",
-   "consejo": "La investigación lo dice sin rodeos: el reto no es encontrar métricas ni la métrica perfecta —esa búsqueda suele ser inútil—, es entender qué problema debe resolver la medición.",
-   "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
-   "senales": [
-    "cuántas ideas",
-    "métricas de innovación"
-   ]
-  },
-  {
-   "id": "todas-las-ideas-suenan-igual",
-   "titulo": "Las ideas nuevas salen todas parecidas",
-   "gravedad": "alta",
-   "sintoma": "El equipo genera muchas ideas con las mismas herramientas y el resultado es homogéneo y olvidable.",
-   "causa": "La herramienta amplifica el cuello de botella humano que ya había. Con las mismas plantillas y los mismos ejemplos, la salida converge.",
-   "porque": "La cantidad se ve y se celebra; la variedad no se mide y por eso no se echa de menos.",
-   "arreglo": "Meter fuentes distintas en la entrada —gente de otra área, otro sector, otro país— antes de generar. La variedad de la salida sale de la variedad de la entrada.",
-   "comoCazarlo": "Pon las últimas veinte ideas en una hoja y tapa quién las escribió. Si no se distingue, ya está.",
-   "consejo": "Los equipos tienen los mismos modelos y las mismas plantillas y los resultados son desigualísimos: la diferencia no es la herramienta.",
-   "salioDe": "«Research: The Innovation Problems AI Can’t Solve» · Harvard Business Review",
-   "senales": [
-    "muchas ideas",
-    "todas parecidas"
-   ]
-  },
-  {
-   "id": "innovar-en-el-mismo-sitio",
-   "titulo": "La innovación siempre toca lo mismo",
-   "gravedad": "media",
-   "sintoma": "Todos los proyectos de innovación son extensiones de línea, y las apuestas de ruptura no aparecen.",
-   "causa": "Nadie mira la CARTERA. Cada proyecto por separado es razonable y prudente; la suma es una empresa que no apuesta.",
-   "porque": "Cada decisión individual premia lo seguro, y nadie tiene el trabajo de mirar el conjunto.",
-   "arreglo": "Medir el reparto de la inversión entre ruptura y extensión, y decidir la proporción a propósito. Sin la cifra, la prudencia gana siempre.",
-   "comoCazarlo": "Calcula qué porcentaje del presupuesto de innovación va a proyectos de ruptura. Si baja del 10 %, no hay cartera.",
-   "consejo": "Mirar la cartera es uno de los cuatro tipos de medición de innovación, y el que casi nadie usa.",
-   "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
-   "senales": [
-    "mejora del producto",
-    "extensión de línea"
-   ]
-  },
-  {
-   "id": "abrir-la-innovacion-sin-abrir-nada",
-   "titulo": "Decimos innovación abierta y no entra nadie",
-   "gravedad": "media",
-   "sintoma": "Se anuncia colaboración con fuera y todos los proyectos siguen siendo internos.",
-   "causa": "Abrir exige ceder control —de la agenda, de la propiedad, del calendario— y eso no se decidió.",
-   "porque": "La palabra es gratis y suena moderna; la cesión cuesta y hay que firmarla.",
-   "arreglo": "Elegir UNA actividad concreta que se abre y decir qué se cede en ella. Una abierta de verdad vale más que diez anunciadas.",
-   "comoCazarlo": "Pregunta qué proyecto tiene hoy a alguien de fuera decidiendo algo. Si ninguno, no está abierto.",
-   "consejo": "Las empresas que lo hacen anclan actividades completas fuera, no piden opiniones.",
-   "salioDe": "«Open innovation» · Harvard Business Review, y «Developing Successful Strategic Partnerships With Universities» · MIT SMR",
-   "senales": [
-    "innovación abierta",
-    "colaboramos con"
-   ]
-  },
-  {
-   "id": "la-transformacion-que-no-transforma",
-   "titulo": "Otro programa de transformación",
-   "gravedad": "alta",
-   "sintoma": "Se lanza un programa grande de cambio y, como los anteriores, no llega.",
-   "causa": "Se trató como proyecto con fecha en vez de como cambio de forma de trabajar. Pese a décadas de esfuerzo e inversión, la tasa de éxito de estos programas no ha mejorado.",
-   "porque": "Un programa tiene presupuesto, patrocinador y calendario; cambiar cómo se trabaja no tiene ninguna de las tres.",
-   "arreglo": "Empezar por una decisión concreta que se toma distinto a partir del lunes, y demostrarlo. Sin eso, el programa es un plan de comunicación.",
-   "comoCazarlo": "Pregunta qué se dejó de hacer por el programa. Si la respuesta es «nada, se suma a lo demás», va a fracasar como los otros.",
-   "consejo": "Lo que agotan estos programas no es el presupuesto: es la energía y la confianza, y eso hace más difícil el siguiente.",
-   "salioDe": "«Open innovation» y material de transformación · Harvard Business Review",
-   "senales": [
-    "transformación",
-    "este año sí"
-   ]
-  },
-  {
-   "id": "gastar-en-ia-sin-plan",
-   "titulo": "Gastamos en IA porque hay que hacer algo",
-   "gravedad": "alta",
-   "sintoma": "Se compran herramientas y se contrata gente por presión, sin una estrategia que diga para qué.",
-   "causa": "La presión por «hacer algo con IA» sustituyó a la pregunta de qué problema se resuelve.",
-   "porque": "No hacer nada se ve mal en un consejo; hacer algo, aunque sea cualquier cosa, se ve bien durante un año.",
-   "arreglo": "Un problema del negocio primero, con su número; la herramienta después. Si el problema no tiene número, todavía no es un problema.",
-   "comoCazarlo": "Pregunta qué métrica del negocio va a mover. Si la respuesta es «productividad» sin cifra, no hay plan.",
-   "consejo": "Unas empresas gastan millones con resultados decepcionantes y otras consiguen mucho más con menos. La diferencia no es el gasto.",
-   "salioDe": "Harvard Business Review, series sobre estrategia de IA",
-   "senales": [
-    "hay que hacer algo con ia",
-    "pilotos de ia"
-   ]
-  },
-  {
-   "id": "el-experimento-sin-hipotesis",
-   "titulo": "Probamos cosas y no aprendemos",
-   "gravedad": "media",
-   "sintoma": "Se hacen experimentos y ninguno cambia una decisión.",
-   "causa": "No se escribió qué resultado apoyaría o tumbaría qué idea. Sin eso, cualquier resultado se explica después.",
-   "porque": "Escribir la hipótesis expone a estar equivocado por escrito.",
-   "arreglo": "Una frase antes de empezar: «creemos X; si el resultado es menos de Y, X es falso». Y guardarla.",
-   "comoCazarlo": "Pregunta qué habría hecho abandonar la idea. Si no hay número, era una demostración, no un experimento.",
-   "consejo": "Un experimento que no puede fallar no informa: sólo consume trimestre.",
-   "salioDe": "Síntesis de práctica de innovación · MIT Sloan Management Review",
-   "senales": [
-    "estamos probando",
-    "a ver qué sale"
-   ]
-  },
-  {
-   "id": "matar-tarde",
-   "titulo": "Los proyectos no se cancelan",
-   "gravedad": "alta",
-   "sintoma": "Hay proyectos que todo el mundo sabe que no van y siguen consumiendo gente.",
-   "causa": "No hay criterio de cierre ni quién lo aplique, y el coste hundido pesa en cada revisión.",
-   "porque": "Cancelar tiene un responsable con nombre; dejar correr no tiene ninguno.",
-   "arreglo": "Criterios de cierre escritos AL EMPEZAR, y una revisión con poder de cancelar. Cancelar es un resultado, no un fracaso.",
-   "comoCazarlo": "Pregunta cuántos proyectos se cancelaron el año pasado. Si son cero, no se está eligiendo: se está acumulando.",
-   "consejo": "La capacidad de innovación de una empresa es la capacidad que le queda libre. Lo que no se cancela, se la come.",
-   "salioDe": "Síntesis de gestión de cartera de innovación · MIT Sloan Management Review",
-   "senales": [
-    "sigue vivo",
-    "ya invertimos mucho"
-   ]
-  },
-  {
-   "id": "la-idea-sin-dueno",
-   "titulo": "Buenas ideas y nadie que las lleve",
-   "gravedad": "media",
-   "sintoma": "El banco de ideas crece y ninguna avanza.",
-   "causa": "Recoger ideas es barato y llevarlas cuesta una persona con tiempo. Sin esa persona, el banco es un cementerio ordenado.",
-   "porque": "La campaña de ideas da participación y se puede reportar; asignar a alguien cuesta capacidad.",
-   "arreglo": "Menos ideas y con dueño. Es mejor una idea con una persona detrás que cincuenta en una lista.",
-   "comoCazarlo": "Cuenta cuántas ideas del banco tienen nombre y horas asignadas. Ésas son las únicas vivas.",
-   "consejo": "Un banco de ideas sin dueños desmotiva más de lo que motiva: la gente ve que aportar no lleva a nada.",
-   "salioDe": "Síntesis de gestión de ideas · MIT Sloan Management Review",
-   "senales": [
-    "buzón de ideas",
-    "nadie las lleva"
-   ]
-  },
-  {
-   "id": "copiar-al-que-ya-llego",
-   "titulo": "Copiamos lo que hizo el que ya triunfó",
-   "gravedad": "media",
-   "sintoma": "La estrategia de innovación consiste en imitar lo que hizo una empresa admirada.",
-   "causa": "Se copia el resultado sin las condiciones que lo hicieron posible, que son las que no se ven.",
-   "porque": "El caso de éxito ya está contado y ordenado; el propio contexto hay que analizarlo.",
-   "arreglo": "Preguntar qué tenía esa empresa que nosotros no —mercado, capacidad, momento— antes de copiar la decisión.",
-   "comoCazarlo": "Si la justificación de un proyecto empieza con el nombre de otra empresa, falta el análisis propio.",
-   "consejo": "Envidiar a los innovadores conocidos es el punto de partida más común y el peor.",
-   "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
-   "senales": [
-    "como hizo",
-    "queremos ser como"
-   ]
-  },
-  {
-   "id": "innovar-sin-tocar-al-cliente",
-   "titulo": "Innovamos sin hablar con nadie de fuera",
-   "gravedad": "alta",
-   "sintoma": "El proyecto avanza meses sin que nadie de fuera haya visto ni probado nada.",
-   "causa": "La validación se pospone porque enseñarlo a medias da vergüenza, y el coste de equivocarse crece cada semana.",
-   "porque": "Dentro se puede avanzar sin conflicto; fuera aparecen respuestas incómodas.",
-   "arreglo": "Enseñar algo a alguien de fuera antes de que el equipo se sienta listo. La incomodidad es la señal de que llega a tiempo.",
-   "comoCazarlo": "Pregunta cuántas personas de fuera lo han visto. Si son cero después de un mes, ya se está apostando a ciegas.",
-   "consejo": "El coste de una idea equivocada crece con el tiempo que lleva sin contrastarse, no con lo que se gastó.",
-   "salioDe": "Síntesis de descubrimiento de producto · Basecamp y MIT SMR",
-   "senales": [
-    "cuando esté listo",
-    "todavía no está"
-   ]
-  },
-  {
-   "id": "la-innovacion-en-un-departamento",
-   "titulo": "La innovación es de un departamento",
-   "gravedad": "media",
-   "sintoma": "Existe un área de innovación y el resto de la empresa no innova.",
-   "causa": "Concentrarla la separó del negocio: el que sabe dónde duele no participa y el que participa no sabe dónde duele.",
-   "porque": "Un departamento se puede presupuestar y medir; la innovación repartida no cabe en un organigrama.",
-   "arreglo": "Que el área de innovación trabaje SIEMPRE emparejada con quien tiene el problema, y que el problema lo traiga esa persona.",
-   "comoCazarlo": "Mira de dónde salieron los últimos proyectos. Si todos salieron del área de innovación, está aislada.",
-   "consejo": "El área sirve como método y capacidad, no como fuente de problemas.",
-   "salioDe": "Síntesis de organización de la innovación · MIT Sloan Management Review",
-   "senales": [
-    "el área de innovación",
-    "ellos se encargan"
-   ]
-  },
-  {
-   "id": "prototipo-que-parece-terminado",
-   "titulo": "El prototipo se ve tan bien que nadie lo critica",
-   "gravedad": "media",
-   "sintoma": "Se enseña un prototipo muy acabado y la gente comenta colores en vez del fondo.",
-   "causa": "El acabado indica que ya está decidido, así que el que mira se calla lo importante.",
-   "porque": "Un prototipo bonito se enseña mejor y da mejor impresión en una junta.",
-   "arreglo": "Enseñar prototipos deliberadamente bastos cuando lo que se quiere es criticar el fondo. El acabado se deja para cuando el fondo esté cerrado.",
-   "comoCazarlo": "Si los comentarios son sobre el color, o el fondo ya está bien o nadie se atreve.",
-   "consejo": "El nivel de acabado es una señal, y hay que usarla a propósito en vez de sufrirla.",
-   "salioDe": "Síntesis de prototipado · Basecamp, Shape Up",
-   "senales": [
-    "se ve muy bien",
-    "me gusta el color"
-   ]
-  },
-  {
-   "id": "lo-nuevo-sin-quitar-lo-viejo",
-   "titulo": "Añadimos lo nuevo y mantenemos todo lo demás",
-   "gravedad": "alta",
-   "sintoma": "Cada innovación se suma y nunca se retira nada, y el equipo mantiene cada vez más cosas.",
-   "causa": "La capacidad es finita. Innovar sin retirar convierte el mantenimiento en el trabajo entero, y entonces se deja de innovar.",
-   "porque": "Retirar algo tiene usuarios que se quejan hoy; no retirarlo tiene un coste repartido en el futuro.",
-   "arreglo": "Por cada cosa nueva, decidir qué se retira. Si no se puede retirar nada, no hay capacidad para lo nuevo — y eso también es una decisión.",
-   "comoCazarlo": "Cuenta cuántas cosas se retiraron el año pasado. Si son cero, la deuda de mantenimiento sólo puede subir.",
-   "consejo": "La empresa que no retira acaba dedicando toda su capacidad a sostener lo que ya hizo.",
-   "salioDe": "Síntesis de gestión de producto · Basecamp y GitLab Handbook",
-   "senales": [
-    "lo mantenemos",
-    "hay clientes usándolo"
-   ]
-  },
-  {
-   "id": "medir-la-innovacion-por-el-gasto",
-   "titulo": "Medimos innovación por lo que gastamos en ella",
-   "gravedad": "media",
-   "sintoma": "El indicador principal es el porcentaje de ingresos invertido en I+D.",
-   "causa": "Es una medida de ENTRADA. Dice cuánto se echa, no qué sale, y se puede cumplir gastando mal.",
-   "porque": "Es fácil de calcular, sale de la contabilidad y se compara con el sector.",
-   "arreglo": "Acompañarla siempre de una de resultado —ventas de producto nuevo, por ejemplo— y mirar las dos juntas. Una sola de las dos engaña.",
-   "comoCazarlo": "Si el gasto sube y las ventas de producto nuevo no, el dinero está entrando en algún sitio que no sale.",
-   "consejo": "Entrada, proceso, resultado y cartera son los cuatro tipos, y usar sólo uno es el error más común.",
-   "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
-   "senales": [
-    "invertimos en i+d",
-    "porcentaje de ingresos"
-   ]
-  }
- ]
+  "area": "innovacion",
+  "nombre": "Innovación",
+  "que": "Cómo se decide qué se prueba, y las maneras de gastar un año probando lo que no era.",
+  "neuronas": [
+    {
+      "id": "metrica-antes-que-pregunta",
+      "titulo": "Medimos la innovación con doce indicadores",
+      "gravedad": "alta",
+      "sintoma": "Hay tablero de innovación con ideas generadas, proyectos en curso y ventas de producto nuevo, y nadie sabe qué decidir con él.",
+      "causa": "Se empezó eligiendo métricas en vez de eligiendo la pregunta. Y no falta de dónde elegir: hay indicadores de resultado, de proceso, de entrada y de cartera.",
+      "porque": "Elegir métricas es una tarde de trabajo y produce un entregable; decidir qué problema debe resolver la medición obliga a admitir cuál es el problema.",
+      "arreglo": "Escribir primero qué decisión debería cambiar el número. La métrica correcta es la que la cambia; el resto sobran.",
+      "comoCazarlo": "Pregunta qué se haría distinto si ese indicador se duplicara. Si nadie contesta, es un indicador de escaparate.",
+      "consejo": "La investigación lo dice sin rodeos: el reto no es encontrar métricas ni la métrica perfecta —esa búsqueda suele ser inútil—, es entender qué problema debe resolver la medición.",
+      "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
+      "senales": [
+        "cuántas ideas",
+        "métricas de innovación"
+      ],
+      "vecinas": [
+        "la-metrica-que-se-volvio-el-fin",
+        "kpi-que-se-despego",
+        "medir-y-premiar",
+        "satisfaccion-como-meta",
+        "medir-al-que-mide"
+      ]
+    },
+    {
+      "id": "todas-las-ideas-suenan-igual",
+      "titulo": "Las ideas nuevas salen todas parecidas",
+      "gravedad": "alta",
+      "sintoma": "El equipo genera muchas ideas con las mismas herramientas y el resultado es homogéneo y olvidable.",
+      "causa": "La herramienta amplifica el cuello de botella humano que ya había. Con las mismas plantillas y los mismos ejemplos, la salida converge.",
+      "porque": "La cantidad se ve y se celebra; la variedad no se mide y por eso no se echa de menos.",
+      "arreglo": "Meter fuentes distintas en la entrada —gente de otra área, otro sector, otro país— antes de generar. La variedad de la salida sale de la variedad de la entrada.",
+      "comoCazarlo": "Pon las últimas veinte ideas en una hoja y tapa quién las escribió. Si no se distingue, ya está.",
+      "consejo": "Los equipos tienen los mismos modelos y las mismas plantillas y los resultados son desigualísimos: la diferencia no es la herramienta.",
+      "salioDe": "«Research: The Innovation Problems AI Can’t Solve» · Harvard Business Review",
+      "senales": [
+        "muchas ideas",
+        "todas parecidas"
+      ],
+      "vecinas": [
+        "contratar-al-parecido",
+        "innovar-en-el-mismo-sitio",
+        "abrir-la-innovacion-sin-abrir-nada",
+        "tres-culturas-que-no-se-hablan"
+      ]
+    },
+    {
+      "id": "innovar-en-el-mismo-sitio",
+      "titulo": "La innovación siempre toca lo mismo",
+      "gravedad": "media",
+      "sintoma": "Todos los proyectos de innovación son extensiones de línea, y las apuestas de ruptura no aparecen.",
+      "causa": "Nadie mira la CARTERA. Cada proyecto por separado es razonable y prudente; la suma es una empresa que no apuesta.",
+      "porque": "Cada decisión individual premia lo seguro, y nadie tiene el trabajo de mirar el conjunto.",
+      "arreglo": "Medir el reparto de la inversión entre ruptura y extensión, y decidir la proporción a propósito. Sin la cifra, la prudencia gana siempre.",
+      "comoCazarlo": "Calcula qué porcentaje del presupuesto de innovación va a proyectos de ruptura. Si baja del 10 %, no hay cartera.",
+      "consejo": "Mirar la cartera es uno de los cuatro tipos de medición de innovación, y el que casi nadie usa.",
+      "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
+      "senales": [
+        "mejora del producto",
+        "extensión de línea"
+      ],
+      "vecinas": [
+        "contratar-al-parecido",
+        "todas-las-ideas-suenan-igual",
+        "la-innovacion-en-un-departamento",
+        "innovar-sin-tocar-al-cliente",
+        "abrir-la-innovacion-sin-abrir-nada"
+      ]
+    },
+    {
+      "id": "abrir-la-innovacion-sin-abrir-nada",
+      "titulo": "Decimos innovación abierta y no entra nadie",
+      "gravedad": "media",
+      "sintoma": "Se anuncia colaboración con fuera y todos los proyectos siguen siendo internos.",
+      "causa": "Abrir exige ceder control —de la agenda, de la propiedad, del calendario— y eso no se decidió.",
+      "porque": "La palabra es gratis y suena moderna; la cesión cuesta y hay que firmarla.",
+      "arreglo": "Elegir UNA actividad concreta que se abre y decir qué se cede en ella. Una abierta de verdad vale más que diez anunciadas.",
+      "comoCazarlo": "Pregunta qué proyecto tiene hoy a alguien de fuera decidiendo algo. Si ninguno, no está abierto.",
+      "consejo": "Las empresas que lo hacen anclan actividades completas fuera, no piden opiniones.",
+      "salioDe": "«Open innovation» · Harvard Business Review, y «Developing Successful Strategic Partnerships With Universities» · MIT SMR",
+      "senales": [
+        "innovación abierta",
+        "colaboramos con"
+      ],
+      "vecinas": [
+        "universidad-como-cantera",
+        "la-alianza-sin-objetivo",
+        "la-innovacion-en-un-departamento",
+        "innovar-sin-tocar-al-cliente",
+        "innovar-en-el-mismo-sitio"
+      ]
+    },
+    {
+      "id": "la-transformacion-que-no-transforma",
+      "titulo": "Otro programa de transformación",
+      "gravedad": "alta",
+      "sintoma": "Se lanza un programa grande de cambio y, como los anteriores, no llega.",
+      "causa": "Se trató como proyecto con fecha en vez de como cambio de forma de trabajar. Pese a décadas de esfuerzo e inversión, la tasa de éxito de estos programas no ha mejorado.",
+      "porque": "Un programa tiene presupuesto, patrocinador y calendario; cambiar cómo se trabaja no tiene ninguna de las tres.",
+      "arreglo": "Empezar por una decisión concreta que se toma distinto a partir del lunes, y demostrarlo. Sin eso, el programa es un plan de comunicación.",
+      "comoCazarlo": "Pregunta qué se dejó de hacer por el programa. Si la respuesta es «nada, se suma a lo demás», va a fracasar como los otros.",
+      "consejo": "Lo que agotan estos programas no es el presupuesto: es la energía y la confianza, y eso hace más difícil el siguiente.",
+      "salioDe": "«Open innovation» y material de transformación · Harvard Business Review",
+      "senales": [
+        "transformación",
+        "este año sí"
+      ],
+      "vecinas": [
+        "la-lista-de-deseos",
+        "objetivos-que-nadie-baja",
+        "plan-sin-escenario-malo",
+        "lo-nuevo-sin-quitar-lo-viejo",
+        "coordinar-mas-que-trabajar"
+      ]
+    },
+    {
+      "id": "gastar-en-ia-sin-plan",
+      "titulo": "Gastamos en IA porque hay que hacer algo",
+      "gravedad": "alta",
+      "sintoma": "Se compran herramientas y se contrata gente por presión, sin una estrategia que diga para qué.",
+      "causa": "La presión por «hacer algo con IA» sustituyó a la pregunta de qué problema se resuelve.",
+      "porque": "No hacer nada se ve mal en un consejo; hacer algo, aunque sea cualquier cosa, se ve bien durante un año.",
+      "arreglo": "Un problema del negocio primero, con su número; la herramienta después. Si el problema no tiene número, todavía no es un problema.",
+      "comoCazarlo": "Pregunta qué métrica del negocio va a mover. Si la respuesta es «productividad» sin cifra, no hay plan.",
+      "consejo": "Unas empresas gastan millones con resultados decepcionantes y otras consiguen mucho más con menos. La diferencia no es el gasto.",
+      "salioDe": "Harvard Business Review, series sobre estrategia de IA",
+      "senales": [
+        "hay que hacer algo con ia",
+        "pilotos de ia"
+      ],
+      "vecinas": [
+        "la-herramienta-en-vez-del-proceso",
+        "la-ia-que-no-resuelve",
+        "contratar-para-tapar-el-proceso",
+        "metrica-antes-que-pregunta",
+        "la-transformacion-que-no-transforma"
+      ]
+    },
+    {
+      "id": "el-experimento-sin-hipotesis",
+      "titulo": "Probamos cosas y no aprendemos",
+      "gravedad": "media",
+      "sintoma": "Se hacen experimentos y ninguno cambia una decisión.",
+      "causa": "No se escribió qué resultado apoyaría o tumbaría qué idea. Sin eso, cualquier resultado se explica después.",
+      "porque": "Escribir la hipótesis expone a estar equivocado por escrito.",
+      "arreglo": "Una frase antes de empezar: «creemos X; si el resultado es menos de Y, X es falso». Y guardarla.",
+      "comoCazarlo": "Pregunta qué habría hecho abandonar la idea. Si no hay número, era una demostración, no un experimento.",
+      "consejo": "Un experimento que no puede fallar no informa: sólo consume trimestre.",
+      "salioDe": "Síntesis de práctica de innovación · MIT Sloan Management Review",
+      "senales": [
+        "estamos probando",
+        "a ver qué sale"
+      ],
+      "vecinas": [
+        "campana-sin-hipotesis",
+        "prototipo-que-parece-terminado",
+        "matar-tarde"
+      ]
+    },
+    {
+      "id": "matar-tarde",
+      "titulo": "Los proyectos no se cancelan",
+      "gravedad": "alta",
+      "sintoma": "Hay proyectos que todo el mundo sabe que no van y siguen consumiendo gente.",
+      "causa": "No hay criterio de cierre ni quién lo aplique, y el coste hundido pesa en cada revisión.",
+      "porque": "Cancelar tiene un responsable con nombre; dejar correr no tiene ninguno.",
+      "arreglo": "Criterios de cierre escritos AL EMPEZAR, y una revisión con poder de cancelar. Cancelar es un resultado, no un fracaso.",
+      "comoCazarlo": "Pregunta cuántos proyectos se cancelaron el año pasado. Si son cero, no se está eligiendo: se está acumulando.",
+      "consejo": "La capacidad de innovación de una empresa es la capacidad que le queda libre. Lo que no se cancela, se la come.",
+      "salioDe": "Síntesis de gestión de cartera de innovación · MIT Sloan Management Review",
+      "senales": [
+        "sigue vivo",
+        "ya invertimos mucho"
+      ],
+      "vecinas": [
+        "la-excepcion-permanente",
+        "la-excepcion-que-se-quedo",
+        "el-piloto-eterno",
+        "el-experimento-sin-hipotesis",
+        "campana-sin-hipotesis"
+      ]
+    },
+    {
+      "id": "la-idea-sin-dueno",
+      "titulo": "Buenas ideas y nadie que las lleve",
+      "gravedad": "media",
+      "sintoma": "El banco de ideas crece y ninguna avanza.",
+      "causa": "Recoger ideas es barato y llevarlas cuesta una persona con tiempo. Sin esa persona, el banco es un cementerio ordenado.",
+      "porque": "La campaña de ideas da participación y se puede reportar; asignar a alguien cuesta capacidad.",
+      "arreglo": "Menos ideas y con dueño. Es mejor una idea con una persona detrás que cincuenta en una lista.",
+      "comoCazarlo": "Cuenta cuántas ideas del banco tienen nombre y horas asignadas. Ésas son las únicas vivas.",
+      "consejo": "Un banco de ideas sin dueños desmotiva más de lo que motiva: la gente ve que aportar no lleva a nada.",
+      "salioDe": "Síntesis de gestión de ideas · MIT Sloan Management Review",
+      "senales": [
+        "buzón de ideas",
+        "nadie las lleva"
+      ],
+      "vecinas": [
+        "sin-dueno-del-proceso",
+        "automatizacion-sin-dueno",
+        "consistencia-sin-quien",
+        "la-estrategia-sin-quien-la-hace",
+        "la-estrategia-sin-talento"
+      ]
+    },
+    {
+      "id": "copiar-al-que-ya-llego",
+      "titulo": "Copiamos lo que hizo el que ya triunfó",
+      "gravedad": "media",
+      "sintoma": "La estrategia de innovación consiste en imitar lo que hizo una empresa admirada.",
+      "causa": "Se copia el resultado sin las condiciones que lo hicieron posible, que son las que no se ven.",
+      "porque": "El caso de éxito ya está contado y ordenado; el propio contexto hay que analizarlo.",
+      "arreglo": "Preguntar qué tenía esa empresa que nosotros no —mercado, capacidad, momento— antes de copiar la decisión.",
+      "comoCazarlo": "Si la justificación de un proyecto empieza con el nombre de otra empresa, falta el análisis propio.",
+      "consejo": "Envidiar a los innovadores conocidos es el punto de partida más común y el peor.",
+      "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
+      "senales": [
+        "como hizo",
+        "queremos ser como"
+      ],
+      "vecinas": [
+        "copiar-la-estructura-de-otro",
+        "competir-donde-todos",
+        "canal-por-costumbre",
+        "global-es-calidad",
+        "expandir-sin-gente-local"
+      ]
+    },
+    {
+      "id": "innovar-sin-tocar-al-cliente",
+      "titulo": "Innovamos sin hablar con nadie de fuera",
+      "gravedad": "alta",
+      "sintoma": "El proyecto avanza meses sin que nadie de fuera haya visto ni probado nada.",
+      "causa": "La validación se pospone porque enseñarlo a medias da vergüenza, y el coste de equivocarse crece cada semana.",
+      "porque": "Dentro se puede avanzar sin conflicto; fuera aparecen respuestas incómodas.",
+      "arreglo": "Enseñar algo a alguien de fuera antes de que el equipo se sienta listo. La incomodidad es la señal de que llega a tiempo.",
+      "comoCazarlo": "Pregunta cuántas personas de fuera lo han visto. Si son cero después de un mes, ya se está apostando a ciegas.",
+      "consejo": "El coste de una idea equivocada crece con el tiempo que lleva sin contrastarse, no con lo que se gastó.",
+      "salioDe": "Síntesis de descubrimiento de producto · Basecamp y MIT SMR",
+      "senales": [
+        "cuando esté listo",
+        "todavía no está"
+      ],
+      "vecinas": [
+        "la-innovacion-en-un-departamento",
+        "abrir-la-innovacion-sin-abrir-nada",
+        "innovar-en-el-mismo-sitio",
+        "soporte-separado-de-producto",
+        "el-uso-como-senal"
+      ]
+    },
+    {
+      "id": "la-innovacion-en-un-departamento",
+      "titulo": "La innovación es de un departamento",
+      "gravedad": "media",
+      "sintoma": "Existe un área de innovación y el resto de la empresa no innova.",
+      "causa": "Concentrarla la separó del negocio: el que sabe dónde duele no participa y el que participa no sabe dónde duele.",
+      "porque": "Un departamento se puede presupuestar y medir; la innovación repartida no cabe en un organigrama.",
+      "arreglo": "Que el área de innovación trabaje SIEMPRE emparejada con quien tiene el problema, y que el problema lo traiga esa persona.",
+      "comoCazarlo": "Mira de dónde salieron los últimos proyectos. Si todos salieron del área de innovación, está aislada.",
+      "consejo": "El área sirve como método y capacidad, no como fuente de problemas.",
+      "salioDe": "Síntesis de organización de la innovación · MIT Sloan Management Review",
+      "senales": [
+        "el área de innovación",
+        "ellos se encargan"
+      ],
+      "vecinas": [
+        "innovar-sin-tocar-al-cliente",
+        "abrir-la-innovacion-sin-abrir-nada",
+        "innovar-en-el-mismo-sitio"
+      ]
+    },
+    {
+      "id": "prototipo-que-parece-terminado",
+      "titulo": "El prototipo se ve tan bien que nadie lo critica",
+      "gravedad": "media",
+      "sintoma": "Se enseña un prototipo muy acabado y la gente comenta colores en vez del fondo.",
+      "causa": "El acabado indica que ya está decidido, así que el que mira se calla lo importante.",
+      "porque": "Un prototipo bonito se enseña mejor y da mejor impresión en una junta.",
+      "arreglo": "Enseñar prototipos deliberadamente bastos cuando lo que se quiere es criticar el fondo. El acabado se deja para cuando el fondo esté cerrado.",
+      "comoCazarlo": "Si los comentarios son sobre el color, o el fondo ya está bien o nadie se atreve.",
+      "consejo": "El nivel de acabado es una señal, y hay que usarla a propósito en vez de sufrirla.",
+      "salioDe": "Síntesis de prototipado · Basecamp, Shape Up",
+      "senales": [
+        "se ve muy bien",
+        "me gusta el color"
+      ],
+      "vecinas": [
+        "el-experimento-sin-hipotesis",
+        "campana-sin-hipotesis",
+        "matar-tarde",
+        "demo-en-vivo-obligatoria",
+        "el-piloto-eterno"
+      ]
+    },
+    {
+      "id": "lo-nuevo-sin-quitar-lo-viejo",
+      "titulo": "Añadimos lo nuevo y mantenemos todo lo demás",
+      "gravedad": "alta",
+      "sintoma": "Cada innovación se suma y nunca se retira nada, y el equipo mantiene cada vez más cosas.",
+      "causa": "La capacidad es finita. Innovar sin retirar convierte el mantenimiento en el trabajo entero, y entonces se deja de innovar.",
+      "porque": "Retirar algo tiene usuarios que se quejan hoy; no retirarlo tiene un coste repartido en el futuro.",
+      "arreglo": "Por cada cosa nueva, decidir qué se retira. Si no se puede retirar nada, no hay capacidad para lo nuevo — y eso también es una decisión.",
+      "comoCazarlo": "Cuenta cuántas cosas se retiraron el año pasado. Si son cero, la deuda de mantenimiento sólo puede subir.",
+      "consejo": "La empresa que no retira acaba dedicando toda su capacidad a sostener lo que ya hizo.",
+      "salioDe": "Síntesis de gestión de producto · Basecamp y GitLab Handbook",
+      "senales": [
+        "lo mantenemos",
+        "hay clientes usándolo"
+      ],
+      "vecinas": [
+        "la-transformacion-que-no-transforma",
+        "coordinar-mas-que-trabajar",
+        "innovar-en-el-mismo-sitio",
+        "competir-donde-todos"
+      ]
+    },
+    {
+      "id": "medir-la-innovacion-por-el-gasto",
+      "titulo": "Medimos innovación por lo que gastamos en ella",
+      "gravedad": "media",
+      "sintoma": "El indicador principal es el porcentaje de ingresos invertido en I+D.",
+      "causa": "Es una medida de ENTRADA. Dice cuánto se echa, no qué sale, y se puede cumplir gastando mal.",
+      "porque": "Es fácil de calcular, sale de la contabilidad y se compara con el sector.",
+      "arreglo": "Acompañarla siempre de una de resultado —ventas de producto nuevo, por ejemplo— y mirar las dos juntas. Una sola de las dos engaña.",
+      "comoCazarlo": "Si el gasto sube y las ventas de producto nuevo no, el dinero está entrando en algún sitio que no sale.",
+      "consejo": "Entrada, proceso, resultado y cartera son los cuatro tipos, y usar sólo uno es el error más común.",
+      "salioDe": "«Creating Better Innovation Measurement Practices» · MIT Sloan Management Review",
+      "senales": [
+        "invertimos en i+d",
+        "porcentaje de ingresos"
+      ],
+      "vecinas": [
+        "metrica-antes-que-pregunta",
+        "medir-y-premiar",
+        "el-ahorro-que-no-se-cobra"
+      ]
+    }
+  ]
 }

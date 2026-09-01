@@ -64,7 +64,7 @@ export function buscar(neuronas, texto){
                     ['consejo', 1], ['ojo', 1], ['donde', 2], ['id', 4], ['area', 3]];
     for(const [c, peso] of campos){
       const v = normal(n[c] || '');
-      for(const p of palabras) if(v.includes(p)) puntos += peso;
+      for(const p of palabras) if(empiezaPalabra(v, p)) puntos += peso;
     }
     return { n, puntos };
   })
@@ -72,6 +72,32 @@ export function buscar(neuronas, texto){
   .sort((a, b) => b.puntos - a.puntos || pesoGravedad(b.n) - pesoGravedad(a.n))
   .map(x => x.n);
 }
+
+/* ── por qué no basta `includes` ───────────────────────────────────────────
+   ⚠ ESTE ES UN DEFECTO REAL Y CARO, NO UNA FINURA. Con `v.includes(p)` la
+   palabra buscada casaba dentro de CUALQUIER palabra. Buscando «está
+   configurado y no lo toma» —que es la señal EXACTA, palabra por palabra, de
+   `error-capa-que-no-pasa-la-variable`— ganaba `automatizar-lo-que-sobra`,
+   que no tiene nada que ver: «toma» está dentro de «auTOMAtizar», y como
+   aparece en el título, el síntoma, la causa y el id, sumaba 14 contra 12.
+
+   O sea: la señal escrita a propósito para que esa búsqueda funcione perdía
+   contra un fragmento de una palabra ajena. El día que entraron 151 neuronas
+   de negocios —llenas de «automatizar» y «optimización»— el defecto empezó a
+   morder; antes estaba ahí y no se notaba.
+
+   La regla: la palabra buscada tiene que EMPEZAR una palabra del campo. Así
+   «toma» sigue casando con «toma», «tomar» y «tomadas» —que es el parecido
+   que sí queremos, el de la raíz— y deja de casar con «automatizar». */
+const empiezaPalabra = (texto, palabra) => {
+  let i = texto.indexOf(palabra);
+  while(i !== -1){
+    const antes = i === 0 ? '' : texto[i - 1];
+    if(!/[a-z0-9]/.test(antes)) return true;   /* arranca palabra */
+    i = texto.indexOf(palabra, i + 1);
+  }
+  return false;
+};
 
 const pesoGravedad = (n) => ({ alta:3, media:2, baja:1 })[n.gravedad] || 0;
 
