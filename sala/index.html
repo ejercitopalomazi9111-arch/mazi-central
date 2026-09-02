@@ -2827,6 +2827,120 @@ function avisar(evento){
   }catch(e){}
 }
 
+/* ── letrero de paso ─────────────────────────────────────────────────────
+   Aparece arriba, dura unos segundos y se va. Tres reglas que salieron de
+   pensar en cómo se usa esto de verdad:
+
+   1 · Sólo lo que llega EN VIVO. El historial no se anuncia: «Luis entró»
+       hace tres horas no es información.
+   2 · Máximo tres a la vez. Cuando alguien tiene mala señal, el servidor
+       manda entra/sale/entra en ráfaga; sin tope, la pantalla se llena de
+       letreros y volvemos al problema de origen con otra forma.
+   3 · Si el mismo aviso se repite, se refresca el que ya está en vez de
+       apilar otro igual. */
+const LETREROS = 3, DURA = 3600;
+function letrero(texto){
+  const caja = $('letreros'); if(!caja) return;
+  const ya = [...caja.children].find(x => x.dataset.txt === texto);
+  if(ya){ clearTimeout(+ya.dataset.reloj); armarSalida(ya); return; }
+
+  const el = document.createElement('div');
+  el.className = 'letrero';
+  el.dataset.txt = texto;
+  el.innerHTML = texto;
+  caja.appendChild(el);
+  while(caja.children.length > LETREROS) caja.firstElementChild.remove();
+  armarSalida(el);
+}
+function armarSalida(el){
+  el.dataset.reloj = setTimeout(() => {
+    el.classList.add('yendose');
+    setTimeout(() => el.remove(), 320);
+  }, DURA);
+}
+
+/* ── AVISOS CON LA SALA CERRADA (Web Push) ─────────────────────────────────
+   Lo de arriba —`avisar()`— sólo funciona con la pestaña VIVA, aunque esté en
+   segundo plano. En cuanto Carlos cierra la sala, ese camino desaparece y el
+   teléfono se queda mudo: es justo el caso que él marcó aparte.
+
+   Esto es el otro camino: un service worker que sigue despierto y un aviso
+   firmado que manda el servidor. Se apunta aquí y se cobra en `sala/sw.js`.
+
+   ⚠ SI ESTO FALLA, NO SE APAGA NADA. El aviso con la app abierta ya está
+   encendido para cuando esto se intenta; si el navegador no sabe de push, o
+   no hay https, o el servicio contesta mal, se sigue avisando por el camino
+   viejo. Un `throw` aquí dejaría a Carlos sin los avisos que SÍ funcionan. */
+const PUEDE_PUSH = 'serviceWorker' in navigator && 'PushManager' in window;
+
+const deB64url = (s) => {
+  const t = (s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(t);
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+};
+const aB64url = (buf) => {
+  let s = ''; for(const b of new Uint8Array(buf)) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+async function apuntarAPush(){
+  if(!PUEDE_PUSH || !sala || demo || !yo) return false;
+  try{
+    /* El service worker vive en `sala/sw.js`, o sea al lado de esta página:
+       su alcance sale siendo `/sala/` sin tener que pedir nada raro. */
+    const reg = await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+
+    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/vapid`, { headers: conLlave() });
+    const { publica } = await r.json();
+    if(!publica) return false;
+    const llavePub = deB64url(publica);
+
+    /* ⚠ UNA SUSCRIPCIÓN VIEJA QUEDA ATADA A LA LLAVE CON LA QUE NACIÓ. Si la
+       sala se regeneró el par —almacenamiento nuevo, sala recreada—, la
+       suscripción guardada en el navegador sigue viva y `subscribe()` la
+       devuelve tal cual, pero los avisos firmados con la llave nueva los
+       rechaza el servicio de push con un 403. Se ve como «todo bien y nada
+       llega», que es el peor de los estados. Por eso se compara y, si no
+       coincide, se tira y se pide otra. */
+    let sus = await reg.pushManager.getSubscription();
+    if(sus){
+      const vieja = sus.options && sus.options.applicationServerKey;
+      if(!vieja || aB64url(vieja) !== publica){ await sus.unsubscribe(); sus = null; }
+    }
+    if(!sus){
+      sus = await reg.pushManager.subscribe({
+        /* Obligatorio en Chrome: promete que cada push va a mostrar algo. Es
+           cierto — `sw.js` siempre muestra la notificación. */
+        userVisibleOnly: true,
+        applicationServerKey: llavePub,
+      });
+    }
+
+    await alServidor('suscribir', { de: yo.id, suscripcion: { endpoint: sus.endpoint } });
+    return true;
+  }catch(e){
+    /* Se dice en la consola y se sigue. El aviso con la app abierta no depende
+       de esto. */
+    console.warn('los avisos con la sala cerrada no se pudieron apuntar:', e);
+    return false;
+  }
+}
+
+async function borrarDePush(){
+  if(!PUEDE_PUSH) return;
+  try{
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sus = reg && await reg.pushManager.getSubscription();
+    if(sus) await sus.unsubscribe();
+    /* Se le avisa al servidor aunque el navegador ya la haya tirado: si no,
+       la sala sigue mandando avisos a un endpoint muerto hasta que un 410 la
+       borre sola, y mientras tanto el botón dice «apagados» y el teléfono
+       sigue sonando. */
+    if(sala && !demo && yo) await alServidor('desuscribir', { de: yo.id });
+  }catch(e){ console.warn('no se pudo quitar la suscripción:', e); }
+}
+
 async function pedirAvisos(){
   if(!PUEDE_AVISAR){ letrero('Este navegador no sabe avisar.'); return false; }
   let p = Notification.permission;
@@ -2840,11 +2954,20 @@ async function pedirAvisos(){
      que acaba de hacer desbloquea el audio, que si no queda mudo hasta el
      primer toque. */
   sonar(); vibrar([40]);
-  letrero('Avisos encendidos.');
+
+  /* Y ahora el que de verdad hacía falta: el de la sala CERRADA. Se intenta
+     DESPUÉS de dar por buenos los otros, y el letrero dice cuál de los dos
+     quedó — porque «avisos encendidos» a secas es lo que haría que Carlos
+     guardara el teléfono confiando en algo que no le va a llegar. */
+  const conCerrada = await apuntarAPush();
+  letrero(conCerrada
+    ? 'Avisos encendidos, también con la sala cerrada.'
+    : 'Avisos encendidos con la sala abierta. Cerrada no se pudo: mira la consola.');
   return true;
 }
-function apagarAvisos(){
+async function apagarAvisos(){
   try{ localStorage.setItem('sala-avisos', 'no'); }catch(e){}
+  await borrarDePush();
   letrero('Avisos apagados.');
 }
 
@@ -3525,6 +3648,18 @@ async function entrar(codigo, nombre){
   avisarCambioDeLlave(h.yoSoy);
   abrirSocket(codigo);
 
+  /* ⚠ SE VUELVE A APUNTAR EN CADA ENTRADA, y no es de más. La suscripción se
+     guarda en el ALMACENAMIENTO DE LA SALA, y la sala se olvida sola a los
+     seis meses; el navegador, en cambio, se queda con la suya para siempre.
+     Sin esto, el botón seguiría diciendo «encendidos» mientras el servidor ya
+     no tiene a quién avisar — otra pantalla que informa un estado y está en
+     otro. Es barato: si ya está apuntado, `subscribe()` devuelve la misma y
+     el servidor reescribe la misma línea.
+     No pide permiso ni abre diálogos: sólo corre si YA estaba concedido. */
+  if(quiereAvisos() && PUEDE_AVISAR && Notification.permission === 'granted'){
+    apuntarAPush();
+  }
+
   $('puerta').classList.add('ida');
   /* ⚠ LA GUÍA SE COLOCA CUANDO LAS PESTAÑAS YA SE VEN, y ésa es la parte que
      se olvida: mientras la puerta tapa la mesa, `offsetWidth` de la pestaña
@@ -3553,37 +3688,14 @@ function abrirSocket(codigo){
                no se ve, porque la línea está bien escrita. */
             + (yo ? `?de=${encodeURIComponent(yo.id)}` : '');
   ws = new WebSocket(url);
-  /* ── letrero de paso ─────────────────────────────────────────────────────
-     Aparece arriba, dura unos segundos y se va. Tres reglas que salieron de
-     pensar en cómo se usa esto de verdad:
-
-     1 · Sólo lo que llega EN VIVO. El historial no se anuncia: «Luis entró»
-         hace tres horas no es información.
-     2 · Máximo tres a la vez. Cuando alguien tiene mala señal, el servidor
-         manda entra/sale/entra en ráfaga; sin tope, la pantalla se llena de
-         letreros y volvemos al problema de origen con otra forma.
-     3 · Si el mismo aviso se repite, se refresca el que ya está en vez de
-         apilar otro igual. */
-  const LETREROS = 3, DURA = 3600;
-  function letrero(texto){
-    const caja = $('letreros'); if(!caja) return;
-    const ya = [...caja.children].find(x => x.dataset.txt === texto);
-    if(ya){ clearTimeout(+ya.dataset.reloj); armarSalida(ya); return; }
-
-    const el = document.createElement('div');
-    el.className = 'letrero';
-    el.dataset.txt = texto;
-    el.innerHTML = texto;
-    caja.appendChild(el);
-    while(caja.children.length > LETREROS) caja.firstElementChild.remove();
-    armarSalida(el);
-  }
-  function armarSalida(el){
-    el.dataset.reloj = setTimeout(() => {
-      el.classList.add('yendose');
-      setTimeout(() => el.remove(), 320);
-    }, DURA);
-  }
+  /* El letrero de paso NO vive aquí: vive arriba, en el cuerpo del script.
+     Vivía dentro de esta función, y por eso `pedirAvisos`, `apagarAvisos` y
+     el cambio de foto lo llamaban desde FUERA de su alcance: cada uno de los
+     tres tronaba con «letrero is not defined» justo al final, después de haber
+     hecho su trabajo. Se veía como que el botón de avisos no hacía nada —el
+     que lo pinta corre DESPUÉS de la llamada que reventaba— cuando en realidad
+     ya había encendido los avisos. Lo cazó el navegador, no la lectura.
+     Sigue usándose desde aquí abajo, igual que antes. */
 
   ws.onmessage = (m) => {
     const p = JSON.parse(m.data);
@@ -4060,7 +4172,7 @@ function pintarBotonAvisos(){
   b.querySelector('.ico').textContent = si ? '🔕' : '🔔';
 }
 $('bAvisos').addEventListener('click', async () => {
-  if(quiereAvisos() && Notification.permission === 'granted') apagarAvisos();
+  if(quiereAvisos() && Notification.permission === 'granted') await apagarAvisos();
   else await pedirAvisos();
   pintarBotonAvisos(); cerrarCajones();
 });

@@ -63,7 +63,26 @@
 
    Ahora son treinta días, cualquier toque los renueva, y una sala fundada
    NUNCA pierde su cerradura: se le olvida lo dicho, no quién es su dueño. */
-const OLVIDO = 30 * 24 * 60 * 60 * 1000;
+/* ⚠ SEIS MESES, NO UNO. Lo pidió Carlos después de que la sala se le vaciara
+   tres veces: «que el chat caduque a los 6 MESES, no al mes». Tenía razón por
+   una razón que no es de gusto: una conversación de trabajo se consulta meses
+   después —«¿cómo quedamos con esto?»— y un mes no alcanza ni para cerrar un
+   proyecto. */
+const OLVIDO = 182 * 24 * 60 * 60 * 1000;
+
+/* Y ANTES DE OLVIDAR SE AVISA, con estas palabras suyas: «avisa pendejo».
+   Cumplido el plazo NO se borra: se deja un aviso en el hilo diciendo qué va a
+   pasar y cuándo, y se espera esta gracia. Cualquier uso dentro de la gracia
+   corre el plazo entero otra vez, así que basta con que alguien entre para
+   salvarlo. Sólo si nadie aparece en toda la gracia se borra. */
+const GRACIA_OLVIDO = 7 * 24 * 60 * 60 * 1000;
+
+/* El respaldo comprimido de lo que se borra, también pedido por él. Un valor
+   de almacenamiento no puede ser enorme, así que se guarda comprimido y con
+   tope: si no cabe, se sacrifican los mensajes MÁS VIEJOS y se dice cuántos.
+   Un respaldo que falla por grande sería peor que no tenerlo, porque nadie se
+   entera hasta que lo necesita. */
+const TOPE_RESPALDO = 110_000;
 
 /* Poner la alarma es una escritura, así que no se rehace en cada petición:
    una vez por hora basta cuando lo que se está corriendo son treinta días. */
@@ -304,6 +323,7 @@ const revuelto = (t) => {
    para no tener dos búsquedas distintas: una aquí y otra allá. Tener la
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
+import { generarVapid, empujarATodos } from './push.mjs';
 
 const ahora = () => Date.now();
 
@@ -357,6 +377,19 @@ export class Sala {
          ordenado —nadie lee el 900 sin haber pasado por el 899— basta con
          hasta dónde llegó cada uno, que son cuatro números. */
       this.vistos    = await ctx.storage.get('vistos')    || {};
+      /* CUÁNDO se usó esta sala por última vez. Se guarda en disco y no sólo
+         en memoria a propósito: es lo único que `alarm()` puede consultar
+         para saber si un disparo es de verdad el olvido o es la vigilia
+         pasando por ahí. Ver el comentario grande en `alarm()`. */
+      this.ultimoUso = await ctx.storage.get('ultimoUso') || 0;
+      /* A quién avisarle con la sala CERRADA: `id de sesión → suscripción del
+         navegador`. Por sesión y no por cuenta porque el permiso lo da un
+         DISPOSITIVO: el teléfono de Carlos y su compu son dos suscripciones
+         distintas y las dos tienen que sonar. */
+      this.avisos   = await ctx.storage.get('avisos')   || {};
+      /* El par de llaves de esta sala. Se genera solo la primera vez que hace
+         falta; la privada no sale de aquí. Ver `push.mjs`. */
+      this.vapid    = await ctx.storage.get('vapid')    || null;
     });
   }
 
@@ -458,6 +491,16 @@ export class Sala {
     if(forzado || t - (this._alarmaPuesta || 0) >= REARME){
       this._alarmaPuesta = t;
       this._olvidoEn = t + OLVIDO;
+      /* El sello va A DISCO, no sólo a memoria. `_olvidoEn` se pierde en
+         cuanto la instancia se recicla, y entonces nadie puede decir si un
+         disparo es el olvido o la vigilia. Esto sí sobrevive. */
+      this.ultimoUso = t;
+      /* La forma de OBJETO, como todo el resto del archivo. `put(clave,
+         valor)` también existe en Cloudflare, pero el almacenamiento de
+         mentiras de las pruebas sólo entiende la de objeto — y con la otra el
+         sello no se guardaba y la prueba nueva salía roja sin que el código
+         de producción tuviera nada malo. */
+      await this.ctx.storage.put({ ultimoUso: t });
     }
     await this.armar();
   }
@@ -505,18 +548,240 @@ export class Sala {
     await this.ctx.storage.setAlarm(cuando);
   }
 
+  /* ── LAS LLAVES DE AVISO, QUE SE HACEN SOLAS ─────────────────────────────
+     La primera vez que hacen falta, la sala se genera su propio par y guarda
+     la privada. Nadie tiene que pegar un secreto en ningún lado — que es la
+     única forma de que esto funcione, porque Carlos dijo con todas sus letras
+     que esta vez no nos resuelve nada, y una función que espera a que alguien
+     pegue una llave es una función apagada. */
+  async llavesDeAviso(){
+    if(this.vapid) return this.vapid;
+    this.vapid = await generarVapid();
+    await this.ctx.storage.put({ vapid: this.vapid });
+    return this.vapid;
+  }
+
+  /* ── EL AVISO CON LA SALA CERRADA ────────────────────────────────────────
+     Se le manda a todos MENOS al que escribió: avisarle a alguien de su propio
+     mensaje es la forma más rápida de que apague los avisos.
+
+     Va por `luego()` y nunca con `await` en el camino de `/decir`: si un
+     servicio de push tarda tres segundos, quien escribió NO tiene por qué
+     esperarlos. El mensaje ya está guardado; el aviso es de después. */
+  async avisarCerrados(evento){
+    const de = evento?.de?.id;
+    const suscripciones = Object.entries(this.avisos || {})
+      .filter(([id]) => id !== de)
+      .map(([, s]) => s)
+      .filter(Boolean);
+    if(!suscripciones.length) return { enviados: 0, muertas: [] };
+
+    const vapid = await this.llavesDeAviso();
+    /* Una costura, y se declara en vez de esconderse: las pruebas sustituyen el
+       que envía para comprobar A QUIÉN se le avisa sin salir a internet. Sin
+       esto habría que fingir la red entera o no probar nada — y no probar a
+       quién se le avisa es justo donde se cuela el error de vibrarle el
+       teléfono a quien acaba de escribir. */
+    const enviar = this._enviarPush || empujarATodos;
+    const r = await enviar(suscripciones, vapid);
+
+    /* Las muertas se borran: reintentar para siempre contra una suscripción que
+       el navegador ya tiró es gastar en algo que nunca va a contestar. */
+    if(r.muertas.length){
+      for(const [id, s] of Object.entries(this.avisos)){
+        if(s && r.muertas.includes(s.endpoint)) delete this.avisos[id];
+      }
+      await this.ctx.storage.put({ avisos: this.avisos });
+    }
+    return r;
+  }
+
+  /* Un renglón de sistema metido a mano en el hilo. No pasa por `publicar()`
+     a propósito: aquello difunde por socket y despierta a los que esperan, y
+     esto corre desde la alarma, donde no hay sockets vivos ni nadie colgado.
+     Lo que sí hace falta es que quede GUARDADO, porque el que lo va a leer
+     llegará mucho después. */
+  async publicarSistema(texto){
+    const ev = { id: `e${++this.serie}`, ts: ahora(), tipo:'sistema',
+                 de: { id:'sala', nombre:'La Sala', tipo:'sistema' }, texto };
+    this.hilo.push(ev);
+    if(this.hilo.length > TOPE_HILO) this.hilo = this.hilo.slice(-TOPE_HILO);
+    await this.ctx.storage.put({ hilo:this.hilo, serie:this.serie });
+    return ev;
+  }
+
+  /* ── EL RESPALDO DE LO QUE SE VA A BORRAR ───────────────────────────────
+     Pedido por Carlos: «que haya un respaldo comprimido de lo que se borra».
+     Se guarda gzip en el propio almacenamiento de la sala, junto a la fecha y
+     cuántos mensajes traía, para que quien vuelva sepa que existe.
+
+     Si aun comprimido no cabe, se recortan los mensajes más viejos hasta que
+     entre y se apunta cuántos se quedaron fuera. Prefiero un respaldo parcial
+     y honesto sobre su recorte, que un respaldo que revienta al guardarse y
+     deja a todos creyendo que hay red. */
+  async respaldar(){
+    try{
+      let hilo = this.hilo || [];
+      const total = hilo.length;
+      let bytes = null, fuera = 0;
+      while(hilo.length){
+        bytes = await this.comprimir(JSON.stringify({ hilo, gente:this.gente }));
+        if(bytes.length <= TOPE_RESPALDO) break;
+        /* Se corta por la mitad de lo que sobra en vez de uno por uno: con 400
+           mensajes, de uno en uno son 400 compresiones. */
+        const quitar = Math.max(1, Math.ceil(hilo.length / 4));
+        hilo = hilo.slice(quitar);
+        fuera += quitar;
+      }
+      if(!bytes) return null;
+      const respaldo = { cuando: ahora(), mensajes: hilo.length, recortados: fuera,
+                         total, gzip: [...bytes] };
+      await this.ctx.storage.put({ respaldo });
+      return respaldo;
+    }catch(e){
+      /* Que el respaldo falle NO puede impedir el olvido ni tumbar la alarma:
+         una sala que no se puede limpiar crece para siempre. Se sigue sin él y
+         el aviso del hilo lo dirá. */
+      return null;
+    }
+  }
+
+  /* `CompressionStream` existe en Workers y en Node 18+, así que esto corre
+     igual en producción y en las pruebas. Si algún día no estuviera, revienta
+     aquí y `respaldar()` lo atrapa: se pierde el respaldo, no la sala. */
+  async comprimir(texto){
+    const cs = new CompressionStream('gzip');
+    const escritor = cs.writable.getWriter();
+    escritor.write(new TextEncoder().encode(texto));
+    escritor.close();
+    const trozos = [];
+    const lector = cs.readable.getReader();
+    for(;;){
+      const { done, value } = await lector.read();
+      if(done) break;
+      trozos.push(value);
+    }
+    let n = 0; for(const t of trozos) n += t.length;
+    const fuera = new Uint8Array(n);
+    let i = 0; for(const t of trozos){ fuera.set(t, i); i += t.length; }
+    return fuera;
+  }
+
   async alarm(){
     /* Primero lo que vence antes. La vigilia se revisa SIEMPRE, aunque no
        toque el olvido, porque las dos comparten la única alarma que hay. */
     const seguir = await this.revisarVigilias();
     if(seguir){ await this.armar(); return; }
 
+    /* ⚠ AQUÍ SE BORRABA GRUPAZ, Y NO ERA EL OLVIDO: ERA LA VIGILIA PASANDO.
+       Carlos lo reportó DOS VECES en menos de un día —«alv se borró toda la
+       conversación qué onda?»— con el olvido puesto en treinta días.
+
+       La causa está tres líneas arriba y se lee: el olvido y la vigilia
+       COMPARTEN la única alarma que tiene un Durable Object. Cuando sonaba
+       por una vigilia, `revisarVigilias()` devolvía si HUBO CAMBIO — que no
+       es lo mismo que si el disparo era suyo—. Sin cambios devolvía falso, y
+       la ejecución seguía de largo hasta el borrado. O sea que cualquier
+       vigilia que venciera sin novedad vaciaba la jornada entera.
+
+       Lo tapaba que el borrado deja la sala «sana»: con su dueño y sus
+       llaves. Se veía igual que una sala nueva.
+
+       El arreglo no es adivinar de quién fue el disparo: es MEDIR. Se olvida
+       cuando de verdad pasaron treinta días sin usarse, y para todo lo demás
+       se re-arma y no se toca nada. Un disparo de más ahora cuesta un `get`;
+       antes costaba el trabajo de un día. */
+    const usada = (await this.ctx.storage.get('ultimoUso')) || this.ultimoUso || 0;
+    /* Sin sello NO se borra. Una sala vieja de verdad tendrá el suyo en cuanto
+       alguien la toque; una sala sin sello es una de la que NO SÉ nada, y no
+       saber nunca puede ser motivo para destruir el trabajo de nadie. Se
+       apunta la hora y se re-arma: al siguiente disparo ya habrá con qué
+       medir. */
+    if(!usada){
+      await this.ctx.storage.put({ ultimoUso: ahora() });
+      await this.armar();
+      return;
+    }
+    if(ahora() - usada < OLVIDO){
+      await this.armar();
+      return;
+    }
+
+    /* ── «AVISA PENDEJO» · el aviso antes del borrado ──────────────────────
+       Palabras de Carlos, y la petición es correcta: cumplido el plazo NO se
+       borra todavía. Se deja dicho en el hilo qué va a pasar y cuándo, y se
+       espera una gracia. Cualquiera que entre o escriba en ese lapso corre el
+       plazo entero otra vez —`tocar()` reescribe el sello— así que basta con
+       asomarse para salvarlo.
+
+       El aviso va al hilo y no a un correo a propósito: el hilo es lo que se
+       lee al volver, y es justo el lugar donde el borrado dolió. */
+    const avisado = (await this.ctx.storage.get('avisoOlvido')) || 0;
+    if(!avisado || avisado < usada){
+      await this.publicarSistema(
+        `Aviso: esta sala lleva seis meses sin usarse y se va a limpiar en `
+      + `siete días. NO se pierde la sala —dueño y llaves se quedan— y lo que `
+      + `se borre queda respaldado aquí mismo. Para cancelarlo basta con que `
+      + `alguien escriba: cualquier uso reinicia la cuenta desde cero.`);
+      await this.ctx.storage.put({ avisoOlvido: ahora() });
+      await this.armar();
+      return;
+    }
+    if(ahora() - avisado < GRACIA_OLVIDO){
+      await this.armar();
+      return;
+    }
+
     /* Una sala FUNDADA no se borra. Puede olvidar lo que se dijo —para eso es
        el acta— pero jamás quién es su dueño ni las llaves que repartió: eso
-       dejaría a todos afuera de su propia sala, sin aviso y sin remedio. */
+       dejaría a todos afuera de su propia sala, sin aviso y sin remedio.
+
+       ⚠ Y OLVIDA EN VOZ ALTA, que es lo que faltaba. Antes vaciaba el hilo
+       y no dejaba rastro: quien volvía encontraba una sala en blanco y no
+       tenía cómo distinguir «aquí nunca se dijo nada» de «aquí se borró lo
+       que se dijo». Pasó de verdad —Carlos lo reportó con un «alv se borró
+       toda la conversación qué onda?»— y le costó raspar la pantalla para
+       enterarse de algo que el propio servidor sabía perfectamente.
+
+       Es la misma regla que ya nos mordió con el vigilante sordo: para que
+       el silencio siga significando silencio, todo lo demás tiene que hacer
+       ruido. Un borrado callado se ve idéntico a una sala nueva, y esa es
+       exactamente la clase de defecto que no se caza leyendo.
+
+       El aviso se queda COMO ÚNICO contenido del hilo, no se difunde ni
+       despierta a nadie: no hay a quién: los sockets ya murieron con la
+       instancia. Lo lee el que vuelva. */
+    /* Se respalda ANTES de tocar nada: si el respaldo falla, que falle con el
+       hilo todavía entero y no a medio borrar. */
+    const guardado = await this.respaldar();
+
     if(this.dueno){
-      this.hilo = []; this.gente = {}; this.propuestas = []; this.vueltas = 0;
-      await this.ctx.storage.put({ hilo:[], gente:{}, propuestas:[], vueltas:0 });
+      const aviso = {
+        id: `e${++this.serie}`,
+        ts: ahora(),
+        tipo: 'sistema',
+        de: { id:'sala', nombre:'La Sala', tipo:'sistema' },
+        texto: 'Aquí se olvidó lo dicho por falta de uso, y se avisó siete días '
+             + `antes. La sala sigue siendo de "${this.dueno}", sus llaves siguen `
+             + 'sirviendo y nadie salió de la mesa: lo que se borró fue la '
+             + 'conversación, no la sala. '
+             + (guardado
+                 ? `Quedó respaldada comprimida: ${guardado.mensajes} mensajes`
+                   + (guardado.recortados
+                        ? ` (los ${guardado.recortados} más viejos no cupieron).`
+                        : ' completos.')
+                 : 'No se pudo guardar el respaldo, así que esto no se recupera.')
+             + ' Aun así, lo que importe va al repo — esto es un chat, no una '
+             + 'bitácora.',
+      };
+      /* ⚠ LA GENTE NO SE BORRA, y es lo cuarto que pidió Carlos: «que se
+         vuelva a meter a todos, para que nadie salga de la sala sin querer».
+         Vaciar `gente` echaba de la sala a quien no había hecho nada — al
+         volver se encontraba fuera de su propia mesa y tenía que entrar otra
+         vez. Lo que caduca es la CONVERSACIÓN, no la membresía. */
+      this.hilo = [aviso]; this.propuestas = []; this.vueltas = 0;
+      await this.ctx.storage.put({ hilo:this.hilo, gente:this.gente, propuestas:[],
+                                   vueltas:0, serie:this.serie, avisoOlvido:0 });
       await this.tocar(true);
       return;
     }
@@ -659,20 +924,40 @@ export class Sala {
       /* Los tres escalones que pidió Carlos, en el orden que los pidió. La
          `nota` es lo que se ve pegado a la persona en la mesa; el evento
          `limite` es lo que queda en el hilo para que se pueda leer después. */
+      /* ⚠ SE DICE LO QUE SE MIDE, NO LA CAUSA. Antes estas notas decían «se
+         cayó sin avisar» y «si fue el uso, podría volver en 3 h 30», y las dos
+         son cosas que la sala NO PUEDE SABER: no sabe si alguien se cayó ni si
+         se le acabó la cuota. Lo único que mide es que no da señales AQUÍ.
+
+         No es teoría: pasó. A mí me marcó «se quedó sin cuota» mientras estaba
+         trabajando —arreglando esta misma sala, de hecho—, nada más porque
+         llevaba una hora sin escribir en la mesa. El otro agente lo relevó de
+         buena fe y le dijo a Carlos que me esperara TRES HORAS Y MEDIA para
+         algo que no había que esperar.
+
+         Silencio en la mesa no es estar muerto: un agente puede estar
+         trabajando duro sin hablar. La marca `automatico:true` de abajo ya
+         decía que esto es una deducción; faltaba que el TEXTO también lo
+         dijera, porque el texto es lo que la gente lee. Sexta vez del mismo
+         defecto en dos días: algo que informa un estado y está en otro. */
       quien.auto = true;
       if(v.paso === 0){
         quien.estado = 'topado';
         quien.reanuda = t + VUELVE_EN;
-        quien.nota = 'Se cayó sin avisar. Si fue el uso, podría volver en 3 h 30.';
+        quien.nota = 'Lleva rato sin dar señales aquí. Puede estar trabajando '
+                   + 'sin hablar o haberse caído: la sala no lo sabe. Si fuera '
+                   + 'el uso, sería cosa de unas 3 h 30.';
         this.vigilias[id] = { paso: 1, cuando: t + VUELVE_EN };
       }else if(v.paso === 1){
         quien.reanuda = t + UNA_MAS;
-        quien.nota = 'No volvió a las 3 h 30. Se le da una hora más: quizás se agotó de más.';
+        quien.nota = 'Sigue sin dar señales 3 h 30 después. Se espera una hora '
+                   + 'más antes de dejar de contar con él.';
         this.vigilias[id] = { paso: 2, cuando: t + UNA_MAS };
       }else{
         quien.estado = 'fuera';
         quien.reanuda = null;
-        quien.nota = 'Tampoco volvió con la hora extra. Uso agotado de la semana, o algo externo.';
+        quien.nota = 'Sin señales desde hace más de cuatro horas. Se deja de '
+                   + 'esperar; vuelve solo en cuanto escriba.';
         delete this.vigilias[id];
       }
 
@@ -862,6 +1147,16 @@ export class Sala {
     await this.guardar();
     this.difundir({ que:'evento', evento, vueltas:this.vueltas, tope:TOPE_VUELTAS });
     this.despertar(evento);
+
+    /* Los avisos al teléfono son SÓLO para lo que escribió una persona o un
+       agente. Los de `sistema` y los de `limite` los deduce la sala, y ya nos
+       costó una vez: la mesa marcó «se cayó» de alguien que estaba trabajando,
+       el otro agente lo repitió como hecho, y Carlos quedó esperando tres horas
+       y media a alguien que nunca se fue. Vibrarle el teléfono por una
+       conjetura sobre un tercero es peor todavía. */
+    if(evento.tipo !== 'sistema' && evento.tipo !== 'limite'){
+      this.luego(this.avisarCerrados(evento).catch(() => {}));
+    }
     return evento;
   }
 
@@ -1311,7 +1606,31 @@ export class Sala {
          puede cortarse a media conexión, así que apuntarlo al salir dejaría
          huecos justo cuando más se está escuchando. */
       if(mio){ mio.visto = ahora();
-        if(this.tocarAgente(mio.id)) this.luego(this.cerrarVigilia(mio.id)); }
+        if(this.tocarAgente(mio.id)) this.luego(this.cerrarVigilia(mio.id));
+        /* ⚠ Y SE GUARDA A DISCO, QUE ES LO QUE FALTABA. Marcar `visto` en el
+           objeto vivo alcanza mientras la instancia siga en memoria — pero se
+           recicla sola, y al recargarse `visto` vuelve a la última vez que
+           este agente HABLÓ, porque hablar es lo único que llamaba a
+           `guardar()`. Entonces la vigilia lee un `visto` viejo y concluye que
+           se cayó alguien que está perfectamente colgado escuchando.
+
+           No es teoría: me pasó a mí dos veces en dos horas mientras
+           trabajaba, y la primera acabó con el otro agente diciéndole a Carlos
+           que me esperara tres horas y media.
+
+           Es la misma lección que hoy me mordió en una prueba: «lo tengo aquí»
+           y «quedó guardado» son dos afirmaciones distintas, y sólo una
+           sobrevive a un reinicio.
+
+           Se escribe con freno de un minuto por agente: la espera se renueva
+           cada 50 s y sin freno esto sería una escritura por vuelta y por
+           agente, para un dato que sólo se consulta cuando vence la vigilia. */
+        this._vistoEnDisco = this._vistoEnDisco || {};
+        if(ahora() - (this._vistoEnDisco[mio.id] || 0) > 60_000){
+          this._vistoEnDisco[mio.id] = ahora();
+          this.luego(this.ctx.storage.put({ gente: this.gente }));
+        }
+      }
       await this.tocar();
 
       const i = desde ? this.hilo.findIndex(e => e.id === desde) : -1;
@@ -1353,6 +1672,47 @@ export class Sala {
        basta con que la sesión exista y sea de esta cuenta — y esa comprobación
        sí se hace, porque si no cualquiera con la llave de invitado podría
        poner a «escribiendo» a una sesión ajena. */
+    /* ── LA LLAVE PÚBLICA PARA SUSCRIBIRSE ────────────────────────────────
+       El navegador la necesita para pedirle al servicio de push una
+       suscripción. Es PÚBLICA: se puede dar a cualquiera que ya entró a la
+       sala, y no sirve para mandar avisos — para eso hace falta la privada,
+       que no sale de aquí. */
+    if(pedido.method === 'GET' && ruta === 'vapid'){
+      const v = await this.llavesDeAviso();
+      return Response.json({ publica: v.publica });
+    }
+
+    /* ── APUNTARSE A LOS AVISOS CON LA SALA CERRADA ───────────────────────
+       Se guarda POR SESIÓN y no por cuenta: el permiso lo concede un
+       DISPOSITIVO. El teléfono de Carlos y su computadora son dos
+       suscripciones distintas y las dos tienen que sonar; guardarlo por cuenta
+       haría que la segunda pisara a la primera y que uno de los dos aparatos
+       se quedara mudo sin que nadie se enterara. */
+    if(pedido.method === 'POST' && ruta === 'suscribir'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const sus = c.suscripcion;
+      if(!sus || typeof sus.endpoint !== 'string' || !/^https:\/\//.test(sus.endpoint)){
+        return Response.json({
+          error:'Falta `suscripcion` con un `endpoint` https del navegador.' },
+          { status:400 });
+      }
+      this.avisos[quien.id] = { endpoint: sus.endpoint };
+      await this.ctx.storage.put({ avisos: this.avisos });
+      return Response.json({ bien:true, apuntados: Object.keys(this.avisos).length });
+    }
+
+    if(pedido.method === 'POST' && ruta === 'desuscribir'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+      delete this.avisos[quien.id];
+      await this.ctx.storage.put({ avisos: this.avisos });
+      return Response.json({ bien:true });
+    }
+
     if(pedido.method === 'POST' && ruta === 'escribiendo'){
       const c = await pedido.json().catch(() => ({}));
       const quien = this.gente[String(c.de || '')];

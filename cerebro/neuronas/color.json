@@ -172,6 +172,40 @@
         "no se distinguen las tarjetas en oscuro"
       ],
       "salioDe": "El banco de pruebas: el fondo oscuro salió de la marca y el violeta de texto es otro que el del tema claro."
+    },
+    {
+      "id": "contraste-medido-sin-componer-el-alfa",
+      "titulo": "El medidor de contraste leyó un velo blanco al 16% como blanco puro",
+      "gravedad": "alta",
+      "sintoma": "Una comprobación de contraste canta 1:1 sobre un texto que se lee perfectamente.",
+      "causa": "Se tomó el primer fondo no transparente subiendo por los padres. Un `rgba(255,255,255,.16)` encima de un azul se leyó como blanco, cuando lo que se pinta es el azul aclarado un 16%.",
+      "porque": "«El fondo» suena a una cosa y son varias apiladas. El primer color que aparece parece el bueno.",
+      "arreglo": "Juntar todas las capas hasta la primera opaca y componerlas de atrás hacia adelante. Y sumar la opacidad acumulada del texto, que no cambia su `color` computado.",
+      "comoCazarlo": "Un caso de prueba con texto claro sobre un velo semitransparente encima de un color oscuro. Sin composición da ~1:1; con ella, el número real.",
+      "consejo": "Un medidor que inventa un defecto te hace romper una página sana: cuesta lo mismo que uno que tapa un defecto de verdad.",
+      "senales": [
+        "dice que no hay contraste y sí se lee",
+        "contraste 1:1",
+        "el fondo es semitransparente"
+      ],
+      "salioDe": "Me la pasó Godines antes de que me la comiera: se la había encontrado midiendo su propia plantilla, «Cerrado ahora» a 1:1 cuando estaba a 5.69:1."
+    },
+    {
+      "id": "violeta-de-la-casa-no-admite-tinta-oscura",
+      "titulo": "Ninguna tinta oscura alcanza AA sobre el violeta #AC27FF",
+      "gravedad": "media",
+      "sintoma": "Un botón de marca con texto oscuro se ve bien y no pasa la comprobación de contraste.",
+      "causa": "El violeta de la casa tiene luminancia media (0.174). Contra él, el NEGRO PURO da 4.49:1 y AA pide 4.5 para texto normal: no hay tinta oscura que alcance.",
+      "porque": "El violeta se ve intenso y oscuro, así que la intuición pide texto claro encima… y en la práctica se pone el color de fondo de la casa, que es oscuro.",
+      "arreglo": "Texto BLANCO sobre el violeta: 4.68:1. O usar el violeta como texto sobre fondo oscuro, no como fondo.",
+      "comoCazarlo": "Calcular la razón antes de decidir el par, no después. Son dos líneas de aritmética.",
+      "consejo": "Cuando ninguna tinta de un lado alcanza, el problema no es la tinta: es que el fondo está a media luminancia.",
+      "senales": [
+        "el botón violeta no pasa contraste",
+        "4.17:1",
+        "qué color de texto le pongo al botón"
+      ],
+      "salioDe": "Medido en `sitio/index.html` (`a.wasap`, 4.17:1) y confirmado a mano con la fórmula WCAG. El negro puro se queda en 4.49."
     }
   ]
 }

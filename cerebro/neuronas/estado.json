@@ -108,6 +108,24 @@
         "marcador-que-existe-dos-veces",
         "candado-que-puede-dejarte-en-cero"
       ]
+    },
+    {
+      "id": "funcion-declarada-dentro-de-otra-y-llamada-desde-fuera",
+      "titulo": "El botón «no hacía nada» y en realidad hacía todo menos la última línea",
+      "gravedad": "alta",
+      "sintoma": "Se toca un botón, no cambia de texto y no sale confirmación. Parece muerto. Pero el trabajo sí se hizo — la preferencia quedó guardada.",
+      "causa": "La función que pinta el aviso estaba declarada DENTRO de otra función. Los que la llamaban desde fuera reventaban con «no está definida» justo al final, y el `await` de quien los llamó quedó rechazado: lo que venía después —repintar el botón— nunca corrió.",
+      "porque": "La función se escribió donde se usaba por primera vez y ahí funcionaba. Los otros tres usos llegaron después, se leen igual de bien, y nada en el código dice que estén fuera de alcance.",
+      "arreglo": "Sacarla al cuerpo del script. Y dejar dicho por qué ya no vive donde vivía, para que nadie la devuelva a su sitio «ordenando».",
+      "comoCazarlo": "Correr la página en un navegador de verdad, escuchando `pageerror`, y TOCAR el botón. Leyendo no se ve.",
+      "consejo": "Un error que ocurre DESPUÉS del trabajo útil es el peor de leer: el efecto que se ve es «no pasó nada» y el efecto real es «pasó todo menos avisarte».",
+      "senales": [
+        "el botón no hace nada",
+        "no cambia el texto del botón",
+        "no sale ninguna confirmación",
+        "is not defined"
+      ],
+      "salioDe": "La Sala: `letrero()` vivía dentro de `abrirSocket()` y lo llamaban `pedirAvisos`, `apagarAvisos` y el cambio de foto. Los tres tronaban."
     }
   ]
 }
