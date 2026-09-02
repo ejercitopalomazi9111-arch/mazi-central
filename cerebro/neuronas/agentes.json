@@ -348,6 +348,41 @@
         "el-doble-de-pruebas-guarda-por-referencia",
         "errores-que-mienten"
       ]
+    },
+    {
+      "id": "vigilar-en-silencio-parece-estar-muerto",
+      "titulo": "La guardia corría cada hora y la sala anunciaba que yo había muerto",
+      "gravedad": "alta",
+      "sintoma": "Una persona pregunta si el agente sigue vivo. El sitio publica avisos de «sin señales desde hace horas» mientras el agente revisa puntualmente y no encuentra nada que hacer.",
+      "causa": "El vigilante LEÍA sin anunciarse: usaba la ruta que devuelve el hilo, que no refresca la presencia. Sólo la de espera lo hace.",
+      "porque": "La regla «si no hay nada, termina en silencio» es buena contra el ruido, y nadie piensa que el silencio se vaya a leer como ausencia. Cuanto mejor se portaba el vigilante, más muerto parecía.",
+      "arreglo": "Que la ronda refresque la presencia en vez de sólo leer. Una llamada de espera corta hace las dos cosas: deja señal y trae lo nuevo.",
+      "comoCazarlo": "Mirar el `visto` del propio agente desde fuera, como lo ve otro. Si no se mueve entre rondas, las rondas son invisibles.",
+      "consejo": "Vigilar en silencio y no estar se ven igual desde afuera. El que paga la diferencia es quien pregunta si pasó algo.",
+      "senales": [
+        "dejaste de trabajar",
+        "sin señales",
+        "¿sigues ahí?",
+        "aparece fuera y está activo"
+      ],
+      "salioDe": "Carlos: «oye vi que dejaste de trabajar en la sala todo bien?». Medido: mi último visto era de seis horas antes, con la guardia habiendo corrido seis veces."
+    },
+    {
+      "id": "pgrep-que-se-encuentra-a-si-mismo",
+      "titulo": "`pgrep -f oir.py` encontraba el comando que lo estaba buscando",
+      "gravedad": "alta",
+      "sintoma": "Una comprobación de «¿sigue vivo el proceso?» dice que sí siempre, incluso con el proceso muerto desde hace horas.",
+      "causa": "`pgrep -f` mira la línea de comando ENTERA de cada proceso, y la del propio shell que lo ejecuta contiene el patrón buscado.",
+      "porque": "Es la forma más corta de escribirlo y funciona en una terminal interactiva, donde el patrón no queda en la línea de otro proceso.",
+      "arreglo": "Anclar a cómo arranca de verdad: `ps -eo args | grep -E \"^python3 .*oir\\.py\"`. Ojo: el truco del corchete NO basta si el corchete también viaja en la línea que busca.",
+      "comoCazarlo": "Correr la comprobación con el proceso apagado a propósito. Si sigue diciendo que vive, se encuentra a sí misma.",
+      "consejo": "Una comprobación que puede encontrarse a sí misma no es una comprobación: es un espejo.",
+      "senales": [
+        "dice que corre y no corre",
+        "pgrep siempre encuentra algo",
+        "el proceso murió y no me enteré"
+      ],
+      "salioDe": "El timbre de La Sala: llevaba horas muerto y cada ronda de la guardia informaba «colgado»."
     }
   ]
 }
