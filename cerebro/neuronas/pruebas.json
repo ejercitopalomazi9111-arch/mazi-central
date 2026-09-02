@@ -381,6 +381,24 @@
         "sólo falla al medir automático"
       ],
       "salioDe": "`empresa/clases/revisar.mjs` contra `sitio/`: 21 rojos que al esperar 1800 ms se quedaron en 9, y los 9 son reales."
+    },
+    {
+      "id": "filtro-de-comodidad-que-tapa-justo-el-que-falla",
+      "titulo": "«Sáltate los que tengan hijos» se llevó por delante el único que fallaba",
+      "gravedad": "alta",
+      "sintoma": "Una prueba informa «29 textos cumplen contraste» y el botón principal está a 1.98:1.",
+      "causa": "El bucle pedía `children.length === 0` para no contar dos veces el mismo texto. Un botón con un icono SVG dentro TIENE hijos, así que quedaba fuera de la medida — y era justo el que fallaba.",
+      "porque": "El filtro se pone por una razón buena y chiquita —no duplicar— y nadie vuelve a mirar a quién deja fuera. La cuenta que sale luego suena a cobertura total.",
+      "arreglo": "Mirar los NODOS DE TEXTO propios del elemento, que son los que se pintan con su `color`. Los hijos se miden en su propia vuelta: nada se cuenta dos veces y nada queda fuera.",
+      "comoCazarlo": "Un caso con texto propio Y un icono al lado. Y en general: comparar cuántos elementos hay contra cuántos se midieron.",
+      "consejo": "Todo filtro de comodidad en un medidor es una lista de cosas que dejas de mirar. Vale la pena escribir a quién excluye, no sólo por qué.",
+      "senales": [
+        "dice que todo cumple y no cumple",
+        "la prueba no lo mide",
+        "children.length",
+        "mide de menos"
+      ],
+      "salioDe": "Godines se lo encontró en su plantilla —el botón de WhatsApp, 1.98:1— y me avisó de que si yo filtraba por hijos mirara ahí. Lo tenía igual, copiado de su versión."
     }
   ]
 }

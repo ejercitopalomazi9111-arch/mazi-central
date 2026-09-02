@@ -329,10 +329,27 @@ const medir = () => {
       return o;
     };
 
+    /* ⚠ SE MIDE EL TEXTO PROPIO, NO «los que no tienen hijos». Me lo avisó
+       Godines después de comérselo: su prueba pedía `children.length === 0`
+       para no contar dos veces el mismo texto, y ese filtro se llevó por
+       delante justo el botón que fallaba —llevaba un icono SVG dentro—. La
+       prueba informaba «29 textos cumplen contraste» sin haber mirado el
+       único que no cumplía, que además era el que decide si el cliente
+       escribe. Yo tenía el mismo filtro, copiado de su versión.
+
+       Lo correcto es mirar los NODOS DE TEXTO propios del elemento: son los
+       que se pintan con SU `color`. Los hijos se miden aparte en su vuelta, y
+       así no se cuenta nada dos veces sin dejar nada fuera. */
+    const textoPropio = (el) => {
+      let t = '';
+      for(const n of el.childNodes) if(n.nodeType === 3) t += n.nodeValue;
+      return t.trim();
+    };
+
     let medidos = 0, peor = 99, textoPeor = '';
     for(const el of document.querySelectorAll('body *')){
-      if(!visible(el) || el.children.length) continue;
-      const texto = (el.textContent || '').trim();
+      if(!visible(el)) continue;
+      const texto = textoPropio(el);
       if(!texto) continue;
 
       const s = getComputedStyle(el);

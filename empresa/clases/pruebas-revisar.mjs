@@ -58,6 +58,16 @@ console.log('\n· El contraste, que me lo señaló Godines como hueco');
   ok('pero en 🟡, y explicando que se midió con opacidad a medias',
      !!apagado && apagado.grave === '🟡' && /opacidad/.test(apagado.que), apagado && apagado.que);
 
+  /* ⚠ EL HUECO QUE ME AVISÓ GODINES, y lo tenía igual. Un filtro puesto por
+     comodidad —«sáltate los que tengan hijos, para no contar dos veces el
+     mismo texto»— se lleva por delante los elementos que tienen texto PROPIO
+     y además un icono dentro. En su caso era el botón de WhatsApp, o sea el
+     único que fallaba y justo el que decide si el cliente escribe. Su prueba
+     decía «29 textos cumplen» sin haberlo mirado. */
+  const conIcono = h.find(x => x.regla === 'no-se-lee' && /con-icono/.test(x.dato || ''));
+  ok('mide el texto propio de un elemento QUE TIENE UN ICONO DENTRO', !!conIcono,
+     h.filter(x=>x.regla==='no-se-lee').map(x=>x.dato).join(' | '));
+
   ok('y cuenta cuántos textos midió', rota.informe[0].contraste.medidos > 0,
      JSON.stringify(rota.informe[0].contraste));
 }
