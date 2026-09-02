@@ -77,6 +77,22 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   opacity:.72}
 .pv{font-size:26px; font-weight:900; font-variant-numeric:tabular-nums; line-height:1}
 .pv .u{font-size:12px; opacity:.6; margin-left:2px}
+
+/* ── LOS REVERSOS ───────────────────────────────────────────────────────────
+   Lo pidió Carlos: ver con el dorso de la carta cuántas tienes tú y cuántas
+   el rival, en vez de leer un número.
+   ⚠ `aria-hidden` a propósito: para quien no ve la pantalla, los montoncitos
+   no dicen nada — el dato va en texto, al lado, que es lo que lee el lector.
+   Un adorno que además se anuncia es ruido. */
+.reversos{display:flex; gap:2px; margin-top:5px; min-height:19px; align-items:flex-end}
+.reversos i{
+  display:block; width:13px; height:18px; border-radius:3px;
+  border:1.5px solid rgba(255,255,255,.5);
+  /* el dorso de verdad, el mismo que usa la caja de cartas de la portada */
+  background:#7a2b48 url(arte/web/reverso.webp) center/cover no-repeat;
+  box-shadow:1px 1px 0 rgba(0,0,0,.35);
+}
+.reversos b{font-size:10.5px; font-weight:900; opacity:.7; margin-left:3px; align-self:center}
 .barra{height:7px; border-radius:99px; background:rgba(255,255,255,.18); margin-top:5px;
   overflow:hidden}
 .barra i{display:block; height:100%; background:var(--rosa); border-radius:99px;
@@ -468,12 +484,14 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
       <div class="quien" id="mNomA">Tú</div>
       <div class="pv"><span id="mPvA">200</span><span class="u">PV</span></div>
       <div class="barra"><i id="mBarA" style="width:100%"></i></div>
+      <div class="reversos" id="mRevA" aria-hidden="true"></div>
     </div>
     <div class="ronda" id="mRonda">Ronda 1</div>
     <div class="der">
       <div class="quien" id="mNomB">Máquina</div>
       <div class="pv"><span id="mPvB">200</span><span class="u">PV</span></div>
       <div class="barra"><i id="mBarB" style="width:100%"></i></div>
+      <div class="reversos" id="mRevB" aria-hidden="true"></div>
     </div>
     <!-- La tira de rondas: de un vistazo, quién viene ganando y por cuánto.
          El marcador dice CÓMO VAN; esto dice CÓMO LLEGARON ahí, que es lo que
@@ -845,7 +863,19 @@ function pintarMarcador(){
   $('#mBarA').style.width = (J.a.pv / MOTOR.PV_INICIAL * 100) + '%';
   $('#mBarB').style.width = (J.b.pv / MOTOR.PV_INICIAL * 100) + '%';
   $('#mRonda').textContent = 'Ronda ' + J.ronda;
+  reversos('#mRevA', J.a.mano.length);
+  reversos('#mRevB', J.b.mano.length);
   pintarTira();
+}
+
+/* Dibuja el montoncito de dorsos. Se topa en seis y lo que sobra va en número:
+   veinte cuadritos no se cuentan de un vistazo, que es justo para lo que
+   sirven. El texto de al lado sigue diciendo el dato exacto. */
+function reversos(donde, cuantas){
+  const c = $(donde);
+  if(!c) return;
+  const tope = Math.min(cuantas, 6);
+  c.innerHTML = '<i></i>'.repeat(tope) + (cuantas > tope ? '<b>+' + (cuantas - tope) + '</b>' : '');
 }
 
 /* ── LA MÁQUINA ───────────────────────────────────────────────────────────
