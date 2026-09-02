@@ -121,6 +121,40 @@
         "estaba suscrito y ya no llega"
       ],
       "salioDe": "Los avisos de La Sala. La sala se olvida a los seis meses y con ella su par de llaves; sin esto, quedaba un teléfono mudo para siempre."
+    },
+    {
+      "id": "push-con-texto-que-llega-y-se-descarta",
+      "titulo": "El aviso con texto mal cifrado llega y el teléfono lo tira en silencio",
+      "gravedad": "alta",
+      "sintoma": "El servicio de push contesta 201, todo parece bien, y en el teléfono no aparece ninguna notificación.",
+      "causa": "El contenido de un push va cifrado (RFC 8291). Si el orden de las dos públicas en el `info` está cambiado, o falta el delimitador 0x02 al final del registro, el navegador no puede descifrarlo y descarta el aviso sin avisar a nadie.",
+      "porque": "El 201 es del servicio de push, que sólo confirma que RECIBIÓ el bulto. Nadie en la cadena valida que se pueda abrir.",
+      "arreglo": "En el `info` va primero la pública del navegador y después la nuestra. El registro termina en 0x02. Y probarlo DESCIFRANDO, no comprobando que no truene.",
+      "comoCazarlo": "Una prueba que haga de navegador: generar una pareja P-256, cifrar contra ella, descifrar con la privada y comparar el texto. Con acentos y emoji.",
+      "consejo": "Cuando el fallo es silencioso en toda la cadena, la única prueba que vale es deshacer lo hecho y comparar.",
+      "senales": [
+        "el push da 201 y no llega",
+        "la notificación no aparece",
+        "sale sin texto"
+      ],
+      "salioDe": "Lo pidió Carlos en cuanto los avisos empezaron a llegarle: «una vista previa de quien escribió y un poco del texto»."
+    },
+    {
+      "id": "recortar-texto-parte-el-emoji",
+      "titulo": "El recorte partió un emoji y dejó medio carácter en la pantalla de bloqueo",
+      "gravedad": "media",
+      "sintoma": "Un aviso recortado termina en un cuadrito o un rombo con signo de interrogación.",
+      "causa": "`slice` corta por unidades UTF-16, y un emoji ocupa dos. Cortar en medio deja un sustituto suelto que no es ningún carácter.",
+      "porque": "`length` de una cadena suena a «cuántas letras» y son unidades UTF-16. Con texto en español sin emoji nunca se nota.",
+      "arreglo": "Recortar sobre `[...cadena]`, que itera por puntos de código.",
+      "comoCazarlo": "Un texto de puros emoji, más largo que el límite. Y ojo con la prueba: un sustituto SUELTO mide 1 dentro del rango; el emoji entero también empieza en ese rango y no está roto.",
+      "consejo": "La prueba de esto es fácil de escribir mal en la misma dirección que el código: la primera versión mía daba por roto un emoji intacto.",
+      "senales": [
+        "sale un cuadrito al final",
+        "se corta raro el texto",
+        "el emoji se ve mal"
+      ],
+      "salioDe": "El recado de los avisos de La Sala, escribiendo su prueba."
     }
   ]
 }

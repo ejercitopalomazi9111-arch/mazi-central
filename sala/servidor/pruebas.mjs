@@ -1892,5 +1892,47 @@ console.log('\n· El hilo suelta lastre antes de reventar');
   ok('las últimas conservan su imagen', nueva_ && !!nueva_.adjuntos[0].datos);
 }
 
+console.log('\n· El recado que se lee en la pantalla de bloqueo');
+{
+  const s = nueva();
+  s._codigo = 'GRUPAZ';
+  const recado = (e) => JSON.parse(s.recado(e));
+
+  const r = recado({ de:{ nombre:'Carlos' }, texto:'oigan, ¿ya quedó lo del violeta?' });
+  ok('el título es QUIÉN escribió', r.titulo === 'Carlos');
+  ok('y el cuerpo es lo que dijo', r.texto === 'oigan, ¿ya quedó lo del violeta?');
+  ok('y dice en qué sala fue, para que al tocarlo abra ésa', r.sala === 'GRUPAZ');
+
+  /* Los saltos de línea se comen la pantalla de bloqueo: se aplastan. */
+  ok('los renglones se aplastan en uno',
+     recado({ de:{nombre:'X'}, texto:'uno\n\n  dos' }).texto === 'uno dos');
+
+  ok('sin nombre no sale «undefined»',
+     recado({ texto:'hola' }).titulo === 'Alguien');
+  ok('un mensaje vacío dice algo en vez de nada',
+     recado({ de:{nombre:'X'}, texto:'' }).texto === 'escribió en la sala');
+  ok('un adjunto sin texto se anuncia',
+     recado({ de:{nombre:'X'}, texto:'', adjuntos:[{}] }).texto === 'mandó un archivo');
+
+  /* ⚠ SE RECORTA POR LETRAS, NO POR BYTES NI POR UNIDADES UTF-16. Un `slice`
+     a secas parte un emoji a la mitad y deja un carácter roto en la pantalla
+     de Carlos — que es exactamente el tipo de detalle que él caza en dos
+     segundos desde una captura. */
+  const largo = recado({ de:{nombre:'X'}, texto:'🐦'.repeat(200) }).texto;
+  ok('un texto larguísimo se recorta', largo.length < 300);
+  ok('y termina en puntos suspensivos', largo.endsWith('…'));
+  /* ⚠ UN SUSTITUTO SUELTO MIDE 1, y ahí estuvo mi error al escribir esta
+     prueba: la primera versión buscaba caracteres en el rango de sustitutos, y
+     como `[...cadena]` devuelve el emoji ENTERO —cuyo primer código también
+     cae en ese rango— daba por roto un emoji intacto. Lo que delata a uno
+     partido es que quede SOLO: longitud 1 dentro del rango. */
+  ok('SIN partir el emoji por la mitad',
+     ![...largo].some(c => c.length === 1
+       && c.charCodeAt(0) >= 0xD800 && c.charCodeAt(0) <= 0xDFFF));
+
+  const justo = recado({ de:{nombre:'X'}, texto:'a'.repeat(120) }).texto;
+  ok('uno que cabe justo no se toca', justo === 'a'.repeat(120));
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);
