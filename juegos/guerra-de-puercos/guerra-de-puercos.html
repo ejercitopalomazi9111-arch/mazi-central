@@ -123,6 +123,90 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
    ancho, caben las cinco de un tirón y siguen grandes. */
 .mano{display:grid; grid-template-columns:repeat(3, 1fr); gap:9px; align-items:end}
 @media (min-width:560px){ .mano{grid-template-columns:repeat(5, 1fr)} }
+
+/* ── EL ABANICO ────────────────────────────────────────────────────────────
+   Carlos, e402. Y no es sólo que se vea como una mano de verdad: es lo que
+   resuelve lo que pidió antes —«hazlas más grandes»— sin pedir más pantalla.
+   Cinco cartas EN FILA se reparten los 390 px de un teléfono y salen a 64
+   cada una. Encimadas, cada una puede medir 100 y las cinco siguen cabiendo,
+   porque lo que se encima es justo la parte que no dice nada.
+
+   El giro y la altura los pone el JS por carta (`--giro`, `--sube`): tienen
+   que salir del NÚMERO de cartas, y en CSS eso sería una regla por cantidad.
+
+   ⚠ El origen del giro va MUY POR DEBAJO de la carta (50% 165%). Girando
+   desde el centro, las puntas de arriba se abren y las de abajo también, y
+   parece un molinillo. Desde un punto bajo, la mano gira como gira una mano:
+   el borde inferior casi quieto y el superior abriéndose. */
+/* ⚠ EL RÓTULO DE LA CARTA CAE JUSTO DONDE ESTÁ EL TÍTULO DE LA SECCIÓN, y
+   con 2 px de por medio se leían encimados: «TU MANO · ELIGE UNA CARTA» salía
+   por debajo de la pastilla. Se vio en la captura, no en el código. El hueco
+   de arriba tiene que caber la pastilla (28 px) más aire. */
+.mano-caja{ position:relative; padding-top:40px }
+.mano-caja .ficha-carta{ top:4px }
+.mano-caja + .especiales{ margin-top:16px }
+#rTuMano{ margin-bottom:10px }
+.mano.abanico{
+  display:flex; justify-content:center; align-items:flex-end;
+  grid-template-columns:none; gap:0;
+  /* Sin altura mínima, la caja la marca la carta más baja del arco y el
+     tapete se encoge cuando levantas una. */
+  min-height:calc(var(--ancho-carta) * 92 / 64 + 26px);
+  padding-bottom:6px;
+}
+.mano.abanico .carta{
+  --ancho-carta:104px;
+  width:var(--ancho-carta); flex:0 0 auto; aspect-ratio:64/92;
+  margin-left:var(--encime, -34px);
+  transform-origin:50% 165%;
+  transform:rotate(var(--giro, 0deg)) translateY(var(--sube, 0px));
+  transition:transform .18s cubic-bezier(.2,.9,.3,1.25), box-shadow .18s;
+  z-index:var(--capa, 1);
+}
+.mano.abanico .carta:first-child{ margin-left:0 }
+/* Los teléfonos angostos: cartas un pelo más chicas y más encimadas. Cinco
+   cartas de 104 con -34 de encime piden 384 px, y un iPhone SE da 320. */
+@media (max-width:400px){
+  .mano.abanico .carta{ --ancho-carta:92px; margin-left:var(--encime, -30px) }
+}
+@media (min-width:560px){
+  .mano.abanico .carta{ --ancho-carta:124px; margin-left:var(--encime, -28px) }
+}
+
+/* ── LA QUE PICASTE ────────────────────────────────────────────────────────
+   Al frente, derecha, levantada y con luz. Las cuatro cosas juntas, porque
+   cada una sola es ambigua: levantada sin luz se confunde con el arco, y con
+   luz sin enderezar sigue tapada por la de al lado. */
+.mano.abanico .carta.al-frente{
+  z-index:50;
+  transform:rotate(0deg) translateY(-26px) scale(1.08);
+  box-shadow:0 10px 0 var(--tinta), 0 0 0 4px #FFD34E, 0 0 22px rgba(255,211,78,.75);
+}
+/* La marca de «ésta va a jugar» se queda: es otra cosa que estar al frente.
+   Al frente = la estás mirando. Marcada = la vas a jugar. */
+.mano.abanico .carta.marcada{ transform:rotate(var(--giro, 0deg)) translateY(calc(var(--sube, 0px) - 14px)) }
+.mano.abanico .carta.al-frente.marcada{ transform:rotate(0deg) translateY(-30px) scale(1.08) }
+
+/* ── EL RÓTULO DE LA CARTA ─────────────────────────────────────────────────
+   Encima de la carta levantada, no en una esquina fija: el dato tiene que
+   salir DONDE está tu dedo. La posición la pone el JS con `--x`. */
+.ficha-carta{
+  position:absolute; top:0; left:var(--x, 50%); transform:translateX(-50%);
+  z-index:60; display:flex; align-items:center; gap:6px; white-space:nowrap;
+  padding:5px 10px; border-radius:99px; border:3px solid var(--tinta);
+  background:var(--hueso); box-shadow:0 3px 0 var(--tinta);
+  font-size:11px; font-weight:900; letter-spacing:.04em;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis;
+}
+.ficha-carta[hidden]{ display:none }
+.ficha-carta .sello{
+  display:inline-grid; place-items:center; width:20px; height:20px; border-radius:6px;
+  border:2px solid var(--tinta); color:#fff; font-size:12px; flex:0 0 auto;
+}
+.ficha-carta .rareza{ text-transform:uppercase; letter-spacing:.1em; font-size:9.5px;
+  color:var(--rosa-hondo) }
+.ficha-carta .nom{ max-width:11ch; overflow:hidden; text-overflow:ellipsis }
+.ficha-carta .pts{ font-variant-numeric:tabular-nums }
 .carta{
   position:relative; width:100%; aspect-ratio:64/92; border-radius:11px;
   border:3px solid var(--tinta); background:var(--hueso);
@@ -319,11 +403,22 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
      bajó.
    Todas se apagan con `prefers-reduced-motion`: hay gente a la que el
    movimiento le marea, y un juego que no se puede jugar no es un juego. */
+/* ⚠ EL `to` TIENE QUE SER LA POSTURA DE REPOSO, NO `none`, y esto casi me
+   aplana el abanico entero. Con `animation-fill-mode: both`, lo que diga el
+   último fotograma SE QUEDA puesto y le gana a la regla de la clase. Decía
+   `transform:none`, o sea que en cuanto acababa el reparto las cinco cartas
+   se enderezaban y el abanico desaparecía — y no en el primer fotograma, que
+   es cuando uno mira, sino un tercio de segundo después.
+
+   El `from` sale del mazo de verdad: `--desde-x` y `--desde-y` los mide el JS
+   contra el montón de reversos. Si no se pudieran medir, cae a «desde arriba»
+   y sigue leyéndose como un reparto. */
 @keyframes reparte{
-  from{ transform:translateY(26px) rotate(-6deg); opacity:0 }
-  to  { transform:none; opacity:1 }
+  from{ transform:translate(var(--desde-x, 0px), var(--desde-y, -120px))
+                  rotate(-16deg) scale(.72); opacity:0 }
+  to  { transform:rotate(var(--giro, 0deg)) translateY(var(--sube, 0px)); opacity:1 }
 }
-.carta.llega{ animation:reparte .34s cubic-bezier(.2,.9,.3,1.3) both }
+.carta.llega{ animation:reparte .38s cubic-bezier(.2,.9,.3,1.15) both }
 @keyframes tiembla{
   0%,100%{ transform:translateX(0) }
   15%{ transform:translateX(-7px) } 30%{ transform:translateX(6px) }
@@ -536,7 +631,19 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   <section id="fElegir">
     <div class="tapete">
       <p class="rotulo" id="rTuMano">Tu mano · elige una carta</p>
-      <div class="mano" id="mMano"></div>
+      <!-- ── LA MANO, EN ABANICO ─────────────────────────────────────────
+           Carlos, e402: «haz que se pongan como en una mano, que unas se
+           encimen a otras, y al picarle a una ésta se ponga en la capa de
+           hasta el frente, se ilumine, se levante y enseñe su rareza y su
+           nivel arriba».
+
+           El rótulo va DENTRO de la caja y no encima del tapete porque tiene
+           que salir sobre la carta que levantaste, y para eso necesita el
+           mismo sistema de coordenadas que el abanico. -->
+      <div class="mano-caja">
+        <div class="ficha-carta" id="mFicha" hidden aria-live="polite"></div>
+        <div class="mano abanico" id="mMano"></div>
+      </div>
       <div class="especiales" id="mEspeciales"></div>
       <p class="aviso" id="mAviso" hidden></p>
     </div>
@@ -1051,10 +1158,119 @@ function deLaVista(v){
   return j;
 }
 
+/* ── QUÉ TAN RARA ES UNA CARTA ─────────────────────────────────────────────
+   Carlos pidió que al levantar una se vea «su rareza y su nivel». El nivel ya
+   existía en los datos y ES la rareza: no hay dos escalas, hay una con dos
+   nombres. Aquí sólo se le pone la palabra a cada letra, en un solo sitio
+   para que cambiarla sea cambiar un renglón. */
+const RAREZA = { S:'Legendaria', A:'Épica', B:'Rara', C:'Común', D:'Básica' };
+
+/* Cuál está al frente ahorita. Vive fuera de `pintarMano` porque la mano se
+   repinta en cada toque y si viviera dentro se perdería en el primero. */
+let alFrente = null;
+
+/* ⚠ QUÉ CARTAS YA ESTABAN. La mano se repinta ENTERA en cada toque, y el
+   reparto se le ponía a todas: picabas una carta y las cinco volvían a
+   volar desde el mazo. Con las cartas en fila casi no se notaba; en abanico
+   es un parpadeo que tira el arco a media animación. Ahora sólo se reparte
+   lo que de verdad acaba de llegar. */
+let manoAnterior = new Set();
+
+/* ── EL ARCO ───────────────────────────────────────────────────────────────
+   El giro sale del NÚMERO de cartas: con dos, casi rectas; con cinco, un
+   abanico de verdad. Y la altura sigue una parábola —las de los extremos más
+   abajo que la del centro— que es como cae una mano de cartas sostenida por
+   abajo. Si se dejaran a la misma altura, el giro solo hace que las puntas se
+   crucen y se ve torcido en vez de abierto. */
+function colocarAbanico(m){
+  const cartas = [...m.children];
+  const n = cartas.length;
+  if(!n) return;
+  const ABRE = 6;                     /* grados por carta desde el centro */
+  const CAE  = 7;                     /* píxeles que cae la punta del arco */
+  const medio = (n - 1) / 2;
+  cartas.forEach((el, i) => {
+    const d = i - medio;                              /* -2 … +2 con cinco */
+    el.style.setProperty('--giro', (d * ABRE).toFixed(2) + 'deg');
+    el.style.setProperty('--sube', (Math.abs(d) * Math.abs(d) * CAE).toFixed(1) + 'px');
+    el.style.setProperty('--capa', String(i + 1));
+  });
+
+  /* ── CUÁNTO SE ENCIMAN: SE MIDE, NO SE ADIVINA ──────────────────────────
+     Lo puse a ojo con `margin-left:-30px` y en un iPhone las cartas de las
+     puntas se salían del tapete: quedaban cortadas por el borde. Se vio en la
+     captura, y adivinar otro número sólo mueve en qué teléfono se corta.
+
+     Aquí se mide la caja de verdad y se reparte el sobrante. El `- 14` es el
+     margen que hay que dejarle al GIRO: una carta girada 12° ocupa más ancho
+     que su lado, y ese ancho de más sale por las puntas. */
+  requestAnimationFrame(() => {
+    const ancho = m.clientWidth;
+    if(!ancho || n < 2) return;
+    const carta = cartas[0].offsetWidth;
+    const cabe = ancho - 14;
+    /* Negativo = se encima. Nunca menos encimadas que -18: sin encime no es
+       una mano, es una fila. */
+    const encime = Math.min(-18, (cabe - n * carta) / (n - 1));
+    for(const el of cartas) el.style.marginLeft = encime.toFixed(1) + 'px';
+    if(cartas[0]) cartas[0].style.marginLeft = '0px';
+  });
+}
+
+/* ── DE DÓNDE VIENE CADA CARTA ─────────────────────────────────────────────
+   Carlos pidió «una animación de que se reparten desde el mazo». Que salgan
+   de arriba y ya se ve bonito, pero no dice de dónde vienen. Se mide el
+   montón de reversos de verdad y se le da a cada carta su propio vector, así
+   que las cinco convergen en el mismo sitio — que es lo que hace que se lea
+   como un reparto y no como cinco cartas cayendo.
+
+   Se mide DESPUÉS de pintar, en el fotograma siguiente: antes de eso el
+   abanico todavía no tiene posiciones y todo mediría cero. Y si el mazo no
+   está en pantalla —otra vista, una prueba— no se toca nada y el respaldo
+   del CSS hace su trabajo. */
+function desdeElMazo(m){
+  const mazo = $('#mRevA');
+  if(!mazo || !m.children.length) return;
+  requestAnimationFrame(() => {
+    const d = mazo.getBoundingClientRect();
+    if(!d.width && !d.height) return;
+    for(const el of m.children){
+      if(!el.classList.contains('llega')) continue;
+      const c = el.getBoundingClientRect();
+      el.style.setProperty('--desde-x', Math.round(d.left + d.width / 2 - (c.left + c.width / 2)) + 'px');
+      el.style.setProperty('--desde-y', Math.round(d.top + d.height / 2 - (c.top + c.height / 2)) + 'px');
+    }
+  });
+}
+
+/* El rótulo, encima de la carta que levantaste. Se le pasa la carta y no un
+   índice: el DOM ya sabe dónde está, y calcularlo dos veces es como se
+   desincronizan estas cosas. */
+function ponerFicha(el, c){
+  const caja = $('#mFicha');
+  if(!caja) return;
+  if(!el || !c){ caja.hidden = true; return; }
+  const f = fichaDe(c);
+  const nivel = (f && f.nivel) || c.nivel;
+  caja.innerHTML = '<span class="sello n-' + nivel + '">' + nivel + '</span>'
+    + '<span class="rareza">' + (RAREZA[nivel] || 'Nivel ' + nivel) + '</span>'
+    + (f ? '<span class="nom">' + f.nombre + '</span>' : '')
+    + '<b class="pts">' + (f ? f.puntos : c.valor) + '</b>';
+  caja.hidden = false;
+  /* Centrada sobre la carta, pero sin salirse de la caja: en el teléfono, la
+     primera y la última se irían medio rótulo fuera de pantalla. */
+  const m = el.parentElement;
+  const x = el.offsetLeft + el.offsetWidth / 2;
+  const mitad = caja.offsetWidth / 2;
+  caja.style.setProperty('--x',
+    Math.max(mitad, Math.min(m.offsetWidth - mitad, x)).toFixed(0) + 'px');
+}
+
 function pintarMano(){
   const m = $('#mMano'); m.innerHTML = '';
   const puedeCombinar = yo().combosUsados < MOTOR.COMBOS_POR_JUGADOR;
 
+  let nuevas = 0;
   for(const c of yo().mano){
     const b = laCarta(c);
     const marcada = elegidas.some(x => x.id === c.id);
@@ -1065,13 +1281,41 @@ function pintarMano(){
        va a resolver, y además cuatro cartas grises se ven como si se hubieran
        roto. Ahora se puede picar cualquiera siempre, y `marcar` decide qué
        significa: combinar si se puede, cambiar de carta si no. */
-    b.addEventListener('click', () => marcar(c));
+    b.addEventListener('click', () => {
+      /* Dos cosas en el mismo toque, y en este orden: primero se levanta —que
+         es la respuesta inmediata que espera el dedo— y luego se marca, que
+         es lo que decide la jugada. `marcar` repinta, así que si fuera al
+         revés el `alFrente` se pondría sobre una carta que ya no existe. */
+      alFrente = c.id;
+      marcar(c);
+    });
     /* Escalonado, no todas de golpe: así se lee como un reparto y no como un
        parpadeo. 45 ms por carta — cinco cartas entran en un cuarto de segundo,
        que es lo que aguanta alguien que ya quiere jugar. */
-    b.classList.add('llega');
-    b.style.animationDelay = (m.children.length * 45) + 'ms';
+    if(!manoAnterior.has(c.id)){
+      b.classList.add('llega');
+      b.style.animationDelay = (nuevas * 45) + 'ms';
+      nuevas++;
+    }
     m.appendChild(b);
+  }
+  manoAnterior = new Set(yo().mano.map(c => c.id));
+
+  /* El arco se coloca DESPUÉS de meterlas todas: el giro de cada una depende
+     de cuántas hay, y contándolas de una en una la primera saldría recta. */
+  colocarAbanico(m);
+  desdeElMazo(m);
+
+  /* Y la que estaba al frente sigue al frente después de repintar. Si esa
+     carta ya se jugó, no se hereda a la de al lado: se apaga el rótulo, que
+     es lo honesto. */
+  const arriba = alFrente && m.querySelector('[data-id="' + CSS.escape(alFrente) + '"]');
+  if(arriba){
+    arriba.classList.add('al-frente');
+    ponerFicha(arriba, yo().mano.find(x => x.id === alFrente));
+  } else {
+    alFrente = null;
+    ponerFicha(null, null);
   }
 
   const e = $('#mEspeciales'); e.innerHTML = '';
