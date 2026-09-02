@@ -115,8 +115,17 @@ const contraste = await page.evaluate(() => {
   };
   const malos = [];
   let medidos = 0, peor = 99;
-  document.querySelectorAll('p,h1,h2,h3,span,li,a').forEach(e => {
-    if (!e.textContent.trim() || e.children.length) return;
+  /* ⚠ NO SE SALTAN LOS ELEMENTOS CON HIJOS. La primera versión pedía
+     `e.children.length === 0` para no medir dos veces el mismo texto, y con eso
+     se saltó justo el botón de WhatsApp — que lleva un icono SVG dentro, así
+     que tiene hijos. Ese botón estaba a 1.98:1 y la prueba decía «29 textos
+     cumplen». Un filtro puesto por comodidad se llevó por delante el único
+     elemento que de verdad fallaba. Ahora se mide todo lo que tenga texto
+     PROPIO, o sea un hijo de tipo texto con contenido. */
+  const tieneTextoPropio = (e) => [...e.childNodes]
+    .some(n => n.nodeType === 3 && n.textContent.trim());
+  document.querySelectorAll('p,h1,h2,h3,span,li,a,button,div').forEach(e => {
+    if (!tieneTextoPropio(e)) return;
     const cs = getComputedStyle(e);
     const a = lum(cs.color), c = lum(fondoDe(e));
     const r = +(((Math.max(a,c)+.05) / (Math.min(a,c)+.05))).toFixed(2);

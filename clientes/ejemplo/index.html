@@ -83,7 +83,12 @@ section.claro{background:var(--claro)}
 .barra a{flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
   height:var(--alto); text-decoration:none; font-weight:700; font-size:16px; color:var(--marca)}
 .barra a + a{border-left:1px solid var(--linea)}
-.barra .wa{background:#25d366; color:#fff}
+/* ⚠ TINTA OSCURA SOBRE EL VERDE, Y NO BLANCA. El blanco sobre #25d366 da
+   1.98:1 — muy por debajo del 4.5 que pide la norma— y ése es justo el botón
+   que decide si el cliente escribe o no. Con la tinta del sitio da 8.95:1 y
+   sigue siendo el verde reconocible de WhatsApp. Medido con la fórmula, no
+   elegido a ojo. */
+.barra .wa{background:#25d366; color:var(--tinta)}
 .barra svg{width:20px; height:20px; fill:currentColor}
 
 .pie{padding:26px 0 34px; color:var(--suave); font-size:14px}
