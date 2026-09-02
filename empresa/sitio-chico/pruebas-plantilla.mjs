@@ -88,6 +88,50 @@ ok('el título de la pestaña es el del negocio, no «Cargando»',
    await page.evaluate(() => document.title.includes(window.NEGOCIO.nombre)));
 ok('ni un error en la consola', errores.length === 0, errores[0] || '');
 
+console.log('\n· Se lee · contraste medido, no supuesto');
+/* ⚠ HAY QUE COMPONER EL ALFA DE LOS FONDOS. La primera versión de esta medida
+   tomaba el primer fondo no transparente que encontraba y leía
+   `rgba(255,255,255,.16)` como blanco: dio contraste 1 sobre «Cerrado ahora»,
+   que en realidad es texto blanco sobre el azul del negocio aclarado un 16%.
+   Estuve a punto de «arreglar» una página que estaba bien. Un medidor que no
+   compone capas inventa defectos, y un defecto inventado cuesta lo mismo que
+   uno tapado. */
+const contraste = await page.evaluate(() => {
+  const num = (c) => (c.match(/[\d.]+/g) || []).map(Number);
+  const lum = (c) => { const [r,g,b] = num(c).slice(0,3).map(v => { v/=255;
+    return v <= .03928 ? v/12.92 : ((v+.055)/1.055) ** 2.4; });
+    return .2126*r + .7152*g + .0722*b; };
+  const fondoDe = (e) => {
+    const capas = []; let n = e;
+    while (n) { const c = num(getComputedStyle(n).backgroundColor);
+      if (c.length >= 3) { const a = c.length > 3 ? c[3] : 1;
+        if (a > 0) capas.push([c[0], c[1], c[2], a]); if (a >= 1) break; }
+      n = n.parentElement; }
+    capas.push([255, 255, 255, 1]);
+    let [r, g, b] = capas[capas.length - 1];
+    for (let i = capas.length - 2; i >= 0; i--) { const [cr, cg, cb, ca] = capas[i];
+      r = cr*ca + r*(1-ca); g = cg*ca + g*(1-ca); b = cb*ca + b*(1-ca); }
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+  const malos = [];
+  let medidos = 0, peor = 99;
+  document.querySelectorAll('p,h1,h2,h3,span,li,a').forEach(e => {
+    if (!e.textContent.trim() || e.children.length) return;
+    const cs = getComputedStyle(e);
+    const a = lum(cs.color), c = lum(fondoDe(e));
+    const r = +(((Math.max(a,c)+.05) / (Math.min(a,c)+.05))).toFixed(2);
+    const px = parseFloat(cs.fontSize);
+    const min = (px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700)) ? 3 : 4.5;
+    medidos++; if (r < peor) peor = r;
+    if (r < min) malos.push(e.textContent.trim().slice(0, 28) + ' → ' + r + ':1');
+  });
+  return { medidos, peor, malos };
+});
+ok(`los ${contraste.medidos} textos cumplen contraste AA (el peor, ${contraste.peor}:1)`,
+   contraste.malos.length === 0, contraste.malos.slice(0, 3).join(' · '));
+ok('y la página declara su idioma, o el lector la pronuncia en inglés',
+   await page.evaluate(() => /^es/i.test(document.documentElement.lang)));
+
 console.log('\n· Un dato que falta esconde su sección, no deja un hueco');
 /* ⚠ NO se toca el DOM a mano para comprobar esto: eso probaría lo que yo
    acabo de escribir, no lo que hace la página. Se INTERCEPTA `negocio.js` y se
