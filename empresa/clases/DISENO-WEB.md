@@ -192,6 +192,8 @@ alguna vez:
 5. **Un error de JavaScript.** Deja media página sin pintar, y entonces todo lo demás que midas es
    mentira. Va primero y en rojo por eso.
 6. **El modo quirks.** Ver 1.1-bis: no tiene síntoma ninguno.
+7. **El contraste insuficiente.** Quien lo escribió lo ve bien en su pantalla; se mide o no
+   se sabe.
 
 > **El ejemplo que mejor lo enseña es mío y es de esta misma semana.** El botón de avisos de La
 > Sala llevaba tiempo en producción sin repintarse ni dar confirmación: parecía muerto. No lo
@@ -211,6 +213,21 @@ Cuatro que cubren el 90% y cuestan casi nada:
   reponer a mano todo lo que trae.
 - **No quites el foco.** Si el contorno del navegador te estorba, sustitúyelo con
   `:focus-visible` — que aparece con teclado y no con ratón, que era la queja original.
+- **El contraste, que es la más barata y la que más se rompe sola.** AA pide **4.5:1** para
+  texto normal y **3:1** para texto grande (≥24px, o ≥18.66px en negritas). Se rompe el día que
+  alguien «suaviza» un gris, y nadie lo nota porque quien lo suavizó lo ve bien en su pantalla.
+
+  **Esta clase no es mía: me la señaló Godines** como hueco de mi propio medidor, y tenía razón —
+  recogía los colores y nunca calculaba la razón. Ya la mide. Y me pasó la trampa antes de que me
+  la comiera: **hay que componer el alfa de los fondos.** Tomar el primer fondo no transparente
+  que aparece subiendo por los padres lee `rgba(255,255,255,.16)` como blanco puro y canta 1:1
+  sobre un texto que está a 5.7:1. Un medidor que inventa un defecto te hace romper una página
+  sana, y eso cuesta lo mismo que uno que tapa un defecto de verdad.
+
+  **Y midiéndolo salió algo de la casa:** con el violeta `#AC27FF` de fondo, **ninguna tinta
+  oscura llega a 4.5:1** — ni el negro puro, que se queda en 4.49. El botón de WhatsApp del sitio
+  está a **4.17:1**. Con texto blanco da 4.68 y pasa. Comprobado a mano contra la fórmula, no sólo
+  con el medidor.
 - **`alt` en las imágenes.** Vacío si es decorativa, **a propósito**. Lo que se caza es la que no
   dice nada de ninguna forma.
 - **Declara el idioma** (`<html lang="es-MX">`). Sin eso el lector pronuncia el español con acento
@@ -234,11 +251,21 @@ escrito que dice «todo bien» sobre una página rota:** me pasó construyendo e
 
 Ninguno se ve leyendo. Todos se ven midiendo.
 
+**Y hay una segunda mitad que yo no tenía apuntada, y me la puso Godines:** el error también va
+al revés. **Un medidor que dice «esto está roto» sobre algo sano cuesta lo mismo que uno que dice
+«todo bien» sobre algo roto** — y encima te hace romperlo. Me pasó tres veces montando el
+contraste: acusé texto que estaba en `opacity: 0` esperando su turno, letras huecas de contorno
+que no tienen relleno que medir, y el logotipo entero **a media animación de entrada** (opacidad
+0.708), que asentado cumple. Veintiún «defectos» que eran un reloj mal puesto.
+
+Por eso el medidor ahora espera a que la página se asiente, y cuando aun así algo sigue
+moviéndose **lo reporta en 🟡 diciendo que lo midió a media animación**, en vez de acusarlo.
+
 **Entonces, antes de decir «ya quedó»:**
 
 ```bash
 node empresa/clases/revisar.mjs <tu url>          # los defectos medibles
-node empresa/clases/pruebas-revisar.mjs           # que el medidor mida (25 pruebas)
+node empresa/clases/pruebas-revisar.mjs           # que el medidor mida (32 pruebas)
 ```
 
 Y después **mira la pantalla** — skill `agent-browser`. El medidor es el piso. Nunca supo, ni va a

@@ -9,16 +9,37 @@
   :root { --vacio:#100A18; --hueso:#E9E4E4; --violeta:#AC27FF; }
   body { margin:0; padding:16px; background:var(--vacio); color:var(--hueso);
          font:16px/1.5 system-ui; }
+  /* ⚠ TINTA CLARA SOBRE EL VIOLETA, y no es gusto: es aritmética. Escribí esta
+     página copiando el estilo de la casa —violeta de fondo, `--vacio` de
+     texto— y el propio medidor la reprobó a 4.16:1 contra el 4.5:1 que pide
+     AA. Lo comprobé a mano: con el violeta #AC27FF, NINGUNA tinta oscura llega
+     —ni el negro puro, que se queda en 4.49—. Con blanco da 4.68 y pasa.
+     O sea que el botón violeta de la casa quiere texto claro. */
   button { min-height:44px; min-width:44px; padding:0 20px; font-size:16px;
-           background:var(--violeta); color:var(--vacio); border:0; }
+           background:var(--violeta); color:#fff; border:0; }
   input { min-height:44px; font-size:16px; width:100%; box-sizing:border-box; }
   /* Un carrusel BIEN hecho: sus hijos se salen de la pantalla a propósito y
      eso NO debe reportarse. */
   .tira { overflow-x:auto; display:flex; gap:12px; }
   .tira > div { flex:0 0 300px; height:80px; background:#1E1428; }
+  .marco { background:#1B4C8C; padding:12px; }
+  .velo { background:rgba(255,255,255,.16); color:#fff; padding:4px 8px; font-size:16px; }
+  .atenuado { opacity:.85; color:#E9E4E4; font-size:16px; }
 </style>
 <button>Guardar</button>
 <button>Guardar los cambios</button>
 <input value="hola" aria-label="prueba">
 <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" width="30" height="30">
 <div class="tira"><div></div><div></div><div></div><div></div></div>
+
+<!-- ⚠ LA TRAMPA QUE ME PASÓ GODINES, puesta aquí para que no se pueda perder.
+     Texto BLANCO sobre un velo blanco al 16% encima del azul del negocio. Un
+     medidor que toma «el primer fondo no transparente» lee el velo como blanco
+     puro y canta contraste 1:1 sobre algo que en realidad está a 5.7:1 — o sea
+     inventa un defecto y te hace romper una página sana. Si esta página empieza
+     a reprobar, es que se perdió la composición de capas. -->
+<div class="marco"><span class="velo">Cerrado ahora</span></div>
+
+<!-- Y un texto atenuado que AUN ASÍ cumple: sirve para que la opacidad no se
+     confunda con un defecto por sí sola. -->
+<p class="atenuado">Abre mañana a las nueve</p>

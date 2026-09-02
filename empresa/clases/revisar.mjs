@@ -83,6 +83,7 @@ const medir = () => {
   };
 
   const hallazgos = [];
+  let resumenContraste = { medidos: 0, peor: null, textoPeor: '' };
   const apunta = (grave, regla, que, dato) => hallazgos.push({ grave, regla, que, dato });
 
   /* 0 · la etiqueta de viewport. Va PRIMERO porque sin ella nada de lo de
@@ -272,6 +273,126 @@ const medir = () => {
     apunta('🟡', 'sin-idioma', 'la página no dice en qué idioma está',
            'sin <html lang="es-MX"> el lector de pantalla lo lee en inglés');
 
+  /* 7-quater · EL CONTRASTE. Es la comprobación de accesibilidad más barata que
+        existe y la que más veces se rompe sola, el día que alguien «suaviza»
+        un gris. Faltaba en la primera versión de este archivo y me lo señaló
+        Godines, que lo había implementado antes en las pruebas de su puesto.
+
+        ⚠ HAY QUE COMPONER EL ALFA DE LOS FONDOS, y la advertencia es suya
+        literal —se comió la trampa y me la pasó para que no la repitiera—:
+        tomar el primer fondo no transparente que aparece subiendo por los
+        padres lee `rgba(255,255,255,.16)` como BLANCO. Sobre su página eso dio
+        contraste 1 en un texto que en realidad está a 5.69:1, y estuvo a punto
+        de «arreglar» algo que estaba bien.
+
+        Es la clase 8 desde el lado que yo no tenía apuntado: un medidor que
+        dice «está roto» sobre algo sano cuesta lo mismo que uno que dice «todo
+        bien» sobre algo roto. Sólo que el primero además te hace romperlo.
+
+        Lo que añado sobre su versión es la OPACIDAD del texto, que es
+        justamente cómo se suaviza un gris en la práctica: `opacity:.6` no
+        cambia el `color` computado, así que sin esto un texto atenuado se mide
+        como si estuviera a tope. */
+  {
+    const num = (c) => (c.match(/[\d.]+/g) || []).map(Number);
+    const canal = (v) => { v /= 255; return v <= .03928 ? v/12.92 : ((v+.055)/1.055) ** 2.4; };
+    const lum = ([r,g,b]) => .2126*canal(r) + .7152*canal(g) + .0722*canal(b);
+    const sobre = ([r,g,b,a], base) =>
+      [ r*a + base[0]*(1-a), g*a + base[1]*(1-a), b*a + base[2]*(1-a) ];
+
+    const fondoDe = (el) => {
+      const capas = [];
+      for(let n = el; n; n = n.parentElement){
+        const c = num(getComputedStyle(n).backgroundColor);
+        if(c.length >= 3){
+          const a = c.length > 3 ? c[3] : 1;
+          if(a > 0) capas.push([c[0], c[1], c[2], a]);
+          if(a >= 1) break;
+        }
+      }
+      /* El lienzo del navegador es blanco cuando nadie pinta nada. Es el
+         último recurso, no el primero: en una página oscura todas las capas
+         de arriba lo tapan. */
+      let base = [255, 255, 255];
+      for(let i = capas.length - 1; i >= 0; i--) base = sobre(capas[i], base);
+      return base;
+    };
+
+    /* La opacidad se ACUMULA por los padres: un .5 dentro de otro .5 pinta al
+       25%. Se multiplican hasta la raíz. */
+    const opacidadDe = (el) => {
+      let o = 1;
+      for(let n = el; n; n = n.parentElement){
+        const v = parseFloat(getComputedStyle(n).opacity);
+        if(!Number.isNaN(v)) o *= v;
+      }
+      return o;
+    };
+
+    let medidos = 0, peor = 99, textoPeor = '';
+    for(const el of document.querySelectorAll('body *')){
+      if(!visible(el) || el.children.length) continue;
+      const texto = (el.textContent || '').trim();
+      if(!texto) continue;
+
+      const s = getComputedStyle(el);
+
+      /* ⚠ LO QUE NO SE PINTA NO SE MIDE. La primera corrida sacó 93 rojos
+         contra el sitio, y casi todos eran elementos con `opacity: 0` —
+         esperando su turno en una animación de entrada—. Texto invisible da
+         razón 1:1 porque tinta y fondo salen iguales, y eso NO es un defecto
+         de contraste: es un elemento que todavía no existe en pantalla.
+         Justo la trampa que Godines me advirtió, en otra forma: inventar
+         defectos sobre algo sano. `visible()` no lo caza porque un elemento
+         con opacidad cero sí ocupa su caja. */
+      const opacidad = opacidadDe(el);
+      if(opacidad < 0.05 || s.visibility === 'hidden') continue;
+
+      /* Y un glifo suelto que no es letra ni número —el «·» que separa dos
+         cosas, una flechita, un icono de texto— es decoración: la norma no le
+         exige contraste de lectura porque no se lee, se ve. Medirlo llena el
+         informe de rojos que nadie va a arreglar, y un informe así se ignora
+         entero. */
+      if(texto.length === 1 && !/[\p{L}\p{N}]/u.test(texto)) continue;
+
+      /* ⚠ Y EL TEXTO HUECO TAMPOCO. `-webkit-text-fill-color: transparent` con
+         `-webkit-text-stroke` dibuja la letra en CONTORNO: no tiene relleno que
+         medir, y leer su `color` —transparente— da 1:1 sobre cualquier fondo.
+         El sitio lo usa en las letras grandes del fondo. Su contraste real es
+         el del trazo, que es otra medida y no la finjo aquí: prefiero decir
+         que no lo mido a inventar un número. */
+      const relleno = num(s.webkitTextFillColor || s.color);
+      if(relleno.length > 3 && relleno[3] === 0) continue;
+      const fondo = fondoDe(el);
+      const tinta = sobre([...num(s.color).slice(0,3), opacidad * (num(s.color)[3] ?? 1)], fondo);
+
+      const a = lum(tinta), b = lum(fondo);
+      const razon = +(((Math.max(a,b) + .05) / (Math.min(a,b) + .05))).toFixed(2);
+
+      /* El umbral baja a 3 para texto grande —la norma lo permite porque un
+         cuerpo gordo se lee con menos contraste—. Confundirlos hace reprobar
+         titulares que están bien. */
+      const px = parseFloat(s.fontSize);
+      const grande = px >= 24 || (px >= 18.66 && parseFloat(s.fontWeight) >= 700);
+      const minimo = grande ? 3 : 4.5;
+
+      medidos++;
+      if(razon < peor){ peor = razon; textoPeor = texto.slice(0,30); }
+      if(razon < minimo){
+        /* Si algo sigue con opacidad a medias después de la espera, es que
+           está animándose todavía o vive atenuado a propósito. Se reporta en
+           🟡 y se DICE por qué: acusar en rojo a algo que se estaba moviendo
+           es cómo se pierde la confianza en el informe entero. */
+        const moviendose = opacidad < 0.99;
+        apunta(moviendose ? '🟡' : '🔴', 'no-se-lee',
+               `contraste ${razon}:1, hace falta ${minimo}:1`
+                 + (moviendose ? ` — pero medido a opacidad ${opacidad.toFixed(2)}, quizá aún animándose` : ''),
+               `${nombra(el)} · ${px}px`);
+      }
+    }
+    resumenContraste = { medidos, peor: medidos ? peor : null, textoPeor };
+  }
+
   /* 8 · la paleta de la casa. No prohíbe colores: cuenta cuántos hay. Una
         página con veinte colores distintos no tiene paleta, tiene un accidente. */
   const colores = new Set();
@@ -285,6 +406,7 @@ const medir = () => {
   return {
     hallazgos,
     colores: [...colores],
+    contraste: resumenContraste,
     ancho: ventana,
     anchoVisual: window.innerWidth,
     anchoDoc,
@@ -309,7 +431,14 @@ export async function revisar(url, opciones = {}){
          medir antes de que llegue es medir otra página, y los desbordes que
          Carlos sí ve no aparecen. */
       await p.evaluate(() => document.fonts.ready);
-      await p.waitForTimeout(400);
+      /* ⚠ SE ESPERA A QUE LA PÁGINA SE ASIENTE, no sólo a la tipografía. Con
+         400 ms el sitio se medía A MEDIA ANIMACIÓN DE ENTRADA: su intro estaba
+         en `opacity: 0.708`, y el logotipo violeta salía a 2.7:1 cuando ya
+         asentado da 4.3:1. Veintiún «defectos de contraste» que eran un reloj
+         mal puesto. Medir una página que todavía se está pintando es medir
+         otra página — la misma familia de error que el viewport que se
+         inventa una pantalla. */
+      await p.waitForTimeout(opciones.asentar ?? 1800);
 
       const r = await p.evaluate(medir);
       /* Un error de JavaScript no es un defecto de diseño, pero deja media
@@ -361,6 +490,9 @@ function pintar({ url, informe }){
        transparencias del mismo violeta, y llamarlos error enseñaría a
        perseguir un cero que no significa nada. El dato útil es si son cinco
        o si son cuarenta. */
+    if(v.contraste && v.contraste.medidos)
+      console.log(`     · ${v.contraste.medidos} textos medidos de contraste · el peor, `
+                + `${v.contraste.peor}:1 «${v.contraste.textoPeor}»`);
     console.log(`     · ${v.colores.length} colores pintados · ${v.colores.length - fuera.length} son exactos de la paleta`);
     if(v.colores.length > 24)
       console.log(`       🟡 son muchos: arriba de ~24 suele ser que no hay paleta, hay accidentes`);

@@ -19,6 +19,8 @@
   .angosto { width:70px; }                                  /* el nombre se parte */
   .ancho-de-sobra { width:320px; min-height:44px; font-size:16px; }
   input.chiquito { font-size:12px; }                        /* zoom de Safari */
+  .gris-flojo { color:#8a8a8a; background:#fff; font-size:16px; }
+  .apagado { color:#333; background:#fff; opacity:.3; font-size:16px; }
   .tira { overflow-x:auto; display:flex; gap:12px; }
   .vagon { flex:0 0 300px; height:60px; background:#1E1428; }
   /* ⚠ LOS VAGONES LLEVAN CLASE A PROPÓSITO. Sin ella el informe los nombra
@@ -47,3 +49,9 @@
 <input class="chiquito" value="me hace zoom">
 <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="30" height="30">
 <p id="repe">uno</p><p id="repe">dos</p>
+
+<!-- Contraste de verdad insuficiente: gris flojo sobre blanco, 2.85:1. -->
+<p class="gris-flojo">este gris no se lee y no es opinión</p>
+<!-- Y uno que falla POR la opacidad: se reporta en 🟡 y diciendo por qué,
+     porque a esa altura no se puede distinguir de una animación a medias. -->
+<p class="apagado">este falla por estar atenuado</p>

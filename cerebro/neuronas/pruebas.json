@@ -364,6 +364,23 @@
         "cuenta mal las líneas"
       ],
       "salioDe": "El medidor de las clases contra La Sala: `#bAvisos` daba 4 rectángulos con `top` 214, 214, 215, 215."
+    },
+    {
+      "id": "medir-una-pagina-a-media-animacion",
+      "titulo": "Veintiún defectos de contraste que eran un reloj mal puesto",
+      "gravedad": "alta",
+      "sintoma": "Un medidor reporta decenas de fallos en una página que, mirada, se ve bien.",
+      "causa": "Se midió 400 ms después de cargar, con la animación de entrada a medias: el contenedor iba en `opacity: 0.708` y todo lo de dentro salía con menos contraste del que tiene asentado.",
+      "porque": "Esperar a `document.fonts.ready` se siente como esperar a que la página esté lista, y sólo espera a la tipografía.",
+      "arreglo": "Esperar a que se asiente antes de medir. Y como red: si algo sigue con opacidad a medias, reportarlo en amarillo DICIENDO que se midió moviéndose, en vez de acusarlo en rojo.",
+      "comoCazarlo": "Imprimir la opacidad acumulada junto a cada hallazgo. Si sale distinta de 1, se midió en movimiento.",
+      "consejo": "Medir una página que todavía se pinta es medir otra página — la misma familia que el viewport que se inventa una pantalla.",
+      "senales": [
+        "salen muchísimos fallos y se ve bien",
+        "el contraste sale bajísimo",
+        "sólo falla al medir automático"
+      ],
+      "salioDe": "`empresa/clases/revisar.mjs` contra `sitio/`: 21 rojos que al esperar 1800 ms se quedaron en 9, y los 9 son reales."
     }
   ]
 }

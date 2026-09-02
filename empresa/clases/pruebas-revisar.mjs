@@ -41,6 +41,26 @@ dice('zoom-de-safari');
 dice('imagen-muda');
 dice('id-repetido');
 dice('sin-idioma');
+dice('no-se-lee');
+
+console.log('\n· El contraste, que me lo señaló Godines como hueco');
+{
+  const gris = h.find(x => x.regla === 'no-se-lee' && /gris-flojo/.test(x.dato || ''));
+  ok('caza un gris flojo sobre blanco', !!gris, h.filter(x=>x.regla==='no-se-lee').map(x=>x.dato).join(' | '));
+  ok('y dice la razón medida y la que hace falta',
+     !!gris && /contraste \d+(\.\d+)?:1, hace falta 4\.5:1/.test(gris.que), gris && gris.que);
+  ok('el gris flojo va en 🔴: no se estaba moviendo', !!gris && gris.grave === '🔴');
+
+  /* Un texto que falla POR estar atenuado no se puede distinguir, desde fuera,
+     de uno a media animación de entrada. Va en 🟡 y DICIENDO por qué. */
+  const apagado = h.find(x => x.regla === 'no-se-lee' && /apagado/.test(x.dato || ''));
+  ok('el atenuado también se reporta', !!apagado);
+  ok('pero en 🟡, y explicando que se midió con opacidad a medias',
+     !!apagado && apagado.grave === '🟡' && /opacidad/.test(apagado.que), apagado && apagado.que);
+
+  ok('y cuenta cuántos textos midió', rota.informe[0].contraste.medidos > 0,
+     JSON.stringify(rota.informe[0].contraste));
+}
 
 /* El desborde tiene DOS partes y sólo la primera es el síntoma. Si la página
    se recorre de lado, además tiene que decir QUIÉN — si no, el aviso obliga a
