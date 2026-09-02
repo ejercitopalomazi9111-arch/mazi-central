@@ -174,7 +174,12 @@ console.log('\n· Cuando el push no se puede, NO se cae nada');
      la pantalla informando un estado que no es. */
   ok('el letrero NO promete la sala cerrada cuando no se pudo',
      !/también con la sala cerrada/.test(letrero));
-  ok('y dice que con la sala cerrada no se pudo', /Cerrada no se pudo/.test(letrero));
+  ok('y dice que con la sala cerrada no se pudo',
+     /cerrada no se pudo/i.test(letrero), letrero);
+  /* Y el MOTIVO en pantalla, no en la consola: en un teléfono no hay consola.
+     Ésta es la mitad que faltaba cuando Carlos reportó «no me deja». */
+  ok('y dice el motivo, sin mandar a ninguna consola',
+     !/consola/i.test(letrero) && letrero.length > 40, letrero);
 
   ok('y el servidor no apuntó a nadie que no se haya suscrito de verdad',
      suscritos.length === 0);
@@ -213,6 +218,138 @@ console.log('\n· La vuelta de base64url, que es de lo que cuelga la comparació
   ok('y empieza en 0x04, que es lo que el navegador exige', r.primero === 4);
   ok('IDA Y VUELTA da exactamente la misma cadena', r.vuelta === vapid.publica);
   ok('la vuelta sigue siendo URL-safe', r.sinRelleno);
+}
+
+console.log('\n· EL SÍNTOMA DE CARLOS: «no me deja desactivar y reactivar»');
+{
+  /* ⚠ ESTA ES LA PRUEBA QUE REPRODUCE EL DEFECTO REPORTADO. Se finge un
+     service worker que NUNCA contesta —que es lo que hace un iPhone en algunos
+     estados— y se comprueba que el interruptor sigue vivo: que se repinta, que
+     cierra el cajón y que DICE algo. Antes, una promesa colgada dejaba el
+     botón con el texto de antes y el cajón abierto, y desde fuera eso se ve
+     como que la app no hace nada. */
+  /* ⚠ CONTEXTO NUEVO, no otra pestaña del mismo. El primero ya tiene la sala
+     recordada en `localStorage`, así que la puerta ni se pinta y el `fill` del
+     código se queda esperando a un campo invisible treinta segundos. */
+  const ctx2 = await navegador.newContext({ viewport:{ width:1100, height:900 } });
+  const p2 = await ctx2.newPage();
+  const errores2 = [];
+  p2.on('pageerror', x => errores2.push(x.message));
+  await p2.addInitScript(() => {
+    class NotificacionDeMentiras {
+      constructor(t, o){ this.t = t; this.o = o; }
+      close(){}
+      static permission = 'granted';
+      static requestPermission(){ return Promise.resolve('granted'); }
+    }
+    Object.defineProperty(window, 'Notification',
+      { value: NotificacionDeMentiras, configurable: true, writable: true });
+
+    /* El ayudante que se traga las promesas y no vuelve jamás. */
+    const nunca = () => new Promise(() => {});
+    try{
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          register: nunca, getRegistration: nunca, ready: nunca(),
+          addEventListener(){}, controller: null,
+        },
+      });
+    }catch(e){ /* si el navegador no deja sustituirlo, la prueba lo dirá abajo */ }
+  });
+
+  await p2.goto(B);
+  await p2.waitForTimeout(400);
+  await p2.fill('#codigoIn', 'GRUPAZ');
+  await p2.fill('#nombreIn', 'Carlos');
+  await p2.click('#bEntrar');
+  await p2.waitForTimeout(800);
+
+  const antes = Date.now();
+  await p2.click('#bAvisos');
+  /* Los plazos del código son de 8 s; con 12 alcanza y sobra. */
+  await p2.waitForFunction(
+    () => /Avisos encendidos/.test(document.querySelector('#letreros')?.textContent || ''),
+    null, { timeout: 12000 });
+  const tardo = Date.now() - antes;
+
+  ok('el botón CONTESTA aunque el ayudante no vuelva nunca', true);
+  ok('y no se queda esperando para siempre: contestó en menos de 12 s', tardo < 12000,
+     `tardó ${tardo} ms`);
+
+  const letrero2 = await p2.evaluate(() =>
+    [...document.querySelectorAll('#letreros .letrero')].map(l => l.textContent).join(' | '));
+  ok('dice que con la sala cerrada no se pudo', /cerrada no se pudo/i.test(letrero2), letrero2);
+  /* Y el motivo EN PANTALLA: en un teléfono no hay consola que abrir. */
+  ok('y dice POR QUÉ, sin mandar a la consola',
+     /tardó más de/.test(letrero2) && !/consola/i.test(letrero2), letrero2);
+
+  ok('los avisos con la app abierta SÍ quedaron encendidos',
+     await p2.evaluate(() => localStorage.getItem('sala-avisos')) === 'si');
+  ok('el botón se repintó pese al cuelgue',
+     /Apagar los avisos/.test(await p2.textContent('#bAvisos')));
+  ok('y el cajón se cerró, que es la otra mitad del «no me deja»',
+     !(await p2.evaluate(() => document.getElementById('ladoIzq')?.classList.contains('abierto'))));
+
+  /* Y AHORA LA SEGUNDA MITAD DE SU REPORTE: apagar y volver a encender. */
+  await p2.click('#bAvisos');
+  await p2.waitForFunction(
+    () => /Avisos apagados/.test(document.querySelector('#letreros')?.textContent || ''),
+    null, { timeout: 12000 });
+  ok('SE PUEDE APAGAR aunque el ayudante siga colgado',
+     await p2.evaluate(() => localStorage.getItem('sala-avisos')) === 'no');
+
+  await p2.click('#bAvisos');
+  await p2.waitForFunction(
+    () => /Avisos encendidos/.test(document.querySelector('#letreros')?.textContent || ''),
+    null, { timeout: 12000 });
+  ok('Y SE PUEDE VOLVER A ENCENDER, que es lo que él no podía',
+     await p2.evaluate(() => localStorage.getItem('sala-avisos')) === 'si');
+
+  ok('sin un solo error suelto de JavaScript', errores2.length === 0,
+     errores2.join(' | '));
+  await ctx2.close();
+}
+
+console.log('\n· Y si algo REVIENTA, no sólo si se cuelga');
+{
+  /* ⚠ ESTE CASO LO DESTAPÓ LA MUTACIÓN, no yo. Quité el `finally` del
+     interruptor y la suite siguió verde: mi escenario del ayudante colgado no
+     lo tocaba, porque ahí nada LANZA —`apuntarAPush` se traga su propio error
+     y devuelve false—. El `finally` sólo se gana el sueldo cuando algo revienta
+     de verdad, así que hace falta un navegador que reviente: uno cuyo
+     `requestPermission` tire una excepción, que es lo que hacen algunos
+     navegadores dentro de una app incrustada. */
+  const ctx3 = await navegador.newContext({ viewport:{ width:1100, height:900 } });
+  const p3 = await ctx3.newPage();
+  await p3.addInitScript(() => {
+    class NotificacionQueRevienta {
+      close(){}
+      static permission = 'default';
+      static requestPermission(){ throw new Error('este navegador no deja pedir permiso'); }
+    }
+    Object.defineProperty(window, 'Notification',
+      { value: NotificacionQueRevienta, configurable: true, writable: true });
+  });
+  await p3.goto(B);
+  await p3.waitForTimeout(400);
+  await p3.fill('#codigoIn', 'GRUPAZ');
+  await p3.fill('#nombreIn', 'Carlos');
+  await p3.click('#bEntrar');
+  await p3.waitForTimeout(800);
+
+  await p3.click('#bAvisos');
+  await p3.waitForTimeout(1200);
+
+  const l3 = await p3.evaluate(() =>
+    [...document.querySelectorAll('#letreros .letrero')].map(x => x.textContent).join(' | '));
+  ok('cuando revienta, el letrero LO DICE en vez de callarse',
+     /no se pudo/i.test(l3), l3);
+  ok('y el cajón se cierra igual: el interruptor no se queda trabado',
+     !(await p3.evaluate(() => document.getElementById('ladoIzq')?.classList.contains('abierto'))));
+  ok('y el botón se puede volver a tocar',
+     !(await p3.evaluate(() => document.getElementById('bAvisos')?.dataset.ocupado)));
+  await ctx3.close();
 }
 
 console.log('\n· Apagar también desapunta');

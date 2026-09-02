@@ -172,6 +172,24 @@
         "no responde al toque"
       ],
       "salioDe": "Carlos: «haz que todos los botones tengan feedback como los de laboratorio», y el rescate bajo prefers-reduced-motion."
+    },
+    {
+      "id": "boton-colgado-de-una-promesa-sin-plazo",
+      "titulo": "«No me deja» era un botón esperando a una promesa que nunca vuelve",
+      "gravedad": "alta",
+      "sintoma": "Se toca un interruptor y no pasa nada: no cambia de texto, el cajón se queda abierto, no sale ningún aviso. Parece que la app se colgó.",
+      "causa": "El manejador espera con `await` a algo que puede no resolverse nunca —`serviceWorker.ready`, `getSubscription()`, `unsubscribe()` en un iPhone, o cualquier `fetch` sin plazo— y las líneas que repintan la interfaz quedan detrás de esa espera.",
+      "porque": "Un `await` se lee como «esto tarda un poco», no como «esto puede no volver jamás». Y en el escritorio del que programa casi siempre vuelve.",
+      "arreglo": "Ninguna promesa de la que dependa la interfaz va sin plazo: se corre contra un reloj y se sigue. El repintado no puede vivir detrás de la espera.",
+      "comoCazarlo": "Sustituir la API lenta por una que devuelva promesas que nunca resuelven, y comprobar que el botón contesta igual. Es una prueba de navegador de veinte renglones.",
+      "consejo": "No hace falta saber CUÁL se cuelga para arreglarlo: lo que está mal es depender de que ninguna lo haga.",
+      "senales": [
+        "no me deja",
+        "el botón no hace nada",
+        "se queda pensando",
+        "no cambia el texto del botón"
+      ],
+      "salioDe": "Carlos, con los avisos de La Sala en su iPhone: «no me deja desactivar y reactivar las notificaciones»."
     }
   ]
 }
