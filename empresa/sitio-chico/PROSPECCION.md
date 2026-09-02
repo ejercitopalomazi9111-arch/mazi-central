@@ -36,9 +36,42 @@ motivo medido, no la corazonada.
 | **No se ve en teléfono** | se abre a 390 px y hay desbordes o letra ilegible | 8 de cada 10 lo abren desde el teléfono |
 | **No dice lo básico** | falta horario, dirección o forma de contacto | es la razón número uno por la que alguien se va a otro |
 
-Los cuatro se miden con lo que ya tenemos: el mismo navegador con el que se
-prueban los diez instrumentos del taller, a 390 px, contando desbordes y
-midiendo el tiempo de carga.
+## Y aquí lo que descubrí al ir a medir de verdad, que cambia el plan
+
+**Desde esta máquina no se puede juzgar el sitio de la mayoría de los negocios.**
+No por falta de herramienta: porque lo que contesta muchas veces no es su
+página. Medido sobre casos reales el 2 de septiembre:
+
+| Sitio | Qué contestó | Qué parece si no se mira |
+|---|---|---|
+| un taller de Querétaro | 202 con 169 bytes y dentro un `sgcaptcha` | «su página no abre» |
+| otro negocio | 403 con 111 bytes | «su página no abre» |
+| un directorio del ramo | ni contestó | «su página no abre» |
+
+Las tres son murallas anti-robots o la propia salida a internet de esta
+máquina. **Ninguna dice nada sobre el sitio del negocio.** Si eso se anota como
+defecto y se le manda por WhatsApp al dueño, se le está diciendo una mentira
+que él puede desmentir abriendo su teléfono, y se quema el negocio en el primer
+mensaje.
+
+Por eso `medir.sh` clasifica ANTES de juzgar, y sólo un estado sirve:
+
+| Estado | Qué significa | ¿Entra en la lista? |
+|---|---|---|
+| `pagina-real` | contestó una página de verdad | **sí**, y aquí sí se puede medir |
+| `reto-de-bot` | captcha o redirección a uno | no: no se sabe nada |
+| `bloqueado` | 401, 403 o 429 con cuerpo mínimo | no: no se sabe nada |
+| `vacia` | 200 pero casi sin contenido | no: sospechoso, no concluyente |
+| `sin-respuesta` | ni contestó | no: **puede ser esta máquina**, no el sitio |
+
+Comprobado en los dos sentidos: da `pagina-real` sobre sitios que sí abren, y
+nombra `no-se-ve-en-telefono` sobre una página real que no trae la etiqueta de
+viewport. Una comprobación que no distingue los dos casos no comprueba nada.
+
+**Consecuencia práctica, y no es una excusa:** la lista va a ser más corta que
+veinte y hay negocios a los que no se les puede escribir con un dato medido.
+A ésos no se les manda un mensaje genérico: no se les manda nada. Preferimos
+cinco mensajes que se contestan a veinte que se ignoran.
 
 ## Cuántos, y por qué tan pocos
 
