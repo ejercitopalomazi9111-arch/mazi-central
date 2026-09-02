@@ -568,6 +568,22 @@ export class Sala {
      Va por `luego()` y nunca con `await` en el camino de `/decir`: si un
      servicio de push tarda tres segundos, quien escribió NO tiene por qué
      esperarlos. El mensaje ya está guardado; el aviso es de después. */
+  /* Lo que se lee en la pantalla de bloqueo. Va RECORTADO a propósito: el aviso
+     es para enterarse, no para leer la conversación desde el candado —y
+     cualquiera que vea el teléfono apagado lo lee—. */
+  recado(evento){
+    const quien = evento?.de?.nombre || 'Alguien';
+    let texto = String(evento?.texto || '').replace(/\s+/g, ' ').trim();
+    if(!texto && (evento?.adjuntos || []).length) texto = 'mandó un archivo';
+    /* Se corta por PUNTOS DE CÓDIGO, no por bytes ni por unidades UTF-16:
+       `slice` a secas parte un emoji a la mitad y deja un carácter roto en la
+       pantalla de Carlos. */
+    const letras = [...(texto || 'escribió en la sala')];
+    if(letras.length > 120) texto = letras.slice(0, 119).join('') + '…';
+    else texto = letras.join('');
+    return JSON.stringify({ titulo: quien, texto, sala: this._codigo || '' });
+  }
+
   async avisarCerrados(evento){
     const de = evento?.de?.id;
     const suscripciones = Object.entries(this.avisos || {})
@@ -583,7 +599,7 @@ export class Sala {
        quién se le avisa es justo donde se cuela el error de vibrarle el
        teléfono a quien acaba de escribir. */
     const enviar = this._enviarPush || empujarATodos;
-    const r = await enviar(suscripciones, vapid);
+    const r = await enviar(suscripciones, vapid, { mensaje: this.recado(evento) });
 
     /* Las muertas se borran: reintentar para siempre contra una suscripción que
        el navegador ya tiró es gastar en algo que nunca va a contestar. */
@@ -1181,6 +1197,12 @@ export class Sala {
     await this.listo;
     const url = new URL(pedido.url);
     const ruta = url.pathname.split('/').pop();
+    /* La sala no sabía cómo se llama: nunca le había hecho falta. Ahora sí,
+       porque el aviso del teléfono dice EN QUÉ SALA escribieron, y al tocarlo
+       abre esa y no otra. Sale de la propia dirección: /api/sala/CODIGO/… */
+    const trozos = url.pathname.split('/').filter(Boolean);
+    const i = trozos.indexOf('sala');
+    if(i >= 0 && trozos[i + 1]) this._codigo = trozos[i + 1];
 
     if(ruta === 'ws') return this.conectar(pedido);
 

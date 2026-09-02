@@ -17,16 +17,25 @@
  * en su almacenamiento. Nadie tiene que pegar nada, la privada NUNCA sale del
  * worker, y no hay ningún secreto que se pueda colar a un repo público.
  *
- * ── POR QUÉ EL AVISO VA SIN CONTENIDO ───────────────────────────────────────
- * Mandar el texto del mensaje dentro del push obliga a cifrarlo (RFC 8291:
- * ECDH + HKDF + AES-GCM contra las llaves del navegador). Se puede, pero es
- * bastante código criptográfico que desde aquí NO puedo probar de punta a punta
- * contra un teléfono de verdad, y media implementación que a veces avisa es
- * peor que ninguna: uno deja de mirar el chat confiando en algo que no llega.
+ * ── EL AVISO AHORA SÍ LLEVA TEXTO, Y POR QUÉ NO LO LLEVABA ─────────────────
+ * La primera versión mandaba el aviso VACÍO —«escribieron en GRUPAZ»— y lo dijo
+ * con todas sus letras: meter el texto obliga a CIFRARLO contra las llaves del
+ * navegador (RFC 8291: ECDH + HKDF + AES-GCM), y eso no se podía probar de
+ * punta a punta desde el contenedor. Media implementación que a veces avisa es
+ * peor que ninguna.
  *
- * Un aviso sin contenido —«escribieron en GRUPAZ», y al tocarlo se abre— sí se
- * puede sostener entero, y resuelve lo que hacía falta: enterarse. El texto se
- * lee al abrir, que es lo que uno hace de todos modos.
+ * Lo pidió Carlos en cuanto los avisos empezaron a llegarle: «haz que se vea
+ * una vista previa de quien escribió y un poco del texto». Y ahora sí se puede
+ * sostener, porque cambió lo que faltaba: él tiene avisos funcionando en un
+ * teléfono de verdad, así que si el texto sale roto lo VE y lo dice.
+ *
+ * ⚠ Y ESO PONE EL MENSAJE EN LA PANTALLA DE BLOQUEO. Es lo que se pidió, pero
+ * conviene saberlo: cualquiera que vea el teléfono apagado lee quién escribió y
+ * el principio de lo que dijo. Por eso el texto va RECORTADO y sin adjuntos.
+ *
+ * El cifrado es de verdad de punta a punta: la llave sale de un ECDH entre una
+ * pareja efímera nuestra y la pública del navegador. Ni el servicio de push
+ * —Google, Apple— puede leer el contenido. Sólo el aparato.
  *
  * Sin dependencias. Corre igual en Workers y en Node porque sólo usa
  * `crypto.subtle`, `fetch` y `btoa`.
@@ -83,6 +92,89 @@ export async function firmarJwt(privadaJwk, reclamos) {
   return `${cabecera}.${cuerpo}.${b64url(new Uint8Array(firma))}`;
 }
 
+/* ── EL CIFRADO DEL CONTENIDO · RFC 8291, codificación `aes128gcm` ──────────
+   Cada paso está numerado igual que en la especificación para que se pueda
+   comparar renglón por renglón. Si algo de esto se escribe mal, el aviso NO
+   truena: llega y el teléfono lo descarta en silencio. Por eso las pruebas
+   DESCIFRAN lo que sale, en vez de comprobar que «no revienta». */
+
+const texto = (t) => new TextEncoder().encode(t);
+
+/** HKDF tal cual lo usa la especificación: extraer y expandir en un paso. */
+async function hkdf(sal, ikm, info, largo) {
+  const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits(
+    { name: 'HKDF', hash: 'SHA-256', salt: sal, info }, k, largo * 8));
+}
+
+const pegar = (...trozos) => {
+  const total = trozos.reduce((n, t) => n + t.length, 0);
+  const r = new Uint8Array(total);
+  let i = 0;
+  for (const t of trozos) { r.set(t, i); i += t.length; }
+  return r;
+};
+
+/**
+ * Cifra `mensaje` para UNA suscripción y devuelve el cuerpo que se manda.
+ *
+ * `suscripcion.keys.p256dh` es la pública del navegador (65 bytes en base64url)
+ * y `keys.auth` su secreto de autenticación (16 bytes). Sin las dos no hay
+ * cifrado posible — y por eso una suscripción vieja, guardada cuando sólo se
+ * apuntaba el endpoint, cae sola al aviso sin texto en vez de romperse.
+ */
+export async function cifrar(mensaje, suscripcion, opciones = {}) {
+  const uaPub  = deB64url(suscripcion.keys.p256dh);
+  const authSecreto = deB64url(suscripcion.keys.auth);
+
+  /* 1 · una pareja EFÍMERA por cada aviso. Reutilizarla dejaría que quien vea
+        dos avisos relacione que son para el mismo aparato. */
+  const efimera = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const asPub = new Uint8Array(await crypto.subtle.exportKey('raw', efimera.publicKey));
+
+  /* 2 · el secreto compartido: nuestra privada efímera contra su pública. */
+  const suPublica = await crypto.subtle.importKey(
+    'raw', uaPub, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const compartido = new Uint8Array(await crypto.subtle.deriveBits(
+    { name: 'ECDH', public: suPublica }, efimera.privateKey, 256));
+
+  /* 3 · el material de partida. ⚠ EL ORDEN DE LAS DOS PÚBLICAS IMPORTA: primero
+        la del navegador y después la nuestra. Cambiarlas da una llave distinta
+        y el aviso llega y se descarta sin decir nada. */
+  const ikm = await hkdf(authSecreto, compartido,
+    pegar(texto('WebPush: info\0'), uaPub, asPub), 32);
+
+  /* 4 · la sal, nueva en cada aviso, y de ella salen la llave y el nonce. */
+  const sal = crypto.getRandomValues(new Uint8Array(16));
+  const llave = await hkdf(sal, ikm, texto('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = await hkdf(sal, ikm, texto('Content-Encoding: nonce\0'), 12);
+
+  /* 5 · el registro lleva un 0x02 al final: es el delimitador que marca «aquí
+        se acabó y no hay más registros». Sin él, el navegador lo rechaza. */
+  const registro = pegar(texto(mensaje), new Uint8Array([2]));
+
+  const aes = await crypto.subtle.importKey('raw', llave, 'AES-GCM', false, ['encrypt']);
+  const cifrado = new Uint8Array(await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: nonce, tagLength: 128 }, aes, registro));
+
+  /* 6 · la cabecera del cuerpo: sal(16) · tamaño de registro(4) · largo de la
+        llave(1) · nuestra pública(65) · y luego el cifrado. */
+  const rs = new Uint8Array(4);
+  new DataView(rs.buffer).setUint32(0, opciones.rs ?? 4096);
+  return pegar(sal, rs, new Uint8Array([asPub.length]), asPub, cifrado);
+}
+
+export const deB64url = (s) => {
+  const t = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(t + '='.repeat((4 - t.length % 4) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+};
+
+/** Una suscripción sólo puede llevar texto si trae las dos llaves. */
+export const puedeLlevarTexto = (s) =>
+  !!(s && s.keys && typeof s.keys.p256dh === 'string' && typeof s.keys.auth === 'string');
+
 /**
  * Manda UN aviso a UNA suscripción.
  *
@@ -101,19 +193,34 @@ export async function empujar(suscripcion, vapid, opciones = {}) {
     sub: opciones.contacto || CONTACTO,
   });
 
-  const r = await traer(suscripcion.endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `vapid t=${jwt}, k=${vapid.publica}`,
-      /* Cuánto lo guarda el servicio de push si el teléfono está apagado. Cinco
-         minutos: un aviso de chat que llega media hora tarde molesta más de lo
-         que sirve. */
-      TTL: String(opciones.ttl ?? 300),
-      'Content-Length': '0',
-    },
-  });
+  const cabeceras = {
+    Authorization: `vapid t=${jwt}, k=${vapid.publica}`,
+    /* Cuánto lo guarda el servicio de push si el teléfono está apagado. Cinco
+       minutos: un aviso de chat que llega media hora tarde molesta más de lo
+       que sirve. */
+    TTL: String(opciones.ttl ?? 300),
+  };
 
-  return { ok: r.ok, estado: r.status, muerta: r.status === 404 || r.status === 410 };
+  /* ⚠ SI LA SUSCRIPCIÓN NO TRAE LLAVES, SE MANDA SIN TEXTO Y YA. Las guardadas
+     antes de que esto existiera sólo tienen `endpoint`, y hacerlas tronar
+     dejaría mudo justo al que lleva más tiempo apuntado. Degrada al aviso de
+     siempre —«escribieron en la sala»— que sigue sirviendo para enterarse. */
+  let cuerpo = null;
+  if (opciones.mensaje && puedeLlevarTexto(suscripcion)) {
+    cuerpo = await cifrar(opciones.mensaje, suscripcion, opciones);
+    cabeceras['Content-Encoding'] = 'aes128gcm';
+    cabeceras['Content-Type'] = 'application/octet-stream';
+    cabeceras['Content-Length'] = String(cuerpo.length);
+  } else {
+    cabeceras['Content-Length'] = '0';
+  }
+
+  const r = await traer(suscripcion.endpoint,
+    cuerpo ? { method: 'POST', headers: cabeceras, body: cuerpo }
+           : { method: 'POST', headers: cabeceras });
+
+  return { ok: r.ok, estado: r.status, muerta: r.status === 404 || r.status === 410,
+           conTexto: !!cuerpo };
 }
 
 /**
@@ -122,16 +229,19 @@ export async function empujar(suscripcion, vapid, opciones = {}) {
  */
 export async function empujarATodos(suscripciones, vapid, opciones = {}) {
   const muertas = [];
-  let enviados = 0;
+  let enviados = 0, conTexto = 0;
   await Promise.all(suscripciones.map(async (s) => {
     try {
       const r = await empujar(s, vapid, opciones);
       if (r.muerta) muertas.push(s.endpoint);
-      else if (r.ok) enviados++;
+      else if (r.ok) { enviados++; if (r.conTexto) conTexto++; }
     } catch (e) {
       /* Un fallo de red no es una suscripción muerta: se reintenta al siguiente
          mensaje. Confundirlos borraría a alguien por un mal minuto de wifi. */
     }
   }));
-  return { enviados, muertas };
+  /* `conTexto` no es adorno: es cómo se sabe cuántos de los que reciben avisos
+     siguen con una suscripción vieja sin llaves. Si nunca sube, es que nadie ha
+     vuelto a apuntarse desde que existe el cifrado. */
+  return { enviados, muertas, conTexto };
 }

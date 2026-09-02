@@ -178,6 +178,20 @@ console.log('\n· Cuando el push no se puede, NO se cae nada');
 
   ok('y el servidor no apuntó a nadie que no se haya suscrito de verdad',
      suscritos.length === 0);
+
+  /* ⚠ Y SI ALGÚN DÍA `subscribe()` SÍ FUNCIONA AQUÍ, que lo que mande traiga
+     las llaves. Hoy no llega —no hay servicio de push en el contenedor— así
+     que esto no puede afirmar nada: se comprueba la FORMA del envío sólo
+     cuando hay envío, y se dice cuando no lo hubo. Una prueba que callara la
+     diferencia sería otra que pasa por ausencia. */
+  if(suscritos.length){
+    const s = suscritos[0].suscripcion || {};
+    ok('la suscripción que se manda trae las llaves del aparato',
+       !!(s.keys && s.keys.p256dh && s.keys.auth), JSON.stringify(s));
+  } else {
+    console.log('     · no hubo suscripción que inspeccionar: este Chromium no '
+              + 'tiene servicio de push (ver el encabezado)');
+  }
 }
 
 console.log('\n· La vuelta de base64url, que es de lo que cuelga la comparación');
