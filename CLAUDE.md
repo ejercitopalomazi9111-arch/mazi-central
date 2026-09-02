@@ -257,6 +257,7 @@ dependemos.
    | `String.replace(a, b)` pega `b` literal | en `b`, `$$` significa **un** dólar — `$&`, `$1`, `$'` también mienten | un guión dejó `$(…)` donde decía `$$(…)` y la página tronó al cargar |
    | una variable llamada `yo` guarda un id | guardaba la **persona entera**, y `encodeURIComponent(yo)` no truena: manda `[object Object]` | el socket **nunca** se ató a nadie: la mesa pintaba a **todos** «sin señal» y decía «1 en línea» con cinco adentro — **vivo en producción**, lo reportó Carlos con una captura |
    | probar cada mitad ya es probar el sistema | el servidor pasaba sus 212 y la mesa las suyas, **con datos puestos a mano en las dos** | el defecto vivía justo en el papel que se pasan, y sólo salió al correr la página contra una sala de verdad |
+   | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
@@ -298,7 +299,6 @@ afectado**, no la skill entera.
 **Empiezo por `find-skill`**, que decide cuál toca y en qué orden.
 
 | Skill | Cuándo se dispara |
-   | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
 |---|---|
 | **`find-skill`** | El enrutador. Qué skill toca, en qué orden, y cuándo ninguna |
 | **`four-judges`** | Antes de toda decisión cara. Palabra clave: **ROAST** |
@@ -745,7 +745,11 @@ sin framework**, que es el argumento de que sabemos hacerlo a mano.
   la mudanza—. Así que **`github.io` no se escribe en ningún metadato, manual ni enlace**: ya pasó
   una vez y hubo que corregir las etiquetas de `sitio/index.html` que mandaban a Google y a
   WhatsApp a la dirección que está por apagarse.
-- **El servidor de Fadori no se despliega desde aquí.** Vive en `servidor/` con su propio
+- **⚠️ Esto ya no es cierto y se corrigió el 1 de septiembre: Fadori SÍ se despliega desde
+  aquí.** Es uno de los cinco proyectos de Cloudflare atados a este repo y construye en cada
+  PR. Se dejó el párrafo porque la RAZÓN sigue siendo buena —son configuraciones aparte y
+  mezclarlas fue lo que tumbó los despliegues— pero la frase de arriba mandaba a buscar un
+  despliegue manual que ya no existe. El servidor de Fadori vive en `servidor/` con su propio
   `wrangler.jsonc` y se publica aparte. Son dos cosas y mezclarlas es como se termina publicando el
   código del servidor.
 - Los pasos que sólo puede dar Carlos —crear el proyecto en Cloudflare, conectar el servidor, pasar
@@ -833,8 +837,57 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   desde el 28 de agosto **sí trae websocket**, así que la presencia se puede probar de verdad.
 - **El buzón automático nace apagado** sin el secreto `MAZI_LLAVE` en Ajustes → Secrets → Actions.
   Sin él, lo que se escriba en `sala/buzon/GRUPAZ/salida.md` se queda en el archivo.
-- **Los dos proyectos de Cloudflare siguen sin crear:** `sala` (raíz `sala/servidor`) y
-  `puercos` (raíz `juegos/servidor`). Sin ellos La Sala sólo corre en local. Es de Carlos.
+- **⚠️ CORREGIDO EL 1 DE SEPTIEMBRE: los proyectos SÍ están creados, y el problema es otro.**
+  Aquí decía que `sala` y `puercos` seguían sin crear. Ya no es verdad: desde este repo
+  despliegan **cinco** proyectos —`mazi-central`, `fadori`, `sala`, `puercos` y `ppuercos`—
+  y los cinco construyen en verde. Se vio en las vistas previas del PR #103, no de memoria.
+  **Lo que sí está roto es dónde apuntan dos de ellos**, y no se caza leyendo porque
+  construyen bien:
+
+  | Proyecto | Qué debería servir | Qué sirve de verdad, medido |
+  |---|---|---|
+  | `ppuercos` | el servidor de salas del juego (`juegos/servidor`) | **la central completa, byte por byte igual que `mazi-central`** — su carpeta raíz está mal puesta |
+  | `puercos` | — | **404 en todo**. Es un proyecto sobrante del nombre viejo |
+
+  O sea que **el servidor de Guerra de Puercos no está publicado**, aunque haya dos proyectos
+  con su nombre y los dos salgan verdes. Cuarta vez que aparece lo mismo: algo que informa un
+  estado y está en otro. **Lo arregla Carlos** en el panel de Cloudflare: al proyecto
+  `ppuercos`, ponerle carpeta raíz `juegos/servidor`; y borrar `puercos`, que no sirve nada.
+  El nombre con dos pes es correcto y está explicado en `juegos/servidor/wrangler.jsonc`.
+- **🟠 La vista previa del proyecto `sala` sirve la central, no la sala.** Medido el 2 de
+  septiembre contra las dos direcciones que da Cloudflare en el PR #103 —la del commit y la
+  de la rama—: las dos devuelven `<title>Grupo Mazi — Central</title>`, **byte por byte
+  idéntico** a la vista previa de `mazi-central`, y 404 en cada ruta del servidor. La
+  producción (`sala.palomazi9111.workers.dev`) sí funciona, así que la carpeta raíz está
+  bien puesta para producción y mal para las vistas previas — la misma enfermedad de
+  `ppuercos`, en otro proyecto.
+
+  **Por qué importa más de lo que parece:** significa que **un cambio de la sala no se puede
+  probar antes de juntarlo**. Todo lo que se le toque llega a producción sin haber corrido
+  nunca en un despliegue de verdad, y ése es exactamente el terreno donde vivió meses el
+  borrado silencioso. Lo arregla Carlos en el panel, en la configuración de vistas previas
+  del proyecto `sala`.
+- **🔴 Los nombres de ocho maestros reales SIGUEN EN LA HISTORIA del repo público.**
+  El archivo actual está limpio —`avisos/datos.js` trae `maestro:''` y su comentario
+  explicando por qué— y por eso parece resuelto. No lo está: quitarlos de la versión de
+  hoy no los quita de los commits donde entraron, y este repositorio es público. Se
+  comprueba en un renglón, y sale la lista completa:
+
+  ```
+  git log origin/main -S"maestro:'" -- avisos/datos.js
+  git show <el commit más viejo>:avisos/datos.js
+  ```
+
+  Son datos personales de gente real que no dio permiso, publicados a cambio de nada
+  —ese campo no lo lee la ficha, ni el cartel, ni ninguna prueba—. **Quinta vez que
+  aparece el mismo defecto de estos dos días: algo que informa un estado y está en otro.**
+  Aquí el disfraz es un archivo limpio encima de una historia que no lo está.
+
+  **Lo decide Carlos y son dos caminos:** pasar el repo a privado, que es lo barato y ya
+  estaba planeado en §7 —y esto adelanta el disparador, porque ya no es sólo código
+  propio: es gente—; o reescribir la historia y forzar el empuje, que sí los borra pero
+  rompe cualquier copia que alguien tenga. **No lo hago yo:** reescribir `main` y forzar
+  un empuje lo autoriza una persona.
 - **El websocket de La Sala no pide llave**, ni con `LLAVES` puestas: quien tenga el link puede
   escuchar aunque no pueda escribir. Anotado, no arreglado.
 - **Las 16 páginas de Notion del prompt maestro piden sesión.** Se desbloquean con

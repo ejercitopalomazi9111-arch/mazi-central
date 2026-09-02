@@ -9,3 +9,7 @@ node_modules/
 .env
 .env.local
 *.env
+
+# Caché de Python: la genera importlib al cargar oir.py en las pruebas.
+__pycache__/
+*.pyc

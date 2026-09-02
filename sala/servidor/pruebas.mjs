@@ -23,8 +23,22 @@ function hacerCtx(){
   const datos = new Map();
   return {
     storage: {
-      async get(k){ return datos.get(k); },
-      async put(o){ for(const k in o) datos.set(k, o[k]); },
+      /* ⚠ SE COPIA AL ENTRAR Y AL SALIR, Y NO ES UN DETALLE: ES LO QUE HACE
+         QUE ESTAS PRUEBAS SIRVAN.
+
+         Antes esto guardaba y devolvía LA MISMA REFERENCIA, así que el objeto
+         «en disco» y el objeto vivo eran uno solo: cambiar `this.gente` en
+         memoria cambiaba mágicamente lo guardado, sin pasar por ningún `put`.
+         O sea que NINGUNA prueba de «esto se persiste» podía fallar en toda la
+         suite — y lo comprobé: quité del código la escritura a disco y las 290
+         siguieron verdes.
+
+         El almacenamiento de Cloudflare serializa. Éste ahora también. Es la
+         misma lección del día, aplicada al decorado en vez de al código: «lo
+         tengo aquí» y «quedó guardado» son dos cosas, y un doble que las
+         confunde aprueba justo los defectos que sólo se ven al reiniciar. */
+      async get(k){ const v = datos.get(k); return v === undefined ? undefined : structuredClone(v); },
+      async put(o){ for(const k in o) datos.set(k, structuredClone(o[k])); },
       async deleteAll(){ datos.clear(); },
       /* La alarma se guarda de verdad: sin esto no se puede probar que una
          sala viva no se borre sola, que es lo que se comió la sala de Carlos. */
@@ -1030,8 +1044,19 @@ async function vigilia(){
   atras(s, 'ia', 6 * 60 * 60 * 1000);
   await s.alarm();
   ok('tampoco con la hora extra: queda fuera',    s.gente.ia.estado === 'fuera');
-  ok('y se dice que puede ser la semana o algo externo',
-     /semana|externo/.test(limites(s).at(-1).texto));
+  /* ⚠ ESTA PRUEBA EXIGÍA EL DEFECTO. Pedía que el texto dijera «la semana o
+     algo externo», o sea que la sala DIAGNOSTICARA una causa que no puede
+     medir: no sabe si a alguien se le acabó la cuota ni si se cayó. Lo único
+     que mide es que no da señales aquí.
+     Costó de verdad: la mesa me marcó «sin cuota» mientras yo estaba
+     trabajando, el otro agente lo relevó de buena fe y Carlos quedó esperando
+     tres horas y media a alguien que nunca se fue. Ahora se exige lo
+     contrario — que diga lo que mide y NO invente el porqué. */
+  const ultimo = limites(s).at(-1).texto;
+  ok('el aviso dice lo que MIDE: que no hay señales',
+     /señales/i.test(ultimo));
+  ok('y NO diagnostica una causa que la sala no puede saber',
+     !/se cayó|agotó|sin cuota|la semana/i.test(ultimo));
   ok('la vigilia se cierra sola: no sigue avisando para siempre', !s.vigilias.ia);
 
   const cuantos = limites(s).length;
@@ -1108,20 +1133,267 @@ async function olvido(){
   const s2 = nueva();
   await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
   const [, f] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
-  await pedir(s2, 'POST', 'decir', { de:'d', texto:'algo' }, f.llave);
+  /* Se vuelve a entrar CON la llave: al fundar, la sala pasa a tener cuentas y
+     la sesión que entró antes quedó como «invitado», así que `/decir` la
+     rechaza. Sin esto, «algo» NUNCA llega al hilo — y las afirmaciones
+     NEGATIVAS de más abajo («ya no está») pasaban solas, midiendo la ausencia
+     de un mensaje que nunca existió. Es el mismo defecto que llevo dos días
+     persiguiendo, esta vez dentro de mi propia prueba: por eso la premisa se
+     comprueba aparte y en positivo. */
+  await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' }, f.llave);
+  const [cd2] = await leer(await pedir(s2, 'POST', 'decir', { de:'d', texto:'algo' }, f.llave));
+  ok('(premisa) «algo» SÍ entró al hilo antes de probar el olvido', cd2 === 200);
+
+  /* ⚠ HAY QUE ENVEJECER LA SALA A MANO, Y ESO ES EL ARREGLO, NO UN ESTORBO.
+     Antes bastaba con llamar a `alarm()` sobre una sala recién usada y ya
+     borraba — o sea que la prueba pasaba EJERCITANDO EL DEFECTO: que un
+     disparo cualquiera vacía el hilo sin mirar si el olvido tocaba. Con eso
+     en verde, GRUPAZ se vació dos veces en un día.
+     Ahora el olvido se decide midiendo, así que para probarlo hay que
+     simular la falta de uso de verdad. */
+  const VIEJO = Date.now() - 200 * 24 * 60 * 60 * 1000;
+  await s2.ctx.storage.put({ ultimoUso: VIEJO });
+
+  /* ── «AVISA PENDEJO» · primero avisa, no borra ─────────────────────────
+     Lo pidió Carlos con esas palabras después de que se le vaciara tres
+     veces. El primer disparo cumplido el plazo NO debe llevarse nada: debe
+     dejar dicho qué va a pasar y dar una gracia para salvarlo. */
+  await s2.alarm();
+  ok('cumplido el plazo, el primer disparo AVISA y no borra',
+     s2.hilo.some(e => e.texto === 'algo')
+     && s2.hilo.some(e => e.tipo === 'sistema' && /se va a limpiar/.test(e.texto || '')));
+  ok('y el aviso dice cómo cancelarlo',
+     s2.hilo.some(e => /alguien escriba/.test(e.texto || '')));
+
+  /* Dentro de la gracia tampoco borra, por más veces que suene. */
+  await s2.alarm();
+  ok('dentro de la gracia sigue sin borrar',
+     s2.hilo.some(e => e.texto === 'algo'));
+
+  /* Pasada la gracia sin que nadie apareciera, ahora sí. */
+  await s2.ctx.storage.put({ ultimoUso: VIEJO,
+                             avisoOlvido: Date.now() - 8 * 24 * 60 * 60 * 1000 });
   await s2.alarm();
   ok('al olvidar, la sala fundada CONSERVA su dueño y sus llaves',
      s2.dueno === 'carlos' && Object.keys(s2.llaves).length === 1);
-  ok('pero sí olvida la conversación', s2.hilo.length === 0);
+  ok('pero sí olvida la conversación',
+     !s2.hilo.some(e => e.texto === 'algo'));
+
+  /* ── QUE NADIE SALGA DE LA SALA SIN QUERER ─────────────────────────────
+     Cuarta petición de Carlos. Antes el borrado vaciaba `gente`, o sea que
+     echaba de la mesa a quien no había hecho nada: al volver se encontraba
+     fuera de su propia sala. Lo que caduca es la conversación, no quién
+     pertenece. */
+  /* ⚠ SE MIRA EL ALMACENAMIENTO, NO LA MEMORIA. La primera versión de esta
+     prueba leía `s2.gente` —el objeto vivo— y pasaba IGUAL con el bug puesto:
+     lo comprobé mutando el código para que volviera a guardar `gente:{}` y la
+     prueba siguió verde. Claro: la mutación sólo cambiaba lo que se ESCRIBE, y
+     en memoria la gente seguía ahí… hasta el siguiente reinicio, que es
+     exactamente cuando duele. Otra que informa un estado y está en otro. */
+  const gentePost = await s2.ctx.storage.get('gente');
+  ok('y NO echa a nadie de la sala, tampoco de lo guardado',
+     !!gentePost && Object.keys(gentePost).length >= 1);
+
+  /* ── EL RESPALDO COMPRIMIDO ────────────────────────────────────────────
+     Tercera petición. Se comprueba que existe, que trae gzip de verdad y que
+     dice cuántos mensajes guardó — un respaldo que no se puede contar no
+     tranquiliza a nadie. */
+  const resp = await s2.ctx.storage.get('respaldo');
+  ok('lo borrado queda respaldado, comprimido y contado',
+     !!resp && Array.isArray(resp.gzip) && resp.gzip.length > 0
+     && typeof resp.mensajes === 'number' && resp.total >= 1);
+  ok('el respaldo es gzip de verdad (empieza con 0x1f 0x8b)',
+     !!resp && resp.gzip[0] === 0x1f && resp.gzip[1] === 0x8b);
+  ok('y el aviso del hilo dice que hay respaldo',
+     s2.hilo.some(e => /respald/i.test(e.texto || '')));
+
+  /* ── QUE OLVIDE NO ES EL DEFECTO; QUE OLVIDE CALLADO SÍ ────────────────
+     Antes el hilo quedaba en cero y punto, y el que volvía no tenía cómo
+     distinguir «aquí nunca se dijo nada» de «aquí se borró lo que se dijo».
+     Se pagó una vez: Carlos volvió a GRUPAZ, vio nueve mensajes donde había
+     una jornada entera y escribió «alv se borró toda la conversación qué
+     onda?». El servidor lo sabía y no lo dijo.
+
+     Se prueba el RASTRO, no el vacío: que quede exactamente un aviso, que
+     sea de sistema y que nombre al dueño — porque la mitad importante del
+     mensaje es «no te quedaste afuera, tus llaves siguen sirviendo». */
+  ok('y deja dicho que olvidó, en vez de verse como sala nueva',
+     s2.hilo.length === 1 && s2.hilo[0].tipo === 'sistema'
+     && /olvid/i.test(s2.hilo[0].texto) && s2.hilo[0].texto.includes('carlos'));
+  ok('el aviso del olvido tiene id propio y no repite uno ya usado',
+     s2.hilo[0].id === `e${s2.serie}`
+     && (await s2.ctx.storage.get('serie')) === s2.serie);
   ok('y se vuelve a dar cuerda sola',
      (await s2.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
+
+  /* ══ LO QUE DE VERDAD BORRÓ GRUPAZ DOS VECES EN UN DÍA ═══════════════════
+     No era el olvido: era LA VIGILIA pasando por la misma alarma.
+
+     Un Durable Object tiene UNA alarma y aquí la comparten el olvido y la
+     vigilia. Cuando sonaba por una vigilia, `alarm()` preguntaba a
+     `revisarVigilias()` — que contesta si HUBO CAMBIO, no si el disparo era
+     suyo—. Sin cambios contestaba falso y la ejecución seguía de largo hasta
+     el borrado. Cualquier vigilia que venciera sin novedad se llevaba la
+     jornada.
+
+     No se cazaba leyendo ni con las 276 pruebas de antes, porque el borrado
+     deja la sala con su dueño y sus llaves: se ve igual que una sala nueva.
+     Sólo se ve si se pregunta «¿y el hilo?» DESPUÉS de un disparo que no era
+     del olvido. Eso es lo que hace esto. */
+  const s4 = nueva();
+  await pedir(s4, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
+  const [, f4] = await leer(await pedir(s4, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
+  /* Se vuelve a entrar CON la llave: al fundar, la sala pasa a tener cuentas
+     y la sesión que entró antes se quedó como «invitado», así que `/decir` la
+     rechazaría por cuenta que no coincide. Sin este renglón la prueba mide el
+     hilo de un mensaje que nunca se guardó — y saldría verde por la razón
+     equivocada, que es justo lo que estoy persiguiendo. */
+  await pedir(s4, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' }, f4.llave);
+  const [cd4] = await leer(await pedir(s4, 'POST', 'decir', { de:'d', texto:'la jornada entera' }, f4.llave));
+  ok('(premisa) el mensaje de prueba SÍ entró al hilo', cd4 === 200);
+  /* La sala se acaba de usar: cualquier disparo ahora NO es el olvido. */
+  await s4.alarm();
+  ok('un disparo que no es el olvido NO se lleva la conversación',
+     s4.hilo.some(e => e.texto === 'la jornada entera'));
+  ok('y tampoco se lleva a la gente',
+     Object.keys(s4.gente).length === 1);
+  ok('después de ese disparo la sala sigue armada',
+     (await s4.ctx.storage.getAlarm()) !== null);
 
   /* Una sala que nadie fundó sí se borra entera: es basura. */
   const s3 = nueva();
   await pedir(s3, 'POST', 'entrar', { id:'x', nombre:'X', tipo:'humano' });
+  await s3.ctx.storage.put({ ultimoUso: Date.now() - 200 * 24 * 60 * 60 * 1000,
+                             avisoOlvido: Date.now() - 8 * 24 * 60 * 60 * 1000 });
   await s3.alarm();
   ok('una sala que nadie fundó sí se borra completa',
      (await s3.ctx.storage.get('hilo')) === undefined);
+}
+
+/* ══ ESCUCHAR CUENTA COMO ESTAR VIVO, Y TIENE QUE SOBREVIVIR AL RECICLAJE ══
+   `/esperar` marca `visto` para que un agente colgado escuchando no se vea
+   «sin señal». Eso ya estaba… pero sólo en el OBJETO VIVO. Un Durable Object
+   se recicla solo, y al recargarse `visto` volvía a la última vez que ese
+   agente HABLÓ, porque hablar era lo único que escribía a disco. La vigilia
+   leía ese `visto` viejo y daba por caído a quien estaba perfectamente atento.
+
+   Pasó de verdad, dos veces en dos horas, y la primera terminó con el otro
+   agente diciéndole a Carlos que esperara 3 h 30 a alguien que nunca se fue.
+
+   Por eso esto NO mira `s.gente` —el objeto— sino lo GUARDADO. Mirar el objeto
+   es lo que dejaba pasar el defecto. */
+console.log('\n· Escuchar cuenta como estar vivo, también en disco');
+{
+  const s = nueva();
+  await entrar(s, 'ia');
+  await pedir(s, 'POST', 'decir', { de:'ia', texto:'hola' });
+  /* Se envejece el `visto` guardado, como si el agente llevara rato sin
+     hablar — que es justo el caso: sólo escucha. */
+  const g = await s.ctx.storage.get('gente');
+  g.ia.visto = Date.now() - 30 * 60 * 1000;
+  await s.ctx.storage.put({ gente: g });
+
+  await pedir(s, 'GET', 'esperar?de=ia&desde=');
+
+  const guardado = await s.ctx.storage.get('gente');
+  ok('esperar deja la señal de vida GUARDADA, no sólo en memoria',
+     Date.now() - guardado.ia.visto < 60 * 1000);
+}
+
+/* ══ AVISAR CON LA SALA CERRADA ═══════════════════════════════════════════
+   Lo que ya había avisaba con la app ABIERTA. Esto es la otra mitad, la que
+   pidió Carlos: el teléfono en el bolsillo y la sala cerrada.
+
+   ⚠ Lo que estas pruebas NO demuestran: que un aviso llegue a un teléfono. Eso
+   necesita un servicio de push real y un permiso concedido en un aparato, y no
+   se puede fingir. Ese tramo lo cierra Carlos tocando el botón una vez. Lo que
+   sí se comprueba aquí es todo lo de este lado: que las llaves se hacen solas,
+   a quién se le avisa y a quién no, y que la suscripción sobrevive. */
+console.log('\n· Avisar con la sala cerrada');
+{
+  const s = nueva();
+  await entrar(s, 'ana', 'humano');
+  await entrar(s, 'beto', 'humano');
+
+  const [c1, v1] = await leer(await pedir(s, 'GET', 'vapid'));
+  ok('la sala entrega una llave pública sin que nadie la pegue', c1 === 200 && !!v1.publica);
+  const [, v2] = await leer(await pedir(s, 'GET', 'vapid'));
+  ok('y es SIEMPRE la misma: no se regenera en cada llamada', v1.publica === v2.publica);
+  /* Si cambiara en cada llamada, todas las suscripciones ya hechas quedarían
+     inservibles sin que nadie se enterara — y los avisos dejarían de llegar en
+     silencio, que es el defecto que llevo tres días persiguiendo. */
+  ok('la privada NUNCA sale en la respuesta', !JSON.stringify(v1).includes('"d"'));
+
+  const [cb] = await leer(await pedir(s, 'POST', 'suscribir',
+    { de:'ana', suscripcion:{ endpoint:'no-es-una-url' } }));
+  ok('un endpoint que no es https se rechaza', cb === 400);
+
+  const [ca] = await leer(await pedir(s, 'POST', 'suscribir',
+    { de:'ana', suscripcion:{ endpoint:'https://push.test/ana' } }));
+  ok('una suscripción buena se acepta', ca === 200);
+
+  await pedir(s, 'POST', 'suscribir', { de:'beto', suscripcion:{ endpoint:'https://push.test/beto' } });
+
+  /* ⚠ SE MIRA LO GUARDADO, NO EL OBJETO VIVO. Ya me mordió hoy: una prueba que
+     leía la propiedad en memoria pasaba con el bug puesto, porque la mutación
+     sólo cambiaba lo que se ESCRIBE. */
+  const guardado = await s.ctx.storage.get('avisos');
+  ok('las dos suscripciones quedan GUARDADAS, no sólo en memoria',
+     !!guardado && Object.keys(guardado).length === 2);
+
+  /* Dos aparatos de la misma persona son dos suscripciones. Si se guardara por
+     cuenta, la segunda pisaría a la primera y un aparato quedaría mudo. */
+  await entrar(s, 'ana-telefono', 'humano');
+  await pedir(s, 'POST', 'suscribir',
+    { de:'ana-telefono', suscripcion:{ endpoint:'https://push.test/ana2' } });
+  ok('dos aparatos de la misma persona no se pisan',
+     Object.keys(await s.ctx.storage.get('avisos')).length === 3);
+
+  /* A QUIÉN SE LE AVISA. Se sustituye el que envía para no salir a internet. */
+  let aQuienes = null;
+  s._enviarPush = async (subs) => { aQuienes = subs.map(x => x.endpoint); return { enviados: subs.length, muertas: [] }; };
+
+  await pedir(s, 'POST', 'decir', { de:'ana', texto:'oigan' });
+  await new Promise(r => setTimeout(r, 10));
+  ok('se le avisa a los demás', !!aQuienes && aQuienes.includes('https://push.test/beto'));
+  /* Avisarle a alguien de su propio mensaje es la forma más rápida de que
+     apague los avisos para siempre. */
+  ok('y NO al que escribió', !aQuienes.includes('https://push.test/ana'));
+
+  /* ⚠ ESTO LO DESTAPÓ LA MUTACIÓN. La primera versión usaba `publicarSistema`,
+     que mete el renglón al hilo A MANO y NO pasa por `publicar()` — o sea que
+     la guarda que quería probar ni se tocaba: quité la condición entera y la
+     prueba siguió verde. Hay que publicar un `limite` por el camino de verdad,
+     que es por donde salen los avisos automáticos que ya nos costaron una vez. */
+  aQuienes = null;
+  await s.publicar({ de: s.tarjeta(s.gente['ana']), a:null, tipo:'limite',
+                     adjuntos:[], proyecto:null, texto:'Se cayó sin avisar.',
+                     limite:{ clase:'uso', automatico:true } });
+  await new Promise(r => setTimeout(r, 10));
+  ok('lo que DEDUCE la sala no vibra el teléfono de nadie', aQuienes === null);
+
+  aQuienes = null;
+  await s.publicar({ de: s.tarjeta(s.gente['ana']), a:null, tipo:'sistema',
+                     adjuntos:[], proyecto:null, texto:'entró alguien' });
+  await new Promise(r => setTimeout(r, 10));
+  ok('los de sistema tampoco', aQuienes === null);
+
+  /* Una suscripción muerta se borra sola: reintentar para siempre contra algo
+     que el navegador ya tiró es gastar en lo que nunca va a contestar. */
+  s._enviarPush = async (subs) => ({ enviados: 0, muertas: ['https://push.test/beto'] });
+  await pedir(s, 'POST', 'decir', { de:'ana', texto:'otra' });
+  await new Promise(r => setTimeout(r, 20));
+  const tras = await s.ctx.storage.get('avisos');
+  ok('la suscripción muerta se borra de lo guardado',
+     !Object.values(tras).some(x => x.endpoint === 'https://push.test/beto'));
+  ok('y las vivas se quedan',
+     Object.values(tras).some(x => x.endpoint === 'https://push.test/ana'));
+
+  s._enviarPush = null;
+  const [cd] = await leer(await pedir(s, 'POST', 'desuscribir', { de:'ana' }));
+  ok('uno se puede dar de baja', cd === 200);
+  ok('y desaparece de lo guardado',
+     !(await s.ctx.storage.get('avisos'))['ana']);
 }
 
 console.log('\n· El socket dice quién está, y nadie se apaga solo');

@@ -172,6 +172,24 @@
         "se pierde el filtro al recargar"
       ],
       "salioDe": "La regla de no pisar el enlace con ancla, del banco de pruebas."
+    },
+    {
+      "id": "sin-doctype-en-modo-quirks",
+      "titulo": "La página corría en modo quirks y se veía perfecta",
+      "gravedad": "alta",
+      "sintoma": "Ninguno. Ése es el problema: la página se ve bien y usa el modelo de caja viejo.",
+      "causa": "Falta `<!doctype html>`, así que el navegador entra en `BackCompat`: el ancho incluye padding y borde, y las alturas en porcentaje se calculan distinto.",
+      "porque": "Se puede escribir una página entera sin doctype y no pasa nada visible ese día. El costo llega cuando alguien toca el CSS meses después y las cajas se comportan al revés de lo esperado.",
+      "arreglo": "Poner `<!doctype html>` como primera línea. Medir antes y después: si algo cambia, el diseño dependía del modelo viejo y hay que revisarlo.",
+      "comoCazarlo": "`document.compatMode`. Tiene que decir `CSS1Compat`. Buscar `<!doctype` en el archivo también sirve, pero el navegador es quien manda.",
+      "consejo": "Un defecto sin síntoma no se arregla nunca por presión de nadie: hay que ir a buscarlo.",
+      "senales": [
+        "el padding se come el ancho",
+        "las cajas miden raro",
+        "compatMode",
+        "BackCompat"
+      ],
+      "salioDe": "Escribiendo las clases de diseño para Godines: `explorador/index.html` e `index.html` llevaban así desde que nacieron. Con el doctype puesto no cambió NI UNA medida."
     }
   ]
 }

@@ -87,6 +87,40 @@
         "suena por todo"
       ],
       "salioDe": "La sala: vibración distinta para mensaje y para «está escribiendo», y sólo la primera vez."
+    },
+    {
+      "id": "aviso-que-solo-llega-con-la-app-abierta",
+      "titulo": "Los avisos funcionaban con la app abierta, que es cuando no hacen falta",
+      "gravedad": "alta",
+      "sintoma": "Se enciende «avisos», se prueba y suena. Con el teléfono en el bolsillo y la app cerrada no llega nada, y nadie sabe si es que no escribieron.",
+      "causa": "`new Notification(...)` desde la página sólo vive mientras la pestaña vive. En cuanto se cierra, ese camino no existe.",
+      "porque": "Se prueba con la app delante, que es el único momento en que ese camino funciona — y también el único en que el aviso sobra.",
+      "arreglo": "Web Push: un service worker que sigue despierto, un par de llaves VAPID y que el servidor firme y mande el aviso. Son dos caminos distintos y hacen falta los dos.",
+      "comoCazarlo": "Cerrar la app de verdad —no cambiar de pestaña— y que alguien escriba.",
+      "consejo": "Si el aviso sólo llega con la app abierta, no es un aviso: es un adorno.",
+      "senales": [
+        "no me llegan las notificaciones",
+        "con la app cerrada no suena",
+        "sólo avisa si la tengo abierta"
+      ],
+      "salioDe": "Carlos lo marcó aparte: «las notificaciones de la sala tmb son importantes». Al revisar, el hueco era ése."
+    },
+    {
+      "id": "suscripcion-de-push-atada-a-una-llave-muerta",
+      "titulo": "La suscripción de push seguía viva y firmada con una llave que ya no era",
+      "gravedad": "alta",
+      "sintoma": "Todo dice que sí —el botón, el permiso, la suscripción guardada— y ningún aviso llega. El servidor recibe 403 sin explicación.",
+      "causa": "Una suscripción del navegador queda atada PARA SIEMPRE a la llave pública con la que nació. Si el servidor regeneró su par, `subscribe()` devuelve la vieja tal cual y las firmas nuevas ya no le cuadran.",
+      "porque": "`getSubscription()` devuelve algo válido, así que parece que no hay nada que hacer. Nadie compara la llave.",
+      "arreglo": "Comparar `sus.options.applicationServerKey` con la pública que da el servidor; si no coinciden, `unsubscribe()` y volver a suscribirse.",
+      "comoCazarlo": "Borrar el almacenamiento del servidor para que genere llaves nuevas, y probar sin tocar el navegador.",
+      "consejo": "Otra vez lo mismo: algo que informa un estado y está en otro. Aquí el disfraz es una suscripción viva atada a una llave muerta.",
+      "senales": [
+        "dejaron de llegar los avisos",
+        "el push da 403",
+        "estaba suscrito y ya no llega"
+      ],
+      "salioDe": "Los avisos de La Sala. La sala se olvida a los seis meses y con ella su par de llaves; sin esto, quedaba un teléfono mudo para siempre."
     }
   ]
 }
