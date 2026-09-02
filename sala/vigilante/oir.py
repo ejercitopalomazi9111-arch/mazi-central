@@ -87,6 +87,33 @@ def avisar_que_contesto(sala, yo):
     except Exception:
         pass
 
+def me_despierta(e, yo):
+    """¿Este evento merece despertarme? Es una FUNCIÓN y no cuatro `continue`
+    sueltos dentro del ciclo a propósito: así la prueba puede llamar a ESTO y
+    no a una copia del criterio escrita en otro archivo. Una prueba que
+    reimplementa la regla pasa aunque la regla de verdad cambie — que es
+    exactamente el defecto que llevo dos días persiguiendo."""
+    de = e.get('de') or {}
+    if de.get('id') == yo or e.get('tipo') == 'sistema':
+        return False
+
+    # ── LO QUE DEDUJO LA SALA NO ES UN MENSAJE ────────────────────────────
+    # Un evento `limite` con `automatico` puesto no lo escribió nadie: lo
+    # supuso el servidor porque alguien lleva rato sin dar señales.
+    # Despertarme por eso cuesta un turno entero para leer una conjetura sobre
+    # un tercero, y encima suele ser falsa — a mí me marcó «se cayó» dos veces
+    # mientras trabajaba, y al otro agente una.
+    #
+    # Lo que un agente DECLARA sí pasa: «me topé, vuelvo a tal hora» es
+    # información que él da de sí mismo. La diferencia está en la bandera, no
+    # en el tipo.
+    lim = e.get('limite') if isinstance(e.get('limite'), dict) else None
+    if e.get('tipo') == 'limite' and lim and lim.get('automatico'):
+        return False
+
+    return bool((e.get('texto') or '').strip())
+
+
 def ultimo_id(sala):
     """De dónde arrancar si nadie lo dijo: el final del hilo, para no volver a
     escupir como nuevo todo lo que ya se dijo."""
@@ -130,11 +157,9 @@ def main():
             if e.get('id'):
                 desde = e['id']
             de = e.get('de') or {}
-            if de.get('id') == yo or e.get('tipo') == 'sistema':
+            if not me_despierta(e, yo):
                 continue
             texto = (e.get('texto') or '').replace('\n', ' ').strip()
-            if not texto:
-                continue
             nota = e.get('nota') if isinstance(e.get('nota'), dict) else None
             mio = e.get('a') == yo or (nota or {}).get('a') == yo
             linea = (f"SALA {sala}{' →PARA MÍ' if mio else ''} · "
