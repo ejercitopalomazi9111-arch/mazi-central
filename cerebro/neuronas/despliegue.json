@@ -161,6 +161,24 @@
       ],
       "area": "despliegue",
       "salioDe": "mazi-central · desde el #61, la bodega de skills"
+    },
+    {
+      "id": "vista-previa-que-sirve-otro-proyecto",
+      "titulo": "La vista previa salió verde y servía otro sitio entero",
+      "gravedad": "alta",
+      "sintoma": "El despliegue de la rama dice ✅ y la dirección que da devuelve otra aplicación: 404 en cada ruta del servidor que se quería probar.",
+      "causa": "La carpeta raíz del proyecto está bien puesta para producción y mal para las vistas previas, así que la vista previa construye y sirve lo que hay en la raíz del repo.",
+      "porque": "El ✅ es del BUILD, no de lo servido. Construir la carpeta equivocada construye perfectamente — sólo que otra cosa.",
+      "arreglo": "Corregir la carpeta raíz de las vistas previas en el panel. Y mientras tanto, decirlo: un cambio que no se puede probar antes de juntarlo hay que tratarlo como no probado.",
+      "comoCazarlo": "Pedirle a la vista previa una ruta que SÓLO exista en ese proyecto. Si contesta 404 —o peor, si contesta 200 con el contenido de otro— ahí está. Comparar el md5 de la raíz con el del otro proyecto lo cierra en un renglón.",
+      "consejo": "Un despliegue verde promete que el código compiló, nunca que lo que está sirviendo es el código.",
+      "senales": [
+        "la vista previa da 404",
+        "el deploy salió verde y no sirve",
+        "me sale otra página en el preview",
+        "no puedo probar antes de mergear"
+      ],
+      "salioDe": "PR #103: las dos vistas previas del proyecto `sala` devolvían la central byte por byte. Misma enfermedad ya documentada de `ppuercos`, en otro proyecto — o sea que no era un accidente suelto."
     }
   ]
 }

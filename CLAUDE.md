@@ -854,6 +854,19 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   estado y está en otro. **Lo arregla Carlos** en el panel de Cloudflare: al proyecto
   `ppuercos`, ponerle carpeta raíz `juegos/servidor`; y borrar `puercos`, que no sirve nada.
   El nombre con dos pes es correcto y está explicado en `juegos/servidor/wrangler.jsonc`.
+- **🟠 La vista previa del proyecto `sala` sirve la central, no la sala.** Medido el 2 de
+  septiembre contra las dos direcciones que da Cloudflare en el PR #103 —la del commit y la
+  de la rama—: las dos devuelven `<title>Grupo Mazi — Central</title>`, **byte por byte
+  idéntico** a la vista previa de `mazi-central`, y 404 en cada ruta del servidor. La
+  producción (`sala.palomazi9111.workers.dev`) sí funciona, así que la carpeta raíz está
+  bien puesta para producción y mal para las vistas previas — la misma enfermedad de
+  `ppuercos`, en otro proyecto.
+
+  **Por qué importa más de lo que parece:** significa que **un cambio de la sala no se puede
+  probar antes de juntarlo**. Todo lo que se le toque llega a producción sin haber corrido
+  nunca en un despliegue de verdad, y ése es exactamente el terreno donde vivió meses el
+  borrado silencioso. Lo arregla Carlos en el panel, en la configuración de vistas previas
+  del proyecto `sala`.
 - **🔴 Los nombres de ocho maestros reales SIGUEN EN LA HISTORIA del repo público.**
   El archivo actual está limpio —`avisos/datos.js` trae `maestro:''` y su comentario
   explicando por qué— y por eso parece resuelto. No lo está: quitarlos de la versión de
