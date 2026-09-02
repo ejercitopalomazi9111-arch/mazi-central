@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- ⚠ SIN ESTA LÍNEA el navegador pide /favicon.ico y suelta un 404 en la
+     consola de todos los que abren el juego. Es la misma trampa que ya se
+     documentó en el taller de negocios: si la etiqueta no está cuando se lee
+     la cabecera, la petición ya salió. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23F3348A'/%3E%3Cellipse cx='32' cy='38' rx='17' ry='13' fill='%23FFC2DA'/%3E%3Cellipse cx='32' cy='40' rx='7' ry='6' fill='%23F3348A'/%3E%3Ccircle cx='29' cy='40' r='1.6' fill='%23fff'/%3E%3Ccircle cx='35' cy='40' r='1.6' fill='%23fff'/%3E%3Ccircle cx='24' cy='30' r='2.4' fill='%23231016'/%3E%3Ccircle cx='40' cy='30' r='2.4' fill='%23231016'/%3E%3C/svg%3E">
 <title>Guerra de Puercos</title>
 <meta name="description" content="El juego de cartas de Guerra de Puercos, para jugar en el teléfono.">
 <meta name="theme-color" content="#E84A8A">
@@ -197,6 +202,46 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   border-radius:12px; border:3px solid var(--tinta); background:var(--rosa-claro);
 }
 .golpe .n{font-size:30px; display:block; line-height:1.1}
+
+/* ── EL FORCEJEO ────────────────────────────────────────────────────────────
+   Lo pidió Carlos: una barra que empieza en el centro, lucha un poco hacia
+   ambos lados y luego cae hacia el que menos tenía.
+   ⚠ ES DECORACIÓN Y ESO ES A PROPÓSITO. Los puntos y el daño ya están escritos
+   en el DOM cuando esto arranca, así que si la animación no corre —teléfono
+   viejo, `prefers-reduced-motion`, una prueba— no se pierde ni un dato. Animar
+   el número que además ES el dato es cómo se hacen las pruebas intermitentes. */
+.pulso{margin:2px 0 10px}
+.pulso .riel{
+  position:relative; height:16px; border-radius:9px; overflow:hidden;
+  border:3px solid var(--tinta); background:#F2766A;
+}
+.pulso .riel i{
+  display:block; height:100%; width:50%; background:#7BD88F;
+  transition:width .45s cubic-bezier(.34,1.3,.64,1);
+}
+.pulso .marca{
+  height:8px; margin:3px auto 0; width:3px; background:var(--tinta); border-radius:2px;
+}
+
+/* la carta que pierde revienta: sólo transform y opacidad sobre una IMAGEN,
+   nunca sobre texto que haya que leer */
+/* ⚠ NO TERMINA EN OPACIDAD 0, Y SE VIO EN LA FOTO. La primera versión la
+   desvanecía del todo: como la pantalla del duelo se queda hasta que tocas
+   «Siguiente ronda», quedaba un HUECO donde había una carta y eso no se lee
+   como «explotó», se lee como «se rompió el juego». Ahora queda chamuscada:
+   encogida, girada y a media luz, así que se entiende qué pasó. */
+@keyframes revienta{
+  0%  { transform:scale(1) rotate(0); filter:none }
+  30% { transform:scale(1.14) rotate(-4deg) }
+  100%{ transform:scale(.72) rotate(8deg); opacity:.28; filter:grayscale(.7) }
+}
+.revienta{ animation:revienta .55s ease-in forwards }
+@keyframes chispa{ to{ transform:translate(var(--x),var(--y)) scale(.2); opacity:0 } }
+.chispa{
+  position:absolute; width:9px; height:9px; border-radius:50%; background:#FFD35A;
+  border:2px solid var(--tinta); pointer-events:none;
+  animation:chispa .5s ease-out forwards;
+}
 
 /* ── cortina de "pásale el teléfono" ── */
 .cortina{
@@ -472,6 +517,13 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
           <div class="puntos" id="dPtsB">—</div>
           <div class="cuenta" id="dCtaB"></div>
         </div>
+      </div>
+      <!-- El forcejeo. Arranca en medio, empuja a los dos lados y al final se
+           va hacia el que menos vida tenía. Es decoración: los números de
+           verdad ya están escritos cuando esto empieza. -->
+      <div class="pulso" id="dPulso" hidden>
+        <div class="riel"><i id="dPulsoTira"></i></div>
+        <div class="marca"></div>
       </div>
       <div class="golpe" id="dGolpe"></div>
     </div>
@@ -857,13 +909,106 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
     g.innerHTML = '<span class="n">−' + h.dano + ' PV</span>' + frase + tope;
   }
   pintarMarcador();
-  if(h.dano && !quieto()){
+  cinematica(h);
+  $('#bSeguir').textContent = despues.acabo ? 'Ver el resultado' : 'Siguiente ronda';
+}
+
+/* ── LA CINEMÁTICA DEL GOLPE ───────────────────────────────────────────────
+   Lo que Carlos describió: forcejeo, números que bajan de a poco, y la carta
+   que pierde reventando.
+
+   ⚠ TRES REGLAS QUE NO SE NEGOCIAN, Y LAS TRES YA COSTARON EN ESTA CASA:
+   1 · Cuando esto arranca, TODOS LOS DATOS YA ESTÁN ESCRITOS en el DOM. Esto
+       sólo los adorna. Así una prueba que lea `#dGolpe` o los puntos no
+       depende de cuándo termine una animación, que es la receta de la prueba
+       intermitente.
+   2 · `prefers-reduced-motion` la apaga entera, y sin ella la pantalla se ve
+       COMPLETA, no a medias.
+   3 · Nada de animar opacidad sobre texto que haya que leer. Los puntos suben
+       contando; lo que se desvanece es la imagen de la carta. */
+function cinematica(h){
+  const pulso = $('#dPulso');
+  const tira  = $('#dPulsoTira');
+  const golpe = $('#dGolpe');
+
+  if(quieto() || !h){ if(pulso) pulso.hidden = true; return; }
+
+  /* el marcador se sacude como antes */
+  if(h.dano){
     const m = document.querySelector('.marcador');
     m.classList.remove('golpeado');
-    void m.offsetWidth;                 /* reinicia la animación si se repite */
+    void m.offsetWidth;
     m.classList.add('golpeado');
   }
-  $('#bSeguir').textContent = despues.acabo ? 'Ver el resultado' : 'Siguiente ronda';
+
+  /* 1 · los puntos suben desde cero, para que se vea quién es más fuerte */
+  contarHasta($('#dPtsA'), h.a.puntos, 480);
+  contarHasta($('#dPtsB'), h.b.puntos, 480);
+
+  /* 2 · el forcejeo. Empieza en medio, empuja a los dos lados, y termina
+         inclinado hacia el que PERDIÓ, tanto como haya sido el daño. */
+  pulso.hidden = false;
+  tira.style.transition = 'none';
+  tira.style.width = '50%';
+  void tira.offsetWidth;
+  tira.style.transition = '';
+  /* medido en vídeo: con 190 ms por empujón el forcejeo se acaba antes de que
+     el ojo lo siga. 300 ms se ve, y el total sigue por debajo de dos segundos */
+  const empujones = [64, 36, 58, 43];
+  empujones.forEach((v, i) => setTimeout(() => { tira.style.width = v + '%'; }, 280 + i * 300));
+  const finPulso = 280 + empujones.length * 300;
+  setTimeout(() => {
+    if(h.dano === 0){ tira.style.width = '50%'; return; }
+    /* el daño llega a 40 como mucho (MOTOR.DANO_TOPE): se reparte hasta 46
+       puntos de barra para que un golpe grande se vea grande */
+    const inclina = Math.min(46, (h.dano / MOTOR.DANO_TOPE) * 46);
+    tira.style.width = (h.perdio === 'a' ? 50 - inclina : 50 + inclina) + '%';
+  }, finPulso);
+
+  /* 3 · la carta que pierde revienta, con sus chispas */
+  if(h.dano){
+    setTimeout(() => {
+      const donde = h.perdio === 'a' ? '#dCartaA' : '#dCartaB';
+      const cont = $(donde);
+      if(!cont) return;
+      cont.style.position = 'relative';
+      $$('.carta', cont).forEach(c => c.classList.add('revienta'));
+      for(let i = 0; i < 7; i++){
+        const ch = document.createElement('i');
+        ch.className = 'chispa';
+        ch.style.left = (40 + Math.random() * 20) + '%';
+        ch.style.top  = (35 + Math.random() * 25) + '%';
+        ch.style.setProperty('--x', (Math.random() * 120 - 60).toFixed(0) + 'px');
+        ch.style.setProperty('--y', (Math.random() * -90 - 20).toFixed(0) + 'px');
+        cont.appendChild(ch);
+        setTimeout(() => ch.remove(), 600);
+      }
+    }, finPulso + 320);
+  }
+
+  /* 4 · y los PV bajando de a poco, que es lo que pidió por nombre */
+  if(h.dano){
+    setTimeout(() => {
+      const cual = h.perdio === 'a' ? '#mPvA' : '#mPvB';
+      const el = $(cual);
+      if(el) contarHasta(el, +el.textContent, 700, +el.textContent + h.dano);
+    }, finPulso + 200);
+  }
+}
+
+/* Cuenta de `desde` a `hasta` en `ms`. Escribe el valor final SIEMPRE, aunque
+   el navegador no dé un solo cuadro: el dato no depende de la animación. */
+function contarHasta(el, hasta, ms, desde = 0){
+  if(!el) return;
+  el.textContent = hasta;                       /* el dato, ya */
+  if(quieto()) return;
+  const t0 = performance.now();
+  const paso = (t) => {
+    const k = Math.min(1, (t - t0) / ms);
+    el.textContent = Math.round(desde + (hasta - desde) * (1 - Math.pow(1 - k, 3)));
+    if(k < 1) requestAnimationFrame(paso); else el.textContent = hasta;
+  };
+  requestAnimationFrame(paso);
 }
 
 function terminar(){
