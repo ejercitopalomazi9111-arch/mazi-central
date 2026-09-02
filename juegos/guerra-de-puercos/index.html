@@ -253,6 +253,28 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
 }
 .revienta{ animation:revienta .55s ease-in forwards }
 @keyframes chispa{ to{ transform:translate(var(--x),var(--y)) scale(.2); opacity:0 } }
+/* ── LOS PUERCOS QUE CORREN AL FUSIONAR ────────────────────────────────────
+   Lo pidió Carlos por nombre. Aparecen sólo cuando se juega una COMBINACIÓN,
+   que es el momento raro de la partida —hay cuatro en total—, así que la
+   fiesta no se gasta.
+   Son SVG dibujados aquí: ni una petición más, y funcionan sin internet igual
+   que el resto del juego. Se mueven con `transform`, que resuelve el
+   compositor, y se van solos. */
+.carrera{
+  position:absolute; left:0; right:0; bottom:2px; height:34px;
+  pointer-events:none; overflow:hidden; z-index:3;
+}
+.carrera svg{
+  position:absolute; bottom:0; width:30px; height:30px;
+  animation:corre var(--dur,1.5s) linear forwards;
+}
+@keyframes corre{
+  from{ transform:translateX(-40px) }
+  to  { transform:translateX(calc(100vw + 40px)) }
+}
+@keyframes brinca{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-8px) } }
+.carrera svg g{ animation:brinca .28s ease-in-out infinite }
+
 .chispa{
   position:absolute; width:9px; height:9px; border-radius:50%; background:#FFD35A;
   border:2px solid var(--tinta); pointer-events:none;
@@ -868,6 +890,36 @@ function pintarMarcador(){
   pintarTira();
 }
 
+/* Suelta la carrera de puercos por el tapete. Se limpian solos. */
+function carreraDePuercos(cuantos = 6){
+  if(quieto()) return;
+  const tapete = document.querySelector('#fDuelo .tapete') || document.querySelector('.tapete');
+  if(!tapete) return;
+  tapete.style.position = 'relative';
+  const pista = document.createElement('div');
+  pista.className = 'carrera';
+  for(let i = 0; i < cuantos; i++){
+    const dur = (1.1 + Math.random() * 0.9).toFixed(2) + 's';
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    p.setAttribute('viewBox', '0 0 40 40');
+    p.style.setProperty('--dur', dur);
+    p.style.animationDelay = (i * 0.12).toFixed(2) + 's';
+    p.style.left = '0';
+    p.innerHTML = '<g>'
+      + '<ellipse cx="20" cy="24" rx="13" ry="9" fill="#FFC2DA" stroke="#231016" stroke-width="2"/>'
+      + '<ellipse cx="31" cy="20" rx="7" ry="6" fill="#FFC2DA" stroke="#231016" stroke-width="2"/>'
+      + '<ellipse cx="35" cy="21" rx="2.6" ry="3" fill="#F3348A" stroke="#231016" stroke-width="1.4"/>'
+      + '<circle cx="31" cy="17" r="1.3" fill="#231016"/>'
+      + '<path d="M26 14 l3 -5 l4 4 z" fill="#FFC2DA" stroke="#231016" stroke-width="1.6"/>'
+      + '<path d="M12 31 l0 5 M18 32 l0 5 M24 32 l0 5" stroke="#231016" stroke-width="2.4" stroke-linecap="round"/>'
+      + '<path d="M8 22 q-4 -2 -2 -5" stroke="#231016" stroke-width="2" fill="none" stroke-linecap="round"/>'
+      + '</g>';
+    pista.appendChild(p);
+  }
+  tapete.appendChild(pista);
+  setTimeout(() => pista.remove(), 2600);
+}
+
 /* Dibuja el montoncito de dorsos. Se topa en seis y lo que sobra va en número:
    veinte cuadritos no se cuentan de un vistazo, que es justo para lo que
    sirven. El texto de al lado sigue diciendo el dato exacto. */
@@ -940,6 +992,8 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
   }
   pintarMarcador();
   cinematica(h);
+  /* la fiesta sólo si alguien fusionó: son cuatro veces en toda la partida */
+  if(h.a.combinada || h.b.combinada) setTimeout(() => carreraDePuercos(7), 220);
   $('#bSeguir').textContent = despues.acabo ? 'Ver el resultado' : 'Siguiente ronda';
 }
 
