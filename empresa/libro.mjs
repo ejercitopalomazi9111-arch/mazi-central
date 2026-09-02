@@ -160,19 +160,39 @@ export function cerrar(puesto, { hasta = new Date(), dias = VENTANA_DIAS, carpet
      en la ventana, no trabajó. Es la misma regla del silencio de estos días. */
   const hayVida = suyos.length > 0;
 
+  /* ⚠ CERO CONTRA CERO NO ES «VIVE», Y ESTO SALIÓ DE CORRERLO.
+     Abrí el primer puesto de verdad, pedí la hoja, y decía «1 de 1 puestos se
+     sostienen» de uno que no había vendido absolutamente nada: `0 >= 0` daba
+     verde. O sea, otra vez algo que informa un estado y está en otro — y aquí
+     el estado falso es el más peligroso de todos, porque anima a no hacer nada.
+
+     Un puesto recién abierto está A PRUEBA: no ha demostrado ni que sirve ni
+     que no. Vivir exige haber cobrado; el cero no es un empate, es una falta de
+     evidencia. Y si la ventana entera pasa sin cobrar, deja de estar a prueba y
+     se retira como cualquier otro. */
+  const reciente = suyos.some(a => a.tipo === 'alta');
+  const sinMovimiento = ingresos === 0 && gastos === 0;
+
+  const veredicto = !hayVida ? 'se retira'
+                  : sinMovimiento && reciente ? 'a prueba'
+                  : ingresos > 0 && ingresos >= gastos ? 'vive'
+                  : 'se retira';
+
+  const porque =
+      !hayVida ? 'no dejó ningún apunte en la ventana: no trabajó'
+    : veredicto === 'a prueba'
+        ? 'recién abierto y todavía sin mover un peso: no ha demostrado nada'
+    : veredicto === 'vive'
+        ? `cobró ${ingresos} y gastó ${gastos}`
+        : (ingresos === 0 ? 'no cobró nada' : `cobró ${ingresos} y gastó ${gastos}`)
+          + (compromisos ? `; tiene ${compromisos} en compromisos, que NO cuentan` : '');
+
   return {
     puesto, desde: inicio.toISOString(), hasta: fin.toISOString(),
     apuntes: suyos.length,
     ingresos, gastos, compromisos,
     saldo: ingresos - gastos,
-    veredicto: !hayVida ? 'se retira'
-             : ingresos >= gastos ? 'vive'
-             : 'se retira',
-    porque: !hayVida ? 'no dejó ningún apunte en la ventana: no trabajó'
-          : ingresos >= gastos
-              ? `cobró ${ingresos} y gastó ${gastos}`
-              : `cobró ${ingresos} y gastó ${gastos}`
-              + (compromisos ? `; tiene ${compromisos} en compromisos, que NO cuentan` : ''),
+    veredicto, porque,
   };
 }
 
@@ -190,6 +210,7 @@ export function hoja({ carpeta = CARPETA, hasta = new Date() } = {}) {
   const ingresos = cierres.reduce((n, c) => n + c.ingresos, 0);
   const gastos = cierres.reduce((n, c) => n + c.gastos, 0);
   const vivos = cierres.filter(c => c.veredicto === 'vive');
+  const aPrueba = cierres.filter(c => c.veredicto === 'a prueba');
 
   const filas = cierres.map(c =>
     `| ${c.puesto} | ${c.ingresos} | ${c.gastos} | ${c.saldo >= 0 ? '+' : ''}${c.saldo} | ${c.veredicto} |`
@@ -199,7 +220,8 @@ export function hoja({ carpeta = CARPETA, hasta = new Date() } = {}) {
     `# La hoja · ${new Date(hasta).toISOString().slice(0, 10)}`,
     '',
     `**Cobrado ${ingresos} · gastado ${gastos} · saldo ${ingresos - gastos >= 0 ? '+' : ''}${ingresos - gastos}**`,
-    `${vivos.length} de ${cierres.length} puestos se sostienen.`,
+    `${vivos.length} de ${cierres.length} puestos se sostienen`
+      + (aPrueba.length ? `, ${aPrueba.length} todavía a prueba.` : '.'),
     '',
     '| puesto | cobró | gastó | saldo | |',
     '|---|---|---|---|---|',

@@ -94,6 +94,44 @@ console.log('\n· Vive, se retira, y el que no dejó rastro');
   ok('y se dice que no trabajó, en vez de un cero mudo', /no trabajó/.test(z.porque));
 }
 
+console.log('\n· Cero contra cero NO es vivir');
+{
+  const c = libro();
+  /* Salió de correrlo, no de leerlo: abrí el primer puesto de verdad, pedí la
+     hoja, y decía «1 de 1 puestos se sostienen» de uno que no había vendido
+     nada — `0 >= 0` daba verde. El estado falso más peligroso de todos, porque
+     anima a no hacer nada. */
+  apuntar({ puesto:'recien-abierto', tipo:'alta', concepto:'abre el puesto' }, c);
+  const r = cerrar('recien-abierto', { carpeta:c });
+  ok('un puesto recién abierto queda A PRUEBA, no vivo', r.veredicto === 'a prueba');
+  ok('y se dice que no ha demostrado nada', /no ha demostrado/.test(r.porque));
+
+  /* Gastar sin cobrar tampoco es empate: es estar perdiendo. */
+  const c2 = libro();
+  apuntar({ puesto:'gasta-y-no-cobra', tipo:'alta', concepto:'abre' }, c2);
+  apuntar({ puesto:'gasta-y-no-cobra', tipo:'gasto', monto:10, moneda:'MXN', concepto:'costo' }, c2);
+  const r2 = cerrar('gasta-y-no-cobra', { carpeta:c2 });
+  ok('en cuanto gasta sin cobrar, se retira', r2.veredicto === 'se retira');
+  ok('y el porqué dice que no cobró nada', /no cobró nada/.test(r2.porque));
+
+  ok('la hoja distingue «a prueba» de «se sostienen»',
+     /a prueba/.test(hoja({ carpeta:c })));
+
+  /* ⚠ ESTE CASO LO DESTAPÓ LA MUTACIÓN, no yo. Quité `ingresos > 0` del código
+     y NINGUNA prueba se puso roja: mis dos casos entraban por la rama de «a
+     prueba» o por la de gasto sin cobro, así que la línea mutada ni se tocaba.
+     El caso que sí la toca es un puesto que sólo apuntó PROMESAS: ni cobró ni
+     gastó, y ya no es nuevo. Con el bug puesto, esos ceros se leen como empate
+     y lo declaran vivo. */
+  const c3 = libro();
+  apuntar({ puesto:'solo-promesas', tipo:'compromiso', monto:50000, moneda:'MXN',
+            concepto:'tres clientes dijeron que sí' }, c3);
+  const r3 = cerrar('solo-promesas', { carpeta:c3 });
+  ok('un puesto con puras promesas y ningún peso movido NO vive',
+     r3.veredicto === 'se retira');
+  ok('y no se le confunde con uno recién abierto', r3.veredicto !== 'a prueba');
+}
+
 console.log('\n· La ventana de verdad se respeta');
 {
   const c = libro();
