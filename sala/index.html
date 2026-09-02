@@ -2917,7 +2917,16 @@ async function apuntarAPush(){
       });
     }
 
-    await alServidor('suscribir', { de: yo.id, suscripcion: { endpoint: sus.endpoint } });
+    /* ⚠ SE MANDAN TAMBIÉN LAS LLAVES, y de ahí sale que el aviso pueda llevar
+       texto. `toJSON()` las da en base64 ya listas; sacarlas a mano de
+       `getKey()` es un ArrayBuffer que hay que convertir, y ahí es donde se
+       rompe. Sin ellas el aviso llega mudo —«escribieron en la sala»— que es
+       como estaba antes de que Carlos pidiera la vista previa. */
+    const j = sus.toJSON();
+    await alServidor('suscribir', { de: yo.id, suscripcion: {
+      endpoint: sus.endpoint,
+      keys: j.keys || undefined,
+    }});
     return true;
   }catch(e){
     /* Se dice en la consola y se sigue. El aviso con la app abierta no depende
