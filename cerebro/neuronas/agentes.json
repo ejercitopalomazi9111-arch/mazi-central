@@ -324,6 +324,30 @@
         "deducir-una-cosa-y-escribir-otra",
         "probar-contra-una-copia-congelada"
       ]
+    },
+    {
+      "clase": "error",
+      "id": "endswith-sobre-nombres-de-archivo",
+      "titulo": "«pruebas-libro.mjs» TERMINA en «libro.mjs», y por eso el archivo se creyó ejecutado",
+      "gravedad": "media",
+      "sintoma": "Al correr las pruebas, el módulo importado imprimió su modo de uso y salió con código 2 antes de comprobar nada. Cero pruebas corridas y ni un error claro.",
+      "causa": "El guardián del CLI preguntaba `process.argv[1].endsWith('libro.mjs')`. Al importarlo desde `pruebas-libro.mjs`, ese nombre TERMINA en `libro.mjs`, así que el módulo se creyó invocado desde la terminal.",
+      "porque": "`endsWith` sobre un nombre de archivo es una coincidencia PARCIAL disfrazada de igualdad, y el prefijo que la rompe —«pruebas-»— es justo el que uno le pone al archivo que lo prueba. O sea que el defecto aparece exactamente cuando escribes la prueba.",
+      "arreglo": "Comparar la ruta ENTERA: `fileURLToPath(import.meta.url) === join(process.argv[1])`. Igualdad, no terminación.",
+      "comoCazarlo": "Si un módulo se comporta distinto al importarlo que al ejecutarlo, mira su guardián de CLI. Y desconfía de todo `endsWith`/`startsWith`/`includes` que esté haciendo el trabajo de un `===`.",
+      "consejo": "Vale igual para rutas, dominios y prefijos de permisos: `banco.com.atacante.com` empieza igual que el bueno y `mi-admin` termina en `admin`.",
+      "salioDe": "empresa/libro.mjs · el guardián del CLI se disparó al importarlo desde las pruebas",
+      "senales": [
+        "la prueba no corre",
+        "sale el modo de uso solo",
+        "se ejecuta al importarlo",
+        "exit code 2 sin explicación"
+      ],
+      "vecinas": [
+        "la-prueba-paso-sin-que-existiera-el-caso",
+        "el-doble-de-pruebas-guarda-por-referencia",
+        "errores-que-mienten"
+      ]
     }
   ]
 }
