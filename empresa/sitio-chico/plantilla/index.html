@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<!-- ⚠ ESTA ETIQUETA ES EL PRODUCTO. Sin ella el teléfono dibuja la página con
+     el ancho de un escritorio y hay que hacer zoom para leerla: es el defecto
+     que vendemos arreglar y el que mide `medir.sh`. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f4e79">
+<!-- ⚠ EL ICONO VA AQUÍ Y NO EN EL GUION. Si la etiqueta no existe cuando el
+     navegador lee la cabecera, pide `/favicon.ico` y se lleva un 404: sale un
+     error en la consola de todos los visitantes y la pestaña queda con el
+     icono en blanco. Va uno neutro y el guion le pone después la inicial y el
+     color del negocio. -->
+<link id="icono" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%231f4e79'/%3E%3C/svg%3E">
+<title>Cargando…</title>
+<meta name="description" content="">
+<style>
+/* Sin fuentes de fuera, sin CDN, sin analítica. La página no hace UNA sola
+   petición a un servidor ajeno: carga rápido con red mala y no pone cookies,
+   que es lo que le conviene a un negocio chico y lo que le prometimos. */
+:root{
+  --tinta:#16181d; --suave:#5b6270; --linea:#e3e6ec; --fondo:#fff; --claro:#f6f8fb;
+  --marca:#1f4e79; --sobre-marca:#fff; --alto:56px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0; background:var(--fondo); color:var(--tinta);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  padding-bottom:calc(var(--alto) + env(safe-area-inset-bottom,0px))}
+img{max-width:100%; height:auto; display:block}
+a{color:var(--marca)}
+.caja{max-width:720px; margin:0 auto; padding:0 20px}
+h1,h2,h3{line-height:1.2; margin:0 0 .4em; letter-spacing:-.01em}
+h1{font-size:clamp(28px,7vw,42px)}
+h2{font-size:clamp(21px,4.4vw,26px); margin-top:0}
+p{margin:0 0 1em}
+
+.tapa{background:var(--marca); color:var(--sobre-marca); padding:34px 0 30px}
+.tapa h1{color:#fff}
+.giro{font-weight:600; opacity:.92; margin:0 0 6px; font-size:14px;
+  text-transform:uppercase; letter-spacing:.09em}
+.lema{font-size:clamp(17px,3.6vw,20px); margin:14px 0 22px; max-width:34ch; opacity:.95}
+.estado{display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.16);
+  padding:7px 13px; border-radius:999px; font-size:14px; font-weight:600}
+.punto{width:9px; height:9px; border-radius:50%; background:#8fe08f}
+.punto.no{background:#ffb4a8}
+
+section{padding:34px 0; border-top:1px solid var(--linea)}
+section.claro{background:var(--claro)}
+
+.horario{list-style:none; margin:0; padding:0}
+.horario li{display:flex; justify-content:space-between; gap:16px;
+  padding:11px 0; border-bottom:1px solid var(--linea)}
+.horario li:last-child{border-bottom:0}
+.horario .dia{color:var(--suave)}
+.horario .hoy{font-weight:700}
+.horario .hoy .dia{color:var(--tinta)}
+
+.rejilla{display:grid; gap:14px; grid-template-columns:1fr}
+@media(min-width:620px){.rejilla{grid-template-columns:1fr 1fr}}
+.tarjeta{border:1px solid var(--linea); border-radius:3px; padding:16px; background:#fff}
+.tarjeta h3{font-size:17px; margin-bottom:.3em}
+.tarjeta p{margin:0; color:var(--suave); font-size:15px}
+
+.razones{list-style:none; margin:0; padding:0}
+.razones li{padding:12px 0 12px 30px; position:relative; border-bottom:1px solid var(--linea)}
+.razones li:last-child{border-bottom:0}
+.razones li::before{content:""; position:absolute; left:4px; top:19px; width:12px; height:2px;
+  background:var(--marca)}
+
+.dir{font-size:17px; margin-bottom:14px}
+.boton{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:48px; padding:0 20px; border-radius:3px; text-decoration:none; font-weight:700;
+  background:var(--marca); color:#fff; border:2px solid var(--marca)}
+.boton.hueco{background:#fff; color:var(--marca)}
+
+/* La barra que decide si llaman o no. Va fija abajo porque en un teléfono el
+   pulgar llega ahí, y con 56 px de alto para que se pueda tocar de verdad. */
+.barra{position:fixed; left:0; right:0; bottom:0; display:flex; z-index:9;
+  border-top:1px solid var(--linea); background:#fff;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.barra a{flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+  height:var(--alto); text-decoration:none; font-weight:700; font-size:16px; color:var(--marca)}
+.barra a + a{border-left:1px solid var(--linea)}
+.barra .wa{background:#25d366; color:#fff}
+.barra svg{width:20px; height:20px; fill:currentColor}
+
+.pie{padding:26px 0 34px; color:var(--suave); font-size:14px}
+</style>
+</head>
+<body>
+
+<header class="tapa"><div class="caja">
+  <p class="giro" id="giro"></p>
+  <h1 id="nombre"></h1>
+  <p class="lema" id="lema"></p>
+  <span class="estado" id="estado" hidden><span class="punto" id="punto"></span><span id="estadoTexto"></span></span>
+</div></header>
+
+<main>
+  <section id="secServicios" hidden><div class="caja">
+    <h2>Qué hacemos</h2>
+    <div class="rejilla" id="servicios"></div>
+  </div></section>
+
+  <section id="secHorario" class="claro" hidden><div class="caja">
+    <h2>Horarios</h2>
+    <ul class="horario" id="horario"></ul>
+  </div></section>
+
+  <section id="secPorque" hidden><div class="caja">
+    <h2>Por qué con nosotros</h2>
+    <ul class="razones" id="porque"></ul>
+  </div></section>
+
+  <section id="secDonde" class="claro" hidden><div class="caja">
+    <h2>Dónde estamos</h2>
+    <p class="dir" id="direccion"></p>
+    <a class="boton hueco" id="mapa" target="_blank" rel="noopener">Ver cómo llegar</a>
+  </div></section>
+</main>
+
+<footer class="pie"><div class="caja">
+  <p id="piePropio"></p>
+  <p id="pieHecho"></p>
+</div></footer>
+
+<nav class="barra" id="barra" hidden></nav>
+
+<script src="negocio.js"></script>
+<script>
+/* Todo sale de NEGOCIO. Lo que no venga, no se dibuja: una sección vacía se
+   esconde entera en vez de salir con un hueco o con un dato inventado. */
+(function(){
+  var N = window.NEGOCIO || {};
+  var $ = function(id){ return document.getElementById(id); };
+  var texto = function(id, v){ if(v){ $(id).textContent = v; } };
+
+  document.title = N.nombre ? N.nombre + (N.giro ? ' · ' + N.giro : '') : 'Sitio';
+  var d = document.querySelector('meta[name=description]');
+  if(d) d.content = [N.nombre, N.giro, N.direccion].filter(Boolean).join('. ');
+  if(N.color){
+    document.documentElement.style.setProperty('--marca', N.color);
+    var tc = document.querySelector('meta[name=theme-color]');
+    if(tc) tc.content = N.color;
+  }
+
+  /* el icono de la pestaña: la inicial del negocio sobre su color */
+  if(N.nombre){
+    var ini = N.nombre.trim().charAt(0).toUpperCase();
+    var col = (N.color || '#1f4e79').replace('#','%23');
+    $('icono').href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E"
+      + "%3Crect width='64' height='64' rx='8' fill='" + col + "'/%3E"
+      + "%3Ctext x='32' y='45' font-family='sans-serif' font-size='38' font-weight='700'"
+      + " text-anchor='middle' fill='%23ffffff'%3E" + encodeURIComponent(ini) + "%3C/text%3E%3C/svg%3E";
+  }
+
+  texto('nombre', N.nombre); texto('giro', N.giro); texto('lema', N.lema);
+  texto('direccion', N.direccion);
+  texto('piePropio', [N.nombre, N.direccion].filter(Boolean).join(' · '));
+  if(N.hecho) $('pieHecho').textContent = 'Sitio hecho por ' + N.hecho + '.';
+
+  /* ── servicios ── */
+  if((N.servicios||[]).length){
+    $('secServicios').hidden = false;
+    $('servicios').innerHTML = N.servicios.map(function(s){
+      return '<div class="tarjeta"><h3></h3><p></p></div>';
+    }).join('');
+    var cajas = $('servicios').children;
+    N.servicios.forEach(function(s, i){
+      cajas[i].querySelector('h3').textContent = s.que || '';
+      cajas[i].querySelector('p').textContent = s.detalle || '';
+    });
+  }
+
+  /* ── porqué ── */
+  if((N.porque||[]).length){
+    $('secPorque').hidden = false;
+    N.porque.forEach(function(r){
+      var li = document.createElement('li'); li.textContent = r; $('porque').appendChild(li);
+    });
+  }
+
+  /* ── horarios y «abierto ahora» ──────────────────────────────────────────
+     Esto es lo que contesta la pregunta por la que la gente busca a un negocio
+     de noche. Se calcula en el teléfono de quien mira, con SU hora. */
+  var DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  function abierto(rango){
+    var m = String(rango).match(/(\d{1,2}):(\d{2})\s*[–\-—a]+\s*(\d{1,2}):(\d{2})/);
+    if(!m) return null;
+    var ahora = new Date(), min = ahora.getHours()*60 + ahora.getMinutes();
+    var a = (+m[1])*60 + (+m[2]), b = (+m[3])*60 + (+m[4]);
+    return min >= a && min < b;
+  }
+  function esHoy(etiqueta){
+    var hoy = DIAS[new Date().getDay()];
+    var e = etiqueta.toLowerCase();
+    if(e.indexOf(hoy) >= 0) return true;
+    /* «Lunes a viernes» cubre de lunes a viernes */
+    var m = e.match(/(\w+)\s+a\s+(\w+)/);
+    if(m){
+      var i = DIAS.indexOf(m[1]), f = DIAS.indexOf(m[2]), n = new Date().getDay();
+      if(i >= 0 && f >= 0) return i <= f ? (n >= i && n <= f) : (n >= i || n <= f);
+    }
+    return false;
+  }
+  if((N.horarios||[]).length){
+    $('secHorario').hidden = false;
+    var hoyRango = null;
+    N.horarios.forEach(function(par){
+      var li = document.createElement('li');
+      var dia = document.createElement('span'); dia.className = 'dia'; dia.textContent = par[0];
+      var hor = document.createElement('span'); hor.textContent = par[1];
+      li.appendChild(dia); li.appendChild(hor);
+      if(esHoy(par[0])){ li.className = 'hoy'; hoyRango = par[1]; }
+      $('horario').appendChild(li);
+    });
+    var ab = hoyRango === null ? null : abierto(hoyRango);
+    if(ab !== null){
+      $('estado').hidden = false;
+      $('estadoTexto').textContent = ab ? 'Abierto ahora' : 'Cerrado ahora';
+      if(!ab) $('punto').className = 'punto no';
+    }
+  }
+
+  /* ── dónde ── */
+  if(N.direccion){
+    $('secDonde').hidden = false;
+    $('mapa').href = N.mapa || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(N.direccion));
+  }
+
+  /* ── la barra de abajo ── */
+  var partes = [];
+  if(N.telefono) partes.push('<a href="tel:' + N.telefono + '">'
+    + '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.6a1 1 0 0 1-.25 1z"/></svg>'
+    + 'Llamar</a>');
+  if(N.whatsapp) partes.push('<a class="wa" target="_blank" rel="noopener" href="https://wa.me/' + N.whatsapp + '">'
+    + '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm5.1 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6a11 11 0 0 1-4.2-3.9c-.3-.5-.7-1.1-.7-1.8s.4-1.1.6-1.3c.2-.2.4-.2.5-.2h.4c.1 0 .3 0 .5.4l.7 1.6c0 .1.1.2 0 .4l-.3.4-.2.3c-.1.1-.2.2 0 .5.2.3.7 1.2 1.6 1.9 1 .6 1.3.6 1.6.7.2 0 .4 0 .5-.2l.6-.7c.2-.2.3-.2.5-.1l1.5.7c.2.1.4.2.4.3.1.1.1.4 0 .7z"/></svg>'
+    + 'WhatsApp</a>');
+  if(partes.length){ $('barra').hidden = false; $('barra').innerHTML = partes.join(''); }
+  else { document.body.style.paddingBottom = '0'; }
+})();
+</script>
+</body>
+</html>
