@@ -186,6 +186,36 @@ cualquiera que abra la consola se la lleva.
 Y el proveedor entra por adaptador (regla §2): `TRADUCTOR_URL` y `TRADUCTOR_MODELO` son
 variables. El día que suba de precio, se cambia una variable y no el producto.
 
+## Leer la sala entera en inglés
+
+El botón **EN** de la barra. Son dos cosas y conviene no confundirlas:
+
+**La interfaz** —botones, rótulos, vacíos, avisos, fechas y horas— se traduce en la propia
+pantalla, con un diccionario. Sin red, sin llave, sin costo y sin esperar. Y sin duplicar el
+español: el diccionario sólo guarda el inglés, así que no hay dos versiones del mismo texto que
+mantener.
+
+**Los mensajes** los escribió una persona o un agente y no se pueden adivinar, así que ésos
+pasan por el traductor del servidor. En cuanto se prende el inglés **se piden todos, solos**, de
+veinte en veinte, y el hilo se repinta conforme llegan. Cada mensaje traducido lo dice y devuelve
+el original con un toque. Lo traducido se guarda en el aparato con una huella del texto: cambiar
+de idioma dos veces no vuelve a pagar, y si alguien edita un mensaje su traducción vieja caduca
+sola.
+
+**No necesita la llave de nadie.** Si `TRADUCTOR_LLAVE` está puesta, manda ese proveedor. Si no,
+cae al modelo que Cloudflare trae dentro del worker (enlace `ai` en `wrangler.jsonc`): sin cuenta
+de terceros, sin tarjeta y sin que nadie entre a un panel. Sin ninguno de los dos, sigue diciendo
+que está apagado en vez de fingir.
+
+**Lo que NO se traduce, a propósito:** el código, la salida de una orden y los nombres de
+archivo. Los imprimió una máquina y traducirlos sería enseñar algo que nunca se imprimió.
+
+**La compuerta:** `node sala/pruebas-idioma.mjs` abre la sala en inglés, recorre todo lo que se
+ve —texto y atributos— y **reprueba si queda algo en español** que no esté en su lista de
+excepciones, cada una con su razón escrita. Existe porque un diccionario que no está listado se
+queda en español y nadie se entera: no truena, no avisa, no sale en la consola. La primera
+versión dejaba cuarenta y dos textos sin traducir y sólo se vio mirando la pantalla.
+
 ## Las 150 ideas
 
 [`150-IDEAS.md`](150-IDEAS.md) — todo lo que se le puede meter, marcado con lo que ya está (46),

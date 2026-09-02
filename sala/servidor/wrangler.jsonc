@@ -26,6 +26,22 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Sala"] }],
 
+  // ── EL TRADUCTOR QUE NO NECESITA LA LLAVE DE NADIE ──────────────────────
+  // Carlos, e404: «haz que el traductor a inglés también traduzca los
+  // mensajes». Traducir el hilo pide un modelo, y un modelo de fuera pide una
+  // llave — o sea que pedía que una persona entrara a un panel a poner un
+  // secreto, y eso deja la función esperando a que alguien tenga un rato.
+  //
+  // Esto es el camino que no espera a nadie: Cloudflare trae su propio modelo
+  // y el worker lo alcanza con un enlace, sin cuenta de terceros, sin tarjeta
+  // y sin secretos. Como este repo se despliega solo al entrar a main, con
+  // fusionar ya traduce.
+  //
+  // No sustituye a TRADUCTOR_LLAVE: si algún día se pone, ése manda, porque
+  // se escogió probándolo. Éste es el suelo, para que la mesa no dependa de
+  // que alguien esté disponible.
+  "ai": { "binding": "AI" },
+
   "vars": {
     // De dónde se acepta que llamen. En claro y sin comodín.
     "ORIGENES": "https://mazi-central.palomazi9111.workers.dev,http://localhost:8792,http://127.0.0.1:8792",
@@ -48,6 +64,9 @@
     "TRADUCTOR_URL": "https://api.groq.com/openai/v1/chat/completions",
     "TRADUCTOR_MODELO": "qwen/qwen3.8-27b"
     // LLAVES no va aquí. Ver abajo.
+    //
+    // Y si TRADUCTOR_LLAVE no está puesta, esto NO deja la sala sin traducir:
+    // cae al enlace "ai" de arriba, que es de Cloudflare y no pide llave.
   }
 
   // ── EL TRADUCTOR · «explícamelo simple» ─────────────────────────────────

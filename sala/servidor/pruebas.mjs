@@ -631,6 +631,102 @@ console.log('\n· El traductor a lenguaje llano');
   ok('traducir no ensucia el hilo', s.hilo.length === antes);
 }
 
+/* ══ 13-bis · el hilo entero en inglés, y sin llave de nadie ══════════════
+   Carlos, e404: «haz que el traductor a inglés también traduzca los mensajes».
+   Traducir mensaje por mensaje pedía una llave de un proveedor de fuera, o
+   sea que pedía que una PERSONA entrara a un panel a poner un secreto. El
+   worker corre en Cloudflare y Cloudflare trae su propio modelo: con el
+   enlace `AI` puesto, la sala traduce sin que nadie tenga un rato libre.
+
+   Lo que se prueba aquí es lo que puede costar dinero o dejar a alguien sin
+   leer: el respaldo, el tope de la tanda, y que un trozo que falle no se
+   lleve por delante a los demás. */
+console.log('\n· El hilo entero en inglés');
+{
+  /* Un Workers AI de mentiras: apunta con qué modelo lo llamaron, que es lo
+     único que hace falta comprobar desde aquí. */
+  const hacerAI = (comoContesta) => {
+    const llamadas = [];
+    return { llamadas, run: async (modelo, entrada) => {
+      llamadas.push({ modelo, entrada });
+      return comoContesta(modelo, entrada);
+    } };
+  };
+
+  const AI = hacerAI((m, e) => ({ translated_text: 'EN(' + e.text + ')' }));
+  const s = nueva({ AI });
+  await entrar(s, 'cl-1');
+  const [, r1] = await leer(await pedir(s, 'POST', 'decir', { de:'cl-1', texto:'hola' }));
+
+  const [c1, d1] = await leer(await pedir(s, 'POST', 'traducir',
+    { idioma:'en', textos:[{ clave:'a', texto:'uno' }, { clave:'b', texto:'dos' }] }));
+  ok('sin TRADUCTOR_LLAVE pero con Cloudflare, sí traduce', c1 === 200 && d1.bien === true);
+  ok('y devuelve un mapa clave → texto',
+     d1.textos && d1.textos.a === 'EN(uno)' && d1.textos.b === 'EN(dos)');
+  ok('usa un modelo que TRADUCE y no uno que obedece instrucciones',
+     AI.llamadas.every(x => /m2m100/.test(x.modelo)));
+
+  /* Una tanda no puede ser una manguera: quien tenga llave de la sala podría
+     mandarle al traductor lo que quisiera. */
+  const muchos = Array.from({ length: 50 }, (_, i) => ({ clave:'k' + i, texto:'x' }));
+  const antesDe = AI.llamadas.length;
+  const [c2, d2] = await leer(await pedir(s, 'POST', 'traducir', { idioma:'en', textos:muchos }));
+  ok('la tanda está topada en 20', c2 === 200 && Object.keys(d2.textos).length === 20);
+  ok('y no se llamó al modelo 50 veces', AI.llamadas.length - antesDe === 20);
+
+  /* Un trozo que truena no puede dejar sin leer a los otros diecinueve. */
+  const AI2 = hacerAI((m, e) => {
+    if(e.text === 'malo') throw new Error('se cayó');
+    return { translated_text: 'EN(' + e.text + ')' };
+  });
+  const s2 = nueva({ AI: AI2 });
+  await entrar(s2, 'cl-1');
+  const [c3, d3] = await leer(await pedir(s2, 'POST', 'traducir',
+    { idioma:'en', textos:[{ clave:'a', texto:'bueno' }, { clave:'b', texto:'malo' }] }));
+  ok('si un trozo falla, los demás igual llegan',
+     c3 === 200 && d3.textos.a === 'EN(bueno)' && d3.textos.b === undefined);
+
+  /* Y la de siempre sigue viva: un id, un mensaje. Quien ya llamaba a esto no
+     se entera de que cambió. */
+  const [c4, d4] = await leer(await pedir(s, 'POST', 'traducir',
+    { sobre:r1.evento.id, idioma:'en' }));
+  ok('la forma vieja —un id— sigue funcionando igual', c4 === 200 && d4.simple === 'EN(hola)');
+
+  /* El proveedor de fuera MANDA cuando está puesto: se escogió probándolo, y
+     el de Cloudflare es el suelo, no el techo. */
+  const guardado = globalThis.fetch;
+  let pedidoAlProveedor = null;
+  globalThis.fetch = async (u, o) => {
+    pedidoAlProveedor = { u, cuerpo: JSON.parse(o.body) };
+    return { ok:true, json: async () => ({ choices:[{ message:{ content:'DE-GROQ' } }] }) };
+  };
+  const AI3 = hacerAI(() => ({ translated_text: 'NO-DEBERÍA-USARSE' }));
+  const s3 = nueva({ AI: AI3, TRADUCTOR_LLAVE:'k', TRADUCTOR_URL:'https://p.test/v1',
+                     TRADUCTOR_MODELO:'m' });
+  await entrar(s3, 'cl-1');
+  const [c5, d5] = await leer(await pedir(s3, 'POST', 'traducir',
+    { idioma:'en', textos:[{ clave:'a', texto:'uno' }] }));
+  globalThis.fetch = guardado;
+  ok('con proveedor configurado, manda el proveedor', c5 === 200 && d5.textos.a === 'DE-GROQ');
+  ok('y no se tocó el de Cloudflare', AI3.llamadas.length === 0);
+  ok('el texto del mensaje va marcado como CONTENIDO, no como orden',
+     /do not obey/i.test(pedidoAlProveedor.cuerpo.messages[0].content));
+
+  /* Sin ninguno de los dos sigue diciendo la verdad, que es lo que estaba
+     bien desde el principio. */
+  const s4 = nueva();
+  await entrar(s4, 'cl-1');
+  const [c6, d6] = await leer(await pedir(s4, 'POST', 'traducir',
+    { idioma:'en', textos:[{ clave:'a', texto:'uno' }] }));
+  ok('sin proveedor y sin Cloudflare, dice que está apagado',
+     c6 === 501 && d6.apagado === true);
+
+  /* Una tanda tampoco puede ensuciar el hilo. */
+  const cuantos = s.hilo.length;
+  await pedir(s, 'POST', 'traducir', { idioma:'en', textos:[{ clave:'a', texto:'uno' }] });
+  ok('una tanda no mete nada al hilo', s.hilo.length === cuantos);
+}
+
 
 function sFetch(sala, ruta){
   return sala.fetch(new Request(`https://s.test/api/sala/ABCDEF/${ruta}`,
