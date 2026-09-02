@@ -56,8 +56,40 @@ console.log('\n· La holgura mueve recursos de verdad');
      r.banda.nombre + ' con holgura ' + r.holgura);
   ok('y holgado compra más revisiones que austeridad',
      banda(5).revisiones > banda(0.5).revisiones);
-  ok('las bandas van de menos a más y ninguna se salta',
-     BANDAS.every((b, i) => i === 0 || b.revisiones >= BANDAS[i - 1].revisiones));
+  /* ⚠ ESTA PRUEBA SE PUSO ROJA AL AÑADIR `a prueba`, Y TENÍA RAZÓN. La
+     invariante que quería sostener es que LA ESCALERA DE ESCASEZ crece con la
+     holgura: sin-saldo → austeridad → normal → holgado. `a prueba` no es un
+     peldaño de esa escalera, es una excepción por edad que vive fuera de ella.
+     Así que la prueba pasa a comprobar la escalera de verdad, y se le añade la
+     que faltaba: que la excepción no se cuele en el orden. Corregir lo que la
+     prueba DICE es legítimo; bajarle el listón para que se calle, no. */
+  const escalera = BANDAS.filter(b => b.nombre !== 'a prueba');
+  ok('la escalera de escasez va de menos a más y ninguna se salta',
+     escalera.every((b, i) => i === 0 || b.revisiones >= escalera[i - 1].revisiones));
+  ok('«a prueba» no es un peldaño: está fuera de la escalera',
+     BANDAS[0].nombre === 'a prueba' && escalera.length === BANDAS.length - 1);
+}
+
+console.log('\n· Un puesto recién nacido no es un puesto fracasado');
+{
+  /* ⚠ ESTE CASO SALIÓ DE CORRER LA CARTERA CONTRA EL PRIMER PUESTO DE VERDAD,
+     no de inventarme datos. `sitio-chico` tenía medio día de vida, cero ventas
+     —normal— y salía en `sin-saldo`, o sea con el alcance de un moribundo. Los
+     dos dan saldo negativo; lo que los separa es la ventana de 30 días que el
+     modelo de Syl ya prometía y mi cartera no sabía leer. */
+  const c = libroCon([{ puesto: 'nuevo', tipo: 'alta', concepto: 'abre', fecha: dia(1) }]);
+  const bebe = cartera('nuevo', { carpeta: c, hasta: new Date(Date.UTC(2026, 8, 2)) });
+  ok('con un día de vida y sin ventas queda «a prueba», no «sin-saldo»',
+     bebe.banda.nombre === 'a prueba', 'quedó en ' + bebe.banda.nombre);
+  ok('y a prueba sí puede trabajar: 2 revisiones, no 0',
+     bebe.banda.revisiones === 2, 'le dieron ' + bebe.banda.revisiones);
+
+  const viejo = cartera('nuevo', { carpeta: c, hasta: new Date(Date.UTC(2026, 9, 15)) });
+  ok('pasada la ventana sin cobrar, ahí sí es «sin-saldo»',
+     viejo.banda.nombre === 'sin-saldo', 'quedó en ' + viejo.banda.nombre);
+  ok('MUTACIÓN: sin mirar los días, el recién nacido caería en sin-saldo',
+     banda(bebe.holgura) .nombre === 'sin-saldo' && bebe.banda.nombre === 'a prueba',
+     'la banda sin días dio ' + banda(bebe.holgura).nombre);
 }
 
 console.log('\n· No se adivina una conversión de moneda');

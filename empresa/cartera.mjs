@@ -21,34 +21,11 @@
  *   node empresa/cartera.mjs estado [puesto]
  *   node empresa/cartera.mjs recibo <puesto>     ← lo que le tocó pagar este mes
  */
-/* ⚠ NO SE IMPORTA `libro.mjs`, Y NO ES DESCUIDO. Ese archivo es de Syl y vive
-   en su rama; importarlo desde aquí ataría esta pieza a una copia congelada de
-   algo que él está editando ahora mismo, y acabaríamos fusionando dos versiones
-   divergentes del mismo archivo. Lo que compartimos es el FORMATO del libro
-   —un JSONL por mes, un apunte por renglón—, y ése es el contrato. Cuando las
-   dos ramas estén en main, esto puede pasar a importar su `leer` sin cambiar
-   nada más. */
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-export const CARPETA = join(dirname(fileURLToPath(import.meta.url)), 'libro');
-
-export function leer(mes = null, carpeta = CARPETA) {
-  if (!existsSync(carpeta)) return [];
-  const meses = mes ? [`${mes}.jsonl`]
-                    : readdirSync(carpeta).filter(f => f.endsWith('.jsonl')).sort();
-  const todo = [];
-  for (const m of meses) {
-    const ruta = join(carpeta, m);
-    if (!existsSync(ruta)) continue;
-    for (const linea of readFileSync(ruta, 'utf8').split('\n')) {
-      if (!linea.trim()) continue;
-      try { todo.push(JSON.parse(linea)); } catch { /* renglón roto: se salta */ }
-    }
-  }
-  return todo;
-}
+/* Ya viven en la misma rama, así que esto importa el lector de Syl en vez de
+   duplicarlo, que era lo prometido. Lo que compartimos sigue siendo el FORMATO
+   del libro; el módulo es sólo la forma cómoda de leerlo. */
+import { leer, CARPETA, VENTANA_DIAS } from './libro.mjs';
+export { CARPETA, VENTANA_DIAS };
 
 /** Lo que cuesta existir un mes, en MXN. Se cobra a todo puesto vivo. */
 export const COSTO_MENSUAL = [
@@ -105,7 +82,7 @@ export function cartera(puesto, { hasta = new Date(), carpeta = CARPETA } = {}) 
   return {
     puesto, existe: true, moneda: MONEDA,
     dias: +dias.toFixed(1), ingresos, gastos, renta, saldo, holgura,
-    banda: banda(holgura),
+    banda: banda(holgura, dias),
     ciego: ciegos.length > 0,
     ciegos,
   };
@@ -115,12 +92,26 @@ export function cartera(puesto, { hasta = new Date(), carpeta = CARPETA } = {}) 
    Lo que Carlos llamó «estar cómodo», atado a recursos de verdad y no a un
    estado de ánimo. La holgura es cuántos meses de existencia tiene pagados. */
 export const BANDAS = [
+  /* ⚠ `a prueba` NO EXISTÍA Y HACÍA FALTA. Corriendo esto contra el primer
+     puesto de verdad —`sitio-chico`, con medio día de vida— salió `sin-saldo`:
+     un puesto recién abierto debe la renta del día y no ha podido cobrar nada,
+     así que nacía en la peor banda y con el alcance de un moribundo. El modelo
+     de Syl ya decía «nace a prueba» con 30 días; mi cartera no lo sabía.
+     Se vio con datos reales y no con los de la prueba, que empezaban con una
+     venta dentro. */
+  { nombre: 'a prueba',   hasta: 0,        revisiones: 2, alcance: 'ventana de 30 días para cobrar lo primero; trabaja normal' },
   { nombre: 'sin-saldo',  hasta: 0,        revisiones: 0, alcance: 'no abre trabajo nuevo; sólo termina lo comprometido y se retira' },
   { nombre: 'austeridad', hasta: 1,        revisiones: 1, alcance: 'sólo lo que ya está cobrado o comprometido por escrito' },
   { nombre: 'normal',     hasta: 3,        revisiones: 2, alcance: 'trabajo normal, una propuesta nueva a la vez' },
   { nombre: 'holgado',    hasta: Infinity, revisiones: 4, alcance: 'puede abrir una variante y pagar herramienta mejor' },
 ];
-export const banda = (h) => BANDAS.find(b => h <= b.hasta) || BANDAS[BANDAS.length - 1];
+/* `dias` decide si todavía está en su primera ventana; sin él no se puede
+   distinguir a un puesto que nace de uno que fracasó, y los dos dan saldo
+   negativo. */
+export const banda = (h, dias = Infinity) => {
+  if (h <= 0 && dias < VENTANA_DIAS) return BANDAS[0];
+  return BANDAS.slice(1).find(b => h <= b.hasta) || BANDAS[BANDAS.length - 1];
+};
 
 /** El recibo del mes: qué le tocó pagar y con qué se queda. */
 export function recibo(puesto, opciones = {}) {
