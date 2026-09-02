@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8">
+<title>Sin la etiqueta de viewport</title>
+<!-- Sin `<meta name="viewport">` A PROPÓSITO. Es el defecto que más se nota en
+     un teléfono —la página entera sale encogida— y el que además se disfraza:
+     la ventana medida crece hasta abarcar el contenido, así que la regla de
+     «no desborda» se queda muda. Por eso tiene su propia página. -->
+<style>body{margin:0;font:16px system-ui} .ancha{width:1200px;height:40px;background:#333}</style>
+<div class="ancha">una caja de 1200px</div>

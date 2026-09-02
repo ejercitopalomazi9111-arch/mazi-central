@@ -1,0 +1,48 @@
+<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página con defectos a propósito</title>
+<!-- ⚠ ESTA PÁGINA ESTÁ ROTA A PROPÓSITO. Cada defecto es el que una regla de
+     DISENO-WEB.md dice que no se haga, y `pruebas-revisar.mjs` comprueba que
+     el medidor los encuentre TODOS. Si algún día alguien la «arregla», las
+     pruebas se ponen verdes por la peor razón posible. -->
+<style>
+  body { margin:0; font:16px system-ui; }
+  .ancha { width:1200px; height:40px; background:#333; }   /* desborda de lado */
+  .chico { width:20px; height:20px; }                       /* más chico que el dedo */
+  /* ⚠ 40×40 A PROPÓSITO: pasa de 32 y no llega a 44. Sin este de en medio, la
+     prueba del dedo pasaba con el mínimo puesto en 24 —lo comprobé mutándolo—
+     porque el único botón chico medía 20 y caía por debajo de cualquier
+     número. Un caso justo por debajo del límite es lo que fija el límite. */
+  .casi { width:40px; height:40px; }
+  .apretado { width:120px; height:18px; overflow:hidden; }  /* el texto no cabe */
+  .angosto { width:70px; }                                  /* el nombre se parte */
+  .ancho-de-sobra { width:320px; min-height:44px; font-size:16px; }
+  input.chiquito { font-size:12px; }                        /* zoom de Safari */
+  .tira { overflow-x:auto; display:flex; gap:12px; }
+  .vagon { flex:0 0 300px; height:60px; background:#1E1428; }
+  /* ⚠ LOS VAGONES LLEVAN CLASE A PROPÓSITO. Sin ella el informe los nombra
+     «div» a secas, y la prueba que comprueba que NO se les acuse buscaba
+     «.tira» en un texto donde esa palabra no podía salir nunca: pasaba sola.
+     Un nombre que no se imprime es una prueba que no prueba. */
+</style>
+<div class="ancha">me salgo de lado</div>
+<button class="chico">x</button>
+<button class="casi">y</button>
+
+<!-- Un carrusel BIEN hecho, en la MISMA página que sí desborda de verdad.
+     Va aquí y no en la limpia porque la lista de culpables sólo se arma
+     cuando la página desborda: en una página que no desborda, «el carrusel no
+     se reporta» pasa sola sin comprobar nada. Lo comprobé mutando el filtro y
+     la prueba siguió verde. -->
+<div class="tira"><div class="vagon"></div><div class="vagon"></div><div class="vagon"></div><div class="vagon"></div></div>
+<div class="apretado">este texto es bastante más largo que su caja y se corta</div>
+<button class="angosto">Guardar los cambios</button>
+<!-- ⚠ ÉSTE NO DEBE REPORTARSE: icono y etiqueta en spans, en UN renglón. Es
+     como está escrito medio menú de La Sala, y la primera versión del medidor
+     decía que caía «en 4 renglones» — contaba un rectángulo por span y otro
+     por su texto. Un botón bien hecho al que se acusa es peor que uno malo que
+     se escapa: la siguiente vez ya nadie lee el informe. -->
+<button class="ancho-de-sobra"><span>🔔</span><span>Avisos al teléfono</span></button>
+<input class="chiquito" value="me hace zoom">
+<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="30" height="30">
+<p id="repe">uno</p><p id="repe">dos</p>
