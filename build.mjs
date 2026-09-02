@@ -31,6 +31,13 @@ const VA = [
   'juegos',
   'ligas-mazi', 'pacto-roto', 'romero', 'inkwell', 'vitallink', 'life-connect',
   'manzanilla', 'herramientas',
+  /* Los sitios entregados a clientes. Sin esta línea la carpeta existe en el
+     repo y NO en el sitio, así que «publicado y funcionando» —que es lo que se
+     cobra en `empresa/sitio-chico/OFERTA.md`— sería mentira. Medido: sin ella
+     `dist/` sale sin un solo archivo del cliente.
+     Va `clientes` y NO `empresa`: en `empresa/` están el material de venta, el
+     método de prospección y el libro de cuentas, y eso no se publica. */
+  'clientes',
   /* La lámina: el atlas del departamento de diseño. Sin esta línea la carpeta
      existe en el repo y NO en el sitio, y el enlace devuelve 404. */
   'lamina',

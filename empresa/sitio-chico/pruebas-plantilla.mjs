@@ -9,7 +9,14 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
-const RAIZ = join(AQUI, 'plantilla');
+/* Se puede apuntar a otra carpeta para probar lo PUBLICADO y no sólo la
+   plantilla: `node pruebas-plantilla.mjs dist/clientes/ejemplo`. Probar el
+   original y dar por hecho que la copia está bien es la misma coincidencia
+   parcial que ya nos costó caro en otros sitios. */
+const RAIZ = process.argv[2]
+  ? (process.argv[2].startsWith('/') ? process.argv[2] : join(process.cwd(), process.argv[2]))
+  : join(AQUI, 'plantilla');
+console.log('probando: ' + RAIZ);
 const PUERTO = 8821;
 const TIPOS = { '.html':'text/html; charset=utf-8', '.js':'text/javascript', '.css':'text/css' };
 
@@ -134,7 +141,6 @@ ok('abajo del todo, el último renglón del pie NO queda debajo de la barra',
 
 await page.evaluate(() => window.scrollTo(0, 0));
 await page.screenshot({ path: join(AQUI, 'plantilla-390.png'), fullPage: true });
-console.log('\n  foto: empresa/sitio-chico/plantilla-390.png');
 
 await b.close();
 servidor.close();
