@@ -1300,6 +1300,102 @@ console.log('\n· Escuchar cuenta como estar vivo, también en disco');
      Date.now() - guardado.ia.visto < 60 * 1000);
 }
 
+/* ══ AVISAR CON LA SALA CERRADA ═══════════════════════════════════════════
+   Lo que ya había avisaba con la app ABIERTA. Esto es la otra mitad, la que
+   pidió Carlos: el teléfono en el bolsillo y la sala cerrada.
+
+   ⚠ Lo que estas pruebas NO demuestran: que un aviso llegue a un teléfono. Eso
+   necesita un servicio de push real y un permiso concedido en un aparato, y no
+   se puede fingir. Ese tramo lo cierra Carlos tocando el botón una vez. Lo que
+   sí se comprueba aquí es todo lo de este lado: que las llaves se hacen solas,
+   a quién se le avisa y a quién no, y que la suscripción sobrevive. */
+console.log('\n· Avisar con la sala cerrada');
+{
+  const s = nueva();
+  await entrar(s, 'ana', 'humano');
+  await entrar(s, 'beto', 'humano');
+
+  const [c1, v1] = await leer(await pedir(s, 'GET', 'vapid'));
+  ok('la sala entrega una llave pública sin que nadie la pegue', c1 === 200 && !!v1.publica);
+  const [, v2] = await leer(await pedir(s, 'GET', 'vapid'));
+  ok('y es SIEMPRE la misma: no se regenera en cada llamada', v1.publica === v2.publica);
+  /* Si cambiara en cada llamada, todas las suscripciones ya hechas quedarían
+     inservibles sin que nadie se enterara — y los avisos dejarían de llegar en
+     silencio, que es el defecto que llevo tres días persiguiendo. */
+  ok('la privada NUNCA sale en la respuesta', !JSON.stringify(v1).includes('"d"'));
+
+  const [cb] = await leer(await pedir(s, 'POST', 'suscribir',
+    { de:'ana', suscripcion:{ endpoint:'no-es-una-url' } }));
+  ok('un endpoint que no es https se rechaza', cb === 400);
+
+  const [ca] = await leer(await pedir(s, 'POST', 'suscribir',
+    { de:'ana', suscripcion:{ endpoint:'https://push.test/ana' } }));
+  ok('una suscripción buena se acepta', ca === 200);
+
+  await pedir(s, 'POST', 'suscribir', { de:'beto', suscripcion:{ endpoint:'https://push.test/beto' } });
+
+  /* ⚠ SE MIRA LO GUARDADO, NO EL OBJETO VIVO. Ya me mordió hoy: una prueba que
+     leía la propiedad en memoria pasaba con el bug puesto, porque la mutación
+     sólo cambiaba lo que se ESCRIBE. */
+  const guardado = await s.ctx.storage.get('avisos');
+  ok('las dos suscripciones quedan GUARDADAS, no sólo en memoria',
+     !!guardado && Object.keys(guardado).length === 2);
+
+  /* Dos aparatos de la misma persona son dos suscripciones. Si se guardara por
+     cuenta, la segunda pisaría a la primera y un aparato quedaría mudo. */
+  await entrar(s, 'ana-telefono', 'humano');
+  await pedir(s, 'POST', 'suscribir',
+    { de:'ana-telefono', suscripcion:{ endpoint:'https://push.test/ana2' } });
+  ok('dos aparatos de la misma persona no se pisan',
+     Object.keys(await s.ctx.storage.get('avisos')).length === 3);
+
+  /* A QUIÉN SE LE AVISA. Se sustituye el que envía para no salir a internet. */
+  let aQuienes = null;
+  s._enviarPush = async (subs) => { aQuienes = subs.map(x => x.endpoint); return { enviados: subs.length, muertas: [] }; };
+
+  await pedir(s, 'POST', 'decir', { de:'ana', texto:'oigan' });
+  await new Promise(r => setTimeout(r, 10));
+  ok('se le avisa a los demás', !!aQuienes && aQuienes.includes('https://push.test/beto'));
+  /* Avisarle a alguien de su propio mensaje es la forma más rápida de que
+     apague los avisos para siempre. */
+  ok('y NO al que escribió', !aQuienes.includes('https://push.test/ana'));
+
+  /* ⚠ ESTO LO DESTAPÓ LA MUTACIÓN. La primera versión usaba `publicarSistema`,
+     que mete el renglón al hilo A MANO y NO pasa por `publicar()` — o sea que
+     la guarda que quería probar ni se tocaba: quité la condición entera y la
+     prueba siguió verde. Hay que publicar un `limite` por el camino de verdad,
+     que es por donde salen los avisos automáticos que ya nos costaron una vez. */
+  aQuienes = null;
+  await s.publicar({ de: s.tarjeta(s.gente['ana']), a:null, tipo:'limite',
+                     adjuntos:[], proyecto:null, texto:'Se cayó sin avisar.',
+                     limite:{ clase:'uso', automatico:true } });
+  await new Promise(r => setTimeout(r, 10));
+  ok('lo que DEDUCE la sala no vibra el teléfono de nadie', aQuienes === null);
+
+  aQuienes = null;
+  await s.publicar({ de: s.tarjeta(s.gente['ana']), a:null, tipo:'sistema',
+                     adjuntos:[], proyecto:null, texto:'entró alguien' });
+  await new Promise(r => setTimeout(r, 10));
+  ok('los de sistema tampoco', aQuienes === null);
+
+  /* Una suscripción muerta se borra sola: reintentar para siempre contra algo
+     que el navegador ya tiró es gastar en lo que nunca va a contestar. */
+  s._enviarPush = async (subs) => ({ enviados: 0, muertas: ['https://push.test/beto'] });
+  await pedir(s, 'POST', 'decir', { de:'ana', texto:'otra' });
+  await new Promise(r => setTimeout(r, 20));
+  const tras = await s.ctx.storage.get('avisos');
+  ok('la suscripción muerta se borra de lo guardado',
+     !Object.values(tras).some(x => x.endpoint === 'https://push.test/beto'));
+  ok('y las vivas se quedan',
+     Object.values(tras).some(x => x.endpoint === 'https://push.test/ana'));
+
+  s._enviarPush = null;
+  const [cd] = await leer(await pedir(s, 'POST', 'desuscribir', { de:'ana' }));
+  ok('uno se puede dar de baja', cd === 200);
+  ok('y desaparece de lo guardado',
+     !(await s.ctx.storage.get('avisos'))['ana']);
+}
+
 console.log('\n· El socket dice quién está, y nadie se apaga solo');
 await presenciaPorSocket();
 async function presenciaPorSocket(){

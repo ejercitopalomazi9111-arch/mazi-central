@@ -323,6 +323,7 @@ const revuelto = (t) => {
    para no tener dos búsquedas distintas: una aquí y otra allá. Tener la
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
+import { generarVapid, empujarATodos } from './push.mjs';
 
 const ahora = () => Date.now();
 
@@ -381,6 +382,14 @@ export class Sala {
          para saber si un disparo es de verdad el olvido o es la vigilia
          pasando por ahí. Ver el comentario grande en `alarm()`. */
       this.ultimoUso = await ctx.storage.get('ultimoUso') || 0;
+      /* A quién avisarle con la sala CERRADA: `id de sesión → suscripción del
+         navegador`. Por sesión y no por cuenta porque el permiso lo da un
+         DISPOSITIVO: el teléfono de Carlos y su compu son dos suscripciones
+         distintas y las dos tienen que sonar. */
+      this.avisos   = await ctx.storage.get('avisos')   || {};
+      /* El par de llaves de esta sala. Se genera solo la primera vez que hace
+         falta; la privada no sale de aquí. Ver `push.mjs`. */
+      this.vapid    = await ctx.storage.get('vapid')    || null;
     });
   }
 
@@ -537,6 +546,54 @@ export class Sala {
     const actual = await this.ctx.storage.getAlarm();
     if(actual !== null && actual !== undefined && Math.abs(actual - cuando) < 30_000) return;
     await this.ctx.storage.setAlarm(cuando);
+  }
+
+  /* ── LAS LLAVES DE AVISO, QUE SE HACEN SOLAS ─────────────────────────────
+     La primera vez que hacen falta, la sala se genera su propio par y guarda
+     la privada. Nadie tiene que pegar un secreto en ningún lado — que es la
+     única forma de que esto funcione, porque Carlos dijo con todas sus letras
+     que esta vez no nos resuelve nada, y una función que espera a que alguien
+     pegue una llave es una función apagada. */
+  async llavesDeAviso(){
+    if(this.vapid) return this.vapid;
+    this.vapid = await generarVapid();
+    await this.ctx.storage.put({ vapid: this.vapid });
+    return this.vapid;
+  }
+
+  /* ── EL AVISO CON LA SALA CERRADA ────────────────────────────────────────
+     Se le manda a todos MENOS al que escribió: avisarle a alguien de su propio
+     mensaje es la forma más rápida de que apague los avisos.
+
+     Va por `luego()` y nunca con `await` en el camino de `/decir`: si un
+     servicio de push tarda tres segundos, quien escribió NO tiene por qué
+     esperarlos. El mensaje ya está guardado; el aviso es de después. */
+  async avisarCerrados(evento){
+    const de = evento?.de?.id;
+    const suscripciones = Object.entries(this.avisos || {})
+      .filter(([id]) => id !== de)
+      .map(([, s]) => s)
+      .filter(Boolean);
+    if(!suscripciones.length) return { enviados: 0, muertas: [] };
+
+    const vapid = await this.llavesDeAviso();
+    /* Una costura, y se declara en vez de esconderse: las pruebas sustituyen el
+       que envía para comprobar A QUIÉN se le avisa sin salir a internet. Sin
+       esto habría que fingir la red entera o no probar nada — y no probar a
+       quién se le avisa es justo donde se cuela el error de vibrarle el
+       teléfono a quien acaba de escribir. */
+    const enviar = this._enviarPush || empujarATodos;
+    const r = await enviar(suscripciones, vapid);
+
+    /* Las muertas se borran: reintentar para siempre contra una suscripción que
+       el navegador ya tiró es gastar en algo que nunca va a contestar. */
+    if(r.muertas.length){
+      for(const [id, s] of Object.entries(this.avisos)){
+        if(s && r.muertas.includes(s.endpoint)) delete this.avisos[id];
+      }
+      await this.ctx.storage.put({ avisos: this.avisos });
+    }
+    return r;
   }
 
   /* Un renglón de sistema metido a mano en el hilo. No pasa por `publicar()`
@@ -1090,6 +1147,16 @@ export class Sala {
     await this.guardar();
     this.difundir({ que:'evento', evento, vueltas:this.vueltas, tope:TOPE_VUELTAS });
     this.despertar(evento);
+
+    /* Los avisos al teléfono son SÓLO para lo que escribió una persona o un
+       agente. Los de `sistema` y los de `limite` los deduce la sala, y ya nos
+       costó una vez: la mesa marcó «se cayó» de alguien que estaba trabajando,
+       el otro agente lo repitió como hecho, y Carlos quedó esperando tres horas
+       y media a alguien que nunca se fue. Vibrarle el teléfono por una
+       conjetura sobre un tercero es peor todavía. */
+    if(evento.tipo !== 'sistema' && evento.tipo !== 'limite'){
+      this.luego(this.avisarCerrados(evento).catch(() => {}));
+    }
     return evento;
   }
 
@@ -1605,6 +1672,47 @@ export class Sala {
        basta con que la sesión exista y sea de esta cuenta — y esa comprobación
        sí se hace, porque si no cualquiera con la llave de invitado podría
        poner a «escribiendo» a una sesión ajena. */
+    /* ── LA LLAVE PÚBLICA PARA SUSCRIBIRSE ────────────────────────────────
+       El navegador la necesita para pedirle al servicio de push una
+       suscripción. Es PÚBLICA: se puede dar a cualquiera que ya entró a la
+       sala, y no sirve para mandar avisos — para eso hace falta la privada,
+       que no sale de aquí. */
+    if(pedido.method === 'GET' && ruta === 'vapid'){
+      const v = await this.llavesDeAviso();
+      return Response.json({ publica: v.publica });
+    }
+
+    /* ── APUNTARSE A LOS AVISOS CON LA SALA CERRADA ───────────────────────
+       Se guarda POR SESIÓN y no por cuenta: el permiso lo concede un
+       DISPOSITIVO. El teléfono de Carlos y su computadora son dos
+       suscripciones distintas y las dos tienen que sonar; guardarlo por cuenta
+       haría que la segunda pisara a la primera y que uno de los dos aparatos
+       se quedara mudo sin que nadie se enterara. */
+    if(pedido.method === 'POST' && ruta === 'suscribir'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+
+      const sus = c.suscripcion;
+      if(!sus || typeof sus.endpoint !== 'string' || !/^https:\/\//.test(sus.endpoint)){
+        return Response.json({
+          error:'Falta `suscripcion` con un `endpoint` https del navegador.' },
+          { status:400 });
+      }
+      this.avisos[quien.id] = { endpoint: sus.endpoint };
+      await this.ctx.storage.put({ avisos: this.avisos });
+      return Response.json({ bien:true, apuntados: Object.keys(this.avisos).length });
+    }
+
+    if(pedido.method === 'POST' && ruta === 'desuscribir'){
+      const c = await pedido.json().catch(() => ({}));
+      const quien = this.quienEs(c.de, cuenta);
+      if(quien.error) return quien.error;
+      delete this.avisos[quien.id];
+      await this.ctx.storage.put({ avisos: this.avisos });
+      return Response.json({ bien:true });
+    }
+
     if(pedido.method === 'POST' && ruta === 'escribiendo'){
       const c = await pedido.json().catch(() => ({}));
       const quien = this.gente[String(c.de || '')];

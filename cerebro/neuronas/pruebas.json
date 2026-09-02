@@ -296,6 +296,40 @@
         "la-prueba-se-ensucia-su-premisa",
         "proceso-huerfano-reportado-muerto"
       ]
+    },
+    {
+      "id": "prueba-de-texto-que-pasa-con-la-cadena-vacia",
+      "titulo": "«No dice la mentira» pasaba porque no decía nada",
+      "gravedad": "alta",
+      "sintoma": "Una prueba que comprueba que un letrero NO promete algo queda verde — y el letrero ni siquiera aparece.",
+      "causa": "La comprobación era una negación sobre el texto. Una cadena vacía tampoco contiene la frase prohibida, así que pasa sola.",
+      "porque": "La negación se escribe pensando en el caso malo, y el caso de «no hay nada que leer» no se parece al caso malo.",
+      "arreglo": "Antes de toda negación, una afirmación que establezca la premisa: que el texto EXISTE. Dos líneas, no una.",
+      "comoCazarlo": "Mutar el código para que el elemento no se pinte. Si la negación sigue verde, no estaba probando nada.",
+      "consejo": "Toda prueba en negativo necesita una hermana en positivo, o es una prueba que se cumple por ausencia.",
+      "senales": [
+        "la prueba pasa y el bug está ahí",
+        "verde y no funciona",
+        "no prueba nada"
+      ],
+      "salioDe": "Las pruebas de los avisos de La Sala: la negación pasaba mientras el letrero tronaba con «letrero is not defined»."
+    },
+    {
+      "id": "el-navegador-sin-cabeza-que-no-sabe-de-notificaciones",
+      "titulo": "El Chromium sin cabeza dice `denied` pase lo que pase",
+      "gravedad": "media",
+      "sintoma": "`grantPermissions(['notifications'])` no cambia nada: `Notification.permission` sigue en `denied` y toda la prueba se cae sin explicar por qué.",
+      "causa": "El Chromium sin cabeza no implementa notificaciones. No es que el permiso se niegue: es que no hay a qué concedérselo.",
+      "porque": "El resto de los permisos —cámara, ubicación, portapapeles— sí se conceden así, y nada dice que éste sea distinto.",
+      "arreglo": "Fingir el `Notification` del sistema con `addInitScript` ANTES de que cargue la página, y decir en el encabezado de la prueba que lo fingido es el permiso del APARATO y nada más.",
+      "comoCazarlo": "Un renglón: abrir cualquier página y leer `Notification.permission`. Si dice `denied` sin haber preguntado, es esto.",
+      "consejo": "Fingir el permiso está bien; fingir el código propio no. La frontera se dibuja en el encabezado de la prueba para que se vea qué quedó demostrado.",
+      "senales": [
+        "grantPermissions no funciona",
+        "permission siempre denied",
+        "la prueba de notificaciones no arranca"
+      ],
+      "salioDe": "Se midió en este contenedor con playwright 1.56, en modo normal y con `--headless=new`. Los dos: `denied`."
     }
   ]
 }
