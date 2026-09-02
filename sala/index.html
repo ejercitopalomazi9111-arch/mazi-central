@@ -2873,6 +2873,22 @@ function armarSalida(el){
    viejo. Un `throw` aquí dejaría a Carlos sin los avisos que SÍ funcionan. */
 const PUEDE_PUSH = 'serviceWorker' in navigator && 'PushManager' in window;
 
+/* ⚠ NADA DE LA INTERFAZ PUEDE COLGAR DE UNA PROMESA SIN PLAZO, y esto lo
+   reportó Carlos: «no me deja desactivar y reactivar las notificaciones».
+   El botón esperaba a `serviceWorker.ready`, a `getSubscription()` y a
+   `unsubscribe()`, que en un iPhone —y sobre todo en una app añadida a la
+   pantalla de inicio— pueden no volver NUNCA. Y si una no vuelve, la línea
+   que repinta el botón no corre: el interruptor se queda igual, el cajón
+   abierto, y desde fuera se ve como que la app no hace nada.
+
+   No hace falta saber cuál de las tres se cuelga para arreglarlo bien: lo
+   que estaba mal era depender de que ninguna lo hiciera. */
+const conPlazo = (promesa, ms, queEs) => Promise.race([
+  Promise.resolve(promesa),
+  new Promise((_, no) => setTimeout(
+    () => no(new Error(`${queEs} tardó más de ${ms/1000}s y se dejó de esperar`)), ms)),
+]);
+
 const deB64url = (s) => {
   const t = (s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
   const bin = atob(t);
@@ -2883,17 +2899,26 @@ const aB64url = (buf) => {
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
+/* El porqué del último fallo, para poder DECIRLO en pantalla. En un iPhone no
+   hay consola que abrir: si el motivo no sale en el letrero, no existe. */
+let porQueNoPush = '';
+
 async function apuntarAPush(){
-  if(!PUEDE_PUSH || !sala || demo || !yo) return false;
+  if(!PUEDE_PUSH){ porQueNoPush = 'este navegador no sabe de avisos en segundo plano'; return false; }
+  if(!sala || demo || !yo){ porQueNoPush = 'todavía no estás dentro de una sala'; return false; }
+  porQueNoPush = '';
   try{
     /* El service worker vive en `sala/sw.js`, o sea al lado de esta página:
        su alcance sale siendo `/sala/` sin tener que pedir nada raro. */
-    const reg = await navigator.serviceWorker.register('sw.js');
-    await navigator.serviceWorker.ready;
+    const reg = await conPlazo(navigator.serviceWorker.register('sw.js'), 8000,
+                               'registrar el ayudante');
+    await conPlazo(navigator.serviceWorker.ready, 8000, 'que el ayudante despierte');
 
-    const r = await fetch(`${SERVIDOR}/api/sala/${sala}/vapid`, { headers: conLlave() });
+    const r = await conPlazo(
+      fetch(`${SERVIDOR}/api/sala/${sala}/vapid`, { headers: conLlave() }),
+      8000, 'pedirle la llave a la sala');
     const { publica } = await r.json();
-    if(!publica) return false;
+    if(!publica){ porQueNoPush = 'la sala no dio su llave pública'; return false; }
     const llavePub = deB64url(publica);
 
     /* ⚠ UNA SUSCRIPCIÓN VIEJA QUEDA ATADA A LA LLAVE CON LA QUE NACIÓ. Si la
@@ -2903,18 +2928,22 @@ async function apuntarAPush(){
        rechaza el servicio de push con un 403. Se ve como «todo bien y nada
        llega», que es el peor de los estados. Por eso se compara y, si no
        coincide, se tira y se pide otra. */
-    let sus = await reg.pushManager.getSubscription();
+    let sus = await conPlazo(reg.pushManager.getSubscription(), 8000,
+                             'mirar si ya estabas apuntado');
     if(sus){
       const vieja = sus.options && sus.options.applicationServerKey;
-      if(!vieja || aB64url(vieja) !== publica){ await sus.unsubscribe(); sus = null; }
+      if(!vieja || aB64url(vieja) !== publica){
+        await conPlazo(sus.unsubscribe(), 8000, 'soltar la suscripción vieja');
+        sus = null;
+      }
     }
     if(!sus){
-      sus = await reg.pushManager.subscribe({
+      sus = await conPlazo(reg.pushManager.subscribe({
         /* Obligatorio en Chrome: promete que cada push va a mostrar algo. Es
            cierto — `sw.js` siempre muestra la notificación. */
         userVisibleOnly: true,
         applicationServerKey: llavePub,
-      });
+      }), 15000, 'apuntarte con el servicio de avisos');
     }
 
     /* ⚠ SE MANDAN TAMBIÉN LAS LLAVES, y de ahí sale que el aviso pueda llevar
@@ -2932,6 +2961,7 @@ async function apuntarAPush(){
     /* Se dice en la consola y se sigue. El aviso con la app abierta no depende
        de esto. */
     console.warn('los avisos con la sala cerrada no se pudieron apuntar:', e);
+    porQueNoPush = (e && e.message) ? e.message : String(e);
     return false;
   }
 }
@@ -2939,15 +2969,22 @@ async function apuntarAPush(){
 async function borrarDePush(){
   if(!PUEDE_PUSH) return;
   try{
-    const reg = await navigator.serviceWorker.getRegistration();
-    const sus = reg && await reg.pushManager.getSubscription();
-    if(sus) await sus.unsubscribe();
+    const reg = await conPlazo(navigator.serviceWorker.getRegistration(), 6000,
+                               'buscar el ayudante');
+    const sus = reg && await conPlazo(reg.pushManager.getSubscription(), 6000,
+                                      'buscar tu suscripción');
+    if(sus) await conPlazo(sus.unsubscribe(), 6000, 'soltar la suscripción');
     /* Se le avisa al servidor aunque el navegador ya la haya tirado: si no,
        la sala sigue mandando avisos a un endpoint muerto hasta que un 410 la
        borre sola, y mientras tanto el botón dice «apagados» y el teléfono
        sigue sonando. */
-    if(sala && !demo && yo) await alServidor('desuscribir', { de: yo.id });
-  }catch(e){ console.warn('no se pudo quitar la suscripción:', e); }
+    if(sala && !demo && yo) await conPlazo(alServidor('desuscribir', { de: yo.id }),
+                                          6000, 'avisarle a la sala');
+    return true;
+  }catch(e){
+    console.warn('no se pudo quitar la suscripción:', e);
+    return false;   /* apagado a medias: se dice, no se calla */
+  }
 }
 
 async function pedirAvisos(){
@@ -2969,15 +3006,23 @@ async function pedirAvisos(){
      quedó — porque «avisos encendidos» a secas es lo que haría que Carlos
      guardara el teléfono confiando en algo que no le va a llegar. */
   const conCerrada = await apuntarAPush();
+  /* ⚠ «mira la consola» NO SIRVE EN UN TELÉFONO: ahí no hay consola que
+     abrir. El motivo va en el letrero o no existe. */
   letrero(conCerrada
     ? 'Avisos encendidos, también con la sala cerrada.'
-    : 'Avisos encendidos con la sala abierta. Cerrada no se pudo: mira la consola.');
+    : 'Avisos encendidos con la sala abierta. Con la sala cerrada no se pudo'
+      + (porQueNoPush ? `: ${esc(porQueNoPush)}.` : '.'));
   return true;
 }
 async function apagarAvisos(){
+  /* Se apaga PRIMERO la preferencia y después se intenta desapuntar. Si el
+     desapuntado se cuelga, el interruptor ya quedó en «apagado» y se puede
+     volver a encender — que es justo lo que no se podía antes. */
   try{ localStorage.setItem('sala-avisos', 'no'); }catch(e){}
-  await borrarDePush();
-  letrero('Avisos apagados.');
+  const suelto = await borrarDePush();
+  letrero(suelto === false
+    ? 'Avisos apagados aquí. En el teléfono puede tardar un poco más.'
+    : 'Avisos apagados.');
 }
 
 /* ══ MARCAR LO LEÍDO AL DESPLAZARSE ════════════════════════════════════════
@@ -4181,9 +4226,30 @@ function pintarBotonAvisos(){
   b.querySelector('.ico').textContent = si ? '🔕' : '🔔';
 }
 $('bAvisos').addEventListener('click', async () => {
-  if(quiereAvisos() && Notification.permission === 'granted') await apagarAvisos();
-  else await pedirAvisos();
-  pintarBotonAvisos(); cerrarCajones();
+  const b = $('bAvisos');
+  /* Que no se pueda tocar dos veces mientras trabaja: dos vueltas a la vez
+     sobre la misma suscripción se pisan y dejan un estado a medias. */
+  if(b.dataset.ocupado) return;
+  b.dataset.ocupado = '1';
+  try{
+    if(quiereAvisos() && Notification.permission === 'granted') await apagarAvisos();
+    else await pedirAvisos();
+  }catch(e){
+    /* ⚠ EL ARREGLO DE VERDAD SON LOS PLAZOS DE `conPlazo`, no esto. Lo
+       comprobé mutando: quitar los plazos CUELGA la suite —o sea reproduce lo
+       que reportó Carlos—, mientras que cambiar el `finally` por líneas
+       sueltas después del `try` no cambia nada, porque este `catch` ya
+       devuelve el control. Lo dejo escrito para que nadie —yo el primero— se
+       cuente que el `finally` es lo que lo salvó.
+       Lo que sí aporta: recuperar si algo revienta en vez de colgarse, y
+       repintar aunque el propio `catch` fallara. */
+    console.warn('el interruptor de avisos falló:', e);
+    letrero(`No se pudo: ${esc((e && e.message) || e)}`);
+  }finally{
+    delete b.dataset.ocupado;
+    pintarBotonAvisos();
+    cerrarCajones();
+  }
 });
 pintarBotonAvisos();
 
