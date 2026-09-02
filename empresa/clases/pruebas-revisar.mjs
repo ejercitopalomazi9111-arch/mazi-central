@@ -40,6 +40,7 @@ ok('un botón de icono+etiqueta en UN renglón no se acusa',
 dice('zoom-de-safari');
 dice('imagen-muda');
 dice('id-repetido');
+dice('sin-idioma');
 
 /* El desborde tiene DOS partes y sólo la primera es el síntoma. Si la página
    se recorre de lado, además tiene que decir QUIÉN — si no, el aviso obliga a
@@ -97,6 +98,20 @@ console.log('\n· La etiqueta que se disfraza de que no falta');
   ok('y por eso el desborde se reporta contra la pantalla inventada',
      x.hallazgos.some(a => a.regla === 'no-desborda' && /980/.test(a.dato || '')),
      x.hallazgos.filter(a => a.regla === 'no-desborda').map(a => a.dato).join(' | '));
+}
+
+console.log('\n· El defecto que no tiene síntoma');
+{
+  const q = await revisar(`${BASE}/quirks.html`, { anchos: solo });
+  const x = q.informe[0].hallazgos;
+  ok('caza que falta el doctype', x.some(a => a.regla === 'modo-quirks'));
+  ok('y va en 🔴 aunque la página se vea perfecta',
+     x.some(a => a.regla === 'modo-quirks' && a.grave === '🔴'));
+  /* La otra mitad: que no lo invente donde sí está. Es el mismo cuidado de
+     siempre — una regla que dispara en todo no distingue nada. */
+  ok('y NO lo reporta en una página que sí lo trae',
+     !(await revisar(`${BASE}/limpia.html`, { anchos: solo }))
+       .informe[0].hallazgos.some(a => a.regla === 'modo-quirks'));
 }
 
 console.log('\n· La página limpia: que SEPA CALLARSE');

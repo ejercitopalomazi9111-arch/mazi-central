@@ -257,6 +257,7 @@ dependemos.
    | `String.replace(a, b)` pega `b` literal | en `b`, `$$` significa **un** dólar — `$&`, `$1`, `$'` también mienten | un guión dejó `$(…)` donde decía `$$(…)` y la página tronó al cargar |
    | una variable llamada `yo` guarda un id | guardaba la **persona entera**, y `encodeURIComponent(yo)` no truena: manda `[object Object]` | el socket **nunca** se ató a nadie: la mesa pintaba a **todos** «sin señal» y decía «1 en línea» con cinco adentro — **vivo en producción**, lo reportó Carlos con una captura |
    | probar cada mitad ya es probar el sistema | el servidor pasaba sus 212 y la mesa las suyas, **con datos puestos a mano en las dos** | el defecto vivía justo en el papel que se pasan, y sólo salió al correr la página contra una sala de verdad |
+   | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
@@ -298,7 +299,6 @@ afectado**, no la skill entera.
 **Empiezo por `find-skill`**, que decide cuál toca y en qué orden.
 
 | Skill | Cuándo se dispara |
-   | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
 |---|---|
 | **`find-skill`** | El enrutador. Qué skill toca, en qué orden, y cuándo ninguna |
 | **`four-judges`** | Antes de toda decisión cara. Palabra clave: **ROAST** |

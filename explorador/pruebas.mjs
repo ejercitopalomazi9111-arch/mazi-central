@@ -4,7 +4,20 @@
    ARBOL REAL de este repo (git ls-tree) y los ARCHIVOS REALES del disco. Asi la
    prueba corre offline, es determinista, y aun asi ejercita datos de verdad. */
 
-import { chromium } from 'playwright';
+/* ⚠ NO `import ... from 'playwright'` A SECAS. En esta máquina playwright vive
+   sólo en la instalación global, así que el import pelón truena con
+   ERR_MODULE_NOT_FOUND y ESTAS PRUEBAS LLEVABAN TIEMPO SIN CORRER — sin que
+   nadie se enterara, porque un suite que ni arranca no reprueba: calla. Se
+   busca en los dos lados, como ya hacen `captura.mjs` y `pruebas-identidad.mjs`. */
+let chromium;
+for(const d of ['/opt/node22/lib/node_modules/playwright/index.mjs',
+                'playwright', '/usr/lib/node_modules/playwright/index.mjs']){
+  try{ chromium = (await import(d)).chromium; if(chromium) break; }catch(e){}
+}
+if(!chromium){
+  console.error('Falta playwright CON navegador: npm i -D playwright && npx playwright install chromium');
+  process.exit(1);
+}
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';

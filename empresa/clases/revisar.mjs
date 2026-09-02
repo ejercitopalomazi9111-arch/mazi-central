@@ -247,6 +247,31 @@ const medir = () => {
              (img.currentSrc||img.src||'').split('/').pop().slice(0,40));
   }
 
+  /* 7-ter · el modo del documento. Sin `<!doctype html>` el navegador entra
+        en MODO QUIRKS: modelo de caja viejo —el ancho incluye padding y
+        borde—, alturas en porcentaje distintas, y un puñado de diferencias más
+        que aparecen el día que alguien toca el CSS.
+
+        ⚠ VA EN ROJO AUNQUE LA PÁGINA SE VEA BIEN, y ésa es la clase. Dos
+        páginas de la casa —el explorador y la central— llevaban así desde que
+        nacieron y se veían perfectas: midiendo antes y después de ponerles el
+        doctype no cambió NI UNA medida. O sea que no había síntoma que ver,
+        sólo una trampa esperando al siguiente que tocara el CSS. */
+  if(document.compatMode !== 'CSS1Compat')
+    apunta('🔴', 'modo-quirks', 'falta <!doctype html>: el navegador usa el modelo de caja viejo',
+           'puede verse bien HOY y romperse el día que alguien toque el CSS');
+
+  /* 7-bis · el idioma declarado. Sin él, el lector de pantalla pronuncia el
+        español con acento inglés y no se entiende nada. Cuesta un atributo.
+
+        ⚠ Y SE MIRA `documentElement.lang`, no la etiqueta `<html>` en el
+        archivo: en HTML5 la etiqueta se puede omitir y el navegador la crea
+        sola —vacía—. Dos páginas de la casa están así, y buscando `<html` en
+        el archivo no aparecen ni como error ni como acierto: no aparecen. */
+  if(!document.documentElement.lang)
+    apunta('🟡', 'sin-idioma', 'la página no dice en qué idioma está',
+           'sin <html lang="es-MX"> el lector de pantalla lo lee en inglés');
+
   /* 8 · la paleta de la casa. No prohíbe colores: cuenta cuántos hay. Una
         página con veinte colores distintos no tiene paleta, tiene un accidente. */
   const colores = new Set();

@@ -330,6 +330,40 @@
         "la prueba de notificaciones no arranca"
       ],
       "salioDe": "Se midió en este contenedor con playwright 1.56, en modo normal y con `--headless=new`. Los dos: `denied`."
+    },
+    {
+      "id": "window-innerwidth-no-es-el-ancho-en-telefono",
+      "titulo": "`window.innerWidth` dijo 1200 en una pantalla de 390",
+      "gravedad": "alta",
+      "sintoma": "Una medida de desborde que nunca se dispara: una caja de 1200px en un teléfono de 390 sale como «no desborda».",
+      "causa": "En emulación de teléfono `window.innerWidth` devuelve el ancho VISUAL tras el encogido, no el de la página. El de la página es `document.documentElement.clientWidth`.",
+      "porque": "En escritorio los dos números coinciden exactamente, así que probando ahí la diferencia no existe.",
+      "arreglo": "Medir siempre contra `documentElement.clientWidth`.",
+      "comoCazarlo": "Abrir una página con una caja más ancha que la pantalla en un contexto móvil e imprimir los dos números. Si no coinciden, ahí está.",
+      "consejo": "Es doblemente traicionero porque el medidor equivocado dice «todo bien» justo sobre el defecto más visible que hay.",
+      "senales": [
+        "no detecta el scroll horizontal",
+        "innerWidth sale enorme",
+        "en móvil mide otra cosa"
+      ],
+      "salioDe": "Construyendo `empresa/clases/revisar.mjs`. Medido: 390px de pantalla, `innerWidth` 1200, `clientWidth` 390."
+    },
+    {
+      "id": "contar-rectangulos-no-es-contar-renglones",
+      "titulo": "Un botón de un renglón salió con «cae en 4 renglones»",
+      "gravedad": "media",
+      "sintoma": "Una comprobación de texto partido acusa a botones que caben perfectamente.",
+      "causa": "`Range.getClientRects()` devuelve un rectángulo por elemento y por nodo de texto, no uno por línea. Un botón con icono y etiqueta en dos `span` da cuatro rectángulos en un solo renglón.",
+      "porque": "El nombre del método invita a leerlo como «los renglones», y en el caso simple —un texto pelón— coincide.",
+      "arreglo": "Agrupar los rectángulos por su posición vertical redondeada y contar bandas.",
+      "comoCazarlo": "Imprimir los rectángulos con su `top`. Si varios comparten posición, es un renglón, no cuatro.",
+      "consejo": "Acusar a un elemento bien hecho cuesta más que dejar pasar uno malo: a la segunda vez ya nadie lee el informe.",
+      "senales": [
+        "dice que se parte y no se parte",
+        "getClientRects",
+        "cuenta mal las líneas"
+      ],
+      "salioDe": "El medidor de las clases contra La Sala: `#bAvisos` daba 4 rectángulos con `top` 214, 214, 215, 215."
     }
   ]
 }
