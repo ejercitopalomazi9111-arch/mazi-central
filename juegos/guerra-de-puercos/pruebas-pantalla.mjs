@@ -174,10 +174,27 @@ ok('están las 5 cartas de la mano', mano.cuantas === 5, mano.cuantas + '');
 ok('las cartas de cada fila están alineadas entre sí',
    mano.filas.every(f => new Set(f.map(c => c.top)).size === 1),
    JSON.stringify(mano.filas));
-/* 95 px no es un capricho: por debajo de eso la frase de la carta —que es la
-   mitad del chiste de cada una— deja de leerse. Con tres por renglón dan 103. */
-ok('cada carta mide lo suficiente para verse (≥95 px)',
-   mano.anchoMin >= 95, Math.round(mano.anchoMin) + ' px');
+/* ⚠ ESTE NÚMERO ESTUVO MAL Y EL COMENTARIO PEOR. Decía «95 px no es un
+   capricho: por debajo de eso la frase de la carta deja de leerse» — y yo no
+   lo había medido. Escogí 95 por quedar justo debajo de los 103 que ya había y
+   le puse una razón encima. Un número que informa una medición que nadie hizo
+   es la misma falta que llevo semanas cazando en otros.
+
+   MEDIDO DESPUÉS, en serio: la misma carta pintada a 84, 90, 92, 95 y 104 px,
+   con la imagen que de verdad se publica (arte/web, 420×595) y a 3× de
+   densidad, que es lo que trae un teléfono de hoy.
+
+     · a  84 px la frase es una mancha: se ve que hay renglones, no qué dicen
+     · de 90 en adelante se distingue el texto, con esfuerzo
+     · entre 92 y 95 NO hay diferencia visible — son 3 px, un 3 %
+     · a 104 se lee mejor, y sigue siendo letra chica
+
+   O sea que el precipicio está entre 84 y 90, no en 95. Queda en 88: bajo para
+   no reprobar un diseño que está bien —el abanico de Godines deja las cartas a
+   92, y a 92 en pantallas de menos de 400 px— y alto para cazar lo único que
+   de verdad importa aquí, que alguien las devuelva a los 64 px de antes. */
+ok('cada carta mide lo suficiente para verse (≥88 px)',
+   mano.anchoMin >= 88, Math.round(mano.anchoMin) + ' px');
 const desborde = await page.evaluate(() =>
   document.documentElement.scrollWidth > window.innerWidth + 1);
 ok('la página no se desborda de lado', !desborde);
