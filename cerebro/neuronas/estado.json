@@ -126,6 +126,25 @@
         "is not defined"
       ],
       "salioDe": "La Sala: `letrero()` vivía dentro de `abrirSocket()` y lo llamaban `pedirAvisos`, `apagarAvisos` y el cambio de foto. Los tres tronaban."
+    },
+    {
+      "id": "hecho-en-una-rama-no-es-hecho",
+      "titulo": "Dije «ya está» de una rama sin fusionar, y para quien lo pidió no estaba",
+      "gravedad": "alta",
+      "sintoma": "Se reporta un cambio como terminado —con captura y pruebas en verde— y quien lo pidió abre el sitio y sigue viendo lo de antes. Reclama que no se hizo, y tiene razón desde donde él mira.",
+      "causa": "El trabajo quedó en una rama con un PR en borrador. Lo que se publica es `main`, y nadie lo fusionó. El commit, las pruebas y la captura son todos ciertos y todos hablan de un archivo que el usuario no puede abrir.",
+      "porque": "Desde aquí adentro la rama ES el proyecto: el editor, las pruebas y la captura miran el mismo archivo, así que todo confirma que está hecho. La distancia entre la rama y lo publicado no aparece en ninguna de esas tres señales.",
+      "arreglo": "Antes de decir «ya está», medir lo PUBLICADO: pedir la URL de producción y comparar contra la rama. Si no coincide, la frase correcta no es «ya está» sino «está hecho y falta fusionarlo», con el número del PR.",
+      "comoCazarlo": "curl a la dirección de producción y diff contra el archivo de la rama. Si son idénticos y tú cambiaste algo, tu cambio no está publicado. Un `git log origin/main` que no traiga tu commit dice lo mismo en un renglón.",
+      "consejo": "Y no basta con avisar: sacar el PR de borrador es lo que convierte «te toca a ti» en algo que se puede hacer de un clic. Fusionar a main sigue siendo de una persona.",
+      "senales": [
+        "no lo quitaste",
+        "sigue igual",
+        "no se hizo",
+        "yo lo veo igual",
+        "no aparece el cambio"
+      ],
+      "salioDe": "Carlos: «Oye no quitaste la fecha ni el qr de habilidades de credenciales pequeño bribón». Los tres recortes SÍ estaban hechos y probados 11/11 y 49/49 — en la rama claude/juego-oregon-3kmicc, dentro del PR #106 en borrador. Producción y main eran el mismo archivo byte por byte."
     }
   ]
 }
