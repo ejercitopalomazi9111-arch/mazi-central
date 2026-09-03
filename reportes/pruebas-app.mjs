@@ -262,6 +262,71 @@ for(const [ancho, alto, movil, como] of [[390,844,true,'teléfono'],[1100,900,fa
   await p.context().close();
 }
 
+console.log('  · la marca de agua, que salía como recuadro negro en PDF');
+{
+  /* ⚠ LO QUE SE MIDE AQUÍ ES EL ALFA, y es todo el defecto. Carlos lo vio en
+     su teléfono: al guardar en PDF, la estrella salía como un rectángulo
+     NEGRO. La causa era `filter: grayscale(1) brightness(.35)` sobre la
+     imagen: un filtro CSS la rasteriza en una capa aparte, y al aplanarla para
+     el PDF hay motores que componen el alfa sin premultiplicar — cada pixel
+     transparente, que es negro con alfa cero, se vuelve negro OPACO.
+
+     No se pudo reproducir aquí: el PDF de Chromium sale bien y él guarda desde
+     Safari. Por eso la prueba NO comprueba «se ve bien en el PDF» —eso sería
+     fingir lo que no puedo medir— sino la propiedad concreta cuya pérdida lo
+     causaba: que el horneado conserve los píxeles transparentes. */
+  const p = await abrir(1100, 900, false);
+  const r = await p.evaluate(async () => {
+    const img = document.createElement('img');
+    oscurecerAgua(img, 'geraldmed/logo-estrella.png');
+    for(let i = 0; i < 40 && !/^data:/.test(img.src); i++)
+      await new Promise(r => setTimeout(r, 50));
+    if(!/^data:image\/png/.test(img.src)) return { horneo:false };
+    const im = new Image(); im.src = img.src; await im.decode();
+    const l = document.createElement('canvas'); l.width = im.width; l.height = im.height;
+    const cx = l.getContext('2d'); cx.drawImage(im, 0, 0);
+    const px = cx.getImageData(0, 0, im.width, im.height).data;
+    let transp = 0, tinta = 0, claros = 0;
+    for(let i = 0; i < px.length; i += 4){
+      if(px[i+3] === 0) transp++;
+      else { tinta++; if(px[i] > 120) claros++; }
+    }
+    return { horneo:true, filtro:img.style.filter, transp, tinta, claros,
+             total: px.length/4, esquina:[px[0],px[1],px[2],px[3]] };
+  });
+
+  ok('el oscurecido se hornea en la imagen', r.horneo === true);
+  ok('y a la etiqueta NO le queda ningún filtro CSS', r.filtro === '',
+     'filtro: ' + r.filtro);
+  ok('LO TRANSPARENTE SIGUE TRANSPARENTE, que es lo que se perdía',
+     r.transp > r.total * 0.5, r.transp + ' de ' + r.total);
+  ok('la esquina no se volvió negro opaco', r.esquina && r.esquina[3] === 0,
+     JSON.stringify(r.esquina));
+  ok('y el dibujo sigue ahí, no se borró de más', r.tinta > r.total * 0.1,
+     r.tinta + ' píxeles con tinta');
+  ok('quedó oscuro de verdad: casi nada claro', r.claros < r.tinta * 0.02,
+     r.claros + ' claros de ' + r.tinta);
+  ok('sin un error suelto', p.__errores.length === 0, p.__errores[0]);
+
+  /* ⚠ Y QUE LA PÁGINA DE VERDAD LO USE. Lo de arriba llama a la función a
+     mano; esto mira la hoja YA PINTADA. La diferencia no es teórica: volví a
+     poner el filtro CSS en el pintado a modo de mutación y las seis pruebas de
+     arriba siguieron verdes, porque ninguna miraba la marca de agua real. */
+  const pintada = await p.evaluate(() => {
+    const img = document.querySelector('.hoja .agua img');
+    if(!img) return { hay:false };
+    return { hay:true, filtro: img.style.filter,
+             horneada: /^data:image\/png/.test(img.src),
+             opacidad: img.style.opacity };
+  });
+  ok('la hoja pinta su marca de agua', pintada.hay === true);
+  ok('SIN filtro CSS en la imagen pintada', pintada.filtro === '',
+     'filtro: ' + pintada.filtro);
+  ok('y con la imagen ya horneada', pintada.horneada === true);
+  ok('la opacidad sí se sigue usando', !!pintada.opacidad, pintada.opacidad);
+  await p.context().close();
+}
+
 await nav.close();
 console.log('\n' + (mal ? '✗ ' : '✓ ') + bien + '/' + (bien + mal) + ' pruebas de la app');
 process.exit(mal ? 1 : 0);

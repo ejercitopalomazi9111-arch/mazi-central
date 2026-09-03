@@ -87,6 +87,24 @@
         "no se lee bien en el celular"
       ],
       "salioDe": "Práctica de publicación accesible; especialmente en sitios institucionales."
+    },
+    {
+      "id": "filtro-css-que-sale-recuadro-negro-en-pdf",
+      "titulo": "La marca de agua salía como un rectángulo negro al guardar en PDF",
+      "gravedad": "alta",
+      "sintoma": "En pantalla la marca de agua se ve bien; en el PDF guardado desde el teléfono aparece un recuadro negro sólido en su lugar.",
+      "causa": "Un `filter` CSS sobre una imagen con transparencia. El filtro obliga a rasterizarla en una capa aparte, y al aplanarla para el PDF hay motores que componen el alfa SIN premultiplicar: cada pixel transparente —negro con alfa cero— se vuelve negro opaco.",
+      "porque": "El filtro se ve perfecto en el navegador donde se programó, y el defecto sólo aparece en el camino de impresión de OTRO motor.",
+      "arreglo": "Hornear el efecto en la imagen con un lienzo, respetando el alfa pixel por pixel, y dejarle a la etiqueta sólo `opacity`, que sí atraviesa bien la impresión.",
+      "comoCazarlo": "No hace falta reproducir el PDF del otro navegador: se mide la propiedad cuya pérdida lo causa —que los píxeles transparentes sigan transparentes después del proceso—.",
+      "consejo": "Cuando no se puede reproducir el entorno donde falla, se quita la clase de riesgo entera en vez de adivinar el ajuste que lo contenta.",
+      "senales": [
+        "sale un recuadro negro",
+        "en el pdf se ve mal",
+        "la marca de agua sale negra",
+        "en pantalla se ve bien"
+      ],
+      "salioDe": "Carlos, guardando en PDF desde Safari. El PDF de Chromium salía correcto, así que el defecto no se pudo reproducir aquí."
     }
   ]
 }
