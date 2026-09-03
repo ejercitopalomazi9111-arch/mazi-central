@@ -22,7 +22,18 @@ const sola  = (valor, nivel, especial=null, id='x') =>
 
 console.log('\n── El mazo (regla 2) ──');
 const mazo = M.armarMazo();
-ok('son 100 cartas principales', mazo.length === 100, mazo.length);
+/* ⚠ 110, NO 100, y el cambio es a propósito: las especiales ahora son CARTAS
+   del mazo. Lo corrigió Carlos: «los +5 y −5 son cartas también, cartas que te
+   salen en el mazo». Antes eran dos contadores que se repartían al empezar. */
+ok('son 100 cartas de puntos', mazo.filter(c => c.nivel !== 'ESP').length === 100,
+   mazo.filter(c => c.nivel !== 'ESP').length);
+ok('más 5 de bonificación y 5 de penalización, dentro del mazo',
+   mazo.filter(c => c.esp === 'bono').length === 5
+   && mazo.filter(c => c.esp === 'castigo').length === 5,
+   mazo.filter(c => c.nivel === 'ESP').length + ' especiales');
+/* Valen 0 a propósito: si valieran, alguien podría jugarlas solas por sus
+   puntos y dejarían de ser un modificador. */
+ok('las especiales no valen puntos', mazo.filter(c => c.nivel === 'ESP').every(c => c.valor === 0));
 for(const [id, cuantas, de, a] of [['S',5,96,100],['A',27,76,95],['B',21,56,75],
                                    ['C',27,36,55],['D',20,16,35]]){
   const g = mazo.filter(c => c.nivel === id);
@@ -72,8 +83,13 @@ ok('el especial no cambia el valor impreso de la carta',
    conCastigo.base === 87 && conBono.base === 70);
 
 console.log('\n── Lo que NO se vale (regla 9) ──');
-const jug = (mano, combos=0, esp={bono:2,castigo:2}) =>
-  ({ nombre:'a', pv:200, mano, combosUsados:combos, especiales:esp });
+/* ⚠ LOS ESPECIALES YA NO SON UN INVENTARIO: SON CARTAS DE LA MANO. Estas
+   ayudas armaban un jugador con `especiales:{bono:2}` y jugaban un +5 sin
+   tener la carta, que es justo lo que ya no se vale. Ahora el ayudante mete
+   las cartas especiales EN LA MANO, que es donde viven. */
+const esp = (clase, id) => ({ id, valor:0, nivel:'ESP', esp:clase });
+const jug = (mano, combos=0, extras=[esp('bono','eb'), esp('castigo','ec')]) =>
+  ({ nombre:'a', pv:200, mano:[...mano, ...extras], combosUsados:combos, cementerio:[], mazo:[] });
 const d1 = carta(22,'D','d1'), d2 = carta(35,'D','d2');
 const a1 = carta(80,'A','a1'), a2 = carta(90,'A','a2');
 const c1 = carta(40,'C','c1');
@@ -88,8 +104,12 @@ ok('a la cuarta todavía sí',
    M.porQueNoSeVale({cartas:[d1,d2]}, jug([d1,d2], 3)) === null);
 ok('un especial NO se puede usar sobre una combinación',
    !!M.porQueNoSeVale({cartas:[d1,d2], especial:'bono'}, jug([d1,d2])));
-ok('no se puede usar un especial que ya se acabó',
-   !!M.porQueNoSeVale({cartas:[d1], especial:'bono'}, jug([d1], 0, {bono:0,castigo:1})));
+ok('no se puede usar un especial que NO TIENES en la mano',
+   !!M.porQueNoSeVale({cartas:[d1], especial:'bono'}, jug([d1], 0, [esp('castigo','ec')])));
+ok('sí se puede si la carta está en la mano',
+   M.porQueNoSeVale({cartas:[d1], especial:'bono'}, jug([d1])) === null);
+ok('una especial NO se puede jugar sola: va encima de otra',
+   !!M.porQueNoSeVale({cartas:[esp('bono','eb')]}, jug([d1])));
 ok('no se puede jugar una carta que no está en la mano',
    !!M.porQueNoSeVale({cartas:[a1]}, jug([d1,d2])));
 ok('no se puede jugar la misma carta dos veces',
@@ -98,10 +118,18 @@ ok('el motivo viene escrito en español, para poder enseñárselo al jugador',
    /combina/i.test(M.porQueNoSeVale({cartas:[d1,c1]}, jug([d1,c1]))));
 
 console.log('\n── Rondas completas (regla 10) ──');
+/* Los dos últimos argumentos eran los contadores de especiales; ahora son las
+   CARTAS especiales que cada quien lleva en la mano. */
 function partidaDe(manoA, manoB, espA, espB){
-  return { a:{ nombre:'a', pv:200, mano:manoA, combosUsados:0, especiales:espA },
-           b:{ nombre:'b', pv:200, mano:manoB, combosUsados:0, especiales:espB },
-           mazo:[], ronda:1, historia:[], acabo:null };
+  const conEsp = (mano, e) => {
+    const extra = [];
+    if(e && e.bono)    for(let i=0;i<e.bono;i++)    extra.push(esp('bono','xb'+i));
+    if(e && e.castigo) for(let i=0;i<e.castigo;i++) extra.push(esp('castigo','xc'+i));
+    return [...mano, ...extra];
+  };
+  return { a:{ nombre:'a', pv:200, mano:conEsp(manoA, espA), combosUsados:0, cementerio:[], mazo:[] },
+           b:{ nombre:'b', pv:200, mano:conEsp(manoB, espB), combosUsados:0, cementerio:[], mazo:[] },
+           ronda:1, historia:[], acabo:null };
 }
 /* 1 · individual sin especial: 78 vs 65 → 13 al de 65 */
 {
@@ -117,7 +145,12 @@ function partidaDe(manoA, manoB, espA, espB){
   const e = M.jugarRonda(partidaDe([A],[B],{bono:1,castigo:0},{bono:0,castigo:0}),
                          {cartas:[A], especial:'bono'}, {cartas:[B]});
   ok('EJEMPLO 2 · 70+5=75 vs 68 → el de 68 pierde 7 PV', e.b.pv === 193, String(e.b.pv));
-  ok('EJEMPLO 2 · la bonificación se gastó', e.a.especiales.bono === 0);
+  /* Ya no hay contador que baje: lo que hay que comprobar es que la CARTA se
+     fue de la mano y cayó al cementerio. */
+  ok('EJEMPLO 2 · la carta de bonificación se gastó',
+     !e.a.mano.some(c => c.nivel === 'ESP' && c.esp === 'bono'));
+  ok('EJEMPLO 2 · y acabó en el cementerio',
+     e.a.cementerio.some(c => c.nivel === 'ESP' && c.esp === 'bono'));
 }
 /* 3 · con combinación: 42+54 → 74, contra 85 → 11 al de la combinación */
 {
@@ -135,16 +168,28 @@ console.log('\n── La partida entera ──');
   let e = M.repartir(12345);
   ok('cada quien arranca con 200 PV', e.a.pv === 200 && e.b.pv === 200);
   ok('cada quien arranca con 5 cartas', e.a.mano.length === 5 && e.b.mano.length === 5);
-  ok('quedan 90 cartas en el mazo de robo', e.mazo.length === 90, String(e.mazo.length));
-  ok('los especiales se repartieron 5 y 5',
-     e.a.especiales.bono + e.a.especiales.castigo === 5 &&
-     e.b.especiales.bono + e.b.especiales.castigo === 5);
-  ok('nadie se quedó con las 5 penalizaciones ni con las 5 bonificaciones',
-     e.a.especiales.bono > 0 && e.a.especiales.castigo > 0 &&
-     e.b.especiales.bono > 0 && e.b.especiales.castigo > 0);
-  ok('entre los dos hay exactamente 5 bonificaciones y 5 penalizaciones',
-     e.a.especiales.bono + e.b.especiales.bono === 5 &&
-     e.a.especiales.castigo + e.b.especiales.castigo === 5);
+  /* ⚠ UN MAZO POR JUGADOR, y ya no hay `e.mazo`. Lo pidió Carlos, y es lo que
+     hace posible que después se pueda COMPRAR cartas: un mazo compartido es el
+     mismo para los dos y no se puede mejorar. */
+  ok('cada quien tiene SU mazo, con 105 cartas después de robar 5',
+     e.a.mazo.length === 105 && e.b.mazo.length === 105,
+     e.a.mazo.length + ' y ' + e.b.mazo.length);
+  ok('ya no hay un mazo compartido', e.mazo === undefined);
+  ok('cada mazo trae sus 5 bonificaciones y sus 5 penalizaciones',
+     [e.a, e.b].every(j => {
+       const todas = [...j.mano, ...j.mazo];
+       return todas.filter(c => c.esp === 'bono').length === 5
+           && todas.filter(c => c.esp === 'castigo').length === 5;
+     }));
+  ok('y sus 100 cartas de puntos',
+     [e.a, e.b].every(j =>
+       [...j.mano, ...j.mazo].filter(c => c.nivel !== 'ESP').length === 100));
+  /* Los dos mazos son el mismo juego de cartas pero revueltos distinto: si
+     salieran idénticos, las dos manos serían iguales y no habría partida. */
+  ok('los dos mazos están revueltos distinto',
+     JSON.stringify(e.a.mazo.map(c => c.id)) !== JSON.stringify(e.b.mazo.map(c => c.id)));
+  ok('cada quien empieza con el cementerio vacío',
+     e.a.cementerio.length === 0 && e.b.cementerio.length === 0);
   ok('la misma semilla reparte la misma partida',
      JSON.stringify(M.repartir(777)) === JSON.stringify(M.repartir(777)));
   ok('semillas distintas reparten partidas distintas',

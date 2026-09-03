@@ -262,6 +262,10 @@ body.fieltro .rot-rival{ color:var(--hueso) }
    queda MÁS ABAJO que el de la carta del centro. Sin este aire, el +5/−5 se
    montaba encima de esas dos esquinas. */
 .mano.abanico + .especiales{ margin-top:24px }
+/* El vacío de las especiales: se dice, y en pequeño. Un hueco donde antes
+   había dos botones se lee como que algo se rompió. */
+.sin-esp{ margin:0; font-size:12px; font-weight:700; opacity:.6; text-align:center }
+body.fieltro .sin-esp{ color:var(--hueso) }
 /* La que se toca se sale del abanico: al frente, derecha y arriba. Sin esto
    queda tapada por la siguiente y no se alcanza a ver QUÉ elegiste, que es lo
    único que importa en ese momento. */
@@ -869,7 +873,7 @@ function deLaVista(v){
                  especiales:v.rival.especiales, nombre:'rival',
                  mano: Array.from({ length:v.rival.cartas },
                                   (_, i) => ({ id:'tapada' + i, valor:0, nivel:'?' })) };
-  const j = { mazo: Array.from({ length:v.mazo }), ronda:v.ronda,
+  const j = { ronda:v.ronda,
               acabo:v.acabo, porCartas:v.porCartas, historia:[] };
   j[v.asiento] = mio;
   j[v.asiento === 'a' ? 'b' : 'a'] = suyo;
@@ -913,9 +917,15 @@ function pintarMano(){
   m.classList.add('abanico');
   const puedeCombinar = yo().combosUsados < MOTOR.COMBOS_POR_JUGADOR;
 
-  const total = yo().mano.length;
+  /* Las especiales SON cartas de la mano, pero no se juegan solas: van encima
+     de otra. Por eso se pintan aparte, en su propia fila, en vez de meterlas
+     al abanico donde parecerían jugables. */
+  const jugables = yo().mano.filter(c => c.nivel !== 'ESP');
+  const misEsp   = yo().mano.filter(c => c.nivel === 'ESP');
+
+  const total = jugables.length;
   let idx = 0;
-  for(const c of yo().mano){
+  for(const c of jugables){
     const b = laCarta(c);
     const marcada = elegidas.some(x => x.id === c.id);
     b.classList.toggle('marcada', marcada);
@@ -955,19 +965,38 @@ function pintarMano(){
     m.appendChild(b);
   }
 
+  /* ── LAS ESPECIALES, UNA POR CARTA QUE TENGAS ────────────────────────────
+     Carlos: «no es que sea un botón sino que es una carta que a veces te sale
+     porque está en el mazo».
+
+     Antes había DOS botones fijos con un contador —«te quedan 3»—, y eso decía
+     una mentira: daba a entender que siempre tienes especiales y que sabes
+     cuántas. Ahora se pinta una por cada carta que de verdad traigas en la
+     mano, y si no te salió ninguna, no hay nada que pintar. Es la diferencia
+     entre un recurso y una carta. */
   const e = $('#mEspeciales'); e.innerHTML = '';
-  for(const [id, etiqueta, signo] of [['bono','Bonificación','+5'], ['castigo','Penalización','−5']]){
+  const ETIQ = { bono:['Bonificación','+5'], castigo:['Penalización','−5'] };
+  for(const c of misEsp){
+    const [etiqueta, signo] = ETIQ[c.esp] || ['', ''];
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'esp ' + id + (especial === id ? ' puesta' : '');
-    b.innerHTML = '<b>' + signo + '</b><small>' + etiqueta.toUpperCase() + '</small>'
-                + '<small>te quedan ' + yo().especiales[id] + '</small>';
-    b.disabled = yo().especiales[id] === 0 || elegidas.length === 2;
+    b.className = 'esp ' + c.esp + (especial === c.esp ? ' puesta' : '');
+    b.innerHTML = '<b>' + signo + '</b><small>' + etiqueta.toUpperCase() + '</small>';
+    /* Sobre una combinación no va (regla 8), y una carta no recibe dos. */
+    b.disabled = elegidas.length === 2;
     b.addEventListener('click', () => {
-      especial = especial === id ? null : id;
+      especial = especial === c.esp ? null : c.esp;
       pintarMano(); pintarBotones();
     });
     e.appendChild(b);
+  }
+  if(!misEsp.length){
+    /* El vacío se DICE. Un hueco donde antes había dos botones se lee como que
+       algo se rompió; «no te salió ninguna» se lee como parte del juego. */
+    const p = document.createElement('p');
+    p.className = 'sin-esp';
+    p.textContent = 'No traes cartas de bonificación ni de penalización.';
+    e.appendChild(p);
   }
 
   $('#rTuMano').textContent = modo === 'dos'
@@ -981,7 +1010,9 @@ function pintarMano(){
        iPhone de 390 el renglón se parte justo ahí y «mazo» se queda solo
        abajo. Una palabra huérfana al final se lee como si el texto se hubiera
        cortado. */
-    + ' · quedan <b>' + J.mazo.length + '</b> cartas en\u00A0el\u00A0mazo';
+    /* TU mazo, no «el» mazo: desde que cada quien tiene el suyo, decir «el
+       mazo» sería un número que no es de nadie. */
+    + ' · te quedan <b>' + (yo().mazo ? yo().mazo.length : 0) + '</b> cartas en\u00A0tu\u00A0mazo';
 }
 
 function marcar(c){

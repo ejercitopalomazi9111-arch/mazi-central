@@ -127,6 +127,24 @@
         "pruebas-que-no-prueban-nada",
         "mensajes-en-una-rama-ya-mezclada"
       ]
+    },
+    {
+      "id": "dos-archivos-un-solo-ambito-global",
+      "titulo": "El módulo y la página comparten ámbito en el navegador: un nombre repetido mata la página entera",
+      "gravedad": "alta",
+      "sintoma": "La página no pinta NADA —ni la portada— y en consola sale «Identifier 'X' has already been declared». Y lo peor: las pruebas del módulo siguen todas en verde.",
+      "causa": "Dos archivos cargados con <script> comparten el ámbito global. Si los dos declaran el mismo nombre en el nivel superior —uno con `const` y otro con `function`, por ejemplo—, el segundo no se carga y se lleva por delante todo lo que venía después.",
+      "porque": "En node cada archivo es su propio módulo y los nombres no chocan, así que la suite del módulo pasa entera con el producto muerto. Y el nombre repetido suele ser el natural para las dos partes: `esEspecial` en el motor y `esEspecial` en el filtro de la colección.",
+      "arreglo": "Nombres distintos en el nivel superior de cada archivo, o meter cada uno en su propio ámbito. Si el módulo ya se usa en node y en el navegador, el que se renombra es el del módulo, que es el que viaja a los dos sitios.",
+      "comoCazarlo": "Una prueba en un navegador de VERDAD que sea la primera de todas y diga el motivo: recoger `pageerror` al cargar y afirmar que no hubo ninguno. Sin ella, el defecto se manifiesta como aserciones raras más abajo —«reparte 5 cartas» en rojo— y uno se va a buscar el reparto.",
+      "consejo": "Es el caso de manual de «cada mitad pasa y el defecto vive en la costura»: 72 pruebas del motor en verde, la página en negro. Ninguna cantidad de pruebas del módulo lo iba a encontrar.",
+      "senales": [
+        "no carga nada",
+        "la página está en blanco",
+        "already been declared",
+        "funciona en node y no en el navegador"
+      ],
+      "salioDe": "Guerra de Puercos, 3 de septiembre: `esEspecial` declarado en motor.js y en index.html. El motor pasaba 72/72 con el juego muerto."
     }
   ]
 }

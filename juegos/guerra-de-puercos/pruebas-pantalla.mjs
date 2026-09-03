@@ -25,6 +25,14 @@ page.on('pageerror', e => errores.push(String(e)));
 await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
 
 console.log('\n── Que abra y se entienda ──');
+/* ⚠ ESTA ES LA PRIMERA Y LA MÁS IMPORTANTE, y dice el motivo cuando falla.
+   `motor.js` y `index.html` se cargan en EL MISMO ÁMBITO GLOBAL del navegador:
+   si los dos declaran un nombre igual, el script entero muere al cargar y no
+   se pinta ni la portada. En node no pasa —ahí cada archivo es su propio
+   módulo—, así que las 72 pruebas del motor se quedan en VERDE con el juego
+   muerto. Pasó de verdad con `esEspecial`, declarado en los dos. */
+ok('la página cargó sin morirse al arrancar', errores.length === 0,
+   errores.join(' | '));
 ok('el motor llegó a la página', await page.evaluate(() => !!window.MOTOR));
 ok('se ve el nombre del juego',
    /GUERRA/i.test(await page.textContent('.titulo')));
@@ -46,7 +54,13 @@ ok('ningún botón visible mide menos de 44 px de alto', chicos.length === 0, ch
 console.log('\n── Contra la máquina ──');
 await page.click('[data-modo="maquina"]');
 await page.waitForTimeout(300);
-ok('reparte 5 cartas', await page.evaluate(() => document.querySelectorAll('#mMano .carta').length) === 5);
+/* ⚠ 5 CARTAS EN LA MANO, PERO NO LAS 5 EN EL ABANICO. Desde que las especiales
+   son cartas del mazo, algunas de esas 5 pueden ser un +5 o un −5, y ésas se
+   pintan en su propia fila porque no se juegan solas. Contar sólo el abanico
+   daría 3 ó 4 y parecería un reparto corto. Lo que se comprueba es el TOTAL. */
+ok('reparte 5 cartas a la mano', await page.evaluate(() =>
+   document.querySelectorAll('#mMano .carta').length
+   + document.querySelectorAll('#mEspeciales .esp').length) === 5);
 ok('arranca con 200 PV cada quien',
    (await page.textContent('#mPvA')) === '200' && (await page.textContent('#mPvB')) === '200');
 ok('el botón de jugar arranca apagado', await page.isDisabled('#bJugar'));
@@ -177,7 +191,19 @@ const mano = await page.evaluate(() => {
   return { cuantas: cs.length, filas: Object.values(filas),
            anchoMin: Math.min(...cs.map(c => c.getBoundingClientRect().width)) };
 });
-ok('están las 5 cartas de la mano', mano.cuantas === 5, mano.cuantas + '');
+ok('el abanico trae las cartas jugables de la mano',
+   mano.cuantas >= 1 && mano.cuantas <= 5, mano.cuantas + '');
+/* Y la fila de especiales trae UNA POR CARTA, no un botón fijo con contador:
+   ésa es toda la corrección de Carlos. Si el reparto no trajo ninguna, se dice
+   con palabras en vez de dejar un hueco. */
+ok('las especiales se pintan una por carta, o se dice que no hay',
+   await page.evaluate(() => {
+     const esps = document.querySelectorAll('#mEspeciales .esp').length;
+     const vacio = !!document.querySelector('#mEspeciales .sin-esp');
+     return esps > 0 ? !vacio : vacio;
+   }));
+ok('y ninguna promete un saldo que ya no existe',
+   !/te quedan/i.test(await page.textContent('#mEspeciales')));
 /* ⚠ LA ASERCIÓN DE «TODAS ALINEADAS» SE RETIRÓ, Y CON RAZÓN. Defendía la mano
    en fila; ahora es un ABANICO, y un abanico tiene las cartas a distinta
    altura A PROPÓSITO. Dejarla habría sido exactamente lo que le advertí a

@@ -39,7 +39,21 @@ const PV_INICIAL      = 200;
 const MANO            = 5;
 const DANO_TOPE       = 15;
 const COMBOS_POR_JUGADOR = 4;
-const ESPECIALES      = { bono: 5, castigo: 5 };   /* 5 y 5, como dice el 8 */
+/* ⚠ LAS ESPECIALES SON CARTAS DEL MAZO, no un inventario que se reparte al
+   empezar. Lo corrigió Carlos: «los +5 y −5 son cartas también, cartas que te
+   salen en el mazo y tú decides si usarlas en tu carta; no es que sea un
+   botón, es una carta que a veces te sale porque está en el mazo».
+
+   Yo las tenía como dos contadores fijos —3 y 2 a uno, 2 y 3 al otro— y eso
+   cambia el juego entero: con contadores SIEMPRE tienes especiales y sabes
+   exactamente cuántas; como cartas, ocupan sitio en la mano, pueden no salirte
+   nunca, y gastar una es gastar un espacio. Es otra decisión y es la suya.
+
+   5 y 5 POR MAZO, que es lo que dice la regla 8 del reglamento de su amiga.
+   Como ahora cada quien tiene su mazo, cada quien tiene sus 5 y 5. Queda
+   anotado por si ella lo quiso de otro modo: se cambia aquí y en ningún otro
+   lado. */
+const ESPECIALES      = { bono: 5, castigo: 5 };
 
 /* ── Azar reproducible ────────────────────────────────────────────────────
    Con semilla, a propósito: una partida se puede volver a jugar igualita para
@@ -88,11 +102,31 @@ function armarMazo(){
       cartas.push({ id:'c' + (n++), valor: valores[i % valores.length], nivel: niv.id });
     }
   }
+  /* Y las especiales, mezcladas con el resto. Llevan `nivel:'ESP'` para que
+     nada las confunda con una carta de puntos: no valen, no combinan y no
+     pueden jugarse solas. */
+  for(const clase of ['bono', 'castigo']){
+    for(let i = 0; i < ESPECIALES[clase]; i++){
+      cartas.push({ id:'e' + (n++), valor: 0, nivel:'ESP', esp: clase });
+    }
+  }
   return cartas;
 }
 
+/* ⚠ SE LLAMA `esCartaEspecial` Y NO `esCartaEspecial` A PROPÓSITO. `esCartaEspecial` ya
+   existe en index.html —filtra la colección por nivel— y el motor se carga en
+   el MISMO ámbito global del navegador. Con los dos nombres iguales, el
+   `const` de aquí choca con la `function` de allá y la página entera muere al
+   cargar con «Identifier 'esCartaEspecial' has already been declared»: no se pinta
+   nada, ni la portada. En node no pasa, porque ahí cada archivo es su propio
+   módulo — o sea que las pruebas del motor seguían en verde con el juego
+   muerto en el navegador. */
+const esCartaEspecial = (c) => !!c && c.nivel === 'ESP';
 const nivelDe = (id) => NIVELES.find(n => n.id === id);
-const sePuedeCombinar = (id) => nivelDe(id).bono !== null;
+/* ⚠ CON GUARDA. `nivelDe('ESP')` devuelve undefined, y sin esta guarda leer su
+   `.bono` truena — y truena DENTRO de la validación, o sea que el juego se
+   cae al tocar una carta en vez de decir que no se puede. */
+const sePuedeCombinar = (id) => { const n = nivelDe(id); return !!n && n.bono !== null; };
 
 /* ── La puntuación de una jugada ──────────────────────────────────────────
    Todo lo que decide quién gana la ronda sale de aquí, y sólo de aquí. */
@@ -129,6 +163,10 @@ function porQueNoSeVale(jugada, jugador){
 
   const enMano = (c) => jugador.mano.some(m => m.id === c.id);
   if(!jugada.cartas.every(enMano)) return 'Esa carta no está en tu mano.';
+  /* Una especial no se juega SOLA: es un modificador. Va encima de una carta
+     de puntos, y esa carta es la que pelea. */
+  if(jugada.cartas.some(esCartaEspecial))
+    return 'Una carta especial va ENCIMA de otra, no se juega sola.';
   if(jugada.cartas.length === 2 && jugada.cartas[0].id === jugada.cartas[1].id)
     return 'Es la misma carta dos veces.';
 
@@ -142,8 +180,12 @@ function porQueNoSeVale(jugada, jugador){
   }
 
   if(jugada.especial){
-    if(!(jugador.especiales[jugada.especial] > 0))
-      return 'Ya no te quedan cartas de ' + (jugada.especial === 'bono' ? 'bonificación' : 'penalización') + '.';
+    /* ⚠ AHORA SE COMPRUEBA CONTRA LA MANO, no contra un contador. Ésa es toda
+       la corrección: antes bastaba con que te quedara saldo; ahora tienes que
+       TENER la carta, porque es una carta. */
+    if(!jugador.mano.some(c => esCartaEspecial(c) && c.esp === jugada.especial))
+      return 'No tienes ninguna carta de '
+           + (jugada.especial === 'bono' ? 'bonificación' : 'penalización') + ' en la mano.';
   }
   return null;
 }
@@ -159,25 +201,32 @@ function danoEntre(puntosA, puntosB){
 }
 
 /* ── Repartir ─────────────────────────────────────────────────────────────
-   Los especiales se reparten 5 y 5. No pueden quedar 2.5 de cada tipo por
-   jugador, así que uno se lleva 3 bonificaciones y 2 penalizaciones y el otro
-   al revés; quién de los dos, lo decide el azar. Es lo más parejo que permite
-   un 5 y 5, y era eso o dejar que a uno le tocaran las 5 penalizaciones. */
+   Cada quien su mazo, y las especiales vienen dentro como cualquier otra
+   carta. Ya no hay reparto de especiales que hacer: si te salen, te salen. */
 function repartir(semilla){
   const dado = azar(semilla);
-  const mazo = revolver(armarMazo(), dado);
-  const alReves = dado() < 0.5;
 
-  const jugador = (nombre, bonos, castigos) => ({
+  /* ⚠ UN MAZO POR JUGADOR, y no es un detalle de reparto: lo pidió Carlos
+     («haz que cada jugador tenga su mazo») y es lo que hace posible todo lo
+     que viene después. Un mazo compartido es el mismo para los dos y no se
+     puede mejorar; un mazo propio es una COLECCIÓN, y una colección se puede
+     comprar, cambiar y presumir. Sin esto, no hay tienda que valga.
+
+     Cada quien revuelve el suyo con el mismo dado sembrado, así que la partida
+     sigue siendo reproducible: misma semilla, mismos dos mazos. Eso es lo que
+     deja que dos teléfonos repartan igual sin mandarse las cartas. */
+  const jugador = (nombre) => ({
     nombre, pv: PV_INICIAL, mano: [], combosUsados: 0,
-    especiales: { bono: bonos, castigo: castigos },
+    mazo: revolver(armarMazo(), dado),
+    /* El cementerio: lo que ya se jugó, en orden. La última de arriba. */
+    cementerio: [],
   });
 
-  const a = jugador('a', alReves ? 2 : 3, alReves ? 3 : 2);
-  const b = jugador('b', alReves ? 3 : 2, alReves ? 2 : 3);
+  const a = jugador('a');
+  const b = jugador('b');
 
-  for(let i = 0; i < MANO; i++){ a.mano.push(mazo.pop()); b.mano.push(mazo.pop()); }
-  return { a, b, mazo, ronda: 1, historia: [], acabo: null };
+  for(let i = 0; i < MANO; i++){ a.mano.push(a.mazo.pop()); b.mano.push(b.mazo.pop()); }
+  return { a, b, ronda: 1, historia: [], acabo: null };
 }
 
 /* ── Una ronda completa ───────────────────────────────────────────────────
@@ -222,15 +271,36 @@ function jugarRonda(estado, jugadaA, jugadaB){
   if(res.quienPierde === 'a') est.a.pv = Math.max(0, est.a.pv - res.dano);
   if(res.quienPierde === 'b') est.b.pv = Math.max(0, est.b.pv - res.dano);
 
-  /* Se gastan las cartas, los especiales y las combinaciones. */
+  /* Se gastan las cartas, las especiales y las combinaciones. */
   for(const [j, jugada] of [[est.a, jugadaA], [est.b, jugadaB]]){
     const fuera = new Set(jugada.cartas.map(c => c.id));
+    /* ⚠ LA ESPECIAL TAMBIÉN SE GASTA, Y SE GASTA UNA. Antes bajaba un contador;
+       ahora hay que sacar de la mano UNA carta concreta de esa clase. Si se
+       sacaran todas las de esa clase, gastar un +5 te quitaría los tres que
+       tuvieras — y como el contador ya no existe, nadie lo notaría hasta
+       contar las cartas. */
+    let gastada = null;
+    if(jugada.especial){
+      gastada = j.mano.find(c => esCartaEspecial(c) && c.esp === jugada.especial) || null;
+      if(gastada) fuera.add(gastada.id);
+    }
+    /* EL CEMENTERIO, en orden: lo último jugado queda al final, que es lo que
+       la pantalla enseña arriba del montón. */
+    /* Se crea si no venía. Un estado armado a mano —una prueba, o un cliente
+       viejo en una partida en línea— no trae cementerio, y reventar por un
+       campo que se acaba de inventar sería tumbar la partida por una mejora
+       cosmética. */
+    if(!Array.isArray(j.cementerio)) j.cementerio = [];
+    for(const c of j.mano) if(fuera.has(c.id)) j.cementerio.push(c);
     j.mano = j.mano.filter(c => !fuera.has(c.id));
     if(jugada.cartas.length === 2) j.combosUsados++;
-    if(jugada.especial) j.especiales[jugada.especial]--;
     /* Regla 4.8: reponer hasta tener 5. Si el mazo se acabó, se juega con lo
        que quede — no se inventan cartas. */
-    while(j.mano.length < MANO && est.mazo.length) j.mano.push(est.mazo.pop());
+    /* Igual que el cementerio: un estado sin mazo propio no repone, pero no
+       tumba la partida. La regla 4.8 dice «si el mazo se acabó, se juega con
+       lo que quede», y no tener mazo es un caso de eso. */
+    if(!Array.isArray(j.mazo)) j.mazo = [];
+    while(j.mano.length < MANO && j.mazo.length) j.mano.push(j.mazo.pop());
   }
 
   est.historia.push({ ronda: est.ronda, a: pA, b: pB,
@@ -254,16 +324,24 @@ function jugarRonda(estado, jugadaA, jugadaB){
    que a la persona no la dejan hacer. */
 function jugadasPosibles(jugador){
   const salen = [];
-  for(const c of jugador.mano){
+  /* ⚠ LAS ESPECIALES NO SON JUGABLES POR SÍ SOLAS, así que no entran a la
+     lista como carta: entran como modificador de otra. Sin este filtro, la
+     máquina —y cualquiera que tome «la primera jugada posible»— acabaría
+     intentando jugar un +5 solo, que el propio motor rechaza. La partida se
+     caía con una excepción, no con un aviso. */
+  const jugables = jugador.mano.filter(c => !esCartaEspecial(c));
+  for(const c of jugables){
     salen.push({ cartas:[c], especial:null });
     for(const e of ['bono', 'castigo']){
-      if(jugador.especiales[e] > 0) salen.push({ cartas:[c], especial:e });
+      /* La máquina también juega con lo que TIENE en la mano. */
+      if(jugador.mano.some(x => esCartaEspecial(x) && x.esp === e))
+        salen.push({ cartas:[c], especial:e });
     }
   }
   if(jugador.combosUsados < COMBOS_POR_JUGADOR){
-    for(let i = 0; i < jugador.mano.length; i++){
-      for(let j = i + 1; j < jugador.mano.length; j++){
-        const x = jugador.mano[i], y = jugador.mano[j];
+    for(let i = 0; i < jugables.length; i++){
+      for(let j = i + 1; j < jugables.length; j++){
+        const x = jugables[i], y = jugables[j];
         if(x.nivel === y.nivel && sePuedeCombinar(x.nivel))
           salen.push({ cartas:[x, y], especial:null });
       }
