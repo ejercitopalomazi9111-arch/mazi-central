@@ -179,6 +179,25 @@
         "no puedo probar antes de mergear"
       ],
       "salioDe": "PR #103: las dos vistas previas del proyecto `sala` devolvían la central byte por byte. Misma enfermedad ya documentada de `ppuercos`, en otro proyecto — o sea que no era un accidente suelto."
+    },
+    {
+      "id": "el-cliente-apunta-al-proyecto-sobrante",
+      "titulo": "Se renombró el proyecto, el viejo se quedó vivo en 404, y el cliente siguió apuntándole",
+      "gravedad": "alta",
+      "sintoma": "Una parte del producto «no está actualizada» aunque el código esté al día y el despliegue en verde. Aquí era el modo de jugar a distancia: la página perfecta, el servidor perfecto, y nunca se hablaban.",
+      "causa": "El proyecto de despliegue cambió de nombre (puercos → ppuercos) y el sobrante no se borró: sigue existiendo y contesta 404 en todas sus rutas. La dirección escrita en el cliente se quedó en el nombre viejo.",
+      "porque": "Un proyecto sobrante no se ve roto: existe, tiene dominio, y hasta sale en verde en cada despliegue del repo. Y del lado del cliente la dirección es UNA constante en medio de miles de líneas que nadie vuelve a leer.",
+      "arreglo": "Que la dirección salga del mismo archivo que declara el proyecto (el wrangler), o al menos que su comentario diga POR QUÉ se llama así. Y borrar el proyecto sobrante: mientras exista, va a atraer configuraciones viejas.",
+      "comoCazarlo": "curl al /api/salud de cada nombre. El bueno contesta 200 con su cuerpo; el sobrante contesta 404 y un código de error del CDN. Dos renglones, y no hace falta abrir el producto.",
+      "consejo": "Ojo con el modo que no se prueba solo: la partida contra la máquina nunca toca el servidor, así que TODO se veía bien hasta que alguien intentaba jugar con otra persona. La función que sólo falla acompañado es la que más tarda en reportarse.",
+      "senales": [
+        "no está actualizado",
+        "no funciona en línea",
+        "no me deja jugar con alguien",
+        "el código no aparece",
+        "dice que no está publicado"
+      ],
+      "salioDe": "Carlos: «Guerra de puercos tampoco está actualizado en mi central». El juego estaba idéntico en producción y en la rama; lo que estaba mal era una constante que apuntaba a puercos (404 en todo) en vez de ppuercos (200 y da códigos)."
     }
   ]
 }

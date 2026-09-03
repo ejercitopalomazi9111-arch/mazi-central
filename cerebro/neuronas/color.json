@@ -206,6 +206,25 @@
         "qué color de texto le pongo al botón"
       ],
       "salioDe": "Medido en `sitio/index.html` (`a.wasap`, 4.17:1) y confirmado a mano con la fórmula WCAG. El negro puro se queda en 4.49."
+    },
+    {
+      "id": "la-mesa-del-mismo-color-que-las-cartas",
+      "titulo": "El fondo de marca a toda pantalla se come el contenido que vino a lucir",
+      "gravedad": "alta",
+      "sintoma": "«Se ve bien culero» sin poder señalar qué. Todo es correcto —el arte es bueno, el texto se lee— y el conjunto se ve barato y cansado.",
+      "causa": "El color de marca ocupa el 100% del fondo, y las piezas que hay que mirar comparten ese mismo color. Sin diferencia de valor entre el fondo y el contenido, no hay separación: el ojo no encuentra dónde posarse.",
+      "porque": "Un color de marca saturado se ve estupendo en un botón y en un logo, así que la conclusión natural es «pues entonces en todo». Pero un acento sirve porque es raro: en cuanto es todo, deja de acentuar.",
+      "arreglo": "La superficie donde se mira el contenido se hace oscura y neutra —luminancia relativa por debajo de 0.08— y el color de marca se retira a la portada, al elemento activo y al acento. En oscuro la elevación se hace con SUPERFICIE, no con sombra.",
+      "comoCazarlo": "Medir la luminancia relativa del fondo y compararla con la del contenido dominante. Y la prueba de escala de grises: si en gris no se distingue el contenido de su fondo, en color tampoco se distingue de verdad.",
+      "consejo": "Cuando se oscurezca el fondo hay que REVISAR LA JERARQUÍA otra vez, porque se invierte sola: lo que en claro era «relleno blanco = secundario» pasa a ser lo más brillante de la pantalla, y el primario apagado parece roto. Pasó con los botones, con los filtros y con dos recuadros de bonificación, los tres a la vez.",
+      "senales": [
+        "se ve culero",
+        "se ve cargado",
+        "todo es del mismo color",
+        "no sé qué mirar",
+        "se ve barato"
+      ],
+      "salioDe": "Guerra de Puercos: el fondo era #E84A8A de borde a borde y las 102 cartas tienen marco rosa. Con la mesa en #241019 las cartas se despegaron sin tocarles un pixel."
     }
   ]
 }
