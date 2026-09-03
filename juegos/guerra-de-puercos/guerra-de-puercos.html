@@ -179,6 +179,99 @@ body.fieltro .rotulo{color:#FF8FBE}
 .carta.revelada[disabled]{opacity:1}
 .carta.chica{width:54px; height:78px; aspect-ratio:auto; flex:0 0 auto}
 .carta.chica .valor{font-size:20px}
+
+/* ══ LA MESA COMO MESA ═════════════════════════════════════════════════════
+   Carlos: «una pantalla de una mesa con los 2 jugadores frente a frente
+   jugando las cartas, como si fuese videojuego».
+
+   Tres franjas, de arriba abajo: EL DE ENFRENTE con sus cartas boca abajo, EL
+   CENTRO donde las dos cartas se encuentran, y MI MANO en abanico. Es la
+   disposición de cualquier juego de cartas físico, y es la que hace que uno
+   sepa dónde mirar sin que nadie se lo explique.
+
+   Y no es adorno: antes la pantalla sólo tenía MI mano y un marcador con un
+   número, o sea que se jugaba contra una cifra. */
+.enfrente{ display:grid; place-items:center; gap:5px; padding:2px 0 8px }
+.mano-rival{ display:flex; justify-content:center; align-items:flex-start; height:54px }
+/* Boca abajo y ENCIMADAS, igual que las mías: si las de él fueran en fila y
+   las mías en abanico, no parecerían el mismo juego. Y con el reverso de
+   verdad, el mismo que la baraja. */
+.mini-dorso{
+  width:34px; height:49px; border-radius:6px; flex:0 0 auto;
+  border:2px solid var(--tinta); background:var(--rosa-hondo);
+  background-image:url(arte/web/reverso.webp),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.14) 0 5px, transparent 5px 10px);
+  background-size:cover; background-position:center;
+  margin-left:-15px; transform-origin:50% 140%;
+  box-shadow:0 2px 6px rgba(0,0,0,.45);
+  transition:transform .3s cubic-bezier(.2,.8,.3,1), opacity .3s;
+}
+.mini-dorso:first-child{ margin-left:0 }
+.rot-rival{
+  font-size:10px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; opacity:.62;
+}
+body.fieltro .rot-rival{ color:var(--hueso) }
+
+/* ══ EL ABANICO ════════════════════════════════════════════════════════════
+   Cinco cartas EN FILA se reparten los 334 px útiles de un iPhone y salen a
+   103 cada una. ENCIMADAS caben más grandes y además se ven como una mano de
+   verdad: lo que se tapa es el costado derecho, que no dice nada — el nombre,
+   los puntos y el nivel viven en la mitad izquierda y ésa queda a la vista.
+
+   El giro y la altura los pone el JS carta por carta (`--giro`, `--sube`),
+   porque salen del NÚMERO de cartas y en CSS eso sería una regla por cantidad.
+
+   ⚠ EL ORIGEN DEL GIRO VA MUY POR DEBAJO DE LA CARTA (50% 155%). Girando
+   desde el centro, las puntas de arriba se abren y las de abajo también, y
+   parece un molinillo. Desde un punto bajo gira como gira una mano: el borde
+   inferior casi quieto y el de arriba abriéndose. */
+.mano.abanico{
+  display:flex; justify-content:center; align-items:flex-end;
+  /* ⚠ UNA CARTA ROTADA OCUPA MÁS ANCHO QUE LA CARTA. A 7.5° una de 104×150
+     mide 122 de caja, o sea 9 px de más por cada lado, y con el abanico
+     centrado eso se sale del tapete por los dos extremos. Con el ancho y el
+     encime de antes la página se desbordaba de lado —medido, no supuesto— y
+     no se veía en la captura porque lo que sobresalía era la esquina de una
+     carta sobre un fondo del mismo color.
+     Las cuentas a 390 px: útil 334, abanico sin girar 298, más 18 de giro =
+     316. Cabe con margen. */
+  --ancho-carta:clamp(80px, 26.5vw, 120px);
+  --encime:calc(var(--ancho-carta) * .58);
+  /* ⚠ EL `gap:9px` DE LA REJILLA SIGUE VIVO EN FLEX y se suma al encime, así
+     que cada carta quedaba 9 px más lejos de la anterior de lo que decían las
+     cuentas. Se ve al medir el paso entre centros, no al leer el CSS. */
+  gap:0;
+  /* ⚠ AIRE ARRIBA, Y NO ES DECORACIÓN. La carta elegida sube 22 px y crece un
+     6 %: sin este hueco se montaba encima de «TU MANO · ELIGE UNA CARTA» y lo
+     dejaba ilegible justo cuando acabas de tocar. Se ve en la captura, no en
+     el código. */
+  padding-top:34px;
+  grid-template-columns:none;
+}
+@media (min-width:560px){ .mano.abanico{ --encime:calc(var(--ancho-carta) * .26) } }
+.mano.abanico .carta{
+  width:var(--ancho-carta); flex:0 0 auto;
+  margin-left:calc(var(--encime) * -1);
+  transform-origin:50% 155%;
+  transform:rotate(var(--giro,0deg)) translateY(var(--sube,0px));
+  z-index:var(--i,0);
+}
+.mano.abanico .carta:first-child{ margin-left:0 }
+/* Las de las puntas bajan (`--sube`), así que el borde de abajo del abanico
+   queda MÁS ABAJO que el de la carta del centro. Sin este aire, el +5/−5 se
+   montaba encima de esas dos esquinas. */
+.mano.abanico + .especiales{ margin-top:24px }
+/* La que se toca se sale del abanico: al frente, derecha y arriba. Sin esto
+   queda tapada por la siguiente y no se alcanza a ver QUÉ elegiste, que es lo
+   único que importa en ese momento. */
+.mano.abanico .carta.frente{
+  z-index:50; transform:rotate(0deg) translateY(-14px) scale(1.06);
+}
+.mano.abanico .carta.marcada{
+  z-index:60; transform:rotate(0deg) translateY(-22px) scale(1.06);
+  box-shadow:0 12px 0 var(--rosa-hondo);
+}
 .carta.dorso{
   background:var(--rosa-hondo); background-image:
     repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 6px, transparent 6px 12px);
@@ -295,9 +388,18 @@ body.fieltro .esp.puesta { background:var(--rosa); color:var(--tinta); border-co
      bajó.
    Todas se apagan con `prefers-reduced-motion`: hay gente a la que el
    movimiento le marea, y un juego que no se puede jugar no es un juego. */
+/* ⚠ EL FOTOGRAMA FINAL NO PUEDE SER `transform:none`, y esto me costó una
+   ronda entera. Con relleno `both`, al terminar la animación el navegador
+   DEJA CLAVADO el último fotograma por encima de cualquier regla normal. O
+   sea que `to{transform:none}` no significa «suelta el control»: significa
+   «esta carta no tiene transformación, nunca». Puse el abanico, el CSS estaba
+   perfecto, y las cartas salían rectas — todas con la misma altura de caja,
+   que fue lo que lo delató al medirlas.
+   Ahora el reparto ATERRIZA en la pose del abanico, y de paso la clase se
+   quita al terminar para que `.frente` y `.marcada` puedan mover la carta. */
 @keyframes reparte{
   from{ transform:translateY(26px) rotate(-6deg); opacity:0 }
-  to  { transform:none; opacity:1 }
+  to  { transform:rotate(var(--giro,0deg)) translateY(var(--sube,0px)); opacity:1 }
 }
 .carta.llega{ animation:reparte .34s cubic-bezier(.2,.9,.3,1.3) both }
 @keyframes tiembla{
@@ -526,6 +628,20 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
          lado derecho, su `grid-column:1/-1` abría un renglón nuevo y empujaba
          a «Máquina» debajo de «Tú». Se vio en la captura, no en el código. -->
     <div class="tira" id="mTira"></div>
+  </div>
+
+  <!-- ── EL DE ENFRENTE ──────────────────────────────────────────────────
+       Carlos: «una mesa con los 2 jugadores frente a frente jugando las
+       cartas, como si fuese videojuego».
+
+       Y no es adorno: antes la pantalla sólo tenía MI mano y un marcador con
+       un número. Se jugaba contra una cifra. Con las cartas del otro boca
+       abajo enfrente, y bajando de cinco a cuatro cuando juega, se ve que hay
+       alguien del otro lado y cuánto le queda. Eso es lo que convierte un
+       formulario en una mesa. -->
+  <div class="enfrente" id="mEnfrente">
+    <div class="mano-rival" id="mManoB"></div>
+    <div class="rot-rival" id="mRotRival"></div>
   </div>
 
   <!-- elegir -->
@@ -1054,25 +1170,81 @@ function deLaVista(v){
   return j;
 }
 
+/* ── EL DE ENFRENTE ────────────────────────────────────────────────────────
+   Sus cartas, boca abajo y contadas. Es la única señal de que hay alguien del
+   otro lado: el marcador dice un número, esto dice una MANO que se vacía.
+
+   El giro se reparte igual que en la mía pero al revés de signo, porque está
+   sentado enfrente y su abanico se abre hacia el otro lado. */
+function pintarRival(){
+  const caja = $('#mManoB'); if(!caja) return;
+  const r = rival();
+  const n = r && r.mano ? r.mano.length : 0;
+  caja.innerHTML = '';
+  for(let i = 0; i < n; i++){
+    const d = document.createElement('div');
+    d.className = 'mini-dorso';
+    /* Un abanico de una sola carta no se abre: sin esto, `n-1` es 0 y sale una
+       división entre cero que deja el giro en NaN — y un transform con NaN el
+       navegador lo ignora en silencio, así que se vería recto sin avisar. */
+    const t = n > 1 ? (i / (n - 1)) - .5 : 0;
+    d.style.setProperty('--giro', (t * 16).toFixed(1) + 'deg');
+    d.style.transform = 'rotate(' + (t * 16).toFixed(1) + 'deg)';
+    caja.appendChild(d);
+  }
+  /* El nombre sale de NOMBRES, que es de donde lo saca el marcador. Leerlo
+     del objeto del jugador daba «b» —el asiento— en pantalla, porque ese
+     objeto no guarda nombre. Se vio en la captura, no en el código. */
+  const rot = $('#mRotRival');
+  const suNombre = (NOMBRES[modo] && NOMBRES[modo].b) || 'Rival';
+  if(rot) rot.textContent = n
+    ? suNombre + ' · ' + n + (n === 1 ? ' carta' : ' cartas')
+    : '';
+}
+
 function pintarMano(){
   const m = $('#mMano'); m.innerHTML = '';
+  m.classList.add('abanico');
   const puedeCombinar = yo().combosUsados < MOTOR.COMBOS_POR_JUGADOR;
 
+  const total = yo().mano.length;
+  let idx = 0;
   for(const c of yo().mano){
     const b = laCarta(c);
     const marcada = elegidas.some(x => x.id === c.id);
     b.classList.toggle('marcada', marcada);
+    /* El abanico: de −t a +t repartido entre las que haya. Con UNA carta no
+       hay abanico que abrir y `total-1` sería cero. */
+    const t = total > 1 ? (idx / (total - 1)) - .5 : 0;
+    b.style.setProperty('--giro', (t * 15).toFixed(2) + 'deg');
+    /* Las de las puntas bajan un poco: es lo que hace que el borde de arriba
+       dibuje un arco en vez de una recta inclinada. */
+    b.style.setProperty('--sube', (Math.abs(t) * 15).toFixed(1) + 'px');
+    b.style.setProperty('--i', String(idx));
+    idx++;
     /* NINGUNA carta de la mano se apaga. La versión anterior apagaba las
        cuatro restantes en cuanto elegías una, y para cambiar de opinión había
        que pasar por «Quitar selección» — un callejón sin salida que un niño no
        va a resolver, y además cuatro cartas grises se ven como si se hubieran
        roto. Ahora se puede picar cualquiera siempre, y `marcar` decide qué
        significa: combinar si se puede, cambiar de carta si no. */
-    b.addEventListener('click', () => marcar(c));
+    b.addEventListener('click', () => {
+      /* Al frente ANTES de decidir qué significa el toque: aunque `marcar` la
+         rechace —dos niveles que no combinan—, quien la tocó tiene derecho a
+         verla entera. Si sólo se levantara al aceptarse, un rechazo se vería
+         como que el toque no registró. */
+      for(const o of m.querySelectorAll('.carta.frente')) o.classList.remove('frente');
+      b.classList.add('frente');
+      marcar(c);
+    });
     /* Escalonado, no todas de golpe: así se lee como un reparto y no como un
        parpadeo. 45 ms por carta — cinco cartas entran en un cuarto de segundo,
        que es lo que aguanta alguien que ya quiere jugar. */
     b.classList.add('llega');
+    /* La clase se va sola al aterrizar: mientras `llega` esté puesta, su
+       fotograma final gana sobre `.frente` y `.marcada` y la carta no se
+       levantaría al tocarla. */
+    b.addEventListener('animationend', () => b.classList.remove('llega'), { once:true });
     b.style.animationDelay = (m.children.length * 45) + 'ms';
     m.appendChild(b);
   }
@@ -1304,7 +1476,7 @@ function pedirJugada(){
   fase('Elegir');
   $('#bJugar').classList.remove('oculto');
   $('#bLimpiar').classList.remove('oculto');
-  pintarMarcador(); pintarMano(); pintarBotones();
+  pintarMarcador(); pintarRival(); pintarMano(); pintarBotones();
 }
 
 function jugar(){

@@ -172,6 +172,43 @@
         "todas las animaciones son iguales"
       ],
       "salioDe": "La gramática de movimiento del banco de pruebas: curvas con papel asignado."
+    },
+    {
+      "id": "el-fotograma-final-que-se-queda-clavado",
+      "titulo": "`to{transform:none}` con relleno both no suelta el control: lo toma para siempre",
+      "gravedad": "alta",
+      "sintoma": "Una transformación de CSS —un giro, una escala, un desplazamiento— está escrita, es correcta, y el elemento sale plano. Sin error en consola y sin nada raro al inspeccionar la regla, que aparece aplicada.",
+      "causa": "El elemento tiene una animación con `animation-fill-mode: both` o `forwards`, y su último fotograma dice `transform:none`. Al terminar, el navegador DEJA CLAVADO ese fotograma, y un fotograma de animación gana sobre cualquier declaración normal por específica que sea.",
+      "porque": "`transform:none` se lee como «aquí no hago nada», y en un fotograma significa lo contrario: «este elemento no tiene transformación, nunca». Y como la animación dura menos de medio segundo, para cuando uno mira ya sólo se ve el resultado plano, sin pista de quién lo dejó así.",
+      "arreglo": "Que el último fotograma ATERRICE en la pose de reposo real —incluidas las variables CSS que la definen— en vez de en `none`. Y quitar la clase de la animación al terminar (`animationend`, `once:true`), para que los estados posteriores —seleccionado, al frente— puedan mover el elemento.",
+      "comoCazarlo": "Medir la CAJA, no leer el CSS: si todos los elementos que deberían estar rotados miden exactamente el mismo alto, no hay rotación. Una caja rotada siempre mide más que la sin rotar. Y `getComputedStyle(el).transform` devuelve la matriz identidad cuando está clavado.",
+      "consejo": "Y en las PRUEBAS, esperar el hecho y no un tiempo: mientras la animación corre, los elementos van escalonados y tienen posiciones distintas por el REPARTO, no por el diseño. Una espera fija a media animación da verde con el efecto muerto.",
+      "senales": [
+        "no gira",
+        "se ve plano",
+        "el css está bien y no hace nada",
+        "la animación deja la carta recta",
+        "no se aplica el transform"
+      ],
+      "salioDe": "El abanico de Guerra de Puercos: el CSS del giro estaba perfecto y las cinco cartas salían rectas. La animación de reparto terminaba en transform:none con fill both."
+    },
+    {
+      "id": "encimar-hasta-dejar-algo-intocable",
+      "titulo": "Al encimar elementos es facilísimo dejar uno tapado del todo y sin forma de tocarlo",
+      "gravedad": "alta",
+      "sintoma": "Una carta, pestaña o ficha de una pila no responde al toque. En la captura se ve perfecta, porque lo que falta no es pintura: es la parte que recibe el dedo.",
+      "causa": "El encime se ajustó mirando la foto, y el elemento de encima cubre el punto donde el de abajo recibe el toque. El clic se lo lleva el de arriba.",
+      "porque": "El ojo perdona un encime agresivo —se sigue viendo bien— y el dedo no. Y quien prueba suele tocar la última, que es la que está encima de todas y siempre funciona.",
+      "arreglo": "Garantizar una franja visible mínima por elemento y comprobarla, no calcularla. Si no cabe, se encima menos o se hace scroll, pero no se deja un elemento inalcanzable.",
+      "comoCazarlo": "`document.elementFromPoint` en el centro de la franja VISIBLE de cada uno —del borde izquierdo al borde del siguiente— y comprobar que lo que hay debajo es ese elemento y no su vecino. Es la única forma de medir «se puede tocar».",
+      "consejo": "Ojo con el modo en que falla en una prueba automática: un clic sobre algo tapado no reprueba, se queda esperando hasta agotar el tiempo y MATA el script entero, sin imprimir una sola falla. Ese silencio se lee igual que un aprobado — me pasó y lo leí mal.",
+      "senales": [
+        "no me deja tocar una",
+        "esa carta no se selecciona",
+        "sólo funciona la última",
+        "se traba al picar"
+      ],
+      "salioDe": "El abanico de Guerra de Puercos. Rompiendo el encime a propósito, las pruebas no reportaban ninguna falla: se moría el proceso."
     }
   ]
 }

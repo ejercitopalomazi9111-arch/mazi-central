@@ -159,7 +159,14 @@ await page.waitForFunction(() => {
   const c = [...document.querySelectorAll('#mMano .carta img')];
   return c.length > 0 && c.every(i => i.complete);
 }, null, { timeout: 15000 }).catch(() => {});
-await page.waitForTimeout(400);
+/* ⚠ Y TAMBIÉN SE ESPERA A QUE ATERRICE EL REPARTO, no sólo a las imágenes.
+   Las cartas entran ESCALONADAS —45 ms de retraso cada una—, así que a media
+   animación tienen alturas distintas POR EL REPARTO, no por el abanico. Con
+   una espera fija de 400 ms este bloque daba verde con el abanico MUERTO: lo
+   comprobé rompiéndolo a propósito y los 45 seguían en verde. */
+await page.waitForFunction(
+  () => !document.querySelector('#mMano .carta.llega'), null, { timeout:8000 }).catch(() => {});
+await page.waitForTimeout(150);
 
 const mano = await page.evaluate(() => {
   const cs = [...document.querySelectorAll('#mMano .carta')];
@@ -171,9 +178,53 @@ const mano = await page.evaluate(() => {
            anchoMin: Math.min(...cs.map(c => c.getBoundingClientRect().width)) };
 });
 ok('están las 5 cartas de la mano', mano.cuantas === 5, mano.cuantas + '');
-ok('las cartas de cada fila están alineadas entre sí',
-   mano.filas.every(f => new Set(f.map(c => c.top)).size === 1),
-   JSON.stringify(mano.filas));
+/* ⚠ LA ASERCIÓN DE «TODAS ALINEADAS» SE RETIRÓ, Y CON RAZÓN. Defendía la mano
+   en fila; ahora es un ABANICO, y un abanico tiene las cartas a distinta
+   altura A PROPÓSITO. Dejarla habría sido exactamente lo que le advertí a
+   Godines que no hiciera con su rama: una prueba defendiendo una decisión ya
+   derribada. Lo que sí importa de un abanico es esto: */
+const fan = await page.evaluate(() => {
+  const cs = [...document.querySelectorAll('#mMano .carta')];
+  const r = cs.map(c => c.getBoundingClientRect());
+  const tap = document.querySelector('#fElegir .tapete').getBoundingClientRect();
+  return {
+    salto: Math.max(...r.map(x => x.top)) - Math.min(...r.map(x => x.top)),
+    alto: r[0].height,
+    /* se enciman: cada carta empieza antes de que acabe la anterior */
+    encimadas: r.slice(1).every((x, i) => x.left < r[i].right),
+    dentro: Math.min(...r.map(x => x.left)) >= tap.left - 1
+         && Math.max(...r.map(x => x.right)) <= tap.right + 1,
+  };
+});
+/* Un abanico sube las puntas; una mano ROTA las manda a cualquier lado. Medio
+   alto de carta es la frontera: por encima de eso ya no se lee como una mano. */
+ok('el abanico abre las cartas, pero menos de medio alto de carta',
+   fan.salto > 0 && fan.salto < fan.alto / 2, Math.round(fan.salto) + ' px de salto');
+ok('las cartas se enciman de verdad', fan.encimadas);
+ok('el abanico entero cabe dentro del tapete', fan.dentro);
+
+/* ⚠ LA PROPIEDAD QUE DE VERDAD SOSTIENE UN ABANICO: que las CINCO se puedan
+   tocar. Al encimar cartas es facilísimo dejar una tapada del todo, y entonces
+   hay una carta en la mano que no se puede jugar — un juego roto que se ve
+   perfecto en la captura.
+   Se mide con elementFromPoint sobre la franja VISIBLE de cada carta (la de
+   la izquierda, la que no tapa la siguiente), que es donde de verdad pica un
+   dedo. Rompiendo el abanico a propósito, las cartas se encimaban del todo y
+   el clic de más abajo moría por tiempo: el defecto se detectaba, pero como
+   un volcado en vez de como una falla legible. */
+const alcanzables = await page.evaluate(() => {
+  const cs = [...document.querySelectorAll('#mMano .carta')];
+  return cs.map((c, i) => {
+    const r = c.getBoundingClientRect();
+    const sig = cs[i + 1] ? cs[i + 1].getBoundingClientRect().left : r.right;
+    const x = (r.left + Math.min(sig, r.right)) / 2;   /* centro de lo que se ve */
+    const y = r.top + r.height * .55;
+    const bajo = document.elementFromPoint(x, y);
+    return !!(bajo && bajo.closest('.carta') === c);
+  });
+});
+ok('las cinco cartas del abanico se pueden tocar',
+   alcanzables.every(Boolean), JSON.stringify(alcanzables));
 /* ⚠ ESTE NÚMERO ESTUVO MAL Y EL COMENTARIO PEOR. Decía «95 px no es un
    capricho: por debajo de eso la frase de la carta deja de leerse» — y yo no
    lo había medido. Escogí 95 por quedar justo debajo de los 103 que ya había y
@@ -198,6 +249,45 @@ ok('cada carta mide lo suficiente para verse (≥88 px)',
 const desborde = await page.evaluate(() =>
   document.documentElement.scrollWidth > window.innerWidth + 1);
 ok('la página no se desborda de lado', !desborde);
+
+/* La razón de ser del abanico: al tocar una carta se ve ENTERA. Sin esto, la
+   que eliges queda tapada por la siguiente y no sabes qué escogiste. */
+{
+  const antes = await page.evaluate(() => {
+    const c = document.querySelectorAll('#mMano .carta')[1];
+    return c.getBoundingClientRect().top;
+  });
+  await page.click('#mMano .carta:nth-child(2)');
+  /* ⚠ NO SE ESPERA UN TIEMPO, SE ESPERA EL HECHO. Al marcar, la mano se
+     repinta entera y las cartas vuelven a entrar con su animación de reparto;
+     mientras `llega` esté puesta, su fotograma final manda y la carta todavía
+     no se ha levantado. Con 400 ms fijos la prueba medía a media animación y
+     reportaba «sube 0 px» con la carta subiendo 36. Ya me pasó en este mismo
+     archivo con las imágenes: medir temprano inventa números. */
+  /* ⚠ CON RED, Y NO ES PEREZA. Si el abanico está roto la clase `llega` no se
+     quita nunca, esta espera revienta y el script SE MUERE ENTERO: no imprime
+     ni un ✗, sólo un volcado. Me pasó probando la mutación y leí ese silencio
+     como «pasó» — que es exactamente la trampa que llevo semanas cazando.
+     Con el catch, la espera se rinde y la aserción de abajo reporta el número
+     medido, que es lo que hace falta para saber qué se rompió. */
+  await page.waitForFunction(
+    () => !document.querySelector('#mMano .carta.llega'), null, { timeout:8000 })
+    .catch(() => {});
+  await page.waitForTimeout(120);
+  const d = await page.evaluate(() => {
+    const cs = [...document.querySelectorAll('#mMano .carta')];
+    const c = cs[1], r = c.getBoundingClientRect();
+    const zi = n => Number(getComputedStyle(n).zIndex) || 0;
+    return { top:r.top, alFrente: cs.every((o, i) => i === 1 || zi(o) < zi(c)),
+             tapaElTitulo: r.top < document.getElementById('rTuMano').getBoundingClientRect().bottom };
+  });
+  ok('la carta que se toca sube', d.top < antes - 4, Math.round(antes - d.top) + ' px');
+  ok('y queda por ENCIMA de todas las demás', d.alFrente);
+  /* Subir y tapar el rótulo de la sección es cambiar un problema por otro. */
+  ok('sin taparle el título a la sección', !d.tapaElTitulo);
+  await page.click('#bLimpiar');
+  await page.waitForTimeout(200);
+}
 
 console.log('\n── El fieltro: la mesa no compite con las cartas ──');
 /* Carlos, viendo unas fotos del juego: «se ve bien culero». El motivo era
