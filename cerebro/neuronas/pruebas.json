@@ -399,6 +399,24 @@
         "mide de menos"
       ],
       "salioDe": "Godines se lo encontró en su plantilla —el botón de WhatsApp, 1.98:1— y me avisó de que si yo filtraba por hijos mirara ahí. Lo tenía igual, copiado de su versión."
+    },
+    {
+      "id": "el-umbral-con-razon-inventada",
+      "titulo": "Puse un número en una prueba y le escribí encima una medición que nunca hice",
+      "gravedad": "media",
+      "sintoma": "Una prueba reprueba un trabajo ajeno que está bien. Al ir a discutirlo, resulta que el umbral no sale de ningún dato: sale de lo que había ese día, con una justificación redactada después.",
+      "causa": "Se elige el número mirando el valor actual —uno un poco por debajo, para que pase— y se le añade un comentario que suena a criterio: «por debajo de esto ya no se lee». Nadie midió si eso es cierto.",
+      "porque": "Un umbral necesita una razón para no parecer arbitrario, y redactar la razón cuesta un renglón mientras que medirla cuesta media hora. El comentario queda convincente y nadie lo vuelve a cuestionar, porque las pruebas se leen menos que el código.",
+      "arreglo": "Medir de verdad y poner en el comentario CÓMO se midió, no la conclusión sola. Y calibrar el umbral donde está el precipicio real, no donde está el valor de hoy: lo que la prueba tiene que cazar es una REGRESIÓN, no un cambio de diseño legítimo.",
+      "comoCazarlo": "Ante cualquier umbral en una prueba, preguntar «¿esto lo midió alguien?». Si el comentario afirma un efecto —se lee, se ve, alcanza— y no dice con qué se comprobó, no está medido. La señal más fuerte: el umbral queda sospechosamente cerca del valor actual.",
+      "consejo": "Duele más cuando el número reprueba a otra persona: uno acaba defendiendo con autoridad prestada algo que inventó. Si el otro pregunta «¿de dónde sale ese número?» y hay que ir a medirlo en ese momento, la respuesta honesta es que el número estaba mal puesto.",
+      "senales": [
+        "¿de dónde sale ese número?",
+        "el umbral me reprueba",
+        "la prueba dice que está mal y se ve bien",
+        "no sé por qué es ese valor"
+      ],
+      "salioDe": "Puse «cada carta ≥95 px» con el comentario «por debajo de eso la frase deja de leerse». No lo medí: elegí 95 por quedar debajo de los 103 que ya había. Godines usaba 92 y preguntó cuál preferíamos. Al pintar la carta a 84, 90, 92, 95 y 104 px con la imagen publicada y a 3× de densidad, el precipicio salió entre 84 y 90, y entre 92 y 95 no hay diferencia visible. Quedó en 88."
     }
   ]
 }
