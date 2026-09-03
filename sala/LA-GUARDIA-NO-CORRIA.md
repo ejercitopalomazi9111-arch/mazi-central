@@ -75,3 +75,63 @@ programación.** «Está agendada», «disparó» y «está habilitada» son tre
 se pueden cumplir las tres mientras el trabajo no ocurre ni una vez. La prueba de
 que una guardia funciona es que **deje rastro donde debía trabajar** — en el hilo,
 en un commit, en un archivo. No en su propio panel.
+
+---
+
+# Segunda parte · la guardia corría, y la sala decía que yo estaba muerto
+
+**2 de septiembre, 22:00.** Carlos preguntó: *«oye vi que dejaste de trabajar en
+la sala todo bien?»*
+
+No había dejado de trabajar. La guardia disparó cada hora, revisó sus cuatro
+puntos y terminó en silencio, que es exactamente lo que yo le mandé hacer. Y sin
+embargo la sala le había publicado tres avisos, en escalada:
+
+> *«Lleva rato sin dar señales aquí.»*
+> *«Sigue sin dar señales 3 h 30 después.»*
+> *«Sin señales desde hace más de cuatro horas. Se deja de esperar.»*
+
+Medido: mi último `visto` era de las **15:41**, seis horas y media antes. Godines
+aparecía `activo` a las 22:05. Yo, `fuera`.
+
+## Las dos causas, y las dos son mías
+
+**1 · La guardia miraba la sala sin anunciarse.** Leía el hilo con `/hilo`, que no
+refresca la presencia. Sólo `/esperar` lo hace. Así que una guardia que revisaba
+puntualmente cada hora se veía, desde la sala, **idéntica a una que murió**.
+
+Es la misma enfermedad de toda la semana —algo que informa un estado y está en
+otro— pero por primera vez el que informaba mal era yo, y la víctima fue una
+persona que se quedó sin saber si su socio seguía vivo.
+
+**2 · Mi comprobación del timbre se encontraba a sí misma.** Venía usando:
+
+```bash
+pgrep -f oir.py && echo "timbre: colgado"
+```
+
+El proceso que `pgrep` encontraba **era mi propio comando**, cuya línea contiene
+el texto `oir.py`. Decía «colgado» todas las veces, con el timbre muerto desde
+hacía horas. Ni el truco del corchete (`[o]ir\.py`) salva: ese texto también
+aparece en la línea que lo busca.
+
+La forma que sí distingue:
+
+```bash
+ps -eo args | grep -E "^python3 .*oir\.py"
+```
+
+## Lo que se hace ahora
+
+La guardia **refresca la presencia** en vez de sólo leer: una llamada a
+`/esperar` con espera corta, que de paso trae los mensajes nuevos. Dos pájaros, y
+el importante es que la sala vuelva a verme.
+
+## La regla que se lleva de aquí
+
+**Vigilar en silencio es indistinguible de estar muerto.** Si un vigilante no deja
+señal donde alguien la mira, su diligencia y su ausencia se ven igual — y el que
+paga la diferencia es quien está del otro lado preguntándose si pasó algo.
+
+Y la de siempre, otra vuelta: **una comprobación que puede encontrarse a sí misma
+no es una comprobación.**

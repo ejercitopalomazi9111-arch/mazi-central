@@ -87,6 +87,42 @@
         "los márgenes quedan mal"
       ],
       "salioDe": "Propiedades lógicas de CSS documentadas en MDN."
+    },
+    {
+      "id": "el-motivo-en-un-renglon-que-nadie-ve",
+      "titulo": "El error se explica perfecto, en la barra de arriba, y quien preguntó mira abajo",
+      "gravedad": "alta",
+      "sintoma": "Se toca un botón —traducir, exportar, reintentar— y aparentemente no pasa nada. Nadie reporta un error porque nadie ve ninguno.",
+      "causa": "El motivo se escribe en una barra global de avisos que está lejos —o fuera— del sitio de la pantalla donde se apretó el botón. En un teléfono eso suele ser fuera de cuadro.",
+      "porque": "Al programar, la barra de avisos se ve siempre: uno la tiene delante mientras prueba en una pantalla ancha y con la página arriba del todo. La distancia entre el botón y el aviso sólo existe para quien está usando la app de verdad.",
+      "arreglo": "El motivo va DONDE se hizo la pregunta: en la misma tarjeta, burbuja o renglón del control que se tocó. La barra global puede seguir teniéndolo, pero no puede ser el único sitio.",
+      "comoCazarlo": "En un navegador de verdad y en 390 px de ancho: tocar el control con la respuesta en fallo y medir con getBoundingClientRect que el texto del motivo está DENTRO de la ventana. Que el nodo exista no es que se vea.",
+      "consejo": "Y que el motivo distinga APAGADO de ROTO. Lo primero se arregla poniendo una variable; lo segundo no se arregla desde ahí. Decir «no se pudo» a las dos cosas deja a alguien esperando a que se componga solo algo que nadie ha encendido.",
+      "senales": [
+        "toco el botón y no pasa nada",
+        "no me traduce",
+        "no marca error pero tampoco funciona",
+        "se queda igual"
+      ],
+      "salioDe": "Carlos mandó la captura de GRUPAZ con tres palabras: «Sigue en spanis». Había tocado «🌐 english» y el mensaje seguía en español. El código ya sabía el motivo —el servidor contesta 501 con apagado:true cuando no hay traductor— y ya lo escribía. Lo escribía en $('aviso'), arriba, fuera de su pantalla."
+    },
+    {
+      "id": "la-llave-del-diccionario-trae-saltos-de-linea",
+      "titulo": "La frase del HTML viene partida en tres renglones y nunca es igual a la del diccionario",
+      "gravedad": "media",
+      "sintoma": "Con la interfaz en otro idioma, unas frases se traducen y otras —casi siempre las largas— se quedan en el original. Parece que faltan del diccionario y están puestas.",
+      "causa": "En el archivo, una frase larga se escribe en varios renglones con sangría, así que el nodo de texto trae saltos de línea y espacios en medio. Un diccionario de coincidencia exacta compara contra una entrada escrita con un solo espacio y no coinciden.",
+      "porque": "El salto de línea es invisible: en pantalla la frase se ve idéntica a la del diccionario, porque el navegador aplasta los espacios al PINTAR pero no al leerlos desde el DOM.",
+      "arreglo": "Aplastar los espacios para BUSCAR —trim más reemplazo de todo grupo de espacios por uno— y armar el mapa de vuelta con la misma llave aplastada. Si sólo se aplasta la ida, la frase se traduce y ya no regresa nunca.",
+      "comoCazarlo": "Poner la interfaz en el otro idioma en un navegador de verdad y recorrer el DOM buscando lo que siga teniendo acentos o palabras de función del idioma original. Sale la lista completa de una: sin ese barrido se encuentran de una en una y por casualidad.",
+      "consejo": "El barrido vale más que las entradas: es lo que hace que la frase que alguien agregue mañana sin su traducción se marque sola. Y hay que dejar fuera lo que ESCRIBIÓ una persona —el hilo de mensajes—, porque eso no le toca al diccionario.",
+      "senales": [
+        "se traduce a medias",
+        "unas frases sí y otras no",
+        "sigue en español",
+        "la traducción está puesta y no sale"
+      ],
+      "salioDe": "El barrido del 3 de septiembre en La Sala: 21 frases de interfaz sin traducir, y varias de ellas ya estaban en el diccionario — lo que fallaba era la comparación."
     }
   ]
 }

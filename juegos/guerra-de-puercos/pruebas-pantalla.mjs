@@ -132,21 +132,194 @@ const mano2 = await page.evaluate(() =>
   [...document.querySelectorAll('#mMano .carta .valor')].map(v => v.textContent).join(','));
 ok('el jugador 2 ve SU mano, no la del 1', mano1 !== mano2, mano1 + ' vs ' + mano2);
 
-console.log('\n── La mano cabe en un renglón (iPhone de 390) ──');
+console.log('\n── La mano, medida cuando ya cargó (iPhone de 390) ──');
 /* Se recarga en limpio en vez de tratar de salir a tientas: veníamos a media
    partida de dos jugadores, con la cortina puesta. */
 await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
 await page.click('[data-modo="maquina"]');
-await page.waitForTimeout(300);
-const renglones = await page.evaluate(() => {
-  const y = [...document.querySelectorAll('#mMano .carta')]
-    .map(c => Math.round(c.getBoundingClientRect().top));
-  return new Set(y).size;
+
+/* ⚠ ESTA PRUEBA ESTUVO EN ROJO Y NADIE LO VIO, por dos motivos distintos:
+
+   1. EXIGÍA UN SOLO RENGLÓN cuando el diseño ya había decidido tres por
+      renglón —está escrito en el CSS y con su razón: cinco en fila daban
+      64 px por carta en un iPhone, alcanzaba para un número y no para una
+      ilustración—. O sea que la prueba defendía una decisión DERRIBADA. Una
+      prueba que contradice al diseño no protege nada: se ignora y de paso
+      tapa las que sí importan.
+
+   2. MEDÍA A LOS 300 ms, antes de que cargaran las imágenes de las cartas.
+      Decía «4 renglones» donde de verdad hay 2 — porque a media carga las
+      alturas bailan y `top` sale distinto en cartas de la misma fila. Un
+      número inventado por medir temprano.
+
+   Lo que sí importa, y es lo que se comprueba ahora: que las cartas de una
+   misma fila estén ALINEADAS, que quepan sin desbordar, y que sean lo bastante
+   grandes para VER la ilustración, que es la mitad del juego. */
+await page.waitForFunction(() => {
+  const c = [...document.querySelectorAll('#mMano .carta img')];
+  return c.length > 0 && c.every(i => i.complete);
+}, null, { timeout: 15000 }).catch(() => {});
+await page.waitForTimeout(400);
+
+const mano = await page.evaluate(() => {
+  const cs = [...document.querySelectorAll('#mMano .carta')];
+  const filas = {};
+  for(const c of cs){ const r = c.getBoundingClientRect();
+    const k = Math.round(r.top / 10) * 10;
+    (filas[k] = filas[k] || []).push({ top:+r.top.toFixed(1), w:+r.width.toFixed(1) }); }
+  return { cuantas: cs.length, filas: Object.values(filas),
+           anchoMin: Math.min(...cs.map(c => c.getBoundingClientRect().width)) };
 });
-ok('las 5 cartas van en UN solo renglón', renglones === 1, renglones + ' renglones');
+ok('están las 5 cartas de la mano', mano.cuantas === 5, mano.cuantas + '');
+ok('las cartas de cada fila están alineadas entre sí',
+   mano.filas.every(f => new Set(f.map(c => c.top)).size === 1),
+   JSON.stringify(mano.filas));
+/* 95 px no es un capricho: por debajo de eso la frase de la carta —que es la
+   mitad del chiste de cada una— deja de leerse. Con tres por renglón dan 103. */
+ok('cada carta mide lo suficiente para verse (≥95 px)',
+   mano.anchoMin >= 95, Math.round(mano.anchoMin) + ' px');
 const desborde = await page.evaluate(() =>
   document.documentElement.scrollWidth > window.innerWidth + 1);
 ok('la página no se desborda de lado', !desborde);
+
+console.log('\n── El fieltro: la mesa no compite con las cartas ──');
+/* Carlos, viendo unas fotos del juego: «se ve bien culero». El motivo era
+   medible: fondo #E84A8A de borde a borde y las 102 cartas con marco rosa, o
+   sea el arte puesto encima de su propio color. */
+const fieltro = await page.evaluate(() => {
+  const lum = c => { const s = c.map(v => { v/=255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+  const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+  return {
+    enMesa: document.body.classList.contains('fieltro'),
+    luzFondo: +lum(num(getComputedStyle(document.body).backgroundColor)).toFixed(4),
+    principalLleno: getComputedStyle(document.querySelector('#bJugar')).backgroundColor,
+    secundarioLleno: getComputedStyle(document.querySelector('#bLimpiar')).backgroundColor,
+  };
+});
+ok('en la mesa el fieltro está puesto', fieltro.enMesa);
+/* El fondo tiene que ser OSCURO de verdad, no rosa oscurecido a ojo. 0.08 de
+   luminancia relativa es el techo: por encima vuelve a competir con el arte. */
+ok('el fondo de la mesa es oscuro de verdad', fieltro.luzFondo < 0.08, fieltro.luzFondo + '');
+/* La jerarquía estaba AL REVÉS: «Jugar carta» apagado y debajo dos bloques
+   blancos sólidos —lo menos importante era lo más brillante—. */
+ok('los botones secundarios no son bloques llenos',
+   /rgba\(0, 0, 0, 0\)|transparent/.test(fieltro.secundarioLleno), fieltro.secundarioLleno);
+
+await page.click('#mMano .carta');
+await page.waitForTimeout(250);
+ok('con una carta elegida, el principal SÍ se llena',
+   !/rgba\(0, 0, 0, 0\)|transparent/.test(
+     await page.evaluate(() => getComputedStyle(document.querySelector('#bJugar')).backgroundColor)));
+await page.click('#bLimpiar');
+await page.waitForTimeout(200);
+
+
+
+console.log('\n── El texto de la mesa se lee (contraste medido) ──');
+const contraste = await page.evaluate(() => {
+  const lum = c => { const s = c.map(v => { v/=255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+  const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+  const mezcla = (f, b, a) => f.map((v,i) => v*a + b[i]*(1-a));
+  /* ⚠ EL FONDO REAL, no el del documento: un texto sobre un panel translúcido
+     sobre el fieltro se compone de las tres capas, y medir contra la de abajo
+     da un número que no existe en la pantalla. */
+  const fondo = el => { let n = el, acc = [0,0,0]; const pila = [];
+    while(n && n !== document.documentElement){
+      const b = getComputedStyle(n).backgroundColor, m = b.match(/[\d.]+/g);
+      if(m){ const a = m.length > 3 ? Number(m[3]) : 1; if(a > 0) pila.push([num(b), a]); }
+      n = n.parentElement; }
+    const raiz = getComputedStyle(document.documentElement).backgroundColor;
+    acc = (raiz.match(/[\d.]+/g) || []).length ? num(raiz) : [0,0,0];
+    for(let i = pila.length - 1; i >= 0; i--) acc = mezcla(pila[i][0], acc, pila[i][1]);
+    return acc; };
+  const razon = (a,b) => { const L1 = lum(a), L2 = lum(b);
+    const [x,y] = L1 > L2 ? [L1,L2] : [L2,L1]; return (x+.05)/(y+.05); };
+  const malos = [], vistos = new Set();
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for(let n = w.nextNode(); n; n = w.nextNode()){
+    const t = (n.nodeValue || '').trim(); if(t.length < 2) continue;
+    const el = n.parentElement; if(!el || vistos.has(el)) continue; vistos.add(el);
+    if(el.closest('.carta')) continue;      /* la carta es una imagen, no texto nuestro */
+    const r = el.getBoundingClientRect(); if(!r.width || !r.height) continue;
+    const cs = getComputedStyle(el);
+    if(cs.visibility === 'hidden' || cs.opacity === '0') continue;
+    const px = parseFloat(cs.fontSize);
+    const grande = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700);
+    const rz = +razon(num(cs.color), fondo(el)).toFixed(2);
+    if(rz < (grande ? 3 : 4.5)) malos.push(t.slice(0,30) + ' · ' + rz);
+  }
+  return malos;
+});
+ok('ningún texto de la mesa se queda corto de contraste',
+   contraste.length === 0, contraste.join(' | '));
+/* La premisa, dicha en voz alta: si el recorrido no viera nada, «ninguno se
+   queda corto» saldría en verde con la mesa entera ilegible. */
+ok('…y el recorrido de verdad está mirando la mesa',
+   await page.evaluate(() => document.body.innerText.includes('Ronda')));
+
+const pistas = await page.evaluate(() => {
+  const el = document.getElementById('mPistas');
+  const rg = document.createRange(); rg.selectNodeContents(el);
+  const tops = [...rg.getClientRects()].map(r => Math.round(r.top));
+  const ultima = Math.max(...tops);
+  let palabras = 0;
+  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for(let n = w.nextNode(); n; n = w.nextNode()){
+    const s = n.nodeValue;
+    for(let i = 0; i < s.length; i++){
+      if(/\S/.test(s[i]) && (i === 0 || /\s/.test(s[i-1]))){
+        const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i+1);
+        if(Math.round(r.getBoundingClientRect().top) === ultima) palabras++;
+      } } }
+  return palabras;
+});
+/* Una palabra sola al final se lee como si el texto se hubiera cortado. Se
+   evita con espacios duros, no acortando la frase. */
+ok('el renglón de abajo no deja una palabra huérfana', pistas > 1, pistas + ' palabra(s)');
+
+console.log('\n── Y al salir, la portada vuelve a ser rosa ──');
+/* ⚠ Esta prueba nació MENTIROSA: la escribí devolviendo `true` a secas, con un
+   `querySelector` decorativo al lado que no comprobaba nada. Habría salido en
+   verde con el fieltro pegado a la portada para siempre. Ahora SE SALE de la
+   mesa de verdad y se mira el fondo que queda. */
+await page.click('#p-mesa .btn:not(.fuerte):last-of-type');   /* Salir */
+await page.waitForTimeout(400);
+const portada = await page.evaluate(() => ({
+  seVeLaPortada: !document.querySelector('#p-portada').classList.contains('oculto'),
+  fieltro: document.body.classList.contains('fieltro'),
+  fondo: getComputedStyle(document.body).backgroundColor,
+}));
+ok('salir de la mesa devuelve a la portada', portada.seVeLaPortada);
+ok('y la portada NO lleva fieltro: ahí el rosa es la marca',
+   portada.seVeLaPortada && !portada.fieltro, portada.fondo);
+
+/* El pie de la portada estaba en blanco al 85 %: 3.45 sobre el rosa, y quitarle
+   la opacidad NO lo arreglaba —blanco puro sobre #E84A8A también da 3.45—. Lo
+   arregla la TINTA OSCURA, que da 5.15. Lo destapó esta prueba, no el ojo. */
+const enPortada = await page.evaluate(() => {
+  const lum = c => { const s = c.map(v => { v/=255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+  const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+  const razon = (a,b) => { const L1 = lum(a), L2 = lum(b);
+    const [x,y] = L1 > L2 ? [L1,L2] : [L2,L1]; return +((x+.05)/(y+.05)).toFixed(2); };
+  const f = num(getComputedStyle(document.body).backgroundColor), malos = [];
+  for(const el of document.querySelectorAll('#p-portada .pie, #p-portada .lema, #p-portada .btn')){
+    const cs = getComputedStyle(el), px = parseFloat(cs.fontSize);
+    const grande = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700);
+    /* Los botones traen su propio fondo, así que se miden contra el suyo. */
+    const bg = /rgba\(0, 0, 0, 0\)/.test(cs.backgroundColor) ? f : num(cs.backgroundColor);
+    const rz = razon(num(cs.color), bg);
+    if(rz < (grande ? 3 : 4.5)) malos.push((el.textContent||'').trim().slice(0,24) + ' · ' + rz);
+  }
+  return malos;
+});
+ok('en la portada tampoco hay texto corto de contraste',
+   enPortada.length === 0, enPortada.join(' | '));
 
 console.log('\n── Que no se pueda hacer trampa desde la pantalla ──');
 ok('nunca quedan marcadas dos cartas que no se pueden combinar', await page.evaluate(() => {

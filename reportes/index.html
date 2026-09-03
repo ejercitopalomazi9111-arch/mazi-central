@@ -1090,7 +1090,7 @@ El día ...
       <textarea id="cOtras" style="min-height:88px; font-family:inherit"
         placeholder="TASK FORCE MEX 1&#10;TÉC. EXTRAC- VEHICULAR&#10;RESCATE K-9"></textarea></label>
     <label class="campo"><span>Habilidades, certificaciones y cursos
-      <small style="color:var(--tenue)">(una por renglón · van en el QR, no en la credencial)</small></span>
+      <small style="color:var(--tenue)">(una por renglón · van en la ficha publicada, no en la credencial)</small></span>
       <textarea id="cHabilidades" style="min-height:130px; font-family:inherit"
         placeholder="TUM Básico (CRUM Querétaro, 2023)&#10;RCP y DEA para profesionales (AHA BLS, 2026)&#10;Atención Prehospitalaria del Trauma (PHTLS, 2025)"></textarea></label>
     <p class="aviso" id="avisoQR" style="margin-top:10px"></p>
@@ -2282,6 +2282,44 @@ function estilosHoja(hoja, f, primera){
   return conMembrete;
 }
 
+/* El oscurecido de la marca de agua, horneado en un lienzo en vez de con un
+   filtro CSS. Se guarda por dirección: la misma marca se pinta en cada hoja del
+   documento y rehacerla por hoja sería tirar trabajo. */
+const AGUA_LISTA = {};
+function oscurecerAgua(img, src){
+  if(AGUA_LISTA[src] === false){ img.style.filter = 'grayscale(1) brightness(.35)'; return; }
+  if(AGUA_LISTA[src]){ img.src = AGUA_LISTA[src]; return; }
+  const crudo = new Image();
+  crudo.onload = () => {
+    try{
+      const an = crudo.naturalWidth || 500, al = crudo.naturalHeight || 500;
+      const l = document.createElement('canvas'); l.width = an; l.height = al;
+      const cx = l.getContext('2d', { willReadFrequently:true });
+      cx.drawImage(crudo, 0, 0, an, al);
+      const d = cx.getImageData(0, 0, an, al), px = d.data;
+      for(let i = 0; i < px.length; i += 4){
+        /* ⚠ EL ALFA NO SE TOCA, y ése es todo el asunto: lo que producía el
+           recuadro negro era justamente perderlo. Un pixel transparente se
+           queda transparente aunque su color se oscurezca. */
+        const gris = 0.2126*px[i] + 0.7152*px[i+1] + 0.0722*px[i+2];
+        const v = gris * 0.35;
+        px[i] = px[i+1] = px[i+2] = v;
+      }
+      cx.putImageData(d, 0, 0);
+      AGUA_LISTA[src] = l.toDataURL('image/png');
+      img.src = AGUA_LISTA[src];
+    }catch(e){
+      /* Un lienzo manchado, un formato que no se puede leer… se vuelve al
+         filtro de siempre en vez de dejar la hoja sin marca. */
+      AGUA_LISTA[src] = false;
+      img.style.filter = 'grayscale(1) brightness(.35)';
+    }
+  };
+  crudo.onerror = () => { AGUA_LISTA[src] = false;
+                          img.style.filter = 'grayscale(1) brightness(.35)'; };
+  crudo.src = src;
+}
+
 function armaHoja(f, primera){
   const h = document.createElement('div');
   h.className = 'hoja';
@@ -2298,7 +2336,24 @@ function armaHoja(f, primera){
       p.src = marca.logo; p.alt = '';
       p.style.width = marca.ancho + 'mm'; p.style.transform = 'rotate(-21deg)';
       p.style.opacity = (f.opacidad/100);
-      p.style.filter = 'grayscale(1) brightness(.35)';
+      /* ⚠ AQUÍ IBA `filter: grayscale(1) brightness(.35)` Y SALÍA UN RECUADRO
+         NEGRO AL GUARDAR EN PDF. Lo reportó Carlos desde el teléfono.
+
+         Un filtro CSS sobre una imagen obliga al navegador a rasterizarla en
+         una capa aparte, y al aplanarla para el PDF hay motores que componen
+         el alfa SIN premultiplicar: cada pixel transparente —que es negro con
+         alfa cero— se vuelve negro OPACO. El dibujo desaparece dentro de su
+         propio rectángulo.
+
+         No pude reproducirlo aquí: el PDF de Chromium sale bien, y Carlos lo
+         guarda desde Safari. Así que en vez de adivinar el ajuste que lo
+         contenta, se quita la CLASE DE RIESGO entera — el oscurecido se hornea
+         en la imagen con un lienzo, respetando el alfa pixel por pixel, y a la
+         etiqueta sólo le queda `opacity`, que sí atraviesa bien la impresión.
+
+         Si el horneado falla por lo que sea, se cae al filtro de antes: peor
+         es quedarse sin marca de agua. */
+      oscurecerAgua(p, marca.logo);
       a.appendChild(p);
     }
     if(f.agua === 'paloma' || f.agua === 'texto'){
@@ -3035,7 +3090,9 @@ function credFrente(c){
   const glifos = ['llave','auto','lupa','estrella','credencial','persona'];
   const filas = [];
   if(c.empleado) filas.push(['persona','EMPLEADO: <b>'+esc(c.empleado)+'</b>']);
-  if(c.num)      filas.push(['credencial','NO. DE EMPLEADO: <b>'+esc(c.num)+'</b>']);
+  /* El NO. DE EMPLEADO ya no va en el frente: lo quitó Carlos. El campo sigue
+     existiendo porque de él sale el folio con el que se publica la ficha de
+     habilidades; lo que se retira es su renglón en la tarjeta. */
   if(c.acred)    filas.push(['estrella','ACREDITADO COMO:<br><b>'+esc(c.acred)+'</b>']);
   otras.forEach((o,k) => filas.push([glifos[k % glifos.length], '<b>'+esc(o)+'</b>']));
 
@@ -3065,7 +3122,7 @@ function credFrente(c){
     '<div class="pie">'+
       '<span class="casco" aria-hidden="true"></span>'+
       '<div class="marca-fr"><span class="a">ADVANCED</span><span class="c">FIRE RESCUE</span></div>'+
-      '<div class="ciclo">'+svg('calendario')+'<span>FECHA:<br>'+esc(b.ciclo)+'</span></div>'+
+      /* El recuadro de FECHA se retiró: lo pidió Carlos. */
     '</div>'+
   '</div>';
 }
@@ -3120,20 +3177,18 @@ function credReverso(c){
            de la empresa; el de habilidades es de la persona.
            Van rotulados, porque dos QR sin etiqueta obligan a escanear los dos
            para saber cuál es cuál. */
+        /* ⚠ EL QR DE HABILIDADES SE RETIRÓ, lo pidió Carlos. Queda SÓLO el de
+           redes, que es el de la empresa. Y sin el compañero al lado ya no
+           necesita rótulo: un QR solo no obliga a nadie a escanear dos para
+           saber cuál es cuál, que era la razón por la que se rotularon. */
         '<div class="lado">'+
-          (QRS[folioCred(c)]
-            ? '<div class="unqr"><div class="qr"><img src="'+QRS[folioCred(c)]+'" alt=""></div>'
-              + '<span class="rotulo-qr">HABILIDADES</span></div>'
-            : '')+
           '<div class="unqr"><div class="qr">'+ (b.qr ? '<img src="'+b.qr+'" alt="">'
-              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div>'
-            + (QRS[folioCred(c)] ? '<span class="rotulo-qr">REDES</span>' : '') +'</div>'+
+              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div></div>'+
         '</div>'+
       '</div>'+
       '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
     '</div>'+
   '</div>';
-  return nuevos > 0;
 }
 
 /* ── la pantalla de credenciales ── */
@@ -3158,17 +3213,18 @@ function avisarQR(c){
   if(!h){
     caja.className = 'aviso';
     caja.innerHTML = 'Escribe aquí <b>todas</b> sus certificaciones. En la credencial ' +
-      'siguen saliendo sólo las de arriba; el QR del reverso lleva a la lista completa.';
+      'siguen saliendo sólo las de arriba; la lista completa vive en la ficha que se ' +
+      'publica, y se llega a ella por su dirección.';
   } else if(!f){
     caja.className = 'aviso mal';
-    caja.innerHTML = '<b>Falta el número de empleado.</b> El QR usa ese número como folio, ' +
-      'y sin él no se puede armar. Llénalo arriba y el QR aparece solo.';
+    caja.innerHTML = '<b>Falta el número de empleado.</b> Ese número es el folio con el ' +
+      'que se publica la ficha, y sin él no se puede armar. Llénalo arriba.';
   } else {
     caja.className = 'aviso';
     caja.innerHTML = '<b>' + h + (h === 1 ? ' certificación' : ' certificaciones') +
-      '</b> en el QR del reverso, con folio <b>' + esc(f) + '</b>. ' +
+      '</b> en su ficha, con folio <b>' + esc(f) + '</b>. ' +
       'Falta subir su archivo a <code>reportes/credencial/datos/</code> — ' +
-      'hasta entonces el QR abre una página que dice que no está publicada.';
+      'hasta entonces la dirección abre una página que dice que no está publicada.';
   }
 }
 
@@ -3188,7 +3244,10 @@ function pintarCred(){
 
      Ahora la condición es «¿se generó alguno nuevo?». Termina sola porque la
      segunda vuelta ya no genera nada. */
-  prepararQRs().then((huboNuevos) => { if(huboNuevos) pintarCred(); });
+  /* ⚠ YA NO SE GENERAN QR. Con el de habilidades retirado, `prepararQRs`
+     fabricaba imágenes que no pinta nadie: trabajo invisible que a la larga
+     confunde a quien lea el código. La función se queda —el día que Carlos
+     quiera el QR de vuelta es descomentar esta línea— pero no corre. */
   $('#cuentaCred').textContent = CRED.gente.length +
     (CRED.gente.length===1 ? ' credencial' : ' credenciales');
   $('#listaCred').innerHTML = CRED.gente.map((g,k) =>
@@ -4279,10 +4338,22 @@ repintar();
      Lo que se puede comprobar aquí mismo, que es síncrono. Que los dos
      códigos SE LEAN de verdad al imprimirse necesita renderizar un PDF y
      decodificarlo, y eso vive en `reportes/pruebas-credencial.mjs`. */
-  ok('cuando hay dos códigos, cada uno va rotulado', (function(){
-     const rot = [...document.querySelectorAll('#mesaCred .rotulo-qr')].map(r => r.textContent);
-     /* Con uno solo no lleva rótulo y está bien: no hay con qué confundirlo. */
-     return rot.length === 0 || (rot.includes('HABILIDADES') && rot.includes('REDES'));
+  /* ⚠ ESTA PRUEBA CAMBIÓ DE SENTIDO, y por eso se reescribió en vez de dejarla.
+     Antes comprobaba que con DOS códigos cada uno fuera rotulado, y aceptaba
+     «cero rótulos» como caso legítimo. Al retirar el QR de habilidades, cero
+     rótulos pasó a ser SIEMPRE cierto: la prueba habría seguido en verde sin
+     mirar nada. Ahora afirma lo que de verdad se pidió — que en el reverso
+     quede UN solo código, el de redes. */
+  ok('en el reverso queda UN solo código, el de la empresa', (function(){
+     const qrs = [...document.querySelectorAll('#mesaCred .unqr')];
+     const rot = [...document.querySelectorAll('#mesaCred .rotulo-qr')];
+     return qrs.length <= 1 && rot.length === 0;
+  })());
+  ok('y el frente ya no lleva el NO. DE EMPLEADO', (function(){
+     return !/NO\. DE EMPLEADO/.test(credFrente({ num:'ACC-1127', apellidos:'X' }));
+  })());
+  ok('ni el recuadro de FECHA', (function(){
+     return !/class="ciclo"/.test(credFrente({ apellidos:'X' }));
   })());
   ok('el botón de arriba imprime CREDENCIALES cuando estás en credenciales',
      /vistaActual\(\) === 'credencial'/.test(imprimir.toString()),

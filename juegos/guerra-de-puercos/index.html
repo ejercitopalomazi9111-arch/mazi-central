@@ -47,6 +47,29 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
 .btn.ancho{width:100%}
 .btn.chico{min-height:44px; padding:8px 14px; font-size:14px; box-shadow:0 3px 0 var(--tinta)}
 
+/* ── LA JERARQUÍA ESTABA AL REVÉS, y se ve en cuanto se mira la mesa ───────
+   «Jugar carta» es LA acción, y mientras no haya carta elegida está apagada.
+   Debajo, «Quitar selección» y «Salir» eran dos bloques blancos sólidos. O sea
+   que las dos cosas menos importantes de la pantalla eran las dos más
+   brillantes, y la única que importa parecía rota.
+
+   Sobre fieltro los secundarios pasan a contorno —se ven, se tocan, y no
+   compiten— y el principal se queda como el único bloque lleno. No se toca
+   ningún tamaño: los 44 px de objetivo táctil siguen enteros. */
+body.fieltro .btn{
+  background:transparent; color:var(--hueso); border-color:rgba(255,255,255,.34);
+  box-shadow:none;
+}
+body.fieltro .btn:active{transform:translateY(2px)}
+body.fieltro .btn.fuerte{
+  background:var(--rosa); color:var(--tinta); border-color:var(--tinta);
+  box-shadow:0 4px 0 var(--rosa-hondo);
+}
+body.fieltro .btn.fuerte[disabled]{
+  background:rgba(232,74,138,.20); color:rgba(255,247,250,.50);
+  border-color:rgba(255,255,255,.16); box-shadow:none; opacity:1;
+}
+
 /* ── portada ── */
 .portada{text-align:center; padding:26px 0 18px}
 .hocico{width:74px; height:74px; margin:0 auto 10px; display:block}
@@ -61,6 +84,26 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   font-size:14px; line-height:1.45; background:var(--rosa-claro);
   border:3px solid var(--tinta); border-radius:12px; padding:9px 12px}
 .menu{display:grid; gap:12px; margin:22px 0 8px}
+
+/* ── EL FIELTRO ────────────────────────────────────────────────────────────
+   Carlos, viendo unas fotos: «se ve bien culero». Tenía razón y el motivo se
+   puede medir: el fondo era #E84A8A —rosa saturado de borde a borde— y las
+   102 cartas tienen MARCO ROSA. O sea que lo mejor que tiene el juego, que es
+   el arte pintado, quedaba puesto encima de su propio color y no se separaba
+   de la mesa.
+
+   Por eso las mesas de los juegos de cartas son oscuras y neutras, sin
+   excepción: la mesa no compite, la mesa sostiene. El rosa no se pierde —sigue
+   siendo la portada, el marcador y lo seleccionado—, pero deja de ser TODO.
+
+   Va por clase en el body y no en `body{}` a secas para que la portada siga
+   rosa: ahí el rosa es la marca y hace su trabajo. */
+body.fieltro{
+  background:#241019;
+  background-image:radial-gradient(circle at 20% 0%, rgba(232,74,138,.22) 0, transparent 55%),
+                   radial-gradient(circle at 85% 95%, rgba(196,36,99,.20) 0, transparent 50%);
+  color:var(--hueso);
+}
 
 /* ── la mesa ── */
 .marcador{
@@ -85,8 +128,17 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   background:var(--rosa-papel); border:3px solid var(--tinta); border-radius:18px;
   padding:14px; margin-bottom:12px; box-shadow:0 5px 0 var(--tinta);
 }
+/* Sobre fieltro el tapete se vuelve una superficie más oscura que el fondo, no
+   más clara: en oscuro la elevación se hace con SUPERFICIE, no con sombra —una
+   sombra negra sobre un fondo casi negro no se ve—. El borde claro es el que
+   dibuja el canto. */
+body.fieltro .tapete{
+  background:#170A10; border-color:rgba(255,255,255,.13);
+  box-shadow:0 6px 22px rgba(0,0,0,.45);
+}
 .rotulo{font-size:11px; font-weight:900; letter-spacing:.16em; text-transform:uppercase;
   color:var(--rosa-hondo); margin:0 0 8px}
+body.fieltro .rotulo{color:#FF8FBE}
 
 /* ── las cartas ── */
 /* Las 5 cartas van en UN renglón y punto. Con ancho fijo se partían 4 y 1 en
@@ -176,6 +228,22 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
 .esp.bono{background:#D8F3E0} .esp.castigo{background:#FBD9D4}
 .esp.puesta{background:var(--tinta); color:var(--hueso)}
 .esp[disabled]{opacity:.5}
+/* ── SOBRE FIELTRO, EL +5 Y EL −5 DEJAN DE GRITAR ──────────────────────────
+   En claro eran menta y salmón: dos pasteles discretos. Sobre el fieltro los
+   mismos dos colores se vuelven las manchas MÁS CLARAS de la pantalla, más que
+   las cartas — y entonces lo primero que mira el ojo es un modificador
+   opcional en vez de la mano. El color no cambió; cambió con qué compite.
+
+   Se resuelven como el resto de la mesa: superficie oscura, y el verde y el
+   rojo viven en el NÚMERO y el canto, que es donde de verdad hacen falta. */
+body.fieltro .esp{
+  background:#1E0F17; color:var(--hueso); border-color:rgba(255,255,255,.15);
+  box-shadow:0 3px 0 rgba(0,0,0,.5);
+}
+body.fieltro .esp small{opacity:.62}
+body.fieltro .esp.bono   { border-color:#3E9D68; color:#8FE3B2 }
+body.fieltro .esp.castigo{ border-color:#C4564A; color:#FFAEA3 }
+body.fieltro .esp.puesta { background:var(--rosa); color:var(--tinta); border-color:var(--tinta) }
 
 /* ── avisos ── */
 .aviso{
@@ -256,6 +324,19 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
   box-shadow:0 3px 0 var(--tinta); cursor:pointer;
 }
 .filtro.puesto{background:var(--tinta); color:var(--hueso)}
+/* Sobre fieltro se invierte, y hay que invertirlo o queda al revés de lo que
+   dice: en claro el elegido es el OSCURO y los demás son blancos; sobre un
+   fondo oscuro eso hace que el elegido parezca apagado y los cuatro que NO
+   están puestos parezcan los encendidos. Lo brillante tiene que ser lo que
+   está activo, no lo que no. */
+body.fieltro .filtro{
+  background:transparent; color:rgba(255,247,250,.78);
+  border-color:rgba(255,255,255,.28); box-shadow:none;
+}
+body.fieltro .filtro.puesto{
+  background:var(--rosa); color:var(--tinta); border-color:var(--tinta);
+  box-shadow:0 3px 0 var(--rosa-hondo);
+}
 /* Dos por renglón en teléfono: es el tamaño en el que se alcanza a LEER la
    frase de la carta, que es la mitad del chiste de cada una. */
 .rejilla{display:grid; grid-template-columns:repeat(2, 1fr); gap:10px}
@@ -283,9 +364,18 @@ button{font-family:inherit; font-size:16px; cursor:pointer}
 .reglas th, .reglas td{border:2px solid var(--tinta); padding:5px 7px; text-align:left}
 .reglas th{background:var(--rosa-claro); font-size:11px; letter-spacing:.08em;
   text-transform:uppercase}
-.pie{text-align:center; font-size:12px; font-weight:700; color:var(--hueso);
-  opacity:.85; padding:10px 0 4px; line-height:1.6}
-.pie a{color:var(--hueso)}
+/* ── EL PIE VA EN TINTA, NO EN BLANCO, y el número manda ───────────────────
+   Estaba en hueso al 85 %: 3.45 contra el rosa de la portada, cuando el mínimo
+   para texto normal es 4.5. Y quitarle la opacidad NO lo arreglaba — blanco
+   puro sobre #E84A8A se queda en 3.45 igual. Sobre un color de marca así de
+   saturado, la tinta oscura gana: 5.15.
+
+   Sobre fieltro es al revés y por eso hay dos reglas: ahí el fondo es oscuro y
+   el que no se lee es el negro. */
+.pie{text-align:center; font-size:12px; font-weight:700; color:var(--tinta);
+  padding:10px 0 4px; line-height:1.6}
+.pie a{color:var(--tinta)}
+body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
 @media (prefers-reduced-motion:reduce){ *{transition:none !important; animation:none !important} }
 </style>
 </head>
@@ -535,7 +625,17 @@ window.LINEA = LINEA;   /* para que las pruebas puedan mirar la sala */
 
    Si la página se sirve desde el mismo sitio donde vive el servidor, se usa
    ese mismo origen y no hay que configurar nada. */
-const SERVIDOR_POR_OMISION = 'https://puercos.palomazi9111.workers.dev';
+/* ⚠ ES `ppuercos`, CON DOS PES, y esta línea ya me costó una queja de Carlos:
+   «Guerra de puercos tampoco está actualizado en mi central». El juego estaba
+   perfectamente al día —producción y la rama, byte por byte iguales— pero
+   apuntaba a `puercos`, que es un proyecto SOBRANTE del nombre viejo y
+   contesta 404 en todo. El bueno es `ppuercos`, el que declara
+   `juegos/servidor/wrangler.jsonc`, y está sano: /api/salud devuelve
+   {"bien":true}. Medido, no supuesto.
+
+   Y no se cazaba jugando solo: la partida local no toca el servidor, así que
+   todo se veía bien hasta que alguien intentaba jugar con otra persona. */
+const SERVIDOR_POR_OMISION = 'https://ppuercos.palomazi9111.workers.dev';
 function servidorSalas(){
   try{
     const guardado = localStorage.getItem('puercos_servidor');
@@ -552,6 +652,10 @@ const LLAVE_SECRETO = 'puercos_secreto_';
 function pantalla(cual){
   for(const p of ['portada','reglas','sala','mesa','cartas'])
     $('#p-' + p).classList.toggle('oculto', p !== cual);
+  /* El fieltro se enciende DONDE SE MIRAN CARTAS —la mesa y la colección— y en
+     ningún otro lado. La portada, las reglas y la sala siguen rosas: ahí el
+     rosa es la marca, no un estorbo. */
+  document.body.classList.toggle('fieltro', cual === 'mesa' || cual === 'cartas');
   window.scrollTo(0, 0);
 }
 function fase(cual){
@@ -701,7 +805,11 @@ function pintarMano(){
   const faltan = MOTOR.COMBOS_POR_JUGADOR - yo().combosUsados;
   $('#mPistas').innerHTML =
     'Te quedan <b>' + faltan + '</b> combinacion' + (faltan === 1 ? '' : 'es')
-    + ' · quedan <b>' + J.mazo.length + '</b> cartas en el mazo';
+    /* El espacio duro pega «el mazo» a la palabra anterior: sin él, en un
+       iPhone de 390 el renglón se parte justo ahí y «mazo» se queda solo
+       abajo. Una palabra huérfana al final se lee como si el texto se hubiera
+       cortado. */
+    + ' · quedan <b>' + J.mazo.length + '</b> cartas en\u00A0el\u00A0mazo';
 }
 
 function marcar(c){

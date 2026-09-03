@@ -713,6 +713,11 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
   background:rgba(90,169,230,.12); border:1px solid rgba(90,169,230,.4);
   font-size:13.5px;
 }
+/* Cuando lo que hay dentro NO es una traducción sino el motivo de que no la
+   haya. Va en ámbar y no en azul porque leerlo del mismo color que una
+   traducción buena es justo el error que esto vino a tapar. */
+.llano.llano-falla{ background:rgba(255,176,32,.10); border-color:rgba(255,176,32,.45); }
+.llano.llano-falla .llano-rot{ color:#FFB020; }
 .llano-rot{
   display:block; font-family:var(--dato); font-size:9px; font-weight:700;
   letter-spacing:.13em; text-transform:uppercase; color:var(--azul);
@@ -2679,9 +2684,11 @@ function pintarHilo(){
         ? 'Para ' + esc(gente[e.nota.a] ? gente[e.nota.a].nombre : e.nota.a)
         : 'Para quien lo tome'}</span>${esc(e.nota.texto)}</div>` : '';
 
+    const falla = fallaron.has(e.id);
     const llano = simples[e.id]
-      ? `<div class="llano"><span class="llano-rot">${
-          IDIOMA === 'en' ? 'In English' : 'En cristiano'}</span>${esc(simples[e.id])}</div>`
+      ? `<div class="llano${falla ? ' llano-falla' : ''}"><span class="llano-rot">${
+          falla ? (IDIOMA === 'en' ? 'Not translated' : 'No se pudo traducir')
+                : (IDIOMA === 'en' ? 'In English' : 'En cristiano')}</span>${esc(simples[e.id])}</div>`
       : '';
 
     /* ── HASTA AQUÍ LEYÓ QUIÉN ────────────────────────────────────────
@@ -3135,6 +3142,14 @@ let reaccionandoA = null;
 /* Las traducciones viven sólo en esta pantalla: no entran al hilo ni las ven
    los demás. Es ayuda de lectura de quien la pidió. */
 const simples = {};
+/* ⚠ LOS QUE FALLARON, aparte de los que sí se tradujeron.
+   Los dos viven en `simples` porque los dos se pintan en la misma caja bajo
+   el mensaje — pero uno es una traducción y el otro es el MOTIVO de que no la
+   haya, y pintarlos iguales sería mentir con el color. Lo reportó Carlos con
+   una captura: tocó «🌐 english», el mensaje se quedó en español y él no vio
+   nada, porque el motivo se anunciaba en la barra de arriba mientras él
+   miraba el botón de abajo. El aviso existía y no servía. */
+const fallaron = new Set();
 $('paletaRejilla').innerHTML = REACCIONES.map(([k, f, q]) =>
   `<button type="button" data-poner="${k}"><span>${f}</span>${q}</button>`).join('');
 
@@ -3179,7 +3194,7 @@ async function reaccionar(sobre, cual){
 
 /* ── explícamelo simple ─────────────────────────────────────────────────── */
 async function explicarSimple(id){
-  if(simples[id]){ delete simples[id]; return pintarHilo(); }   /* segundo toque lo quita */
+  if(simples[id]){ delete simples[id]; fallaron.delete(id); return pintarHilo(); }   /* segundo toque lo quita */
   const ev = hilo.find(x => x.id === id);
   if(!ev) return;
   if(demo){
@@ -3187,7 +3202,9 @@ async function explicarSimple(id){
                 + 'Hace falta configurar un traductor para que sea de verdad.';
     return pintarHilo();
   }
-  simples[id] = 'Traduciendo…'; pintarHilo();
+  simples[id] = IDIOMA === 'en' ? 'Translating…' : 'Traduciendo…';
+  fallaron.delete(id);
+  pintarHilo();
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${sala}/traducir`, {
       method:'POST', headers: conLlave({ 'content-type':'application/json' }),
@@ -3196,16 +3213,38 @@ async function explicarSimple(id){
     const c = await r.json();
     if(r.ok){ simples[id] = c.simple; }
     else {
-      delete simples[id];
-      /* Se dice la verdad: apagado no es lo mismo que roto. */
-      $('aviso').textContent = c.apagado
-        ? 'Todavía no hay traductor configurado. ' + (c.comoSePone || '')
-        : (c.error || 'No se pudo traducir.');
+      /* Se dice la verdad: apagado no es lo mismo que roto. Y se dice DONDE
+         ESTÁ MIRANDO QUIEN PREGUNTÓ —en la burbuja, junto al botón que
+         apretó— y no sólo en la barra de arriba. Ésa es la corrección: el
+         motivo ya se escribía, pero en un renglón que en el teléfono queda
+         fuera de la pantalla, así que desde su lado se veía idéntico a que el
+         botón no hiciera nada. */
+      simples[id] = motivoDeNoTraducir(c);
+      fallaron.add(id);
+      $('aviso').textContent = simples[id];
     }
   }catch(err){
-    delete simples[id]; marcarVivo(false);
+    simples[id] = IDIOMA === 'en'
+      ? 'The room could not be reached, so this stays in Spanish. Try again when the connection is back.'
+      : 'No se pudo hablar con la sala, así que esto se queda como está. Inténtalo cuando vuelva la conexión.';
+    fallaron.add(id);
+    marcarVivo(false);
   }
   pintarHilo();
+}
+
+/* El motivo en cristiano. APAGADO Y ROTO NO SON LO MISMO y por eso no dicen lo
+   mismo: uno se arregla poniendo una variable y el otro no se arregla desde
+   aquí. Meterlos en la misma frase —«no se pudo traducir»— es lo que hace que
+   uno se quede esperando a que se componga solo algo que nadie ha encendido. */
+function motivoDeNoTraducir(c){
+  if(c && c.apagado){
+    return (IDIOMA === 'en'
+      ? 'There is no translator configured yet, so this stays as it is. '
+      : 'Todavía no hay traductor configurado, así que esto se queda como está. ')
+      + (c.comoSePone || '');
+  }
+  return (c && c.error) || (IDIOMA === 'en' ? 'It could not be translated.' : 'No se pudo traducir.');
 }
 
 /* ── la pantalla de cada agente ─────────────────────────────────────────── */
@@ -5088,6 +5127,30 @@ const EN = {
   'Explícamelo simple':'Explain it simply', 'Léelo en inglés':'Read it in English',
   '💬 simple':'💬 simple', '🌐 english':'🌐 english',
   'Traduciendo…':'Translating…',
+  'No se pudo traducir':'Not translated',
+  /* ── LO QUE SE ESCAPABA, y cómo se supo ──────────────────────────────────
+     No se descubrió leyendo: se puso la mesa en inglés en un navegador de
+     verdad y se recorrió el DOM buscando lo que siguiera teniendo acentos o
+     palabras de función del español. Salieron veintiuna, y las de abajo son
+     las que sí son interfaz —el resto eran nombres de personas y de salas, que
+     no se traducen—. `sala/pruebas-idioma.mjs` repite ese barrido, así que lo
+     que se agregue mañana sin su inglés sale marcado solo. */
+  'Avisos al teléfono':'Phone alerts',
+  'Sin conexión':'Offline',
+  'Sin conexión con la sala. Reintentando…':'No connection to the room. Retrying…',
+  'De acuerdo':'Agree', 'No estoy de acuerdo':'I disagree',
+  'Ya quedó':'Done', 'Tengo una duda':'I have a question',
+  'La mesa donde trabajan las personas y sus Claude. Todos ven lo mismo.':
+    'The table where people and their Claudes work. Everyone sees the same thing.',
+  'Esta sala pide llave':'This room needs a key',
+  'Pega aquí':'Paste here', 'el link que te pasaron':'the link they gave you',
+  'o la llave sola. Se guarda en este aparato y no vuelve a pedirse.':
+    'or just the key. It is kept on this device and never asked for again.',
+  'Guardar la llave y entrar':'Save the key and go in',
+  'Ver una sala de ejemplo':'See an example room',
+  'Cambiar mi foto de perfil':'Change my profile picture',
+  'Escribe a la sala…':'Write to the room…',
+  'https://… o la llave':'https://… or the key',
   /* etiquetas de mensaje */
   'Tarea':'Task', 'Decisión':'Decision', 'Pregunta':'Question',
   'Revisión':'Review', 'Propuesta':'Proposal', 'Ejecución':'Run',
@@ -5138,16 +5201,27 @@ const EN = {
    El diccionario casa frases EXACTAS —que es lo que lo hace seguro— así que
    para éstas hace falta una regla aparte, y sólo para éstas. Van en pares:
    la de ida y la de vuelta, porque el botón tiene que regresar a español. */
-const PAT_EN = [[/^(\d+) en línea$/, '$1 online']];
-const PAT_ES = [[/^(\d+) online$/, '$1 en línea']];
+const PAT_EN = [[/^(\d+) en línea$/, '$1 online'],
+                [/^(.+) · sin señal$/, '$1 · no signal']];
+const PAT_ES = [[/^(\d+) online$/, '$1 en línea'],
+                [/^(.+) · no signal$/, '$1 · sin señal']];
 
 /* El camino de vuelta. Se arma solo, y de paso avisa si dos frases distintas
    acabaron con la misma traducción: eso rompería el regreso a español y es el
    tipo de cosa que uno no nota hasta que ya la publicó. */
+/* ⚠ LA LLAVE VA CON LOS ESPACIOS APLASTADOS, y no es un detalle: en el HTML
+   una frase larga viene partida en tres renglones con sangría, así que el
+   texto real trae saltos de línea en medio y NUNCA era igual a la entrada del
+   diccionario. Se veía como si faltara la traducción —«Guardar la llave y
+   entrar» seguía en español con la mesa en inglés— cuando la traducción
+   existía y era la comparación la que fallaba. */
+const aplanar = (t) => String(t).trim().replace(/\s+/g, ' ');
+
 const ES = {};
 for(const [es, en] of Object.entries(EN)){
-  if(ES[en] && ES[en] !== es) console.warn('idioma: dos frases comparten traducción →', en);
-  if(!ES[en]) ES[en] = es;
+  const k = aplanar(en);
+  if(ES[k] && ES[k] !== es) console.warn('idioma: dos frases comparten traducción →', en);
+  if(!ES[k]) ES[k] = es;
 }
 
 const ATRIBUTOS = ['placeholder', 'aria-label', 'title'];
@@ -5156,13 +5230,14 @@ let observador = null;
 function cambiar(txt, mapa, patrones){
   const limpio = String(txt).trim();
   if(!limpio) return null;
-  let puesto = mapa[limpio];
+  const clave = aplanar(limpio);
+  let puesto = mapa[clave];
   if(puesto == null && patrones){
     for(const [re, con] of patrones){
-      if(re.test(limpio)){ puesto = limpio.replace(re, con); break; }
+      if(re.test(clave)){ puesto = clave.replace(re, con); break; }
     }
   }
-  if(puesto == null || puesto === limpio) return null;
+  if(puesto == null || puesto === clave) return null;
   /* Se conserva el espacio de alrededor: en el HTML hay saltos de línea y
      sangría que sostienen el diseño, y comérselos mueve cosas de lugar. */
   return String(txt).replace(limpio, puesto);
@@ -5237,6 +5312,7 @@ document.addEventListener('click', (e) => {
      inglés y sigues leyendo la explicación en español debajo del mensaje —
      que es exactamente lo que uno acaba de pedir que no pase. */
   for(const k of Object.keys(simples)) delete simples[k];
+  fallaron.clear();
   aplicarIdioma();
   if(typeof pintarHilo === 'function') pintarHilo();
 });

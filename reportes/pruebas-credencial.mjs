@@ -85,10 +85,14 @@ const dos = await page.evaluate(() => ({
   cuantos: document.querySelectorAll('#mesaCred .bloque-inf .qr').length,
   rotulos: [...document.querySelectorAll('#mesaCred .rotulo-qr')].map(r => r.textContent),
 }));
-ok('la credencial lleva los DOS códigos, no uno en lugar del otro',
-   dos.cuantos === 2, dos.cuantos + ' códigos');
-ok('cada uno dice cuál es', dos.rotulos.includes('HABILIDADES') && dos.rotulos.includes('REDES'),
-   dos.rotulos.join(' · ') || 'sin rótulos');
+/* ⚠ ESTA PRUEBA CAMBIÓ DE SENTIDO Y SE REESCRIBIÓ, no se borró. Exigía DOS
+   códigos rotulados porque así lo pidió Carlos en su día —«que quede ese
+   ADEMÁS del de redes»—. El 3 de septiembre pidió lo contrario: quitar el de
+   habilidades. La prueba vieja habría quedado en rojo para siempre diciendo la
+   verdad de ayer, así que ahora afirma lo que se pidió hoy. */
+ok('en el reverso queda UN solo código', dos.cuantos === 1, dos.cuantos + ' códigos');
+ok('y sin rótulo, que ya no hay con qué confundirlo',
+   dos.rotulos.length === 0, dos.rotulos.join(' · '));
 
 await page.evaluate(() => {
   document.querySelector('#impresora').innerHTML = pliegosDe(CRED.gente);
@@ -100,22 +104,26 @@ const pdf = await page.pdf({ format:'Letter', printBackground:true,
 const ruta = TMP + '/cred-prueba.pdf';
 writeFileSync(ruta, pdf);
 
-/* 600 ppp es lo que hace cualquier impresora de oficina. A 300 el código de
-   Instagram —que es de los adornados, con puntitos y el logo en medio— pierde
-   detalle y deja de leerse; el de habilidades aguanta los dos. Se comprueban
-   los dos para que quede escrito cuál es el que va justo. */
+/* 600 ppp es lo que hace cualquier impresora de oficina. El código de
+   Instagram es de los adornados —puntitos y el logo en medio— así que es el
+   que va justo de detalle: a 300 se pierde. Ahora que está SOLO se pinta a
+   20 mm en vez de a 17.5, o sea con más margen que antes; se mide igual a las
+   dos resoluciones para que quede escrito dónde empieza a fallar.
+
+   Y se comprueba además que el de habilidades YA NO ESTÉ. Quitarlo de la
+   pantalla y que siguiera saliendo impreso sería justo el tipo de defecto que
+   nadie mira: la credencial que se ve no es la que sale del papel. */
 for(const ppp of [300, 600]){
   execFileSync('pdftoppm', ['-r', String(ppp), '-png', ruta, TMP + '/cp' + ppp]);
   const leidos = leer(TMP + '/cp' + ppp + '-1.png');
   const hab = leidos.some(x => /credencial\/#PM-014$/.test(x));
   const red = leidos.some(x => /instagram\.com/.test(x));
   console.log('   a ' + ppp + ' ppp → habilidades:' + (hab?'sí':'no') + ' · redes:' + (red?'sí':'no'));
-  if(ppp === 300){
-    ok('a 300 ppp el código de HABILIDADES ya se lee', hab,
-       'a 17.5 mm debería seguir leyéndose');
-  } else {
-    ok('a 600 ppp —lo normal de una impresora— se leen LOS DOS', hab && red,
-       'habilidades:' + hab + ' redes:' + red);
+  ok('a ' + ppp + ' ppp el código de habilidades NO está impreso', !hab,
+     'se retiró de la credencial y no debe salir en el papel');
+  if(ppp === 600){
+    ok('y a 600 ppp —lo normal de una impresora— el de redes sí se lee', red,
+       'redes:' + red);
   }
   try{ unlinkSync(TMP + '/cp' + ppp + '-1.png'); }catch(e){}
 }
