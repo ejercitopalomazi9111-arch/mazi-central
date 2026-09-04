@@ -87,6 +87,24 @@
         "¿es problema mío?"
       ],
       "salioDe": "El banco de pruebas: el estado de error dice explícitamente que no es la conexión de quien lee."
+    },
+    {
+      "id": "el-campo-que-el-servidor-dejo-de-mandar",
+      "titulo": "El websocket contesta 500 y parece problema de red",
+      "gravedad": "alta",
+      "sintoma": "La conexión en vivo no se abre: «Error during WebSocket handshake: unexpected response code 500». Todo lo demás del servidor responde bien.",
+      "causa": "El código que arma lo que se manda leía un campo que había dejado de existir tras un cambio de modelo de datos. Al reventar dentro del manejador, lo que sale por el cable no es un error del handshake: es un 500, que se lee como caída del servicio.",
+      "porque": "Cambiar el modelo de datos se prueba con las pruebas del modelo, y ésas pasan. Quien lee el dato es OTRO archivo, en otro proyecto, y sólo se entera al ejecutarse de verdad.",
+      "arreglo": "Correr las pruebas de extremo a extremo CON EL SERVIDOR LEVANTADO después de cualquier cambio de forma de los datos. Y no dar por buena la mitad: el defecto vivía justo en el papel que se pasan las dos.",
+      "comoCazarlo": "Un 500 en un handshake no es red: es una excepción del lado del servidor. El log del worker trae la línea exacta; buscarla ahí antes de sospechar del proxy.",
+      "consejo": "Un cambio de modelo de datos tiene tantos lugares que tocar como consumidores tiene el dato, y el compilador no los conoce si el reparto va por JSON.",
+      "senales": [
+        "no conecta en línea",
+        "error de websocket",
+        "500 al conectar",
+        "funciona local pero no entre dos"
+      ],
+      "salioDe": "Guerra de Puercos: pasar de un mazo compartido a un mazo por jugador dejó `this.J.mazo` sin existir, y el modo a distancia llevaba días muerto sin que nadie lo notara."
     }
   ]
 }

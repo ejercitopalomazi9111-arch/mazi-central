@@ -1566,9 +1566,9 @@ function deLaVista(v){
      siempre «0 cartas en tu mazo».
      `especiales` ya no existe: los +5 y −5 son CARTAS y vienen en la mano. */
   const mio = { pv:v.yo.pv, mano:v.yo.mano, combosUsados:v.yo.combosUsados,
-                mazo:v.yo.mazo, nombre:v.asiento };
+                mazo:v.yo.mazo, cementerio:v.yo.cementerio || [], nombre:v.asiento };
   const suyo = { pv:v.rival.pv, combosUsados:v.rival.combosUsados,
-                 mazo:v.rival.mazo, nombre:'rival',
+                 mazo:v.rival.mazo, cementerio:v.rival.cementerio || [], nombre:'rival',
                  mano: Array.from({ length:v.rival.cartas },
                                   (_, i) => ({ id:'tapada' + i, valor:0, nivel:'?' })) };
   const j = { ronda:v.ronda,

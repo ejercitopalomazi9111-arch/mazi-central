@@ -154,10 +154,18 @@ export class Sala {
          servidor levantado o no prueban nada.
          Y del mazo viaja el NÚMERO, no las cartas: mandarlas sería regalar por
          el cable justo lo que no queremos que se sepa. */
+      /* ⚠ EL CEMENTERIO SÍ VIAJA, Y LAS DOS. Lo que se ha jugado es
+         información PÚBLICA en cualquier mesa de cartas: se puso boca arriba
+         delante de los dos. Lo que no viaja —y sigue sin viajar— es la MANO
+         del rival. Van sólo las cuatro últimas porque son las que se pintan;
+         mandar el montón entero sería empujar 100 cartas por ronda para
+         dibujar cuatro. */
       yo:    { pv: yo.pv, mano: yo.mano, combosUsados: yo.combosUsados,
-               mazo: (yo.mazo || []).length },
+               mazo: (yo.mazo || []).length,
+               cementerio: (yo.cementerio || []).slice(-4) },
       rival: { pv: otro.pv, cartas: otro.mano.length, combosUsados: otro.combosUsados,
-               mazo: (otro.mazo || []).length },
+               mazo: (otro.mazo || []).length,
+               cementerio: (otro.cementerio || []).slice(-4) },
     });
   }
 

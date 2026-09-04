@@ -145,6 +145,24 @@
         "no aparece el cambio"
       ],
       "salioDe": "Carlos: «Oye no quitaste la fecha ni el qr de habilidades de credenciales pequeño bribón». Los tres recortes SÍ estaban hechos y probados 11/11 y 49/49 — en la rama claude/juego-oregon-3kmicc, dentro del PR #106 en borrador. Producción y main eran el mismo archivo byte por byte."
+    },
+    {
+      "id": "la-mano-que-se-llena-de-lo-que-no-se-juega",
+      "titulo": "La mano se llenó de cartas que no se pueden jugar y el juego se quedó quieto",
+      "gravedad": "alta",
+      "sintoma": "A media partida ya no hay nada que tocar. La mano está llena, la partida no ha terminado, y no pasa nada más.",
+      "causa": "El límite de la mano contaba TODAS las cartas, incluidas las que sólo sirven como modificador de otra. Quien nunca las gasta las acumula hasta ocupar los cinco sitios: cero jugadas legales, y la condición de fin —«mano vacía»— no se cumple porque la mano no está vacía.",
+      "porque": "«Repón hasta tener cinco» suena a una regla sobre cartas, y nadie se pregunta qué cuenta como una de las cinco hasta que el juego se para.",
+      "arreglo": "El límite se cuenta en cartas JUGABLES, no en cartas. La mano puede traer seis o siete: cinco tuyas más los modificadores. Y la condición de fin también mira si queda algo jugable, no si la mano está vacía.",
+      "comoCazarlo": "Jugar muchas partidas del peor jugador posible —el que siempre tira la primera carta y no gasta un modificador en su vida— y comprobar que TODAS terminan. Salieron 45 trabadas de 200.",
+      "consejo": "Un recurso que no caduca y ocupa sitio siempre acaba llenando el sitio. Si algo se puede guardar para siempre, no puede competir por el espacio de lo que sí se usa.",
+      "senales": [
+        "se queda congelado a media partida",
+        "no puedo jugar nada",
+        "tengo cartas pero no me deja",
+        "se traba y no termina"
+      ],
+      "salioDe": "Guerra de Puercos, jugando ocho partidas a puros clics: una se paró en la ronda 17 sin decir nada."
     }
   ]
 }
