@@ -1,0 +1,425 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   JABONERA · SISTEMA VISUAL  ·  v4 «BURBUJA»
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos, e502: mandó SEIS referencias y con eso quedó claro que la v3 iba
+   por el lado equivocado. Lo que comparten sus seis, contado y no supuesto:
+
+   | Sus referencias                        | Lo que yo había hecho (v3)  |
+   |----------------------------------------|-----------------------------|
+   | Esquinas MUY redondeadas (18–28 px, y pastillas) | radio **0**       |
+   | Color saturado en BLOQUES GRANDES      | un acento diminuto          |
+   | Dos o tres colores fuertes conviviendo | uno solo                    |
+   | Tarjetas suaves flotando sobre color   | hojas con borde de 1 px     |
+   | Formas orgánicas (Headspace)           | retícula milimétrica        |
+   | Registro amable, de app de consumo     | instrumento de ingeniería   |
+
+   Las seis: ajustes de Material You, una app de eventos en menta, una de
+   música en azul noche con salmón, una de empleo en lima con violeta, una de
+   salud en índigo con coral, y Headspace con sus manchas orgánicas.
+
+   ── PERO NO SE COPIA UNA PANTALLA DE DRIBBBLE, QUE SERÍA CAER OTRA VEZ EN
+      LO GENÉRICO. El tema da la forma, y aquí el tema es JABÓN: ──
+   · **BURBUJAS.** Las manchas orgánicas de Headspace aquí no son decoración
+     de moda: son espuma. Se dibujan en SVG y sólo en las zonas de color.
+   · **TODO REDONDO** porque una burbuja no tiene esquinas. Tarjetas de 20,
+     botones en pastilla, la probeta con los cantos redondeados.
+   · **ÍNDIGO + CORAL**, que es el par de su referencia de salud, con menta
+     para «esto ya se puede afirmar». Tres colores que trabajan juntos, no un
+     acento tímido.
+   · **LOS NÚMEROS DEJAN LA MONOESPACIADA** —era de la v3 y sonaba a
+     laboratorio— pero conservan `tabular-nums`: una columna de cifras se
+     sigue comparando de un vistazo sin el registro técnico.
+
+   Los dos usos siguen mandando: DE PIE EN EL BAÑO con una mano (48 px de
+   tocable, campos de 16 px —por debajo iOS hace zoom solo—, acciones abajo)
+   y PROYECTADO EN UN EXAMEN (contraste alto, cifras de lejos).
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* IBM Plex Sans · SIL Open Font License 1.1 · autohospedada. Va autohospedada
+   y no de un CDN porque el archivo suelto tiene que abrir desde una memoria
+   USB sin internet, y ahí una fuente remota es una fuente que no carga. */
+@font-face{ font-family:Plex; src:url(tipos/PlexSans.woff2) format('woff2');
+            font-weight:100 700; font-display:swap }
+
+:root{
+  --sans:Plex, 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* SIETE tamaños. El salto entre 22 y 40 separa «texto» de «dato». */
+  --t-display:60px; --t-titulo:40px; --t-seccion:22px; --t-guia:18px;
+  --t-cuerpo:16px;  --t-menor:14px;  --t-micro:12px;
+  --t-nano:11px;    /* única excepción declarada: pestañas y ejes de gráfica */
+
+  --p-normal:400; --p-medio:500; --p-fuerte:600; --p-macizo:700;
+  --tr-display:-.028em; --tr-titulo:-.02em; --tr-rotulo:.07em;
+
+  /* ── EL PAR DE COLOR, en bloques grandes ── */
+  --indigo:#3B2FB5;  --indigo-hondo:#2A1F8C;  --indigo-suave:#EDEBFB;
+  /* Los dos corales tienen trabajos distintos y no se pueden intercambiar:
+     el vivo es para RELLENOS grandes —con texto tinta encima, que es lo que
+     hace la referencia de la app de empleo con su botón lima— y el hondo es
+     para TEXTO y para bloques con texto blanco. Blanco sobre el vivo da
+     2.83:1 y no pasa; sobre el hondo da 5.12:1. Medido, no ajustado a ojo. */
+  --coral:#FF6B3D;   --coral-hondo:#C63E15;   --coral-suave:#FFEDE6;
+  --menta:#12BE8F;   --menta-texto:#0A7D5E;   --menta-suave:#E2F7F1;
+  --crema:#FFF8F2;   --nube:#FFFFFF;          --niebla:#F4EFEA;
+  --tinta:#1A1533;   --humo:#6A6480;          --linea:#E7E0DA;
+
+  --r:20px; --r-chico:14px; --r-grande:28px; --r-pastilla:999px;
+  --sombra:0 2px 6px rgba(26,21,51,.05), 0 12px 28px rgba(26,21,51,.07);
+  --sombra-color:0 10px 24px rgba(59,47,181,.22);
+  --tope:1120px; --aire:16px;
+}
+
+*{ box-sizing:border-box }
+/* ⚠ CON `!important`. `[hidden]` del navegador es `display:none`, pero
+   cualquier regla de clase con `display:grid` le gana por especificidad: los
+   campos del jabón en barra salían aunque el producto fuera líquido. */
+[hidden]{ display:none !important }
+
+html,body{ margin:0; padding:0 }
+body{
+  color:var(--tinta); background:var(--crema);
+  font-family:var(--sans); font-size:var(--t-cuerpo); line-height:1.5;
+  font-weight:var(--p-normal);
+  -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+  padding-bottom:calc(84px + env(safe-area-inset-bottom));
+}
+/* Los números llevan `tabular-nums` pero NO monoespaciada: se siguen pudiendo
+   comparar en columna sin sonar a terminal. Es el cambio de registro que
+   pedían las referencias. */
+.num, .dato .v, table td.n, table th.n, input[type=number]{
+  font-variant-numeric:tabular-nums lining-nums;
+}
+
+h1,h2,h3{ margin:0; line-height:1.16 }
+h1,h2{ font-size:var(--t-seccion); font-weight:var(--p-macizo); letter-spacing:-.012em }
+h3{ font-size:var(--t-menor); font-weight:var(--p-fuerte) }
+p{ margin:0 0 10px }
+a{ color:var(--indigo) }
+.guia{ font-size:var(--t-guia); line-height:1.45; color:var(--humo) }
+.menor{ font-size:var(--t-menor); color:var(--humo) }
+.micro{ font-size:var(--t-micro); color:var(--humo) }
+.rotulo{ font-size:var(--t-micro); font-weight:var(--p-macizo); letter-spacing:var(--tr-rotulo);
+  text-transform:uppercase; color:var(--humo) }
+
+/* ── LA PORTADA: bloque de color con espuma ───────────────────────────── */
+.campo-marca{
+  position:relative; overflow:hidden;
+  background:var(--indigo); color:#fff;
+  padding:calc(24px + env(safe-area-inset-top)) var(--aire) 30px;
+  border-radius:0 0 var(--r-grande) var(--r-grande);
+}
+/* LA ESPUMA. Manchas orgánicas como las de Headspace, pero aquí no son moda:
+   son burbujas de jabón. Van en el fondo del bloque de color y en ningún
+   otro sitio, para que no se vuelvan textura. */
+.espuma{ position:absolute; inset:0; pointer-events:none; opacity:.5 }
+.campo-marca .dentro{ position:relative; max-width:var(--tope); margin:0 auto }
+.marca{
+  /* `clamp` porque a 320 px «JABONERA» a 60 px no cabe, y partirla en dos
+     renglones la rompe a media palabra: se lee como error, no como logotipo. */
+  font-size:clamp(38px, 14.5vw, var(--t-display));
+  font-weight:var(--p-macizo); letter-spacing:var(--tr-display);
+  line-height:1; margin:0 0 12px; white-space:nowrap;
+}
+.marca em{ font-style:normal; color:#FFD9CB }
+.lema{ font-size:var(--t-guia); line-height:1.42; color:rgba(255,255,255,.86);
+       max-width:32ch; margin:0 }
+.campo-marca .rotulo{ color:rgba(255,255,255,.66); margin:0 0 14px }
+.campo-marca hr{ border:0; border-top:1px solid rgba(255,255,255,.22); margin:24px 0 20px }
+
+/* ── cabecera compacta ────────────────────────────────────────────────── */
+.cabecera{
+  position:sticky; top:0; z-index:20;
+  background:var(--indigo); color:#fff;
+  padding:calc(9px + env(safe-area-inset-top)) var(--aire) 12px;
+  border-radius:0 0 var(--r) var(--r);
+}
+.cabecera .dentro{ display:flex; align-items:center; gap:10px; max-width:var(--tope); margin:0 auto }
+.cabecera .nom{ font-size:var(--t-cuerpo); font-weight:var(--p-macizo); letter-spacing:-.01em }
+.cabecera .der{ margin-left:auto; display:flex; gap:6px; align-items:center }
+.cabecera button{
+  appearance:none; background:rgba(255,255,255,.16); border:0; color:#fff; cursor:pointer;
+  width:42px; height:42px; border-radius:var(--r-pastilla); display:grid; place-items:center;
+}
+.cabecera button svg{ width:20px; height:20px }
+.gota{ width:26px; height:26px; flex:0 0 auto }
+
+main{ max-width:var(--tope); margin:0 auto; padding:var(--aire) var(--aire) 24px }
+.panel[hidden]{ display:none }
+
+/* ── TARJETAS: blandas, sin borde, con sombra suave ───────────────────── */
+.tarjeta{
+  background:var(--nube); border:0; border-radius:var(--r);
+  padding:20px; margin:0 0 14px; box-shadow:var(--sombra);
+}
+.tarjeta > h2{ margin-bottom:6px }
+.tarjeta > .pie-nota{ margin:14px 0 0; font-size:var(--t-menor); color:var(--humo) }
+.rejilla{ display:grid; gap:14px; grid-template-columns:1fr }
+@media (min-width:760px){ .rejilla.dos{ grid-template-columns:1fr 1fr } :root{ --aire:24px } }
+
+/* ── PESTAÑAS: barra flotante con pastilla activa ─────────────────────── */
+.pestanas{
+  position:fixed; left:10px; right:10px; bottom:calc(10px + env(safe-area-inset-bottom));
+  z-index:30; display:grid; grid-template-columns:repeat(5,1fr);
+  background:var(--nube); border-radius:var(--r-pastilla);
+  box-shadow:0 6px 22px rgba(26,21,51,.14); padding:6px;
+}
+.pestanas button{
+  appearance:none; border:0; background:transparent; cursor:pointer;
+  padding:8px 2px; min-height:56px; border-radius:var(--r-pastilla);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  font-family:inherit; font-size:var(--t-nano); font-weight:var(--p-fuerte); line-height:1;
+  color:var(--humo);
+}
+.pestanas button svg{ width:22px; height:22px }
+.pestanas button[aria-selected=true]{ background:var(--indigo-suave); color:var(--indigo) }
+.pestanas button[aria-selected=true] svg{ stroke-width:2.4 }
+
+/* ── EL DATO ──────────────────────────────────────────────────────────── */
+.dato{ background:var(--nube); border:0; border-radius:var(--r); padding:18px 20px;
+       box-shadow:var(--sombra) }
+.dato .et{ font-size:var(--t-micro); font-weight:var(--p-macizo); letter-spacing:var(--tr-rotulo);
+  text-transform:uppercase; color:var(--humo); margin:0 0 10px }
+.dato .v{ font-size:var(--t-titulo); font-weight:var(--p-macizo); letter-spacing:var(--tr-titulo);
+  line-height:1; display:block }
+.dato .v u{ text-decoration:none; font-size:var(--t-guia); font-weight:var(--p-fuerte);
+  letter-spacing:0; color:var(--humo); margin-left:6px }
+.dato .n{ font-size:var(--t-menor); color:var(--humo); margin-top:10px; line-height:1.35 }
+.dato.hueca .v{ font-size:var(--t-guia); font-weight:var(--p-fuerte); color:var(--humo); letter-spacing:0 }
+/* El dato principal es un BLOQUE DE COLOR, que es lo que hacen sus seis
+   referencias: el color grande, no en una rayita. */
+.dato.grande{ background:var(--indigo); color:#fff; box-shadow:var(--sombra-color) }
+.dato.grande .v{ font-size:clamp(38px, 11vw, var(--t-display)); color:#fff;
+                 letter-spacing:var(--tr-display) }
+.dato.grande .et, .dato.grande .n, .dato.grande .v u{ color:rgba(255,255,255,.78) }
+.dato.alarma{ background:var(--coral-hondo); color:#fff; box-shadow:0 10px 24px rgba(198,62,21,.28) }
+.dato.alarma .et, .dato.alarma .n, .dato.alarma .v u{ color:rgba(255,255,255,.85) }
+.dato.alarma .v{ color:#fff }
+.datos{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); margin:0 0 14px }
+
+/* ── BOTONES: pastilla ────────────────────────────────────────────────── */
+button.b{
+  appearance:none; cursor:pointer; font-family:var(--sans);
+  font-size:var(--t-cuerpo); font-weight:var(--p-fuerte); line-height:1;
+  min-height:54px; padding:0 24px; border-radius:var(--r-pastilla);
+  border:2px solid transparent; background:var(--indigo); color:#fff;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:var(--sombra-color);
+}
+button.b:active{ transform:translateY(1px) }
+button.b.ancho{ width:100% }
+/* Texto TINTA sobre el coral vivo, no blanco: blanco encima da 2.83:1 y
+   tinta da 5.3:1 — y además es exactamente lo que hace la referencia del
+   botón lima que mandó Carlos. */
+button.b.primario{ background:var(--coral); color:var(--tinta); box-shadow:0 10px 24px rgba(255,107,61,.3) }
+button.b.fantasma{ background:var(--nube); color:var(--indigo); border-color:var(--linea); box-shadow:none }
+button.b.claro{ background:rgba(255,255,255,.18); color:#fff; border-color:rgba(255,255,255,.42); box-shadow:none }
+button.b.peligro{ background:var(--nube); color:var(--coral-hondo); border-color:#F0C8BA; box-shadow:none }
+/* 44 es el mínimo con el que un pulgar acierta; lo tuve en 38 y lo cazó la
+   compuerta de pantalla, no el ojo. */
+button.b.chico{ min-height:44px; font-size:var(--t-menor); padding:0 16px; box-shadow:none }
+button.b:disabled{ opacity:.4; cursor:not-allowed }
+
+/* ── ILUSTRACIÓN, ICONOS Y ANILLO ─────────────────────────────────────
+   La capa que faltaba. Cinco de las seis referencias de Carlos llevan imagen
+   —ilustración 3D, carátulas, avatares, logos, iconos de color en mosaico— y
+   mis tres versiones anteriores no tenían ninguna: eran tipografía y bloques
+   de color. Por eso se veían «estilizadas» y no «diseñadas». */
+.ilustra-caja{ display:flex; justify-content:center; margin:22px 0 4px }
+.ilustra{ width:min(58vw, 220px); height:auto; display:block;
+          filter:drop-shadow(0 18px 26px rgba(0,0,0,.22)) }
+
+/* El icono va en un cuadro tintado, como en su referencia de la app de
+   salud: color arriba, rótulo abajo. */
+.icono{ width:44px; height:44px; border-radius:var(--r-chico); display:grid;
+        place-items:center; margin:0 0 12px }
+.icono svg{ width:22px; height:22px }
+.icono.indigo{ background:var(--indigo-suave); color:var(--indigo) }
+.icono.coral { background:var(--coral-suave);  color:var(--coral-hondo) }
+.icono.menta { background:var(--menta-suave);  color:var(--menta-texto) }
+.dato.grande .icono, .dato.alarma .icono{ background:rgba(255,255,255,.18); color:#fff }
+
+/* El mosaico de accesos: 2×2 con icono, el patrón de la pantalla de perfil
+   de su referencia de salud. */
+.mosaico{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+.baldosa{
+  appearance:none; cursor:pointer; font-family:inherit; font-size:var(--t-menor);
+  font-weight:var(--p-fuerte); color:var(--tinta); background:var(--nube);
+  border:0; border-radius:var(--r); padding:16px 12px; min-height:104px;
+  display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+  box-shadow:var(--sombra); text-align:left;
+}
+.baldosa .icono{ margin-bottom:10px }
+.baldosa:active{ transform:translateY(1px) }
+
+/* El anillo de progreso: su referencia de salud tiene uno con el 25 % del
+   plan; aquí dice qué tan lejos está el proyecto de poder concluir. */
+.anillo{ position:relative; width:132px; margin:0 auto }
+.anillo svg{ width:100%; height:auto; display:block }
+.anillo b{ position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; font-size:var(--t-seccion);
+  font-weight:var(--p-macizo); letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums lining-nums; line-height:1 }
+.anillo b em{ font-style:normal; font-size:var(--t-micro); font-weight:var(--p-fuerte);
+  color:var(--humo); letter-spacing:var(--tr-rotulo); text-transform:uppercase; margin-top:4px }
+
+/* ── MENÚ DE RENGLONES ────────────────────────────────────────────────
+   Lo que sustituye a la pila de tarjetas: icono, título y una línea de qué
+   hay dentro. Carlos: «están sobresaturadas de información, mete algunas a
+   submenús». */
+.menu{ background:var(--nube); border-radius:var(--r); box-shadow:var(--sombra); overflow:hidden }
+.renglon{
+  appearance:none; cursor:pointer; width:100%; text-align:left; font-family:inherit;
+  font-size:var(--t-cuerpo); background:transparent; border:0;
+  border-bottom:1px solid var(--linea); padding:16px 18px; min-height:76px;
+  display:flex; align-items:center; gap:14px; color:var(--tinta);
+}
+.menu .renglon:last-child{ border-bottom:0 }
+.renglon:active{ background:var(--niebla) }
+.renglon .icono{ margin:0; flex:0 0 auto }
+.renglon .txt{ flex:1; min-width:0 }
+.renglon .txt b{ display:block; font-weight:var(--p-fuerte) }
+.renglon .txt span{ display:block; font-size:var(--t-micro); color:var(--humo); margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.renglon .flecha{ color:var(--humo); font-size:var(--t-seccion); flex:0 0 auto }
+
+/* Lo plegado en pantalla SÍ se imprime: el documento que se entrega no puede
+   depender de qué submenú quedó abierto. */
+.solo-imprimir{ display:none }
+@media print{ .solo-imprimir{ display:block !important } }
+
+/* ── FICHAS con probeta ───────────────────────────────────────────────── */
+.fichas{ display:grid; gap:12px; grid-template-columns:1fr; margin:0 0 16px }
+@media (min-width:560px){ .fichas{ grid-template-columns:1fr 1fr } }
+.ficha{
+  appearance:none; cursor:pointer; text-align:left; font-family:inherit; font-size:var(--t-cuerpo);
+  background:var(--nube); border:2px solid transparent; border-radius:var(--r);
+  padding:14px 18px; min-height:92px; display:flex; align-items:center; gap:16px;
+  color:var(--tinta); box-shadow:var(--sombra);
+}
+.ficha[aria-pressed=true]{ border-color:var(--indigo); background:var(--indigo-suave) }
+.ficha:active{ transform:translateY(1px) }
+.ficha .txt{ flex:1; min-width:0 }
+.ficha .tit{ font-size:var(--t-cuerpo); font-weight:var(--p-macizo); display:block }
+.ficha .sub{ font-size:var(--t-micro); color:var(--humo); display:block; margin-top:4px }
+.probeta{ width:34px; height:72px; flex:0 0 auto; display:block }
+
+/* ── FORMULARIOS ──────────────────────────────────────────────────────── */
+label{ display:block; font-size:var(--t-micro); font-weight:var(--p-macizo);
+  letter-spacing:var(--tr-rotulo); text-transform:uppercase; color:var(--humo); margin:0 0 8px }
+input, select, textarea{
+  /* ⚠ EN LARGO Y NO EN ATAJO: `font: 400 16px/1.4 inherit` es INVÁLIDO —el
+     atajo `font` exige una familia y `inherit` no lo es— y el navegador
+     tiraba la declaración COMPLETA, dejando los campos en los 13.33 px de
+     Chrome, justo por debajo del umbral en que iOS hace zoom solo. */
+  width:100%; font-family:var(--sans); font-weight:var(--p-normal);
+  font-size:var(--t-cuerpo); line-height:1.4; color:var(--tinta);
+  background:var(--niebla); border:2px solid transparent; border-radius:var(--r-chico);
+  padding:14px 16px; min-height:52px;
+}
+input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--indigo); background:var(--nube) }
+.campo{ margin:0 0 16px }
+.par{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+
+/* El campo de captura: el número se teclea en tamaño de DATO. */
+.captura input{
+  font-size:var(--t-titulo); font-weight:var(--p-macizo); letter-spacing:var(--tr-titulo);
+  text-align:center; min-height:88px; padding:6px 12px;
+  background:var(--indigo-suave); border-color:transparent;
+  font-variant-numeric:tabular-nums lining-nums;
+}
+.atajos{ display:flex; gap:8px; margin:12px 0 0; flex-wrap:wrap }
+.atajos button{
+  appearance:none; cursor:pointer; font-family:inherit; font-size:var(--t-menor);
+  font-weight:var(--p-fuerte); color:var(--indigo); background:var(--indigo-suave);
+  border:0; border-radius:var(--r-pastilla); min-height:46px; padding:0 16px;
+  flex:1 1 auto; min-width:0;
+}
+.atajos button:active{ background:var(--indigo); color:#fff }
+
+/* ── PASOS ────────────────────────────────────────────────────────────── */
+.pasos{ display:flex; gap:8px; margin:0 0 18px }
+.pasos i{ height:8px; flex:1; border-radius:var(--r-pastilla); background:var(--linea) }
+.pasos i.hecho{ background:var(--coral) }
+.paso-et{ margin:0 0 6px }
+.paso-et b{ font-size:var(--t-micro); font-weight:var(--p-macizo); letter-spacing:var(--tr-rotulo);
+  text-transform:uppercase; color:var(--coral-hondo) }
+
+/* ── AVISOS ───────────────────────────────────────────────────────────── */
+.aviso{
+  border:0; border-radius:var(--r-chico);
+  padding:16px 18px; margin:0 0 14px; font-size:var(--t-menor); line-height:1.45;
+  background:var(--niebla);
+}
+.aviso h3{ margin:0 0 5px; font-size:var(--t-cuerpo) }
+.aviso.info{ background:var(--indigo-suave); color:#241C6E }
+.aviso.ojo { background:#FFF3DC; color:#6B4A05 }
+.aviso.mal { background:var(--coral-suave); color:#8C2A0C }
+.aviso.bien{ background:var(--menta-suave); color:#0A5C46 }
+.aviso ul{ margin:6px 0 0; padding-left:18px }
+
+/* ── TABLAS ───────────────────────────────────────────────────────────── */
+.tabla-caja{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 calc(var(--aire) * -1); padding:0 var(--aire) }
+/* 520 y no 340: con menos, en un teléfono cada celda se parte en cuatro
+   renglones. Pero eso vale para tablas de DATOS; una de PROSA se lee y debe
+   envolver, porque deslizar de lado un texto que alguien lee en voz alta en
+   un examen es peor que un renglón largo. */
+table{ width:100%; border-collapse:separate; border-spacing:0; font-size:var(--t-menor); min-width:520px }
+.tabla-texto table{ min-width:0 }
+.tabla-texto th, .tabla-texto td{ padding:11px 8px }
+th,td{ text-align:left; padding:12px 12px; border-bottom:1px solid var(--linea) }
+th{ font-size:var(--t-micro); text-transform:uppercase; letter-spacing:var(--tr-rotulo);
+    color:var(--indigo); font-weight:var(--p-macizo); background:var(--indigo-suave) }
+th:first-child{ border-radius:var(--r-chico) 0 0 var(--r-chico) }
+th:last-child{ border-radius:0 var(--r-chico) var(--r-chico) 0 }
+td.n, th.n{ text-align:right }
+tbody tr:last-child td{ border-bottom:0 }
+.pista-desliza{ margin:0 0 8px }
+@media (min-width:640px){ .pista-desliza{ display:none } }
+
+/* ── GRÁFICAS ─────────────────────────────────────────────────────────── */
+.gr{ width:100%; height:auto; display:block; overflow:visible }
+.gr text{ font-family:inherit; font-size:var(--t-nano); font-weight:var(--p-medio); fill:var(--humo) }
+.gr .barra{ fill:var(--coral-hondo) }
+.gr .barra.floja{ fill:#C9C3E8 }
+.gr .eje{ stroke:var(--linea); stroke-width:1 }
+.leyenda{ display:flex; flex-wrap:wrap; gap:12px; font-size:var(--t-micro); color:var(--humo); margin-top:10px }
+
+/* ── LISTAS ───────────────────────────────────────────────────────────── */
+.lista{ list-style:none; margin:0; padding:0 }
+.lista li{ display:flex; gap:12px; align-items:center; padding:14px 0; border-bottom:1px solid var(--linea) }
+.lista li:last-child{ border-bottom:0 }
+.lista .txt{ flex:1; min-width:0 }
+/* `display:block` a propósito: los renglones de detalle iban en la misma
+   línea y se partían a media unidad («1.85 L · 1,851 / mL · repuso…»). */
+.lista .txt b{ display:block; font-weight:var(--p-macizo); font-size:var(--t-cuerpo) }
+.lista .txt span{ display:block; font-size:var(--t-micro); color:var(--humo) }
+
+.etq{ display:inline-block; font-size:var(--t-nano); font-weight:var(--p-macizo);
+  letter-spacing:var(--tr-rotulo); text-transform:uppercase;
+  padding:4px 10px; border-radius:var(--r-pastilla);
+  background:var(--indigo-suave); color:var(--indigo) }
+.etq.solido{ background:#FFEFD3; color:#6B4A05 }
+.etq.demo{ background:var(--coral); color:#fff }
+/* ⚠ LA ESPECIFICIDAD. `.lista .txt span` (0,3,0) le gana a `.etq` (0,1,0),
+   así que dentro de una lista la etiqueta se quedaba con el gris del renglón
+   sobre su propio fondo. Se veía bien en una pantalla y rota en otra. */
+.lista .txt span.etq{ color:var(--indigo) }
+.lista .txt span.etq.solido{ color:#6B4A05 }
+.lista .txt span.etq.demo{ color:#fff }
+
+.vacio{ text-align:center; padding:32px 16px }
+.vacio svg{ width:54px; height:54px; opacity:.3; margin-bottom:10px }
+.sep{ height:1px; background:var(--linea); margin:18px 0 }
+.brinco{ animation:brinco .22s ease }
+@keyframes brinco{ from{ transform:translateY(6px); opacity:.5 } to{ transform:none; opacity:1 } }
+@media (prefers-reduced-motion:reduce){ .brinco{ animation:none } }
+
+/* ── IMPRESIÓN ────────────────────────────────────────────────────────── */
+@media print{
+  .pestanas, .cabecera, .no-imprimir{ display:none !important }
+  body{ background:#fff; padding:0 }
+  .tarjeta, .dato{ box-shadow:none; border:1px solid var(--linea); break-inside:avoid }
+  .panel[hidden]{ display:block !important }
+  .campo-marca{ background:var(--indigo) !important; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+}

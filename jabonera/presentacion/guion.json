@@ -1,0 +1,202 @@
+{
+  "proyecto": "NERA",
+  "subtitulo": "Control de consumo de jabón en los baños escolares",
+  "integrantes": [
+    "Luis Santiago Ramos Bermúdez",
+    "Diana Ximena Ramos Gonzales",
+    "Sandra Michelle Ocadiz García",
+    "Danae García Rodríguez",
+    "Alain Alejandro Mandujano Galvan"
+  ],
+  "laminas": [
+    {
+      "n": 1,
+      "seccion": "Portada",
+      "titulo": "NERA",
+      "pantalla": "NERA\nCuánto jabón gasta la escuela. Medido, no calculado a ojo.",
+      "hablado": "Buenos días. Somos el equipo del proyecto NERA. El nombre viene de «jabonera». Vamos a contarles cómo medimos, con método, cuánto jabón se gasta de verdad en los baños de la escuela — y por qué eso no se puede saber a ojo.",
+      "diseno": "Fondo índigo a sangre. El nombre NERA enorme, centrado en la lámina, en Poppins Bold, ocupando la mitad del ancho. Debajo, la frase en una línea, mucho más chica y en blanco al 80%. Más abajo, los cinco nombres en una sola línea de 12 pt. Nada más: ni logo, ni foto, ni adornos.",
+      "canva": "Busca «gradient background» y filtra por gratis; o pon un rectángulo de color plano #3B2FB5, que se ve mejor. Para las burbujas: busca «circle» y pon tres círculos blancos con transparencia al 10% detrás del texto.",
+      "maqueta": "portada"
+    },
+    {
+      "n": 2,
+      "seccion": "Problemática",
+      "titulo": "El problema",
+      "pantalla": "La escuela compra jabón sin saber cuánto se gasta ni dónde.",
+      "hablado": "Hoy el jabón se compra por costumbre: se pide cuando alguien avisa que se acabó. Nadie sabe qué baño gasta más, en qué días, ni cuánto cuesta al mes. Sin ese dato no se puede planear una compra, y por eso a veces sobra y a veces falta justo cuando más se necesita.",
+      "diseno": "Fondo crema. El texto a la izquierda ocupando dos tercios; a la derecha, un solo icono grande de interrogación o de dispensador vacío. Regla: una idea, una imagen, nada más.",
+      "canva": "Busca «soap dispenser icon» en Elementos, filtro Gratis. Ponlo en coral #FF6B3D sobre el crema.",
+      "maqueta": "texto-icono"
+    },
+    {
+      "n": 3,
+      "seccion": "Justificación",
+      "titulo": "Por qué importa",
+      "pantalla": "Lavarse las manos previene enfermedades. Sin jabón, no hay lavado.",
+      "hablado": "El lavado de manos con jabón es la medida de higiene más barata que existe para evitar contagios en una escuela. Si un dispensador está vacío, ese lavado no ocurre. Así que garantizar que nunca falte jabón no es un tema de limpieza: es un tema de salud, y además de dinero bien gastado.",
+      "diseno": "Fondo crema, texto centrado y grande. Debajo, tres iconos pequeños en fila con una palabra cada uno: SALUD · HIGIENE · AHORRO. Los tres del mismo tamaño y del mismo color.",
+      "canva": "Busca «hand washing line icon». Usa los tres iconos en índigo, todos con el mismo grosor de línea — si mezclas grosores se nota.",
+      "maqueta": "centro-tres"
+    },
+    {
+      "n": 4,
+      "seccion": "Objetivo general",
+      "titulo": "Objetivo general",
+      "pantalla": "Medir el consumo real de jabón para decidir las compras con datos.",
+      "hablado": "Nuestro objetivo general es medir, con un método repetible, cuánto jabón se consume realmente en los baños de la escuela, para que la decisión de cuánto comprar deje de tomarse a ojo y pase a tomarse con datos.",
+      "diseno": "Fondo índigo. Sólo la frase, centrada, grande, en blanco. Ninguna imagen. Esta lámina vale por el silencio visual: es la promesa del proyecto.",
+      "canva": "Nada que buscar. Rectángulo índigo y texto. Resistan la tentación de meterle un icono.",
+      "maqueta": "silencio"
+    },
+    {
+      "n": 5,
+      "seccion": "Objetivos específicos",
+      "titulo": "Objetivos específicos",
+      "pantalla": "Calibrar el dispensador. Medir dos baños. Analizar. Proyectar la compra.",
+      "hablado": "Los objetivos específicos son cuatro. Uno: calibrar el dispensador, es decir, medir cuánto jabón suelta cada pulsada. Dos: registrar durante varias semanas cuánto queda y cuánto se repone en los dos baños. Tres: analizar en qué baños, días y horas se concentra el gasto. Y cuatro: proyectar cuánto hay que comprar y cuánto cuesta.",
+      "diseno": "Cuatro tarjetas en una fila de dos por dos, cada una con un número grande (01 a 04) y dos palabras. Todas del mismo tamaño y misma altura — si una queda más alta, se ve descuidado.",
+      "canva": "Usa la cuadrícula: Elementos → Cuadrículas → 2×2. Fondo blanco en las tarjetas y esquinas redondeadas.",
+      "maqueta": "cuatro-tarjetas"
+    },
+    {
+      "n": 6,
+      "seccion": "Misión",
+      "titulo": "Misión",
+      "pantalla": "Que en esta escuela nunca falte jabón, y que nada se desperdicie.",
+      "hablado": "Nuestra misión es que en esta escuela nunca falte jabón en un baño, y que al mismo tiempo no se desperdicie ni un peso comprando de más. Las dos cosas a la vez sólo se pueden lograr midiendo.",
+      "diseno": "Fondo crema, texto grande centrado, con una franja coral fina arriba. Misión y Visión deben verse como una pareja: mismo tipo de lámina, sólo cambia la palabra del rótulo.",
+      "canva": "Un rectángulo delgado de 6 px en coral #FF6B3D pegado al borde superior.",
+      "maqueta": "franja"
+    },
+    {
+      "n": 7,
+      "seccion": "Visión",
+      "titulo": "Visión",
+      "pantalla": "Que otras escuelas midan su consumo con nuestro método y nuestra app.",
+      "hablado": "Nuestra visión es que este método y esta aplicación se puedan entregar a otra escuela y funcionen igual: que cualquier grupo pueda medir su propio consumo sin empezar de cero. Por eso todo el método está escrito paso a paso.",
+      "diseno": "Igual que la de Misión, cambiando sólo el rótulo. Que se vean gemelas es el punto.",
+      "canva": "Duplica la lámina anterior y cambia el texto. No la rediseñes.",
+      "maqueta": "franja"
+    },
+    {
+      "n": 8,
+      "seccion": "Marco teórico",
+      "titulo": "Marco teórico",
+      "pantalla": "Las normas piden entre 1 y 5 mL por dosis. Los dispensadores reales dan menos.",
+      "hablado": "Nos apoyamos en normas de higiene de manos. La norma ASTM E2755 pide una dosis de un mililitro y medio, la europea EN 1500 pide tres, y la ASTM E1174 pide cinco. La guía Leapfrog exige mínimo un mililitro por accionamiento. Pero los estudios de dispensadores reales encuentran que muchos entregan menos de un mililitro. Por eso no supusimos la dosis: la medimos.",
+      "diseno": "Una tabla simple de dos columnas: norma y mililitros. Cuatro renglones. Encabezado en índigo con texto blanco. Sin bordes de colores: sólo líneas finas grises.",
+      "canva": "Elementos → Tablas → la más simple. No uses la tabla con sombras.",
+      "maqueta": "tabla"
+    },
+    {
+      "n": 9,
+      "seccion": "Marco conceptual",
+      "titulo": "Marco conceptual",
+      "pantalla": "Consumo = lo que quedaba, más lo repuesto, menos lo que queda ahora.",
+      "hablado": "Este es el concepto central del proyecto. El consumo de jabón no se puede ver directamente: sólo se puede ver cuánto queda. Por eso cada visita registra dos números, no uno: lo que encontramos dentro y lo que repusimos. La resta entre dos visitas es el consumo. Y si esa resta sale negativa, significa que alguien rellenó sin apuntarlo: el sistema lo detecta y lo avisa en vez de esconderlo.",
+      "diseno": "La fórmula enorme, en el centro, en tres bloques de color separados por los signos. Es la lámina más importante de todas: que ocupe toda la pantalla y no lleve nada más.",
+      "canva": "Tres rectángulos redondeados en fila: uno índigo, uno menta, uno coral, con el signo + y − entre ellos en negro.",
+      "maqueta": "formula"
+    },
+    {
+      "n": 10,
+      "seccion": "STEAM · Ciencia",
+      "titulo": "S — Ciencia",
+      "pantalla": "Planteamos una hipótesis, la medimos y aceptamos lo que digan los datos.",
+      "hablado": "En Ciencia: planteamos una hipótesis — que unos baños gastan más que otros y que hay horas pico — y la pusimos a prueba con un método repetible. La app avisa cuando todavía no hay datos suficientes para concluir, y eso también es ciencia: saber cuándo no se puede afirmar algo.",
+      "diseno": "Las cinco láminas de STEAM son una serie: misma composición, sólo cambian la letra grande, el color y el texto. La letra ocupa un tercio izquierdo, el texto los dos tercios derechos.",
+      "canva": "Haz una y duplícala cuatro veces. Colores: S índigo, T menta, E coral, A morado claro, M índigo oscuro.",
+      "maqueta": "steam",
+      "tono": {
+        "fondo": "#3B2FB5",
+        "tinta": "#fff",
+        "letra": "S"
+      }
+    },
+    {
+      "n": 11,
+      "seccion": "STEAM · Tecnología",
+      "titulo": "T — Tecnología",
+      "pantalla": "Una app que funciona sin internet, guarda los datos y exporta a Excel.",
+      "hablado": "En Tecnología: construimos una aplicación que funciona sin internet en el propio teléfono, guarda los datos ahí mismo y los exporta a Excel con nueve hojas. Funciona sin internet a propósito, porque la medición se hace de pie en el baño, donde puede no haber señal.",
+      "diseno": "Igual que la anterior. Si quieren, una captura de pantalla del teléfono a la derecha, recortada en un marco de celular.",
+      "canva": "Elementos → busca «phone mockup» con filtro Gratis, y mete la captura dentro.",
+      "maqueta": "steam",
+      "tono": {
+        "fondo": "#12BE8F",
+        "tinta": "#0B1F1A",
+        "letra": "T"
+      },
+      "ranura": "telefono"
+    },
+    {
+      "n": 12,
+      "seccion": "STEAM · Ingeniería",
+      "titulo": "E — Ingeniería",
+      "pantalla": "Calibramos el dispensador: diez pulsadas en una probeta, entre diez.",
+      "hablado": "En Ingeniería: caracterizamos el dispensador mecánico que ya tiene la escuela. Lo accionamos diez veces sobre una probeta y dividimos el volumen entre diez, repitiéndolo tres veces. Esa calibración es la que permite traducir mililitros a lavadas de manos, que es el número que la gente entiende.",
+      "diseno": "Misma serie. A la derecha, una foto real del dispensador de la escuela o de la probeta — si la tienen, va aquí y no en otra lámina.",
+      "canva": "Suban su propia foto. Vale mucho más que cualquier ilustración de banco.",
+      "maqueta": "steam",
+      "tono": {
+        "fondo": "#FF6B3D",
+        "tinta": "#2A1005",
+        "letra": "E"
+      },
+      "ranura": "foto"
+    },
+    {
+      "n": 13,
+      "seccion": "STEAM · Arte",
+      "titulo": "A — Arte y diseño",
+      "pantalla": "Si registrar tarda más de treinta segundos, nadie lo hace.",
+      "hablado": "En Arte y diseño: el diseño de la captura es parte del experimento, no un adorno. Si registrar una medición tarda más de treinta segundos, nadie lo va a hacer, y a las dos semanas los datos son basura. Por eso la pantalla de registro pide sólo dos números y tiene atajos.",
+      "diseno": "Misma serie. A la derecha, la captura de la pantalla de registro de la app.",
+      "canva": "Misma plantilla, cambia el color y la imagen.",
+      "maqueta": "steam",
+      "tono": {
+        "fondo": "#7B5BE0",
+        "tinta": "#fff",
+        "letra": "A"
+      },
+      "ranura": "telefono"
+    },
+    {
+      "n": 14,
+      "seccion": "STEAM · Matemáticas",
+      "titulo": "M — Matemáticas",
+      "pantalla": "Restas, promedios ponderados, reparto proporcional y consumo por alumno.",
+      "hablado": "En Matemáticas: restas entre mediciones, promedio ponderado para el costo — porque si compras a dos precios distintos el costo no es ninguno de los dos —, reparto proporcional del consumo entre los días que abarca cada intervalo, consumo por alumno y proyección de existencias. Y un detalle: para el precio usamos la mediana y no el promedio, porque un precio muy alto arrastra la media.",
+      "diseno": "Misma serie. A la derecha, la fórmula del promedio ponderado escrita en grande.",
+      "canva": "Escríbela como texto, no como imagen: se ve más limpia.",
+      "maqueta": "steam",
+      "tono": {
+        "fondo": "#241C7A",
+        "tinta": "#fff",
+        "letra": "M"
+      },
+      "ranura": "formula-chica"
+    },
+    {
+      "n": 15,
+      "seccion": "Resultados",
+      "titulo": "Lo que medimos",
+      "pantalla": "Baño 2 gastó tres veces más que el Baño 1. El jueves es el pico.",
+      "hablado": "Estos son nuestros resultados. El Baño 2, con sesenta y cinco alumnos, gastó aproximadamente el triple que el Baño 1, con veintiuno. El día de mayor consumo es el jueves. Y el consumo por alumno es casi el mismo en los dos baños, lo cual confirma que la diferencia es de afluencia y no de desperdicio.",
+      "diseno": "Una sola gráfica de barras, grande, con los dos baños. Sin leyenda: los nombres van pegados a las barras. Debajo, una frase con el hallazgo.",
+      "canva": "Elementos → Gráficos → barras. Cambia los colores a índigo y coral. Borra la leyenda.",
+      "maqueta": "barras"
+    },
+    {
+      "n": 16,
+      "seccion": "Cierre",
+      "titulo": "Lo que este sistema no puede decir",
+      "pantalla": "No sabe quién gastó, ni distingue uso de desperdicio. Y así debe ser.",
+      "hablado": "Cerramos con lo que el sistema no puede decir, porque un proyecto de ciencias que sólo enseña sus aciertos está incompleto. No sabe quién gastó: mide el baño, no a las personas, y así debe ser, porque registrar el uso individual de un alumno sería vigilarlo. No distingue el uso del desperdicio: un dispensador que gotea se ve igual que un buen lavado. Y si alguien rellena sin apuntarlo, ese consumo se pierde: lo detectamos, pero no lo recuperamos. Gracias.",
+      "diseno": "Fondo índigo, texto blanco, centrado. La última lámina cierra igual que abrió la primera: mismo fondo, misma tipografía. Sin «Gracias» gigante ni animaciones.",
+      "canva": "Nada. Fondo de color y texto.",
+      "maqueta": "cierre"
+    }
+  ]
+}
