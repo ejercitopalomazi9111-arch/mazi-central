@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- Archivo GENERADO por armar-suelto.mjs · 2026-09-04.
      No se edita a mano: se cambian los originales y se vuelve a generar. -->
-<title>Jabonera · control de jabón en baños escolares</title>
+<title>NERA · control de jabón en baños escolares</title>
 <meta name="description" content="Registro y análisis del consumo de jabón en los baños de una escuela. Proyecto STEAM.">
 <meta name="theme-color" content="#0B4F5C">
 <style>
@@ -455,7 +455,7 @@ tbody tr:last-child td{ border-bottom:0 }
             fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
       <circle cx="9.6" cy="13.8" r="1.5" fill="#fff" opacity=".85"/>
     </svg>
-    <span class="nom">Jabonera</span>
+    <span class="nom">NERA</span>
     <div class="der">
       <button type="button" data-abrir-ajustes="1" aria-label="Ajustes" title="Ajustes">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1 2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.5-2.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 4a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 21 11a2 2 0 1 1 0 4Z"/></svg>
@@ -1732,7 +1732,7 @@ bastante próxima a la anterior. Se requieren dos visitas el mismo día al mismo
 
   if(p.conclusiones){ L.push('## VIII. Conclusiones'); L.push(''); L.push(p.conclusiones); L.push(''); }
 
-  L.push('> Los datos de este informe fueron capturados en campo por el equipo del proyecto y procesados por el sistema Jabonera. El detalle completo de mediciones se entrega en el archivo de hoja de cálculo adjunto.');
+  L.push('> Los datos de este informe fueron capturados en campo por el equipo del proyecto y procesados por el sistema NERA. El detalle completo de mediciones se entrega en el archivo de hoja de cálculo adjunto.');
 
   if(estado.demo){
     L.push('');
@@ -2112,7 +2112,7 @@ PINTORES.inicio = () => {
     ${espuma()}
     <div class="dentro">
       <p class="rotulo">${esc(E.escuela.nombre || 'Proyecto STEAM')}</p>
-      <h1 class="marca">Jabo<em>nera</em></h1>
+      <h1 class="marca">NERA</h1>
       <p class="lema">Cuánto jabón se gasta en los baños de la escuela.
         Medido, no calculado a ojo.</p>
 
@@ -2964,7 +2964,7 @@ PINTORES.ajustes = () => {
     { id:'demo', icono:'aviso', tono:'coral', titulo:'Demostración y borrado',
       que: E.demo ? 'ahora mismo hay datos inventados' : 'cargar ejemplo o empezar de cero' },
   ])}
-  <p class="micro" style="text-align:center;margin:20px 0">Jabonera · Grupo Mazi · funciona sin internet</p>`;
+  <p class="micro" style="text-align:center;margin:20px 0">NERA · Grupo Mazi · funciona sin internet</p>`;
 };
 
 /* ══ acciones ══════════════════════════════════════════════════════════ */
@@ -3021,7 +3021,7 @@ document.addEventListener('change', ev => {
     const fr = new FileReader();
     fr.onload = () => {
       try{ E = D.sanear(JSON.parse(fr.result)); salvar(); pinta(); alerta('Respaldo restaurado.'); }
-      catch(err){ alerta('Ese archivo no es un respaldo de Jabonera.', 'mal'); }
+      catch(err){ alerta('Ese archivo no es un respaldo de NERA.', 'mal'); }
     };
     fr.readAsText(file);
   }

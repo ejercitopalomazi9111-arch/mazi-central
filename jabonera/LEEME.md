@@ -1,4 +1,8 @@
-# Jabonera · control de jabón en baños escolares
+# NERA · control de jabón en baños escolares
+
+NERA, de jabo**nera**. El nombre lo eligió Carlos; la carpeta, la rama y el
+archivo suelto siguen llamándose `jabonera` a propósito: renombrarlos rompería
+los enlaces ya repartidos y la llave de `localStorage` donde está lo capturado.
 
 Lo pidió Carlos: un sistema de inventario de jabón para los baños de una
 escuela, con análisis de consumo, exportación a Excel, jabón líquido y en
@@ -72,13 +76,13 @@ de reportes actual»*. **No se redibujó el membrete**: la herramienta
 `sectPr` y sus colores muestreados de las imágenes— más la marca de agua, la
 numeración, las firmas y el sello de verificación.
 
-Jabonera escribe un archivo con **la misma forma que esa herramienta
+NERA escribe un archivo con **la misma forma que esa herramienta
 importa**, y ella lo maqueta y lo imprime. Un solo formato oficial, en un
 solo sitio: tenerlo en dos garantiza que se separen el día que la escuela
 cambie el suyo.
 
 ```
-Jabonera → Proyecto → «Generar el reporte»   (baja un .json)
+NERA → Proyecto → «Generar el reporte»   (baja un .json)
 Reportes → Guardados → Importar → ese archivo → Imprimir / PDF
 ```
 

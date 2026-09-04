@@ -175,7 +175,7 @@ bastante próxima a la anterior. Se requieren dos visitas el mismo día al mismo
 
   if(p.conclusiones){ L.push('## VIII. Conclusiones'); L.push(''); L.push(p.conclusiones); L.push(''); }
 
-  L.push('> Los datos de este informe fueron capturados en campo por el equipo del proyecto y procesados por el sistema Jabonera. El detalle completo de mediciones se entrega en el archivo de hoja de cálculo adjunto.');
+  L.push('> Los datos de este informe fueron capturados en campo por el equipo del proyecto y procesados por el sistema NERA. El detalle completo de mediciones se entrega en el archivo de hoja de cálculo adjunto.');
 
   if(estado.demo){
     L.push('');

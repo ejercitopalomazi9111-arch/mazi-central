@@ -336,7 +336,7 @@ PINTORES.inicio = () => {
     ${espuma()}
     <div class="dentro">
       <p class="rotulo">${esc(E.escuela.nombre || 'Proyecto STEAM')}</p>
-      <h1 class="marca">Jabo<em>nera</em></h1>
+      <h1 class="marca">NERA</h1>
       <p class="lema">Cuánto jabón se gasta en los baños de la escuela.
         Medido, no calculado a ojo.</p>
 
@@ -1188,7 +1188,7 @@ PINTORES.ajustes = () => {
     { id:'demo', icono:'aviso', tono:'coral', titulo:'Demostración y borrado',
       que: E.demo ? 'ahora mismo hay datos inventados' : 'cargar ejemplo o empezar de cero' },
   ])}
-  <p class="micro" style="text-align:center;margin:20px 0">Jabonera · Grupo Mazi · funciona sin internet</p>`;
+  <p class="micro" style="text-align:center;margin:20px 0">NERA · Grupo Mazi · funciona sin internet</p>`;
 };
 
 /* ══ acciones ══════════════════════════════════════════════════════════ */
@@ -1245,7 +1245,7 @@ document.addEventListener('change', ev => {
     const fr = new FileReader();
     fr.onload = () => {
       try{ E = D.sanear(JSON.parse(fr.result)); salvar(); pinta(); alerta('Respaldo restaurado.'); }
-      catch(err){ alerta('Ese archivo no es un respaldo de Jabonera.', 'mal'); }
+      catch(err){ alerta('Ese archivo no es un respaldo de NERA.', 'mal'); }
     };
     fr.readAsText(file);
   }
