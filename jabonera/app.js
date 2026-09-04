@@ -61,28 +61,49 @@ const hace = ts => {
 /** LA PROBETA. El medidor de cada baño no es una barra de progreso: es una
  *  probeta graduada con sus marcas, dibujada aquí en SVG. El instrumento del
  *  proyecto convertido en elemento de interfaz — y de paso se lee mejor: una
- *  barra dice «algo va por la mitad», una probeta dice CUÁNTO Y DE QUÉ. */
+ *  barra dice «algo va por la mitad», una probeta dice CUÁNTO Y DE QUÉ.
+ *  Con los cantos redondeados, que es el lenguaje de las referencias que
+ *  mandó Carlos, y porque además una burbuja no tiene esquinas. */
 function probeta(pct){
   const p = Math.max(0, Math.min(100, pct || 0));
-  const X = 30, Y = 66, m = 3, ancho = 18, alto = 50, izq = (X-ancho)/2, top = m + 4;
+  const X = 34, Y = 72, ancho = 22, alto = 52, izq = (X-ancho)/2, top = 12;
   const nivel = top + alto * (1 - p/100);
-  const marcas = [0,25,50,75,100].map(v => {
+  const marcas = [25,50,75].map(v => {
     const y = top + alto * (1 - v/100);
-    const largo = (v % 50 === 0) ? 7 : 4;
-    return `<line x1="${izq}" y1="${y.toFixed(1)}" x2="${(izq+largo)}" y2="${y.toFixed(1)}"
-            stroke="currentColor" stroke-width="1" opacity=".55"/>`;
+    return `<line x1="${izq+3}" y1="${y.toFixed(1)}" x2="${izq+8}" y2="${y.toFixed(1)}"
+            stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".45"/>`;
   }).join('');
   return `<svg class="probeta" viewBox="0 0 ${X} ${Y}" role="img"
-      aria-label="Probeta al ${Math.round(p)} por ciento" style="color:var(--tinta)">
-    <rect x="${izq}" y="${top}" width="${ancho}" height="${alto}" fill="none"
-          stroke="currentColor" stroke-width="1.5"/>
-    <rect x="${izq+1}" y="${nivel.toFixed(1)}" width="${ancho-2}"
-          height="${Math.max(0, top+alto-nivel-1).toFixed(1)}" fill="var(--azul)" opacity=".85"/>
+      aria-label="Probeta al ${Math.round(p)} por ciento" style="color:var(--indigo)">
+    <defs><clipPath id="pb${Math.round(p)}">
+      <rect x="${izq}" y="${top}" width="${ancho}" height="${alto}" rx="10"/>
+    </clipPath></defs>
+    <rect x="${izq-3}" y="4" width="${ancho+6}" height="7" rx="3.5"
+          fill="currentColor" opacity=".28"/>
+    <rect x="${izq}" y="${top}" width="${ancho}" height="${alto}" rx="10"
+          fill="var(--indigo-suave)"/>
+    <g clip-path="url(#pb${Math.round(p)})">
+      <rect x="${izq}" y="${nivel.toFixed(1)}" width="${ancho}"
+            height="${Math.max(0, top+alto-nivel).toFixed(1)}" fill="currentColor" opacity=".9"/>
+    </g>
     ${marcas}
-    <rect x="${izq-2}" y="${m}" width="${ancho+4}" height="4" fill="none"
-          stroke="currentColor" stroke-width="1.5"/>
-    <text x="${X/2}" y="${Y-3}" text-anchor="middle" font-family="var(--mono)"
-          font-size="9.5" font-weight="500" fill="currentColor">${Math.round(p)}%</text>
+    <rect x="${izq}" y="${top}" width="${ancho}" height="${alto}" rx="10"
+          fill="none" stroke="currentColor" stroke-width="1.6" opacity=".55"/>
+    <text x="${X/2}" y="${Y-1}" text-anchor="middle"
+          font-size="10" font-weight="700" fill="currentColor">${Math.round(p)}%</text>
+  </svg>`;
+}
+
+/** LA ESPUMA. Manchas orgánicas al fondo del bloque de color. En Headspace
+ *  son una decisión de estilo; aquí son burbujas de jabón, y por eso salen
+ *  SÓLO donde hay color y nunca sobre el contenido. */
+function espuma(){
+  return `<svg class="espuma" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <circle cx="352" cy="34" r="86" fill="#fff" opacity=".10"/>
+    <circle cx="300" cy="118" r="42" fill="#fff" opacity=".08"/>
+    <circle cx="382" cy="150" r="26" fill="#FF6B3D" opacity=".22"/>
+    <circle cx="18"  cy="252" r="96" fill="#fff" opacity=".07"/>
+    <circle cx="112" cy="288" r="34" fill="#12BE8F" opacity=".18"/>
   </svg>`;
 }
 
@@ -123,9 +144,9 @@ function ranking(filas, opciones = {}){
         <b class="num" style="font-size:var(--t-guia);font-weight:var(--p-fuerte)">${nu(f.v, f.v < 100 ? 1 : 0)}</b>
         <span class="micro">${esc(unidad)}</span>
       </div>
-      <div style="height:10px;background:var(--papel-hondo);border:1px solid var(--linea);overflow:hidden">
+      <div style="height:10px;background:var(--niebla);border-radius:999px;overflow:hidden">
         <div style="height:100%;width:${max>0?(f.v/max*100).toFixed(1):0}%;
-             background:${i===0?'var(--rojo)':'var(--tinta)'}"></div>
+             background:${i===0?'var(--coral)':'var(--indigo)'};border-radius:999px"></div>
       </div>
       ${f.nota ? `<div class="micro" style="margin-top:4px">${esc(f.nota)}</div>` : ''}
     </div>`).join('')}</div>`;
@@ -203,12 +224,13 @@ PINTORES.inicio = () => {
         <span class="sub">${ult ? `última visita ${esc(hace(ult.ts))}` : 'sin visitar todavía'}
           ${b.alumnos ? ` · ${b.alumnos} alumnos` : ''}</span>
       </span>
-      <span aria-hidden="true" style="color:var(--grafito);font-size:var(--t-seccion)">›</span>
+      <span aria-hidden="true" style="color:var(--humo);font-size:var(--t-seccion)">›</span>
     </button>`;
   }).join('');
 
   return `
   <div class="campo-marca">
+    ${espuma()}
     <div class="dentro">
       <p class="rotulo">${esc(E.escuela.nombre || 'Proyecto STEAM')}</p>
       <h1 class="marca">Jabo<em>nera</em></h1>
@@ -219,14 +241,14 @@ PINTORES.inicio = () => {
       <hr>
       <p class="rotulo" style="margin:0 0 8px">${esc(p0.producto.nombre)} · ${nu(c.dias,1)} días medidos</p>
       <div class="num" style="font-size:var(--t-display);font-weight:var(--p-fuerte);
-                  letter-spacing:var(--tr-display);line-height:1;color:#FF6B60">${cifra.grande}<span
-           style="font-family:var(--sans);font-size:var(--t-seccion);font-weight:var(--p-ligero);
-                  color:rgba(251,250,246,.7);margin-left:8px;letter-spacing:0">${cifra.unidad}</span></div>
-      <p class="menor" style="color:rgba(251,250,246,.76);margin:10px 0 0">
+                  letter-spacing:var(--tr-display);line-height:1;color:#FFD9CB">${cifra.grande}<span
+           style="font-size:var(--t-seccion);font-weight:var(--p-fuerte);
+                  color:rgba(255,255,255,.72);margin-left:8px;letter-spacing:0">${cifra.unidad}</span></div>
+      <p class="menor" style="color:rgba(255,255,255,.82);margin:10px 0 0">
         ${p0.lavados != null ? `equivalen a <b>${nu(p0.lavados,0)} lavadas de manos</b>` : cifra.detalle}
         ${inf.dinero.gasto != null ? ` · ${pesos(inf.dinero.gasto)}` : ''}</p>` : `
       <hr>
-      <p class="menor" style="color:rgba(251,250,246,.72);margin:0">
+      <p class="menor" style="color:rgba(255,255,255,.8);margin:0">
         ${listo ? 'Todavía no hay dos mediciones en un mismo baño: hasta que las haya, no hay consumo que calcular.'
                 : 'Falta dar de alta los baños y el jabón.'}</p>`}
 
@@ -242,8 +264,8 @@ PINTORES.inicio = () => {
            configuraba desaparecía la única puerta y había que irse a otra
            pestaña para encontrar el engrane. Lo cazó la compuerta. -->
       <button type="button" data-abrir-ajustes="1"
-        style="appearance:none;background:none;border:0;color:rgba(251,250,246,.78);
-               font-family:var(--mono);font-size:var(--t-micro);font-weight:var(--p-medio);
+        style="appearance:none;background:none;border:0;color:rgba(255,255,255,.85);
+               font-size:var(--t-micro);font-weight:var(--p-medio);
                letter-spacing:.06em;text-transform:uppercase;
                cursor:pointer;padding:16px 4px 0;min-height:44px;text-decoration:underline">
         Ajustes, baños y respaldo</button>
@@ -292,7 +314,7 @@ PINTORES.registrar = () => {
         <span class="txt"><span class="tit">${esc(b.nombre)}</span>
           <span class="sub">${ult ? `visitado ${esc(hace(ult.ts))} · dentro ${esc(soloNumero(dentro,prod))}`
                                   : 'primera visita'}</span></span>
-        <span aria-hidden="true" style="color:var(--grafito);font-size:var(--t-seccion)">›</span>
+        <span aria-hidden="true" style="color:var(--humo);font-size:var(--t-seccion)">›</span>
       </button>`;
     }).join('');
     return `
@@ -302,7 +324,7 @@ PINTORES.registrar = () => {
     <p class="menor" style="margin-bottom:18px">La probeta enseña lo que le quedaba dentro según la última visita.</p>
     ${E.productos.length > 1 ? `<div class="atajos" style="margin:0 0 16px">
       ${E.productos.map(p => `<button type="button" data-producto="${esc(p.id)}"
-        style="${p.id===sel.productoId?'background:var(--tinta);color:var(--hoja)':''}">${esc(p.nombre)}</button>`).join('')}
+        style="${p.id===sel.productoId?'background:var(--tinta);color:var(--nube)':''}">${esc(p.nombre)}</button>`).join('')}
     </div>` : ''}
     <div class="fichas">${fichas}</div>`;
   }
@@ -386,7 +408,7 @@ PINTORES.registrar = () => {
   ${consumo == null ? `
     <div class="dato" style="margin-bottom:14px">
       <div class="et">Consumo</div>
-      <span class="v" style="font-size:var(--t-seccion);color:var(--grafito)">todavía no se puede</span>
+      <span class="v" style="font-size:var(--t-seccion);color:var(--humo)">todavía no se puede</span>
       <div class="n">Es la primera visita a este baño. La próxima ya podrá restarse.</div>
     </div>`
   : hueco ? `
@@ -552,10 +574,10 @@ PINTORES.almacen = () => {
     return `<div class="tarjeta">
       <h2>${esc(p.producto.nombre)} <span class="etq ${p.producto.tipo==='solido'?'solido':''}">${p.producto.tipo}</span></h2>
       <div class="datos" style="margin:16px 0 0">
-        <div class="dato ${urgente?'':'grande'}" ${urgente?'style="background:var(--rojo);border-color:var(--rojo);color:#fff"':''}>
-          <div class="et" ${urgente?'style="color:rgba(255,255,255,.8)"':''}>Aguanta</div>
-          <span class="v num" ${urgente?'style="color:#fff"':''}>${dias == null ? '—' : nu(dias,1)}<u ${urgente?'style="color:rgba(255,255,255,.8)"':''}>días</u></span>
-          <div class="n" ${urgente?'style="color:rgba(255,255,255,.85)"':''}>${dias == null
+        <div class="dato ${urgente?'alarma':'grande'}">
+          <div class="et">Aguanta</div>
+          <span class="v num">${dias == null ? '—' : nu(dias,1)}<u>días</u></span>
+          <div class="n">${dias == null
             ? 'hacen falta dos visitas para saber a qué ritmo se gasta'
             : (urgente ? 'hay que comprar' : 'al ritmo de ' + nu(p.diario,0) + ' ' + M.UNIDAD[p.producto.tipo] + ' por día')}</div></div>
         <div class="dato"><div class="et">En el almacén</div>
@@ -808,7 +830,7 @@ PINTORES.ajustes = () => `
     ${E.banos.length ? `<ul class="lista">${E.banos.map(b => `<li>
       <div class="txt"><b>${esc(b.nombre)}</b>
         <span>${esc(b.zona||'sin zona')} · ${esc(b.tipo||'—')} · ${b.dispensadores||0} dispensador(es)
-        · ${b.alumnos ? b.alumnos + ' alumnos' : '<b style="color:var(--rojo)">sin alumnos: no habrá promedio por alumno</b>'}</span></div>
+        · ${b.alumnos ? b.alumnos + ' alumnos' : '<b style="color:var(--coral-hondo)">sin alumnos: no habrá promedio por alumno</b>'}</span></div>
       <button class="b chico peligro" data-borrar-bano="${esc(b.id)}">Borrar</button></li>`).join('')}</ul>`
       : `<p class="menor">Ninguno todavía.</p>`}
     <div class="sep"></div>
@@ -866,7 +888,7 @@ PINTORES.ajustes = () => `
   </div>
 
   <div class="tarjeta">
-    <h2>Respaldo · <b style="color:var(--rojo)">léelo</b></h2>
+    <h2>Respaldo · <b style="color:var(--coral-hondo)">léelo</b></h2>
     <div class="aviso ojo">
       <h3>Los datos viven en ESTE aparato</h3>
       No hay servidor. Si se borran los datos del navegador, se cambia de teléfono o se usa modo privado,

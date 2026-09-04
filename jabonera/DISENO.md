@@ -10,7 +10,74 @@ números y no con impresiones.
 
 ---
 
-# v3 · «INSTRUMENTO» — la referencia es **IBM Carbon**
+# v4 · «BURBUJA» — la referencia son **las seis imágenes de Carlos**
+
+Carlos mandó seis referencias (e502) y con eso quedó claro que la v3 iba por
+el lado equivocado. **La v3 era distintiva pero austera; sus seis son
+cálidas, saturadas y redondas.** Es su decisión y manda.
+
+## Lo que comparten sus seis, contado
+
+Ajustes de Material You · una app de eventos en menta · una de música en azul
+noche con salmón · una de empleo en lima con violeta · una de salud en índigo
+con coral · Headspace con sus manchas orgánicas.
+
+| Sus referencias | La v3 que yo había hecho |
+|---|---|
+| Esquinas MUY redondeadas (18–28 px, y pastillas) | radio **0** |
+| Color saturado en **bloques grandes** | un acento diminuto |
+| Dos o tres colores fuertes conviviendo | uno solo |
+| Tarjetas suaves flotando sobre color | hojas con borde de 1 px |
+| Formas orgánicas | retícula milimétrica |
+| Registro amable, de app de consumo | instrumento de ingeniería |
+
+## Pero no se copia una pantalla de Dribbble
+
+Eso sería volver a lo genérico por otro camino. El tema da la forma, y el
+tema es **jabón**:
+
+| Decisión | Por qué es de ESTE proyecto |
+|---|---|
+| **La espuma** — manchas orgánicas al fondo del bloque de color | En Headspace son una decisión de estilo; aquí son **burbujas**. Salen sólo donde hay color y nunca sobre el contenido, para que no se vuelvan textura |
+| **Todo redondo**, hasta la probeta | Una burbuja no tiene esquinas |
+| **Índigo + coral**, con menta para «esto ya se puede afirmar» | Es el par de su referencia de salud. Tres colores que trabajan, no un acento tímido |
+| **Los números dejan la monoespaciada pero conservan `tabular-nums`** | La mono era de la v3 y sonaba a laboratorio. Sin ella una columna de cifras se sigue comparando de un vistazo, pero sin el registro técnico |
+| **La probeta se queda** | Es lo único que no vino de ninguna referencia: es del proyecto |
+
+## Los colores se calcularon, no se ajustaron a ojo
+
+La compuerta de contraste reprobó el primer intento y los números decidieron:
+
+| | Blanco encima | |
+|---|---|---|
+| `#FF6B3D` coral vivo | **2.83:1** | no pasa |
+| `#D8461B` | 4.36:1 | no pasa |
+| `#C63E15` coral hondo | **5.12:1** | pasa |
+
+De ahí salieron **dos corales con trabajos distintos y no intercambiables**:
+el vivo para rellenos grandes **con texto tinta encima** —que es exactamente
+lo que hace su referencia del botón lima— y el hondo para texto y para
+bloques con texto blanco.
+
+### Y otra vez la compuerta se equivocó antes que el diseño
+
+Reportaba **1.00:1** en el botón secundario de la portada. Ese botón es
+`rgba(255,255,255,.18)` sobre índigo, y mi comprobación tomaba el primer
+fondo con alfa y se quedaba con su RGB tal cual: lo medía como blanco puro
+contra texto blanco. **Un blanco translúcido sobre índigo no es blanco.**
+Ahora las capas se componen una sobre otra hasta llegar a un fondo opaco,
+que es lo que de verdad ve el ojo.
+
+## La regla de esquina cambió de dueño
+
+En la v3 la compuerta exigía **radio 0** (la disciplina de Carbon). Ahora
+exige **12 px o más**. La compuerta sigue el diseño vigente, no el anterior
+— pero sigue siendo una regla que se puede romper sin querer y que nadie ve
+hasta que la lámina se ve barata.
+
+---
+
+# v3 · «INSTRUMENTO» — la referencia fue **IBM Carbon** (queda como registro)
 
 ## Por qué se rehízo la v2
 

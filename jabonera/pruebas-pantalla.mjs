@@ -152,14 +152,27 @@ console.log('\n══ LA PIEL: NINGUNA VARIABLE MUERTA, TIPO CARGADO, ESQUINA VI
        ámbar de las etiquetas— se contaba como transparente, la prueba subía
        al padre claro y reportaba 1.04:1 sobre texto blanco cuando el
        contraste real es 5.93:1. La compuerta mentía, no el diseño. */
-    const opaco = s => { const n = nums(s); return n.length < 4 || n[3] > 0.05; };
-    const fondoDe = el => { let n = el;
+    const alfa = s => { const n = nums(s); return n.length < 4 ? 1 : n[3]; };
+    /* ⚠ UN BLANCO TRANSLÚCIDO SOBRE ÍNDIGO NO ES BLANCO. La versión anterior
+       tomaba el primer fondo con alfa > 0.05 y se quedaba con su RGB tal
+       cual: un botón de `rgba(255,255,255,.18)` sobre índigo se medía como
+       blanco puro y daba 1.00:1 contra su texto blanco. Ahora las capas se
+       COMPONEN una sobre otra hasta llegar a un fondo opaco, que es lo que
+       de verdad ve el ojo. */
+    const fondoDe = el => {
+      const capas = []; let n = el;
       while(n && n !== document.documentElement){
         const b = getComputedStyle(n).backgroundColor;
-        if(b && opaco(b)) return rgb(b);
+        const a = b ? alfa(b) : 0;
+        if(a > 0.004){ capas.push([rgb(b), a]); if(a >= 0.999) break; }
         n = n.parentElement;
       }
-      return [255,255,255]; };
+      let out = [255,255,255];
+      for(let i = capas.length - 1; i >= 0; i--){
+        const [c, a] = capas[i];
+        out = [0,1,2].map(k => c[k]*a + out[k]*(1-a));
+      }
+      return out; };
     const malos = [];
     for(const el of document.querySelectorAll('button, a, h1, h2, h3, p, span, td, th, label, li')){
       if(el.children.length || !el.textContent.trim()) continue;
@@ -180,26 +193,31 @@ console.log('\n══ LA PIEL: NINGUNA VARIABLE MUERTA, TIPO CARGADO, ESQUINA VI
 
   ok('IBM Plex Sans cargó de verdad (no se cayó al tipo del sistema)',
      await pg.evaluate(() => document.fonts.check('16px Plex')));
-  ok('IBM Plex Mono cargó, que es donde van TODOS los números',
-     await pg.evaluate(() => document.fonts.check('16px PlexMono')));
-  ok('los números van en monoespaciada, como en un cuaderno de laboratorio',
+  /* Los números conservan `tabular-nums` aunque ya no vayan en
+     monoespaciada: sin eso, una columna de cifras baila y deja de poder
+     compararse de un vistazo, que es para lo que existe. */
+  ok('los números llevan cifras tabulares, para poder compararse en columna',
      await pg.evaluate(() => {
        const v = document.querySelector('.dato .v') || document.querySelector('.num');
-       return !!v && /Plex ?Mono|mono/i.test(getComputedStyle(v).fontFamily);
+       return !!v && /tabular-nums/.test(getComputedStyle(v).fontVariantNumeric);
      }));
 
-  /* La disciplina que se tomó de IBM Carbon: esquina viva. */
-  const redondos = await mirarTodo(() => {
+  /* ⚠ ESTA REGLA CAMBIÓ DE DUEÑO. En la v3 la comprobación exigía radio 0
+     —la disciplina de IBM Carbon—. Carlos mandó seis referencias y las seis
+     van al revés: esquinas muy redondeadas. La compuerta sigue el diseño
+     vigente, no el anterior; y sigue siendo una regla que se puede romper
+     sin querer y que nadie ve hasta que la lámina se ve barata. */
+  const cuadrados = await mirarTodo(() => {
     const malos = [];
-    for(const el of document.querySelectorAll('button.b, .tarjeta, .dato, input, .aviso, .etq, th, td')){
+    for(const el of document.querySelectorAll('button.b, .tarjeta, .dato, input, .aviso, .etq, .ficha')){
       const r = el.getBoundingClientRect(); if(!r.width) continue;
       const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
-      if(rad > 0.5) malos.push(el.className + ' → ' + rad + 'px');
+      if(rad < 12) malos.push((el.className||el.tagName) + ' → ' + rad + 'px');
     }
     return [...new Set(malos)];
   });
-  ok('esquina viva en todo: radio 0, que es la regla de Carbon',
-     redondos.length === 0, redondos.slice(0,3).join(' · '));
+  ok('todo lleva esquina redondeada de 12 px o más, como las referencias',
+     cuadrados.length === 0, cuadrados.slice(0,3).join(' · '));
   await ctx.close();
 }
 

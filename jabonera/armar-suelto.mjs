@@ -34,7 +34,7 @@ const js   = await Promise.all(GUIONES.map(leer));
    sin decir nada — que es la peor forma de fallar, porque parece que
    funciona. Se incrustan en base64. */
 const { readFile: leerCrudo } = await import('node:fs/promises');
-for(const f of ['PlexSans.woff2','PlexMono-400.woff2','PlexMono-500.woff2','PlexMono-600.woff2']){
+for(const f of ['PlexSans.woff2']){
   const b64 = (await leerCrudo(join(DIR, 'tipos', f))).toString('base64');
   css = css.replace(`url(tipos/${f})`, `url(data:font/woff2;base64,${b64})`);
 }
