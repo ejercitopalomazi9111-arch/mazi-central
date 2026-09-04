@@ -172,6 +172,23 @@
         "aparece el nombre del dominio"
       ],
       "salioDe": "Carlos: «una regla de grupo Mazi es jamás usar esa porquería». Se sustituyó por un diálogo propio en la sala."
+    },
+    {
+      "id": "la-pantalla-que-ensena-una-regla-falsa",
+      "titulo": "La ayuda de la pantalla contradice a las reglas que el motor sí cumple",
+      "gravedad": "alta",
+      "sintoma": "El sistema calcula bien, pero el texto que se lee antes de decidir explica otra cosa. Nadie lo nota porque el resultado final cuadra.",
+      "causa": "El texto explicativo se escribió mirando la variable de la que salía el número, no el reglamento. La lógica aplicaba el efecto a quien tocaba; la frase lo contaba al revés.",
+      "porque": "Las pruebas comprueban RESULTADOS. Un letrero que miente da el mismo resultado, así que el verde no lo caza nunca.",
+      "arreglo": "Releer la fuente de las reglas y comparar frase por frase con lo que dice la interfaz. No comparar la interfaz con el código: los dos pueden estar mal de la misma manera.",
+      "comoCazarlo": "Coger el documento original y buscar en la pantalla cada regla que menciona. Es lento y es la única forma.",
+      "consejo": "En algo que se usa para aprender —un juego para un niño, un formulario oficial, una calculadora— la pantalla ENSEÑA. Si enseña mal, hace más daño que si no dijera nada.",
+      "senales": [
+        "explica al revés",
+        "el texto no coincide con las reglas",
+        "dice que me quita a mí"
+      ],
+      "salioDe": "Guerra de Puercos: el reglamento dice que la penalización va sobre la carta del RIVAL; el motor lo hacía bien y el letrero decía «87 − 5 = 82» como si te lo restaras tú. Lo cazó Carlos pidiendo que releyera el reglamento."
     }
   ]
 }

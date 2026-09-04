@@ -127,6 +127,8 @@ body.fieltro{
 .tapete{
   background:var(--rosa-papel); border:3px solid var(--tinta); border-radius:18px;
   padding:14px; margin-bottom:12px; box-shadow:0 5px 0 var(--tinta);
+  /* En la mesa el tapete aprieta: cada píxel de relleno se lo quita al
+     abanico, que es lo único que importa de esa pantalla. */
 }
 /* Sobre fieltro el tapete se vuelve una superficie más oscura que el fondo, no
    más clara: en oscuro la elevación se hace con SUPERFICIE, no con sombra —una
@@ -179,6 +181,265 @@ body.fieltro .rotulo{color:#FF8FBE}
 .carta.revelada[disabled]{opacity:1}
 .carta.chica{width:54px; height:78px; aspect-ratio:auto; flex:0 0 auto}
 .carta.chica .valor{font-size:20px}
+
+/* ══ LA MESA COMO MESA ═════════════════════════════════════════════════════
+   Carlos: «una pantalla de una mesa con los 2 jugadores frente a frente
+   jugando las cartas, como si fuese videojuego».
+
+   Tres franjas, de arriba abajo: EL DE ENFRENTE con sus cartas boca abajo, EL
+   CENTRO donde las dos cartas se encuentran, y MI MANO en abanico. Es la
+   disposición de cualquier juego de cartas físico, y es la que hace que uno
+   sepa dónde mirar sin que nadie se lo explique.
+
+   Y no es adorno: antes la pantalla sólo tenía MI mano y un marcador con un
+   número, o sea que se jugaba contra una cifra. */
+.enfrente{ display:grid; place-items:center; gap:5px; padding:2px 0 8px }
+.mano-rival{ display:flex; justify-content:center; align-items:flex-start; height:54px }
+/* Boca abajo y ENCIMADAS, igual que las mías: si las de él fueran en fila y
+   las mías en abanico, no parecerían el mismo juego. Y con el reverso de
+   verdad, el mismo que la baraja. */
+.mini-dorso{
+  width:34px; height:49px; border-radius:6px; flex:0 0 auto;
+  border:2px solid var(--tinta); background:var(--rosa-hondo);
+  background-image:url(arte/web/reverso.webp),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.14) 0 5px, transparent 5px 10px);
+  background-size:cover; background-position:center;
+  margin-left:-15px; transform-origin:50% 140%;
+  box-shadow:0 2px 6px rgba(0,0,0,.45);
+  transition:transform .3s cubic-bezier(.2,.8,.3,1), opacity .3s;
+}
+.mini-dorso:first-child{ margin-left:0 }
+.rot-rival{
+  font-size:10px; font-weight:800; letter-spacing:.14em;
+  text-transform:uppercase; opacity:.62;
+}
+body.fieltro .rot-rival{ color:var(--hueso) }
+
+/* ══ LOS DOS LADOS DE LA MESA ══════════════════════════════════════════════
+   mazo · lo que pasa en medio · cementerio. Igual arriba y abajo, en espejo.
+   Las dos pilas de los costados miden lo mismo para que la columna del medio
+   quede centrada de verdad y no un poco corrida. */
+.lado{
+  /* ⚠ `minmax(0,1fr)` Y NO `1fr`. Un `1fr` pelado es `minmax(auto,1fr)`: la
+     columna nunca baja de lo que mide su contenido, y el abanico mide mucho
+     más que su hueco. Con `1fr`, la mano empujaba a las dos pilas de los
+     costados hasta dejarlas en cero — y no «se veían mal»: NO SE VEÍAN, con
+     el CSS correcto y el JS pintándolas. Se cazó en una captura. */
+  display:grid; grid-template-columns:var(--pila) minmax(0,1fr) var(--pila);
+  align-items:center; gap:6px; padding:2px 2px 4px;
+  --pila:clamp(42px, 13vw, 56px);
+}
+.lado .centro{ display:grid; place-items:center; min-width:0 }
+.lado.mio{ align-items:flex-end; gap:4px; padding:0 }
+.lado.mio .mano{ min-width:0 }
+/* Las pilas del jugador se apoyan en la base del abanico, no en su centro:
+   una mesa se lee por la línea de abajo. */
+.lado.mio .pila{ margin-bottom:6px }
+.lado .rotulo{ margin:0; font-size:11px }
+.pila{
+  width:var(--pila); aspect-ratio:62/78; position:relative;
+  border-radius:8px; display:grid; place-items:center;
+}
+/* El mazo: un dorso de verdad con el número encima. Sólo el número — «te
+   quedan 105 cartas en tu mazo» era un renglón de texto para decir 105. */
+.pila.mazo{
+  border:2px solid var(--tinta);
+  background:var(--rosa-hondo) url(arte/web/reverso.webp) center/cover;
+  box-shadow:1px 1px 0 rgba(0,0,0,.5), 3px 3px 0 rgba(0,0,0,.35),
+             5px 5px 0 rgba(0,0,0,.2);
+}
+.pila.mazo b{
+  font-size:15px; font-weight:900; color:#fff;
+  padding:1px 6px; border-radius:99px; background:rgba(0,0,0,.62);
+  /* Sobre la ilustración del dorso, el número solo no se lee: la pastilla
+     oscura es lo que lo despega del arte. Medido con el contraste, no a ojo. */
+}
+.pila.mazo.vacia{ opacity:.35; box-shadow:none }
+/* ── LA SALIDA, EN LA ESQUINA ──────────────────────────────────────────────
+   Discreta a propósito: es la única forma de irse de una partida, así que no
+   puede faltar, pero tampoco compite con las cartas. */
+/* En la mesa el tapete aprieta: cada píxel de relleno se lo quita al abanico,
+   que es lo único que de verdad importa en esa pantalla. */
+#fElegir .tapete{ padding:8px 6px 4px }
+.renglon-mano{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+.renglon-mano .rotulo{ margin:0 }
+.salir{
+  width:28px; height:28px; min-height:0; padding:0; flex:0 0 auto;
+  border:1px solid rgba(233,228,228,.28); border-radius:99px;
+  background:rgba(0,0,0,.28); color:var(--hueso);
+  font-size:14px; font-weight:900; line-height:1; cursor:pointer;
+  display:grid; place-items:center; box-shadow:none;
+}
+.salir:active{ transform:none; background:rgba(0,0,0,.5) }
+/* El cementerio: hueco marcado cuando no hay nada, para que se entienda que
+   ahí VAN a caer las cartas y no que falta algo. */
+.pila.cementerio{
+  border:2px dashed rgba(233,228,228,.22);
+  background:rgba(0,0,0,.18);
+}
+.pila.cementerio:not(.vacia){ border-color:transparent; background:transparent }
+.pila.cementerio .carta.tirada{
+  position:absolute; inset:0; width:100%; height:100%; margin:0;
+  transform:translate(var(--dx,0), var(--dy,0)) rotate(var(--tor,0deg));
+  filter:grayscale(.35) brightness(.72);
+}
+/* La última muerta se ve entera y a color: es la que cuenta la historia. Las
+   de abajo asoman apagadas, que es como se ve un montón de descarte. */
+.pila.cementerio .carta.tirada.encima{
+  filter:none; transform:translate(0,0) rotate(calc(var(--tor,0deg) * .35));
+  box-shadow:0 3px 8px rgba(0,0,0,.5);
+}
+
+/* ⚠ LA CARTA ELEGIDA AVISA QUE LE FALTA UN TOQUE. Sin esta señal, «tres
+   toques para jugar» es un secreto que nadie descubre: el primero parece no
+   hacer nada y el segundo tampoco. Con el borde encendido, el tercero se
+   adivina. */
+.mano.abanico .carta.lista{
+  outline:3px solid #FFD166; outline-offset:2px;
+  animation:late 1s ease-in-out infinite;
+}
+@keyframes late{ 50%{ outline-color:#fff } }
+/* La copia que va colgada del dedo mientras se arrastra. */
+.carta.fantasma{ opacity:.92; box-shadow:0 14px 30px rgba(0,0,0,.6) }
+/* Y el hueco al que va se enciende: es lo que dice «suéltala aquí». */
+.slot.apuntado{ border-color:#FFD166; background:rgba(255,209,102,.12) }
+/* ⚠ LAS CARTAS NO SE PUEDEN «ARRASTRAR» COMO IMAGEN. Sin esto, el navegador
+   arranca su propio arrastre nativo con la ilustración y el gesto de llevarla
+   a la mesa deja de funcionar a media pantalla. */
+.mano.abanico .carta{ touch-action:none; -webkit-user-drag:none; user-select:none }
+
+/* ══ LA MESA ═══════════════════════════════════════════════════════════════
+   Carlos: «haz que se vea la mesa donde se ponen las cartas».
+
+   Dos huecos con forma de carta, uno por lado, SIEMPRE visibles aunque estén
+   vacíos. Ése es el punto entero: un hueco vacío es lo que le dice a alguien
+   «aquí va a caer tu carta» antes de que la juegue. Si el sitio sólo apareciera
+   al revelar, mientras eliges no estarías mandando la carta a ningún lado.
+
+   ⚠ EL ANCHO SE MIDE EN vw Y SE TOPA. En un iPhone la pantalla la reparten el
+   marcador, la mano del rival, la mesa y el abanico; si la mesa se lleva más
+   de ~86 px de alto por hueco, el abanico queda fuera del tapete. Se probó
+   midiendo, no a ojo. */
+/* ⚠ LOS DOS HUECOS VAN LADO A LADO, NO UNO ENCIMA DEL OTRO. La primera
+   versión los puso apilados —el de arriba del rival, el de abajo mío— porque
+   suena a «frente a frente». Medido en un iPhone de 390: se comía 200 px y
+   empujaba «Jugar carta» fuera de la pantalla. Un juego de cartas donde hay
+   que hacer scroll para jugar la carta que acabas de elegir no sirve.
+
+   Lado a lado cuesta 105 px y sigue leyéndose como el choque: el suyo sube un
+   poco, el mío baja, y el VS queda en medio. Que quién es quién se entiende ya
+   está resuelto arriba y abajo, con su mano y la mía. */
+.mesa-centro{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:2px 0 8px;
+}
+.hueco{ display:grid; place-items:center }
+.hueco.mia { transform:translateY(7px) }
+.hueco.suya{ transform:translateY(-7px) }
+.slot{
+  /* ⚠ LA PROPORCIÓN ES LA DE LA CARTA CHICA (62×78), NO LA DE LA ILUSTRACIÓN
+     (420×595). Puesta a 420/595 el hueco vacío salía 16 px más alto que la
+     carta que iba a caer dentro, así que al aterrizar quedaba un dedo de aire
+     abajo y el marco no se le ajustaba. Medido con la carta puesta. */
+  width:clamp(52px, 17vw, 74px); aspect-ratio:62/78;
+  border-radius:9px;
+  border:2px dashed rgba(233,228,228,.28);
+  background:rgba(0,0,0,.22);
+  display:grid; place-items:center;
+  box-shadow:inset 0 2px 10px rgba(0,0,0,.35);
+  transition:border-color .25s, background .25s, transform .25s;
+}
+/* Con carta adentro, el hueco deja de ser hueco: se quita el punteado, porque
+   un marco punteado alrededor de una carta puesta se lee como error. */
+.slot.puesto{
+  border:2px solid rgba(233,228,228,.42);
+  background:transparent; box-shadow:none;
+}
+.slot .carta{ width:100%; margin:0 }
+/* La carta cae en su hueco. Es el único momento del turno en que algo se
+   mueve solo, y por eso se nota. */
+@keyframes aterriza{
+  from{ transform:translateY(-26px) scale(.9); opacity:0 }
+  to  { transform:translateY(0) scale(1); opacity:1 }
+}
+.slot .carta.cae{ animation:aterriza .26s cubic-bezier(.2,.8,.3,1) both }
+.linea-media{ display:grid; place-items:center }
+.linea-media span{
+  font-size:10px; font-weight:900; letter-spacing:.18em;
+  color:rgba(233,228,228,.45);
+}
+body:not(.fieltro) .linea-media span{ color:rgba(0,0,0,.4) }
+
+/* ══ EL ABANICO ════════════════════════════════════════════════════════════
+   Cinco cartas EN FILA se reparten los 334 px útiles de un iPhone y salen a
+   103 cada una. ENCIMADAS caben más grandes y además se ven como una mano de
+   verdad: lo que se tapa es el costado derecho, que no dice nada — el nombre,
+   los puntos y el nivel viven en la mitad izquierda y ésa queda a la vista.
+
+   El giro y la altura los pone el JS carta por carta (`--giro`, `--sube`),
+   porque salen del NÚMERO de cartas y en CSS eso sería una regla por cantidad.
+
+   ⚠ EL ORIGEN DEL GIRO VA MUY POR DEBAJO DE LA CARTA (50% 155%). Girando
+   desde el centro, las puntas de arriba se abren y las de abajo también, y
+   parece un molinillo. Desde un punto bajo gira como gira una mano: el borde
+   inferior casi quieto y el de arriba abriéndose. */
+.mano.abanico{
+  display:flex; justify-content:center; align-items:flex-end;
+  /* ⚠ UNA CARTA ROTADA OCUPA MÁS ANCHO QUE LA CARTA. A 7.5° una de 104×150
+     mide 122 de caja, o sea 9 px de más por cada lado, y con el abanico
+     centrado eso se sale del tapete por los dos extremos. Con el ancho y el
+     encime de antes la página se desbordaba de lado —medido, no supuesto— y
+     no se veía en la captura porque lo que sobresalía era la esquina de una
+     carta sobre un fondo del mismo color.
+     Las cuentas a 390 px: útil 334, abanico sin girar 298, más 18 de giro =
+     316. Cabe con margen. */
+  /* El ancho baja de 26.5vw a 23vw: con las pilas del mazo y el cementerio a
+     los costados, la mano ya no dispone del tapete entero. */
+  --ancho-carta:clamp(74px, 23vw, 116px);
+  --encime:calc(var(--ancho-carta) * .58);   /* de arranque; el JS lo afina */
+  /* ⚠ EL `gap:9px` DE LA REJILLA SIGUE VIVO EN FLEX y se suma al encime, así
+     que cada carta quedaba 9 px más lejos de la anterior de lo que decían las
+     cuentas. Se ve al medir el paso entre centros, no al leer el CSS. */
+  gap:0;
+  /* ⚠ AIRE ARRIBA, Y NO ES DECORACIÓN. La carta elegida sube 22 px y crece un
+     6 %: sin este hueco se montaba encima de «TU MANO · ELIGE UNA CARTA» y lo
+     dejaba ilegible justo cuando acabas de tocar. Se ve en la captura, no en
+     el código. */
+  /* 32, no 26: la carta elegida sube 22 px y crece un 6 %, y con 26 se subía
+     por encima del rótulo «Tu mano» y lo dejaba ilegible justo al tocar. */
+  padding-top:32px;
+  grid-template-columns:none;
+}
+@media (min-width:560px){ .mano.abanico{ --encime:calc(var(--ancho-carta) * .26) } }
+.mano.abanico .carta{
+  width:var(--ancho-carta); flex:0 0 auto;
+  margin-left:calc(var(--encime) * -1);
+  transform-origin:50% 155%;
+  transform:rotate(var(--giro,0deg)) translateY(var(--sube,0px));
+  z-index:var(--i,0);
+}
+.mano.abanico .carta:first-child{ margin-left:0 }
+/* Las de las puntas bajan (`--sube`), así que el borde de abajo del abanico
+   queda MÁS ABAJO que el de la carta del centro. Sin este aire, el +5/−5 se
+   montaba encima de esas dos esquinas. */
+.mano.abanico + .especiales{ margin-top:24px }
+/* El vacío de las especiales: se dice, y en pequeño. Un hueco donde antes
+   había dos botones se lee como que algo se rompió. */
+/* Las especiales, ya como cartas, un poco más grandes que las «chicas» de
+   siempre: hay que poder ver de cuál es sin escanearla. */
+.carta .niv.n-BONO{ background:#2E7D4F } .carta .niv.n-CASTIGO{ background:#C0392B }
+.sin-esp{ margin:0; font-size:12px; font-weight:700; opacity:.6; text-align:center }
+body.fieltro .sin-esp{ color:var(--hueso) }
+/* La que se toca se sale del abanico: al frente, derecha y arriba. Sin esto
+   queda tapada por la siguiente y no se alcanza a ver QUÉ elegiste, que es lo
+   único que importa en ese momento. */
+.mano.abanico .carta.frente{
+  z-index:50; transform:rotate(0deg) translateY(-14px) scale(1.06);
+}
+.mano.abanico .carta.marcada{
+  z-index:60; transform:rotate(0deg) translateY(-22px) scale(1.06);
+  box-shadow:0 12px 0 var(--rosa-hondo);
+}
 .carta.dorso{
   background:var(--rosa-hondo); background-image:
     repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 6px, transparent 6px 12px);
@@ -217,7 +478,11 @@ body.fieltro .rotulo{color:#FF8FBE}
 .n-C{background:var(--C)} .n-D{background:var(--D)}
 
 /* ── especiales ── */
-.especiales{display:flex; gap:10px; justify-content:center; margin-top:12px}
+/* ⚠ SE ENVUELVE, y no es precaución: desde que la mano se cuenta en cartas
+   JUGABLES, las especiales que no gastes se van quedando además de tus cinco.
+   Quien no use ninguna puede llegar a traer las diez de su mazo, y diez de
+   66 px en una fila que no envuelve son 760 px sobre una pantalla de 390. */
+.especiales{display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap}
 .esp{
   min-height:52px; padding:8px 12px; border-radius:12px; border:3px solid var(--tinta);
   background:var(--hueso); font-weight:900; font-size:13px; display:flex;
@@ -260,11 +525,48 @@ body.fieltro .esp.puesta { background:var(--rosa); color:var(--tinta); border-co
 .duelo .lado{display:flex; flex-direction:column; align-items:center; gap:6px}
 .puntos{font-size:30px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums}
 .cuenta{font-size:12px; font-weight:800; color:var(--rosa-hondo); min-height:16px}
-.golpe{
-  text-align:center; font-size:15px; font-weight:900; padding:10px;
-  border-radius:12px; border:3px solid var(--tinta); background:var(--rosa-claro);
+/* ⚠ EL RECUADRO ROSA CLARO SE FUE. Carlos: «lo de daño está terrible». Lo era
+   y era medible: `--rosa-claro` de fondo con la letra en hueso daba 1.6 de
+   contraste —hace falta 4.5— así que el texto más importante de la ronda era
+   el menos legible de la pantalla. Además el recuadro ocupaba 200 px para
+   decir «−15». Ahora el daño es un número grande sin caja y la explicación va
+   pequeña debajo. */
+.golpe{ text-align:center; font-size:13px; font-weight:800; padding:4px 6px 0 }
+.golpe .n{
+  font-size:40px; display:block; line-height:1; letter-spacing:-.02em;
+  color:#FF5A6E; text-shadow:0 2px 0 rgba(0,0,0,.45);
 }
-.golpe .n{font-size:30px; display:block; line-height:1.1}
+.golpe small{ display:block; opacity:.68; font-weight:700; margin-top:3px }
+body.fieltro .golpe{ color:var(--hueso) }
+
+/* ── LA BARRA DE FORCEJEO ──────────────────────────────────────────────────
+   Arranca partida por la mitad y se va al lado del que pierde. El ancho del
+   relleno es literalmente el reparto de puntos entre las dos cartas, así que
+   la barra no ilustra el resultado: LO ES. */
+.pulso{
+  position:relative; height:26px; margin:8px 0 2px;
+  border-radius:99px; overflow:hidden;
+  border:2px solid var(--tinta); background:#2A1520;
+}
+.pulso .fondo{ position:absolute; inset:0; background:#C0392B }   /* el lado de él */
+.pulso .fill{
+  position:absolute; inset:0 auto 0 0; width:50%;
+  background:linear-gradient(90deg,#2E7D4F,#4FC38A);              /* el mío */
+  box-shadow:2px 0 0 rgba(255,255,255,.5);
+  transition:width .9s cubic-bezier(.5,-0.25,.4,1.25);
+}
+.pulso .marca{
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-size:12px; font-weight:900; letter-spacing:.1em; color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.85);
+}
+/* El temblor del choque, sólo cuando hay golpe. */
+@keyframes forcejeo{
+  0%,100%{ transform:translateX(0) }
+  20%{ transform:translateX(-3px) } 40%{ transform:translateX(3px) }
+  60%{ transform:translateX(-2px) } 80%{ transform:translateX(2px) }
+}
+.pulso.choca{ animation:forcejeo .45s ease-in-out }
 
 /* ── cortina de "pásale el teléfono" ── */
 .cortina{
@@ -295,9 +597,18 @@ body.fieltro .esp.puesta { background:var(--rosa); color:var(--tinta); border-co
      bajó.
    Todas se apagan con `prefers-reduced-motion`: hay gente a la que el
    movimiento le marea, y un juego que no se puede jugar no es un juego. */
+/* ⚠ EL FOTOGRAMA FINAL NO PUEDE SER `transform:none`, y esto me costó una
+   ronda entera. Con relleno `both`, al terminar la animación el navegador
+   DEJA CLAVADO el último fotograma por encima de cualquier regla normal. O
+   sea que `to{transform:none}` no significa «suelta el control»: significa
+   «esta carta no tiene transformación, nunca». Puse el abanico, el CSS estaba
+   perfecto, y las cartas salían rectas — todas con la misma altura de caja,
+   que fue lo que lo delató al medirlas.
+   Ahora el reparto ATERRIZA en la pose del abanico, y de paso la clase se
+   quita al terminar para que `.frente` y `.marcada` puedan mover la carta. */
 @keyframes reparte{
   from{ transform:translateY(26px) rotate(-6deg); opacity:0 }
-  to  { transform:none; opacity:1 }
+  to  { transform:rotate(var(--giro,0deg)) translateY(var(--sube,0px)); opacity:1 }
 }
 .carta.llega{ animation:reparte .34s cubic-bezier(.2,.9,.3,1.3) both }
 @keyframes tiembla{
@@ -529,39 +840,123 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
     <div class="tira" id="mTira"></div>
   </div>
 
+  <!-- ══ LA MESA, PARTIDA EN DOS ══════════════════════════════════════════
+       Carlos: «pon la pantalla de juego dividida en 2, un lado mío con mi deck
+       de cartas que diga las cartas que tiene sólo el número, el cementerio que
+       muestre la última muerta y abajo desacomodadas el resto… tanto mías como
+       del rival».
+
+       Y con la referencia que mandó —Card Wars— se entiende el porqué: en un
+       juego de cartas de verdad, el mazo y el descarte SON sitios de la mesa.
+       Verlos es lo que hace que la partida se sienta jugada y no calculada:
+       el mazo bajando dice cuánto queda, el cementerio creciendo dice qué se
+       ha gastado. Antes eran dos números en una línea de texto al pie.
+
+       Cada lado es lo mismo en espejo: mazo · lo que pasa en medio ·
+       cementerio. El de arriba es suyo, el de abajo mío. -->
+  <div class="lado suyo" id="mLadoB">
+    <div class="pila mazo" id="mMazoB"><b>0</b></div>
+    <div class="enfrente" id="mEnfrente">
+      <div class="mano-rival" id="mManoB"></div>
+      <div class="rot-rival" id="mRotRival"></div>
+    </div>
+    <div class="pila cementerio" id="mCemB"></div>
+  </div>
+
+  <!-- ── LA MESA DONDE SE PONEN LAS CARTAS ─────────────────────────────────
+       Carlos: «haz que se vea la mesa donde se ponen las cartas».
+
+       Los dos huecos están SIEMPRE ahí y al jugar la carta aterriza en el
+       suyo. Un juego de cartas necesita un sitio donde se ponen; si no, es una
+       lista.
+
+       ⚠ EL MÍO A LA IZQUIERDA, y no es capricho: el marcador del duelo ya
+       ponía mis puntos a la izquierda y los suyos a la derecha. Con la mesa al
+       revés, la misma ronda contaba dos historias distintas en la misma
+       pantalla. Se vio en una captura, no leyendo.
+
+       Y es además la zona a la que se ARRASTRA la carta para jugarla, así que
+       tiene que estar a la vista mientras se elige o el gesto no existe. -->
+  <div class="mesa-centro" id="mMesa">
+    <div class="hueco mia"><div class="slot" id="mSlotA"></div></div>
+    <div class="linea-media"><span>VS</span></div>
+    <div class="hueco suya"><div class="slot" id="mSlotB"></div></div>
+  </div>
+
   <!-- elegir -->
+  <!-- ⚠ AQUÍ YA NO HAY BOTONES, Y ES LO QUE PIDIÓ CARLOS: «quita el botón de
+       jugar carta y haz que pueda hacerlo pulsando 3 veces en mi carta o
+       arrastrándola al campo de juego». Los tres que había —Jugar, Quitar
+       selección y Salir— ocupaban tres renglones debajo de la mano para hacer
+       lo que el dedo ya sabe hacer solo encima de la carta.
+
+       Tampoco está el pie de «te quedan 4 combinaciones · te quedan 105
+       cartas»: ese dato ahora se ve, no se lee. El número vive en el mazo y
+       las combinaciones gastadas en el rótulo de la mano. -->
   <section id="fElegir">
     <div class="tapete">
-      <p class="rotulo" id="rTuMano">Tu mano · elige una carta</p>
-      <div class="mano" id="mMano"></div>
-      <div class="especiales" id="mEspeciales"></div>
-      <p class="aviso" id="mAviso" hidden></p>
-    </div>
-    <div style="display:grid; gap:10px">
-      <button class="btn fuerte ancho" id="bJugar" disabled>Jugar carta</button>
-      <div style="display:flex; gap:10px">
-        <button class="btn chico" style="flex:1" id="bLimpiar">Quitar selección</button>
-        <button class="btn chico" style="flex:1" data-ir="portada">Salir</button>
+      <!-- ⚠ SALIR VA EN ESTE RENGLÓN, NO EN EL MARCADOR. Carlos: «el botón de
+           salir escóndelo, no es necesario que quede allí». Quitarlo del todo
+           deja atrapado a quien quiera irse a media partida, así que se hizo
+           una ✕ pequeña — pero puesta en el marcador se le encimaba al nombre
+           del rival, «MÁQUINA» con una ✕ atravesada. Aquí comparte renglón con
+           el rótulo de la mano, que iba medio vacío, y no le quita ni un píxel
+           a las cartas. -->
+      <div class="renglon-mano">
+        <p class="rotulo" id="rTuMano">Tu mano</p>
+        <button class="salir" id="bSalir" data-ir="portada" aria-label="Salir de la partida">✕</button>
       </div>
+      <!-- ⚠ MI MAZO Y MI CEMENTERIO VAN PEGADOS AL ABANICO, no en una fila
+           propia. Con una fila aparte para mi lado, la pantalla de un iPhone
+           llevaba cinco bloques apilados —marcador, su lado, la mesa, mi lado
+           y la mano— y el abanico se salía por abajo. Medido: 194 px de más.
+           Pegados a los costados de la mano son exactamente donde están en la
+           mesa de las referencias que mandó Carlos, y no cuestan ni un píxel
+           de alto. -->
+      <div class="lado mio" id="mLadoA">
+        <div class="pila mazo" id="mMazoA"><b>0</b></div>
+        <div class="mano" id="mMano"></div>
+        <div class="pila cementerio" id="mCemA"></div>
+      </div>
+      <p class="aviso" id="mAviso" hidden></p>
+      <p class="pie" id="mPistas"></p>
     </div>
-    <p class="pie" id="mPistas"></p>
   </section>
 
   <!-- resultado -->
   <section id="fDuelo" class="oculto">
     <div class="tapete">
       <div class="duelo">
+        <!-- ⚠ AQUÍ YA NO SE REPITEN LAS CARTAS. Estaban pintadas dos veces
+             en la misma pantalla —una en la mesa de arriba y otra aquí—, en
+             el mismo orden y a distinto tamaño, que es como se ve un error de
+             maquetación y no una decisión. La mesa enseña QUÉ se jugó; este
+             panel dice CUÁNTO valió y quién se llevó el golpe. -->
         <div class="lado">
-          <div id="dCartaA"></div>
           <div class="puntos" id="dPtsA">—</div>
           <div class="cuenta" id="dCtaA"></div>
         </div>
         <div class="vs">VS</div>
         <div class="lado">
-          <div id="dCartaB"></div>
           <div class="puntos" id="dPtsB">—</div>
           <div class="cuenta" id="dCtaB"></div>
         </div>
+      </div>
+      <!-- ══ EL FORCEJEO ══════════════════════════════════════════════════
+           Carlos: «el enfrentamiento entre poderes de ambas cartas con una
+           barrita que salga en el centro y luche hacia ambos lados hasta ceder
+           hacia el lado del perdedor y al acabarse el golpe llegar a la vida
+           del jugador».
+
+           Y de paso arregla lo que llamó «terrible»: el resultado era un
+           párrafo dentro de un recuadro rosa claro con letra blanca encima
+           —ilegible, medido— que ocupaba media pantalla para decir un número.
+           Ahora el número lo dice la barra: arranca en medio, forcejea, y cede
+           hacia quien pierde. Se ENTIENDE quién ganó sin leer una palabra. -->
+      <div class="pulso" id="dPulso">
+        <i class="fondo"></i>
+        <i class="fill" id="dPulsoFill"></i>
+        <span class="marca" id="dPulsoEtq"></span>
       </div>
       <div class="golpe" id="dGolpe"></div>
     </div>
@@ -709,6 +1104,13 @@ async function cargarCatalogo(){
 
 function fichaDe(c){
   if(!CAT.listo) return null;
+  /* Las especiales tienen su propia carta en el catálogo, con su arte: la
+     Alcancía es el +5 y las Carnitas el −5. Sin esto salían como un botón con
+     un número, que es justo lo que Carlos corrigió: son CARTAS. */
+  if(c.nivel === 'ESP'){
+    const quiere = c.esp === 'bono' ? 'BONIFICACION' : 'PENALIZACION';
+    return (CAT.todas || []).find(f => f.nivel === quiere) || null;
+  }
   const exacta = CAT.exacta[c.nivel + ':' + c.valor];
   if(exacta) return exacta;
   const lista = CAT.porNivel[c.nivel];
@@ -722,9 +1124,15 @@ function laCarta(c, opciones = {}){
   b.className = 'carta' + (opciones.chica ? ' chica' : '');
   b.dataset.id = c.id;
   const f = fichaDe(c);
+  /* Una especial no vale 0: vale +5 o −5, y eso es lo que hay que leer en la
+     carta. Poner el `valor` crudo pintaría un 0 enorme y sin sentido. */
+  const esEsp = c.nivel === 'ESP';
+  const marca = esEsp ? (c.esp === 'bono' ? '+5' : '−5') : String(c.valor);
+  const rotulo = esEsp ? (c.esp === 'bono' ? 'BONO' : 'CASTIGO') : c.nivel;
+  if(esEsp) b.classList.add('especial', c.esp);
   b.innerHTML = (f ? '<span class="ilustra" style="background-image:url(' + f.arte + ')"></span>' : '')
-              + '<span class="niv n-' + c.nivel + '">' + c.nivel + '</span>'
-              + '<span class="valor">' + c.valor + '</span>';
+              + '<span class="niv n-' + rotulo + '">' + rotulo + '</span>'
+              + '<span class="valor">' + marca + '</span>';
   if(f){
     b.classList.add('con-arte');
     b.title = f.nombre + ' · ' + f.puntos + ' pts · nivel ' + f.nivel;
@@ -746,78 +1154,375 @@ const rival = () => J[turnoDe === 'a' ? 'b' : 'a'];
    dos modos, para que toda la pintura de abajo funcione igual sin saber si la
    partida es local o de allá. Del rival se arma una mano de cartas TAPADAS
    —sólo para contarlas—, porque sus valores nunca llegaron. */
+/* Cuántas cartas me quedan en el mazo. Son dos formas distintas del mismo
+   dato y por eso no se puede escribir `.length` y ya: contra la máquina el
+   mazo es un array que vive en esta página, y en línea es un número que manda
+   el servidor. */
+function enMiMazo(){
+  const j = yo(); if(!j) return 0;
+  if(typeof j.mazo === 'number') return j.mazo;
+  return Array.isArray(j.mazo) ? j.mazo.length : 0;
+}
+
 function deLaVista(v){
+  /* ⚠ `mazo` LLEGA COMO NÚMERO, NO COMO ARRAY. Contra la máquina el mazo
+     entero vive aquí; en línea vive en el servidor y de allá sólo viene
+     cuántas quedan. Por eso se cuenta con `enMiMazo()` y no con `.length` a
+     secas — que era, además, lo que hacía que en línea el letrero dijera
+     siempre «0 cartas en tu mazo».
+     `especiales` ya no existe: los +5 y −5 son CARTAS y vienen en la mano. */
   const mio = { pv:v.yo.pv, mano:v.yo.mano, combosUsados:v.yo.combosUsados,
-                especiales:v.yo.especiales, nombre:v.asiento };
+                mazo:v.yo.mazo, cementerio:v.yo.cementerio || [], nombre:v.asiento };
   const suyo = { pv:v.rival.pv, combosUsados:v.rival.combosUsados,
-                 especiales:v.rival.especiales, nombre:'rival',
+                 mazo:v.rival.mazo, cementerio:v.rival.cementerio || [], nombre:'rival',
                  mano: Array.from({ length:v.rival.cartas },
                                   (_, i) => ({ id:'tapada' + i, valor:0, nivel:'?' })) };
-  const j = { mazo: Array.from({ length:v.mazo }), ronda:v.ronda,
+  const j = { ronda:v.ronda,
               acabo:v.acabo, porCartas:v.porCartas, historia:[] };
   j[v.asiento] = mio;
   j[v.asiento === 'a' ? 'b' : 'a'] = suyo;
   return j;
 }
 
-function pintarMano(){
-  const m = $('#mMano'); m.innerHTML = '';
-  const puedeCombinar = yo().combosUsados < MOTOR.COMBOS_POR_JUGADOR;
+/* ── EL DE ENFRENTE ────────────────────────────────────────────────────────
+   Sus cartas, boca abajo y contadas. Es la única señal de que hay alguien del
+   otro lado: el marcador dice un número, esto dice una MANO que se vacía.
 
-  for(const c of yo().mano){
+   El giro se reparte igual que en la mía pero al revés de signo, porque está
+   sentado enfrente y su abanico se abre hacia el otro lado. */
+function pintarRival(){
+  const caja = $('#mManoB'); if(!caja) return;
+  const r = rival();
+  const n = r && r.mano ? r.mano.length : 0;
+  caja.innerHTML = '';
+  for(let i = 0; i < n; i++){
+    const d = document.createElement('div');
+    d.className = 'mini-dorso';
+    /* Un abanico de una sola carta no se abre: sin esto, `n-1` es 0 y sale una
+       división entre cero que deja el giro en NaN — y un transform con NaN el
+       navegador lo ignora en silencio, así que se vería recto sin avisar. */
+    const t = n > 1 ? (i / (n - 1)) - .5 : 0;
+    d.style.setProperty('--giro', (t * 16).toFixed(1) + 'deg');
+    d.style.transform = 'rotate(' + (t * 16).toFixed(1) + 'deg)';
+    caja.appendChild(d);
+  }
+  /* El nombre sale de NOMBRES, que es de donde lo saca el marcador. Leerlo
+     del objeto del jugador daba «b» —el asiento— en pantalla, porque ese
+     objeto no guarda nombre. Se vio en la captura, no en el código. */
+  const rot = $('#mRotRival');
+  const suNombre = (NOMBRES[modo] && NOMBRES[modo].b) || 'Rival';
+  if(rot) rot.textContent = n
+    ? suNombre + ' · ' + n + (n === 1 ? ' carta' : ' cartas')
+    : '';
+}
+
+/* ⚠ LA MANO SÓLO SE REPARTE CUANDO ES OTRA MANO. Carlos: «cada que toco una
+   carta todas se vuelven a dibujar lentamente».
+
+   Tenía razón y era mío: `marcar()` llamaba a `pintarMano()`, que borraba el
+   abanico entero y volvía a crear las cinco cartas con su animación de reparto
+   escalonada. O sea que ELEGIR una carta se veía igual que empezar la ronda:
+   medio segundo de cartas entrando, en cada toque.
+
+   Ahora se compara la mano con la que ya está pintada. Si son las mismas
+   cartas, no se toca el DOM: sólo se actualizan las clases de elegida. El
+   reparto se ve cuando de verdad hay reparto. */
+let manoPintada = '';
+
+function pintarMano(){
+  const m = $('#mMano');
+  m.classList.add('abanico');
+  const huella = yo().mano.map(c => c.id).join(',');
+  if(huella === manoPintada){
+    /* Misma mano: sólo cambia qué está elegido. */
+    for(const b of m.querySelectorAll('.carta')) pintarEstadoDe(b);
+    rotularMano();
+    return;
+  }
+  manoPintada = huella;
+  m.innerHTML = '';
+
+  /* ⚠ LAS ESPECIALES VAN DENTRO DEL ABANICO, NO EN SU PROPIA FILA. Carlos:
+     «la carta bonificación no le des otro espacio, métela a la mano como otra
+     carta más». Y tiene razón por dónde no me lo esperaba: mientras vivieron
+     en una fila aparte se leían como un panel de poderes, y este juego no
+     tiene poderes — tiene CARTAS, y una de ellas resulta ser un +5. Lo que la
+     hace distinta no es dónde se guarda, es que se pone ENCIMA de otra, y eso
+     se explica al tocarla, no reservándole un cajón.
+
+     ⚠ Y LA MANO SIGUE SIENDO DE CINCO JUGABLES. Que se pinten juntas no
+     significa que cuenten igual: si un +5 ocupara uno de los cinco sitios,
+     quien no los gasta acaba con cinco especiales y ninguna carta que jugar
+     —el juego se quedaba quieto para siempre, medido en 45 de 200 partidas—.
+     Así que el abanico puede traer seis o siete cartas: cinco tuyas y los
+     modificadores que te hayan salido. */
+  const mano  = yo().mano;
+  const total = mano.length;
+  let idx = 0;
+  for(const c of mano){
+    const esp = c.nivel === 'ESP';
     const b = laCarta(c);
-    const marcada = elegidas.some(x => x.id === c.id);
-    b.classList.toggle('marcada', marcada);
-    /* NINGUNA carta de la mano se apaga. La versión anterior apagaba las
-       cuatro restantes en cuanto elegías una, y para cambiar de opinión había
-       que pasar por «Quitar selección» — un callejón sin salida que un niño no
-       va a resolver, y además cuatro cartas grises se ven como si se hubieran
-       roto. Ahora se puede picar cualquiera siempre, y `marcar` decide qué
-       significa: combinar si se puede, cambiar de carta si no. */
-    b.addEventListener('click', () => marcar(c));
+    b.dataset.id = c.id;
+    if(esp) b.dataset.esp = c.esp;
+    b.classList.toggle('es-esp', esp);
+    pintarEstadoDe(b);
+    /* El abanico: de −t a +t repartido entre las que haya. Con UNA carta no
+       hay abanico que abrir y `total-1` sería cero. */
+    const t = total > 1 ? (idx / (total - 1)) - .5 : 0;
+    b.style.setProperty('--giro', (t * 15).toFixed(2) + 'deg');
+    /* Las de las puntas bajan un poco: es lo que hace que el borde de arriba
+       dibuje un arco en vez de una recta inclinada. */
+    b.style.setProperty('--sube', (Math.abs(t) * 15).toFixed(1) + 'px');
+    b.style.setProperty('--i', String(idx));
+    idx++;
+    /* NINGUNA carta de la mano se apaga: se puede picar cualquiera siempre, y
+       `marcar` decide qué significa el toque. */
+    b.addEventListener('click', () => {
+      if(arrastre.hubo){ arrastre.hubo = false; return; }   /* fue un arrastre */
+      /* Al frente ANTES de decidir qué significa el toque: aunque `marcar` la
+         rechace, quien la tocó tiene derecho a verla entera. */
+      for(const o of m.querySelectorAll('.carta.frente')) o.classList.remove('frente');
+      b.classList.add('frente');
+      marcar(c);
+    });
+    atarArrastre(b, c);
     /* Escalonado, no todas de golpe: así se lee como un reparto y no como un
-       parpadeo. 45 ms por carta — cinco cartas entran en un cuarto de segundo,
-       que es lo que aguanta alguien que ya quiere jugar. */
+       parpadeo. 45 ms por carta. */
     b.classList.add('llega');
+    /* La clase se va sola al aterrizar: mientras `llega` esté puesta, su
+       fotograma final gana sobre `.frente` y `.marcada`. */
+    b.addEventListener('animationend', () => b.classList.remove('llega'), { once:true });
     b.style.animationDelay = (m.children.length * 45) + 'ms';
     m.appendChild(b);
   }
-
-  const e = $('#mEspeciales'); e.innerHTML = '';
-  for(const [id, etiqueta, signo] of [['bono','Bonificación','+5'], ['castigo','Penalización','−5']]){
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'esp ' + id + (especial === id ? ' puesta' : '');
-    b.innerHTML = '<b>' + signo + '</b><small>' + etiqueta.toUpperCase() + '</small>'
-                + '<small>te quedan ' + yo().especiales[id] + '</small>';
-    b.disabled = yo().especiales[id] === 0 || elegidas.length === 2;
-    b.addEventListener('click', () => {
-      especial = especial === id ? null : id;
-      pintarMano(); pintarBotones();
-    });
-    e.appendChild(b);
-  }
-
-  $('#rTuMano').textContent = modo === 'dos'
-    ? NOMBRES.dos[turnoDe] + ' · elige tu carta'
-    : 'Tu mano · elige una carta';
-
-  const faltan = MOTOR.COMBOS_POR_JUGADOR - yo().combosUsados;
-  $('#mPistas').innerHTML =
-    'Te quedan <b>' + faltan + '</b> combinacion' + (faltan === 1 ? '' : 'es')
-    /* El espacio duro pega «el mazo» a la palabra anterior: sin él, en un
-       iPhone de 390 el renglón se parte justo ahí y «mazo» se queda solo
-       abajo. Una palabra huérfana al final se lee como si el texto se hubiera
-       cortado. */
-    + ' · quedan <b>' + J.mazo.length + '</b> cartas en\u00A0el\u00A0mazo';
+  ajustarEncime(m, total);
+  rotularMano();
 }
 
-function marcar(c){
-  const i = elegidas.findIndex(x => x.id === c.id);
-  if(i >= 0){ elegidas.splice(i, 1); }
-  else if(elegidas.length === 0){
-    elegidas.push(c);
+/* ⚠ CUÁNTO SE ENCIMAN LAS CARTAS SE CALCULA, NO SE ELIGE A OJO. El 58 % fijo
+   del CSS estaba medido para CINCO cartas y un tapete de 334 px de ancho. Hoy
+   ninguna de las dos cosas es verdad: las especiales viven en el abanico —así
+   que pueden ser seis o siete— y el mazo y el cementerio se llevan 108 px de
+   los costados. Con los números viejos, el abanico se salía del tapete por los
+   dos lados.
+
+   Se toma el ancho de verdad de la caja y se reparte: nunca menos del 26 % de
+   encime (más separadas se ven feas y sobra sitio) y lo que haga falta cuando
+   son muchas. Los 6 px de holgura son por el giro, que ensancha la caja. */
+function ajustarEncime(m, total){
+  if(total < 2) return;
+  const util = m.clientWidth;
+  if(!util) return;                     /* la mesa aún no se ve: no hay qué medir */
+  const ac = parseFloat(getComputedStyle(m).getPropertyValue('--ancho-carta')) || 100;
+  const necesario = (total * ac - (util - 6)) / (total - 1);
+  m.style.setProperty('--encime', Math.max(ac * .26, Math.min(ac * .72, necesario)) + 'px');
+}
+
+/* Cómo se ve una carta según lo que esté pasando con ella. Está aparte porque
+   se usa en los dos caminos de `pintarMano` —el que redibuja y el que no— y
+   tenerlo duplicado fue lo que dejó las especiales sin actualizarse cuando la
+   mano no cambiaba. */
+function pintarEstadoDe(b){
+  const esp = !!b.dataset.esp;
+  const puesta = esp ? especial === b.dataset.esp
+                     : elegidas.some(x => x.id === b.dataset.id);
+  b.classList.toggle('marcada', puesta);
+  /* Los toques que lleva: la carta elegida enseña cuántos le faltan para
+     salir a la mesa. Sin esta señal, «tres toques» es un secreto. */
+  const lista = !esp && puesta && toques >= 2;
+  b.classList.toggle('lista', lista);
+}
+
+function rotularMano(){
+  const faltan = MOTOR.COMBOS_POR_JUGADOR - yo().combosUsados;
+  $('#rTuMano').textContent = (modo === 'dos' ? NOMBRES.dos[turnoDe] : 'Tu mano')
+    + ' · ' + faltan + (faltan === 1 ? ' combinación' : ' combinaciones');
+  pintarPilas();
+}
+
+/* ── EL MAZO Y EL CEMENTERIO, DE LOS DOS LADOS ─────────────────────────────
+   Carlos: «un lado mío con mi deck de cartas que diga las cartas que tiene
+   sólo el número, el cementerio que muestre la última muerta y abajo
+   desacomodadas el resto… y que se vea aunque sea una esquina o un lado de las
+   cartas anteriores».
+
+   Las dos pilas se pintan igual para los dos jugadores, porque las dos son
+   información pública: cuántas cartas te quedan y qué has gastado se ve en
+   cualquier mesa de verdad. Lo que NO es público es tu mano, y ésa sigue sin
+   viajar.
+
+   ⚠ EL DESACOMODO ES FIJO POR CARTA, NO ALEATORIO EN CADA PINTADA. Con
+   `Math.random()` en cada repintado, el montón de descarte temblaba solito
+   cada vez que tocabas una carta —parecía un fallo, no un montón—. El ángulo
+   sale del id de la carta, así que una carta tirada se queda donde cayó. */
+function desordenDe(id){
+  let h = 0;
+  for(let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return h;
+}
+
+function pintarPilas(){
+  for(const [lado, quien] of [['A', yo()], ['B', rival()]]){
+    /* El mazo: un dorso con el número encima. Sólo el número, como lo pidió. */
+    const mz = $('#mMazo' + lado);
+    if(mz){
+      const n = typeof quien.mazo === 'number' ? quien.mazo
+              : Array.isArray(quien.mazo) ? quien.mazo.length : 0;
+      mz.querySelector('b').textContent = n;
+      mz.classList.toggle('vacia', n === 0);
+    }
+
+    /* El cementerio: la última muerta ARRIBA y a la vista; debajo, las
+       anteriores asomando una esquina, cada una torcida lo suyo. */
+    const cm = $('#mCem' + lado);
+    if(!cm) continue;
+    const muertas = Array.isArray(quien.cementerio) ? quien.cementerio : [];
+    const huella = muertas.map(c => c.id).join(',');
+    if(cm.dataset.huella === huella) continue;   /* nada que redibujar */
+    cm.dataset.huella = huella;
+    cm.innerHTML = '';
+    cm.classList.toggle('vacia', muertas.length === 0);
+    if(!muertas.length) continue;
+    /* Se pintan hasta cuatro: la de encima y tres asomando. Más no se ven y
+       cada una es una imagen que cargar. */
+    const ultimas = muertas.slice(-4);
+    ultimas.forEach((c, i) => {
+      const arriba = i === ultimas.length - 1;
+      const el = laCarta(c, { chica:true, estatica:true });
+      el.classList.add('tirada');
+      if(arriba) el.classList.add('encima');
+      const h = desordenDe(c.id);
+      /* De −14 a +14 grados y un empujón de hasta 7 px: suficiente para que se
+         lea como un montón y no tanto como para que se salga de su sitio. */
+      el.style.setProperty('--tor', ((h % 29) - 14) + 'deg');
+      el.style.setProperty('--dx', (((h >> 5) % 15) - 7) + 'px');
+      el.style.setProperty('--dy', (((h >> 9) % 11) - 5) + 'px');
+      el.style.zIndex = String(10 + i);
+      cm.appendChild(el);
+    });
+    cm.title = muertas.length + (muertas.length === 1 ? ' carta gastada' : ' cartas gastadas');
   }
+}
+
+/* ── EL GESTO: TRES TOQUES O ARRASTRAR ─────────────────────────────────────
+   Carlos: «quita el botón de jugar carta y haz que pueda hacerlo pulsando 3
+   veces en mi carta (la de seleccionar y dos más) o arrastrándola al campo de
+   juego».
+
+   Son dos caminos al mismo sitio a propósito, y ninguno sobra: el arrastre es
+   lo que se siente como poner una carta en la mesa, y los tres toques es lo
+   que funciona cuando el dedo se resbala, cuando se juega con una mano o
+   cuando alguien no descubre que se puede arrastrar. Un juego que sólo
+   entiende un gesto deja fuera a quien no dio con él. */
+let toques = 0;              /* cuántas veces seguidas se tocó la elegida */
+const PARA_JUGAR = 3;        /* la de seleccionar y dos más */
+const arrastre = { hubo:false, fantasma:null, carta:null, x0:0, y0:0, activo:false };
+
+function atarArrastre(b, c){
+  b.addEventListener('pointerdown', (e) => {
+    if(e.button && e.button !== 0) return;
+    arrastre.carta = c; arrastre.x0 = e.clientX; arrastre.y0 = e.clientY;
+    arrastre.activo = false;
+    b.setPointerCapture(e.pointerId);
+  });
+  b.addEventListener('pointermove', (e) => {
+    if(arrastre.carta !== c) return;
+    const dx = e.clientX - arrastre.x0, dy = e.clientY - arrastre.y0;
+    /* 12 px de margen: por debajo de eso es un dedo tembloroso tocando, no
+       alguien arrastrando. Sin el margen, cada toque se volvía un arrastre de
+       cero píxeles y el juego dejaba de responder a los toques. */
+    if(!arrastre.activo && Math.hypot(dx, dy) < 12) return;
+    if(!arrastre.activo){
+      arrastre.activo = true;
+      const f = b.cloneNode(true);
+      f.className = 'carta fantasma';
+      const r = b.getBoundingClientRect();
+      f.style.cssText = 'position:fixed; z-index:900; pointer-events:none; margin:0;'
+        + 'width:' + r.width + 'px; left:' + r.left + 'px; top:' + r.top + 'px;';
+      document.body.appendChild(f);
+      arrastre.fantasma = f;
+      $('#mSlotA').classList.add('apuntado');
+    }
+    arrastre.fantasma.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.06)';
+  });
+  const soltar = (e) => {
+    if(arrastre.carta !== c) return;
+    const activo = arrastre.activo;
+    if(arrastre.fantasma){ arrastre.fantasma.remove(); arrastre.fantasma = null; }
+    $('#mSlotA').classList.remove('apuntado');
+    arrastre.carta = null; arrastre.activo = false;
+    if(!activo) return;
+    arrastre.hubo = true;                 /* que el `click` de después no cuente */
+    setTimeout(() => { arrastre.hubo = false; }, 60);
+    const sobre = document.elementFromPoint(e.clientX, e.clientY);
+    if(!sobre || !sobre.closest('#mMesa')) return;
+    /* Se soltó en el campo. Si es una especial, se pone encima de lo elegido;
+       si es una carta, se elige y se juega de una vez — que es lo que quiere
+       decir el gesto de empujarla a la mesa. */
+    if(c.nivel === 'ESP'){ marcar(c); return; }
+    if(!elegidas.some(x => x.id === c.id)) marcar(c);
+    if(elegidas.some(x => x.id === c.id)) intentarJugar();
+  };
+  b.addEventListener('pointerup', soltar);
+  b.addEventListener('pointercancel', soltar);
+}
+
+/* Jugar sólo si las reglas dejan. Si no, el motivo se enseña donde ya se
+   enseñan los motivos, en vez de que el toque parezca no haber registrado. */
+function intentarJugar(){
+  const mal = MOTOR.porQueNoSeVale({ cartas: elegidas, especial }, yo());
+  if(mal){ avisar(mal); return; }
+  toques = 0;
+  jugar();
+}
+
+/* Tocar fuera de las cartas suelta lo elegido. Carlos: «el botón de quitar
+   selección quítalo y haz que se deseleccione al pulsar otro lugar». Es el
+   gesto que ya hace todo el mundo sin que se lo digan. */
+document.addEventListener('click', (e) => {
+  if(!J || $('#fElegir').classList.contains('oculto')) return;
+  if(e.target.closest('#mMano .carta')) return;
+  if(e.target.closest('button')) return;      /* los botones hacen lo suyo */
+  if(!elegidas.length && !especial) return;
+  elegidas = []; especial = null; toques = 0;
+  for(const o of $('#mMano').querySelectorAll('.carta.frente')) o.classList.remove('frente');
+  pintarMano(); pintarBotones();
+});
+
+function marcar(c){
+  /* ── UNA ESPECIAL NO SE ELIGE: SE PONE ENCIMA ────────────────────────────
+     Está en la mano como una carta más —lo pidió Carlos— pero el reglamento es
+     claro en lo que la hace distinta: «va sobre tu carta». Así que tocarla sin
+     nada elegido no puede seleccionarla, porque no hay jugada que hacer con
+     ella sola; lo que toca es decirlo. */
+  if(c.nivel === 'ESP'){
+    if(!elegidas.length){
+      avisar('Primero elige la carta y luego ponle el ' + (c.esp === 'bono' ? '+5' : '−5') + ' encima.');
+      return;
+    }
+    if(elegidas.length === 2){
+      avisar('Sobre una combinación no va ninguna especial.');
+      return;
+    }
+    especial = especial === c.esp ? null : c.esp;
+    toques = 0;
+    pintarMano(); pintarBotones();
+    return;
+  }
+
+  const yaEstaba = elegidas.some(x => x.id === c.id);
+  if(yaEstaba){
+    /* ⚠ VOLVER A TOCARLA YA NO LA SUELTA: LA ACERCA A LA MESA. Carlos:
+       «pulsando 3 veces en mi carta (la de seleccionar y dos más)». Soltar
+       ahora es tocar fuera, que es lo que hace todo el mundo sin que se lo
+       expliquen — y así el mismo gesto no significa dos cosas contrarias. */
+    toques++;
+    if(toques >= PARA_JUGAR){ intentarJugar(); return; }
+    pintarMano(); pintarBotones();
+    return;
+  }
+
+  if(elegidas.length === 0) elegidas.push(c);
   else {
     /* Ya hay algo elegido. Se pregunta a las REGLAS si la carta nueva se puede
        combinar con lo que hay; si sí, se suma y queda una combinación. Si no,
@@ -827,36 +1532,47 @@ function marcar(c){
     if(elegidas.length === 1 && !MOTOR.porQueNoSeVale(tentativa, yo())) elegidas.push(c);
     else elegidas = [c];
   }
+  toques = 1;
   if(elegidas.length === 2) especial = null;   /* regla 8: no van juntas */
   pintarMano(); pintarBotones();
 }
 
+function avisar(texto){
+  const av = $('#mAviso');
+  av.hidden = !texto;
+  if(texto) av.textContent = texto;
+}
+
 function pintarBotones(){
   const jugada = { cartas: elegidas, especial };
-  const mal = elegidas.length ? MOTOR.porQueNoSeVale(jugada, yo()) : 'Falta elegir carta.';
-  $('#bJugar').disabled = !!mal;
-  const av = $('#mAviso');
-  /* El aviso sólo sale cuando ya eligió algo: regañar antes de que toque nada
-     es ruido. */
-  if(mal && elegidas.length){ av.hidden = false; av.textContent = mal; }
-  else av.hidden = true;
+  const mal = elegidas.length ? MOTOR.porQueNoSeVale(jugada, yo()) : null;
 
+  if(mal){ avisar(mal); return; }
+  if(!elegidas.length){ avisar(''); return; }
+
+  const p = MOTOR.puntuar(jugada);
   /* Que vea la cuenta ANTES de jugar. Es la parte que cuesta entender del
      reglamento —la combinación no suma las dos cartas— y enseñarla hecha
      enseña la regla sin explicarla. */
-  if(!mal && elegidas.length === 2){
-    const p = MOTOR.puntuar(jugada);
-    av.hidden = false;
-    av.textContent = 'Combinación de nivel ' + p.nivel + ': se toma la más alta, '
-                   + p.base + ' + ' + p.bono + ' del nivel = ' + p.puntos + ' puntos.';
+  let dice;
+  if(elegidas.length === 2){
+    dice = 'Combinación de nivel ' + p.nivel + ': se toma la más alta, '
+         + p.base + ' + ' + p.bono + ' del nivel = ' + p.puntos + ' puntos.';
+  } else if(especial === 'bono'){
+    dice = p.base + ' + 5 = ' + p.puntos + ' puntos. Sigue siendo nivel ' + p.nivel + '.';
+  } else if(especial === 'castigo'){
+    /* ⚠ EL −5 NO ES TUYO: ES DEL RIVAL, y aquí lo tenía mal escrito. El
+       reglamento dice «Penalización (−5) va sobre la de tu rival», y el motor
+       lo aplica así desde siempre; era ESTE letrero el que decía «87 − 5 = 82»
+       como si te lo restaras tú. Una pantalla que enseña una regla falsa es
+       peor que una que no enseña nada: el niño aprende lo que ve. */
+    dice = 'La penalización se la pones a la carta del otro: le quita 5 a la '
+         + 'suya. La tuya vale ' + p.base + '.';
+  } else {
+    dice = 'Tócala otra vez para mandarla a la mesa. (' + p.base + ' puntos, nivel '
+         + p.nivel + '.)';
   }
-  if(!mal && elegidas.length === 1 && especial){
-    const p = MOTOR.puntuar(jugada);
-    av.hidden = false;
-    av.textContent = p.base + (especial === 'bono' ? ' + 5' : ' − 5') + ' = '
-                   + p.puntos + ' puntos. Sigue siendo nivel ' + p.nivel + '.';
-  }
-  $('#bJugar').textContent = elegidas.length === 2 ? 'Jugar la combinación' : 'Jugar carta';
+  avisar(dice);
 }
 
 /* Cuenta del número viejo al nuevo en vez de saltar. No es adorno: saltar de
@@ -928,16 +1644,36 @@ function pensarMaquina(j){
   return posibles.reduce((mejor, x) => valor(x) > valor(mejor) ? x : mejor, posibles[0]);
 }
 
+/* ── la mesa ── */
+/* Los dos huecos del centro. `mSlotA` es el mío —el de abajo, del lado de mi
+   mano—, `mSlotB` el del de enfrente. Siempre están ahí; lo que cambia es si
+   tienen carta.
+
+   ⚠ EN EL MODO DE DOS EN UN TELÉFONO MI CARTA NO SE PONE AL JUGARLA. Los dos
+   miran la misma pantalla, así que enseñar la del primero mientras el segundo
+   elige es enseñarle la jugada. Ahí el hueco se queda vacío hasta el duelo —
+   que es exactamente lo que protege la cortina de «pásale el teléfono». */
+function ponerEnMesa(donde, cartas){
+  const s = $(donde);
+  s.innerHTML = '';
+  s.classList.add('puesto');
+  for(const c of cartas){
+    const el = laCarta(c, { chica:true, estatica:true });
+    el.classList.add('cae');
+    s.appendChild(el);
+  }
+}
+function limpiarMesa(){
+  for(const id of ['#mSlotA', '#mSlotB']){
+    const s = $(id); s.innerHTML = ''; s.classList.remove('puesto');
+  }
+}
+
 /* ── el duelo ── */
 function mostrarDuelo(antes, despues, jugadaA, jugadaB){
   fase('Duelo');
   const h = despues.historia[despues.historia.length - 1];
-  const pinta = (lado, jugada, p, dondeCarta, dondePts, dondeCta) => {
-    const cont = $(dondeCarta); cont.innerHTML = '';
-    const fila = document.createElement('div');
-    fila.style.cssText = 'display:flex; gap:5px; justify-content:center';
-    for(const c of jugada.cartas) fila.appendChild(laCarta(c, { chica:true, estatica:true }));
-    cont.appendChild(fila);
+  const pinta = (lado, jugada, p, dondePts, dondeCta) => {
     $(dondePts).textContent = p.puntos;
     $(dondeCta).textContent = p.combinada
       ? 'combinación ' + p.base + ' + ' + p.bono
@@ -945,25 +1681,64 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
       : p.especial === 'castigo' ? p.base + ' − 5 de penalización'
       : '';
   };
-  pinta('a', jugadaA, h.a, '#dCartaA', '#dPtsA', '#dCtaA');
-  pinta('b', jugadaB, h.b, '#dCartaB', '#dPtsB', '#dCtaB');
+  pinta('a', jugadaA, h.a, '#dPtsA', '#dCtaA');
+  pinta('b', jugadaB, h.b, '#dPtsB', '#dCtaB');
+
+  /* Y en la mesa de arriba, que es la que se ha estado mirando todo el turno.
+     El duelo de abajo explica la cuenta; la mesa enseña que las dos cartas
+     acabaron donde tenían que acabar. */
+  ponerEnMesa('#mSlotA', jugadaA.cartas);
+  ponerEnMesa('#mSlotB', jugadaB.cartas);
+
+  /* ── EL FORCEJEO ────────────────────────────────────────────────────────
+     La barra arranca a la mitad y se va hacia el que pierde. El destino no es
+     un adorno: es la proporción de verdad entre las dos puntuaciones, así que
+     una paliza empuja hasta el borde y un 38 contra 41 se queda casi en medio.
+     Eso cuenta la ronda sin una sola palabra. */
+  const pulso = $('#dPulso'), fill = $('#dPulsoFill'), etq = $('#dPulsoEtq');
+  const total = h.a.puntos + h.b.puntos;
+  const destino = total ? (h.a.puntos / total) * 100 : 50;
+  fill.style.width = '50%';                 /* siempre se empieza en el centro */
+  pulso.classList.remove('choca');
+  etq.textContent = '';
+  if(quieto()){
+    fill.style.width = destino.toFixed(1) + '%';
+  } else {
+    /* Dos cuadros de margen para que el navegador dibuje el 50 % ANTES de
+       cambiarlo: sin esto, la transición no tiene de dónde salir y la barra
+       aparece ya puesta en su sitio. */
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fill.style.width = destino.toFixed(1) + '%';
+    }));
+    setTimeout(() => pulso.classList.add('choca'), 780);
+  }
 
   const g = $('#dGolpe');
   if(h.dano === 0){
-    g.innerHTML = '<span class="n">Empate</span>Las dos valen ' + h.a.puntos
-                + '. No hay daño.';
+    etq.textContent = 'EMPATE';
+    g.innerHTML = '<span class="n">' + h.a.puntos + ' = ' + h.b.puntos + '</span>'
+                + 'Las dos valen lo mismo. Nadie recibe daño.';
   } else {
     /* «Tú recibe el golpe» estaba mal escrito, y en un juego para un niño la
        frase se lee muchísimas veces. Contra la máquina se habla de tú; en el
        modo de dos, por nombre. */
     const frase = modo === 'maquina'
-      ? (h.perdio === 'a' ? '<b>Recibes</b> el golpe.' : 'La <b>máquina</b> recibe el golpe.')
-      : '<b>' + NOMBRES.dos[h.perdio] + '</b> recibe el golpe.';
+      ? (h.perdio === 'a' ? '<b>Recibes</b> el golpe' : 'La <b>máquina</b> recibe el golpe')
+      : '<b>' + NOMBRES.dos[h.perdio] + '</b> recibe el golpe';
     const tope = h.crudo > MOTOR.DANO_TOPE
-      ? '<br><small>La diferencia era ' + h.crudo + ', pero el daño nunca pasa de '
+      ? '<small>La diferencia era ' + h.crudo + ', pero el daño nunca pasa de '
         + MOTOR.DANO_TOPE + '.</small>' : '';
-    g.innerHTML = '<span class="n">−' + h.dano + ' PV</span>' + frase + tope;
+    etq.textContent = h.perdio === 'a' ? '◀ PIERDES' : 'GANAS ▶';
+    /* ⚠ «Recibes el golpe de vida» — así quedó al pegar la frase con el sufijo,
+       y no quiere decir nada. La frase ya termina en «el golpe»; lo que faltaba
+       era decir de cuánto, y eso ya lo grita el número de arriba. */
+    g.innerHTML = '<span class="n">−' + h.dano + ' PV</span>' + frase + '.' + tope;
   }
+  /* El mazo y el cementerio también cambian al resolverse la ronda: la carta
+     que se acaba de jugar tiene que aparecer en el montón de descarte. Sin
+     esta línea el cementerio se quedaba vacío toda la partida y sólo se
+     llenaba al volver a la pantalla de elegir. */
+  pintarPilas();
   pintarMarcador();
   if(h.dano && !quieto()){
     const m = document.querySelector('.marcador');
@@ -1008,9 +1783,9 @@ function cortina(quien, texto, luego){
 function pedirJugada(){
   elegidas = []; especial = null;
   fase('Elegir');
-  $('#bJugar').classList.remove('oculto');
-  $('#bLimpiar').classList.remove('oculto');
-  pintarMarcador(); pintarMano(); pintarBotones();
+  limpiarMesa();
+  toques = 0;
+  pintarMarcador(); pintarRival(); pintarMano(); pintarBotones();
 }
 
 function jugar(){
@@ -1024,6 +1799,7 @@ function jugar(){
     LINEA.ws.send(JSON.stringify({ tipo:'jugada',
       cartas: jugada.cartas.map(c => c.id), especial: jugada.especial }));
     LINEA.esperando = true;
+    ponerEnMesa('#mSlotA', jugada.cartas);
     esperandoAlOtro();
     return;
   }
@@ -1071,15 +1847,13 @@ function avisoSala(texto){
 function esperandoAlOtro(){
   fase('Elegir');
   $('#rTuMano').textContent = 'Ya jugaste · falta el otro';
+  /* ⚠ SE BORRA LA HUELLA, no sólo el HTML. `pintarMano` no redibuja cuando la
+     mano es la misma; si se vacía la caja a mano y la huella se queda, al
+     volver el turno el abanico no se vuelve a pintar nunca. */
+  manoPintada = '';
   $('#mMano').innerHTML = '<p style="grid-column:1/-1; text-align:center; font-weight:800;'
     + ' margin:16px 0">Esperando a que el otro elija su carta…</p>';
-  $('#mEspeciales').innerHTML = '';
   $('#mAviso').hidden = true;
-  $('#bJugar').disabled = true;
-  /* Se esconden, no se apagan: un botón apagado invita a picarle y a
-     preguntarse por qué no hace nada. */
-  $('#bJugar').classList.add('oculto');
-  $('#bLimpiar').classList.add('oculto');
   $('#mPistas').textContent = '';
 }
 
@@ -1272,9 +2046,6 @@ function pintarColeccion(){
 
 $('#cLupa').addEventListener('click', () => $('#cLupa').classList.add('oculto'));
 $('#bCartas').addEventListener('click', () => { pantalla('cartas'); pintarColeccion(); });
-$('#bJugar').addEventListener('click', jugar);
-$('#bLimpiar').addEventListener('click', () => { elegidas = []; especial = null;
-  pintarMano(); pintarBotones(); });
 $('#bOtra').addEventListener('click', () => {
   if(modo === 'linea'){
     /* La revancha la pide al servidor: si cada teléfono repartiera su propia

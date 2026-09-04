@@ -257,6 +257,9 @@ dependemos.
    | `String.replace(a, b)` pega `b` literal | en `b`, `$$` significa **un** dólar — `$&`, `$1`, `$'` también mienten | un guión dejó `$(…)` donde decía `$$(…)` y la página tronó al cargar |
    | una variable llamada `yo` guarda un id | guardaba la **persona entera**, y `encodeURIComponent(yo)` no truena: manda `[object Object]` | el socket **nunca** se ató a nadie: la mesa pintaba a **todos** «sin señal» y decía «1 en línea» con cinco adentro — **vivo en producción**, lo reportó Carlos con una captura |
    | probar cada mitad ya es probar el sistema | el servidor pasaba sus 212 y la mesa las suyas, **con datos puestos a mano en las dos** | el defecto vivía justo en el papel que se pasan, y sólo salió al correr la página contra una sala de verdad |
+   | `1fr` reparte el resto del ancho | es `minmax(auto,1fr)`: **nunca baja del mínimo del contenido** | el mazo y el cementerio del jugador medían **0 px** con el CSS correcto y el JS pintándolos — no se veían «mal», no se veían |
+   | probar el motor prueba el juego | las 74 del motor pasaban con el modo a distancia **muerto**: el servidor leía `this.J.mazo`, que dejó de existir | un websocket que contesta **500** parecía caída de red, y llevaba días así sin que nadie lo notara |
+   | si el cálculo está bien, la pantalla está bien | el motor aplicaba el −5 al rival, como manda el reglamento; **el letrero decía que te lo restabas tú** | ninguna prueba lo caza: comprueban resultados, y un letrero que miente da el mismo resultado |
    | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
@@ -854,19 +857,36 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   estado y está en otro. **Lo arregla Carlos** en el panel de Cloudflare: al proyecto
   `ppuercos`, ponerle carpeta raíz `juegos/servidor`; y borrar `puercos`, que no sirve nada.
   El nombre con dos pes es correcto y está explicado en `juegos/servidor/wrangler.jsonc`.
-- **🟠 La vista previa del proyecto `sala` sirve la central, no la sala.** Medido el 2 de
-  septiembre contra las dos direcciones que da Cloudflare en el PR #103 —la del commit y la
-  de la rama—: las dos devuelven `<title>Grupo Mazi — Central</title>`, **byte por byte
-  idéntico** a la vista previa de `mazi-central`, y 404 en cada ruta del servidor. La
-  producción (`sala.palomazi9111.workers.dev`) sí funciona, así que la carpeta raíz está
-  bien puesta para producción y mal para las vistas previas — la misma enfermedad de
-  `ppuercos`, en otro proyecto.
+- **🟠 Las vistas previas de `sala` Y DE `ppuercos` sirven la central, no sus servidores.**
+  Medido de nuevo el 4 de septiembre, contra las direcciones de rama del PR #108 y con los
+  cinco despliegues en verde:
 
-  **Por qué importa más de lo que parece:** significa que **un cambio de la sala no se puede
-  probar antes de juntarlo**. Todo lo que se le toque llega a producción sin haber corrido
-  nunca en un despliegue de verdad, y ése es exactamente el terreno donde vivió meses el
-  borrado silencioso. Lo arregla Carlos en el panel, en la configuración de vistas previas
-  del proyecto `sala`.
+  | Dirección | Debería servir | Sirve de verdad |
+  |---|---|---|
+  | `claude-…-sala.workers.dev` | el servidor de La Sala | `<title>Grupo Mazi — Central</title>` · `/api/salud` → **404** |
+  | `claude-…-ppuercos.workers.dev` | el servidor de salas del juego | `<title>Grupo Mazi — Central</title>` · `/api/salud` → **404** |
+  | `ppuercos.workers.dev` *(producción)* | ídem | `{"bien":true}` ✅ |
+
+  **Antes aquí decía que `ppuercos` «ya está bien», y era verdad a medias:** está bien en
+  producción y mal en las vistas previas. Ése era exactamente el matiz que faltaba, y es la
+  sexta vez que aparece el mismo defecto — sólo que esta vez el que informaba un estado y
+  estaba en otro era **este apunte**.
+
+  **Por qué importa más de lo que parece:** significa que **ni un cambio de La Sala ni uno
+  del servidor de Puercos se pueden probar antes de juntarlos**. Lo que se les toque llega a
+  producción sin haber corrido nunca en un despliegue de verdad — y eso duele justo ahora,
+  que el modo a distancia del juego acaba de resucitar después de días muerto. Lo arregla
+  Carlos en el panel, en la configuración de **vistas previas** de los dos proyectos:
+  carpeta raíz `sala/servidor` y `juegos/servidor` respectivamente.
+
+  **Cómo comprobarlo sin abrir el panel** —el navegador de este contenedor no sale a
+  internet, pero `curl` sí—:
+
+  ```
+  curl -s https://<la-direccion>/api/salud          # debe dar {"bien":true}
+  curl -s https://<la-direccion>/ | grep -o '<title>[^<]*</title>'
+  ```
+  Si sale el título de la Central, la carpeta raíz de la vista previa está mal puesta.
 - **🔴 Los nombres de ocho maestros reales SIGUEN EN LA HISTORIA del repo público.**
   El archivo actual está limpio —`avisos/datos.js` trae `maestro:''` y su comentario
   explicando por qué— y por eso parece resuelto. No lo está: quitarlos de la versión de

@@ -327,6 +327,59 @@ console.log('  · la marca de agua, que salía como recuadro negro en PDF');
   await p.context().close();
 }
 
+/* ══ EL TEXTO SOBRE EL VIOLETA ════════════════════════════════════════════
+   Lo decidió Carlos —«el texto blanco»— y no fue una preferencia: sobre
+   #AC27FF NINGUNA tinta oscura cumple la norma. El negro puro se queda en
+   4.49 y hacen falta 4.5. El `#12061C` que había daba 4.20, y lo llevaban
+   todos los botones fuertes de la app, que son los que más se pulsan.
+
+   ⚠ SE MIDE EL FONDO REAL, subiendo por los padres hasta encontrar uno
+   opaco. Medir contra el fondo del documento es lo que deja pasar un texto
+   ilegible sobre un panel de color: el documento es oscuro y la cuenta sale
+   bien mientras la pantalla se ve mal. */
+{
+  const p = await abrir(390, 844, true);
+  const malos = await p.evaluate(() => {
+    const lum = c => { const s = c.map(v => { v/=255;
+      return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+      return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+    const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+    const fondoReal = (el) => { let n = el;
+      while(n && n !== document.documentElement){
+        const bg = getComputedStyle(n).backgroundColor;
+        const a = (bg.match(/[\d.]+/g) || [])[3];
+        if(bg && bg !== 'rgba(0, 0, 0, 0)' && (a === undefined || +a > .9)) return num(bg);
+        n = n.parentElement; }
+      return num(getComputedStyle(document.body).backgroundColor); };
+    const fuera = [];
+    let vistos = 0;
+    for(const el of document.querySelectorAll('*')){
+      const t = [...el.childNodes].filter(n => n.nodeType === 3)
+                 .map(n => n.textContent.trim()).join('').trim();
+      if(!t) continue;
+      const f = fondoReal(el);
+      /* Sólo el violeta de la casa, #AC27FF. */
+      if(!(Math.abs(f[0]-172) < 10 && Math.abs(f[1]-39) < 10 && Math.abs(f[2]-255) < 10)) continue;
+      vistos++;
+      const cs = getComputedStyle(el);
+      const c = num(cs.color);
+      const rz = (Math.max(lum(c), lum(f)) + .05) / (Math.min(lum(c), lum(f)) + .05);
+      const grande = parseFloat(cs.fontSize) >= 24
+                  || (parseFloat(cs.fontSize) >= 18.66 && +cs.fontWeight >= 700);
+      if(rz < (grande ? 3 : 4.5)) fuera.push(t.slice(0,20) + ' · ' + rz.toFixed(2) + ' · ' + cs.color);
+    }
+    return { fuera, vistos };
+  });
+  /* La premisa, dicha en voz alta: si el recorrido no encontrara NADA sobre el
+     violeta, «ninguno se queda corto» saldría en verde con la app entera
+     ilegible. Ya me pasó con otra prueba de contraste. */
+  ok('el recorrido de verdad encontró texto sobre el violeta', malos.vistos > 0,
+     malos.vistos + ' encontrados');
+  ok('y ninguno se queda corto de contraste', malos.fuera.length === 0,
+     malos.fuera.join(' | '));
+  await p.context().close();
+}
+
 await nav.close();
 console.log('\n' + (mal ? '✗ ' : '✓ ') + bien + '/' + (bien + mal) + ' pruebas de la app');
 process.exit(mal ? 1 : 0);

@@ -172,6 +172,24 @@
         "el lector lee en desorden"
       ],
       "salioDe": "Las pruebas de recorrido con teclado del banco: 24 paradas, todas con anillo visible."
+    },
+    {
+      "id": "un-fr-no-es-cero",
+      "titulo": "Las columnas de los lados desaparecieron y el CSS estaba bien",
+      "gravedad": "media",
+      "sintoma": "En una rejilla de tres columnas, las dos de los costados no se ven. El CSS es correcto y el JS las pinta.",
+      "causa": "`1fr` es `minmax(auto, 1fr)`: la pista nunca baja del tamaño MÍNIMO de su contenido. Si la columna del medio lleva algo ancho —una fila de cartas, una tabla, un bloque de código— se lo queda todo y aplasta a las vecinas.",
+      "porque": "`1fr` se lee como «el resto» y en la mayoría de los casos se comporta así. Sólo falla cuando el contenido tiene un mínimo grande, que es justo cuando hace falta que no falle.",
+      "arreglo": "`minmax(0, 1fr)` en la pista que lleva el contenido ancho. Lo mismo con `minmax(0, auto)` en flex (`min-width:0`).",
+      "comoCazarlo": "Medir el ancho de las pistas de los lados, no mirarlas. Una pista de 0 px no se ve como un fallo: se ve como si no existiera.",
+      "consejo": "Cada vez que una columna «no aparece» con el CSS correcto, el primer sospechoso es el mínimo automático de la pista de al lado.",
+      "senales": [
+        "no se ve la columna de al lado",
+        "desapareció la barra lateral",
+        "el CSS está bien pero no sale",
+        "se come todo el ancho"
+      ],
+      "salioDe": "La mesa de Guerra de Puercos: el mazo y el cementerio del jugador estaban pintados y medían cero, aplastados por el abanico de la mano."
     }
   ]
 }
