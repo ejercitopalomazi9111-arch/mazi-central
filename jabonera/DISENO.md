@@ -10,6 +10,58 @@ números y no con impresiones.
 
 ---
 
+# v5 · lo que faltaba: **ilustración** y **menos por pantalla**
+
+Dos correcciones más de Carlos, y las dos justas.
+
+## e504 — «usa las referencias que te di»
+
+Lo dijo **tres minutos después** de ver la v4, así que le dio tiempo de
+mirarla. Al volver a sus seis imágenes con ojo nuevo apareció lo que ninguna
+de mis versiones tenía:
+
+> **Cinco de las seis llevan IMAGEN.** Ilustración 3D de un calendario,
+> carátulas de disco, avatares, logos en cuadros redondeados, iconos de color
+> en mosaico. Lo mío era tipografía y bloques de color, y nada más.
+
+Por eso se veía «estilizado» y no «diseñado». Lo que se añadió, todo dibujado
+en SVG a mano —ni una imagen generada por un modelo, que es regla de la casa
+y además aquí se nota, porque hay que dibujar **un** dispensador y no la idea
+de un dispensador—:
+
+| | De dónde viene |
+|---|---|
+| **Ilustración del dispensador** con volumen, degradados y burbujas | El equivalente de la ilustración del calendario en su referencia de eventos |
+| **Iconos de línea en cuadros tintados** en cada tarjeta de dato | El patrón de la pantalla de perfil de su referencia de salud |
+| **Mosaico 2×2 de accesos** con icono | La misma pantalla de perfil |
+| **Anillo de progreso** para «cuánto falta para poder concluir» | El anillo del 25 % de su referencia de salud |
+
+## e507 — «están sobresaturadas de información, mete algunas a submenús»
+
+También justa: Proyecto y Ajustes eran una pila de **ocho tarjetas** cada
+una, y había que rodar medio metro para llegar al final. Sus seis
+referencias enseñan poco por pantalla.
+
+- **Proyecto** y **Ajustes** ahora abren como **menú de renglones** —icono,
+  título y una línea de qué hay dentro— y cada renglón entra a lo suyo con
+  su vuelta atrás.
+- En **Análisis** las tres gráficas secundarias pasaron a una sub-pantalla
+  («Cuándo se gasta»); la principal se queda con la cifra, el ranking y el
+  Excel.
+- **La impresión sigue sacándolo TODO.** El documento que se entrega no
+  puede depender de qué submenú quedó abierto: lo plegado en pantalla se
+  imprime igual (`.solo-imprimir`).
+
+### Y la compuerta tuvo que aprender a entrar
+
+Al meter media interfaz en submenús, las comprobaciones de contraste y de
+variables muertas dejaron de verla. Ahora el recorrido de la compuerta entra
+a las cinco pestañas, a los tres pasos del registro **y a las doce
+sub-pantallas**. Una prueba que no llega hasta donde nadie mira es justo la
+que no sirve.
+
+---
+
 # v4 · «BURBUJA» — la referencia son **las seis imágenes de Carlos**
 
 Carlos mandó seis referencias (e502) y con eso quedó claro que la v3 iba por

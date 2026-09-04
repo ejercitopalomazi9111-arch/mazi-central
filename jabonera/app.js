@@ -58,6 +58,87 @@ const hace = ts => {
   return `hace ${Math.round(m/1440)} días`;
 };
 
+/* ══ LA CAPA QUE FALTABA: ILUSTRACIÓN E ICONOS ═════════════════════════════
+   Carlos insistió («usa las referencias que te di») después de ver la v4, y
+   al mirar sus seis otra vez apareció lo que ninguna de mis versiones tenía:
+   CINCO DE LAS SEIS LLEVAN IMAGEN. Ilustración 3D de un calendario, carátulas
+   de disco, avatares, logos en cuadros redondeados, iconos de color en
+   mosaicos. Lo mío era tipografía y bloques de color, y nada más — por eso se
+   veía «estilizado» y no «diseñado».
+
+   Todo va dibujado en SVG a mano. Ni una imagen generada por un modelo: es
+   regla de la casa (`marca/PLACA.md`) y además aquí se nota, porque lo que
+   hay que dibujar es un dispensador concreto y no una idea de dispensador. */
+
+/** El dispensador, con volumen. El equivalente de la ilustración del
+ *  calendario en la referencia de la app de eventos. */
+function ilustracion(){
+  return `<svg viewBox="0 0 200 220" class="ilustra" role="img" aria-label="Dispensador de jabón">
+    <defs>
+      <linearGradient id="ilFr" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FFFFFF" stop-opacity=".95"/>
+        <stop offset="1" stop-color="#C9C3F5" stop-opacity=".85"/></linearGradient>
+      <linearGradient id="ilLiq" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FF9A6B"/><stop offset="1" stop-color="#FF6B3D"/></linearGradient>
+      <linearGradient id="ilTap" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6C5CE7"/><stop offset="1" stop-color="#3B2FB5"/></linearGradient>
+    </defs>
+    <ellipse cx="100" cy="204" rx="62" ry="10" fill="#1A1533" opacity=".14"/>
+    <circle cx="163" cy="44" r="17" fill="#fff" opacity=".5"/>
+    <circle cx="36"  cy="70" r="10" fill="#fff" opacity=".38"/>
+    <circle cx="176" cy="92" r="7"  fill="#12BE8F" opacity=".8"/>
+    <!-- cuerpo -->
+    <rect x="52" y="80" width="96" height="120" rx="26" fill="url(#ilFr)"/>
+    <path d="M60 150h80v24a26 26 0 0 1-26 26H86a26 26 0 0 1-26-26z" fill="url(#ilLiq)"/>
+    <rect x="52" y="80" width="96" height="120" rx="26" fill="none" stroke="#3B2FB5" stroke-opacity=".22" stroke-width="2"/>
+    <rect x="64" y="96" width="12" height="46" rx="6" fill="#fff" opacity=".75"/>
+    <!-- cuello y pulsador -->
+    <rect x="86" y="54" width="28" height="30" rx="8" fill="url(#ilTap)"/>
+    <rect x="74" y="40" width="52" height="18" rx="9" fill="url(#ilTap)"/>
+    <rect x="118" y="44" width="34" height="10" rx="5" fill="url(#ilTap)"/>
+    <!-- la gota -->
+    <path d="M152 62c5 6 9 11 9 15a9 9 0 0 1-18 0c0-4 4-9 9-15z" fill="#FF6B3D"/>
+    <circle cx="150" cy="76" r="2.4" fill="#fff" opacity=".85"/>
+  </svg>`;
+}
+
+/** Iconos de línea, dentro de un cuadro redondeado tintado. Es el patrón de
+ *  su referencia de la app de salud: icono de color arriba, rótulo abajo. */
+const TRAZOS = {
+  gota:   'M12 3.2c3.4 4 6.2 7.3 6.2 10.6a6.2 6.2 0 1 1-12.4 0C5.8 10.5 8.6 7.2 12 3.2Z',
+  grafica:'M4 20V10M10 20V4M16 20v-7M22 20H2',
+  caja:   'M3 9l9-5 9 5v11H3zM3 9h18M9 20V13h6v7',
+  hoja:   'M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h7',
+  reloj:  'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 2',
+  dinero: 'M12 3v18M16 7.5c0-1.7-1.8-2.5-4-2.5S8 5.8 8 7.5 9.8 10 12 10s4 1 4 2.8-1.8 2.7-4 2.7-4-1-4-2.7',
+  gente:  'M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M21 20v-2a4 4 0 0 0-3-3.9',
+  ajuste: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1 2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.5-2.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 4a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 21 11a2 2 0 1 1 0 4Z',
+  aviso:  'M12 8v5M12 17h.01M10.3 3.9 2.4 17.4A2 2 0 0 0 4.1 20.4h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
+};
+function icono(nombre, tono = 'indigo'){
+  return `<span class="icono ${tono}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="${TRAZOS[nombre] || TRAZOS.gota}"/></svg></span>`;
+}
+
+/** Anillo de progreso. Su referencia de salud tiene uno con el 25 % del plan;
+ *  aquí dice qué tan lejos está el proyecto de poder concluir. */
+function anillo(pct, dentro, abajo, tono = 'var(--indigo)'){
+  const p = Math.max(0, Math.min(100, pct || 0));
+  const r = 46, c = 2 * Math.PI * r;
+  return `<div class="anillo">
+    <svg viewBox="0 0 120 120" role="img" aria-label="${esc(abajo)}: ${Math.round(p)}%">
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--niebla)" stroke-width="13"/>
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="${tono}" stroke-width="13"
+        stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}"
+        stroke-dashoffset="${(c * (1 - p/100)).toFixed(1)}"
+        transform="rotate(-90 60 60)"/>
+    </svg>
+    <b>${dentro}</b>
+  </div>
+  <p class="micro" style="text-align:center;margin:8px 0 0">${esc(abajo)}</p>`;
+}
+
 /** LA PROBETA. El medidor de cada baño no es una barra de progreso: es una
  *  probeta graduada con sus marcas, dibujada aquí en SVG. El instrumento del
  *  proyecto convertido en elemento de interfaz — y de paso se lee mejor: una
@@ -157,6 +238,12 @@ let E = D.cargar();
 let tab = 'inicio';
 let sel = { banoId:null, productoId:null };
 let paso = 1;                 /* el recorrido de Registrar */
+/* ⚠ SUB-PANTALLAS. Carlos: «están sobresaturadas de información, mete
+   algunas a submenús». Tenía razón: Proyecto y Ajustes eran una pila de
+   ocho tarjetas y había que rodar medio metro para llegar al final. Ahora
+   cada una abre como MENÚ y cada renglón entra a lo suyo. `sub` guarda qué
+   sub-pantalla está abierta dentro de la pestaña actual. */
+let sub = null;
 let borrador = { restante:'', repuesto:'' };
 
 function salvar(){
@@ -181,6 +268,22 @@ function capacidadDe(bano, producto){
   if(producto.tipo === 'liquido')
     return (Number(bano.dispensadores)||1) * (Number(E.dispensador.capacidad)||1000);
   return (Number(bano.dispensadores)||1) * 300;   /* jaboneras de barra */
+}
+
+/** Un menú de renglones: icono, título, una línea de qué hay dentro. Es lo
+ *  que sustituye a la pila de tarjetas. */
+function menu(filas){
+  return `<div class="menu">${filas.map(f => `
+    <button class="renglon" data-sub="${esc(f.id)}">
+      ${icono(f.icono, f.tono || 'indigo')}
+      <span class="txt"><b>${esc(f.titulo)}</b><span>${esc(f.que)}</span></span>
+      <span aria-hidden="true" class="flecha">›</span>
+    </button>`).join('')}</div>`;
+}
+/** La cabecera de una sub-pantalla, con su vuelta atrás. */
+function volver(titulo){
+  return `<button class="b chico fantasma" data-sub="atras" style="margin-bottom:14px">‹ Volver</button>
+          <h1 style="margin:0 0 16px">${esc(titulo)}</h1>`;
 }
 
 /* ── router ──────────────────────────────────────────────────────────── */
@@ -252,6 +355,8 @@ PINTORES.inicio = () => {
         ${listo ? 'Todavía no hay dos mediciones en un mismo baño: hasta que las haya, no hay consumo que calcular.'
                 : 'Falta dar de alta los baños y el jabón.'}</p>`}
 
+      <div class="ilustra-caja">${ilustracion()}</div>
+
       <div style="margin-top:24px;display:grid;gap:10px">
         ${listo
           ? `<button class="b primario ancho" data-ir="registrar">Registrar una medición</button>`
@@ -279,12 +384,20 @@ PINTORES.inicio = () => {
       <p class="menor" style="margin:0 0 14px">Cuánto le queda dentro al dispensador, según la última visita.</p>
       <div class="fichas">${gauges}</div>` : ''}
 
-    ${c.intervalos ? `<div class="datos">
-      <div class="dato"><div class="et">Días medidos</div><span class="v num">${nu(c.dias,1)}</span>
-        <div class="n">${c.visitas} visitas · ${c.intervalos} intervalos</div></div>
-      <div class="dato ${c.suficiente?'':'hueca'}"><div class="et">¿Se puede concluir?</div>
-        <span class="v">${c.suficiente ? 'Sí' : 'Todavía no'}</span>
-        <div class="n">${c.suficiente ? 'más de 7 días y 6 intervalos' : 'hacen falta 7 días y 6 intervalos'}</div></div>
+    ${c.intervalos ? `
+    <div class="rejilla dos" style="margin-bottom:14px">
+      <div class="tarjeta" style="margin:0;text-align:center">
+        ${anillo(Math.min(100, c.dias/7*100), `${nu(c.dias,1)}<em>días</em>`,
+                 c.suficiente ? 'Ya se puede concluir' : 'Faltan días para concluir',
+                 c.suficiente ? 'var(--menta)' : 'var(--coral)')}
+        <p class="menor" style="text-align:center;margin:10px 0 0">${c.visitas} visitas · ${c.intervalos} intervalos</p>
+      </div>
+      <div class="mosaico">
+        <button class="baldosa" data-ir="analisis">${icono('grafica','indigo')}<span>Análisis</span></button>
+        <button class="baldosa" data-ir="almacen">${icono('caja','menta')}<span>Almacén</span></button>
+        <button class="baldosa" data-ir="proyecto">${icono('hoja','coral')}<span>Reporte</span></button>
+        <button class="baldosa" data-abrir-ajustes="1">${icono('ajuste','indigo')}<span>Ajustes</span></button>
+      </div>
     </div>` : ''}
   </main>`;
 };
@@ -424,11 +537,11 @@ PINTORES.registrar = () => {
     </div>`}
 
   <div class="datos">
-    <div class="dato"><div class="et">Encontraste</div>
+    <div class="dato">${icono('gota','indigo')}<div class="et">Encontraste</div>
       <span class="v num">${cantPartida(r,prod).grande}<u>${cantPartida(r,prod).unidad}</u></span></div>
-    <div class="dato"><div class="et">Añadiste</div>
+    <div class="dato">${icono('gota','coral')}<div class="et">Añadiste</div>
       <span class="v num">${cantPartida(rep,prod).grande}<u>${cantPartida(rep,prod).unidad}</u></span></div>
-    <div class="dato"><div class="et">Queda dentro</div>
+    <div class="dato">${icono('caja','menta')}<div class="et">Queda dentro</div>
       <span class="v num">${cantPartida(r+rep,prod).grande}<u>${cantPartida(r+rep,prod).unidad}</u></span></div>
   </div>
 
@@ -475,7 +588,7 @@ PINTORES.analisis = () => {
 
   const cifras = inf.porProducto.filter(p => p.producto.id !== p0.producto.id).map(p => {
     const cc = cantPartida(p.consumo, p.producto);
-    return `<div class="dato"><div class="et">${esc(p.producto.nombre)}</div>
+    return `<div class="dato">${icono('gota','coral')}<div class="et">${esc(p.producto.nombre)}</div>
       <span class="v num">${cc.grande}<u>${cc.unidad}</u></span>
       <div class="n">${[cc.detalle, p.lavados != null ? `${nu(p.lavados,0)} lavadas` : null]
         .filter(Boolean).join(' · ')}</div></div>`;
@@ -504,9 +617,9 @@ PINTORES.analisis = () => {
   const picoHora = h.horas.reduce((a,b,i,arr) => arr[a].consumo >= b.consumo ? a : i, 0);
 
   return `
-    ${avisos.join('')}
+    ${sub === 'graficas' ? volver('Cuándo se gasta') : avisos.join('')}
 
-    <div class="dato grande" style="margin-bottom:12px">
+    ${sub === 'graficas' ? '' : `<div class="dato grande" style="margin-bottom:12px">
       <div class="et">${esc(p0.producto.nombre)} · ${nu(inf.rango.dias,1)} días medidos</div>
       <span class="v num">${cif.grande}<u>${cif.unidad}</u></span>
       <div class="n">${[cif.detalle,
@@ -516,15 +629,16 @@ PINTORES.analisis = () => {
 
     <div class="datos">
       ${cifras}
-      <div class="dato ${inf.dinero.gasto==null?'hueca':''}"><div class="et">Valor de lo consumido</div>
+      <div class="dato ${inf.dinero.gasto==null?'hueca':''}">${icono('dinero','menta')}<div class="et">Valor de lo consumido</div>
         <span class="v num">${inf.dinero.gasto==null ? 'sin precio' : pesos(inf.dinero.gasto)}</span>
         <div class="n">${inf.dinero.gasto == null
           ? 'sin entregas registradas no se puede valorar'
           : 'invertido en compras: ' + pesos(inf.dinero.invertido)}</div></div>
     </div>
 
-    ${porProducto}
+    ${porProducto}`}
 
+    ${sub === 'graficas' ? `
     <div class="tarjeta">
       <h2>Consumo por día</h2>
       <p class="menor" style="margin-bottom:14px">${esc(p0.producto.nombre)}. Cuando entre dos visitas
@@ -555,12 +669,16 @@ PINTORES.analisis = () => {
       </div>
     </div>
 
-    <div class="tarjeta no-imprimir">
+    ` : `
+    ${menu([
+      { id:'graficas', icono:'grafica', tono:'indigo', titulo:'Cuándo se gasta',
+        que:'Por día, por día de la semana y a qué hora' },
+    ])}
+    <div class="tarjeta no-imprimir" style="margin-top:14px">
       <h2>Llevárselo</h2>
-      <p class="menor" style="margin-bottom:16px">Un <b>.xlsx</b> de verdad, con nueve hojas: resumen,
-        consumo por baño, por día, por día de la semana, por hora, visitas, entregas, baños y productos.</p>
+      <p class="menor" style="margin:6px 0 16px">Un <b>.xlsx</b> de nueve hojas.</p>
       <button class="b ancho" data-excel="1">Exportar a Excel</button>
-    </div>`;
+    </div>`}`;
 };
 
 /* ══ 4 · ALMACÉN ═══════════════════════════════════════════════════════ */
@@ -580,10 +698,10 @@ PINTORES.almacen = () => {
           <div class="n">${dias == null
             ? 'hacen falta dos visitas para saber a qué ritmo se gasta'
             : (urgente ? 'hay que comprar' : 'al ritmo de ' + nu(p.diario,0) + ' ' + M.UNIDAD[p.producto.tipo] + ' por día')}</div></div>
-        <div class="dato"><div class="et">En el almacén</div>
+        <div class="dato">${icono('caja','indigo')}<div class="et">En el almacén</div>
           <span class="v num">${alm.grande}<u>${alm.unidad}</u></span>
           <div class="n">${[alm.detalle,'lo comprado menos lo que ya se llevó a los baños'].filter(Boolean).join(' · ')}</div></div>
-        <div class="dato"><div class="et">Puesto en dispensadores</div>
+        <div class="dato">${icono('gota','menta')}<div class="et">Puesto en dispensadores</div>
           <span class="v num">${dis.grande}<u>${dis.unidad}</u></span>
           <div class="n">${[dis.detalle,'esto ya salió del almacén: son dos cuentas distintas'].filter(Boolean).join(' · ')}</div></div>
       </div>
@@ -639,14 +757,18 @@ PINTORES.almacen = () => {
   </div>`;
 };
 
-/* ══ 5 · PROYECTO ══════════════════════════════════════════════════════ */
+/* ══ 5 · PROYECTO · menú, no una pila de ocho tarjetas ═════════════════
+   Carlos: «están sobresaturadas de información, mete algunas a submenús».
+   Antes esto era un solo rollo de ocho tarjetas y había que rodar medio
+   metro para llegar al final. Ahora abre como menú y cada renglón entra a
+   lo suyo. La impresión sigue sacándolo TODO, que es lo que se entrega. */
 PINTORES.proyecto = () => {
   const inf = M.informe(E);
   const p0 = inf.principal;
   const disp = E.dispensador;
   const py = E.proyecto || {};
-  return `
-  <form class="tarjeta" id="formProyecto">
+
+  if(sub === 'reporte')     return volver('Reporte y datos del proyecto') + `<form class="tarjeta" id="formProyecto">
     <h2>Datos del proyecto</h2>
     <p class="menor" style="margin-bottom:16px">Esto es lo que encabeza el reporte en formato Rembrandt.</p>
     <div class="campo"><label for="yNom">Nombre del proyecto</label>
@@ -686,19 +808,8 @@ PINTORES.proyecto = () => {
       4. Ábrelo y dale <b>Imprimir / PDF</b>.
     </div>
     <button class="b ancho" data-reporte="1">Generar el reporte</button>
-  </div>
-
-  <div class="tarjeta">
-    <h2>Qué es esto, en una frase</h2>
-    <p class="guia" style="color:var(--tinta)">Un sistema para <b>medir</b> cuánto jabón se gasta en los
-      baños de la escuela, <b>saber cuándo y dónde</b>, y <b>decidir con números</b> cuánto comprar
-      en vez de a ojo.</p>
-    <p class="menor">La pregunta de investigación no es «¿cuánto jabón usamos?» sino
-      <b>«¿cuánto jabón hace falta, y cómo lo sabemos?»</b> — la primera se contesta pesando una caja;
-      la segunda necesita un método.</p>
-  </div>
-
-  <div class="tarjeta">
+  </div>`;
+  if(sub === 'steam')       return volver('Modalidad STEAM') + `<div class="tarjeta">
     <h2>Cómo cumple la modalidad STEAM</h2>
     <p class="menor" style="margin-bottom:14px">Cada letra con lo que de verdad se hace en el proyecto,
       no con una definición de diccionario.</p>
@@ -719,9 +830,8 @@ PINTORES.proyecto = () => {
           reparto proporcional del consumo entre días, consumo per cápita y proyección de existencias.</td></tr>
       </tbody>
     </table></div>
-  </div>
-
-  <div class="tarjeta">
+  </div>`;
+  if(sub === 'dispensador') return volver('El dispensador') + `<div class="tarjeta">
     <h2>El dispensador mecánico</h2>
     <p class="menor" style="margin-bottom:16px">Ya lo tiene la escuela: aquí no se diseña, se
       <b>caracteriza</b>. Y de su calibración sale el número que la gente entiende.</p>
@@ -748,9 +858,8 @@ PINTORES.proyecto = () => {
     ${p0 && p0.lavados != null ? `<div class="aviso bien" style="margin-top:14px">
       <h3>Lo que se puede decir en la presentación</h3>
       Con lo medido hasta ahora, el jabón gastado equivale a <b>${nu(p0.lavados,0)} lavadas de manos</b>.</div>` : ''}
-  </div>
-
-  <div class="tarjeta">
+  </div>`;
+  if(sub === 'metodo')      return volver('El método') + `<div class="tarjeta">
     <h2>El método, para que otro grupo lo repita</h2>
     <ol style="padding-left:22px;margin:0;font-size:var(--t-cuerpo)">
       <li style="margin-bottom:10px"><b>Dar de alta los baños</b> con su número de alumnos. Sin ese número
@@ -763,9 +872,121 @@ PINTORES.proyecto = () => {
         permite saber a qué HORA se gasta.</li>
       <li><b>Exportar a Excel</b> al terminar cada semana. Es el respaldo y es la evidencia.</li>
     </ol>
+  </div>`;
+  if(sub === 'limites')     return volver('Lo que no puede decir') + `<div class="tarjeta">
+    <h2>Lo que este sistema NO puede decir</h2>
+    <p class="menor" style="margin-bottom:12px">Va aquí a propósito. Un proyecto de ciencias que sólo
+      enseña lo que sí puede afirmar está incompleto, y un sinodal lo va a preguntar.</p>
+    <ul style="padding-left:22px;margin:0;font-size:var(--t-cuerpo)">
+      <li style="margin-bottom:9px"><b>No sabe quién gastó.</b> Mide el baño, no a las personas — y así
+        debe ser: registrar el uso individual del baño de un alumno sería vigilarlo.</li>
+      <li style="margin-bottom:9px"><b>No distingue el uso del desperdicio.</b> Un dispensador que gotea y
+        un grupo que se lava bien las manos se ven igual en el número.</li>
+      <li style="margin-bottom:9px"><b>No sabe cuánta gente entró.</b> El «por alumno» usa los alumnos
+        ASIGNADOS al baño, no los que realmente lo usaron ese día.</li>
+      <li><b>Si alguien rellena sin apuntarlo, ese consumo se pierde.</b> El sistema lo detecta y lo
+        denuncia, pero no puede recuperarlo.</li>
+    </ul>
+  </div>`;
+
+  return `
+  <div class="tarjeta">
+    <h2>Qué es esto, en una frase</h2>
+    <p class="guia" style="color:var(--tinta)">Un sistema para <b>medir</b> cuánto jabón se gasta en los
+      baños de la escuela, <b>saber cuándo y dónde</b>, y <b>decidir con números</b> cuánto comprar
+      en vez de a ojo.</p>
+    <p class="menor">La pregunta de investigación no es «¿cuánto jabón usamos?» sino
+      <b>«¿cuánto jabón hace falta, y cómo lo sabemos?»</b> — la primera se contesta pesando una caja;
+      la segunda necesita un método.</p>
   </div>
 
-  <div class="tarjeta">
+  ${menu([
+    { id:'reporte', icono:'hoja', tono:'coral', titulo:'Reporte en formato Rembrandt',
+      que:'Los datos del proyecto y el documento para entregar' },
+    { id:'steam', icono:'grafica', tono:'indigo', titulo:'Cómo cumple STEAM',
+      que:'Cada letra con lo que de verdad se hace' },
+    { id:'dispensador', icono:'gota', tono:'menta', titulo:'El dispensador',
+      que:`${disp.dosisPorPulsada > 0 ? nu(disp.dosisPorPulsada,2)+' mL por pulsada · medida' : 'falta medir la dosis'}` },
+    { id:'metodo', icono:'reloj', tono:'indigo', titulo:'El método',
+      que:'Los seis pasos, para que otro grupo lo repita' },
+    { id:'limites', icono:'aviso', tono:'coral', titulo:'Lo que NO puede decir',
+      que:'Lo que un sinodal va a preguntar' },
+  ])}
+
+  <div class="tarjeta no-imprimir" style="margin-top:14px">
+    <h2>Para entregar</h2>
+    <p class="menor" style="margin:6px 0 16px">La impresión saca <b>todas</b> las secciones.</p>
+    <div class="par">
+      <button class="b fantasma" data-imprimir="1">Imprimir / PDF</button>
+      <button class="b" data-excel="1">Excel</button>
+    </div>
+  </div>
+
+  <!-- Se imprime todo aunque en pantalla esté plegado: el documento que se
+       entrega no puede depender de qué submenú quedó abierto. -->
+  <div hidden class="solo-imprimir">
+    <div class="tarjeta">
+    <h2>Cómo cumple la modalidad STEAM</h2>
+    <p class="menor" style="margin-bottom:14px">Cada letra con lo que de verdad se hace en el proyecto,
+      no con una definición de diccionario.</p>
+    <div class="tabla-caja tabla-texto"><table>
+      <thead><tr><th style="width:26px">·</th><th style="width:74px">Área</th><th>Qué se hace aquí</th></tr></thead>
+      <tbody>
+        <tr><td><b>S</b></td><td>Ciencia</td><td>Se plantea una hipótesis (unos baños gastan más que otros
+          y hay horas pico), se <b>mide</b> con un método repetible y se acepta o se descarta con los datos.
+          El sistema marca cuándo <b>todavía no hay datos suficientes</b> para concluir.</td></tr>
+        <tr><td><b>T</b></td><td>Tecnología</td><td>Una aplicación web que funciona sin internet en el
+          propio teléfono, guarda los datos localmente y exporta a Excel.</td></tr>
+        <tr><td><b>E</b></td><td>Ingeniería</td><td>El dispensador mecánico y su <b>calibración</b>: medir
+          cuánto jabón suelta cada pulsada es lo que permite traducir mililitros a lavadas de manos.</td></tr>
+        <tr><td><b>A</b></td><td>Arte / Diseño</td><td>El diseño de la captura es parte del experimento:
+          si registrar tarda más de treinta segundos nadie lo hace y el estudio se muere. También la
+          visualización — una gráfica mal hecha miente sin querer.</td></tr>
+        <tr><td><b>M</b></td><td>Matemáticas</td><td>Restas entre mediciones, promedios ponderados de costo,
+          reparto proporcional del consumo entre días, consumo per cápita y proyección de existencias.</td></tr>
+      </tbody>
+    </table></div>
+  </div> <div class="tarjeta">
+    <h2>El dispensador mecánico</h2>
+    <p class="menor" style="margin-bottom:16px">Ya lo tiene la escuela: aquí no se diseña, se
+      <b>caracteriza</b>. Y de su calibración sale el número que la gente entiende.</p>
+    <div class="datos">
+      <div class="dato"><div class="et">Capacidad</div><span class="v num">${nu(disp.capacidad,0)}<u>mL</u></span></div>
+      <div class="dato ${disp.dosisPorPulsada>0?'':'hueca'}"><div class="et">Dosis por pulsada</div>
+        <span class="v num">${disp.dosisPorPulsada > 0 ? nu(disp.dosisPorPulsada,2)+'<u>mL</u>' : 'sin medir'}</span>
+        <div class="n">${disp.dosisPorPulsada > 0 ? 'medida en clase' : 'hasta medirla no se pueden calcular lavadas'}</div></div>
+    </div>
+    <div class="aviso info" style="margin-top:14px">
+      <h3>Cómo se mide la dosis (y es el experimento del proyecto)</h3>
+      Se acciona el dispensador <b>10 veces sobre una probeta</b> y se divide el volumen entre 10.
+      Conviene repetirlo tres veces y promediar: la primera pulsada tras una recarga suele soltar menos
+      porque el tubo trae aire.<br><br>
+      Para el jabón <b>en barra</b> la dosis no existe: se pesa la barra antes y después de un número
+      contado de lavadas, y eso da los <b>gramos por lavada</b>. Son dos experimentos distintos porque son
+      dos unidades distintas — mililitros y gramos no se pueden dividir entre lo mismo.
+      <br><br><b>Referencia de la literatura</b>, para contrastar con lo que midan: las normas piden
+      entre 1.5 y 5 mL por dosis (ASTM E2755: 1.5 mL; EN 1500: 3 mL; ASTM E1174: 5 mL) y la guía Leapfrog
+      exige al menos 1.0 mL por accionamiento, pero los estudios de dispensadores reales encuentran que
+      muchos entregan <b>menos de 1 mL</b> y que pasar de 1.5 mL es raro. Por eso hay que medir el suyo.
+    </div>
+    ${disp.notas ? `<p class="pie-nota">${esc(disp.notas)}</p>` : ''}
+    ${p0 && p0.lavados != null ? `<div class="aviso bien" style="margin-top:14px">
+      <h3>Lo que se puede decir en la presentación</h3>
+      Con lo medido hasta ahora, el jabón gastado equivale a <b>${nu(p0.lavados,0)} lavadas de manos</b>.</div>` : ''}
+  </div> <div class="tarjeta">
+    <h2>El método, para que otro grupo lo repita</h2>
+    <ol style="padding-left:22px;margin:0;font-size:var(--t-cuerpo)">
+      <li style="margin-bottom:10px"><b>Dar de alta los baños</b> con su número de alumnos. Sin ese número
+        no hay consumo por alumno — es una división sin denominador.</li>
+      <li style="margin-bottom:10px"><b>Calibrar el dispensador</b> (arriba).</li>
+      <li style="margin-bottom:10px"><b>Visitar cada baño a la misma hora</b>, todos los días de clase.
+        Apuntar sólo dos números: lo que queda y lo que se repone.</li>
+      <li style="margin-bottom:10px"><b>Apuntar cada entrega</b> del almacén con su costo.</li>
+      <li style="margin-bottom:10px"><b>Dos visitas el mismo día</b> en al menos un baño: es lo único que
+        permite saber a qué HORA se gasta.</li>
+      <li><b>Exportar a Excel</b> al terminar cada semana. Es el respaldo y es la evidencia.</li>
+    </ol>
+  </div> <div class="tarjeta">
     <h2>Lo que este sistema NO puede decir</h2>
     <p class="menor" style="margin-bottom:12px">Va aquí a propósito. Un proyecto de ciencias que sólo
       enseña lo que sí puede afirmar está incompleto, y un sinodal lo va a preguntar.</p>
@@ -780,19 +1001,12 @@ PINTORES.proyecto = () => {
         denuncia, pero no puede recuperarlo.</li>
     </ul>
   </div>
-
-  <div class="tarjeta no-imprimir">
-    <h2>Para entregar</h2>
-    <div class="par">
-      <button class="b fantasma" data-imprimir="1">Imprimir / PDF</button>
-      <button class="b" data-excel="1">Excel</button>
-    </div>
   </div>`;
 };
 
-/* ══ AJUSTES (desde el engrane de la cabecera) ══════════════════════════ */
-PINTORES.ajustes = () => `
-  <form class="tarjeta" id="formEscuela">
+/* ══ AJUSTES · también menú, por lo mismo ══════════════════════════════ */
+PINTORES.ajustes = () => {
+  if(sub === 'escuela')   return volver('La escuela') + `<form class="tarjeta" id="formEscuela">
     <h2>La escuela</h2>
     <div class="par">
       <div class="campo"><label for="aNom">Nombre</label>
@@ -807,9 +1021,8 @@ PINTORES.ajustes = () => `
         <input id="aRes" name="responsable" value="${esc(E.escuela.responsable)}" placeholder="Equipo STEAM"></div>
     </div>
     <button class="b" type="submit">Guardar</button>
-  </form>
-
-  <form class="tarjeta" id="formDisp">
+  </form>`;
+  if(sub === 'aparato')   return volver('El dispensador') + `<form class="tarjeta" id="formDisp">
     <h2>El dispensador</h2>
     <div class="campo"><label for="dMod">Modelo</label>
       <input id="dMod" name="modelo" value="${esc(E.dispensador.modelo)}"></div>
@@ -823,9 +1036,8 @@ PINTORES.ajustes = () => `
     <div class="campo"><label for="dNot">Cómo se midió</label>
       <input id="dNot" name="notas" value="${esc(E.dispensador.notas)}" placeholder="10 pulsadas en probeta = 12 mL"></div>
     <button class="b" type="submit">Guardar</button>
-  </form>
-
-  <div class="tarjeta">
+  </form>`;
+  if(sub === 'banos')     return volver('Baños') + `<div class="tarjeta">
     <h2>Baños <span class="etq">${E.banos.length}</span></h2>
     ${E.banos.length ? `<ul class="lista">${E.banos.map(b => `<li>
       <div class="txt"><b>${esc(b.nombre)}</b>
@@ -851,9 +1063,8 @@ PINTORES.ajustes = () => `
       </div>
       <button class="b ancho" type="submit">Añadir baño</button>
     </form>
-  </div>
-
-  <div class="tarjeta">
+  </div>`;
+  if(sub === 'productos') return volver('Productos') + `<div class="tarjeta">
     <h2>Productos <span class="etq">${E.productos.length}</span></h2>
     ${E.productos.length ? `<ul class="lista">${E.productos.map(p => `<li>
       <div class="txt"><b>${esc(p.nombre)}</b>
@@ -903,6 +1114,35 @@ PINTORES.ajustes = () => `
     <label for="restaurar">Restaurar desde un respaldo</label>
     <input id="restaurar" type="file" accept="application/json,.json">
     <p class="menor" style="margin-top:10px">Reemplaza TODO lo que hay ahora.</p>
+  </div>`;
+  if(sub === 'mediciones')return volver('Mediciones') + `<div class="tarjeta">
+    <h2>Últimas mediciones <span class="etq">${E.visitas.length}</span></h2>
+    <p class="menor" style="margin-bottom:12px">Por si se apuntó una mal. Borrar una medición
+      cambia el consumo de los dos intervalos que tocaba.</p>
+    ${E.visitas.length ? `<ul class="lista">${[...E.visitas].sort((a,b)=>b.ts-a.ts).slice(0,8).map(v => {
+      const b = E.banos.find(x => x.id === v.banoId), p = E.productos.find(x => x.id === v.productoId);
+      return `<li><div class="txt"><b>${esc(b?.nombre || '—')}</b>
+        <span>${esc(p?.nombre || '—')} · encontró ${esc(soloNumero(v.restante,p))} · repuso ${esc(soloNumero(v.repuesto,p))}</span>
+        <span>${esc(M.fechaHora(v.ts))}${v.quien ? ' · ' + esc(v.quien) : ''}</span></div>
+        <button class="b chico peligro" data-borrar-visita="${esc(v.id)}">Borrar</button></li>`;
+    }).join('')}</ul>` : `<p class="menor">Ninguna todavía.</p>`}
+  </div>`;
+  if(sub === 'respaldo')  return volver('Respaldo') + `<div class="tarjeta">
+    <h2>Respaldo · <b style="color:var(--coral-hondo)">léelo</b></h2>
+    <div class="aviso ojo">
+      <h3>Los datos viven en ESTE aparato</h3>
+      No hay servidor. Si se borran los datos del navegador, se cambia de teléfono o se usa modo privado,
+      <b>se pierde todo</b>. Exporta un respaldo cada semana: es un archivo, se manda por correo y se
+      vuelve a cargar aquí.
+    </div>
+    <div class="par">
+      <button class="b" data-respaldo="1">Respaldo (.json)</button>
+      <button class="b fantasma" data-excel="1">Excel (.xlsx)</button>
+    </div>
+    <div class="sep"></div>
+    <label for="restaurar">Restaurar desde un respaldo</label>
+    <input id="restaurar" type="file" accept="application/json,.json">
+    <p class="menor" style="margin-top:10px">Reemplaza TODO lo que hay ahora.</p>
   </div>
 
   <div class="tarjeta">
@@ -916,9 +1156,8 @@ PINTORES.ajustes = () => `
         <span>${esc(M.fechaHora(v.ts))}${v.quien ? ' · ' + esc(v.quien) : ''}</span></div>
         <button class="b chico peligro" data-borrar-visita="${esc(v.id)}">Borrar</button></li>`;
     }).join('')}</ul>` : `<p class="menor">Ninguna todavía.</p>`}
-  </div>
-
-  <div class="tarjeta">
+  </div>`;
+  if(sub === 'demo')      return volver('Demostración y borrado') + `<div class="tarjeta">
     <h2>Demostración y borrado</h2>
     <p class="menor" style="margin-bottom:16px">La demostración carga tres semanas de mediciones
       inventadas —siempre las mismas— para poder enseñar el sistema funcionando antes de tener datos
@@ -927,9 +1166,30 @@ PINTORES.ajustes = () => `
       <button class="b fantasma" data-demo="1">Cargar demostración</button>
       <button class="b peligro" data-vaciar="1">Empezar de cero</button>
     </div>
-  </div>
+  </div>`;
 
+  return `
+  <h1 style="margin:0 0 4px">Ajustes</h1>
+  <p class="menor" style="margin:0 0 18px">Todo lo que no se toca a diario.</p>
+  ${menu([
+    { id:'escuela', icono:'hoja', tono:'indigo', titulo:'La escuela',
+      que: E.escuela.nombre || 'sin capturar' },
+    { id:'aparato', icono:'gota', tono:'menta', titulo:'El dispensador',
+      que: E.dispensador.dosisPorPulsada > 0
+        ? `${nu(E.dispensador.dosisPorPulsada,2)} mL por pulsada` : 'falta medir la dosis' },
+    { id:'banos', icono:'caja', tono:'indigo', titulo:'Baños',
+      que: `${E.banos.length} dado(s) de alta` },
+    { id:'productos', icono:'gota', tono:'coral', titulo:'Productos',
+      que: `${E.productos.length} dado(s) de alta` },
+    { id:'mediciones', icono:'reloj', tono:'indigo', titulo:'Mediciones',
+      que: `${E.visitas.length} registrada(s)` },
+    { id:'respaldo', icono:'hoja', tono:'menta', titulo:'Respaldo',
+      que: 'Los datos viven en ESTE aparato — léelo' },
+    { id:'demo', icono:'aviso', tono:'coral', titulo:'Demostración y borrado',
+      que: E.demo ? 'ahora mismo hay datos inventados' : 'cargar ejemplo o empezar de cero' },
+  ])}
   <p class="micro" style="text-align:center;margin:20px 0">Jabonera · Grupo Mazi · funciona sin internet</p>`;
+};
 
 /* ══ acciones ══════════════════════════════════════════════════════════ */
 const leer = f => Object.fromEntries(new FormData(f).entries());
@@ -993,10 +1253,11 @@ document.addEventListener('change', ev => {
 
 document.addEventListener('click', ev => {
   const pes = ev.target.closest('.pestanas button');
-  if(pes){ tab = pes.dataset.tab; if(tab === 'registrar') paso = 1; window.scrollTo(0,0); return pinta(); }
+  if(pes){ tab = pes.dataset.tab; sub = null; if(tab === 'registrar') paso = 1;
+           window.scrollTo(0,0); return pinta(); }
 
   const t = ev.target.closest('[data-bano],[data-producto],[data-ir],[data-ir-registrar],[data-paso],'
-    + '[data-poner],[data-guardar],[data-demo],[data-vaciar],[data-excel],[data-reporte],[data-respaldo],'
+    + '[data-poner],[data-guardar],[data-demo],[data-vaciar],[data-excel],[data-reporte],[data-respaldo],[data-sub],'
     + '[data-imprimir],[data-abrir-ajustes],[data-borrar-bano],[data-borrar-producto],[data-borrar-visita]');
   if(!t) return;
   const d = t.dataset;
@@ -1006,9 +1267,10 @@ document.addEventListener('click', ev => {
   if(d.irRegistrar){ sel.banoId = d.irRegistrar; tab = 'registrar'; paso = 2;
                      borrador = { restante:'', repuesto:'' }; window.scrollTo(0,0); return pinta(); }
   if(d.producto){ sel.productoId = d.producto; return pinta(); }
-  if(d.ir){ tab = d.ir; if(tab === 'registrar') paso = 1; window.scrollTo(0,0); return pinta(); }
+  if(d.ir){ tab = d.ir; sub = null; if(tab === 'registrar') paso = 1; window.scrollTo(0,0); return pinta(); }
+  if(d.sub){ sub = d.sub === 'atras' ? null : d.sub; window.scrollTo(0,0); return pinta(); }
   if(d.paso){ paso = Number(d.paso); window.scrollTo(0,0); return pinta(); }
-  if(d.abrirAjustes){ tab = 'ajustes'; window.scrollTo(0,0); return pinta(); }
+  if(d.abrirAjustes){ tab = 'ajustes'; sub = null; window.scrollTo(0,0); return pinta(); }
   if(d.imprimir) return window.print();
 
   /* Los atajos de captura: −1 quiere decir «llénalo hasta arriba». */

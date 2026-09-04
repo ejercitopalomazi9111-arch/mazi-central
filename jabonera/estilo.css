@@ -220,6 +220,74 @@ button.b.peligro{ background:var(--nube); color:var(--coral-hondo); border-color
 button.b.chico{ min-height:44px; font-size:var(--t-menor); padding:0 16px; box-shadow:none }
 button.b:disabled{ opacity:.4; cursor:not-allowed }
 
+/* ── ILUSTRACIÓN, ICONOS Y ANILLO ─────────────────────────────────────
+   La capa que faltaba. Cinco de las seis referencias de Carlos llevan imagen
+   —ilustración 3D, carátulas, avatares, logos, iconos de color en mosaico— y
+   mis tres versiones anteriores no tenían ninguna: eran tipografía y bloques
+   de color. Por eso se veían «estilizadas» y no «diseñadas». */
+.ilustra-caja{ display:flex; justify-content:center; margin:22px 0 4px }
+.ilustra{ width:min(58vw, 220px); height:auto; display:block;
+          filter:drop-shadow(0 18px 26px rgba(0,0,0,.22)) }
+
+/* El icono va en un cuadro tintado, como en su referencia de la app de
+   salud: color arriba, rótulo abajo. */
+.icono{ width:44px; height:44px; border-radius:var(--r-chico); display:grid;
+        place-items:center; margin:0 0 12px }
+.icono svg{ width:22px; height:22px }
+.icono.indigo{ background:var(--indigo-suave); color:var(--indigo) }
+.icono.coral { background:var(--coral-suave);  color:var(--coral-hondo) }
+.icono.menta { background:var(--menta-suave);  color:var(--menta-texto) }
+.dato.grande .icono, .dato.alarma .icono{ background:rgba(255,255,255,.18); color:#fff }
+
+/* El mosaico de accesos: 2×2 con icono, el patrón de la pantalla de perfil
+   de su referencia de salud. */
+.mosaico{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+.baldosa{
+  appearance:none; cursor:pointer; font-family:inherit; font-size:var(--t-menor);
+  font-weight:var(--p-fuerte); color:var(--tinta); background:var(--nube);
+  border:0; border-radius:var(--r); padding:16px 12px; min-height:104px;
+  display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+  box-shadow:var(--sombra); text-align:left;
+}
+.baldosa .icono{ margin-bottom:10px }
+.baldosa:active{ transform:translateY(1px) }
+
+/* El anillo de progreso: su referencia de salud tiene uno con el 25 % del
+   plan; aquí dice qué tan lejos está el proyecto de poder concluir. */
+.anillo{ position:relative; width:132px; margin:0 auto }
+.anillo svg{ width:100%; height:auto; display:block }
+.anillo b{ position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; font-size:var(--t-seccion);
+  font-weight:var(--p-macizo); letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums lining-nums; line-height:1 }
+.anillo b em{ font-style:normal; font-size:var(--t-micro); font-weight:var(--p-fuerte);
+  color:var(--humo); letter-spacing:var(--tr-rotulo); text-transform:uppercase; margin-top:4px }
+
+/* ── MENÚ DE RENGLONES ────────────────────────────────────────────────
+   Lo que sustituye a la pila de tarjetas: icono, título y una línea de qué
+   hay dentro. Carlos: «están sobresaturadas de información, mete algunas a
+   submenús». */
+.menu{ background:var(--nube); border-radius:var(--r); box-shadow:var(--sombra); overflow:hidden }
+.renglon{
+  appearance:none; cursor:pointer; width:100%; text-align:left; font-family:inherit;
+  font-size:var(--t-cuerpo); background:transparent; border:0;
+  border-bottom:1px solid var(--linea); padding:16px 18px; min-height:76px;
+  display:flex; align-items:center; gap:14px; color:var(--tinta);
+}
+.menu .renglon:last-child{ border-bottom:0 }
+.renglon:active{ background:var(--niebla) }
+.renglon .icono{ margin:0; flex:0 0 auto }
+.renglon .txt{ flex:1; min-width:0 }
+.renglon .txt b{ display:block; font-weight:var(--p-fuerte) }
+.renglon .txt span{ display:block; font-size:var(--t-micro); color:var(--humo); margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.renglon .flecha{ color:var(--humo); font-size:var(--t-seccion); flex:0 0 auto }
+
+/* Lo plegado en pantalla SÍ se imprime: el documento que se entrega no puede
+   depender de qué submenú quedó abierto. */
+.solo-imprimir{ display:none }
+@media print{ .solo-imprimir{ display:block !important } }
+
 /* ── FICHAS con probeta ───────────────────────────────────────────────── */
 .fichas{ display:grid; gap:12px; grid-template-columns:1fr; margin:0 0 16px }
 @media (min-width:560px){ .fichas{ grid-template-columns:1fr 1fr } }

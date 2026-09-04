@@ -120,8 +120,21 @@ console.log('\n══ LA PIEL: NINGUNA VARIABLE MUERTA, TIPO CARGADO, ESQUINA VI
         await pg.click('[data-paso="1"]').catch(()=>{}); await pg.waitForTimeout(200);
       }
     }
-    await pg.click('[data-abrir-ajustes]'); await pg.waitForTimeout(260);
-    junto.push(...await pg.evaluate(fn));
+    /* ⚠ Y TAMBIÉN LOS SUBMENÚS. Al meter Proyecto y Ajustes en menús, la
+       mitad de la interfaz dejó de estar en pantalla al primer vistazo: si
+       la prueba no entra, deja de comprobar justo lo que nadie mira. */
+    for(const [tab, subs] of [['proyecto', ['reporte','steam','dispensador','metodo','limites']],
+                              ['ajustes',  ['escuela','aparato','banos','productos','mediciones','respaldo','demo']]]){
+      await pg.click(`.pestanas button[data-tab="${tab}"]`).catch(async () => {
+        await pg.click('[data-abrir-ajustes]'); });
+      await pg.waitForTimeout(220);
+      for(const s of subs){
+        const b = await pg.$(`[data-sub="${s}"]`); if(!b) continue;
+        await b.click(); await pg.waitForTimeout(200);
+        junto.push(...await pg.evaluate(fn));
+        await pg.click('[data-sub="atras"]').catch(()=>{}); await pg.waitForTimeout(160);
+      }
+    }
     return [...new Set(junto)];
   };
 
@@ -321,6 +334,12 @@ console.log('\n══ LOS CAMPOS QUE DEPENDEN DEL TIPO ══');
      cabecera va escondida, así que si Ajustes sólo viviera ahí no habría
      puerta. Eso estuvo roto y lo cazó esta prueba. */
   await pg.click('#p-inicio [data-abrir-ajustes]'); await pg.waitForTimeout(300);
+  /* Ahora Ajustes abre como MENÚ y cada cosa vive en su sub-pantalla: la
+     prueba tiene que entrar, igual que una persona. */
+  ok('Ajustes abre como menú de renglones y no como una pila de tarjetas',
+     (await pg.$$('#p-ajustes .renglon')).length >= 5 &&
+     (await pg.$$('#p-ajustes input')).length === 0);
+  await pg.click('[data-sub="productos"]'); await pg.waitForTimeout(300);
   ok('con producto LÍQUIDO, los campos de la barra están escondidos',
      (await pg.isVisible('#soloSolido')) === false);
   await pg.selectOption('#pTip', 'solido'); await pg.waitForTimeout(200);
@@ -376,6 +395,9 @@ console.log('\n══ EL REPORTE EN FORMATO REMBRANDT ══');
   await pg.goto(`http://127.0.0.1:${P}/`, { waitUntil:'networkidle' });
   await pg.click('[data-demo="1"]'); await pg.waitForTimeout(400);
   await pg.click('.pestanas button[data-tab="proyecto"]'); await pg.waitForTimeout(400);
+  /* El generador vive dentro del submenú «Reporte», igual que para una
+     persona: la prueba entra por donde se entra. */
+  await pg.click('[data-sub="reporte"]'); await pg.waitForTimeout(300);
   const [bajada] = await Promise.all([ pg.waitForEvent('download'), pg.click('[data-reporte="1"]') ]);
   const crudo = await readFile(await bajada.path(), 'utf8');
   const lista = JSON.parse(crudo);
