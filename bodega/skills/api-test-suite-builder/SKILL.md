@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/skills/api-test-suite-builder/SKILL.md

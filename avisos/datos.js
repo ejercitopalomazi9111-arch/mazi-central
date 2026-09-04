@@ -8,18 +8,32 @@
 
 /* Cada materia trae su dibujo y su color. El color NO es decoración: es lo que
    deja que el alumno encuentre su materia de un vistazo sin leer. */
+/* ⚠️ EL CAMPO `maestro` VA VACÍO, Y ASÍ SE QUEDA.
+   ──────────────────────────────────────────────────────────────────────────
+   Traía los nombres completos de ocho maestros de verdad. Este repositorio es
+   PÚBLICO, y ese campo no lo lee absolutamente nadie: ni la ficha del
+   pendiente, ni el cartel, ni una sola de las pruebas. Se comprobó buscando
+   `maestro` en todo el árbol antes de tocarlo — la única otra aparición es
+   la palabra dentro de un comentario.
+
+   O sea: eran datos personales de terceros publicados a cambio de nada. Lo
+   levantó el Claude de Luis y tenía razón; el campo se queda por si algún día
+   hace falta, pero se llena en el teléfono de Carlos, no en el repositorio.
+
+   Si algún día el cartel llega a decir de quién es la materia, el nombre entra
+   por `localStorage` desde la pantalla, y este archivo sigue vacío. */
 const MATERIAS = [
-  { id:'quimbio',  nombre:'Química y Biología III',   corto:'Química y Bio',   maestro:'Michelle Ramírez',        icono:'matraz',   color:'#3F6B45' },
-  { id:'geometria',nombre:'Geometría Analítica',      corto:'Geometría',       maestro:'Daniel Vázquez Alvarado', icono:'escuadra', color:'#1E5083' },
-  { id:'progra',   nombre:'Programación y BD',        corto:'Programación',    maestro:'Michelle Ramírez Almaraz',icono:'codigo',   color:'#8C2D18' },
-  { id:'fisica',   nombre:'Física I enfoque STEAM',   corto:'Física',          maestro:'Daniel Vázquez',          icono:'atomo',    color:'#123A5E' },
-  { id:'ingles',   nombre:'Inglés III',               corto:'Inglés',          maestro:'Valentín Hernández Salazar', icono:'globo', color:'#5D2469' },
-  { id:'efisica',  nombre:'Educación Física III',     corto:'Educación Física',maestro:'Diana Olvera Antonio',    icono:'pelota',   color:'#3F6B45' },
-  { id:'metodo',   nombre:'Metodología Inv. I STEAM', corto:'Metodología',     maestro:'Omar Ávila Cruz',         icono:'lupa',     color:'#8A6516' }  /* el dorado #B98A2E medía 3.07 de contraste sobre el papel: no se leía */,
-  { id:'etica',    nombre:'Humanidades III y Ética',  corto:'Humanidades',     maestro:'Omar Ávila Cruz',         icono:'balanza',  color:'#5D2469' },
-  { id:'mtto',     nombre:'Mto. de equipo y SO',      corto:'Mantenimiento',   maestro:'Fernanda Rosas',          icono:'monitor',  color:'#1E5083' },
-  { id:'tec',      nombre:'TEC III',                  corto:'TEC',             maestro:'Fernanda Rosas Mendoza',  icono:'engrane',  color:'#8C2D18' },
-  { id:'redes',    nombre:'Admón. y estructura de redes', corto:'Redes',       maestro:'Ricardo Carrillo Cue',    icono:'red',      color:'#123A5E' },
+  { id:'quimbio',  nombre:'Química y Biología III',   corto:'Química y Bio',   maestro:'',        icono:'matraz',   color:'#3F6B45' },
+  { id:'geometria',nombre:'Geometría Analítica',      corto:'Geometría',       maestro:'', icono:'escuadra', color:'#1E5083' },
+  { id:'progra',   nombre:'Programación y BD',        corto:'Programación',    maestro:'',icono:'codigo',   color:'#8C2D18' },
+  { id:'fisica',   nombre:'Física I enfoque STEAM',   corto:'Física',          maestro:'',          icono:'atomo',    color:'#123A5E' },
+  { id:'ingles',   nombre:'Inglés III',               corto:'Inglés',          maestro:'', icono:'globo', color:'#5D2469' },
+  { id:'efisica',  nombre:'Educación Física III',     corto:'Educación Física',maestro:'',    icono:'pelota',   color:'#3F6B45' },
+  { id:'metodo',   nombre:'Metodología Inv. I STEAM', corto:'Metodología',     maestro:'',         icono:'lupa',     color:'#8A6516' }  /* el dorado #B98A2E medía 3.07 de contraste sobre el papel: no se leía */,
+  { id:'etica',    nombre:'Humanidades III y Ética',  corto:'Humanidades',     maestro:'',         icono:'balanza',  color:'#5D2469' },
+  { id:'mtto',     nombre:'Mto. de equipo y SO',      corto:'Mantenimiento',   maestro:'',          icono:'monitor',  color:'#1E5083' },
+  { id:'tec',      nombre:'TEC III',                  corto:'TEC',             maestro:'',  icono:'engrane',  color:'#8C2D18' },
+  { id:'redes',    nombre:'Admón. y estructura de redes', corto:'Redes',       maestro:'',    icono:'red',      color:'#123A5E' },
   { id:'steam',    nombre:'Proyecto STEAM',           corto:'Proyecto STEAM',  maestro:'',                        icono:'steam',    color:'#5D2469' },
   { id:'general',  nombre:'Aviso general',            corto:'General',         maestro:'',                        icono:'megafono', color:'#7C1D24' },
 
@@ -35,7 +49,7 @@ const MATERIAS = [
 
 /* El tipo dice QUÉ hay que hacer. Va aparte de la materia porque un alumno
    busca de las dos formas: «qué tengo de inglés» y «qué tengo que traer». */
-const TIPOS = [
+const TIPOS_PEND = [
   { id:'tarea',    nombre:'Tarea',        icono:'hoja',    verbo:'Hacer'   },
   { id:'material', nombre:'Material',     icono:'caja',    verbo:'Traer'   },
   { id:'examen',   nombre:'Examen',       icono:'examen',  verbo:'Estudiar'},
@@ -121,4 +135,4 @@ const DIAS   = ['domingo','lunes','martes','miércoles','jueves','viernes','sáb
 const MESES  = ['enero','febrero','marzo','abril','mayo','junio','julio',
                 'agosto','septiembre','octubre','noviembre','diciembre'];
 
-if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS, CUANDOS, DESTACADO, PLANTILLAS, FUENTES, DIAS, MESES };
+if(typeof module !== 'undefined') module.exports = { MATERIAS, TIPOS_PEND, CUANDOS, DESTACADO, PLANTILLAS, FUENTES, DIAS, MESES };

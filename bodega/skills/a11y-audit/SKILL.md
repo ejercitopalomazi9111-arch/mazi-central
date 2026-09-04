@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering-team/a11y-audit/skills/a11y-audit/SKILL.md

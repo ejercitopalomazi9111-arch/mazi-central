@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/compliance-os/skills/compliance-os/SKILL.md

@@ -1,0 +1,92 @@
+{
+  "area": "listas",
+  "nombre": "Listas, búsqueda y filtros",
+  "que": "Encontrar algo dentro de muchos: orden, filtros, paginación y qué pasa cuando no hay resultados.",
+  "neuronas": [
+    {
+      "id": "filtros-que-no-dicen-cuantos-quedan",
+      "titulo": "Se filtra y no se sabe cuánto se quitó",
+      "gravedad": "media",
+      "sintoma": "Después de filtrar, la gente no sabe si el resultado es corto porque filtró bien o porque no hay nada.",
+      "causa": "No se muestra el conteo ni qué filtros están puestos.",
+      "porque": "El estado del filtro está en un panel que se cerró, y el conteo parece un detalle.",
+      "arreglo": "Enseñar siempre cuántos resultados hay y qué filtros están activos, con forma de quitarlos de uno en uno.",
+      "comoCazarlo": "Filtrar, cerrar el panel y preguntarse qué se está viendo.",
+      "consejo": "Sin el conteo, un filtro demasiado estrecho se confunde con un catálogo vacío.",
+      "senales": [
+        "no sé qué filtros tengo puestos",
+        "salen pocos resultados",
+        "¿esto es todo?"
+      ],
+      "salioDe": "Prácticas de listas y facetas recogidas por NN/g."
+    },
+    {
+      "id": "sin-resultados-sin-salida",
+      "titulo": "«No se encontró nada» y punto",
+      "gravedad": "media",
+      "sintoma": "Una búsqueda sin resultados deja a la persona sin nada que hacer.",
+      "causa": "El estado vacío de búsqueda no ofrece alternativas.",
+      "porque": "Es un estado que se pinta con una frase y se da por resuelto.",
+      "arreglo": "Ofrecer salidas: quitar un filtro, corregir la escritura, ver lo más cercano, o contactar.",
+      "comoCazarlo": "Buscar algo que no existe y contar cuántas acciones quedan disponibles.",
+      "consejo": "Es el momento en que más gente se va, y el que menos se diseña.",
+      "senales": [
+        "no encuentro nada",
+        "dice que no hay resultados y ya",
+        "me quedé atorado"
+      ],
+      "salioDe": "El principio de estados vacíos del banco: decir qué pasó y qué se puede hacer."
+    },
+    {
+      "id": "orden-por-defecto-que-nadie-decidio",
+      "titulo": "La lista sale ordenada por lo que devolvió la base de datos",
+      "gravedad": "media",
+      "sintoma": "El orden de la lista no tiene sentido para quien la lee.",
+      "causa": "No se decidió un orden: se muestra el que viene.",
+      "porque": "El orden por defecto no se ve como una decisión de diseño.",
+      "arreglo": "Escoger el orden que sirve a la tarea más común y decir cuál es.",
+      "comoCazarlo": "Preguntarse por qué el primer elemento es el primero. Si no hay respuesta, no hay orden.",
+      "consejo": "El primer resultado se lleva la mayoría de la atención: no puede ser azar.",
+      "senales": [
+        "¿por qué sale ese primero?",
+        "el orden es raro",
+        "no encuentro lo reciente"
+      ],
+      "salioDe": "Principio de arquitectura de información sobre orden por defecto."
+    },
+    {
+      "id": "paginacion-que-pierde-el-sitio",
+      "titulo": "Al volver de un resultado se pierde la página",
+      "gravedad": "media",
+      "sintoma": "Se entra a un elemento, se vuelve atrás y la lista empieza de cero.",
+      "causa": "La posición y la página no están en la dirección ni se restauran.",
+      "porque": "Volver atrás se prueba poco, y en desarrollo la lista es corta.",
+      "arreglo": "Guardar página y posición, y restaurarlas al volver.",
+      "comoCazarlo": "Bajar mucho en una lista, entrar en un elemento y volver.",
+      "consejo": "Con carga infinita el problema es peor: hay que volver a cargar todo para llegar donde se estaba.",
+      "senales": [
+        "pierdo el lugar al volver",
+        "tengo que bajar otra vez",
+        "se reinicia la lista"
+      ],
+      "salioDe": "El mismo principio del estado en la dirección del área de página."
+    },
+    {
+      "id": "buscar-que-exige-la-palabra-exacta",
+      "titulo": "La búsqueda sólo encuentra si se escribe igual",
+      "gravedad": "media",
+      "sintoma": "No aparece nada aunque el contenido exista, por un acento o un plural.",
+      "causa": "La comparación es literal: no normaliza acentos, mayúsculas ni formas.",
+      "porque": "La comparación literal es la que sale de la primera versión y funciona en las pruebas.",
+      "arreglo": "Normalizar antes de comparar y buscar por las palabras que usa la gente, no por el término técnico.",
+      "comoCazarlo": "Buscar lo mismo con y sin acento, en singular y en plural.",
+      "consejo": "Quien tiene el problema enfrente no sabe cómo se llama: por eso se busca por síntoma.",
+      "senales": [
+        "no encuentra nada aunque está",
+        "hay que escribirlo exacto",
+        "con acento no sale"
+      ],
+      "salioDe": "El buscador del cerebro de este grupo, que normaliza y busca sobre las señales."
+    }
+  ]
+}

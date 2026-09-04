@@ -1,0 +1,110 @@
+{
+  "area": "impresion",
+  "nombre": "Imprimir y exportar",
+  "que": "Lo que pasa cuando la pantalla se convierte en papel o en PDF, que casi nadie prueba.",
+  "neuronas": [
+    {
+      "id": "la-pagina-que-no-se-puede-imprimir",
+      "titulo": "Al imprimir sale la navegación y falta el contenido",
+      "gravedad": "media",
+      "sintoma": "La versión impresa es inservible: menús, banners y el texto cortado.",
+      "causa": "No hay estilos de impresión.",
+      "porque": "Casi nadie imprime, hasta que alguien tiene que imprimir justo eso.",
+      "arreglo": "Unos estilos de impresión mínimos: quitar navegación y adornos, dejar el contenido y las URLs de los enlaces.",
+      "comoCazarlo": "Vista previa de impresión de las páginas que la gente imprimiría.",
+      "consejo": "En sitios institucionales —una escuela, un trámite— se imprime más de lo que se cree.",
+      "senales": [
+        "se imprime mal",
+        "salen los menús en el papel",
+        "no cabe en la hoja"
+      ],
+      "salioDe": "Práctica de hojas de impresión; especialmente relevante en sitios de servicio."
+    },
+    {
+      "id": "enlaces-que-en-papel-no-dicen-nada",
+      "titulo": "En papel, «haz clic aquí» no lleva a ninguna parte",
+      "gravedad": "baja",
+      "sintoma": "El documento impreso menciona enlaces sin decir a dónde van.",
+      "causa": "El texto del enlace no dice el destino y en papel no hay clic.",
+      "porque": "En pantalla el destino se descubre pasando el cursor.",
+      "arreglo": "Texto de enlace descriptivo y, en impresión, mostrar la URL al lado.",
+      "comoCazarlo": "Imprimir una página con enlaces y comprobar si se pueden seguir.",
+      "consejo": "El texto descriptivo también ayuda a quien navega saltando entre enlaces.",
+      "senales": [
+        "no se sabe a dónde van los links",
+        "dice clic aquí",
+        "en el pdf no sirven"
+      ],
+      "salioDe": "Prácticas de accesibilidad de enlaces y estilos de impresión."
+    },
+    {
+      "id": "colores-que-en-papel-desaparecen",
+      "titulo": "Lo que se distinguía por color se pierde impreso",
+      "gravedad": "media",
+      "sintoma": "Una tabla o gráfica impresa deja de distinguir sus categorías.",
+      "causa": "La codificación es sólo por color y la impresión es en blanco y negro.",
+      "porque": "Se diseña para pantalla y el papel es un caso que nadie pide.",
+      "arreglo": "La misma regla que en pantalla: el color acompaña, no informa solo.",
+      "comoCazarlo": "Imprimir en escala de grises.",
+      "consejo": "Es la misma comprobación que sirve para daltonismo: dos problemas, una prueba.",
+      "senales": [
+        "impreso no se distingue",
+        "en blanco y negro se pierde",
+        "la gráfica no se entiende en papel"
+      ],
+      "salioDe": "La neurona del color como único mensajero, aplicada a impresión."
+    },
+    {
+      "id": "saltos-de-pagina-en-mitad-de-todo",
+      "titulo": "La tabla se parte y el encabezado se queda en la página anterior",
+      "gravedad": "baja",
+      "sintoma": "En el PDF, filas y bloques quedan cortados entre páginas.",
+      "causa": "No se declaró cómo debe partirse el contenido.",
+      "porque": "El navegador parte donde toca y en pantalla no existe el concepto.",
+      "arreglo": "Declarar dónde no se puede partir y repetir los encabezados de tabla en cada página.",
+      "comoCazarlo": "Exportar a PDF un documento largo y mirar cada salto.",
+      "consejo": "Un título solo al final de una página es la versión de papel del texto huérfano.",
+      "senales": [
+        "se corta la tabla",
+        "el título quedó solo abajo",
+        "se parte mal el pdf"
+      ],
+      "salioDe": "Propiedades de fragmentación de CSS documentadas en MDN."
+    },
+    {
+      "id": "el-pdf-como-unica-version",
+      "titulo": "La información sólo existe dentro de un PDF",
+      "gravedad": "media",
+      "sintoma": "Para leer un horario o un requisito hay que descargar un archivo.",
+      "causa": "Se publicó el documento tal cual en vez de pasarlo a la página.",
+      "porque": "El PDF ya existe y subirlo es un minuto.",
+      "arreglo": "Publicar el contenido como página, y dejar el PDF como copia descargable.",
+      "comoCazarlo": "Contar cuántas cosas importantes sólo están en PDF.",
+      "consejo": "Un PDF en un teléfono se lee mal, pesa, y muchas veces no es accesible.",
+      "senales": [
+        "está en el pdf",
+        "hay que descargarlo",
+        "no se lee bien en el celular"
+      ],
+      "salioDe": "Práctica de publicación accesible; especialmente en sitios institucionales."
+    },
+    {
+      "id": "filtro-css-que-sale-recuadro-negro-en-pdf",
+      "titulo": "La marca de agua salía como un rectángulo negro al guardar en PDF",
+      "gravedad": "alta",
+      "sintoma": "En pantalla la marca de agua se ve bien; en el PDF guardado desde el teléfono aparece un recuadro negro sólido en su lugar.",
+      "causa": "Un `filter` CSS sobre una imagen con transparencia. El filtro obliga a rasterizarla en una capa aparte, y al aplanarla para el PDF hay motores que componen el alfa SIN premultiplicar: cada pixel transparente —negro con alfa cero— se vuelve negro opaco.",
+      "porque": "El filtro se ve perfecto en el navegador donde se programó, y el defecto sólo aparece en el camino de impresión de OTRO motor.",
+      "arreglo": "Hornear el efecto en la imagen con un lienzo, respetando el alfa pixel por pixel, y dejarle a la etiqueta sólo `opacity`, que sí atraviesa bien la impresión.",
+      "comoCazarlo": "No hace falta reproducir el PDF del otro navegador: se mide la propiedad cuya pérdida lo causa —que los píxeles transparentes sigan transparentes después del proceso—.",
+      "consejo": "Cuando no se puede reproducir el entorno donde falla, se quita la clase de riesgo entera en vez de adivinar el ajuste que lo contenta.",
+      "senales": [
+        "sale un recuadro negro",
+        "en el pdf se ve mal",
+        "la marca de agua sale negra",
+        "en pantalla se ve bien"
+      ],
+      "salioDe": "Carlos, guardando en PDF desde Safari. El PDF de Chromium salía correcto, así que el defecto no se pudo reproducir aquí."
+    }
+  ]
+}

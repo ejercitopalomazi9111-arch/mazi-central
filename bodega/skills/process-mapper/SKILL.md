@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/business-operations/skills/process-mapper/SKILL.md

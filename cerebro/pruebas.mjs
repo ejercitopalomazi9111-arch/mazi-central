@@ -305,5 +305,50 @@ console.log('\n· El buscador corre en cualquier lado');
   ok('y busca igual que el de siempre', r.length > 0 && r[0].id === 'charset-que-no-manda-el-servidor');
 }
 
+/* ══ LO ESCRITO Y LO SERVIDO SON DOS ARCHIVOS ═════════════════════════════
+   ⚠ ESTA PRUEBA NACE DE UN AGUJERO QUE COSTÓ 14 NEURONAS INVISIBLES.
+
+   Las neuronas viven en `cerebro/neuronas/*.json`. La pantalla y la sala NO
+   leen eso: leen `cerebro/todo.json`, que se genera aparte con
+   `node cerebro/cerebro.mjs armar`. Si se escribe una neurona y no se
+   regenera, todo sale en verde —las pruebas leen los archivos fuente— y la
+   pantalla se queda con el número viejo. Nadie ve la neurona nueva y nada
+   avisa.
+
+   Y no es teórico: el 4 de septiembre `todo.json` llevaba 517 neuronas y los
+   archivos 531. Catorce escritas, commiteadas, en verde y que no veía nadie.
+   Godines lo cazó primero por su lado (e327) y su comprobación está en su
+   rama sin fusionar, así que aquí va la de este lado. Si la suya entra
+   después, se queda la mejor de las dos.
+
+   Lo que hace que esto SIRVA es que revienta nombrando cuáles faltan: un
+   «no coinciden» obliga a averiguar; una lista se arregla en un renglón. */
+{
+  console.log('\n── Lo escrito contra lo servido ──');
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const dir = new URL('./neuronas/', import.meta.url);
+  const escritas = new Set();
+  for(const f of fs.readdirSync(dir)){
+    if(!f.endsWith('.json')) continue;
+    const d = JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8'));
+    for(const n of (d.neuronas || [])) escritas.add(n.id);
+  }
+  let servidas = new Set();
+  const dondeTodo = new URL('./todo.json', import.meta.url);
+  if(fs.existsSync(dondeTodo)){
+    const t = JSON.parse(fs.readFileSync(dondeTodo, 'utf8'));
+    for(const n of (t.neuronas || [])) servidas.add(n.id);
+  }
+  const faltan = [...escritas].filter(id => !servidas.has(id));
+  const sobran = [...servidas].filter(id => !escritas.has(id));
+  ok('cerebro/todo.json existe', servidas.size > 0);
+  ok(`están servidas las ${escritas.size} neuronas escritas`, faltan.length === 0,
+     faltan.length ? `faltan ${faltan.length}: ${faltan.slice(0,8).join(', ')}`
+       + (faltan.length > 8 ? '…' : '') + ' → corre: node cerebro/cerebro.mjs armar' : '');
+  ok('y no se sirve ninguna que ya no esté escrita', sobran.length === 0,
+     sobran.length ? `sobran ${sobran.length}: ${sobran.slice(0,8).join(', ')}` : '');
+}
+
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
 process.exit(mal ? 1 : 0);

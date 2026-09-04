@@ -1,0 +1,230 @@
+{
+  "area": "color",
+  "nombre": "Color que se lee y no miente",
+  "que": "Contraste, paletas, espacios de color y temas: lo que se ve bien en la maqueta y falla en la pantalla de alguien.",
+  "neuronas": [
+    {
+      "id": "contraste-que-pasa-en-el-mockup-y-no-en-la-pantalla",
+      "titulo": "El contraste se midió contra el fondo equivocado",
+      "gravedad": "alta",
+      "sintoma": "La paleta pasó la revisión de contraste y aun así hay texto que no se lee.",
+      "causa": "Se midió el texto contra el fondo del documento, no contra el fondo REAL del elemento: una tarjeta tintada, una franja, una imagen o un degradado debajo.",
+      "porque": "Las herramientas piden dos colores y uno teclea los dos que tiene a mano, que son los del tema, no los del sitio exacto donde ese texto acaba viviendo.",
+      "arreglo": "Medir cada pareja contra el fondo que de verdad queda detrás. Si el elemento se usa sobre tres superficies, son tres medidas, no una.",
+      "comoCazarlo": "Recorrer los elementos de texto y calcular el contraste con el color de fondo heredado real, no con el del <body>. Un tono que pasa sobre el papel liso puede reprobar sobre el papel tintado.",
+      "consejo": "Cuando una entrada de color existe «por si acaso», casi siempre existe porque alguien ya se topó con esto y no lo escribió.",
+      "senales": [
+        "pasa el contraste y sigue sin leerse",
+        "el gris se ve bien en la maqueta y mal en la página",
+        "reprueba sólo en las tarjetas"
+      ],
+      "salioDe": "El banco de pruebas: #6B6470 daba 4.08:1 sobre el papel hondo y pasaba sobre el liso. Lo cazó la prueba que mide contra el fondo real de cada elemento."
+    },
+    {
+      "id": "el-mismo-color-para-display-y-para-texto-chico",
+      "titulo": "El color de marca no sirve para un renglón de 12 px",
+      "gravedad": "alta",
+      "sintoma": "El color corporativo se ve espectacular en el titular y el pie de foto no se lee.",
+      "causa": "Se usa una sola entrada de color para todo. Un tono que alcanza 3:1 vale para display grande y para gráficos, y reprueba para texto normal, que pide 4.5:1.",
+      "porque": "La marca entrega UN color y se asume que un color es un color. El umbral cambia con el tamaño, no con el tono.",
+      "arreglo": "Dos entradas desde el principio: la de marca para display y gráficos, y una versión oscurecida —o aclarada, sobre tinta— para texto pequeño. No es capricho: son dos requisitos distintos.",
+      "comoCazarlo": "Calcular el contraste de cada uso, separando por tamaño: 4.5:1 para texto normal, 3:1 para texto grande (18 pt / 24 px, o 14 pt / 18.5 px en negrita) y para iconos esenciales.",
+      "consejo": "El día que alguien pregunte «¿por qué hay dos rojos?», la respuesta está en esta neurona y no en el gusto de nadie.",
+      "senales": [
+        "el color de la marca no pasa contraste",
+        "se ve bien en grande y mal en chico",
+        "¿por qué hay dos versiones del mismo color?"
+      ],
+      "salioDe": "web.dev, «Color and contrast»: 4.5:1 para texto normal y 3:1 para texto grande, con el umbral de tamaño explícito."
+    },
+    {
+      "id": "el-color-como-unico-mensajero",
+      "titulo": "El único que dice qué pasó es el color",
+      "gravedad": "alta",
+      "sintoma": "Alguien no ve que un campo está en error, o que un renglón está seleccionado.",
+      "causa": "El estado se codifica sólo con color: rojo para error, verde para bien, y nada más cambia.",
+      "porque": "En la maqueta el color se ve clarísimo, y quien la hace ve los colores. Uno de cada doce hombres y una de cada doscientas mujeres no distinguen alguno.",
+      "arreglo": "Que el color acompañe, nunca que informe solo. Un icono, un texto, un subrayado, un cambio de forma o de peso: algo que sobreviva en escala de grises.",
+      "comoCazarlo": "Poner la pantalla en blanco y negro. Si un estado deja de distinguirse, ese estado no existe para mucha gente.",
+      "consejo": "Sirve igual para quien mira el teléfono bajo el sol, que es mucha más gente que la que tiene un diagnóstico.",
+      "senales": [
+        "no vi que estaba en error",
+        "los dos renglones se ven iguales",
+        "en blanco y negro no se entiende nada"
+      ],
+      "salioDe": "WCAG 1.4.1 y las guías de Carnegie Museums citadas por Smashing: no usar sólo el color como indicador."
+    },
+    {
+      "id": "gris-que-no-es-gris",
+      "titulo": "El gris tenía color y el ojo lo notaba sin saber por qué",
+      "gravedad": "media",
+      "sintoma": "Alguien dice que el tema claro «se ve amarillento» o «sucio», y nadie sabe señalar qué.",
+      "causa": "El gris no era neutro: llevaba un tinte cálido o frío heredado de promediar una imagen o de una paleta de marca.",
+      "porque": "Un tinte pequeño es invisible en una muestra de 40 px y evidentísimo en una hoja entera. La superficie multiplica lo que el chip esconde.",
+      "arreglo": "Decidir a propósito si el gris es neutro o tintado, y si se cambia, cambiar el TINTE manteniendo la luminancia calculada.",
+      "comoCazarlo": "Poner el color junto a un gris neutro del mismo valor. Si uno de los dos se ve «de otro color», había tinte.",
+      "consejo": "Moviendo el brillo al quitar el tinte hay que volver a medir TODOS los contrastes; manteniéndolo, no.",
+      "senales": [
+        "se ve amarillento",
+        "el blanco se ve sucio",
+        "no sé qué tiene pero no está bien"
+      ],
+      "salioDe": "El banco de pruebas: se quitó el tinte manteniendo la luminancia exacta —0.7274 → 0.7305— para no invalidar los contrastes ya medidos."
+    },
+    {
+      "id": "el-punto-mas-brillante-no-es-el-papel",
+      "titulo": "Se tomó como fondo el punto más brillante de la referencia",
+      "gravedad": "media",
+      "sintoma": "El tema claro deslumbra. La gente dice que «quema» o baja el brillo de la pantalla.",
+      "causa": "El color de fondo salió de promediar los píxeles claros de una imagen de marca, que no es el papel: es el brillo de la lámpara sobre el papel.",
+      "porque": "Promediar «los claros» suena a sacar el color del papel y saca el del reflejo. Una hoja entera del punto más alto es una hoja entera de reflejo.",
+      "arreglo": "Bajar un escalón la luminancia del fondo. El dato de marca no se contradice: se está usando para lo que no era.",
+      "comoCazarlo": "Poner el fondo a pantalla completa un minuto. Si dan ganas de bajarle el brillo al monitor, está alto.",
+      "consejo": "Lo mismo al revés en el tema oscuro: el negro absoluto sobre pantallas OLED da halos en el texto.",
+      "senales": [
+        "ese blanco es demasiado brillante",
+        "quema la vista",
+        "tengo que bajarle el brillo"
+      ],
+      "salioDe": "El banco de pruebas, corregido dos veces por Carlos: primero el brillo, después el tinte."
+    },
+    {
+      "id": "degradado-que-se-ensucia-a-medio-camino",
+      "titulo": "El degradado pasa por un color que nadie escogió",
+      "gravedad": "media",
+      "sintoma": "Un degradado entre dos colores bonitos se ve gris o embarrado en el medio.",
+      "causa": "La interpolación se hace en el espacio por defecto (sRGB), que atraviesa la zona muerta entre los dos tonos.",
+      "porque": "Se piensa el degradado como «de este color a este otro» y el navegador lo resuelve como una recta en un espacio que no es perceptual.",
+      "arreglo": "Interpolar en un espacio cilíndrico —OKLCH, LCH, HSL— y, cuando importe el camino, decir si va por el arco corto o el largo.",
+      "comoCazarlo": "Mirar el punto medio del degradado y compararlo con la mezcla que uno esperaría. Si está más apagado, es la interpolación.",
+      "consejo": "El mismo color se puede escribir en varios espacios y el promedio de dos colores CAMBIA según dónde se calcule.",
+      "senales": [
+        "el degradado se ve sucio en medio",
+        "pierde saturación a mitad",
+        "se ve gris entre los dos colores"
+      ],
+      "salioDe": "web.dev, «Gradients»: los espacios cilíndricos aceptan `shorter`/`longer` y el resultado del promedio depende del espacio."
+    },
+    {
+      "id": "oklch-para-que-una-escala-se-vea-pareja",
+      "titulo": "La escala de tonos daba saltos aunque los números fueran parejos",
+      "gravedad": "media",
+      "sintoma": "Una rampa de color de 100 a 900 se ve pareja en unos tramos y salta en otros.",
+      "causa": "Los pasos se hicieron parejos en HSL o en HEX, que no son perceptuales: la misma diferencia numérica se ve distinta según el tono.",
+      "porque": "HSL parece perceptual porque tiene «luminosidad», pero su L no corresponde a lo que el ojo llama claro. El amarillo al 50 % se ve mucho más claro que el azul al 50 %.",
+      "arreglo": "Construir la escala en OKLCH moviendo la L, que sí es perceptual, y dejar croma y tono como decisiones aparte.",
+      "comoCazarlo": "Pasar la rampa a escala de grises: si los pasos dejan de ser parejos, la escala estaba hecha en el espacio equivocado.",
+      "consejo": "OKLCH se entiende como HSL —croma y tono— y se comporta como LAB, que es lo que hacía falta.",
+      "senales": [
+        "la escala de color no se ve pareja",
+        "el amarillo se ve más claro que el resto",
+        "los pasos saltan"
+      ],
+      "salioDe": "Smashing, «Falling For Oklch»: croma y tono son tan fáciles de entender como HSL, y mejor."
+    },
+    {
+      "id": "el-foco-tambien-tiene-que-contrastar",
+      "titulo": "El anillo de foco se ve pero no cumple",
+      "gravedad": "alta",
+      "sintoma": "Hay indicador de foco y aun así una auditoría lo reprueba.",
+      "causa": "El anillo se pintó de un color que no llega a 3:1 contra el fondo sobre el que se dibuja.",
+      "porque": "El foco se piensa como decoración del estado y no como información, así que nadie le mide el contraste.",
+      "arreglo": "Tratar el anillo como contenido: 3:1 mínimo contra su fondo, y comprobarlo en los dos temas y sobre las superficies tintadas.",
+      "comoCazarlo": "Recorrer la página con el tabulador midiendo el contraste del anillo en cada parada, no sólo en la primera.",
+      "consejo": "Un anillo que se ve en el fondo del documento puede desaparecer sobre una tarjeta oscura: son fondos distintos.",
+      "senales": [
+        "sí hay foco pero lo reprueban",
+        "el borde de foco casi no se ve",
+        "se pierde el foco en las tarjetas"
+      ],
+      "salioDe": "web.dev, «Keyboard focus»: 3:1 para el indicador, por el criterio Focus Appearance de WCAG 2.2."
+    },
+    {
+      "id": "texto-sobre-imagen-sin-suelo",
+      "titulo": "El texto sobre la foto se lee hoy y mañana no",
+      "gravedad": "alta",
+      "sintoma": "El titular sobre la imagen se lee en la maqueta y desaparece cuando cambian la foto.",
+      "causa": "El contraste depende de los píxeles concretos de ESA imagen. Cambia la imagen y cambia el fondo del texto.",
+      "porque": "Se mide una vez, con la foto de ejemplo, y se da por resuelto lo que en realidad es un contrato con todas las fotos futuras.",
+      "arreglo": "Poner un suelo que no dependa de la foto: una capa sólida o un degradado con opacidad suficiente, o una zona reservada. Si el texto va encima, el fondo lo pone el diseño, no la imagen.",
+      "comoCazarlo": "Probar el mismo bloque con la foto más clara y la más oscura del catálogo. Si una de las dos falla, falla el patrón.",
+      "consejo": "Un contenedor casi opaco detrás del mensaje resuelve el caso completo y se ve a propósito.",
+      "senales": [
+        "el texto sobre la foto no se lee",
+        "se lee con una imagen y con otra no",
+        "depende de la foto que suban"
+      ],
+      "salioDe": "Smashing, «Designing Accessible Text Over Images»: el contenedor prácticamente opaco separa el mensaje del fondo."
+    },
+    {
+      "id": "tema-oscuro-no-es-invertir",
+      "titulo": "El tema oscuro se hizo invirtiendo el claro",
+      "gravedad": "media",
+      "sintoma": "El tema oscuro se ve turbio: los acentos vibran, las sombras no se ven y algunos textos deslumbran.",
+      "causa": "Se voltearon los tokens en vez de rehacer las decisiones. El acento que funciona sobre papel no funciona sobre tinta, y la sombra oscura sobre fondo oscuro no existe.",
+      "porque": "Voltear es barato y da algo que parece un tema oscuro a la primera vista, así que nadie vuelve a medir.",
+      "arreglo": "Rehacer las tres decisiones que cambian: el color de fondo (que casi nunca es negro puro), el acento (que suele tener que aclararse) y la profundidad, que en oscuro se hace con luz, no con sombra.",
+      "comoCazarlo": "Medir contraste otra vez en el tema oscuro, con sus propios fondos. Y mirar si las sombras siguen diciendo algo.",
+      "consejo": "En oscuro, lo que separa capas es que la superficie de arriba sea MÁS CLARA, no que tenga sombra.",
+      "senales": [
+        "el modo oscuro se ve raro",
+        "los colores vibran en oscuro",
+        "no se distinguen las tarjetas en oscuro"
+      ],
+      "salioDe": "El banco de pruebas: el fondo oscuro salió de la marca y el violeta de texto es otro que el del tema claro."
+    },
+    {
+      "id": "contraste-medido-sin-componer-el-alfa",
+      "titulo": "El medidor de contraste leyó un velo blanco al 16% como blanco puro",
+      "gravedad": "alta",
+      "sintoma": "Una comprobación de contraste canta 1:1 sobre un texto que se lee perfectamente.",
+      "causa": "Se tomó el primer fondo no transparente subiendo por los padres. Un `rgba(255,255,255,.16)` encima de un azul se leyó como blanco, cuando lo que se pinta es el azul aclarado un 16%.",
+      "porque": "«El fondo» suena a una cosa y son varias apiladas. El primer color que aparece parece el bueno.",
+      "arreglo": "Juntar todas las capas hasta la primera opaca y componerlas de atrás hacia adelante. Y sumar la opacidad acumulada del texto, que no cambia su `color` computado.",
+      "comoCazarlo": "Un caso de prueba con texto claro sobre un velo semitransparente encima de un color oscuro. Sin composición da ~1:1; con ella, el número real.",
+      "consejo": "Un medidor que inventa un defecto te hace romper una página sana: cuesta lo mismo que uno que tapa un defecto de verdad.",
+      "senales": [
+        "dice que no hay contraste y sí se lee",
+        "contraste 1:1",
+        "el fondo es semitransparente"
+      ],
+      "salioDe": "Me la pasó Godines antes de que me la comiera: se la había encontrado midiendo su propia plantilla, «Cerrado ahora» a 1:1 cuando estaba a 5.69:1."
+    },
+    {
+      "id": "violeta-de-la-casa-no-admite-tinta-oscura",
+      "titulo": "Ninguna tinta oscura alcanza AA sobre el violeta #AC27FF",
+      "gravedad": "media",
+      "sintoma": "Un botón de marca con texto oscuro se ve bien y no pasa la comprobación de contraste.",
+      "causa": "El violeta de la casa tiene luminancia media (0.174). Contra él, el NEGRO PURO da 4.49:1 y AA pide 4.5 para texto normal: no hay tinta oscura que alcance.",
+      "porque": "El violeta se ve intenso y oscuro, así que la intuición pide texto claro encima… y en la práctica se pone el color de fondo de la casa, que es oscuro.",
+      "arreglo": "Texto BLANCO sobre el violeta: 4.68:1. O usar el violeta como texto sobre fondo oscuro, no como fondo.",
+      "comoCazarlo": "Calcular la razón antes de decidir el par, no después. Son dos líneas de aritmética.",
+      "consejo": "Cuando ninguna tinta de un lado alcanza, el problema no es la tinta: es que el fondo está a media luminancia.",
+      "senales": [
+        "el botón violeta no pasa contraste",
+        "4.17:1",
+        "qué color de texto le pongo al botón"
+      ],
+      "salioDe": "Medido en `sitio/index.html` (`a.wasap`, 4.17:1) y confirmado a mano con la fórmula WCAG. El negro puro se queda en 4.49."
+    },
+    {
+      "id": "la-mesa-del-mismo-color-que-las-cartas",
+      "titulo": "El fondo de marca a toda pantalla se come el contenido que vino a lucir",
+      "gravedad": "alta",
+      "sintoma": "«Se ve bien culero» sin poder señalar qué. Todo es correcto —el arte es bueno, el texto se lee— y el conjunto se ve barato y cansado.",
+      "causa": "El color de marca ocupa el 100% del fondo, y las piezas que hay que mirar comparten ese mismo color. Sin diferencia de valor entre el fondo y el contenido, no hay separación: el ojo no encuentra dónde posarse.",
+      "porque": "Un color de marca saturado se ve estupendo en un botón y en un logo, así que la conclusión natural es «pues entonces en todo». Pero un acento sirve porque es raro: en cuanto es todo, deja de acentuar.",
+      "arreglo": "La superficie donde se mira el contenido se hace oscura y neutra —luminancia relativa por debajo de 0.08— y el color de marca se retira a la portada, al elemento activo y al acento. En oscuro la elevación se hace con SUPERFICIE, no con sombra.",
+      "comoCazarlo": "Medir la luminancia relativa del fondo y compararla con la del contenido dominante. Y la prueba de escala de grises: si en gris no se distingue el contenido de su fondo, en color tampoco se distingue de verdad.",
+      "consejo": "Cuando se oscurezca el fondo hay que REVISAR LA JERARQUÍA otra vez, porque se invierte sola: lo que en claro era «relleno blanco = secundario» pasa a ser lo más brillante de la pantalla, y el primario apagado parece roto. Pasó con los botones, con los filtros y con dos recuadros de bonificación, los tres a la vez.",
+      "senales": [
+        "se ve culero",
+        "se ve cargado",
+        "todo es del mismo color",
+        "no sé qué mirar",
+        "se ve barato"
+      ],
+      "salioDe": "Guerra de Puercos: el fondo era #E84A8A de borde a borde y las 102 cartas tienen marco rosa. Con la mesa en #241019 las cartas se despegaron sin tocarles un pixel."
+    }
+  ]
+}

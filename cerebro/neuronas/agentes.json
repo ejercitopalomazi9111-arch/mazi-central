@@ -144,6 +144,245 @@
         "pieza-sala"
       ],
       "salioDe": "propuesta por Gemini (gemini-3-flash-preview) en la sala MESAAA"
+    },
+    {
+      "clase": "error",
+      "id": "borrado-callado-parece-sala-nueva",
+      "titulo": "Un borrado que no deja rastro se ve igual que un lugar que nunca se usó",
+      "gravedad": "alta",
+      "sintoma": "Carlos volvió a GRUPAZ, encontró nueve mensajes donde había una jornada entera y escribió «alv se borró toda la conversación qué onda?».",
+      "causa": "CAUSA REAL, hallada el 1 de septiembre después de que se repitiera: NO era el olvido programado. Un Durable Object tiene UNA sola alarma y aquí la comparten el olvido y la vigilia. Cuando sonaba por una vigilia, alarm() preguntaba a revisarVigilias(), que contesta si HUBO CAMBIO — no si el disparo era suyo—. Sin cambios contestaba falso y la ejecución seguía DE LARGO hasta el borrado. Encima el borrado era callado.",
+      "porque": "Un contenedor vacío no guarda memoria de por qué está vacío. «Nunca se dijo nada» y «se borró lo que se dijo» son el MISMO estado si nadie escribe la diferencia — y el servidor sí sabía cuál de los dos era.",
+      "arreglo": "Dos cosas. Que el olvido se decida MIDIENDO: se guarda en disco cuándo se usó la sala por última vez y sólo se borra si de verdad pasó el plazo; cualquier otro disparo re-arma y no toca nada. Y sin sello NO se borra: no saber nunca puede ser motivo para destruir el trabajo de alguien. Además el borrado deja un aviso en el hilo.",
+      "comoCazarlo": "La prueba vieja llamaba a alarm() sobre una sala recién usada y esperaba que borrara: o sea que PASABA EJERCITANDO EL DEFECTO. La buena dispara la alarma cuando el olvido NO toca y exige que el hilo siga entero. Y lleva su premisa comprobada aparte, porque el mensaje de prueba se rechazaba por cuenta y el hilo salía vacío por otra razón.",
+      "consejo": "Vale para todo lo que limpia solo: cachés, colas, sesiones, archivos temporales. Si borras por política, di que borraste; si no, el usuario lo va a diagnosticar como pérdida de datos y va a tener razón en asustarse.",
+      "salioDe": "sala/servidor/sala.js · alarm() · Carlos lo reportó y se repitió a las 17 h",
+      "senales": [
+        "se borró todo",
+        "desapareció la conversación",
+        "estaba vacío",
+        "perdí el historial",
+        "qué onda se borró",
+        "se borró otra vez",
+        "se vació sola",
+        "la alarma borró todo"
+      ],
+      "vecinas": [
+        "la-sala-se-borraba-sola",
+        "errores-que-mienten",
+        "conectado-no-es-vivo",
+        "la-prueba-paso-sin-que-existiera-el-caso"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "tarea-programada-que-dispara-sin-correr",
+      "titulo": "Una tarea programada atada a una sesión dormida dispara sin correr",
+      "gravedad": "alta",
+      "sintoma": "La guardia de 24/7 disparó 82 veces en tres días y no corrió ni una. Las 82 llegaron de golpe cuando la sesión despertó por otra razón.",
+      "causa": "La rutina estaba atada a una sesión existente (persist_session). Eso NO despierta a la sesión: le encola el mensaje. Dormida la sesión, el mensaje se apila y nadie lo lee.",
+      "porque": "«Disparar» y «correr» son dos cosas distintas y el panel sólo enseña la primera: enabled, next_run_at y last_fired_at se ven idénticos en una guardia que trabaja y en una que no. Y como la guardia está escrita para callarse cuando no hay nada, su silencio se leía como «no había mensajes» y significaba «nunca desperté».",
+      "arreglo": "Que cada disparo cree una sesión NUEVA, que sí arranca. Pero antes hay que dejarle en el entorno lo que necesita para trabajar —la llave— porque una sesión nueva no hereda lo que se pasó a mano por el chat: si no, se cambia una guardia dormida por una sorda.",
+      "comoCazarlo": "No se caza en el panel de la rutina: ahí se ve sana. Se caza buscando su RASTRO donde debía trabajar — un renglón en el hilo, un commit, un archivo tocado. Si en tres días no dejó ninguno, no corrió.",
+      "consejo": "Vale para cualquier cosa automática: cron, webhooks, colas, respaldos. Programada, habilitada y disparada son tres estados que se cumplen enteros mientras el trabajo no ocurre ni una vez.",
+      "salioDe": "trig · Guardia de La Sala · 82 disparos encolados del 28 ago al 1 sep",
+      "senales": [
+        "no me avisó",
+        "la tarea no hizo nada",
+        "está programada y no corre",
+        "se juntaron todos los avisos",
+        "el cron no sirve"
+      ],
+      "vecinas": [
+        "borrado-callado-parece-sala-nueva",
+        "proceso-huerfano-reportado-muerto",
+        "errores-que-mienten",
+        "reporte-de-agente-sin-evidencia"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "una-alarma-dos-dueños",
+      "titulo": "Dos relojes en una sola alarma: el que suena antes ejecuta lo del otro",
+      "gravedad": "alta",
+      "sintoma": "La sala se vació dos veces en un día con el olvido puesto en treinta días.",
+      "causa": "Un Durable Object tiene UNA alarma. La compartían el olvido (30 días) y la vigilia (minutos). Al sonar por la vigilia, el código preguntaba «¿hubo cambio?» en vez de «¿de quién era este disparo?», y con un no seguía de largo hasta el borrado del otro.",
+      "porque": "Cuando dos plazos comparten un disparador, el disparador deja de decir POR QUÉ sonó. Y el código que va después asume que sonó por lo suyo, porque cuando se escribió era lo único que había.",
+      "arreglo": "Que cada tarea verifique su propia condición MIDIENDO, no por el hecho de que sonó. Ninguna acción destructiva debe colgar de «llegó el turno»: debe colgar de «se cumple lo que la justifica».",
+      "comoCazarlo": "Cuenta cuántas cosas distintas cuelgan del mismo disparador. Si son dos o más, cada rama tiene que empezar comprobando lo suyo. Y la prueba se hace disparando por el motivo AJENO y exigiendo que no pase nada.",
+      "consejo": "Vale para cualquier cron, cola o temporizador compartido. El disparo dice CUÁNDO, nunca POR QUÉ.",
+      "salioDe": "sala/servidor/sala.js · el olvido y la vigilia compartían setAlarm",
+      "senales": [
+        "se ejecutó lo que no tocaba",
+        "el cron hizo de más",
+        "borró sin que tocara",
+        "dos tareas un temporizador"
+      ],
+      "vecinas": [
+        "borrado-callado-parece-sala-nueva",
+        "tarea-programada-que-dispara-sin-correr",
+        "la-prueba-paso-sin-que-existiera-el-caso"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "la-prueba-mira-la-memoria-no-el-disco",
+      "titulo": "Una prueba que lee el objeto vivo aprueba un bug que sólo se ve al reiniciar",
+      "gravedad": "alta",
+      "sintoma": "Mutar el código para que volviera a guardar mal NO puso roja la prueba: seguía verde con el defecto puesto.",
+      "causa": "La prueba leía la propiedad en memoria (`s.gente`) y la mutación sólo cambiaba lo que se ESCRIBE al almacenamiento. En memoria el dato seguía correcto; en disco ya no.",
+      "porque": "Después de una operación, la memoria y el disco coinciden casi siempre, así que leer cualquiera de los dos parece lo mismo. Dejan de coincidir justo en el caso que importa: el reinicio.",
+      "arreglo": "Toda prueba de algo que debe SOBREVIVIR se hace contra el almacenamiento, no contra el objeto. Si lo que se afirma es «esto se conserva», la lectura tiene que venir de donde se conserva.",
+      "comoCazarlo": "Mutación: rompe a propósito sólo la escritura. Si la prueba sigue verde, estaba mirando la memoria. Así salió ésta.",
+      "consejo": "Vale igual para cachés, sesiones y estado de UI: «lo tengo aquí» y «quedó guardado» son dos afirmaciones distintas y sólo una sobrevive a un reinicio.",
+      "salioDe": "sala/servidor/pruebas.mjs · la prueba de que el olvido no echa a nadie",
+      "senales": [
+        "pasa la prueba pero falla en producción",
+        "se pierde al reiniciar",
+        "no se guardó",
+        "la mutación no la cazó"
+      ],
+      "vecinas": [
+        "una-alarma-dos-dueños",
+        "la-prueba-paso-sin-que-existiera-el-caso",
+        "mutacion-sin-restaurar",
+        "borrado-callado-parece-sala-nueva"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "borrarlo-del-archivo-no-lo-borra-del-repo",
+      "titulo": "Quitar un dato del archivo no lo quita de la historia, y el repo es público",
+      "gravedad": "alta",
+      "sintoma": "El archivo se ve limpio, con su comentario explicando que el campo va vacío a propósito. El dato sigue siendo legible por cualquiera.",
+      "causa": "Se corrigió la versión de hoy y no los commits donde el dato entró. Git guarda todo lo que pasó, no sólo lo que quedó.",
+      "porque": "El arreglo se siente completo porque el archivo es lo que uno mira. La historia no aparece en ninguna pantalla salvo que se pregunte por ella a propósito.",
+      "arreglo": "Para datos personales o secretos no basta con el commit que los quita: o el repositorio pasa a privado, o se reescribe la historia y se fuerza el empuje —lo segundo rompe las copias de todos y lo autoriza una persona, nunca un agente.",
+      "comoCazarlo": "`git log -S\"<el dato>\" -- <archivo>` dice en qué commits vivió. Si devuelve algo, sigue ahí. Vale igual para llaves, tokens, correos y teléfonos.",
+      "consejo": "Antes de dar por resuelta una fuga, pregúntate si arreglaste el archivo o el repositorio. Son dos cosas y sólo una la ve el que clona.",
+      "salioDe": "avisos/datos.js · ocho maestros reales, campo que no leía nadie",
+      "senales": [
+        "ya lo quité",
+        "el archivo está limpio",
+        "se me fue una llave",
+        "datos personales en el repo",
+        "lo borré del código"
+      ],
+      "vecinas": [
+        "la-prueba-mira-la-memoria-no-el-disco",
+        "decision-llaves-fuera-del-repo",
+        "decision-repos-publicos",
+        "errores-que-mienten"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "deducir-una-cosa-y-escribir-otra",
+      "titulo": "El sistema mide silencio y escribe un diagnóstico que no puede saber",
+      "gravedad": "alta",
+      "sintoma": "La mesa anunció «se quedó sin cuota, vuelve en 3 h 30» de un agente que estaba trabajando. El otro agente lo relevó de buena fe y Carlos quedó esperando a alguien que nunca se fue.",
+      "causa": "La vigilia mide UNA cosa —«no da señales aquí»— y el texto afirmaba DOS que no puede medir: que se cayó y que fue la cuota. Silencio en la mesa no es estar muerto: se puede estar trabajando duro sin hablar.",
+      "porque": "Al escribir el aviso uno redacta la explicación más probable, no el hecho observado. Y la explicación probable, dicha en indicativo, se lee como dato — sobre todo cuando la repite alguien más.",
+      "arreglo": "Que el texto diga lo medido y ofrezca la causa como hipótesis, no como hecho. La marca de dato-deducido en el evento ya existía; lo que faltaba era que el TEXTO lo dijera, porque el texto es lo que la gente lee.",
+      "comoCazarlo": "Lee el aviso y pregunta: ¿qué de esto midió el sistema y qué lo supuso? Si el aviso no distingue, alguien lo va a repetir como hecho. Aquí pasó en menos de una hora.",
+      "consejo": "Vale para cualquier alerta automática: monitoreo, antifraude, salud, moderación. Una suposición en indicativo es una mentira con retraso.",
+      "salioDe": "sala/servidor/sala.js · la vigilia me marcó topado mientras arreglaba esa misma sala",
+      "senales": [
+        "dice que me fui y aquí estoy",
+        "el sistema dijo que",
+        "marcó mal a alguien",
+        "por qué dice eso de mí"
+      ],
+      "vecinas": [
+        "borrado-callado-parece-sala-nueva",
+        "una-alarma-dos-dueños",
+        "reporte-de-agente-sin-evidencia",
+        "conectado-no-es-vivo"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "el-doble-de-pruebas-guarda-por-referencia",
+      "titulo": "Un almacenamiento de mentiras que guarda por referencia aprueba todo lo que no se persiste",
+      "gravedad": "alta",
+      "sintoma": "Se quitó del código la escritura a disco y las 290 pruebas siguieron verdes.",
+      "causa": "El doble guardaba y devolvía LA MISMA referencia, así que el objeto «en disco» y el objeto vivo eran uno solo. Cambiar la memoria cambiaba lo guardado sin pasar por ningún `put`.",
+      "porque": "Un Map es lo que uno escribe cuando quiere un almacenamiento de mentiras rápido, y funciona para todo menos para lo único que ese doble tiene que representar: que guardar es COPIAR. El de verdad serializa.",
+      "arreglo": "Que el doble copie al entrar y al salir (structuredClone). Con eso, «lo tengo en memoria» y «quedó guardado» vuelven a ser dos cosas distintas dentro de la prueba, como lo son en producción.",
+      "comoCazarlo": "Quita del código una escritura a disco a propósito. Si ninguna prueba se pone roja, tu doble está mintiendo, no tu código.",
+      "consejo": "Un doble que es más permisivo que la cosa real convierte toda la suite en decorado. Vale igual para relojes, redes, colas y sistemas de archivos falsos.",
+      "salioDe": "sala/servidor/pruebas.mjs · salió al mutar la persistencia de `visto`",
+      "senales": [
+        "la mutación no la cazó",
+        "pasa la prueba y falla en producción",
+        "el mock no falla nunca",
+        "se pierde al reiniciar"
+      ],
+      "vecinas": [
+        "la-prueba-mira-la-memoria-no-el-disco",
+        "la-prueba-paso-sin-que-existiera-el-caso",
+        "deducir-una-cosa-y-escribir-otra",
+        "probar-contra-una-copia-congelada"
+      ]
+    },
+    {
+      "clase": "error",
+      "id": "endswith-sobre-nombres-de-archivo",
+      "titulo": "«pruebas-libro.mjs» TERMINA en «libro.mjs», y por eso el archivo se creyó ejecutado",
+      "gravedad": "media",
+      "sintoma": "Al correr las pruebas, el módulo importado imprimió su modo de uso y salió con código 2 antes de comprobar nada. Cero pruebas corridas y ni un error claro.",
+      "causa": "El guardián del CLI preguntaba `process.argv[1].endsWith('libro.mjs')`. Al importarlo desde `pruebas-libro.mjs`, ese nombre TERMINA en `libro.mjs`, así que el módulo se creyó invocado desde la terminal.",
+      "porque": "`endsWith` sobre un nombre de archivo es una coincidencia PARCIAL disfrazada de igualdad, y el prefijo que la rompe —«pruebas-»— es justo el que uno le pone al archivo que lo prueba. O sea que el defecto aparece exactamente cuando escribes la prueba.",
+      "arreglo": "Comparar la ruta ENTERA: `fileURLToPath(import.meta.url) === join(process.argv[1])`. Igualdad, no terminación.",
+      "comoCazarlo": "Si un módulo se comporta distinto al importarlo que al ejecutarlo, mira su guardián de CLI. Y desconfía de todo `endsWith`/`startsWith`/`includes` que esté haciendo el trabajo de un `===`.",
+      "consejo": "Vale igual para rutas, dominios y prefijos de permisos: `banco.com.atacante.com` empieza igual que el bueno y `mi-admin` termina en `admin`.",
+      "salioDe": "empresa/libro.mjs · el guardián del CLI se disparó al importarlo desde las pruebas",
+      "senales": [
+        "la prueba no corre",
+        "sale el modo de uso solo",
+        "se ejecuta al importarlo",
+        "exit code 2 sin explicación"
+      ],
+      "vecinas": [
+        "la-prueba-paso-sin-que-existiera-el-caso",
+        "el-doble-de-pruebas-guarda-por-referencia",
+        "errores-que-mienten"
+      ]
+    },
+    {
+      "id": "vigilar-en-silencio-parece-estar-muerto",
+      "titulo": "La guardia corría cada hora y la sala anunciaba que yo había muerto",
+      "gravedad": "alta",
+      "sintoma": "Una persona pregunta si el agente sigue vivo. El sitio publica avisos de «sin señales desde hace horas» mientras el agente revisa puntualmente y no encuentra nada que hacer.",
+      "causa": "El vigilante LEÍA sin anunciarse: usaba la ruta que devuelve el hilo, que no refresca la presencia. Sólo la de espera lo hace.",
+      "porque": "La regla «si no hay nada, termina en silencio» es buena contra el ruido, y nadie piensa que el silencio se vaya a leer como ausencia. Cuanto mejor se portaba el vigilante, más muerto parecía.",
+      "arreglo": "Que la ronda refresque la presencia en vez de sólo leer. Una llamada de espera corta hace las dos cosas: deja señal y trae lo nuevo.",
+      "comoCazarlo": "Mirar el `visto` del propio agente desde fuera, como lo ve otro. Si no se mueve entre rondas, las rondas son invisibles.",
+      "consejo": "Vigilar en silencio y no estar se ven igual desde afuera. El que paga la diferencia es quien pregunta si pasó algo.",
+      "senales": [
+        "dejaste de trabajar",
+        "sin señales",
+        "¿sigues ahí?",
+        "aparece fuera y está activo"
+      ],
+      "salioDe": "Carlos: «oye vi que dejaste de trabajar en la sala todo bien?». Medido: mi último visto era de seis horas antes, con la guardia habiendo corrido seis veces."
+    },
+    {
+      "id": "pgrep-que-se-encuentra-a-si-mismo",
+      "titulo": "`pgrep -f oir.py` encontraba el comando que lo estaba buscando",
+      "gravedad": "alta",
+      "sintoma": "Una comprobación de «¿sigue vivo el proceso?» dice que sí siempre, incluso con el proceso muerto desde hace horas.",
+      "causa": "`pgrep -f` mira la línea de comando ENTERA de cada proceso, y la del propio shell que lo ejecuta contiene el patrón buscado.",
+      "porque": "Es la forma más corta de escribirlo y funciona en una terminal interactiva, donde el patrón no queda en la línea de otro proceso.",
+      "arreglo": "Anclar a cómo arranca de verdad: `ps -eo args | grep -E \"^python3 .*oir\\.py\"`. Ojo: el truco del corchete NO basta si el corchete también viaja en la línea que busca.",
+      "comoCazarlo": "Correr la comprobación con el proceso apagado a propósito. Si sigue diciendo que vive, se encuentra a sí misma.",
+      "consejo": "Una comprobación que puede encontrarse a sí misma no es una comprobación: es un espejo.",
+      "senales": [
+        "dice que corre y no corre",
+        "pgrep siempre encuentra algo",
+        "el proceso murió y no me enteré"
+      ],
+      "salioDe": "El timbre de La Sala: llevaba horas muerto y cada ronda de la guardia informaba «colgado»."
     }
   ]
 }

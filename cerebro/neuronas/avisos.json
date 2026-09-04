@@ -1,0 +1,160 @@
+{
+  "area": "avisos",
+  "nombre": "Avisos y notificaciones",
+  "que": "Interrumpir a alguien: cuándo vale la pena, cuánto dura, y qué pasa cuando llegan varios.",
+  "neuronas": [
+    {
+      "id": "aviso-que-desaparece-antes-de-leerse",
+      "titulo": "El mensaje se va antes de terminar de leerlo",
+      "gravedad": "media",
+      "sintoma": "Aparece un aviso, se empieza a leer y desaparece.",
+      "causa": "La duración es fija y corta, sin relación con la longitud del texto.",
+      "porque": "Se ajusta con un texto de prueba corto.",
+      "arreglo": "Duración según la longitud, con un mínimo. Y lo importante no se va solo: se cierra.",
+      "comoCazarlo": "Leer el aviso más largo en voz alta y cronometrar.",
+      "consejo": "Si el aviso lleva una acción, no puede desaparecer solo.",
+      "senales": [
+        "no me dio tiempo de leer",
+        "desapareció muy rápido",
+        "¿qué decía?"
+      ],
+      "salioDe": "Práctica de avisos temporales; la duración por longitud es la regla mínima."
+    },
+    {
+      "id": "avisos-que-se-apilan-y-tapan",
+      "titulo": "Llegan cinco avisos y tapan la interfaz",
+      "gravedad": "media",
+      "sintoma": "Una racha de mensajes cubre la esquina y no deja usar nada.",
+      "causa": "No hay tope ni agrupación: cada evento crea su aviso.",
+      "porque": "Uno a uno funciona, y la racha sólo aparece en producción.",
+      "arreglo": "Tope de avisos visibles, agrupación de los repetidos y una salida para verlos todos.",
+      "comoCazarlo": "Provocar diez eventos seguidos.",
+      "consejo": "«3 archivos subidos» dice lo mismo que tres avisos y ocupa un tercio.",
+      "senales": [
+        "se llenó de avisos",
+        "no puedo tocar nada",
+        "salen muchos mensajes"
+      ],
+      "salioDe": "La pila de avisos del banco de pruebas, con tope y salida por deslizamiento."
+    },
+    {
+      "id": "aviso-que-empuja-el-contenido",
+      "titulo": "El aviso mueve lo que estaba leyendo",
+      "gravedad": "media",
+      "sintoma": "Aparece una barra arriba y todo el contenido baja de golpe.",
+      "causa": "El aviso ocupa sitio en el flujo en vez de superponerse.",
+      "porque": "Ponerlo en el flujo es lo más simple y no tapa nada.",
+      "arreglo": "Superponer, o reservar el hueco desde el principio.",
+      "comoCazarlo": "Provocar el aviso mientras se lee algo y mirar si el texto salta.",
+      "consejo": "Es la misma causa que el salto de imagen: algo que llega y ocupa sitio que no estaba reservado.",
+      "senales": [
+        "salta el contenido cuando sale el aviso",
+        "se mueve todo",
+        "perdí el renglón"
+      ],
+      "salioDe": "El caso de la consola del banco, que se aparta con transform y no empuja."
+    },
+    {
+      "id": "notificacion-para-lo-que-no-urge",
+      "titulo": "Se notifica todo y la gente lo apaga",
+      "gravedad": "media",
+      "sintoma": "El permiso de notificaciones se revoca o se ignoran todas.",
+      "causa": "Se usa el canal más intrusivo para cosas que podían esperar.",
+      "porque": "Cada área quiere su notificación y ninguna se siente prescindible por sí sola.",
+      "arreglo": "Reservar la interrupción para lo que la persona necesita saber AHORA. El resto, dentro de la aplicación.",
+      "comoCazarlo": "Contar cuántas notificaciones se mandan por semana y cuántas provocan una acción.",
+      "consejo": "Pedir el permiso al entrar, sin contexto, es la forma más rápida de perderlo.",
+      "senales": [
+        "apagué las notificaciones",
+        "son demasiadas",
+        "no sirven de nada"
+      ],
+      "salioDe": "La sala: el permiso se pide con un gesto de la persona y sólo se avisa si la pestaña no está delante."
+    },
+    {
+      "id": "vibrar-y-sonar-sin-medida",
+      "titulo": "Vibra y suena en cada evento",
+      "gravedad": "baja",
+      "sintoma": "El teléfono vibra tanto que se silencia la aplicación entera.",
+      "causa": "Cada mensaje dispara vibración y sonido, sin distinguir importancia ni repetición.",
+      "porque": "El efecto se prueba con un evento y se siente bien.",
+      "arreglo": "Distinguir: patrón corto para lo secundario, sólo la primera vez para lo repetido, y nada si la persona ya está mirando.",
+      "comoCazarlo": "Simular una racha y contar vibraciones.",
+      "consejo": "Que alguien esté escribiendo no merece el mismo aviso que un mensaje entregado.",
+      "senales": [
+        "vibra demasiado",
+        "silencié la app",
+        "suena por todo"
+      ],
+      "salioDe": "La sala: vibración distinta para mensaje y para «está escribiendo», y sólo la primera vez."
+    },
+    {
+      "id": "aviso-que-solo-llega-con-la-app-abierta",
+      "titulo": "Los avisos funcionaban con la app abierta, que es cuando no hacen falta",
+      "gravedad": "alta",
+      "sintoma": "Se enciende «avisos», se prueba y suena. Con el teléfono en el bolsillo y la app cerrada no llega nada, y nadie sabe si es que no escribieron.",
+      "causa": "`new Notification(...)` desde la página sólo vive mientras la pestaña vive. En cuanto se cierra, ese camino no existe.",
+      "porque": "Se prueba con la app delante, que es el único momento en que ese camino funciona — y también el único en que el aviso sobra.",
+      "arreglo": "Web Push: un service worker que sigue despierto, un par de llaves VAPID y que el servidor firme y mande el aviso. Son dos caminos distintos y hacen falta los dos.",
+      "comoCazarlo": "Cerrar la app de verdad —no cambiar de pestaña— y que alguien escriba.",
+      "consejo": "Si el aviso sólo llega con la app abierta, no es un aviso: es un adorno.",
+      "senales": [
+        "no me llegan las notificaciones",
+        "con la app cerrada no suena",
+        "sólo avisa si la tengo abierta"
+      ],
+      "salioDe": "Carlos lo marcó aparte: «las notificaciones de la sala tmb son importantes». Al revisar, el hueco era ése."
+    },
+    {
+      "id": "suscripcion-de-push-atada-a-una-llave-muerta",
+      "titulo": "La suscripción de push seguía viva y firmada con una llave que ya no era",
+      "gravedad": "alta",
+      "sintoma": "Todo dice que sí —el botón, el permiso, la suscripción guardada— y ningún aviso llega. El servidor recibe 403 sin explicación.",
+      "causa": "Una suscripción del navegador queda atada PARA SIEMPRE a la llave pública con la que nació. Si el servidor regeneró su par, `subscribe()` devuelve la vieja tal cual y las firmas nuevas ya no le cuadran.",
+      "porque": "`getSubscription()` devuelve algo válido, así que parece que no hay nada que hacer. Nadie compara la llave.",
+      "arreglo": "Comparar `sus.options.applicationServerKey` con la pública que da el servidor; si no coinciden, `unsubscribe()` y volver a suscribirse.",
+      "comoCazarlo": "Borrar el almacenamiento del servidor para que genere llaves nuevas, y probar sin tocar el navegador.",
+      "consejo": "Otra vez lo mismo: algo que informa un estado y está en otro. Aquí el disfraz es una suscripción viva atada a una llave muerta.",
+      "senales": [
+        "dejaron de llegar los avisos",
+        "el push da 403",
+        "estaba suscrito y ya no llega"
+      ],
+      "salioDe": "Los avisos de La Sala. La sala se olvida a los seis meses y con ella su par de llaves; sin esto, quedaba un teléfono mudo para siempre."
+    },
+    {
+      "id": "push-con-texto-que-llega-y-se-descarta",
+      "titulo": "El aviso con texto mal cifrado llega y el teléfono lo tira en silencio",
+      "gravedad": "alta",
+      "sintoma": "El servicio de push contesta 201, todo parece bien, y en el teléfono no aparece ninguna notificación.",
+      "causa": "El contenido de un push va cifrado (RFC 8291). Si el orden de las dos públicas en el `info` está cambiado, o falta el delimitador 0x02 al final del registro, el navegador no puede descifrarlo y descarta el aviso sin avisar a nadie.",
+      "porque": "El 201 es del servicio de push, que sólo confirma que RECIBIÓ el bulto. Nadie en la cadena valida que se pueda abrir.",
+      "arreglo": "En el `info` va primero la pública del navegador y después la nuestra. El registro termina en 0x02. Y probarlo DESCIFRANDO, no comprobando que no truene.",
+      "comoCazarlo": "Una prueba que haga de navegador: generar una pareja P-256, cifrar contra ella, descifrar con la privada y comparar el texto. Con acentos y emoji.",
+      "consejo": "Cuando el fallo es silencioso en toda la cadena, la única prueba que vale es deshacer lo hecho y comparar.",
+      "senales": [
+        "el push da 201 y no llega",
+        "la notificación no aparece",
+        "sale sin texto"
+      ],
+      "salioDe": "Lo pidió Carlos en cuanto los avisos empezaron a llegarle: «una vista previa de quien escribió y un poco del texto»."
+    },
+    {
+      "id": "recortar-texto-parte-el-emoji",
+      "titulo": "El recorte partió un emoji y dejó medio carácter en la pantalla de bloqueo",
+      "gravedad": "media",
+      "sintoma": "Un aviso recortado termina en un cuadrito o un rombo con signo de interrogación.",
+      "causa": "`slice` corta por unidades UTF-16, y un emoji ocupa dos. Cortar en medio deja un sustituto suelto que no es ningún carácter.",
+      "porque": "`length` de una cadena suena a «cuántas letras» y son unidades UTF-16. Con texto en español sin emoji nunca se nota.",
+      "arreglo": "Recortar sobre `[...cadena]`, que itera por puntos de código.",
+      "comoCazarlo": "Un texto de puros emoji, más largo que el límite. Y ojo con la prueba: un sustituto SUELTO mide 1 dentro del rango; el emoji entero también empieza en ese rango y no está roto.",
+      "consejo": "La prueba de esto es fácil de escribir mal en la misma dirección que el código: la primera versión mía daba por roto un emoji intacto.",
+      "senales": [
+        "sale un cuadrito al final",
+        "se corta raro el texto",
+        "el emoji se ve mal"
+      ],
+      "salioDe": "El recado de los avisos de La Sala, escribiendo su prueba."
+    }
+  ]
+}

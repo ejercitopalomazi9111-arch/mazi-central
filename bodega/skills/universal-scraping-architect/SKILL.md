@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/universal-scraping-architect/skills/universal-scraping-architect/SKILL.md

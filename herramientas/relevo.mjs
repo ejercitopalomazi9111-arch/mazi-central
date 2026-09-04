@@ -193,7 +193,7 @@ const recorte = (t) => String(t).replace(/\s+/g, ' ').slice(0, 130);
    Se reusa `/estado`, que ya existe y ya publica un evento `limite` con la
    hora de regreso. Sin esto, el relevo cambia de corredor en silencio y nadie
    se entera de por qué de repente contesta otro modelo. */
-async function avisarSala(prov, espera, clase){
+export async function avisarSala(prov, espera, clase){
   const S = (process.env.MAZI_SERVIDOR || '').replace(/\/$/, '');
   const sala = (process.env.MAZI_SALA || '').toUpperCase();
   const yo = process.env.MAZI_YO;
@@ -226,7 +226,7 @@ export async function disponibles(){
   });
 }
 
-async function marcar(id, clase, espera){
+export async function marcar(id, clase, espera){
   const est = await leerEstado();
   est[id] = { clase, hasta: ahora() + espera, desde: ahora() };
   await guardarEstado(est);

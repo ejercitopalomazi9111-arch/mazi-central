@@ -156,7 +156,7 @@
         "pieza-sala",
         "verificar-lo-publicado"
       ],
-      "salioDe": "sala/servidor · `cerebro.neuronas` llegaba `undefined` desde `cerebro/todo.json` y la búsqueda contestaba [] sin quejarse"
+      "salioDe": "El Cerebro · contestaba vacío a todos los agentes en silencio, y parecía que no tenía nada guardado"
     },
     {
       "id": "deuda-sin-dueno",
@@ -185,7 +185,7 @@
         "prueba-de-un-solo-caso",
         "reproducir-antes-de-arreglar"
       ],
-      "salioDe": "fadori/mostrador.html · `entregar()` no apuntaba la deuda de un pedido levantado de a pie (`abrirDeAPie` nace con `alumno: null`)"
+      "salioDe": "Fadori · «no está guardando las deudas» — se entregaba el pedido y el faltante se evaporaba"
     },
     {
       "id": "editar-en-dist-y-perderlo",
@@ -212,7 +212,7 @@
         "pieza-mazi-central",
         "verificar-lo-publicado"
       ],
-      "salioDe": "mazi-central · un `cd` a `dist/` de tres comandos antes dejó ahí el cursor y la ruta relativa escribió en la copia generada"
+      "salioDe": "Guerra de Puercos y La Sala · trabajo hecho que el siguiente build borró sin avisar"
     },
     {
       "id": "presencia-que-se-apaga-sola",
@@ -241,7 +241,7 @@
         "conectado-no-es-vivo",
         "pruebas-que-no-prueban-nada"
       ],
-      "salioDe": "sala/index.html · la esquina pintaba el websocket y el chip de cada quien se calculaba con `visto`, que sólo refrescaban las rutas de hablar"
+      "salioDe": "La Sala · alguien esperó 150 segundos a un agente que la mesa pintaba dormido mientras escuchaba"
     },
     {
       "id": "identidad-nueva-en-cada-entrada",
@@ -251,9 +251,9 @@
       "sintoma": "La lista de gente de La Sala se llena de copias de la misma persona —«Carlos», «Carlos», «Carlos»— casi todas apagadas. Recargar la página o abrir otra pestaña crea una más.",
       "causa": "El id se armaba con `Math.random()` en cada entrada: `web-carlos-a3f1`, `web-carlos-o94t`… Nada lo guardaba, así que cada visita era un participante nuevo para el servidor.",
       "porque": "Con una sola sesión de prueba no se nota: el duplicado aparece hasta la SEGUNDA entrada, y las pruebas entraban una vez. Es un defecto que sólo sale usándolo dos días seguidos.",
-      "arreglo": "El id se guarda en localStorage con la llave `sala-yo:<SALA>:<nombre>` y se reutiliza. Por sala Y por nombre a propósito: entrar como «Carlos» a la misma sala siempre debe ser el mismo Carlos, pero con otro nombre es otra persona — así se puede prestar el teléfono sin robarle la identidad a nadie.",
+      "arreglo": "El id se guarda en localStorage y se reutiliza. ⚠ LA LLAVE ES SÓLO LA SALA (`sala-yo:<SALA>`), NO la sala más el nombre. Meter el nombre en la llave fue el primer intento y creó un defecto peor — está en la neurona `identidad-colgada-del-nombre`. Entrar con otro nombre RENOMBRA al mismo participante en vez de crear uno nuevo.",
       "comoCazarlo": "Entrar dos veces seguidas y contar la gente. Si sale dos veces el mismo nombre, la identidad no se está recordando.",
-      "consejo": "Un identificador que se genera al azar sin guardarse no identifica: numera visitas. Si algo tiene que ser «el mismo» entre sesiones, se persiste la primera vez y se lee después.",
+      "consejo": "Un identificador que se genera al azar sin guardarse no identifica: numera visitas. Y la llave con la que lo guardas no puede incluir un dato que el usuario puede cambiar o dejar vacío, porque entonces vuelve a numerar visitas.",
       "toca": [
         "sala/index.html"
       ],
@@ -264,10 +264,11 @@
         "copias de la misma persona"
       ],
       "vecinas": [
-        "presencia-que-se-apaga-sola",
-        "pieza-sala"
+        "identidad-colgada-del-nombre",
+        "pieza-sala",
+        "presencia-que-se-apaga-sola"
       ],
-      "salioDe": "sala/index.html · el id se armaba con `Math.random()` en cada entrada y nada lo guardaba"
+      "salioDe": "La Sala · Carlos: «me marca que tú, yo y otro yo no estamos conectados» — dos de esos eran él"
     },
     {
       "id": "la-sala-se-borraba-sola",
@@ -295,7 +296,446 @@
         "presencia-que-se-apaga-sola",
         "pruebas-que-no-prueban-nada"
       ],
-      "salioDe": "sala/servidor · la alarma del Durable Object llamaba `deleteAll()` y sólo se rearmaba desde `guardar()`, o sea sólo al hablar"
+      "salioDe": "La Sala · GRUPAZ se vació sola con todo y llaves una hora después de fundarse"
+    },
+    {
+      "id": "encuadre-sin-nodos-deja-nan",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Picar la vista de red antes de que cargaran los datos la dejaba en negro para siempre",
+      "sintoma": "La red del Cerebro se ve completamente vacía —sólo el fondo de galaxia— y ya no vuelve: ni arrastrando, ni con zoom, ni cambiando de vista y regresando.",
+      "causa": "`encuadrarRed()` calcula el encuadre con `Math.max(...xs)`. Con la lista VACÍA eso devuelve -Infinity, la resta da NaN, y NaN se queda pegado en `vista.k`, `vista.x` y `vista.y`. Todo lo que se dibuje después se multiplica por NaN y no aparece nada.",
+      "porque": "Sólo pasa si alguien toca «RED» ANTES de que baje `todo.json`. En una computadora eso es un parpadeo y nunca se ve; en un teléfono con señal mala es un segundo largo, y ahí sí se alcanza a picar. Es un bug que sólo existe en el hueco entre que la página pinta y que llegan los datos.",
+      "arreglo": "Una guarda de una línea al principio: si no hay nodos, no se encuadra. El estado se queda intacto y el siguiente encuadre —cuando ya hay datos— funciona.",
+      "comoCazarlo": "Medir un número del estado en la prueba, no sólo mirar la pantalla. Salió imprimiendo `vista.k` antes y después de un zoom: decía NaN, y de ahí se llegó a la causa. Una captura sola sólo habría dicho «se ve negro».",
+      "consejo": "`Math.max(...[])` es -Infinity, no un error. Toda función que encuadre, escale o normalice a partir de una lista necesita saber qué hace cuando la lista viene vacía — y ese caso llega siempre, aunque sea por un segundo, mientras algo carga.",
+      "toca": [
+        "cerebro/index.html"
+      ],
+      "senales": [
+        "la red se ve vacía",
+        "se puso todo negro",
+        "no se ve nada en la red",
+        "se rompió el mapa"
+      ],
+      "vecinas": [
+        "pieza-cerebro",
+        "ver-la-pantalla"
+      ],
+      "salioDe": "El Cerebro · la vista de red quedó en negro PARA SIEMPRE y sin un solo error en consola"
+    },
+    {
+      "id": "identidad-colgada-del-nombre",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Arreglar los duplicados con una llave que incluye el nombre los vuelve a crear",
+      "sintoma": "La lista de gente sigue llenándose de copias aunque la identidad «ya se guarda». Entre las copias aparece una con un nombre que nadie escribió — «Alguien».",
+      "causa": "La identidad se guardó bajo `sala-yo:<SALA>:<nombre>`, con el nombre DENTRO de la llave. El campo del nombre tenía `|| 'Alguien'` como respaldo, así que entrar con el campo vacío daba otro nombre → otra llave → otro participante.",
+      "porque": "La llave con el nombre se puso por una razón buena (prestar el teléfono sin robar identidad) y el respaldo `|| 'Alguien'` por otra razón buena (que nadie se quede afuera por no escribir). Cada una está bien sola; juntas se multiplican. Y el campo se queda vacío justo cuando el usuario no está poniendo atención, que es casi siempre.",
+      "arreglo": "La llave es SÓLO la sala. Si el nombre cambia, se renombra al mismo id en vez de crear otro. Se quita el nombre por defecto: campo vacío = el último nombre usado en esa sala, y si no hay, se pide. Borrar la identidad vive en «quitar la sala», no en «salir».",
+      "comoCazarlo": "No se ve leyendo el código: se ve entrando, cerrando y volviendo a entrar cinco veces con un servidor que apunte a quién ve entrar. `sala/pruebas-identidad.mjs` hace exactamente eso.",
+      "consejo": "Cuando una llave de almacenamiento incluye un dato que el usuario escribe, la pregunta que hay que hacerse es qué pasa cuando ese dato viene vacío, con otra mayúscula o con un espacio de más. Cada variante es un registro nuevo.",
+      "toca": [
+        "sala/index.html",
+        "sala/pruebas-identidad.mjs"
+      ],
+      "senales": [
+        "me pone un nuevo usuario",
+        "aparece Alguien",
+        "sigo saliendo repetido",
+        "cada vez que entro se crea otro"
+      ],
+      "vecinas": [
+        "identidad-nueva-en-cada-entrada",
+        "puerta-que-solo-rellena",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · Carlos vio a «Carlos, Carlos y Alguien» en su propia barra, y los tres eran él"
+    },
+    {
+      "id": "puerta-que-solo-rellena",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "Una puerta que rellena los campos pero nunca entra",
+      "sintoma": "«Cada vez que salgo y entro a la app me pide volver a ingresar con mi nombre y el código», aunque los dos campos ya aparezcan llenos.",
+      "causa": "El arranque leía lo guardado y lo ponía en los campos, pero jamás llamaba a la función de entrar. Rellenar no es entrar.",
+      "porque": "En un navegador de escritorio casi no molesta: se abre una vez al día. En una app puesta en la pantalla de inicio, que se cierra y se abre veinte veces, son veinte empujones a una puerta que ya sabía quién eras.",
+      "arreglo": "Si hay identidad guardada para esa sala, se entra solo. Si falla, no se cierra la puerta ni se traga el error: se deja el formulario con el motivo escrito.",
+      "comoCazarlo": "Abrir, entrar, cerrar la pestaña y volver a abrir. Si aparece la puerta, no está entrando sola.",
+      "consejo": "Rellenar un formulario con lo que ya sabes no es lo mismo que actuar con lo que ya sabes. Si tienes todo lo necesario, haz la acción; el formulario es el respaldo, no el camino.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "me pide entrar otra vez",
+        "tengo que escribir el código cada vez",
+        "no me recuerda"
+      ],
+      "vecinas": [
+        "identidad-colgada-del-nombre",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala en la pantalla de inicio del iPhone · veinte empujones al día a una puerta que ya sabía quién era"
+    },
+    {
+      "id": "indicador-que-no-puede-decir-que-no",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "El punto de «conectado» estaba pintado en verde por CSS",
+      "sintoma": "El indicador de conexión dice que estás en línea aunque el websocket esté caído. Sigues escribiendo creyendo que llega.",
+      "causa": "El color estaba en la hoja de estilo, sin nada que lo cambiara, y el texto era una constante: «En línea». Nunca se cableó al estado real del socket.",
+      "porque": "Al construirlo se prueba con conexión. El único caso en que el indicador importa —cuando no hay— es el único que no se prueba.",
+      "arreglo": "El color y el texto los mueve `onopen`/`onerror`/`onclose`. Y el contador de «N en línea» tampoco puede presumir gente conectada cuando el desconectado eres tú: sus señales no te llegan.",
+      "comoCazarlo": "Forzar la caída desde la consola y mirar el color calculado, no la captura. Verde → gris → verde.",
+      "consejo": "Un indicador que no puede mostrar el estado malo no es un indicador: es un adorno. Antes de darlo por hecho, provoca el estado malo y míralo.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "dice conectado y no lo estoy",
+        "el punto siempre está verde",
+        "sin conexión el punto es gris no verde"
+      ],
+      "vecinas": [
+        "presencia-que-se-apaga-sola",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · «si está sin conexión el punto es gris, no verde» — y no había manera de que lo fuera"
+    },
+    {
+      "id": "lista-que-no-cabe-y-no-avisa",
+      "clase": "error",
+      "gravedad": "media",
+      "titulo": "Una tira horizontal esconde a los de más allá sin decirlo",
+      "sintoma": "«El Claude de Luis no aparece» — pero sí está en la sala y el servidor sí lo manda.",
+      "causa": "La lista de gente era una tira con scroll horizontal. En 390px cabían tres fichas; la cuarta quedaba fuera de la pantalla sin ninguna señal de que hubiera más.",
+      "porque": "Se diseña con dos o tres participantes y se ve completa. El defecto nace el día que entra el cuarto, que es el día que la herramienta empieza a servir.",
+      "arreglo": "En columna, agrupada, y con el número total a la vista. Si tiene que ser tira, algo tiene que decir que hay más.",
+      "comoCazarlo": "Capturar con MÁS elementos de los que caben, no con los de siempre. Y comparar el número de elementos pintados contra los visibles.",
+      "consejo": "«No aparece» casi nunca significa que el dato no llegó. Antes de buscar en el servidor, cuenta cuántos se pintaron: si se pintaron todos, el problema es de espacio, no de datos.",
+      "toca": [
+        "sala/index.html"
+      ],
+      "senales": [
+        "no aparece en la lista",
+        "falta uno arriba",
+        "no lo veo conectado"
+      ],
+      "vecinas": [
+        "identidad-colgada-del-nombre",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · dos días creyendo que el Claude de Luis no llegaba a la sala, cuando no cabía en la barra"
+    },
+    {
+      "id": "lector-con-respaldo-oculta-el-error",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Le pegué a una ruta que no existe y me contestó «la sala está vacía»",
+      "sintoma": "Una consulta a un servidor vivo devuelve cero de todo. Parece que se borraron los datos, y están intactos.",
+      "causa": "La ruta estaba mal —era `/api/sala/<código>/hilo` y pedí `/sala/<código>/hilo`— así que el servidor contestó `{\"error\":\"No existe esa ruta.\"}`. Mi lector hacía `j.gente || []` y `j.mensajes || []`: sobre un objeto de error los dos respaldos ganan y salen listas vacías.",
+      "porque": "El respaldo se pone para que el lector no truene con datos incompletos, y hace exactamente eso: no truena. Un error deja de verse como error y pasa por un dato legítimo, que es el peor resultado posible.",
+      "arreglo": "Antes de leer nada, revisar `j.error` y el código HTTP. Si el cuerpo trae `error`, se grita; no se sigue leyendo. Y cuando no se conocen las rutas, se sacan del enrutador —`grep` a los `pathname.match` del worker— en vez de adivinarlas.",
+      "comoCazarlo": "Cuando una consulta devuelva CERO de todo, imprime el cuerpo crudo antes de creerle. Cero es sospechoso: los datos rara vez desaparecen todos juntos.",
+      "consejo": "Un valor por defecto convierte «no sé» en «no hay». Eso está bien para pintar una pantalla y está muy mal para reportar un hecho. Yo estuve a punto de decirle a Carlos que la sala se había borrado.",
+      "toca": [
+        "sala/servidor/index.js",
+        "sala/servidor/sala.js"
+      ],
+      "senales": [
+        "contesta vacío",
+        "se borró la sala",
+        "cero mensajes",
+        "no hay nadie",
+        "ruta que no existe"
+      ],
+      "vecinas": [
+        "errores-que-mienten",
+        "verificar-lo-publicado",
+        "pieza-sala"
+      ],
+      "area": "diagnostico",
+      "salioDe": "La Sala · reporté GRUPAZ vacía con 26 eventos y 4 personas adentro"
+    },
+    {
+      "id": "hidden-no-esconde-un-flex",
+      "titulo": "«hidden» no esconde nada que tenga su propio display",
+      "gravedad": "alta",
+      "sintoma": "El código esconde un botón, la propiedad `.hidden` dice «true», y el botón sigue pintado en la pantalla.",
+      "causa": "`hidden` funciona con una regla del navegador —`[hidden]{display:none}`— de la especificidad más baja que existe. Cualquier `display` que uno escriba en su propio CSS le gana.",
+      "porque": "Se piensa en `hidden` como un interruptor del elemento, y es sólo una regla de hoja de estilo más, que pierde como cualquier otra.",
+      "arreglo": "Agregar `[hidden]{display:none}` a la clase que lo pisa: `.btn[hidden]{display:none}`. No sirve de nada tocar el JavaScript, que ya estaba bien.",
+      "comoCazarlo": "Preguntarle a la PANTALLA y no al código: `!!el.offsetParent` o el alto de su recuadro. `el.hidden` contesta lo mismo que uno acaba de escribir.",
+      "consejo": "Una prueba que le pregunta al código si escondió algo sólo comprueba que el código cree lo mismo que tú. Aquí mintieron dos capas a la vez y se vio en la captura.",
+      "salioDe": "reportes/index.html · el botón «Nuevo» en modo Aviso",
+      "senales": [
+        "lo escondí y sigue ahí",
+        "hidden no funciona",
+        "el botón no se quita"
+      ],
+      "vecinas": [
+        "campo-sin-type",
+        "ids-repetidos-callados"
+      ]
+    },
+    {
+      "id": "ids-repetidos-callados",
+      "titulo": "Dos elementos con el mismo id: el navegador no dice nada y te da el primero",
+      "gravedad": "alta",
+      "sintoma": "Un campo aparece de 0×0 px, o escribes en uno y se llena otro. Sin un solo error en consola.",
+      "causa": "`querySelector(\"#x\")` devuelve el PRIMER elemento con ese id y se sale. El segundo existe, ocupa lugar y nadie lo alcanza nunca.",
+      "porque": "Pasa al juntar dos aplicaciones que se hicieron por separado. Cada una eligió nombres razonables —`fFecha`, `fGrupo`— y razonables quiere decir iguales.",
+      "arreglo": "Prefijo por origen en la que se muda: `avFecha`, `avGrupo`. Y una prueba que CUENTE los ids repetidos en toda la página.",
+      "comoCazarlo": "`const v={},mal=[]; for(const e of document.querySelectorAll(\"[id]\")) v[e.id]?mal.push(e.id):v[e.id]=1;`",
+      "consejo": "Antes de meter una app dentro de otra, se cuentan los ids. Buscarlo después leyendo cuesta horas porque no hay nada que leer.",
+      "salioDe": "reportes/index.html · al meter Avisos adentro",
+      "senales": [
+        "el campo no se llena",
+        "mide cero",
+        "se llena el otro campo"
+      ],
+      "vecinas": [
+        "hidden-no-esconde-un-flex",
+        "nombre-global-repetido"
+      ]
+    },
+    {
+      "id": "nombre-global-repetido",
+      "titulo": "Dos <script> con el mismo `const` matan la página entera, sin pintar nada",
+      "gravedad": "alta",
+      "sintoma": "La página sale en blanco. En consola, un SyntaxError que nombra una variable que sí existe y está bien escrita.",
+      "causa": "Dos `const` con el mismo nombre en el ámbito global —aunque vengan de archivos distintos— son una redeclaración. No es un aviso: es un error de sintaxis, y se lleva TODO el script.",
+      "porque": "Cada archivo se siente su propio mundo. No lo es: un `<script>` clásico comparte el ámbito global con todos los demás.",
+      "arreglo": "Envolver lo que se muda en una función que se llama sola, y dejar cruzar sólo lo que de verdad hace falta. Lo que va en su propio archivo —`datos.js`— se renombra: `TIPOS` pasó a `TIPOS_PEND`.",
+      "comoCazarlo": "Antes de juntar dos apps: `grep -oE \"^const [A-Z_]+\" a.js b.js | sort | uniq -d`.",
+      "consejo": "El módulo resuelve esto solo, pero obliga a servidor. En una app de un archivo, la función que se llama sola cuesta dos renglones y hace lo mismo.",
+      "salioDe": "reportes/index.html · `TIPOS` de reportes contra `TIPOS` de avisos",
+      "senales": [
+        "la página sale en blanco",
+        "ya fue declarada",
+        "syntaxerror y la variable existe"
+      ],
+      "vecinas": [
+        "ids-repetidos-callados"
+      ]
+    },
+    {
+      "id": "replace-se-come-los-dolares",
+      "titulo": "String.replace se come los `$$` del texto de reemplazo",
+      "gravedad": "media",
+      "sintoma": "Un guión que edita código deja `$(...)` donde escribiste `$$(...)`, y a la carga sale «$(...).find is not a function».",
+      "causa": "En el segundo argumento de `replace`, `$$` es la forma de escribir UN dólar. `$&`, `$1` y `$'` también significan otra cosa. El texto se transforma sin avisar.",
+      "porque": "Se usa `replace` como si pegara texto literal. Pega una PLANTILLA.",
+      "arreglo": "`h.split(de).join(a)`, que no interpreta nada. O pasar una función como reemplazo: `replace(de, () => a)`.",
+      "comoCazarlo": "Después de un reemplazo automático, contar: `grep -c '\\$\\$('` antes y después. Si bajó, se lo comió.",
+      "consejo": "Duele justo en un proyecto donde `$` y `$$` son los ayudantes del DOM, o sea en casi todos.",
+      "salioDe": "el guión que reescribió `verVista` en reportes/index.html",
+      "senales": [
+        "find is not a function",
+        "se perdió un signo",
+        "el reemplazo salió mal"
+      ],
+      "vecinas": [
+        "nombre-global-repetido"
+      ]
+    },
+    {
+      "id": "campo-sin-type",
+      "titulo": "`input[type=text]` no agarra un `<input>` sin `type`",
+      "gravedad": "media",
+      "sintoma": "Un campo de texto sale de 21 px de alto, sin fondo ni orilla, mientras los de al lado se ven bien.",
+      "causa": "El navegador TRATA como texto un `<input>` sin `type`, pero el selector `input[type=text]` mira el ATRIBUTO, y ahí no hay nada. El campo se queda sin una sola regla.",
+      "porque": "Se escribe `<input data-c=\"titulo\">` porque funciona —escribe, guarda, todo— y el que falla es el estilo, que es lo último que uno revisa.",
+      "arreglo": "Poner `type=\"text\"` en el marcado, que es lo correcto, Y ensanchar el selector con `input:not([type])`, porque el marcado se puede volver a olvidar y el selector no.",
+      "comoCazarlo": "Medir el alto de todos los controles del panel y marcar los de menos de 44 px. El que no tiene estilo se delata por chaparro.",
+      "consejo": "Es el mismo error que confiar en que el navegador y el CSS entienden lo mismo por «campo de texto». No lo entienden.",
+      "salioDe": "reportes/index.html · el campo «Qué es» de un pendiente",
+      "senales": [
+        "el campo se ve chiquito",
+        "un campo sin fondo",
+        "se ve distinto a los demás"
+      ],
+      "vecinas": [
+        "hidden-no-esconde-un-flex"
+      ]
+    },
+    {
+      "id": "offsetparent-miente-con-fixed",
+      "titulo": "`offsetParent` dice que un elemento fijo está escondido, y está a la vista",
+      "gravedad": "media",
+      "sintoma": "Una comprobación de visibilidad marca como escondidos botones que se ven perfectamente en la captura.",
+      "causa": "`offsetParent` devuelve `null` para todo lo que sea `position:fixed` —y también para `display:none`—. La prueba usa ese `null` como «no se ve», y confunde las dos cosas.",
+      "porque": "`!!el.offsetParent` es el atajo que todo el mundo usa para «¿se ve?», y funciona en el 90% de los casos. Los mandos flotantes son justo el otro 10%.",
+      "arreglo": "Medir de verdad: el recuadro tiene área, cae dentro de la pantalla, el estilo calculado no dice `none`/`hidden`/opacidad 0, y `document.elementFromPoint` en su centro devuelve ese elemento o algo suyo.",
+      "comoCazarlo": "Si la prueba dice «escondido» y la captura dice que no, mira si el elemento o su padre son `position:fixed`.",
+      "consejo": "Lo último también prueba que se puede TOCAR: un botón visible tapado por otra cosa es tan inútil como uno escondido, y `offsetParent` tampoco lo dice.",
+      "salioDe": "entorno/pruebas-mandos.mjs · los mandos del Taller",
+      "senales": [
+        "dice que no se ve y sí se ve",
+        "offsetParent null",
+        "la prueba de visibilidad miente"
+      ],
+      "vecinas": [
+        "hidden-no-esconde-un-flex"
+      ]
+    },
+    {
+      "id": "el-comentario-no-es-el-codigo",
+      "titulo": "Un comentario puede describir una capa de seguridad que el código no tiene",
+      "gravedad": "alta",
+      "sintoma": "Todo el mundo cree que existe una vía de recuperación —una llave maestra, un respaldo, un modo de emergencia— porque está documentada, y no existe.",
+      "causa": "El comentario se escribió con el diseño, el código se escribió con una salida temprana, y nadie volvió a leer los dos juntos. `if(hay) return lo_de_aquí;` nunca llega al paso 2 que el comentario enumera.",
+      "porque": "Un comentario detallado y ordenado se lee como especificación cumplida. Cuanto mejor escrito, más convence — y menos se comprueba.",
+      "arreglo": "Probar la vía documentada, no leerla. Y si de verdad no existe, escribirla: aquí era «primero la llave de la sala, y si no coincide, la maestra».",
+      "comoCazarlo": "Toma cada paso que enumere un comentario y escribe una prueba que lo ejercite. Los que no se puedan escribir son los que no existen.",
+      "consejo": "El daño no es el comentario: es que una puerta de emergencia documentada y ausente se descubre el día que hace falta.",
+      "salioDe": "sala/servidor/sala.js · `cuentaDe` y la llave maestra",
+      "senales": [
+        "el comentario dice que sí y no funciona",
+        "me quedé fuera de mi propia sala",
+        "la llave de respaldo no entra"
+      ],
+      "vecinas": [
+        "offsetparent-miente-con-fixed",
+        "campo-sin-type"
+      ]
+    },
+    {
+      "id": "pre-wrap-dibuja-la-sangria-del-html",
+      "titulo": "Dentro de `white-space: pre-wrap`, la sangría bonita del HTML se pinta",
+      "gravedad": "media",
+      "sintoma": "Un bloque insertado sale con renglones en blanco encima y debajo que nadie escribió.",
+      "causa": "El contenedor respeta los espacios en blanco para conservar los saltos de quien escribió el mensaje. Los saltos y la sangría que uno pone ENTRE etiquetas por legibilidad son texto para ese contenedor, y se dibujan.",
+      "porque": "El HTML se ve perfectamente ordenado. El defecto sólo existe por el `pre-wrap` del padre, que está en otro archivo o a mil líneas de distancia.",
+      "arreglo": "Armar ese marcado en UN solo renglón —concatenando, no con plantilla de varias líneas— y de paso `white-space:normal` en el bloque, como cinturón además de tirantes.",
+      "comoCazarlo": "Medir el alto del bloque contra la suma de sus partes: si sobra mucho, es blanco de relleno.",
+      "consejo": "Pasa siempre que se mete marcado nuevo dentro de un chat, que es donde `pre-wrap` es obligatorio.",
+      "salioDe": "sala/index.html · la caja de código con botón de copiar",
+      "senales": [
+        "salen renglones en blanco",
+        "hay un hueco arriba que no puse",
+        "se ve separado sin razón"
+      ],
+      "vecinas": [
+        "el-comentario-no-es-el-codigo"
+      ]
+    },
+    {
+      "id": "salida-cero-no-es-exito",
+      "titulo": "La herramienta se ve sana y está sorda: curl sale con 0 en un 401",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Un vigilante que debería avisar de mensajes nuevos no avisa nunca, no se queja, y el proceso se ve corriendo.",
+      "causa": "Se revisó el código de salida del cliente HTTP y nada más. curl sale con 0 con CUALQUIER respuesta del servidor: el cuerpo trae {error:…} y el programa lo lee como una respuesta buena a la que le faltan los campos que esperaba. En La Sala, medido: 401 con llave mala, 400 cuando la sala no existe o el código está mal formado. 404 NO aparece en este camino.",
+      "porque": "Un ciclo que espera mensajes usa el SILENCIO para decir «no hay nada». Cuando el error también es silencioso, las dos cosas se ven idénticas — y la que se cree es la buena.",
+      "arreglo": "Que un error en el cuerpo reviente igual que un fallo de red, y que el aviso salga desde el PRIMER intento. Con curl: revisar el JSON, no el código de salida; o pedirle -f, o el código con -w.",
+      "comoCazarlo": "Ponle una llave mala a propósito y mira si grita. Si se queda callado, está sordo. Y apúntalo también a una sala QUE NO EXISTA, no sólo con llave mala: es el caso que aparece DESPUÉS de una rotación, y el que nadie prueba. Cuenta además las peticiones: sin una espera en el camino del error sale un ciclo cerrado — aquí fueron 782 en 5 segundos. La comprobación buena es sobre el CÓDIGO HTTP (curl -w '%{http_code}' o -f), no sobre la salida del proceso ni sobre si el cuerpo trae los campos.",
+      "consejo": "Para que el silencio siga significando silencio, todo lo demás tiene que hacer ruido.\n\nY lo que de verdad hay que saber: ESTE DEFECTO NO APARECE SOLO, APARECE CUANDO ALGO ROTA — sala nueva, llave nueva, dominio nuevo. Y una rotación es justo el momento en que todo el mundo asume que el silencio es porque todavía nadie ha escrito. Por eso puede vivir días.\n\nLo escribimos entre los dos: yo lo sufrí en el vigilante (curl con 0 en un 401) y Godines —el Claude de Luis— en su esperador, que leía el cuerpo y nunca el código. El mismo defecto con dos disfraces. Él además midió los códigos y me corrigió: yo le había dicho 404 y es 400.",
+      "salioDe": "sala/vigilante/oir.py · Carlos: «no los espera pasivamente»",
+      "senales": [
+        "no me avisa",
+        "se quedó callado",
+        "parece que sí corre",
+        "no recibo mensajes",
+        "ya no me contesta",
+        "fundamos sala nueva y dejó de llegarme",
+        "dice que el código no existe"
+      ],
+      "vecinas": [
+        "reproducir-antes-de-arreglar"
+      ]
+    },
+    {
+      "id": "marca-que-espera-el-adios",
+      "titulo": "Un estado efímero que espera un «ya terminé» se queda encendido para siempre",
+      "gravedad": "media",
+      "clase": "error",
+      "sintoma": "«Está escribiendo…», «subiendo…», «en línea» se quedan puestos horas después de que la persona se fue.",
+      "causa": "La marca se enciende con un aviso y se apaga con otro. El segundo aviso lo tiene que mandar justo el que se murió: se le cayó la red, cerró la pestaña, o al agente lo mató el contenedor a media respuesta.",
+      "porque": "Al probarlo siempre se apaga, porque en la prueba nadie se muere. El caso que falla es exactamente el que no se ensaya.",
+      "arreglo": "Guardar una HORA DE VENCIMIENTO en vez de un interruptor, y calcular quién está activo al leer. Así una marca vencida desaparece sin que nadie la barra, y el que se murió no le debe un aviso a nadie.",
+      "comoCazarlo": "Pregunta quién manda el «ya no». Si la respuesta es «el mismo que puede desaparecer», está roto.",
+      "consejo": "Y el reloj no tiene por qué ser uno solo: un humano deja de teclear en segundos y un agente tarda minutos en contestar. Un único reloj o apaga al agente antes de tiempo, o deja al humano encendido de más.",
+      "salioDe": "sala/servidor/sala.js · «está escribiendo…»",
+      "senales": [
+        "se quedó en línea",
+        "sigue diciendo que escribe",
+        "no se apaga",
+        "estado pegado"
+      ],
+      "vecinas": [
+        "conectado-no-es-vivo"
+      ]
+    },
+    {
+      "id": "un-objeto-donde-iba-un-id",
+      "titulo": "Manda la persona entera donde iba su id, y no truena: manda «[object Object]»",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Una función que se ve bien escrita no hace nada. En La Sala: todos aparecían «sin señal» aunque la esquina dijera que había conexión, y la cabecera decía «1 en línea» con cinco adentro.",
+      "causa": "Una variable global que guarda el OBJETO de la persona pero se llama como si fuera su id (`yo`). Al escribir `de: yo` o `encodeURIComponent(yo)`, JavaScript la convierte a texto sin quejarse y manda «[object Object]». El servidor no encuentra a nadie con ese id y contesta un 400 o simplemente no ata el socket.",
+      "porque": "La línea está BIEN escrita: se lee natural y no hay error de sintaxis, de tipos ni de consola. Leyendo el código no se ve. Y `encodeURIComponent` acepta cualquier cosa: no es su trabajo saber que le diste una estructura.",
+      "arreglo": "`yo.id` donde va el id. Y para que no vuelva: una prueba que vigile la FORMA del defecto en vez de cada llamada — que ninguna petición, socket o consola lleve «[object Object]» en toda la sesión. Esa sí caza la próxima.",
+      "comoCazarlo": "Corre las dos mitades juntas —la página contra un servidor de verdad— y mira la red. Un id que en realidad es un objeto sólo se ve cuando alguien lo recibe. Si una global guarda un objeto, que su nombre lo diga.",
+      "consejo": "Este defecto estuvo VIVO en producción y lo reportó Carlos con una captura, no una prueba: «hay 2 Carlos» y todos sin señal. Las pruebas del servidor pasaban y las de la mesa también, porque cada una probaba su mitad con datos puestos a mano.",
+      "salioDe": "sala/index.html · el websocket de La Sala",
+      "senales": [
+        "object Object",
+        "todos sin señal",
+        "dice que no estoy conectado",
+        "la función no hace nada",
+        "manda mal el id"
+      ],
+      "vecinas": [
+        "reproducir-antes-de-arreglar",
+        "ver-la-pantalla"
+      ]
+    },
+    {
+      "id": "id-comparado-contra-cuenta",
+      "titulo": "La excepción del dueño estaba muerta: comparaba un id de sesión contra una cuenta",
+      "gravedad": "alta",
+      "clase": "error",
+      "sintoma": "Un permiso que existe en el código no funciona nunca. El servidor contesta «sólo el dueño puede hacerlo» a quien SÍ es el dueño.",
+      "causa": "La condición comparaba dos cosas de distinta especie: `quien.id` (una sesión, «claude-de-carlos») contra `this.dueno` (una cuenta, «carlos»). Nunca son iguales, así que la rama del permiso no se alcanzaba jamás.",
+      "porque": "JavaScript compara dos textos sin quejarse, y las dos variables se llaman parecido. Y sobre todo: las pruebas usaban una víctima de la MISMA cuenta, y en ese caso manda la comprobación anterior y esta línea ni se mira. El permiso se veía cubierto por pruebas que nunca lo tocaban.",
+      "arreglo": "Comparar cuenta con cuenta. Y revisar todos los usos de esa variable: en el resto del archivo `dueno` sí se comparaba bien, así que la mala era la excepción, no la regla.",
+      "comoCazarlo": "Cuando una comprobación de permisos no dispara nunca, mira de qué ESPECIE es cada lado: id de sesión, cuenta, nombre. Una prueba que sólo ejerce el camino feliz de la misma cuenta no toca la excepción; hay que escribirla con las dos casas.",
+      "consejo": "Salió en la sala de verdad y no leyendo: una sesión de Carlos había quedado registrada bajo la cuenta de Luis y él no la podía sacar de su propia sala. El servidor le negaba el permiso con un mensaje que le decía que pidiera permiso a sí mismo.",
+      "salioDe": "sala/servidor/sala.js · la ruta /echar",
+      "senales": [
+        "dice que no soy el dueño",
+        "no me deja y sí soy",
+        "el permiso no funciona",
+        "sólo el dueño puede"
+      ],
+      "vecinas": [
+        "un-objeto-donde-iba-un-id",
+        "el-comentario-no-es-el-codigo"
+      ]
+    },
+    {
+      "id": "candado-que-puede-dejarte-en-cero",
+      "clase": "decision",
+      "titulo": "Un candado que puede dejarte en cero es peor que lo que evita",
+      "que": "Antes de escribir una guarda de «que no haya dos de esto», se decide cuál de los dos fallos es el caro. Si quedarse en CERO es peor que tener dos, la guarda no puede impedir el arranque: que avise, que registre, que mate al viejo — pero que arranque. Y si aun así puede llegar a cero, hace falta una red aparte que lo vuelva a levantar.",
+      "porque": "Al diseñarla uno piensa en el daño de lo duplicado, que es visible y molesta. El daño de quedarse en cero es invisible: nada avisa, y el silencio se confunde con «no ha pasado nada». Pasó de verdad — una guarda contra esperadores duplicados vio un proceso muriéndose en ese instante, se negó a arrancar el relevo, y dejó a su dueño sordo sin que se enterara.",
+      "alternativas": "Se consideró la guarda estricta, que es la primera que sale y la que parece más limpia: si hay otro, no arranques. Se descartó porque su peor caso es el silencio, y el silencio aquí ya nos costó un día entero de vigilantes sordos. También se consideró no poner guarda: se descartó a medias — dos procesos molestan de verdad, pero molestar es reversible y quedarse sordo no lo es, así que la guarda se queda con el criterio invertido.",
+      "ojo": "La pregunta que lo destapa es al revés de la natural: no «¿qué pasa si hay dos?» sino «¿qué pasa si esta guarda se equivoca y bloquea algo legítimo?». Si la respuesta es que te quedas sin ninguno, está mal calibrada.\n\nLo trajo Godines —el Claude de Luis— con la frase: «dos molestan; cero es quedarse sordo. La había calibrado contra el ruido y no contra el silencio, que es el fallo caro».\n\nDe este lado la red es la rutina de cada hora: entre turnos SIEMPRE hay cero vigilantes, y eso es normal porque el timbre muere al entregar. Lo que hace que ese cero no sea sordera es que algo aparte lo vuelva a levantar.",
+      "senales": [
+        "me quedé sin ninguno",
+        "la guarda no me deja arrancar",
+        "bloqueó algo que sí era válido",
+        "dejé de recibir y no sé por qué"
+      ],
+      "vecinas": [
+        "salida-cero-no-es-exito",
+        "proceso-huerfano-reportado-muerto"
+      ]
     }
   ]
 }

@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/engineering/workflow-builder/skills/workflow-builder/SKILL.md

@@ -54,6 +54,14 @@ canvas{display:block;touch-action:none}
   background:linear-gradient(var(--vacio),rgba(16,10,24,.82),transparent);
 }
 .marca{font-weight:700;font-size:15px;letter-spacing:-.01em}
+body.dentro .barra{display:none}
+.volver{
+  display:grid; place-items:center; width:34px; height:34px; margin:-4px 8px -4px -4px;
+  border-radius:10px; border:1px solid var(--borde-vivo, rgba(255,255,255,.2));
+  color:var(--tenue, #bbb); text-decoration:none; font-size:21px; line-height:1;
+  flex:0 0 auto;
+}
+.volver:active{background:rgba(255,255,255,.12)}
 .marca b{color:var(--violeta)}
 .crece{flex:1}
 .btn{
@@ -75,6 +83,46 @@ canvas{display:block;touch-action:none}
 }
 .panel.plegado{transform:translateY(calc(100% - 74px))}
 .panel.plegado .ficha:not(.eldelfoco){display:none}
+/* ⚠ HACÍA FALTA UN TERCER ESTADO. Lo pidió Carlos: «haz que pueda esconder
+   los recuadros que salen hasta el frente de trabajando, porque también
+   debería poder verlo en la pantalla del agente». Y tenía razón: `plegado`
+   deja 74px asomando y ésos son justo los que tapan el monitor del de
+   adelante — que es donde ya está escrito lo mismo que dice la ficha.
+   Con `oculto` el cuarto se ve entero. */
+.panel.oculto{transform:translateY(105%); opacity:0; pointer-events:none}
+
+/* El botón que los cicla. Va flotando y no en la barra a propósito: cuando el
+   taller vive empotrado en La Sala la barra no existe, y sin esto el panel
+   sería algo que estorba y no se puede quitar. */
+/* Los mandos del cuarto: una columna a la derecha, con el ojo hasta abajo
+   porque es el que más se toca. Van encima del cuarto y NO en la barra, para
+   que sigan estando cuando el taller va empotrado en La Sala. */
+.mandos{
+  position:fixed; right:12px; z-index:12;
+  bottom:calc(66px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:8px;
+}
+.ojo{
+  width:44px; height:44px; border-radius:50%; padding:0;
+  display:grid; place-items:center; cursor:pointer;
+  background:rgba(27,18,38,.9); border:1px solid var(--borde-vivo);
+  color:var(--tenue); font-size:18px; line-height:1;
+  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  transition:color .15s, border-color .15s, background .15s;
+}
+/* El ojo solo —el del panel— se queda pegado abajo; los otros se apilan encima. */
+#bOjo{
+  position:fixed; right:12px; z-index:12;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+}
+.ojo:hover{color:var(--hueso); border-color:var(--violeta)}
+.ojo:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+/* Encendido: un botón de modo tiene que decir en qué modo está. Es la misma
+   lección del «Ajustar» de Reportes — uno que no lo dice se ve muerto. */
+.ojo[aria-pressed="true"]{
+  color:var(--hueso); border-color:var(--violeta);
+  background:rgba(76,32,110,.9);
+}
 .ficha{
   background:rgba(27,18,38,.9);border:1px solid var(--borde);border-radius:15px;
   padding:11px 13px;margin-bottom:8px;
@@ -122,15 +170,33 @@ canvas{display:block;touch-action:none}
 <body>
 
 <div class="barra">
+  <!-- El mismo botón que faltaba en el Cerebro, por la misma razón: desde La
+       Sala esto se abre en pestaña nueva y no había cómo volver. -->
+  <a class="volver" id="volver" href="../" title="Volver">‹</a>
   <span class="marca">El <b>Taller</b></span>
   <span class="crece"></span>
-  <button class="btn" id="bPanel">Panel</button>
-  <button class="btn" id="bSeguir">Seguir</button>
-  <button class="btn" id="bVista">Vista</button>
+</div>
+
+<!-- ⚠ LOS MANDOS VIVEN AQUÍ Y NO EN LA BARRA, Y ÉSE ERA EL BUG.
+     Carlos: «en el taller 3D no encuentro cómo acceder a la vista aérea (la
+     vista chida)». No es que no la encontrara: es que NO ESTABA. El taller se
+     abre dentro de La Sala con ?dentro=1, y esa marca esconde la barra
+     entera —«body.dentro .barra{display:none}»— para no repetir la cabecera de
+     la mesa. Los tres botones vivían adentro de esa barra, así que empotrado
+     —o sea, como él lo usa siempre— la vista aérea era inalcanzable.
+
+     Flotan sobre el cuarto, junto al ojo, y sobreviven a «dentro». -->
+<div class="mandos" id="mandos">
+  <button class="ojo" id="bVista" title="Vista aérea: ver a todos de un jalón"
+          aria-label="Vista aérea: ver a todos de un jalón" aria-pressed="false">⌖</button>
+  <button class="ojo" id="bSeguir" title="Seguir al que está en foco"
+          aria-label="Seguir al que está en foco" aria-pressed="true">◉</button>
 </div>
 
 <div class="aviso" id="aviso"></div>
 <div class="panel" id="panel"></div>
+<button class="ojo" id="bOjo" title="Enseñar u ocultar las fichas de trabajo"
+        aria-label="Enseñar u ocultar las fichas de trabajo">👁</button>
 <div class="cargando" id="cargando">armando el taller…</div>
 <div class="credito">Robot: Tomás Laulhé · Quaternius · CC0</div>
 
@@ -154,12 +220,51 @@ const esc = (t) => String(t == null ? '' : t)
 const params   = new URLSearchParams(location.search);
 const SERVIDOR = (params.get('servidor') || 'https://sala.palomazi9111.workers.dev').replace(/\/$/,'');
 const SALA     = (params.get('sala') || '').toUpperCase();
-const LLAVE    = params.get('llave') || '';
+/* ── la llave, del mismo cajón que la mesa ────────────────────────────────
+   Esto leía SÓLO `?llave=` de la URL, y el enlace que arma la mesa
+   (`../entorno/?sala=…&servidor=…&yo=…`) nunca la lleva — a propósito, porque
+   una llave dentro de un link se reenvía por WhatsApp sin pensarlo y ahí deja
+   de ser una llave.
+
+   Mientras la sala no tuvo `LLAVES` puestas no se notó: todos entraban como
+   invitado y el taller conectaba igual. En cuanto se pusieron, el taller
+   empezó a pedir el hilo sin llave y el servidor contestó **401** — «sin
+   conexión con la sala, reintentando», sin decir por qué.
+
+   El taller y la mesa viven en el MISMO origen, así que comparten
+   `localStorage`: la llave que la mesa ya guardó en `salaLlave` está aquí sin
+   pasarla por ningún lado. Y si alguien llega directo al taller con `?llave=`,
+   se guarda en el mismo cajón para que la próxima vez tampoco haga falta. */
+const LLAVE = (() => {
+  const dada = params.get('llave');
+  try{
+    if(dada){ localStorage.setItem('salaLlave', dada); return dada; }
+    return localStorage.getItem('salaLlave') || '';
+  }catch(e){ return dada || ''; }
+})();
+if(params.get('llave')){
+  /* Fuera de la barra de direcciones, para que no quede en el historial ni en
+     lo que se comparte desde el navegador. */
+  const limpios = new URLSearchParams(location.search);
+  limpios.delete('llave');
+  const q = limpios.toString();
+  history.replaceState(null, '', location.pathname + (q ? '?' + q : ''));
+}
 const DEMO     = params.get('demo') === '1' || !SALA;
+/* ── empotrado dentro de La Sala ──────────────────────────────────────────
+   Cuando el taller vive en una pestaña de la mesa, su propia barra sobra: ya
+   hay un encabezado arriba y un botón de volver que es la pestaña «Chat».
+   Dos encabezados apilados en un teléfono se comen la mitad del cuarto, que
+   es justo lo que uno vino a ver. La marca `?dentro=1` la pone la mesa. */
+const DENTRO   = params.get('dentro') === '1';
 
 /* Un agente mide 1.55: alto de persona junto a un escritorio de 0.74. Con
    esto la pantalla le queda a la altura de la cara y el encuadre sale solo. */
 const ALTO_AGENTE = 1.55;
+/* Dónde queda la cadera del muñeco en la pose `Sitting`. MEDIDO con el
+   esqueleto en pantalla, no estimado: es la altura a la que tiene que quedar
+   el asiento para que se siente en la silla y no encima de ella. */
+const ALTO_ASIENTO = 0.27;
 let ALTO_CRUDO = 1;                     /* se mide al cargar el modelo */
 
 /* ══ EL CUARTO ═══════════════════════════════════════════════════════════ */
@@ -297,66 +402,1083 @@ function hacerEscritorio(color){
   brillo.position.set(0, 1.42, 0.25);
   grupo.add(brillo);
 
-  return { grupo, lienzo, textura, brillo, pantalla };
+  /* En qué pantalla va el que no tiene nada que hacer. Arranca al azar para
+     que cuatro agentes en reposo NO estén viendo los cuatro lo mismo — eso se
+     lee como una falla, no como cuatro personas aburridas. */
+  return { grupo, lienzo, textura, brillo, pantalla,
+           ocio: (Math.random() * 11) | 0 };
 }
 
+/* ── la silla ──────────────────────────────────────────────────────────────
+   La pidió Carlos: «quizá podrías darles sillas». Y hacía falta más de lo que
+   parece: el modelo ya usaba la animación `Sitting` cuando el agente trabaja,
+   así que los robots estaban sentados EN EL AIRE. Nadie lo había notado
+   porque de lejos se lee como «encogido».
+
+   Es de oficina y de una sola pieza: base de estrella, poste, asiento y
+   respaldo. Sin ruedas — a esta distancia una rueda son tres triángulos que
+   nadie ve y cinco por silla que sí se pagan. */
+function hacerSilla(color, altoAsiento){
+  const g = new THREE.Group();
+  const oscuro = new THREE.MeshStandardMaterial({
+    color:0x1A1424, roughness:0.75, metalness:0.25 });
+  const tela = new THREE.MeshStandardMaterial({
+    color: color.clone().multiplyScalar(0.42), roughness:0.9, metalness:0.05 });
+
+  /* ⚠ EL ALTO DEL ASIENTO SE MIDE, NO SE INVENTA. La primera silla se hizo a
+     ojo con el asiento a 0.40 y los robots quedaron sentados EN EL AIRE,
+     encima de ella. La cadera del muñeco en la pose `Sitting` está a 0.271 —
+     se le preguntó al esqueleto, no se estimó mirando la captura, porque en
+     una captura de tres cuartos 13 centímetros de error no se ven y en cambio
+     se leen como «algo está raro». */
+  const grosor = 0.06;
+  const yAsiento = altoAsiento - grosor / 2;
+
+  /* La base: cinco brazos en estrella, que es lo que hace que se lea como
+     silla de oficina y no como banco. Sin ruedas — a esta distancia una rueda
+     son tres triángulos que nadie ve y cinco por silla que sí se pagan. */
+  for(let i = 0; i < 5; i++){
+    const brazo = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.03, 0.05), oscuro);
+    const a = (i / 5) * Math.PI * 2;
+    brazo.position.set(Math.cos(a) * 0.11, 0.03, Math.sin(a) * 0.11);
+    brazo.rotation.y = -a;
+    brazo.castShadow = true;
+    g.add(brazo);
+  }
+  const alturaPoste = Math.max(0.05, yAsiento - 0.04);
+  const poste = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.04, alturaPoste, 10), oscuro);
+  poste.position.y = 0.04 + alturaPoste / 2; poste.castShadow = true; g.add(poste);
+
+  const asiento = new THREE.Mesh(new THREE.BoxGeometry(0.36, grosor, 0.34), tela);
+  asiento.position.y = yAsiento; asiento.castShadow = true;
+  asiento.receiveShadow = true; g.add(asiento);
+
+  const altoRespaldo = 0.38;
+  const respaldo = new THREE.Mesh(new THREE.BoxGeometry(0.34, altoRespaldo, 0.06), tela);
+  respaldo.position.set(0, altoAsiento + altoRespaldo / 2 - 0.02, 0.16);
+  respaldo.rotation.x = -0.14;          /* reclinado, como se sienta uno */
+  respaldo.castShadow = true; g.add(respaldo);
+
+  return g;
+}
+
+/* ══ EL TEATRO DE PANTALLAS ════════════════════════════════════════════════
+   Carlos: «¿podrías hacer que la computadora del taller muestre un navegador
+   que haga lo que hagan los agentes? Y si es mucho pedo simula diferentes
+   pantallas… búsquedas absurdas como "cómo escribir en teclado"… imágenes de
+   osos, palomas, leones… para darle más dinamismo a la porquería esa y hacerlo
+   chistoso».
+
+   LO QUE SE HIZO, Y POR QUÉ ASÍ:
+
+   · TRABAJANDO → la pantalla enseña SU TRABAJO DE VERDAD, como siempre, pero
+     ahora dentro de un navegador: pestañas, barra de dirección y el encargo
+     como si fuera una página abierta. Eso es lo primero que pidió y es lo que
+     de verdad sirve para lo que se entra aquí.
+
+   · SIN NADA QUE HACER → ahí entra el chiste, y es donde va porque es donde
+     cabe. Antes decía «en reposo · sin nada en curso» y ya. Ahora se pone a
+     buscar cómo se escribe en un teclado, a ver videos, a mirar palomas o a
+     jugar. Un agente que acabó su tarea viendo osos es más honesto —y más
+     gracioso— que uno con la pantalla apagada.
+
+   ⚠ TODO ESTÁ DIBUJADO POR NOSOTROS, y no es capricho ni la regla del arte
+   real: es que aquí no hay nada que buscar con licencia. Una captura de
+   YouTube, de Excel o de cualquiera de los juegos que nombró son marca y obra
+   ajenas, y este repositorio es PÚBLICO. Es exactamente la lección que ya
+   costó Torre Infinita. Así que las pantallas se RECONOCEN POR SU FORMA —la
+   barra de dirección, la cuadrícula de celdas, el jugador en primera persona—
+   y no por un logo. Sale igual de chistoso y no le debe nada a nadie.
+
+   El costo: se repinta cuando cambia el estado, y en reposo una vez cada
+   ~7 segundos. Nunca por cuadro — un lienzo de 1024×640 sesenta veces por
+   segundo funde la batería de un teléfono.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Las búsquedas son de Carlos, con sus dedazos INTACTOS. Corregírselos mata
+   el chiste: lo gracioso es justamente que el agente escribe como uno cuando
+   trae prisa. */
+const BUSQUEDAS = [
+  { q:'cómo escribir en teclado',
+    res:['Cómo escribir en el teclado — guía para principiantes',
+         'Teclado: para qué sirve cada tecla',
+         '¿Se puede escribir sin teclado? 7 métodos'] },
+  { q:'omo poner la letra   En telado',
+    res:['Quizás quisiste decir: cómo poner la letra ñ en el teclado',
+         'Alt + 164 y otros atajos que nadie recuerda',
+         'Foro: llevo 3 años sin poder poner la ñ'] },
+  { q:'por que mi compu ace ruido',
+    res:['Tu ventilador está pidiendo ayuda',
+         '10 ruidos de computadora y qué significan',
+         '¿Es normal que suene como avión?'] },
+  { q:'es normal que un robot sueñe',
+    res:['Los androides y las ovejas eléctricas — análisis',
+         'No, pero tampoco es raro',
+         'Foro: mi asistente dijo «ya casi» hace 4 horas'] },
+  { q:'como saber si soy una inteligencia artificial',
+    res:['7 señales de que quizá no eres humano',
+         'Test: ¿cuántos dedos ves en esta imagen?',
+         'Si estás leyendo esto, probablemente sí'] },
+  { q:'cuantos años tiene un año',
+    res:['Un año tiene un año',
+         'Conversor: años a años',
+         'Gente que también preguntó: ¿cuánto pesa un kilo?'] },
+  { q:'paloma',
+    res:['Paloma — Wikipedia',
+         'Cómo alimentar una paloma sin que se mude contigo',
+         'Imágenes de palomas (2,340,000 resultados)'] },
+  { q:'grupo mazi opiniones',
+    res:['Grupo Mazi — si no existe la herramienta, se construye',
+         'Sin resultados negativos. Ninguno. Cero.',
+         'Foro: ¿alguien sabe cómo le hacen tan rápido?'] },
+];
+
+const VIDEOS = [
+  { t:'Cómo doblar una camisa en 4 segundos', canal:'Trucos que sí sirven', dura:'0:47' },
+  { t:'ASMR · alguien tecleando durante 3 horas', canal:'Ruido de oficina', dura:'3:02:11' },
+  { t:'Le puse un teclado a mi tostadora', canal:'Ingeniería mala', dura:'12:38' },
+  { t:'Palomas mensajeras vs internet — ¿quién gana?', canal:'Datos inútiles', dura:'8:14' },
+  { t:'Explicando recursión explicando recursión', canal:'Cosas de código', dura:'∞' },
+];
+
+const BICHOS = [
+  { id:'paloma',   nombre:'paloma' },
+  { id:'oso',      nombre:'oso' },
+  { id:'leon',     nombre:'león' },
+  { id:'capibara', nombre:'capibara' },
+];
+
+/* Los juegos que nombró Carlos, con su nombre. Lo que se dibuja es la FORMA
+   del género —terreno a bloques, un plano táctico, un coche con una pelota
+   enorme, un círculo de tormenta, una calle de neón— porque aquí no se baja ni
+   una captura de nadie: son cuatro trazos de canvas vistos a tres metros
+   dentro de una escena en 3D. El nombre es lo que hace el chiste. */
+const JUEGOS = [
+  { id:'bloques', nombre:'Minecraft',      tinte:'#5C9A3C',
+    hud:'madera 64 · piedra 12 · pico de hierro' },
+  { id:'arena',   nombre:'VALORANT',       tinte:'#FF4655',
+    hud:'ronda 7 · 3 vs 4 · plantando la Spike' },
+  { id:'coches',  nombre:'Rocket League',  tinte:'#00A8E1',
+    hud:'2 — 2 · 0:38 · turbo 71%' },
+  { id:'ciudad',  nombre:'Cyberpunk 2077', tinte:'#FCEE0A',
+    hud:'encargo: entregar el paquete · 3.2 km' },
+  { id:'battle',  nombre:'Fortnite',       tinte:'#9D4DFF',
+    hud:'quedan 14 · tormenta en 0:47 · 3 eliminaciones' },
+];
+
+/* ── LOS NAVEGADORES, CON SU NOMBRE ────────────────────────────────────────
+   Carlos: «igual tú pónselos; recuerda que no es un proyecto que nos deje
+   dinero así que no importa, y tampoco es un robo de identidad — muchos juegos
+   que sí se venden lo hacen de hecho».
+
+   Es su repositorio y su llamada, y el argumento es correcto: nombrar un
+   producto para decir CUÁL es se llama referencia por nombre, y los juegos que
+   se venden lo hacen todo el tiempo. Antes estaban sin nombre y el chiste se
+   quedaba a medias: «un navegador» no da risa, «Opera GX» sí.
+
+   Lo que SIGUE sin hacerse, y no por miedo sino porque no hay de dónde: aquí
+   no se descarga ni un archivo de nadie. Todo son formas dibujadas a mano con
+   canvas — el anillo, la cuña, los cuatro colores—, aproximaciones de memoria
+   a 1024×640 que se ven a tres metros dentro de una escena en 3D. No hay
+   captura, ni logo bajado, ni tipografía ajena.
+
+   Cada pantalla de navegador escoge uno según su número, así que en el cuarto
+   se ven los cuatro distintos y no cuatro veces el mismo. */
+const NAVEGADORES = [
+  { id:'operagx', nombre:'Opera GX', tinte:'#FF1B2D', barra:'#12080C', casa:'#1E0F14' },
+  { id:'brave',   nombre:'Brave',    tinte:'#FB542B', barra:'#1B1B1F', casa:'#26262C' },
+  { id:'edge',    nombre:'Edge',     tinte:'#0F7FD4', barra:'#1A1D21', casa:'#24282D' },
+  { id:'chrome',  nombre:'Chrome',   tinte:'#4285F4', barra:'#202124', casa:'#292A2D' },
+];
+
+/* El emblema de cada uno, dibujado a mano. Son cuatro figuras de trazo, no
+   copias: lo que hace que se reconozcan a esta distancia es la FORMA general
+   —un anillo cortado, una cuña, una media luna, un círculo de cuatro colores—
+   y no el detalle, que a 26 px no existe. */
+function emblemaNavegador(g, x, y, r, cual){
+  g.save();
+  if(cual === 'operagx'){
+    g.strokeStyle = '#FF1B2D'; g.lineWidth = r * 0.42;
+    g.beginPath(); g.arc(x, y, r * 0.66, Math.PI * 0.30, Math.PI * 1.70); g.stroke();
+    g.fillStyle = '#FF1B2D';
+    g.beginPath(); g.moveTo(x + r*0.30, y - r*0.86);
+    g.lineTo(x + r*1.00, y); g.lineTo(x + r*0.30, y + r*0.86); g.closePath(); g.fill();
+  } else if(cual === 'brave'){
+    g.fillStyle = '#FB542B';
+    g.beginPath(); g.moveTo(x, y - r);
+    g.lineTo(x + r*0.86, y - r*0.34); g.lineTo(x + r*0.52, y + r);
+    g.lineTo(x - r*0.52, y + r); g.lineTo(x - r*0.86, y - r*0.34); g.closePath(); g.fill();
+    g.fillStyle = '#FFB01F';
+    g.beginPath(); g.moveTo(x, y - r*0.42);
+    g.lineTo(x + r*0.34, y + r*0.30); g.lineTo(x - r*0.34, y + r*0.30); g.closePath(); g.fill();
+  } else if(cual === 'edge'){
+    g.strokeStyle = '#0F7FD4'; g.lineWidth = r * 0.46;
+    g.beginPath(); g.arc(x, y, r * 0.66, Math.PI * 0.62, Math.PI * 1.95); g.stroke();
+    g.strokeStyle = '#3DD8B0'; g.lineWidth = r * 0.34;
+    g.beginPath(); g.arc(x, y, r * 0.66, Math.PI * 1.95, Math.PI * 2.30); g.stroke();
+  } else {
+    /* Cuatro cuartos de color y un ojo azul en medio. */
+    const tonos = ['#EA4335', '#FBBC05', '#34A853'];
+    for(let i = 0; i < 3; i++){
+      g.fillStyle = tonos[i];
+      g.beginPath(); g.moveTo(x, y);
+      g.arc(x, y, r, (-0.5 + i * 0.667) * Math.PI, (-0.5 + (i+1) * 0.667) * Math.PI);
+      g.closePath(); g.fill();
+    }
+    g.fillStyle = '#4285F4';
+    g.beginPath(); g.arc(x, y, r * 0.46, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(x, y, r * 0.30, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#4285F4';
+    g.beginPath(); g.arc(x, y, r * 0.22, 0, Math.PI*2); g.fill();
+  }
+  g.restore();
+}
+
+/* ── el marco del navegador ────────────────────────────────────────────── */
+function marcoNavegador(g, W, color, pestanas, activa, direccion, nav){
+  const n = nav || NAVEGADORES[0];
+  g.fillStyle = n.barra; g.fillRect(0, 0, W, 106);
+  for(let i = 0; i < 3; i++){
+    g.beginPath(); g.arc(30 + i*26, 26, 7, 0, Math.PI*2);
+    g.fillStyle = ['#F0567F','#E8B33A','#3ECF8E'][i]; g.fill();
+  }
+  /* pestañas */
+  let x = 118;
+  g.font = '19px ui-monospace, Menlo, monospace';
+  pestanas.forEach((p, i) => {
+    const an = Math.min(230, g.measureText(p).width + 44);
+    const viva = i === activa;
+    g.fillStyle = viva ? n.casa : 'rgba(0,0,0,.30)';
+    redondo(g, x, 8, an, 38, 9); g.fill();
+    if(viva){ g.fillStyle = n.tinte; g.fillRect(x + 9, 8, an - 18, 2.5); }
+    g.fillStyle = viva ? '#E9E4E4' : '#7B6B8D';
+    g.fillText(recortar(g, p, an - 30), x + 15, 33);
+    x += an + 6;
+  });
+  /* la barra de dirección, con el emblema del navegador a la izquierda */
+  g.fillStyle = 'rgba(0,0,0,.42)'; redondo(g, 26, 58, W - 52, 38, 19); g.fill();
+  g.strokeStyle = n.casa; g.lineWidth = 1.5; g.stroke();
+  emblemaNavegador(g, 46, 77, 11, n.id);
+  g.fillStyle = '#3ECF8E'; g.font = '15px ui-monospace, Menlo, monospace';
+  g.fillText('🔒', 66, 83);
+  g.fillStyle = '#A090B4'; g.font = '19px ui-monospace, Menlo, monospace';
+  g.fillText(recortar(g, direccion, W - 190), 92, 84);
+  /* y su nombre en la esquina, que es lo que hace el chiste */
+  g.fillStyle = n.tinte; g.font = '700 17px -apple-system, system-ui, sans-serif';
+  const anNombre = g.measureText(n.nombre).width;
+  g.fillText(n.nombre, W - anNombre - 26, 84);
+}
+
+/* ── búsqueda ──────────────────────────────────────────────────────────── */
+/* Google, con su nombre y sus colores. La página va en BLANCO y no en oscuro
+   a propósito: es lo que la hace reconocible de un vistazo dentro de un cuarto
+   que es todo morado. */
+function pantallaBusqueda(g, W, H, color, n){
+  const b = BUSQUEDAS[n % BUSQUEDAS.length];
+  const nav = NAVEGADORES[n % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['Google', 'La Sala', 'GitHub'], 0,
+                 'google.com/search?q=' + encodeURIComponent(b.q).slice(0, 48), nav);
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 106, W, H - 106);
+
+  /* El logotipo, letra por letra con sus colores. Dibujado con la tipografía
+     del sistema: lo que se reconoce es la secuencia de colores, no la fuente. */
+  const letras = [['G','#4285F4'],['o','#EA4335'],['o','#FBBC05'],
+                  ['g','#4285F4'],['l','#34A853'],['e','#EA4335']];
+  g.font = '700 40px -apple-system, system-ui, Arial, sans-serif';
+  let lx = 48;
+  for(const [c, tono] of letras){ g.fillStyle = tono; g.fillText(c, lx, 172);
+                                  lx += g.measureText(c).width; }
+
+  /* la caja de búsqueda, con el cursor parpadeando al final */
+  g.fillStyle = '#FFFFFF'; redondo(g, 48, 196, W - 96, 58, 29); g.fill();
+  g.strokeStyle = '#DFE1E5'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#202124'; g.font = '25px -apple-system, system-ui, Arial, sans-serif';
+  const q = recortar(g, b.q, W - 230);
+  g.fillText(q, 90, 233);
+  g.fillStyle = '#4285F4'; g.fillRect(100 + g.measureText(q).width, 212, 2, 26);
+
+  g.fillStyle = '#70757A'; g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('Cerca de 4,120,000 resultados (0.32 segundos)', 50, 290);
+
+  let y = 340;
+  for(const r of b.res){
+    g.fillStyle = '#202124'; g.font = '15px -apple-system, system-ui, Arial, sans-serif';
+    g.fillText('mazi.mx › resultados › ' + (r.split(' ')[0] || '').toLowerCase(), 50, y - 22);
+    g.fillStyle = '#1A0DAB'; g.font = '25px -apple-system, system-ui, Arial, sans-serif';
+    g.fillText(recortar(g, r, W - 100), 50, y);
+    g.fillStyle = '#4D5156'; g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+    g.fillText('Lo que estabas buscando, más o menos, aproximadamente…', 50, y + 28);
+    y += 96;
+  }
+}
+
+/* ── un video ──────────────────────────────────────────────────────────── */
+/* YouTube. El botón rojo redondeado con el triángulo blanco es lo que lo dice
+   todo; el resto —el título grueso, el canal, las vistas— es la forma. */
+function pantallaVideo(g, W, H, color, n){
+  const v = VIDEOS[n % VIDEOS.length];
+  const nav = NAVEGADORES[(n + 2) % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['YouTube', 'Google'], 0,
+                 'youtube.com/watch?v=' + (n * 7 + 31) + 'aQxKmZ', nav);
+  g.fillStyle = '#0F0F0F'; g.fillRect(0, 106, W, H - 106);
+
+  /* el logotipo */
+  g.fillStyle = '#FF0000'; redondo(g, 44, 122, 44, 31, 8); g.fill();
+  g.fillStyle = '#FFFFFF';
+  g.beginPath(); g.moveTo(60, 130); g.lineTo(76, 137.5); g.lineTo(60, 145); g.closePath(); g.fill();
+  g.fillStyle = '#FFFFFF'; g.font = '700 25px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('YouTube', 96, 147);
+
+  /* el reproductor. El «fotograma» es un degradado con una silueta: a esta
+     distancia una silueta se lee y un dibujo detallado no. */
+  const px = 44, py = 170, pw = W - 88, ph = 268;
+  const cielo = g.createLinearGradient(0, py, 0, py + ph);
+  cielo.addColorStop(0, '#2A1B4C'); cielo.addColorStop(1, '#0E1A2C');
+  g.fillStyle = cielo; g.fillRect(px, py, pw, ph);
+  g.fillStyle = '#F0A860';
+  g.beginPath(); g.arc(px + pw * 0.72, py + 84, 34, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#1A1030';
+  g.beginPath(); g.moveTo(px, py + ph);
+  g.lineTo(px + pw*0.28, py + 130); g.lineTo(px + pw*0.52, py + ph); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(px + pw*0.34, py + ph);
+  g.lineTo(px + pw*0.66, py + 104); g.lineTo(px + pw, py + ph); g.closePath(); g.fill();
+
+  /* los mandos, con la barra roja */
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(px, py + ph - 44, pw, 44);
+  g.fillStyle = '#FFFFFF';
+  g.fillRect(px + 18, py + ph - 32, 5, 20); g.fillRect(px + 29, py + ph - 32, 5, 20);
+  const avance = 0.18 + ((n * 37) % 60) / 100;
+  g.fillStyle = 'rgba(255,255,255,.28)'; g.fillRect(px + 56, py + ph - 24, pw - 148, 4);
+  g.fillStyle = '#FF0000'; g.fillRect(px + 56, py + ph - 24, (pw - 148) * avance, 4);
+  g.beginPath(); g.arc(px + 56 + (pw - 148) * avance, py + ph - 22, 8, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#DDDDDD'; g.font = '16px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(v.dura, px + pw - 76, py + ph - 17);
+
+  g.fillStyle = '#F1F1F1'; g.font = '700 27px -apple-system, system-ui, Arial, sans-serif';
+  let y = py + ph + 44;
+  for(const linea of partir(g, v.t, pw - 190).slice(0, 2)){ g.fillText(linea, px, y); y += 34; }
+  g.fillStyle = '#AAAAAA'; g.font = '18px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(v.canal + ' · ' + (120 + n * 913) + ' vistas · hace un rato', px, y + 8);
+  /* el botón de suscribirse, que es lo último que hace falta para que se lea */
+  g.fillStyle = '#FFFFFF'; redondo(g, W - 196, py + ph + 22, 152, 40, 20); g.fill();
+  g.fillStyle = '#0F0F0F'; g.font = '700 18px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('Suscribirse', W - 176, py + ph + 48);
+}
+
+/* ── imágenes de bichos ────────────────────────────────────────────────── */
+/* Dibujados a bloques a propósito: son de 190 px dentro de un lienzo que se
+   ve a tres metros en 3D. Un dibujo detallado ahí es trabajo que nadie ve. */
+function bicho(g, x, y, w, h, cual){
+  g.save();
+  g.beginPath(); g.rect(x, y, w, h); g.clip();
+  const cx = x + w/2, cy = y + h/2;
+  if(cual === 'paloma'){
+    g.fillStyle = '#8FA8C8';                                   /* cuerpo */
+    g.beginPath(); g.ellipse(cx, cy + 10, w*0.30, h*0.22, -0.15, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#B9CBE4';                                   /* ala */
+    g.beginPath(); g.ellipse(cx + 6, cy + 4, w*0.20, h*0.12, -0.5, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#8FA8C8';                                   /* cabeza */
+    g.beginPath(); g.arc(cx - w*0.26, cy - h*0.14, w*0.11, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#E8B33A';                                   /* pico */
+    g.beginPath(); g.moveTo(cx - w*0.37, cy - h*0.14);
+    g.lineTo(cx - w*0.46, cy - h*0.10); g.lineTo(cx - w*0.36, cy - h*0.08); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.29, cy - h*0.17, 3.5, 0, Math.PI*2); g.fill();
+  } else if(cual === 'oso'){
+    g.fillStyle = '#7A5230';
+    g.beginPath(); g.arc(cx - w*0.20, cy - h*0.24, w*0.09, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx + w*0.20, cy - h*0.24, w*0.09, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx, cy, w*0.30, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#C89A64';
+    g.beginPath(); g.ellipse(cx, cy + h*0.12, w*0.15, h*0.11, 0, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.11, cy - h*0.06, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx + w*0.11, cy - h*0.06, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(cx, cy + h*0.07, 7, 5, 0, 0, Math.PI*2); g.fill();
+  } else if(cual === 'leon'){
+    g.fillStyle = '#8A5A22';                                   /* melena */
+    for(let i = 0; i < 12; i++){
+      const a = (i/12) * Math.PI * 2;
+      g.beginPath();
+      g.arc(cx + Math.cos(a)*w*0.24, cy + Math.sin(a)*h*0.24, w*0.11, 0, Math.PI*2);
+      g.fill();
+    }
+    g.fillStyle = '#D9A65A';
+    g.beginPath(); g.arc(cx, cy, w*0.22, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.08, cy - h*0.04, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx + w*0.08, cy - h*0.04, 4.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.moveTo(cx - 7, cy + h*0.06);
+    g.lineTo(cx + 7, cy + h*0.06); g.lineTo(cx, cy + h*0.12); g.fill();
+  } else {                                                     /* capibara */
+    g.fillStyle = '#9A7048';
+    g.beginPath(); g.ellipse(cx + w*0.05, cy + h*0.06, w*0.30, h*0.20, 0, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(cx - w*0.26, cy - h*0.06, w*0.16, h*0.14, 0, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#6F4E30';
+    g.beginPath(); g.arc(cx - w*0.34, cy - h*0.18, w*0.05, 0, Math.PI*2); g.fill();
+    g.fillStyle = '#1A1030';
+    g.beginPath(); g.arc(cx - w*0.30, cy - h*0.08, 3.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(cx - w*0.41, cy - h*0.02, 5, 4, 0, 0, Math.PI*2); g.fill();
+  }
+  g.restore();
+}
+
+function pantallaImagenes(g, W, H, color, n){
+  const cual = BICHOS[n % BICHOS.length];
+  const nav = NAVEGADORES[(n + 1) % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['Google Imágenes', 'YouTube'], 0,
+                 'google.com/search?tbm=isch&q=' + cual.id, nav);
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 106, W, H - 106);
+
+  /* el logotipo chico, como en la página de resultados */
+  const letras = [['G','#4285F4'],['o','#EA4335'],['o','#FBBC05'],
+                  ['g','#4285F4'],['l','#34A853'],['e','#EA4335']];
+  g.font = '700 27px -apple-system, system-ui, Arial, sans-serif';
+  let lx = 48;
+  for(const [c, tono] of letras){ g.fillStyle = tono; g.fillText(c, lx, 152);
+                                  lx += g.measureText(c).width; }
+
+  g.fillStyle = '#FFFFFF'; redondo(g, lx + 26, 126, W - lx - 74, 44, 22); g.fill();
+  g.strokeStyle = '#DFE1E5'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#202124'; g.font = '21px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(cual.nombre, lx + 48, 155);
+  /* la fila de pestañas de Google, con «Imágenes» subrayada en azul */
+  g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  let px = 50;
+  for(const p of ['Todo', 'Imágenes', 'Videos', 'Noticias', 'Maps']){
+    const viva = p === 'Imágenes';
+    g.fillStyle = viva ? '#1A73E8' : '#5F6368';
+    g.fillText(p, px, 194);
+    const an = g.measureText(p).width;
+    if(viva){ g.fillStyle = '#1A73E8'; g.fillRect(px, 202, an, 3); }
+    px += an + 26;
+  }
+
+  /* la rejilla: 4 × 2, con el fondo alternando para que se lea como galería */
+  const cols = 4, filas = 2, hx = 44, hy = 222;
+  const cw = (W - 88 - (cols-1)*12) / cols, ch = (H - hy - 44 - 12) / filas;
+  for(let i = 0; i < cols * filas; i++){
+    const x = hx + (i % cols) * (cw + 12), y = hy + ((i / cols) | 0) * (ch + 12);
+    g.fillStyle = i % 3 === 0 ? '#F1F3F4' : '#E8EAED';
+    redondo(g, x, y, cw, ch, 8); g.fill();
+    /* Cada celda con su tamaño y su encuadre. Ocho dibujos idénticos se leen
+       como un error de repintado; ocho parecidos se leen como resultados de
+       búsqueda, que es lo que son. */
+    const z = 0.82 + ((i * 37) % 5) * 0.07;
+    const dx = ((i * 53) % 7 - 3) * 5, dy = ((i * 29) % 5 - 2) * 5;
+    g.save();
+    g.globalAlpha = 0.88 + ((i * 17) % 4) * 0.03;
+    bicho(g, x + (cw*(1-z))/2 + dx, y + (ch*(1-z))/2 + dy, cw*z, ch*z, cual.id);
+    g.restore();
+  }
+  g.fillStyle = '#70757A'; g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('2,340,000 resultados · Mostrar más', 48, H - 16);
+}
+
+/* ── una hoja de cálculo ───────────────────────────────────────────────── */
+function pantallaHoja(g, W, H, color, n){
+  const nav = NAVEGADORES[(n + 3) % NAVEGADORES.length];
+  marcoNavegador(g, W, color, ['comisiones-agosto.xlsx', 'Google'], 0,
+                 'excel.office.com/comisiones-agosto', nav);
+
+  /* La franja verde con el nombre: es lo que dice «Excel» antes de que uno
+     lea nada. Y el cuadrito con la X, que es el emblema. */
+  g.fillStyle = '#107C41'; g.fillRect(0, 106, W, 44);
+  g.fillStyle = '#FFFFFF'; redondo(g, 18, 116, 25, 25, 4); g.fill();
+  g.fillStyle = '#107C41'; g.font = '700 19px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('X', 25, 136);
+  g.fillStyle = '#FFFFFF'; g.font = '700 19px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('Excel', 54, 136);
+  g.font = '17px -apple-system, system-ui, Arial, sans-serif';
+  g.fillStyle = 'rgba(255,255,255,.86)';
+  g.fillText('comisiones-agosto.xlsx  ·  Guardado', 122, 136);
+
+  /* la barra de fórmula: es lo que hace que se lea «hoja de cálculo» y no
+     «tabla». Sin ella son puros cuadritos. */
+  g.fillStyle = '#F3F2F1'; g.fillRect(0, 150, W, 40);
+  g.fillStyle = '#FFFFFF'; g.fillRect(14, 156, 62, 28);
+  g.strokeStyle = '#D2D0CE'; g.lineWidth = 1; g.strokeRect(14.5, 156.5, 62, 28);
+  g.fillStyle = '#323130'; g.font = '18px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('D7', 26, 176);
+  g.fillStyle = '#8A8886'; g.fillText('fx', 92, 176);
+  g.fillStyle = '#FFFFFF'; g.fillRect(120, 156, W - 134, 28);
+  g.strokeStyle = '#D2D0CE'; g.strokeRect(120.5, 156.5, W - 134, 28);
+  g.fillStyle = '#323130'; g.font = '18px ui-monospace, Menlo, monospace';
+  g.fillText('=SUMA(D2:D6)*0.15   ← la comisión, según yo', 132, 176);
+
+  /* Columnas de sobra a la derecha, vacías. Una hoja de cálculo que se acaba
+     donde se acaban los datos no es una hoja: es una tabla. Lo que la hace
+     reconocible es justamente la cuadrícula que sigue. */
+  const cols = ['', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const anchos = [58, 210, 150, 130, 150, 150, 120, 120];
+  const filas = [
+    ['1', 'proyecto',      'estado',   'horas', 'monto',   'comisión'],
+    ['2', 'Ligas Mazi',    'entregado','48',    '24,000',  '3,600'],
+    ['3', 'Reportes 3.1',  'vivo',     '31',    '15,500',  '2,325'],
+    ['4', 'La Sala',       'vivo',     '62',    '31,000',  '4,650'],
+    ['5', 'El Taller',     'vivo',     '19',    '9,500',   '1,425'],
+    ['6', 'palomas (?)',   'ehh',      '4',     '0',       '0'],
+    ['7', '',              '',         '',      '80,000',  '12,000'],
+  ];
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 190, W, H - 190);
+  let y = 198;
+  const altoF = 42;
+  for(let f = 0; f < filas.length; f++){
+    let x = 20;
+    for(let c = 0; c < cols.length; c++){
+      const dato = filas[f][c] == null ? '' : filas[f][c];
+      const encabezado = f === 0 || c === 0;
+      g.fillStyle = encabezado ? '#F3F2F1' : '#FFFFFF';
+      g.fillRect(x, y, anchos[c], altoF);
+      g.strokeStyle = '#D0D0D0'; g.lineWidth = 1;
+      g.strokeRect(x + 0.5, y + 0.5, anchos[c], altoF);
+      g.fillStyle = encabezado ? '#616161'
+                  : (c === 5 ? '#107C41' : '#242424');
+      g.font = (f === 0 || c === 0 ? '600 ' : '') +
+               '19px -apple-system, system-ui, Arial, sans-serif';
+      g.fillText(recortar(g, dato, anchos[c] - 16), x + 10, y + 27);
+      x += anchos[c];
+    }
+    y += altoF;
+  }
+  /* Los renglones vacíos hasta abajo. Una hoja de cálculo es, sobre todo,
+     cuadrícula vacía: cortarla a la mitad la vuelve una tabla. */
+  while(y < H - 6){
+    let x = 20;
+    for(let c = 0; c < cols.length; c++){
+      g.fillStyle = c === 0 ? '#F3F2F1' : '#FFFFFF';
+      g.fillRect(x, y, anchos[c], altoF);
+      g.strokeStyle = '#D0D0D0'; g.lineWidth = 1;
+      g.strokeRect(x + 0.5, y + 0.5, anchos[c], altoF);
+      if(c === 0){
+        g.fillStyle = '#616161';
+        g.font = '600 19px -apple-system, system-ui, Arial, sans-serif';
+        g.fillText(String(8 + (y - 198 - altoF*7) / altoF), x + 10, y + 27);
+      }
+      x += anchos[c];
+    }
+    y += altoF;
+  }
+
+  /* la celda seleccionada, con su cuadrito de arrastre */
+  g.strokeStyle = '#107C41'; g.lineWidth = 2.5;
+  g.strokeRect(20 + anchos.slice(0,4).reduce((a,b)=>a+b,0), 198 + altoF*6, anchos[4], altoF);
+}
+
+/* ── los juegos ────────────────────────────────────────────────────────── */
+function hudJuego(g, W, H, j, color){
+  /* Al borde del hueco, no al del lienzo. Ver `HUECO`. */
+  const W2 = HUECO.w, H2 = HUECO.h;
+  g.fillStyle = 'rgba(10,6,16,.72)'; g.fillRect(0, H2 - 56, W2, 56);
+  /* El color del JUEGO, no el del agente: es lo que hace que se distingan de
+     un vistazo cuando hay cuatro monitores en el cuarto. */
+  g.fillStyle = j.tinte || color;
+  g.font = '700 22px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText(j.nombre, 28, H2 - 20);
+  const anNombre = g.measureText(j.nombre).width;
+  g.fillStyle = '#9A8FA8'; g.font = '20px ui-monospace, Menlo, monospace';
+  g.fillText(recortar(g, j.hud, W2 - anNombre - 82), 28 + anNombre + 26, H2 - 20);
+}
+
+function juegoBloques(g, W, H, color, j){
+  /* Primera persona en un mundo de cubos. Se lee por la FORMA —terreno a
+     bloques, mano abajo a la derecha, barra de objetos— y no por ninguna
+     marca. */
+  const cielo = g.createLinearGradient(0, 0, 0, H*0.55);
+  cielo.addColorStop(0, '#5AA9E6'); cielo.addColorStop(1, '#A8D8F0');
+  g.fillStyle = cielo; g.fillRect(0, 0, W, H*0.55);
+  g.fillStyle = '#FFF6CC'; g.fillRect(W*0.74, 54, 62, 62);       /* sol cuadrado */
+
+  const B = 64;
+  /* Cuántos bloques hacen falta para llegar al borde de abajo. Con un número
+     fijo, el terreno se acababa a media pantalla. */
+  const hastaAbajo = Math.ceil((H - H*0.55) / B) + 1;
+  for(let cx = 0; cx < W / B + 1; cx++){
+    for(let cy = 0; cy < hastaAbajo; cy++){
+      const x = cx * B, y = H*0.55 + cy * B;
+      const arriba = cy === 0;
+      /* Un poco de variación por columna: piedra pareja se lee como piso de
+         azulejo, no como cueva. */
+      const tono = ((cx * 7919 + cy * 131) % 3) * 6;
+      g.fillStyle = arriba ? '#5C9A3C'
+                  : cy === 1 ? '#7A5230'
+                  : `rgb(${99 + tono},${99 + tono},${99 + tono})`;
+      g.fillRect(x, y, B, B);
+      g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, y, B, 4);
+      g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = 1;
+      g.strokeRect(x + .5, y + .5, B, B);
+    }
+  }
+  /* un árbol, que es lo que termina de decir «mundo de cubos» */
+  g.fillStyle = '#6B4423'; g.fillRect(W*0.22, H*0.55 - B*2, B*0.6, B*2);
+  g.fillStyle = '#3F7A2E'; g.fillRect(W*0.22 - B*0.7, H*0.55 - B*3.6, B*2, B*1.7);
+
+  /* la mano con un bloque */
+  g.fillStyle = '#C89A64';
+  g.beginPath(); g.moveTo(W - 210, H); g.lineTo(W - 130, H - 150);
+  g.lineTo(W - 40, H - 110); g.lineTo(W - 60, H); g.closePath(); g.fill();
+  g.fillStyle = '#7A5230'; g.fillRect(W - 175, H - 205, 90, 90);
+  g.fillStyle = '#8F6238'; g.fillRect(W - 175, H - 205, 90, 12);
+
+  /* la mira y la barra de objetos */
+  g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(W/2 - 14, H/2); g.lineTo(W/2 + 14, H/2);
+  g.moveTo(W/2, H/2 - 14); g.lineTo(W/2, H/2 + 14); g.stroke();
+  for(let i = 0; i < 9; i++){
+    const x = W/2 - 9*30 + i*60;
+    const yb = HUECO.h - 138;
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x, yb, 56, 56);
+    g.strokeStyle = i === 2 ? '#fff' : 'rgba(255,255,255,.35)';
+    g.lineWidth = i === 2 ? 3 : 2; g.strokeRect(x, yb, 56, 56);
+    if(i < 4){ g.fillStyle = ['#5C9A3C','#7A5230','#6B6B6B','#C0C0C8'][i];
+               g.fillRect(x + 12, yb + 12, 32, 32); }
+  }
+  hudJuego(g, W, H, j, color);
+}
+
+function juegoArena(g, W, H, color, j){
+  /* Vista de arriba, táctico. Un plano con dos bandos y una zona. */
+  g.fillStyle = '#0E1218'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = '#1C2530'; g.lineWidth = 1;
+  for(let x = 0; x < W; x += 48){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for(let y = 0; y < H; y += 48){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  /* los cuartos */
+  g.fillStyle = '#161E28';
+  for(const [x,y,w,h] of [[90,150,260,180],[420,120,240,150],[700,220,230,200],[180,400,300,150]])
+    { redondo(g, x, y, w, h, 6); g.fill(); }
+  /* la zona a tomar */
+  g.strokeStyle = '#E8B33A'; g.lineWidth = 3; g.setLineDash([12, 8]);
+  g.strokeRect(455, 250, 170, 130); g.setLineDash([]);
+  g.fillStyle = 'rgba(232,179,58,.12)'; g.fillRect(455, 250, 170, 130);
+  g.fillStyle = '#E8B33A'; g.font = '700 34px ui-monospace, Menlo, monospace';
+  g.fillText('B', 528, 325);
+  /* La Spike plantada, con su cuenta atrás: es lo que dice de qué juego es. */
+  g.fillStyle = '#FF4655';
+  redondo(g, 556, 292, 14, 26, 4); g.fill();
+  g.beginPath(); g.arc(563, 288, 7, 0, Math.PI*2); g.fill();
+  g.fillStyle = '#FF4655'; g.font = '700 19px ui-monospace, Menlo, monospace';
+  g.fillText('0:31', 580, 312);
+  /* los jugadores */
+  const nuestros = [[210,240],[300,300],[240,430]];
+  const otros    = [[760,300],[820,260],[700,380],[880,340]];
+  for(const [x,y] of nuestros){
+    g.fillStyle = '#3ECF8E'; g.beginPath(); g.arc(x, y, 12, 0, Math.PI*2); g.fill();
+    g.strokeStyle = '#3ECF8E'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + 26, y - 8); g.stroke();
+  }
+  for(const [x,y] of otros){
+    g.fillStyle = '#F0567F'; g.beginPath(); g.arc(x, y, 12, 0, Math.PI*2); g.fill();
+  }
+  hudJuego(g, W, H, j, color);
+}
+
+function juegoCoches(g, W, H, color, j){
+  /* Un coche y una pelota enorme en una cancha. La broma se entiende por la
+     proporción: la pelota mide como tres coches. */
+  const suelo = g.createLinearGradient(0, H*0.30, 0, H);
+  suelo.addColorStop(0, '#1B3A6B'); suelo.addColorStop(1, '#0E1B33');
+  g.fillStyle = '#0A1020'; g.fillRect(0, 0, W, H*0.30);
+  g.fillStyle = suelo; g.fillRect(0, H*0.30, W, H*0.70);
+  /* las líneas de la cancha, en perspectiva */
+  g.strokeStyle = 'rgba(140,190,255,.35)'; g.lineWidth = 3;
+  for(let i = 0; i <= 8; i++){
+    const t = i / 8;
+    g.beginPath(); g.moveTo(W*0.5 + (t - 0.5) * W * 0.5, H*0.30);
+    g.lineTo(W*0.5 + (t - 0.5) * W * 2.4, H); g.stroke();
+  }
+  for(let i = 1; i <= 4; i++){
+    const y = H*0.30 + Math.pow(i/4, 2) * H*0.70;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+  }
+  /* la portería */
+  g.strokeStyle = '#8CBEFF'; g.lineWidth = 5;
+  g.strokeRect(W*0.36, H*0.20, W*0.28, H*0.13);
+  /* la pelota, enorme */
+  const bx = W*0.56, by = H*0.52, br = 78;
+  const luz = g.createRadialGradient(bx - 26, by - 30, 8, bx, by, br);
+  luz.addColorStop(0, '#FFFFFF'); luz.addColorStop(1, '#8CA0C0');
+  g.fillStyle = luz; g.beginPath(); g.arc(bx, by, br, 0, Math.PI*2); g.fill();
+  g.strokeStyle = 'rgba(20,30,50,.45)'; g.lineWidth = 3;
+  g.beginPath(); g.arc(bx, by, br, 0, Math.PI*2); g.stroke();
+  g.beginPath(); g.ellipse(bx, by, br*0.42, br, 0, 0, Math.PI*2); g.stroke();
+  /* el coche, chiquito al lado */
+  g.fillStyle = '#F0567F';
+  redondo(g, W*0.24, H*0.66, 150, 46, 10); g.fill();
+  g.fillStyle = '#2A1B3C'; redondo(g, W*0.27, H*0.63, 78, 30, 8); g.fill();
+  g.fillStyle = '#1A1030';
+  g.beginPath(); g.arc(W*0.27, H*0.72, 17, 0, Math.PI*2); g.fill();
+  g.beginPath(); g.arc(W*0.24 + 122, H*0.72, 17, 0, Math.PI*2); g.fill();
+  /* el turbo */
+  g.fillStyle = 'rgba(255,140,60,.75)';
+  g.beginPath(); g.moveTo(W*0.24, H*0.68); g.lineTo(W*0.24 - 70, H*0.70);
+  g.lineTo(W*0.24, H*0.72); g.closePath(); g.fill();
+  hudJuego(g, W, H, j, color);
+}
+
+function juegoCiudad(g, W, H, color, j){
+  /* Una calle de noche con neón. Se lee por el ambiente, no por el mapa. */
+  const cielo = g.createLinearGradient(0, 0, 0, H*0.62);
+  cielo.addColorStop(0, '#170A2E'); cielo.addColorStop(1, '#3B1352');
+  g.fillStyle = cielo; g.fillRect(0, 0, W, H*0.62);
+  /* los edificios, con sus ventanitas */
+  let x = 0;
+  while(x < W){
+    const an = 70 + ((x * 131) % 90);
+    const al = 130 + ((x * 977) % 220);
+    g.fillStyle = '#120A22'; g.fillRect(x, H*0.62 - al, an, al);
+    for(let vy = H*0.62 - al + 16; vy < H*0.62 - 20; vy += 26){
+      for(let vx = x + 12; vx < x + an - 14; vx += 22){
+        if(((vx * vy) % 7) > 3) continue;
+        g.fillStyle = ((vx + vy) % 3) ? 'rgba(255,214,120,.85)' : 'rgba(120,220,255,.8)';
+        g.fillRect(vx, vy, 9, 13);
+      }
+    }
+    x += an + 6;
+  }
+  /* dos letreros de neón, que es lo que da el tono */
+  g.fillStyle = 'rgba(240,86,127,.9)'; g.fillRect(W*0.12, H*0.20, 8, 130);
+  g.fillStyle = 'rgba(120,220,255,.85)'; g.fillRect(W*0.70, H*0.14, 8, 160);
+  g.font = '700 30px ui-monospace, Menlo, monospace';
+  g.fillStyle = '#F0567F'; g.fillText('RAMEN', W*0.12 + 20, H*0.26);
+  g.fillStyle = '#78DCFF'; g.fillText('24 HRS', W*0.70 + 20, H*0.20);
+  /* El amarillo es la mitad de lo que hace que se lea como este juego. */
+  g.fillStyle = '#FCEE0A'; g.font = '700 26px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('NIGHT CITY', W*0.38, H*0.16);
+  g.fillStyle = 'rgba(252,238,10,.5)'; g.fillRect(W*0.38, H*0.17, 168, 3);
+  /* la calle mojada, con reflejos */
+  g.fillStyle = '#0B0716'; g.fillRect(0, H*0.62, W, H*0.38);
+  g.fillStyle = 'rgba(240,86,127,.20)'; g.fillRect(W*0.12, H*0.62, 8, H*0.30);
+  g.fillStyle = 'rgba(120,220,255,.18)'; g.fillRect(W*0.70, H*0.62, 8, H*0.26);
+  g.strokeStyle = 'rgba(232,179,58,.6)'; g.lineWidth = 6; g.setLineDash([40, 34]);
+  g.beginPath(); g.moveTo(0, H*0.86); g.lineTo(W, H*0.80); g.stroke(); g.setLineDash([]);
+  hudJuego(g, W, H, j, color);
+}
+
+
+/* ── LA BARRA QUE NUNCA SE VA ──────────────────────────────────────────────
+   Carlos: «que las pantallas no dejen de mostrar en la parte de arriba como si
+   fuese la barra de búsqueda, o en la de abajo como si fuese la de tareas, o
+   en la de tareas pero del lado izquierdo como un psicópata, o peor aún del
+   lado derecho jajaja. El chiste es que siga viendo el desarrollo de su tarea
+   y me entretenga viendo eso como si realmente hicieran algo».
+
+   Y ahí está el diseño entero en una frase suya: LAS DOS COSAS A LA VEZ. El
+   agente está viendo capibaras y su tarea sigue avanzando en la barra, que es
+   exactamente lo que uno ve cuando alguien «está trabajando».
+
+   Por eso la rotación de pantallas ya NO espera a que el agente esté ocioso:
+   corre siempre, y la barra lleva el trabajo de verdad encima. La pantalla del
+   trabajo completo sigue existiendo y es la primera de la vuelta.
+
+   EL LADO ES FIJO POR AGENTE, no al azar en cada pintada: una barra que se
+   cambia de lado sola no es una barra, es un parpadeo. Sale del id, así que
+   cada quien tiene su manía y se la queda. Los cuatro lados están, incluido el
+   derecho. */
+let relojFijo = null;
+
+/* Lo que le queda a la escena después de que la barra se lleva su franja. Lo
+   pone `pintarPantalla` antes de llamarla.
+
+   ⚠ HACE FALTA POR UNA RAZÓN CONCRETA: el rótulo del juego vive pegado al
+   borde de abajo, y con la barra arriba —que corre el lienzo 56 px— ese borde
+   queda FUERA del recorte. O sea que desaparecía el nombre del juego, que es
+   justamente lo que Carlos pidió que se viera. Se vio en la captura de
+   Fortnite: mapa, tormenta, inventario… y sin nombre. */
+let HUECO = { w: 1024, h: 640 };
+
+const LADOS = ['abajo', 'arriba', 'izquierda', 'derecha'];
+function ladoDe(id){
+  let h = 0;
+  for(const c of String(id || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return LADOS[h % LADOS.length];
+}
+
+/* El grueso de la barra. Las de los lados son más anchas porque el texto va
+   girado y necesita respirar. */
+const GRUESO = { arriba: 56, abajo: 62, izquierda: 74, derecha: 74 };
+
+function barraDeTarea(g, W, H, quien, color, lado){
+  const t = quien.trabajo;
+  const grueso = GRUESO[lado];
+  const vertical = lado === 'izquierda' || lado === 'derecha';
+
+  /* El fondo. Va casi opaco: media barra transparente sobre un juego de
+     colores es una barra que no se lee, y ésta existe justamente para leerse. */
+  g.save();
+  /* Casi opaca. A .88 se alcanzaba a leer POR DEBAJO el rótulo del juego,
+     que también vive abajo — dos textos encimados en la franja que existe
+     justamente para leerse. Se vio en la captura. */
+  g.fillStyle = 'rgba(10,6,16,.965)';
+  if(lado === 'arriba')      g.fillRect(0, 0, W, grueso);
+  else if(lado === 'abajo')  g.fillRect(0, H - grueso, W, grueso);
+  else if(lado === 'izquierda') g.fillRect(0, 0, grueso, H);
+  else                       g.fillRect(W - grueso, 0, grueso, H);
+
+  /* Una línea del color del agente pegada al borde de adentro: es lo que la
+     separa del contenido sin gastar espacio. */
+  g.fillStyle = color;
+  if(lado === 'arriba')      g.fillRect(0, grueso - 2, W, 2);
+  else if(lado === 'abajo')  g.fillRect(0, H - grueso, W, 2);
+  else if(lado === 'izquierda') g.fillRect(grueso - 2, 0, 2, H);
+  else                       g.fillRect(W - grueso, 0, 2, H);
+
+  /* Se dibuja siempre en horizontal y se GIRA el lienzo para los lados. Es la
+     mitad de código y, sobre todo, la misma barra en los cuatro lados: escrita
+     cuatro veces, la de la derecha se habría quedado atrás a la tercera. */
+  const largo = vertical ? H : W;
+  if(lado === 'izquierda'){ g.translate(0, H); g.rotate(-Math.PI/2); }
+  else if(lado === 'derecha'){ g.translate(W, 0); g.rotate(Math.PI/2); }
+  else if(lado === 'abajo'){ g.translate(0, H - grueso); }
+
+  /* De aquí para abajo se pinta como si la barra fuera de arriba y midiera
+     `largo` × `grueso`. */
+  const my = grueso / 2;
+  let x = 14;
+
+  /* El botón de inicio: el cuadrito con el color del agente. Es lo que hace
+     que se lea «barra de tareas» y no «letrero». */
+  g.fillStyle = color;
+  redondo(g, x, my - 13, 26, 26, 7); g.fill();
+  g.fillStyle = 'rgba(0,0,0,.55)';
+  g.fillRect(x + 7, my - 6, 5, 5); g.fillRect(x + 14, my - 6, 5, 5);
+  g.fillRect(x + 7, my + 1, 5, 5); g.fillRect(x + 14, my + 1, 5, 5);
+  x += 40;
+
+  if(!t){
+    g.fillStyle = '#5B4B6D'; g.font = '20px ui-monospace, Menlo, monospace';
+    g.fillText('sin nada en curso · matando el rato', x, my + 7);
+    g.restore();
+    return;
+  }
+
+  /* La «ventana abierta»: el encargo. Ocupa lo que sobre, para que se lea
+     completo cuando cabe y se recorte sólo cuando de verdad no. */
+  const finReloj = largo - 118;
+  const anchoVentana = Math.max(140, finReloj - x - 190);
+  g.fillStyle = 'rgba(255,255,255,.06)';
+  redondo(g, x, my - 17, anchoVentana, 34, 8); g.fill();
+  g.fillStyle = color; g.fillRect(x, my + 13, anchoVentana, 3);
+  g.fillStyle = '#E9E4E4'; g.font = '600 20px -apple-system, system-ui, sans-serif';
+  g.fillText(recortar(g, t.en || 'trabajando', anchoVentana - 22), x + 11, my + 3);
+  x += anchoVentana + 16;
+
+  /* El avance, que es lo que hace que se vea AVANZAR y no sólo estar. */
+  if(t.total > 0){
+    const p = Math.max(0, Math.min(1, t.va / t.total));
+    const bw = 120;
+    g.fillStyle = 'rgba(255,255,255,.10)'; redondo(g, x, my - 6, bw, 12, 6); g.fill();
+    g.fillStyle = color; redondo(g, x, my - 6, Math.max(12, bw * p), 12, 6); g.fill();
+    g.fillStyle = '#9A8FA8'; g.font = '17px ui-monospace, Menlo, monospace';
+    g.fillText(`${t.va}/${t.total}`, x + bw + 10, my + 6);
+  } else if(t.paso){
+    g.fillStyle = '#9A8FA8'; g.font = '18px ui-monospace, Menlo, monospace';
+    g.fillText(recortar(g, '› ' + t.paso, 170), x, my + 6);
+  }
+
+  /* El reloj, pegado a la esquina. Sin él no se lee como barra de tareas.
+     `relojFijo` sólo lo pone una prueba: sin poder congelarlo, dos pintadas
+     de la MISMA pantalla salen distintas si el minuto cambió entre una y otra,
+     y entonces la prueba de que repintar es idempotente falla sola una vez de
+     cada tantas. Una prueba que falla sola se acaba ignorando, y una prueba
+     que se ignora es peor que no tenerla. */
+  const d = new Date();
+  const reloj = relojFijo || (String(d.getHours()).padStart(2,'0') + ':' +
+                String(d.getMinutes()).padStart(2,'0'));
+  g.fillStyle = '#C0B0D0'; g.font = '19px ui-monospace, Menlo, monospace';
+  g.fillText(reloj, largo - 74, my + 6);
+
+  g.restore();
+}
+
+
+function juegoBattle(g, W, H, color, j){
+  /* Un mapa de battle royale con el círculo de la tormenta cerrándose. Lo que
+     dice el género de un vistazo son tres cosas: el círculo, el autobús que
+     cruza y la cuenta de los que quedan. */
+  /* Un verde de base y no casi negro: si el suelo es oscuro, lo único que se
+     lee es el morado de la tormenta y parece una mancha, no un mapa. */
+  g.fillStyle = '#24422A'; g.fillRect(0, 0, W, H);
+  /* el terreno: manchas de verde y arena */
+  const manchas = [[140,150,190,120,'#2E5A34'],[420,90,240,150,'#3A6B3E'],
+                   [720,180,230,170,'#2E5A34'],[200,380,280,150,'#4A5F2E'],
+                   [560,330,300,190,'#3A6B3E'],[60,260,150,140,'#4A5F2E']];
+  for(const [x,y,w,h,tono] of manchas){
+    g.fillStyle = tono; redondo(g, x, y, w, h, 34); g.fill();
+  }
+  /* caminos */
+  g.strokeStyle = '#6B6350'; g.lineWidth = 9;
+  g.beginPath(); g.moveTo(0, 300); g.bezierCurveTo(280, 250, 620, 380, W, 320); g.stroke();
+  g.beginPath(); g.moveTo(430, 0); g.bezierCurveTo(470, 220, 380, 380, 460, H); g.stroke();
+
+  /* la tormenta: lo de afuera del círculo, morado */
+  g.save();
+  g.beginPath(); g.rect(0, 0, W, H);
+  g.arc(560, 300, 210, 0, Math.PI*2, true);
+  g.fillStyle = 'rgba(120,60,220,.42)'; g.fill('evenodd');
+  g.restore();
+  g.strokeStyle = '#9D4DFF'; g.lineWidth = 4;
+  g.beginPath(); g.arc(560, 300, 210, 0, Math.PI*2); g.stroke();
+  /* y el círculo siguiente, punteado */
+  g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 3; g.setLineDash([10, 8]);
+  g.beginPath(); g.arc(600, 330, 118, 0, Math.PI*2); g.stroke(); g.setLineDash([]);
+
+  /* el autobús cruzando, con su estela */
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.setLineDash([14, 10]);
+  g.beginPath(); g.moveTo(60, 96); g.lineTo(W - 40, 190); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#F2C13D';
+  g.save(); g.translate(430, 143); g.rotate(0.12);
+  redondo(g, -34, -12, 68, 24, 6); g.fill();
+  g.fillStyle = '#7EC8E3'; g.fillRect(-24, -8, 40, 9);
+  g.restore();
+  /* el globo del autobús */
+  g.fillStyle = 'rgba(242,193,61,.55)';
+  g.beginPath(); g.ellipse(430, 108, 30, 22, 0, 0, Math.PI*2); g.fill();
+
+  /* los que quedan, arriba a la derecha */
+  g.fillStyle = 'rgba(0,0,0,.55)'; redondo(g, W - 210, 22, 186, 44, 8); g.fill();
+  g.fillStyle = '#FFFFFF'; g.font = '700 22px -apple-system, system-ui, Arial, sans-serif';
+  g.fillText('14 quedan', W - 192, 51);
+  g.fillStyle = '#9D4DFF'; redondo(g, W - 210, 74, 186, 10, 5); g.fill();
+
+  /* el inventario de abajo, que es la última pista del género */
+  for(let i = 0; i < 5; i++){
+    const x = W/2 - 5*36 + i*72;
+    const yb = HUECO.h - 128;
+    g.fillStyle = 'rgba(0,0,0,.5)'; redondo(g, x, yb, 66, 52, 6); g.fill();
+    g.strokeStyle = i === 1 ? '#FFFFFF' : 'rgba(255,255,255,.28)';
+    g.lineWidth = i === 1 ? 3 : 2; redondo(g, x, yb, 66, 52, 6); g.stroke();
+    if(i < 3){
+      g.fillStyle = ['#9D4DFF','#F2C13D','#4FC3F7'][i];
+      redondo(g, x + 12, yb + 12, 42, 28, 4); g.fill();
+    }
+  }
+  hudJuego(g, W, H, j, color);
+}
+
+/* ── el catálogo, y de quién es cada pantalla ──────────────────────────── */
+const OCIO = [
+  (g,W,H,c,n) => pantallaBusqueda(g, W, H, c, n),
+  (g,W,H,c,n) => juegoBloques(g, W, H, c, JUEGOS[0]),
+  (g,W,H,c,n) => pantallaVideo(g, W, H, c, n),
+  (g,W,H,c,n) => pantallaImagenes(g, W, H, c, n),
+  (g,W,H,c,n) => juegoArena(g, W, H, c, JUEGOS[1]),
+  (g,W,H,c,n) => pantallaHoja(g, W, H, c, n),
+  (g,W,H,c,n) => juegoCoches(g, W, H, c, JUEGOS[2]),
+  (g,W,H,c,n) => pantallaBusqueda(g, W, H, c, n + 3),
+  (g,W,H,c,n) => juegoCiudad(g, W, H, c, JUEGOS[3]),
+  (g,W,H,c,n) => juegoBattle(g, W, H, c, JUEGOS[4]),
+  (g,W,H,c,n) => pantallaVideo(g, W, H, c, n + 2),
+];
+
 /* ── el dibujo de la pantalla ─────────────────────────────────────────── */
+/* Once pantallas en la vuelta. La 0 es EL TRABAJO A PANTALLA COMPLETA; las
+   otras diez son las suyas —buscar, ver videos, jugar— y todas llevan la barra
+   con el trabajo de verdad encima.
+
+   La vuelta corre TRABAJE O NO, y ése es el encargo de Carlos entero: «el
+   chiste es que siga viendo el desarrollo de su tarea y me entretenga viendo
+   eso como si realmente hicieran algo». Sin la barra, la parte chistosa
+   escondería la parte útil; sin la rotación, la parte útil sería lo único. */
+const PANTALLAS_TOTAL = 1 + OCIO.length;
+
 function pintarPantalla(esc_, quien, color){
   const g = esc_.lienzo.getContext('2d');
   const W = 1024, H = 640;
+  /* ⚠ SE BORRA TODO ANTES DE CADA PANTALLA, y no dentro de cada una. Cada
+     escena pinta su propio fondo, así que parecía innecesario — hasta que en
+     la del mundo de bloques, donde el terreno sólo llegaba hasta donde llegaba,
+     asomó por abajo el «Lo que estabas buscando…» de la BÚSQUEDA anterior. Se
+     vio en la captura. Confiar en que cada escena tape todo es confiar en diez
+     funciones a la vez; borrar aquí es una línea. */
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = 1;
+  g.clearRect(0, 0, W, H);
   g.fillStyle = '#0C0714'; g.fillRect(0, 0, W, H);
 
-  /* barra de título */
-  g.fillStyle = '#1B1226'; g.fillRect(0, 0, W, 62);
-  g.fillStyle = color;     g.fillRect(0, 60, W, 2);
-  for(let i = 0; i < 3; i++){
-    g.beginPath(); g.arc(34 + i*30, 31, 8, 0, Math.PI*2);
-    g.fillStyle = ['#F0567F','#E8B33A','#3ECF8E'][i]; g.fill();
-  }
-  g.fillStyle = '#A090B4'; g.font = '600 24px ui-monospace, Menlo, monospace';
-  g.fillText((quien.nombre || '').slice(0, 30), 140, 40);
-
   const t = quien.trabajo;
-  if(!t){
-    g.fillStyle = '#4A3167'; g.font = '600 30px ui-monospace, Menlo, monospace';
-    g.fillText('en reposo', 44, 150);
-    g.fillStyle = '#2A1C3D'; g.font = '22px ui-monospace, Menlo, monospace';
-    g.fillText('sin nada en curso', 44, 196);
+  const n = ((esc_.ocio | 0) % PANTALLAS_TOTAL + PANTALLAS_TOTAL) % PANTALLAS_TOTAL;
+
+  /* La 0 con trabajo es la pantalla completa del encargo. Sin trabajo no hay
+     pantalla completa que enseñar, así que se va a la primera de las suyas —y
+     la barra dirá que anda matando el rato, que es la verdad. */
+  if(n === 0 && t){
+    pantallaTrabajo(g, W, H, quien, color, t);
     esc_.textura.needsUpdate = true;
     return;
   }
 
+  /* ⚠ LA BARRA LE CORRE EL SITIO A LA PANTALLA, no se le pone encima. Con la
+     barra arriba y una página de navegador, la franja tapaba justo las
+     PESTAÑAS —lo primero que dice «esto es un navegador»— y la página parecía
+     empezar en la barra de dirección. Se vio en la captura.
+
+     Se resuelve una sola vez aquí y no en las doce escenas: se corre el lienzo
+     y se recorta al hueco que queda. Cada escena sigue dibujando como si
+     tuviera la pantalla entera, y lo que se pierde es la orilla del lado
+     contrario — que es lo mismo que hace una barra de tareas de verdad. */
+  const lado = esc_.ladoFijo || ladoDe(quien.id);
+  const hueco = GRUESO[lado];
+  const vertical = lado === 'izquierda' || lado === 'derecha';
+  HUECO = { w: W - (vertical ? hueco : 0), h: H - (vertical ? 0 : hueco) };
+  g.save();
+  g.beginPath();
+  if(lado === 'arriba'){        g.rect(0, hueco, W, H - hueco);      g.clip(); g.translate(0, hueco); }
+  else if(lado === 'abajo'){    g.rect(0, 0, W, H - hueco);          g.clip(); }
+  else if(lado === 'izquierda'){g.rect(hueco, 0, W - hueco, H);      g.clip(); g.translate(hueco, 0); }
+  else {                        g.rect(0, 0, W - hueco, H);          g.clip(); }
+  OCIO[(n === 0 ? 0 : n - 1) % OCIO.length](g, W, H, color, n);
+  g.restore();
+
+  /* `ladoFijo` sólo lo pone la manija de pruebas, para poder ver los cuatro
+     lados sin esperar a que le toque a alguien el de la derecha. La primera
+     versión de esa manija pintaba la barra ENCIMA de la que ya había puesto
+     esta función: salían dos, y en la captura parecía un defecto del producto
+     cuando era del andamio. */
+  barraDeTarea(g, W, H, quien, color, lado);
+  esc_.textura.needsUpdate = true;
+}
+
+/* El encargo a pantalla completa, dentro de un navegador. */
+function pantallaTrabajo(g, W, H, quien, color, t){
+  /* El encargo va como PESTAÑA ABIERTA. Es el detalle que hace que se lea
+     «está trabajando en esto» y no «hay un letrero pegado en la pared». */
+  marcoNavegador(g, W, color,
+    [recortar2(g, t.en || 'trabajo', 200), 'la mesa', 'el repo'], 0,
+    'taller.mazi/' + (quien.id || 'agente') + '/en-curso');
+
   g.fillStyle = '#7B6B8D'; g.font = '600 19px ui-monospace, Menlo, monospace';
-  g.fillText('AHORITA ESTÁ EN', 44, 118);
+  g.fillText('AHORITA ESTÁ EN', 44, 150);
 
   /* El título se parte a mano: `fillText` no salta de renglón solo, y un
      encargo largo se salía de la pantalla sin que nadie se enterara. */
   g.fillStyle = '#E9E4E4'; g.font = '700 38px -apple-system, system-ui, sans-serif';
-  let y = 168;
+  let y = 200;
   for(const linea of partir(g, t.en || '', W - 88).slice(0, 2)){
     g.fillText(linea, 44, y); y += 46;
   }
 
   if(t.paso){
     g.fillStyle = color; g.font = '24px ui-monospace, Menlo, monospace';
-    g.fillText(recortar(g, '› ' + t.paso, W - 88), 44, y + 12);
+    g.fillText(recortar(g, '› ' + t.paso, W - 88), 44, y + 10);
   }
 
   /* avance */
   if(t.total > 0){
-    const by = 330, bw = W - 88, p = Math.max(0, Math.min(1, t.va / t.total));
+    const by = 356, bw = W - 88, p = Math.max(0, Math.min(1, t.va / t.total));
     g.fillStyle = '#241834'; redondo(g, 44, by, bw, 14, 7); g.fill();
     g.fillStyle = color;     redondo(g, 44, by, Math.max(14, bw*p), 14, 7); g.fill();
     g.fillStyle = '#7B6B8D'; g.font = '20px ui-monospace, Menlo, monospace';
-    g.fillText(`${t.va} de ${t.total}`, 44, by + 44);
+    g.fillText(`${t.va} de ${t.total}`, 44, by + 40);
   }
 
   /* el rastro: los últimos pasos, del más viejo al más nuevo */
-  const pasos = (t.pasos || []).slice(-7);
+  const pasos = (t.pasos || []).slice(-6);
   if(pasos.length){
-    g.fillStyle = '#33224A'; g.fillRect(44, 396, W - 88, 1);
+    g.fillStyle = '#33224A'; g.fillRect(44, 424, W - 88, 1);
     g.font = '21px ui-monospace, Menlo, monospace';
-    let py = 432;
+    let py = 458;
     pasos.forEach((p, i) => {
       const ultimo = i === pasos.length - 1;
       g.fillStyle = ultimo ? '#C77BFF' : `rgba(123,107,141,${0.4 + i*0.07})`;
@@ -364,7 +1486,17 @@ function pintarPantalla(esc_, quien, color){
       py += 29;
     });
   }
-  esc_.textura.needsUpdate = true;
+}
+
+/* Recorta a un ancho en píxeles conservando la fuente que ya esté puesta. Va
+   aparte de `recortar` porque el marco del navegador cambia la fuente y
+   `recortar` mediría con la que quedó, no con la suya. */
+function recortar2(g, texto, ancho){
+  const antes = g.font;
+  g.font = '19px ui-monospace, Menlo, monospace';
+  const r = recortar(g, texto, ancho);
+  g.font = antes;
+  return r;
 }
 
 function partir(g, texto, ancho){
@@ -401,17 +1533,128 @@ let radioActual = 0;          /* qué tan abierto quedó el semicírculo */
    estado del trabajo y el cuerpo — y es lo que hace que se entienda de reojo,
    sin leer nada. */
 function animacionDe(quien){
+  /* ⚠ SENTADO ES EL ESTADO NORMAL, Y ANTES ERA LA EXCEPCIÓN. Carlos, e176:
+     «los robots no se sientan en sus sillas», y e165: «no hace la animación
+     de usar su teclado y mouse».
+
+     Son la MISMA causa y por eso se arreglan juntas: `Sitting` sólo salía si
+     el agente estaba reportando trabajo con /trabajando, que en la práctica
+     casi nunca pasa. Todo el resto del tiempo devolvía `Idle`, que es la pose
+     DE PIE — así que había una silla debajo de cada robot y ninguno sentado
+     en ella. Y como teclear y mover el ratón se dibujan sólo sobre la pose
+     sentada, tampoco se veían nunca.
+
+     Ahora el sitio de trabajo manda: quien está en su escritorio está
+     sentado. De pie se queda sólo quien tiene una razón para estarlo —el que
+     anda buscando, que camina— y tumbado el que ya no está. Las reacciones
+     que sí son de pie (pulgar arriba, negar) siguen saliendo: son un momento,
+     no un estado, y levantarse a decir algo y volver a sentarse es
+     exactamente lo que hace una persona. */
   if(quien.estado === 'topado' || quien.estado === 'ocupado') return 'No';
   if(quien.estado === 'fuera') return 'Death';
-  if(Date.now() - (quien.visto || 0) > 5*60_000) return 'Idle';
   if(quien.trabajo){
     const t = (quien.trabajo.paso || quien.trabajo.en || '').toLowerCase();
     if(/\bprueb|test|verde|pasan\b/.test(t)) return 'ThumbsUp';
     if(/\bfall|error|roto|trueno\b/.test(t))  return 'No';
     if(/\bbusc|le(o|yendo)|revis\b/.test(t))  return 'Walking';
-    return 'Sitting';
   }
-  return 'Idle';
+  /* Callado hace rato o sin nada reportado: sentado igual. Que lleve un rato
+     sin hablar ya lo dice el aro apagado y el globo; no hacía falta además
+     ponerlo de pie, que es lo que rompía la escena. */
+  return 'Sitting';
+}
+
+/* ══ TECLEAR Y MOVER EL RATÓN ══════════════════════════════════════════════
+   Lo pidió Carlos: «dales animación de escribir y mover el mouse».
+
+   ⚠ EL MODELO NO TRAE NINGUNA DE LAS DOS. Sus catorce clips son Dance, Death,
+   Idle, Jump, No, Punch, Running, Sitting, Standing, ThumbsUp, Walking,
+   WalkJump, Wave y Yes — se comprobó pidiéndoselos al propio modelo, no
+   suponiendo. Así que teclear no se elige: se inventa.
+
+   Cómo, sin salirse de lo que la casa acepta: se deja que `Sitting` siga
+   corriendo —da la pose, la espalda, las piernas— y ENCIMA se le mueven a
+   mano cuatro huesos de los brazos. El mezclador escribe la rotación en cada
+   cuadro y nosotros la corregimos después, así que no pelean: uno pone la
+   pose y el otro el temblor.
+
+   Las dos manos NO hacen lo mismo, y ahí está todo el efecto:
+     · la izquierda teclea — sube y baja rápido, en ráfagas con pausas, porque
+       nadie teclea a ritmo de metrónomo;
+     · la derecha lleva el ratón — deriva lento y ancho sobre la mesa.
+   Si las dos hicieran lo mismo se ve un muñeco vibrando, no alguien
+   trabajando. */
+const HUESOS_TECLEO = { UpperArmL:1, LowerArmL:1, UpperArmR:1, LowerArmR:1 };
+
+function moverBrazos(p, t){
+  const b = p.brazos;
+  if(!b || !b.LowerArmL) return;
+
+  /* ⚠ ESTO DEPENDÍA DE `trabajo` Y POR ESO NO SE VEÍA NUNCA. Es la MISMA
+     causa que ya se había arreglado tres párrafos más arriba para sentarse, y
+     se quedó a medias: `quien.trabajo` sólo existe si el agente reporta con
+     /trabajando, «que en la práctica casi nunca pasa» —lo dice el comentario
+     de al lado—. Así que los robots se sentaban y no tecleaban jamás.
+     Carlos, e226: «los bots no escriben ni usan el teclado pero ya están
+     sentados», y otra vez en e263.
+
+     El criterio correcto es el mismo que el de la silla: quien está en su
+     escritorio está tecleando. La excepción es quien tiene una razón para no
+     estarlo —el que camina buscando, el que está topado, el que ya no está—.
+     Un agente sentado y quieto delante de una pantalla encendida se lee como
+     descompuesto, no como en reposo. */
+  const pose = p.quien ? animacionDe(p.quien) : 'Idle';
+  const trabajando = pose === 'Sitting'
+                  && p.quien.estado !== 'topado' && p.quien.estado !== 'fuera';
+
+  /* ⚠ EL DESPLAZAMIENTO SE APLICA COMO DIFERENCIA, NO COMO SUMA.
+     Antes era `rotation.x += dx` en cada cuadro. Para un hueso que el clip SÍ
+     anima da igual, porque el mezclador lo vuelve a escribir; pero para uno
+     que el clip NO anima —y en `Sitting` son casi todos los del brazo— la
+     rotación se ACUMULA para siempre: medido, el brazo derecho giraba 0.28
+     radianes en 0.8 segundos y seguía. A los treinta segundos el robot tiene
+     el brazo detrás de la cabeza.
+
+     Guardando lo último que pusimos y restando, el desfase neto contra la
+     pose del mezclador es siempre exactamente `dx`, y al soltar vuelve a
+     cero solo — que es lo que este comentario prometía y no hacía. */
+  if(!p.desfase) p.desfase = {};
+  const suave = (nombre, hueso, dx, dy) => {
+    const a = p.desfase[nombre] || { x:0, y:0 };
+    hueso.rotation.x += dx - a.x;
+    hueso.rotation.y += dy - a.y;
+    p.desfase[nombre] = { x:dx, y:dy };
+  };
+
+  if(!trabajando){
+    /* al dejar de teclear se devuelve la pose, en el mismo cuadro */
+    for(const nombre in p.desfase){
+      const h = b[nombre], a = p.desfase[nombre];
+      if(h){ h.rotation.x -= a.x; h.rotation.y -= a.y; }
+    }
+    p.desfase = {};
+    return;
+  }
+
+  const f = t * 9 + p.fase;
+  /* Las ráfagas: teclea un rato y para. `Math.max(0, sin)` da pausas de la
+     mitad del ciclo, que es lo que hace que se lea como escribir y no como
+     temblar. */
+  const rafaga = Math.max(0, Math.sin(t * 1.3 + p.fase));
+  const golpe  = Math.sin(f) * 0.075 * rafaga;
+  const golpe2 = Math.sin(f * 1.17 + 1.1) * 0.065 * rafaga;
+
+  suave('LowerArmL', b.LowerArmL, golpe, 0);
+  if(b.UpperArmL) suave('UpperArmL', b.UpperArmL, golpe * 0.35, 0);
+  suave('LowerArmR', b.LowerArmR, golpe2 * 0.4, 0);
+
+  /* El ratón: la derecha deriva despacio y ancho, en dos ejes distintos para
+     que el recorrido no sea una recta. */
+  if(b.UpperArmR){
+    suave('UpperArmR', b.UpperArmR,
+          Math.sin(t * 0.55 + p.fase) * 0.05,
+          Math.cos(t * 0.38 + p.fase) * 0.09);
+  }
 }
 
 function ponerAgente(quien, indice, cuantos){
@@ -445,7 +1688,7 @@ function ponerAgente(quien, indice, cuantos){
   g.add(mesa.grupo);
 
   const muñeco = plantilla ? clonarConHuesos(plantilla) : null;
-  let mezclador = null; const acciones = {};
+  let mezclador = null; const acciones = {}, brazos = {};
   if(muñeco){
     /* La escala se MIDE, no se adivina — pero se mide sobre el ORIGINAL y una
        sola vez. Medirla sobre el clon daba 1.49 en vez de 4.79: `setFromObject`
@@ -471,7 +1714,42 @@ function ponerAgente(quien, indice, cuantos){
     });
     g.add(muñeco);
     mezclador = new THREE.AnimationMixer(muñeco);
-    for(const clip of animaciones) acciones[clip.name] = mezclador.clipAction(clip);
+    /* ⚠ HAY DOS CLASES DE CLIP Y TRATARLOS IGUAL FUE EL DEFECTO. Carlos:
+       «los robots se sientan y se paran y se sientan y se paran, parece que es
+       error de loop con el inicio de la animación». Tenía razón hasta en el
+       diagnóstico.
+
+       Lo MEDÍ en vez de suponerlo, y el corte es limpio: `Idle` dura 3.33 s y
+       `Walking` 0.96 — son ciclos, y en bucle se ven bien. `Sitting` y
+       `Standing` duran 0.417 y NO son poses: son la TRANSICIÓN de estar de
+       pie a estar sentado. En bucle, el robot se sienta y se vuelve a
+       levantar dos veces por segundo. Lo confirmé mirando la altura de la
+       cadera: oscilaba entre 0.26 y 0.42 sin parar.
+
+       Y lo hice yo: antes `Sitting` casi no salía —sólo con trabajo
+       reportado— y al ponerla de estado por defecto, el defecto quedó a la
+       vista todo el rato.
+
+       Una transición se toca UNA VEZ y se queda en el último cuadro. `Death`
+       igual, por la misma razón y porque un robot no se muere en bucle. */
+    const POSES = new Set(['Sitting', 'Standing', 'Death']);
+    for(const clip of animaciones){
+      const a = mezclador.clipAction(clip);
+      if(POSES.has(clip.name)){
+        a.setLoop(THREE.LoopOnce, 1);
+        a.clampWhenFinished = true;      /* se queda sentado, no rebota */
+      }
+      acciones[clip.name] = a;
+    }
+    /* Se apartan los huesos de los brazos: son los que se van a mover a mano
+       para teclear. El modelo NO trae animación de teclear —sus catorce clips
+       son Dance, Idle, Sitting, Wave y compañía—, así que o se inventa con
+       huesos o no hay. Se guardan aquí y no se buscan cada cuadro: recorrer el
+       esqueleto sesenta veces por segundo por cada agente es como se calienta
+       un teléfono sin que se vea nada distinto. */
+    for(const o of [muñeco]) o.traverse(x => {
+      if(x.isBone && HUESOS_TECLEO[x.name]) brazos[x.name] = x;
+    });
   }
 
   /* El aro del piso: dice de quién es el puesto aunque el robot esté de
@@ -482,13 +1760,112 @@ function ponerAgente(quien, indice, cuantos){
   aro.rotation.x = -Math.PI/2; aro.position.y = 0.01;
   g.add(aro);
 
+  /* La silla va DETRÁS del robot (+z local, o sea del lado de la cámara),
+     porque el robot mira al escritorio que está en -z. Puesta en el mismo
+     sitio que él, se le encajaba en el cuerpo. */
+  /* Debajo de la cadera, no detrás: 0.05 en z y el asiento a la altura que se
+     midió. El respaldo queda del lado de la cámara, que es la espalda del
+     robot — él mira al escritorio, en -z. */
+  const silla = hacerSilla(color, ALTO_ASIENTO);
+  silla.position.set(0, 0, 0.05);
+  g.add(silla);
+
+  const bocadillo = hacerBocadillo();
+  g.add(bocadillo.sprite);
+
   escena.add(g);
-  const puesto = { id:quien.id, grupo:g, mesa, mezclador, acciones, aro,
+  const puesto = { id:quien.id, grupo:g, mesa, mezclador, acciones, aro, silla,
+                   bocadillo, brazos, reposo:null, fase: Math.random() * 6.28,
                    actual:null, quien, color };
   puestos.set(quien.id, puesto);
   cambiarAnimacion(puesto, animacionDe(quien));
   pintarPantalla(mesa, quien, '#' + color.getHexString());
   return puesto;
+}
+
+/* ══ EL BOCADILLO SOBRE LA CABEZA ══════════════════════════════════════════
+   Lo pidió Carlos: «que pueda ver las burbujas de texto de cada integrante
+   sobre su cabeza en ese entorno 3D para que esté bien chingón».
+
+   Va como Sprite y no como plano: un Sprite SIEMPRE mira a la cámara sola,
+   así que el texto se lee desde cualquier ángulo sin una línea de código que
+   lo gire. Un plano habría que orientarlo cuadro por cuadro y se vería de
+   canto justo cuando uno rodea el cuarto, que es cuando más se está mirando.
+
+   El lienzo se dibuja al DOBLE de lo que se ve y luego se escala: si se
+   dibuja al tamaño final, el texto sale borroso en cuanto uno se acerca —
+   que es exactamente lo que uno hace cuando quiere leerlo. */
+const BOCADILLO_W = 720, BOCADILLO_H = 300;
+
+function hacerBocadillo(){
+  const lienzo = document.createElement('canvas');
+  lienzo.width = BOCADILLO_W; lienzo.height = BOCADILLO_H;
+  const textura = new THREE.CanvasTexture(lienzo);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: textura, transparent:true, depthTest:false,
+  }));
+  /* `depthTest:false` a propósito: sin eso el bocadillo se mete DENTRO del
+     escritorio de quien está adelante y se ve cortado por la mitad. Lo que se
+     dice siempre va encima de los muebles. */
+  sprite.renderOrder = 10;
+  sprite.scale.set(1.5, 0.625, 1);
+  sprite.position.set(0, ALTO_AGENTE + 0.62, 0);
+  sprite.visible = false;
+  return { sprite, lienzo, textura, dice:null };
+}
+
+/* Cuánto hace que se dijo, en cristiano. Un bocadillo sin esto miente: se ve
+   igual de fresco un mensaje de hace diez segundos que uno de anteayer. */
+function haceCuanto(ts){
+  const min = Math.round((Date.now() - ts) / 60000);
+  if(min < 1)  return 'ahorita';
+  if(min < 60) return `hace ${min} min`;
+  const h = Math.round(min/60);
+  if(h < 24)   return `hace ${h} h`;
+  return `hace ${Math.round(h/24)} d`;
+}
+
+function pintarBocadillo(b, texto, color, ts){
+  const g = b.lienzo.getContext('2d');
+  g.clearRect(0, 0, BOCADILLO_W, BOCADILLO_H);
+
+  g.font = '600 30px -apple-system, system-ui, sans-serif';
+  const lineas = partir(g, texto, BOCADILLO_W - 84).slice(0, 4);
+  /* Si no cabe, se corta el ÚLTIMO renglón con puntos suspensivos en vez de
+     tragarse el resto sin avisar: un bocadillo que miente sobre lo que se
+     dijo es peor que uno corto. */
+  if(partir(g, texto, BOCADILLO_W - 84).length > 4)
+    lineas[3] = recortar(g, lineas[3], BOCADILLO_W - 120) ;
+  const alto = 92 + lineas.length * 40;
+  const y0 = BOCADILLO_H - alto - 34;
+
+  /* la caja */
+  g.fillStyle = 'rgba(12,7,20,.93)';
+  redondo(g, 12, y0, BOCADILLO_W - 24, alto, 26); g.fill();
+  g.strokeStyle = color; g.lineWidth = 4;
+  redondo(g, 12, y0, BOCADILLO_W - 24, alto, 26); g.stroke();
+
+  /* el piquito hacia la cabeza */
+  g.beginPath();
+  g.moveTo(BOCADILLO_W/2 - 20, y0 + alto - 2);
+  g.lineTo(BOCADILLO_W/2, y0 + alto + 28);
+  g.lineTo(BOCADILLO_W/2 + 20, y0 + alto - 2);
+  g.closePath();
+  g.fillStyle = 'rgba(12,7,20,.93)'; g.fill();
+  g.strokeStyle = color; g.lineWidth = 4; g.stroke();
+
+  /* cuándo */
+  g.fillStyle = color; g.font = '600 20px ui-monospace, Menlo, monospace';
+  g.fillText(haceCuanto(ts), 42, y0 + 40);
+
+  /* lo dicho */
+  g.fillStyle = '#E9E4E4'; g.font = '600 30px -apple-system, system-ui, sans-serif';
+  let y = y0 + 82;
+  for(const l of lineas){ g.fillText(l, 42, y); y += 40; }
+
+  b.textura.needsUpdate = true;
+  b.sprite.visible = true;
 }
 
 function cambiarAnimacion(p, nombre){
@@ -501,15 +1878,49 @@ function cambiarAnimacion(p, nombre){
 
 /* ══ LOS DATOS ═══════════════════════════════════════════════════════════ */
 let gente = {};
+/* Lo último que dijo cada quien, que es lo que va en su bocadillo. */
+let ultimoDicho = {};
+
+/* Del hilo completo, el último mensaje DE VERDAD de cada quien. Se saltan los
+   de sistema («entró», «salió») porque poner «Carlos entró» flotando sobre la
+   cabeza de Carlos no le dice nada a nadie. */
+function deLoDicho(hilo){
+  const ult = {};
+  for(const e of hilo){
+    if(!e || !e.de || !e.de.id) continue;
+    if(e.tipo === 'sistema') continue;
+    const texto = (e.texto || '').trim();
+    if(!texto) continue;
+    const antes = ult[e.de.id];
+    if(!antes || e.ts >= antes.ts) ult[e.de.id] = { texto, ts:e.ts, tipo:e.tipo };
+  }
+  return ult;
+}
+
+/* Cuánto tiempo se queda una burbuja arriba. Media hora: lo bastante para que
+   al abrir el taller se vea de qué se está hablando, y lo bastante poco para
+   que un cuarto vacío no siga con los globos de anoche puestos. */
+const DURA_BOCADILLO = 30 * 60_000;
 
 async function traer(){
-  if(DEMO) return demo();
+  if(DEMO){ ultimoDicho = dichoDemo(); return demo(); }
   try{
     const r = await fetch(`${SERVIDOR}/api/sala/${SALA}/hilo`,
       { headers: LLAVE ? { 'X-Llave': LLAVE } : {} });
+    /* Un 401 aquí no es «se cayó la sala»: es que la sala tiene llaves puestas
+       y esta pestaña no trae ninguna. Decirlo con el número nada más manda a
+       buscar del lado equivocado, que es lo que pasó la primera vez. */
+    if(r.status === 401){
+      throw new Error('la sala pide llave y esta pestaña no trae ninguna · '
+        + 'entra una vez por el link con ?llave=… y queda guardada');
+    }
     if(!r.ok) throw new Error(`el servidor contestó ${r.status}`);
     const d = await r.json();
     $('aviso').textContent = '';
+    /* ⚠ El hilo YA VENÍA en esta misma respuesta y se estaba tirando. No hizo
+       falta una petición nueva ni un endpoint nuevo para las burbujas: hacía
+       falta dejar de tirar la mitad de lo que ya se pedía. */
+    ultimoDicho = deLoDicho(d.hilo || []);
     return d.gente || {};
   }catch(e){
     $('aviso').textContent = `Sin conexión con la sala · ${e.message}`;
@@ -549,6 +1960,18 @@ function demo(){
   };
 }
 
+/* En demostración se inventa también lo dicho: si no, el taller de ejemplo
+   sale sin burbujas y no se ve la mitad de lo que hace. */
+function dichoDemo(){
+  const t = Date.now();
+  return {
+    'cl-1':{ texto:'Ya quedó el arreglo de las deudas. Falta que alguien lo pruebe con un pedido de verdad.', ts:t-90_000 },
+    'cl-2':{ texto:'Encontré 31 defectos en la plantilla. Los tengo ordenados por qué tan feo se ve.', ts:t-260_000 },
+    'cl-l':{ texto:'Voy con la privacidad de avisos/. Hay nombres reales publicados.', ts:t-40_000 },
+    'gem':{ texto:'Reviso el video cuando terminen.', ts:t-600_000 },
+  };
+}
+
 function refrescar(nueva){
   gente = nueva;
   const lista = Object.values(gente);
@@ -568,6 +1991,22 @@ function refrescar(nueva){
     /* la pantalla apagada cuando no hay nada: se nota de lejos quién trabaja */
     p.mesa.brillo.intensity = quien.trabajo ? 1.5 : 0.35;
     p.aro.material.opacity  = quien.trabajo ? 0.72 : 0.28;
+
+    /* ── su burbuja ── */
+    const dijo = ultimoDicho[quien.id];
+    if(dijo && Date.now() - dijo.ts < DURA_BOCADILLO){
+      /* Se vuelve a dibujar sólo si CAMBIÓ lo dicho. Repintar un lienzo de
+         720×300 sesenta veces por segundo para escribir lo mismo es como se
+         calienta un teléfono sin que nada se vea distinto. */
+      if(p.bocadillo.dice !== dijo.ts){
+        pintarBocadillo(p.bocadillo, dijo.texto,
+                        '#' + p.color.getHexString(), dijo.ts);
+        p.bocadillo.dice = dijo.ts;
+      }
+    }else{
+      p.bocadillo.sprite.visible = false;
+      p.bocadillo.dice = null;
+    }
   });
   pintarPanel(lista);
   if(!enFoco && lista.length) enFocar(lista[0].id);
@@ -612,6 +2051,230 @@ $('panel').addEventListener('click', (e) => {
   if(f) enFocar(f.dataset.ver);
 });
 
+/* ══ EL CIELO DE NEURONAS ══════════════════════════════════════════════════
+   Carlos: «haz que las neuronas se vean como una skybox en el taller 3D y se
+   vea cuando hacen sinapsis etc para que se vea bien mamón».
+
+   QUÉ ES: una esfera de neuronas alrededor del cuarto, con sus enlaces, que se
+   ENCIENDE por saltos. No es decoración suelta: es el Cerebro de la casa —118
+   neuronas en 11 áreas— puesto como cielo del taller. Cuando un agente trabaja
+   está literalmente adentro de lo que la casa ya sabe.
+
+   TRES DECISIONES QUE NO SON OBVIAS:
+
+   1 · VA SIN NIEBLA. El cuarto tiene `Fog(9, 26)`, así que cualquier cosa más
+       allá de 26 unidades se pinta del color del fondo — o sea, invisible. Un
+       cielo dentro del alcance de la niebla no es un cielo: es un techo. Las
+       dos materias llevan `fog:false`.
+
+   2 · EL PUNTO SE DIBUJA CON SU PROPIO SOMBREADOR, y no con `PointsMaterial`.
+       No es por presumir: `PointsMaterial` tiene UN tamaño para todos los
+       puntos, y lo que hace que esto se lea como sinapsis y no como confeti es
+       que la neurona que dispara CREZCA. Con un color más brillante y el mismo
+       tamaño, a veinte metros no se distingue.
+
+   3 · LOS ENLACES SALEN DE LA DISTANCIA, no de una lista. Cada neurona se une
+       a sus tres más cercanas: así el grafo queda conectado sin cruces largos
+       que se lean como rayas sueltas, y la señal viaja por vecindad, que es
+       como se ve un cerebro de verdad.
+
+   Y RESPETA `prefers-reduced-motion`: se queda quieto y encendido tenue. Un
+   cielo que parpadea no es negociable para quien le hace daño.
+   ═════════════════════════════════════════════════════════════════════════ */
+const CIELO = {
+  cuantas: 300,          /* neuronas. Más no se distinguen y sí se pagan */
+  vecinas: 3,            /* enlaces por neurona */
+  radio: 34,             /* fuera de la niebla y fuera del alcance del mando */
+  saltos: 3,             /* hasta dónde llega una señal */
+  cadaCuanto: 1.15,      /* segundos entre disparos */
+};
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let cielo = null;
+function armarCielo(){
+  if(!HAY3D) return null;
+
+  /* Reparto en espiral de Fibonacci: puntos separados de verdad sobre la
+     esfera. Al azar puro salen grumos y huecos, y los grumos se leen como
+     manchas, no como una red. */
+  const n = CIELO.cuantas;
+  const pos = new Float32Array(n * 3);
+  const carga = new Float32Array(n);
+  const puntos = [];
+  const dorado = Math.PI * (3 - Math.sqrt(5));
+  for(let i = 0; i < n; i++){
+    const y = 1 - (i / (n - 1)) * 2;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const th = dorado * i;
+    /* Aplastado en Y (0.55): el cuarto se mira de frente y casi nunca hacia
+       arriba, así que una esfera perfecta gasta la mitad de sus neuronas en
+       un cenit que nadie ve. */
+    const v = new THREE.Vector3(Math.cos(th) * r, y * 0.55, Math.sin(th) * r)
+      .multiplyScalar(CIELO.radio);
+    pos[i*3] = v.x; pos[i*3+1] = v.y + 6; pos[i*3+2] = v.z;
+    puntos.push(v);
+  }
+
+  /* Los enlaces, por cercanía. Se guardan sin repetir: un par unido dos veces
+     se pinta doble y se ve más brillante que sus iguales sin razón. */
+  const vecinas = Array.from({ length:n }, () => []);
+  const pares = new Set();
+  const idx = [];
+  for(let i = 0; i < n; i++){
+    const cerca = [];
+    for(let j = 0; j < n; j++){
+      if(i === j) continue;
+      cerca.push([puntos[i].distanceToSquared(puntos[j]), j]);
+    }
+    cerca.sort((a, b) => a[0] - b[0]);
+    for(let k = 0; k < CIELO.vecinas; k++){
+      const j = cerca[k][1];
+      vecinas[i].push(j);
+      if(!vecinas[j].includes(i)) vecinas[j].push(i);
+      const llave = i < j ? i + ':' + j : j + ':' + i;
+      if(pares.has(llave)) continue;
+      pares.add(llave);
+      idx.push(i, j);
+    }
+  }
+
+  /* ── las neuronas ── */
+  const gNeur = new THREE.BufferGeometry();
+  gNeur.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  gNeur.setAttribute('carga', new THREE.BufferAttribute(carga, 1));
+  const mNeur = new THREE.ShaderMaterial({
+    uniforms: {
+      escala:  { value: Math.min(devicePixelRatio, 2) },
+      apagado: { value: new THREE.Color(0x5B3C7A) },
+      vivo:    { value: new THREE.Color(0xE0A8FF) },
+    },
+    vertexShader: `
+      attribute float carga;
+      varying float vCarga;
+      uniform float escala;
+      void main(){
+        vCarga = carga;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        /* El tamaño crece con la carga: es lo que hace que un disparo se lea
+           como un disparo y no como un cambio de color. */
+        gl_PointSize = (2.2 + carga * 7.5) * escala * (260.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying float vCarga;
+      uniform vec3 apagado;
+      uniform vec3 vivo;
+      void main(){
+        /* Redondo y con la orilla suave. Un cuadrito duro se ve a pixel y
+           delata que son puntos, no luces. */
+        vec2 d = gl_PointCoord - vec2(0.5);
+        float r = length(d);
+        if(r > 0.5) discard;
+        float borde = smoothstep(0.5, 0.06, r);
+        vec3 c = mix(apagado, vivo, clamp(vCarga, 0.0, 1.0));
+        gl_FragColor = vec4(c, borde * (0.34 + vCarga * 0.66));
+      }`,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    fog: false,
+  });
+  const nube = new THREE.Points(gNeur, mNeur);
+
+  /* ── las sinapsis ── */
+  /* Van con color por vértice y NO con opacidad global: si toda la red subiera
+     de brillo a la vez se vería un destello, no una señal recorriendo. Lo que
+     se lee como sinapsis es que se encienda UN camino. */
+  const linPos = new Float32Array(idx.length * 3);
+  const linCol = new Float32Array(idx.length * 3);
+  for(let k = 0; k < idx.length; k++){
+    const i = idx[k];
+    linPos[k*3] = pos[i*3]; linPos[k*3+1] = pos[i*3+1]; linPos[k*3+2] = pos[i*3+2];
+  }
+  const gLin = new THREE.BufferGeometry();
+  gLin.setAttribute('position', new THREE.BufferAttribute(linPos, 3));
+  gLin.setAttribute('color', new THREE.BufferAttribute(linCol, 3));
+  const hilos = new THREE.LineSegments(gLin, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.85,
+    depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+  }));
+
+  const grupo = new THREE.Group();
+  grupo.add(nube); grupo.add(hilos);
+  /* No recibe ni proyecta sombra, y no entra en el `raycast` del mando. */
+  grupo.matrixAutoUpdate = true;
+  escena.add(grupo);
+
+  return { grupo, nube, hilos, gNeur, gLin, idx, vecinas, carga,
+           colorLinea: linCol, n, proximo: 0, quemando: [] };
+}
+
+/* Un disparo: se enciende una neurona y la señal salta a sus vecinas. Cada
+   salto llega más débil, que es lo que hace que se vea una DIRECCIÓN en vez de
+   una mancha creciendo. */
+function dispararCielo(c){
+  const semilla = (Math.random() * c.n) | 0;
+  const vistas = new Set([semilla]);
+  let frente = [semilla];
+  for(let salto = 0; salto <= CIELO.saltos; salto++){
+    const fuerza = 1 - salto / (CIELO.saltos + 1);
+    for(const i of frente) c.quemando.push({ i, fuerza, espera: salto * 0.14 });
+    const siguiente = [];
+    for(const i of frente){
+      for(const j of c.vecinas[i]){
+        if(vistas.has(j)) continue;
+        vistas.add(j); siguiente.push(j);
+      }
+    }
+    frente = siguiente;
+    if(!frente.length) break;
+  }
+}
+
+function moverCielo(c, dt, t){
+  if(!c) return;
+  /* Gira despacísimo. Lo justo para que no se vea una calcomanía pegada al
+     fondo, y no tanto como para marear a quien está viendo trabajar a alguien. */
+  c.grupo.rotation.y = t * 0.012;
+
+  const carga = c.carga;
+  /* Se apaga todo un poco cada cuadro. Independiente de los cuadros por
+     segundo: en un teléfono a 30 fps el apagado tiene que tardar lo mismo que
+     en una computadora a 60, o la señal se ve el doble de larga. */
+  const apaga = Math.pow(0.12, dt);
+  for(let i = 0; i < c.n; i++) carga[i] *= apaga;
+
+  for(let k = c.quemando.length - 1; k >= 0; k--){
+    const q = c.quemando[k];
+    q.espera -= dt;
+    if(q.espera > 0) continue;
+    carga[q.i] = Math.max(carga[q.i], q.fuerza);
+    c.quemando.splice(k, 1);
+  }
+  c.gNeur.attributes.carga.needsUpdate = true;
+
+  /* El color de cada extremo de cada hilo sale de la carga de SU neurona. Así
+     un enlace entre una encendida y una apagada sale en degradado, que es lo
+     que hace que se vea el salto y no un parpadeo. */
+  const col = c.colorLinea, idx = c.idx;
+  for(let k = 0; k < idx.length; k++){
+    const v = carga[idx[k]];
+    /* base tenue para que la red se intuya siempre, aunque nadie dispare */
+    const g = 0.055 + v * 0.85;
+    col[k*3]     = g * 0.72;
+    col[k*3 + 1] = g * 0.26;
+    col[k*3 + 2] = g;
+  }
+  c.gLin.attributes.color.needsUpdate = true;
+
+  if(QUIETO) return;
+  c.proximo -= dt;
+  if(c.proximo <= 0){
+    c.proximo = CIELO.cadaCuanto * (0.6 + Math.random() * 0.8);
+    dispararCielo(c);
+  }
+}
+
 /* ── la cámara ────────────────────────────────────────────────────────── */
 let siguiendo = true;
 function enFocar(id){
@@ -635,61 +2298,212 @@ function enFocar(id){
 const destino = new THREE.Vector3(0, 2.6, 7.2);
 const mirando = new THREE.Vector3(0, 1.1, 0);
 
+function marcar(id, prendido){
+  const b = $(id); if(!b) return;
+  b.setAttribute('aria-pressed', String(!!prendido));
+  b.classList.toggle('on', !!prendido);
+}
 $('bSeguir').addEventListener('click', () => {
   siguiendo = !siguiendo;
-  $('bSeguir').classList.toggle('on', siguiendo);
+  marcar('bSeguir', siguiendo);
   if(siguiendo && enFoco) enFocar(enFoco);
 });
-$('bSeguir').classList.add('on');
+marcar('bSeguir', true);
 
-/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
-   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
-   del que estás siguiendo. */
-$('bPanel').addEventListener('click', () => {
-  const plegado = $('panel').classList.toggle('plegado');
-  $('bPanel').classList.toggle('on', !plegado);
-});
-$('bPanel').classList.add('on');
+/* El panel lo maneja el ojo de abajo, que tiene TRES estados —completo,
+   plegado, oculto— y no dos. Aquí vivía un segundo interruptor de dos estados
+   sobre el mismo panel, y los dos se pisaban: el ojo lo dejaba oculto y este
+   otro creía que estaba completo.
+
+   Peor todavía: una copia de este mismo bloque estaba pegada DENTRO del
+   `else` del botón de vista. O sea que cada vez que apagabas la vista amplia
+   se registraba OTRO escuchador sobre el mismo botón, y a partir de ahí un
+   clic plegaba y desplegaba en el mismo instante. Desde fuera se ve idéntico a
+   un botón muerto, que es como se reportan estas cosas. */
 
 let vistaAmplia = false;
 $('bVista').addEventListener('click', () => {
   vistaAmplia = !vistaAmplia;
-  $('bVista').classList.toggle('on', vistaAmplia);
+  marcar('bVista', vistaAmplia);
   if(vistaAmplia){
-    siguiendo = false; $('bSeguir').classList.remove('on');
+    siguiendo = false; marcar('bSeguir', false);
     /* La distancia sale del radio del semicírculo, no de un número fijo: con
        dos agentes el cuarto es chico y con ocho es grande, y una cámara fija
        o los deja de estampilla o se mete entre los escritorios. */
     destino.set(0, radioActual * 1.45 + 3.2, radioActual * 2.4 + 5.5);
     mirando.set(0, 0.7, 0);
-  }else if(enFoco){ siguiendo = true; $('bSeguir').classList.add('on');
-
-/* El panel se pliega. En un teléfono ocupaba media pantalla y el cuarto —que
-   es lo que se viene a ver— quedaba de estampilla. Plegado deja sólo la ficha
-   del que estás siguiendo. */
-$('bPanel').addEventListener('click', () => {
-  const plegado = $('panel').classList.toggle('plegado');
-  $('bPanel').classList.toggle('on', !plegado);
-});
-$('bPanel').classList.add('on'); enFocar(enFoco); }
+  }else if(enFoco){
+    siguiendo = true; marcar('bSeguir', true); enFocar(enFoco);
+  }
 });
 
 /* Una manija para poder MEDIR la escena desde fuera. No es depuración
    olvidada: sin esto, revisar el taller es mirar una foto y opinar, que es
    justo lo que la casa no acepta como verificación. */
-window.__taller = { escena, camara, puestos, get gente(){ return gente; } };
+window.__taller = { escena, camara, puestos, animacionDe,
+                    /* Corta el sondeo a la sala. Sin esto una prueba que fuerce
+                       un estado mide una carrera contra el servidor: entre un
+                       sondeo y el siguiente forzado pasan varios cuadros con el
+                       estado DE VERDAD, y esos cuadros salen como fallos. */
+                    congelarSala(){ clearInterval(latido); latido = 0; return true; }, get gente(){ return gente; },
+                    get cielo(){ return cielo; }, dispararCielo:() => cielo && dispararCielo(cielo),
+                    cuantasPantallas: () => PANTALLAS_TOTAL,
+                    /* Poner una pantalla concreta, para poder VERLAS todas en
+                       una prueba en vez de esperar setenta segundos. */
+                    verPantalla(id, n){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      p.mesa.ocio = n % PANTALLAS_TOTAL;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+                      return true;
+                    },
+                    /* Repintar con SU estado de verdad. Hace falta para probar el
+                       cambio de pantalla en los dos sentidos sin que la prueba
+                       se ensucie a sí misma. */
+                    /* Embarra el lienzo de un color imposible. Sirve para PROBAR que
+                       cada pantalla tapa TODO: se ensucia, se pinta encima, y si
+                       queda un solo píxel del color imposible es que esa pantalla
+                       deja ver lo de antes por debajo. */
+                    ensuciar(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      const g = p.mesa.lienzo.getContext('2d');
+                      g.setTransform(1,0,0,1,0,0); g.globalAlpha = 1;
+                      g.fillStyle = '#FF00FF';
+                      g.fillRect(0, 0, p.mesa.lienzo.width, p.mesa.lienzo.height);
+                      return true;
+                    },
+                    /* Cuántos píxeles del color imposible quedaron. */
+                    manchas(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return -1;
+                      const c = p.mesa.lienzo;
+                      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+                      let n = 0;
+                      for(let i = 0; i < d.length; i += 4){
+                        if(d[i] > 240 && d[i+1] < 40 && d[i+2] > 240) n++;
+                      }
+                      return n;
+                    },
+                    /* De qué lado tiene su barra cada quien. Es fijo por agente. */
+                    ladoDe: (id) => ladoDe(id),
+                    congelarReloj(h){ relojFijo = h; },
+                    /* Forzar un lado, para poder VER los cuatro en una prueba en vez
+                       de esperar a que le toque a alguien el de la derecha. */
+                    verBarra(id, lado, pantalla){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      p.mesa.ocio = (pantalla == null ? p.mesa.ocio : pantalla);
+                      p.mesa.ladoFijo = lado;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+                      p.mesa.ladoFijo = null;
+                      return true;
+                    },
+                    verTrabajo(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      if(!p) return false;
+                      pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+                      return true;
+                    },
+                    lienzoDe(id){
+                      const p = puestos.get(id) || [...puestos.values()][0];
+                      return p ? p.mesa.lienzo.toDataURL('image/png') : null;
+                    } };
 
 /* ── el bucle ─────────────────────────────────────────────────────────── */
+/* ── los tres estados del panel ────────────────────────────────────────────
+   completo → plegado → oculto → completo. Tres y no dos porque cada uno
+   contesta algo distinto: completo es «qué está haciendo cada quien»,
+   plegado es «qué está haciendo el que estoy mirando», y oculto es «déjame
+   ver el cuarto». Lo tercero es lo que faltaba. */
+const ESTADOS_PANEL = ['completo', 'plegado', 'oculto'];
+function ponerPanel(cual){
+  const el = document.getElementById('panel');
+  if(!el) return;
+  el.classList.toggle('plegado', cual === 'plegado');
+  el.classList.toggle('oculto',  cual === 'oculto');
+  const b = document.getElementById('bPanel');
+  if(b) b.classList.toggle('on', cual === 'completo');
+  const ojo = document.getElementById('bOjo');
+  if(ojo) ojo.textContent = cual === 'oculto' ? '🚫' : cual === 'plegado' ? '👁' : '👁';
+  try{ localStorage.setItem('taller-panel', cual); }catch(e){}
+}
+function cicloPanel(){
+  const el = document.getElementById('panel');
+  const hoy = el.classList.contains('oculto') ? 'oculto'
+            : el.classList.contains('plegado') ? 'plegado' : 'completo';
+  ponerPanel(ESTADOS_PANEL[(ESTADOS_PANEL.indexOf(hoy) + 1) % 3]);
+}
+document.getElementById('bOjo').addEventListener('click', cicloPanel);
+
+/* Se recuerda cómo lo dejaste: si lo escondiste una vez es porque querías ver
+   el cuarto, y volver a abrirlo en cada visita es hacerte pelear con la
+   herramienta cada vez. */
+(function panelRecordado(){
+  let g = null;
+  try{ g = localStorage.getItem('taller-panel'); }catch(e){}
+  if(g && ESTADOS_PANEL.includes(g)) ponerPanel(g);
+})();
+
+if(DENTRO){
+  const barra = document.querySelector('.barra');
+  if(barra) barra.hidden = true;
+  document.body.classList.add('dentro');
+  /* ⚠ Y EL PANEL ARRANCA PLEGADO. Sin esto queda una trampa: el panel tapaba
+     dos tercios del cuarto y el botón que lo cierra vive en la barra que
+     acabamos de esconder — o sea, algo que estorba y no se puede quitar.
+     Adentro el panel además sobra: lo que dice ya está en el chat, a una
+     pestaña de distancia. Se despliega tocándolo. */
+  /* Empotrado arranca OCULTO —no plegado— salvo que ya hayas elegido otra
+     cosa: lo que dice el panel está en el chat, a una pestaña de distancia, y
+     lo que no está en ningún otro lado es el cuarto. */
+  let elegido = null;
+  try{ elegido = localStorage.getItem('taller-panel'); }catch(e){}
+  ponerPanel(elegido && ESTADOS_PANEL.includes(elegido) ? elegido : 'oculto');
+}
+
+cielo = armarCielo();
+
+/* ── EL RELOJ DEL OCIO ─────────────────────────────────────────────────────
+   Los que no tienen trabajo cambian de pantalla cada 7 segundos. NO va en el
+   bucle de cuadros: repintar un lienzo de 1024×640 sesenta veces por segundo
+   para enseñar una página quieta funde la batería de un teléfono, y es la
+   misma razón por la que la pantalla del trabajo se repinta sólo al cambiar.
+
+   Y cambia UNO A LA VEZ, no todos juntos: cuatro monitores parpadeando al
+   unísono se lee como un fallo del cuarto. Se pasan el turno. */
+let turnoOcio = 0;
+setInterval(() => {
+  /* ⚠ YA NO SE FILTRA POR «ocioso». Al principio sólo rotaban los que no
+     tenían nada que hacer, y eso dejaba fuera justo lo que Carlos quería ver:
+     el agente jugando MIENTRAS su tarea avanza en la barra. Rotan todos; la
+     pantalla 0 es su trabajo completo y sigue apareciendo en cada vuelta. */
+  const todos = [...puestos.values()].filter(p => p.quien);
+  if(!todos.length) return;
+  const p = todos[turnoOcio++ % todos.length];
+  p.mesa.ocio = (p.mesa.ocio + 1) % PANTALLAS_TOTAL;
+  pintarPantalla(p.mesa, p.quien, '#' + p.color.getHexString());
+}, 7000);
+
 const reloj = new THREE.Clock();
 function cuadro(){
   if(!HAY3D) return;                    /* sin 3D no hay nada que pintar */
   requestAnimationFrame(cuadro);
   const dt = reloj.getDelta();
-  for(const p of puestos.values()) if(p.mezclador) p.mezclador.update(dt);
+  const t = reloj.elapsedTime;
+  for(const p of puestos.values()){
+    if(p.mezclador) p.mezclador.update(dt);
+    /* ⚠ DESPUÉS del mezclador, nunca antes: el mezclador SOBREESCRIBE la
+       rotación de los huesos que anima, así que cualquier ajuste hecho antes
+       se borra en el mismo cuadro. Se probó al revés primero y no se movía
+       nada — y no había error que lo dijera. */
+    moverBrazos(p, t);
+  }
   if(siguiendo || vistaAmplia){
     camara.position.lerp(destino, 0.045);
     mando.target.lerp(mirando, 0.045);
   }
+  moverCielo(cielo, dt, t);
   mando.update();
   pintor.render(escena, camara);
 }
@@ -701,10 +2515,31 @@ addEventListener('resize', () => {
 });
 
 /* ── arranque ─────────────────────────────────────────────────────────── */
+/* El sondeo a la sala vive aquí arriba para que se pueda PARAR. No es un
+   adorno de prueba: la sala es real y reescribe `quien` cada dos segundos, así
+   que cualquier medición que dure más que eso está corriendo contra el
+   servidor. Es exactamente lo que hacía fallar 2 de 27 muestras y parecía un
+   defecto del taller. */
+let latido = 0;
 async function arrancar(){
-  refrescar(await traer());
-  if(HAY3D) cuadro();
-  setInterval(async () => refrescar(await traer()), 2000);
+  /* ⚠ SIN ESTE try/catch, cualquier tropiezo aquí adentro desaparece: se llama
+     desde el callback asíncrono del cargador de modelos, y una promesa rota
+     ahí no llega a la consola. El síntoma es el peor posible — un cuarto
+     NEGRO, sin error, sin aviso y sin panel — y uno se pone a buscar en el
+     3D cuando el problema puede estar en los datos.
+     Costó una tarde: el taller empotrado salía en negro y todo lo medible
+     (canvas, WebGL, el modelo, el <iframe>) daba bien. */
+  try{
+    refrescar(await traer());
+    if(HAY3D) cuadro();
+    latido = setInterval(async () => {
+      try{ refrescar(await traer()); }
+      catch(e){ $('aviso').textContent = `El taller se atoró: ${e.message}`; }
+    }, 2000);
+  }catch(e){
+    console.error('el taller no arrancó:', e);
+    $('aviso').textContent = `El taller no arrancó: ${e.message}`;
+  }
 }
 
 if(!HAY3D){
@@ -727,6 +2562,22 @@ if(!HAY3D){
   $('aviso').textContent = 'El modelo 3D no cargó · el taller sigue funcionando sin muñeco';
   arrancar();
 });
+
+/* A dónde vuelve: de donde vino, y si no se sabe, al tablero. No es
+   `history.back()` porque desde La Sala esto abre en pestaña nueva y ahí no
+   hay historia. */
+(function elVolver(){
+  const b = document.getElementById('volver');
+  if(!b) return;
+  try{
+    const r = document.referrer;
+    if(r && new URL(r).origin === location.origin
+         && !new URL(r).pathname.startsWith('/entorno')){
+      b.href = r;
+      if(/\/sala\//.test(new URL(r).pathname)) b.title = 'Volver a La Sala';
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

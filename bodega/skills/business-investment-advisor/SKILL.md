@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/finance/business-investment-advisor/skills/business-investment-advisor/SKILL.md

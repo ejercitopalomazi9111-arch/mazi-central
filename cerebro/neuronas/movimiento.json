@@ -1,0 +1,214 @@
+{
+  "area": "movimiento",
+  "nombre": "Movimiento que informa y no marea",
+  "que": "Animación, scroll y paralaje: cuándo el movimiento dice algo, qué cuesta, y qué hacer con quien pide que pare.",
+  "neuronas": [
+    {
+      "id": "movimiento-reducido-apagado-a-lo-bruto",
+      "titulo": "«Menos movimiento» apagó también lo que informa",
+      "gravedad": "alta",
+      "sintoma": "Con la preferencia de movimiento reducido puesta, la barra de progreso se queda en cero o un elemento no aparece nunca.",
+      "causa": "Se apagó todo con una regla general —`animation-duration: 1ms !important`— y con ella se apagaron las animaciones que ESTABAN informando, no adornando.",
+      "porque": "La regla general es la receta que circula, y funciona para el 95 %: el 5 % que rompe son justo las que llevaban un dato.",
+      "arreglo": "Después de la regla general, rescatar una por una las que informan. Y lo que sigue al dedo —una barra de progreso— no es animación: es lectura.",
+      "comoCazarlo": "Correr la página entera con la preferencia puesta y comprobar que nada quede oculto, en cero o a medio camino.",
+      "consejo": "Lo que molesta es el movimiento que uno no pidió, no el que uno está causando con el dedo.",
+      "senales": [
+        "con movimiento reducido no se ve la barra",
+        "desactivé animaciones y falta algo",
+        "se quedó en cero"
+      ],
+      "salioDe": "El banco de pruebas: la barra de progreso se quedaba en scaleX(0) para siempre, y lo cazó la prueba de «nada desplazado»."
+    },
+    {
+      "id": "reducir-no-es-quitar",
+      "titulo": "Movimiento reducido se entendió como cero movimiento",
+      "gravedad": "media",
+      "sintoma": "Con la preferencia puesta, las transiciones desaparecen de golpe y se pierde de dónde salió cada cosa.",
+      "causa": "Se interpretó la preferencia como «sin animaciones» cuando pide «sin movimiento que descoloque».",
+      "porque": "El nombre de la media query invita a apagar, y apagar es una línea.",
+      "arreglo": "Sustituir el desplazamiento por un cambio que no mueva nada —un fundido corto, un cambio de color— en vez de eliminar la transición.",
+      "comoCazarlo": "Comprobar que con la preferencia puesta se siga entendiendo la relación entre lo que había y lo que hay.",
+      "consejo": "Quien pide menos movimiento no está pidiendo menos información.",
+      "senales": [
+        "con reducido se pierde el hilo",
+        "aparece de golpe",
+        "no entiendo de dónde salió"
+      ],
+      "salioDe": "MDN, sobre `prefers-reduced-motion`: el ejemplo cambia a una disolución, que no dispara el reflejo vestibular."
+    },
+    {
+      "id": "pantalla-completa-que-marea",
+      "titulo": "La transición de página ocupa toda la pantalla y marea",
+      "gravedad": "alta",
+      "sintoma": "Alguien reporta mareo o desorientación al navegar entre secciones.",
+      "causa": "Una transición que mueve toda la superficie es la que más molesta a quien tiene un trastorno vestibular.",
+      "porque": "Es el efecto más vistoso y el que mejor sale en un vídeo de presentación.",
+      "arreglo": "Ofrecer una alternativa más sobria bajo `prefers-reduced-motion` que siga contando qué se conecta con qué, en vez de apagarla sin más.",
+      "comoCazarlo": "Preguntarse qué fracción de la pantalla se mueve. Cuanto más cerca del 100 %, más riesgo.",
+      "consejo": "Un movimiento pequeño en el elemento que cambia comunica lo mismo que uno grande en toda la página.",
+      "senales": [
+        "me marea la transición",
+        "se mueve toda la pantalla",
+        "es demasiado la animación al cambiar"
+      ],
+      "salioDe": "web.dev, «View transitions for SPAs»: las animaciones a pantalla completa incomodan a quien tiene trastornos vestibulares."
+    },
+    {
+      "id": "paralaje-sin-interruptor",
+      "titulo": "El paralaje no se puede apagar",
+      "gravedad": "media",
+      "sintoma": "La página tiene capas que se mueven al scrollear y no hay forma de detenerlas.",
+      "causa": "El efecto está atado al scroll y no hay control ni respeto por la preferencia del sistema.",
+      "porque": "El paralaje se implementa como parte del diseño, no como una función que se pueda desactivar.",
+      "arreglo": "Respetar `prefers-reduced-motion` y, si el efecto es central, ofrecer además un control visible para todo el sitio.",
+      "comoCazarlo": "Preguntarse: si esto marea a alguien, ¿qué puede hacer? Si la respuesta es «irse», falta el interruptor.",
+      "consejo": "El criterio 2.3.3 de WCAG pone justo este ejemplo: paralaje con opción de apagarlo para todo el sitio.",
+      "senales": [
+        "no puedo quitar el efecto",
+        "el fondo se mueve y me molesta",
+        "no hay forma de pararlo"
+      ],
+      "salioDe": "W3C, «Understanding SC 2.3.3: Animation from Interactions»."
+    },
+    {
+      "id": "paralaje-con-javascript-en-cada-scroll",
+      "titulo": "El paralaje se calcula en JavaScript en cada evento de scroll",
+      "gravedad": "media",
+      "sintoma": "El paralaje va bien en la computadora del que lo hizo y a tirones en un teléfono.",
+      "causa": "Cada evento de scroll dispara lectura de posición y escritura de estilo, o sea trabajo en el hilo principal justo cuando está más ocupado.",
+      "porque": "Es la forma obvia de implementarlo y funciona en un aparato rápido, que es donde se prueba.",
+      "arreglo": "Usar animaciones dirigidas por scroll en CSS —`scroll()` y `view()`— que el navegador resuelve sin pasar por el hilo principal.",
+      "comoCazarlo": "Ralentizar la CPU seis veces y medir los fotogramas durante el scroll.",
+      "consejo": "Y si hace falta el respaldo en JS, que haga UNA lectura por cuadro y no una por evento.",
+      "senales": [
+        "el paralaje va a tirones en el celular",
+        "se traba al bajar",
+        "va bien en mi compu y mal en el teléfono"
+      ],
+      "salioDe": "CSS-Tricks, «Bringing Back Parallax With Scroll-Driven CSS Animations»: `scroll()` y `view()` atan la animación al scroll sin JavaScript."
+    },
+    {
+      "id": "hover-que-repinta-durante-el-scroll",
+      "titulo": "El efecto de hover se dispara mientras alguien scrollea",
+      "gravedad": "media",
+      "sintoma": "Al desplazarse rápido por una rejilla de tarjetas, el scroll se siente trabado.",
+      "causa": "El cursor va pasando por encima de cada tarjeta y cada una pinta y despinta su efecto de hover, en medio del scroll.",
+      "porque": "El hover se piensa como respuesta a una intención, y durante el scroll el cursor pasa por encima sin ninguna intención.",
+      "arreglo": "Retrasar el efecto lo suficiente para que sólo aparezca cuando alguien de verdad se detiene, o suspenderlo mientras hay scroll.",
+      "comoCazarlo": "Perfilar el pintado mientras se scrollea con el cursor encima de la lista, no al lado.",
+      "consejo": "Es un caso donde el rendimiento del scroll vale más que el efecto: nadie estaba mirando el hover.",
+      "senales": [
+        "se traba al pasar el mouse mientras bajo",
+        "va lento con el cursor encima",
+        "la rejilla de tarjetas arrastra"
+      ],
+      "salioDe": "Smashing, «Gone In 60 Frames Per Second»: el hover amplifica el jank durante el scroll."
+    },
+    {
+      "id": "animar-opacidad-sobre-texto",
+      "titulo": "El texto aparece desvaneciéndose y a media transición no se lee",
+      "gravedad": "alta",
+      "sintoma": "Un titular entra con un fundido y durante medio segundo es gris ilegible sobre el fondo.",
+      "causa": "Animar la opacidad de un texto lo lleva por todos los valores intermedios, y en la mayoría no cumple contraste.",
+      "porque": "El fundido es la transición por defecto de casi todo y nadie mide el contraste en los estados intermedios.",
+      "arreglo": "Destapar el texto con máscara —recorte y desplazamiento— a opacidad plena. Sobre elementos decorativos el fundido sí vale.",
+      "comoCazarlo": "Congelar la animación a la mitad y medir el contraste ahí.",
+      "consejo": "Un texto que existe a medias durante 400 ms es un texto que alguien puede estar intentando leer.",
+      "senales": [
+        "el texto aparece desvaneciendo",
+        "no se lee mientras entra",
+        "el título se ve gris al aparecer"
+      ],
+      "salioDe": "Regla del sistema del banco de pruebas y del sitio del Instituto: nunca animar opacidad sobre texto."
+    },
+    {
+      "id": "animar-lo-que-recalcula-la-maqueta",
+      "titulo": "La animación mueve `width` o `left` y el navegador recalcula todo",
+      "gravedad": "media",
+      "sintoma": "Una animación sencilla hace que la página entera vaya a tirones.",
+      "causa": "Se animan propiedades que cambian la maqueta, así que en cada cuadro hay que recalcular posiciones de todo lo demás.",
+      "porque": "`width` y `left` son las propiedades que uno ya conoce, y funcionan; el costo no se ve hasta que hay contenido alrededor.",
+      "arreglo": "Animar sólo `transform` y `opacity`. Para una barra, un elemento de 1 px estirado con `scaleX` en vez de cambiar el ancho.",
+      "comoCazarlo": "Grabar el rendimiento durante la animación y mirar si aparecen recálculos de maqueta por cuadro.",
+      "consejo": "`scaleX` sobre un elemento de un píxel da el ancho exacto sin tocar la maqueta: el factor ES el ancho.",
+      "senales": [
+        "la animación va a tirones",
+        "se mueve todo al animar uno",
+        "va lento aunque sea una sola cosa"
+      ],
+      "salioDe": "El motor del banco de pruebas: sólo transform, y la barra de progreso con scaleX."
+    },
+    {
+      "id": "duraciones-inventadas-una-por-una",
+      "titulo": "Cada animación dura lo que le pareció a quien la escribió",
+      "gravedad": "baja",
+      "sintoma": "La interfaz se siente descoordinada: unas cosas van rápido, otras lentas, sin patrón.",
+      "causa": "No hay escala de duraciones. Cada transición se ajustó a ojo en el momento.",
+      "porque": "Ajustar a ojo funciona para la pieza que se está mirando, y nadie compara dos piezas hechas en semanas distintas.",
+      "arreglo": "Cinco escalones y ninguna duración escrita a mano: micro, corta, media, larga y de escena. Cada cosa escoge escalón, no número.",
+      "comoCazarlo": "Recorrer las duraciones que el navegador acabó aplicando y reprobar cualquiera que no sea de la escala.",
+      "consejo": "Sin esa comprobación, «tenemos un lenguaje de movimiento» dura hasta el primer `0.3s` que alguien escriba de prisa.",
+      "senales": [
+        "se siente descoordinado",
+        "unas transiciones van más rápido que otras",
+        "no hay consistencia en el movimiento"
+      ],
+      "salioDe": "El banco de pruebas: cinco tokens de duración y una prueba que reprueba cualquier otra."
+    },
+    {
+      "id": "la-curva-dice-que-tipo-de-cosa-es",
+      "titulo": "Todo entra y sale con la misma curva",
+      "gravedad": "baja",
+      "sintoma": "El movimiento se ve correcto y sin carácter; nada se siente ni ágil ni definitivo.",
+      "causa": "Se usa una sola curva para todo, así que la curva no está diciendo nada sobre qué clase de cambio es.",
+      "porque": "`ease` es el valor por defecto y hace falta un motivo para cambiarlo; el motivo no se ve hasta que se comparan dos.",
+      "arreglo": "Tres curvas con papeles: salida rápida-y-frena para lo que llega, entrada lenta-y-acelera para lo que se va, y resorte sólo para lo que confirma.",
+      "comoCazarlo": "Preguntar de cada transición qué está diciendo. Si la respuesta es «que se mueve», la curva está desperdiciada.",
+      "consejo": "El resorte gasta atención: sirve para confirmar algo, nunca para informar de algo.",
+      "senales": [
+        "el movimiento se ve soso",
+        "no se siente nada al tocar",
+        "todas las animaciones son iguales"
+      ],
+      "salioDe": "La gramática de movimiento del banco de pruebas: curvas con papel asignado."
+    },
+    {
+      "id": "el-fotograma-final-que-se-queda-clavado",
+      "titulo": "`to{transform:none}` con relleno both no suelta el control: lo toma para siempre",
+      "gravedad": "alta",
+      "sintoma": "Una transformación de CSS —un giro, una escala, un desplazamiento— está escrita, es correcta, y el elemento sale plano. Sin error en consola y sin nada raro al inspeccionar la regla, que aparece aplicada.",
+      "causa": "El elemento tiene una animación con `animation-fill-mode: both` o `forwards`, y su último fotograma dice `transform:none`. Al terminar, el navegador DEJA CLAVADO ese fotograma, y un fotograma de animación gana sobre cualquier declaración normal por específica que sea.",
+      "porque": "`transform:none` se lee como «aquí no hago nada», y en un fotograma significa lo contrario: «este elemento no tiene transformación, nunca». Y como la animación dura menos de medio segundo, para cuando uno mira ya sólo se ve el resultado plano, sin pista de quién lo dejó así.",
+      "arreglo": "Que el último fotograma ATERRICE en la pose de reposo real —incluidas las variables CSS que la definen— en vez de en `none`. Y quitar la clase de la animación al terminar (`animationend`, `once:true`), para que los estados posteriores —seleccionado, al frente— puedan mover el elemento.",
+      "comoCazarlo": "Medir la CAJA, no leer el CSS: si todos los elementos que deberían estar rotados miden exactamente el mismo alto, no hay rotación. Una caja rotada siempre mide más que la sin rotar. Y `getComputedStyle(el).transform` devuelve la matriz identidad cuando está clavado.",
+      "consejo": "Y en las PRUEBAS, esperar el hecho y no un tiempo: mientras la animación corre, los elementos van escalonados y tienen posiciones distintas por el REPARTO, no por el diseño. Una espera fija a media animación da verde con el efecto muerto.",
+      "senales": [
+        "no gira",
+        "se ve plano",
+        "el css está bien y no hace nada",
+        "la animación deja la carta recta",
+        "no se aplica el transform"
+      ],
+      "salioDe": "El abanico de Guerra de Puercos: el CSS del giro estaba perfecto y las cinco cartas salían rectas. La animación de reparto terminaba en transform:none con fill both."
+    },
+    {
+      "id": "encimar-hasta-dejar-algo-intocable",
+      "titulo": "Al encimar elementos es facilísimo dejar uno tapado del todo y sin forma de tocarlo",
+      "gravedad": "alta",
+      "sintoma": "Una carta, pestaña o ficha de una pila no responde al toque. En la captura se ve perfecta, porque lo que falta no es pintura: es la parte que recibe el dedo.",
+      "causa": "El encime se ajustó mirando la foto, y el elemento de encima cubre el punto donde el de abajo recibe el toque. El clic se lo lleva el de arriba.",
+      "porque": "El ojo perdona un encime agresivo —se sigue viendo bien— y el dedo no. Y quien prueba suele tocar la última, que es la que está encima de todas y siempre funciona.",
+      "arreglo": "Garantizar una franja visible mínima por elemento y comprobarla, no calcularla. Si no cabe, se encima menos o se hace scroll, pero no se deja un elemento inalcanzable.",
+      "comoCazarlo": "`document.elementFromPoint` en el centro de la franja VISIBLE de cada uno —del borde izquierdo al borde del siguiente— y comprobar que lo que hay debajo es ese elemento y no su vecino. Es la única forma de medir «se puede tocar».",
+      "consejo": "Ojo con el modo en que falla en una prueba automática: un clic sobre algo tapado no reprueba, se queda esperando hasta agotar el tiempo y MATA el script entero, sin imprimir una sola falla. Ese silencio se lee igual que un aprobado — me pasó y lo leí mal.",
+      "senales": [
+        "no me deja tocar una",
+        "esa carta no se selecciona",
+        "sólo funciona la última",
+        "se traba al picar"
+      ],
+      "salioDe": "El abanico de Guerra de Puercos. Rompiendo el encime a propósito, las pruebas no reportaban ninguna falla: se moría el proceso."
+    }
+  ]
+}

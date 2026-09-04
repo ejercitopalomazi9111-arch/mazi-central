@@ -1,0 +1,110 @@
+{
+  "area": "red",
+  "nombre": "Cuando la red falla",
+  "que": "Sin conexión, reintentos, datos viejos y errores que dicen de quién es el problema.",
+  "neuronas": [
+    {
+      "id": "la-pagina-que-supone-que-hay-red",
+      "titulo": "Sin conexión la aplicación se queda muda",
+      "gravedad": "media",
+      "sintoma": "Al perder la red, los botones dejan de responder sin explicación.",
+      "causa": "No hay estado de sin conexión: cada petición falla en silencio.",
+      "porque": "En desarrollo la red no se cae nunca.",
+      "arreglo": "Un estado explícito que diga que no hay conexión, qué se ve —lo último guardado— y que se actualizará solo al volver.",
+      "comoCazarlo": "Cortar la red a mitad de una tarea y mirar qué dice la pantalla.",
+      "consejo": "Culpar a la red de la persona cuando el problema es del servidor es peor que no decir nada.",
+      "senales": [
+        "se queda pensando y nada",
+        "no dice que no hay internet",
+        "dejó de funcionar sin avisar"
+      ],
+      "salioDe": "El banco de pruebas: los cuatro estados incluyen sin conexión, y dice qué se está viendo."
+    },
+    {
+      "id": "reintento-que-multiplica-el-problema",
+      "titulo": "Al fallar, se reintenta en bucle",
+      "gravedad": "media",
+      "sintoma": "Cuando el servidor va mal, la aplicación lo golpea más.",
+      "causa": "El reintento es inmediato y sin límite.",
+      "porque": "Reintentar parece resiliencia y en el caso feliz no se nota.",
+      "arreglo": "Espera creciente entre intentos, un tope, y decirlo en la interfaz.",
+      "comoCazarlo": "Provocar un fallo del servidor y contar las peticiones por minuto.",
+      "consejo": "Un reintento sin espera convierte una caída corta en una caída larga.",
+      "senales": [
+        "se satura cuando falla",
+        "hace mil peticiones",
+        "empeora al reintentar"
+      ],
+      "salioDe": "Práctica de reintento con espera creciente, usada en los empujes de este grupo."
+    },
+    {
+      "id": "lo-guardado-que-parece-en-vivo",
+      "titulo": "Se muestran datos viejos como si fueran de ahora",
+      "gravedad": "media",
+      "sintoma": "Alguien toma una decisión con un dato que ya cambió.",
+      "causa": "Se pinta lo que hay en caché sin decir de cuándo es.",
+      "porque": "Enseñar algo se siente mejor que enseñar un hueco, y la fecha ocupa sitio.",
+      "arreglo": "Decir de cuándo son los datos cuando no son de ahora, y marcar mientras se actualizan.",
+      "comoCazarlo": "Poner la aplicación sin conexión y preguntarse si se distingue lo viejo de lo nuevo.",
+      "consejo": "Es la diferencia entre una aplicación que funciona sin red y una que engaña sin red.",
+      "senales": [
+        "el dato estaba viejo",
+        "no sabía que era de ayer",
+        "me fié de lo que decía"
+      ],
+      "salioDe": "El estado sin conexión del banco: dice que lo que se ve es lo último guardado."
+    },
+    {
+      "id": "todo-o-nada-al-guardar",
+      "titulo": "Si falla el guardado se pierde el trabajo",
+      "gravedad": "alta",
+      "sintoma": "Un error de red borra media hora de escritura.",
+      "causa": "El estado vive sólo en memoria hasta que el servidor confirma.",
+      "porque": "Guardar localmente añade un caso más y parece redundante mientras la red funcione.",
+      "arreglo": "Guardar en el aparato conforme se escribe y sincronizar después. Lo local es lo que sobrevive al fallo.",
+      "comoCazarlo": "Escribir, cortar la red, recargar. Lo que no vuelva estaba sólo en memoria.",
+      "consejo": "Y avisar de que está guardado localmente: sin eso, nadie se atreve a cerrar.",
+      "senales": [
+        "perdí lo que escribí",
+        "se borró todo al fallar",
+        "no se guardó nada"
+      ],
+      "salioDe": "La regla de los formularios del Instituto: nunca se pierde lo que la persona escribió."
+    },
+    {
+      "id": "el-error-que-no-distingue-de-quien-es",
+      "titulo": "El mensaje no dice si el problema es de aquí o de allá",
+      "gravedad": "baja",
+      "sintoma": "La gente revisa su conexión cuando el que falló fue el servidor.",
+      "causa": "El mensaje es genérico y no distingue entre fallo de red, del servidor o de los datos.",
+      "porque": "Distinguirlos exige mirar el error de verdad, y todos acaban en el mismo bloque.",
+      "arreglo": "Tres mensajes distintos, y decir explícitamente cuándo NO es culpa de quien lee.",
+      "comoCazarlo": "Provocar los tres fallos y comparar lo que dice la pantalla.",
+      "consejo": "«El servidor tardó más de diez segundos. No es tu conexión» evita una llamada de soporte.",
+      "senales": [
+        "creí que era mi internet",
+        "el error no dice nada",
+        "¿es problema mío?"
+      ],
+      "salioDe": "El banco de pruebas: el estado de error dice explícitamente que no es la conexión de quien lee."
+    },
+    {
+      "id": "el-campo-que-el-servidor-dejo-de-mandar",
+      "titulo": "El websocket contesta 500 y parece problema de red",
+      "gravedad": "alta",
+      "sintoma": "La conexión en vivo no se abre: «Error during WebSocket handshake: unexpected response code 500». Todo lo demás del servidor responde bien.",
+      "causa": "El código que arma lo que se manda leía un campo que había dejado de existir tras un cambio de modelo de datos. Al reventar dentro del manejador, lo que sale por el cable no es un error del handshake: es un 500, que se lee como caída del servicio.",
+      "porque": "Cambiar el modelo de datos se prueba con las pruebas del modelo, y ésas pasan. Quien lee el dato es OTRO archivo, en otro proyecto, y sólo se entera al ejecutarse de verdad.",
+      "arreglo": "Correr las pruebas de extremo a extremo CON EL SERVIDOR LEVANTADO después de cualquier cambio de forma de los datos. Y no dar por buena la mitad: el defecto vivía justo en el papel que se pasan las dos.",
+      "comoCazarlo": "Un 500 en un handshake no es red: es una excepción del lado del servidor. El log del worker trae la línea exacta; buscarla ahí antes de sospechar del proxy.",
+      "consejo": "Un cambio de modelo de datos tiene tantos lugares que tocar como consumidores tiene el dato, y el compilador no los conoce si el reparto va por JSON.",
+      "senales": [
+        "no conecta en línea",
+        "error de websocket",
+        "500 al conectar",
+        "funciona local pero no entre dos"
+      ],
+      "salioDe": "Guerra de Puercos: pasar de un mazo compartido a un mazo por jugador dejó `this.J.mazo` sin existir, y el modo a distancia llevaba días muerto sin que nadie lo notara."
+    }
+  ]
+}

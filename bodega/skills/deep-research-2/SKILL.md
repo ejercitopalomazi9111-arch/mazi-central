@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/research/deep-research/skills/deep-research/SKILL.md

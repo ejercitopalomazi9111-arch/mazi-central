@@ -14,8 +14,14 @@
       "comoCazarlo": "Si dos cosas empiezan a fallar el mismo día y una de ellas ni la tocaste, busca qué configuración empezaron a compartir.",
       "consejo": "Un juego de cartas no puede tumbar el despliegue del tablero. Si puede, están mal separados.",
       "salioDe": "juegos/servidor · y por eso sala/servidor nació aparte",
-      "senales": ["fallan los dos", "sin registro", "no toqué ese proyecto"],
-      "vecinas": ["origenes-sin-la-vista-previa"]
+      "senales": [
+        "fallan los dos",
+        "sin registro",
+        "no toqué ese proyecto"
+      ],
+      "vecinas": [
+        "origenes-sin-la-vista-previa"
+      ]
     },
     {
       "id": "charset-que-no-manda-el-servidor",
@@ -28,8 +34,16 @@
       "comoCazarlo": "`curl -sI` a la página y mira el `content-type`. Si no dice charset, ya sabes. Y sirve local con un servidor que TAMPOCO lo mande, para reproducirlo.",
       "consejo": "Prueba contra un servidor tan tonto como el de producción, no contra el más listo que tengas a mano.",
       "salioDe": "campana/ · siete páginas habrían salido con los acentos rotos",
-      "senales": ["Ã±", "Â", "acentos raros", "en local sí se ve"],
-      "vecinas": ["falta-el-viewport", "verificar-lo-publicado"]
+      "senales": [
+        "Ã±",
+        "Â",
+        "acentos raros",
+        "en local sí se ve"
+      ],
+      "vecinas": [
+        "falta-el-viewport",
+        "verificar-lo-publicado"
+      ]
     },
     {
       "id": "falta-el-viewport",
@@ -42,8 +56,14 @@
       "comoCazarlo": "Abre con un navegador de 390px y mide `innerWidth` desde la consola. Si dice 980, es esto.",
       "consejo": "Cuando un archivo pueda servirse solo Y dentro de un envoltorio, tiene que traer sus propios metas.",
       "salioDe": "campana/ · seis de siete páginas lo traían sólo por el envoltorio de artifacts",
-      "senales": ["se ve chiquito en el celular", "980", "en compu sí se ve"],
-      "vecinas": ["charset-que-no-manda-el-servidor"]
+      "senales": [
+        "se ve chiquito en el celular",
+        "980",
+        "en compu sí se ve"
+      ],
+      "vecinas": [
+        "charset-que-no-manda-el-servidor"
+      ]
     },
     {
       "id": "origenes-sin-la-vista-previa",
@@ -56,8 +76,14 @@
       "comoCazarlo": "Abre la página desde la vista previa, no desde local. Es el único lugar donde sale.",
       "consejo": "La lista de orígenes tiene que cubrir los tres lugares donde vive la página: local, vista previa y producción.",
       "salioDe": "sala/servidor · faltaba VISTAS_PREVIAS y la mesa no habría podido hablarle",
-      "senales": ["CORS", "bloqueado", "en local sí funciona"],
-      "vecinas": ["servidor-dentro-del-sitio"]
+      "senales": [
+        "CORS",
+        "bloqueado",
+        "en local sí funciona"
+      ],
+      "vecinas": [
+        "servidor-dentro-del-sitio"
+      ]
     },
     {
       "id": "ventana-nueva-bloqueada",
@@ -70,8 +96,108 @@
       "comoCazarlo": "Ábrelo donde lo va a abrir el usuario, no en tu navegador.",
       "consejo": "Falla hacia algo que el usuario SÍ pueda hacer, nunca hacia el silencio.",
       "salioDe": "campana/ · el expediente publicado como artifact",
-      "senales": ["se ilumina y no abre", "no pasa nada al tocar", "no me deja entrar"],
-      "vecinas": ["ver-la-pantalla"]
+      "senales": [
+        "se ilumina y no abre",
+        "no pasa nada al tocar",
+        "no me deja entrar"
+      ],
+      "vecinas": [
+        "ver-la-pantalla"
+      ]
+    },
+    {
+      "id": "verifique-un-sitio-no-el-suyo",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Dije «verificado en producción» cuatro días seguidos mirando el sitio equivocado",
+      "sintoma": "Carlos: «jamás se actualizó» y «se imprimió cortado», mientras yo reportaba todo verificado y verde.",
+      "causa": "El proyecto se sirve desde DOS lados: Cloudflare Workers y GitHub Pages. Yo verificaba Cloudflare; él usa Pages. Pages llevaba 16 construcciones fallidas seguidas y servía código de cuatro días antes.",
+      "porque": "Con dos publicaciones del mismo repo, «producción» deja de ser una cosa. Verificar la que uno tiene a mano se siente igual de riguroso y no lo es.",
+      "arreglo": "Verificar la URL que la PERSONA usa. Si no se sabe cuál es, se pregunta o se saca de una captura: el pie del PDF que mandó traía la dirección impresa.",
+      "comoCazarlo": "`curl -sI` a la URL del usuario y mirar `last-modified`. Si la fecha no es de hoy, no importa lo verde que esté lo demás. Y revisar las corridas del despliegue, no sólo que la página responda 200.",
+      "consejo": "Una página que contesta 200 no está al día; contesta 200 con lo viejo. El 200 es lo que hace que este defecto sobreviva semanas.",
+      "toca": [
+        ".github",
+        "wrangler.jsonc",
+        "build.mjs"
+      ],
+      "senales": [
+        "no se actualizó",
+        "sigue igual que antes",
+        "no veo el cambio",
+        "ya lo publicaste y no aparece"
+      ],
+      "vecinas": [
+        "verificar-lo-publicado",
+        "probar-contra-una-copia-congelada",
+        "origenes-sin-la-vista-previa"
+      ],
+      "area": "despliegue",
+      "salioDe": "mazi-central · 16 builds de Pages rotos y cuatro días de trabajo sin llegar a su teléfono"
+    },
+    {
+      "id": "enlace-absoluto-rompe-el-empaquetado",
+      "clase": "error",
+      "gravedad": "alta",
+      "titulo": "Un enlace simbólico con ruta absoluta tumba el despliegue entero, y en silencio",
+      "sintoma": "El despliegue falla siempre, desde cierto commit, sin ningún mensaje que hable del código.",
+      "causa": "450 `SKILL.md` eran enlaces simbólicos a `/home/user/…/.clones/`, una carpeta del contenedor que nunca se commiteó. Git los guarda como enlaces (modo 120000) y en cualquier otra máquina cuelgan al vacío. `upload-pages-artifact` empaqueta con `tar --dereference`: sigue cada enlace, no lo encuentra y sale con 1.",
+      "porque": "En la máquina donde nacen funcionan perfecto, así que se commitean sin sospecha. El enlace guarda una RUTA, nunca el contenido — y una ruta absoluta sólo existe en un lugar del mundo.",
+      "arreglo": "Ninguno se arregla apuntándolo bien: el destino no existe fuera del contenedor. Se borran. Y si de verdad hace falta el contenido, se copia como archivo.",
+      "comoCazarlo": "`git ls-files -s | awk '$1==\"120000\"'` saca todo enlace registrado; con un `[ -e ]` encima salen los rotos. Y `tar --dereference -cf /dev/null .` reproduce el fallo del despliegue en tres segundos.",
+      "consejo": "Antes de commitear, un enlace se prueba desde OTRA carpeta o se mira su destino: si empieza con `/`, no va a sobrevivir el viaje.",
+      "toca": [
+        "bodega/"
+      ],
+      "senales": [
+        "el despliegue falla siempre",
+        "no publica y no dice por qué",
+        "tar exit code 1",
+        "symlink roto"
+      ],
+      "vecinas": [
+        "verifique-un-sitio-no-el-suyo",
+        "editar-en-dist-y-perderlo"
+      ],
+      "area": "despliegue",
+      "salioDe": "mazi-central · desde el #61, la bodega de skills"
+    },
+    {
+      "id": "vista-previa-que-sirve-otro-proyecto",
+      "titulo": "La vista previa salió verde y servía otro sitio entero",
+      "gravedad": "alta",
+      "sintoma": "El despliegue de la rama dice ✅ y la dirección que da devuelve otra aplicación: 404 en cada ruta del servidor que se quería probar.",
+      "causa": "La carpeta raíz del proyecto está bien puesta para producción y mal para las vistas previas, así que la vista previa construye y sirve lo que hay en la raíz del repo.",
+      "porque": "El ✅ es del BUILD, no de lo servido. Construir la carpeta equivocada construye perfectamente — sólo que otra cosa.",
+      "arreglo": "Corregir la carpeta raíz de las vistas previas en el panel. Y mientras tanto, decirlo: un cambio que no se puede probar antes de juntarlo hay que tratarlo como no probado.",
+      "comoCazarlo": "Pedirle a la vista previa una ruta que SÓLO exista en ese proyecto. Si contesta 404 —o peor, si contesta 200 con el contenido de otro— ahí está. Comparar el md5 de la raíz con el del otro proyecto lo cierra en un renglón.",
+      "consejo": "Un despliegue verde promete que el código compiló, nunca que lo que está sirviendo es el código.",
+      "senales": [
+        "la vista previa da 404",
+        "el deploy salió verde y no sirve",
+        "me sale otra página en el preview",
+        "no puedo probar antes de mergear"
+      ],
+      "salioDe": "PR #103: las dos vistas previas del proyecto `sala` devolvían la central byte por byte. Misma enfermedad ya documentada de `ppuercos`, en otro proyecto — o sea que no era un accidente suelto."
+    },
+    {
+      "id": "el-cliente-apunta-al-proyecto-sobrante",
+      "titulo": "Se renombró el proyecto, el viejo se quedó vivo en 404, y el cliente siguió apuntándole",
+      "gravedad": "alta",
+      "sintoma": "Una parte del producto «no está actualizada» aunque el código esté al día y el despliegue en verde. Aquí era el modo de jugar a distancia: la página perfecta, el servidor perfecto, y nunca se hablaban.",
+      "causa": "El proyecto de despliegue cambió de nombre (puercos → ppuercos) y el sobrante no se borró: sigue existiendo y contesta 404 en todas sus rutas. La dirección escrita en el cliente se quedó en el nombre viejo.",
+      "porque": "Un proyecto sobrante no se ve roto: existe, tiene dominio, y hasta sale en verde en cada despliegue del repo. Y del lado del cliente la dirección es UNA constante en medio de miles de líneas que nadie vuelve a leer.",
+      "arreglo": "Que la dirección salga del mismo archivo que declara el proyecto (el wrangler), o al menos que su comentario diga POR QUÉ se llama así. Y borrar el proyecto sobrante: mientras exista, va a atraer configuraciones viejas.",
+      "comoCazarlo": "curl al /api/salud de cada nombre. El bueno contesta 200 con su cuerpo; el sobrante contesta 404 y un código de error del CDN. Dos renglones, y no hace falta abrir el producto.",
+      "consejo": "Ojo con el modo que no se prueba solo: la partida contra la máquina nunca toca el servidor, así que TODO se veía bien hasta que alguien intentaba jugar con otra persona. La función que sólo falla acompañado es la que más tarda en reportarse.",
+      "senales": [
+        "no está actualizado",
+        "no funciona en línea",
+        "no me deja jugar con alguien",
+        "el código no aparece",
+        "dice que no está publicado"
+      ],
+      "salioDe": "Carlos: «Guerra de puercos tampoco está actualizado en mi central». El juego estaba idéntico en producción y en la rama; lo que estaba mal era una constante que apuntaba a puercos (404 en todo) en vez de ppuercos (200 y da códigos)."
     }
   ]
 }

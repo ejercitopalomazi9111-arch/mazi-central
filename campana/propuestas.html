@@ -23,9 +23,9 @@
   --muy-tenue:#7A8798;
   --linea:#D9E1EA;
 
-  --organiza:#0A3D6E;
-  --actualiza:#A81440;
-  --optimiza:#0E8350;
+  --comprende:#0A3D6E;
+  --trasciende:#A81440;
+  --ejecuta:#0E8350;
 
   --display:"Instrument Serif",Georgia,"Times New Roman",serif;
   --cuerpo:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -39,15 +39,15 @@
     --tenue:#A3B2C3;
     --muy-tenue:#74849A;
     --linea:#22303F;
-    --organiza:#5798D6;
-    --actualiza:#F0648F;
-    --optimiza:#3FC98A;
+    --comprende:#5798D6;
+    --trasciende:#F0648F;
+    --ejecuta:#3FC98A;
   }
 }
 :root[data-theme="dark"]{
   --papel:#0B1017; --tarjeta:#131C26; --tinta:#EAF0F7; --tenue:#A3B2C3;
   --muy-tenue:#74849A; --linea:#22303F;
-  --organiza:#5798D6; --actualiza:#F0648F; --optimiza:#3FC98A;
+  --comprende:#5798D6; --trasciende:#F0648F; --ejecuta:#3FC98A;
 }
 
 *{box-sizing:border-box}
@@ -97,9 +97,9 @@ h2{
 }
 .verbo .idea{color:var(--tenue); margin:0 0 20px; font-size:15.5px; max-width:56ch}
 
-.o .figura{background:var(--organiza)}  .o h3{color:var(--organiza)}
-.a .figura{background:var(--actualiza)} .a h3{color:var(--actualiza)}
-.p .figura{background:var(--optimiza)}  .p h3{color:var(--optimiza)}
+.o .figura{background:var(--comprende)}  .o h3{color:var(--comprende)}
+.a .figura{background:var(--trasciende)} .a h3{color:var(--trasciende)}
+.p .figura{background:var(--ejecuta)}  .p h3{color:var(--ejecuta)}
 
 /* ── propuestas ── */
 .prop{
@@ -144,7 +144,7 @@ h2{
 }
 .paso:first-of-type{border-top:none}
 .cuando{
-  font-family:var(--dato); font-size:12.5px; font-weight:700; color:var(--organiza);
+  font-family:var(--dato); font-size:12.5px; font-weight:700; color:var(--comprende);
   font-variant-numeric:tabular-nums; padding-top:2px;
 }
 .paso h4{font-family:var(--cuerpo); font-weight:700; font-size:16.5px; margin:0 0 3px}
@@ -169,15 +169,15 @@ td:last-child{color:var(--tenue)}
 ul{margin:0 0 16px; padding:0; list-style:none; max-width:64ch}
 li{position:relative; padding-left:20px; margin-bottom:9px}
 li::before{content:""; position:absolute; left:2px; top:.68em; width:6px; height:6px;
-  border-radius:2px; background:var(--organiza)}
-ul.dinero li::before{background:var(--optimiza)}
-ul.ojo li::before{background:var(--actualiza)}
+  border-radius:2px; background:var(--comprende)}
+ul.dinero li::before{background:var(--ejecuta)}
+ul.ojo li::before{background:var(--trasciende)}
 
 .caja{
   background:var(--tarjeta); border:1px solid var(--linea); border-radius:14px;
   padding:20px 22px; margin:0 0 18px;
 }
-.caja.ojo{border-color:var(--actualiza)}
+.caja.ojo{border-color:var(--trasciende)}
 .caja h4{font-family:var(--cuerpo); font-weight:700; font-size:17px; margin:0 0 8px}
 .caja p:last-child{margin-bottom:0}
 p{margin:0 0 14px; max-width:64ch}
@@ -194,12 +194,16 @@ code{font-family:var(--dato); font-size:.85em; background:var(--papel);
 <div class="hoja">
 
 <header class="portada">
-  <p class="sello">Comité estudiantil · Bachillerato Rembrandt</p>
+  <p class="sello">Candidatura CET · Instituto Rembrandt de Querétaro</p>
   <h1>Las <i>nueve</i></h1>
-  <p class="lema">Solo llegarás rápido. Juntos, lejos.</p>
+  <p class="lema">Escuchar para hacer. Hacer para trascender.</p>
   <p class="entrada">Tres por cada verbo. Todas se pueden hacer con lo que ya hay en la
   escuela, todas tocan lo académico, y <b>todas traen cómo se miden</b> — porque una propuesta
   que no se puede comprobar no es una propuesta, es una promesa.</p>
+  <p class="entrada" style="margin-top:14px"><b>Cómo se reparten.</b> Cada propuesta lleva el verbo
+  de su <b>entregable</b>, no el de su actividad. La pregunta única es <i>¿qué queda cuando esto
+  termina?</i> Sin esa regla, dos personas del comité etiquetan la misma propuesta distinto y el
+  sistema se cae en una semana.</p>
 </header>
 
 <section>
@@ -207,11 +211,10 @@ code{font-family:var(--dato); font-size:.85em; background:var(--papel);
   <p class="bajada">Cada una dice qué es, qué problema resuelve hoy, y con qué número se sabrá
   en marzo si se cumplió o no.</p>
 
-  <!-- ═══ ORGANIZA ═══ -->
+  <!-- ═══ COMPRENDE ═══ -->
   <div class="verbo o">
-    <div class="verbo-cab"><div class="figura">◼</div><h3>Organiza</h3></div>
-    <p class="idea">Que las cosas pasen a tiempo y que se sepa cuándo. La mitad de lo que
-    se siente como exceso de trabajo es en realidad falta de calendario.</p>
+    <div class="verbo-cab"><div class="figura">◼</div><h3>Comprende</h3></div>
+    <p class="idea">Escuchar y analizar antes de decidir. Aquí queda <b>información que antes no teníamos</b>: lo que el mes completo se ve de un jalón, lo que el alumnado de verdad pide, y dónde se está yendo el tiempo.</p>
 
     <div class="prop">
       <div class="prop-cab"><span class="num">01</span>
@@ -226,18 +229,6 @@ code{font-family:var(--dato); font-size:.85em; background:var(--papel);
     </div>
 
     <div class="prop">
-      <div class="prop-cab"><span class="num">02</span>
-        <h4>Ventanilla única de trámites</h4></div>
-      <p>Un solo lugar para pedir constancias, justificantes y credenciales, con un
-      responsable del comité y un acuse con fecha. El alumno pide una vez y sabe cuándo se lo
-      entregan.</p>
-      <p class="hoy"><b>El problema hoy</b>Nadie sabe con quién va cada trámite, así que se
-      pregunta en tres lados y se pierde clase caminando.</p>
-      <div class="medida"><span>Se mide</span>
-        Días que tarda un trámite desde que se pide hasta que se entrega.</div>
-    </div>
-
-    <div class="prop">
       <div class="prop-cab"><span class="num">03</span>
         <h4>Junta abierta de treinta minutos, cada mes</h4></div>
       <p>Fecha fija, media hora, cualquiera entra. Sale una minuta corta con lo que se acordó,
@@ -247,23 +238,35 @@ code{font-family:var(--dato); font-size:.85em; background:var(--papel);
       <div class="medida"><span>Se mide</span>
         Minutas publicadas: deben ser una por mes, sin faltar ninguna.</div>
     </div>
-  </div>
-
-  <!-- ═══ ACTUALIZA ═══ -->
-  <div class="verbo a">
-    <div class="verbo-cab"><div class="figura">◆</div><h3>Actualiza</h3></div>
-    <p class="idea">Traer al presente lo que ya existe pero se quedó viejo. Casi nada hay que
-    inventarlo: hay que desempolvarlo y ponerlo donde se vea.</p>
 
     <div class="prop">
-      <div class="prop-cab"><span class="num">04</span>
-        <h4>Banco de apuntes y exámenes de años pasados</h4></div>
-      <p>Una carpeta por materia con apuntes, guías y exámenes anteriores, subidos por los
-      alumnos y revisados por el comité antes de publicarse. Abierta a toda la escuela.</p>
-      <p class="hoy"><b>El problema hoy</b>Ese material existe, pero vive en el teléfono de
-      tres personas de cada generación y se pierde cuando salen.</p>
+      <div class="prop-cab"><span class="num">07</span>
+        <h4>Mapa de tiempos muertos</h4></div>
+      <p>Durante dos semanas se mide dónde se pierde el tiempo: filas, cambios de salón,
+      esperas, entradas y salidas. Con eso se proponen <strong>dos</strong> cambios concretos a
+      dirección, con el número que los justifica.</p>
+      <p class="hoy"><b>El problema hoy</b>Todos sentimos que se pierde tiempo, pero nadie
+      trae un número, así que la conversación se queda en queja.</p>
       <div class="medida"><span>Se mide</span>
-        Materias con material completo. La meta es todas las del plan, no «varias».</div>
+        Minutos recuperados por alumno a la semana, contados igual antes y después.</div>
+    </div>
+  </div>
+
+  <!-- ═══ EJECUTA ═══ -->
+  <div class="verbo p">
+    <div class="verbo-cab"><div class="figura">▲</div><h3>Ejecuta</h3></div>
+    <p class="idea">Convertir las propuestas en acciones. Aquí queda <b>algo que ocurrió</b>: un trámite resuelto, una hora de asesoría dada, un aviso que sí llegó.</p>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">02</span>
+        <h4>Ventanilla única de trámites</h4></div>
+      <p>Un solo lugar para pedir constancias, justificantes y credenciales, con un
+      responsable del comité y un acuse con fecha. El alumno pide una vez y sabe cuándo se lo
+      entregan.</p>
+      <p class="hoy"><b>El problema hoy</b>Nadie sabe con quién va cada trámite, así que se
+      pregunta en tres lados y se pierde clase caminando.</p>
+      <div class="medida"><span>Se mide</span>
+        Días que tarda un trámite desde que se pide hasta que se entrega.</div>
     </div>
 
     <div class="prop">
@@ -278,6 +281,34 @@ code{font-family:var(--dato); font-size:.85em; background:var(--papel);
     </div>
 
     <div class="prop">
+      <div class="prop-cab"><span class="num">08</span>
+        <h4>Un solo canal de avisos por grupo</h4></div>
+      <p>Se acaba el aviso repartido en cinco chats. Un canal oficial por grupo, con formato
+      fijo y hora fija de publicación, manejado por el jefe de grupo y el comité.</p>
+      <p class="hoy"><b>El problema hoy</b>El mismo aviso llega distinto por tres lados, y el
+      que se pierde uno no tiene dónde ir a buscarlo.</p>
+      <div class="medida"><span>Se mide</span>
+        Avisos publicados en el canal oficial contra avisos que siguieron llegando por fuera.</div>
+    </div>
+  </div>
+
+  <!-- ═══ TRASCIENDE ═══ -->
+  <div class="verbo a">
+    <div class="verbo-cab"><div class="figura">◆</div><h3>Trasciende</h3></div>
+    <p class="idea">Dejar una base para quien siga. Aquí queda <b>algo que la siguiente Sociedad puede usar</b> aunque cambie por completo el equipo.</p>
+
+    <div class="prop">
+      <div class="prop-cab"><span class="num">04</span>
+        <h4>Banco de apuntes y exámenes de años pasados</h4></div>
+      <p>Una carpeta por materia con apuntes, guías y exámenes anteriores, subidos por los
+      alumnos y revisados por el comité antes de publicarse. Abierta a toda la escuela.</p>
+      <p class="hoy"><b>El problema hoy</b>Ese material existe, pero vive en el teléfono de
+      tres personas de cada generación y se pierde cuando salen.</p>
+      <div class="medida"><span>Se mide</span>
+        Materias con material completo. La meta es todas las del plan, no «varias».</div>
+    </div>
+
+    <div class="prop">
       <div class="prop-cab"><span class="num">06</span>
         <h4>El reglamento, en cristiano</h4></div>
       <p>Una versión corta y legible del reglamento —qué se puede, qué no, y qué pasa— con el
@@ -287,36 +318,6 @@ code{font-family:var(--dato); font-size:.85em; background:var(--papel);
       <div class="medida"><span>Se mide</span>
         Que exista, que dirección la autorice, y que esté publicada antes de terminar el
         primer periodo.</div>
-    </div>
-  </div>
-
-  <!-- ═══ OPTIMIZA ═══ -->
-  <div class="verbo p">
-    <div class="verbo-cab"><div class="figura">▲</div><h3>Optimiza</h3></div>
-    <p class="idea">Quitar el desperdicio de lo que ya se hace. Aquí no se agrega nada: se
-    mide dónde se va el tiempo y el dinero, y se corrige.</p>
-
-    <div class="prop">
-      <div class="prop-cab"><span class="num">07</span>
-        <h4>Mapa de tiempos muertos</h4></div>
-      <p>Durante dos semanas se mide dónde se pierde el tiempo: filas, cambios de salón,
-      esperas, entradas y salidas. Con eso se proponen <strong>dos</strong> cambios concretos a
-      dirección, con el número que los justifica.</p>
-      <p class="hoy"><b>El problema hoy</b>Todos sentimos que se pierde tiempo, pero nadie
-      trae un número, así que la conversación se queda en queja.</p>
-      <div class="medida"><span>Se mide</span>
-        Minutos recuperados por alumno a la semana, contados igual antes y después.</div>
-    </div>
-
-    <div class="prop">
-      <div class="prop-cab"><span class="num">08</span>
-        <h4>Un solo canal de avisos por grupo</h4></div>
-      <p>Se acaba el aviso repartido en cinco chats. Un canal oficial por grupo, con formato
-      fijo y hora fija de publicación, manejado por el jefe de grupo y el comité.</p>
-      <p class="hoy"><b>El problema hoy</b>El mismo aviso llega distinto por tres lados, y el
-      que se pierde uno no tiene dónde ir a buscarlo.</p>
-      <div class="medida"><span>Se mide</span>
-        Avisos publicados en el canal oficial contra avisos que siguieron llegando por fuera.</div>
     </div>
 
     <div class="prop">
@@ -398,7 +399,7 @@ code{font-family:var(--dato); font-size:.85em; background:var(--papel);
           <td>Ya están medidos: contrastan con texto blanco y se separan en escala de grises</td></tr>
         <tr><td>El nombre</td><td>Una palabra, grande</td>
           <td>En una boleta se lee de reojo y en dos segundos</td></tr>
-        <tr><td>Las tres palabras</td><td>Organiza · Actualiza · Optimiza</td>
+        <tr><td>Las tres palabras</td><td>Comprende · Ejecuta · Trasciende</td>
           <td>Es lo único que hay que recordar. Si alguien recuerda esas tres, ganamos</td></tr>
       </tbody>
     </table>

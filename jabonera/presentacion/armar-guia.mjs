@@ -472,6 +472,80 @@ ${g.laminas.map(pagLamina).join('\n')}
 ${PREGUNTAS}
 </body></html>`;
 
+/* ── la versión web ────────────────────────────────────────────────────────
+   La guía está compuesta para A4. En un teléfono, 14 mm de margen se comen
+   media pantalla y 3.2 mm de texto son 12 px. Así que la web NO se escala:
+   se vuelve a componer en píxeles por debajo de 860 px. Escalar con transform
+   o con zoom deja el texto en 5 px, que es lo mismo que no publicarla. */
+const WEB = `
+body{background:#EFE9E2;padding:0}
+.pagina{margin:0 auto 6mm;box-shadow:0 1mm 4mm rgba(26,21,51,.16)}
+.pagina:first-child{margin-top:6mm}
+.bajar{position:sticky;top:0;z-index:9;display:block;background:var(--tinta);color:#fff;
+       text-align:center;padding:11px 14px;font:600 14px/1.3 var(--sans);text-decoration:none;
+       letter-spacing:.01em}
+.bajar b{font-weight:700}
+
+@media screen and (max-width:860px){
+  .pagina{width:100%;height:auto;min-height:0;padding:26px 20px 30px;margin:0 0 14px;
+          box-shadow:none;border-bottom:1px solid var(--linea)}
+  h1{font-size:76px}
+  h2{font-size:30px;margin:10px 0 14px}
+  h3{font-size:19px;margin:22px 0 6px}
+  .eyebrow,.cuenta{font-size:11px}
+  .et-bloque{font-size:10px}
+  .cab{border-bottom-width:2px;padding-bottom:7px}
+  .nota,.dos p,.regla,.hablado p,.par p,.rep,.uso,.tapa-nota,.aviso{font-size:14px}
+  .copiar{padding:14px 16px;margin-top:16px;border-width:2px;border-radius:6px}
+  .copiar p{font-size:19px}
+  .dos{grid-template-columns:1fr;gap:16px;margin-top:16px}
+  .hablado{margin-top:16px;border-left-width:3px;padding-left:12px}
+  .pie{font-size:11px;padding-top:10px}
+  .diapo{font-size:min(4.6vw,22px);border-radius:8px;box-shadow:4px 4px 0 rgba(26,21,51,.10)}
+  .tapa-alto{padding-top:8px}
+  .tapa-sub{font-size:19px;margin-top:12px}
+  .tapa-bajo{grid-template-columns:1fr;gap:20px;margin-top:34px;padding-bottom:0}
+  .nombres{font-size:15px}
+  .b1{width:300px;height:300px;right:-110px;top:120px}
+  .b2{width:170px;height:170px;left:-60px;bottom:220px}
+  .b3{width:80px;height:80px;right:60px;top:440px}
+  .paleta{grid-template-columns:1fr 1fr;gap:10px}
+  .muestra{height:44px;border-radius:5px;font-size:11px;padding:6px}
+  .col-p b{font-size:14px}
+  .uso{font-size:12px}
+  .tab.ancha{font-size:13px}
+  .tab.ancha th,.tab.ancha td{padding:7px 9px}
+  .aviso{padding:14px 16px;border-radius:6px;margin-top:16px}
+  .reglas{gap:12px}
+  .regla{grid-template-columns:28px 1fr;gap:8px}
+  .rn{font-size:15px}
+  .indice{font-size:13px}
+  .indice td{padding:7px 4px}
+  .ix-s{width:auto}
+  .ix-t{display:none}          /* la frase completa no cabe: está en su propia página */
+  .ix-n{width:26px}
+  .ix-w{width:26px}
+  .rep{grid-template-columns:1fr;gap:2px;padding:8px 0;border-bottom:1px solid var(--linea)}
+  .qa{gap:18px;margin-top:16px}
+  .par b{font-size:16px;margin-bottom:5px}
+}
+`;
+
+const WEB_HTML = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NERA · guía de presentación</title>
+<meta name="description" content="Las 16 láminas del proyecto NERA: el texto exacto de cada una, cómo debe verse y qué buscar en Canva gratis.">
+<style>${CSS}${WEB}</style></head><body>
+<a class="bajar" href="NERA-guia-presentacion.pdf">Bajar la guía en <b>PDF</b> — 20 páginas, lista para imprimir</a>
+${PORTADA}
+${COMO}
+${INDICE}
+${g.laminas.map(pagLamina).join('\n')}
+${PREGUNTAS}
+</body></html>`;
+fs.writeFileSync(path.join(AQUI, 'index.html'), WEB_HTML);
+console.log(`index.html   — ${(WEB_HTML.length / 1024).toFixed(0)} KB · la que se publica`);
+
 const salidaHtml = path.join(AQUI, 'guia.html');
 fs.writeFileSync(salidaHtml, HTML);
 console.log(`guia.html — ${(HTML.length / 1024).toFixed(0)} KB · ${g.laminas.length + 4} páginas`);

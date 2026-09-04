@@ -1,0 +1,92 @@
+{
+  "area": "medios",
+  "nombre": "Vídeo y sonido",
+  "que": "Reproducir cosas: autoplay, subtítulos, peso y qué pasa cuando alguien no puede oír o no quiere.",
+  "neuronas": [
+    {
+      "id": "video-que-arranca-solo-con-sonido",
+      "titulo": "El vídeo empieza solo y suena",
+      "gravedad": "alta",
+      "sintoma": "Se abre la página en un sitio público y se oye un anuncio.",
+      "causa": "Reproducción automática con audio.",
+      "porque": "Se prueba con el volumen bajo y en solitario.",
+      "arreglo": "Nunca con sonido sin que alguien lo pida. Y si arranca en silencio, que se vea que se puede parar.",
+      "comoCazarlo": "Abrir la página con el volumen alto en un sitio con gente.",
+      "consejo": "Los navegadores ya lo bloquean casi siempre: si funciona, es que se está insistiendo.",
+      "senales": [
+        "se oyó el video",
+        "empieza solo",
+        "tuve que buscar cómo pararlo"
+      ],
+      "salioDe": "Práctica de reproducción automática; criterio de WCAG sobre audio que suena solo."
+    },
+    {
+      "id": "video-sin-subtitulos",
+      "titulo": "El vídeo no se puede seguir sin sonido",
+      "gravedad": "alta",
+      "sintoma": "Quien no oye, o quien está en el metro, no se entera de nada.",
+      "causa": "No hay subtítulos ni transcripción.",
+      "porque": "Subtitular cuesta y se deja para después.",
+      "arreglo": "Subtítulos siempre, y transcripción cuando el contenido importa.",
+      "comoCazarlo": "Ver el vídeo sin sonido y comprobar si se entiende.",
+      "consejo": "La mayoría del consumo en móvil es sin sonido: no es sólo accesibilidad, es alcance.",
+      "senales": [
+        "no se entiende sin audio",
+        "no hay subtítulos",
+        "lo veo en silencio"
+      ],
+      "salioDe": "Criterios de WCAG sobre alternativas para medios temporales."
+    },
+    {
+      "id": "video-de-fondo-que-pesa",
+      "titulo": "El vídeo decorativo de la portada pesa más que la página",
+      "gravedad": "media",
+      "sintoma": "La portada tarda en cargar por un vídeo que nadie mira.",
+      "causa": "Se puso un vídeo de fondo sin condiciones de red ni de aparato.",
+      "porque": "Se ve espectacular en la presentación y se prueba en oficina.",
+      "arreglo": "No cargarlo en redes lentas ni con ahorro de datos, y usar una imagen como respaldo.",
+      "comoCazarlo": "Medir el peso total de la portada y qué proporción es el vídeo.",
+      "consejo": "Con movimiento reducido, además, no debería reproducirse.",
+      "senales": [
+        "la portada pesa mucho",
+        "tarda por el video",
+        "gasta datos"
+      ],
+      "salioDe": "Prácticas de rendimiento en móvil de Smashing y la regla de movimiento reducido."
+    },
+    {
+      "id": "controles-de-medios-que-no-se-alcanzan",
+      "titulo": "No se puede pausar con teclado",
+      "gravedad": "media",
+      "sintoma": "Un reproductor propio que no responde al tabulador ni a la barra espaciadora.",
+      "causa": "Se sustituyeron los controles nativos por otros sin reproducir su comportamiento.",
+      "porque": "Los nativos son feos y se ocultan sin pensar en lo que se pierde.",
+      "arreglo": "Si se sustituyen, hay que reproducir teclado, foco y anuncios. Y casi siempre no compensa.",
+      "comoCazarlo": "Manejar el reproductor sin ratón.",
+      "consejo": "Es el mismo caso que el `div` haciendo de botón, con más superficie.",
+      "senales": [
+        "no puedo pausar con teclado",
+        "los controles no responden",
+        "hay que usar el mouse"
+      ],
+      "salioDe": "A List Apart, sobre reproductores accesibles."
+    },
+    {
+      "id": "sonido-de-interfaz-sin-permiso",
+      "titulo": "La interfaz hace ruido sin que nadie lo pidiera",
+      "gravedad": "baja",
+      "sintoma": "Sonidos al enviar, al recibir o al fallar que sorprenden.",
+      "causa": "Se añadió realimentación sonora activada por defecto.",
+      "porque": "En la demostración el sonido gusta y se nota.",
+      "arreglo": "Apagado por defecto, con interruptor visible; y nunca como único aviso.",
+      "comoCazarlo": "Abrir la aplicación en silencio y comprobar que nada suena.",
+      "consejo": "Un sonido corto y suave funciona mejor que uno bonito: se oye muchas veces.",
+      "senales": [
+        "sonó sin que yo quisiera",
+        "cómo quito el sonido",
+        "hace ruido la app"
+      ],
+      "salioDe": "La sala: el sonido va detrás del mismo permiso que las notificaciones y se puede apagar."
+    }
+  ]
+}

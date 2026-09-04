@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/agent-launcher/skills/stage-launch/SKILL.md

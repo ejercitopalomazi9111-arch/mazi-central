@@ -1,0 +1,195 @@
+{
+  "area": "reticula",
+  "nombre": "Retícula, aire y forma",
+  "que": "Cómo se reparte el espacio: rejillas, proporciones, separación y qué pasa cuando la pantalla es chica.",
+  "neuronas": [
+    {
+      "id": "componente-que-mira-la-ventana",
+      "titulo": "El componente se adapta a la ventana y no a su hueco",
+      "gravedad": "media",
+      "sintoma": "La misma tarjeta se ve bien en la portada y apretada en la barra lateral, con la misma ventana.",
+      "causa": "Las reglas responsivas miran el ancho de la VENTANA, y el componente no vive en la ventana: vive en un hueco que puede medir cualquier cosa.",
+      "porque": "Durante años lo único que se podía preguntar era el ancho de la ventana, y ese hábito sobrevivió a que existan las consultas de contenedor.",
+      "arreglo": "Consultar el ancho del contenedor. El componente decide por el sitio donde está, no por el aparato.",
+      "comoCazarlo": "Poner el mismo componente en dos anchos distintos de la MISMA página. Si sólo uno se ve bien, está mirando la ventana.",
+      "consejo": "Es la diferencia entre un componente que se puede reutilizar y uno que hay que ajustar en cada sitio donde se pega.",
+      "senales": [
+        "se ve bien arriba y mal en la columna",
+        "tuve que hacer una variante para la barra lateral",
+        "depende de dónde lo ponga"
+      ],
+      "salioDe": "web.dev, «Micro layouts»: con consultas de contenedor el ancho de la ventana deja de importar."
+    },
+    {
+      "id": "la-imagen-sin-proporcion-declarada",
+      "titulo": "La página salta cuando cargan las imágenes",
+      "gravedad": "alta",
+      "sintoma": "Se está leyendo y de pronto el texto se va hacia abajo porque llegó una imagen.",
+      "causa": "La imagen no declara sus proporciones, así que ocupa cero hasta que llega y entonces empuja todo.",
+      "porque": "En desarrollo las imágenes están en caché y llegan al instante, así que el salto no existe donde se prueba.",
+      "arreglo": "Declarar `width` y `height` o `aspect-ratio` para que el hueco esté reservado desde el primer pintado.",
+      "comoCazarlo": "Cargar con la red ralentizada y mirar si algo se mueve. O medir el desplazamiento acumulado de maqueta.",
+      "consejo": "Reservar el hueco también permite pintar un marcador honesto mientras llega, en vez de un blanco que parece un error.",
+      "senales": [
+        "la página salta al cargar",
+        "el texto se mueve solo",
+        "le doy clic y me sale otra cosa"
+      ],
+      "salioDe": "El sitio del Instituto: la relación de aspecto fijada en los marcadores hace que sustituirlos por la foto real no mueva nada."
+    },
+    {
+      "id": "aspecto-fijo-que-descuadra-el-degradado",
+      "titulo": "El efecto sobre la imagen se descoloca al cambiar de ancho",
+      "gravedad": "baja",
+      "sintoma": "Un degradado sobre la foto acaba a distinta altura en cada tarjeta de la misma fila.",
+      "causa": "El alto de la imagen depende del ancho, y el degradado se midió en porcentaje de un alto que cambia.",
+      "porque": "Se ajusta a ojo en un ancho concreto y se da por bueno; el error sólo se ve comparando varias tarjetas a la vez.",
+      "arreglo": "Anclar el efecto a una medida que no dependa del alto —píxeles desde el borde inferior— o fijar el alto además de la proporción.",
+      "comoCazarlo": "Poner tres tarjetas en fila y mirar si el efecto acaba a la misma altura en las tres.",
+      "consejo": "Los defectos de proporción casi nunca se ven en una tarjeta sola: se ven en la fila.",
+      "senales": [
+        "el degradado no queda igual en todas",
+        "se descuadra al cambiar el tamaño",
+        "las tarjetas no coinciden"
+      ],
+      "salioDe": "Smashing, «Create Responsive Image Effects With CSS Gradients And aspect-ratio»."
+    },
+    {
+      "id": "columnas-iguales-que-no-lo-son",
+      "titulo": "Las columnas `1fr` no salieron iguales",
+      "gravedad": "baja",
+      "sintoma": "Se pidieron columnas iguales y una es más ancha porque su contenido no cabe.",
+      "causa": "`1fr` es `minmax(auto, 1fr)`: la retícula primero le da a cada columna lo que su contenido pide y reparte lo que sobra.",
+      "porque": "`1fr` se lee como «una fracción igual» y en realidad dice «una fracción del espacio SOBRANTE».",
+      "arreglo": "`minmax(0, 1fr)` cuando de verdad se quieren columnas iguales pase lo que pase con el contenido.",
+      "comoCazarlo": "Meter una palabra muy larga en una celda. Si esa columna crece, era `auto`.",
+      "consejo": "Es también la causa de que una celda con contenido ancho desborde la rejilla entera.",
+      "senales": [
+        "las columnas no quedan iguales",
+        "una columna es más ancha",
+        "se me desborda la rejilla"
+      ],
+      "salioDe": "web.dev, «Grid»: `1fr` equivale a `minmax(auto, 1fr)` y la retícula mira el tamaño intrínseco primero."
+    },
+    {
+      "id": "borde-en-hover-que-mueve-la-maqueta",
+      "titulo": "Al pasar el cursor todo se mueve un píxel",
+      "gravedad": "baja",
+      "sintoma": "Pasar el ratón por una tarjeta empuja ligeramente a las de al lado.",
+      "causa": "El borde que aparece en hover cuenta para el tamaño del elemento, así que al aparecer lo agranda.",
+      "porque": "Es la forma más directa de marcar el estado y el salto es de un píxel: se ve pero no se nombra.",
+      "arreglo": "Reservar el borde desde el principio en transparente, o usar un borde interior —sombra hacia dentro— que no ocupa sitio.",
+      "comoCazarlo": "Poner tres elementos en fila y pasar el cursor por el del medio mirando los de los lados.",
+      "consejo": "Es el mismo problema del anillo de foco: si aparece de la nada y ocupa sitio, mueve la página.",
+      "senales": [
+        "se mueve al pasar el mouse",
+        "brinca un poquito",
+        "las tarjetas se empujan"
+      ],
+      "salioDe": "Smashing, «50 Useful Coding Techniques»: bordes que no cambian la maqueta."
+    },
+    {
+      "id": "aire-repartido-por-igual",
+      "titulo": "Todo tiene el mismo aire alrededor",
+      "gravedad": "media",
+      "sintoma": "La página se lee como una lista continua: no se ve dónde termina un tema y empieza otro.",
+      "causa": "Se usó una sola medida de separación para todo, así que el espacio no está agrupando nada.",
+      "porque": "Un único valor es más fácil de mantener y se siente ordenado en una pantalla vacía.",
+      "arreglo": "Que el espacio DENTRO de un grupo sea claramente menor que el espacio ENTRE grupos. La proporción importa más que los valores.",
+      "comoCazarlo": "Entrecerrar los ojos: deberían verse bloques. Si se ve un flujo parejo, el espacio no está agrupando.",
+      "consejo": "Agrupar con espacio sale gratis y funciona incluso sin color ni líneas.",
+      "senales": [
+        "se ve todo seguido",
+        "no se distinguen las secciones",
+        "parece una lista larga"
+      ],
+      "salioDe": "El principio de proximidad, y el ritmo vertical del banco de pruebas."
+    },
+    {
+      "id": "la-columna-unica-once-veces",
+      "titulo": "Once secciones con exactamente la misma forma",
+      "gravedad": "baja",
+      "sintoma": "El documento se siente monótono aunque cada sección esté bien resuelta.",
+      "causa": "Cada sección abre igual —rótulo, título, párrafo— y sigue con una rejilla de celdas iguales. La forma no cambia nunca.",
+      "porque": "Repetir la estructura es lo correcto para la coherencia, y nadie separa «coherente» de «idéntico».",
+      "arreglo": "Cambiar la forma donde el CONTENIDO lo pide: comparar dos cosas pide dos columnas; una serie pide una cinta; un dato que manda pide ocupar más.",
+      "comoCazarlo": "Mirar las secciones en miniatura, sin texto. Si todas son el mismo rectángulo, la forma no está diciendo nada.",
+      "consejo": "Variar por variar es peor que repetir: la forma tiene que salir del contenido, no del aburrimiento.",
+      "senales": [
+        "se ve monótono",
+        "todas las secciones son iguales",
+        "le falta ritmo"
+      ],
+      "salioDe": "La autorrevisión del banco de pruebas, «no» nº 5, y el comparador que sí salió del contenido."
+    },
+    {
+      "id": "esconder-en-vez-de-redisenar",
+      "titulo": "En teléfono se escondió lo que no cabía",
+      "gravedad": "alta",
+      "sintoma": "En pantalla chica desaparecen la navegación, filtros o columnas de una tabla.",
+      "causa": "Se resolvió el ancho con `display:none` en vez de darle otra forma al mismo contenido.",
+      "porque": "Esconder es una línea y el resultado «se ve bien»: nadie echa de menos lo que no ve.",
+      "arreglo": "Llevar el contenido a una forma que sí cabe: barra inferior al alcance del pulgar, cinta que se desliza, tabla que se reordena.",
+      "comoCazarlo": "Comparar la lista de acciones posibles en escritorio y en teléfono. Si en el teléfono hay menos, se escondieron cosas.",
+      "consejo": "Es escritorio reducido con el paso extra de borrar cosas, y donde más se lee es justo el teléfono.",
+      "senales": [
+        "en el celular no aparece el menú",
+        "no puedo llegar a esa opción desde el teléfono",
+        "desaparecieron las columnas"
+      ],
+      "salioDe": "La autorrevisión del banco: `display:none` sobre los diez enlaces, corregido con una barra inferior."
+    },
+    {
+      "id": "scroll-horizontal-no-buscado",
+      "titulo": "La página se mueve de lado en el teléfono",
+      "gravedad": "alta",
+      "sintoma": "En pantalla chica se puede arrastrar la página a la derecha y aparece una franja vacía.",
+      "causa": "Algo mide más que la ventana: una tabla, una imagen sin tope, un `width` en píxeles o una palabra larguísima.",
+      "porque": "En escritorio sobra ancho y el desborde no se nota; aparece sólo por debajo de cierto tamaño.",
+      "arreglo": "Encontrar al culpable en vez de tapar con `overflow-x:hidden`, que esconde el síntoma y a veces también contenido.",
+      "comoCazarlo": "Comparar el ancho del documento con el de la ventana en varios anchos. Si es mayor, hay desborde, y se puede señalar cuál.",
+      "consejo": "Lo que desborda casi siempre es un elemento concreto, no «el diseño».",
+      "senales": [
+        "se mueve de lado",
+        "hay una franja blanca a la derecha",
+        "se sale de la pantalla"
+      ],
+      "salioDe": "Las comprobaciones de desborde del sitio del Instituto, a 320, 390, 768 y 1440 px."
+    },
+    {
+      "id": "el-orden-visual-no-es-el-del-documento",
+      "titulo": "Con teclado el foco salta a un sitio raro",
+      "gravedad": "alta",
+      "sintoma": "Al tabular, el foco va a un elemento que en la pantalla está en otro lado.",
+      "causa": "La retícula reordenó visualmente lo que en el documento sigue en otro orden.",
+      "porque": "Reordenar con CSS es cómodo y no cambia nada de lo que se ve; el orden de lectura no se ve.",
+      "arreglo": "Que el orden del documento sea el orden lógico, y reordenar visualmente sólo cuando los dos coinciden.",
+      "comoCazarlo": "Recorrer la pantalla con el tabulador siguiendo el anillo de foco con la vista. Si salta hacia atrás, hay desorden.",
+      "consejo": "Afecta a quien navega con teclado y a quien usa lector de pantalla, que leen el documento, no la pantalla.",
+      "senales": [
+        "el foco salta raro",
+        "con tab se va a otro lado",
+        "el lector lee en desorden"
+      ],
+      "salioDe": "Las pruebas de recorrido con teclado del banco: 24 paradas, todas con anillo visible."
+    },
+    {
+      "id": "un-fr-no-es-cero",
+      "titulo": "Las columnas de los lados desaparecieron y el CSS estaba bien",
+      "gravedad": "media",
+      "sintoma": "En una rejilla de tres columnas, las dos de los costados no se ven. El CSS es correcto y el JS las pinta.",
+      "causa": "`1fr` es `minmax(auto, 1fr)`: la pista nunca baja del tamaño MÍNIMO de su contenido. Si la columna del medio lleva algo ancho —una fila de cartas, una tabla, un bloque de código— se lo queda todo y aplasta a las vecinas.",
+      "porque": "`1fr` se lee como «el resto» y en la mayoría de los casos se comporta así. Sólo falla cuando el contenido tiene un mínimo grande, que es justo cuando hace falta que no falle.",
+      "arreglo": "`minmax(0, 1fr)` en la pista que lleva el contenido ancho. Lo mismo con `minmax(0, auto)` en flex (`min-width:0`).",
+      "comoCazarlo": "Medir el ancho de las pistas de los lados, no mirarlas. Una pista de 0 px no se ve como un fallo: se ve como si no existiera.",
+      "consejo": "Cada vez que una columna «no aparece» con el CSS correcto, el primer sospechoso es el mínimo automático de la pista de al lado.",
+      "senales": [
+        "no se ve la columna de al lado",
+        "desapareció la barra lateral",
+        "el CSS está bien pero no sale",
+        "se come todo el ancho"
+      ],
+      "salioDe": "La mesa de Guerra de Puercos: el mazo y el cementerio del jugador estaban pintados y medían cero, aplastados por el abanico de la mano."
+    }
+  ]
+}

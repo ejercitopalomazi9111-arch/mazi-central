@@ -70,7 +70,8 @@ body{
 }
 .barra-fila{display:flex; align-items:center; gap:10px; min-height:44px}
 .marca{font-family:var(--mazi); font-size:19px; letter-spacing:.01em; color:var(--hueso);
-  text-decoration:none; display:flex; align-items:center; gap:8px; white-space:nowrap}
+  text-decoration:none; display:flex; align-items:center; gap:8px; white-space:nowrap;
+  min-width:0; overflow:hidden; text-overflow:clip}
 .marca b{color:var(--violeta); font-weight:400}
 .crece{flex:1}
 .btn{
@@ -79,12 +80,54 @@ body{
   min-height:44px; padding:0 14px; border-radius:11px; cursor:pointer;
   display:inline-flex; align-items:center; justify-content:center; gap:7px;
   transition:border-color .16s, background .16s, transform .08s;
+  /* Un botón NUNCA parte su nombre en dos renglones. «Crear la imagen» se
+     partía en «Crear la / imagen» y la barra crecía al doble de alto; a 390 px
+     eso se come un renglón entero de la pantalla, y encima el botón deja de
+     parecer un botón. Lo que cede es la marca, no el nombre de la acción. */
+  white-space:nowrap; flex:0 0 auto;
 }
+/* ⚠️ `hidden` NO esconde un `.btn`. El atributo funciona con una regla del
+   navegador —`[hidden]{display:none}`— que pierde contra cualquier `display`
+   que uno escriba, y `.btn` dice `inline-flex`. El botón «Nuevo» seguía
+   ahí en el modo Aviso aunque el código lo diera por escondido, y la prueba
+   que lo vigilaba leía la PROPIEDAD `.hidden` —que sí era 'true'— en vez de
+   mirar la pantalla. Dos capas mintiendo a la vez; se vio en la captura. */
+.btn[hidden]{display:none}
 .btn:hover{border-color:var(--violeta); background:var(--superficie-2)}
 .btn:active{transform:translateY(1px)}
-.btn.fuerte{background:var(--violeta); border-color:var(--violeta); color:#12061C}
+/* ⚠ SOBRE EL VIOLETA, LETRA BLANCA. Lo decidió Carlos —«el texto blanco»—
+   después de que se midiera: sobre #AC27FF NINGUNA tinta oscura cumple la
+   norma. El negro puro se queda en 4.49 y hace falta 4.5; el `#12061C` que
+   había daba 4.20. Con blanco da 4.68 y pasa.
+   Y no era teórico: los botones fuertes de Reportes, que son los que más se
+   pulsan de la app, estaban todos por debajo. */
+.btn.fuerte{background:var(--violeta); border-color:var(--violeta); color:#fff}
 .btn.fuerte:hover{background:var(--violeta-suave); border-color:var(--violeta-suave)}
-.btn.chico{min-height:36px; padding:0 11px; font-size:13px; border-radius:9px}
+.btn.chico{min-height:44px; padding:0 12px; font-size:13px; border-radius:9px}
+
+/* ── EL BOTÓN «AJUSTAR» SE VE MUERTO, Y LO PARECÍA CON RAZÓN ───────────────
+   Carlos: «el botón ajustes/ajustar no hace nada». Tenía razón en lo que veía
+   y el código estaba bien: la vista LLEGA ya en modo automático, así que
+   tocarlo recalcula el mismo 41% y no se mueve nada. Sólo hace algo después
+   de haber tocado + o −, y ni entonces avisa de nada.
+
+   Un botón que la mayoría de las veces no puede hacer nada, y que no lo dice,
+   es indistinguible de uno roto. Ahora se enciende cuando el ajuste
+   automático está puesto: se apaga al tocar + o −, y se vuelve a encender al
+   tocarlo. Así el toque siempre tiene respuesta, aunque el zoom no cambie. */
+/* Encendido DISCRETO a propósito: el violeta lleno ya es de «Imprimir / PDF»,
+   que es la acción principal de esta barra. Un indicador de modo que grita lo
+   mismo que el botón importante deja la barra sin jerarquía. Borde y letra en
+   violeta bastan para decir «este modo está puesto».
+
+   ⚠ La primera versión usó `var(--acento)`, que NO existe en esta app —el
+   violeta se llama `--violeta`—. Sin la variable, el fondo se quedó oscuro y
+   encima quedó mi letra oscura: el botón se volvió ILEGIBLE. Se vio en la
+   captura, no leyendo el CSS. */
+.btn.chico[aria-pressed="true"]{
+  background:var(--superficie-2); border-color:var(--violeta-suave);
+  color:var(--violeta-suave); font-weight:700;
+}
 .btn[disabled]{opacity:.4; pointer-events:none}
 
 .pestanas{display:flex; gap:2px; margin-top:8px; overflow-x:auto; scrollbar-width:none}
@@ -116,7 +159,13 @@ body{
 
 label.campo{display:block; margin:0 0 12px}
 label.campo>span{display:block; font-size:12.5px; font-weight:600; color:var(--tenue); margin-bottom:5px; letter-spacing:.01em}
-input[type=text], input[type=date], input[type=number], select, textarea{
+/* ⚠️ `input[type=text]` NO agarra un <input> sin `type`. El navegador lo trata
+   como texto igual, pero el CSS no: el campo del título de un pendiente venía
+   sin `type` y salía de 21 px de alto, sin fondo y sin orilla, o sea un
+   renglón blanquecino en medio de una tarjeta oscura. Se midió, no se leyó.
+   Se arregló el marcado Y se ensanchó el selector, porque el marcado se puede
+   volver a olvidar y esto no. */
+input:not([type]), input[type=text], input[type=date], input[type=number], select, textarea{
   width:100%; background:var(--vacio); color:var(--hueso);
   border:1px solid var(--linea); border-radius:10px;
   font:inherit; font-size:16px; padding:11px 12px; min-height:44px;
@@ -136,9 +185,14 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .chip{
   appearance:none; border:1px solid var(--linea); background:var(--vacio); color:var(--tenue);
   font:inherit; font-size:13px; font-weight:600; padding:9px 12px; border-radius:999px;
-  cursor:pointer; min-height:40px;
+  cursor:pointer;
+  /* 44 px, no 40. Los 40 venían de que se ven más finos apretados en una fila,
+     y es cierto — pero son los botones con los que se ESCOGE el tipo de
+     reporte, o sea lo primero que se toca al abrir la app, y Apple pide 44
+     porque debajo de eso el dedo empieza a fallar. Se midió: eran 40. */
+  min-height:44px; display:inline-flex; align-items:center;
 }
-.chip[aria-pressed="true"]{background:var(--violeta); border-color:var(--violeta); color:#12061C}
+.chip[aria-pressed="true"]{background:var(--violeta); border-color:var(--violeta); color:#fff}
 
 .ayuda{border:1px solid var(--linea); border-radius:12px; overflow:hidden; margin-top:12px}
 .ayuda summary{cursor:pointer; padding:12px 14px; font-size:13.5px; font-weight:600; color:var(--tenue); min-height:44px; display:flex; align-items:center}
@@ -418,13 +472,63 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 }
 .hoja .membrete-sup{position:absolute; top:0; left:0; width:100%; display:block}
 .hoja .membrete-inf{position:absolute; bottom:0; left:0; width:100%; display:block}
+/* ── la cabecera compuesta, para la institución que tiene logo y no membrete
+   Va con el logo a la izquierda y el nombre al lado, no centrado: un membrete
+   centrado imita el aire de un documento oficial que aquí NO existe, y esta
+   herramienta no está para fingir sellos. Con el logo alineado se lee como
+   papelería de la casa, que es lo que es. */
+.hoja .membrete-sup.compuesto{
+  display:flex; align-items:center; gap:6mm;
+  padding:9mm var(--lado) 5mm; border-bottom:.7mm solid var(--rojo);
+  background:#fff;
+}
+.hoja .membrete-sup.compuesto img{
+  height:22mm; width:auto; display:block; flex:0 0 auto;
+}
+.hoja .membrete-sup.compuesto .quien{
+  display:flex; flex-direction:column; min-width:0; margin-left:auto; text-align:right;
+}
+.hoja .membrete-sup.compuesto .quien span{
+  font-size:8.5pt; letter-spacing:.16em; text-transform:uppercase; color:var(--azul);
+}
+/* El pie: una barra fina del color de la casa. Ni logo ni datos inventados —
+   poner un domicilio o un teléfono que nadie me dio sería inventar. */
+/* ⚠ SE LLAMABA `.barra` Y SE IBA AL TECHO DE LA HOJA. `.barra` ya existía en
+   esta app: es la barra de herramientas de arriba, `position:sticky; top:0`.
+   El pie heredó ese `top:0`, y con `top` y `bottom` puestos a la vez gana
+   `top` — así que el filo del pie se pintaba como listón en la cabecera.
+   Se ve raro pero no roto, que es la peor clase de defecto: uno lo mira y
+   piensa «ha de ser el diseño». Lo cazó medir dónde caía, no verlo.
+   Nombre propio y se acabó. */
+.hoja .membrete-inf.filo-inf{height:4mm; background:var(--rojo)}
 
-/* marca de agua — la paloma de Grupo Mazi */
+/* ── cada papel con su aire, que es lo que pidió Carlos con «todos con sus
+   diferentes formatos». No es sólo cambiar el logo: si los cuatro se ven
+   iguales con distinta imagen, no son cuatro papeles, es uno con calcomanías.
+   Lo que cambia en cada uno es la MEDIDA del logo y el peso del filo — que es
+   lo que se nota de lejos, antes de leer nada. */
+.hoja .membrete-sup.compuesto.mazi{
+  border-bottom-width:1.4mm;                    /* filo grueso, como la marca */
+}
+.hoja .membrete-sup.compuesto.mazi img{height:16mm}
+.hoja .membrete-sup.compuesto.mazi .quien span{letter-spacing:.22em}
+
+.hoja .membrete-sup.compuesto.presidencia{
+  border-bottom-width:.4mm; padding-bottom:4mm;
+}
+.hoja .membrete-sup.compuesto.presidencia img{height:19mm}
+
+.hoja .membrete-sup.compuesto.geraldmed img{height:22mm}
+
+/* Marca de agua. Cada institución trae la suya: la imagen, su ancho y su
+   leyenda salen de INSTITUCIONES, no de aquí. El ancho tiene que ser por
+   institución porque la paloma y la ambulancia son apaisadas (1.7:1) y el
+   escudo es cuadrado: al mismo ancho, el escudo se pinta 70% más alto y
+   parece otra cosa. */
 .hoja .agua{
   position:absolute; inset:0; display:grid; place-items:center;
   pointer-events:none; z-index:0;
 }
-.hoja .agua svg{width:118mm; height:auto; transform:rotate(-21deg); opacity:.055}
 .hoja .agua .letras{
   position:absolute; font-family:var(--ui); font-weight:800; letter-spacing:.32em;
   font-size:8.5pt; color:#000; opacity:.055; transform:rotate(-21deg) translateY(38mm);
@@ -434,7 +538,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .hoja .zona{
   position:absolute; z-index:1;
   left:var(--lado); right:var(--lado); top:var(--tope);
-  height:calc(279.4mm - var(--tope) - var(--fondo));
+  /* ── EL RESERVE DEL PIE · el defecto que Carlos vio IMPRESO ─────────────
+     Antes la zona bajaba hasta `--fondo`, que es EXACTAMENTE donde vive el
+     pie de página. El paginador mide `.zona` para decidir cuánto cabe, así
+     que metía texto en la franja que el pie iba a tapar: la última línea de
+     casi cada hoja salía partida a la mitad con el folio encima.
+
+     No se veía escribiendo poco —hace falta que la hoja se llene— y por eso
+     llegó hasta el papel.
+
+     Los 6mm salen de medir, no de tantear: el pie mide 7.5mm de alto y su
+     borde superior queda 0.5mm ARRIBA del final de la zona. 6mm dejan ~5.5mm
+     de aire, y aguantan también un pie de tres renglones sin que se toquen.
+     Con esto el paginador corta antes solo, sin tocar el paginador. */
+  height:calc(279.4mm - var(--tope) - var(--fondo) - 6mm);
   overflow:hidden;
 }
 .hoja .folio-pie{
@@ -523,8 +640,31 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 .doc hr{border:0; border-top:.3mm solid #C3C9D8; margin:4mm 0}
 
 .doc figure{margin:0 0 4mm; text-align:center; break-inside:avoid}
-.doc figure img{width:100%; height:72mm; object-fit:contain; background:#F2F4F8;
-  border:.25mm solid #C3C9D8; border-radius:1mm}
+/* ── LA FIGURA RESPETA SU FORMA ────────────────────────────────────────────
+   Antes: `width:100%; height:72mm; object-fit:contain`. Toda imagen se metía
+   a la fuerza en una caja apaisada de 72mm. Con fotos de evidencia —que salen
+   del teléfono y son más anchas que altas— funciona bien.
+
+   Se rompe con una imagen VERTICAL: la lámina de identidad de CET (1024x1536)
+   quedaba encogida al centro, ilegible, con dos franjas grises de relleno a
+   los lados. Y no es un problema de esa lámina: cualquier captura de pantalla
+   de teléfono, que también es vertical, salía igual.
+
+   Ahora la imagen decide su forma y sólo se le ponen topes: nunca más ancha
+   que la columna, nunca más alta que 148mm —que deja sitio para el pie y para
+   un párrafo—. Una vertical sube a 148mm de alto y se lee; una apaisada sigue
+   ocupando el ancho como antes.
+
+   `--ancho-fig` deja apretar una en concreto: un logotipo no quiere los 156mm
+   de la columna. */
+.doc figure img{
+  display:block; margin:0 auto;
+  width:auto; height:auto;
+  max-width:min(100%, var(--ancho-fig, 100%));
+  max-height:148mm;
+  background:#fff;
+  border:.25mm solid #C3C9D8; border-radius:1mm;
+}
 .doc figcaption{
   margin-top:1.6mm; font-size:8.8pt; color:#4A4A58; font-style:italic; text-align:center;
 }
@@ -562,6 +702,176 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
 }
 .fecha-vieja[hidden]{display:none}
 .fecha-vieja .btn{margin-top:8px; min-height:44px}
+/* ══════════════════════════════════════════════════════════════════════════
+   AVISOS · la herramienta del 3.1, que antes vivía en `avisos/`
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «une el de avisos con el de reportes». Son la misma persona haciendo
+   papeles de la misma escuela en la misma tarde, y tener dos direcciones que
+   se ven distintas obliga a acordarse de cuál era cuál.
+
+   Lo que se mudó es la HERRAMIENTA, no su piel: el cartel que sale sigue
+   siendo crema y vino —ése es el formato de la escuela y no se toca—, pero la
+   pantalla desde la que se arma ya es la de Reportes. Por eso aquí abajo casi
+   no hay colores: casi todo lo hereda de arriba y sólo se corrige lo que la
+   piel de Reportes no contemplaba.
+
+   ⚠️ EL RENGLÓN QUE MÁS IMPORTA es el del `textarea`. Reportes le pone
+   `min-height:340px` porque el suyo es el cuerpo de un reporte entero; el de
+   un pendiente son tres palabras. Sin corregirlo, cada pendiente traía una
+   caja de 340 px de alto y la lista se volvía inusable — es justo el tipo de
+   desproporción que Carlos pidió cazar.
+   ═════════════════════════════════════════════════════════════════════════ */
+#panel-avisos textarea{
+  min-height:84px; line-height:1.45; font-size:16px;
+  font-family:var(--ui);   /* no monoespaciada: esto es prosa, no un reporte */
+}
+#panel-avisos .tarjeta{
+  background:var(--superficie-2); border:1px solid var(--linea);
+  border-radius:14px; padding:14px; margin-bottom:12px;
+}
+#panel-avisos .tarjeta label{
+  display:block; font-size:12.5px; font-weight:600; color:var(--tenue);
+  margin:12px 0 5px; letter-spacing:.01em;
+}
+#panel-avisos .tarjeta label:first-of-type{margin-top:0}
+#panel-avisos .fila{display:grid; grid-template-columns:1fr 1fr; gap:0 10px}
+/* Debajo de 520 px, cada uno a su renglón. En dos columnas a 390 px el
+   desplegable de «Para cuándo» salía como «Para mañan⌄»: el texto no cabía y
+   el navegador lo corta sin decir nada. Un menú que miente sobre lo que dice
+   es peor que uno feo. */
+@media(max-width:520px){ #panel-avisos .fila{grid-template-columns:1fr} }
+#panel-avisos .fila > *{min-width:0}
+#panel-avisos .fila input, #panel-avisos .fila select{min-width:0; max-width:100%}
+/* ⚠️ LA FECHA VA SOLA, EN SU PROPIO RENGLÓN. Se conserva la lección de la
+   versión anterior: en iOS un `input type="date"` no es una caja de texto sino
+   un CONTROL NATIVO, y se pinta al ancho que el sistema decide — ni
+   `min-width:0` ni `max-width` lo encogen. No se puede reproducir aquí porque
+   Chromium no monta ese control. Se arregla quitándole el terreno, no
+   afinándole las medidas. */
+#panel-avisos #avFecha{display:block; width:100%}
+#panel-avisos .acciones{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+#panel-avisos .btn.borrar{border-color:#E0708A; color:#F0A0B2}
+#panel-avisos .btn.borrar:hover{border-color:#F0A0B2; background:var(--superficie-2)}
+/* ⚠️ Va con `label.marca-caja` y no con `.marca-caja` a secas: la regla de
+   arriba —`#panel-avisos .tarjeta label`— pesa más (un tipo de más) y le
+   ganaba el `display`. La casilla quedaba en bloque: el cuadrito arriba y el
+   texto debajo, en vez de uno junto al otro. Se midió (`display: block`
+   cuando debía decir `flex`); leyendo el CSS se ve correcto. */
+#panel-avisos .tarjeta label.marca-caja, #panel-avisos .marca-caja{
+  display:flex; align-items:center; gap:10px; min-height:46px; margin:12px 0 0;
+  background:var(--vacio); border:1px solid var(--linea); border-radius:10px;
+  padding:8px 12px; font-size:14px; color:var(--hueso); cursor:pointer;
+}
+#panel-avisos .marca-caja span{font-weight:500}
+/* La casilla se dibuja aquí y no se deja al sistema: la del navegador es un
+   cuadro BLANCO, y sobre un panel violeta oscuro es lo más claro de toda la
+   pantalla —o sea, lo primero que ve el ojo— para decir algo que casi siempre
+   está apagado. `accent-color` no arregla eso: sólo pinta la palomita cuando
+   ya está prendida. */
+#panel-avisos .marca-caja input[type=checkbox]{
+  appearance:none; -webkit-appearance:none;
+  width:24px; height:24px; min-height:24px; flex:0 0 auto; margin:0; padding:0;
+  border:1.5px solid var(--tenue); border-radius:7px; background:var(--superficie);
+  display:grid; place-content:center; cursor:pointer;
+}
+#panel-avisos .marca-caja input[type=checkbox]::before{
+  content:''; width:13px; height:13px; transform:scale(0); background:var(--violeta);
+  transition:transform .12s ease-out;
+  clip-path:polygon(14% 44%, 0 60%, 40% 100%, 100% 18%, 84% 0, 38% 68%);
+}
+#panel-avisos .marca-caja input[type=checkbox]:checked{border-color:var(--violeta)}
+#panel-avisos .marca-caja input[type=checkbox]:checked::before{transform:scale(1)}
+#panel-avisos .marca-caja input[type=checkbox]:focus-visible{
+  outline:2px solid var(--violeta); outline-offset:2px}
+#panel-avisos .marca-caja:has(input:checked){border-color:var(--violeta); background:var(--superficie-2)}
+#panel-avisos .marca-caja.fijar{border-color:#3E5A78}
+#panel-avisos .marca-caja.fijar input[type=checkbox]:checked{border-color:#6FA8DC}
+#panel-avisos .marca-caja.fijar input[type=checkbox]::before{background:#6FA8DC}
+#panel-avisos .marca-caja.fijar:has(input:checked){border-color:#6FA8DC}
+#panel-avisos .pend{border-left:4px solid var(--violeta)}
+#panel-avisos .pend-cab{display:flex; align-items:center; gap:10px; margin-bottom:10px}
+#panel-avisos .pend-cab svg{width:22px; height:22px; flex:0 0 auto}
+#panel-avisos .pend-cab b{font-size:15px}
+/* Los iconos se dibujaron para papel claro. Sobre el violeta oscuro de aquí,
+   un verde de escuela se apaga; se les sube el brillo lo justo para que se
+   distingan sin repintarlos uno por uno. */
+#panel-avisos .pend-cab svg{filter:brightness(1.55) saturate(1.15)}
+#panel-avisos .vacio{color:var(--tenue); font-size:14px; text-align:center; padding:22px 10px}
+#panel-avisos .nota, #panel-cartel .nota{
+  font-size:13px; color:var(--tenue); line-height:1.5; margin:2px 0 14px;
+}
+#panel-avisos .aviso-caja{
+  background:var(--vacio); border:1px solid #6B5220; border-left:3px solid #C79A3A;
+  border-radius:10px; padding:11px 13px; font-size:13.5px; line-height:1.5; margin-top:12px;
+}
+/* El cartel se pinta en canvas con SU papel crema. El marco blanco de aquí no
+   es decoración: sin él, un cartel de fondo claro se funde con el borde del
+   panel oscuro y no se ve dónde acaba la hoja. */
+#panel-cartel canvas{
+  width:100%; height:auto; display:block; background:#fff;
+  border:1px solid var(--linea); border-radius:12px;
+}
+#panel-cartel #salida img{
+  width:100%; height:auto; display:block; margin-top:12px;
+  border:1px solid var(--linea); border-radius:12px;
+}
+/* Un mensajito de la casa. Nada de `alert()`: en el teléfono sale un cuadro
+   del navegador que dice «tal-dirección dice», se ve ajeno a la app y trae un
+   botón de «no permitir más diálogos» que la deja muda. */
+#mensajito{
+  position:fixed; left:50%; transform:translate(-50%, 20px);
+  bottom:calc(18px + env(safe-area-inset-bottom)); z-index:60;
+  background:var(--superficie-2); color:var(--hueso);
+  border:1px solid var(--violeta-suave);
+  padding:13px 20px; border-radius:999px;
+  font-size:14px; font-weight:600; max-width:88vw; text-align:center;
+  opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  box-shadow:0 12px 34px rgba(0,0,0,.45);
+}
+#mensajito.viendose{opacity:1; transform:translate(-50%, 0)}
+
+/* ───────── los dos niveles de navegación ─────────
+   Antes eran ocho pestañas en una sola tira que se iba de lado, y con Avisos
+   habrían sido diez. Diez pestañas en un renglón que se desliza es una lista
+   que no se ve: para llegar a la última hay que arrastrar sin saber que existe.
+
+   Ahora el primer renglón dice QUÉ ESTÁS HACIENDO —un reporte, una credencial
+   o un aviso— y el segundo, sólo los pasos de eso. Es el mismo número de
+   toques para llegar a cualquier lado, pero el de arriba cabe entero en la
+   pantalla de un teléfono, así que se ve todo lo que la app puede hacer sin
+   arrastrar nada. */
+.modos{
+  display:flex; gap:6px; margin-top:6px; padding-bottom:2px;
+}
+.modo{
+  appearance:none; flex:1; min-width:0; min-height:40px;
+  border:1px solid var(--linea); background:var(--superficie);
+  color:var(--tenue); font:inherit; font-size:14px; font-weight:600;
+  border-radius:10px; cursor:pointer; padding:0 8px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:color .16s, background .16s, border-color .16s;
+}
+.modo:hover{color:var(--hueso); border-color:var(--violeta-suave)}
+.modo[aria-selected="true"]{
+  background:var(--superficie-2); border-color:var(--violeta);
+  color:var(--hueso); font-weight:700;
+}
+/* En el teléfono los tres se reparten el ancho, que es lo cómodo con el
+   pulgar. En computadora NO: tres botones de 420 px cada uno no se leen como
+   una elección, se leen como tres barras. Ahí valen lo que mide su nombre. */
+/* ⚠️ VA DESPUÉS de las reglas de arriba: una consulta de medios no suma
+   especificidad, y puesta antes le ganaba el `flex:1` de `.modo`. Se vio en
+   la captura —tres barras de 420 px— con la regla ya escrita y correcta. */
+@media(min-width:720px){
+  .modos{justify-content:flex-start}
+  .modo{flex:0 0 auto; padding:0 20px}
+}
+
+/* Una pestaña que no es de este modo no se esconde con `hidden`: se saca del
+   flujo con `display:none` para que la tira de abajo no deje huecos. */
+.pestana[hidden]{display:none}
+.pestanas[hidden]{display:none}
+
 @media print{
   .hoja, .pliego{ zoom:var(--imp, .86); }
   /* imprimiendo credenciales: fuera todo lo demás, incluida la hoja carta */
@@ -615,15 +925,27 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
     <button class="btn chico" id="bNuevo" type="button">Nuevo</button>
     <button class="btn fuerte" id="bImprimir" type="button">Imprimir / PDF</button>
   </div>
+  <!-- ───────── QUÉ ESTÁS HACIENDO ─────────
+       Tres cosas distintas que salen de esta app: un reporte, una credencial o
+       el aviso del grupo. Antes eran ocho pestañas revueltas en un renglón que
+       se iba de lado; ahora lo de arriba dice qué estás haciendo y lo de abajo
+       los pasos de eso. -->
+  <nav class="modos" role="tablist" aria-label="Qué estás haciendo">
+    <button class="modo" role="tab" data-modo="reporte"    aria-selected="true">Reporte</button>
+    <button class="modo" role="tab" data-modo="credencial" aria-selected="false">Credencial</button>
+    <button class="modo" role="tab" data-modo="aviso"      aria-selected="false">Aviso</button>
+  </nav>
   <nav class="pestanas" role="tablist" aria-label="Secciones">
-    <button class="pestana" role="tab" data-vista="escribir" aria-selected="true">Escribir</button>
-    <button class="pestana" role="tab" data-vista="ver" aria-selected="false">Vista</button>
-    <button class="pestana" role="tab" data-vista="credencial" aria-selected="false">Credencial</button>
-    <button class="pestana" role="tab" data-vista="plantilla" aria-selected="false">Plantilla</button>
-    <button class="pestana" role="tab" data-vista="registro" aria-selected="false">Registro</button>
-    <button class="pestana" role="tab" data-vista="formato" aria-selected="false">Formato</button>
-    <button class="pestana" role="tab" data-vista="verificar" aria-selected="false">Verificar</button>
-    <button class="pestana" role="tab" data-vista="guardados" aria-selected="false">Guardados</button>
+    <button class="pestana" role="tab" data-modo="reporte" data-vista="escribir" aria-selected="true">Escribir</button>
+    <button class="pestana" role="tab" data-modo="reporte" data-vista="ver" aria-selected="false">Vista</button>
+    <button class="pestana" role="tab" data-modo="reporte" data-vista="formato" aria-selected="false">Formato</button>
+    <button class="pestana" role="tab" data-modo="reporte" data-vista="plantilla" aria-selected="false">Plantilla</button>
+    <button class="pestana" role="tab" data-modo="reporte" data-vista="registro" aria-selected="false">Registro</button>
+    <button class="pestana" role="tab" data-modo="reporte" data-vista="verificar" aria-selected="false">Verificar</button>
+    <button class="pestana" role="tab" data-modo="reporte" data-vista="guardados" aria-selected="false">Guardados</button>
+    <button class="pestana" role="tab" data-modo="credencial" data-vista="credencial" aria-selected="false" hidden>Hacerla</button>
+    <button class="pestana" role="tab" data-modo="aviso" data-vista="avisos" aria-selected="false" hidden>Pendientes</button>
+    <button class="pestana" role="tab" data-modo="aviso" data-vista="cartel" aria-selected="false" hidden>El cartel</button>
   </nav>
 </header>
 
@@ -731,7 +1053,8 @@ El día ...
       <button class="btn chico" type="button" id="bMenos">−</button>
       <span class="contador" id="nivelZoom">100%</span>
       <button class="btn chico" type="button" id="bMas">+</button>
-      <button class="btn chico" type="button" id="bAjustar">Ajustar</button>
+      <button class="btn chico" type="button" id="bAjustar" aria-pressed="true"
+              title="Encajar la hoja en la pantalla">Ajustar</button>
       <button class="btn fuerte chico" type="button" id="bImprimir2">Imprimir / PDF</button>
     </div>
     <div class="escenario" id="escenario">
@@ -748,7 +1071,7 @@ El día ...
     <div class="chips" id="listaCred"></div>
     <div class="chips">
       <button class="chip" type="button" id="cNueva" style="background:var(--violeta);
-        border-color:var(--violeta); color:#12061C">Nueva credencial</button>
+        border-color:var(--violeta); color:#fff">Nueva credencial</button>
       <button class="chip" type="button" id="cDuplicar">Duplicar esta</button>
       <button class="chip" type="button" id="cBorrar">Borrar esta</button>
       <button class="chip" type="button" id="cPegar">Pegar una lista</button>
@@ -773,7 +1096,7 @@ El día ...
       <textarea id="cOtras" style="min-height:88px; font-family:inherit"
         placeholder="TASK FORCE MEX 1&#10;TÉC. EXTRAC- VEHICULAR&#10;RESCATE K-9"></textarea></label>
     <label class="campo"><span>Habilidades, certificaciones y cursos
-      <small style="color:var(--tenue)">(una por renglón · van en el QR, no en la credencial)</small></span>
+      <small style="color:var(--tenue)">(una por renglón · van en la ficha publicada, no en la credencial)</small></span>
       <textarea id="cHabilidades" style="min-height:130px; font-family:inherit"
         placeholder="TUM Básico (CRUM Querétaro, 2023)&#10;RCP y DEA para profesionales (AHA BLS, 2026)&#10;Atención Prehospitalaria del Trauma (PHTLS, 2025)"></textarea></label>
     <p class="aviso" id="avisoQR" style="margin-top:10px"></p>
@@ -845,7 +1168,7 @@ El día ...
       </select></label>
     <div class="chips" style="margin-top:14px">
       <button class="chip" type="button" id="cImprimir" style="background:var(--violeta);
-        border-color:var(--violeta); color:#12061C">Imprimir todas</button>
+        border-color:var(--violeta); color:#fff">Imprimir todas</button>
       <button class="chip" type="button" id="cSoloEsta">Imprimir sólo ésta</button>
     </div>
     <p class="aviso" id="cAvisoAcomodo"></p>
@@ -860,7 +1183,7 @@ El día ...
       entra aquí sin tocarlo.</p>
     <div class="chips">
       <button class="chip" type="button" id="bCopiarIA" style="background:var(--violeta);
-        border-color:var(--violeta); color:#12061C">Copiar instrucciones para la IA</button>
+        border-color:var(--violeta); color:#fff">Copiar instrucciones para la IA</button>
       <button class="chip" type="button" id="bCopiarPlantilla">Copiar sólo el esqueleto</button>
     </div>
     <textarea id="txtIA" readonly style="min-height:260px; font-size:13px"></textarea>
@@ -940,7 +1263,7 @@ El día ...
     <div class="entradas" id="listaEntradas"></div>
     <div class="chips" style="margin-top:14px">
       <button class="chip" type="button" id="bPasar" style="background:var(--violeta);
-        border-color:var(--violeta); color:#12061C">Pasar al reporte</button>
+        border-color:var(--violeta); color:#fff">Pasar al reporte</button>
       <button class="chip" type="button" id="bBorrarDia">Borrar el día</button>
     </div>
     <p class="aviso">Todo esto vive <b>sólo en este teléfono</b>. Son nombres de menores: no se
@@ -976,6 +1299,17 @@ El día ...
         </select></label>
     </div>
 
+    <h2 class="rotulo">Institución <span class="regla"></span>
+      <small>de quién es el papel</small></h2>
+    <label class="campo"><span>Membrete</span>
+      <select id="oInstitucion">
+        <option value="mazi">Jefatura de grupo · marca de Grupo Mazi</option>
+        <option value="rembrandt" selected>Instituto Rembrandt · membrete oficial</option>
+        <option value="presidencia">Presidencia · Sociedad de Alumnos</option>
+        <option value="geraldmed">GERALDMED · atención prehospitalaria</option>
+      </select></label>
+    <p class="aviso" id="avisoPapel"></p>
+
     <h2 class="rotulo">Márgenes <span class="regla"></span>
       <small>los del formato oficial son 3 cm a los lados</small></h2>
     <div class="rejilla">
@@ -985,10 +1319,10 @@ El día ...
     </div>
 
     <h2 class="rotulo">Marca de agua y sello <span class="regla"></span></h2>
-    <label class="campo"><span>Marca de agua de Grupo Mazi</span>
+    <label class="campo"><span>Marca de agua <b id="aguaDeQuien"></b></span>
       <select id="oAgua">
-        <option value="paloma" selected>Paloma + leyenda</option>
-        <option value="solo">Sólo la paloma</option>
+        <option value="paloma" selected>Logo + leyenda</option>
+        <option value="solo">Sólo el logo</option>
         <option value="texto">Sólo la leyenda</option>
         <option value="no">Sin marca de agua</option>
       </select></label>
@@ -1006,9 +1340,9 @@ El día ...
     <label class="campo"><span>Desde dónde imprimes</span>
       <select id="oImpresion">
         <option value="0.80">iPhone o iPad · Safari</option>
-        <option value="0.90">Android · Chrome</option>
-        <option value="1">Computadora, con márgenes en «ninguno»</option>
+        <option value="0.90">Computadora o Android · Chrome</option>
         <option value="0.72">Se sigue partiendo · encoger más</option>
+        <option value="1">Aprovechar toda la hoja · SÓLO con márgenes en «ninguno»</option>
       </select></label>
     <p class="aviso">Safari en iPhone <b>se queda con un margen suyo</b> que no se puede apagar, y
       por eso una hoja completa no le cabe: se pasa por un pelo y arrastra una <b>página en blanco
@@ -1059,6 +1393,55 @@ El día ...
     </div>
   </section>
 
+  <!-- ══════════ AVISO · LOS PENDIENTES ══════════
+       Lo que antes era `avisos/index.html`. Se escriben los pendientes del
+       3.1 y en la pestaña de al lado sale la imagen lista para el chat. -->
+  <section class="panel" id="panel-avisos" hidden>
+    <h2 class="rotulo">El encabezado <span class="regla"></span></h2>
+    <label class="campo" for="avFecha"><span>Fecha</span>
+      <input type="date" id="avFecha"></label>
+    <div class="rejilla">
+      <label class="campo" for="avGrupo"><span>Grupo</span>
+        <input type="text" id="avGrupo" value="3.1"></label>
+      <label class="campo" for="avSemestre"><span>Semestre</span>
+        <input type="text" id="avSemestre" value="3er semestre"></label>
+    </div>
+    <label class="campo" for="fPlantilla"><span>Formato del cartel</span>
+      <select id="fPlantilla"></select></label>
+    <p class="nota" id="quePlantilla"></p>
+    <label class="campo" for="fFuente"><span>Tipografía del cartel</span>
+      <select id="fFuente"></select></label>
+    <p class="nota">Sólo van las que existen en cualquier aparato. El cartel se
+      convierte en imagen aquí mismo, así que una tipografía de internet saldría
+      cambiada sin avisar.</p>
+    <div class="aviso-caja" id="consejo" hidden></div>
+
+    <h2 class="rotulo" style="margin-top:20px">Los pendientes <span class="regla"></span>
+      <small id="cuentaPend"></small></h2>
+    <div id="lista"></div>
+    <div class="acciones">
+      <button class="btn fuerte" id="bAgregar" type="button">+ Agregar un pendiente</button>
+      <button class="btn chico borrar" id="bVaciar" type="button">Vaciar la lista</button>
+    </div>
+  </section>
+
+  <!-- ══════════ AVISO · EL CARTEL ══════════
+       Va en pestaña aparte a propósito. Antes el lienzo estaba hasta abajo de
+       la misma página: con doce pendientes había que recorrer toda la lista
+       para ver cómo iba quedando, y volver a subir para cambiar algo. -->
+  <section class="panel" id="panel-cartel" hidden>
+    <h2 class="rotulo">Cómo va quedando <span class="regla"></span>
+      <small id="medidaCartel"></small></h2>
+    <canvas id="lienzo" aria-label="Vista previa del aviso"></canvas>
+    <div class="acciones">
+      <button class="btn fuerte" id="bImagen" type="button">Crear la imagen para el chat</button>
+    </div>
+    <div id="salida"></div>
+    <p class="nota" style="margin-top:14px"><b>Todo se guarda sólo en este teléfono.</b>
+      No hay servidor ni cuenta: si borras los datos del navegador, se van. La
+      imagen se arma aquí mismo.</p>
+  </section>
+
 </div>
 </main>
 
@@ -1069,6 +1452,11 @@ El día ...
      script principal a propósito: si va después, la primera pintada de las
      credenciales ocurre sin él y salen sin QR hasta que algo las repinte. -->
 <script src="credencial/vendor/qrcode.min.js"></script>
+<!-- Las materias, los tipos de pendiente, las plantillas del cartel y los
+     iconos dibujados a mano. Viven en `avisos/` y NO se copian aquí: una
+     copia es dos verdades, y el horario del 3.1 cambia cada semestre. -->
+<script src="../avisos/datos.js"></script>
+<script src="../avisos/iconos.js"></script>
 <script>
 "use strict";
 
@@ -1400,13 +1788,114 @@ Qué significa lo anterior.
 /* ══════════════════════════════════════════════════════════════════════════
    2 · EL ESTADO
    ═════════════════════════════════════════════════════════════════════════ */
+/* ══ LAS DOS INSTITUCIONES ═════════════════════════════════════════════════
+   Carlos: «ahí están los logos de GERALDMED, el de la ambulancia úsalo para
+   el formato».
+
+   No se hizo una herramienta aparte, y ésa es la decisión que importa: la
+   paginación, el sello de verificación, la marca de agua, las evidencias
+   numeradas y la impresión que Safari no parte en dos ya están probadas aquí.
+   Duplicarlas para un membrete distinto habría sido duplicar también sus
+   defectos futuros. Lo único que cambia entre una institución y otra es la
+   cabecera y dos colores, así que eso es lo que se vuelve dato.
+
+   ⚠ DIFERENCIA HONESTA ENTRE LAS DOS, para que nadie la descubra a la mala:
+     · REMBRANDT trae el membrete REAL, sacado del .docx institucional. Es una
+       imagen a sangre y se usa tal cual.
+     · GERALDMED trae su LOGO, no un membrete. Aquí no existe un .docx suyo,
+       así que la cabecera se COMPONE con el logo — no se inventa un membrete
+       que finja ser oficial. Si algún día aparece el .docx de GERALDMED, se
+       cambia `membrete` por su imagen y lo demás se queda igual. */
+const INSTITUCIONES = {
+  /* ── 1 · JEFE DE GRUPO · con la marca de la casa ────────────────────────
+     Carlos lo pidió así: el reporte que él firma como jefe de grupo va con la
+     marca de SU empresa, no con la de la escuela. Tiene sentido: ese papel lo
+     produce él, no la institución. */
+  mazi: {
+    nombre: 'Grupo Mazi',
+    compuesta: { logo:'../marca/logo/paloma-simple.svg', lema:'Jefatura de grupo · 3.1',
+                 clase:'mazi' },
+    pie:'Grupo Mazi · si no existe la herramienta, se construye la herramienta',
+    agua:{ logo:'../marca/logo/paloma-simple.svg', ancho:118,
+           leyenda:'GRUPO MAZI · DOCUMENTO ORIGINAL' },
+    tinta:'#2B1B3D', acento:'#AC27FF',
+    tope:40, fondo:30,
+  },
+
+  /* ── 2 · REMBRANDT · el único con membrete REAL ─────────────────────────
+     Salió del .docx institucional. Es una imagen a sangre y se usa tal cual;
+     los otros tres se componen porque de ellos no tenemos un .docx. */
+  rembrandt: {
+    nombre: 'Instituto Rembrandt',
+    membrete: { sup:'formato/membrete-superior.png', inf:'formato/membrete-inferior.png' },
+    pie:'Instituto Rembrandt · Bachillerato Tecnológico del Estado de Querétaro',
+    agua:{ logo:'escudo-rembrandt.png', ancho:80,
+           leyenda:'INSTITUTO REMBRANDT · DOCUMENTO ORIGINAL' },
+    tinta:'#002060', acento:'#C00000',
+    tope:34, fondo:42,
+  },
+
+  /* ── 3 · PRESIDENCIA · y aquí falta algo, dicho sin adornos ─────────────
+     ⚠ LA SOCIEDAD DE ALUMNOS NO TIENE LOGO PROPIO EN EL REPO. No me lo han
+     dado, así que no me lo invento: se compone con el ESCUDO DE LA ESCUELA,
+     que sí es real y sí le corresponde a un órgano de la escuela, y el texto
+     dice de qué órgano se trata. Se ve como lo que es —papelería de la
+     sociedad de alumnos del Rembrandt— y no finge un emblema que no existe.
+     El día que Carlos mande el suyo, se cambia la ruta del logo y ya. */
+  presidencia: {
+    nombre: 'Sociedad de Alumnos',
+    compuesta: { logo:'escudo-rembrandt.png', lema:'Instituto Rembrandt · Presidencia',
+                 clase:'presidencia' },
+    pie:'Sociedad de Alumnos · Instituto Rembrandt',
+    agua:{ logo:'escudo-rembrandt.png', ancho:80,
+           leyenda:'SOCIEDAD DE ALUMNOS · DOCUMENTO ORIGINAL' },
+    tinta:'#5A1319', acento:'#CA2229',
+    tope:40, fondo:30,
+  },
+
+  /* ── 4 · GERALDMED ─────────────────────────────────────────────────────
+     Trae su logo, no un membrete. Los colores se MIDIERON del PNG que mandó
+     Carlos —turquesa #92D9CF y azul #454C78—, no se escogieron a ojo: un logo
+     con el color casi bien se ve peor que uno en blanco y negro. */
+  geraldmed: {
+    nombre: 'GERALDMED',
+    compuesta: { logo:'geraldmed/logo-ambulancia.png', lema:'Atención prehospitalaria',
+                 clase:'geraldmed' },
+    pie:'GERALDMED · Atención prehospitalaria',
+    /* La marca de agua es la ESTRELLA, no el logo de la cabecera. Lo pidió
+       Carlos y además funciona mejor: la cabecera lleva el logo apaisado y el
+       fondo lleva el emblema, en vez de repetir la misma imagen dos veces en
+       la misma hoja.
+
+       110mm y no 80 como el escudo porque el dibujo ocupa sólo el 67% de su
+       lienzo —trae aire alrededor— así que al mismo ancho se vería un tercio
+       más chico. Medido con umbral de alfa: `getbbox()` a secas devolvía el
+       lienzo completo por culpa de un halo casi invisible. */
+    agua:{ logo:'geraldmed/logo-estrella.png', ancho:110,
+           leyenda:'GERALDMED · DOCUMENTO ORIGINAL' },
+    tinta:'#454C78', acento:'#92D9CF',
+    tope:42, fondo:30,
+  },
+};
+
+/* Con qué institución arranca cada tipo de reporte. Es un valor por defecto,
+   no una regla: el selector manda siempre. Se pone porque escoger dos veces lo
+   mismo —el tipo y luego su papel— es trabajo que la herramienta puede hacer
+   sola casi siempre. */
+const PAPEL_POR_AREA = { jefe:'mazi', sociedad:'presidencia', general:'rembrandt' };
+
+
 const LLAVE = 'reportes_mazi_v1';
 const FORMATO_OFICIAL = {
   fuente:'"Arial Narrow", "Helvetica Neue Condensed Bold", "Liberation Sans Narrow", "Helvetica Neue", Arial, sans-serif',
   tamano:'11pt', inter:'1.5', alinea:'justify',
   lado:30, tope:34, fondo:42,
-  agua:'paloma', opacidad:6, leyenda:'GRUPO MAZI · DOCUMENTO ORIGINAL',
-  sello:'si', membrete:'todas',
+  /* La leyenda arranca en la de la institución con la que arranca el papel.
+     Antes decía GRUPO MAZI con `institucion:'rembrandt'` puesto dos renglones
+     abajo: un documento de la escuela firmado con la marca de agua de la
+     empresa. */
+  agua:'paloma', opacidad:6, leyenda:'INSTITUTO REMBRANDT · DOCUMENTO ORIGINAL',
+  sello:'si', membrete:'todas', institucion:'rembrandt',
   /* Cuánto se encoge la hoja al imprimir. Safari en iPhone se queda con un
      margen suyo que no se puede apagar; sin esto, cada hoja se parte en dos. */
   impresion:0.80,
@@ -1588,8 +2077,9 @@ function leer(texto, evidencias){
     const e = evidencias[n-1];
     if(!e) return null;
     usadas.add(n-1);
+    const tope = e.ancho ? ' style="--ancho-fig:'+(+e.ancho)+'mm"' : '';
     return { tipo:'figura', n:n, html:
-      '<figure><img src="'+e.datos+'" alt=""><figcaption><b>Imagen '+n+'.</b> '+
+      '<figure'+tope+'><img src="'+e.datos+'" alt=""><figcaption><b>Imagen '+n+'.</b> '+
       esc(e.pie||'Evidencia fotográfica')+'</figcaption></figure>' };
   };
 
@@ -1614,9 +2104,14 @@ function leer(texto, evidencias){
         html:'<h2><span class="rom">'+esc(mr[1])+'.</span> '+enLinea(mr[2])+'</h2>' });
       i++; continue;
     }
-    /* un renglón corto TODO EN MAYÚSCULAS también es un apartado */
+    /* un renglón corto TODO EN MAYÚSCULAS también es un apartado.
+       OJO CON EL ORDEN: esta regla corre ANTES que la de `###`, y «###» no
+       tiene minúsculas, así que «### ECOSISTEMAS» pasaba por apartado en
+       mayúsculas y salía impreso CON los tres gatos delante. Se vio en un
+       directorio de empresas, donde media docena de nombres van en mayúsculas.
+       Por eso se descarta aquí lo que ya trae marca de título. */
     if(t.length > 3 && t.length < 90 && !/[.;]$/.test(t) &&
-       t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{3}/.test(t) && !/^\||^\d+[.)]/.test(t)){
+       t === t.toUpperCase() && /[A-ZÁÉÍÓÚÑ]{3}/.test(t) && !/^\||^#|^\d+[.)]/.test(t)){
       bloques.push({tipo:'h2', pega:true, html:'<h2>'+enLinea(t)+'</h2>'});
       i++; continue;
     }
@@ -1793,23 +2288,78 @@ function estilosHoja(hoja, f, primera){
   return conMembrete;
 }
 
+/* El oscurecido de la marca de agua, horneado en un lienzo en vez de con un
+   filtro CSS. Se guarda por dirección: la misma marca se pinta en cada hoja del
+   documento y rehacerla por hoja sería tirar trabajo. */
+const AGUA_LISTA = {};
+function oscurecerAgua(img, src){
+  if(AGUA_LISTA[src] === false){ img.style.filter = 'grayscale(1) brightness(.35)'; return; }
+  if(AGUA_LISTA[src]){ img.src = AGUA_LISTA[src]; return; }
+  const crudo = new Image();
+  crudo.onload = () => {
+    try{
+      const an = crudo.naturalWidth || 500, al = crudo.naturalHeight || 500;
+      const l = document.createElement('canvas'); l.width = an; l.height = al;
+      const cx = l.getContext('2d', { willReadFrequently:true });
+      cx.drawImage(crudo, 0, 0, an, al);
+      const d = cx.getImageData(0, 0, an, al), px = d.data;
+      for(let i = 0; i < px.length; i += 4){
+        /* ⚠ EL ALFA NO SE TOCA, y ése es todo el asunto: lo que producía el
+           recuadro negro era justamente perderlo. Un pixel transparente se
+           queda transparente aunque su color se oscurezca. */
+        const gris = 0.2126*px[i] + 0.7152*px[i+1] + 0.0722*px[i+2];
+        const v = gris * 0.35;
+        px[i] = px[i+1] = px[i+2] = v;
+      }
+      cx.putImageData(d, 0, 0);
+      AGUA_LISTA[src] = l.toDataURL('image/png');
+      img.src = AGUA_LISTA[src];
+    }catch(e){
+      /* Un lienzo manchado, un formato que no se puede leer… se vuelve al
+         filtro de siempre en vez de dejar la hoja sin marca. */
+      AGUA_LISTA[src] = false;
+      img.style.filter = 'grayscale(1) brightness(.35)';
+    }
+  };
+  crudo.onerror = () => { AGUA_LISTA[src] = false;
+                          img.style.filter = 'grayscale(1) brightness(.35)'; };
+  crudo.src = src;
+}
+
 function armaHoja(f, primera){
   const h = document.createElement('div');
   h.className = 'hoja';
+  const inst = INSTITUCIONES[f.institucion] || INSTITUCIONES.rembrandt;
+  h.style.setProperty('--azul', inst.tinta);
+  h.style.setProperty('--rojo', inst.acento);
   const conMembrete = estilosHoja(h, f, primera);
-  if(conMembrete){
-    const im = document.createElement('img');
-    im.className = 'membrete-sup'; im.src = 'formato/membrete-superior.png'; im.alt = '';
-    h.appendChild(im);
-  }
+  if(conMembrete) h.appendChild(cabecera(inst));
   if(f.agua !== 'no'){
     const a = document.createElement('div'); a.className = 'agua';
+    const marca = inst.agua || INSTITUCIONES.mazi.agua;
     if(f.agua === 'paloma' || f.agua === 'solo'){
       const p = document.createElement('img');
-      p.src = '../marca/logo/paloma-simple.svg'; p.alt = '';
-      p.style.width = '118mm'; p.style.transform = 'rotate(-21deg)';
+      p.src = marca.logo; p.alt = '';
+      p.style.width = marca.ancho + 'mm'; p.style.transform = 'rotate(-21deg)';
       p.style.opacity = (f.opacidad/100);
-      p.style.filter = 'grayscale(1) brightness(.35)';
+      /* ⚠ AQUÍ IBA `filter: grayscale(1) brightness(.35)` Y SALÍA UN RECUADRO
+         NEGRO AL GUARDAR EN PDF. Lo reportó Carlos desde el teléfono.
+
+         Un filtro CSS sobre una imagen obliga al navegador a rasterizarla en
+         una capa aparte, y al aplanarla para el PDF hay motores que componen
+         el alfa SIN premultiplicar: cada pixel transparente —que es negro con
+         alfa cero— se vuelve negro OPACO. El dibujo desaparece dentro de su
+         propio rectángulo.
+
+         No pude reproducirlo aquí: el PDF de Chromium sale bien, y Carlos lo
+         guarda desde Safari. Así que en vez de adivinar el ajuste que lo
+         contenta, se quita la CLASE DE RIESGO entera — el oscurecido se hornea
+         en la imagen con un lienzo, respetando el alfa pixel por pixel, y a la
+         etiqueta sólo le queda `opacity`, que sí atraviesa bien la impresión.
+
+         Si el horneado falla por lo que sea, se cae al filtro de antes: peor
+         es quedarse sin marca de agua. */
+      oscurecerAgua(p, marca.logo);
       a.appendChild(p);
     }
     if(f.agua === 'paloma' || f.agua === 'texto'){
@@ -1827,10 +2377,52 @@ function armaHoja(f, primera){
   z.appendChild(d); h.appendChild(z);
   const pie = document.createElement('div'); pie.className = 'folio-pie';
   h.appendChild(pie);
-  const inf = document.createElement('img');
-  inf.className = 'membrete-inf'; inf.src = 'formato/membrete-inferior.png'; inf.alt = '';
-  h.appendChild(inf);
+  h.appendChild(piePagina(inst));
   return h;
+}
+
+/* La cabecera de la hoja. Una imagen si la institución tiene membrete real;
+   compuesta con su logo si no. */
+function cabecera(inst){
+  if(inst.membrete){
+    const im = document.createElement('img');
+    im.className = 'membrete-sup'; im.src = inst.membrete.sup; im.alt = '';
+    return im;
+  }
+  const c = document.createElement('div');
+  c.className = 'membrete-sup compuesto ' + (inst.compuesta.clase || '');
+  const im = document.createElement('img');
+  /* ⚠ EL LOGO YA DICE «GERALDMED». Se había puesto el nombre otra vez en texto
+     al lado, y en la primera captura se lee dos veces — que es de esas cosas
+     que uno no nota escribiéndolas y salta a la vista en cuanto se imprime.
+     Así que el logo va SOLO y más grande, y el `alt` sí lleva el nombre porque
+     ahora es el único lugar donde está escrito para un lector de pantalla. */
+  im.src = inst.compuesta.logo; im.alt = inst.nombre;
+  const t = document.createElement('div');
+  t.className = 'quien';
+  const l = document.createElement('span'); l.textContent = inst.compuesta.lema;
+  t.append(l);
+  c.append(im, t);
+  return c;
+}
+
+/* Con qué se firma el pie. Rembrandt lleva su nombre completo, que es como
+   viene en su papelería; GERALDMED lleva el suyo y su lema, que es lo único
+   que tenemos de ellos — no se inventa un domicilio ni un registro. */
+function pieDe(f){
+  const inst = INSTITUCIONES[f.institucion] || INSTITUCIONES.rembrandt;
+  return inst.pie || inst.nombre;
+}
+
+function piePagina(inst){
+  if(inst.membrete){
+    const inf = document.createElement('img');
+    inf.className = 'membrete-inf'; inf.src = inst.membrete.inf; inf.alt = '';
+    return inf;
+  }
+  const b = document.createElement('div');
+  b.className = 'membrete-inf filo-inf';
+  return b;
 }
 
 function bloqueTitulo(r){
@@ -1871,10 +2463,37 @@ function bloqueFirmas(r){
 }
 
 function alturaCon(el, primero){
+  /* ── POR QUÉ EL TESTIGO · el defecto que salió IMPRESO ──────────────────
+     La hoja fantasma mide UN bloque a la vez, así que ese bloque siempre es
+     `:last-child` — y la hoja de estilo dice `.doc>*:last-child{margin-bottom:0}`.
+     O sea que el hueco de 3.2mm que va DEBAJO de cada bloque se reportaba
+     como CERO, siempre.
+
+     Con siete u ocho bloques por hoja eso son ~24mm que el paginador creía
+     libres y no lo estaban: metía un párrafo de más, la zona lo recortaba con
+     su `overflow:hidden` y la última línea salía partida a la mitad con el
+     folio encima. Medido: `.doc` acababa en 836px dentro de una zona de 746.
+
+     No se ve escribiendo poco. Hace falta llenar la hoja, y por eso llegó
+     hasta el papel de Carlos.
+
+     El testigo hace que el bloque deje de ser el último mientras se mide, y
+     entonces su margen real aparece. Se prefiere esto a sumar 3.2mm a mano
+     porque el día que un tipo de bloque lleve otro margen, esto sigue bien y
+     la constante no. */
+  const padre = el.parentNode;
+  let testigo = null;
+  if(padre){
+    testigo = document.createElement('div');
+    testigo.style.cssText = 'height:0;margin:0;padding:0;border:0';
+    padre.appendChild(testigo);
+  }
   const cs = getComputedStyle(el);
   const mt = primero ? 0 : parseFloat(cs.marginTop) || 0;
   const mb = parseFloat(cs.marginBottom) || 0;
-  return el.getBoundingClientRect().height + mt + mb;
+  const alto = el.getBoundingClientRect().height + mt + mb;
+  if(testigo) padre.removeChild(testigo);
+  return alto;
 }
 
 /* corta una tabla que no cabe, repitiendo su encabezado */
@@ -1996,7 +2615,12 @@ function paginar(r){
     const pie = $('.folio-pie', h);
     pie.innerHTML =
       '<div><b style="color:var(--azul)">Folio</b> '+esc(fo)+
-      '<br>Instituto Rembrandt · Bachillerato Tecnológico del Estado de Querétaro</div>'+
+      /* ⚠ ESTO ESTABA CLAVADO EN «Instituto Rembrandt». Con el membrete de
+         GERALDMED arriba, el pie seguía firmando con la escuela: una hoja con
+         dos instituciones distintas, que en un documento con folio y sello de
+         verificación no es un detalle de diseño — es un papel que dice dos
+         cosas. */
+      '<br>'+esc(pieDe(f))+'</div>'+
       '<div class="sello">'+
         (f.sello === 'si' ? 'Sello de verificación <b>'+esc(sl)+'</b><br>' : '')+
         '<span class="pagina">Página '+(k+1)+' de '+hojas.length+'</span></div>';
@@ -2174,7 +2798,7 @@ $('#bAlumnos').addEventListener('click', () => {
       esc(GRUPO.alumnos.join('\n'))+'</textarea>'+
     '<div class="chips" style="margin-top:12px">'+
       '<button class="chip" type="button" id="hGuardar" style="background:var(--violeta);'+
-      'border-color:var(--violeta); color:#12061C">Guardar</button>'+
+      'border-color:var(--violeta); color:#fff">Guardar</button>'+
       '<button class="chip" type="button" data-cerrar>Cancelar</button></div>');
   $('#hGuardar').addEventListener('click', () => {
     GRUPO.alumnos = $('#hGrupo').value.split('\n').map(x=>x.trim()).filter(Boolean);
@@ -2272,7 +2896,7 @@ $('#bPasar').addEventListener('click', () => {
     '</div>'+
     '<div class="chips">'+
       '<button class="chip" type="button" id="hPasar" style="background:var(--violeta);'+
-      'border-color:var(--violeta); color:#12061C">Escribirlo</button>'+
+      'border-color:var(--violeta); color:#fff">Escribirlo</button>'+
       '<button class="chip" type="button" data-cerrar>Cancelar</button></div>');
   $('#hPasar').addEventListener('click', () => {
     const txt = redactarIncidencias($('#hDesde').value, $('#hHasta').value);
@@ -2472,7 +3096,9 @@ function credFrente(c){
   const glifos = ['llave','auto','lupa','estrella','credencial','persona'];
   const filas = [];
   if(c.empleado) filas.push(['persona','EMPLEADO: <b>'+esc(c.empleado)+'</b>']);
-  if(c.num)      filas.push(['credencial','NO. DE EMPLEADO: <b>'+esc(c.num)+'</b>']);
+  /* El NO. DE EMPLEADO ya no va en el frente: lo quitó Carlos. El campo sigue
+     existiendo porque de él sale el folio con el que se publica la ficha de
+     habilidades; lo que se retira es su renglón en la tarjeta. */
   if(c.acred)    filas.push(['estrella','ACREDITADO COMO:<br><b>'+esc(c.acred)+'</b>']);
   otras.forEach((o,k) => filas.push([glifos[k % glifos.length], '<b>'+esc(o)+'</b>']));
 
@@ -2502,7 +3128,7 @@ function credFrente(c){
     '<div class="pie">'+
       '<span class="casco" aria-hidden="true"></span>'+
       '<div class="marca-fr"><span class="a">ADVANCED</span><span class="c">FIRE RESCUE</span></div>'+
-      '<div class="ciclo">'+svg('calendario')+'<span>FECHA:<br>'+esc(b.ciclo)+'</span></div>'+
+      /* El recuadro de FECHA se retiró: lo pidió Carlos. */
     '</div>'+
   '</div>';
 }
@@ -2557,20 +3183,18 @@ function credReverso(c){
            de la empresa; el de habilidades es de la persona.
            Van rotulados, porque dos QR sin etiqueta obligan a escanear los dos
            para saber cuál es cuál. */
+        /* ⚠ EL QR DE HABILIDADES SE RETIRÓ, lo pidió Carlos. Queda SÓLO el de
+           redes, que es el de la empresa. Y sin el compañero al lado ya no
+           necesita rótulo: un QR solo no obliga a nadie a escanear dos para
+           saber cuál es cuál, que era la razón por la que se rotularon. */
         '<div class="lado">'+
-          (QRS[folioCred(c)]
-            ? '<div class="unqr"><div class="qr"><img src="'+QRS[folioCred(c)]+'" alt=""></div>'
-              + '<span class="rotulo-qr">HABILIDADES</span></div>'
-            : '')+
           '<div class="unqr"><div class="qr">'+ (b.qr ? '<img src="'+b.qr+'" alt="">'
-              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div>'
-            + (QRS[folioCred(c)] ? '<span class="rotulo-qr">REDES</span>' : '') +'</div>'+
+              : '<span class="falta">Pon aquí<br>el QR</span>') +'</div></div>'+
         '</div>'+
       '</div>'+
       '<div class="red">'+svg('globo')+'<span>'+esc(b.red)+'</span></div>'+
     '</div>'+
   '</div>';
-  return nuevos > 0;
 }
 
 /* ── la pantalla de credenciales ── */
@@ -2595,17 +3219,18 @@ function avisarQR(c){
   if(!h){
     caja.className = 'aviso';
     caja.innerHTML = 'Escribe aquí <b>todas</b> sus certificaciones. En la credencial ' +
-      'siguen saliendo sólo las de arriba; el QR del reverso lleva a la lista completa.';
+      'siguen saliendo sólo las de arriba; la lista completa vive en la ficha que se ' +
+      'publica, y se llega a ella por su dirección.';
   } else if(!f){
     caja.className = 'aviso mal';
-    caja.innerHTML = '<b>Falta el número de empleado.</b> El QR usa ese número como folio, ' +
-      'y sin él no se puede armar. Llénalo arriba y el QR aparece solo.';
+    caja.innerHTML = '<b>Falta el número de empleado.</b> Ese número es el folio con el ' +
+      'que se publica la ficha, y sin él no se puede armar. Llénalo arriba.';
   } else {
     caja.className = 'aviso';
     caja.innerHTML = '<b>' + h + (h === 1 ? ' certificación' : ' certificaciones') +
-      '</b> en el QR del reverso, con folio <b>' + esc(f) + '</b>. ' +
+      '</b> en su ficha, con folio <b>' + esc(f) + '</b>. ' +
       'Falta subir su archivo a <code>reportes/credencial/datos/</code> — ' +
-      'hasta entonces el QR abre una página que dice que no está publicada.';
+      'hasta entonces la dirección abre una página que dice que no está publicada.';
   }
 }
 
@@ -2625,7 +3250,10 @@ function pintarCred(){
 
      Ahora la condición es «¿se generó alguno nuevo?». Termina sola porque la
      segunda vuelta ya no genera nada. */
-  prepararQRs().then((huboNuevos) => { if(huboNuevos) pintarCred(); });
+  /* ⚠ YA NO SE GENERAN QR. Con el de habilidades retirado, `prepararQRs`
+     fabricaba imágenes que no pinta nadie: trabajo invisible que a la larga
+     confunde a quien lea el código. La función se queda —el día que Carlos
+     quiera el QR de vuelta es descomentar esta línea— pero no corre. */
   $('#cuentaCred').textContent = CRED.gente.length +
     (CRED.gente.length===1 ? ' credencial' : ' credenciales');
   $('#listaCred').innerHTML = CRED.gente.map((g,k) =>
@@ -2750,7 +3378,7 @@ $('#cPegar').addEventListener('click', () => {
     '<div class="chips" style="margin-top:12px">'+
       '<button class="chip" type="button" id="hVer">Ver qué entiende</button>'+
       '<button class="chip" type="button" id="hMeter" style="background:var(--violeta);'+
-      'border-color:var(--violeta); color:#12061C">Crearlas</button>'+
+      'border-color:var(--violeta); color:#fff">Crearlas</button>'+
       '<button class="chip" type="button" data-cerrar>Cancelar</button></div>'+
     '<p class="aviso" id="hPrevia"></p>');
   const previa = () => {
@@ -3029,6 +3657,8 @@ function pintarCampos(){
   $('#oFondo').value = f.fondo;   $('#oAgua').value = f.agua;
   $('#oOpacidad').value = f.opacidad; $('#oLeyenda').value = f.leyenda;
   $('#oSello').value = f.sello;   $('#oMembrete').value = f.membrete;
+  $('#oInstitucion').value = f.institucion || 'rembrandt';
+  avisoPapel();
   $('#oImpresion').value = String(f.impresion || FORMATO_OFICIAL.impresion);
   aplicarEscalaImpresion();
   pintarEvidencias(); pintarApartados(); contarPalabras();
@@ -3117,6 +3747,9 @@ function aplicarZoom(){
   marco.style.width  = hojas ? (anchoHoja * zoom) + 'px' : '';
   marco.style.height = hojas ? (hojas * altoHoja * zoom) + 'px' : '';
   $('#nivelZoom').textContent = Math.round(zoom*100) + '%';
+  /* que el botón diga en qué modo está: encendido = ajuste automático */
+  const bAj = $('#bAjustar');
+  if(bAj) bAj.setAttribute('aria-pressed', zoomAuto ? 'true' : 'false');
 }
 
 /* ── pestañas ── */
@@ -3127,24 +3760,84 @@ function vistaActual(){
   return p ? p.dataset.vista : 'escribir';
 }
 
+/* De qué MODO es una vista. Se lee de la propia pestaña —cada una trae su
+   `data-modo`— en vez de una tabla aparte: una tabla aparte se olvida de
+   actualizar el día que se agrega una pestaña, y entonces la pestaña existe
+   pero no pertenece a ningún modo y nunca se ve. */
+function modoDe(v){
+  const p = $$(".pestana").find(b => b.dataset.vista === v);
+  return p ? p.dataset.modo : "reporte";
+}
+function modoActual(){
+  const m = $$(".modo").find(b => b.getAttribute("aria-selected") === "true");
+  return m ? m.dataset.modo : "reporte";
+}
+
+/* La PRIMERA pestaña de cada modo. También sale del marcado, por lo mismo. */
+function primeraDe(modo){
+  const p = $$(".pestana").find(b => b.dataset.modo === modo);
+  return p ? p.dataset.vista : "escribir";
+}
+
+function verModo(m){
+  $$(".modo").forEach(b => b.setAttribute("aria-selected", String(b.dataset.modo === m)));
+  $$(".pestana").forEach(b => { b.hidden = b.dataset.modo !== m; });
+  /* Con una sola pestaña, la tira de abajo no dice nada que el renglón de
+     arriba no diga ya. Se esconde para no gastar un renglón de pantalla. */
+  const cuantas = $$(".pestana").filter(b => b.dataset.modo === m).length;
+  $(".pestanas").hidden = cuantas < 2;
+}
+
 function verVista(v){
-  $$('.pestana').forEach(b => b.setAttribute('aria-selected', String(b.dataset.vista===v)));
-  const anchoGrande = window.matchMedia('(min-width:1080px)').matches;
-  const partido = anchoGrande && (v==='escribir' || v==='ver');
-  $('#tablero').classList.toggle('partido', partido);
+  const modo = modoDe(v);
+  verModo(modo);
+  $$(".pestana").forEach(b => b.setAttribute("aria-selected", String(b.dataset.vista===v)));
+  const anchoGrande = window.matchMedia("(min-width:1080px)").matches;
+  /* En pantalla ancha se parten en dos las parejas que se miran entre sí:
+     el reporte y su hoja, los pendientes y su cartel. En el teléfono no cabe. */
+  const partido = anchoGrande &&
+    (v==="escribir" || v==="ver" || v==="avisos" || v==="cartel");
+  $("#tablero").classList.toggle("partido", partido);
   const mostrar = {
-    escribir: partido ? ['escribir','ver'] : ['escribir'],
-    ver:      partido ? ['escribir','ver'] : ['ver'],
-    credencial:['credencial'], plantilla:['plantilla'], registro: ['registro'],
-    formato:  ['formato'], verificar:['verificar'], guardados:['guardados'],
-  }[v] || ['escribir'];
-  ['escribir','ver','credencial','plantilla','registro','formato','verificar','guardados'].forEach(n=>{
-    $('#panel-'+n).hidden = mostrar.indexOf(n) < 0;
+    escribir: partido ? ["escribir","ver"] : ["escribir"],
+    ver:      partido ? ["escribir","ver"] : ["ver"],
+    avisos:   partido ? ["avisos","cartel"] : ["avisos"],
+    cartel:   partido ? ["avisos","cartel"] : ["cartel"],
+    credencial:["credencial"], plantilla:["plantilla"], registro: ["registro"],
+    formato:  ["formato"], verificar:["verificar"], guardados:["guardados"],
+  }[v] || ["escribir"];
+  /* La lista de paneles se saca del DOM, no se escribe a mano: así un panel
+     nuevo no se queda visible para siempre porque a alguien se le pasó
+     apuntarlo aquí. Ya pasó con la impresión y costó dieciséis páginas. */
+  $$("[id^='panel-']").forEach(sec => {
+    sec.hidden = mostrar.indexOf(sec.id.slice(6)) < 0;
   });
-  if(mostrar.indexOf('ver') >= 0) requestAnimationFrame(()=>{ repintar(); });
-  if(v === 'registro') pintarRegistro();
-  if(v === 'plantilla') $('#txtIA').value = instruccionesIA();
-  if(v === 'credencial') pintarCred();
+  if(mostrar.indexOf("ver") >= 0) requestAnimationFrame(()=>{ repintar(); });
+  if(v === "registro") pintarRegistro();
+  if(v === "plantilla") $("#txtIA").value = instruccionesIA();
+  if(v === "credencial") pintarCred();
+  /* El cartel se vuelve a dibujar al asomarse, y las pruebas de avisos corren
+     la primera vez —ya con los paneles VISIBLES, que es cuando medir el alto
+     de un control significa algo. */
+  if(modo === "aviso" && window.__avisos){
+    window.__avisos.probarUnaVez();
+    requestAnimationFrame(() => window.__avisos.dibujar());
+  }
+  pintarBarra(modo);
+}
+
+/* La barra de arriba cambia con el modo. Un botón que dice «Imprimir / PDF»
+   mientras armas el aviso del grupo no es sólo inútil: es el que está en el
+   lugar donde el pulgar espera la acción principal, así que se toca por
+   costumbre y no hace lo que uno quería. */
+function pintarBarra(modo){
+  const esAviso = modo === "aviso";
+  $("#bImprimir").textContent = esAviso ? "Crear la imagen" : "Imprimir / PDF";
+  /* En modo Aviso el panel YA trae su «+ Agregar un pendiente» a todo lo ancho.
+     Repetirlo arriba no daba una segunda vía: daba un tercer botón en una barra
+     de 390 px, y ahí es donde «Crear la imagen» se partía en dos renglones. */
+  $("#bNuevo").hidden = esAviso;
+  $("#bNuevo").textContent = "Nuevo";
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -3222,6 +3915,71 @@ conectarFormato('#oLado','lado',1);   conectarFormato('#oTope','tope',1);
 conectarFormato('#oFondo','fondo',1); conectarFormato('#oAgua','agua');
 conectarFormato('#oOpacidad','opacidad',1); conectarFormato('#oLeyenda','leyenda');
 conectarFormato('#oSello','sello');   conectarFormato('#oMembrete','membrete');
+/* Cambiar de institución mueve además los márgenes, porque el membrete real de
+   Rembrandt es una imagen alta y la cabecera compuesta de GERALDMED no: dejar
+   los 34mm de Rembrandt sobre una cabecera de 20 deja un hueco enorme que
+   parece un error de impresión. Se respetan los valores que Carlos haya
+   tocado a mano — sólo se mueven si venían de la otra institución. */
+/* El aviso de qué papel es y qué le falta. Se dice en la pantalla y no sólo en
+   el código, porque quien va a imprimirlo es Carlos y no yo. */
+function avisoPapel(){
+  /* De quién es la marca de agua, escrito donde se escoge. Es el defecto que
+     reportó Carlos: los cuatro papeles llevaban la paloma de Mazi, y en un
+     documento que le entrega a GERALDMED eso no se lee como un sello de
+     origen, se lee como que Mazi firmó su papelería. */
+  const q = $('#aguaDeQuien');
+  if(q){
+    const i = INSTITUCIONES[R.formato.institucion] || INSTITUCIONES.rembrandt;
+    q.textContent = '· ' + i.nombre;
+  }
+  const el = $('#avisoPapel'); if(!el) return;
+  const cual = R.formato.institucion;
+  el.innerHTML =
+    cual === 'rembrandt'
+      ? 'Es el único con <b>membrete oficial</b>: salió del .docx de la escuela.'
+    : cual === 'presidencia'
+      ? '⚠ La sociedad de alumnos <b>no tiene logo propio</b> en el repo, así que ' +
+        'se compone con el escudo de la escuela. Mándame el suyo y lo cambio.'
+    : cual === 'mazi'
+      ? 'Con la paloma y el violeta de la casa. Es tu papel, no el de la escuela.'
+      : 'Compuesto con su logo. GERALDMED no nos ha dado un .docx con membrete.';
+}
+
+/* ══ CAMBIAR DE PAPEL · UNA SOLA VEZ, EN UN SOLO LUGAR ═════════════════════
+   Se llega aquí por dos caminos —Carlos escoge el papel a mano, o lo mueve el
+   tipo de reporte (PAPEL_POR_AREA)— y los dos tienen que hacer LO MISMO.
+
+   Estaba escrito dos veces, y por eso nació un defecto: cuando le agregué a la
+   leyenda la regla de «sigue al papel», se la puse sólo al camino de a mano.
+   El otro camino dejaba papel de GERALDMED con la leyenda del Rembrandt: un
+   documento con dos instituciones encima, que es exactamente lo que Carlos
+   reportó. Lo cazó una prueba, no la vista.
+
+   Lo que se mueve solo se mueve SÓLO si seguía siendo lo que traía el papel
+   anterior. Lo que Carlos tocó a mano no se toca: pisarle una elección —o
+   peor, un texto que él redactó— es el defecto clásico de los valores
+   «inteligentes». */
+function cambiarPapel(cual){
+  const antes = INSTITUCIONES[R.formato.institucion] || INSTITUCIONES.rembrandt;
+  const hoy   = INSTITUCIONES[cual] || INSTITUCIONES.rembrandt;
+  /* Los márgenes: el membrete real de Rembrandt es una imagen alta y la
+     cabecera compuesta de GERALDMED no. Dejar los 34mm de Rembrandt sobre una
+     cabecera de 20 deja un hueco que parece error de impresión. */
+  if(R.formato.tope  === antes.tope)  { R.formato.tope  = hoy.tope;  $('#oTope').value  = hoy.tope; }
+  if(R.formato.fondo === antes.fondo) { R.formato.fondo = hoy.fondo; $('#oFondo').value = hoy.fondo; }
+  if(R.formato.leyenda === (antes.agua && antes.agua.leyenda)){
+    R.formato.leyenda = hoy.agua.leyenda;
+    $('#oLeyenda').value = hoy.agua.leyenda;
+  }
+  R.formato.institucion = cual;
+  $('#oInstitucion').value = cual;
+  avisoPapel();
+}
+
+$('#oInstitucion').addEventListener('input', () => {
+  cambiarPapel($('#oInstitucion').value);
+  guardarLuego(); repintar();
+});
 /* La hoja mide esto y no se negocia: es tamaño carta. */
 const HOJA_MM = { alto:279.4, ancho:215.9 };
 
@@ -3251,6 +4009,25 @@ function formatoAlDia(f){
    posición absoluta— caía en la página siguiente y salía sola. */
 const SAFARI_COME = { arriba:22, abajo:22, lados:12.7 };
 
+/* Lo que se queda un navegador de ESCRITORIO con sus márgenes «Predeterminado»
+   —los 0.4 pulgadas de Chrome—. Es el caso que le tocó a Carlos: imprimió y le
+   salieron 30 páginas para 15 hojas, una en blanco detrás de cada una.
+
+   La opción que escogió se llamaba «Computadora, con márgenes en ninguno»: un
+   nombre que le pide RECORDAR un ajuste del diálogo de impresión. Si no lo
+   pone, la hoja de 279.4mm no cabe en los 259 que quedan y cada una arrastra
+   una página vacía. Un valor por defecto que depende de que la persona se
+   acuerde de algo no es un valor por defecto: es una trampa con instrucciones.
+
+   Ahora la opción de computadora va en 0.90 —cabe con o sin el ajuste— y la
+   de aprovechar toda la hoja dice en su propio nombre que exige el ajuste, en
+   vez de esconderlo en un aviso debajo. */
+const ESCRITORIO_COME = { arriba:10.2, abajo:10.2, lados:10.2 };
+
+/* Las escalas que se ofrecen, y cuáles tienen que caber SIN que la persona
+   toque nada. La de 1 queda fuera a propósito: su nombre ya avisa. */
+const ESCALAS_SEGURAS = [0.80, 0.90, 0.72];
+
 function aplicarEscalaImpresion(){
   document.documentElement.style.setProperty('--imp',
     String(R.formato.impresion || FORMATO_OFICIAL.impresion));
@@ -3272,6 +4049,22 @@ $('#tipos').addEventListener('click', e => {
   const T = TIPOS.find(t => t.id === R.tipo);
   if(!R.titulo && T.titulo) { R.titulo = T.titulo; $('#fTitulo').value = T.titulo; }
   if(!R.para && T.para) { R.para = T.para; $('#fPara').value = T.para; }
+
+  /* ── el papel sigue al cargo, mientras no lo hayas cambiado tú ──────────
+     Un reporte de jefe de grupo va en papel de Grupo Mazi; una minuta de la
+     sociedad, en el de Presidencia. Escoger dos veces lo mismo —el tipo y
+     luego su papel— es trabajo que la herramienta puede hacer sola.
+
+     PERO se respeta lo que Carlos haya escogido a mano: sólo se mueve si el
+     papel actual sigue siendo el que le tocaba al tipo ANTERIOR. Si él puso
+     GERALDMED a propósito, cambiar de tipo no se lo debe quitar — ése es el
+     defecto clásico de los valores «inteligentes». */
+  const sugerido = PAPEL_POR_AREA[T.area];
+  const eraSugerido = Object.values(PAPEL_POR_AREA).includes(R.formato.institucion);
+  if(sugerido && eraSugerido && R.formato.institucion !== sugerido){
+    cambiarPapel(sugerido);
+  }
+
   pintarTipos(); guardar(); repintar();
   if(!$('#panel-plantilla').hidden) $('#txtIA').value = instruccionesIA();
 });
@@ -3396,6 +4189,10 @@ $('#bVerificar').addEventListener('click', () => {
 
 /* vista e impresión */
 $$('.pestana').forEach(b => b.addEventListener('click', () => verVista(b.dataset.vista)));
+/* Al cambiar de modo se cae en su PRIMERA pestaña, no en la que estaba antes:
+   volver a «Aviso» y encontrarse el cartel en vez de los pendientes es
+   desorientador, porque el cartel se ve igual esté como esté. */
+$$('.modo').forEach(b => b.addEventListener('click', () => verVista(primeraDe(b.dataset.modo))));
 $('#bMas').addEventListener('click', () => { zoomAuto=false; zoom=Math.min(2, zoom+.1); aplicarZoom(); });
 $('#bMenos').addEventListener('click', () => { zoomAuto=false; zoom=Math.max(.2, zoom-.1); aplicarZoom(); });
 $('#bAjustar').addEventListener('click', () => { zoomAuto=true; aplicarZoom(); });
@@ -3410,6 +4207,20 @@ function imprimir(){
      El botón de «Imprimir todas» de allá abajo sigue existiendo; esto sólo
      hace que el de arriba haga lo que uno espera desde donde está parado. */
   if(vistaActual() === 'credencial'){ imprimirCredenciales(false); return; }
+
+  /* Y en modo Aviso NO se imprime: se hace la imagen para el chat. Es la
+     misma lección de las credenciales, que costó dieciséis páginas. El botón
+     grande de la barra tiene que hacer lo que uno espera DESDE DONDE ESTÁ
+     PARADO, no lo que hacía cuando esta app sólo sabía hacer reportes. */
+  if(modoActual() === 'aviso'){
+    if(!window.__avisos.cuantos()){
+      alert('No hay ningún pendiente: el cartel saldría con puro encabezado.');
+      return;
+    }
+    verVista('cartel');
+    requestAnimationFrame(() => window.__avisos.imagen());
+    return;
+  }
 
   /* Un reporte sin nada adentro imprimía UNA HOJA EN BLANCO, con su membrete y
      su folio, sin decir ni pío. El de credenciales sí avisa cuando no hay nada
@@ -3447,7 +4258,21 @@ if(TODOS.length){
 }
 pintarTipos(); pintarCampos(); pintarGuardados(); pintarRegistro(); pintarCred();
 revisarFecha();
-verVista('escribir');
+/* La dirección puede pedir con qué abrir: `reportes/#aviso` cae en los
+   pendientes, `#credencial` en las credenciales, `#formato` en el formato.
+   Hace falta porque la pantalla de inicio de Carlos y la página vieja de
+   `avisos/` mandan aquí, y sin esto llegarían a la de Escribir a media noche
+   con la de Aviso a dos toques de distancia. Se acepta el nombre de un MODO o
+   el de una VISTA, porque a mano se escribe el que uno se acuerde. */
+function verLoQuePideLaDireccion(){
+  const q = (location.hash || "").replace("#", "").trim();
+  if(!q) return false;
+  if($$(".pestana").some(b => b.dataset.vista === q)){ verVista(q); return true; }
+  if($$(".modo").some(b => b.dataset.modo === q)){ verVista(primeraDe(q)); return true; }
+  return false;
+}
+if(!verLoQuePideLaDireccion()) verVista("escribir");
+window.addEventListener("hashchange", verLoQuePideLaDireccion);
 repintar();
 
 /* Las pruebas de la casa: si algo de esto truena, se ve en la consola y no en
@@ -3519,10 +4344,22 @@ repintar();
      Lo que se puede comprobar aquí mismo, que es síncrono. Que los dos
      códigos SE LEAN de verdad al imprimirse necesita renderizar un PDF y
      decodificarlo, y eso vive en `reportes/pruebas-credencial.mjs`. */
-  ok('cuando hay dos códigos, cada uno va rotulado', (function(){
-     const rot = [...document.querySelectorAll('#mesaCred .rotulo-qr')].map(r => r.textContent);
-     /* Con uno solo no lleva rótulo y está bien: no hay con qué confundirlo. */
-     return rot.length === 0 || (rot.includes('HABILIDADES') && rot.includes('REDES'));
+  /* ⚠ ESTA PRUEBA CAMBIÓ DE SENTIDO, y por eso se reescribió en vez de dejarla.
+     Antes comprobaba que con DOS códigos cada uno fuera rotulado, y aceptaba
+     «cero rótulos» como caso legítimo. Al retirar el QR de habilidades, cero
+     rótulos pasó a ser SIEMPRE cierto: la prueba habría seguido en verde sin
+     mirar nada. Ahora afirma lo que de verdad se pidió — que en el reverso
+     quede UN solo código, el de redes. */
+  ok('en el reverso queda UN solo código, el de la empresa', (function(){
+     const qrs = [...document.querySelectorAll('#mesaCred .unqr')];
+     const rot = [...document.querySelectorAll('#mesaCred .rotulo-qr')];
+     return qrs.length <= 1 && rot.length === 0;
+  })());
+  ok('y el frente ya no lleva el NO. DE EMPLEADO', (function(){
+     return !/NO\. DE EMPLEADO/.test(credFrente({ num:'ACC-1127', apellidos:'X' }));
+  })());
+  ok('ni el recuadro de FECHA', (function(){
+     return !/class="ciclo"/.test(credFrente({ apellidos:'X' }));
   })());
   ok('el botón de arriba imprime CREDENCIALES cuando estás en credenciales',
      /vistaActual\(\) === 'credencial'/.test(imprimir.toString()),
@@ -3723,6 +4560,1137 @@ repintar();
     'color:'+(malas.length?'#FF7A7A':'#5BD98A')+';font-weight:700');
   if(malas.length) console.warn(malas.join('\n'));
 })();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11 · AVISOS Y TAREAS DEL 3.1
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos: «une el de avisos con el de reportes». Esto era `avisos/index.html`,
+   una app aparte con su propia dirección y su propia piel. Es la misma persona,
+   la misma escuela y la misma tarde: tener dos apps obliga a acordarse de cuál
+   era cuál, y a Carlos le tocaba adivinar desde la pantalla de inicio.
+
+   VA DENTRO DE UNA FUNCIÓN Y NO SUELTO, y eso no es manía: `avisos` declara
+   `$`, `D`, `guardar`, `aviso`, `piel`, `caja`, `F`… y Reportes declara varios
+   de esos mismos nombres. Dos `const` con el mismo nombre en el mismo ámbito no
+   son un conflicto silencioso: es un SyntaxError que mata la página entera,
+   sin pintar nada y sin decir por qué. Aquí adentro cada quien tiene los suyos.
+
+   Lo único que cruza la pared es `window.__avisos`, a propósito: la barra de
+   arriba necesita poder decirle «dibuja» y «haz la imagen», y nada más.
+
+   LO QUE SÍ HUBO QUE TOCAR AFUERA: `avisos/datos.js` llamaba `TIPOS` a sus
+   tipos de pendiente y Reportes ya tenía un `TIPOS` —los tipos de reporte—.
+   Los dos son globales de verdad (van en su propio <script>), así que uno de
+   los dos tenía que ceder el nombre. Cedió el de avisos: ahora es `TIPOS_PEND`.
+   ═════════════════════════════════════════════════════════════════════════ */
+(function(){
+const $ = s => document.querySelector(s);
+const LLAVE = 'avisos_31_v1';
+
+/* Un mensajito de la casa. Nada de `alert()`: en el teléfono sale un cuadro del
+   navegador que dice «tal-dirección dice», se ve ajeno a la app y trae un botón
+   de «no permitir más diálogos» que la deja muda. Es la misma lección de Fadori. */
+function aviso(texto){
+  let t = $('#mensajito');
+  if(!t){
+    t = document.createElement('div'); t.id = 'mensajito'; document.body.appendChild(t);
+  }
+  t.textContent = texto; t.classList.add('viendose');
+  clearTimeout(aviso._t);
+  aviso._t = setTimeout(() => t.classList.remove('viendose'), 3600);
+}
+
+/* ══ EL ESTADO ═══════════════════════════════════════════════════════════ */
+function hoyISO(){
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+let D = { fecha: hoyISO(), grupo:'3.1', semestre:'3er semestre',
+          plantilla:'tablero', fuente:'sistema', pendientes:[] };
+try{ const g = JSON.parse(localStorage.getItem(LLAVE));
+     if(g && g.pendientes) D = Object.assign({ plantilla:'tablero', fuente:'sistema' }, g); }catch(e){}
+function guardar(){ try{ localStorage.setItem(LLAVE, JSON.stringify(D)); }catch(e){} }
+
+const materia = id => MATERIAS.find(m => m.id === id) || MATERIAS[MATERIAS.length-1];
+const tipo    = id => TIPOS_PEND.find(t => t.id === id)    || TIPOS_PEND[TIPOS_PEND.length-1];
+
+/* Orden del periódico: primero lo de mañana, luego la semana, luego lo demás.
+   Dentro de cada bloque se respeta el orden en que Carlos los escribió. */
+const ORDEN_CUANDO = { manana:0, semana:1, fecha:2, pronto:3 };
+/* Lo destacado va HASTA ARRIBA, antes que lo de mañana. Es donde van los avisos
+   de dirección y cualquier cosa que no se puede perder: si queda enterrado a la
+   mitad del aviso, da igual haberlo puesto. */
+const bloqueDe = p => p.destacado ? 'destacado' : p.cuando;
+const ordenBloque = b => b === 'destacado' ? -1 : ORDEN_CUANDO[b];
+function ordenados(){
+  return D.pendientes
+    .map((p,i) => ({ p, i }))
+    .sort((a,b) => (ordenBloque(bloqueDe(a.p)) - ordenBloque(bloqueDe(b.p))) || (a.i - b.i))
+    .map(x => x.p);
+}
+
+/* ══ EL EDITOR ═══════════════════════════════════════════════════════════ */
+function opciones(lista, sel){
+  return lista.map(x => `<option value="${x.id}"${x.id === sel ? ' selected':''}>${x.nombre}</option>`).join('');
+}
+function pintarLista(){
+  const l = $('#lista');
+  if(!D.pendientes.length){
+    l.innerHTML = '<div class="tarjeta vacio">Todavía no hay pendientes.<br>Toca «Agregar un pendiente».</div>';
+    return;
+  }
+  l.innerHTML = D.pendientes.map((p, i) => {
+    const m = materia(p.materia), t = tipo(p.tipo);
+    return `<div class="tarjeta pend" style="border-left-color:${m.color}" data-i="${i}">
+      <div class="pend-cab">
+        ${iconoSVG(m.icono, m.color, 2)}
+        <b>${m.corto}</b>
+        <span style="margin-left:auto; font-size:12px; color:var(--tenue)">${t.nombre}</span>
+      </div>
+      <label>Materia</label>
+      <select data-c="materia">${opciones(MATERIAS, p.materia)}</select>
+      <div class="fila">
+        <div><label>Tipo</label><select data-c="tipo">${opciones(TIPOS_PEND, p.tipo)}</select></div>
+        <div><label>Para cuándo</label><select data-c="cuando">${opciones(CUANDOS, p.cuando)}</select></div>
+      </div>
+      ${p.cuando === 'fecha'
+        ? `<label>¿Qué día?</label><input type="date" data-c="dia" value="${p.dia||''}">` : ''}
+      <label>Qué es</label>
+      <input type="text" data-c="titulo" value="${(p.titulo||'').replace(/"/g,'&quot;')}"
+        placeholder="Traer el juego de geometría">
+      <label class="marca-caja"><input type="checkbox" data-c="destacado"
+        ${p.destacado ? 'checked' : ''}> <span>Muy importante · lo sube hasta arriba</span></label>
+      <label class="marca-caja fijar"><input type="checkbox" data-c="fijado"
+        ${p.fijado ? 'checked' : ''}> <span>Sigue vigente · no se borra al vaciar la lista</span></label>
+      <label>Detalles · uno por renglón</label>
+      <textarea data-c="detalles" placeholder="Escuadras&#10;Compás&#10;Transportador">${p.detalles||''}</textarea>
+      <div class="acciones">
+        <button class="btn chico" type="button" data-mover="-1">↑ Subir</button>
+        <button class="btn chico" type="button" data-mover="1">↓ Bajar</button>
+        <button class="btn chico borrar" type="button" data-borrar="1">Borrar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#lista').addEventListener('input', e => {
+  const caja = e.target.closest('[data-i]'); if(!caja) return;
+  const campo = e.target.getAttribute('data-c'); if(!campo) return;
+  D.pendientes[+caja.dataset.i][campo] =
+    e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+  guardar();
+  /* Cambiar materia, tipo o «cuándo» redibuja la ficha (el icono y el campo de
+     fecha dependen de eso). Escribir el título NO: si se redibuja, el teclado
+     se cierra a media palabra. Ya me pasó probándolo. */
+  if(campo === 'materia' || campo === 'tipo' || campo === 'cuando' ||
+     campo === 'destacado') pintarLista();
+  dibujar();
+});
+$('#lista').addEventListener('click', e => {
+  const caja = e.target.closest('[data-i]'); if(!caja) return;
+  const i = +caja.dataset.i;
+  if(e.target.hasAttribute('data-borrar')){ D.pendientes.splice(i,1); }
+  else if(e.target.hasAttribute('data-mover')){
+    const j = i + (+e.target.getAttribute('data-mover'));
+    if(j < 0 || j >= D.pendientes.length) return;
+    const [x] = D.pendientes.splice(i,1); D.pendientes.splice(j,0,x);
+  } else return;
+  guardar(); pintarLista(); dibujar();
+});
+$('#bAgregar').addEventListener('click', () => {
+  D.pendientes.push({ materia:'general', tipo:'tarea', cuando:'manana', titulo:'', detalles:'' });
+  guardar(); pintarLista(); dibujar();
+  const cajas = document.querySelectorAll('#lista [data-i]');
+  const ultima = cajas[cajas.length-1];
+  if(ultima){ ultima.scrollIntoView({behavior:'smooth', block:'center'});
+              const t = ultima.querySelector('[data-c="titulo"]'); if(t) t.focus(); }
+});
+$('#bVaciar').addEventListener('click', () => {
+  if(!D.pendientes.length) return;
+  /* Sin confirmación se pierde el trabajo de la tarde de un dedazo. Y no se usa
+     `confirm()`: en el teléfono sale un cuadro del navegador que se ve ajeno a
+     la app. Se pide tocar dos veces. */
+  const b = $('#bVaciar');
+  if(b.dataset.seguro !== '1'){
+    b.dataset.seguro = '1'; b.textContent = '¿Seguro? Toca otra vez';
+    setTimeout(() => { b.dataset.seguro = ''; b.textContent = 'Vaciar la lista'; }, 4000);
+    return;
+  }
+  /* Lo FIJADO sobrevive a vaciar. Es justo lo que Carlos pidió: hay avisos de
+     dirección que valen un día y otros que valen semanas, y los de semanas no
+     se pueden estar reescribiendo cada tarde. */
+  const quedan = D.pendientes.filter(p => p.fijado).length;
+  D.pendientes = D.pendientes.filter(p => p.fijado);
+  b.dataset.seguro = ''; b.textContent = 'Vaciar la lista';
+  guardar(); pintarLista(); dibujar();
+  if(quedan) aviso(quedan + (quedan === 1 ? ' aviso se quedó' : ' avisos se quedaron') +
+                   ' porque sigue(n) vigente(s).');
+});
+
+$('#fPlantilla').innerHTML = PLANTILLAS
+  .map(x => '<option value="' + x.id + '">' + x.nombre + '</option>').join('');
+$('#fPlantilla').addEventListener('change', () => {
+  D.plantilla = $('#fPlantilla').value; guardar(); describePlantilla(); dibujar();
+});
+$('#fFuente').innerHTML = FUENTES
+  .map(f => '<option value="' + f.id + '">' + f.nombre + '</option>').join('');
+$('#fFuente').addEventListener('change', () => {
+  D.fuente = $('#fFuente').value; guardar(); dibujar();
+});
+function describePlantilla(){
+  const x = PLANTILLAS.find(z => z.id === D.plantilla) || PLANTILLAS[0];
+  $('#quePlantilla').textContent = x.que;
+}
+
+['avFecha','avGrupo','avSemestre'].forEach(id => {
+  $('#'+id).addEventListener('input', () => {
+    D.fecha = $('#avFecha').value; D.grupo = $('#avGrupo').value;
+    D.semestre = $('#avSemestre').value; guardar(); dibujar();
+  });
+});
+
+/* ══ LA IMAGEN ═══════════════════════════════════════════════════════════ */
+/* El ANCHO YA NO ES FIJO.
+
+   Carlos: «no hagas que crezca solo hacia abajo, haz que lo haga en todas
+   direcciones». Tenía razón: con sesenta pendientes de mucho texto, un lienzo
+   de ancho fijo se convierte en una tira de veinte mil píxeles que nadie
+   scrollea. Un periódico no se hace más largo — se hace de más columnas.
+
+   Así que el ANCHO DE COLUMNA se queda quieto —eso es lo que mantiene el texto
+   del mismo tamaño y por tanto igual de legible— y lo que crece es el NÚMERO
+   de columnas. Más columnas = lienzo más ancho y más bajito.
+
+   `PROPORCION_TOPE` es hasta dónde se le deja crecer hacia abajo antes de
+   abrir otra columna. 1.6 es un poco más alto que una hoja carta. */
+const ANCHO_BASE = 1080, ESC = 2;
+const PROPORCION_TOPE = 1.6;
+const COLUMNAS_TOPE = 6;
+let ANCHO = ANCHO_BASE;
+const escudo = new Image(); escudo.src = 'escudo-rembrandt.png';
+
+function fechaLarga(iso){
+  if(!iso) return '';
+  const [a,m,d] = iso.split('-').map(Number);
+  const f = new Date(a, m-1, d);
+  return DIAS[f.getDay()] + ' ' + d + ' de ' + MESES[m-1] + ' de ' + a;
+}
+function fechaCorta(iso){
+  if(!iso) return '';
+  const [a,m,d] = iso.split('-').map(Number);
+  return DIAS[new Date(a,m-1,d).getDay()].slice(0,3).toUpperCase() + ' ' + d + ' ' + MESES[m-1].slice(0,3).toUpperCase();
+}
+
+/* Parte un texto en renglones que quepan en `ancho`. El canvas no envuelve
+   solo: si no se hace esto, el texto se sale de la tarjeta y nadie se entera
+   hasta que el aviso ya se mandó al chat. */
+function envolver(ctx, texto, ancho){
+  const palabras = [];
+  for(const w of String(texto).split(/\s+/).filter(Boolean)){
+    /* Una palabra más larga que la columna —una dirección de internet, un
+       nombre de archivo— no se puede acomodar entre espacios: hay que PARTIRLA.
+       Sin esto se salía de la tarjeta, y con las columnas angostas eso deja de
+       ser raro. */
+    if(ctx.measureText(w).width <= ancho){ palabras.push(w); continue; }
+    let trozo = '';
+    for(const letra of w){
+      if(ctx.measureText(trozo + letra).width > ancho && trozo){
+        palabras.push(trozo); trozo = letra;
+      } else trozo += letra;
+    }
+    if(trozo) palabras.push(trozo);
+  }
+  const out = []; let linea = '';
+  for(const w of palabras){
+    const prueba = linea ? linea + ' ' + w : w;
+    if(ctx.measureText(prueba).width > ancho && linea){ out.push(linea); linea = w; }
+    else linea = prueba;
+  }
+  if(linea) out.push(linea);
+  return out.length ? out : [''];
+}
+function caja(ctx, x, y, w, h, r, relleno, borde){
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+  else ctx.rect(x, y, w, h);
+  if(relleno){ ctx.fillStyle = relleno; ctx.fill(); }
+  if(borde){ ctx.strokeStyle = borde; ctx.lineWidth = 1.5; ctx.stroke(); }
+}
+
+/* La familia tipográfica del CARTEL, que no es la de la pantalla: Carlos la
+   escoge y la imagen tiene que salir con ésa. */
+function familia(){
+  return (FUENTES.find(f => f.id === D.fuente) || FUENTES[0]).fam;
+}
+const F = (peso, tam) => peso + ' ' + tam + 'px ' + familia();
+
+/* La piel de la plantilla en UN SOLO LUGAR. Antes los colores estaban regados
+   por el dibujo, y agregar una plantilla obligaba a tocar seis sitios. */
+function piel(){
+  const p = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  const oscuro = p.tinta === 'clara';
+  const bandas = p.bandas || ['#7C1D24', '#123A5E'];
+  return {
+    plantilla:p, oscuro,
+    papel:   p.papel || '#FAF4EA',
+    tarjeta: oscuro ? '#232C3C' : '#FFFDF8',
+    borde:   oscuro ? '#334054' : '#E6DCCB',
+    tinta:   oscuro ? '#F2F5FA' : '#241A14',
+    suave:   oscuro ? 'rgba(242,245,250,.82)' : '#4A3B30',
+    chica:   oscuro ? 'rgba(242,245,250,.66)' : '#6B5A4A',
+    urgente: bandas[0], calma: bandas[1],
+    destacada: oscuro ? '#3A1418' : '#5A1319',
+    /* Cada materia tiñe MUY POCO su tarjeta —un 9 %— y colorea su orilla.
+       Carlos: «que según la materia tenga un color un poco diferente el
+       recuadro». Poco a propósito: si el tinte pesa, seis tarjetas seguidas
+       parecen un arcoíris y deja de leerse cuál importa. */
+    tinte: (color) => mezclar(color, oscuro ? '#232C3C' : '#FFFDF8', oscuro ? .16 : .09),
+    /* El color de la materia SIRVE PARA PAPEL CLARO. Sobre una tarjeta oscura,
+       «GEOMETRÍA» en azul marino sobre azul marino no se lee — se vio en la
+       primera plantilla oscura. Aquí se aclara hasta que pase 4.5:1 contra la
+       tarjeta, en vez de confiar en que se vea. */
+    acento: function(color){
+      const fondo = oscuro ? mezclar(color, '#232C3C', .16) : '#FFFDF8';
+      let c = color;
+      for(let k = 0; k < 12 && contraste(c, fondo) < 4.5; k++)
+        c = mezclar('#FFFFFF', c, .12 * (k + 1));
+      return c;
+    },
+  };
+}
+
+/* Contraste WCAG. Se usa para decidir, no para decorar. */
+function luminancia(h){
+  const c = [1,3,5].map(i => parseInt(h.slice(i, i+2), 16) / 255)
+    .map(v => v <= .03928 ? v/12.92 : Math.pow((v + .055)/1.055, 2.4));
+  return .2126*c[0] + .7152*c[1] + .0722*c[2];
+}
+function contraste(a, b){
+  const x = luminancia(a), y = luminancia(b);
+  return (Math.max(x,y) + .05) / (Math.min(x,y) + .05);
+}
+
+/* Mezcla dos colores. Hace falta porque el canvas no entiende `color-mix()`. */
+function mezclar(a, b, cuanto){
+  const n = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
+  const [r1,g1,b1] = n(a), [r2,g2,b2] = n(b);
+  const m = (x,y) => Math.round(y + (x - y) * cuanto);
+  return '#' + [m(r1,r2), m(g1,g2), m(b1,b2)]
+    .map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+/* Compone el aviso. Se corre DOS veces: la primera sólo mide (pintar=false)
+   para saber qué alto necesita el lienzo, la segunda dibuja. Sin la pasada de
+   medición habría que adivinar el alto, y con contenido variable eso siempre
+   sale mal por un lado o por el otro. */
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MOTOR · se arma una lista de BLOQUES que saben medirse solos, y luego la
+   plantilla decide dónde caen.
+
+   Por qué así y no dibujando derecho: para repartir en dos columnas hay que
+   saber cuánto mide cada cosa ANTES de colocarla, y para eso hay que poder
+   medir sin pintar. Un bloque es { alto(ancho), pinta(x,y,ancho) }.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* La banda que separa secciones. */
+function bloqueBanda(texto, fondo, compacta){
+  const alto = compacta ? 40 : 52;
+  return {
+    banda: true,
+    alto: () => alto,
+    pinta: (ctx, x, y, w) => {
+      caja(ctx, x, y, w, alto, 10, fondo);
+      ctx.fillStyle = '#FFF6EC'; ctx.font = F(900, compacta ? 21 : 26);
+      ctx.letterSpacing = '2px';
+      ctx.fillText(texto.toUpperCase(), x + 18, y + (compacta ? 27 : 35));
+      ctx.letterSpacing = '0px';
+    }
+  };
+}
+
+/* Un pendiente en tarjeta. */
+function bloqueFicha(ctx0, p){
+  return {
+    alto: (w) => ficha(ctx0, p, 0, 0, w, false),
+    pinta: (ctx, x, y, w) => ficha(ctx, p, x, y, w, true)
+  };
+}
+
+/* Acomoda trozos de texto con FUENTES DISTINTAS en un mismo párrafo.
+
+   Hace falta porque en la lista compacta el título va en negritas y los
+   detalles en normal, pegados. El primer intento fue dibujar todo el renglón en
+   normal y encima el título en negritas: no funciona, porque las negritas son
+   más anchas y el texto queda impreso encima de sí mismo. Se veía horrible y
+   sólo se notó al renderizar un aviso de sesenta.
+
+   `sangriaPrimera` es el hueco que hay que dejar en el PRIMER renglón: ahí es
+   donde va el sello de «sigue vigente», y si no se reserva, el sello se encima
+   sobre el título. */
+function fluir(ctx, trozos, ancho, sangriaPrimera){
+  const lineas = [[]];
+  let x = 0, primera = true;
+  const cabe = () => (primera ? ancho - (sangriaPrimera || 0) : ancho);
+  for(const t of trozos){
+    ctx.font = t.fuente;
+    for(const palabra of String(t.texto).split(/\s+/).filter(Boolean)){
+      const sep = x > 0 ? ' ' : '';
+      const w = ctx.measureText(sep + palabra).width;
+      if(x + w > cabe() && x > 0){
+        lineas.push([]); x = 0; primera = false;
+        lineas[lineas.length-1].push({ ...t, texto: palabra, x: 0 });
+        x = ctx.measureText(palabra).width;
+      } else {
+        lineas[lineas.length-1].push({ ...t, texto: sep + palabra, x });
+        x += w;
+      }
+    }
+  }
+  return lineas;
+}
+
+/* Un pendiente en UN SOLO RENGLÓN (o dos si no cabe). Es lo que hace posible el
+   día de sesenta pendientes: los detalles se pegan al título separados por
+   puntos, y la tarjeta se vuelve una línea. */
+function bloqueRenglon(ctx0, p){
+  const m = materia(p.materia), t = tipo(p.tipo);
+  const detalles = String(p.detalles || '').split('\n').map(z => z.trim()).filter(Boolean);
+  const cola = detalles.join(' · ');
+  const trozos = [{ texto: p.titulo || t.nombre, fuente: F(800, 23), fuerte: true }];
+  if(cola) trozos.push({ texto: '· ' + cola, fuente: F(500, 21), fuerte: false });
+
+  const medir = (w) => {
+    const disponible = w - 46 - 14;
+    const lineas = fluir(ctx0, trozos, disponible, p.fijado ? 74 : 0);
+    return { lineas, alto: 13 + lineas.length * 28 + 11 };
+  };
+  return {
+    alto: (w) => medir(w).alto,
+    pinta: (ctx, x, y, w) => {
+      const q = medir(w);
+      const D_ = !!p.destacado, P = piel();
+      caja(ctx, x, y, w, q.alto, 10,
+           D_ ? m.color : P.tinte(m.color), D_ ? m.color : m.color + '55');
+      iconoCanvas(ctx, m.icono, x + 12, y + 12, 24, D_ ? '#FFF6EC' : P.acento(m.color), 2);
+      let ty = y + 13 + 20;
+      for(const linea of q.lineas){
+        for(const t2 of linea){
+          ctx.font = t2.fuente;
+          ctx.fillStyle = t2.fuerte ? (D_ ? '#FFF6EC' : P.tinta)
+                                    : (D_ ? 'rgba(255,246,236,.85)' : P.suave);
+          ctx.fillText(t2.texto, x + 46 + t2.x, ty);
+        }
+        ty += 28;
+      }
+      if(p.fijado) chipFijado(ctx, x + w - 12, y + 11, D_);
+    }
+  };
+}
+
+/* El sello de «sigue vigente». Va en la esquina y no en el texto: si fuera
+   texto, en la lista compacta se comería el renglón. */
+function chipFijado(ctx, xDer, y, sobreColor){
+  const t = 'SIGUE';
+  ctx.font = F(900, 13); ctx.letterSpacing = '1px';
+  const w = ctx.measureText(t).width + 16;
+  caja(ctx, xDer - w, y, w, 20, 6, sobreColor ? 'rgba(255,246,236,.24)' : '#8A6516');
+  ctx.fillStyle = '#FFF6EC'; ctx.textAlign = 'center';
+  ctx.fillText(t, xDer - w/2, y + 15);
+  ctx.textAlign = 'left'; ctx.letterSpacing = '0px';
+}
+
+/* Arma la lista de bloques ya ordenada y con sus bandas. */
+function bloquesDe(ctx, compacta){
+  const lista = ordenados();
+  const out = [];
+  let bloqueActual = null;
+  for(const p of lista){
+    const b = bloqueDe(p);
+    if(b !== bloqueActual){
+      bloqueActual = b;
+      const c = b === 'destacado' ? DESTACADO : (CUANDOS.find(x => x.id === b) || CUANDOS[3]);
+      const P = piel();
+      const fondo = b === 'destacado' ? P.destacada : (c.urgente ? P.urgente : P.calma);
+      out.push(bloqueBanda(c.nombre, fondo, compacta));
+    }
+    out.push(compacta ? bloqueRenglon(ctx, p) : bloqueFicha(ctx, p));
+  }
+  return out;
+}
+
+/* Reparte los bloques en `n` columnas dejándolas parejas.
+
+   Con una regla que importa: UNA BANDA NUNCA SE QUEDA SOLA al pie de una
+   columna. Si el corte cae justo después de un encabezado, el encabezado se
+   pasa a la otra columna con su contenido — si no, la primera columna termina
+   con un «PARA MAÑANA» huérfano y la segunda arranca con tarjetas sin decir de
+   qué son. */
+function repartir(bloques, n, ancho, hueco){
+  if(n === 1) return [bloques];
+  const altos = bloques.map(b => b.alto(ancho) + hueco);
+  const total = altos.reduce((a, b) => a + b, 0);
+  const meta = total / n;
+  const cols = []; let actual = [], acumulado = 0;
+  for(let i = 0; i < bloques.length; i++){
+    actual.push(bloques[i]); acumulado += altos[i];
+    const quedan = bloques.length - i - 1;
+    if(cols.length < n - 1 && acumulado >= meta && quedan > 0){
+      /* si el último que metimos es una banda, se devuelve */
+      while(actual.length && actual[actual.length-1].banda){
+        acumulado -= altos[i]; i--; actual.pop();
+      }
+      if(actual.length){ cols.push(actual); actual = []; acumulado = 0; }
+    }
+  }
+  if(actual.length) cols.push(actual);
+  while(cols.length < n) cols.push([]);
+  return cols;
+}
+
+function componer(ctx, pintar, columnas){
+  const M = 34;
+  const plantilla = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  const cols = columnas || plantilla.columnas;
+  /* El ancho de columna NO cambia con el número de columnas: sale del lienzo
+     base con las columnas que la plantilla pide. Por eso el texto se ve igual
+     de grande lleve dos columnas o cinco. */
+  const anchoCol = (ANCHO_BASE - M*2 - (plantilla.columnas - 1) * 20) / plantilla.columnas;
+  ANCHO = Math.round(M*2 + cols * anchoCol + (cols - 1) * 20);
+  let y = 0;
+
+  /* ── el encabezado ── */
+  const altoCab = 168;
+  if(pintar){
+    caja(ctx, 0, 0, ANCHO, altoCab, 0, piel().urgente);
+    /* ⚠ EL ESCUDO SE DIBUJA A 112, PERO SALE A 224 PÍXELES REALES, porque el
+       cartel se pinta al doble (ESC = 2). La copia que había medía 150 de
+       lado: se estaba ESTIRANDO 1.5x, y un escudo estirado en el encabezado
+       de un aviso escolar se nota — se ve suave justo en la parte que la
+       gente reconoce de un vistazo. La de 225 que mandó Carlos cubre los 224
+       exactos.
+       Si algún día sube ESC, hay que subir el escudo con él. */
+    if(escudo.complete && escudo.naturalWidth){
+      /* ⚠ Y VA SOBRE UNA PLACA CLARA. El escudo es rojo y el encabezado es
+         vino: rojo sobre vino casi no se ve, y lo que se pierde es justo la
+         parte que la gente reconoce de un vistazo. No se le toca el color al
+         escudo —es de la escuela— se le pone fondo, que es lo que se hace con
+         cualquier logo sobre un color cercano al suyo. */
+      const r = 10, x = M - 6, y = 22, w = 124;
+      ctx.save();
+      ctx.fillStyle = '#FFF6EC';
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + w, r);
+      ctx.arcTo(x + w, y + w, x, y + w, r);
+      ctx.arcTo(x, y + w, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.drawImage(escudo, M, 28, 112, 112);
+    }
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(255,246,236,.82)';
+    ctx.font = F(700, 22); ctx.letterSpacing = '3px';
+    ctx.fillText('BACHILLERATO REMBRANDT', M + 138, 62);
+    ctx.letterSpacing = '0px';
+    ctx.fillStyle = '#FFF6EC'; ctx.font = F(900, 54);
+    ctx.fillText('AVISOS Y TAREAS', M + 138, 116);
+    ctx.fillStyle = 'rgba(255,246,236,.7)'; ctx.font = F(700, 18);
+    ctx.letterSpacing = '4px';
+    ctx.fillText('RESPETO · CULTURA · HONOR', M + 138, 146);
+    ctx.letterSpacing = '0px';
+  }
+  y = altoCab;
+
+  /* ── la fila de la fecha ── */
+  const altoFila = 66;
+  if(pintar){
+    const Pf = piel();
+    caja(ctx, 0, y, ANCHO, altoFila, 0, mezclar(Pf.urgente, Pf.papel, .10));
+    ctx.fillStyle = Pf.oscuro ? '#F2F5FA' : Pf.destacada; ctx.font = F(800, 25);
+    ctx.fillText(fechaLarga(D.fecha), M, y + 43);
+    ctx.textAlign = 'right'; ctx.fillStyle = Pf.oscuro ? '#BFD4EA' : Pf.urgente; ctx.font = F(800, 23);
+    ctx.fillText('Grupo ' + D.grupo + '  ·  ' + D.semestre, ANCHO - M, y + 43);
+    ctx.textAlign = 'left';
+  }
+  y += altoFila + 26;
+
+  /* ── el cuerpo, según la plantilla ── */
+  const bloques = bloquesDe(ctx, !!plantilla.compacta);
+  const hueco = plantilla.compacta ? 8 : 12;
+  const repartido = repartir(bloques, cols, anchoCol, hueco);
+
+  let maxAlto = 0;
+  repartido.forEach((col, i) => {
+    const x = M + i * (anchoCol + 20);
+    let cy = y;
+    for(const b of col){
+      const h = b.alto(anchoCol);
+      if(pintar) b.pinta(ctx, x, cy, anchoCol);
+      cy += h + hueco;
+    }
+    maxAlto = Math.max(maxAlto, cy - y);
+  });
+  y += maxAlto;
+
+  if(!bloques.length){
+    if(pintar){
+      ctx.fillStyle = piel().chica; ctx.font = F(600, 26); ctx.textAlign = 'center';
+      ctx.fillText('Sin pendientes por hoy.', ANCHO/2, y + 50);
+      ctx.textAlign = 'left';
+    }
+    y += 90;
+  }
+
+  /* ── el pie ── */
+  y += 14;
+  if(pintar){
+    caja(ctx, 0, y, ANCHO, 62, 0, piel().urgente);
+    ctx.fillStyle = 'rgba(255,246,236,.9)'; ctx.font = F(800, 20);
+    ctx.textAlign = 'center'; ctx.letterSpacing = '3px';
+    ctx.fillText('RESPETO · CULTURA · HONOR', ANCHO/2, y + 39);
+    ctx.letterSpacing = '0px'; ctx.textAlign = 'left';
+  }
+  return y + 62;
+}
+
+function etiquetaDe(p, t){
+  return t.nombre + (p.cuando === 'fecha' && p.dia ? '  ·  ' + fechaCorta(p.dia) : '');
+}
+
+/* ¿Caben el nombre de la materia y la etiqueta del tipo en el MISMO renglón?
+   Vive aparte para que la prueba use ESTA función y no una copia de la cuenta:
+   una prueba que reimplementa la regla que quiere comprobar sólo comprueba que
+   sé copiar y pegar. */
+function cabeElEncabezado(ctx, m, etiqueta, w){
+  const pad = 20, sangria = 74, aire = 42;
+  ctx.font = F(800, 22);
+  const a = ctx.measureText(m.corto.toUpperCase()).width;
+  ctx.font = F(700, 20);
+  const b = ctx.measureText(etiqueta).width;
+  return (a + b + aire) <= (w - sangria - pad);
+}
+
+/* Una ficha de pendiente. Devuelve su alto. */
+function ficha(ctx, p, x, y, w, pintar){
+  const m = materia(p.materia), t = tipo(p.tipo);
+  const pad = 20, sangria = 74;
+  let alto = pad;
+
+  /* ¿Caben el nombre de la materia y la etiqueta del tipo en el MISMO renglón?
+     En una columna angosta no: «PROGRAMACIÓN» se encimaba con «Examen · JUE 3
+     SEP» y quedaba ilegible. Si no caben, la etiqueta se baja a su propio
+     renglón en vez de encimarse o de recortar el nombre de la materia, que es
+     lo que el alumno usa para encontrar lo suyo. */
+  const etiqueta = etiquetaDe(p, t);
+  ctx.font = F(700, 20);
+  const anchoEti = ctx.measureText(etiqueta).width;
+  const dosRenglones = !cabeElEncabezado(ctx, m, etiqueta, w);
+  const encabezado = dosRenglones ? 62 : 34;
+  alto += encabezado + 8;
+
+  ctx.font = F(800, 30);
+  const titulo = envolver(ctx, p.titulo || t.nombre, w - sangria - pad);
+  alto += titulo.length * 38;
+
+  const detalles = String(p.detalles || '').split('\n').map(z => z.trim()).filter(Boolean);
+  ctx.font = F(500, 25);
+  const renglones = [];
+  for(const d of detalles){
+    const ls = envolver(ctx, d, w - sangria - pad - 26);
+    renglones.push(ls); alto += ls.length * 33;
+  }
+  if(detalles.length) alto += 8;
+  alto += pad;
+
+  if(pintar){
+    /* Una ficha destacada se pinta A COLOR ENTERO, no sólo se sube de lugar.
+       Si sólo cambiara de posición, en un aviso de doce pendientes nadie
+       notaría cuál es el importante. */
+    const D_ = !!p.destacado, P = piel();
+    const tintaFuerte = D_ ? '#FFF6EC' : P.tinta;
+    const tintaSuave  = D_ ? 'rgba(255,246,236,.88)' : P.suave;
+    const tintaChica  = D_ ? 'rgba(255,246,236,.78)' : P.chica;
+
+    /* El recuadro se tiñe con el color de su materia y su orilla lo lleva más
+       marcado. Es lo que pidió Carlos, y de paso deja encontrar la materia sin
+       leer el rótulo. */
+    caja(ctx, x, y, w, alto, 14,
+         D_ ? m.color : P.tinte(m.color), D_ ? m.color : m.color + '55');
+    if(!D_){
+      ctx.save();
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(x, y, w, alto, 14); else ctx.rect(x, y, w, alto);
+      ctx.clip();
+      caja(ctx, x, y, 7, alto, 0, m.color);
+      ctx.restore();
+    }
+
+    caja(ctx, x + pad, y + pad - 2, 50, 50, 12,
+         D_ ? 'rgba(255,246,236,.18)' : mezclar(m.color, P.tinte(m.color), .16));
+    iconoCanvas(ctx, m.icono, x + pad + 10, y + pad + 8, 30, D_ ? '#FFF6EC' : P.acento(m.color), 2);
+
+    ctx.fillStyle = D_ ? 'rgba(255,246,236,.92)' : P.acento(m.color); ctx.font = F(800, 22);
+    ctx.fillText(m.corto.toUpperCase(), x + sangria, y + pad + 20);
+    ctx.fillStyle = tintaChica; ctx.font = F(700, 20);
+    if(dosRenglones){
+      /* segundo renglón, alineado con la materia */
+      iconoCanvas(ctx, t.icono, x + sangria, y + pad + 32, 21, tintaChica, 1.8);
+      ctx.fillText(etiqueta, x + sangria + 28, y + pad + 48);
+    } else {
+      ctx.textAlign = 'right';
+      ctx.fillText(etiqueta, x + w - pad, y + pad + 20);
+      ctx.textAlign = 'left';
+      iconoCanvas(ctx, t.icono, x + w - pad - anchoEti - 30, y + pad + 4, 21, tintaChica, 1.8);
+    }
+
+    let ty = y + pad + encabezado + 34;
+    ctx.fillStyle = tintaFuerte; ctx.font = F(800, 30);
+    for(const l of titulo){ ctx.fillText(l, x + sangria, ty); ty += 38; }
+
+    ctx.font = F(500, 25);
+    ty += detalles.length ? 6 : 0;
+    for(const ls of renglones){
+      for(let i = 0; i < ls.length; i++){
+        if(i === 0){
+          ctx.fillStyle = D_ ? 'rgba(255,246,236,.75)' : P.acento(m.color);
+          ctx.beginPath(); ctx.arc(x + sangria + 6, ty - 8, 4.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.fillStyle = tintaSuave;
+        ctx.fillText(ls[i], x + sangria + 26, ty); ty += 33;
+      }
+    }
+    if(p.fijado) chipFijado(ctx, x + w - pad, y + alto - 30, D_);
+  }
+  return alto;
+}
+
+/* Cuántas columnas hacen falta para que el cartel no salga como una tira.
+   Se prueba de la que pide la plantilla hacia arriba y se para en cuanto la
+   proporción entra en el tope — o cuando ya no mejora, que pasa cuando un solo
+   pendiente es más alto que toda la meta. */
+function elegirColumnas(ctx){
+  const plantilla = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  let mejor = plantilla.columnas, mejorProp = Infinity;
+  for(let n = plantilla.columnas; n <= COLUMNAS_TOPE; n++){
+    const alto = componer(ctx, false, n);
+    const prop = alto / ANCHO;
+    if(prop <= PROPORCION_TOPE) return n;
+    if(prop < mejorProp - 0.02){ mejorProp = prop; mejor = n; }
+    else break;                       /* ya no mejora: no tiene caso ensanchar */
+  }
+  return mejor;
+}
+
+function dibujar(){
+  const c = $('#lienzo'), ctx = c.getContext('2d');
+  c.width = ANCHO_BASE * ESC; c.height = 100;
+  ctx.setTransform(ESC, 0, 0, ESC, 0, 0);
+  const cols = elegirColumnas(ctx);
+  const alto = componer(ctx, false, cols);      /* fija ANCHO */
+  c.width = Math.round(ANCHO * ESC); c.height = Math.round(alto * ESC);
+  const g = c.getContext('2d');
+  g.setTransform(ESC, 0, 0, ESC, 0, 0);
+  g.fillStyle = piel().papel; g.fillRect(0, 0, ANCHO, alto);
+  componer(g, true, cols);
+  consejoPlantilla(cols);
+}
+
+/* Le dice cuál plantilla le conviene, sin quitarle la que eligió. */
+function consejoPlantilla(cols){
+  const n = D.pendientes.length;
+  const actual = PLANTILLAS.find(x => x.id === D.plantilla) || PLANTILLAS[0];
+  const buena = PLANTILLAS.find(x => n <= x.holgado) || PLANTILLAS[PLANTILLAS.length-1];
+  const caja = $('#consejo');
+  if(!caja) return;
+  if(buena.id === actual.id || !n){ caja.hidden = true; return; }
+  caja.hidden = false;
+  caja.innerHTML = 'Con <b>' + n + ' pendientes</b>, «' + actual.nombre + '» va a salir muy ' +
+    (actual.holgado < buena.holgado ? 'larga' : 'vacía') +
+    '. Te conviene <b>«' + buena.nombre + '»</b>. ' +
+    '<button class="btn chico" type="button" id="bCambiarPlantilla">Cambiar a ' + buena.nombre + '</button>';
+  $('#bCambiarPlantilla').onclick = () => {
+    D.plantilla = buena.id; guardar(); $('#fPlantilla').value = buena.id; dibujar();
+  };
+}
+
+$('#bImagen').addEventListener('click', () => {
+  dibujar();
+  const c = $('#lienzo');
+  const url = c.toDataURL('image/png');
+  const nombre = 'avisos-' + D.grupo.replace(/[^\w.]/g,'') + '-' + (D.fecha || hoyISO()) + '.png';
+  /* En iPhone el botón de descarga a veces no hace nada, así que además se
+     enseña la imagen: manteniéndola apretada se guarda o se comparte. Esa vía
+     funciona en todos lados. */
+  $('#salida').innerHTML =
+    '<h2 class="rotulo">Lista <span class="regla"></span></h2>' +
+    '<img src="' + url + '" alt="Aviso del grupo">' +
+    '<p class="nota"><b>Mantén apretada la imagen</b> para guardarla o mandarla al chat. ' +
+    'Si tu teléfono deja descargar, también sirve el botón de abajo.</p>' +
+    '<div class="acciones"><a class="btn" style="text-align:center; text-decoration:none; display:block" ' +
+    'download="' + nombre + '" href="' + url + '">Descargar la imagen</a></div>';
+  $('#salida').scrollIntoView({ behavior:'smooth', block:'start' });
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PRUEBAS · corren solas al cargar. Si algo se rompió, sale en la consola
+   antes de que Carlos mande un aviso mal hecho al grupo.
+   ═════════════════════════════════════════════════════════════════════════ */
+function pruebas(){
+  let bien = 0, mal = 0;
+  const ok = (q, c) => { if(c) bien++; else { mal++; console.error('✗ ' + q); } };
+  /* Las pruebas escriben encima de lo que Carlos tenga escrito, así que se
+     guarda todo y se repone tal cual al terminar. */
+  const suyo = JSON.parse(JSON.stringify(D));
+
+  /* ── los datos del grupo ── */
+  ok('hay una materia por cada clase del horario', MATERIAS.length >= 11);
+  ok('ninguna materia se quedó sin icono', MATERIAS.every(m => ICONOS[m.icono]));
+  ok('ningún tipo se quedó sin icono',     TIPOS_PEND.every(t => ICONOS[t.icono]));
+  ok('ningún id de materia repetido', new Set(MATERIAS.map(m=>m.id)).size === MATERIAS.length);
+  ok('cada materia trae color propio', MATERIAS.every(m => /^#[0-9A-F]{6}$/i.test(m.color)));
+
+  /* ── el orden del periódico ── */
+  D.pendientes = [
+    { materia:'ingles', tipo:'tarea', cuando:'pronto',  titulo:'C' },
+    { materia:'fisica', tipo:'tarea', cuando:'manana',  titulo:'A' },
+    { materia:'etica',  tipo:'tarea', cuando:'semana',  titulo:'B' },
+    { materia:'tec',    tipo:'tarea', cuando:'manana',  titulo:'A2' },
+  ];
+  const o = ordenados().map(p => p.titulo).join('');
+  ok('lo de mañana va primero y lo demás detrás', o === 'AA2BC');
+
+  /* ── el texto que no cabe ── */
+  const ctx = $('#lienzo').getContext('2d');
+  ctx.font = '30px sans-serif';
+  const largo = 'palabra '.repeat(40);
+  ok('un texto largo se parte en renglones', envolver(ctx, largo, 400).length > 3);
+  ok('un texto vacío no truena', envolver(ctx, '', 400).length === 1);
+  /* Que ningún renglón se pase del ancho: si se pasa, el texto se sale de la
+     tarjeta y eso NO se ve hasta que el aviso ya se mandó. */
+  ok('ningún renglón se sale del ancho',
+     envolver(ctx, largo, 400).every(l => ctx.measureText(l).width <= 400 || l.indexOf(' ') < 0));
+
+  /* ── la imagen ── */
+  D.fecha = '2026-08-24';
+  dibujar();
+  const c = $('#lienzo');
+  ok('la imagen sale al doble de tamaño', c.width === ANCHO * ESC);
+  ok('la imagen crece con el contenido', c.height > 600 * ESC);
+  const altoConCuatro = c.height;
+  D.pendientes.push({ materia:'redes', tipo:'aviso', cuando:'semana', titulo:'X',
+                      detalles:'uno\ndos\ntres' });
+  dibujar();
+  ok('un pendiente más hace la imagen más alta', c.height > altoConCuatro);
+  D.pendientes = [];
+  dibujar();
+  ok('sin pendientes también se dibuja algo', c.height > 200 * ESC);
+
+  /* ── las fechas en español ── */
+  ok('la fecha se escribe en español', fechaLarga('2026-08-24') === 'lunes 24 de agosto de 2026');
+  ok('la fecha corta también', fechaCorta('2026-08-28') === 'VIE 28 AGO');
+  ok('sin fecha no se inventa nada', fechaLarga('') === '');
+
+  /* ── que no se pierda el trabajo ── */
+  D.pendientes = [{ materia:'tec', tipo:'tarea', cuando:'manana', titulo:'guardado' }];
+  guardar();
+  ok('lo escrito se guarda en el teléfono', (function(){
+    try{ return JSON.parse(localStorage.getItem(LLAVE)).pendientes[0].titulo === 'guardado'; }
+    catch(e){ return false; }
+  })());
+
+  /* ── que los colores se lean ── */
+  /* El color de la materia se usa como TEXTO chico sobre el papel, y en una
+     ficha destacada el texto crema va encima del color. Las dos veces tiene que
+     pasar 4.5:1. El dorado #B98A2E medía 3.07 y nadie lo iba a notar a ojo:
+     salió midiendo. */
+  const lum = h => { const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255)
+      .map(v => v<=.03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4));
+    return .2126*c[0] + .7152*c[1] + .0722*c[2]; };
+  const contra = (a,b) => { const x=lum(a), y=lum(b);
+    return (Math.max(x,y)+.05) / (Math.min(x,y)+.05); };
+  const flojos = MATERIAS.filter(m => contra(m.color,'#FFFDF8') < 4.5 ||
+                                      contra(m.color,'#FFF6EC') < 4.5);
+  ok('todos los colores de materia se leen (4.5:1)', flojos.length === 0);
+  if(flojos.length) console.error('   flojos:', flojos.map(m => m.corto + ' ' + m.color));
+  ok('prefectura no se funde con la banda de «muy importante»',
+     (MATERIAS.find(m => m.id === 'prefectura') || {}).color !== '#5A1319');
+
+  /* ── de dónde viene el aviso ── */
+  ok('se puede poner un aviso de dirección',
+     MATERIAS.some(m => m.id === 'direccion' && m.oficial));
+  ok('y de prefectura y de la sociedad de alumnos',
+     ['prefectura','sociedad'].every(id => MATERIAS.some(m => m.id === id)));
+  D.pendientes = [
+    { materia:'ingles', tipo:'tarea', cuando:'manana', titulo:'normal' },
+    { materia:'direccion', tipo:'aviso', cuando:'pronto', destacado:true, titulo:'de dirección' },
+  ];
+  ok('lo destacado se sube por encima de lo de mañana',
+     ordenados()[0].titulo === 'de dirección');
+  ok('sin destacar, «sin fecha» se va hasta abajo',
+     (function(){ D.pendientes[1].destacado = false;
+       return ordenados()[0].titulo === 'normal'; })());
+
+  /* ── las plantillas ── */
+  ok('hay más de una plantilla', PLANTILLAS.length >= 3);
+  ok('todas dicen para qué sirven', PLANTILLAS.every(x => x.que && x.columnas >= 1));
+  D.pendientes = [];
+  for(let i = 0; i < 40; i++) D.pendientes.push(
+    { materia: MATERIAS[i % MATERIAS.length].id, tipo:'tarea', cuando:'manana',
+      titulo:'Pendiente número ' + i, detalles:'Un detalle\nOtro detalle' });
+  const altos = {};
+  for(const x of PLANTILLAS){ D.plantilla = x.id; dibujar(); altos[x.id] = $('#lienzo').height; }
+  ok('con 40 pendientes, «periódico» sale más corta que «tablero»',
+     altos.periodico < altos.tablero);
+  ok('y «lista» más corta que las dos', altos.lista < altos.periodico);
+  ok('las de dos columnas usan las dos', (function(){
+    D.plantilla = 'periodico';
+    const cols = repartir(bloquesDe($('#lienzo').getContext('2d'), false), 2, 480, 12);
+    return cols.length === 2 && cols[0].length > 0 && cols[1].length > 0;
+  })());
+  /* La regla de que una banda nunca se quede sola al pie de una columna.
+
+     Ojo con cómo se prueba esto: con pendientes de verdad el caso NO OCURRE
+     NUNCA —se comprobó quitando la guarda y barriendo de 4 a 28 pendientes: ni
+     una sola banda huérfana—, porque una banda mide 40 px y el corte casi
+     siempre lo cruza una tarjeta, no un encabezado. O sea que la primera
+     versión de esta prueba pasaba igual con el defecto puesto: confianza falsa,
+     que es peor que no tener prueba.
+
+     Así que se le da a `repartir` una lista ARMADA A PROPÓSITO para que el
+     corte caiga justo en la banda. Se prueba el contrato de la función, no la
+     suerte de los datos. */
+  ok('una banda nunca se queda sola al pie de una columna', (function(){
+    const falso = (h, banda) => ({ banda, alto: () => h, pinta: () => {} });
+    /* alturas elegidas para que la mitad caiga exactamente en la banda:
+       100+12=112, +112=224, +40+12=276 · total 500, mitad 250 */
+    const bl = [falso(100), falso(100), falso(40, true), falso(100), falso(100)];
+    const cols = repartir(bl, 2, 480, 12);
+    return cols.length === 2 && cols.every(c => !c.length || !c[c.length-1].banda);
+  })());
+
+  /* ── que el encabezado de la tarjeta no se encime ── */
+  /* En columna angosta «PROGRAMACIÓN» se montaba sobre «Examen · JUE 3 SEP».
+     No se ve leyendo el código: salió al renderizar en dos columnas.
+     La prueba usa la MISMA función que el dibujo, no una copia de la cuenta. */
+  (function(){
+    const g = $('#lienzo').getContext('2d');
+    const ANCHA = 1012, ANGOSTA = 496;   /* una columna · dos columnas */
+    const peor = MATERIAS.reduce((a, m) => {
+      g.font = F(800, 22);
+      return g.measureText(m.corto.toUpperCase()).width >
+             g.measureText(a.corto.toUpperCase()).width ? m : a;
+    });
+    const etiquetaLarga = etiquetaDe({ cuando:'fecha', dia:'2026-08-28' },
+                                     TIPOS_PEND.find(t => t.id === 'proyecto'));
+    ok('en columna angosta, el par más largo NO se pone en un renglón',
+       cabeElEncabezado(g, peor, etiquetaLarga, ANGOSTA) === false);
+    ok('en una sola columna, ese mismo par SÍ cabe en un renglón',
+       cabeElEncabezado(g, peor, etiquetaLarga, ANCHA) === true);
+    /* y que la ficha crezca de verdad cuando decide dos renglones */
+    const p1 = { materia: peor.id, tipo:'proyecto', cuando:'fecha', dia:'2026-08-28', titulo:'X' };
+    ok('la tarjeta se hace más alta cuando el encabezado va en dos renglones',
+       ficha(g, p1, 0, 0, ANGOSTA, false) - ficha(g, p1, 0, 0, ANCHA, false) >= 20);
+  })();
+
+  /* ── lo fijado ── */
+  D.pendientes = [
+    { materia:'direccion', tipo:'aviso', cuando:'semana', fijado:true, titulo:'dura semanas' },
+    { materia:'ingles', tipo:'tarea', cuando:'manana', titulo:'es de hoy' },
+  ];
+  const sobreviven = D.pendientes.filter(p => p.fijado);
+  ok('vaciar la lista respeta lo fijado', sobreviven.length === 1 &&
+     sobreviven[0].titulo === 'dura semanas');
+  D.plantilla = 'tablero'; dibujar();
+  ok('un fijado se dibuja sin tronar', $('#lienzo').height > 200 * ESC);
+
+  /* ── que crezca en todas direcciones, no sólo hacia abajo ── */
+  /* Carlos: «no hagas que crezca solo hacia abajo». Con mucho contenido el
+     lienzo tiene que ENSANCHARSE abriendo columnas, no volverse una tira. */
+  (function(){
+    const gordo = 'Traer la investigación completa sobre la técnica correcta para correr';
+    const det = ['Incluir imágenes de la postura desde tres ángulos y explicar cada una',
+                 'Explicar el método de respiración y cada cuántos pasos se aplica',
+                 'Comparar la zancada de fondo con la de velocidad y decir por qué'].join('\n');
+    D.plantilla = 'tablero'; D.pendientes = [];
+    for(let i = 0; i < 14; i++) D.pendientes.push(
+      { materia: MATERIAS[i % 11].id, tipo:'tarea', cuando:'manana',
+        titulo: gordo + ' — ' + i, detalles: det });
+    dibujar();
+    const anchoGordo = $('#lienzo').width, altoGordo = $('#lienzo').height;
+    ok('con mucho contenido el lienzo se ensancha', anchoGordo > ANCHO_BASE * ESC);
+    ok('y no queda como una tira', altoGordo / anchoGordo <= 2.2);
+
+    D.pendientes = D.pendientes.slice(0, 2); dibujar();
+    ok('con poco contenido NO se ensancha de más', $('#lienzo').width <= anchoGordo);
+  })();
+
+  /* ── una palabra más larga que la columna ── */
+  /* Sin partir palabras, una dirección de internet se salía de la tarjeta. Con
+     columnas angostas eso deja de ser raro. */
+  (function(){
+    const g = $('#lienzo').getContext('2d');
+    g.font = F(500, 25);
+    const bicho = 'https://mazi-central.palomazi9111.workers.dev/fadori/instalar.html';
+    const ls = envolver(g, bicho, 300);
+    ok('una palabra larguísima se parte en vez de desbordarse', ls.length > 1);
+    ok('y ningún trozo se sale del ancho',
+       ls.every(l => g.measureText(l).width <= 300 + 1));
+  })();
+
+  /* ── las diez plantillas y los colores en todas ── */
+  ok('hay diez plantillas', PLANTILLAS.length === 10);
+  ok('ningún id de plantilla repetido',
+     new Set(PLANTILLAS.map(x => x.id)).size === PLANTILLAS.length);
+  ok('todas dicen para qué sirven y cuántas columnas llevan',
+     PLANTILLAS.every(x => x.que && x.columnas >= 1 && x.holgado > 0));
+  ok('no son la misma con otro nombre', (function(){
+     /* que de verdad se distingan: columnas, apretado o papel */
+     const huellas = new Set(PLANTILLAS.map(x =>
+       [x.columnas, !!x.compacta, x.papel || '', (x.bandas||[]).join('')].join('|')));
+     return huellas.size >= 8;
+  })());
+
+  /* El color de la materia se usa como TEXTO. En papel claro pasaba; en una
+     plantilla oscura «GEOMETRÍA» en azul marino sobre azul marino no se leía.
+     Esto lo mide en las DIEZ, no en una. */
+  (function(){
+    const antes = D.plantilla;
+    const flojos = [];
+    for(const pl of PLANTILLAS){
+      D.plantilla = pl.id;
+      const P = piel();
+      for(const m of MATERIAS){
+        const fondo = P.oscuro ? mezclar(m.color, '#232C3C', .16) : '#FFFDF8';
+        if(contraste(P.acento(m.color), fondo) < 4.5) flojos.push(pl.id + '/' + m.corto);
+      }
+    }
+    D.plantilla = antes;
+    ok('el nombre de la materia se lee en las diez plantillas', flojos.length === 0);
+    if(flojos.length) console.error('   flojos:', flojos.slice(0,8));
+  })();
+
+  /* ── la tipografía ── */
+  ok('se puede cambiar la tipografía', FUENTES.length >= 4);
+  ok('ninguna tipografía viene de un servicio de fuera',
+     FUENTES.every(f => !/https?:|@import|fonts\.google/.test(f.fam)));
+  /* Las de repuesto tienen que estar en el aparato; la de la casa NO —ésa se
+     carga— y por eso se le pregunta otra cosa. */
+  ok('las tipografías de repuesto sí vienen con el aparato',
+     FUENTES.filter(f => !f.propia).every(f => !/Mazi/.test(f.fam)));
+  ok('la de la casa está en la lista y es la nuestra',
+     FUENTES.some(f => f.id === 'mazi' && f.propia && /"Mazi"/.test(f.fam)));
+  /* Lo que de verdad falla si se olvida el @font-face: el canvas pinta con la
+     de repuesto sin avisar. Se comprueba MIDIENDO, no leyendo el CSS. */
+  ok('la fuente de la casa está declarada en esta página',
+     [...document.styleSheets].some(h => { try{
+        return [...h.cssRules].some(r => r.constructor.name === 'CSSFontFaceRule'
+               && /Mazi/.test(r.style.getPropertyValue('font-family')));
+     }catch(e){ return false; } }));
+  ok('la fuente elegida es la que usa el dibujo', (function(){
+     const antes = D.fuente; D.fuente = 'maquina';
+     const usa = /Courier/.test(F(800, 20));
+     D.fuente = antes; return usa;
+  })());
+
+  /* ── el tinte por materia ── */
+  ok('cada materia tiñe distinto su recuadro', (function(){
+     const P = piel();
+     const tonos = new Set(MATERIAS.map(m => P.tinte(m.color)));
+     return tonos.size >= 6;
+  })());
+  ok('pero el tinte es SUAVE, no un arcoíris', (function(){
+     const P = piel();
+     /* el recuadro teñido tiene que seguir pareciéndose al papel */
+     return MATERIAS.every(m => contraste(P.tinte(m.color), P.papel) < 1.35);
+  })());
+
+  /* ── que se alcance con el dedo ── */
+  /* Ya me pasó en Ligas Mazi: campos de 36 px que nadie atina. Aquí se mide,
+     no se confía. */
+  const chicos = [...document.querySelectorAll('#panel-avisos button, #panel-avisos select, ' +
+    '#panel-avisos input, #panel-avisos textarea, #panel-cartel button')]
+    .filter(e => { const h = e.getBoundingClientRect().height; return h > 0 && h < 44; });
+  ok('ningún control mide menos de 44 px de alto', chicos.length === 0);
+  if(chicos.length) console.error('   chicos:', chicos.map(e => e.id || e.getAttribute('data-c')));
+
+  /* ── lo que se lee en pantalla ── */
+  const copia = document.getElementById('panel-cartel').cloneNode(true);
+  copia.querySelectorAll('script, style').forEach(e => e.remove());
+  const texto = copia.textContent;
+  ok('dice que todo se guarda sólo en el teléfono', /sólo en este teléfono/i.test(texto));
+
+  /* se repone lo de Carlos */
+  D = suyo; guardar(); pintarLista(); dibujar();
+
+  console.log('%cAvisos 3.1 · ' + bien + '/' + (bien+mal) + ' pruebas',
+    'font-weight:700;color:' + (mal ? '#B23A3A' : '#3F6B45'));
+}
+
+/* ══ ARRANQUE ════════════════════════════════════════════════════════════ */
+/* La fecha arranca SIEMPRE en hoy, aunque los pendientes de ayer sigan ahí.
+   Si se guardara la fecha vieja, el error más fácil de cometer sería mandar el
+   aviso de hoy fechado ayer — y nadie lo revisa antes de darle enviar.
+   Los pendientes NO se borran a propósito: casi siempre el aviso de hoy es el
+   de ayer con dos cosas cambiadas, y así sólo se editan. */
+D.fecha = hoyISO(); guardar();
+$('#avFecha').value = D.fecha;
+$('#avGrupo').value = D.grupo;
+$('#avSemestre').value = D.semestre;
+$('#fPlantilla').value = D.plantilla;
+$('#fFuente').value = D.fuente || 'sistema';
+describePlantilla();
+pintarLista();
+escudo.onload = dibujar;
+dibujar();
+
+/* La tipografía de la casa se carga aparte, y hasta que llega se vuelve a
+   dibujar. Sin esto el cartel sale con la de repuesto SIN AVISAR: el canvas
+   no espera a las fuentes, pinta con lo que haya en ese instante. Es
+   justamente el error que ya está anotado arriba en la lista de FUENTES. */
+if(document.fonts && document.fonts.load){
+  document.fonts.load('800 40px "Mazi"')
+    .then(() => document.fonts.load('500 40px "Mazi"'))
+    .then(() => dibujar())
+    .catch(() => {});
+}
+
+/* ── el contador del encabezado ──
+   `dibujar` se envuelve en vez de editarla por dentro: así el motor del cartel
+   —que es lo delicado— se queda exactamente como estaba y probado, y lo que se
+   le cuelga encima es sólo lo de la pantalla nueva. */
+function marcador(){
+  const n = D.pendientes.length;
+  const c = document.getElementById('cuentaPend');
+  if(c) c.textContent = !n ? 'ninguno todavía'
+      : n === 1 ? '1 pendiente' : n + ' pendientes';
+  const m = document.getElementById('medidaCartel');
+  const l = document.getElementById('lienzo');
+  if(m && l && l.width) m.textContent =
+    Math.round(l.width / ESC) + ' × ' + Math.round(l.height / ESC) + ' px';
+}
+const dibujoBase = dibujar;
+dibujar = function(){ dibujoBase(); marcador(); };
+/* La imagen del escudo guardó la referencia VIEJA cuando se cargó el arranque.
+   Se vuelve a colgar para que al llegar el escudo también se refresque el
+   contador — si no, el primer dibujo deja el rótulo en blanco. */
+escudo.onload = dibujar;
+marcador();
+
+/* Lo único que se asoma por la pared. Las pruebas NO corren al cargar: corren
+   la primera vez que se entra al modo Aviso, porque miden el alto real de los
+   controles y un panel escondido mide cero — una prueba que pasa por no poder
+   ver nada es peor que no tenerla. */
+let yaProbado = false;
+window.__avisos = {
+  dibujar,
+  imagen:  () => document.getElementById('bImagen').click(),
+  agregar: () => document.getElementById('bAgregar').click(),
+  cuantos: () => D.pendientes.length,
+  probarUnaVez(){ if(yaProbado) return; yaProbado = true; pruebas(); },
+};
+})();
+
 </script>
 </body>
 </html>

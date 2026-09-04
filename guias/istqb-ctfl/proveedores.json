@@ -1,0 +1,281 @@
+[
+ {
+  "slug": "accsoftware-2",
+  "nombre": "Verity Consulting",
+  "tel": "+56 2 27148720",
+  "email": "karina.meza@verity.cl",
+  "web": "http://www.verity.cl/",
+  "pais": "Chile",
+  "ctfl": true
+ },
+ {
+  "slug": "atesoft-sac",
+  "nombre": "ATESOFT SAC",
+  "tel": "51 4057909",
+  "email": "informes@atesoftperu.com",
+  "web": "www.atesoftperu.com",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "babel-learning-center-s-a",
+  "nombre": "Babel Learning Center S.A.",
+  "tel": "4001 2834",
+  "email": "learning@grupobabel.com",
+  "web": "www.babel-learning.com",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "business-innovations-s-r-l",
+  "nombre": "Business Innovations S.R.L.",
+  "tel": "+511 2260325",
+  "email": "info@businessinnova.com",
+  "web": "www.businessinnova.com",
+  "pais": "",
+  "ctfl": false
+ },
+ {
+  "slug": "calidad-de-conceptos-sac",
+  "nombre": "Calidad de conceptos SAC",
+  "tel": "+51 978904540 – 51 980917045",
+  "email": "info@cdconceptos.com",
+  "web": "www.cdconceptos.com",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "centro-de-formacion-en-tecnologias-de-informacion",
+  "nombre": "CENFOTEC IT LEARNING CENTER",
+  "tel": "+ 506 4000-3950",
+  "email": "rchi@ucenfotec.ac.cr",
+  "web": "www.ucenfotec.ac.cr",
+  "pais": "",
+  "ctfl": false
+ },
+ {
+  "slug": "choucair-testing",
+  "nombre": "Choucair Testing",
+  "tel": "+574 4480510",
+  "email": "cursoschoucair@choucairtesting.com",
+  "web": "www.choucairtesting.com",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "cool-testers",
+  "nombre": "Cool Testers (Aurean Blue)",
+  "tel": "+52 8130788589",
+  "email": "contacto@cooltesters.com",
+  "web": "http://www.cooltesters.com/",
+  "pais": "México",
+  "ctfl": true
+ },
+ {
+  "slug": "creativa-consultores",
+  "nombre": "Creativa Consultores",
+  "tel": "(503) 2217-3800",
+  "email": "hi@creativastudios.us",
+  "web": "www.creativaconsultores.com",
+  "pais": "El Salvador",
+  "ctfl": true
+ },
+ {
+  "slug": "ecosistemas",
+  "nombre": "ECOSISTEMAS",
+  "tel": "+54-1126809149",
+  "email": "agrano@ecosistemas.com.ar",
+  "web": "https://ecosistemasglobal.com/",
+  "pais": "Argentina",
+  "ctfl": true
+ },
+ {
+  "slug": "fyc-soluciones-integrales-c-a-grupo-fyc",
+  "nombre": "FYC Soluciones Integrales, C.A. (Grupo FYC)",
+  "tel": "+58 212 232-7811",
+  "email": "informacion@fyccorp.com",
+  "web": "www.fyccorp.com",
+  "pais": "",
+  "ctfl": false
+ },
+ {
+  "slug": "gestion-it-s-r-l",
+  "nombre": "GESTIÓN IT S.R.L",
+  "tel": "(54 11) 5031-8810",
+  "email": "ruben.duro@gestionit.com.ar",
+  "web": "www.gestionit.com.ar",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "global-resources",
+  "nombre": "GLOBAL RESOURCES",
+  "tel": "+58 212 615-3645",
+  "email": "contacto@globalr.net",
+  "web": "www.globalr.net",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "hypernova-labs-s-a",
+  "nombre": "Hypernova Labs S.A.",
+  "tel": "",
+  "email": "info@hypernovalabs.com",
+  "web": "https://www.hypernovalabs.com/",
+  "pais": "",
+  "ctfl": false
+ },
+ {
+  "slug": "it-alianza-s-a",
+  "nombre": "IT ALIANZA S.A.",
+  "tel": "(595984)175112",
+  "email": "info@italianza.com.py",
+  "web": "www.italianza.com.py",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "itworkers-sa",
+  "nombre": "ITWorkers SA DE CV",
+  "tel": "+52 72 9556 5103",
+  "email": "juan.vargas@itw.mx",
+  "web": "www.itw.mx",
+  "pais": "México",
+  "ctfl": false
+ },
+ {
+  "slug": "jb-enterprise-group-s-a-c",
+  "nombre": "JB ENTERPRISE GROUP S.A.C.",
+  "tel": "+51 951 208 836",
+  "email": "cursos@jbenterprisegroup.com",
+  "web": "www.jbenterprisegroup.com",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "laserants",
+  "nombre": "LASERANTS",
+  "tel": "(502) 3082 9898",
+  "email": "info@laserants.com",
+  "web": "www.laserants.com",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "logic-studio",
+  "nombre": "Logic Studio S.A.",
+  "tel": "+507 317 1258",
+  "email": "yaitzy.julio@logicstudio.net",
+  "web": "www.logicstudio.net",
+  "pais": "Panamá",
+  "ctfl": true
+ },
+ {
+  "slug": "mtp-digital-business-assurance",
+  "nombre": "MTP Digital Business Assurance",
+  "tel": "+52 1 55 5286 1461",
+  "email": "campus@mtpinternational.mx",
+  "web": "https://mtpinternational.mx/",
+  "pais": "México",
+  "ctfl": true
+ },
+ {
+  "slug": "partner-program",
+  "nombre": "Partner Program",
+  "tel": "",
+  "email": "",
+  "web": "del ASOCIADO.",
+  "pais": "",
+  "ctfl": false
+ },
+ {
+  "slug": "qa-minds-lab",
+  "nombre": "QA Minds Lab",
+  "tel": "+52 33 1820 0455 – 3411591743",
+  "email": "gbejines@qamindslab.com",
+  "web": "https:",
+  "pais": "México",
+  "ctfl": true
+ },
+ {
+  "slug": "qa-team",
+  "nombre": "QA Team",
+  "tel": "+51 992 062 484",
+  "email": "info@qateamperu.com",
+  "web": "https://qateamperu.com/",
+  "pais": "",
+  "ctfl": false
+ },
+ {
+  "slug": "qarmy-academia-de-qa",
+  "nombre": "QArmy Academia de QA",
+  "tel": "+54 9 261 5658888",
+  "email": "info@qarmy.ar",
+  "web": "info@qarmy.ar",
+  "pais": "Argentina",
+  "ctfl": true
+ },
+ {
+  "slug": "quality-data-s-a",
+  "nombre": "Quality Data S.A.",
+  "tel": "+57 1 6377060",
+  "email": "",
+  "web": "www.qdata.com.co",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "servicios-informaticos-y-capacitacion-spa",
+  "nombre": "Servicios Informáticos y Capacitación SPA",
+  "tel": "96676690",
+  "email": "cursos@testingenchile.cl",
+  "web": "https://www.testingenchile.cl/",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "sj-agile-consulting",
+  "nombre": "SJ Agile Consulting",
+  "tel": "+51961356046 –> Sandra Villanueva",
+  "email": "cursos@sjagileconsulting.com",
+  "web": "https:",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "tecnologia-aplicada-s-a-tecnasa",
+  "nombre": "TECNOLOGÍA APLICADA, S.A. (TECNASA)",
+  "tel": "(+507) 366-6888",
+  "email": "tecnasau@tecnasa.com",
+  "web": "https://tecnasau.tecnasa.com/",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "testgroup-s-a",
+  "nombre": "TestGroup S.A.",
+  "tel": "+56 9 6326 2990",
+  "email": "romina.campos@testgroup.cl",
+  "web": "www.testgroup.cl",
+  "pais": "Chile",
+  "ctfl": true
+ },
+ {
+  "slug": "testing-it-consulting-s-a-de-c-v",
+  "nombre": "Testing IT Consulting S.A. de C.V.",
+  "tel": "+52 5566-3535",
+  "email": "info@testingit.com.mx",
+  "web": "www.testingit.com.mx",
+  "pais": "",
+  "ctfl": true
+ },
+ {
+  "slug": "turing-ti",
+  "nombre": "Turing Ti",
+  "tel": "(+56) 9 54076772",
+  "email": "daniel.tolosa@turingti.com",
+  "web": "www.turingti.com",
+  "pais": "Chile",
+  "ctfl": false
+ }
+]

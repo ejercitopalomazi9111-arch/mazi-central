@@ -14,8 +14,16 @@
       "comoCazarlo": "Prueba con TRES elementos, nunca con uno. Un bug de este tipo es invisible con un solo caso y evidente con tres.",
       "consejo": "Cuando alguien reporta «sólo el primero funciona», no busques en el pintado: busca qué bandera es de todos y debería ser de cada uno.",
       "salioDe": "reportes/ · el QR salía sólo en la primera credencial",
-      "senales": ["sólo el primero", "el resto no", "al recargar cambia", "una sí y las demás no"],
-      "vecinas": ["ajuste-guardado-por-documento", "prueba-de-un-solo-caso"]
+      "senales": [
+        "sólo el primero",
+        "el resto no",
+        "al recargar cambia",
+        "una sí y las demás no"
+      ],
+      "vecinas": [
+        "ajuste-guardado-por-documento",
+        "prueba-de-un-solo-caso"
+      ]
     },
     {
       "id": "ajuste-guardado-por-documento",
@@ -28,8 +36,15 @@
       "comoCazarlo": "Prueba SIEMPRE con un documento viejo, no con uno recién creado. Guarda uno a propósito antes de cambiar el defecto.",
       "consejo": "Si el usuario repite un reporte que ya «arreglaste», el arreglo está en el lugar equivocado. Casi siempre es dato viejo, no código nuevo.",
       "salioDe": "reportes/ · la escala de impresión seguía en 0.86 en el reporte de Carlos",
-      "senales": ["ya lo arreglé y sigue igual", "en uno nuevo sí sirve", "me sigue saliendo mal"],
-      "vecinas": ["bandera-global-primera-vez", "sintoma-contra-causa"]
+      "senales": [
+        "ya lo arreglé y sigue igual",
+        "en uno nuevo sí sirve",
+        "me sigue saliendo mal"
+      ],
+      "vecinas": [
+        "bandera-global-primera-vez",
+        "sintoma-contra-causa"
+      ]
     },
     {
       "id": "temporizador-que-nadie-mata",
@@ -42,8 +57,14 @@
       "comoCazarlo": "Mide el tiempo de la suite. Una prueba que debería tardar un segundo y tarda un minuto casi siempre es un temporizador vivo.",
       "consejo": "Todo `setTimeout` que acompaña a una promesa necesita su `clearTimeout`. Si no lo ves, es un fuga.",
       "salioDe": "sala/servidor · /esperar dejaba vivo su reloj de 50s y la suite tardaba 1m40",
-      "senales": ["no termina el proceso", "las pruebas tardan un montón", "se queda colgado"],
-      "vecinas": ["medir-antes-de-suponer"]
+      "senales": [
+        "no termina el proceso",
+        "las pruebas tardan un montón",
+        "se queda colgado"
+      ],
+      "vecinas": [
+        "medir-antes-de-suponer"
+      ]
     },
     {
       "id": "menu-que-no-se-cierra",
@@ -56,8 +77,92 @@
       "comoCazarlo": "Ábrelo y toca otra cosa. Es una prueba de dos segundos que nadie hace.",
       "consejo": "Todo lo que se abre necesita al menos dos maneras de cerrarse, y una tiene que ser «me arrepentí».",
       "salioDe": "sala/index.html · el menú de comandos tapaba el hilo",
-      "senales": ["se queda abierto", "tapa el contenido", "no se quita"],
-      "vecinas": ["ver-la-pantalla"]
+      "senales": [
+        "se queda abierto",
+        "tapa el contenido",
+        "no se quita"
+      ],
+      "vecinas": [
+        "ver-la-pantalla"
+      ]
+    },
+    {
+      "id": "filtro-de-procesos-se-ve-a-si-mismo",
+      "titulo": "Buscar tu proceso por subcadena casa con el shell que lo está lanzando",
+      "gravedad": "media",
+      "clase": "error",
+      "sintoma": "Una guarda de «¿ya hay otro corriendo?» dice que sí SIEMPRE, incluso la primera vez, y se niega a arrancar.",
+      "causa": "El filtro busca un texto en cualquier parte de la línea del proceso. La línea del shell que está lanzando el programa CONTIENE ese texto, así que la guarda se ve a sí misma nacer.",
+      "porque": "Es invisible al leer, porque la cadena que buscas es exactamente la correcta. Y al probarlo a mano desde otra terminal a veces no pasa, según cómo se lanzó.",
+      "arreglo": "Anclar en los argumentos —que el proceso SEA el intérprete ejecutando ESE archivo— en vez de buscar la subcadena; y descartar explícitamente al padre y a uno mismo por pid.",
+      "comoCazarlo": "Corre el filtro solo, sin nada tuyo vivo. Si encuentra algo, es él. El truco de grep de meter corchetes al primer carácter tapa el caso del propio grep, pero NO el del shell que te lanzó: son dos cosas distintas.",
+      "consejo": "Es la misma trampa que `marcador-que-existe-dos-veces` pero sobre `ps` en vez de sobre un archivo: el que busca aparece en lo buscado. Lo cazó Godines al cuarto intento, después de que la guarda se negara a existir tres veces seguidas.",
+      "salioDe": "la guarda de un solo esperador · Godines",
+      "senales": [
+        "dice que ya hay otro y no hay",
+        "siempre encuentra uno",
+        "no arranca nunca",
+        "se ve a sí mismo"
+      ],
+      "vecinas": [
+        "marcador-que-existe-dos-veces",
+        "candado-que-puede-dejarte-en-cero"
+      ]
+    },
+    {
+      "id": "funcion-declarada-dentro-de-otra-y-llamada-desde-fuera",
+      "titulo": "El botón «no hacía nada» y en realidad hacía todo menos la última línea",
+      "gravedad": "alta",
+      "sintoma": "Se toca un botón, no cambia de texto y no sale confirmación. Parece muerto. Pero el trabajo sí se hizo — la preferencia quedó guardada.",
+      "causa": "La función que pinta el aviso estaba declarada DENTRO de otra función. Los que la llamaban desde fuera reventaban con «no está definida» justo al final, y el `await` de quien los llamó quedó rechazado: lo que venía después —repintar el botón— nunca corrió.",
+      "porque": "La función se escribió donde se usaba por primera vez y ahí funcionaba. Los otros tres usos llegaron después, se leen igual de bien, y nada en el código dice que estén fuera de alcance.",
+      "arreglo": "Sacarla al cuerpo del script. Y dejar dicho por qué ya no vive donde vivía, para que nadie la devuelva a su sitio «ordenando».",
+      "comoCazarlo": "Correr la página en un navegador de verdad, escuchando `pageerror`, y TOCAR el botón. Leyendo no se ve.",
+      "consejo": "Un error que ocurre DESPUÉS del trabajo útil es el peor de leer: el efecto que se ve es «no pasó nada» y el efecto real es «pasó todo menos avisarte».",
+      "senales": [
+        "el botón no hace nada",
+        "no cambia el texto del botón",
+        "no sale ninguna confirmación",
+        "is not defined"
+      ],
+      "salioDe": "La Sala: `letrero()` vivía dentro de `abrirSocket()` y lo llamaban `pedirAvisos`, `apagarAvisos` y el cambio de foto. Los tres tronaban."
+    },
+    {
+      "id": "hecho-en-una-rama-no-es-hecho",
+      "titulo": "Dije «ya está» de una rama sin fusionar, y para quien lo pidió no estaba",
+      "gravedad": "alta",
+      "sintoma": "Se reporta un cambio como terminado —con captura y pruebas en verde— y quien lo pidió abre el sitio y sigue viendo lo de antes. Reclama que no se hizo, y tiene razón desde donde él mira.",
+      "causa": "El trabajo quedó en una rama con un PR en borrador. Lo que se publica es `main`, y nadie lo fusionó. El commit, las pruebas y la captura son todos ciertos y todos hablan de un archivo que el usuario no puede abrir.",
+      "porque": "Desde aquí adentro la rama ES el proyecto: el editor, las pruebas y la captura miran el mismo archivo, así que todo confirma que está hecho. La distancia entre la rama y lo publicado no aparece en ninguna de esas tres señales.",
+      "arreglo": "Antes de decir «ya está», medir lo PUBLICADO: pedir la URL de producción y comparar contra la rama. Si no coincide, la frase correcta no es «ya está» sino «está hecho y falta fusionarlo», con el número del PR.",
+      "comoCazarlo": "curl a la dirección de producción y diff contra el archivo de la rama. Si son idénticos y tú cambiaste algo, tu cambio no está publicado. Un `git log origin/main` que no traiga tu commit dice lo mismo en un renglón.",
+      "consejo": "Y no basta con avisar: sacar el PR de borrador es lo que convierte «te toca a ti» en algo que se puede hacer de un clic. Fusionar a main sigue siendo de una persona.",
+      "senales": [
+        "no lo quitaste",
+        "sigue igual",
+        "no se hizo",
+        "yo lo veo igual",
+        "no aparece el cambio"
+      ],
+      "salioDe": "Carlos: «Oye no quitaste la fecha ni el qr de habilidades de credenciales pequeño bribón». Los tres recortes SÍ estaban hechos y probados 11/11 y 49/49 — en la rama claude/juego-oregon-3kmicc, dentro del PR #106 en borrador. Producción y main eran el mismo archivo byte por byte."
+    },
+    {
+      "id": "la-mano-que-se-llena-de-lo-que-no-se-juega",
+      "titulo": "La mano se llenó de cartas que no se pueden jugar y el juego se quedó quieto",
+      "gravedad": "alta",
+      "sintoma": "A media partida ya no hay nada que tocar. La mano está llena, la partida no ha terminado, y no pasa nada más.",
+      "causa": "El límite de la mano contaba TODAS las cartas, incluidas las que sólo sirven como modificador de otra. Quien nunca las gasta las acumula hasta ocupar los cinco sitios: cero jugadas legales, y la condición de fin —«mano vacía»— no se cumple porque la mano no está vacía.",
+      "porque": "«Repón hasta tener cinco» suena a una regla sobre cartas, y nadie se pregunta qué cuenta como una de las cinco hasta que el juego se para.",
+      "arreglo": "El límite se cuenta en cartas JUGABLES, no en cartas. La mano puede traer seis o siete: cinco tuyas más los modificadores. Y la condición de fin también mira si queda algo jugable, no si la mano está vacía.",
+      "comoCazarlo": "Jugar muchas partidas del peor jugador posible —el que siempre tira la primera carta y no gasta un modificador en su vida— y comprobar que TODAS terminan. Salieron 45 trabadas de 200.",
+      "consejo": "Un recurso que no caduca y ocupa sitio siempre acaba llenando el sitio. Si algo se puede guardar para siempre, no puede competir por el espacio de lo que sí se usa.",
+      "senales": [
+        "se queda congelado a media partida",
+        "no puedo jugar nada",
+        "tengo cartas pero no me deja",
+        "se traba y no termina"
+      ],
+      "salioDe": "Guerra de Puercos, jugando ocho partidas a puros clics: una se paró en la ronda 17 sin decir nada."
     }
   ]
 }

@@ -17,6 +17,34 @@ const ok = (que, cond, detalle='') => {
   else { mal++; console.log('  ✗ ' + que + (detalle ? '  → ' + detalle : '')); }
 };
 
+/* ⚠ YA NO HAY NI «QUITAR SELECCIÓN» NI «JUGAR CARTA». Carlos los mandó quitar
+   los dos: «quita el botón de jugar carta y haz que pueda hacerlo pulsando 3
+   veces en mi carta o arrastrándola al campo de juego», y «el de quitar
+   selección quítalo y haz que se deseleccione al pulsar otro lugar».
+
+   Así que las pruebas juegan como una persona: tocan la carta tres veces para
+   mandarla a la mesa y tocan fuera para soltarla. Si alguno de los dos gestos
+   deja de funcionar, media suite se cae — que es exactamente lo que se le pide
+   a una prueba que depende del gesto y no de un botón. */
+const DESMARCAR = () => { document.querySelector('#rTuMano').click(); };
+/* ⚠ ESTOS AYUDANTES CORREN EN NODE Y HACEN EL `evaluate` ELLOS. Escribirlos
+   como funciones sueltas y llamarlas dentro de otro `evaluate` no funciona: al
+   navegador sólo viaja el cuerpo de la función que se le pasa, no las de
+   alrededor, así que ahí dentro `TOCAR3` sencillamente no existe.
+   Tres toques: el de elegir y dos más. Se vuelve a buscar la carta en cada
+   vuelta porque `pintarMano` puede haberla redibujado en medio. */
+const jugarUna = (p) => p.evaluate(() => {
+  const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
+  if(!c) return false;
+  const id = c.dataset.id;
+  for(let i = 0; i < 3; i++){
+    const v = document.querySelector('#mMano .carta[data-id="' + id + '"]');
+    if(!v) break;
+    v.click();
+  }
+  return true;
+});
+
 const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport:{ width:390, height:844 } });
 const page = await ctx.newPage();
@@ -25,6 +53,14 @@ page.on('pageerror', e => errores.push(String(e)));
 await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
 
 console.log('\n── Que abra y se entienda ──');
+/* ⚠ ESTA ES LA PRIMERA Y LA MÁS IMPORTANTE, y dice el motivo cuando falla.
+   `motor.js` y `index.html` se cargan en EL MISMO ÁMBITO GLOBAL del navegador:
+   si los dos declaran un nombre igual, el script entero muere al cargar y no
+   se pinta ni la portada. En node no pasa —ahí cada archivo es su propio
+   módulo—, así que las 72 pruebas del motor se quedan en VERDE con el juego
+   muerto. Pasó de verdad con `esEspecial`, declarado en los dos. */
+ok('la página cargó sin morirse al arrancar', errores.length === 0,
+   errores.join(' | '));
 ok('el motor llegó a la página', await page.evaluate(() => !!window.MOTOR));
 ok('se ve el nombre del juego',
    /GUERRA/i.test(await page.textContent('.titulo')));
@@ -46,13 +82,47 @@ ok('ningún botón visible mide menos de 44 px de alto', chicos.length === 0, ch
 console.log('\n── Contra la máquina ──');
 await page.click('[data-modo="maquina"]');
 await page.waitForTimeout(300);
-ok('reparte 5 cartas', await page.evaluate(() => document.querySelectorAll('#mMano .carta').length) === 5);
+/* ⚠ ESTA PRUEBA SE HA CORREGIDO TRES VECES Y SIEMPRE POR NO TENER CLARO QUÉ
+   SON LAS CINCO. Vale la pena dejar escrito el recorrido:
+     · contaba sólo el abanico → daba 3 ó 4 y parecía un reparto corto
+     · contaba abanico + fila de especiales = 5 → y con eso el juego SE TRABABA:
+       las especiales que nunca gastas se acumulan y acaban ocupando los cinco
+       sitios sin dejarte jugar nada (45 partidas trabadas de 200, medido)
+     · ahora las especiales viven DENTRO del abanico —lo pidió Carlos— pero no
+       cuentan para los cinco
+   Así que el abanico puede traer 5, 6 ó 7 cartas: las cinco jugables y los
+   modificadores que hayan salido. Lo que se comprueba son las CINCO. */
+const reparto = await page.evaluate(() => ({
+  jugables: [...document.querySelectorAll('#mMano .carta')].filter(c => !c.dataset.esp).length,
+  especiales: document.querySelectorAll('#mMano .carta[data-esp]').length,
+}));
+ok('reparte 5 cartas jugables al abanico', reparto.jugables === 5,
+   reparto.jugables + ' jugables y ' + reparto.especiales + ' especiales');
+/* Y las especiales están EN la mano, no en un cajón aparte. Carlos: «la carta
+   bonificación no le des otro espacio, métela a la mano como otra carta más». */
+ok('las especiales viven dentro del abanico, no en su propia fila',
+   await page.evaluate(() => !document.querySelector('#mEspeciales')));
 ok('arranca con 200 PV cada quien',
    (await page.textContent('#mPvA')) === '200' && (await page.textContent('#mPvB')) === '200');
-ok('el botón de jugar arranca apagado', await page.isDisabled('#bJugar'));
+ok('no queda ningún botón de jugar', await page.evaluate(() => !document.querySelector('#bJugar')));
 
-await page.click('#mMano .carta');
-ok('al elegir una carta ya se puede jugar', !(await page.isDisabled('#bJugar')));
+await page.evaluate(() => { document.querySelector('#mMano .carta:not([data-esp])').click(); });
+ok('al tocar una carta, queda elegida', await page.evaluate(() =>
+   document.querySelectorAll('#mMano .carta.marcada').length === 1));
+/* El segundo toque tiene que AVISAR que falta uno. Sin señal, «tres toques»
+   es un secreto que nadie descubre: el primero parece no hacer nada. */
+await page.evaluate(() => { document.querySelector('#mMano .carta.marcada').click(); });
+ok('al segundo toque se enciende que ya está lista para salir',
+   await page.evaluate(() => !!document.querySelector('#mMano .carta.marcada.lista')));
+ok('y lo dice con palabras, no sólo con un borde',
+   /otra vez/i.test(await page.textContent('#mAviso')),
+   (await page.textContent('#mAviso')).slice(0, 60));
+/* Tocar fuera la suelta. Es lo que sustituyó al botón «Quitar selección». */
+await page.evaluate(DESMARCAR);
+await page.waitForTimeout(120);
+ok('tocar fuera de las cartas suelta la elegida', await page.evaluate(() =>
+   document.querySelectorAll('#mMano .carta.marcada').length === 0));
+await page.evaluate(() => { document.querySelector('#mMano .carta:not([data-esp])').click(); });
 
 /* La trampa que hay que impedir: elegir dos cartas que NO se pueden combinar. */
 /* Antes se apagaban las otras cuatro cartas al elegir una, y para cambiar de
@@ -64,40 +134,58 @@ ok('con una carta elegida, las demás siguen tocables (se puede cambiar de opini
      [...document.querySelectorAll('#mMano .carta')].every(c => !c.disabled)));
 ok('picar otra carta que no combina CAMBIA la elección, no la traba',
    await page.evaluate(() => {
-     const cs = [...document.querySelectorAll('#mMano .carta')];
+     /* ⚠ SIN LAS ESPECIALES. Están en el mismo abanico desde que Carlos las
+        mandó meter a la mano, y su nivel es BONO o CASTIGO: al buscar «otra de
+        distinto nivel» salían ellas, y una especial NO se elige —se pone
+        encima—, así que la prueba reprobaba una regla que se cumple. */
+     const cs = [...document.querySelectorAll('#mMano .carta')].filter(c => !c.dataset.esp);
      const niv = c => c.querySelector('.niv').textContent;
      const marcada = cs.find(c => c.classList.contains('marcada'));
+     if(!marcada) return false;
      const otra = cs.find(c => c !== marcada && niv(c) !== niv(marcada));
      if(!otra) return true;
      otra.click();
-     const ahora = [...document.querySelectorAll('#mMano .carta.marcada')];
+     const ahora = [...document.querySelectorAll('#mMano .carta.marcada')].filter(c => !c.dataset.esp);
      return ahora.length === 1 && niv(ahora[0]) === niv(otra);
    }));
 
 /* Se juega la partida entera a base de clics, como lo haría el niño. */
-let vueltas = 0, rondasJugadas = 0;
+let vueltas = 0, rondasJugadas = 0, motivo = 'se acabaron las 300 vueltas';
 while(vueltas++ < 300){
   if(!(await page.isVisible('#fElegir'))) {
     if(await page.isVisible('#fDuelo')){ await page.click('#bSeguir'); await page.waitForTimeout(60); continue; }
     if(await page.isVisible('#fFin')) break;
   }
   const hay = await page.evaluate(() => {
-    /* Se limpia primero: si quedó una carta marcada de antes, volver a
-       picarla la DESMARCA y el botón de jugar se apaga. Es exactamente lo que
-       le pasaría a un niño que cambia de opinión, así que la prueba tiene que
-       partir de limpio en cada ronda. */
-    document.querySelector('#bLimpiar').click();
-    const c = [...document.querySelectorAll('#mMano .carta')]
-      .find(x => !x.disabled && !x.classList.contains('marcada'));
-    if(!c) return false; c.click(); return true;
+    const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
+    if(!c) return false;
+    /* Tres toques, que es como se juega desde que no hay botón. */
+    for(let i = 0; i < 3; i++){
+      const v = document.querySelector('#mMano .carta[data-id="' + c.dataset.id + '"]');
+      if(!v) break;
+      v.click();
+    }
+    return true;
   });
-  if(!hay) break;
-  if(await page.isDisabled('#bJugar')) break;
-  await page.click('#bJugar'); rondasJugadas++;
+  /* ⚠ LOS DOS CORTES DICEN POR QUÉ. Antes rompían el ciclo en silencio y el
+     único dato que quedaba era «30 rondas» — que no distingue un juego
+     trabado de una pantalla que no respondió a tiempo. Una vez falló así y me
+     costó una corrida entera averiguar cuál de los dos había sido. */
+  if(!hay){ motivo = 'la mano se quedó sin cartas jugables'; break; }
+  /* Si los tres toques no sacaron la carta, la ronda no avanzó. Se dice por
+     qué en vez de romper el ciclo en silencio: «30 rondas» no distingue un
+     juego trabado de una pantalla que no respondió. */
+  if(await page.isVisible('#fElegir') && await page.evaluate(() =>
+       document.querySelectorAll('#mMano .carta.marcada').length > 0)){
+    motivo = 'los tres toques no mandaron la carta a la mesa · aviso: '
+           + (await page.textContent('#mAviso')).trim().slice(0, 60);
+    break;
+  }
+  rondasJugadas++;
   await page.waitForTimeout(60);
 }
 ok('la partida se puede jugar completa a puros clics hasta el final',
-   await page.isVisible('#fFin'), rondasJugadas + ' rondas');
+   await page.isVisible('#fFin'), rondasJugadas + ' rondas · ' + motivo);
 const fin = await page.textContent('#finTitulo');
 ok('al final dice quién ganó', /Ganaste|Perdiste|Empate/.test(fin), fin);
 
@@ -121,9 +209,8 @@ await page.click('#bCortina');
 await page.waitForTimeout(150);
 const mano1 = await page.evaluate(() =>
   [...document.querySelectorAll('#mMano .carta .valor')].map(v => v.textContent).join(','));
-await page.evaluate(() => { document.querySelector('#mMano .carta').click(); });
-await page.click('#bJugar');
-await page.waitForTimeout(200);
+await jugarUna(page);
+await page.waitForTimeout(250);
 ok('al jugar el 1, vuelve a tapar para pasarle el teléfono al 2',
    await page.isVisible('#cortina') && /Jugador 2/.test(await page.textContent('#corQuien')));
 await page.click('#bCortina');
@@ -132,26 +219,378 @@ const mano2 = await page.evaluate(() =>
   [...document.querySelectorAll('#mMano .carta .valor')].map(v => v.textContent).join(','));
 ok('el jugador 2 ve SU mano, no la del 1', mano1 !== mano2, mano1 + ' vs ' + mano2);
 
-console.log('\n── La mano cabe en un renglón (iPhone de 390) ──');
+console.log('\n── La mano, medida cuando ya cargó (iPhone de 390) ──');
 /* Se recarga en limpio en vez de tratar de salir a tientas: veníamos a media
    partida de dos jugadores, con la cortina puesta. */
 await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
 await page.click('[data-modo="maquina"]');
-await page.waitForTimeout(300);
-const renglones = await page.evaluate(() => {
-  const y = [...document.querySelectorAll('#mMano .carta')]
-    .map(c => Math.round(c.getBoundingClientRect().top));
-  return new Set(y).size;
+
+/* ⚠ ESTA PRUEBA ESTUVO EN ROJO Y NADIE LO VIO, por dos motivos distintos:
+
+   1. EXIGÍA UN SOLO RENGLÓN cuando el diseño ya había decidido tres por
+      renglón —está escrito en el CSS y con su razón: cinco en fila daban
+      64 px por carta en un iPhone, alcanzaba para un número y no para una
+      ilustración—. O sea que la prueba defendía una decisión DERRIBADA. Una
+      prueba que contradice al diseño no protege nada: se ignora y de paso
+      tapa las que sí importan.
+
+   2. MEDÍA A LOS 300 ms, antes de que cargaran las imágenes de las cartas.
+      Decía «4 renglones» donde de verdad hay 2 — porque a media carga las
+      alturas bailan y `top` sale distinto en cartas de la misma fila. Un
+      número inventado por medir temprano.
+
+   Lo que sí importa, y es lo que se comprueba ahora: que las cartas de una
+   misma fila estén ALINEADAS, que quepan sin desbordar, y que sean lo bastante
+   grandes para VER la ilustración, que es la mitad del juego. */
+await page.waitForFunction(() => {
+  const c = [...document.querySelectorAll('#mMano .carta img')];
+  return c.length > 0 && c.every(i => i.complete);
+}, null, { timeout: 15000 }).catch(() => {});
+/* ⚠ Y TAMBIÉN SE ESPERA A QUE ATERRICE EL REPARTO, no sólo a las imágenes.
+   Las cartas entran ESCALONADAS —45 ms de retraso cada una—, así que a media
+   animación tienen alturas distintas POR EL REPARTO, no por el abanico. Con
+   una espera fija de 400 ms este bloque daba verde con el abanico MUERTO: lo
+   comprobé rompiéndolo a propósito y los 45 seguían en verde. */
+await page.waitForFunction(
+  () => !document.querySelector('#mMano .carta.llega'), null, { timeout:8000 }).catch(() => {});
+await page.waitForTimeout(150);
+
+const mano = await page.evaluate(() => {
+  const cs = [...document.querySelectorAll('#mMano .carta')];
+  const filas = {};
+  for(const c of cs){ const r = c.getBoundingClientRect();
+    const k = Math.round(r.top / 10) * 10;
+    (filas[k] = filas[k] || []).push({ top:+r.top.toFixed(1), w:+r.width.toFixed(1) }); }
+  return { cuantas: cs.length, filas: Object.values(filas),
+           anchoMin: Math.min(...cs.map(c => c.getBoundingClientRect().width)) };
 });
-ok('las 5 cartas van en UN solo renglón', renglones === 1, renglones + ' renglones');
+/* ⚠ EL TECHO YA NO ES 5. Desde que las especiales viven dentro del abanico
+   —Carlos: «métela a la mano como otra carta más»— la mano son cinco jugables
+   MÁS los modificadores que hayan salido, y de ésos puede haber hasta diez en
+   un mazo. Dejar el 5 habría sido una prueba defendiendo una decisión ya
+   derribada, que es justo lo que le pedí a Godines que no hiciera. */
+ok('el abanico trae la mano entera: las cinco jugables y sus especiales',
+   mano.cuantas >= 5 && mano.cuantas <= 15, mano.cuantas + '');
+/* Las especiales son cartas de la mano y se pintan una por carta, con su arte
+   —la Alcancía para el +5, las Carnitas para el −5—. Antes eran dos botones
+   con un contador que decía «te quedan 3», y eso era una mentira: daba a
+   entender que siempre tienes especiales y que sabes cuántas. */
+ok('las especiales, si salieron, son cartas de verdad con su arte',
+   await page.evaluate(() => {
+     const es = [...document.querySelectorAll('#mMano .carta[data-esp]')];
+     return es.every(c => c.classList.contains('con-arte'));
+   }));
+ok('y ninguna promete un saldo que ya no existe',
+   !/te quedan/i.test(await page.textContent('#fElegir')));
+/* ⚠ LA ASERCIÓN DE «TODAS ALINEADAS» SE RETIRÓ, Y CON RAZÓN. Defendía la mano
+   en fila; ahora es un ABANICO, y un abanico tiene las cartas a distinta
+   altura A PROPÓSITO. Dejarla habría sido exactamente lo que le advertí a
+   Godines que no hiciera con su rama: una prueba defendiendo una decisión ya
+   derribada. Lo que sí importa de un abanico es esto: */
+const fan = await page.evaluate(() => {
+  const cs = [...document.querySelectorAll('#mMano .carta')];
+  const r = cs.map(c => c.getBoundingClientRect());
+  const tap = document.querySelector('#fElegir .tapete').getBoundingClientRect();
+  return {
+    salto: Math.max(...r.map(x => x.top)) - Math.min(...r.map(x => x.top)),
+    alto: r[0].height,
+    /* se enciman: cada carta empieza antes de que acabe la anterior */
+    encimadas: r.slice(1).every((x, i) => x.left < r[i].right),
+    dentro: Math.min(...r.map(x => x.left)) >= tap.left - 1
+         && Math.max(...r.map(x => x.right)) <= tap.right + 1,
+  };
+});
+/* Un abanico sube las puntas; una mano ROTA las manda a cualquier lado. Medio
+   alto de carta es la frontera: por encima de eso ya no se lee como una mano. */
+ok('el abanico abre las cartas, pero menos de medio alto de carta',
+   fan.salto > 0 && fan.salto < fan.alto / 2, Math.round(fan.salto) + ' px de salto');
+ok('las cartas se enciman de verdad', fan.encimadas);
+ok('el abanico entero cabe dentro del tapete', fan.dentro);
+
+/* ⚠ LA PROPIEDAD QUE DE VERDAD SOSTIENE UN ABANICO: que las CINCO se puedan
+   tocar. Al encimar cartas es facilísimo dejar una tapada del todo, y entonces
+   hay una carta en la mano que no se puede jugar — un juego roto que se ve
+   perfecto en la captura.
+   Se mide con elementFromPoint sobre la franja VISIBLE de cada carta (la de
+   la izquierda, la que no tapa la siguiente), que es donde de verdad pica un
+   dedo. Rompiendo el abanico a propósito, las cartas se encimaban del todo y
+   el clic de más abajo moría por tiempo: el defecto se detectaba, pero como
+   un volcado en vez de como una falla legible. */
+const alcanzables = await page.evaluate(() => {
+  const cs = [...document.querySelectorAll('#mMano .carta')];
+  return cs.map((c, i) => {
+    const r = c.getBoundingClientRect();
+    const sig = cs[i + 1] ? cs[i + 1].getBoundingClientRect().left : r.right;
+    const x = (r.left + Math.min(sig, r.right)) / 2;   /* centro de lo que se ve */
+    const y = r.top + r.height * .55;
+    const bajo = document.elementFromPoint(x, y);
+    return !!(bajo && bajo.closest('.carta') === c);
+  });
+});
+ok('las cinco cartas del abanico se pueden tocar',
+   alcanzables.every(Boolean), JSON.stringify(alcanzables));
+/* ⚠ ESTE NÚMERO ESTUVO MAL Y EL COMENTARIO PEOR. Decía «95 px no es un
+   capricho: por debajo de eso la frase de la carta deja de leerse» — y yo no
+   lo había medido. Escogí 95 por quedar justo debajo de los 103 que ya había y
+   le puse una razón encima. Un número que informa una medición que nadie hizo
+   es la misma falta que llevo semanas cazando en otros.
+
+   MEDIDO DESPUÉS, en serio: la misma carta pintada a 84, 90, 92, 95 y 104 px,
+   con la imagen que de verdad se publica (arte/web, 420×595) y a 3× de
+   densidad, que es lo que trae un teléfono de hoy.
+
+     · a  84 px la frase es una mancha: se ve que hay renglones, no qué dicen
+     · de 90 en adelante se distingue el texto, con esfuerzo
+     · entre 92 y 95 NO hay diferencia visible — son 3 px, un 3 %
+     · a 104 se lee mejor, y sigue siendo letra chica
+
+   O sea que el precipicio está entre 84 y 90, no en 95. Queda en 88: bajo para
+   no reprobar un diseño que está bien —el abanico de Godines deja las cartas a
+   92, y a 92 en pantallas de menos de 400 px— y alto para cazar lo único que
+   de verdad importa aquí, que alguien las devuelva a los 64 px de antes. */
+ok('cada carta mide lo suficiente para verse (≥88 px)',
+   mano.anchoMin >= 88, Math.round(mano.anchoMin) + ' px');
 const desborde = await page.evaluate(() =>
   document.documentElement.scrollWidth > window.innerWidth + 1);
 ok('la página no se desborda de lado', !desborde);
 
+/* La razón de ser del abanico: al tocar una carta se ve ENTERA. Sin esto, la
+   que eliges queda tapada por la siguiente y no sabes qué escogiste. */
+{
+  const antes = await page.evaluate(() => {
+    const c = document.querySelectorAll('#mMano .carta')[1];
+    return c.getBoundingClientRect().top;
+  });
+  /* ⚠ CON EL RATÓN DE PLAYWRIGHT NO: las cartas se enciman, así que el centro
+     de la segunda lo ocupa la tercera y el clic se queda esperando para
+     siempre. Se toca por JS, que es lo que hace un dedo sobre la parte visible
+     de la carta. */
+  await page.evaluate(() => document.querySelectorAll('#mMano .carta')[1].click());
+  /* ⚠ NO SE ESPERA UN TIEMPO, SE ESPERA EL HECHO. Al marcar, la mano se
+     repinta entera y las cartas vuelven a entrar con su animación de reparto;
+     mientras `llega` esté puesta, su fotograma final manda y la carta todavía
+     no se ha levantado. Con 400 ms fijos la prueba medía a media animación y
+     reportaba «sube 0 px» con la carta subiendo 36. Ya me pasó en este mismo
+     archivo con las imágenes: medir temprano inventa números. */
+  /* ⚠ CON RED, Y NO ES PEREZA. Si el abanico está roto la clase `llega` no se
+     quita nunca, esta espera revienta y el script SE MUERE ENTERO: no imprime
+     ni un ✗, sólo un volcado. Me pasó probando la mutación y leí ese silencio
+     como «pasó» — que es exactamente la trampa que llevo semanas cazando.
+     Con el catch, la espera se rinde y la aserción de abajo reporta el número
+     medido, que es lo que hace falta para saber qué se rompió. */
+  await page.waitForFunction(
+    () => !document.querySelector('#mMano .carta.llega'), null, { timeout:8000 })
+    .catch(() => {});
+  await page.waitForTimeout(120);
+  const d = await page.evaluate(() => {
+    const cs = [...document.querySelectorAll('#mMano .carta')];
+    const c = cs[1], r = c.getBoundingClientRect();
+    const zi = n => Number(getComputedStyle(n).zIndex) || 0;
+    return { top:r.top, alFrente: cs.every((o, i) => i === 1 || zi(o) < zi(c)),
+             tapaElTitulo: r.top < document.getElementById('rTuMano').getBoundingClientRect().bottom };
+  });
+  ok('la carta que se toca sube', d.top < antes - 4, Math.round(antes - d.top) + ' px');
+  ok('y queda por ENCIMA de todas las demás', d.alFrente);
+  /* Subir y tapar el rótulo de la sección es cambiar un problema por otro. */
+  ok('sin taparle el título a la sección', !d.tapaElTitulo);
+  await page.evaluate(DESMARCAR);
+  await page.waitForTimeout(200);
+}
+
+console.log('\n── La mesa donde se ponen las cartas ──');
+/* Carlos: «haz que se vea la mesa donde se ponen las cartas». */
+const mesa = await page.evaluate(() => {
+  const r = s => document.querySelector(s).getBoundingClientRect();
+  const a = r('#mSlotA'), b = r('#mSlotB');
+  return {
+    seVe: a.width > 40 && a.height > 40 && b.width > 40 && b.height > 40,
+    mismoTamano: Math.abs(a.width - b.width) < 2 && Math.abs(a.height - b.height) < 2,
+    alto: r('#mMesa').height,
+    vacios: !document.querySelector('#mSlotA .carta') && !document.querySelector('#mSlotB .carta'),
+    /* Y el hueco vacío tiene que verse como un hueco: si no se distingue del
+       fieltro, no está diciendo «aquí va a caer tu carta» y entonces no sirve
+       de nada tenerlo. */
+    seNota: getComputedStyle(document.querySelector('#mSlotA')).borderStyle === 'dashed',
+  };
+});
+ok('los dos huecos están ahí ANTES de jugar, no sólo al revelar', mesa.seVe && mesa.vacios);
+ok('y se ven como huecos, no como fieltro', mesa.seNota);
+ok('los dos miden lo mismo', mesa.mismoTamano);
+/* ⚠ ESTE NÚMERO ES EL DEFECTO QUE YA COMETÍ. La primera versión apiló los dos
+   huecos uno encima del otro: 200 px de alto, que empujaron «Jugar carta»
+   fuera de la pantalla de un iPhone. Se vio en una captura. 120 es el techo:
+   por encima, algo se volvió a apilar. */
+ok('la mesa no se come la pantalla', mesa.alto < 120, Math.round(mesa.alto) + ' px de alto');
+/* Lo que de verdad importa de lo anterior, medido donde duele: elegir la carta
+   y poder jugarla SIN hacer scroll. Un juego de cartas en el que hay que
+   recorrer la pantalla para pulsar «Jugar» después de cada elección no se
+   juega dos veces. */
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.evaluate(() => document.querySelector('#mMano .carta').click());
+await page.waitForTimeout(150);
+const cabe = await page.evaluate(() => {
+  /* ⚠ SE MIDE EL ÚLTIMO BOTÓN, NO «JUGAR». Con la mesa apilada, «Jugar carta»
+     quedaba justo pegado al borde de abajo —dentro de la pantalla por unos
+     píxeles— y «Salir» ya no se veía. O sea que medir sólo «Jugar» daba VERDE
+     con la pantalla rota, que es exactamente la clase de prueba que llevo la
+     semana entera cazando. Se comprobó a propósito: apilando otra vez la mesa,
+     la de «Jugar» pasaba y ésta truena. */
+  const bs = [...document.querySelectorAll('#fElegir button')].filter(x => x.offsetParent);
+  const b = bs[bs.length - 1].getBoundingClientRect();
+  return { fondo: b.bottom, alto: window.innerHeight, cual: bs[bs.length - 1].textContent.trim() };
+});
+ok('los botones de la mesa se alcanzan sin hacer scroll', cabe.fondo <= cabe.alto,
+   '«' + cabe.cual + '» acaba en ' + Math.round(cabe.fondo) + ' de ' + cabe.alto);
+await page.evaluate(DESMARCAR);
+await page.waitForTimeout(150);
+
+console.log('\n── El fieltro: la mesa no compite con las cartas ──');
+/* Carlos, viendo unas fotos del juego: «se ve bien culero». El motivo era
+   medible: fondo #E84A8A de borde a borde y las 102 cartas con marco rosa, o
+   sea el arte puesto encima de su propio color. */
+const fieltro = await page.evaluate(() => {
+  const lum = c => { const s = c.map(v => { v/=255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+  const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+  return {
+    enMesa: document.body.classList.contains('fieltro'),
+    luzFondo: +lum(num(getComputedStyle(document.body).backgroundColor)).toFixed(4),
+    salirLleno: getComputedStyle(document.querySelector('#bSalir')).backgroundColor,
+  };
+});
+ok('en la mesa el fieltro está puesto', fieltro.enMesa);
+/* El fondo tiene que ser OSCURO de verdad, no rosa oscurecido a ojo. 0.08 de
+   luminancia relativa es el techo: por encima vuelve a competir con el arte. */
+ok('el fondo de la mesa es oscuro de verdad', fieltro.luzFondo < 0.08, fieltro.luzFondo + '');
+/* La jerarquía estaba AL REVÉS: «Jugar carta» apagado y debajo dos bloques
+   blancos sólidos —lo menos importante era lo más brillante—. Hoy el único
+   botón de la mesa es la ✕ de salir, y tiene que ser lo MENOS llamativo de la
+   pantalla: lo que manda son las cartas. */
+ok('la ✕ de salir no es un bloque lleno',
+   !/^rgb\(2[0-9][0-9]|^rgb\(255/.test(fieltro.salirLleno), fieltro.salirLleno);
+/* Y con una carta elegida, lo que se enciende es LA CARTA, no un botón. */
+await page.evaluate(() => { document.querySelector('#mMano .carta:not([data-esp])').click(); });
+await page.waitForTimeout(250);
+ok('con una carta elegida, lo que se marca es la carta',
+   await page.evaluate(() => !!document.querySelector('#mMano .carta.marcada')));
+await page.evaluate(DESMARCAR);
+await page.waitForTimeout(200);
+
+
+
+console.log('\n── El texto de la mesa se lee (contraste medido) ──');
+const contraste = await page.evaluate(() => {
+  const lum = c => { const s = c.map(v => { v/=255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+  const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+  const mezcla = (f, b, a) => f.map((v,i) => v*a + b[i]*(1-a));
+  /* ⚠ EL FONDO REAL, no el del documento: un texto sobre un panel translúcido
+     sobre el fieltro se compone de las tres capas, y medir contra la de abajo
+     da un número que no existe en la pantalla. */
+  const fondo = el => { let n = el, acc = [0,0,0]; const pila = [];
+    while(n && n !== document.documentElement){
+      const b = getComputedStyle(n).backgroundColor, m = b.match(/[\d.]+/g);
+      if(m){ const a = m.length > 3 ? Number(m[3]) : 1; if(a > 0) pila.push([num(b), a]); }
+      n = n.parentElement; }
+    const raiz = getComputedStyle(document.documentElement).backgroundColor;
+    acc = (raiz.match(/[\d.]+/g) || []).length ? num(raiz) : [0,0,0];
+    for(let i = pila.length - 1; i >= 0; i--) acc = mezcla(pila[i][0], acc, pila[i][1]);
+    return acc; };
+  const razon = (a,b) => { const L1 = lum(a), L2 = lum(b);
+    const [x,y] = L1 > L2 ? [L1,L2] : [L2,L1]; return (x+.05)/(y+.05); };
+  const malos = [], vistos = new Set();
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for(let n = w.nextNode(); n; n = w.nextNode()){
+    const t = (n.nodeValue || '').trim(); if(t.length < 2) continue;
+    const el = n.parentElement; if(!el || vistos.has(el)) continue; vistos.add(el);
+    if(el.closest('.carta')) continue;      /* la carta es una imagen, no texto nuestro */
+    const r = el.getBoundingClientRect(); if(!r.width || !r.height) continue;
+    const cs = getComputedStyle(el);
+    if(cs.visibility === 'hidden' || cs.opacity === '0') continue;
+    const px = parseFloat(cs.fontSize);
+    const grande = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700);
+    const rz = +razon(num(cs.color), fondo(el)).toFixed(2);
+    if(rz < (grande ? 3 : 4.5)) malos.push(t.slice(0,30) + ' · ' + rz);
+  }
+  return malos;
+});
+ok('ningún texto de la mesa se queda corto de contraste',
+   contraste.length === 0, contraste.join(' | '));
+/* La premisa, dicha en voz alta: si el recorrido no viera nada, «ninguno se
+   queda corto» saldría en verde con la mesa entera ilegible. */
+ok('…y el recorrido de verdad está mirando la mesa',
+   await page.evaluate(() => document.body.innerText.includes('Ronda')));
+
+/* ⚠ AQUÍ ESTABA LA PRUEBA DE LA PALABRA HUÉRFANA DE `#mPistas`. Se retira
+   porque el texto que defendía ya no existe: Carlos mandó quitar «te quedan 4
+   combinaciones · te quedan 105 cartas en tu mazo» —«lo de te quedan x cartas
+   etc quítalo»— y ese dato ahora se VE en el mazo y en el rótulo. Una prueba
+   que vigila un renglón borrado sólo puede salir verde o mentir.
+
+   Lo que la sustituye vigila lo que ocupó su sitio: que el número del mazo sea
+   un número y no un hueco, y que el cementerio exista de los dos lados. */
+const pilas = await page.evaluate(() => ({
+  mio:   (document.querySelector('#mMazoA b') || {}).textContent,
+  suyo:  (document.querySelector('#mMazoB b') || {}).textContent,
+  cemA:  !!document.querySelector('#mCemA'),
+  cemB:  !!document.querySelector('#mCemB'),
+  anchoA: document.querySelector('#mMazoA').getBoundingClientRect().width,
+}));
+ok('el mazo dice cuántas cartas quedan, con un número',
+   /^\d+$/.test(pilas.mio || '') && /^\d+$/.test(pilas.suyo || ''),
+   pilas.mio + ' y ' + pilas.suyo);
+ok('los dos jugadores tienen su cementerio en la mesa', pilas.cemA && pilas.cemB);
+/* Y que se vea: una pila de 0 px de ancho es una pila que no existe. Ya pasó
+   —un `1fr` en la rejilla las dejó en cero con el CSS y el JS correctos. */
+ok('y las pilas se ven de verdad, no aplastadas a cero',
+   pilas.anchoA >= 40, Math.round(pilas.anchoA) + ' px');
+
+console.log('\n── Y al salir, la portada vuelve a ser rosa ──');
+/* ⚠ Esta prueba nació MENTIROSA: la escribí devolviendo `true` a secas, con un
+   `querySelector` decorativo al lado que no comprobaba nada. Habría salido en
+   verde con el fieltro pegado a la portada para siempre. Ahora SE SALE de la
+   mesa de verdad y se mira el fondo que queda. */
+await page.click('#bSalir');   /* la ✕ del renglón de la mano */
+await page.waitForTimeout(400);
+const portada = await page.evaluate(() => ({
+  seVeLaPortada: !document.querySelector('#p-portada').classList.contains('oculto'),
+  fieltro: document.body.classList.contains('fieltro'),
+  fondo: getComputedStyle(document.body).backgroundColor,
+}));
+ok('salir de la mesa devuelve a la portada', portada.seVeLaPortada);
+ok('y la portada NO lleva fieltro: ahí el rosa es la marca',
+   portada.seVeLaPortada && !portada.fieltro, portada.fondo);
+
+/* El pie de la portada estaba en blanco al 85 %: 3.45 sobre el rosa, y quitarle
+   la opacidad NO lo arreglaba —blanco puro sobre #E84A8A también da 3.45—. Lo
+   arregla la TINTA OSCURA, que da 5.15. Lo destapó esta prueba, no el ojo. */
+const enPortada = await page.evaluate(() => {
+  const lum = c => { const s = c.map(v => { v/=255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+    return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+  const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+  const razon = (a,b) => { const L1 = lum(a), L2 = lum(b);
+    const [x,y] = L1 > L2 ? [L1,L2] : [L2,L1]; return +((x+.05)/(y+.05)).toFixed(2); };
+  const f = num(getComputedStyle(document.body).backgroundColor), malos = [];
+  for(const el of document.querySelectorAll('#p-portada .pie, #p-portada .lema, #p-portada .btn')){
+    const cs = getComputedStyle(el), px = parseFloat(cs.fontSize);
+    const grande = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700);
+    /* Los botones traen su propio fondo, así que se miden contra el suyo. */
+    const bg = /rgba\(0, 0, 0, 0\)/.test(cs.backgroundColor) ? f : num(cs.backgroundColor);
+    const rz = razon(num(cs.color), bg);
+    if(rz < (grande ? 3 : 4.5)) malos.push((el.textContent||'').trim().slice(0,24) + ' · ' + rz);
+  }
+  return malos;
+});
+ok('en la portada tampoco hay texto corto de contraste',
+   enPortada.length === 0, enPortada.join(' | '));
+
 console.log('\n── Que no se pueda hacer trampa desde la pantalla ──');
 ok('nunca quedan marcadas dos cartas que no se pueden combinar', await page.evaluate(() => {
   const niv = c => c.querySelector('.niv').textContent;
-  document.querySelector('#bLimpiar').click();
+  document.querySelector('#rTuMano').click();
   const cs = [...document.querySelectorAll('#mMano .carta')];
   const a = cs[0];
   const otra = cs.slice(1).find(c => niv(c) !== niv(a));
@@ -162,7 +601,7 @@ ok('nunca quedan marcadas dos cartas que no se pueden combinar', await page.eval
 }));
 ok('dos cartas del MISMO nivel combinable sí se marcan juntas', await page.evaluate(() => {
   const niv = c => c.querySelector('.niv').textContent;
-  document.querySelector('#bLimpiar').click();
+  document.querySelector('#rTuMano').click();
   const cs = [...document.querySelectorAll('#mMano .carta')];
   let par = null;
   for(let i = 0; i < cs.length && !par; i++)
@@ -192,16 +631,30 @@ console.log('\n── El resultado de la ronda se lee bien ──');
   await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
   await page.click('[data-modo="maquina"]');
   await page.waitForTimeout(250);
-  await page.evaluate(() => { document.querySelector('#mMano .carta').click(); });
-  await page.click('#bJugar');
+  await jugarUna(page);
   await page.waitForTimeout(400);
   const texto = (await page.textContent('#dGolpe')).replace(/\s+/g, ' ').trim();
   ok('no dice «Tú recibe», que es como estaba mal escrito', !/Tú recibe\b/.test(texto), texto);
   ok('dice quién se llevó el golpe, en español que se entiende',
      /Recibes el golpe|La máquina recibe el golpe|Empate/.test(texto), texto);
-  ok('las cartas reveladas se ven completas, no desvaídas', await page.evaluate(() =>
-     [...document.querySelectorAll('#dCartaA .carta, #dCartaB .carta')]
+  /* ⚠ LAS CARTAS REVELADAS YA NO VIVEN EN EL PANEL DEL DUELO: viven en la
+     MESA, que es donde se pusieron. Estaban pintadas en los dos sitios a la
+     vez y eso se veía como un error de maquetación. */
+  ok('al revelar, las dos cartas quedan puestas en la mesa', await page.evaluate(() =>
+     document.querySelectorAll('#mSlotA .carta').length >= 1
+     && document.querySelectorAll('#mSlotB .carta').length >= 1));
+  ok('y se ven completas, no desvaídas', await page.evaluate(() =>
+     [...document.querySelectorAll('#mSlotA .carta, #mSlotB .carta')]
        .every(c => getComputedStyle(c).opacity === '1')));
+  /* ⚠ EL LADO IMPORTA. La mesa y el marcador del duelo cuentan la MISMA ronda;
+     si mi carta sale a la izquierda arriba y mis puntos a la derecha abajo, la
+     pantalla se contradice sola. Pasó: la primera versión tenía los huecos al
+     revés y se cazó en una captura, no leyendo el código. */
+  ok('mi carta y mis puntos están del MISMO lado', await page.evaluate(() => {
+    const x = el => el.getBoundingClientRect().left;
+    return (x(document.querySelector('#mSlotA')) < x(document.querySelector('#mSlotB')))
+        === (x(document.querySelector('#dPtsA')) < x(document.querySelector('#dPtsB')));
+  }));
 }
 
 console.log('\n── La máquina ──');

@@ -1,0 +1,331 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   EL MINUTO ANTES · la página
+   ──────────────────────────────────────────────────────────────────────────
+   LA PALETA SALE DE LA FOTO, NO DE LA MARCA. Es la decisión que más pesa aquí.
+   Pintar esto del morado de Mazi sobre negro nos habría dado otra página de la
+   casa en vez de ÉSTA; el violeta entra una sola vez, como firma, y del tamaño
+   de una firma.
+
+   LA FORMA TAMBIÉN SALE DE LA FOTO, y es lo que la separa de una plantilla:
+   una cancha es PUROS RECTÁNGULOS Y UN SOLO CÍRCULO. Así que aquí el radio es
+   cero en todo —tarjetas, campos, botones, avisos— y lo único redondo del
+   documento es el balón. No es una preferencia estética: es que la página
+   tenga la geometría de lo que cuenta.
+
+   Y NADA DE SOMBRAS DIFUSAS. La luz de la foto es de tarde, plana y baja. Una
+   sombra suave debajo de cada caja es el tic que delata a las plantillas; aquí
+   la profundidad la hace el color, no el desenfoque.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* Del pasto, en dos profundidades: la sombra y donde pega la luz. */
+  --pasto:#141C13;
+  --pasto-claro:#1D2A1B;
+
+  /* La cal NUNCA es #FFF. La línea de la foto está pisada, con tierra y con
+     pasto encima. Un blanco puro aquí se ve de laboratorio y además pega
+     demasiado fuerte en una pantalla de noche, que es cuando un papá revisa
+     el horario. */
+  --cal:#E8E4D9;
+  --cal-tenue:#9EA396;
+
+  /* Los dos del balón. */
+  --lima:#C9CE3A;
+  --rojo:#A8323A;
+
+  /* ⚠ EL ROJO NO SE USA PARA TEXTO CHICO. Sobre el pasto da alrededor de
+     3.3:1, que no pasa AA. Va en gráficos, en orillas y en piezas grandes.
+     Cuando hace falta rojo legible, se aclara: */
+  --rojo-texto:#E2707A;
+
+  /* La luz de tarde: un ámbar que envuelve, nunca un degradado morado-azul. */
+  --tarde:#E0A050;
+
+  --mazi:#AC27FF;   /* la firma, una sola vez */
+
+  /* Del sistema, cero descargas. Una tipografía de internet aquí sería una
+     petición más para alguien que está revisando el horario con dos rayitas
+     de señal afuera de la cancha. */
+  --display:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --dato:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* ⚠ ESTOS TRES NÚMEROS ESTÁN AMARRADOS y salieron de MIRAR la pantalla, no
+     de calcularlos: el balón va centrado sobre la línea, así que se come
+     `--balon/2` hacia cada lado. Si el texto empieza antes de
+     `--linea-x + --balon/2`, el balón se le encima al titular — que es
+     exactamente lo que pasaba con 26 y 56 en un teléfono de 390. */
+  --linea-x:22px;              /* dónde cae la línea de cal en el teléfono */
+  --balon:44px;
+  --aire:26px;                 /* del borde del balón a la primera letra */
+}
+@media (min-width:760px){ :root{ --linea-x:64px; --balon:76px; --aire:44px; } }
+
+*{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+
+body{
+  margin:0;
+  background:var(--pasto);
+  color:var(--cal);
+  font-family:var(--display);
+  line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* El pasto no es un color plano: tiene la luz de la tarde entrando de un lado
+   y el resto en sombra. Dos degradados y grano en SVG — cero archivos, cero
+   peticiones, y se cambia de tono en una línea. */
+body::before{
+  content:''; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(120% 60% at 88% 4%, #E0A05018 0%, transparent 58%),
+    linear-gradient(178deg, var(--pasto-claro) 0%, var(--pasto) 46%, #0F150E 100%);
+}
+body::after{
+  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  opacity:.055; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'>\
+<filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/></filter>\
+<rect width='140' height='140' filter='url(%23p)'/></svg>");
+  background-size:140px 140px;
+}
+
+/* ── LA CANCHA · la línea y el balón ─────────────────────────────────────
+   La línea de cal de la foto es horizontal porque la cancha se mira de lado.
+   Aquí la página se recorre hacia abajo, así que la línea baja: es la misma
+   línea vista desde arriba, y de paso es por dónde va a rodar el balón. */
+.cancha{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+}
+.linea{
+  position:absolute; top:0; bottom:0; left:var(--linea-x); width:3px;
+  background:var(--cal);
+  /* La cal está pisada: se raspa con una máscara en vez de dibujarle
+     manchitas. Más barato y se ve menos «hecho». */
+  opacity:.34;
+  -webkit-mask-image:repeating-linear-gradient(180deg,#000 0 26px,#0006 26px 30px,#000 30px 52px,#0009 52px 55px);
+          mask-image:repeating-linear-gradient(180deg,#000 0 26px,#0006 26px 30px,#000 30px 52px,#0009 52px 55px);
+}
+.balon{
+  position:absolute; top:0; left:var(--linea-x);
+  width:var(--balon); height:var(--balon);
+  margin-left:calc(var(--balon) / -2 + 1.5px);
+  /* Sin movimiento, el balón se queda donde lo dejó el niño de la foto:
+     apoyado en la línea, arriba. La página no se ve rota — se ve como la
+     referencia. Es lo que hace que borrar mueve.js no rompa nada. */
+  transform:translateY(38vh);
+}
+.balon svg{ width:100%; height:100%; display:block; }
+.cuero{ fill:var(--lima); }
+.gajo{ fill:var(--rojo); }
+.orilla{ fill:none; stroke:#0F150E; stroke-width:2.5; opacity:.5; }
+
+/* ── el texto ────────────────────────────────────────────────────────── */
+main{
+  position:relative; z-index:1;
+  /* Se calcula desde la línea y el balón, no a ojo: así mover la línea no
+     vuelve a encimar nada. */
+  padding-left:calc(var(--linea-x) + var(--balon) / 2 + var(--aire));
+  padding-right:20px;
+}
+@media (min-width:760px){ main{ padding-right:40px; } }
+
+.escena{
+  max-width:34rem;
+  padding:16vh 0;
+}
+.escena:first-child{ padding-top:22vh; }
+
+h1{
+  font-size:clamp(3rem, 17vw, 8.5rem);
+  line-height:.86;
+  /* Tracking negativo en display. Un titular grande con el interletraje por
+     defecto se ve suelto, y es de esas cosas a las que nadie llega por
+     accidente — por eso está en la lista de tics. */
+  letter-spacing:-.045em;
+  font-weight:800;
+  /* El margen va en `em` y no en `rem` a propósito. Con `line-height:.86` las
+     letras se salen de su renglón, así que el hueco que se VE es bastante
+     menor que el que mide la caja — y con un titular de 17vw, 1.1rem se
+     quedaba corto y «antes.» se montaba en el párrafo. En `em` el aire crece
+     con la letra. Esto sólo se ve mirando la pantalla. */
+  margin:0 0 .42em;
+}
+h1 span{ display:block; }
+h1 span:last-child{ color:var(--lima); }
+
+h2{
+  font-size:clamp(2rem, 9vw, 3.6rem);
+  line-height:.95; letter-spacing:-.035em; font-weight:800;
+  margin:0 0 .6em;              /* misma razón que el h1 */
+}
+
+p{ margin:0 0 1.1rem; font-size:clamp(1.05rem, 4.4vw, 1.35rem); max-width:30rem; }
+
+.antetitulo{
+  font-family:var(--dato); font-size:.8rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--cal-tenue); margin-bottom:1.6rem;
+}
+.entrada{ color:var(--cal); }
+.acento{ color:var(--lima); font-weight:650; }
+
+.cita{
+  font-size:clamp(1.25rem, 5.6vw, 1.9rem); line-height:1.28;
+  letter-spacing:-.02em; font-weight:650;
+  /* La línea de la cita es cal, como la de la cancha. Es la misma idea: algo
+     que marca un límite. */
+  border-left:3px solid var(--cal); padding-left:1rem; margin-bottom:.6rem;
+  max-width:26rem;
+}
+.firma{ font-family:var(--dato); font-size:.85rem; color:var(--cal-tenue); }
+
+.hoy{ list-style:none; padding:0; margin:0 0 1.6rem; }
+.hoy li{
+  border-top:1px solid #E8E4D922; padding:.95rem 0;
+  font-size:clamp(1rem, 4.2vw, 1.2rem); color:var(--cal-tenue);
+}
+.hoy li:last-child{ border-bottom:1px solid #E8E4D922; }
+.hoy b{ color:var(--cal); font-weight:650; }
+.remate{ color:var(--rojo-texto); font-weight:650; }
+
+/* ── la consulta · lo único que sirve ─────────────────────────────────── */
+.consulta{
+  border:1px solid #E8E4D92e; background:#0F150E80; padding:1.2rem;
+  max-width:30rem;
+}
+.consulta label{
+  display:block; font-family:var(--dato); font-size:.78rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--cal-tenue); margin-bottom:.5rem;
+}
+.consulta select{
+  width:100%;
+  /* 16px o más: abajo de eso iOS hace zoom al tocar el campo y saca de lugar
+     la página. Un papá revisando esto en la banqueta no necesita eso. */
+  font-size:16px; font-family:var(--display);
+  padding:.85rem .8rem; min-height:48px;      /* dedo, no cursor */
+  background:var(--pasto); color:var(--cal);
+  border:1px solid var(--cal-tenue); border-radius:0;
+  appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23E8E4D9' stroke-width='2'/></svg>");
+  background-repeat:no-repeat; background-position:right .9rem center;
+}
+.consulta select:focus-visible{ outline:2px solid var(--lima); outline-offset:2px; }
+
+.resultado{ margin-top:1.2rem; min-height:6.5rem; }
+.resultado .vacio{ color:var(--cal-tenue); font-size:1rem; margin:0; }
+
+/* El resultado se lee como un DATO, no como un párrafo: mono, grande, y cada
+   cosa con su rótulo chiquito encima. Es lo que uno mira de reojo mientras
+   maneja. */
+.ficha{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#E8E4D92e; border:1px solid #E8E4D92e; }
+.ficha div{ background:var(--pasto); padding:.85rem .9rem; }
+.ficha .ancho{ grid-column:1 / -1; }
+.ficha dt{
+  font-family:var(--dato); font-size:.7rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--cal-tenue); margin:0 0 .3rem;
+}
+.ficha dd{ margin:0; font-family:var(--dato); font-size:1.35rem; color:var(--cal); }
+.ficha dd.grande{ font-size:1.8rem; color:var(--lima); }
+
+.cambio{
+  margin-top:1px; background:var(--rojo); color:var(--cal);
+  padding:.7rem .9rem; font-size:.95rem; font-weight:650;
+}
+.sinjuego{
+  border:1px solid #E8E4D92e; padding:.9rem; color:var(--cal-tenue); font-size:1rem;
+}
+.aviso{
+  font-family:var(--dato); font-size:.75rem; line-height:1.5;
+  color:var(--cal-tenue); max-width:30rem; margin-top:1.2rem;
+}
+
+/* ── cierre y pie ─────────────────────────────────────────────────────── */
+.cierre{ padding-bottom:8vh; }
+footer{
+  position:relative; z-index:1;
+  border-top:1px solid #E8E4D922;
+  margin-left:calc(var(--linea-x) + var(--balon) / 2 + var(--aire)); margin-right:20px;
+  padding:1.6rem 0 3rem;
+  font-size:.9rem; color:var(--cal-tenue);
+}
+footer b{ color:var(--cal); }
+footer b:first-of-type{ color:var(--lima); }
+/* La firma de la casa, una sola vez y del tamaño de una firma. */
+footer p:first-child::after{
+  content:''; display:inline-block; width:6px; height:6px;
+  background:var(--mazi); margin-left:.5rem; vertical-align:middle;
+}
+footer .chico{ font-size:.78rem; margin:.4rem 0 0; }
+
+/* ── la tabla · lo que se lee cuando no hay JavaScript ────────────────────
+   No es un respaldo feo escondido: es la misma información completa, y hay que
+   poder leerla en un teléfono. Por eso no se hace scroll horizontal — se
+   aprieta la tipografía y se quita el relleno antes que sacar la tabla de la
+   pantalla. Una tabla que hay que arrastrar de lado no se lee, se abandona. */
+.tabla{ width:100%; border-collapse:collapse; font-family:var(--dato); font-size:.82rem; }
+.tabla caption{
+  text-align:left; font-size:.7rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--cal-tenue); padding-bottom:.6rem;
+}
+.tabla th, .tabla td{
+  text-align:left; padding:.55rem .4rem;
+  border-bottom:1px solid #E8E4D91f; vertical-align:top;
+}
+.tabla thead th{
+  font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--cal-tenue); font-weight:500;
+}
+.tabla tbody th{ font-weight:650; color:var(--cal); font-family:var(--display); }
+.tabla td{ color:var(--cal-tenue); }
+.tabla tr[data-cambio] td:nth-child(2), .tabla tr[data-cambio] td:nth-child(3){ color:var(--rojo-texto); }
+@media (max-width:400px){
+  .tabla{ font-size:.74rem; }
+  .tabla th, .tabla td{ padding:.5rem .25rem; }
+}
+
+/* ── LO QUE RESPONDE AL DEDO ──────────────────────────────────────────────
+   De la lista de antes de lanzar de la casa: «recorrer el sitio en el teléfono
+   y contar cuántas veces algo RESPONDE al toque. Si la respuesta es cero, se
+   ve de IA por bonita que esté la paleta.»
+
+   Esta página respondía UNA vez. Es poco interactiva por naturaleza —se lee,
+   no se opera— pero lo que sí se toca tiene que hundirse, y eso cuesta cuatro
+   reglas. */
+
+/* El presionado es el más barato y el que más se nota. Un control que no se
+   hunde al tocarlo se siente muerto, y ese sentimiento es lo que la gente
+   llama «se ve de IA». */
+.consulta select:active{ border-color:var(--lima); transform:translateY(1px); }
+
+/* El hover va ENCERRADO. En una pantalla táctil un `:hover` se queda pegado
+   después del toque y deja el control iluminado como si siguiera apuntado. */
+@media (hover:hover) and (pointer:fine){
+  .consulta select:hover{ border-color:var(--cal); }
+  .arriba:hover{ background:var(--cal); color:var(--pasto); }
+  .tabla tbody tr:hover td, .tabla tbody tr:hover th{ background:#E8E4D90c; }
+}
+
+/* ── volver arriba ────────────────────────────────────────────────────── */
+.arriba{
+  position:fixed; right:14px; bottom:14px; z-index:2;
+  display:inline-flex; align-items:center; gap:.4rem;
+  /* 48 de alto: dedo, no cursor. */
+  min-height:48px; padding:0 1rem;
+  background:var(--pasto-claro); color:var(--cal);
+  border:1px solid var(--cal-tenue); border-radius:0;
+  font-family:var(--dato); font-size:.78rem; letter-spacing:.08em;
+  text-transform:uppercase; text-decoration:none;
+  transition:transform .18s ease, background .18s ease, color .18s ease, opacity .18s ease;
+}
+.arriba:active{ transform:translateY(2px); }
+.arriba:focus-visible{ outline:2px solid var(--lima); outline-offset:2px; }
+/* Escondido sólo cuando hay JS y estamos arriba: la clase la pone `mueve.js`.
+   Sin JS nunca se pone, así que el enlace se queda visible y sirve igual. */
+.arriba.lejos{ opacity:0; pointer-events:none; transform:translateY(8px); }
+
+@media (prefers-reduced-motion: reduce){
+  .arriba{ transition:none; }
+  .consulta select:active, .arriba:active{ transform:none; }
+}

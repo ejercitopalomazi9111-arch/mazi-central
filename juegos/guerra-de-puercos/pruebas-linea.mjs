@@ -32,6 +32,19 @@ const ok = (que, cond, detalle='') => {
   else { mal++; console.log('  ✗ ' + que + (detalle ? '  → ' + detalle : '')); }
 };
 const esperar = (ms) => new Promise(r => setTimeout(r, ms));
+/* ⚠ SE JUEGA CON TRES TOQUES, QUE ES COMO SE JUEGA DESDE QUE NO HAY BOTÓN.
+   Carlos: «quita el botón de jugar carta y haz que pueda hacerlo pulsando 3
+   veces en mi carta». Las especiales se saltan: no se juegan solas. */
+const jugarUna = (p) => p.evaluate(() => {
+  const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
+  if(!c) return false;
+  for(let i = 0; i < 3; i++){
+    const v = document.querySelector('#mMano .carta[data-id="' + c.dataset.id + '"]');
+    if(!v) break;
+    v.click();
+  }
+  return true;
+});
 
 const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 /* Dos contextos = dos navegadores distintos, con su propio almacenamiento.
@@ -124,30 +137,40 @@ ok('y el objeto del rival NO trae ninguna mano', await uno.evaluate(() =>
      .every(m => m.vista.rival.mano === undefined)));
 
 console.log('\n── Una ronda entre los dos ──');
-await uno.evaluate(() => document.querySelector('#mMano .carta').click());
-await uno.click('#bJugar');
+await jugarUna(uno);
 await esperar(600);
 ok('el que ya jugó ve que falta el otro',
    /Esperando a que el otro/.test(await uno.textContent('#mMano')));
-ok('y no puede volver a jugar en la misma ronda', await uno.isDisabled('#bJugar'));
+/* Ya no hay botón que apagar: lo que tiene que pasar es que no le quede
+   NINGUNA carta que tocar mientras espera. Un abanico vivo con la jugada ya
+   mandada invita a jugar dos veces la misma ronda. */
+ok('y no puede volver a jugar en la misma ronda',
+   await uno.evaluate(() => document.querySelectorAll('#mMano .carta').length === 0));
 ok('mientras espera no le dejan botones que no hacen nada',
-   !(await uno.isVisible('#bJugar')) && !(await uno.isVisible('#bLimpiar'))); 
+   await uno.evaluate(() => !document.querySelector('#bJugar')));
 ok('el marcador dice «Tú» y «El otro», nunca «Máquina»', await uno.evaluate(() => {
   const t = document.querySelector('#mNomA').textContent
           + ' ' + document.querySelector('#mNomB').textContent;
   return /Tú/.test(t) && /El otro/.test(t) && !/quina/i.test(t);
 }));
 
-await dos.evaluate(() => document.querySelector('#mMano .carta').click());
-await dos.click('#bJugar');
+await jugarUna(dos);
 await esperar(900);
 ok('al jugar los dos, se resuelve la ronda en LOS DOS teléfonos',
    (await uno.isVisible('#fDuelo')) && (await dos.isVisible('#fDuelo')));
 const g1 = await uno.textContent('#dGolpe'), g2 = await dos.textContent('#dGolpe');
 const dano = (t) => (t.match(/−(\d+) PV/) || [])[1];
 ok('los dos ven EL MISMO daño', dano(g1) === dano(g2), dano(g1) + ' y ' + dano(g2));
+/* ⚠ LAS CARTAS REVELADAS VIVEN EN LA MESA, no en el panel del duelo. Estaban
+   pintadas en los dos sitios y eso se veía como un error de maquetación. */
 ok('hasta ese momento sí se revelan las dos cartas',
-   (await uno.evaluate(() => document.querySelectorAll('#dCartaB .carta').length)) > 0);
+   (await uno.evaluate(() => document.querySelectorAll('#mSlotB .carta').length)) > 0);
+/* Y el cementerio del rival tiene que traer lo que acaba de morir: es
+   información pública de la mesa, y sin ella el montón de descarte se quedaba
+   vacío toda la partida en línea aunque en local se llenara. */
+ok('y la carta jugada aparece en el cementerio de cada quien',
+   (await uno.evaluate(() => document.querySelectorAll('#mCemA .carta').length)) > 0
+   && (await uno.evaluate(() => document.querySelectorAll('#mCemB .carta').length)) > 0);
 
 console.log('\n── Que no se pueda hacer trampa ──');
 const trampa = await uno.evaluate(async (srv) => {

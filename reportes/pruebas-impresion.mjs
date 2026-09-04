@@ -110,6 +110,46 @@ ok('MUTACIÓN: con la escala vieja (0.86) la hoja NO cabía',
    n.hoja.alto * 0.86 > utilAlto,
    'entonces 0.86 sí cabía y el diagnóstico está mal');
 
+/* ══ NINGUNA OPCIÓN OFRECIDA PUEDE PARTIR LA HOJA ══════════════════════════
+   Lo que le pasó a Carlos: imprimió desde una computadora y salieron 30
+   páginas para 15 hojas, una en blanco detrás de cada una.
+
+   No fue un defecto de cálculo: la opción que escogió se llamaba «Computadora,
+   con márgenes en ninguno» y sólo funciona si uno se ACUERDA de poner ese
+   ajuste en el diálogo de impresión. Si no, la hoja no cabe.
+
+   Una opción que depende de que la persona recuerde algo es una trampa con
+   instrucciones. Así que ahora se comprueba que TODA escala ofrecida quepa con
+   los márgenes que un navegador de escritorio pone SOLO — menos la de 1, que
+   dice en su propio nombre que exige el ajuste. */
+{
+  const d = await page.evaluate(() => ({
+    escalas: ESCALAS_SEGURAS,
+    hoja: HOJA_MM,
+    come: ESCRITORIO_COME,
+    ofrecidas: [...document.querySelectorAll('#oImpresion option')].map(o => parseFloat(o.value)),
+  }));
+  const utilA = d.hoja.alto  - d.come.arriba - d.come.abajo;
+  const utilAn= d.hoja.ancho - d.come.lados * 2;
+
+  for(const e of d.escalas){
+    ok('escala ' + e + ' cabe en un escritorio SIN tocar los márgenes',
+       d.hoja.alto * e <= utilA && d.hoja.ancho * e <= utilAn,
+       'se pasa por ' + (d.hoja.alto * e - utilA).toFixed(1) + ' mm de alto');
+  }
+
+  /* Y que la lista de la pantalla no se separe de la lista que se comprueba:
+     una escala nueva que nadie probó es exactamente cómo volvería el defecto. */
+  const sinProbar = d.ofrecidas.filter(v => v !== 1 && !d.escalas.includes(v));
+  ok('toda escala del menú está en la lista que se comprueba',
+     sinProbar.length === 0, 'sin probar: ' + JSON.stringify(sinProbar));
+
+  /* MUTACIÓN: la escala vieja de «computadora» era 1, y NO cabía. */
+  ok('MUTACIÓN: la escala 1 no cabría sin el ajuste — por eso ya no es la de computadora',
+     d.hoja.alto * 1 > utilA,
+     'entonces sí cabía y el diagnóstico está mal');
+}
+
 /* ── el candado contra la partida, leído del navegador, no del archivo ── */
 await page.emulateMedia({ media:'print' });
 const candado = await page.evaluate(() => {
@@ -267,6 +307,272 @@ console.log('\n── La escala vieja que se quedó guardada en el reporte ─�
      279.4 * 0.86 > 279.4 - 44,
      'entonces 0.86 sí cabía y el diagnóstico está mal');
   await ctx2.close();
+}
+
+/* ══ LAS DOS INSTITUCIONES ═════════════════════════════════════════════════
+   GERALDMED no tiene membrete oficial, así que su cabecera se COMPONE con el
+   logo. Lo que se prueba aquí son los dos defectos que salieron armándola, y
+   los dos son de la misma familia: se ven «raros pero no rotos», que es la
+   peor clase — uno los mira y piensa «ha de ser el diseño».
+
+   1 · el filo del pie se llamaba `.barra`, que ya era la barra de herramientas
+       de la app con `position:sticky; top:0`. Lo heredó, y con `top` y
+       `bottom` puestos a la vez gana `top`: el pie se pintaba como listón EN
+       LA CABECERA.
+   2 · el pie de página seguía firmando «Instituto Rembrandt» debajo del
+       membrete de GERALDMED. En un documento con folio y sello de
+       verificación eso no es un detalle: es un papel que dice dos cosas. */
+{
+  const p3 = await (await b.newContext()).newPage();
+  await p3.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p3.waitForTimeout(1000);
+
+  const mide = async () => p3.evaluate(() => {
+    const h = document.querySelector('.hoja');
+    const inf = h.querySelector('.membrete-inf');
+    const cab = h.querySelector('.membrete-sup');
+    const zona = h.querySelector('.zona');
+    const rh = h.getBoundingClientRect(), ri = inf.getBoundingClientRect();
+    return {
+      pieAbajo: Math.abs(ri.bottom - rh.bottom) < 2,
+      firma: (document.querySelector('.folio-pie').innerText.split('\n')[1] || ''),
+      seEncima: zona.getBoundingClientRect().top < cab.getBoundingClientRect().bottom,
+      cabeceraEsImagen: cab.tagName === 'IMG',
+      /* La marca de agua: de quién es la imagen, qué tan grande se pinta, y
+         qué dice la leyenda. Se lee del DOM ya pintado, no de la
+         configuración: lo que importa es lo que sale en el papel. */
+      aguaSrc: (() => { const i = h.querySelector('.agua img');
+                        return i ? new URL(i.src).pathname : null; })(),
+      /* El ALTO DE LA TINTA, no el de la caja. Un logo con aire alrededor de
+         su dibujo se pinta más chico que otro del mismo ancho declarado, y
+         midiendo el elemento eso no se ve: los dos reportan lo mismo. Así que
+         se dibuja en un canvas y se barre el alfa para hallar dónde empieza y
+         dónde acaba el dibujo de verdad.
+         (La estrella de GERALDMED ocupa 67% de su lienzo. Con la medida vieja
+         habría pasado la prueba viéndose un tercio más chica que las otras.) */
+      aguaAlto: 0,
+      leyenda: (h.querySelector('.agua .letras') || {}).textContent || '',
+    };
+  });
+
+  /* Se mide aparte porque hay que esperar a que la imagen cargue de verdad:
+     una imagen a medio cargar no tiene tinta que medir. */
+  const tinta = async () => p3.evaluate(async () => {
+    const im = document.querySelector('.hoja .agua img');
+    if(!im) return 0;
+    const b = new Image(); b.src = im.src;
+    await b.decode();
+    const c = document.createElement('canvas');
+    c.width = b.naturalWidth; c.height = b.naturalHeight;
+    const cx = c.getContext('2d'); cx.drawImage(b, 0, 0);
+    const d = cx.getImageData(0, 0, c.width, c.height).data;
+    let arriba = -1, abajo = -1;
+    for(let y = 0; y < c.height; y++){
+      for(let x = 0; x < c.width; x++){
+        if(d[(y*c.width + x)*4 + 3] >= 40){ if(arriba < 0) arriba = y; abajo = y; break; }
+      }
+    }
+    if(arriba < 0) return 0;
+    /* de píxeles del archivo a milímetros pintados en la hoja */
+    const alto = im.getBoundingClientRect().height;
+    return +((abajo - arriba + 1) / c.height * alto).toFixed(1);
+  });
+
+  const cambiar = async (cual) => {
+    await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(250);
+    await p3.selectOption('#oInstitucion', cual); await p3.waitForTimeout(700);
+    await p3.click('[data-vista="ver"]'); await p3.waitForTimeout(900);
+  };
+
+  /* Los CUATRO papeles: jefatura con la marca de la casa, la escuela con su
+     membrete real, presidencia y GERALDMED compuestos. Se prueban todos porque
+     el defecto que importa —un papel que firma con otra institución— no se ve
+     en uno solo: se ve comparándolos. */
+  const ESPERADO = {
+    mazi:        { firma:/grupo mazi/i,   imagen:false, agua:/paloma-simple\.svg$/,
+                   leyenda:/grupo mazi/i },
+    rembrandt:   { firma:/rembrandt/i,    imagen:true,  agua:/escudo-rembrandt\.png$/,
+                   leyenda:/instituto rembrandt/i },
+    presidencia: { firma:/sociedad/i,     imagen:false, agua:/escudo-rembrandt\.png$/,
+                   leyenda:/sociedad de alumnos/i },
+    /* La marca de agua de GERALDMED es la ESTRELLA, no el logo de la
+       cabecera: la hoja no debe repetir la misma imagen dos veces. */
+    geraldmed:   { firma:/geraldmed/i,    imagen:false, agua:/logo-estrella\.png$/,
+                   leyenda:/geraldmed/i },
+  };
+  const altos = {};
+  for(const [cual, esp] of Object.entries(ESPERADO)){
+    await cambiar(cual);
+    const m = await mide();
+    ok(cual + ' · el filo del pie va ABAJO, no de listón en la cabecera',
+       m.pieAbajo, 'quedó arriba: chocó con otra clase que trae top:0');
+    ok(cual + ' · firma con su propia institución',
+       esp.firma.test(m.firma), 'firmó «' + m.firma + '»');
+    ok(cual + ' · el texto NO se monta sobre la línea del membrete',
+       !m.seEncima, 'el margen de arriba se quedó corto para su cabecera');
+    ok(cual + (esp.imagen ? ' · usa su membrete REAL, que es una imagen'
+                          : ' · se COMPONE, no finge un membrete que no existe'),
+       m.cabeceraEsImagen === esp.imagen);
+
+    /* ── LA MARCA DE AGUA ─────────────────────────────────────────────────
+       El defecto que reportó Carlos: los cuatro papeles llevaban la paloma de
+       Grupo Mazi. En el suyo tiene sentido; debajo del membrete de GERALDMED
+       dice que Mazi firmó la papelería de otro. */
+    ok(cual + ' · la marca de agua es SUYA, no la de la casa',
+       esp.agua.test(m.aguaSrc || ''), 'trae ' + m.aguaSrc);
+    ok(cual + ' · la leyenda de la marca de agua también es suya',
+       esp.leyenda.test(m.leyenda), 'dice «' + m.leyenda + '»');
+    altos[cual] = await tinta();
+  }
+
+  /* Cada logo trae su propio ancho porque son de formas distintas —la paloma
+     apaisada 1.7:1, el escudo cuadrado, la estrella cuadrada pero con 33% de
+     aire alrededor de su dibujo—. Lo que tiene que quedar parejo NO es el
+     ancho declarado sino la TINTA que cae en el papel, que es lo único que se
+     ve. Por eso se mide el dibujo y no la caja. */
+  const alturas = Object.values(altos);
+  ok('ninguna marca de agua se sale de escala frente a las otras',
+     Math.max(...alturas) / Math.min(...alturas) < 1.30,
+     'altos de TINTA pintada (px): ' + JSON.stringify(altos));
+
+  /* Y que el papel siga al cargo sin pisarle una elección hecha a mano: ése es
+     el defecto clásico de los valores «inteligentes». */
+  /* ⚠ Se vuelve a un papel SUGERIDO antes de medir. El bucle de arriba dejó
+     GERALDMED puesto a mano, y respetarlo es justo lo que el código debe hacer
+     — así que sin este reinicio la prueba medía la regla de al lado y fallaba
+     acusando al código de algo que hacía bien. Falló primero así, y el
+     equivocado era el examen. */
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  await p3.selectOption('#oInstitucion','rembrandt'); await p3.waitForTimeout(400);
+  await p3.click('[data-vista="escribir"]'); await p3.waitForTimeout(300);
+  await p3.click('[data-tipo="minuta"]'); await p3.waitForTimeout(500);
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  ok('un reporte de la sociedad arranca en papel de Presidencia',
+     await p3.inputValue('#oInstitucion') === 'presidencia',
+     'quedó en ' + await p3.inputValue('#oInstitucion'));
+  await p3.selectOption('#oInstitucion','geraldmed'); await p3.waitForTimeout(400);
+  await p3.click('[data-vista="escribir"]'); await p3.waitForTimeout(300);
+  await p3.click('[data-tipo="incidencia"]'); await p3.waitForTimeout(500);
+  await p3.click('[data-vista="formato"]'); await p3.waitForTimeout(300);
+  ok('pero si lo escogiste a mano, cambiar de tipo NO te lo quita',
+     await p3.inputValue('#oInstitucion') === 'geraldmed',
+     'se lo llevó el valor por defecto');
+
+  /* La leyenda se mueve sola con el papel, PERO una que Carlos haya escrito no
+     se toca. Es la misma regla del papel-sigue-al-cargo, y el mismo defecto
+     clásico si se hace mal: un valor «inteligente» que borra texto ajeno. */
+  await p3.selectOption('#oInstitucion','mazi'); await p3.waitForTimeout(400);
+  ok('la leyenda sigue al papel cuando venía de la institución anterior',
+     /grupo mazi/i.test(await p3.inputValue('#oLeyenda')),
+     'quedó «' + await p3.inputValue('#oLeyenda') + '»');
+
+  const MIA = 'ESTO LO ESCRIBIÓ CARLOS';
+  await p3.fill('#oLeyenda', MIA); await p3.waitForTimeout(400);
+  await p3.selectOption('#oInstitucion','geraldmed'); await p3.waitForTimeout(500);
+  ok('pero una leyenda escrita a mano NO se la lleva el cambio de papel',
+     await p3.inputValue('#oLeyenda') === MIA,
+     'se la comió: quedó «' + await p3.inputValue('#oLeyenda') + '»');
+}
+
+/* ══ EL TEXTO NO SE MONTA SOBRE EL PIE ═════════════════════════════════════
+   Carlos imprimió el documento de la candidatura y la última línea de casi
+   cada hoja salió partida a la mitad con el folio encima.
+
+   La causa NO era el diseño del pie: era que la hoja fantasma mide un bloque
+   a la vez, ese bloque siempre resulta `:last-child`, y la hoja de estilo le
+   pone `margin-bottom:0`. El hueco de 3.2mm bajo cada bloque se contaba como
+   cero, así que el paginador metía ~24mm de más por hoja —un párrafo entero—
+   y la zona lo recortaba con su `overflow:hidden`.
+
+   Sólo aparece con la hoja LLENA, que es justo lo que ninguna prueba hacía.
+   Por eso esta prueba escribe un cuerpo largo a propósito. */
+{
+  const p4 = await (await b.newContext()).newPage();
+  await p4.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p4.waitForTimeout(1000);
+
+  const parr = [];
+  for(let i = 1; i <= 40; i++)
+    parr.push('Párrafo ' + i + '. ' +
+      'Texto de relleno para llenar la hoja y ver si la última línea se monta sobre el pie. '.repeat(3));
+
+  await p4.click('[data-vista="escribir"]'); await p4.waitForTimeout(300);
+  await p4.fill('#fCuerpo', parr.join('\n\n'));
+  await p4.dispatchEvent('#fCuerpo', 'input'); await p4.waitForTimeout(2500);
+  await p4.click('[data-vista="ver"]'); await p4.waitForTimeout(2500);
+
+  const m = await p4.evaluate(() => {
+    const hojas = [...document.querySelectorAll('.hoja')];
+    let choques = 0, desborde = 0;
+    for(const h of hojas){
+      const pie = h.querySelector('.folio-pie');
+      const z = h.querySelector('.zona');
+      const doc = h.querySelector('.doc');
+      if(!pie || !z || !doc) continue;
+      /* el .doc no puede ser más alto que su zona: si lo es, lo recortan */
+      if(doc.offsetHeight > z.clientHeight) desborde++;
+      const rp = pie.getBoundingClientRect();
+      for(const el of h.querySelectorAll('.zona .doc *')){
+        if(!el.textContent.trim() || el.children.length) continue;
+        if(el.getBoundingClientRect().bottom > rp.top + 1){ choques++; break; }
+      }
+    }
+    return { hojas: hojas.length, choques, desborde };
+  });
+
+  ok('con la hoja llena, el texto NO se monta sobre el pie de página',
+     m.choques === 0, m.choques + ' de ' + m.hojas + ' hojas con el texto encima del folio');
+  ok('y el contenido no desborda su zona, que es lo que lo partía a la mitad',
+     m.desborde === 0, m.desborde + ' de ' + m.hojas + ' hojas con el .doc más alto que su zona');
+  ok('el cuerpo largo sí se repartió en varias hojas',
+     m.hojas >= 5, 'salieron ' + m.hojas);
+}
+
+/* ══ EL BOTÓN «AJUSTAR» DICE EN QUÉ MODO ESTÁ ══════════════════════════════
+   Carlos: «el botón ajustes/ajustar no hace nada». Tenía razón en lo que veía:
+   la vista LLEGA en modo automático, así que tocarlo recalcula el mismo 41% y
+   nada se mueve. El código estaba bien y el botón parecía roto.
+
+   Lo que se prueba no es que el zoom cambie —a veces no debe cambiar— sino que
+   el botón COMUNIQUE el modo: encendido con ajuste automático, apagado al
+   tocar + o −, encendido otra vez al tocarlo. Y que se pueda tocar con el
+   dedo: 44px de alto, no 36. */
+{
+  const p5 = await (await b.newContext({ viewport:{width:390,height:844},
+                                         isMobile:true, hasTouch:true })).newPage();
+  await p5.goto(BASE + '/reportes/', { waitUntil:'networkidle' });
+  await p5.waitForTimeout(1200);
+  await p5.click('[data-vista="ver"]'); await p5.waitForTimeout(1000);
+
+  const modo = () => p5.getAttribute('#bAjustar', 'aria-pressed');
+  const alto = async () => (await p5.evaluate(
+    () => Math.round(document.querySelector('#bAjustar').getBoundingClientRect().height)));
+
+  ok('al llegar, «Ajustar» se ve ENCENDIDO — el ajuste automático ya está puesto',
+     await modo() === 'true', 'llegó en ' + await modo());
+
+  await p5.click('#bMas'); await p5.waitForTimeout(300);
+  ok('al tocar +, «Ajustar» se apaga', await modo() === 'false', 'quedó en ' + await modo());
+
+  await p5.click('#bAjustar'); await p5.waitForTimeout(300);
+  ok('al tocarlo, se vuelve a encender y reencaja la hoja',
+     await modo() === 'true', 'quedó en ' + await modo());
+
+  const h = await alto();
+  ok('y se puede tocar con el dedo: 44px de alto', h >= 44, 'mide ' + h + 'px');
+
+  /* Que sea legible NO se cuida a ojo: la primera versión usó una variable de
+     color que no existe en esta app y quedó letra oscura sobre fondo oscuro. */
+  const c = await p5.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector('#bAjustar'));
+    const n = (x) => x.match(/\d+/g).slice(0,3).map(Number);
+    const lum = ([r,g,b]) => { const f = v => { v/=255; return v<=.03928 ? v/12.92 : ((v+.055)/1.055)**2.4; };
+                               return .2126*f(r) + .7152*f(g) + .0722*f(b); };
+    const a = lum(n(cs.color)), b2 = lum(n(cs.backgroundColor));
+    return +(((Math.max(a,b2)+.05)/(Math.min(a,b2)+.05))).toFixed(2);
+  });
+  ok('el botón encendido se LEE: contraste ' + c + ':1', c >= 4.5,
+     'con ' + c + ':1 la letra se pierde en el fondo');
 }
 
 await b.close();

@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/marketing-skill/video-content-strategist/skills/video-content-strategist/SKILL.md

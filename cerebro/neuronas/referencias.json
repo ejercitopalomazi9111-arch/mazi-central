@@ -1,0 +1,92 @@
+{
+  "area": "referencias",
+  "nombre": "Estudiar diseño sin copiar",
+  "que": "Cómo se miran referencias, qué se guarda de ellas y por qué copiar la forma sin la razón sale mal.",
+  "neuronas": [
+    {
+      "id": "la-carpeta-de-capturas-sin-notas",
+      "titulo": "Se guardan capturas y no por qué",
+      "gravedad": "media",
+      "sintoma": "Una carpeta llena de referencias que no sirve para nada al empezar un proyecto.",
+      "causa": "Se guardó la imagen sin anotar qué problema resolvía.",
+      "porque": "Guardar es un clic y anotar es una frase que en ese momento parece obvia.",
+      "arreglo": "Una línea por referencia: qué problema resuelve y con qué recurso.",
+      "comoCazarlo": "Abrir la carpeta y ver si se puede buscar por problema. Si sólo se puede mirar, es un collage.",
+      "consejo": "Sin la razón anotada, lo único que se puede copiar es la apariencia.",
+      "senales": [
+        "tengo muchas referencias y no sé usarlas",
+        "guardo capturas y ya",
+        "no me sirve mi carpeta"
+      ],
+      "salioDe": "La neurona de copiar el efecto sin la razón, del área de sistema."
+    },
+    {
+      "id": "referencia-de-otra-escala",
+      "titulo": "Se copia el diseño de un producto con mil veces más recursos",
+      "gravedad": "media",
+      "sintoma": "El resultado se ve pobre comparado con la referencia aunque se copió bien.",
+      "causa": "La referencia depende de fotografía, ilustración o motion hechos a medida, que aquí no existen.",
+      "porque": "La composición se ve como lo copiable, y el material que la sostiene es invisible.",
+      "arreglo": "Escoger referencias con recursos parecidos a los propios, o copiar la estructura y resolver el material de otra forma.",
+      "comoCazarlo": "Preguntar de cada referencia qué material haría falta para reproducirla.",
+      "consejo": "Sin fotografía propia, la geometría y la tipografía tienen que cargar con todo — y pueden.",
+      "senales": [
+        "me quedó pobre",
+        "no se ve como el ejemplo",
+        "les falta algo a mis pantallas"
+      ],
+      "salioDe": "El sistema del Instituto: sin fotos del plantel, el vínculo se expresa con geometría."
+    },
+    {
+      "id": "mirar-solo-lo-que-esta-de-moda",
+      "titulo": "Todas las referencias son del mismo año y el mismo estilo",
+      "gravedad": "baja",
+      "sintoma": "El trabajo se ve actual y ya se ve viejo un año después.",
+      "causa": "Las referencias vienen de la misma fuente y el mismo momento.",
+      "porque": "Es lo que aparece primero al buscar y lo que todo el mundo comparte.",
+      "arreglo": "Mezclar épocas y disciplinas: impresión, señalética, editorial. Lo que sobrevivió décadas enseña más que lo de este mes.",
+      "comoCazarlo": "Mirar las fechas de las referencias. Si son todas recientes, falta perspectiva.",
+      "consejo": "Casi todo lo que hoy parece nuevo en la web ya se resolvió en papel.",
+      "senales": [
+        "se ve como todo lo demás",
+        "envejeció rápido",
+        "es muy de moda"
+      ],
+      "salioDe": "La mezcla de norma, motor y oficio de la cosecha, con fuentes de los años noventa a hoy."
+    },
+    {
+      "id": "la-fuente-unica",
+      "titulo": "Todo lo que se sabe viene de un solo sitio",
+      "gravedad": "media",
+      "sintoma": "Se repiten las mismas recetas y no se distinguen los casos donde no aplican.",
+      "causa": "Una sola fuente, por buena que sea, tiene un punto de vista y unos silencios.",
+      "porque": "Una fuente que explica bien se vuelve la única que se consulta.",
+      "arreglo": "Cruzar al menos tres tipos: la norma, el motor y el oficio. Donde se contradicen está lo interesante.",
+      "comoCazarlo": "Mirar el reparto por fuente de lo que se ha leído. Si una pasa del 30 %, falta variedad.",
+      "consejo": "Quien sólo lee la norma hace cosas correctas y feas; quien sólo lee el oficio, cosas bonitas que se rompen.",
+      "senales": [
+        "siempre cito la misma web",
+        "no sé si eso aplica aquí",
+        "todos dicen lo mismo"
+      ],
+      "salioDe": "El cupo por casa de la cosecha: ocho fuentes, ninguna por encima del 13 %."
+    },
+    {
+      "id": "copiar-de-un-modelo-de-imagen",
+      "titulo": "Se pide una imagen y se toma como diseño",
+      "gravedad": "media",
+      "sintoma": "Un boceto generado se convierte en la maqueta final y luego no se puede construir.",
+      "causa": "La imagen no tiene retícula, ni escala tipográfica, ni estados: es una ilustración de una interfaz.",
+      "porque": "Se parece muchísimo a una maqueta y llega en segundos.",
+      "arreglo": "Usarla para explorar dirección y extraer decisiones —paleta, densidad, carácter— y construir el sistema aparte.",
+      "comoCazarlo": "Intentar sacar de la imagen la escala tipográfica y los estados de un botón. No están.",
+      "consejo": "En este grupo hay una regla más dura para lo que sí es identidad: el logo nunca lo dibuja un modelo de imagen.",
+      "senales": [
+        "lo generé con IA",
+        "se ve bien pero no se puede hacer",
+        "no sé qué tamaños usar"
+      ],
+      "salioDe": "La regla de marca de este grupo y la práctica de arte generativo del sitio del Instituto."
+    }
+  ]
+}

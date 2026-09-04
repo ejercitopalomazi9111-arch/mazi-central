@@ -1,1 +1,0 @@
-/home/user/mazi-central/bodega/.clones/alirezarezvani-claude-skills/marketing-skill/skills/social-media-manager/SKILL.md
