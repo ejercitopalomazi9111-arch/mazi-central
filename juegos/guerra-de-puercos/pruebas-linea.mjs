@@ -131,7 +131,7 @@ ok('el que ya jugó ve que falta el otro',
    /Esperando a que el otro/.test(await uno.textContent('#mMano')));
 ok('y no puede volver a jugar en la misma ronda', await uno.isDisabled('#bJugar'));
 ok('mientras espera no le dejan botones que no hacen nada',
-   !(await uno.isVisible('#bJugar')) && !(await uno.isVisible('#bLimpiar'))); 
+   !(await uno.isVisible('#bJugar'))); 
 ok('el marcador dice «Tú» y «El otro», nunca «Máquina»', await uno.evaluate(() => {
   const t = document.querySelector('#mNomA').textContent
           + ' ' + document.querySelector('#mNomB').textContent;

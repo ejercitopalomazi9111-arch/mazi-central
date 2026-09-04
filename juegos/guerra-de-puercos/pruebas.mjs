@@ -167,13 +167,24 @@ console.log('\n── La partida entera ──');
 {
   let e = M.repartir(12345);
   ok('cada quien arranca con 200 PV', e.a.pv === 200 && e.b.pv === 200);
-  ok('cada quien arranca con 5 cartas', e.a.mano.length === 5 && e.b.mano.length === 5);
+  /* ⚠ CINCO JUGABLES, NO CINCO CARTAS, y la diferencia arregló un juego que se
+     trababa. Si en el reparto salen especiales, se las quedas ADEMÁS de tus
+     cinco: una carta que no se puede jugar sola no ocupa uno de los cinco
+     sitios. Contando cartas a secas, se podía acabar con cinco especiales en
+     la mano, sin nada que jugar y sin que la partida se diera por terminada. */
+  /* ⚠ NO SE LLAMA `jug`: ese nombre ya es del ayudante que arma jugadores, y
+     aquí adentro lo taparía. Un nombre que choca consigo mismo ya nos costó
+     una tarde dentro del propio Cerebro. */
+  const cuantasJugables = j => j.mano.filter(c => c.nivel !== 'ESP').length;
+  ok('cada quien arranca con 5 cartas JUGABLES',
+     cuantasJugables(e.a) === 5 && cuantasJugables(e.b) === 5,
+     cuantasJugables(e.a) + ' y ' + cuantasJugables(e.b));
   /* ⚠ UN MAZO POR JUGADOR, y ya no hay `e.mazo`. Lo pidió Carlos, y es lo que
      hace posible que después se pueda COMPRAR cartas: un mazo compartido es el
      mismo para los dos y no se puede mejorar. */
-  ok('cada quien tiene SU mazo, con 105 cartas después de robar 5',
-     e.a.mazo.length === 105 && e.b.mazo.length === 105,
-     e.a.mazo.length + ' y ' + e.b.mazo.length);
+  ok('cada quien tiene SU mazo, y lo repartido salió de ahí',
+     [e.a, e.b].every(j => j.mano.length + j.mazo.length === 110),
+     (e.a.mano.length + e.a.mazo.length) + ' y ' + (e.b.mano.length + e.b.mazo.length));
   ok('ya no hay un mazo compartido', e.mazo === undefined);
   ok('cada mazo trae sus 5 bonificaciones y sus 5 penalizaciones',
      [e.a, e.b].every(j => {
@@ -279,6 +290,37 @@ console.log('\n── La MUTACIÓN: si le quito el tope de 15, ¿lo cacho? ─�
   /* Y si la combinación sumara las dos cartas, el ejemplo daría 96 y no 74. */
   ok('MUTACIÓN · si la combinación sumara, el ejemplo daría 96 y no 74',
      42 + 54 === 96 && combo(42,54,'C').puntos === 74);
+}
+
+console.log('\n── Que la partida SIEMPRE se acabe (el juego se trababa) ──');
+/* ⚠ ÉSTA ES LA PRUEBA DE UN JUEGO QUE SE QUEDABA QUIETO PARA SIEMPRE, y salió
+   de jugar 8 partidas a puros clics: en una de ellas, en la ronda 17, ya no
+   había nada que tocar. El motivo es que quien nunca gasta sus +5 y −5 se las
+   va acumulando —nadie lo obliga—, hasta que sus cinco cartas son cinco
+   especiales: no puede jugar, y la partida no se daba por terminada porque su
+   mano NO estaba vacía. Cinco cartas y ningún movimiento.
+
+   Se prueba jugando 200 partidas del peor jugador posible: el que siempre tira
+   la primera carta que puede y no usa una especial en su vida. */
+{
+  let trabadas = 0, masLarga = 0, peor = null;
+  for(let semilla = 1; semilla <= 200; semilla++){
+    let e = M.repartir(semilla), n = 0;
+    while(!e.acabo && n < 400){
+      const eleg = (j) => {
+        const c = j.mano.find(x => x.nivel !== 'ESP');
+        return c ? { cartas:[c], especial:null } : null;
+      };
+      const ja = eleg(e.a), jb = eleg(e.b);
+      if(!ja || !jb) break;                  /* nadie puede jugar y NADIE lo dijo */
+      e = M.jugarRonda(e, ja, jb); n++;
+    }
+    if(!e.acabo){ trabadas++; peor = semilla; }
+    if(n > masLarga) masLarga = n;
+  }
+  ok('ninguna de 200 partidas se queda trabada', trabadas === 0,
+     trabadas + ' trabadas, la primera con la semilla ' + peor);
+  ok('y ninguna se alarga sin sentido', masLarga < 400, masLarga + ' rondas la más larga');
 }
 
 console.log('\n── Que el archivo suelto no se quede viejo ──');

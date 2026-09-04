@@ -200,6 +200,25 @@ function danoEntre(puntosA, puntosB){
            crudo };
 }
 
+/* ── LA MANO SE CUENTA EN CARTAS JUGABLES, NO EN CARTAS ────────────────────
+   ⚠ ESTO ES UN ARREGLO DE UN JUEGO QUE SE TRABABA, no una regla nueva.
+
+   Las especiales (+5 y −5) NO se juegan solas: van encima de otra carta. Si
+   cuentan para las cinco de la mano, se quedan ahí ocupando sitio ronda tras
+   ronda —nadie está obligado a gastarlas— y llega un momento en que tus cinco
+   cartas son cinco especiales: no puedes jugar nada, y el juego no se acaba
+   porque tu mano no está vacía. Se queda quieto para siempre.
+
+   No es teórico: salió 1 de cada 8 partidas jugadas a puros clics, y así es
+   como juega alguien que nunca usa sus especiales. La partida se paraba en la
+   ronda 17 sin decir nada.
+
+   La regla 4.8 dice «reponer hasta tener 5». Lo que se corrige es qué cuenta
+   como una de esas 5: una carta que no se puede jugar sola no es una de tus
+   cinco cartas, es un modificador que traes aparte — que además es como ya se
+   pintaba en la pantalla, en su propia fila. */
+const jugablesDe = (mano) => mano.filter(c => !esCartaEspecial(c));
+
 /* ── Repartir ─────────────────────────────────────────────────────────────
    Cada quien su mazo, y las especiales vienen dentro como cualquier otra
    carta. Ya no hay reparto de especiales que hacer: si te salen, te salen. */
@@ -225,7 +244,10 @@ function repartir(semilla){
   const a = jugador('a');
   const b = jugador('b');
 
-  for(let i = 0; i < MANO; i++){ a.mano.push(a.mazo.pop()); b.mano.push(b.mazo.pop()); }
+  /* Cinco JUGABLES cada quien. Si en el camino salen especiales, se las quedan
+     además de las cinco: por eso el reparto puede sacar seis o siete cartas. */
+  for(const j of [a, b])
+    while(jugablesDe(j.mano).length < MANO && j.mazo.length) j.mano.push(j.mazo.pop());
   return { a, b, ronda: 1, historia: [], acabo: null };
 }
 
@@ -300,7 +322,7 @@ function jugarRonda(estado, jugadaA, jugadaB){
        tumba la partida. La regla 4.8 dice «si el mazo se acabó, se juega con
        lo que quede», y no tener mazo es un caso de eso. */
     if(!Array.isArray(j.mazo)) j.mazo = [];
-    while(j.mano.length < MANO && j.mazo.length) j.mano.push(j.mazo.pop());
+    while(jugablesDe(j.mano).length < MANO && j.mazo.length) j.mano.push(j.mazo.pop());
   }
 
   est.historia.push({ ronda: est.ronda, a: pA, b: pB,
@@ -311,7 +333,7 @@ function jugarRonda(estado, jugadaA, jugadaB){
   if(est.a.pv <= 0 || est.b.pv <= 0){
     est.acabo = est.a.pv <= 0 && est.b.pv <= 0 ? 'empate'
               : est.a.pv <= 0 ? 'b' : 'a';
-  } else if(!est.a.mano.length || !est.b.mano.length){
+  } else if(!jugablesDe(est.a.mano).length || !jugablesDe(est.b.mano).length){
     est.acabo = est.a.pv === est.b.pv ? 'empate' : (est.a.pv > est.b.pv ? 'a' : 'b');
     est.porCartas = true;
   }

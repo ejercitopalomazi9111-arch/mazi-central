@@ -17,6 +17,34 @@ const ok = (que, cond, detalle='') => {
   else { mal++; console.log('  ✗ ' + que + (detalle ? '  → ' + detalle : '')); }
 };
 
+/* ⚠ YA NO HAY NI «QUITAR SELECCIÓN» NI «JUGAR CARTA». Carlos los mandó quitar
+   los dos: «quita el botón de jugar carta y haz que pueda hacerlo pulsando 3
+   veces en mi carta o arrastrándola al campo de juego», y «el de quitar
+   selección quítalo y haz que se deseleccione al pulsar otro lugar».
+
+   Así que las pruebas juegan como una persona: tocan la carta tres veces para
+   mandarla a la mesa y tocan fuera para soltarla. Si alguno de los dos gestos
+   deja de funcionar, media suite se cae — que es exactamente lo que se le pide
+   a una prueba que depende del gesto y no de un botón. */
+const DESMARCAR = () => { document.querySelector('#rTuMano').click(); };
+/* ⚠ ESTOS AYUDANTES CORREN EN NODE Y HACEN EL `evaluate` ELLOS. Escribirlos
+   como funciones sueltas y llamarlas dentro de otro `evaluate` no funciona: al
+   navegador sólo viaja el cuerpo de la función que se le pasa, no las de
+   alrededor, así que ahí dentro `TOCAR3` sencillamente no existe.
+   Tres toques: el de elegir y dos más. Se vuelve a buscar la carta en cada
+   vuelta porque `pintarMano` puede haberla redibujado en medio. */
+const jugarUna = (p) => p.evaluate(() => {
+  const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
+  if(!c) return false;
+  const id = c.dataset.id;
+  for(let i = 0; i < 3; i++){
+    const v = document.querySelector('#mMano .carta[data-id="' + id + '"]');
+    if(!v) break;
+    v.click();
+  }
+  return true;
+});
+
 const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport:{ width:390, height:844 } });
 const page = await ctx.newPage();
@@ -54,19 +82,47 @@ ok('ningún botón visible mide menos de 44 px de alto', chicos.length === 0, ch
 console.log('\n── Contra la máquina ──');
 await page.click('[data-modo="maquina"]');
 await page.waitForTimeout(300);
-/* ⚠ 5 CARTAS EN LA MANO, PERO NO LAS 5 EN EL ABANICO. Desde que las especiales
-   son cartas del mazo, algunas de esas 5 pueden ser un +5 o un −5, y ésas se
-   pintan en su propia fila porque no se juegan solas. Contar sólo el abanico
-   daría 3 ó 4 y parecería un reparto corto. Lo que se comprueba es el TOTAL. */
-ok('reparte 5 cartas a la mano', await page.evaluate(() =>
-   document.querySelectorAll('#mMano .carta').length
-   + document.querySelectorAll('#mEspeciales .esp').length) === 5);
+/* ⚠ ESTA PRUEBA SE HA CORREGIDO TRES VECES Y SIEMPRE POR NO TENER CLARO QUÉ
+   SON LAS CINCO. Vale la pena dejar escrito el recorrido:
+     · contaba sólo el abanico → daba 3 ó 4 y parecía un reparto corto
+     · contaba abanico + fila de especiales = 5 → y con eso el juego SE TRABABA:
+       las especiales que nunca gastas se acumulan y acaban ocupando los cinco
+       sitios sin dejarte jugar nada (45 partidas trabadas de 200, medido)
+     · ahora las especiales viven DENTRO del abanico —lo pidió Carlos— pero no
+       cuentan para los cinco
+   Así que el abanico puede traer 5, 6 ó 7 cartas: las cinco jugables y los
+   modificadores que hayan salido. Lo que se comprueba son las CINCO. */
+const reparto = await page.evaluate(() => ({
+  jugables: [...document.querySelectorAll('#mMano .carta')].filter(c => !c.dataset.esp).length,
+  especiales: document.querySelectorAll('#mMano .carta[data-esp]').length,
+}));
+ok('reparte 5 cartas jugables al abanico', reparto.jugables === 5,
+   reparto.jugables + ' jugables y ' + reparto.especiales + ' especiales');
+/* Y las especiales están EN la mano, no en un cajón aparte. Carlos: «la carta
+   bonificación no le des otro espacio, métela a la mano como otra carta más». */
+ok('las especiales viven dentro del abanico, no en su propia fila',
+   await page.evaluate(() => !document.querySelector('#mEspeciales')));
 ok('arranca con 200 PV cada quien',
    (await page.textContent('#mPvA')) === '200' && (await page.textContent('#mPvB')) === '200');
-ok('el botón de jugar arranca apagado', await page.isDisabled('#bJugar'));
+ok('no queda ningún botón de jugar', await page.evaluate(() => !document.querySelector('#bJugar')));
 
-await page.click('#mMano .carta');
-ok('al elegir una carta ya se puede jugar', !(await page.isDisabled('#bJugar')));
+await page.evaluate(() => { document.querySelector('#mMano .carta:not([data-esp])').click(); });
+ok('al tocar una carta, queda elegida', await page.evaluate(() =>
+   document.querySelectorAll('#mMano .carta.marcada').length === 1));
+/* El segundo toque tiene que AVISAR que falta uno. Sin señal, «tres toques»
+   es un secreto que nadie descubre: el primero parece no hacer nada. */
+await page.evaluate(() => { document.querySelector('#mMano .carta.marcada').click(); });
+ok('al segundo toque se enciende que ya está lista para salir',
+   await page.evaluate(() => !!document.querySelector('#mMano .carta.marcada.lista')));
+ok('y lo dice con palabras, no sólo con un borde',
+   /otra vez/i.test(await page.textContent('#mAviso')),
+   (await page.textContent('#mAviso')).slice(0, 60));
+/* Tocar fuera la suelta. Es lo que sustituyó al botón «Quitar selección». */
+await page.evaluate(DESMARCAR);
+await page.waitForTimeout(120);
+ok('tocar fuera de las cartas suelta la elegida', await page.evaluate(() =>
+   document.querySelectorAll('#mMano .carta.marcada').length === 0));
+await page.evaluate(() => { document.querySelector('#mMano .carta:not([data-esp])').click(); });
 
 /* La trampa que hay que impedir: elegir dos cartas que NO se pueden combinar. */
 /* Antes se apagaban las otras cuatro cartas al elegir una, y para cambiar de
@@ -78,40 +134,58 @@ ok('con una carta elegida, las demás siguen tocables (se puede cambiar de opini
      [...document.querySelectorAll('#mMano .carta')].every(c => !c.disabled)));
 ok('picar otra carta que no combina CAMBIA la elección, no la traba',
    await page.evaluate(() => {
-     const cs = [...document.querySelectorAll('#mMano .carta')];
+     /* ⚠ SIN LAS ESPECIALES. Están en el mismo abanico desde que Carlos las
+        mandó meter a la mano, y su nivel es BONO o CASTIGO: al buscar «otra de
+        distinto nivel» salían ellas, y una especial NO se elige —se pone
+        encima—, así que la prueba reprobaba una regla que se cumple. */
+     const cs = [...document.querySelectorAll('#mMano .carta')].filter(c => !c.dataset.esp);
      const niv = c => c.querySelector('.niv').textContent;
      const marcada = cs.find(c => c.classList.contains('marcada'));
+     if(!marcada) return false;
      const otra = cs.find(c => c !== marcada && niv(c) !== niv(marcada));
      if(!otra) return true;
      otra.click();
-     const ahora = [...document.querySelectorAll('#mMano .carta.marcada')];
+     const ahora = [...document.querySelectorAll('#mMano .carta.marcada')].filter(c => !c.dataset.esp);
      return ahora.length === 1 && niv(ahora[0]) === niv(otra);
    }));
 
 /* Se juega la partida entera a base de clics, como lo haría el niño. */
-let vueltas = 0, rondasJugadas = 0;
+let vueltas = 0, rondasJugadas = 0, motivo = 'se acabaron las 300 vueltas';
 while(vueltas++ < 300){
   if(!(await page.isVisible('#fElegir'))) {
     if(await page.isVisible('#fDuelo')){ await page.click('#bSeguir'); await page.waitForTimeout(60); continue; }
     if(await page.isVisible('#fFin')) break;
   }
   const hay = await page.evaluate(() => {
-    /* Se limpia primero: si quedó una carta marcada de antes, volver a
-       picarla la DESMARCA y el botón de jugar se apaga. Es exactamente lo que
-       le pasaría a un niño que cambia de opinión, así que la prueba tiene que
-       partir de limpio en cada ronda. */
-    document.querySelector('#bLimpiar').click();
-    const c = [...document.querySelectorAll('#mMano .carta')]
-      .find(x => !x.disabled && !x.classList.contains('marcada'));
-    if(!c) return false; c.click(); return true;
+    const c = [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp);
+    if(!c) return false;
+    /* Tres toques, que es como se juega desde que no hay botón. */
+    for(let i = 0; i < 3; i++){
+      const v = document.querySelector('#mMano .carta[data-id="' + c.dataset.id + '"]');
+      if(!v) break;
+      v.click();
+    }
+    return true;
   });
-  if(!hay) break;
-  if(await page.isDisabled('#bJugar')) break;
-  await page.click('#bJugar'); rondasJugadas++;
+  /* ⚠ LOS DOS CORTES DICEN POR QUÉ. Antes rompían el ciclo en silencio y el
+     único dato que quedaba era «30 rondas» — que no distingue un juego
+     trabado de una pantalla que no respondió a tiempo. Una vez falló así y me
+     costó una corrida entera averiguar cuál de los dos había sido. */
+  if(!hay){ motivo = 'la mano se quedó sin cartas jugables'; break; }
+  /* Si los tres toques no sacaron la carta, la ronda no avanzó. Se dice por
+     qué en vez de romper el ciclo en silencio: «30 rondas» no distingue un
+     juego trabado de una pantalla que no respondió. */
+  if(await page.isVisible('#fElegir') && await page.evaluate(() =>
+       document.querySelectorAll('#mMano .carta.marcada').length > 0)){
+    motivo = 'los tres toques no mandaron la carta a la mesa · aviso: '
+           + (await page.textContent('#mAviso')).trim().slice(0, 60);
+    break;
+  }
+  rondasJugadas++;
   await page.waitForTimeout(60);
 }
 ok('la partida se puede jugar completa a puros clics hasta el final',
-   await page.isVisible('#fFin'), rondasJugadas + ' rondas');
+   await page.isVisible('#fFin'), rondasJugadas + ' rondas · ' + motivo);
 const fin = await page.textContent('#finTitulo');
 ok('al final dice quién ganó', /Ganaste|Perdiste|Empate/.test(fin), fin);
 
@@ -135,9 +209,8 @@ await page.click('#bCortina');
 await page.waitForTimeout(150);
 const mano1 = await page.evaluate(() =>
   [...document.querySelectorAll('#mMano .carta .valor')].map(v => v.textContent).join(','));
-await page.evaluate(() => { document.querySelector('#mMano .carta').click(); });
-await page.click('#bJugar');
-await page.waitForTimeout(200);
+await jugarUna(page);
+await page.waitForTimeout(250);
 ok('al jugar el 1, vuelve a tapar para pasarle el teléfono al 2',
    await page.isVisible('#cortina') && /Jugador 2/.test(await page.textContent('#corQuien')));
 await page.click('#bCortina');
@@ -191,19 +264,24 @@ const mano = await page.evaluate(() => {
   return { cuantas: cs.length, filas: Object.values(filas),
            anchoMin: Math.min(...cs.map(c => c.getBoundingClientRect().width)) };
 });
-ok('el abanico trae las cartas jugables de la mano',
-   mano.cuantas >= 1 && mano.cuantas <= 5, mano.cuantas + '');
-/* Y la fila de especiales trae UNA POR CARTA, no un botón fijo con contador:
-   ésa es toda la corrección de Carlos. Si el reparto no trajo ninguna, se dice
-   con palabras en vez de dejar un hueco. */
-ok('las especiales se pintan una por carta, o se dice que no hay',
+/* ⚠ EL TECHO YA NO ES 5. Desde que las especiales viven dentro del abanico
+   —Carlos: «métela a la mano como otra carta más»— la mano son cinco jugables
+   MÁS los modificadores que hayan salido, y de ésos puede haber hasta diez en
+   un mazo. Dejar el 5 habría sido una prueba defendiendo una decisión ya
+   derribada, que es justo lo que le pedí a Godines que no hiciera. */
+ok('el abanico trae la mano entera: las cinco jugables y sus especiales',
+   mano.cuantas >= 5 && mano.cuantas <= 15, mano.cuantas + '');
+/* Las especiales son cartas de la mano y se pintan una por carta, con su arte
+   —la Alcancía para el +5, las Carnitas para el −5—. Antes eran dos botones
+   con un contador que decía «te quedan 3», y eso era una mentira: daba a
+   entender que siempre tienes especiales y que sabes cuántas. */
+ok('las especiales, si salieron, son cartas de verdad con su arte',
    await page.evaluate(() => {
-     const esps = document.querySelectorAll('#mEspeciales .esp').length;
-     const vacio = !!document.querySelector('#mEspeciales .sin-esp');
-     return esps > 0 ? !vacio : vacio;
+     const es = [...document.querySelectorAll('#mMano .carta[data-esp]')];
+     return es.every(c => c.classList.contains('con-arte'));
    }));
 ok('y ninguna promete un saldo que ya no existe',
-   !/te quedan/i.test(await page.textContent('#mEspeciales')));
+   !/te quedan/i.test(await page.textContent('#fElegir')));
 /* ⚠ LA ASERCIÓN DE «TODAS ALINEADAS» SE RETIRÓ, Y CON RAZÓN. Defendía la mano
    en fila; ahora es un ABANICO, y un abanico tiene las cartas a distinta
    altura A PROPÓSITO. Dejarla habría sido exactamente lo que le advertí a
@@ -283,7 +361,11 @@ ok('la página no se desborda de lado', !desborde);
     const c = document.querySelectorAll('#mMano .carta')[1];
     return c.getBoundingClientRect().top;
   });
-  await page.click('#mMano .carta:nth-child(2)');
+  /* ⚠ CON EL RATÓN DE PLAYWRIGHT NO: las cartas se enciman, así que el centro
+     de la segunda lo ocupa la tercera y el clic se queda esperando para
+     siempre. Se toca por JS, que es lo que hace un dedo sobre la parte visible
+     de la carta. */
+  await page.evaluate(() => document.querySelectorAll('#mMano .carta')[1].click());
   /* ⚠ NO SE ESPERA UN TIEMPO, SE ESPERA EL HECHO. Al marcar, la mano se
      repinta entera y las cartas vuelven a entrar con su animación de reparto;
      mientras `llega` esté puesta, su fotograma final manda y la carta todavía
@@ -311,9 +393,56 @@ ok('la página no se desborda de lado', !desborde);
   ok('y queda por ENCIMA de todas las demás', d.alFrente);
   /* Subir y tapar el rótulo de la sección es cambiar un problema por otro. */
   ok('sin taparle el título a la sección', !d.tapaElTitulo);
-  await page.click('#bLimpiar');
+  await page.evaluate(DESMARCAR);
   await page.waitForTimeout(200);
 }
+
+console.log('\n── La mesa donde se ponen las cartas ──');
+/* Carlos: «haz que se vea la mesa donde se ponen las cartas». */
+const mesa = await page.evaluate(() => {
+  const r = s => document.querySelector(s).getBoundingClientRect();
+  const a = r('#mSlotA'), b = r('#mSlotB');
+  return {
+    seVe: a.width > 40 && a.height > 40 && b.width > 40 && b.height > 40,
+    mismoTamano: Math.abs(a.width - b.width) < 2 && Math.abs(a.height - b.height) < 2,
+    alto: r('#mMesa').height,
+    vacios: !document.querySelector('#mSlotA .carta') && !document.querySelector('#mSlotB .carta'),
+    /* Y el hueco vacío tiene que verse como un hueco: si no se distingue del
+       fieltro, no está diciendo «aquí va a caer tu carta» y entonces no sirve
+       de nada tenerlo. */
+    seNota: getComputedStyle(document.querySelector('#mSlotA')).borderStyle === 'dashed',
+  };
+});
+ok('los dos huecos están ahí ANTES de jugar, no sólo al revelar', mesa.seVe && mesa.vacios);
+ok('y se ven como huecos, no como fieltro', mesa.seNota);
+ok('los dos miden lo mismo', mesa.mismoTamano);
+/* ⚠ ESTE NÚMERO ES EL DEFECTO QUE YA COMETÍ. La primera versión apiló los dos
+   huecos uno encima del otro: 200 px de alto, que empujaron «Jugar carta»
+   fuera de la pantalla de un iPhone. Se vio en una captura. 120 es el techo:
+   por encima, algo se volvió a apilar. */
+ok('la mesa no se come la pantalla', mesa.alto < 120, Math.round(mesa.alto) + ' px de alto');
+/* Lo que de verdad importa de lo anterior, medido donde duele: elegir la carta
+   y poder jugarla SIN hacer scroll. Un juego de cartas en el que hay que
+   recorrer la pantalla para pulsar «Jugar» después de cada elección no se
+   juega dos veces. */
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.evaluate(() => document.querySelector('#mMano .carta').click());
+await page.waitForTimeout(150);
+const cabe = await page.evaluate(() => {
+  /* ⚠ SE MIDE EL ÚLTIMO BOTÓN, NO «JUGAR». Con la mesa apilada, «Jugar carta»
+     quedaba justo pegado al borde de abajo —dentro de la pantalla por unos
+     píxeles— y «Salir» ya no se veía. O sea que medir sólo «Jugar» daba VERDE
+     con la pantalla rota, que es exactamente la clase de prueba que llevo la
+     semana entera cazando. Se comprobó a propósito: apilando otra vez la mesa,
+     la de «Jugar» pasaba y ésta truena. */
+  const bs = [...document.querySelectorAll('#fElegir button')].filter(x => x.offsetParent);
+  const b = bs[bs.length - 1].getBoundingClientRect();
+  return { fondo: b.bottom, alto: window.innerHeight, cual: bs[bs.length - 1].textContent.trim() };
+});
+ok('los botones de la mesa se alcanzan sin hacer scroll', cabe.fondo <= cabe.alto,
+   '«' + cabe.cual + '» acaba en ' + Math.round(cabe.fondo) + ' de ' + cabe.alto);
+await page.evaluate(DESMARCAR);
+await page.waitForTimeout(150);
 
 console.log('\n── El fieltro: la mesa no compite con las cartas ──');
 /* Carlos, viendo unas fotos del juego: «se ve bien culero». El motivo era
@@ -327,8 +456,7 @@ const fieltro = await page.evaluate(() => {
   return {
     enMesa: document.body.classList.contains('fieltro'),
     luzFondo: +lum(num(getComputedStyle(document.body).backgroundColor)).toFixed(4),
-    principalLleno: getComputedStyle(document.querySelector('#bJugar')).backgroundColor,
-    secundarioLleno: getComputedStyle(document.querySelector('#bLimpiar')).backgroundColor,
+    salirLleno: getComputedStyle(document.querySelector('#bSalir')).backgroundColor,
   };
 });
 ok('en la mesa el fieltro está puesto', fieltro.enMesa);
@@ -336,16 +464,17 @@ ok('en la mesa el fieltro está puesto', fieltro.enMesa);
    luminancia relativa es el techo: por encima vuelve a competir con el arte. */
 ok('el fondo de la mesa es oscuro de verdad', fieltro.luzFondo < 0.08, fieltro.luzFondo + '');
 /* La jerarquía estaba AL REVÉS: «Jugar carta» apagado y debajo dos bloques
-   blancos sólidos —lo menos importante era lo más brillante—. */
-ok('los botones secundarios no son bloques llenos',
-   /rgba\(0, 0, 0, 0\)|transparent/.test(fieltro.secundarioLleno), fieltro.secundarioLleno);
-
-await page.click('#mMano .carta');
+   blancos sólidos —lo menos importante era lo más brillante—. Hoy el único
+   botón de la mesa es la ✕ de salir, y tiene que ser lo MENOS llamativo de la
+   pantalla: lo que manda son las cartas. */
+ok('la ✕ de salir no es un bloque lleno',
+   !/^rgb\(2[0-9][0-9]|^rgb\(255/.test(fieltro.salirLleno), fieltro.salirLleno);
+/* Y con una carta elegida, lo que se enciende es LA CARTA, no un botón. */
+await page.evaluate(() => { document.querySelector('#mMano .carta:not([data-esp])').click(); });
 await page.waitForTimeout(250);
-ok('con una carta elegida, el principal SÍ se llena',
-   !/rgba\(0, 0, 0, 0\)|transparent/.test(
-     await page.evaluate(() => getComputedStyle(document.querySelector('#bJugar')).backgroundColor)));
-await page.click('#bLimpiar');
+ok('con una carta elegida, lo que se marca es la carta',
+   await page.evaluate(() => !!document.querySelector('#mMano .carta.marcada')));
+await page.evaluate(DESMARCAR);
 await page.waitForTimeout(200);
 
 
@@ -394,32 +523,36 @@ ok('ningún texto de la mesa se queda corto de contraste',
 ok('…y el recorrido de verdad está mirando la mesa',
    await page.evaluate(() => document.body.innerText.includes('Ronda')));
 
-const pistas = await page.evaluate(() => {
-  const el = document.getElementById('mPistas');
-  const rg = document.createRange(); rg.selectNodeContents(el);
-  const tops = [...rg.getClientRects()].map(r => Math.round(r.top));
-  const ultima = Math.max(...tops);
-  let palabras = 0;
-  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  for(let n = w.nextNode(); n; n = w.nextNode()){
-    const s = n.nodeValue;
-    for(let i = 0; i < s.length; i++){
-      if(/\S/.test(s[i]) && (i === 0 || /\s/.test(s[i-1]))){
-        const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i+1);
-        if(Math.round(r.getBoundingClientRect().top) === ultima) palabras++;
-      } } }
-  return palabras;
-});
-/* Una palabra sola al final se lee como si el texto se hubiera cortado. Se
-   evita con espacios duros, no acortando la frase. */
-ok('el renglón de abajo no deja una palabra huérfana', pistas > 1, pistas + ' palabra(s)');
+/* ⚠ AQUÍ ESTABA LA PRUEBA DE LA PALABRA HUÉRFANA DE `#mPistas`. Se retira
+   porque el texto que defendía ya no existe: Carlos mandó quitar «te quedan 4
+   combinaciones · te quedan 105 cartas en tu mazo» —«lo de te quedan x cartas
+   etc quítalo»— y ese dato ahora se VE en el mazo y en el rótulo. Una prueba
+   que vigila un renglón borrado sólo puede salir verde o mentir.
+
+   Lo que la sustituye vigila lo que ocupó su sitio: que el número del mazo sea
+   un número y no un hueco, y que el cementerio exista de los dos lados. */
+const pilas = await page.evaluate(() => ({
+  mio:   (document.querySelector('#mMazoA b') || {}).textContent,
+  suyo:  (document.querySelector('#mMazoB b') || {}).textContent,
+  cemA:  !!document.querySelector('#mCemA'),
+  cemB:  !!document.querySelector('#mCemB'),
+  anchoA: document.querySelector('#mMazoA').getBoundingClientRect().width,
+}));
+ok('el mazo dice cuántas cartas quedan, con un número',
+   /^\d+$/.test(pilas.mio || '') && /^\d+$/.test(pilas.suyo || ''),
+   pilas.mio + ' y ' + pilas.suyo);
+ok('los dos jugadores tienen su cementerio en la mesa', pilas.cemA && pilas.cemB);
+/* Y que se vea: una pila de 0 px de ancho es una pila que no existe. Ya pasó
+   —un `1fr` en la rejilla las dejó en cero con el CSS y el JS correctos. */
+ok('y las pilas se ven de verdad, no aplastadas a cero',
+   pilas.anchoA >= 40, Math.round(pilas.anchoA) + ' px');
 
 console.log('\n── Y al salir, la portada vuelve a ser rosa ──');
 /* ⚠ Esta prueba nació MENTIROSA: la escribí devolviendo `true` a secas, con un
    `querySelector` decorativo al lado que no comprobaba nada. Habría salido en
    verde con el fieltro pegado a la portada para siempre. Ahora SE SALE de la
    mesa de verdad y se mira el fondo que queda. */
-await page.click('#p-mesa .btn:not(.fuerte):last-of-type');   /* Salir */
+await page.click('#bSalir');   /* la ✕ del renglón de la mano */
 await page.waitForTimeout(400);
 const portada = await page.evaluate(() => ({
   seVeLaPortada: !document.querySelector('#p-portada').classList.contains('oculto'),
@@ -457,7 +590,7 @@ ok('en la portada tampoco hay texto corto de contraste',
 console.log('\n── Que no se pueda hacer trampa desde la pantalla ──');
 ok('nunca quedan marcadas dos cartas que no se pueden combinar', await page.evaluate(() => {
   const niv = c => c.querySelector('.niv').textContent;
-  document.querySelector('#bLimpiar').click();
+  document.querySelector('#rTuMano').click();
   const cs = [...document.querySelectorAll('#mMano .carta')];
   const a = cs[0];
   const otra = cs.slice(1).find(c => niv(c) !== niv(a));
@@ -468,7 +601,7 @@ ok('nunca quedan marcadas dos cartas que no se pueden combinar', await page.eval
 }));
 ok('dos cartas del MISMO nivel combinable sí se marcan juntas', await page.evaluate(() => {
   const niv = c => c.querySelector('.niv').textContent;
-  document.querySelector('#bLimpiar').click();
+  document.querySelector('#rTuMano').click();
   const cs = [...document.querySelectorAll('#mMano .carta')];
   let par = null;
   for(let i = 0; i < cs.length && !par; i++)
@@ -498,16 +631,30 @@ console.log('\n── El resultado de la ronda se lee bien ──');
   await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
   await page.click('[data-modo="maquina"]');
   await page.waitForTimeout(250);
-  await page.evaluate(() => { document.querySelector('#mMano .carta').click(); });
-  await page.click('#bJugar');
+  await jugarUna(page);
   await page.waitForTimeout(400);
   const texto = (await page.textContent('#dGolpe')).replace(/\s+/g, ' ').trim();
   ok('no dice «Tú recibe», que es como estaba mal escrito', !/Tú recibe\b/.test(texto), texto);
   ok('dice quién se llevó el golpe, en español que se entiende',
      /Recibes el golpe|La máquina recibe el golpe|Empate/.test(texto), texto);
-  ok('las cartas reveladas se ven completas, no desvaídas', await page.evaluate(() =>
-     [...document.querySelectorAll('#dCartaA .carta, #dCartaB .carta')]
+  /* ⚠ LAS CARTAS REVELADAS YA NO VIVEN EN EL PANEL DEL DUELO: viven en la
+     MESA, que es donde se pusieron. Estaban pintadas en los dos sitios a la
+     vez y eso se veía como un error de maquetación. */
+  ok('al revelar, las dos cartas quedan puestas en la mesa', await page.evaluate(() =>
+     document.querySelectorAll('#mSlotA .carta').length >= 1
+     && document.querySelectorAll('#mSlotB .carta').length >= 1));
+  ok('y se ven completas, no desvaídas', await page.evaluate(() =>
+     [...document.querySelectorAll('#mSlotA .carta, #mSlotB .carta')]
        .every(c => getComputedStyle(c).opacity === '1')));
+  /* ⚠ EL LADO IMPORTA. La mesa y el marcador del duelo cuentan la MISMA ronda;
+     si mi carta sale a la izquierda arriba y mis puntos a la derecha abajo, la
+     pantalla se contradice sola. Pasó: la primera versión tenía los huecos al
+     revés y se cazó en una captura, no leyendo el código. */
+  ok('mi carta y mis puntos están del MISMO lado', await page.evaluate(() => {
+    const x = el => el.getBoundingClientRect().left;
+    return (x(document.querySelector('#mSlotA')) < x(document.querySelector('#mSlotB')))
+        === (x(document.querySelector('#dPtsA')) < x(document.querySelector('#dPtsB')));
+  }));
 }
 
 console.log('\n── La máquina ──');

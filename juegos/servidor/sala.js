@@ -144,11 +144,20 @@ export class Sala {
     const yo = this.J[asiento], otro = this.J[asiento === 'a' ? 'b' : 'a'];
     return Object.assign(base, {
       ronda: this.J.ronda, acabo: this.J.acabo, porCartas: !!this.J.porCartas,
-      mazo: this.J.mazo.length,
+      /* ⚠ YA NO HAY `this.J.mazo`, Y ESO TENÍA EL MODO EN LÍNEA MUERTO. Desde
+         que cada jugador tiene SU mazo —lo pidió Carlos, y es lo que hace
+         posible una colección— el estado dejó de traer un mazo compartido.
+         Esta línea seguía leyéndolo: `undefined.length` reventaba dentro del
+         Durable Object, y desde fuera se veía como un websocket que contesta
+         500. O sea, un error de una palabra que se disfrazaba de problema de
+         red. Lo cazaron las pruebas de línea, que hay que correr con el
+         servidor levantado o no prueban nada.
+         Y del mazo viaja el NÚMERO, no las cartas: mandarlas sería regalar por
+         el cable justo lo que no queremos que se sepa. */
       yo:    { pv: yo.pv, mano: yo.mano, combosUsados: yo.combosUsados,
-               especiales: yo.especiales },
+               mazo: (yo.mazo || []).length },
       rival: { pv: otro.pv, cartas: otro.mano.length, combosUsados: otro.combosUsados,
-               especiales: otro.especiales },
+               mazo: (otro.mazo || []).length },
     });
   }
 
