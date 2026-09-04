@@ -20,8 +20,12 @@ import { fileURLToPath } from 'node:url';
 const DIR = dirname(fileURLToPath(import.meta.url));
 const leer = f => readFile(join(DIR, f), 'utf8');
 
-const [html, css, motor, excel, datos, app] = await Promise.all(
-  ['index.html','estilo.css','motor.js','excel.js','datos.js','app.js'].map(leer));
+/* El orden importa: es el mismo del index.html, y `app.js` necesita que los
+   otros ya hayan puesto lo suyo en `globalThis`. */
+const GUIONES = ['motor.js','excel.js','datos.js','reporte.js','app.js'];
+const html = await leer('index.html');
+const css  = await leer('estilo.css');
+const js   = await Promise.all(GUIONES.map(leer));
 
 /* `</script>` dentro de una cadena de JavaScript cierra la etiqueta del HTML
    y parte el archivo por la mitad. Pasa de verdad y es de las que cuesta
@@ -41,15 +45,18 @@ const pon = txt => () => txt;
 
 let out = html
   .replace('<link rel="stylesheet" href="estilo.css">', pon(`<style>\n${css}\n</style>`))
-  .replace(/<script src="motor\.js"><\/script>\s*<script src="excel\.js"><\/script>\s*<script src="datos\.js"><\/script>\s*<script src="app\.js"><\/script>/,
-    pon(`<script>\n${seguro(motor)}\n</script>\n<script>\n${seguro(excel)}\n</script>\n` +
-        `<script>\n${seguro(datos)}\n</script>\n<script>\n${seguro(app)}\n</script>`));
+  /* Se arma la expresión desde la MISMA lista de arriba: si un día se añade
+     un módulo y se olvida aquí, la sustitución no encaja y el guardián de
+     abajo revienta — que es justo lo que pasó al añadir `reporte.js`. */
+  .replace(new RegExp(GUIONES.map(f => `<script src="${f.replace('.','\\.')}"><\\/script>`).join('\\s*')),
+    pon(js.map(t => `<script>\n${seguro(t)}\n</script>`).join('\n')));
 
 /* Si alguna sustitución no encajó, el archivo saldría pidiendo archivos que
    no existen y fallaría EN SILENCIO al abrirlo. Mejor reventar aquí. */
 const problemas = [];
 if(out.includes('href="estilo.css"')) problemas.push('el CSS no se incrustó');
-if(out.includes('src="motor.js"'))    problemas.push('los scripts no se incrustaron');
+for(const f of GUIONES)
+  if(out.includes(`src="${f}"`)) problemas.push(`no se incrustó ${f}`);
 if(problemas.length){ console.error('✗ ' + problemas.join(' · ')); process.exit(1); }
 
 out = out.replace('<title>', `<!-- Archivo GENERADO por armar-suelto.mjs · ${new Date().toISOString().slice(0,10)}.

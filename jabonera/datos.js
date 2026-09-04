@@ -41,6 +41,9 @@ function estadoVacio(){
        mililitros a lavadas de manos. */
     dispensador: { modelo:'Dispensador mecánico de pulsador', capacidad:1000,
                    dosisPorPulsada:0, notas:'' },
+    /* Lo que encabeza el reporte en formato Rembrandt. */
+    proyecto: { nombre:'', modalidad:'STEAM', asignatura:'', integrantes:[],
+                asesor:'', grupo:'', conclusiones:'' },
     banos: [],
     productos: [],
     visitas: [],
@@ -71,6 +74,8 @@ function sanear(e){
   const out = { ...base, ...e };
   out.escuela      = { ...base.escuela, ...(e.escuela || {}) };
   out.dispensador  = { ...base.dispensador, ...(e.dispensador || {}) };
+  out.proyecto     = { ...base.proyecto, ...(e.proyecto || {}) };
+  if(!Array.isArray(out.proyecto.integrantes)) out.proyecto.integrantes = [];
   out.banos        = Array.isArray(e.banos) ? e.banos : [];
   out.productos    = Array.isArray(e.productos) ? e.productos : [];
   out.visitas      = (Array.isArray(e.visitas) ? e.visitas : []).map(v => ({
@@ -214,87 +219,150 @@ function hojasDeExcel(estado, informe, M){
   return hojas;
 }
 
+/* ── LO QUE SE INVESTIGÓ, CON SUS FUENTES ─────────────────────────────────
+   Carlos pidió: «busca refills en la web y haz un promedio y usa ese; además
+   investiga cuánto gasta un dispensador en promedio». Esto es lo que salió.
+   Va aquí, con fuente y fecha, y NO escondido en el código: un número sin
+   procedencia es una suposición con formato de dato.
+
+   ⚠ SON REFERENCIAS PARA EMPEZAR, NO MEDICIONES DE LA ESCUELA. En cuanto
+   haya una entrega real registrada, el sistema usa ESE precio y olvida éste
+   (el costo se calcula como promedio ponderado de las entregas, ver el
+   motor). Y la dosis del dispensador hay que medirla: es el experimento del
+   proyecto.                                                     (sept. 2026) */
+const REFERENCIAS = {
+  jabonLiquido: {
+    /* Seis precios de mercado mexicano, por litro:
+       $30.88 (refill 4 L, MercadoLibre)      $35.60 (5 L, VivoNatural)
+       $23.00 (20 L, Vive Limpio)             $17.00 (20 L, distribuidor)
+       $19.66 (20 L, Ninu)                    $45.00 (20 L, Química PH)
+       Se usa la MEDIANA y no el promedio: el de $45 es un valor extremo que
+       arrastra la media hasta $28.52 sin representar lo que se compra. Con
+       seis datos y uno atípico, la mediana es la medida honesta — y de paso
+       es un ejemplo de libro para la parte de matemáticas del proyecto. */
+    porLitro: 26.94, media: 28.52, minimo: 17.00, maximo: 45.00, muestras: 6,
+    fuente: 'MercadoLibre MX, VivoNatural, Vive Limpio, Ninu, Química PH (consulta sept. 2026)',
+  },
+  jabonBarra: {
+    /* $31.00 la barra de 150 g al menudeo (Escudo, farmacia) y $15.00 la
+       misma barra a mayoreo. Mediana $23.00 por barra = $153.33 por kilo. */
+    porBarra150: 23.00, porKilo: 153.33, minimo: 15.00, maximo: 31.00, muestras: 2,
+    fuente: 'Farmacias del Ahorro / YZA y precios de mayoreo (consulta sept. 2026)',
+  },
+  dispensador: {
+    /* Cuánto suelta un dispensador por accionamiento, según la literatura:
+       · ASTM E2755 pide 1.5 mL · EN 1500 pide 3 mL · ASTM E1174 pide 5 mL
+       · la guía Leapfrog (2022) exige al menos 1.0 mL por accionamiento
+       · pero los estudios de dispensadores REALES encuentran que muchos
+         entregan menos de 1 mL y que pasar de 1.5 mL es poco común.
+       Por eso el valor de arranque es 1.2 mL: dentro de lo que exige la
+       norma y dentro de lo que se mide en la práctica. Hay que medirlo. */
+    dosisReferencia: 1.2, dosisMinimaNorma: 1.0, rangoReal: [0.7, 1.5],
+    fuente: 'Am J Infect Control 2025 (consistencia de dispensadores); J Hosp Infect 2025; ASTM E2755 / EN 1500 / ASTM E1174; Leapfrog 2022',
+  },
+  /* Consumo esperado de un baño, para contrastar con lo medido:
+       alumnos × usos por día × dosis. Dos usos por alumno y día es lo que se
+       supone en una jornada escolar (después del recreo y después del baño).
+     NO es una predicción: es la vara con la que se compara la medición, y si
+     no coinciden, eso ES el hallazgo del proyecto. */
+  usosPorAlumnoDia: 2,
+};
+
+/** Consumo diario esperado de un baño, en mL. Sirve para poner la medición
+ *  en contexto — «medimos 190 y la referencia decía 156» es una frase de
+ *  proyecto de ciencias; «medimos 190» sola, no. */
+function consumoEsperado(bano, dispensador){
+  const alumnos = Number(bano?.alumnos);
+  const dosis = Number(dispensador?.dosisPorPulsada) || REFERENCIAS.dispensador.dosisReferencia;
+  if(!(alumnos > 0)) return null;
+  return alumnos * REFERENCIAS.usosPorAlumnoDia * dosis;
+}
+
 /* ── datos de demostración ─────────────────────────────────────────────────
-   Para poder presentar el proyecto ANTES de tener tres semanas de campo.
-   Van marcados con `demo:true` y la marca sale impresa en el resumen de
-   Excel y en un letrero rojo en la pantalla: un dato inventado que se pueda
-   confundir con una medición es exactamente lo que no debe pasar en un
-   proyecto de ciencias. */
+   Con LOS DOS BAÑOS REALES que dio Carlos —el 1 con un flujo de 20 a 22
+   alumnos y el 2 con unos 65— y con los precios investigados arriba. Son
+   dos y no seis a propósito: inventar cuatro baños que no existen para que
+   la gráfica se vea más llena sería exactamente lo que este proyecto no
+   debe hacer. Añadir más es un toque en Ajustes.
+
+   Van marcados con `demo:true`, y la marca sale en pantalla, en el Excel y
+   en el reporte: un dato inventado que se pueda confundir con una medición
+   es lo que no debe pasar en un proyecto de ciencias. */
 function datosDemo(hoy = Date.now()){
   const e = estadoVacio();
   e.demo = true;
   e.escuela = { nombre:'Escuela de ejemplo', ciclo:'2025–2026', turno:'Matutino',
                 responsable:'Equipo STEAM' };
+  e.proyecto = { nombre:'Control de consumo de jabón en los baños escolares',
+                 modalidad:'STEAM', asignatura:'Proyecto integrador',
+                 integrantes:['(nombre del integrante)','(nombre del integrante)'],
+                 asesor:'(nombre del asesor)', grupo:'', conclusiones:'' };
   e.dispensador = { modelo:'Dispensador mecánico de pulsador', capacidad:1000,
-                    dosisPorPulsada:1.2,
-                    notas:'Dosis medida en clase: 10 pulsadas en una probeta = 12 mL.' };
+                    dosisPorPulsada: REFERENCIAS.dispensador.dosisReferencia,
+                    notas:'Valor de referencia de la literatura (1.2 mL). PENDIENTE de medir en clase: 10 pulsadas en una probeta ÷ 10.' };
 
   const liq = { id:'pl', nombre:'Jabón líquido para manos', tipo:'liquido',
                 marca:'Genérico', tamanoEnvase:5000 };
   const sol = { id:'ps', nombre:'Jabón en barra', tipo:'solido',
-                marca:'Genérico', tamanoEnvase:1200, gramosPorPieza:100,
-                /* Medido pesando una barra antes y después de 50 lavadas
+                marca:'Genérico', tamanoEnvase:1800, gramosPorPieza:150,
+                /* Medido pesando una barra antes y después de lavadas
                    contadas. La barra NO usa la dosis del dispensador de
                    líquido: son dos unidades y dos experimentos. */
                 gramosPorLavada:0.55 };
   e.productos = [liq, sol];
 
   e.banos = [
-    { id:'b1', nombre:'Baño hombres · planta baja', zona:'Edificio A', tipo:'hombres', dispensadores:3, alumnos:180 },
-    { id:'b2', nombre:'Baño mujeres · planta baja', zona:'Edificio A', tipo:'mujeres', dispensadores:3, alumnos:175 },
-    { id:'b3', nombre:'Baño hombres · planta alta', zona:'Edificio A', tipo:'hombres', dispensadores:2, alumnos:120 },
-    { id:'b4', nombre:'Baño mujeres · planta alta', zona:'Edificio A', tipo:'mujeres', dispensadores:2, alumnos:118 },
-    { id:'b5', nombre:'Baño de talleres',           zona:'Edificio B', tipo:'mixto',   dispensadores:2, alumnos:90  },
-    { id:'b6', nombre:'Baño accesible',             zona:'Edificio A', tipo:'accesible',dispensadores:1, alumnos:25  },
+    { id:'b1', nombre:'Baño 1', zona:'Planta baja', tipo:'mixto', dispensadores:1, alumnos:21 },
+    { id:'b2', nombre:'Baño 2', zona:'Planta alta', tipo:'mixto', dispensadores:2, alumnos:65 },
   ];
 
-  /* Un generador CON SEMILLA: los mismos datos en cada máquina, para que la
+  /* Generador CON SEMILLA: los mismos datos en cada máquina, para que la
      presentación no cambie de números entre el ensayo y el examen. */
   let s = 20260115;
   const azar = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
 
   const DIA = 86400000;
   const inicio = new Date(hoy - 21*DIA); inicio.setHours(7,30,0,0);
-  /* Intensidad por baño: el de planta baja está junto a la cafetería y se usa
-     mucho más. No es adorno — es lo que hace que el ranking tenga algo que
-     enseñar. */
-  const peso = { b1:1.00, b2:0.95, b3:0.55, b4:0.52, b5:0.40, b6:0.10 };
 
+  /* Precios de las entregas, tomados de REFERENCIAS. */
+  const pl = REFERENCIAS.jabonLiquido.porLitro;
   e.entregas = [
-    { id:'e1', ts:inicio.getTime()-DIA, productoId:'pl', envases:8, costoTotal:1360, proveedor:'Distribuidora local' },
-    { id:'e2', ts:inicio.getTime()+9*DIA, productoId:'pl', envases:4, costoTotal:700,  proveedor:'Distribuidora local' },
-    { id:'e3', ts:inicio.getTime()-DIA, productoId:'ps', envases:3, costoTotal:255,  proveedor:'Distribuidora local' },
+    { id:'e1', ts:inicio.getTime()-DIA,   productoId:'pl', envases:4, costoTotal: Math.round(4*5*pl), proveedor:'Distribuidora local' },
+    { id:'e2', ts:inicio.getTime()+11*DIA, productoId:'pl', envases:2, costoTotal: Math.round(2*5*pl), proveedor:'Distribuidora local' },
+    { id:'e3', ts:inicio.getTime()-DIA,   productoId:'ps', envases:1,
+      costoTotal: Math.round(12*REFERENCIAS.jabonBarra.porBarra150), proveedor:'Distribuidora local' },
   ];
 
-  const dentro = {};                     /* lo que hay ahora en cada dispensador */
+  const dentro = {};
   for(const b of e.banos){ dentro[b.id+'pl'] = 0; dentro[b.id+'ps'] = 0; }
 
   for(let d = 0; d <= 21; d++){
     const cuando = new Date(inicio.getTime() + d*DIA);
     const finde = cuando.getDay() === 0 || cuando.getDay() === 6;
     for(const b of e.banos){
-      /* Se visita a diario salvo fin de semana. Dos veces al día en los dos
-         baños grandes: eso es lo que le da material al perfil por horas. */
-      const veces = finde ? 0 : (peso[b.id] > 0.9 ? 2 : 1);
+      /* Dos visitas al día en el baño grande: es lo que le da material al
+         perfil por horas, que sólo puede usar intervalos de menos de 12 h. */
+      const veces = finde ? 0 : (b.alumnos > 40 ? 2 : 1);
       for(let k = 0; k < veces; k++){
         const hora = k === 0 ? 7.5 : 13.5;
         const ts = new Date(cuando); ts.setHours(Math.floor(hora), (hora%1)*60, 0, 0);
         for(const p of [liq, sol]){
           const clave = b.id + p.id;
-          /* Gasto desde la visita anterior. El sólido se gasta bastante menos. */
-          const base = p.tipo === 'liquido' ? 210 : 26;
-          const gastado = finde ? 0
-            : base * peso[b.id] * (0.7 + azar()*0.6) * (veces === 2 ? 0.55 : 1);
+          /* El gasto se construye desde el consumo ESPERADO —alumnos × usos
+             × dosis— y se le mete ±30 % de variación. Así la demostración no
+             es un número al aire: es el modelo del propio proyecto. */
+          const esperado = consumoEsperado(b, e.dispensador) || 60;
+          const base = p.tipo === 'liquido' ? esperado : esperado * 0.12;
+          const gastado = finde ? 0 : base * (0.7 + azar()*0.6) / veces;
           dentro[clave] = Math.max(0, dentro[clave] - gastado);
-          /* Se rellena cuando baja del 25 % de la capacidad. */
-          const cap = p.tipo === 'liquido' ? 1000 * (b.dispensadores||1) : 300;
+          const cap = p.tipo === 'liquido' ? 1000 * (b.dispensadores||1) : 300 * (b.dispensadores||1);
           let repuesto = 0;
           if(dentro[clave] < cap * 0.25){ repuesto = cap - dentro[clave]; dentro[clave] = cap; }
           e.visitas.push({
             id: idNuevo('v'), ts: ts.getTime(), banoId: b.id, productoId: p.id,
             restante: Math.round((dentro[clave] - repuesto) * 10)/10,
             repuesto: Math.round(repuesto * 10)/10,
-            quien: 'Intendencia', nota: '',
+            quien: 'Equipo del proyecto', nota: '',
           });
         }
       }
@@ -303,7 +371,8 @@ function datosDemo(hoy = Date.now()){
   return e;
 }
 
-const API = { LLAVE, idNuevo, estadoVacio, cargar, guardar, sanear, hojasDeExcel, datosDemo };
+const API = { LLAVE, idNuevo, estadoVacio, cargar, guardar, sanear, hojasDeExcel, datosDemo,
+              REFERENCIAS, consumoEsperado };
 if(typeof module !== 'undefined') module.exports = API;
 globalThis.DATOS = API;
 })();

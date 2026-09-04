@@ -64,9 +64,53 @@ console.log('\n══ LA PÁGINA ABRE Y NO SE CAE ══');
   const { ctx, pg, errs } = await pagina();
   ok('carga sin un solo error de JavaScript', errs.length === 0, errs.join(' · '));
   ok('con todo vacío ofrece una salida en vez de una pantalla muerta',
-     await pg.isVisible('[data-ir="ajustes"]'));
-  ok('los cuatro módulos quedaron expuestos, ninguno se pisó',
-     await pg.evaluate(() => !!(globalThis.JABONERA && globalThis.EXCEL && globalThis.DATOS)));
+     await pg.isVisible('#p-inicio [data-abrir-ajustes]'));
+  ok('los cinco módulos quedaron expuestos, ninguno se pisó',
+     await pg.evaluate(() => !!(globalThis.JABONERA && globalThis.EXCEL && globalThis.DATOS && globalThis.REPORTE)));
+
+  /* ── LA DISCIPLINA TIPOGRÁFICA, MEDIDA EN PANTALLA ──
+     No basta con declararla en el CSS: lo que cuenta es lo que se renderiza.
+     El diagnóstico de la v1 salió de bajar el CSS de stripe.com y contar:
+     ellos usan SIETE tamaños y CINCO pesos, y su tipo de display llega a
+     48 px. La v1 tenía TRECE tamaños, OCHO pesos y su mayor era 26 px — por
+     eso se veía a panel de administración y no a producto. */
+  const tipo = await pg.evaluate(() => {
+    const tam = new Set(), pes = new Set();
+    for(const el of document.querySelectorAll('*')){
+      const r = el.getBoundingClientRect();
+      if(!r.width || !r.height) continue;
+      if(!el.textContent || !el.textContent.trim() || el.children.length) continue;
+      const s = getComputedStyle(el);
+      tam.add(Math.round(parseFloat(s.fontSize)));
+      pes.add(s.fontWeight);
+    }
+    return { tam:[...tam].sort((a,b)=>a-b), pes:[...pes].sort() };
+  });
+  ok(`la escala no pasa de 8 tamaños — usa ${tipo.tam.length}: ${tipo.tam.join(', ')}`,
+     tipo.tam.length <= 8, 'Stripe usa 7; la v1 de esto usaba 13 y por eso parecía un panel');
+  ok(`los pesos no pasan de 5 — usa ${tipo.pes.length}: ${tipo.pes.join(', ')}`,
+     tipo.pes.length <= 5, 'la v1 usaba 8, con 620/650/730/750 inventados');
+  ok(`hay un tamaño de DISPLAY de 44 px o más — el mayor es ${Math.max(...tipo.tam)} px`,
+     Math.max(...tipo.tam) >= 44, 'sin display todo es interfaz y nada es producto');
+  await ctx.close();
+}
+
+console.log('\n══ LA PORTADA ABRE COMO PRODUCTO, NO COMO FORMULARIO ══');
+{
+  const { ctx, pg } = await pagina();
+  ok('lo primero que se ve es el campo de marca, no un formulario',
+     await pg.isVisible('.campo-marca'));
+  ok('con el rótulo de la marca en tamaño de display',
+     await pg.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.marca')).fontSize) >= 44));
+  const campos = await pg.evaluate(() => document.querySelectorAll('#p-inicio input, #p-inicio select').length);
+  ok('y CERO campos de texto en la primera pantalla', campos === 0, `hay ${campos}`);
+  ok('Ajustes se alcanza desde la portada aunque ya esté todo configurado',
+     await pg.evaluate(async () => {
+       document.querySelector('[data-demo]').click();
+       await new Promise(r => setTimeout(r, 400));
+       const b = document.querySelector('#p-inicio [data-abrir-ajustes]');
+       return !!b && b.getBoundingClientRect().height > 0;
+     }));
   await ctx.close();
 }
 
@@ -75,7 +119,7 @@ for(const w of [320, 390, 414]){
   const { ctx, pg } = await pagina(w);
   await pg.click('[data-demo="1"]'); await pg.waitForTimeout(300);
   let peor = 0, dondePeor = '';
-  for(const tab of ['registrar','analisis','almacen','proyecto','ajustes']){
+  for(const tab of ['inicio','registrar','analisis','almacen','proyecto']){
     await pg.click(`.pestanas button[data-tab="${tab}"]`); await pg.waitForTimeout(250);
     const d = await pg.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     if(d > peor){ peor = d; dondePeor = tab; }
@@ -112,10 +156,23 @@ console.log('\n══ SE PUEDE REGISTRAR, Y LO REGISTRADO SOBREVIVE ══');
   const { ctx, pg } = await pagina();
   await pg.click('[data-demo="1"]'); await pg.waitForTimeout(300);
   const antes = await pg.evaluate(() => JSON.parse(localStorage.getItem('jabonera.v1')).visitas.length);
+  /* El recorrido: elegir baño → los dos números → ver lo que se calcula. */
+  await pg.click('.pestanas button[data-tab="registrar"]'); await pg.waitForTimeout(300);
+  ok('el paso 1 pide el baño con fichas, no con una lista de campos',
+     (await pg.$$('#p-registrar .ficha')).length > 0 &&
+     (await pg.$$('#p-registrar input')).length === 0);
+  await pg.click('#p-registrar .ficha'); await pg.waitForTimeout(300);
   await pg.fill('#restante', '250');
   await pg.fill('#repuesto', '750');
   await pg.click('#formVisita button[type=submit]');
-  await pg.waitForTimeout(300);
+  await pg.waitForTimeout(400);
+  const previo = await pg.innerText('#p-registrar');
+  ok('el paso 3 enseña lo que se va a calcular ANTES de guardar',
+     /Se gastó desde la última visita|todavía no se puede|sin registrarlo/i.test(previo), previo.slice(0,110));
+  ok('y todavía no ha guardado nada', await pg.evaluate(
+     () => JSON.parse(localStorage.getItem('jabonera.v1')).visitas.length) === antes);
+  await pg.click('[data-guardar]');
+  await pg.waitForTimeout(400);
   const despues = await pg.evaluate(() => JSON.parse(localStorage.getItem('jabonera.v1')).visitas.length);
   ok('guardar una medición añade exactamente una visita', despues === antes + 1, `${antes} → ${despues}`);
   const ultima = await pg.evaluate(() => {
@@ -134,7 +191,10 @@ console.log('\n══ SE PUEDE REGISTRAR, Y LO REGISTRADO SOBREVIVE ══');
 console.log('\n══ LOS CAMPOS QUE DEPENDEN DEL TIPO ══');
 {
   const { ctx, pg } = await pagina();
-  await pg.click('.pestanas button[data-tab="ajustes"]'); await pg.waitForTimeout(250);
+  /* Desde la portada, y no desde el engrane de la cabecera: en la portada la
+     cabecera va escondida, así que si Ajustes sólo viviera ahí no habría
+     puerta. Eso estuvo roto y lo cazó esta prueba. */
+  await pg.click('#p-inicio [data-abrir-ajustes]'); await pg.waitForTimeout(300);
   ok('con producto LÍQUIDO, los campos de la barra están escondidos',
      (await pg.isVisible('#soloSolido')) === false);
   await pg.selectOption('#pTip', 'solido'); await pg.waitForTimeout(200);
@@ -180,6 +240,34 @@ console.log('\n══ EL EXCEL SE DESCARGA Y ES UN ARCHIVO DE VERDAD ══');
   ok('trae las nueve hojas dentro', (buf.toString('latin1').match(/xl\/worksheets\/sheet/g)||[]).length >= 9);
   ok('y el aviso de datos de demostración viaja DENTRO del archivo',
      /DATOS DE DEMOSTRACI/.test(buf.toString('utf8')));
+  await ctx.close();
+}
+
+console.log('\n══ EL REPORTE EN FORMATO REMBRANDT ══');
+{
+  const ctx = await nav.newContext({ viewport:{width:414,height:896}, acceptDownloads:true, locale:'es-MX' });
+  const pg = await ctx.newPage();
+  await pg.goto(`http://127.0.0.1:${P}/`, { waitUntil:'networkidle' });
+  await pg.click('[data-demo="1"]'); await pg.waitForTimeout(400);
+  await pg.click('.pestanas button[data-tab="proyecto"]'); await pg.waitForTimeout(400);
+  const [bajada] = await Promise.all([ pg.waitForEvent('download'), pg.click('[data-reporte="1"]') ]);
+  const crudo = await readFile(await bajada.path(), 'utf8');
+  const lista = JSON.parse(crudo);
+  ok('se descarga un .json', /\.json$/.test(bajada.suggestedFilename()));
+  /* La herramienta `reportes/` importa un ARRAY y exige `id` en cada uno:
+     `lista.forEach(x => { if(x && x.id && !tengo.has(x.id)) … })`. Si esto
+     deja de ser un array con id, la importación se traga el archivo sin
+     decir nada — que es la peor forma de fallar. */
+  ok('con la forma que importa la herramienta de reportes: array con id',
+     Array.isArray(lista) && lista.length === 1 && !!lista[0].id);
+  for(const campo of ['tipo','titulo','fecha','cuerpo','autor','lugar'])
+    ok(`trae el campo «${campo}»`, lista[0][campo] !== undefined);
+  ok('el cuerpo usa la marcación de apartados de esa herramienta (## …)',
+     /^## I\. Datos del proyecto/m.test(lista[0].cuerpo));
+  ok('e incluye el apartado de limitaciones, que es el que un sinodal pregunta',
+     /Alcance y limitaciones/.test(lista[0].cuerpo));
+  ok('y la advertencia de datos de demostración viaja dentro',
+     /DATOS DE DEMOSTRACIÓN/.test(lista[0].cuerpo));
   await ctx.close();
 }
 
