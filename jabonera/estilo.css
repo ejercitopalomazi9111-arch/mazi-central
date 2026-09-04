@@ -1,0 +1,234 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   JABONERA · SISTEMA VISUAL
+   ──────────────────────────────────────────────────────────────────────────
+   Dos usos que no se parecen en nada, y el diseño tiene que servir para los
+   dos sin partirse en dos productos:
+
+   1 · DE PIE EN EL BAÑO, con el teléfono en una mano. Ahí manda el pulgar:
+       botones de 48 px, campos de 16 px —por debajo de eso iOS hace zoom
+       solo y se pierde el sitio—, barra de pestañas ABAJO y el número que se
+       teclea siempre por encima del teclado.
+   2 · PROYECTADO EN UN EXAMEN. Ahí manda la distancia: contraste alto,
+       cifras grandes en tabular, y ni una gráfica sin su unidad al lado.
+
+   Claro y no oscuro a propósito: un baño escolar tiene luz fluorescente y un
+   cañón de proyección lava los negros. El tema oscuro se ve mejor en una
+   captura y peor en las dos situaciones reales.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --papel:#F3F6F5;  --tarjeta:#FFFFFF;  --tinta:#0E1A18;
+  --suave:#596B67;  --linea:#DCE4E2;    --linea-fuerte:#C3CFCC;
+  --agua:#0E6F7A;   --agua-claro:#E4F1F2; --agua-hondo:#0A4F58;
+  --ambar:#A96A12;  --ambar-claro:#FBF0DD;
+  --alerta:#A6241D; --alerta-claro:#FBE9E7;
+  --bien:#1C6E45;   --bien-claro:#E4F2EA;
+  --r:10px; --r-chico:8px;
+  --sombra:0 1px 2px rgba(14,26,24,.06), 0 4px 14px rgba(14,26,24,.05);
+  --tope:1080px;
+}
+
+*{ box-sizing:border-box }
+/* ⚠ CON `!important` Y NO SIN ÉL. `[hidden]` del navegador es `display:none`,
+   pero cualquier regla de clase con `display:grid` le gana por especificidad:
+   los campos de «gramos por barra» salían aunque el producto fuera líquido,
+   con el atributo `hidden` puesto y todo. */
+[hidden]{ display:none !important }
+html,body{ margin:0; padding:0 }
+body{
+  background:var(--papel); color:var(--tinta);
+  font:400 16px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+  padding-bottom:calc(74px + env(safe-area-inset-bottom));
+}
+/* Los números SIEMPRE en tabular: si no, una columna de cifras baila y deja
+   de poder compararse de un vistazo, que es justo para lo que existe. */
+.num, table, .cifra, input[type=number]{ font-variant-numeric:tabular-nums lining-nums }
+
+h1,h2,h3{ margin:0; line-height:1.2; letter-spacing:-.015em }
+h1{ font-size:22px; font-weight:700 }
+h2{ font-size:17px; font-weight:650 }
+h3{ font-size:14px; font-weight:650 }
+p{ margin:0 0 10px }
+a{ color:var(--agua) }
+
+/* ── armazón ─────────────────────────────────────────────────────────── */
+.cabecera{
+  position:sticky; top:0; z-index:20;
+  background:linear-gradient(180deg,#0E6F7A,#0A5A63);
+  color:#fff; padding:calc(10px + env(safe-area-inset-top)) 16px 12px;
+}
+.cabecera .fila{ display:flex; align-items:center; gap:10px; max-width:var(--tope); margin:0 auto }
+.cabecera .marca{ font-weight:750; letter-spacing:-.02em; font-size:19px }
+.cabecera .sub{ font-size:12.5px; opacity:.82; margin-left:auto; text-align:right; line-height:1.35 }
+.gota{ width:26px; height:26px; flex:0 0 auto }
+
+main{ max-width:var(--tope); margin:0 auto; padding:14px 14px 20px }
+.panel[hidden]{ display:none }
+
+.tarjeta{
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r);
+  padding:14px; margin:0 0 12px; box-shadow:var(--sombra);
+}
+.tarjeta > h2{ margin-bottom:4px }
+.tarjeta > .pie-nota{ margin:8px 0 0; font-size:12.5px; color:var(--suave) }
+
+.rejilla{ display:grid; gap:12px; grid-template-columns:1fr }
+@media (min-width:720px){
+  .rejilla.dos{ grid-template-columns:1fr 1fr }
+  .rejilla.tres{ grid-template-columns:repeat(3,1fr) }
+  h1{ font-size:26px }
+}
+
+/* ── barra de pestañas, abajo, para el pulgar ────────────────────────── */
+.pestanas{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  display:grid; grid-template-columns:repeat(5,1fr);
+  background:rgba(255,255,255,.97); border-top:1px solid var(--linea-fuerte);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.pestanas button{
+  appearance:none; border:0; background:none; cursor:pointer;
+  padding:8px 2px 9px; min-height:52px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-family:inherit; font-weight:600; font-size:11px; line-height:1.1;
+  color:var(--suave); letter-spacing:.01em;
+}
+.pestanas button svg{ width:22px; height:22px }
+.pestanas button[aria-selected=true]{ color:var(--agua) }
+.pestanas button[aria-selected=true] svg{ stroke-width:2.4 }
+
+/* ── formularios ─────────────────────────────────────────────────────── */
+label{ display:block; font-size:13px; font-weight:600; color:var(--suave); margin:0 0 5px }
+input, select, textarea{
+  /* ⚠ EN LARGO Y NO EN ATAJO. `font:400 16px/1.4 inherit` parece razonable y
+     es INVÁLIDO: el atajo `font` exige una familia y `inherit` no lo es, así
+     que el navegador tiraba la declaración COMPLETA y los campos se quedaban
+     en los 13.33 px que Chrome le pone a los controles por omisión — justo
+     por debajo del umbral en que iOS hace zoom solo al tocarlos. Lo cazó
+     `pruebas-pantalla.mjs`; a ojo no se ve. */
+  width:100%; font-family:inherit; font-weight:400; font-size:16px; line-height:1.4;
+  color:var(--tinta);
+  background:#fff; border:1px solid var(--linea-fuerte); border-radius:var(--r-chico);
+  padding:11px 12px; min-height:46px;
+}
+input:focus, select:focus, textarea:focus{ outline:2px solid var(--agua); outline-offset:1px; border-color:var(--agua) }
+.campo{ margin:0 0 12px }
+.par{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.par-unidad{ display:grid; grid-template-columns:1fr 92px; gap:8px }
+
+button.b{
+  appearance:none; cursor:pointer;
+  font-family:inherit; font-weight:650; font-size:15.5px; line-height:1;
+  min-height:48px; padding:0 18px; border-radius:var(--r-chico);
+  border:1px solid transparent; background:var(--agua); color:#fff;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+}
+button.b:active{ transform:translateY(1px) }
+button.b.ancho{ width:100% }
+button.b.fantasma{ background:#fff; color:var(--agua); border-color:var(--linea-fuerte) }
+button.b.peligro{ background:#fff; color:var(--alerta); border-color:#E7C6C3 }
+/* 44 y no 38: es el mínimo con el que un pulgar acierta. Lo tenía en 38 y
+   lo cazó la compuerta de pantalla, no el ojo. */
+button.b.chico{ min-height:44px; font-size:14px; padding:0 12px }
+button.b:disabled{ opacity:.45; cursor:not-allowed }
+
+/* ── fichas de selección (baño / producto): el gesto del registro ───── */
+.fichas{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px }
+.fichas button{
+  appearance:none; cursor:pointer; text-align:left;
+  font-family:inherit; font-weight:600; font-size:14.5px; line-height:1.25;
+  min-height:46px; padding:8px 14px; border-radius:999px;
+  border:1.5px solid var(--linea-fuerte); background:#fff; color:var(--tinta);
+}
+.fichas button[aria-pressed=true]{ background:var(--agua); border-color:var(--agua); color:#fff }
+.fichas button .men{ display:block; font-weight:500; font-size:11.5px; opacity:.7 }
+
+/* ── cifras grandes ──────────────────────────────────────────────────── */
+.cifras{ display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)) }
+.cifra{
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r);
+  padding:12px 13px;
+}
+.cifra .et{ font-size:11.5px; font-weight:650; color:var(--suave); text-transform:uppercase;
+  letter-spacing:.05em; margin:0 0 5px }
+.cifra .v{ font-size:26px; font-weight:730; letter-spacing:-.025em; line-height:1.05 }
+.cifra .v small{ font-size:14px; font-weight:600; color:var(--suave); letter-spacing:0 }
+.cifra .n{ font-size:12px; color:var(--suave); margin-top:4px }
+.cifra.destacada{ background:var(--agua); border-color:var(--agua-hondo); color:#fff }
+.cifra.destacada .et, .cifra.destacada .n, .cifra.destacada .v small{ color:rgba(255,255,255,.82) }
+.cifra.nula .v{ color:var(--suave); font-size:19px; font-weight:600 }
+
+/* ── avisos ──────────────────────────────────────────────────────────── */
+.aviso{
+  border:1px solid var(--linea-fuerte); border-left-width:4px; border-radius:var(--r-chico);
+  padding:11px 13px; margin:0 0 12px; font-size:14px; background:#fff;
+}
+.aviso h3{ margin:0 0 3px }
+.aviso.info{ border-left-color:var(--agua); background:var(--agua-claro) }
+.aviso.ojo { border-left-color:var(--ambar); background:var(--ambar-claro) }
+.aviso.mal { border-left-color:var(--alerta); background:var(--alerta-claro) }
+.aviso.bien{ border-left-color:var(--bien); background:var(--bien-claro) }
+.aviso ul{ margin:6px 0 0; padding-left:18px }
+
+/* ── tablas ──────────────────────────────────────────────────────────── */
+.tabla-caja{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -14px; padding:0 14px }
+/* 520 y no 340: con menos, en un teléfono cada celda se parte en cuatro
+   renglones. Vale mucho más deslizar la tabla que leerla en vertical.
+   PERO eso vale para tablas de DATOS. Una tabla de PROSA —la de STEAM— se
+   lee, no se compara: ahí lo correcto es que envuelva y quepa entera, porque
+   deslizar de lado un texto que alguien está leyendo en voz alta en un examen
+   es peor que un renglón largo. */
+table{ width:100%; border-collapse:collapse; font-size:14px; min-width:520px }
+.tabla-texto table{ min-width:0 }
+.tabla-texto th, .tabla-texto td{ padding:9px 8px }
+th,td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--linea) }
+th{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--suave); font-weight:700;
+    background:var(--papel); position:sticky; top:0 }
+td.n, th.n{ text-align:right }
+tbody tr:last-child td{ border-bottom:0 }
+
+/* ── gráficas ────────────────────────────────────────────────────────── */
+.gr{ width:100%; height:auto; display:block; overflow:visible }
+.gr text{ font:500 11px/1 -apple-system, system-ui, sans-serif; fill:var(--suave) }
+.gr .barra{ fill:var(--agua) }
+.gr .barra.floja{ fill:#9CC4C8 }
+.gr .eje{ stroke:var(--linea); stroke-width:1 }
+.gr .valor{ fill:var(--tinta); font-weight:650 }
+.leyenda{ display:flex; flex-wrap:wrap; gap:12px; font-size:12.5px; color:var(--suave); margin-top:8px }
+.leyenda i{ width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:5px; vertical-align:-1px }
+
+/* ── listas de renglón ───────────────────────────────────────────────── */
+.lista{ list-style:none; margin:0; padding:0 }
+.lista li{ display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--linea) }
+.lista li:last-child{ border-bottom:0 }
+.lista .txt{ flex:1; min-width:0 }
+.lista .txt b{ display:block; font-weight:620; font-size:14.5px }
+/* `display:block` a propósito: los dos renglones de detalle iban en la misma
+   línea y se partían a media unidad («1.85 L · 1,851 / mL · repuso…»). */
+.lista .txt span{ display:block; font-size:12.5px; color:var(--suave) }
+
+.etq{ display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  padding:3px 7px; border-radius:5px; background:var(--agua-claro); color:var(--agua-hondo) }
+.etq.solido{ background:var(--ambar-claro); color:var(--ambar) }
+.etq.demo{ background:var(--alerta-claro); color:var(--alerta) }
+
+.pista-desliza{ margin:0 0 6px }
+@media (min-width:640px){ .pista-desliza{ display:none } }
+
+.vacio{ text-align:center; padding:26px 14px; color:var(--suave) }
+.vacio svg{ width:44px; height:44px; opacity:.35; margin-bottom:8px }
+
+.sep{ height:1px; background:var(--linea); margin:14px 0 }
+.mini{ font-size:12.5px; color:var(--suave) }
+.brinco{ animation:brinco .25s ease }
+@keyframes brinco{ from{ transform:scale(.98); opacity:.6 } to{ transform:none; opacity:1 } }
+@media (prefers-reduced-motion:reduce){ .brinco{ animation:none } }
+
+/* ── impresión: la hoja que se entrega con el proyecto ───────────────── */
+@media print{
+  .pestanas, .cabecera, .no-imprimir{ display:none !important }
+  body{ background:#fff; padding:0 }
+  .tarjeta{ box-shadow:none; break-inside:avoid }
+  .panel[hidden]{ display:block !important }   /* se imprime TODO, no la pestaña abierta */
+}

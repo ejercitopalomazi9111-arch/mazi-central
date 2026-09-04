@@ -1,0 +1,2150 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Archivo GENERADO por armar-suelto.mjs · 2026-09-04.
+     No se edita a mano: se cambian los originales y se vuelve a generar. -->
+<title>Jabonera · control de jabón en baños escolares</title>
+<meta name="description" content="Registro y análisis del consumo de jabón en los baños de una escuela. Proyecto STEAM.">
+<meta name="theme-color" content="#0E6F7A">
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   JABONERA · SISTEMA VISUAL
+   ──────────────────────────────────────────────────────────────────────────
+   Dos usos que no se parecen en nada, y el diseño tiene que servir para los
+   dos sin partirse en dos productos:
+
+   1 · DE PIE EN EL BAÑO, con el teléfono en una mano. Ahí manda el pulgar:
+       botones de 48 px, campos de 16 px —por debajo de eso iOS hace zoom
+       solo y se pierde el sitio—, barra de pestañas ABAJO y el número que se
+       teclea siempre por encima del teclado.
+   2 · PROYECTADO EN UN EXAMEN. Ahí manda la distancia: contraste alto,
+       cifras grandes en tabular, y ni una gráfica sin su unidad al lado.
+
+   Claro y no oscuro a propósito: un baño escolar tiene luz fluorescente y un
+   cañón de proyección lava los negros. El tema oscuro se ve mejor en una
+   captura y peor en las dos situaciones reales.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --papel:#F3F6F5;  --tarjeta:#FFFFFF;  --tinta:#0E1A18;
+  --suave:#596B67;  --linea:#DCE4E2;    --linea-fuerte:#C3CFCC;
+  --agua:#0E6F7A;   --agua-claro:#E4F1F2; --agua-hondo:#0A4F58;
+  --ambar:#A96A12;  --ambar-claro:#FBF0DD;
+  --alerta:#A6241D; --alerta-claro:#FBE9E7;
+  --bien:#1C6E45;   --bien-claro:#E4F2EA;
+  --r:10px; --r-chico:8px;
+  --sombra:0 1px 2px rgba(14,26,24,.06), 0 4px 14px rgba(14,26,24,.05);
+  --tope:1080px;
+}
+
+*{ box-sizing:border-box }
+/* ⚠ CON `!important` Y NO SIN ÉL. `[hidden]` del navegador es `display:none`,
+   pero cualquier regla de clase con `display:grid` le gana por especificidad:
+   los campos de «gramos por barra» salían aunque el producto fuera líquido,
+   con el atributo `hidden` puesto y todo. */
+[hidden]{ display:none !important }
+html,body{ margin:0; padding:0 }
+body{
+  background:var(--papel); color:var(--tinta);
+  font:400 16px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+  padding-bottom:calc(74px + env(safe-area-inset-bottom));
+}
+/* Los números SIEMPRE en tabular: si no, una columna de cifras baila y deja
+   de poder compararse de un vistazo, que es justo para lo que existe. */
+.num, table, .cifra, input[type=number]{ font-variant-numeric:tabular-nums lining-nums }
+
+h1,h2,h3{ margin:0; line-height:1.2; letter-spacing:-.015em }
+h1{ font-size:22px; font-weight:700 }
+h2{ font-size:17px; font-weight:650 }
+h3{ font-size:14px; font-weight:650 }
+p{ margin:0 0 10px }
+a{ color:var(--agua) }
+
+/* ── armazón ─────────────────────────────────────────────────────────── */
+.cabecera{
+  position:sticky; top:0; z-index:20;
+  background:linear-gradient(180deg,#0E6F7A,#0A5A63);
+  color:#fff; padding:calc(10px + env(safe-area-inset-top)) 16px 12px;
+}
+.cabecera .fila{ display:flex; align-items:center; gap:10px; max-width:var(--tope); margin:0 auto }
+.cabecera .marca{ font-weight:750; letter-spacing:-.02em; font-size:19px }
+.cabecera .sub{ font-size:12.5px; opacity:.82; margin-left:auto; text-align:right; line-height:1.35 }
+.gota{ width:26px; height:26px; flex:0 0 auto }
+
+main{ max-width:var(--tope); margin:0 auto; padding:14px 14px 20px }
+.panel[hidden]{ display:none }
+
+.tarjeta{
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r);
+  padding:14px; margin:0 0 12px; box-shadow:var(--sombra);
+}
+.tarjeta > h2{ margin-bottom:4px }
+.tarjeta > .pie-nota{ margin:8px 0 0; font-size:12.5px; color:var(--suave) }
+
+.rejilla{ display:grid; gap:12px; grid-template-columns:1fr }
+@media (min-width:720px){
+  .rejilla.dos{ grid-template-columns:1fr 1fr }
+  .rejilla.tres{ grid-template-columns:repeat(3,1fr) }
+  h1{ font-size:26px }
+}
+
+/* ── barra de pestañas, abajo, para el pulgar ────────────────────────── */
+.pestanas{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  display:grid; grid-template-columns:repeat(5,1fr);
+  background:rgba(255,255,255,.97); border-top:1px solid var(--linea-fuerte);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.pestanas button{
+  appearance:none; border:0; background:none; cursor:pointer;
+  padding:8px 2px 9px; min-height:52px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-family:inherit; font-weight:600; font-size:11px; line-height:1.1;
+  color:var(--suave); letter-spacing:.01em;
+}
+.pestanas button svg{ width:22px; height:22px }
+.pestanas button[aria-selected=true]{ color:var(--agua) }
+.pestanas button[aria-selected=true] svg{ stroke-width:2.4 }
+
+/* ── formularios ─────────────────────────────────────────────────────── */
+label{ display:block; font-size:13px; font-weight:600; color:var(--suave); margin:0 0 5px }
+input, select, textarea{
+  /* ⚠ EN LARGO Y NO EN ATAJO. `font:400 16px/1.4 inherit` parece razonable y
+     es INVÁLIDO: el atajo `font` exige una familia y `inherit` no lo es, así
+     que el navegador tiraba la declaración COMPLETA y los campos se quedaban
+     en los 13.33 px que Chrome le pone a los controles por omisión — justo
+     por debajo del umbral en que iOS hace zoom solo al tocarlos. Lo cazó
+     `pruebas-pantalla.mjs`; a ojo no se ve. */
+  width:100%; font-family:inherit; font-weight:400; font-size:16px; line-height:1.4;
+  color:var(--tinta);
+  background:#fff; border:1px solid var(--linea-fuerte); border-radius:var(--r-chico);
+  padding:11px 12px; min-height:46px;
+}
+input:focus, select:focus, textarea:focus{ outline:2px solid var(--agua); outline-offset:1px; border-color:var(--agua) }
+.campo{ margin:0 0 12px }
+.par{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.par-unidad{ display:grid; grid-template-columns:1fr 92px; gap:8px }
+
+button.b{
+  appearance:none; cursor:pointer;
+  font-family:inherit; font-weight:650; font-size:15.5px; line-height:1;
+  min-height:48px; padding:0 18px; border-radius:var(--r-chico);
+  border:1px solid transparent; background:var(--agua); color:#fff;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+}
+button.b:active{ transform:translateY(1px) }
+button.b.ancho{ width:100% }
+button.b.fantasma{ background:#fff; color:var(--agua); border-color:var(--linea-fuerte) }
+button.b.peligro{ background:#fff; color:var(--alerta); border-color:#E7C6C3 }
+/* 44 y no 38: es el mínimo con el que un pulgar acierta. Lo tenía en 38 y
+   lo cazó la compuerta de pantalla, no el ojo. */
+button.b.chico{ min-height:44px; font-size:14px; padding:0 12px }
+button.b:disabled{ opacity:.45; cursor:not-allowed }
+
+/* ── fichas de selección (baño / producto): el gesto del registro ───── */
+.fichas{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px }
+.fichas button{
+  appearance:none; cursor:pointer; text-align:left;
+  font-family:inherit; font-weight:600; font-size:14.5px; line-height:1.25;
+  min-height:46px; padding:8px 14px; border-radius:999px;
+  border:1.5px solid var(--linea-fuerte); background:#fff; color:var(--tinta);
+}
+.fichas button[aria-pressed=true]{ background:var(--agua); border-color:var(--agua); color:#fff }
+.fichas button .men{ display:block; font-weight:500; font-size:11.5px; opacity:.7 }
+
+/* ── cifras grandes ──────────────────────────────────────────────────── */
+.cifras{ display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)) }
+.cifra{
+  background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r);
+  padding:12px 13px;
+}
+.cifra .et{ font-size:11.5px; font-weight:650; color:var(--suave); text-transform:uppercase;
+  letter-spacing:.05em; margin:0 0 5px }
+.cifra .v{ font-size:26px; font-weight:730; letter-spacing:-.025em; line-height:1.05 }
+.cifra .v small{ font-size:14px; font-weight:600; color:var(--suave); letter-spacing:0 }
+.cifra .n{ font-size:12px; color:var(--suave); margin-top:4px }
+.cifra.destacada{ background:var(--agua); border-color:var(--agua-hondo); color:#fff }
+.cifra.destacada .et, .cifra.destacada .n, .cifra.destacada .v small{ color:rgba(255,255,255,.82) }
+.cifra.nula .v{ color:var(--suave); font-size:19px; font-weight:600 }
+
+/* ── avisos ──────────────────────────────────────────────────────────── */
+.aviso{
+  border:1px solid var(--linea-fuerte); border-left-width:4px; border-radius:var(--r-chico);
+  padding:11px 13px; margin:0 0 12px; font-size:14px; background:#fff;
+}
+.aviso h3{ margin:0 0 3px }
+.aviso.info{ border-left-color:var(--agua); background:var(--agua-claro) }
+.aviso.ojo { border-left-color:var(--ambar); background:var(--ambar-claro) }
+.aviso.mal { border-left-color:var(--alerta); background:var(--alerta-claro) }
+.aviso.bien{ border-left-color:var(--bien); background:var(--bien-claro) }
+.aviso ul{ margin:6px 0 0; padding-left:18px }
+
+/* ── tablas ──────────────────────────────────────────────────────────── */
+.tabla-caja{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -14px; padding:0 14px }
+/* 520 y no 340: con menos, en un teléfono cada celda se parte en cuatro
+   renglones. Vale mucho más deslizar la tabla que leerla en vertical.
+   PERO eso vale para tablas de DATOS. Una tabla de PROSA —la de STEAM— se
+   lee, no se compara: ahí lo correcto es que envuelva y quepa entera, porque
+   deslizar de lado un texto que alguien está leyendo en voz alta en un examen
+   es peor que un renglón largo. */
+table{ width:100%; border-collapse:collapse; font-size:14px; min-width:520px }
+.tabla-texto table{ min-width:0 }
+.tabla-texto th, .tabla-texto td{ padding:9px 8px }
+th,td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--linea) }
+th{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--suave); font-weight:700;
+    background:var(--papel); position:sticky; top:0 }
+td.n, th.n{ text-align:right }
+tbody tr:last-child td{ border-bottom:0 }
+
+/* ── gráficas ────────────────────────────────────────────────────────── */
+.gr{ width:100%; height:auto; display:block; overflow:visible }
+.gr text{ font:500 11px/1 -apple-system, system-ui, sans-serif; fill:var(--suave) }
+.gr .barra{ fill:var(--agua) }
+.gr .barra.floja{ fill:#9CC4C8 }
+.gr .eje{ stroke:var(--linea); stroke-width:1 }
+.gr .valor{ fill:var(--tinta); font-weight:650 }
+.leyenda{ display:flex; flex-wrap:wrap; gap:12px; font-size:12.5px; color:var(--suave); margin-top:8px }
+.leyenda i{ width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:5px; vertical-align:-1px }
+
+/* ── listas de renglón ───────────────────────────────────────────────── */
+.lista{ list-style:none; margin:0; padding:0 }
+.lista li{ display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--linea) }
+.lista li:last-child{ border-bottom:0 }
+.lista .txt{ flex:1; min-width:0 }
+.lista .txt b{ display:block; font-weight:620; font-size:14.5px }
+/* `display:block` a propósito: los dos renglones de detalle iban en la misma
+   línea y se partían a media unidad («1.85 L · 1,851 / mL · repuso…»). */
+.lista .txt span{ display:block; font-size:12.5px; color:var(--suave) }
+
+.etq{ display:inline-block; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  padding:3px 7px; border-radius:5px; background:var(--agua-claro); color:var(--agua-hondo) }
+.etq.solido{ background:var(--ambar-claro); color:var(--ambar) }
+.etq.demo{ background:var(--alerta-claro); color:var(--alerta) }
+
+.pista-desliza{ margin:0 0 6px }
+@media (min-width:640px){ .pista-desliza{ display:none } }
+
+.vacio{ text-align:center; padding:26px 14px; color:var(--suave) }
+.vacio svg{ width:44px; height:44px; opacity:.35; margin-bottom:8px }
+
+.sep{ height:1px; background:var(--linea); margin:14px 0 }
+.mini{ font-size:12.5px; color:var(--suave) }
+.brinco{ animation:brinco .25s ease }
+@keyframes brinco{ from{ transform:scale(.98); opacity:.6 } to{ transform:none; opacity:1 } }
+@media (prefers-reduced-motion:reduce){ .brinco{ animation:none } }
+
+/* ── impresión: la hoja que se entrega con el proyecto ───────────────── */
+@media print{
+  .pestanas, .cabecera, .no-imprimir{ display:none !important }
+  body{ background:#fff; padding:0 }
+  .tarjeta{ box-shadow:none; break-inside:avoid }
+  .panel[hidden]{ display:block !important }   /* se imprime TODO, no la pestaña abierta */
+}
+
+</style>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     JABONERA
+     Todo funciona SIN INTERNET y sin servidor: se puede abrir desde una
+     memoria USB, desde el teléfono en modo avión o desde la web. Por eso los
+     scripts van con <script src> clásico y no como módulos — un módulo ES
+     no carga desde `file://` por la política de origen del navegador, y ahí
+     se acaba el «lo abro en la compu del salón».
+     ═════════════════════════════════════════════════════════════════════ -->
+
+<header class="cabecera">
+  <div class="fila">
+    <svg class="gota" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 2.5c3.6 4.2 6.5 7.7 6.5 11.1A6.5 6.5 0 0 1 5.5 13.6C5.5 10.2 8.4 6.7 12 2.5Z"
+            fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
+      <circle cx="9.6" cy="13.8" r="1.5" fill="#fff" opacity=".85"/>
+    </svg>
+    <div>
+      <div class="marca">Jabonera</div>
+      <div style="font-size:12px;opacity:.8;margin-top:1px">Control de jabón en baños escolares</div>
+    </div>
+    <div class="sub" id="subCabecera"></div>
+  </div>
+</header>
+
+<main>
+  <div id="letreroDemo"></div>
+
+  <section class="panel" id="p-registrar" aria-labelledby="t-registrar"></section>
+  <section class="panel" id="p-analisis"  aria-labelledby="t-analisis"  hidden></section>
+  <section class="panel" id="p-almacen"   aria-labelledby="t-almacen"   hidden></section>
+  <section class="panel" id="p-proyecto"  aria-labelledby="t-proyecto"  hidden></section>
+  <section class="panel" id="p-ajustes"   aria-labelledby="t-ajustes"   hidden></section>
+</main>
+
+<nav class="pestanas no-imprimir" role="tablist" aria-label="Secciones">
+  <button role="tab" data-tab="registrar" id="t-registrar" aria-selected="true" aria-controls="p-registrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    Registrar</button>
+  <button role="tab" data-tab="analisis" id="t-analisis" aria-selected="false" aria-controls="p-analisis">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    Análisis</button>
+  <button role="tab" data-tab="almacen" id="t-almacen" aria-selected="false" aria-controls="p-almacen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5v11H3z"/><path d="M3 9h18M9 20V13h6v7"/></svg>
+    Almacén</button>
+  <button role="tab" data-tab="proyecto" id="t-proyecto" aria-selected="false" aria-controls="p-proyecto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.4 4.2 1.1 6L12 16.8 6.6 19.6l1.1-6L3.3 9.4l6.1-.8z"/></svg>
+    Proyecto</button>
+  <button role="tab" data-tab="ajustes" id="t-ajustes" aria-selected="false" aria-controls="p-ajustes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1 2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.5-2.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 4a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 21 11a2 2 0 1 1 0 4Z"/></svg>
+    Ajustes</button>
+</nav>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   JABONERA · EL MOTOR
+   ──────────────────────────────────────────────────────────────────────────
+   Toda la cuenta y NADA de pantalla. Va aparte a propósito: un sistema de
+   inventario no se cae por el diseño, se cae por la aritmética — y la
+   aritmética no se ve mirando la app, se ve en una prueba.
+
+   LAS CINCO TRAMPAS DE ESTE PROBLEMA, que es lo que este archivo resuelve:
+
+   1. EL CONSUMO NO SE MIDE, SE DEDUCE. Nadie puede ver cuánto jabón se usó:
+      sólo se ve cuánto QUEDA. El consumo entre dos visitas es
+          (lo que quedaba + lo que se repuso) − lo que queda ahora
+      y por eso una visita registra DOS números y no uno. Si alguien rellena
+      sin apuntarlo, la resta sale NEGATIVA: eso no se esconde ni se corrige
+      en silencio, se cuenta como 0 y se marca como hueco (ver `calidad`).
+
+   2. LÍQUIDO Y SÓLIDO NO SE PUEDEN SUMAR. Un envase de 5 L y una barra de
+      100 g no comparten unidad, y meterlos en la misma columna es de donde
+      salen los números falsos. Aquí TODO se guarda en unidad canónica —el
+      líquido en mL, el sólido en GRAMOS— y la barra es sólo una forma de
+      MOSTRARLO (`enPiezas`). Los totales de dos tipos distintos nunca se
+      suman: se suman sus COSTOS, que sí comparten unidad.
+
+   3. UN INTERVALO NO CABE EN UN DÍA. Si una visita es el lunes y la
+      siguiente el viernes, ese consumo no es «del viernes». Se reparte
+      PROPORCIONALMENTE entre los días que abarca (`porDia`). Cargárselo a
+      un solo día es la forma más fácil de dibujar una gráfica preciosa y
+      mentirosa.
+
+   4. LA HORA SÓLO LA PUEDEN DECIR LOS INTERVALOS CORTOS. Un intervalo de
+      cinco días no sabe nada de «a qué hora se gasta». `porHora` usa SÓLO
+      los intervalos de menos de 12 h y DEVUELVE CUÁNTOS pudo usar, para que
+      la pantalla pueda decir «con 3 mediciones» en vez de fingir certeza.
+
+   5. EL PROMEDIO POR ALUMNO NECESITA DENOMINADOR. Sin alumnos por baño no
+      hay promedio por alumno: se devuelve `null`, no un cero que parece un
+      dato. Lo mismo con el costo cuando no hay entregas registradas.
+   ═════════════════════════════════════════════════════════════════════════ */
+/* ⚠ TODO EL ARCHIVO VA DENTRO DE UNA FUNCIÓN, y no es manía. Estos módulos se
+   cargan con <script src> clásico —no como módulos ES, porque un módulo ES no
+   carga desde `file://` y ahí se acabaría el «lo abro en la compu del salón»—
+   y los scripts clásicos COMPARTEN el ámbito global. Los tres declaraban
+   `const API` al final y el segundo reventaba con «Identifier 'API' has
+   already been declared», dejando la página en blanco. En node no pasaba
+   porque ahí cada archivo tiene su propio ámbito: sólo se vio abriéndolo en
+   un navegador de verdad. */
+(function(){
+'use strict';
+
+
+const DIA = 86400000;
+
+/* ── unidades ─────────────────────────────────────────────────────────────
+   Canónica: mL para líquido, GRAMOS para sólido. Todo lo demás es formato. */
+const UNIDAD = { liquido: 'mL', solido: 'g' };
+
+/** Convierte a la unidad canónica del producto desde lo que teclea la gente.
+ *  El líquido se captura en mL o en L; el sólido en g, kg o PIEZAS (barras),
+ *  y para piezas hace falta saber cuánto pesa una — por eso `producto`. */
+function aCanonica(cantidad, unidad, producto){
+  const n = Number(cantidad);
+  if(!isFinite(n)) return 0;
+  switch(unidad){
+    case 'mL': case 'g': return n;
+    case 'L':  return n * 1000;
+    case 'kg': return n * 1000;
+    case 'pz': {
+      const pieza = Number(producto?.gramosPorPieza);
+      /* Sin peso de la barra, una pieza no se puede convertir a gramos. Cero
+         es la respuesta honesta: la pantalla no debe ofrecer 'pz' si falta. */
+      return pieza > 0 ? n * pieza : 0;
+    }
+    default: return n;
+  }
+}
+
+/** Gramos → barras, para MOSTRAR. Nunca para guardar. */
+function enPiezas(gramos, producto){
+  const pieza = Number(producto?.gramosPorPieza);
+  return pieza > 0 ? gramos / pieza : null;
+}
+
+/* ── el costo, que es un promedio ponderado y no el último precio ─────────
+   Si se compraron 20 L a $300 y luego 5 L a $100, el mL no cuesta ni lo uno
+   ni lo otro: cuesta (300+100)/(25000). Usar el último precio infla o
+   desinfla el gasto histórico entero. */
+function costoPorUnidad(productoId, entregas, productos){
+  const p = productos.find(x => x.id === productoId);
+  if(!p) return null;
+  let unidades = 0, pesos = 0;
+  for(const e of entregas){
+    if(e.productoId !== productoId) continue;
+    unidades += Number(e.envases) * Number(p.tamanoEnvase);
+    pesos    += Number(e.costoTotal);
+  }
+  if(unidades <= 0) return null;      /* sin compras no hay precio que inventar */
+  return pesos / unidades;
+}
+
+/* ── el consumo, que es una resta entre visitas ───────────────────────────── */
+
+/** Ordena las visitas de un mismo baño y producto y devuelve los INTERVALOS.
+ *  Cada intervalo es el trozo de tiempo entre dos visitas seguidas, con lo
+ *  que se gastó dentro. Una sola visita no produce ningún intervalo: con un
+ *  solo punto no hay consumo que medir, y ésa es la respuesta correcta. */
+function intervalos(visitas){
+  const por = new Map();
+  for(const v of visitas){
+    const k = v.banoId + '·' + v.productoId;
+    if(!por.has(k)) por.set(k, []);
+    por.get(k).push(v);
+  }
+  const out = [];
+  for(const [, lista] of por){
+    lista.sort((a,b) => a.ts - b.ts);
+    for(let i = 1; i < lista.length; i++){
+      const a = lista[i-1], b = lista[i];
+      const bruto = (Number(a.restante) + Number(a.repuesto)) - Number(b.restante);
+      out.push({
+        banoId: b.banoId, productoId: b.productoId,
+        desde: a.ts, hasta: b.ts, horas: (b.ts - a.ts) / 3600000,
+        consumo: Math.max(0, bruto),
+        /* El hueco NO se borra: es la señal de que alguien rellenó sin
+           apuntarlo, y eso hay que poder decirlo en voz alta. */
+        hueco: bruto < 0 ? -bruto : 0,
+      });
+    }
+  }
+  return out.sort((x,y) => x.hasta - y.hasta);
+}
+
+/** Filtra intervalos a una ventana [desde, hasta] por su fecha de cierre. */
+function enRango(lista, desde, hasta){
+  return lista.filter(i =>
+    (desde == null || i.hasta >= desde) && (hasta == null || i.hasta <= hasta));
+}
+
+/* ── los cortes que pide el análisis ─────────────────────────────────────── */
+
+/** Consumo por baño, de mayor a menor. Separado POR PRODUCTO, porque sumar
+ *  mL con gramos es la trampa nº 2. */
+function porBano(ints, banos){
+  const m = new Map();
+  for(const i of ints){
+    const k = i.banoId + '·' + i.productoId;
+    const a = m.get(k) || { banoId: i.banoId, productoId: i.productoId, consumo: 0, intervalos: 0, huecos: 0 };
+    a.consumo += i.consumo; a.intervalos++; a.huecos += i.hueco > 0 ? 1 : 0;
+    m.set(k, a);
+  }
+  const out = [...m.values()];
+  for(const r of out) r.bano = banos.find(b => b.id === r.banoId) || null;
+  return out.sort((a,b) => b.consumo - a.consumo);
+}
+
+/** Consumo repartido por DÍA. Un intervalo que abarca cuatro días pone un
+ *  cuarto en cada uno — ver trampa nº 3. Devuelve un mapa AAAA-MM-DD → mL/g
+ *  por producto. */
+function porDia(ints){
+  const m = new Map();
+  for(const i of ints){
+    const ini = i.desde, fin = i.hasta;
+    const span = Math.max(fin - ini, 1);
+    /* Se recorre día a día y se reparte según cuánto del día cae dentro. */
+    let cursor = new Date(ini); cursor.setHours(0,0,0,0);
+    let t0 = cursor.getTime();
+    let vueltas = 0;
+    while(t0 < fin && vueltas++ < 400){
+      const t1 = t0 + DIA;
+      const solapa = Math.min(fin, t1) - Math.max(ini, t0);
+      if(solapa > 0){
+        const clave = fechaISO(t0) + '·' + i.productoId;
+        const a = m.get(clave) || { dia: fechaISO(t0), productoId: i.productoId, consumo: 0 };
+        a.consumo += i.consumo * (solapa / span);
+        m.set(clave, a);
+      }
+      t0 = t1;
+    }
+  }
+  return [...m.values()].sort((a,b) => a.dia < b.dia ? -1 : 1);
+}
+
+/** Consumo por día de la SEMANA (0 = domingo). Mismo reparto proporcional. */
+function porDiaSemana(ints){
+  const acc = Array.from({length:7}, (_,d) => ({ dia:d, consumo:0 }));
+  for(const d of porDia(ints)){
+    const [a,m,x] = d.dia.split('-').map(Number);
+    acc[new Date(a, m-1, x).getDay()].consumo += d.consumo;
+  }
+  return acc;
+}
+
+/** Perfil por HORA — trampa nº 4. Sólo intervalos de menos de `topeHoras`,
+ *  y se informa CON CUÁNTOS se hizo para que nadie lo lea como certeza. */
+function porHora(ints, topeHoras = 12){
+  const acc = Array.from({length:24}, (_,h) => ({ hora:h, consumo:0 }));
+  const usados = ints.filter(i => i.horas > 0 && i.horas <= topeHoras);
+  for(const i of usados){
+    /* Se reparte por horas del reloj que abarca el intervalo. */
+    const pasos = Math.max(1, Math.round(i.horas));
+    for(let k = 0; k < pasos; k++){
+      const t = i.desde + (i.hasta - i.desde) * (k + .5) / pasos;
+      acc[new Date(t).getHours()].consumo += i.consumo / pasos;
+    }
+  }
+  return { horas: acc, muestras: usados.length, descartados: ints.length - usados.length, topeHoras };
+}
+
+/* ── existencias y dinero ─────────────────────────────────────────────────── */
+
+/** Lo que queda en el almacén: lo que entró menos lo que se llevó a los baños.
+ *  NO cuenta lo que sigue dentro de los dispensadores: eso ya salió del
+ *  almacén. Son dos preguntas distintas y mezclarlas da un inventario que
+ *  nunca cuadra con el estante. */
+function existencias(productos, entregas, visitas){
+  return productos.map(p => {
+    const entro = entregas.filter(e => e.productoId === p.id)
+      .reduce((s,e) => s + Number(e.envases) * Number(p.tamanoEnvase), 0);
+    const salio = visitas.filter(v => v.productoId === p.id)
+      .reduce((s,v) => s + Number(v.repuesto), 0);
+    const enDispensadores = ultimoRestantePorBano(visitas, p.id);
+    return { producto: p, entro, salio, almacen: entro - salio, enDispensadores };
+  });
+}
+
+/** Suma del último `restante` conocido de cada baño para un producto: lo que
+ *  hay puesto ahora mismo en los dispensadores. */
+function ultimoRestantePorBano(visitas, productoId){
+  const ult = new Map();
+  for(const v of visitas){
+    if(v.productoId !== productoId) continue;
+    const a = ult.get(v.banoId);
+    if(!a || v.ts > a.ts) ult.set(v.banoId, v);
+  }
+  return [...ult.values()].reduce((s,v) => s + Number(v.restante), 0);
+}
+
+/** Dinero. Devuelve `null` en `costo` cuando no hay entregas: un gasto de $0
+ *  y un gasto DESCONOCIDO no son lo mismo y no se pueden pintar igual. */
+function dinero(ints, productos, entregas){
+  let gasto = 0, conPrecio = 0, sinPrecio = 0;
+  const porProducto = new Map();
+  for(const i of ints){
+    const c = costoPorUnidad(i.productoId, entregas, productos);
+    if(c == null){ sinPrecio += i.consumo; continue; }
+    const $ = i.consumo * c;
+    gasto += $; conPrecio += i.consumo;
+    porProducto.set(i.productoId, (porProducto.get(i.productoId) || 0) + $);
+  }
+  const invertido = entregas.reduce((s,e) => s + Number(e.costoTotal), 0);
+  return {
+    gasto: conPrecio > 0 ? gasto : null,
+    invertido,
+    porProducto: [...porProducto].map(([productoId, pesos]) => ({ productoId, pesos })),
+    consumoSinPrecio: sinPrecio,
+  };
+}
+
+/** Días que aguantan las existencias al ritmo medido. `null` si no hay ritmo
+ *  (sin datos no se proyecta: se dice que no se sabe). */
+function proyeccion(existencia, consumoDiario){
+  if(!(consumoDiario > 0)) return null;
+  return existencia / consumoDiario;
+}
+
+/* ── promedios por alumno ─────────────────────────────────────────────────── */
+
+/** Consumo por alumno y por día. `null` si el baño no tiene alumnos
+ *  asignados — trampa nº 5: una división sin denominador no es un cero. */
+function porAlumno(ints, bano){
+  const alumnos = Number(bano?.alumnos);
+  if(!(alumnos > 0)) return null;
+  const dias = diasCubiertos(ints);
+  if(!(dias > 0)) return null;
+  const consumo = ints.reduce((s,i) => s + i.consumo, 0);
+  return consumo / alumnos / dias;
+}
+
+/** Días REALES que cubren los intervalos: de la primera medición a la
+ *  última. No es «cuántos días lleva el proyecto»: es cuánto tiempo hay
+ *  efectivamente medido. */
+function diasCubiertos(ints){
+  if(!ints.length) return 0;
+  const ini = Math.min(...ints.map(i => i.desde));
+  const fin = Math.max(...ints.map(i => i.hasta));
+  return Math.max((fin - ini) / DIA, 0);
+}
+
+/* ── el dispensador mecánico ──────────────────────────────────────────────── */
+
+/** Cuántos lavados salieron de ese jabón. Es el número que de verdad se
+ *  entiende en una presentación: «1 250 lavadas de manos», no «6 300 mL».
+ *
+ *  ⚠ ESTO YA ESTUVO MAL UNA VEZ y no lo cazó ninguna prueba: dividía los
+ *  GRAMOS del jabón en barra entre los MILILITROS por pulsada del
+ *  dispensador de líquido, y soltaba «1 205 lavadas» tan campante. Es la
+ *  trampa nº 2 entrando por la puerta de atrás. Ahora cada tipo tiene su
+ *  propia medida y, si no está medida, se contesta que no se sabe:
+ *   · líquido → `dispensador.dosisPorPulsada` en mL por pulsada;
+ *   · barra   → `producto.gramosPorLavada`, que se mide pesando la barra
+ *               antes y después de N lavadas. Es, de hecho, un experimento
+ *               mejor que el del líquido. */
+function lavados(consumo, dispensador, producto){
+  const tipo = producto?.tipo;
+  if(tipo === 'solido'){
+    const g = Number(producto?.gramosPorLavada);
+    return g > 0 ? consumo / g : null;
+  }
+  if(tipo && tipo !== 'liquido') return null;
+  const dosis = Number(dispensador?.dosisPorPulsada);
+  if(!(dosis > 0)) return null;
+  return consumo / dosis;
+}
+
+/** Cuántas recargas completas caben en lo que queda en almacén.
+ *
+ *  ⚠ TERCERA VEZ QUE LA MISMA TRAMPA INTENTA COLARSE. La capacidad del
+ *  dispensador está en MILILITROS; el almacén de jabón en barra está en
+ *  GRAMOS. La pantalla soltaba «alcanza para 1.3 recargas» dividiendo gramos
+ *  entre mililitros. Ahora la función exige saber de qué producto habla y se
+ *  niega si no es líquido: un dispensador de bombeo no se recarga con barras.
+ *  La comprobación vive AQUÍ y no en la pantalla porque la pantalla ya se
+ *  equivocó una vez. */
+function recargasPosibles(almacen, dispensador, producto){
+  if(producto && producto.tipo !== 'liquido') return null;
+  const cap = Number(dispensador?.capacidad);
+  if(!(cap > 0)) return null;
+  return almacen / cap;
+}
+
+/* ── la honestidad del análisis ───────────────────────────────────────────── */
+
+/** Lo que la pantalla tiene que poder decir en voz alta antes de enseñar una
+ *  sola gráfica. Un análisis que no dice sobre cuántos datos está hablando
+ *  es una opinión con ejes. */
+function calidad(visitas, ints, banos){
+  const conDatos = new Set(ints.map(i => i.banoId));
+  const huecos = ints.filter(i => i.hueco > 0);
+  return {
+    visitas: visitas.length,
+    intervalos: ints.length,
+    dias: diasCubiertos(ints),
+    banosSinDatos: banos.filter(b => !conDatos.has(b.id)).map(b => b.nombre),
+    banosConUnaSolaVisita: banos.filter(b => {
+      const n = visitas.filter(v => v.banoId === b.id).length;
+      return n === 1;
+    }).map(b => b.nombre),
+    huecos: huecos.length,
+    huecoTotal: huecos.reduce((s,i) => s + i.hueco, 0),
+    /* Regla de dedo declarada, no escondida: con menos de 2 semanas y menos
+       de 3 intervalos por baño, los promedios se mueven muchísimo. */
+    suficiente: ints.length >= 6 && diasCubiertos(ints) >= 7,
+  };
+}
+
+/* ── utilidades de fecha ──────────────────────────────────────────────────── */
+function fechaISO(ts){
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function fechaHora(ts){
+  const d = new Date(ts);
+  const p = n => String(n).padStart(2,'0');
+  return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* ── el informe entero, de una ────────────────────────────────────────────── */
+function informe(estado, desde = null, hasta = null){
+  const { banos, productos, visitas, entregas, dispensador } = estado;
+  const todos = intervalos(visitas);
+  const ints  = enRango(todos, desde, hasta);
+  const dias  = diasCubiertos(ints);
+
+  const porProducto = productos.map(p => {
+    const mios = ints.filter(i => i.productoId === p.id);
+    const consumo = mios.reduce((s,i) => s + i.consumo, 0);
+    const ex = existencias([p], entregas, visitas)[0];
+    return {
+      producto: p, consumo,
+      unidad: UNIDAD[p.tipo],
+      piezas: p.tipo === 'solido' ? enPiezas(consumo, p) : null,
+      diario: dias > 0 ? consumo / dias : null,
+      lavados: lavados(consumo, dispensador, p),
+      almacen: ex.almacen,
+      enDispensadores: ex.enDispensadores,
+      diasRestantes: proyeccion(ex.almacen, dias > 0 ? consumo / dias : 0),
+      costoUnidad: costoPorUnidad(p.id, entregas, productos),
+    };
+  });
+
+  /* ⚠ La semana y las horas se calculan de UN SOLO PRODUCTO —el de mayor
+     consumo— y no de todos juntos. Sumar mililitros con gramos en la misma
+     barra es la trampa nº 2, y se me coló justo aquí: las dos gráficas salían
+     con un eje que no era ninguna unidad. Se ve bonito y no significa nada. */
+  const principal = [...porProducto].sort((a,b) => b.consumo - a.consumo)[0] || null;
+  const deUno = principal ? ints.filter(i => i.productoId === principal.producto.id) : [];
+
+  return {
+    rango: { desde, hasta, dias },
+    principal,
+    porProducto,
+    banos: porBano(ints, banos).map(r => ({
+      ...r,
+      porAlumno: porAlumno(ints.filter(i => i.banoId === r.banoId && i.productoId === r.productoId),
+                           banos.find(b => b.id === r.banoId)),
+    })),
+    dia: porDia(ints),
+    semana: porDiaSemana(deUno),
+    hora: porHora(deUno),
+    dinero: dinero(ints, productos, entregas),
+    calidad: calidad(visitas, ints, banos),
+    intervalos: ints,
+  };
+}
+
+const API = {
+  DIA, UNIDAD,
+  aCanonica, enPiezas, costoPorUnidad,
+  intervalos, enRango, porBano, porDia, porDiaSemana, porHora,
+  existencias, ultimoRestantePorBano, dinero, proyeccion,
+  porAlumno, diasCubiertos, lavados, recargasPosibles, calidad,
+  fechaISO, fechaHora, informe,
+};
+
+/* Tres formas de cargarlo, un solo archivo: `module.exports` para node,
+   `globalThis` para la página. `globalThis` y no `window` para que también
+   sirva desde un Worker, que no tiene `window`. */
+if(typeof module !== 'undefined') module.exports = API;
+globalThis.JABONERA = API;
+})();
+
+</script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   JABONERA · EXPORTAR A EXCEL DE VERDAD
+   ──────────────────────────────────────────────────────────────────────────
+   Un `.xlsx` auténtico, con varias hojas, encabezados en negrita, fechas que
+   Excel reconoce como fechas y pesos con formato de moneda. Sin una sola
+   dependencia: un .xlsx es un ZIP con unos XML dentro, y eso cabe aquí.
+
+   POR QUÉ NO UN CSV, que habría sido cuatro líneas:
+   · un CSV es UNA tabla, y aquí hacen falta siete (resumen, por baño, por
+     día, visitas, entregas, baños, productos). Siete archivos sueltos se
+     pierden y no se pueden presentar;
+   · en un CSV las fechas llegan como texto y Excel en español las malinterpreta
+     según la computadora — 05/01 puede ser 5 de enero o 1 de mayo;
+   · y los números con decimales cambian de significado según la coma o el
+     punto del sistema. En un .xlsx el número viaja como número.
+
+   EL ZIP VA SIN COMPRIMIR (método 0, «store»). No hace falta: son unos
+   kilobytes de XML, y comprimir obligaría a traer un deflate entero. Excel,
+   LibreOffice y Google Sheets abren un ZIP sin comprimir igual de bien.
+   ═════════════════════════════════════════════════════════════════════════ */
+/* ⚠ TODO EL ARCHIVO VA DENTRO DE UNA FUNCIÓN, y no es manía. Estos módulos se
+   cargan con <script src> clásico —no como módulos ES, porque un módulo ES no
+   carga desde `file://` y ahí se acabaría el «lo abro en la compu del salón»—
+   y los scripts clásicos COMPARTEN el ámbito global. Los tres declaraban
+   `const API` al final y el segundo reventaba con «Identifier 'API' has
+   already been declared», dejando la página en blanco. En node no pasaba
+   porque ahí cada archivo tiene su propio ámbito: sólo se vio abriéndolo en
+   un navegador de verdad. */
+(function(){
+'use strict';
+
+
+/* ── CRC-32, que el ZIP exige por cada archivo ─────────────────────────── */
+const TABLA_CRC = (() => {
+  const t = new Uint32Array(256);
+  for(let n = 0; n < 256; n++){
+    let c = n;
+    for(let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes){
+  let c = 0xFFFFFFFF;
+  for(let i = 0; i < bytes.length; i++) c = TABLA_CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+const utf8 = s => new TextEncoder().encode(s);
+
+/* ── el ZIP ────────────────────────────────────────────────────────────── */
+function armarZip(archivos){
+  const partes = [], central = [];
+  let offset = 0;
+
+  const u16 = n => [n & 0xFF, (n >>> 8) & 0xFF];
+  const u32 = n => [n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF];
+
+  for(const { nombre, datos } of archivos){
+    const nom = utf8(nombre);
+    const crc = crc32(datos);
+    /* Fecha fija (1980-01-01). Un .xlsx no usa la fecha del ZIP para nada, y
+       fijarla hace que dos exportaciones del mismo dato den el mismo archivo
+       — que es lo que permite comprobarlo en una prueba. */
+    const cab = [
+      ...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0),
+      ...u16(0), ...u16(0x0021),
+      ...u32(crc), ...u32(datos.length), ...u32(datos.length),
+      ...u16(nom.length), ...u16(0),
+    ];
+    partes.push(new Uint8Array(cab), nom, datos);
+
+    central.push([
+      ...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0),
+      ...u16(0), ...u16(0x0021),
+      ...u32(crc), ...u32(datos.length), ...u32(datos.length),
+      ...u16(nom.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0),
+      ...u32(0), ...u32(offset),
+      ...Array.from(nom),
+    ]);
+    offset += cab.length + nom.length + datos.length;
+  }
+
+  const dir = new Uint8Array(central.flat());
+  const fin = new Uint8Array([
+    ...u32(0x06054b50), ...u16(0), ...u16(0),
+    ...u16(archivos.length), ...u16(archivos.length),
+    ...u32(dir.length), ...u32(offset), ...u16(0),
+  ]);
+
+  const total = partes.reduce((s,p) => s + p.length, 0) + dir.length + fin.length;
+  const out = new Uint8Array(total);
+  let p = 0;
+  for(const t of [...partes, dir, fin]){ out.set(t, p); p += t.length; }
+  return out;
+}
+
+/* ── XML ───────────────────────────────────────────────────────────────── */
+const esc = s => String(s ?? '')
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;')
+  /* Excel rompe el archivo entero si le llega un carácter de control. */
+  .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');
+
+/** Columna 1 → A, 27 → AA. */
+function letraCol(n){
+  let s = '';
+  while(n > 0){ const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = (n - 1 - r) / 26; }
+  return s;
+}
+
+/** Fecha → número de serie de Excel. El día 0 es el 30/12/1899, y la fecha
+ *  se pasa a hora LOCAL primero: si no, una visita de las 08:00 en México
+ *  aparece en Excel a las 14:00 y el análisis por hora se va al carajo. */
+function serieExcel(ts){
+  const d = new Date(ts);
+  return (d.getTime() - d.getTimezoneOffset() * 60000) / 86400000 + 25569;
+}
+
+/* Estilos: 0 normal · 1 encabezado · 2 dos decimales · 3 pesos · 4 fecha ·
+   5 entero · 6 título de sección. */
+const ESTILO = { texto:0, numero:2, dinero:3, fecha:4, entero:5 };
+
+const ESTILOS_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="3">
+<numFmt numFmtId="164" formatCode="#,##0.00"/>
+<numFmt numFmtId="165" formatCode="&quot;$&quot;#,##0.00"/>
+<numFmt numFmtId="166" formatCode="dd/mm/yyyy\\ hh:mm"/>
+</numFmts>
+<fonts count="3">
+<font><sz val="11"/><name val="Calibri"/></font>
+<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+<font><b/><sz val="13"/><color rgb="FF0E5C63"/><name val="Calibri"/></font>
+</fonts>
+<fills count="3">
+<fill><patternFill patternType="none"/></fill>
+<fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF0E5C63"/><bgColor indexed="64"/></patternFill></fill>
+</fills>
+<borders count="2">
+<border><left/><right/><top/><bottom/><diagonal/></border>
+<border><left/><right/><top/><bottom style="thin"><color rgb="FFBFCBC9"/></bottom><diagonal/></border>
+</borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="7">
+<xf numFmtId="0"   fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0"   fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment vertical="center"/></xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="1"   fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="0"   fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"/>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+
+function hojaXML(hoja){
+  const cols = hoja.columnas;
+  const anchos = cols.map((c,i) =>
+    `<col min="${i+1}" max="${i+1}" width="${c.ancho || 16}" customWidth="1"/>`).join('');
+
+  const celda = (fila, col, valor, tipo) => {
+    const ref = letraCol(col) + fila;
+    if(valor === null || valor === undefined || valor === '')
+      return `<c r="${ref}"/>`;
+    if(tipo === 'fecha')
+      return `<c r="${ref}" s="4"><v>${serieExcel(valor)}</v></c>`;
+    if(tipo && tipo !== 'texto' && typeof valor === 'number' && isFinite(valor))
+      return `<c r="${ref}" s="${ESTILO[tipo] ?? 0}"><v>${valor}</v></c>`;
+    return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${esc(valor)}</t></is></c>`;
+  };
+
+  const filas = [];
+  filas.push(`<row r="1" ht="22" customHeight="1">` +
+    cols.map((c,i) => `<c r="${letraCol(i+1)}1" s="1" t="inlineStr"><is><t>${esc(c.titulo)}</t></is></c>`).join('') +
+    `</row>`);
+  hoja.filas.forEach((f, n) => {
+    filas.push(`<row r="${n+2}">` +
+      f.map((v,i) => celda(n+2, i+1, v, cols[i]?.tipo)).join('') + `</row>`);
+  });
+
+  const ref = `A1:${letraCol(Math.max(cols.length,1))}${hoja.filas.length + 1}`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<cols>${anchos}</cols>
+<sheetData>${filas.join('')}</sheetData>
+<autoFilter ref="${ref}"/>
+</worksheet>`;
+}
+
+/** Nombre de hoja válido para Excel: 31 caracteres y sin : \\ / ? * [ ] */
+function nombreHoja(s, usados){
+  let n = String(s).replace(/[:\\/?*\[\]]/g,'-').slice(0,31).trim() || 'Hoja';
+  let i = 2;
+  while(usados.has(n.toLowerCase())){ const suf = ' ' + i++; n = n.slice(0, 31-suf.length) + suf; }
+  usados.add(n.toLowerCase());
+  return n;
+}
+
+/** hojas: [{ nombre, columnas:[{titulo,ancho,tipo}], filas:[[...]] }] → Uint8Array */
+function libro(hojas){
+  const usados = new Set();
+  const hs = hojas.map((h,i) => ({ ...h, nombre: nombreHoja(h.nombre, usados), idx: i+1 }));
+
+  const archivos = [
+    { nombre:'[Content_Types].xml', datos: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+${hs.map(h => `<Override PartName="/xl/worksheets/sheet${h.idx}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('\n')}
+</Types>`)},
+    { nombre:'_rels/.rels', datos: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`)},
+    { nombre:'xl/workbook.xml', datos: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets>${hs.map(h => `<sheet name="${esc(h.nombre)}" sheetId="${h.idx}" r:id="rId${h.idx}"/>`).join('')}</sheets>
+</workbook>`)},
+    { nombre:'xl/_rels/workbook.xml.rels', datos: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+${hs.map(h => `<Relationship Id="rId${h.idx}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${h.idx}.xml"/>`).join('\n')}
+<Relationship Id="rId${hs.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`)},
+    { nombre:'xl/styles.xml', datos: utf8(ESTILOS_XML) },
+    ...hs.map(h => ({ nombre:`xl/worksheets/sheet${h.idx}.xml`, datos: utf8(hojaXML(h)) })),
+  ];
+  return armarZip(archivos);
+}
+
+const API = { libro, armarZip, crc32, letraCol, serieExcel, nombreHoja, hojaXML };
+if(typeof module !== 'undefined') module.exports = API;
+globalThis.EXCEL = API;
+})();
+
+</script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   JABONERA · EL ESTADO Y SU GUARDADO
+   ──────────────────────────────────────────────────────────────────────────
+   Dónde viven los datos y cómo se convierten en un libro de Excel.
+
+   SE GUARDA EN EL PROPIO NAVEGADOR (`localStorage`) y no en un servidor, y
+   es una decisión, no una limitación:
+   · el registro se hace DE PIE EN EL BAÑO, donde puede no haber señal;
+   · no hay que pedirle a nadie una cuenta, una llave ni un despliegue para
+     que el proyecto exista mañana;
+   · y la escuela no acaba con datos de sus alumnos en un servidor ajeno.
+   El precio es real y hay que decirlo en voz alta: **los datos viven en ESE
+   teléfono**. Por eso el respaldo a archivo (`.json`) y la exportación a
+   Excel no son un extra bonito — son la forma de que el trabajo no se
+   pierda, y por eso el aviso de respaldo está en la pantalla y no en un pie.
+   ═════════════════════════════════════════════════════════════════════════ */
+/* ⚠ TODO EL ARCHIVO VA DENTRO DE UNA FUNCIÓN, y no es manía. Estos módulos se
+   cargan con <script src> clásico —no como módulos ES, porque un módulo ES no
+   carga desde `file://` y ahí se acabaría el «lo abro en la compu del salón»—
+   y los scripts clásicos COMPARTEN el ámbito global. Los tres declaraban
+   `const API` al final y el segundo reventaba con «Identifier 'API' has
+   already been declared», dejando la página en blanco. En node no pasaba
+   porque ahí cada archivo tiene su propio ámbito: sólo se vio abriéndolo en
+   un navegador de verdad. */
+(function(){
+'use strict';
+
+
+const LLAVE = 'jabonera.v1';
+
+function idNuevo(p='x'){
+  return p + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7);
+}
+
+function estadoVacio(){
+  return {
+    version: 1,
+    escuela: { nombre:'', ciclo:'', turno:'', responsable:'' },
+    /* El dispensador que YA TIENEN. No lo diseñamos nosotros: se describe,
+       y sobre todo se anota su DOSIS medida, que es lo que permite traducir
+       mililitros a lavadas de manos. */
+    dispensador: { modelo:'Dispensador mecánico de pulsador', capacidad:1000,
+                   dosisPorPulsada:0, notas:'' },
+    banos: [],
+    productos: [],
+    visitas: [],
+    entregas: [],
+    demo: false,
+  };
+}
+
+function cargar(){
+  try{
+    const crudo = localStorage.getItem(LLAVE);
+    if(!crudo) return estadoVacio();
+    const e = JSON.parse(crudo);
+    return sanear(e);
+  }catch(err){
+    /* Un JSON roto no puede borrar el trabajo de nadie en silencio: se avisa
+       y se deja el original donde está para poder rescatarlo a mano. */
+    console.error('Jabonera: no se pudo leer lo guardado.', err);
+    try{ localStorage.setItem(LLAVE + '.roto.' + Date.now(), localStorage.getItem(LLAVE)); }catch(_){}
+    return estadoVacio();
+  }
+}
+
+/** Rellena lo que falte sin tirar lo que haya. Un archivo de hace tres
+ *  versiones tiene que seguir abriendo. */
+function sanear(e){
+  const base = estadoVacio();
+  const out = { ...base, ...e };
+  out.escuela      = { ...base.escuela, ...(e.escuela || {}) };
+  out.dispensador  = { ...base.dispensador, ...(e.dispensador || {}) };
+  out.banos        = Array.isArray(e.banos) ? e.banos : [];
+  out.productos    = Array.isArray(e.productos) ? e.productos : [];
+  out.visitas      = (Array.isArray(e.visitas) ? e.visitas : []).map(v => ({
+    ...v, ts:Number(v.ts), restante:Number(v.restante)||0, repuesto:Number(v.repuesto)||0 }));
+  out.entregas     = (Array.isArray(e.entregas) ? e.entregas : []).map(x => ({
+    ...x, ts:Number(x.ts), envases:Number(x.envases)||0, costoTotal:Number(x.costoTotal)||0 }));
+  return out;
+}
+
+function guardar(estado){
+  try{
+    localStorage.setItem(LLAVE, JSON.stringify(estado));
+    return { bien:true };
+  }catch(err){
+    /* El navegador puede negarse (modo privado, cuota llena). Devolver
+       `bien:false` obliga a la pantalla a decirlo: un guardado que falla en
+       silencio es cómo se pierde una semana de mediciones. */
+    return { bien:false, error: String(err && err.message || err) };
+  }
+}
+
+/* ── el libro de Excel ─────────────────────────────────────────────────── */
+
+/** Convierte el informe del motor en las hojas del .xlsx. Va aquí y no en
+ *  `excel.js` a propósito: `excel.js` no sabe nada de jabón, y así se puede
+ *  reusar tal cual en cualquier otro proyecto. */
+function hojasDeExcel(estado, informe, M){
+  const nom = id => estado.banos.find(b => b.id === id)?.nombre || '—';
+  const prod = id => estado.productos.find(p => p.id === id)?.nombre || '—';
+  const uni  = id => M.UNIDAD[estado.productos.find(p => p.id === id)?.tipo] || '';
+  const n2 = x => (x == null ? null : Math.round(x * 100) / 100);
+  const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+  /* 1 · RESUMEN. Es la hoja que alguien va a proyectar, así que arriba va lo
+     que se puede afirmar y abajo, con todas sus letras, sobre cuántos datos
+     se está afirmando. */
+  const resumen = [];
+  resumen.push(['Escuela', estado.escuela.nombre || '(sin capturar)', null]);
+  resumen.push(['Ciclo / turno', [estado.escuela.ciclo, estado.escuela.turno].filter(Boolean).join(' · ') || '(sin capturar)', null]);
+  resumen.push(['Exportado', M.fechaHora(Date.now()), null]);
+  resumen.push(['', '', null]);
+  resumen.push(['DÍAS MEDIDOS', n2(informe.calidad.dias), null]);
+  resumen.push(['Visitas registradas', informe.calidad.visitas, null]);
+  resumen.push(['Intervalos de consumo', informe.calidad.intervalos, null]);
+  resumen.push(['', '', null]);
+  for(const p of informe.porProducto){
+    resumen.push([`Consumo · ${p.producto.nombre} (${p.unidad})`, n2(p.consumo), null]);
+    if(p.piezas != null) resumen.push([`  equivale a barras`, n2(p.piezas), null]);
+    if(p.lavados != null) resumen.push([`  equivale a lavadas de manos`, Math.round(p.lavados), null]);
+    if(p.diario != null) resumen.push([`  promedio por día (${p.unidad})`, n2(p.diario), null]);
+    resumen.push([`  en almacén (${p.unidad})`, n2(p.almacen), null]);
+    if(p.diasRestantes != null) resumen.push([`  días que aguanta el almacén`, n2(p.diasRestantes), null]);
+    if(p.costoUnidad != null) resumen.push([`  costo por ${p.unidad}`, null, n2(p.costoUnidad)]);
+  }
+  resumen.push(['', '', null]);
+  resumen.push(['Invertido en compras', null, n2(informe.dinero.invertido)]);
+  resumen.push(['Valor de lo consumido', null, informe.dinero.gasto == null ? null : n2(informe.dinero.gasto)]);
+  if(informe.dinero.gasto == null)
+    resumen.push(['  (no hay entregas registradas: sin precio no se puede valorar el consumo)', '', null]);
+  resumen.push(['', '', null]);
+  resumen.push(['— HASTA DÓNDE LLEGAN ESTOS DATOS —', '', null]);
+  resumen.push(['¿Suficiente para concluir?',
+                informe.calidad.suficiente ? 'Sí (7+ días y 6+ intervalos)'
+                                           : 'Todavía no: hacen falta más días o más mediciones', null]);
+  if(informe.calidad.banosSinDatos.length)
+    resumen.push(['Baños SIN una sola medición', informe.calidad.banosSinDatos.join(', '), null]);
+  if(informe.calidad.banosConUnaSolaVisita.length)
+    resumen.push(['Baños con una sola visita (aún no dicen consumo)', informe.calidad.banosConUnaSolaVisita.join(', '), null]);
+  if(informe.calidad.huecos)
+    resumen.push([`Recargas no registradas detectadas`, `${informe.calidad.huecos} · faltan ${n2(informe.calidad.huecoTotal)} sin apuntar`, null]);
+  if(estado.demo)
+    resumen.push(['⚠ ATENCIÓN', 'Este archivo contiene DATOS DE DEMOSTRACIÓN, no mediciones reales.', null]);
+
+  const hojas = [
+    { nombre:'Resumen',
+      columnas:[{titulo:'Concepto',ancho:42},{titulo:'Valor',ancho:26,tipo:'numero'},{titulo:'Pesos',ancho:14,tipo:'dinero'}],
+      filas: resumen },
+
+    { nombre:'Consumo por baño',
+      columnas:[{titulo:'Baño',ancho:30},{titulo:'Producto',ancho:22},{titulo:'Unidad',ancho:9},
+                {titulo:'Consumo',ancho:14,tipo:'numero'},{titulo:'Por alumno y día',ancho:18,tipo:'numero'},
+                {titulo:'Alumnos',ancho:10,tipo:'entero'},{titulo:'Mediciones',ancho:12,tipo:'entero'},
+                {titulo:'Recargas sin apuntar',ancho:20,tipo:'entero'}],
+      filas: informe.banos.map(r => [
+        nom(r.banoId), prod(r.productoId), uni(r.productoId), n2(r.consumo),
+        n2(r.porAlumno), r.bano?.alumnos || null, r.intervalos, r.huecos ]) },
+
+    { nombre:'Consumo por día',
+      columnas:[{titulo:'Día',ancho:14},{titulo:'Producto',ancho:22},{titulo:'Unidad',ancho:9},
+                {titulo:'Consumo',ancho:14,tipo:'numero'}],
+      filas: informe.dia.map(d => [ d.dia, prod(d.productoId), uni(d.productoId), n2(d.consumo) ]) },
+
+    /* La semana y las horas hablan de UN producto —el de mayor consumo—
+       porque mezclar mL con gramos en una columna da un total que no es de
+       ninguna unidad. El encabezado lo dice para que nadie lo suponga. */
+    { nombre:'Por día de la semana',
+      columnas:[{titulo:'Día',ancho:14},
+                {titulo:`Consumo · ${informe.principal ? informe.principal.producto.nombre + ' (' + informe.principal.unidad + ')' : '—'}`,ancho:38,tipo:'numero'}],
+      filas: informe.semana.map(s => [ DIAS[s.dia], n2(s.consumo) ]) },
+
+    { nombre:'Por hora',
+      columnas:[{titulo:'Hora',ancho:10,tipo:'entero'},
+                {titulo:`Consumo · ${informe.principal ? informe.principal.producto.nombre + ' (' + informe.principal.unidad + ')' : '—'}`,ancho:34,tipo:'numero'},
+                {titulo:'Nota',ancho:60}],
+      filas: informe.hora.horas.map((h,i) => [ h.hora, n2(h.consumo),
+        i === 0 ? `Sólo con los ${informe.hora.muestras} intervalos de menos de ${informe.hora.topeHoras} h. `
+                + `Se descartaron ${informe.hora.descartados} por ser demasiado largos para decir nada de la hora.` : '' ]) },
+
+    { nombre:'Visitas',
+      columnas:[{titulo:'Fecha y hora',ancho:20,tipo:'fecha'},{titulo:'Baño',ancho:30},
+                {titulo:'Producto',ancho:22},{titulo:'Unidad',ancho:9},
+                {titulo:'Encontrado',ancho:13,tipo:'numero'},{titulo:'Repuesto',ancho:13,tipo:'numero'},
+                {titulo:'Quién',ancho:18},{titulo:'Nota',ancho:34}],
+      filas: [...estado.visitas].sort((a,b)=>b.ts-a.ts).map(v => [
+        v.ts, nom(v.banoId), prod(v.productoId), uni(v.productoId),
+        n2(v.restante), n2(v.repuesto), v.quien || '', v.nota || '' ]) },
+
+    { nombre:'Entregas',
+      columnas:[{titulo:'Fecha',ancho:20,tipo:'fecha'},{titulo:'Producto',ancho:22},
+                {titulo:'Envases',ancho:10,tipo:'numero'},{titulo:'Contenido total',ancho:16,tipo:'numero'},
+                {titulo:'Unidad',ancho:9},{titulo:'Costo total',ancho:14,tipo:'dinero'},
+                {titulo:'Costo por unidad',ancho:16,tipo:'dinero'},{titulo:'Proveedor',ancho:22}],
+      filas: [...estado.entregas].sort((a,b)=>b.ts-a.ts).map(e => {
+        const p = estado.productos.find(x => x.id === e.productoId);
+        const total = p ? e.envases * p.tamanoEnvase : null;
+        return [ e.ts, prod(e.productoId), e.envases, n2(total), uni(e.productoId),
+                 n2(e.costoTotal), total ? n2(e.costoTotal/total) : null, e.proveedor || '' ]; }) },
+
+    { nombre:'Baños',
+      columnas:[{titulo:'Baño',ancho:30},{titulo:'Zona',ancho:22},{titulo:'Tipo',ancho:14},
+                {titulo:'Dispensadores',ancho:14,tipo:'entero'},{titulo:'Alumnos',ancho:10,tipo:'entero'}],
+      filas: estado.banos.map(b => [ b.nombre, b.zona||'', b.tipo||'', b.dispensadores||null, b.alumnos||null ]) },
+
+    { nombre:'Productos',
+      columnas:[{titulo:'Producto',ancho:26},{titulo:'Tipo',ancho:12},{titulo:'Marca',ancho:18},
+                {titulo:'Contenido por envase',ancho:20,tipo:'numero'},{titulo:'Unidad',ancho:9},
+                {titulo:'Gramos por barra',ancho:16,tipo:'numero'}],
+      filas: estado.productos.map(p => [ p.nombre, p.tipo, p.marca||'',
+                n2(p.tamanoEnvase), M.UNIDAD[p.tipo], p.tipo==='solido' ? n2(p.gramosPorPieza) : null ]) },
+  ];
+  return hojas;
+}
+
+/* ── datos de demostración ─────────────────────────────────────────────────
+   Para poder presentar el proyecto ANTES de tener tres semanas de campo.
+   Van marcados con `demo:true` y la marca sale impresa en el resumen de
+   Excel y en un letrero rojo en la pantalla: un dato inventado que se pueda
+   confundir con una medición es exactamente lo que no debe pasar en un
+   proyecto de ciencias. */
+function datosDemo(hoy = Date.now()){
+  const e = estadoVacio();
+  e.demo = true;
+  e.escuela = { nombre:'Escuela de ejemplo', ciclo:'2025–2026', turno:'Matutino',
+                responsable:'Equipo STEAM' };
+  e.dispensador = { modelo:'Dispensador mecánico de pulsador', capacidad:1000,
+                    dosisPorPulsada:1.2,
+                    notas:'Dosis medida en clase: 10 pulsadas en una probeta = 12 mL.' };
+
+  const liq = { id:'pl', nombre:'Jabón líquido para manos', tipo:'liquido',
+                marca:'Genérico', tamanoEnvase:5000 };
+  const sol = { id:'ps', nombre:'Jabón en barra', tipo:'solido',
+                marca:'Genérico', tamanoEnvase:1200, gramosPorPieza:100,
+                /* Medido pesando una barra antes y después de 50 lavadas
+                   contadas. La barra NO usa la dosis del dispensador de
+                   líquido: son dos unidades y dos experimentos. */
+                gramosPorLavada:0.55 };
+  e.productos = [liq, sol];
+
+  e.banos = [
+    { id:'b1', nombre:'Baño hombres · planta baja', zona:'Edificio A', tipo:'hombres', dispensadores:3, alumnos:180 },
+    { id:'b2', nombre:'Baño mujeres · planta baja', zona:'Edificio A', tipo:'mujeres', dispensadores:3, alumnos:175 },
+    { id:'b3', nombre:'Baño hombres · planta alta', zona:'Edificio A', tipo:'hombres', dispensadores:2, alumnos:120 },
+    { id:'b4', nombre:'Baño mujeres · planta alta', zona:'Edificio A', tipo:'mujeres', dispensadores:2, alumnos:118 },
+    { id:'b5', nombre:'Baño de talleres',           zona:'Edificio B', tipo:'mixto',   dispensadores:2, alumnos:90  },
+    { id:'b6', nombre:'Baño accesible',             zona:'Edificio A', tipo:'accesible',dispensadores:1, alumnos:25  },
+  ];
+
+  /* Un generador CON SEMILLA: los mismos datos en cada máquina, para que la
+     presentación no cambie de números entre el ensayo y el examen. */
+  let s = 20260115;
+  const azar = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+
+  const DIA = 86400000;
+  const inicio = new Date(hoy - 21*DIA); inicio.setHours(7,30,0,0);
+  /* Intensidad por baño: el de planta baja está junto a la cafetería y se usa
+     mucho más. No es adorno — es lo que hace que el ranking tenga algo que
+     enseñar. */
+  const peso = { b1:1.00, b2:0.95, b3:0.55, b4:0.52, b5:0.40, b6:0.10 };
+
+  e.entregas = [
+    { id:'e1', ts:inicio.getTime()-DIA, productoId:'pl', envases:8, costoTotal:1360, proveedor:'Distribuidora local' },
+    { id:'e2', ts:inicio.getTime()+9*DIA, productoId:'pl', envases:4, costoTotal:700,  proveedor:'Distribuidora local' },
+    { id:'e3', ts:inicio.getTime()-DIA, productoId:'ps', envases:3, costoTotal:255,  proveedor:'Distribuidora local' },
+  ];
+
+  const dentro = {};                     /* lo que hay ahora en cada dispensador */
+  for(const b of e.banos){ dentro[b.id+'pl'] = 0; dentro[b.id+'ps'] = 0; }
+
+  for(let d = 0; d <= 21; d++){
+    const cuando = new Date(inicio.getTime() + d*DIA);
+    const finde = cuando.getDay() === 0 || cuando.getDay() === 6;
+    for(const b of e.banos){
+      /* Se visita a diario salvo fin de semana. Dos veces al día en los dos
+         baños grandes: eso es lo que le da material al perfil por horas. */
+      const veces = finde ? 0 : (peso[b.id] > 0.9 ? 2 : 1);
+      for(let k = 0; k < veces; k++){
+        const hora = k === 0 ? 7.5 : 13.5;
+        const ts = new Date(cuando); ts.setHours(Math.floor(hora), (hora%1)*60, 0, 0);
+        for(const p of [liq, sol]){
+          const clave = b.id + p.id;
+          /* Gasto desde la visita anterior. El sólido se gasta bastante menos. */
+          const base = p.tipo === 'liquido' ? 210 : 26;
+          const gastado = finde ? 0
+            : base * peso[b.id] * (0.7 + azar()*0.6) * (veces === 2 ? 0.55 : 1);
+          dentro[clave] = Math.max(0, dentro[clave] - gastado);
+          /* Se rellena cuando baja del 25 % de la capacidad. */
+          const cap = p.tipo === 'liquido' ? 1000 * (b.dispensadores||1) : 300;
+          let repuesto = 0;
+          if(dentro[clave] < cap * 0.25){ repuesto = cap - dentro[clave]; dentro[clave] = cap; }
+          e.visitas.push({
+            id: idNuevo('v'), ts: ts.getTime(), banoId: b.id, productoId: p.id,
+            restante: Math.round((dentro[clave] - repuesto) * 10)/10,
+            repuesto: Math.round(repuesto * 10)/10,
+            quien: 'Intendencia', nota: '',
+          });
+        }
+      }
+    }
+  }
+  return e;
+}
+
+const API = { LLAVE, idNuevo, estadoVacio, cargar, guardar, sanear, hojasDeExcel, datosDemo };
+if(typeof module !== 'undefined') module.exports = API;
+globalThis.DATOS = API;
+})();
+
+</script>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   JABONERA · LA PANTALLA
+   ──────────────────────────────────────────────────────────────────────────
+   Sólo interfaz: toda la cuenta está en `motor.js` y se comprueba con
+   `pruebas.mjs`, que no puede hacer clic en un botón. Aquí no se calcula
+   nada que no venga del motor — si algún día hay que sumar en este archivo,
+   está mal puesto.
+   ═════════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+const M = globalThis.JABONERA, D = globalThis.DATOS, X = globalThis.EXCEL;
+
+/* ── utilidades ──────────────────────────────────────────────────────── */
+const $  = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nu = (x, dec=0) => x == null || !isFinite(x) ? '—'
+  : x.toLocaleString('es-MX', { minimumFractionDigits:dec, maximumFractionDigits:dec });
+const pesos = x => x == null || !isFinite(x) ? '—'
+  : '$' + x.toLocaleString('es-MX', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+/** Cantidad con su unidad, y para la barra también en piezas. Nunca se
+ *  imprime un número de jabón sin decir de qué unidad habla. */
+function cant(v, p){
+  const c = cantPartida(v, p);
+  return c.detalle ? `${c.grande} <small>· ${c.detalle}</small>` : c.grande;
+}
+/** La misma cantidad partida en dos: lo que va en el número grande y lo que
+ *  va debajo. En una tarjeta estrecha, «11.91 L · 11,912 mL» se rompía a
+ *  media unidad y dejaba un «mL» huérfano en su propio renglón. */
+function cantPartida(v, p){
+  if(v == null || !isFinite(v)) return { grande:'—', detalle:'' };
+  if(!p) return { grande:nu(v,1), detalle:'' };
+  if(p.tipo === 'solido'){
+    const pz = M.enPiezas(v, p);
+    return { grande: nu(v, v < 100 ? 1 : 0) + ' g',
+             detalle: pz != null ? `${nu(pz,1)} barras` : '' };
+  }
+  return v >= 1000
+    ? { grande: nu(v/1000, 2) + ' L', detalle: nu(v,0) + ' mL' }
+    : { grande: nu(v,0) + ' mL', detalle:'' };
+}
+const soloNumero = (v,p) => cantPartida(v,p).grande;
+const hace = ts => {
+  const m = (Date.now() - ts) / 60000;
+  if(m < 60) return `hace ${Math.max(1,Math.round(m))} min`;
+  if(m < 60*36) return `hace ${Math.round(m/60)} h`;
+  return `hace ${Math.round(m/1440)} días`;
+};
+
+/* ── gráficas: SVG a mano, sin una sola librería ─────────────────────── */
+function columnas(datos, opciones = {}){
+  const { unidad='', alto=150, resaltar=-1 } = opciones;
+  if(!datos.length || datos.every(d => !(d.v > 0)))
+    return `<p class="mini">Todavía no hay suficiente para dibujar esto.</p>`;
+  const max = Math.max(...datos.map(d => d.v));
+  const n = datos.length, W = 340, H = alto, base = H - 22, techo = 12;
+  const paso = W / n, ancho = Math.max(3, Math.min(paso - 4, 40));
+  const barras = datos.map((d,i) => {
+    const h = max > 0 ? (base - techo) * (d.v / max) : 0;
+    const x = i * paso + (paso - ancho)/2;
+    return `<rect class="barra${i===resaltar?'':' floja'}" x="${x.toFixed(1)}" y="${(base-h).toFixed(1)}"
+            width="${ancho.toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2"><title>${esc(d.et)}: ${nu(d.v,1)} ${esc(unidad)}</title></rect>`;
+  }).join('');
+  const etiquetas = datos.map((d,i) => {
+    if(n > 12 && i % Math.ceil(n/8) !== 0) return '';
+    return `<text x="${(i*paso + paso/2).toFixed(1)}" y="${H-6}" text-anchor="middle">${esc(d.corta ?? d.et)}</text>`;
+  }).join('');
+  return `<svg class="gr" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Gráfica de columnas, máximo ${nu(max,1)} ${esc(unidad)}">
+    <line class="eje" x1="0" y1="${base}" x2="${W}" y2="${base}"/>
+    ${barras}${etiquetas}
+  </svg>
+  <div class="leyenda"><span>Máximo de la gráfica: <b>${nu(max,1)} ${esc(unidad)}</b></span></div>`;
+}
+
+function ranking(filas, opciones = {}){
+  const { unidad='' } = opciones;
+  if(!filas.length) return `<p class="mini">Sin mediciones todavía.</p>`;
+  const max = Math.max(...filas.map(f => f.v));
+  return `<div>${filas.map((f,i) => `
+    <div style="margin:0 0 9px">
+      <div style="display:flex;gap:8px;font-size:13.5px;margin-bottom:3px">
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.et)}</span>
+        <b class="num">${nu(f.v, f.v < 100 ? 1 : 0)} ${esc(unidad)}</b>
+      </div>
+      <div style="height:9px;background:var(--agua-claro);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${max>0?(f.v/max*100).toFixed(1):0}%;
+             background:${i===0?'var(--agua)':'#5FA3AB'};border-radius:5px"></div>
+      </div>
+      ${f.nota ? `<div class="mini" style="margin-top:2px">${esc(f.nota)}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* ── estado ──────────────────────────────────────────────────────────── */
+let E = D.cargar();
+let tab = 'registrar';
+let sel = { banoId:null, productoId:null };
+
+function salvar(){
+  const r = D.guardar(E);
+  if(!r.bien) alerta(`No se pudo guardar: ${r.error}. Exporta un respaldo AHORA antes de seguir.`, 'mal');
+  return r.bien;
+}
+let temporizador = null;
+function alerta(texto, clase='bien'){
+  let c = $('#brindis');
+  if(!c){ c = document.createElement('div'); c.id = 'brindis';
+    c.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:60';
+    document.body.appendChild(c); }
+  c.innerHTML = `<div class="aviso ${clase}" style="box-shadow:var(--sombra);margin:0">${esc(texto)}</div>`;
+  clearTimeout(temporizador);
+  temporizador = setTimeout(() => { c.innerHTML = ''; }, 4200);
+}
+
+/* ── router ──────────────────────────────────────────────────────────── */
+const PINTORES = {};
+function pinta(){
+  for(const b of document.querySelectorAll('.pestanas button')){
+    const activa = b.dataset.tab === tab;
+    b.setAttribute('aria-selected', activa ? 'true' : 'false');
+  }
+  for(const p of document.querySelectorAll('.panel')) p.hidden = p.id !== 'p-' + tab;
+  const destino = $('#p-' + tab);
+  destino.innerHTML = PINTORES[tab]();
+  destino.classList.remove('brinco'); void destino.offsetWidth; destino.classList.add('brinco');
+
+  $('#subCabecera').innerHTML = E.escuela.nombre
+    ? `${esc(E.escuela.nombre)}<br>${esc([E.escuela.ciclo, E.escuela.turno].filter(Boolean).join(' · '))}`
+    : '';
+  $('#letreroDemo').innerHTML = E.demo ? `<div class="aviso mal">
+      <h3>Estos son DATOS DE DEMOSTRACIÓN</h3>
+      No son mediciones reales: se generaron para poder enseñar el sistema funcionando.
+      Antes de usarlo de verdad, ve a <b>Ajustes → Empezar de cero</b>.
+      La advertencia también sale impresa en el Excel.</div>` : '';
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('.pestanas button');
+  if(b){ tab = b.dataset.tab; pinta(); window.scrollTo(0,0); }
+});
+
+/* ══ 1 · REGISTRAR ══════════════════════════════════════════════════════
+   La pantalla que se usa DE PIE EN EL BAÑO. Todo lo demás del sistema
+   depende de que esto se pueda hacer en menos de treinta segundos, porque
+   si tarda más nadie lo llena y a las dos semanas el análisis es una gráfica
+   bonita encima de datos inventados. */
+PINTORES.registrar = () => {
+  if(!E.banos.length || !E.productos.length) return `
+    <div class="tarjeta"><div class="vacio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-5 9 5v11H3z"/><path d="M3 9h18"/></svg>
+      <h2>Falta decirle al sistema qué hay</h2>
+      <p class="mini">No se puede registrar sin al menos un baño y un producto.</p>
+      <button class="b" data-ir="ajustes">Ir a Ajustes</button>
+      <div class="sep"></div>
+      <p class="mini">¿Sólo quieres ver cómo se ve funcionando?</p>
+      <button class="b fantasma" data-demo="1">Cargar datos de demostración</button>
+    </div></div>`;
+
+  if(!sel.banoId || !E.banos.some(b => b.id === sel.banoId)) sel.banoId = E.banos[0].id;
+  if(!sel.productoId || !E.productos.some(p => p.id === sel.productoId)) sel.productoId = E.productos[0].id;
+  const bano = E.banos.find(b => b.id === sel.banoId);
+  const prod = E.productos.find(p => p.id === sel.productoId);
+
+  const previas = E.visitas.filter(v => v.banoId === sel.banoId && v.productoId === sel.productoId)
+                           .sort((a,b) => b.ts - a.ts);
+  const ult = previas[0];
+  const dentroAntes = ult ? Number(ult.restante) + Number(ult.repuesto) : null;
+
+  const unidades = prod.tipo === 'liquido'
+    ? ['mL','L'] : (prod.gramosPorPieza > 0 ? ['g','pz','kg'] : ['g','kg']);
+
+  const recientes = [...E.visitas].sort((a,b) => b.ts - a.ts).slice(0,6);
+
+  return `
+  <div class="tarjeta">
+    <h2>¿Qué baño?</h2>
+    <div class="fichas" id="fBanos">${E.banos.map(b => `
+      <button type="button" data-bano="${esc(b.id)}" aria-pressed="${b.id===sel.banoId}">
+        ${esc(b.nombre)}${b.zona ? `<span class="men">${esc(b.zona)}</span>` : ''}
+      </button>`).join('')}</div>
+
+    <h2>¿Qué jabón?</h2>
+    <div class="fichas" id="fProductos">${E.productos.map(p => `
+      <button type="button" data-producto="${esc(p.id)}" aria-pressed="${p.id===sel.productoId}">
+        ${esc(p.nombre)}<span class="men">${p.tipo === 'liquido' ? 'líquido · mL' : 'en barra · g'}</span>
+      </button>`).join('')}</div>
+  </div>
+
+  ${ult ? `<div class="aviso info">
+      <h3>La vez anterior · ${esc(hace(ult.ts))}</h3>
+      Se dejaron dentro <b>${esc(soloNumero(dentroAntes, prod))}</b>
+      (quedaban ${esc(soloNumero(ult.restante, prod))} y se repusieron ${esc(soloNumero(ult.repuesto, prod))}).<br>
+      <span class="mini">Lo que apuntes ahora, restado de eso, es el consumo.</span>
+    </div>`
+    : `<div class="aviso ojo"><h3>Primera visita a este baño</h3>
+      Esta medición todavía no dice consumo: hace falta una segunda para poder restar.
+      Es normal y es correcto — un solo punto no mide un gasto.</div>`}
+
+  <form class="tarjeta" id="formVisita">
+    <h2>La medición</h2>
+    <p class="mini" style="margin-bottom:12px">Dos números y ya. Primero lo que ENCUENTRAS, después lo que AÑADES.</p>
+
+    <div class="campo">
+      <label for="restante">1 · Lo que encontraste dentro</label>
+      <div class="par-unidad">
+        <input id="restante" name="restante" type="number" inputmode="decimal" step="any" min="0"
+               placeholder="0" required>
+        <select name="uRestante" aria-label="Unidad de lo encontrado">
+          ${unidades.map(u => `<option>${u}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label for="repuesto">2 · Lo que añadiste ahora</label>
+      <div class="par-unidad">
+        <input id="repuesto" name="repuesto" type="number" inputmode="decimal" step="any" min="0"
+               placeholder="0" value="0">
+        <select name="uRepuesto" aria-label="Unidad de lo añadido">
+          ${unidades.map(u => `<option>${u}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <details style="margin:0 0 12px">
+      <summary class="mini" style="cursor:pointer;padding:6px 0">Fecha, quién y notas (casi nunca hace falta)</summary>
+      <div class="campo" style="margin-top:10px">
+        <label for="cuando">Fecha y hora</label>
+        <input id="cuando" name="cuando" type="datetime-local" value="${new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)}">
+      </div>
+      <div class="campo">
+        <label for="quien">Quién midió</label>
+        <input id="quien" name="quien" type="text" placeholder="Nombre o puesto" value="${esc(E.ultimoQuien||'')}">
+      </div>
+      <div class="campo">
+        <label for="nota">Nota</label>
+        <input id="nota" name="nota" type="text" placeholder="Dispensador roto, se derramó…">
+      </div>
+    </details>
+
+    <button class="b ancho" type="submit">Guardar la medición</button>
+  </form>
+
+  <div class="tarjeta">
+    <h2>Últimas mediciones</h2>
+    ${recientes.length ? `<ul class="lista">${recientes.map(v => {
+      const b = E.banos.find(x => x.id === v.banoId), p = E.productos.find(x => x.id === v.productoId);
+      return `<li>
+        <div class="txt">
+          <b>${esc(b?.nombre || '—')}</b>
+          <span>${esc(p?.nombre || '—')} · encontró ${esc(soloNumero(v.restante,p))} · repuso ${esc(soloNumero(v.repuesto,p))}</span>
+          <span>${esc(M.fechaHora(v.ts))}${v.quien ? ' · ' + esc(v.quien) : ''}</span>
+        </div>
+        <button class="b chico peligro" data-borrar-visita="${esc(v.id)}" title="Borrar esta medición">Borrar</button>
+      </li>`; }).join('')}</ul>`
+      : `<p class="mini">Ninguna todavía.</p>`}
+  </div>`;
+};
+
+/* ══ 2 · ANÁLISIS ══════════════════════════════════════════════════════ */
+PINTORES.analisis = () => {
+  const inf = M.informe(E);
+  const c = inf.calidad;
+
+  if(!c.intervalos) return `
+    <div class="tarjeta"><div class="vacio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <h2>Todavía no hay consumo que analizar</h2>
+      <p class="mini">El consumo es una resta entre dos visitas al mismo baño.
+      Con una sola visita no hay nada que restar — hacen falta dos.</p>
+      <button class="b" data-ir="registrar">Registrar una medición</button>
+    </div></div>`;
+
+  /* La honestidad va ARRIBA de las gráficas, no debajo en letra chica: es lo
+     que decide si lo de abajo se puede citar en un examen o no. */
+  const avisos = [];
+  if(!c.suficiente) avisos.push(`<div class="aviso ojo">
+    <h3>Estos números todavía se mueven</h3>
+    Hay <b>${nu(c.dias,1)} días</b> medidos y <b>${c.intervalos}</b> intervalos.
+    Por debajo de 7 días y 6 intervalos, un día raro cambia todos los promedios.
+    Sirve para enseñar cómo funciona; para concluir, hace falta más campo.</div>`);
+  if(c.banosSinDatos.length) avisos.push(`<div class="aviso mal">
+    <h3>${c.banosSinDatos.length} baño(s) sin una sola medición</h3>
+    ${esc(c.banosSinDatos.join(', '))}. No aparecen abajo: no es que gasten cero, es que no se sabe.</div>`);
+  if(c.banosConUnaSolaVisita.length) avisos.push(`<div class="aviso ojo">
+    <h3>Baños con una sola visita</h3>
+    ${esc(c.banosConUnaSolaVisita.join(', '))} — falta una segunda para poder restar.</div>`);
+  if(c.huecos) avisos.push(`<div class="aviso mal">
+    <h3>${c.huecos} recarga(s) sin apuntar</h3>
+    Apareció jabón que nadie registró (faltan ${nu(c.huecoTotal,0)} unidades sin apuntar).
+    Ese consumo se cuenta como 0 en vez de inventarlo, así que <b>el gasto real es mayor que el de abajo</b>.</div>`);
+
+  const cifras = inf.porProducto.map(p => {
+    const c = cantPartida(p.consumo, p.producto);
+    const notas = [
+      c.detalle,
+      p.diario != null ? `${soloNumero(p.diario, p.producto)} al día` : null,
+      p.lavados != null ? `${nu(p.lavados,0)} lavadas de manos` : null,
+    ].filter(Boolean);
+    return `
+    <div class="cifra ${p.consumo>0?'destacada':''}">
+      <div class="et">${esc(p.producto.nombre)}</div>
+      <div class="v">${c.grande}</div>
+      <div class="n">${esc(notas.join(' · '))}</div>
+    </div>`; }).join('');
+
+  const dinero = `
+    <div class="cifra"><div class="et">Valor de lo consumido</div>
+      <div class="v ${inf.dinero.gasto==null?'':''}">${pesos(inf.dinero.gasto)}</div>
+      <div class="n">${inf.dinero.gasto == null
+        ? 'Sin entregas registradas no hay precio: no se puede valorar.'
+        : 'en ' + nu(inf.rango.dias,1) + ' días medidos'}</div></div>
+    <div class="cifra"><div class="et">Invertido en compras</div>
+      <div class="v">${pesos(inf.dinero.invertido)}</div>
+      <div class="n">todas las entregas registradas</div></div>`;
+
+  /* Por baño: una tarjeta por producto, porque mL y g no se pueden mezclar
+     en la misma barra — es la trampa nº 2 del motor. */
+  const porProducto = E.productos.map(p => {
+    const filas = inf.banos.filter(r => r.productoId === p.id).map(r => ({
+      et: r.bano?.nombre || '—', v: r.consumo,
+      nota: r.porAlumno != null
+        ? `${nu(r.porAlumno,2)} ${M.UNIDAD[p.tipo]} por alumno y día`
+        : (r.bano && !r.bano.alumnos ? 'sin alumnos asignados: no hay promedio por alumno' : ''),
+    }));
+    if(!filas.length) return '';
+    return `<div class="tarjeta">
+      <h2>Qué baño gasta más · ${esc(p.nombre)}</h2>
+      <p class="mini" style="margin-bottom:12px">En ${esc(M.UNIDAD[p.tipo])}, sobre ${nu(inf.rango.dias,1)} días medidos.</p>
+      ${ranking(filas, { unidad: M.UNIDAD[p.tipo] })}
+    </div>`;
+  }).join('');
+
+  /* Por día: se toma el producto de mayor consumo para que la gráfica tenga
+     una sola unidad. Mezclarlos daría una curva sin significado. */
+  const principal = inf.principal;
+  const serie = inf.dia.filter(d => d.productoId === principal.producto.id)
+    .map(d => ({ et:d.dia, corta:d.dia.slice(8), v:d.consumo }));
+
+  const sem = inf.semana.map((s,i) => ({ et:DIAS[i], corta:DIAS[i].slice(0,2).toUpperCase(), v:s.consumo }));
+  const picoSem = sem.reduce((a,b,i,arr) => arr[a].v >= b.v ? a : i, 0);
+
+  const h = inf.hora;
+  const picoHora = h.horas.reduce((a,b,i,arr) => arr[a].consumo >= b.consumo ? a : i, 0);
+
+  return `
+    ${avisos.join('')}
+    <div class="cifras" style="margin-bottom:12px">${cifras}${dinero}</div>
+
+    ${porProducto}
+
+    <div class="tarjeta">
+      <h2>Consumo por día · ${esc(principal.producto.nombre)}</h2>
+      <p class="mini" style="margin-bottom:10px">
+        Cuando entre dos visitas pasan varios días, el gasto se reparte
+        <b>proporcionalmente</b> entre esos días. Cargárselo entero al día de la
+        última visita dibujaría picos que no existieron.</p>
+      ${columnas(serie, { unidad: M.UNIDAD[principal.producto.tipo] })}
+    </div>
+
+    <div class="rejilla dos">
+      <div class="tarjeta">
+        <h2>Por día de la semana</h2>
+        <p class="mini" style="margin-bottom:8px">Sólo <b>${esc(principal.producto.nombre)}</b>,
+          en ${esc(M.UNIDAD[principal.producto.tipo])}: mezclar mililitros con gramos
+          daría un eje que no es ninguna unidad.</p>
+        ${columnas(sem, { unidad:M.UNIDAD[principal.producto.tipo], resaltar:picoSem })}
+        <p class="pie-nota">El día de más consumo es el <b>${esc(DIAS[picoSem])}</b>.</p>
+      </div>
+      <div class="tarjeta">
+        <h2>A qué hora se gasta</h2>
+        <p class="mini" style="margin-bottom:8px">Sólo ${esc(principal.producto.nombre)}.</p>
+        ${h.muestras
+          ? columnas(h.horas.map(x => ({ et:x.hora+' h', corta:String(x.hora), v:x.consumo })),
+                     { unidad:M.UNIDAD[principal.producto.tipo], resaltar:picoHora }) +
+            `<p class="pie-nota">Calculado <b>sólo con ${h.muestras} intervalo(s)</b> de menos de ${h.topeHoras} h;
+             se descartaron ${h.descartados} por ser demasiado largos para decir algo de la hora.
+             El pico cae hacia las <b>${picoHora}:00</b>.</p>`
+          : `<p class="mini">Ninguna medición está lo bastante cerca de la anterior.
+             Para saber a qué hora se gasta hacen falta <b>dos visitas el mismo día</b>
+             (por ejemplo al entrar y a la salida del recreo).</p>`}
+      </div>
+    </div>
+
+    <div class="tarjeta no-imprimir">
+      <h2>Llevárselo a Excel</h2>
+      <p class="mini" style="margin-bottom:12px">Un archivo <b>.xlsx</b> de verdad con
+        ${9} hojas: resumen, consumo por baño, por día, por día de la semana, por hora,
+        visitas, entregas, baños y productos. Las fechas van como fechas y los pesos
+        con formato de moneda, así que se puede seguir analizando dentro de Excel.</p>
+      <button class="b ancho" data-excel="1">Exportar a Excel (.xlsx)</button>
+    </div>`;
+};
+
+/* ══ 3 · ALMACÉN ═══════════════════════════════════════════════════════ */
+PINTORES.almacen = () => {
+  const inf = M.informe(E);
+  const tarjetas = inf.porProducto.map(p => {
+    const dias = p.diasRestantes;
+    const urgente = dias != null && dias < 7;
+    const recargas = M.recargasPosibles(p.almacen, E.dispensador, p.producto);
+    return `<div class="tarjeta">
+      <h2>${esc(p.producto.nombre)} <span class="etq ${p.producto.tipo==='solido'?'solido':''}">${p.producto.tipo}</span></h2>
+      <div class="cifras" style="margin:10px 0">
+        <div class="cifra"><div class="et">En el almacén</div>
+          <div class="v">${cantPartida(p.almacen, p.producto).grande}</div>
+          <div class="n">${[cantPartida(p.almacen,p.producto).detalle,
+             'lo comprado menos lo que ya se llevó a los baños'].filter(Boolean).join(' · ')}</div></div>
+        <div class="cifra"><div class="et">Puesto en dispensadores</div>
+          <div class="v">${cantPartida(p.enDispensadores, p.producto).grande}</div>
+          <div class="n">${[cantPartida(p.enDispensadores,p.producto).detalle,
+             'esto ya salió del almacén: son dos cuentas distintas'].filter(Boolean).join(' · ')}</div></div>
+        <div class="cifra ${urgente?'':''}"><div class="et">Aguanta</div>
+          <div class="v ${dias==null?'nula':''}">${dias == null ? 'sin ritmo medido' : nu(dias,1) + ' <small>días</small>'}</div>
+          <div class="n">${dias == null ? 'hacen falta dos visitas para saber a qué ritmo se gasta'
+            : 'al ritmo de ' + nu(p.diario,0) + ' ' + M.UNIDAD[p.producto.tipo] + ' por día'}</div></div>
+      </div>
+      ${urgente ? `<div class="aviso mal"><h3>Hay que comprar</h3>
+        Al ritmo actual el almacén se vacía en ${nu(dias,1)} días.</div>` : ''}
+      <p class="pie-nota">
+        ${p.costoUnidad != null ? `Costo medido: <b>${pesos(p.costoUnidad*1000)}</b> por
+          ${p.producto.tipo==='liquido'?'litro':'kilo'} (promedio ponderado de todas las entregas).`
+          : 'Sin entregas registradas no hay precio, y por eso no se calcula el gasto en pesos.'}
+        ${recargas != null ? ` Alcanza para <b>${nu(recargas,1)}</b> recargas completas del dispensador.` : ''}
+      </p>
+    </div>`;
+  }).join('') || `<div class="tarjeta"><p class="mini">Primero hay que dar de alta algún producto en Ajustes.</p></div>`;
+
+  const entregas = [...E.entregas].sort((a,b) => b.ts - a.ts);
+
+  return `
+  ${tarjetas}
+
+  <form class="tarjeta" id="formEntrega">
+    <h2>Apuntar una entrega</h2>
+    <p class="mini" style="margin-bottom:12px">Lo que llega al almacén. <b>Es lo que le pone precio a todo:</b>
+      sin entregas el sistema no puede decir cuánto cuesta el jabón que se gastó.</p>
+    <div class="campo">
+      <label for="ePro">Producto</label>
+      <select id="ePro" name="productoId" required>
+        ${E.productos.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)} · envase de ${nu(p.tamanoEnvase,0)} ${M.UNIDAD[p.tipo]}</option>`).join('')}
+      </select>
+    </div>
+    <div class="par">
+      <div class="campo"><label for="eEnv">Cuántos envases</label>
+        <input id="eEnv" name="envases" type="number" inputmode="decimal" step="any" min="0" required placeholder="4"></div>
+      <div class="campo"><label for="eCos">Costo total ($)</label>
+        <input id="eCos" name="costoTotal" type="number" inputmode="decimal" step="any" min="0" required placeholder="680"></div>
+    </div>
+    <div class="par">
+      <div class="campo"><label for="eFec">Fecha</label>
+        <input id="eFec" name="cuando" type="date" value="${M.fechaISO(Date.now())}"></div>
+      <div class="campo"><label for="ePrv">Proveedor</label>
+        <input id="ePrv" name="proveedor" type="text" placeholder="Opcional"></div>
+    </div>
+    <button class="b ancho" type="submit">Guardar entrega</button>
+  </form>
+
+  <div class="tarjeta">
+    <h2>Entregas registradas</h2>
+    ${entregas.length ? `<p class="mini pista-desliza">Desliza la tabla de lado para ver el costo por unidad →</p>
+      <div class="tabla-caja"><table>
+      <thead><tr><th>Fecha</th><th>Producto</th><th class="n">Envases</th><th class="n">Costo</th><th class="n">Por unidad</th></tr></thead>
+      <tbody>${entregas.map(e => {
+        const p = E.productos.find(x => x.id === e.productoId);
+        const total = p ? e.envases * p.tamanoEnvase : null;
+        return `<tr>
+          <td>${esc(M.fechaISO(e.ts))}</td>
+          <td>${esc(p?.nombre || '—')}${e.proveedor?`<br><span class="mini">${esc(e.proveedor)}</span>`:''}</td>
+          <td class="n">${nu(e.envases,0)}</td>
+          <td class="n">${pesos(e.costoTotal)}</td>
+          <td class="n">${total ? pesos(e.costoTotal/total) + '<br><span class="mini">por ' + M.UNIDAD[p.tipo] + '</span>' : '—'}</td>
+        </tr>`; }).join('')}</tbody></table></div>`
+      : `<p class="mini">Ninguna todavía. Sin entregas no hay precios y el análisis no puede hablar de dinero.</p>`}
+  </div>`;
+};
+
+/* ══ 4 · PROYECTO (lo que se presenta en el examen) ════════════════════ */
+PINTORES.proyecto = () => {
+  const inf = M.informe(E);
+  const p0 = inf.porProducto[0];
+  const disp = E.dispensador;
+  return `
+  <div class="tarjeta">
+    <h2>Qué es esto, en una frase</h2>
+    <p>Un sistema para <b>medir</b> cuánto jabón se gasta en los baños de la escuela,
+    <b>saber cuándo y dónde</b> se gasta, y <b>decidir con números</b> cuánto comprar
+    en vez de a ojo.</p>
+    <p class="mini">La pregunta de investigación no es «¿cuánto jabón usamos?» sino
+    <b>«¿cuánto jabón hace falta, y cómo lo sabemos?»</b> — la primera se contesta
+    pesando una caja; la segunda necesita un método.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Cómo cumple la modalidad STEAM</h2>
+    <p class="mini" style="margin-bottom:12px">Cada letra con lo que de verdad se hace en el
+    proyecto, no con una definición de diccionario.</p>
+    <div class="tabla-caja tabla-texto"><table>
+      <thead><tr><th style="width:26px">·</th><th style="width:74px">Área</th><th>Qué se hace aquí</th></tr></thead>
+      <tbody>
+        <tr><td><b>S</b></td><td>Ciencia</td><td>Se plantea una hipótesis (unos baños gastan más que otros
+          y hay horas pico), se <b>mide</b> con un método repetible y se acepta o se descarta con los datos.
+          El sistema marca cuándo <b>todavía no hay datos suficientes</b> para concluir.</td></tr>
+        <tr><td><b>T</b></td><td>Tecnología</td><td>Una aplicación web que funciona sin internet
+          en el propio teléfono, guarda los datos localmente y exporta a Excel.</td></tr>
+        <tr><td><b>E</b></td><td>Ingeniería</td><td>El dispensador mecánico y su <b>calibración</b>:
+          medir cuánto jabón suelta cada pulsada es lo que permite traducir mililitros a lavadas de manos.</td></tr>
+        <tr><td><b>A</b></td><td>Arte / Diseño</td><td>El diseño de la captura es parte del experimento:
+          si registrar tarda más de treinta segundos nadie lo hace y el estudio se muere.
+          También la visualización — una gráfica mal hecha miente sin querer.</td></tr>
+        <tr><td><b>M</b></td><td>Matemáticas</td><td>Restas entre mediciones, promedios ponderados de costo,
+          reparto proporcional del consumo entre días, consumo per cápita y proyección de existencias.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>El dispensador mecánico</h2>
+    <p class="mini" style="margin-bottom:12px">El dispensador ya lo tiene la escuela: aquí no se diseña,
+      se <b>caracteriza</b>. Y de su calibración sale el número que la gente entiende.</p>
+    <div class="cifras">
+      <div class="cifra"><div class="et">Modelo</div><div class="v" style="font-size:16px">${esc(disp.modelo || '—')}</div></div>
+      <div class="cifra"><div class="et">Capacidad</div><div class="v">${nu(disp.capacidad,0)} <small>mL</small></div></div>
+      <div class="cifra ${disp.dosisPorPulsada>0?'':'nula'}"><div class="et">Dosis por pulsada</div>
+        <div class="v">${disp.dosisPorPulsada > 0 ? nu(disp.dosisPorPulsada,2) + ' <small>mL</small>' : 'sin medir'}</div>
+        <div class="n">${disp.dosisPorPulsada > 0 ? '' : 'hasta medirla no se pueden calcular lavadas'}</div></div>
+    </div>
+    <div class="aviso info" style="margin-top:12px">
+      <h3>Cómo se mide la dosis (y es el experimento del proyecto)</h3>
+      Se acciona el dispensador <b>10 veces sobre una probeta</b> y se divide el volumen entre 10.
+      Conviene repetirlo tres veces y promediar: la primera pulsada después de una recarga
+      suele soltar menos porque el tubo trae aire.
+      <br><br>Para el jabón <b>en barra</b> la dosis no existe: ahí se pesa la barra antes y después
+      de un número contado de lavadas, y eso da los <b>gramos por lavada</b>.
+      Son dos experimentos distintos porque son dos unidades distintas — mililitros y gramos no
+      se pueden dividir entre lo mismo.
+    </div>
+    ${disp.notas ? `<p class="pie-nota">${esc(disp.notas)}</p>` : ''}
+    ${p0 && p0.lavados != null ? `<div class="aviso bien" style="margin-top:12px">
+      <h3>Lo que se puede decir en la presentación</h3>
+      Con lo medido hasta ahora, el jabón gastado equivale a
+      <b>${nu(p0.lavados,0)} lavadas de manos</b>.</div>` : ''}
+  </div>
+
+  <div class="tarjeta">
+    <h2>El método, para que otro grupo lo pueda repetir</h2>
+    <ol style="padding-left:20px;margin:0">
+      <li style="margin-bottom:8px"><b>Dar de alta los baños</b> con su número de alumnos.
+        Sin ese número no hay consumo por alumno — es una división sin denominador.</li>
+      <li style="margin-bottom:8px"><b>Calibrar el dispensador</b> (arriba).</li>
+      <li style="margin-bottom:8px"><b>Visitar cada baño a la misma hora</b>, todos los días de clase.
+        Apuntar sólo dos números: lo que queda y lo que se repone.</li>
+      <li style="margin-bottom:8px"><b>Apuntar cada entrega</b> del almacén con su costo.</li>
+      <li style="margin-bottom:8px"><b>Dos visitas el mismo día</b> (entrada y salida del recreo)
+        en al menos un baño: es lo único que permite saber a qué HORA se gasta.</li>
+      <li><b>Exportar a Excel</b> al terminar cada semana. Es el respaldo y es la evidencia.</li>
+    </ol>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Lo que este sistema NO puede decir</h2>
+    <p class="mini" style="margin-bottom:10px">Va aquí a propósito. Un proyecto de ciencias que sólo
+      enseña lo que sí puede afirmar está incompleto, y un sinodal lo va a preguntar.</p>
+    <ul style="padding-left:20px;margin:0;font-size:14.5px">
+      <li style="margin-bottom:7px"><b>No sabe quién gastó.</b> Mide el baño, no a las personas —
+        y así debe ser: registrar el uso individual del baño de un alumno sería vigilarlo.</li>
+      <li style="margin-bottom:7px"><b>No distingue el uso del desperdicio.</b> Un dispensador que gotea
+        y un grupo que se lava bien las manos se ven igual en el número. Por eso está el campo de notas.</li>
+      <li style="margin-bottom:7px"><b>No sabe cuánta gente entró.</b> El «por alumno» usa los alumnos
+        ASIGNADOS al baño, no los que realmente lo usaron ese día.</li>
+      <li><b>Si alguien rellena sin apuntarlo, ese consumo se pierde.</b> El sistema lo detecta y lo
+        denuncia en el análisis, pero no puede recuperarlo.</li>
+    </ul>
+  </div>
+
+  <div class="tarjeta no-imprimir">
+    <h2>Para entregar</h2>
+    <p class="mini" style="margin-bottom:12px">La impresión saca <b>todas</b> las secciones, no sólo la abierta.</p>
+    <div class="par">
+      <button class="b fantasma" data-imprimir="1">Imprimir / guardar PDF</button>
+      <button class="b" data-excel="1">Exportar a Excel</button>
+    </div>
+  </div>`;
+};
+
+/* ══ 5 · AJUSTES ═══════════════════════════════════════════════════════ */
+PINTORES.ajustes = () => `
+  <form class="tarjeta" id="formEscuela">
+    <h2>La escuela</h2>
+    <div class="par">
+      <div class="campo"><label for="aNom">Nombre</label>
+        <input id="aNom" name="nombre" value="${esc(E.escuela.nombre)}" placeholder="Escuela Secundaria…"></div>
+      <div class="campo"><label for="aCic">Ciclo escolar</label>
+        <input id="aCic" name="ciclo" value="${esc(E.escuela.ciclo)}" placeholder="2025–2026"></div>
+    </div>
+    <div class="par">
+      <div class="campo"><label for="aTur">Turno</label>
+        <input id="aTur" name="turno" value="${esc(E.escuela.turno)}" placeholder="Matutino"></div>
+      <div class="campo"><label for="aRes">Responsable</label>
+        <input id="aRes" name="responsable" value="${esc(E.escuela.responsable)}" placeholder="Equipo STEAM"></div>
+    </div>
+    <button class="b" type="submit">Guardar</button>
+  </form>
+
+  <form class="tarjeta" id="formDisp">
+    <h2>El dispensador</h2>
+    <div class="campo"><label for="dMod">Modelo</label>
+      <input id="dMod" name="modelo" value="${esc(E.dispensador.modelo)}"></div>
+    <div class="par">
+      <div class="campo"><label for="dCap">Capacidad (mL)</label>
+        <input id="dCap" name="capacidad" type="number" inputmode="decimal" step="any" min="0" value="${E.dispensador.capacidad||''}"></div>
+      <div class="campo"><label for="dDos">Dosis por pulsada (mL)</label>
+        <input id="dDos" name="dosisPorPulsada" type="number" inputmode="decimal" step="any" min="0"
+               value="${E.dispensador.dosisPorPulsada||''}" placeholder="mídela, no la supongas"></div>
+    </div>
+    <div class="campo"><label for="dNot">Cómo se midió</label>
+      <input id="dNot" name="notas" value="${esc(E.dispensador.notas)}" placeholder="10 pulsadas en probeta = 12 mL"></div>
+    <button class="b" type="submit">Guardar</button>
+  </form>
+
+  <div class="tarjeta">
+    <h2>Baños <span class="etq">${E.banos.length}</span></h2>
+    ${E.banos.length ? `<ul class="lista">${E.banos.map(b => `<li>
+      <div class="txt"><b>${esc(b.nombre)}</b>
+        <span>${esc(b.zona||'sin zona')} · ${esc(b.tipo||'—')} · ${b.dispensadores||0} dispensador(es)
+        · ${b.alumnos ? b.alumnos + ' alumnos' : '<b style="color:var(--alerta)">sin alumnos: no habrá promedio por alumno</b>'}</span></div>
+      <button class="b chico peligro" data-borrar-bano="${esc(b.id)}">Borrar</button></li>`).join('')}</ul>`
+      : `<p class="mini">Ninguno todavía.</p>`}
+    <div class="sep"></div>
+    <form id="formBano">
+      <div class="campo"><label for="bNom">Nombre del baño</label>
+        <input id="bNom" name="nombre" required placeholder="Baño hombres · planta baja"></div>
+      <div class="par">
+        <div class="campo"><label for="bZon">Zona o edificio</label>
+          <input id="bZon" name="zona" placeholder="Edificio A"></div>
+        <div class="campo"><label for="bTip">Tipo</label>
+          <select id="bTip" name="tipo"><option>hombres</option><option>mujeres</option><option>mixto</option><option>accesible</option></select></div>
+      </div>
+      <div class="par">
+        <div class="campo"><label for="bDis">Dispensadores</label>
+          <input id="bDis" name="dispensadores" type="number" inputmode="numeric" min="0" step="1" value="1"></div>
+        <div class="campo"><label for="bAlu">Alumnos que lo usan</label>
+          <input id="bAlu" name="alumnos" type="number" inputmode="numeric" min="0" step="1" placeholder="120"></div>
+      </div>
+      <button class="b ancho" type="submit">Añadir baño</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Productos <span class="etq">${E.productos.length}</span></h2>
+    ${E.productos.length ? `<ul class="lista">${E.productos.map(p => `<li>
+      <div class="txt"><b>${esc(p.nombre)}</b>
+        <span><span class="etq ${p.tipo==='solido'?'solido':''}">${esc(p.tipo)}</span>
+        envase de ${nu(p.tamanoEnvase,0)} ${M.UNIDAD[p.tipo]}${p.marca?' · '+esc(p.marca):''}
+        ${p.tipo==='solido' ? ' · barra de ' + nu(p.gramosPorPieza,0) + ' g' : ''}
+        ${p.tipo==='solido' && p.gramosPorLavada ? ' · ' + nu(p.gramosPorLavada,2) + ' g por lavada' : ''}</span></div>
+      <button class="b chico peligro" data-borrar-producto="${esc(p.id)}">Borrar</button></li>`).join('')}</ul>`
+      : `<p class="mini">Ninguno todavía.</p>`}
+    <div class="sep"></div>
+    <form id="formProducto">
+      <div class="par">
+        <div class="campo"><label for="pNom">Nombre</label>
+          <input id="pNom" name="nombre" required placeholder="Jabón líquido para manos"></div>
+        <div class="campo"><label for="pTip">Tipo</label>
+          <select id="pTip" name="tipo"><option value="liquido">líquido (mL)</option><option value="solido">en barra (g)</option></select></div>
+      </div>
+      <div class="par">
+        <div class="campo"><label for="pTam">Contenido por envase</label>
+          <input id="pTam" name="tamanoEnvase" type="number" inputmode="decimal" step="any" min="0" required placeholder="5000"></div>
+        <div class="campo"><label for="pMar">Marca</label>
+          <input id="pMar" name="marca" placeholder="Opcional"></div>
+      </div>
+      <div class="par" id="soloSolido" hidden>
+        <div class="campo"><label for="pPie">Gramos por barra</label>
+          <input id="pPie" name="gramosPorPieza" type="number" inputmode="decimal" step="any" min="0" placeholder="100"></div>
+        <div class="campo"><label for="pLav">Gramos por lavada (medido)</label>
+          <input id="pLav" name="gramosPorLavada" type="number" inputmode="decimal" step="any" min="0" placeholder="0.6"></div>
+      </div>
+      <button class="b ancho" type="submit">Añadir producto</button>
+    </form>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Respaldo · <b style="color:var(--alerta)">léelo</b></h2>
+    <div class="aviso ojo">
+      <h3>Los datos viven en ESTE aparato</h3>
+      No hay servidor. Si se borran los datos del navegador, se cambia de teléfono o se
+      usa modo privado, <b>se pierde todo</b>. Exporta un respaldo cada semana:
+      es un archivo, se manda por correo y se vuelve a cargar aquí.
+    </div>
+    <div class="par">
+      <button class="b" data-respaldo="1">Descargar respaldo (.json)</button>
+      <button class="b fantasma" data-excel="1">Exportar a Excel (.xlsx)</button>
+    </div>
+    <div class="sep"></div>
+    <label for="restaurar">Restaurar desde un respaldo</label>
+    <input id="restaurar" type="file" accept="application/json,.json">
+    <p class="mini" style="margin-top:8px">Reemplaza TODO lo que hay ahora. Descarga un respaldo antes por si acaso.</p>
+  </div>
+
+  <div class="tarjeta">
+    <h2>Datos de demostración y borrado</h2>
+    <p class="mini" style="margin-bottom:12px">La demostración carga tres semanas de mediciones
+      inventadas —siempre las mismas— para poder enseñar el sistema funcionando antes de tener
+      datos reales. Queda marcado en pantalla y en el Excel.</p>
+    <div class="par">
+      <button class="b fantasma" data-demo="1">Cargar demostración</button>
+      <button class="b peligro" data-vaciar="1">Empezar de cero</button>
+    </div>
+  </div>
+
+  <p class="mini" style="text-align:center;margin:16px 0">
+    Jabonera · Grupo Mazi · funciona sin internet</p>`;
+
+/* ══ acciones ══════════════════════════════════════════════════════════ */
+const leer = f => Object.fromEntries(new FormData(f).entries());
+const num = v => { const n = Number(v); return isFinite(n) ? n : 0; };
+
+document.addEventListener('submit', ev => {
+  const f = ev.target;
+  const d = leer(f);
+  ev.preventDefault();
+
+  if(f.id === 'formVisita'){
+    const p = E.productos.find(x => x.id === sel.productoId);
+    const ts = d.cuando ? new Date(d.cuando).getTime() : Date.now();
+    if(!isFinite(ts)) return alerta('Esa fecha no se entiende.', 'mal');
+    E.visitas.push({
+      id: D.idNuevo('v'), ts, banoId: sel.banoId, productoId: sel.productoId,
+      restante: M.aCanonica(num(d.restante), d.uRestante, p),
+      repuesto: M.aCanonica(num(d.repuesto), d.uRepuesto, p),
+      quien: (d.quien||'').trim(), nota: (d.nota||'').trim(),
+    });
+    if(d.quien) E.ultimoQuien = d.quien.trim();
+    if(salvar()) alerta('Medición guardada.');
+    return pinta();
+  }
+
+  if(f.id === 'formEntrega'){
+    const ts = d.cuando ? new Date(d.cuando + 'T09:00').getTime() : Date.now();
+    E.entregas.push({ id: D.idNuevo('e'), ts, productoId: d.productoId,
+      envases: num(d.envases), costoTotal: num(d.costoTotal), proveedor:(d.proveedor||'').trim() });
+    if(salvar()) alerta('Entrega guardada.');
+    return pinta();
+  }
+
+  if(f.id === 'formBano'){
+    E.banos.push({ id: D.idNuevo('b'), nombre:d.nombre.trim(), zona:(d.zona||'').trim(),
+      tipo:d.tipo, dispensadores:num(d.dispensadores), alumnos:num(d.alumnos) });
+    if(salvar()) alerta('Baño añadido.');
+    return pinta();
+  }
+
+  if(f.id === 'formProducto'){
+    const p = { id: D.idNuevo('p'), nombre:d.nombre.trim(), tipo:d.tipo,
+      marca:(d.marca||'').trim(), tamanoEnvase:num(d.tamanoEnvase) };
+    if(d.tipo === 'solido'){
+      p.gramosPorPieza  = num(d.gramosPorPieza);
+      p.gramosPorLavada = num(d.gramosPorLavada);
+    }
+    E.productos.push(p);
+    if(salvar()) alerta('Producto añadido.');
+    return pinta();
+  }
+
+  if(f.id === 'formEscuela'){ E.escuela = { ...E.escuela, ...d };
+    if(salvar()) alerta('Guardado.'); return pinta(); }
+
+  if(f.id === 'formDisp'){
+    E.dispensador = { ...E.dispensador, modelo:d.modelo, notas:d.notas,
+      capacidad:num(d.capacidad), dosisPorPulsada:num(d.dosisPorPulsada) };
+    if(salvar()) alerta('Guardado.'); return pinta();
+  }
+});
+
+document.addEventListener('change', ev => {
+  if(ev.target.id === 'pTip'){
+    const solo = $('#soloSolido'); if(solo) solo.hidden = ev.target.value !== 'solido';
+  }
+  if(ev.target.id === 'restaurar'){
+    const file = ev.target.files[0]; if(!file) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try{
+        E = D.sanear(JSON.parse(fr.result));
+        salvar(); pinta(); alerta('Respaldo restaurado.');
+      }catch(err){ alerta('Ese archivo no es un respaldo de Jabonera.', 'mal'); }
+    };
+    fr.readAsText(file);
+  }
+});
+
+document.addEventListener('click', ev => {
+  const t = ev.target.closest('[data-bano],[data-producto],[data-ir],[data-demo],[data-vaciar],'
+    + '[data-excel],[data-respaldo],[data-imprimir],[data-borrar-visita],[data-borrar-bano],[data-borrar-producto]');
+  if(!t) return;
+  const d = t.dataset;
+
+  if(d.bano)      { sel.banoId = d.bano;         return pinta(); }
+  if(d.producto)  { sel.productoId = d.producto; return pinta(); }
+  if(d.ir)        { tab = d.ir; window.scrollTo(0,0); return pinta(); }
+  if(d.imprimir)  { return window.print(); }
+
+  if(d.demo){
+    if(E.visitas.length && !confirm('Esto reemplaza todo lo que hay ahora por datos inventados. ¿Seguro?')) return;
+    E = D.datosDemo(); salvar(); alerta('Datos de demostración cargados.'); return pinta();
+  }
+  if(d.vaciar){
+    if(!confirm('Se borra TODO: baños, productos, mediciones y entregas. Esto no se puede deshacer.')) return;
+    E = D.estadoVacio(); salvar(); alerta('Listo, de cero.'); return pinta();
+  }
+  if(d.borrarVisita){
+    E.visitas = E.visitas.filter(v => v.id !== d.borrarVisita); salvar(); alerta('Medición borrada.'); return pinta();
+  }
+  if(d.borrarBano){
+    const n = E.visitas.filter(v => v.banoId === d.borrarBano).length;
+    if(n && !confirm(`Ese baño tiene ${n} medición(es). Se borran también. ¿Seguro?`)) return;
+    E.banos = E.banos.filter(b => b.id !== d.borrarBano);
+    E.visitas = E.visitas.filter(v => v.banoId !== d.borrarBano);
+    salvar(); return pinta();
+  }
+  if(d.borrarProducto){
+    const n = E.visitas.filter(v => v.productoId === d.borrarProducto).length;
+    if(n && !confirm(`Ese producto tiene ${n} medición(es). Se borran también. ¿Seguro?`)) return;
+    E.productos = E.productos.filter(p => p.id !== d.borrarProducto);
+    E.visitas   = E.visitas.filter(v => v.productoId !== d.borrarProducto);
+    E.entregas  = E.entregas.filter(x => x.productoId !== d.borrarProducto);
+    salvar(); return pinta();
+  }
+
+  if(d.excel){
+    try{
+      const inf = M.informe(E);
+      const buf = X.libro(D.hojasDeExcel(E, inf, M));
+      bajar(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+        `jabonera-${M.fechaISO(Date.now())}.xlsx`);
+      alerta('Excel generado.');
+    }catch(err){ alerta('No se pudo generar el Excel: ' + err.message, 'mal'); }
+  }
+  if(d.respaldo){
+    bajar(new Blob([JSON.stringify(E, null, 2)], { type:'application/json' }),
+      `jabonera-respaldo-${M.fechaISO(Date.now())}.json`);
+    alerta('Respaldo descargado. Guárdalo fuera del teléfono.');
+  }
+});
+
+function bajar(blob, nombre){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+pinta();
+})();
+
+</script>
+</html>

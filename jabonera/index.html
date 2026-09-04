@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jabonera · control de jabón en baños escolares</title>
+<meta name="description" content="Registro y análisis del consumo de jabón en los baños de una escuela. Proyecto STEAM.">
+<meta name="theme-color" content="#0E6F7A">
+<link rel="stylesheet" href="estilo.css">
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     JABONERA
+     Todo funciona SIN INTERNET y sin servidor: se puede abrir desde una
+     memoria USB, desde el teléfono en modo avión o desde la web. Por eso los
+     scripts van con <script src> clásico y no como módulos — un módulo ES
+     no carga desde `file://` por la política de origen del navegador, y ahí
+     se acaba el «lo abro en la compu del salón».
+     ═════════════════════════════════════════════════════════════════════ -->
+
+<header class="cabecera">
+  <div class="fila">
+    <svg class="gota" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 2.5c3.6 4.2 6.5 7.7 6.5 11.1A6.5 6.5 0 0 1 5.5 13.6C5.5 10.2 8.4 6.7 12 2.5Z"
+            fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
+      <circle cx="9.6" cy="13.8" r="1.5" fill="#fff" opacity=".85"/>
+    </svg>
+    <div>
+      <div class="marca">Jabonera</div>
+      <div style="font-size:12px;opacity:.8;margin-top:1px">Control de jabón en baños escolares</div>
+    </div>
+    <div class="sub" id="subCabecera"></div>
+  </div>
+</header>
+
+<main>
+  <div id="letreroDemo"></div>
+
+  <section class="panel" id="p-registrar" aria-labelledby="t-registrar"></section>
+  <section class="panel" id="p-analisis"  aria-labelledby="t-analisis"  hidden></section>
+  <section class="panel" id="p-almacen"   aria-labelledby="t-almacen"   hidden></section>
+  <section class="panel" id="p-proyecto"  aria-labelledby="t-proyecto"  hidden></section>
+  <section class="panel" id="p-ajustes"   aria-labelledby="t-ajustes"   hidden></section>
+</main>
+
+<nav class="pestanas no-imprimir" role="tablist" aria-label="Secciones">
+  <button role="tab" data-tab="registrar" id="t-registrar" aria-selected="true" aria-controls="p-registrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    Registrar</button>
+  <button role="tab" data-tab="analisis" id="t-analisis" aria-selected="false" aria-controls="p-analisis">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    Análisis</button>
+  <button role="tab" data-tab="almacen" id="t-almacen" aria-selected="false" aria-controls="p-almacen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5v11H3z"/><path d="M3 9h18M9 20V13h6v7"/></svg>
+    Almacén</button>
+  <button role="tab" data-tab="proyecto" id="t-proyecto" aria-selected="false" aria-controls="p-proyecto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.8-4.4 4.2 1.1 6L12 16.8 6.6 19.6l1.1-6L3.3 9.4l6.1-.8z"/></svg>
+    Proyecto</button>
+  <button role="tab" data-tab="ajustes" id="t-ajustes" aria-selected="false" aria-controls="p-ajustes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1 2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.5-2.5l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 4a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 21 11a2 2 0 1 1 0 4Z"/></svg>
+    Ajustes</button>
+</nav>
+
+<script src="motor.js"></script>
+<script src="excel.js"></script>
+<script src="datos.js"></script>
+<script src="app.js"></script>
+</html>
