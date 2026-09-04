@@ -37,7 +37,13 @@
   p{margin:10px 0; color:var(--tenue)}
   b{color:var(--hueso)}
   a{display:inline-flex; align-items:center; justify-content:center; margin-top:20px;
-    background:var(--violeta); color:#12061C; font-weight:700; text-decoration:none;
+/* ⚠ SOBRE EL VIOLETA, LETRA BLANCA. Lo decidió Carlos —«el texto blanco»—
+   después de que se midiera: sobre #AC27FF NINGUNA tinta oscura cumple la
+   norma. El negro puro se queda en 4.49 y hace falta 4.5; el `#12061C` que
+   había daba 4.20. Con blanco da 4.68 y pasa.
+   Y no era teórico: los botones fuertes de Reportes, que son los que más se
+   pulsan de la app, estaban todos por debajo. */
+    background:var(--violeta); color:#fff; font-weight:700; text-decoration:none;
     padding:0 20px; min-height:48px; border-radius:12px}
   .chico{font-size:13px; opacity:.7; margin-top:18px}
 </style></head>
