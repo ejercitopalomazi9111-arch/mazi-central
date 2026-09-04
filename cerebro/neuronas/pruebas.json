@@ -417,6 +417,24 @@
         "no sé por qué es ese valor"
       ],
       "salioDe": "Puse «cada carta ≥95 px» con el comentario «por debajo de eso la frase deja de leerse». No lo medí: elegí 95 por quedar debajo de los 103 que ya había. Godines usaba 92 y preguntó cuál preferíamos. Al pintar la carta a 84, 90, 92, 95 y 104 px con la imagen publicada y a 3× de densidad, el precipicio salió entre 84 y 90, y entre 92 y 95 no hay diferencia visible. Quedó en 88."
+    },
+    {
+      "id": "la-medicion-que-se-mide-a-si-misma",
+      "titulo": "El contraste dio 1.00: estaba midiendo la letra contra la letra",
+      "gravedad": "alta",
+      "sintoma": "Una comprobación de contraste sobre una imagen reprueba casi todo, con varios resultados de exactamente 1.00, mientras la pieza a la vista se lee perfectamente.",
+      "causa": "Se muestrearon los píxeles DENTRO de la caja del texto sobre el render final — donde la letra ya está pintada. El «píxel más claro del fondo» bajo un texto blanco era el propio texto blanco.",
+      "porque": "Sobre un color plano se puede leer el fondo del CSS y ya. Sobre una FOTOGRAFÍA no hay un color de fondo que leer, así que se recurre a muestrear píxeles — y el sitio obvio donde muestrear es justo donde está la letra encima.",
+      "arreglo": "Renderizar DOS veces: una normal y otra con el texto apagado (`color:transparent` en los nodos medidos). El fondo se mide en la segunda. Ahí sí es el fondo.",
+      "comoCazarlo": "Un 1.00 clavado es la firma. Nada en una fotografía da exactamente 1.00 contra una tinta salvo esa misma tinta. Si aparece más de un 1.00 en una tanda, no es la pieza: es el método.",
+      "consejo": "Vale para cualquier medición sobre lo pintado, no sólo el contraste: si lo que quieres medir está TAPADO por lo que estás midiendo, hay que apagar una de las dos capas. Y una comprobación que reprueba casi todo suele estar rota, no descubriendo algo.",
+      "senales": [
+        "da 1.00 de contraste",
+        "reprueba todo y se ve bien",
+        "medir contraste sobre una foto",
+        "el fondo no es un color, es una imagen"
+      ],
+      "salioDe": "Revisando el póster de Xbox de Godines: mi primera pasada dio 11 de 12 textos «cortos», cinco de ellos con 1.00 exacto. Con el texto apagado, los 12 pasan y el peor va a 7.71 contra un piso de 4.5."
     }
   ]
 }
