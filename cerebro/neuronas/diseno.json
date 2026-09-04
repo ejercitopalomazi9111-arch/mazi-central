@@ -127,7 +127,8 @@
       "vecinas": [
         "pieza-sala",
         "ver-la-pantalla"
-      ]
+      ],
+      "salioDe": "sala/index.html · la barra de arriba, con «Quién es quién» partido en tres renglones a 390 px"
     }
   ]
 }

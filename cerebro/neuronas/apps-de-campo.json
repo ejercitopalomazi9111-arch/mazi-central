@@ -1,0 +1,243 @@
+{
+  "area": "apps-de-campo",
+  "nombre": "Apps que se llenan de pie, frente al problema",
+  "que": "Una app de captura en campo — un baño, una bodega, un almacén — se llena parado, con una mano, en menos de treinta segundos, muchas veces sin señal, y después alguien tiene que poder abrirla desde una USB. Nada de eso se parece a un formulario web, y casi todo lo que muerde aquí muerde en silencio.",
+  "neuronas": [
+    {
+      "id": "modulos-clasicos-mismo-ambito",
+      "titulo": "Dos archivos `<script src>` declararon la misma constante y la página salió en blanco",
+      "gravedad": "alta",
+      "sintoma": "La página no pinta nada. En consola: «Identifier 'API' has already been declared». En Node los mismos archivos pasan las pruebas sin una queja.",
+      "causa": "Un `<script src>` clásico —sin `type=\"module\"`— comparte el ámbito léxico global con todos los demás. Un `const` de nivel superior en el segundo archivo choca con el del primero y el navegador aborta ESE archivo entero.",
+      "porque": "Se eligieron scripts clásicos a propósito, para que el archivo único abra desde `file://` en una USB (los módulos ES no cargan desde `file://` por CORS). Y Node no lo reproduce: ahí cada archivo tiene su propio ámbito, así que las pruebas del motor siguen en verde mientras la pantalla está muerta.",
+      "arreglo": "Cada módulo va envuelto en una IIFE y exporta por `module.exports` más `globalThis`. Dentro de la función, `const API` ya no toca a nadie.",
+      "comoCazarlo": "Abrir la página de verdad y mirar la consola. Una prueba de Node NUNCA va a cazar esto — es la diferencia exacta entre los dos ámbitos.",
+      "consejo": "Si eliges scripts clásicos para poder abrir desde `file://`, el precio es el ámbito compartido: envuelve cada archivo desde el primer día, no cuando aparezca el choque.",
+      "salioDe": "jabonera/NERA · tres módulos declararon `const API`; la app abría en blanco y las 61 pruebas del motor seguían pasando",
+      "senales": [
+        "la pagina sale en blanco",
+        "already been declared",
+        "en node si pasa y en el navegador no",
+        "abre desde usb"
+      ],
+      "vecinas": ["campo-que-choca-consigo", "pruebas-que-no-prueban-nada", "compuerta-que-no-llega-al-defecto"]
+    },
+    {
+      "id": "atajo-font-con-inherit",
+      "titulo": "El atajo `font:` con `inherit` de familia tira la declaración entera y el iPhone hace zoom al escribir",
+      "gravedad": "media",
+      "sintoma": "Al tocar un campo, iOS acerca la pantalla y ya no se ve el formulario. En el inspector el input mide 13.33 px aunque el CSS diga 16.",
+      "causa": "`font: 400 16px/1.4 inherit` es inválido: el atajo exige una FAMILIA de verdad al final, e `inherit` no lo es. El navegador descarta la declaración completa —tamaño incluido— y el input se queda con el 13.33 px que Chrome le da por omisión.",
+      "porque": "Falla en silencio. No hay error en consola, no hay tachado obvio, y quien lo escribió estaba pensando en heredar la familia, que es lo razonable — el atajo simplemente no lo permite.",
+      "arreglo": "Propiedades largas: `font-size`, `font-weight`, `line-height` y `font-family` por separado.",
+      "comoCazarlo": "Medir el `font-size` COMPUTADO de cada input en la página pintada, no leerlo del CSS. Menos de 16 px en un input es zoom garantizado en iOS.",
+      "consejo": "Al atajo `font:` no se le pasa `inherit`. Y todo umbral que dependa de un valor computado se comprueba sobre el DOM pintado.",
+      "salioDe": "jabonera/NERA · la compuerta de pantalla midió 13.33 px donde el CSS decía 16",
+      "senales": [
+        "se hace zoom al escribir",
+        "el celular acerca la pantalla",
+        "el css dice 16 y mide otra cosa",
+        "input chiquito"
+      ],
+      "vecinas": ["medir-el-texto-pintado", "no-cabe-legible", "hidden-pierde-contra-display"]
+    },
+    {
+      "id": "hidden-pierde-contra-display",
+      "titulo": "`[hidden]` no esconde nada si la regla del componente pone `display:grid`",
+      "gravedad": "media",
+      "sintoma": "Los campos de jabón en barra salen también cuando el producto es líquido, aunque el atributo `hidden` esté puesto en el HTML.",
+      "causa": "`[hidden]` es sólo `display:none` en la hoja del navegador, con la especificidad más baja que existe. Cualquier `.campo{display:grid}` propio le gana.",
+      "porque": "Uno escribe `hidden` pensando que es un interruptor del lenguaje, y es una regla CSS más — compitiendo, y perdiendo, contra la tuya.",
+      "arreglo": "`[hidden]{display:none !important}` una vez, en la base de la hoja.",
+      "comoCazarlo": "Que la compuerta abra cada rama del formulario y compruebe que lo marcado `hidden` tiene `offsetParent === null`, no que traiga el atributo.",
+      "consejo": "Comprobar que algo está escondido se hace midiendo si se ve, nunca leyendo el atributo que debería esconderlo.",
+      "salioDe": "jabonera/NERA · los campos de barra aparecían en el formulario de jabón líquido",
+      "senales": [
+        "puse hidden y se sigue viendo",
+        "aparecen campos que no van",
+        "no se esconde"
+      ],
+      "vecinas": ["atajo-font-con-inherit", "compuerta-que-no-llega-al-defecto"]
+    },
+    {
+      "id": "reemplazo-que-se-expande-solo",
+      "titulo": "El empaquetador se corrompió a sí mismo: `String.replace` expande `$&` dentro del reemplazo",
+      "gravedad": "alta",
+      "sintoma": "El archivo único generado sale con trozos de sí mismo duplicados en lugares imposibles, y a veces ni siquiera parsea.",
+      "causa": "En `s.replace(re, texto)` el segundo argumento NO es texto literal: `$&`, `$'`, `` $` `` y `$1` son sustituciones. El código que se estaba incrustando contenía `\"$\"#,##0.00` (formato de moneda de Excel) y `'$' +`, así que se expandían solos.",
+      "porque": "Nadie sospecha del reemplazo — se sospecha del patrón. Y sólo revienta cuando el contenido incrustado casualmente trae un signo de peso seguido de la letra correcta, que es justo lo que pasa al empaquetar código que formatea dinero.",
+      "arreglo": "Pasar una FUNCIÓN como reemplazo: `s.replace(re, () => texto)`. Dentro de una función no hay expansión.",
+      "comoCazarlo": "Comprobar que cada módulo y la hoja de estilo aparecen íntegros en la salida, y que la salida abre sin un solo error. Un empaquetador sin esa comprobación miente en verde.",
+      "consejo": "Si el reemplazo es contenido y no plantilla, va como función. Siempre.",
+      "salioDe": "jabonera/NERA · `armar-suelto.mjs` se corrompió dos veces: una por el `$` del formato de moneda y otra cuando la lista de módulos se seguía escribiendo a mano",
+      "senales": [
+        "el archivo generado sale raro",
+        "se duplico un pedazo de codigo",
+        "el bundle no abre",
+        "salio texto de mas"
+      ],
+      "vecinas": ["error-escape-que-se-cuela", "modulos-clasicos-mismo-ambito"]
+    },
+    {
+      "id": "sumar-mililitros-con-gramos",
+      "titulo": "La gráfica sumó mililitros con gramos y el número quedó bonito y falso",
+      "gravedad": "alta",
+      "sintoma": "El consumo por día de la semana da una cifra plausible, sin error ni aviso, y no cuadra con nada.",
+      "causa": "Dos productos con unidades distintas —jabón líquido en mL, jabón en barra en g— se sumaron en el mismo total. Y al traducir consumo a lavadas, se dividieron gramos entre los mL por pulsada del dispensador.",
+      "porque": "Los dos son `Number`. El sistema de tipos no distingue un mililitro de un gramo, así que la suma es válida para la máquina y absurda para la persona. Se coló TRES veces en el mismo proyecto.",
+      "arreglo": "La guarda vive en el motor, no en la pantalla: toda función que agregue exige un producto y descarta lo que no comparta su unidad canónica. Cada agregado dice también cuántas muestras usó y cuántas descartó.",
+      "comoCazarlo": "Una prueba con DOS productos de unidades distintas en el mismo baño. Con un solo producto ningún cálculo de éstos falla nunca.",
+      "consejo": "Si se coló una vez, la guarda va en el motor. La pantalla ya demostró que se equivoca.",
+      "salioDe": "jabonera/NERA · `lavados()`, la gráfica por día de la semana y `recargasPosibles()` — las tres mezclaron mL con g",
+      "senales": [
+        "el numero no cuadra",
+        "sale un total raro",
+        "mezcla litros con kilos",
+        "dos productos distintos"
+      ],
+      "vecinas": ["el-ultimo-precio-no-es-el-costo", "hueco-cargado-a-un-solo-dia", "prueba-de-un-solo-caso"]
+    },
+    {
+      "id": "compuerta-que-no-llega-al-defecto",
+      "titulo": "La compuerta pasó en verde porque sólo miraba el panel abierto",
+      "gravedad": "alta",
+      "sintoma": "Rompo algo a propósito para probar la compuerta y la compuerta sigue verde.",
+      "causa": "El recorrido inspeccionaba únicamente lo visible al cargar. Las otras pestañas, los pasos del formulario y los submenús nunca se abrieron, así que sus botones de 38 px y sus textos ilegibles jamás se midieron.",
+      "porque": "Una compuerta se escribe mirando la pantalla que uno tiene enfrente, y esa pantalla es la primera. Lo que hay detrás de un toque no existe para el `document` inicial.",
+      "arreglo": "El recorrido abre TODO: cada pestaña, cada paso del alta y cada submenú, y mide en cada estado. En este proyecto son 5 pestañas, 3 pasos y 12 submenús.",
+      "comoCazarlo": "Meter el defecto a propósito en la pantalla MÁS ESCONDIDA que exista. Si la compuerta sigue verde, la compuerta no cubre la app: cubre su portada.",
+      "consejo": "Una compuerta se estrena rompiéndola. Verde sin haberla visto roja no significa nada.",
+      "salioDe": "jabonera/NERA · botones de 38 px y una ruta sin regreso a Ajustes vivieron adentro con la compuerta en verde",
+      "senales": [
+        "las pruebas pasan y el bug sigue",
+        "no lo caza la prueba",
+        "solo revisa la primera pantalla"
+      ],
+      "vecinas": ["pruebas-que-no-prueban-nada", "contraste-medido-sin-componer-alfa", "ver-la-pantalla"]
+    },
+    {
+      "id": "contraste-medido-sin-componer-alfa",
+      "titulo": "El medidor de contraste mintió dos veces, y las dos veces el diseño estaba bien",
+      "gravedad": "alta",
+      "sintoma": "La compuerta reprueba textos que se leen perfecto: 1.04:1 sobre un café opaco, 1.00:1 sobre un chip translúcido encima de índigo.",
+      "causa": "Dos fallos del medidor. Uno: una expresión regular `/, *0\\)$/` tomaba por transparente cualquier color con el canal AZUL en 0, así que `rgb(138,90,0)` se leía como fondo inexistente. Dos: `rgba(255,255,255,.18)` se leía como blanco puro en vez de componerse contra lo que tiene debajo.",
+      "porque": "Un medidor de contraste parece aritmética y es composición: hay que subir por los ancestros hasta el primer fondo opaco y mezclar cada capa por su alfa. Saltarse eso da números que parecen mediciones.",
+      "arreglo": "Parsear el alfa de verdad y componer capa por capa hasta el primer fondo opaco. Sólo entonces calcular la luminancia relativa.",
+      "comoCazarlo": "Alimentar el medidor con casos de respuesta conocida: blanco sobre negro debe dar 21:1, y un color opaco con un canal en 0 no debe dar 1.04.",
+      "consejo": "Antes de creerle a una compuerta que reprueba, comprobar la compuerta. Aquí falló el instrumento, no el diseño — pero dentro había un fallo real (blanco sobre coral, 2.83:1) que sólo apareció cuando el instrumento dejó de mentir.",
+      "salioDe": "jabonera/NERA · dos falsos positivos seguidos en la compuerta de contraste, y detrás un fallo verdadero",
+      "senales": [
+        "dice que no pasa contraste y se ve bien",
+        "el medidor da 1.04",
+        "chip translucido",
+        "falso positivo de accesibilidad"
+      ],
+      "vecinas": ["compuerta-que-no-llega-al-defecto", "medir-el-texto-pintado", "errores-que-mienten"]
+    },
+    {
+      "id": "el-ultimo-precio-no-es-el-costo",
+      "titulo": "Costear con el último precio pagado exagera el gasto en cuanto hay dos compras",
+      "gravedad": "media",
+      "sintoma": "El gasto del mes salta cuando se registra una compra chica y cara, aunque casi todo el consumo venga del garrafón barato de antes.",
+      "causa": "El costo por unidad se tomaba de la última compra registrada, no del promedio ponderado por cantidad comprada.",
+      "porque": "«El precio» suena a un número único, y en un almacén nunca lo es: es el promedio de lo que hay, pesado por cuánto se compró de cada cosa. Es la misma cuenta que hace cualquier bodega, y por eso un sinodal la pregunta.",
+      "arreglo": "Promedio ponderado: suma de (precio × cantidad) entre suma de cantidad, en la unidad canónica del producto.",
+      "comoCazarlo": "Dos compras del mismo producto a precios muy distintos y cantidades muy distintas. Con una sola compra los dos métodos dan igual y la prueba no dice nada.",
+      "consejo": "En cuanto haya dos compras del mismo insumo, el costo es ponderado. Y se explica en voz alta: es de lo primero que preguntan.",
+      "salioDe": "jabonera/NERA · el costo por unidad salía de la última compra hasta que se cambió a promedio ponderado",
+      "senales": [
+        "el gasto se disparo",
+        "cual precio uso",
+        "compre a dos precios",
+        "cuanto cuesta en realidad"
+      ],
+      "vecinas": ["sumar-mililitros-con-gramos", "hueco-cargado-a-un-solo-dia", "prueba-de-un-solo-caso"]
+    },
+    {
+      "id": "hueco-cargado-a-un-solo-dia",
+      "titulo": "Se saltaron tres días de registro y el consumo entero se le cargó al día del regreso",
+      "gravedad": "media",
+      "sintoma": "Una gráfica con un pico enorme un jueves cualquiera, y el resto de la semana en casi cero.",
+      "causa": "El consumo se calcula entre dos visitas consecutivas. Si entre ellas pasaron cuatro días, todo ese consumo se atribuía a la fecha de la segunda.",
+      "porque": "El dato de campo tiene huecos SIEMPRE — alguien se enferma, hay puente, se olvida. Un sistema que supone captura diaria produce picos falsos y la conclusión que sale de ahí es falsa también.",
+      "arreglo": "Repartir el consumo del intervalo proporcionalmente entre los días que abarca, y marcar ese tramo como estimado para que el informe pueda decirlo.",
+      "comoCazarlo": "Una prueba con un hueco de varios días que compruebe que ningún día recibe el total, y que el tramo queda marcado.",
+      "consejo": "Repartir es la mitad; la otra mitad es DECIRLO. Un dato estimado que no se presenta como estimado es un dato inventado.",
+      "salioDe": "jabonera/NERA · `porDia()` cargaba el intervalo completo al día de la segunda visita",
+      "senales": [
+        "hay un pico rarisimo",
+        "se me olvido registrar unos dias",
+        "falta un dia",
+        "la grafica esta chueca"
+      ],
+      "vecinas": ["el-ultimo-precio-no-es-el-costo", "sumar-mililitros-con-gramos", "dato-que-no-esta-confirmado"]
+    },
+    {
+      "id": "referenciar-un-diseno-es-medirlo",
+      "clase": "decision",
+      "titulo": "«Básate en tal sitio» se cumple midiendo su CSS, no recordándolo",
+      "que": "Cuando el encargo dice «que se parezca a Stripe» o «usa estas referencias», se descarga la hoja de estilos del sitio y se CUENTAN sus decisiones: cuántos tamaños de letra distintos usa, cuántos pesos, qué radios, cuántos colores. Ese conteo se vuelve el presupuesto del diseño propio, y la compuerta lo verifica sobre el DOM pintado.",
+      "porque": "«Se parece a Stripe» de memoria produce siempre lo mismo: una paleta genérica y catorce tamaños de letra. Medido, la referencia se vuelve un número que se puede cumplir y comprobar — y la conversación con quien pidió el diseño deja de ser de gustos y pasa a ser de cifras.",
+      "alternativas": "Copiar la sensación de memoria (sale genérico y no se puede defender). Capturar el sitio y calcarlo (se copia lo que se ve, no la regla que lo generó). Pedir una guía de marca que casi nunca existe.",
+      "ojo": "El conteo es un presupuesto, no una estética: cumplirlo no garantiza que se vea bien, sólo que no se está gastando de más. Y con referencias en IMAGEN no hay CSS que medir — ahí se miden la propia captura y las proporciones, y se dice claramente que es una lectura y no una medición.",
+      "senales": [
+        "basate en tal pagina",
+        "que se vea como stripe",
+        "usa estas referencias",
+        "hazlo mas original"
+      ],
+      "vecinas": ["medir-antes-de-suponer", "error-se-ve-hecho-por-ia", "decision-escoger-estetica-antes"]
+    },
+    {
+      "id": "descarga-muerta-en-visor-incrustado",
+      "titulo": "El botón de exportar a Excel no hace nada dentro de un visor incrustado",
+      "gravedad": "media",
+      "sintoma": "En el archivo local la descarga funciona; en el link que le mandé a la persona, el botón se toca y no pasa absolutamente nada. Sin error.",
+      "causa": "Un `<a download>` o un `URL.createObjectURL` disparado por script está inerte dentro de un iframe con sandbox — que es donde vive cualquier vista previa incrustada. Incluye `data:` y `blob:`.",
+      "porque": "Falla en silencio y sólo en el entorno donde la va a probar la persona, nunca en el tuyo. Y es justo la función que uno presume: «exporta a Excel».",
+      "arreglo": "O se declara la capacidad de descargas del visor y se guarda por su API, o se avisa EN LA PÁGINA que ahí está bloqueado y dónde sí funciona. Lo que no vale es dejar un botón que no hace nada.",
+      "comoCazarlo": "Probar el link en el visor, no el archivo en disco. Son dos entornos distintos y sólo uno se lo mandas a alguien.",
+      "consejo": "Un botón que no hace nada es peor que un botón ausente: la persona cree que su archivo se descargó.",
+      "salioDe": "jabonera/NERA · Excel, reporte y respaldo quedaron inertes al publicar la app como vista previa",
+      "senales": [
+        "el boton no hace nada",
+        "no me descarga el excel",
+        "en mi compu si funciona",
+        "no pasa nada al tocar"
+      ],
+      "vecinas": ["ventana-nueva-bloqueada", "verificar-lo-publicado", "compuerta-que-no-llega-al-defecto"]
+    },
+    {
+      "id": "renombrar-lo-visible-no-la-llave",
+      "clase": "decision",
+      "titulo": "Al rebautizar un proyecto se cambia lo que la gente lee, nunca lo que la máquina indexa",
+      "que": "El proyecto pasó de llamarse Jabonera a llamarse NERA. Se cambió el título, la cabecera, el reporte y el LEEME. NO se cambiaron: la carpeta, el nombre de la rama, el archivo suelto, el objeto global ni la llave de `localStorage`.",
+      "porque": "La llave de `localStorage` es dónde vive lo que ya capturó una persona: renombrarla no migra los datos, los deja huérfanos y la app arranca vacía. Y el nombre del archivo ya viajaba en links repartidos por chat: cambiarlo los rompe todos sin avisar a nadie.",
+      "alternativas": "Renombrar todo y escribir una migración de la llave vieja a la nueva — es la opción correcta si el identificador viejo estorba de verdad, pero cuesta código y una prueba que casi nunca se escribe. Renombrar todo sin migración: pierde los datos de quien ya estaba usando la app.",
+      "ojo": "Lo que sí hay que hacer es DECIR que no coinciden, y por qué, en el LEEME — si no, la siguiente sesión ve `jabonera.v1` en el código de un proyecto llamado NERA y lo «arregla».",
+      "senales": [
+        "vamos a cambiarle el nombre",
+        "se llama diferente ahora",
+        "renombrar el proyecto",
+        "se borraron mis datos"
+      ],
+      "vecinas": ["renombrar-de-un-lado", "ajuste-guardado-por-documento", "descarga-muerta-en-visor-incrustado"]
+    },
+    {
+      "id": "dato-que-no-esta-confirmado",
+      "clase": "decision",
+      "titulo": "Lo que todavía no se midió se presenta como ejemplo, en la pantalla y en voz alta",
+      "que": "Mientras la escuela no entregue las mediciones reales, la app arranca con datos de demostración y el informe lleva la advertencia dentro, en su propio apartado. La guía de la presentación dice explícitamente qué lámina va con datos de ejemplo y ordena decirlo en voz alta.",
+      "porque": "Un dato de ejemplo presentado como medido es lo único de un proyecto escolar que sí puede reprobarlo, y en un proyecto de verdad es lo que destruye la confianza en todo lo demás. El costo de decirlo es una frase; el de que lo descubra el sinodal, el proyecto entero.",
+      "alternativas": "Rellenar con cifras plausibles (es inventar). Dejar la sección vacía (se ve incompleto y no explica por qué). Poner un asterisco al pie que nadie lee — la advertencia va donde está el número, no al final.",
+      "ojo": "La advertencia tiene que viajar DENTRO del artefacto exportado, no sólo en la pantalla: el informe se imprime y se entrega suelto, y ahí ya no está la app para aclarar nada.",
+      "senales": [
+        "todavia no tenemos los datos",
+        "pon algo de ejemplo",
+        "no lo han confirmado",
+        "que numero pongo"
+      ],
+      "vecinas": ["hueco-cargado-a-un-solo-dia", "error-reseñas-de-relleno", "el-ultimo-precio-no-es-el-costo"]
+    }
+  ]
+}

@@ -155,7 +155,8 @@
         "pieza-cerebro",
         "pieza-sala",
         "verificar-lo-publicado"
-      ]
+      ],
+      "salioDe": "sala/servidor · `cerebro.neuronas` llegaba `undefined` desde `cerebro/todo.json` y la búsqueda contestaba [] sin quejarse"
     },
     {
       "id": "deuda-sin-dueno",
@@ -183,7 +184,8 @@
         "pieza-fadori",
         "prueba-de-un-solo-caso",
         "reproducir-antes-de-arreglar"
-      ]
+      ],
+      "salioDe": "fadori/mostrador.html · `entregar()` no apuntaba la deuda de un pedido levantado de a pie (`abrirDeAPie` nace con `alumno: null`)"
     },
     {
       "id": "editar-en-dist-y-perderlo",
@@ -209,7 +211,8 @@
       "vecinas": [
         "pieza-mazi-central",
         "verificar-lo-publicado"
-      ]
+      ],
+      "salioDe": "mazi-central · un `cd` a `dist/` de tres comandos antes dejó ahí el cursor y la ruta relativa escribió en la copia generada"
     },
     {
       "id": "presencia-que-se-apaga-sola",
@@ -237,7 +240,8 @@
         "pieza-sala",
         "conectado-no-es-vivo",
         "pruebas-que-no-prueban-nada"
-      ]
+      ],
+      "salioDe": "sala/index.html · la esquina pintaba el websocket y el chip de cada quien se calculaba con `visto`, que sólo refrescaban las rutas de hablar"
     },
     {
       "id": "identidad-nueva-en-cada-entrada",
@@ -262,7 +266,8 @@
       "vecinas": [
         "presencia-que-se-apaga-sola",
         "pieza-sala"
-      ]
+      ],
+      "salioDe": "sala/index.html · el id se armaba con `Math.random()` en cada entrada y nada lo guardaba"
     },
     {
       "id": "la-sala-se-borraba-sola",
@@ -289,7 +294,8 @@
         "pieza-sala",
         "presencia-que-se-apaga-sola",
         "pruebas-que-no-prueban-nada"
-      ]
+      ],
+      "salioDe": "sala/servidor · la alarma del Durable Object llamaba `deleteAll()` y sólo se rearmaba desde `guardar()`, o sea sólo al hablar"
     }
   ]
 }
