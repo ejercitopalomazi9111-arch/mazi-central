@@ -24,8 +24,21 @@ const leer = f => readFile(join(DIR, f), 'utf8');
    otros ya hayan puesto lo suyo en `globalThis`. */
 const GUIONES = ['motor.js','excel.js','datos.js','reporte.js','app.js'];
 const html = await leer('index.html');
-const css  = await leer('estilo.css');
+let   css  = await leer('estilo.css');
 const js   = await Promise.all(GUIONES.map(leer));
+
+/* ── LAS TIPOGRAFÍAS VAN DENTRO ────────────────────────────────────────────
+   IBM Plex se autohospeda en `tipos/`, y en el archivo suelto tiene que
+   viajar EN el archivo: una `url(tipos/…)` relativa desde una memoria USB
+   apunta a una carpeta que no está, y la página se cae al tipo del sistema
+   sin decir nada — que es la peor forma de fallar, porque parece que
+   funciona. Se incrustan en base64. */
+const { readFile: leerCrudo } = await import('node:fs/promises');
+for(const f of ['PlexSans.woff2','PlexMono-400.woff2','PlexMono-500.woff2','PlexMono-600.woff2']){
+  const b64 = (await leerCrudo(join(DIR, 'tipos', f))).toString('base64');
+  css = css.replace(`url(tipos/${f})`, `url(data:font/woff2;base64,${b64})`);
+}
+if(css.includes('url(tipos/')){ console.error('✗ quedó una tipografía sin incrustar'); process.exit(1); }
 
 /* `</script>` dentro de una cadena de JavaScript cierra la etiqueta del HTML
    y parte el archivo por la mitad. Pasa de verdad y es de las que cuesta

@@ -1,70 +1,90 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   JABONERA · SISTEMA VISUAL  ·  v2
+   JABONERA · SISTEMA VISUAL  ·  v3 «INSTRUMENTO»
    ──────────────────────────────────────────────────────────────────────────
-   POR QUÉ SE REHÍZO. Carlos: «enfócate al 100 en diseño, básate en Fadori,
-   en Ligas Mazi y en el menú de Guerra de Puercos; evita listas de botones
-   con cuadros de texto; usa una web famosa como punto de comparación».
+   Carlos, e498: «hazlo más original y ahora básate en otra web para un diseño
+   diferente y más distintivo».
 
-   El punto de comparación es **stripe.com**, y no de memoria: se bajó su CSS
-   y se midió. Lo que salió, y es el diagnóstico de la v1:
+   Tenía razón. La v2 tenía ORDEN pero no IDENTIDAD: teal, esquinas
+   redondeadas y tarjetas blancas es lo que se ve en cualquier producto de
+   software. Ordenado y anónimo.
 
-   |                | Stripe                        | Jabonera v1              |
-   |----------------|-------------------------------|--------------------------|
-   | Tamaños de letra | 7 (12·14·16·18·22·34·48)    | **13**, sin escala       |
-   | Pesos          | 5 (300–700)                   | **8**, con 620/650/730   |
-   | Tipo más grande| 48 px                         | **26 px**                |
-   | Tracking       | negativo en display, positivo en texto chico | mezclado |
+   ── LA REFERENCIA NUEVA: IBM CARBON (carbondesignsystem.com) ──
+   Medida, no recordada: se bajó su HTML y se contaron sus valores. Es lo
+   OPUESTO a Stripe, que era la referencia de la v2:
 
-   Ahí estaba el problema entero: sin un tamaño de DISPLAY, todo era
-   «interfaz» y nada era «producto». Un panel de administración se ve así
-   exactamente. Fadori, Ligas Mazi y Puercos hacen lo contrario: abren con
-   una palabra enorme, un color a sangre y tres botones gruesos.
+   |                 | Stripe (v2)          | IBM Carbon (v3)              |
+   |-----------------|----------------------|------------------------------|
+   | Radio           | 4 · 8 · 16 · 30 px   | **0** (17 de sus 17 reglas)  |
+   | Pesos           | 300–700, display negro | **100 · 300 · 400 · 600** — display LIGERO, sin negras |
+   | Escala          | hasta 48 px          | hasta **156 px**             |
+   | Color           | morado + pasteles    | `#0f62fe` puro, grises duros `#161616 #e0e0e0 #8d8d8d` |
+   | Sensación       | producto amable      | **instrumento de ingeniería** |
 
-   ESTA VERSIÓN: SIETE tamaños y CUATRO pesos, ni uno más. El tipo de
-   display llega a 52 px —más que Stripe— porque aquí el número medido ES el
-   producto, y en un examen se ve de lejos.
+   ── PERO LA IDENTIDAD NO SE COPIA, SE SACA DEL TEMA ──
+   De Carbon se toma la ESTRUCTURA: esquina viva, display en peso ligero,
+   retícula visible, bordes en vez de sombras. El carácter sale del propio
+   proyecto, y por eso no se parece a Carbon ni a nadie:
 
-   Los dos usos siguen mandando y no se parecen:
-   · DE PIE EN EL BAÑO con una mano: pulgar, 48 px de tocable, campos de
-     16 px —por debajo iOS hace zoom solo— y la acción principal abajo.
-   · PROYECTADO EN UN EXAMEN: contraste alto y cifras que se leen de lejos.
+   · **PAPEL CUADRICULADO.** El fondo es papel milimétrico de 4 mm, dibujado
+     en CSS. Es el sustrato real de un proyecto de ciencias, y aquí no es
+     adorno: la retícula es la misma unidad con la que se mide.
+   · **TODO NÚMERO EN MONOESPACIADA.** Los números de un laboratorio se
+     escriben en mono. Con IBM Plex Mono, una columna de cifras se compara de
+     un vistazo, y la lámina entera cambia de registro.
+   · **ROJO DE CORRECCIÓN.** El acento no es un color de marca: es el rojo
+     del bolígrafo con el que alguien marca en una libreta lo que importa.
+     Aparece UNA vez por pantalla — en el dato principal o en una alerta.
+   · **LA PROBETA.** El medidor de cada baño no es una barrita de progreso:
+     es una probeta graduada con sus marcas, dibujada en SVG. El instrumento
+     del proyecto, convertido en elemento de interfaz.
+
+   Los dos usos siguen mandando: DE PIE EN EL BAÑO con una mano (48 px de
+   tocable, campos de 16 px —por debajo iOS hace zoom solo—, acciones abajo)
+   y PROYECTADO EN UN EXAMEN (contraste alto, cifras que se leen de lejos).
    ═════════════════════════════════════════════════════════════════════════ */
 
+/* ── IBM Plex · SIL Open Font License 1.1 · autohospedada ──────────────────
+   Autohospedada y no traída de un CDN a propósito: el archivo suelto tiene
+   que abrir desde una memoria USB sin internet, y una fuente remota ahí es
+   una fuente que no carga. Crédito y licencia en el LEEME. */
+@font-face{ font-family:Plex; src:url(tipos/PlexSans.woff2) format('woff2');
+            font-weight:100 700; font-display:swap }
+@font-face{ font-family:PlexMono; src:url(tipos/PlexMono-400.woff2) format('woff2');
+            font-weight:400; font-display:swap }
+@font-face{ font-family:PlexMono; src:url(tipos/PlexMono-500.woff2) format('woff2');
+            font-weight:500; font-display:swap }
+@font-face{ font-family:PlexMono; src:url(tipos/PlexMono-600.woff2) format('woff2');
+            font-weight:600; font-display:swap }
+
 :root{
-  /* ── LA ESCALA. Siete pasos, con el salto deliberado entre 22 y 34: es lo
-     que separa «texto» de «dato», y es la lección medida de Stripe. ── */
-  --t-display:52px;   /* la cifra que es el producto, y el rótulo de portada */
-  --t-titulo:34px;    /* el número grande de cada tarjeta */
-  --t-seccion:22px;   /* título de sección */
-  --t-guia:18px;      /* párrafo de entrada */
-  --t-cuerpo:16px;    /* texto y TODOS los campos */
-  --t-menor:14px;     /* secundario */
-  --t-micro:12px;     /* rótulos, unidades, pies */
-  --t-nano:11px;      /* ÚNICA excepción y va declarada: la barra de pestañas
-                         y las etiquetas de las gráficas. A 12 px, cinco
-                         pestañas no caben en un teléfono de 320. */
+  --sans:Plex, 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono:PlexMono, 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  /* ── CUATRO pesos. Ninguno inventado. ── */
-  --p-normal:400; --p-medio:500; --p-fuerte:600; --p-macizo:700;
+  /* ── SIETE tamaños. El salto entre 22 y 40 es lo que separa «texto» de
+     «dato», y es la lección que quedó de medir Stripe. Carbon llega mucho
+     más arriba; aquí el techo es 64 porque una portada de teléfono no da
+     para 156. ── */
+  --t-display:64px; --t-titulo:40px; --t-seccion:22px; --t-guia:18px;
+  --t-cuerpo:16px;  --t-menor:14px;  --t-micro:12px;
+  --t-nano:11px;    /* única excepción declarada: pestañas y ejes de gráfica */
 
-  /* ── Tracking: apretar lo grande, abrir lo chico. Regla de imprenta, y es
-     lo que Stripe hace (−0.031em en display, +0.004em en texto menor). ── */
-  --tr-display:-.035em; --tr-titulo:-.025em; --tr-seccion:-.012em; --tr-rotulo:.09em;
+  /* ── CUATRO pesos, y el de display es LIGERO. Es la decisión de Carbon y
+     es la que más cambia el carácter: un titular en 300 se lee técnico; el
+     mismo en 700 se lee comercial. ── */
+  --p-ligero:300; --p-normal:400; --p-medio:500; --p-fuerte:600;
 
-  /* ── Color: UN campo de identidad y UN acento, como las tres referencias
-     de la casa. El ámbar aparece sólo en el dato principal. ── */
-  --papel:#F2F5F4;  --tarjeta:#FFFFFF;  --tinta:#0B1614;
-  --suave:#556763;  --linea:#DFE6E4;    --linea-fuerte:#C2CFCC;
-  --agua:#0E6F7A;   --agua-hondo:#093F49; --agua-claro:#E2F0F1; --agua-vivo:#14939F;
-  --ambar:#FFC24B;  --ambar-tinta:#7A5210; --ambar-claro:#FFF4DD;
-  --bien:#1C6E45;   --bien-claro:#E2F1E9;
-  --alerta:#A6241D; --alerta-claro:#FBE9E7;
+  --tr-display:-.03em; --tr-titulo:-.02em; --tr-rotulo:.12em;
 
-  --r-chico:8px; --r:16px; --r-pastilla:999px;
-  --sombra:0 1px 2px rgba(11,22,20,.05), 0 6px 20px rgba(11,22,20,.06);
-  --sombra-dura:0 3px 0 var(--agua-hondo);
-  --tope:1080px;
-  --aire:16px;
+  /* ── Papel y tinta, no marca y fondo ── */
+  --papel:#F2F0E9;  --papel-hondo:#E8E5DB; --hoja:#FBFAF6;
+  --tinta:#14140F;  --grafito:#57574D;     --linea:#D2CEC1; --linea-viva:#A9A498;
+  --reticula:rgba(20,20,15,.055);
+  --azul:#1236C4;   --azul-claro:#E4E8FA;   /* tinta: estructura y enlaces */
+  --rojo:#C1121F;   --rojo-claro:#FBE7E6;   /* corrección: el dato y la alerta */
+  --verde:#1F5E3C;  --verde-claro:#E3EFE7;
+  --ambar:#8A5A00;  --ambar-claro:#FAF0DC;
+
+  --tope:1120px; --aire:16px;
 }
 
 *{ box-sizing:border-box }
@@ -75,245 +95,249 @@
 
 html,body{ margin:0; padding:0 }
 body{
-  background:var(--papel); color:var(--tinta);
-  font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-size:var(--t-cuerpo); line-height:1.5;
+  color:var(--tinta); background:var(--papel);
+  /* EL PAPEL CUADRICULADO. 4 mm, como el papel milimétrico de un cuaderno de
+     laboratorio; cada 5 casillas la línea es más marcada, igual que el real. */
+  background-image:
+    linear-gradient(var(--reticula) 1px, transparent 1px),
+    linear-gradient(90deg, var(--reticula) 1px, transparent 1px),
+    linear-gradient(rgba(20,20,15,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,20,15,.028) 1px, transparent 1px);
+  background-size:75.6px 75.6px, 75.6px 75.6px, 15.1px 15.1px, 15.1px 15.1px;
+  font-family:var(--sans); font-size:var(--t-cuerpo); line-height:1.5;
+  font-weight:var(--p-normal);
   -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
   padding-bottom:calc(76px + env(safe-area-inset-bottom));
 }
-/* Los números SIEMPRE en tabular: si no, una columna de cifras baila y deja
-   de poder compararse de un vistazo, que es para lo que existe. */
-.num, table, .dato .v, input[type=number]{ font-variant-numeric:tabular-nums lining-nums }
+/* TODO número en monoespaciada: es el registro del cuaderno de laboratorio y
+   además hace que una columna de cifras se pueda comparar de un vistazo. */
+.num, .dato .v, .cifra, table td.n, table th.n, input[type=number], .medida{
+  font-family:var(--mono); font-variant-numeric:tabular-nums lining-nums;
+}
 
-h1,h2,h3{ margin:0; line-height:1.12 }
-h1{ font-size:var(--t-seccion); font-weight:var(--p-macizo); letter-spacing:var(--tr-seccion) }
-h2{ font-size:var(--t-seccion); font-weight:var(--p-fuerte); letter-spacing:var(--tr-seccion) }
+h1,h2,h3{ margin:0; line-height:1.14 }
+h1,h2{ font-size:var(--t-seccion); font-weight:var(--p-fuerte); letter-spacing:-.01em }
 h3{ font-size:var(--t-menor); font-weight:var(--p-fuerte) }
 p{ margin:0 0 10px }
-a{ color:var(--agua) }
-.guia{ font-size:var(--t-guia); line-height:1.45; color:var(--suave) }
-.menor{ font-size:var(--t-menor); color:var(--suave) }
-.micro{ font-size:var(--t-micro); color:var(--suave) }
-.rotulo{ font-size:var(--t-micro); font-weight:var(--p-macizo); letter-spacing:var(--tr-rotulo);
-         text-transform:uppercase; color:var(--suave) }
+a{ color:var(--azul) }
+.guia{ font-size:var(--t-guia); line-height:1.45; color:var(--grafito) }
+.menor{ font-size:var(--t-menor); color:var(--grafito) }
+.micro{ font-size:var(--t-micro); color:var(--grafito) }
+/* El rótulo va en mono y espaciado: es la etiqueta de un instrumento. */
+.rotulo{ font-family:var(--mono); font-size:var(--t-micro); font-weight:var(--p-medio);
+  letter-spacing:var(--tr-rotulo); text-transform:uppercase; color:var(--grafito) }
 
-/* ── EL CAMPO DE IDENTIDAD ─────────────────────────────────────────────
-   Lo que hacen las tres referencias de la casa y no hacía la v1: abrir con
-   un color a sangre y una palabra enorme. */
+/* ── LA PORTADA: la tapa del cuaderno ─────────────────────────────────── */
 .campo-marca{
-  background:linear-gradient(160deg,#0E7C86 0%, #0B4F5C 62%, #08343D 100%);
-  color:#fff; padding:calc(20px + env(safe-area-inset-top)) var(--aire) 26px;
+  background:var(--tinta); color:var(--hoja);
+  padding:calc(22px + env(safe-area-inset-top)) var(--aire) 24px;
+  border-bottom:3px solid var(--rojo);
 }
 .campo-marca .dentro{ max-width:var(--tope); margin:0 auto }
 .marca{
-  /* `clamp` y no un tamaño fijo: a 320 px «JABONERA» a 52 px no cabe, y
-     partirla en dos renglones la rompía a media palabra («JABO / NERA»),
-     que se lee como error y no como logotipo. Ligas Mazi puede apilar
-     porque son DOS palabras; ésta es una. */
-  font-size:clamp(34px, 13.5vw, var(--t-display));
-  font-weight:var(--p-macizo); letter-spacing:var(--tr-display);
-  line-height:1; text-transform:uppercase; margin:0 0 10px; white-space:nowrap;
+  /* Peso LIGERO, que es la decisión de Carbon y la que cambia el carácter.
+     `clamp` porque a 320 px «JABONERA» a 64 px no cabe, y partirla en dos
+     renglones la rompe a media palabra: se lee como error, no como logotipo. */
+  font-size:clamp(38px, 15vw, var(--t-display));
+  font-weight:var(--p-ligero); letter-spacing:var(--tr-display);
+  line-height:1; text-transform:uppercase; margin:0 0 12px; white-space:nowrap;
 }
-/* El corte de color va DENTRO del renglón, no en un salto de línea. */
-.marca em{ font-style:normal; color:var(--ambar) }
-.lema{ font-size:var(--t-guia); line-height:1.35; color:rgba(255,255,255,.86); max-width:30ch; margin:0 }
-.campo-marca .rotulo{ color:rgba(255,255,255,.6); margin:0 0 12px }
+.marca em{ font-style:normal; font-weight:var(--p-fuerte) }  /* el corte es de PESO, no de color */
+.lema{ font-size:var(--t-guia); line-height:1.4; color:rgba(251,250,246,.78);
+       max-width:34ch; margin:0; font-weight:var(--p-ligero) }
+.campo-marca .rotulo{ color:rgba(251,250,246,.55); margin:0 0 14px }
+.campo-marca hr{ border:0; border-top:1px solid rgba(251,250,246,.22); margin:22px 0 18px }
 
-/* ── cabecera compacta (todas las pantallas menos la portada) ───────── */
+/* ── cabecera compacta ────────────────────────────────────────────────── */
 .cabecera{
   position:sticky; top:0; z-index:20;
-  background:var(--agua-hondo); color:#fff;
-  padding:calc(9px + env(safe-area-inset-top)) var(--aire) 11px;
+  background:var(--tinta); color:var(--hoja);
+  padding:calc(9px + env(safe-area-inset-top)) var(--aire) 10px;
+  border-bottom:2px solid var(--rojo);
 }
 .cabecera .dentro{ display:flex; align-items:center; gap:10px; max-width:var(--tope); margin:0 auto }
-.cabecera .nom{ font-size:var(--t-menor); font-weight:var(--p-macizo);
+.cabecera .nom{ font-family:var(--mono); font-size:var(--t-menor); font-weight:var(--p-medio);
   letter-spacing:var(--tr-rotulo); text-transform:uppercase }
 .cabecera .der{ margin-left:auto; display:flex; gap:6px; align-items:center }
 .cabecera button{
-  appearance:none; background:rgba(255,255,255,.14); border:0; color:#fff; cursor:pointer;
-  width:40px; height:40px; border-radius:var(--r-chico); display:grid; place-items:center;
+  appearance:none; background:transparent; border:1px solid rgba(251,250,246,.35);
+  color:var(--hoja); cursor:pointer; width:42px; height:42px; border-radius:0;
+  display:grid; place-items:center;
 }
 .cabecera button svg{ width:20px; height:20px }
-.gota{ width:26px; height:26px; flex:0 0 auto }
+.gota{ width:24px; height:24px; flex:0 0 auto }
 
 main{ max-width:var(--tope); margin:0 auto; padding:var(--aire) var(--aire) 24px }
 .panel[hidden]{ display:none }
 
-/* ── bandas alternadas, como hace Stripe para marcar secciones ──────── */
-.banda{ background:var(--agua-claro); margin:0 calc(var(--aire) * -1) ; padding:20px var(--aire) }
-.banda + .banda{ margin-top:0 }
-
+/* ── TARJETAS: hoja sobre papel, con esquina viva y borde, sin sombra ─── */
 .tarjeta{
-  background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r);
-  padding:18px; margin:0 0 14px; box-shadow:var(--sombra);
+  background:var(--hoja); border:1px solid var(--linea); border-radius:0;
+  padding:18px; margin:0 0 14px;
 }
 .tarjeta > h2{ margin-bottom:6px }
-.tarjeta > .pie-nota{ margin:12px 0 0; font-size:var(--t-menor); color:var(--suave) }
-
+.tarjeta > .pie-nota{ margin:12px 0 0; font-size:var(--t-menor); color:var(--grafito) }
 .rejilla{ display:grid; gap:14px; grid-template-columns:1fr }
-@media (min-width:760px){
-  .rejilla.dos{ grid-template-columns:1fr 1fr }
-  :root{ --t-display:64px; --aire:22px }
-}
+@media (min-width:760px){ .rejilla.dos{ grid-template-columns:1fr 1fr } :root{ --aire:24px } }
 
-/* ── LA BARRA DE PESTAÑAS, abajo, para el pulgar ────────────────────── */
+/* ── PESTAÑAS ─────────────────────────────────────────────────────────── */
 .pestanas{
   position:fixed; left:0; right:0; bottom:0; z-index:30;
   display:grid; grid-template-columns:repeat(5,1fr);
-  background:rgba(255,255,255,.97); border-top:1px solid var(--linea-fuerte);
+  background:var(--hoja); border-top:1px solid var(--linea-viva);
   padding-bottom:env(safe-area-inset-bottom);
-  backdrop-filter:none;   /* a propósito: cuesta un repintado por fotograma */
 }
 .pestanas button{
-  appearance:none; border:0; background:none; cursor:pointer;
-  padding:9px 2px 10px; min-height:54px;
+  appearance:none; border:0; border-top:3px solid transparent; background:none; cursor:pointer;
+  padding:8px 2px 10px; min-height:54px;
   display:flex; flex-direction:column; align-items:center; gap:4px;
-  font-family:inherit; font-size:var(--t-nano); font-weight:var(--p-fuerte); line-height:1;
-  color:var(--suave);
+  font-family:var(--mono); font-size:var(--t-nano); font-weight:var(--p-medio);
+  letter-spacing:.04em; line-height:1; color:var(--grafito); text-transform:uppercase;
 }
 .pestanas button svg{ width:22px; height:22px }
-.pestanas button[aria-selected=true]{ color:var(--agua) }
-.pestanas button[aria-selected=true] svg{ stroke-width:2.4 }
+.pestanas button[aria-selected=true]{ color:var(--tinta); border-top-color:var(--rojo) }
+.pestanas button[aria-selected=true] svg{ stroke-width:2.2 }
 
-/* ── EL DATO: lo que en la v1 era una tarjetita y aquí es el producto ── */
-.dato{ background:var(--tarjeta); border:1px solid var(--linea); border-radius:var(--r); padding:18px }
-.dato .et{ font-size:var(--t-micro); font-weight:var(--p-macizo); letter-spacing:var(--tr-rotulo);
-  text-transform:uppercase; color:var(--suave); margin:0 0 8px }
-.dato .v{ font-size:var(--t-titulo); font-weight:var(--p-macizo); letter-spacing:var(--tr-titulo);
+/* ── EL DATO ──────────────────────────────────────────────────────────── */
+.dato{ background:var(--hoja); border:1px solid var(--linea); border-radius:0; padding:16px 18px }
+.dato .et{ font-family:var(--mono); font-size:var(--t-micro); font-weight:var(--p-medio);
+  letter-spacing:var(--tr-rotulo); text-transform:uppercase; color:var(--grafito); margin:0 0 10px }
+.dato .v{ font-size:var(--t-titulo); font-weight:var(--p-fuerte); letter-spacing:var(--tr-titulo);
   line-height:1; display:block }
-.dato .v u{ text-decoration:none; font-size:var(--t-seccion); font-weight:var(--p-fuerte);
-  letter-spacing:0; color:var(--suave); margin-left:4px }
-.dato .n{ font-size:var(--t-menor); color:var(--suave); margin-top:8px; line-height:1.35 }
-.dato.hueca .v{ font-size:var(--t-guia); font-weight:var(--p-fuerte); color:var(--suave); letter-spacing:0 }
-.dato.grande{ background:var(--agua-hondo); border-color:var(--agua-hondo); color:#fff }
-.dato.grande .v{ font-size:var(--t-display); letter-spacing:var(--tr-display); color:var(--ambar) }
-.dato.grande .et, .dato.grande .n{ color:rgba(255,255,255,.72) }
-.dato.grande .v u{ color:rgba(255,255,255,.72) }
-.datos{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin:0 0 14px }
+.dato .v u{ text-decoration:none; font-family:var(--sans); font-size:var(--t-guia);
+  font-weight:var(--p-normal); letter-spacing:0; color:var(--grafito); margin-left:6px }
+.dato .n{ font-size:var(--t-menor); color:var(--grafito); margin-top:10px; line-height:1.35 }
+.dato.hueca .v{ font-family:var(--sans); font-size:var(--t-guia); font-weight:var(--p-normal);
+  color:var(--grafito); letter-spacing:0 }
+/* El dato principal lleva el rojo de corrección y una regla gruesa a la
+   izquierda, como lo que alguien subraya en una libreta. */
+.dato.grande{ background:var(--hoja); border-left:6px solid var(--rojo) }
+/* `clamp` y no `--t-display` a secas: dentro de una celda de la rejilla de
+   dos columnas en un teléfono, 64 px se sale de la tarjeta y corta la cifra
+   («163.3» salía «163.»). Fuera de la rejilla sí llega a 64. */
+.dato.grande .v{ font-size:clamp(34px, 9.5vw, var(--t-display)); color:var(--rojo);
+                 letter-spacing:var(--tr-display) }
+.datos .dato.grande .v{ font-size:clamp(30px, 8vw, var(--t-titulo)) }
+.dato.alarma{ border-left-color:var(--rojo); background:var(--rojo-claro) }
+.datos{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); margin:0 0 14px }
 
-/* ── BOTONES: gruesos, como los de Puercos, y uno solo es el primario ── */
+/* ── BOTONES: esquina viva, borde de 2 px, sin sombra ─────────────────── */
 button.b{
-  appearance:none; cursor:pointer; font-family:inherit;
+  appearance:none; cursor:pointer; font-family:var(--sans);
   font-size:var(--t-cuerpo); font-weight:var(--p-fuerte); line-height:1;
-  min-height:52px; padding:0 20px; border-radius:var(--r-chico);
-  border:1px solid transparent; background:var(--agua); color:#fff;
+  min-height:52px; padding:0 20px; border-radius:0;
+  border:2px solid var(--tinta); background:var(--tinta); color:var(--hoja);
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  box-shadow:var(--sombra-dura);
 }
-button.b:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--agua-hondo) }
+button.b:active{ background:var(--rojo); border-color:var(--rojo) }
 button.b.ancho{ width:100% }
-button.b.fantasma{ background:#fff; color:var(--agua); border-color:var(--linea-fuerte); box-shadow:0 3px 0 var(--linea) }
-/* Sobre el campo de marca hay UN primario y el resto es secundario. Los dos
-   botones de la portada pesaban igual y no se sabía cuál era la acción. */
-button.b.primario{ background:#fff; color:var(--agua-hondo); border-color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.22) }
-button.b.claro{ background:transparent; color:#fff; border-color:rgba(255,255,255,.45); box-shadow:none }
-button.b.peligro{ background:#fff; color:var(--alerta); border-color:#E7C6C3; box-shadow:0 3px 0 #EFD6D4 }
-/* 44 es el mínimo con el que un pulgar acierta; lo tuve en 38 y lo cazó la
-   compuerta de pantalla, no el ojo. */
-button.b.chico{ min-height:44px; font-size:var(--t-menor); padding:0 14px; box-shadow:none }
+button.b.primario{ background:var(--rojo); border-color:var(--rojo); color:#fff }
+button.b.fantasma{ background:transparent; color:var(--tinta); border-color:var(--tinta) }
+button.b.claro{ background:transparent; color:var(--hoja); border-color:rgba(251,250,246,.45) }
+button.b.peligro{ background:transparent; color:var(--rojo); border-color:var(--rojo) }
+button.b.chico{ min-height:44px; font-size:var(--t-menor); padding:0 14px; border-width:1px }
 button.b:disabled{ opacity:.4; cursor:not-allowed }
 
-/* ── FICHAS grandes de selección: aquí se elige el baño, y esto sustituye
-   a la lista de botones con cuadros de texto que Carlos mandó quitar ── */
-.fichas{ display:grid; gap:10px; grid-template-columns:1fr; margin:0 0 16px }
-@media (min-width:520px){ .fichas{ grid-template-columns:1fr 1fr } }
+/* ── FICHAS con probeta ───────────────────────────────────────────────── */
+.fichas{ display:grid; gap:0; grid-template-columns:1fr; margin:0 0 16px;
+         border:1px solid var(--linea); background:var(--hoja) }
+@media (min-width:560px){ .fichas{ grid-template-columns:1fr 1fr } }
 .ficha{
-  appearance:none; cursor:pointer; text-align:left; font-family:inherit;
-  background:var(--tarjeta); border:2px solid var(--linea-fuerte); border-radius:var(--r);
-  padding:14px 16px; min-height:76px; display:flex; align-items:center; gap:14px;
-  color:var(--tinta);
+  appearance:none; cursor:pointer; text-align:left; font-family:inherit; font-size:var(--t-cuerpo);
+  background:transparent; border:0; border-bottom:1px solid var(--linea); border-radius:0;
+  padding:14px 16px; min-height:88px; display:flex; align-items:center; gap:16px; color:var(--tinta);
 }
-.ficha[aria-pressed=true]{ border-color:var(--agua); background:var(--agua-claro) }
+.fichas .ficha:last-child{ border-bottom:0 }
+.ficha[aria-pressed=true]{ background:var(--azul-claro) }
+.ficha:active{ background:var(--papel-hondo) }
 .ficha .txt{ flex:1; min-width:0 }
 .ficha .tit{ font-size:var(--t-cuerpo); font-weight:var(--p-fuerte); display:block }
-.ficha .sub{ font-size:var(--t-micro); color:var(--suave); display:block; margin-top:3px }
-/* El medidor: enseña cuánto queda dentro del dispensador de un vistazo.
-   Es lo que convierte una lista en una pantalla que informa. */
-.medidor{ width:34px; height:52px; border:2px solid var(--linea-fuerte); border-radius:6px;
-  position:relative; overflow:hidden; flex:0 0 auto; background:#fff }
-.medidor i{ position:absolute; left:0; right:0; bottom:0; background:var(--agua-vivo); display:block }
-.medidor b{ position:absolute; inset:0; display:grid; place-items:center; font-size:var(--t-nano);
-  font-weight:var(--p-macizo); color:var(--tinta); mix-blend-mode:normal }
-.ficha[aria-pressed=true] .medidor{ border-color:var(--agua) }
+.ficha .sub{ font-family:var(--mono); font-size:var(--t-micro); color:var(--grafito);
+             display:block; margin-top:4px }
+.probeta{ width:32px; height:70px; flex:0 0 auto; display:block }
 
-/* ── FORMULARIOS ────────────────────────────────────────────────────── */
-label{ display:block; font-size:var(--t-menor); font-weight:var(--p-fuerte); color:var(--suave); margin:0 0 6px }
+/* ── FORMULARIOS ──────────────────────────────────────────────────────── */
+label{ display:block; font-family:var(--mono); font-size:var(--t-micro); font-weight:var(--p-medio);
+  letter-spacing:.06em; text-transform:uppercase; color:var(--grafito); margin:0 0 8px }
 input, select, textarea{
-  /* ⚠ EN LARGO Y NO EN ATAJO: `font: 400 16px/1.4 inherit` es INVÁLIDO
-     —el atajo `font` exige una familia y `inherit` no lo es— y el navegador
+  /* ⚠ EN LARGO Y NO EN ATAJO: `font: 400 16px/1.4 inherit` es INVÁLIDO —el
+     atajo `font` exige una familia y `inherit` no lo es— y el navegador
      tiraba la declaración COMPLETA, dejando los campos en los 13.33 px de
      Chrome, justo por debajo del umbral en que iOS hace zoom solo. */
-  width:100%; font-family:inherit; font-weight:var(--p-normal);
+  width:100%; font-family:var(--sans); font-weight:var(--p-normal);
   font-size:var(--t-cuerpo); line-height:1.4; color:var(--tinta);
-  background:#fff; border:1px solid var(--linea-fuerte); border-radius:var(--r-chico);
-  padding:13px 14px; min-height:50px;
+  background:var(--hoja); border:0; border-bottom:2px solid var(--linea-viva); border-radius:0;
+  padding:13px 12px; min-height:50px;
 }
-input:focus, select:focus, textarea:focus{ outline:2px solid var(--agua); outline-offset:1px; border-color:var(--agua) }
-.campo{ margin:0 0 14px }
-.par{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
-.par-unidad{ display:grid; grid-template-columns:1fr 104px; gap:8px }
+input:focus, select:focus, textarea:focus{ outline:2px solid var(--azul); outline-offset:0;
+  border-bottom-color:var(--azul) }
+.campo{ margin:0 0 16px }
+.par{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
 
-/* El campo grande de captura: el número se teclea en tamaño de dato, no en
-   tamaño de formulario. Es LO que se está haciendo en esa pantalla. */
+/* El campo de captura: el número se teclea en tamaño y tipo de DATO. */
 .captura input{
-  font-size:var(--t-titulo); font-weight:var(--p-macizo); letter-spacing:var(--tr-titulo);
-  text-align:center; min-height:76px; padding:8px 12px;
+  font-family:var(--mono); font-size:var(--t-titulo); font-weight:var(--p-fuerte);
+  letter-spacing:var(--tr-titulo); text-align:center; min-height:84px; padding:6px 10px;
+  border:2px solid var(--tinta); background:var(--hoja);
 }
-.atajos{ display:flex; gap:8px; margin:10px 0 0; flex-wrap:wrap }
+.atajos{ display:flex; gap:0; margin:12px 0 0; border:1px solid var(--linea-viva) }
 .atajos button{
-  appearance:none; cursor:pointer; font-family:inherit; font-size:var(--t-menor);
-  font-weight:var(--p-fuerte); color:var(--agua); background:var(--agua-claro);
-  border:1px solid transparent; border-radius:var(--r-pastilla);
-  min-height:44px; padding:0 16px; flex:1 1 auto;
+  appearance:none; cursor:pointer; font-family:var(--mono); font-size:var(--t-menor);
+  font-weight:var(--p-medio); color:var(--tinta); background:var(--hoja);
+  border:0; border-right:1px solid var(--linea-viva); border-radius:0;
+  min-height:46px; padding:0 6px; flex:1 1 0; min-width:0;
 }
-.atajos button:active{ background:var(--agua); color:#fff }
+.atajos button:last-child{ border-right:0 }
+.atajos button:active{ background:var(--tinta); color:var(--hoja) }
 
-/* ── PASOS ──────────────────────────────────────────────────────────── */
-.pasos{ display:flex; gap:6px; margin:0 0 18px }
-.pasos i{ height:5px; flex:1; border-radius:3px; background:var(--linea-fuerte) }
-.pasos i.hecho{ background:var(--agua) }
-.paso-et{ display:flex; align-items:baseline; gap:10px; margin:0 0 4px }
-.paso-et b{ font-size:var(--t-micro); font-weight:var(--p-macizo); letter-spacing:var(--tr-rotulo);
-  text-transform:uppercase; color:var(--agua) }
+/* ── PASOS: la regla graduada del recorrido ───────────────────────────── */
+.pasos{ display:flex; gap:0; margin:0 0 16px; border-bottom:2px solid var(--linea-viva) }
+.pasos i{ height:6px; flex:1; background:transparent; border-bottom:6px solid transparent;
+          margin-bottom:-2px }
+.pasos i.hecho{ border-bottom-color:var(--rojo) }
+.paso-et{ margin:0 0 6px }
+.paso-et b{ font-family:var(--mono); font-size:var(--t-micro); font-weight:var(--p-medio);
+  letter-spacing:var(--tr-rotulo); text-transform:uppercase; color:var(--rojo) }
 
-/* ── AVISOS ─────────────────────────────────────────────────────────── */
+/* ── AVISOS ───────────────────────────────────────────────────────────── */
 .aviso{
-  border:1px solid var(--linea-fuerte); border-left-width:5px; border-radius:var(--r-chico);
-  padding:13px 15px; margin:0 0 14px; font-size:var(--t-menor); background:#fff; line-height:1.45;
+  border:1px solid var(--linea); border-left:5px solid var(--grafito); border-radius:0;
+  padding:14px 16px; margin:0 0 14px; font-size:var(--t-menor); background:var(--hoja); line-height:1.45;
 }
-.aviso h3{ margin:0 0 4px; font-size:var(--t-cuerpo) }
-.aviso.info{ border-left-color:var(--agua); background:var(--agua-claro) }
-.aviso.ojo { border-left-color:var(--ambar-tinta); background:var(--ambar-claro) }
-.aviso.mal { border-left-color:var(--alerta); background:var(--alerta-claro) }
-.aviso.bien{ border-left-color:var(--bien); background:var(--bien-claro) }
+.aviso h3{ margin:0 0 5px; font-size:var(--t-cuerpo) }
+.aviso.info{ border-left-color:var(--azul); background:var(--azul-claro) }
+.aviso.ojo { border-left-color:var(--ambar); background:var(--ambar-claro) }
+.aviso.mal { border-left-color:var(--rojo);  background:var(--rojo-claro) }
+.aviso.bien{ border-left-color:var(--verde); background:var(--verde-claro) }
 .aviso ul{ margin:6px 0 0; padding-left:18px }
 
-/* ── TABLAS ─────────────────────────────────────────────────────────── */
+/* ── TABLAS ───────────────────────────────────────────────────────────── */
 .tabla-caja{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 calc(var(--aire) * -1); padding:0 var(--aire) }
 /* 520 y no 340: con menos, en un teléfono cada celda se parte en cuatro
-   renglones. Pero eso vale para tablas de DATOS; una tabla de PROSA se lee y
-   debe envolver, porque deslizar de lado un texto que alguien lee en voz
-   alta en un examen es peor que un renglón largo. */
+   renglones. Pero eso vale para tablas de DATOS; una de PROSA se lee y debe
+   envolver, porque deslizar de lado un texto que alguien lee en voz alta en
+   un examen es peor que un renglón largo. */
 table{ width:100%; border-collapse:collapse; font-size:var(--t-menor); min-width:520px }
 .tabla-texto table{ min-width:0 }
 .tabla-texto th, .tabla-texto td{ padding:10px 8px }
 th,td{ text-align:left; padding:11px 10px; border-bottom:1px solid var(--linea) }
-th{ font-size:var(--t-micro); text-transform:uppercase; letter-spacing:var(--tr-rotulo);
-    color:var(--suave); font-weight:var(--p-macizo); background:var(--papel) }
+th{ font-family:var(--mono); font-size:var(--t-micro); text-transform:uppercase;
+    letter-spacing:.06em; color:var(--hoja); font-weight:var(--p-medio); background:var(--tinta) }
 td.n, th.n{ text-align:right }
 tbody tr:last-child td{ border-bottom:0 }
 .pista-desliza{ margin:0 0 8px }
 @media (min-width:640px){ .pista-desliza{ display:none } }
 
-/* ── GRÁFICAS ───────────────────────────────────────────────────────── */
+/* ── GRÁFICAS ─────────────────────────────────────────────────────────── */
 .gr{ width:100%; height:auto; display:block; overflow:visible }
-.gr text{ font-family:inherit; font-size:var(--t-nano); font-weight:var(--p-medio); fill:var(--suave) }
-.gr .barra{ fill:var(--agua) }
-.gr .barra.floja{ fill:#8FC0C6 }
-.gr .eje{ stroke:var(--linea-fuerte); stroke-width:1 }
-.leyenda{ display:flex; flex-wrap:wrap; gap:12px; font-size:var(--t-micro); color:var(--suave); margin-top:10px }
+.gr text{ font-family:var(--mono); font-size:var(--t-nano); font-weight:var(--p-normal); fill:var(--grafito) }
+.gr .barra{ fill:var(--tinta) }
+.gr .barra.floja{ fill:#B7B3A6 }
+.gr .eje{ stroke:var(--linea-viva); stroke-width:1 }
+.leyenda{ display:flex; flex-wrap:wrap; gap:12px; font-family:var(--mono);
+          font-size:var(--t-micro); color:var(--grafito); margin-top:10px }
 
-/* ── LISTAS ─────────────────────────────────────────────────────────── */
+/* ── LISTAS ───────────────────────────────────────────────────────────── */
 .lista{ list-style:none; margin:0; padding:0 }
 .lista li{ display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--linea) }
 .lista li:last-child{ border-bottom:0 }
@@ -321,26 +345,36 @@ tbody tr:last-child td{ border-bottom:0 }
 /* `display:block` a propósito: los renglones de detalle iban en la misma
    línea y se partían a media unidad («1.85 L · 1,851 / mL · repuso…»). */
 .lista .txt b{ display:block; font-weight:var(--p-fuerte); font-size:var(--t-cuerpo) }
-.lista .txt span{ display:block; font-size:var(--t-micro); color:var(--suave) }
+.lista .txt span{ display:block; font-family:var(--mono); font-size:var(--t-micro); color:var(--grafito) }
 
-.etq{ display:inline-block; font-size:var(--t-nano); font-weight:var(--p-macizo); letter-spacing:var(--tr-rotulo);
-  text-transform:uppercase; padding:4px 8px; border-radius:5px;
-  background:var(--agua-claro); color:var(--agua-hondo) }
-.etq.solido{ background:var(--ambar-claro); color:var(--ambar-tinta) }
-.etq.demo{ background:var(--alerta-claro); color:var(--alerta) }
+/* ⚠ LA ESPECIFICIDAD, que cazó la compuerta de contraste. `.lista .txt span`
+   (0,3,0) le gana a `.etq` (0,1,0), así que dentro de una lista la etiqueta
+   de tipo se quedaba con el gris del renglón sobre el ámbar de su fondo:
+   1.04:1, ilegible. Se ve perfecta en Almacén y rota en Ajustes, que es
+   justo la clase de defecto que no se descubre mirando la pantalla que uno
+   acaba de tocar. */
+.lista .txt span.etq{ color:var(--hoja) }
+.lista .txt span.etq.solido{ color:#fff }
+.lista .txt span.etq.demo{ color:#fff }
+
+.etq{ display:inline-block; font-family:var(--mono); font-size:var(--t-nano);
+  font-weight:var(--p-medio); letter-spacing:.06em; text-transform:uppercase;
+  padding:3px 7px; border-radius:0; background:var(--tinta); color:var(--hoja) }
+.etq.solido{ background:var(--ambar); color:#fff }
+.etq.demo{ background:var(--rojo); color:#fff }
 
 .vacio{ text-align:center; padding:30px 16px }
 .vacio svg{ width:52px; height:52px; opacity:.3; margin-bottom:10px }
-.sep{ height:1px; background:var(--linea); margin:16px 0 }
-.brinco{ animation:brinco .22s ease }
-@keyframes brinco{ from{ transform:translateY(4px); opacity:.5 } to{ transform:none; opacity:1 } }
+.sep{ height:1px; background:var(--linea); margin:18px 0 }
+.brinco{ animation:brinco .2s ease }
+@keyframes brinco{ from{ transform:translateY(4px); opacity:.55 } to{ transform:none; opacity:1 } }
 @media (prefers-reduced-motion:reduce){ .brinco{ animation:none } }
 
-/* ── IMPRESIÓN: la hoja que se entrega con el proyecto ──────────────── */
+/* ── IMPRESIÓN ────────────────────────────────────────────────────────── */
 @media print{
   .pestanas, .cabecera, .no-imprimir{ display:none !important }
-  body{ background:#fff; padding:0 }
-  .tarjeta, .dato{ box-shadow:none; break-inside:avoid }
-  .panel[hidden]{ display:block !important }   /* se imprime TODO */
-  .campo-marca{ background:#0B4F5C !important; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+  body{ background:#fff; background-image:none; padding:0 }
+  .tarjeta, .dato{ break-inside:avoid }
+  .panel[hidden]{ display:block !important }
+  .campo-marca{ background:#14140F !important; -webkit-print-color-adjust:exact; print-color-adjust:exact }
 }

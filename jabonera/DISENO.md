@@ -1,17 +1,101 @@
 # El diseño, y contra qué se comparó
 
-Carlos: *«necesito que te enfoques al 100 en diseño, básate en Fadori, en
-Ligas Mazi, en el menú de Guerra de Puercos, debes evitar listas de botones
-con cuadros de texto, reparte bien cada cosa en la pantalla… y usa alguna web
-famosa como punto de comparación; cada cambio artístico que hagas corrobora
-tu versión con la web seleccionada por ti».*
+Carlos: *«necesito que te enfoques al 100 en diseño… usa alguna web famosa
+como punto de comparación; cada cambio artístico que hagas corrobora tu
+versión con la web seleccionada»*, y después *«hazlo más original y ahora
+básate en otra web para un diseño diferente y más distintivo»*.
 
-Esto es ese cotejo. Va aquí para que se pueda discutir con números y no con
-impresiones.
+Este archivo es ese cotejo, en orden. Va aquí para que se pueda discutir con
+números y no con impresiones.
 
 ---
 
-## El punto de comparación: **stripe.com**
+# v3 · «INSTRUMENTO» — la referencia es **IBM Carbon**
+
+## Por qué se rehízo la v2
+
+La v2 tenía **orden** pero no **identidad**. Teal, esquinas redondeadas y
+tarjetas blancas con sombra suave es lo que se ve en cualquier producto de
+software: ordenado y anónimo. Carlos lo dijo en una línea y tenía razón.
+
+## Lo que se midió de Carbon
+
+`carbondesignsystem.com`, bajado y contado — no descrito de memoria. Es lo
+**opuesto** a Stripe, que era la referencia de la v2:
+
+| | Stripe (v2) | **IBM Carbon (v3)** |
+|---|---|---|
+| Radio | 4 · 8 · 16 · 30 px | **0** — es su valor dominante |
+| Pesos | 300–700, display **negro** | **100 · 300 · 400 · 600** — display **ligero**, ninguna negra |
+| Escala | hasta 48 px | hasta **156 px** |
+| Color | morado + pasteles | `#0f62fe` puro, grises duros `#161616 #e0e0e0 #8d8d8d`, rojo `#da1e28` |
+| Sensación | producto amable | **instrumento de ingeniería** |
+
+De esas cuatro, la que más cambia el carácter es el **peso ligero en el
+display**: un titular en 300 se lee técnico; el mismo en 700 se lee
+comercial. Es una decisión que casi nadie copia y por eso Carbon se reconoce.
+
+## Pero la identidad no se copia, se saca del tema
+
+De Carbon se toma la **estructura** —esquina viva, display ligero, retícula,
+bordes en vez de sombras—. El carácter sale del propio proyecto, y por eso no
+se parece a Carbon ni a nadie:
+
+| Decisión | Por qué es de ESTE proyecto y no de otro |
+|---|---|
+| **Papel cuadriculado** de 4 mm dibujado en CSS | Es el sustrato real de un proyecto de ciencias. No es textura: la retícula es la misma unidad con la que se mide |
+| **Todos los números en IBM Plex Mono** | Los números de un laboratorio se escriben en monoespaciada; y una columna de cifras en mono se compara de un vistazo |
+| **Rojo de corrección** `#C1121F` como único acento | No es un color de marca: es el rojo del bolígrafo con el que alguien marca en una libreta lo que importa. Aparece **una vez** por pantalla |
+| **La probeta graduada** en lugar de una barra de progreso | El instrumento del proyecto convertido en elemento de interfaz. Y se lee mejor: una barra dice «va por la mitad», una probeta dice **cuánto y de qué** |
+| **El corte del logotipo es de PESO, no de color** | `JABO` en 300 y `NERA` en 600. En la v2 era un cambio de color, que es lo que hace todo el mundo |
+
+## La disciplina, medida sobre lo renderizado
+
+`pruebas-pantalla.mjs` no mira el CSS: mira **lo que el navegador pinta**.
+
+```
+✓ la escala no pasa de 8 tamaños
+✓ los pesos no pasan de 5
+✓ hay un tamaño de DISPLAY de 44 px o más
+✓ ningún estilo en línea usa una variable de color que ya no existe
+✓ todo el texto pasa el contraste mínimo contra el fondo que le toca
+✓ IBM Plex Sans y Mono cargaron de verdad (no se cayó al tipo del sistema)
+✓ esquina viva en todo: radio 0, que es la regla de Carbon
+✓ lo primero que se ve es el campo de marca, no un formulario
+✓ y CERO campos de texto en la primera pantalla
+```
+
+### Tres cosas que salieron de esas comprobaciones, y ninguna la vio el ojo
+
+1. **Una variable de color muerta.** Al cambiar la paleta quedaron `var(--agua)`
+   sueltas en estilos en línea. Una variable que no existe **no da error**: la
+   propiedad se queda sin valor, y el resultado fue un chip con texto blanco
+   sobre fondo transparente — ilegible — con la página cargando sin un solo
+   error de JavaScript.
+2. **La prueba no llegaba al defecto.** La primera versión de esa comprobación
+   sólo miraba el panel abierto, y el chip roto vivía en otra pestaña: la
+   mutación de prueba **no la puso roja**. Ahora recorre las cinco pestañas y
+   los tres pasos del recorrido.
+3. **La compuerta mintió, y no el diseño.** El contraste daba 1.04:1 en las
+   etiquetas de tipo. Resultó que mi regex para «fondo transparente»
+   (`/, *0\)$/`) casaba también con **cualquier color cuyo canal azul fuera
+   cero**: `rgb(138, 90, 0)` se contaba como transparente. El contraste real
+   era 5.93:1. Ahora la alfa se lee del valor, no se adivina.
+
+## IBM Plex
+
+Autohospedada en `tipos/`, licencia **SIL Open Font License 1.1**. Va
+autohospedada y no traída de un CDN porque el archivo suelto tiene que abrir
+desde una memoria USB sin internet, y ahí una fuente remota es una fuente que
+no carga. En `jabonera.html` viaja incrustada en base64: una `url()` relativa
+apuntaría a una carpeta que no está y la página se caería al tipo del sistema
+**sin decir nada**, que es la peor forma de fallar.
+
+---
+
+# v2 · la referencia fue **stripe.com** (queda como registro)
+
+## Por qué se eligió Stripe
 
 Se eligió por tres razones, y la tercera es la que lo hace útil:
 
@@ -68,7 +152,7 @@ primario claro y ni un campo de texto en la primera pantalla.**
 | **Un solo acento** (ámbar `#FFC24B`) y sólo en la cifra principal | Stripe: un primario y los acentos dosificados |
 | **Bandas de fondo alternado** entre secciones | Stripe alterna fondo para marcar dónde acaba una idea |
 
-## Lo que Carlos mandó quitar, y con qué se sustituyó
+## Lo que Carlos mandó quitar, y con qué se sustituyó (sigue vigente en la v3)
 
 > *«evita listas de botones con cuadros de texto, reparte bien cada cosa en la
 > pantalla»*
@@ -105,7 +189,7 @@ Tenía razón: la v1 era exactamente eso. Lo que hay ahora:
 Si alguien vuelve a meter un `font-size: 13.5px` suelto, la compuerta se pone
 roja. Es la única forma de que una decisión de diseño dure más de una sesión.
 
-## Lo que NO se copió, y por qué
+## Lo que NO se copió de Stripe, y por qué
 
 - **La paleta de Stripe.** Su morado es suyo. Aquí el campo es petróleo —agua
   y jabón— con un solo acento ámbar.

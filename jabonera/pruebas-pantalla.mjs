@@ -95,6 +95,114 @@ console.log('\n══ LA PÁGINA ABRE Y NO SE CAE ══');
   await ctx.close();
 }
 
+console.log('\n══ LA PIEL: NINGUNA VARIABLE MUERTA, TIPO CARGADO, ESQUINA VIVA ══');
+{
+  const { ctx, pg } = await pagina();
+  await pg.click('[data-demo="1"]'); await pg.waitForTimeout(400);
+
+  /* ⚠ ESTO YA SE ROMPIÓ. Al cambiar la paleta quedaron `var(--agua)` sueltas
+     en estilos EN LÍNEA de `app.js`. Una variable que no existe no da error:
+     la propiedad se queda sin valor. El resultado fue un chip con texto
+     blanco sobre fondo transparente — ILEGIBLE — y ninguna prueba se enteró
+     porque la página cargaba sin un solo error de JavaScript. */
+  /* ⚠ SE RECORREN TODAS LAS PESTAÑAS, no sólo la abierta. La primera versión
+     de esta prueba miraba únicamente el panel visible y por eso NO cazó la
+     mutación de prueba: el chip roto vivía en «Registrar». Una comprobación
+     que no llega hasta el defecto no lo comprueba. */
+  const mirarTodo = async (fn) => {
+    const junto = [];
+    for(const tab of ['inicio','registrar','analisis','almacen','proyecto']){
+      await pg.click(`.pestanas button[data-tab="${tab}"]`); await pg.waitForTimeout(260);
+      junto.push(...await pg.evaluate(fn));
+      if(tab === 'registrar' && await pg.$('#p-registrar .ficha')){
+        await pg.click('#p-registrar .ficha'); await pg.waitForTimeout(260);
+        junto.push(...await pg.evaluate(fn));
+        await pg.click('[data-paso="1"]').catch(()=>{}); await pg.waitForTimeout(200);
+      }
+    }
+    await pg.click('[data-abrir-ajustes]'); await pg.waitForTimeout(260);
+    junto.push(...await pg.evaluate(fn));
+    return [...new Set(junto)];
+  };
+
+  const muertas = await mirarTodo(() => {
+    const raiz = getComputedStyle(document.documentElement);
+    const malas = new Set();
+    for(const el of document.querySelectorAll('[style]')){
+      for(const v of (el.getAttribute('style').match(/var\(--[a-z0-9-]+\)/g) || [])){
+        const nombre = v.slice(4, -1);
+        if(!raiz.getPropertyValue(nombre).trim()) malas.add(nombre);
+      }
+    }
+    return [...malas];
+  });
+  ok('ningún estilo en línea usa una variable de color que ya no existe',
+     muertas.length === 0, muertas.join(', '));
+
+  /* Contraste real de todo texto contra el fondo que le toca: es lo que
+     habría cazado el chip ilegible aunque la variable sí existiera. */
+  const flojos = await mirarTodo(() => {
+    const lum = ([R,G,B]) => { const f=v=>{v/=255; return v<=.03928? v/12.92 : Math.pow((v+.055)/1.055,2.4);};
+      return .2126*f(R)+.7152*f(G)+.0722*f(B); };
+    const nums = s => (s.match(/[\d.]+/g) || []).map(Number);
+    const rgb = s => { const n = nums(s); return [n[0]||0, n[1]||0, n[2]||0]; };
+    /* ⚠ LA ALFA SE LEE, NO SE ADIVINA CON UN REGEX. La primera versión daba
+       por transparente todo lo que terminara en «, 0)» — y eso casa también
+       con cualquier color cuyo canal AZUL sea cero. `rgb(138, 90, 0)` —el
+       ámbar de las etiquetas— se contaba como transparente, la prueba subía
+       al padre claro y reportaba 1.04:1 sobre texto blanco cuando el
+       contraste real es 5.93:1. La compuerta mentía, no el diseño. */
+    const opaco = s => { const n = nums(s); return n.length < 4 || n[3] > 0.05; };
+    const fondoDe = el => { let n = el;
+      while(n && n !== document.documentElement){
+        const b = getComputedStyle(n).backgroundColor;
+        if(b && opaco(b)) return rgb(b);
+        n = n.parentElement;
+      }
+      return [255,255,255]; };
+    const malos = [];
+    for(const el of document.querySelectorAll('button, a, h1, h2, h3, p, span, td, th, label, li')){
+      if(el.children.length || !el.textContent.trim()) continue;
+      const r = el.getBoundingClientRect(); if(!r.width || !r.height) continue;
+      const s = getComputedStyle(el);
+      if(parseFloat(s.opacity) < .3) continue;
+      const c = rgb(s.color), f = fondoDe(el);
+      const [hi, lo] = lum(c) > lum(f) ? [lum(c), lum(f)] : [lum(f), lum(c)];
+      const razon = (hi + .05) / (lo + .05);
+      const grande = parseFloat(s.fontSize) >= 24 || (parseFloat(s.fontSize) >= 18.66 && +s.fontWeight >= 700);
+      if(razon < (grande ? 3 : 4.5))
+        malos.push(`${el.textContent.trim().slice(0,24)} → ${razon.toFixed(2)}:1`);
+    }
+    return malos;
+  });
+  ok('todo el texto pasa el contraste mínimo contra el fondo que le toca',
+     flojos.length === 0, flojos.slice(0,4).join(' · '));
+
+  ok('IBM Plex Sans cargó de verdad (no se cayó al tipo del sistema)',
+     await pg.evaluate(() => document.fonts.check('16px Plex')));
+  ok('IBM Plex Mono cargó, que es donde van TODOS los números',
+     await pg.evaluate(() => document.fonts.check('16px PlexMono')));
+  ok('los números van en monoespaciada, como en un cuaderno de laboratorio',
+     await pg.evaluate(() => {
+       const v = document.querySelector('.dato .v') || document.querySelector('.num');
+       return !!v && /Plex ?Mono|mono/i.test(getComputedStyle(v).fontFamily);
+     }));
+
+  /* La disciplina que se tomó de IBM Carbon: esquina viva. */
+  const redondos = await mirarTodo(() => {
+    const malos = [];
+    for(const el of document.querySelectorAll('button.b, .tarjeta, .dato, input, .aviso, .etq, th, td')){
+      const r = el.getBoundingClientRect(); if(!r.width) continue;
+      const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+      if(rad > 0.5) malos.push(el.className + ' → ' + rad + 'px');
+    }
+    return [...new Set(malos)];
+  });
+  ok('esquina viva en todo: radio 0, que es la regla de Carbon',
+     redondos.length === 0, redondos.slice(0,3).join(' · '));
+  await ctx.close();
+}
+
 console.log('\n══ LA PORTADA ABRE COMO PRODUCTO, NO COMO FORMULARIO ══');
 {
   const { ctx, pg } = await pagina();

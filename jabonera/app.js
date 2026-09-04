@@ -58,6 +58,34 @@ const hace = ts => {
   return `hace ${Math.round(m/1440)} días`;
 };
 
+/** LA PROBETA. El medidor de cada baño no es una barra de progreso: es una
+ *  probeta graduada con sus marcas, dibujada aquí en SVG. El instrumento del
+ *  proyecto convertido en elemento de interfaz — y de paso se lee mejor: una
+ *  barra dice «algo va por la mitad», una probeta dice CUÁNTO Y DE QUÉ. */
+function probeta(pct){
+  const p = Math.max(0, Math.min(100, pct || 0));
+  const X = 30, Y = 66, m = 3, ancho = 18, alto = 50, izq = (X-ancho)/2, top = m + 4;
+  const nivel = top + alto * (1 - p/100);
+  const marcas = [0,25,50,75,100].map(v => {
+    const y = top + alto * (1 - v/100);
+    const largo = (v % 50 === 0) ? 7 : 4;
+    return `<line x1="${izq}" y1="${y.toFixed(1)}" x2="${(izq+largo)}" y2="${y.toFixed(1)}"
+            stroke="currentColor" stroke-width="1" opacity=".55"/>`;
+  }).join('');
+  return `<svg class="probeta" viewBox="0 0 ${X} ${Y}" role="img"
+      aria-label="Probeta al ${Math.round(p)} por ciento" style="color:var(--tinta)">
+    <rect x="${izq}" y="${top}" width="${ancho}" height="${alto}" fill="none"
+          stroke="currentColor" stroke-width="1.5"/>
+    <rect x="${izq+1}" y="${nivel.toFixed(1)}" width="${ancho-2}"
+          height="${Math.max(0, top+alto-nivel-1).toFixed(1)}" fill="var(--azul)" opacity=".85"/>
+    ${marcas}
+    <rect x="${izq-2}" y="${m}" width="${ancho+4}" height="4" fill="none"
+          stroke="currentColor" stroke-width="1.5"/>
+    <text x="${X/2}" y="${Y-3}" text-anchor="middle" font-family="var(--mono)"
+          font-size="9.5" font-weight="500" fill="currentColor">${Math.round(p)}%</text>
+  </svg>`;
+}
+
 /* ── gráficas: SVG a mano, sin una sola librería ─────────────────────── */
 function columnas(datos, opciones = {}){
   const { unidad='', alto=150, resaltar=-1 } = opciones;
@@ -92,12 +120,12 @@ function ranking(filas, opciones = {}){
     <div style="margin:0 0 14px">
       <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:5px">
         <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:var(--p-medio)">${esc(f.et)}</span>
-        <b class="num" style="font-size:var(--t-guia);font-weight:var(--p-macizo)">${nu(f.v, f.v < 100 ? 1 : 0)}</b>
+        <b class="num" style="font-size:var(--t-guia);font-weight:var(--p-fuerte)">${nu(f.v, f.v < 100 ? 1 : 0)}</b>
         <span class="micro">${esc(unidad)}</span>
       </div>
-      <div style="height:10px;background:var(--agua-claro);border-radius:5px;overflow:hidden">
+      <div style="height:10px;background:var(--papel-hondo);border:1px solid var(--linea);overflow:hidden">
         <div style="height:100%;width:${max>0?(f.v/max*100).toFixed(1):0}%;
-             background:${i===0?'var(--agua)':'#6FAAB1'};border-radius:5px"></div>
+             background:${i===0?'var(--rojo)':'var(--tinta)'}"></div>
       </div>
       ${f.nota ? `<div class="micro" style="margin-top:4px">${esc(f.nota)}</div>` : ''}
     </div>`).join('')}</div>`;
@@ -121,7 +149,7 @@ function alerta(texto, clase='bien'){
   if(!c){ c = document.createElement('div'); c.id = 'brindis';
     c.style.cssText = 'position:fixed;left:14px;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:60';
     document.body.appendChild(c); }
-  c.innerHTML = `<div class="aviso ${clase}" style="box-shadow:var(--sombra);margin:0">${esc(texto)}</div>`;
+  c.innerHTML = `<div class="aviso ${clase}" style="margin:0">${esc(texto)}</div>`;
   clearTimeout(temporizador);
   temporizador = setTimeout(() => { c.innerHTML = ''; }, 4200);
 }
@@ -169,13 +197,13 @@ PINTORES.inicio = () => {
     const pct = cap > 0 ? Math.max(0, Math.min(100, dentro / cap * 100)) : 0;
     const ult = E.visitas.filter(v => v.banoId === b.id).sort((a,b2)=>b2.ts-a.ts)[0];
     return `<button class="ficha" type="button" data-ir-registrar="${esc(b.id)}">
-      <span class="medidor"><i style="height:${pct.toFixed(0)}%"></i><b>${Math.round(pct)}%</b></span>
+      ${probeta(pct)}
       <span class="txt">
         <span class="tit">${esc(b.nombre)}</span>
         <span class="sub">${ult ? `última visita ${esc(hace(ult.ts))}` : 'sin visitar todavía'}
           ${b.alumnos ? ` · ${b.alumnos} alumnos` : ''}</span>
       </span>
-      <span aria-hidden="true" style="color:var(--suave);font-size:var(--t-seccion)">›</span>
+      <span aria-hidden="true" style="color:var(--grafito);font-size:var(--t-seccion)">›</span>
     </button>`;
   }).join('');
 
@@ -188,20 +216,21 @@ PINTORES.inicio = () => {
         Medido, no calculado a ojo.</p>
 
       ${cifra ? `
-      <div style="margin:24px 0 0;padding-top:20px;border-top:1px solid rgba(255,255,255,.18)">
-        <p class="rotulo" style="margin:0 0 6px">${esc(p0.producto.nombre)} · ${nu(c.dias,1)} días medidos</p>
-        <div style="font-size:var(--t-display);font-weight:var(--p-macizo);letter-spacing:var(--tr-display);
-                    line-height:.95;color:var(--ambar)" class="num">${cifra.grande}<span
-             style="font-size:var(--t-seccion);color:rgba(255,255,255,.7);margin-left:6px;letter-spacing:0">${cifra.unidad}</span></div>
-        <p class="menor" style="color:rgba(255,255,255,.78);margin:8px 0 0">
-          ${p0.lavados != null ? `equivalen a <b>${nu(p0.lavados,0)} lavadas de manos</b>` : cifra.detalle}
-          ${inf.dinero.gasto != null ? ` · ${pesos(inf.dinero.gasto)}` : ''}</p>
-      </div>` : `
-      <p class="menor" style="color:rgba(255,255,255,.75);margin:20px 0 0">
+      <hr>
+      <p class="rotulo" style="margin:0 0 8px">${esc(p0.producto.nombre)} · ${nu(c.dias,1)} días medidos</p>
+      <div class="num" style="font-size:var(--t-display);font-weight:var(--p-fuerte);
+                  letter-spacing:var(--tr-display);line-height:1;color:#FF6B60">${cifra.grande}<span
+           style="font-family:var(--sans);font-size:var(--t-seccion);font-weight:var(--p-ligero);
+                  color:rgba(251,250,246,.7);margin-left:8px;letter-spacing:0">${cifra.unidad}</span></div>
+      <p class="menor" style="color:rgba(251,250,246,.76);margin:10px 0 0">
+        ${p0.lavados != null ? `equivalen a <b>${nu(p0.lavados,0)} lavadas de manos</b>` : cifra.detalle}
+        ${inf.dinero.gasto != null ? ` · ${pesos(inf.dinero.gasto)}` : ''}</p>` : `
+      <hr>
+      <p class="menor" style="color:rgba(251,250,246,.72);margin:0">
         ${listo ? 'Todavía no hay dos mediciones en un mismo baño: hasta que las haya, no hay consumo que calcular.'
                 : 'Falta dar de alta los baños y el jabón.'}</p>`}
 
-      <div style="margin-top:22px;display:grid;gap:10px">
+      <div style="margin-top:24px;display:grid;gap:10px">
         ${listo
           ? `<button class="b primario ancho" data-ir="registrar">Registrar una medición</button>`
           : `<button class="b primario ancho" data-abrir-ajustes="1">Configurar los baños</button>`}
@@ -213,9 +242,10 @@ PINTORES.inicio = () => {
            configuraba desaparecía la única puerta y había que irse a otra
            pestaña para encontrar el engrane. Lo cazó la compuerta. -->
       <button type="button" data-abrir-ajustes="1"
-        style="appearance:none;background:none;border:0;color:rgba(255,255,255,.8);
-               font:inherit;font-size:var(--t-menor);font-weight:var(--p-fuerte);
-               cursor:pointer;padding:14px 4px 0;min-height:44px;text-decoration:underline">
+        style="appearance:none;background:none;border:0;color:rgba(251,250,246,.78);
+               font-family:var(--mono);font-size:var(--t-micro);font-weight:var(--p-medio);
+               letter-spacing:.06em;text-transform:uppercase;
+               cursor:pointer;padding:16px 4px 0;min-height:44px;text-decoration:underline">
         Ajustes, baños y respaldo</button>
     </div>
   </div>
@@ -258,21 +288,21 @@ PINTORES.registrar = () => {
       const pct = cap > 0 ? Math.max(0, Math.min(100, dentro/cap*100)) : 0;
       const ult = E.visitas.filter(v => v.banoId === b.id && v.productoId === prod.id).sort((x,y)=>y.ts-x.ts)[0];
       return `<button class="ficha" type="button" data-bano="${esc(b.id)}" aria-pressed="false">
-        <span class="medidor"><i style="height:${pct.toFixed(0)}%"></i><b>${Math.round(pct)}%</b></span>
+        ${probeta(pct)}
         <span class="txt"><span class="tit">${esc(b.nombre)}</span>
           <span class="sub">${ult ? `visitado ${esc(hace(ult.ts))} · dentro ${esc(soloNumero(dentro,prod))}`
                                   : 'primera visita'}</span></span>
-        <span aria-hidden="true" style="color:var(--suave);font-size:var(--t-seccion)">›</span>
+        <span aria-hidden="true" style="color:var(--grafito);font-size:var(--t-seccion)">›</span>
       </button>`;
     }).join('');
     return `
     <div class="pasos"><i class="hecho"></i><i></i><i></i></div>
     <div class="paso-et"><b>Paso 1 de 3</b></div>
     <h2 style="margin-bottom:4px">¿A qué baño fuiste?</h2>
-    <p class="menor" style="margin-bottom:18px">El medidor enseña lo que le quedaba según la última visita.</p>
+    <p class="menor" style="margin-bottom:18px">La probeta enseña lo que le quedaba dentro según la última visita.</p>
     ${E.productos.length > 1 ? `<div class="atajos" style="margin:0 0 16px">
       ${E.productos.map(p => `<button type="button" data-producto="${esc(p.id)}"
-        style="${p.id===sel.productoId?'background:var(--agua);color:#fff':''}">${esc(p.nombre)}</button>`).join('')}
+        style="${p.id===sel.productoId?'background:var(--tinta);color:var(--hoja)':''}">${esc(p.nombre)}</button>`).join('')}
     </div>` : ''}
     <div class="fichas">${fichas}</div>`;
   }
@@ -356,7 +386,7 @@ PINTORES.registrar = () => {
   ${consumo == null ? `
     <div class="dato" style="margin-bottom:14px">
       <div class="et">Consumo</div>
-      <span class="v" style="font-size:var(--t-seccion);color:var(--suave)">todavía no se puede</span>
+      <span class="v" style="font-size:var(--t-seccion);color:var(--grafito)">todavía no se puede</span>
       <div class="n">Es la primera visita a este baño. La próxima ya podrá restarse.</div>
     </div>`
   : hueco ? `
@@ -522,7 +552,7 @@ PINTORES.almacen = () => {
     return `<div class="tarjeta">
       <h2>${esc(p.producto.nombre)} <span class="etq ${p.producto.tipo==='solido'?'solido':''}">${p.producto.tipo}</span></h2>
       <div class="datos" style="margin:16px 0 0">
-        <div class="dato ${urgente?'':'grande'}" ${urgente?'style="background:var(--alerta);border-color:var(--alerta);color:#fff"':''}>
+        <div class="dato ${urgente?'':'grande'}" ${urgente?'style="background:var(--rojo);border-color:var(--rojo);color:#fff"':''}>
           <div class="et" ${urgente?'style="color:rgba(255,255,255,.8)"':''}>Aguanta</div>
           <span class="v num" ${urgente?'style="color:#fff"':''}>${dias == null ? '—' : nu(dias,1)}<u ${urgente?'style="color:rgba(255,255,255,.8)"':''}>días</u></span>
           <div class="n" ${urgente?'style="color:rgba(255,255,255,.85)"':''}>${dias == null
@@ -778,7 +808,7 @@ PINTORES.ajustes = () => `
     ${E.banos.length ? `<ul class="lista">${E.banos.map(b => `<li>
       <div class="txt"><b>${esc(b.nombre)}</b>
         <span>${esc(b.zona||'sin zona')} · ${esc(b.tipo||'—')} · ${b.dispensadores||0} dispensador(es)
-        · ${b.alumnos ? b.alumnos + ' alumnos' : '<b style="color:var(--alerta)">sin alumnos: no habrá promedio por alumno</b>'}</span></div>
+        · ${b.alumnos ? b.alumnos + ' alumnos' : '<b style="color:var(--rojo)">sin alumnos: no habrá promedio por alumno</b>'}</span></div>
       <button class="b chico peligro" data-borrar-bano="${esc(b.id)}">Borrar</button></li>`).join('')}</ul>`
       : `<p class="menor">Ninguno todavía.</p>`}
     <div class="sep"></div>
@@ -836,7 +866,7 @@ PINTORES.ajustes = () => `
   </div>
 
   <div class="tarjeta">
-    <h2>Respaldo · <b style="color:var(--alerta)">léelo</b></h2>
+    <h2>Respaldo · <b style="color:var(--rojo)">léelo</b></h2>
     <div class="aviso ojo">
       <h3>Los datos viven en ESTE aparato</h3>
       No hay servidor. Si se borran los datos del navegador, se cambia de teléfono o se usa modo privado,

@@ -8,11 +8,15 @@ dispensador mecánico ya lo tiene la escuela.
 **Abre en `jabonera/index.html`.** Sin servidor, sin cuenta y sin internet.
 
 > **El diseño y contra qué se comparó están en `DISENO.md`.** Carlos pidió una
-> web famosa como punto de comparación: es `stripe.com`, y no de memoria — se
-> bajó su hoja de estilos y se midió. El diagnóstico de la primera versión
-> salió de ahí: 13 tamaños de letra contra 7, ocho pesos contra cinco, y el
-> tipo más grande a 26 px contra 48. Por eso parecía un panel de
-> administración.
+> web famosa como punto de comparación, y luego pidió *más original*, así que
+> hay dos: primero `stripe.com` —que dio la disciplina tipográfica— y después
+> **IBM Carbon**, que es su opuesto: radio 0, display en peso **ligero** y
+> grises duros. Ninguna de las dos de memoria: se bajaron y se midieron.
+>
+> Pero la identidad no se copió de nadie, sale del tema: **papel cuadriculado
+> de laboratorio, todos los números en monoespaciada, el rojo del bolígrafo de
+> corrección como único acento, y una probeta graduada en vez de una barra de
+> progreso.** Tipografía **IBM Plex** (SIL OFL 1.1), autohospedada.
 
 ---
 
@@ -129,13 +133,15 @@ pierda.
 
 ```
 node jabonera/pruebas.mjs           # el motor · 61 comprobaciones
-node jabonera/pruebas-pantalla.mjs  # la pantalla · 44 comprobaciones (necesita playwright)
+node jabonera/pruebas-pantalla.mjs  # la pantalla · 50 comprobaciones (necesita playwright)
 node jabonera/armar-suelto.mjs      # genera jabonera.html, el archivo único para USB
 ```
 
-La compuerta de pantalla mide también **la disciplina tipográfica en lo que se
-renderiza**, no en lo que dice el CSS: si alguien vuelve a meter un tamaño
-suelto o un peso inventado, se pone roja.
+La compuerta de pantalla mide también **el diseño sobre lo que se renderiza**,
+no sobre lo que dice el CSS: la escala tipográfica, los pesos, que exista un
+tamaño de display, que ninguna variable de color esté muerta, que todo el
+texto pase el contraste contra el fondo que le toca, que IBM Plex cargue de
+verdad y que no haya una sola esquina redondeada.
 
 `jabonera.html` es **generado**: no se edita a mano. Se cambian los
 originales y se vuelve a correr el armador; `pruebas-pantalla.mjs` comprueba
