@@ -4,22 +4,47 @@
 /* ══════════════════════════════════════════════════════════════════════════
    PÓSTER · 50 × 70 cm · pieza de concepto
    ──────────────────────────────────────────────────────────────────────────
-   UNA IDEA, Y TODO SIRVE A ELLA: la X es una puerta. El plano es negro y la
-   única luz de la lámina entra por el hueco. Por eso el verde aparece UNA
-   vez a saturación completa y lo demás es neutro — es lo que hace que un
-   color de marca se sienta caro en vez de decorativo.
+   ⚠ POR QUÉ ESTA VERSIÓN NO SE PARECE A LA PRIMERA.
+   La v1 era fondo negro liso con la marca encendida en verde neón. Luis:
+   «se ve horrible», y tenía razón. La guía de la casa
+   (`bodega/skills/huashu-design`) lo tiene fichado con nombre propio como
+   ZONA PROHIBIDA: «solución perezosa GitHub-dark — fondo oscuro uniforme +
+   glow de neón genérico». Y ese verde, a saturación de pantalla, en la misma
+   guía no es Xbox: es «verde fluorescente → terminal / hacker».
 
-   ⚠ TODO EL DIBUJO VA EN UN SOLO SISTEMA DE COORDENADAS, y no es manía.
-   La primera versión enmascaraba un <div> con `objectBoundingBox`: como la
-   hoja no es cuadrada, el círculo salió OVALADO. Un logo ovalado se ve mal
-   antes de que nadie sepa por qué. Ahora el plano, la luz y el hueco viven
-   dentro del mismo <svg> con viewBox, así que un círculo es un círculo.
+   Dos errores, los dos de principiante:
+   · un cartel PROMOCIONAL sin una sola imagen no promociona nada; el verde
+     encendido hacía de decorado porque no había nada más que mirar;
+   · saturación máxima de pantalla en superficie grande = plástico. Lo que el
+     ojo lee como «caro» es que la tinta impresa NUNCA llega al RGB de un
+     monitor, así que en pantalla hay que bajar el croma a propósito.
 
-   MEDIDAS PENSADAS EN MILÍMETROS. Un cartel se piensa en el tamaño en que
-   se imprime; diseñar en píxeles y «escalar al final» es cómo se acaba con
+   LO QUE SE HIZO EN SU LUGAR:
+   · una fotografía de verdad ocupa la lámina entera — los Pilares de la
+     Creación del Hubble, que además son verticales y SUBEN, así que el mundo
+     apunta hacia la puerta sin necesidad de dibujar una flecha;
+   · el verde aparece UNA sola vez a saturación entera: DENTRO del hueco. En
+     el resto de la lámina el texto es hueso y la única otra pizca de verde
+     es un tercio de la regla. Repartirlo lo abarata.
+   · el mundo va con el croma comprimido y sólo lo que se ve POR EL HUECO
+     está encendido. La idea se sostiene igual —la X es una puerta— pero
+     ahora del otro lado hay algo que vale entrar a ver.
+
+   ⚠ EL COLOR NO SE PONE CON FILTROS DE CSS, SE HORNEA EN LOS ARCHIVOS
+   (`gradar.py`). Dos motivos, y el segundo es el que importa:
+     1) un `filter:` obliga a Chromium a rasterizar la capa entera al factor
+        de escala del PDF — 5977 × 8340 px sin pérdida = 228 MB de PDF;
+     2) el hueco salía CIAN. La nebulosa es azul-teal y una veladura verde
+        al 20% encima no la mueve: la marca de Xbox tiene que ser VERDE o no
+        es la marca. `nucleo.jpg` es la misma foto mapeada por LUMINANCIA a
+        una rampa de verdes: conserva la textura y las estrellas, y el tono
+        deja de ser una casualidad de la nebulosa.
+
+   MEDIDAS PENSADAS EN MILÍMETROS. Un cartel se piensa en el tamaño en que se
+   imprime; diseñar en píxeles y «escalar al final» es cómo se acaba con
    texto de 4 pt y sangrado inventado.
      · hoja        500 × 700 mm  +  3 mm de sangrado por lado
-     · área segura 18 mm desde el corte (nada legible entra ahí)
+     · área segura 18 mm desde el corte
      · retícula    6 columnas · medianil 8 mm
      · 1 mm = 3.7795 px de CSS a 96 dpi → hoja = 1912 × 2668 px
    ═══════════════════════════════════════════════════════════════════════ */
@@ -33,58 +58,53 @@
 @font-face{font-family:Mono;  src:url(JetBrainsMono-Medium.woff2) format('woff2'); font-weight:500}
 
 :root{
-  /* El verde declarado UNA vez. Sacar un color de marca con el cuentagotas
-     de una captura es cómo se acaba con cuatro verdes en la misma lámina. */
-  --verde:#107C10;
-  --verde-luz:#7CFF80;
-  --verde-medio:#38D63A;
-  --negro:#040506;
-  --humo:#8C9699;
-  --hueso:#F2F5F3;
+  --verde:#1DB954;          /* el verde de Xbox, sin subirle el croma */
+  --hueso:#F4F6F4;
+  --humo:#98A4A2;
   --seguro:21mm;            /* 18 mm desde el corte + 3 mm de sangrado */
 }
 
 @page{ size:506mm 706mm; margin:0 }
-html,body{margin:0; padding:0; background:#2b2b2b}
+html,body{margin:0; padding:0; background:#1b1b1b}
 
 .hoja{
   position:relative; width:506mm; height:706mm; overflow:hidden;
-  background:var(--negro); color:var(--hueso);
+  background:#05070A; color:var(--hueso);
   font-family:Inter, sans-serif; -webkit-font-smoothing:antialiased;
 }
 .hoja svg.dibujo{ position:absolute; inset:0; width:100%; height:100% }
 
-/* Grano. Impreso, un negro perfectamente liso se llena de bandas; el grano
-   las rompe y de paso le quita el aire de render. */
+/* Grano: impreso, un cielo liso se llena de bandas. Y de paso le quita a la
+   foto el acabado de fondo de escritorio. */
 .grano{
   position:absolute; inset:0; pointer-events:none; opacity:.06;
+  mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>\
-<filter id='r'><feTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/></filter>\
-<rect width='160' height='160' filter='url(%23r)'/></svg>");
+<svg xmlns='http://www.w3.org/2000/svg' width='170' height='170'>\
+<filter id='r'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/></filter>\
+<rect width='170' height='170' filter='url(%23r)'/></svg>");
 }
 
-/* ── LA RETÍCULA, VISIBLE A PROPÓSITO ─────────────────────────────────────
-   No es adorno: es la lámina enseñando de qué está hecha. Va tan tenue que
-   se siente antes de leerse. */
+/* La retícula, sólo en la zona de texto. Cruzando la fotografía se leía como
+   una raya en la foto, no como una retícula; aquí abajo se lee como lo que
+   es: la lámina enseñando de qué está hecha. */
 .reticula{
   position:absolute; left:var(--seguro); right:var(--seguro);
-  top:var(--seguro); bottom:var(--seguro); pointer-events:none;
+  bottom:var(--seguro); height:196mm; pointer-events:none;
   display:grid; grid-template-columns:repeat(6,1fr); gap:8mm;
 }
-.reticula i{ border-left:.22mm solid rgba(242,245,243,.05) }
-.reticula i:last-child{ border-right:.22mm solid rgba(242,245,243,.05) }
+.reticula i{ border-left:.22mm solid rgba(244,246,244,.07) }
+.reticula i:last-child{ border-right:.22mm solid rgba(244,246,244,.07) }
 
 /* ── TEXTO ────────────────────────────────────────────────────────────────
    La jerarquía la hacen CUATRO cosas a la vez —peso, color, posición y
-   tracking—, no sólo el tamaño. Separarlo todo por tamaño es lo que hace
-   que una lámina se lea como una lista de la compra. */
+   tracking—, no sólo el tamaño. */
 .capa{ position:absolute; inset:0 }
 
 .cejilla{
   position:absolute; left:var(--seguro); top:var(--seguro);
   font-family:Mono; font-weight:500; font-size:3.6mm; letter-spacing:.4em;
-  text-transform:uppercase; color:var(--verde-medio);
+  text-transform:uppercase; color:#C2CCCA;
 }
 .cejilla b{ color:var(--hueso); font-weight:500 }
 .folio{
@@ -93,54 +113,51 @@ html,body{margin:0; padding:0; background:#2b2b2b}
   line-height:1.6; color:var(--humo);
 }
 
-/* El titular va ABAJO. La mitad de arriba es la puerta, y meterle texto
-   encima sería taparle la idea a la lámina. */
-.titular{ position:absolute; left:var(--seguro); right:var(--seguro); bottom:104mm }
+/* El bloque de texto va abajo y va JUNTO. En la versión anterior quedaba a
+   112 mm del pie y dejaba 79 mm de nada entre la regla y el pie: la lámina
+   se combaba por el medio. */
+.titular{ position:absolute; left:var(--seguro); right:var(--seguro); bottom:62mm }
 .titular h1{
-  margin:0; font-weight:900; font-size:44mm; line-height:.86;
-  letter-spacing:-.04em; text-transform:uppercase;
-  /* ⚠ El tracking negativo es del TITULAR y sólo suyo: en cuerpo de texto
+  margin:0; font-weight:900; font-size:54mm; line-height:.87;
+  letter-spacing:-.045em; text-transform:uppercase; color:var(--hueso);
+  /* El tracking negativo es del TITULAR y sólo suyo: en cuerpo de texto
      aprieta las letras hasta hacerlas ilegibles. */
 }
-.titular h1 .dos{ display:block; color:var(--verde-luz) }
+.titular h1 span{ display:block }
 .bajada{
-  margin:12mm 0 0; max-width:118mm; font-size:5.2mm; line-height:1.46;
-  font-weight:400; color:var(--humo);
+  margin:11mm 0 0; max-width:152mm; font-size:5.6mm; line-height:1.46;
+  font-weight:400; color:#C6D0CE;
 }
 .bajada b{ color:var(--hueso); font-weight:600 }
 
-/* Un solo trazo ancla el bloque de texto a la retícula. Barato de imprimir
-   y hace media composición. */
 .regla{
-  position:absolute; left:var(--seguro); bottom:92mm;
-  width:calc(100% - var(--seguro)*2); height:.6mm; background:rgba(242,245,243,.14);
+  position:absolute; left:var(--seguro); bottom:50mm;
+  width:calc(100% - var(--seguro)*2); height:.6mm; background:rgba(244,246,244,.18);
 }
 .regla::before{
   content:''; position:absolute; left:0; top:0; height:100%;
-  width:33.333%; background:var(--verde-medio);
+  width:33.333%; background:var(--verde);
 }
 
 /* ── EL PIE ───────────────────────────────────────────────────────────────
-   Aquí va lo que hace honesta a la lámina: es una PIEZA DE CONCEPTO, no
-   publicidad. Va a 3.6 mm y no a 2, porque un descargo que no se puede leer
-   no descarga nada. */
+   Dos cosas que NO son adorno: que esto es una pieza de concepto, y el
+   crédito de la fotografía. Las dos legibles — un descargo que no se puede
+   leer no descarga nada, y una foto de un archivo público se cita. */
 .pie{
   position:absolute; left:var(--seguro); right:var(--seguro); bottom:var(--seguro);
   display:flex; justify-content:space-between; align-items:flex-end; gap:14mm;
 }
 .pie .aviso{
-  font-family:Mono; font-weight:500; font-size:3.6mm; line-height:1.5;
-  color:var(--humo); max-width:158mm;
+  font-family:Mono; font-weight:500; font-size:3.4mm; line-height:1.55;
+  color:#B6C0BE; max-width:212mm;
 }
 .pie .aviso b{ color:var(--hueso); font-weight:500 }
 .pie .marca{
-  text-align:right; font-family:Mono; font-weight:500; font-size:3.6mm;
-  line-height:1.5; color:var(--humo); white-space:nowrap;
+  text-align:right; font-family:Mono; font-weight:500; font-size:3.4mm;
+  line-height:1.55; color:#B6C0BE; white-space:nowrap;
 }
-.pie .marca b{ color:var(--verde-medio); font-weight:500 }
+.pie .marca b{ color:var(--hueso); font-weight:500 }
 
-/* Marcas de corte: van sobre el sangrado, fuera de la hoja. Son para la
-   guillotina, no para el ojo. */
 .corte{ position:absolute; background:var(--hueso); opacity:.7 }
 .corte.h{ width:2.6mm; height:.25mm } .corte.v{ width:.25mm; height:2.6mm }
 </style>
@@ -148,132 +165,95 @@ html,body{margin:0; padding:0; background:#2b2b2b}
 <div class="hoja">
 
   <!-- ══ EL DIBUJO ═══════════════════════════════════════════════════════
-       Un solo viewBox de 1912 × 2668 (la hoja en px de CSS). Dentro: el
-       campo de luz al fondo, el plano negro encima con el hueco recortado,
-       y el derrame de luz sobre el plano.                                -->
+       Un solo viewBox de 1912 × 2668 — la lección de la v1: enmascarar un
+       <div> con `objectBoundingBox` en una hoja que no es cuadrada convierte
+       el círculo en un ÓVALO. Aquí el plano, el hueco y la luz viven en el
+       mismo sistema de coordenadas, así que un círculo es un círculo.
+
+       Las dos imágenes ya vienen graduadas de `gradar.py`: ni un solo
+       `filter:` en toda la lámina.                                       -->
   <svg class="dibujo" viewBox="0 0 1912 2668" preserveAspectRatio="none">
     <defs>
-      <!-- El mundo del otro lado. No es un degradado liso: pasa por un
-           blanco cálido en el núcleo y cae a un verde casi negro en el
-           borde, para que se lea como PROFUNDIDAD y no como relleno. -->
-      <!-- ⚠ EN UNIDADES DE USUARIO Y CENTRADO EN LA MARCA. Estaba en
-           porcentajes sobre la hoja entera: el núcleo brillante se repartía
-           por 1912 × 2668 px y para cuando llegaba al hueco ya era verde
-           medio, así que la abertura salía TURBIA en vez de luminosa. Una
-           puerta que no ilumina no es una puerta. Ahora el degradado mide
-           lo mismo que el anillo.
-           Y con hexadecimales, no con `var()`: una variable de CSS dentro
-           de un `stop-color` es de las cosas que funcionan hasta que el
-           motor cambia, y esto tiene que salir igual en la imprenta. -->
-      <radialGradient id="mundo" gradientUnits="userSpaceOnUse"
-                      cx="956" cy="986" r="372">
-        <stop offset="0"    stop-color="#FBFFFA"/>
-        <stop offset=".08"  stop-color="#D8FFD9"/>
-        <stop offset=".20"  stop-color="#7CFF80"/>
-        <stop offset=".40"  stop-color="#38D63A"/>
-        <stop offset=".62"  stop-color="#12922E"/>
-        <stop offset=".82"  stop-color="#0A5A12"/>
-        <stop offset="1"    stop-color="#04280A"/>
+      <!-- La foto, encuadrada. La original es casi cuadrada (6780 × 7071) y
+           la hoja es 0.72 de ancha, así que se recorta por los lados y se
+           baja el encuadre: los pilares suben, y dejarles cielo arriba es
+           justo lo que permite poner ahí la puerta. -->
+      <pattern id="foto" patternUnits="userSpaceOnUse" x="-360" y="0" width="2632" height="2746">
+        <image href="fondo.jpg" x="0" y="0" width="2632" height="2746"
+               preserveAspectRatio="xMidYMax slice"/>
+      </pattern>
+
+      <!-- La caída de luz: casi transparente arriba y casi opaca abajo. Es
+           lo que le da al titular dónde apoyarse sin tapar la foto. -->
+      <linearGradient id="caida" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0"   stop-color="#05070A" stop-opacity=".50"/>
+        <stop offset=".24" stop-color="#05070A" stop-opacity=".26"/>
+        <stop offset=".50" stop-color="#05070A" stop-opacity=".44"/>
+        <stop offset=".74" stop-color="#04060A" stop-opacity=".82"/>
+        <stop offset="1"   stop-color="#03050A" stop-opacity=".96"/>
+      </linearGradient>
+
+      <radialGradient id="vineta" cx="50%" cy="32%" r="80%">
+        <stop offset=".50" stop-color="#000" stop-opacity="0"/>
+        <stop offset="1"   stop-color="#000" stop-opacity=".62"/>
       </radialGradient>
 
-      <!-- ── EL HAZ QUE CAE AL SUELO ────────────────────────────────────
-           Esto es lo que convierte la marca en una PUERTA. Sin él, entre el
-           hueco y el titular quedaban 500 px de negro muerto que se leían
-           como lámina sin terminar. La luz de una abertura cae hacia
-           adelante y se ensancha; el haz llena ese vacío con lo único que
-           debía llenarlo, que es la propia idea. -->
-      <!-- ⚠ EL HAZ SE DESVANECE POR LOS TRES BORDES, y la primera versión
-           no lo hacía por ninguno. Un trapecio con relleno plano tiene CANTO
-           —arriba una raya recta cruzando el anillo, y a los lados dos
-           aristas— y entonces no se lee como luz sino como una rampa. La luz
-           no tiene filo. Aquí: el degradado vertical nace en cero (fuera el
-           canto de arriba) y una máscara horizontal se come los lados. -->
-      <linearGradient id="haz" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0"    stop-color="#9BFF9E" stop-opacity="0"/>
-        <stop offset=".055" stop-color="#9BFF9E" stop-opacity=".17"/>
-        <stop offset=".30"  stop-color="#38D63A" stop-opacity=".085"/>
-        <stop offset=".68"  stop-color="#107C10" stop-opacity=".028"/>
-        <stop offset="1"    stop-color="#107C10" stop-opacity="0"/>
-      </linearGradient>
-      <linearGradient id="haz-lados" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0"    stop-color="#000"/>
-        <stop offset=".26"  stop-color="#fff"/>
-        <stop offset=".74"  stop-color="#fff"/>
-        <stop offset="1"    stop-color="#000"/>
-      </linearGradient>
-      <mask id="haz-suave" maskUnits="userSpaceOnUse" x="360" y="1330" width="1192" height="1140">
-        <rect x="360" y="1330" width="1192" height="1140" fill="url(#haz-lados)"/>
+      <!-- El halo que la puerta derrama sobre el mundo. La luz de una
+           abertura SIEMPRE moja lo de alrededor; sin esto el anillo queda
+           pegado como una calcomanía. -->
+      <radialGradient id="derrame" cx="50%" cy="50%" r="50%">
+        <stop offset="0"   stop-color="#8CF0AE" stop-opacity=".30"/>
+        <stop offset=".20" stop-color="#1DB954" stop-opacity=".15"/>
+        <stop offset=".46" stop-color="#0E7A33" stop-opacity=".06"/>
+        <stop offset="1"   stop-color="#0E7A33" stop-opacity="0"/>
+      </radialGradient>
+
+      <!-- ⚠ EL HUECO. Blanco = se ve; negro = no. El aspa nace del anillo en
+           vez de atravesarlo —el círculo interior le come las puntas—, que
+           es lo que hace que la marca se lea como UNA pieza y no como una X
+           metida dentro de un aro. -->
+      <clipPath id="dentro" clipPathUnits="userSpaceOnUse">
+        <circle cx="956" cy="800" r="247"/>
+      </clipPath>
+      <!-- ⚠ LO QUE METE LA MARCA DENTRO DE LA LÁMINA, y no es el color.
+           Una marca pintada encima de una foto se lee PEGADA. Los pilares
+           son polvo, así que la luz de la puerta los atraviesa a medias:
+           donde hay pilar la marca baja al 32 %, donde hay cielo va entera.
+           No baja a cero a propósito — una máscara con agujeros negros se
+           lee como un error; una veladura se lee como materia. La matriz
+           sale de la propia fotografía (`gradar.py`), no está dibujada. -->
+      <mask id="polvo" maskUnits="userSpaceOnUse" x="616" y="460" width="680" height="680">
+        <image href="polvo.png" x="616" y="460" width="680" height="680"/>
       </mask>
 
-      <!-- El halo que se derrama por la abertura sobre el plano negro. Sin
-           esto la X queda pegada como una calcomanía: la luz de un hueco
-           SIEMPRE moja el borde de alrededor. -->
-      <radialGradient id="derrame" cx="50%" cy="50%" r="50%">
-        <stop offset="0"   stop-color="#9BFF9E" stop-opacity=".52"/>
-        <stop offset=".16" stop-color="#7CFF80" stop-opacity=".30"/>
-        <stop offset=".34" stop-color="#38D63A" stop-opacity=".14"/>
-        <stop offset=".58" stop-color="#107C10" stop-opacity=".055"/>
-        <stop offset="1"   stop-color="#107C10" stop-opacity="0"/>
-      </radialGradient>
-
-      <!-- El viñeteado: oscurece las esquinas para que el ojo caiga al
-           centro sin que nadie se lo pida. -->
-      <!-- El viñeteado empuja el ojo al centro. Iba a .72 y se comía el
-           derrame entero: la luz que acababa de encender la apagaba dos
-           capas después. -->
-      <radialGradient id="vineta" cx="50%" cy="38%" r="82%">
-        <stop offset=".58" stop-color="#000" stop-opacity="0"/>
-        <stop offset="1"   stop-color="#000" stop-opacity=".46"/>
-      </radialGradient>
-
-      <!-- ⚠ EL HUECO. Blanco = plano; negro = por ahí entra la luz.
-           El aspa se dibuja como un rectángulo girado y el círculo interior
-           le come las puntas: así el brazo nace del anillo en vez de
-           atravesarlo, que es lo que hace que la marca se lea como UNA
-           pieza y no como una X metida en un aro. -->
-      <clipPath id="dentro" clipPathUnits="userSpaceOnUse">
-        <circle cx="956" cy="1006" r="286"/>
-      </clipPath>
       <mask id="puerta" maskUnits="userSpaceOnUse" x="0" y="0" width="1912" height="2668">
-        <rect width="1912" height="2668" fill="#fff"/>
-        <!-- el anillo -->
-        <circle cx="956" cy="1006" r="334" fill="none" stroke="#000" stroke-width="49"/>
-        <!-- las dos aspas, recortadas por el círculo interior -->
+        <rect width="1912" height="2668" fill="#000"/>
+        <circle cx="956" cy="800" r="290" fill="none" stroke="#fff" stroke-width="43"/>
         <g clip-path="url(#dentro)">
-          <rect x="-352" y="-44" width="704" height="88"
-                transform="translate(956 1006) rotate(45)"/>
-          <rect x="-352" y="-44" width="704" height="88"
-                transform="translate(956 1006) rotate(-45)"/>
+          <rect x="-305" y="-38" width="610" height="76"
+                transform="translate(956 800) rotate(45)" fill="#fff"/>
+          <rect x="-305" y="-38" width="610" height="76"
+                transform="translate(956 800) rotate(-45)" fill="#fff"/>
         </g>
       </mask>
     </defs>
 
-    <!-- el mundo, al fondo -->
-    <rect width="1912" height="2668" fill="url(#mundo)"/>
-    <!-- estrías finas: le dan materia al vacío. Un degradado liso es lo que
-         hace que una lámina parezca salida de una plantilla. -->
-    <rect width="1912" height="2668" fill="url(#estrias)" opacity=".5"
-          style="mix-blend-mode:overlay"/>
-    <!-- el plano negro con el hueco -->
-    <rect width="1912" height="2668" fill="#040506" mask="url(#puerta)"/>
-    <!-- ⚠ EL HAZ ARRANCA POR DEBAJO DEL ANILLO, no a media marca. Empezaba
-         en y=1080 y como se pinta ENCIMA del plano, su borde recto cruzaba
-         el anillo por abajo: se veía el rectángulo. Una luz no tiene canto.
-         Ahora nace en el borde inferior del círculo (1006 + 358) y el propio
-         degradado se encarga de que ahí no haya línea. -->
-    <path d="M 706 1358 L 1206 1358 L 1512 2440 L 400 2440 Z"
-          fill="url(#haz)" mask="url(#haz-suave)"/>
-    <!-- la luz que se derrama sobre el plano -->
-    <ellipse cx="956" cy="1006" rx="900" ry="900" fill="url(#derrame)"/>
-    <!-- las esquinas, hacia abajo -->
+    <!-- 1 · el mundo, con el croma ya comprimido en el archivo -->
+    <rect width="1912" height="2668" fill="url(#foto)"/>
+    <rect width="1912" height="2668" fill="url(#caida)"/>
     <rect width="1912" height="2668" fill="url(#vineta)"/>
 
-    <defs>
-      <pattern id="estrias" width="5" height="5" patternUnits="userSpaceOnUse">
-        <rect width="5" height="5" fill="#000" fill-opacity=".18"/>
-        <rect width="1.6" height="5" fill="#fff" fill-opacity=".16"/>
-      </pattern>
-    </defs>
+    <!-- 2 · lo que se ve POR LA PUERTA: el mismo trozo de cielo, encendido y
+         en verde de marca. Es el ÚNICO sitio de la lámina con el color a
+         saturación entera. -->
+    <g mask="url(#puerta)">
+      <g mask="url(#polvo)">
+        <image href="nucleo.jpg" x="616" y="460" width="680" height="680"/>
+      </g>
+    </g>
+
+    <!-- 3 · el derrame sobre el mundo -->
+    <circle cx="956" cy="800" r="790" fill="url(#derrame)"/>
   </svg>
 
   <div class="grano"></div>
@@ -287,7 +267,7 @@ html,body{margin:0; padding:0; background:#2b2b2b}
     <div class="regla"></div>
 
     <div class="titular">
-      <h1>LA X<span class="dos">ES UNA PUERTA</span></h1>
+      <h1>LA X<span>ES UNA PUERTA</span></h1>
       <p class="bajada">No es un botón ni un logotipo. Es el hueco por donde
         entra otro mundo — y del otro lado <b>siempre hay alguien esperando
         a que llegues</b>.</p>
@@ -295,8 +275,10 @@ html,body{margin:0; padding:0; background:#2b2b2b}
 
     <div class="pie">
       <div class="aviso"><b>PIEZA DE CONCEPTO.</b> Ejercicio de diseño sin
-        relación con Microsoft ni con Xbox. No es publicidad oficial y no
-        está autorizada por el titular de la marca.</div>
+        relación con Microsoft ni con Xbox; no es publicidad oficial ni está
+        autorizada por el titular de la marca.<br>
+        Fotografía: <b>Pilares de la Creación</b> · NASA / ESA / Hubble
+        Heritage Team (STScI&nbsp;·&nbsp;AURA) · CC&nbsp;BY&nbsp;4.0</div>
       <div class="marca">GRUPO MAZI<br><b>DEPARTAMENTO DE DISEÑO</b></div>
     </div>
   </div>

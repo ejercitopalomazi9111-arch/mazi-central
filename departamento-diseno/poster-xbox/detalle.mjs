@@ -1,9 +1,10 @@
 /* Recorte 1:1 del pie y del titular: la letra chica es donde se cae todo. */
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
-const DIR='/tmp/claude-0/-home-user-evaluaciones-rembrandt/bf88face-536e-5b8f-9dd9-93f513378ced/scratchpad/poster';
-const T={'.html':'text/html','.woff2':'font/woff2'};
+import { extname, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const DIR = dirname(fileURLToPath(import.meta.url));   /* la carpeta de este archivo */
+const T={'.html':'text/html','.woff2':'font/woff2','.jpg':'image/jpeg','.png':'image/png'};
 const srv=http.createServer(async(q,r)=>{const f=join(DIR,decodeURIComponent(new URL(q.url,'http://x').pathname));
  try{const d=await readFile(f);r.setHeader('content-type',T[extname(f)]||'application/octet-stream');r.end(d);}catch(e){r.statusCode=404;r.end('no');}});
 await new Promise(r=>srv.listen(0,'127.0.0.1',r)); const P=srv.address().port;

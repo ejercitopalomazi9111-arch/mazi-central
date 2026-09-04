@@ -11,12 +11,19 @@
    2 · ÁREA SEGURA. Nada legible puede entrar en los 18 mm del corte, porque
        la guillotina no es exacta.
    3 · CUERPO MÍNIMO. Impreso, por debajo de 3 mm no se lee.
+   4 · QUE LA MARCA SEA VERDE DE MARCA. Ésta se añadió porque FALLÓ: el
+       primer corte de esta versión enseñaba por el hueco la nebulosa tal
+       cual, y la nebulosa es azul-teal — la marca salía CIAN. Se veía en
+       la pantalla y ninguna comprobación lo decía. Ahora el aspa se mide
+       contra #1DB954 y el anillo se recorre punto por punto: una marca
+       rota o de otro color pone la compuerta roja.
    ═══════════════════════════════════════════════════════════════════════ */
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
-const DIR = '/tmp/claude-0/-home-user-evaluaciones-rembrandt/bf88face-536e-5b8f-9dd9-93f513378ced/scratchpad/poster';
-const T = { '.html':'text/html', '.woff2':'font/woff2', '.png':'image/png' };
+import { extname, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const DIR = dirname(fileURLToPath(import.meta.url));   /* la carpeta de este archivo */
+const T = { '.html':'text/html', '.woff2':'font/woff2', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg' };
 const srv = http.createServer(async (q,r)=>{ const f=join(DIR,decodeURIComponent(new URL(q.url,'http://x').pathname));
   try{ const d=await readFile(f); r.setHeader('content-type',T[extname(f)]||'application/octet-stream'); r.end(d); }
   catch(e){ r.statusCode=404; r.end('no'); } });
@@ -62,7 +69,7 @@ const r = await pg.evaluate(async (b64)=>{
     ['cejilla',            '.cejilla',      3.0],
     ['folio',              '.folio',        3.0],
     ['titular · línea 1',  '.titular h1',   8.0],
-    ['titular · línea 2',  '.titular h1 .dos', 8.0],
+    ['titular · línea 2',  '.titular h1 span', 8.0],
     ['bajada',             '.bajada',       3.6],
     ['aviso de concepto',  '.pie .aviso',   3.0],
     ['firma',              '.pie .marca',   3.0],
@@ -114,6 +121,63 @@ for(const p of r.out) if(!p.falta)
 console.log('\n── CUERPO MÍNIMO PARA IMPRESIÓN ──');
 for(const p of r.out) if(!p.falta)
   ok(`${p.nombre} — ${p.cuerpo} mm (mínimo ${p.mmMin})`, p.cuerpo >= p.mmMin);
+
+/* ── 4 · EL COLOR Y LA INTEGRIDAD DE LA MARCA ──────────────────────────────
+   El hueco es el único sitio de la lámina con el color a saturación entera,
+   así que es el único que puede equivocarse de color sin que nada avise. */
+/* Se mide sobre la LÁMINA RENDERIZADA, no sobre el SVG suelto: el SVG
+   referencia imágenes externas y como data-uri no las carga — daría verde
+   por no dibujar nada, que es la peor clase de comprobación. */
+const lamina = (await pg.screenshot()).toString('base64');
+const m = await pg.evaluate(async (b64)=>{
+  const img = new Image();
+  await new Promise(res=>{ img.onload=res; img.src='data:image/png;base64,'+b64; });
+  const cv = document.createElement('canvas');
+  cv.width=img.width; cv.height=img.height;
+  const cx = cv.getContext('2d'); cx.drawImage(img,0,0);
+  const d = cx.getImageData(0,0,cv.width,cv.height).data;
+  const W = cv.width;
+  const en = (x,y)=>{ const i=((y|0)*W+(x|0))*4; return [d[i],d[i+1],d[i+2]]; };
+  const tono = ([R,G,B])=>{ const M=Math.max(R,G,B), n=Math.min(R,G,B), c=M-n;
+    if(!c) return -1; let h;
+    if(M===R) h=((G-B)/c)%6; else if(M===G) h=(B-R)/c+2; else h=(R-G)/c+4;
+    return (h*60+360)%360; };
+
+  /* el aspa: un disco en el cruce, promediado para que una estrella no mande */
+  let s=[0,0,0], n=0;
+  for(let y=-34;y<=34;y+=2) for(let x=-34;x<=34;x+=2){
+    if(x*x+y*y>34*34) continue;
+    const p=en(956+x,800+y); s[0]+=p[0]; s[1]+=p[1]; s[2]+=p[2]; n++;
+  }
+  const aspa = s.map(v=>Math.round(v/n));
+
+  /* el anillo: 24 puntos sobre la circunferencia r=290 */
+  const ring=[];
+  for(let k=0;k<24;k++){
+    const a=k*Math.PI/12;
+    ring.push(en(956+290*Math.cos(a), 800+290*Math.sin(a)));
+  }
+  return { aspa, tonoAspa:Math.round(tono(aspa)), tam:[cv.width,cv.height],
+           ring: ring.map(p=>({p, t:Math.round(tono(p)), verde:p[1]>p[0]+18 && p[1]>p[2]+10})) };
+}, lamina);
+
+console.log('\n── LA MARCA ES VERDE DE MARCA, Y ENTERA ──');
+{
+  const [R,G,B] = m.aspa;
+  /* El tono SOLO significa algo si hay croma. Un gris da un ángulo de tono
+     cualquiera y pasaría la prueba: mutando el hueco a la foto cruda salió
+     rgb(68,97,75) —casi gris— con tono 134°, y este check se quedó verde.
+     Por eso el croma va DENTRO de la misma comprobación y no al lado. */
+  const croma = Math.max(R,G,B) - Math.min(R,G,B);
+  ok(`el aspa es verde de marca y no cian ni gris — rgb(${m.aspa}) tono ${m.tonoAspa}° croma ${croma}`,
+     m.tonoAspa >= 105 && m.tonoAspa <= 160 && croma >= 70,
+     `verde de Xbox ≈ 141° con croma alto; cian ≈ 175-195°; croma < 70 = no hay color que juzgar`);
+  ok(`el verde domina en el aspa — G=${G} R=${R} B=${B}`,
+     G > R + 40 && G > B + 25, 'si G no domina, el hueco se pintó del color de la foto');
+  const vivos = m.ring.filter(x=>x.verde).length;
+  ok(`el anillo está entero — ${vivos}/24 puntos en verde`,
+     vivos >= 18, 'el polvo puede velar el anillo, no cortarlo');
+}
 
 console.log(`\n${bien} bien · ${mal} mal\n`);
 await nav.close(); srv.close();

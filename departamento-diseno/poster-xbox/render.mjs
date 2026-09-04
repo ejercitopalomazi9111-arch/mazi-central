@@ -2,9 +2,10 @@
 
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join } from 'node:path';
-const DIR = '/tmp/claude-0/-home-user-evaluaciones-rembrandt/bf88face-536e-5b8f-9dd9-93f513378ced/scratchpad/poster';
-const T = { '.html':'text/html', '.woff2':'font/woff2', '.png':'image/png', '.svg':'image/svg+xml' };
+import { extname, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const DIR = dirname(fileURLToPath(import.meta.url));   /* la carpeta de este archivo */
+const T = { '.html':'text/html', '.woff2':'font/woff2', '.png':'image/png', '.svg':'image/svg+xml', '.jpg':'image/jpeg' };
 const srv = http.createServer(async (q, r) => {
   const f = join(DIR, decodeURIComponent(new URL(q.url,'http://x').pathname));
   try { const d = await readFile(f);

@@ -1,0 +1,312 @@
+<meta charset="utf-8">
+<title>Xbox · pieza de concepto</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   PÓSTER · 50 × 70 cm · pieza de concepto
+   ──────────────────────────────────────────────────────────────────────────
+   UNA IDEA, Y TODO SIRVE A ELLA: la X es una puerta. El plano es negro y la
+   única luz de la lámina entra por el hueco. Por eso el verde aparece UNA
+   vez a saturación completa y lo demás es neutro — es lo que hace que un
+   color de marca se sienta caro en vez de decorativo.
+
+   ⚠ TODO EL DIBUJO VA EN UN SOLO SISTEMA DE COORDENADAS, y no es manía.
+   La primera versión enmascaraba un <div> con `objectBoundingBox`: como la
+   hoja no es cuadrada, el círculo salió OVALADO. Un logo ovalado se ve mal
+   antes de que nadie sepa por qué. Ahora el plano, la luz y el hueco viven
+   dentro del mismo <svg> con viewBox, así que un círculo es un círculo.
+
+   MEDIDAS PENSADAS EN MILÍMETROS. Un cartel se piensa en el tamaño en que
+   se imprime; diseñar en píxeles y «escalar al final» es cómo se acaba con
+   texto de 4 pt y sangrado inventado.
+     · hoja        500 × 700 mm  +  3 mm de sangrado por lado
+     · área segura 18 mm desde el corte (nada legible entra ahí)
+     · retícula    6 columnas · medianil 8 mm
+     · 1 mm = 3.7795 px de CSS a 96 dpi → hoja = 1912 × 2668 px
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@font-face{font-family:Inter; src:url(Inter-Black.woff2) format('woff2'); font-weight:900}
+@font-face{font-family:Inter; src:url(Inter-ExtraBold.woff2) format('woff2'); font-weight:800}
+@font-face{font-family:Inter; src:url(Inter-Bold.woff2) format('woff2'); font-weight:700}
+@font-face{font-family:Inter; src:url(Inter-SemiBold.woff2) format('woff2'); font-weight:600}
+@font-face{font-family:Inter; src:url(Inter-Medium.woff2) format('woff2'); font-weight:500}
+@font-face{font-family:Inter; src:url(Inter-Regular.woff2) format('woff2'); font-weight:400}
+@font-face{font-family:Mono;  src:url(JetBrainsMono-Medium.woff2) format('woff2'); font-weight:500}
+
+:root{
+  /* El verde declarado UNA vez. Sacar un color de marca con el cuentagotas
+     de una captura es cómo se acaba con cuatro verdes en la misma lámina. */
+  --verde:#107C10;
+  --verde-luz:#7CFF80;
+  --verde-medio:#38D63A;
+  --negro:#040506;
+  --humo:#8C9699;
+  --hueso:#F2F5F3;
+  --seguro:21mm;            /* 18 mm desde el corte + 3 mm de sangrado */
+}
+
+@page{ size:506mm 706mm; margin:0 }
+html,body{margin:0; padding:0; background:#2b2b2b}
+
+.hoja{
+  position:relative; width:506mm; height:706mm; overflow:hidden;
+  background:var(--negro); color:var(--hueso);
+  font-family:Inter, sans-serif; -webkit-font-smoothing:antialiased;
+}
+.hoja svg.dibujo{ position:absolute; inset:0; width:100%; height:100% }
+
+/* Grano. Impreso, un negro perfectamente liso se llena de bandas; el grano
+   las rompe y de paso le quita el aire de render. */
+.grano{
+  position:absolute; inset:0; pointer-events:none; opacity:.06;
+  background-image:url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'>\
+<filter id='r'><feTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/></filter>\
+<rect width='160' height='160' filter='url(%23r)'/></svg>");
+}
+
+/* ── LA RETÍCULA, VISIBLE A PROPÓSITO ─────────────────────────────────────
+   No es adorno: es la lámina enseñando de qué está hecha. Va tan tenue que
+   se siente antes de leerse. */
+.reticula{
+  position:absolute; left:var(--seguro); right:var(--seguro);
+  top:var(--seguro); bottom:var(--seguro); pointer-events:none;
+  display:grid; grid-template-columns:repeat(6,1fr); gap:8mm;
+}
+.reticula i{ border-left:.22mm solid rgba(242,245,243,.05) }
+.reticula i:last-child{ border-right:.22mm solid rgba(242,245,243,.05) }
+
+/* ── TEXTO ────────────────────────────────────────────────────────────────
+   La jerarquía la hacen CUATRO cosas a la vez —peso, color, posición y
+   tracking—, no sólo el tamaño. Separarlo todo por tamaño es lo que hace
+   que una lámina se lea como una lista de la compra. */
+.capa{ position:absolute; inset:0 }
+
+.cejilla{
+  position:absolute; left:var(--seguro); top:var(--seguro);
+  font-family:Mono; font-weight:500; font-size:3.6mm; letter-spacing:.4em;
+  text-transform:uppercase; color:var(--verde-medio);
+}
+.cejilla b{ color:var(--hueso); font-weight:500 }
+.folio{
+  position:absolute; right:var(--seguro); top:var(--seguro); text-align:right;
+  font-family:Mono; font-weight:500; font-size:3.6mm; letter-spacing:.18em;
+  line-height:1.6; color:var(--humo);
+}
+
+/* El titular va ABAJO. La mitad de arriba es la puerta, y meterle texto
+   encima sería taparle la idea a la lámina. */
+.titular{ position:absolute; left:var(--seguro); right:var(--seguro); bottom:104mm }
+.titular h1{
+  margin:0; font-weight:900; font-size:44mm; line-height:.86;
+  letter-spacing:-.04em; text-transform:uppercase;
+  /* ⚠ El tracking negativo es del TITULAR y sólo suyo: en cuerpo de texto
+     aprieta las letras hasta hacerlas ilegibles. */
+}
+.titular h1 .dos{ display:block; color:var(--verde-luz) }
+.bajada{
+  margin:12mm 0 0; max-width:118mm; font-size:5.2mm; line-height:1.46;
+  font-weight:400; color:var(--humo);
+}
+.bajada b{ color:var(--hueso); font-weight:600 }
+
+/* Un solo trazo ancla el bloque de texto a la retícula. Barato de imprimir
+   y hace media composición. */
+.regla{
+  position:absolute; left:var(--seguro); bottom:92mm;
+  width:calc(100% - var(--seguro)*2); height:.6mm; background:rgba(242,245,243,.14);
+}
+.regla::before{
+  content:''; position:absolute; left:0; top:0; height:100%;
+  width:33.333%; background:var(--verde-medio);
+}
+
+/* ── EL PIE ───────────────────────────────────────────────────────────────
+   Aquí va lo que hace honesta a la lámina: es una PIEZA DE CONCEPTO, no
+   publicidad. Va a 3.6 mm y no a 2, porque un descargo que no se puede leer
+   no descarga nada. */
+.pie{
+  position:absolute; left:var(--seguro); right:var(--seguro); bottom:var(--seguro);
+  display:flex; justify-content:space-between; align-items:flex-end; gap:14mm;
+}
+.pie .aviso{
+  font-family:Mono; font-weight:500; font-size:3.6mm; line-height:1.5;
+  color:var(--humo); max-width:158mm;
+}
+.pie .aviso b{ color:var(--hueso); font-weight:500 }
+.pie .marca{
+  text-align:right; font-family:Mono; font-weight:500; font-size:3.6mm;
+  line-height:1.5; color:var(--humo); white-space:nowrap;
+}
+.pie .marca b{ color:var(--verde-medio); font-weight:500 }
+
+/* Marcas de corte: van sobre el sangrado, fuera de la hoja. Son para la
+   guillotina, no para el ojo. */
+.corte{ position:absolute; background:var(--hueso); opacity:.7 }
+.corte.h{ width:2.6mm; height:.25mm } .corte.v{ width:.25mm; height:2.6mm }
+</style>
+
+<div class="hoja">
+
+  <!-- ══ EL DIBUJO ═══════════════════════════════════════════════════════
+       Un solo viewBox de 1912 × 2668 (la hoja en px de CSS). Dentro: el
+       campo de luz al fondo, el plano negro encima con el hueco recortado,
+       y el derrame de luz sobre el plano.                                -->
+  <svg class="dibujo" viewBox="0 0 1912 2668" preserveAspectRatio="none">
+    <defs>
+      <!-- El mundo del otro lado. No es un degradado liso: pasa por un
+           blanco cálido en el núcleo y cae a un verde casi negro en el
+           borde, para que se lea como PROFUNDIDAD y no como relleno. -->
+      <!-- ⚠ EN UNIDADES DE USUARIO Y CENTRADO EN LA MARCA. Estaba en
+           porcentajes sobre la hoja entera: el núcleo brillante se repartía
+           por 1912 × 2668 px y para cuando llegaba al hueco ya era verde
+           medio, así que la abertura salía TURBIA en vez de luminosa. Una
+           puerta que no ilumina no es una puerta. Ahora el degradado mide
+           lo mismo que el anillo.
+           Y con hexadecimales, no con `var()`: una variable de CSS dentro
+           de un `stop-color` es de las cosas que funcionan hasta que el
+           motor cambia, y esto tiene que salir igual en la imprenta. -->
+      <radialGradient id="mundo" gradientUnits="userSpaceOnUse"
+                      cx="956" cy="986" r="372">
+        <stop offset="0"    stop-color="#FBFFFA"/>
+        <stop offset=".08"  stop-color="#D8FFD9"/>
+        <stop offset=".20"  stop-color="#7CFF80"/>
+        <stop offset=".40"  stop-color="#38D63A"/>
+        <stop offset=".62"  stop-color="#12922E"/>
+        <stop offset=".82"  stop-color="#0A5A12"/>
+        <stop offset="1"    stop-color="#04280A"/>
+      </radialGradient>
+
+      <!-- ── EL HAZ QUE CAE AL SUELO ────────────────────────────────────
+           Esto es lo que convierte la marca en una PUERTA. Sin él, entre el
+           hueco y el titular quedaban 500 px de negro muerto que se leían
+           como lámina sin terminar. La luz de una abertura cae hacia
+           adelante y se ensancha; el haz llena ese vacío con lo único que
+           debía llenarlo, que es la propia idea. -->
+      <!-- ⚠ EL HAZ SE DESVANECE POR LOS TRES BORDES, y la primera versión
+           no lo hacía por ninguno. Un trapecio con relleno plano tiene CANTO
+           —arriba una raya recta cruzando el anillo, y a los lados dos
+           aristas— y entonces no se lee como luz sino como una rampa. La luz
+           no tiene filo. Aquí: el degradado vertical nace en cero (fuera el
+           canto de arriba) y una máscara horizontal se come los lados. -->
+      <linearGradient id="haz" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0"    stop-color="#9BFF9E" stop-opacity="0"/>
+        <stop offset=".055" stop-color="#9BFF9E" stop-opacity=".17"/>
+        <stop offset=".30"  stop-color="#38D63A" stop-opacity=".085"/>
+        <stop offset=".68"  stop-color="#107C10" stop-opacity=".028"/>
+        <stop offset="1"    stop-color="#107C10" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="haz-lados" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="#000"/>
+        <stop offset=".26"  stop-color="#fff"/>
+        <stop offset=".74"  stop-color="#fff"/>
+        <stop offset="1"    stop-color="#000"/>
+      </linearGradient>
+      <mask id="haz-suave" maskUnits="userSpaceOnUse" x="360" y="1330" width="1192" height="1140">
+        <rect x="360" y="1330" width="1192" height="1140" fill="url(#haz-lados)"/>
+      </mask>
+
+      <!-- El halo que se derrama por la abertura sobre el plano negro. Sin
+           esto la X queda pegada como una calcomanía: la luz de un hueco
+           SIEMPRE moja el borde de alrededor. -->
+      <radialGradient id="derrame" cx="50%" cy="50%" r="50%">
+        <stop offset="0"   stop-color="#9BFF9E" stop-opacity=".52"/>
+        <stop offset=".16" stop-color="#7CFF80" stop-opacity=".30"/>
+        <stop offset=".34" stop-color="#38D63A" stop-opacity=".14"/>
+        <stop offset=".58" stop-color="#107C10" stop-opacity=".055"/>
+        <stop offset="1"   stop-color="#107C10" stop-opacity="0"/>
+      </radialGradient>
+
+      <!-- El viñeteado: oscurece las esquinas para que el ojo caiga al
+           centro sin que nadie se lo pida. -->
+      <!-- El viñeteado empuja el ojo al centro. Iba a .72 y se comía el
+           derrame entero: la luz que acababa de encender la apagaba dos
+           capas después. -->
+      <radialGradient id="vineta" cx="50%" cy="38%" r="82%">
+        <stop offset=".58" stop-color="#000" stop-opacity="0"/>
+        <stop offset="1"   stop-color="#000" stop-opacity=".46"/>
+      </radialGradient>
+
+      <!-- ⚠ EL HUECO. Blanco = plano; negro = por ahí entra la luz.
+           El aspa se dibuja como un rectángulo girado y el círculo interior
+           le come las puntas: así el brazo nace del anillo en vez de
+           atravesarlo, que es lo que hace que la marca se lea como UNA
+           pieza y no como una X metida en un aro. -->
+      <clipPath id="dentro" clipPathUnits="userSpaceOnUse">
+        <circle cx="956" cy="1006" r="286"/>
+      </clipPath>
+      <mask id="puerta" maskUnits="userSpaceOnUse" x="0" y="0" width="1912" height="2668">
+        <rect width="1912" height="2668" fill="#fff"/>
+        <!-- el anillo -->
+        <circle cx="956" cy="1006" r="334" fill="none" stroke="#000" stroke-width="49"/>
+        <!-- las dos aspas, recortadas por el círculo interior -->
+        <g clip-path="url(#dentro)">
+          <rect x="-352" y="-44" width="704" height="88"
+                transform="translate(956 1006) rotate(45)"/>
+          <rect x="-352" y="-44" width="704" height="88"
+                transform="translate(956 1006) rotate(-45)"/>
+        </g>
+      </mask>
+    </defs>
+
+    <!-- el mundo, al fondo -->
+    <rect width="1912" height="2668" fill="url(#mundo)"/>
+    <!-- estrías finas: le dan materia al vacío. Un degradado liso es lo que
+         hace que una lámina parezca salida de una plantilla. -->
+    <rect width="1912" height="2668" fill="url(#estrias)" opacity=".5"
+          style="mix-blend-mode:overlay"/>
+    <!-- el plano negro con el hueco -->
+    <rect width="1912" height="2668" fill="#040506" mask="url(#puerta)"/>
+    <!-- ⚠ EL HAZ ARRANCA POR DEBAJO DEL ANILLO, no a media marca. Empezaba
+         en y=1080 y como se pinta ENCIMA del plano, su borde recto cruzaba
+         el anillo por abajo: se veía el rectángulo. Una luz no tiene canto.
+         Ahora nace en el borde inferior del círculo (1006 + 358) y el propio
+         degradado se encarga de que ahí no haya línea. -->
+    <path d="M 706 1358 L 1206 1358 L 1512 2440 L 400 2440 Z"
+          fill="url(#haz)" mask="url(#haz-suave)"/>
+    <!-- la luz que se derrama sobre el plano -->
+    <ellipse cx="956" cy="1006" rx="900" ry="900" fill="url(#derrame)"/>
+    <!-- las esquinas, hacia abajo -->
+    <rect width="1912" height="2668" fill="url(#vineta)"/>
+
+    <defs>
+      <pattern id="estrias" width="5" height="5" patternUnits="userSpaceOnUse">
+        <rect width="5" height="5" fill="#000" fill-opacity=".18"/>
+        <rect width="1.6" height="5" fill="#fff" fill-opacity=".16"/>
+      </pattern>
+    </defs>
+  </svg>
+
+  <div class="grano"></div>
+
+  <div class="capa">
+    <div class="reticula"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+    <div class="cejilla"><b>XBOX</b> · PIEZA DE CONCEPTO</div>
+    <div class="folio">50 × 70 CM<br>001 / 001</div>
+
+    <div class="regla"></div>
+
+    <div class="titular">
+      <h1>LA X<span class="dos">ES UNA PUERTA</span></h1>
+      <p class="bajada">No es un botón ni un logotipo. Es el hueco por donde
+        entra otro mundo — y del otro lado <b>siempre hay alguien esperando
+        a que llegues</b>.</p>
+    </div>
+
+    <div class="pie">
+      <div class="aviso"><b>PIEZA DE CONCEPTO.</b> Ejercicio de diseño sin
+        relación con Microsoft ni con Xbox. No es publicidad oficial y no
+        está autorizada por el titular de la marca.</div>
+      <div class="marca">GRUPO MAZI<br><b>DEPARTAMENTO DE DISEÑO</b></div>
+    </div>
+  </div>
+
+  <div class="corte h" style="left:0;    top:3mm"></div>
+  <div class="corte v" style="left:3mm;  top:0"></div>
+  <div class="corte h" style="right:0;   top:3mm"></div>
+  <div class="corte v" style="right:3mm; top:0"></div>
+  <div class="corte h" style="left:0;    bottom:3mm"></div>
+  <div class="corte v" style="left:3mm;  bottom:0"></div>
+  <div class="corte h" style="right:0;   bottom:3mm"></div>
+  <div class="corte v" style="right:3mm; bottom:0"></div>
+</div>
