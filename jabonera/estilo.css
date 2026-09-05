@@ -77,12 +77,20 @@
 [hidden]{ display:none !important }
 
 html,body{ margin:0; padding:0 }
+/* El lienzo de la página es el de `html`, no el de `body`. Estaba transparente,
+   así que al rebotar el scroll —o mientras la cabecera pegajosa repinta— lo que
+   asomaba arriba era el crema, no el índigo: el «fondo pelón». Se pinta índigo,
+   que es el color que hay arriba en TODAS las pantallas (portada y cabecera), y
+   se apaga el rebote vertical para que no haya nada que asomar. */
+html{ background:var(--indigo); overscroll-behavior-y:none }
+
 body{
   color:var(--tinta); background:var(--crema);
   font-family:var(--sans); font-size:var(--t-cuerpo); line-height:1.5;
   font-weight:var(--p-normal);
   -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
   padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  min-height:100dvh;
 }
 /* Los números llevan `tabular-nums` pero NO monoespaciada: se siguen pudiendo
    comparar en columna sin sonar a terminal. Es el cambio de registro que
@@ -127,21 +135,45 @@ a{ color:var(--indigo) }
 .campo-marca .rotulo{ color:rgba(255,255,255,.66); margin:0 0 14px }
 .campo-marca hr{ border:0; border-top:1px solid rgba(255,255,255,.22); margin:24px 0 20px }
 
+/* El aviso de demostración, plegado: un renglón en vez de cinco, en las cuatro
+   pestañas. `summary` necesita 44 px de alto como cualquier cosa que se toca. */
+.aviso.cinta{ padding:0 }
+.aviso.cinta summary{
+  list-style:none; cursor:pointer; padding:12px 40px 12px 16px; min-height:44px;
+  display:flex; align-items:center; font-size:var(--t-menor); position:relative;
+}
+.aviso.cinta summary::-webkit-details-marker{ display:none }
+.aviso.cinta summary::after{ content:'›'; position:absolute; right:16px; top:50%;
+                            transform:translateY(-50%); font-size:1.3em; line-height:1 }
+.aviso.cinta[open] summary::after{ content:'⌄' }
+.aviso.cinta p{ padding:0 16px 14px; font-size:var(--t-menor) }
+
 /* ── cabecera compacta ────────────────────────────────────────────────── */
 .cabecera{
   position:sticky; top:0; z-index:20;
   background:var(--indigo); color:#fff;
+  /* Su propia capa del compositor. Sin esto, un scroll rápido la deja repintar
+     tarde y se ve el fondo por debajo. Es `transform`, no `backdrop-filter`:
+     lo resuelve el compositor sin recalcular nada en cada fotograma. */
+  transform:translateZ(0); will-change:transform;
   padding:calc(9px + env(safe-area-inset-top)) var(--aire) 12px;
   border-radius:0 0 var(--r) var(--r);
 }
 .cabecera .dentro{ display:flex; align-items:center; gap:10px; max-width:var(--tope); margin:0 auto }
 .cabecera .nom{ font-size:var(--t-cuerpo); font-weight:var(--p-macizo); letter-spacing:-.01em }
 .cabecera .der{ margin-left:auto; display:flex; gap:6px; align-items:center }
-.cabecera button{
+/* La marca es un botón, no un adorno: 44 px de alto como todo lo tocable. */
+.marca-ir{
+  appearance:none; background:transparent; border:0; color:inherit; cursor:pointer;
+  display:flex; align-items:center; gap:10px; padding:0 8px 0 0; min-height:44px;
+  font:inherit; border-radius:var(--r-pastilla);
+}
+.marca-ir:active{ opacity:.72 }
+.cabecera .der button{
   appearance:none; background:rgba(255,255,255,.16); border:0; color:#fff; cursor:pointer;
   width:42px; height:42px; border-radius:var(--r-pastilla); display:grid; place-items:center;
 }
-.cabecera button svg{ width:20px; height:20px }
+.cabecera .der button svg{ width:20px; height:20px }
 .gota{ width:26px; height:26px; flex:0 0 auto }
 
 main{ max-width:var(--tope); margin:0 auto; padding:var(--aire) var(--aire) 24px }

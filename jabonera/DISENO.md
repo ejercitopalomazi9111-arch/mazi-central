@@ -319,3 +319,99 @@ roja. Es la única forma de que una decisión de diseño dure más de una sesió
 - **Su animación.** Aquí no hay ninguna librería y el movimiento es un
   `translateY` de 4 px al cambiar de pestaña. `backdrop-filter` está
   descartado a propósito: obliga a recomponer en cada fotograma de scroll.
+
+---
+
+# Quinta vuelta · «está eteeeeerno» (e522)
+
+Carlos probó la app publicada y mandó cuatro cosas. Las cuatro eran ciertas y
+ninguna la había cazado la compuerta, que medía contraste y tamaños pero no
+**cuánto** hay en una pantalla ni si se puede uno ir de ella.
+
+## Lo que midió el problema
+
+Antes de tocar nada, cuánto medía cada pestaña en pantallas de 390 × 844:
+
+| Pestaña | Antes | Después |
+|---|---|---|
+| Inicio | 2.19 | 1.92 |
+| Registrar | 1.00 | 1.00 |
+| **Análisis** | **1.90** | **1.00** |
+| **Almacén** | **3.25** | **1.00** |
+| Proyecto | 1.38 | 1.38 |
+| Ajustes | 1.18 | 1.18 |
+
+Almacén era peor que Análisis, y nadie lo había mirado porque el que se quejó
+fue de Análisis. Medir las seis costó un minuto y cambió qué se arregló.
+
+## 1 · «si algo ya sale una vez quítalo»
+
+Tres repeticiones de verdad, no una impresión:
+
+- **«Qué baño gasta más» salía dos veces**, una por producto, con el mismo
+  encabezado palabra por palabra. Ahora el encabezado va una vez —es el
+  título de la sub-pantalla— y cada tarjeta se llama como su producto, que es
+  lo que de verdad las distingue.
+- **El mosaico de la portada repetía la barra de pestañas.** Análisis, Almacén
+  y Reporte ya son pestañas; a Ajustes se llega por el enlace de arriba. Cuatro
+  botones que no llevaban a ningún sitio nuevo, ocupando media pantalla.
+- **El aviso de datos de demostración** salía entero —cinco renglones— en las
+  cuatro pestañas. No se puede quitar: presentar datos de ejemplo como medidos
+  es lo único que sí puede reprobarlos. Va plegado, en un renglón, con el
+  detalle a un toque.
+
+## 2 · El reparto en submenús
+
+La regla al repartir fue **que ningún dato quede en dos sitios**:
+
+- **Análisis** = una cifra y cuatro renglones. La cifra principal está arriba y
+  en ningún submenú; el resto de productos sólo en «Cuánto costó»; el reparto
+  por baño sólo en el suyo.
+- **Almacén** = un renglón por producto, con lo único que se mira de pie
+  —cuántos días aguanta, en coral si son menos de siete—, más «Apuntar una
+  entrega» y «Entregas registradas».
+
+## 3 · La cabecera que se quedaba atrás
+
+El lienzo de la página es el de `html`, y estaba **transparente**: la página
+tomaba el crema de `body`. Así que al rebotar el scroll, o mientras la cabecera
+pegajosa repintaba, lo que asomaba arriba era crema y no índigo — el «fondo
+pelón». Tres líneas:
+
+- `html{ background: var(--indigo) }` — el color que hay arriba en todas las pantallas.
+- `html{ overscroll-behavior-y: none }` — sin rebote no hay nada que asomar.
+- `.cabecera{ transform: translateZ(0) }` — su propia capa del compositor, para
+  que un scroll rápido no la deje repintar tarde. Es `transform`, no
+  `backdrop-filter`.
+
+Y `body{ min-height: 100dvh }`, porque con poco contenido el índigo del lienzo
+asomaba **por abajo**, que es exactamente el mismo defecto al revés.
+
+## 4 · La salida que no estaba
+
+Ajustes no es una de las cinco pestañas, así que su raíz no marcaba ninguna y
+tampoco traía «volver»: se entraba y visualmente no había por dónde salir. Dos
+salidas nuevas, porque una sola es la que faltaba antes:
+
+- La raíz de Ajustes estrena **«‹ Inicio»**.
+- **La marca de la cabecera es un botón** que lleva a Inicio, con sus 44 px.
+
+## Lo que aprendió la compuerta
+
+Dos cosas, y la segunda es un error de la compuerta, no del diseño:
+
+- **Comprobación nueva:** desde cualquier pantalla se puede volver a Inicio. Si
+  ninguna pestaña está marcada, el panel visible tiene que traer una salida.
+
+  **Y la primera versión no servía.** La escribí, se puso verde, y al quitarle a
+  propósito la salida a Ajustes **siguió verde**. La causa era la misma de
+  siempre: el recorrido entraba a cada submenú y salía, pero **nunca miraba la
+  pantalla de la que colgaban**. Mirar a los hijos no es mirar al padre.
+  Arreglado el recorrido, la mutación la pone roja (50 · 1) y el código bueno
+  verde (51 · 0). Una compuerta que no se ha visto roja no vale nada, y ésta
+  estuvo a punto de contar como buena.
+- **El selector va anclado al panel.** Los paneles escondidos conservan su HTML,
+  así que un `[data-sub="banos"]` suelto encontraba PRIMERO el de Análisis
+  —invisible— y la prueba se colgaba treinta segundos esperando a que fuera
+  visible algo que nunca lo iba a ser. Saltó en cuanto Análisis estrenó un
+  submenú que se llamaba igual que uno de Ajustes.

@@ -280,9 +280,15 @@ function menu(filas){
       <span aria-hidden="true" class="flecha">›</span>
     </button>`).join('')}</div>`;
 }
-/** La cabecera de una sub-pantalla, con su vuelta atrás. */
-function volver(titulo){
-  return `<button class="b chico fantasma" data-sub="atras" style="margin-bottom:14px">‹ Volver</button>
+/** La cabecera de una sub-pantalla, con su vuelta atrás.
+    `a` dice a dónde vuelve: por omisión al menú de la pestaña (sub → null), y
+    con un nombre de pestaña, a esa pestaña. Ajustes NO es una de las cinco
+    pestañas de abajo, así que su raíz se quedaba sin salida visible: nada en
+    la pantalla decía cómo volver a Inicio. Se lo dijo Carlos, y tenía razón. */
+function volver(titulo, a){
+  const accion = a ? `data-ir="${esc(a)}"` : 'data-sub="atras"';
+  const texto  = a ? '‹ Inicio' : '‹ Volver';
+  return `<button class="b chico fantasma" ${accion} style="margin-bottom:14px">${texto}</button>
           <h1 style="margin:0 0 16px">${esc(titulo)}</h1>`;
 }
 
@@ -299,10 +305,11 @@ function pinta(){
   $('#cabecera').hidden = tab === 'inicio';
   $('#letreroDemo').innerHTML = (E.demo && tab !== 'inicio') ? avisoDemo() : '';
 }
-const avisoDemo = () => `<div class="aviso mal">
-  <h3>Estos son DATOS DE DEMOSTRACIÓN</h3>
-  No son mediciones reales. Antes de usarlo de verdad: <b>Ajustes → Empezar de cero</b>.
-  La advertencia sale también en el Excel y en el reporte.</div>`;
+const avisoDemo = () => `<details class="aviso mal cinta">
+  <summary><span><b>DATOS DE DEMOSTRACIÓN</b> — no son mediciones reales</span></summary>
+  <p style="margin:8px 0 0">Antes de usarlo de verdad: <b>Ajustes → Empezar de cero</b>.
+  La advertencia viaja también dentro del Excel y del reporte, así que no se
+  pierde cuando el archivo se entrega suelto.</p></details>`;
 
 /* ══ 1 · INICIO · la portada ════════════════════════════════════════════
    Se abre como abren las tres referencias de la casa: color a sangre, una
@@ -385,19 +392,11 @@ PINTORES.inicio = () => {
       <div class="fichas">${gauges}</div>` : ''}
 
     ${c.intervalos ? `
-    <div class="rejilla dos" style="margin-bottom:14px">
-      <div class="tarjeta" style="margin:0;text-align:center">
-        ${anillo(Math.min(100, c.dias/7*100), `${nu(c.dias,1)}<em>días</em>`,
-                 c.suficiente ? 'Ya se puede concluir' : 'Faltan días para concluir',
-                 c.suficiente ? 'var(--menta)' : 'var(--coral)')}
-        <p class="menor" style="text-align:center;margin:10px 0 0">${c.visitas} visitas · ${c.intervalos} intervalos</p>
-      </div>
-      <div class="mosaico">
-        <button class="baldosa" data-ir="analisis">${icono('grafica','indigo')}<span>Análisis</span></button>
-        <button class="baldosa" data-ir="almacen">${icono('caja','menta')}<span>Almacén</span></button>
-        <button class="baldosa" data-ir="proyecto">${icono('hoja','coral')}<span>Reporte</span></button>
-        <button class="baldosa" data-abrir-ajustes="1">${icono('ajuste','indigo')}<span>Ajustes</span></button>
-      </div>
+    <div class="tarjeta" style="margin-bottom:14px;text-align:center">
+      ${anillo(Math.min(100, c.dias/7*100), `${nu(c.dias,1)}<em>días</em>`,
+               c.suficiente ? 'Ya se puede concluir' : 'Faltan días para concluir',
+               c.suficiente ? 'var(--menta)' : 'var(--coral)')}
+      <p class="menor" style="text-align:center;margin:10px 0 0">${c.visitas} visitas · ${c.intervalos} intervalos</p>
     </div>` : ''}
   </main>`;
 };
@@ -602,8 +601,8 @@ PINTORES.analisis = () => {
     }));
     if(!filas.length) return '';
     return `<div class="tarjeta">
-      <h2>Qué baño gasta más</h2>
-      <p class="menor" style="margin-bottom:16px">${esc(p.nombre)}, en ${esc(M.UNIDAD[p.tipo])},
+      <h2>${esc(p.nombre)}</h2>
+      <p class="menor" style="margin-bottom:16px">En ${esc(M.UNIDAD[p.tipo])},
         sobre ${nu(inf.rango.dias,1)} días medidos.</p>
       ${ranking(filas, { unidad: M.UNIDAD[p.tipo] })}
     </div>`;
@@ -616,10 +615,18 @@ PINTORES.analisis = () => {
   const h = inf.hora;
   const picoHora = h.horas.reduce((a,b,i,arr) => arr[a].consumo >= b.consumo ? a : i, 0);
 
-  return `
-    ${sub === 'graficas' ? volver('Cuándo se gasta') : avisos.join('')}
+  /* Todo esto cabía en una sola pantalla y salía «eteeeeerno» — palabra de
+     Carlos. Ahora la pestaña es UNA cifra y cuatro renglones; el detalle vive
+     detrás de cada uno. La regla al repartir fue que ningún dato aparezca en
+     dos sitios: la cifra principal está arriba y en ningún submenú, el resto
+     de productos sólo en «Cuánto costó», y el reparto por baño sólo en el suyo. */
+  const TITULOS = { banos:'Qué baño gasta más', graficas:'Cuándo se gasta',
+                    dinero:'Cuánto costó', llevarselo:'Llevárselo' };
 
-    ${sub === 'graficas' ? '' : `<div class="dato grande" style="margin-bottom:12px">
+  return `
+    ${sub ? volver(TITULOS[sub] || 'Análisis') : avisos.join('')}
+
+    ${sub ? '' : `<div class="dato grande" style="margin-bottom:14px">
       <div class="et">${esc(p0.producto.nombre)} · ${nu(inf.rango.dias,1)} días medidos</div>
       <span class="v num">${cif.grande}<u>${cif.unidad}</u></span>
       <div class="n">${[cif.detalle,
@@ -627,6 +634,20 @@ PINTORES.analisis = () => {
           p0.diario != null ? `${soloNumero(p0.diario,p0.producto)} al día` : null].filter(Boolean).join(' · ')}</div>
     </div>
 
+    ${menu([
+      { id:'banos', icono:'caja', tono:'indigo', titulo:'Qué baño gasta más',
+        que:`Comparación entre los ${E.banos.length} baños, y por alumno` },
+      { id:'graficas', icono:'grafica', tono:'menta', titulo:'Cuándo se gasta',
+        que:'Por día, por día de la semana y a qué hora' },
+      { id:'dinero', icono:'dinero', tono:'coral', titulo:'Cuánto costó',
+        que: inf.dinero.gasto == null ? 'sin precio todavía' : pesos(inf.dinero.gasto) + ' consumidos' },
+      { id:'llevarselo', icono:'hoja', tono:'indigo', titulo:'Llevárselo',
+        que:'Exportar a Excel: un .xlsx de nueve hojas' },
+    ])}`}
+
+    ${sub === 'banos' ? porProducto : ''}
+
+    ${sub === 'dinero' ? `
     <div class="datos">
       ${cifras}
       <div class="dato ${inf.dinero.gasto==null?'hueca':''}">${icono('dinero','menta')}<div class="et">Valor de lo consumido</div>
@@ -635,8 +656,20 @@ PINTORES.analisis = () => {
           ? 'sin entregas registradas no se puede valorar'
           : 'invertido en compras: ' + pesos(inf.dinero.invertido)}</div></div>
     </div>
+    <div class="tarjeta" style="margin-top:14px">
+      <h2>De dónde sale este dinero</h2>
+      <p class="menor">El costo por unidad NO es el último precio pagado, sino el
+      <b>promedio ponderado</b> por cantidad comprada. Si se compró mucho barato y poco caro,
+      el promedio lo refleja — es la misma cuenta que hace un almacén.</p>
+    </div>` : ''}
 
-    ${porProducto}`}
+    ${sub === 'llevarselo' ? `
+    <div class="tarjeta no-imprimir">
+      <h2>Llevárselo</h2>
+      <p class="menor" style="margin:6px 0 16px">Un <b>.xlsx</b> de nueve hojas: mediciones,
+      consumo por baño, por día, existencias, compras y las advertencias.</p>
+      <button class="b ancho" data-excel="1">Exportar a Excel</button>
+    </div>` : ''}
 
     ${sub === 'graficas' ? `
     <div class="tarjeta">
@@ -669,21 +702,16 @@ PINTORES.analisis = () => {
       </div>
     </div>
 
-    ` : `
-    ${menu([
-      { id:'graficas', icono:'grafica', tono:'indigo', titulo:'Cuándo se gasta',
-        que:'Por día, por día de la semana y a qué hora' },
-    ])}
-    <div class="tarjeta no-imprimir" style="margin-top:14px">
-      <h2>Llevárselo</h2>
-      <p class="menor" style="margin:6px 0 16px">Un <b>.xlsx</b> de nueve hojas.</p>
-      <button class="b ancho" data-excel="1">Exportar a Excel</button>
-    </div>`}`;
+    ` : ''}`;
 };
 
 /* ══ 4 · ALMACÉN ═══════════════════════════════════════════════════════ */
 PINTORES.almacen = () => {
   const inf = M.informe(E);
+  /* Almacén medía 3.25 pantallas: una tarjeta enorme por producto, el
+     formulario de entregas y la tabla entera, todo seguido. Ahora la pestaña
+     es un renglón por producto —el dato que se mira de pie es «cuántos días
+     aguanta»— y lo demás vive detrás de su renglón. */
   const tarjetas = inf.porProducto.map(p => {
     const dias = p.diasRestantes;
     const urgente = dias != null && dias < 7;
@@ -712,11 +740,43 @@ PINTORES.almacen = () => {
         ${recargas != null ? ` Alcanza para <b>${nu(recargas,1)}</b> recargas completas del dispensador.` : ''}
       </p>
     </div>`;
-  }).join('') || `<div class="tarjeta"><p class="menor">Primero hay que dar de alta algún producto.</p></div>`;
+  });
 
   const entregas = [...E.entregas].sort((a,b) => b.ts - a.ts);
+
+  const filasMenu = inf.porProducto.map(p => {
+    const d = p.diasRestantes;
+    return { id:'prod-' + p.producto.id, icono:'caja',
+             tono: d != null && d < 7 ? 'coral' : 'indigo',
+             titulo: p.producto.nombre,
+             que: d == null ? 'hacen falta dos visitas para saber el ritmo'
+                            : (d < 7 ? `aguanta ${nu(d,1)} días — hay que comprar`
+                                     : `aguanta ${nu(d,1)} días`) };
+  });
+
+  if(sub && sub.startsWith('prod-')){
+    const id = sub.slice(5);
+    const p = inf.porProducto.find(x => x.producto.id === id);
+    if(!p) { sub = null; }
+    else return volver(p.producto.nombre) + tarjetaProducto(p);
+  }
+  if(sub === 'apuntar')  return volver('Apuntar una entrega') + formEntrega();
+  if(sub === 'entregas') return volver('Entregas registradas') + tablaEntregas();
+
   return `
-  ${tarjetas}
+  ${filasMenu.length ? menu(filasMenu)
+    : '<div class="tarjeta"><p class="menor">Primero hay que dar de alta algún producto.</p></div>'}
+  <div style="margin-top:14px">
+  ${menu([
+    { id:'apuntar', icono:'hoja', tono:'menta', titulo:'Apuntar una entrega',
+      que:'Lo que llega y su precio' },
+    { id:'entregas', icono:'reloj', tono:'indigo', titulo:'Entregas registradas',
+      que: entregas.length ? `${entregas.length} apuntada(s)` : 'ninguna todavía' },
+  ])}</div>`;
+
+  function tarjetaProducto(p){ return tarjetas[inf.porProducto.indexOf(p)]; }
+
+  function formEntrega(){ return `
   <form class="tarjeta" id="formEntrega">
     <h2>Apuntar una entrega</h2>
     <p class="menor" style="margin-bottom:16px">Lo que llega al almacén. <b>Es lo que le pone precio a todo:</b>
@@ -738,10 +798,10 @@ PINTORES.almacen = () => {
         <input id="ePrv" name="proveedor" type="text" placeholder="Opcional"></div>
     </div>
     <button class="b ancho" type="submit">Guardar entrega</button>
-  </form>
+  </form>`; }
 
+  function tablaEntregas(){ return `
   <div class="tarjeta">
-    <h2>Entregas registradas</h2>
     ${entregas.length ? `<p class="menor pista-desliza" style="margin-top:10px">Desliza la tabla de lado →</p>
       <div class="tabla-caja"><table>
       <thead><tr><th>Fecha</th><th>Producto</th><th class="n">Envases</th><th class="n">Costo</th><th class="n">Por unidad</th></tr></thead>
@@ -754,7 +814,7 @@ PINTORES.almacen = () => {
           <td class="n">${total ? pesos(e.costoTotal/total) + '<br><span class="micro">por ' + M.UNIDAD[p.tipo] + '</span>' : '—'}</td>
         </tr>`; }).join('')}</tbody></table></div>`
       : `<p class="menor" style="margin-top:10px">Ninguna todavía. Sin entregas no hay precios y el análisis no puede hablar de dinero.</p>`}
-  </div>`;
+  </div>`; }
 };
 
 /* ══ 5 · PROYECTO · menú, no una pila de ocho tarjetas ═════════════════
@@ -1169,8 +1229,8 @@ PINTORES.ajustes = () => {
   </div>`;
 
   return `
-  <h1 style="margin:0 0 4px">Ajustes</h1>
-  <p class="menor" style="margin:0 0 18px">Todo lo que no se toca a diario.</p>
+  ${volver('Ajustes', 'inicio')}
+  <p class="menor" style="margin:-10px 0 18px">Todo lo que no se toca a diario.</p>
   ${menu([
     { id:'escuela', icono:'hoja', tono:'indigo', titulo:'La escuela',
       que: E.escuela.nombre || 'sin capturar' },
