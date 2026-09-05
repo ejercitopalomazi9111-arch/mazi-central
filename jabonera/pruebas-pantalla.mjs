@@ -112,7 +112,7 @@ console.log('\n══ LA PIEL: NINGUNA VARIABLE MUERTA, TIPO CARGADO, ESQUINA VI
   const mirarTodo = async (fn) => {
     const junto = [];
     for(const tab of ['inicio','registrar','analisis','almacen','proyecto']){
-      await pg.click(`.pestanas button[data-tab="${tab}"]`); await pg.waitForTimeout(260);
+      await pg.click(`.pestanas button[data-tab="${tab}"]`); await pg.waitForTimeout(170);
       junto.push(...await pg.evaluate(fn));
       if(tab === 'registrar' && await pg.$('#p-registrar .ficha')){
         await pg.click('#p-registrar .ficha'); await pg.waitForTimeout(260);
@@ -123,20 +123,53 @@ console.log('\n══ LA PIEL: NINGUNA VARIABLE MUERTA, TIPO CARGADO, ESQUINA VI
     /* ⚠ Y TAMBIÉN LOS SUBMENÚS. Al meter Proyecto y Ajustes en menús, la
        mitad de la interfaz dejó de estar en pantalla al primer vistazo: si
        la prueba no entra, deja de comprobar justo lo que nadie mira. */
-    for(const [tab, subs] of [['proyecto', ['reporte','steam','dispensador','metodo','limites']],
+    /* ⚠ Y EL SELECTOR VA ANCLADO AL PANEL. Los paneles que no se ven conservan
+       su HTML, así que un `[data-sub="banos"]` suelto encuentra PRIMERO el de
+       Análisis —que está escondido— y la prueba se cuelga treinta segundos
+       esperando a que sea visible algo que nunca lo va a ser. Pasó en cuanto
+       Análisis estrenó un submenú que se llamaba igual que uno de Ajustes. */
+    /* ⚠ Y LA RAÍZ DE CADA PESTAÑA, NO SÓLO SUS HIJOS. Este bucle entraba a
+       cada submenú y salía, pero nunca miraba la pantalla de la que colgaban.
+       Ajustes no es una de las cinco de abajo, así que su raíz no la miraba
+       nadie: le quité a propósito la salida a Inicio y la compuerta siguió en
+       verde. Mirar a los hijos no es mirar al padre. */
+    for(const [tab, subs] of [['analisis', ['banos','graficas','dinero','llevarselo']],
+                              ['proyecto', ['reporte','steam','dispensador','metodo','limites']],
                               ['ajustes',  ['escuela','aparato','banos','productos','mediciones','respaldo','demo']]]){
       await pg.click(`.pestanas button[data-tab="${tab}"]`).catch(async () => {
         await pg.click('[data-abrir-ajustes]'); });
-      await pg.waitForTimeout(220);
+      await pg.waitForTimeout(170);
+      junto.push(...await pg.evaluate(fn));
       for(const s of subs){
-        const b = await pg.$(`[data-sub="${s}"]`); if(!b) continue;
-        await b.click(); await pg.waitForTimeout(200);
+        const b = await pg.$(`#p-${tab} [data-sub="${s}"]`); if(!b) continue;
+        if(!await b.isVisible()) continue;
+        await b.click(); await pg.waitForTimeout(150);
         junto.push(...await pg.evaluate(fn));
-        await pg.click('[data-sub="atras"]').catch(()=>{}); await pg.waitForTimeout(160);
+        await pg.click(`#p-${tab} [data-sub="atras"]`).catch(()=>{});
+        await pg.waitForTimeout(140);
       }
     }
     return [...new Set(junto)];
   };
+
+  /* ⚠ TODA PANTALLA TIENE QUE TENER SALIDA A INICIO. Ajustes no es una de las
+     cinco pestañas de abajo, así que su raíz no marcaba ninguna y tampoco
+     traía «volver»: se entraba y visualmente no había por dónde salir. La
+     compuerta anterior no lo cazó porque miraba el contraste y los tamaños,
+     no si se podía uno ir. Lo cazó Carlos, que es peor. */
+  const sinSalida = await mirarTodo(() => {
+    const marcada = document.querySelector('.pestanas button[aria-selected="true"]');
+    if(marcada) return [];                       // está en una pestaña: la barra es la salida
+    const panel = [...document.querySelectorAll('.panel')].find(p => !p.hidden);
+    if(!panel) return ['no hay panel visible'];
+    const salida = [...panel.querySelectorAll('[data-ir],[data-sub="atras"]')]
+      .some(b => b.offsetParent !== null);
+    const marca = document.querySelector('.marca-ir');
+    const porLaMarca = marca && marca.offsetParent !== null;
+    return (salida || porLaMarca) ? [] : [panel.id + ' no tiene cómo volver'];
+  });
+  ok('desde cualquier pantalla se puede volver a Inicio',
+     sinSalida.length === 0, sinSalida.join(', '));
 
   const muertas = await mirarTodo(() => {
     const raiz = getComputedStyle(document.documentElement);
@@ -376,6 +409,7 @@ console.log('\n══ EL EXCEL SE DESCARGA Y ES UN ARCHIVO DE VERDAD ══');
   await pg.goto(`http://127.0.0.1:${P}/`, { waitUntil:'networkidle' });
   await pg.click('[data-demo="1"]'); await pg.waitForTimeout(300);
   await pg.click('.pestanas button[data-tab="analisis"]'); await pg.waitForTimeout(300);
+  await pg.click('#p-analisis [data-sub="llevarselo"]'); await pg.waitForTimeout(300);
   const [bajada] = await Promise.all([ pg.waitForEvent('download'), pg.click('[data-excel="1"]') ]);
   const ruta = await bajada.path();
   const buf = await readFile(ruta);
