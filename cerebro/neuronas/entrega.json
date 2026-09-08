@@ -87,6 +87,26 @@
         "otra vez con lo mismo"
       ],
       "salioDe": "Una regla explícita de este equipo, y la corrección «no me des problemas, dime qué necesitas»."
+    },
+    {
+      "id": "artefacto-que-el-otro-no-puede-abrir",
+      "titulo": "Se entregó un enlace que quien lo recibe no puede abrir",
+      "gravedad": "alta",
+      "sintoma": "Se manda el trabajo como enlace a una página alojada y del otro lado contestan que no lo pueden ver, que es inútil, o simplemente no contestan. Se repite el envío y pasa lo mismo.",
+      "causa": "El formato se eligió por lo que le conviene a quien entrega —una página viva, interactiva, que se actualiza sola— y no por lo que la otra persona puede abrir de verdad. Un enlace exige conexión, sesión iniciada y un navegador que llegue a ese dominio. Tres condiciones que quien entrega da por hechas porque en su lado se cumplen siempre.",
+      "porque": "Quien entrega prueba el enlace en su propio entorno, donde funciona. La comprobación que faltaba no es «¿abre?» sino «¿abre EN EL APARATO DE QUIEN LO VA A VER?», y ésa no se puede hacer desde aquí. Además el fallo llega tarde y como reproche, no como error, así que se atribuye al contenido —«no le gustó»— en vez de al formato.",
+      "arreglo": "Preguntar UNA VEZ, al empezar la relación, cómo quiere recibir el trabajo, y anotarlo. Mientras no haya respuesta, mandar lo que se ve sin salir de donde ya está leyendo: la captura pegada al mensaje y el texto en el mensaje. El enlace se ofrece además, nunca en lugar de.",
+      "comoCazarlo": "Si tras mandar un enlace la respuesta no habla del CONTENIDO —dice «no lo puedo ver», «es inútil», o no llega— es el formato, no el trabajo. Contar los envíos: dos enlaces seguidos sin comentario de fondo ya es la señal.",
+      "consejo": "Una entrega no es lo que uno manda: es lo que el otro recibe. Un enlace precioso que no abre vale menos que una captura fea que sí.",
+      "senales": [
+        "no lo puedo ver",
+        "no me mandes links",
+        "es inútil",
+        "no abre",
+        "no tengo internet",
+        "mándamelo por aquí"
+      ],
+      "salioDe": "toydarians/ · tres entregas seguidas por enlace a un compañero que no podía abrirlas; la tercera fue «deja de mandarme artefactos, ni acceden a wifi, no los puedo ver y son inútiles»"
     }
   ]
 }
