@@ -147,6 +147,15 @@ export function montarEncendido(raiz) {
   const destino = document.querySelector('[data-logo-destino]');
   const saltar = raiz.querySelector('[data-saltar]');
 
+  /* ⚠ `parar` SE DECLARABA HASTA ABAJO Y `terminar()` LO USA. Con la
+     preferencia de menos movimiento puesta, el atajo de aquí llamaba a
+     `terminar(true)` ANTES de que existiera, y el `const` de más abajo lo deja
+     en zona muerta: ReferenceError, el módulo entero se cae y con él TODA la
+     experiencia de la portada. No se veía porque sólo pasa con esa preferencia
+     —o sea, justo con quien más la necesita— y porque el suite que lo caza
+     llevaba tiempo sin arrancar. Declararlo aquí, en `let`, lo apaga. */
+  let parar = null;
+
   // Menos movimiento: se prende y ya. Nadie se pierde nada.
   if (menosMovimiento()) { terminar(true); return; }
 
@@ -174,7 +183,7 @@ export function montarEncendido(raiz) {
   const inicio = performance.now();
   let fase = 'filamento', sono = false;
 
-  const parar = cada(() => {
+  parar = cada(() => {
     const ms = performance.now() - inicio;
 
     if (fase === 'filamento') {

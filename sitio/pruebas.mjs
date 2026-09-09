@@ -1,4 +1,18 @@
-import { chromium } from 'playwright';
+/* ⚠ AQUÍ DECÍA `import { chromium } from 'playwright'` Y ESTE SUITE NUNCA CORRÍA
+   EN ESTE CONTENEDOR: playwright vive sólo en la instalación global, así que el
+   import pelón truena con ERR_MODULE_NOT_FOUND antes de la primera comprobación.
+   Un suite que ni arranca no reprueba: calla, y calla igual que uno que pasa.
+   Es el mismo defecto que ya estaba en `toydarians/taller/revisar.mjs` y en
+   `explorador/pruebas.mjs` — tercera vez, y por eso se busca en los dos lados. */
+let chromium;
+for (const d of ['/opt/node22/lib/node_modules/playwright/index.mjs',
+                 'playwright', '/usr/lib/node_modules/playwright/index.mjs']) {
+  try { chromium = (await import(d)).chromium; if (chromium) break; } catch (e) {}
+}
+if (!chromium) {
+  console.error('Falta playwright con navegador. En este contenedor vive en /opt/node22.');
+  process.exit(1);
+}
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
