@@ -367,10 +367,60 @@ footer{background:#000;border-top:1px solid var(--linea);
     transition:transform 420ms cubic-bezier(.34,1.25,.44,1);
     transition-delay:calc(var(--d) * 22ms)}
 }
+/* ══════════════════ S · Sylcred ══════════════════
+   Carlos: «mejora el scroll para que las cosas aparezcan de modo más aestetic
+   y como si fuesen enérgicas las apariciones».
+
+   Lo que había era correcto y tímido: 18 px de recorrido con una curva que
+   sólo desacelera (.2,.7,.25,1). Eso se lee como «apareció», no como «entró».
+   Y sólo lo llevaban TRES elementos de toda la página, así que el resto del
+   scroll estaba muerto.
+
+   Tres cosas dan la energía, y ninguna es hacerlo más rápido:
+
+   1 · RECORRIDO. 18 px no se ven; 34 sí. Lo que se percibe como fuerza es la
+       distancia recorrida, no la duración.
+   2 · SOBREPASO. La curva pasa de largo y regresa (el 1.3 del tercer punto).
+       Un movimiento que se pasa y se acomoda se lee como que traía inercia —
+       tiene peso. El que sólo frena parece que lo empujaron.
+   3 · ESCALONADO. Los hermanos entran uno tras otro, no en bloque. Es lo que
+       hace que se vea compuesto en vez de hecho por un script — y es
+       exactamente lo que ya hacía `.pieza-eje` con su `--d`; aquí se
+       generaliza.
+
+   ⚠ NADA DE OPACITY SOBRE TEXTO, que es regla de la casa y él ya la tenía
+   escrita: un texto a media opacidad es un texto con el contraste roto
+   mientras dura. El texto entra sólo con `transform`. La opacidad se reserva
+   para lo que no se lee — imágenes y cajas.
+
+   ⚠ EL TOPE DEL ESCALONADO ES A PROPÓSITO. Sin él, una rejilla de 47 fichas
+   pondría la última a 47 × 70 ms = tres segundos y pico después de entrar en
+   pantalla: el visitante ya hizo scroll y se perdió la mitad. Se corta en 8. */
+@media (scripting: enabled){
+  .s-rev{transform:translate3d(0,34px,0);
+    transition:transform 640ms cubic-bezier(.2,1.3,.32,1);
+    transition-delay:calc(var(--s-i,0) * 70ms)}
+  .s-rev.s-dentro{transform:none}
+  /* Las cajas —no el texto— además se asientan con un pelo de escala y de
+     opacidad. En una tarjeta con foto eso se lee como que aterriza. */
+  .s-rev.s-caja{opacity:.001;transform:translate3d(0,34px,0) scale(.975);
+    transition:transform 640ms cubic-bezier(.2,1.3,.32,1),
+               opacity 400ms ease-out;
+    transition-delay:calc(var(--s-i,0) * 70ms)}
+  .s-rev.s-caja.s-dentro{opacity:1;transform:none}
+  /* El revelado que ya existía también se estira: era el más visible y el que
+     peor contaba la historia. */
+  .revelar{transform:translate3d(0,34px,0);
+    transition:transform 640ms cubic-bezier(.2,1.3,.32,1)}
+}
+/* ══════════════════ /S ══════════════════ */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
   .revelar,.figura,.carton,.burbuja img,.lustre{transform:none!important}
   .pieza-eje{transform:translateX(-1px)!important}
+  /* ══════ S ══════ */
+  .s-rev,.s-rev.s-caja{transform:none!important;opacity:1!important}
+  /* ══════ /S ══════ */
 }
 """
 
@@ -654,6 +704,62 @@ JS = r"""
   } else {
     document.querySelectorAll('.revelar').forEach(function(n){ n.classList.add('dentro'); });
   }
+
+  /* ══════════════════ S · Sylcred ══════════════════
+     El scroll enérgico que pidió Carlos. Se engancha desde AQUÍ y no desde el
+     HTML a propósito: así no toco una sola etiqueta del generador de Godines.
+     Sin JavaScript no pasa nada de esto y la página se ve entera — el CSS de
+     arriba vive dentro de `@media (scripting: enabled)`.
+
+     ⚠ EL ÍNDICE ES POR GRUPO, NO GLOBAL. Numerar de corrido toda la página
+     haría que la última sección esperara el escalonado de todas las
+     anteriores. El contador se reinicia en cada padre, que es lo que hace que
+     cada rejilla se sienta como una tanda propia. */
+  if ('IntersectionObserver' in window) {
+    var TOY = window.TOY = window.TOY || {};
+    TOY.s = TOY.s || {};
+
+    // Lo que merece entrar: las fichas de la vitrina y los renglones del
+    // índice. Nunca la portada — lo que ya se ve al llegar no se «revela», se
+    // estropea si parpadea.
+    //
+    // ⚠ ESTOS NOMBRES ESTÁN SACADOS DEL HTML, NO SUPUESTOS. La primera versión
+    // decía `.celda, .ficha, .tarjeta, .sobre` — cuatro nombres razonables y
+    // ninguno existe aquí. El selector no falla cuando no encuentra nada:
+    // devuelve una lista vacía y sigue. Resultado: se revelaba el índice y la
+    // vitrina entera —lo que más se ve— se quedaba quieta, con la compuerta en
+    // verde y sin un solo error en consola.
+    // Se cazó contando los revelados por grupo, no leyendo. Las de verdad son
+    // `.pieza` (8 fichas) y `.reng` (47 renglones).
+    var grupos = ['.pieza', '.reng'];
+    var vistos = new Set();
+    grupos.forEach(function(sel){
+      var nodos = document.querySelectorAll(sel);
+      var porPadre = new Map();
+      nodos.forEach(function(n){
+        if (vistos.has(n) || n.closest('.cartel')) return;   // la portada no
+        vistos.add(n);
+        var p = n.parentElement;
+        var i = porPadre.get(p) || 0;
+        porPadre.set(p, i + 1);
+        n.style.setProperty('--s-i', Math.min(i, 8));        // tope: ver el CSS
+        n.classList.add('s-rev');
+        // Con foto dentro es caja; si es sólo texto, nada de opacidad.
+        if (n.querySelector('img, picture, canvas')) n.classList.add('s-caja');
+      });
+    });
+
+    var ojoS = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if (!e.isIntersecting) return;
+        e.target.classList.add('s-dentro');
+        ojoS.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
+    document.querySelectorAll('.s-rev').forEach(function(n){ ojoS.observe(n); });
+    TOY.s.revelados = vistos.size;
+  }
+  /* ══════════════════ /S ══════════════════ */
 
   if (quieto) return;
 
