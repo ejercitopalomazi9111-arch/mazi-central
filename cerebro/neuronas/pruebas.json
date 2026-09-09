@@ -504,6 +504,31 @@
         "prueba-de-texto-que-pasa-con-la-cadena-vacia",
         "la-medicion-que-se-mide-a-si-misma"
       ]
+    },
+    {
+      "id": "el-generado-que-cambia-solo-y-choca-en-todo-rebase",
+      "titulo": "Un archivo generado con la hora adentro choca en todos los rebases",
+      "gravedad": "media",
+      "clase": "error",
+      "sintoma": "cerebro/todo.json marcaba conflicto en CADA rebase, incluso entre ramas que habían tocado neuronas distintas o ninguna. El conflicto se 'resolvía' regenerando y volvía a aparecer al siguiente rebase.",
+      "causa": "`armar()` escribía `hecho: new Date().toISOString()` dentro del archivo. Nadie lo leía —ni la pantalla, ni el servidor de La Sala, ni las pruebas— pero cambiaba en cada corrida, así que dos ramas producían bytes distintos con contenido idéntico.",
+      "porque": "git compara bytes, no significado. No tiene forma de saber que las únicas dos líneas distintas eran una marca de tiempo que a nadie le importa, así que marca conflicto igual que si se hubiera reescrito medio archivo.",
+      "arreglo": "Quitar el campo. `armar()` quedó determinista: mismas neuronas → mismo archivo byte por byte. Un choque en todo.json vuelve a significar que dos ramas tocaron neuronas de verdad.",
+      "comoCazarlo": "Armar dos veces seguidas y comparar: `node cerebro/cerebro.mjs armar; md5sum cerebro/todo.json` dos veces. Si los md5 difieren con las mismas fuentes, hay algo no determinista adentro. El diff completo son las líneas culpables — aquí eran DOS.",
+      "consejo": "En cualquier artefacto generado que se commitea, la regla es que dos corridas den lo mismo. Fechas de generación, ids aleatorios y recorridos que dependen del orden del sistema de archivos son las tres causas de siempre, y todas se ven igual desde fuera: 'este archivo siempre choca'. La prueba que lo cuida no comprueba el CAMPO sino la PROPIEDAD, porque un nombre se esquiva sin querer y 'dos corridas dan lo mismo' no.",
+      "salioDe": "Iba a meter `armar` dentro de build.mjs para que lo publicado nunca trajera neuronas invisibles. Antes comprobé si era idempotente —no lo era— y ahí apareció la causa de un conflicto que ya se había pagado dos veces: en el rebase del #112 y en la rama de Godines.",
+      "senales": [
+        "todo.json siempre choca",
+        "conflicto en un archivo generado",
+        "rebase que choca sin razon",
+        "el mismo conflicto vuelve a aparecer",
+        "armar dos veces da distinto",
+        "archivo generado no determinista"
+      ],
+      "vecinas": [
+        "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
+        "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor"
+      ]
     }
   ]
 }

@@ -266,6 +266,7 @@ dependemos.
    | arreglar el contraste que reportaron arregla el contraste | la pareja de tonos claro-sobre-claro estaba usada en **toda** la tanda de avisos | Carlos volvió con el mismo reclamo señalando el elemento de al lado, dos centímetros más allá |
    | un rojo que no se repite al volver a correr era un tropezón | eran DOS pruebas intermitentes, de 1/5 y de 1/8 — una llamaba trampa a la regla del juego y la otra buscaba la palabra «Empate», que el juego **nunca escribe** | una intermitente no se comprueba con una corrida verde: hay que correrla **doce veces** y contarlas |
    | la cadena está en el código, así que de ahí la copio | el archivo guarda `<b>Recibes</b> el golpe`; la prueba lee `textContent`, que **ya viene sin etiquetas** | «arreglé» la prueba y pasó de fallar 1 de cada 8 a fallar **10 de 12** |
+   | si un archivo generado choca en el rebase, es que los dos lo cambiaron | `todo.json` traía la **hora de armado**, que nadie leía y cambiaba en cada corrida: dos ramas daban bytes distintos con contenido idéntico | el conflicto se pagó **dos veces** —el #112 y la rama de Godines— y «se resolvía» regenerando, así que volvía siempre |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 

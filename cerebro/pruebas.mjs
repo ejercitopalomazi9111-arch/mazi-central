@@ -348,6 +348,28 @@ console.log('\n· El buscador corre en cualquier lado');
        + (faltan.length > 8 ? '…' : '') + ' → corre: node cerebro/cerebro.mjs armar' : '');
   ok('y no se sirve ninguna que ya no esté escrita', sobran.length === 0,
      sobran.length ? `sobran ${sobran.length}: ${sobran.slice(0,8).join(', ')}` : '');
+
+  /* ⚠ ARMAR DOS VECES TIENE QUE DAR EL MISMO ARCHIVO, BYTE POR BYTE.
+     No es manía de limpieza: `todo.json` traía un `hecho` con la hora, que
+     nadie leía y que cambiaba en cada corrida. El efecto era que CUALQUIER par
+     de ramas que regeneraran el archivo chocaba en él —aunque hubieran tocado
+     neuronas distintas, o ninguna—, y el conflicto no se podía distinguir de
+     uno de verdad. Se pagó dos veces: en el rebase del #112 y otra vez en la
+     rama de Godines.
+
+     Esta prueba no comprueba el campo: comprueba la PROPIEDAD. Si mañana
+     alguien mete un `id` aleatorio, un `Date.now()` o un recorrido que dependa
+     del orden del sistema de archivos, esto se pone rojo aunque el campo se
+     llame de otro modo. Un nombre se puede esquivar sin querer; que dos
+     corridas den lo mismo, no. */
+  const { armar } = await import('./cerebro.mjs');
+  await armar();
+  const uno = fs.readFileSync(dondeTodo, 'utf8');
+  await armar();
+  const dos = fs.readFileSync(dondeTodo, 'utf8');
+  ok('armar dos veces da el mismo archivo (sin esto, todo.json choca en cada rebase)',
+     uno === dos,
+     uno === dos ? '' : 'dos corridas seguidas difieren → hay algo no determinista dentro de armar()');
 }
 
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);
