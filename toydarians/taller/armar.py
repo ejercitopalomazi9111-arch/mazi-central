@@ -6,10 +6,25 @@ sacadas del WooCommerce del cliente y las imagenes van embebidas como data URI
 (el visor bloquea imagenes externas). Editar eso a mano seria imposible.
 Los datos entran por activos/, el diseno vive aqui.
 """
-import json, re, pathlib
+import base64, json, re, pathlib
 
-RAIZ = pathlib.Path(__file__).resolve().parent.parent
-ACT  = RAIZ / 'activos'
+# ⚠ AQUÍ HABÍA UN `parent.parent` QUE DEJABA EL GENERADOR MUERTO EN MAIN.
+# Cuando el taller vivía en `scripts/`, subir dos niveles caía en la carpeta del
+# proyecto y `activos/` estaba ahí. Al mudarlo a `taller/` los activos se
+# mudaron CON él —viven en `taller/activos/`— pero el `parent.parent` se quedó
+# igual, así que apuntaba a `toydarians/activos`, que no existe.
+#
+# Resultado: `python3 taller/armar.py` reventaba con
+#     FileNotFoundError: .../toydarians/activos/catalogo-limpio.json
+# O sea que el sitio commiteado NO SE PODÍA REGENERAR. No se ve leyendo, porque
+# el `index.html` que ya está generado se sirve perfecto: lo que estaba roto era
+# la única manera de volver a hacerlo.
+#
+# `AQUI` y no `RAIZ`: el nombre dice dónde está parado el archivo, que es la
+# pregunta que se contestó mal. RAIZ se queda para lo que sí es la raíz.
+AQUI = pathlib.Path(__file__).resolve().parent
+RAIZ = AQUI.parent
+ACT  = AQUI / 'activos'
 cat  = json.loads((ACT / 'catalogo-limpio.json').read_text(encoding='utf-8'))
 img  = json.loads((ACT / 'assets.json').read_text(encoding='utf-8'))
 
@@ -418,9 +433,47 @@ LOGO = img['logo']
 
 CSS = CSS.replace('AUREBESH_URI', img['aurebesh']['uri'])
 
+
+# ── LA TIPOGRAFÍA DE LA IDENTIDAD VA EMPOTRADA, NO PEDIDA ────────────────────
+# Antes Bungee entraba por `<link>` a fonts.googleapis.com junto con las otras
+# dos. Se midió en un navegador de verdad y NO CARGABA: el titular salía en la
+# sans del sistema, porque el repuesto `'Arial Black'` tampoco existe en todos
+# lados y la pila caía hasta `system-ui`.
+#
+# El defecto se ve de un golpe en la sección del cartón: el logo del blíster
+# está en la letra correcta —es imagen— y el titular de al lado se ve de
+# plantilla. La identidad del cliente vive en esa letra; pedírsela a un tercero
+# es apostarla contra su red.
+#
+# ⚠ SÓLO BUNGEE, y es a propósito. Es la que carga la identidad. Familjen
+# Grotesk y JetBrains Mono siguen por link: empotrarlas también sumaría ~200 KB
+# a un archivo que ya pesa 345, y en teléfono eso se paga. O sea que la
+# dependencia externa BAJA pero no desaparece — decirlo así es más útil que
+# presumir un «cero dependencias» que no sería cierto.
+#
+# Licencia OFL, que permite empotrar: activos/fuentes/LICENCIA-BUNGEE.md
+def _fuente(nombre, rango):
+    datos = base64.b64encode((ACT / "fuentes" / nombre).read_bytes()).decode()
+    return ("@font-face{font-family:'Bungee';font-style:normal;font-weight:400;"
+            "font-display:swap;"
+            f"src:url(data:font/woff2;base64,{datos}) format('woff2');"
+            f"unicode-range:{rango}}}")
+
+BUNGEE_EMPOTRADA = (
+    _fuente('bungee-ext.woff2',
+            'U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,'
+            'U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,'
+            'U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF')
+    + _fuente('bungee-latin.woff2',
+              'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,'
+              'U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,'
+              'U+2212,U+2215,U+FEFF,U+FFFD')
+)
+
 DOC = f"""<title>Toydarians · The Vintage Collection</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>{BUNGEE_EMPOTRADA}</style>
 <style>{CSS}</style>
 
 <div class="barra"><div class="caso">
@@ -756,13 +809,19 @@ if JS.count("})();") != 1:
     raise SystemExit(f'el motor quedo con {JS.count("})();")} cierres, debe tener 1')
 
 DOC += f"<script>{JS}</script>\n"
-salida = RAIZ / 'sitio.html'
+salida = AQUI / 'sitio.html'   # intermedio de trabajo: vive en taller/, que no se publica
 salida.write_text(DOC, encoding='utf-8')
 
 cabeza, cuerpo = DOC.split('\n<div class="barra">', 1)
-publico = RAIZ / 'publico'
-publico.mkdir(exist_ok=True)
-(publico / 'index.html').write_text(
+# ⚠ ESTO ESCRIBÍA EN `publico/index.html` Y LO QUE SE PUBLICA ES `index.html`.
+# Entre los dos había un copiado A MANO, y ése es el hueco por el que el
+# generador y el archivo servido se separan: se regenera, sale verde, y la
+# página publicada sigue siendo la de antes. Es el mismo defecto que nos costó
+# el `todo.json` del Cerebro —lo escrito contra lo servido— con otro disfraz.
+#
+# Ahora escribe DIRECTO donde `build.mjs` lo va a recoger. Un paso manual menos
+# es un estado menos que puede quedarse viejo.
+(RAIZ / 'index.html').write_text(
     '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
     '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
     '<meta name="description" content="Toydarians — Star Wars The Vintage '

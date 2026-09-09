@@ -13,3 +13,7 @@ node_modules/
 # Caché de Python: la genera importlib al cargar oir.py en las pruebas.
 __pycache__/
 *.pyc
+
+# Intermedio del taller de Toydarians: `armar.py` lo regenera y lo que se
+# publica es `toydarians/index.html`. Commitearlo duplicaría el estado.
+toydarians/taller/sitio.html
