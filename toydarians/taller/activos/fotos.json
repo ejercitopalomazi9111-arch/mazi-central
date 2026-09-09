@@ -1,0 +1,566 @@
+{
+ "01A": {
+  "nombre": "Dengar",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=dengar-vc-01a-the-vintage-collection-figura-star-wars-el-imperio-contraataca",
+  "fotos": [
+   "vc01A-0.webp",
+   "vc01A-1.webp",
+   "vc01A-2.webp",
+   "vc01A-3.webp",
+   "vc01A-4.webp"
+  ]
+ },
+ "57": {
+  "nombre": "Dr. Evazan (A New Hope)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-dr-evazan-a-new-hope-vc-57",
+  "fotos": [
+   "vc57-0.webp",
+   "vc57-1.webp",
+   "vc57-2.webp",
+   "vc57-3.webp",
+   "vc57-4.webp"
+  ]
+ },
+ "73": {
+  "nombre": "Aurra Sing",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=aurra-sing-vc-73-figura-star-wars-the-vintage-collection",
+  "fotos": [
+   "vc73-0.webp",
+   "vc73-1.webp",
+   "vc73-2.webp",
+   "vc73-3.webp",
+   "vc73-4.webp"
+  ]
+ },
+ "231": {
+  "nombre": "Stormtrooper",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-stormtrooper-vc-231",
+  "fotos": [
+   "vc231-0.webp",
+   "vc231-1.webp",
+   "vc231-2.webp",
+   "vc231-3.webp",
+   "vc231-4.webp"
+  ]
+ },
+ "240": {
+  "nombre": "Clone Trooper (501st Legion)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=clone-trooper-501st-vc240-vintage-collection",
+  "fotos": [
+   "vc240-0.webp",
+   "vc240-1.webp",
+   "vc240-2.webp",
+   "vc240-3.webp",
+   "vc240-4.webp"
+  ]
+ },
+ "271": {
+  "nombre": "Dark Trooper",
+  "serie": "The Mandalorian",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-dark-trooper-the-mandalorian-vc271",
+  "fotos": [
+   "vc271-0.webp",
+   "vc271-1.webp",
+   "vc271-2.webp",
+   "vc271-3.webp",
+   "vc271-4.webp"
+  ]
+ },
+ "301": {
+  "nombre": "Darth Revan",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-darth-revan-vc-301",
+  "fotos": [
+   "vc301-0.webp",
+   "vc301-1.webp",
+   "vc301-2.webp",
+   "vc301-3.webp",
+   "vc301-4.webp"
+  ]
+ },
+ "310": {
+  "nombre": "Jod Na Nawood",
+  "serie": "Skeleton Crew",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-jod-na-nawood-skeleton-crew-vc-310",
+  "fotos": [
+   "vc310-0.webp",
+   "vc310-1.webp",
+   "vc310-2.webp",
+   "vc310-3.webp",
+   "vc310-4.webp"
+  ]
+ },
+ "312A": {
+  "nombre": "The Mandalorian (Imperial Base)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-the-mandalorian-imperial-base-vc-312a",
+  "fotos": [
+   "vc312A-0.webp",
+   "vc312A-1.webp",
+   "vc312A-2.webp",
+   "vc312A-3.webp",
+   "vc312A-4.webp"
+  ]
+ },
+ "317": {
+  "nombre": "Clone Commander Rex (Bracca Mission)",
+  "serie": "The Bad Batch",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-clone-commander-rex-bracca-mission-the-bad-batch-vc317",
+  "fotos": [
+   "vc317-0.webp",
+   "vc317-1.webp",
+   "vc317-2.webp",
+   "vc317-3.webp",
+   "vc317-4.webp"
+  ]
+ },
+ "327": {
+  "nombre": "Osha Aniseya",
+  "serie": "The Acolyte",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-osha-aniseya-the-acolyte-vc-327",
+  "fotos": [
+   "vc327-0.webp",
+   "vc327-1.webp",
+   "vc327-2.webp",
+   "vc327-3.webp",
+   "vc327-4.webp"
+  ]
+ },
+ "328": {
+  "nombre": "Mae (Assassin)",
+  "serie": "The Acolyte",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-mae-assassin-the-acolyte-vc328",
+  "fotos": [
+   "vc328-0.webp",
+   "vc328-1.webp",
+   "vc328-2.webp",
+   "vc328-3.webp",
+   "vc328-4.webp"
+  ]
+ },
+ "329": {
+  "nombre": "Jedi Master Sol",
+  "serie": "The Acolyte",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-jedi-master-sol-the-acolyte-vc329",
+  "fotos": [
+   "vc329-0.webp",
+   "vc329-1.webp",
+   "vc329-2.webp",
+   "vc329-3.webp",
+   "vc329-4.webp"
+  ]
+ },
+ "330": {
+  "nombre": "HK-87 Assassin Droid (Arcana)",
+  "serie": "Ahsoka",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-hk-87-assassin-droid-arcana-ahsoka-vc330",
+  "fotos": [
+   "vc330-0.webp",
+   "vc330-1.webp",
+   "vc330-2.webp",
+   "vc330-3.webp",
+   "vc330-4.webp"
+  ]
+ },
+ "336": {
+  "nombre": "Jetpack Trooper",
+  "serie": "Jedi Survivor",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-jetpack-trooper-jedi-survivor-vc-336",
+  "fotos": [
+   "vc336-0.webp",
+   "vc336-1.webp",
+   "vc336-2.webp",
+   "vc336-3.webp",
+   "vc336-4.webp"
+  ]
+ },
+ "337": {
+  "nombre": "Grand Admiral Thrawn",
+  "serie": "Ahsoka",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-grand-admiral-thrawn-ahsoka-vc-337",
+  "fotos": [
+   "vc337-0.webp",
+   "vc337-1.webp",
+   "vc337-2.webp",
+   "vc337-3.webp",
+   "vc337-4.webp"
+  ]
+ },
+ "338": {
+  "nombre": "Ahsoka Tano (Peridea)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-ahsoka-tano-peridea-vc-338",
+  "fotos": [
+   "vc338-0.webp",
+   "vc338-1.webp",
+   "vc338-2.webp",
+   "vc338-3.webp",
+   "vc338-4.webp"
+  ]
+ },
+ "339": {
+  "nombre": "Bo-Katan Kryze",
+  "serie": "Plazir-15",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-bo-katan-kryze-plazir-15-vc-339",
+  "fotos": [
+   "vc339-0.webp",
+   "vc339-1.webp",
+   "vc339-2.webp",
+   "vc339-3.webp",
+   "vc339-4.webp"
+  ]
+ },
+ "343": {
+  "nombre": "Cobb Vanth (Mandalorian Armor)",
+  "serie": "The Mandalorian",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-cobb-vanth-mandalorian-armor-the-mandalorian-deluxe-vc-343",
+  "fotos": [
+   "vc343-0.webp",
+   "vc343-1.webp",
+   "vc343-2.webp",
+   "vc343-3.webp",
+   "vc343-4.webp"
+  ]
+ },
+ "344": {
+  "nombre": "Luke Skywalker (A New Hope)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-luke-skywalker-a-new-hope-vc-344",
+  "fotos": [
+   "vc344-0.webp",
+   "vc344-1.webp",
+   "vc344-2.webp",
+   "vc344-3.webp",
+   "vc344-4.webp"
+  ]
+ },
+ "345": {
+  "nombre": "Jedi Master Indara",
+  "serie": "The Acolyte",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-jedi-master-indara-the-acolyte-vc-345-2",
+  "fotos": [
+   "vc345-0.webp",
+   "vc345-1.webp",
+   "vc345-2.webp",
+   "vc345-3.webp",
+   "vc345-4.webp"
+  ]
+ },
+ "346": {
+  "nombre": "Dedra Meero",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=dedra-meero-vc-346-star-wars-the-vintage-collection-figura-andor",
+  "fotos": [
+   "vc346-0.webp",
+   "vc346-1.webp",
+   "vc346-2.webp",
+   "vc346-3.webp",
+   "vc346-4.webp"
+  ]
+ },
+ "347": {
+  "nombre": "Anakin Skywalker",
+  "serie": "Ahsoka",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-anakin-skywalker-ahsoka-vc-347",
+  "fotos": [
+   "vc347-0.webp",
+   "vc347-1.webp",
+   "vc347-2.webp",
+   "vc347-3.webp",
+   "vc347-4.webp"
+  ]
+ },
+ "348": {
+  "nombre": "Clone Trooper Lieutenant (Teth)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-clone-trooper-lieutenant-vc-348",
+  "fotos": [
+   "vc348-0.webp",
+   "vc348-1.webp",
+   "vc348-2.webp",
+   "vc348-3.webp",
+   "vc348-4.webp"
+  ]
+ },
+ "349": {
+  "nombre": "Imperial Snowtrooper (Hoth Battle Gear)",
+  "serie": "The Empire Strikes Back",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-imperial-snowtrooper-hoth-battle-gear-the-empire-strikes-back-vc-349",
+  "fotos": [
+   "vc349-0.webp",
+   "vc349-1.webp",
+   "vc349-2.webp",
+   "vc349-3.webp",
+   "vc349-4.webp"
+  ]
+ },
+ "350": {
+  "nombre": "Chopper (Imperial Disguise)",
+  "serie": "Rebels",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-chopper-imperial-disguise-rebels-vc-350",
+  "fotos": [
+   "vc350-0.webp",
+   "vc350-1.webp",
+   "vc350-2.webp",
+   "vc350-3.webp",
+   "vc350-4.webp"
+  ]
+ },
+ "351": {
+  "nombre": "Lieutenant Callahan",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=lieutenant-callahan-vc351-ahsoka-tv",
+  "fotos": [
+   "vc351-0.webp",
+   "vc351-1.webp",
+   "vc351-2.webp",
+   "vc351-3.webp",
+   "vc351-4.webp"
+  ]
+ },
+ "352": {
+  "nombre": "Howler & Sabine Wren (Peridea)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=howler-sabine-wren-peridea-vc-352-star-wars-vintage-collection-ahsoka",
+  "fotos": [
+   "vc352-0.webp",
+   "vc352-1.webp",
+   "vc352-2.webp",
+   "vc352-3.webp",
+   "vc352-4.webp"
+  ]
+ },
+ "353": {
+  "nombre": "Mandalorian Super Commando",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=mandalorian-super-commando-vc353-ahsoka",
+  "fotos": [
+   "vc353-0.webp",
+   "vc353-1.webp",
+   "vc353-2.webp",
+   "vc353-3.webp",
+   "vc353-4.webp"
+  ]
+ },
+ "355": {
+  "nombre": "Baylan Skoll",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=baylan-skoll-vc355-vintage-collection-ahsoka",
+  "fotos": [
+   "vc355-0.webp",
+   "vc355-1.webp",
+   "vc355-2.webp",
+   "vc355-3.webp",
+   "vc355-4.webp"
+  ]
+ },
+ "356": {
+  "nombre": "Shin Hati",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-shin-hati-vc-356",
+  "fotos": [
+   "vc356-0.webp",
+   "vc356-1.webp",
+   "vc356-2.webp",
+   "vc356-3.webp",
+   "vc356-4.webp"
+  ]
+ },
+ "357": {
+  "nombre": "Obi-Wan Kenobi (Jedi Legend)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=obi-wan-kenobi-jedi-legend-vc357-tvc",
+  "fotos": [
+   "vc357-0.webp",
+   "vc357-1.webp",
+   "vc357-2.webp",
+   "vc357-3.webp",
+   "vc357-4.webp"
+  ]
+ },
+ "358": {
+  "nombre": "IG-12, Grogu, & Anzellan",
+  "serie": "The Mandalorian",
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-ig-12-grogu-anzellan-the-mandalorian-vc-358",
+  "fotos": [
+   "vc358-0.webp",
+   "vc358-1.webp",
+   "vc358-2.webp",
+   "vc358-3.webp",
+   "vc358-4.webp"
+  ]
+ },
+ "362": {
+  "nombre": "Momaw Nadon",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-momaw-nadon-vc-362-deluxe",
+  "fotos": [
+   "vc362-0.webp",
+   "vc362-1.webp",
+   "vc362-2.webp",
+   "vc362-3.webp",
+   "vc362-4.webp"
+  ]
+ },
+ "363": {
+  "nombre": "Carson Teva",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=carson-teva-vc363-vintage-collection-piloto",
+  "fotos": [
+   "vc363-0.webp",
+   "vc363-1.webp",
+   "vc363-2.webp",
+   "vc363-3.webp",
+   "vc363-4.webp"
+  ]
+ },
+ "364": {
+  "nombre": "Asajj Ventress",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=asajj-ventress-vc364-vintage-collection",
+  "fotos": [
+   "vc364-0.webp",
+   "vc364-1.webp",
+   "vc364-2.webp",
+   "vc364-3.webp",
+   "vc364-4.webp"
+  ]
+ },
+ "365": {
+  "nombre": "Alexsandr Kallus",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=alexsandr-kallus-vc-365-the-vintage-collection-figura-star-wars-rebels",
+  "fotos": [
+   "vc365-0.webp",
+   "vc365-1.webp",
+   "vc365-2.webp",
+   "vc365-3.webp",
+   "vc365-4.webp"
+  ]
+ },
+ "366": {
+  "nombre": "Armored Commando",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=imperial-armored-commando-vc-366-star-wars-the-vintage-collection",
+  "fotos": [
+   "vc366-0.webp",
+   "vc366-1.webp",
+   "vc366-2.webp",
+   "vc366-3.webp",
+   "vc366-4.webp"
+  ]
+ },
+ "367": {
+  "nombre": "Nightsister Merrin",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-nightsister-merrin-vc-367",
+  "fotos": [
+   "vc367-0.webp",
+   "vc367-1.webp",
+   "vc367-2.webp",
+   "vc367-3.webp",
+   "vc367-4.webp"
+  ]
+ },
+ "368": {
+  "nombre": "Moff Gideon (Dark Trooper Armor)",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-moff-gideon-dark-trooper-armor-vc-368",
+  "fotos": [
+   "vc368-0.webp",
+   "vc368-1.webp",
+   "vc368-2.webp",
+   "vc368-3.webp",
+   "vc368-4.webp"
+  ]
+ },
+ "369": {
+  "nombre": "Rocket Launcher Trooper",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-rocket-launcher-trooper-vc-369",
+  "fotos": [
+   "vc369-0.webp",
+   "vc369-1.webp",
+   "vc369-2.webp",
+   "vc369-3.webp",
+   "vc369-4.webp"
+  ]
+ },
+ "370": {
+  "nombre": "Crosshair",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=crosshair-vc370-vintage-collection-bad-batch",
+  "fotos": [
+   "vc370-0.webp",
+   "vc370-1.webp",
+   "vc370-2.webp",
+   "vc370-3.webp",
+   "vc370-4.webp"
+  ]
+ },
+ "371": {
+  "nombre": "Cobb Vanth",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=cobb-vanth-vc371-vintage-collection-boba-fett",
+  "fotos": [
+   "vc371-0.webp",
+   "vc371-1.webp",
+   "vc371-2.webp",
+   "vc371-3.webp",
+   "vc371-4.webp"
+  ]
+ },
+ "372": {
+  "nombre": "Han Solo",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=han-solo-vc-372-the-vintage-collection",
+  "fotos": [
+   "vc372-0.webp",
+   "vc372-1.webp",
+   "vc372-2.webp",
+   "vc372-3.webp",
+   "vc372-4.webp"
+  ]
+ },
+ "373": {
+  "nombre": "Ben Kenobi",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-ben-kenobi-vc-373",
+  "fotos": [
+   "vc373-0.webp",
+   "vc373-1.webp",
+   "vc373-2.webp",
+   "vc373-3.webp",
+   "vc373-4.webp"
+  ]
+ },
+ "374": {
+  "nombre": "Imperial Shock Trooper",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-the-vintage-collection-imperial-shock-trooper-vc-374",
+  "fotos": [
+   "vc374-0.webp",
+   "vc374-1.webp",
+   "vc374-2.webp",
+   "vc374-3.webp",
+   "vc374-4.webp"
+  ]
+ },
+ "381": {
+  "nombre": "Chewbacca",
+  "serie": null,
+  "url": "https://www.toydarians.com/?product=star-wars-vintage-collection-chewbacca-vc-381",
+  "fotos": [
+   "vc381-0.webp",
+   "vc381-1.webp",
+   "vc381-2.webp",
+   "vc381-3.webp",
+   "vc381-4.webp"
+  ]
+ }
+}

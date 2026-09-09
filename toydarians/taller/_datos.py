@@ -8,7 +8,11 @@ Los datos entran por activos/, el diseno vive aqui.
 """
 import json, re, pathlib
 
-RAIZ = pathlib.Path(__file__).resolve().parent.parent
+# La carpeta del proyecto, funcione el taller donde funcione. Con parent.parent
+# fijo, al mudarlo de `scripts/` a `taller/` dejo de encontrar los activos y el
+# sitio commiteado no se podia regenerar. Lo cazo Sylcred.
+AQUI = pathlib.Path(__file__).resolve().parent
+RAIZ = AQUI if (AQUI / 'activos').is_dir() else AQUI.parent
 ACT  = RAIZ / 'activos'
 cat  = json.loads((ACT / 'catalogo-limpio.json').read_text(encoding='utf-8'))
 img  = json.loads((ACT / 'assets.json').read_text(encoding='utf-8'))

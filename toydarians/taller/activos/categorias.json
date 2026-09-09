@@ -1,0 +1,145 @@
+{
+ "hasbro": {
+  "nombre": "HASBRO",
+  "productos": 350,
+  "fotos": [
+   "hasbro-0.webp",
+   "hasbro-1.webp",
+   "hasbro-2.webp"
+  ]
+ },
+ "vintage-collection": {
+  "nombre": "VINTAGE COLLECTION",
+  "productos": 321,
+  "fotos": [
+   "vintage-collection-0.webp",
+   "vintage-collection-1.webp",
+   "vintage-collection-2.webp"
+  ]
+ },
+ "black-series": {
+  "nombre": "BLACK SERIES",
+  "productos": 30,
+  "fotos": [
+   "black-series-0.webp",
+   "black-series-1.webp",
+   "black-series-2.webp"
+  ]
+ },
+ "retro-collection": {
+  "nombre": "RETRO COLLECTION",
+  "productos": 2,
+  "fotos": [
+   "retro-collection-0.webp",
+   "retro-collection-1.webp",
+   "retro-collection-2.webp"
+  ]
+ },
+ "gi-joe": {
+  "nombre": "GI JOE",
+  "productos": 2,
+  "fotos": [
+   "gi-joe-0.webp",
+   "gi-joe-1.webp",
+   "gi-joe-2.webp"
+  ]
+ },
+ "classified-series": {
+  "nombre": "CLASSIFIED SERIES",
+  "productos": 2,
+  "fotos": [
+   "classified-series-0.webp",
+   "classified-series-1.webp",
+   "classified-series-2.webp"
+  ]
+ },
+ "mattel": {
+  "nombre": "MATTEL",
+  "productos": 2,
+  "fotos": [
+   "mattel-0.webp",
+   "mattel-1.webp",
+   "mattel-2.webp"
+  ]
+ },
+ "disney": {
+  "nombre": "DISNEY",
+  "productos": null,
+  "fotos": [
+   "disney-0.webp",
+   "disney-1.webp",
+   "disney-2.webp"
+  ]
+ },
+ "droids-factory": {
+  "nombre": "DROIDS FACTORY",
+  "productos": null,
+  "fotos": [
+   "droids-factory-0.webp",
+   "droids-factory-1.webp",
+   "droids-factory-2.webp"
+  ]
+ },
+ "neca": {
+  "nombre": "NECA",
+  "productos": null,
+  "fotos": [
+   "neca-0.webp",
+   "neca-1.webp",
+   "neca-2.webp"
+  ]
+ },
+ "funko": {
+  "nombre": "FUNKO",
+  "productos": 8,
+  "fotos": [
+   "funko-0.webp",
+   "funko-1.webp",
+   "funko-2.webp"
+  ]
+ },
+ "super-7": {
+  "nombre": "SUPER 7",
+  "productos": 2,
+  "fotos": [
+   "super-7-0.webp",
+   "super-7-1.webp",
+   "super-7-2.webp"
+  ]
+ },
+ "reaction": {
+  "nombre": "REACTION",
+  "productos": null,
+  "fotos": [
+   "reaction-0.webp",
+   "reaction-1.webp",
+   "reaction-2.webp"
+  ]
+ },
+ "ultimates": {
+  "nombre": "ULTIMATES",
+  "productos": null,
+  "fotos": [
+   "ultimates-0.webp",
+   "ultimates-1.webp",
+   "ultimates-2.webp"
+  ]
+ },
+ "3d-print": {
+  "nombre": "3D PRINT",
+  "productos": 7,
+  "fotos": [
+   "3d-print-0.webp",
+   "3d-print-1.webp",
+   "3d-print-2.webp"
+  ]
+ },
+ "merch": {
+  "nombre": "MERCH",
+  "productos": null,
+  "fotos": [
+   "merch-0.webp",
+   "merch-1.webp"
+  ]
+ }
+}

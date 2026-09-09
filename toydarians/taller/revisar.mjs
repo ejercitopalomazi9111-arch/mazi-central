@@ -87,6 +87,19 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
         if (b.height > 0 && b.width > 0 && b.width < 90 && b.height > b.width * 2.2)
           aplastados.push((n.className || n.tagName) + ' ' + Math.round(b.width) + '×' + Math.round(b.height));
       }
+      // Todas las tarjetas salieron con el LOGO en vez de la figura porque el
+      // raspado se trajo la imagen de la cabecera de primera. La señal es que
+      // muchas fichas comparten la misma imagen: eso se mide.
+      const repes = [];
+      const cuenta = {};
+      for (const im of document.querySelectorAll('.rejilla img, .g-cats img')) {
+        const k = (im.currentSrc || im.src || '').split('/').pop();
+        if (k) cuenta[k] = (cuenta[k] || 0) + 1;
+      }
+      const totalFichas = document.querySelectorAll('.rejilla .pieza').length;
+      for (const [k, c] of Object.entries(cuenta))
+        if (c > 3 && c > totalFichas * 0.25) repes.push(k + ' ×' + c);
+
       const flojos = [];
       for (const n of document.querySelectorAll('p,span,a,li,h1,h2,h3,b,i,small,div')) {
         const t = [...n.childNodes].filter(x => x.nodeType === 3 && x.textContent.trim()).map(x => x.textContent.trim()).join(' ');
@@ -100,20 +113,21 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
         const pide = grande ? 3 : 4.5;
         if (ratio < pide) flojos.push(t.slice(0, 26) + ' ' + ratio.toFixed(2) + '<' + pide);
       }
-      return { desborde, culpables: culpables.slice(0, 5), cortados,
+      return { desborde, culpables: culpables.slice(0, 5), cortados, repes: repes.slice(0, 3),
                aplastados: [...new Set(aplastados)].slice(0, 4),
                flojos: flojos.slice(0, 6), sinSuelo: [...new Set(sinSuelo)].slice(0, 4),
                h1: document.querySelectorAll('h1').length, ocultos,
                alto: Math.round(de.scrollHeight) };
     });
 
-    const mal = fallos.length > 0 || r.desborde > 1 || r.h1 !== 1 || r.ocultos > 0 || r.cortados.length > 0 || r.flojos.length > 0 || r.sinSuelo.length > 0 || r.aplastados.length > 0;
+    const mal = fallos.length > 0 || r.desborde > 1 || r.h1 !== 1 || r.ocultos > 0 || r.cortados.length > 0 || r.flojos.length > 0 || r.sinSuelo.length > 0 || r.aplastados.length > 0 || r.repes.length > 0;
     if (mal) malo++;
-    console.log(`${w}px js=${js ? 'sí' : 'no '}  desborde ${r.desborde}px  h1 ${r.h1}  ocultos ${r.ocultos}  cortados ${r.cortados.length}  contraste ${r.flojos.length}  sin-suelo ${r.sinSuelo.length}  errores ${fallos.length}  aplastados ${r.aplastados.length}  alto ${r.alto}px ${mal ? '  ← MAL' : ''}`);
+    console.log(`${w}px js=${js ? 'sí' : 'no '}  desborde ${r.desborde}px  h1 ${r.h1}  ocultos ${r.ocultos}  cortados ${r.cortados.length}  contraste ${r.flojos.length}  sin-suelo ${r.sinSuelo.length}  errores ${fallos.length}  aplastados ${r.aplastados.length}  repetidas ${r.repes.length}  alto ${r.alto}px ${mal ? '  ← MAL' : ''}`);
     r.culpables.forEach(c => console.log('      desborda ' + c));
     r.cortados.forEach(c => console.log('      corta    ' + c));
     r.flojos.forEach(c => console.log('      flojo    ' + c));
     r.aplastados.forEach(c => console.log('      aplastado ' + c));
+    r.repes.forEach(c => console.log('      misma imagen en muchas fichas: ' + c));
     r.sinSuelo.forEach(c => console.log('      degradado sin color sólido: ' + c));
     [...new Set(fallos)].slice(0, 3).forEach(c => console.log('      ' + c));
     if (js && (w === 1440 || w === 390)) {

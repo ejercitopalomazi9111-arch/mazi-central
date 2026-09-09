@@ -79,6 +79,43 @@ p strong{color:var(--hueso);font-weight:500}
 """
 
 CSS += r"""
+
+/* ══════════════════════════════════════════════════════════════════════════
+   G · LA INTRO · 5 s
+   Pedida asi: «que construya el logo letra por letra estilo star wars como si
+   fuese un sable laser». Las letras NO son de una tipografia parecida: son las
+   del logotipo real del cliente, recortadas del archivo por los valles del
+   perfil de tinta (las letras se tocan, asi que no valen las columnas vacias).
+   Cada una la traza una hoja de luz que baja, la revela y se apaga.
+   ══════════════════════════════════════════════════════════════════════════ */
+.g-intro{position:fixed;inset:0;z-index:100;background:#000;display:grid;
+  place-items:center;overflow:hidden}
+.g-intro[hidden]{display:none}
+.g-intro .cielo{position:absolute;inset:0;opacity:.55}
+.g-intro .marca{position:relative;width:min(88vw,900px)}
+.g-intro .fila{position:relative;width:100%;aspect-ratio:1884/174}
+.g-intro .let{position:absolute;top:0;height:100%;
+  -webkit-mask-image:linear-gradient(#000,#000);mask-image:linear-gradient(#000,#000);
+  -webkit-mask-size:100% 0%;mask-size:100% 0%;
+  -webkit-mask-position:50% 0;mask-position:50% 0;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.g-intro .let img{width:100%;height:100%;object-fit:fill;display:block}
+/* la hoja: una linea de luz que cruza la letra mientras la revela */
+.g-intro .hoja{position:absolute;top:0;height:0%;width:100%;pointer-events:none;
+  background:linear-gradient(180deg,transparent,#FFF 60%,#FFF);
+  box-shadow:0 0 18px 5px rgba(250,247,0,.85),0 0 46px 14px rgba(250,247,0,.35);
+  opacity:0}
+.g-intro .au{display:block;width:52%;margin:18px auto 0;opacity:0;
+  filter:drop-shadow(0 0 12px rgba(250,247,0,.5))}
+.g-intro .saltar{position:absolute;right:16px;bottom:16px;z-index:3;
+  background:transparent;border:1px solid #3A3A40;color:#8A8A92;cursor:pointer;
+  font:700 10px/1 var(--dato);letter-spacing:.2em;text-transform:uppercase;
+  padding:10px 14px}
+.g-intro .saltar:hover{border-color:var(--amarillo);color:var(--amarillo)}
+/* La pagina no se ve hasta que la intro termina, pero EXISTE: si el guion no
+   corre, `hidden` nunca se pone y el sitio se ve igual sin intro. */
+@media (prefers-reduced-motion: reduce){ .g-intro{display:none} }
+
 /* ---- Barra ---------------------------------------------------------------- */
 .barra{position:sticky;top:0;z-index:20;background:#000;
   border-bottom:1px solid var(--linea)}
@@ -231,6 +268,121 @@ CSS += r"""
 """
 
 CSS += r"""
+
+/* ══════════════════════════════════════════════════════════════════════════
+   G · CATEGORIAS Y BANNERS
+   La lista de 47 filas se va: la sustituye la rejilla de categorias con la
+   marca de cada apartado, sacada del menu REAL de su web. Y los banners se
+   cambian solos, poco a poco y a destiempo -- cada uno con su propio reloj,
+   que es lo que hace que no parezca un carrusel.
+   ══════════════════════════════════════════════════════════════════════════ */
+.g-cats{display:grid;gap:clamp(10px,1.4vw,16px);
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,268px),1fr))}
+.g-cat{position:relative;display:block;overflow:hidden;text-decoration:none;
+  color:inherit;background:var(--panel);border:1px solid var(--linea);
+  aspect-ratio:16/10;transition:border-color .25s,transform .4s cubic-bezier(.2,.7,.3,1)}
+.g-cat:hover{border-color:var(--amarillo);transform:translate3d(0,-4px,0)}
+.g-cat.ancha{grid-column:span 2;aspect-ratio:16/6}
+@media (max-width:620px){.g-cat.ancha{grid-column:span 1;aspect-ratio:16/9}}
+/* los banners viven apilados y se cruzan por opacidad: es una capa decorativa,
+   nunca el texto */
+.g-cat .banners{position:absolute;inset:0}
+.g-cat .banners span{position:absolute;inset:0;background-size:cover;
+  background-position:50% 42%;opacity:0;transition:opacity 1.6s ease-in-out}
+.g-cat .banners span.viva{opacity:1}
+.g-cat .velo{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(8,8,10,.30) 0%,rgba(8,8,10,.62) 52%,rgba(8,8,10,.92) 100%)}
+.g-cat .marca-cat{position:absolute;left:0;right:0;bottom:0;padding:16px 17px 17px;
+  display:grid;gap:6px}
+.g-cat .marca-cat b{font:400 clamp(17px,2vw,26px)/1 var(--display);
+  letter-spacing:-.045em;text-transform:uppercase;color:var(--hueso)}
+.g-cat:hover .marca-cat b{color:var(--amarillo)}
+.g-cat .marca-cat i{font:700 9.5px/1.5 var(--dato);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--gris);font-style:normal}
+.g-cat .cuenta{position:absolute;top:11px;right:11px;background:rgba(8,8,10,.72);
+  border:1px solid var(--linea);color:var(--amarillo);padding:5px 8px;
+  font:700 9.5px/1 var(--dato);letter-spacing:.14em}
+/* la marca del apartado, dibujada con su nombre en la letra del logo: no me
+   descargo logotipos ajenos, uso el rotulo */
+.g-cat .rotulo{position:absolute;inset:0;display:grid;place-items:center;
+  font:400 clamp(22px,3.4vw,44px)/1 var(--display);letter-spacing:-.05em;
+  color:rgba(255,255,255,.09);text-transform:uppercase;pointer-events:none;
+  padding:0 14px;text-align:center}
+
+/* ══ G · PUERTAS · la ficha se abre como una compuerta de nave ══ */
+.g-ficha{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
+  background:rgba(4,4,6,.86);padding:clamp(12px,3vw,34px)}
+.g-ficha[hidden]{display:none}
+.g-puerta{position:absolute;top:0;bottom:0;width:50%;background:#111114;z-index:2;
+  border-inline:1px solid var(--linea);transition:transform .82s cubic-bezier(.72,0,.2,1)}
+.g-puerta.izq{left:0}
+.g-puerta.der{right:0}
+.g-ficha.abierta .g-puerta.izq{transform:translate3d(-101%,0,0)}
+.g-ficha.abierta .g-puerta.der{transform:translate3d(101%,0,0)}
+.g-puerta::after{content:'';position:absolute;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,transparent,var(--amarillo),transparent);opacity:.6}
+.g-puerta.izq::after{right:0} .g-puerta.der::after{left:0}
+.g-caja{position:relative;z-index:1;width:min(100%,940px);max-height:100%;
+  overflow-y:auto;background:var(--panel);border:1px solid var(--linea);
+  display:grid;gap:0;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  opacity:0;transition:opacity .5s ease .5s}
+.g-ficha.abierta .g-caja{opacity:1}
+@media (max-width:760px){.g-caja{grid-template-columns:minmax(0,1fr)}}
+.g-galeria{background:#0C0C0E;display:grid;gap:8px;padding:14px;align-content:start}
+.g-galeria .grande{aspect-ratio:1/1;background:#111;position:relative;overflow:hidden}
+.g-galeria .grande img{width:100%;height:100%;object-fit:contain}
+.g-tiras{display:flex;gap:7px;flex-wrap:wrap}
+.g-tiras button{width:54px;height:54px;padding:0;background:#141416;cursor:pointer;
+  border:1px solid var(--linea);transition:border-color .2s}
+.g-tiras button[aria-current="true"]{border-color:var(--amarillo)}
+.g-tiras img{width:100%;height:100%;object-fit:contain}
+.g-datos{padding:clamp(16px,2.4vw,26px);display:grid;gap:12px;align-content:start}
+.g-datos .vc{font:700 11px/1 var(--dato);letter-spacing:.22em;color:var(--amarillo)}
+.g-datos h3{font-size:clamp(19px,2.6vw,28px)}
+.g-datos dl{margin:6px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);
+  gap:8px 16px;font:400 12.5px/1.5 var(--dato)}
+.g-datos dt{color:var(--gris-tenue);text-transform:uppercase;letter-spacing:.12em;
+  font-size:10px;padding-top:3px}
+.g-datos dd{margin:0;color:var(--hueso)}
+.g-cerrar{position:absolute;top:10px;right:10px;z-index:3;background:var(--panel2);
+  border:1px solid var(--linea);color:var(--hueso);cursor:pointer;width:38px;height:38px;
+  font:400 18px/1 var(--texto)}
+.g-cerrar:hover{border-color:var(--amarillo);color:var(--amarillo)}
+
+
+/* ══ G · menu desplegable con la jerarquia real de su web ══ */
+.g-menu{border-bottom:1px solid var(--linea);background:#0C0C0E;
+  padding-block:clamp(20px,3vw,34px)}
+.g-menu[hidden]{display:none}
+.g-menu-red{display:grid;gap:clamp(20px,3vw,44px);
+  grid-template-columns:minmax(0,2.2fr) minmax(0,1fr)}
+@media (max-width:760px){.g-menu-red{grid-template-columns:minmax(0,1fr)}}
+.g-marcas{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.g-marca .raiz{display:block;font:400 clamp(15px,1.7vw,19px)/1 var(--display);
+  letter-spacing:-.045em;text-transform:uppercase;text-decoration:none;
+  color:var(--hueso);transition:color .2s}
+.g-marca .raiz:hover{color:var(--amarillo)}
+.g-marca .hijos{display:grid;gap:4px;margin-top:8px;padding-left:10px;
+  border-left:1px solid var(--linea)}
+.g-marca .hijos a{font:400 12px/1.45 var(--dato);color:var(--gris);text-decoration:none}
+.g-marca .hijos a:hover{color:var(--amarillo)}
+.g-pags{display:grid;gap:7px}
+.g-pags a{font:400 12.5px/1.5 var(--dato);color:var(--gris);text-decoration:none}
+.g-pags a:hover{color:var(--amarillo)}
+.g-abrir{appearance:none;background:transparent;border:1px solid var(--linea);
+  color:var(--hueso);cursor:pointer;padding:9px 13px;
+  font:700 10.5px/1 var(--dato);letter-spacing:.16em;text-transform:uppercase;
+  transition:border-color .2s,color .2s}
+.g-abrir:hover,.g-abrir[aria-expanded="true"]{border-color:var(--amarillo);color:var(--amarillo)}
+
+/* la ficha de producto ahora es un boton: se abre al detalle, no se va fuera */
+.pieza{appearance:none;text-align:left;font:inherit;cursor:pointer;padding:0}
+.foto .mas{position:absolute;right:9px;bottom:9px;background:rgba(8,8,10,.78);
+  border:1px solid var(--linea);color:var(--amarillo);padding:5px 8px;
+  font:700 9.5px/1 var(--dato);letter-spacing:.1em}
+.foto{background:#101013}
+.foto img{position:absolute;inset:5%;width:90%;height:90%;object-fit:contain}
+
 /* ---- El cartón -------------------------------------------------------------- */
 .carton-zona{display:grid;gap:clamp(26px,4vw,60px);align-items:center;
   grid-template-columns:minmax(0,1fr) minmax(240px,380px)}
@@ -413,6 +565,150 @@ REJILLA = '\n'.join([tarjeta_foto(*c) for c in CON_FOTO] +
 def cinta():
     return '<div class="cinta" aria-hidden="true"><div class="rodillo"></div></div>'
 
+
+# ══ G · El menu REAL del cliente, sacado de su propia web ══════════════════
+# Nada de esto se invento: sale de los <li class="menu-item"> de toydarians.com.
+# La jerarquia es la suya, no una que me pareciera mas bonita.
+MENU = [
+    ('HASBRO', 'hasbro', [
+        ('Vintage Collection', 'vintage-collection'),
+        ('Black Series', 'black-series'),
+        ('Retro Collection', 'retro-collection')]),
+    ('GI JOE', 'gi-joe', [('Classified Series', 'classified-series')]),
+    ('MATTEL', 'mattel', []),
+    ('DISNEY', 'disney', [('Droids Factory', 'droids-factory')]),
+    ('NECA', 'neca', [('Figuras', 'figuras-neca'), ('Packs', 'packs-neca')]),
+    ('FUNKO', 'funko', [('Figuras', 'figuras-funko')]),
+    ('SUPER 7', 'super-7', [('Reaction', 'reaction'), ('Ultimates', 'ultimates')]),
+    ('3D PRINT', '3d-print', []),
+    ('MERCH', 'merch', []),
+]
+PAGINAS = [('¿Quiénes somos?', '?page_id=832'), ('Envíos', '?page_id=840'),
+           ('Tipos de embalaje', '?page_id=979'), ('Garantía', '?page_id=1554'),
+           ('Aviso de privacidad', '?page_id=842')]
+
+# Las subcategorias de Vintage Collection, que es la linea que si conocemos
+VC_SUB = [('Exclusivas', 'exclusivas-vintage-collection'),
+          ('Figuras', 'figuras-vintage-collection'),
+          ('Packs', 'packs-vintage-collection'),
+          ('Play Sets', 'play-sets-vintage-collecton'),
+          ('Vehículos', 'vehiculos-vintage-collection')]
+
+try:
+    CATFOTOS = json.loads((ACT / 'categorias.json').read_text(encoding='utf-8'))
+except Exception:
+    CATFOTOS = {}
+try:
+    FOTOS = json.loads((ACT / 'fotos.json').read_text(encoding='utf-8'))
+except Exception:
+    FOTOS = {}
+
+def g_menu():
+    """El menu de su web, con la jerarquia real."""
+    marcas = ''
+    for nom, slug, subs in MENU:
+        hijos = ''.join(
+            f'<a href="{TIENDA}?product_cat={h}" target="_blank" rel="noopener">{esc(t)}</a>'
+            for t, h in subs)
+        marcas += (f'<div class="g-marca"><a class="raiz" href="{TIENDA}?product_cat={slug}" '
+                   f'target="_blank" rel="noopener">{esc(nom)}</a>'
+                   f'{f"<div class=hijos>{hijos}</div>" if hijos else ""}</div>')
+    pgs = ''.join(f'<a href="{TIENDA}{u}" target="_blank" rel="noopener">{esc(t)}</a>'
+                  for t, u in PAGINAS)
+    return (f'<div class="g-menu" id="g-menu" hidden>'
+            f'<div class="caso"><div class="g-menu-red">'
+            f'<div><p class="ceja">Marcas</p><div class="g-marcas">{marcas}</div></div>'
+            f'<div><p class="ceja">La tienda</p><div class="g-pags">{pgs}</div></div>'
+            f'</div></div></div>')
+
+def g_categorias():
+    """La rejilla que sustituye a la lista de 47 filas."""
+    fichas = []
+    for nom, slug, subs in MENU:
+        info = CATFOTOS.get(slug, {})
+        fotos = info.get('fotos') or []
+        n = info.get('productos')
+        # los banners que se cruzan solos; si no hay fotos, manda el rotulo
+        caps = ''.join(f'<span data-b="fotos/cat/{f}"></span>' for f in fotos[:3])
+        sub = ' · '.join(t for t, _ in subs) if subs else 'Ver la categoría'
+        ancha = ' ancha' if slug == 'hasbro' else ''
+        fichas.append(
+            f'<a class="g-cat{ancha}" href="{TIENDA}?product_cat={slug}" target="_blank" '
+            f'rel="noopener" data-cat="{slug}">'
+            f'<span class="rotulo" aria-hidden="true">{esc(nom)}</span>'
+            f'<span class="banners">{caps}</span>'
+            f'<span class="velo"></span>'
+            + (f'<span class="cuenta">{n} piezas</span>' if n else '')
+            + f'<span class="marca-cat"><b>{esc(nom)}</b><i>{esc(sub)}</i></span></a>')
+    return '<div class="g-cats">' + ''.join(fichas) + '</div>'
+
+def g_rejilla():
+    """Las 47 fichas con su foto REAL, no cinco renders de fabrica."""
+    t = []
+    for pz in cat:
+        f = FOTOS.get(pz['vc'], {})
+        fotos = f.get('fotos') or []
+        if not fotos: continue
+        slug = 'vc' + ''.join(c for c in pz['vc'] if c.isalnum())
+        t.append(
+            f'<button class="pieza" data-vc="{esc(pz["vc"])}" type="button" '
+            f'aria-haspopup="dialog">'
+            f'<span class="foto"><span class="pildora">VC {esc(pz["vc"])}</span>'
+            f'<img src="fotos/{fotos[0]}" alt="{esc(pz["nombre"])}" loading="lazy" '
+            f'decoding="async" width="680" height="680">'
+            + (f'<span class="mas">+{len(fotos)-1}</span>' if len(fotos) > 1 else '')
+            + f'</span><span class="ficha-p"><span class="nom">{esc(pz["nombre"])}</span>'
+            f'<span class="met">{esc(pz["serie"] or "The Vintage Collection")}</span>'
+            f'<span class="ir">Ver a detalle</span></span></button>')
+    return '<div class="rejilla" id="g-rejilla">' + '\n'.join(t) + '</div>'
+
+def g_datos_js():
+    """Lo que el guion necesita para armar la ficha al vuelo, sin repetir el
+    HTML de 47 fichas en el documento."""
+    d = {}
+    for pz in cat:
+        f = FOTOS.get(pz['vc'], {})
+        if not f.get('fotos'): continue
+        d[pz['vc']] = {'n': pz['nombre'], 's': pz['serie'] or 'The Vintage Collection',
+                       'u': pz['url'], 'f': f['fotos']}
+    return json.dumps(d, ensure_ascii=False, separators=(',', ':'))
+
+def g_ficha():
+    """El cuadro que se abre como compuerta. Vacio: lo llena el guion."""
+    return ('<div class="g-ficha" id="g-ficha" hidden role="dialog" aria-modal="true" '
+            'aria-label="Ficha de la figura">'
+            '<div class="g-puerta izq" aria-hidden="true"></div>'
+            '<div class="g-puerta der" aria-hidden="true"></div>'
+            '<div class="g-caja">'
+            '<button class="g-cerrar" id="g-cerrar" type="button" aria-label="Cerrar">✕</button>'
+            '<div class="g-galeria"><div class="grande"><img id="g-grande" alt=""></div>'
+            '<div class="g-tiras" id="g-tiras"></div></div>'
+            '<div class="g-datos"><span class="vc" id="g-vc"></span>'
+            '<h3 id="g-nom"></h3>'
+            '<dl><dt>Línea</dt><dd id="g-serie"></dd>'
+            '<dt>Escala</dt><dd>3.75&Prime; · 9.5 cm</dd>'
+            '<dt>Estado</dt><dd>En su cartón original, sin abrir</dd>'
+            '<dt>Precio</dt><dd>En la tienda</dd></dl>'
+            '<a class="b" id="g-ir" href="#" target="_blank" rel="noopener">'
+            '<span>Ver en la tienda ↗</span></a></div>'
+            '</div></div>')
+
+def g_intro():
+    ls = ''.join(
+        f'<span class="let" style="left:{l["x"]*100:.3f}%;width:{l["ancho"]*100:.3f}%">'
+        f'<img src="{l["uri"]}" alt="" width="{l["w"]}" height="{l["h"]}">'
+        f'<span class="hoja" aria-hidden="true"></span></span>'
+        for l in img['letras'])
+    a = img['aurebesh']
+    return (f'<div class="g-intro" id="g-intro" aria-hidden="true">'
+            f'<canvas class="cielo" id="g-cielo"></canvas>'
+            f'<div class="marca"><div class="fila">{ls}</div>'
+            f'<img class="au" id="g-au" src="{a["uri"]}" width="{a["w"]}" height="{a["h"]}" alt=""></div>'
+            f'<button class="saltar" id="g-saltar" type="button">Saltar</button></div>')
+
+VC_TOTAL     = (CATFOTOS.get('vintage-collection') or {}).get('productos') or len(cat)
+HASBRO_TOTAL = (CATFOTOS.get('hasbro') or {}).get('productos') or VC_TOTAL
+
 TIENDA = 'https://www.toydarians.com/'
 LOGO = img['logo']
 
@@ -423,17 +719,22 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
 <style>{CSS}</style>
 
+{g_intro()}
+
 <div class="barra"><div class="caso">
   <a class="logo" href="{TIENDA}" target="_blank" rel="noopener">
     <img src="{LOGO['uri']}" width="{LOGO['w']}" height="{LOGO['h']}"
          alt="Toydarians" fetchpriority="high"></a>
   <nav>
-    <a href="#vitrina">La vitrina</a>
+    <a href="#vitrina" class="opc">La vitrina</a>
+    <a href="#categorias">Categorías</a>
     <a href="#carton" class="opc">El cartón</a>
-    <a href="#indice">Índice VC</a>
     <a href="{TIENDA}" target="_blank" rel="noopener">Tienda ↗</a>
   </nav>
+  <button class="g-abrir" id="g-abrir" type="button" aria-expanded="false"
+          aria-controls="g-menu">Menú</button>
 </div></div>
+{g_menu()}
 
 <header class="cartel">
   <div class="cuna" aria-hidden="true"></div>
@@ -443,11 +744,11 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
     <h1>Cada pieza<br>tiene <em>número</em></h1>
     <div class="dicho">
       <p>El número <strong>VC</strong> es la pieza. Toydarians tiene
-        <strong>{len(cat)}</strong> de las 381 de la línea, y este escaparate está
-        construido alrededor de ese número.</p>
+        <strong>{VC_TOTAL}</strong> de The Vintage Collection y
+        <strong>{HASBRO_TOTAL}</strong> de Hasbro en total.</p>
       <div class="acciones">
         <a class="b" href="#vitrina"><span>Ver la vitrina</span></a>
-        <a class="b hueco" href="#indice"><span>El índice</span></a>
+        <a class="b hueco" href="#categorias"><span>Categorías</span></a>
       </div>
     </div>
     <div class="peana">
@@ -461,20 +762,27 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
 
 <div class="banda-cat"><div class="caso">
   <h2>Descubre la Vintage Collection</h2>
-  <span class="apunte">{len(cat)} piezas · VC {rango}</span>
+  <span class="apunte">{VC_TOTAL} piezas · {len(cat)} en esta vitrina</span>
 </div></div>
 
 <section id="vitrina"><div class="caso">
   <p class="ceja">La vitrina</p>
-  <h2 class="revelar" style="max-width:18ch">Lo que hay<br>ahora mismo</h2>
-  <p style="margin:18px 0 clamp(24px,3vw,36px)">Cada cajón lleva <strong>el color medido
-    de su propia foto</strong>. Y donde todavía no hay foto propia se dice: nunca una
-    imagen que pretenda ser la pieza.</p>
-  <div class="rejilla">{REJILLA}</div>
+  <h2 class="revelar" style="max-width:18ch">{len(cat)} piezas,<br>una por una</h2>
+  <p style="margin:18px 0 clamp(24px,3vw,36px)">Cada una con sus fotos de la tienda.
+    Toca cualquiera para <strong>verla a detalle</strong>.</p>
+  {g_rejilla()}
 </div></section>
-"""
 
-DOC += f"""
+{cinta()}
+
+<section id="categorias"><div class="caso">
+  <p class="ceja">Categorías</p>
+  <h2 class="revelar" style="max-width:16ch">Todo lo que<br>hay en la tienda</h2>
+  <p style="margin:18px 0 clamp(24px,3vw,36px)">Las marcas y líneas del catálogo,
+    con el número de piezas que tiene cada una <strong>ahora mismo</strong>.</p>
+  {g_categorias()}
+</div></section>
+
 {cinta()}
 
 <section id="carton"><div class="caso carton-zona">
@@ -507,25 +815,6 @@ DOC += f"""
   </div>
 </div></section>
 
-{cinta()}
-
-<section id="indice"><div class="caso">
-  <p class="ceja">Índice VC</p>
-  <h2 class="revelar" style="max-width:16ch">El catálogo<br>tiene huecos</h2>
-  <p style="margin:18px 0 clamp(22px,2.8vw,32px)">Hasbro numera cada figura y la
-    numeración <strong>salta</strong>: del 01A al 57, del 73 al 231. Cada raya es una
-    pieza que sí está; los claros son las que no. <strong>Este dibujo es de este
-    cliente y de nadie más.</strong></p>
-  {EJE}
-  <ul class="cifras">
-    <li><b>{len(cat)}</b><span>En vitrina</span></li>
-    <li><b>{ausentes}</b><span>Números ausentes</span></li>
-    <li><b>{len(filas) - len(cat)}</b><span>Tramos sin cubrir</span></li>
-    <li><b>{rango}</b><span>Rango</span></li>
-  </ul>
-  <div class="indice" style="margin-top:clamp(28px,3.6vw,44px)">{INDICE}</div>
-</div></section>
-
 <div class="cierre"><div class="caso">
   <div>
     <h2>Precios y existencias,<br>en la tienda</h2>
@@ -535,6 +824,8 @@ DOC += f"""
   <a class="b" href="{TIENDA}" target="_blank" rel="noopener"><span>Abrir toydarians.com ↗</span></a>
 </div></div>
 
+{g_ficha()}
+
 <footer><div class="caso fila-pie">
   <div>
     <img src="{LOGO['uri']}" width="{LOGO['w']}" height="{LOGO['h']}" alt="Toydarians">
@@ -542,12 +833,10 @@ DOC += f"""
     <div style="margin-top:12px">Fluidez: <span id="medida">midiendo…</span></div>
   </div>
   <p class="nota" style="margin:0">
-    Propuesta de escaparate. El logotipo es el del cliente. Las fotos de producto son
-    los renders de fábrica de Hasbro, puestos como provisionales: donde no hay foto
-    propia se marca el hueco en vez de rellenarlo. <strong>No se publican precios ni
-    existencias</strong> porque no los tenemos confirmados — viven en la tienda.
-    Star Wars y The Vintage Collection son marcas de sus titulares; este sitio no está
-    afiliado a ellos.
+    Propuesta de escaparate. El logotipo, las fotos de producto, las categorías y sus
+    conteos salen de toydarians.com. <strong>No se publican precios</strong> porque
+    cambian: viven en la tienda. Star Wars, The Vintage Collection y las marcas
+    nombradas son de sus titulares; este sitio no está afiliado a ellos.
   </p>
 </div></footer>
 """
@@ -560,6 +849,7 @@ JS = r"""
 (function(){
   var quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var raiz = document.documentElement;
+  var TOY = window.TOY = window.TOY || {}; TOY.g = TOY.g || {};
   requestAnimationFrame(function(){ raiz.classList.add('cargado'); });
 
   // El reflejo se clona en vez de repetir el data URI en el HTML.
@@ -627,69 +917,19 @@ JS = r"""
 """
 
 JS += r"""
-  // ---- Polvo en el cono de luz (WebGL) ------------------------------------
-  // Se crea tarde y solo si la portada esta a la vista, y se apaga al salir.
-  // Un contexto WebGL corriendo fuera de pantalla es una estufa por nada.
-  var lienzo = document.getElementById('polvo'), gl = null, prog = null, uni = {}, N = 900;
-  function encender(){
-    if (gl || !lienzo) return;
-    gl = lienzo.getContext('webgl', { alpha:true, antialias:false, depth:false, premultipliedAlpha:false });
-    if (!gl) return;
-    var vs = 'attribute vec3 s;uniform float t;uniform vec2 luz;uniform float razon;varying float b;' +
-      'void main(){float x=fract(s.x+t*(0.0055+s.z*0.009));' +
-      'float y=fract(s.y+t*0.0035+sin(t*0.4+s.x*21.0)*0.010);' +
-      'vec2 p=vec2(x,y)*2.0-1.0;' +
-      'float d=distance(vec2(p.x*razon,p.y),vec2(luz.x*razon,luz.y));' +
-      'b=smoothstep(1.25,0.05,d)*(0.22+s.z*0.78);' +
-      'gl_Position=vec4(p,0.0,1.0);gl_PointSize=(1.0+s.z*2.4)*(0.6+b*1.6);}';
-    var fs = 'precision mediump float;varying float b;' +
-      'void main(){vec2 c=gl_PointCoord-0.5;' +
-      'float a=smoothstep(0.5,0.03,length(c))*b;gl_FragColor=vec4(0.94,0.73,0.43,a);}';
-    function comp(tipo, src){ var s = gl.createShader(tipo); gl.shaderSource(s, src); gl.compileShader(s); return s; }
-    prog = gl.createProgram();
-    gl.attachShader(prog, comp(gl.VERTEX_SHADER, vs));
-    gl.attachShader(prog, comp(gl.FRAGMENT_SHADER, fs));
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; return; }
-    gl.useProgram(prog);
-    var d = new Float32Array(N * 3);
-    for (var i = 0; i < N; i++){ d[i*3] = Math.random(); d[i*3+1] = Math.random(); d[i*3+2] = Math.random(); }
-    var buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, d, gl.STATIC_DRAW);
-    var a = gl.getAttribLocation(prog, 's');
-    gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 3, gl.FLOAT, false, 0, 0);
-    uni.t = gl.getUniformLocation(prog, 't');
-    uni.luz = gl.getUniformLocation(prog, 'luz');
-    uni.razon = gl.getUniformLocation(prog, 'razon');
-    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-    gl.clearColor(0, 0, 0, 0);
-    tallar(); lienzo.classList.add('vivo');
-  }
-  function tallar(){
-    if (!gl) return;
-    var r = Math.min(devicePixelRatio || 1, 1.5);   // topado: mas no se nota y cuesta
-    var w = Math.round(lienzo.clientWidth * r), h = Math.round(lienzo.clientHeight * r);
-    if (w && h && (lienzo.width !== w || lienzo.height !== h)) {
-      lienzo.width = w; lienzo.height = h; gl.viewport(0, 0, w, h);
-    }
-  }
-  var aLaVista = true;
-  if (lienzo && 'IntersectionObserver' in window) {
-    new IntersectionObserver(function(es){
-      aLaVista = es[0].isIntersecting;
-      if (aLaVista) encender();
-    }, { rootMargin: '120px' }).observe(lienzo);
-  } else { encender(); }
-  addEventListener('resize', tallar, { passive: true });
-"""
+  // (El motor de polvo en WebGL se quito: colgaba de un canvas #polvo que ya
+  //  no existe en el marcado. Lo cazo Sylcred y lo comprobe. El campo de
+  //  estrellas de la intro cubre esa funcion y ese si esta enchufado.)
 
-JS += r"""
   // ---- Un solo bucle -------------------------------------------------------
   var t0 = performance.now(), ultimo = t0, cuadros = 0, ventana = t0,
       peor = 0, listo = false, pintado = 0;
 
+  var tareas = TOY.g.tareas = [];      // cualquiera cuelga aqui; un solo bucle
+
   function paso(ahora){
     requestAnimationFrame(paso);
+    for (var q = 0; q < tareas.length; q++) tareas[q](ahora);
     var dt = Math.min(ahora - ultimo, 64); ultimo = ahora;
     var k = 1 - Math.pow(0.0016, dt / 1000);      // suavizado independiente del cuadro
 
@@ -709,15 +949,6 @@ JS += r"""
     }
 
     // El fondo tiene presupuesto propio: ~30 fps. No compite con el scroll.
-    if (gl && aLaVista && ahora - pintado > 32) {
-      pintado = ahora;
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform1f(uni.t, (ahora - t0) / 1000);
-      gl.uniform2f(uni.luz, (sx - .5) * 1.5, (.5 - sy) * 1.2 + .35);
-      gl.uniform1f(uni.razon, lienzo.width / Math.max(1, lienzo.height));
-      gl.drawArrays(gl.POINTS, 0, N);
-    }
-
     cuadros++;
     if (ahora - ventana >= 600) {
       var fps = Math.round(cuadros * 1000 / (ahora - ventana));
@@ -748,12 +979,203 @@ JS += r"""
 })();
 """
 
-cierre = "  requestAnimationFrame(paso);\n})();"
-if cierre not in JS:
-    raise SystemExit('no se encontro el cierre del motor base')
-JS = JS.replace(cierre, "  requestAnimationFrame(paso);", 1)
-if JS.count("})();") != 1:
-    raise SystemExit(f'el motor quedo con {JS.count("})();")} cierres, debe tener 1')
+
+
+JS += r"""
+  // ══════════════════════════════════════════════════════════════════════
+  // G · TODO LO NUEVO cuelga de TOY.g, como quedo acordado con Sylcred para
+  // que los dos podamos escribir aqui sin pisarnos.
+  // ══════════════════════════════════════════════════════════════════════
+  // ---- 1 · LA INTRO · 5 s -----------------------------------------------
+  // El logo se construye letra por letra: una hoja de luz baja por cada una y
+  // la va revelando con mascara. Son las letras REALES del logotipo, no una
+  // tipografia parecida.
+  var intro = document.getElementById('g-intro');
+  function cerrarIntro(){
+    if (!intro || intro.hidden) return;
+    intro.style.transition = 'opacity .5s ease';
+    intro.style.opacity = '0';
+    setTimeout(function(){ intro.hidden = true; document.body.style.overflow = ''; }, 520);
+  }
+  if (intro && !quieto) {
+    document.body.style.overflow = 'hidden';
+    var lets = [].slice.call(intro.querySelectorAll('.let'));
+    var au = document.getElementById('g-au');
+    var T0 = 380, PASO = 300, DUR = 520;        // 380 + 10*300 + 520 ≈ 3.9 s
+    lets.forEach(function(L, i){
+      var hoja = L.querySelector('.hoja');
+      var t = T0 + i * PASO;
+      setTimeout(function(){
+        hoja.style.opacity = '1';
+        hoja.style.transition = 'height ' + DUR + 'ms cubic-bezier(.5,0,.3,1)';
+        L.style.transition = '-webkit-mask-size ' + DUR + 'ms cubic-bezier(.5,0,.3,1),'
+                           + 'mask-size ' + DUR + 'ms cubic-bezier(.5,0,.3,1)';
+        hoja.style.height = '100%';
+        L.style.webkitMaskSize = '100% 100%'; L.style.maskSize = '100% 100%';
+        setTimeout(function(){
+          hoja.style.transition = 'opacity .32s ease';
+          hoja.style.opacity = '0';
+        }, DUR - 40);
+      }, t);
+    });
+    setTimeout(function(){ if (au){ au.style.transition = 'opacity .9s ease'; au.style.opacity = '.9'; } },
+               T0 + lets.length * PASO + 200);
+    setTimeout(cerrarIntro, 5000);
+    var bs = document.getElementById('g-saltar');
+    if (bs) bs.addEventListener('click', cerrarIntro);
+    addEventListener('keydown', function(e){ if (e.key === 'Escape') cerrarIntro(); });
+
+    // el campo de estrellas del fondo, con el mismo bucle de siempre
+    var ci = document.getElementById('g-cielo'), cx = ci && ci.getContext('2d');
+    if (cx) {
+      var estrellas = [], R = Math.min(devicePixelRatio || 1, 1.5);
+      function medirCielo(){
+        ci.width = Math.round(ci.clientWidth * R);
+        ci.height = Math.round(ci.clientHeight * R);
+        if (!ci.width || !ci.height) return;
+        estrellas = [];
+        for (var i = 0; i < 170; i++)
+          estrellas.push({ x: Math.random(), y: Math.random(),
+                           z: Math.random() * .8 + .2, f: Math.random() * 6.28 });
+      }
+      tareas.push(function(t){
+        if (intro.hidden) return;
+        if (ci.width !== Math.round(ci.clientWidth * R) ||
+            ci.height !== Math.round(ci.clientHeight * R)) medirCielo();
+        if (!estrellas.length) return;
+        cx.clearRect(0, 0, ci.width, ci.height);
+        for (var i = 0; i < estrellas.length; i++) {
+          var e = estrellas[i];
+          var a = (.35 + .65 * Math.abs(Math.sin(t / 900 + e.f))) * e.z;
+          cx.fillStyle = 'rgba(250,247,220,' + a.toFixed(3) + ')';
+          cx.fillRect(e.x * ci.width, e.y * ci.height, e.z * 2 * R, e.z * 2 * R);
+        }
+      });
+    }
+  } else if (intro) { intro.hidden = true; }
+
+  // ---- 2 · LOS BANNERS que se cambian solos ------------------------------
+  // Cada tarjeta lleva SU PROPIO reloj y un intervalo distinto: si todas
+  // cambiaran a la vez seria un carrusel, y lo que se pidio es que se cambien
+  // «paulatina y esporadicamente». Las de fuera de pantalla no gastan nada.
+  document.querySelectorAll('.g-cat .banners').forEach(function(caja, k){
+    var caps = [].slice.call(caja.children);
+    if (!caps.length) return;
+    caps.forEach(function(c){ c.style.backgroundImage = 'url("' + c.dataset.b + '")'; });
+    caps[0].classList.add('viva');
+    if (caps.length < 2 || quieto) return;
+    var i = 0, aLaVista = true;
+    if ('IntersectionObserver' in window)
+      new IntersectionObserver(function(es){ aLaVista = es[0].isIntersecting; },
+        { rootMargin:'80px' }).observe(caja);
+    (function siguiente(){
+      // 5 a 11 s, distinto por tarjeta y distinto cada vuelta
+      var espera = 5000 + Math.random() * 6000 + k * 400;
+      setTimeout(function(){
+        if (aLaVista) {
+          caps[i].classList.remove('viva');
+          i = (i + 1) % caps.length;
+          caps[i].classList.add('viva');
+        }
+        siguiente();
+      }, espera);
+    })();
+  });
+
+  // ---- 3 · EL MENU de su web ---------------------------------------------
+  var bAbrir = document.getElementById('g-abrir'), menu = document.getElementById('g-menu');
+  if (bAbrir && menu) bAbrir.addEventListener('click', function(){
+    var abierto = bAbrir.getAttribute('aria-expanded') === 'true';
+    bAbrir.setAttribute('aria-expanded', String(!abierto));
+    menu.hidden = abierto;
+  });
+"""
+
+JS += """
+  // ---- 4 · LA FICHA AL DETALLE, con puertas de nave ---------------------
+  // Las 47 fichas no viven en el documento: se arman al vuelo desde este dato.
+  // Meter 47 galerias en el HTML lo habria hecho enorme para algo que casi
+  // nadie abre entero.
+  TOY.g.piezas = """ + g_datos_js() + """;
+"""
+
+JS += r"""
+  var cuadro = document.getElementById('g-ficha');
+  if (cuadro) {
+    var gGrande = document.getElementById('g-grande'),
+        gTiras  = document.getElementById('g-tiras'),
+        gVc = document.getElementById('g-vc'), gNom = document.getElementById('g-nom'),
+        gSerie = document.getElementById('g-serie'), gIr = document.getElementById('g-ir'),
+        devolver = null;
+
+    function pintarTiras(fotos, activa){
+      gTiras.innerHTML = '';
+      fotos.forEach(function(f, i){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('aria-current', String(i === activa));
+        b.setAttribute('aria-label', 'Foto ' + (i + 1));
+        var im = document.createElement('img');
+        im.src = 'fotos/' + f; im.alt = ''; im.loading = 'lazy';
+        b.appendChild(im);
+        b.addEventListener('click', function(){
+          gGrande.src = 'fotos/' + f;
+          pintarTiras(fotos, i);
+        });
+        gTiras.appendChild(b);
+      });
+    }
+
+    function abrir(vc, origen){
+      var d = TOY.g.piezas[vc]; if (!d) return;
+      devolver = origen || null;
+      gVc.textContent = 'VC ' + vc;
+      gNom.textContent = d.n; gSerie.textContent = d.s; gIr.href = d.u;
+      gGrande.src = 'fotos/' + d.f[0]; gGrande.alt = d.n;
+      pintarTiras(d.f, 0);
+      cuadro.hidden = false;
+      document.body.style.overflow = 'hidden';
+      // las puertas arrancan cerradas y se abren al cuadro siguiente
+      cuadro.classList.remove('abierta');
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ cuadro.classList.add('abierta'); });
+      });
+      document.getElementById('g-cerrar').focus();
+    }
+    function cerrar(){
+      cuadro.classList.remove('abierta');
+      setTimeout(function(){
+        cuadro.hidden = true;
+        document.body.style.overflow = '';
+        if (devolver && devolver.focus) devolver.focus();
+      }, quieto ? 0 : 380);
+    }
+    document.getElementById('g-cerrar').addEventListener('click', cerrar);
+    cuadro.addEventListener('click', function(e){ if (e.target === cuadro) cerrar(); });
+    addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && !cuadro.hidden) cerrar();
+    });
+    var rej = document.getElementById('g-rejilla');
+    if (rej) rej.addEventListener('click', function(e){
+      var b = e.target.closest('.pieza[data-vc]');
+      if (b) abrir(b.dataset.vc, b);
+    });
+    TOY.g.abrir = abrir;
+  }
+"""
+
+# Solo los cierres SIN SANGRAR cierran bloque; los sangrados son funciones
+# auto-invocadas legitimas dentro del codigo (el reloj de los banners, por
+# ejemplo) y quitarlos parte el guion -- ya paso.
+antes = JS.count("\n})();")
+JS = JS.replace("\n})();", "")
+if antes < 2:
+    raise SystemExit(f'se esperaban 2 cierres de bloque y habia {antes}')
+JS += "\n})();\n"                       # y se cierra una sola vez, al final
+# Se cuentan solo los sin sangrar: los sangrados son funciones legitimas.
+n = JS.count("\n})();")
+if n != 1:
+    raise SystemExit(f'el motor quedo con {n} cierres de bloque, debe tener 1')
 
 DOC += f"<script>{JS}</script>\n"
 salida = RAIZ / 'sitio.html'
