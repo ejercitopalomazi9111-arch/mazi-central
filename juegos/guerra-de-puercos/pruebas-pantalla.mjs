@@ -444,6 +444,99 @@ ok('los botones de la mesa se alcanzan sin hacer scroll', cabe.fondo <= cabe.alt
 await page.evaluate(DESMARCAR);
 await page.waitForTimeout(150);
 
+console.log('\n── Lo que reportó Carlos mirando su teléfono ──');
+{
+  /* Se busca una mano que traiga especial: sin ella no hay nada que probar,
+     y dar por buena la prueba porque «no salió el caso» es lo mismo que no
+     tenerla. Si en 12 repartos no sale ninguna, se DICE. */
+  let hay = false;
+  for(let i = 0; i < 12 && !hay; i++){
+    hay = await page.evaluate(() => !!document.querySelector('#mMano .carta[data-esp]'));
+    if(!hay){
+      await page.click('#bSalir'); await page.waitForTimeout(150);
+      await page.click('[data-modo="maquina"]'); await page.waitForTimeout(350);
+    }
+  }
+  ok('salió una mano con especial para poder probarlo', hay,
+     hay ? '' : 'doce repartos sin ninguna — la prueba de abajo no comprobó nada');
+
+  if(hay){
+    /* ⚠ EL DEFECTO, TAL CUAL LO DESCRIBIÓ: «si selecciono mi carta y la de
+       bonificación y deselecciono la de bonificación se queda flotando; si
+       deselecciono la otra vuelve a la normalidad». La causa era `.frente`,
+       que la ponía el toque y sólo la quitaba el toque SIGUIENTE sobre otra
+       carta — de ahí que soltar la otra sí lo arreglara. */
+    await page.evaluate(DESMARCAR); await page.waitForTimeout(150);
+    await page.evaluate(() =>
+      [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp).click());
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.querySelector('#mMano .carta[data-esp]').click());
+    await page.waitForTimeout(250);
+    /* ⚠ EXACTAMENTE DOS, y este número cazó un defecto que yo no vi: con dos
+       bonificaciones en la mano se marcaban LAS DOS, porque el estado se
+       guardaba por clase («bono») y no por carta. El motor gastaba una sola,
+       así que el resultado salía bien y sólo mentía la pantalla. */
+    const conLasDos = await page.evaluate(() =>
+      document.querySelectorAll('#mMano .carta.marcada').length);
+    ok('con carta y especial quedan marcadas DOS, ni una más', conLasDos === 2,
+       conLasDos + ' marcadas');
+
+    await page.evaluate(() => document.querySelector('#mMano .carta[data-esp]').click());
+    await page.waitForTimeout(400);
+    const tras = await page.evaluate(() => {
+      const e = document.querySelector('#mMano .carta[data-esp]');
+      const suyo = e.getBoundingClientRect().top;
+      /* Las que están en reposo: ni elegidas ni al frente. */
+      const reposo = [...document.querySelectorAll('#mMano .carta')]
+        .filter(x => x !== e && !x.classList.contains('marcada') && !x.classList.contains('frente'))
+        .map(x => x.getBoundingClientRect().top);
+      const base = reposo.length ? reposo.reduce((a, b) => a + b, 0) / reposo.length : suyo;
+      return { frente: e.classList.contains('frente'), marcada: e.classList.contains('marcada'),
+               subida: base - suyo };
+    });
+    ok('al soltar la especial NO se queda flotando',
+       !tras.frente && !tras.marcada && tras.subida < 6,
+       'frente:' + tras.frente + ' marcada:' + tras.marcada
+       + ' levantada ' + Math.round(tras.subida) + ' px sobre las de reposo');
+  }
+
+  /* «No uses texto claro sobre cuadro claro» — el aviso tenía el fondo amarillo
+     pálido y heredaba la tinta hueso del fieltro. Se mide contra su fondo, no
+     contra el del documento. */
+  await page.evaluate(() =>
+    [...document.querySelectorAll('#mMano .carta')].find(x => !x.dataset.esp).click());
+  await page.waitForTimeout(250);
+  const aviso = await page.evaluate(() => {
+    const el = document.querySelector('#mAviso');
+    if(!el || el.hidden) return null;
+    const lum = c => { const s = c.map(v => { v/=255;
+      return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); });
+      return .2126*s[0] + .7152*s[1] + .0722*s[2]; };
+    const num = s => (s.match(/[\d.]+/g) || [0,0,0]).slice(0,3).map(Number);
+    const cs = getComputedStyle(el);
+    const a = lum(num(cs.color)), b = lum(num(cs.backgroundColor));
+    return { rz: (Math.max(a,b) + .05) / (Math.min(a,b) + .05), color: cs.color };
+  });
+  ok('el aviso está visible para poder medirlo', !!aviso);
+  ok('y su texto NO es claro sobre cuadro claro',
+     aviso && aviso.rz >= 4.5, aviso ? aviso.rz.toFixed(2) + ' · ' + aviso.color : '');
+
+  /* «Al seleccionar una carta se le hace una línea rosa abajo que se ve
+     horrible.» Era un box-shadow sólido de 12 px: sobre el fieltro no se lee
+     como sombra sino como una barra de color pegada al borde. */
+  const sombra = await page.evaluate(() => {
+    const m = document.querySelector('#mMano .carta.marcada');
+    return m ? getComputedStyle(m).boxShadow : null;
+  });
+  ok('la carta elegida ya no lleva la barra rosa maciza',
+     !!sombra && !/rgb\(196, 36, 99\)/.test(sombra), sombra || 'sin carta marcada');
+  /* ⚠ SE DEJA LA MESA LIMPIA. Este bloque termina con una carta elegida, y las
+     pruebas de más abajo dan por hecho que no hay nada marcado. Una prueba que
+     le ensucia el estado a la siguiente hace fallar a la inocente. */
+  await page.evaluate(DESMARCAR);
+  await page.waitForTimeout(150);
+}
+
 console.log('\n── El fieltro: la mesa no compite con las cartas ──');
 /* Carlos, viendo unas fotos del juego: «se ve bien culero». El motivo era
    medible: fondo #E84A8A de borde a borde y las 102 cartas con marco rosa, o
@@ -669,6 +762,67 @@ ok('la máquina NO ve la mano del rival', await page.evaluate(() => {
   /* `pensarMaquina` sólo recibe UN jugador: no tiene por dónde ver al otro. */
   return pensarMaquina.length === 1;
 }));
+
+console.log('\n── La tienda ──');
+{
+  /* Carlos: «espero ya esté puesta la tienda». Lo que se comprueba es que el
+     circuito CIERRA: se gana jugando, se gasta comprando, y la colección
+     crece. Una tienda que enseña sobres bonitos y no cambia nada al comprar
+     es un escaparate. */
+  await page.goto(BASE + '/juegos/guerra-de-puercos/', { waitUntil:'networkidle' });
+  await page.evaluate(() => {
+    localStorage.setItem('puercos_monedas', '200');
+    localStorage.removeItem('puercos_tengo');
+  });
+  await page.reload({ waitUntil:'networkidle' });
+  await page.waitForTimeout(500);
+  await page.click('#bTienda');
+  await page.waitForTimeout(600);
+
+  ok('la tienda existe y se abre', await page.isVisible('#p-tienda'));
+  ok('y dice cuántas monedas hay', (await page.textContent('#tMonedas')) === '200');
+
+  const antes = await page.evaluate(() => ({
+    monedas: +document.querySelector('#tMonedas').textContent,
+    tengo: Object.keys(JSON.parse(localStorage.getItem('puercos_tengo') || '{}')).length,
+  }));
+  await page.evaluate(() => document.querySelectorAll('.sobre')[0].click());
+  await page.waitForTimeout(500);
+  const despues = await page.evaluate(() => ({
+    monedas: +document.querySelector('#tMonedas').textContent,
+    tengo: Object.keys(JSON.parse(localStorage.getItem('puercos_tengo') || '{}')).length,
+    salieron: document.querySelectorAll('#tSalidas img').length,
+    seVe: !document.querySelector('#tAbierto').classList.contains('oculto'),
+  }));
+  ok('comprar un sobre cobra las monedas', despues.monedas < antes.monedas,
+     antes.monedas + ' → ' + despues.monedas);
+  ok('y enseña las cartas que salieron', despues.seVe && despues.salieron === 3,
+     despues.salieron + ' cartas');
+  ok('la colección crece de verdad', despues.tengo > antes.tengo,
+     antes.tengo + ' → ' + despues.tengo);
+  /* ⚠ Y QUE SOBREVIVA A RECARGAR. Una colección que vive sólo en memoria se
+     pierde al cerrar el juego, y eso no se ve probando en una sola pasada. */
+  await page.reload({ waitUntil:'networkidle' });
+  await page.waitForTimeout(400);
+  await page.click('#bTienda');
+  await page.waitForTimeout(400);
+  const tras = await page.evaluate(() => ({
+    monedas: +document.querySelector('#tMonedas').textContent,
+    dice: document.querySelector('#tLlevas').textContent,
+  }));
+  ok('lo comprado sigue ahí después de recargar',
+     tras.monedas === despues.monedas && /Llevas \d+ de/.test(tras.dice),
+     tras.monedas + ' · ' + tras.dice);
+
+  /* Sin monedas no se compra, y el botón lo dice en vez de no hacer nada. */
+  await page.evaluate(() => localStorage.setItem('puercos_monedas', '0'));
+  await page.reload({ waitUntil:'networkidle' });
+  await page.waitForTimeout(400);
+  await page.click('#bTienda');
+  await page.waitForTimeout(400);
+  ok('sin monedas los sobres quedan apagados',
+     await page.evaluate(() => [...document.querySelectorAll('.sobre')].every(b => b.disabled)));
+}
 
 ok('la página no tiró ningún error', errores.length === 0, errores[0] || '');
 

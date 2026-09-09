@@ -435,6 +435,30 @@
         "el fondo no es un color, es una imagen"
       ],
       "salioDe": "Revisando el póster de Xbox de Godines: mi primera pasada dio 11 de 12 textos «cortos», cinco de ellos con 1.00 exacto. Con el texto apagado, los 12 pasan y el peor va a 7.71 contra un piso de 4.5."
+    },
+    {
+      "id": "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
+      "titulo": "La prueba contaba lo que ya no era, y el reporte acusaba a otro",
+      "gravedad": "alta",
+      "sintoma": "«Se reparte a los dos → 5 y 6.» El servidor parece estar repartiendo mal, o de más a uno. Y reparte bien.",
+      "causa": "El contenedor cambió de contenido —ahora en la mano viven las cinco jugables MÁS los modificadores— y la prueba siguió contando todos los hijos. Lo que cambió fue la definición de «mano», no el reparto.",
+      "porque": "Una prueba escrita cuando el contenedor tenía una sola clase de cosa no dice cuál cuenta, porque no había otra. Al meter una segunda clase, el selector viejo sigue siendo válido y sigue devolviendo un número — sólo que ahora otro.",
+      "arreglo": "El selector nombra lo que la afirmación quiere contar, con exclusión explícita: `.carta:not([data-esp])`. Y el mensaje de fallo dice el número, para que se vea que son 6 y no 4.",
+      "comoCazarlo": "Cuando una prueba señale a un componente que no tocaste, sospechar primero de la prueba. Y comprobarla con mutación: meter el defecto de verdad (repartir 4) y ver que dé un número DISTINTO al del falso positivo.",
+      "consejo": "Al agregar una clase nueva de elemento a un contenedor, hay que ir a buscar quién lo cuenta. Nadie avisa: los selectores viejos no truenan, contestan otra cosa.",
+      "salioDe": "juegos/guerra-de-puercos · pruebas-linea.mjs, después de meter las especiales al abanico",
+      "senales": [
+        "la prueba culpa al servidor",
+        "dice 5 y 6",
+        "falla algo que no toqué",
+        "cuenta de más"
+      ],
+      "vecinas": [
+        "la-prueba-se-ensucia-su-premisa",
+        "contar-rectangulos-no-es-contar-renglones",
+        "la-mano-que-se-llena-de-lo-que-no-se-juega",
+        "mutacion-sin-restaurar"
+      ]
     }
   ]
 }

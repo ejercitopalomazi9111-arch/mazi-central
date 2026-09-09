@@ -163,6 +163,51 @@
         "se traba y no termina"
       ],
       "salioDe": "Guerra de Puercos, jugando ocho partidas a puros clics: una se paró en la ronda 17 sin decir nada."
+    },
+    {
+      "id": "estado-guardado-por-clase-y-no-por-identidad",
+      "titulo": "El estado guarda de QUÉ TIPO es lo elegido, no CUÁL fue",
+      "gravedad": "alta",
+      "sintoma": "Selecciono uno y se marcan dos. Con un solo elemento de esa clase todo se ve perfecto; el defecto aparece la primera vez que hay dos iguales.",
+      "causa": "La variable de estado guardaba la CLASE de la cosa elegida ('bono') y el pintado preguntaba «¿tu clase es la elegida?». Cualquier hermano de la misma clase contesta que sí.",
+      "porque": "Mientras se construye casi siempre hay uno solo de cada clase, así que clase e identidad valen lo mismo y no se nota que se escogió la equivocada. El código además se lee bien: dice justo lo que hace.",
+      "arreglo": "Guardar también el id, y que el pintado exija las dos cosas: misma clase Y mismo id. Si sólo se puede guardar una, que sea el id — la clase se saca de él, al revés no.",
+      "comoCazarlo": "Poner DOS de la misma clase y afirmar cuántos quedan marcados con un número exacto. «Está marcado el mío» pasa con los dos marcados; «hay exactamente 1 marcado» no.",
+      "consejo": "Cuando el estado sea «cuál está elegido», que guarde una identidad. Un tipo, un nombre o una clase describen a un grupo, y el estado de selección nunca es de un grupo.",
+      "salioDe": "juegos/guerra-de-puercos · con dos cartas de +5 en la mano se marcaban las dos al tocar una",
+      "senales": [
+        "selecciono uno y se marcan dos",
+        "se marcan todos los iguales",
+        "con uno solo funcionaba",
+        "cuando hay repetidos se descompone"
+      ],
+      "vecinas": [
+        "bandera-global-primera-vez",
+        "prueba-de-un-solo-caso",
+        "la-clase-que-se-queda-huerfana"
+      ]
+    },
+    {
+      "id": "la-clase-que-se-queda-huerfana",
+      "titulo": "La clase la pone un camino y la quita otro, y hay un tercero",
+      "gravedad": "media",
+      "sintoma": "Se queda flotando/encendido algo que ya deseleccioné. Y si toco OTRA cosa distinta, se acomoda solo — lo cual hace pensar que el bug está en la otra cosa.",
+      "causa": "La clase visual se agrega en el momento de elegir y se quita en el repintado general, pero existe una salida que no pasa por ninguno de los dos: deseleccionar por el otro lado deja al elemento con la clase puesta y sin nadie que la retire.",
+      "porque": "Uno cuenta los caminos de ida y los de vuelta, y salen parejos. El que se escapa es el camino cruzado — deseleccionar B afectando a A — porque al escribirlo se piensa en B.",
+      "arreglo": "Que la clase la ponga y la quite el MISMO dueño: el repintado que ya conoce todo el estado. Si hace falta quitarla a mano, quitarla en el mismo bloque donde se decide el nuevo estado, no en el que la puso.",
+      "comoCazarlo": "Probar el cruce: elegir A y B, soltar B, mirar A. Nunca sólo elegir-y-soltar lo mismo, que es el camino que sí está cubierto.",
+      "consejo": "Si arreglar algo pasa por «tocar otra cosa y se acomoda», no es un defecto del pintado: es una clase que quedó sin dueño.",
+      "salioDe": "juegos/guerra-de-puercos · lo reportó Carlos: «si deselecciono la de bonificación, la otra se queda flotando»",
+      "senales": [
+        "se queda flotando",
+        "se queda prendido",
+        "si toco otra cosa se arregla solo",
+        "vuelve a la normalidad al tocar otra"
+      ],
+      "vecinas": [
+        "estado-guardado-por-clase-y-no-por-identidad",
+        "menu-que-no-se-cierra"
+      ]
     }
   ]
 }

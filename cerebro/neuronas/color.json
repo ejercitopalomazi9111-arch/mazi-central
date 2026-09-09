@@ -225,6 +225,29 @@
         "se ve barato"
       ],
       "salioDe": "Guerra de Puercos: el fondo era #E84A8A de borde a borde y las 102 cartas tienen marco rosa. Con la mesa en #241019 las cartas se despegaron sin tocarles un pixel."
+    },
+    {
+      "id": "el-defecto-de-contraste-vive-en-familia",
+      "titulo": "Arreglé el contraste de un recuadro y el de al lado tenía el mismo",
+      "gravedad": "alta",
+      "sintoma": "Se arregla el elemento reportado, se mide, queda. Y el usuario vuelve con el MISMO reclamo señalando otro elemento a dos centímetros.",
+      "causa": "El contraste malo casi nunca es un descuido suelto: es una pareja de tonos de la paleta —claro sobre claro— que se usó en todos los avisos, sellos y etiquetas de la misma tanda. Arreglar uno arregla una instancia, no la pareja.",
+      "porque": "El reporte llega señalando UN lugar, y uno atiende el lugar. Pero quien lo escribió eligió esos dos tonos juntos porque se veían bien en su cabeza, y los usó cada vez que necesitó ese tipo de caja.",
+      "arreglo": "Al arreglar un contraste, buscar la pareja de colores en TODA la hoja y arreglar cada aparición en el mismo commit. Y dejar una prueba que barra todo el texto corto de la pantalla, no la caja reportada.",
+      "comoCazarlo": "Medir todos los elementos de texto de la pantalla y afirmar un piso, en vez de medir el que reportaron. Una prueba de un elemento pasa con los otros once rotos.",
+      "consejo": "Cuando te reporten «texto claro sobre cuadro claro», el arreglo no es ese cuadro: es esa pareja de colores, dondequiera que esté.",
+      "salioDe": "juegos/guerra-de-puercos · arreglé el panel de daño y Carlos encontró el mismo defecto en el aviso de al lado",
+      "senales": [
+        "no se lee",
+        "texto claro sobre cuadro claro",
+        "ya lo habías arreglado y sigue igual",
+        "ahora en otro lado"
+      ],
+      "vecinas": [
+        "contraste-que-pasa-en-el-mockup-y-no-en-la-pantalla",
+        "el-mismo-color-para-display-y-para-texto-chico",
+        "violeta-de-la-casa-no-admite-tinta-oscura"
+      ]
     }
   ]
 }
