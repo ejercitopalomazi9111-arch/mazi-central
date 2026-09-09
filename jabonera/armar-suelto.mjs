@@ -72,7 +72,13 @@ for(const f of GUIONES)
   if(out.includes(`src="${f}"`)) problemas.push(`no se incrustó ${f}`);
 if(problemas.length){ console.error('✗ ' + problemas.join(' · ')); process.exit(1); }
 
-out = out.replace('<title>', `<!-- Archivo GENERADO por armar-suelto.mjs · ${new Date().toISOString().slice(0,10)}.
+/* ⚠ AQUÍ IBA LA FECHA DE ARMADO Y ERA LA MISMA TRAMPA QUE `cerebro/todo.json`.
+   Nadie la lee, pero cambia en cada corrida: correr las pruebas ENSUCIA el
+   repo, y dos ramas que regeneren el archivo chocan en él aunque el contenido
+   sea idéntico byte a byte. Ese conflicto se «resuelve» regenerando, así que
+   vuelve siempre. La fecha de verdad la da `git log -1 jabonera/jabonera.html`,
+   que además no miente. */
+out = out.replace('<title>', `<!-- Archivo GENERADO por armar-suelto.mjs.
      No se edita a mano: se cambian los originales y se vuelve a generar. -->
 <title>`);
 

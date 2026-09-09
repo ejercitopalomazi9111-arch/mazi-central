@@ -1,4 +1,26 @@
-import { chromium } from 'playwright';
+/* ⚠ AQUÍ DECÍA `import { chromium } from 'playwright'` Y ESTE SUITE NUNCA CORRÍA
+   EN ESTE CONTENEDOR: playwright vive sólo en la instalación global, así que el
+   import pelón truena con ERR_MODULE_NOT_FOUND antes de la primera comprobación.
+   Un suite que ni arranca no reprueba: calla, y calla igual que uno que pasa.
+   Es el mismo defecto que ya estaba en `toydarians/taller/revisar.mjs` y en
+   `explorador/pruebas.mjs` — tercera vez, y por eso se busca en los dos lados. */
+let chromium;
+for (const d of ['/opt/node22/lib/node_modules/playwright/index.mjs',
+                 'playwright', '/usr/lib/node_modules/playwright/index.mjs']) {
+  try { chromium = (await import(d)).chromium; if (chromium) break; } catch (e) {}
+}
+if (!chromium) {
+  console.error('Falta playwright con navegador. En este contenedor vive en /opt/node22.');
+  process.exit(1);
+}
+/* ⚠ LAS CAPTURAS CAÍAN EN `caps/` RELATIVO AL DIRECTORIO ACTUAL, o sea dentro
+   del repo si corrías desde la raíz. Correr las pruebas dejaba 1.3 MB de PNG
+   sin seguir, y el gancho de cierre pedía commitearlos. Una prueba no ensucia
+   lo que mide. Ahora van al temporal del sistema y salen impresas al final. */
+import { tmpdir } from 'node:os';
+import { mkdirSync } from 'node:fs';
+const CAPS = tmpdir() + '/caps-sitio';
+mkdirSync(CAPS, { recursive: true });
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
@@ -105,7 +127,7 @@ for (const [nom,an,al,rm] of [['telefono',390,844,false],['laptop',1280,900,fals
     rev(nom+': y SIGUE al dedo',m1!==m2&&m2.includes('radial'),'cambio='+(m1!==m2));
     await p.evaluate(()=>scrollTo(0,0)); await p.waitForTimeout(300);
   }
-  await p.screenshot({path:'caps/60-sitio-'+nom+'.png'});
+  await p.screenshot({path:CAPS+'/60-sitio-'+nom+'.png'});
   await ctx.close();
 }
 // prueba dura: si el JS truena, la portada TIENE que verse igual
@@ -120,7 +142,7 @@ const vivo=await p.evaluate(()=>{const l=document.querySelector('.logotipo');
   return getComputedStyle(l).opacity!=='0'&&l.getBoundingClientRect().height>0
     && getComputedStyle(document.querySelector('.frase')).opacity!=='0';});
 rev('si el JS truena, la portada se ve igual',vivo);
-await p.screenshot({path:'caps/61-sitio-sin-js.png'});
+await p.screenshot({path:CAPS+'/61-sitio-sin-js.png'});
 console.log('\n'+'═'.repeat(66));
 let mal=0;P.forEach(t=>{if(!t.ok)mal++;console.log((t.ok?'  ok  ':' FALLA')+' · '+t.n+(t.d?'  → '+t.d:''))});
 console.log('═'.repeat(66));console.log(`${P.length-mal}/${P.length}`);
