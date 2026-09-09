@@ -6,25 +6,10 @@ sacadas del WooCommerce del cliente y las imagenes van embebidas como data URI
 (el visor bloquea imagenes externas). Editar eso a mano seria imposible.
 Los datos entran por activos/, el diseno vive aqui.
 """
-import base64, json, re, pathlib
+import json, re, pathlib
 
-# ⚠ AQUÍ HABÍA UN `parent.parent` QUE DEJABA EL GENERADOR MUERTO EN MAIN.
-# Cuando el taller vivía en `scripts/`, subir dos niveles caía en la carpeta del
-# proyecto y `activos/` estaba ahí. Al mudarlo a `taller/` los activos se
-# mudaron CON él —viven en `taller/activos/`— pero el `parent.parent` se quedó
-# igual, así que apuntaba a `toydarians/activos`, que no existe.
-#
-# Resultado: `python3 taller/armar.py` reventaba con
-#     FileNotFoundError: .../toydarians/activos/catalogo-limpio.json
-# O sea que el sitio commiteado NO SE PODÍA REGENERAR. No se ve leyendo, porque
-# el `index.html` que ya está generado se sirve perfecto: lo que estaba roto era
-# la única manera de volver a hacerlo.
-#
-# `AQUI` y no `RAIZ`: el nombre dice dónde está parado el archivo, que es la
-# pregunta que se contestó mal. RAIZ se queda para lo que sí es la raíz.
-AQUI = pathlib.Path(__file__).resolve().parent
-RAIZ = AQUI.parent
-ACT  = AQUI / 'activos'
+RAIZ = pathlib.Path(__file__).resolve().parent.parent
+ACT  = RAIZ / 'activos'
 cat  = json.loads((ACT / 'catalogo-limpio.json').read_text(encoding='utf-8'))
 img  = json.loads((ACT / 'assets.json').read_text(encoding='utf-8'))
 
@@ -82,17 +67,8 @@ a{color:inherit}
   container-type:inline-size}
 h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;
   letter-spacing:-.045em;margin:0;text-wrap:balance;line-height:1.02}
-/* ⚠ EL MÍNIMO ERA 34 px Y ESO ES LO QUE CARLOS LLAMÓ «SE VE CHIQUITO».
-   En un teléfono de 390 el `7.6vw` da 29.6, así que ganaba el suelo de 34 —
-   tamaño de subtítulo para el titular de una portada. En escritorio subía a
-   106. Un cartel que se desinfla 3× al pasar al teléfono no es el mismo cartel,
-   y el teléfono es donde se ve esto.
-   Sube a 44 de suelo y 12vw de pendiente: en 390 da 46.8. El `min(…,16cqw)`
-   de abajo sigue siendo el freno que impide que Bungee —que es ancha— se salga
-   de su columna; con él, 390 px se resuelve en ~46 px y no desborda. Medido con
-   `revisar.mjs`, que da desborde 0 en 390, 768 y 1440. */
-h1{font-size:clamp(44px,12vw,106px)}
-h1{font-size:min(clamp(44px,12vw,106px),16cqw)}
+h1{font-size:clamp(34px,7.6vw,106px)}
+h1{font-size:min(clamp(34px,7.6vw,106px),16cqw)}
 h2{font-size:clamp(21px,3.4vw,44px)}
 h2{font-size:min(clamp(21px,3.4vw,44px),10cqw)}
 h3{font-size:clamp(14px,1.6vw,18px);letter-spacing:-.035em}
@@ -147,24 +123,19 @@ CSS += r"""
   padding-block:13px}
 .barra .logo{flex:0 0 auto}
 .barra .logo img{height:clamp(20px,2.6vw,27px);width:auto}
-.barra nav{display:flex;gap:clamp(12px,2vw,24px);margin-left:auto;flex-wrap:wrap;
+.barra .caso{flex-wrap:nowrap}
+.barra nav{display:flex;gap:clamp(12px,2vw,24px);margin-left:auto;flex-wrap:nowrap;
   font:700 10.5px/1 var(--dato);letter-spacing:.16em;text-transform:uppercase}
+/* En telefono no caben logo + enlaces + boton: mandan el logo y el boton, y
+   los enlaces viven dentro del menu. Antes se partia en dos renglones y el
+   boton quedaba encimado -- de ahi el «el boton menu no sirve». */
+@media (max-width:720px){
+  .barra nav{display:none}
+  .g-abrir{margin-left:auto}
+}
 .barra nav a{color:var(--gris);text-decoration:none;transition:color .2s}
 .barra nav a:hover{color:var(--amarillo)}
-@media (max-width:620px){.barra nav a.opc{display:none}}
-/* ⚠ EN 390 px LA BARRA SE PARTÍA EN DOS RENGLONES Y SE ENCIMABA CON EL LOGO.
-   Escondiendo sólo `.opc` quedaban tres enlaces, y con `letter-spacing:.16em`
-   más el gap de 12 px medían ~300 px al lado de un logo de ~110: no caben en
-   los 354 px útiles de un teléfono, así que `flex-wrap` los mandaba abajo
-   pegados. No es que envuelva —envolver está bien—: es que envolvía SIN AIRE y
-   parecía un defecto.
-   Apretar la letra en el móvil los deja en una sola línea. El letter-spacing
-   ancho es un lujo de escritorio; a 9.5 px sólo separa. */
-@media (max-width:620px){
-  .barra .caso{gap:10px}
-  .barra nav{gap:13px;font-size:9.5px;letter-spacing:.05em}
-  .barra .logo img{height:19px}
-}
+
 
 /* ---- Cartel de portada ---------------------------------------------------- */
 /* Un cartel, no una portada de plantilla: el titular en el amarillo de la
@@ -350,20 +321,15 @@ CSS += r"""
 .g-ficha{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
   background:rgba(4,4,6,.86);padding:clamp(12px,3vw,34px)}
 .g-ficha[hidden]{display:none}
-.g-puerta{position:absolute;top:0;bottom:0;width:50%;background:#111114;z-index:2;
-  border-inline:1px solid var(--linea);transition:transform .82s cubic-bezier(.72,0,.2,1)}
-.g-puerta.izq{left:0}
-.g-puerta.der{right:0}
-.g-ficha.abierta .g-puerta.izq{transform:translate3d(-101%,0,0)}
-.g-ficha.abierta .g-puerta.der{transform:translate3d(101%,0,0)}
-.g-puerta::after{content:'';position:absolute;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,transparent,var(--amarillo),transparent);opacity:.6}
-.g-puerta.izq::after{right:0} .g-puerta.der::after{left:0}
+/* Las compuertas de nave se quitaron: Carlos las vio «super fuera de lugar».
+   La ficha entra ahora subiendo un poco y ganando escala, que es lo que hace
+   una ficha de tienda y no distrae del producto. */
 .g-caja{position:relative;z-index:1;width:min(100%,940px);max-height:100%;
   overflow-y:auto;background:var(--panel);border:1px solid var(--linea);
   display:grid;gap:0;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
-  opacity:0;transition:opacity .5s ease .5s}
-.g-ficha.abierta .g-caja{opacity:1}
+  opacity:0;transform:translate3d(0,22px,0) scale(.985);
+  transition:opacity .34s ease,transform .44s cubic-bezier(.2,.9,.28,1)}
+.g-ficha.abierta .g-caja{opacity:1;transform:none}
 @media (max-width:760px){.g-caja{grid-template-columns:minmax(0,1fr)}}
 .g-galeria{background:#0C0C0E;display:grid;gap:8px;padding:14px;align-content:start}
 .g-galeria .grande{aspect-ratio:1/1;background:#111;position:relative;overflow:hidden}
@@ -386,6 +352,30 @@ CSS += r"""
   font:400 18px/1 var(--texto)}
 .g-cerrar:hover{border-color:var(--amarillo);color:var(--amarillo)}
 
+
+.ficha-p .precio{font:400 clamp(15px,1.7vw,19px)/1 var(--display);
+  letter-spacing:-.03em;color:var(--amarillo);display:flex;align-items:baseline;gap:5px}
+.ficha-p .precio i{font:700 8.5px/1 var(--dato);letter-spacing:.16em;
+  color:var(--gris-tenue);font-style:normal}
+
+/* ══ G · PAGO ══════════════════════════════════════════════════════════════
+   El boton de PayPal sólo se dibuja si hay identificador del cliente. Sin él
+   NO se finge un pago: se dice qué falta y se manda a la tienda, que sí cobra.
+   Un botón de pago que no cobra es peor que no tener botón. */
+.g-compra{display:grid;gap:10px;margin-top:6px}
+.g-precio-g{font:400 clamp(24px,3.4vw,34px)/1 var(--display);letter-spacing:-.04em;
+  color:var(--amarillo);display:flex;align-items:baseline;gap:7px}
+.g-precio-g i{font:700 10px/1 var(--dato);letter-spacing:.18em;color:var(--gris-tenue);
+  font-style:normal}
+.g-stock{display:inline-flex;align-items:center;gap:7px;font:700 10px/1 var(--dato);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--verde)}
+.g-stock::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--verde)}
+.g-stock.no{color:var(--rojo)} .g-stock.no::before{background:var(--rojo)}
+#g-paypal{min-height:0}
+.g-aviso-pago{border:1px dashed var(--amarillo-hondo);padding:12px 13px;
+  font:400 11.5px/1.55 var(--dato);color:var(--gris)}
+.g-aviso-pago b{color:var(--amarillo);display:block;margin-bottom:5px;
+  letter-spacing:.14em;text-transform:uppercase;font-size:10px}
 
 /* ══ G · menu desplegable con la jerarquia real de su web ══ */
 .g-menu{border-bottom:1px solid var(--linea);background:#0C0C0E;
@@ -519,60 +509,10 @@ footer{background:#000;border-top:1px solid var(--linea);
     transition:transform 420ms cubic-bezier(.34,1.25,.44,1);
     transition-delay:calc(var(--d) * 22ms)}
 }
-/* ══════════════════ S · Sylcred ══════════════════
-   Carlos: «mejora el scroll para que las cosas aparezcan de modo más aestetic
-   y como si fuesen enérgicas las apariciones».
-
-   Lo que había era correcto y tímido: 18 px de recorrido con una curva que
-   sólo desacelera (.2,.7,.25,1). Eso se lee como «apareció», no como «entró».
-   Y sólo lo llevaban TRES elementos de toda la página, así que el resto del
-   scroll estaba muerto.
-
-   Tres cosas dan la energía, y ninguna es hacerlo más rápido:
-
-   1 · RECORRIDO. 18 px no se ven; 34 sí. Lo que se percibe como fuerza es la
-       distancia recorrida, no la duración.
-   2 · SOBREPASO. La curva pasa de largo y regresa (el 1.3 del tercer punto).
-       Un movimiento que se pasa y se acomoda se lee como que traía inercia —
-       tiene peso. El que sólo frena parece que lo empujaron.
-   3 · ESCALONADO. Los hermanos entran uno tras otro, no en bloque. Es lo que
-       hace que se vea compuesto en vez de hecho por un script — y es
-       exactamente lo que ya hacía `.pieza-eje` con su `--d`; aquí se
-       generaliza.
-
-   ⚠ NADA DE OPACITY SOBRE TEXTO, que es regla de la casa y él ya la tenía
-   escrita: un texto a media opacidad es un texto con el contraste roto
-   mientras dura. El texto entra sólo con `transform`. La opacidad se reserva
-   para lo que no se lee — imágenes y cajas.
-
-   ⚠ EL TOPE DEL ESCALONADO ES A PROPÓSITO. Sin él, una rejilla de 47 fichas
-   pondría la última a 47 × 70 ms = tres segundos y pico después de entrar en
-   pantalla: el visitante ya hizo scroll y se perdió la mitad. Se corta en 8. */
-@media (scripting: enabled){
-  .s-rev{transform:translate3d(0,34px,0);
-    transition:transform 640ms cubic-bezier(.2,1.3,.32,1);
-    transition-delay:calc(var(--s-i,0) * 70ms)}
-  .s-rev.s-dentro{transform:none}
-  /* Las cajas —no el texto— además se asientan con un pelo de escala y de
-     opacidad. En una tarjeta con foto eso se lee como que aterriza. */
-  .s-rev.s-caja{opacity:.001;transform:translate3d(0,34px,0) scale(.975);
-    transition:transform 640ms cubic-bezier(.2,1.3,.32,1),
-               opacity 400ms ease-out;
-    transition-delay:calc(var(--s-i,0) * 70ms)}
-  .s-rev.s-caja.s-dentro{opacity:1;transform:none}
-  /* El revelado que ya existía también se estira: era el más visible y el que
-     peor contaba la historia. */
-  .revelar{transform:translate3d(0,34px,0);
-    transition:transform 640ms cubic-bezier(.2,1.3,.32,1)}
-}
-/* ══════════════════ /S ══════════════════ */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
   .revelar,.figura,.carton,.burbuja img,.lustre{transform:none!important}
   .pieza-eje{transform:translateX(-1px)!important}
-  /* ══════ S ══════ */
-  .s-rev,.s-rev.s-caja{transform:none!important;opacity:1!important}
-  /* ══════ /S ══════ */
 }
 """
 
@@ -689,6 +629,22 @@ try:
     FOTOS = json.loads((ACT / 'fotos.json').read_text(encoding='utf-8'))
 except Exception:
     FOTOS = {}
+try:
+    PRECIOS = json.loads((ACT / 'precios.json').read_text(encoding='utf-8'))
+except Exception:
+    PRECIOS = {}
+
+# ══ PAGO ══════════════════════════════════════════════════════════════════
+# El identificador de PayPal es del CLIENTE y no me lo puedo inventar: sin el
+# de verdad, un boton de pago o no cobra o cobra a la cuenta equivocada. Se
+# deja declarado y VACIO a proposito. Con el vacio, el sitio no finge: enseña
+# que falta configurarlo y manda a la tienda, que si cobra.
+#
+# Para encenderlo: pegar aqui el «Client ID» de la cuenta de negocio del
+# cliente (PayPal → Developer → Apps & Credentials → Live). Es un dato
+# publico —viaja en el <script> del navegador—, pero es SUYO.
+PAYPAL_ID = ''
+MONEDA = 'MXN'
 
 def g_menu():
     """El menu de su web, con la jerarquia real."""
@@ -736,6 +692,7 @@ def g_rejilla():
         f = FOTOS.get(pz['vc'], {})
         fotos = f.get('fotos') or []
         if not fotos: continue
+        pr = g_precio(pz['vc'])
         slug = 'vc' + ''.join(c for c in pz['vc'] if c.isalnum())
         t.append(
             f'<button class="pieza" data-vc="{esc(pz["vc"])}" type="button" '
@@ -746,8 +703,15 @@ def g_rejilla():
             + (f'<span class="mas">+{len(fotos)-1}</span>' if len(fotos) > 1 else '')
             + f'</span><span class="ficha-p"><span class="nom">{esc(pz["nombre"])}</span>'
             f'<span class="met">{esc(pz["serie"] or "The Vintage Collection")}</span>'
-            f'<span class="ir">Ver a detalle</span></span></button>')
+            + (f'<span class="precio">$ {pr["precio"]:,.0f}'
+               f'<i>{MONEDA}</i></span>' if pr else '')
+            + f'<span class="ir">Ver a detalle</span></span></button>')
     return '<div class="rejilla" id="g-rejilla">' + '\n'.join(t) + '</div>'
+
+def g_precio(vc):
+    d = PRECIOS.get(vc)
+    if not d: return None
+    return d
 
 def g_datos_js():
     """Lo que el guion necesita para armar la ficha al vuelo, sin repetir el
@@ -756,16 +720,16 @@ def g_datos_js():
     for pz in cat:
         f = FOTOS.get(pz['vc'], {})
         if not f.get('fotos'): continue
+        pr = g_precio(pz['vc']) or {}
         d[pz['vc']] = {'n': pz['nombre'], 's': pz['serie'] or 'The Vintage Collection',
-                       'u': pz['url'], 'f': f['fotos']}
+                       'u': pz['url'], 'f': f['fotos'],
+                       'p': pr.get('precio'), 'st': pr.get('stock', 'disponible')}
     return json.dumps(d, ensure_ascii=False, separators=(',', ':'))
 
 def g_ficha():
     """El cuadro que se abre como compuerta. Vacio: lo llena el guion."""
     return ('<div class="g-ficha" id="g-ficha" hidden role="dialog" aria-modal="true" '
             'aria-label="Ficha de la figura">'
-            '<div class="g-puerta izq" aria-hidden="true"></div>'
-            '<div class="g-puerta der" aria-hidden="true"></div>'
             '<div class="g-caja">'
             '<button class="g-cerrar" id="g-cerrar" type="button" aria-label="Cerrar">✕</button>'
             '<div class="g-galeria"><div class="grande"><img id="g-grande" alt=""></div>'
@@ -774,10 +738,13 @@ def g_ficha():
             '<h3 id="g-nom"></h3>'
             '<dl><dt>Línea</dt><dd id="g-serie"></dd>'
             '<dt>Escala</dt><dd>3.75&Prime; · 9.5 cm</dd>'
-            '<dt>Estado</dt><dd>En su cartón original, sin abrir</dd>'
-            '<dt>Precio</dt><dd>En la tienda</dd></dl>'
+            '<dt>Estado</dt><dd>En su cartón original, sin abrir</dd></dl>'
+            '<div class="g-compra">'
+            '<span class="g-precio-g" id="g-precio"></span>'
+            '<span class="g-stock" id="g-stock"></span>'
+            '<div id="g-paypal"></div>'
             '<a class="b" id="g-ir" href="#" target="_blank" rel="noopener">'
-            '<span>Ver en la tienda ↗</span></a></div>'
+            '<span>Ver en la tienda ↗</span></a></div></div>'
             '</div></div>')
 
 def g_intro():
@@ -801,47 +768,9 @@ LOGO = img['logo']
 
 CSS = CSS.replace('AUREBESH_URI', img['aurebesh']['uri'])
 
-
-# ── LA TIPOGRAFÍA DE LA IDENTIDAD VA EMPOTRADA, NO PEDIDA ────────────────────
-# Antes Bungee entraba por `<link>` a fonts.googleapis.com junto con las otras
-# dos. Se midió en un navegador de verdad y NO CARGABA: el titular salía en la
-# sans del sistema, porque el repuesto `'Arial Black'` tampoco existe en todos
-# lados y la pila caía hasta `system-ui`.
-#
-# El defecto se ve de un golpe en la sección del cartón: el logo del blíster
-# está en la letra correcta —es imagen— y el titular de al lado se ve de
-# plantilla. La identidad del cliente vive en esa letra; pedírsela a un tercero
-# es apostarla contra su red.
-#
-# ⚠ SÓLO BUNGEE, y es a propósito. Es la que carga la identidad. Familjen
-# Grotesk y JetBrains Mono siguen por link: empotrarlas también sumaría ~200 KB
-# a un archivo que ya pesa 345, y en teléfono eso se paga. O sea que la
-# dependencia externa BAJA pero no desaparece — decirlo así es más útil que
-# presumir un «cero dependencias» que no sería cierto.
-#
-# Licencia OFL, que permite empotrar: activos/fuentes/LICENCIA-BUNGEE.md
-def _fuente(nombre, rango):
-    datos = base64.b64encode((ACT / "fuentes" / nombre).read_bytes()).decode()
-    return ("@font-face{font-family:'Bungee';font-style:normal;font-weight:400;"
-            "font-display:swap;"
-            f"src:url(data:font/woff2;base64,{datos}) format('woff2');"
-            f"unicode-range:{rango}}}")
-
-BUNGEE_EMPOTRADA = (
-    _fuente('bungee-ext.woff2',
-            'U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,'
-            'U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,'
-            'U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF')
-    + _fuente('bungee-latin.woff2',
-              'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,'
-              'U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,'
-              'U+2212,U+2215,U+FEFF,U+FFFD')
-)
-
 DOC = f"""<title>Toydarians · The Vintage Collection</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
-<style>{BUNGEE_EMPOTRADA}</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
 <style>{CSS}</style>
 
 {g_intro()}
@@ -995,62 +924,6 @@ JS = r"""
     document.querySelectorAll('.revelar').forEach(function(n){ n.classList.add('dentro'); });
   }
 
-  /* ══════════════════ S · Sylcred ══════════════════
-     El scroll enérgico que pidió Carlos. Se engancha desde AQUÍ y no desde el
-     HTML a propósito: así no toco una sola etiqueta del generador de Godines.
-     Sin JavaScript no pasa nada de esto y la página se ve entera — el CSS de
-     arriba vive dentro de `@media (scripting: enabled)`.
-
-     ⚠ EL ÍNDICE ES POR GRUPO, NO GLOBAL. Numerar de corrido toda la página
-     haría que la última sección esperara el escalonado de todas las
-     anteriores. El contador se reinicia en cada padre, que es lo que hace que
-     cada rejilla se sienta como una tanda propia. */
-  if ('IntersectionObserver' in window) {
-    var TOY = window.TOY = window.TOY || {};
-    TOY.s = TOY.s || {};
-
-    // Lo que merece entrar: las fichas de la vitrina y los renglones del
-    // índice. Nunca la portada — lo que ya se ve al llegar no se «revela», se
-    // estropea si parpadea.
-    //
-    // ⚠ ESTOS NOMBRES ESTÁN SACADOS DEL HTML, NO SUPUESTOS. La primera versión
-    // decía `.celda, .ficha, .tarjeta, .sobre` — cuatro nombres razonables y
-    // ninguno existe aquí. El selector no falla cuando no encuentra nada:
-    // devuelve una lista vacía y sigue. Resultado: se revelaba el índice y la
-    // vitrina entera —lo que más se ve— se quedaba quieta, con la compuerta en
-    // verde y sin un solo error en consola.
-    // Se cazó contando los revelados por grupo, no leyendo. Las de verdad son
-    // `.pieza` (8 fichas) y `.reng` (47 renglones).
-    var grupos = ['.pieza', '.reng'];
-    var vistos = new Set();
-    grupos.forEach(function(sel){
-      var nodos = document.querySelectorAll(sel);
-      var porPadre = new Map();
-      nodos.forEach(function(n){
-        if (vistos.has(n) || n.closest('.cartel')) return;   // la portada no
-        vistos.add(n);
-        var p = n.parentElement;
-        var i = porPadre.get(p) || 0;
-        porPadre.set(p, i + 1);
-        n.style.setProperty('--s-i', Math.min(i, 8));        // tope: ver el CSS
-        n.classList.add('s-rev');
-        // Con foto dentro es caja; si es sólo texto, nada de opacidad.
-        if (n.querySelector('img, picture, canvas')) n.classList.add('s-caja');
-      });
-    });
-
-    var ojoS = new IntersectionObserver(function(es){
-      es.forEach(function(e){
-        if (!e.isIntersecting) return;
-        e.target.classList.add('s-dentro');
-        ojoS.unobserve(e.target);
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
-    document.querySelectorAll('.s-rev').forEach(function(n){ ojoS.observe(n); });
-    TOY.s.revelados = vistos.size;
-  }
-  /* ══════════════════ /S ══════════════════ */
-
   if (quieto) return;
 
   // ---- Puntero ------------------------------------------------------------
@@ -1183,6 +1056,7 @@ JS += r"""
     var lets = [].slice.call(intro.querySelectorAll('.let'));
     var au = document.getElementById('g-au');
     var T0 = 380, PASO = 300, DUR = 520;        // 380 + 10*300 + 520 ≈ 3.9 s
+    function trazar(){
     lets.forEach(function(L, i){
       var hoja = L.querySelector('.hoja');
       var t = T0 + i * PASO;
@@ -1202,6 +1076,16 @@ JS += r"""
     setTimeout(function(){ if (au){ au.style.transition = 'opacity .9s ease'; au.style.opacity = '.9'; } },
                T0 + lets.length * PASO + 200);
     setTimeout(cerrarIntro, 5000);
+    }
+    // No se traza hasta que las diez letras esten DECODIFICADAS. Si no, en un
+    // telefono lento la animacion corre mientras las imagenes siguen llegando
+    // y el logo sale a medias -- que es justo lo que reporto Carlos.
+    var imgs = lets.map(function(L){ return L.querySelector('img'); });
+    var espera = Promise.all(imgs.map(function(im){
+      return (im.decode ? im.decode() : Promise.resolve()).catch(function(){});
+    }));
+    // pero no se espera para siempre: a los 2.5 s se arranca igual
+    Promise.race([espera, new Promise(function(r){ setTimeout(r, 2500); })]).then(trazar);
     var bs = document.getElementById('g-saltar');
     if (bs) bs.addEventListener('click', cerrarIntro);
     addEventListener('keydown', function(e){ if (e.key === 'Escape') cerrarIntro(); });
@@ -1278,6 +1162,8 @@ JS += """
   // Meter 47 galerias en el HTML lo habria hecho enorme para algo que casi
   // nadie abre entero.
   TOY.g.piezas = """ + g_datos_js() + """;
+  TOY.g.paypal = """ + json.dumps(PAYPAL_ID) + """;
+  TOY.g.moneda = """ + json.dumps(MONEDA) + """;
 """
 
 JS += r"""
@@ -1300,8 +1186,7 @@ JS += r"""
         im.src = 'fotos/' + f; im.alt = ''; im.loading = 'lazy';
         b.appendChild(im);
         b.addEventListener('click', function(){
-          gGrande.src = 'fotos/' + f;
-          pintarTiras(fotos, i);
+          iAct = i; gGrande.src = 'fotos/' + f; pintarTiras(fotos, i);
         });
         gTiras.appendChild(b);
       });
@@ -1312,6 +1197,18 @@ JS += r"""
       devolver = origen || null;
       gVc.textContent = 'VC ' + vc;
       gNom.textContent = d.n; gSerie.textContent = d.s; gIr.href = d.u;
+      // precio, existencia y pago
+      var eP = document.getElementById('g-precio'),
+          eS = document.getElementById('g-stock'),
+          eB = document.getElementById('g-paypal');
+      if (d.p) { eP.innerHTML = '$ ' + d.p.toLocaleString('es-MX') +
+                                '<i>' + TOY.g.moneda + '</i>'; eP.hidden = false; }
+      else { eP.hidden = true; }
+      eS.textContent = d.st === 'agotado' ? 'Agotado' : 'Disponible';
+      eS.className = 'g-stock' + (d.st === 'agotado' ? ' no' : '');
+      pintarPago(vc, d, eB);
+
+      fotosAct = d.f; iAct = 0;
       gGrande.src = 'fotos/' + d.f[0]; gGrande.alt = d.n;
       pintarTiras(d.f, 0);
       cuadro.hidden = false;
@@ -1336,6 +1233,97 @@ JS += r"""
     addEventListener('keydown', function(e){
       if (e.key === 'Escape' && !cuadro.hidden) cerrar();
     });
+    // Deslizar sobre la foto grande, con dedo o con raton. Antes solo se podia
+    // cambiar pulsando una miniatura.
+    var fotosAct = [], iAct = 0, gx0 = null, gy0 = null, arrastrando = false;
+    function irA(k){
+      if (!fotosAct.length) return;
+      iAct = (k + fotosAct.length) % fotosAct.length;
+      gGrande.src = 'fotos/' + fotosAct[iAct];
+      pintarTiras(fotosAct, iAct);
+    }
+    var lienzoG = gGrande.parentElement;
+    lienzoG.style.touchAction = 'pan-y';
+    lienzoG.addEventListener('pointerdown', function(e){
+      gx0 = e.clientX; gy0 = e.clientY; arrastrando = true;
+      lienzoG.setPointerCapture(e.pointerId);
+    });
+    lienzoG.addEventListener('pointermove', function(e){
+      if (!arrastrando || gx0 === null) return;
+      var dx = e.clientX - gx0;
+      // se sigue el dedo, para que se sienta agarrado y no un boton
+      gGrande.style.transform = 'translate3d(' + (dx * .35).toFixed(1) + 'px,0,0)';
+    });
+    ['pointerup','pointercancel'].forEach(function(t){
+      lienzoG.addEventListener(t, function(e){
+        if (!arrastrando) return;
+        arrastrando = false;
+        var dx = e.clientX - gx0, dy = e.clientY - (gy0 || 0);
+        gGrande.style.transition = 'transform .28s cubic-bezier(.2,.8,.3,1)';
+        gGrande.style.transform = '';
+        setTimeout(function(){ gGrande.style.transition = ''; }, 300);
+        // sólo cuenta si el gesto fue mas horizontal que vertical
+        if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy)) irA(iAct + (dx < 0 ? 1 : -1));
+        gx0 = gy0 = null;
+      });
+    });
+    addEventListener('keydown', function(e){
+      if (cuadro.hidden) return;
+      if (e.key === 'ArrowRight') irA(iAct + 1);
+      if (e.key === 'ArrowLeft')  irA(iAct - 1);
+    });
+
+    // ---- PAGO ---------------------------------------------------------
+    // Con identificador: botones de PayPal de verdad. Sin el: se dice que
+    // falta y se manda a la tienda. Nunca un boton que aparenta cobrar.
+    var sdkPedido = false;
+    function cargarSDK(cb){
+      if (window.paypal) return cb();
+      if (sdkPedido) return;                    // ya viene en camino
+      sdkPedido = true;
+      var sc = document.createElement('script');
+      sc.src = 'https://www.paypal.com/sdk/js?client-id=' +
+               encodeURIComponent(TOY.g.paypal) + '&currency=' + TOY.g.moneda;
+      sc.onload = cb;
+      sc.onerror = function(){ sdkPedido = false; };
+      document.head.appendChild(sc);
+    }
+    function pintarPago(vc, d, caja){
+      caja.innerHTML = '';
+      if (!d.p || d.st === 'agotado') return;
+      if (!TOY.g.paypal) {
+        var av = document.createElement('div');
+        av.className = 'g-aviso-pago';
+        av.innerHTML = '<b>Pago no configurado</b>El botón de PayPal está cableado y ' +
+          'listo: sólo falta el identificador de la cuenta de Toydarians. ' +
+          'Mientras tanto, la compra se cierra en la tienda.';
+        caja.appendChild(av);
+        return;
+      }
+      cargarSDK(function(){
+        if (!window.paypal || caja.dataset.vc === vc) return;
+        caja.dataset.vc = vc;
+        window.paypal.Buttons({
+          style: { color:'gold', shape:'rect', label:'pay', height:44 },
+          createOrder: function(_, actions){
+            return actions.order.create({ purchase_units: [{
+              description: 'VC ' + vc + ' · ' + d.n,
+              amount: { value: d.p.toFixed(2), currency_code: TOY.g.moneda } }] });
+          },
+          onApprove: function(_, actions){
+            return actions.order.capture().then(function(o){
+              caja.innerHTML = '<div class="g-aviso-pago"><b>Pago recibido</b>' +
+                'Folio ' + (o.id || '') + '. Toydarians se pone en contacto para el envío.</div>';
+            });
+          },
+          onError: function(){
+            caja.innerHTML = '<div class="g-aviso-pago"><b>No se pudo cobrar</b>' +
+              'Intenta de nuevo o termina la compra en la tienda.</div>';
+          }
+        }).render(caja);
+      });
+    }
+
     var rej = document.getElementById('g-rejilla');
     if (rej) rej.addEventListener('click', function(e){
       var b = e.target.closest('.pieza[data-vc]');
@@ -1359,19 +1347,13 @@ if n != 1:
     raise SystemExit(f'el motor quedo con {n} cierres de bloque, debe tener 1')
 
 DOC += f"<script>{JS}</script>\n"
-salida = AQUI / 'sitio.html'   # intermedio de trabajo: vive en taller/, que no se publica
+salida = RAIZ / 'sitio.html'
 salida.write_text(DOC, encoding='utf-8')
 
 cabeza, cuerpo = DOC.split('\n<div class="barra">', 1)
-# ⚠ ESTO ESCRIBÍA EN `publico/index.html` Y LO QUE SE PUBLICA ES `index.html`.
-# Entre los dos había un copiado A MANO, y ése es el hueco por el que el
-# generador y el archivo servido se separan: se regenera, sale verde, y la
-# página publicada sigue siendo la de antes. Es el mismo defecto que nos costó
-# el `todo.json` del Cerebro —lo escrito contra lo servido— con otro disfraz.
-#
-# Ahora escribe DIRECTO donde `build.mjs` lo va a recoger. Un paso manual menos
-# es un estado menos que puede quedarse viejo.
-(RAIZ / 'index.html').write_text(
+publico = RAIZ / 'publico'
+publico.mkdir(exist_ok=True)
+(publico / 'index.html').write_text(
     '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
     '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
     '<meta name="description" content="Toydarians — Star Wars The Vintage '
