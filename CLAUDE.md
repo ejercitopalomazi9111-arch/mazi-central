@@ -261,6 +261,9 @@ dependemos.
    | probar el motor prueba el juego | las 74 del motor pasaban con el modo a distancia **muerto**: el servidor leía `this.J.mazo`, que dejó de existir | un websocket que contesta **500** parecía caída de red, y llevaba días así sin que nadie lo notara |
    | si el cálculo está bien, la pantalla está bien | el motor aplicaba el −5 al rival, como manda el reglamento; **el letrero decía que te lo restabas tú** | ninguna prueba lo caza: comprueban resultados, y un letrero que miente da el mismo resultado |
    | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
+   | guardar **de qué tipo** es lo que elegiste alcanza | describe a un GRUPO: con dos cartas de +5 en la mano, tocar una marcaba **las dos** | invisible hasta que hubo repetidas — con una sola de cada clase, tipo e identidad valen igual |
+   | si una prueba falla, falla el código que señala | decía «se reparte a los dos → 5 y 6» y **el servidor repartía bien**: la que contaba mal era ella | casi mando a arreglar un servidor sano; la mutación de verdad (repartir 4) da «4 y 4», no «5 y 6» |
+   | arreglar el contraste que reportaron arregla el contraste | la pareja de tonos claro-sobre-claro estaba usada en **toda** la tanda de avisos | Carlos volvió con el mismo reclamo señalando el elemento de al lado, dos centímetros más allá |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
@@ -908,6 +911,22 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   propio: es gente—; o reescribir la historia y forzar el empuje, que sí los borra pero
   rompe cualquier copia que alguien tenga. **No lo hago yo:** reescribir `main` y forzar
   un empuje lo autoriza una persona.
+- **🟠 El Cerebro creció y sus enlaces no.** `node cerebro/pruebas.mjs` está en
+  **76 pasan · 4 fallan**, y ya estaba así antes de la rama de Puercos —así que la
+  compuerta no está compuertando nada—. Los números: **535 neuronas escritas, sólo 147
+  llevan a otras**, y el grafo se parte en **184 comunidades**. O sea que la mitad buena
+  del Cerebro —que las neuronas se llamen entre sí— dejó de funcionar cuando entró la
+  tanda grande del ecosistema, que llegó sin `vecinas`. Se ve en un renglón:
+
+  ```
+  node cerebro/pruebas.mjs | grep ✗
+  ```
+
+  **Séptima vez que aparece lo mismo:** algo que informa un estado y está en otro —aquí,
+  unas pruebas rojas que llevan commits en rojo sin que nadie las mire. No lo arreglo
+  metiendo `vecinas` a mano en 388 neuronas: hay que decidir si el descubrimiento por
+  señales se afina o si el umbral estaba mal puesto desde que el corpus era chico.
+
 - **El websocket de La Sala no pide llave**, ni con `LLAVES` puestas: quien tenga el link puede
   escuchar aunque no pueda escribir. Anotado, no arreglado.
 - **Las 16 páginas de Notion del prompt maestro piden sesión.** Se desbloquean con
