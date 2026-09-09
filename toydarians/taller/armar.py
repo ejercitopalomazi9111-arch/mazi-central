@@ -82,8 +82,17 @@ a{color:inherit}
   container-type:inline-size}
 h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;
   letter-spacing:-.045em;margin:0;text-wrap:balance;line-height:1.02}
-h1{font-size:clamp(34px,7.6vw,106px)}
-h1{font-size:min(clamp(34px,7.6vw,106px),16cqw)}
+/* ⚠ EL MÍNIMO ERA 34 px Y ESO ES LO QUE CARLOS LLAMÓ «SE VE CHIQUITO».
+   En un teléfono de 390 el `7.6vw` da 29.6, así que ganaba el suelo de 34 —
+   tamaño de subtítulo para el titular de una portada. En escritorio subía a
+   106. Un cartel que se desinfla 3× al pasar al teléfono no es el mismo cartel,
+   y el teléfono es donde se ve esto.
+   Sube a 44 de suelo y 12vw de pendiente: en 390 da 46.8. El `min(…,16cqw)`
+   de abajo sigue siendo el freno que impide que Bungee —que es ancha— se salga
+   de su columna; con él, 390 px se resuelve en ~46 px y no desborda. Medido con
+   `revisar.mjs`, que da desborde 0 en 390, 768 y 1440. */
+h1{font-size:clamp(44px,12vw,106px)}
+h1{font-size:min(clamp(44px,12vw,106px),16cqw)}
 h2{font-size:clamp(21px,3.4vw,44px)}
 h2{font-size:min(clamp(21px,3.4vw,44px),10cqw)}
 h3{font-size:clamp(14px,1.6vw,18px);letter-spacing:-.035em}
@@ -106,6 +115,19 @@ CSS += r"""
 .barra nav a{color:var(--gris);text-decoration:none;transition:color .2s}
 .barra nav a:hover{color:var(--amarillo)}
 @media (max-width:620px){.barra nav a.opc{display:none}}
+/* ⚠ EN 390 px LA BARRA SE PARTÍA EN DOS RENGLONES Y SE ENCIMABA CON EL LOGO.
+   Escondiendo sólo `.opc` quedaban tres enlaces, y con `letter-spacing:.16em`
+   más el gap de 12 px medían ~300 px al lado de un logo de ~110: no caben en
+   los 354 px útiles de un teléfono, así que `flex-wrap` los mandaba abajo
+   pegados. No es que envuelva —envolver está bien—: es que envolvía SIN AIRE y
+   parecía un defecto.
+   Apretar la letra en el móvil los deja en una sola línea. El letter-spacing
+   ancho es un lujo de escritorio; a 9.5 px sólo separa. */
+@media (max-width:620px){
+  .barra .caso{gap:10px}
+  .barra nav{gap:13px;font-size:9.5px;letter-spacing:.05em}
+  .barra .logo img{height:19px}
+}
 
 /* ---- Cartel de portada ---------------------------------------------------- */
 /* Un cartel, no una portada de plantilla: el titular en el amarillo de la
