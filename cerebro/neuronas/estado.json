@@ -208,6 +208,27 @@
         "estado-guardado-por-clase-y-no-por-identidad",
         "menu-que-no-se-cierra"
       ]
+    },
+    {
+      "id": "zona-muerta-en-el-atajo",
+      "titulo": "El atajo del principio usa algo que se declara al final",
+      "gravedad": "alta",
+      "sintoma": "`ReferenceError: Cannot access 'X' before initialization`, y con él se cae el módulo ENTERO — no sólo la función que falló.",
+      "causa": "Una función declarada arriba usa un `const`/`let` de más abajo. Mientras sólo la llames tarde, funciona. El día que metes una salida temprana que la llama de inmediato, cae en la zona muerta temporal.",
+      "porque": "`function` se iza y se puede llamar antes de su línea; `const` y `let` NO — existen pero lanzan si los tocas antes de su declaración. El atajo temprano es justo el que se salta las 150 líneas donde se declaraba.",
+      "arreglo": "Declarar la variable con `let x = null` ARRIBA del primer camino que pueda salir, y asignarla donde estaba.",
+      "comoCazarlo": "Correr la página con cada preferencia y cada atajo puestos —menos movimiento, scroll ya movido, botón de saltar— y mirar la consola. El camino normal nunca lo enseña.",
+      "consejo": "Cada salida temprana que agregues a una función larga es una llamada a todo lo que esa función tenga declarado después.",
+      "salioDe": "sitio/experiencia.js · `terminar(true)` con prefers-reduced-motion mataba toda la experiencia de la portada, y sólo para quien tiene la preferencia puesta",
+      "senales": [
+        "cannot access before initialization",
+        "se cae con menos movimiento",
+        "el JS no corre en la portada",
+        "zona muerta temporal"
+      ],
+      "vecinas": [
+        "suite-que-no-arranca-calla"
+      ]
     }
   ]
 }

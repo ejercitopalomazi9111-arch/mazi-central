@@ -529,6 +529,70 @@
         "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
         "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor"
       ]
+    },
+    {
+      "id": "suite-que-no-arranca-calla",
+      "titulo": "El suite no reprueba porque ni siquiera arranca",
+      "gravedad": "alta",
+      "sintoma": "Nadie recuerda que esa suite se haya puesto roja. Corres a mano y sale una traza de Node en vez de resultados.",
+      "causa": "Un import que no resuelve —`from 'playwright'` a secas cuando playwright vive sólo en la instalación global— o una ruta absoluta de otra máquina. Revienta ANTES de la primera comprobación.",
+      "porque": "En este contenedor playwright está en /opt/node22/lib/node_modules, no en un node_modules del repo. Y una suite que muere en la línea 1 sale con código 1 sin imprimir un solo ✗: el silencio se lee igual que un verde.",
+      "arreglo": "Buscar en los dos lados: `for (const d of ['/opt/node22/lib/node_modules/playwright/index.mjs','playwright']) try{ chromium=(await import(d)).chromium; if(chromium) break }catch(e){}`.",
+      "comoCazarlo": "Correrla y CONTAR lo que imprime. Si no salen números, no corrió. `node <suite> | tail -1` tiene que decir un resultado, no `Node.js v22`.",
+      "consejo": "Una compuerta que no corre es peor que ninguna: da la confianza sin dar la comprobación.",
+      "salioDe": "toydarians/taller/revisar.mjs, explorador/pruebas.mjs y sitio/pruebas.mjs · el mismo renglón tres veces, y la tercera tapaba una portada que se caía entera",
+      "senales": [
+        "las pruebas nunca fallan",
+        "sale una traza en vez de resultados",
+        "ERR_MODULE_NOT_FOUND",
+        "no encuentra playwright"
+      ],
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "conexion-rechazada-parece-defecto"
+      ]
+    },
+    {
+      "id": "conexion-rechazada-parece-defecto",
+      "titulo": "Doce suites «rotas» eran doce suites sin servidor",
+      "gravedad": "media",
+      "sintoma": "Media docena de suites revientan a la vez con `net::ERR_CONNECTION_REFUSED`. Parece que algo grande se rompió.",
+      "causa": "Son suites de navegador y piden un puerto concreto, escrito adentro. Sin nada servido ahí, Playwright tira una excepción que mata el proceso antes de la primera comprobación.",
+      "porque": "El puerto no está en un README ni en un script: está enterrado en el `page.goto` de cada suite, así que quien no las corrió nunca no tiene forma de saberlo.",
+      "arreglo": "Levantar los estáticos que piden y correr DESDE LA RAÍZ del repo. En mazi-central: 8791, 8792, 8123 y 8781 sirviendo `dist/`, 8124 sirviendo `empresa/clases`, y wrangler en 8815 para el modo a distancia.",
+      "comoCazarlo": "`node <suite> 2>&1 | grep -m1 'net::'` dice el puerto exacto que le falta. Es una línea y ahí se acaba el misterio.",
+      "consejo": "Antes de declarar rota una suite de navegador, mira qué URL pidió. Casi siempre es un `python3 -m http.server`, no un bug.",
+      "salioDe": "el censo del 9 de septiembre · 12 de 41 suites reventaban por esto y ninguna tenía nada malo",
+      "senales": [
+        "ERR_CONNECTION_REFUSED",
+        "todas las pruebas revientan",
+        "page.goto falló",
+        "no carga la página en las pruebas"
+      ],
+      "vecinas": [
+        "suite-que-no-arranca-calla"
+      ]
+    },
+    {
+      "id": "prueba-que-aprueba-por-accidente",
+      "titulo": "Pasa porque la midió antes de tiempo, no porque esté bien",
+      "gravedad": "media",
+      "sintoma": "La misma comprobación pasa en una configuración y falla en otra, y el código no cambia entre las dos.",
+      "causa": "El selector agarra el PRIMER nodo que coincide, y hay dos: el de la intro y el de la portada. Mientras la intro sigue puesta, el de la intro mide bien y la prueba aprueba — midiendo algo que no es lo que dice medir.",
+      "porque": "La espera de la prueba (2.5 s) es más corta que la intro (3.4 s), así que en el caso normal nunca llega a ver la portada. Con `prefers-reduced-motion` la intro se salta, el nodo mide 0 px de alto y ahí sí falla.",
+      "arreglo": "Anclar el selector a su sección, no al documento: `.portada .ave`, no `.ave`. Y esperar a un estado, no a un número de milisegundos.",
+      "comoCazarlo": "Contar cuántos nodos hace juego el selector: `document.querySelectorAll(sel).length`. Si es más de 1, la prueba está midiendo a la suerte.",
+      "consejo": "Una prueba que pasa en un modo y falla en otro no está reportando dos comportamientos: está reportando que mide mal.",
+      "salioDe": "sitio/pruebas.mjs · «la portada se ve completa» medía el ave de la intro",
+      "senales": [
+        "pasa a veces sí y a veces no",
+        "falla sólo con menos movimiento",
+        "querySelector agarra otro"
+      ],
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "suite-que-no-arranca-calla"
+      ]
     }
   ]
 }
