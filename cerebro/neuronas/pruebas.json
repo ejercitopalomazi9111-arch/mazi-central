@@ -516,7 +516,7 @@
       "arreglo": "Quitar el campo. `armar()` quedó determinista: mismas neuronas → mismo archivo byte por byte. Un choque en todo.json vuelve a significar que dos ramas tocaron neuronas de verdad.",
       "comoCazarlo": "Armar dos veces seguidas y comparar: `node cerebro/cerebro.mjs armar; md5sum cerebro/todo.json` dos veces. Si los md5 difieren con las mismas fuentes, hay algo no determinista adentro. El diff completo son las líneas culpables — aquí eran DOS.",
       "consejo": "En cualquier artefacto generado que se commitea, la regla es que dos corridas den lo mismo. Fechas de generación, ids aleatorios y recorridos que dependen del orden del sistema de archivos son las tres causas de siempre, y todas se ven igual desde fuera: 'este archivo siempre choca'. La prueba que lo cuida no comprueba el CAMPO sino la PROPIEDAD, porque un nombre se esquiva sin querer y 'dos corridas dan lo mismo' no.",
-      "salioDe": "Iba a meter `armar` dentro de build.mjs para que lo publicado nunca trajera neuronas invisibles. Antes comprobé si era idempotente —no lo era— y ahí apareció la causa de un conflicto que ya se había pagado dos veces: en el rebase del #112 y en la rama de Godines.",
+      "salioDe": "Iba a meter `armar` dentro de build.mjs para que lo publicado nunca trajera neuronas invisibles. Antes comprobé si era idempotente —no lo era— y ahí apareció la causa de un conflicto que ya se había pagado dos veces: en el rebase del #112 y en la rama de Godines. · SEGUNDA VEZ el 9 de septiembre en jabonera/armar-suelto.mjs, con la fecha de armado en un comentario del HTML: correr las pruebas ensuciaba el repo y el gancho de cierre pedía commitear un archivo cuyo contenido no había cambiado. Que reaparezca en otro generador dice que no es un descuido: es lo que uno escribe por costumbre al generar un archivo.",
       "senales": [
         "todo.json siempre choca",
         "conflicto en un archivo generado",
@@ -592,6 +592,29 @@
       "vecinas": [
         "pruebas-que-no-prueban-nada",
         "suite-que-no-arranca-calla"
+      ]
+    },
+    {
+      "id": "la-prueba-ensucia-lo-que-mide",
+      "titulo": "Correr las pruebas deja basura dentro del repo",
+      "gravedad": "media",
+      "sintoma": "`git status` sale sucio después de correr una suite, sin haber tocado nada. Capturas sin seguir, un archivo generado con otra fecha, o el gancho de cierre pidiendo commitear cosas que no son tuyas.",
+      "causa": "La suite escribe con una ruta RELATIVA al directorio actual —`caps/algo.png`— así que el destino depende de desde dónde la corriste, y desde la raíz cae dentro del repo.",
+      "porque": "Al escribirla se corre desde su propia carpeta y ahí el destino queda fuera de la vista. El día que alguien la corre desde la raíz —que es como se corren todas cuando se barre el repo— aterriza adentro.",
+      "arreglo": "Salidas al temporal del sistema: `tmpdir() + '/caps-<loquesea>'`, e imprimir la ruta al final para que se encuentren. Nunca una ruta relativa, y nunca una absoluta de una máquina o una sesión concretas.",
+      "comoCazarlo": "`git status --porcelain` ANTES y DESPUÉS de correr la suite. Si cambia, la suite escribe donde no debe.",
+      "consejo": "Una prueba no ensucia lo que mide. Si deja rastro en el repo, el siguiente que barra las suites va a commitear basura o va a perder tiempo averiguando de quién es.",
+      "salioDe": "sitio/pruebas.mjs dejaba 1.3 MB de PNG en `caps/`, y explorador/pruebas.mjs apuntaba a un scratchpad con el UUID de UNA sesión — funcionaba en la máquina donde se escribió y en ninguna otra",
+      "senales": [
+        "git status sale sucio",
+        "quedaron capturas sin seguir",
+        "la prueba deja archivos",
+        "ruta que sólo existe en una máquina"
+      ],
+      "vecinas": [
+        "el-generado-que-cambia-solo-y-choca-en-todo-rebase",
+        "suite-que-no-arranca-calla",
+        "conexion-rechazada-parece-defecto"
       ]
     }
   ]

@@ -22,9 +22,15 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { join, extname } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const RAIZ = '/home/user/mazi-central';
-const SALIDA = '/tmp/claude-0/-home-user-mazi-central/617efe1d-4733-537e-8ae2-f3b050e50e7a/scratchpad/caps';
+/* ⚠ AQUÍ HABÍA UNA RUTA CON EL UUID DE UNA SESIÓN CONCRETA. Funcionaba en la
+   máquina donde se escribió y en ninguna otra: para cualquiera que clone el
+   repo es una carpeta que no existe. Es la misma familia que la ruta absoluta
+   de otra máquina que tenía `revisar.mjs`. El temporal del sistema sirve en
+   todas. */
+const SALIDA = tmpdir() + '/caps-explorador';
 mkdirSync(SALIDA, { recursive: true });
 
 const MIME = { '.html':'text/html;charset=utf-8', '.js':'text/javascript', '.css':'text/css',
