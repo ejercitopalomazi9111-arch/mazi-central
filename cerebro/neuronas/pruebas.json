@@ -459,6 +459,51 @@
         "la-mano-que-se-llena-de-lo-que-no-se-juega",
         "mutacion-sin-restaurar"
       ]
+    },
+    {
+      "id": "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
+      "titulo": "La prueba que falla 1 de cada 8 es peor que la que falla siempre",
+      "gravedad": "alta",
+      "sintoma": "Una suite da verde, verde, verde, ROJA, verde. Vuelves a correrla y pasa, así que sigues adelante.",
+      "causa": "La afirmación sólo se cumple para el camino común. Un caso poco frecuente —un empate, una mano con la carta rara en cierta posición— cae fuera de lo que la prueba contempla y la pone roja sin que nada esté mal en el producto.",
+      "porque": "Una prueba se escribe corriéndola una vez. Si esa vez tocó el camino común, la premisa queda a medias y nadie lo nota: el rojo llega semanas después, cuando ya se aprendió a volver a correr y seguir.",
+      "arreglo": "Cuando aparezca un rojo que no se repite, NO se vuelve a correr y ya: se corre en ciclo hasta reproducirlo y se imprime el estado que lo causó. Con el caso enfrente se arregla la premisa, y se vuelve a correr DIEZ veces o más para saber que quedó.",
+      "comoCazarlo": "`for i in $(seq 1 12); do … done` contando verdes. Una sola corrida verde no prueba nada de una intermitente — es literalmente el estado en el que ya estaba.",
+      "consejo": "El daño de una intermitente no es el rojo: es que enseña a ignorar los rojos. En cuanto la suite miente una vez, deja de servir para todas las demás.",
+      "salioDe": "juegos/guerra-de-puercos · dos intermitentes distintas en la misma suite, una de 1/5 y otra de 1/8",
+      "senales": [
+        "a veces pasa y a veces no",
+        "vuelvo a correrlo y ya pasó",
+        "falla de vez en cuando",
+        "no lo puedo reproducir"
+      ],
+      "vecinas": [
+        "la-prueba-que-cuenta-de-mas-y-culpa-al-servidor",
+        "prueba-de-un-solo-caso",
+        "reloj-vivo-hace-fallar-la-prueba"
+      ]
+    },
+    {
+      "id": "comparar-contra-el-html-y-no-contra-lo-que-se-lee",
+      "titulo": "Saqué la cadena del archivo fuente y la comparé contra texto plano",
+      "gravedad": "alta",
+      "sintoma": "Arreglé una prueba de texto leyendo el código, y en vez de mejorar empeoró: pasó de fallar 1 de cada 8 a fallar 10 de 12.",
+      "causa": "En el archivo la frase lleva etiquetas —`<b>Recibes</b> el golpe`— y yo copié eso a la expresión. Pero la prueba lee `textContent`, que devuelve el texto YA sin etiquetas, así que el patrón no casaba nunca.",
+      "porque": "Buscar la frase en el código fuente se siente como «ir a la verdad», y por eso no se sospecha. Pero el fuente y lo que la persona lee son dos cadenas distintas, y la prueba compara contra la segunda.",
+      "arreglo": "El patrón se escribe contra lo que devuelve el lector que usa la prueba. Con `textContent`, sin etiquetas; con `innerHTML`, con ellas. Y se comprueba aparte, contra las cadenas literales, antes de correr la suite entera.",
+      "comoCazarlo": "Antes de dar por buena una prueba de texto, pasarle a la expresión las cadenas reales —las cuatro que sí deben casar y dos que no— en un `node -e` de tres renglones. Cuesta diez segundos y no necesita navegador.",
+      "consejo": "«Lo saqué del código» no es garantía de nada si el código guarda una forma y la prueba lee otra. La pregunta correcta es qué devuelve exactamente el lector.",
+      "salioDe": "juegos/guerra-de-puercos · pruebas-pantalla.mjs, arreglando una intermitente y empeorándola",
+      "senales": [
+        "lo arreglé y quedó peor",
+        "lo copié del código y no casa",
+        "la prueba no encuentra un texto que sí está"
+      ],
+      "vecinas": [
+        "la-prueba-intermitente-ensena-a-ignorar-los-rojos",
+        "prueba-de-texto-que-pasa-con-la-cadena-vacia",
+        "la-medicion-que-se-mide-a-si-misma"
+      ]
     }
   ]
 }

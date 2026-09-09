@@ -684,7 +684,16 @@ console.log('\n── Que no se pueda hacer trampa desde la pantalla ──');
 ok('nunca quedan marcadas dos cartas que no se pueden combinar', await page.evaluate(() => {
   const niv = c => c.querySelector('.niv').textContent;
   document.querySelector('#rTuMano').click();
-  const cs = [...document.querySelectorAll('#mMano .carta')];
+  /* ⚠ SIN LAS ESPECIALES. Esta prueba comprueba que dos cartas JUGABLES de
+     distinto nivel no se combinen. Una especial marcada AL MISMO TIEMPO que
+     una carta no es trampa: es exactamente para lo que sirve un +5.
+     Contándolas, la prueba fallaba 1 de cada 5 veces —sólo cuando la mano
+     traía la bonificación en segundo lugar y su `.niv` decía «BONO», que es
+     un nivel distinto al de la primera— y llamaba trampa a la regla del
+     juego. Tercera vez que un selector ciego recoge una especial desde que
+     entraron al abanico. */
+  const cs = [...document.querySelectorAll('#mMano .carta:not([data-esp])')];
+  if(cs.length < 2) return true;               /* mano sin dos jugables */
   const a = cs[0];
   const otra = cs.slice(1).find(c => niv(c) !== niv(a));
   if(!otra) return true;                       /* no hubo caso que probar */
@@ -695,7 +704,10 @@ ok('nunca quedan marcadas dos cartas que no se pueden combinar', await page.eval
 ok('dos cartas del MISMO nivel combinable sí se marcan juntas', await page.evaluate(() => {
   const niv = c => c.querySelector('.niv').textContent;
   document.querySelector('#rTuMano').click();
-  const cs = [...document.querySelectorAll('#mMano .carta')];
+  /* Las especiales fuera, por la misma razón de arriba. Aquí no rompía porque
+     el filtro `'BCD'.includes(...)` ya descartaba un nivel «BONO», pero el
+     selector estaba igual de ciego y era cuestión de tiempo. */
+  const cs = [...document.querySelectorAll('#mMano .carta:not([data-esp])')];
   let par = null;
   for(let i = 0; i < cs.length && !par; i++)
     for(let j = i + 1; j < cs.length; j++)
@@ -728,8 +740,20 @@ console.log('\n── El resultado de la ronda se lee bien ──');
   await page.waitForTimeout(400);
   const texto = (await page.textContent('#dGolpe')).replace(/\s+/g, ' ').trim();
   ok('no dice «Tú recibe», que es como estaba mal escrito', !/Tú recibe\b/.test(texto), texto);
+  /* ⚠ LAS REDACCIONES SON LAS DEL JUEGO, NO LAS QUE YO CREÍA. Aquí decía
+     «Empate», una palabra que el juego NUNCA escribe: en un empate pone «Las
+     dos valen lo mismo. Nadie recibe daño.». Como el empate sale más o menos
+     1 de cada 8 rondas, la prueba pasaba casi siempre y fallaba sola de vez
+     en cuando — lo peor que puede hacer una prueba, porque enseña a ignorar
+     los rojos.
+
+     ⚠ Y SE COMPARA CONTRA TEXTO PLANO, NO CONTRA EL HTML. Al corregirla puse
+     `Recibes<\/b> el golpe` porque así está en `index.html`; pero esto lee
+     `textContent`, que ya viene sin etiquetas, y entonces NO casaba NUNCA:
+     pasó de fallar 1 de cada 8 a fallar 10 de 12. La cadena a la que se
+     compara es la que ve la persona, no la que está en el archivo. */
   ok('dice quién se llevó el golpe, en español que se entiende',
-     /Recibes el golpe|La máquina recibe el golpe|Empate/.test(texto), texto);
+     /Recibes el golpe|recibe el golpe|Nadie recibe daño/.test(texto), texto);
   /* ⚠ LAS CARTAS REVELADAS YA NO VIVEN EN EL PANEL DEL DUELO: viven en la
      MESA, que es donde se pusieron. Estaban pintadas en los dos sitios a la
      vez y eso se veía como un error de maquetación. */

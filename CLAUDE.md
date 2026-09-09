@@ -264,6 +264,8 @@ dependemos.
    | guardar **de qué tipo** es lo que elegiste alcanza | describe a un GRUPO: con dos cartas de +5 en la mano, tocar una marcaba **las dos** | invisible hasta que hubo repetidas — con una sola de cada clase, tipo e identidad valen igual |
    | si una prueba falla, falla el código que señala | decía «se reparte a los dos → 5 y 6» y **el servidor repartía bien**: la que contaba mal era ella | casi mando a arreglar un servidor sano; la mutación de verdad (repartir 4) da «4 y 4», no «5 y 6» |
    | arreglar el contraste que reportaron arregla el contraste | la pareja de tonos claro-sobre-claro estaba usada en **toda** la tanda de avisos | Carlos volvió con el mismo reclamo señalando el elemento de al lado, dos centímetros más allá |
+   | un rojo que no se repite al volver a correr era un tropezón | eran DOS pruebas intermitentes, de 1/5 y de 1/8 — una llamaba trampa a la regla del juego y la otra buscaba la palabra «Empate», que el juego **nunca escribe** | una intermitente no se comprueba con una corrida verde: hay que correrla **doce veces** y contarlas |
+   | la cadena está en el código, así que de ahí la copio | el archivo guarda `<b>Recibes</b> el golpe`; la prueba lee `textContent`, que **ya viene sin etiquetas** | «arreglé» la prueba y pasó de fallar 1 de cada 8 a fallar **10 de 12** |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
