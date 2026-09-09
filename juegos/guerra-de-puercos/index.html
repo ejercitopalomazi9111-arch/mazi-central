@@ -295,7 +295,11 @@ body.fieltro .sobre{ background:#2A1520; color:var(--hueso); border-color:rgba(2
 }
 .sobre .que{ min-width:0 }
 .sobre .que b{ display:block; font-size:16px; font-weight:900 }
-.sobre .que small{ display:block; font-size:12px; font-weight:700; opacity:.7; margin-top:2px }
+.sobre .que small{ display:block; font-size:12px; font-weight:700; opacity:.7; margin-top:2px;
+  /* ⚠ `balance` REPARTE LOS RENGLONES; sin él, «3 cartas, ninguna de nivel D»
+     dejaba la D sola en el segundo renglón, y una letra huérfana se lee como
+     un error de la pantalla, no como una línea larga. */
+  text-wrap:balance }
 .sobre .precio{
   font-size:16px; font-weight:900; white-space:nowrap;
   padding:6px 10px; border-radius:99px; background:var(--rosa-hondo); color:#fff;
