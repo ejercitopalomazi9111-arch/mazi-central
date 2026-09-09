@@ -338,8 +338,18 @@ p strong{color:var(--hueso);font-weight:500}
 .g-ficha.abierta .g-caja{opacity:1;transform:none}
 @media (max-width:760px){.g-caja{grid-template-columns:minmax(0,1fr)}}
 .g-galeria{background:#0C0C0E;display:grid;gap:8px;padding:14px;align-content:start}
-.g-galeria .grande{aspect-ratio:1/1;background:#111;position:relative;overflow:hidden}
-.g-galeria .grande img{width:100%;height:100%;object-fit:contain}
+.g-galeria .grande{aspect-ratio:1/1;background:#111;position:relative;overflow:hidden;
+  touch-action:pan-y;cursor:grab}
+.g-galeria .grande:active{cursor:grabbing}
+/* La tira: todas las fotos una junto a otra. Lo que se mueve es la tira, no
+   se sustituye la imagen -- por eso no hay parpadeo ni cambio notorio. */
+.g-tira{display:flex;height:100%;will-change:transform}
+.g-hoja{flex:0 0 auto;height:100%;display:grid;place-items:center}
+.g-hoja img{width:100%;height:100%;object-fit:contain;pointer-events:none;
+  -webkit-user-drag:none;user-select:none}
+.g-cuenta{position:absolute;right:10px;bottom:10px;background:rgba(8,8,10,.74);
+  border:1px solid var(--linea);color:var(--gris);padding:5px 9px;
+  font:700 10px/1 var(--dato);letter-spacing:.12em;pointer-events:none}
 .g-tiras{display:flex;gap:7px;flex-wrap:wrap}
 .g-tiras button{width:54px;height:54px;padding:0;background:#141416;cursor:pointer;
   border:1px solid var(--linea);transition:border-color .2s}
@@ -708,7 +718,7 @@ footer{background:#000;border-top:1px solid var(--linea);
   <a class="b" href="https://www.toydarians.com/" target="_blank" rel="noopener"><span>Abrir toydarians.com ↗</span></a>
 </div></div>
 
-<div class="g-ficha" id="g-ficha" hidden role="dialog" aria-modal="true" aria-label="Ficha de la figura"><div class="g-caja"><button class="g-cerrar" id="g-cerrar" type="button" aria-label="Cerrar">✕</button><div class="g-galeria"><div class="grande"><img id="g-grande" alt=""></div><div class="g-tiras" id="g-tiras"></div></div><div class="g-datos"><span class="vc" id="g-vc"></span><h3 id="g-nom"></h3><dl><dt>Línea</dt><dd id="g-serie"></dd><dt>Escala</dt><dd>3.75&Prime; · 9.5 cm</dd><dt>Estado</dt><dd>En su cartón original, sin abrir</dd></dl><div class="g-compra"><span class="g-precio-g" id="g-precio"></span><span class="g-stock" id="g-stock"></span><div id="g-paypal"></div><a class="b" id="g-ir" href="#" target="_blank" rel="noopener"><span>Ver en la tienda ↗</span></a></div></div></div></div>
+<div class="g-ficha" id="g-ficha" hidden role="dialog" aria-modal="true" aria-label="Ficha de la figura"><div class="g-caja"><button class="g-cerrar" id="g-cerrar" type="button" aria-label="Cerrar">✕</button><div class="g-galeria"><div class="grande"><div class="g-tira" id="g-tira"></div><span class="g-cuenta" id="g-cuenta"></span></div><div class="g-tiras" id="g-tiras"></div></div><div class="g-datos"><span class="vc" id="g-vc"></span><h3 id="g-nom"></h3><dl><dt>Línea</dt><dd id="g-serie"></dd><dt>Escala</dt><dd>3.75&Prime; · 9.5 cm</dd><dt>Estado</dt><dd>En su cartón original, sin abrir</dd></dl><div class="g-compra"><span class="g-precio-g" id="g-precio"></span><span class="g-stock" id="g-stock"></span><div id="g-paypal"></div><a class="b" id="g-ir" href="#" target="_blank" rel="noopener"><span>Ver en la tienda ↗</span></a></div></div></div></div>
 
 <footer><div class="caso fila-pie">
   <div>
@@ -1039,26 +1049,38 @@ footer{background:#000;border-top:1px solid var(--linea);
 
   var cuadro = document.getElementById('g-ficha');
   if (cuadro) {
-    var gGrande = document.getElementById('g-grande'),
+    var gTira   = document.getElementById('g-tira'),
         gTiras  = document.getElementById('g-tiras'),
+        gCuenta = document.getElementById('g-cuenta'),
         gVc = document.getElementById('g-vc'), gNom = document.getElementById('g-nom'),
         gSerie = document.getElementById('g-serie'), gIr = document.getElementById('g-ir'),
         devolver = null;
 
-    function pintarTiras(fotos, activa){
-      gTiras.innerHTML = '';
+    function armarGaleria(fotos, alt){
+      gTira.innerHTML = ''; gTiras.innerHTML = '';
       fotos.forEach(function(f, i){
+        // la tira: todas las fotos una junto a otra, no una que se sustituye
+        var hueco = document.createElement('div');
+        hueco.className = 'g-hoja';
+        var im = document.createElement('img');
+        im.src = 'fotos/' + f; im.alt = i === 0 ? alt : '';
+        // las dos primeras llegan ya; el resto en cuanto haya hueco
+        im.loading = i < 2 ? 'eager' : 'lazy';
+        im.decoding = 'async';
+        hueco.appendChild(im); gTira.appendChild(hueco);
+
         var b = document.createElement('button');
         b.type = 'button';
-        b.setAttribute('aria-current', String(i === activa));
         b.setAttribute('aria-label', 'Foto ' + (i + 1));
-        var im = document.createElement('img');
-        im.src = 'fotos/' + f; im.alt = ''; im.loading = 'lazy';
-        b.appendChild(im);
-        b.addEventListener('click', function(){
-          iAct = i; gGrande.src = 'fotos/' + f; pintarTiras(fotos, i);
-        });
+        var mini = document.createElement('img');
+        mini.src = 'fotos/' + f; mini.alt = ''; mini.loading = 'lazy';
+        b.appendChild(mini);
+        b.addEventListener('click', function(){ colocar(i, true); });
         gTiras.appendChild(b);
+      });
+      gTira.style.width = (fotos.length * 100) + '%';
+      [].forEach.call(gTira.children, function(h){
+        h.style.width = (100 / fotos.length) + '%';
       });
     }
 
@@ -1078,9 +1100,9 @@ footer{background:#000;border-top:1px solid var(--linea);
       eS.className = 'g-stock' + (d.st === 'agotado' ? ' no' : '');
       pintarPago(vc, d, eB);
 
-      fotosAct = d.f; iAct = 0;
-      gGrande.src = 'fotos/' + d.f[0]; gGrande.alt = d.n;
-      pintarTiras(d.f, 0);
+      fotosAct = d.f;
+      armarGaleria(d.f, d.n);
+      colocar(0, false);
       cuadro.hidden = false;
       document.body.style.overflow = 'hidden';
       // las puertas arrancan cerradas y se abren al cuadro siguiente
@@ -1105,51 +1127,86 @@ footer{background:#000;border-top:1px solid var(--linea);
     });
     // Deslizar sobre la foto grande, con dedo o con raton. Antes solo se podia
     // cambiar pulsando una miniatura.
-    var fotosAct = [], iAct = 0, gx0 = null, gy0 = null, arrastrando = false;
-    function irA(k){
+    // ---- LA TIRA HORIZONTAL ---------------------------------------------
+    // Carlos: «que al deslizar a los lados se cambie como si fuesen una tira
+    // horizontal, sin que se note un cambio de imagen tan notorio, y que
+    // parezca que estan unidas a los lados».
+    // Asi que ya no se cambia el src: las fotos estan puestas UNA JUNTO A OTRA
+    // y lo que se mueve es la tira. No hay parpadeo porque no hay cambio.
+    //
+    // Y el otro fallo suyo: «el scroll hacia arriba y abajo tambien cambia la
+    // imagen». Pasaba porque el eje del gesto se decidia AL SOLTAR, asi que un
+    // dedo en diagonal contaba como deslizar. Ahora se decide en los primeros
+    // pixeles y, si el gesto es vertical, se suelta la captura y la pagina
+    // scrollea normal.
+    var fotosAct = [], iAct = 0;
+    var gx0 = null, gy0 = null, eje = null, idPuntero = null, anchoTira = 0;
+
+    function colocar(k, animado){
       if (!fotosAct.length) return;
-      iAct = (k + fotosAct.length) % fotosAct.length;
-      gGrande.src = 'fotos/' + fotosAct[iAct];
-      pintarTiras(fotosAct, iAct);
+      iAct = Math.max(0, Math.min(fotosAct.length - 1, k));
+      gTira.style.transition = animado
+        ? 'transform .34s cubic-bezier(.22,.9,.28,1)' : 'none';
+      gTira.style.transform = 'translate3d(' + (-iAct * 100) + '%,0,0)';
+      marcarTiras(iAct);
     }
-    var lienzoG = gGrande.parentElement;
-    lienzoG.style.touchAction = 'pan-y';
-    lienzoG.addEventListener('pointerdown', function(e){
-      gx0 = e.clientX; gy0 = e.clientY; arrastrando = true;
-      lienzoG.setPointerCapture(e.pointerId);
+    function marcarTiras(k){
+      [].forEach.call(gTiras.children, function(b, i){
+        b.setAttribute('aria-current', String(i === k));
+      });
+      if (gCuenta) gCuenta.textContent = (k + 1) + ' / ' + fotosAct.length;
+    }
+
+    gTira.addEventListener('pointerdown', function(e){
+      if (fotosAct.length < 2) return;
+      gx0 = e.clientX; gy0 = e.clientY; eje = null; idPuntero = e.pointerId;
+      anchoTira = gTira.parentElement.getBoundingClientRect().width || 1;
+      gTira.style.transition = 'none';
     });
-    lienzoG.addEventListener('pointermove', function(e){
-      if (!arrastrando || gx0 === null) return;
-      var dx = e.clientX - gx0;
-      // se sigue el dedo, para que se sienta agarrado y no un boton
-      gGrande.style.transform = 'translate3d(' + (dx * .35).toFixed(1) + 'px,0,0)';
+    gTira.addEventListener('pointermove', function(e){
+      if (gx0 === null) return;
+      var dx = e.clientX - gx0, dy = e.clientY - gy0;
+      if (eje === null) {
+        // hacen falta unos pocos pixeles para saber que quiere el dedo
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        eje = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        if (eje === 'x') { try { gTira.setPointerCapture(idPuntero); } catch (_) {} }
+        else { gx0 = gy0 = null; return; }   // vertical: la pagina manda
+      }
+      // resistencia en los extremos, para que se sienta el tope
+      var pos = -iAct * anchoTira + dx;
+      var min = -(fotosAct.length - 1) * anchoTira;
+      if (pos > 0) pos *= .32;
+      else if (pos < min) pos = min + (pos - min) * .32;
+      gTira.style.transform = 'translate3d(' + pos.toFixed(1) + 'px,0,0)';
     });
     ['pointerup','pointercancel'].forEach(function(t){
-      lienzoG.addEventListener(t, function(e){
-        if (!arrastrando) return;
-        arrastrando = false;
-        var dx = e.clientX - gx0, dy = e.clientY - (gy0 || 0);
-        gGrande.style.transition = 'transform .28s cubic-bezier(.2,.8,.3,1)';
-        gGrande.style.transform = '';
-        setTimeout(function(){ gGrande.style.transition = ''; }, 300);
-        // sólo cuenta si el gesto fue mas horizontal que vertical
-        if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy)) irA(iAct + (dx < 0 ? 1 : -1));
-        gx0 = gy0 = null;
+      gTira.addEventListener(t, function(e){
+        if (gx0 === null || eje !== 'x') { gx0 = gy0 = null; eje = null; return; }
+        var dx = e.clientX - gx0;
+        gx0 = gy0 = null; eje = null;
+        // un quinto del ancho basta para pasar de foto
+        var salto = Math.abs(dx) > anchoTira * .2 ? (dx < 0 ? 1 : -1) : 0;
+        colocar(iAct + salto, true);
       });
     });
     addEventListener('keydown', function(e){
       if (cuadro.hidden) return;
-      if (e.key === 'ArrowRight') irA(iAct + 1);
-      if (e.key === 'ArrowLeft')  irA(iAct - 1);
+      if (e.key === 'ArrowRight') colocar(iAct + 1, true);
+      if (e.key === 'ArrowLeft')  colocar(iAct - 1, true);
     });
+    addEventListener('resize', function(){ if (!cuadro.hidden) colocar(iAct, false); },
+                     { passive: true });
 
-    // ---- PAGO ---------------------------------------------------------
+    // ---- PAGO -----------------------------------------------------------
     // Con identificador: botones de PayPal de verdad. Sin el: se dice que
     // falta y se manda a la tienda. Nunca un boton que aparenta cobrar.
+    // (Esta definicion se perdio en la fusion del #114/#115 y la llamada se
+    //  quedo: la ficha reventaba con «pintarPago is not defined» y no abria.)
     var sdkPedido = false;
     function cargarSDK(cb){
       if (window.paypal) return cb();
-      if (sdkPedido) return;                    // ya viene en camino
+      if (sdkPedido) return;
       sdkPedido = true;
       var sc = document.createElement('script');
       sc.src = 'https://www.paypal.com/sdk/js?client-id=' +
@@ -1159,6 +1216,7 @@ footer{background:#000;border-top:1px solid var(--linea);
       document.head.appendChild(sc);
     }
     function pintarPago(vc, d, caja){
+      if (!caja) return;
       caja.innerHTML = '';
       if (!d.p || d.st === 'agotado') return;
       if (!TOY.g.paypal) {
