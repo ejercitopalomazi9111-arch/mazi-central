@@ -43,6 +43,10 @@ const VA = [
      esta línea la carpeta existe en el repo y NO en el sitio, y el enlace que
      se le pasa a alguien devuelve 404 — que es exactamente lo que pasó. */
   'guias',
+  /* El escaparate de Toydarians, para poder probarlo mientras el cliente
+     aprueba y Carlos le crea su repo propio. Es UN archivo con todo dentro
+     —imágenes y logo incluidos como data URI— así que basta la carpeta. */
+  'toydarians',
 ];
 
 /* Lo que NO va, aunque esté dentro de algo que sí va. Los .md son notas de
@@ -71,6 +75,10 @@ const NO_VA = (ruta) => {
      OFL sí se publican —viajan con las fuentes, que es donde tienen que estar—
      y por eso la regla de los .md de arriba no las toca: son .txt. */
   if(/(^|\/)luz\/taller(\/|$)/.test(ruta)) return true;
+  /* El taller de Toydarians arma el index.html a partir del catálogo real y de
+     los activos medidos: mismo caso que los otros dos. Ahí dentro va también la
+     compuerta, que no la ejecuta nadie desde el navegador. */
+  if(/(^|\/)toydarians\/taller(\/|$)/.test(ruta)) return true;
   /* el taller de las guías arma el HTML y el PDF: es material de trabajo.
      OJO con el final: `ruta` llega SIN barra al final cuando lo que se está
      mirando es la carpeta misma, así que el patrón tiene que aceptar el fin de
