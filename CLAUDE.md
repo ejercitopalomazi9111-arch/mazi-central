@@ -852,19 +852,31 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   **Lo que sí está roto es dónde apuntan dos de ellos**, y no se caza leyendo porque
   construyen bien:
 
-  | Proyecto | Qué debería servir | Qué sirve de verdad, medido |
+  | Proyecto | Qué debería servir | Qué sirve de verdad · medido el **9 de septiembre** |
   |---|---|---|
-  | `ppuercos` | el servidor de salas del juego (`juegos/servidor`) | **la central completa, byte por byte igual que `mazi-central`** — su carpeta raíz está mal puesta |
-  | `puercos` | — | **404 en todo**. Es un proyecto sobrante del nombre viejo |
+  | `ppuercos` | el servidor de salas del juego (`juegos/servidor`) | ✅ **ya está bien.** `/api/salud` → `{"bien":true}` |
+  | `sala` | el servidor de La Sala | ✅ **también.** `/api/salud` → `{"bien":true}` |
+  | `puercos` | — | ❌ **no sirve nada.** El 4 de septiembre daba 404; el 9 da `error code: 1042`. Cambió el síntoma, no el veredicto: sobra y hay que borrarlo |
 
-  O sea que **el servidor de Guerra de Puercos no está publicado**, aunque haya dos proyectos
-  con su nombre y los dos salgan verdes. Cuarta vez que aparece lo mismo: algo que informa un
-  estado y está en otro. **Lo arregla Carlos** en el panel de Cloudflare: al proyecto
-  `ppuercos`, ponerle carpeta raíz `juegos/servidor`; y borrar `puercos`, que no sirve nada.
-  El nombre con dos pes es correcto y está explicado en `juegos/servidor/wrangler.jsonc`.
+  **⚠️ Y AQUÍ ESTABA EL ERROR MÁS CARO DE ESTE APUNTE, corregido el 9 de septiembre.** Debajo de
+  esa tabla decía, en negritas, que **«el servidor de Guerra de Puercos no está publicado»**.
+  Ya no es verdad y hace días que no lo es: `ppuercos` contesta `{"bien":true}` en producción,
+  y `sala` también. La frase venía del 1 de septiembre, cuando `ppuercos` sí servía la central
+  entera por tener mal la carpeta raíz.
+
+  **Lo irónico es de manual:** este apunte existe para avisar de «algo que informa un estado y
+  está en otro», y él mismo llevaba una semana informando un estado que no era. Un apunte no
+  se cree, se vuelve a medir — son dos renglones de `curl` y ahí se acaba la discusión.
+
+  **Lo único que le queda a Carlos de este punto:** borrar el proyecto `puercos` en el panel de
+  Cloudflare. El nombre con dos pes es el correcto y está explicado en
+  `juegos/servidor/wrangler.jsonc`.
 - **🟠 Las vistas previas de `sala` Y DE `ppuercos` sirven la central, no sus servidores.**
-  Medido de nuevo el 4 de septiembre, contra las direcciones de rama del PR #108 y con los
-  cinco despliegues en verde:
+  **Vuelto a medir el 9 de septiembre** contra las direcciones de rama del PR #112, con los
+  cinco despliegues en verde: sigue igual, ni una coma cambió. Lo que sí quedó claro esta vez
+  es que **la producción de los dos está bien** —`sala` y `ppuercos` contestan `{"bien":true}`—,
+  así que el defecto está SÓLO en la configuración de vistas previas, y es exactamente ahí
+  donde hay que tocarle. (La medición del 4 de septiembre, contra el PR #108, decía lo mismo.)
 
   | Dirección | Debería servir | Sirve de verdad |
   |---|---|---|
