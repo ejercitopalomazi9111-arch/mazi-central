@@ -1,12 +1,35 @@
 // Compuerta: mide el DOM renderizado, no el CSS. Las tres cosas que este
 // diseno puede romper sin que se note: desborde horizontal (los hijos de grid
 // no bajan de min-content), mas de un h1, y que sin JS quede algo escondido.
-const pw = await import('/home/user/mazi-central/node_modules/playwright/index.js');
+/* ⚠ ESTA RUTA ESTABA MAL Y LA COMPUERTA NUNCA CORRIÓ EN ESTE REPO.
+   Apuntaba a `<repo>/node_modules/playwright`, que aquí no existe: en este
+   contenedor Playwright vive en /opt. Reventaba con ERR_MODULE_NOT_FOUND antes
+   de la primera comprobación, así que el revisor que mide desborde, contraste
+   y h1 daba CERO cobertura mientras parecía existir.
+
+   Una compuerta que no corre es peor que ninguna: da la confianza sin dar la
+   comprobación. Es el mismo defecto que perseguimos todo el tiempo — algo que
+   informa un estado y está en otro.
+
+   Se prueba en un renglón: `node toydarians/taller/revisar.mjs` tiene que
+   imprimir resultados, no una traza. */
+const RUTA_PW = '/opt/node22/lib/node_modules/playwright/index.js';
+const pw = await import(RUTA_PW);
 const chromium = pw.chromium ?? pw.default.chromium;   // playwright es CommonJS
 const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 // acepta un archivo por argumento: el sitio y el boceto pasan por la misma
 // compuerta, que para eso se escribio.
-const archivo = process.argv[2] || '/home/user/toydarians/sitio.html';
+/* ⚠ EL DEFAULT ERA UNA RUTA ABSOLUTA DE OTRA MÁQUINA: `/home/user/toydarians/
+   sitio.html`, que se sale de este repo. Aunque el import de Playwright ya
+   estuviera bien, la compuerta seguía muerta un renglón más abajo.
+
+   Ahora se calcula desde el propio archivo, así que corre desde donde sea:
+   `node toydarians/taller/revisar.mjs` o `cd toydarians/taller && node
+   revisar.mjs` dan lo mismo. Y mide `index.html` —EL QUE SE PUBLICA— y no el
+   intermedio, porque medir lo que no se sirve es el defecto que arreglamos hoy
+   en el generador. Se puede pasar otro archivo por argumento. */
+const AQUI = new URL('.', import.meta.url).pathname;
+const archivo = process.argv[2] || AQUI + '../index.html';
 const url = 'file://' + archivo;
 console.log('midiendo', archivo);
 let malo = 0;
