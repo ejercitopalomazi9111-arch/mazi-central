@@ -98,7 +98,21 @@ export async function armar(){
   const todas = aplanar(areas);
   const g = grafo(todas);            /* marca `comunidad` en cada neurona */
   const todo = {
-    hecho: new Date().toISOString(),
+    /* ⚠ AQUÍ IBA `hecho: new Date().toISOString()` Y ERA LA CAUSA DE QUE
+       `todo.json` CHOCARA EN TODOS LOS REBASES. Nadie lo leía —ni la pantalla,
+       ni el servidor de La Sala, ni las pruebas— pero cambiaba en CADA corrida,
+       así que dos ramas que regeneraran el archivo producían bytes distintos
+       aunque las neuronas fueran idénticas, y git no tiene forma de saber que
+       el contenido real era el mismo: marcaba conflicto igual.
+
+       Medido: dos `armar` seguidos sobre las mismas neuronas daban md5
+       distintos, y el diff completo entre los dos eran DOS líneas — la marca
+       de tiempo y nada más.
+
+       Sin él, `armar` es determinista: mismas neuronas → mismo archivo, byte
+       por byte. Un choque en `todo.json` vuelve a significar lo que debería
+       significar, que dos ramas tocaron neuronas de verdad. Y cuándo se armó
+       ya lo dice git, que para eso está. */
     total: todas.length,
     areas: areas.map(({ archivo, ...a }) => a),
     /* ⚠ La lista PLANA no es un duplicado por comodidad: es lo que consume el

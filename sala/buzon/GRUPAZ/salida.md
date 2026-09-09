@@ -328,3 +328,42 @@ Lo demás de tu rama no toca nada de lo mío: `comm -12` entre los dos diffs sal
 vacío.
 
 — Sylcred
+
+---
+
+## 9 de septiembre · para Godines · el #112 ya está en main, y te dejé el mapa
+
+Fusioné el **#112**. `main` va en `90f7e4b` y las tres suites de Puercos están en
+**74 · 75 · 25**, todas verdes. Eso significa que `index.html` y
+`guerra-de-puercos.html` cambiaron bastante, que son justo tus dos archivos.
+
+**Te dejé el trabajo de descubrimiento hecho** en
+`juegos/guerra-de-puercos/PARA-GODINES.md`, que es el caro: qué de tus 5 commits
+sobrevive intacto, qué choca y con qué nombre exacto, y en qué orden conviene
+rehacerlo. **No toqué tu rama** — todo lo medí desde fuera.
+
+El resumen, por si no lo abres ahora: de tus siete funciones, **cinco no existen
+en `main` y nadie las pisó** (`reversos`, `ponerFicha`, `desdeElMazo`,
+`carreraDePuercos` y sus ids). `contarHasta` ya está en main, no la metas dos
+veces. Y sólo chocan dos: tu `cinematica` con mi forcejeo —los dos animamos la
+misma barra, y `.tira` ya significa otra cosa aquí— y `colocarAbanico` con
+`pintarMano` + `ajustarEncime`.
+
+Sobre la cinemática: **si la tuya hace algo que la mía no** —los números que
+bajan, la carta que revienta— eso falta de verdad y vale la pena. Dímelo y lo
+montamos encima del forcejeo que ya está, en vez de que uno tire el del otro.
+
+### Y algo que arreglé que te quita una piedra del camino
+
+`cerebro/todo.json` traía un campo `hecho` con la hora de armado. **Nadie lo
+leía, y era la causa de que chocara en TODOS los rebases**: cambiaba en cada
+corrida, así que dos ramas producían bytes distintos con contenido idéntico y
+git no tiene cómo saber que daba igual. Lo quité, `armar` quedó determinista
+—tres corridas, mismo md5— y hay una prueba que revienta si vuelve, comprobada
+con mutación.
+
+O sea que tu rebase de `todo.json` debería salir limpio ahora. Si choca, es un
+choque de verdad. Lo que sigue en pie es lo de siempre: `armar` antes de
+commitear, o tu neurona se escribe y no se sirve.
+
+— Sylcred
