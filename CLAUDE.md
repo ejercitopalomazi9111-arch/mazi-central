@@ -261,6 +261,11 @@ dependemos.
    | probar el motor prueba el juego | las 74 del motor pasaban con el modo a distancia **muerto**: el servidor leía `this.J.mazo`, que dejó de existir | un websocket que contesta **500** parecía caída de red, y llevaba días así sin que nadie lo notara |
    | si el cálculo está bien, la pantalla está bien | el motor aplicaba el −5 al rival, como manda el reglamento; **el letrero decía que te lo restabas tú** | ninguna prueba lo caza: comprueban resultados, y un letrero que miente da el mismo resultado |
    | el verde de antes del commit sigue valiendo | entre ese verde y el commit **metí el bug a mano** para la prueba de mutación, y el turno se cortó antes de restaurar | subí el arreglo **con el defecto puesto** y un mensaje de commit que decía lo contrario — el único testigo es correr las pruebas DESPUÉS de restaurar |
+   | guardar **de qué tipo** es lo que elegiste alcanza | describe a un GRUPO: con dos cartas de +5 en la mano, tocar una marcaba **las dos** | invisible hasta que hubo repetidas — con una sola de cada clase, tipo e identidad valen igual |
+   | si una prueba falla, falla el código que señala | decía «se reparte a los dos → 5 y 6» y **el servidor repartía bien**: la que contaba mal era ella | casi mando a arreglar un servidor sano; la mutación de verdad (repartir 4) da «4 y 4», no «5 y 6» |
+   | arreglar el contraste que reportaron arregla el contraste | la pareja de tonos claro-sobre-claro estaba usada en **toda** la tanda de avisos | Carlos volvió con el mismo reclamo señalando el elemento de al lado, dos centímetros más allá |
+   | un rojo que no se repite al volver a correr era un tropezón | eran DOS pruebas intermitentes, de 1/5 y de 1/8 — una llamaba trampa a la regla del juego y la otra buscaba la palabra «Empate», que el juego **nunca escribe** | una intermitente no se comprueba con una corrida verde: hay que correrla **doce veces** y contarlas |
+   | la cadena está en el código, así que de ahí la copio | el archivo guarda `<b>Recibes</b> el golpe`; la prueba lee `textContent`, que **ya viene sin etiquetas** | «arreglé» la prueba y pasó de fallar 1 de cada 8 a fallar **10 de 12** |
 
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
@@ -847,19 +852,31 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   **Lo que sí está roto es dónde apuntan dos de ellos**, y no se caza leyendo porque
   construyen bien:
 
-  | Proyecto | Qué debería servir | Qué sirve de verdad, medido |
+  | Proyecto | Qué debería servir | Qué sirve de verdad · medido el **9 de septiembre** |
   |---|---|---|
-  | `ppuercos` | el servidor de salas del juego (`juegos/servidor`) | **la central completa, byte por byte igual que `mazi-central`** — su carpeta raíz está mal puesta |
-  | `puercos` | — | **404 en todo**. Es un proyecto sobrante del nombre viejo |
+  | `ppuercos` | el servidor de salas del juego (`juegos/servidor`) | ✅ **ya está bien.** `/api/salud` → `{"bien":true}` |
+  | `sala` | el servidor de La Sala | ✅ **también.** `/api/salud` → `{"bien":true}` |
+  | `puercos` | — | ❌ **no sirve nada.** El 4 de septiembre daba 404; el 9 da `error code: 1042`. Cambió el síntoma, no el veredicto: sobra y hay que borrarlo |
 
-  O sea que **el servidor de Guerra de Puercos no está publicado**, aunque haya dos proyectos
-  con su nombre y los dos salgan verdes. Cuarta vez que aparece lo mismo: algo que informa un
-  estado y está en otro. **Lo arregla Carlos** en el panel de Cloudflare: al proyecto
-  `ppuercos`, ponerle carpeta raíz `juegos/servidor`; y borrar `puercos`, que no sirve nada.
-  El nombre con dos pes es correcto y está explicado en `juegos/servidor/wrangler.jsonc`.
+  **⚠️ Y AQUÍ ESTABA EL ERROR MÁS CARO DE ESTE APUNTE, corregido el 9 de septiembre.** Debajo de
+  esa tabla decía, en negritas, que **«el servidor de Guerra de Puercos no está publicado»**.
+  Ya no es verdad y hace días que no lo es: `ppuercos` contesta `{"bien":true}` en producción,
+  y `sala` también. La frase venía del 1 de septiembre, cuando `ppuercos` sí servía la central
+  entera por tener mal la carpeta raíz.
+
+  **Lo irónico es de manual:** este apunte existe para avisar de «algo que informa un estado y
+  está en otro», y él mismo llevaba una semana informando un estado que no era. Un apunte no
+  se cree, se vuelve a medir — son dos renglones de `curl` y ahí se acaba la discusión.
+
+  **Lo único que le queda a Carlos de este punto:** borrar el proyecto `puercos` en el panel de
+  Cloudflare. El nombre con dos pes es el correcto y está explicado en
+  `juegos/servidor/wrangler.jsonc`.
 - **🟠 Las vistas previas de `sala` Y DE `ppuercos` sirven la central, no sus servidores.**
-  Medido de nuevo el 4 de septiembre, contra las direcciones de rama del PR #108 y con los
-  cinco despliegues en verde:
+  **Vuelto a medir el 9 de septiembre** contra las direcciones de rama del PR #112, con los
+  cinco despliegues en verde: sigue igual, ni una coma cambió. Lo que sí quedó claro esta vez
+  es que **la producción de los dos está bien** —`sala` y `ppuercos` contestan `{"bien":true}`—,
+  así que el defecto está SÓLO en la configuración de vistas previas, y es exactamente ahí
+  donde hay que tocarle. (La medición del 4 de septiembre, contra el PR #108, decía lo mismo.)
 
   | Dirección | Debería servir | Sirve de verdad |
   |---|---|---|
@@ -908,6 +925,22 @@ Arreglar el layout de escritorio (diagnóstico abajo) y los objetivos táctiles.
   propio: es gente—; o reescribir la historia y forzar el empuje, que sí los borra pero
   rompe cualquier copia que alguien tenga. **No lo hago yo:** reescribir `main` y forzar
   un empuje lo autoriza una persona.
+- **🟠 El Cerebro creció y sus enlaces no.** `node cerebro/pruebas.mjs` está en
+  **76 pasan · 4 fallan**, y ya estaba así antes de la rama de Puercos —así que la
+  compuerta no está compuertando nada—. Los números: **535 neuronas escritas, sólo 147
+  llevan a otras**, y el grafo se parte en **184 comunidades**. O sea que la mitad buena
+  del Cerebro —que las neuronas se llamen entre sí— dejó de funcionar cuando entró la
+  tanda grande del ecosistema, que llegó sin `vecinas`. Se ve en un renglón:
+
+  ```
+  node cerebro/pruebas.mjs | grep ✗
+  ```
+
+  **Séptima vez que aparece lo mismo:** algo que informa un estado y está en otro —aquí,
+  unas pruebas rojas que llevan commits en rojo sin que nadie las mire. No lo arreglo
+  metiendo `vecinas` a mano en 388 neuronas: hay que decidir si el descubrimiento por
+  señales se afina o si el umbral estaba mal puesto desde que el corpus era chico.
+
 - **El websocket de La Sala no pide llave**, ni con `LLAVES` puestas: quien tenga el link puede
   escuchar aunque no pueda escribir. Anotado, no arreglado.
 - **Las 16 páginas de Notion del prompt maestro piden sesión.** Se desbloquean con

@@ -101,9 +101,18 @@ await esperar(1500);
 
 const manoDe = (p) => p.evaluate(() =>
   [...document.querySelectorAll('#mMano .carta .valor')].map(v => v.textContent));
+/* ⚠ EL ABANICO YA NO SON CINCO COSAS. Desde que Carlos pidió meter la
+   bonificación «a la mano como otra carta más», ahí conviven las cinco
+   JUGABLES más los modificadores que hayan salido. Contar `.carta` a secas
+   decía «5 y 6» y parecía que el servidor repartía mal: repartía bien, la
+   que contaba mal era la prueba. Lo que se reparte de a cinco son las que
+   NO llevan `data-esp`. */
+const jugablesDe = (p) => p.evaluate(() =>
+  [...document.querySelectorAll('#mMano .carta:not([data-esp]) .valor')].map(v => v.textContent));
 const m1 = await manoDe(uno), m2 = await manoDe(dos);
-ok('al llenarse la sala, se reparte a los dos', m1.length === 5 && m2.length === 5,
-   m1.length + ' y ' + m2.length);
+const j1 = await jugablesDe(uno), j2 = await jugablesDe(dos);
+ok('al llenarse la sala, se reparte a los dos', j1.length === 5 && j2.length === 5,
+   j1.length + ' y ' + j2.length);
 ok('cada quien recibe una mano DISTINTA', m1.join() !== m2.join(),
    m1.join() + ' vs ' + m2.join());
 ok('los dos arrancan con 200 PV',

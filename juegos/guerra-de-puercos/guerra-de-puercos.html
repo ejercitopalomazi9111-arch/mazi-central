@@ -262,6 +262,64 @@ body.fieltro .rot-rival{ color:var(--hueso) }
    que es lo único que de verdad importa en esa pantalla. */
 #fElegir .tapete{ padding:8px 6px 4px }
 .renglon-mano{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+.renglon-mano .salir + .salir{ margin-left:6px }
+/* Apagado se ve apagado: si el botón de sonido se ve igual encendido que
+   apagado, hay que tocarlo para saber en qué está. */
+.salir.apagado{ opacity:.45 }
+
+/* ══ LA TIENDA ═════════════════════════════════════════════════════════════ */
+.cartera{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:26px; font-weight:900; margin:4px 0 0;
+}
+.cartera .moneda{ font-size:24px }
+.cartera .u{ font-size:13px; font-weight:800; opacity:.7 }
+.paga{
+  margin:10px 0 0; padding:8px 12px; border-radius:99px; display:inline-block;
+  font-size:15px; font-weight:800; background:rgba(255,209,102,.16);
+  border:2px solid rgba(255,209,102,.5); color:#FFD166;
+}
+.paga[hidden]{ display:none }
+.sobres{ display:grid; gap:12px }
+.sobre{
+  display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px;
+  padding:14px; border-radius:16px; border:3px solid var(--tinta);
+  background:var(--rosa-papel); box-shadow:0 5px 0 var(--tinta);
+  text-align:left; font-family:inherit; cursor:pointer; width:100%;
+}
+body.fieltro .sobre{ background:#2A1520; color:var(--hueso); border-color:rgba(233,228,228,.2) }
+.sobre .cara{
+  width:52px; height:66px; border-radius:8px; flex:0 0 auto;
+  border:2px solid var(--tinta); background:var(--rosa-hondo) url(arte/web/reverso.webp) center/cover;
+  box-shadow:2px 2px 0 rgba(0,0,0,.4);
+}
+.sobre .que{ min-width:0 }
+.sobre .que b{ display:block; font-size:16px; font-weight:900 }
+.sobre .que small{ display:block; font-size:12px; font-weight:700; opacity:.7; margin-top:2px;
+  /* ⚠ `balance` REPARTE LOS RENGLONES; sin él, «3 cartas, ninguna de nivel D»
+     dejaba la D sola en el segundo renglón, y una letra huérfana se lee como
+     un error de la pantalla, no como una línea larga. */
+  text-wrap:balance }
+.sobre .precio{
+  font-size:16px; font-weight:900; white-space:nowrap;
+  padding:6px 10px; border-radius:99px; background:var(--rosa-hondo); color:#fff;
+}
+/* Lo que no alcanza se ve que no alcanza, y NO se apaga del todo: un botón
+   gris sin explicación se lee como roto. Se queda legible y dice el precio. */
+.sobre:disabled{ opacity:.5; cursor:default }
+.sobre:disabled .precio{ background:#7A6A72 }
+.abierto{ margin-top:16px }
+.rejilla.chica{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.rejilla.chica img{ width:100%; border-radius:8px; display:block }
+/* La carta que ya tenías se marca: sin esto, abrir un sobre de repetidas se
+   siente igual que uno bueno y el jugador no entiende por qué no sube su
+   colección. */
+.rejilla.chica .repe{ position:relative; opacity:.62 }
+.rejilla.chica .repe::after{
+  content:'ya la tenías'; position:absolute; left:4px; right:4px; bottom:4px;
+  font-size:9px; font-weight:900; text-align:center; padding:2px;
+  border-radius:4px; background:rgba(0,0,0,.75); color:#fff;
+}
 .renglon-mano .rotulo{ margin:0 }
 .salir{
   width:28px; height:28px; min-height:0; padding:0; flex:0 0 auto;
@@ -358,11 +416,23 @@ body.fieltro .rot-rival{ color:var(--hueso) }
 .slot .carta{ width:100%; margin:0 }
 /* La carta cae en su hueco. Es el único momento del turno en que algo se
    mueve solo, y por eso se nota. */
+/* ⚠ LA CARTA CAE DE VERDAD. Carlos: «añade más transición al poner una
+   carta». Antes eran 260 ms de un desplazamiento de 26 px: se veía como un
+   parpadeo, no como poner una carta en la mesa. Ahora viene de más arriba,
+   girada, y ATERRIZA — con un rebote corto al final, que es lo que hace la
+   carta de verdad al soltarla sobre el fieltro. */
 @keyframes aterriza{
-  from{ transform:translateY(-26px) scale(.9); opacity:0 }
-  to  { transform:translateY(0) scale(1); opacity:1 }
+  0%  { transform:translateY(-90px) rotate(-14deg) scale(1.18); opacity:0 }
+  55% { opacity:1 }
+  70% { transform:translateY(6px) rotate(2deg) scale(.97) }
+  85% { transform:translateY(-4px) rotate(-1deg) scale(1.02) }
+  100%{ transform:translateY(0) rotate(0deg) scale(1); opacity:1 }
 }
-.slot .carta.cae{ animation:aterriza .26s cubic-bezier(.2,.8,.3,1) both }
+.slot .carta.cae{ animation:aterriza .62s cubic-bezier(.3,.7,.4,1) both }
+/* Y el hueco acusa el golpe: sin esto la carta llega a un sitio que no
+   reacciona, y se nota que es una imagen puesta encima. */
+@keyframes recibe{ 45%{ transform:scale(1.06) } 70%{ transform:scale(.985) } }
+.slot.puesto{ animation:recibe .62s ease-out }
 .linea-media{ display:grid; place-items:center }
 .linea-media span{
   font-size:10px; font-weight:900; letter-spacing:.18em;
@@ -436,9 +506,16 @@ body.fieltro .sin-esp{ color:var(--hueso) }
 .mano.abanico .carta.frente{
   z-index:50; transform:rotate(0deg) translateY(-14px) scale(1.06);
 }
+/* ⚠ FUERA LA LÍNEA ROSA. Carlos: «al seleccionar una carta se le hace una
+   línea rosa abajo que se ve horrible». Era un `box-shadow` sólido de 12 px
+   —el truco de sombra dura que funciona sobre el papel rosa de la portada— y
+   sobre el fieltro oscuro no se lee como profundidad: se lee como una barra
+   de color pegada al borde. Lo que marca la elegida es que SUBE y que se
+   enciende su contorno; la barra no aportaba nada. */
 .mano.abanico .carta.marcada{
   z-index:60; transform:rotate(0deg) translateY(-22px) scale(1.06);
-  box-shadow:0 12px 0 var(--rosa-hondo);
+  box-shadow:0 10px 22px rgba(0,0,0,.55);
+  outline:2px solid rgba(255,255,255,.55); outline-offset:1px;
 }
 .carta.dorso{
   background:var(--rosa-hondo); background-image:
@@ -511,11 +588,18 @@ body.fieltro .esp.castigo{ border-color:#C4564A; color:#FFAEA3 }
 body.fieltro .esp.puesta { background:var(--rosa); color:var(--tinta); border-color:var(--tinta) }
 
 /* ── avisos ── */
+/* ⚠ LA TINTA SE FIJA AQUÍ, NO SE HEREDA. Carlos: «no uses texto claro sobre
+   cuadro claro». Y era exactamente eso: el fondo del aviso es amarillo pálido
+   pero el color venía heredado de `body.fieltro`, que lo pone en hueso —claro
+   sobre claro, 1.4 de contraste—. Lo más irónico es que es el mismo defecto
+   que yo acababa de arreglar en el panel de daño: lo arreglé donde lo vi y lo
+   dejé vivo dos elementos más abajo. */
 .aviso{
   margin:10px 0 0; padding:10px 12px; border-radius:12px; font-size:14px;
   font-weight:700; line-height:1.4; border:3px solid var(--tinta);
-  background:#FFE9B8;
+  background:#FFE9B8; color:#2A1508;
 }
+body.fieltro .aviso{ color:#2A1508 }
 .aviso[hidden]{display:none}
 
 /* ── el duelo ── */
@@ -553,7 +637,10 @@ body.fieltro .golpe{ color:var(--hueso) }
   position:absolute; inset:0 auto 0 0; width:50%;
   background:linear-gradient(90deg,#2E7D4F,#4FC38A);              /* el mío */
   box-shadow:2px 0 0 rgba(255,255,255,.5);
-  transition:width .9s cubic-bezier(.5,-0.25,.4,1.25);
+  /* Mientras forcejea los tirones son secos y cortos; al ceder, la caída es
+     lenta. Que las dos fases tengan el mismo tiempo era la mitad del problema:
+     un forcejeo suave no es un forcejeo. */
+  transition:width .17s cubic-bezier(.35,.8,.4,1);
 }
 .pulso .marca{
   position:absolute; inset:0; display:grid; place-items:center;
@@ -566,6 +653,10 @@ body.fieltro .golpe{ color:var(--hueso) }
   20%{ transform:translateX(-3px) } 40%{ transform:translateX(3px) }
   60%{ transform:translateX(-2px) } 80%{ transform:translateX(2px) }
 }
+.pulso.luchando .fill{ transition:width .17s cubic-bezier(.35,.8,.4,1) }
+.pulso:not(.luchando) .fill{ transition:width .52s cubic-bezier(.5,-0.2,.35,1.2) }
+/* El temblor acompaña a los tirones, no sólo al final. */
+.pulso.luchando{ animation:forcejeo .19s ease-in-out infinite }
 .pulso.choca{ animation:forcejeo .45s ease-in-out }
 
 /* ── cortina de "pásale el teléfono" ── */
@@ -707,7 +798,8 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
   <div class="menu">
     <button class="btn fuerte ancho" data-modo="maquina">Jugar contra la máquina</button>
     <button class="btn ancho" data-modo="dos">Dos en este teléfono</button>
-        <button class="btn ancho" id="bCartas">Ver las 100 cartas</button>
+        <button class="btn ancho" id="bTienda">La tienda</button>
+    <button class="btn ancho" id="bCartas">Ver las 100 cartas</button>
     <button class="btn ancho" id="bReglas">Cómo se juega</button>
   </div>
   <p class="pie">El juego y su reglamento son de su autora.<br>Esta versión para
@@ -725,6 +817,43 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
      Se arma sola de `cartas.json`, así que el día que ella agregue o cambie
      una, aquí sale sin tocar código.
      ══════════════════════════════════════════════════════════════════════ -->
+<!-- ══ LA TIENDA ═══════════════════════════════════════════════════════════
+     Carlos: «haz que al ganar/perder se ganen puntos para comprar cartas».
+
+     Las monedas se ganan JUGANDO, no se compran con dinero: esto es un juego
+     de la casa para su hija y para la amiga que escribió el reglamento, no un
+     sitio para sacarle dinero a un niño. Que quede escrito aquí para que nadie
+     lo convierta en otra cosa sin darse cuenta.
+
+     ⚠ TODO VIVE EN EL APARATO. No hay cuenta, no hay servidor, no se manda
+     nada de nadie a ningún lado. Un juego para niños que pide correo antes de
+     dejar jugar es una recolección de datos con cartas encima. El precio es
+     que si cambia de teléfono empieza de cero, y ése es el trato correcto
+     mientras no haya una cuenta que él haya pedido. -->
+<main id="p-tienda" class="envoltura oculto">
+  <h2 class="titulillo">La tienda</h2>
+  <div class="cartera">
+    <span class="moneda">🪙</span>
+    <b id="tMonedas">0</b>
+    <span class="u">monedas</span>
+  </div>
+  <p class="pie" id="tLlevas" style="margin:2px 0 14px"></p>
+
+  <div class="sobres" id="tSobres"></div>
+
+  <div id="tAbierto" class="abierto oculto">
+    <p class="rotulo" id="tQueSalio">Te salieron</p>
+    <div class="rejilla chica" id="tSalidas"></div>
+    <button class="btn fuerte ancho" id="tCerrar" style="margin-top:12px">Ya</button>
+  </div>
+
+  <p class="pie" style="margin-top:18px; opacity:.7">
+    Las monedas se ganan jugando. No se compran con dinero, y nunca se van a
+    comprar con dinero.
+  </p>
+  <button class="btn ancho" data-ir="portada" style="margin-top:10px">Volver</button>
+</main>
+
 <main id="p-cartas" class="envoltura oculto">
   <h2 class="titulillo">La colección</h2>
   <p class="pie" style="margin:0 0 10px" id="cCuantas">Cargando la baraja…</p>
@@ -903,6 +1032,7 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
            a las cartas. -->
       <div class="renglon-mano">
         <p class="rotulo" id="rTuMano">Tu mano</p>
+        <button class="salir" id="bSonido" aria-label="Apagar o encender el sonido">♪</button>
         <button class="salir" id="bSalir" data-ir="portada" aria-label="Salir de la partida">✕</button>
       </div>
       <!-- ⚠ MI MAZO Y MI CEMENTERIO VAN PEGADOS AL ABANICO, no en una fila
@@ -967,9 +1097,11 @@ body.fieltro .pie, body.fieltro .pie a{color:var(--hueso); opacity:.9}
     <div class="tapete" style="text-align:center">
       <h2 id="finTitulo" style="margin:4px 0 8px; text-transform:uppercase; font-size:28px"></h2>
       <p id="finTexto" style="font-weight:700; margin:0 0 4px"></p>
+      <p class="paga" id="finPaga" hidden></p>
     </div>
     <div style="display:grid; gap:10px">
       <button class="btn fuerte ancho" id="bOtra">Otra partida</button>
+      <button class="btn ancho" id="bAlaTienda">Ir a la tienda</button>
       <button class="btn ancho" data-ir="portada">Al inicio</button>
     </div>
   </section>
@@ -1393,7 +1525,14 @@ let J = null;          /* el estado de la partida */
 let modo = 'maquina';  /* 'maquina' | 'dos' */
 let turnoDe = 'a';     /* de quién es la elección en curso (modo dos) */
 let elegidas = [];     /* cartas marcadas */
-let especial = null;   /* 'bono' | 'castigo' | null */
+let especial = null;   /* 'bono' | 'castigo' | null — lo que entiende el motor */
+/* ⚠ Y ADEMÁS CUÁL CARTA. El motor sólo necesita la CLASE —da igual con cuál de
+   tus tres +5 lo hagas—, pero la pantalla sí necesita saber cuál tocaste: con
+   dos bonificaciones en la mano, marcar por clase encendía LAS DOS y parecía
+   que ibas a jugar dos. El motor gastaba una sola, así que el resultado era
+   correcto y la pantalla mentía — que es peor que fallar, porque no se nota.
+   Lo cazó una prueba nueva, no yo mirando. */
+let especialId = null;
 let guardadaA = null;  /* la jugada de A mientras A espera a B */
 
 const NOMBRES = { maquina:{ a:'Tú', b:'Máquina' }, dos:{ a:'Jugador 1', b:'Jugador 2' },
@@ -1438,13 +1577,273 @@ function servidorSalas(){
 }
 const LLAVE_SECRETO = 'puercos_secreto_';
 
+/* ══ LA CARTERA Y LA TIENDA ════════════════════════════════════════════════
+   Carlos: «haz que al ganar/perder se ganen puntos para comprar cartas».
+
+   ⚠ NO SE COMPRA CON DINERO, Y NO ES UN DESCUIDO: es una decisión. Este juego
+   lo escribió una amiga de Carlos y lo juega su hija. Meterle una pasarela de
+   pago a un juego de cartas para niños es exactamente la clase de cosa que se
+   añade «sólo para probar» y se queda. Las monedas se ganan jugando y punto.
+
+   ⚠ Y TODO VIVE EN EL APARATO: ni cuenta, ni correo, ni servidor. El precio de
+   eso es que cambiar de teléfono empieza de cero, y es el trato correcto
+   mientras nadie haya pedido una cuenta. Si algún día se quiere que la
+   colección viaje, eso ES una decisión de privacidad de datos de un menor y la
+   toma una persona, no yo.
+
+   ⚠ SE LEE CON GUARDIA. `localStorage` truena entero en una ventana privada de
+   algunos navegadores —no devuelve vacío: LANZA— y un juego que no arranca por
+   no poder guardar monedas es un juego roto por una función secundaria. */
+const CARTERA = { monedas: 0, tengo: {} };
+
+function cargarCartera(){
+  try{
+    const m = localStorage.getItem('puercos_monedas');
+    CARTERA.monedas = Math.max(0, parseInt(m, 10) || 0);
+    CARTERA.tengo = JSON.parse(localStorage.getItem('puercos_tengo') || '{}') || {};
+  }catch(e){ CARTERA.monedas = 0; CARTERA.tengo = {}; }
+}
+function guardarCartera(){
+  try{
+    localStorage.setItem('puercos_monedas', String(CARTERA.monedas));
+    localStorage.setItem('puercos_tengo', JSON.stringify(CARTERA.tengo));
+  }catch(e){}
+}
+cargarCartera();
+
+/* Cuánto se gana. Perder también paga: un juego que sólo premia ganar castiga
+   dos veces al que va perdiendo, y el que va perdiendo es justo el que
+   necesita una razón para jugar otra. */
+const PAGA = { gana: 25, empata: 12, pierde: 8, porRonda: 1 };
+
+function pagarPartida(comoAcabo, rondas){
+  const base = comoAcabo === 'gana' ? PAGA.gana
+             : comoAcabo === 'empata' ? PAGA.empata : PAGA.pierde;
+  const ganado = base + Math.min(15, Math.max(0, rondas | 0) * PAGA.porRonda);
+  CARTERA.monedas += ganado;
+  guardarCartera();
+  return ganado;
+}
+
+/* Los sobres. El caro no da MÁS cartas: da cartas de mejor nivel, que es lo
+   que de verdad se quiere cuando ya tienes medio álbum. */
+const SOBRES = [
+  { id:'chico',  nombre:'Sobre sencillo', dice:'3 cartas de cualquier nivel',
+    precio:30,  cuantas:3, niveles:null },
+  { id:'bueno',  nombre:'Sobre bueno',    dice:'3 cartas, ninguna de nivel D',
+    precio:70,  cuantas:3, niveles:['S','A','B','C'] },
+  { id:'fino',   nombre:'Sobre fino',     dice:'2 cartas de nivel A o S',
+    precio:140, cuantas:2, niveles:['S','A'] },
+];
+
+function cuantasTengo(){ return Object.keys(CARTERA.tengo).length; }
+
+function abrirSobre(sobre){
+  if(!CAT.listo || !CAT.todas.length) return null;
+  if(CARTERA.monedas < sobre.precio) return null;
+  const bolsa = sobre.niveles
+    ? CAT.todas.filter(c => sobre.niveles.includes(c.nivel))
+    : CAT.todas.slice();
+  if(!bolsa.length) return null;
+  CARTERA.monedas -= sobre.precio;
+  const salen = [];
+  for(let i = 0; i < sobre.cuantas; i++){
+    const f = bolsa[Math.floor(Math.random() * bolsa.length)];
+    const clave = f.nombre + '·' + f.puntos;
+    const repetida = !!CARTERA.tengo[clave];
+    /* Una repetida NO se tira: devuelve monedas. Si no, abrir un sobre caro y
+       que salgan tres que ya tienes se siente a robo, y con razón. */
+    if(repetida) CARTERA.monedas += 4;
+    else CARTERA.tengo[clave] = 1;
+    salen.push({ f, repetida });
+  }
+  guardarCartera();
+  return salen;
+}
+
+function pintarTienda(){
+  $('#tMonedas').textContent = CARTERA.monedas;
+  const n = cuantasTengo();
+  const total = CAT.listo ? CAT.todas.length : 100;
+  $('#tLlevas').textContent = n
+    ? 'Llevas ' + n + ' de ' + total + ' cartas de la colección.'
+    : 'Todavía no tienes ninguna carta en tu colección.';
+
+  const caja = $('#tSobres');
+  caja.innerHTML = '';
+  for(const so of SOBRES){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sobre';
+    b.disabled = CARTERA.monedas < so.precio || !CAT.listo;
+    b.innerHTML = '<span class="cara"></span>'
+      + '<span class="que"><b>' + so.nombre + '</b><small>' + so.dice + '</small></span>'
+      + '<span class="precio">🪙 ' + so.precio + '</span>';
+    b.addEventListener('click', () => {
+      const salen = abrirSobre(so);
+      if(!salen) return;
+      son('poner');
+      const nuevas = salen.filter(x => !x.repetida).length;
+      setTimeout(() => son(nuevas ? 'ganas' : 'soltar'), 260);
+      $('#tQueSalio').textContent = nuevas
+        ? (nuevas === 1 ? 'Te salió 1 carta nueva' : 'Te salieron ' + nuevas + ' cartas nuevas')
+        : 'Todas repetidas — te devolvemos monedas';
+      const r = $('#tSalidas'); r.innerHTML = '';
+      for(const x of salen){
+        const cont = document.createElement('div');
+        if(x.repetida) cont.className = 'repe';
+        const im = document.createElement('img');
+        im.loading = 'lazy'; im.src = x.f.arte;
+        im.alt = x.f.nombre + ' · ' + x.f.puntos + ' puntos · nivel ' + x.f.nivel;
+        cont.appendChild(im);
+        r.appendChild(cont);
+      }
+      $('#tAbierto').classList.remove('oculto');
+      pintarTienda();
+    });
+    caja.appendChild(b);
+  }
+}
+
+/* ══ EL SONIDO ═════════════════════════════════════════════════════════════
+   Carlos: «ponle música sonidos etc».
+
+   ⚠ TODO SE GENERA, NO SE DESCARGA. Es la regla de la casa —lo que la empresa
+   usa lo construimos nosotros— y aquí además sale gratis en peso: un juego de
+   cartas con seis efectos en mp3 son cientos de kilobytes que el teléfono de
+   alguien paga con sus datos. Con osciladores son cero bytes y suenan igual de
+   bien para lo que hacen falta.
+
+   ⚠ Y NACE APAGADO HASTA QUE TOQUEN LA PANTALLA. Los navegadores no dejan
+   sonar nada antes del primer gesto —y hacen bien—, así que el contexto se
+   crea en el primer toque de verdad y no al cargar. Si no, la primera partida
+   se juega muda y parece que el sonido no sirve.
+
+   ⚠ EL INTERRUPTOR SE RECUERDA. Alguien que juega en el camión apaga el sonido
+   una vez; volvérselo a encender en cada partida es una falta de respeto. */
+const SON = {
+  ctx: null, maestro: null, musica: null, encendido: true, arrancado: false,
+};
+try{ SON.encendido = localStorage.getItem('puercos_sonido') !== 'no'; }catch(e){}
+
+function despertarSonido(){
+  if(SON.ctx || !SON.encendido) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return;                       /* navegador sin audio: se sigue jugando */
+  try{
+    SON.ctx = new AC();
+    SON.maestro = SON.ctx.createGain();
+    SON.maestro.gain.value = 0.18;      /* bajo a propósito: acompaña, no tapa */
+    SON.maestro.connect(SON.ctx.destination);
+  }catch(e){ SON.ctx = null; }
+}
+
+/* Un tono con su envolvente. Todo lo demás son combinaciones de esto. */
+function tono({ f = 440, a = 0, d = .18, tipo = 'sine', vol = .5, hasta = null }){
+  if(!SON.ctx || !SON.encendido) return;
+  const t = SON.ctx.currentTime + a;
+  const o = SON.ctx.createOscillator();
+  const g = SON.ctx.createGain();
+  o.type = tipo;
+  o.frequency.setValueAtTime(f, t);
+  if(hasta) o.frequency.exponentialRampToValueAtTime(Math.max(20, hasta), t + d);
+  /* Ataque de 8 ms: sin él, empezar un oscilador de golpe da un chasquido que
+     se oye más que la nota. */
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + .008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(SON.maestro);
+  o.start(t); o.stop(t + d + .05);
+}
+
+/* Ruido corto: es lo que hace que una carta suene a CARTA y no a pitido. */
+function roce({ d = .09, vol = .25, agudo = 2400 }){
+  if(!SON.ctx || !SON.encendido) return;
+  const n = Math.floor(SON.ctx.sampleRate * d);
+  const buf = SON.ctx.createBuffer(1, n, SON.ctx.sampleRate);
+  const dd = buf.getChannelData(0);
+  for(let i = 0; i < n; i++) dd[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = SON.ctx.createBufferSource(); src.buffer = buf;
+  const f = SON.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = agudo;
+  const g = SON.ctx.createGain(); g.gain.value = vol;
+  src.connect(f); f.connect(g); g.connect(SON.maestro);
+  src.start();
+}
+
+const SONIDOS = {
+  toque:   () => tono({ f:520, d:.07, tipo:'triangle', vol:.28 }),
+  elegir:  () => { tono({ f:660, d:.09, tipo:'triangle', vol:.32 });
+                   tono({ f:990, a:.05, d:.09, tipo:'sine', vol:.18 }); },
+  lista:   () => { tono({ f:740, d:.1, tipo:'square', vol:.16 });
+                   tono({ f:880, a:.08, d:.12, tipo:'square', vol:.14 }); },
+  soltar:  () => tono({ f:300, d:.09, tipo:'sine', vol:.22, hasta:190 }),
+  poner:   () => { roce({ d:.13, vol:.32, agudo:1800 });
+                   tono({ f:180, a:.05, d:.16, tipo:'sine', vol:.3, hasta:90 }); },
+  reparto: (i) => { roce({ d:.07, vol:.2, agudo:2600 });
+                    tono({ f:420 + i * 40, d:.06, tipo:'triangle', vol:.14 }); },
+  /* El forcejeo: un latido por tirón, cada vez más grave. */
+  tiron:   (i) => tono({ f:150 - i * 12, d:.11, tipo:'sawtooth', vol:.2, hasta:80 }),
+  ganas:   () => { [523, 659, 784, 1047].forEach((f, i) =>
+                     tono({ f, a:i * .07, d:.22, tipo:'triangle', vol:.3 })); },
+  pierdes: () => { [392, 330, 262].forEach((f, i) =>
+                     tono({ f, a:i * .1, d:.3, tipo:'sawtooth', vol:.26, hasta:f * .8 })); },
+  empate:  () => { tono({ f:440, d:.16, tipo:'triangle', vol:.24 });
+                   tono({ f:440, a:.18, d:.16, tipo:'triangle', vol:.24 }); },
+  victoria:() => { [523, 659, 784, 1047, 1319].forEach((f, i) =>
+                     tono({ f, a:i * .11, d:.4, tipo:'triangle', vol:.34 })); },
+  derrota: () => { [330, 294, 247, 196].forEach((f, i) =>
+                     tono({ f, a:i * .16, d:.45, tipo:'sine', vol:.3 })); },
+};
+function son(cual, arg){
+  despertarSonido();
+  try{ if(SONIDOS[cual]) SONIDOS[cual](arg); }catch(e){}
+}
+
+/* ── LA MÚSICA ─────────────────────────────────────────────────────────────
+   Un bajo de cuatro notas que da vueltas, muy por debajo de los efectos. No
+   es una canción: es lo que hace que el silencio entre jugadas no se sienta
+   como que el juego se colgó. Se apaga fuera de la mesa. */
+function musica(encender){
+  despertarSonido();
+  if(!SON.ctx) return;
+  if(!encender){
+    if(SON.musica){ clearInterval(SON.musica); SON.musica = null; }
+    return;
+  }
+  if(SON.musica) return;
+  const linea = [98, 110, 87, 110, 98, 123, 110, 98];
+  let i = 0;
+  const paso = () => {
+    if(!SON.encendido) return;
+    tono({ f: linea[i % linea.length], d:.42, tipo:'triangle', vol:.09 });
+    /* una quinta arriba cada cuatro tiempos, para que no sea un zumbido */
+    if(i % 4 === 0) tono({ f: linea[i % linea.length] * 3, a:.2, d:.2, tipo:'sine', vol:.035 });
+    i++;
+  };
+  paso();
+  SON.musica = setInterval(paso, 460);
+}
+
+function alternarSonido(){
+  SON.encendido = !SON.encendido;
+  try{ localStorage.setItem('puercos_sonido', SON.encendido ? 'si' : 'no'); }catch(e){}
+  const b = $('#bSonido');
+  if(b){ b.textContent = SON.encendido ? '♪' : '♪̸'; b.classList.toggle('apagado', !SON.encendido); }
+  if(!SON.encendido) musica(false);
+  else { despertarSonido(); son('toque'); if(!$('#p-mesa').classList.contains('oculto')) musica(true); }
+}
+
 function pantalla(cual){
-  for(const p of ['portada','reglas','sala','mesa','cartas'])
+  for(const p of ['portada','reglas','sala','mesa','cartas','tienda'])
     $('#p-' + p).classList.toggle('oculto', p !== cual);
   /* El fieltro se enciende DONDE SE MIRAN CARTAS —la mesa y la colección— y en
      ningún otro lado. La portada, las reglas y la sala siguen rosas: ahí el
      rosa es la marca, no un estorbo. */
-  document.body.classList.toggle('fieltro', cual === 'mesa' || cual === 'cartas');
+  document.body.classList.toggle('fieltro',
+    cual === 'mesa' || cual === 'cartas' || cual === 'tienda');
+  /* La música sólo vive en la mesa: en la portada estorba, y en la colección
+     alguien está leyendo cartas. */
+  musica(cual === 'mesa');
   window.scrollTo(0, 0);
 }
 function fase(cual){
@@ -1686,7 +2085,9 @@ function pintarMano(){
     /* La clase se va sola al aterrizar: mientras `llega` esté puesta, su
        fotograma final gana sobre `.frente` y `.marcada`. */
     b.addEventListener('animationend', () => b.classList.remove('llega'), { once:true });
-    b.style.animationDelay = (m.children.length * 45) + 'ms';
+    const cuantasVan = m.children.length;
+    b.style.animationDelay = (cuantasVan * 45) + 'ms';
+    if(!quieto()) setTimeout(() => son('reparto', cuantasVan), cuantasVan * 45);
     m.appendChild(b);
   }
   ajustarEncime(m, total);
@@ -1718,7 +2119,7 @@ function ajustarEncime(m, total){
    mano no cambiaba. */
 function pintarEstadoDe(b){
   const esp = !!b.dataset.esp;
-  const puesta = esp ? especial === b.dataset.esp
+  const puesta = esp ? (especial === b.dataset.esp && especialId === b.dataset.id)
                      : elegidas.some(x => x.id === b.dataset.id);
   b.classList.toggle('marcada', puesta);
   /* Los toques que lleva: la carta elegida enseña cuántos le faltan para
@@ -1878,8 +2279,9 @@ document.addEventListener('click', (e) => {
   if(e.target.closest('#mMano .carta')) return;
   if(e.target.closest('button')) return;      /* los botones hacen lo suyo */
   if(!elegidas.length && !especial) return;
-  elegidas = []; especial = null; toques = 0;
+  elegidas = []; especial = null; especialId = null; toques = 0;
   for(const o of $('#mMano').querySelectorAll('.carta.frente')) o.classList.remove('frente');
+  son('soltar');
   pintarMano(); pintarBotones();
 });
 
@@ -1898,7 +2300,23 @@ function marcar(c){
       avisar('Sobre una combinación no va ninguna especial.');
       return;
     }
-    especial = especial === c.esp ? null : c.esp;
+    /* Tocar OTRA especial de la misma clase cambia cuál se usa, no la apaga. */
+    const laMisma = especial === c.esp && especialId === c.id;
+    especial = laMisma ? null : c.esp;
+    especialId = laMisma ? null : c.id;
+    /* ⚠ AL SOLTARLA HAY QUE BAJARLA. Carlos: «si selecciono mi carta y la de
+       bonificación y deselecciono la de bonificación se queda flotando».
+       Tenía razón y el motivo era una clase huérfana: `.frente` la pone el
+       manejador del toque y sólo la quitaba el toque SIGUIENTE sobre otra
+       carta. Al soltar la especial se iba `.marcada` pero `.frente` se
+       quedaba, así que la carta bajaba a media altura y ahí se quedaba —de
+       ahí que «si deselecciono la otra vuelve a la normalidad»: la otra sí
+       limpiaba el `.frente` de todas. Ahora la que se suelta se baja ella. */
+    if(!especial){
+      const suya = $('#mMano').querySelector('.carta[data-id="' + c.id + '"]');
+      if(suya) suya.classList.remove('frente');
+    }
+    son(especial ? 'elegir' : 'soltar');
     toques = 0;
     pintarMano(); pintarBotones();
     return;
@@ -1912,6 +2330,7 @@ function marcar(c){
        expliquen — y así el mismo gesto no significa dos cosas contrarias. */
     toques++;
     if(toques >= PARA_JUGAR){ intentarJugar(); return; }
+    son('lista');
     pintarMano(); pintarBotones();
     return;
   }
@@ -1927,7 +2346,8 @@ function marcar(c){
     else elegidas = [c];
   }
   toques = 1;
-  if(elegidas.length === 2) especial = null;   /* regla 8: no van juntas */
+  if(elegidas.length === 2){ especial = null; especialId = null; }   /* regla 8 */
+  son(elegidas.length === 2 ? 'lista' : 'elegir');
   pintarMano(); pintarBotones();
 }
 
@@ -2056,6 +2476,7 @@ function ponerEnMesa(donde, cartas){
     el.classList.add('cae');
     s.appendChild(el);
   }
+  if(cartas.length) son('poner');
 }
 function limpiarMesa(){
   for(const id of ['#mSlotA', '#mSlotB']){
@@ -2098,17 +2519,47 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
   if(quieto()){
     fill.style.width = destino.toFixed(1) + '%';
   } else {
-    /* Dos cuadros de margen para que el navegador dibuje el 50 % ANTES de
-       cambiarlo: sin esto, la transición no tiene de dónde salir y la barra
-       aparece ya puesta en su sitio. */
+    /* ⚠ FORCEJEA DE VERDAD, NO SE DESLIZA. Carlos: «haz más dramático el
+       forcejeo, o sea que luche hacia ambos lados y luego ceda hacia el
+       perdedor». La primera versión iba del 50 % al destino en un solo
+       movimiento, y un solo movimiento no es un forcejeo: es un resultado
+       animado.
+
+       Ahora son cuatro tirones que se van pasando —cada uno más corto que el
+       anterior, y el ÚLTIMO exagerado hacia el lado CONTRARIO al que va a
+       ganar, para que la caída final se sienta como que cede—. La amplitud
+       sale de lo cerrada que estuvo la ronda: un 96 contra un 23 casi no
+       forcejea, y un 65 contra un 66 se pelea hasta el final. Eso cuenta la
+       ronda sin una palabra, que es de lo que se trataba.
+
+       Dos cuadros de margen antes del primer tirón: sin ellos el navegador no
+       llega a dibujar el 50 % y la barra aparece ya puesta en su sitio. */
+    const cerrado = 1 - Math.min(1, Math.abs(destino - 50) / 50);   /* 0 paliza · 1 empate */
+    const tiron = 6 + cerrado * 20;
+    const pasos = [
+      { a: 50 + tiron,       ms: 0   },
+      { a: 50 - tiron * 0.8, ms: 190 },
+      { a: 50 + tiron * 0.5, ms: 360 },
+      /* el último empuje va HACIA EL QUE VA A PERDER, para que ceder se note */
+      { a: destino > 50 ? 50 - tiron * 0.35 : 50 + tiron * 0.35, ms: 510 },
+      { a: destino,          ms: 660 },
+    ];
+    pulso.classList.add('luchando');
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      fill.style.width = destino.toFixed(1) + '%';
+      pasos.forEach((p, i) => setTimeout(() => {
+        fill.style.width = Math.max(2, Math.min(98, p.a)).toFixed(1) + '%';
+        son('tiron', i);
+      }, p.ms));
     }));
-    setTimeout(() => pulso.classList.add('choca'), 780);
+    setTimeout(() => { pulso.classList.remove('luchando'); pulso.classList.add('choca'); }, 1180);
   }
 
   const g = $('#dGolpe');
+  /* El sonido llega DESPUÉS del forcejeo, no a la vez: si suena el golpe
+     mientras la barra todavía pelea, se sabe el resultado antes de verlo. */
+  const cuandoCede = quieto() ? 0 : 700;
   if(h.dano === 0){
+    setTimeout(() => son('empate'), cuandoCede);
     etq.textContent = 'EMPATE';
     g.innerHTML = '<span class="n">' + h.a.puntos + ' = ' + h.b.puntos + '</span>'
                 + 'Las dos valen lo mismo. Nadie recibe daño.';
@@ -2122,6 +2573,7 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
     const tope = h.crudo > MOTOR.DANO_TOPE
       ? '<small>La diferencia era ' + h.crudo + ', pero el daño nunca pasa de '
         + MOTOR.DANO_TOPE + '.</small>' : '';
+    setTimeout(() => son(h.perdio === 'a' ? 'pierdes' : 'ganas'), cuandoCede);
     etq.textContent = h.perdio === 'a' ? '◀ PIERDES' : 'GANAS ▶';
     /* ⚠ «Recibes el golpe de vida» — así quedó al pegar la frase con el sufijo,
        y no quiere decir nada. La frase ya termina en «el golpe»; lo que faltaba
@@ -2146,6 +2598,17 @@ function mostrarDuelo(antes, despues, jugadaA, jugadaB){
 function terminar(){
   fase('Fin');
   const gane = J.acabo === 'a';
+  son(J.acabo === 'empate' ? 'empate' : gane ? 'victoria' : 'derrota');
+  /* ⚠ SE PAGA UNA SOLA VEZ POR PARTIDA. `terminar()` se puede llamar más de
+     una vez —en línea llega un estado por cada teléfono— y pagar en cada
+     llamada sería una máquina de monedas. La marca va en el estado, que se
+     tira al empezar la siguiente. */
+  let ganado = 0;
+  if(J && !J.__pagada){
+    J.__pagada = true;
+    ganado = pagarPartida(J.acabo === 'empate' ? 'empata' : gane ? 'gana' : 'pierde',
+                          (J.historia || []).length);
+  }
   if(J.acabo === 'empate'){
     $('#finTitulo').textContent = 'Empate';
     $('#finTexto').textContent = 'Los dos quedaron igual. Ni modo.';
@@ -2161,6 +2624,15 @@ function terminar(){
   if(J.porCartas){
     $('#finTexto').textContent += ' Se acabaron las cartas, así que gana el que tenía más vida.';
   }
+  /* Lo que se ganó se DICE aquí, donde acaba de pasar. Enterarse de las
+     monedas al entrar a la tienda es enterarse tarde: la recompensa tiene que
+     llegar pegada a la partida que la ganó. */
+  const cob = $('#finPaga');
+  if(cob){
+    cob.hidden = !ganado;
+    if(ganado) cob.innerHTML = '🪙 <b>+' + ganado + '</b> monedas · llevas <b>'
+      + CARTERA.monedas + '</b>';
+  }
 }
 
 /* ── la cortina de "pásale el teléfono" ───────────────────────────────────
@@ -2175,7 +2647,7 @@ function cortina(quien, texto, luego){
 
 /* ── el turno ── */
 function pedirJugada(){
-  elegidas = []; especial = null;
+  elegidas = []; especial = null; especialId = null;
   fase('Elegir');
   limpiarMesa();
   toques = 0;
@@ -2438,7 +2910,18 @@ function pintarColeccion(){
   }
 }
 
+/* El interruptor del sonido, y su estado al arrancar. */
+$('#bSonido').addEventListener('click', (e) => { e.stopPropagation(); alternarSonido(); });
+if(!SON.encendido){ $('#bSonido').textContent = '♪̸'; $('#bSonido').classList.add('apagado'); }
+
 $('#cLupa').addEventListener('click', () => $('#cLupa').classList.add('oculto'));
+$('#bTienda').addEventListener('click', () => {
+  pantalla('tienda'); $('#tAbierto').classList.add('oculto'); pintarTienda();
+});
+$('#tCerrar').addEventListener('click', () => $('#tAbierto').classList.add('oculto'));
+$('#bAlaTienda').addEventListener('click', () => {
+  pantalla('tienda'); $('#tAbierto').classList.add('oculto'); pintarTienda();
+});
 $('#bCartas').addEventListener('click', () => { pantalla('cartas'); pintarColeccion(); });
 $('#bOtra').addEventListener('click', () => {
   if(modo === 'linea'){

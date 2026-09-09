@@ -198,6 +198,28 @@
         "dice que no está publicado"
       ],
       "salioDe": "Carlos: «Guerra de puercos tampoco está actualizado en mi central». El juego estaba idéntico en producción y en la rama; lo que estaba mal era una constante que apuntaba a puercos (404 en todo) en vez de ppuercos (200 y da códigos)."
+    },
+    {
+      "id": "el-apunte-que-avisa-de-estados-viejos-y-esta-viejo",
+      "titulo": "El apunte que existe para avisar de estados viejos llevaba una semana viejo",
+      "gravedad": "alta",
+      "sintoma": "Repites en un reporte que algo está roto —«el servidor no está publicado»— y llevaba días arreglado. Lo peor: el apunte del que lo copiaste fue escrito justo para cazar ese tipo de error.",
+      "causa": "Un pendiente se escribe con una medición del día que se escribió, y después se lee como si fuera el estado de hoy. Nadie vuelve a correr el comando porque el apunte «ya lo dice».",
+      "porque": "Un apunte con fecha, negritas y un comando de comprobación se lee como autoridad, no como fotografía. Y mientras más trabajo costó escribirlo, más se cree.",
+      "arreglo": "Antes de repetir un pendiente en un reporte, se vuelve a medir. Si sale distinto, se corrige el apunte EN ESE MOMENTO y se dice qué cambió y desde cuándo. Un pendiente sin fecha de última medición no es un pendiente, es un rumor.",
+      "comoCazarlo": "Cada pendiente lleva escrito el renglón que lo comprueba y la fecha en que se corrió por última vez. Si la fecha tiene más de unos días, se corre antes de citarlo.",
+      "consejo": "Los apuntes de estado caducan más rápido que el código. Los de causa —por qué pasó, cómo se caza— no caducan; ésos son los que vale la pena guardar largo.",
+      "salioDe": "CLAUDE.md · decía «el servidor de Guerra de Puercos no está publicado» y llevaba días contestando {\"bien\":true}",
+      "senales": [
+        "el apunte dice que está roto",
+        "segun mis notas eso falla",
+        "llevaba dias arreglado",
+        "¿desde cuando esta asi?"
+      ],
+      "vecinas": [
+        "verificar-lo-publicado",
+        "la-prueba-intermitente-ensena-a-ignorar-los-rojos"
+      ]
     }
   ]
 }
