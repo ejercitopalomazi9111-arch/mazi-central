@@ -6,10 +6,25 @@ sacadas del WooCommerce del cliente y las imagenes van embebidas como data URI
 (el visor bloquea imagenes externas). Editar eso a mano seria imposible.
 Los datos entran por activos/, el diseno vive aqui.
 """
-import json, re, pathlib
+import base64, json, re, pathlib
 
-RAIZ = pathlib.Path(__file__).resolve().parent.parent
-ACT  = RAIZ / 'activos'
+# ⚠ ESTE `parent.parent` DEJA EL GENERADOR MUERTO, Y YA VOLVIÓ UNA VEZ.
+# Cuando el taller vivía en `scripts/`, subir dos niveles caía en la carpeta del
+# proyecto y `activos/` estaba ahí. Al mudarlo a `taller/` los activos se
+# mudaron CON él, pero el cálculo se quedó igual: apunta a `toydarians/activos`,
+# que no existe.
+#     python3 toydarians/taller/armar.py
+#     FileNotFoundError: .../toydarians/activos/catalogo-limpio.json
+# O sea que el sitio commiteado NO SE PUEDE REGENERAR — y no se nota, porque el
+# index.html ya generado se sirve perfecto. Lo roto es la única forma de volver
+# a hacerlo.
+#
+# Se arregló el 9 de septiembre y volvió el mismo día, al empujarse una copia de
+# `armar.py` escrita antes de ese arreglo. Si vuelve a aparecer: no es un
+# despiste nuevo, es que alguien trabajó sobre una base vieja.
+AQUI = pathlib.Path(__file__).resolve().parent
+RAIZ = AQUI.parent
+ACT  = AQUI / 'activos'
 cat  = json.loads((ACT / 'catalogo-limpio.json').read_text(encoding='utf-8'))
 img  = json.loads((ACT / 'assets.json').read_text(encoding='utf-8'))
 
@@ -59,7 +74,23 @@ CSS = r"""
 *{box-sizing:border-box}
 body{margin:0;background:var(--negro);color:var(--hueso);
   font:400 16px/1.6 var(--texto);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-img{display:block;max-width:100%}
+/* ⚠ EL `height:auto` NO ES ADORNO: SIN EL EL LOGO SE DEFORMA.
+   Lo reporto Carlos — «el logo cuando carga se ve demasiado recortado en la
+   parte de abajo». No estaba recortado: estaba ESTIRADO a lo alto.
+
+   Los `<img>` llevan `width="760" height="128"` en el atributo, y eso esta BIEN
+   puesto: reserva el hueco y evita que el contenido salte al cargar. Pero
+   cuando el CSS toca SOLO un eje (`.cabecera img{width:62%}`), el navegador se
+   queda con el alto del atributo: pintaba 219 x 128 cuando le tocaban 219 x 37.
+   El aurebesh de abajo, aplastado contra el borde, se leia como un recorte.
+
+   Proporcion natural 760/128 = 5.94; pintada 219/128 = 1.71. La barra usa
+   `height` + `width:auto` y por eso ESA siempre estuvo bien: el mismo logo,
+   correcto en un sitio y roto en otro.
+
+   Va en la regla general y no en `.cabecera` a proposito: asi muere la clase
+   entera de defecto para cualquier imagen a la que alguien toque un solo eje. */
+img{display:block;max-width:100%;height:auto}
 a{color:inherit}
 ::selection{background:var(--amarillo);color:#0A0A0B}
 :focus-visible{outline:2px solid var(--amarillo);outline-offset:3px}
@@ -67,8 +98,14 @@ a{color:inherit}
   container-type:inline-size}
 h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;
   letter-spacing:-.045em;margin:0;text-wrap:balance;line-height:1.02}
-h1{font-size:clamp(34px,7.6vw,106px)}
-h1{font-size:min(clamp(34px,7.6vw,106px),16cqw)}
+/* ⚠ EL MINIMO ERA 34 px Y ESO ES LO QUE CARLOS LLAMO «SE VE CHIQUITO».
+   En un telefono de 390 el `7.6vw` da 29.6, asi que ganaba el suelo de 34 —
+   tamano de subtitulo para el titular de una portada, y el telefono es donde
+   se mira esto. Sube a 44 de suelo y 12vw de pendiente: 46.8 px reales en 390.
+   El `min(...,16cqw)` se queda: es el freno que impide que Bungee, que es muy
+   ancha, se salga de su columna. */
+h1{font-size:clamp(44px,12vw,106px)}
+h1{font-size:min(clamp(44px,12vw,106px),16cqw)}
 h2{font-size:clamp(21px,3.4vw,44px)}
 h2{font-size:min(clamp(21px,3.4vw,44px),10cqw)}
 h3{font-size:clamp(14px,1.6vw,18px);letter-spacing:-.035em}
@@ -199,6 +236,29 @@ CSS += r"""
   overflow:hidden;text-decoration:none;color:inherit;display:flex;
   flex-direction:column;transition:border-color .25s,transform .3s cubic-bezier(.2,.7,.3,1)}
 .pieza:hover{border-color:var(--amarillo);transform:translate3d(0,-4px,0)}
+/* ══════════════════ S · Sylcred ══════════════════
+   ⚠ EN UN TELEFONO NO HAY `:hover`. Todo el trabajo de la ficha estaba en el
+   unico estado que el visitante de Carlos —que mira desde el iPhone— nunca va
+   a ver. El que importa ahi es `:active`, y no existia: al tocar, la tarjeta no
+   respondia, y una tarjeta que no responde se toca dos veces porque nadie sabe
+   si registro. El hundido es deliberadamente pequeno y rapido: es acuse de
+   recibo, no una animacion. */
+.pieza{transition:border-color .25s,transform .3s cubic-bezier(.2,.7,.3,1),box-shadow .3s ease}
+.pieza:active{transform:translate3d(0,-1px,0) scale(.985);transition-duration:.09s}
+.pieza:focus-visible{outline:none;border-color:var(--amarillo);
+  box-shadow:0 0 0 2px var(--amarillo),0 0 0 6px rgba(250,247,0,.22)}
+/* La foto se acerca dentro de su marco: se mueve el CONTENIDO, no la caja, que
+   es lo que hace que la tarjeta se sienta una ventana. Solo `transform` — el
+   `drop-shadow` que ya tiene NO se anima, que es de lo mas caro por fotograma. */
+.foto img{transition:transform .45s cubic-bezier(.2,.7,.3,1)}
+.pieza:hover .foto img{transform:scale(1.05)}
+/* El «+4» decia que hay galeria y era una etiqueta muerta. */
+.foto .mas{transition:transform .28s cubic-bezier(.2,1.3,.32,1),
+                     background-color .28s,color .28s,border-color .28s}
+.pieza:hover .mas,.pieza:focus-visible .mas{transform:translateY(-3px);
+  background:var(--amarillo);color:#0A0A0B;border-color:var(--amarillo)}
+.b:active{transform:scale(.972);transition-duration:.09s}
+/* ══════════════════ /S ══════════════════ */
 .foto{display:block;position:relative;aspect-ratio:1/1;background-color:var(--luz);
   background-image:radial-gradient(72% 60% at 50% 42%,
     color-mix(in srgb,var(--luz) 88%,#FFF) 0%,var(--luz) 44%,
@@ -502,7 +562,32 @@ footer{background:#000;border-top:1px solid var(--linea);
 
 /* ---- Movimiento ------------------------------------------------------------- */
 @media (scripting: enabled){
-  .revelar{transform:translate3d(0,18px,0);transition:transform .7s cubic-bezier(.2,.7,.25,1)}
+  .revelar{transform:translate3d(0,34px,0);
+    transition:transform 640ms cubic-bezier(.2,1.3,.32,1)}
+  /* ══════════════════ S · Sylcred ══════════════════
+     Carlos: «que las cosas aparezcan de modo mas aestetic y como si fuesen
+     energicas las apariciones». Lo que habia era correcto y timido: 18 px con
+     una curva que solo desacelera, y solo TRES elementos lo llevaban.
+     La energia no sale de acelerarlo, sale de tres cosas:
+       1 RECORRIDO — 18 px no se ven, 34 si. Lo que se percibe como fuerza es la
+         distancia, no la duracion.
+       2 SOBREPASO — la curva pasa de largo y regresa (el 1.3). Un movimiento
+         que se acomoda se lee como que traia inercia; el que solo frena parece
+         empujado.
+       3 ESCALONADO — los hermanos entran uno tras otro, no en bloque.
+     ⚠ NADA DE OPACITY SOBRE TEXTO: un texto a media opacidad es un texto con el
+     contraste roto mientras dura. La opacidad se reserva para cajas con foto.
+     ⚠ EL TOPE DEL ESCALONADO ES A PROPOSITO: sin el, 47 fichas pondrian la
+     ultima tres segundos despues de entrar en pantalla. Se corta en 8. */
+  .s-rev{transform:translate3d(0,34px,0);
+    transition:transform 640ms cubic-bezier(.2,1.3,.32,1);
+    transition-delay:calc(var(--s-i,0) * 70ms)}
+  .s-rev.s-dentro{transform:none}
+  .s-rev.s-caja{opacity:.001;transform:translate3d(0,34px,0) scale(.975);
+    transition:transform 640ms cubic-bezier(.2,1.3,.32,1),opacity 400ms ease-out;
+    transition-delay:calc(var(--s-i,0) * 70ms)}
+  .s-rev.s-caja.s-dentro{opacity:1;transform:none}
+  /* ══════════════════ /S ══════════════════ */
   .revelar.dentro{transform:none}
   .pieza-eje{transform:translateX(-1px) scaleY(0);transform-origin:bottom}
   .dibujado .pieza-eje{transform:translateX(-1px) scaleY(1);
@@ -513,6 +598,13 @@ footer{background:#000;border-top:1px solid var(--linea);
   *,*::before,*::after{animation:none!important;transition:none!important}
   .revelar,.figura,.carton,.burbuja img,.lustre{transform:none!important}
   .pieza-eje{transform:translateX(-1px)!important}
+  /* ══════ S ══════ */
+  .s-rev,.s-rev.s-caja{transform:none!important;opacity:1!important}
+  /* Los estados siguen EXISTIENDO: se quita el movimiento, no la respuesta.
+     Un boton que no acusa el toque no es accesible, es mudo. */
+  .pieza:active,.b:active,.pieza:hover .foto img,
+  .pieza:hover .mas,.pieza:focus-visible .mas{transform:none!important}
+  /* ══════ /S ══════ */
 }
 """
 
@@ -768,9 +860,46 @@ LOGO = img['logo']
 
 CSS = CSS.replace('AUREBESH_URI', img['aurebesh']['uri'])
 
+
+# ── LA TIPOGRAFIA DE LA IDENTIDAD VA EMPOTRADA, NO PEDIDA ────────────────────
+# Bungee entraba por `<link>` a fonts.googleapis.com. Se midio en un navegador
+# de verdad y NO CARGABA: el titular salia en la sans del sistema, porque el
+# repuesto `'Arial Black'` tampoco existe en todos lados y la pila caia hasta
+# `system-ui`.
+#
+# Se ve de un golpe en la seccion del carton: el logo del blister esta en la
+# letra correcta —es imagen— y el titular de al lado se veia de plantilla. La
+# identidad del cliente vive en esa letra; pedirsela a un tercero es apostarla
+# contra su red.
+#
+# ⚠ SOLO BUNGEE, y es a proposito. Familjen Grotesk y JetBrains Mono siguen por
+# link: empotrarlas sumaria ~200 KB a un archivo que ya pesa 340, y en telefono
+# eso se paga. La dependencia BAJA pero no desaparece, y decirlo asi es mas util
+# que presumir un «cero dependencias» que no seria cierto.
+#
+# Licencia OFL, que permite empotrar: activos/fuentes/LICENCIA-BUNGEE.md
+def _fuente(nombre, rango):
+    datos = base64.b64encode((ACT / 'fuentes' / nombre).read_bytes()).decode()
+    return ("@font-face{font-family:'Bungee';font-style:normal;font-weight:400;"
+            "font-display:swap;"
+            f"src:url(data:font/woff2;base64,{datos}) format('woff2');"
+            f"unicode-range:{rango}}}")
+
+BUNGEE_EMPOTRADA = (
+    _fuente('bungee-ext.woff2',
+            'U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,'
+            'U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,'
+            'U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF')
+    + _fuente('bungee-latin.woff2',
+              'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,'
+              'U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,'
+              'U+2212,U+2215,U+FEFF,U+FFFD')
+)
+
 DOC = f"""<title>Toydarians · The Vintage Collection</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>{BUNGEE_EMPOTRADA}</style>
 <style>{CSS}</style>
 
 {g_intro()}
@@ -923,6 +1052,68 @@ JS = r"""
   } else {
     document.querySelectorAll('.revelar').forEach(function(n){ n.classList.add('dentro'); });
   }
+
+  /* ══════════════════ S · Sylcred ══════════════════
+     El scroll energico que pidio Carlos. Se engancha desde AQUI y no desde el
+     HTML a proposito: asi no toco una sola etiqueta del generador. Sin
+     JavaScript no pasa nada de esto y la pagina se ve entera — el CSS vive
+     dentro de `@media (scripting: enabled)`.
+
+     ⚠ LOS NOMBRES ESTAN SACADOS DEL HTML, NO SUPUESTOS. Una version anterior
+     buscaba `.celda, .ficha, .tarjeta, .sobre`: cuatro nombres razonables y
+     ninguno existe aqui. Un selector que no encuentra nada NO FALLA — devuelve
+     lista vacia y sigue. Se revelaba el indice y la vitrina entera se quedaba
+     quieta, con la compuerta en verde y sin un error en consola.
+
+     ⚠ Y EL REVELADO SE APARTA AL TERMINAR. Si las fichas se quedan con
+     `s-rev s-dentro` para siempre, `.s-rev.s-dentro{transform:none}` empata en
+     especificidad con `.pieza:hover{transform:...}` y gana por ir despues: la
+     animacion de entrada MATA el hover de la ficha. Paso, y no se ve de ninguna
+     forma que no sea leer el `transform` computado con el raton encima. */
+  if ('IntersectionObserver' in window) {
+    var TOY = window.TOY = window.TOY || {};
+    TOY.s = TOY.s || {};
+    var vistos = new Set();
+    ['.pieza', '.reng'].forEach(function(sel){
+      var porPadre = new Map();
+      document.querySelectorAll(sel).forEach(function(n){
+        if (vistos.has(n) || n.closest('.cartel')) return;   // la portada no
+        vistos.add(n);
+        var pa = n.parentElement, i = porPadre.get(pa) || 0;
+        porPadre.set(pa, i + 1);
+        n.style.setProperty('--s-i', Math.min(i, 8));        // tope: ver el CSS
+        n.classList.add('s-rev');
+        if (n.querySelector('img, picture, canvas')) n.classList.add('s-caja');
+      });
+    });
+
+    var soltar = function(n){
+      n.classList.remove('s-rev', 's-caja', 's-dentro');
+      n.style.removeProperty('--s-i');
+    };
+    var ojoS = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if (!e.isIntersecting) return;
+        var n = e.target;
+        n.classList.add('s-dentro');
+        ojoS.unobserve(n);
+        var listo = false;
+        var fin = function(ev){
+          if (listo || (ev && ev.target !== n)) return;
+          listo = true;
+          n.removeEventListener('transitionend', fin);
+          soltar(n);
+        };
+        n.addEventListener('transitionend', fin);
+        /* El plazo existe porque `transitionend` NO dispara si el elemento ya
+           entro en su posicion final. Sin el, justo esos quedarian clavados. */
+        setTimeout(fin, 1400);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
+    document.querySelectorAll('.s-rev').forEach(function(n){ ojoS.observe(n); });
+    TOY.s.revelados = vistos.size;
+  }
+  /* ══════════════════ /S ══════════════════ */
 
   if (quieto) return;
 
@@ -1347,19 +1538,26 @@ if n != 1:
     raise SystemExit(f'el motor quedo con {n} cierres de bloque, debe tener 1')
 
 DOC += f"<script>{JS}</script>\n"
-salida = RAIZ / 'sitio.html'
+salida = AQUI / 'sitio.html'   # intermedio de trabajo: vive en taller/, que no se publica
 salida.write_text(DOC, encoding='utf-8')
 
 cabeza, cuerpo = DOC.split('\n<div class="barra">', 1)
-publico = RAIZ / 'publico'
-publico.mkdir(exist_ok=True)
-(publico / 'index.html').write_text(
+# ⚠ ESTO ESCRIBIA EN `publico/index.html` Y LO QUE SE PUBLICA ES `index.html`.
+# Entre los dos habia un copiado A MANO, y ese es el hueco por el que el
+# generador y el archivo servido se separan: se regenera, sale verde, y la
+# pagina publicada sigue siendo la de antes. Es el mismo defecto que nos costo
+# el `todo.json` del Cerebro —lo escrito contra lo servido— con otro disfraz.
+#
+# Se arreglo el 9 de septiembre y volvio el mismo dia con una copia vieja del
+# generador. Si `publico/` reaparece, es la senal de que alguien trabajo sobre
+# una base anterior a este comentario.
+(RAIZ / 'index.html').write_text(
     '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
     '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
     '<meta name="description" content="Toydarians — Star Wars The Vintage '
     'Collection. El catalogo por numero VC.">\n'
     '<meta name="color-scheme" content="dark">\n' + cabeza +
     '\n<style>*{box-sizing:border-box}html{background:#0A0A0B}body{margin:0}'
-    'img{display:block;max-width:100%}</style>\n</head>\n<body>\n'
+    'img{display:block;max-width:100%;height:auto}</style>\n</head>\n<body>\n'
     '<div class="barra">' + cuerpo + '\n</body>\n</html>\n', encoding='utf-8')
 print(f"sitio.html  {len(DOC.encode()):,} bytes")

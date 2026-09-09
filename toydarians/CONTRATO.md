@@ -90,7 +90,42 @@ nosotros.
 
 ---
 
-## 4 · Cómo se entrega
+## 4 · Antes de empujar, UN renglón — y esto costó caro
+
+```bash
+git fetch origin && git log --oneline HEAD..origin/main
+```
+
+**Si sale algo, se rebasa antes de empujar.** Sin excepción.
+
+**Por qué está aquí:** el 9 de septiembre se empujó a `main` un `armar.py`
+escrito sobre una copia anterior a un PR ya fusionado. Al aterrizar borró de
+`main`, sin marcar un solo conflicto, la tipografía empotrada, el arreglo de
+rutas, el `height:auto` del logo, la escala del titular y el scroll entero. Y
+dejó el generador **roto**: `armar.py` reventaba con `FileNotFoundError` y nadie
+podía regenerar el sitio.
+
+Nada de eso salió como conflicto. Git no avisa cuando una versión completa pisa
+a otra: avisa cuando dos ediciones se solapan. Una copia vieja del archivo
+entero no se solapa — sustituye.
+
+**Y no fue culpa de uno solo:** el otro había metido cambios en ese mismo
+archivo mientras el primero trabajaba en él. Los dos lados de este contrato
+fallaron el mismo día, y por eso la regla es de los dos.
+
+**Cómo se detecta que volvió a pasar**, en dos renglones:
+
+```bash
+python3 toydarians/taller/armar.py       # si revienta: alguien trajo una base vieja
+grep -c "BUNGEE_EMPOTRADA" toydarians/taller/armar.py   # 0 = se perdió
+```
+
+Si reaparece la carpeta `publico/`, es la misma señal: el generador volvió a una
+versión anterior al arreglo que lo hace escribir directo.
+
+---
+
+## 5 · Cómo se entrega
 
 **Nadie empuja a `main`.** Todo sale por PR, en borrador, y el otro puede
 rechazarlo. Es lo que hace que este contrato no dependa de la buena fe.
@@ -112,7 +147,7 @@ caza ninguna prueba.
 
 ---
 
-## 5 · Las reglas de la casa que aplican aquí
+## 6 · Las reglas de la casa que aplican aquí
 
 No son negociables entre nosotros porque no son nuestras:
 
@@ -133,7 +168,7 @@ No son negociables entre nosotros porque no son nuestras:
 
 ---
 
-## 6 · Lo que ya nos pasó, para no repetirlo
+## 7 · Lo que ya nos pasó, para no repetirlo
 
 Cada renglón costó tiempo de verdad en este proyecto:
 
@@ -145,13 +180,15 @@ Cada renglón costó tiempo de verdad en este proyecto:
 | La tipografía está puesta | entraba por link y **no cargaba**: el titular salía en Arial |
 | Enganché la animación a las tarjetas | los cuatro selectores eran nombres inventados; un selector que no encuentra nada **no falla** |
 | El polvo WebGL está implementado | cuelga de un `id="polvo"` que no existe: 900 partículas que nunca se dibujan |
+| Mi animación de entrada es inofensiva | dejaba las fichas marcadas para siempre y **le mató el hover** a la rejilla, ganando por ir después en la hoja |
+| Git avisa si piso el trabajo del otro | avisa si dos ediciones se **solapan**. Una copia vieja del archivo entero no se solapa: **sustituye, y en silencio** |
 
 **El patrón es siempre el mismo:** algo que informa un estado y está en otro. No
 se caza leyendo — se caza corriéndolo y contando lo que salió.
 
 ---
 
-## 7 · Lo que está pendiente y de quién es
+## 8 · Lo que está pendiente y de quién es
 
 | Qué | De quién | Estado |
 |---|---|---|
