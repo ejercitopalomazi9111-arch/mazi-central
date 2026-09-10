@@ -1433,5 +1433,108 @@ seccion('generar energía, no sólo gastarla');
      'sin turbina llega a ' + sinT.toFixed(2) + ' · pasando por ella ' + conT.toFixed(2));
 }
 
+seccion('cuerdas, amarres y péndulos');
+{
+  /* Herramientas de esta sección: colgar una cuerda del techo y buscar cosas.
+     ⚠ Todo se mide DESPUÉS de dejarla asentarse: recién pintada, una cuerda
+     está estirada tiesa en la posición en que la dibujó el dedo. */
+  const cuelga = (m, x, largo, y0 = 1) => {
+    for(let i = 0; i < m.an; i++) m.pon(i, y0 - 1, IDX.muro);
+    for(let y = y0; y < y0 + largo; y++) m.pon(x, y, IDX.cuerda);
+    return y0 + largo;                       /* la primera fila LIBRE de abajo */
+  };
+  const donde = (m, id) => { for(let y = 0; y < m.al; y++) for(let x = 0; x < m.an; x++)
+    if(m.t[y * m.an + x] === id) return [x, y]; return [-1, -1]; };
+
+  {
+    const m = mundo(40, 40, 7);
+    cuelga(m, 20, 10);
+    corre(m, 40);
+    ok('una cuerda colgada del techo cuelga entera', cuantos(m, 'cuerda') === 10,
+       'quedaron ' + cuantos(m, 'cuerda'));
+    let hondo = 0;
+    for(let y = 0; y < 40; y++) if(m.t[m.i(20, y)] === IDX.cuerda) hondo = y;
+    ok('y llega hasta abajo, no se amontona', hondo === 10, 'el último eslabón en y=' + hondo);
+  }
+
+  {
+    /* una cuerda SIN amarre no es una cuerda: es un montón de celdas cayendo */
+    const m = mundo(40, 40, 7);
+    repisa(m, 39);
+    for(let y = 5; y < 12; y++) m.pon(20, y, IDX.cuerda);
+    corre(m, 120);
+    let hondo = 0;
+    for(let y = 0; y < 40; y++) if(m.t[m.i(20, y)] === IDX.cuerda) hondo = y;
+    ok('una cuerda sin amarre se cae, no flota', hondo === 38, 'el último en y=' + hondo);
+  }
+
+  {
+    const m = mundo(40, 40, 7);
+    const libre = cuelga(m, 20, 10);
+    m.pon(20, libre, IDX.metal);
+    corre(m, 80);
+    const [mx, my] = donde(m, IDX.metal);
+    ok('un peso amarrado a la punta SE QUEDA COLGANDO', my <= 12 && my >= 10,
+       'el peso quedó en y=' + my + ' (x=' + mx + ')');
+  }
+
+  {
+    /* y al cortarla, se cae: si no, no estaba amarrado — estaba clavado */
+    const m = mundo(40, 40, 7);
+    const libre = cuelga(m, 20, 10);
+    m.pon(20, libre, IDX.metal);
+    repisa(m, 39);
+    corre(m, 40);
+    for(let y = 1; y <= 5; y++) m.pon(20, y, IDX.vacio);
+    corre(m, 120);
+    const [, my] = donde(m, IDX.metal);
+    ok('al CORTAR la cuerda, el peso se cae', my >= 36, 'el peso quedó en y=' + my);
+  }
+
+  {
+    /* EL PÉNDULO. Lo que se mide no es que se mueva —eso lo hace cualquier
+       cosa empujada— sino que VUELVA: que pase del otro lado del reposo. Un
+       peso que se va y se queda en la orilla no es un péndulo, es un peso
+       colgado torcido, y eso era lo que salía antes. */
+    const m = mundo(60, 40, 7);
+    const libre = cuelga(m, 30, 20);
+    m.pon(30, libre, IDX.metal);
+    corre(m, 30);
+    const [rx, ry] = donde(m, IDX.metal);
+    m.vx[m.i(rx, ry)] = 2.5;
+    let masDer = rx, masIzq = rx, sueltoEn = -1;
+    for(let i = 0; i < 140; i++){
+      m.paso();
+      const [bx, by] = donde(m, IDX.metal);
+      if(bx < 0) break;
+      masDer = Math.max(masDer, bx); masIzq = Math.min(masIzq, bx);
+      if(by > ry + 2 && sueltoEn < 0) sueltoEn = i;
+    }
+    ok('empujado de lado, el peso se VA', masDer >= rx + 3,
+       'llegó hasta x=' + masDer + ' desde x=' + rx);
+    ok('y VUELVE: pasa del otro lado del reposo', masIzq <= rx - 1,
+       'lo más lejos por la izquierda fue x=' + masIzq + ' (reposo x=' + rx + ')');
+    ok('y en todo el columpio NO se suelta de la cuerda', sueltoEn < 0,
+       'se soltó en el paso ' + sueltoEn);
+  }
+
+  {
+    /* la cuerda tiene que SEGUIR al peso. Con la tensión mal repartida se
+       columpiaba la punta y los eslabones de arriba se quedaban tiesos, que
+       es lo que se ve feo aunque el peso haga el arco correcto. */
+    const m = mundo(60, 40, 7);
+    const libre = cuelga(m, 30, 20);
+    m.pon(30, libre, IDX.metal);
+    corre(m, 30);
+    const [rx, ry] = donde(m, IDX.metal);
+    m.vx[m.i(rx, ry)] = 2.5;
+    let torcidos = 0;
+    for(let i = 0; i < 26; i++) m.paso();
+    for(let y = 1; y <= 20; y++) if(m.t[m.i(30, y)] !== IDX.cuerda) torcidos++;
+    ok('la cuerda se dobla y sigue al peso, no se queda tiesa', torcidos >= 4,
+       'sólo ' + torcidos + ' eslabones se salieron de la vertical');
+  }
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

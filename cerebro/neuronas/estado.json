@@ -316,6 +316,111 @@
         "una-bandera-con-dos-significados",
         "corriente-que-se-alimenta-de-si-misma"
       ]
+    },
+    {
+      "id": "el-nudo-que-era-solo-estar-pegadito",
+      "titulo": "El amarre se buscaba por vecindad y se perdía en cuanto algo se movía",
+      "gravedad": "alta",
+      "sintoma": "Un peso colgado de una cuerda se columpiaba noventa pasos y de repente se soltaba solo y caía, con la cuerda intacta colgando arriba.",
+      "causa": "El amarre no se guardaba: cada paso se volvía a buscar «qué sólido toca un eslabón». En cuanto el eslabón de la punta se movía una celda, el peso quedaba a distancia 2 y nadie lo encontraba nunca más.",
+      "porque": "Un nudo es una relación entre dos cosas, y una relación no se puede deducir de dónde están ahora. Es el mismo error de la casilla contra la cosa, un piso más arriba: aquí lo que vivía en la casilla no era un campo, era el vínculo.",
+      "arreglo": "Un campo `nudo` con el número de paso en que se amarró, que viaja en `intercambia`. Pegado se amarra; a dos celdas sólo aguanta si YA venía amarrado el paso anterior.",
+      "comoCazarlo": "Cuelga un peso, empújalo y déjalo cien pasos. Si se suelta solo cuando ya casi no se mueve, el amarre era vecindad.",
+      "consejo": "El síntoma engañaba: se soltaba al FINAL, cuando ya casi estaba quieto, así que parecía un problema del reposo y era del movimiento de un eslabón.",
+      "salioDe": "juegos/crisol/motor.js · cuerdaPaso() paso 5",
+      "senales": [
+        "se suelta solo",
+        "se cae después de un rato",
+        "el amarre se pierde",
+        "deja la cuerda colgando"
+      ],
+      "vecinas": [
+        "la-marca-no-viaja-con-la-particula",
+        "el-peso-que-se-trepaba-por-la-cuerda"
+      ]
+    },
+    {
+      "id": "la-rejilla-estira-la-cuerda-al-torcerse",
+      "titulo": "Diez eslabones en diagonal alcanzaban catorce celdas",
+      "gravedad": "alta",
+      "sintoma": "El péndulo no subía nunca: empujado de lado se iba en línea recta a la misma altura hasta quedarse sin impulso, y no volvía.",
+      "causa": "La restricción era «cada eslabón pegado a su padre», medida en celdas vecinas. En una rejilla un paso en diagonal cuesta lo mismo que uno recto, así que una cuerda torcida se ESTIRA sola: no había nada que obligara al peso a subir.",
+      "porque": "La distancia de vecindad (Chebyshev) no es la distancia real. Una cadena de n vecinos alcanza n·√2, no n.",
+      "arreglo": "Además del padre, un tope de distancia real al amarre igual al número de eslabones que van hasta él, con media celda de holgura porque una rejilla no tiene puntos a distancia exacta.",
+      "comoCazarlo": "Empuja el péndulo y mira la ALTURA. Si nunca cambia, la cuerda se está estirando.",
+      "consejo": "La profundidad se cuenta con el padre, no con el puesto en la lista: la búsqueda es a lo ancho y en una cuerda con ramas no son lo mismo.",
+      "salioDe": "juegos/crisol/motor.js · tensa(), alcance desde el amarre",
+      "senales": [
+        "no sube",
+        "va derecho",
+        "no hace arco",
+        "la cuerda se estira"
+      ],
+      "vecinas": [
+        "la-cuerda-que-solo-aguantaba-sin-tirar",
+        "el-nudo-que-era-solo-estar-pegadito"
+      ]
+    },
+    {
+      "id": "la-cuerda-que-solo-aguantaba-sin-tirar",
+      "titulo": "La restricción impedía, pero no transmitía",
+      "gravedad": "media",
+      "sintoma": "El peso colgado se iba a la casilla de al lado y ahí se quedaba clavado para siempre, con la cuerda perfectamente vertical arriba. Después, con el tirón mal dirigido, se columpiaba la punta como látigo y los quince eslabones de arriba seguían tiesos.",
+      "causa": "El único flujo de información iba del padre al hijo. Nada empujaba hacia arriba. Y cuando lo hubo, iba en la dirección del amarre —que para un eslabón bajo el clavo apunta hacia ABAJO— en vez de a lo largo del tramo de cuerda.",
+      "porque": "Una cuerda no sólo impide: transmite, y transmite a lo largo de sí misma, tramo por tramo.",
+      "arreglo": "La velocidad que apunta hacia fuera se cancela (eso es la tensión) y se le entrega al padre en la dirección del tramo hijo→padre, repartida por densidad como un choque inelástico.",
+      "comoCazarlo": "Columpia el péndulo y cuenta cuántos eslabones se salieron de la vertical. Si son dos, la tensión no viaja.",
+      "consejo": "Repartir velocidad SIEMPRE que el eslabón no se moviera inventaba un rozamiento: la causa más común de no moverse es que la velocidad no llega a una celda entera. Sólo cuenta cuando la restricción de verdad estorbó.",
+      "salioDe": "juegos/crisol/motor.js · tensa(), cancelación radial y reparto al padre",
+      "senales": [
+        "se queda tieso",
+        "el péndulo no vuelve",
+        "la cuerda no sigue",
+        "se para en tres oscilaciones"
+      ],
+      "vecinas": [
+        "la-rejilla-estira-la-cuerda-al-torcerse"
+      ]
+    },
+    {
+      "id": "el-peso-que-se-trepaba-por-la-cuerda",
+      "titulo": "Se re-amarraba al eslabón de más arriba que tocara",
+      "gravedad": "media",
+      "sintoma": "Empujado fuerte, el peso subía pegado a la cuerda hasta el techo y se quedaba colgado del clavo con un eslabón de correa.",
+      "causa": "La búsqueda de lo que cuelga recorría la cuerda desde el amarre, así que al subir el peso siempre encontraba primero un eslabón más alto y adoptaba su alcance, más corto.",
+      "porque": "Lo que uno amarra, lo amarra a la PUNTA. Recorrer de arriba abajo convertía cada contacto en un nudo nuevo más corto que el anterior.",
+      "arreglo": "Recorrer la cuerda de la punta hacia el amarre.",
+      "comoCazarlo": "Empuja el peso con fuerza de sobra para dar la vuelta. Si acaba arriba y se queda, se trepó.",
+      "consejo": "Salió de un empujón exagerado —4.5 celdas por paso—, que era mucho más de lo que hace falta para dar la vuelta. Los valores absurdos encuentran defectos que los razonables tapan.",
+      "salioDe": "juegos/crisol/motor.js · cuerdaPaso() paso 5, recorrido de pos",
+      "senales": [
+        "se trepa",
+        "sube por la cuerda",
+        "se acorta la cuerda"
+      ],
+      "vecinas": [
+        "el-nudo-que-era-solo-estar-pegadito"
+      ]
+    },
+    {
+      "id": "un-solo-conductor-cuesta-diecisiete-milisegundos",
+      "titulo": "Poner UNA celda de metal duplica el costo del paso",
+      "gravedad": "media",
+      "sintoma": "Con la cuerda puesta, el paso pasó de 13.9 a 31 ms y parecía culpa de la cuerda.",
+      "causa": "No lo era: una sola celda de metal, en una habitación sin cuerda, da exactamente lo mismo. La luz, el magnetismo y la electricidad se saltan la rejilla entera mientras no haya NADA que les toque, y al primer conductor hacen el barrido completo.",
+      "porque": "Un atajo de «si no hay nada, no hagas nada» esconde el costo real hasta que aparece el primer caso, y entonces el salto se le achaca a lo último que se tocó.",
+      "arreglo": "Pendiente: esos tres pasos necesitan caja delimitadora como la presión. Lo que se arregló hoy fue la atribución.",
+      "comoCazarlo": "Antes de culpar a lo nuevo, mide la misma habitación con lo nuevo y con una celda cualquiera de lo que lo acompaña.",
+      "consejo": "La cuerda de 39 eslabones cuesta 1.3 ms. Estuve a punto de optimizar la pieza equivocada.",
+      "salioDe": "juegos/crisol/motor.js · medición de luzPaso, magnetismo y electricidad",
+      "senales": [
+        "se puso lento",
+        "baja los cuadros",
+        "cuesta mucho un paso"
+      ],
+      "vecinas": [
+        "la-cuerda-que-solo-aguantaba-sin-tirar"
+      ]
     }
   ]
 }

@@ -20,6 +20,13 @@ export const IDX = {};
 IDS.forEach((id, i) => { IDX[id] = i; });
 export const EL = IDS.map(id => Object.assign({ id }, ELEMENTOS[id]));
 export const VACIO = IDX.vacio;
+/* Tabla plana de «¿esto es cuerda?». Parece una tontería al lado de
+   `EL[t[k]].cuerda`, y son 16 ms por paso en una habitación de 320×480: el
+   buscador de cuerdas recorre la rejilla entera cada paso, y preguntarle una
+   propiedad a un objeto ciento cincuenta mil veces cuesta lo que no cuesta
+   leer un byte de un array. Medido con y sin cuerda en la misma habitación. */
+export const ES_CUERDA = new Uint8Array(EL.length);
+EL.forEach((e, i) => { if(e.cuerda) ES_CUERDA[i] = 1; });
 
 /* Tabla de reacciones indexada por par, para no recorrer 24 reglas por celda
    por cuadro. Con doscientos elementos eso sería la diferencia entre correr y
@@ -156,7 +163,15 @@ export class Mundo {
     this._cola = new Int32Array(n);
     this._cola2 = new Int32Array(n);
     this._visto = new Uint8Array(n);
+    this._vistoC = new Uint8Array(n);
+    this._padreC = new Int32Array(n);
     this.flotante = new Uint8Array(n);
+    /* EL NUDO. Guarda en qué paso se amarró esta celda a una cuerda, y viaja
+       con ella. Sin él el amarre era «estar pegadito», y eso se pierde en
+       cuanto el eslabón de la punta se mueve una celda: el peso quedaba a
+       distancia 2, nadie lo encontraba y se caía solo después de columpiarse
+       noventa pasos. Un nudo es del objeto, no de la casilla. */
+    this.nudo = new Int32Array(n);
     /* de quién vino la corriente a cada celda: sin esto una compuerta no puede
        distinguir una entrada de su propia salida */
     this._padre = new Int32Array(n);
@@ -280,6 +295,16 @@ export class Mundo {
     /* la gravedad PROPIA es del objeto, así que viaja con él — el mismo error
        que ya costó dos veces con la velocidad y con «suelto» */
     const gv = this.gmul[k1]; this.gmul[k1] = this.gmul[k2]; this.gmul[k2] = gv;
+    /* ⚠ Y LA MARCA DE «YA ME MOVIÓ OTRO SISTEMA» TAMBIÉN. Tercera vez que
+       tropiezo con lo mismo en este archivo —pasó con la velocidad, con
+       `suelto` y con `gmul`—: en una rejilla es facilísimo confundir la
+       CASILLA con la COSA. Aquí costó un péndulo: la cuerda movía el peso,
+       `flotante` se quedaba en la celda vieja, y `mueve` volvía a moverlo con
+       su velocidad entera. El peso salía disparado y dejaba la cuerda atrás.
+       Todo lo que describe al objeto viaja con él. Sólo lo que describe al
+       sitio se queda. */
+    const flv = this.flotante[k1]; this.flotante[k1] = this.flotante[k2]; this.flotante[k2] = flv;
+    const nuv = this.nudo[k1]; this.nudo[k1] = this.nudo[k2]; this.nudo[k2] = nuv;
     this.mov[k1] = 1; this.mov[k2] = 1;
   }
 
@@ -711,6 +736,306 @@ export class Mundo {
     return { modo:'con carga', margen:0, carga: Math.round(f * 10) / 10 };
   }
 
+
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     CUERDAS Y PÉNDULOS
+     -----------------------------------------------------------------------
+     Carlos: «péndulos y cuerdas para amarrar cosas».
+
+     Esto fue lo último de toda la lista, y no por difícil de programar sino
+     porque es de OTRA CLASE. Todo lo demás de este juego son reglas por celda:
+     esta piedra cae, este gas sube, esta pared aguanta tanto. Una cuerda no:
+     su comportamiento vive en la RELACIÓN entre celdas. Un eslabón no sabe qué
+     hacer mirando a sus vecinos — necesita saber quién es el ANTERIOR y
+     mantenerse pegado a él, eslabón por eslabón hasta el amarre.
+
+     O sea que hace falta un resolvedor de restricciones, y va aparte:
+
+       1 · se encuentran las cadenas (celdas de cuerda pegadas, en 8 vecinos)
+       2 · se busca el AMARRE: un eslabón pegado a algo sólido que se sostiene
+       3 · se recorre la cadena desde el amarre, dando a cada eslabón su padre
+       4 · cada eslabón cae por su cuenta… y después se le obliga a estar
+           pegado a su padre. Esa corrección ES la tensión: no hay una fuerza
+           de tensión escrita en ninguna parte, hay una restricción que se
+           cumple — que es como se hacen las cuerdas en un motor de física.
+       5 · lo que cuelga del último eslabón se queda colgando: eso es amarrar.
+
+     Una cuerda sin amarre no es una cuerda: es un montón de celdas cayendo, y
+     así se comporta. */
+  cuerdaPaso(){
+    const { an, al, t, sop } = this;
+    const visto = this._vistoC;
+    visto.fill(0);
+    const cola = this._cola2;
+    const padres = this._padreC;
+
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k0 = y * an + x;
+        if(visto[k0] || !ES_CUERDA[t[k0]]) continue;
+
+        /* 1 · la cadena entera, por 8 vecinos: una cuerda dobla en diagonal */
+        let cab = 0, fin = 0;
+        cola[fin++] = k0; visto[k0] = 1;
+        const cadena = [];
+        while(cab < fin){
+          const k = cola[cab++];
+          cadena.push(k);
+          const cx = k % an, cy = (k / an) | 0;
+          for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){
+            if(!dx && !dy) continue;
+            const nx = cx + dx, ny = cy + dy;
+            if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
+            const k2 = ny * an + nx;
+            if(visto[k2] || !ES_CUERDA[t[k2]]) continue;
+            visto[k2] = 1; cola[fin++] = k2;
+          }
+          if(cadena.length > 3000) break;
+        }
+
+        /* 2 · el amarre */
+        let amarre = -1;
+        for(const k of cadena){
+          const cx = k % an, cy = (k / an) | 0;
+          for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+            const nx = cx + dx, ny = cy + dy;
+            if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
+            const k2 = ny * an + nx;
+            if(t[k2] === VACIO || ES_CUERDA[t[k2]]) continue;
+            if(EL[t[k2]].fijo || (sop[k2] && this.estadoDe(k2) === 'solido')){ amarre = k; break; }
+          }
+          if(amarre >= 0) break;
+        }
+        if(amarre < 0){ for(const k of cadena) this.suelto[k] = 1; continue; }
+
+        /* 3 · cada eslabón con su padre, desde el amarre.
+           ⚠ Y EL PADRE SE GUARDA COMO PUESTO EN LA CADENA, NO COMO CELDA. Con
+           la celda parecía más simple y estaba mal: en cuanto un eslabón se
+           MUEVE, el siguiente sigue mirando la casilla donde su padre ESTABA —
+           que ya está vacía. La restricción se calculaba contra un fantasma y
+           la cuerda se quedaba estirada, tiesa, sin volver nunca. Otra vez la
+           casilla confundida con la cosa, esta vez dentro del mismo paso. */
+        for(const k of cadena) padres[k] = -1;
+        const orden = [amarre];
+        const dePadre = [0];
+        padres[amarre] = amarre;
+        for(let i = 0; i < orden.length; i++){
+          const k = orden[i];
+          const cx = k % an, cy = (k / an) | 0;
+          for(let dy = -1; dy <= 1; dy++) for(let dx = -1; dx <= 1; dx++){
+            if(!dx && !dy) continue;
+            const nx = cx + dx, ny = cy + dy;
+            if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
+            const k2 = ny * an + nx;
+            if(!ES_CUERDA[t[k2]]) continue;
+            if(padres[k2] !== -1) continue;
+            padres[k2] = k; dePadre.push(i); orden.push(k2);
+          }
+        }
+
+        /* 4 · el amarre no se mueve; los demás caen y luego se les obliga.
+           `pos` lleva DÓNDE ESTÁ AHORA cada eslabón, que es lo que cambia. */
+        const pos = orden.slice();
+        /* cuántos eslabones hay entre éste y el amarre: ÉSA es su cuerda, y
+           por eso no se calcula con el puesto en la lista —la búsqueda es a lo
+           ancho y en una cuerda con ramas el puesto no es la profundidad— */
+        const prof = [0];
+        for(let i = 1; i < orden.length; i++) prof.push(prof[dePadre[i]] + 1);
+        sop[amarre] = 1; this.flotante[amarre] = 1;
+        this.vy[amarre] = 0; this.vx[amarre] = 0;
+        for(let i = 1; i < orden.length; i++){
+          const k = pos[i];
+          this.flotante[k] = 1;
+          this.gravedadEn(k % an, (k / an) | 0, k);
+          this.vy[k] = Math.max(-VMAX, Math.min(this.vy[k] + this._gy, VMAX));
+          this.vx[k] = Math.max(-VMAX, Math.min(this.vx[k] + this._gx, VMAX));
+          this.arrastra(k, EL[t[k]]);
+          pos[i] = this.tensa(k, pos[dePadre[i]], amarre, prof[i]);
+        }
+
+        /* 5 · lo que cuelga de la cuerda se queda colgando: eso es AMARRAR.
+           ⚠ Y SE LE APLICA LA MISMA RESTRICCIÓN QUE A UN ESLABÓN, que es donde
+           me quedé corto: al principio sólo le ponía `sop` para que no cayera,
+           y eso lo sujeta HACIA ABAJO y nada más. Al empujarlo de lado salía
+           volando y dejaba la cuerda atrás — o sea que se podía colgar un peso
+           pero no había péndulo. Un amarre sujeta en todas las direcciones.
+
+           ⚠ Y SE BUSCA EN LOS OCHO VECINOS, NO EN CUATRO. Con cuatro, la
+           primera vez que el peso se movía UNA celda de lado quedaba en
+           DIAGONAL del último eslabón — sujeto por la restricción, invisible
+           para la búsqueda— y al paso siguiente nadie volvía a encontrarlo:
+           se soltaba y caía al suelo con la cuerda intacta colgando arriba.
+           El amarre se perdía justo en el instante en que empezaba a servir.
+           Y se recorre `pos`, no `orden`: los eslabones YA se movieron en el
+           paso 4, así que `orden` son las casillas donde ESTABAN. */
+        /* ⚠ DE LA PUNTA HACIA EL AMARRE, no al revés. Recorriéndola desde
+           arriba, un peso que sube pegado a la cuerda se iba «reamarrando» al
+           eslabón de más arriba que tocara: se trepaba por la cuerda hasta el
+           techo y se quedaba colgado del amarre con un eslabón de correa. Lo
+           que uno amarra, lo amarra a la PUNTA. */
+        for(let i = pos.length - 1; i >= 0; i--){
+          const k = pos[i];
+          const cx = k % an, cy = (k / an) | 0;
+          for(let dy = -2; dy <= 2; dy++) for(let dx = -2; dx <= 2; dx++){
+            if(!dx && !dy) continue;
+            const nx = cx + dx, ny = cy + dy;
+            if(nx < 0 || ny < 0 || nx >= an || ny >= al) continue;
+            const k2 = ny * an + nx;
+            if(t[k2] === VACIO || ES_CUERDA[t[k2]] || EL[t[k2]].fijo) continue;
+            /* pegado: se amarra. A dos celdas: sólo si YA venía amarrado el
+               paso pasado — eso es el nudo aguantando, no un imán */
+            if(dx < -1 || dx > 1 || dy < -1 || dy > 1){
+              if(this.nudo[k2] < this.paso_ - 1) continue;
+            }
+            if(this.estadoDe(k2) !== 'solido') continue;
+            if(this.flotante[k2]) continue;            /* ya lo lleva otra cuerda */
+            sop[k2] = 0; this.flotante[k2] = 1; this.nudo[k2] = this.paso_;
+            this.gravedadEn(nx, ny, k2);
+            this.vy[k2] = Math.max(-VMAX, Math.min(this.vy[k2] + this._gy, VMAX));
+            this.vx[k2] = Math.max(-VMAX, Math.min(this.vx[k2] + this._gx, VMAX));
+            this.arrastra(k2, EL[t[k2]]);
+            this.tensa(k2, k, amarre, prof[i] + 1);   /* la carga se sujeta al último eslabón */
+          }
+        }
+      }
+    }
+  }
+
+  /* Mueve un eslabón hacia donde apunta su velocidad y luego lo obliga a
+     seguir pegado a su padre. Esa corrección es la TENSIÓN. */
+  tensa(k, padre, ancla = -1, alcance = 0){
+    const { an } = this;
+    /* devuelve DÓNDE QUEDÓ, para que el eslabón siguiente sepa dónde está su
+       padre de verdad y no dónde estaba al empezar el paso */
+    let x = k % an, y = (k / an) | 0;
+    const px = padre % an, py = (padre / an) | 0;
+    /* ⚠ Y ADEMÁS NO SE PUEDE ALEJAR DEL AMARRE MÁS QUE LA CUERDA QUE TIENE.
+       Sin este tope el péndulo no subía nunca: la restricción con el padre se
+       mide en celdas vecinas, y en una rejilla un paso en diagonal cuesta lo
+       mismo que uno recto. O sea que diez eslabones «tensos» en diagonal
+       alcanzan 14 celdas, no 10 — la cuerda se ESTIRA sola al torcerse. Con
+       eso, el peso empujado se iba de lado a la misma altura, en línea recta,
+       hasta quedarse sin impulso: no describía un arco porque no había nada
+       que lo obligara a subir. El tope es la longitud real de la cuerda. */
+    const ax0 = ancla >= 0 ? ancla % an : 0, ay0 = ancla >= 0 ? (ancla / an) | 0 : 0;
+    /* medio celda de holgura: una rejilla no tiene puntos a distancia exacta 9,
+       y sin ella el peso de un péndulo tenso se quedaba clavado —CUALQUIER
+       casilla vecina se pasaba del tope por centésimas */
+    const tope = (alcance + 0.5) * (alcance + 0.5);
+    const lejosDelAmarre = (nx, ny) => ancla >= 0 &&
+      (nx - ax0) * (nx - ax0) + (ny - ay0) * (ny - ay0) > tope;
+
+    /* ── LA CUERDA TENSA MATA LA VELOCIDAD QUE APUNTA HACIA AFUERA ───────
+       Esto es la tensión, y es lo que convierte una caída en un ARCO. Una
+       cuerda estirada no puede empujar ni estirarse: lo único que hace es
+       cancelar la parte de la velocidad que se aleja del amarre, y deja
+       intacta la que va de lado. Lo que queda es exactamente la componente
+       tangencial — o sea, la gravedad frenando al peso conforme sube y
+       acelerándolo conforme baja, sin una sola línea que diga «péndulo».
+       Y esa parte cancelada no se pierde: se la lleva el padre. Eso es que
+       la cuerda TIRE de lo de arriba en vez de sólo aguantar lo de abajo. */
+    if(ancla >= 0 && alcance > 0){
+      const rx = x - ax0, ry = y - ay0;
+      const d = Math.sqrt(rx * rx + ry * ry);
+      if(d > 0.5 && d >= alcance - 0.5){
+        const ux = rx / d, uy = ry / d;
+        const rad = this.vx[k] * ux + this.vy[k] * uy;
+        if(rad > 0){
+          this.vx[k] -= rad * ux; this.vy[k] -= rad * uy;
+          /* ⚠ Y EL TIRÓN AL PADRE VA POR EL TRAMO DE CUERDA, no en la
+             dirección del amarre. Con la dirección del amarre, los eslabones
+             que estaban justo debajo del clavo recibían un tirón hacia ABAJO
+             —que es a donde apunta el radio ahí— y no se movían de lado
+             nunca: el péndulo se columpiaba con la punta doblada como un
+             látigo y los quince eslabones de arriba tiesos y verticales.
+             Una cuerda tira a lo largo de sí misma, tramo por tramo. */
+          const m1 = EL[this.t[k]].dens || 1, m2 = EL[this.t[padre]].dens || 1;
+          const t2 = rad * m1 / (m1 + m2);
+          const sx = x - px, sy = y - py, sl = Math.sqrt(sx * sx + sy * sy) || 1;
+          this.vx[padre] = Math.max(-VMAX, Math.min(this.vx[padre] + t2 * sx / sl, VMAX));
+          this.vy[padre] = Math.max(-VMAX, Math.min(this.vy[padre] + t2 * sy / sl, VMAX));
+        }
+      }
+    }
+    const dx = this.vx[k] > 0.35 ? 1 : this.vx[k] < -0.35 ? -1 : 0;
+    const dy = this.vy[k] > 0.35 ? 1 : this.vy[k] < -0.35 ? -1 : 0;
+    let kk = k, movido = false;
+    if(dx || dy){
+      /* primero en diagonal y si no cabe por separado: así una cuerda dobla
+         en vez de quedarse trabada en una esquina */
+      for(const [ax, ay] of [[dx, dy], [dx, 0], [0, dy]]){
+        if(!ax && !ay) continue;
+        if(Math.max(Math.abs(x + ax - px), Math.abs(y + ay - py)) > 1) continue;
+        if(lejosDelAmarre(x + ax, y + ay)) continue;
+        if(!this.dentro(x + ax, y + ay)) continue;
+        const kd = this.i(x + ax, y + ay);
+        if(kd === padre) continue;
+        if(this.t[kd] !== VACIO){
+          const ed = EL[this.t[kd]];
+          const est = this.estadoDe(kd);
+          if(est === 'solido' || est === 'polvo' || ed.fijo) continue;
+          if((ed.dens || 0) >= (EL[this.t[kk]].dens || 1)) continue;
+        }
+        this.intercambia(kk, kd);
+        kk = kd; x = kk % an; y = (kk / an) | 0;
+        movido = true;
+        break;
+      }
+    }
+    const bloqueado = (dx || dy) && !movido;
+    const lejos = Math.max(Math.abs(x - px), Math.abs(y - py)) > 1;
+    if(lejos){
+      /* quedó lejos: la cuerda TIRA de él */
+      let mejor = -1, mejorD = 1e9;
+      for(let ddy = -1; ddy <= 1; ddy++) for(let ddx = -1; ddx <= 1; ddx++){
+        if(!ddx && !ddy) continue;
+        const nx = px + ddx, ny = py + ddy;
+        if(!this.dentro(nx, ny)) continue;
+        const kd = this.i(nx, ny);
+        if(kd === kk){ mejor = -1; break; }
+        if(this.t[kd] !== VACIO){
+          const est = this.estadoDe(kd);
+          if(est === 'solido' || est === 'polvo' || EL[this.t[kd]].fijo) continue;
+        }
+        const d = (nx - x) * (nx - x) + (ny - y) * (ny - y);
+        if(d < mejorD){ mejorD = d; mejor = kd; }
+      }
+      if(mejor >= 0){ this.intercambia(kk, mejor); kk = mejor; }
+    }
+    /* ── EL TIRÓN VIAJA HACIA ARRIBA ────────────────────────────────────
+       Y aquí estaba el péndulo que no era péndulo. Con la restricción sola,
+       el peso quedaba SUJETO —eso ya funcionaba— pero la cuerda ni se
+       enteraba: el peso empujado se iba a la casilla de al lado, la
+       restricción le negaba la siguiente, y ahí se quedaba clavado para
+       siempre con la cuerda perfectamente vertical arriba. Un peso colgado
+       tieso a 45°, que es lo único que no hace un péndulo.
+
+       Una cuerda no sólo IMPIDE: TRANSMITE. Si el hijo no pudo ir a donde
+       iba, esa velocidad no se evapora — tira del padre. Se reparte como un
+       choque perfectamente inelástico (los dos hacia su velocidad común,
+       pesados por la densidad), que es lo que conserva la cantidad de
+       movimiento: un peso pesado arrastra a la cuerda ligera casi entera, y
+       una cuerda gruesa apenas se inmuta con algo liviano colgando.
+       El amarre no cuenta: su velocidad se pone en cero cada paso, así que
+       absorbe el tirón — que es exactamente lo que hace un clavo. */
+    /* ⚠ Y SÓLO SI LA RESTRICCIÓN DE VERDAD LE ESTORBÓ. Antes bastaba con que
+       no se hubiera movido, y eso incluye el caso más común de todos: que la
+       velocidad no llegue a una celda entera. O sea que un péndulo lento
+       repartía su velocidad con la cuerda en CADA paso y se paraba en tres
+       oscilaciones — un rozamiento inventado, disfrazado de tensión. */
+    if(bloqueado || lejos){
+      const m1 = EL[this.t[kk]].dens || 1, m2 = EL[this.t[padre]].dens || 1;
+      const suma = m1 + m2, acopla = 0.55;
+      const cx = (m1 * this.vx[kk] + m2 * this.vx[padre]) / suma;
+      const cy = (m1 * this.vy[kk] + m2 * this.vy[padre]) / suma;
+      this.vx[kk] += acopla * (cx - this.vx[kk]);
+      this.vy[kk] += acopla * (cy - this.vy[kk]);
+      this.vx[padre] = Math.max(-VMAX, Math.min(this.vx[padre] + acopla * (cx - this.vx[padre]), VMAX));
+      this.vy[padre] = Math.max(-VMAX, Math.min(this.vy[padre] + acopla * (cy - this.vy[padre]), VMAX));
+    }
+    return kk;
+  }
 
   /* ── EL GLOBO ─────────────────────────────────────────────────────────
      Carlos: «el helio no permite crear globos porque no tienen física los
@@ -1370,6 +1695,7 @@ export class Mundo {
     this.mov.fill(0);
     this.sostenPaso();
     this.globoPaso();
+    this.cuerdaPaso();
     this.electricidad();
     this.luzPaso();
     this.magnetismo();

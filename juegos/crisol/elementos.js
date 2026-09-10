@@ -119,6 +119,18 @@ const JUEGO = {
      que en la vida real: los globos se hacen de película fina justo por eso.
      Sigue pesando el doble que el aire, así que sola tampoco vuela: hay que
      llenarla de algo más ligero. Ahí es donde entra el helio. */
+  /* ── CUERDA ─────────────────────────────────────────────────────────────
+     Carlos: «péndulos y cuerdas para amarrar cosas». Una cuerda no es un
+     elemento más y por eso fue lo último: su comportamiento no vive en la
+     celda, vive en la RELACIÓN entre celdas. Todo lo demás de este juego sale
+     de reglas por celda —esta piedra cae, este gas sube—; una cuerda necesita
+     que cada eslabón sepa quién es el anterior y se mantenga pegado a él.
+     Eso es un resolvedor de restricciones, y va aparte en `cuerdaPaso()`. */
+  cuerda:  { nom:'Cuerda', col:'#C2A878', estado:'solido', dens:6, cond:.12,
+             cuerda:true, arde:.5, calorArde:400, dureza:.08,
+             traccion:26, compresion:0.5, corte:1, elastico:0.4,
+             grupo:'básico',
+             ayuda:'Cuélgala de algo fijo y amárrale cosas. Aguanta tirón, no empuje' },
   globo:   { nom:'Tela de globo', col:'#E85A8A', estado:'solido', dens:2.5, cond:.2,
              dureza:.02, arde:.6, calorArde:400, grupo:'básico' },
   madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12, friccion:.55,
@@ -554,7 +566,7 @@ const ICONOS = {
   agua:'💧', salada:'🌊', hielo:'🧊', nieve:'❄️', vapor:'♨️', hielose:'🌫', co2:'💨',
   fuego:'🔥', humo:'💨', ceniza:'🌑', lava:'🌋', obsidiana:'⬛', termita:'✨',
   aceite:'🛢', gasnat:'💨', polvora:'🧨', nitro:'💥', madera:'🪵', carbon:'⚫',
-  globo:'🎈', hidrogeno:'🎈', oxigeno:'🫧',
+  globo:'🎈', cuerda:'🪢', hidrogeno:'🎈', oxigeno:'🫧',
   metal:'🔩', metfun:'🫗', cobre:'🟠', bateria:'🔋', lampara:'💡', aislante:'🚫',
   mercurio:'🌡', iman:'🧲', electroiman:'🧲', ferroso:'🧲',
   interruptor:'🎚', resistencia:'🌡', pulsador:'⏱', motor:'⚙️',
