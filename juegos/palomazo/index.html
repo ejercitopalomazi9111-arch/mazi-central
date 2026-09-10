@@ -224,6 +224,11 @@ p{margin:0;max-width:34ch;font-size:clamp(14px,4vw,17px);color:#C9C2D4}
     <button class="btn fantasma" id="bTienda">Vestidor</button>
     <button class="btn fantasma" id="bComo">Cómo se juega</button>
   </div>
+  <div class="fila">
+    <button class="btn fantasma" id="bProbar"
+            style="min-height:48px;font-size:15px">🔊 Probar el sonido</button>
+  </div>
+  <p class="chico" id="dicAudio"></p>
   <p class="chico">Toda la música de este juego se hace sola, aquí adentro. No hay
     un solo archivo de audio.</p>
 </section>
@@ -238,6 +243,9 @@ p{margin:0;max-width:34ch;font-size:clamp(14px,4vw,17px);color:#C9C2D4}
      fallas, se oye el hueco.</p>
   <p class="chico">En computadora: <b>A · S · D</b>, o las flechas, o 1 · 2 · 3.
      Espacio para pausar.</p>
+  <p class="chico">¿No se oye nada en el iPhone? Es el <b>interruptor de silencio</b>
+     de la orilla: con él puesto, Safari calla los juegos aunque el volumen esté
+     al tope. El botón «Probar el sonido» del menú te lo dice en un segundo.</p>
   <button class="btn" id="bComoOk">Ya entendí</button>
 </section>
 
@@ -346,23 +354,86 @@ function impulso(ctx, seg, caida){
   return b;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   EL DESTRABE DE iOS · esto es por qué Carlos no oía nada
+   ---------------------------------------------------------------------------
+   En el escritorio todo sonaba: medí 29 osciladores arrancados y el contexto
+   en `running`. O sea que el motor agendaba bien y el problema estaba en el
+   teléfono. Son TRES cosas distintas y hacían falta las tres:
+
+   1 · `audioArranca()` sólo llamaba a `resume()` cuando el contexto YA
+       existía. La primera llamada lo CREABA y no lo reanudaba nunca — y en
+       iOS un contexto nuevo nace suspendido. Se quedaba dormido para siempre.
+   2 · iOS no destraba el audio hasta que se EMPUJA un sonido dentro del
+       gesto, aunque el estado diga `running`. Va un buffer de un sample.
+   3 · Y la que de verdad silencia los iPhone: con el interruptor lateral en
+       silencio, Safari calla el Web Audio. Reproducir un `<audio playsinline>`
+       en bucle cambia la categoría de audio del sistema a reproducción, y
+       entonces manda el volumen del teléfono y no el interruptor. El archivo
+       es medio segundo de silencio empotrado aquí mismo: no se descarga nada.
+
+   Ninguna de las tres se ve leyendo el código y ninguna sale en el
+   escritorio. Por eso hay un botón de «probar sonido» en el menú: convierte
+   «no se oye» en un dato en un segundo, en vez de una tarde de adivinanzas. */
+const SILENCIO = 'data:audio/wav;base64,UklGRqQMAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYAMAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+let elSilencio = null;
+
+function destrabarIOS(){
+  try{
+    if(!elSilencio){
+      elSilencio = document.createElement('audio');
+      elSilencio.setAttribute('playsinline', '');
+      elSilencio.setAttribute('webkit-playsinline', '');
+      elSilencio.loop = true;
+      elSilencio.volume = 0.001;
+      elSilencio.src = SILENCIO;
+      /* ⚠ Y AL DOCUMENTO. Estaba creado y suelto: un `<audio>` fuera del DOM
+         se puede reproducir, pero en iOS es justo donde este truco deja de ser
+         fiable — y de paso ninguna prueba lo podía ver, que es como se me pasó.
+         Va con estilo en línea, no con `hidden`: `hidden` es la regla de menor
+         especificidad de CSS y cualquier clase propia se la come. */
+      elSilencio.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+      document.body.appendChild(elSilencio);
+    }
+    const pr = elSilencio.play();
+    if(pr && pr.catch) pr.catch(() => {});
+  }catch(e){}
+}
+
 function audioArranca(){
-  if(A.ctx) { if(A.ctx.state === 'suspended') A.ctx.resume(); return; }
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  if(!Ctx) return;
-  A.ctx = new Ctx();
-  A.master = A.ctx.createGain();
-  A.master.gain.value = 0.85;
-  A.master.connect(A.ctx.destination);
+  if(!A.ctx){
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return;
+    A.ctx = new Ctx();
+    A.master = A.ctx.createGain();
+    A.master.gain.value = 0.85;
+    A.master.connect(A.ctx.destination);
 
-  A.rev = A.ctx.createConvolver();
-  A.rev.buffer = impulso(A.ctx, 2.1, 2.6);
-  const revG = A.ctx.createGain(); revG.gain.value = 0.26;
-  A.rev.connect(revG); revG.connect(A.master);
+    A.rev = A.ctx.createConvolver();
+    A.rev.buffer = impulso(A.ctx, 2.1, 2.6);
+    const revG = A.ctx.createGain(); revG.gain.value = 0.26;
+    A.rev.connect(revG); revG.connect(A.master);
 
-  A.seco = A.ctx.createGain(); A.seco.gain.value = 1;
-  A.seco.connect(A.master);
-  A.listo = true;
+    A.seco = A.ctx.createGain(); A.seco.gain.value = 1;
+    A.seco.connect(A.master);
+    A.listo = true;
+  }
+
+  /* SIEMPRE, no sólo cuando ya existía. Éste era el defecto. */
+  if(A.ctx.state !== 'running'){
+    const pr = A.ctx.resume();
+    if(pr && pr.catch) pr.catch(() => {});
+  }
+  /* Empujar un sonido dentro del gesto: iOS no destraba sin esto. */
+  if(!A.destrabado){
+    try{
+      const b = A.ctx.createBuffer(1, 1, A.ctx.sampleRate);
+      const s = A.ctx.createBufferSource();
+      s.buffer = b; s.connect(A.ctx.destination); s.start(0);
+      A.destrabado = true;
+    }catch(e){}
+  }
+  destrabarIOS();
 }
 
 /* Todos los instrumentos reciben `t` en segundos del reloj de AUDIO. Nunca en
@@ -1785,6 +1856,29 @@ $('bJugar').onclick = () => {
   audioArranca();
   pintarLista(); ver('pantLista');
 };
+/* Probar el sonido. Toca tres notas y DICE qué pasó, que es la parte que
+   importa: si el navegador no abrió el audio es una cosa, y si lo abrió y aun
+   así no se oye es el interruptor lateral del teléfono, que es otra y no la
+   arregla ninguna página. Sin esto, «no se escucha» es media tarde. */
+$('bProbar').onclick = () => {
+  audioArranca();
+  const d = $('dicAudio');
+  if(!A.ctx){ d.textContent = 'Este navegador no tiene Web Audio. Ahí sí no puedo hacer nada.'; return; }
+  d.textContent = 'Sonando… ¿lo oíste?';
+  const t0 = A.ctx.currentTime + 0.06;
+  [72, 76, 79].forEach((n, i) => melodia(t0 + i * 0.17, n, 0.4, 1, 'piano'));
+  setTimeout(() => {
+    if(A.ctx.state !== 'running'){
+      d.textContent = 'El navegador todavía no deja sonar (' + A.ctx.state +
+        '). Vuelve a tocar el botón.';
+    } else {
+      d.innerHTML = 'El juego SÍ está sonando. Si no lo oíste: sube el volumen, y '
+        + 'en iPhone <b>quita el interruptor de silencio</b> — con él puesto, Safari '
+        + 'calla los juegos aunque el volumen esté alto.';
+    }
+  }, 700);
+};
+
 $('bComo').onclick = () => ver('pantComo');
 $('bComoOk').onclick = () => ver('pantMenu');
 $('bTienda').onclick = () => { audioArranca(); pintarTienda(); ver('pantTienda'); };
@@ -1799,6 +1893,10 @@ $('bListaVolver').onclick = () => ver('pantMenu');
    esto vuelves y la canción siguió sin ti. */
 document.addEventListener('visibilitychange', () => {
   if(document.hidden && J.activo && !J.pausa) pausar();
+  /* Al volver, iOS deja el contexto suspendido aunque tú creas que sigue vivo. */
+  if(!document.hidden && A.ctx && A.ctx.state === 'suspended' && !J.pausa){
+    const pr = A.ctx.resume(); if(pr && pr.catch) pr.catch(() => {});
+  }
 });
 
 /* ── El bucle ───────────────────────────────────────────────────────────── */
