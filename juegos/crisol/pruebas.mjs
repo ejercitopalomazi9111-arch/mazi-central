@@ -997,5 +997,47 @@ seccion('la mano y el termómetro');
      !!iu && iu.a === null && /nuclear/.test(iu.nota), iu ? iu.nota : 'no aparece');
 }
 
+seccion('la nitro detona por CHOQUE, no por caerse');
+{
+  /* Carlos, dos veces: «la nitroglicerina sigue explotando nada más ponerla».
+     Reproducido: en reposo aguantaba, pero pintada en el aire caía a velocidad
+     terminal contra un umbral más bajo y detonaba sola. El error era medir la
+     velocidad ABSOLUTA: un charco que cae entero no se está golpeando con
+     nada, se está cayendo. Lo que detona es velocidad RELATIVA. */
+  const cuantoQueda = (arma) => {
+    const m = mundo(40, 60, 7);
+    repisa(m, 59);
+    arma(m);
+    corre(m, 200);
+    let n = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.nitro) n++;
+    return n;
+  };
+  ok('pintada en el aire y cayendo 54 celdas, AGUANTA',
+     cuantoQueda(m => { for(let x = 10; x < 20; x++) m.pon(x, 5, IDX.nitro); }) === 10);
+  ok('apoyada y sin que nada la toque, aguanta',
+     cuantoQueda(m => { for(let x = 10; x < 20; x++) m.pon(x, 58, IDX.nitro); }) === 10);
+  ok('pero con una piedra de osmio cayéndole encima, DETONA',
+     cuantoQueda(m => {
+       for(let x = 10; x < 20; x++) m.pon(x, 58, IDX.nitro);
+       m.pon(15, 5, IDX.eOs); m.suelto[m.i(15,5)] = 1;
+     }) < 10);
+  /* Un chapuzón de agua NO la detona, y eso no es una excepción escrita a
+     mano: el agua es ligera, el arrastre le deja una velocidad terminal de
+     2.16 y el umbral de la nitro son 2.2. Sale del número, no de un `if`. */
+  ok('y un chapuzón de agua no: no llega a la velocidad de golpe',
+     cuantoQueda(m => {
+       for(let x = 10; x < 20; x++) m.pon(x, 58, IDX.nitro);
+       for(let x = 13; x < 17; x++) m.pon(x, 5, IDX.agua);
+     }) === 10);
+  /* detonación simpática: la onda de otra explosión */
+  const s = mundo(60, 60, 7);
+  repisa(s, 59);
+  for(let x = 40; x < 50; x++) s.pon(x, 58, IDX.nitro);
+  s.revienta(20, 55, 16);
+  corre(s, 120);
+  let quedan = 0; for(let k = 0; k < s.t.length; k++) if(s.t[k] === IDX.nitro) quedan++;
+  ok('y la onda de otra explosión SÍ la detona (simpática)', quedan < 10, quedan + '/10');
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

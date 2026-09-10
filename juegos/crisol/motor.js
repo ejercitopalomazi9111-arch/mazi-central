@@ -138,6 +138,7 @@ export class Mundo {
     /* de quién vino la corriente a cada celda: sin esto una compuerta no puede
        distinguir una entrada de su propia salida */
     this._padre = new Int32Array(n);
+    this._detona = [];   /* choques que van a detonar, resueltos al final del paso */
     /* ── LA LUZ ────────────────────────────────────────────────────────
        Carlos: «la lámpara no produce iluminación, de hecho no tenemos
        iluminación». Cierto: la lámpara se pintaba amarilla y ahí acababa
@@ -900,6 +901,14 @@ export class Mundo {
        hacía vidrio y el motor «no tenía nada malo».
        Primero se actúa con la temperatura que hay, luego evoluciona. */
     this.calor();
+    /* Las detonaciones por choque se resuelven AQUÍ y no dentro del
+       movimiento: reventar en medio del recorrido cambia el mundo debajo del
+       bucle que lo está recorriendo, y eso es como se corrompe un motor. */
+    if(this._detona.length){
+      const lista = this._detona;
+      this._detona = [];
+      for(const [dx, dy, f] of lista) this.revienta(dx, dy, f);
+    }
   }
 
   celda(x, y, k, tipo){
@@ -966,19 +975,38 @@ export class Mundo {
        que es lo que se me pasó: que ELLA caiga rápido y se estrelle, o que
        algo LE CAIGA ENCIMA. Medir sólo su propia velocidad dejaba fuera el
        caso obvio — tirarle una piedra — y era justo el que se prueba primero. */
+    /* ── DETONA POR GOLPE, Y EL GOLPE ES RELATIVO ─────────────────────────
+       Carlos, dos veces: «la nitroglicerina sigue explotando nada más
+       ponerla». Reproducido: en reposo aguantaba, pero pintada en el aire caía
+       a velocidad terminal 6 contra un umbral de 2.2 y detonaba sola. O sea
+       que bastaba soltarla.
+
+       Lo que estaba mal era medir la velocidad ABSOLUTA. Un charco que cae
+       entero lleva velocidad 6 y no se está golpeando con nada: se está
+       cayendo. Lo que detona un explosivo es un choque, y un choque es
+       velocidad RELATIVA — la diferencia con lo que tiene al lado.
+
+       Con eso: un charco cayendo junto tiene relativa 0 y aguanta; una piedra
+       que le cae encima tiene relativa 6 y lo revienta; y una onda de choque
+       de otra explosión también, que es la detonación simpática de verdad.
+
+       ⚠ Y ojo: durante un rato esto «se arregló solo» porque la resistencia
+       del aire le bajó la velocidad terminal a 2.37, justo por encima del
+       umbral de 2.2. Eso no es un arreglo, es una casualidad de dos números
+       que se rompe al primer ajuste. */
     if(e.golpe){
-      const propio = Math.abs(this.vy[k]) + Math.abs(this.vx[k]);
-      let impacto = propio > e.golpe &&
-        (() => { const a = this.dentro(x, y+1) ? EL[this.t[this.i(x,y+1)]] : EL[IDX.muro];
-                 return a.estado === 'solido' || a.estado === 'polvo'; })();
-      if(!impacto){
-        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
-          if(!this.dentro(x+dx, y+dy)) continue;
-          const k2 = this.i(x+dx, y+dy);
-          if(this.t[k2] === VACIO) continue;
-          if(Math.abs(this.vy[k2]) + Math.abs(this.vx[k2]) > e.golpe){ impacto = true; break; }
-        }
+      let impacto = false;
+      const vyk = this.vy[k], vxk = this.vx[k];
+      for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+        if(!this.dentro(x+dx, y+dy)) continue;
+        const k2 = this.i(x+dx, y+dy);
+        if(this.t[k2] === VACIO) continue;
+        if(this.t[k2] === tipo) continue;          /* uno de los suyos no lo golpea */
+        const rel = Math.abs(this.vy[k2] - vyk) + Math.abs(this.vx[k2] - vxk);
+        if(rel > e.golpe){ impacto = true; break; }
       }
+      /* y la onda de choque de otra explosión: detonación simpática */
+      if(!impacto && this.pres[k] > 70) impacto = true;
       if(impacto){ this.revienta(x, y, e.explota || 6); return; }
     }
     if(e.radia){
@@ -1500,6 +1528,24 @@ export class Mundo {
   trata(x, y, k, nx, ny, e){
     if(!this.dentro(nx, ny)) return false;
     const k2 = this.i(nx, ny);
+    /* ⚠ EL CHOQUE SE MIRA ANTES QUE NADA. Estaba más abajo, después de la
+       guarda de «esta celda ya se movió este cuadro»… y el líquido de abajo se
+       procesa ANTES que el cuerpo que le cae encima, así que casi siempre ya
+       se había movido y `trata` salía en la primera línea sin llegar a mirar
+       el impacto. La nitro aguantaba una piedra de osmio a plomo. */
+    {
+      const d0 = this.t[k2];
+      if(d0 !== VACIO && EL[d0].golpe){
+        const rel = Math.abs(this.vy[k] - this.vy[k2]) + Math.abs(this.vx[k] - this.vx[k2]);
+        /* ⚠ SE GUARDA EL SITIO Y LA FUERZA, NO EL ÍNDICE DE LA CELDA. Guardé
+           el índice y para cuando se resolvía la detonación el que había
+           entrado YA OCUPABA esa celda: se leía «osmio, esto no explota» y se
+           descartaba en silencio. La nitro aguantaba una piedra a plomo y el
+           choque sí se estaba detectando. */
+        if(rel > EL[d0].golpe)
+          this._detona.push([nx, ny, EL[d0].explota || 6]);
+      }
+    }
     if(this.mov[k2]) return false;
     const dest = this.t[k2];
     /* ⚠ aquí decía `if(dest === k)`: comparaba un TIPO con un ÍNDICE de celda.
@@ -1508,6 +1554,12 @@ export class Mundo {
        deja de moverse sin motivo. Manzanas con naranjas. */
     if(dest === VACIO){ this.intercambia(k, k2); return true; }
     const v = EL[dest];
+    /* ⚠ UN CUERPO RÁPIDO SE SALTA A SUS VECINOS. La nitro miraba a los cuatro
+       lados buscando algo que llegara deprisa… y una piedra de osmio pasa de
+       y=54 a y=58 en UN paso: nunca está pegada, se le mete dentro de golpe.
+       Comprobarlo desde el que recibe no funciona con velocidades altas.
+       Aquí sí, porque `trata` es por donde pasa TODO movimiento: el choque se
+       detecta en el instante en que uno entra donde está el otro. */
     const ev = this.estadoDe(k2);
     if(ev === 'solido' || ev === 'polvo') return false;
     if((v.dens || 0) < (e.dens || 0)){ this.intercambia(k, k2); return true; }
