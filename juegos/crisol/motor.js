@@ -33,7 +33,7 @@ EL.forEach((e, i) => { if(e.cuerda) ES_CUERDA[i] = 1; });
    arrastrarse. */
 const TABLA = new Map();
 const clave = (a, b) => a * 512 + b;
-for(const [a, b, ra, rb, prob, calor, enciende] of REACCIONES){
+for(const [a, b, ra, rb, prob, calor, enciende, aprieta] of REACCIONES){
   if(prob <= 0) continue;
   const A = IDX[a], B = IDX[b];
   /* `enciende` es la temperatura mínima. Nació de un reporte de Carlos:
@@ -42,8 +42,10 @@ for(const [a, b, ra, rb, prob, calor, enciende] of REACCIONES){
      que decía «sólo con chispa». Esa chispa nunca se implementó: una regla que
      no podía dispararse nunca, con una nota explicando por qué. */
   const t = enciende == null ? -1e9 : enciende;
-  TABLA.set(clave(A, B), { a: ra === null ? A : IDX[ra], b: rb === null ? B : IDX[rb], p: prob, q: calor || 0, t });
-  TABLA.set(clave(B, A), { a: rb === null ? B : IDX[rb], b: ra === null ? A : IDX[ra], p: prob, q: calor || 0, t });
+  /* la presión mínima alternativa: `Infinity` si la reacción no la admite */
+  const pr = aprieta == null ? Infinity : aprieta;
+  TABLA.set(clave(A, B), { a: ra === null ? A : IDX[ra], b: rb === null ? B : IDX[rb], p: prob, q: calor || 0, t, pr });
+  TABLA.set(clave(B, A), { a: rb === null ? B : IDX[rb], b: ra === null ? A : IDX[ra], p: prob, q: calor || 0, t, pr });
 }
 
 export const AMBIENTE = 22;
@@ -76,6 +78,13 @@ export const ESCALA_ESF = 0.05;
    el acto en vez de sólo fatigarse. Es lo que separa el corazón de una
    explosión del frente que sólo pasa. */
 export const ROMPE_YA = 4;
+/* Tope de compresión por celda. 40 atmósferas de gas en una celda es ya un
+   tanque de buceo; más que eso sólo servía para hacer números absurdos. */
+export const MOLES_MAX = 40;
+/* Cuánta presión del campo `pres` vale UNA atmósfera por encima del ambiente.
+   Con 300, una cámara al triple de su gas revienta la piedra (aguanta ~960) y
+   el muro no, que es lo que se quiere. */
+export const ATM = 300;
 /* ── EL HUECO ES AIRE, NO VACÍO ─────────────────────────────────────────
    Carlos lo pidió por su nombre: «no tienen peso, resistencia del aire,
    gravedad etc, deberías sumar todo eso». Nada de eso se puede calcular sin
@@ -200,6 +209,20 @@ export class Mundo {
        Un tope así no maquilla nada — sólo prohíbe crear energía, que es lo
        que la física ya prohibía. */
     this.picoOnda = 0;
+    /* ── CUÁNTO GAS HAY EN ESTA CELDA ───────────────────────────────────
+       Carlos: «las presiones en un espacio cerrado deben incluir el aire para
+       poder aumentar la presión en un lugar y que explote al rebasarse», y
+       «no tengo manera de aumentar la presión dentro de un espacio».
+       Tenía razón y era estructural: una celda de gas era una celda de gas y
+       ya. Sin una CANTIDAD, meter más gas en un sitio lleno no era ni
+       representable — no había dónde apuntarlo—, así que la ley de los gases
+       sólo podía subir por temperatura. Ahora cada celda lleva sus moles:
+       pintar gas encima de gas lo comprime, y encoger la cámara con un pistón
+       sube la presión sin tocar la temperatura, que es Boyle. */
+    this.moles = new Float32Array(n);
+    this.camara = new Int32Array(n);      /* a qué cámara sellada pertenece */
+    this.camaraP = [];                    /* presión de cada cámara */
+    this._abierto = new Uint8Array(n);
     /* ── EL CAMPO GRAVITATORIO ────────────────────────────────────────
        Carlos no pidió «activar y desactivar la gravedad»: pidió magnitud,
        dirección, zonas, por objeto y puntos que atraen o repelen, «combinar
@@ -274,12 +297,25 @@ export class Mundo {
     /* pintar es CONSTRUIR: lo que pones queda anclado hasta que algo lo golpee */
     this.suelto[this.i(x, y)] = 0;
     const k = y * this.an + x;
+    /* ⚠ PINTAR GAS SOBRE EL MISMO GAS LO COMPRIME. Ésta es la respuesta
+       directa a «no tengo manera de aumentar la presión dentro de un espacio»:
+       antes, repasar con el dedo una recámara ya llena de hidrógeno no hacía
+       absolutamente nada — la celda ya era hidrógeno—. Ahora suma moles, y de
+       ahí sale la presión que funde el hidrógeno con el oxígeno, la que
+       convierte el carbón en diamante y la que revienta el recipiente. */
+    if(this.t[k] === tipo && EL[tipo].estado === 'gas'){
+      this.moles[k] = Math.min(MOLES_MAX, this.moles[k] + 1);
+      if(temp != null) this.temp[k] = temp;
+      this.despierta(x, y, 2);
+      return;
+    }
     this.t[k] = tipo;
     this.vida[k] = 0;
     this.car[k] = 0;
     this.vy[k] = 0; this.vx[k] = 0;
     this.fase[k] = 0; this.color[k] = 0;
     const e = EL[tipo];
+    this.moles[k] = e.estado === 'gas' ? 1 : 0;
     if(temp != null) this.temp[k] = temp;
     else if(e.nace != null) this.temp[k] = e.nace;
     else if(e.calor) this.temp[k] = e.id === 'lava' ? 1200 : 900;
@@ -329,6 +365,8 @@ export class Mundo {
        sitio se queda. */
     const flv = this.flotante[k1]; this.flotante[k1] = this.flotante[k2]; this.flotante[k2] = flv;
     const nuv = this.nudo[k1]; this.nudo[k1] = this.nudo[k2]; this.nudo[k2] = nuv;
+    /* los moles son de la COSA: si el gas se mueve, se lleva su cantidad */
+    const mov2 = this.moles[k1]; this.moles[k1] = this.moles[k2]; this.moles[k2] = mov2;
     this.mov[k1] = 1; this.mov[k2] = 1;
   }
 
@@ -396,6 +434,129 @@ export class Mundo {
       const k = this.i(nx, ny);
       if(EL[this.t[k]].id === 'muro') continue;
       this.cambia(k, this.rnd() < .7 ? IDX.fuego : IDX.humo);
+    }
+  }
+
+  /* ── LAS CÁMARAS SELLADAS ───────────────────────────────────────────────
+     Carlos, dos veces en el mismo mensaje: «las presiones en un espacio
+     cerrado deben incluir el aire para poder aumentar la presión en un lugar y
+     que explote al rebasarse», y «no tengo manera de aumentar la presión
+     dentro de un espacio, por ejemplo para fusionar hidrógeno y oxígeno, o
+     someter a tanta presión carbono que se vuelva diamante».
+
+     Medido antes de tocar nada: una caja de muro llena de gas natural, metiendo
+     más gas doscientos pasos seguidos, marcaba presión CERO. Y no era un ajuste
+     malo — es que la presión sólo podía nacer de la TEMPERATURA. Un gas frío
+     encerrado no pesaba nada, y el aire de una habitación no existía siquiera
+     como cosa que se pueda comprimir.
+
+     Aquí se busca qué huecos están sellados —lo que no se alcanza desde el
+     borde del mundo— y a cada uno se le aplica la ley de los gases:
+
+         P = (n/V)·(T/T₀) − 1        en atmósferas POR ENCIMA del ambiente
+
+     · `n` son los moles: cada celda de gas los suyos (que suben al pintar
+       encima), y cada hueco cuenta como UNA de aire — eso es literalmente lo
+       que pidió, «deben incluir el aire».
+     · `V` es el volumen que queda: los líquidos ocupan sitio y no comprimen,
+       así que restan volumen en vez de sumar gas. Por eso meter agua a una
+       cámara sellada la presuriza.
+     · y de ahí sale solo lo demás: un pistón que encoge la cámara sube la
+       presión sin tocar el fuego (Boyle), calentarla la sube sin meter nada
+       (Gay-Lussac), y si la mezcla reacciona y quedan menos moles, BAJA.
+
+     Lo que sale por el otro lado es que el recipiente reviente cuando no
+     aguante, y eso no hace falta escribirlo: la presión se escribe en el mismo
+     campo que usa la onda, así que la maquinaria de romper ya estaba puesta. */
+  camaraPaso(){
+    const { an, al, t } = this;
+    const abierto = this._abierto;
+    const cola = this._cola;
+    abierto.fill(0);
+    let cab = 0, fin = 0;
+    const pasable = k => {
+      const e = EL[t[k]];
+      if(e.fijo) return false;
+      const est = this.estadoDe(k);
+      return est !== 'solido' && est !== 'polvo';
+    };
+    /* 1 · lo que se alcanza desde el borde del mundo está al aire libre */
+    const borde = k => { if(!abierto[k] && pasable(k)){ abierto[k] = 1; cola[fin++] = k; } };
+    for(let x = 0; x < an; x++){ borde(x); borde((al - 1) * an + x); }
+    for(let y = 0; y < al; y++){ borde(y * an); borde(y * an + an - 1); }
+    while(cab < fin){
+      const k = cola[cab++], x = k % an, y = (k / an) | 0;
+      if(x > 0)      borde(k - 1);
+      if(x < an - 1) borde(k + 1);
+      if(y > 0)      borde(k - an);
+      if(y < al - 1) borde(k + an);
+    }
+    /* 2 · lo que quedó sin alcanzar son cámaras. Una por componente. */
+    this.camara.fill(0);
+    this.camaraP.length = 0;
+    const cola2 = this._cola2;
+    for(let k0 = 0; k0 < t.length; k0++){
+      if(abierto[k0] || this.camara[k0] || !pasable(k0)) continue;
+      const id = this.camaraP.length + 1;
+      let c2 = 0, f2 = 0;
+      cola2[f2++] = k0; this.camara[k0] = id;
+      let vol = 0, moles = 0, tsum = 0;
+      while(c2 < f2){
+        const k = cola2[c2++], x = k % an, y = (k / an) | 0;
+        const tk = t[k];
+        if(tk === VACIO){ vol++; moles += 1; tsum += this.temp[k]; }
+        else if(EL[tk].estado === 'gas'){ vol++; moles += this.moles[k] || 1; tsum += this.temp[k]; }
+        /* los líquidos ocupan sitio y no comprimen: ni volumen ni moles */
+        const mete = k2 => { if(!this.camara[k2] && !abierto[k2] && pasable(k2)){ this.camara[k2] = id; cola2[f2++] = k2; } };
+        if(x > 0)      mete(k - 1);
+        if(x < an - 1) mete(k + 1);
+        if(y > 0)      mete(k - an);
+        if(y < al - 1) mete(k + an);
+        if(f2 > cola2.length - 4) break;
+      }
+      if(vol < 1){ this.camaraP.push(0); continue; }
+      /* ⚠ SÓLO LA COMPRESIÓN, NO LA TEMPERATURA — y esto costó seis pruebas
+         rojas antes de verlo. La presión que da el CALOR ya la ponía el motor
+         celda a celda desde la tanda del cohete, y meterla otra vez aquí la
+         contaba dos veces: la misma recámara a 2 600° pasó de 77 a 2 600 de
+         presión, treinta y cuatro veces más, y con eso un recipiente CERRADO
+         y sin gravedad se propulsaba solo doce celdas. Lo que faltaba no era
+         el calor: era que meter MÁS GAS en el mismo sitio contara. Así que
+         esto mide sólo el exceso sobre «una de aire por hueco», que es
+         exactamente el agujero que Carlos señaló, y a una atmósfera normal
+         da cero y no toca nada de lo que ya funcionaba. */
+      const tmed = tsum / vol + 273;
+      const atm = Math.max(0, moles / vol - 1) * (tmed / (AMBIENTE + 273));
+      this.camaraP.push(atm * ATM);
+      if(atm > 0.05) this.despierta(k0 % an, (k0 / an) | 0, 2);
+    }
+    /* ── 3 · LO QUE ESTÁ SUMERGIDO TAMBIÉN ESTÁ A ESA PRESIÓN ──────────
+       Sin esto, apretar una cámara aplastaba lo que hubiera DENTRO, y salía
+       una tontería memorable: el carbón se volvía diamante y a los sesenta
+       pasos los dieciséis diamantes habían desaparecido, triturados por la
+       misma presión que los hizo. El defecto es de bulto: la rotura compara
+       la presión de una celda con la de su vecina sólida, y un objeto
+       sumergido tenía 11 000 alrededor y 0 dentro. Un cuerpo rodeado de
+       presión POR IGUAL no siente fuerza neta — por eso un buzo no se aplasta
+       y un submarino sí.
+       Lo que distingue la PARED del recipiente de lo que hay dentro es una
+       sola cosa: la pared toca el aire libre por fuera. Así el bote sigue
+       reventando —que es lo que se quiere— y lo de dentro aguanta.
+       ⚠ Y se mira SÓLO a los vecinos. Lo intenté primero propagando «toca
+       fuera» por toda la cadena de sólidos, y con eso cualquier cosa APOYADA
+       en el suelo del recipiente contaba como pared: los diamantes seguían
+       haciéndose polvo porque estaban posados encima. Tocar a alguien que
+       toca la calle no es estar en la calle. */
+    for(let k = 0; k < t.length; k++){
+      if(t[k] === VACIO || this.camara[k]) continue;
+      const est = this.estadoDe(k);
+      if(est !== 'solido' && est !== 'polvo') continue;
+      if(EL[t[k]].fijo) continue;
+      const x = k % an, y = (k / an) | 0;
+      if(x === 0 || y === 0 || x === an - 1 || y === al - 1) continue;
+      if(abierto[k - 1] || abierto[k + 1] || abierto[k - an] || abierto[k + an]) continue;
+      const id = this.camara[k - 1] || this.camara[k + 1] || this.camara[k - an] || this.camara[k + an];
+      if(id) this.camara[k] = id;
     }
   }
 
@@ -1460,6 +1621,13 @@ export class Mundo {
       conduceCalor: e.cond ?? null, conduceElec: e.elec ?? null,
       dureza: e.dureza ?? null,
       presion: Math.round(this.pres[k] * 100) / 100,
+      /* Carlos: «la presión no se nota». Aquí es donde tiene que notarse: el
+         termómetro dice si estás dentro de algo SELLADO, a cuántas
+         atmósferas, y cuánto gas lleva metido esa celda. Sin estos tres
+         números, comprimir una cámara es a ciegas. */
+      sellado: !!this.camara[k],
+      atmosferas: Math.round((this.pres[k] / ATM) * 100) / 100,
+      moles: this.moles[k] ? Math.round(this.moles[k] * 10) / 10 : null,
       corriente: !!this.car[k],
       sostenido: !!this.sop[k], suelto: !!this.suelto[k],
       cambios: [],
@@ -1475,6 +1643,10 @@ export class Mundo {
        reconoce por el dato: hierve por debajo de donde se funde. */
     if(e.fusReal != null && e.ebuReal != null && e.ebuReal < e.fusReal)
       r.cambios.push({ que:'sublimación', a: e.ebuReal, nota:'de sólido a gas, sin pasar por líquido' });
+    if(e.aprieta) r.cambios.push({ que:'por presión', a: null,
+      nota: 'a ' + Math.round(e.aprieta[0] / ATM) + ' atmósferas ' +
+            (e.aprieta[1].startsWith('__revienta') ? 'revienta'
+             : 'se vuelve ' + (EL[IDX[e.aprieta[1]]] || {}).nom) });
     if(e.arde) r.cambios.push({ que:'combustión', a: null, nota:'arde con una fuente de calor cerca' });
     if(e.radia) r.cambios.push({ que:'fisión', a: null, nota:'nuclear, no es un cambio de estado' });
     return r;
@@ -1631,17 +1803,32 @@ export class Mundo {
         let v = (pv[k] + C2 * lap) * am[k];
         let p = pk + v;
         const tk = t[k];
-        if(tk !== VACIO && EL[tk].estado === 'gas'){
-          const eq = this.temp[k] > AMBIENTE ? (this.temp[k] - AMBIENTE) * 0.03 : 0;
-          p += (eq - p) * 0.06;
+        const cam = this.camara[k];
+        const cal = (tk !== VACIO && EL[tk].estado === 'gas' && this.temp[k] > AMBIENTE)
+                  ? (this.temp[k] - AMBIENTE) * 0.03 : 0;
+        if(cam){
+          /* dentro de una cámara sellada la celda tiende a lo que le toca por
+             estar apretada, MÁS lo que ya daba por estar caliente. Vale para
+             el hueco igual que para el gas — el aire de una habitación
+             cerrada también empuja, que es justo lo que Carlos echaba en
+             falta. */
+          const eq = (this.camaraP[cam - 1] || 0) + cal;
+          p += (eq - p) * 0.10;
+          if(eq > this.picoOnda) this.picoOnda = eq;
         }
+        else if(cal) p += (cal - p) * 0.06;
         /* El hueco es el desahogo: es aire abierto, no una cámara. Se desahoga
            SÓLO cuando no está oscilando, así que el frente de la onda —que
            lleva velocidad grande— lo cruza sin perder nada, y en cambio el
            desnivel plano que queda después sí se drena. Sin esto la sala se
            quedaba presurizada de por vida: a 900 pasos la energía seguía
            clavada en 5.21e6 empujándolo todo. */
-        if(tk === VACIO && v > -0.5 && v < 0.5) p *= 0.95;
+        /* ⚠ Y EL DESAHOGO NO VALE DENTRO DE UNA CÁMARA. Es el drenaje que
+           impide que la sala se quede presurizada de por vida, y estaba bien
+           puesto para el aire libre — pero aplicado dentro de un bote sellado
+           le abre un agujero que no existe: la presión se escapaba por donde
+           no hay salida y ninguna recámara subía nunca. */
+        if(tk === VACIO && !cam && v > -0.5 && v < 0.5) p *= 0.95;
         if(p > -0.04 && p < 0.04 && v > -0.04 && v < 0.04){ p = 0; v = 0; }
         if(p > techo) p = techo; else if(p < -techo) p = -techo;
         if(v > techo) v = techo; else if(v < -techo) v = -techo;
@@ -1865,6 +2052,16 @@ export class Mundo {
     this.electricidad();
     this.luzPaso();
     this.magnetismo();
+    /* ⚠ CADA DOS PASOS, Y NO CADA CUATRO AUNQUE SEAN 2.7 ms MÁS BARATOS.
+       Son tres recorridos del mundo entero y la tentación era espaciarlos:
+       medido en la sala de 320×480 son 23 ms cada paso, 18.7 cada dos y 16.0
+       cada cuatro. Pero a cuatro se rompen dos pruebas del cohete, y con
+       razón: entre pasada y pasada el gas SE MUEVE, así que la marca de «esta
+       celda pertenece a la cámara» se queda vieja y la presión se aplica a
+       unas celdas sí y a otras no. Esa asimetría le da empuje neto a un
+       recipiente cerrado — se propulsaba 1.57 celdas él solo. Una foto vieja
+       de quién está dentro es peor que ninguna. */
+    if((this.paso_ & 1) === 0) this.camaraPaso();
     this.presionPaso();
     this.esfuerzoPaso();
 
@@ -2022,6 +2219,20 @@ export class Mundo {
       if(!impacto && this.pres[k] > 18) impacto = true;
       if(impacto){ this.revienta(x, y, e.explota || 6); return; }
     }
+    /* ── LO QUE CAMBIA POR APRETARLO ────────────────────────────────────
+       Carlos: «someter a tanta presión carbono que se vuelva diamante, o
+       uranio que explote». Es hermano de `fus` y `ebu` —lo mismo pero con el
+       otro eje del diagrama de fases— y por eso se escribe igual: en el
+       elemento, no en el motor. Quien quiera meter otro material que se
+       transforme al apretarlo, le pone `aprieta:[presión,'producto']` y ya. */
+    if(e.aprieta && this.pres[k] >= e.aprieta[0]){
+      const destino = e.aprieta[1];
+      if(destino.startsWith('__revienta ')){
+        this.revienta(x, y, +destino.slice(11));
+        this.cambia(k, VACIO);
+      } else this.cambia(k, IDX[destino]);
+      return;
+    }
     if(e.radia){
       this.temp[k] += 1.2;
       if(this.rnd() < .002){
@@ -2154,7 +2365,11 @@ export class Mundo {
       if(!r) continue;
       /* hay reacciones que necesitan una CHISPA: no pasan solas por estar
          juntas, hace falta que alguien las encienda */
-      if(r.t > -1e8 && this.temp[k] < r.t && this.temp[k2] < r.t) continue;
+      /* la condición de encendido: CALOR o PRESIÓN, cualquiera de las dos.
+         La segunda es la que pidió Carlos para fusionar hidrógeno y oxígeno
+         sin chispa — apretarlos en una cámara sellada. */
+      if(r.t > -1e8 && this.temp[k] < r.t && this.temp[k2] < r.t &&
+         !(this.pres[k] >= r.pr || this.pres[k2] >= r.pr)) continue;
       if(this.rnd() > r.p) continue;
       const antesA = this.t[k], antesB = this.t[k2];
       this.t[k] = r.a; this.vida[k] = 0;

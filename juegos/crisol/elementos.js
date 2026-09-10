@@ -136,7 +136,15 @@ const JUEGO = {
   madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12, friccion:.55,
              arde:.35, calorArde:600, dureza:.25, grupo:'combustible' },
   carbon:  { nom:'Carbón',  col:'#26222C', estado:'polvo',  dens:14, cond:.16,
-             arde:.5, calorArde:1100, dureza:.15, grupo:'combustible' },
+             arde:.5, calorArde:1100, dureza:.15, aprieta:[2600,'diamante'],
+             grupo:'combustible',
+             ayuda:'Arde. Y si lo aprietas muchísimo dentro de algo sellado, se vuelve diamante' },
+  /* Carlos: «someter a tanta presión carbono que se vuelva diamante». Es la
+     transición de verdad —grafito a diamante pide unas 5 GPa— y aquí es la
+     recompensa de saber sellar una cámara y comprimirla, no un botón. */
+  diamante:{ nom:'Diamante', col:'#BFF3FF', estado:'solido', dens:18, cond:.9,
+             dureza:.98, grupo:'combustible',
+             ayuda:'Lo más duro que hay. Sale de apretar carbón a lo bestia' },
 
   /* ── gases ────────────────────────────────────────────────────────────── */
   hidrogeno:{nom:'Hidrógeno',col:'#C9D8FF',estado:'gas',   dens:0.08, cond:.5,
@@ -311,7 +319,8 @@ const JUEGO = {
   acido:   { nom:'Ácido',   col:'#8FE03D', estado:'liquido', dens:11, cond:.4,
              corroe:.35, grupo:'química' },
   uranio:  { nom:'Uranio',  col:'#5FE04A', estado:'polvo',  dens:38, cond:.4,
-             radia:true, dureza:.5, grupo:'química' },
+             radia:true, dureza:.5, aprieta:[4200,'__revienta 26'], grupo:'química',
+             ayuda:'Radiactivo. Comprimido a lo bestia dentro de algo sellado, revienta' },
 
   /* ── vida, apenas la semilla de lo que viene ──────────────────────────── */
   planta:  { nom:'Planta',  col:'#3FA83F', estado:'solido', dens:18, cond:.15,
@@ -512,7 +521,11 @@ export const REACCIONES = [
   /* La de verdad: 2H₂ + O₂ → 2H₂O. Necesita chispa —500°— y suelta MUCHO
      calor, que es lo que la vuelve peligrosa y lo que hace que se propague
      sola en cuanto empieza. */
-  ['hidrogeno','oxigeno','agua',    'vapor',  .85,  2200, 500],
+  /* ⚠ Y TAMBIÉN POR PRESIÓN, SIN CHISPA. Carlos: «no tengo manera de aumentar
+     la presión dentro de un espacio, por ejemplo para poder fusionar hidrógeno
+     y oxígeno». El octavo campo es la presión mínima: con cualquiera de las
+     dos condiciones —caliente O apretado— la reacción corre. */
+  ['hidrogeno','oxigeno','agua',    'vapor',  .85,  2200, 500, 1200],
   /* Hidronio, H₃O⁺: el ion que hace que un ácido sea ácido. Sale de meterle
      un protón al agua, y aquí eso es agua + ácido. Corroe. */
   ['agua',     'acido',  'hidronio','acido',  .12,  30],
@@ -570,7 +583,7 @@ const RESISTENCIA = {
    Es una tabla y no un `if`, por la misma razón que todo lo demás aquí:
    para que crezca sin tocar el motor. */
 const ICONOS = {
-  vacio:'⌫', muro:'🧱', arena:'🏖', tierra:'🟫', piedra:'🪨', grava:'🪨', sal:'🧂',
+  diamante:'💎', vacio:'⌫', muro:'🧱', arena:'🏖', tierra:'🟫', piedra:'🪨', grava:'🪨', sal:'🧂',
   salfun:'🌡', vidrio:'🪟', vidfun:'🫗', cemento:'🪣', concreto:'🧱',
   agua:'💧', salada:'🌊', hielo:'🧊', nieve:'❄️', vapor:'♨️', hielose:'🌫', co2:'💨',
   fuego:'🔥', humo:'💨', ceniza:'🌑', lava:'🌋', obsidiana:'⬛', termita:'✨',

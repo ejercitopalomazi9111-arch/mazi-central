@@ -1706,5 +1706,110 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
      'metal ' + me.queda + '/' + me.de + ' · piedra ' + pi.queda + '/' + pi.de);
 }
 
+seccion('cámaras selladas: el aire cuenta, se comprime y revienta');
+{
+  const caja = (m, x0, y0, x1, y1, mat) => {
+    for(let x = x0; x <= x1; x++){ m.pon(x, y0, IDX[mat]); m.pon(x, y1, IDX[mat]); }
+    for(let y = y0; y <= y1; y++){ m.pon(x0, y, IDX[mat]); m.pon(x1, y, IDX[mat]); }
+  };
+  /* repasar con el dedo, que es lo que hace Carlos en el teléfono */
+  const bombea = (m, gas, x0, y0, x1, y1, pasos, ojo) => {
+    for(let n = 1; n <= pasos; n++){
+      if(n % 2 === 0) for(let y = y0; y <= y1; y++) for(let x = x0; x <= x1; x++){
+        const k = m.i(x, y); if(m.t[k] === IDX[gas] || m.t[k] === IDX.vacio) m.pon(x, y, IDX[gas]); }
+      m.paso(); if(ojo) ojo(m, n);
+    }
+  };
+
+  /* «Las presiones en un espacio cerrado deben incluir el aire para poder
+     aumentar la presión en un lugar y que explote al rebasarse.» Medido antes
+     de tocar nada: una caja de muro llena de gas, metiendo más gas doscientos
+     pasos, marcaba presión CERO. */
+  {
+    const m = mundo(40, 40, 7);
+    for(let x = 0; x < 40; x++) m.pon(x, 39, IDX.muro);
+    caja(m, 10, 18, 30, 38, 'piedra');
+    const pared = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) c++; return c; };
+    const a0 = pared();
+    let pico = 0;
+    bombea(m, 'gasnat', 11, 19, 29, 37, 120, (mm) => {
+      const c = mm.camara[mm.i(20, 28)]; if(c) pico = Math.max(pico, mm.camaraP[c - 1]); });
+    ok('meter gas en un sitio sellado SUBE la presión', pico > 400, 'llegó a ' + pico.toFixed(0));
+    ok('y la caja de piedra REVIENTA por dentro', pared() < a0 * 0.75,
+       'quedaron ' + pared() + ' de ' + a0 + ' celdas de pared');
+  }
+
+  /* ⚠ y la pareja: una habitación ABIERTA no se presuriza sola. Sin esta
+     prueba, «que suba la presión» se cumple subiendo un número hasta que todo
+     el mundo está a presión siempre. */
+  {
+    const m = mundo(40, 40, 7);
+    for(let x = 0; x < 40; x++) m.pon(x, 39, IDX.muro);
+    corre(m, 200);
+    let s = 0; for(let k = 0; k < m.pres.length; k++) s += Math.abs(m.pres[k]);
+    ok('una habitación abierta NO se presuriza sola', s < 1, 'presión total ' + s.toFixed(2));
+  }
+
+  /* «Someter a tanta presión carbono que se vuelva diamante.» */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let x = 12; x < 28; x++) m.pon(x, 29, IDX.carbon);
+    bombea(m, 'gasnat', 11, 11, 29, 28, 400);
+    ok('el carbón apretado se vuelve DIAMANTE', cuantos(m, 'diamante') > 8,
+       'salieron ' + cuantos(m, 'diamante') + ' diamantes');
+    /* ⚠ Y QUE SOBREVIVA. La primera versión los hacía y a los sesenta pasos
+       los dieciséis habían desaparecido, triturados por la misma presión que
+       los creó: la rotura comparaba la presión de fuera con la de dentro, y un
+       objeto sumergido tenía 11 000 alrededor y 0 adentro. Un cuerpo rodeado
+       de presión por igual no siente fuerza neta — por eso un buzo no se
+       aplasta y un submarino sí. */
+    ok('y NO se tritura con la misma presión que lo hizo', cuantos(m, 'diamante') > 8,
+       'quedaron ' + cuantos(m, 'diamante'));
+  }
+
+  /* «Fusionar hidrógeno y oxígeno» — sin chispa, sólo apretando. */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++)
+      m.pon(x, y, (x % 2) ? IDX.hidrogeno : IDX.oxigeno);
+    let agua = 0;
+    for(let n = 1; n <= 300; n++){
+      if(n % 2 === 0) for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++){
+        const k = m.i(x, y), tt = m.t[k];
+        if(tt === IDX.hidrogeno || tt === IDX.oxigeno) m.pon(x, y, tt); }
+      m.paso();
+      agua = Math.max(agua, cuantos(m, 'agua') + cuantos(m, 'vapor'));
+    }
+    ok('hidrógeno y oxígeno APRETADOS hacen agua sin chispa', agua > 20,
+       'lo más que hubo fue ' + agua);
+  }
+
+  /* «O uranio que explote.» */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let x = 14; x < 26; x++) m.pon(x, 29, IDX.uranio);
+    const u0 = cuantos(m, 'uranio');
+    bombea(m, 'gasnat', 11, 11, 29, 28, 300);
+    ok('el uranio apretado revienta', cuantos(m, 'uranio') < u0 / 2,
+       'de ' + u0 + ' quedaron ' + cuantos(m, 'uranio'));
+  }
+
+  /* y que el termómetro lo DIGA, que es la otra mitad de «la presión no se
+     nota»: un número que no se ve no existe para quien juega */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++) m.pon(x, y, IDX.gasnat);
+    for(let i = 0; i < 3; i++) m.pon(20, 20, IDX.gasnat);
+    corre(m, 20);
+    const r = m.informe(20, 20);
+    ok('el termómetro dice que el recinto está sellado', r.sellado === true);
+    ok('y cuánto gas lleva metido esa celda', r.moles >= 3, 'dice ' + r.moles);
+  }
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

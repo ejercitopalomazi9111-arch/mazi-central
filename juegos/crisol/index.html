@@ -780,7 +780,12 @@ function ficha(x, y){
   h += fila('Temperatura', r.temperatura + ' °C');
   h += fila('Estado ahora', r.estado);
   h += fila('Densidad', r.densidad + (r.masa ? ' · ' + r.masa + ' g/cm³ de verdad' : ''));
-  if(r.presion) h += fila('Presión', r.presion);
+  /* Carlos: «la presión no se nota». Se nota aquí o no se nota: en
+     atmósferas, que es como se piensa, y diciendo si el sitio está sellado —
+     que es lo único que permite que suba. */
+  if(r.presion) h += fila('Presión', r.atmosferas + ' atm');
+  if(r.sellado) h += fila('Recinto', 'SELLADO · aquí sí sube la presión');
+  if(r.moles) h += fila('Gas metido', r.moles + '× (repinta encima para comprimir)');
   if(r.corriente) h += fila('Corriente', 'sí, le llega');
   const fases = r.cambios.filter(c => c.que !== 'fisión' && c.que !== 'combustión');
   if(fases.length){
