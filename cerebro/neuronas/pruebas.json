@@ -639,6 +639,28 @@
         "prueba-que-aprueba-por-accidente",
         "suite-que-no-arranca-calla"
       ]
+    },
+    {
+      "id": "medir-antes-de-que-acabe",
+      "titulo": "Lo declaré roto y sólo no había terminado",
+      "gravedad": "media",
+      "sintoma": "En la captura o en el volcado, algo está a medio camino y parece atorado. Se abre el código a buscar un bug que no existe.",
+      "causa": "Se mide antes de que el sistema haya llegado a su estado estable. Lo que se ve es un fotograma intermedio, no un resultado.",
+      "porque": "El tiempo de espera se elige a ojo y casi siempre por lo bajo, porque uno tiene prisa. Y un intermedio se parece muchísimo a un atorón.",
+      "arreglo": "Calcular cuánto TARDA de verdad —cuántos pasos, cuántos cuadros— y esperar eso, o mejor esperar a que la magnitud deje de cambiar en vez de a un reloj.",
+      "comoCazarlo": "Antes de abrir el código, volver a medir con el triple de tiempo. Si el síntoma se va, era prisa.",
+      "consejo": "Un sistema a medio camino no es un sistema roto. Y en un día ya casi mando a arreglar tres motores sanos por esto.",
+      "salioDe": "juegos/crisol · la arena se veía flotando en la captura y parecía fallar la gravedad; tenía 138 celdas que caer y yo esperé 900 ms, que dan 54 pasos",
+      "senales": [
+        "se quedó a medias",
+        "parece atorado",
+        "no llega al final",
+        "flota en el aire"
+      ],
+      "vecinas": [
+        "prueba-que-aprueba-por-accidente",
+        "el-robot-mide-con-la-regla-chueca"
+      ]
     }
   ]
 }

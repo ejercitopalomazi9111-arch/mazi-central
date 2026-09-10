@@ -229,6 +229,48 @@
       "vecinas": [
         "suite-que-no-arranca-calla"
       ]
+    },
+    {
+      "id": "salto-que-no-mira-el-camino",
+      "titulo": "Comprueba el destino y se salta lo que hay en medio",
+      "gravedad": "alta",
+      "sintoma": "Algo aparece del otro lado de una pared. En una simulación: el líquido atraviesa el muro; en una lista: se selecciona un elemento oculto; en un movimiento: la ficha pasa por encima de otra.",
+      "causa": "El código busca a distancia —«hasta 5 celdas a la derecha»— y sólo comprueba que la casilla FINAL esté libre. Lo que haya en medio no se mira.",
+      "porque": "Escribir `for(i=1..n)` y comprobar el destino se siente completo, y con alcance 1 lo es. El agujero sólo aparece cuando el alcance crece, y para entonces el bucle ya se dio por bueno.",
+      "arreglo": "Recorrer el camino celda por celda y PARAR en el primer estorbo (`break`, no `continue`). La diferencia entre los dos es literalmente atravesar paredes.",
+      "comoCazarlo": "Poner una barrera justo en medio del alcance y comprobar que nada la cruza. Una prueba de dos líneas que no se le ocurre a nadie hasta que pasa.",
+      "consejo": "Cuando el síntoma es «la reacción no funciona» y los ingredientes están separados por algo, sospecha del camino antes que de la reacción.",
+      "salioDe": "juegos/crisol · el esparcimiento lateral de líquidos saltaba por encima de un muro: el vidrio fundido se fugaba del crisol y el agua salada se salía de su canal, y las dos veces parecía que fallaba la química",
+      "senales": [
+        "atraviesa la pared",
+        "aparece del otro lado",
+        "se salta lo que hay en medio",
+        "la reacción no funciona"
+      ],
+      "vecinas": [
+        "campo-que-choca-consigo"
+      ]
+    },
+    {
+      "id": "una-bandera-con-dos-significados",
+      "titulo": "El mismo campo quiere decir dos cosas distintas",
+      "gravedad": "media",
+      "sintoma": "Algo se comporta bien en un caso y absurdo en otro, sin que el código tenga una rama que los distinga.",
+      "causa": "Un campo booleano al que se le fueron colgando dos ideas parecidas pero no iguales. Al leerlo, el código aplica la primera a todo el que lo lleve.",
+      "porque": "Al nombrarlo, las dos ideas suenan a lo mismo: «esto está caliente» y «esto calienta». Se marca igual y durante un rato funciona, porque el primer caso cumple las dos.",
+      "arreglo": "Separar en dos campos con nombres que no se confundan, y decir en el comentario cuál es cuál y por qué fueron uno solo.",
+      "comoCazarlo": "Listar quién lleva la bandera y preguntarse si TODOS cumplen las dos lecturas. En cuanto uno no, ahí está.",
+      "consejo": "Si al explicar un campo usas «bueno, depende», ya son dos campos.",
+      "salioDe": "juegos/crisol · marqué los metales y vidrios fundidos con `calor` «porque están calientes», y ese campo significaba «horno eterno»: el vidrio fundido se quedaba a 1804° para siempre y jamás volvía a ser vidrio",
+      "senales": [
+        "nunca se enfría",
+        "se queda así para siempre",
+        "funciona en un caso y no en otro",
+        "la bandera hace dos cosas"
+      ],
+      "vecinas": [
+        "salto-que-no-mira-el-camino"
+      ]
     }
   ]
 }
