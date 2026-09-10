@@ -161,6 +161,10 @@ function pinta(){
     const tipo = t[k];
     const c = RGB[tipo];
     let r = c[0], g = c[1], b = c[2];
+    if(tipo === VACIO){
+      const P = M.pres[k];
+      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*120; g += f*120; b += f*160; }
+    }
     if(tipo !== VACIO){
       const n = RUIDO[k];
       r += n; g += n; b += n;
@@ -171,6 +175,12 @@ function pinta(){
       if(T > 120){ const f = Math.min(1, (T - 120) / 900); r += f*170; g += f*55; }
       else if(T < 0){ const f = Math.min(1, -T / 60); b += f*70; g += f*30; }
       if(car[k]){ r += 70; g += 90; b += 30; }
+      /* La presión SE PINTA. Una onda expansiva que no se ve no es una onda:
+         es un número. Se tiñe de blanco hacia el azul según la fuerza. */
+      const P = M.pres[k];
+      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*150; g += f*150; b += f*190; }
+      /* un interruptor cerrado se ve cerrado */
+      if(EL[tipo].interruptor && M.vida[k]){ g += 60; }
     }
     const p = k << 2;
     datos[p]   = r < 0 ? 0 : r > 255 ? 255 : r;
@@ -226,10 +236,12 @@ function paleta(){
     b.appendChild(i);
     const s = document.createElement('span'); s.textContent = e.nom;
     b.appendChild(s);
+    if(e.ayuda) b.title = e.ayuda;
     b.onclick = () => {
       elSel = IDX[e.id]; modo = 'pintar';
       if(nuevo){ guardado.mochila[e.id] = 2; salva(); }
       $('bCalor').classList.remove('on'); $('bFrio').classList.remove('on');
+      if(e.ayuda) avisa(e.nom + ' · ' + e.ayuda);
       paleta();
     };
     c.appendChild(b);
@@ -280,7 +292,14 @@ function brocha(x, y){
 }
 cv.addEventListener('pointerdown', ev => {
   ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
-  const [x, y] = celdaDe(ev); dedos.set(ev.pointerId, [x, y]); brocha(x, y);
+  const [x, y] = celdaDe(ev);
+  /* Tocar un interruptor lo ACCIONA en vez de pintarle encima. Sin esto no
+     había forma de operar un circuito: sólo de construirlo y mirarlo. */
+  if(modo === 'pintar' && M.acciona(x, y)){
+    avisa(M.vida[M.i(x,y)] ? 'Interruptor cerrado ⚡' : 'Interruptor abierto');
+    return;
+  }
+  dedos.set(ev.pointerId, [x, y]); brocha(x, y);
 }, { passive:false });
 cv.addEventListener('pointermove', ev => {
   if(!dedos.has(ev.pointerId)) return;
@@ -327,13 +346,14 @@ function cuadro(ms){
   cuadros++; acum += dt;
   if(acum > 500){
     fps = Math.round(cuadros * 1000 / acum); acum = 0; cuadros = 0;
-    let vivas = 0, tmax = -999;
+    let vivas = 0, tmax = -999, pmax = 0;
     for(let k = 0; k < M.t.length; k++){
       if(M.t[k] !== VACIO) vivas++;
       if(M.temp[k] > tmax) tmax = M.temp[k];
+      if(M.pres[k] > pmax) pmax = M.pres[k];
     }
     $('datos').innerHTML = an + '×' + al + ' · ' + fps + ' fps<br>' +
-      vivas + ' celdas · máx ' + Math.round(tmax) + '°';
+      vivas + ' celdas · ' + Math.round(tmax) + '° · ' + Math.round(pmax) + ' bar';
     revisaDescubrimientos();
   }
 }

@@ -111,7 +111,7 @@ export const ELEMENTOS = {
 
   /* ── metales y electricidad ───────────────────────────────────────────── */
   metal:   { nom:'Metal',   col:'#9AA3B0', estado:'solido', dens:30, cond:.95,
-             elec:1, fus:[1450,'metfun'], dureza:.8, grupo:'eléctrico' },
+             elec:1, fus:[1450,'metfun'], dureza:.8, ferroso:.5, grupo:'eléctrico' },
   metfun:  { nom:'Metal fundido', col:'#FFB03D', estado:'liquido', dens:29, cond:.95,
              elec:1, congela:[1400,'metal'], nace:1500, grupo:'eléctrico' },
   cobre:   { nom:'Cobre',   col:'#C87A45', estado:'solido', dens:31, cond:1,
@@ -124,6 +124,39 @@ export const ELEMENTOS = {
              elec:0, dureza:.5, grupo:'eléctrico' },
   mercurio:{ nom:'Mercurio',col:'#B9C2CC', estado:'liquido', dens:34, cond:.7,
              elec:1, congela:[-39,'metal'], grupo:'eléctrico' },
+
+  /* ── electrónica de verdad ──────────────────────────────────────────────
+     ⚠ Carlos: «todo lo de lógica y eléctrica está medio raro de operar».
+     Tenía razón y el problema era que faltaban las piezas intermedias. Sin
+     interruptor no puedes ENCENDER nada a voluntad; sin resistencia no puedes
+     limitar corriente; sin pulsador ni reloj no hay señales que cambien solas.
+     Quedaba «pinta batería y cable y a ver qué pasa», que no es operar: es
+     mirar. */
+  interruptor:{nom:'Interruptor', col:'#7A9E5A', estado:'solido', dens:28, cond:.3,
+             elec:1, interruptor:true, dureza:.5, grupo:'eléctrico',
+             ayuda:'Tócalo para abrir y cerrar el paso' },
+  resistencia:{nom:'Resistencia', col:'#B58A3A', estado:'solido', dens:28, cond:.5,
+             elec:1, resiste:.55, dureza:.4, grupo:'eléctrico',
+             ayuda:'Deja pasar menos corriente y SE CALIENTA' },
+  pulsador:{ nom:'Pulsador',  col:'#5A9E9E', estado:'solido', dens:28, cond:.3,
+             elec:1, pulso:14, dureza:.5, grupo:'eléctrico',
+             ayuda:'Late solo: enciende y apaga cada tanto' },
+  motor:   { nom:'Motor',     col:'#9E5A7A', estado:'solido', dens:32, cond:.4,
+             elec:1, motor:true, dureza:.5, grupo:'eléctrico',
+             ayuda:'Con corriente, empuja lo que tenga encima' },
+
+  /* ── magnetismo ─────────────────────────────────────────────────────────
+     Lo pidió por su nombre. `iman` atrae lo ferroso; `electroiman` sólo
+     mientras le llegue corriente, que es lo que lo hace útil para máquinas. */
+  iman:    { nom:'Imán',      col:'#C43A3A', estado:'solido', dens:33, cond:.6,
+             elec:1, iman:9, dureza:.65, grupo:'magnetismo',
+             ayuda:'Atrae metales de lejos' },
+  electroiman:{nom:'Electroimán', col:'#8A3A6A', estado:'solido', dens:33, cond:.6,
+             elec:1, electroiman:11, dureza:.6, grupo:'magnetismo',
+             ayuda:'Igual, pero SÓLO con corriente' },
+  limadura:{ nom:'Limadura',  col:'#8A8F98', estado:'polvo',  dens:20, cond:.8,
+             elec:1, ferroso:1, dureza:.1, grupo:'magnetismo',
+             ayuda:'Polvo de hierro: lo mueven los imanes' },
 
   /* ── compuertas lógicas · con esto se PROGRAMA dentro del juego ───────── */
   gAND:    { nom:'Y (AND)',  col:'#3DFFC5', estado:'solido', dens:40, cond:.2,

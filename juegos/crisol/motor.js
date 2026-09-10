@@ -40,6 +40,9 @@ export const AMBIENTE = 22;
    lateral. */
 export const GRAVEDAD = 0.28;
 export const VMAX = 6;
+/* Hasta dónde llega la corriente desde una fuente. Es lo que hace que una
+   resistencia sirva: si el alcance fuera infinito, atenuar no apagaría nada. */
+export const ALCANCE = 110;
 
 export class Mundo {
   constructor(an, al){
@@ -235,6 +238,7 @@ export class Mundo {
     this.paso_++;
     this.mov.fill(0);
     this.electricidad();
+    this.magnetismo();
     this.presionPaso();
 
     /* De abajo hacia arriba: si se recorriera al revés, un grano de arena
@@ -324,6 +328,12 @@ export class Mundo {
     /* 6 · vida vegetal */
     if(e.crece && this.rnd() < .004) this.crece(x, y);
     if(e.germina) this.germina(x, y, k);
+
+    /* 6-bis · un motor con corriente empuja lo que tenga encima */
+    if(e.motor && this.car[k] && this.dentro(x, y-1)){
+      const k2 = this.i(x, y-1);
+      if(this.t[k2] !== VACIO && EL[this.t[k2]].estado !== 'solido') this.vy[k2] -= 1.1;
+    }
 
     /* 7 · la presión empuja antes de mover */
     this.empuja(x, y, k, e);
@@ -566,37 +576,144 @@ export class Mundo {
     this.temp = nuevo;
   }
 
-  /* ── electricidad ────────────────────────────────────────────────────── */
+  /* ── ELECTRICIDAD ──────────────────────────────────────────────────────
+     ⚠ REESCRITA, Y EL DEFECTO ERA GORDO: la versión anterior encendía una
+     celda si CUALQUIER vecino tenía carga. Eso se retroalimenta — el cable A
+     se alimenta de B y B de A — así que en cuanto la corriente llegaba a un
+     tramo, ese tramo se quedaba encendido PARA SIEMPRE aunque cortaras la
+     batería. Se veía funcionar de maravilla mientras sólo encendías cosas;
+     el día que quieres APAGAR algo, no se apaga, y ahí es donde Carlos dijo
+     que esto estaba «raro de operar». Tenía razón y era esto.
+
+     Ahora la corriente se reparte desde las FUENTES con un recorrido en
+     anchura, guardando a qué distancia está cada celda. Sin camino hasta una
+     fuente no hay carga, así que cortar el circuito lo apaga de verdad. */
   electricidad(){
     const { an, al, t, car } = this;
-    const sig = new Uint8Array(car.length);
-    for(let y = 0; y < al; y++){
-      for(let x = 0; x < an; x++){
-        const k = y * an + x;
-        const e = EL[t[k]];
-        if(!e.elec) continue;
-        if(e.fuente){ sig[k] = 1; continue; }
+    const n = car.length;
+    const sig = new Uint8Array(n);
+    const dist = new Uint8Array(n).fill(255);
+    const cola = [];
 
-        let vecinosVivos = 0;
+    /* 1 · quién es fuente ESTE paso. Las compuertas se resuelven con la carga
+       del paso anterior, que es lo que les da su retardo de un cuadro — y ese
+       retardo es justo lo que permite hacer memorias y osciladores. */
+    for(let y = 0; y < al; y++) for(let x = 0; x < an; x++){
+      const k = y * an + x, e = EL[t[k]];
+      if(!e.elec) continue;
+      let esFuente = false;
+      if(e.fuente) esFuente = true;
+      else if(e.pulso) esFuente = (Math.floor(this.paso_ / e.pulso) & 1) === 1;
+      else if(e.puerta){
+        let vivos = 0;
         for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
           const px = x+dx, py = y+dy;
           if(px < 0 || py < 0 || px >= an || py >= al) continue;
           const k2 = py * an + px;
-          if(EL[t[k2]].elec && car[k2]) vecinosVivos++;
+          if(EL[t[k2]].elec && car[k2]) vivos++;
         }
-        if(e.puerta === 'not')      sig[k] = vecinosVivos ? 0 : 1;
-        else if(e.puerta === 'and') sig[k] = vecinosVivos >= 2 ? 1 : 0;
-        else if(e.puerta === 'or')  sig[k] = vecinosVivos >= 1 ? 1 : 0;
-        else                        sig[k] = vecinosVivos ? 1 : 0;
+        if(e.puerta === 'not')      esFuente = vivos === 0;
+        else if(e.puerta === 'and') esFuente = vivos >= 2;
+        else if(e.puerta === 'or')  esFuente = vivos >= 1;
+        else                        esFuente = vivos >= 1;   /* diodo */
+      }
+      if(esFuente){ sig[k] = 1; dist[k] = 0; cola.push(k); }
+    }
 
-        /* El agua salada conduce y el agua dulce a medias: por eso `elec`
-           es un número y no un sí o no. */
-        if(e.elec < 1 && sig[k] && this.rnd() > e.elec) sig[k] = 0;
-        /* Un conductor con corriente se calienta. Así un corto se ve. */
-        if(sig[k] && e.id !== 'bateria') this.temp[k] += 0.6;
+    /* 2 · repartir desde las fuentes.
+       Con costes distintos por pieza hay que atender siempre la celda MÁS
+       CERCANA pendiente, o una resistencia visitada primero bloquearía un
+       camino barato que llegaba después.
+       ⚠ Lo resolví primero con un `sort` DENTRO del bucle, que es O(n² log n)
+       y en 17 000 celdas se come el cuadro entero. Va por CUBETAS: una lista
+       por distancia, recorridas en orden. Mismo resultado, coste lineal. */
+    const cubeta = new Array(ALCANCE + 2);
+    for(const k of cola){ (cubeta[0] || (cubeta[0] = [])).push(k); }
+    for(let d = 0; d <= ALCANCE; d++){
+      const lote = cubeta[d];
+      if(!lote) continue;
+      for(const k of lote){
+        if(dist[k] !== d) continue;   /* llegó otro camino más barato */
+        const x = k % an, y = (k / an) | 0;
+      for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+        const px = x+dx, py = y+dy;
+        if(px < 0 || py < 0 || px >= an || py >= al) continue;
+        const k2 = py * an + px;
+        if(dist[k2] !== 255) continue;
+        const v = EL[t[k2]];
+        if(!v.elec) continue;
+        if(v.puerta || v.fuente || v.pulso) continue;   /* mandan por su cuenta */
+        /* un interruptor ABIERTO corta el paso: es todo su trabajo */
+        if(v.interruptor && !this.vida[k2]) continue;
+        /* ⚠ LA RESISTENCIA NO CORTA AL AZAR, y así estaba: con 55% de
+           probabilidad de tijeretazo por paso, el circuito parpadeaba solo y
+           la lámpara del otro lado encendía a ratos. Eso no es una
+           resistencia, es un cable roto.
+           Una resistencia CAÍDA DE TENSIÓN: cuesta más «distancia» pasar por
+           ella, y la corriente sólo llega hasta cierto alcance. Con eso, dos
+           resistencias en serie apagan lo que una sola dejaba encendido, que
+           es exactamente lo que hacen de verdad — y es determinista, así que
+           el circuito que armas hoy se comporta igual mañana. */
+        let coste = 1;
+        if(v.resiste) coste += Math.round(v.resiste * 26);
+        /* el agua dulce conduce a medias: `elec` es un número, no un sí o no */
+        if(v.elec < 1) coste += Math.round((1 - v.elec) * 22);
+        const nd = d + coste;
+        if(nd > ALCANCE) continue;
+        dist[k2] = nd; sig[k2] = 1;
+        (cubeta[nd] || (cubeta[nd] = [])).push(k2);
+      }
       }
     }
+
+    /* 3 · el calor que produce la corriente */
+    for(let k = 0; k < n; k++){
+      if(!sig[k]) continue;
+      const e = EL[t[k]];
+      if(e.fuente) continue;
+      this.temp[k] += e.resiste ? 4.5 : 0.6;
+    }
     this.car = sig;
+    this.dist = dist;
+  }
+
+  /* ── MAGNETISMO ────────────────────────────────────────────────────────
+     Lo pidió Carlos por su nombre. Los imanes tiran de lo ferroso con una
+     fuerza que cae con la distancia, y el electroimán sólo mientras le llegue
+     corriente — que es justo lo que lo vuelve una pieza de máquina y no un
+     adorno: con un pulsador y un electroimán ya tienes algo que agarra y
+     suelta solo. */
+  magnetismo(){
+    const { an, al, t } = this;
+    const imanes = [];
+    for(let y = 0; y < al; y++) for(let x = 0; x < an; x++){
+      const k = y * an + x, e = EL[t[k]];
+      if(e.iman) imanes.push([x, y, e.iman]);
+      else if(e.electroiman && this.car[k]) imanes.push([x, y, e.electroiman]);
+    }
+    if(!imanes.length) return;
+    for(let y = 0; y < al; y++) for(let x = 0; x < an; x++){
+      const k = y * an + x, e = EL[t[k]];
+      if(!e.ferroso || e.estado === 'solido') continue;
+      for(const [ix, iy, f] of imanes){
+        const dx = ix - x, dy = iy - y;
+        const d = Math.hypot(dx, dy);
+        if(d < 0.5 || d > f) continue;
+        const fuerza = (1 - d / f) * 0.55 * e.ferroso;
+        this.vx[k] += (dx / d) * fuerza;
+        this.vy[k] += (dy / d) * fuerza;
+      }
+    }
+  }
+
+  /* Abre o cierra el interruptor que haya en esa celda. Devuelve si hizo algo,
+     para que la pantalla sepa si contarlo como toque o como pintura. */
+  acciona(x, y){
+    if(!this.dentro(x, y)) return false;
+    const k = this.i(x, y);
+    if(!EL[this.t[k]].interruptor) return false;
+    this.vida[k] = this.vida[k] ? 0 : 1;
+    return true;
   }
 
   /* ── utilidades ──────────────────────────────────────────────────────── */

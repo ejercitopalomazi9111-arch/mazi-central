@@ -373,5 +373,75 @@ seccion('gas DENTRO del agua');
   ok('el gas metido en el fondo BURBUJEA hacia arriba', subio);
 }
 
+seccion('electrónica que se puede OPERAR');
+{
+  /* interruptor: lo que faltaba para poder encender algo a voluntad */
+  const m = mundo(20, 10);
+  m.pon(2, 5, IDX.bateria);
+  for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(8, 5, IDX.interruptor);
+  for(let x = 9; x < 14; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(14, 5, IDX.lampara);
+  corre(m, 30);
+  ok('con el interruptor ABIERTO la lámpara no enciende', m.car[m.i(14,5)] === 0);
+  m.acciona(8, 5);
+  corre(m, 30);
+  ok('y al accionarlo, enciende', m.car[m.i(14,5)] === 1);
+  m.acciona(8, 5);
+  corre(m, 30);
+  ok('y vuelve a apagarse', m.car[m.i(14,5)] === 0);
+
+  /* resistencia: calienta de verdad */
+  const r = mundo(20, 10);
+  r.pon(2, 5, IDX.bateria);
+  for(let x = 3; x < 9; x++) r.pon(x, 5, IDX.cobre);
+  r.pon(9, 5, IDX.resistencia);
+  corre(r, 60);
+  const tRes = r.temp[r.i(9,5)], tCab = r.temp[r.i(5,5)];
+  ok('la resistencia se CALIENTA mucho más que el cable',
+     tRes > tCab + 20, 'resistencia ' + tRes.toFixed(0) + '° · cable ' + tCab.toFixed(0) + '°');
+
+  /* pulsador: la señal que cambia sola */
+  const s = mundo(20, 10);
+  s.pon(4, 5, IDX.pulsador);
+  for(let x = 5; x < 12; x++) s.pon(x, 5, IDX.cobre);
+  let encendido = 0, apagado = 0;
+  for(let i = 0; i < 80; i++){ s.paso(); s.car[s.i(11,5)] ? encendido++ : apagado++; }
+  ok('el pulsador late solo: enciende Y apaga', encendido > 8 && apagado > 8,
+     encendido + ' encendido · ' + apagado + ' apagado');
+}
+
+seccion('magnetismo');
+{
+  const m = mundo(40, 40, 5);
+  crisol(m, 4, 4, 36, 36);
+  /* ⚠ antes ponía el imán a 21 celdas y su alcance es 9: la limadura ni se
+     enteraba, y la prueba culpaba al magnetismo de estar fuera de rango. */
+  m.pon(20, 30, IDX.iman);
+  for(let y = 26; y < 29; y++) for(let x = 13; x < 16; x++) m.pon(x, y, IDX.limadura);
+  const xMedio = () => { let s = 0, n = 0;
+    for(let y = 0; y < 40; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x,y)] === IDX.limadura){ s += x; n++; }
+    return n ? s / n : 0; };
+  const antes = xMedio();
+  corre(m, 120);
+  const despues = xMedio();
+  ok('el imán JALA la limadura hacia él', despues > antes + 2,
+     'x medio ' + antes.toFixed(1) + ' → ' + despues.toFixed(1));
+
+  /* el electroimán, sólo con corriente */
+  const sinCorriente = mundo(40, 40, 5);
+  crisol(sinCorriente, 4, 4, 36, 36);
+  sinCorriente.pon(20, 30, IDX.electroiman);
+  for(let y = 26; y < 29; y++) for(let x = 13; x < 16; x++) sinCorriente.pon(x, y, IDX.limadura);
+  const a0 = (() => { let s=0,n=0; for(let y=0;y<40;y++) for(let x=0;x<40;x++)
+    if(sinCorriente.t[sinCorriente.i(x,y)] === IDX.limadura){ s+=x; n++; } return s/n; })();
+  corre(sinCorriente, 120);
+  const a1 = (() => { let s=0,n=0; for(let y=0;y<40;y++) for(let x=0;x<40;x++)
+    if(sinCorriente.t[sinCorriente.i(x,y)] === IDX.limadura){ s+=x; n++; } return s/n; })();
+  ok('el electroimán SIN corriente no jala nada', a1 < a0 + 2,
+     'x medio ' + a0.toFixed(1) + ' → ' + a1.toFixed(1));
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);
