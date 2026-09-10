@@ -239,6 +239,21 @@ const JUEGO = {
              elec:1, ferroso:1, dureza:.1, grupo:'magnetismo',
              ayuda:'Polvo de hierro: lo mueven los imanes' },
 
+  /* ── VÁLVULA ────────────────────────────────────────────────────────────
+     Carlos la pidió por su nombre y con su comportamiento: «cerrada restringe
+     el flujo; abierta permite que el contenido salga dependiendo de la
+     diferencia de presión; la presión debe acumularse si el recipiente está
+     cerrado; una apertura pequeña debe producir un flujo diferente a una
+     grande».
+     Cerrada es un sólido normal y ya está: contiene. Abierta deja de estorbar
+     y el gas sale por la diferencia de presión, que es la que ya calcula el
+     campo — la apertura grande deja pasar más porque son más celdas abiertas,
+     no porque nadie lo haya programado.
+     Se acciona tocándola, o con corriente: por eso lleva `elec`. */
+  valvula: { nom:'Válvula', col:'#5AA3A3', estado:'solido', dens:29, cond:.3,
+             elec:1, valvula:true, dureza:.55, grupo:'automatización',
+             ayuda:'Tócala para abrir y cerrar. Cerrada contiene la presión; abierta la deja salir' },
+
   /* ── compuertas lógicas · con esto se PROGRAMA dentro del juego ───────── */
   gAND:    { nom:'Y (AND)',  col:'#3DFFC5', estado:'solido', dens:40, cond:.2,
              elec:1, puerta:'and', dureza:.5, grupo:'lógica' },
@@ -512,7 +527,7 @@ const ICONOS = {
   metal:'🔩', metfun:'🫗', cobre:'🟠', bateria:'🔋', lampara:'💡', aislante:'🚫',
   mercurio:'🌡', iman:'🧲', electroiman:'🧲', ferroso:'🧲',
   interruptor:'🎚', resistencia:'🌡', pulsador:'⏱', motor:'⚙️',
-  reloj:'⏳', repetidor:'📶', observador:'👁', piston:'🔨', resorte:'🌀', pila:'🔋',
+  reloj:'⏳', valvula:'🚰', repetidor:'📶', observador:'👁', piston:'🔨', resorte:'🌀', pila:'🔋',
   estRoja:'🎆', estVerde:'🎆', estAzul:'🎆', estOro:'🎆', mecha:'🧵', chispa:'✨',
   gAND:'🔀', gOR:'🔀', gNOT:'🔁', diodo:'➡️', nand:'🔀', nor:'🔀', xor:'⊕', xnor:'⊜',
   acido:'🧪', uranio:'☢️', planta:'🌱', semilla:'🌰',

@@ -206,6 +206,13 @@ export class Mundo {
 
   /* El estado que de verdad tiene una celda: el de su elemento, salvo que la
      temperatura la haya fundido o hervido. Todo el motor pregunta por aquí. */
+  /* ¿Está abierta esta válvula? Con corriente o accionada a mano. */
+  valvulaAbierta(k){
+    const e = EL[this.t[k]];
+    if(!e.valvula) return false;
+    return !!this.vida[k] || !!this.car[k];
+  }
+
   estadoDe(k){
     const f = this.fase[k];
     if(f === 1) return 'liquido';
@@ -752,22 +759,75 @@ export class Mundo {
         /* lo que ENCIERRA: se inunda desde fuera de su caja y lo que no se
            moja por dentro es lo de dentro */
         const enc = this.encerradas(x0, y0, x1, y1, visto);
-        peso += enc.peso; 
+        peso += enc.peso;
         const total = celdas + enc.celdas;
         const desplaza = total * DENS_AIRE;
         if(desplaza <= peso) continue;             /* pesa más que el aire: no vuela */
         const sube = GRAVEDAD * (desplaza - peso) / peso;
+
+        /* ⚠ UN GLOBO SE MUEVE COMO UNA PIEZA, Y AQUÍ ESTABA EL DEFECTO. Yo le
+           ponía velocidad a cada celda de la cáscara por su cuenta… y la
+           cáscara no es rígida: las celdas de ABAJO subían hacia el interior
+           —el helio es menos denso, así que las deja pasar— y el globo se
+           IMPLOSIONABA en vez de subir. Medido: empezaba en y=60 y acababa en
+           y=68, o sea que se hundía, con el balance de flotación saliendo
+           correcto (desplaza 118.8, pesa 101.3).
+           Ahora el impulso se acumula en la pieza entera y, cuando junta una
+           celda completa, se mueve TODO —cáscara y lo que encierra— o no se
+           mueve nada. Eso es lo que separa un cuerpo de un montón de píxeles
+           que casualmente están juntos. */
+        let vy = this.vy[cola[0]] - sube;
+        if(vy < -VMAX) vy = -VMAX;
+        if(vy <= -1){
+          if(this.mueveGlobo(cola, fin, enc.celdasLista, -1)) vy += 1;
+          else vy = 0;                             /* topó con algo */
+        }
         for(let i = 0; i < fin; i++){
           const k = cola[i];
-          this.vy[k] = Math.max(-VMAX, this.vy[k] - sube);
+          this.vy[k] = vy; this.vx[k] = 0;
           this.suelto[k] = 1; sop[k] = 0;
           /* el balance de esta pieza ya está hecho AQUÍ, con su peso y lo que
              encierra. Si `mueve` le volviera a sumar la gravedad por celda,
              estaría contando dos veces y ningún globo despegaría. */
           this.flotante[k] = 1;
         }
+        for(const k of enc.celdasLista) this.flotante[k] = 1;
       }
     }
+  }
+
+  /* Mueve una pieza entera una celda en vertical, o ninguna. Primero se
+     comprueba que TODOS los destinos estén libres —o sean de la propia
+     pieza—, y sólo entonces se mueve. Un cuerpo no se mueve a trozos. */
+  mueveGlobo(cola, fin, dentro, dy){
+    const { an } = this;
+    const mios = new Set();
+    for(let i = 0; i < fin; i++) mios.add(cola[i]);
+    for(const k of dentro) mios.add(k);
+    const lista = [...mios];
+    /* ¿cabe? */
+    for(const k of lista){
+      const y = (k / an) | 0, x = k % an;
+      const ny = y + dy;
+      if(ny < 0 || ny >= this.al) return false;
+      const kd = this.i(x, ny);
+      if(mios.has(kd)) continue;                   /* se mete en su propio sitio */
+      if(this.t[kd] === VACIO) continue;
+      const ed = EL[this.t[kd]];
+      if(ed.fijo) return false;
+      const est = this.estadoDe(kd);
+      if(est === 'solido' || est === 'polvo') return false;
+      if((ed.dens || 0) >= 1.2) return false;      /* un fluido más pesado que el aire no se aparta */
+    }
+    /* se mueve en el orden correcto: hacia arriba, primero los de arriba */
+    lista.sort((a, b) => dy < 0 ? a - b : b - a);
+    for(const k of lista){
+      const y = (k / an) | 0, x = k % an;
+      const kd = this.i(x, y + dy);
+      if(kd === k) continue;
+      this.intercambia(k, kd);
+    }
+    return true;
   }
 
   tocaGasLigero(x, y){
@@ -808,6 +868,7 @@ export class Mundo {
       meter(ix-1, iy); meter(ix+1, iy); meter(ix, iy-1); meter(ix, iy+1);
     }
     let peso = 0, celdas = 0;
+    const celdasLista = [];
     for(let iy = 1; iy < h - 1; iy++){
       for(let ix = 1; ix < w - 1; ix++){
         if(fuera[iy * w + ix]) continue;
@@ -816,9 +877,10 @@ export class Mundo {
         const k = gy * an + gx;
         if(visto[k]) continue;                    /* la cáscara misma ya se contó */
         peso += EL[t[k]].dens || 1; celdas++;
+        celdasLista.push(k);
       }
     }
-    return { peso, celdas };
+    return { peso, celdas, celdasLista };
   }
 
 
@@ -1176,6 +1238,7 @@ export class Mundo {
   transmite(k){
     const e = EL[this.t[k]];
     if(e.fijo) return 0;                       /* muro: rebota entera */
+    if(e.valvula && this.valvulaAbierta(k)) return 1;   /* abierta: no estorba */
     const ev = this.estadoDe(k);
     if(ev === 'solido'){
       /* Una pared dura refleja casi todo; una floja deja pasar la mitad y se
@@ -1240,18 +1303,57 @@ export class Mundo {
   empuja(x, y, k, e){
     const p = this.pres[k];
     if(p < 3) return;
-    if(e.estado === 'solido') return;
+    if(e.fijo) return;
     let gx = 0, gy = 0;
     for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
       if(!this.dentro(x+dx, y+dy)) continue;
       const k2 = this.i(x+dx, y+dy);
-      if(EL[this.t[k2]].estado === 'solido') continue;
+      if(this.estadoDe(k2) === 'solido' && this.t[k2] !== VACIO) continue;
       const dif = this.pres[k] - this.pres[k2];
       if(dif > 0){ gx += dx * dif; gy += dy * dif; }
     }
     const m = Math.max(0.35, (e.dens || 1) * 0.12);   /* la masa se resiste */
-    this.vx[k] += (gx / m) * 0.016;
-    this.vy[k] += (gy / m) * 0.016;
+    const ax = (gx / m) * 0.016, ay = (gy / m) * 0.016;
+    this.vx[k] += ax;
+    this.vy[k] += ay;
+
+    /* ── ACCIÓN Y REACCIÓN · el empuje del cohete ───────────────────────────
+       Carlos: «quiero experimentar con sistemas de propulsión impulsados por
+       presión y expansión de gases; el sistema debe simular las fuerzas
+       resultantes de forma física, en lugar de mover el objeto hacia adelante
+       mediante una animación».
+
+       Pues es la tercera ley y ya. Si esta celda de gas sale acelerada hacia
+       algún lado, algo la empujó — y ese algo se lleva el impulso contrario.
+       Ese algo es el sólido que tiene JUSTO DETRÁS: la pared de la recámara.
+       Con eso, un recipiente cerrado no se mueve —las paredes opuestas se
+       cancelan, como debe ser— y en cuanto le abres una boca, el gas sale por
+       ahí y la pared de enfrente se queda con todo el impulso. Eso es un
+       cohete, y no hay una sola línea que diga «cohete».
+
+       El impulso se reparte por masa: el gas es ligero y el recipiente pesado,
+       así que el recipiente se mueve poco por cada bocanada — pero son muchas
+       bocanadas, y de ahí sale la aceleración sostenida. */
+    if(e.estado === 'solido') return;              /* un sólido no propulsa nada */
+    const mag = Math.abs(ax) + Math.abs(ay);
+    if(mag < 0.004) return;
+    const dx = ax > 0 ? -1 : ax < 0 ? 1 : 0;
+    const dy = ay > 0 ? -1 : ay < 0 ? 1 : 0;
+    for(const [rx, ry] of [[dx, 0], [0, dy]]){
+      if(!rx && !ry) continue;
+      if(!this.dentro(x + rx, y + ry)) continue;
+      const kr = this.i(x + rx, y + ry);
+      if(this.t[kr] === VACIO) continue;
+      const er = EL[this.t[kr]];
+      if(er.fijo) continue;                        /* el muro se lo traga: por eso ancla */
+      if(this.estadoDe(kr) !== 'solido') continue;
+      /* momento igual y contrario, repartido por las masas */
+      const mr = er.dens || 1;
+      const f = (e.dens || 1) / mr;
+      if(rx) this.vx[kr] -= ax * f;
+      if(ry) this.vy[kr] -= ay * f;
+      this.suelto[kr] = 1;
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -1605,6 +1707,12 @@ export class Mundo {
        el primer paso, porque debajo tiene el hueco de la caja. */
     if(est === 'solido'){
       if(e.fijo){ this.vy[k] = 0; this.vx[k] = 0; return; }
+      /* ⚠ Si esta celda es parte de una pieza que flota, YA la movió
+         `globoPaso` como conjunto — y moverla otra vez por su cuenta es lo que
+         volvía a implosionar el globo: la cáscara de abajo se metía hacia
+         dentro celda por celda justo después de que la pieza entera subiera.
+         Un cuerpo se mueve una vez por paso, no dos. */
+      if(this.flotante[k]) return;
       const lanzado = this.vy[k] < -0.35 || this.vx[k] > 0.35 || this.vx[k] < -0.35;
       /* ── LO QUE NO SE SOSTIENE, SE CAE ─────────────────────────────────
          Y esto lo decidió Carlos sin saberlo, con la frase con que cerró el
@@ -1711,11 +1819,17 @@ export class Mundo {
       if(sube && this.dentro(x, y - 1)){
         const ka = this.i(x, y - 1);
         if(this.t[ka] !== VACIO && this.estadoDe(ka) === 'solido' && !EL[this.t[ka]].fijo){
-          const empuje = (DENS_AIRE - d) * 0.55;
-          this.vy[ka] -= empuje;
-          /* si el empuje es de verdad, la cáscara deja de estar anclada: es lo
-             que hace que un globo pintado a mano llegue a despegar */
-          if(empuje > 0.25) this.suelto[ka] = 1;
+          /* ⚠ Y SE DIVIDE ENTRE LA MASA DEL SÓLIDO, que es lo que faltaba.
+             Sin eso, una sola celda de hidrógeno —lo más ligero que hay—
+             levantaba una VÁLVULA de densidad 29 y la arrancaba de la pared
+             de un recipiente. Se veía como «la válvula cerrada tiene fugas» y
+             lo que pasaba era que el gas se llevaba la válvula puesta.
+             Un empuje es una fuerza; lo que se le comunica a un cuerpo es
+             fuerza entre masa. Aquí faltaba la masa.
+             Y NO se suelta el sólido: quién despega de verdad lo decide
+             `globoPaso`, que pesa la cáscara entera contra el aire que
+             desplaza. Una celda suelta no puede tomar esa decisión. */
+          this.vy[ka] -= (DENS_AIRE - d) * 0.55 / (EL[this.t[ka]].dens || 1);
         }
       }
       const dirs = dy === 0 && dxg === 0
@@ -1981,6 +2095,11 @@ export class Mundo {
        Aquí sí, porque `trata` es por donde pasa TODO movimiento: el choque se
        detecta en el instante en que uno entra donde está el otro. */
     const ev = this.estadoDe(k2);
+    /* Una VÁLVULA ABIERTA deja pasar lo que no es sólido. Cerrada es una
+       pared como cualquier otra, y por eso contiene la presión. */
+    if(ev === 'solido' && v.valvula && this.valvulaAbierta(k2) && e.estado !== 'solido'){
+      this.intercambia(k, k2); return true;
+    }
     if(ev === 'solido' || ev === 'polvo') return false;
     if((v.dens || 0) < (e.dens || 0)){ this.intercambia(k, k2); return true; }
     return false;
@@ -2353,6 +2472,8 @@ export class Mundo {
     const e = EL[this.t[k]];
     /* «que se puedan apagar al tiempo»: tocar el reloj lo vacía */
     if(e.retardo){ this.vida[k] = 0; return true; }
+    /* la válvula se abre y se cierra tocándola, igual que un interruptor */
+    if(e.valvula){ this.vida[k] = this.vida[k] ? 0 : 1; return true; }
     if(!e.interruptor) return false;
     this.vida[k] = this.vida[k] ? 0 : 1;
     return true;

@@ -1229,5 +1229,103 @@ seccion('resistencia estructural: quién falla primero, y por qué');
      'viga −' + metal12.viga + ' · empotramientos −' + metal12.olla);
 }
 
+seccion('válvula y cohete: acción y reacción');
+{
+  /* Carlos: «quiero experimentar con sistemas de propulsión impulsados por
+     presión y expansión de gases; el sistema debe simular las fuerzas
+     resultantes de forma física, en lugar de mover el objeto hacia adelante
+     mediante una animación».
+     No hay una sola línea que diga «cohete». Es la tercera ley: si una celda
+     de gas sale acelerada, el sólido que tenía detrás se lleva el impulso
+     contrario. Un recipiente cerrado no se mueve porque sus paredes opuestas
+     se cancelan; en cuanto le abres una boca, deja de cancelarse. */
+  const cohete = ({ abierta = true, boca = 3, presion = 2600 }) => {
+    const m = mundo(60, 120, 5);
+    m.ponGravedadGlobal(0, 0);            /* sin gravedad se ve el empuje limpio */
+    const x0 = 24, x1 = 34, y0 = 40, y1 = 60;
+    for(let x = x0; x <= x1; x++){ m.pon(x, y0, IDX.metal); m.pon(x, y1, IDX.metal); }
+    for(let y = y0; y <= y1; y++){ m.pon(x0, y, IDX.metal); m.pon(x1, y, IDX.metal); }
+    const cx = Math.round((x0 + x1) / 2), r = Math.floor(boca / 2);
+    for(let d = -r; d <= r; d++){
+      m.pon(cx + d, y1, IDX.valvula);
+      if(abierta) m.vida[m.i(cx + d, y1)] = 1;
+    }
+    for(let y = y0+1; y < y1; y++) for(let x = x0+1; x < x1; x++){
+      m.pon(x, y, IDX.co2); m.temp[m.i(x,y)] = presion;
+    }
+    const centro = () => { let sy = 0, n = 0;
+      for(let k = 0; k < m.t.length; k++)
+        if(m.t[k] === IDX.metal || m.t[k] === IDX.valvula){ sy += (k / m.an) | 0; n++; }
+      return n ? sy / n : 0; };
+    const y0c = centro();
+    corre(m, 300);
+    return centro() - y0c;
+  };
+  const cerrado = cohete({ abierta:false }), abierto = cohete({ abierta:true });
+  ok('un recipiente CERRADO no se propulsa: sus paredes se cancelan',
+     Math.abs(cerrado) < 1, 'se movió ' + cerrado.toFixed(2) + ' celdas');
+  ok('y con la boca ABIERTA sale disparado al lado contrario',
+     abierto < -2, 'se movió ' + abierto.toFixed(2) + ' celdas (negativo = hacia arriba)');
+  ok('y NO es por la válvula en sí: abierta empuja mucho más que cerrada',
+     Math.abs(abierto) > Math.abs(cerrado) * 3,
+     'cerrada ' + cerrado.toFixed(2) + ' · abierta ' + abierto.toFixed(2));
+
+  const boca1 = cohete({ boca:1 }), boca5 = cohete({ boca:5 });
+  ok('una boca más grande empuja más', Math.abs(boca5) > Math.abs(boca1),
+     'boca 1 → ' + boca1.toFixed(2) + ' · boca 5 → ' + boca5.toFixed(2));
+
+  const flojo = cohete({ presion:800 }), fuerte = cohete({ presion:5000 });
+  ok('y más presión empuja más', Math.abs(fuerte) > Math.abs(flojo) * 2,
+     '800° → ' + flojo.toFixed(2) + ' · 5000° → ' + fuerte.toFixed(2));
+
+  /* la válvula, por su cuenta: cerrada contiene, abierta deja salir */
+  const olla = (abierta) => {
+    const m = mundo(40, 40, 3);
+    crisol(m, 10, 10, 30, 30);
+    m.pon(20, 10, IDX.valvula);
+    if(abierta) m.vida[m.i(20,10)] = 1;
+    for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++){
+      m.pon(x, y, IDX.hidrogeno);      /* ligero: quiere subir y salir */
+    }
+    corre(m, 200);
+    let fuera = 0;
+    for(let y = 0; y < 10; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x,y)] === IDX.hidrogeno) fuera++;
+    return fuera;
+  };
+  ok('una válvula CERRADA contiene el gas', olla(false) === 0, olla(false) + ' celdas se escaparon');
+  ok('y ABIERTA lo deja salir', olla(true) > 0, olla(true) + ' celdas salieron');
+}
+
+seccion('el globo vuela, y sólo con lo que debe');
+{
+  /* Carlos: «el helio no permite crear globos porque no tienen física los
+     sólidos». Ahora la cáscara se pesa ENTERA contra el aire que desplaza,
+     contando lo que encierra, y se mueve como una pieza. */
+  const globo = (relleno) => {
+    const m = mundo(40, 80, 1);
+    repisa(m, 79);
+    for(let x = 16; x <= 24; x++){ m.pon(x, 60, IDX.globo); m.pon(x, 70, IDX.globo); }
+    for(let y = 60; y <= 70; y++){ m.pon(16, y, IDX.globo); m.pon(24, y, IDX.globo); }
+    if(relleno) for(let y = 61; y < 70; y++) for(let x = 17; x < 24; x++) m.pon(x, y, IDX[relleno]);
+    corre(m, 600);
+    let techo = 99, tela = 0;
+    for(let y = 0; y < 80; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x,y)] === IDX.globo){ if(y < techo) techo = y; tela++; }
+    return { techo, tela };
+  };
+  const he = globo('eHe'), aire = globo(null), co2 = globo('co2');
+  ok('lleno de HELIO, sube', he.techo < 40, 'empezó en y=60 y acabó en y=' + he.techo);
+  /* ⚠ y ENTERO. Esto es la mitad de la prueba y por poco no la escribo: la
+     primera versión le ponía velocidad a cada celda de la cáscara por su
+     cuenta, y como el helio es menos denso, las celdas de abajo subían HACIA
+     DENTRO y el globo se implosionaba. Medido, se hundía de y=60 a y=68 con
+     el balance de flotación saliendo perfecto. Un globo que llega arriba
+     desarmado no es un globo. */
+  ok('y llega entero, sin implosionarse', he.tela === 36, he.tela + '/36 de tela');
+  ok('el MISMO globo lleno de aire NO sube', aire.techo >= 60, 'y=' + aire.techo);
+  ok('y lleno de CO₂ tampoco', co2.techo >= 60, 'y=' + co2.techo);
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);
