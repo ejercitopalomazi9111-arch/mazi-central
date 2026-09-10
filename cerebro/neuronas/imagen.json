@@ -172,6 +172,27 @@
         "tarda en cargar el fondo"
       ],
       "salioDe": "El banco de pruebas: el grano va como SVG con feTurbulence embebido en la hoja."
+    },
+    {
+      "id": "el-pixel-mas-alto-no-es-la-cabeza",
+      "titulo": "Buscar el punto más alto de la figura encuentra el ala, no la cabeza",
+      "gravedad": "media",
+      "sintoma": "Pones un adorno «en la cabeza» de una figura y sale flotando en otro lado, o del tamaño equivocado.",
+      "causa": "La coordenada se inventó a ojo, o se dedujo buscando el píxel pintado más alto — y en muchas siluetas ese punto NO es la cabeza: en un ave con las alas abiertas es la punta del ala.",
+      "porque": "«Arriba del todo» y «la cabeza» sólo coinciden en figuras de pie. En cualquier silueta con extremidades levantadas el máximo global está en otra parte, y el método parece correcto porque devuelve un número creíble.",
+      "arreglo": "Dibujar la figura en un canvas con una CUADRÍCULA de coordenadas numerada encima y mirarla. Se resuelve en un vistazo y no se puede uno equivocar. Después, todo lo que se cuelgue de ahí en múltiplos de un radio, no en números sueltos.",
+      "comoCazarlo": "Renderizar todos los adornos uno junto a otro sobre la figura, en grande, y mirarlos. En miniatura no se nota; a tamaño de tarjeta sí.",
+      "consejo": "Una coordenada inventada se lee igual que una medida. La diferencia sólo aparece en la pantalla.",
+      "salioDe": "juegos/palomazo · los nueve sombreros salían en la punta del ala derecha y del doble de grandes. El método del píxel más alto dio (928,241) y tampoco era; la cuadrícula dio (700,286) al primer vistazo",
+      "senales": [
+        "el sombrero sale en otro lado",
+        "el adorno flota",
+        "la coordenada no cuadra",
+        "sale del tamaño equivocado"
+      ],
+      "vecinas": [
+        "prueba-que-aprueba-por-accidente"
+      ]
     }
   ]
 }

@@ -616,6 +616,29 @@
         "suite-que-no-arranca-calla",
         "conexion-rechazada-parece-defecto"
       ]
+    },
+    {
+      "id": "el-robot-mide-con-la-regla-chueca",
+      "titulo": "La prueba usa la misma función que está probando, y se tuerce con ella",
+      "gravedad": "alta",
+      "sintoma": "Metes el defecto A PROPÓSITO para ver la prueba fallar y la prueba sigue en verde, con el mismo número exacto de antes.",
+      "causa": "La prueba decide QUÉ ESPERAR llamando a la misma función que juzga. Si esa función se desplaza, la expectativa se desplaza igual y las dos siguen coincidiendo.",
+      "porque": "Al escribir la prueba uno reusa lo que ya está a la mano, y lo que está a la mano es el código que quiere probar. Sale una prueba que comprueba que el sistema es consistente consigo mismo — que siempre lo es.",
+      "arreglo": "La prueba se ancla a una VERDAD INDEPENDIENTE, no a una función del sistema. En un juego de ritmo, el instante en que la nota SUENA (reloj del audio) y no el instante que el juego cree; en una API, el contrato escrito y no el serializador.",
+      "comoCazarlo": "Prueba de mutación de verdad: rompe el código y comprueba que se pone ROJO. Si la mutación no la caza, la prueba mide con la regla chueca — y el arreglo es la prueba, no el código.",
+      "consejo": "Si una prueba no puede fallar nunca, no está probando: está acompañando.",
+      "salioDe": "juegos/palomazo · el robot tocaba usando `pasoAhora()`, la misma función del juicio. Con 120 ms de desfase metidos a mano seguía dando 74 perfectas; anclado al reloj del audio, la misma mutación da 0 perfectas y 58 «casi»",
+      "senales": [
+        "metí el bug y la prueba sigue verde",
+        "la mutación no se detecta",
+        "la prueba no falla nunca",
+        "prueba circular"
+      ],
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "prueba-que-aprueba-por-accidente",
+        "suite-que-no-arranca-calla"
+      ]
     }
   ]
 }
