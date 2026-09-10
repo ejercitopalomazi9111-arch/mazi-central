@@ -3,6 +3,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0B0712">
+<!-- Sin esto el navegador pide /favicon.ico, se lleva un 404 y la pestaña sale
+     en blanco. Va empotrado como SVG en la propia etiqueta: cero peticiones. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0712'/%3E%3Cpath d='M8 7h16l-3 9 3 9H8l3-9z' fill='%23AC27FF'/%3E%3Ccircle cx='16' cy='19' r='3' fill='%23FFC53D'/%3E%3C/svg%3E">
 <title>CRISOL — el sandbox de reacciones</title>
 <meta name="description" content="Sandbox de píxeles con química, termodinámica y electricidad de verdad. 48 elementos, reacciones reales, circuitos y compuertas lógicas.">
 <style>
@@ -53,19 +56,27 @@ body{
 }
 
 /* ── panel de abajo ────────────────────────────────────────────────────── */
-/* Y el panel va CLAVADO abajo, no sólo «al final del flujo»: con position
-   fixed no hay barra de navegador que lo mueva. */
+/* ⚠ EL PANEL SE COMÍA EL SUELO DE LA HABITACIÓN, y Carlos lo reportó dos
+   veces: «tu menú aún en oculto se encima al suelo y no lo deja ver, así que
+   parece que se cae al vacío lo que pones». Y era literal: con `position:
+   fixed` el panel flota ENCIMA, y el lienzo del mundo seguía midiendo la
+   pantalla entera y dibujando debajo. Las últimas cincuenta filas del mundo
+   existían y se simulaban — simplemente no se veían nunca.
+   Ahora el panel vive en el FLUJO, así que el mundo se encoge de verdad y la
+   cámara recalcula su área visible. Lo de `fixed` estaba para que la barra de
+   Safari no lo moviera, y eso ya lo resuelve el `100dvh` del body. */
 #panel{
-  position:fixed; left:0; right:0; bottom:0; z-index:8;
+  position:relative; z-index:8; flex:0 1 auto; min-height:0;
   background:var(--sup); display:flex; flex-direction:column;
   max-height:52dvh;
   padding-bottom:var(--ab);
   box-shadow:0 -10px 30px rgba(0,0,0,.5);
-  transition:transform .22s ease;
 }
-/* Desplegable: Carlos lo pidió porque el panel se come media pantalla y a
-   veces lo que quieres es MIRAR el mundo. */
-#panel.plegado{ transform:translateY(calc(100% - 52px - var(--ab))) }
+/* Plegado: el panel se queda en su tirador y el mundo se lleva el resto. Se
+   hace con `display:none` en el contenido y no con `translateY`, justamente
+   porque mover algo con transform NO cambia el espacio que ocupa — y ese era
+   medio problema. */
+#panel.plegado > *:not(#tirador){ display:none !important }
 #tirador{
   height:52px; flex:0 0 auto; display:flex; align-items:center; gap:10px;
   padding:0 12px; cursor:pointer; background:none; border:0; color:inherit;
@@ -77,7 +88,8 @@ body{
 #tirador .qual{ font-size:13px; color:#B9B0C8; flex:1; }
 #tirador .flecha{ font-size:13px; color:#9C93AB }
 @media (prefers-reduced-motion: reduce){ #panel{transition:none} }
-#pestanas{display:flex;gap:4px;padding:6px 8px 0;overflow-x:auto}
+#pestanas{display:flex;gap:4px;padding:6px 8px 0;overflow-x:auto;flex:0 0 auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin}
 .pes{
   border:0;background:transparent;color:#9C93AB;font:inherit;font-weight:700;
   font-size:12.5px;padding:0 13px;height:44px;border-radius:9px;cursor:pointer;
@@ -86,12 +98,27 @@ body{
 .pes.sel{background:var(--sup2);color:var(--hueso)}
 .pes:focus-visible{outline:3px solid var(--oro);outline-offset:-2px}
 
-#lista{overflow-y:auto;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+/* ⚠ `overflow-y:auto` NO BASTA DENTRO DE UN FLEX, y por eso Carlos decía que
+   «el menú de abajo no hace scroll en los elementos cuando está muy lleno».
+   Un hijo de flex tiene `min-height:auto` por defecto, o sea que se niega a
+   encogerse por debajo de su contenido: la lista crecía y crecía, se salía
+   del panel, y el `auto` no llegaba a activarse nunca porque nunca había
+   desbordamiento QUE MEDIR. El `min-height:0` es lo que le da permiso de ser
+   más chica que lo que lleva dentro, y ahí sí aparece el scroll.
+   `touch-action:pan-y` es la otra mitad: el lienzo de al lado lo tiene en
+   `none` para pintar, y sin decirlo aquí el dedo tampoco arrastra la lista. */
+#cuerpoPanel{display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
+#lista{
+  overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  flex:1 1 auto; min-height:0; overscroll-behavior:contain;
+  padding:8px; display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start;
+}
 .el{
   display:flex;align-items:center;gap:7px;border:0;cursor:pointer;font:inherit;
   background:var(--sup2);color:var(--hueso);border-radius:11px;
   padding:0 11px 0 8px;height:44px;font-size:12.5px;font-weight:600;
 }
+.el .ico{font-size:15px;line-height:1;flex:0 0 auto}
 .el i{width:17px;height:17px;border-radius:5px;display:block;flex:0 0 auto;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
 .el.sel{box-shadow:inset 0 0 0 2px var(--menta)}
@@ -110,6 +137,27 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
   text-align:center;
 }
 .aviso.va{opacity:1}
+/* Carlos: «pon un indicador de la escala que llevo en el zoom porque es
+   difícil saber cuándo tengo y cuándo no tengo zoom». */
+#escala{
+  margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;
+  font-size:13px;color:#B9B0C8;background:var(--sup2);
+  padding:0 11px;height:44px;display:flex;align-items:center;border-radius:11px;
+}
+/* La ficha del termómetro. Sale pegada al mensaje y se lee de un vistazo. */
+#ficha{
+  position:absolute;left:10px;right:10px;bottom:10px;z-index:6;
+  background:rgba(26,20,36,.97);border-radius:13px;padding:11px 13px;
+  box-shadow:inset 0 0 0 1px rgba(172,39,255,.4);font-size:12.5px;
+  display:none;max-height:52%;overflow-y:auto;
+}
+#ficha.va{display:block}
+#ficha h4{margin:0 0 6px;font-size:14.5px}
+#ficha table{border-collapse:collapse;width:100%}
+#ficha td{padding:2px 0;vertical-align:top}
+#ficha td:first-child{color:#9C93AB;padding-right:10px;white-space:nowrap}
+#ficha .cerrar{position:absolute;top:6px;right:8px;background:none;border:0;
+  color:#9C93AB;font-size:19px;cursor:pointer;width:34px;height:34px}
 @media (prefers-reduced-motion: reduce){ .aviso{transition:none} }
 </style>
 
@@ -124,6 +172,7 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
 <div id="zona">
   <canvas id="mundo"></canvas>
   <div class="aviso" id="aviso"></div>
+  <div id="ficha" role="status"><button class="cerrar" id="fichaX" aria-label="Cerrar">✕</button><div id="fichaC"></div></div>
 </div>
 
 <div id="panel">
@@ -140,8 +189,12 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <input type="range" id="tam" min="1" max="14" value="4">
     <button class="icono" id="bCalor" aria-label="Calentar" title="Calentar">🔥</button>
     <button class="icono" id="bFrio" aria-label="Enfriar" title="Enfriar">❄️</button>
+    <button class="icono" id="bMano" aria-label="Mover la vista" title="Mover la vista: arrastra con un dedo">🖐</button>
+    <button class="icono" id="bAgarra" aria-label="Agarrar y arrastrar" title="Agarrar un sólido y arrastrarlo con fuerza">✊</button>
+    <button class="icono" id="bMide" aria-label="Termómetro" title="Termómetro: material, temperatura y cambios de estado">🌡</button>
     <button class="icono" id="bMas" aria-label="Acercar">＋</button>
     <button class="icono" id="bMenos" aria-label="Alejar">－</button>
+    <span id="escala" title="Zoom actual">×4.0</span>
   </div>
   </div>
 </div>
@@ -217,6 +270,7 @@ let RUIDO = null;
 
 function pinta(){
   const { t, temp, car } = M;
+  const hayLuz = M.hayLuz;
   if(!RUIDO || RUIDO.length !== t.length){
     RUIDO = new Int8Array(t.length);
     for(let i = 0; i < RUIDO.length; i++) RUIDO[i] = ((Math.random()*22)|0) - 11;
@@ -254,6 +308,22 @@ function pinta(){
       if(P > 1.5){ const f = Math.min(1, P / 70); r += f*150; g += f*150; b += f*190; }
       /* un interruptor cerrado se ve cerrado */
       if(EL[tipo].interruptor && M.vida[k]){ g += 60; }
+    }
+    /* ── LA LUZ, PINTADA ────────────────────────────────────────────────
+       Carlos: «no tenemos iluminación… la lámpara no produce iluminación, de
+       hecho es una textura o un icono que parpadea». Ahora el motor calcula un
+       campo de luz de verdad y aquí se APLICA: lo iluminado se aclara y tira a
+       cálido, y lo que queda en sombra se ve como lo que es, una sombra.
+       Sólo se aplica si hay algún foco encendido — si no, la habitación se
+       pinta igual que siempre y no se paga nada. */
+    if(hayLuz){
+      const lu = M.luz[k];
+      if(lu > 0){
+        const f = 1 + lu * 0.055;
+        r = r * f + lu * 3.2; g = g * f + lu * 2.4; b = b * f + lu * 0.9;
+      } else if(tipo !== VACIO){
+        r *= 0.42; g *= 0.42; b *= 0.5;      /* en sombra, pero se ve */
+      }
     }
     const p = k << 2;
     datos[p]   = r < 0 ? 0 : r > 255 ? 255 : r;
@@ -318,13 +388,21 @@ function paleta(){
     b.className = 'el' + (IDX[e.id] === elSel ? ' sel' : '') + (nuevo ? ' nuevo' : '');
     const i = document.createElement('i'); i.style.background = e.col;
     b.appendChild(i);
+    /* el icono delante del nombre: Carlos no reconocía las piezas sólo por el
+       nombre, y con ciento ochenta y cinco elementos leer cada uno es un peaje */
+    if(e.ico){
+      const ic = document.createElement('span');
+      ic.textContent = e.ico; ic.className = 'ico'; ic.setAttribute('aria-hidden','true');
+      b.appendChild(ic);
+    }
     const s = document.createElement('span'); s.textContent = e.nom;
     b.appendChild(s);
     if(e.ayuda) b.title = e.ayuda;
     b.onclick = () => {
       elSel = IDX[e.id]; modo = 'pintar';
       if(nuevo){ guardado.mochila[e.id] = 2; salva(); }
-      $('bCalor').classList.remove('on'); $('bFrio').classList.remove('on');
+      for(const id of Object.values(BOTON_MODO)) $(id).classList.remove('on');
+      $('ficha').classList.remove('va');
       if(e.ayuda) avisa(e.nom + ' · ' + e.ayuda);
       $('qual').textContent = e.nom;
       paleta();
@@ -432,11 +510,39 @@ function brocha(x, y){
       M.pon(nx, ny, elSel);
   }
 }
+/* ── ARRASTRAR PARA MOVERSE ────────────────────────────────────────────────
+   Carlos: «necesito una herramienta para poder moverme en la habitación de
+   crisol arrastrando para moverme, pellizcando para hacer o deshacer zoom».
+   El pellizco ya estaba; lo que faltaba era el dedo solo. Va como herramienta
+   aparte —la mano 🖐— para que no se pelee con pintar: con la mano puesta, un
+   dedo desplaza la vista y no deja un rayón. */
+let paneo = null;
+/* ── LA MANO FÍSICA ────────────────────────────────────────────────────────
+   El agarre vive aquí pero la fuerza la aplica el MOTOR (`M.agarra`), que es
+   quien sabe de masas. La pantalla sólo dice dónde está el dedo. */
+let agarre = null;
+
 cv.addEventListener('pointerdown', ev => {
   ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
   const [x, y] = celdaDe(ev);
   dedos.set(ev.pointerId, { cx:x, cy:y, pantalla:{x:ev.clientX, y:ev.clientY}, pintando:true });
-  if(dedos.size >= 2){ empiezaGesto(); return; }
+  if(dedos.size >= 2){ empiezaGesto(); paneo = null; return; }
+
+  if(modo === 'navegar'){
+    paneo = { x0:ev.clientX, y0:ev.clientY, vx0:vista.x, vy0:vista.y };
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'medir'){
+    ficha(x, y);
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'agarrar'){
+    agarre = { cx:x, cy:y, fx:x, fy:y };
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
   /* Tocar un interruptor lo ACCIONA en vez de pintarle encima. Sin esto no
      había forma de operar un circuito: sólo de construirlo y mirarlo. */
   if(modo === 'pintar' && M.acciona(x, y)){
@@ -453,6 +559,16 @@ cv.addEventListener('pointermove', ev => {
   ev.preventDefault();
   d.pantalla = { x:ev.clientX, y:ev.clientY };
   if(dedos.size >= 2){ sigueGesto(); return; }
+  if(paneo){
+    /* el mundo se mueve al revés que el dedo: se arrastra el MUNDO, no la
+       cámara, que es lo que se siente natural */
+    vista.x = paneo.vx0 - (ev.clientX - paneo.x0) / vista.esc;
+    vista.y = paneo.vy0 - (ev.clientY - paneo.y0) / vista.esc;
+    limitaVista();
+    return;
+  }
+  if(agarre){ const [gx, gy] = celdaDe(ev); agarre.fx = gx; agarre.fy = gy; return; }
+  if(modo === 'medir'){ const [mx, my] = celdaDe(ev); ficha(mx, my); return; }
   if(!d.pintando) return;
   const [x, y] = celdaDe(ev);
   const px = d.cx, py = d.cy;
@@ -464,7 +580,11 @@ cv.addEventListener('pointermove', ev => {
   d.cx = x; d.cy = y;
 }, { passive:false });
 
-const suelta = ev => { dedos.delete(ev.pointerId); if(dedos.size < 2) gesto = null; };
+const suelta = ev => {
+  dedos.delete(ev.pointerId);
+  if(dedos.size < 2) gesto = null;
+  if(!dedos.size){ paneo = null; agarre = null; }
+};
 cv.addEventListener('pointerup', suelta);
 cv.addEventListener('pointercancel', suelta);
 
@@ -492,6 +612,11 @@ $('tirador').onclick = () => {
   $('panel').classList.toggle('plegado', plegado);
   $('tirador').setAttribute('aria-expanded', String(!plegado));
   $('flecha').textContent = plegado ? '▴ materiales' : '▾ ocultar';
+  /* ⚠ Y SE VUELVE A MEDIR. Plegar el panel cambia cuánto sitio le queda al
+     mundo, y si no se re-mide, el lienzo conserva el tamaño de antes: la
+     cámara sigue creyendo que ve un área que ya no es la suya y el suelo
+     queda fuera de cuadro. Es la otra mitad de «parece que se cae al vacío». */
+  medir();
 };
 
 $('bPausa').onclick = () => {
@@ -501,24 +626,69 @@ $('bPausa').onclick = () => {
 };
 $('bBorra').onclick = () => { M.limpia(); avisa('Mundo vacío'); };
 $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
-$('bCalor').onclick = () => {
-  modo = modo === 'calor' ? 'pintar' : 'calor';
-  $('bCalor').classList.toggle('on', modo === 'calor');
-  $('bFrio').classList.remove('on');
-};
-$('bFrio').onclick = () => {
-  modo = modo === 'frio' ? 'pintar' : 'frio';
-  $('bFrio').classList.toggle('on', modo === 'frio');
-  $('bCalor').classList.remove('on');
-};
+/* ── LAS HERRAMIENTAS ──────────────────────────────────────────────────────
+   Un solo sitio decide qué modo está activo y apaga los demás. Antes cada
+   botón se encargaba de apagar a los otros a mano, y con cinco herramientas
+   eso son veinte líneas que se contradicen entre sí a la primera distracción. */
+const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide' };
+function ponModo(m){
+  modo = (modo === m) ? 'pintar' : m;
+  for(const [k, id] of Object.entries(BOTON_MODO)) $(id).classList.toggle('on', modo === k);
+  if(modo !== 'medir') $('ficha').classList.remove('va');
+  const dice = {
+    navegar:'Mover la vista: arrastra con un dedo. Con dos, zoom',
+    agarrar:'Agarra un sólido y arrástralo. Lo pesado va a costar',
+    medir:'Toca algo para ver su material, su temperatura y sus cambios de estado',
+    calor:'Calentando', frio:'Enfriando',
+  }[modo];
+  if(dice) avisa(dice);
+}
+$('bCalor').onclick  = () => ponModo('calor');
+$('bFrio').onclick   = () => ponModo('frio');
+$('bMano').onclick   = () => ponModo('navegar');
+$('bAgarra').onclick = () => ponModo('agarrar');
+$('bMide').onclick   = () => ponModo('medir');
+$('fichaX').onclick  = () => $('ficha').classList.remove('va');
+
+/* ── el termómetro, en pantalla ────────────────────────────────────────────
+   Los datos los da el motor (`informe`), aquí sólo se pintan. La fisión sale
+   marcada aparte porque NO es un cambio de estado — lo corrigió Carlos. */
+function ficha(x, y){
+  const r = M.informe(x, y);
+  if(!r) return;
+  const fila = (a, b) => '<tr><td>' + a + '</td><td>' + b + '</td></tr>';
+  let h = '<h4>' + r.nombre + (r.simbolo ? ' · ' + r.simbolo + (r.z ? ' (Z ' + r.z + ')' : '') : '') + '</h4><table>';
+  h += fila('Temperatura', r.temperatura + ' °C');
+  h += fila('Estado ahora', r.estado);
+  h += fila('Densidad', r.densidad + (r.masa ? ' · ' + r.masa + ' g/cm³ de verdad' : ''));
+  if(r.presion) h += fila('Presión', r.presion);
+  if(r.corriente) h += fila('Corriente', 'sí, le llega');
+  const fases = r.cambios.filter(c => c.que !== 'fisión' && c.que !== 'combustión');
+  if(fases.length){
+    h += '<tr><td colspan="2" style="padding-top:6px;color:#B9B0C8"><b>Cambios de estado</b></td></tr>';
+    for(const c of fases) h += fila(c.que, (c.a != null ? c.a + ' °C · ' : '') + c.nota);
+  }
+  const otros = r.cambios.filter(c => c.que === 'fisión' || c.que === 'combustión');
+  for(const c of otros) h += fila(c.que, c.nota);
+  h += '</table>';
+  $('fichaC').innerHTML = h;
+  $('ficha').classList.add('va');
+}
 
 /* ── el bucle ───────────────────────────────────────────────────────────── */
 let ultimo = 0, fps = 0, acum = 0, cuadros = 0;
 function cuadro(ms){
   requestAnimationFrame(cuadro);
   const dt = ms - ultimo; ultimo = ms;
+  /* la mano tira ANTES del paso, para que la fuerza entre en la misma física
+     de este cuadro y no en la del siguiente */
+  if(agarre){
+    const g = M.agarra(agarre.cx, agarre.cy, agarre.fx, agarre.fy, Math.max(2, tam - 1));
+    agarre.cx = g.cx; agarre.cy = g.cy;
+  }
   if(!pausado) M.paso();
   pinta();
+  $('escala').textContent = '×' + vista.esc.toFixed(1);
   cuadros++; acum += dt;
   if(acum > 500){
     fps = Math.round(cuadros * 1000 / acum); acum = 0; cuadros = 0;
@@ -534,7 +704,17 @@ function cuadro(ms){
   }
 }
 
+/* ⚠ NO BASTA CON MEDIR AL ARRANCAR Y AL REDIMENSIONAR, y esto sólo se ve en
+   un navegador de verdad: `medir()` corría antes de que el navegador hubiera
+   terminado de colocar el panel, así que el lienzo se quedaba con 610 px de
+   alto metidos a mano mientras su zona medía 422. Resultado: el mundo se
+   dibujaba 188 px por debajo del panel — o sea justo lo que Carlos reportó
+   dos veces, «parece que se cae al vacío lo que pones».
+   Un ResizeObserver no depende de adivinar CUÁNDO está lista la maqueta: se
+   entera cada vez que cambia, venga de donde venga el cambio (girar el
+   teléfono, plegar el panel, la barra de Safari, el teclado). */
 addEventListener('resize', () => { medir(); });
+if(window.ResizeObserver) new ResizeObserver(() => medir()).observe($('zona'));
 medir(); pestanas(); paleta();
 requestAnimationFrame(cuadro);
 window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom,

@@ -43,11 +43,11 @@ const JUEGO = {
   muro:    { nom:'Muro',    col:'#5A5468', estado:'solido', dens:999,  cond:.15, dureza:1, fijo:true, grupo:'básico' },
 
   /* ── tierra y piedra ──────────────────────────────────────────────────── */
-  arena:   { nom:'Arena',   col:'#D9B168', estado:'polvo',  dens:16, cond:.12,
+  arena:   { nom:'Arena',   col:'#D9B168', estado:'polvo',  dens:16, cond:.12, friccion:.75,
              fus:[1700,'vidrio'], dureza:.2, grupo:'tierra' },
   tierra:  { nom:'Tierra',  col:'#6B4A2F', estado:'polvo',  dens:15, cond:.10,
              dureza:.2, grupo:'tierra' },
-  piedra:  { nom:'Piedra',  col:'#7C7687', estado:'solido', dens:25, cond:.20,
+  piedra:  { nom:'Piedra',  col:'#7C7687', estado:'solido', dens:25, cond:.20, friccion:.65,
              fus:[1200,'lava'], dureza:.6, grupo:'tierra' },
   grava:   { nom:'Grava',   col:'#8A8496', estado:'polvo',  dens:20, cond:.18,
              fus:[1200,'lava'], dureza:.35, grupo:'tierra' },
@@ -69,7 +69,7 @@ const JUEGO = {
              ebu:[100,'vapor'], congela:[0,'hielo'], elec:.35, grupo:'agua' },
   salada:  { nom:'Agua salada', col:'#2A6FA8', estado:'liquido', dens:11, cond:.60,
              ebu:[105,'vapor'], congela:[-2,'hielo'], elec:1, grupo:'agua' },
-  hielo:   { nom:'Hielo',   col:'#A8DCF0', estado:'solido', dens:9, cond:.45,
+  hielo:   { nom:'Hielo',   col:'#A8DCF0', estado:'solido', dens:9, cond:.45, friccion:.04,
              fus:[0,'agua'], dureza:.2, frio:true, grupo:'agua' },
   nieve:   { nom:'Nieve',   col:'#E8F4FA', estado:'polvo',  dens:5, cond:.20,
              fus:[0,'agua'], frio:true, grupo:'agua' },
@@ -102,7 +102,7 @@ const JUEGO = {
              arde:.85, calorArde:2600, dureza:.1, grupo:'fuego' },
 
   /* ── combustibles ─────────────────────────────────────────────────────── */
-  aceite:  { nom:'Aceite',  col:'#5A4520', estado:'liquido', dens:8, cond:.20,
+  aceite:  { nom:'Aceite',  col:'#5A4520', estado:'liquido', dens:8, cond:.20, friccion:.02,
              arde:.7, calorArde:700, ebu:[300,'gasnat'], grupo:'combustible' },
   gasnat:  { nom:'Gas',     col:'#93A05A', estado:'gas',    dens:0.66, cond:.10,
              arde:1, calorArde:900, grupo:'combustible' },
@@ -121,7 +121,7 @@ const JUEGO = {
      llenarla de algo más ligero. Ahí es donde entra el helio. */
   globo:   { nom:'Tela de globo', col:'#E85A8A', estado:'solido', dens:2.5, cond:.2,
              dureza:.02, arde:.6, calorArde:400, grupo:'básico' },
-  madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12,
+  madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12, friccion:.55,
              arde:.35, calorArde:600, dureza:.25, grupo:'combustible' },
   carbon:  { nom:'Carbón',  col:'#26222C', estado:'polvo',  dens:14, cond:.16,
              arde:.5, calorArde:1100, dureza:.15, grupo:'combustible' },
@@ -133,7 +133,7 @@ const JUEGO = {
              aviva:true, grupo:'gases' },
 
   /* ── metales y electricidad ───────────────────────────────────────────── */
-  metal:   { nom:'Metal',   col:'#9AA3B0', estado:'solido', dens:30, cond:.95,
+  metal:   { nom:'Metal',   col:'#9AA3B0', estado:'solido', dens:30, cond:.95, friccion:.25,
              elec:1, fus:[1450,'metfun'], dureza:.8, ferroso:.5, grupo:'eléctrico' },
   metfun:  { nom:'Metal fundido', col:'#FFB03D', estado:'liquido', dens:29, cond:.95,
              elec:1, congela:[1400,'metal'], nace:1500, grupo:'eléctrico' },
@@ -141,7 +141,9 @@ const JUEGO = {
              elec:1, fus:[1085,'metfun'], dureza:.7, grupo:'eléctrico' },
   bateria: { nom:'Batería', col:'#FFC53D', estado:'solido', dens:40, cond:.4,
              elec:1, fuente:true, dureza:.6, grupo:'eléctrico' },
-  lampara: { nom:'Lámpara', col:'#6E6A55', estado:'solido', dens:28, cond:.3,
+  /* `luz` es cuánto alumbra cuando le llega corriente. La luz se reparte de
+     verdad por la habitación y la bloquean los sólidos: ver luzPaso(). */
+  lampara: { nom:'Lámpara', col:'#6E6A55', estado:'solido', dens:28, cond:.3, luz:20,
              elec:1, lampara:true, dureza:.4, grupo:'eléctrico' },
   aislante:{ nom:'Aislante',col:'#3A3446', estado:'solido', dens:20, cond:.05,
              elec:0, dureza:.5, grupo:'eléctrico' },
@@ -455,6 +457,34 @@ export const REACCIONES = [
   ['semilla','tierra','semilla', 'tierra',  0,    0],
 ];
 
+/* ── UN ICONO POR ELEMENTO ──────────────────────────────────────────────
+   Carlos: «ponles iconos más claros a cada cosa por favor, no se entiende
+   bien qué es cada cosa sólo por el nombre». Va por elemento donde importa y
+   por FAMILIA en los 118 —que ahí el símbolo químico ya dice más que
+   cualquier dibujito, y un emoji distinto para cada uno sería ruido—.
+   Es una tabla y no un `if`, por la misma razón que todo lo demás aquí:
+   para que crezca sin tocar el motor. */
+const ICONOS = {
+  vacio:'⌫', muro:'🧱', arena:'🏖', tierra:'🟫', piedra:'🪨', grava:'🪨', sal:'🧂',
+  salfun:'🌡', vidrio:'🪟', vidfun:'🫗', cemento:'🪣', concreto:'🧱',
+  agua:'💧', salada:'🌊', hielo:'🧊', nieve:'❄️', vapor:'♨️', hielose:'🌫', co2:'💨',
+  fuego:'🔥', humo:'💨', ceniza:'🌑', lava:'🌋', obsidiana:'⬛', termita:'✨',
+  aceite:'🛢', gasnat:'💨', polvora:'🧨', nitro:'💥', madera:'🪵', carbon:'⚫',
+  globo:'🎈', hidrogeno:'🎈', oxigeno:'🫧',
+  metal:'🔩', metfun:'🫗', cobre:'🟠', bateria:'🔋', lampara:'💡', aislante:'🚫',
+  mercurio:'🌡', iman:'🧲', electroiman:'🧲', ferroso:'🧲',
+  interruptor:'🎚', resistencia:'🌡', pulsador:'⏱', motor:'⚙️',
+  reloj:'⏳', repetidor:'📶', observador:'👁', piston:'🔨', resorte:'🌀', pila:'🔋',
+  estRoja:'🎆', estVerde:'🎆', estAzul:'🎆', estOro:'🎆', mecha:'🧵', chispa:'✨',
+  gAND:'🔀', gOR:'🔀', gNOT:'🔁', diodo:'➡️', nand:'🔀', nor:'🔀', xor:'⊕', xnor:'⊜',
+  acido:'🧪', uranio:'☢️', planta:'🌱', semilla:'🌰',
+};
+const ICONO_FAMILIA = {
+  '⚛ no metal':'🔬', '⚛ noble':'🎈', '⚛ alcalino':'⚡', '⚛ alcalinotérreo':'🧱',
+  '⚛ metaloide':'🔷', '⚛ halógeno':'🧪', '⚛ metal':'🔩', '⚛ transición':'⚙️',
+  '⚛ lantánido':'💠', '⚛ actínido':'☢️', '⚛ post-transición':'🔗',
+};
+
 /* ── LOS GASES DE LA TABLA, POR SU MASA MEDIDA ──────────────────────────
    Los 118 traen `masa` en g/cm³ de verdad —el helio 0.00018, el nitrógeno
    0.00125— y su `dens` de juego venía puesta a 1 para todos, o sea inservible
@@ -466,6 +496,9 @@ for(const id of Object.keys(TABLA)){
   const e = TABLA[id];
   if(e.estado === 'gas' && e.masa) e.dens = Math.round((e.masa / 0.0012) * 1.2 * 100) / 100;
 }
+
+for(const id of Object.keys(JUEGO)) if(ICONOS[id]) JUEGO[id].ico = ICONOS[id];
+for(const id of Object.keys(TABLA)) TABLA[id].ico = ICONO_FAMILIA[TABLA[id].grupo] || '⚛';
 
 /* Los de juego y los 118 en una sola tabla: el motor no distingue. */
 Object.assign(JUEGO, TABLA);

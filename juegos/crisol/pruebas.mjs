@@ -867,5 +867,135 @@ seccion('las compuertas lógicas, con su tabla de verdad entera');
   ok('y con señal se apaga, y se queda apagada', conSenal === 0, conSenal + '/20 pasos');
 }
 
+seccion('rozar no es golpear · fricción y contacto');
+{
+  /* Carlos: «una pared no se rompe si la roza un objeto… debes meter también
+     la fricción», y separó él mismo contacto, rozamiento, fuerza normal,
+     impacto, corte, deformación y fractura. Lo que decide no es tocar: es la
+     energía ½·m·v² contra lo que el material aguanta. */
+  const cuenta = (m, id) => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) c++; return c; };
+  const losa = (proyectil, desde) => {
+    const g = mundo(40, 60, 1);
+    repisa(g, 59);
+    for(let x = 0; x < 40; x++) for(let y = 50; y < 59; y++) g.pon(x, y, IDX.piedra);
+    const antes = cuenta(g, 'piedra');
+    g.pon(20, desde, IDX[proyectil]); g.suelto[g.i(20, desde)] = 1;
+    corre(g, 300);
+    return antes - cuenta(g, 'piedra');
+  };
+  const caida = losa('eOs', 2), encima = losa('eOs', 48), ligero = losa('ceniza', 2);
+  ok('un proyectil pesado a velocidad ABOLLA la losa', caida > 0, 'agujero de ' + caida);
+  ok('el mismo, soltado encima y sin velocidad, NO', encima === 0, 'agujero de ' + encima);
+  ok('y uno ligero desde la misma altura tampoco', ligero === 0, 'agujero de ' + ligero);
+
+  /* el roce: 300 pasos raspando y la pared entera */
+  const roce = mundo(40, 40, 1);
+  for(let y = 0; y < 40; y++) roce.pon(20, y, IDX.piedra);
+  for(let i = 0; i < 300; i++){
+    const k = roce.i(19, 20);
+    if(roce.t[k] === VACIO) roce.pon(19, 20, IDX.metal);
+    roce.vx[k] = 0.5; roce.suelto[k] = 1;
+    roce.paso();
+  }
+  let quedan = 0;
+  for(let y = 0; y < 40; y++) if(roce.t[roce.i(20,y)] === IDX.piedra) quedan++;
+  ok('y ROZARLA 300 pasos no le hace nada', quedan === 40, quedan + '/40 celdas');
+
+  /* la fricción FRENA de verdad, y el hielo menos que la arena */
+  /* ⚠ el suelo va en la ÚLTIMA FILA. La primera versión lo puso a media
+     altura en un mundo de 20 y, desde que los sólidos caen, ese suelo se
+     desplomaba con bloque y todo: las dos superficies daban el mismo número
+     porque las dos se habían ido al fondo. Medía la gravedad otra vez. */
+  const desliza = (suelo) => {
+    const m = mundo(60, 20, 2);
+    repisa(m, 19);
+    for(let x = 0; x < 60; x++) m.pon(x, 18, IDX[suelo]);
+    m.pon(5, 17, IDX.metal); m.suelto[m.i(5,17)] = 1; m.vx[m.i(5,17)] = 5;
+    corre(m, 60);
+    for(let x = 59; x >= 0; x--) if(m.t[m.i(x,17)] === IDX.metal) return x;
+    return 5;
+  };
+  /* ⚠ y NO con hielo, que a 22° se derrite: el bloque acababa nadando y las
+     dos superficies daban lo mismo. El metal es liso y no se va a ningún lado. */
+  const porMetal = desliza('metal'), porArena = desliza('arena');
+  ok('un bloque llega MÁS LEJOS por metal liso que por arena', porMetal > porArena,
+     'metal x=' + porMetal + ' · arena x=' + porArena);
+}
+
+seccion('la luz alumbra de verdad y da sombra');
+{
+  /* Carlos: «no tenemos iluminación… la lámpara no produce iluminación».
+     Ahora la luz se reparte desde la lámpara encendida, se apaga con la
+     distancia y la bloquean los sólidos. Y depende del CIRCUITO. */
+  const m = mundo(60, 40, 1);
+  repisa(m, 39);
+  m.pon(10, 38, IDX.bateria);
+  for(let x = 11; x < 20; x++) m.pon(x, 38, IDX.cobre);
+  m.pon(20, 38, IDX.lampara);
+  for(let y = 20; y < 39; y++) m.pon(35, y, IDX.piedra);   /* una pared */
+  corre(m, 20);
+  const L = (x, y) => m.luz[m.i(x, y)];
+  ok('junto a la lámpara hay luz', L(21,37) > 10, L(21,37).toFixed(0));
+  ok('y se APAGA con la distancia', L(30,37) > 0 && L(30,37) < L(21,37),
+     'a 1 celda ' + L(21,37).toFixed(0) + ' · a 10 celdas ' + L(30,37).toFixed(0));
+  ok('detrás de una pared hay SOMBRA', L(40,37) === 0, L(40,37).toFixed(0));
+  m.pon(15, 38, IDX.aislante);      /* se corta el circuito */
+  corre(m, 20);
+  ok('y si cortas el circuito, se apaga', L(21,37) === 0, L(21,37).toFixed(0));
+}
+
+seccion('la mano y el termómetro');
+{
+  /* «El arrastre debe aplicar una FUERZA al objeto, no simplemente cambiar su
+     posición» — así que lo que se comprueba es justo eso: que lo ligero venga
+     y lo pesado cueste, con la misma mano y el mismo tirón. */
+  const tira = (id) => {
+    const m = mundo(60, 40, 3);
+    repisa(m, 39);
+    m.pon(10, 38, IDX[id]);
+    let cx = 10, cy = 38;
+    for(let i = 0; i < 60; i++){
+      const g = m.agarra(cx, cy, 45, 38, 2);   /* el dedo, lejos a la derecha */
+      cx = g.cx; cy = g.cy;
+      m.paso();
+    }
+    for(let x = 59; x >= 0; x--) if(m.t[m.i(x,38)] === IDX[id]) return x;
+    return 10;
+  };
+  const ligero = tira('madera'), pesado = tira('eOs');
+  ok('la mano ARRASTRA un sólido', ligero > 12, 'la madera llegó a x=' + ligero);
+  ok('y lo pesado cuesta más que lo ligero', pesado < ligero,
+     'madera x=' + ligero + ' · osmio x=' + pesado);
+  ok('y no atraviesa el muro', (() => {
+    const m = mundo(40, 40, 3);
+    repisa(m, 39);
+    for(let y = 20; y < 39; y++) m.pon(20, y, IDX.muro);
+    m.pon(10, 38, IDX.madera);
+    let cx = 10, cy = 38;
+    for(let i = 0; i < 80; i++){ const g = m.agarra(cx, cy, 35, 38, 2); cx = g.cx; cy = g.cy; m.paso(); }
+    for(let x = 21; x < 40; x++) if(m.t[m.i(x,38)] === IDX.madera) return false;
+    return true;
+  })());
+
+  /* el termómetro */
+  const t = mundo(20, 20, 1);
+  t.pon(10, 10, IDX.eFe);
+  const inf = t.informe(10, 10);
+  ok('el termómetro dice qué material es', inf.nombre === 'Hierro' && inf.simbolo === 'Fe', inf.nombre);
+  ok('y su temperatura y su estado', inf.temperatura === 22 && inf.estado === 'solido',
+     inf.temperatura + '° ' + inf.estado);
+  const nombres = inf.cambios.map(c => c.que);
+  ok('y sus cambios de estado, con la temperatura de cada uno',
+     nombres.includes('fusión') && nombres.includes('ebullición'),
+     inf.cambios.map(c => c.que + ' ' + c.a + '°').join(' · '));
+  /* ⚠ la FISIÓN no es un cambio de estado, y lo corrigió el propio Carlos.
+     Va listada aparte y marcada como fenómeno nuclear. */
+  const u = mundo(20, 20, 1);
+  u.pon(10, 10, IDX.uranio);
+  const iu = u.informe(10, 10).cambios.find(c => c.que === 'fisión');
+  ok('la fisión aparece marcada como NUCLEAR, no como cambio de estado',
+     !!iu && iu.a === null && /nuclear/.test(iu.nota), iu ? iu.nota : 'no aparece');
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

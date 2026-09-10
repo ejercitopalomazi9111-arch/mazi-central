@@ -137,7 +137,14 @@ export class Mundo {
     this.flotante = new Uint8Array(n);
     /* de quién vino la corriente a cada celda: sin esto una compuerta no puede
        distinguir una entrada de su propia salida */
-    this._padre = new Int32Array(n);   /* este paso ya lleva su balance de flotación hecho */
+    this._padre = new Int32Array(n);
+    /* ── LA LUZ ────────────────────────────────────────────────────────
+       Carlos: «la lámpara no produce iluminación, de hecho no tenemos
+       iluminación». Cierto: la lámpara se pintaba amarilla y ahí acababa
+       todo. Esto es un campo de luz de verdad — se reparte desde las
+       lámparas encendidas, se apaga con la distancia y la BLOQUEAN los
+       sólidos, así que una pared da sombra. */
+    this.luz = new Float32Array(n);   /* este paso ya lleva su balance de flotación hecho */
     /* la caja de dónde hay onda; vacía al revés quiere decir «silencio» */
     this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
     this.temp.fill(AMBIENTE);
@@ -514,6 +521,103 @@ export class Mundo {
   }
 
 
+  /* ── LA MANO ──────────────────────────────────────────────────────────
+     Carlos: «quiero una herramienta para poder mover los sólidos con físicas
+     como si los arrastrara», y con la condición explícita de que «el arrastre
+     debe aplicar una FUERZA al objeto, no simplemente cambiar su posición».
+
+     Así que no hay teletransporte ni se escribe una posición. Se agarra lo que
+     hay alrededor del punto de agarre y se le aplica una fuerza hacia el dedo,
+     dividida por su densidad — que es F = m·a despejada. De ahí salen solas
+     las cuatro cosas que pidió, sin programar ninguna:
+
+       · lo pesado cuesta: el osmio recibe la misma fuerza y menos aceleración
+       · lo atorado no cede: la fuerza se aplica, pero el movimiento lo decide
+         `mueve`, que sigue chocando con lo que haya
+       · no atraviesa nada, porque no se mueve por su cuenta: pide sitio
+       · al soltarlo sigue con su velocidad, porque la velocidad es suya
+
+     El punto de agarre persigue al MATERIAL, no al dedo. Por eso un bloque
+     pesado se queda atrás y se siente el peso en la mano.
+
+     Devuelve cuántas celdas agarró, para que la pantalla sepa si enganchó. */
+  agarra(cx, cy, fx, fy, r = 4){
+    let n = 0, sx = 0, sy = 0;
+    const rr = r * r + r;
+    for(let dy = -r; dy <= r; dy++){
+      for(let dx = -r; dx <= r; dx++){
+        if(dx*dx + dy*dy > rr) continue;
+        const x = Math.round(cx) + dx, y = Math.round(cy) + dy;
+        if(!this.dentro(x, y)) continue;
+        const k = this.i(x, y);
+        if(this.t[k] === VACIO) continue;
+        const e = EL[this.t[k]];
+        if(e.fijo) continue;                       /* el muro no se arrastra */
+        const est = this.estadoDe(k);
+        if(est !== 'solido' && est !== 'polvo') continue;
+        n++; sx += x; sy += y;
+        /* la fuerza tira hacia el dedo y la masa se resiste */
+        const m = e.dens || 1;
+        const f = 2.2 / (m > 0.2 ? m : 0.2);
+        let ax = (fx - x) * f, ay = (fy - y) * f;
+        const tope = 1.6;
+        if(ax > tope) ax = tope; else if(ax < -tope) ax = -tope;
+        if(ay > tope) ay = tope; else if(ay < -tope) ay = -tope;
+        /* mientras la mano tira, se compensa la gravedad para poder levantar
+           — que es lo que hace una mano de verdad, no una excepción */
+        this.vx[k] += ax;
+        this.vy[k] += ay - GRAVEDAD * 0.9;
+        this.suelto[k] = 1;
+        this.sop[k] = 0;
+      }
+    }
+    if(!n) return { n:0, cx, cy };
+    return { n, cx: sx / n, cy: sy / n };
+  }
+
+  /* ── EL TERMÓMETRO ────────────────────────────────────────────────────
+     Qué material es, a qué temperatura está y a qué temperaturas cambia de
+     estado. Vive en el motor y no en la pantalla porque los datos son del
+     motor, y así se puede probar sin navegador.
+
+     ⚠ La FISIÓN no va aquí, y lo dijo el propio Carlos al corregirse: no es
+     un cambio de estado, es un fenómeno nuclear. Los cambios de estado son
+     fusión, solidificación, vaporización, ebullición, condensación y
+     sublimación. Meter la fisión en esta lista sería enseñar mal la física
+     en una herramienta cuyo único trabajo es enseñar física. */
+  informe(x, y){
+    if(!this.dentro(x, y)) return null;
+    const k = this.i(x, y);
+    const e = EL[this.t[k]];
+    const est = this.estadoDe(k);
+    const r = {
+      id: e.id, nombre: e.nom, simbolo: e.sim || null, z: e.z || null,
+      temperatura: Math.round(this.temp[k] * 10) / 10,
+      estado: est === 'energia' ? 'energía' : est,
+      densidad: e.dens, masa: e.masa || null,
+      conduceCalor: e.cond ?? null, conduceElec: e.elec ?? null,
+      dureza: e.dureza ?? null,
+      presion: Math.round(this.pres[k] * 100) / 100,
+      corriente: !!this.car[k],
+      sostenido: !!this.sop[k], suelto: !!this.suelto[k],
+      cambios: [],
+    };
+    /* los 118 traen sus temperaturas MEDIDAS */
+    if(e.fusReal != null) r.cambios.push({ que:'fusión', a: e.fusReal, nota:'de sólido a líquido' });
+    if(e.ebuReal != null) r.cambios.push({ que:'ebullición', a: e.ebuReal, nota:'de líquido a gas' });
+    /* los de juego cambian de elemento, que es su forma de cambiar de fase */
+    if(e.fus) r.cambios.push({ que:'fusión', a: e.fus[0], nota:'se vuelve ' + (EL[IDX[e.fus[1]]] || {}).nom });
+    if(e.ebu) r.cambios.push({ que:'ebullición', a: e.ebu[0], nota:'se vuelve ' + (EL[IDX[e.ebu[1]]] || {}).nom });
+    if(e.congela) r.cambios.push({ que:'solidificación', a: e.congela[0], nota:'se vuelve ' + (EL[IDX[e.congela[1]]] || {}).nom });
+    /* sublimación: pasar de sólido a gas SIN pasar por líquido. Es real y se
+       reconoce por el dato: hierve por debajo de donde se funde. */
+    if(e.fusReal != null && e.ebuReal != null && e.ebuReal < e.fusReal)
+      r.cambios.push({ que:'sublimación', a: e.ebuReal, nota:'de sólido a gas, sin pasar por líquido' });
+    if(e.arde) r.cambios.push({ que:'combustión', a: null, nota:'arde con una fuente de calor cerca' });
+    if(e.radia) r.cambios.push({ que:'fisión', a: null, nota:'nuclear, no es un cambio de estado' });
+    return r;
+  }
+
   /* Soltar lo que hay en un radio: lo llama todo el que da un golpe de
      verdad. Sin esto, un sólido pintado es inamovible aunque le revientes una
      bomba al lado. */
@@ -768,6 +872,7 @@ export class Mundo {
     this.sostenPaso();
     this.globoPaso();
     this.electricidad();
+    this.luzPaso();
     this.magnetismo();
     this.presionPaso();
 
@@ -1117,13 +1222,24 @@ export class Mundo {
         if(!subio && subidas > 0) this.vy[ck] = 0;
       } else {
         const saltos = this.pasosDe(vy);
-        let cayo = false;
+        let cayo = false, topo = false;
         for(let i = 0; i < saltos; i++){
-          if(!this.trata(cx, cy, ck, cx, cy + 1, e)) break;
+          if(!this.trata(cx, cy, ck, cx, cy + 1, e)){ topo = true; break; }
           cy++; ck = this.i(cx, cy); cayo = true;
         }
+        /* ⚠ EL GOLPE SE MIDE AL TOPAR, NO AL NO MOVERSE. Aquí decía
+           `if(!cayo)`, o sea que sólo contaba el impacto cuando el cuerpo no
+           había avanzado NI UNA celda en el cuadro… y un cuerpo en caída
+           avanza cinco o seis y LUEGO topa. Con eso ningún golpe de verdad se
+           contaba nunca: un proyectil de osmio a velocidad terminal no le
+           hacía ni un rasguño a una losa de piedra, y la fórmula de la energía
+           estaba perfecta. El defecto no estaba en el cálculo, estaba en
+           cuándo se llamaba. */
+        if(topo && this.dentro(cx, cy + 1)) this.impacta(ck, e, this.i(cx, cy + 1));
         if(!cayo && saltos > 0) this.vy[ck] *= .1;
+        else if(topo) this.vy[ck] *= .18;
       }
+      this.roza(ck, e);
       if(this.vx[ck] > .35 || this.vx[ck] < -.35){
         const d = this.vx[ck] > 0 ? 1 : -1;
         if(this.trata(cx, cy, ck, cx + d, cy, e)){ cx += d; ck = this.i(cx, cy); }
@@ -1264,6 +1380,64 @@ export class Mundo {
           if(this.trata(x, y, k, nx, y, e)) return;
         }
       }
+    }
+  }
+
+  /* ── FRICCIÓN Y CONTACTO ──────────────────────────────────────────────
+     Carlos: «una pared no se rompe si la roza un objeto… debes meter también
+     la fricción», y separó él mismo las siete cosas que no son lo mismo:
+     contacto, rozamiento, fuerza normal, impacto, corte, deformación y
+     fractura. Aquí están las dos que faltaban.
+
+     ROZAR es tangencial y sólo FRENA. Cuánto, lo deciden los dos materiales:
+     manda el más áspero. El hielo resbala, la arena agarra. */
+  roza(k, e){
+    const vx = this.vx[k];
+    if(vx > -0.02 && vx < 0.02) return;
+    const x = k % this.an, y = (k / this.an) | 0;
+    let mu = 0;
+    for(const [dx, dy] of [[0,1],[0,-1]]){          /* el suelo y el techo */
+      if(!this.dentro(x + dx, y + dy)) continue;
+      const k2 = this.i(x + dx, y + dy);
+      if(this.t[k2] === VACIO) continue;
+      const ev = this.estadoDe(k2);
+      if(ev !== 'solido' && ev !== 'polvo') continue;
+      const m2 = EL[this.t[k2]].friccion;
+      const m1 = e.friccion;
+      const c = Math.max(m1 == null ? 0.35 : m1, m2 == null ? 0.35 : m2);
+      if(c > mu) mu = c;
+    }
+    if(mu === 0) return;
+    this.vx[k] = vx * (1 - mu * 0.55);
+    if(this.vx[k] > -0.02 && this.vx[k] < 0.02) this.vx[k] = 0;
+  }
+
+  /* GOLPEAR es otra cosa. Lo que rompe un material no es tocarlo: es la
+     ENERGÍA que le entra de golpe, ½·m·v², contra lo que ese material aguanta.
+     Con eso, rozar una pared a 0.3 celdas por paso no le hace nada —la energía
+     es cien veces menor que su tenacidad— y un proyectil a 6 sí la abolla.
+     La misma fórmula para los dos casos, que es justo lo que él pedía:
+     «si un objeto simplemente roza una pared con una fuerza pequeña, la pared
+     no debería romperse, pero si existe suficiente fuerza, velocidad o
+     repetición del esfuerzo, entonces sí». */
+  impacta(k, e, k2){
+    const vy = this.vy[k], vx = this.vx[k];
+    const v2 = vy*vy + vx*vx;
+    if(v2 < 4) return;                       /* por debajo de 2 celdas/paso no marca */
+    const v = EL[this.t[k2]];
+    if(v.fijo) return;                       /* el muro no cede: para eso está */
+    const energia = 0.5 * (e.dens || 1) * v2;
+    /* la tenacidad sale de la dureza y de la densidad: un material duro y
+       pesado aguanta más que uno duro y ligero */
+    const aguanta = 40 + (v.dureza || 0) * 900 + (v.dens || 1) * 4;
+    if(energia < aguanta) return;
+    /* pasa de aguantar: se abolla. El daño se acumula en `vida`, así que la
+       REPETICIÓN también rompe — que es el desgaste que él nombró. */
+    this.vida[k2] += Math.round((energia - aguanta) / 10);
+    this.suelto[k2] = 1;
+    if(this.vida[k2] > 40){
+      this.cambia(k2, VACIO);
+      this.suelta(k2 % this.an, (k2 / this.an) | 0, 2);
     }
   }
 
@@ -1603,6 +1777,71 @@ export class Mundo {
     }
     this.car = sig;
     this.dist = dist;
+  }
+
+  /* ── ILUMINACIÓN ──────────────────────────────────────────────────────
+     Un reparto desde cada lámpara encendida, igual que la corriente pero con
+     otra regla de atenuación: la luz se apaga con la distancia y la frenan los
+     materiales según lo opacos que sean. Un cristal la deja pasar casi entera,
+     el agua a medias, la piedra nada — y de eso salen las sombras solas.
+
+     Se apoya en la electricidad, que ya corrió: una lámpara alumbra si le
+     llega corriente, y se apaga si le cortas el circuito o se le acaba la
+     pila. Es lo que pidió: que la luz sea una consecuencia del circuito y no
+     un icono que parpadea. */
+  luzPaso(){
+    const { an, al, t, luz } = this;
+    luz.fill(0);
+    const focos = [];
+    for(let k = 0; k < t.length; k++){
+      const e = EL[t[k]];
+      if(e.luz && this.car[k]) focos.push([k, e.luz]);
+      else if(e.calor || e.id === 'fuego') focos.push([k, 9]);   /* el fuego también alumbra */
+      else if(e.chispa === undefined && e.id === 'chispa') focos.push([k, 5]);
+    }
+    if(!focos.length){ this.hayLuz = false; return; }
+    this.hayLuz = true;
+    /* Cubetas por «cuánta luz queda», de más a menos: así cada celda se
+       resuelve con el camino que más luz le trae y no con el primero que
+       llegó. Es el mismo truco de la corriente, al revés. */
+    const NIV = 24;
+    const cubeta = new Array(NIV + 1);
+    const mete = (k, v) => {
+      const n = Math.round(v);
+      if(n <= 0 || n > NIV) return;
+      if(luz[k] >= n) return;
+      luz[k] = n;
+      (cubeta[n] || (cubeta[n] = [])).push(k);
+    };
+    for(const [k, f] of focos) mete(k, Math.min(NIV, f));
+    for(let v = NIV; v > 0; v--){
+      const lote = cubeta[v];
+      if(!lote) continue;
+      for(const k of lote){
+        if(luz[k] !== v) continue;
+        const x = k % an, y = (k / an) | 0;
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          const px = x + dx, py = y + dy;
+          if(px < 0 || py < 0 || px >= an || py >= al) continue;
+          const k2 = py * an + px;
+          mete(k2, v - this.opaco(k2));
+        }
+      }
+    }
+  }
+
+  /* Cuánta luz se come cada material al atravesarlo. El aire casi nada —por
+     eso la luz llega lejos—, el agua algo, y un sólido la para en seco: eso
+     es una sombra. */
+  opaco(k){
+    if(this.t[k] === VACIO) return 1;
+    const est = this.estadoDe(k);
+    if(est === 'gas' || est === 'energia') return 1;
+    if(est === 'liquido') return 3;
+    if(est === 'polvo') return 7;
+    const e = EL[this.t[k]];
+    if(e.id === 'vidrio') return 2;            /* el cristal es cristal */
+    return 24;                                  /* sólido: sombra */
   }
 
   /* ── MAGNETISMO ────────────────────────────────────────────────────────
