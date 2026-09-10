@@ -39,6 +39,15 @@ export const AMBIENTE = 22;
    paredes delgadas por el mismo agujero que ya tapamos en el movimiento
    lateral. */
 export const GRAVEDAD = 0.28;
+/* ── LA GRAVEDAD EN UNIDADES DE VERDAD ──────────────────────────────────
+   Carlos la pidió en m/s²: «9.81, 5, 1, 0, -9.81». El motor trabaja en
+   celdas por paso al cuadrado, así que hace falta el cambio de unidades, y
+   se calibra por su propio número: 0.28 celdas/paso² ES la gravedad de la
+   Tierra dentro de este mundo. Todo lo demás sale de una regla de tres, no
+   de una tabla inventada. */
+export const G_TIERRA = 9.81;
+export const aCeldas = ms2 => GRAVEDAD * (ms2 / G_TIERRA);
+export const aMetros = cel => G_TIERRA * (cel / GRAVEDAD);
 export const VMAX = 6;
 /* Hasta dónde llega la corriente desde una fuente. Es lo que hace que una
    resistencia sirva: si el alcance fuera infinito, atenuar no apagaría nada. */
@@ -139,6 +148,27 @@ export class Mundo {
        distinguir una entrada de su propia salida */
     this._padre = new Int32Array(n);
     this._detona = [];   /* choques que van a detonar, resueltos al final del paso */
+    /* ── EL CAMPO GRAVITATORIO ────────────────────────────────────────
+       Carlos no pidió «activar y desactivar la gravedad»: pidió magnitud,
+       dirección, zonas, por objeto y puntos que atraen o repelen, «combinar
+       campos mediante suma vectorial». Así que la gravedad deja de ser una
+       constante y pasa a ser un CAMPO que se consulta por celda.
+
+       · `gGlobal` es el vector de toda la sala
+       · `zonas` son rectángulos que suman o reemplazan
+       · `puntos` atraen o repelen hacia un sitio, con radio
+       · `gmul` es por CELDA, y viaja con la partícula: es la gravedad
+         propia de un objeto
+
+       Y no hay teletransporte en ninguna parte: todo esto cambia la
+       ACELERACIÓN. Al cruzar de una zona a otra, la velocidad y la inercia
+       se conservan solas porque nadie las toca. */
+    this.gGlobal = { x: 0, y: GRAVEDAD };
+    this.zonas = [];
+    this.puntos = [];
+    this.gmul = new Float32Array(n);
+    this.gmul.fill(1);
+    this._gx = 0; this._gy = GRAVEDAD; this._gSimple = true;
     /* ── LA LUZ ────────────────────────────────────────────────────────
        Carlos: «la lámpara no produce iluminación, de hecho no tenemos
        iluminación». Cierto: la lámpara se pintaba amarilla y ahí acababa
@@ -227,6 +257,9 @@ export class Mundo {
        mismo error que ya estaba anotado dos líneas más arriba para la
        velocidad — y lo volví a cometer con el campo de al lado. */
     const sv = this.suelto[k1]; this.suelto[k1] = this.suelto[k2]; this.suelto[k2] = sv;
+    /* la gravedad PROPIA es del objeto, así que viaja con él — el mismo error
+       que ya costó dos veces con la velocidad y con «suelto» */
+    const gv = this.gmul[k1]; this.gmul[k1] = this.gmul[k2]; this.gmul[k2] = gv;
     this.mov[k1] = 1; this.mov[k2] = 1;
   }
 
@@ -522,6 +555,95 @@ export class Mundo {
   }
 
 
+  /* ── QUÉ GRAVEDAD SE SIENTE EN ESTA CELDA ─────────────────────────────
+     Suma vectorial, que es lo que Carlos pidió textualmente: «preferiblemente
+     utilizar vectores y suma de fuerzas para que los campos puedan interactuar
+     de manera coherente».
+
+     El orden de prioridad, y es el que él listó:
+       1 · se parte del campo global
+       2 · una zona con modo `reemplaza` lo sustituye; con `suma`, se suma
+       3 · los puntos gravitatorios se suman siempre, con caída 1/d²
+       4 · el multiplicador propio de la celda escala el resultado
+
+     Devuelve celdas/paso². Para hablar en m/s² están `aCeldas` y `aMetros`. */
+  /* ⚠ ESCRIBE EN DOS CAMPOS Y NO DEVUELVE UN ARREGLO. Devolver `[gx, gy]` se
+     lee mucho mejor, y es un arreglo nuevo por cada celda que se mueve sesenta
+     veces por segundo: la misma basura que este archivo evita desde su primera
+     línea al no usar un objeto por celda. Feo, y es lo que corre.
+
+     ⚠ Y UNA CORRECCIÓN MÍA, porque el error estuvo a punto de quedarse escrito
+     aquí como si fuera un dato: creí ver una regresión de 12.6 a 19.2 ms al
+     meter el campo, y NO EXISTÍA. Los 12.6 eran de antes de que se reiniciara
+     el contenedor, o sea de otra máquina. Medido el mismo día contra el commit
+     anterior, tres corridas cada uno: 19.6/19.1/20.0 con el campo y
+     18.7/19.7/20.3 sin él. El campo no cuesta nada medible.
+     La lección no es sobre gravedad: un número de rendimiento sólo vale
+     comparado contra el otro CORRIDO EL MISMO DÍA en la MISMA máquina. */
+  gravedadEn(x, y, k){
+    /* camino rápido: sin zonas, sin puntos y sin gravedad propia, que es el
+       caso de siempre, esto es leer dos números */
+    if(this._gSimple && this.gmul[k] === 1){
+      this._gx = this.gGlobal.x; this._gy = this.gGlobal.y;
+      return;
+    }
+    let gx = this.gGlobal.x, gy = this.gGlobal.y;
+    for(const z of this.zonas){
+      if(!z.activa) continue;
+      if(x < z.x0 || x > z.x1 || y < z.y0 || y > z.y1) continue;
+      if(z.modo === 'reemplaza'){ gx = z.gx; gy = z.gy; }
+      else { gx += z.gx; gy += z.gy; }
+    }
+    for(const p of this.puntos){
+      if(!p.activa) continue;
+      const dx = p.x - x, dy = p.y - y;
+      const d2 = dx*dx + dy*dy;
+      if(d2 < 0.5 || d2 > p.radio * p.radio) continue;
+      const d = Math.sqrt(d2);
+      /* 1/d² como la de verdad, y con un suelo para que no se dispare al
+         acercarse al centro y mande una partícula al otro lado del mundo */
+      const f = (p.atrae ? 1 : -1) * p.fuerza * (p.radio * p.radio) / (d2 * 40);
+      gx += (dx / d) * f; gy += (dy / d) * f;
+    }
+    const m = this.gmul[k];
+    if(m !== 1){ gx *= m; gy *= m; }
+    this._gx = gx; this._gy = gy;
+  }
+
+  /* Se recalcula cuando cambia algo del campo, no en cada consulta. */
+  revisaCampo(){
+    this._gSimple = this.zonas.length === 0 && this.puntos.length === 0;
+  }
+
+  /* Las herramientas de la pantalla se apoyan en esto, y devuelven lo que
+     crearon para poder quitarlo o apagarlo después. */
+  zonaGravedad(x0, y0, x1, y1, gxMs2, gyMs2, modo = 'reemplaza'){
+    const z = {
+      x0: Math.min(x0,x1), y0: Math.min(y0,y1), x1: Math.max(x0,x1), y1: Math.max(y0,y1),
+      gx: aCeldas(gxMs2), gy: aCeldas(gyMs2), modo, activa: true,
+    };
+    this.zonas.push(z);
+    this.revisaCampo();
+    return z;
+  }
+  puntoGravedad(x, y, fuerzaMs2, radio, atrae = true){
+    const p = { x, y, fuerza: aCeldas(fuerzaMs2), radio, atrae, activa: true };
+    this.puntos.push(p);
+    this.revisaCampo();
+    return p;
+  }
+  ponGravedadGlobal(gxMs2, gyMs2){
+    this.gGlobal = { x: aCeldas(gxMs2), y: aCeldas(gyMs2) };
+  }
+  /* gravedad propia de un trozo de materia, pintada con brocha */
+  pintaGravedad(x, y, r, mult){
+    for(let dy = -r; dy <= r; dy++) for(let dx = -r; dx <= r; dx++){
+      if(dx*dx + dy*dy > r*r + r) continue;
+      if(!this.dentro(x+dx, y+dy)) continue;
+      this.gmul[this.i(x+dx, y+dy)] = mult;
+    }
+  }
+
   /* ── LA MANO ──────────────────────────────────────────────────────────
      Carlos: «quiero una herramienta para poder mover los sólidos con físicas
      como si los arrastrara», y con la condición explícita de que «el arrastre
@@ -567,7 +689,8 @@ export class Mundo {
         /* mientras la mano tira, se compensa la gravedad para poder levantar
            — que es lo que hace una mano de verdad, no una excepción */
         this.vx[k] += ax;
-        this.vy[k] += ay - GRAVEDAD * 0.9;
+        this.gravedadEn(x, y, k);
+        this.vy[k] += ay - this._gy * 0.9;
         this.suelto[k] = 1;
         this.sop[k] = 0;
       }
@@ -1228,7 +1351,16 @@ export class Mundo {
       if(!lanzado && this.sop[k]){ this.vy[k] = 0; this.vx[k] = 0; return; }
       /* un sólido no se escurre en diagonal: eso es lo que separa un ladrillo
          de un grano de arena. Cae recto, o se queda donde topó. */
-      if(!this.flotante[k]) this.vy[k] = Math.min(this.vy[k] + GRAVEDAD - this.flota(k, e), VMAX);
+      if(!this.flotante[k]){
+        this.gravedadEn(x, y, k);
+        const gx = this._gx, gy = this._gy;
+        /* Un cuerpo sumergido en un medio siente g·(1 − ρmedio/ρcuerpo): si
+           pesa menos que el aire, sale negativo y sube. Un solo número para la
+           gravedad y la flotación, en la dirección que sea. */
+        const f = 1 - DENS_AIRE / (e.dens || 1);
+        this.vy[k] = Math.max(-VMAX, Math.min(this.vy[k] + gy * f, VMAX));
+        this.vx[k] = Math.max(-VMAX, Math.min(this.vx[k] + gx * f, VMAX));
+      }
       this.arrastra(k, e);
       let cx = x, cy = y, ck = k;
       /* ⚠ CELDAS ENTERAS PARA VELOCIDADES FRACCIONARIAS: el mismo defecto de
@@ -1288,8 +1420,20 @@ export class Mundo {
          helio y el hidrógeno suben, el vapor sube, y el CO₂ y el oxígeno
          bajan. Uno solo número decide, y decide bien. */
       const d = e.dens || 0;
-      const sube = d < DENS_AIRE;
-      const dy = sube ? -1 : 1;
+      this.gravedadEn(x, y, k);
+      const ggx = this._gx, ggy = this._gy;
+      /* ⚠ «Arriba» no es «y menor»: es CONTRA LA GRAVEDAD. Con la gravedad
+         invertida, un globo tiene que bajar y una piedra subir, y si esto se
+         quedara clavado en −1 el helio seguiría trepando al techo en un mundo
+         del revés. Con gravedad cero no hay arriba ni abajo y el gas se queda
+         difundiendo, que es exactamente lo que hace. */
+      const ligero = d < DENS_AIRE;
+      let dy = 0, dxg = 0;
+      if(ggy > 0.005) dy = ligero ? -1 : 1;
+      else if(ggy < -0.005) dy = ligero ? 1 : -1;
+      if(ggx > 0.005) dxg = ligero ? -1 : 1;
+      else if(ggx < -0.005) dxg = ligero ? 1 : -1;
+      const sube = dy === -1;
       /* ── EL GLOBO ────────────────────────────────────────────────────────
          Un gas que quiere subir y tiene un sólido encima le PASA su empuje.
          Eso es literalmente lo que hace un globo: el helio no tira de la tela,
@@ -1306,7 +1450,9 @@ export class Mundo {
           if(empuje > 0.25) this.suelto[ka] = 1;
         }
       }
-      const dirs = [[0,dy],[0,dy],[-1,dy],[1,dy],[-1,0],[1,0]];
+      const dirs = dy === 0 && dxg === 0
+        ? [[0,-1],[0,1],[-1,0],[1,0]]                     /* sin gravedad: difunde */
+        : [[dxg,dy],[dxg,dy],[dxg-1,dy],[dxg+1,dy],[-1,0],[1,0]];
       const veces = (e.sube || 1) + 2;
       for(let i = 0; i < veces; i++){
         const [ddx, ddy] = dirs[(this.rnd()*dirs.length)|0];
@@ -1323,7 +1469,13 @@ export class Mundo {
        nada del suelo. Todo el sistema de velocidad estaba a medias y las
        pruebas del motor pasaban igual, porque todas medían cosas cayendo.
        Ahora si la velocidad apunta hacia arriba, SUBE. */
-    this.vy[k] = Math.min(this.vy[k] + GRAVEDAD - this.flota(k, e), VMAX);
+    {
+      this.gravedadEn(x, y, k);
+      const gx = this._gx, gy = this._gy;
+      const f = 1 - DENS_AIRE / (e.dens || 1);
+      this.vy[k] = Math.max(-VMAX, Math.min(this.vy[k] + gy * f, VMAX));
+      this.vx[k] = Math.max(-VMAX, Math.min(this.vx[k] + gx * f, VMAX));
+    }
     this.arrastra(k, e);
     let cx = x, cy = y, ck = k, cayo = false;
 
@@ -1953,6 +2105,6 @@ export class Mundo {
     this.vida.fill(0); this.car.fill(0);
     this.vy.fill(0); this.vx.fill(0); this.pres.fill(0); this.pv.fill(0);
     this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
-    this.fase.fill(0); this.color.fill(0); this.suelto.fill(0); this.sop.fill(0);
+    this.fase.fill(0); this.color.fill(0); this.suelto.fill(0); this.sop.fill(0); this.gmul.fill(1);
   }
 }

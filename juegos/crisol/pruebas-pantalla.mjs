@@ -165,6 +165,107 @@ seccion('la luz alumbra la habitación');
   ok('y se apaga con la distancia', luz.lejos < luz.cerca, 'cerca ' + luz.cerca + ' · lejos ' + luz.lejos);
 }
 
+seccion('la herramienta de gravedad');
+{
+  /* Carlos listó diez cosas por su nombre para esta herramienta. Esto las
+     recorre en el navegador, que es donde viven. */
+  await pg.evaluate(() => window.CRISOL.mundo.limpia());
+  await pg.click('#bGrav'); await pg.waitForTimeout(200);
+  ok('1 · el panel de gravedad abre', await pg.isVisible('#grav'));
+
+  /* global: magnitud y dirección */
+  await pg.fill('#gMag', '3');
+  await pg.click('#grav .gb[data-dir="arriba"]');
+  await pg.click('#gGlobal'); await pg.waitForTimeout(150);
+  const g1 = await pg.evaluate(() => ({ ...window.CRISOL.mundo.gGlobal }));
+  ok('2 · aplica una gravedad global con su magnitud', Math.abs(Math.abs(g1.y) - 0.28*3/9.81) < 1e-6,
+     JSON.stringify(g1));
+  ok('3 · y con su dirección: hacia arriba es negativa', g1.y < 0, String(g1.y));
+
+  await pg.click('#grav .gb[data-dir="der"]');
+  await pg.click('#gGlobal'); await pg.waitForTimeout(120);
+  const g2 = await pg.evaluate(() => ({ ...window.CRISOL.mundo.gGlobal }));
+  ok('4 · y a la derecha empuja en x, no en y', g2.x > 0 && Math.abs(g2.y) < 1e-9, JSON.stringify(g2));
+
+  await pg.click('#gNormal'); await pg.waitForTimeout(120);
+  const g3 = await pg.evaluate(() => ({ ...window.CRISOL.mundo.gGlobal }));
+  ok('5 · «volver a normal» la deja en 9.81 hacia abajo',
+     Math.abs(g3.y - 0.28) < 1e-6 && Math.abs(g3.x) < 1e-9, JSON.stringify(g3));
+
+  /* zona: se dibuja arrastrando */
+  await pg.fill('#gMag', '0');
+  await pg.click('#gZona'); await pg.waitForTimeout(120);
+  const caja = await pg.locator('#mundo').boundingBox();
+  await pg.mouse.move(caja.x + 60, caja.y + 60);
+  await pg.mouse.down();
+  await pg.mouse.move(caja.x + 200, caja.y + 190, { steps:10 });
+  await pg.mouse.up();
+  await pg.waitForTimeout(200);
+  const zonas = await pg.evaluate(() => window.CRISOL.mundo.zonas.map(z => ({ ...z })));
+  ok('6 · se DIBUJA una zona arrastrando', zonas.length === 1, zonas.length + ' zonas');
+  ok('7 · y toma la magnitud elegida (0 m/s²)',
+     zonas.length === 1 && Math.abs(zonas[0].gy) < 1e-9 && Math.abs(zonas[0].gx) < 1e-9,
+     JSON.stringify(zonas[0] || {}));
+  ok('8 · la zona sale en la lista, y se puede apagar y quitar',
+     (await pg.locator('.gcampo').count()) === 1);
+  await pg.click('.gcampo button:nth-child(2)'); await pg.waitForTimeout(120);
+  ok('9 · apagarla NO la borra', await pg.evaluate(() => {
+    const z = window.CRISOL.mundo.zonas; return z.length === 1 && z[0].activa === false; }));
+  await pg.click('.gcampo button:nth-child(2)'); await pg.waitForTimeout(100);
+
+  /* que la zona HAGA algo: una piedra quieta dentro no cae */
+  await pg.evaluate(() => {
+    const C = window.CRISOL, M = C.mundo, z = M.zonas[0];
+    M.pon(Math.round((z.x0+z.x1)/2), Math.round((z.y0+z.y1)/2), C.IDX.piedra);
+  });
+  const y0 = await pg.evaluate(() => { const M = window.CRISOL.mundo;
+    for(let k=0;k<M.t.length;k++) if(M.t[k]===window.CRISOL.IDX.piedra) return (k/M.an)|0; return -1; });
+  await pg.waitForTimeout(1400);
+  const y1 = await pg.evaluate(() => { const M = window.CRISOL.mundo;
+    for(let k=0;k<M.t.length;k++) if(M.t[k]===window.CRISOL.IDX.piedra) return (k/M.an)|0; return -1; });
+  ok('10 · y la zona ACTÚA: una piedra quieta dentro no cae', y0 > 0 && y1 === y0,
+     'empezó en y=' + y0 + ' y está en y=' + y1);
+
+  /* punto que atrae */
+  await pg.fill('#gMag', '20');
+  await pg.click('#gPunto'); await pg.waitForTimeout(200);
+  /* ⚠ y se comprueba que el panel SE APARTA, porque con él abierto ocupaba
+     tres cuartos de la sala y el dedo caía encima: «toca para poner el punto»
+     era literalmente imposible. */
+  ok('11a · con una herramienta de colocar, el panel se encoge y deja ver la sala',
+     await pg.evaluate(() => {
+       const g = document.getElementById('grav').getBoundingClientRect();
+       const c = document.getElementById('mundo').getBoundingClientRect();
+       return g.height < c.height * 0.45;
+     }));
+  await pg.mouse.click(caja.x + 200, caja.y + 90);
+  await pg.waitForTimeout(250);
+  /* ⚠ aquí escribí `ok(..., true)` — una prueba que no puede fallar, que es el
+     defecto que este repo lleva meses persiguiendo. Y al medirlo de verdad
+     también estaba en el SITIO equivocado: lo comprobaba mientras la
+     herramienta seguía activa, cuando ahí el panel SÍ debe estar encogido.
+     Va después de colocar, que es cuando la herramienta tiene que soltarse. */
+  ok('11b · y al terminar de colocar, la herramienta se suelta sola',
+     await pg.evaluate(() => !document.getElementById('grav').classList.contains('mini')),
+     'el panel sigue encogido: la herramienta quedó pegada');
+  ok('11 · se pone un punto gravitatorio tocando',
+     (await pg.evaluate(() => window.CRISOL.mundo.puntos.length)) === 1);
+  await pg.click('#gRepele'); await pg.waitForTimeout(80);
+  ok('12 · y el botón alterna entre atrae y repele',
+     (await pg.textContent('#gRepele')) === 'repele');
+
+  /* quitar */
+  await pg.click('.gcampo:last-child button:last-child'); await pg.waitForTimeout(150);
+  ok('13 · quitar un campo lo quita de verdad',
+     (await pg.evaluate(() => window.CRISOL.mundo.zonas.length + window.CRISOL.mundo.puntos.length)) === 1);
+
+  /* las flechas se pueden apagar */
+  await pg.uncheck('#gFlechas'); await pg.waitForTimeout(100);
+  ok('14 · las flechas del campo se pueden apagar', !(await pg.isChecked('#gFlechas')));
+  await pg.click('#gravX'); await pg.waitForTimeout(150);
+  ok('15 · y el panel cierra', !(await pg.isVisible('#grav')));
+}
+
 seccion('sin errores al final');
 ok('ni un error de consola en toda la sesión', errores.length === 0, errores.slice(0,3).join(' | '));
 

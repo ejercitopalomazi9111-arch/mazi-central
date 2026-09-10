@@ -5,7 +5,7 @@
 
    ⚠ Esto prueba EL MOTOR, no el juego. Ya nos pasó en Guerra de Puercos que
    las 74 del motor pasaban con la pantalla muerta. La pantalla va aparte. */
-import { Mundo, IDX, EL, VACIO } from './motor.js';
+import { Mundo, IDX, EL, VACIO, aCeldas, GRAVEDAD } from './motor.js';
 
 let bien = 0, mal = 0;
 const ok = (t, c, det) => { c ? bien++ : mal++;
@@ -1037,6 +1037,132 @@ seccion('la nitro detona por CHOQUE, no por caerse');
   corre(s, 120);
   let quedan = 0; for(let k = 0; k < s.t.length; k++) if(s.t[k] === IDX.nitro) quedan++;
   ok('y la onda de otra explosión SÍ la detona (simpática)', quedan < 10, quedan + '/10');
+}
+
+seccion('la gravedad es un CAMPO, no una constante');
+{
+  /* Carlos no pidió «activar y desactivar la gravedad». Pidió magnitud,
+     dirección, zonas, por objeto, puntos que atraen o repelen, y «combinar
+     campos gravitatorios mediante suma vectorial». */
+  const donde = (m, id) => { for(let y = 0; y < m.al; y++) for(let x = 0; x < m.an; x++)
+    if(m.t[m.i(x,y)] === IDX[id]) return { x, y }; return null; };
+
+  ok('9.81 m/s² es exactamente la gravedad del motor', Math.abs(aCeldas(9.81) - GRAVEDAD) < 1e-9,
+     aCeldas(9.81).toFixed(4) + ' vs ' + GRAVEDAD);
+
+  const inv = mundo(40, 60, 1);
+  inv.ponGravedadGlobal(0, -9.81);
+  inv.pon(20, 40, IDX.piedra); inv.suelto[inv.i(20,40)] = 1;
+  corre(inv, 60);
+  const pi = donde(inv, 'piedra');
+  ok('con la gravedad invertida, la piedra SUBE', pi && pi.y < 40, 'y=' + (pi ? pi.y : '—'));
+
+  const lat = mundo(60, 40, 1);
+  lat.ponGravedadGlobal(9.81, 0);
+  lat.pon(10, 20, IDX.arena);
+  corre(lat, 80);
+  const pl = donde(lat, 'arena');
+  ok('y con la gravedad de lado, cae de lado', pl && pl.x > 40, 'x=' + (pl ? pl.x : '—'));
+
+  /* ⚠ Y AQUÍ ESTABA MI ERROR AL ESCRIBIR LA PRUEBA, no el del motor: puse una
+     zona de gravedad cero y esperé que FRENARA a una piedra que entraba
+     cayendo. No: una piedra que entra con velocidad la CONSERVA y cruza de
+     largo, que es literalmente lo que Carlos pidió — «su velocidad e inercia
+     deben conservarse». Lo que hay que medir es que deje de ACELERAR. */
+  const z = mundo(40, 90, 1);
+  z.zonaGravedad(0, 30, 39, 60, 0, 0, 'reemplaza');
+  z.pon(20, 5, IDX.piedra); z.suelto[z.i(20,5)] = 1;
+  let vEntra = 0, vSale = 0;
+  for(let i = 0; i < 200; i++){
+    z.paso();
+    const p = donde(z, 'piedra'); if(!p) break;
+    const k = z.i(p.x, p.y);
+    if(p.y >= 32 && p.y <= 34 && !vEntra) vEntra = z.vy[k];
+    if(p.y >= 56 && p.y <= 58) vSale = z.vy[k];
+  }
+  /* ⚠ Y ME EQUIVOQUÉ DOS VECES SEGUIDAS EN LA MISMA PRUEBA. La segunda: pedí
+     que la velocidad se conservara CLAVADA dentro de la zona, y no: ahí sigue
+     habiendo AIRE, y el arrastre es la otra cosa que Carlos pidió. Un cuerpo
+     en gravedad cero dentro de un fluido se frena — despacio, pero se frena.
+     Lo que hay que comprobar es que ya no ACELERA y que conserva la mayor
+     parte de su inercia, no que la conserve entera. */
+  const conG = (() => {
+    const w = mundo(40, 90, 1);
+    w.pon(20, 5, IDX.piedra); w.suelto[w.i(20,5)] = 1;
+    let e = 0, sa = 0;
+    for(let i = 0; i < 200; i++){
+      w.paso();
+      const p = donde(w, 'piedra'); if(!p) break;
+      const k = w.i(p.x, p.y);
+      if(p.y >= 32 && p.y <= 34 && !e) e = w.vy[k];
+      if(p.y >= 56 && p.y <= 58) sa = w.vy[k];
+    }
+    return { e, sa };
+  })();
+  ok('en una zona de gravedad CERO deja de ACELERAR',
+     vSale <= vEntra && conG.sa > conG.e,
+     'sin gravedad ' + vEntra.toFixed(2) + ' → ' + vSale.toFixed(2) +
+     ' · con gravedad ' + conG.e.toFixed(2) + ' → ' + conG.sa.toFixed(2));
+  ok('y conserva la mayor parte de su inercia: sólo la frena el aire',
+     vSale > vEntra * 0.4, vEntra.toFixed(2) + ' → ' + vSale.toFixed(2));
+
+  const q = mundo(40, 90, 1);
+  q.zonaGravedad(0, 30, 39, 60, 0, 0, 'reemplaza');
+  q.pon(20, 45, IDX.piedra); q.suelto[q.i(20,45)] = 1;
+  corre(q, 150);
+  const pq = donde(q, 'piedra');
+  ok('y una piedra QUIETA dentro de esa zona se queda flotando', pq && pq.y === 45,
+     'y=' + (pq ? pq.y : '—'));
+
+  const at = mundo(60, 60, 1);
+  at.ponGravedadGlobal(0, 0);
+  at.puntoGravedad(30, 30, 30, 40, true);
+  at.pon(50, 30, IDX.piedra); at.suelto[at.i(50,30)] = 1;
+  corre(at, 120);
+  const pa = donde(at, 'piedra');
+  ok('un punto gravitatorio ATRAE hacia él', pa && pa.x < 48, 'x=' + (pa ? pa.x : '—'));
+
+  const re = mundo(60, 60, 1);
+  re.ponGravedadGlobal(0, 0);
+  re.puntoGravedad(30, 30, 30, 40, false);
+  re.pon(35, 30, IDX.piedra); re.suelto[re.i(35,30)] = 1;
+  corre(re, 120);
+  const pr = donde(re, 'piedra');
+  ok('y con «repele», la echa', pr && pr.x > 37, 'x=' + (pr ? pr.x : '—'));
+
+  /* gravedad por objeto: dos piedras iguales, distinto destino */
+  const ob = mundo(40, 60, 1);
+  ob.pon(10, 10, IDX.piedra); ob.suelto[ob.i(10,10)] = 1;
+  ob.pon(30, 10, IDX.piedra); ob.suelto[ob.i(30,10)] = 1;
+  ob.pintaGravedad(30, 10, 1, 0);
+  corre(ob, 80);
+  let ya = -1, yb = -1;
+  for(let y = 0; y < 60; y++){
+    if(ob.t[ob.i(10,y)] === IDX.piedra) ya = y;
+    if(ob.t[ob.i(30,y)] === IDX.piedra) yb = y;
+  }
+  ok('dos piedras iguales, una con gravedad propia 0: una cae y la otra no',
+     ya > 40 && yb === 10, 'la normal en y=' + ya + ' · la de gravedad 0 en y=' + yb);
+
+  /* suma vectorial: global hacia abajo + zona hacia la derecha = diagonal */
+  const su = mundo(60, 60, 1);
+  su.zonaGravedad(0, 0, 59, 59, 9.81, 0, 'suma');
+  su.pon(10, 5, IDX.arena);
+  corre(su, 90);
+  const ps = donde(su, 'arena');
+  ok('una zona en modo SUMA da una diagonal, no reemplaza', ps && ps.x > 20 && ps.y > 30,
+     'acabó en (' + (ps ? ps.x + ',' + ps.y : '—') + ')');
+
+  /* los gases también obedecen: «arriba» es contra la gravedad */
+  const g = mundo(40, 60, 1);
+  g.ponGravedadGlobal(0, -9.81);
+  for(let x = 18; x < 22; x++) g.pon(x, 30, IDX.hidrogeno);
+  corre(g, 60);
+  let yh = 0, n = 0;
+  for(let y = 0; y < 60; y++) for(let x = 0; x < 40; x++)
+    if(g.t[g.i(x,y)] === IDX.hidrogeno){ yh += y; n++; }
+  ok('con la gravedad invertida, el hidrógeno BAJA en vez de subir',
+     n > 0 && yh / n > 30, 'y medio ' + (n ? (yh/n).toFixed(1) : '—'));
 }
 
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
