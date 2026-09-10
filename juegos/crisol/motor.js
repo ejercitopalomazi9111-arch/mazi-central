@@ -76,6 +76,11 @@ export class Mundo {
        1538, el oro a 1064, el mercurio ya nace líquido a temperatura
        ambiente. Un campo contra ciento dieciocho. */
     this.fase = new Uint8Array(n);
+    /* Color propio de la partícula, para la pirotecnia: una chispa de estrella
+       roja tiene que seguir siendo roja aunque el elemento «chispa» sea uno
+       solo. 0 = usa el color de su elemento. */
+    this.color = new Uint8Array(n);
+    this.paleta = ['', '#FF3B4E', '#3BFF6E', '#3B8AFF', '#FFD43B'];
     /* ⚠ Búferes REUTILIZADOS. La primera versión hacía `new Float32Array(n)`
        dos veces por paso —una para el calor y otra para la presión—, y en una
        sala de 153 600 celdas eso es más de un mega de basura por cuadro,
@@ -90,6 +95,8 @@ export class Mundo {
        mochila: no se descubre lo que pintas, se descubre lo que LOGRAS. */
     this.nacidos = {};
   }
+
+  colorIdx(hex){ const i = this.paleta.indexOf(hex); return i < 0 ? 0 : i; }
 
   /* Azar propio y reproducible: con `Math.random` dos corridas iguales dan
      resultados distintos y ninguna prueba de simulación sirve. */
@@ -120,7 +127,7 @@ export class Mundo {
     this.vida[k] = 0;
     this.car[k] = 0;
     this.vy[k] = 0; this.vx[k] = 0;
-    this.fase[k] = 0;
+    this.fase[k] = 0; this.color[k] = 0;
     const e = EL[tipo];
     if(temp != null) this.temp[k] = temp;
     else if(e.nace != null) this.temp[k] = e.nace;
@@ -148,6 +155,7 @@ export class Mundo {
        partícula que cae le hereda su impulso a la que se queda atrás y el
        montón se pone a temblar solo. */
     const fv = this.fase[k1]; this.fase[k1] = this.fase[k2]; this.fase[k2] = fv;
+    const cl = this.color[k1]; this.color[k1] = this.color[k2]; this.color[k2] = cl;
     const yv = this.vy[k1]; this.vy[k1] = this.vy[k2]; this.vy[k2] = yv;
     const xv = this.vx[k1]; this.vx[k1] = this.vx[k2]; this.vx[k2] = xv;
     this.mov[k1] = 1; this.mov[k2] = 1;
@@ -330,6 +338,27 @@ export class Mundo {
     if(e.ebu && T >= e.ebu[0]){ this.cambia(k, IDX[e.ebu[1]], true); return; }
     if(e.congela && T <= e.congela[0]){ this.cambia(k, IDX[e.congela[1]], true); return; }
 
+    /* ⚠ LA ESTRELLA VA ANTES DE LA COMBUSTIÓN. Estaba después, así que el
+       bloque de «lo que arde, arde» la convertía en fuego y nunca llegaba a
+       reventar en chispas: la pirotecnia se veía como una fogata cualquiera.
+       El orden dentro del paso decide qué reglas existen. */
+    if(e.chispa && (this.temp[k] > 300 || this.vecinoCaliente(x, y, e))){
+      for(let i = 0; i < 18; i++){
+        const a = this.rnd() * Math.PI * 2, d = this.rnd() * 3;
+        const nx = Math.round(x + Math.cos(a)*d), ny = Math.round(y + Math.sin(a)*d);
+        if(!this.dentro(nx, ny)) continue;
+        const k2 = this.i(nx, ny);
+        if(this.t[k2] !== VACIO && k2 !== k) continue;
+        this.pon(nx, ny, IDX.chispa);
+        this.color[k2] = this.colorIdx(e.chispa);
+        this.vx[k2] = Math.cos(a) * 2.6;
+        this.vy[k2] = Math.sin(a) * 2.6 - 1.2;
+      }
+      this.temp[k] += 400;
+      this.cambia(k, VACIO);
+      return;
+    }
+
     /* 3 · lo que arde, arde */
     if(e.arde && this.vecinoCaliente(x, y, e)){
       this.temp[k] += (e.calorArde || 500) * .12;
@@ -377,6 +406,65 @@ export class Mundo {
     if(e.crece && this.rnd() < .004) this.crece(x, y);
     if(e.germina) this.germina(x, y, k);
 
+    /* PISTÓN: con corriente, empuja fuerte hacia arriba. Es el que lanza. */
+    if(e.piston && this.car[k] && this.dentro(x, y-1)){
+      const k2 = this.i(x, y-1);
+      if(this.t[k2] !== VACIO && this.estadoDe(k2) !== 'solido'){
+        this.vy[k2] -= e.piston;
+        this.pres[k2] += 18;
+      }
+    }
+    /* RESORTE: guarda el golpe que recibe y lo devuelve. `vida` es la
+       compresión acumulada. */
+    if(e.resorte){
+      let golpe = 0;
+      for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+        if(!this.dentro(x+dx, y+dy)) continue;
+        const k2 = this.i(x+dx, y+dy);
+        if(this.t[k2] === VACIO) continue;
+        golpe = Math.max(golpe, Math.abs(this.vy[k2]) + Math.abs(this.vx[k2]));
+      }
+      if(golpe > .6){ this.vida[k] = Math.min(200, this.vida[k] + golpe * 12); }
+      else if(this.vida[k] > 0){
+        /* devuelve lo guardado hacia arriba */
+        const suelta = Math.min(this.vida[k] / 12, e.resorte);
+        if(this.dentro(x, y-1)){
+          const k2 = this.i(x, y-1);
+          if(this.t[k2] !== VACIO && this.estadoDe(k2) !== 'solido') this.vy[k2] -= suelta;
+        }
+        this.vida[k] = Math.max(0, this.vida[k] - suelta * 12);
+      }
+    }
+    /* MECHA: se quema despacio y SÓLO hacia sus vecinas, no en bola. Es lo
+       que permite retrasar una tronada un rato exacto. */
+    /* ⚠ UNA MECHA ENCENDIDA ARDE SOLA. Antes sólo contaba mientras algo la
+       calentara desde fuera, y con masa térmica el calor de la vecina se
+       disipaba en pocos pasos: la mecha avanzaba dos celdas y se apagaba.
+       Una vez prendida se mantiene ella misma —que es literalmente lo que
+       hace— y al consumirse enciende a la siguiente. */
+    /* ⚠ Y SE PASA EL FUEGO AL TERMINAR, NO POR ESTAR CALIENTE. Con el paso
+       anterior la mecha ya ardía sola a 430°… y eso encendía a sus vecinas de
+       inmediato, así que la línea entera prendía a la vez: treinta celdas
+       ardiendo en paralelo, que es una traca, no una mecha. El relevo es
+       explícito —la que se consume prende a la siguiente— y el encendido por
+       calor pide un fuego de verdad, no el calor de la mecha de al lado. */
+    if(e.mecha && (this.vida[k] > 0 || this.temp[k] > 700)){
+      this.temp[k] = Math.max(this.temp[k], 430);
+      this.vida[k]++;
+      if(this.vida[k] > 26){
+        /* ⚠ y ENCIENDE A SU VECINA. Sin esto la mecha se consumía una celda y
+           ahí se paraba: el fuego que dejaba es «energía» y SUBE, se va
+           volando antes de tocar la siguiente. Una mecha que no propaga no es
+           una mecha, es un punto quemado. */
+        for(const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          if(!this.dentro(x+dx, y+dy)) continue;
+          const k2 = this.i(x+dx, y+dy);
+          if(EL[this.t[k2]].mecha && this.vida[k2] === 0) this.vida[k2] = 1;
+        }
+        this.cambia(k, IDX.fuego);
+        return;
+      }
+    }
     /* 6-bis · un motor con corriente empuja lo que tenga encima */
     if(e.motor && this.car[k] && this.dentro(x, y-1)){
       const k2 = this.i(x, y-1);
@@ -487,9 +575,37 @@ export class Mundo {
       return;
     }
 
-    /* ── caída acelerada ─────────────────────────────────────────────── */
+    /* ── vuelo y caída ───────────────────────────────────────────────────
+       ⚠ AQUÍ FALTABA LA MITAD DEL MOVIMIENTO Y NO SE VEÍA. Esto sólo sabía
+       CAER: `saltos = max(1, floor(vy))` con una velocidad negativa daba 1, o
+       sea que un objeto lanzado hacia arriba... bajaba una celda. El pistón
+       empujaba en vano, el resorte devolvía nada y una explosión no levantaba
+       nada del suelo. Todo el sistema de velocidad estaba a medias y las
+       pruebas del motor pasaban igual, porque todas medían cosas cayendo.
+       Ahora si la velocidad apunta hacia arriba, SUBE. */
     this.vy[k] = Math.min(this.vy[k] + GRAVEDAD, VMAX);
     let cx = x, cy = y, ck = k, cayo = false;
+
+    if(this.vy[ck] < -0.5){
+      const subidas = Math.min(6, Math.floor(-this.vy[ck]));
+      let subio = false;
+      for(let i = 0; i < subidas; i++){
+        if(!this.trata(cx, cy, ck, cx, cy - 1, e)) break;
+        cy--; ck = this.i(cx, cy); subio = true;
+      }
+      if(subio){
+        /* el impulso lateral también cuenta mientras vuela */
+        if(Math.abs(this.vx[ck]) > .35){
+          const d = this.vx[ck] > 0 ? 1 : -1;
+          if(this.trata(cx, cy, ck, cx + d, cy, e)){ cx += d; ck = this.i(cx, cy); }
+          this.vx[ck] *= .9;
+        }
+        return;
+      }
+      /* chocó con el techo: pierde el impulso hacia arriba */
+      this.vy[ck] = 0;
+    }
+
     const saltos = Math.max(1, Math.floor(this.vy[ck]));
     for(let i = 0; i < saltos; i++){
       if(!this.trata(cx, cy, ck, cx, cy + 1, e)) break;
@@ -683,7 +799,48 @@ export class Mundo {
       if(!e.elec) continue;
       let esFuente = false;
       if(e.fuente) esFuente = true;
+      /* PILA RECARGABLE: `vida` es la carga que le queda. Se gasta mientras
+         entrega y se recupera con calor — que es lo que pidió Carlos: «que las
+         baterías se acaben y puedan recargarse». */
+      else if(e.pila){
+        if(this.vida[k] === 0 && this.paso_ < 3) this.vida[k] = e.pila;
+        if(this.temp[k] > 90 && this.vida[k] < e.pila) this.vida[k] += 3;
+        if(this.vida[k] > 0){ esFuente = true; this.vida[k]--; }
+      }
       else if(e.pulso) esFuente = (Math.floor(this.paso_ / e.pulso) & 1) === 1;
+      /* RELOJ DE ARENA: cuenta mientras le llega señal y sólo deja pasar
+         cuando llenó su tiempo. Tocarlo lo vacía y vuelve a empezar. */
+      else if(e.retardo){
+        let entra = 0;
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          const px = x+dx, py = y+dy;
+          if(px < 0 || py < 0 || px >= an || py >= al) continue;
+          const k2 = py * an + px;
+          if(EL[t[k2]].elec && car[k2] && !EL[t[k2]].retardo) entra++;
+        }
+        if(entra){ if(this.vida[k] < 65535) this.vida[k]++; }
+        else this.vida[k] = 0;
+        esFuente = this.vida[k] >= e.retardo;
+      }
+      /* REPETIDOR: si le llega algo, vuelve a mandar desde cero. Sin esto la
+         corriente se apaga a los 110 de distancia y no se puede cablear una
+         sala de 320×480. */
+      else if(e.repite){
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          const px = x+dx, py = y+dy;
+          if(px < 0 || py < 0 || px >= an || py >= al) continue;
+          const k2 = py * an + px;
+          if(EL[t[k2]].elec && car[k2] && !EL[t[k2]].repite){ esFuente = true; break; }
+        }
+      }
+      /* OBSERVADOR: mira la celda de ARRIBA y suelta un pulso cuando cambia.
+         Guarda lo último que vio en `vida`. */
+      else if(e.observa){
+        const arr = y > 0 ? t[k - an] : 255;
+        const visto = this.vida[k] & 255;
+        if(visto !== arr){ this.vida[k] = arr | 256; esFuente = true; }
+        else esFuente = (this.vida[k] & 256) !== 0 && (this.vida[k] &= ~256, true);
+      }
       else if(e.puerta){
         let vivos = 0;
         for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
@@ -722,7 +879,13 @@ export class Mundo {
         if(dist[k2] !== 255) continue;
         const v = EL[t[k2]];
         if(!v.elec) continue;
-        if(v.puerta || v.fuente || v.pulso) continue;   /* mandan por su cuenta */
+        /* ⚠ Estas piezas MANDAN POR SU CUENTA y no se dejan atravesar. Faltaban
+           las nuevas en la lista, y el efecto era que el reloj de arena dejaba
+           pasar la corriente DE INMEDIATO por el camino normal — o sea que un
+           temporizador no temporizaba nada. Cada pieza que decide su salida
+           tiene que estar aquí o su lógica es decorativa. */
+        if(v.puerta || v.fuente || v.pulso || v.retardo || v.repite ||
+           v.observa || v.pila) continue;
         /* un interruptor ABIERTO corta el paso: es todo su trabajo */
         if(v.interruptor && !this.vida[k2]) continue;
         /* ⚠ LA RESISTENCIA NO CORTA AL AZAR, y así estaba: con 55% de
@@ -791,7 +954,10 @@ export class Mundo {
   acciona(x, y){
     if(!this.dentro(x, y)) return false;
     const k = this.i(x, y);
-    if(!EL[this.t[k]].interruptor) return false;
+    const e = EL[this.t[k]];
+    /* «que se puedan apagar al tiempo»: tocar el reloj lo vacía */
+    if(e.retardo){ this.vida[k] = 0; return true; }
+    if(!e.interruptor) return false;
     this.vida[k] = this.vida[k] ? 0 : 1;
     return true;
   }
@@ -809,6 +975,7 @@ export class Mundo {
   limpia(){
     this.t.fill(VACIO); this.temp.fill(AMBIENTE);
     this.vida.fill(0); this.car.fill(0);
-    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0); this.fase.fill(0);
+    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0);
+    this.fase.fill(0); this.color.fill(0);
   }
 }

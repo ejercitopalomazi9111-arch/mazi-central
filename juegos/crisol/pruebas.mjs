@@ -542,5 +542,111 @@ seccion('los 118 de la tabla periódica');
   ok('el oro pesa más que el mercurio (19.3 vs 13.5)', TABLA.eAu.dens > TABLA.eHg.dens);
 }
 
+seccion('automatización: lo que Carlos pidió por su nombre');
+{
+  /* RELOJ DE ARENA: no deja pasar hasta que pase el tiempo */
+  const m = mundo(30, 10);
+  m.pon(2, 5, IDX.bateria);
+  for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(8, 5, IDX.reloj);
+  for(let x = 9; x < 14; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(14, 5, IDX.lampara);
+  corre(m, 20);
+  ok('el reloj de arena NO deja pasar al principio', m.car[m.i(14,5)] === 0);
+  corre(m, 120);
+  ok('pero deja pasar cuando se llena su tiempo', m.car[m.i(14,5)] === 1);
+  m.acciona(8, 5);
+  corre(m, 8);
+  ok('y tocarlo lo REINICIA («que se puedan apagar al tiempo»)', m.car[m.i(14,5)] === 0);
+
+  /* REPETIDOR: sin él la corriente se muere de lejos */
+  const largo = mundo(200, 10);
+  largo.pon(1, 5, IDX.bateria);
+  for(let x = 2; x < 195; x++) largo.pon(x, 5, IDX.cobre);
+  largo.pon(195, 5, IDX.lampara);
+  corre(largo, 260);
+  ok('sin repetidor, la corriente NO llega a 195 celdas', largo.car[largo.i(195,5)] === 0);
+
+  const rep = mundo(200, 10);
+  rep.pon(1, 5, IDX.bateria);
+  for(let x = 2; x < 195; x++) rep.pon(x, 5, x % 60 === 0 ? IDX.repetidor : IDX.cobre);
+  rep.pon(195, 5, IDX.lampara);
+  corre(rep, 300);
+  ok('CON repetidores cada 60, sí llega', rep.car[rep.i(195,5)] === 1);
+
+  /* PILA que se acaba y se recarga */
+  const pila = mundo(20, 10);
+  pila.pon(2, 5, IDX.pila);
+  for(let x = 3; x < 10; x++) pila.pon(x, 5, IDX.cobre);
+  pila.pon(10, 5, IDX.lampara);
+  corre(pila, 30);
+  ok('la pila enciende al principio', pila.car[pila.i(10,5)] === 1);
+  const cargaInicial = pila.vida[pila.i(2,5)];
+  corre(pila, 2700);
+  ok('y SE ACABA con el uso', pila.car[pila.i(10,5)] === 0,
+     'carga ' + cargaInicial + ' → ' + pila.vida[pila.i(2,5)]);
+  for(let i = 0; i < 400; i++){ pila.temp[pila.i(2,5)] = 300; pila.paso(); }
+  ok('y con calor SE RECARGA', pila.vida[pila.i(2,5)] > 0,
+     'carga ' + pila.vida[pila.i(2,5)]);
+
+  /* PISTÓN que lanza */
+  const pis = mundo(30, 40, 4);
+  pis.pon(15, 35, IDX.piston);
+  pis.pon(15, 34, IDX.arena);
+  pis.pon(14, 35, IDX.bateria);
+  /* ⚠ antes buscaba sólo en la COLUMNA 15, y una arena lanzada se va de lado:
+     la prueba la perdía de vista y decía que no había subido. */
+  let yMin = 99;
+  for(let i = 0; i < 60; i++){
+    pis.paso();
+    for(let y = 0; y < 40; y++) for(let x = 0; x < 30; x++)
+      if(pis.t[pis.i(x,y)] === IDX.arena && y < yMin) yMin = y;
+  }
+  ok('el pistón con corriente LANZA lo que tiene encima', yMin < 33, 'llegó a y=' + yMin);
+
+  /* OBSERVADOR */
+  const obs = mundo(20, 14);
+  obs.pon(8, 8, IDX.observador);
+  for(let x = 9; x < 14; x++) obs.pon(x, 8, IDX.cobre);
+  corre(obs, 12);
+  const quieto = obs.car[obs.i(13,8)];
+  obs.pon(8, 7, IDX.piedra);          /* algo CAMBIA encima */
+  let disparo = false;
+  for(let i = 0; i < 14; i++){ obs.paso(); if(obs.car[obs.i(13,8)]) disparo = true; }
+  ok('el observador dispara cuando CAMBIA lo que tiene encima', !quieto && disparo);
+}
+
+seccion('pirotecnia');
+{
+  const m = mundo(60, 60, 12);
+  for(let y = 28; y < 32; y++) for(let x = 28; x < 32; x++) m.pon(x, y, IDX.estRoja);
+  m.pon(30, 27, IDX.fuego);
+  let chispas = 0, colores = new Set();
+  for(let i = 0; i < 40; i++){
+    m.paso();
+    for(let k = 0; k < m.t.length; k++)
+      if(m.t[k] === IDX.chispa){ chispas++; colores.add(m.color[k]); }
+    if(chispas) break;
+  }
+  ok('una estrella al arder suelta CHISPAS', chispas > 0, chispas + ' chispas');
+  ok('y las chispas llevan el color de SU estrella', colores.has(1),
+     'colores ' + [...colores].join(','));
+
+  /* la mecha se quema despacio y en línea, para retrasar la tronada */
+  const me = mundo(40, 12, 8);
+  for(let x = 4; x < 34; x++) me.pon(x, 8, IDX.mecha);
+  /* ⚠ antes ponía FUEGO al lado, y el fuego es «energía»: SUBE y se va
+     volando en el primer paso, sin llegar a tocar la mecha. Se enciende
+     calentando la punta, que es lo que hace un cerillo. */
+  me.temp[me.i(4, 8)] = 800;
+  let paso20 = 0, paso200 = 0;
+  for(let i = 0; i < 20; i++) me.paso();
+  paso20 = cuantos(me, 'mecha');
+  for(let i = 0; i < 400; i++) me.paso();
+  paso200 = cuantos(me, 'mecha');
+  ok('la mecha se quema DESPACIO, no de golpe', paso20 > 24 && paso200 < paso20,
+     '30 → ' + paso20 + ' (20 pasos) → ' + paso200 + ' (420 pasos)');
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

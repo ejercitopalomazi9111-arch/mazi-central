@@ -140,6 +140,8 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <input type="range" id="tam" min="1" max="14" value="4">
     <button class="icono" id="bCalor" aria-label="Calentar" title="Calentar">🔥</button>
     <button class="icono" id="bFrio" aria-label="Enfriar" title="Enfriar">❄️</button>
+    <button class="icono" id="bMas" aria-label="Acercar">＋</button>
+    <button class="icono" id="bMenos" aria-label="Alejar">－</button>
   </div>
   </div>
 </div>
@@ -354,6 +356,63 @@ function revisaDescubrimientos(){
 
 /* ── pintar con el dedo ─────────────────────────────────────────────────── */
 const dedos = new Map();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZOOM Y DESPLAZAMIENTO
+   Un dedo pinta. DOS dedos mueven el mundo: pellizcar acerca y aleja,
+   arrastrar desplaza. Es el gesto que todo el mundo ya conoce de las fotos,
+   así que no hay que explicarlo — y en una sala de 153 600 celdas es la
+   diferencia entre poder trabajar y no.
+   ═════════════════════════════════════════════════════════════════════════ */
+let gesto = null;
+const dist2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const centro = (a, b) => ({ x:(a.x + b.x) / 2, y:(a.y + b.y) / 2 });
+
+function puntos(){
+  return [...dedos.values()].filter(d => d.pantalla).map(d => d.pantalla);
+}
+
+function empiezaGesto(){
+  const ps = puntos();
+  if(ps.length < 2){ gesto = null; return; }
+  const c = centro(ps[0], ps[1]);
+  gesto = { d0: dist2(ps[0], ps[1]) || 1, esc0: vista.esc,
+            c0: c, vx0: vista.x, vy0: vista.y };
+  /* al empezar a mover el mundo, lo que se haya pintado con el primer dedo
+     ya está: se cancela el pintado para no dejar un rayón al hacer zoom */
+  for(const d of dedos.values()) d.pintando = false;
+}
+
+function sigueGesto(){
+  if(!gesto) return;
+  const ps = puntos();
+  if(ps.length < 2) return;
+  const c = centro(ps[0], ps[1]);
+  const escNueva = gesto.esc0 * (dist2(ps[0], ps[1]) / gesto.d0);
+  /* el zoom se ancla al punto entre los dedos: si no, la imagen se va
+     corriendo sola mientras pellizcas y marea */
+  const r = cv.getBoundingClientRect();
+  const mundoX = gesto.vx0 + (gesto.c0.x - r.left) / gesto.esc0;
+  const mundoY = gesto.vy0 + (gesto.c0.y - r.top) / gesto.esc0;
+  vista.esc = Math.max(1.2, Math.min(14, escNueva));
+  vista.x = mundoX - (c.x - r.left) / vista.esc;
+  vista.y = mundoY - (c.y - r.top) / vista.esc;
+  limitaVista();
+}
+
+/* rueda del ratón, para quien esté en computadora */
+cv.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const r = cv.getBoundingClientRect();
+  const antes = vista.esc;
+  vista.esc = Math.max(1.2, Math.min(14, vista.esc * (ev.deltaY < 0 ? 1.12 : 0.89)));
+  const mx = vista.x + (ev.clientX - r.left) / antes;
+  const my = vista.y + (ev.clientY - r.top) / antes;
+  vista.x = mx - (ev.clientX - r.left) / vista.esc;
+  vista.y = my - (ev.clientY - r.top) / vista.esc;
+  limitaVista();
+}, { passive:false });
+
 function celdaDe(ev){
   const r = cv.getBoundingClientRect();
   return [Math.floor(vista.x + (ev.clientX - r.left) / vista.esc),
@@ -376,31 +435,55 @@ function brocha(x, y){
 cv.addEventListener('pointerdown', ev => {
   ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
   const [x, y] = celdaDe(ev);
+  dedos.set(ev.pointerId, { cx:x, cy:y, pantalla:{x:ev.clientX, y:ev.clientY}, pintando:true });
+  if(dedos.size >= 2){ empiezaGesto(); return; }
   /* Tocar un interruptor lo ACCIONA en vez de pintarle encima. Sin esto no
      había forma de operar un circuito: sólo de construirlo y mirarlo. */
   if(modo === 'pintar' && M.acciona(x, y)){
     avisa(M.vida[M.i(x,y)] ? 'Interruptor cerrado ⚡' : 'Interruptor abierto');
+    dedos.get(ev.pointerId).pintando = false;
     return;
   }
-  dedos.set(ev.pointerId, [x, y]); brocha(x, y);
+  brocha(x, y);
 }, { passive:false });
+
 cv.addEventListener('pointermove', ev => {
-  if(!dedos.has(ev.pointerId)) return;
+  const d = dedos.get(ev.pointerId);
+  if(!d) return;
   ev.preventDefault();
+  d.pantalla = { x:ev.clientX, y:ev.clientY };
+  if(dedos.size >= 2){ sigueGesto(); return; }
+  if(!d.pintando) return;
   const [x, y] = celdaDe(ev);
-  const [px, py] = dedos.get(ev.pointerId);
+  const px = d.cx, py = d.cy;
   /* interpolar: sin esto, un dedo rápido pinta puntos sueltos y no una línea */
   const pasos = Math.max(Math.abs(x-px), Math.abs(y-py));
   for(let i = 0; i <= pasos; i++){
     brocha(Math.round(px + (x-px)*i/pasos), Math.round(py + (y-py)*i/pasos));
   }
-  dedos.set(ev.pointerId, [x, y]);
+  d.cx = x; d.cy = y;
 }, { passive:false });
-const suelta = ev => dedos.delete(ev.pointerId);
+
+const suelta = ev => { dedos.delete(ev.pointerId); if(dedos.size < 2) gesto = null; };
 cv.addEventListener('pointerup', suelta);
 cv.addEventListener('pointercancel', suelta);
 
 /* ── botones ────────────────────────────────────────────────────────────── */
+/* Botones de zoom: los gestos son cómodos pero no todo el mundo puede hacer
+   un pellizco, y con teclado no hay pellizco que valga. */
+const zoom = f => {
+  const r = cv.getBoundingClientRect();
+  const antes = vista.esc;
+  vista.esc = Math.max(1.2, Math.min(14, vista.esc * f));
+  const mx = vista.x + (r.width/2) / antes, my = vista.y + (r.height/2) / antes;
+  vista.x = mx - (r.width/2) / vista.esc;
+  vista.y = my - (r.height/2) / vista.esc;
+  limitaVista();
+  avisa('Zoom ' + vista.esc.toFixed(1) + '×');
+};
+$('bMas').onclick = () => zoom(1.35);
+$('bMenos').onclick = () => zoom(0.74);
+
 /* El tirador: plegar y desplegar. Y dice qué traes seleccionado, para que
    plegado sigas sabiendo con qué estás pintando. */
 let plegado = false;
@@ -454,7 +537,7 @@ function cuadro(ms){
 addEventListener('resize', () => { medir(); });
 medir(); pestanas(); paleta();
 requestAnimationFrame(cuadro);
-window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado,
+window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom,
                   pon:(x,y,id)=>M.pon(x,y,IDX[id]) };
 </script>
 </body>

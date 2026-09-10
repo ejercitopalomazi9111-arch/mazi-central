@@ -145,6 +145,62 @@ const JUEGO = {
              elec:1, motor:true, dureza:.5, grupo:'eléctrico',
              ayuda:'Con corriente, empuja lo que tenga encima' },
 
+  /* ── automatización · lo que pidió Carlos por su nombre ─────────────────
+     «relojes de arena que no dejen pasar electricidad hasta que haya pasado
+     cierto tiempo y que se puedan apagar al tiempo, interruptores pistones
+     observadores repetidores de señal, que las baterías se acaben y puedan
+     recargarse». Cada uno resuelve algo que sin él no se puede hacer:
+     sin retardo no hay secuencias, sin observador nada reacciona a lo que
+     pasa en el mundo, y sin repetidor la corriente se muere a los 110 pasos
+     de distancia y no puedes cablear la sala entera. */
+  reloj:   { nom:'Reloj de arena', col:'#D9A441', estado:'solido', dens:29, cond:.3,
+             elec:1, retardo:90, dureza:.4, grupo:'automatización',
+             ayuda:'Deja pasar la señal DESPUÉS de un rato. Tócalo para reiniciarlo' },
+  repetidor:{nom:'Repetidor', col:'#5AA36E', estado:'solido', dens:29, cond:.3,
+             elec:1, repite:true, dureza:.4, grupo:'automatización',
+             ayuda:'Refresca la señal: sin él la corriente se muere de lejos' },
+  observador:{nom:'Observador', col:'#A36E5A', estado:'solido', dens:30, cond:.3,
+             elec:1, observa:true, dureza:.5, grupo:'automatización',
+             ayuda:'Suelta un pulso cuando CAMBIA lo que tiene encima' },
+  piston:  { nom:'Pistón',    col:'#6E8AA3', estado:'solido', dens:34, cond:.4,
+             elec:1, piston:5, dureza:.6, grupo:'automatización',
+             ayuda:'Con corriente, EMPUJA con fuerza hacia arriba' },
+  resorte: { nom:'Resorte',   col:'#9EA35A', estado:'solido', dens:24, cond:.5,
+             elec:1, resorte:2.6, dureza:.35, grupo:'automatización',
+             ayuda:'Guarda el golpe que recibe y lo devuelve' },
+  pila:    { nom:'Pila recargable', col:'#D9C441', estado:'solido', dens:38, cond:.4,
+             elec:1, pila:2600, dureza:.5, grupo:'automatización',
+             ayuda:'Como la batería pero SE ACABA. Con calor se recarga' },
+
+  /* ── pirotecnia ─────────────────────────────────────────────────────────
+     «Asegúrate de que pueda crear pirotecnia». Las estrellas son sales
+     metálicas de verdad: el estroncio da rojo, el bario verde, el cobre azul
+     y el sodio dorado. Es la química que hay detrás de un castillo. */
+  estRoja: { nom:'Estrella roja', col:'#FF3B4E', estado:'polvo', dens:14, cond:.2,
+             arde:.9, calorArde:900, chispa:'#FF3B4E', explota:4, grupo:'pirotecnia',
+             ayuda:'Estroncio: arde en rojo' },
+  estVerde:{ nom:'Estrella verde', col:'#3BFF6E', estado:'polvo', dens:14, cond:.2,
+             arde:.9, calorArde:900, chispa:'#3BFF6E', explota:4, grupo:'pirotecnia',
+             ayuda:'Bario: arde en verde' },
+  estAzul: { nom:'Estrella azul', col:'#3B8AFF', estado:'polvo', dens:14, cond:.2,
+             arde:.9, calorArde:900, chispa:'#3B8AFF', explota:4, grupo:'pirotecnia',
+             ayuda:'Cobre: arde en azul' },
+  estOro:  { nom:'Estrella dorada', col:'#FFD43B', estado:'polvo', dens:14, cond:.2,
+             arde:.9, calorArde:900, chispa:'#FFD43B', explota:4, grupo:'pirotecnia',
+             ayuda:'Sodio: arde en dorado' },
+  /* ⚠ SIN `arde`, Y ESO ES LO QUE LA HACE MECHA. Con `arde:.5` el bloque
+     genérico de combustión —que corre ANTES— la convertía en fuego de golpe y
+     su propio contador no llegaba a ejecutarse nunca: avanzaba dos celdas y
+     se paraba. Es la segunda vez hoy que el orden dentro del paso decide qué
+     reglas existen; la primera fue la estrella de pirotecnia. Una pieza con
+     lógica propia no puede llevar además la genérica. */
+  mecha:   { nom:'Mecha',     col:'#8A7A5A', estado:'solido', dens:18, cond:.2,
+             mecha:true, dureza:.05, grupo:'pirotecnia',
+             ayuda:'Se quema despacio y en línea: para retrasar la tronada' },
+  chispa:  { nom:'Chispa',    col:'#FFF3C4', estado:'energia', dens:1, cond:.9,
+             vida:90, muere:'humo', calor:true, grupo:'pirotecnia',
+             ayuda:'Lo que sale volando de una estrella' },
+
   /* ── magnetismo ─────────────────────────────────────────────────────────
      Lo pidió por su nombre. `iman` atrae lo ferroso; `electroiman` sólo
      mientras le llegue corriente, que es lo que lo hace útil para máquinas. */
