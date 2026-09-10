@@ -1378,5 +1378,60 @@ seccion('química que necesita chispa · H₂ + O₂ → agua');
   ok('y el ácido sigue comiéndose la piedra', p1 < p0, p0 + ' → ' + p1);
 }
 
+seccion('generar energía, no sólo gastarla');
+{
+  /* Carlos, punto 4: «debe ser posible generar energía… la energía no debe
+     aparecer ni desaparecer arbitrariamente». Hasta ahora el motor CONSUMÍA y
+     nada GENERABA: la corriente sólo salía de pilas que aparecían llenas. */
+  const turbina = () => {
+    const m = mundo(60, 60, 3);
+    repisa(m, 59);
+    for(let y = 20; y < 26; y++) m.pon(30, y, IDX.generador);
+    for(let y = 26; y < 59; y++) m.pon(30, y, IDX.muro);
+    for(let x = 31; x < 45; x++){ m.pon(x, 25, IDX.cobre); m.pon(x, 26, IDX.muro); }
+    m.pon(45, 25, IDX.lampara); m.pon(45, 26, IDX.muro);
+    return m;
+  };
+  const corriendo = (chorro, pasos = 600) => {
+    const m = turbina(); let on = 0;
+    for(let i = 0; i < pasos; i++){
+      if(chorro && i % 2 === 0) m.pon(29, 2, IDX.agua);
+      m.paso();
+      if(m.car[m.i(45,25)]) on++;
+    }
+    return on;
+  };
+  ok('un salto de agua enciende una lámpara', corriendo(true) > 150, corriendo(true) + '/600 pasos');
+  ok('y sin nada que lo mueva NO genera de la nada', corriendo(false) === 0, corriendo(false) + '/600');
+
+  /* se apaga sola al cortar el agua: lo guardado se acaba */
+  const m = turbina();
+  for(let i = 0; i < 400; i++){ if(i % 2 === 0) m.pon(29, 2, IDX.agua); m.paso(); }
+  let despues = 0;
+  for(let i = 0; i < 600; i++){ m.paso(); if(m.car[m.i(45,25)]) despues++; }
+  ok('al cortar el agua se apaga sola', despues > 0 && despues < 200,
+     'siguió ' + despues + ' pasos con lo guardado y se apagó');
+
+  /* ⚠ LA CONSERVACIÓN, que es la mitad que casi nunca se implementa: si el
+     generador no FRENA a quien lo mueve, es una fuente de energía gratis. */
+  const cae = (conTurbina) => {
+    const m = mundo(20, 60, 4);
+    repisa(m, 59);
+    for(let y = 0; y < 59; y++) m.pon(11, y, IDX.muro);
+    if(conTurbina) for(let y = 20; y < 40; y++) m.pon(11, y, IDX.generador);
+    let vmax = 0;
+    for(let i = 0; i < 200; i++){
+      if(i % 2 === 0) m.pon(10, 2, IDX.agua);
+      m.paso();
+      for(let y = 44; y < 50; y++){ const k = m.i(10, y);
+        if(m.t[k] === IDX.agua) vmax = Math.max(vmax, Math.abs(m.vy[k])); }
+    }
+    return vmax;
+  };
+  const sinT = cae(false), conT = cae(true);
+  ok('y FRENA a quien lo mueve: la energía no sale de la nada', conT < sinT,
+     'sin turbina llega a ' + sinT.toFixed(2) + ' · pasando por ella ' + conT.toFixed(2));
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

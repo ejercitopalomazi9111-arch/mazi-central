@@ -166,6 +166,19 @@ const JUEGO = {
   pulsador:{ nom:'Pulsador',  col:'#5A9E9E', estado:'solido', dens:28, cond:.3,
              elec:1, pulso:14, dureza:.5, grupo:'eléctrico',
              ayuda:'Late solo: enciende y apaga cada tanto' },
+  /* ── GENERADOR ──────────────────────────────────────────────────────────
+     Carlos, punto 4: «debe ser posible generar energía, transportarla,
+     almacenarla, convertirla de un tipo a otro… La energía no debe aparecer ni
+     desaparecer arbitrariamente. Debe existir conservación de energía dentro
+     de los límites de la simulación».
+     Hasta ahora el motor CONSUMÍA y nada GENERABA: la corriente sólo salía de
+     pilas que aparecían llenas. Esto cierra el circuito. Un generador toma la
+     energía cinética de lo que se mueve a su lado, la convierte en corriente
+     — y FRENA lo que se la dio, que es la mitad que casi nunca se implementa
+     y sin la cual esto sería una fuente de energía gratis. */
+  generador:{nom:'Generador', col:'#C58A3D', estado:'solido', dens:33, cond:.5,
+             elec:1, genera:.55, dureza:.5, grupo:'eléctrico',
+             ayuda:'Convierte el movimiento de al lado en corriente, y frena lo que lo mueve' },
   motor:   { nom:'Motor',     col:'#9E5A7A', estado:'solido', dens:32, cond:.4,
              elec:1, motor:true, dureza:.5, grupo:'eléctrico',
              ayuda:'Con corriente, empuja lo que tenga encima' },

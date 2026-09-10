@@ -2213,6 +2213,48 @@ export class Mundo {
         if(this.temp[k] > 90 && this.vida[k] < e.pila) this.vida[k] += 3;
         if(this.vida[k] > 0){ esFuente = true; this.vida[k]--; }
       }
+      /* ── GENERADOR · movimiento → corriente, CON conservación ─────────
+         Toma la energía cinética de lo que pasa a su lado y la convierte en
+         corriente. Y frena a quien se la dio: sin esa segunda mitad esto sería
+         una fuente de energía gratis, que es exactamente lo que Carlos dijo
+         que no quería («la energía no debe aparecer ni desaparecer
+         arbitrariamente»).
+         Lo que se le quita al que empuja es proporcional a lo que se genera:
+         el generador no puede sacar más de lo que le entra. */
+      else if(e.genera){
+        let cinetica = 0;
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          const px = x+dx, py = y+dy;
+          if(px < 0 || py < 0 || px >= an || py >= al) continue;
+          const k2 = py * an + px;
+          if(t[k2] === VACIO) continue;
+          const v2 = this.vy[k2]*this.vy[k2] + this.vx[k2]*this.vx[k2];
+          if(v2 < 0.04) continue;
+          const m2 = EL[t[k2]].dens || 1;
+          const saca = Math.min(0.85, e.genera);
+          cinetica += 0.5 * m2 * v2 * saca;
+          /* la conservación: se le quita al que empuja la MISMA fracción de
+             velocidad que se le sacó de energía. √(1−saca) porque la energía
+             va con el cuadrado de la velocidad. */
+          const freno = Math.sqrt(1 - saca);
+          this.vy[k2] *= freno; this.vx[k2] *= freno;
+        }
+        /* la energía se acumula: con poquito movimiento tarda en encender,
+           con mucho enciende de inmediato. Eso es un volante de inercia. */
+        /* ── VOLANTE DE INERCIA ────────────────────────────────────────
+           La energía se ACUMULA y se gasta poco a poco, en vez de dispararse
+           de golpe cada vez que junta un umbral. Esa diferencia es la que
+           separa «una lámpara encendida» de «una lámpara parpadeando»: con
+           umbral de 12 encendía 24 de cada 600 pasos, y con umbral de 4, 72.
+           Las dos cosas se leen como estropeado — y con razón, es exactamente
+           la queja que Carlos tuvo con la compuerta NO.
+           Guardando la energía y gastando 1 por paso, un chorro constante la
+           mantiene encendida, un chorro más gordo la mantiene MÁS TIEMPO, y al
+           cortar el agua se apaga sola cuando se acaba lo guardado — que es lo
+           que hace un volante de verdad. */
+        this.vida[k] = Math.min(600, this.vida[k] + cinetica);
+        if(this.vida[k] >= 1){ esFuente = true; this.vida[k] -= 1; }
+      }
       else if(e.pulso) esFuente = (Math.floor(this.paso_ / e.pulso) & 1) === 1;
       /* RELOJ DE ARENA: cuenta mientras le llega señal y sólo deja pasar
          cuando llenó su tiempo. Tocarlo lo vacía y vuelve a empezar. */
@@ -2346,7 +2388,7 @@ export class Mundo {
            temporizador no temporizaba nada. Cada pieza que decide su salida
            tiene que estar aquí o su lógica es decorativa. */
         if(v.puerta || v.fuente || v.pulso || v.retardo || v.repite ||
-           v.observa || v.pila) continue;
+           v.observa || v.pila || v.genera) continue;
         /* un interruptor ABIERTO corta el paso: es todo su trabajo */
         if(v.interruptor && !this.vida[k2]) continue;
         /* ⚠ LA RESISTENCIA NO CORTA AL AZAR, y así estaba: con 55% de
