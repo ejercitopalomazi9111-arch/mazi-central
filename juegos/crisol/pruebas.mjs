@@ -281,5 +281,97 @@ seccion('nada se rompe ni se desborda');
   ok('ningún tipo inválido y ninguna temperatura NaN o infinita', malos === 0, malos + ' celdas malas');
 }
 
+seccion('física nueva: velocidad, presión y golpe');
+{
+  /* Lo que pidió Carlos con todas sus letras: una columna cae JUNTA, no se
+     desmorona de abajo hacia arriba. Se mide el ALTO del bloque: si se
+     estira, es que cada partícula está cayendo por su cuenta. */
+  const m = mundo(20, 60);
+  for(let y = 4; y < 12; y++) for(let x = 8; x < 12; x++) m.pon(x, y, IDX.arena);
+  const altoDe = () => { let a = 99, b = -1;
+    for(let y = 0; y < 60; y++) for(let x = 0; x < 20; x++)
+      if(m.t[m.i(x,y)] === IDX.arena){ if(y<a)a=y; if(y>b)b=y; }
+    return b - a + 1; };
+  const antes = altoDe();
+  corre(m, 6);
+  const durante = altoDe();
+  ok('una columna en el aire cae JUNTA, sin estirarse',
+     durante <= antes + 1, 'alto ' + antes + ' → ' + durante);
+
+  const v = mundo(20, 60);
+  v.pon(10, 2, IDX.arena);
+  let y1 = 0, y2 = 0;
+  for(let i = 0; i < 6; i++) v.paso();
+  for(let y = 0; y < 60; y++) if(v.t[v.i(10,y)] === IDX.arena) y1 = y;
+  for(let i = 0; i < 6; i++) v.paso();
+  for(let y = 0; y < 60; y++) if(v.t[v.i(10,y)] === IDX.arena) y2 = y;
+  ok('y ACELERA: el segundo tramo es más largo que el primero',
+     (y2 - y1) > y1 - 2, 'primeros 6 pasos ' + (y1-2) + ' celdas · siguientes 6 ' + (y2-y1));
+}
+
+seccion('la explosión es una ONDA, no un parpadeo');
+{
+  const m = mundo(60, 60, 5);
+  for(let y = 30; y < 34; y++) for(let x = 28; x < 32; x++) m.pon(x, y, IDX.polvora);
+  m.pon(30, 29, IDX.fuego);
+  let picoPresion = 0, cuandoPico = -1, radioMax = 0;
+  for(let i = 0; i < 40; i++){
+    m.paso();
+    let p = 0, r = 0;
+    for(let y = 0; y < 60; y++) for(let x = 0; x < 60; x++){
+      const k = m.i(x,y);
+      if(m.pres[k] > p) p = m.pres[k];
+      if(m.pres[k] > 4){ const d = Math.hypot(x-30, y-31); if(d > r) r = d; }
+    }
+    if(p > picoPresion){ picoPresion = p; cuandoPico = i; }
+    if(r > radioMax) radioMax = r;
+  }
+  ok('la explosión genera presión de verdad', picoPresion > 20, 'pico ' + picoPresion.toFixed(0));
+  ok('y la onda se EXPANDE varias celdas', radioMax > 5, 'radio ' + radioMax.toFixed(1));
+
+  /* que la presión se calme: una onda que no decae es un motor atascado */
+  for(let i = 0; i < 300; i++) m.paso();
+  let queda = 0;
+  for(let k = 0; k < m.pres.length; k++) if(m.pres[k] > 2) queda++;
+  ok('y después se calma sola', queda < 20, queda + ' celdas siguen presurizadas');
+}
+
+seccion('la nitro ya no explota nada más ponerla');
+{
+  const m = mundo(24, 24, 11);
+  crisol(m, 4, 14, 20, 22);
+  for(let x = 6; x < 18; x++) for(let y = 19; y < 22; y++) m.pon(x, y, IDX.nitro);
+  const antes = cuantos(m, 'nitro');
+  corre(m, 400);
+  ok('puesta en reposo, aguanta 400 pasos sin detonar',
+     cuantos(m, 'nitro') >= antes - 2, antes + ' → ' + cuantos(m, 'nitro'));
+
+  /* pero SÍ detona por golpe */
+  const g = mundo(30, 60, 3);
+  for(let x = 12; x < 18; x++) g.pon(x, 55, IDX.nitro);
+  /* ⚠ antes usaba PIEDRA, que es sólida y NO CAE: la prueba medía una roca
+     flotando y culpaba a la nitro. La grava sí cae. */
+  for(let x = 12; x < 18; x++) for(let y = 2; y < 6; y++) g.pon(x, y, IDX.grava);
+  corre(g, 120);
+  ok('pero le tiras grava desde alto y SÍ revienta',
+     cuantos(g, 'nitro') < 6, 'quedan ' + cuantos(g, 'nitro') + ' de 6');
+}
+
+seccion('gas DENTRO del agua');
+{
+  const m = mundo(24, 30, 9);
+  crisol(m, 4, 6, 20, 26);
+  for(let y = 10; y < 26; y++) for(let x = 5; x < 20; x++) m.pon(x, y, IDX.agua);
+  /* meter gas en el FONDO del agua, que antes era imposible */
+  for(let x = 10; x < 14; x++) m.pon(x, 24, IDX.gasnat);
+  let subio = false;
+  for(let i = 0; i < 90; i++){
+    m.paso();
+    for(let x = 5; x < 20; x++) if(m.t[m.i(x, 12)] === IDX.gasnat) subio = true;
+    if(subio) break;
+  }
+  ok('el gas metido en el fondo BURBUJEA hacia arriba', subio);
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

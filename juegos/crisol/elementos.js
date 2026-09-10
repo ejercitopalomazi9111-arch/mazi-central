@@ -92,8 +92,12 @@ export const ELEMENTOS = {
              arde:1, calorArde:900, grupo:'combustible' },
   polvora: { nom:'Pólvora', col:'#3E3A44', estado:'polvo',  dens:13, cond:.15,
              arde:1, calorArde:1400, explota:9, dureza:.05, grupo:'combustible' },
+  /* ⚠ `inestable:.5` la hacía explotar SOLA a los pocos segundos de ponerla:
+     Carlos no alcanzaba ni a construir con ella. La nitroglicerina de verdad
+     no detona por existir — detona por GOLPE, y eso ahora se mide con la
+     velocidad de impacto. `golpe` es a qué velocidad revienta. */
   nitro:   { nom:'Nitroglicerina', col:'#C8B96A', estado:'liquido', dens:12, cond:.2,
-             arde:1, calorArde:2200, explota:22, inestable:.5, grupo:'combustible' },
+             arde:1, calorArde:2200, explota:22, golpe:2.2, grupo:'combustible' },
   madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12,
              arde:.35, calorArde:600, dureza:.25, grupo:'combustible' },
   carbon:  { nom:'Carbón',  col:'#26222C', estado:'polvo',  dens:14, cond:.16,

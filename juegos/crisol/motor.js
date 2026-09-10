@@ -34,6 +34,12 @@ for(const [a, b, ra, rb, prob, calor] of REACCIONES){
 }
 
 export const AMBIENTE = 22;
+/* Gravedad en celdas por paso al cuadrado, y tope de velocidad. El tope no es
+   pereza: sin él una partícula salta media pantalla en un cuadro y atraviesa
+   paredes delgadas por el mismo agujero que ya tapamos en el movimiento
+   lateral. */
+export const GRAVEDAD = 0.28;
+export const VMAX = 6;
 
 export class Mundo {
   constructor(an, al){
@@ -42,8 +48,21 @@ export class Mundo {
     this.t    = new Uint8Array(n);        /* tipo */
     this.temp = new Float32Array(n);      /* °C */
     this.vida = new Uint16Array(n);       /* pasos vividos */
-    this.car  = new Uint8Array(n);        /* carga eléctrica: 0 · 1 · 2 = recién */
+    this.car  = new Uint8Array(n);        /* carga eléctrica */
     this.mov  = new Uint8Array(n);
+    /* ── FÍSICA DE VERDAD, no «una celda por paso» ──────────────────────
+       Carlos lo señaló exacto: «que las partículas al caer no tomen la de
+       abajo como quieta porque aún no está cayendo; si tienen físicas, su
+       capa debe caer junto con el resto». Sin velocidad, cada partícula
+       decide por su cuenta cada paso y una columna se desmorona en vez de
+       caer. Con velocidad acumulada, toda la columna lleva la misma y cae
+       junta — y además ACELERA, que es lo que hace que se sienta gravedad. */
+    this.vy   = new Float32Array(n);      /* velocidad vertical, celdas/paso */
+    this.vx   = new Float32Array(n);      /* velocidad horizontal */
+    /* Presión: un campo propio que se difunde y empuja. Es lo que convierte
+       una explosión en una ONDA en vez de un parpadeo, y lo que permite una
+       recámara, un cañón y una olla a presión. */
+    this.pres = new Float32Array(n);
     this.temp.fill(AMBIENTE);
     this.paso_ = 0;
     this.azar = 123456789;
@@ -71,6 +90,7 @@ export class Mundo {
     this.t[k] = tipo;
     this.vida[k] = 0;
     this.car[k] = 0;
+    this.vy[k] = 0; this.vx[k] = 0;
     const e = EL[tipo];
     if(temp != null) this.temp[k] = temp;
     else if(e.nace != null) this.temp[k] = e.nace;
@@ -94,12 +114,28 @@ export class Mundo {
     const tv = this.temp[k1]; this.temp[k1] = this.temp[k2]; this.temp[k2] = tv;
     const vv = this.vida[k1]; this.vida[k1] = this.vida[k2]; this.vida[k2] = vv;
     const cv = this.car[k1];  this.car[k1]  = this.car[k2];  this.car[k2]  = cv;
+    /* ⚠ la velocidad VIAJA con la partícula. Si se queda en la celda, una
+       partícula que cae le hereda su impulso a la que se queda atrás y el
+       montón se pone a temblar solo. */
+    const yv = this.vy[k1]; this.vy[k1] = this.vy[k2]; this.vy[k2] = yv;
+    const xv = this.vx[k1]; this.vx[k1] = this.vx[k2]; this.vx[k2] = xv;
     this.mov[k1] = 1; this.mov[k2] = 1;
   }
 
-  /* ── explosión: empuja calor y rompe según dureza ────────────────────── */
+  /* ── explosión ─────────────────────────────────────────────────────────
+     ⚠ Carlos: «tus explosiones son demasiado instantáneas y poco
+     impresionantes». Tenía razón y la causa era de diseño: la vieja versión
+     recorría un círculo y CAMBIABA los tipos de golpe. Todo pasaba en un
+     cuadro, así que no había nada que ver — ni onda, ni cosas saliendo
+     volando, ni retumbo.
+
+     Ahora una explosión no rompe nada por sí misma: INYECTA PRESIÓN, CALOR y
+     VELOCIDAD en un punto. La presión se difunde sola en los cuadros
+     siguientes, empuja lo que encuentra y rompe lo que no aguante. Eso es una
+     onda expansiva, y de paso es la misma pieza con la que funciona un cañón:
+     presión encerrada que encuentra por dónde salir. */
   revienta(x, y, fuerza){
-    const r = Math.max(1, Math.round(fuerza));
+    const r = Math.max(2, Math.round(fuerza * 1.4));
     for(let dy = -r; dy <= r; dy++){
       for(let dx = -r; dx <= r; dx++){
         const d = Math.hypot(dx, dy);
@@ -107,15 +143,89 @@ export class Mundo {
         const nx = x + dx, ny = y + dy;
         if(!this.dentro(nx, ny)) continue;
         const k = this.i(nx, ny);
-        const e = EL[this.t[k]];
-        if(e.id === 'muro') continue;
-        this.temp[k] += (1 - d / r) * fuerza * 130;
-        const aguanta = (e.dureza || 0) + d / r;
-        if(this.rnd() > aguanta){
-          this.cambia(k, this.rnd() < .55 ? IDX.fuego : IDX.humo);
+        if(EL[this.t[k]].id === 'muro') continue;
+        const cerca = 1 - d / r;
+        this.pres[k] += fuerza * 26 * cerca * cerca;
+        this.temp[k] += fuerza * 95 * cerca;
+        if(d > 0.4){
+          this.vx[k] += (dx / d) * fuerza * .85 * cerca;
+          this.vy[k] += (dy / d) * fuerza * .85 * cerca;
         }
       }
     }
+    /* el corazón sí se convierte en fuego: es la deflagración */
+    const rc = Math.max(1, Math.round(fuerza * .35));
+    for(let dy = -rc; dy <= rc; dy++) for(let dx = -rc; dx <= rc; dx++){
+      if(Math.hypot(dx, dy) > rc) continue;
+      const nx = x + dx, ny = y + dy;
+      if(!this.dentro(nx, ny)) continue;
+      const k = this.i(nx, ny);
+      if(EL[this.t[k]].id === 'muro') continue;
+      this.cambia(k, this.rnd() < .7 ? IDX.fuego : IDX.humo);
+    }
+  }
+
+  /* ── PRESIÓN ───────────────────────────────────────────────────────────
+     Un campo que se difunde y decae. Los sólidos la contienen —por eso una
+     recámara aguanta y un tubo abierto no—, y donde se acumula, empuja y
+     acaba rompiendo lo que no resiste. Con esto salen la onda expansiva, la
+     olla a presión, el cañón y el estallido de una tubería. */
+  presionPaso(){
+    const { an, al, t, pres } = this;
+    const nuevo = new Float32Array(pres.length);
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k = y * an + x;
+        const e = EL[t[k]];
+        /* Un gas caliente y encerrado empuja: es la ley de los gases en su
+           versión de píxeles, y es de donde sale la fuerza de una pistola. */
+        let p = pres[k];
+        if(e.estado === 'gas' && t[k] !== VACIO){
+          p += Math.max(0, (this.temp[k] - AMBIENTE)) * 0.004;
+        }
+        if(e.id === 'muro'){ nuevo[k] = 0; continue; }
+        let suma = 0, n = 0;
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          const px = x+dx, py = y+dy;
+          if(px < 0 || py < 0 || px >= an || py >= al) continue;
+          const k2 = py * an + px;
+          const v = EL[t[k2]];
+          /* la presión NO atraviesa sólidos: eso es lo que hace que un
+             recipiente sea un recipiente */
+          if(v.estado === 'solido'){
+            /* pero sí los EMPUJA, y si no aguantan, ceden */
+            if(pres[k] > 55 && this.rnd() < (pres[k] - 55) * .0012 * (1 - (v.dureza||0))){
+              this.cambia(k2, VACIO);
+              this.vx[k2] += dx * 2; this.vy[k2] += dy * 2;
+            }
+            continue;
+          }
+          suma += pres[k2] - pres[k]; n++;
+        }
+        p += suma * .24;
+        nuevo[k] = p * 0.955;               /* decae: si no, nunca se calma */
+        if(nuevo[k] < 0.02) nuevo[k] = 0;
+      }
+    }
+    this.pres = nuevo;
+  }
+
+  /* La presión empuja lo que se puede mover. Se llama por celda. */
+  empuja(x, y, k, e){
+    const p = this.pres[k];
+    if(p < 3) return;
+    if(e.estado === 'solido') return;
+    let gx = 0, gy = 0;
+    for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+      if(!this.dentro(x+dx, y+dy)) continue;
+      const k2 = this.i(x+dx, y+dy);
+      if(EL[this.t[k2]].estado === 'solido') continue;
+      const dif = this.pres[k] - this.pres[k2];
+      if(dif > 0){ gx += dx * dif; gy += dy * dif; }
+    }
+    const m = Math.max(0.35, (e.dens || 1) * 0.12);   /* la masa se resiste */
+    this.vx[k] += (gx / m) * 0.016;
+    this.vy[k] += (gy / m) * 0.016;
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -125,6 +235,7 @@ export class Mundo {
     this.paso_++;
     this.mov.fill(0);
     this.electricidad();
+    this.presionPaso();
 
     /* De abajo hacia arriba: si se recorriera al revés, un grano de arena
        caería toda la columna en un solo cuadro. Y las filas se recorren
@@ -176,7 +287,25 @@ export class Mundo {
         return;
       }
     }
-    if(e.inestable && this.rnd() < e.inestable * .0006){ this.revienta(x, y, e.explota || 6); return; }
+    /* Detona por GOLPE, no por existir. Y el golpe puede venir de dos lados,
+       que es lo que se me pasó: que ELLA caiga rápido y se estrelle, o que
+       algo LE CAIGA ENCIMA. Medir sólo su propia velocidad dejaba fuera el
+       caso obvio — tirarle una piedra — y era justo el que se prueba primero. */
+    if(e.golpe){
+      const propio = Math.abs(this.vy[k]) + Math.abs(this.vx[k]);
+      let impacto = propio > e.golpe &&
+        (() => { const a = this.dentro(x, y+1) ? EL[this.t[this.i(x,y+1)]] : EL[IDX.muro];
+                 return a.estado === 'solido' || a.estado === 'polvo'; })();
+      if(!impacto){
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          if(!this.dentro(x+dx, y+dy)) continue;
+          const k2 = this.i(x+dx, y+dy);
+          if(this.t[k2] === VACIO) continue;
+          if(Math.abs(this.vy[k2]) + Math.abs(this.vx[k2]) > e.golpe){ impacto = true; break; }
+        }
+      }
+      if(impacto){ this.revienta(x, y, e.explota || 6); return; }
+    }
     if(e.radia){
       this.temp[k] += 1.2;
       if(this.rnd() < .002){
@@ -196,7 +325,10 @@ export class Mundo {
     if(e.crece && this.rnd() < .004) this.crece(x, y);
     if(e.germina) this.germina(x, y, k);
 
-    /* 7 · movimiento */
+    /* 7 · la presión empuja antes de mover */
+    this.empuja(x, y, k, e);
+
+    /* 8 · movimiento */
     this.mueve(x, y, k, e);
   }
 
@@ -277,12 +409,17 @@ export class Mundo {
     return false;
   }
 
-  /* ── movimiento según el estado ──────────────────────────────────────── */
+  /* ── movimiento ───────────────────────────────────────────────────────
+     Con VELOCIDAD, no «una celda por paso». La diferencia se ve en cuanto
+     sueltas un montón: antes cada partícula decidía sola cada cuadro y el
+     bloque se desmoronaba; ahora todas llevan la misma velocidad, caen
+     juntas y aceleran. */
   mueve(x, y, k, e){
     const est = e.estado;
-    if(est === 'solido') return;
+    if(est === 'solido'){ this.vy[k] = 0; this.vx[k] = 0; return; }
 
     if(est === 'gas' || est === 'energia'){
+      if(this.burbujea(x, y, k, e)) return;
       const sube = e.sube || 1;
       const dirs = [[0,-1],[0,-1],[-1,-1],[1,-1],[-1,0],[1,0]];
       for(let i = 0; i < sube + 2; i++){
@@ -292,8 +429,35 @@ export class Mundo {
       return;
     }
 
-    /* polvo y líquido: primero abajo, luego las diagonales */
-    if(this.trata(x, y, k, x, y+1, e)) return;
+    /* ── caída acelerada ─────────────────────────────────────────────── */
+    this.vy[k] = Math.min(this.vy[k] + GRAVEDAD, VMAX);
+    let cx = x, cy = y, ck = k, cayo = false;
+    const saltos = Math.max(1, Math.floor(this.vy[ck]));
+    for(let i = 0; i < saltos; i++){
+      if(!this.trata(cx, cy, ck, cx, cy + 1, e)) break;
+      cy++; ck = this.i(cx, cy); cayo = true;
+    }
+    if(cayo){
+      /* si le quedaba impulso lateral, lo gasta mientras cae */
+      if(Math.abs(this.vx[ck]) > .35){
+        const d = this.vx[ck] > 0 ? 1 : -1;
+        if(this.trata(cx, cy, ck, cx + d, cy, e)){ cx += d; ck = this.i(cx, cy); }
+        this.vx[ck] *= .82;
+      }
+      return;
+    }
+    /* topó: pierde casi toda la velocidad vertical, como un golpe */
+    this.vy[ck] *= .18;
+
+    /* impulso lateral suelto — es lo que lanza las cosas en una explosión */
+    if(Math.abs(this.vx[ck]) > .35){
+      const d = this.vx[ck] > 0 ? 1 : -1;
+      if(this.trata(cx, cy, ck, cx + d, cy, e)){ ck = this.i(cx + d, cy); cx += d; }
+      this.vx[ck] *= .74;
+      if(Math.abs(this.vx[ck]) < .35) this.vx[ck] = 0;
+    }
+
+    x = cx; y = cy; k = ck;
     const izqPrim = this.rnd() < .5;
     const d1 = izqPrim ? -1 : 1, d2 = -d1;
     if(this.trata(x, y, k, x+d1, y+1, e)) return;
@@ -340,6 +504,23 @@ export class Mundo {
     const v = EL[d];
     if(v.estado === 'solido' || v.estado === 'polvo') return false;
     return (v.dens || 0) < (e.dens || 0);
+  }
+
+  /* ── Gases DENTRO de líquidos ───────────────────────────────────────────
+     Carlos: «haz que pueda poner cosas dentro de otras, como gas dentro del
+     agua». Antes era imposible: un gas sólo entraba a un hueco, así que al
+     pintarlo sobre agua se quedaba encima. Ahora un gas puede meterse en un
+     líquido —queda disuelto— y sube en burbujas hasta salir, que es lo que
+     hace de verdad. */
+  burbujea(x, y, k, e){
+    if(e.estado !== 'gas' || this.t[k] === VACIO) return false;
+    const arr = this.dentro(x, y-1) ? this.i(x, y-1) : -1;
+    if(arr < 0) return false;
+    const v = EL[this.t[arr]];
+    if(v.estado !== 'liquido') return false;
+    /* sube a través del líquido: el gas es siempre menos denso */
+    this.intercambia(k, arr);
+    return true;
   }
 
   /* Devuelve true si se movió. La regla de oro: sólo se pasa a un hueco o se
@@ -431,5 +612,6 @@ export class Mundo {
   limpia(){
     this.t.fill(VACIO); this.temp.fill(AMBIENTE);
     this.vida.fill(0); this.car.fill(0);
+    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0);
   }
 }
