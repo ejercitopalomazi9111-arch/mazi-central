@@ -807,5 +807,65 @@ seccion('el muro es lo único inamovible');
      m.pres[m.i(20,20)].toFixed(2));
 }
 
+seccion('las compuertas lógicas, con su tabla de verdad entera');
+{
+  /* Carlos, sin rodeos: «tus módulos de lógica no sirven para una mierda,
+     supuse que la Y sería que si recibe dos señales separadas entonces
+     permite el paso, pero con una ya lo permite; la NO no hace nada más que
+     parpadear». Las dos quejas eran el MISMO defecto —la compuerta contaba su
+     propia salida como entrada— más un segundo debajo: al ser fuente, también
+     empujaba hacia atrás por su cable de entrada y le robaba la paternidad a
+     la batería, lo que daba un parpadeo exacto al 50%.
+     Por eso esto no comprueba sólo el resultado: comprueba que sea ESTABLE.
+     Una compuerta que da el valor correcto la mitad de los pasos está rota, y
+     mirando sólo el último paso se ve perfecta. */
+  const monta = (puerta, a, b) => {
+    const m = mundo(30, 20, 3);
+    repisa(m, 15);
+    const gx = 14, gy = 14;
+    m.pon(gx, gy, IDX[puerta]);
+    for(let x = 10; x < gx; x++) m.pon(x, gy, IDX.cobre);      /* entrada A, por la izquierda */
+    if(a) m.pon(9, gy, IDX.bateria);
+    for(let y = 10; y < gy; y++) m.pon(gx, y, IDX.cobre);      /* entrada B, por arriba */
+    if(b) m.pon(gx, 9, IDX.bateria);
+    for(let x = gx + 1; x < 20; x++) m.pon(x, gy, IDX.cobre);  /* salida, a la derecha */
+    m.pon(20, gy, IDX.lampara);
+    corre(m, 40);
+    let on = 0;
+    for(let i = 0; i < 20; i++){ m.paso(); if(m.car[m.i(20, gy)]) on++; }
+    return { sal: m.car[m.i(20, gy)] ? 1 : 0, estable: on === 0 || on === 20, on };
+  };
+  const tabla = {
+    gAND: [0,0,0,1], gOR: [0,1,1,1], nand: [1,1,1,0],
+    nor:  [1,0,0,0], xor: [0,1,1,0], xnor: [1,0,0,1],
+  };
+  for(const [g, esp] of Object.entries(tabla)){
+    const r = [monta(g,0,0), monta(g,1,0), monta(g,0,1), monta(g,1,1)];
+    const dio = r.map(v => v.sal);
+    ok(EL[IDX[g]].nom + ': su tabla de verdad entera', dio.join() === esp.join(),
+       '00 01 10 11 → ' + dio.join(' ') + ' · esperado ' + esp.join(' '));
+    ok('  …y sin parpadear', r.every(v => v.estable),
+       'pasos encendida de 20: ' + r.map(v => v.on).join(' / '));
+  }
+
+  /* NOT va aparte: una sola entrada */
+  const notCon = (a) => {
+    const m = mundo(30, 20, 3);
+    repisa(m, 15);
+    m.pon(14, 14, IDX.gNOT);
+    for(let x = 10; x < 14; x++) m.pon(x, 14, IDX.cobre);
+    if(a) m.pon(9, 14, IDX.bateria);
+    for(let x = 15; x < 20; x++) m.pon(x, 14, IDX.cobre);
+    m.pon(20, 14, IDX.lampara);
+    corre(m, 40);
+    let on = 0;
+    for(let i = 0; i < 20; i++){ m.paso(); if(m.car[m.i(20,14)]) on++; }
+    return on;
+  };
+  const sinSenal = notCon(0), conSenal = notCon(1);
+  ok('NO (NOT): sin señal enciende, y se QUEDA encendida', sinSenal === 20, sinSenal + '/20 pasos');
+  ok('y con señal se apaga, y se queda apagada', conSenal === 0, conSenal + '/20 pasos');
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

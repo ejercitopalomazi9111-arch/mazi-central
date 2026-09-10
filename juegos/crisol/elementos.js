@@ -246,6 +246,20 @@ const JUEGO = {
              elec:1, puerta:'not', dureza:.5, grupo:'lógica' },
   diodo:   { nom:'Diodo',    col:'#AC27FF', estado:'solido', dens:40, cond:.2,
              elec:1, puerta:'diodo', dureza:.5, grupo:'lógica' },
+  /* Las que faltaban. Con `padre` distinguiendo entrada de salida, todas
+     funcionan con el mismo código: cambia una línea del switch. */
+  nand:    { nom:'NO-Y (NAND)', col:'#8A6FD1', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'nand', dureza:.5, grupo:'lógica',
+             ayuda:'Se apaga sólo cuando le llegan las DOS señales' },
+  nor:     { nom:'NO-O (NOR)', col:'#6F8AD1', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'nor',  dureza:.5, grupo:'lógica',
+             ayuda:'Enciende sólo si NO le llega ninguna señal' },
+  xor:     { nom:'O-exclusiva (XOR)', col:'#D18A6F', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'xor',  dureza:.5, grupo:'lógica',
+             ayuda:'Enciende con UNA señal, no con dos. Es el sumador' },
+  xnor:    { nom:'XNOR', col:'#6FD18A', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'xnor', dureza:.5, grupo:'lógica',
+             ayuda:'Enciende cuando las dos entradas están IGUALES' },
 
   /* ── química agresiva ─────────────────────────────────────────────────── */
   acido:   { nom:'Ácido',   col:'#8FE03D', estado:'liquido', dens:11, cond:.4,

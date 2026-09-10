@@ -134,7 +134,10 @@ export class Mundo {
     this._cola = new Int32Array(n);
     this._cola2 = new Int32Array(n);
     this._visto = new Uint8Array(n);
-    this.flotante = new Uint8Array(n);   /* este paso ya lleva su balance de flotación hecho */
+    this.flotante = new Uint8Array(n);
+    /* de quién vino la corriente a cada celda: sin esto una compuerta no puede
+       distinguir una entrada de su propia salida */
+    this._padre = new Int32Array(n);   /* este paso ya lleva su balance de flotación hecho */
     /* la caja de dónde hay onda; vacía al revés quiere decir «silencio» */
     this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
     this.temp.fill(AMBIENTE);
@@ -1408,6 +1411,7 @@ export class Mundo {
     const sig = new Uint8Array(n);
     const dist = new Uint8Array(n).fill(255);
     const cola = [];
+    const colaPuertas = [];   /* reparten DESPUÉS, ver el porqué abajo */
 
     /* 1 · quién es fuente ESTE paso. Las compuertas se resuelven con la carga
        del paso anterior, que es lo que les da su retardo de un cuadro — y ese
@@ -1460,19 +1464,61 @@ export class Mundo {
         else esFuente = (this.vida[k] & 256) !== 0 && (this.vida[k] &= ~256, true);
       }
       else if(e.puerta){
-        let vivos = 0;
+        /* ═══════════════════════════════════════════════════════════════════
+           ⚠ LAS COMPUERTAS SE LEÍAN A SÍ MISMAS. Carlos, sin rodeos: «tus
+           módulos de lógica no sirven para una mierda, supuse que la Y sería
+           que si recibe dos señales eléctricas separadas entonces permite el
+           paso, pero con una ya lo permite; la NO no hace nada más que
+           parpadear». Las dos quejas son EL MISMO defecto, y es de raíz:
+
+           esto contaba como entrada a CUALQUIER vecino con carga… incluido su
+           propio cable de SALIDA, que la compuerta misma había encendido el
+           paso anterior. Entonces la Y con una sola entrada se encendía, al
+           paso siguiente veía su salida como segunda entrada y se quedaba
+           encendida para siempre. Y la NO se veía a sí misma: se apagaba,
+           dejaba de verse, se encendía — eso es literalmente el parpadeo que
+           él describió. No era que estuvieran mal calibradas: era que una
+           compuerta no tenía forma de saber por dónde ENTRA la señal.
+
+           Ahora sí la tiene. El reparto de corriente apunta de quién viene
+           cada celda encendida (`padre`), así que un vecino es ENTRADA sólo si
+           su carga no salió de esta misma compuerta. Con eso la Y necesita dos
+           entradas de verdad, separadas, y la NO se queda quieta.
+           ═══════════════════════════════════════════════════════════════════ */
+        let vivos = 0, entradas = 0;
         for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
           const px = x+dx, py = y+dy;
           if(px < 0 || py < 0 || px >= an || py >= al) continue;
           const k2 = py * an + px;
-          if(EL[t[k2]].elec && car[k2]) vivos++;
+          if(!EL[t[k2]].elec) continue;
+          entradas++;
+          /* su propia salida NO es una entrada */
+          if(car[k2] && this._padre[k2] !== k) vivos++;
         }
-        if(e.puerta === 'not')      esFuente = vivos === 0;
-        else if(e.puerta === 'and') esFuente = vivos >= 2;
-        else if(e.puerta === 'or')  esFuente = vivos >= 1;
-        else                        esFuente = vivos >= 1;   /* diodo */
+        switch(e.puerta){
+          case 'not':  esFuente = vivos === 0; break;
+          case 'and':  esFuente = vivos >= 2; break;
+          case 'or':   esFuente = vivos >= 1; break;
+          case 'nand': esFuente = vivos < 2;  break;
+          case 'nor':  esFuente = vivos === 0; break;
+          case 'xor':  esFuente = (vivos & 1) === 1; break;
+          case 'xnor': esFuente = (vivos & 1) === 0; break;
+          default:     esFuente = vivos >= 1; break;   /* diodo */
+        }
       }
-      if(esFuente){ sig[k] = 1; dist[k] = 0; cola.push(k); }
+      if(esFuente){
+        sig[k] = 1; dist[k] = 0;
+        /* Dos listas y no una, y esto es la SEGUNDA mitad del arreglo de las
+           compuertas. Una compuerta encendida también empuja corriente hacia
+           ATRÁS, por su propio cable de entrada — y como sale a distancia 0,
+           llegaba a esa celda antes que la batería, que estaba a cuatro o
+           cinco de distancia. O sea que la compuerta se adueñaba de su propia
+           entrada, al paso siguiente ya no la contaba, se apagaba, la batería
+           la reclamaba, se encendía… un parpadeo al 50% que se medía como
+           «10 de 20 pasos encendida». Primero reparten las fuentes de verdad
+           y sólo después las compuertas, sobre lo que quede sin dueño. */
+        (e.puerta ? colaPuertas : cola).push(k);
+      }
     }
 
     /* 2 · repartir desde las fuentes.
@@ -1482,6 +1528,19 @@ export class Mundo {
        ⚠ Lo resolví primero con un `sort` DENTRO del bucle, que es O(n² log n)
        y en 17 000 celdas se come el cuadro entero. Va por CUBETAS: una lista
        por distancia, recorridas en orden. Mismo resultado, coste lineal. */
+    const padre = this._padre;
+    padre.fill(-1);
+    this.reparte(cola, dist, sig, padre);
+    this.reparte(colaPuertas, dist, sig, padre);
+    this.electricidadRemate(dist, sig);
+  }
+
+  /* Reparte la corriente desde una lista de fuentes por el camino más barato.
+     Se llama DOS veces: primero con las fuentes de verdad y después con las
+     compuertas, para que una compuerta no pueda adueñarse de su propia
+     entrada. Ver el comentario grande de arriba. */
+  reparte(cola, dist, sig, padre){
+    const { an, al, t } = this;
     const cubeta = new Array(ALCANCE + 2);
     for(const k of cola){ (cubeta[0] || (cubeta[0] = [])).push(k); }
     for(let d = 0; d <= ALCANCE; d++){
@@ -1522,11 +1581,19 @@ export class Mundo {
         const nd = d + coste;
         if(nd > ALCANCE) continue;
         dist[k2] = nd; sig[k2] = 1;
+        /* ⚠ DE QUIÉN VIENE LA CORRIENTE, que es lo que faltaba para que las
+           compuertas funcionaran. Sin esto una compuerta no puede distinguir
+           una ENTRADA de su propia SALIDA, y se lee a sí misma. */
+        padre[k2] = k;
         (cubeta[nd] || (cubeta[nd] = [])).push(k2);
       }
       }
     }
+  }
 
+  electricidadRemate(dist, sig){
+    const { t } = this;
+    const n = t.length;
     /* 3 · el calor que produce la corriente */
     for(let k = 0; k < n; k++){
       if(!sig[k]) continue;
