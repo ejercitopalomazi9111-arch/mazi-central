@@ -18,7 +18,11 @@ await pg.waitForTimeout(400);
 const cual = process.argv[2] || 'seis';
 const r = await pg.evaluate(async (id) => {
   const P = window.PALOMAZO;
-  P.lanzar(P.CANCIONES.find(c => c.id === id));
+  const todas = P.CANCIONES.concat(P.PIEZAS || []);
+  const cual = todas.find(c => c.id === id);
+  if(!cual) return { error:'no existe esa canción: ' + id +
+                     ' · hay: ' + todas.map(c=>c.id).join(', ') };
+  P.lanzar(cual);
   await new Promise(r => setTimeout(r, 60));
   if(!P.J.activo) return { error:'no arrancó' };
 

@@ -440,6 +440,22 @@ function bajo(t, midi, dur, vol){
 function melodia(t, midi, dur, vol, timbre){
   if(!A.listo) return;
   const v = (vol == null ? 1 : vol);
+  /* El piano es otra envolvente, no otro oscilador: golpe seco y decaimiento
+     largo, SIN sustain. Es lo que distingue una tecla de un sintetizador. */
+  if(timbre === 'piano'){
+    [[0,0.26,'triangle'],[12,0.10,'sine'],[19,0.05,'sine']].forEach(([semi,vv,tp]) => {
+      const o = A.ctx.createOscillator(), g = A.ctx.createGain();
+      o.type = tp; o.frequency.setValueAtTime(nota2hz(midi + semi), t);
+      const largo = Math.max(dur, 0.55);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(v * vv, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(v * vv * 0.28, t + 0.09);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + largo);
+      o.connect(g); g.connect(A.seco); g.connect(A.rev);
+      o.start(t); o.stop(t + largo + 0.1);
+    });
+    return;
+  }
   const tipos = timbre === 'metal' ? ['square','sawtooth'] : ['triangle','square'];
   tipos.forEach((tp, i) => {
     const o = A.ctx.createOscillator(), g = A.ctx.createGain();
@@ -548,6 +564,85 @@ const RITMOS = {
   final:   'BhbBThhBBhbBThTo',
 };
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   3-bis · LAS PIEZAS DE VERDAD
+   Carlos las pidió «tipo Piano Tiles». Piano Tiles puede usar canciones
+   reconocibles por una razón concreta y hay que decirla: **usa clásicos de
+   DOMINIO PÚBLICO**. Éstas también — Beethoven, Mozart y Pachelbel llevan
+   más de dos siglos muertos, así que las obras son de todos.
+
+   ⚠ Lo que NO son: grabaciones. Son transcripciones mías de la melodía, de
+   memoria, en notas MIDI. Reconocibles, sí; fieles al último matiz, no. Si
+   alguna suena rara es culpa de mi oído, no del motor — y se arregla
+   corrigiendo los números de aquí abajo, que para eso están a la vista.
+
+   Formato: [nota MIDI, duración en pasos]. El 0 es silencio. Un paso es una
+   semicorchea, así que 2 = corchea y 4 = negra. */
+
+/* Cada pieza se toca DOS VECES seguidas. Sueltas duran 11-17 s, que se siente
+   a demo y no a canción; repetidas quedan en 22-34 s, que es lo que dura una
+   ronda de este tipo de juego. Se hace aquí y no copiando la lista dos veces
+   porque una lista duplicada a mano se desincroniza en cuanto se corrige una
+   nota — y estas notas las voy a corregir. */
+const cl = (sec) => sec.concat(sec);
+
+const PIEZAS = [
+  {
+    id:'elisa', nombre:'Para Elisa', autor:'Beethoven · 1810',
+    sub:'Dominio público · la de siempre',
+    bpm:132, timbre:'piano', ritmo:'calma',
+    acordes:[[57,60,64],[52,56,59],[57,60,64],[52,56,59]],
+    sec: cl([
+      [76,2],[75,2],[76,2],[75,2],[76,2],[71,2],[74,2],[72,2],
+      [69,4],[0,2],[60,2],[64,2],[69,2],[71,4],[0,2],[64,2],
+      [68,2],[71,2],[72,4],[0,2],[64,2],[76,2],[75,2],[76,2],[75,2],
+      [76,2],[71,2],[74,2],[72,2],[69,4],[0,2],[60,2],[64,2],[69,2],
+      [71,4],[0,2],[64,2],[72,2],[71,2],[69,6],
+    ]),
+  },
+  {
+    id:'alegria', nombre:'Himno a la alegría', autor:'Beethoven · 1824',
+    sub:'Dominio público · fácil, para empezar',
+    bpm:112, timbre:'piano', ritmo:'suave',
+    acordes:[[60,64,67],[55,59,62],[57,60,64],[53,57,60]],
+    sec: cl([
+      [64,4],[64,4],[65,4],[67,4], [67,4],[65,4],[64,4],[62,4],
+      [60,4],[60,4],[62,4],[64,4], [64,6],[62,2],[62,8],
+      [64,4],[64,4],[65,4],[67,4], [67,4],[65,4],[64,4],[62,4],
+      [60,4],[60,4],[62,4],[64,4], [62,6],[60,2],[60,8],
+    ]),
+  },
+  {
+    id:'canon', nombre:'Canon en Re', autor:'Pachelbel · c. 1680',
+    sub:'Dominio público · la de las bodas',
+    bpm:104, timbre:'piano', ritmo:'suave',
+    acordes:[[62,66,69],[57,61,64],[59,62,66],[54,57,61],
+             [55,59,62],[50,54,57],[55,59,62],[57,61,64]],
+    sec: cl([
+      [78,4],[76,4],[74,4],[73,4], [71,4],[69,4],[71,4],[73,4],
+      [74,4],[73,4],[71,4],[69,4], [67,4],[66,4],[67,4],[64,4],
+      [74,2],[78,2],[81,2],[79,2],[78,2],[74,2],[78,2],[76,2],
+      [74,2],[71,2],[74,2],[81,2],[79,2],[83,2],[81,2],[79,2],
+    ]),
+  },
+  {
+    id:'turca', nombre:'Marcha turca', autor:'Mozart · 1783',
+    sub:'Dominio público · la más brava',
+    bpm:126, timbre:'piano', ritmo:'urbano',
+    acordes:[[57,60,64],[52,56,59],[57,60,64],[52,56,59]],
+    sec: cl([
+      [71,1],[69,1],[68,1],[69,1],[72,4],[0,4],[0,4],
+      [74,1],[72,1],[71,1],[72,1],[76,4],[0,4],[0,4],
+      [77,1],[76,1],[75,1],[76,1],[83,2],[81,2],[80,2],[81,2],
+      [83,2],[81,2],[80,2],[81,2],[84,4],
+      [71,1],[69,1],[68,1],[69,1],[72,4],[0,4],[0,4],
+      [74,1],[72,1],[71,1],[72,1],[76,4],[0,4],[0,4],
+      [77,1],[76,1],[75,1],[76,1],[83,2],[81,2],[80,2],[81,2],
+      [84,2],[83,2],[81,2],[80,2],[81,8],
+    ]),
+  },
+];
+
 const CANCIONES = [
   {
     id:'seis', nombre:'Las seis de la mañana',
@@ -601,13 +696,29 @@ const CANCIONES = [
    contra el reloj del AudioContext al arrancar. */
 function armarCancion(c){
   const notas = [], fondo = [];
-  const compases = c.arreglo.length;
   const PASOS = 16;
+
+  /* Una pieza real no se arma con frases: trae su melodía escrita nota por
+     nota. Se recorre la secuencia acumulando pasos, y el número de compases
+     sale de lo que dure — no al revés. */
+  const secuencia = c.sec ? (() => {
+    let p = 0; const out = [];
+    for(const [n, d] of c.sec){
+      if(n > 0) out.push({ p:p, n:n, d:d });
+      p += d;
+    }
+    return { notas: out, largo: p };
+  })() : null;
+
+  const compases = secuencia
+    ? Math.ceil(secuencia.largo / PASOS)
+    : c.arreglo.length;
 
   for(let m = 0; m < compases; m++){
     const base = m * PASOS;
     const acorde = c.acordes[m % c.acordes.length];
     const ritmo = (c.ritmoFinal && m >= compases - 4) ? RITMOS[c.ritmoFinal] : RITMOS[c.ritmo];
+    if(!ritmo) throw new Error('ritmo desconocido: ' + c.ritmo);
 
     /* percusión */
     for(let s = 0; s < PASOS; s++){
@@ -618,19 +729,27 @@ function armarCancion(c){
       if(ch === 'o') fondo.push({p:base+s, k:'charolAb'});
     }
     /* bajo: fundamental en 1 y 3, quinta en el 2 y medio */
-    fondo.push({p:base,    k:'bajo', n:acorde[0] + c.bajoOct, d:3.6});
-    fondo.push({p:base+6,  k:'bajo', n:acorde[2] + c.bajoOct, d:1.6});
-    fondo.push({p:base+8,  k:'bajo', n:acorde[0] + c.bajoOct, d:3.6});
-    fondo.push({p:base+14, k:'bajo', n:acorde[1] + c.bajoOct, d:1.6});
+    /* ⚠ `bajoOct` no existe en las piezas clásicas, y `acorde[0] + undefined`
+       da NaN — que NO truena: `nota2hz(NaN)` devuelve NaN y el oscilador se
+       queda mudo sin un solo error en consola. Es de las que se buscan una
+       hora. Un valor por defecto y ya. */
+    const oct = c.bajoOct == null ? -12 : c.bajoOct;
+    fondo.push({p:base,    k:'bajo', n:acorde[0] + oct, d:3.6});
+    fondo.push({p:base+6,  k:'bajo', n:acorde[2] + oct, d:1.6});
+    fondo.push({p:base+8,  k:'bajo', n:acorde[0] + oct, d:3.6});
+    fondo.push({p:base+14, k:'bajo', n:acorde[1] + oct, d:1.6});
     /* colchón de acorde, un compás entero */
     fondo.push({p:base, k:'colchon', ns:acorde.map(x => x + 12), d:16});
 
-    /* melodía = notas jugables */
-    const frase = FRASES[c.arreglo[m]];
-    for(const [p, g, d] of frase){
-      notas.push({ p: base + p, n: gradoA(acorde, g) + 12, d: d });
+    /* melodía = notas jugables, sólo cuando la canción se genera de frases */
+    if(!secuencia){
+      const frase = FRASES[c.arreglo[m]];
+      for(const [p, g, d] of frase){
+        notas.push({ p: base + p, n: gradoA(acorde, g) + 12, d: d });
+      }
     }
   }
+  if(secuencia) for(const n of secuencia.notas) notas.push(n);
 
   /* El carril sale de la ALTURA de la nota: grave a la izquierda, agudo a la
      derecha, para que la mano siga la melodía.
@@ -1381,7 +1500,42 @@ $('bHistSalta').onclick = () => {
 };
 
 /* ── Lista de canciones ─────────────────────────────────────────────────── */
+function tarjetaCanc(c, i, bloqueada){
+  const b = document.createElement('button');
+  b.className = 'canc' + (bloqueada ? ' bloq' : '');
+  const mej = G.mejores[c.id];
+  b.innerHTML = '<span class="num"></span>' +
+    '<span class="info"><b></b><small></small></span><span class="mejor"></span>';
+  b.querySelector('.num').textContent = c.autor ? '♪' : (i + 1);
+  b.querySelector('b').textContent = bloqueada ? 'Todavía no' : c.nombre;
+  b.querySelector('small').textContent = bloqueada
+    ? 'Se abre al pasar la anterior' : (c.autor ? c.autor + ' · ' + c.sub : c.sub);
+  b.querySelector('.mejor').textContent = mej ? (mej.letra + ' · ' + mej.puntos) : '';
+  if(!bloqueada) b.onclick = () => { audioArranca(); lanzar(c); };
+  return b;
+}
+
+function rotulo(txt){
+  const d = document.createElement('div');
+  d.className = 'acto';
+  d.style.cssText = 'margin:6px 0 2px';
+  d.textContent = txt;
+  return d;
+}
+
 function pintarLista(){
+  const cont = $('listaCanc');
+  cont.innerHTML = '';
+  /* Las piezas de verdad NO se bloquean: son el modo suelto, como en Piano
+     Tiles. La historia es lo que se desbloquea, porque ahí sí hay un orden
+     que contar. */
+  cont.appendChild(rotulo('Piano · piezas de verdad'));
+  PIEZAS.forEach((c, i) => cont.appendChild(tarjetaCanc(c, i, false)));
+  cont.appendChild(rotulo('La historia de Mazi'));
+  CANCIONES.forEach((c, i) => cont.appendChild(tarjetaCanc(c, i, i > G.hasta)));
+}
+
+function pintarListaVieja(){
   const cont = $('listaCanc');
   cont.innerHTML = '';
   CANCIONES.forEach((c, i) => {
@@ -1629,8 +1783,7 @@ $('bSalir').onclick = () => {
 /* ── Botones del menú ───────────────────────────────────────────────────── */
 $('bJugar').onclick = () => {
   audioArranca();
-  if(G.hasta === 0 && !G.mejores['seis']) verHistoria(0, false);
-  else { pintarLista(); ver('pantLista'); }
+  pintarLista(); ver('pantLista');
 };
 $('bComo').onclick = () => ver('pantComo');
 $('bComoOk').onclick = () => ver('pantMenu');
@@ -1689,7 +1842,7 @@ requestAnimationFrame(cuadro);
    tocar en el instante exacto. Un juego de ritmo que sólo se prueba por
    fuera no está probado — lo único que importa es si el juicio cae donde
    debe, y eso sólo se ve tocando. */
-window.PALOMAZO = { J, G, CANCIONES, armarCancion, ver, lanzar, CATEGORIAS,
+window.PALOMAZO = { J, G, CANCIONES, PIEZAS, armarCancion, ver, lanzar, CATEGORIAS,
                     pasoAhora, tocar, soltar, terminar, A, pista, guardar };
 </script>
 </body>
