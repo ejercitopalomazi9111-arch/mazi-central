@@ -661,6 +661,29 @@
         "prueba-que-aprueba-por-accidente",
         "el-robot-mide-con-la-regla-chueca"
       ]
+    },
+    {
+      "id": "todas-las-pruebas-miden-el-mismo-sentido",
+      "titulo": "Las 57 pruebas pasaban y nada podía salir volando hacia arriba",
+      "gravedad": "alta",
+      "sintoma": "El pistón, el resorte y las explosiones empujaban y la cosa empujada BAJABA una celda. La suite entera en verde.",
+      "causa": "`saltos = Math.max(1, Math.floor(vy))` con vy negativa devuelve 1, y ese 1 se usaba para avanzar HACIA ABAJO. Nunca existió el caso de subir.",
+      "porque": "Todas las pruebas del motor nacieron probando gravedad: arena que cae, agua que baja, lava que escurre. Una suite escrita sobre un solo sentido no puede reprobar el otro — ni siquiera lo visita.",
+      "arreglo": "Rama aparte para vy<0 que sube celda por celda y pone vy=0 al topar techo. Y una prueba por cada sentido, no por cada pieza.",
+      "comoCazarlo": "Por cada eje del sistema, pregúntate cuál es el sentido CONTRARIO y busca la prueba que lo mide. Si no existe, el código de ese sentido nunca corrió.",
+      "consejo": "Verde no quiere decir correcto: quiere decir que lo que se midió salió bien. Cuenta qué NO se midió.",
+      "salioDe": "juegos/crisol/motor.js · 57 pruebas en verde con el vuelo muerto",
+      "senales": [
+        "pasa todo y el bug sigue",
+        "no sube",
+        "empuja y no se mueve",
+        "la prueba no cubre ese caso"
+      ],
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "prueba-de-un-solo-caso",
+        "medir-antes-de-suponer"
+      ]
     }
   ]
 }
