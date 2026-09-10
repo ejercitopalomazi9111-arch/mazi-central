@@ -66,6 +66,20 @@ export class Mundo {
        una explosión en una ONDA en vez de un parpadeo, y lo que permite una
        recámara, un cañón y una olla a presión. */
     this.pres = new Float32Array(n);
+    /* ── LA ONDA, QUE ES LO QUE FALTABA ────────────────────────────────
+       Carlos: «tus ondas expansivas se quedan donde fue la explosión, no se
+       expanden ni luchan con el entorno». Tenía razón y se mide: el radio
+       pasaba de 18.9 a 24.2 en cuarenta pasos mientras la presión total se
+       desplomaba de 76 244 a 12 530. Eso no es una onda, es una mancha que se
+       apaga en el sitio — porque el campo se estaba DIFUNDIENDO (como el
+       calor) y una difusión no viaja: se reparte.
+       Una onda necesita DOS campos, no uno: la presión y su ritmo de cambio.
+       Con ellos sale la ecuación de onda de verdad, y con ella salen solas
+       las cuatro cosas que pidió: el frente viaja, se debilita al repartirse
+       en un círculo cada vez más grande, REBOTA en lo rígido y se DIFRACTA
+       en las esquinas, y atraviesa una pared floja perdiendo fuerza mientras
+       parte se queda del otro lado. Ninguna está programada aparte. */
+    this.pv = new Float32Array(n);        /* ∂presión/∂tiempo */
     /* ── FASE por celda ────────────────────────────────────────────────
        0 sólido · 1 líquido · 2 gas.
        Los 118 de la tabla traen su punto de fusión y de ebullición REALES, y
@@ -88,6 +102,10 @@ export class Mundo {
        lo destapó de golpe. Se reservan una vez y se van turnando. */
     this._temp2 = new Float32Array(n);
     this._pres2 = new Float32Array(n);
+    this._trans = new Float32Array(n);
+    this._amort = new Float32Array(n);
+    /* la caja de dónde hay onda; vacía al revés quiere decir «silencio» */
+    this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
     this.temp.fill(AMBIENTE);
     this.paso_ = 0;
     this.azar = 123456789;
@@ -174,6 +192,7 @@ export class Mundo {
      onda expansiva, y de paso es la misma pieza con la que funciona un cañón:
      presión encerrada que encuentra por dónde salir. */
   revienta(x, y, fuerza){
+    this.despierta(x, y, Math.max(3, Math.round(fuerza * 1.4)) + 2);
     const r = Math.max(2, Math.round(fuerza * 1.4));
     for(let dy = -r; dy <= r; dy++){
       for(let dx = -r; dx <= r; dx++){
@@ -204,59 +223,263 @@ export class Mundo {
     }
   }
 
-  /* ── PRESIÓN ───────────────────────────────────────────────────────────
-     Un campo que se difunde y decae. Los sólidos la contienen —por eso una
-     recámara aguanta y un tubo abierto no—, y donde se acumula, empuja y
-     acaba rompiendo lo que no resiste. Con esto salen la onda expansiva, la
-     olla a presión, el cañón y el estallido de una tubería. */
+  /* ── PRESIÓN · ECUACIÓN DE ONDA ────────────────────────────────────────
+     ⚠ ESTO ERA UNA DIFUSIÓN DISFRAZADA DE ONDA Y CARLOS LO CAZÓ MIRANDO.
+     La versión anterior repartía la presión entre los vecinos y la multiplicaba
+     por 0.955 cada paso. Eso es exactamente lo que hace el calor, y el calor no
+     viaja: se reparte y se enfría donde está. Medido antes de tocar nada: el
+     radio de la onda pasaba de 18.9 a 24.2 celdas en cuarenta pasos —o sea
+     0.13 celdas por paso— mientras la presión total caía de 76 244 a 12 530.
+     Una explosión que se queda en su sitio y se desvanece.
+
+     Una onda es de segundo orden: no basta con saber cuánta presión hay, hace
+     falta saber a qué RITMO está cambiando. Con esos dos campos sale la
+     ecuación de onda —∂²p/∂t² = c²∇²p— y con ella salen solas, sin una línea
+     dedicada a cada una, las cuatro cosas que pidió Carlos:
+
+       · el frente VIAJA en vez de quedarse
+       · se DEBILITA al repartirse en una circunferencia cada vez mayor
+       · REBOTA en lo rígido y se DIFRACTA al doblar una esquina
+       · una pared floja la deja pasar DEBILITADA y refleja el resto: parte
+         se queda de este lado y parte sigue del otro con menos fuerza
+
+     El acoplamiento con cada vecino es lo que decide qué pasa en el borde: 0
+     es reflexión perfecta (el muro), 1 es paso libre (aire, líquido), y en
+     medio están los sólidos según su dureza. Es el coeficiente de transmisión
+     de toda la vida, sólo que aquí se lee como «qué tan buena pared eres».
+
+     Estabilidad: en dos dimensiones la condición es c²·dt²/dx² ≤ ½. Con 0.42
+     y dos sub-pasos por cuadro el frente avanza ~1.3 celdas por paso, que a
+     sesenta cuadros se ve como una onda y no como una animación. Pasarse de
+     ½ no da «más rápido»: da números que explotan a infinito en cuatro pasos. */
   presionPaso(){
+    /* Dos sub-pasos: el frente avanza ~1.4 celdas por paso, que a sesenta
+       cuadros son 84 celdas por segundo y se lee como una explosión. Con uno
+       solo va a la mitad y se ve como una animación lenta — y además el
+       desahogo del aire corre la mitad de veces, así que la sala tardaba 700
+       pasos en callarse en vez de 400. Se puede pagar: medido en una sala
+       normal de 320×480 con suelo, arena, agua y un circuito, el paso entero
+       cuesta 12.3 ms en reposo y 15.1 con una explosión encima — MENOS que los
+       13.7 y 16.4 de la difusión que había antes. */
+    this.ondaSubPaso();
+    this.ondaSubPaso();
+    this.presionRompe();
+  }
+
+  /* Marca que hay onda en esta zona, para que el sub-paso sepa dónde mirar.
+     Todo el que inyecte presión tiene que llamarlo, o su onda no se propaga. */
+  despierta(x, y, r){
+    const c = this._caja;
+    c.x0 = Math.min(c.x0, x - r); c.x1 = Math.max(c.x1, x + r);
+    c.y0 = Math.min(c.y0, y - r); c.y1 = Math.max(c.y1, y + r);
+  }
+
+  /* La forma SANCIONADA de meter presión. Escribir `pres[k]` a pelo también
+     funciona… hasta que se te olvida despertar la caja, y entonces la onda se
+     queda congelada sin un solo error: pico clavado en 300 durante trescientos
+     pasos. Me pasó al escribir la propia prueba de la onda, y las 70 del motor
+     pasaron igual porque las que reventaban de verdad sí despertaban. */
+  presiona(x, y, v){
+    if(!this.dentro(x, y)) return;
+    this.pres[this.i(x, y)] += v;
+    this.despierta(x, y, 1);
+  }
+
+  ondaSubPaso(){
+    /* Red de seguridad: cada tanto se rehace la caja mirando el mundo entero.
+       Cuesta un recorrido cada treinta pasos —repartido, nada— y convierte
+       «se me olvidó despertar» en medio segundo de retraso en vez de en una
+       onda muerta para siempre. Una caja es una optimización, y una
+       optimización que puede mentir tiene que poder corregirse sola. */
+    if((this.paso_ % 30) === 0) this.recajea();
+    const { an, al, t, pres, pv, fase } = this;
+    const caja = this._caja;
+    /* ⚠ SIN ESTA CAJA EL JUEGO NO CORRE EN UN TELÉFONO, y lo aprendí a
+       cachetadas: la onda pasó el coste de 11.9 a 126.7 ms por paso en la sala
+       de 153 600 celdas. La culpa no es de la ecuación, es de recorrerlo todo:
+       después de una explosión NINGUNA celda vale cero exacto, así que el salto
+       rápido no saltaba nunca y se calculaban 153 600 celdas por dos sub-pasos.
+       Una onda vive en un anillo, no en la sala. Se lleva la caja de dónde hay
+       algo y se recorre sólo eso, creciendo dos celdas por sub-paso —que es más
+       de lo que el frente puede avanzar, así que no se le escapa. */
+    if(caja.x1 < caja.x0) return;                    /* silencio absoluto: gratis */
+    let x0 = Math.max(0, caja.x0 - 2), x1 = Math.min(an - 1, caja.x1 + 2);
+    let y0 = Math.max(0, caja.y0 - 2), y1 = Math.min(al - 1, caja.y1 + 2);
+    const p0 = this._pres2;
+    /* sólo se copia la caja, no el mundo entero */
+    for(let y = y0; y <= y1; y++){
+      const f = y * an;
+      for(let x = x0; x <= x1; x++) p0[f + x] = pres[f + x];
+    }
+    /* transmisión por celda, calculada UNA vez y usada cinco: la miran sus
+       cuatro vecinas y ella misma */
+    const tr = this._trans, am = this._amort;
+    for(let y = y0; y <= y1; y++){
+      const f = y * an;
+      for(let x = x0; x <= x1; x++){
+        const k = f + x, e = EL[t[k]];
+        let v;
+        if(e.fijo) v = 0;
+        else {
+          const fa = fase[k];
+          const ev = fa === 1 ? 'liquido' : fa === 2 ? 'gas' : e.estado;
+          if(ev === 'solido') v = 0.05 + 0.45 * (1 - (e.dureza || 0));
+          else if(ev === 'polvo') v = 0.55;
+          else v = 1;
+        }
+        tr[k] = v;
+        /* la amortiguación también, en el mismo recorrido: una llamada por
+           celda por paso en 153 600 celdas se nota y no aporta nada */
+        am[k] = e.id === 'vacio' ? 0.99
+              : e.estado === 'gas' ? 0.99
+              : e.estado === 'liquido' ? 0.985
+              : e.estado === 'polvo' ? 0.93 : 0.90;
+      }
+    }
+    /* Estabilidad en dos dimensiones: c²·dt²/dx² ≤ ½. A 0.48 el frente avanza
+       ~0.7 celdas por paso, que a sesenta cuadros son 42 celdas por segundo y
+       se lee como una onda. Pasarse de ½ no da «más rápido»: da números que
+       llegan a infinito en cuatro pasos. */
+    const C2 = 0.48;
+    let nx0 = an, nx1 = -1, ny0 = al, ny1 = -1;
+    for(let y = y0; y <= y1; y++){
+      const f = y * an;
+      const arrF = y > 0 ? f - an : -1, abaF = y < al - 1 ? f + an : -1;
+      for(let x = x0; x <= x1; x++){
+        const k = f + x;
+        const tc = tr[k];
+        if(tc === 0){ pres[k] = 0; pv[k] = 0; continue; }   /* muro: reflector */
+        const pk = p0[k];
+        let lap = 0;
+        /* Bordes del mundo: absorben, no reflejan. Si el vecino cae fuera se
+           trata como presión cero, que es lo que hace que lo que se va no
+           vuelva. Un MURO sí refleja — para eso está. */
+        if(arrF < 0) lap -= pk; else { const c = tc < tr[arrF+x] ? tc : tr[arrF+x]; if(c) lap += (p0[arrF+x] - pk) * c; }
+        if(abaF < 0) lap -= pk; else { const c = tc < tr[abaF+x] ? tc : tr[abaF+x]; if(c) lap += (p0[abaF+x] - pk) * c; }
+        if(x === 0)      lap -= pk; else { const c = tc < tr[k-1] ? tc : tr[k-1]; if(c) lap += (p0[k-1] - pk) * c; }
+        if(x === an - 1) lap -= pk; else { const c = tc < tr[k+1] ? tc : tr[k+1]; if(c) lap += (p0[k+1] - pk) * c; }
+
+        let v = (pv[k] + C2 * lap) * am[k];
+        let p = pk + v;
+        const tk = t[k];
+        if(tk !== VACIO && EL[tk].estado === 'gas'){
+          const eq = this.temp[k] > AMBIENTE ? (this.temp[k] - AMBIENTE) * 0.03 : 0;
+          p += (eq - p) * 0.06;
+        }
+        /* El hueco es el desahogo: es aire abierto, no una cámara. Se desahoga
+           SÓLO cuando no está oscilando, así que el frente de la onda —que
+           lleva velocidad grande— lo cruza sin perder nada, y en cambio el
+           desnivel plano que queda después sí se drena. Sin esto la sala se
+           quedaba presurizada de por vida: a 900 pasos la energía seguía
+           clavada en 5.21e6 empujándolo todo. */
+        if(tk === VACIO && v > -0.5 && v < 0.5) p *= 0.95;
+        if(p > -0.04 && p < 0.04 && v > -0.04 && v < 0.04){ p = 0; v = 0; }
+        pv[k] = v; pres[k] = p;
+        if(p !== 0 || v !== 0){
+          if(x < nx0) nx0 = x; if(x > nx1) nx1 = x;
+          if(y < ny0) ny0 = y; if(y > ny1) ny1 = y;
+        }
+      }
+    }
+    caja.x0 = nx0; caja.x1 = nx1; caja.y0 = ny0; caja.y1 = ny1;
+  }
+
+  /* La presión a la que TIENDE un gas por estar caliente y encerrado. Ley de
+     los gases en su versión de píxeles: es de aquí de donde sale la fuerza que
+     empuja un proyectil por un cañón. */
+  presionDeGas(k){
+    return Math.max(0, this.temp[k] - AMBIENTE) * 0.03;
+  }
+
+  recajea(){
+    const { pres, pv, an } = this;
+    let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+    for(let k = 0; k < pres.length; k++){
+      if(pres[k] === 0 && pv[k] === 0) continue;
+      const x = k % an, y = (k / an) | 0;
+      if(x < x0) x0 = x; if(x > x1) x1 = x;
+      if(y < y0) y0 = y; if(y > y1) y1 = y;
+    }
+    this._caja = { x0, y0, x1, y1 };
+  }
+
+  /* Qué tan bien pasa la onda de un borde al otro. Es el coeficiente de
+     transmisión, y es TODO el comportamiento de bordes en un solo número.
+
+     ⚠ Y TIENE QUE SER SIMÉTRICO, que es donde me equivoqué y no se ve leyendo.
+     La primera versión miraba sólo al VECINO: la celda A usaba f(B) y la B
+     usaba f(A). Dos números distintos para el mismo borde — y un operador
+     asimétrico no conserva energía, la FABRICA. Se veía en la medición y en
+     ningún otro sitio: la onda decaía bien hasta el paso 20 y a partir del 40
+     la energía volvía a subir (4.20e6 → 6.90e6) con el pico estancado en 45
+     en vez de apagarse. Una explosión que en vez de morir se alimenta sola.
+     El mínimo de los dos lados es simétrico por construcción, y además es lo
+     físico: manda el peor conductor del par, igual que ya hacía el calor. */
+  acople(k, k2){
+    const a = this.transmite(k), b = this.transmite(k2);
+    return a < b ? a : b;
+  }
+
+  transmite(k){
+    const e = EL[this.t[k]];
+    if(e.fijo) return 0;                       /* muro: rebota entera */
+    const ev = this.estadoDe(k);
+    if(ev === 'solido'){
+      /* Una pared dura refleja casi todo; una floja deja pasar la mitad y se
+         queda con el resto. Eso es «un residuo se queda tras la pared y otro
+         atraviesa pero pierde fuerza», que es literalmente lo que pidió. */
+      return 0.05 + 0.45 * (1 - (e.dureza || 0));
+    }
+    if(ev === 'polvo') return 0.55;            /* la arena amortigua: por eso los sacos terreros */
+    return 1;
+  }
+
+  /* Cuánto se apaga la onda al viajar por cada medio. En el aire casi nada
+     —por eso se oye lejos—; en un sólido se come el golpe en dos celdas. */
+  amortigua(e){
+    if(e.id === 'vacio') return 0.995;
+    const ev = e.estado;
+    if(ev === 'gas') return 0.99;
+    if(ev === 'liquido') return 0.985;
+    if(ev === 'polvo') return 0.93;
+    return 0.90;
+  }
+
+  /* ── lo que la presión ROMPE ──────────────────────────────────────────
+     Aparte de la propagación, y a propósito: mezclarlo con el bucle de la onda
+     era lo que hacía que romper una pared dependiera del orden de recorrido.
+     Lo que rompe no es la presión en sí, es la DIFERENCIA a los dos lados de
+     la pared — que es lo que de verdad revienta un recipiente. */
+  presionRompe(){
     const { an, al, t, pres } = this;
-    const nuevo = this._pres2;
-    nuevo.fill(0);
     for(let y = 0; y < al; y++){
       for(let x = 0; x < an; x++){
         const k = y * an + x;
-        /* Salto rápido: sin presión aquí ni al lado, no hay nada que difundir.
-           La presión sólo existe en un puñado de celdas casi siempre. */
-        if(pres[k] === 0){
-          const ar = y > 0 ? pres[k-an] : 0, ab = y < al-1 ? pres[k+an] : 0;
-          const iz = x > 0 ? pres[k-1] : 0, de = x < an-1 ? pres[k+1] : 0;
-          if(ar === 0 && ab === 0 && iz === 0 && de === 0 &&
-             t[k] !== VACIO === false){ continue; }
-          if(ar === 0 && ab === 0 && iz === 0 && de === 0 && EL[t[k]].estado !== 'gas'){ continue; }
-        }
+        if(pres[k] < 40) continue;
         const e = EL[t[k]];
-        /* Un gas caliente y encerrado empuja: es la ley de los gases en su
-           versión de píxeles, y es de donde sale la fuerza de una pistola. */
-        let p = pres[k];
-        if(e.estado === 'gas' && t[k] !== VACIO){
-          p += Math.max(0, (this.temp[k] - AMBIENTE)) * 0.004;
-        }
-        if(e.id === 'muro'){ nuevo[k] = 0; continue; }
-        let suma = 0, n = 0;
+        if(e.fijo) continue;
         for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
-          const px = x+dx, py = y+dy;
-          if(px < 0 || py < 0 || px >= an || py >= al) continue;
-          const k2 = py * an + px;
+          if(!this.dentro(x+dx, y+dy)) continue;
+          const k2 = this.i(x+dx, y+dy);
           const v = EL[t[k2]];
-          /* la presión NO atraviesa sólidos: eso es lo que hace que un
-             recipiente sea un recipiente */
-          if(v.estado === 'solido'){
-            /* pero sí los EMPUJA, y si no aguantan, ceden */
-            if(pres[k] > 55 && this.rnd() < (pres[k] - 55) * .0012 * (1 - (v.dureza||0))){
-              this.cambia(k2, VACIO);
-              this.vx[k2] += dx * 2; this.vy[k2] += dy * 2;
-            }
-            continue;
-          }
-          suma += pres[k2] - pres[k]; n++;
+          if(v.fijo) continue;                 /* el muro no cede: para eso está */
+          if(this.estadoDe(k2) !== 'solido') continue;
+          const dif = pres[k] - pres[k2];
+          if(dif < 40) continue;
+          /* La dureza es la resistencia del material, y aquí es donde compite
+             de verdad con la presión de dentro: un recipiente de vidrio
+             revienta y uno de concreto aguanta el mismo golpe. */
+          const aguanta = 40 + (v.dureza || 0) * 420;
+          if(dif <= aguanta) continue;
+          if(this.rnd() > (dif - aguanta) * .004) continue;
+          /* no desaparece: SALE DESPEDIDA, que es lo que hace la metralla */
+          this.vx[k2] += dx * (dif - aguanta) * .05;
+          this.vy[k2] += dy * (dif - aguanta) * .05;
+          if(this.rnd() < .35) this.cambia(k2, VACIO);
+          pres[k] *= .6;
         }
-        p += suma * .24;
-        nuevo[k] = p * 0.955;               /* decae: si no, nunca se calma */
-        if(nuevo[k] < 0.02) nuevo[k] = 0;
       }
     }
-    this._pres2 = pres; this.pres = nuevo;
   }
 
   /* La presión empuja lo que se puede mover. Se llama por celda. */
@@ -359,6 +582,11 @@ export class Mundo {
       return;
     }
 
+    /* Un gas caliente es una FUENTE de presión, así que hay que visitarlo
+       aunque la onda no haya llegado nunca por aquí: si no, la caja no lo
+       alcanza y la recámara nunca sube de presión. */
+    if(e.estado === 'gas' && tipo !== VACIO && this.temp[k] > AMBIENTE + 40) this.despierta(x, y, 1);
+
     /* 3 · lo que arde, arde */
     if(e.arde && this.vecinoCaliente(x, y, e)){
       this.temp[k] += (e.calorArde || 500) * .12;
@@ -411,7 +639,7 @@ export class Mundo {
       const k2 = this.i(x, y-1);
       if(this.t[k2] !== VACIO && this.estadoDe(k2) !== 'solido'){
         this.vy[k2] -= e.piston;
-        this.pres[k2] += 18;
+        this.pres[k2] += 18; this.despierta(x, y - 1, 2);
       }
     }
     /* RESORTE: guarda el golpe que recibe y lo devuelve. `vida` es la
@@ -975,7 +1203,8 @@ export class Mundo {
   limpia(){
     this.t.fill(VACIO); this.temp.fill(AMBIENTE);
     this.vida.fill(0); this.car.fill(0);
-    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0);
+    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0); this.pv.fill(0);
+    this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
     this.fase.fill(0); this.color.fill(0);
   }
 }

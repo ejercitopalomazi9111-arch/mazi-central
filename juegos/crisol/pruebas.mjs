@@ -648,5 +648,125 @@ seccion('pirotecnia');
      '30 → ' + paso20 + ' (20 pasos) → ' + paso200 + ' (420 pasos)');
 }
 
+seccion('la onda expansiva VIAJA, rebota, se difracta y atraviesa');
+{
+  /* Carlos: «tus ondas expansivas se quedan donde fue la explosión, no se
+     expanden ni luchan con el entorno para crecer, ni se deforman al chocar
+     con una pared; que un residuo se quede tras la pared y otro atraviese
+     pero pierda fuerza». Esto mide las cuatro cosas por separado. */
+  const frente = (m, cx, cy) => {
+    let r = 0;
+    for(let y = 0; y < m.al; y++) for(let x = 0; x < m.an; x++)
+      if(Math.abs(m.pres[m.i(x,y)]) > 1) r = Math.max(r, Math.hypot(x-cx, y-cy));
+    return r;
+  };
+
+  /* 1 · VIAJA. Antes de la ecuación de onda esto daba 0.13 celdas por paso:
+     una mancha que se difundía y se apagaba en el sitio. */
+  const m = mundo(160, 160, 3);
+  for(let y = 78; y <= 82; y++) for(let x = 78; x <= 82; x++) m.presiona(x, y, 400);
+  corre(m, 10); const r10 = frente(m, 80, 80);
+  corre(m, 30); const r40 = frente(m, 80, 80);
+  const veloc = (r40 - r10) / 30;
+  ok('el frente AVANZA, y a velocidad de onda', veloc > 0.9,
+     veloc.toFixed(2) + ' celdas por paso (la difusión de antes daba 0.13)');
+
+  /* 2 · SE DEBILITA al repartirse en una circunferencia mayor, y la energía
+     nunca crece: si crece, el operador está fabricando energía y la sala
+     acaba temblando sola. Eso pasó de verdad, por un acople asimétrico. */
+  const energia = mm => { let e = 0; for(let k = 0; k < mm.pres.length; k++) e += mm.pres[k]*mm.pres[k]; return e; };
+  const e40 = energia(m); corre(m, 40); const e80 = energia(m);
+  ok('y se DEBILITA: la energía nunca crece', e80 < e40,
+     e40.toExponential(2) + ' → ' + e80.toExponential(2));
+
+  /* 3 · una pared DURA refleja y una FLOJA deja pasar debilitada. Es el mismo
+     código para las dos: sale del coeficiente de transmisión, no de un `if`. */
+  const cruza = (material) => {
+    const w = mundo(120, 60, 5);
+    if(material != null) for(let y = 0; y < 60; y++) w.pon(60, y, material);
+    for(let y = 28; y <= 32; y++) for(let x = 18; x <= 22; x++) w.presiona(x, y, 400);
+    let aca = 0, alla = 0;
+    for(let i = 0; i < 70; i++){
+      w.paso();
+      for(let y = 0; y < 60; y++){
+        for(let x = 40; x <= 58; x++) aca  = Math.max(aca,  Math.abs(w.pres[w.i(x,y)]));
+        for(let x = 62; x <= 80; x++) alla = Math.max(alla, Math.abs(w.pres[w.i(x,y)]));
+      }
+    }
+    return alla / aca;
+  };
+  const libre = cruza(null), pMuro = cruza(IDX.muro);
+  const pConc = cruza(IDX.concreto), pMad = cruza(IDX.madera);
+  ok('el MURO la refleja entera: no pasa nada', pMuro === 0, (pMuro*100).toFixed(0) + '%');
+  ok('una pared FLOJA la deja pasar debilitada', pMad > 0.2 && pMad < libre,
+     'madera ' + (pMad*100).toFixed(0) + '% · sin pared ' + (libre*100).toFixed(0) + '%');
+  ok('y una DURA deja pasar menos que una floja', pConc < pMad,
+     'concreto ' + (pConc*100).toFixed(0) + '% < madera ' + (pMad*100).toFixed(0) + '%');
+
+  /* 4 · DIFRACCIÓN: dobla la esquina de un hueco. La geometría dice cero. */
+  const d = mundo(120, 60, 5);
+  for(let y = 0; y < 60; y++) if(y < 27 || y > 33) d.pon(60, y, IDX.muro);
+  for(let y = 28; y <= 32; y++) for(let x = 18; x <= 22; x++) d.presiona(x, y, 400);
+  corre(d, 70);
+  let esquina = 0;
+  for(let y = 0; y < 12; y++) for(let x = 70; x <= 80; x++) esquina = Math.max(esquina, Math.abs(d.pres[d.i(x,y)]));
+  ok('y DOBLA LA ESQUINA de un hueco (difracción)', esquina > 1, 'pico ' + esquina.toFixed(1));
+}
+
+seccion('la onda se calma sola, y la sala no queda presurizada de por vida');
+{
+  /* Esto costó dos rondas. La primera versión amortiguaba la VELOCIDAD de la
+     onda y nunca la presión — y un desnivel uniforme tiene laplaciano cero, o
+     sea que no se mueve y no se amortigua: a 900 pasos la energía seguía
+     clavada en 5.21e6 con la sala entera empujándolo todo. */
+  const m = mundo(60, 60, 5);
+  for(let y = 30; y < 34; y++) for(let x = 28; x < 32; x++) m.pon(x, y, IDX.polvora);
+  m.pon(30, 29, IDX.fuego);
+  corre(m, 340);
+  let queda = 0;
+  for(let k = 0; k < m.pres.length; k++) if(Math.abs(m.pres[k]) > 2) queda++;
+  ok('a los 340 pasos ya no queda presión suelta', queda === 0, queda + ' celdas');
+  /* Y NO por haber apagado la física: una recámara sellada de gas caliente
+     SÍ conserva su presión mientras esté caliente. Si esto fallara, el
+     desahogo se estaría comiendo también lo que debe aguantar. */
+  const r = mundo(60, 60, 9);
+  crisol(r, 20, 20, 40, 40);
+  /* ⚠ CO₂ Y NO GAS NATURAL, y esto lo escribí mal a la primera: puse gasnat a
+     900° y a esa temperatura SE AUTOENCIENDE. Para el paso 5 no quedaba gas
+     —había fuego, que es «energía» y no ejerce presión de gas— y la prueba
+     acusaba al motor de no aguantar una recámara que yo mismo había quemado.
+     Es la misma familia que el aceite que se caía antes de tocar el fuego y el
+     vidrio medido mientras estaba fundido. */
+  for(let y = 21; y < 40; y++) for(let x = 21; x < 40; x++){ r.pon(x, y, IDX.co2); r.temp[r.i(x,y)] = 700; }
+  /* ⚠ Y SE MIDE EL PICO, NO UN PASO CUALQUIERA. La primera versión miraba el
+     paso 40 y para entonces el gas ya se había enfriado de 700° a 39° —el
+     calor se conduce por el muro—, así que leía 1.5 y acusaba al motor.
+     Lo que hay que comprobar es que MIENTRAS ESTÁ CALIENTE aguanta, y que la
+     presión sigue a la temperatura en vez de quedarse clavada. */
+  let pico = 0, fria = 0;
+  for(let i = 0; i < 80; i++){
+    r.paso();
+    let d = 0, n = 0;
+    for(let y = 25; y < 35; y++) for(let x = 25; x < 35; x++){ d += r.pres[r.i(x,y)]; n++; }
+    if(i < 30 && d/n > pico) pico = d/n;
+    if(i === 79) fria = d/n;
+  }
+  ok('pero una recámara CALIENTE Y SELLADA sí aguanta su presión', pico > 5,
+     'pico ' + pico.toFixed(1) + ' de presión media dentro');
+  ok('y al ENFRIARSE la suelta, que es la ley de los gases', fria < pico * 0.2,
+     'pico ' + pico.toFixed(1) + ' → fría ' + fria.toFixed(2));
+}
+
+seccion('el muro es lo único inamovible');
+{
+  const m = mundo(40, 40, 7);
+  m.pon(20, 20, IDX.muro);
+  m.revienta(20, 22, 20);      /* una tronada pegada al muro */
+  corre(m, 30);
+  ok('una explosión pegada NO borra el muro', m.t[m.i(20,20)] === IDX.muro);
+  ok('y el muro no acumula presión: la refleja', m.pres[m.i(20,20)] === 0,
+     m.pres[m.i(20,20)].toFixed(2));
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

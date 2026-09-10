@@ -31,7 +31,12 @@
 const JUEGO = {
   /* ── lo básico ────────────────────────────────────────────────────────── */
   vacio:   { nom:'Vacío',   col:'#0B0712', estado:'gas',    dens:0,    cond:.02, grupo:'básico' },
-  muro:    { nom:'Muro',    col:'#5A5468', estado:'solido', dens:999,  cond:.15, dureza:1, grupo:'básico' },
+  /* El muro es lo ÚNICO inamovible, y lo pidió Carlos por su nombre: «deja un
+     muro inamovible por si quiero hacer algo especial». Ahora que los sólidos
+     caen, hace falta algo que NO — o no habría suelo, ni recámara, ni cañón
+     que aguante el disparo. `fijo` es esa marca: no cae, no lo empuja la
+     presión, no lo rompe nada y refleja la onda entera. */
+  muro:    { nom:'Muro',    col:'#5A5468', estado:'solido', dens:999,  cond:.15, dureza:1, fijo:true, grupo:'básico' },
 
   /* ── tierra y piedra ──────────────────────────────────────────────────── */
   arena:   { nom:'Arena',   col:'#D9B168', estado:'polvo',  dens:16, cond:.12,
