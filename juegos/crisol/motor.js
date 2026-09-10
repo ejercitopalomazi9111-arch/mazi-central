@@ -3750,6 +3750,62 @@ export class Mundo {
     }
     return c;
   }
+  /* ── DESHACER Y GUARDAR ─────────────────────────────────────────────────
+     Carlos: «el botón de borrar no hace confirmación», «necesito un botón de
+     regresar» y «necesito guardados». Los tres se apoyan en lo mismo: poder
+     sacarle una foto a la habitación y volver a ponerla.
+
+     La foto lleva el TIPO de cada celda y su TEMPERATURA, que es lo que uno
+     construyó. Lo demás —velocidades, presiones, cargas— es el estado del
+     movimiento y se vuelve a formar solo en unos pasos; guardarlo cuadruplica
+     el tamaño para conservar algo que dura un parpadeo. En una sala de
+     320×480 una foto son 154 KB de tipos y 614 de temperatura: con eso caben
+     de sobra las seis que guarda el deshacer. */
+  instantanea(){
+    return { an: this.an, al: this.al, t: this.t.slice(), temp: this.temp.slice() };
+  }
+
+  restaura(f){
+    if(!f || f.an !== this.an || f.al !== this.al) return false;
+    this.t.set(f.t); this.temp.set(f.temp);
+    /* ⚠ y se limpia el movimiento, que NO va en la foto. Sin esto quedan
+       velocidades y presiones de un mundo que ya no existe empujando celdas
+       que no las ganaron: al deshacer, lo restaurado salía disparado. */
+    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0); this.pv.fill(0);
+    this.suelto.fill(0); this.fase.fill(0); this.car.fill(0);
+    this._caja = { x0: 0, y0: 0, x1: this.an - 1, y1: this.al - 1 };
+    return true;
+  }
+
+  /* La habitación en una cadena corta, para el localStorage del teléfono.
+     Se cuenta por rachas: una sala recién abierta son 150 mil celdas de aire
+     seguidas, o sea DOS números en vez de 150 mil. */
+  aTexto(){
+    const p = [];
+    let ini = this.t[0], n = 1;
+    for(let k = 1; k < this.t.length; k++){
+      if(this.t[k] === ini && n < 60000) n++;
+      else { p.push(ini + ':' + n); ini = this.t[k]; n = 1; }
+    }
+    p.push(ini + ':' + n);
+    return this.an + 'x' + this.al + '|' + p.join(',');
+  }
+
+  deTexto(txt){
+    if(typeof txt !== 'string') return false;
+    const [tam, cuerpo] = txt.split('|');
+    const [an, al] = tam.split('x').map(Number);
+    if(an !== this.an || al !== this.al) return false;
+    this.limpia();
+    let k = 0;
+    for(const tramo of cuerpo.split(',')){
+      const [tp, n] = tramo.split(':').map(Number);
+      for(let i = 0; i < n && k < this.t.length; i++, k++) this.t[k] = tp;
+    }
+    this._caja = { x0: 0, y0: 0, x1: this.an - 1, y1: this.al - 1 };
+    return true;
+  }
+
   limpia(){
     this.t.fill(VACIO); this.temp.fill(AMBIENTE);
     this.vida.fill(0); this.car.fill(0);

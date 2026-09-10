@@ -305,6 +305,47 @@ seccion('soldar estructuras y el interruptor de cuerpos rígidos');
   await pg.click('#bSolda'); await pg.waitForTimeout(80);
 }
 
+seccion('deshacer, guardar y no borrar sin querer');
+{
+  const piedras = () => pg.evaluate(() => { const M = window.CRISOL.mundo; let n = 0;
+    for(let k = 0; k < M.t.length; k++) if(M.t[k] === window.CRISOL.IDX.piedra) n++; return n; });
+
+  await pg.evaluate(() => {
+    const M = window.CRISOL.mundo;
+    M.limpia();
+    for(let y = 30; y < 36; y++) for(let x = 30; x < 44; x++) M.pon(x, y, window.CRISOL.IDX.piedra);
+    window.CRISOL.apunta();     /* la foto que saca la app antes de cada trazo */
+    for(let y = 30; y < 36; y++) for(let x = 30; x < 44; x++) M.pon(x, y, window.CRISOL.IDX.vacio);
+  });
+  ok('20 · borrar con la brocha se lleva las piedras', (await piedras()) === 0);
+  await pg.click('#bDeshace'); await pg.waitForTimeout(150);
+  ok('21 · y el botón de regresar las trae de vuelta', (await piedras()) > 60,
+     'volvieron ' + (await piedras()));
+
+  /* ⚠ EL BOTE DE BASURA PIDE CONFIRMACIÓN: un toque avisa, dos vacían. Es lo
+     que Carlos reportó, y es de las cosas que sólo se ven probándolas — el
+     botón existía y funcionaba, sólo que demasiado bien. */
+  await pg.click('#bBorra'); await pg.waitForTimeout(150);
+  ok('22 · un solo toque al bote NO vacía nada', (await piedras()) > 60,
+     'quedaron ' + (await piedras()));
+  await pg.click('#bBorra'); await pg.waitForTimeout(150);
+  ok('23 · y el segundo toque sí', (await piedras()) === 0);
+  await pg.click('#bDeshace'); await pg.waitForTimeout(150);
+  ok('24 · vaciar también se puede deshacer', (await piedras()) > 60);
+
+  /* guardados */
+  await pg.click('#bGuarda'); await pg.waitForTimeout(150);
+  ok('25 · el panel de salas guardadas abre', await pg.isVisible('#salas'));
+  await pg.click('#salasLista .gcampo:first-child button'); await pg.waitForTimeout(200);
+  await pg.evaluate(() => { window.CRISOL.mundo.limpia(); });
+  ok('26 · tras vaciar no queda nada', (await piedras()) === 0);
+  await pg.click('#salasLista .gcampo:first-child button:nth-child(3)'); await pg.waitForTimeout(250);
+  ok('27 · y cargar la ranura devuelve la sala', (await piedras()) > 60,
+     'volvieron ' + (await piedras()));
+  ok('28 · y el guardado sobrevive en el teléfono',
+     (await pg.evaluate(() => !!(JSON.parse(localStorage.getItem('crisol.v1') || '{}').salas || {})['1'])));
+}
+
 seccion('sin errores al final');
 ok('ni un error de consola en toda la sesión', errores.length === 0, errores.slice(0,3).join(' | '));
 
