@@ -294,6 +294,28 @@
         "bandera-global-primera-vez",
         "una-bandera-con-dos-significados"
       ]
+    },
+    {
+      "id": "la-marca-no-viaja-con-la-particula",
+      "titulo": "El campo iba en la CELDA y no en lo que se mueve",
+      "gravedad": "alta",
+      "sintoma": "Una piedra soltada por una explosión caía UNA celda y se volvía a anclar sola. Un objeto arrastrado se paraba en seco.",
+      "causa": "`intercambia` movía tipo, temperatura, velocidad y fase, pero no la marca de «suelto» ni la gravedad propia. Se quedaban en la celda de origen.",
+      "porque": "En una rejilla es fácil confundir la CASILLA con la COSA. Todo lo que describe al objeto tiene que viajar con él; sólo lo que describe al sitio se queda.",
+      "arreglo": "Cada campo nuevo se pregunta: ¿esto es del sitio o de la cosa? Si es de la cosa, se intercambia también.",
+      "comoCazarlo": "Mueve el objeto UNA celda y vuelve a leer el campo. Si se perdió, iba en la casilla.",
+      "consejo": "Este error ya estaba anotado para la velocidad, con su comentario y todo, y lo volví a cometer dos veces con los campos de al lado. Un aviso escrito no protege al campo siguiente.",
+      "salioDe": "juegos/crisol/motor.js · `suelto` y `gmul` en intercambia()",
+      "senales": [
+        "se para solo",
+        "se re-ancla",
+        "cae una celda y ya",
+        "pierde la marca"
+      ],
+      "vecinas": [
+        "una-bandera-con-dos-significados",
+        "corriente-que-se-alimenta-de-si-misma"
+      ]
     }
   ]
 }

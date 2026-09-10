@@ -783,6 +783,28 @@
         "sintoma-contra-causa",
         "una-bandera-con-dos-significados"
       ]
+    },
+    {
+      "id": "una-pieza-que-se-lee-a-si-misma",
+      "titulo": "La compuerta contaba su propia salida como entrada",
+      "gravedad": "alta",
+      "sintoma": "La Y se encendía con UNA señal y ya no se apagaba; la NO parpadeaba sin parar.",
+      "causa": "Contaba como entrada a cualquier vecino con carga, incluido el cable de salida que ella misma había encendido el paso anterior.",
+      "porque": "En una rejilla, «vecino» no distingue de dónde VIENE la señal. Sin esa dirección, cualquier pieza con realimentación se lee a sí misma y se convierte en un oscilador.",
+      "arreglo": "Apuntar de quién viene cada celda encendida (`padre`) y contar como entrada sólo lo que no salió de esta pieza. Y repartir en dos fases: primero las fuentes de verdad, después las piezas, para que ninguna se adueñe de su propia entrada.",
+      "comoCazarlo": "Prueba la tabla de verdad ENTERA y comprueba que sea ESTABLE. Una compuerta que acierta la mitad de los pasos está rota y en el último paso se ve perfecta.",
+      "consejo": "Toda pieza con realimentación necesita saber por dónde entra la señal. Si no lo sabe, no está mal calibrada: está mal planteada.",
+      "salioDe": "juegos/crisol · Carlos: «todos tus módulos de lógica son una mierda»",
+      "senales": [
+        "parpadea",
+        "se queda encendido",
+        "con una señal ya funciona",
+        "la compuerta no sirve"
+      ],
+      "vecinas": [
+        "corriente-que-se-alimenta-de-si-misma",
+        "el-orden-del-paso-decide-que-reglas-existen"
+      ]
     }
   ]
 }

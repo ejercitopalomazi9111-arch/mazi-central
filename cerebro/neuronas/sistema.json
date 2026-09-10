@@ -172,6 +172,28 @@
         "otra vez la misma propuesta"
       ],
       "salioDe": "La sección «decidido y cerrado» del sitio del Instituto, escrita justo por esto."
+    },
+    {
+      "id": "lista-a-mano-que-se-rompe-con-el-segundo-caso",
+      "titulo": "«Lo que no se corroe» era una lista de dos nombres",
+      "gravedad": "media",
+      "sintoma": "Al meter un segundo ácido, el nuevo se corroía A SÍ MISMO y desaparecía en tres pasos. La reacción funcionaba y el producto no se veía nunca.",
+      "causa": "La excepción estaba escrita por nombre —«acido» y «muro»— en vez de por PROPIEDAD.",
+      "porque": "Con un solo caso, una lista de nombres y una regla se comportan igual, así que la lista parece suficiente. Se rompe silenciosamente el día que entra el segundo.",
+      "arreglo": "Escribir la excepción por lo que la causa: no se corroe lo inamovible ni lo que también corroe.",
+      "comoCazarlo": "Cada vez que añadas un elemento de una familia, busca las listas por nombre de esa familia. Si existe una, ya está rota.",
+      "consejo": "Una excepción por nombre es una regla a la que le falta el porqué.",
+      "salioDe": "juegos/crisol/motor.js · corroe() al añadir el hidronio",
+      "senales": [
+        "se destruye solo",
+        "el nuevo elemento no funciona",
+        "desaparece",
+        "sólo pasa con el nuevo"
+      ],
+      "vecinas": [
+        "decidido-y-vuelto-a-proponer",
+        "nombres-que-dicen-como-se-ve"
+      ]
     }
   ]
 }

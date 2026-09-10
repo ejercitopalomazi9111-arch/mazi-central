@@ -1327,5 +1327,56 @@ seccion('el globo vuela, y sólo con lo que debe');
   ok('y lleno de CO₂ tampoco', co2.techo >= 60, 'y=' + co2.techo);
 }
 
+seccion('química que necesita chispa · H₂ + O₂ → agua');
+{
+  /* Carlos: «coloqué hidrógeno y oxígeno pero no sé cómo volverlo agua». Y
+     tenía razón: la reacción estaba escrita desde el principio en
+     probabilidad CERO con un comentario que decía «sólo con chispa». Esa
+     chispa nunca se implementó — una regla que no podía dispararse nunca,
+     con una nota explicando por qué. Un TODO disfrazado de código. */
+  const mezcla = (chispa) => {
+    const m = mundo(40, 40, 3);
+    repisa(m, 39);
+    for(let y = 20; y < 30; y++) for(let x = 10; x < 20; x++) m.pon(x, y, IDX.hidrogeno);
+    for(let y = 20; y < 30; y++) for(let x = 20; x < 30; x++) m.pon(x, y, IDX.oxigeno);
+    if(chispa) m.pon(20, 25, IDX.chispa);
+    corre(m, 200);
+    let agua = 0, h = 0;
+    for(let k = 0; k < m.t.length; k++){
+      if(m.t[k] === IDX.agua || m.t[k] === IDX.vapor) agua++;
+      if(m.t[k] === IDX.hidrogeno) h++;
+    }
+    return { agua, h };
+  };
+  const sin = mezcla(false), con = mezcla(true);
+  ok('hidrógeno y oxígeno juntos NO reaccionan solos', sin.agua === 0 && sin.h > 0,
+     'agua ' + sin.agua + ' · queda hidrógeno ' + sin.h);
+  ok('pero con una CHISPA se vuelven agua', con.agua > 0 && con.h === 0,
+     'agua/vapor ' + con.agua + ' · queda hidrógeno ' + con.h);
+
+  /* el hidronio, H₃O⁺ */
+  const m = mundo(30, 30, 3);
+  repisa(m, 29);
+  for(let y = 20; y < 28; y++) for(let x = 5; x < 15; x++) m.pon(x, y, IDX.agua);
+  for(let y = 20; y < 28; y++) for(let x = 15; x < 25; x++) m.pon(x, y, IDX.acido);
+  corre(m, 150);
+  let hd = 0;
+  for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.hidronio) hd++;
+  /* ⚠ esto daba CERO y la reacción estaba bien: la lista de lo que un ácido
+     NO corroe estaba escrita a mano —«acido» y «muro»— así que en cuanto entró
+     un segundo corrosivo, el hidronio se corroía A SÍ MISMO y se gastaba en
+     tres pasos. El producto existía y desaparecía antes de poder verse. */
+  ok('agua + ácido da HIDRONIO, y no se come a sí mismo', hd > 10, hd + ' celdas');
+  /* y el ácido sigue haciendo su trabajo con lo que no reacciona */
+  const a = mundo(30, 30, 3);
+  repisa(a, 29);
+  for(let y = 20; y < 28; y++) for(let x = 5; x < 25; x++) a.pon(x, y, IDX.piedra);
+  for(let x = 6; x < 24; x++) a.pon(x, 19, IDX.acido);
+  let p0 = 0; for(let k = 0; k < a.t.length; k++) if(a.t[k] === IDX.piedra) p0++;
+  corre(a, 300);
+  let p1 = 0; for(let k = 0; k < a.t.length; k++) if(a.t[k] === IDX.piedra) p1++;
+  ok('y el ácido sigue comiéndose la piedra', p1 < p0, p0 + ' → ' + p1);
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

@@ -279,6 +279,10 @@ const JUEGO = {
              ayuda:'Enciende cuando las dos entradas están IGUALES' },
 
   /* ── química agresiva ─────────────────────────────────────────────────── */
+  /* H₃O⁺ · el ion hidronio. Corrosivo y de vida corta: se recombina. */
+  hidronio:{ nom:'Hidronio H₃O⁺', col:'#B6FF6E', estado:'liquido', dens:10.4, cond:.5,
+             corroe:.16, vida:420, muere:'agua', dureza:0, grupo:'química',
+             ayuda:'El ion que hace ácido a un ácido. Corroe, y con el tiempo vuelve a ser agua' },
   acido:   { nom:'Ácido',   col:'#8FE03D', estado:'liquido', dens:11, cond:.4,
              corroe:.35, grupo:'química' },
   uranio:  { nom:'Uranio',  col:'#5FE04A', estado:'polvo',  dens:38, cond:.4,
@@ -441,7 +445,14 @@ export const TABLA = {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    REACCIONES · qué pasa cuando dos cosas se tocan
-   [A, B, → A pasa a ser, → B pasa a ser, probabilidad, calor que suelta]
+   [A, B, → A pasa a ser, → B pasa a ser, probabilidad, calor que suelta, ENCIENDE]
+
+   El séptimo campo es la temperatura MÍNIMA para que la reacción ocurra, y
+   nació de un reporte de Carlos: «coloqué hidrógeno y oxígeno pero no sé cómo
+   volverlo agua». Y tenía razón — la reacción existía desde el principio con
+   probabilidad CERO y un comentario que decía «sólo con chispa». Esa chispa
+   nunca se implementó: era una regla que no podía dispararse nunca, con una
+   nota explicando por qué. Un `TODO` disfrazado de código.
    `null` quiere decir «se queda igual». Están en una tabla y no en `if`s por
    la misma razón que los elementos: para que crezcan sin tocar el motor.
    ═════════════════════════════════════════════════════════════════════════ */
@@ -464,7 +475,14 @@ export const REACCIONES = [
   ['fuego', 'oxigeno','fuego',   'fuego',   .8,   200],
   ['fuego', 'planta', 'fuego',   'fuego',   .35,  500],
   ['fuego', 'semilla','fuego',   'ceniza',  .4,   400],
-  ['hidrogeno','oxigeno','agua', 'vacio',   .0,   0],   /* sólo con chispa */
+  /* La de verdad: 2H₂ + O₂ → 2H₂O. Necesita chispa —500°— y suelta MUCHO
+     calor, que es lo que la vuelve peligrosa y lo que hace que se propague
+     sola en cuanto empieza. */
+  ['hidrogeno','oxigeno','agua',    'vapor',  .85,  2200, 500],
+  /* Hidronio, H₃O⁺: el ion que hace que un ácido sea ácido. Sale de meterle
+     un protón al agua, y aquí eso es agua + ácido. Corroe. */
+  ['agua',     'acido',  'hidronio','acido',  .12,  30],
+  ['hidronio', 'agua',   'hidronio','hidronio',.05, 10],
   ['vapor', 'hielo',  'agua',    'agua',    .3,   0],
   ['uranio','agua',   'uranio',  'vapor',   .12,  260],
   ['termita','oxigeno','fuego',  'fuego',   .5,   2600],
@@ -530,7 +548,7 @@ const ICONOS = {
   reloj:'⏳', valvula:'🚰', repetidor:'📶', observador:'👁', piston:'🔨', resorte:'🌀', pila:'🔋',
   estRoja:'🎆', estVerde:'🎆', estAzul:'🎆', estOro:'🎆', mecha:'🧵', chispa:'✨',
   gAND:'🔀', gOR:'🔀', gNOT:'🔁', diodo:'➡️', nand:'🔀', nor:'🔀', xor:'⊕', xnor:'⊜',
-  acido:'🧪', uranio:'☢️', planta:'🌱', semilla:'🌰',
+  acido:'🧪', hidronio:'⚗️', uranio:'☢️', planta:'🌱', semilla:'🌰',
 };
 const ICONO_FAMILIA = {
   '⚛ no metal':'🔬', '⚛ noble':'🎈', '⚛ alcalino':'⚡', '⚛ alcalinotérreo':'🧱',

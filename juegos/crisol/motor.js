@@ -26,11 +26,17 @@ export const VACIO = IDX.vacio;
    arrastrarse. */
 const TABLA = new Map();
 const clave = (a, b) => a * 512 + b;
-for(const [a, b, ra, rb, prob, calor] of REACCIONES){
+for(const [a, b, ra, rb, prob, calor, enciende] of REACCIONES){
   if(prob <= 0) continue;
   const A = IDX[a], B = IDX[b];
-  TABLA.set(clave(A, B), { a: ra === null ? A : IDX[ra], b: rb === null ? B : IDX[rb], p: prob, q: calor || 0 });
-  TABLA.set(clave(B, A), { a: rb === null ? B : IDX[rb], b: ra === null ? A : IDX[ra], p: prob, q: calor || 0 });
+  /* `enciende` es la temperatura mínima. Nació de un reporte de Carlos:
+     «coloqué hidrógeno y oxígeno pero no sé cómo volverlo agua» — y la
+     reacción llevaba desde el principio en probabilidad CERO con un comentario
+     que decía «sólo con chispa». Esa chispa nunca se implementó: una regla que
+     no podía dispararse nunca, con una nota explicando por qué. */
+  const t = enciende == null ? -1e9 : enciende;
+  TABLA.set(clave(A, B), { a: ra === null ? A : IDX[ra], b: rb === null ? B : IDX[rb], p: prob, q: calor || 0, t });
+  TABLA.set(clave(B, A), { a: rb === null ? B : IDX[rb], b: ra === null ? A : IDX[ra], p: prob, q: calor || 0, t });
 }
 
 export const AMBIENTE = 22;
@@ -1632,6 +1638,9 @@ export class Mundo {
       const k2 = this.i(x+dx, y+dy);
       const r = TABLA.get(clave(tipo, this.t[k2]));
       if(!r) continue;
+      /* hay reacciones que necesitan una CHISPA: no pasan solas por estar
+         juntas, hace falta que alguien las encienda */
+      if(r.t > -1e8 && this.temp[k] < r.t && this.temp[k2] < r.t) continue;
       if(this.rnd() > r.p) continue;
       const antesA = this.t[k], antesB = this.t[k2];
       this.t[k] = r.a; this.vida[k] = 0;
@@ -1648,7 +1657,17 @@ export class Mundo {
       if(!this.dentro(x+dx, y+dy)) continue;
       const k2 = this.i(x+dx, y+dy);
       const v = EL[this.t[k2]];
-      if(this.t[k2] === VACIO || v.id === 'acido' || v.id === 'muro') continue;
+      /* ⚠ LA LISTA ESTABA ESCRITA A MANO —«acido» y «muro»— y en cuanto entró
+         un segundo corrosivo se rompió sola: el hidronio se corroía A SÍ MISMO
+         y se gastaba en tres pasos, así que la reacción funcionaba y el
+         producto desaparecía antes de poder verlo. Lo que no se corroe no es
+         una lista de nombres: es lo inamovible y lo que también corroe. */
+      if(this.t[k2] === VACIO || v.corroe || v.fijo) continue;
+      /* ⚠ Si para este par HAY una reacción escrita, manda la reacción y no la
+         corrosión. Sin esto el ácido se comía el agua antes de que pudiera
+         reaccionar con ella, y el hidronio no se formaba nunca: la regla
+         existía y otra la pisaba. Dos mecanismos peleando por el mismo par. */
+      if(TABLA.has(clave(this.t[k], this.t[k2]))) continue;
       if(this.rnd() < e.corroe * (1 - (v.dureza || 0))){
         this.cambia(k2, this.rnd() < .3 ? IDX.humo : VACIO);
         if(this.rnd() < .18) this.cambia(k, VACIO);   /* el ácido se gasta */
