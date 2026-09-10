@@ -376,6 +376,28 @@ CSS += r"""
   font:400 clamp(22px,3.4vw,44px)/1 var(--display);letter-spacing:-.05em;
   color:rgba(255,255,255,.09);text-transform:uppercase;pointer-events:none;
   padding:0 14px;text-align:center}
+/* La tarjeta SIN foto real. No es un estado de error: es la mitad del catalogo
+   —lineas que la tienda si vende y de las que no tenemos una imagen suya— y
+   tiene que verse tan a proposito como las otras. Se dibuja con lo que ya es
+   de la casa: la cuna diagonal y la trama de rayas del pie. Tres variantes por
+   posicion, para que ocho tarjetas seguidas no sean la misma lamina. */
+.g-cat.sin-foto{background:
+  repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 2px,transparent 2px 9px),
+  linear-gradient(148deg,#141416 0%,#141416 54%,var(--rojo) 54%,#7E0E17 100%),
+  var(--panel)}
+.g-cat.sin-foto.t1{background:
+  repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 2px,transparent 2px 9px),
+  linear-gradient(32deg,#141416 0%,#141416 62%,var(--rojo) 62%,#7E0E17 100%),
+  var(--panel)}
+.g-cat.sin-foto.t2{background:
+  repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 2px,transparent 2px 9px),
+  linear-gradient(205deg,#141416 0%,#141416 46%,#22222A 46%,#0C0C0E 100%),
+  var(--panel)}
+/* sobre la trama el rotulo si se lee, asi que sube de tinta y baja de peso */
+.g-cat.sin-foto .rotulo{color:rgba(255,255,255,.16)}
+/* y el velo negro de las fotos aqui taparia la trama: se aclara */
+.g-cat.sin-foto .velo{background:linear-gradient(180deg,rgba(8,8,10,0) 0%,
+  rgba(8,8,10,.35) 55%,rgba(8,8,10,.86) 100%)}
 
 /* ══ G · PUERTAS · la ficha se abre como una compuerta de nave ══ */
 .g-ficha{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
@@ -401,8 +423,12 @@ CSS += r"""
 .g-hoja{flex:0 0 auto;height:100%;display:grid;place-items:center}
 .g-hoja img{width:100%;height:100%;object-fit:contain;pointer-events:none;
   -webkit-user-drag:none;user-select:none}
-.g-cuenta{position:absolute;right:10px;bottom:10px;background:rgba(8,8,10,.74);
-  border:1px solid var(--linea);color:var(--gris);padding:5px 9px;
+/* Abajo a la derecha caia justo encima del sello VINTAGE COLLECTION que traen
+   impresas casi todas las fotos de Hasbro, y el contador no se leia. Arriba a
+   la izquierda esa esquina siempre esta limpia. Fondo opaco, no translucido:
+   sobre foto clara el .74 dejaba pasar el fondo. */
+.g-cuenta{position:absolute;left:10px;top:10px;background:#0A0A0C;
+  border:1px solid var(--linea);color:var(--hueso);padding:5px 9px;
   font:700 10px/1 var(--dato);letter-spacing:.12em;pointer-events:none}
 .g-tiras{display:flex;gap:7px;flex-wrap:wrap}
 .g-tiras button{width:54px;height:54px;padding:0;background:#141416;cursor:pointer;
@@ -748,6 +774,31 @@ except Exception:
 PAYPAL_ID = ''
 MONEDA = 'MXN'
 
+# ══ LOS BANNERS DE CATEGORIA, COMPROBADOS AQUI Y NO EN LA COMPUERTA ═══════
+# Que se rompio: el raspador, cuando no sabia que imagen dar a una categoria,
+# servia el LOGO de la tienda. Salieron 32 archivos con nombres distintos
+# —hasbro-0.webp, gi-joe-0.webp…— y los MISMOS BYTES, asi que las 16 tarjetas
+# ensenaron el mismo logo ampliado y nadie lo vio hasta mirar la pantalla.
+#
+# Por que se comprueba aqui y no en revisar.mjs: la compuerta mide el DOM, y en
+# el DOM son 16 rutas DISTINTAS. La igualdad esta en los bytes, y los bytes
+# solo se tienen aqui. Una comprobacion en el sitio equivocado no es media
+# comprobacion: es cero, con la confianza de una.
+def _comprobar_banners(cats, fotos_dir):
+    import hashlib, collections
+    de_quien = collections.defaultdict(list)
+    for slug, info in cats.items():
+        for f in (info.get('fotos') or [])[:3]:
+            ruta = fotos_dir / f
+            if not ruta.exists():
+                raise SystemExit(f'banner que no existe: {f} (categoria {slug})')
+            de_quien[hashlib.md5(ruta.read_bytes()).hexdigest()].append(f'{slug}:{f}')
+    repetidos = {d: v for d, v in de_quien.items() if len(v) > 2}
+    if repetidos:
+        detalle = ' · '.join(', '.join(v) for v in repetidos.values())
+        raise SystemExit('la misma imagen de banner en mas de dos categorias: ' + detalle)
+    return len(de_quien)
+
 def g_menu():
     """El menu de su web, con la jerarquia real."""
     marcas = ''
@@ -768,15 +819,21 @@ def g_menu():
 
 def g_categorias():
     """La rejilla que sustituye a la lista de 47 filas."""
+    _comprobar_banners(CATFOTOS, RAIZ / "fotos")
     fichas = []
     for nom, slug, subs in MENU:
         info = CATFOTOS.get(slug, {})
         fotos = info.get('fotos') or []
         n = info.get('productos')
         # los banners que se cruzan solos; si no hay fotos, manda el rotulo
-        caps = ''.join(f'<span data-b="fotos/cat/{f}"></span>' for f in fotos[:3])
+        caps = ''.join(f'<span data-b="fotos/{f}"></span>' for f in fotos[:3])
         sub = ' · '.join(t for t, _ in subs) if subs else 'Ver la categoría'
         ancha = ' ancha' if slug == 'hasbro' else ''
+        # Sin foto REAL no se inventa una: se dibuja con la trama de la casa.
+        # Antes se colaba aqui el logo de la tienda que el raspador servia
+        # cuando no sabia que dar, y 16 tarjetas ensenaban el mismo logo
+        # ampliado. Un hueco honesto se ve mejor que una imagen equivocada.
+        if not fotos: ancha += f' sin-foto t{len(fichas) % 3}'
         fichas.append(
             f'<a class="g-cat{ancha}" href="{TIENDA}?product_cat={slug}" target="_blank" '
             f'rel="noopener" data-cat="{slug}">'
