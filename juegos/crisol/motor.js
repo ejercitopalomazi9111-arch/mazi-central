@@ -66,6 +66,16 @@ export class Mundo {
        una explosión en una ONDA en vez de un parpadeo, y lo que permite una
        recámara, un cañón y una olla a presión. */
     this.pres = new Float32Array(n);
+    /* ── FASE por celda ────────────────────────────────────────────────
+       0 sólido · 1 líquido · 2 gas.
+       Los 118 de la tabla traen su punto de fusión y de ebullición REALES, y
+       hacía falta que sirvieran de algo. La salida fácil era inventar un
+       «hierro fundido», un «oro fundido» y 116 más — o sea duplicar la tabla
+       para no tocar el motor. Con una fase por celda, CUALQUIER elemento se
+       funde y hierve a su temperatura sin un solo elemento nuevo: el hierro a
+       1538, el oro a 1064, el mercurio ya nace líquido a temperatura
+       ambiente. Un campo contra ciento dieciocho. */
+    this.fase = new Uint8Array(n);
     this.temp.fill(AMBIENTE);
     this.paso_ = 0;
     this.azar = 123456789;
@@ -83,6 +93,15 @@ export class Mundo {
   }
   semilla(s){ this.azar = s | 0 || 123456789; }
 
+  /* El estado que de verdad tiene una celda: el de su elemento, salvo que la
+     temperatura la haya fundido o hervido. Todo el motor pregunta por aquí. */
+  estadoDe(k){
+    const f = this.fase[k];
+    if(f === 1) return 'liquido';
+    if(f === 2) return 'gas';
+    return EL[this.t[k]].estado;
+  }
+
   i(x, y){ return y * this.an + x; }
   dentro(x, y){ return x >= 0 && y >= 0 && x < this.an && y < this.al; }
   get(x, y){ return this.dentro(x, y) ? this.t[y * this.an + x] : IDX.muro; }
@@ -94,6 +113,7 @@ export class Mundo {
     this.vida[k] = 0;
     this.car[k] = 0;
     this.vy[k] = 0; this.vx[k] = 0;
+    this.fase[k] = 0;
     const e = EL[tipo];
     if(temp != null) this.temp[k] = temp;
     else if(e.nace != null) this.temp[k] = e.nace;
@@ -120,6 +140,7 @@ export class Mundo {
     /* ⚠ la velocidad VIAJA con la partícula. Si se queda en la celda, una
        partícula que cae le hereda su impulso a la que se queda atrás y el
        montón se pone a temblar solo. */
+    const fv = this.fase[k1]; this.fase[k1] = this.fase[k2]; this.fase[k2] = fv;
     const yv = this.vy[k1]; this.vy[k1] = this.vy[k2]; this.vy[k2] = yv;
     const xv = this.vx[k1]; this.vx[k1] = this.vx[k2]; this.vx[k2] = xv;
     this.mov[k1] = 1; this.mov[k2] = 1;
@@ -278,6 +299,16 @@ export class Mundo {
 
     /* 2 · cambios de estado por temperatura */
     const T = this.temp[k];
+    /* Fusión y ebullición REALES, por fase y sin elementos nuevos. */
+    if(e.fusReal != null){
+      const antes = this.fase[k];
+      if(e.ebuReal != null && T >= e.ebuReal) this.fase[k] = 2;
+      else if(T >= e.fusReal) this.fase[k] = 1;
+      else this.fase[k] = 0;
+      if(this.fase[k] !== antes && this.fase[k] > 0) this.nace(this.t[k]);
+    } else if(e.ebuReal != null){
+      this.fase[k] = T >= e.ebuReal ? 2 : 0;
+    }
     if(e.fus && T >= e.fus[0]){ this.cambia(k, IDX[e.fus[1]], true); return; }
     if(e.ebu && T >= e.ebu[0]){ this.cambia(k, IDX[e.ebu[1]], true); return; }
     if(e.congela && T <= e.congela[0]){ this.cambia(k, IDX[e.congela[1]], true); return; }
@@ -425,7 +456,7 @@ export class Mundo {
      bloque se desmoronaba; ahora todas llevan la misma velocidad, caen
      juntas y aceleran. */
   mueve(x, y, k, e){
-    const est = e.estado;
+    const est = this.estadoDe(k);
     if(est === 'solido'){ this.vy[k] = 0; this.vx[k] = 0; return; }
 
     if(est === 'gas' || est === 'energia'){
@@ -509,10 +540,12 @@ export class Mundo {
   /* ¿Desde aquí se puede descender? Es lo que separa fluir de agitarse. */
   puedeBajar(x, y, e){
     if(!this.dentro(x, y + 1)) return false;
-    const d = this.t[this.i(x, y + 1)];
+    const k2 = this.i(x, y + 1);
+    const d = this.t[k2];
     if(d === VACIO) return true;
     const v = EL[d];
-    if(v.estado === 'solido' || v.estado === 'polvo') return false;
+    const ev = this.estadoDe(k2);
+    if(ev === 'solido' || ev === 'polvo') return false;
     return (v.dens || 0) < (e.dens || 0);
   }
 
@@ -547,7 +580,8 @@ export class Mundo {
        deja de moverse sin motivo. Manzanas con naranjas. */
     if(dest === VACIO){ this.intercambia(k, k2); return true; }
     const v = EL[dest];
-    if(v.estado === 'solido' || v.estado === 'polvo') return false;
+    const ev = this.estadoDe(k2);
+    if(ev === 'solido' || ev === 'polvo') return false;
     if((v.dens || 0) < (e.dens || 0)){ this.intercambia(k, k2); return true; }
     return false;
   }
@@ -729,6 +763,6 @@ export class Mundo {
   limpia(){
     this.t.fill(VACIO); this.temp.fill(AMBIENTE);
     this.vida.fill(0); this.car.fill(0);
-    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0);
+    this.vy.fill(0); this.vx.fill(0); this.pres.fill(0); this.fase.fill(0);
   }
 }

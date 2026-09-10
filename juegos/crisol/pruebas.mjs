@@ -443,5 +443,87 @@ seccion('magnetismo');
      'x medio ' + a0.toFixed(1) + ' → ' + a1.toFixed(1));
 }
 
+seccion('los 118 de la tabla periódica');
+{
+  const { TABLA } = await import('./elementos.js');
+  const ids = Object.keys(TABLA);
+  ok('están los 118', ids.length === 118, ids.length + ' elementos');
+
+  /* los datos son REALES: se comprueban contra los valores conocidos */
+  ok('el hierro funde a 1538 °C', TABLA.eFe.fusReal === 1538, TABLA.eFe.fusReal);
+  ok('el oro funde a 1064 °C', TABLA.eAu.fusReal === 1064, TABLA.eAu.fusReal);
+  /* ⚠ yo había escrito «el wolframio es el que más aguanta» y ES FALSO: el
+     carbono funde a 3550. El wolframio es el METAL que más aguanta, que no es
+     lo mismo. El dato estaba bien; la afirmación era mía y estaba mal. */
+  ok('el wolframio es el METAL que más aguanta: 3422 °C',
+     TABLA.eW.fusReal === 3422 &&
+     /* ⚠ y aquí caí en la trampa de siempre: filtraba con
+        `grupo.includes('metal')`, y «NO METAL» CONTIENE «METAL». El carbono se
+        colaba en la lista de metales y volvía a ganar. Se compara el grupo
+        entero, no un pedazo. */
+     Math.max(...ids.filter(i => ['⚛ transición','⚛ metal','⚛ alcalino',
+                                  '⚛ alcalinotérreo','⚛ lantánido','⚛ actínido']
+                                  .indexOf(TABLA[i].grupo) >= 0)
+                  .map(i => TABLA[i].fusReal || -999)) === 3422, TABLA.eW.fusReal);
+  ok('y el carbono aguanta todavía más, que es lo correcto', TABLA.eC.fusReal === 3550);
+  /* ⚠ el osmio es el más denso MEDIDO. Varios superpesados traen densidades
+     mayores, pero son calculadas: de ellos existen unos pocos átomos que
+     duran milisegundos y nadie ha pesado un trozo. Van marcados. */
+  const medidos = ids.filter(i => !TABLA[i].predicho);
+  ok('el osmio es el más denso de los MEDIDOS',
+     Math.max(...medidos.map(i => TABLA[i].masa)) === TABLA.eOs.masa,
+     TABLA.eOs.masa + ' g/cm³');
+  ok('y las densidades calculadas van marcadas, no coladas como medición',
+     ids.filter(i => TABLA[i].predicho).length > 10);
+  ok('el mercurio es líquido a temperatura ambiente', TABLA.eHg.fusReal < 22);
+  ok('el helio y el neón son gases', TABLA.eHe.estado === 'gas' && TABLA.eNe.estado === 'gas');
+
+  /* ⚠ lo que NO se inventa */
+  /* ⚠ la primera versión metía en el mismo saco a los gases, que no llevan
+     `fusReal` por otra razón. Se comprueban sólo los sólidos. */
+  const sinDato = ids.filter(i => TABLA[i].fusReal == null && TABLA[i].estado !== 'gas');
+  ok('a los sintéticos sin fusión medida NO se les inventó un número',
+     sinDato.length > 0 && sinDato.every(i => TABLA[i].z >= 100),
+     sinDato.length + ' sin dato: ' + sinDato.map(i=>TABLA[i].sim).join(' '));
+
+  /* y que la fase FUNCIONE: el hierro se funde y escurre */
+  const m = mundo(20, 30, 6);
+  crisol(m, 4, 8, 16, 26);
+  for(let x = 6; x < 14; x++) for(let y = 12; y < 15; y++) m.pon(x, y, IDX.eFe);
+  corre(m, 5);
+  ok('el hierro a temperatura ambiente es SÓLIDO y no se mueve',
+     m.estadoDe(m.i(8, 12)) === 'solido');
+  for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.eFe) m.temp[k] = 1600;
+  corre(m, 3);
+  ok('a 1600 °C se FUNDE (por encima de sus 1538)',
+     m.estadoDe(m.i(8, 13)) === 'liquido' || m.estadoDe(m.i(8,14)) === 'liquido');
+  /* ⚠ antes corría 60 pasos y esperaba que llegara al fondo. No llegaba, y
+     el motor tenía razón: en 60 pasos el hierro se enfría por debajo de 1538
+     y VUELVE A SER SÓLIDO a media caída. Eso es lo que hace el metal fundido
+     cuando nadie mantiene el horno encendido. Con el horno puesto, escurre. */
+  for(let i = 0; i < 60; i++){
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.eFe) m.temp[k] = 1600;
+    m.paso();
+  }
+  let masAbajo = 0;
+  for(let y = 0; y < 30; y++) for(let x = 0; x < 20; x++)
+    if(m.t[m.i(x,y)] === IDX.eFe && y > masAbajo) masAbajo = y;
+  ok('y fundido, con el horno encendido, ESCURRE al fondo del crisol',
+     masAbajo >= 24, 'llegó a y=' + masAbajo);
+
+  const frio = mundo(20, 30, 6);
+  crisol(frio, 4, 8, 16, 26);
+  for(let x = 6; x < 14; x++) frio.pon(x, 12, IDX.eFe);
+  for(let k = 0; k < frio.t.length; k++) if(frio.t[k] === IDX.eFe) frio.temp[k] = 1600;
+  corre(frio, 90);
+  ok('y si lo dejas enfriar, SE SOLIDIFICA a medio camino — como el metal real',
+     frio.estadoDe(frio.i(9, 20)) === 'solido' ||
+     [...Array(30).keys()].some(y => frio.t[frio.i(9,y)] === IDX.eFe &&
+                                     frio.estadoDe(frio.i(9,y)) === 'solido'));
+
+  /* densidad real: el oro se hunde en el mercurio... no, FLOTA. 19.3 vs 13.5 */
+  ok('el oro pesa más que el mercurio (19.3 vs 13.5)', TABLA.eAu.dens > TABLA.eHg.dens);
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);
