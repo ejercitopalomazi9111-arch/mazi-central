@@ -421,6 +421,150 @@
       "vecinas": [
         "la-cuerda-que-solo-aguantaba-sin-tirar"
       ]
+    },
+    {
+      "id": "la-onda-se-alimentaba-de-lo-que-rompia",
+      "titulo": "Dos piezas estables por separado que juntas crean energía",
+      "gravedad": "alta",
+      "sintoma": "Un empujón de 3 000 de presión llegaba a 147 MIL MILLONES dentro de piedra y a 11 billones dentro de metal, arrasando la sala entera. Parecía que «todo material se destruye sin importar la cantidad de explosivo».",
+      "causa": "Una celda de piedra transmite 0.23; al reventar, ese sitio pasa a transmitir 1 —más de cuatro veces— con la presión que ya tenía dentro. El siguiente paso lee un salto enorme donde había un muro blando y da una patada que rompe la celda siguiente.",
+      "porque": "La ecuación de onda SOLA es estable en los cuatro materiales, y romper SOLO tampoco crea nada. Lo que se dispara es el PAR. Un sistema se puede probar por mitades y estar roto en la costura.",
+      "arreglo": "Tres cosas: el hueco nace sin presión, romper cuesta lo que aguanta el material y ese costo sale de la onda, y una ley escrita — una onda nunca puede ser más fuerte que lo que la creó.",
+      "comoCazarlo": "Sumar |presión| de toda la sala paso a paso. Si sube después de la inyección, se está creando energía. Y apagar UNA pieza por vez hasta que pare.",
+      "consejo": "Lo perseguí por cuatro sitios equivocados —el explosivo, el borde de la caja, el paso de tiempo y la propia ecuación— y ninguno era. Medir cada sospechoso por separado habría costado la cuarta parte.",
+      "salioDe": "juegos/crisol/motor.js · presionRompe y esfuerzoPaso",
+      "senales": [
+        "todo se destruye",
+        "explota demasiado",
+        "la presión crece sola",
+        "arrasa la sala"
+      ],
+      "vecinas": [
+        "mi-prueba-encendia-un-horno",
+        "la-marca-no-viaja-con-la-particula"
+      ]
+    },
+    {
+      "id": "mi-prueba-encendia-un-horno",
+      "titulo": "La prueba metía en la sala algo que no era lo que medía",
+      "gravedad": "media",
+      "sintoma": "9 celdas de nitro derretían un suelo de 2 400 piedras enteras, y con 4 celdas no pasaba casi nada. Un acantilado imposible.",
+      "causa": "Para encender el explosivo yo ponía TODAS sus celdas a 3 000°. Desde que el aire acarrea calor, esos 3 000° se reparten por la sala y derriten el suelo — y eso no es la explosión, es un horno que metí yo.",
+      "porque": "Una prueba también actúa sobre el mundo. Lo que usa para PROVOCAR el fenómeno tiene que ser lo más pequeño posible, o acaba midiéndose a sí misma.",
+      "arreglo": "Una chispa en UNA celda, a la temperatura justa de ignición. Lo demás lo hace la detonación simpática, que además es lo que hace un explosivo de verdad.",
+      "comoCazarlo": "Si el resultado no depende de lo que crees que mides, mira con qué lo estás encendiendo.",
+      "consejo": "Ya me había pasado con gas natural a 900°, que se auto-enciende. Es la tercera vez que el reactivo de la prueba es el culpable.",
+      "salioDe": "juegos/crisol/pruebas.mjs · proporcionalidad de los explosivos",
+      "senales": [
+        "la prueba miente",
+        "resultado absurdo",
+        "acantilado en los números"
+      ],
+      "vecinas": [
+        "la-onda-se-alimentaba-de-lo-que-rompia"
+      ]
+    },
+    {
+      "id": "contar-dos-veces-la-misma-fisica",
+      "titulo": "La presión del calor entraba por dos puertas",
+      "gravedad": "alta",
+      "sintoma": "Seis pruebas rojas de golpe al meter las cámaras selladas, y un recipiente CERRADO y sin gravedad propulsándose solo doce celdas.",
+      "causa": "El calor ya ponía su presión celda a celda desde antes; la ley de los gases de la cámara la volvía a poner. La misma recámara a 2 600° pasó de 77 a 2 600 de presión, treinta y cuatro veces más.",
+      "porque": "Al meter una regla general es fácil pisar un caso que ya estaba resuelto con una regla particular. Lo nuevo tiene que cubrir SÓLO el hueco que faltaba.",
+      "arreglo": "La cámara mide únicamente la COMPRESIÓN —el exceso sobre una de aire por hueco—, y a presión normal da cero y no toca nada de lo que ya funcionaba.",
+      "comoCazarlo": "Si al añadir un sistema nuevo se rompen pruebas de un sistema viejo que no tocaste, casi siempre es que los dos calculan lo mismo.",
+      "consejo": "El síntoma —un bote que se mueve solo— no se parecía en nada a la causa, y es lo que más tardó en conectarse.",
+      "salioDe": "juegos/crisol/motor.js · camaraPaso",
+      "senales": [
+        "se mueve solo",
+        "se propulsa",
+        "rompió pruebas viejas"
+      ],
+      "vecinas": [
+        "la-fuerza-al-cuerpo-no-a-la-celda"
+      ]
+    },
+    {
+      "id": "la-fuerza-al-cuerpo-no-a-la-celda",
+      "titulo": "Repartir la fuerza y luego promediar no da lo mismo que sumarla",
+      "gravedad": "alta",
+      "sintoma": "Con cuerpos rígidos, un recipiente cerrado y sin gravedad se propulsaba solo seis celdas y media.",
+      "causa": "Cada celda dividía la fuerza por SU masa, y esa división lleva dentro un tope que aplasta a las ligeras. En una carcasa de dos materiales las fuerzas de arriba y de abajo dejaban de cancelarse.",
+      "porque": "Sumar primero y dividir después entre la masa total es la segunda ley aplicada a un CUERPO. Dividir antes y promediar después es otra cosa, y esa otra cosa no conserva la cantidad de movimiento.",
+      "arreglo": "Se recorre el contorno de la pieza, se suma la presión que empuja cada cara mojada, y se divide UNA vez entre la masa total.",
+      "comoCazarlo": "Un cuerpo cerrado, sin gravedad y sin nada que expulse, tiene que dar cero exacto. Si da otra cosa, la fuerza se está aplicando mal.",
+      "consejo": "Y la fórmula es la presión SOBRE LA CARA, no el gradiente: copiando la del gas salió el signo al revés y el bote se hundía en vez de subir. Un sólido no se mueve porque él tenga presión, sino porque el fluido de al lado empuja su cara.",
+      "salioDe": "juegos/crisol/motor.js · cuerpoPaso",
+      "senales": [
+        "se propulsa solo",
+        "movimiento perpetuo",
+        "empuje de la nada"
+      ],
+      "vecinas": [
+        "contar-dos-veces-la-misma-fisica",
+        "el-aviso-arreglado-en-una-pieza"
+      ]
+    },
+    {
+      "id": "el-aviso-arreglado-en-una-pieza",
+      "titulo": "La misma línea mala, corregida en el pistón y viva en el motor",
+      "gravedad": "media",
+      "sintoma": "Carlos: «el motor no funciona». Y no funcionaba literalmente: la corriente le llegaba —medido, su carga en 1— y no movía nada.",
+      "causa": "La línea que empuja decía «y NO sea sólido», que excluye a mano lo único que uno le pone encima. Es la MISMA línea que ya se había corregido en el pistón dos tandas antes.",
+      "porque": "Un arreglo con su comentario y todo no protege al código gemelo de al lado. Si una corrección vale para una pieza, hay que buscar quién más tiene ese patrón.",
+      "arreglo": "Buscar la expresión en todo el archivo al arreglarla, no sólo donde la reportaron.",
+      "comoCazarlo": "Al corregir un defecto, un grep de la condición equivocada por el archivo entero.",
+      "consejo": "Es la misma familia que «un aviso escrito no protege al campo siguiente», que ya estaba anotada para intercambia. Aquí el gemelo no era un campo sino una línea.",
+      "salioDe": "juegos/crisol/motor.js · el motor y el pistón",
+      "senales": [
+        "no hace nada",
+        "no mueve",
+        "le llega corriente y nada"
+      ],
+      "vecinas": [
+        "la-marca-no-viaja-con-la-particula",
+        "la-fuerza-al-cuerpo-no-a-la-celda"
+      ]
+    },
+    {
+      "id": "lo-sumergido-no-se-aplasta",
+      "titulo": "Un objeto rodeado de presión por igual no siente fuerza neta",
+      "gravedad": "media",
+      "sintoma": "El carbón apretado se volvía diamante y a los sesenta pasos los dieciséis diamantes habían desaparecido, triturados por la misma presión que los hizo.",
+      "causa": "La rotura compara la presión de una celda con la de su vecina sólida, y un objeto sumergido tenía 11 000 alrededor y 0 dentro.",
+      "porque": "Por eso un buzo no se aplasta y un submarino sí: lo que rompe es la DIFERENCIA entre dentro y fuera, no la presión.",
+      "arreglo": "Lo que no toca el aire libre está a la presión de la cámara. Lo que distingue la pared del recipiente de lo que hay dentro es que la pared toca la calle por fuera.",
+      "comoCazarlo": "Meter algo duro en una cámara y comprimirla. Si desaparece, se está midiendo presión en vez de diferencia.",
+      "consejo": "Propagar «toca fuera» por la cadena de sólidos NO sirve: con eso, cualquier cosa apoyada en el suelo del bote cuenta como pared. Tocar a alguien que toca la calle no es estar en la calle.",
+      "salioDe": "juegos/crisol/motor.js · camaraPaso paso 3",
+      "senales": [
+        "se tritura",
+        "desaparece lo que hice",
+        "se aplasta dentro"
+      ],
+      "vecinas": [
+        "contar-dos-veces-la-misma-fisica"
+      ]
+    },
+    {
+      "id": "el-orden-de-cinco-lineas-son-cinco-milisegundos",
+      "titulo": "Preguntar lo barato primero, en un bucle de 153 mil celdas",
+      "gravedad": "baja",
+      "sintoma": "Los cuerpos rígidos subieron el paso de 18.7 a 23.6 ms en una sala de 320×480.",
+      "causa": "La condición que decide si una celda entra en un cuerpo llamaba a una función —`estadoDe`— antes de las comprobaciones baratas. Se pregunta una vez por celda y por paso.",
+      "porque": "Casi todas las celdas están vacías, y de las que no, casi todas están sostenidas y quietas. Lo caro sólo debe correr sobre las pocas que quedan.",
+      "arreglo": "Reordenar: vacío, ya movida, sostenida y quieta, fija, y sólo al final la llamada. 23.6 → 21.3 ms, medido.",
+      "comoCazarlo": "En cualquier bucle por celda, mirar en qué orden están las condiciones antes de buscar optimizaciones más listas.",
+      "consejo": "Y espaciar el cálculo NO siempre vale: la cámara sellada cada cuatro pasos ahorra 2.7 ms y rompe dos pruebas, porque entre pasada y pasada el gas se mueve. Una foto vieja de quién está dentro es peor que ninguna.",
+      "salioDe": "juegos/crisol/motor.js · cuerpoPaso",
+      "senales": [
+        "se puso lento",
+        "baja los cuadros",
+        "cuesta el paso"
+      ],
+      "vecinas": [
+        "un-solo-conductor-cuesta-diecisiete-milisegundos"
+      ]
     }
   ]
 }
