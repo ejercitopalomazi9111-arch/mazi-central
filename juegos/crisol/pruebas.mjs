@@ -21,6 +21,11 @@ const crisol = (m, x0, y0, x1, y1) => {
   for(let x = x0; x <= x1; x++){ m.pon(x, y1, IDX.muro); m.pon(x, y0, IDX.muro); }
   for(let y = y0; y <= y1; y++){ m.pon(x0, y, IDX.muro); m.pon(x1, y, IDX.muro); }
 };
+/* Una REPISA de muro bajo una fila. Desde que los sólidos caen, un circuito
+   pintado en el aire se desploma — que es lo que Carlos pidió y lo correcto—,
+   así que las pruebas de electrónica se construyen apoyadas, como se construye
+   de verdad. Sin esto medían electricidad sobre cables que iban cayéndose. */
+const repisa = (m, y, x0 = 0, x1 = m.an - 1) => { for(let x = x0; x <= x1; x++) m.pon(x, y, IDX.muro); };
 const cuantos = (m, id) => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) c++; return c; };
 
 seccion('la gravedad y los estados');
@@ -31,10 +36,30 @@ seccion('la gravedad y los estados');
   ok('la arena cae hasta el suelo', m.t[m.i(20, 39)] === IDX.arena,
      'quedó en y=' + (() => { for(let y=0;y<40;y++) if(m.t[m.i(20,y)]===IDX.arena) return y; return '?'; })());
 
+  /* ⚠ ESTA PRUEBA AFIRMABA LO CONTRARIO Y ESTABA BIEN EN SU MOMENTO: antes un
+     sólido era un decorado clavado en su celda. Carlos pidió que dejara de
+     serlo —«que puedan moverse caerse etc no solo el polvo y el gas»— así que
+     ahora se comprueba lo de verdad: sin sostén se cae, y apoyada se queda. */
   const p = mundo();
   p.pon(20, 5, IDX.piedra);
-  corre(p, 30);
-  ok('la piedra NO cae: es sólida', p.t[p.i(20, 5)] === IDX.piedra);
+  corre(p, 60);
+  ok('una piedra sin sostén SE CAE', p.t[p.i(20, 5)] !== IDX.piedra);
+  ok('y llega al suelo', p.t[p.i(20, 39)] === IDX.piedra);
+
+  const q = mundo();
+  repisa(q, 20);
+  q.pon(20, 19, IDX.piedra);
+  corre(q, 60);
+  ok('pero apoyada en un muro se queda', q.t[q.i(20, 19)] === IDX.piedra);
+
+  const arco = mundo();
+  repisa(arco, 30);
+  for(let y = 10; y < 30; y++){ arco.pon(5, y, IDX.piedra); arco.pon(34, y, IDX.piedra); }
+  for(let x = 5; x <= 34; x++) arco.pon(x, 10, IDX.piedra);   /* el puente */
+  corre(arco, 80);
+  let puente = 0;
+  for(let x = 5; x <= 34; x++) if(arco.t[arco.i(x, 10)] === IDX.piedra) puente++;
+  ok('y un PUENTE colgado entre dos pilares aguanta', puente === 30, puente + '/30 celdas');
 
   const g = mundo();
   g.pon(20, 30, IDX.humo);
@@ -167,6 +192,7 @@ seccion('fuego y explosiones');
 seccion('electricidad');
 {
   const m = mundo(20, 10);
+  repisa(m, 6);
   m.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 15; x++) m.pon(x, 5, IDX.cobre);
   m.pon(15, 5, IDX.lampara);
@@ -377,6 +403,7 @@ seccion('electrónica que se puede OPERAR');
 {
   /* interruptor: lo que faltaba para poder encender algo a voluntad */
   const m = mundo(20, 10);
+  repisa(m, 6);
   m.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
   m.pon(8, 5, IDX.interruptor);
@@ -393,6 +420,7 @@ seccion('electrónica que se puede OPERAR');
 
   /* resistencia: calienta de verdad */
   const r = mundo(20, 10);
+  repisa(r, 6);
   r.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 9; x++) r.pon(x, 5, IDX.cobre);
   r.pon(9, 5, IDX.resistencia);
@@ -403,6 +431,7 @@ seccion('electrónica que se puede OPERAR');
 
   /* pulsador: la señal que cambia sola */
   const s = mundo(20, 10);
+  repisa(s, 6);
   s.pon(4, 5, IDX.pulsador);
   for(let x = 5; x < 12; x++) s.pon(x, 5, IDX.cobre);
   let encendido = 0, apagado = 0;
@@ -489,10 +518,14 @@ seccion('los 118 de la tabla periódica');
   /* y que la fase FUNCIONE: el hierro se funde y escurre */
   const m = mundo(20, 30, 6);
   crisol(m, 4, 8, 16, 26);
-  for(let x = 6; x < 14; x++) for(let y = 12; y < 15; y++) m.pon(x, y, IDX.eFe);
+  /* apoyado en el fondo del crisol: desde que los sólidos caen, un bloque de
+     hierro flotando a media altura se desploma —y con razón— así que lo que
+     se mide aquí (que a temperatura ambiente NO fluye) hay que medirlo sobre
+     algo, o se está midiendo la gravedad otra vez. */
+  for(let x = 6; x < 14; x++) for(let y = 23; y < 26; y++) m.pon(x, y, IDX.eFe);
   corre(m, 5);
   ok('el hierro a temperatura ambiente es SÓLIDO y no se mueve',
-     m.estadoDe(m.i(8, 12)) === 'solido');
+     m.estadoDe(m.i(8, 24)) === 'solido');
   for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.eFe) m.temp[k] = 1600;
   /* ⚠ DOS ERRORES MÍOS EN LA MISMA PRUEBA, y los dos de medir mal:
      1 · miraba DOS CELDAS CONCRETAS, y en cuanto el hierro se funde ESCURRE:
@@ -546,6 +579,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 {
   /* RELOJ DE ARENA: no deja pasar hasta que pase el tiempo */
   const m = mundo(30, 10);
+  repisa(m, 6);
   m.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
   m.pon(8, 5, IDX.reloj);
@@ -561,6 +595,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* REPETIDOR: sin él la corriente se muere de lejos */
   const largo = mundo(200, 10);
+  repisa(largo, 6);
   largo.pon(1, 5, IDX.bateria);
   for(let x = 2; x < 195; x++) largo.pon(x, 5, IDX.cobre);
   largo.pon(195, 5, IDX.lampara);
@@ -568,6 +603,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
   ok('sin repetidor, la corriente NO llega a 195 celdas', largo.car[largo.i(195,5)] === 0);
 
   const rep = mundo(200, 10);
+  repisa(rep, 6);
   rep.pon(1, 5, IDX.bateria);
   for(let x = 2; x < 195; x++) rep.pon(x, 5, x % 60 === 0 ? IDX.repetidor : IDX.cobre);
   rep.pon(195, 5, IDX.lampara);
@@ -576,6 +612,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* PILA que se acaba y se recarga */
   const pila = mundo(20, 10);
+  repisa(pila, 6);
   pila.pon(2, 5, IDX.pila);
   for(let x = 3; x < 10; x++) pila.pon(x, 5, IDX.cobre);
   pila.pon(10, 5, IDX.lampara);
@@ -591,6 +628,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* PISTÓN que lanza */
   const pis = mundo(30, 40, 4);
+  repisa(pis, 36);
   pis.pon(15, 35, IDX.piston);
   pis.pon(15, 34, IDX.arena);
   pis.pon(14, 35, IDX.bateria);
@@ -606,6 +644,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* OBSERVADOR */
   const obs = mundo(20, 14);
+  repisa(obs, 9);
   obs.pon(8, 8, IDX.observador);
   for(let x = 9; x < 14; x++) obs.pon(x, 8, IDX.cobre);
   corre(obs, 12);

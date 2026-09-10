@@ -43,6 +43,17 @@ export const VMAX = 6;
 /* Hasta dónde llega la corriente desde una fuente. Es lo que hace que una
    resistencia sirva: si el alcance fuera infinito, atenuar no apagaría nada. */
 export const ALCANCE = 110;
+/* ── EL HUECO ES AIRE, NO VACÍO ─────────────────────────────────────────
+   Carlos lo pidió por su nombre: «no tienen peso, resistencia del aire,
+   gravedad etc, deberías sumar todo eso». Nada de eso se puede calcular sin
+   un medio: sin aire no hay arrastre, no hay flotación y no hay globo.
+   Materializar el aire como celdas costaría 153 600 partículas activas por
+   cuadro para nada. Así que el hueco SE COMPORTA como aire, con esta
+   densidad, y no hace falta simular ni una celda.
+   La escala está comprimida a propósito: en la vida el agua es 833 veces el
+   aire y aquí es 8.3. Lo que importa para flotar es el ORDEN, no el factor, y
+   con 833 un globo saldría disparado a velocidad absurda en una rejilla. */
+export const DENS_AIRE = 1.2;
 
 export class Mundo {
   constructor(an, al){
@@ -104,6 +115,26 @@ export class Mundo {
     this._pres2 = new Float32Array(n);
     this._trans = new Float32Array(n);
     this._amort = new Float32Array(n);
+    /* ── SOSTÉN ESTRUCTURAL ────────────────────────────────────────────
+       Ahora que los sólidos caen hace falta saber cuáles NO deben caerse, o
+       el techo de cualquier caja se desploma hacia dentro en el primer paso.
+       Un sólido se sostiene si está pegado —por una cadena de sólidos— a algo
+       inamovible, al suelo del mundo, o a algo que ya no puede bajar. De ahí
+       salen los arcos, los voladizos y que volar la base tire la torre. */
+    this.sop  = new Uint8Array(n);
+    /* ── SUELTO ────────────────────────────────────────────────────────
+       Lo que PINTAS se queda puesto: si no, construir un circuito en el aire
+       sería imposible y habría que levantar un pilar antes de cada cosa. Lo
+       que recibe un golpe de verdad —una explosión, un pistón, la presión que
+       revienta una pared, el empuje de un globo— se SUELTA, y a partir de ahí
+       obedece la física como cualquier piedra.
+       Y soltarse se CONTAGIA hacia lo que no se sostiene: por eso volarle la
+       base a una torre la tira entera en vez de dejar el resto flotando. */
+    this.suelto = new Uint8Array(n);
+    this._cola = new Int32Array(n);
+    this._cola2 = new Int32Array(n);
+    this._visto = new Uint8Array(n);
+    this.flotante = new Uint8Array(n);   /* este paso ya lleva su balance de flotación hecho */
     /* la caja de dónde hay onda; vacía al revés quiere decir «silencio» */
     this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
     this.temp.fill(AMBIENTE);
@@ -140,6 +171,8 @@ export class Mundo {
 
   pon(x, y, tipo, temp){
     if(!this.dentro(x, y)) return;
+    /* pintar es CONSTRUIR: lo que pones queda anclado hasta que algo lo golpee */
+    this.suelto[this.i(x, y)] = 0;
     const k = y * this.an + x;
     this.t[k] = tipo;
     this.vida[k] = 0;
@@ -176,6 +209,13 @@ export class Mundo {
     const cl = this.color[k1]; this.color[k1] = this.color[k2]; this.color[k2] = cl;
     const yv = this.vy[k1]; this.vy[k1] = this.vy[k2]; this.vy[k2] = yv;
     const xv = this.vx[k1]; this.vx[k1] = this.vx[k2]; this.vx[k2] = xv;
+    /* ⚠ Y LA MARCA DE «SUELTO» TAMBIÉN VIAJA, que es donde me tropecé: iba en
+       la CELDA y no en la partícula, así que una piedra soltada por una
+       explosión caía UNA celda y en la siguiente ya estaba anclada otra vez.
+       Se veía como «nada se cae», nunca como lo que era. Es exactamente el
+       mismo error que ya estaba anotado dos líneas más arriba para la
+       velocidad — y lo volví a cometer con el campo de al lado. */
+    const sv = this.suelto[k1]; this.suelto[k1] = this.suelto[k2]; this.suelto[k2] = sv;
     this.mov[k1] = 1; this.mov[k2] = 1;
   }
 
@@ -193,6 +233,7 @@ export class Mundo {
      presión encerrada que encuentra por dónde salir. */
   revienta(x, y, fuerza){
     this.despierta(x, y, Math.max(3, Math.round(fuerza * 1.4)) + 2);
+    this.suelta(x, y, Math.max(3, Math.round(fuerza * 1.6)));
     const r = Math.max(2, Math.round(fuerza * 1.4));
     for(let dy = -r; dy <= r; dy++){
       for(let dx = -r; dx <= r; dx++){
@@ -272,6 +313,220 @@ export class Mundo {
     const c = this._caja;
     c.x0 = Math.min(c.x0, x - r); c.x1 = Math.max(c.x1, x + r);
     c.y0 = Math.min(c.y0, y - r); c.y1 = Math.max(c.y1, y + r);
+  }
+
+  /* ── QUÉ SÓLIDOS SE SOSTIENEN ──────────────────────────────────────────
+     Recorrido en anchura desde lo que no se puede caer, propagando por
+     sólidos pegados. Las semillas son tres, y las tres hacen falta:
+
+       · lo FIJO (el muro), que es el ancla de verdad
+       · el suelo del mundo
+       · cualquier sólido que ya tenga algo debajo por donde no puede bajar
+
+     La tercera es la que se me iba a olvidar y la que rompe todo: sin ella,
+     una caja de piedra apoyada sobre ARENA no está anclada a nada, así que su
+     techo —que tiene hueco debajo, el interior de la caja— se desploma hacia
+     dentro en el primer paso. Con ella, la caja se apoya, se sostiene entera,
+     y sigue siendo una caja.
+
+     Lo que esto compra: arcos que aguantan, voladizos, techos, recámaras…
+     y que volarle la base a una torre la tire de verdad. */
+  sostenPaso(){
+    const { an, al, t, sop } = this;
+    const cola = this._cola;
+    let cab = 0, fin = 0;
+    sop.fill(0);
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k = y * an + x;
+        const tk = t[k];
+        if(tk === VACIO) continue;
+        const e = EL[tk];
+        if(e.fijo){ sop[k] = 1; cola[fin++] = k; continue; }
+        if(this.estadoDe(k) !== 'solido') continue;
+        if(y === al - 1){ sop[k] = 1; cola[fin++] = k; continue; }
+        const ab = k + an;
+        if(t[ab] === VACIO) continue;
+        /* ⚠ AQUÍ DECÍA TAMBIÉN «o apoyado en un SÓLIDO», y esa condición se
+           cumple sola dentro de cualquier torre: cada piedra se apoya en la de
+           abajo. O sea que la torre entera se declaraba sostenida a sí misma
+           —incluido el trozo que colgaba en el aire— y borrarle la base no
+           tiraba nada. Un anillo de razonamiento, no un error de tecleo.
+           Sólido sobre sólido lo resuelve el RECORRIDO desde las anclas de
+           verdad, que para eso está. Semilla sólo lo que no depende de otro
+           sólido: lo fijo, el suelo del mundo, y apoyarse en un montón de
+           polvo, que sí es sostén propio. */
+        if(this.estadoDe(ab) === 'polvo' || EL[t[ab]].fijo){ sop[k] = 1; cola[fin++] = k; }
+      }
+    }
+    while(cab < fin){
+      const k = cola[cab++];
+      const x = k % an, y = (k / an) | 0;
+      if(x > 0      && this.pegado(k - 1)){  sop[k - 1]  = 1; cola[fin++] = k - 1; }
+      if(x < an - 1 && this.pegado(k + 1)){  sop[k + 1]  = 1; cola[fin++] = k + 1; }
+      if(y > 0      && this.pegado(k - an)){ sop[k - an] = 1; cola[fin++] = k - an; }
+      if(y < al - 1 && this.pegado(k + an)){ sop[k + an] = 1; cola[fin++] = k + an; }
+    }
+
+    /* El contagio del soltado. Un sólido suelto que NO se sostiene arrastra a
+       sus vecinos que tampoco se sostienen: es lo que convierte «le volé la
+       base» en «se me cayó la torre» y no en «se quedó el resto flotando».
+       Va cuadro a cuadro a propósito — el derrumbe se ve caer. */
+    const su = this.suelto;
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k = y * an + x;
+        if(!su[k] || sop[k]) continue;
+        if(t[k] === VACIO || this.estadoDe(k) !== 'solido') continue;
+        if(x > 0      && !sop[k-1]  && this.esSolido(k-1))  su[k-1]  = 1;
+        if(x < an - 1 && !sop[k+1]  && this.esSolido(k+1))  su[k+1]  = 1;
+        if(y > 0      && !sop[k-an] && this.esSolido(k-an)) su[k-an] = 1;
+        if(y < al - 1 && !sop[k+an] && this.esSolido(k+an)) su[k+an] = 1;
+      }
+    }
+  }
+
+  esSolido(k){ return this.t[k] !== VACIO && this.estadoDe(k) === 'solido'; }
+
+  /* ── EL GLOBO ─────────────────────────────────────────────────────────
+     Carlos: «el helio no permite crear globos porque no tienen física los
+     sólidos». Darles física no bastaba, y esto costó entenderlo: con el
+     empuje aplicado celda a celda, el helio levantaba SÓLO el trozo de techo
+     que tenía encima y salía volando el techo sin el globo. Un globo vuela
+     porque es UNA pieza y porque el gas de DENTRO cuenta — no el que roza la
+     tela por arriba.
+
+     Así que aquí se busca la cáscara entera como componente conectado, se
+     averigua qué encierra, y se pesa el conjunto contra el aire que desplaza:
+
+       peso     = Σ densidad de la cáscara + Σ densidad de lo que encierra
+       desplaza = (celdas de cáscara + celdas encerradas) × densidad del aire
+
+     Si desplaza más de lo que pesa, sube. Y de ahí sale solo que el mismo
+     globo lleno de helio vuele, lleno de aire se quede y lleno de CO₂ se
+     hunda, sin una línea para cada caso. También sale que haga falta una tela
+     LIGERA: con madera no vuela, igual que en la vida real.
+
+     Sólo se analizan las cáscaras que tocan un gas más ligero que el aire.
+     Sin ese filtro habría que recorrer cada muro del mundo por si acaso. */
+  globoPaso(){
+    const { an, al, t, sop } = this;
+    this.flotante.fill(0);
+    const visto = this._visto;
+    visto.fill(0);
+    const cola = this._cola;
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k0 = y * an + x;
+        if(visto[k0] || !this.esSolido(k0) || EL[t[k0]].fijo) continue;
+        /* ¿toca un gas más ligero que el aire? si no, ni lo miramos */
+        if(!this.tocaGasLigero(x, y)) continue;
+        /* componente conectado */
+        let cab = 0, fin = 0;
+        cola[fin++] = k0; visto[k0] = 1;
+        let x0 = x, x1 = x, y0 = y, y1 = y, peso = 0, celdas = 0;
+        while(cab < fin){
+          const k = cola[cab++];
+          const cx = k % an, cy = (k / an) | 0;
+          if(cx < x0) x0 = cx; if(cx > x1) x1 = cx;
+          if(cy < y0) y0 = cy; if(cy > y1) y1 = cy;
+          peso += EL[t[k]].dens || 1; celdas++;
+          if(celdas > 4000) break;                 /* una cáscara sensata */
+          if(cx > 0      && !visto[k-1]  && this.esSolido(k-1)  && !EL[t[k-1]].fijo){  visto[k-1]  = 1; cola[fin++] = k-1; }
+          if(cx < an - 1 && !visto[k+1]  && this.esSolido(k+1)  && !EL[t[k+1]].fijo){  visto[k+1]  = 1; cola[fin++] = k+1; }
+          if(cy > 0      && !visto[k-an] && this.esSolido(k-an) && !EL[t[k-an]].fijo){ visto[k-an] = 1; cola[fin++] = k-an; }
+          if(cy < al - 1 && !visto[k+an] && this.esSolido(k+an) && !EL[t[k+an]].fijo){ visto[k+an] = 1; cola[fin++] = k+an; }
+        }
+        if(celdas < 4 || celdas > 4000) continue;
+        /* lo que ENCIERRA: se inunda desde fuera de su caja y lo que no se
+           moja por dentro es lo de dentro */
+        const enc = this.encerradas(x0, y0, x1, y1, visto);
+        peso += enc.peso; 
+        const total = celdas + enc.celdas;
+        const desplaza = total * DENS_AIRE;
+        if(desplaza <= peso) continue;             /* pesa más que el aire: no vuela */
+        const sube = GRAVEDAD * (desplaza - peso) / peso;
+        for(let i = 0; i < fin; i++){
+          const k = cola[i];
+          this.vy[k] = Math.max(-VMAX, this.vy[k] - sube);
+          this.suelto[k] = 1; sop[k] = 0;
+          /* el balance de esta pieza ya está hecho AQUÍ, con su peso y lo que
+             encierra. Si `mueve` le volviera a sumar la gravedad por celda,
+             estaría contando dos veces y ningún globo despegaría. */
+          this.flotante[k] = 1;
+        }
+      }
+    }
+  }
+
+  tocaGasLigero(x, y){
+    for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+      if(!this.dentro(x+dx, y+dy)) continue;
+      const k = this.i(x+dx, y+dy);
+      if(this.t[k] === VACIO) continue;
+      if(this.estadoDe(k) !== 'gas') continue;
+      if((EL[this.t[k]].dens || 0) < DENS_AIRE) return true;
+    }
+    return false;
+  }
+
+  /* Lo que queda ATRAPADO dentro de una cáscara: se inunda desde el borde de
+     su caja y lo que el agua no alcanza es el interior. */
+  encerradas(x0, y0, x1, y1, visto){
+    const { an, t } = this;
+    const w = x1 - x0 + 3, h = y1 - y0 + 3;
+    const fuera = new Uint8Array(w * h);
+    const pila = this._cola2;
+    let n = 0;
+    const meter = (ix, iy) => {
+      if(ix < 0 || iy < 0 || ix >= w || iy >= h) return;
+      const p = iy * w + ix;
+      if(fuera[p]) return;
+      const gx = x0 - 1 + ix, gy = y0 - 1 + iy;
+      if(gx >= 0 && gy >= 0 && gx < this.an && gy < this.al){
+        const k = gy * an + gx;
+        if(visto[k]) return;                      /* la cáscara corta el paso */
+      }
+      fuera[p] = 1; pila[n++] = p;
+    };
+    for(let ix = 0; ix < w; ix++){ meter(ix, 0); meter(ix, h-1); }
+    for(let iy = 0; iy < h; iy++){ meter(0, iy); meter(w-1, iy); }
+    while(n > 0){
+      const p = pila[--n];
+      const ix = p % w, iy = (p / w) | 0;
+      meter(ix-1, iy); meter(ix+1, iy); meter(ix, iy-1); meter(ix, iy+1);
+    }
+    let peso = 0, celdas = 0;
+    for(let iy = 1; iy < h - 1; iy++){
+      for(let ix = 1; ix < w - 1; ix++){
+        if(fuera[iy * w + ix]) continue;
+        const gx = x0 - 1 + ix, gy = y0 - 1 + iy;
+        if(gx < 0 || gy < 0 || gx >= this.an || gy >= this.al) continue;
+        const k = gy * an + gx;
+        if(visto[k]) continue;                    /* la cáscara misma ya se contó */
+        peso += EL[t[k]].dens || 1; celdas++;
+      }
+    }
+    return { peso, celdas };
+  }
+
+
+  /* Soltar lo que hay en un radio: lo llama todo el que da un golpe de
+     verdad. Sin esto, un sólido pintado es inamovible aunque le revientes una
+     bomba al lado. */
+  suelta(x, y, r){
+    for(let dy = -r; dy <= r; dy++) for(let dx = -r; dx <= r; dx++){
+      if(!this.dentro(x+dx, y+dy)) continue;
+      const k = this.i(x+dx, y+dy);
+      if(EL[this.t[k]].fijo) continue;
+      this.suelto[k] = 1;
+    }
+  }
+
+  /* ¿Este vecino es sólido, y todavía sin marcar? Es lo único por lo que el
+     sostén se propaga: un líquido no sostiene un techo. */
+  pegado(k){
+    return !this.sop[k] && this.t[k] !== VACIO && this.estadoDe(k) === 'solido';
   }
 
   /* La forma SANCIONADA de meter presión. Escribir `pres[k]` a pelo también
@@ -475,6 +730,7 @@ export class Mundo {
           /* no desaparece: SALE DESPEDIDA, que es lo que hace la metralla */
           this.vx[k2] += dx * (dif - aguanta) * .05;
           this.vy[k2] += dy * (dif - aguanta) * .05;
+          this.suelta(x + dx, y + dy, 2);
           if(this.rnd() < .35) this.cambia(k2, VACIO);
           pres[k] *= .6;
         }
@@ -506,6 +762,8 @@ export class Mundo {
   paso(){
     this.paso_++;
     this.mov.fill(0);
+    this.sostenPaso();
+    this.globoPaso();
     this.electricidad();
     this.magnetismo();
     this.presionPaso();
@@ -637,8 +895,14 @@ export class Mundo {
     /* PISTÓN: con corriente, empuja fuerte hacia arriba. Es el que lanza. */
     if(e.piston && this.car[k] && this.dentro(x, y-1)){
       const k2 = this.i(x, y-1);
-      if(this.t[k2] !== VACIO && this.estadoDe(k2) !== 'solido'){
+      /* ⚠ AQUÍ DECÍA «Y NO SEA SÓLIDO», que es exactamente lo contrario de
+         para qué sirve un pistón. Con los sólidos clavados en su celda no
+         tenía sentido empujarlos, así que se excluían… y eso hacía imposible
+         lo que Carlos pidió por su nombre: «cómo creo una pistola que dispare
+         un proyectil». El proyectil de una pistola es un SÓLIDO. */
+      if(this.t[k2] !== VACIO && !EL[this.t[k2]].fijo){
         this.vy[k2] -= e.piston;
+        this.suelto[k2] = 1;                 /* lanzado: ya no está anclado */
         this.pres[k2] += 18; this.despierta(x, y - 1, 2);
       }
     }
@@ -658,7 +922,7 @@ export class Mundo {
         const suelta = Math.min(this.vida[k] / 12, e.resorte);
         if(this.dentro(x, y-1)){
           const k2 = this.i(x, y-1);
-          if(this.t[k2] !== VACIO && this.estadoDe(k2) !== 'solido') this.vy[k2] -= suelta;
+          if(this.t[k2] !== VACIO && !EL[this.t[k2]].fijo){ this.vy[k2] -= suelta; this.suelto[k2] = 1; }
         }
         this.vida[k] = Math.max(0, this.vida[k] - suelta * 12);
       }
@@ -704,6 +968,16 @@ export class Mundo {
 
     /* 8 · movimiento */
     this.mueve(x, y, k, e);
+  }
+
+  /* Cuántas celdas avanzar con una velocidad que no es entera. La parte
+     entera va segura y la fracción se juega a los dados: a la larga da la
+     velocidad exacta, y a corto plazo evita que todo lo que va a menos de una
+     celda por paso se quede clavado o, peor, se vaya al revés. */
+  pasosDe(v){
+    if(v <= 0) return 0;
+    const ent = Math.floor(v);
+    return Math.min(6, ent + (this.rnd() < v - ent ? 1 : 0));
   }
 
   vecinoAzar(x, y){
@@ -790,15 +1064,106 @@ export class Mundo {
      juntas y aceleran. */
   mueve(x, y, k, e){
     const est = this.estadoDe(k);
-    if(est === 'solido'){ this.vy[k] = 0; this.vx[k] = 0; return; }
+
+    /* ── SÓLIDOS CON FÍSICA ────────────────────────────────────────────────
+       Carlos: «ponle físicas a los sólidos o sea que puedan moverse caerse
+       etc no solo el polvo y el gas porque si no cómo creo una pistola que
+       dispare un proyectil». Aquí salía `return` a secas: un sólido era un
+       decorado clavado en su celda. El pistón lo empujaba y no se movía, una
+       explosión no lanzaba metralla, y un proyectil era imposible.
+
+       Ahora caen y se pueden lanzar. Lo único que no se mueve es lo FIJO —el
+       muro— y lo que el sostén estructural dice que está agarrado a algo.
+       Sin ese sostén, el techo de cualquier caja se desploma hacia dentro en
+       el primer paso, porque debajo tiene el hueco de la caja. */
+    if(est === 'solido'){
+      if(e.fijo){ this.vy[k] = 0; this.vx[k] = 0; return; }
+      const lanzado = this.vy[k] < -0.35 || this.vx[k] > 0.35 || this.vx[k] < -0.35;
+      /* ── LO QUE NO SE SOSTIENE, SE CAE ─────────────────────────────────
+         Y esto lo decidió Carlos sin saberlo, con la frase con que cerró el
+         encargo: «deja un muro inamovible POR SI QUIERO HACER ALGO ESPECIAL».
+         Pedir una excepción es dar por hecho que lo demás se mueve.
+         Probé antes un modelo más cómodo —lo pintado se queda anclado hasta
+         que algo lo golpee— y lo tiré: hacía que borrarle la base a una torre
+         la dejara flotando, que es justo lo primero que él va a intentar.
+         Se sostiene lo que está pegado, por una cadena de sólidos, a algo
+         inamovible, al suelo, o a algo por lo que no puede colarse. Para
+         clavar cualquier cosa en el aire está el muro. */
+      if(!lanzado && this.sop[k]){ this.vy[k] = 0; this.vx[k] = 0; return; }
+      /* un sólido no se escurre en diagonal: eso es lo que separa un ladrillo
+         de un grano de arena. Cae recto, o se queda donde topó. */
+      if(!this.flotante[k]) this.vy[k] = Math.min(this.vy[k] + GRAVEDAD - this.flota(k, e), VMAX);
+      this.arrastra(k, e);
+      let cx = x, cy = y, ck = k;
+      /* ⚠ CELDAS ENTERAS PARA VELOCIDADES FRACCIONARIAS: el mismo defecto de
+         la tanda pasada, en otro umbral. Un globo sube a 0.18 celdas por paso;
+         con `floor` eso son CERO celdas, y el código se iba a la rama de caer
+         y lo hacía bajar una. Una velocidad hacia arriba pequeña se convertía
+         en caída. Ahora la parte fraccionaria se juega a los dados —con el
+         azar propio, que tiene semilla, así que sigue siendo reproducible— y
+         un cuerpo que sube a 0.18 sube una celda cada cinco o seis pasos, que
+         es exactamente lo que quiere decir 0.18 celdas por paso. */
+      const vy = this.vy[ck];
+      if(vy < 0){
+        const subidas = this.pasosDe(-vy);
+        let subio = false;
+        for(let i = 0; i < subidas; i++){
+          if(!this.trata(cx, cy, ck, cx, cy - 1, e)) break;
+          cy--; ck = this.i(cx, cy); subio = true;
+        }
+        if(!subio && subidas > 0) this.vy[ck] = 0;
+      } else {
+        const saltos = this.pasosDe(vy);
+        let cayo = false;
+        for(let i = 0; i < saltos; i++){
+          if(!this.trata(cx, cy, ck, cx, cy + 1, e)) break;
+          cy++; ck = this.i(cx, cy); cayo = true;
+        }
+        if(!cayo && saltos > 0) this.vy[ck] *= .1;
+      }
+      if(this.vx[ck] > .35 || this.vx[ck] < -.35){
+        const d = this.vx[ck] > 0 ? 1 : -1;
+        if(this.trata(cx, cy, ck, cx + d, cy, e)){ cx += d; ck = this.i(cx, cy); }
+        else this.vx[ck] = 0;
+        this.vx[ck] *= .88;
+      }
+      return;
+    }
 
     if(est === 'gas' || est === 'energia'){
       if(this.burbujea(x, y, k, e)) return;
-      const sube = e.sube || 1;
-      const dirs = [[0,-1],[0,-1],[-1,-1],[1,-1],[-1,0],[1,0]];
-      for(let i = 0; i < sube + 2; i++){
-        const [dx, dy] = dirs[(this.rnd()*dirs.length)|0];
-        if(this.trata(x, y, k, x+dx, y+dy, e)) return;
+      /* ── LOS GASES VAN POR FLOTACIÓN, NO «HACIA ARRIBA» ──────────────────
+         Antes TODOS subían, sin más. Eso hace que el CO₂ suba —y el CO₂ pesa
+         una vez y media lo que el aire: se acumula en el suelo, que es por lo
+         que asfixia en un sótano y por lo que sirve para apagar un fuego—, y
+         hace imposible un globo, porque si todo sube da igual con qué lo
+         llenes. Ahora manda la densidad contra la del aire, y con eso el
+         helio y el hidrógeno suben, el vapor sube, y el CO₂ y el oxígeno
+         bajan. Uno solo número decide, y decide bien. */
+      const d = e.dens || 0;
+      const sube = d < DENS_AIRE;
+      const dy = sube ? -1 : 1;
+      /* ── EL GLOBO ────────────────────────────────────────────────────────
+         Un gas que quiere subir y tiene un sólido encima le PASA su empuje.
+         Eso es literalmente lo que hace un globo: el helio no tira de la tela,
+         la empuja desde dentro. Con esto, cualquier cáscara que Carlos
+         construya y llene de helio se levanta sola, sin un elemento «globo»
+         inventado ni un caso especial. */
+      if(sube && this.dentro(x, y - 1)){
+        const ka = this.i(x, y - 1);
+        if(this.t[ka] !== VACIO && this.estadoDe(ka) === 'solido' && !EL[this.t[ka]].fijo){
+          const empuje = (DENS_AIRE - d) * 0.55;
+          this.vy[ka] -= empuje;
+          /* si el empuje es de verdad, la cáscara deja de estar anclada: es lo
+             que hace que un globo pintado a mano llegue a despegar */
+          if(empuje > 0.25) this.suelto[ka] = 1;
+        }
+      }
+      const dirs = [[0,dy],[0,dy],[-1,dy],[1,dy],[-1,0],[1,0]];
+      const veces = (e.sube || 1) + 2;
+      for(let i = 0; i < veces; i++){
+        const [ddx, ddy] = dirs[(this.rnd()*dirs.length)|0];
+        if(this.trata(x, y, k, x+ddx, y+ddy, e)) return;
       }
       return;
     }
@@ -811,7 +1176,8 @@ export class Mundo {
        nada del suelo. Todo el sistema de velocidad estaba a medias y las
        pruebas del motor pasaban igual, porque todas medían cosas cayendo.
        Ahora si la velocidad apunta hacia arriba, SUBE. */
-    this.vy[k] = Math.min(this.vy[k] + GRAVEDAD, VMAX);
+    this.vy[k] = Math.min(this.vy[k] + GRAVEDAD - this.flota(k, e), VMAX);
+    this.arrastra(k, e);
     let cx = x, cy = y, ck = k, cayo = false;
 
     if(this.vy[ck] < -0.5){
@@ -896,6 +1262,30 @@ export class Mundo {
         }
       }
     }
+  }
+
+  /* ── FLOTACIÓN ────────────────────────────────────────────────────────
+     Cuánta gravedad le quita al cuerpo el medio que desplaza. Si el cuerpo
+     pesa menos que el aire, sale negativo y SUBE — que es lo que hace que una
+     cáscara ligera se levante sin ningún caso especial. */
+  flota(k, e){
+    const d = e.dens || 1;
+    if(d <= 0) return 0;
+    return GRAVEDAD * (DENS_AIRE / d);
+  }
+
+  /* ── RESISTENCIA DEL AIRE ─────────────────────────────────────────────
+     Carlos la pidió por su nombre. Es cuadrática, como la de verdad, y va
+     dividida por la densidad: por eso la ceniza revolotea y el hierro cae a
+     plomo. La velocidad terminal sale sola de igualar arrastre y gravedad —
+     √(g·densidad / (c·aire))—, así que no hay una tabla de «qué tan rápido
+     cae cada cosa»: hay una fórmula y ciento ochenta y cinco densidades. */
+  arrastra(k, e){
+    const d = e.dens || 1;
+    const c = 0.5 * DENS_AIRE / (d > 0.05 ? d : 0.05);
+    const vy = this.vy[k], vx = this.vx[k];
+    if(vy > 0.02 || vy < -0.02) this.vy[k] = vy - c * vy * (vy > 0 ? vy : -vy);
+    if(vx > 0.02 || vx < -0.02) this.vx[k] = vx - c * vx * (vx > 0 ? vx : -vx);
   }
 
   /* ¿Desde aquí se puede descender? Es lo que separa fluir de agitarse. */
@@ -1205,6 +1595,6 @@ export class Mundo {
     this.vida.fill(0); this.car.fill(0);
     this.vy.fill(0); this.vx.fill(0); this.pres.fill(0); this.pv.fill(0);
     this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
-    this.fase.fill(0); this.color.fill(0);
+    this.fase.fill(0); this.color.fill(0); this.suelto.fill(0); this.sop.fill(0);
   }
 }

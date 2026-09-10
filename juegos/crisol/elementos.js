@@ -30,7 +30,11 @@
 
 const JUEGO = {
   /* ── lo básico ────────────────────────────────────────────────────────── */
-  vacio:   { nom:'Vacío',   col:'#0B0712', estado:'gas',    dens:0,    cond:.02, grupo:'básico' },
+  /* El hueco es AIRE, no vacío, y por eso se llama así: sin un medio no hay
+     resistencia del aire, no hay flotación y no hay globo. No se simula ni una
+     celda —serían 153 600 partículas activas por cuadro para nada—, sólo se
+     comporta como aire con la densidad de DENS_AIRE. Y sigue siendo el borrador. */
+  vacio:   { nom:'Aire · borra', col:'#0B0712', estado:'gas', dens:1.2, cond:.02, grupo:'básico' },
   /* El muro es lo ÚNICO inamovible, y lo pidió Carlos por su nombre: «deja un
      muro inamovible por si quiero hacer algo especial». Ahora que los sólidos
      caen, hace falta algo que NO — o no habría suelo, ni recámara, ni cañón
@@ -69,17 +73,24 @@ const JUEGO = {
              fus:[0,'agua'], dureza:.2, frio:true, grupo:'agua' },
   nieve:   { nom:'Nieve',   col:'#E8F4FA', estado:'polvo',  dens:5, cond:.20,
              fus:[0,'agua'], frio:true, grupo:'agua' },
-  vapor:   { nom:'Vapor',   col:'#B9C9D6', estado:'gas',    dens:2, cond:.30,
+  /* ── LAS DENSIDADES DE LOS GASES SON RELATIVAS AL AIRE (1.2) ──────────
+     Y salen de la masa molar de verdad dividida entre la del aire (29 g/mol):
+     H₂ 2/29 → 0.08 · CH₄ 16/29 → 0.66 · H₂O 18/29 → 0.75 · O₂ 32/29 → 1.43 ·
+     CO₂ 44/29 → 1.83. Antes eran todas 1, 2 o 3 y todos los gases subían por
+     igual, lo cual es falso y además rompe dos cosas: el CO₂ pesa vez y media
+     lo que el aire —por eso se acumula en el suelo, asfixia en un sótano y
+     apaga fuegos— y un globo es imposible si da lo mismo con qué lo llenes. */
+  vapor:   { nom:'Vapor',   col:'#B9C9D6', estado:'gas',    dens:0.75, cond:.30,
              congela:[99,'agua'], grupo:'agua' },
   hielose: { nom:'Hielo seco', col:'#D6EEF5', estado:'polvo', dens:8, cond:.25,
              fus:[-78,'co2'], frio:true, grupo:'agua' },
-  co2:     { nom:'CO₂',     col:'#7A8A94', estado:'gas',    dens:3, cond:.15,
+  co2:     { nom:'CO₂',     col:'#7A8A94', estado:'gas',    dens:1.83, cond:.15,
              ahoga:true, grupo:'gases' },
 
   /* ── fuego, calor y sus restos ────────────────────────────────────────── */
-  fuego:   { nom:'Fuego',   col:'#FF6A1A', estado:'energia', dens:1, cond:.9,
+  fuego:   { nom:'Fuego',   col:'#FF6A1A', estado:'energia', dens:0.3, cond:.9,
              vida:52, muere:'humo', calor:true, grupo:'fuego' },
-  humo:    { nom:'Humo',    col:'#4A4453', estado:'gas',    dens:1, cond:.10,
+  humo:    { nom:'Humo',    col:'#4A4453', estado:'gas',    dens:0.6, cond:.10,
              vida:220, muere:'vacio', grupo:'fuego' },
   ceniza:  { nom:'Ceniza',  col:'#4F4954', estado:'polvo',  dens:12, cond:.12,
              dureza:.1, grupo:'fuego' },
@@ -93,7 +104,7 @@ const JUEGO = {
   /* ── combustibles ─────────────────────────────────────────────────────── */
   aceite:  { nom:'Aceite',  col:'#5A4520', estado:'liquido', dens:8, cond:.20,
              arde:.7, calorArde:700, ebu:[300,'gasnat'], grupo:'combustible' },
-  gasnat:  { nom:'Gas',     col:'#93A05A', estado:'gas',    dens:2, cond:.10,
+  gasnat:  { nom:'Gas',     col:'#93A05A', estado:'gas',    dens:0.66, cond:.10,
              arde:1, calorArde:900, grupo:'combustible' },
   polvora: { nom:'Pólvora', col:'#3E3A44', estado:'polvo',  dens:13, cond:.15,
              arde:1, calorArde:1400, explota:9, dureza:.05, grupo:'combustible' },
@@ -103,15 +114,22 @@ const JUEGO = {
      velocidad de impacto. `golpe` es a qué velocidad revienta. */
   nitro:   { nom:'Nitroglicerina', col:'#C8B96A', estado:'liquido', dens:12, cond:.2,
              arde:1, calorArde:2200, explota:22, golpe:2.2, grupo:'combustible' },
+  /* Tela de globo: un sólido LIGERO, que es lo que hace falta para que un
+     globo vuele. Con madera no vuela —pesa diecinueve veces el aire— igual
+     que en la vida real: los globos se hacen de película fina justo por eso.
+     Sigue pesando el doble que el aire, así que sola tampoco vuela: hay que
+     llenarla de algo más ligero. Ahí es donde entra el helio. */
+  globo:   { nom:'Tela de globo', col:'#E85A8A', estado:'solido', dens:2.5, cond:.2,
+             dureza:.02, arde:.6, calorArde:400, grupo:'básico' },
   madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12,
              arde:.35, calorArde:600, dureza:.25, grupo:'combustible' },
   carbon:  { nom:'Carbón',  col:'#26222C', estado:'polvo',  dens:14, cond:.16,
              arde:.5, calorArde:1100, dureza:.15, grupo:'combustible' },
 
   /* ── gases ────────────────────────────────────────────────────────────── */
-  hidrogeno:{nom:'Hidrógeno',col:'#C9D8FF',estado:'gas',   dens:1, cond:.5,
+  hidrogeno:{nom:'Hidrógeno',col:'#C9D8FF',estado:'gas',   dens:0.08, cond:.5,
              arde:1, calorArde:1200, explota:7, sube:2, grupo:'gases' },
-  oxigeno: { nom:'Oxígeno',  col:'#8FD8FF', estado:'gas',   dens:2, cond:.2,
+  oxigeno: { nom:'Oxígeno',  col:'#8FD8FF', estado:'gas',   dens:1.43, cond:.2,
              aviva:true, grupo:'gases' },
 
   /* ── metales y electricidad ───────────────────────────────────────────── */
@@ -422,6 +440,18 @@ export const REACCIONES = [
   ['semilla','agua',  'planta',  'vacio',   .06,  0],
   ['semilla','tierra','semilla', 'tierra',  0,    0],
 ];
+
+/* ── LOS GASES DE LA TABLA, POR SU MASA MEDIDA ──────────────────────────
+   Los 118 traen `masa` en g/cm³ de verdad —el helio 0.00018, el nitrógeno
+   0.00125— y su `dens` de juego venía puesta a 1 para todos, o sea inservible
+   para flotar. El aire son 0.0012 g/cm³, así que la densidad de juego sale de
+   una división y no de una tabla escrita a mano: helio 0.15 veces el aire,
+   nitrógeno 1.04, oxígeno 1.19, radón 7.7. Es el mismo dato real que ya
+   estaba, usado para algo. */
+for(const id of Object.keys(TABLA)){
+  const e = TABLA[id];
+  if(e.estado === 'gas' && e.masa) e.dens = Math.round((e.masa / 0.0012) * 1.2 * 100) / 100;
+}
 
 /* Los de juego y los 118 en una sola tabla: el motor no distingue. */
 Object.assign(JUEGO, TABLA);
