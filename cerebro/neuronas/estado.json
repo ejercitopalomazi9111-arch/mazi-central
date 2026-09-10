@@ -271,6 +271,29 @@
       "vecinas": [
         "salto-que-no-mira-el-camino"
       ]
+    },
+    {
+      "id": "corriente-que-se-alimenta-de-si-misma",
+      "titulo": "Corté la pila y el cable siguió encendido para siempre",
+      "gravedad": "alta",
+      "sintoma": "Circuitos imposibles de operar: se prendían y ya no había forma de apagarlos. Carlos lo describió como «medio raro de operar».",
+      "causa": "Cada celda se encendía si algún VECINO estaba encendido. Eso es una definición circular: el tramo se sostiene a sí mismo sin fuente.",
+      "porque": "Copiar el estado del vecino parece propagación, pero propagar sin ORIGEN ni COSTE convierte el estado en un rumor: nadie recuerda de dónde vino y por eso nadie puede desmentirlo.",
+      "arreglo": "Recorrido en anchura DESDE las fuentes, con distancia acumulada y un alcance máximo. La resistencia es distancia extra (caída de tensión), no un corte al azar — un corte aleatorio hace parpadear el circuito y no se puede operar.",
+      "comoCazarlo": "Apaga la fuente y corre cien pasos. Si algo sigue encendido, el estado se está alimentando de sí mismo.",
+      "consejo": "Todo estado que se propaga necesita saber de quién viene y a qué distancia. Sin eso, no se puede apagar.",
+      "salioDe": "juegos/crisol/motor.js · electricidad reescrita como BFS con cola por cubetas",
+      "senales": [
+        "no se apaga",
+        "se queda prendido",
+        "parpadea",
+        "raro de operar"
+      ],
+      "vecinas": [
+        "temporizador-que-nadie-mata",
+        "bandera-global-primera-vez",
+        "una-bandera-con-dos-significados"
+      ]
     }
   ]
 }

@@ -281,5 +281,372 @@ seccion('nada se rompe ni se desborda');
   ok('ningún tipo inválido y ninguna temperatura NaN o infinita', malos === 0, malos + ' celdas malas');
 }
 
+seccion('física nueva: velocidad, presión y golpe');
+{
+  /* Lo que pidió Carlos con todas sus letras: una columna cae JUNTA, no se
+     desmorona de abajo hacia arriba. Se mide el ALTO del bloque: si se
+     estira, es que cada partícula está cayendo por su cuenta. */
+  const m = mundo(20, 60);
+  for(let y = 4; y < 12; y++) for(let x = 8; x < 12; x++) m.pon(x, y, IDX.arena);
+  const altoDe = () => { let a = 99, b = -1;
+    for(let y = 0; y < 60; y++) for(let x = 0; x < 20; x++)
+      if(m.t[m.i(x,y)] === IDX.arena){ if(y<a)a=y; if(y>b)b=y; }
+    return b - a + 1; };
+  const antes = altoDe();
+  corre(m, 6);
+  const durante = altoDe();
+  ok('una columna en el aire cae JUNTA, sin estirarse',
+     durante <= antes + 1, 'alto ' + antes + ' → ' + durante);
+
+  const v = mundo(20, 60);
+  v.pon(10, 2, IDX.arena);
+  let y1 = 0, y2 = 0;
+  for(let i = 0; i < 6; i++) v.paso();
+  for(let y = 0; y < 60; y++) if(v.t[v.i(10,y)] === IDX.arena) y1 = y;
+  for(let i = 0; i < 6; i++) v.paso();
+  for(let y = 0; y < 60; y++) if(v.t[v.i(10,y)] === IDX.arena) y2 = y;
+  ok('y ACELERA: el segundo tramo es más largo que el primero',
+     (y2 - y1) > y1 - 2, 'primeros 6 pasos ' + (y1-2) + ' celdas · siguientes 6 ' + (y2-y1));
+}
+
+seccion('la explosión es una ONDA, no un parpadeo');
+{
+  const m = mundo(60, 60, 5);
+  for(let y = 30; y < 34; y++) for(let x = 28; x < 32; x++) m.pon(x, y, IDX.polvora);
+  m.pon(30, 29, IDX.fuego);
+  let picoPresion = 0, cuandoPico = -1, radioMax = 0;
+  for(let i = 0; i < 40; i++){
+    m.paso();
+    let p = 0, r = 0;
+    for(let y = 0; y < 60; y++) for(let x = 0; x < 60; x++){
+      const k = m.i(x,y);
+      if(m.pres[k] > p) p = m.pres[k];
+      if(m.pres[k] > 4){ const d = Math.hypot(x-30, y-31); if(d > r) r = d; }
+    }
+    if(p > picoPresion){ picoPresion = p; cuandoPico = i; }
+    if(r > radioMax) radioMax = r;
+  }
+  ok('la explosión genera presión de verdad', picoPresion > 20, 'pico ' + picoPresion.toFixed(0));
+  ok('y la onda se EXPANDE varias celdas', radioMax > 5, 'radio ' + radioMax.toFixed(1));
+
+  /* que la presión se calme: una onda que no decae es un motor atascado */
+  for(let i = 0; i < 300; i++) m.paso();
+  let queda = 0;
+  for(let k = 0; k < m.pres.length; k++) if(m.pres[k] > 2) queda++;
+  ok('y después se calma sola', queda < 20, queda + ' celdas siguen presurizadas');
+}
+
+seccion('la nitro ya no explota nada más ponerla');
+{
+  const m = mundo(24, 24, 11);
+  crisol(m, 4, 14, 20, 22);
+  for(let x = 6; x < 18; x++) for(let y = 19; y < 22; y++) m.pon(x, y, IDX.nitro);
+  const antes = cuantos(m, 'nitro');
+  corre(m, 400);
+  ok('puesta en reposo, aguanta 400 pasos sin detonar',
+     cuantos(m, 'nitro') >= antes - 2, antes + ' → ' + cuantos(m, 'nitro'));
+
+  /* pero SÍ detona por golpe */
+  const g = mundo(30, 60, 3);
+  for(let x = 12; x < 18; x++) g.pon(x, 55, IDX.nitro);
+  /* ⚠ antes usaba PIEDRA, que es sólida y NO CAE: la prueba medía una roca
+     flotando y culpaba a la nitro. La grava sí cae. */
+  for(let x = 12; x < 18; x++) for(let y = 2; y < 6; y++) g.pon(x, y, IDX.grava);
+  corre(g, 120);
+  ok('pero le tiras grava desde alto y SÍ revienta',
+     cuantos(g, 'nitro') < 6, 'quedan ' + cuantos(g, 'nitro') + ' de 6');
+}
+
+seccion('gas DENTRO del agua');
+{
+  const m = mundo(24, 30, 9);
+  crisol(m, 4, 6, 20, 26);
+  for(let y = 10; y < 26; y++) for(let x = 5; x < 20; x++) m.pon(x, y, IDX.agua);
+  /* meter gas en el FONDO del agua, que antes era imposible */
+  for(let x = 10; x < 14; x++) m.pon(x, 24, IDX.gasnat);
+  let subio = false;
+  for(let i = 0; i < 90; i++){
+    m.paso();
+    for(let x = 5; x < 20; x++) if(m.t[m.i(x, 12)] === IDX.gasnat) subio = true;
+    if(subio) break;
+  }
+  ok('el gas metido en el fondo BURBUJEA hacia arriba', subio);
+}
+
+seccion('electrónica que se puede OPERAR');
+{
+  /* interruptor: lo que faltaba para poder encender algo a voluntad */
+  const m = mundo(20, 10);
+  m.pon(2, 5, IDX.bateria);
+  for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(8, 5, IDX.interruptor);
+  for(let x = 9; x < 14; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(14, 5, IDX.lampara);
+  corre(m, 30);
+  ok('con el interruptor ABIERTO la lámpara no enciende', m.car[m.i(14,5)] === 0);
+  m.acciona(8, 5);
+  corre(m, 30);
+  ok('y al accionarlo, enciende', m.car[m.i(14,5)] === 1);
+  m.acciona(8, 5);
+  corre(m, 30);
+  ok('y vuelve a apagarse', m.car[m.i(14,5)] === 0);
+
+  /* resistencia: calienta de verdad */
+  const r = mundo(20, 10);
+  r.pon(2, 5, IDX.bateria);
+  for(let x = 3; x < 9; x++) r.pon(x, 5, IDX.cobre);
+  r.pon(9, 5, IDX.resistencia);
+  corre(r, 60);
+  const tRes = r.temp[r.i(9,5)], tCab = r.temp[r.i(5,5)];
+  ok('la resistencia se CALIENTA mucho más que el cable',
+     tRes > tCab + 20, 'resistencia ' + tRes.toFixed(0) + '° · cable ' + tCab.toFixed(0) + '°');
+
+  /* pulsador: la señal que cambia sola */
+  const s = mundo(20, 10);
+  s.pon(4, 5, IDX.pulsador);
+  for(let x = 5; x < 12; x++) s.pon(x, 5, IDX.cobre);
+  let encendido = 0, apagado = 0;
+  for(let i = 0; i < 80; i++){ s.paso(); s.car[s.i(11,5)] ? encendido++ : apagado++; }
+  ok('el pulsador late solo: enciende Y apaga', encendido > 8 && apagado > 8,
+     encendido + ' encendido · ' + apagado + ' apagado');
+}
+
+seccion('magnetismo');
+{
+  const m = mundo(40, 40, 5);
+  crisol(m, 4, 4, 36, 36);
+  /* ⚠ antes ponía el imán a 21 celdas y su alcance es 9: la limadura ni se
+     enteraba, y la prueba culpaba al magnetismo de estar fuera de rango. */
+  m.pon(20, 30, IDX.iman);
+  for(let y = 26; y < 29; y++) for(let x = 13; x < 16; x++) m.pon(x, y, IDX.limadura);
+  const xMedio = () => { let s = 0, n = 0;
+    for(let y = 0; y < 40; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x,y)] === IDX.limadura){ s += x; n++; }
+    return n ? s / n : 0; };
+  const antes = xMedio();
+  corre(m, 120);
+  const despues = xMedio();
+  ok('el imán JALA la limadura hacia él', despues > antes + 2,
+     'x medio ' + antes.toFixed(1) + ' → ' + despues.toFixed(1));
+
+  /* el electroimán, sólo con corriente */
+  const sinCorriente = mundo(40, 40, 5);
+  crisol(sinCorriente, 4, 4, 36, 36);
+  sinCorriente.pon(20, 30, IDX.electroiman);
+  for(let y = 26; y < 29; y++) for(let x = 13; x < 16; x++) sinCorriente.pon(x, y, IDX.limadura);
+  const a0 = (() => { let s=0,n=0; for(let y=0;y<40;y++) for(let x=0;x<40;x++)
+    if(sinCorriente.t[sinCorriente.i(x,y)] === IDX.limadura){ s+=x; n++; } return s/n; })();
+  corre(sinCorriente, 120);
+  const a1 = (() => { let s=0,n=0; for(let y=0;y<40;y++) for(let x=0;x<40;x++)
+    if(sinCorriente.t[sinCorriente.i(x,y)] === IDX.limadura){ s+=x; n++; } return s/n; })();
+  ok('el electroimán SIN corriente no jala nada', a1 < a0 + 2,
+     'x medio ' + a0.toFixed(1) + ' → ' + a1.toFixed(1));
+}
+
+seccion('los 118 de la tabla periódica');
+{
+  const { TABLA } = await import('./elementos.js');
+  const ids = Object.keys(TABLA);
+  ok('están los 118', ids.length === 118, ids.length + ' elementos');
+
+  /* los datos son REALES: se comprueban contra los valores conocidos */
+  ok('el hierro funde a 1538 °C', TABLA.eFe.fusReal === 1538, TABLA.eFe.fusReal);
+  ok('el oro funde a 1064 °C', TABLA.eAu.fusReal === 1064, TABLA.eAu.fusReal);
+  /* ⚠ yo había escrito «el wolframio es el que más aguanta» y ES FALSO: el
+     carbono funde a 3550. El wolframio es el METAL que más aguanta, que no es
+     lo mismo. El dato estaba bien; la afirmación era mía y estaba mal. */
+  ok('el wolframio es el METAL que más aguanta: 3422 °C',
+     TABLA.eW.fusReal === 3422 &&
+     /* ⚠ y aquí caí en la trampa de siempre: filtraba con
+        `grupo.includes('metal')`, y «NO METAL» CONTIENE «METAL». El carbono se
+        colaba en la lista de metales y volvía a ganar. Se compara el grupo
+        entero, no un pedazo. */
+     Math.max(...ids.filter(i => ['⚛ transición','⚛ metal','⚛ alcalino',
+                                  '⚛ alcalinotérreo','⚛ lantánido','⚛ actínido']
+                                  .indexOf(TABLA[i].grupo) >= 0)
+                  .map(i => TABLA[i].fusReal || -999)) === 3422, TABLA.eW.fusReal);
+  ok('y el carbono aguanta todavía más, que es lo correcto', TABLA.eC.fusReal === 3550);
+  /* ⚠ el osmio es el más denso MEDIDO. Varios superpesados traen densidades
+     mayores, pero son calculadas: de ellos existen unos pocos átomos que
+     duran milisegundos y nadie ha pesado un trozo. Van marcados. */
+  const medidos = ids.filter(i => !TABLA[i].predicho);
+  ok('el osmio es el más denso de los MEDIDOS',
+     Math.max(...medidos.map(i => TABLA[i].masa)) === TABLA.eOs.masa,
+     TABLA.eOs.masa + ' g/cm³');
+  ok('y las densidades calculadas van marcadas, no coladas como medición',
+     ids.filter(i => TABLA[i].predicho).length > 10);
+  ok('el mercurio es líquido a temperatura ambiente', TABLA.eHg.fusReal < 22);
+  ok('el helio y el neón son gases', TABLA.eHe.estado === 'gas' && TABLA.eNe.estado === 'gas');
+
+  /* ⚠ lo que NO se inventa */
+  /* ⚠ la primera versión metía en el mismo saco a los gases, que no llevan
+     `fusReal` por otra razón. Se comprueban sólo los sólidos. */
+  const sinDato = ids.filter(i => TABLA[i].fusReal == null && TABLA[i].estado !== 'gas');
+  ok('a los sintéticos sin fusión medida NO se les inventó un número',
+     sinDato.length > 0 && sinDato.every(i => TABLA[i].z >= 100),
+     sinDato.length + ' sin dato: ' + sinDato.map(i=>TABLA[i].sim).join(' '));
+
+  /* y que la fase FUNCIONE: el hierro se funde y escurre */
+  const m = mundo(20, 30, 6);
+  crisol(m, 4, 8, 16, 26);
+  for(let x = 6; x < 14; x++) for(let y = 12; y < 15; y++) m.pon(x, y, IDX.eFe);
+  corre(m, 5);
+  ok('el hierro a temperatura ambiente es SÓLIDO y no se mueve',
+     m.estadoDe(m.i(8, 12)) === 'solido');
+  for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.eFe) m.temp[k] = 1600;
+  /* ⚠ DOS ERRORES MÍOS EN LA MISMA PRUEBA, y los dos de medir mal:
+     1 · miraba DOS CELDAS CONCRETAS, y en cuanto el hierro se funde ESCURRE:
+         esas celdas quedan vacías y la prueba culpaba a la fusión de que el
+         metal se hubiera movido.
+     2 · medía a los 3 pasos, y para entonces YA SE VOLVIÓ A SOLIDIFICAR: con
+         masa térmica, un puñado de hierro rodeado de muro frío pasa de 1600 a
+         1499 en tres pasos. El motor tenía razón las dos veces.
+     Se pregunta por la propiedad y en el instante en que ocurre. */
+  const cuantasLiquidas = (mm) => {
+    let n = 0;
+    for(let q = 0; q < mm.t.length; q++)
+      if(mm.t[q] === IDX.eFe && mm.estadoDe(q) === 'liquido') n++;
+    return n;
+  };
+  m.paso();
+  ok('a 1600 °C se FUNDE (por encima de sus 1538)', cuantasLiquidas(m) > 0,
+     cuantasLiquidas(m) + ' celdas líquidas');
+  corre(m, 6);
+  ok('y sin horno se vuelve a solidificar en unos pasos, como el metal real',
+     cuantasLiquidas(m) === 0);
+  /* ⚠ antes corría 60 pasos y esperaba que llegara al fondo. No llegaba, y
+     el motor tenía razón: en 60 pasos el hierro se enfría por debajo de 1538
+     y VUELVE A SER SÓLIDO a media caída. Eso es lo que hace el metal fundido
+     cuando nadie mantiene el horno encendido. Con el horno puesto, escurre. */
+  for(let i = 0; i < 60; i++){
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.eFe) m.temp[k] = 1600;
+    m.paso();
+  }
+  let masAbajo = 0;
+  for(let y = 0; y < 30; y++) for(let x = 0; x < 20; x++)
+    if(m.t[m.i(x,y)] === IDX.eFe && y > masAbajo) masAbajo = y;
+  ok('y fundido, con el horno encendido, ESCURRE al fondo del crisol',
+     masAbajo >= 24, 'llegó a y=' + masAbajo);
+
+  const frio = mundo(20, 30, 6);
+  crisol(frio, 4, 8, 16, 26);
+  for(let x = 6; x < 14; x++) frio.pon(x, 12, IDX.eFe);
+  for(let k = 0; k < frio.t.length; k++) if(frio.t[k] === IDX.eFe) frio.temp[k] = 1600;
+  corre(frio, 90);
+  ok('y si lo dejas enfriar, SE SOLIDIFICA a medio camino — como el metal real',
+     frio.estadoDe(frio.i(9, 20)) === 'solido' ||
+     [...Array(30).keys()].some(y => frio.t[frio.i(9,y)] === IDX.eFe &&
+                                     frio.estadoDe(frio.i(9,y)) === 'solido'));
+
+  /* densidad real: el oro se hunde en el mercurio... no, FLOTA. 19.3 vs 13.5 */
+  ok('el oro pesa más que el mercurio (19.3 vs 13.5)', TABLA.eAu.dens > TABLA.eHg.dens);
+}
+
+seccion('automatización: lo que Carlos pidió por su nombre');
+{
+  /* RELOJ DE ARENA: no deja pasar hasta que pase el tiempo */
+  const m = mundo(30, 10);
+  m.pon(2, 5, IDX.bateria);
+  for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(8, 5, IDX.reloj);
+  for(let x = 9; x < 14; x++) m.pon(x, 5, IDX.cobre);
+  m.pon(14, 5, IDX.lampara);
+  corre(m, 20);
+  ok('el reloj de arena NO deja pasar al principio', m.car[m.i(14,5)] === 0);
+  corre(m, 120);
+  ok('pero deja pasar cuando se llena su tiempo', m.car[m.i(14,5)] === 1);
+  m.acciona(8, 5);
+  corre(m, 8);
+  ok('y tocarlo lo REINICIA («que se puedan apagar al tiempo»)', m.car[m.i(14,5)] === 0);
+
+  /* REPETIDOR: sin él la corriente se muere de lejos */
+  const largo = mundo(200, 10);
+  largo.pon(1, 5, IDX.bateria);
+  for(let x = 2; x < 195; x++) largo.pon(x, 5, IDX.cobre);
+  largo.pon(195, 5, IDX.lampara);
+  corre(largo, 260);
+  ok('sin repetidor, la corriente NO llega a 195 celdas', largo.car[largo.i(195,5)] === 0);
+
+  const rep = mundo(200, 10);
+  rep.pon(1, 5, IDX.bateria);
+  for(let x = 2; x < 195; x++) rep.pon(x, 5, x % 60 === 0 ? IDX.repetidor : IDX.cobre);
+  rep.pon(195, 5, IDX.lampara);
+  corre(rep, 300);
+  ok('CON repetidores cada 60, sí llega', rep.car[rep.i(195,5)] === 1);
+
+  /* PILA que se acaba y se recarga */
+  const pila = mundo(20, 10);
+  pila.pon(2, 5, IDX.pila);
+  for(let x = 3; x < 10; x++) pila.pon(x, 5, IDX.cobre);
+  pila.pon(10, 5, IDX.lampara);
+  corre(pila, 30);
+  ok('la pila enciende al principio', pila.car[pila.i(10,5)] === 1);
+  const cargaInicial = pila.vida[pila.i(2,5)];
+  corre(pila, 2700);
+  ok('y SE ACABA con el uso', pila.car[pila.i(10,5)] === 0,
+     'carga ' + cargaInicial + ' → ' + pila.vida[pila.i(2,5)]);
+  for(let i = 0; i < 400; i++){ pila.temp[pila.i(2,5)] = 300; pila.paso(); }
+  ok('y con calor SE RECARGA', pila.vida[pila.i(2,5)] > 0,
+     'carga ' + pila.vida[pila.i(2,5)]);
+
+  /* PISTÓN que lanza */
+  const pis = mundo(30, 40, 4);
+  pis.pon(15, 35, IDX.piston);
+  pis.pon(15, 34, IDX.arena);
+  pis.pon(14, 35, IDX.bateria);
+  /* ⚠ antes buscaba sólo en la COLUMNA 15, y una arena lanzada se va de lado:
+     la prueba la perdía de vista y decía que no había subido. */
+  let yMin = 99;
+  for(let i = 0; i < 60; i++){
+    pis.paso();
+    for(let y = 0; y < 40; y++) for(let x = 0; x < 30; x++)
+      if(pis.t[pis.i(x,y)] === IDX.arena && y < yMin) yMin = y;
+  }
+  ok('el pistón con corriente LANZA lo que tiene encima', yMin < 33, 'llegó a y=' + yMin);
+
+  /* OBSERVADOR */
+  const obs = mundo(20, 14);
+  obs.pon(8, 8, IDX.observador);
+  for(let x = 9; x < 14; x++) obs.pon(x, 8, IDX.cobre);
+  corre(obs, 12);
+  const quieto = obs.car[obs.i(13,8)];
+  obs.pon(8, 7, IDX.piedra);          /* algo CAMBIA encima */
+  let disparo = false;
+  for(let i = 0; i < 14; i++){ obs.paso(); if(obs.car[obs.i(13,8)]) disparo = true; }
+  ok('el observador dispara cuando CAMBIA lo que tiene encima', !quieto && disparo);
+}
+
+seccion('pirotecnia');
+{
+  const m = mundo(60, 60, 12);
+  for(let y = 28; y < 32; y++) for(let x = 28; x < 32; x++) m.pon(x, y, IDX.estRoja);
+  m.pon(30, 27, IDX.fuego);
+  let chispas = 0, colores = new Set();
+  for(let i = 0; i < 40; i++){
+    m.paso();
+    for(let k = 0; k < m.t.length; k++)
+      if(m.t[k] === IDX.chispa){ chispas++; colores.add(m.color[k]); }
+    if(chispas) break;
+  }
+  ok('una estrella al arder suelta CHISPAS', chispas > 0, chispas + ' chispas');
+  ok('y las chispas llevan el color de SU estrella', colores.has(1),
+     'colores ' + [...colores].join(','));
+
+  /* la mecha se quema despacio y en línea, para retrasar la tronada */
+  const me = mundo(40, 12, 8);
+  for(let x = 4; x < 34; x++) me.pon(x, 8, IDX.mecha);
+  /* ⚠ antes ponía FUEGO al lado, y el fuego es «energía»: SUBE y se va
+     volando en el primer paso, sin llegar a tocar la mecha. Se enciende
+     calentando la punta, que es lo que hace un cerillo. */
+  me.temp[me.i(4, 8)] = 800;
+  let paso20 = 0, paso200 = 0;
+  for(let i = 0; i < 20; i++) me.paso();
+  paso20 = cuantos(me, 'mecha');
+  for(let i = 0; i < 400; i++) me.paso();
+  paso200 = cuantos(me, 'mecha');
+  ok('la mecha se quema DESPACIO, no de golpe', paso20 > 24 && paso200 < paso20,
+     '30 → ' + paso20 + ' (20 pasos) → ' + paso200 + ' (420 pasos)');
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);

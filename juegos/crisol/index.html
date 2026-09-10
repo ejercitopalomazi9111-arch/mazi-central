@@ -12,13 +12,23 @@
   --ab:env(safe-area-inset-bottom,0px); --ar:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+/* ⚠ EL MENÚ SE LE SUBÍA A CARLOS EN SU NAVEGADOR, y la causa es de manual en
+   iPhone: `height:100%` mide el viewport SIN contar que la barra de
+   direcciones de Safari aparece y desaparece al hacer scroll. Cuando se
+   recoge, el documento mide más que la ventana y el panel de abajo se va
+   hacia arriba de la pantalla.
+   `100dvh` —dynamic viewport height— sí sigue a la barra. Va con `100vh` de
+   respaldo primero, para los navegadores que no lo conocen: el orden importa,
+   porque el segundo pisa al primero sólo donde se entiende. */
+html{height:100%}
 body{
+  margin:0; overflow:hidden; overscroll-behavior:none;
+  height:100vh; height:100dvh;
   background:var(--vacio);color:var(--hueso);
   font:14px/1.4 ui-rounded,-apple-system,"Segoe UI",system-ui,sans-serif;
   user-select:none;-webkit-user-select:none;
   display:flex;flex-direction:column;
-  padding-top:var(--ar);padding-bottom:var(--ab);
+  padding-top:var(--ar);
 }
 
 /* ── barra de arriba ───────────────────────────────────────────────────── */
@@ -43,7 +53,30 @@ body{
 }
 
 /* ── panel de abajo ────────────────────────────────────────────────────── */
-#panel{flex:0 0 auto;background:var(--sup);max-height:44vh;display:flex;flex-direction:column}
+/* Y el panel va CLAVADO abajo, no sólo «al final del flujo»: con position
+   fixed no hay barra de navegador que lo mueva. */
+#panel{
+  position:fixed; left:0; right:0; bottom:0; z-index:8;
+  background:var(--sup); display:flex; flex-direction:column;
+  max-height:52dvh;
+  padding-bottom:var(--ab);
+  box-shadow:0 -10px 30px rgba(0,0,0,.5);
+  transition:transform .22s ease;
+}
+/* Desplegable: Carlos lo pidió porque el panel se come media pantalla y a
+   veces lo que quieres es MIRAR el mundo. */
+#panel.plegado{ transform:translateY(calc(100% - 52px - var(--ab))) }
+#tirador{
+  height:52px; flex:0 0 auto; display:flex; align-items:center; gap:10px;
+  padding:0 12px; cursor:pointer; background:none; border:0; color:inherit;
+  font:inherit; font-weight:700; width:100%; text-align:left;
+}
+#tirador .asa{
+  width:38px; height:5px; border-radius:99px; background:#6E6880; flex:0 0 auto;
+}
+#tirador .qual{ font-size:13px; color:#B9B0C8; flex:1; }
+#tirador .flecha{ font-size:13px; color:#9C93AB }
+@media (prefers-reduced-motion: reduce){ #panel{transition:none} }
 #pestanas{display:flex;gap:4px;padding:6px 8px 0;overflow-x:auto}
 .pes{
   border:0;background:transparent;color:#9C93AB;font:inherit;font-weight:700;
@@ -94,6 +127,12 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
 </div>
 
 <div id="panel">
+  <button id="tirador" aria-expanded="true" aria-controls="cuerpoPanel">
+    <span class="asa"></span>
+    <span class="qual" id="qual">Arena</span>
+    <span class="flecha" id="flecha">▾ ocultar</span>
+  </button>
+  <div id="cuerpoPanel">
   <div id="pestanas"></div>
   <div id="lista"></div>
   <div id="herr">
@@ -101,6 +140,9 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <input type="range" id="tam" min="1" max="14" value="4">
     <button class="icono" id="bCalor" aria-label="Calentar" title="Calentar">🔥</button>
     <button class="icono" id="bFrio" aria-label="Enfriar" title="Enfriar">❄️</button>
+    <button class="icono" id="bMas" aria-label="Acercar">＋</button>
+    <button class="icono" id="bMenos" aria-label="Alejar">－</button>
+  </div>
   </div>
 </div>
 
@@ -118,28 +160,50 @@ const cv = document.getElementById('mundo');
 const ctx = cv.getContext('2d', { alpha:false });
 const $ = id => document.getElementById(id);
 
-const ESC = 4;                    /* píxeles de pantalla por celda */
-let M, img, datos, an, al;
+/* ── LA SALA ───────────────────────────────────────────────────────────
+   Carlos: «quiero una sala de crisol mucho más grande para que me quepan
+   todas mis locuras» y «que pueda hacer zoom». Van juntas: una sala grande
+   sin zoom es una sala que no se ve.
+
+   El mundo tiene AHORA UN TAMAÑO PROPIO, mucho mayor que la pantalla, y lo
+   que ves es una ventana que se mueve por encima. El dibujo se hace al mundo
+   entero en un lienzo aparte y luego se recorta — así el zoom no cuesta nada,
+   porque es la misma imagen mirada más de cerca. */
+const SALA_AN = 320, SALA_AL = 480;
+let M, img, datos, an = SALA_AN, al = SALA_AL;
+let lienzoMundo = null, ctxMundo = null;
+/* la ventana: qué trozo del mundo se ve */
+const vista = { x:0, y:0, esc:4 };
+
+function limitaVista(){
+  const z = document.getElementById('zona').getBoundingClientRect();
+  vista.esc = Math.max(1.2, Math.min(14, vista.esc));
+  const anVis = z.width / vista.esc, alVis = z.height / vista.esc;
+  vista.x = Math.max(0, Math.min(an - anVis, vista.x));
+  vista.y = Math.max(0, Math.min(al - alVis, vista.y));
+  if(anVis >= an) vista.x = (an - anVis) / 2;
+  if(alVis >= al) vista.y = (al - alVis) / 2;
+}
 
 function medir(){
   const z = document.getElementById('zona').getBoundingClientRect();
-  an = Math.max(60, Math.floor(z.width / ESC));
-  al = Math.max(60, Math.floor(z.height / ESC));
-  cv.width = an; cv.height = al;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.round(z.width * dpr); cv.height = Math.round(z.height * dpr);
+  cv.style.width = z.width + 'px'; cv.style.height = z.height + 'px';
+  if(M){ limitaVista(); return; }
   const nuevo = new Mundo(an, al);
-  if(M){
-    /* al girar el teléfono no se tira lo que llevas hecho */
-    const w = Math.min(M.an, an), h = Math.min(M.al, al);
-    for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){
-      const k = M.i(x, y), k2 = nuevo.i(x, y);
-      nuevo.t[k2] = M.t[k]; nuevo.temp[k2] = M.temp[k]; nuevo.car[k2] = M.car[k];
-    }
-    nuevo.nacidos = M.nacidos;
-  }
   M = nuevo;
-  img = ctx.createImageData(an, al);
+  /* El mundo se dibuja completo aquí, y la pantalla sólo recorta. Al girar el
+     teléfono no se pierde nada porque el mundo no cambia de tamaño: cambia la
+     ventana. */
+  lienzoMundo = document.createElement('canvas');
+  lienzoMundo.width = an; lienzoMundo.height = al;
+  ctxMundo = lienzoMundo.getContext('2d', { alpha:false });
+  img = ctxMundo.createImageData(an, al);
   datos = img.data;
   for(let i = 3; i < datos.length; i += 4) datos[i] = 255;
+  vista.x = an / 2 - 48; vista.y = al - 90;
+  limitaVista();
 }
 
 /* colores precalculados: convertir '#RRGGBB' 30 000 veces por cuadro es
@@ -161,6 +225,19 @@ function pinta(){
     const tipo = t[k];
     const c = RGB[tipo];
     let r = c[0], g = c[1], b = c[2];
+    if(tipo === VACIO){
+      /* ⚠ Carlos: «es difícil saber dónde está esa zona si no hay un material
+         abajo». Y era literal: el vacío se pintaba siempre del mismo negro,
+         así que una zona calentada o enfriada era INVISIBLE hasta que le
+         echabas algo encima. Un campo que no se ve no se puede usar. */
+      const T = M.temp[k];
+      if(T > 40){ const f = Math.min(1, (T - 40) / 700);
+        r += f*170; g += f*58; b += f*14; }
+      else if(T < 8){ const f = Math.min(1, (8 - T) / 55);
+        r += f*8; g += f*46; b += f*96; }
+      const P = M.pres[k];
+      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*120; g += f*120; b += f*160; }
+    }
     if(tipo !== VACIO){
       const n = RUIDO[k];
       r += n; g += n; b += n;
@@ -171,13 +248,30 @@ function pinta(){
       if(T > 120){ const f = Math.min(1, (T - 120) / 900); r += f*170; g += f*55; }
       else if(T < 0){ const f = Math.min(1, -T / 60); b += f*70; g += f*30; }
       if(car[k]){ r += 70; g += 90; b += 30; }
+      /* La presión SE PINTA. Una onda expansiva que no se ve no es una onda:
+         es un número. Se tiñe de blanco hacia el azul según la fuerza. */
+      const P = M.pres[k];
+      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*150; g += f*150; b += f*190; }
+      /* un interruptor cerrado se ve cerrado */
+      if(EL[tipo].interruptor && M.vida[k]){ g += 60; }
     }
     const p = k << 2;
     datos[p]   = r < 0 ? 0 : r > 255 ? 255 : r;
     datos[p+1] = g < 0 ? 0 : g > 255 ? 255 : g;
     datos[p+2] = b < 0 ? 0 : b > 255 ? 255 : b;
   }
-  ctx.putImageData(img, 0, 0);
+  ctxMundo.putImageData(img, 0, 0);
+
+  /* y ahora la ventana. `imageSmoothingEnabled` en falso o el zoom se ve
+     como una foto borrosa en vez de píxeles. */
+  const z = cv.width, w = cv.height;
+  const dpr = cv.width / parseFloat(cv.style.width);
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = '#07040D';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  const anVis = (cv.width / dpr) / vista.esc, alVis = (cv.height / dpr) / vista.esc;
+  ctx.drawImage(lienzoMundo, vista.x, vista.y, anVis, alVis,
+                0, 0, cv.width, cv.height);
 }
 
 /* ── la paleta y la mochila ─────────────────────────────────────────────── */
@@ -226,10 +320,13 @@ function paleta(){
     b.appendChild(i);
     const s = document.createElement('span'); s.textContent = e.nom;
     b.appendChild(s);
+    if(e.ayuda) b.title = e.ayuda;
     b.onclick = () => {
       elSel = IDX[e.id]; modo = 'pintar';
       if(nuevo){ guardado.mochila[e.id] = 2; salva(); }
       $('bCalor').classList.remove('on'); $('bFrio').classList.remove('on');
+      if(e.ayuda) avisa(e.nom + ' · ' + e.ayuda);
+      $('qual').textContent = e.nom;
       paleta();
     };
     c.appendChild(b);
@@ -259,10 +356,67 @@ function revisaDescubrimientos(){
 
 /* ── pintar con el dedo ─────────────────────────────────────────────────── */
 const dedos = new Map();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ZOOM Y DESPLAZAMIENTO
+   Un dedo pinta. DOS dedos mueven el mundo: pellizcar acerca y aleja,
+   arrastrar desplaza. Es el gesto que todo el mundo ya conoce de las fotos,
+   así que no hay que explicarlo — y en una sala de 153 600 celdas es la
+   diferencia entre poder trabajar y no.
+   ═════════════════════════════════════════════════════════════════════════ */
+let gesto = null;
+const dist2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const centro = (a, b) => ({ x:(a.x + b.x) / 2, y:(a.y + b.y) / 2 });
+
+function puntos(){
+  return [...dedos.values()].filter(d => d.pantalla).map(d => d.pantalla);
+}
+
+function empiezaGesto(){
+  const ps = puntos();
+  if(ps.length < 2){ gesto = null; return; }
+  const c = centro(ps[0], ps[1]);
+  gesto = { d0: dist2(ps[0], ps[1]) || 1, esc0: vista.esc,
+            c0: c, vx0: vista.x, vy0: vista.y };
+  /* al empezar a mover el mundo, lo que se haya pintado con el primer dedo
+     ya está: se cancela el pintado para no dejar un rayón al hacer zoom */
+  for(const d of dedos.values()) d.pintando = false;
+}
+
+function sigueGesto(){
+  if(!gesto) return;
+  const ps = puntos();
+  if(ps.length < 2) return;
+  const c = centro(ps[0], ps[1]);
+  const escNueva = gesto.esc0 * (dist2(ps[0], ps[1]) / gesto.d0);
+  /* el zoom se ancla al punto entre los dedos: si no, la imagen se va
+     corriendo sola mientras pellizcas y marea */
+  const r = cv.getBoundingClientRect();
+  const mundoX = gesto.vx0 + (gesto.c0.x - r.left) / gesto.esc0;
+  const mundoY = gesto.vy0 + (gesto.c0.y - r.top) / gesto.esc0;
+  vista.esc = Math.max(1.2, Math.min(14, escNueva));
+  vista.x = mundoX - (c.x - r.left) / vista.esc;
+  vista.y = mundoY - (c.y - r.top) / vista.esc;
+  limitaVista();
+}
+
+/* rueda del ratón, para quien esté en computadora */
+cv.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  const r = cv.getBoundingClientRect();
+  const antes = vista.esc;
+  vista.esc = Math.max(1.2, Math.min(14, vista.esc * (ev.deltaY < 0 ? 1.12 : 0.89)));
+  const mx = vista.x + (ev.clientX - r.left) / antes;
+  const my = vista.y + (ev.clientY - r.top) / antes;
+  vista.x = mx - (ev.clientX - r.left) / vista.esc;
+  vista.y = my - (ev.clientY - r.top) / vista.esc;
+  limitaVista();
+}, { passive:false });
+
 function celdaDe(ev){
   const r = cv.getBoundingClientRect();
-  return [Math.floor((ev.clientX - r.left) / r.width * an),
-          Math.floor((ev.clientY - r.top) / r.height * al)];
+  return [Math.floor(vista.x + (ev.clientX - r.left) / vista.esc),
+          Math.floor(vista.y + (ev.clientY - r.top) / vista.esc)];
 }
 function brocha(x, y){
   const r = tam - 1;
@@ -280,25 +434,66 @@ function brocha(x, y){
 }
 cv.addEventListener('pointerdown', ev => {
   ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
-  const [x, y] = celdaDe(ev); dedos.set(ev.pointerId, [x, y]); brocha(x, y);
-}, { passive:false });
-cv.addEventListener('pointermove', ev => {
-  if(!dedos.has(ev.pointerId)) return;
-  ev.preventDefault();
   const [x, y] = celdaDe(ev);
-  const [px, py] = dedos.get(ev.pointerId);
+  dedos.set(ev.pointerId, { cx:x, cy:y, pantalla:{x:ev.clientX, y:ev.clientY}, pintando:true });
+  if(dedos.size >= 2){ empiezaGesto(); return; }
+  /* Tocar un interruptor lo ACCIONA en vez de pintarle encima. Sin esto no
+     había forma de operar un circuito: sólo de construirlo y mirarlo. */
+  if(modo === 'pintar' && M.acciona(x, y)){
+    avisa(M.vida[M.i(x,y)] ? 'Interruptor cerrado ⚡' : 'Interruptor abierto');
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  brocha(x, y);
+}, { passive:false });
+
+cv.addEventListener('pointermove', ev => {
+  const d = dedos.get(ev.pointerId);
+  if(!d) return;
+  ev.preventDefault();
+  d.pantalla = { x:ev.clientX, y:ev.clientY };
+  if(dedos.size >= 2){ sigueGesto(); return; }
+  if(!d.pintando) return;
+  const [x, y] = celdaDe(ev);
+  const px = d.cx, py = d.cy;
   /* interpolar: sin esto, un dedo rápido pinta puntos sueltos y no una línea */
   const pasos = Math.max(Math.abs(x-px), Math.abs(y-py));
   for(let i = 0; i <= pasos; i++){
     brocha(Math.round(px + (x-px)*i/pasos), Math.round(py + (y-py)*i/pasos));
   }
-  dedos.set(ev.pointerId, [x, y]);
+  d.cx = x; d.cy = y;
 }, { passive:false });
-const suelta = ev => dedos.delete(ev.pointerId);
+
+const suelta = ev => { dedos.delete(ev.pointerId); if(dedos.size < 2) gesto = null; };
 cv.addEventListener('pointerup', suelta);
 cv.addEventListener('pointercancel', suelta);
 
 /* ── botones ────────────────────────────────────────────────────────────── */
+/* Botones de zoom: los gestos son cómodos pero no todo el mundo puede hacer
+   un pellizco, y con teclado no hay pellizco que valga. */
+const zoom = f => {
+  const r = cv.getBoundingClientRect();
+  const antes = vista.esc;
+  vista.esc = Math.max(1.2, Math.min(14, vista.esc * f));
+  const mx = vista.x + (r.width/2) / antes, my = vista.y + (r.height/2) / antes;
+  vista.x = mx - (r.width/2) / vista.esc;
+  vista.y = my - (r.height/2) / vista.esc;
+  limitaVista();
+  avisa('Zoom ' + vista.esc.toFixed(1) + '×');
+};
+$('bMas').onclick = () => zoom(1.35);
+$('bMenos').onclick = () => zoom(0.74);
+
+/* El tirador: plegar y desplegar. Y dice qué traes seleccionado, para que
+   plegado sigas sabiendo con qué estás pintando. */
+let plegado = false;
+$('tirador').onclick = () => {
+  plegado = !plegado;
+  $('panel').classList.toggle('plegado', plegado);
+  $('tirador').setAttribute('aria-expanded', String(!plegado));
+  $('flecha').textContent = plegado ? '▴ materiales' : '▾ ocultar';
+};
+
 $('bPausa').onclick = () => {
   pausado = !pausado;
   $('bPausa').textContent = pausado ? '▶' : '❚❚';
@@ -327,13 +522,14 @@ function cuadro(ms){
   cuadros++; acum += dt;
   if(acum > 500){
     fps = Math.round(cuadros * 1000 / acum); acum = 0; cuadros = 0;
-    let vivas = 0, tmax = -999;
+    let vivas = 0, tmax = -999, pmax = 0;
     for(let k = 0; k < M.t.length; k++){
       if(M.t[k] !== VACIO) vivas++;
       if(M.temp[k] > tmax) tmax = M.temp[k];
+      if(M.pres[k] > pmax) pmax = M.pres[k];
     }
     $('datos').innerHTML = an + '×' + al + ' · ' + fps + ' fps<br>' +
-      vivas + ' celdas · máx ' + Math.round(tmax) + '°';
+      vivas + ' celdas · ' + Math.round(tmax) + '° · ' + Math.round(pmax) + ' bar';
     revisaDescubrimientos();
   }
 }
@@ -341,7 +537,7 @@ function cuadro(ms){
 addEventListener('resize', () => { medir(); });
 medir(); pestanas(); paleta();
 requestAnimationFrame(cuadro);
-window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado,
+window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom,
                   pon:(x,y,id)=>M.pon(x,y,IDX[id]) };
 </script>
 </body>
