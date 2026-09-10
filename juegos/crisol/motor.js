@@ -76,6 +76,13 @@ export class Mundo {
        1538, el oro a 1064, el mercurio ya nace líquido a temperatura
        ambiente. Un campo contra ciento dieciocho. */
     this.fase = new Uint8Array(n);
+    /* ⚠ Búferes REUTILIZADOS. La primera versión hacía `new Float32Array(n)`
+       dos veces por paso —una para el calor y otra para la presión—, y en una
+       sala de 153 600 celdas eso es más de un mega de basura por cuadro,
+       sesenta veces por segundo. A 17 000 celdas ni se notaba; la sala grande
+       lo destapó de golpe. Se reservan una vez y se van turnando. */
+    this._temp2 = new Float32Array(n);
+    this._pres2 = new Float32Array(n);
     this.temp.fill(AMBIENTE);
     this.paso_ = 0;
     this.azar = 123456789;
@@ -196,10 +203,20 @@ export class Mundo {
      olla a presión, el cañón y el estallido de una tubería. */
   presionPaso(){
     const { an, al, t, pres } = this;
-    const nuevo = new Float32Array(pres.length);
+    const nuevo = this._pres2;
+    nuevo.fill(0);
     for(let y = 0; y < al; y++){
       for(let x = 0; x < an; x++){
         const k = y * an + x;
+        /* Salto rápido: sin presión aquí ni al lado, no hay nada que difundir.
+           La presión sólo existe en un puñado de celdas casi siempre. */
+        if(pres[k] === 0){
+          const ar = y > 0 ? pres[k-an] : 0, ab = y < al-1 ? pres[k+an] : 0;
+          const iz = x > 0 ? pres[k-1] : 0, de = x < an-1 ? pres[k+1] : 0;
+          if(ar === 0 && ab === 0 && iz === 0 && de === 0 &&
+             t[k] !== VACIO === false){ continue; }
+          if(ar === 0 && ab === 0 && iz === 0 && de === 0 && EL[t[k]].estado !== 'gas'){ continue; }
+        }
         const e = EL[t[k]];
         /* Un gas caliente y encerrado empuja: es la ley de los gases en su
            versión de píxeles, y es de donde sale la fuerza de una pistola. */
@@ -231,7 +248,7 @@ export class Mundo {
         if(nuevo[k] < 0.02) nuevo[k] = 0;
       }
     }
-    this.pres = nuevo;
+    this._pres2 = pres; this.pres = nuevo;
   }
 
   /* La presión empuja lo que se puede mover. Se llama por celda. */
@@ -589,12 +606,26 @@ export class Mundo {
   /* ── calor: difusión entre vecinos ───────────────────────────────────── */
   calor(){
     const { an, al, temp, t } = this;
-    const nuevo = temp.slice();
+    const nuevo = this._temp2;
+    nuevo.set(temp);
     for(let y = 0; y < al; y++){
       for(let x = 0; x < an; x++){
         const k = y * an + x;
         const e = EL[t[k]];
         if(e.calor){ nuevo[k] = Math.max(temp[k], e.id === 'lava' ? 1150 : 820); continue; }
+        /* Salto rápido: si esta celda y las de al lado ya están al ambiente,
+           no hay nada que transferir. En una sala grande la enorme mayoría de
+           las celdas están en reposo, y comprobarlo cuesta mucho menos que
+           calcular. */
+        const dT = temp[k] - AMBIENTE;
+        if(dT > -0.35 && dT < 0.35){
+          const ar = y > 0 ? temp[k-an] : AMBIENTE, ab = y < al-1 ? temp[k+an] : AMBIENTE;
+          const iz = x > 0 ? temp[k-1] : AMBIENTE, de = x < an-1 ? temp[k+1] : AMBIENTE;
+          if(Math.abs(ar-AMBIENTE) < .35 && Math.abs(ab-AMBIENTE) < .35 &&
+             Math.abs(iz-AMBIENTE) < .35 && Math.abs(de-AMBIENTE) < .35){
+            nuevo[k] = AMBIENTE; continue;
+          }
+        }
         let suma = 0, cuenta = 0;
         for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
           const px = x+dx, py = y+dy;
@@ -604,7 +635,22 @@ export class Mundo {
           suma += (temp[k2] - temp[k]) * c;
           cuenta++;
         }
-        nuevo[k] = temp[k] + suma * .22 + (AMBIENTE - temp[k]) * .0035;
+        /* ── MASA TÉRMICA ────────────────────────────────────────────────
+           ⚠ Carlos, dos veces: «las zonas calientes y frías se quedan activas
+           siempre, deben respetar la transferencia de energía». Tenía razón y
+           yo lo había dado por arreglado sin medirlo. Medido ahora: una zona
+           caliente pintada en el VACÍO tardaba MIL pasos —dieciséis segundos—
+           en volver al ambiente.
+
+           La causa es que el retorno al ambiente era una constante igual para
+           todo, y eso ignora la física: el vacío no tiene masa que calentar,
+           así que no puede guardar calor. Un ladrillo sí. Ahora la pérdida
+           depende de la densidad — poca masa, se enfría rápido; mucha masa,
+           aguanta. Que es exactamente por qué una olla de hierro conserva el
+           guiso y el aire de la cocina no. */
+        const masa = t[k] === 0 ? 0 : (e.dens || 1);
+        const perdida = masa === 0 ? 0.34 : Math.min(0.09, 0.9 / (8 + masa));
+        nuevo[k] = temp[k] + suma * .22 + (AMBIENTE - temp[k]) * perdida;
       }
     }
     this.temp = nuevo;

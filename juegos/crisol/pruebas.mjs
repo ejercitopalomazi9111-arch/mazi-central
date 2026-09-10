@@ -494,9 +494,26 @@ seccion('los 118 de la tabla periódica');
   ok('el hierro a temperatura ambiente es SÓLIDO y no se mueve',
      m.estadoDe(m.i(8, 12)) === 'solido');
   for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.eFe) m.temp[k] = 1600;
-  corre(m, 3);
-  ok('a 1600 °C se FUNDE (por encima de sus 1538)',
-     m.estadoDe(m.i(8, 13)) === 'liquido' || m.estadoDe(m.i(8,14)) === 'liquido');
+  /* ⚠ DOS ERRORES MÍOS EN LA MISMA PRUEBA, y los dos de medir mal:
+     1 · miraba DOS CELDAS CONCRETAS, y en cuanto el hierro se funde ESCURRE:
+         esas celdas quedan vacías y la prueba culpaba a la fusión de que el
+         metal se hubiera movido.
+     2 · medía a los 3 pasos, y para entonces YA SE VOLVIÓ A SOLIDIFICAR: con
+         masa térmica, un puñado de hierro rodeado de muro frío pasa de 1600 a
+         1499 en tres pasos. El motor tenía razón las dos veces.
+     Se pregunta por la propiedad y en el instante en que ocurre. */
+  const cuantasLiquidas = (mm) => {
+    let n = 0;
+    for(let q = 0; q < mm.t.length; q++)
+      if(mm.t[q] === IDX.eFe && mm.estadoDe(q) === 'liquido') n++;
+    return n;
+  };
+  m.paso();
+  ok('a 1600 °C se FUNDE (por encima de sus 1538)', cuantasLiquidas(m) > 0,
+     cuantasLiquidas(m) + ' celdas líquidas');
+  corre(m, 6);
+  ok('y sin horno se vuelve a solidificar en unos pasos, como el metal real',
+     cuantasLiquidas(m) === 0);
   /* ⚠ antes corría 60 pasos y esperaba que llegara al fondo. No llegaba, y
      el motor tenía razón: en 60 pasos el hierro se enfría por debajo de 1538
      y VUELVE A SER SÓLIDO a media caída. Eso es lo que hace el metal fundido
