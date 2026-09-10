@@ -457,6 +457,44 @@ export const REACCIONES = [
   ['semilla','tierra','semilla', 'tierra',  0,    0],
 ];
 
+/* ── RESISTENCIA ESTRUCTURAL, SEPARADA EN TRES ─────────────────────────
+   Carlos: «no quiero que simplemente se rompa todo al mismo tiempo; la
+   simulación debe comparar resistencia a la compresión, a la tracción, al
+   corte, elasticidad, deformación, masa, geometría…». Y puso el caso exacto:
+   un recipiente de concreto con un tapón de madera y presión dentro.
+
+   Un solo número —`dureza`— no puede contestar eso, porque los materiales NO
+   fallan igual en cada modo, y ahí está justamente la gracia:
+
+     · el CONCRETO aguanta muchísimo a compresión y casi nada a tracción.
+       Por eso el concreto de verdad va armado con varilla: la varilla pone
+       la tracción que al concreto le falta.
+     · la MADERA aguanta bien a tracción a lo largo de la fibra y se raja al
+       CORTE con poco. Un tapón de madera en un tubo falla por corte.
+     · el METAL aguanta parecido en los tres, y por eso sirve de refuerzo.
+     · el VIDRIO es frágil: compresión alta, tracción ridícula.
+
+   Los números están en la misma escala arbitraria, pero las PROPORCIONES
+   entre modos son las de los materiales de verdad — que es lo que decide
+   quién se rompe primero, y es lo único que aquí importa.
+
+   `elastico` es cuánto se deforma antes de romperse: la madera se dobla, el
+   vidrio no. Sirve para que un refuerzo reparta carga en vez de partirse. */
+const RESISTENCIA = {
+  /*                    compresión, tracción, corte, elástico */
+  concreto:  { compresion:30, traccion: 3, corte: 4, elastico:0.05 },
+  piedra:    { compresion:40, traccion: 4, corte: 5, elastico:0.03 },
+  obsidiana: { compresion:45, traccion: 3, corte: 4, elastico:0.02 },
+  vidrio:    { compresion:30, traccion: 3, corte: 3, elastico:0.02 },
+  madera:    { compresion:12, traccion: 9, corte: 2, elastico:0.55 },
+  metal:     { compresion:60, traccion:60, corte:40, elastico:0.35 },
+  cobre:     { compresion:45, traccion:45, corte:30, elastico:0.45 },
+  hielo:     { compresion: 5, traccion: 1, corte: 1, elastico:0.02 },
+  globo:     { compresion: 1, traccion: 6, corte: 1, elastico:0.90 },
+  aislante:  { compresion:10, traccion: 4, corte: 3, elastico:0.30 },
+  ceniza:    { compresion: 2, traccion: 0.4, corte:0.5, elastico:0.10 },
+};
+
 /* ── UN ICONO POR ELEMENTO ──────────────────────────────────────────────
    Carlos: «ponles iconos más claros a cada cosa por favor, no se entiende
    bien qué es cada cosa sólo por el nombre». Va por elemento donde importa y
@@ -498,6 +536,21 @@ for(const id of Object.keys(TABLA)){
 }
 
 for(const id of Object.keys(JUEGO)) if(ICONOS[id]) JUEGO[id].ico = ICONOS[id];
+/* Donde no hay dato medido, se deriva de la dureza — y se deriva con la forma
+   de un material frágil (mucha compresión, poca tracción), que es lo que son
+   casi todos los sólidos de este juego. Es una aproximación declarada, no un
+   número inventado con cara de medición. */
+for(const id of Object.keys(JUEGO)){
+  const e = JUEGO[id];
+  if(e.estado !== 'solido' || e.fijo) continue;
+  const r = RESISTENCIA[id];
+  if(r){ Object.assign(e, r); continue; }
+  const d = e.dureza != null ? e.dureza : 0.3;
+  e.compresion = 4 + d * 46;
+  e.traccion   = 0.6 + d * 6;
+  e.corte      = 0.8 + d * 7;
+  e.elastico   = 0.1;
+}
 for(const id of Object.keys(TABLA)) TABLA[id].ico = ICONO_FAMILIA[TABLA[id].grupo] || '⚛';
 
 /* Los de juego y los 118 en una sola tabla: el motor no distingue. */

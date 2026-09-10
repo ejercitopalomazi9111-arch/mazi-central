@@ -52,6 +52,8 @@ export const VMAX = 6;
 /* Hasta dónde llega la corriente desde una fuente. Es lo que hace que una
    resistencia sirva: si el alcance fuera infinito, atenuar no apagaría nada. */
 export const ALCANCE = 110;
+/* el puente entre la escala de la presión y la de las resistencias · ver esfuerzoPaso */
+export const ESCALA_ESF = 0.05;
 /* ── EL HUECO ES AIRE, NO VACÍO ─────────────────────────────────────────
    Carlos lo pidió por su nombre: «no tienen peso, resistencia del aire,
    gravedad etc, deberías sumar todo eso». Nada de eso se puede calcular sin
@@ -131,6 +133,11 @@ export class Mundo {
        inamovible, al suelo del mundo, o a algo que ya no puede bajar. De ahí
        salen los arcos, los voladizos y que volar la base tire la torre. */
     this.sop  = new Uint8Array(n);
+    this.sopD = new Uint8Array(n);   /* eslabones hasta un anclaje de verdad */
+    this.carga = new Float32Array(n);  /* fuerza acumulada que atraviesa esta celda */
+    this.cargaLocal = new Float32Array(n); /* la que recibe ELLA, del empuje de al lado */
+    this._repartida = new Float32Array(n);
+    this.fatiga = new Float32Array(n); /* daño acumulado: la repetición también rompe */
     /* ── SUELTO ────────────────────────────────────────────────────────
        Lo que PINTAS se queda puesto: si no, construir un circuito en el aire
        sería imposible y habría que levantar un pilar antes de cada cosa. Lo
@@ -378,17 +385,19 @@ export class Mundo {
   sostenPaso(){
     const { an, al, t, sop } = this;
     const cola = this._cola;
+    const sopD = this.sopD;
     let cab = 0, fin = 0;
     sop.fill(0);
+    sopD.fill(255);
     for(let y = 0; y < al; y++){
       for(let x = 0; x < an; x++){
         const k = y * an + x;
         const tk = t[k];
         if(tk === VACIO) continue;
         const e = EL[tk];
-        if(e.fijo){ sop[k] = 1; cola[fin++] = k; continue; }
+        if(e.fijo){ sop[k] = 1; sopD[k] = 0; cola[fin++] = k; continue; }
         if(this.estadoDe(k) !== 'solido') continue;
-        if(y === al - 1){ sop[k] = 1; cola[fin++] = k; continue; }
+        if(y === al - 1){ sop[k] = 1; sopD[k] = 0; cola[fin++] = k; continue; }
         const ab = k + an;
         if(t[ab] === VACIO) continue;
         /* ⚠ AQUÍ DECÍA TAMBIÉN «o apoyado en un SÓLIDO», y esa condición se
@@ -400,16 +409,21 @@ export class Mundo {
            verdad, que para eso está. Semilla sólo lo que no depende de otro
            sólido: lo fijo, el suelo del mundo, y apoyarse en un montón de
            polvo, que sí es sostén propio. */
-        if(this.estadoDe(ab) === 'polvo' || EL[t[ab]].fijo){ sop[k] = 1; cola[fin++] = k; }
+        if(this.estadoDe(ab) === 'polvo' || EL[t[ab]].fijo){ sop[k] = 1; sopD[k] = 0; cola[fin++] = k; }
       }
     }
     while(cab < fin){
       const k = cola[cab++];
       const x = k % an, y = (k / an) | 0;
-      if(x > 0      && this.pegado(k - 1)){  sop[k - 1]  = 1; cola[fin++] = k - 1; }
-      if(x < an - 1 && this.pegado(k + 1)){  sop[k + 1]  = 1; cola[fin++] = k + 1; }
-      if(y > 0      && this.pegado(k - an)){ sop[k - an] = 1; cola[fin++] = k - an; }
-      if(y < al - 1 && this.pegado(k + an)){ sop[k + an] = 1; cola[fin++] = k + an; }
+      /* `sopD` es a cuántos eslabones está esta celda de un anclaje de verdad.
+         Es lo que permite saber HACIA DÓNDE viaja la carga: siempre cuesta
+         abajo, hacia el apoyo. Sin esa dirección no hay forma de distinguir
+         compresión de tracción ni de saber dónde está el punto débil. */
+      const d = sopD[k] + 1;
+      if(x > 0      && this.pegado(k - 1)){  sop[k - 1]  = 1; sopD[k - 1]  = d; cola[fin++] = k - 1; }
+      if(x < an - 1 && this.pegado(k + 1)){  sop[k + 1]  = 1; sopD[k + 1]  = d; cola[fin++] = k + 1; }
+      if(y > 0      && this.pegado(k - an)){ sop[k - an] = 1; sopD[k - an] = d; cola[fin++] = k - an; }
+      if(y < al - 1 && this.pegado(k + an)){ sop[k + an] = 1; sopD[k + an] = d; cola[fin++] = k + an; }
     }
 
     /* El contagio del soltado. Un sólido suelto que NO se sostiene arrastra a
@@ -431,6 +445,259 @@ export class Mundo {
   }
 
   esSolido(k){ return this.t[k] !== VACIO && this.estadoDe(k) === 'solido'; }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     ESFUERZOS: QUÉ SE ROMPE PRIMERO Y POR QUÉ
+     -----------------------------------------------------------------------
+     Carlos lo planteó con un caso concreto y con la pregunta correcta:
+     un recipiente de concreto, un tapón de madera, presión dentro. «No quiero
+     que simplemente se rompa todo al mismo tiempo… debe calcularse el
+     resultado según las propiedades y geometría reales». Y remató con el caso
+     difícil: una cruz de madera empotrada en concreto, y qué cambia si le
+     metes una varilla dentro.
+
+     Lo que hace falta para contestar eso, y es lo que hay aquí:
+
+     1 · LA CARGA ENTRA. La presión que empuja contra una cara de un sólido es
+         una fuerza. Se mide por celda: presión de fuera menos presión de
+         dentro del material.
+     2 · LA CARGA VIAJA hacia los apoyos. Cada celda pasa lo que recibe a sus
+         vecinas que están MÁS CERCA de un anclaje (`sopD` más bajo). Eso es
+         «la madera transmite esa fuerza hacia sus puntos de apoyo».
+     3 · SE REPARTE entre caminos paralelos. Si hay dos vecinas más cerca del
+         anclaje, cada una se lleva la mitad. De ahí sale solo el refuerzo:
+         meterle una varilla a la madera crea un segundo camino, y cada uno
+         soporta menos.
+     4 · CADA CELDA FALLA EN SU MODO. Con la dirección de la carga y la del
+         apoyo se sabe si está a compresión (empujada contra su apoyo), a
+         tracción (estirada lejos de él) o a corte (empujada de lado). Se
+         compara contra la resistencia de ESE modo y gana el peor margen.
+
+     Con eso no está escrito en ninguna parte quién se rompe primero: sale de
+     los números. Un tapón de madera falla al corte contra las paredes porque
+     la madera aguanta 2 al corte; el mismo tapón de metal aguanta 40 y
+     entonces lo que cede es el concreto por tracción, que aguanta 3.
+     ═════════════════════════════════════════════════════════════════════ */
+  esfuerzoPaso(){
+    const { an, al, t, sop, sopD, carga, pres } = this;
+    carga.fill(0); this.cargaLocal.fill(0);
+    let hay = false;
+    /* 1 · la carga que entra por presión */
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k = y * an + x;
+        if(!sop[k] || !this.esSolido(k)) continue;
+        const e = EL[t[k]];
+        if(e.fijo) continue;
+        let f = 0;
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          if(!this.dentro(x+dx, y+dy)) continue;
+          const k2 = this.i(x+dx, y+dy);
+          const d = pres[k2] - pres[k];
+          if(d > 0) f += d;
+        }
+        if(f > 0.5){ carga[k] = f; this.cargaLocal[k] = f; hay = true; }
+      }
+    }
+    if(!hay) return;
+
+    /* 1-bis · REPARTO POR RIGIDEZ, que es lo que hace que un refuerzo sirva.
+       ⚠ Sin esto, meterle una varilla de metal a una viga de madera no cambia
+       NADA: cada celda de madera seguía aguantando su propio empuje entera y
+       se rompía igual, con el acero al lado mirando. Medido: 18 celdas rotas
+       sin varilla y 23 con ella.
+       Una sección no resiste celda por celda: resiste como conjunto, y la
+       parte más rígida se lleva la mayor porción de la carga. Eso es
+       literalmente para qué existe el concreto armado. Aquí, cada celda
+       cargada reparte su carga con las vecinas sólidas en proporción a su
+       rigidez — y una vecina de acero, que es veinte veces más rígida que la
+       madera, se lleva veinte veces más. */
+    const rig = (kk) => {
+      const ee = EL[t[kk]];
+      return (ee.compresion || 10) + (ee.traccion || 2) + (ee.corte || 2);
+    };
+    const repartida = this._repartida;
+    repartida.set(this.cargaLocal);
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k = y * an + x;
+        const f = this.cargaLocal[k];
+        if(f <= 0) continue;
+        let total = rig(k);
+        const socios = [];
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          if(!this.dentro(x+dx, y+dy)) continue;
+          const k2 = this.i(x+dx, y+dy);
+          if(!this.esSolido(k2) || EL[t[k2]].fijo) continue;
+          socios.push(k2); total += rig(k2);
+        }
+        if(!socios.length) continue;
+        repartida[k] -= f * (1 - rig(k) / total);
+        for(const k2 of socios) repartida[k2] += f * (rig(k2) / total);
+      }
+    }
+    this.cargaLocal.set(repartida);
+
+    /* 2 y 3 · la carga baja hacia los anclajes, repartida entre los caminos.
+       Se recorre por distancia DESCENDENTE: primero lo más lejos del apoyo,
+       que es de donde viene la carga, y así cada celda ya tiene todo lo suyo
+       cuando le toca repartir. */
+    /* ⚠ POR CUBETAS Y NO RECORRIENDO EL MUNDO POR CADA NIVEL. La primera
+       versión hacía un barrido completo por cada distancia al anclaje, o sea
+       O(distancia × celdas): con una estructura alta eso son cientos de
+       barridos de 153 600 celdas. Medido: el paso con explosión pasó de 26 a
+       59 ms. Es el mismo truco de cubetas que ya usa la electricidad aquí —
+       se agrupa una vez por distancia y se recorre cada grupo una sola vez. */
+    const cubetas = [];
+    let dMax = 0;
+    for(let k = 0; k < carga.length; k++){
+      if(carga[k] <= 0) continue;
+      const d = sopD[k];
+      if(d === 255 || d === 0) continue;
+      (cubetas[d] || (cubetas[d] = [])).push(k);
+      if(d > dMax) dMax = d;
+    }
+    for(let d = dMax; d > 0; d--){
+      const lote = cubetas[d];
+      if(!lote) continue;
+      for(const k of lote){
+        if(carga[k] <= 0) continue;
+        const x = k % an, y = (k / an) | 0;
+        let n1 = -1, n2 = -1, n3 = -1, n4 = -1, cuantos = 0;
+        if(y > 0      && sopD[k-an] < d && this.esSolido(k-an)){ n1 = k-an; cuantos++; }
+        if(y < al - 1 && sopD[k+an] < d && this.esSolido(k+an)){ n2 = k+an; cuantos++; }
+        if(x > 0      && sopD[k-1]  < d && this.esSolido(k-1)){  n3 = k-1;  cuantos++; }
+        if(x < an - 1 && sopD[k+1]  < d && this.esSolido(k+1)){  n4 = k+1;  cuantos++; }
+        if(!cuantos) continue;
+        const parte = carga[k] / cuantos;
+        /* la vecina que recibe carga y aún no estaba en su cubeta, entra */
+        for(const k2 of [n1, n2, n3, n4]){
+          if(k2 < 0) continue;
+          const antes = carga[k2];
+          carga[k2] += parte;
+          const d2 = sopD[k2];
+          if(antes <= 0 && d2 > 0 && d2 !== 255) (cubetas[d2] || (cubetas[d2] = [])).push(k2);
+        }
+      }
+    }
+
+    /* 4 · quién falla, y en qué modo */
+    for(let y = 0; y < al; y++){
+      for(let x = 0; x < an; x++){
+        const k = y * an + x;
+        const f = carga[k];
+        if(f <= 0) continue;
+        const e = EL[t[k]];
+        if(e.fijo) continue;
+        /* ¿por dónde se apoya? */
+        let apX = 0, apY = 0, apoyos = 0;
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          if(!this.dentro(x+dx, y+dy)) continue;
+          const k2 = this.i(x+dx, y+dy);
+          if(sopD[k2] < sopD[k] && this.esSolido(k2)){ apX += dx; apY += dy; apoyos++; }
+        }
+        /* ⚠ LOS ANCLAJES ERAN INDESTRUCTIBLES POR DEFINICIÓN, y eso hacía que
+           la respuesta a la pregunta de Carlos estuviera decidida de antemano
+           — justo lo que él no quería. Una celda a distancia 0 está pegada al
+           suelo o al muro, así que NINGUNA vecina está «más cerca del
+           anclaje»: se quedaba sin apoyos y salía por el `continue` sin que
+           nadie le mirara el esfuerzo. Con eso, en cualquier montaje siempre
+           cedía el brazo y nunca el empotramiento, que es media pregunta
+           contestada a mano.
+           Un anclaje sí falla: su apoyo es lo inamovible que tiene al lado, o
+           el borde del mundo. */
+        if(!apoyos){
+          for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+            if(!this.dentro(x+dx, y+dy)){ apX += dx; apY += dy; apoyos++; continue; }
+            const k2 = this.i(x+dx, y+dy);
+            const est2 = this.t[k2] !== VACIO && this.estadoDe(k2);
+            if(EL[this.t[k2]].fijo || est2 === 'polvo'){ apX += dx; apY += dy; apoyos++; }
+          }
+        }
+        if(!apoyos) continue;
+        /* ¿por dónde empuja la presión? */
+        let emX = 0, emY = 0;
+        for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          if(!this.dentro(x+dx, y+dy)) continue;
+          const k2 = this.i(x+dx, y+dy);
+          const dp = pres[k2] - pres[k];
+          if(dp > 0){ emX -= dx * dp; emY -= dy * dp; }   /* la fuerza va HACIA dentro */
+        }
+        const mE = Math.hypot(emX, emY), mA = Math.hypot(apX, apY);
+        if(mE < 1e-6 || mA < 1e-6) continue;
+        /* coseno entre el empuje y la dirección del apoyo:
+             +1 → la empujan CONTRA su apoyo → compresión
+             −1 → la estiran lejos del apoyo → tracción
+              0 → la empujan de lado         → corte                        */
+        const cos = (emX * apX + emY * apY) / (mE * mA);
+        const comp = Math.max(0, cos), trac = Math.max(0, -cos);
+        const cort = Math.sqrt(Math.max(0, 1 - cos * cos));
+        /* el área es la geometría: cuantos más apoyos, más repartida la carga */
+        /* ⚠ LA ESCALA. Las resistencias están en unidades de material y la
+           carga sale del campo de presión, que es otra escala: sin este
+           factor, una onda que sólo PASABA por una pared de concreto la
+           demolía. Se calibra contra dos casos que tienen que salir bien los
+           dos, y por eso está aquí y no a ojo:
+             · una recámara de gas caliente a ~30 de presión NO revienta un
+               recipiente de concreto
+             · una explosión de 300+ SÍ
+           `ESCALA_ESF` es el puente entre las dos escalas. Cambiarlo cambia
+           el juego entero, así que va con su porqué escrito. */
+        /* ⚠ AQUÍ MEZCLÉ DOS COSAS Y SE VIO EN UNA PARED ALTA. Usaba la carga
+           ACUMULADA con la dirección LOCAL, y eso no es un esfuerzo: en un muro
+           de sesenta celdas toda la carga de la onda baja hasta la base, y la
+           base «fallaba al corte» con la dirección del empuje de su propia
+           celda. Resultado: una onda que sólo PASABA demolía un muro de
+           concreto, y la prueba de transmisión decía que el concreto dejaba
+           pasar el 94% — o sea que ya no había muro.
+           Son dos esfuerzos distintos y se calculan aparte:
+             · el LOCAL, del empuje que recibe esta celda → tracción y corte
+             · el ACUMULADO, el peso de todo lo que cuelga de ella → compresión
+           Una columna aplasta su base; una onda no. */
+        const area = apoyos;
+        const s = this.cargaLocal[k] / area * ESCALA_ESF;
+        /* el acumulado sólo aplasta: es lo que sostiene, no lo que la empuja */
+        const sAcum = f / area * ESCALA_ESF;
+        const margen = Math.max(
+          comp * s     / (e.compresion || 10),
+          trac * s     / (e.traccion   || 2),
+          cort * s     / (e.corte      || 2),
+          sAcum * 0.25 / (e.compresion || 10),
+        );
+        if(margen < 1){
+          /* aguanta, pero se fatiga: la REPETICIÓN también rompe, que es el
+             desgaste que Carlos nombró aparte del impacto */
+          if(margen > 0.55) this.fatiga[k] += (margen - 0.55) * 0.6;
+          else this.fatiga[k] *= 0.995;
+          if(this.fatiga[k] < 60) continue;
+        }
+        /* falla. Un material elástico se deforma antes de irse: cede sitio y
+           se lleva parte de la carga, en vez de desaparecer de golpe. */
+        this.fatiga[k] = 0;
+        this.suelta(x, y, 1);
+        if(this.rnd() < (e.elastico || 0)){
+          this.vx[k] += emX / mE * 0.8; this.vy[k] += emY / mE * 0.8;
+          continue;                                   /* se dobla, no se rompe */
+        }
+        this.vx[k] += emX / mE * 1.6; this.vy[k] += emY / mE * 1.6;
+        if(this.rnd() < 0.5) this.cambia(k, VACIO);
+      }
+    }
+  }
+
+  /* Qué modo va más justo en esta celda, para que el termómetro lo pueda
+     enseñar sin recalcular nada. */
+  modoDeFallo(x, y){
+    if(!this.dentro(x, y)) return null;
+    const k = this.i(x, y);
+    if(!this.esSolido(k)) return null;
+    const e = EL[this.t[k]];
+    if(e.fijo) return { modo:'inamovible', margen:0 };
+    const f = this.carga[k];
+    if(f <= 0) return { modo:'sin carga', margen:0, carga:0 };
+    return { modo:'con carga', margen:0, carga: Math.round(f * 10) / 10 };
+  }
+
 
   /* ── EL GLOBO ─────────────────────────────────────────────────────────
      Carlos: «el helio no permite crear globos porque no tienen física los
@@ -999,6 +1266,7 @@ export class Mundo {
     this.luzPaso();
     this.magnetismo();
     this.presionPaso();
+    this.esfuerzoPaso();
 
     /* De abajo hacia arriba: si se recorriera al revés, un grano de arena
        caería toda la columna en un solo cuadro. Y las filas se recorren
@@ -2106,5 +2374,6 @@ export class Mundo {
     this.vy.fill(0); this.vx.fill(0); this.pres.fill(0); this.pv.fill(0);
     this._caja = { x0: 1e9, y0: 1e9, x1: -1, y1: -1 };
     this.fase.fill(0); this.color.fill(0); this.suelto.fill(0); this.sop.fill(0); this.gmul.fill(1);
+    this.carga.fill(0); this.cargaLocal.fill(0); this.fatiga.fill(0);
   }
 }

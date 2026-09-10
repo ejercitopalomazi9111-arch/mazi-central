@@ -1165,5 +1165,69 @@ seccion('la gravedad es un CAMPO, no una constante');
      n > 0 && yh / n > 30, 'y medio ' + (n ? (yh/n).toFixed(1) : '—'));
 }
 
+seccion('resistencia estructural: quién falla primero, y por qué');
+{
+  /* Carlos, con su caso: «un recipiente de concreto, un tapón de madera,
+     presión interna. NO quiero que simplemente se rompa todo al mismo tiempo…
+     debe compararse resistencia a la compresión, a la tracción, al corte,
+     elasticidad, geometría… No asumir automáticamente que siempre falla la
+     madera o siempre el concreto.»
+     Nada de esto está escrito: sale de tres resistencias por material y de
+     por dónde viaja la carga. */
+  const cuenta = (m, id) => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) c++; return c; };
+
+  const tubo = (tapon, presion) => {
+    const m = mundo(60, 60, 5);
+    repisa(m, 59);
+    for(let x = 20; x <= 40; x++) m.pon(x, 58, IDX.concreto);
+    for(let y = 44; y <= 58; y++){ m.pon(20, y, IDX.concreto); m.pon(40, y, IDX.concreto); }
+    for(let x = 20; x <= 40; x++) if(x < 28 || x > 33) m.pon(x, 44, IDX.concreto);
+    for(let x = 28; x <= 33; x++) m.pon(x, 44, IDX[tapon]);
+    const t0 = cuenta(m, tapon), c0 = cuenta(m, 'concreto');
+    for(let y = 45; y < 58; y++) for(let x = 21; x < 40; x++){ m.pon(x, y, IDX.co2); m.temp[m.i(x,y)] = presion; }
+    corre(m, 300);
+    return { tapon: t0 - cuenta(m, tapon), olla: c0 - cuenta(m, 'concreto') };
+  };
+  const mad = tubo('madera', 900), met = tubo('metal', 900), flojo = tubo('madera', 200);
+  ok('un tapón de MADERA cede y el recipiente de concreto aguanta',
+     mad.tapon > 0 && mad.olla === 0, 'tapón −' + mad.tapon + ' · olla −' + mad.olla);
+  ok('el MISMO recipiente con tapón de METAL aguanta entero',
+     met.tapon === 0 && met.olla === 0, 'tapón −' + met.tapon + ' · olla −' + met.olla);
+  ok('y con poca presión no cede ninguno de los dos',
+     flojo.tapon === 0 && flojo.olla === 0, 'tapón −' + flojo.tapon);
+
+  /* la viga empotrada, que es la pregunta difícil que puso él */
+  const viga = ({ material = 'madera', refuerzo = null, presion = 1400 }) => {
+    const m = mundo(50, 40, 5);
+    repisa(m, 39);
+    for(let x = 10; x <= 40; x++) m.pon(x, 38, IDX.concreto);
+    for(let y = 22; y <= 38; y++) for(let d = 0; d < 3; d++){ m.pon(10+d, y, IDX.concreto); m.pon(40-d, y, IDX.concreto); }
+    for(let x = 10; x <= 40; x++) m.pon(x, 21, IDX[material]);
+    if(refuerzo) for(let x = 10; x <= 40; x++) m.pon(x, 22, IDX[refuerzo]);
+    const v0 = cuenta(m, material), c0 = cuenta(m, 'concreto');
+    for(let y = refuerzo ? 23 : 22; y < 38; y++) for(let x = 13; x < 38; x++)
+      if(m.t[m.i(x,y)] === VACIO){ m.pon(x, y, IDX.co2); m.temp[m.i(x,y)] = presion; }
+    corre(m, 400);
+    return { viga: v0 - cuenta(m, material), olla: c0 - cuenta(m, 'concreto') };
+  };
+  const sinR  = viga({ presion: 1400 });
+  const conR  = viga({ presion: 1400, refuerzo: 'metal' });
+  ok('una viga de madera empotrada CEDE con la presión', sinR.viga > 0, '−' + sinR.viga + ' celdas');
+  /* ⚠ y aquí está el refuerzo. Sin el reparto por rigidez esto no cambiaba
+     NADA: cada celda de madera aguantaba su propio empuje entera y se rompía
+     igual, con el acero al lado mirando. */
+  ok('y con una varilla de metal PEGADA, la misma viga aguanta',
+     conR.viga === 0, 'con refuerzo −' + conR.viga + ' · sin refuerzo −' + sinR.viga);
+
+  const metal6  = viga({ material: 'metal', presion: 6000 });
+  const metal12 = viga({ material: 'metal', presion: 12000 });
+  ok('una viga de METAL aguanta donde la de madera ya se rompió',
+     metal6.viga === 0, '−' + metal6.viga + ' celdas a 6000°');
+  /* la parte que más le importaba: que el punto de fallo SE MUEVA */
+  ok('y con suficiente presión ceden los EMPOTRAMIENTOS en vez de la viga',
+     metal12.olla > 0 && metal12.viga === 0,
+     'viga −' + metal12.viga + ' · empotramientos −' + metal12.olla);
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);
