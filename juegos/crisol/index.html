@@ -804,7 +804,7 @@ function ficha(x, y){
   if(r.presion) h += fila('Presión', r.atmosferas + ' atm');
   if(r.sellado) h += fila('Recinto', 'SELLADO · aquí sí sube la presión');
   if(r.moles) h += fila('Gas metido', r.moles + '× (repinta encima para comprimir)');
-  if(r.corriente) h += fila('Corriente', 'sí, le llega');
+  if(r.corriente) h += fila('Corriente', 'sí, le llega · ' + r.voltaje + ' V (apila pilas para subirlo)');
   const fases = r.cambios.filter(c => c.que !== 'fisión' && c.que !== 'combustión');
   if(fases.length){
     h += '<tr><td colspan="2" style="padding-top:6px;color:#B9B0C8"><b>Cambios de estado</b></td></tr>';

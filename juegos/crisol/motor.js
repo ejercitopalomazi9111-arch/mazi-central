@@ -232,6 +232,16 @@ export class Mundo {
     /* el interruptor que pidió Carlos: apagado, cada celda vuelve a ser suya */
     this.rigido = true;
     this.enCuerpo = new Uint8Array(n);
+    /* ── EL VOLTAJE ─────────────────────────────────────────────────────
+       Carlos: «la resistencia debe poder tener más poder (producir más calor)
+       conforme más voltaje tenga, al punto de que pueda quemar algo», y «los
+       pistones deben poder tener distintos empujes». Las dos piden lo mismo y
+       faltaba lo mismo: el circuito sólo sabía SÍ o NO. Ahora hay un número,
+       y la manera de subirlo es la de siempre — apilar pilas. Una batería de
+       una celda da 1; tres celdas pegadas dan 3, y con eso la resistencia
+       calienta nueve veces más, porque la potencia va con el CUADRADO del
+       voltaje. Eso no es un ajuste: es P = V²/R. */
+    this.volt = new Float32Array(n);
     /* ── EL CAMPO GRAVITATORIO ────────────────────────────────────────
        Carlos no pidió «activar y desactivar la gravedad»: pidió magnitud,
        dirección, zonas, por objeto y puntos que atraen o repelen, «combinar
@@ -1895,6 +1905,8 @@ export class Mundo {
       atmosferas: Math.round((this.pres[k] / ATM) * 100) / 100,
       moles: this.moles[k] ? Math.round(this.moles[k] * 10) / 10 : null,
       corriente: !!this.car[k],
+      /* el voltaje, a la vista: sin verlo, «apila más pilas» es adivinar */
+      voltaje: this.car[k] ? Math.round((this.volt[k] || 0) * 100) / 100 : 0,
       sostenido: !!this.sop[k], suelto: !!this.suelto[k],
       cambios: [],
     };
@@ -1916,6 +1928,17 @@ export class Mundo {
     if(e.arde) r.cambios.push({ que:'combustión', a: null, nota:'arde con una fuente de calor cerca' });
     if(e.radia) r.cambios.push({ que:'fisión', a: null, nota:'nuclear, no es un cambio de estado' });
     return r;
+  }
+
+  /* ¿Tiene una llama pegada? Fuego, lava, termita: cualquier cosa que sea
+     calor en sí misma, no algo que esté caliente. */
+  tocaLlama(x, y){
+    for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+      if(!this.dentro(x + dx, y + dy)) continue;
+      const k2 = this.i(x + dx, y + dy);
+      if(this.t[k2] !== VACIO && EL[this.t[k2]].calor) return true;
+    }
+    return false;
   }
 
   /* Soltar lo que hay en un radio: lo llama todo el que da un golpe de
@@ -2531,7 +2554,10 @@ export class Mundo {
          lo que Carlos pidió por su nombre: «cómo creo una pistola que dispare
          un proyectil». El proyectil de una pistola es un SÓLIDO. */
       if(this.t[k2] !== VACIO && !EL[this.t[k2]].fijo){
-        this.vy[k2] -= e.piston;
+        /* «Los pistones deben poder tener distintos empujes» — y el mando es
+           el mismo que el de la resistencia y el motor: cuántas pilas le
+           pongas. Un solo tipo de pistón, la fuerza la decides tú. */
+        this.vy[k2] -= e.piston * (this.volt[k] || 1);
         this.suelto[k2] = 1;                 /* lanzado: ya no está anclado */
         this.pres[k2] += 18; this.anotaPico(this.pres[k2]); this.despierta(x, y - 1, 2);
       }
@@ -2570,7 +2596,22 @@ export class Mundo {
        ardiendo en paralelo, que es una traca, no una mecha. El relevo es
        explícito —la que se consume prende a la siguiente— y el encendido por
        calor pide un fuego de verdad, no el calor de la mecha de al lado. */
-    if(e.mecha && (this.vida[k] > 0 || this.temp[k] > 700)){
+    /* ⚠ EL UMBRAL ERAN 700° Y POR ESO «LA MECHA NO SE QUEMA». Medido: una
+       mecha de 30 celdas con fuego pegado al extremo se quedaba en 30 celdas
+       tras 300 pasos — cero. Y 700 es más de lo que da casi nada de lo que uno
+       tiene a mano: una resistencia con una pila llegaba a 39°. Una mecha de
+       verdad prende con una cerilla, no con un soplete. A 320° prende con
+       fuego, con lava, con una chispa de pirotecnia y con una resistencia de
+       dos pilas — que son justo las cuatro cosas con las que uno intenta
+       encenderla. */
+    /* ⚠ Y PRENDE POR CONTACTO CON LA LLAMA, no sólo por temperatura, que es
+       lo que faltaba de verdad. Medido con el umbral ya bajado a 320°: con
+       LAVA al lado la mecha ardía (la vecina llegaba a 820°) y con FUEGO al
+       lado NO — la vecina se quedaba en 27°. El fuego es un gas: sube y se va
+       en un paso o dos, así que nunca está el rato que hace falta para
+       calentar por conducción. Pero uno enciende una mecha con una llama, no
+       apoyándole una piedra al rojo: tocarla ya es encenderla. */
+    if(e.mecha && (this.vida[k] > 0 || this.temp[k] > 320 || this.tocaLlama(x, y))){
       this.temp[k] = Math.max(this.temp[k], 430);
       this.vida[k]++;
       if(this.vida[k] > 26){
@@ -2587,10 +2628,23 @@ export class Mundo {
         return;
       }
     }
-    /* 6-bis · un motor con corriente empuja lo que tenga encima */
+    /* 6-bis · UN MOTOR CON CORRIENTE EMPUJA LO QUE TENGA ENCIMA.
+       ⚠ Y AQUÍ DECÍA «y NO sea sólido», que es la misma línea que ya se había
+       corregido en el pistón y que aquí se quedó puesta. Carlos: «el motor no
+       funciona» — y no funcionaba literalmente: la corriente le llegaba
+       (medido, `car` en 1) y el motor excluía a mano lo único que uno le pone
+       encima. Un aviso arreglado en una pieza no arregla a la de al lado.
+       La fuerza va con el voltaje: apilar pilas mueve más peso, que es lo que
+       hace un motor de verdad. */
     if(e.motor && this.car[k] && this.dentro(x, y-1)){
       const k2 = this.i(x, y-1);
-      if(this.t[k2] !== VACIO && EL[this.t[k2]].estado !== 'solido') this.vy[k2] -= 1.1;
+      if(this.t[k2] !== VACIO && !EL[this.t[k2]].fijo){
+        const V = this.volt[k] || 1;
+        this.vy[k2] -= 1.1 * V;
+        this.suelto[k2] = 1;
+        this.sop[k2] = 0;
+        this.despierta(x, y - 1, 2);
+      }
     }
 
     /* 7 · la presión empuja antes de mover */
@@ -3442,6 +3496,36 @@ export class Mundo {
       }
     }
 
+    /* 1-bis · cuánto voltaje da cada fuente: el tamaño de su propio montón de
+       pilas. Se calcula una vez por grupo y se comparte, para que las tres
+       celdas de una pila de tres den 3 y no 1 cada una. */
+    const volt = this.volt;
+    volt.fill(0);
+    {
+      const visto = this._vistoCuerpo;
+      visto.fill(0);
+      const pila = this._colaCuerpo;
+      for(const k0 of cola){
+        if(visto[k0] || !EL[t[k0]].fuente) continue;
+        let cab = 0, fin = 0;
+        pila[fin++] = k0; visto[k0] = 1;
+        while(cab < fin){
+          const k = pila[cab++], x = k % an, y = (k / an) | 0;
+          const mete = k2 => { if(!visto[k2] && EL[t[k2]].fuente){ visto[k2] = 1; pila[fin++] = k2; } };
+          if(x > 0)      mete(k - 1);
+          if(x < an - 1) mete(k + 1);
+          if(y > 0)      mete(k - an);
+          if(y < al - 1) mete(k + an);
+          if(fin > pila.length - 4) break;
+        }
+        for(let i = 0; i < fin; i++) volt[pila[i]] = fin;
+      }
+      /* lo que no es batería pero manda corriente —un generador, una
+         compuerta— vale un voltio, que es lo que valía todo antes */
+      for(const k0 of cola) if(!volt[k0]) volt[k0] = 1;
+      for(const k0 of colaPuertas) if(!volt[k0]) volt[k0] = 1;
+    }
+
     /* 2 · repartir desde las fuentes.
        Con costes distintos por pieza hay que atender siempre la celda MÁS
        CERCANA pendiente, o una resistencia visitada primero bloquearía un
@@ -3502,6 +3586,20 @@ export class Mundo {
         const nd = d + coste;
         if(nd > ALCANCE) continue;
         dist[k2] = nd; sig[k2] = 1;
+        /* El voltaje CAE por el camino, y cae de golpe EN una resistencia:
+           eso es lo que hace que la resistencia se lleve el calor y no el
+           cable.
+           ⚠ Y LA CAÍDA ES AL SALIR DE ELLA, NO AL ENTRAR. Puesto al entrar,
+           la resistencia se quedaba con el voltaje YA rebajado y una pila
+           suelta calentaba menos que antes de todo esto — un circuito que
+           funcionaba ayer empeoraba hoy, que es lo peor que puede pasarle a
+           quien ya tenía cosas construidas. La caída de tensión está EN el
+           componente: él ve la tensión entera y los de después ven menos. */
+        /* el cobre pierde poquísimo: 0.015 por celda hacía que un cable de
+           seis celdas ya le quitara un 9% a la resistencia del final */
+        const cae = (EL[t[k]].resiste ? EL[t[k]].resiste * 0.55 : 0) + 0.004;
+        const nv = this.volt[k] - cae;
+        this.volt[k2] = nv > 0 ? nv : 0;
         /* ⚠ DE QUIÉN VIENE LA CORRIENTE, que es lo que faltaba para que las
            compuertas funcionaran. Sin esto una compuerta no puede distinguir
            una ENTRADA de su propia SALIDA, y se lee a sí misma. */
@@ -3520,7 +3618,14 @@ export class Mundo {
       if(!sig[k]) continue;
       const e = EL[t[k]];
       if(e.fuente) continue;
-      this.temp[k] += e.resiste ? 4.5 : 0.6;
+      /* ⚠ P = V²/R, y por eso el voltaje entra al cuadrado. Con una pila
+         suelta esto da los mismos 4.5 de antes —nada cambia para quien ya
+         tenía circuitos hechos— y con tres pilas apiladas da 40, que ya
+         prende madera. Medido antes de tocar: la resistencia se quedaba en
+         53.7° contra 46.2° del cable, o sea que no servía para encender nada,
+         y Carlos pidió justamente «al punto de que pueda quemar algo». */
+      const V = this.volt[k] || 0;
+      this.temp[k] += e.resiste ? 6.5 * e.resiste / 0.55 * V * V : 0.6;
     }
     this.car = sig;
     this.dist = dist;

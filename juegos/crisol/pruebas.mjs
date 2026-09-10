@@ -1873,5 +1873,83 @@ seccion('cuerpos rígidos: lo que está pegado cae junto');
   }
 }
 
+seccion('voltaje: la resistencia quema, el motor mueve y la mecha prende');
+{
+  /* Carlos: «la resistencia debe poder tener más poder (producir más calor)
+     conforme más voltaje tenga, al punto de que pueda quemar algo», «los
+     pistones deben poder tener distintos empujes» y «el motor no funciona».
+     Las tres pedían lo mismo y faltaba lo mismo: el circuito sólo sabía SÍ o
+     NO. El mando es apilar pilas. */
+  const calienta = (pilas) => {
+    const m = mundo(30, 20, 7);
+    repisa(m, 19);
+    for(let i = 0; i < pilas; i++) m.pon(10, 18 - i, IDX.bateria);
+    m.pon(11, 18, IDX.cobre); m.pon(12, 18, IDX.resistencia);
+    m.pon(12, 17, IDX.madera);
+    corre(m, 300);
+    return { grados: m.temp[m.i(12, 18)], quemo: m.t[m.i(12, 17)] !== IDX.madera };
+  };
+  const p1 = calienta(1), p2 = calienta(2), p3 = calienta(3);
+  ok('más pilas, más calor en la resistencia', p3.grados > p2.grados * 1.8 && p2.grados > p1.grados * 1.8,
+     '1→' + p1.grados.toFixed(0) + '° · 2→' + p2.grados.toFixed(0) + '° · 3→' + p3.grados.toFixed(0) + '°');
+  /* el cuadrado no es un adorno: es P = V²/R, y por eso doblar las pilas
+     cuadruplica el calor en vez de doblarlo */
+  ok('y con tres pilas QUEMA la madera de encima', p3.quemo && !p1.quemo,
+     'con 1 pila ' + (p1.quemo ? 'quemó' : 'no quemó') + ' · con 3 ' + (p3.quemo ? 'quemó' : 'no quemó'));
+
+  /* «El motor no funciona.» Y no funcionaba literalmente: la corriente le
+     llegaba y la línea que empuja excluía a mano los SÓLIDOS — la misma línea
+     que ya se había corregido en el pistón y que aquí se quedó puesta. */
+  const empuja = (pilas) => {
+    const m = mundo(30, 30, 7);
+    repisa(m, 29);
+    for(let i = 0; i < pilas; i++) m.pon(10, 28 - i, IDX.bateria);
+    m.pon(11, 28, IDX.cobre); m.pon(12, 28, IDX.motor); m.pon(12, 27, IDX.piedra);
+    corre(m, 60);
+    let alto = 99;
+    for(let y = 0; y < 30; y++) for(let x = 0; x < 30; x++)
+      if(m.t[m.i(x, y)] === IDX.piedra && y < alto) alto = y;
+    return 27 - alto;
+  };
+  const m1 = empuja(1), m3 = empuja(3);
+  ok('un motor con corriente EMPUJA una piedra sólida', m1 > 0, 'la subió ' + m1 + ' celdas');
+  ok('y con más pilas la sube más', m3 > m1, '1 pila ' + m1 + ' · 3 pilas ' + m3);
+
+  /* «La mecha no se quema.» Medido: 30 celdas con fuego pegado seguían siendo
+     30 tras 300 pasos. Dos causas: el umbral eran 700° —más de lo que da nada
+     de lo que uno tiene a mano— y el fuego es un GAS que sube y se va antes de
+     calentar por conducción. Uno enciende una mecha con una llama. */
+  const mecha = (enciende) => {
+    const m = mundo(40, 12, 7);
+    repisa(m, 11);
+    for(let x = 5; x < 35; x++) m.pon(x, 10, IDX.mecha);
+    enciende(m);
+    const a = cuantos(m, 'mecha');
+    corre(m, 400);
+    return a - cuantos(m, 'mecha');
+  };
+  ok('la mecha prende con FUEGO al lado', mecha(m => m.pon(4, 10, IDX.fuego)) > 5,
+     'se quemaron ' + mecha(m => m.pon(4, 10, IDX.fuego)) + ' celdas');
+  ok('y con lava también', mecha(m => m.pon(4, 10, IDX.lava)) > 5);
+  /* ⚠ la pareja: sin nada, no prende sola. Sin esta prueba, «que la mecha
+     prenda» se cumple haciendo que arda siempre. */
+  ok('pero sola NO se prende', mecha(() => {}) === 0);
+
+  /* «Los pistones deben poder tener distintos empujes.» */
+  const lanza = (pilas) => {
+    const m = mundo(30, 40, 7);
+    repisa(m, 39);
+    for(let i = 0; i < pilas; i++) m.pon(10, 38 - i, IDX.bateria);
+    m.pon(11, 38, IDX.cobre); m.pon(12, 38, IDX.piston); m.pon(12, 37, IDX.piedra);
+    corre(m, 40);
+    let alto = 99;
+    for(let y = 0; y < 40; y++) for(let x = 0; x < 30; x++)
+      if(m.t[m.i(x, y)] === IDX.piedra && y < alto) alto = y;
+    return 37 - alto;
+  };
+  const l1 = lanza(1), l3 = lanza(3);
+  ok('un pistón con más pilas lanza más lejos', l3 > l1, '1 pila ' + l1 + ' · 3 pilas ' + l3);
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);
