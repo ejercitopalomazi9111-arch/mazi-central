@@ -487,6 +487,15 @@ export const REACCIONES = [
   ['lava',  'hielo',  'piedra',  'vapor',   .9,   0],
   ['lava',  'nieve',  'piedra',  'vapor',   .9,   0],
   ['agua',  'sal',    'salada',  'vacio',   .35,  0],
+  /* ⚠ Y LA SAL SE REPARTE POR TODA EL AGUA. Carlos: «la sal no se vuelve
+     agua salada, sólo una capita». Medido: diez celdas de sal daban diez
+     celdas de salada exactas, 1 a 1, y las otras 398 seguían dulces — que es
+     lo que pasa cuando la única regla convierte UNA celda por UNA celda y no
+     hay nada que mueva la sal ya disuelta. Lo que falta no es más sal: es que
+     lo salado contagie a lo dulce, que es literalmente lo que hace disolver.
+     Probabilidad baja a propósito: se ve avanzar el frente salado, no aparece
+     de golpe. */
+  ['salada','agua',   'salada',  'salada',  .05,  0],
   ['agua',  'cemento','concreto','concreto',.28,  0],
   ['salada','cemento','concreto','concreto',.28,  0],
   ['acido', 'agua',   'acido',   'vacio',   .06,  12],

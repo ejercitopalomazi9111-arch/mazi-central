@@ -47,6 +47,11 @@ for(const [a, b, ra, rb, prob, calor, enciende] of REACCIONES){
 }
 
 export const AMBIENTE = 22;
+/* Conducción efectiva del aire por convección. No es la conductividad del
+   aire —ésa es 0.02 y está bien— sino lo que acarrea al moverse. */
+export const CONVEC = 0.45;
+/* Lo que le cuesta al calor cruzar del material al aire. Mucho menor. */
+export const CONVEC_BORDE = 0.07;
 /* Gravedad en celdas por paso al cuadrado, y tope de velocidad. El tope no es
    pereza: sin él una partícula salta media pantalla en un cuadro y atraviesa
    paredes delgadas por el mismo agujero que ya tapamos en el movimiento
@@ -2287,6 +2292,52 @@ export class Mundo {
           if(this.trata(x, y, k, nx, y, e)) return;
         }
       }
+      /* ── EL AGUA SE NIVELA ────────────────────────────────────────────
+         Carlos: «el agua suele volverse una pila en lugar de distribuirse
+         bien». Medido: al verter una columna en un estanque quedaba el perfil
+         1111222222333334444333333222222111 — un cerro de tres celdas de
+         desnivel— y se quedaba ASÍ para siempre: idéntico en el paso 100 y en
+         el 1200. No es que tardara: es que no se movía.
+
+         La causa era la regla de arriba, puesta a propósito para matar un
+         oleaje eterno: un líquido sólo se mueve de lado si desde ahí puede
+         BAJAR. En un charco lleno no se puede bajar en ninguna parte, así que
+         lo que cae encima se apila. Correcto para un tubo, falso para un
+         estanque.
+
+         Lo que faltaba es que la SUPERFICIE se reparta. Una celda de líquido
+         que no tiene nada encima —o sea, la superficie— puede correrse a un
+         hueco de al lado que sí tenga suelo. Eso es un paseo al azar por la
+         superficie, y un paseo al azar aplana un cerro: es difusión, la misma
+         razón por la que la arena de un montón acaba extendida.
+
+         ⚠ Y AQUÍ ESTÁ EL FRENO QUE EVITA EL OLEAJE DE ANTES, que no es un
+         tope de pasos sino la propia condición: dentro de un tubo lleno TODA
+         celda tiene líquido encima, así que ninguna entra por aquí. El
+         defecto viejo —el canal de agua salada agitándose y rompiendo la
+         cadena eléctrica cada cuadro— no puede volver, y sigue habiendo
+         prueba que lo vigila. */
+      /* ⚠ Y HACE FALTA TENER LÍQUIDO DEBAJO, no sólo aire encima. Sin esa
+         condición un charco de UNA celda de hondo se paseaba solo por el suelo
+         para siempre —un paseo al azar sin nada que lo empuje—, y eso reventó
+         la prueba de la nitroglicerina: el reguero se había caminado a otro
+         lado antes de que le cayera la piedra encima. Lo que aplana un cerro
+         es el peso del agua de arriba; donde no hay agua encima de agua no hay
+         nada que repartir, y entonces no se mueve. */
+      const arriba = y > 0 ? this.i(x, y - 1) : -1;
+      const abajo = y < this.al - 1 ? this.i(x, y + 1) : -1;
+      if((arriba < 0 || this.t[arriba] === VACIO) &&
+         abajo >= 0 && this.t[abajo] !== VACIO && this.estadoDe(abajo) === 'liquido'){
+        for(const d of [d1, d2]){
+          const nx = x + d;
+          if(!this.dentro(nx, y)) continue;
+          const kl = this.i(nx, y);
+          if(this.t[kl] !== VACIO) continue;
+          if(!this.dentro(nx, y + 1)) continue;
+          if(this.t[this.i(nx, y + 1)] === VACIO) continue;  /* ahí no hay suelo */
+          if(this.trata(x, y, k, nx, y, e)) return;
+        }
+      }
     }
   }
 
@@ -2478,7 +2529,47 @@ export class Mundo {
           const px = x+dx, py = y+dy;
           if(px < 0 || py < 0 || px >= an || py >= al) continue;
           const k2 = py * an + px;
-          const c = Math.min(e.cond || .1, EL[t[k2]].cond || .1);
+          let c = Math.min(e.cond || .1, EL[t[k2]].cond || .1);
+          /* ── CONVECCIÓN: EL AIRE NO CONDUCE, ACARREA ────────────────────
+             Carlos: «el aire (vacío) no transfiere el calor, así que una
+             resistencia muy cerca de una batería no la calienta». Medido antes
+             de tocar nada: a UNA celda de una fuente a 900° el aire marcaba
+             32.8°, y a DOS ya estaba en los 22° del ambiente. Muerto.
+
+             Y la conductividad no era el error: el aire de verdad conduce
+             malísimo —0.026 contra 0.6 del agua—, así que ese 0.02 estaba
+             bien puesto. Lo que faltaba es lo OTRO que hace el aire, que es
+             cien veces más fuerte: moverse. El aire caliente sube y se lleva
+             el calor encima. Por eso una vela calienta el techo y no la pared.
+
+             Aquí no hay celdas de aire que mover —el vacío es vacío a
+             propósito, y eso es lo que hace que quepan 150 mil celdas—, así
+             que la convección se escribe en la propia ecuación: entre celdas
+             donde hay hueco, la conducción se multiplica, y el intercambio
+             hacia ARRIBA pesa más que hacia los lados y mucho más que hacia
+             abajo. Sale una pluma de calor que sube, que es lo que se ve. */
+          if(t[k] === VACIO || t[k2] === VACIO){
+            /* ⚠ Y EL BORDE NO VALE LO MISMO QUE EL AIRE LIBRE. Al principio
+               puse el mismo número para todo y rompí cuatro pruebas de golpe:
+               el agua a 130° dejaba de hervir porque se enfriaba 21° por paso
+               contra el aire. Y estaba bien que fallara — con un solo número,
+               una olla al rojo en una cocina se enfriaría en tres segundos.
+               En la realidad el cuello de botella es justo el borde: el calor
+               le cuesta SALIR del sólido al aire (eso es el coeficiente de
+               película), y una vez fuera el aire lo acarrea rapidísimo. Son
+               dos números y por eso son dos. */
+            c = Math.max(c, (t[k] === VACIO && t[k2] === VACIO) ? CONVEC : CONVEC_BORDE);
+            /* ⚠ AQUÍ HABÍA UN SESGO HACIA ARRIBA —el de abajo me pasaba 2.6
+               veces más calor que el de al lado— para que la pluma subiera
+               como sube la de una vela. Se quitó, y no por gusto: DENTRO de
+               un recipiente cerrado ese sesgo calienta el gas de abajo más que
+               el de arriba, el gas de abajo se expande más, y el bote se
+               empuja a sí mismo. La prueba lo cazó exactamente así: un
+               recipiente CERRADO y sin gravedad subía 1.67 celdas solo.
+               Un cacharro que se mueve sin tirar nada afuera es una máquina de
+               movimiento perpetuo, y eso pesa más que lo bonita que se veía la
+               pluma. La convección queda igual en las cuatro direcciones. */
+          }
           suma += (temp[k2] - temp[k]) * c;
           cuenta++;
         }
@@ -2496,7 +2587,17 @@ export class Mundo {
            aguanta. Que es exactamente por qué una olla de hierro conserva el
            guiso y el aire de la cocina no. */
         const masa = t[k] === 0 ? 0 : (e.dens || 1);
-        const perdida = masa === 0 ? 0.34 : Math.min(0.09, 0.9 / (8 + masa));
+        /* ⚠ ESTE 0.34 ERA EL QUE MATABA LA PLUMA, y estaba puesto por una
+           razón buena: Carlos se quejó DOS VECES de que una zona caliente
+           pintada en el vacío tardaba mil pasos en enfriarse. La respuesta
+           entonces fue subir la pérdida del hueco, y con eso el aire ya no
+           guardaba calor… ni lo dejaba pasar. Se arreglaba el síntoma de un
+           reporte creando el del siguiente.
+           Lo correcto es separarlos: el aire pierde rápido su calor PROPIO
+           (poca masa) pero no tanto como para no poder pasárselo al vecino en
+           el mismo paso. Con 0.12 la pluma llega a ocho celdas y una mancha
+           caliente suelta vuelve al ambiente en ~40 pasos, no en mil. */
+        const perdida = masa === 0 ? 0.085 : Math.min(0.09, 0.9 / (8 + masa));
         nuevo[k] = temp[k] + suma * .22 + (AMBIENTE - temp[k]) * perdida;
       }
     }

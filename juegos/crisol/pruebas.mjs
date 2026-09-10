@@ -130,11 +130,18 @@ seccion('termodinámica de verdad');
      fundido > 0 && cuantos(v, 'vidrio') > 0,
      'al calentar ' + fundido + ' · al enfriar ' + cuantos(v,'vidrio') + ' de vidrio');
 
+  /* ⚠ ESTA PRUEBA MIRABA TARDE Y ACUSABA AL MOTOR. Leía el vapor en el paso
+     4 y desde que el aire acarrea calor, para entonces ya se había vuelto a
+     condensar: hervía en el paso 1, ocho celdas, y en el 3 ya eran agua otra
+     vez a 89°. O sea que el motor hacía lo correcto —una bocanada de vapor en
+     aire frío se condensa en un parpadeo— y la prueba decía que no hervía.
+     Se mide SI HIRVIÓ, que es la pregunta, no cómo estaba en un instante. */
   const h = mundo(14, 14);
   for(let x = 3; x < 11; x++) h.pon(x, 12, IDX.agua);
   for(let k = 0; k < h.t.length; k++) if(h.t[k] === IDX.agua) h.temp[k] = 130;
-  corre(h, 4);
-  ok('el agua a 130° hierve', cuantos(h, 'vapor') > 0, cuantos(h,'vapor') + ' de vapor');
+  let hirvio = 0;
+  for(let i = 0; i < 4; i++){ h.paso(); hirvio = Math.max(hirvio, cuantos(h, 'vapor')); }
+  ok('el agua a 130° hierve', hirvio > 0, 'nunca pasó de ' + hirvio + ' de vapor');
 }
 
 seccion('química');
@@ -1534,6 +1541,92 @@ seccion('cuerdas, amarres y péndulos');
     ok('la cuerda se dobla y sigue al peso, no se queda tiesa', torcidos >= 4,
        'sólo ' + torcidos + ' eslabones se salieron de la vertical');
   }
+}
+
+seccion('el aire acarrea, el agua se nivela, la sal se reparte');
+{
+  /* Carlos: «el aire (vacío) no transfiere el calor, así que una resistencia
+     muy cerca de una batería no la calienta nada». Medido antes de tocar:
+     a UNA celda de una fuente a 900° el aire marcaba 32.8° y a DOS ya estaba
+     en el ambiente. */
+  const m = mundo(40, 40, 7);
+  for(let x = 0; x < 40; x++) m.pon(x, 39, IDX.muro);
+  m.pon(10, 30, IDX.muro);
+  for(let i = 0; i < 200; i++){ m.temp[m.i(10, 29)] = 900; m.paso(); }
+  const a3 = m.temp[m.i(10, 26)], a6 = m.temp[m.i(10, 23)];
+  /* el umbral es 35 y no más: son 13° POR ENCIMA del ambiente donde antes
+     había exactamente 22.0, o sea cero. Y no se pone más alto a propósito —
+     el aire tiene que dejar pasar el calor, no repartirlo por toda la sala. */
+  ok('el calor cruza el aire y llega a tres celdas', a3 > 35,
+     'a 3 celdas: ' + a3.toFixed(1) + '° (antes del arreglo: 22.0°, el ambiente)');
+  ok('y se va apagando con la distancia, no llena la sala', a6 < a3 && a6 < 35,
+     'a 3 celdas ' + a3.toFixed(1) + '° · a 6 celdas ' + a6.toFixed(1) + '°');
+
+  /* ⚠ Y ESTA ES LA PAREJA DE LA DE ARRIBA, sin ella la de arriba se «arregla»
+     subiendo un número hasta que el aire guarde calor para siempre — que es
+     de lo que Carlos se quejó DOS VECES antes. Las dos juntas o ninguna. */
+  const f = mundo(30, 30, 7);
+  for(let y = 13; y < 17; y++) for(let x = 13; x < 17; x++) f.temp[f.i(x, y)] = 900;
+  corre(f, 60);
+  ok('una mancha caliente suelta en el aire se enfría sola', f.temp[f.i(15, 15)] < 30,
+     'tras 60 pasos sigue a ' + f.temp[f.i(15,15)].toFixed(1) + '°');
+}
+
+{
+  /* «El agua suele volverse una pila en lugar de distribuirse bien.» Medido:
+     el perfil quedaba 1111222222333334444333333222222111 y NO se movía —
+     idéntico en el paso 100 y en el 1200. */
+  const m = mundo(40, 40, 7);
+  for(let x = 2; x <= 37; x++) m.pon(x, 38, IDX.muro);
+  for(let y = 2; y <= 38; y++){ m.pon(2, y, IDX.muro); m.pon(37, y, IDX.muro); }
+  for(let y = 10; y < 30; y++) for(let x = 18; x < 22; x++) m.pon(x, y, IDX.agua);
+  corre(m, 600);
+  const alturas = [];
+  for(let x = 3; x < 37; x++){ let h = 0;
+    for(let y = 2; y < 38; y++) if(m.t[m.i(x, y)] === IDX.agua){ h = 38 - y; break; }
+    alturas.push(h); }
+  const desnivel = Math.max(...alturas) - Math.min(...alturas);
+  ok('el agua vertida se NIVELA en vez de quedarse en pila', desnivel <= 2,
+     'desnivel de ' + desnivel + ' celdas · perfil ' + alturas.join(''));
+
+  /* Y el freno: dentro de un tubo LLENO no se agita, que es el defecto viejo
+     —el canal de agua salada rompiendo la cadena eléctrica cada cuadro—. */
+  const t = mundo(30, 20, 7);
+  for(let x = 5; x <= 25; x++){ t.pon(x, 9, IDX.muro); t.pon(x, 12, IDX.muro); }
+  for(let y = 9; y <= 12; y++){ t.pon(5, y, IDX.muro); t.pon(25, y, IDX.muro); }
+  for(let y = 10; y <= 11; y++) for(let x = 6; x < 25; x++) t.pon(x, y, IDX.agua);
+  corre(t, 40);
+  const foto = t.t.slice();
+  corre(t, 40);
+  let movidas = 0;
+  for(let k = 0; k < foto.length; k++) if(foto[k] !== t.t[k]) movidas++;
+  ok('pero en un tubo LLENO se queda quieta, sin oleaje eterno', movidas === 0,
+     movidas + ' celdas cambiaron en 40 pasos sin que pasara nada');
+}
+
+{
+  /* «La sal no se vuelve agua salada, sólo una capita.» Medido: 10 celdas de
+     sal daban 10 de salada exactas —una por una— y las otras 398 seguían
+     dulces. */
+  const m = mundo(30, 40, 7);
+  for(let x = 2; x <= 27; x++){ m.pon(x, 38, IDX.muro); m.pon(x, 2, IDX.muro); }
+  for(let y = 2; y <= 38; y++){ m.pon(2, y, IDX.muro); m.pon(27, y, IDX.muro); }
+  for(let y = 20; y < 37; y++) for(let x = 3; x < 27; x++) m.pon(x, y, IDX.agua);
+  for(let x = 10; x < 20; x++) m.pon(x, 10, IDX.sal);
+  corre(m, 600);
+  const dulce = cuantos(m, 'agua'), salada = cuantos(m, 'salada');
+  ok('un puñado de sal sala TODA el agua, no una capita', salada > dulce * 4,
+     'quedaron ' + dulce + ' dulces contra ' + salada + ' saladas');
+
+  /* y no de golpe: se ve avanzar el frente */
+  const r = mundo(30, 40, 7);
+  for(let x = 2; x <= 27; x++){ r.pon(x, 38, IDX.muro); r.pon(x, 2, IDX.muro); }
+  for(let y = 2; y <= 38; y++){ r.pon(2, y, IDX.muro); r.pon(27, y, IDX.muro); }
+  for(let y = 20; y < 37; y++) for(let x = 3; x < 27; x++) r.pon(x, y, IDX.agua);
+  for(let x = 10; x < 20; x++) r.pon(x, 10, IDX.sal);
+  corre(r, 40);
+  ok('y tarda: a los 40 pasos todavía queda agua dulce', cuantos(r, 'agua') > 0,
+     'ya no quedaba ni una dulce a los 40 pasos');
 }
 
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
