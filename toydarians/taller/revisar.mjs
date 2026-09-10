@@ -123,6 +123,24 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
       for (const [k, c] of Object.entries(cuenta))
         if (c > 3 && c > totalFichas * 0.25) repes.push(k + ' ×' + c);
 
+      /* Los banners de categoria NO son <img>: son <span> con background-image
+         que pone el JS, asi que la cuenta de arriba no los ve. Esto cubre el
+         caso de la MISMA RUTA repartida en muchas tarjetas.
+         ⚠ Lo que NO cubre, y por eso se dice: cuando el raspador sirvio el
+         logo de la tienda a 16 categorias, los archivos tenian NOMBRES
+         DISTINTOS y los MISMOS BYTES. En el DOM eso son 16 rutas distintas y
+         esta comprobacion pasa en verde. La igualdad de bytes se comprueba
+         donde estan los bytes: `_comprobar_banners` en armar.py. */
+      const fondos = {};
+      for (const s of document.querySelectorAll('.g-cats .banners span')) {
+        const u = (s.dataset.b || getComputedStyle(s).backgroundImage || '');
+        const k = (u.match(/[^/"')]+\.(?:webp|png|jpe?g|avif)/i) || [''])[0];
+        if (k) fondos[k] = (fondos[k] || 0) + 1;
+      }
+      const totalCats = document.querySelectorAll('.g-cats .g-cat').length;
+      for (const [k, c] of Object.entries(fondos))
+        if (c > 2 && c > totalCats * 0.25) repes.push('banner ' + k + ' ×' + c);
+
       const flojos = [];
       for (const n of document.querySelectorAll('p,span,a,li,h1,h2,h3,b,i,small,div')) {
         const t = [...n.childNodes].filter(x => x.nodeType === 3 && x.textContent.trim()).map(x => x.textContent.trim()).join(' ');
