@@ -52,6 +52,14 @@ body{
   text-align:center; z-index:10; overflow-y:auto; overscroll-behavior:contain;
 }
 .pant.va{display:flex}
+/* Velo bajo el contenido: el canvas de la ciudad va detrás de TODAS las
+   pantallas, y el texto chico del pie caía justo encima de las ventanas
+   encendidas. Se leía a ratos, que es peor que no leerse. */
+.pant::before{
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(16,10,24,.42) 0%, rgba(16,10,24,.62) 46%, rgba(16,10,24,.95) 100%);
+}
 
 h1{
   font-family:'Mazi',ui-rounded,system-ui,sans-serif;
@@ -699,89 +707,101 @@ const PLUMAJES = [
 ];
 
 /* Los sombreros se dibujan en coordenadas del viewBox de la paloma
-   (1408 × 768), así que crecen con ella sin cuentas raras. La cabeza está
-   arriba a la derecha, cerca de x 1180 · y 210. */
-const CABEZA = { x:1178, y:208 };
+   (1408 × 768), así que crecen con ella sin cuentas raras.
+
+   ⚠ AQUÍ DECÍA x 1178 · y 208 Y ERA PURO OJO: ahí no hay cabeza, hay punta de
+   ala, así que TODOS los sombreros salían flotando en el ala derecha y del
+   doble de grandes. No se cazó leyendo ni midiendo el píxel más alto —el ave
+   trae las alas MÁS arriba que la cabeza, así que ese método encuentra el ala—
+   sino dibujándola con una cuadrícula de coordenadas encima y mirándola.
+   La cabeza es el bulto central con el pico a la derecha: centro (700, 286),
+   unos 95 px de ancho, y el tope en y 258. */
+const CABEZA = { x:700, y:286 };
+const RC = 47;   /* radio de la cabeza, para que todo escale con ella */
 
 const SOMBREROS = [
   { id:'nada', nom:'A pelo', precio:0, dib:null },
   { id:'gorra', nom:'Gorra', precio:60, dib:(x)=>{
       x.fillStyle = '#2B7FFF';
-      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-6, 84, Math.PI, 0); x.fill();
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-14, RC*1.06, Math.PI, 0); x.fill();
       x.fillStyle = '#1B5FCC';
-      x.beginPath(); x.ellipse(CABEZA.x+72, CABEZA.y-6, 76, 19, 0, 0, Math.PI*2); x.fill();
+      x.beginPath(); x.ellipse(CABEZA.x+RC*0.85, CABEZA.y-14, RC*0.78, RC*0.2, 0, 0, Math.PI*2); x.fill();
       x.fillStyle = '#E9E4E4';
-      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-64, 12, 0, Math.PI*2); x.fill(); } },
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-RC*1.0, RC*0.15, 0, Math.PI*2); x.fill(); } },
   { id:'mono', nom:'Moño', precio:95, dib:(x)=>{
+      const y = CABEZA.y - RC*1.05;
       x.fillStyle = '#FF3D9E';
-      x.beginPath(); x.moveTo(CABEZA.x, CABEZA.y-14);
-      x.lineTo(CABEZA.x-74, CABEZA.y-58); x.lineTo(CABEZA.x-74, CABEZA.y+22); x.closePath(); x.fill();
-      x.beginPath(); x.moveTo(CABEZA.x, CABEZA.y-14);
-      x.lineTo(CABEZA.x+74, CABEZA.y-58); x.lineTo(CABEZA.x+74, CABEZA.y+22); x.closePath(); x.fill();
+      x.beginPath(); x.moveTo(CABEZA.x, y);
+      x.lineTo(CABEZA.x-RC*0.82, y-RC*0.5); x.lineTo(CABEZA.x-RC*0.82, y+RC*0.42); x.closePath(); x.fill();
+      x.beginPath(); x.moveTo(CABEZA.x, y);
+      x.lineTo(CABEZA.x+RC*0.82, y-RC*0.5); x.lineTo(CABEZA.x+RC*0.82, y+RC*0.42); x.closePath(); x.fill();
       x.fillStyle = '#C41E75';
-      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-16, 20, 0, Math.PI*2); x.fill(); } },
+      x.beginPath(); x.arc(CABEZA.x, y, RC*0.22, 0, Math.PI*2); x.fill(); } },
   { id:'mensajero', nom:'Casco mensajero', precio:150, dib:(x)=>{
       x.fillStyle = '#C9412B';
-      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-4, 88, Math.PI, 0); x.fill();
-      x.fillStyle = '#8E2A1B'; x.fillRect(CABEZA.x-92, CABEZA.y-14, 184, 22);
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-12, RC*1.1, Math.PI, 0); x.fill();
+      x.fillStyle = '#8E2A1B';
+      x.fillRect(CABEZA.x-RC*1.16, CABEZA.y-19, RC*2.32, RC*0.26);
       x.fillStyle = '#FFC53D';
-      x.beginPath(); x.moveTo(CABEZA.x, CABEZA.y-96);
-      x.lineTo(CABEZA.x+16, CABEZA.y-58); x.lineTo(CABEZA.x-16, CABEZA.y-58); x.closePath(); x.fill(); } },
+      x.beginPath(); x.moveTo(CABEZA.x, CABEZA.y-RC*1.72);
+      x.lineTo(CABEZA.x+RC*0.19, CABEZA.y-RC*1.06);
+      x.lineTo(CABEZA.x-RC*0.19, CABEZA.y-RC*1.06); x.closePath(); x.fill(); } },
   { id:'dj', nom:'Audífonos', precio:190, dib:(x)=>{
-      x.strokeStyle = '#2A2334'; x.lineWidth = 20; x.lineCap = 'round';
-      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-2, 82, Math.PI*1.06, Math.PI*1.94); x.stroke();
+      x.strokeStyle = '#2A2334'; x.lineWidth = RC*0.24; x.lineCap = 'round';
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-6, RC*1.04, Math.PI*1.08, Math.PI*1.92); x.stroke();
       x.fillStyle = '#AC27FF';
-      x.beginPath(); x.ellipse(CABEZA.x-80, CABEZA.y+6, 24, 34, 0, 0, Math.PI*2); x.fill();
-      x.beginPath(); x.ellipse(CABEZA.x+80, CABEZA.y+6, 24, 34, 0, 0, Math.PI*2); x.fill(); } },
+      x.beginPath(); x.ellipse(CABEZA.x-RC*1.02, CABEZA.y-2, RC*0.28, RC*0.42, 0, 0, Math.PI*2); x.fill();
+      x.beginPath(); x.ellipse(CABEZA.x+RC*1.02, CABEZA.y-2, RC*0.28, RC*0.42, 0, 0, Math.PI*2); x.fill(); } },
   { id:'copa', nom:'De copa', precio:220, dib:(x)=>{
       x.fillStyle = '#181320';
-      x.fillRect(CABEZA.x-58, CABEZA.y-142, 116, 132);
-      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-8, 104, 22, 0, 0, Math.PI*2); x.fill();
-      x.fillStyle = '#AC27FF'; x.fillRect(CABEZA.x-58, CABEZA.y-44, 116, 26); } },
+      x.fillRect(CABEZA.x-RC*0.62, CABEZA.y-RC*2.05, RC*1.24, RC*1.5);
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*0.56, RC*1.2, RC*0.25, 0, 0, Math.PI*2); x.fill();
+      x.fillStyle = '#AC27FF';
+      x.fillRect(CABEZA.x-RC*0.62, CABEZA.y-RC*0.95, RC*1.24, RC*0.32); } },
   { id:'charro', nom:'De charro', precio:270, dib:(x)=>{
       x.fillStyle = '#2E2438';
-      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y+2, 152, 32, 0, 0, Math.PI*2); x.fill();
-      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-56, 66, 58, 0, 0, Math.PI*2); x.fill();
-      x.strokeStyle = '#FFC53D'; x.lineWidth = 9;
-      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-14, 68, 20, 0, 0, Math.PI*2); x.stroke();
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*0.5, RC*1.9, RC*0.4, 0, 0, Math.PI*2); x.fill();
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*1.25, RC*0.86, RC*0.78, 0, 0, Math.PI*2); x.fill();
+      x.strokeStyle = '#FFC53D'; x.lineWidth = RC*0.13;
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*0.72, RC*0.88, RC*0.26, 0, 0, Math.PI*2); x.stroke();
       x.fillStyle = '#FFC53D';
       for(let i=-2;i<=2;i++){
-        x.beginPath(); x.arc(CABEZA.x + i*48, CABEZA.y+4, 7, 0, Math.PI*2); x.fill();
+        x.beginPath(); x.arc(CABEZA.x + i*RC*0.62, CABEZA.y-RC*0.47, RC*0.1, 0, Math.PI*2); x.fill();
       } } },
   { id:'flores', nom:'Corona de flores', precio:300, dib:(x)=>{
       const cols = ['#FF3D9E','#FFC53D','#3DFFC5','#FF7A3D','#AC27FF'];
       for(let i=0;i<7;i++){
         const a = Math.PI + (i/6)*Math.PI;
-        const px = CABEZA.x + Math.cos(a)*86, py = CABEZA.y - 4 + Math.sin(a)*74;
+        const px = CABEZA.x + Math.cos(a)*RC*1.06, py = CABEZA.y - RC*0.2 + Math.sin(a)*RC*0.92;
         x.fillStyle = cols[i % cols.length];
-        for(let p=0;p<5;p++){
-          const pa = (p/5)*Math.PI*2;
-          x.beginPath(); x.arc(px + Math.cos(pa)*13, py + Math.sin(pa)*13, 11, 0, Math.PI*2); x.fill();
+        for(let q=0;q<5;q++){
+          const pa = (q/5)*Math.PI*2;
+          x.beginPath(); x.arc(px + Math.cos(pa)*RC*0.15, py + Math.sin(pa)*RC*0.15, RC*0.13, 0, Math.PI*2); x.fill();
         }
         x.fillStyle = '#FFF3C4';
-        x.beginPath(); x.arc(px, py, 8, 0, Math.PI*2); x.fill();
+        x.beginPath(); x.arc(px, py, RC*0.09, 0, Math.PI*2); x.fill();
       } } },
   { id:'corona', nom:'Corona', precio:380, dib:(x)=>{
+      const b = CABEZA.y - RC*0.62;
       x.fillStyle = '#FFC53D';
       x.beginPath();
-      x.moveTo(CABEZA.x-88, CABEZA.y+4); x.lineTo(CABEZA.x-88, CABEZA.y-72);
-      x.lineTo(CABEZA.x-44, CABEZA.y-26); x.lineTo(CABEZA.x, CABEZA.y-104);
-      x.lineTo(CABEZA.x+44, CABEZA.y-26); x.lineTo(CABEZA.x+88, CABEZA.y-72);
-      x.lineTo(CABEZA.x+88, CABEZA.y+4); x.closePath(); x.fill();
-      const joyas = ['#FF3D9E','#3DFFC5','#2B7FFF'];
-      joyas.forEach((c,i) => {
+      x.moveTo(CABEZA.x-RC*0.95, b); x.lineTo(CABEZA.x-RC*0.95, b-RC*0.86);
+      x.lineTo(CABEZA.x-RC*0.48, b-RC*0.34); x.lineTo(CABEZA.x, b-RC*1.22);
+      x.lineTo(CABEZA.x+RC*0.48, b-RC*0.34); x.lineTo(CABEZA.x+RC*0.95, b-RC*0.86);
+      x.lineTo(CABEZA.x+RC*0.95, b); x.closePath(); x.fill();
+      ['#FF3D9E','#3DFFC5','#2B7FFF'].forEach((c,i) => {
         x.fillStyle = c;
-        x.beginPath(); x.arc(CABEZA.x + (i-1)*46, CABEZA.y-14, 12, 0, Math.PI*2); x.fill();
+        x.beginPath(); x.arc(CABEZA.x + (i-1)*RC*0.5, b-RC*0.2, RC*0.13, 0, Math.PI*2); x.fill();
       }); } },
   { id:'escafandra', nom:'Escafandra', precio:520, dib:(x)=>{
-      const g = x.createRadialGradient(CABEZA.x-30, CABEZA.y-46, 8, CABEZA.x, CABEZA.y-16, 118);
-      g.addColorStop(0,'rgba(255,255,255,.5)'); g.addColorStop(.5,'rgba(61,197,255,.18)');
-      g.addColorStop(1,'rgba(61,197,255,.34)');
+      const g = x.createRadialGradient(CABEZA.x-RC*0.4, CABEZA.y-RC*0.7, RC*0.1,
+                                       CABEZA.x, CABEZA.y-RC*0.15, RC*1.5);
+      g.addColorStop(0,'rgba(255,255,255,.5)'); g.addColorStop(.5,'rgba(61,197,255,.16)');
+      g.addColorStop(1,'rgba(61,197,255,.32)');
       x.fillStyle = g;
-      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-16, 118, 0, Math.PI*2); x.fill();
-      x.strokeStyle = '#9FE8FF'; x.lineWidth = 8;
-      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-16, 118, 0, Math.PI*2); x.stroke();
-      x.fillStyle = '#C9412B'; x.fillRect(CABEZA.x-34, CABEZA.y+86, 68, 26); } },
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-RC*0.15, RC*1.5, 0, Math.PI*2); x.fill();
+      x.strokeStyle = '#9FE8FF'; x.lineWidth = RC*0.12;
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-RC*0.15, RC*1.5, 0, Math.PI*2); x.stroke(); } },
 ];
 
 /* Las estelas son partículas que suelta la paloma. Cada una devuelve cómo se
@@ -1124,7 +1144,9 @@ function dibujaPaloma(x, cx, cy, alto, opc){
   const plum = buscaCos('plumaje', o.plumaje || G.plumaje);
   x.fillStyle = plum.pinta(x, AVE_VB.w, AVE_VB.h);
   x.fill(AVE_CUERPO);
-  x.fillStyle = '#1A1322';
+  /* El segundo trazo es la ESTRELLA DEL PECHO, no un ojo, y en el SVG de la
+     marca va en hueso. La estaba pintando oscura y se veía un agujero. */
+  x.fillStyle = o.estrella || '#EAE5E3';
   x.fill(AVE_OJO);
 
   const som = buscaCos('sombrero', o.sombrero || G.sombrero);
@@ -1179,7 +1201,11 @@ function pista(){
   const x0 = (AN - ancho) / 2;
   const w = ancho / CARRILES;
   const linea = AL * 0.80;
-  return { x0:x0, w:w, ancho:ancho, linea:linea, alto:AL };
+  /* ⚠ La pista arrancaba en y=0 y las notas subían POR DETRÁS DE LA PALOMA:
+     se colaban por los huecos entre las alas y parecía que traía puesto algo.
+     El techo va debajo del ave. */
+  const tope = AL * 0.24;
+  return { x0:x0, w:w, ancho:ancho, linea:linea, tope:tope, alto:AL };
 }
 
 const COLC = ['#FF3D9E', '#AC27FF', '#3DFFC5'];
@@ -1195,14 +1221,19 @@ function pintarJuego(dt){
   }
 
   fondoCiudad();
+  /* Velo: la ciudad se veía DETRÁS de los aros de juicio, con las ventanas
+     amarillas justo en la zona que más hay que mirar. Se deja de fondo pero
+     apagada — quitarla del todo dejaba la pantalla vacía. */
+  X.fillStyle = 'rgba(16,10,24,.62)';
+  X.fillRect(0, 0, AN, AL);
 
   /* carriles */
   for(let c = 0; c < CARRILES; c++){
     const x = P.x0 + c * P.w;
     X.fillStyle = tocando[c] ? 'rgba(255,255,255,.075)' : 'rgba(255,255,255,.028)';
-    X.fillRect(x, 0, P.w - 2, P.linea + 40);
+    X.fillRect(x, P.tope, P.w - 2, P.linea - P.tope + 40);
     X.fillStyle = 'rgba(255,255,255,.06)';
-    X.fillRect(x + P.w - 2, 0, 2, P.linea + 40);
+    X.fillRect(x + P.w - 2, P.tope, 2, P.linea - P.tope + 40);
   }
 
   /* línea de juicio */
@@ -1223,18 +1254,18 @@ function pintarJuego(dt){
     if(n.est === 2) continue;
     const rel = (n.p - p) / mirapasos;          /* 1 = arriba · 0 = línea */
     if(rel > 1.06) { if(n.p - p > mirapasos * 1.3) break; continue; }
-    const y = P.linea - rel * P.linea;
+    const y = P.linea - rel * (P.linea - P.tope);
     const cx = P.x0 + n.carril * P.w + P.w / 2;
     const r = P.w * 0.27;
 
     if(n.larga){
-      const yFin = P.linea - ((n.p + n.d - p) / mirapasos) * P.linea;
+      const yFin = P.linea - ((n.p + n.d - p) / mirapasos) * (P.linea - P.tope);
       X.strokeStyle = COLC[n.carril];
       X.globalAlpha = n.est === 1 ? 0.95 : 0.5;
       X.lineWidth = r * 1.15; X.lineCap = 'round';
       X.beginPath();
       X.moveTo(cx, Math.min(y, P.linea));
-      X.lineTo(cx, Math.max(yFin, -40));
+      X.lineTo(cx, Math.max(yFin, P.tope - 10));
       X.stroke();
       X.globalAlpha = 1;
     }
