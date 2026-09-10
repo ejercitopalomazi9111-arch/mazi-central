@@ -107,13 +107,13 @@ const JUEGO = {
   gasnat:  { nom:'Gas',     col:'#93A05A', estado:'gas',    dens:0.66, cond:.10,
              arde:1, calorArde:900, grupo:'combustible' },
   polvora: { nom:'Pólvora', col:'#3E3A44', estado:'polvo',  dens:13, cond:.15,
-             arde:1, calorArde:1400, explota:9, dureza:.05, grupo:'combustible' },
+             arde:1, calorArde:1400, explota:3.5, dureza:.05, grupo:'combustible' },
   /* ⚠ `inestable:.5` la hacía explotar SOLA a los pocos segundos de ponerla:
      Carlos no alcanzaba ni a construir con ella. La nitroglicerina de verdad
      no detona por existir — detona por GOLPE, y eso ahora se mide con la
      velocidad de impacto. `golpe` es a qué velocidad revienta. */
   nitro:   { nom:'Nitroglicerina', col:'#C8B96A', estado:'liquido', dens:12, cond:.2,
-             arde:1, calorArde:2200, explota:22, golpe:2.2, grupo:'combustible' },
+             arde:1, calorArde:2200, explota:8, golpe:2.2, grupo:'combustible' },
   /* Tela de globo: un sólido LIGERO, que es lo que hace falta para que un
      globo vuele. Con madera no vuela —pesa diecinueve veces el aire— igual
      que en la vida real: los globos se hacen de película fina justo por eso.
@@ -140,7 +140,7 @@ const JUEGO = {
 
   /* ── gases ────────────────────────────────────────────────────────────── */
   hidrogeno:{nom:'Hidrógeno',col:'#C9D8FF',estado:'gas',   dens:0.08, cond:.5,
-             arde:1, calorArde:1200, explota:7, sube:2, grupo:'gases' },
+             arde:1, calorArde:1200, explota:2.5, sube:2, ardeEn:'vapor', grupo:'gases' },
   oxigeno: { nom:'Oxígeno',  col:'#8FD8FF', estado:'gas',   dens:1.43, cond:.2,
              aviva:true, grupo:'gases' },
 
@@ -227,16 +227,16 @@ const JUEGO = {
      metálicas de verdad: el estroncio da rojo, el bario verde, el cobre azul
      y el sodio dorado. Es la química que hay detrás de un castillo. */
   estRoja: { nom:'Estrella roja', col:'#FF3B4E', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#FF3B4E', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#FF3B4E', explota:1.6, grupo:'pirotecnia',
              ayuda:'Estroncio: arde en rojo' },
   estVerde:{ nom:'Estrella verde', col:'#3BFF6E', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#3BFF6E', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#3BFF6E', explota:1.6, grupo:'pirotecnia',
              ayuda:'Bario: arde en verde' },
   estAzul: { nom:'Estrella azul', col:'#3B8AFF', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#3B8AFF', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#3B8AFF', explota:1.6, grupo:'pirotecnia',
              ayuda:'Cobre: arde en azul' },
   estOro:  { nom:'Estrella dorada', col:'#FFD43B', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#FFD43B', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#FFD43B', explota:1.6, grupo:'pirotecnia',
              ayuda:'Sodio: arde en dorado' },
   /* ⚠ SIN `arde`, Y ESO ES LO QUE LA HACE MECHA. Con `arde:.5` el bloque
      genérico de combustión —que corre ANTES— la convertía en fuego de golpe y

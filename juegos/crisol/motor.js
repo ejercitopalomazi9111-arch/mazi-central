@@ -72,6 +72,10 @@ export const VMAX = 6;
 export const ALCANCE = 110;
 /* el puente entre la escala de la presión y la de las resistencias · ver esfuerzoPaso */
 export const ESCALA_ESF = 0.05;
+/* Cuántas veces su resistencia tiene que llevarse una celda para reventar en
+   el acto en vez de sólo fatigarse. Es lo que separa el corazón de una
+   explosión del frente que sólo pasa. */
+export const ROMPE_YA = 4;
 /* ── EL HUECO ES AIRE, NO VACÍO ─────────────────────────────────────────
    Carlos lo pidió por su nombre: «no tienen peso, resistencia del aire,
    gravedad etc, deberías sumar todo eso». Nada de eso se puede calcular sin
@@ -181,6 +185,21 @@ export class Mundo {
        distinguir una entrada de su propia salida */
     this._padre = new Int32Array(n);
     this._detona = [];   /* choques que van a detonar, resueltos al final del paso */
+    /* ── EL TECHO DE LA ONDA ────────────────────────────────────────────
+       Una onda NUNCA puede ser más fuerte que lo que la creó. Suena obvio y
+       es que hacía falta escribirlo: la pareja onda + rotura se realimenta
+       —la celda revienta, el sitio pasa de transmitir 0.23 a transmitir 1 con
+       toda la presión dentro, y esa patada rompe a la siguiente— y de ahí
+       salían 147 MIL MILLONES de presión a partir de un empujón de 3 000,
+       con la sala entera arrasada. Perseguí ese número por cuatro sitios
+       equivocados: el explosivo, el borde de la caja, el paso de tiempo y la
+       propia ecuación. Ninguno era. La ecuación sola es estable en los cuatro
+       materiales, y romper solo también; lo que se dispara es el par.
+       En vez de seguir buscando el modo exacto, se escribe la ley: se guarda
+       el pico inyectado, se deja caer despacio, y ninguna celda puede pasarlo.
+       Un tope así no maquilla nada — sólo prohíbe crear energía, que es lo
+       que la física ya prohibía. */
+    this.picoOnda = 0;
     /* ── EL CAMPO GRAVITATORIO ────────────────────────────────────────
        Carlos no pidió «activar y desactivar la gravedad»: pidió magnitud,
        dirección, zonas, por objeto y puntos que atraen o repelen, «combinar
@@ -325,10 +344,31 @@ export class Mundo {
      siguientes, empuja lo que encuentra y rompe lo que no aguante. Eso es una
      onda expansiva, y de paso es la misma pieza con la que funciona un cañón:
      presión encerrada que encuentra por dónde salir. */
+  /* ⚠ LA FUERZA ES POR CELDA, NO POR EXPLOSIÓN, y ahí estaba el reclamo de
+     Carlos entero: «todos los explosivos explotan demasiado fuerte y sin
+     contar el muro todo material se destruye SIN IMPORTAR LA CANTIDAD de
+     explosivo». Medido antes de tocar nada, contra un suelo de piedra:
+
+         nitro    1→246  2→251  4→251  9→251  25→251  64→596
+         pólvora  1→0    2→11   4→11   9→11   25→11   64→61
+
+     O sea: UNA celda de nitroglicerina destruía 246 celdas de piedra, y
+     multiplicar el explosivo por sesenta y cuatro apenas cambiaba nada. Las
+     dos mitades del reclamo son el mismo defecto: el radio salía de una
+     constante del MATERIAL —`explota`— y no de cuánto habías puesto, así que
+     cada celda hacía la explosión completa ella sola y las demás sólo la
+     repetían encima, en el mismo sitio, sin sumar casi nada.
+
+     Ahora `explota` es la energía de UNA celda y es chica. Muchas celdas
+     hacen muchos estallidos pequeños cuyas presiones SÍ se suman —la línea
+     de abajo es `+=`—, y de ahí sale solo lo que pedía: el doble de explosivo
+     hace el doble de daño, sin una tabla que lo diga. El radio crece con la
+     raíz de la energía porque en un plano el área es el cuadrado del radio;
+     ponerlo lineal es lo que hacía que un petardo tuviera alcance de bomba. */
   revienta(x, y, fuerza){
-    this.despierta(x, y, Math.max(3, Math.round(fuerza * 1.4)) + 2);
-    this.suelta(x, y, Math.max(3, Math.round(fuerza * 1.6)));
-    const r = Math.max(2, Math.round(fuerza * 1.4));
+    const r = Math.max(1, Math.round(Math.sqrt(fuerza) * 1.15));
+    this.despierta(x, y, r + 2);
+    this.suelta(x, y, r + 1);
     for(let dy = -r; dy <= r; dy++){
       for(let dx = -r; dx <= r; dx++){
         const d = Math.hypot(dx, dy);
@@ -338,16 +378,17 @@ export class Mundo {
         const k = this.i(nx, ny);
         if(EL[this.t[k]].id === 'muro') continue;
         const cerca = 1 - d / r;
-        this.pres[k] += fuerza * 26 * cerca * cerca;
-        this.temp[k] += fuerza * 95 * cerca;
+        this.pres[k] += fuerza * 22 * cerca * cerca;
+        this.anotaPico(this.pres[k]);
+        this.temp[k] += fuerza * 60 * cerca;
         if(d > 0.4){
-          this.vx[k] += (dx / d) * fuerza * .85 * cerca;
-          this.vy[k] += (dy / d) * fuerza * .85 * cerca;
+          this.vx[k] += (dx / d) * Math.sqrt(fuerza) * .5 * cerca;
+          this.vy[k] += (dy / d) * Math.sqrt(fuerza) * .5 * cerca;
         }
       }
     }
     /* el corazón sí se convierte en fuego: es la deflagración */
-    const rc = Math.max(1, Math.round(fuerza * .35));
+    const rc = Math.max(0, Math.round(Math.sqrt(fuerza) * .35));
     for(let dy = -rc; dy <= rc; dy++) for(let dx = -rc; dx <= rc; dx++){
       if(Math.hypot(dx, dy) > rc) continue;
       const nx = x + dx, ny = y + dy;
@@ -707,9 +748,22 @@ export class Mundo {
           cort * s     / (e.corte      || 2),
           sAcum * 0.25 / (e.compresion || 10),
         );
-        if(margen < 1){
-          /* aguanta, pero se fatiga: la REPETICIÓN también rompe, que es el
-             desgaste que Carlos nombró aparte del impacto */
+        /* ⚠ UNA ONDA QUE PASA NO ES UNA CARGA QUE APLASTA, y el umbral de 1
+           no sabía distinguirlas. La piedra aguanta 4 a tracción; el frente de
+           una explosión trae gradientes de mil, o sea margen 6. Con fallo
+           instantáneo en cuanto margen pasa de 1, la onda iba rompiendo TODA
+           la sala celda por celda mientras la cruzaba — y cada hueco nuevo la
+           realimentaba. Medido: un solo empujón de 3 000 dejaba un suelo de
+           2 400 piedras en CERO, y ésa es la otra mitad del reclamo de Carlos,
+           «sin contar el muro todo material se destruye».
+
+           Ahora hay dos umbrales, que es como se comporta un material de
+           verdad: por encima de `ROMPE_YA` revienta en el acto —es el
+           corazón de la explosión, y ahí sí revienta— y entre 1 y ése se
+           FATIGA. Si la carga se va, la fatiga se relaja y la pieza aguanta;
+           si se queda o se repite, acaba cediendo igual. El frente pasa y deja
+           la pared cascada, no pulverizada. */
+        if(margen < ROMPE_YA){
           if(margen > 0.55) this.fatiga[k] += (margen - 0.55) * 0.6;
           else this.fatiga[k] *= 0.995;
           if(this.fatiga[k] < 60) continue;
@@ -723,7 +777,26 @@ export class Mundo {
           continue;                                   /* se dobla, no se rompe */
         }
         this.vx[k] += emX / mE * 1.6; this.vy[k] += emY / mE * 1.6;
-        if(this.rnd() < 0.5) this.cambia(k, VACIO);
+        if(this.rnd() < 0.5){
+          this.cambia(k, VACIO);
+          /* ⚠ EL MISMO HUECO SILENCIOSO QUE EN `presionRompe`, y aquí era
+             MUCHO peor porque aquí es donde de verdad se rompía la sala. Con
+             el sostén apagado, un empujón de 3 000 en un suelo de 6 400
+             piedras dejaba 6 400 y la onda moría en 200 pasos; con el sostén
+             encendido quedaban 2 438 piedras y la presión llegaba a 147 MIL
+             MILLONES. La pareja rota es la misma: la celda revienta, el sitio
+             pasa de transmitir 0.23 a transmitir 1 con toda su presión dentro,
+             y esa patada rompe a la siguiente.
+             Aislarlo costó cuatro medidas equivocadas —culpé al explosivo, al
+             borde de la caja, al paso de tiempo y a la ecuación— y las cuatro
+             veces la respuesta fue la misma: apagar UNA pieza por vez hasta
+             que la sala dejó de arrasarse. La ecuación de onda sola es
+             estable en los cuatro materiales; romper solo, también. */
+          this.pres[k] = 0; this.pv[k] = 0;
+        } else {
+          /* aunque no desaparezca, romperse consume la onda que la rompió */
+          this.pres[k] *= 0.5;
+        }
       }
     }
   }
@@ -1430,8 +1503,14 @@ export class Mundo {
      queda congelada sin un solo error: pico clavado en 300 durante trescientos
      pasos. Me pasó al escribir la propia prueba de la onda, y las 70 del motor
      pasaron igual porque las que reventaban de verdad sí despertaban. */
+  /* Toda inyección de presión pasa por aquí y por `revienta`, y las dos
+     levantan el techo. Si algún día aparece una tercera, tiene que hacerlo
+     también o su onda se quedará recortada. */
+  anotaPico(v){ const a = Math.abs(v); if(a > this.picoOnda) this.picoOnda = a; }
+
   presiona(x, y, v){
     if(!this.dentro(x, y)) return;
+    this.anotaPico(this.pres[this.i(x, y)] + v);
     this.pres[this.i(x, y)] += v;
     this.despierta(x, y, 1);
   }
@@ -1457,17 +1536,40 @@ export class Mundo {
     let x0 = Math.max(0, caja.x0 - 2), x1 = Math.min(an - 1, caja.x1 + 2);
     let y0 = Math.max(0, caja.y0 - 2), y1 = Math.min(al - 1, caja.y1 + 2);
     const p0 = this._pres2;
-    /* sólo se copia la caja, no el mundo entero */
-    for(let y = y0; y <= y1; y++){
+    /* ⚠ SE COPIA UNA CELDA MÁS DE LA QUE SE CALCULA, Y ESE BORDE ERA UNA
+       FÁBRICA DE ENERGÍA. Antes se copiaba exactamente la caja y se calculaba
+       exactamente la caja — pero para calcular una celda hay que leer a sus
+       CUATRO VECINAS, y las del borde caen fuera de lo copiado. Ahí `p0` no
+       era la presión de ahora: era una foto vieja, de cuando la caja estaba en
+       otro sitio. La onda se alimentaba de su propio pasado.
+
+       Y no se veía nunca en el aire, que es donde uno prueba: en el hueco la
+       onda avanza rápido, la caja crece con ella y el borde va siempre por
+       delante, en ceros. En un sólido la onda avanza despacio, la caja se
+       queda quieta encima de restos de fotos anteriores, y ahí es donde se
+       dispara. Medido, con NADA que romper y sin tocar el material:
+
+           aire     1:13k   20:116k   100:80k    200:25k      ← baja, correcto
+           piedra   1:3k    20:113k   100:178M   200:147 MIL MILLONES
+           metal    1:3k    20:9k     100:71M    200:11 BILLONES
+
+       Ésta es la mitad grande de «todo material se destruye sin importar la
+       cantidad de explosivo»: no era el explosivo, era que dentro de la piedra
+       la onda crecía sin techo hasta arrasar la sala. Y llevaba ahí desde que
+       se escribió la ecuación de onda — todas las pruebas la miraban en el
+       aire. */
+    const cx0 = Math.max(0, x0 - 1), cx1 = Math.min(an - 1, x1 + 1);
+    const cy0 = Math.max(0, y0 - 1), cy1 = Math.min(al - 1, y1 + 1);
+    for(let y = cy0; y <= cy1; y++){
       const f = y * an;
-      for(let x = x0; x <= x1; x++) p0[f + x] = pres[f + x];
+      for(let x = cx0; x <= cx1; x++) p0[f + x] = pres[f + x];
     }
     /* transmisión por celda, calculada UNA vez y usada cinco: la miran sus
        cuatro vecinas y ella misma */
     const tr = this._trans, am = this._amort;
-    for(let y = y0; y <= y1; y++){
+    for(let y = cy0; y <= cy1; y++){
       const f = y * an;
-      for(let x = x0; x <= x1; x++){
+      for(let x = cx0; x <= cx1; x++){
         const k = f + x, e = EL[t[k]];
         let v;
         if(e.fijo) v = 0;
@@ -1479,6 +1581,16 @@ export class Mundo {
           else v = 1;
         }
         tr[k] = v;
+        /* ⚠ Y EL TECHO TIENE QUE CONTAR LA PRESIÓN DE LOS GASES, que no pasa
+           ni por `presiona` ni por `revienta`. Sin esto el techo valía CERO
+           mientras no hubiera explotado nada, y una recámara caliente y
+           sellada se quedaba a presión 0.00 — o sea que el tope, puesto para
+           que la onda no creara energía, le prohibía existir a la presión que
+           sí nace de algo. Se cazó en cuatro pruebas del cohete de un golpe. */
+        if(v > 0 && t[k] !== VACIO && e.estado === 'gas'){
+          const eqk = (this.temp[k] - AMBIENTE) * 0.03;
+          if(eqk > this.picoOnda) this.picoOnda = eqk;
+        }
         /* la amortiguación también, en el mismo recorrido: una llamada por
            celda por paso en 153 600 celdas se nota y no aporta nada */
         am[k] = e.id === 'vacio' ? 0.99
@@ -1492,6 +1604,12 @@ export class Mundo {
        se lee como una onda. Pasarse de ½ no da «más rápido»: da números que
        llegan a infinito en cuatro pasos. */
     const C2 = 0.48;
+    /* el techo baja solo: una explosión de hace diez segundos ya no autoriza
+       nada. Sin esta caída, el primer petardo de la partida dejaría permiso
+       para siempre. Se lee DESPUÉS del recorrido de arriba, que es donde los
+       gases calientes lo levantan. */
+    this.picoOnda *= 0.995;
+    const techo = this.picoOnda * 1.05 + 1;
     let nx0 = an, nx1 = -1, ny0 = al, ny1 = -1;
     for(let y = y0; y <= y1; y++){
       const f = y * an;
@@ -1525,6 +1643,8 @@ export class Mundo {
            clavada en 5.21e6 empujándolo todo. */
         if(tk === VACIO && v > -0.5 && v < 0.5) p *= 0.95;
         if(p > -0.04 && p < 0.04 && v > -0.04 && v < 0.04){ p = 0; v = 0; }
+        if(p > techo) p = techo; else if(p < -techo) p = -techo;
+        if(v > techo) v = techo; else if(v < -techo) v = -techo;
         pv[k] = v; pres[k] = p;
         if(p !== 0 || v !== 0){
           if(x < nx0) nx0 = x; if(x > nx1) nx1 = x;
@@ -1603,7 +1723,7 @@ export class Mundo {
      Lo que rompe no es la presión en sí, es la DIFERENCIA a los dos lados de
      la pared — que es lo que de verdad revienta un recipiente. */
   presionRompe(){
-    const { an, al, t, pres } = this;
+    const { an, al, t, pres, pv } = this;
     for(let y = 0; y < al; y++){
       for(let x = 0; x < an; x++){
         const k = y * an + x;
@@ -1620,16 +1740,57 @@ export class Mundo {
           if(dif < 40) continue;
           /* La dureza es la resistencia del material, y aquí es donde compite
              de verdad con la presión de dentro: un recipiente de vidrio
-             revienta y uno de concreto aguanta el mismo golpe. */
-          const aguanta = 40 + (v.dureza || 0) * 420;
+             revienta y uno de concreto aguanta el mismo golpe.
+
+             ⚠ Y AQUÍ ESTABA LA MITAD GRANDE DEL RECLAMO DE CARLOS —«sin
+             contar el muro TODO material se destruye sin importar la cantidad
+             de explosivo»—, que resultó no ser de los explosivos sino de la
+             onda. Medido: UN solo empujón de 3000 en un suelo de 2400 piedras
+             lo dejaba en CERO a los 200 pasos, y la presión total del cuarto
+             subía de 35 mil a 1.1 millones por el camino.
+
+             La causa es que romper salía GRATIS. Dos cosas:
+             · el aguante de la piedra eran 292 contra una onda de 1400, y la
+               probabilidad `(dif-aguanta)*.004` pasaba de 1 en cuanto la
+               diferencia llegaba a 542 — o sea, certeza. Con certeza, una
+               onda que cruza mil celdas rompe mil celdas.
+             · y al romper, la onda sólo se multiplicaba por 0.6. Fija. Da
+               igual reventar corcho que acero.
+
+             Ahora romper CUESTA lo que aguanta el material, y ese costo sale
+             de la onda. Una carga chica abolla y se apaga; una grande sigue.
+             De ahí sale sola la proporcionalidad que pedía: no hay tabla de
+             «cuánto explosivo hace cuánto daño», hay un presupuesto. */
+          const aguanta = 120 + (v.dureza || 0) * 1400;
           if(dif <= aguanta) continue;
-          if(this.rnd() > (dif - aguanta) * .004) continue;
+          const exceso = dif - aguanta;
+          if(this.rnd() > Math.min(0.55, exceso * .0009)) continue;
           /* no desaparece: SALE DESPEDIDA, que es lo que hace la metralla */
-          this.vx[k2] += dx * (dif - aguanta) * .05;
-          this.vy[k2] += dy * (dif - aguanta) * .05;
+          this.vx[k2] += dx * exceso * .02;
+          this.vy[k2] += dy * exceso * .02;
           this.suelta(x + dx, y + dy, 2);
-          if(this.rnd() < .35) this.cambia(k2, VACIO);
-          pres[k] *= .6;
+          if(this.rnd() < .35){
+            this.cambia(k2, VACIO);
+            /* ⚠ Y EL HUECO NACE EN SILENCIO. Aquí estaba el motor del
+               desastre, y no se ve leyendo ninguna de las dos piezas por
+               separado: la ecuación de onda SOLA es estable en todos los
+               materiales —medido, cae a cero en los cuatro—, y romper solo
+               tampoco crea nada. Lo que se realimenta es la pareja.
+               Una celda de piedra transmite 0.23; en cuanto se rompe, ese
+               mismo sitio pasa a transmitir 1 — más de CUATRO VECES— con la
+               presión que ya tenía dentro. El siguiente sub-paso lee un salto
+               enorme donde antes había un muro blando, y de ahí sale una
+               patada que rompe la siguiente celda, que abre otro hueco, que
+               da otra patada. Medido: 3 000 de presión inicial llegaban a
+               147 MIL MILLONES en 200 pasos dentro de piedra, y a 11 billones
+               dentro de metal, arrasando la sala entera.
+               El sitio que se abre empieza vacío de presión, que es lo que de
+               verdad pasa cuando algo revienta: el hueco no hereda el empuje
+               del ladrillo que ya no está. */
+            pres[k2] = 0; pv[k2] = 0;
+          }
+          /* lo que costó romperlo se lo lleva de la onda */
+          pres[k] = Math.max(0, pres[k] - aguanta * 1.15);
         }
       }
     }
@@ -1796,8 +1957,26 @@ export class Mundo {
     if(e.arde && this.vecinoCaliente(x, y, e)){
       this.temp[k] += (e.calorArde || 500) * .12;
       if(this.rnd() < e.arde * .3){
-        if(e.explota){ this.revienta(x, y, e.explota); return; }
-        this.cambia(k, IDX.fuego);
+        /* ⚠ Y SI ADEMÁS EXPLOTA, TAMBIÉN DEJA SU PRODUCTO. Esta línea salía
+           antes que la de abajo, así que el hidrógeno —que explota— nunca
+           llegaba a hacer vapor: reventaba y se acababa la historia. Explotar
+           en oxígeno no es lo contrario de hacer agua, es la misma cosa más
+           rápido. */
+        if(e.explota){
+          this.revienta(x, y, e.explota);
+          if(e.ardeEn) this.cambia(k, IDX[e.ardeEn]);
+          return;
+        }
+        /* ⚠ LO QUE ARDE NO SIEMPRE DEJA FUEGO Y YA. El hidrógeno que arde
+           HACE AGUA — arder en oxígeno ES la reacción—, y aquí se convertía en
+           fuego y el agua se perdía. No se notaba hasta que el aire empezó a
+           acarrear calor: con el calor quieto, la chispa encendía poco y la
+           reacción tenía tiempo de correr; con el calor viajando, la llama se
+           come el hidrógeno antes. La prueba pasó de «hace agua» a «no queda
+           hidrógeno y no hay agua», y el arreglo no era bajarle al aire: era
+           que quemar hidrógeno diera lo que da. */
+        this.cambia(k, e.ardeEn ? IDX[e.ardeEn] : IDX.fuego);
+        if(e.ardeEn) this.temp[k] += (e.calorArde || 500) * .5;
         return;
       }
     }
@@ -1836,7 +2015,11 @@ export class Mundo {
         if(rel > e.golpe){ impacto = true; break; }
       }
       /* y la onda de choque de otra explosión: detonación simpática */
-      if(!impacto && this.pres[k] > 70) impacto = true;
+      /* el umbral baja con los explosivos: desde que `explota` es energía por
+         celda y no por explosión, una onda vecina trae mucha menos presión
+         —eran 70 contra picos que ya no llegan— y la detonación simpática
+         dejaba 10 de 10 celdas sin detonar */
+      if(!impacto && this.pres[k] > 18) impacto = true;
       if(impacto){ this.revienta(x, y, e.explota || 6); return; }
     }
     if(e.radia){
@@ -1869,7 +2052,7 @@ export class Mundo {
       if(this.t[k2] !== VACIO && !EL[this.t[k2]].fijo){
         this.vy[k2] -= e.piston;
         this.suelto[k2] = 1;                 /* lanzado: ya no está anclado */
-        this.pres[k2] += 18; this.despierta(x, y - 1, 2);
+        this.pres[k2] += 18; this.anotaPico(this.pres[k2]); this.despierta(x, y - 1, 2);
       }
     }
     /* RESORTE: guarda el golpe que recibe y lo devuelve. `vida` es la

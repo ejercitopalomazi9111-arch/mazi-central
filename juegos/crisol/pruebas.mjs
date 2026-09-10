@@ -1629,5 +1629,82 @@ seccion('el aire acarrea, el agua se nivela, la sal se reparte');
      'ya no quedaba ni una dulce a los 40 pasos');
 }
 
+seccion('el explosivo es proporcional y la onda no se inventa energía');
+{
+  /* Carlos: «todos los explosivos explotan demasiado fuerte y, sin contar el
+     muro, todo material se destruye SIN IMPORTAR LA CANTIDAD de explosivo».
+     Medido antes de tocar nada, contra un suelo de piedra:
+         nitro  1→246  2→251  4→251  9→251  25→251  64→596
+     Una sola celda de nitroglicerina destruía 246 celdas de piedra. */
+  const dana = (n) => {
+    const m = mundo(80, 80, 7);
+    for(let x = 0; x < 80; x++) for(let y = 50; y < 80; y++) m.pon(x, y, IDX.piedra);
+    const lado = Math.ceil(Math.sqrt(n)); let p = 0;
+    for(let dy = 0; dy < lado && p < n; dy++) for(let dx = 0; dx < lado && p < n; dx++){
+      m.pon(38 + dx, 49 - dy, IDX.nitro); p++; }
+    const cuenta = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) c++; return c; };
+    const antes = cuenta();
+    /* UNA chispa en UNA celda: lo demás lo hace la detonación simpática.
+       ⚠ Encender todas a 3000° metía en la sala un horno que NO es la
+       explosión, y desde que el aire acarrea calor eso derretía el suelo
+       entero — mi propia prueba acusando al motor de lo que hacía ella. */
+    m.temp[m.i(38, 49)] = 2280;
+    corre(m, 150);
+    return antes - cuenta();
+  };
+  const d1 = dana(1), d16 = dana(16), d64 = dana(64), d256 = dana(256);
+  ok('una celda suelta de nitro NO arrasa la sala', d1 < 10,
+     'destruyó ' + d1 + ' piedras (antes del arreglo: 246)');
+  ok('más explosivo hace MÁS daño', d64 > d16 && d16 > d1,
+     '1→' + d1 + ' · 16→' + d16 + ' · 64→' + d64);
+  ok('y sigue creciendo sin dispararse con cargas enormes', d256 > d64 && d256 < 400,
+     '64→' + d64 + ' · 256→' + d256);
+}
+
+{
+  /* ⚠ LA LEY QUE FALTABA ESCRITA: una onda no puede ser más fuerte que lo que
+     la creó. La pareja onda + rotura se realimentaba —la celda revienta, el
+     sitio pasa de transmitir 0.23 a transmitir 1 con toda la presión dentro,
+     y esa patada rompe a la siguiente—, y de un empujón de 3 000 salían 147
+     MIL MILLONES de presión con la sala arrasada. La ecuación SOLA es estable
+     en los cuatro materiales, y romper solo también: se dispara el par. */
+  for(const mat of ['piedra', 'metal']){
+    const m = mundo(80, 80, 7);
+    for(let y = 0; y < 80; y++) for(let x = 0; x < 80; x++) m.pon(x, y, IDX[mat]);
+    m.presiona(40, 40, 3000);
+    let pico = 0;
+    for(let i = 0; i < 200; i++){ m.paso();
+      for(let k = 0; k < m.pres.length; k++){ const a = Math.abs(m.pres[k]); if(a > pico) pico = a; } }
+    ok('dentro de ' + mat + ', la onda nunca pasa de lo que la creó', pico <= 3200,
+       'llegó a ' + pico.toFixed(0) + ' desde 3 000');
+  }
+}
+
+{
+  /* «Las ondas a veces se pasan por los huevos las paredes.» Con una
+     explosión de verdad —no un número inventado— cada material deja pasar lo
+     suyo y la pared sigue en pie. */
+  const cruza = (mat) => {
+    const m = mundo(100, 40, 7);
+    for(let y = 0; y < 40; y++) for(let g = 0; g < 3; g++) m.pon(50 + g, y, IDX[mat]);
+    const enteros = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[mat]) c++; return c; };
+    const a0 = enteros();
+    for(let dy = 0; dy < 3; dy++) for(let dx = 0; dx < 3; dx++) m.pon(44 + dx, 20 + dy, IDX.nitro);
+    m.temp[m.i(44, 20)] = 2280;
+    let antes = 0, desp = 0;
+    for(let i = 0; i < 150; i++){ m.paso();
+      for(let y = 0; y < 40; y++){
+        antes = Math.max(antes, Math.abs(m.pres[m.i(48, y)]));
+        desp  = Math.max(desp,  Math.abs(m.pres[m.i(57, y)])); } }
+    return { paso: 100 * desp / (antes || 1), queda: enteros(), de: a0 };
+  };
+  const mu = cruza('muro'), me = cruza('metal'), pi = cruza('piedra');
+  ok('el MURO no deja pasar nada de la onda', mu.paso < 1, mu.paso.toFixed(0) + '% pasó');
+  ok('una pared de metal deja pasar poco', me.paso > 1 && me.paso < 35, me.paso.toFixed(0) + '% pasó');
+  ok('y las paredes SIGUEN EN PIE tras la explosión',
+     me.queda === me.de && pi.queda === pi.de,
+     'metal ' + me.queda + '/' + me.de + ' · piedra ' + pi.queda + '/' + pi.de);
+}
+
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');
 process.exit(mal ? 1 : 0);
