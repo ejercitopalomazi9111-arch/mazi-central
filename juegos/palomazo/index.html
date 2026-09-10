@@ -1,0 +1,1947 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#100A18">
+<title>PALOMAZO — el juego de ritmo de Grupo Mazi</title>
+<meta name="description" content="Una paloma mensajera se quedó sin cartas que llevar, así que ahora lleva el ritmo. Juego de ritmo con música hecha por código, historia y cosméticos.">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   PALOMAZO · un archivo, sin internet, sin build.
+
+   La paloma es la de la marca de verdad: los trazos salen de
+   `marca/piezas/ave-simple.svg` y están empotrados abajo como Path2D. NO está
+   dibujada a mano ni generada — es LA paloma, que es justamente lo que dice
+   la regla de la casa sobre el logo.
+
+   La música tampoco es un archivo: se sintetiza con WebAudio nota por nota.
+   Eso no es lucimiento, son tres razones prácticas:
+     · pesa cero y funciona sin internet,
+     · no dependemos de la licencia de nadie (§2 del CLAUDE.md),
+     · y sobre todo: en un juego de ritmo el reloj TIENE que ser el del audio.
+       Con un MP3 y `performance.now()` la sincronía se va derivando y nadie
+       sabe por qué. Aquí el compás y la nota que tocas son el mismo reloj.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --vacio:#100A18; --superficie:#1E1428; --violeta:#AC27FF; --hueso:#E9E4E4;
+  --oro:#FFC53D; --menta:#3DFFC5; --rosa:#FF3D9E;
+  --c1:#FF3D9E; --c2:#AC27FF; --c3:#3DFFC5;   /* los tres carriles */
+  --seguro-ab: env(safe-area-inset-bottom, 0px);
+  --seguro-ar: env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  background:var(--vacio); color:var(--hueso);
+  font:16px/1.45 ui-rounded,-apple-system,"Segoe UI",system-ui,sans-serif;
+  touch-action:manipulation; user-select:none; -webkit-user-select:none;
+}
+/* El titular usa la tipografía de la casa cuando el juego se sirve desde el
+   sitio; si se abre suelto cae a una gruesa cualquiera y NO se rompe nada. */
+@font-face{font-family:'Mazi';src:url('../../sitio/fuente/mazi.woff2') format('woff2');font-display:swap}
+
+#lienzo{display:block;position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+
+/* ── Las pantallas ──────────────────────────────────────────────────────── */
+.pant{
+  position:fixed; inset:0; display:none; flex-direction:column;
+  align-items:center; justify-content:center; gap:18px;
+  padding:calc(20px + var(--seguro-ar)) 22px calc(20px + var(--seguro-ab));
+  text-align:center; z-index:10; overflow-y:auto; overscroll-behavior:contain;
+}
+.pant.va{display:flex}
+/* Velo bajo el contenido: el canvas de la ciudad va detrás de TODAS las
+   pantallas, y el texto chico del pie caía justo encima de las ventanas
+   encendidas. Se leía a ratos, que es peor que no leerse. */
+.pant::before{
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(180deg,
+    rgba(16,10,24,.42) 0%, rgba(16,10,24,.62) 46%, rgba(16,10,24,.95) 100%);
+}
+
+h1{
+  font-family:'Mazi',ui-rounded,system-ui,sans-serif;
+  font-size:clamp(46px,15vw,110px); line-height:.86; margin:0;
+  letter-spacing:.01em; color:var(--hueso);
+  text-shadow:0 0 34px rgba(172,39,255,.55);
+}
+h2{font-size:clamp(21px,6vw,30px);margin:0;line-height:1.1;letter-spacing:.01em}
+p{margin:0;max-width:34ch;font-size:clamp(14px,4vw,17px);color:#C9C2D4}
+.chico{font-size:13px;color:#8C82A0;max-width:36ch}
+
+/* Los botones. 56 px de alto: el mínimo táctil es 44 y esto es un juego que se
+   toca a prisa, así que van holgados a propósito. */
+.btn{
+  appearance:none; border:0; cursor:pointer; font:inherit; font-weight:800;
+  min-height:56px; padding:0 30px; border-radius:16px;
+  background:var(--violeta); color:#fff; font-size:17px; letter-spacing:.02em;
+  box-shadow:0 8px 0 #6D14A6, 0 14px 30px rgba(172,39,255,.32);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.btn:active{transform:translateY(5px);box-shadow:0 3px 0 #6D14A6,0 6px 14px rgba(172,39,255,.3)}
+.btn.fantasma{
+  background:transparent; color:var(--hueso);
+  box-shadow:inset 0 0 0 2px rgba(233,228,228,.28);
+}
+.btn.fantasma:active{transform:translateY(3px);box-shadow:inset 0 0 0 2px rgba(233,228,228,.5)}
+.btn:focus-visible{outline:3px solid var(--oro);outline-offset:3px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.fila{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* ── Cabecera de plumas ─────────────────────────────────────────────────── */
+.plumas{
+  position:fixed; top:calc(10px + var(--seguro-ar)); right:12px; z-index:20;
+  display:none; align-items:center; gap:7px; padding:9px 15px;
+  background:rgba(30,20,40,.9); border-radius:999px;
+  box-shadow:inset 0 0 0 1px rgba(255,197,61,.3);
+  font-weight:800; color:var(--oro); font-size:15px;
+}
+.plumas.va{display:flex}
+
+/* ── HUD durante la canción ─────────────────────────────────────────────── */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5;display:none}
+#hud.va{display:block}
+#marcador{
+  position:absolute; top:calc(12px + var(--seguro-ar)); left:14px;
+  font-weight:800; font-size:26px; letter-spacing:.02em;
+  text-shadow:0 2px 10px rgba(0,0,0,.7);
+}
+#cancionNom{
+  position:absolute; top:calc(46px + var(--seguro-ar)); left:14px;
+  font-size:12px; color:#9F95B4; letter-spacing:.08em; text-transform:uppercase;
+}
+#barraEnergia{
+  position:absolute; top:calc(14px + var(--seguro-ar)); left:50%;
+  transform:translateX(-50%); width:min(46vw,230px); height:9px;
+  background:rgba(255,255,255,.14); border-radius:999px; overflow:hidden;
+}
+#energia{
+  height:100%; width:100%; border-radius:999px;
+  background:linear-gradient(90deg,var(--menta),var(--violeta));
+  transition:width .16s ease;
+}
+#pausar{
+  position:absolute; top:calc(8px + var(--seguro-ar)); right:12px;
+  pointer-events:auto; width:46px; height:46px; border-radius:14px; border:0;
+  background:rgba(30,20,40,.86); color:var(--hueso); font-size:17px; cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(233,228,228,.2);
+}
+
+/* ── Historia ───────────────────────────────────────────────────────────── */
+#lamHist{
+  max-width:36ch; display:flex; flex-direction:column; gap:14px; align-items:center;
+}
+#histTxt{font-size:clamp(15px,4.4vw,19px);line-height:1.6;color:#DCD6E6;min-height:5.2em}
+.acto{
+  font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--violeta);
+  font-weight:800;
+}
+
+/* ── Tienda ─────────────────────────────────────────────────────────────── */
+#pantTienda{justify-content:flex-start;gap:14px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.tab{
+  appearance:none;border:0;cursor:pointer;font:inherit;font-weight:700;font-size:14px;
+  min-height:44px;padding:0 16px;border-radius:12px;
+  background:rgba(233,228,228,.09);color:#B9B0C8;
+}
+.tab.sel{background:var(--violeta);color:#fff}
+.tab:focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+.rejilla{
+  display:grid; gap:11px; width:100%; max-width:560px;
+  grid-template-columns:repeat(auto-fill,minmax(104px,1fr));
+}
+.art{
+  position:relative; cursor:pointer; border:0; font:inherit; color:inherit;
+  background:var(--superficie); border-radius:16px; padding:10px 8px 12px;
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  box-shadow:inset 0 0 0 1px rgba(233,228,228,.11);
+  transition:transform .1s ease;
+}
+.art:active{transform:scale(.96)}
+.art:focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+.art.puesto{box-shadow:inset 0 0 0 2px var(--menta)}
+.art.bloq{opacity:.62}
+.art canvas{width:74px;height:60px;display:block}
+.art b{font-size:12.5px;font-weight:700;line-height:1.2}
+.art .precio{font-size:11.5px;color:var(--oro);font-weight:800}
+.art .tengo{font-size:11.5px;color:var(--menta);font-weight:800}
+.art .caro{color:#8C82A0}
+
+/* ── Resultados ─────────────────────────────────────────────────────────── */
+.notaGrande{
+  font-family:'Mazi',ui-rounded,system-ui,sans-serif;
+  font-size:clamp(76px,26vw,150px); line-height:.8; margin:0;
+}
+.tabla{display:grid;grid-template-columns:auto auto;gap:5px 22px;font-size:15px}
+.tabla span:nth-child(odd){color:#9F95B4;text-align:right}
+.tabla span:nth-child(even){font-weight:800;text-align:left}
+
+/* ── Lista de canciones ─────────────────────────────────────────────────── */
+.canc{
+  width:100%;max-width:440px;display:flex;align-items:center;gap:13px;
+  background:var(--superficie);border:0;border-radius:16px;padding:14px 16px;
+  cursor:pointer;color:inherit;font:inherit;text-align:left;min-height:64px;
+  box-shadow:inset 0 0 0 1px rgba(233,228,228,.11);
+}
+.canc:active{transform:scale(.985)}
+.canc:focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+.canc.bloq{opacity:.5;pointer-events:none}
+.canc .num{
+  font-family:'Mazi',ui-rounded,system-ui,sans-serif;font-size:27px;
+  color:var(--violeta);min-width:1.3em;text-align:center
+}
+.canc .info{flex:1;min-width:0}
+.canc .info b{display:block;font-size:16px}
+.canc .info small{color:#9F95B4;font-size:12.5px}
+.canc .mejor{font-size:12px;color:var(--oro);font-weight:800;white-space:nowrap}
+
+/* Menos movimiento: se quitan los adornos que laten, NUNCA la mecánica —
+   un juego de ritmo sin notas moviéndose no es un juego accesible, es un
+   juego roto. Lo que se apaga son las partículas y los latidos de fondo. */
+@media (prefers-reduced-motion: reduce){
+  .btn,.art,.canc{transition:none}
+}
+</style>
+
+<body>
+<canvas id="lienzo"></canvas>
+
+<div class="plumas" id="plumas"><span>🪶</span><span id="plumasN">0</span></div>
+
+<!-- ── PORTADA ─────────────────────────────────────────────────────────── -->
+<section class="pant va" id="pantMenu">
+  <canvas id="palomaMenu" width="320" height="220"
+          style="width:min(72vw,300px);height:auto"></canvas>
+  <h1>PALOMAZO</h1>
+  <p>Una paloma mensajera se quedó sin cartas que llevar.<br>Ahora lleva el ritmo.</p>
+  <div class="fila">
+    <button class="btn" id="bJugar">Echarse un palomazo</button>
+  </div>
+  <div class="fila">
+    <button class="btn fantasma" id="bTienda">Vestidor</button>
+    <button class="btn fantasma" id="bComo">Cómo se juega</button>
+  </div>
+  <div class="fila">
+    <button class="btn fantasma" id="bProbar"
+            style="min-height:48px;font-size:15px">🔊 Probar el sonido</button>
+  </div>
+  <p class="chico" id="dicAudio"></p>
+  <p class="chico">Toda la música de este juego se hace sola, aquí adentro. No hay
+    un solo archivo de audio.</p>
+</section>
+
+<!-- ── CÓMO SE JUEGA ───────────────────────────────────────────────────── -->
+<section class="pant" id="pantComo">
+  <h2>Cómo se juega</h2>
+  <p><b>Toca el carril cuando la nota llegue a la línea.</b> Nada más.</p>
+  <p>Las notas <b>largas</b> se mantienen apretadas hasta que se acaban: es el
+     aleteo sostenido.</p>
+  <p>Cada nota que atinas <b>suena</b> — la melodía la estás tocando tú. Si
+     fallas, se oye el hueco.</p>
+  <p class="chico">En computadora: <b>A · S · D</b>, o las flechas, o 1 · 2 · 3.
+     Espacio para pausar.</p>
+  <p class="chico">¿No se oye nada en el iPhone? Es el <b>interruptor de silencio</b>
+     de la orilla: con él puesto, Safari calla los juegos aunque el volumen esté
+     al tope. El botón «Probar el sonido» del menú te lo dice en un segundo.</p>
+  <button class="btn" id="bComoOk">Ya entendí</button>
+</section>
+
+<!-- ── HISTORIA ────────────────────────────────────────────────────────── -->
+<section class="pant" id="pantHist">
+  <div id="lamHist">
+    <canvas id="palomaHist" width="300" height="200"
+            style="width:min(56vw,240px);height:auto"></canvas>
+    <div class="acto" id="histActo">Acto uno</div>
+    <div id="histTxt"></div>
+  </div>
+  <button class="btn" id="bHistSig">Seguir</button>
+  <button class="btn fantasma" id="bHistSalta" style="min-height:44px;font-size:14px">Saltar</button>
+</section>
+
+<!-- ── LISTA DE CANCIONES ──────────────────────────────────────────────── -->
+<section class="pant" id="pantLista">
+  <h2>El repertorio</h2>
+  <div class="fila" id="listaCanc" style="flex-direction:column;width:100%;align-items:center"></div>
+  <div class="fila">
+    <button class="btn fantasma" id="bListaVolver">Volver</button>
+    <button class="btn fantasma" id="bListaTienda">Vestidor</button>
+  </div>
+</section>
+
+<!-- ── TIENDA ──────────────────────────────────────────────────────────── -->
+<section class="pant" id="pantTienda">
+  <h2>El vestidor</h2>
+  <canvas id="palomaTienda" width="340" height="230"
+          style="width:min(62vw,270px);height:auto"></canvas>
+  <div class="tabs" id="tiendaTabs"></div>
+  <div class="rejilla" id="tiendaRejilla"></div>
+  <p class="chico" id="tiendaPista">Las plumas se ganan tocando. Entre mejor
+     toques, más caen.</p>
+  <button class="btn" id="bTiendaVolver">Volver</button>
+</section>
+
+<!-- ── RESULTADOS ──────────────────────────────────────────────────────── -->
+<section class="pant" id="pantFin">
+  <div class="acto" id="finTitulo">Fin de la canción</div>
+  <p class="notaGrande" id="finLetra">A</p>
+  <div class="tabla" id="finTabla"></div>
+  <p class="chico" id="finPlumas"></p>
+  <div class="fila">
+    <button class="btn" id="bFinSeguir">Seguir</button>
+    <button class="btn fantasma" id="bFinOtra">Otra vez</button>
+  </div>
+</section>
+
+<!-- ── PAUSA ───────────────────────────────────────────────────────────── -->
+<section class="pant" id="pantPausa">
+  <h2>En pausa</h2>
+  <div class="fila" style="flex-direction:column">
+    <button class="btn" id="bSeguirJugando">Seguir</button>
+    <button class="btn fantasma" id="bReiniciar">Empezar de nuevo</button>
+    <button class="btn fantasma" id="bSalir">Dejarlo por ahora</button>
+  </div>
+</section>
+
+<div id="hud">
+  <div id="marcador">0</div>
+  <div id="cancionNom"></div>
+  <div id="barraEnergia"><div id="energia"></div></div>
+  <button id="pausar" aria-label="Pausar">❚❚</button>
+</div>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   1 · LA PALOMA
+   Trazos sacados tal cual de `marca/piezas/ave-simple.svg`. Se dibujan con
+   Path2D para poder repintarle el plumaje sin trucos de composición: los
+   cosméticos cambian el relleno, no la figura.
+   ═════════════════════════════════════════════════════════════════════════ */
+const AVE_VB = { w:1408, h:768 };
+const AVE_CUERPO = new Path2D("M 209.83 93 L 213.83 93.67 L 218.67 98.17 Q 225.87 109.13 235.5 117.67 Q 252.41 134.59 274.83 146 Q 317.46 166.88 361.5 186.33 L 373.83 192.67 L 397.83 203 L 411.17 210 L 432.5 219 L 451.83 229 L 468.83 236 L 487.83 246 L 506.83 254 L 520.17 261 L 567.17 282.33 Q 573.95 285.22 578.67 290.17 L 582 294.17 L 591.33 308.5 L 601.83 320.33 Q 615.37 333.29 639.83 335.33 Q 654.13 333.46 661 324.17 Q 665.56 318.39 668 310.5 L 676.33 280.17 Q 679.2 273.37 684.17 268.67 Q 692.76 259.1 710.83 259 Q 717.85 259.49 723.17 261.67 L 728.5 264.67 L 737.5 271.67 L 743.17 274 L 750.5 275.67 L 757.33 280.17 Q 760 281.84 759.67 286.5 L 756.5 290 L 746.17 292.67 Q 741.65 294.49 739 298.17 Q 736.17 301.67 736.67 308.5 Q 738.27 322.39 746.17 330 Q 753.22 336.28 767.17 335.67 Q 781.04 334.21 792.17 330 Q 802.97 325.31 810 316.83 L 818.67 306.5 L 827 293.17 L 832.17 288 L 840.5 283 L 914.17 249 L 924.83 243.33 L 945.17 234.67 L 962.17 225.67 L 980.5 218 L 1001.17 207.33 L 1024.5 197.33 L 1039.5 189.67 L 1096.83 163.67 L 1134.17 145.67 Q 1146.47 139.3 1157.17 131.33 Q 1170.12 121.12 1181.33 109.17 L 1189.67 98.17 L 1193.5 94.33 Q 1194.92 92.92 1197.83 93 Q 1201.18 93.99 1202.67 96.83 Q 1206.72 103.12 1206.33 113.83 Q 1204.67 127.17 1199.67 137.17 Q 1192.33 149.66 1182.17 159.33 Q 1171.46 169.29 1158.83 177.33 L 1128.5 194.67 L 1087.83 215 Q 1067.08 222.58 1048.83 232.67 L 1025.83 241.67 Q 1021.54 243.21 1019 246.5 L 1018.67 248.5 L 1020.83 251 L 1023.17 251.33 L 1035.83 248 L 1063.83 238 L 1083.5 232.67 L 1109.83 223.33 L 1129.17 218 L 1191.83 197.33 Q 1208.21 193.38 1222.83 187.67 L 1227.5 187 L 1230.67 188.83 Q 1232.47 189.87 1232 193.17 Q 1225.83 205.33 1216.17 214 Q 1189.9 236.9 1153.5 249.67 Q 1131.11 255.95 1110.5 264 L 1082.5 270.67 L 1059.83 277.67 L 1029.5 284.33 L 1010.5 289.67 L 1007.67 291.83 Q 1007.18 294.49 1008.5 295.33 Q 1009.72 296.44 1012.5 296 L 1024.5 294 L 1047.83 291.33 L 1078.5 285.67 L 1098.17 283.67 L 1133.17 277.67 L 1168.83 273 L 1198.5 267.67 L 1221.83 264.33 L 1227.5 264.33 L 1230.67 266.83 Q 1231.87 267.8 1231.33 270.5 Q 1228.49 275.99 1223.83 279.67 Q 1197.62 302.29 1157.5 311 L 1127.5 316.67 L 1094.83 320.67 L 1085.5 322.33 L 1019.17 328.67 L 996.83 330 Q 994.13 330.46 993 332.5 Q 992.5 335.83 994.83 336.33 L 1003.5 337 L 1075.83 337.67 L 1088.83 338.67 L 1128.17 338.67 L 1167.17 339.67 L 1195.17 339.67 Q 1198.81 340.03 1200.33 342.5 L 1201 345.83 L 1197.5 350.33 Q 1178.43 363.93 1151.5 369.67 Q 1139.89 372.23 1126.83 373.33 Q 1118.29 372.96 1111.5 374.33 L 1084.83 374.67 L 1069.17 373.33 L 1056.5 373.33 L 1032.5 371.33 L 1018.17 371 L 1002.83 369.33 L 990.5 369 Q 978.7 366.97 965.5 366.33 L 962.33 368.17 L 962 370.5 L 963.17 372 L 969.17 374 L 1127.5 402.67 Q 1133.01 403.16 1135.67 406.5 L 1136.33 409.5 L 1133.17 413.33 Q 1122.43 419.1 1108.5 421.67 L 1083.17 424.67 L 1073.17 424.67 L 1023.17 418.33 L 987.83 410 L 956.83 403.67 L 937.83 398 L 933.83 397.67 L 932.33 398.83 L 931.67 401.17 L 933.83 403.67 Q 956.09 410.91 976.83 419.67 L 1004.5 428.67 L 1027.83 438.33 L 1044.17 443.33 L 1051.83 446.67 L 1055 449.17 Q 1056.58 450.09 1056.33 452.83 L 1053.83 456 L 1048.5 458 L 1037.83 459.67 L 1031.17 460.33 L 1015.17 460.67 L 997.83 458 L 966.5 450.33 L 914.5 430.33 L 899.17 423 L 896.5 422.67 L 894.67 424.17 L 894.33 425.83 L 896.83 428.67 L 925.17 445.67 L 943.17 455.33 L 959.83 466 L 968.5 470.33 L 975 475.5 L 976 478.5 L 972.83 482.33 L 968.83 483.33 L 949.5 483.33 Q 925.93 479.4 906.83 471 L 869.5 450 L 850.5 437 L 846.17 435 L 844.17 435 L 842 436.83 L 841.33 439.5 Q 844.56 445.44 849.83 449.33 L 864.67 463.5 L 873.83 473.33 L 879.67 478.83 Q 881.83 480.34 881.67 484.17 L 879.83 486.67 Q 878.41 488.08 875.5 488 Q 862.84 486.16 852.5 482 L 835.5 474.33 L 823.17 466 L 807.17 453 L 800.33 446.5 L 782.67 426.83 L 773 414.17 L 766.83 407.67 Q 765.33 405.83 761.83 406 L 758.67 408.17 L 756.33 412.83 Q 752.92 430.09 747 444.83 L 737.67 465.17 Q 736.44 467.94 737 472.5 L 738 475.83 L 747.67 494.5 L 763.33 520.5 L 772.33 537.83 L 781 551.5 Q 789.46 569.37 800 585.17 L 805.67 596.5 L 830.67 639.83 Q 832.83 642.67 833.33 647.17 L 831.5 650 Q 830.33 651.5 827.17 651 Q 807.59 641.58 794.33 625.83 L 775 600.5 L 765.67 584.83 L 762.17 580.67 L 759.83 579.67 L 757.33 581.17 Q 755.96 582.13 756.33 584.83 L 787.33 678.5 L 787.67 682.17 L 785.17 685.33 L 782.5 686 Q 774.76 682.24 769.67 675.83 Q 755.87 660.13 746.33 640.17 Q 735.08 615.75 727.67 587.5 L 725.5 584.33 L 723.17 583.67 L 721.33 584.83 L 720.33 586.5 L 720.33 622.5 L 719.33 630.83 L 719.33 637.5 L 718 654.5 L 716.33 669.17 Q 714.39 684.22 710.67 697.5 L 708.33 703.5 L 706.17 705.67 L 703.17 706.33 L 700.67 704.5 L 698.67 701.17 L 695.67 690.83 L 691.33 665.17 L 689.67 648.17 L 688.67 624.83 L 687.67 616.17 L 687.67 593.5 L 688 588.17 L 686.17 585.33 L 683.83 584.67 L 681.67 586.17 L 679.67 590.17 L 672 615.5 Q 665.87 632.54 658 647.83 Q 648.78 665.95 634.83 679.33 L 627.83 685 L 623.83 685.67 L 621 683.17 L 620.67 679.17 Q 630.14 653.31 638 625.83 L 643.33 611.5 L 646 601.5 L 652 585.17 L 652.67 580.5 L 650.5 578 L 648.83 577.67 L 645.33 580.5 Q 635.31 599.31 622.67 615.5 Q 615.45 625.28 606.5 633.33 Q 599.35 640.35 590.83 646 L 583.17 650.33 L 578.83 651.33 L 576.33 650 Q 574.58 648.98 575 645.5 L 597.33 604.83 L 640.67 529.5 L 649.67 512.17 L 660.67 494.17 L 670 476.5 Q 671.89 473.56 671.67 468.5 L 670.33 464.17 Q 664 453.16 659.67 440.17 Q 654.46 426.38 651.33 410.5 L 648.17 406.33 L 645.5 405.33 Q 640.3 406.97 637.67 411.17 L 627 425.5 L 612 442.5 L 603.5 451 L 584.5 466.67 L 573.17 474 Q 560.33 481 545.17 485.67 L 535.17 488 L 530.17 488 L 527 485.5 L 526.33 482.17 Q 529.31 476.31 534.5 472.67 L 543 464.5 L 555.83 451 L 567.33 440.17 L 568.67 436.17 L 566.5 433.67 L 563.83 433.33 L 559.17 435.67 L 540.17 449 L 510.17 466.67 L 499.5 472 L 468.17 482 L 459.83 483.33 L 445.5 483.67 L 437.5 483 Q 434.48 482.18 433 479.83 L 432.33 477.17 L 434.33 474 L 439.17 470.67 L 453.5 463 L 469.5 452.67 L 495.83 438.33 L 502.67 432.83 L 503.33 431.17 L 501.83 428.67 Q 500.97 427.53 498.5 428 Q 477.99 435.15 459.17 444 L 442.17 450 L 414.17 457.33 L 404.17 459.33 Q 394.39 461.39 381.83 460.67 L 359.5 458 Q 355.07 457.26 352.67 454.5 L 351.67 451.5 L 355.17 447.33 L 364.5 443.33 L 386.17 436.33 L 423.17 422 L 448.83 413.33 Q 460.85 407.35 474.83 403.33 L 477.67 401.17 L 478 399.17 L 476.5 397.33 L 475.17 397 L 455.17 402.67 L 445.5 404.33 L 412.5 412.33 L 382.17 418.67 L 350.83 423 L 334.83 424.33 L 320.83 424.33 Q 304.83 423.33 291.5 419.67 L 279.83 415.67 Q 275.03 414.14 272.33 410.5 L 271.67 407.83 L 274.17 404.67 L 276.83 403.33 L 319.83 395.33 L 440.17 374 L 444.83 373 L 447.67 370.83 L 448 368.83 L 446.5 367 L 445.5 366.33 L 440.83 366.33 L 387.5 371.33 L 377.5 371.33 L 357.83 373 L 339.17 373.33 L 330.83 374.33 L 300.83 374.67 L 271.83 372.33 L 255.17 369.33 L 244.83 366.67 Q 232.92 362.92 222.5 357.67 Q 214.52 353.98 208.67 348.17 Q 207.03 347.14 207.33 344.17 L 210.17 340.67 L 213.5 339.67 L 228.17 339.33 L 332.17 338.67 L 340.5 337.67 L 352.17 337.33 L 413.83 337 L 417 334.83 L 417.33 332.83 L 416.17 331.33 L 411.17 329.67 L 399.5 329.33 L 379.83 327.33 L 374.5 327.33 L 339.5 323.33 L 317.83 321.67 L 273.17 315.33 L 251.17 311 L 229.5 305 Q 217.44 300.72 206.83 295 Q 191.43 287.07 180 275.17 L 177 270.83 L 176.67 268.17 L 179.5 264.67 Q 181.5 263.17 185.83 264 L 219.5 269.33 L 236.5 272.67 L 261.83 275.67 L 294.5 281.33 L 317.17 283.67 L 344.5 289 L 366.83 291.33 L 400.5 297.33 L 405.5 297.67 L 407.67 295.83 L 408 293.5 L 404.17 290.67 L 386.83 287.33 L 365.5 281 L 332.83 273.67 Q 313.24 266.09 290.5 261.67 L 243.5 245.33 Q 226.17 237.99 211.17 228.33 Q 197.1 219.9 186.33 208.17 L 178.33 197.5 Q 176.34 195.16 176 191.17 L 177.83 188.33 Q 179.06 186.72 182.17 187 Q 196.78 192.38 213.17 196 L 265.5 213.67 L 287.83 219.67 L 311.17 228.33 L 329.83 233 L 348.83 240.33 Q 361.29 244.87 375.5 247.67 L 398.5 256.33 L 402.5 256.67 L 404 255.5 L 404.33 252.83 L 400.17 249.67 L 385.5 244.33 L 367.5 235.33 L 346.17 227 L 326.17 216.67 L 308.83 209.67 Q 295.43 201.57 280.5 195 L 246.5 175.33 Q 231.77 165.56 220 152.83 Q 211.84 144.33 206.67 132.83 Q 202.11 123.39 202 109.5 L 204 99.83 Q 205.25 96.08 208.17 94 L 209.83 93 Z M 704.67 357.67 L 703.33 358.33 L 698.33 375.67 L 697.33 377 L 685.67 376.67 L 679.33 376.67 L 677.67 377.67 L 693 389.33 L 693 391 L 687.67 408 L 704.33 397 L 718 407 L 720.67 408 L 715 390.67 L 715.33 388.33 L 730.67 377.67 L 729 376.67 L 711.33 377 L 710 376 L 704.67 357.67 Z ");
+const AVE_OJO    = new Path2D("M 704.5 357.67 L 710 375.83 L 711.17 377 L 728.83 376.67 L 730.67 377.5 L 715.33 388.33 L 715 390.5 L 720.67 408 L 717.83 407 L 704.17 397 L 687.67 408 L 693 390.83 L 693 389.17 L 677.67 377.5 L 679.17 376.67 L 685.5 376.67 L 697.17 377 L 698.33 375.5 L 703.33 358.33 L 704.5 357.67 Z ");
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2 · EL SINTETIZADOR
+   Todo lo que suena aquí nace de osciladores y ruido. Cero archivos.
+   ═════════════════════════════════════════════════════════════════════════ */
+const A = { ctx:null, master:null, rev:null, seco:null, listo:false };
+
+function nota2hz(n){ return 440 * Math.pow(2, (n - 69) / 12); }
+
+function ruidoBuffer(ctx, seg){
+  const n = Math.max(1, Math.floor(ctx.sampleRate * seg));
+  const b = ctx.createBuffer(1, n, ctx.sampleRate);
+  const d = b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i] = Math.random()*2 - 1;
+  return b;
+}
+
+/* Reverb sin archivo: una cola de ruido que decae. Le da aire a todo y cuesta
+   un buffer de dos segundos. */
+function impulso(ctx, seg, caida){
+  const n = Math.floor(ctx.sampleRate * seg);
+  const b = ctx.createBuffer(2, n, ctx.sampleRate);
+  for(let c=0;c<2;c++){
+    const d = b.getChannelData(c);
+    for(let i=0;i<n;i++){
+      d[i] = (Math.random()*2-1) * Math.pow(1 - i/n, caida);
+    }
+  }
+  return b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EL DESTRABE DE iOS · esto es por qué Carlos no oía nada
+   ---------------------------------------------------------------------------
+   En el escritorio todo sonaba: medí 29 osciladores arrancados y el contexto
+   en `running`. O sea que el motor agendaba bien y el problema estaba en el
+   teléfono. Son TRES cosas distintas y hacían falta las tres:
+
+   1 · `audioArranca()` sólo llamaba a `resume()` cuando el contexto YA
+       existía. La primera llamada lo CREABA y no lo reanudaba nunca — y en
+       iOS un contexto nuevo nace suspendido. Se quedaba dormido para siempre.
+   2 · iOS no destraba el audio hasta que se EMPUJA un sonido dentro del
+       gesto, aunque el estado diga `running`. Va un buffer de un sample.
+   3 · Y la que de verdad silencia los iPhone: con el interruptor lateral en
+       silencio, Safari calla el Web Audio. Reproducir un `<audio playsinline>`
+       en bucle cambia la categoría de audio del sistema a reproducción, y
+       entonces manda el volumen del teléfono y no el interruptor. El archivo
+       es medio segundo de silencio empotrado aquí mismo: no se descarga nada.
+
+   Ninguna de las tres se ve leyendo el código y ninguna sale en el
+   escritorio. Por eso hay un botón de «probar sonido» en el menú: convierte
+   «no se oye» en un dato en un segundo, en vez de una tarde de adivinanzas. */
+const SILENCIO = 'data:audio/wav;base64,UklGRqQMAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYAMAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+let elSilencio = null;
+
+function destrabarIOS(){
+  try{
+    if(!elSilencio){
+      elSilencio = document.createElement('audio');
+      elSilencio.setAttribute('playsinline', '');
+      elSilencio.setAttribute('webkit-playsinline', '');
+      elSilencio.loop = true;
+      elSilencio.volume = 0.001;
+      elSilencio.src = SILENCIO;
+      /* ⚠ Y AL DOCUMENTO. Estaba creado y suelto: un `<audio>` fuera del DOM
+         se puede reproducir, pero en iOS es justo donde este truco deja de ser
+         fiable — y de paso ninguna prueba lo podía ver, que es como se me pasó.
+         Va con estilo en línea, no con `hidden`: `hidden` es la regla de menor
+         especificidad de CSS y cualquier clase propia se la come. */
+      elSilencio.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+      document.body.appendChild(elSilencio);
+    }
+    const pr = elSilencio.play();
+    if(pr && pr.catch) pr.catch(() => {});
+  }catch(e){}
+}
+
+function audioArranca(){
+  if(!A.ctx){
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return;
+    A.ctx = new Ctx();
+    A.master = A.ctx.createGain();
+    A.master.gain.value = 0.85;
+    A.master.connect(A.ctx.destination);
+
+    A.rev = A.ctx.createConvolver();
+    A.rev.buffer = impulso(A.ctx, 2.1, 2.6);
+    const revG = A.ctx.createGain(); revG.gain.value = 0.26;
+    A.rev.connect(revG); revG.connect(A.master);
+
+    A.seco = A.ctx.createGain(); A.seco.gain.value = 1;
+    A.seco.connect(A.master);
+    A.listo = true;
+  }
+
+  /* SIEMPRE, no sólo cuando ya existía. Éste era el defecto. */
+  if(A.ctx.state !== 'running'){
+    const pr = A.ctx.resume();
+    if(pr && pr.catch) pr.catch(() => {});
+  }
+  /* Empujar un sonido dentro del gesto: iOS no destraba sin esto. */
+  if(!A.destrabado){
+    try{
+      const b = A.ctx.createBuffer(1, 1, A.ctx.sampleRate);
+      const s = A.ctx.createBufferSource();
+      s.buffer = b; s.connect(A.ctx.destination); s.start(0);
+      A.destrabado = true;
+    }catch(e){}
+  }
+  destrabarIOS();
+}
+
+/* Todos los instrumentos reciben `t` en segundos del reloj de AUDIO. Nunca en
+   milisegundos del reloj de la página: son dos relojes y se separan. */
+function aEnv(g, t, ata, dec, pico, sos, susDur, rel){
+  g.gain.cancelScheduledValues(t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(pico,0.0002), t + ata);
+  g.gain.exponentialRampToValueAtTime(Math.max(sos,0.0001), t + ata + dec);
+  g.gain.setValueAtTime(Math.max(sos,0.0001), t + ata + dec + susDur);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + ata + dec + susDur + rel);
+}
+
+function bombo(t, vol){
+  if(!A.listo) return;
+  const o = A.ctx.createOscillator(), g = A.ctx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(155, t);
+  o.frequency.exponentialRampToValueAtTime(46, t + 0.09);
+  g.gain.setValueAtTime((vol||1) * 0.95, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+  o.connect(g); g.connect(A.seco);
+  o.start(t); o.stop(t + 0.34);
+}
+
+function tarola(t, vol){
+  if(!A.listo) return;
+  const s = A.ctx.createBufferSource();
+  s.buffer = ruidoBuffer(A.ctx, 0.22);
+  const f = A.ctx.createBiquadFilter();
+  f.type = 'bandpass'; f.frequency.value = 1750; f.Q.value = 0.85;
+  const g = A.ctx.createGain();
+  g.gain.setValueAtTime((vol||1) * 0.42, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  s.connect(f); f.connect(g); g.connect(A.seco); g.connect(A.rev);
+  s.start(t); s.stop(t + 0.22);
+  const o = A.ctx.createOscillator(), og = A.ctx.createGain();
+  o.type = 'triangle'; o.frequency.setValueAtTime(196, t);
+  og.gain.setValueAtTime((vol||1) * 0.22, t);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+  o.connect(og); og.connect(A.seco);
+  o.start(t); o.stop(t + 0.12);
+}
+
+function charol(t, abierto, vol){
+  if(!A.listo) return;
+  const dur = abierto ? 0.24 : 0.045;
+  const s = A.ctx.createBufferSource();
+  s.buffer = ruidoBuffer(A.ctx, dur + 0.03);
+  const f = A.ctx.createBiquadFilter();
+  f.type = 'highpass'; f.frequency.value = 7600;
+  const g = A.ctx.createGain();
+  g.gain.setValueAtTime((vol||1) * (abierto ? 0.16 : 0.13), t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(A.seco);
+  s.start(t); s.stop(t + dur + 0.03);
+}
+
+function bajo(t, midi, dur, vol){
+  if(!A.listo) return;
+  const o = A.ctx.createOscillator(), g = A.ctx.createGain(),
+        f = A.ctx.createBiquadFilter();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(nota2hz(midi), t);
+  f.type = 'lowpass'; f.Q.value = 7;
+  f.frequency.setValueAtTime(1500, t);
+  f.frequency.exponentialRampToValueAtTime(340, t + Math.min(dur, 0.35));
+  aEnv(g, t, 0.008, 0.06, (vol||1) * 0.34, (vol||1) * 0.22, Math.max(dur-0.09,0.01), 0.07);
+  o.connect(f); f.connect(g); g.connect(A.seco);
+  o.start(t); o.stop(t + dur + 0.14);
+}
+
+/* La voz que TÚ tocas. Va más brillante que el resto a propósito: tiene que
+   destacar sobre la pista o no se siente que la estés tocando. */
+function melodia(t, midi, dur, vol, timbre){
+  if(!A.listo) return;
+  const v = (vol == null ? 1 : vol);
+  /* El piano es otra envolvente, no otro oscilador: golpe seco y decaimiento
+     largo, SIN sustain. Es lo que distingue una tecla de un sintetizador. */
+  if(timbre === 'piano'){
+    [[0,0.26,'triangle'],[12,0.10,'sine'],[19,0.05,'sine']].forEach(([semi,vv,tp]) => {
+      const o = A.ctx.createOscillator(), g = A.ctx.createGain();
+      o.type = tp; o.frequency.setValueAtTime(nota2hz(midi + semi), t);
+      const largo = Math.max(dur, 0.55);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(v * vv, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(v * vv * 0.28, t + 0.09);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + largo);
+      o.connect(g); g.connect(A.seco); g.connect(A.rev);
+      o.start(t); o.stop(t + largo + 0.1);
+    });
+    return;
+  }
+  const tipos = timbre === 'metal' ? ['square','sawtooth'] : ['triangle','square'];
+  tipos.forEach((tp, i) => {
+    const o = A.ctx.createOscillator(), g = A.ctx.createGain();
+    o.type = tp;
+    o.frequency.setValueAtTime(nota2hz(midi + (i ? 12 : 0)), t);
+    o.detune.value = i ? 6 : -4;
+    aEnv(g, t, 0.006, 0.07, v * (i ? 0.09 : 0.2), v * (i ? 0.04 : 0.1),
+         Math.max(dur - 0.08, 0.01), 0.16);
+    o.connect(g); g.connect(A.seco); g.connect(A.rev);
+    o.start(t); o.stop(t + dur + 0.3);
+  });
+}
+
+function colchon(t, midis, dur){
+  if(!A.listo) return;
+  midis.forEach((m, i) => {
+    const o = A.ctx.createOscillator(), g = A.ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(nota2hz(m), t);
+    o.detune.value = (i % 2 ? 8 : -8);
+    const f = A.ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 1150;
+    aEnv(g, t, 0.16, 0.2, 0.052, 0.036, Math.max(dur - 0.4, 0.05), 0.42);
+    o.connect(f); f.connect(g); g.connect(A.rev); g.connect(A.seco);
+    o.start(t); o.stop(t + dur + 0.6);
+  });
+}
+
+/* El ruido de fallar. No es un castigo sonoro feo: es el hueco donde iba la
+   nota, que es peor y se entiende solo. */
+function fallo(t){
+  if(!A.listo) return;
+  const o = A.ctx.createOscillator(), g = A.ctx.createGain();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(140, t);
+  o.frequency.exponentialRampToValueAtTime(58, t + 0.16);
+  const f = A.ctx.createBiquadFilter();
+  f.type = 'lowpass'; f.frequency.value = 620;
+  g.gain.setValueAtTime(0.14, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+  o.connect(f); f.connect(g); g.connect(A.seco);
+  o.start(t); o.stop(t + 0.22);
+}
+
+function tin(freq, vol){
+  if(!A.listo) return;
+  const t = A.ctx.currentTime;
+  const o = A.ctx.createOscillator(), g = A.ctx.createGain();
+  o.type = 'triangle'; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(vol == null ? 0.14 : vol, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  o.connect(g); g.connect(A.seco); g.connect(A.rev);
+  o.start(t); o.stop(t + 0.2);
+}
+</script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   3 · LAS CANCIONES
+   Ni escritas nota por nota a mano ni improvisadas al azar: se arman con
+   progresión de acordes fija y FRASES melódicas escritas, montadas sobre un
+   arreglo (A A B A…). Suena compuesto porque lo está — lo que se automatiza
+   es la copia, no la decisión.
+
+   Y la pieza que amarra todo: la melodía y las notas jugables son LA MISMA
+   COSA. Cada nota que tocas es la que sonaba, así que atinarle no es
+   «acertar», es tocar la canción.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Un acorde es una lista de notas MIDI. El grado 0 es la fundamental; si te
+   pasas del acorde, se sube una octava. Así ninguna nota jugable puede sonar
+   fuera de tono, que es lo que arruina la música generada. */
+function gradoA(acorde, g){
+  const n = acorde.length;
+  const oct = Math.floor(g / n);
+  return acorde[((g % n) + n) % n] + oct * 12;
+}
+
+/* Frases: [paso dentro del compás, grado del acorde, duración en pasos].
+   16 pasos por compás = semicorcheas. */
+const FRASES = {
+  respira:  [[0,0,4],[4,2,4],[8,1,4],[12,3,2]],
+  paso:     [[0,0,2],[2,1,2],[4,2,4],[10,1,2],[12,0,4]],
+  sube:     [[0,0,2],[2,1,2],[4,2,2],[6,3,2],[8,4,4],[12,3,4]],
+  llama:    [[0,2,2],[2,2,2],[6,1,2],[8,0,4],[12,2,2],[14,3,2]],
+  corre:    [[0,0,2],[2,2,2],[4,1,2],[6,3,2],[8,2,2],[10,4,2],[12,3,2],[14,1,2]],
+  golpea:   [[0,0,2],[4,0,2],[6,2,2],[8,1,4],[12,4,2],[14,2,2]],
+  cae:      [[0,4,2],[2,3,2],[4,2,2],[6,1,2],[8,0,6],[14,1,2]],
+  quieta:   [[0,0,8],[8,2,8]],
+  fiesta:   [[0,0,2],[2,1,2],[4,2,2],[6,4,2],[8,3,2],[10,2,2],[12,1,2],[14,0,2]],
+  pregunta: [[0,1,2],[2,2,2],[4,3,4],[10,2,2],[12,4,4]],
+  eco:      [[0,2,2],[4,1,2],[8,3,2],[12,0,4]],
+  planea:   [[0,4,8],[8,2,8]],
+  alza:     [[0,0,2],[2,2,2],[4,4,10],[14,3,2]],
+};
+
+/* Percusión: 16 caracteres por compás.
+   b bombo · t tarola · h charol · o charol abierto · B bombo+charol · T tarola+charol */
+const RITMOS = {
+  calma:   'b..h..t.b..h..t.',
+  suave:   'B..h.hT..h.B..hT',
+  urbano:  'B.hbT.hBb.hbT.ho',
+  tenso:   'B.hBT.hbB.hBT.Tb',
+  fiesta:  'BhhbThhBBhhbThho',
+  final:   'BhbBThhBBhbBThTo',
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3-bis · LAS PIEZAS DE VERDAD
+   Carlos las pidió «tipo Piano Tiles». Piano Tiles puede usar canciones
+   reconocibles por una razón concreta y hay que decirla: **usa clásicos de
+   DOMINIO PÚBLICO**. Éstas también — Beethoven, Mozart y Pachelbel llevan
+   más de dos siglos muertos, así que las obras son de todos.
+
+   ⚠ Lo que NO son: grabaciones. Son transcripciones mías de la melodía, de
+   memoria, en notas MIDI. Reconocibles, sí; fieles al último matiz, no. Si
+   alguna suena rara es culpa de mi oído, no del motor — y se arregla
+   corrigiendo los números de aquí abajo, que para eso están a la vista.
+
+   Formato: [nota MIDI, duración en pasos]. El 0 es silencio. Un paso es una
+   semicorchea, así que 2 = corchea y 4 = negra. */
+
+/* Cada pieza se toca DOS VECES seguidas. Sueltas duran 11-17 s, que se siente
+   a demo y no a canción; repetidas quedan en 22-34 s, que es lo que dura una
+   ronda de este tipo de juego. Se hace aquí y no copiando la lista dos veces
+   porque una lista duplicada a mano se desincroniza en cuanto se corrige una
+   nota — y estas notas las voy a corregir. */
+const cl = (sec) => sec.concat(sec);
+
+const PIEZAS = [
+  {
+    id:'elisa', nombre:'Para Elisa', autor:'Beethoven · 1810',
+    sub:'Dominio público · la de siempre',
+    bpm:132, timbre:'piano', ritmo:'calma',
+    acordes:[[57,60,64],[52,56,59],[57,60,64],[52,56,59]],
+    sec: cl([
+      [76,2],[75,2],[76,2],[75,2],[76,2],[71,2],[74,2],[72,2],
+      [69,4],[0,2],[60,2],[64,2],[69,2],[71,4],[0,2],[64,2],
+      [68,2],[71,2],[72,4],[0,2],[64,2],[76,2],[75,2],[76,2],[75,2],
+      [76,2],[71,2],[74,2],[72,2],[69,4],[0,2],[60,2],[64,2],[69,2],
+      [71,4],[0,2],[64,2],[72,2],[71,2],[69,6],
+    ]),
+  },
+  {
+    id:'alegria', nombre:'Himno a la alegría', autor:'Beethoven · 1824',
+    sub:'Dominio público · fácil, para empezar',
+    bpm:112, timbre:'piano', ritmo:'suave',
+    acordes:[[60,64,67],[55,59,62],[57,60,64],[53,57,60]],
+    sec: cl([
+      [64,4],[64,4],[65,4],[67,4], [67,4],[65,4],[64,4],[62,4],
+      [60,4],[60,4],[62,4],[64,4], [64,6],[62,2],[62,8],
+      [64,4],[64,4],[65,4],[67,4], [67,4],[65,4],[64,4],[62,4],
+      [60,4],[60,4],[62,4],[64,4], [62,6],[60,2],[60,8],
+    ]),
+  },
+  {
+    id:'canon', nombre:'Canon en Re', autor:'Pachelbel · c. 1680',
+    sub:'Dominio público · la de las bodas',
+    bpm:104, timbre:'piano', ritmo:'suave',
+    acordes:[[62,66,69],[57,61,64],[59,62,66],[54,57,61],
+             [55,59,62],[50,54,57],[55,59,62],[57,61,64]],
+    sec: cl([
+      [78,4],[76,4],[74,4],[73,4], [71,4],[69,4],[71,4],[73,4],
+      [74,4],[73,4],[71,4],[69,4], [67,4],[66,4],[67,4],[64,4],
+      [74,2],[78,2],[81,2],[79,2],[78,2],[74,2],[78,2],[76,2],
+      [74,2],[71,2],[74,2],[81,2],[79,2],[83,2],[81,2],[79,2],
+    ]),
+  },
+  {
+    id:'turca', nombre:'Marcha turca', autor:'Mozart · 1783',
+    sub:'Dominio público · la más brava',
+    bpm:126, timbre:'piano', ritmo:'urbano',
+    acordes:[[57,60,64],[52,56,59],[57,60,64],[52,56,59]],
+    sec: cl([
+      [71,1],[69,1],[68,1],[69,1],[72,4],[0,4],[0,4],
+      [74,1],[72,1],[71,1],[72,1],[76,4],[0,4],[0,4],
+      [77,1],[76,1],[75,1],[76,1],[83,2],[81,2],[80,2],[81,2],
+      [83,2],[81,2],[80,2],[81,2],[84,4],
+      [71,1],[69,1],[68,1],[69,1],[72,4],[0,4],[0,4],
+      [74,1],[72,1],[71,1],[72,1],[76,4],[0,4],[0,4],
+      [77,1],[76,1],[75,1],[76,1],[83,2],[81,2],[80,2],[81,2],
+      [84,2],[83,2],[81,2],[80,2],[81,8],
+    ]),
+  },
+];
+
+const CANCIONES = [
+  {
+    id:'seis', nombre:'Las seis de la mañana',
+    sub:'El palomar todavía dormido · fácil',
+    bpm:88, timbre:'suave', ritmo:'calma',
+    acordes:[[50,53,57],[48,52,55],[55,58,62],[53,57,60]],
+    arreglo:['respira','respira','paso','respira',
+             'respira','paso','sube','quieta',
+             'respira','paso','llama','paso',
+             'sube','llama','cae','quieta'],
+    bajoOct:-12,
+  },
+  {
+    id:'cables', nombre:'Cables y migajas',
+    sub:'La ciudad que ya no manda cartas',
+    bpm:112, timbre:'metal', ritmo:'urbano',
+    acordes:[[57,60,64],[53,57,60],[55,59,62],[52,55,59]],
+    arreglo:['paso','corre','paso','llama',
+             'corre','golpea','corre','cae',
+             'paso','corre','llama','golpea',
+             'corre','fiesta','cae','quieta'],
+    bajoOct:-12,
+  },
+  {
+    id:'halcon', nombre:'El Halcón',
+    sub:'El que dice que el silencio es orden · difícil',
+    bpm:132, timbre:'metal', ritmo:'tenso',
+    acordes:[[48,51,55],[56,59,63],[51,55,58],[47,51,54]],
+    arreglo:['golpea','corre','golpea','pregunta',
+             'corre','corre','golpea','cae',
+             'llama','corre','golpea','corre',
+             'fiesta','corre','golpea','quieta'],
+    bajoOct:-12,
+  },
+  {
+    id:'palomazo', nombre:'Palomazo',
+    sub:'Todas al mismo tiempo · la última',
+    bpm:126, timbre:'suave', ritmo:'fiesta',
+    acordes:[[53,57,60],[55,58,62],[57,60,64],[50,53,57]],
+    arreglo:['fiesta','corre','alza','llama',
+             'fiesta','corre','golpea','planea',
+             'fiesta','alza','corre','sube',
+             'fiesta','corre','planea','fiesta'],
+    bajoOct:-12, ritmoFinal:'final',
+  },
+];
+
+/* Arma la canción entera: la pista de fondo y el mapa de notas jugables.
+   Devuelve todo en PASOS (semicorcheas), que es la unidad del reloj musical.
+   Nada aquí toca `Date` ni `performance`: los tiempos reales se calculan
+   contra el reloj del AudioContext al arrancar. */
+function armarCancion(c){
+  const notas = [], fondo = [];
+  const PASOS = 16;
+
+  /* Una pieza real no se arma con frases: trae su melodía escrita nota por
+     nota. Se recorre la secuencia acumulando pasos, y el número de compases
+     sale de lo que dure — no al revés. */
+  const secuencia = c.sec ? (() => {
+    let p = 0; const out = [];
+    for(const [n, d] of c.sec){
+      if(n > 0) out.push({ p:p, n:n, d:d });
+      p += d;
+    }
+    return { notas: out, largo: p };
+  })() : null;
+
+  const compases = secuencia
+    ? Math.ceil(secuencia.largo / PASOS)
+    : c.arreglo.length;
+
+  for(let m = 0; m < compases; m++){
+    const base = m * PASOS;
+    const acorde = c.acordes[m % c.acordes.length];
+    const ritmo = (c.ritmoFinal && m >= compases - 4) ? RITMOS[c.ritmoFinal] : RITMOS[c.ritmo];
+    if(!ritmo) throw new Error('ritmo desconocido: ' + c.ritmo);
+
+    /* percusión */
+    for(let s = 0; s < PASOS; s++){
+      const ch = ritmo[s];
+      if(ch === 'b' || ch === 'B') fondo.push({p:base+s, k:'bombo'});
+      if(ch === 't' || ch === 'T') fondo.push({p:base+s, k:'tarola'});
+      if(ch === 'h' || ch === 'B' || ch === 'T') fondo.push({p:base+s, k:'charol'});
+      if(ch === 'o') fondo.push({p:base+s, k:'charolAb'});
+    }
+    /* bajo: fundamental en 1 y 3, quinta en el 2 y medio */
+    /* ⚠ `bajoOct` no existe en las piezas clásicas, y `acorde[0] + undefined`
+       da NaN — que NO truena: `nota2hz(NaN)` devuelve NaN y el oscilador se
+       queda mudo sin un solo error en consola. Es de las que se buscan una
+       hora. Un valor por defecto y ya. */
+    const oct = c.bajoOct == null ? -12 : c.bajoOct;
+    fondo.push({p:base,    k:'bajo', n:acorde[0] + oct, d:3.6});
+    fondo.push({p:base+6,  k:'bajo', n:acorde[2] + oct, d:1.6});
+    fondo.push({p:base+8,  k:'bajo', n:acorde[0] + oct, d:3.6});
+    fondo.push({p:base+14, k:'bajo', n:acorde[1] + oct, d:1.6});
+    /* colchón de acorde, un compás entero */
+    fondo.push({p:base, k:'colchon', ns:acorde.map(x => x + 12), d:16});
+
+    /* melodía = notas jugables, sólo cuando la canción se genera de frases */
+    if(!secuencia){
+      const frase = FRASES[c.arreglo[m]];
+      for(const [p, g, d] of frase){
+        notas.push({ p: base + p, n: gradoA(acorde, g) + 12, d: d });
+      }
+    }
+  }
+  if(secuencia) for(const n of secuencia.notas) notas.push(n);
+
+  /* El carril sale de la ALTURA de la nota: grave a la izquierda, agudo a la
+     derecha, para que la mano siga la melodía.
+
+     ⚠ PERO NO POR EL RANGO, Y ESTO ESTUVO MAL Y SE MIDIÓ. Repartir con
+     umbrales fijos sobre (nota-mín)/(máx-mín) daba 36/30/**8**: el carril
+     derecho se quedaba casi vacío porque las melodías viven abajo del rango y
+     la nota más alta aparece dos veces en toda la canción. Se veía «bien» en
+     el código y el juego se jugaba con dos dedos.
+
+     Se reparte por TERCILES DE LAS NOTAS QUE HAY, no del rango que podrían
+     ocupar. Así cada carril recibe un tercio exacto y se conserva el orden
+     grave→agudo. Los empates se desempatan por tiempo, que de paso alterna la
+     mano cuando la melodía repite nota. */
+  const orden = notas.map((n, i) => i)
+    .sort((a, b) => (notas[a].n - notas[b].n) || (notas[a].p - notas[b].p));
+  const tercio = orden.length / 3;
+  orden.forEach((ni, puesto) => {
+    notas[ni].carril = puesto < tercio ? 0 : (puesto < tercio * 2 ? 1 : 2);
+  });
+  for(const n of notas){
+    /* Nota larga: las de 6 pasos o más se sostienen. Es el aleteo. */
+    n.larga = n.d >= 6;
+  }
+  notas.sort((a,b) => a.p - b.p);
+  fondo.sort((a,b) => a.p - b.p);
+  return { notas, fondo, pasos: compases * PASOS, compases };
+}
+</script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   4 · EL VESTIDOR
+   Cada cosmético es una función que dibuja. Nada de imágenes: son formas
+   propias encima de la paloma de la marca, así que no hay arte de nadie más
+   metido aquí ni un solo archivo que cargar.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Los plumajes devuelven un relleno: un color o un degradado ya construido. */
+const PLUMAJES = [
+  { id:'casa',  nom:'De la casa',  precio:0,   pinta:(x,w,h)=> '#AD21ED' },
+  { id:'hueso', nom:'Hueso',       precio:40,  pinta:(x,w,h)=> '#E9E4E4' },
+  { id:'carbon',nom:'Carbón',      precio:70,  pinta:(x,w,h)=> '#3A3346' },
+  { id:'menta', nom:'Menta',       precio:90,  pinta:(x,w,h)=> '#3DFFC5' },
+  { id:'oro',   nom:'Oro',         precio:130, pinta:(x,w,h)=>{
+      const g = x.createLinearGradient(0,0,0,h);
+      g.addColorStop(0,'#FFE79A'); g.addColorStop(.5,'#FFC53D'); g.addColorStop(1,'#C98A00');
+      return g; } },
+  { id:'tarde', nom:'Atardecer',   precio:170, pinta:(x,w,h)=>{
+      const g = x.createLinearGradient(0,0,w,h);
+      g.addColorStop(0,'#FFB03D'); g.addColorStop(.55,'#FF3D9E'); g.addColorStop(1,'#7A27FF');
+      return g; } },
+  { id:'neon',  nom:'Neón',        precio:230, pinta:(x,w,h)=>{
+      const g = x.createLinearGradient(0,h,w,0);
+      g.addColorStop(0,'#00E5FF'); g.addColorStop(.5,'#AC27FF'); g.addColorStop(1,'#FF3D9E');
+      return g; } },
+  { id:'marmol',nom:'Mármol',      precio:280, pinta:(x,w,h)=>{
+      const g = x.createLinearGradient(0,0,w,h);
+      g.addColorStop(0,'#F4F1F6'); g.addColorStop(.34,'#B9AFC6');
+      g.addColorStop(.5,'#F4F1F6'); g.addColorStop(.72,'#9C93AB'); g.addColorStop(1,'#EDE8F0');
+      return g; } },
+  { id:'tricolor', nom:'Tricolor', precio:340, pinta:(x,w,h)=>{
+      const g = x.createLinearGradient(0,0,w,0);
+      g.addColorStop(0,'#006847'); g.addColorStop(.33,'#006847');
+      g.addColorStop(.36,'#F7F2EA'); g.addColorStop(.64,'#F7F2EA');
+      g.addColorStop(.67,'#CE1126'); g.addColorStop(1,'#CE1126');
+      return g; } },
+  { id:'arcoiris', nom:'Arcoíris', precio:450, pinta:(x,w,h)=>{
+      const g = x.createLinearGradient(0,0,w,h);
+      ['#FF3D3D','#FFA53D','#FFE73D','#3DFF7A','#3DC5FF','#7A3DFF','#FF3DD2']
+        .forEach((c,i,a) => g.addColorStop(i/(a.length-1), c));
+      return g; } },
+];
+
+/* Los sombreros se dibujan en coordenadas del viewBox de la paloma
+   (1408 × 768), así que crecen con ella sin cuentas raras.
+
+   ⚠ AQUÍ DECÍA x 1178 · y 208 Y ERA PURO OJO: ahí no hay cabeza, hay punta de
+   ala, así que TODOS los sombreros salían flotando en el ala derecha y del
+   doble de grandes. No se cazó leyendo ni midiendo el píxel más alto —el ave
+   trae las alas MÁS arriba que la cabeza, así que ese método encuentra el ala—
+   sino dibujándola con una cuadrícula de coordenadas encima y mirándola.
+   La cabeza es el bulto central con el pico a la derecha: centro (700, 286),
+   unos 95 px de ancho, y el tope en y 258. */
+const CABEZA = { x:700, y:286 };
+const RC = 47;   /* radio de la cabeza, para que todo escale con ella */
+
+const SOMBREROS = [
+  { id:'nada', nom:'A pelo', precio:0, dib:null },
+  { id:'gorra', nom:'Gorra', precio:60, dib:(x)=>{
+      x.fillStyle = '#2B7FFF';
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-14, RC*1.06, Math.PI, 0); x.fill();
+      x.fillStyle = '#1B5FCC';
+      x.beginPath(); x.ellipse(CABEZA.x+RC*0.85, CABEZA.y-14, RC*0.78, RC*0.2, 0, 0, Math.PI*2); x.fill();
+      x.fillStyle = '#E9E4E4';
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-RC*1.0, RC*0.15, 0, Math.PI*2); x.fill(); } },
+  { id:'mono', nom:'Moño', precio:95, dib:(x)=>{
+      const y = CABEZA.y - RC*1.05;
+      x.fillStyle = '#FF3D9E';
+      x.beginPath(); x.moveTo(CABEZA.x, y);
+      x.lineTo(CABEZA.x-RC*0.82, y-RC*0.5); x.lineTo(CABEZA.x-RC*0.82, y+RC*0.42); x.closePath(); x.fill();
+      x.beginPath(); x.moveTo(CABEZA.x, y);
+      x.lineTo(CABEZA.x+RC*0.82, y-RC*0.5); x.lineTo(CABEZA.x+RC*0.82, y+RC*0.42); x.closePath(); x.fill();
+      x.fillStyle = '#C41E75';
+      x.beginPath(); x.arc(CABEZA.x, y, RC*0.22, 0, Math.PI*2); x.fill(); } },
+  { id:'mensajero', nom:'Casco mensajero', precio:150, dib:(x)=>{
+      x.fillStyle = '#C9412B';
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-12, RC*1.1, Math.PI, 0); x.fill();
+      x.fillStyle = '#8E2A1B';
+      x.fillRect(CABEZA.x-RC*1.16, CABEZA.y-19, RC*2.32, RC*0.26);
+      x.fillStyle = '#FFC53D';
+      x.beginPath(); x.moveTo(CABEZA.x, CABEZA.y-RC*1.72);
+      x.lineTo(CABEZA.x+RC*0.19, CABEZA.y-RC*1.06);
+      x.lineTo(CABEZA.x-RC*0.19, CABEZA.y-RC*1.06); x.closePath(); x.fill(); } },
+  { id:'dj', nom:'Audífonos', precio:190, dib:(x)=>{
+      x.strokeStyle = '#2A2334'; x.lineWidth = RC*0.24; x.lineCap = 'round';
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-6, RC*1.04, Math.PI*1.08, Math.PI*1.92); x.stroke();
+      x.fillStyle = '#AC27FF';
+      x.beginPath(); x.ellipse(CABEZA.x-RC*1.02, CABEZA.y-2, RC*0.28, RC*0.42, 0, 0, Math.PI*2); x.fill();
+      x.beginPath(); x.ellipse(CABEZA.x+RC*1.02, CABEZA.y-2, RC*0.28, RC*0.42, 0, 0, Math.PI*2); x.fill(); } },
+  { id:'copa', nom:'De copa', precio:220, dib:(x)=>{
+      x.fillStyle = '#181320';
+      x.fillRect(CABEZA.x-RC*0.62, CABEZA.y-RC*2.05, RC*1.24, RC*1.5);
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*0.56, RC*1.2, RC*0.25, 0, 0, Math.PI*2); x.fill();
+      x.fillStyle = '#AC27FF';
+      x.fillRect(CABEZA.x-RC*0.62, CABEZA.y-RC*0.95, RC*1.24, RC*0.32); } },
+  { id:'charro', nom:'De charro', precio:270, dib:(x)=>{
+      x.fillStyle = '#2E2438';
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*0.5, RC*1.9, RC*0.4, 0, 0, Math.PI*2); x.fill();
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*1.25, RC*0.86, RC*0.78, 0, 0, Math.PI*2); x.fill();
+      x.strokeStyle = '#FFC53D'; x.lineWidth = RC*0.13;
+      x.beginPath(); x.ellipse(CABEZA.x, CABEZA.y-RC*0.72, RC*0.88, RC*0.26, 0, 0, Math.PI*2); x.stroke();
+      x.fillStyle = '#FFC53D';
+      for(let i=-2;i<=2;i++){
+        x.beginPath(); x.arc(CABEZA.x + i*RC*0.62, CABEZA.y-RC*0.47, RC*0.1, 0, Math.PI*2); x.fill();
+      } } },
+  { id:'flores', nom:'Corona de flores', precio:300, dib:(x)=>{
+      const cols = ['#FF3D9E','#FFC53D','#3DFFC5','#FF7A3D','#AC27FF'];
+      for(let i=0;i<7;i++){
+        const a = Math.PI + (i/6)*Math.PI;
+        const px = CABEZA.x + Math.cos(a)*RC*1.06, py = CABEZA.y - RC*0.2 + Math.sin(a)*RC*0.92;
+        x.fillStyle = cols[i % cols.length];
+        for(let q=0;q<5;q++){
+          const pa = (q/5)*Math.PI*2;
+          x.beginPath(); x.arc(px + Math.cos(pa)*RC*0.15, py + Math.sin(pa)*RC*0.15, RC*0.13, 0, Math.PI*2); x.fill();
+        }
+        x.fillStyle = '#FFF3C4';
+        x.beginPath(); x.arc(px, py, RC*0.09, 0, Math.PI*2); x.fill();
+      } } },
+  { id:'corona', nom:'Corona', precio:380, dib:(x)=>{
+      const b = CABEZA.y - RC*0.62;
+      x.fillStyle = '#FFC53D';
+      x.beginPath();
+      x.moveTo(CABEZA.x-RC*0.95, b); x.lineTo(CABEZA.x-RC*0.95, b-RC*0.86);
+      x.lineTo(CABEZA.x-RC*0.48, b-RC*0.34); x.lineTo(CABEZA.x, b-RC*1.22);
+      x.lineTo(CABEZA.x+RC*0.48, b-RC*0.34); x.lineTo(CABEZA.x+RC*0.95, b-RC*0.86);
+      x.lineTo(CABEZA.x+RC*0.95, b); x.closePath(); x.fill();
+      ['#FF3D9E','#3DFFC5','#2B7FFF'].forEach((c,i) => {
+        x.fillStyle = c;
+        x.beginPath(); x.arc(CABEZA.x + (i-1)*RC*0.5, b-RC*0.2, RC*0.13, 0, Math.PI*2); x.fill();
+      }); } },
+  { id:'escafandra', nom:'Escafandra', precio:520, dib:(x)=>{
+      const g = x.createRadialGradient(CABEZA.x-RC*0.4, CABEZA.y-RC*0.7, RC*0.1,
+                                       CABEZA.x, CABEZA.y-RC*0.15, RC*1.5);
+      g.addColorStop(0,'rgba(255,255,255,.5)'); g.addColorStop(.5,'rgba(61,197,255,.16)');
+      g.addColorStop(1,'rgba(61,197,255,.32)');
+      x.fillStyle = g;
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-RC*0.15, RC*1.5, 0, Math.PI*2); x.fill();
+      x.strokeStyle = '#9FE8FF'; x.lineWidth = RC*0.12;
+      x.beginPath(); x.arc(CABEZA.x, CABEZA.y-RC*0.15, RC*1.5, 0, Math.PI*2); x.stroke(); } },
+];
+
+/* Las estelas son partículas que suelta la paloma. Cada una devuelve cómo se
+   dibuja UNA partícula; el motor se encarga de la vida y el movimiento. */
+const ESTELAS = [
+  { id:'nada', nom:'Sin estela', precio:0, dib:null },
+  { id:'chispas', nom:'Chispas', precio:80, col:'#FFC53D', dib:(x,p)=>{
+      x.fillStyle = '#FFC53D';
+      x.globalAlpha = p.v; x.beginPath(); x.arc(0,0, 3.4*p.v, 0, Math.PI*2); x.fill(); } },
+  { id:'plumas', nom:'Plumitas', precio:120, col:'#E9E4E4', dib:(x,p)=>{
+      x.fillStyle = '#E9E4E4'; x.globalAlpha = p.v * .9;
+      x.rotate(p.g); x.beginPath();
+      x.ellipse(0, 0, 3*p.v, 8*p.v, 0, 0, Math.PI*2); x.fill(); } },
+  { id:'notas', nom:'Notitas', precio:160, col:'#3DFFC5', dib:(x,p)=>{
+      x.fillStyle = '#3DFFC5'; x.globalAlpha = p.v; x.rotate(p.g * .4);
+      x.beginPath(); x.ellipse(-3, 4, 4.6*p.v, 3.4*p.v, -.4, 0, Math.PI*2); x.fill();
+      x.fillRect(0.6, -9*p.v, 1.8, 13*p.v); } },
+  { id:'corazon', nom:'Corazoncitos', precio:200, col:'#FF3D9E', dib:(x,p)=>{
+      x.fillStyle = '#FF3D9E'; x.globalAlpha = p.v; const s = p.v * .5;
+      x.beginPath();
+      x.moveTo(0, 4*s*2);
+      x.bezierCurveTo(-9*s, -2*s, -5*s, -11*s, 0, -5*s);
+      x.bezierCurveTo(5*s, -11*s, 9*s, -2*s, 0, 4*s*2);
+      x.fill(); } },
+  { id:'estrellas', nom:'Estrellitas', precio:250, col:'#FFE73D', dib:(x,p)=>{
+      x.fillStyle = '#FFE73D'; x.globalAlpha = p.v; x.rotate(p.g);
+      x.beginPath();
+      for(let i=0;i<10;i++){
+        const r = (i % 2 ? 2.6 : 6.4) * p.v, a = (i/10)*Math.PI*2 - Math.PI/2;
+        i ? x.lineTo(Math.cos(a)*r, Math.sin(a)*r) : x.moveTo(Math.cos(a)*r, Math.sin(a)*r);
+      }
+      x.closePath(); x.fill(); } },
+  { id:'fuego', nom:'Fueguito', precio:310, col:'#FF7A3D', dib:(x,p)=>{
+      const g = x.createRadialGradient(0,0,0,0,0,7*p.v);
+      g.addColorStop(0,'rgba(255,231,61,'+p.v+')');
+      g.addColorStop(.5,'rgba(255,122,61,'+(p.v*.8)+')');
+      g.addColorStop(1,'rgba(255,61,61,0)');
+      x.fillStyle = g; x.beginPath(); x.arc(0,0,7*p.v,0,Math.PI*2); x.fill(); } },
+  { id:'galaxia', nom:'Galaxia', precio:420, col:'#AC27FF', dib:(x,p)=>{
+      const g = x.createRadialGradient(0,0,0,0,0,8*p.v);
+      g.addColorStop(0,'rgba(255,255,255,'+p.v+')');
+      g.addColorStop(.4,'rgba(172,39,255,'+(p.v*.85)+')');
+      g.addColorStop(1,'rgba(61,197,255,0)');
+      x.fillStyle = g; x.beginPath(); x.arc(0,0,8*p.v,0,Math.PI*2); x.fill(); } },
+];
+
+const CATEGORIAS = [
+  { id:'plumaje',  nom:'Plumaje',   lista:PLUMAJES  },
+  { id:'sombrero', nom:'Sombrero',  lista:SOMBREROS },
+  { id:'estela',   nom:'Estela',    lista:ESTELAS   },
+];
+
+/* ── Guardado ─────────────────────────────────────────────────────────────
+   localStorage puede tronar de plano (Safari en privado, sitio con datos
+   bloqueados), no sólo venir vacío. Por eso TODO va envuelto: si no se puede
+   guardar, el juego se juega igual y se pierde el progreso, que es infinitamente
+   mejor que una pantalla en blanco. */
+const LLAVE = 'palomazo.v1';
+const porDefecto = () => ({
+  plumas: 0, plumaje:'casa', sombrero:'nada', estela:'nada',
+  tengo:{ plumaje:['casa'], sombrero:['nada'], estela:['nada'] },
+  mejores:{}, hasta:0, vistoHist:0,
+});
+let G = porDefecto();
+
+function cargar(){
+  try{
+    const s = localStorage.getItem(LLAVE);
+    if(!s) return;
+    const d = JSON.parse(s);
+    if(d && typeof d === 'object'){
+      G = Object.assign(porDefecto(), d);
+      G.tengo = Object.assign(porDefecto().tengo, d.tengo || {});
+      G.mejores = d.mejores || {};
+    }
+  }catch(e){ /* se juega sin memoria y ya */ }
+}
+function guardar(){
+  try{ localStorage.setItem(LLAVE, JSON.stringify(G)); }catch(e){}
+}
+function puestoDe(cat){ return G[cat]; }
+function tengo(cat, id){ return (G.tengo[cat] || []).indexOf(id) >= 0; }
+function buscaCos(cat, id){
+  const l = CATEGORIAS.find(c => c.id === cat).lista;
+  return l.find(x => x.id === id) || l[0];
+}
+</script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   5 · LA HISTORIA
+   ═════════════════════════════════════════════════════════════════════════ */
+const HISTORIA = [
+  { acto:'Acto uno · El palomar callado', antes:'seis', txt:[
+    'Mazi nació mensajera, como su madre y como la madre de su madre.',
+    'Su bisabuela cruzó el país entero con un telegrama amarrado a la pata. Llegó con las plumas quemadas de sol y el papel intacto.',
+    'Pero ya nadie manda cartas. El palomar lleva tres años sin un solo sobre.',
+    'Esta mañana Mazi salió a la plaza a las seis, igual que siempre, sin nada que llevar.',
+    'Y fue ahí cuando se dio cuenta de que la plaza también se había quedado callada.',
+  ]},
+  { acto:'Acto dos · Cables y migajas', antes:'cables', txt:[
+    'Resulta que sí traía algo.',
+    'En el pecho, justo donde va amarrado el sobre, le venía latiendo un compás. Llevaba ahí toda la vida y nunca lo había oído porque siempre iba de prisa.',
+    'Lo soltó sobre la plaza sin pensarlo mucho. Y la plaza le contestó.',
+    'Ahora ya sabe qué entregar. Falta convencer a la ciudad — que está llena de palomas paradas en los cables, esperando un trabajo que no va a volver.',
+  ]},
+  { acto:'Acto tres · El Halcón', antes:'halcon', txt:[
+    'No a todos les gustó el ruido.',
+    '«El silencio es orden», dijo el Halcón desde la antena más alta. «Cada quien en su cable, cada quien en lo suyo. Así no se estorban.»',
+    'Mazi lo pensó un rato, porque sonaba a algo que ya le habían dicho antes.',
+    '«¿Y si el orden», contestó, «es que todos suenen al mismo tiempo y aun así se entienda?»',
+    'El Halcón abrió las alas. La ciudad entera se quedó esperando quién empezaba.',
+  ]},
+  { acto:'Acto cuatro · Palomazo', antes:'palomazo', txt:[
+    'Empezó ella.',
+    'Y detrás entraron las de los cables, y las del kiosco, y hasta las dos que viven en el anuncio de la tortillería.',
+    'No había partitura. Nadie les había enseñado esa canción porque esa canción todavía no existía.',
+    'Y ése resultó ser el chiste: si no existe la herramienta, se construye la herramienta. Si no existe la canción, pues se echa el palomazo y ya.',
+  ]},
+];
+const EPILOGO = {
+  acto:'Y colorín',
+  txt:[
+    'El Halcón no se fue. Se quedó marcando el tiempo desde la antena, que resulta que era lo suyo desde siempre.',
+    'El palomar sigue sin recibir cartas.',
+    'Pero a las seis de la mañana, si te asomas a la plaza, vas a oír que alguien anda entregando algo.',
+    '— Fin —',
+  ]};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6 · EL MOTOR
+   ═════════════════════════════════════════════════════════════════════════ */
+const CARRILES = 3;
+const MIRA_SEG = 1.45;    /* cuánto tiempo VES la nota antes de que llegue.
+                             Va en SEGUNDOS y no en pasos a propósito: en pasos,
+                             una canción a 132 se leería a la mitad de tiempo
+                             que una a 88, y sería injusta sin que se notara
+                             por qué. */
+const PREPARA  = 2.0;     /* aire antes del primer golpe */
+const V = { perfecto:0.055, bien:0.105, casi:0.16 };   /* ventanas, en segundos */
+
+const J = {
+  activo:false, pausa:false, canc:null, arm:null,
+  t0:0, pasoDur:0.15, idxFondo:0,
+  notas:[], combo:0, mejorCombo:0, puntos:0, energia:100,
+  cuenta:{ perfecto:0, bien:0, casi:0, fallo:0 },
+  sost:[null,null,null], aviso:null, sacude:0, part:[], pulso:0,
+};
+
+function pasoAhora(){
+  if(!A.listo) return 0;
+  return (A.ctx.currentTime - J.t0) / J.pasoDur;
+}
+
+function empezarCancion(c){
+  audioArranca();
+  if(!A.listo){ return false; }
+  J.canc = c;
+  J.arm = armarCancion(c);
+  J.pasoDur = 60 / c.bpm / 4;
+  J.notas = J.arm.notas.map(n => Object.assign({}, n, { est:0, sostHasta:0 }));
+  /* est: 0 esperando · 1 sostenida · 2 juzgada */
+  J.idxFondo = 0;
+  J.combo = 0; J.mejorCombo = 0; J.puntos = 0; J.energia = 100;
+  J.cuenta = { perfecto:0, bien:0, casi:0, fallo:0 };
+  J.sost = [null,null,null]; J.aviso = null; J.sacude = 0; J.part = []; J.pulso = 0;
+  J.t0 = A.ctx.currentTime + PREPARA;
+  J.activo = true; J.pausa = false;
+  return true;
+}
+
+/* Programador con vista adelantada. Se llama seguido y agenda lo que caiga en
+   la ventana; el navegador se encarga de que suene EXACTO en su segundo. */
+function agendarFondo(){
+  if(!J.activo || J.pausa || !A.listo) return;
+  const hasta = A.ctx.currentTime + 0.28;
+  const f = J.arm.fondo;
+  while(J.idxFondo < f.length){
+    const ev = f[J.idxFondo];
+    const t = J.t0 + ev.p * J.pasoDur;
+    if(t > hasta) break;
+    const tt = Math.max(t, A.ctx.currentTime);
+    if(ev.k === 'bombo')    bombo(tt, 1);
+    else if(ev.k === 'tarola')   tarola(tt, 1);
+    else if(ev.k === 'charol')   charol(tt, false, 1);
+    else if(ev.k === 'charolAb') charol(tt, true, 1);
+    else if(ev.k === 'bajo')     bajo(tt, ev.n, ev.d * J.pasoDur, 1);
+    else if(ev.k === 'colchon')  colchon(tt, ev.ns, ev.d * J.pasoDur);
+    J.idxFondo++;
+  }
+}
+
+function avisar(txt, col){
+  J.aviso = { txt:txt, col:col, t:0 };
+}
+
+function soltarParticulas(n, x, y, col){
+  if(menosMov()) return;
+  const est = buscaCos('estela', G.estela);
+  for(let i=0;i<n;i++){
+    J.part.push({
+      x:x, y:y,
+      vx:(Math.random()-0.5)*160, vy:-Math.random()*150 - 30,
+      v:1, g:Math.random()*Math.PI*2, gv:(Math.random()-0.5)*6,
+      col: col || (est.col || '#FFC53D'),
+    });
+  }
+}
+
+/* El juicio. Busca la nota MÁS CERCANA de ese carril dentro de la ventana más
+   ancha; si no hay ninguna, el toque no castiga — sólo suena seco. Castigar
+   los toques de más convierte el juego en una trampa para quien va nervioso. */
+function tocar(carril){
+  if(!J.activo || J.pausa) return;
+  const p = pasoAhora();
+  let mejor = null, mejorD = 1e9;
+  for(const n of J.notas){
+    if(n.carril !== carril || n.est !== 0) continue;
+    const d = Math.abs((n.p - p) * J.pasoDur);
+    if(d < mejorD){ mejorD = d; mejor = n; }
+    if(n.p - p > 40) break;
+  }
+  if(!mejor || mejorD > V.casi){
+    if(A.listo) charol(A.ctx.currentTime, false, 0.45);
+    return;
+  }
+  let clase, pts;
+  if(mejorD <= V.perfecto){ clase='perfecto'; pts=300; }
+  else if(mejorD <= V.bien){ clase='bien'; pts=200; }
+  else { clase='casi'; pts=100; }
+
+  J.cuenta[clase]++;
+  J.combo++;
+  if(J.combo > J.mejorCombo) J.mejorCombo = J.combo;
+  const mult = Math.min(4, 1 + Math.floor(J.combo / 10) * 0.5);
+  J.puntos += Math.round(pts * mult);
+  J.energia = Math.min(100, J.energia + (clase === 'perfecto' ? 2 : clase === 'bien' ? 1 : 0));
+
+  /* ── Y aquí está el corazón: suena LA nota de la melodía. ── */
+  if(A.listo){
+    const vol = clase === 'perfecto' ? 1 : clase === 'bien' ? 0.85 : 0.6;
+    melodia(A.ctx.currentTime, mejor.n, Math.max(mejor.d * J.pasoDur, 0.12), vol, J.canc.timbre);
+  }
+
+  avisar(clase === 'perfecto' ? '¡PERFECTO!' : clase === 'bien' ? 'Bien' : 'Casi',
+         clase === 'perfecto' ? '#FFC53D' : clase === 'bien' ? '#3DFFC5' : '#9F95B4');
+  soltarParticulas(clase === 'perfecto' ? 12 : 6, 0, 0);
+  J.pulso = 1;
+
+  if(mejor.larga){
+    mejor.est = 1;
+    mejor.sostHasta = mejor.p + mejor.d;
+    J.sost[carril] = mejor;
+  } else {
+    mejor.est = 2;
+  }
+}
+
+function soltar(carril){
+  const n = J.sost[carril];
+  if(!n) return;
+  const p = pasoAhora();
+  /* Soltar antes de tiempo corta la nota, pero lo ya ganado no se quita: el
+     castigo es que se acaba el sonido, y eso se oye. */
+  if(p < n.sostHasta - 1.2){
+    J.combo = 0;
+    if(A.listo) fallo(A.ctx.currentTime);
+  }
+  n.est = 2;
+  J.sost[carril] = null;
+}
+
+function correrJuicioPerdidas(){
+  const p = pasoAhora();
+  for(const n of J.notas){
+    if(n.est === 2) continue;
+    if(n.est === 1){
+      if(p >= n.sostHasta){
+        n.est = 2;
+        const c = J.sost[n.carril];
+        if(c === n) J.sost[n.carril] = null;
+        J.puntos += 60;
+        soltarParticulas(6, 0, 0);
+      }
+      continue;
+    }
+    if((p - n.p) * J.pasoDur > V.casi){
+      n.est = 2;
+      J.cuenta.fallo++;
+      J.combo = 0;
+      J.energia = Math.max(0, J.energia - 7);
+      J.sacude = 1;
+      if(A.listo) fallo(A.ctx.currentTime);
+      avisar('—', '#FF5B6E');
+    }
+    if(n.p - p > 60) break;
+  }
+}
+
+function menosMov(){
+  return window.matchMedia &&
+         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+</script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   7 · DIBUJO
+   ═════════════════════════════════════════════════════════════════════════ */
+const lienzo = document.getElementById('lienzo');
+const X = lienzo.getContext('2d');
+let AN = 0, AL = 0, DPR = 1;
+
+function medir(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  AN = window.innerWidth; AL = window.innerHeight;
+  lienzo.width = Math.round(AN * DPR);
+  lienzo.height = Math.round(AL * DPR);
+  lienzo.style.width = AN + 'px';
+  lienzo.style.height = AL + 'px';
+  X.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', medir);
+medir();
+
+/* La paloma, con lo que traiga puesto. `x` es CUALQUIER contexto: el del juego,
+   el del menú o el de una tarjeta de la tienda. Por eso los cosméticos se
+   dibujan en coordenadas del viewBox y se escalan aquí. */
+function dibujaPaloma(x, cx, cy, alto, opc){
+  const o = opc || {};
+  const esc = alto / AVE_VB.h;
+  const anchoReal = AVE_VB.w * esc;
+  x.save();
+  x.translate(cx - anchoReal/2, cy - alto/2);
+  x.scale(esc, esc);
+  if(o.voltea){ x.translate(AVE_VB.w, 0); x.scale(-1, 1); }
+
+  const plum = buscaCos('plumaje', o.plumaje || G.plumaje);
+  x.fillStyle = plum.pinta(x, AVE_VB.w, AVE_VB.h);
+  x.fill(AVE_CUERPO);
+  /* El segundo trazo es la ESTRELLA DEL PECHO, no un ojo, y en el SVG de la
+     marca va en hueso. La estaba pintando oscura y se veía un agujero. */
+  x.fillStyle = o.estrella || '#EAE5E3';
+  x.fill(AVE_OJO);
+
+  const som = buscaCos('sombrero', o.sombrero || G.sombrero);
+  if(som.dib) som.dib(x);
+  x.restore();
+}
+
+/* Ciudad de fondo. Formas propias y baratas: no hay imagen que cargar y se
+   adapta a cualquier pantalla sin recortarse. */
+function fondoCiudad(t){
+  const g = X.createLinearGradient(0, 0, 0, AL);
+  g.addColorStop(0, '#160D22');
+  g.addColorStop(.55, '#100A18');
+  g.addColorStop(1, '#0B0712');
+  X.fillStyle = g; X.fillRect(0, 0, AN, AL);
+
+  /* resplandor que late con la música */
+  const lat = menosMov() ? 0.5 : (0.5 + J.pulso * 0.5);
+  const rg = X.createRadialGradient(AN/2, AL*0.34, 10, AN/2, AL*0.34, AL*0.62);
+  rg.addColorStop(0, 'rgba(172,39,255,' + (0.16 * lat).toFixed(3) + ')');
+  rg.addColorStop(1, 'rgba(172,39,255,0)');
+  X.fillStyle = rg; X.fillRect(0, 0, AN, AL);
+
+  /* azoteas */
+  X.fillStyle = '#080510';
+  const base = AL * 0.9, u = Math.max(28, AN / 14);
+  for(let i = -1; i * u < AN + u; i++){
+    const h = 26 + ((i * 7919) % 11) * 7;
+    X.fillRect(i * u, base - h, u - 3, h + 40);
+  }
+  /* ventanas encendidas, quietas: parpadear las 40 marea y no aporta */
+  X.fillStyle = 'rgba(255,197,61,.5)';
+  for(let i = -1; i * u < AN + u; i++){
+    const h = 26 + ((i * 7919) % 11) * 7;
+    for(let k = 0; k < 3; k++){
+      if(((i * 31 + k * 17) % 5) < 2){
+        X.fillRect(i * u + 6 + k * 9, base - h + 8 + ((i + k) % 3) * 11, 5, 6);
+      }
+    }
+  }
+  /* el cable */
+  X.strokeStyle = 'rgba(233,228,228,.13)'; X.lineWidth = 2;
+  X.beginPath();
+  X.moveTo(0, AL * 0.86);
+  X.quadraticCurveTo(AN / 2, AL * 0.895, AN, AL * 0.86);
+  X.stroke();
+}
+
+/* Geometría de la pista: se calcula cada cuadro porque el teléfono gira. */
+function pista(){
+  const ancho = Math.min(AN * 0.92, 430);
+  const x0 = (AN - ancho) / 2;
+  const w = ancho / CARRILES;
+  const linea = AL * 0.80;
+  /* ⚠ La pista arrancaba en y=0 y las notas subían POR DETRÁS DE LA PALOMA:
+     se colaban por los huecos entre las alas y parecía que traía puesto algo.
+     El techo va debajo del ave. */
+  const tope = AL * 0.24;
+  return { x0:x0, w:w, ancho:ancho, linea:linea, tope:tope, alto:AL };
+}
+
+const COLC = ['#FF3D9E', '#AC27FF', '#3DFFC5'];
+let tocando = [false, false, false];
+
+function pintarJuego(dt){
+  const P = pista();
+  const p = pasoAhora();
+
+  X.save();
+  if(J.sacude > 0 && !menosMov()){
+    X.translate((Math.random()-0.5) * 9 * J.sacude, (Math.random()-0.5) * 9 * J.sacude);
+  }
+
+  fondoCiudad();
+  /* Velo: la ciudad se veía DETRÁS de los aros de juicio, con las ventanas
+     amarillas justo en la zona que más hay que mirar. Se deja de fondo pero
+     apagada — quitarla del todo dejaba la pantalla vacía. */
+  X.fillStyle = 'rgba(16,10,24,.62)';
+  X.fillRect(0, 0, AN, AL);
+
+  /* carriles */
+  for(let c = 0; c < CARRILES; c++){
+    const x = P.x0 + c * P.w;
+    X.fillStyle = tocando[c] ? 'rgba(255,255,255,.075)' : 'rgba(255,255,255,.028)';
+    X.fillRect(x, P.tope, P.w - 2, P.linea - P.tope + 40);
+    X.fillStyle = 'rgba(255,255,255,.06)';
+    X.fillRect(x + P.w - 2, P.tope, 2, P.linea - P.tope + 40);
+  }
+
+  /* línea de juicio */
+  X.fillStyle = 'rgba(233,228,228,.30)';
+  X.fillRect(P.x0, P.linea - 2, P.ancho, 4);
+  for(let c = 0; c < CARRILES; c++){
+    const x = P.x0 + c * P.w + P.w / 2;
+    X.strokeStyle = COLC[c];
+    X.globalAlpha = tocando[c] ? 0.95 : 0.42;
+    X.lineWidth = tocando[c] ? 4 : 2.5;
+    X.beginPath(); X.arc(x, P.linea, P.w * 0.30, 0, Math.PI * 2); X.stroke();
+    X.globalAlpha = 1;
+  }
+
+  /* las notas */
+  const mirapasos = MIRA_SEG / J.pasoDur;
+  for(const n of J.notas){
+    if(n.est === 2) continue;
+    const rel = (n.p - p) / mirapasos;          /* 1 = arriba · 0 = línea */
+    if(rel > 1.06) { if(n.p - p > mirapasos * 1.3) break; continue; }
+    const y = P.linea - rel * (P.linea - P.tope);
+    const cx = P.x0 + n.carril * P.w + P.w / 2;
+    const r = P.w * 0.27;
+
+    if(n.larga){
+      const yFin = P.linea - ((n.p + n.d - p) / mirapasos) * (P.linea - P.tope);
+      X.strokeStyle = COLC[n.carril];
+      X.globalAlpha = n.est === 1 ? 0.95 : 0.5;
+      X.lineWidth = r * 1.15; X.lineCap = 'round';
+      X.beginPath();
+      X.moveTo(cx, Math.min(y, P.linea));
+      X.lineTo(cx, Math.max(yFin, P.tope - 10));
+      X.stroke();
+      X.globalAlpha = 1;
+    }
+    if(n.est === 1 && y >= P.linea - 2) continue;   /* la cabeza ya se tocó */
+
+    X.fillStyle = COLC[n.carril];
+    X.beginPath(); X.arc(cx, y, r, 0, Math.PI * 2); X.fill();
+    X.fillStyle = 'rgba(255,255,255,.75)';
+    X.beginPath(); X.arc(cx, y, r * 0.42, 0, Math.PI * 2); X.fill();
+  }
+
+  /* la paloma, volando arriba de la pista */
+  const flot = menosMov() ? 0 : Math.sin(A.listo ? A.ctx.currentTime * 3.4 : 0) * 7;
+  const palY = AL * 0.135 + flot;
+  const palX = AN * 0.5;
+  const palH = Math.min(AL * 0.12, 96) * (1 + (menosMov() ? 0 : J.pulso * 0.09));
+  dibujaPaloma(X, palX, palY, palH, {});
+
+  /* estela: sale de atrás de la paloma */
+  const est = buscaCos('estela', G.estela);
+  if(est.dib){
+    if(!menosMov() && J.activo && Math.random() < 0.35){
+      J.part.push({ x:palX - palH * 0.7, y:palY + 6,
+        vx:-40 - Math.random()*50, vy:(Math.random()-0.5)*40,
+        v:1, g:Math.random()*6.3, gv:(Math.random()-0.5)*4, col:est.col });
+    }
+    for(const q of J.part){
+      X.save(); X.translate(q.x, q.y);
+      est.dib(X, q);
+      X.restore(); X.globalAlpha = 1;
+    }
+  }
+
+  /* aviso de juicio */
+  if(J.aviso && J.aviso.t < 0.7){
+    const a = 1 - J.aviso.t / 0.7;
+    X.globalAlpha = a;
+    X.fillStyle = J.aviso.col;
+    X.font = '800 ' + Math.round(Math.min(AN * 0.075, 32)) + 'px ui-rounded,system-ui,sans-serif';
+    X.textAlign = 'center';
+    X.fillText(J.aviso.txt, AN / 2, P.linea - 62 - (1 - a) * 22);
+    X.globalAlpha = 1;
+  }
+  /* combo */
+  if(J.combo >= 5){
+    X.fillStyle = 'rgba(255,197,61,.92)';
+    X.font = '800 ' + Math.round(Math.min(AN * 0.055, 24)) + 'px ui-rounded,system-ui,sans-serif';
+    X.textAlign = 'center';
+    X.fillText(J.combo + ' seguidas', AN / 2, P.linea - 24);
+  }
+  X.restore();
+}
+
+/* La paloma sola, para el menú y la tienda. Recibe su propio contexto. */
+function pintaRetrato(cv, opc){
+  const x = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  x.clearRect(0, 0, w, h);
+  dibujaPaloma(x, w / 2, h / 2, h * 0.78, opc || {});
+}
+</script>
+
+<script>
+'use strict';
+/* ═══════════════════════════════════════════════════════════════════════════
+   8 · PANTALLAS, CONTROLES Y BUCLE
+   ═════════════════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const PANTS = ['pantMenu','pantComo','pantHist','pantLista','pantTienda','pantFin','pantPausa'];
+let pantalla = 'pantMenu';
+
+function ver(id){
+  pantalla = id;
+  PANTS.forEach(p => $(p).classList.toggle('va', p === id));
+  $('hud').classList.toggle('va', id === null);
+  $('plumas').classList.toggle('va', id === 'pantMenu' || id === 'pantLista' || id === 'pantTienda');
+  $('plumasN').textContent = G.plumas;
+  if(id === 'pantMenu') pintaRetrato($('palomaMenu'), {});
+}
+function verJuego(){
+  pantalla = null;
+  PANTS.forEach(p => $(p).classList.remove('va'));
+  $('hud').classList.add('va');
+  $('plumas').classList.remove('va');
+}
+
+/* ── Historia ───────────────────────────────────────────────────────────── */
+let histCap = 0, histLinea = 0, histTrasFin = false;
+
+function verHistoria(cap, trasFin){
+  histCap = cap; histLinea = 0; histTrasFin = !!trasFin;
+  pintaRetrato($('palomaHist'), {});
+  pintarHist();
+  ver('pantHist');
+}
+function pintarHist(){
+  const h = histTrasFin ? EPILOGO : HISTORIA[histCap];
+  $('histActo').textContent = h.acto;
+  $('histTxt').textContent = h.txt[histLinea];
+  $('bHistSig').textContent = (histLinea >= h.txt.length - 1) ? 'Empezar' : 'Seguir';
+  if(histTrasFin && histLinea >= h.txt.length - 1) $('bHistSig').textContent = 'Volver al palomar';
+  if(A.listo) tin(560 + histLinea * 40, 0.07);
+}
+$('bHistSig').onclick = () => {
+  const h = histTrasFin ? EPILOGO : HISTORIA[histCap];
+  if(histLinea < h.txt.length - 1){ histLinea++; pintarHist(); return; }
+  if(histTrasFin){ ver('pantMenu'); return; }
+  lanzar(CANCIONES[histCap]);
+};
+$('bHistSalta').onclick = () => {
+  if(histTrasFin){ ver('pantMenu'); return; }
+  lanzar(CANCIONES[histCap]);
+};
+
+/* ── Lista de canciones ─────────────────────────────────────────────────── */
+function tarjetaCanc(c, i, bloqueada){
+  const b = document.createElement('button');
+  b.className = 'canc' + (bloqueada ? ' bloq' : '');
+  const mej = G.mejores[c.id];
+  b.innerHTML = '<span class="num"></span>' +
+    '<span class="info"><b></b><small></small></span><span class="mejor"></span>';
+  b.querySelector('.num').textContent = c.autor ? '♪' : (i + 1);
+  b.querySelector('b').textContent = bloqueada ? 'Todavía no' : c.nombre;
+  b.querySelector('small').textContent = bloqueada
+    ? 'Se abre al pasar la anterior' : (c.autor ? c.autor + ' · ' + c.sub : c.sub);
+  b.querySelector('.mejor').textContent = mej ? (mej.letra + ' · ' + mej.puntos) : '';
+  if(!bloqueada) b.onclick = () => { audioArranca(); lanzar(c); };
+  return b;
+}
+
+function rotulo(txt){
+  const d = document.createElement('div');
+  d.className = 'acto';
+  d.style.cssText = 'margin:6px 0 2px';
+  d.textContent = txt;
+  return d;
+}
+
+function pintarLista(){
+  const cont = $('listaCanc');
+  cont.innerHTML = '';
+  /* Las piezas de verdad NO se bloquean: son el modo suelto, como en Piano
+     Tiles. La historia es lo que se desbloquea, porque ahí sí hay un orden
+     que contar. */
+  cont.appendChild(rotulo('Piano · piezas de verdad'));
+  PIEZAS.forEach((c, i) => cont.appendChild(tarjetaCanc(c, i, false)));
+  cont.appendChild(rotulo('La historia de Mazi'));
+  CANCIONES.forEach((c, i) => cont.appendChild(tarjetaCanc(c, i, i > G.hasta)));
+}
+
+function pintarListaVieja(){
+  const cont = $('listaCanc');
+  cont.innerHTML = '';
+  CANCIONES.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'canc' + (i > G.hasta ? ' bloq' : '');
+    const mej = G.mejores[c.id];
+    b.innerHTML =
+      '<span class="num">' + (i + 1) + '</span>' +
+      '<span class="info"><b></b><small></small></span>' +
+      '<span class="mejor"></span>';
+    b.querySelector('b').textContent = i > G.hasta ? 'Todavía no' : c.nombre;
+    b.querySelector('small').textContent = i > G.hasta
+      ? 'Se abre al pasar la anterior' : c.sub;
+    b.querySelector('.mejor').textContent = mej ? (mej.letra + ' · ' + mej.puntos) : '';
+    if(i <= G.hasta) b.onclick = () => { audioArranca(); lanzar(c); };
+    cont.appendChild(b);
+  });
+}
+
+/* ── Tienda ─────────────────────────────────────────────────────────────── */
+let catSel = 'plumaje';
+
+function pintarTienda(){
+  $('plumasN').textContent = G.plumas;
+  pintaRetrato($('palomaTienda'), {});
+  const tabs = $('tiendaTabs');
+  tabs.innerHTML = '';
+  CATEGORIAS.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (cat.id === catSel ? ' sel' : '');
+    b.textContent = cat.nom;
+    b.onclick = () => { catSel = cat.id; pintarTienda(); };
+    tabs.appendChild(b);
+  });
+
+  const rej = $('tiendaRejilla');
+  rej.innerHTML = '';
+  const cat = CATEGORIAS.find(c => c.id === catSel);
+  cat.lista.forEach(it => {
+    const mio = tengo(catSel, it.id);
+    const puesto = puestoDe(catSel) === it.id;
+    const alcanza = G.plumas >= it.precio;
+    const b = document.createElement('button');
+    b.className = 'art' + (puesto ? ' puesto' : '') + (mio ? '' : ' bloq');
+    const cv = document.createElement('canvas');
+    cv.width = 148; cv.height = 120;
+    b.appendChild(cv);
+    const nom = document.createElement('b');
+    nom.textContent = it.nom;
+    b.appendChild(nom);
+    const et = document.createElement('span');
+    if(puesto){ et.className = 'tengo'; et.textContent = 'Puesto'; }
+    else if(mio){ et.className = 'tengo'; et.textContent = 'Ponérselo'; }
+    else { et.className = 'precio' + (alcanza ? '' : ' caro'); et.textContent = '🪶 ' + it.precio; }
+    b.appendChild(et);
+
+    /* La vista previa enseña el artículo puesto SOBRE lo que ya traes, no
+       sobre una paloma genérica: si no, compras a ciegas. */
+    const opc = {};
+    opc[catSel] = it.id;
+    if(catSel === 'estela'){
+      pintaRetrato(cv, {});
+      const xx = cv.getContext('2d');
+      if(it.dib){
+        for(let i=0;i<9;i++){
+          xx.save();
+          xx.translate(16 + i * 5.5, 30 + Math.sin(i) * 16);
+          it.dib(xx, { v: 1 - i * 0.08, g: i });
+          xx.restore(); xx.globalAlpha = 1;
+        }
+      }
+    } else {
+      pintaRetrato(cv, opc);
+    }
+
+    b.onclick = () => {
+      audioArranca();
+      if(mio){
+        G[catSel] = it.id; guardar(); tin(720, .1); pintarTienda();
+      } else if(alcanza){
+        G.plumas -= it.precio;
+        G.tengo[catSel] = (G.tengo[catSel] || []).concat([it.id]);
+        G[catSel] = it.id; guardar();
+        tin(880, .13); setTimeout(() => tin(1170, .12), 90);
+        pintarTienda();
+      } else {
+        $('tiendaPista').textContent = 'Te faltan ' + (it.precio - G.plumas) +
+          ' plumas. Se ganan tocando — y con la barra llena caen más.';
+        tin(190, .1);
+      }
+    };
+    rej.appendChild(b);
+  });
+}
+
+/* ── Lanzar y terminar ──────────────────────────────────────────────────── */
+function lanzar(c){
+  if(!empezarCancion(c)){
+    /* Si el audio no arrancó no se entra a una pista muda: se dice por qué. */
+    $('tiendaPista').textContent = 'Este navegador no dejó abrir el audio.';
+    ver('pantMenu'); return;
+  }
+  verJuego();
+  $('cancionNom').textContent = c.nombre;
+  $('marcador').textContent = '0';
+  $('energia').style.width = '100%';
+}
+
+function letraDe(prec){
+  if(prec >= .97) return 'S';
+  if(prec >= .92) return 'A';
+  if(prec >= .82) return 'B';
+  if(prec >= .70) return 'C';
+  if(prec >= .55) return 'D';
+  return 'E';
+}
+
+function terminar(cayo){
+  J.activo = false;
+  const c = J.canc;
+  const tot = J.cuenta.perfecto + J.cuenta.bien + J.cuenta.casi + J.cuenta.fallo;
+  const acertadas = J.cuenta.perfecto + J.cuenta.bien + J.cuenta.casi;
+  const prec = tot ? (J.cuenta.perfecto + J.cuenta.bien * 0.75 + J.cuenta.casi * 0.4) / tot : 0;
+  const letra = cayo ? 'F' : letraDe(prec);
+
+  /* Las plumas premian tocar BIEN, no tocar mucho: si no, la mejor estrategia
+     sería repetir la fácil mil veces. */
+  const ganadas = cayo ? Math.round(J.puntos / 260)
+                       : Math.round(J.puntos / 130 + prec * 45 + J.mejorCombo * 0.6);
+  G.plumas += Math.max(0, ganadas);
+
+  const idx = CANCIONES.indexOf(c);
+  if(!cayo && idx >= 0){
+    const ant = G.mejores[c.id];
+    if(!ant || J.puntos > ant.puntos) G.mejores[c.id] = { puntos:J.puntos, letra:letra };
+    if(idx >= G.hasta) G.hasta = Math.min(CANCIONES.length - 1, idx + 1);
+    if(idx > G.vistoHist) G.vistoHist = idx;
+  }
+  guardar();
+
+  $('finTitulo').textContent = cayo ? 'Se te cayó la paloma' : c.nombre;
+  $('finLetra').textContent = letra;
+  $('finLetra').style.color = cayo ? '#FF5B6E'
+    : (letra === 'S' ? 'var(--oro)' : letra === 'A' ? 'var(--menta)' : 'var(--hueso)');
+  $('finTabla').innerHTML = '';
+  const filas = [
+    ['Puntos', J.puntos],
+    ['Perfectas', J.cuenta.perfecto],
+    ['Bien', J.cuenta.bien],
+    ['Casi', J.cuenta.casi],
+    ['Perdidas', J.cuenta.fallo],
+    ['Racha', J.mejorCombo],
+    ['Precisión', Math.round(prec * 100) + '%'],
+  ];
+  for(const [k, v] of filas){
+    const a = document.createElement('span'); a.textContent = k;
+    const b = document.createElement('span'); b.textContent = v;
+    $('finTabla').appendChild(a); $('finTabla').appendChild(b);
+  }
+  $('finPlumas').textContent = '+' + Math.max(0, ganadas) + ' plumas 🪶';
+
+  const ultima = idx === CANCIONES.length - 1;
+  $('bFinSeguir').textContent = cayo ? 'Volver al repertorio'
+    : (ultima ? 'Ver cómo acaba' : 'Siguiente');
+  $('bFinSeguir').onclick = () => {
+    if(cayo){ pintarLista(); ver('pantLista'); return; }
+    if(ultima){ verHistoria(0, true); return; }
+    verHistoria(Math.min(idx + 1, HISTORIA.length - 1), false);
+  };
+  $('bFinOtra').onclick = () => lanzar(c);
+  ver('pantFin');
+  if(A.listo && !cayo){
+    const t = A.ctx.currentTime;
+    [0,.11,.22,.4].forEach((d,i) => melodia(t+d, [65,69,72,77][i], .5, .9, 'suave'));
+  }
+}
+
+/* ── Controles ──────────────────────────────────────────────────────────── */
+function carrilDeX(x){
+  const P = pista();
+  if(x < P.x0) return 0;
+  if(x > P.x0 + P.ancho) return CARRILES - 1;
+  return Math.min(CARRILES - 1, Math.floor((x - P.x0) / P.w));
+}
+const dedos = new Map();
+
+lienzo.addEventListener('pointerdown', e => {
+  if(pantalla !== null) return;
+  e.preventDefault();
+  audioArranca();
+  const c = carrilDeX(e.clientX);
+  dedos.set(e.pointerId, c);
+  tocando[c] = true;
+  tocar(c);
+}, { passive:false });
+
+function levanta(e){
+  if(!dedos.has(e.pointerId)) return;
+  const c = dedos.get(e.pointerId);
+  dedos.delete(e.pointerId);
+  if(![...dedos.values()].includes(c)){ tocando[c] = false; soltar(c); }
+}
+lienzo.addEventListener('pointerup', levanta);
+lienzo.addEventListener('pointercancel', levanta);
+
+const TECLAS = { KeyA:0, KeyS:1, KeyD:2, ArrowLeft:0, ArrowDown:1, ArrowRight:2,
+                 Digit1:0, Digit2:1, Digit3:2 };
+addEventListener('keydown', e => {
+  if(e.code === 'Space'){ e.preventDefault(); if(pantalla === null) pausar(); return; }
+  const c = TECLAS[e.code];
+  if(c === undefined || e.repeat || pantalla !== null) return;
+  e.preventDefault(); audioArranca(); tocando[c] = true; tocar(c);
+});
+addEventListener('keyup', e => {
+  const c = TECLAS[e.code];
+  if(c === undefined) return;
+  tocando[c] = false; soltar(c);
+});
+
+/* ── Pausa ──────────────────────────────────────────────────────────────── */
+function pausar(){
+  if(!J.activo || J.pausa) return;
+  J.pausa = true;
+  if(A.ctx) A.ctx.suspend();
+  ver('pantPausa');
+}
+$('pausar').onclick = pausar;
+$('bSeguirJugando').onclick = () => {
+  /* Al reanudar, el reloj de audio se quedó QUIETO mientras estaba suspendido,
+     así que `t0` sigue siendo válido y la canción retoma en su lugar. Ésta es
+     la ventaja de que el reloj sea el del audio y no el de la página: con
+     `performance.now()` habría que compensar la pausa a mano, y ahí es donde
+     se desincroniza. */
+  J.pausa = false;
+  verJuego();
+  if(A.ctx) A.ctx.resume();
+};
+$('bReiniciar').onclick = () => { J.pausa = false; if(A.ctx) A.ctx.resume(); lanzar(J.canc); };
+$('bSalir').onclick = () => {
+  J.pausa = false; J.activo = false;
+  if(A.ctx) A.ctx.resume();
+  pintarLista(); ver('pantLista');
+};
+
+/* ── Botones del menú ───────────────────────────────────────────────────── */
+$('bJugar').onclick = () => {
+  audioArranca();
+  pintarLista(); ver('pantLista');
+};
+/* Probar el sonido. Toca tres notas y DICE qué pasó, que es la parte que
+   importa: si el navegador no abrió el audio es una cosa, y si lo abrió y aun
+   así no se oye es el interruptor lateral del teléfono, que es otra y no la
+   arregla ninguna página. Sin esto, «no se escucha» es media tarde. */
+$('bProbar').onclick = () => {
+  audioArranca();
+  const d = $('dicAudio');
+  if(!A.ctx){ d.textContent = 'Este navegador no tiene Web Audio. Ahí sí no puedo hacer nada.'; return; }
+  d.textContent = 'Sonando… ¿lo oíste?';
+  const t0 = A.ctx.currentTime + 0.06;
+  [72, 76, 79].forEach((n, i) => melodia(t0 + i * 0.17, n, 0.4, 1, 'piano'));
+  setTimeout(() => {
+    if(A.ctx.state !== 'running'){
+      d.textContent = 'El navegador todavía no deja sonar (' + A.ctx.state +
+        '). Vuelve a tocar el botón.';
+    } else {
+      d.innerHTML = 'El juego SÍ está sonando. Si no lo oíste: sube el volumen, y '
+        + 'en iPhone <b>quita el interruptor de silencio</b> — con él puesto, Safari '
+        + 'calla los juegos aunque el volumen esté alto.';
+    }
+  }, 700);
+};
+
+$('bComo').onclick = () => ver('pantComo');
+$('bComoOk').onclick = () => ver('pantMenu');
+$('bTienda').onclick = () => { audioArranca(); pintarTienda(); ver('pantTienda'); };
+$('bListaTienda').onclick = () => { pintarTienda(); ver('pantTienda'); };
+$('bTiendaVolver').onclick = () => {
+  $('tiendaPista').textContent = 'Las plumas se ganan tocando. Entre mejor toques, más caen.';
+  ver('pantMenu');
+};
+$('bListaVolver').onclick = () => ver('pantMenu');
+
+/* Si la pestaña se va a segundo plano a media canción, se pausa sola. Sin
+   esto vuelves y la canción siguió sin ti. */
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden && J.activo && !J.pausa) pausar();
+  /* Al volver, iOS deja el contexto suspendido aunque tú creas que sigue vivo. */
+  if(!document.hidden && A.ctx && A.ctx.state === 'suspended' && !J.pausa){
+    const pr = A.ctx.resume(); if(pr && pr.catch) pr.catch(() => {});
+  }
+});
+
+/* ── El bucle ───────────────────────────────────────────────────────────── */
+let anterior = 0;
+function cuadro(ms){
+  requestAnimationFrame(cuadro);
+  const dt = Math.min((ms - anterior) / 1000, 0.05);
+  anterior = ms;
+
+  if(J.activo && !J.pausa){
+    agendarFondo();
+    correrJuicioPerdidas();
+
+    if(J.aviso) J.aviso.t += dt;
+    J.sacude = Math.max(0, J.sacude - dt * 4);
+    J.pulso  = Math.max(0, J.pulso - dt * 3.4);
+    for(let i = J.part.length - 1; i >= 0; i--){
+      const q = J.part[i];
+      q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 210 * dt;
+      q.g += q.gv * dt; q.v -= dt * 1.15;
+      if(q.v <= 0) J.part.splice(i, 1);
+    }
+
+    $('marcador').textContent = J.puntos;
+    $('energia').style.width = J.energia + '%';
+
+    if(J.energia <= 0){ terminar(true); }
+    else if(pasoAhora() > J.arm.pasos + 8){ terminar(false); }
+  }
+
+  if(pantalla === null) pintarJuego(dt);
+  else if(!J.activo){ fondoCiudad(); }
+}
+
+/* ── Arranque ───────────────────────────────────────────────────────────── */
+cargar();
+ver('pantMenu');
+requestAnimationFrame(cuadro);
+/* Se expone lo justo para que las pruebas puedan JUGAR el juego, no sólo
+   leerlo: `pasoAhora` y `tocar` son lo que le hace falta a un robot para
+   tocar en el instante exacto. Un juego de ritmo que sólo se prueba por
+   fuera no está probado — lo único que importa es si el juicio cae donde
+   debe, y eso sólo se ve tocando. */
+window.PALOMAZO = { J, G, CANCIONES, PIEZAS, armarCancion, ver, lanzar, CATEGORIAS,
+                    pasoAhora, tocar, soltar, terminar, A, pista, guardar };
+</script>
+</body>
+</html>

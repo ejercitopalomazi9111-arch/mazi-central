@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0B0712">
+<title>CRISOL — el sandbox de reacciones</title>
+<meta name="description" content="Sandbox de píxeles con química, termodinámica y electricidad de verdad. 48 elementos, reacciones reales, circuitos y compuertas lógicas.">
+<style>
+:root{
+  --vacio:#0B0712; --sup:#1A1424; --sup2:#241B32; --violeta:#AC27FF;
+  --hueso:#E9E4E4; --oro:#FFC53D; --menta:#3DFFC5;
+  --ab:env(safe-area-inset-bottom,0px); --ar:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  background:var(--vacio);color:var(--hueso);
+  font:14px/1.4 ui-rounded,-apple-system,"Segoe UI",system-ui,sans-serif;
+  user-select:none;-webkit-user-select:none;
+  display:flex;flex-direction:column;
+  padding-top:var(--ar);padding-bottom:var(--ab);
+}
+
+/* ── barra de arriba ───────────────────────────────────────────────────── */
+#barra{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:var(--sup);flex:0 0 auto;
+}
+#barra b{font-size:15px;letter-spacing:.06em}
+#datos{margin-left:auto;font-size:11.5px;color:#9C93AB;text-align:right;line-height:1.3}
+.icono{
+  border:0;background:var(--sup2);color:var(--hueso);border-radius:11px;
+  width:44px;height:44px;font-size:17px;cursor:pointer;flex:0 0 auto;
+}
+.icono.on{background:var(--violeta);color:#fff}
+.icono:focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+
+/* ── el mundo ──────────────────────────────────────────────────────────── */
+#zona{flex:1 1 auto;position:relative;min-height:0;background:#07040D}
+#mundo{
+  position:absolute;inset:0;width:100%;height:100%;
+  image-rendering:pixelated;touch-action:none;display:block;
+}
+
+/* ── panel de abajo ────────────────────────────────────────────────────── */
+#panel{flex:0 0 auto;background:var(--sup);max-height:44vh;display:flex;flex-direction:column}
+#pestanas{display:flex;gap:4px;padding:6px 8px 0;overflow-x:auto}
+.pes{
+  border:0;background:transparent;color:#9C93AB;font:inherit;font-weight:700;
+  font-size:12.5px;padding:0 13px;height:44px;border-radius:9px;cursor:pointer;
+  white-space:nowrap;flex:0 0 auto;
+}
+.pes.sel{background:var(--sup2);color:var(--hueso)}
+.pes:focus-visible{outline:3px solid var(--oro);outline-offset:-2px}
+
+#lista{overflow-y:auto;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.el{
+  display:flex;align-items:center;gap:7px;border:0;cursor:pointer;font:inherit;
+  background:var(--sup2);color:var(--hueso);border-radius:11px;
+  padding:0 11px 0 8px;height:44px;font-size:12.5px;font-weight:600;
+}
+.el i{width:17px;height:17px;border-radius:5px;display:block;flex:0 0 auto;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.el.sel{box-shadow:inset 0 0 0 2px var(--menta)}
+.el:focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+.el.nuevo::after{content:'nuevo';font-size:9.5px;color:var(--oro);font-weight:800}
+
+#herr{display:flex;gap:6px;padding:0 8px 8px;align-items:center;flex-wrap:wrap}
+#herr label{font-size:11.5px;color:#9C93AB}
+input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);height:34px}
+
+.aviso{
+  position:absolute;left:50%;transform:translateX(-50%);
+  bottom:12px;background:rgba(26,20,36,.95);padding:9px 15px;border-radius:11px;
+  font-size:13px;box-shadow:inset 0 0 0 1px rgba(255,197,61,.35);
+  pointer-events:none;opacity:0;transition:opacity .25s ease;max-width:88%;
+  text-align:center;
+}
+.aviso.va{opacity:1}
+@media (prefers-reduced-motion: reduce){ .aviso{transition:none} }
+</style>
+
+<body>
+<div id="barra">
+  <b>CRISOL</b>
+  <button class="icono" id="bPausa" aria-label="Pausar">❚❚</button>
+  <button class="icono" id="bBorra" aria-label="Vaciar">🗑</button>
+  <div id="datos"></div>
+</div>
+
+<div id="zona">
+  <canvas id="mundo"></canvas>
+  <div class="aviso" id="aviso"></div>
+</div>
+
+<div id="panel">
+  <div id="pestanas"></div>
+  <div id="lista"></div>
+  <div id="herr">
+    <label>Pincel <span id="tamN">4</span></label>
+    <input type="range" id="tam" min="1" max="14" value="4">
+    <button class="icono" id="bCalor" aria-label="Calentar" title="Calentar">🔥</button>
+    <button class="icono" id="bFrio" aria-label="Enfriar" title="Enfriar">❄️</button>
+  </div>
+</div>
+
+<script type="module">
+import { Mundo, IDS, IDX, EL, VACIO, AMBIENTE } from './motor.js';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA PANTALLA
+   ⚠ El motor tiene sus 26 pruebas en verde, y eso NO garantiza que esto
+   funcione: en Guerra de Puercos las 74 del motor pasaban con el modo a
+   distancia muerto. Esta parte se prueba con un navegador de verdad.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+const cv = document.getElementById('mundo');
+const ctx = cv.getContext('2d', { alpha:false });
+const $ = id => document.getElementById(id);
+
+const ESC = 4;                    /* píxeles de pantalla por celda */
+let M, img, datos, an, al;
+
+function medir(){
+  const z = document.getElementById('zona').getBoundingClientRect();
+  an = Math.max(60, Math.floor(z.width / ESC));
+  al = Math.max(60, Math.floor(z.height / ESC));
+  cv.width = an; cv.height = al;
+  const nuevo = new Mundo(an, al);
+  if(M){
+    /* al girar el teléfono no se tira lo que llevas hecho */
+    const w = Math.min(M.an, an), h = Math.min(M.al, al);
+    for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){
+      const k = M.i(x, y), k2 = nuevo.i(x, y);
+      nuevo.t[k2] = M.t[k]; nuevo.temp[k2] = M.temp[k]; nuevo.car[k2] = M.car[k];
+    }
+    nuevo.nacidos = M.nacidos;
+  }
+  M = nuevo;
+  img = ctx.createImageData(an, al);
+  datos = img.data;
+  for(let i = 3; i < datos.length; i += 4) datos[i] = 255;
+}
+
+/* colores precalculados: convertir '#RRGGBB' 30 000 veces por cuadro es
+   exactamente como se pierden los fotogramas en un teléfono */
+const RGB = EL.map(e => {
+  const h = e.col.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+});
+/* ruido fijo por celda, para que la arena no se vea como una mancha plana */
+let RUIDO = null;
+
+function pinta(){
+  const { t, temp, car } = M;
+  if(!RUIDO || RUIDO.length !== t.length){
+    RUIDO = new Int8Array(t.length);
+    for(let i = 0; i < RUIDO.length; i++) RUIDO[i] = ((Math.random()*22)|0) - 11;
+  }
+  for(let k = 0; k < t.length; k++){
+    const tipo = t[k];
+    const c = RGB[tipo];
+    let r = c[0], g = c[1], b = c[2];
+    if(tipo !== VACIO){
+      const n = RUIDO[k];
+      r += n; g += n; b += n;
+      /* lo caliente se ve caliente y lo helado se ve helado: el calor es
+         invisible si no se pinta, y entonces la termodinámica no existe
+         para quien juega */
+      const T = temp[k];
+      if(T > 120){ const f = Math.min(1, (T - 120) / 900); r += f*170; g += f*55; }
+      else if(T < 0){ const f = Math.min(1, -T / 60); b += f*70; g += f*30; }
+      if(car[k]){ r += 70; g += 90; b += 30; }
+    }
+    const p = k << 2;
+    datos[p]   = r < 0 ? 0 : r > 255 ? 255 : r;
+    datos[p+1] = g < 0 ? 0 : g > 255 ? 255 : g;
+    datos[p+2] = b < 0 ? 0 : b > 255 ? 255 : b;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/* ── la paleta y la mochila ─────────────────────────────────────────────── */
+const GRUPOS = [...new Set(EL.map(e => e.grupo).filter(Boolean))];
+let grupoSel = 'tierra', elSel = IDX.arena, tam = 4, modo = 'pintar';
+let pausado = false;
+
+const LLAVE = 'crisol.v1';
+let guardado = { mochila:{}, vistos:{} };
+try{ const s = localStorage.getItem(LLAVE); if(s) guardado = Object.assign(guardado, JSON.parse(s)); }catch(e){}
+const salva = () => { try{ localStorage.setItem(LLAVE, JSON.stringify(guardado)); }catch(e){} };
+
+function pestanas(){
+  const c = $('pestanas'); c.innerHTML = '';
+  const todos = ['mochila', ...GRUPOS];
+  for(const g of todos){
+    const b = document.createElement('button');
+    b.className = 'pes' + (g === grupoSel ? ' sel' : '');
+    const n = g === 'mochila' ? Object.keys(guardado.mochila).length : 0;
+    b.textContent = g === 'mochila' ? ('🎒 Mochila' + (n ? ' ' + n : '')) : g;
+    b.onclick = () => { grupoSel = g; pestanas(); paleta(); };
+    c.appendChild(b);
+  }
+}
+
+function paleta(){
+  const c = $('lista'); c.innerHTML = '';
+  let lista;
+  if(grupoSel === 'mochila'){
+    lista = Object.keys(guardado.mochila).map(id => EL[IDX[id]]).filter(Boolean);
+    if(!lista.length){
+      const p = document.createElement('p');
+      p.style.cssText = 'color:#9C93AB;font-size:12.5px;margin:4px 8px;max-width:40ch';
+      p.textContent = 'Aquí se van guardando solas las cosas que LOGRES, no las que pintes. '
+        + 'Junta lava y agua y mira qué pasa.';
+      c.appendChild(p); return;
+    }
+  } else {
+    lista = EL.filter(e => e.grupo === grupoSel);
+  }
+  for(const e of lista){
+    const b = document.createElement('button');
+    const nuevo = guardado.mochila[e.id] === 1;
+    b.className = 'el' + (IDX[e.id] === elSel ? ' sel' : '') + (nuevo ? ' nuevo' : '');
+    const i = document.createElement('i'); i.style.background = e.col;
+    b.appendChild(i);
+    const s = document.createElement('span'); s.textContent = e.nom;
+    b.appendChild(s);
+    b.onclick = () => {
+      elSel = IDX[e.id]; modo = 'pintar';
+      if(nuevo){ guardado.mochila[e.id] = 2; salva(); }
+      $('bCalor').classList.remove('on'); $('bFrio').classList.remove('on');
+      paleta();
+    };
+    c.appendChild(b);
+  }
+}
+
+let avisoT = 0;
+function avisa(txt){
+  const a = $('aviso');
+  a.textContent = txt; a.classList.add('va');
+  clearTimeout(avisoT);
+  avisoT = setTimeout(() => a.classList.remove('va'), 2600);
+}
+
+/* Lo que se descubre. Es la mochila que pidió Carlos: si al juntar cosas
+   sale arena, la arena queda guardada y se puede usar directo. */
+function revisaDescubrimientos(){
+  for(const id in M.nacidos){
+    if(guardado.mochila[id]) continue;
+    if(id === 'vacio') continue;
+    guardado.mochila[id] = 1;
+    salva(); pestanas();
+    if(grupoSel === 'mochila') paleta();
+    avisa('🎒 Descubriste ' + EL[IDX[id]].nom + ' — ya lo puedes usar');
+  }
+}
+
+/* ── pintar con el dedo ─────────────────────────────────────────────────── */
+const dedos = new Map();
+function celdaDe(ev){
+  const r = cv.getBoundingClientRect();
+  return [Math.floor((ev.clientX - r.left) / r.width * an),
+          Math.floor((ev.clientY - r.top) / r.height * al)];
+}
+function brocha(x, y){
+  const r = tam - 1;
+  for(let dy = -r; dy <= r; dy++) for(let dx = -r; dx <= r; dx++){
+    if(dx*dx + dy*dy > r*r + r) continue;
+    const nx = x+dx, ny = y+dy;
+    if(!M.dentro(nx, ny)) continue;
+    const k = M.i(nx, ny);
+    if(modo === 'calor'){ M.temp[k] += 220; continue; }
+    if(modo === 'frio'){ M.temp[k] -= 160; continue; }
+    /* pintar vacío BORRA; pintar sobre algo sólo si hay hueco o es un borrado */
+    if(elSel === VACIO || M.t[k] === VACIO || EL[elSel].estado === 'solido')
+      M.pon(nx, ny, elSel);
+  }
+}
+cv.addEventListener('pointerdown', ev => {
+  ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
+  const [x, y] = celdaDe(ev); dedos.set(ev.pointerId, [x, y]); brocha(x, y);
+}, { passive:false });
+cv.addEventListener('pointermove', ev => {
+  if(!dedos.has(ev.pointerId)) return;
+  ev.preventDefault();
+  const [x, y] = celdaDe(ev);
+  const [px, py] = dedos.get(ev.pointerId);
+  /* interpolar: sin esto, un dedo rápido pinta puntos sueltos y no una línea */
+  const pasos = Math.max(Math.abs(x-px), Math.abs(y-py));
+  for(let i = 0; i <= pasos; i++){
+    brocha(Math.round(px + (x-px)*i/pasos), Math.round(py + (y-py)*i/pasos));
+  }
+  dedos.set(ev.pointerId, [x, y]);
+}, { passive:false });
+const suelta = ev => dedos.delete(ev.pointerId);
+cv.addEventListener('pointerup', suelta);
+cv.addEventListener('pointercancel', suelta);
+
+/* ── botones ────────────────────────────────────────────────────────────── */
+$('bPausa').onclick = () => {
+  pausado = !pausado;
+  $('bPausa').textContent = pausado ? '▶' : '❚❚';
+  $('bPausa').classList.toggle('on', pausado);
+};
+$('bBorra').onclick = () => { M.limpia(); avisa('Mundo vacío'); };
+$('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
+$('bCalor').onclick = () => {
+  modo = modo === 'calor' ? 'pintar' : 'calor';
+  $('bCalor').classList.toggle('on', modo === 'calor');
+  $('bFrio').classList.remove('on');
+};
+$('bFrio').onclick = () => {
+  modo = modo === 'frio' ? 'pintar' : 'frio';
+  $('bFrio').classList.toggle('on', modo === 'frio');
+  $('bCalor').classList.remove('on');
+};
+
+/* ── el bucle ───────────────────────────────────────────────────────────── */
+let ultimo = 0, fps = 0, acum = 0, cuadros = 0;
+function cuadro(ms){
+  requestAnimationFrame(cuadro);
+  const dt = ms - ultimo; ultimo = ms;
+  if(!pausado) M.paso();
+  pinta();
+  cuadros++; acum += dt;
+  if(acum > 500){
+    fps = Math.round(cuadros * 1000 / acum); acum = 0; cuadros = 0;
+    let vivas = 0, tmax = -999;
+    for(let k = 0; k < M.t.length; k++){
+      if(M.t[k] !== VACIO) vivas++;
+      if(M.temp[k] > tmax) tmax = M.temp[k];
+    }
+    $('datos').innerHTML = an + '×' + al + ' · ' + fps + ' fps<br>' +
+      vivas + ' celdas · máx ' + Math.round(tmax) + '°';
+    revisaDescubrimientos();
+  }
+}
+
+addEventListener('resize', () => { medir(); });
+medir(); pestanas(); paleta();
+requestAnimationFrame(cuadro);
+window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado,
+                  pon:(x,y,id)=>M.pon(x,y,IDX[id]) };
+</script>
+</body>
+</html>
