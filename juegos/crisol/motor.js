@@ -223,6 +223,15 @@ export class Mundo {
     this.camara = new Int32Array(n);      /* a qué cámara sellada pertenece */
     this.camaraP = [];                    /* presión de cada cámara */
     this._abierto = new Uint8Array(n);
+    this._vistoCuerpo = new Uint8Array(n);
+    this._colaCuerpo = new Int32Array(n);
+    /* qué celdas soldó el jugador en una estructura: mismo número = misma
+       pieza, aunque sean materiales distintos */
+    this.soldado = new Int32Array(n);
+    this.soldadoN = 0;
+    /* el interruptor que pidió Carlos: apagado, cada celda vuelve a ser suya */
+    this.rigido = true;
+    this.enCuerpo = new Uint8Array(n);
     /* ── EL CAMPO GRAVITATORIO ────────────────────────────────────────
        Carlos no pidió «activar y desactivar la gravedad»: pidió magnitud,
        dirección, zonas, por objeto y puntos que atraen o repelen, «combinar
@@ -367,6 +376,7 @@ export class Mundo {
     const nuv = this.nudo[k1]; this.nudo[k1] = this.nudo[k2]; this.nudo[k2] = nuv;
     /* los moles son de la COSA: si el gas se mueve, se lleva su cantidad */
     const mov2 = this.moles[k1]; this.moles[k1] = this.moles[k2]; this.moles[k2] = mov2;
+    const sov = this.soldado[k1]; this.soldado[k1] = this.soldado[k2]; this.soldado[k2] = sov;
     this.mov[k1] = 1; this.mov[k2] = 1;
   }
 
@@ -1348,12 +1358,22 @@ export class Mundo {
            que casualmente están juntos. */
         let vy = this.vy[cola[0]] - sube;
         if(vy < -VMAX) vy = -VMAX;
+        /* ⚠ Y SI SE MOVIÓ, LAS CELDAS YA NO ESTÁN DONDE DICE `cola`. La marca
+           se ponía en las casillas de ANTES del movimiento —que ya son aire—
+           y las de verdad se quedaban sin marcar: 9 de las 36 celdas de un
+           globo, medido. No se notaba mientras nadie más mirara esa marca,
+           pero en cuanto los cuerpos rígidos empezaron a recoger «lo que no
+           está marcado», esas nueve se iban por su cuenta y el globo se
+           deshacía en el aire: subía cuatro celdas y acababa en el suelo.
+           Otra vez la casilla confundida con la cosa, y otra vez el disfraz
+           fue un índice guardado antes de mover. */
+        let corr = 0;
         if(vy <= -1){
-          if(this.mueveGlobo(cola, fin, enc.celdasLista, -1)) vy += 1;
+          if(this.mueveGlobo(cola, fin, enc.celdasLista, -1)){ vy += 1; corr = -an; }
           else vy = 0;                             /* topó con algo */
         }
         for(let i = 0; i < fin; i++){
-          const k = cola[i];
+          const k = cola[i] + corr;
           this.vy[k] = vy; this.vx[k] = 0;
           this.suelto[k] = 1; sop[k] = 0;
           /* el balance de esta pieza ya está hecho AQUÍ, con su peso y lo que
@@ -1361,9 +1381,255 @@ export class Mundo {
              estaría contando dos veces y ningún globo despegaría. */
           this.flotante[k] = 1;
         }
-        for(const k of enc.celdasLista) this.flotante[k] = 1;
+        for(const k of enc.celdasLista) this.flotante[k + corr] = 1;
       }
     }
+  }
+
+  /* ── CUERPOS RÍGIDOS ────────────────────────────────────────────────────
+     Carlos: «los sólidos se tratan como partículas al caer o agarrarlos, en
+     lugar de unirse con las del mismo tipo y volverse un solo cuerpo, si me
+     entiendes». Sí: una piedra de veinte celdas caía como veinte piedras de
+     una celda, se deshilachaba al chocar y al agarrarla con la mano se estiraba
+     como plastilina. Cada celda hacía su propia física y el objeto no existía
+     en ninguna parte.
+
+     Lo que se junta en un cuerpo son celdas PEGADAS y del MISMO material —eso
+     lo dijo él— o soldadas a mano con la herramienta de estructura, que es lo
+     que resuelve la otra mitad de su encargo: «si uno varios tipos de
+     materiales en una sola estructura, como una pistola que incluye muchos
+     materiales, poder decidirlo».
+
+     Y sólo se agrupa lo que está EN MOVIMIENTO —lo que no se sostiene o va
+     lanzado—, por dos razones que valen igual: una torre quieta no necesita
+     saberse un cuerpo para no moverse, y recorrer los sólidos del mundo entero
+     cada paso cuesta lo que no hay en un teléfono.
+
+     El interruptor `rigido` lo apaga y se vuelve al grano por grano, que
+     también lo pidió por su nombre. */
+  cuerpoPaso(){
+    if(!this.rigido) return;
+    const { an, al, t, sop } = this;
+    const visto = this._vistoCuerpo;
+    visto.fill(0);
+    this.enCuerpo.fill(0);
+    const cola = this._colaCuerpo;
+    /* ⚠ SE JUNTA LO QUE SE TOCA, NO SÓLO LO DEL MISMO MATERIAL. Empecé por
+       «mismo tipo», que es lo que Carlos escribió, y rompió cinco pruebas de
+       golpe: el cohete quedaba partido en DOS cuerpos —la carcasa de metal por
+       un lado y la válvula por otro— y cada uno se movía por su cuenta, así
+       que un recipiente cerrado y sin gravedad se propulsaba solo seis celdas
+       y media. Una caja con una válvula en la pared es UN objeto; separarla
+       porque son materiales distintos crea fuerza de la nada.
+       Lo del mismo tipo sí se cumple —es un caso particular de tocarse— y lo
+       de «poder decidirlo» lo da la soldadura: un número de estructura marca
+       qué celdas van juntas y CUÁLES NO, aunque estén pegadas. Eso es lo que
+       permite montar una pistola de muchos materiales y que el proyectil no
+       forme parte del cañón. */
+    const juntos = (k, k2) => {
+      if(t[k2] === VACIO || EL[t[k2]].fijo) return false;
+      if(this.estadoDe(k2) !== 'solido') return false;
+      return this.soldado[k] === this.soldado[k2];
+    };
+    /* ⚠ Y SOSTENIDO ES SOSTENIDO AUNQUE LE HAYAN PEGADO. La primera versión
+       entraba también con `suelto`, que sólo quiere decir «algo la golpeó», y
+       con eso una viga EMPOTRADA se convertía en cuerpo libre al primer
+       empujón y se iba entera: el refuerzo de acero pasó de aguantar sin
+       perder una celda a perder doce. Se copia la misma condición que usa el
+       movimiento celda a celda —hace falta velocidad de verdad, no una marca—
+       para que anclado y lanzado signifiquen lo mismo en los dos sitios. */
+    /* ⚠ EL ORDEN DE ESTAS CINCO LÍNEAS SON CINCO MILISEGUNDOS. Se pregunta
+       por celda en las 153 600 de una sala, así que lo barato va primero: casi
+       todas están vacías, y de las que no, casi todas están sostenidas y
+       quietas. `estadoDe` es una llamada y se deja para el final, cuando ya
+       sólo quedan las pocas que de verdad se mueven. Puesto al revés costaba
+       23.6 ms por paso; puesto así, 21.3 — medido, no estimado. */
+    const enMarcha = k => {
+      if(t[k] === VACIO) return false;
+      if(this.flotante[k]) return false;
+      if(sop[k] && !(this.vy[k] < -0.35 || this.vx[k] > 0.35 || this.vx[k] < -0.35)) return false;
+      if(EL[t[k]].fijo) return false;
+      return this.estadoDe(k) === 'solido';
+    };
+
+    for(let k0 = 0; k0 < t.length; k0++){
+      if(visto[k0] || !enMarcha(k0)) continue;
+      let cab = 0, fin = 0;
+      cola[fin++] = k0; visto[k0] = 1;
+      while(cab < fin){
+        const k = cola[cab++], x = k % an, y = (k / an) | 0;
+        const mete = k2 => { if(!visto[k2] && enMarcha(k2) && juntos(k, k2)){ visto[k2] = 1; cola[fin++] = k2; } };
+        if(x > 0)      mete(k - 1);
+        if(x < an - 1) mete(k + 1);
+        if(y > 0)      mete(k - an);
+        if(y < al - 1) mete(k + an);
+        if(fin > cola.length - 4) break;
+      }
+      if(fin < 2) continue;            /* una celda suelta ya la lleva `mueve` */
+
+      /* la velocidad del cuerpo es la de su centro de masa: así un trozo que
+         recibe un empujón en una esquina arrastra al resto en vez de arrancarse */
+      let masa = 0, svy = 0, svx = 0, sx = 0, sy = 0;
+      for(let i = 0; i < fin; i++){
+        const k = cola[i], m = EL[t[k]].dens || 1;
+        masa += m; svy += this.vy[k] * m; svx += this.vx[k] * m;
+        sx += k % an; sy += (k / an) | 0;
+      }
+      let vy = svy / masa, vx = svx / masa;
+      const cx = Math.round(sx / fin), cy = Math.round(sy / fin);
+      /* ── LA PRESIÓN SE LE APLICA A LA PIEZA, NO A CADA CELDA ────────────
+         Y ésta era la última que faltaba para que un recipiente cerrado no se
+         moviera solo. Repartir la fuerza celda a celda y luego promediar NO da
+         lo mismo: cada celda dividía por SU masa, y esa división lleva dentro
+         un `max(0.35, …)` que aplasta a las ligeras. Con eso, en una carcasa
+         de dos materiales las fuerzas de arriba y de abajo dejaban de
+         cancelarse, y un bote sellado y sin gravedad se propulsaba dos celdas.
+         Sumar primero las fuerzas y dividir DESPUÉS entre la masa total es la
+         segunda ley aplicada a un cuerpo, y con ella un recipiente cerrado da
+         cero exacto sin que nadie se lo pida — mientras que abrirle una boca
+         rompe la simetría y ahí sí sale disparado. */
+      /* ⚠ Y ES LA PRESIÓN SOBRE LA CARA, NO EL GRADIENTE. Lo escribí primero
+         copiando la fórmula de `empuja` —«me empujan hacia donde hay menos»— y
+         salió el signo al revés: el bote cerrado pasó de subirse dos celdas
+         solo a BAJARSE dos. Y estaba mal por una razón de fondo: esa fórmula
+         describe a la celda que TIENE la presión, o sea al gas. Un sólido no
+         se mueve porque él tenga presión, se mueve porque el fluido de al lado
+         empuja su cara. Así que se recorre el contorno de la pieza y cada cara
+         mojada suma la presión del fluido que la toca, en dirección contraria
+         a ese fluido. Con eso una carcasa cerrada da CERO exacto —cada cara de
+         arriba tiene su gemela abajo— y abrirle una boca quita la cara que
+         cancelaba: de ahí sale el empuje, sin una línea que diga «cohete». */
+      let fx = 0, fy = 0;
+      for(let i = 0; i < fin; i++){
+        const k = cola[i], x = k % an, y = (k / an) | 0;
+        for(const [ddx, ddy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+          if(!this.dentro(x+ddx, y+ddy)) continue;
+          const k2 = this.i(x+ddx, y+ddy);
+          if(visto[k2]) continue;                  /* cara interna de la pieza */
+          if(t[k2] !== VACIO && this.estadoDe(k2) === 'solido') continue;
+          const p2 = this.pres[k2];
+          if(p2 > -3 && p2 < 3) continue;
+          fx -= ddx * p2; fy -= ddy * p2;
+        }
+      }
+      /* la misma escala que usa `empuja` celda a celda: allí la masa entra
+         como dens·0.12, así que aquí entra como masa total·0.12. Sin ese 0.12
+         la pieza pesaba ocho veces de más y el cohete apenas se despegaba. */
+      vy += (fy / (masa * 0.12)) * 0.016;
+      vx += (fx / (masa * 0.12)) * 0.016;
+      this.gravedadEn(cx, cy, cola[0]);
+      const dens = masa / fin;
+      const f = 1 - DENS_AIRE / (dens || 1);
+      vy = Math.max(-VMAX, Math.min(vy + this._gy * f, VMAX));
+      vx = Math.max(-VMAX, Math.min(vx + this._gx * f, VMAX));
+      /* el rozamiento del aire lo siente la PIEZA, no cada celda: por eso una
+         plancha grande y una piedrita del mismo material caen distinto */
+      const c = 0.5 * DENS_AIRE / (dens > 0.05 ? dens : 0.05) / Math.sqrt(fin);
+      if(vy > 0.02 || vy < -0.02) vy -= c * vy * Math.abs(vy);
+      if(vx > 0.02 || vx < -0.02) vx -= c * vx * Math.abs(vx);
+
+      const lista = cola.slice(0, fin);
+      let pasos = this.pasosDe(Math.abs(vy)), dy = vy > 0 ? 1 : -1;
+      for(let i = 0; i < pasos; i++){
+        if(!this.mueveCuerpo(lista, 0, dy)){ vy = 0; break; }
+      }
+      pasos = this.pasosDe(Math.abs(vx)); const dx = vx > 0 ? 1 : -1;
+      for(let i = 0; i < pasos; i++){
+        if(!this.mueveCuerpo(lista, dx, 0)){ vx = 0; break; }
+      }
+      for(const k of lista){
+        this.vy[k] = vy; this.vx[k] = vx;
+        this.flotante[k] = 1;          /* ya se movió como pieza: `mueve` no lo toca */
+        this.suelto[k] = 1;
+        this.enCuerpo[k] = 1;          /* y que `empuja` no la empuje otra vez */
+      }
+    }
+  }
+
+  /* ── SOLDAR UNA ESTRUCTURA ──────────────────────────────────────────────
+     Carlos: «si uno varios tipos de materiales en una sola estructura, como
+     una pistola que incluye muchos materiales, poder decidirlo, y así para
+     hacer más estructuras».
+
+     Desde que lo que se toca ya forma un cuerpo, soldar no sirve para PEGAR:
+     sirve para SEPARAR y para que la separación aguante. Al tocar una pieza se
+     le pone un número de estructura propio, y a partir de ahí sólo es una
+     pieza con lo que lleve ese mismo número — aunque esté pegada a otra cosa.
+     Eso es lo que permite que una pistola sea una pistola y que el proyectil
+     que tiene dentro NO forme parte del cañón: sin esto, apuntar y disparar
+     movería el arma entera con la bala pegada.
+
+     Devuelve cuántas celdas quedaron en la estructura, para que la pantalla
+     pueda decir qué se soldó en vez de no decir nada. */
+  suelda(x, y, r = 2, grupo = 0){
+    /* ⚠ SE PINTA, NO SE CONTAGIA. La primera versión inundaba desde el toque
+       por todo lo que estuviera pegado, y con eso era imposible hacer lo único
+       para lo que sirve: en una pistola con un proyectil DENTRO, el flood se
+       llevaba el proyectil al mismo grupo que el cañón. Si la estructura la
+       decide el contacto, no la decide el jugador — y él pidió literalmente
+       «poder decidirlo». Así que se marca con la brocha, arrastrando encima de
+       lo que uno quiere que sea una pieza. */
+    const g = grupo || ++this.soldadoN;
+    let n = 0;
+    for(let dy = -r; dy <= r; dy++) for(let dx = -r; dx <= r; dx++){
+      if(dx * dx + dy * dy > r * r) continue;
+      if(!this.dentro(x + dx, y + dy)) continue;
+      const k = this.i(x + dx, y + dy);
+      if(this.t[k] === VACIO || EL[this.t[k]].fijo) continue;
+      if(this.estadoDe(k) !== 'solido') continue;
+      if(this.soldado[k] === g) continue;
+      this.soldado[k] = g; n++;
+    }
+    this.soldadoUltimo = g;
+    return n;
+  }
+
+  /* Y deshacerlo: la estructura vuelve a ser lo que toque. */
+  dessuelda(x, y){
+    if(!this.dentro(x, y)) return 0;
+    const k0 = this.i(x, y);
+    const g = this.soldado[k0];
+    if(!g) return 0;
+    let n = 0;
+    for(let k = 0; k < this.soldado.length; k++) if(this.soldado[k] === g){ this.soldado[k] = 0; n++; }
+    return n;
+  }
+
+  /* Mueve un cuerpo entero una celda, o ninguna. Es la misma ley que la del
+     globo —todos los destinos libres o propios, y si no, no se mueve— pero en
+     cualquier dirección y devolviendo si cupo, que es lo que convierte «no
+     cabe» en un choque en vez de en una deformación. */
+  mueveCuerpo(lista, dx, dy){
+    const { an, al } = this;
+    const mios = new Set(lista);
+    for(const k of lista){
+      const x = k % an, y = (k / an) | 0;
+      const nx = x + dx, ny = y + dy;
+      if(nx < 0 || ny < 0 || nx >= an || ny >= al) return false;
+      const kd = ny * an + nx;
+      if(mios.has(kd)) continue;
+      if(this.t[kd] === VACIO) continue;
+      const ed = EL[this.t[kd]];
+      if(ed.fijo) return false;
+      const est = this.estadoDe(kd);
+      if(est === 'solido' || est === 'polvo') return false;
+      /* un fluido más denso que la pieza tampoco se aparta: por eso un corcho
+         no se hunde y una piedra sí */
+      if((ed.dens || 0) >= (EL[this.t[lista[0]]].dens || 1)) return false;
+    }
+    /* el orden importa: se empieza por el borde que avanza, o una celda pisa a
+       la siguiente antes de que ésta se haya quitado */
+    const orden = lista.slice().sort((a, b) => {
+      const ax = a % an, ay = (a / an) | 0, bx = b % an, by = (b / an) | 0;
+      return (bx * dx + by * dy) - (ax * dx + ay * dy);
+    });
+    for(const k of orden){
+      const x = k % an, y = (k / an) | 0;
+      const kd = (y + dy) * an + (x + dx);
+      if(kd === k) continue;
+      this.intercambia(k, kd);
+    }
+    return true;
   }
 
   /* Mueve una pieza entera una celda en vertical, o ninguna. Primero se
@@ -1988,6 +2254,9 @@ export class Mundo {
     const p = this.pres[k];
     if(p < 3) return;
     if(e.fijo) return;
+    /* si esta celda va dentro de un cuerpo, su empuje ya se sumó al de la
+       pieza entera: contarlo aquí otra vez es contarlo dos veces */
+    if(this.enCuerpo[k]) return;
     let gx = 0, gy = 0;
     for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
       if(!this.dentro(x+dx, y+dy)) continue;
@@ -2049,6 +2318,7 @@ export class Mundo {
     this.sostenPaso();
     this.globoPaso();
     this.cuerdaPaso();
+    this.cuerpoPaso();
     this.electricidad();
     this.luzPaso();
     this.magnetismo();

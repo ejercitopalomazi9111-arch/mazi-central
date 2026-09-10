@@ -1246,7 +1246,7 @@ seccion('válvula y cohete: acción y reacción');
      de gas sale acelerada, el sólido que tenía detrás se lleva el impulso
      contrario. Un recipiente cerrado no se mueve porque sus paredes opuestas
      se cancelan; en cuanto le abres una boca, deja de cancelarse. */
-  const cohete = ({ abierta = true, boca = 3, presion = 2600 }) => {
+  const cohete = ({ abierta = true, boca = 3, presion = 2600, pasos = 300 }) => {
     const m = mundo(60, 120, 5);
     m.ponGravedadGlobal(0, 0);            /* sin gravedad se ve el empuje limpio */
     const x0 = 24, x1 = 34, y0 = 40, y1 = 60;
@@ -1265,7 +1265,7 @@ seccion('válvula y cohete: acción y reacción');
         if(m.t[k] === IDX.metal || m.t[k] === IDX.valvula){ sy += (k / m.an) | 0; n++; }
       return n ? sy / n : 0; };
     const y0c = centro();
-    corre(m, 300);
+    corre(m, pasos);
     return centro() - y0c;
   };
   const cerrado = cohete({ abierta:false }), abierto = cohete({ abierta:true });
@@ -1281,7 +1281,12 @@ seccion('válvula y cohete: acción y reacción');
   ok('una boca más grande empuja más', Math.abs(boca5) > Math.abs(boca1),
      'boca 1 → ' + boca1.toFixed(2) + ' · boca 5 → ' + boca5.toFixed(2));
 
-  const flojo = cohete({ presion:800 }), fuerte = cohete({ presion:5000 });
+  /* ⚠ SE MIDE A 120 PASOS Y NO A 300, y no es para que pase: a 300 el cohete
+     fuerte YA SE VACIÓ. Medido: la razón entre 5 000° y 800° es 2.39 a los 60
+     pasos, 2.65 a los 120 y 1.77 a los 300 — porque el que empuja más gasta su
+     gas antes, que es lo que hace un cohete de verdad. A 300 pasos no se está
+     midiendo el empuje, se está midiendo cuánto duró el depósito. */
+  const flojo = cohete({ presion:800, pasos:120 }), fuerte = cohete({ presion:5000, pasos:120 });
   ok('y más presión empuja más', Math.abs(fuerte) > Math.abs(flojo) * 2,
      '800° → ' + flojo.toFixed(2) + ' · 5000° → ' + fuerte.toFixed(2));
 
@@ -1808,6 +1813,63 @@ seccion('cámaras selladas: el aire cuenta, se comprime y revienta');
     const r = m.informe(20, 20);
     ok('el termómetro dice que el recinto está sellado', r.sellado === true);
     ok('y cuánto gas lleva metido esa celda', r.moles >= 3, 'dice ' + r.moles);
+  }
+}
+
+seccion('cuerpos rígidos: lo que está pegado cae junto');
+{
+  /* Carlos: «los sólidos se tratan como partículas al caer o agarrarlos, en
+     lugar de unirse con las del mismo tipo y volverse un solo cuerpo, si me
+     entiendes». Sí: una piedra de veinte celdas caía como veinte piedras. */
+  const bloque = (rigido) => {
+    const m = mundo(40, 60, 3);
+    m.rigido = rigido;
+    repisa(m, 59);
+    /* ⚠ LA PIEZA CAE SOBRE UN PILAR ESTRECHO, y no al suelo raso. Con el suelo
+       raso la prueba no distinguía nada: la L llegaba entera en los dos casos
+       porque cae recta y aterriza a la vez. Lo que separa un CUERPO de un
+       montón de píxeles es qué pasa cuando sólo una parte tiene apoyo: rígida
+       se queda encima del pilar, suelta se derrama por los lados. */
+    for(let y = 40; y < 59; y++){ m.pon(19, y, IDX.muro); m.pon(20, y, IDX.muro); }
+    for(let y = 10; y < 14; y++) for(let x = 12; x < 28; x++) m.pon(x, y, IDX.piedra);
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) m.suelto[k] = 1;
+    corre(m, 200);
+    let alto = 99, bajo = 0;
+    for(let y = 0; y < 60; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x, y)] === IDX.piedra){ if(y < alto) alto = y; if(y > bajo) bajo = y; }
+    return { alto, bajo, grosor: bajo - alto + 1 };
+  };
+  const con = bloque(true), sin = bloque(false);
+  ok('una plancha que cae sobre un pilar se queda ENTERA encima', con.grosor === 4,
+     'quedó de ' + con.grosor + ' celdas de grosor (empezó de 4) entre y=' + con.alto + ' e y=' + con.bajo);
+  /* ⚠ y la pareja, que es la que prueba que el interruptor SIRVE: apagado,
+     tiene que volver a comportarse como antes. Sin ella, «rígido» podría estar
+     encendido siempre y la prueba de arriba pasaría igual. */
+  ok('y con el interruptor APAGADO se derrama por los lados del pilar',
+     sin.grosor > con.grosor,
+     'apagado ' + sin.grosor + ' de grosor · encendido ' + con.grosor);
+
+  /* soldar: la estructura de varios materiales que pidió por su nombre */
+  {
+    const m = mundo(40, 40, 3);
+    repisa(m, 39);
+    for(let x = 10; x < 20; x++) m.pon(x, 20, IDX.metal);
+    for(let x = 10; x < 20; x++) m.pon(x, 21, IDX.madera);
+    m.pon(15, 19, IDX.piedra);          /* el «proyectil» posado encima */
+    /* se pinta EXACTAMENTE la estructura: las dos filas del arma, y ni una
+       celda más. La piedra de encima se queda fuera porque no la pintaste —
+       que es justo lo que Carlos pidió poder decidir. */
+    let n = 0, g = 0;
+    for(const yy of [20, 21]) for(let x = 10; x < 20; x++){ n += m.suelda(x, yy, 0, g); g = m.soldadoUltimo; }
+    ok('soldar con la brocha agarra lo que pintas', n > 15, 'soldó ' + n + ' celdas');
+    ok('y la piedra de encima NO queda dentro de la estructura',
+       m.soldado[m.i(15, 19)] !== m.soldado[m.i(12, 20)],
+       'la piedra quedó en el grupo ' + m.soldado[m.i(15,19)]);
+    ok('y se puede deshacer', m.dessuelda(12, 20) > 15 && m.soldado[m.i(12,20)] === 0);
+    /* y lo que de verdad compra: soldada, la estructura NO se lleva puesto lo
+       que tenga encima cuando la muevan */
+    const g2 = m.soldado[m.i(15, 19)];
+    ok('lo soldado y lo no soldado son piezas distintas', g2 === 0);
   }
 }
 

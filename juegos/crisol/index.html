@@ -267,6 +267,8 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <button class="icono" id="bAgarra" aria-label="Agarrar y arrastrar" title="Agarrar un sólido y arrastrarlo con fuerza">✊</button>
     <button class="icono" id="bMide" aria-label="Termómetro" title="Termómetro: material, temperatura y cambios de estado">🌡</button>
     <button class="icono" id="bGrav" aria-label="Gravedad" title="Gravedad: global, por zona, por objeto y puntos que atraen o repelen">🌍</button>
+    <button class="icono" id="bSolda" aria-label="Soldar estructura" title="Soldar: pinta encima lo que quieras que sea UNA pieza. Vuelve a tocarlo con el botón para despegarlo">🔗</button>
+    <button class="icono on" id="bRigido" aria-label="Cuerpos rígidos" title="Cuerpos rígidos: lo que está pegado cae junto. Apágalo y vuelve a ser grano por grano">🧱</button>
     <button class="icono" id="bMas" aria-label="Acercar">＋</button>
     <button class="icono" id="bMenos" aria-label="Alejar">－</button>
     <span id="escala" title="Zoom actual">×4.0</span>
@@ -581,6 +583,10 @@ function brocha(x, y){
     const k = M.i(nx, ny);
     if(modo === 'calor'){ M.temp[k] += 220; continue; }
     if(modo === 'frio'){ M.temp[k] -= 160; continue; }
+    /* soldar es pintar una ESTRUCTURA: todo lo que pases con el dedo en un
+       mismo trazo queda en la misma pieza. Por eso el grupo se guarda entre
+       llamadas — si cada celda hiciera su propio grupo, soldar no soldaría. */
+    if(modo === 'soldar'){ M.suelda(nx, ny, 0, grupoSolda); grupoSolda = M.soldadoUltimo; continue; }
     /* pintar vacío BORRA; pintar sobre algo sólo si hay hueco o es un borrado */
     if(elSel === VACIO || M.t[k] === VACIO || EL[elSel].estado === 'solido')
       M.pon(nx, ny, elSel);
@@ -614,6 +620,7 @@ cv.addEventListener('pointerdown', ev => {
     dedos.get(ev.pointerId).pintando = false;
     return;
   }
+  if(modo === 'soldar') grupoSolda = 0;   /* cada trazo, una estructura */
   if(modo === 'agarrar'){
     agarre = { cx:x, cy:y, fx:x, fy:y };
     dedos.get(ev.pointerId).pintando = false;
@@ -747,7 +754,8 @@ $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
    Un solo sitio decide qué modo está activo y apaga los demás. Antes cada
    botón se encargaba de apagar a los otros a mano, y con cinco herramientas
    eso son veinte líneas que se contradicen entre sí a la primera distracción. */
-const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide' };
+let grupoSolda = 0;
+const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda' };
 const MODOS_GRAVEDAD = ['zona', 'punto', 'gobjeto'];
 function ponModo(m){
   modo = (modo === m) ? 'pintar' : m;
@@ -759,6 +767,7 @@ function ponModo(m){
     agarrar:'Agarra un sólido y arrástralo. Lo pesado va a costar',
     medir:'Toca algo para ver su material, su temperatura y sus cambios de estado',
     calor:'Calentando', frio:'Enfriando',
+    soldar:'Pinta encima lo que quieras que sea UNA pieza. Lo que no pintes, no entra',
   }[modo];
   if(dice) avisa(dice);
 }
@@ -767,6 +776,15 @@ $('bFrio').onclick   = () => ponModo('frio');
 $('bMano').onclick   = () => ponModo('navegar');
 $('bAgarra').onclick = () => ponModo('agarrar');
 $('bMide').onclick   = () => ponModo('medir');
+$('bSolda').onclick  = () => { grupoSolda = 0; ponModo('soldar'); };
+/* el interruptor que pidió Carlos por su nombre: «que decidir si se tratan
+   como partículas separadas sea un toggle» */
+$('bRigido').onclick = () => {
+  M.rigido = !M.rigido;
+  $('bRigido').classList.toggle('on', M.rigido);
+  avisa(M.rigido ? 'Cuerpos rígidos: lo que está pegado cae junto'
+                 : 'Grano por grano: cada celda por su cuenta');
+};
 $('fichaX').onclick  = () => $('ficha').classList.remove('va');
 
 /* ── el termómetro, en pantalla ────────────────────────────────────────────

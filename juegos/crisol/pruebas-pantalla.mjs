@@ -266,6 +266,45 @@ seccion('la herramienta de gravedad');
   ok('15 · y el panel cierra', !(await pg.isVisible('#grav')));
 }
 
+seccion('soldar estructuras y el interruptor de cuerpos rígidos');
+{
+  /* Carlos pidió las dos por su nombre: «que decidir si se tratan como
+     partículas separadas sea un toggle» y «si uno varios tipos de materiales
+     en una sola estructura, como una pistola, poder decidirlo». Un botón que
+     existe en el HTML pero no cambia nada es lo que él reportó del 🌐 english:
+     aquí se comprueba el EFECTO, no que el botón esté. */
+  ok('16 · el interruptor de cuerpos rígidos empieza encendido',
+     (await pg.evaluate(() => window.CRISOL.mundo.rigido)) === true);
+  await pg.click('#bRigido'); await pg.waitForTimeout(120);
+  ok('17 · y al tocarlo se apaga de verdad, no sólo en el botón',
+     (await pg.evaluate(() => window.CRISOL.mundo.rigido)) === false &&
+     !(await pg.evaluate(() => document.getElementById('bRigido').classList.contains('on'))));
+  await pg.click('#bRigido'); await pg.waitForTimeout(120);
+  ok('18 · y vuelve a encenderse',
+     (await pg.evaluate(() => window.CRISOL.mundo.rigido)) === true);
+
+  /* soldar: se pinta una piedra y se le pasa el dedo con la herramienta */
+  await pg.click('#bSolda'); await pg.waitForTimeout(120);
+  const antes = await pg.evaluate(() => { let n = 0; const M = window.CRISOL.mundo;
+    for(let k = 0; k < M.soldado.length; k++) if(M.soldado[k]) n++; return n; });
+  /* ⚠ PINTAR Y SOLDAR EN LA MISMA VUELTA. Separados en dos `evaluate` la
+     prueba daba 0 y parecía que soldar no servía: entre uno y otro corren
+     cuadros de simulación, y la piedra que acababa de pintar en el aire SE
+     CAYÓ antes de que le pasara el dedo. */
+  await pg.evaluate(() => {
+    const M = window.CRISOL.mundo;
+    for(let y = 20; y < 26; y++) for(let x = 20; x < 30; x++) M.pon(x, y, window.CRISOL.IDX.piedra);
+    /* el trazo, como lo haría el dedo: varias celdas seguidas en un grupo */
+    let g = 0;
+    for(let x = 20; x < 30; x++){ M.suelda(x, 22, 1, g); g = M.soldadoUltimo; }
+  });
+  const desp = await pg.evaluate(() => { let n = 0; const M = window.CRISOL.mundo;
+    for(let k = 0; k < M.soldado.length; k++) if(M.soldado[k]) n++; return n; });
+  ok('19 · soldar marca celdas como una sola estructura', desp > antes,
+     'antes ' + antes + ' · después ' + desp);
+  await pg.click('#bSolda'); await pg.waitForTimeout(80);
+}
+
 seccion('sin errores al final');
 ok('ni un error de consola en toda la sesión', errores.length === 0, errores.slice(0,3).join(' | '));
 
