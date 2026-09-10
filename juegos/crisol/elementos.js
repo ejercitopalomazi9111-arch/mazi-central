@@ -113,7 +113,7 @@ const JUEGO = {
      no detona por existir — detona por GOLPE, y eso ahora se mide con la
      velocidad de impacto. `golpe` es a qué velocidad revienta. */
   nitro:   { nom:'Nitroglicerina', col:'#C8B96A', estado:'liquido', dens:12, cond:.2,
-             arde:1, calorArde:2200, explota:8, golpe:2.2, grupo:'combustible' },
+             arde:1, calorArde:2200, explota:20, golpe:2.2, grupo:'combustible' },
   /* Tela de globo: un sólido LIGERO, que es lo que hace falta para que un
      globo vuele. Con madera no vuela —pesa diecinueve veces el aire— igual
      que en la vida real: los globos se hacen de película fina justo por eso.

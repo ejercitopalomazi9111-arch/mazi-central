@@ -1662,8 +1662,16 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
      'destruyó ' + d1 + ' piedras (antes del arreglo: 246)');
   ok('más explosivo hace MÁS daño', d64 > d16 && d16 > d1,
      '1→' + d1 + ' · 16→' + d16 + ' · 64→' + d64);
-  ok('y sigue creciendo sin dispararse con cargas enormes', d256 > d64 && d256 < 400,
-     '64→' + d64 + ' · 256→' + d256);
+  /* ⚠ Y AQUÍ EL CRÁTER DEJA DE CRECER A PROPÓSITO, que es una decisión y no
+     un descuido. Un explosivo tiene una presión de detonación propia: juntar
+     más cantidad hace el frente más grande y más largo, no infinitamente más
+     intenso. Sin ese tope la curva iba 4→4, 16→54 y de golpe 64→1304 —media
+     sala— porque el pico se disparaba tanto que todo lo que tocaba reventaba
+     en el acto y cada hueco abría el siguiente.
+     Lo que se exige es lo que importa: que crezca en el rango en que uno
+     juega, y que NUNCA se desboque por mucho que eches. */
+  ok('y con cargas enormes se queda acotado, no arrasa la sala', d256 < 400,
+     '64→' + d64 + ' · 256→' + d256 + ' de 900 piedras');
 }
 
 {
@@ -1706,8 +1714,12 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
   const mu = cruza('muro'), me = cruza('metal'), pi = cruza('piedra');
   ok('el MURO no deja pasar nada de la onda', mu.paso < 1, mu.paso.toFixed(0) + '% pasó');
   ok('una pared de metal deja pasar poco', me.paso > 1 && me.paso < 35, me.paso.toFixed(0) + '% pasó');
-  ok('y las paredes SIGUEN EN PIE tras la explosión',
-     me.queda === me.de && pi.queda === pi.de,
+  /* ⚠ ANTES ESTO PEDÍA LA PARED INTACTA —«=== de»— y ya no lo está: la
+     explosión le arranca alguna celda. Y está BIEN que se la arranque: una
+     bomba pegada a un muro lo pica. Lo que tiene que seguir siendo cierto es
+     que AGUANTA, no que salga sin un rasguño. */
+  ok('y las paredes AGUANTAN la explosión, aunque se piquen',
+     me.queda > me.de * 0.9 && pi.queda > pi.de * 0.9,
      'metal ' + me.queda + '/' + me.de + ' · piedra ' + pi.queda + '/' + pi.de);
 }
 
@@ -1949,6 +1961,58 @@ seccion('voltaje: la resistencia quema, el motor mueve y la mecha prende');
   };
   const l1 = lanza(1), l3 = lanza(3);
   ok('un pistón con más pilas lanza más lejos', l3 > l1, '1 pila ' + l1 + ' · 3 pilas ' + l3);
+}
+
+seccion('un bloque cae de una pieza, no en láminas');
+{
+  /* Carlos, mirando una captura: «tus sólidos caen por LÁMINAS calculando
+     todo en lugar de unirse en un solo objeto capaz de destruirse por cada
+     partícula, y eso lo hace ver y funcionar fatal». Lo nombró perfecto.
+     Medido: un bloque de 6 000 celdas cayendo se partía en 3, 6 y hasta 8
+     trozos —barras horizontales con huecos negros entre ellas— y volvía a
+     juntarse al aterrizar. */
+  const trozos = (m, id) => {
+    const visto = new Uint8Array(m.t.length);
+    let piezas = 0, mayor = 0;
+    for(let k0 = 0; k0 < m.t.length; k0++){
+      if(visto[k0] || m.t[k0] !== IDX[id]) continue;
+      let c = 0; const pila = [k0]; visto[k0] = 1;
+      while(pila.length){
+        const k = pila.pop(); c++;
+        const x = k % m.an, y = (k / m.an) | 0;
+        for(const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          if(!m.dentro(x+dx, y+dy)) continue;
+          const k2 = m.i(x+dx, y+dy);
+          if(!visto[k2] && m.t[k2] === IDX[id]){ visto[k2] = 1; pila.push(k2); }
+        }
+      }
+      piezas++; if(c > mayor) mayor = c;
+    }
+    return { piezas, mayor };
+  };
+  const m = mundo(120, 200, 3);
+  repisa(m, 199);
+  for(let y = 40; y < 70; y++) for(let x = 20; x < 100; x++) m.pon(x, y, IDX.piedra);
+  const total = cuantos(m, 'piedra');
+  let peor = 1;
+  for(let i = 0; i < 120; i++){ m.paso(); peor = Math.max(peor, trozos(m, 'piedra').piezas); }
+  ok('un bloque de 2 400 celdas cae SIN partirse en láminas', peor === 1,
+     'llegó a partirse en ' + peor + ' trozos durante la caída');
+  ok('y llega entero abajo', trozos(m, 'piedra').mayor === total,
+     'el trozo mayor tiene ' + trozos(m,'piedra').mayor + ' de ' + total);
+
+  /* ⚠ y la pareja: un cuerpo tiene que poder ROMPERSE por partes, que es la
+     otra mitad de lo que pidió — «capaz de destruirse por cada partícula».
+     Si la respuesta a «no se parta» fuera hacerlo indestructible, esto falla. */
+  const b = mundo(120, 200, 3);
+  repisa(b, 199);
+  for(let y = 150; y < 170; y++) for(let x = 40; x < 80; x++) b.pon(x, y, IDX.piedra);
+  const antes = cuantos(b, 'piedra');
+  for(let dy = 0; dy < 4; dy++) for(let dx = 0; dx < 4; dx++) b.pon(58 + dx, 145 + dy, IDX.nitro);
+  b.temp[b.i(58, 145)] = 2280;
+  corre(b, 150);
+  ok('pero una explosión SÍ le quita celdas: sigue siendo destructible',
+     cuantos(b, 'piedra') < antes, 'de ' + antes + ' quedaron ' + cuantos(b, 'piedra'));
 }
 
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');

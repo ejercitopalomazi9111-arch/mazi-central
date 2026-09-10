@@ -355,9 +355,32 @@ const RGB = EL.map(e => {
 /* ruido fijo por celda, para que la arena no se vea como una mancha plana */
 let RUIDO = null;
 
+/* ── LA ONDA, PINTADA COMO UNA ONDA ────────────────────────────────────────
+   Carlos mandó cuatro capturas de una explosión de nitroglicerina: «para que
+   entiendas por qué está mal hecha». En todas se ve lo mismo — un pegote lila
+   plano, opaco, del tamaño de la pantalla, sin forma y sin frente. Y en una de
+   ellas el contador decía 148 CELDAS mientras media pantalla estaba morada,
+   que es la pista: eso no era materia, era la capa de presión.
+
+   El defecto era del tinte, no de la física. Se pintaba `min(1, P/70)`, así
+   que TODO lo que pasara de 70 salía del mismo color: una onda cuyo frente
+   vale 1 100 y cuya cola vale 80 se pinta entera igual, y en vez de un anillo
+   se ve una mancha. Y el suelo estaba en 1.5, o sea que el rescoldo también
+   pintaba: medido, a los 200 pasos el pico ya era 24 —la onda prácticamente
+   no existe— y seguía tiñendo 21 557 celdas de lila.
+
+   Ahora la escala es RELATIVA al pico que hay en la sala y el suelo sube con
+   él: se ve el frente, se ve cómo se apaga, y cuando la onda se muere la sala
+   vuelve a estar limpia. Y el tinte pesa la mitad, para que se vea A TRAVÉS
+   de la onda lo que hay debajo. */
+let picoVista = 0;
 function pinta(){
   const { t, temp, car } = M;
   const hayLuz = M.hayLuz;
+  const esc = picoVista > 25 ? picoVista : 25;
+  const pisoP = esc * 0.10;
+  const fuerzaP = P => { const f = (P - pisoP) / (esc - pisoP); return f > 1 ? 1 : f * f; };
+  let picoAhora = 0;
   if(!RUIDO || RUIDO.length !== t.length){
     RUIDO = new Int8Array(t.length);
     for(let i = 0; i < RUIDO.length; i++) RUIDO[i] = ((Math.random()*22)|0) - 11;
@@ -366,6 +389,7 @@ function pinta(){
     const tipo = t[k];
     const c = RGB[tipo];
     let r = c[0], g = c[1], b = c[2];
+    { const a = M.pres[k]; if(a > picoAhora) picoAhora = a; }
     if(tipo === VACIO){
       /* ⚠ Carlos: «es difícil saber dónde está esa zona si no hay un material
          abajo». Y era literal: el vacío se pintaba siempre del mismo negro,
@@ -377,7 +401,7 @@ function pinta(){
       else if(T < 8){ const f = Math.min(1, (8 - T) / 55);
         r += f*8; g += f*46; b += f*96; }
       const P = M.pres[k];
-      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*120; g += f*120; b += f*160; }
+      if(P > pisoP){ const f = fuerzaP(P); r += f*70; g += f*70; b += f*95; }
     }
     if(tipo !== VACIO){
       const n = RUIDO[k];
@@ -392,7 +416,7 @@ function pinta(){
       /* La presión SE PINTA. Una onda expansiva que no se ve no es una onda:
          es un número. Se tiñe de blanco hacia el azul según la fuerza. */
       const P = M.pres[k];
-      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*150; g += f*150; b += f*190; }
+      if(P > pisoP){ const f = fuerzaP(P); r += f*95; g += f*95; b += f*120; }
       /* un interruptor cerrado se ve cerrado */
       if(EL[tipo].interruptor && M.vida[k]){ g += 60; }
     }
@@ -417,6 +441,10 @@ function pinta(){
     datos[p+1] = g < 0 ? 0 : g > 255 ? 255 : g;
     datos[p+2] = b < 0 ? 0 : b > 255 ? 255 : b;
   }
+  /* el pico de ESTE cuadro manda en el siguiente. Un cuadro de retraso no se
+     ve y evita tener que recorrer la sala dos veces. */
+  picoVista = picoVista * 0.88 + picoAhora * 0.12;
+  if(picoAhora > picoVista) picoVista = picoAhora;
   ctxMundo.putImageData(img, 0, 0);
 
   /* y ahora la ventana. `imageSmoothingEnabled` en falso o el zoom se ve

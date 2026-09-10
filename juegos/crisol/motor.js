@@ -81,6 +81,9 @@ export const ROMPE_YA = 4;
 /* Tope de compresión por celda. 40 atmósferas de gas en una celda es ya un
    tanque de buceo; más que eso sólo servía para hacer números absurdos. */
 export const MOLES_MAX = 40;
+/* Presión de detonación: lo más fuerte que puede ser el frente de UNA
+   explosión, por mucho explosivo que juntes. */
+export const TOPE_DETON = 900;
 /* Cuánta presión del campo `pres` vale UNA atmósfera por encima del ambiente.
    Con 300, una cámara al triple de su gas revienta la piedra (aguanta ~960) y
    el muro no, que es lo que se quiere. */
@@ -436,7 +439,18 @@ export class Mundo {
         const k = this.i(nx, ny);
         if(EL[this.t[k]].id === 'muro') continue;
         const cerca = 1 - d / r;
-        this.pres[k] += fuerza * 22 * cerca * cerca;
+        /* ⚠ TOPE POR CELDA, y es lo que quita el acantilado. Sin él, sesenta
+           y cuatro celdas detonando en el mismo sitio SUMAN sus presiones sin
+           límite: la curva de daño iba 4→4, 16→54 y de golpe 64→1304, o sea
+           media sala. Y no es que 64 celdas hagan media sala de daño — es que
+           el pico se dispara tanto que TODO lo que toca revienta en el acto y
+           cada hueco abre el siguiente.
+           Un explosivo de verdad tiene una presión de detonación propia: más
+           cantidad hace el frente MÁS GRANDE y más largo, no infinitamente más
+           intenso. Con el tope, más explosivo sigue haciendo más daño —cubre
+           más área— pero ya no se desboca. */
+        const p2 = this.pres[k] + fuerza * 22 * cerca * cerca;
+        this.pres[k] = p2 > TOPE_DETON ? TOPE_DETON : p2;
         this.anotaPico(this.pres[k]);
         this.temp[k] += fuerza * 60 * cerca;
         if(d > 0.4){
@@ -1538,15 +1552,33 @@ export class Mundo {
       if(vy > 0.02 || vy < -0.02) vy -= c * vy * Math.abs(vy);
       if(vx > 0.02 || vx < -0.02) vx -= c * vx * Math.abs(vx);
 
-      const lista = cola.slice(0, fin);
-      let pasos = this.pasosDe(Math.abs(vy)), dy = vy > 0 ? 1 : -1;
-      for(let i = 0; i < pasos; i++){
-        if(!this.mueveCuerpo(lista, 0, dy)){ vy = 0; break; }
-      }
+      /* ⚠ LAS CELDAS YA NO ESTÁN DONDE DICE LA LISTA EN CUANTO SE MUEVE UNA
+         VEZ, y esto es lo que Carlos vio y nombró perfecto: «tus sólidos caen
+         por LÁMINAS en lugar de unirse en un solo objeto». Un bloque de 6 000
+         celdas cayendo se partía en tres, seis, ocho trozos — barras
+         horizontales con huecos negros entre ellas, exactamente eso.
+
+         La causa: `lista` guarda ÍNDICES, y a velocidad de dos celdas por
+         cuadro el bucle movía dos veces. La primera movía la pieza; la segunda
+         seguía usando los índices de ANTES, que ya no apuntan a la piedra sino
+         a lo que quedó ahí. O sea que el segundo empujón movía a otra gente:
+         la pieza se cortaba en capas y se desfasaba.
+
+         Es la TERCERA vez en este archivo que un índice guardado antes de
+         mover se convierte en un bicho: la cuerda, el globo y ahora esto. Y
+         las tres veces se disfrazó de otra cosa —tieso, hundido, en láminas—
+         sin parecerse nunca a «índice viejo». */
+      let lista = cola.slice(0, fin);
+      const corre = (dx, dy) => {
+        if(!this.mueveCuerpo(lista, dx, dy)) return false;
+        const salto = dy * an + dx;
+        for(let i = 0; i < lista.length; i++) lista[i] += salto;
+        return true;
+      };
+      let pasos = this.pasosDe(Math.abs(vy)); const dy = vy > 0 ? 1 : -1;
+      for(let i = 0; i < pasos; i++) if(!corre(0, dy)){ vy = 0; break; }
       pasos = this.pasosDe(Math.abs(vx)); const dx = vx > 0 ? 1 : -1;
-      for(let i = 0; i < pasos; i++){
-        if(!this.mueveCuerpo(lista, dx, 0)){ vx = 0; break; }
-      }
+      for(let i = 0; i < pasos; i++) if(!corre(dx, 0)){ vx = 0; break; }
       for(const k of lista){
         this.vy[k] = vy; this.vx[k] = vx;
         this.flotante[k] = 1;          /* ya se movió como pieza: `mueve` no lo toca */
