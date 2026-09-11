@@ -617,10 +617,10 @@
       "id": "el-cargo-no-detona-entero",
       "titulo": "Treinta celdas de explosivo y sólo revientan seis",
       "gravedad": "media",
-      "sintoma": "Un bote con 30 celdas de nitroglicerina entrega un quinto de su energía: contado con el motor en la mano, `revienta` se llama 6 veces.",
+      "sintoma": "Un bote con 30 celdas de nitroglicerina entregaba un quinto de su energía: `revienta` se llamaba SEIS veces. Ahora las 16 de un cargo de 16 detonan.",
       "causa": "Las otras 24 se las come el fuego que deja la primera. Eso es deflagración, no detonación: no hay frente que se lleve la masa entera.",
       "porque": "Un explosivo rompedor de verdad lo atraviesa un frente a miles de metros por segundo. Aquí se propaga por temperatura, y la temperatura consume antes de detonar.",
-      "arreglo": "SIN ARREGLAR A PROPÓSITO. Se probó encolar los vecinos con `explota`: sube de 6 a 37 detonaciones y multiplica por cinco el impulso, pero pone en rojo la pared de metal (deja pasar 42% en vez de poco), las paredes que deben aguantar, y la prueba de que el hidrógeno con chispa hace agua. Es un cambio de física que necesita su propia pasada de calibración.",
+      "arreglo": "ARREGLADO el 11 de septiembre, y la primera vez que lo intenté lo rechacé por una medición falsa: JULIOS estaba en 30 porque un barrido en segundo plano me reescribía el archivo. Con las constantes buenas, el frente —encolar los vecinos con `explota` en `_detona` y consumirlos en el acto— deja la curva monótona y sólo mueve dos umbrales, que se recalibran contra la bomba de verdad. OJO con encolarse a SÍ MISMA: sin esa línea una celda suelta detonaba dos veces y todo el motor entregaba el doble.",
       "comoCazarlo": "Envolver `revienta` y CONTAR las llamadas. Un cargo que no detona entero no se ve: se siente como que el explosivo es flojo.",
       "consejo": "Un cambio de física que descalibra media docena de pruebas necesita su propia pasada, no un parche de paso. Dejarlo escrito donde se ve vale más que subirlo a medias.",
       "salioDe": "CRISOL, 11 de septiembre de 2026",
@@ -655,6 +655,77 @@
         "barrido"
       ],
       "vecinas": [
+        "el-cargo-no-detona-entero"
+      ]
+    },
+    {
+      "id": "el-recipiente-que-se-deshace-al-moverse",
+      "titulo": "Un bote que se mueve se intercambia con su propio contenido",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «un recipiente lleno de algo inflamable, el ambiente en llamas, y si el recipiente se mueve el contenido explota por el ambiente». Un bote de metal SELLADO con 25 celdas de nitro detonaba en menos de 20 pasos.",
+      "causa": "El cuerpo rígido son las paredes; el líquido de dentro no es sólido, así que no entraba en el cuerpo. Al moverse, cada celda de pared INTERCAMBIABA con el fluido que tenía delante, que era su propio contenido: echaba una gota afuera y el ambiente ocupaba el hueco. Contado: paso 2 con 25 de nitro dentro, paso 3 con 5 de FUEGO.",
+      "porque": "«Cuerpo rígido» se definió como sólidos pegados, y un recipiente es sólido MÁS lo que encierra. El hueco sellado ya lo sabía `camaraPaso`; nadie se lo había dicho al que mueve.",
+      "arreglo": "Si toda la frontera de una cámara es esta pieza o algo fijo, sus celdas viajan en la misma lista de movimiento y su masa cuenta. Más tres cosas que hacen falta para que funcione de verdad: buscar las cámaras ANTES de mover los cuerpos, mudar la marca `camara` con el bote, y BORRAR el rastro de marcas viejas antes de poner las nuevas.",
+      "comoCazarlo": "Medir el interior RELATIVO al recipiente —buscando su caja— y no en coordenadas fijas: midiendo en coordenadas fijas mientras el bote cae, la pared de arriba entra en la ventana y parece una fuga que no existe. Me pasó y me mandó a perseguir un bug falso.",
+      "consejo": "Cuando algo compuesto se mueve, la pregunta no es qué celdas son suyas: es qué celdas VIAJAN con él.",
+      "salioDe": "CRISOL, 11 de septiembre de 2026",
+      "senales": [
+        "recipiente",
+        "bote",
+        "contenido",
+        "se escapa",
+        "entra fuego",
+        "sellado",
+        "viaja"
+      ],
+      "vecinas": [
+        "el-impulso-va-a-la-pieza-no-a-la-celda",
+        "un-vecino-caliente-no-es-una-llama"
+      ]
+    },
+    {
+      "id": "un-vecino-caliente-no-es-una-llama",
+      "titulo": "Encender no es lo mismo que estar al lado de algo caliente",
+      "gravedad": "alta",
+      "sintoma": "Cualquier cosa inflamable prendía si tenía un vecino a más de 260°, sin importar el material. La pared del propio recipiente se volvía el encendedor de lo que guardaba.",
+      "causa": "Una sola regla —«vecino > 260 ES fuego»— para dos fenómenos distintos: la llama en contacto y la autoignición por temperatura. Y un único número para todos los materiales, cuando en la vida real van de 205° a 600°.",
+      "porque": "Es la regla más corta que funciona en el caso fácil, y el caso fácil es el único que se prueba: pintar fuego junto a madera.",
+      "arreglo": "Dos caminos separados: llama de verdad EN CONTACTO, o que la celda llegue a SU PROPIA temperatura de ignición. El calor ya viaja por conducción, así que el material del recipiente decide solo — medido con fuego alrededor: aislante 28°, piedra 68°, concreto 73°, vidrio 78°, metal 1146° y detona. Un bote de metal cuece lo que guarda y uno de piedra no, sin una línea que lo diga.",
+      "comoCazarlo": "Probar con un material dentro de otro. Con la llama pegada directamente, las dos reglas dan lo mismo y no se distinguen.",
+      "consejo": "Las temperaturas van en la ESCALA DEL MOTOR, no en grados reales: aquí un vecino sólido se queda en un tercio de la fuente —madera a 154° junto a una resistencia de 450°—, así que los 300° reales de la madera son inalcanzables. Se calibra contra un ancla medida y se deja escrito el valor real al lado.",
+      "salioDe": "CRISOL, 11 de septiembre de 2026",
+      "senales": [
+        "se prende solo",
+        "arde",
+        "ignicion",
+        "temperatura",
+        "recipiente",
+        "fuego"
+      ],
+      "vecinas": [
+        "el-recipiente-que-se-deshace-al-moverse"
+      ]
+    },
+    {
+      "id": "la-prueba-que-medía-lo-quemado-y-decia-presion",
+      "titulo": "Pasaba porque el tapón se quemaba, no porque cediera",
+      "gravedad": "media",
+      "sintoma": "«Un tapón de madera cede y el recipiente de concreto aguanta»: en verde durante meses. Al arreglar la ignición se puso roja.",
+      "causa": "La prueba llenaba la olla de CO₂ a 900° UNA vez. Medido: presión CERO en los 300 pasos y el gas enfriándose de 900° a 22° en cincuenta. Calentar un gas de golpe no lo presuriza; lo que sube la presión es METER MÁS. El tapón desaparecía QUEMADO por la regla vieja, y la prueba contaba celdas que faltaban y las llamaba «cedió».",
+      "porque": "El nombre de la prueba describía la intención; la medida contaba celdas que faltan, y a una celda que falta le da igual por qué falta.",
+      "arreglo": "Bombear gas de verdad —la cámara llega a más de 100— y mirar si el tapón sigue EN SU AGUJERO en vez de contar madera en todo el mundo. Y escribir el hueco que quedó al aire: comparar qué material cede primero NO está hecho, el tapón se cae solo porque no está anclado.",
+      "comoCazarlo": "Cuando una prueba se ponga roja por un arreglo no relacionado, sospechar de la prueba antes que del arreglo: preguntarse por qué mecanismo pasaba.",
+      "consejo": "Contar lo que falta no dice por qué falta. Hay que medir el mecanismo, no el resultado.",
+      "salioDe": "CRISOL, 11 de septiembre de 2026",
+      "senales": [
+        "prueba verde que miente",
+        "presión",
+        "tapón",
+        "se quemó",
+        "umbral"
+      ],
+      "vecinas": [
+        "un-vecino-caliente-no-es-una-llama",
         "el-cargo-no-detona-entero"
       ]
     }
