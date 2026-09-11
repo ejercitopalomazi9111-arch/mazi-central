@@ -72,8 +72,41 @@ CSS = r"""
   --aurebesh:url('AUREBESH_URI');
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--negro);color:var(--hueso);
+/* ⚠ EL NEGRO SE MUDA DE `body` A `html`, Y NO ES COSMETICO.
+   `index.html` ya trae `html{background:#0A0A0B}` en el estilo en linea que
+   evita el destello blanco al cargar. Con `html` pintado, el fondo de `body`
+   YA NO se propaga al lienzo de la ventana: `body` pinta su propia caja, y esa
+   caja tapaba entero el lienzo de la nebulosa, que va en `z-index:-1`.
+   Sintoma: el fondo animado estaba dibujando —medido, pixeles y todo— y la
+   pagina se veia negra igual que antes.
+   Con `body` transparente el suelo lo pone `html`: sin JS queda el mismo negro
+   de siempre, y con JS la nebulosa se ve. */
+html{background:var(--negro)}
+body{margin:0;background:transparent;color:var(--hueso);
   font:400 16px/1.6 var(--texto);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+/* ══ G · EL FONDO VIVO ═════════════════════════════════════════════════════
+   Un lienzo fijo detras de todo: nebulosa que se mueve, tres capas de
+   estrellas con paralaje al scrollear y, de vez en cuando, una raya de salto
+   al hiperespacio.
+
+   Tres decisiones que no son de gusto:
+
+   · `z-index:-1` y NO un `z-index:0` con el contenido encima. El fondo de
+     `body` se propaga al lienzo de la ventana —`html` no tiene ninguno—, asi
+     que la caja de `body` no pinta nada y el -1 se ve. Con 0 habria que
+     ponerle posicion y capa a CADA seccion, y la que se olvidara quedaria
+     debajo del fondo.
+   · `pointer-events:none`: si no, se come los clics de toda la pagina.
+   · Sin JS no existe y no pasa nada: queda el negro de siempre. El lienzo es
+     aniadido, nunca el suelo sobre el que se lee.
+
+   Y el limite que lo hace seguro: la nebulosa va a ALFA MUY BAJA a proposito.
+   El contraste de la pagina se mide contra `--negro`, asi que si el fondo
+   aclarara de verdad ese numero seria mentira. Hay una comprobacion en
+   revisar.mjs que mide el pixel mas claro que este lienzo llega a pintar. */
+.g-fondo{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  width:100%;height:100%;display:block}
+@media (prefers-reduced-motion:reduce){.g-fondo{opacity:.7}}
 /* ⚠ EL `height:auto` NO ES ADORNO: SIN EL EL LOGO SE DEFORMA.
    Lo reporto Carlos — «el logo cuando carga se ve demasiado recortado en la
    parte de abajo». No estaba recortado: estaba ESTIRADO a lo alto.
@@ -177,7 +210,12 @@ CSS += r"""
 /* ---- Cartel de portada ---------------------------------------------------- */
 /* Un cartel, no una portada de plantilla: el titular en el amarillo de la
    marca, la cuña roja cruzando y las figuras dentro de la cuña. */
-.cartel{position:relative;overflow:hidden;background:#000;
+/* ⚠ `background:#000` AQUI TAPABA EL FONDO VIVO. El lienzo de la nebulosa va
+   en `z-index:-1`, o sea detras del contenido pero delante del fondo de la
+   ventana; cualquier seccion con fondo opaco lo borra en su trozo. El cartel
+   y el pie son justamente los dos sitios donde hay aire para que se vea, asi
+   que se quedan transparentes y el negro lo pone `body`, como siempre. */
+.cartel{position:relative;overflow:hidden;background:transparent;
   padding-block:clamp(30px,5vw,58px) 0}
 .cuna{position:absolute;inset:auto -12% -14% -12%;height:62%;z-index:0;
   background:linear-gradient(101deg,var(--rojo-hondo) 0%,var(--rojo) 46%,#6E0F14 100%);
@@ -399,54 +437,213 @@ CSS += r"""
 .g-cat.sin-foto .velo{background:linear-gradient(180deg,rgba(8,8,10,0) 0%,
   rgba(8,8,10,.35) 55%,rgba(8,8,10,.86) 100%)}
 
-/* ══ G · PUERTAS · la ficha se abre como una compuerta de nave ══ */
+/* ══════════════════════════════════════════════════════════════════════════
+   G · EL EXPEDIENTE · la ficha de cada pieza
+   ──────────────────────────────────────────────────────────────────────────
+   Carlos lo dijo sin rodeos: «el apartado de cada figura ni se parece en nada
+   al de la tienda original y de hecho se ve peor». Tenia razon. Copiar la suya
+   tampoco era la respuesta: lo que se pidio es que fuera MEJOR.
+
+   El layout: pantalla partida en dos, y NO por la mitad. A la izquierda la
+   ESCENA —la figura, con su numero VC de fondo a tamano de cartel—; a la
+   derecha la LECTURA, una columna estrecha de ficha tecnica. La asimetria es
+   el punto: una tienda pone foto y datos del mismo tamano; un expediente da
+   casi todo el espacio a la pieza y aprieta los datos en una columna que se
+   lee de un tiron. Debajo, el riel: la coleccion sigue.
+
+   Las reglas del movimiento, que aqui no son negociables:
+
+   · NUNCA se anima `opacity` sobre texto. Un texto a media transicion no
+     cumple contraste. Todo lo que es texto se destapa con MASCARA —caja con
+     overflow oculto y el texto subiendo dentro— a opacidad plena. La opacidad
+     se usa en lo decorativo: el velo, el numero de fondo, el anillo, el
+     barrido.
+   · Solo `transform` y `opacity`: las resuelve el compositor sin recalcular
+     el diseno.
+   · Nada de `backdrop-filter`. Obliga a Chrome a recomponer en cada cuadro de
+     scroll y ya nos costo una vez que el sitio fuera a tirones.
+   · Todo el movimiento vive dentro de `@media (scripting: enabled)`: sin JS la
+     ficha no se abre, y lo que no se ve no debe quedarse a medio destapar.
+   ══════════════════════════════════════════════════════════════════════════ */
 .g-ficha{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
-  background:rgba(4,4,6,.86);padding:clamp(12px,3vw,34px)}
+  padding:clamp(0px,2.2vw,30px)}
 .g-ficha[hidden]{display:none}
-/* Las compuertas de nave se quitaron: Carlos las vio «super fuera de lugar».
-   La ficha entra ahora subiendo un poco y ganando escala, que es lo que hace
-   una ficha de tienda y no distrae del producto. */
-.g-caja{position:relative;z-index:1;width:min(100%,940px);max-height:100%;
-  overflow-y:auto;background:var(--panel);border:1px solid var(--linea);
-  display:grid;gap:0;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
-  opacity:0;transform:translate3d(0,22px,0) scale(.985);
-  transition:opacity .34s ease,transform .44s cubic-bezier(.2,.9,.28,1)}
-.g-ficha.abierta .g-caja{opacity:1;transform:none}
-@media (max-width:760px){.g-caja{grid-template-columns:minmax(0,1fr)}}
-.g-galeria{background:#0C0C0E;display:grid;gap:8px;padding:14px;align-content:start}
-.g-galeria .grande{aspect-ratio:1/1;background:#111;position:relative;overflow:hidden;
-  touch-action:pan-y;cursor:grab}
-.g-galeria .grande:active{cursor:grabbing}
-/* La tira: todas las fotos una junto a otra. Lo que se mueve es la tira, no
-   se sustituye la imagen -- por eso no hay parpadeo ni cambio notorio. */
+/* el velo es decorativo: este SI puede animar opacidad */
+.ex-velo{position:absolute;inset:0;background:rgba(4,4,6,.90)}
+@media (scripting: enabled){
+  .g-ficha .ex-velo{opacity:0;transition:opacity .3s ease}
+  .g-ficha.abierta .ex-velo{opacity:1}
+}
+.g-caja{position:relative;z-index:1;width:min(100%,1180px);max-height:100%;
+  overflow-y:auto;overflow-x:hidden;background:var(--panel);
+  border:1px solid var(--linea);display:grid;
+  grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);
+  grid-template-areas:'escena leer' 'riel riel'}
+@media (scripting: enabled){
+  .g-ficha .g-caja{opacity:0;transform:translate3d(0,26px,0) scale(.982);
+    transition:opacity .3s ease,transform .46s cubic-bezier(.2,.9,.28,1)}
+  .g-ficha.abierta .g-caja{opacity:1;transform:none}
+}
+@media (max-width:860px){
+  .g-caja{grid-template-columns:minmax(0,1fr);
+    grid-template-areas:'escena' 'leer' 'riel'}}
+
+/* ── las esquinas se dibujan solas: encuadre de instrumento ─────────────── */
+.ex-marco{position:absolute;inset:8px;z-index:4;pointer-events:none}
+.ex-marco i{position:absolute;width:26px;height:26px;
+  border:2px solid var(--amarillo);opacity:.85}
+.ex-marco .e1{top:0;left:0;border-right:0;border-bottom:0;transform-origin:top left}
+.ex-marco .e2{top:0;right:0;border-left:0;border-bottom:0;transform-origin:top right}
+.ex-marco .e3{bottom:0;left:0;border-right:0;border-top:0;transform-origin:bottom left}
+.ex-marco .e4{bottom:0;right:0;border-left:0;border-top:0;transform-origin:bottom right}
+@media (scripting: enabled){
+  .g-ficha .ex-marco i{transform:scale(.2)}
+  .g-ficha.abierta .ex-marco i{transform:scale(1);
+    transition:transform .5s cubic-bezier(.2,.9,.28,1) .12s}
+}
+
+/* ── LA ESCENA ─────────────────────────────────────────────────────────── */
+.ex-escena{grid-area:escena;position:relative;overflow:hidden;background:#0B0B0D;
+  display:grid;gap:10px;padding:clamp(14px,2vw,24px);align-content:start;
+  container-type:inline-size}
+/* ⚠ ESTO ESTABA DETRAS DE LA FOTO Y NO SE VEIA NADA. Las fotos de producto
+   de Hasbro son cuadrados OPACOS con su propio fondo de color —verde, rojo,
+   azul—, asi que tapaban entera la marca de agua. Un adorno que existe en el
+   marcado y no se ve en la pantalla es peor que no tenerlo: cuesta lo mismo y
+   no hace nada.
+   Se muda a la columna de lectura, anclada abajo, que es justo donde sobraba
+   sitio cuando la pieza no lleva boton de pago. */
+.ex-slab{position:absolute;left:0;right:0;bottom:-.14em;z-index:0;text-align:center;
+  font:400 clamp(120px,26cqw,260px)/.8 var(--display);letter-spacing:-.06em;
+  color:rgba(255,255,255,.055);pointer-events:none;user-select:none;overflow:hidden;
+  transform:translate3d(calc((var(--px) - .5) * -22px),calc((var(--py) - .5) * -10px),0)}
+/* el anillo de aurebesh gira despacio: es la letra de la casa, no un adorno
+   generico sacado de ningun lado */
+.ex-anillo{position:absolute;left:50%;top:52%;width:min(90%,440px);aspect-ratio:1;
+  translate:-50% -50%;z-index:0;pointer-events:none;opacity:.10;
+  background:var(--aurebesh) center/contain no-repeat}
+/* y lo que se lee va por encima de las dos marcas de agua */
+.ex-leer>*:not(.ex-slab):not(.ex-anillo){position:relative;z-index:1}
+@media (scripting: enabled){
+  .g-ficha.abierta .ex-anillo{animation:ex-gira 64s linear infinite}
+}
+@keyframes ex-gira{to{rotate:360deg}}
+
+.ex-escena .grande{position:relative;z-index:1;aspect-ratio:1/1;overflow:hidden;
+  touch-action:pan-y;cursor:grab;background:transparent}
+.ex-escena .grande:active{cursor:grabbing}
+/* La tira: todas las fotos una junto a otra. Lo que se mueve es la tira, no se
+   sustituye la imagen — por eso no hay parpadeo ni cambio notorio. */
 .g-tira{display:flex;height:100%;will-change:transform}
 .g-hoja{flex:0 0 auto;height:100%;display:grid;place-items:center}
 .g-hoja img{width:100%;height:100%;object-fit:contain;pointer-events:none;
-  -webkit-user-drag:none;user-select:none}
+  -webkit-user-drag:none;user-select:none;
+  filter:drop-shadow(0 18px 26px rgba(0,0,0,.6))}
+/* la figura sigue al puntero, al reves que el numero de fondo: es lo que da
+   la sensacion de que hay hondura entre los dos planos. Poca cantidad a
+   proposito —12 px—: mas que eso se nota como un truco y marea. */
+@media (hover:hover) and (scripting: enabled){
+  .g-hoja img{transform:translate3d(calc((var(--px) - .5) * 12px),
+                                    calc((var(--py) - .5) * 7px),0)}
+}
+/* la foto entra con un empujon al cambiar de pieza */
+@media (scripting: enabled){
+  .ex-escena .grande.entra{animation:ex-entra .44s cubic-bezier(.2,.9,.28,1)}
+}
+@keyframes ex-entra{from{transform:scale(.965)}to{transform:none}}
 /* Abajo a la derecha caia justo encima del sello VINTAGE COLLECTION que traen
    impresas casi todas las fotos de Hasbro, y el contador no se leia. Arriba a
    la izquierda esa esquina siempre esta limpia. Fondo opaco, no translucido:
    sobre foto clara el .74 dejaba pasar el fondo. */
-.g-cuenta{position:absolute;left:10px;top:10px;background:#0A0A0C;
+.g-cuenta{position:absolute;left:10px;top:10px;z-index:2;background:#0A0A0C;
   border:1px solid var(--linea);color:var(--hueso);padding:5px 9px;
   font:700 10px/1 var(--dato);letter-spacing:.12em;pointer-events:none}
-.g-tiras{display:flex;gap:7px;flex-wrap:wrap}
+/* el barrido: una raya de luz que cruza la foto al cambiar de pieza. Capa
+   decorativa SOBRE LA IMAGEN, nunca sobre texto. */
+.ex-barrido{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+  background:linear-gradient(100deg,transparent 38%,rgba(250,247,0,.30) 50%,transparent 62%)}
+@media (scripting: enabled){.ex-barrido.pasa{animation:ex-barre .62s ease-out}}
+@keyframes ex-barre{
+  from{opacity:1;transform:translate3d(-100%,0,0)}
+  to{opacity:0;transform:translate3d(100%,0,0)}}
+
+.g-tiras{position:relative;z-index:1;display:flex;gap:7px;flex-wrap:wrap}
 .g-tiras button{width:54px;height:54px;padding:0;background:#141416;cursor:pointer;
-  border:1px solid var(--linea);transition:border-color .2s}
+  border:1px solid var(--linea);
+  transition:border-color .2s,transform .25s cubic-bezier(.2,.9,.28,1)}
+.g-tiras button:hover{transform:translate3d(0,-3px,0)}
 .g-tiras button[aria-current="true"]{border-color:var(--amarillo)}
 .g-tiras img{width:100%;height:100%;object-fit:contain}
-.g-datos{padding:clamp(16px,2.4vw,26px);display:grid;gap:12px;align-content:start}
-.g-datos .vc{font:700 11px/1 var(--dato);letter-spacing:.22em;color:var(--amarillo)}
-.g-datos h3{font-size:clamp(19px,2.6vw,28px)}
-.g-datos dl{margin:6px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);
-  gap:8px 16px;font:400 12.5px/1.5 var(--dato)}
-.g-datos dt{color:var(--gris-tenue);text-transform:uppercase;letter-spacing:.12em;
+
+/* ── LA LECTURA ────────────────────────────────────────────────────────── */
+.ex-leer{grid-area:leer;position:relative;overflow:hidden;
+  padding:clamp(18px,2.4vw,30px);display:grid;gap:13px;
+  align-content:start;background:var(--panel);container-type:inline-size}
+.ex-ceja{display:flex;align-items:baseline;gap:10px;margin:0;
+  font:700 10.5px/1 var(--dato);letter-spacing:.24em;text-transform:uppercase;
+  color:var(--amarillo)}
+.ex-ceja i{font-style:normal;color:var(--gris-tenue);letter-spacing:.2em}
+.ex-ceja.chica{font-size:9.5px;margin:0 0 11px}
+/* LA MASCARA. El titulo entra subiendo DENTRO de una caja con overflow oculto,
+   a opacidad plena en todo momento: cumple contraste en cada cuadro de la
+   transicion. Es exactamente la razon por la que no se anima opacidad sobre
+   texto, y aqui esta la alternativa. */
+.ex-mask{overflow:hidden}
+.ex-leer h3{font-size:clamp(22px,3vw,38px);line-height:1.04}
+.ex-regla{display:block;height:2px;background:var(--amarillo);transform-origin:left center}
+@media (scripting: enabled){
+  .g-ficha .ex-leer h3{transform:translate3d(0,110%,0)}
+  .g-ficha .ex-regla{transform:scaleX(0)}
+  .g-ficha .ex-fila>*{transform:translate3d(0,115%,0)}
+  .g-ficha.abierta .ex-leer h3{transform:none;
+    transition:transform .52s cubic-bezier(.2,.9,.28,1) .10s}
+  .g-ficha.abierta .ex-regla{transform:scaleX(1);
+    transition:transform .5s cubic-bezier(.2,.9,.28,1) .22s}
+  /* escalonado: cada fila entra 60 ms despues de la anterior */
+  .g-ficha.abierta .ex-fila>*{transform:none;
+    transition:transform .46s cubic-bezier(.2,.9,.28,1)}
+  .g-ficha.abierta .ex-fila:nth-child(1)>*{transition-delay:.26s}
+  .g-ficha.abierta .ex-fila:nth-child(2)>*{transition-delay:.32s}
+  .g-ficha.abierta .ex-fila:nth-child(3)>*{transition-delay:.38s}
+  .g-ficha.abierta .ex-fila:nth-child(4)>*{transition-delay:.44s}
+}
+.ex-datos{margin:4px 0 0;display:grid;gap:0;font:400 12.5px/1.5 var(--dato)}
+/* ⚠ `overflow:hidden` va en la FILA y lo que se mueve son sus hijos. Si se
+   moviera la fila entera, la mascara se moveria con el texto y no taparia
+   nada: se veria el texto deslizandose por encima de lo de al lado. */
+.ex-fila{overflow:hidden;display:grid;
+  grid-template-columns:minmax(84px,auto) minmax(0,1fr);gap:8px 16px;
+  padding:9px 0;border-bottom:1px solid var(--linea)}
+.ex-fila dt{color:var(--gris-tenue);text-transform:uppercase;letter-spacing:.12em;
   font-size:10px;padding-top:3px}
-.g-datos dd{margin:0;color:var(--hueso)}
-.g-cerrar{position:absolute;top:10px;right:10px;z-index:3;background:var(--panel2);
-  border:1px solid var(--linea);color:var(--hueso);cursor:pointer;width:38px;height:38px;
-  font:400 18px/1 var(--texto)}
-.g-cerrar:hover{border-color:var(--amarillo);color:var(--amarillo)}
+.ex-fila dd{margin:0;color:var(--hueso)}
+
+/* ── EL RIEL del final: la coleccion sigue ─────────────────────────────── */
+.ex-riel{grid-area:riel;padding:clamp(14px,2vw,20px);
+  border-top:1px solid var(--linea);background:#101012}
+.ex-vagones{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.ex-vagones button{flex:0 0 auto;width:78px;padding:0;background:#141416;
+  border:1px solid var(--linea);cursor:pointer;display:grid;gap:0;
+  transition:border-color .2s,transform .25s cubic-bezier(.2,.9,.28,1)}
+.ex-vagones button:hover{border-color:var(--amarillo);transform:translate3d(0,-3px,0)}
+.ex-vagones button img{width:100%;aspect-ratio:1;object-fit:contain}
+.ex-vagones button b{font:700 8.5px/1 var(--dato);letter-spacing:.1em;
+  color:var(--gris);padding:5px 4px 6px}
+
+/* ── botones flotantes ─────────────────────────────────────────────────── */
+.g-cerrar,.ex-paso{position:absolute;z-index:5;background:var(--panel2);
+  border:1px solid var(--linea);color:var(--hueso);cursor:pointer;
+  display:grid;place-items:center}
+.g-cerrar{top:10px;right:10px;width:40px;height:40px;font:400 18px/1 var(--texto)}
+/* ⚠ ESTABAN ANCLADAS A `.g-caja` Y LA DE «SIGUIENTE» CAIA ENCIMA DEL AVISO DE
+   PAGO, en la otra columna. Van dentro de la escena, que es lo que gobiernan. */
+.ex-paso{top:46%;translate:0 -50%;width:38px;height:56px;font:400 24px/1 var(--texto)}
+.ex-paso.ant{left:clamp(14px,2vw,24px)} .ex-paso.sig{right:clamp(14px,2vw,24px)}
+.g-cerrar:hover,.ex-paso:hover{border-color:var(--amarillo);color:var(--amarillo)}
+.ex-paso[disabled]{opacity:.3;cursor:default}
+/* en telefono estorban encima de la foto: el gesto y el riel ya llevan a la
+   pieza de al lado */
+@media (max-width:860px){.ex-paso{display:none}}
 
 
 .ficha-p .precio{font:400 clamp(15px,1.7vw,19px)/1 var(--display);
@@ -587,7 +784,7 @@ CSS += r"""
 .cierre .b:hover{background:transparent;color:#0A0A0B}
 section{padding-block:clamp(40px,5.6vw,80px)}
 .sep{height:1px;background:var(--linea)}
-footer{background:#000;border-top:1px solid var(--linea);
+footer{background:transparent;border-top:1px solid var(--linea);
   padding-block:clamp(32px,4.4vw,52px)}
 .fila-pie{display:flex;flex-wrap:wrap;gap:22px 34px;justify-content:space-between;
   align-items:flex-start;font:400 11.5px/1.65 var(--dato);color:var(--gris-tenue)}
@@ -634,6 +831,15 @@ footer{background:#000;border-top:1px solid var(--linea);
   *,*::before,*::after{animation:none!important;transition:none!important}
   .revelar,.figura,.carton,.burbuja img,.lustre{transform:none!important}
   .pieza-eje{transform:translateX(-1px)!important}
+  /* EL EXPEDIENTE. Sin esto dependeria de que la clase `.abierta` llegue
+     siempre para deshacer los estados de partida —titulo a 110%, regla a
+     scaleX(0), esquinas a scale(.2)—. Con las transiciones apagadas, un
+     estado de partida que nadie deshace no es una animacion suave: es texto
+     que NO SE VE. El estado final se afirma aqui y no se hereda de nadie. */
+  .g-caja,.ex-marco i,.ex-leer h3,.ex-regla,.ex-fila>*,.ex-slab,
+  .g-hoja img,.ex-anillo{transform:none!important}
+  .ex-regla{transform:scaleX(1)!important}
+  .g-caja,.ex-velo{opacity:1!important}
   /* ══════ S ══════ */
   .s-rev,.s-rev.s-caja{transform:none!important;opacity:1!important}
   /* Los estados siguen EXISTIENDO: se quita el movimiento, no la respuesta.
@@ -885,27 +1091,71 @@ def g_datos_js():
                        'p': pr.get('precio'), 'st': pr.get('stock', 'disponible')}
     return json.dumps(d, ensure_ascii=False, separators=(',', ':'))
 
+def g_orden_js():
+    """El orden del catalogo. La ficha lo necesita para la pieza anterior y la
+    siguiente y para el riel del final; sin el habria que recorrer un objeto,
+    cuyo orden de claves no es contrato."""
+    return json.dumps([pz['vc'] for pz in cat
+                       if (FOTOS.get(pz['vc']) or {}).get('fotos')],
+                      ensure_ascii=False, separators=(',', ':'))
+
 def g_ficha():
-    """El cuadro que se abre como compuerta. Vacio: lo llena el guion."""
+    """EL EXPEDIENTE · la ficha de cada pieza.
+
+    Carlos lo dijo sin rodeos: «el apartado de cada figura ni se parece en nada
+    al de la tienda original y de hecho se ve peor». Tenia razon, y copiar la
+    suya tampoco era la respuesta —lo que pidieron es que fuera MEJOR—.
+
+    Asi que no es un cuadrito de tienda: es un expediente. La pieza no se
+    presenta como un articulo en una lista, se presenta como una ficha tecnica
+    —numero, linea, escala, estado— que es exactamente como habla de sus
+    figuras quien colecciona. El numero VC gigante detras no es adorno: es EL
+    dato, el que da nombre a la pieza y el que la seccion entera defiende.
+
+    Va vacio a proposito: lo llena el guion. Repetir aqui el marcado de las 47
+    fichas serian ~180 KB de HTML que casi nadie llega a abrir.
+    """
+    filas = (
+        '<div class="ex-fila"><dt>Línea</dt><dd id="g-serie"></dd></div>'
+        '<div class="ex-fila"><dt>Escala</dt><dd>3.75&Prime; · 9.5 cm</dd></div>'
+        '<div class="ex-fila"><dt>Estado</dt><dd>En su cartón original, sin abrir</dd></div>'
+        '<div class="ex-fila"><dt>Nº de pieza</dt><dd id="g-npieza"></dd></div>')
     return ('<div class="g-ficha" id="g-ficha" hidden role="dialog" aria-modal="true" '
-            'aria-label="Ficha de la figura">'
-            '<div class="g-caja">'
+            'aria-labelledby="g-nom">'
+            '<div class="ex-velo" aria-hidden="true"></div>'
+            '<div class="g-caja" id="g-caja">'
+
+            '<div class="ex-marco" aria-hidden="true">'
+            '<i class="e1"></i><i class="e2"></i><i class="e3"></i><i class="e4"></i></div>'
+
             '<button class="g-cerrar" id="g-cerrar" type="button" aria-label="Cerrar">✕</button>'
-            '<div class="g-galeria">'
+
+            '<div class="ex-escena">'
+            '<button class="ex-paso ant" id="g-ant" type="button" aria-label="Pieza anterior">‹</button>'
+            '<button class="ex-paso sig" id="g-sig" type="button" aria-label="Pieza siguiente">›</button>'
             '<div class="grande"><div class="g-tira" id="g-tira"></div>'
-            '<span class="g-cuenta" id="g-cuenta"></span></div>'
-            '<div class="g-tiras" id="g-tiras"></div></div>'
-            '<div class="g-datos"><span class="vc" id="g-vc"></span>'
-            '<h3 id="g-nom"></h3>'
-            '<dl><dt>Línea</dt><dd id="g-serie"></dd>'
-            '<dt>Escala</dt><dd>3.75&Prime; · 9.5 cm</dd>'
-            '<dt>Estado</dt><dd>En su cartón original, sin abrir</dd></dl>'
+            '<span class="g-cuenta" id="g-cuenta"></span>'
+            '<span class="ex-barrido" id="g-barrido" aria-hidden="true"></span></div>'
+            '<div class="g-tiras" id="g-tiras"></div>'
+            '</div>'
+
+            '<div class="ex-leer">'
+            '<span class="ex-slab" id="g-slab" aria-hidden="true"></span>'
+            '<span class="ex-anillo" aria-hidden="true"></span>'
+            '<p class="ex-ceja"><span id="g-vc"></span><i>Expediente</i></p>'
+            '<div class="ex-mask"><h3 id="g-nom"></h3></div>'
+            '<span class="ex-regla" aria-hidden="true"></span>'
+            f'<dl class="ex-datos">{filas}</dl>'
             '<div class="g-compra">'
             '<span class="g-precio-g" id="g-precio"></span>'
             '<span class="g-stock" id="g-stock"></span>'
             '<div id="g-paypal"></div>'
             '<a class="b" id="g-ir" href="#" target="_blank" rel="noopener">'
-            '<span>Ver en la tienda ↗</span></a></div></div>'
+            '<span>Ver en la tienda ↗</span></a></div>'
+            '</div>'
+
+            '<div class="ex-riel"><p class="ex-ceja chica">Más de la colección</p>'
+            '<div class="ex-vagones" id="g-riel"></div></div>'
             '</div></div>')
 
 def g_intro():
@@ -970,6 +1220,8 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
 <style>{BUNGEE_EMPOTRADA}</style>
 <style>{CSS}</style>
+
+<canvas class="g-fondo" id="g-fondo" aria-hidden="true"></canvas>
 
 {g_intro()}
 
@@ -1184,10 +1436,26 @@ JS = r"""
   }
   /* ══════════════════ /S ══════════════════ */
 
-  if (quieto) return;
+  /* ⚠ AQUI HABIA UN `if (quieto) return;` Y SE LLEVABA MEDIA PAGINA POR DELANTE.
+     Todo el guion del sitio vive dentro de UNA SOLA funcion auto-invocada —un
+     rAF compartido, como manda el motor—, asi que ese `return` no apagaba el
+     movimiento: apagaba TODO LO QUE VENIA DESPUES. Y despues venian el puntero,
+     la rotacion de banners, la intro, el fondo vivo y el EXPEDIENTE ENTERO.
+     O sea: a quien tiene «Reducir movimiento» encendido —en iPhone son dos
+     toques en Accesibilidad— pulsar una figura NO HACIA ABSOLUTAMENTE NADA.
+     Ni se abria, ni avisaba, ni fallaba: nada.
+
+     Comprobado en la version que YA ESTABA PUBLICADA, o sea que no es de hoy:
+     `TOY.g.abrir` salia `undefined` y la ficha no se abria.
+
+     `quieto` significa «sin movimiento», NUNCA «sin JavaScript». Lo que de
+     verdad se mueve se frena donde se mueve —abajo, marcado uno por uno—, y
+     lo demas sigue funcionando, que es justo lo que pide la regla: sin
+     movimiento la pagina queda COMPLETA, nunca a medias. */
 
   // ---- Puntero ------------------------------------------------------------
   var vitrina = document.querySelector('.vitrina'),
+      ficha   = document.getElementById('g-ficha'),
       carton  = document.getElementById('carton'),
       banda   = document.getElementById('banda'),
       medida  = document.getElementById('medida');
@@ -1195,7 +1463,7 @@ JS = r"""
   var cx = .5, cy = .5, kx = .5, ky = .5;
   var agarre = null, tocada = false;
 
-  addEventListener('pointermove', function(e){
+  if (!quieto) addEventListener('pointermove', function(e){
     mx = e.clientX / innerWidth; my = e.clientY / innerHeight;
     if (agarre === null && carton) {
       var r = carton.getBoundingClientRect();
@@ -1206,7 +1474,7 @@ JS = r"""
     }
   }, { passive: true });
 
-  if (carton) {
+  if (carton && !quieto) {
     carton.addEventListener('pointerdown', function(e){
       agarre = { x: e.clientX, y: e.clientY, cx: cx, cy: cy };
       carton.classList.add('agarrado'); carton.setPointerCapture(e.pointerId);
@@ -1251,10 +1519,16 @@ JS += r"""
     kx += (cx - kx) * k; ky += (cy - ky) * k;
     if (vitrina) { vitrina.style.setProperty('--px', sx.toFixed(4));
                    vitrina.style.setProperty('--py', sy.toFixed(4)); }
+    /* ⚠ EL EXPEDIENTE VIVE FUERA DE `.vitrina`, asi que heredaba el `--px:.5`
+       de `:root` — o sea, el centro fijo— y su numero de fondo y su figura
+       NO SE MOVIAN NUNCA. El efecto estaba escrito y no existia. Se le pasan
+       aqui las mismas dos variables, y solo mientras esta abierto. */
+    if (ficha && !ficha.hidden) { ficha.style.setProperty('--px', sx.toFixed(4));
+                                  ficha.style.setProperty('--py', sy.toFixed(4)); }
     if (carton)  { carton.style.setProperty('--cx', kx.toFixed(4));
                    carton.style.setProperty('--cy', ky.toFixed(4)); }
 
-    if (banda && !tocada) {
+    if (banda && !tocada && !quieto) {
       var r = banda.getBoundingClientRect();
       var p = (innerHeight - r.top) / (innerHeight + r.height);
       p = Math.max(0, Math.min(1, (p - .18) / .58));
@@ -1422,9 +1696,185 @@ JS += """
   // Meter 47 galerias en el HTML lo habria hecho enorme para algo que casi
   // nadie abre entero.
   TOY.g.piezas = """ + g_datos_js() + """;
+  TOY.g.orden = """ + g_orden_js() + """;
   TOY.g.paypal = """ + json.dumps(PAYPAL_ID) + """;
   TOY.g.moneda = """ + json.dumps(MONEDA) + """;
 """
+
+JS += r"""
+  // ══════════════════════════════════════════════════════════════════════
+  // G · EL FONDO VIVO · nebulosa + estrellas con paralaje + hiperespacio
+  // ══════════════════════════════════════════════════════════════════════
+  // Se pide un fondo "mas entretenido, animado con colores, sin desentonar".
+  // Lo que NO desentona aqui es la paleta que ya es del cliente: el amarillo
+  // medido de su logo y el rojo de la casa, sobre negro. Nada de morados ni
+  // de degradados de moda.
+  //
+  // Las tres cosas que lo hacen barato, que es lo que permite que este
+  // encendido TODO el rato sin que el scroll se sienta:
+  //
+  // 1 · La nebulosa se pinta en un lienzo de 192x108 y se estira al tamano de
+  //     la ventana. Una nube difusa no necesita pixeles: a tamano real serian
+  //     ~2 millones de pixeles por cuadro, aqui son 20 mil. Es la misma idea
+  //     de siempre —no pagar resolucion donde no se ve—.
+  // 2 · La nebulosa se repinta a 12 cuadros por segundo y las estrellas a 30.
+  //     A una nube que tarda 40 segundos en cruzar nadie le nota los 12.
+  // 3 · Fuera de la pestana no dibuja nada.
+  //
+  // Y el limite duro: la nebulosa va a alfa bajisima. El contraste del texto
+  // se mide contra --negro, asi que un fondo que aclarara de verdad volveria
+  // mentira ese numero. Hay una comprobacion en revisar.mjs que mide el pixel
+  // mas claro que esto llega a pintar.
+  var lienzoF = document.getElementById('g-fondo'),
+      fx = lienzoF && lienzoF.getContext && lienzoF.getContext('2d');
+  if (fx) {
+    var RF = Math.min(devicePixelRatio || 1, 1.5);
+
+    // --- la nebulosa, en chiquito ---------------------------------------
+    var neb = document.createElement('canvas');
+    neb.width = 192; neb.height = 108;
+    var nx = neb.getContext('2d');
+    // rojo de la casa, amarillo del logo y un azul frio que da hondura.
+    // El azul NO es una marca nueva: es el suelo, igual que en el membrete.
+    // Las alfas NO son al gusto: son el techo que deja el contraste. El texto
+    // mas flojo de la pagina es --gris (#9A9AA2, luminancia .313) y para
+    // cumplir 4.5:1 el fondo no puede pasar de .0307 de luminancia. Estas
+    // dejan el bloque mas claro en ~.022, o sea ~5:1 en el peor sitio, y se
+    // ven. La primera version se quedo en .0075 —cumplia de sobra y NO SE
+    // VEIA: un fondo invisible no es un fondo, es negro con costo de CPU—.
+    var manchas = [
+      { c:'209,35,42',   x:.18, y:.24, r:.62, a:.225, vx: .0000110, vy: .0000062, f:0 },
+      { c:'250,247,0',   x:.82, y:.18, r:.48, a:.130, vx:-.0000086, vy: .0000091, f:2 },
+      { c:'142,19,25',   x:.62, y:.74, r:.70, a:.200, vx: .0000067, vy:-.0000078, f:4 },
+      { c:'27,47,107',   x:.30, y:.86, r:.66, a:.260, vx:-.0000094, vy:-.0000054, f:1 },
+      { c:'250,247,0',   x:.06, y:.62, r:.34, a:.095, vx: .0000122, vy: .0000041, f:3 }
+    ];
+    function pintarNebulosa(t){
+      nx.clearRect(0, 0, 192, 108);
+      for (var i = 0; i < manchas.length; i++) {
+        var m = manchas[i];
+        // van y vienen: seno lento, no un desplazamiento que se salga
+        var px = (m.x + Math.sin(t * m.vx + m.f) * .17) * 192;
+        var py = (m.y + Math.cos(t * m.vy + m.f) * .15) * 108;
+        var pr = m.r * 108 * (1 + Math.sin(t * .000047 + m.f) * .12);
+        var g = nx.createRadialGradient(px, py, 0, px, py, pr);
+        g.addColorStop(0,   'rgba(' + m.c + ',' + m.a + ')');
+        g.addColorStop(.55, 'rgba(' + m.c + ',' + (m.a * .38).toFixed(4) + ')');
+        g.addColorStop(1,   'rgba(' + m.c + ',0)');
+        nx.fillStyle = g;
+        nx.fillRect(0, 0, 192, 108);
+      }
+    }
+
+    // --- tres capas de estrellas, con paralaje al scrollear --------------
+    // La de atras casi no se mueve y la de adelante se mueve el doble que la
+    // pagina: es lo que da la sensacion de hondura sin dibujar nada en 3D.
+    // Las estrellas son lo que de verdad se VE que se mueve, y ademas son
+    // gratis para el contraste: un punto de 3 px promediado en un bloque de
+    // 32x32 no levanta el fondo. Por eso el presupuesto se gasta aqui y no
+    // en subirle mas tinta a la nebulosa, que si lo levantaria.
+    var capas = [
+      { n:190, prof:.05, tam:1.4, br:.42, halo:0 },
+      { n:110, prof:.16, tam:2.1, br:.70, halo:0 },
+      { n: 48, prof:.33, tam:3.0, br:1,   halo:1 }
+    ];
+    var cielo = [];
+    function sembrar(){
+      cielo = [];
+      for (var c = 0; c < capas.length; c++)
+        for (var i = 0; i < capas[c].n; i++)
+          cielo.push({ x:Math.random(), y:Math.random(), c:c,
+                       f:Math.random() * 6.283, w:.6 + Math.random() * .9 });
+    }
+    sembrar();
+
+    // --- el salto al hiperespacio, de vez en cuando ----------------------
+    // Una raya que cruza cada 9-22 s. Es el guino de Star Wars que pidieron,
+    // y es UNA raya: si fueran muchas seria un protector de pantalla.
+    var raya = null, proxima = 4200;
+    function lanzarRaya(t){
+      var borde = Math.random() < .5;
+      raya = { t0:t, dur:520 + Math.random() * 380,
+               x0: borde ? -.08 : Math.random(), y0: borde ? Math.random() * .8 : -.08,
+               dx: borde ? 1.16 : (Math.random() - .5) * .5,
+               dy: borde ? (Math.random() - .5) * .45 : 1.16,
+               g: Math.random() < .34 };      // una de cada tres es amarilla
+      proxima = t + 6000 + Math.random() * 9000;
+    }
+
+    var anchoF = 0, altoF = 0, ultNeb = 0, ultFondo = 0;
+    function medirFondo(){
+      var w = Math.round(lienzoF.clientWidth * RF), h = Math.round(lienzoF.clientHeight * RF);
+      if (!w || !h) return false;
+      if (w !== lienzoF.width || h !== lienzoF.height) {
+        lienzoF.width = w; lienzoF.height = h; anchoF = w; altoF = h;
+      }
+      return true;
+    }
+
+    function dibujarFondo(t){
+      if (!medirFondo()) return;
+      fx.clearRect(0, 0, anchoF, altoF);
+      fx.imageSmoothingEnabled = true;
+      fx.drawImage(neb, 0, 0, anchoF, altoF);
+
+      var sc = (window.pageYOffset || 0) * RF;
+      for (var i = 0; i < cielo.length; i++) {
+        var e = cielo[i], cp = capas[e.c];
+        var y = (e.y * altoF - sc * cp.prof) % altoF;
+        if (y < 0) y += altoF;
+        // el titileo es de las estrellas, no del texto: aqui si se puede
+        var a = cp.br * (.55 + .45 * Math.sin(t / 1100 * e.w + e.f));
+        var px = e.x * anchoF, tam = cp.tam * RF;
+        if (cp.halo) {                       // las de delante llevan resplandor
+          fx.fillStyle = 'rgba(250,247,210,' + (a * .16).toFixed(3) + ')';
+          fx.fillRect(px - tam, y - tam, tam * 3, tam * 3);
+        }
+        fx.fillStyle = 'rgba(244,242,226,' + a.toFixed(3) + ')';
+        fx.fillRect(px, y, tam, tam);
+      }
+
+      if (raya) {
+        var u = (t - raya.t0) / raya.dur;
+        if (u >= 1) raya = null;
+        else {
+          var lx = (raya.x0 + raya.dx * u) * anchoF,
+              ly = (raya.y0 + raya.dy * u) * altoF,
+              cola = .13;
+          var tx = (raya.x0 + raya.dx * Math.max(0, u - cola)) * anchoF,
+              ty = (raya.y0 + raya.dy * Math.max(0, u - cola)) * altoF;
+          var g = fx.createLinearGradient(tx, ty, lx, ly);
+          var col = raya.g ? '250,247,0' : '236,240,255';
+          var vida = Math.sin(u * Math.PI);           // entra y sale, no aparece
+          g.addColorStop(0, 'rgba(' + col + ',0)');
+          g.addColorStop(1, 'rgba(' + col + ',' + (.62 * vida).toFixed(3) + ')');
+          fx.strokeStyle = g;
+          fx.lineWidth = 1.6 * RF;
+          fx.beginPath(); fx.moveTo(tx, ty); fx.lineTo(lx, ly); fx.stroke();
+        }
+      }
+    }
+
+    if (quieto) {
+      // Sin movimiento: UN cuadro, y ya. No queda a medias ni en negro.
+      pintarNebulosa(0);
+      requestAnimationFrame(function(){ dibujarFondo(0); });
+      addEventListener('resize', function(){ dibujarFondo(0); });
+    } else {
+      pintarNebulosa(0);
+      tareas.push(function(t){
+        if (document.hidden) return;
+        if (t - ultNeb > 83) { pintarNebulosa(t); ultNeb = t; }   // ~12 fps
+        if (t - ultFondo < 33) return;                            // ~30 fps
+        ultFondo = t;
+        if (t > proxima) lanzarRaya(t);
+        dibujarFondo(t);
+      });
+    }
+  }
+})();
+"""
+
 
 JS += r"""
   var cuadro = document.getElementById('g-ficha');
@@ -1434,6 +1884,11 @@ JS += r"""
         gCuenta = document.getElementById('g-cuenta'),
         gVc = document.getElementById('g-vc'), gNom = document.getElementById('g-nom'),
         gSerie = document.getElementById('g-serie'), gIr = document.getElementById('g-ir'),
+        gNPieza = document.getElementById('g-npieza'),
+        gSlab = document.getElementById('g-slab'),
+        gBarrido = document.getElementById('g-barrido'),
+        gRiel = document.getElementById('g-riel'),
+        gAnt = document.getElementById('g-ant'), gSig = document.getElementById('g-sig'),
         devolver = null;
 
     function armarGaleria(fotos, alt){
@@ -1464,17 +1919,27 @@ JS += r"""
       });
     }
 
-    function abrir(vc, origen){
-      var d = TOY.g.piezas[vc]; if (!d) return;
-      devolver = origen || null;
+    // ---- EL EXPEDIENTE se llena ------------------------------------------
+    // `abrir` hace dos cosas distintas y conviene no confundirlas: PINTAR los
+    // datos de la pieza (que tambien pasa al cambiar de pieza sin cerrar) y
+    // ABRIR el cuadro (que solo pasa la primera vez). Por eso estan separadas.
+    var vcAct = null;
+
+    function pintar(vc, animar){
+      var d = TOY.g.piezas[vc]; if (!d) return false;
+      vcAct = vc;
       gVc.textContent = 'VC ' + vc;
       gNom.textContent = d.n; gSerie.textContent = d.s; gIr.href = d.u;
-      // precio, existencia y pago
+      if (gNPieza) gNPieza.textContent = vc;
+      // el numero a tamano de cartel. Se pone ENTERO: el sufijo de las
+      // reediciones —01A, 312A— es parte del nombre de la pieza, y recortarlo
+      // a los digitos hacia que dos piezas distintas se rotularan igual.
+      if (gSlab) gSlab.textContent = vc;
+
       var eP = document.getElementById('g-precio'),
           eS = document.getElementById('g-stock'),
           eB = document.getElementById('g-paypal');
-      if (d.p) { eP.innerHTML = '$ ' + d.p.toLocaleString('es-MX') +
-                                '<i>' + TOY.g.moneda + '</i>'; eP.hidden = false; }
+      if (d.p) { contarPrecio(eP, d.p, animar); eP.hidden = false; }
       else { eP.hidden = true; }
       eS.textContent = d.st === 'agotado' ? 'Agotado' : 'Disponible';
       eS.className = 'g-stock' + (d.st === 'agotado' ? ' no' : '');
@@ -1483,9 +1948,89 @@ JS += r"""
       fotosAct = d.f;
       armarGaleria(d.f, d.n);
       colocar(0, false);
+      armarRiel(vc);
+      pasos(vc);
+      if (animar && !quieto) {                      // raya de luz y empujon
+        var caja = gTira.parentNode;
+        if (gBarrido) {
+          gBarrido.classList.remove('pasa');
+          void gBarrido.offsetWidth;                // reinicia la animacion
+          gBarrido.classList.add('pasa');
+        }
+        if (caja) { caja.classList.remove('entra'); void caja.offsetWidth;
+                    caja.classList.add('entra'); }
+      }
+      try { history.replaceState(null, '', '#' + 'vc-' + vc.toLowerCase()); } catch (_) {}
+      return true;
+    }
+
+    // El precio SUBE hasta su valor. Es un numero, no un texto que haya que
+    // leer mientras se mueve, asi que aqui el movimiento no estorba — y dura
+    // medio segundo, no tres.
+    function contarPrecio(nodo, fin, animar){
+      var moneda = '<i>' + TOY.g.moneda + '</i>';
+      if (!animar || quieto) {
+        nodo.innerHTML = '$ ' + fin.toLocaleString('es-MX') + moneda; return;
+      }
+      var t0 = 0;
+      function marco(t){
+        if (!t0) t0 = t;
+        var u = Math.min(1, (t - t0) / 520);
+        var v = Math.round(fin * (1 - Math.pow(1 - u, 3)));
+        nodo.innerHTML = '$ ' + v.toLocaleString('es-MX') + moneda;
+        if (u < 1) requestAnimationFrame(marco);
+      }
+      requestAnimationFrame(marco);
+    }
+
+    // El riel: la coleccion sigue. Diez piezas alrededor de esta, no diez al
+    // azar — el catalogo esta ordenado por numero VC y esa vecindad significa
+    // algo para quien colecciona.
+    function armarRiel(vc){
+      if (!gRiel) return;
+      var orden = TOY.g.orden || [], k = orden.indexOf(vc);
+      if (k < 0) return;
+      var desde = Math.max(0, Math.min(k - 5, orden.length - 11));
+      gRiel.innerHTML = '';
+      for (var i = desde; i < Math.min(desde + 11, orden.length); i++) {
+        if (orden[i] === vc) continue;
+        (function(otro){
+          var d = TOY.g.piezas[otro]; if (!d) return;
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.setAttribute('aria-label', d.n + ', VC ' + otro);
+          var im = document.createElement('img');
+          im.src = 'fotos/' + d.f[0]; im.alt = ''; im.loading = 'lazy';
+          var et = document.createElement('b'); et.textContent = 'VC ' + otro;
+          b.appendChild(im); b.appendChild(et);
+          b.addEventListener('click', function(){ pintar(otro, true); });
+          gRiel.appendChild(b);
+        })(orden[i]);
+      }
+      gRiel.scrollLeft = 0;
+    }
+
+    function pasos(vc){
+      var orden = TOY.g.orden || [], k = orden.indexOf(vc);
+      if (gAnt) gAnt.disabled = k <= 0;
+      if (gSig) gSig.disabled = k < 0 || k >= orden.length - 1;
+    }
+    function saltar(paso){
+      var orden = TOY.g.orden || [], k = orden.indexOf(vcAct);
+      if (k < 0) return;
+      var j = k + paso;
+      if (j < 0 || j >= orden.length) return;
+      pintar(orden[j], true);
+    }
+
+    function abrir(vc, origen){
+      if (!pintar(vc, false)) return;
+      devolver = origen || null;
       cuadro.hidden = false;
       document.body.style.overflow = 'hidden';
-      // las puertas arrancan cerradas y se abren al cuadro siguiente
+      // arranca cerrado y se destapa al cuadro siguiente: si se pusiera la
+      // clase en el mismo cuadro, el navegador no tendria estado "antes" del
+      // que transicionar y todo apareceria de golpe
       cuadro.classList.remove('abierta');
       requestAnimationFrame(function(){
         requestAnimationFrame(function(){ cuadro.classList.add('abierta'); });
@@ -1494,6 +2039,7 @@ JS += r"""
     }
     function cerrar(){
       cuadro.classList.remove('abierta');
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
       setTimeout(function(){
         cuadro.hidden = true;
         document.body.style.overflow = '';
@@ -1501,10 +2047,37 @@ JS += r"""
       }, quieto ? 0 : 380);
     }
     document.getElementById('g-cerrar').addEventListener('click', cerrar);
-    cuadro.addEventListener('click', function(e){ if (e.target === cuadro) cerrar(); });
-    addEventListener('keydown', function(e){
-      if (e.key === 'Escape' && !cuadro.hidden) cerrar();
+    cuadro.addEventListener('click', function(e){
+      if (e.target === cuadro || (e.target.className || '') === 'ex-velo') cerrar();
     });
+    if (gAnt) gAnt.addEventListener('click', function(){ saltar(-1); });
+    if (gSig) gSig.addEventListener('click', function(){ saltar(1); });
+    addEventListener('keydown', function(e){
+      if (cuadro.hidden) return;
+      if (e.key === 'Escape') cerrar();
+      // las flechas mueven la FOTO, que es lo que uno espera con la figura
+      // delante; la pieza de al lado se cambia con los botones o el riel
+      else if (e.key === 'ArrowRight') colocar(iAct + 1, true);
+      else if (e.key === 'ArrowLeft')  colocar(iAct - 1, true);
+    });
+    // Enlace directo: toydarians/#vc-357 abre esa pieza. Es lo que convierte
+    // la ficha en algo que se puede MANDAR por WhatsApp, que es como el cliente
+    // ensena una figura.
+    function porElAncla(){
+      var m = (location.hash || '').match(/^#vc-([a-z0-9]+)$/i);
+      if (!m) return;
+      var busca = m[1].toUpperCase();
+      var orden = TOY.g.orden || [];
+      for (var i = 0; i < orden.length; i++)
+        if (orden[i].replace(/[^A-Za-z0-9]/g, '').toUpperCase() === busca) {
+          abrir(orden[i], null); return;
+        }
+    }
+    addEventListener('hashchange', function(){
+      if (!(location.hash || '').indexOf('#vc-')) porElAncla();
+      else if (!cuadro.hidden) cerrar();
+    });
+    porElAncla();
     // Deslizar sobre la foto grande, con dedo o con raton. Antes solo se podia
     // cambiar pulsando una miniatura.
     // ---- LA TIRA HORIZONTAL ---------------------------------------------
