@@ -3,6 +3,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0B0712">
+<!-- Sin esto el navegador pide /favicon.ico, se lleva un 404 y la pestaña sale
+     en blanco. Va empotrado como SVG en la propia etiqueta: cero peticiones. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0712'/%3E%3Cpath d='M8 7h16l-3 9 3 9H8l3-9z' fill='%23AC27FF'/%3E%3Ccircle cx='16' cy='19' r='3' fill='%23FFC53D'/%3E%3C/svg%3E">
 <title>CRISOL — el sandbox de reacciones</title>
 <meta name="description" content="Sandbox de píxeles con química, termodinámica y electricidad de verdad. 48 elementos, reacciones reales, circuitos y compuertas lógicas.">
 <style>
@@ -53,19 +56,27 @@ body{
 }
 
 /* ── panel de abajo ────────────────────────────────────────────────────── */
-/* Y el panel va CLAVADO abajo, no sólo «al final del flujo»: con position
-   fixed no hay barra de navegador que lo mueva. */
+/* ⚠ EL PANEL SE COMÍA EL SUELO DE LA HABITACIÓN, y Carlos lo reportó dos
+   veces: «tu menú aún en oculto se encima al suelo y no lo deja ver, así que
+   parece que se cae al vacío lo que pones». Y era literal: con `position:
+   fixed` el panel flota ENCIMA, y el lienzo del mundo seguía midiendo la
+   pantalla entera y dibujando debajo. Las últimas cincuenta filas del mundo
+   existían y se simulaban — simplemente no se veían nunca.
+   Ahora el panel vive en el FLUJO, así que el mundo se encoge de verdad y la
+   cámara recalcula su área visible. Lo de `fixed` estaba para que la barra de
+   Safari no lo moviera, y eso ya lo resuelve el `100dvh` del body. */
 #panel{
-  position:fixed; left:0; right:0; bottom:0; z-index:8;
+  position:relative; z-index:8; flex:0 1 auto; min-height:0;
   background:var(--sup); display:flex; flex-direction:column;
   max-height:52dvh;
   padding-bottom:var(--ab);
   box-shadow:0 -10px 30px rgba(0,0,0,.5);
-  transition:transform .22s ease;
 }
-/* Desplegable: Carlos lo pidió porque el panel se come media pantalla y a
-   veces lo que quieres es MIRAR el mundo. */
-#panel.plegado{ transform:translateY(calc(100% - 52px - var(--ab))) }
+/* Plegado: el panel se queda en su tirador y el mundo se lleva el resto. Se
+   hace con `display:none` en el contenido y no con `translateY`, justamente
+   porque mover algo con transform NO cambia el espacio que ocupa — y ese era
+   medio problema. */
+#panel.plegado > *:not(#tirador){ display:none !important }
 #tirador{
   height:52px; flex:0 0 auto; display:flex; align-items:center; gap:10px;
   padding:0 12px; cursor:pointer; background:none; border:0; color:inherit;
@@ -77,7 +88,8 @@ body{
 #tirador .qual{ font-size:13px; color:#B9B0C8; flex:1; }
 #tirador .flecha{ font-size:13px; color:#9C93AB }
 @media (prefers-reduced-motion: reduce){ #panel{transition:none} }
-#pestanas{display:flex;gap:4px;padding:6px 8px 0;overflow-x:auto}
+#pestanas{display:flex;gap:4px;padding:6px 8px 0;overflow-x:auto;flex:0 0 auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin}
 .pes{
   border:0;background:transparent;color:#9C93AB;font:inherit;font-weight:700;
   font-size:12.5px;padding:0 13px;height:44px;border-radius:9px;cursor:pointer;
@@ -86,12 +98,27 @@ body{
 .pes.sel{background:var(--sup2);color:var(--hueso)}
 .pes:focus-visible{outline:3px solid var(--oro);outline-offset:-2px}
 
-#lista{overflow-y:auto;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+/* ⚠ `overflow-y:auto` NO BASTA DENTRO DE UN FLEX, y por eso Carlos decía que
+   «el menú de abajo no hace scroll en los elementos cuando está muy lleno».
+   Un hijo de flex tiene `min-height:auto` por defecto, o sea que se niega a
+   encogerse por debajo de su contenido: la lista crecía y crecía, se salía
+   del panel, y el `auto` no llegaba a activarse nunca porque nunca había
+   desbordamiento QUE MEDIR. El `min-height:0` es lo que le da permiso de ser
+   más chica que lo que lleva dentro, y ahí sí aparece el scroll.
+   `touch-action:pan-y` es la otra mitad: el lienzo de al lado lo tiene en
+   `none` para pintar, y sin decirlo aquí el dedo tampoco arrastra la lista. */
+#cuerpoPanel{display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
+#lista{
+  overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y;
+  flex:1 1 auto; min-height:0; overscroll-behavior:contain;
+  padding:8px; display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start;
+}
 .el{
   display:flex;align-items:center;gap:7px;border:0;cursor:pointer;font:inherit;
   background:var(--sup2);color:var(--hueso);border-radius:11px;
   padding:0 11px 0 8px;height:44px;font-size:12.5px;font-weight:600;
 }
+.el .ico{font-size:15px;line-height:1;flex:0 0 auto}
 .el i{width:17px;height:17px;border-radius:5px;display:block;flex:0 0 auto;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
 .el.sel{box-shadow:inset 0 0 0 2px var(--menta)}
@@ -110,6 +137,62 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
   text-align:center;
 }
 .aviso.va{opacity:1}
+/* Carlos: «pon un indicador de la escala que llevo en el zoom porque es
+   difícil saber cuándo tengo y cuándo no tengo zoom». */
+#escala{
+  margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;
+  font-size:13px;color:#B9B0C8;background:var(--sup2);
+  padding:0 11px;height:44px;display:flex;align-items:center;border-radius:11px;
+}
+/* La ficha del termómetro. Sale pegada al mensaje y se lee de un vistazo. */
+#ficha{
+  position:absolute;left:10px;right:10px;bottom:10px;z-index:6;
+  background:rgba(26,20,36,.97);border-radius:13px;padding:11px 13px;
+  box-shadow:inset 0 0 0 1px rgba(172,39,255,.4);font-size:12.5px;
+  display:none;max-height:52%;overflow-y:auto;
+}
+#ficha.va{display:block}
+#salas,
+#grav{
+  position:absolute;left:10px;right:10px;bottom:10px;z-index:7;display:none;
+  background:rgba(26,20,36,.98);border-radius:13px;padding:12px 13px 10px;
+  box-shadow:inset 0 0 0 1px rgba(61,255,197,.4);font-size:12.5px;
+  max-height:76%;overflow-y:auto;touch-action:pan-y;
+}
+#salas.va,
+#grav.va{display:block}
+/* ⚠ EL PANEL TAPABA LA HABITACIÓN. Mientras estaba abierto ocupaba tres
+   cuartos de la sala, así que «dibuja una zona» o «toca para poner el punto»
+   eran imposibles: el dedo caía en el panel. Cuando hay algo que colocar se
+   encoge a una tira con la instrucción, y la sala queda libre. */
+#grav.mini{max-height:none;top:auto}
+#grav.mini > *:not(h4):not(.cerrar):not(#gPista){display:none}
+#gPista{display:none;color:var(--menta);margin-top:2px;line-height:1.35}
+#grav.mini #gPista{display:block}
+#grav h4{margin:0 0 8px;font-size:14.5px}
+.gfila{display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap}
+.gfila > label{color:#9C93AB;min-width:64px}
+.gfila .gu{color:#9C93AB;font-size:11.5px}
+.gfila input[type=number]{width:74px;height:38px;border-radius:9px;border:0;
+  background:var(--sup2);color:var(--hueso);font:inherit;padding:0 9px;text-align:right}
+.gfila select{height:38px;border-radius:9px;border:0;background:var(--sup2);
+  color:var(--hueso);font:inherit;padding:0 8px;flex:1;min-width:130px}
+.gb{border:0;background:var(--sup2);color:var(--hueso);border-radius:9px;
+  min-width:44px;height:38px;font:inherit;font-weight:600;cursor:pointer;padding:0 12px}
+.gb.ancho{flex:1;min-width:130px}
+.gb.on{background:var(--menta);color:#0B0712}
+.gb:focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+#gLista{margin-top:4px}
+.gcampo{display:flex;align-items:center;gap:7px;padding:5px 0;border-top:1px solid #2B2338}
+.gcampo span{flex:1;color:#B9B0C8}
+.gcampo button{border:0;background:var(--sup2);color:var(--hueso);border-radius:8px;
+  height:34px;min-width:38px;font:inherit;cursor:pointer;padding:0 9px}
+#ficha h4{margin:0 0 6px;font-size:14.5px}
+#ficha table{border-collapse:collapse;width:100%}
+#ficha td{padding:2px 0;vertical-align:top}
+#ficha td:first-child{color:#9C93AB;padding-right:10px;white-space:nowrap}
+#ficha .cerrar{position:absolute;top:6px;right:8px;background:none;border:0;
+  color:#9C93AB;font-size:19px;cursor:pointer;width:34px;height:34px}
 @media (prefers-reduced-motion: reduce){ .aviso{transition:none} }
 </style>
 
@@ -117,13 +200,63 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
 <div id="barra">
   <b>CRISOL</b>
   <button class="icono" id="bPausa" aria-label="Pausar">❚❚</button>
-  <button class="icono" id="bBorra" aria-label="Vaciar">🗑</button>
+  <button class="icono" id="bDeshace" aria-label="Deshacer" title="Deshacer lo último que pintaste">↩</button>
+  <button class="icono" id="bGuarda" aria-label="Guardar y cargar" title="Guardar esta sala o cargar una guardada">💾</button>
+  <button class="icono" id="bBorra" aria-label="Vaciar" title="Vaciar la sala. Pregunta antes">🗑</button>
   <div id="datos"></div>
 </div>
 
 <div id="zona">
   <canvas id="mundo"></canvas>
   <div class="aviso" id="aviso"></div>
+  <div id="ficha" role="status"><button class="cerrar" id="fichaX" aria-label="Cerrar">✕</button><div id="fichaC"></div></div>
+  <div id="salas" role="dialog" aria-label="Salas guardadas">
+    <button class="cerrar" id="salasX" aria-label="Cerrar">✕</button>
+    <h4>Salas guardadas</h4>
+    <div id="salasLista"></div>
+    <p style="margin:8px 0 0;opacity:.7">Se guardan en este teléfono. Sólo los materiales: lo que esté cayendo o ardiendo empieza de nuevo.</p>
+  </div>
+  <div id="grav" role="dialog" aria-label="Gravedad">
+    <button class="cerrar" id="gravX" aria-label="Cerrar">✕</button>
+    <h4>Gravedad</h4>
+    <div class="gfila">
+      <label for="gMag">Fuerza</label>
+      <input type="number" id="gMag" value="9.81" step="0.5" min="-100" max="100">
+      <span class="gu">m/s²</span>
+    </div>
+    <div class="gfila gdir">
+      <span>Dirección</span>
+      <button class="gb" data-dir="abajo" title="Hacia abajo">↓</button>
+      <button class="gb" data-dir="arriba" title="Hacia arriba">↑</button>
+      <button class="gb" data-dir="izq" title="Hacia la izquierda">←</button>
+      <button class="gb" data-dir="der" title="Hacia la derecha">→</button>
+    </div>
+    <div class="gfila">
+      <button class="gb ancho" id="gGlobal">Aplicar a toda la sala</button>
+      <button class="gb ancho" id="gNormal">Volver a 9.81 ↓</button>
+    </div>
+    <div class="gfila">
+      <button class="gb ancho" id="gZona">Dibujar una zona</button>
+      <select id="gModo" aria-label="Cómo actúa la zona">
+        <option value="reemplaza">reemplaza la global</option>
+        <option value="suma">se suma a la global</option>
+      </select>
+    </div>
+    <div class="gfila">
+      <button class="gb ancho" id="gPunto">Poner un punto que atrae</button>
+      <button class="gb" id="gRepele" title="Atrae o repele">atrae</button>
+      <input type="number" id="gRadio" value="40" min="4" max="400" step="4" aria-label="Radio">
+      <span class="gu">radio</span>
+    </div>
+    <div class="gfila">
+      <button class="gb ancho" id="gObjeto">Pintar gravedad en un objeto</button>
+      <input type="number" id="gMul" value="0" step="0.5" min="-4" max="6" aria-label="Multiplicador">
+      <span class="gu">×</span>
+    </div>
+    <div class="gfila"><label><input type="checkbox" id="gFlechas" checked> Ver las flechas del campo</label></div>
+    <div id="gPista"></div>
+    <div id="gLista"></div>
+  </div>
 </div>
 
 <div id="panel">
@@ -140,8 +273,15 @@ input[type=range]{flex:1 1 90px;min-width:80px;accent-color:var(--violeta);heigh
     <input type="range" id="tam" min="1" max="14" value="4">
     <button class="icono" id="bCalor" aria-label="Calentar" title="Calentar">🔥</button>
     <button class="icono" id="bFrio" aria-label="Enfriar" title="Enfriar">❄️</button>
+    <button class="icono" id="bMano" aria-label="Mover la vista" title="Mover la vista: arrastra con un dedo">🖐</button>
+    <button class="icono" id="bAgarra" aria-label="Agarrar y arrastrar" title="Agarrar un sólido y arrastrarlo con fuerza">✊</button>
+    <button class="icono" id="bMide" aria-label="Termómetro" title="Termómetro: material, temperatura y cambios de estado">🌡</button>
+    <button class="icono" id="bGrav" aria-label="Gravedad" title="Gravedad: global, por zona, por objeto y puntos que atraen o repelen">🌍</button>
+    <button class="icono" id="bSolda" aria-label="Soldar estructura" title="Soldar: pinta encima lo que quieras que sea UNA pieza. Vuelve a tocarlo con el botón para despegarlo">🔗</button>
+    <button class="icono on" id="bRigido" aria-label="Cuerpos rígidos" title="Cuerpos rígidos: lo que está pegado cae junto. Apágalo y vuelve a ser grano por grano">🧱</button>
     <button class="icono" id="bMas" aria-label="Acercar">＋</button>
     <button class="icono" id="bMenos" aria-label="Alejar">－</button>
+    <span id="escala" title="Zoom actual">×4.0</span>
   </div>
   </div>
 </div>
@@ -215,8 +355,32 @@ const RGB = EL.map(e => {
 /* ruido fijo por celda, para que la arena no se vea como una mancha plana */
 let RUIDO = null;
 
+/* ── LA ONDA, PINTADA COMO UNA ONDA ────────────────────────────────────────
+   Carlos mandó cuatro capturas de una explosión de nitroglicerina: «para que
+   entiendas por qué está mal hecha». En todas se ve lo mismo — un pegote lila
+   plano, opaco, del tamaño de la pantalla, sin forma y sin frente. Y en una de
+   ellas el contador decía 148 CELDAS mientras media pantalla estaba morada,
+   que es la pista: eso no era materia, era la capa de presión.
+
+   El defecto era del tinte, no de la física. Se pintaba `min(1, P/70)`, así
+   que TODO lo que pasara de 70 salía del mismo color: una onda cuyo frente
+   vale 1 100 y cuya cola vale 80 se pinta entera igual, y en vez de un anillo
+   se ve una mancha. Y el suelo estaba en 1.5, o sea que el rescoldo también
+   pintaba: medido, a los 200 pasos el pico ya era 24 —la onda prácticamente
+   no existe— y seguía tiñendo 21 557 celdas de lila.
+
+   Ahora la escala es RELATIVA al pico que hay en la sala y el suelo sube con
+   él: se ve el frente, se ve cómo se apaga, y cuando la onda se muere la sala
+   vuelve a estar limpia. Y el tinte pesa la mitad, para que se vea A TRAVÉS
+   de la onda lo que hay debajo. */
+let picoVista = 0;
 function pinta(){
   const { t, temp, car } = M;
+  const hayLuz = M.hayLuz;
+  const esc = picoVista > 25 ? picoVista : 25;
+  const pisoP = esc * 0.10;
+  const fuerzaP = P => { const f = (P - pisoP) / (esc - pisoP); return f > 1 ? 1 : f * f; };
+  let picoAhora = 0;
   if(!RUIDO || RUIDO.length !== t.length){
     RUIDO = new Int8Array(t.length);
     for(let i = 0; i < RUIDO.length; i++) RUIDO[i] = ((Math.random()*22)|0) - 11;
@@ -225,6 +389,7 @@ function pinta(){
     const tipo = t[k];
     const c = RGB[tipo];
     let r = c[0], g = c[1], b = c[2];
+    { const a = M.pres[k]; if(a > picoAhora) picoAhora = a; }
     if(tipo === VACIO){
       /* ⚠ Carlos: «es difícil saber dónde está esa zona si no hay un material
          abajo». Y era literal: el vacío se pintaba siempre del mismo negro,
@@ -236,7 +401,7 @@ function pinta(){
       else if(T < 8){ const f = Math.min(1, (8 - T) / 55);
         r += f*8; g += f*46; b += f*96; }
       const P = M.pres[k];
-      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*120; g += f*120; b += f*160; }
+      if(P > pisoP){ const f = fuerzaP(P); r += f*70; g += f*70; b += f*95; }
     }
     if(tipo !== VACIO){
       const n = RUIDO[k];
@@ -251,15 +416,35 @@ function pinta(){
       /* La presión SE PINTA. Una onda expansiva que no se ve no es una onda:
          es un número. Se tiñe de blanco hacia el azul según la fuerza. */
       const P = M.pres[k];
-      if(P > 1.5){ const f = Math.min(1, P / 70); r += f*150; g += f*150; b += f*190; }
+      if(P > pisoP){ const f = fuerzaP(P); r += f*95; g += f*95; b += f*120; }
       /* un interruptor cerrado se ve cerrado */
       if(EL[tipo].interruptor && M.vida[k]){ g += 60; }
+    }
+    /* ── LA LUZ, PINTADA ────────────────────────────────────────────────
+       Carlos: «no tenemos iluminación… la lámpara no produce iluminación, de
+       hecho es una textura o un icono que parpadea». Ahora el motor calcula un
+       campo de luz de verdad y aquí se APLICA: lo iluminado se aclara y tira a
+       cálido, y lo que queda en sombra se ve como lo que es, una sombra.
+       Sólo se aplica si hay algún foco encendido — si no, la habitación se
+       pinta igual que siempre y no se paga nada. */
+    if(hayLuz){
+      const lu = M.luz[k];
+      if(lu > 0){
+        const f = 1 + lu * 0.055;
+        r = r * f + lu * 3.2; g = g * f + lu * 2.4; b = b * f + lu * 0.9;
+      } else if(tipo !== VACIO){
+        r *= 0.42; g *= 0.42; b *= 0.5;      /* en sombra, pero se ve */
+      }
     }
     const p = k << 2;
     datos[p]   = r < 0 ? 0 : r > 255 ? 255 : r;
     datos[p+1] = g < 0 ? 0 : g > 255 ? 255 : g;
     datos[p+2] = b < 0 ? 0 : b > 255 ? 255 : b;
   }
+  /* el pico de ESTE cuadro manda en el siguiente. Un cuadro de retraso no se
+     ve y evita tener que recorrer la sala dos veces. */
+  picoVista = picoVista * 0.88 + picoAhora * 0.12;
+  if(picoAhora > picoVista) picoVista = picoAhora;
   ctxMundo.putImageData(img, 0, 0);
 
   /* y ahora la ventana. `imageSmoothingEnabled` en falso o el zoom se ve
@@ -272,6 +457,7 @@ function pinta(){
   const anVis = (cv.width / dpr) / vista.esc, alVis = (cv.height / dpr) / vista.esc;
   ctx.drawImage(lienzoMundo, vista.x, vista.y, anVis, alVis,
                 0, 0, cv.width, cv.height);
+  pintaFlechas();
 }
 
 /* ── la paleta y la mochila ─────────────────────────────────────────────── */
@@ -318,13 +504,21 @@ function paleta(){
     b.className = 'el' + (IDX[e.id] === elSel ? ' sel' : '') + (nuevo ? ' nuevo' : '');
     const i = document.createElement('i'); i.style.background = e.col;
     b.appendChild(i);
+    /* el icono delante del nombre: Carlos no reconocía las piezas sólo por el
+       nombre, y con ciento ochenta y cinco elementos leer cada uno es un peaje */
+    if(e.ico){
+      const ic = document.createElement('span');
+      ic.textContent = e.ico; ic.className = 'ico'; ic.setAttribute('aria-hidden','true');
+      b.appendChild(ic);
+    }
     const s = document.createElement('span'); s.textContent = e.nom;
     b.appendChild(s);
     if(e.ayuda) b.title = e.ayuda;
     b.onclick = () => {
       elSel = IDX[e.id]; modo = 'pintar';
       if(nuevo){ guardado.mochila[e.id] = 2; salva(); }
-      $('bCalor').classList.remove('on'); $('bFrio').classList.remove('on');
+      for(const id of Object.values(BOTON_MODO)) $(id).classList.remove('on');
+      $('ficha').classList.remove('va');
       if(e.ayuda) avisa(e.nom + ' · ' + e.ayuda);
       $('qual').textContent = e.nom;
       paleta();
@@ -427,16 +621,70 @@ function brocha(x, y){
     const k = M.i(nx, ny);
     if(modo === 'calor'){ M.temp[k] += 220; continue; }
     if(modo === 'frio'){ M.temp[k] -= 160; continue; }
+    /* soldar es pintar una ESTRUCTURA: todo lo que pases con el dedo en un
+       mismo trazo queda en la misma pieza. Por eso el grupo se guarda entre
+       llamadas — si cada celda hiciera su propio grupo, soldar no soldaría. */
+    if(modo === 'soldar'){ M.suelda(nx, ny, 0, grupoSolda); grupoSolda = M.soldadoUltimo; continue; }
     /* pintar vacío BORRA; pintar sobre algo sólo si hay hueco o es un borrado */
     if(elSel === VACIO || M.t[k] === VACIO || EL[elSel].estado === 'solido')
       M.pon(nx, ny, elSel);
   }
 }
+/* ── ARRASTRAR PARA MOVERSE ────────────────────────────────────────────────
+   Carlos: «necesito una herramienta para poder moverme en la habitación de
+   crisol arrastrando para moverme, pellizcando para hacer o deshacer zoom».
+   El pellizco ya estaba; lo que faltaba era el dedo solo. Va como herramienta
+   aparte —la mano 🖐— para que no se pelee con pintar: con la mano puesta, un
+   dedo desplaza la vista y no deja un rayón. */
+let paneo = null;
+/* ── LA MANO FÍSICA ────────────────────────────────────────────────────────
+   El agarre vive aquí pero la fuerza la aplica el MOTOR (`M.agarra`), que es
+   quien sabe de masas. La pantalla sólo dice dónde está el dedo. */
+let agarre = null;
+
 cv.addEventListener('pointerdown', ev => {
   ev.preventDefault(); cv.setPointerCapture(ev.pointerId);
   const [x, y] = celdaDe(ev);
   dedos.set(ev.pointerId, { cx:x, cy:y, pantalla:{x:ev.clientX, y:ev.clientY}, pintando:true });
-  if(dedos.size >= 2){ empiezaGesto(); return; }
+  if(dedos.size >= 2){ empiezaGesto(); paneo = null; return; }
+  /* la foto se saca ANTES del trazo: después ya no queda qué recuperar */
+  if(dedos.size === 1 && (modo === 'pintar' || modo === 'calor' || modo === 'frio')) apunta();
+
+  if(modo === 'navegar'){
+    paneo = { x0:ev.clientX, y0:ev.clientY, vx0:vista.x, vy0:vista.y };
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'medir'){
+    ficha(x, y);
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'soldar') grupoSolda = 0;   /* cada trazo, una estructura */
+  if(modo === 'agarrar'){
+    agarre = { cx:x, cy:y, fx:x, fy:y };
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'zona'){
+    gArrastre = { x0:x, y0:y, x1:x, y1:y };
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
+  if(modo === 'punto'){
+    const [gx, gy] = gVector();
+    M.puntoGravedad(x, y, Math.hypot(gx, gy) || 9.81,
+                    parseInt($('gRadio').value, 10) || 40, !gRepele);
+    avisa('Punto que ' + (gRepele ? 'repele' : 'atrae') + ' puesto');
+    dedos.get(ev.pointerId).pintando = false;
+    ponModo('pintar');
+    return;
+  }
+  if(modo === 'gobjeto'){
+    M.pintaGravedad(x, y, Math.max(1, tam - 1), parseFloat($('gMul').value));
+    dedos.get(ev.pointerId).pintando = false;
+    return;
+  }
   /* Tocar un interruptor lo ACCIONA en vez de pintarle encima. Sin esto no
      había forma de operar un circuito: sólo de construirlo y mirarlo. */
   if(modo === 'pintar' && M.acciona(x, y)){
@@ -453,6 +701,22 @@ cv.addEventListener('pointermove', ev => {
   ev.preventDefault();
   d.pantalla = { x:ev.clientX, y:ev.clientY };
   if(dedos.size >= 2){ sigueGesto(); return; }
+  if(paneo){
+    /* el mundo se mueve al revés que el dedo: se arrastra el MUNDO, no la
+       cámara, que es lo que se siente natural */
+    vista.x = paneo.vx0 - (ev.clientX - paneo.x0) / vista.esc;
+    vista.y = paneo.vy0 - (ev.clientY - paneo.y0) / vista.esc;
+    limitaVista();
+    return;
+  }
+  if(agarre){ const [gx, gy] = celdaDe(ev); agarre.fx = gx; agarre.fy = gy; return; }
+  if(gArrastre){ const [zx, zy] = celdaDe(ev); gArrastre.x1 = zx; gArrastre.y1 = zy; return; }
+  if(modo === 'gobjeto'){
+    const [ox, oy] = celdaDe(ev);
+    M.pintaGravedad(ox, oy, Math.max(1, tam - 1), parseFloat($('gMul').value));
+    return;
+  }
+  if(modo === 'medir'){ const [mx, my] = celdaDe(ev); ficha(mx, my); return; }
   if(!d.pintando) return;
   const [x, y] = celdaDe(ev);
   const px = d.cx, py = d.cy;
@@ -464,7 +728,27 @@ cv.addEventListener('pointermove', ev => {
   d.cx = x; d.cy = y;
 }, { passive:false });
 
-const suelta = ev => { dedos.delete(ev.pointerId); if(dedos.size < 2) gesto = null; };
+const suelta = ev => {
+  dedos.delete(ev.pointerId);
+  if(dedos.size < 2) gesto = null;
+  if(!dedos.size){
+    paneo = null; agarre = null;
+    if(gArrastre){
+      const { x0, y0, x1, y1 } = gArrastre;
+      gArrastre = null;
+      /* una zona de una sola celda es un dedazo, no una zona */
+      if(Math.abs(x1-x0) > 1 || Math.abs(y1-y0) > 1){
+        const [gx, gy] = gVector();
+        M.zonaGravedad(x0, y0, x1, y1, gx, gy, $('gModo').value);
+        avisa('Zona de gravedad creada');
+        /* la herramienta se suelta al terminar: si no, el panel se queda
+           encogido y la lista de campos —que es donde se apagan y se
+           quitan— no se puede ni ver */
+        ponModo('pintar');
+      }
+    }
+  }
+};
 cv.addEventListener('pointerup', suelta);
 cv.addEventListener('pointercancel', suelta);
 
@@ -492,6 +776,11 @@ $('tirador').onclick = () => {
   $('panel').classList.toggle('plegado', plegado);
   $('tirador').setAttribute('aria-expanded', String(!plegado));
   $('flecha').textContent = plegado ? '▴ materiales' : '▾ ocultar';
+  /* ⚠ Y SE VUELVE A MEDIR. Plegar el panel cambia cuánto sitio le queda al
+     mundo, y si no se re-mide, el lienzo conserva el tamaño de antes: la
+     cámara sigue creyendo que ve un área que ya no es la suya y el suelo
+     queda fuera de cuadro. Es la otra mitad de «parece que se cae al vacío». */
+  medir();
 };
 
 $('bPausa').onclick = () => {
@@ -499,26 +788,306 @@ $('bPausa').onclick = () => {
   $('bPausa').textContent = pausado ? '▶' : '❚❚';
   $('bPausa').classList.toggle('on', pausado);
 };
-$('bBorra').onclick = () => { M.limpia(); avisa('Mundo vacío'); };
+/* ── DESHACER, GUARDAR Y NO BORRAR SIN QUERER ──────────────────────────────
+   Carlos, tres de un tirón: «el botón de borrar no hace confirmación»,
+   «necesito un botón de regresar» y «necesito guardados».
+
+   El deshacer guarda una foto ANTES de cada trazo, no después: después ya
+   perdiste lo que querías recuperar. Seis niveles, que en una sala de 320×480
+   son unos 4.6 MB — cabe, y más niveles empiezan a pesar en un teléfono.
+
+   Y la confirmación de borrar es a DOS TOQUES en vez de un diálogo del
+   sistema: en el teléfono un `confirm()` tapa la pantalla, se sale del tono
+   de todo lo demás y encima bloquea la simulación. Dos toques con aviso hacen
+   el mismo trabajo sin sacarte del juego. */
+const historial = [];
+function apunta(){
+  historial.push(M.instantanea());
+  if(historial.length > 6) historial.shift();
+  $('bDeshace').classList.toggle('on', historial.length > 0);
+}
+$('bDeshace').onclick = () => {
+  const f = historial.pop();
+  if(!f){ avisa('No hay nada que deshacer'); return; }
+  M.restaura(f);
+  $('bDeshace').classList.toggle('on', historial.length > 0);
+  avisa('Deshecho · quedan ' + historial.length);
+};
+
+let borrarArmado = 0;
+$('bBorra').onclick = () => {
+  const ahora = Date.now();
+  if(ahora - borrarArmado > 3000){
+    borrarArmado = ahora;
+    $('bBorra').classList.add('on');
+    avisa('¿Seguro? Toca el bote otra vez para vaciarlo todo');
+    setTimeout(() => $('bBorra').classList.remove('on'), 3000);
+    return;
+  }
+  borrarArmado = 0;
+  $('bBorra').classList.remove('on');
+  apunta();                       /* vaciar también se puede deshacer */
+  M.limpia();
+  avisa('Sala vacía · el botón ↩ la trae de vuelta');
+};
+
+/* ── GUARDADOS ────────────────────────────────────────────────────────────
+   Tres ranuras, en el propio teléfono. La sala se guarda por RACHAS: una
+   recién abierta son 150 mil celdas de aire seguidas, o sea dos números en
+   vez de 150 mil, y así cabe de sobra en el almacenamiento del navegador. */
+guardado.salas = guardado.salas || {};
+function pintaSalas(){
+  const c = $('salasLista');
+  c.innerHTML = '';
+  for(const r of ['1', '2', '3']){
+    const g = guardado.salas[r];
+    const fila = document.createElement('div');
+    fila.className = 'gcampo';
+    fila.innerHTML = '<span>Ranura ' + r + (g ? ' · ' + g.cuando : ' · vacía') + '</span>';
+    const bg = document.createElement('button');
+    bg.textContent = 'Guardar';
+    bg.onclick = () => {
+      guardado.salas[r] = { txt: M.aTexto(), cuando: new Date().toLocaleString('es-MX', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) };
+      salva(); pintaSalas(); avisa('Guardado en la ranura ' + r);
+    };
+    fila.appendChild(bg);
+    if(g){
+      const bc = document.createElement('button');
+      bc.textContent = 'Cargar';
+      bc.onclick = () => {
+        apunta();                 /* cargar también se puede deshacer */
+        if(M.deTexto(g.txt)) avisa('Cargada la ranura ' + r);
+        else avisa('Esa sala se guardó con otro tamaño de habitación');
+        $('salas').classList.remove('va');
+      };
+      fila.appendChild(bc);
+      const bb = document.createElement('button');
+      bb.textContent = 'Borrar';
+      bb.onclick = () => { delete guardado.salas[r]; salva(); pintaSalas(); };
+      fila.appendChild(bb);
+    }
+    c.appendChild(fila);
+  }
+}
+$('bGuarda').onclick = () => { pintaSalas(); $('salas').classList.toggle('va'); };
+$('salasX').onclick = () => $('salas').classList.remove('va');
 $('tam').oninput = e => { tam = +e.target.value; $('tamN').textContent = tam; };
-$('bCalor').onclick = () => {
-  modo = modo === 'calor' ? 'pintar' : 'calor';
-  $('bCalor').classList.toggle('on', modo === 'calor');
-  $('bFrio').classList.remove('on');
+/* ── LAS HERRAMIENTAS ──────────────────────────────────────────────────────
+   Un solo sitio decide qué modo está activo y apaga los demás. Antes cada
+   botón se encargaba de apagar a los otros a mano, y con cinco herramientas
+   eso son veinte líneas que se contradicen entre sí a la primera distracción. */
+let grupoSolda = 0;
+const BOTON_MODO = { calor:'bCalor', frio:'bFrio', navegar:'bMano', agarrar:'bAgarra', medir:'bMide', soldar:'bSolda' };
+const MODOS_GRAVEDAD = ['zona', 'punto', 'gobjeto'];
+function ponModo(m){
+  modo = (modo === m) ? 'pintar' : m;
+  for(const [k, id] of Object.entries(BOTON_MODO)) $(id).classList.toggle('on', modo === k);
+  if(typeof gPinta === 'function') gPinta();
+  if(modo !== 'medir') $('ficha').classList.remove('va');
+  const dice = {
+    navegar:'Mover la vista: arrastra con un dedo. Con dos, zoom',
+    agarrar:'Agarra un sólido y arrástralo. Lo pesado va a costar',
+    medir:'Toca algo para ver su material, su temperatura y sus cambios de estado',
+    calor:'Calentando', frio:'Enfriando',
+    soldar:'Pinta encima lo que quieras que sea UNA pieza. Lo que no pintes, no entra',
+  }[modo];
+  if(dice) avisa(dice);
+}
+$('bCalor').onclick  = () => ponModo('calor');
+$('bFrio').onclick   = () => ponModo('frio');
+$('bMano').onclick   = () => ponModo('navegar');
+$('bAgarra').onclick = () => ponModo('agarrar');
+$('bMide').onclick   = () => ponModo('medir');
+$('bSolda').onclick  = () => { grupoSolda = 0; ponModo('soldar'); };
+/* el interruptor que pidió Carlos por su nombre: «que decidir si se tratan
+   como partículas separadas sea un toggle» */
+$('bRigido').onclick = () => {
+  M.rigido = !M.rigido;
+  $('bRigido').classList.toggle('on', M.rigido);
+  avisa(M.rigido ? 'Cuerpos rígidos: lo que está pegado cae junto'
+                 : 'Grano por grano: cada celda por su cuenta');
 };
-$('bFrio').onclick = () => {
-  modo = modo === 'frio' ? 'pintar' : 'frio';
-  $('bFrio').classList.toggle('on', modo === 'frio');
-  $('bCalor').classList.remove('on');
+$('fichaX').onclick  = () => $('ficha').classList.remove('va');
+
+/* ── el termómetro, en pantalla ────────────────────────────────────────────
+   Los datos los da el motor (`informe`), aquí sólo se pintan. La fisión sale
+   marcada aparte porque NO es un cambio de estado — lo corrigió Carlos. */
+function ficha(x, y){
+  const r = M.informe(x, y);
+  if(!r) return;
+  const fila = (a, b) => '<tr><td>' + a + '</td><td>' + b + '</td></tr>';
+  let h = '<h4>' + r.nombre + (r.simbolo ? ' · ' + r.simbolo + (r.z ? ' (Z ' + r.z + ')' : '') : '') + '</h4><table>';
+  h += fila('Temperatura', r.temperatura + ' °C');
+  h += fila('Estado ahora', r.estado);
+  h += fila('Densidad', r.densidad + (r.masa ? ' · ' + r.masa + ' g/cm³ de verdad' : ''));
+  /* Carlos: «la presión no se nota». Se nota aquí o no se nota: en
+     atmósferas, que es como se piensa, y diciendo si el sitio está sellado —
+     que es lo único que permite que suba. */
+  if(r.presion) h += fila('Presión', r.atmosferas + ' atm');
+  if(r.sellado) h += fila('Recinto', 'SELLADO · aquí sí sube la presión');
+  if(r.moles) h += fila('Gas metido', r.moles + '× (repinta encima para comprimir)');
+  if(r.corriente) h += fila('Corriente', 'sí, le llega · ' + r.voltaje + ' V (apila pilas para subirlo)');
+  const fases = r.cambios.filter(c => c.que !== 'fisión' && c.que !== 'combustión');
+  if(fases.length){
+    h += '<tr><td colspan="2" style="padding-top:6px;color:#B9B0C8"><b>Cambios de estado</b></td></tr>';
+    for(const c of fases) h += fila(c.que, (c.a != null ? c.a + ' °C · ' : '') + c.nota);
+  }
+  const otros = r.cambios.filter(c => c.que === 'fisión' || c.que === 'combustión');
+  for(const c of otros) h += fila(c.que, c.nota);
+  h += '</table>';
+  $('fichaC').innerHTML = h;
+  $('ficha').classList.add('va');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA GRAVEDAD, EN PANTALLA
+   ---------------------------------------------------------------------------
+   Carlos pidió diez cosas por su nombre: global, por objeto, por zona,
+   dibujar la zona, magnitud, dirección, atrae o repele, ver las flechas del
+   campo, apagar un campo sin borrarlo, y quitarlo o cambiarlo. Están las diez.
+   El cálculo vive en el motor; aquí sólo se elige y se dibuja.
+   ═════════════════════════════════════════════════════════════════════════ */
+let gDir = 'abajo', gRepele = false, gVerFlechas = true, gArrastre = null;
+const DIRS = { abajo:[0,1], arriba:[0,-1], izq:[-1,0], der:[1,0] };
+
+function gVector(){
+  const mag = parseFloat($('gMag').value) || 0;
+  const [dx, dy] = DIRS[gDir];
+  return [dx * mag, dy * mag];
+}
+function gPinta(){
+  for(const b of document.querySelectorAll('#grav .gb[data-dir]'))
+    b.classList.toggle('on', b.dataset.dir === gDir);
+  $('gRepele').textContent = gRepele ? 'repele' : 'atrae';
+  $('gRepele').classList.toggle('on', gRepele);
+  $('gPunto').textContent = gRepele ? 'Poner un punto que repele' : 'Poner un punto que atrae';
+  for(const [id, m] of [['gZona','zona'],['gPunto','punto'],['gObjeto','gobjeto']])
+    $(id).classList.toggle('on', modo === m);
+  /* con una herramienta de colocar activa, el panel se aparta */
+  const colocando = MODOS_GRAVEDAD.includes(modo);
+  $('grav').classList.toggle('mini', colocando);
+  $('gPista').textContent = {
+    zona:   'Arrastra en la sala para dibujar la zona. Toca ✕ para salir.',
+    punto:  'Toca en la sala para poner el punto. Toca ✕ para salir.',
+    gobjeto:'Pinta encima de un objeto para darle su propia gravedad. ✕ para salir.',
+  }[modo] || '';
+  /* la lista de campos, con apagar y quitar */
+  const c = $('gLista'); c.innerHTML = '';
+  const campos = [
+    ...M.zonas.map((z, i) => ({ o:z, txt:'Zona ' + (i+1) + ' · ' + (z.x1-z.x0+1) + '×' + (z.y1-z.y0+1) +
+        ' · ' + M.constructor.name.slice(0,0) + gEnMetros(z.gx, z.gy) + ' · ' + z.modo, lista:M.zonas })),
+    ...M.puntos.map((p, i) => ({ o:p, txt:'Punto ' + (i+1) + ' · ' + (p.atrae ? 'atrae' : 'repele') +
+        ' · radio ' + p.radio, lista:M.puntos })),
+  ];
+  if(!campos.length){ c.innerHTML = '<div style="color:#6E6880;padding-top:6px">Sin zonas ni puntos todavía.</div>'; return; }
+  for(const { o, txt, lista } of campos){
+    const f = document.createElement('div'); f.className = 'gcampo';
+    const t = document.createElement('span'); t.textContent = txt;
+    const on = document.createElement('button');
+    on.textContent = o.activa ? 'on' : 'off';
+    on.title = o.activa ? 'Apagar sin borrar' : 'Encender';
+    on.onclick = () => { o.activa = !o.activa; gPinta(); };
+    const x = document.createElement('button');
+    x.textContent = '✕'; x.title = 'Quitar';
+    x.onclick = () => { lista.splice(lista.indexOf(o), 1); M.revisaCampo(); gPinta(); };
+    f.append(t, on, x); c.appendChild(f);
+  }
+}
+/* de celdas/paso² a m/s², para que la lista hable en las unidades que pidió */
+function gEnMetros(gx, gy){
+  const a = (v) => (9.81 * v / 0.28).toFixed(1);
+  if(Math.abs(gx) < 1e-6) return a(gy) + ' m/s² ' + (gy >= 0 ? '↓' : '↑');
+  if(Math.abs(gy) < 1e-6) return a(gx) + ' m/s² ' + (gx >= 0 ? '→' : '←');
+  return a(Math.hypot(gx, gy)) + ' m/s² ⤢';
+}
+
+$('bGrav').onclick = () => {
+  const abierto = $('grav').classList.toggle('va');
+  if(abierto){ gPinta(); } else if(['zona','punto','gobjeto'].includes(modo)) ponModo('pintar');
 };
+$('gravX').onclick = () => { $('grav').classList.remove('va'); if(['zona','punto','gobjeto'].includes(modo)) ponModo('pintar'); };
+for(const b of document.querySelectorAll('#grav .gb[data-dir]'))
+  b.onclick = () => { gDir = b.dataset.dir; gPinta(); };
+$('gRepele').onclick = () => { gRepele = !gRepele; gPinta(); };
+$('gFlechas').onchange = e => { gVerFlechas = e.target.checked; };
+$('gGlobal').onclick = () => {
+  const [gx, gy] = gVector();
+  M.ponGravedadGlobal(gx, gy);
+  avisa('Gravedad de la sala: ' + gEnMetros(0.28*gx/9.81, 0.28*gy/9.81));
+};
+$('gNormal').onclick = () => {
+  M.ponGravedadGlobal(0, 9.81);
+  $('gMag').value = '9.81'; gDir = 'abajo'; gPinta();
+  avisa('Gravedad normal, 9.81 m/s² hacia abajo');
+};
+$('gZona').onclick   = () => { ponModo('zona');    gPinta(); avisa('Arrastra en la sala para dibujar la zona'); };
+$('gPunto').onclick  = () => { ponModo('punto');   gPinta(); avisa('Toca en la sala para poner el punto'); };
+$('gObjeto').onclick = () => { ponModo('gobjeto'); gPinta(); avisa('Pinta encima de un objeto para darle su propia gravedad'); };
+
+/* las flechas del campo: ayudan a entender, NO sustituyen la simulación */
+function pintaFlechas(){
+  if(!gVerFlechas) return;
+  if(M._gSimple && Math.abs(M.gGlobal.x) < 1e-6 && M.gGlobal.y > 0) return;   /* normal: no estorbar */
+  const dpr = cv.width / parseFloat(cv.style.width);
+  const paso = 34;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(61,255,197,.55)'; ctx.lineWidth = 1.4 * dpr;
+  for(let py = paso; py < cv.height; py += paso * dpr){
+    for(let px = paso; px < cv.width; px += paso * dpr){
+      const mx = vista.x + (px / dpr) / vista.esc, my = vista.y + (py / dpr) / vista.esc;
+      if(!M.dentro(Math.floor(mx), Math.floor(my))) continue;
+      M.gravedadEn(Math.floor(mx), Math.floor(my), M.i(Math.floor(mx), Math.floor(my)));
+      const gx = M._gx, gy = M._gy, mag = Math.hypot(gx, gy);
+      if(mag < 0.004) continue;
+      const l = Math.min(16, 7 + mag * 22) * dpr;
+      const ux = gx / mag, uy = gy / mag;
+      ctx.beginPath();
+      ctx.moveTo(px - ux*l/2, py - uy*l/2);
+      ctx.lineTo(px + ux*l/2, py + uy*l/2);
+      /* la punta */
+      ctx.lineTo(px + ux*l/2 - ux*4*dpr - uy*3*dpr, py + uy*l/2 - uy*4*dpr + ux*3*dpr);
+      ctx.moveTo(px + ux*l/2, py + uy*l/2);
+      ctx.lineTo(px + ux*l/2 - ux*4*dpr + uy*3*dpr, py + uy*l/2 - uy*4*dpr - ux*3*dpr);
+      ctx.stroke();
+    }
+  }
+  /* el contorno de las zonas y el radio de los puntos */
+  const aPant = (mx, my) => [ (mx - vista.x) * vista.esc * dpr, (my - vista.y) * vista.esc * dpr ];
+  ctx.setLineDash([6*dpr, 5*dpr]);
+  for(const z of M.zonas){
+    ctx.strokeStyle = z.activa ? 'rgba(61,255,197,.8)' : 'rgba(110,104,128,.6)';
+    const [ax, ay] = aPant(z.x0, z.y0), [bx, by] = aPant(z.x1 + 1, z.y1 + 1);
+    ctx.strokeRect(ax, ay, bx - ax, by - ay);
+  }
+  for(const p of M.puntos){
+    ctx.strokeStyle = p.activa ? (p.atrae ? 'rgba(255,197,61,.8)' : 'rgba(255,59,78,.8)') : 'rgba(110,104,128,.6)';
+    const [cx0, cy0] = aPant(p.x, p.y);
+    ctx.beginPath(); ctx.arc(cx0, cy0, p.radio * vista.esc * dpr, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx0, cy0, 4*dpr, 0, Math.PI*2); ctx.stroke();
+  }
+  if(gArrastre){
+    ctx.strokeStyle = 'rgba(61,255,197,.9)'; ctx.setLineDash([4*dpr, 4*dpr]);
+    const [ax, ay] = aPant(Math.min(gArrastre.x0, gArrastre.x1), Math.min(gArrastre.y0, gArrastre.y1));
+    const [bx, by] = aPant(Math.max(gArrastre.x0, gArrastre.x1) + 1, Math.max(gArrastre.y0, gArrastre.y1) + 1);
+    ctx.strokeRect(ax, ay, bx - ax, by - ay);
+  }
+  ctx.restore();
+}
 
 /* ── el bucle ───────────────────────────────────────────────────────────── */
 let ultimo = 0, fps = 0, acum = 0, cuadros = 0;
 function cuadro(ms){
   requestAnimationFrame(cuadro);
   const dt = ms - ultimo; ultimo = ms;
+  /* la mano tira ANTES del paso, para que la fuerza entre en la misma física
+     de este cuadro y no en la del siguiente */
+  if(agarre){
+    const g = M.agarra(agarre.cx, agarre.cy, agarre.fx, agarre.fy, Math.max(2, tam - 1));
+    agarre.cx = g.cx; agarre.cy = g.cy;
+  }
   if(!pausado) M.paso();
   pinta();
+  $('escala').textContent = '×' + vista.esc.toFixed(1);
   cuadros++; acum += dt;
   if(acum > 500){
     fps = Math.round(cuadros * 1000 / acum); acum = 0; cuadros = 0;
@@ -534,10 +1103,20 @@ function cuadro(ms){
   }
 }
 
+/* ⚠ NO BASTA CON MEDIR AL ARRANCAR Y AL REDIMENSIONAR, y esto sólo se ve en
+   un navegador de verdad: `medir()` corría antes de que el navegador hubiera
+   terminado de colocar el panel, así que el lienzo se quedaba con 610 px de
+   alto metidos a mano mientras su zona medía 422. Resultado: el mundo se
+   dibujaba 188 px por debajo del panel — o sea justo lo que Carlos reportó
+   dos veces, «parece que se cae al vacío lo que pones».
+   Un ResizeObserver no depende de adivinar CUÁNDO está lista la maqueta: se
+   entera cada vez que cambia, venga de donde venga el cambio (girar el
+   teléfono, plegar el panel, la barra de Safari, el teclado). */
 addEventListener('resize', () => { medir(); });
+if(window.ResizeObserver) new ResizeObserver(() => medir()).observe($('zona'));
 medir(); pestanas(); paleta();
 requestAnimationFrame(cuadro);
-window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom,
+window.CRISOL = { M, EL, IDX, get mundo(){ return M; }, guardado, vista, zoom, apunta,
                   pon:(x,y,id)=>M.pon(x,y,IDX[id]) };
 </script>
 </body>

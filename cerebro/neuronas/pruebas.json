@@ -684,6 +684,28 @@
         "prueba-de-un-solo-caso",
         "medir-antes-de-suponer"
       ]
+    },
+    {
+      "id": "la-regla-que-no-puede-dispararse",
+      "titulo": "La regla existía, en probabilidad cero, con una nota explicando por qué",
+      "gravedad": "media",
+      "sintoma": "«Puse hidrógeno y oxígeno y no hay forma de volverlo agua.»",
+      "causa": "La reacción estaba escrita con probabilidad 0 y el comentario «sólo con chispa». Esa chispa nunca se implementó.",
+      "porque": "Un `TODO` escrito como código se lee como código: al buscar «¿existe esta regla?» la respuesta es sí, y nadie vuelve a mirarla. Un comentario que describe lo que falta lo hace parecer hecho.",
+      "arreglo": "O se implementa la condición, o la regla no se escribe. Una condición inalcanzable con una nota al lado es deuda camuflada de función.",
+      "comoCazarlo": "Busca constantes que apaguen una rama entera —probabilidad 0, `if(false)`, un umbral inalcanzable— y comprueba si alguna prueba la cubre. Si ninguna, es que no se dispara nunca.",
+      "consejo": "Lo que no se puede disparar no está implementado, por bien documentado que esté.",
+      "salioDe": "juegos/crisol/elementos.js · hidrógeno + oxígeno con `prob: 0`",
+      "senales": [
+        "no pasa nada",
+        "la regla está pero no funciona",
+        "nunca reacciona",
+        "sólo con chispa"
+      ],
+      "vecinas": [
+        "pruebas-que-no-prueban-nada",
+        "el-comentario-no-es-el-codigo"
+      ]
     }
   ]
 }

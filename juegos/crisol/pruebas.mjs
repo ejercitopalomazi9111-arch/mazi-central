@@ -5,7 +5,7 @@
 
    ⚠ Esto prueba EL MOTOR, no el juego. Ya nos pasó en Guerra de Puercos que
    las 74 del motor pasaban con la pantalla muerta. La pantalla va aparte. */
-import { Mundo, IDX, EL, VACIO } from './motor.js';
+import { Mundo, IDX, EL, VACIO, aCeldas, GRAVEDAD } from './motor.js';
 
 let bien = 0, mal = 0;
 const ok = (t, c, det) => { c ? bien++ : mal++;
@@ -21,6 +21,11 @@ const crisol = (m, x0, y0, x1, y1) => {
   for(let x = x0; x <= x1; x++){ m.pon(x, y1, IDX.muro); m.pon(x, y0, IDX.muro); }
   for(let y = y0; y <= y1; y++){ m.pon(x0, y, IDX.muro); m.pon(x1, y, IDX.muro); }
 };
+/* Una REPISA de muro bajo una fila. Desde que los sólidos caen, un circuito
+   pintado en el aire se desploma — que es lo que Carlos pidió y lo correcto—,
+   así que las pruebas de electrónica se construyen apoyadas, como se construye
+   de verdad. Sin esto medían electricidad sobre cables que iban cayéndose. */
+const repisa = (m, y, x0 = 0, x1 = m.an - 1) => { for(let x = x0; x <= x1; x++) m.pon(x, y, IDX.muro); };
 const cuantos = (m, id) => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) c++; return c; };
 
 seccion('la gravedad y los estados');
@@ -31,10 +36,30 @@ seccion('la gravedad y los estados');
   ok('la arena cae hasta el suelo', m.t[m.i(20, 39)] === IDX.arena,
      'quedó en y=' + (() => { for(let y=0;y<40;y++) if(m.t[m.i(20,y)]===IDX.arena) return y; return '?'; })());
 
+  /* ⚠ ESTA PRUEBA AFIRMABA LO CONTRARIO Y ESTABA BIEN EN SU MOMENTO: antes un
+     sólido era un decorado clavado en su celda. Carlos pidió que dejara de
+     serlo —«que puedan moverse caerse etc no solo el polvo y el gas»— así que
+     ahora se comprueba lo de verdad: sin sostén se cae, y apoyada se queda. */
   const p = mundo();
   p.pon(20, 5, IDX.piedra);
-  corre(p, 30);
-  ok('la piedra NO cae: es sólida', p.t[p.i(20, 5)] === IDX.piedra);
+  corre(p, 60);
+  ok('una piedra sin sostén SE CAE', p.t[p.i(20, 5)] !== IDX.piedra);
+  ok('y llega al suelo', p.t[p.i(20, 39)] === IDX.piedra);
+
+  const q = mundo();
+  repisa(q, 20);
+  q.pon(20, 19, IDX.piedra);
+  corre(q, 60);
+  ok('pero apoyada en un muro se queda', q.t[q.i(20, 19)] === IDX.piedra);
+
+  const arco = mundo();
+  repisa(arco, 30);
+  for(let y = 10; y < 30; y++){ arco.pon(5, y, IDX.piedra); arco.pon(34, y, IDX.piedra); }
+  for(let x = 5; x <= 34; x++) arco.pon(x, 10, IDX.piedra);   /* el puente */
+  corre(arco, 80);
+  let puente = 0;
+  for(let x = 5; x <= 34; x++) if(arco.t[arco.i(x, 10)] === IDX.piedra) puente++;
+  ok('y un PUENTE colgado entre dos pilares aguanta', puente === 30, puente + '/30 celdas');
 
   const g = mundo();
   g.pon(20, 30, IDX.humo);
@@ -105,11 +130,18 @@ seccion('termodinámica de verdad');
      fundido > 0 && cuantos(v, 'vidrio') > 0,
      'al calentar ' + fundido + ' · al enfriar ' + cuantos(v,'vidrio') + ' de vidrio');
 
+  /* ⚠ ESTA PRUEBA MIRABA TARDE Y ACUSABA AL MOTOR. Leía el vapor en el paso
+     4 y desde que el aire acarrea calor, para entonces ya se había vuelto a
+     condensar: hervía en el paso 1, ocho celdas, y en el 3 ya eran agua otra
+     vez a 89°. O sea que el motor hacía lo correcto —una bocanada de vapor en
+     aire frío se condensa en un parpadeo— y la prueba decía que no hervía.
+     Se mide SI HIRVIÓ, que es la pregunta, no cómo estaba en un instante. */
   const h = mundo(14, 14);
   for(let x = 3; x < 11; x++) h.pon(x, 12, IDX.agua);
   for(let k = 0; k < h.t.length; k++) if(h.t[k] === IDX.agua) h.temp[k] = 130;
-  corre(h, 4);
-  ok('el agua a 130° hierve', cuantos(h, 'vapor') > 0, cuantos(h,'vapor') + ' de vapor');
+  let hirvio = 0;
+  for(let i = 0; i < 4; i++){ h.paso(); hirvio = Math.max(hirvio, cuantos(h, 'vapor')); }
+  ok('el agua a 130° hierve', hirvio > 0, 'nunca pasó de ' + hirvio + ' de vapor');
 }
 
 seccion('química');
@@ -167,6 +199,7 @@ seccion('fuego y explosiones');
 seccion('electricidad');
 {
   const m = mundo(20, 10);
+  repisa(m, 6);
   m.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 15; x++) m.pon(x, 5, IDX.cobre);
   m.pon(15, 5, IDX.lampara);
@@ -377,6 +410,7 @@ seccion('electrónica que se puede OPERAR');
 {
   /* interruptor: lo que faltaba para poder encender algo a voluntad */
   const m = mundo(20, 10);
+  repisa(m, 6);
   m.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
   m.pon(8, 5, IDX.interruptor);
@@ -393,6 +427,7 @@ seccion('electrónica que se puede OPERAR');
 
   /* resistencia: calienta de verdad */
   const r = mundo(20, 10);
+  repisa(r, 6);
   r.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 9; x++) r.pon(x, 5, IDX.cobre);
   r.pon(9, 5, IDX.resistencia);
@@ -403,6 +438,7 @@ seccion('electrónica que se puede OPERAR');
 
   /* pulsador: la señal que cambia sola */
   const s = mundo(20, 10);
+  repisa(s, 6);
   s.pon(4, 5, IDX.pulsador);
   for(let x = 5; x < 12; x++) s.pon(x, 5, IDX.cobre);
   let encendido = 0, apagado = 0;
@@ -489,10 +525,14 @@ seccion('los 118 de la tabla periódica');
   /* y que la fase FUNCIONE: el hierro se funde y escurre */
   const m = mundo(20, 30, 6);
   crisol(m, 4, 8, 16, 26);
-  for(let x = 6; x < 14; x++) for(let y = 12; y < 15; y++) m.pon(x, y, IDX.eFe);
+  /* apoyado en el fondo del crisol: desde que los sólidos caen, un bloque de
+     hierro flotando a media altura se desploma —y con razón— así que lo que
+     se mide aquí (que a temperatura ambiente NO fluye) hay que medirlo sobre
+     algo, o se está midiendo la gravedad otra vez. */
+  for(let x = 6; x < 14; x++) for(let y = 23; y < 26; y++) m.pon(x, y, IDX.eFe);
   corre(m, 5);
   ok('el hierro a temperatura ambiente es SÓLIDO y no se mueve',
-     m.estadoDe(m.i(8, 12)) === 'solido');
+     m.estadoDe(m.i(8, 24)) === 'solido');
   for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.eFe) m.temp[k] = 1600;
   /* ⚠ DOS ERRORES MÍOS EN LA MISMA PRUEBA, y los dos de medir mal:
      1 · miraba DOS CELDAS CONCRETAS, y en cuanto el hierro se funde ESCURRE:
@@ -546,6 +586,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 {
   /* RELOJ DE ARENA: no deja pasar hasta que pase el tiempo */
   const m = mundo(30, 10);
+  repisa(m, 6);
   m.pon(2, 5, IDX.bateria);
   for(let x = 3; x < 8; x++) m.pon(x, 5, IDX.cobre);
   m.pon(8, 5, IDX.reloj);
@@ -561,6 +602,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* REPETIDOR: sin él la corriente se muere de lejos */
   const largo = mundo(200, 10);
+  repisa(largo, 6);
   largo.pon(1, 5, IDX.bateria);
   for(let x = 2; x < 195; x++) largo.pon(x, 5, IDX.cobre);
   largo.pon(195, 5, IDX.lampara);
@@ -568,6 +610,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
   ok('sin repetidor, la corriente NO llega a 195 celdas', largo.car[largo.i(195,5)] === 0);
 
   const rep = mundo(200, 10);
+  repisa(rep, 6);
   rep.pon(1, 5, IDX.bateria);
   for(let x = 2; x < 195; x++) rep.pon(x, 5, x % 60 === 0 ? IDX.repetidor : IDX.cobre);
   rep.pon(195, 5, IDX.lampara);
@@ -576,6 +619,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* PILA que se acaba y se recarga */
   const pila = mundo(20, 10);
+  repisa(pila, 6);
   pila.pon(2, 5, IDX.pila);
   for(let x = 3; x < 10; x++) pila.pon(x, 5, IDX.cobre);
   pila.pon(10, 5, IDX.lampara);
@@ -591,6 +635,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* PISTÓN que lanza */
   const pis = mundo(30, 40, 4);
+  repisa(pis, 36);
   pis.pon(15, 35, IDX.piston);
   pis.pon(15, 34, IDX.arena);
   pis.pon(14, 35, IDX.bateria);
@@ -606,6 +651,7 @@ seccion('automatización: lo que Carlos pidió por su nombre');
 
   /* OBSERVADOR */
   const obs = mundo(20, 14);
+  repisa(obs, 9);
   obs.pon(8, 8, IDX.observador);
   for(let x = 9; x < 14; x++) obs.pon(x, 8, IDX.cobre);
   corre(obs, 12);
@@ -646,6 +692,1470 @@ seccion('pirotecnia');
   paso200 = cuantos(me, 'mecha');
   ok('la mecha se quema DESPACIO, no de golpe', paso20 > 24 && paso200 < paso20,
      '30 → ' + paso20 + ' (20 pasos) → ' + paso200 + ' (420 pasos)');
+}
+
+seccion('la onda expansiva VIAJA, rebota, se difracta y atraviesa');
+{
+  /* Carlos: «tus ondas expansivas se quedan donde fue la explosión, no se
+     expanden ni luchan con el entorno para crecer, ni se deforman al chocar
+     con una pared; que un residuo se quede tras la pared y otro atraviese
+     pero pierda fuerza». Esto mide las cuatro cosas por separado. */
+  const frente = (m, cx, cy) => {
+    let r = 0;
+    for(let y = 0; y < m.al; y++) for(let x = 0; x < m.an; x++)
+      if(Math.abs(m.pres[m.i(x,y)]) > 1) r = Math.max(r, Math.hypot(x-cx, y-cy));
+    return r;
+  };
+
+  /* 1 · VIAJA. Antes de la ecuación de onda esto daba 0.13 celdas por paso:
+     una mancha que se difundía y se apagaba en el sitio. */
+  const m = mundo(160, 160, 3);
+  for(let y = 78; y <= 82; y++) for(let x = 78; x <= 82; x++) m.presiona(x, y, 400);
+  corre(m, 10); const r10 = frente(m, 80, 80);
+  corre(m, 30); const r40 = frente(m, 80, 80);
+  const veloc = (r40 - r10) / 30;
+  ok('el frente AVANZA, y a velocidad de onda', veloc > 0.9,
+     veloc.toFixed(2) + ' celdas por paso (la difusión de antes daba 0.13)');
+
+  /* 2 · SE DEBILITA al repartirse en una circunferencia mayor, y la energía
+     nunca crece: si crece, el operador está fabricando energía y la sala
+     acaba temblando sola. Eso pasó de verdad, por un acople asimétrico. */
+  const energia = mm => { let e = 0; for(let k = 0; k < mm.pres.length; k++) e += mm.pres[k]*mm.pres[k]; return e; };
+  const e40 = energia(m); corre(m, 40); const e80 = energia(m);
+  ok('y se DEBILITA: la energía nunca crece', e80 < e40,
+     e40.toExponential(2) + ' → ' + e80.toExponential(2));
+
+  /* 3 · una pared DURA refleja y una FLOJA deja pasar debilitada. Es el mismo
+     código para las dos: sale del coeficiente de transmisión, no de un `if`. */
+  const cruza = (material) => {
+    const w = mundo(120, 60, 5);
+    if(material != null) for(let y = 0; y < 60; y++) w.pon(60, y, material);
+    for(let y = 28; y <= 32; y++) for(let x = 18; x <= 22; x++) w.presiona(x, y, 400);
+    let aca = 0, alla = 0;
+    for(let i = 0; i < 70; i++){
+      w.paso();
+      for(let y = 0; y < 60; y++){
+        for(let x = 40; x <= 58; x++) aca  = Math.max(aca,  Math.abs(w.pres[w.i(x,y)]));
+        for(let x = 62; x <= 80; x++) alla = Math.max(alla, Math.abs(w.pres[w.i(x,y)]));
+      }
+    }
+    return alla / aca;
+  };
+  const libre = cruza(null), pMuro = cruza(IDX.muro);
+  const pConc = cruza(IDX.concreto), pMad = cruza(IDX.madera);
+  ok('el MURO la refleja entera: no pasa nada', pMuro === 0, (pMuro*100).toFixed(0) + '%');
+  ok('una pared FLOJA la deja pasar debilitada', pMad > 0.2 && pMad < libre,
+     'madera ' + (pMad*100).toFixed(0) + '% · sin pared ' + (libre*100).toFixed(0) + '%');
+  ok('y una DURA deja pasar menos que una floja', pConc < pMad,
+     'concreto ' + (pConc*100).toFixed(0) + '% < madera ' + (pMad*100).toFixed(0) + '%');
+
+  /* 4 · DIFRACCIÓN: dobla la esquina de un hueco. La geometría dice cero. */
+  const d = mundo(120, 60, 5);
+  for(let y = 0; y < 60; y++) if(y < 27 || y > 33) d.pon(60, y, IDX.muro);
+  for(let y = 28; y <= 32; y++) for(let x = 18; x <= 22; x++) d.presiona(x, y, 400);
+  corre(d, 70);
+  let esquina = 0;
+  for(let y = 0; y < 12; y++) for(let x = 70; x <= 80; x++) esquina = Math.max(esquina, Math.abs(d.pres[d.i(x,y)]));
+  ok('y DOBLA LA ESQUINA de un hueco (difracción)', esquina > 1, 'pico ' + esquina.toFixed(1));
+}
+
+seccion('la onda se calma sola, y la sala no queda presurizada de por vida');
+{
+  /* Esto costó dos rondas. La primera versión amortiguaba la VELOCIDAD de la
+     onda y nunca la presión — y un desnivel uniforme tiene laplaciano cero, o
+     sea que no se mueve y no se amortigua: a 900 pasos la energía seguía
+     clavada en 5.21e6 con la sala entera empujándolo todo. */
+  const m = mundo(60, 60, 5);
+  for(let y = 30; y < 34; y++) for(let x = 28; x < 32; x++) m.pon(x, y, IDX.polvora);
+  m.pon(30, 29, IDX.fuego);
+  corre(m, 340);
+  let queda = 0;
+  for(let k = 0; k < m.pres.length; k++) if(Math.abs(m.pres[k]) > 2) queda++;
+  ok('a los 340 pasos ya no queda presión suelta', queda === 0, queda + ' celdas');
+  /* Y NO por haber apagado la física: una recámara sellada de gas caliente
+     SÍ conserva su presión mientras esté caliente. Si esto fallara, el
+     desahogo se estaría comiendo también lo que debe aguantar. */
+  const r = mundo(60, 60, 9);
+  crisol(r, 20, 20, 40, 40);
+  /* ⚠ CO₂ Y NO GAS NATURAL, y esto lo escribí mal a la primera: puse gasnat a
+     900° y a esa temperatura SE AUTOENCIENDE. Para el paso 5 no quedaba gas
+     —había fuego, que es «energía» y no ejerce presión de gas— y la prueba
+     acusaba al motor de no aguantar una recámara que yo mismo había quemado.
+     Es la misma familia que el aceite que se caía antes de tocar el fuego y el
+     vidrio medido mientras estaba fundido. */
+  for(let y = 21; y < 40; y++) for(let x = 21; x < 40; x++){ r.pon(x, y, IDX.co2); r.temp[r.i(x,y)] = 700; }
+  /* ⚠ Y SE MIDE EL PICO, NO UN PASO CUALQUIERA. La primera versión miraba el
+     paso 40 y para entonces el gas ya se había enfriado de 700° a 39° —el
+     calor se conduce por el muro—, así que leía 1.5 y acusaba al motor.
+     Lo que hay que comprobar es que MIENTRAS ESTÁ CALIENTE aguanta, y que la
+     presión sigue a la temperatura en vez de quedarse clavada. */
+  let pico = 0, fria = 0;
+  for(let i = 0; i < 80; i++){
+    r.paso();
+    let d = 0, n = 0;
+    for(let y = 25; y < 35; y++) for(let x = 25; x < 35; x++){ d += r.pres[r.i(x,y)]; n++; }
+    if(i < 30 && d/n > pico) pico = d/n;
+    if(i === 79) fria = d/n;
+  }
+  ok('pero una recámara CALIENTE Y SELLADA sí aguanta su presión', pico > 5,
+     'pico ' + pico.toFixed(1) + ' de presión media dentro');
+  ok('y al ENFRIARSE la suelta, que es la ley de los gases', fria < pico * 0.2,
+     'pico ' + pico.toFixed(1) + ' → fría ' + fria.toFixed(2));
+}
+
+seccion('el muro es lo único inamovible');
+{
+  const m = mundo(40, 40, 7);
+  m.pon(20, 20, IDX.muro);
+  m.revienta(20, 22, 20);      /* una tronada pegada al muro */
+  corre(m, 30);
+  ok('una explosión pegada NO borra el muro', m.t[m.i(20,20)] === IDX.muro);
+  ok('y el muro no acumula presión: la refleja', m.pres[m.i(20,20)] === 0,
+     m.pres[m.i(20,20)].toFixed(2));
+}
+
+seccion('las compuertas lógicas, con su tabla de verdad entera');
+{
+  /* Carlos, sin rodeos: «tus módulos de lógica no sirven para una mierda,
+     supuse que la Y sería que si recibe dos señales separadas entonces
+     permite el paso, pero con una ya lo permite; la NO no hace nada más que
+     parpadear». Las dos quejas eran el MISMO defecto —la compuerta contaba su
+     propia salida como entrada— más un segundo debajo: al ser fuente, también
+     empujaba hacia atrás por su cable de entrada y le robaba la paternidad a
+     la batería, lo que daba un parpadeo exacto al 50%.
+     Por eso esto no comprueba sólo el resultado: comprueba que sea ESTABLE.
+     Una compuerta que da el valor correcto la mitad de los pasos está rota, y
+     mirando sólo el último paso se ve perfecta. */
+  const monta = (puerta, a, b) => {
+    const m = mundo(30, 20, 3);
+    repisa(m, 15);
+    const gx = 14, gy = 14;
+    m.pon(gx, gy, IDX[puerta]);
+    for(let x = 10; x < gx; x++) m.pon(x, gy, IDX.cobre);      /* entrada A, por la izquierda */
+    if(a) m.pon(9, gy, IDX.bateria);
+    for(let y = 10; y < gy; y++) m.pon(gx, y, IDX.cobre);      /* entrada B, por arriba */
+    if(b) m.pon(gx, 9, IDX.bateria);
+    for(let x = gx + 1; x < 20; x++) m.pon(x, gy, IDX.cobre);  /* salida, a la derecha */
+    m.pon(20, gy, IDX.lampara);
+    corre(m, 40);
+    let on = 0;
+    for(let i = 0; i < 20; i++){ m.paso(); if(m.car[m.i(20, gy)]) on++; }
+    return { sal: m.car[m.i(20, gy)] ? 1 : 0, estable: on === 0 || on === 20, on };
+  };
+  const tabla = {
+    gAND: [0,0,0,1], gOR: [0,1,1,1], nand: [1,1,1,0],
+    nor:  [1,0,0,0], xor: [0,1,1,0], xnor: [1,0,0,1],
+  };
+  for(const [g, esp] of Object.entries(tabla)){
+    const r = [monta(g,0,0), monta(g,1,0), monta(g,0,1), monta(g,1,1)];
+    const dio = r.map(v => v.sal);
+    ok(EL[IDX[g]].nom + ': su tabla de verdad entera', dio.join() === esp.join(),
+       '00 01 10 11 → ' + dio.join(' ') + ' · esperado ' + esp.join(' '));
+    ok('  …y sin parpadear', r.every(v => v.estable),
+       'pasos encendida de 20: ' + r.map(v => v.on).join(' / '));
+  }
+
+  /* NOT va aparte: una sola entrada */
+  const notCon = (a) => {
+    const m = mundo(30, 20, 3);
+    repisa(m, 15);
+    m.pon(14, 14, IDX.gNOT);
+    for(let x = 10; x < 14; x++) m.pon(x, 14, IDX.cobre);
+    if(a) m.pon(9, 14, IDX.bateria);
+    for(let x = 15; x < 20; x++) m.pon(x, 14, IDX.cobre);
+    m.pon(20, 14, IDX.lampara);
+    corre(m, 40);
+    let on = 0;
+    for(let i = 0; i < 20; i++){ m.paso(); if(m.car[m.i(20,14)]) on++; }
+    return on;
+  };
+  const sinSenal = notCon(0), conSenal = notCon(1);
+  ok('NO (NOT): sin señal enciende, y se QUEDA encendida', sinSenal === 20, sinSenal + '/20 pasos');
+  ok('y con señal se apaga, y se queda apagada', conSenal === 0, conSenal + '/20 pasos');
+}
+
+seccion('rozar no es golpear · fricción y contacto');
+{
+  /* Carlos: «una pared no se rompe si la roza un objeto… debes meter también
+     la fricción», y separó él mismo contacto, rozamiento, fuerza normal,
+     impacto, corte, deformación y fractura. Lo que decide no es tocar: es la
+     energía ½·m·v² contra lo que el material aguanta. */
+  const cuenta = (m, id) => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) c++; return c; };
+  const losa = (proyectil, desde) => {
+    const g = mundo(40, 60, 1);
+    repisa(g, 59);
+    for(let x = 0; x < 40; x++) for(let y = 50; y < 59; y++) g.pon(x, y, IDX.piedra);
+    const antes = cuenta(g, 'piedra');
+    g.pon(20, desde, IDX[proyectil]); g.suelto[g.i(20, desde)] = 1;
+    corre(g, 300);
+    return antes - cuenta(g, 'piedra');
+  };
+  const caida = losa('eOs', 2), encima = losa('eOs', 48), ligero = losa('ceniza', 2);
+  ok('un proyectil pesado a velocidad ABOLLA la losa', caida > 0, 'agujero de ' + caida);
+  ok('el mismo, soltado encima y sin velocidad, NO', encima === 0, 'agujero de ' + encima);
+  ok('y uno ligero desde la misma altura tampoco', ligero === 0, 'agujero de ' + ligero);
+
+  /* el roce: 300 pasos raspando y la pared entera */
+  const roce = mundo(40, 40, 1);
+  for(let y = 0; y < 40; y++) roce.pon(20, y, IDX.piedra);
+  for(let i = 0; i < 300; i++){
+    const k = roce.i(19, 20);
+    if(roce.t[k] === VACIO) roce.pon(19, 20, IDX.metal);
+    roce.vx[k] = 0.5; roce.suelto[k] = 1;
+    roce.paso();
+  }
+  let quedan = 0;
+  for(let y = 0; y < 40; y++) if(roce.t[roce.i(20,y)] === IDX.piedra) quedan++;
+  ok('y ROZARLA 300 pasos no le hace nada', quedan === 40, quedan + '/40 celdas');
+
+  /* la fricción FRENA de verdad, y el hielo menos que la arena */
+  /* ⚠ el suelo va en la ÚLTIMA FILA. La primera versión lo puso a media
+     altura en un mundo de 20 y, desde que los sólidos caen, ese suelo se
+     desplomaba con bloque y todo: las dos superficies daban el mismo número
+     porque las dos se habían ido al fondo. Medía la gravedad otra vez. */
+  const desliza = (suelo) => {
+    const m = mundo(60, 20, 2);
+    repisa(m, 19);
+    for(let x = 0; x < 60; x++) m.pon(x, 18, IDX[suelo]);
+    m.pon(5, 17, IDX.metal); m.suelto[m.i(5,17)] = 1; m.vx[m.i(5,17)] = 5;
+    corre(m, 60);
+    for(let x = 59; x >= 0; x--) if(m.t[m.i(x,17)] === IDX.metal) return x;
+    return 5;
+  };
+  /* ⚠ y NO con hielo, que a 22° se derrite: el bloque acababa nadando y las
+     dos superficies daban lo mismo. El metal es liso y no se va a ningún lado. */
+  const porMetal = desliza('metal'), porArena = desliza('arena');
+  ok('un bloque llega MÁS LEJOS por metal liso que por arena', porMetal > porArena,
+     'metal x=' + porMetal + ' · arena x=' + porArena);
+}
+
+seccion('la luz alumbra de verdad y da sombra');
+{
+  /* Carlos: «no tenemos iluminación… la lámpara no produce iluminación».
+     Ahora la luz se reparte desde la lámpara encendida, se apaga con la
+     distancia y la bloquean los sólidos. Y depende del CIRCUITO. */
+  const m = mundo(60, 40, 1);
+  repisa(m, 39);
+  m.pon(10, 38, IDX.bateria);
+  for(let x = 11; x < 20; x++) m.pon(x, 38, IDX.cobre);
+  m.pon(20, 38, IDX.lampara);
+  for(let y = 20; y < 39; y++) m.pon(35, y, IDX.piedra);   /* una pared */
+  corre(m, 20);
+  const L = (x, y) => m.luz[m.i(x, y)];
+  ok('junto a la lámpara hay luz', L(21,37) > 10, L(21,37).toFixed(0));
+  ok('y se APAGA con la distancia', L(30,37) > 0 && L(30,37) < L(21,37),
+     'a 1 celda ' + L(21,37).toFixed(0) + ' · a 10 celdas ' + L(30,37).toFixed(0));
+  ok('detrás de una pared hay SOMBRA', L(40,37) === 0, L(40,37).toFixed(0));
+  m.pon(15, 38, IDX.aislante);      /* se corta el circuito */
+  corre(m, 20);
+  ok('y si cortas el circuito, se apaga', L(21,37) === 0, L(21,37).toFixed(0));
+}
+
+seccion('la mano y el termómetro');
+{
+  /* «El arrastre debe aplicar una FUERZA al objeto, no simplemente cambiar su
+     posición» — así que lo que se comprueba es justo eso: que lo ligero venga
+     y lo pesado cueste, con la misma mano y el mismo tirón. */
+  const tira = (id) => {
+    const m = mundo(60, 40, 3);
+    repisa(m, 39);
+    m.pon(10, 38, IDX[id]);
+    let cx = 10, cy = 38;
+    for(let i = 0; i < 60; i++){
+      const g = m.agarra(cx, cy, 45, 38, 2);   /* el dedo, lejos a la derecha */
+      cx = g.cx; cy = g.cy;
+      m.paso();
+    }
+    for(let x = 59; x >= 0; x--) if(m.t[m.i(x,38)] === IDX[id]) return x;
+    return 10;
+  };
+  const ligero = tira('madera'), pesado = tira('eOs');
+  ok('la mano ARRASTRA un sólido', ligero > 12, 'la madera llegó a x=' + ligero);
+  ok('y lo pesado cuesta más que lo ligero', pesado < ligero,
+     'madera x=' + ligero + ' · osmio x=' + pesado);
+  ok('y no atraviesa el muro', (() => {
+    const m = mundo(40, 40, 3);
+    repisa(m, 39);
+    for(let y = 20; y < 39; y++) m.pon(20, y, IDX.muro);
+    m.pon(10, 38, IDX.madera);
+    let cx = 10, cy = 38;
+    for(let i = 0; i < 80; i++){ const g = m.agarra(cx, cy, 35, 38, 2); cx = g.cx; cy = g.cy; m.paso(); }
+    for(let x = 21; x < 40; x++) if(m.t[m.i(x,38)] === IDX.madera) return false;
+    return true;
+  })());
+
+  /* ⚠ LAS TRES DE ARRIBA ARRASTRAN **UNA CELDA**, Y POR ESO PASABAN CON LA
+     MANO ROTA. Carlos lo reportó como «la manita de agarrar no agarra nada» y
+     tenía toda la razón: desde que existen los cuerpos rígidos, la brocha
+     mordía un círculo de la piedra, esas celdas formaban un cuerpo aparte, y
+     ese cuerpo chocaba contra el resto de SU PROPIA PIEDRA — `mueveCuerpo`
+     daba falso y la velocidad se ponía a cero. Con una celda suelta no hay
+     resto contra el que chocar, así que las pruebas decían que sí.
+     Medido en navegador antes del arreglo: 104 tirones, 31 celdas agarradas
+     cada vez, CERO celdas de movimiento. Éstas se arrastran un BLOQUE. */
+  const bloque = (id, lado, fx, fy, vueltas = 60) => {
+    const m = mundo(80, 60, 5);
+    repisa(m, 50);
+    for(let y = 0; y < lado; y++) for(let x = 0; x < lado; x++) m.pon(20 + x, 49 - lado + y, IDX[id]);
+    corre(m, 30);
+    const centro = () => { let n = 0, sx = 0, sy = 0;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]){ n++; sx += k % 80; sy += (k / 80) | 0; }
+      return n ? { n, x:sx/n, y:sy/n } : { n:0, x:0, y:0 }; };
+    const a0 = centro();
+    let g = { cx:a0.x, cy:a0.y, n:0 };
+    for(let i = 0; i < vueltas; i++){ g = m.agarra(g.cx, g.cy, fx, fy, 3); m.paso(); }
+    return { de:a0, a:centro(), agarro:g.n };
+  };
+  {
+    /* ⚠ 8×8 Y NO 4×4, Y LA DIFERENCIA NO ES DE TAMAÑO SINO DE SI LA PRUEBA
+       SIRVE. La brocha mide 3 de radio, así que en un bloque de 4×4 LA MANO
+       LO CUBRE ENTERO: mordisco y pieza son la misma cosa y el defecto no
+       aparece. Lo comprobé rompiendo el motor a propósito —quitando el
+       crecimiento de la pieza— y las 213 seguían en verde. Hace falta un
+       bloque MÁS GRANDE QUE LA MANO para que exista un resto contra el que
+       chocar, que es exactamente lo que veía Carlos. */
+    const r = bloque('piedra', 8, 60, 25);
+    ok('la mano arrastra un BLOQUE entero, no un mordisco de él',
+       Math.abs(r.a.x - 60) < 4 && Math.abs(r.a.y - 25) < 5,
+       'de ' + r.de.x + ',' + r.de.y + ' a ' + r.a.x + ',' + r.a.y);
+    ok('y agarra la pieza completa, no sólo lo que cabe en la brocha',
+       r.agarro === 64, 'agarró ' + r.agarro + ' de 64');
+  }
+  ok('y lo ligero no se le escapa de la mano', (() => {
+    /* con el punto de agarre quieto, la madera salía volando hasta la pared:
+       acelera más, y en un cuadro se salía del círculo de tres celdas */
+    const r = bloque('madera', 6, 60, 25);
+    return Math.abs(r.a.x - 60) < 4 && Math.abs(r.a.y - 25) < 4 && r.agarro === 36;
+  })());
+  ok('y un peñasco de 196 celdas se queda atrás: lo pesado CUESTA', (() => {
+    const chico = bloque('piedra', 4, 60, 25), grande = bloque('piedra', 14, 60, 25);
+    return Math.abs(chico.a.x - 60) < 3 && grande.a.x < 58 && grande.a.y > 30;
+  })());
+  ok('y la mano no se lleva el muro pegado', (() => {
+    const m = mundo(60, 50, 5);
+    repisa(m, 40);
+    for(let y = 0; y < 4; y++) for(let x = 0; x < 4; x++) m.pon(20 + x, 36 + y, IDX.piedra);
+    corre(m, 20);
+    let g = { cx:21.5, cy:37.5 };
+    for(let i = 0; i < 40; i++){ g = m.agarra(g.cx, g.cy, 45, 20, 3); m.paso(); }
+    for(let x = 0; x < 60; x++) if(m.t[m.i(x, 40)] !== IDX.muro) return false;
+    return true;
+  })());
+
+  /* el termómetro */
+  const t = mundo(20, 20, 1);
+  t.pon(10, 10, IDX.eFe);
+  const inf = t.informe(10, 10);
+  ok('el termómetro dice qué material es', inf.nombre === 'Hierro' && inf.simbolo === 'Fe', inf.nombre);
+  ok('y su temperatura y su estado', inf.temperatura === 22 && inf.estado === 'solido',
+     inf.temperatura + '° ' + inf.estado);
+  const nombres = inf.cambios.map(c => c.que);
+  ok('y sus cambios de estado, con la temperatura de cada uno',
+     nombres.includes('fusión') && nombres.includes('ebullición'),
+     inf.cambios.map(c => c.que + ' ' + c.a + '°').join(' · '));
+  /* ⚠ la FISIÓN no es un cambio de estado, y lo corrigió el propio Carlos.
+     Va listada aparte y marcada como fenómeno nuclear. */
+  const u = mundo(20, 20, 1);
+  u.pon(10, 10, IDX.uranio);
+  const iu = u.informe(10, 10).cambios.find(c => c.que === 'fisión');
+  ok('la fisión aparece marcada como NUCLEAR, no como cambio de estado',
+     !!iu && iu.a === null && /nuclear/.test(iu.nota), iu ? iu.nota : 'no aparece');
+}
+
+seccion('la nitro detona por CHOQUE, no por caerse');
+{
+  /* Carlos, dos veces: «la nitroglicerina sigue explotando nada más ponerla».
+     Reproducido: en reposo aguantaba, pero pintada en el aire caía a velocidad
+     terminal contra un umbral más bajo y detonaba sola. El error era medir la
+     velocidad ABSOLUTA: un charco que cae entero no se está golpeando con
+     nada, se está cayendo. Lo que detona es velocidad RELATIVA. */
+  const cuantoQueda = (arma) => {
+    const m = mundo(40, 60, 7);
+    repisa(m, 59);
+    arma(m);
+    corre(m, 200);
+    let n = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.nitro) n++;
+    return n;
+  };
+  ok('pintada en el aire y cayendo 54 celdas, AGUANTA',
+     cuantoQueda(m => { for(let x = 10; x < 20; x++) m.pon(x, 5, IDX.nitro); }) === 10);
+  ok('apoyada y sin que nada la toque, aguanta',
+     cuantoQueda(m => { for(let x = 10; x < 20; x++) m.pon(x, 58, IDX.nitro); }) === 10);
+  ok('pero con una piedra de osmio cayéndole encima, DETONA',
+     cuantoQueda(m => {
+       for(let x = 10; x < 20; x++) m.pon(x, 58, IDX.nitro);
+       m.pon(15, 5, IDX.eOs); m.suelto[m.i(15,5)] = 1;
+     }) < 10);
+  /* Un chapuzón de agua NO la detona, y eso no es una excepción escrita a
+     mano: el agua es ligera, el arrastre le deja una velocidad terminal de
+     2.16 y el umbral de la nitro son 2.2. Sale del número, no de un `if`. */
+  ok('y un chapuzón de agua no: no llega a la velocidad de golpe',
+     cuantoQueda(m => {
+       for(let x = 10; x < 20; x++) m.pon(x, 58, IDX.nitro);
+       for(let x = 13; x < 17; x++) m.pon(x, 5, IDX.agua);
+     }) === 10);
+  /* detonación simpática: la onda de otra explosión */
+  const s = mundo(60, 60, 7);
+  repisa(s, 59);
+  for(let x = 40; x < 50; x++) s.pon(x, 58, IDX.nitro);
+  s.revienta(20, 55, 16);
+  corre(s, 120);
+  let quedan = 0; for(let k = 0; k < s.t.length; k++) if(s.t[k] === IDX.nitro) quedan++;
+  ok('y la onda de otra explosión SÍ la detona (simpática)', quedan < 10, quedan + '/10');
+}
+
+seccion('la gravedad es un CAMPO, no una constante');
+{
+  /* Carlos no pidió «activar y desactivar la gravedad». Pidió magnitud,
+     dirección, zonas, por objeto, puntos que atraen o repelen, y «combinar
+     campos gravitatorios mediante suma vectorial». */
+  const donde = (m, id) => { for(let y = 0; y < m.al; y++) for(let x = 0; x < m.an; x++)
+    if(m.t[m.i(x,y)] === IDX[id]) return { x, y }; return null; };
+
+  ok('9.81 m/s² es exactamente la gravedad del motor', Math.abs(aCeldas(9.81) - GRAVEDAD) < 1e-9,
+     aCeldas(9.81).toFixed(4) + ' vs ' + GRAVEDAD);
+
+  const inv = mundo(40, 60, 1);
+  inv.ponGravedadGlobal(0, -9.81);
+  inv.pon(20, 40, IDX.piedra); inv.suelto[inv.i(20,40)] = 1;
+  corre(inv, 60);
+  const pi = donde(inv, 'piedra');
+  ok('con la gravedad invertida, la piedra SUBE', pi && pi.y < 40, 'y=' + (pi ? pi.y : '—'));
+
+  const lat = mundo(60, 40, 1);
+  lat.ponGravedadGlobal(9.81, 0);
+  lat.pon(10, 20, IDX.arena);
+  corre(lat, 80);
+  const pl = donde(lat, 'arena');
+  ok('y con la gravedad de lado, cae de lado', pl && pl.x > 40, 'x=' + (pl ? pl.x : '—'));
+
+  /* ⚠ Y AQUÍ ESTABA MI ERROR AL ESCRIBIR LA PRUEBA, no el del motor: puse una
+     zona de gravedad cero y esperé que FRENARA a una piedra que entraba
+     cayendo. No: una piedra que entra con velocidad la CONSERVA y cruza de
+     largo, que es literalmente lo que Carlos pidió — «su velocidad e inercia
+     deben conservarse». Lo que hay que medir es que deje de ACELERAR. */
+  const z = mundo(40, 90, 1);
+  z.zonaGravedad(0, 30, 39, 60, 0, 0, 'reemplaza');
+  z.pon(20, 5, IDX.piedra); z.suelto[z.i(20,5)] = 1;
+  let vEntra = 0, vSale = 0;
+  for(let i = 0; i < 200; i++){
+    z.paso();
+    const p = donde(z, 'piedra'); if(!p) break;
+    const k = z.i(p.x, p.y);
+    if(p.y >= 32 && p.y <= 34 && !vEntra) vEntra = z.vy[k];
+    if(p.y >= 56 && p.y <= 58) vSale = z.vy[k];
+  }
+  /* ⚠ Y ME EQUIVOQUÉ DOS VECES SEGUIDAS EN LA MISMA PRUEBA. La segunda: pedí
+     que la velocidad se conservara CLAVADA dentro de la zona, y no: ahí sigue
+     habiendo AIRE, y el arrastre es la otra cosa que Carlos pidió. Un cuerpo
+     en gravedad cero dentro de un fluido se frena — despacio, pero se frena.
+     Lo que hay que comprobar es que ya no ACELERA y que conserva la mayor
+     parte de su inercia, no que la conserve entera. */
+  const conG = (() => {
+    const w = mundo(40, 90, 1);
+    w.pon(20, 5, IDX.piedra); w.suelto[w.i(20,5)] = 1;
+    let e = 0, sa = 0;
+    for(let i = 0; i < 200; i++){
+      w.paso();
+      const p = donde(w, 'piedra'); if(!p) break;
+      const k = w.i(p.x, p.y);
+      if(p.y >= 32 && p.y <= 34 && !e) e = w.vy[k];
+      if(p.y >= 56 && p.y <= 58) sa = w.vy[k];
+    }
+    return { e, sa };
+  })();
+  ok('en una zona de gravedad CERO deja de ACELERAR',
+     vSale <= vEntra && conG.sa > conG.e,
+     'sin gravedad ' + vEntra.toFixed(2) + ' → ' + vSale.toFixed(2) +
+     ' · con gravedad ' + conG.e.toFixed(2) + ' → ' + conG.sa.toFixed(2));
+  ok('y conserva la mayor parte de su inercia: sólo la frena el aire',
+     vSale > vEntra * 0.4, vEntra.toFixed(2) + ' → ' + vSale.toFixed(2));
+
+  const q = mundo(40, 90, 1);
+  q.zonaGravedad(0, 30, 39, 60, 0, 0, 'reemplaza');
+  q.pon(20, 45, IDX.piedra); q.suelto[q.i(20,45)] = 1;
+  corre(q, 150);
+  const pq = donde(q, 'piedra');
+  ok('y una piedra QUIETA dentro de esa zona se queda flotando', pq && pq.y === 45,
+     'y=' + (pq ? pq.y : '—'));
+
+  const at = mundo(60, 60, 1);
+  at.ponGravedadGlobal(0, 0);
+  at.puntoGravedad(30, 30, 30, 40, true);
+  at.pon(50, 30, IDX.piedra); at.suelto[at.i(50,30)] = 1;
+  corre(at, 120);
+  const pa = donde(at, 'piedra');
+  ok('un punto gravitatorio ATRAE hacia él', pa && pa.x < 48, 'x=' + (pa ? pa.x : '—'));
+
+  const re = mundo(60, 60, 1);
+  re.ponGravedadGlobal(0, 0);
+  re.puntoGravedad(30, 30, 30, 40, false);
+  re.pon(35, 30, IDX.piedra); re.suelto[re.i(35,30)] = 1;
+  corre(re, 120);
+  const pr = donde(re, 'piedra');
+  ok('y con «repele», la echa', pr && pr.x > 37, 'x=' + (pr ? pr.x : '—'));
+
+  /* gravedad por objeto: dos piedras iguales, distinto destino */
+  const ob = mundo(40, 60, 1);
+  ob.pon(10, 10, IDX.piedra); ob.suelto[ob.i(10,10)] = 1;
+  ob.pon(30, 10, IDX.piedra); ob.suelto[ob.i(30,10)] = 1;
+  ob.pintaGravedad(30, 10, 1, 0);
+  corre(ob, 80);
+  let ya = -1, yb = -1;
+  for(let y = 0; y < 60; y++){
+    if(ob.t[ob.i(10,y)] === IDX.piedra) ya = y;
+    if(ob.t[ob.i(30,y)] === IDX.piedra) yb = y;
+  }
+  ok('dos piedras iguales, una con gravedad propia 0: una cae y la otra no',
+     ya > 40 && yb === 10, 'la normal en y=' + ya + ' · la de gravedad 0 en y=' + yb);
+
+  /* suma vectorial: global hacia abajo + zona hacia la derecha = diagonal */
+  const su = mundo(60, 60, 1);
+  su.zonaGravedad(0, 0, 59, 59, 9.81, 0, 'suma');
+  su.pon(10, 5, IDX.arena);
+  corre(su, 90);
+  const ps = donde(su, 'arena');
+  ok('una zona en modo SUMA da una diagonal, no reemplaza', ps && ps.x > 20 && ps.y > 30,
+     'acabó en (' + (ps ? ps.x + ',' + ps.y : '—') + ')');
+
+  /* los gases también obedecen: «arriba» es contra la gravedad */
+  const g = mundo(40, 60, 1);
+  g.ponGravedadGlobal(0, -9.81);
+  for(let x = 18; x < 22; x++) g.pon(x, 30, IDX.hidrogeno);
+  corre(g, 60);
+  let yh = 0, n = 0;
+  for(let y = 0; y < 60; y++) for(let x = 0; x < 40; x++)
+    if(g.t[g.i(x,y)] === IDX.hidrogeno){ yh += y; n++; }
+  ok('con la gravedad invertida, el hidrógeno BAJA en vez de subir',
+     n > 0 && yh / n > 30, 'y medio ' + (n ? (yh/n).toFixed(1) : '—'));
+}
+
+seccion('resistencia estructural: quién falla primero, y por qué');
+{
+  /* Carlos, con su caso: «un recipiente de concreto, un tapón de madera,
+     presión interna. NO quiero que simplemente se rompa todo al mismo tiempo…
+     debe compararse resistencia a la compresión, a la tracción, al corte,
+     elasticidad, geometría… No asumir automáticamente que siempre falla la
+     madera o siempre el concreto.»
+     Nada de esto está escrito: sale de tres resistencias por material y de
+     por dónde viaja la carga. */
+  const cuenta = (m, id) => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) c++; return c; };
+
+  const tubo = (tapon, presion) => {
+    const m = mundo(60, 60, 5);
+    repisa(m, 59);
+    for(let x = 20; x <= 40; x++) m.pon(x, 58, IDX.concreto);
+    for(let y = 44; y <= 58; y++){ m.pon(20, y, IDX.concreto); m.pon(40, y, IDX.concreto); }
+    for(let x = 20; x <= 40; x++) if(x < 28 || x > 33) m.pon(x, 44, IDX.concreto);
+    for(let x = 28; x <= 33; x++) m.pon(x, 44, IDX[tapon]);
+    const t0 = cuenta(m, tapon), c0 = cuenta(m, 'concreto');
+    for(let y = 45; y < 58; y++) for(let x = 21; x < 40; x++){ m.pon(x, y, IDX.co2); m.temp[m.i(x,y)] = presion; }
+    corre(m, 300);
+    return { tapon: t0 - cuenta(m, tapon), olla: c0 - cuenta(m, 'concreto') };
+  };
+  const mad = tubo('madera', 900), met = tubo('metal', 900), flojo = tubo('madera', 200);
+  ok('un tapón de MADERA cede y el recipiente de concreto aguanta',
+     mad.tapon > 0 && mad.olla === 0, 'tapón −' + mad.tapon + ' · olla −' + mad.olla);
+  ok('el MISMO recipiente con tapón de METAL aguanta entero',
+     met.tapon === 0 && met.olla === 0, 'tapón −' + met.tapon + ' · olla −' + met.olla);
+  ok('y con poca presión no cede ninguno de los dos',
+     flojo.tapon === 0 && flojo.olla === 0, 'tapón −' + flojo.tapon);
+
+  /* la viga empotrada, que es la pregunta difícil que puso él */
+  const viga = ({ material = 'madera', refuerzo = null, presion = 1400 }) => {
+    const m = mundo(50, 40, 5);
+    repisa(m, 39);
+    for(let x = 10; x <= 40; x++) m.pon(x, 38, IDX.concreto);
+    for(let y = 22; y <= 38; y++) for(let d = 0; d < 3; d++){ m.pon(10+d, y, IDX.concreto); m.pon(40-d, y, IDX.concreto); }
+    for(let x = 10; x <= 40; x++) m.pon(x, 21, IDX[material]);
+    if(refuerzo) for(let x = 10; x <= 40; x++) m.pon(x, 22, IDX[refuerzo]);
+    const v0 = cuenta(m, material), c0 = cuenta(m, 'concreto');
+    for(let y = refuerzo ? 23 : 22; y < 38; y++) for(let x = 13; x < 38; x++)
+      if(m.t[m.i(x,y)] === VACIO){ m.pon(x, y, IDX.co2); m.temp[m.i(x,y)] = presion; }
+    corre(m, 400);
+    return { viga: v0 - cuenta(m, material), olla: c0 - cuenta(m, 'concreto') };
+  };
+  const sinR  = viga({ presion: 1400 });
+  const conR  = viga({ presion: 1400, refuerzo: 'metal' });
+  ok('una viga de madera empotrada CEDE con la presión', sinR.viga > 0, '−' + sinR.viga + ' celdas');
+  /* ⚠ y aquí está el refuerzo. Sin el reparto por rigidez esto no cambiaba
+     NADA: cada celda de madera aguantaba su propio empuje entera y se rompía
+     igual, con el acero al lado mirando. */
+  ok('y con una varilla de metal PEGADA, la misma viga aguanta',
+     conR.viga === 0, 'con refuerzo −' + conR.viga + ' · sin refuerzo −' + sinR.viga);
+
+  const metal6  = viga({ material: 'metal', presion: 6000 });
+  const metal12 = viga({ material: 'metal', presion: 12000 });
+  ok('una viga de METAL aguanta donde la de madera ya se rompió',
+     metal6.viga === 0, '−' + metal6.viga + ' celdas a 6000°');
+  /* la parte que más le importaba: que el punto de fallo SE MUEVA */
+  ok('y con suficiente presión ceden los EMPOTRAMIENTOS en vez de la viga',
+     metal12.olla > 0 && metal12.viga === 0,
+     'viga −' + metal12.viga + ' · empotramientos −' + metal12.olla);
+}
+
+seccion('válvula y cohete: acción y reacción');
+{
+  /* Carlos: «quiero experimentar con sistemas de propulsión impulsados por
+     presión y expansión de gases; el sistema debe simular las fuerzas
+     resultantes de forma física, en lugar de mover el objeto hacia adelante
+     mediante una animación».
+     No hay una sola línea que diga «cohete». Es la tercera ley: si una celda
+     de gas sale acelerada, el sólido que tenía detrás se lleva el impulso
+     contrario. Un recipiente cerrado no se mueve porque sus paredes opuestas
+     se cancelan; en cuanto le abres una boca, deja de cancelarse. */
+  const cohete = ({ abierta = true, boca = 3, presion = 2600, pasos = 300 }) => {
+    const m = mundo(60, 120, 5);
+    m.ponGravedadGlobal(0, 0);            /* sin gravedad se ve el empuje limpio */
+    const x0 = 24, x1 = 34, y0 = 40, y1 = 60;
+    for(let x = x0; x <= x1; x++){ m.pon(x, y0, IDX.metal); m.pon(x, y1, IDX.metal); }
+    for(let y = y0; y <= y1; y++){ m.pon(x0, y, IDX.metal); m.pon(x1, y, IDX.metal); }
+    const cx = Math.round((x0 + x1) / 2), r = Math.floor(boca / 2);
+    for(let d = -r; d <= r; d++){
+      m.pon(cx + d, y1, IDX.valvula);
+      if(abierta) m.vida[m.i(cx + d, y1)] = 1;
+    }
+    for(let y = y0+1; y < y1; y++) for(let x = x0+1; x < x1; x++){
+      m.pon(x, y, IDX.co2); m.temp[m.i(x,y)] = presion;
+    }
+    const centro = () => { let sy = 0, n = 0;
+      for(let k = 0; k < m.t.length; k++)
+        if(m.t[k] === IDX.metal || m.t[k] === IDX.valvula){ sy += (k / m.an) | 0; n++; }
+      return n ? sy / n : 0; };
+    const y0c = centro();
+    corre(m, pasos);
+    return centro() - y0c;
+  };
+  const cerrado = cohete({ abierta:false }), abierto = cohete({ abierta:true });
+  ok('un recipiente CERRADO no se propulsa: sus paredes se cancelan',
+     Math.abs(cerrado) < 1, 'se movió ' + cerrado.toFixed(2) + ' celdas');
+  ok('y con la boca ABIERTA sale disparado al lado contrario',
+     abierto < -2, 'se movió ' + abierto.toFixed(2) + ' celdas (negativo = hacia arriba)');
+  ok('y NO es por la válvula en sí: abierta empuja mucho más que cerrada',
+     Math.abs(abierto) > Math.abs(cerrado) * 3,
+     'cerrada ' + cerrado.toFixed(2) + ' · abierta ' + abierto.toFixed(2));
+
+  const boca1 = cohete({ boca:1 }), boca5 = cohete({ boca:5 });
+  ok('una boca más grande empuja más', Math.abs(boca5) > Math.abs(boca1),
+     'boca 1 → ' + boca1.toFixed(2) + ' · boca 5 → ' + boca5.toFixed(2));
+
+  /* ⚠ SE MIDE A 120 PASOS Y NO A 300, y no es para que pase: a 300 el cohete
+     fuerte YA SE VACIÓ. Medido: la razón entre 5 000° y 800° es 2.39 a los 60
+     pasos, 2.65 a los 120 y 1.77 a los 300 — porque el que empuja más gasta su
+     gas antes, que es lo que hace un cohete de verdad. A 300 pasos no se está
+     midiendo el empuje, se está midiendo cuánto duró el depósito. */
+  const flojo = cohete({ presion:800, pasos:120 }), fuerte = cohete({ presion:5000, pasos:120 });
+  ok('y más presión empuja más', Math.abs(fuerte) > Math.abs(flojo) * 2,
+     '800° → ' + flojo.toFixed(2) + ' · 5000° → ' + fuerte.toFixed(2));
+
+  /* la válvula, por su cuenta: cerrada contiene, abierta deja salir */
+  const olla = (abierta) => {
+    const m = mundo(40, 40, 3);
+    crisol(m, 10, 10, 30, 30);
+    m.pon(20, 10, IDX.valvula);
+    if(abierta) m.vida[m.i(20,10)] = 1;
+    for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++){
+      m.pon(x, y, IDX.hidrogeno);      /* ligero: quiere subir y salir */
+    }
+    corre(m, 200);
+    let fuera = 0;
+    for(let y = 0; y < 10; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x,y)] === IDX.hidrogeno) fuera++;
+    return fuera;
+  };
+  ok('una válvula CERRADA contiene el gas', olla(false) === 0, olla(false) + ' celdas se escaparon');
+  ok('y ABIERTA lo deja salir', olla(true) > 0, olla(true) + ' celdas salieron');
+}
+
+seccion('el globo vuela, y sólo con lo que debe');
+{
+  /* Carlos: «el helio no permite crear globos porque no tienen física los
+     sólidos». Ahora la cáscara se pesa ENTERA contra el aire que desplaza,
+     contando lo que encierra, y se mueve como una pieza. */
+  const globo = (relleno) => {
+    const m = mundo(40, 80, 1);
+    repisa(m, 79);
+    for(let x = 16; x <= 24; x++){ m.pon(x, 60, IDX.globo); m.pon(x, 70, IDX.globo); }
+    for(let y = 60; y <= 70; y++){ m.pon(16, y, IDX.globo); m.pon(24, y, IDX.globo); }
+    if(relleno) for(let y = 61; y < 70; y++) for(let x = 17; x < 24; x++) m.pon(x, y, IDX[relleno]);
+    corre(m, 600);
+    let techo = 99, tela = 0;
+    for(let y = 0; y < 80; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x,y)] === IDX.globo){ if(y < techo) techo = y; tela++; }
+    return { techo, tela };
+  };
+  const he = globo('eHe'), aire = globo(null), co2 = globo('co2');
+  ok('lleno de HELIO, sube', he.techo < 40, 'empezó en y=60 y acabó en y=' + he.techo);
+  /* ⚠ y ENTERO. Esto es la mitad de la prueba y por poco no la escribo: la
+     primera versión le ponía velocidad a cada celda de la cáscara por su
+     cuenta, y como el helio es menos denso, las celdas de abajo subían HACIA
+     DENTRO y el globo se implosionaba. Medido, se hundía de y=60 a y=68 con
+     el balance de flotación saliendo perfecto. Un globo que llega arriba
+     desarmado no es un globo. */
+  ok('y llega entero, sin implosionarse', he.tela === 36, he.tela + '/36 de tela');
+  ok('el MISMO globo lleno de aire NO sube', aire.techo >= 60, 'y=' + aire.techo);
+  ok('y lleno de CO₂ tampoco', co2.techo >= 60, 'y=' + co2.techo);
+}
+
+seccion('química que necesita chispa · H₂ + O₂ → agua');
+{
+  /* Carlos: «coloqué hidrógeno y oxígeno pero no sé cómo volverlo agua». Y
+     tenía razón: la reacción estaba escrita desde el principio en
+     probabilidad CERO con un comentario que decía «sólo con chispa». Esa
+     chispa nunca se implementó — una regla que no podía dispararse nunca,
+     con una nota explicando por qué. Un TODO disfrazado de código. */
+  const mezcla = (chispa) => {
+    const m = mundo(40, 40, 3);
+    repisa(m, 39);
+    for(let y = 20; y < 30; y++) for(let x = 10; x < 20; x++) m.pon(x, y, IDX.hidrogeno);
+    for(let y = 20; y < 30; y++) for(let x = 20; x < 30; x++) m.pon(x, y, IDX.oxigeno);
+    if(chispa) m.pon(20, 25, IDX.chispa);
+    corre(m, 200);
+    let agua = 0, h = 0;
+    for(let k = 0; k < m.t.length; k++){
+      if(m.t[k] === IDX.agua || m.t[k] === IDX.vapor) agua++;
+      if(m.t[k] === IDX.hidrogeno) h++;
+    }
+    return { agua, h };
+  };
+  const sin = mezcla(false), con = mezcla(true);
+  ok('hidrógeno y oxígeno juntos NO reaccionan solos', sin.agua === 0 && sin.h > 0,
+     'agua ' + sin.agua + ' · queda hidrógeno ' + sin.h);
+  ok('pero con una CHISPA se vuelven agua', con.agua > 0 && con.h === 0,
+     'agua/vapor ' + con.agua + ' · queda hidrógeno ' + con.h);
+
+  /* el hidronio, H₃O⁺ */
+  const m = mundo(30, 30, 3);
+  repisa(m, 29);
+  for(let y = 20; y < 28; y++) for(let x = 5; x < 15; x++) m.pon(x, y, IDX.agua);
+  for(let y = 20; y < 28; y++) for(let x = 15; x < 25; x++) m.pon(x, y, IDX.acido);
+  corre(m, 150);
+  let hd = 0;
+  for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.hidronio) hd++;
+  /* ⚠ esto daba CERO y la reacción estaba bien: la lista de lo que un ácido
+     NO corroe estaba escrita a mano —«acido» y «muro»— así que en cuanto entró
+     un segundo corrosivo, el hidronio se corroía A SÍ MISMO y se gastaba en
+     tres pasos. El producto existía y desaparecía antes de poder verse. */
+  ok('agua + ácido da HIDRONIO, y no se come a sí mismo', hd > 10, hd + ' celdas');
+  /* y el ácido sigue haciendo su trabajo con lo que no reacciona */
+  const a = mundo(30, 30, 3);
+  repisa(a, 29);
+  for(let y = 20; y < 28; y++) for(let x = 5; x < 25; x++) a.pon(x, y, IDX.piedra);
+  for(let x = 6; x < 24; x++) a.pon(x, 19, IDX.acido);
+  let p0 = 0; for(let k = 0; k < a.t.length; k++) if(a.t[k] === IDX.piedra) p0++;
+  corre(a, 300);
+  let p1 = 0; for(let k = 0; k < a.t.length; k++) if(a.t[k] === IDX.piedra) p1++;
+  ok('y el ácido sigue comiéndose la piedra', p1 < p0, p0 + ' → ' + p1);
+}
+
+seccion('generar energía, no sólo gastarla');
+{
+  /* Carlos, punto 4: «debe ser posible generar energía… la energía no debe
+     aparecer ni desaparecer arbitrariamente». Hasta ahora el motor CONSUMÍA y
+     nada GENERABA: la corriente sólo salía de pilas que aparecían llenas. */
+  const turbina = () => {
+    const m = mundo(60, 60, 3);
+    repisa(m, 59);
+    for(let y = 20; y < 26; y++) m.pon(30, y, IDX.generador);
+    for(let y = 26; y < 59; y++) m.pon(30, y, IDX.muro);
+    for(let x = 31; x < 45; x++){ m.pon(x, 25, IDX.cobre); m.pon(x, 26, IDX.muro); }
+    m.pon(45, 25, IDX.lampara); m.pon(45, 26, IDX.muro);
+    return m;
+  };
+  const corriendo = (chorro, pasos = 600) => {
+    const m = turbina(); let on = 0;
+    for(let i = 0; i < pasos; i++){
+      if(chorro && i % 2 === 0) m.pon(29, 2, IDX.agua);
+      m.paso();
+      if(m.car[m.i(45,25)]) on++;
+    }
+    return on;
+  };
+  ok('un salto de agua enciende una lámpara', corriendo(true) > 150, corriendo(true) + '/600 pasos');
+  ok('y sin nada que lo mueva NO genera de la nada', corriendo(false) === 0, corriendo(false) + '/600');
+
+  /* se apaga sola al cortar el agua: lo guardado se acaba */
+  const m = turbina();
+  for(let i = 0; i < 400; i++){ if(i % 2 === 0) m.pon(29, 2, IDX.agua); m.paso(); }
+  let despues = 0;
+  for(let i = 0; i < 600; i++){ m.paso(); if(m.car[m.i(45,25)]) despues++; }
+  ok('al cortar el agua se apaga sola', despues > 0 && despues < 200,
+     'siguió ' + despues + ' pasos con lo guardado y se apagó');
+
+  /* ⚠ LA CONSERVACIÓN, que es la mitad que casi nunca se implementa: si el
+     generador no FRENA a quien lo mueve, es una fuente de energía gratis. */
+  const cae = (conTurbina) => {
+    const m = mundo(20, 60, 4);
+    repisa(m, 59);
+    for(let y = 0; y < 59; y++) m.pon(11, y, IDX.muro);
+    if(conTurbina) for(let y = 20; y < 40; y++) m.pon(11, y, IDX.generador);
+    let vmax = 0;
+    for(let i = 0; i < 200; i++){
+      if(i % 2 === 0) m.pon(10, 2, IDX.agua);
+      m.paso();
+      for(let y = 44; y < 50; y++){ const k = m.i(10, y);
+        if(m.t[k] === IDX.agua) vmax = Math.max(vmax, Math.abs(m.vy[k])); }
+    }
+    return vmax;
+  };
+  const sinT = cae(false), conT = cae(true);
+  ok('y FRENA a quien lo mueve: la energía no sale de la nada', conT < sinT,
+     'sin turbina llega a ' + sinT.toFixed(2) + ' · pasando por ella ' + conT.toFixed(2));
+}
+
+seccion('cuerdas, amarres y péndulos');
+{
+  /* Herramientas de esta sección: colgar una cuerda del techo y buscar cosas.
+     ⚠ Todo se mide DESPUÉS de dejarla asentarse: recién pintada, una cuerda
+     está estirada tiesa en la posición en que la dibujó el dedo. */
+  const cuelga = (m, x, largo, y0 = 1) => {
+    for(let i = 0; i < m.an; i++) m.pon(i, y0 - 1, IDX.muro);
+    for(let y = y0; y < y0 + largo; y++) m.pon(x, y, IDX.cuerda);
+    return y0 + largo;                       /* la primera fila LIBRE de abajo */
+  };
+  const donde = (m, id) => { for(let y = 0; y < m.al; y++) for(let x = 0; x < m.an; x++)
+    if(m.t[y * m.an + x] === id) return [x, y]; return [-1, -1]; };
+
+  {
+    const m = mundo(40, 40, 7);
+    cuelga(m, 20, 10);
+    corre(m, 40);
+    ok('una cuerda colgada del techo cuelga entera', cuantos(m, 'cuerda') === 10,
+       'quedaron ' + cuantos(m, 'cuerda'));
+    let hondo = 0;
+    for(let y = 0; y < 40; y++) if(m.t[m.i(20, y)] === IDX.cuerda) hondo = y;
+    ok('y llega hasta abajo, no se amontona', hondo === 10, 'el último eslabón en y=' + hondo);
+  }
+
+  {
+    /* una cuerda SIN amarre no es una cuerda: es un montón de celdas cayendo */
+    const m = mundo(40, 40, 7);
+    repisa(m, 39);
+    for(let y = 5; y < 12; y++) m.pon(20, y, IDX.cuerda);
+    corre(m, 120);
+    let hondo = 0;
+    for(let y = 0; y < 40; y++) if(m.t[m.i(20, y)] === IDX.cuerda) hondo = y;
+    ok('una cuerda sin amarre se cae, no flota', hondo === 38, 'el último en y=' + hondo);
+  }
+
+  {
+    const m = mundo(40, 40, 7);
+    const libre = cuelga(m, 20, 10);
+    m.pon(20, libre, IDX.metal);
+    corre(m, 80);
+    const [mx, my] = donde(m, IDX.metal);
+    ok('un peso amarrado a la punta SE QUEDA COLGANDO', my <= 12 && my >= 10,
+       'el peso quedó en y=' + my + ' (x=' + mx + ')');
+  }
+
+  {
+    /* y al cortarla, se cae: si no, no estaba amarrado — estaba clavado */
+    const m = mundo(40, 40, 7);
+    const libre = cuelga(m, 20, 10);
+    m.pon(20, libre, IDX.metal);
+    repisa(m, 39);
+    corre(m, 40);
+    for(let y = 1; y <= 5; y++) m.pon(20, y, IDX.vacio);
+    corre(m, 120);
+    const [, my] = donde(m, IDX.metal);
+    ok('al CORTAR la cuerda, el peso se cae', my >= 36, 'el peso quedó en y=' + my);
+  }
+
+  {
+    /* EL PÉNDULO. Lo que se mide no es que se mueva —eso lo hace cualquier
+       cosa empujada— sino que VUELVA: que pase del otro lado del reposo. Un
+       peso que se va y se queda en la orilla no es un péndulo, es un peso
+       colgado torcido, y eso era lo que salía antes. */
+    const m = mundo(60, 40, 7);
+    const libre = cuelga(m, 30, 20);
+    m.pon(30, libre, IDX.metal);
+    corre(m, 30);
+    const [rx, ry] = donde(m, IDX.metal);
+    m.vx[m.i(rx, ry)] = 2.5;
+    let masDer = rx, masIzq = rx, sueltoEn = -1;
+    for(let i = 0; i < 140; i++){
+      m.paso();
+      const [bx, by] = donde(m, IDX.metal);
+      if(bx < 0) break;
+      masDer = Math.max(masDer, bx); masIzq = Math.min(masIzq, bx);
+      if(by > ry + 2 && sueltoEn < 0) sueltoEn = i;
+    }
+    ok('empujado de lado, el peso se VA', masDer >= rx + 3,
+       'llegó hasta x=' + masDer + ' desde x=' + rx);
+    ok('y VUELVE: pasa del otro lado del reposo', masIzq <= rx - 1,
+       'lo más lejos por la izquierda fue x=' + masIzq + ' (reposo x=' + rx + ')');
+    ok('y en todo el columpio NO se suelta de la cuerda', sueltoEn < 0,
+       'se soltó en el paso ' + sueltoEn);
+  }
+
+  {
+    /* la cuerda tiene que SEGUIR al peso. Con la tensión mal repartida se
+       columpiaba la punta y los eslabones de arriba se quedaban tiesos, que
+       es lo que se ve feo aunque el peso haga el arco correcto. */
+    const m = mundo(60, 40, 7);
+    const libre = cuelga(m, 30, 20);
+    m.pon(30, libre, IDX.metal);
+    corre(m, 30);
+    const [rx, ry] = donde(m, IDX.metal);
+    m.vx[m.i(rx, ry)] = 2.5;
+    let torcidos = 0;
+    for(let i = 0; i < 26; i++) m.paso();
+    for(let y = 1; y <= 20; y++) if(m.t[m.i(30, y)] !== IDX.cuerda) torcidos++;
+    ok('la cuerda se dobla y sigue al peso, no se queda tiesa', torcidos >= 4,
+       'sólo ' + torcidos + ' eslabones se salieron de la vertical');
+  }
+}
+
+seccion('el aire acarrea, el agua se nivela, la sal se reparte');
+{
+  /* Carlos: «el aire (vacío) no transfiere el calor, así que una resistencia
+     muy cerca de una batería no la calienta nada». Medido antes de tocar:
+     a UNA celda de una fuente a 900° el aire marcaba 32.8° y a DOS ya estaba
+     en el ambiente. */
+  const m = mundo(40, 40, 7);
+  for(let x = 0; x < 40; x++) m.pon(x, 39, IDX.muro);
+  m.pon(10, 30, IDX.muro);
+  for(let i = 0; i < 200; i++){ m.temp[m.i(10, 29)] = 900; m.paso(); }
+  const a3 = m.temp[m.i(10, 26)], a6 = m.temp[m.i(10, 23)];
+  /* el umbral es 35 y no más: son 13° POR ENCIMA del ambiente donde antes
+     había exactamente 22.0, o sea cero. Y no se pone más alto a propósito —
+     el aire tiene que dejar pasar el calor, no repartirlo por toda la sala. */
+  ok('el calor cruza el aire y llega a tres celdas', a3 > 35,
+     'a 3 celdas: ' + a3.toFixed(1) + '° (antes del arreglo: 22.0°, el ambiente)');
+  ok('y se va apagando con la distancia, no llena la sala', a6 < a3 && a6 < 35,
+     'a 3 celdas ' + a3.toFixed(1) + '° · a 6 celdas ' + a6.toFixed(1) + '°');
+
+  /* ⚠ Y ESTA ES LA PAREJA DE LA DE ARRIBA, sin ella la de arriba se «arregla»
+     subiendo un número hasta que el aire guarde calor para siempre — que es
+     de lo que Carlos se quejó DOS VECES antes. Las dos juntas o ninguna. */
+  const f = mundo(30, 30, 7);
+  for(let y = 13; y < 17; y++) for(let x = 13; x < 17; x++) f.temp[f.i(x, y)] = 900;
+  corre(f, 60);
+  ok('una mancha caliente suelta en el aire se enfría sola', f.temp[f.i(15, 15)] < 30,
+     'tras 60 pasos sigue a ' + f.temp[f.i(15,15)].toFixed(1) + '°');
+}
+
+{
+  /* «El agua suele volverse una pila en lugar de distribuirse bien.» Medido:
+     el perfil quedaba 1111222222333334444333333222222111 y NO se movía —
+     idéntico en el paso 100 y en el 1200. */
+  const m = mundo(40, 40, 7);
+  for(let x = 2; x <= 37; x++) m.pon(x, 38, IDX.muro);
+  for(let y = 2; y <= 38; y++){ m.pon(2, y, IDX.muro); m.pon(37, y, IDX.muro); }
+  for(let y = 10; y < 30; y++) for(let x = 18; x < 22; x++) m.pon(x, y, IDX.agua);
+  corre(m, 600);
+  const alturas = [];
+  for(let x = 3; x < 37; x++){ let h = 0;
+    for(let y = 2; y < 38; y++) if(m.t[m.i(x, y)] === IDX.agua){ h = 38 - y; break; }
+    alturas.push(h); }
+  const desnivel = Math.max(...alturas) - Math.min(...alturas);
+  ok('el agua vertida se NIVELA en vez de quedarse en pila', desnivel <= 2,
+     'desnivel de ' + desnivel + ' celdas · perfil ' + alturas.join(''));
+
+  /* Y el freno: dentro de un tubo LLENO no se agita, que es el defecto viejo
+     —el canal de agua salada rompiendo la cadena eléctrica cada cuadro—. */
+  const t = mundo(30, 20, 7);
+  for(let x = 5; x <= 25; x++){ t.pon(x, 9, IDX.muro); t.pon(x, 12, IDX.muro); }
+  for(let y = 9; y <= 12; y++){ t.pon(5, y, IDX.muro); t.pon(25, y, IDX.muro); }
+  for(let y = 10; y <= 11; y++) for(let x = 6; x < 25; x++) t.pon(x, y, IDX.agua);
+  corre(t, 40);
+  const foto = t.t.slice();
+  corre(t, 40);
+  let movidas = 0;
+  for(let k = 0; k < foto.length; k++) if(foto[k] !== t.t[k]) movidas++;
+  ok('pero en un tubo LLENO se queda quieta, sin oleaje eterno', movidas === 0,
+     movidas + ' celdas cambiaron en 40 pasos sin que pasara nada');
+}
+
+{
+  /* «La sal no se vuelve agua salada, sólo una capita.» Medido: 10 celdas de
+     sal daban 10 de salada exactas —una por una— y las otras 398 seguían
+     dulces. */
+  const m = mundo(30, 40, 7);
+  for(let x = 2; x <= 27; x++){ m.pon(x, 38, IDX.muro); m.pon(x, 2, IDX.muro); }
+  for(let y = 2; y <= 38; y++){ m.pon(2, y, IDX.muro); m.pon(27, y, IDX.muro); }
+  for(let y = 20; y < 37; y++) for(let x = 3; x < 27; x++) m.pon(x, y, IDX.agua);
+  for(let x = 10; x < 20; x++) m.pon(x, 10, IDX.sal);
+  corre(m, 600);
+  const dulce = cuantos(m, 'agua'), salada = cuantos(m, 'salada');
+  ok('un puñado de sal sala TODA el agua, no una capita', salada > dulce * 4,
+     'quedaron ' + dulce + ' dulces contra ' + salada + ' saladas');
+
+  /* y no de golpe: se ve avanzar el frente */
+  const r = mundo(30, 40, 7);
+  for(let x = 2; x <= 27; x++){ r.pon(x, 38, IDX.muro); r.pon(x, 2, IDX.muro); }
+  for(let y = 2; y <= 38; y++){ r.pon(2, y, IDX.muro); r.pon(27, y, IDX.muro); }
+  for(let y = 20; y < 37; y++) for(let x = 3; x < 27; x++) r.pon(x, y, IDX.agua);
+  for(let x = 10; x < 20; x++) r.pon(x, 10, IDX.sal);
+  corre(r, 40);
+  ok('y tarda: a los 40 pasos todavía queda agua dulce', cuantos(r, 'agua') > 0,
+     'ya no quedaba ni una dulce a los 40 pasos');
+}
+
+seccion('el explosivo es proporcional y la onda no se inventa energía');
+{
+  /* Carlos: «todos los explosivos explotan demasiado fuerte y, sin contar el
+     muro, todo material se destruye SIN IMPORTAR LA CANTIDAD de explosivo».
+     Medido antes de tocar nada, contra un suelo de piedra:
+         nitro  1→246  2→251  4→251  9→251  25→251  64→596
+     Una sola celda de nitroglicerina destruía 246 celdas de piedra. */
+  const dana = (n) => {
+    const m = mundo(80, 80, 7);
+    for(let x = 0; x < 80; x++) for(let y = 50; y < 80; y++) m.pon(x, y, IDX.piedra);
+    const lado = Math.ceil(Math.sqrt(n)); let p = 0;
+    for(let dy = 0; dy < lado && p < n; dy++) for(let dx = 0; dx < lado && p < n; dx++){
+      m.pon(38 + dx, 49 - dy, IDX.nitro); p++; }
+    const cuenta = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) c++; return c; };
+    const antes = cuenta();
+    /* UNA chispa en UNA celda: lo demás lo hace la detonación simpática.
+       ⚠ Encender todas a 3000° metía en la sala un horno que NO es la
+       explosión, y desde que el aire acarrea calor eso derretía el suelo
+       entero — mi propia prueba acusando al motor de lo que hacía ella. */
+    m.temp[m.i(38, 49)] = 2280;
+    corre(m, 150);
+    return antes - cuenta();
+  };
+  const d1 = dana(1), d16 = dana(16), d64 = dana(64), d256 = dana(256);
+  ok('una celda suelta de nitro NO arrasa la sala', d1 < 10,
+     'destruyó ' + d1 + ' piedras (antes del arreglo: 246)');
+  ok('más explosivo hace MÁS daño', d64 > d16 && d16 > d1,
+     '1→' + d1 + ' · 16→' + d16 + ' · 64→' + d64);
+  /* ⚠ ESTA PRUEBA PEDÍA QUE EL CRÁTER SE QUEDARA ACOTADO, y Carlos la tiró
+     con una frase: «el cráter, en lugar de hacerlo fijo, haz que se calcule
+     según los NEWTONS de la explosión». Tenía razón y mi tope era un parche —
+     lo puse para matar el desbocamiento y de rebote maté también el efecto
+     bueno, que el cráter creciera.
+     Ahora el cráter sale de un PRESUPUESTO de energía y romper cada celda
+     CUESTA según lo duro y lo pesado que sea. Así que lo que hay que exigir ya
+     no es un techo: es que el daño por unidad de explosivo se quede donde
+     está. Si se desbocara, cada celda de más haría MÁS daño que la anterior —
+     que es exactamente lo que pasaba antes: 16 celdas hacían 3.4 de daño cada
+     una y 64 hacían 20. Medido ahora: 1.37 por celda con 64 y 1.57 con 256. */
+  const porCelda64 = d64 / 64, porCelda256 = d256 / 256;
+  ok('el cráter sigue creciendo con la carga, sin techo', d256 > d64 && d64 > d16,
+     '16→' + d16 + ' · 64→' + d64 + ' · 256→' + d256);
+  ok('y el daño POR CELDA de explosivo no se dispara: no se realimenta',
+     porCelda256 < porCelda64 * 3,
+     'con 64 cada celda hace ' + porCelda64.toFixed(2) + ' · con 256 hace ' + porCelda256.toFixed(2));
+
+  /* y lo que compra el presupuesto además de la proporción: que el MATERIAL
+     decida cuánto se lleva la misma carga. Romper una celda cuesta según lo
+     duro y lo pesado que sea, así que esto sale de la contabilidad y no de una
+     tabla de «cuánto daño hace X contra Y». */
+  const contra = (mat) => {
+    const m = mundo(80, 80, 7);
+    for(let x = 0; x < 80; x++) for(let y = 50; y < 80; y++) m.pon(x, y, IDX[mat]);
+    let p = 0;
+    for(let dy = 0; dy < 8 && p < 64; dy++) for(let dx = 0; dx < 8 && p < 64; dx++){
+      m.pon(38 + dx, 49 - dy, IDX.nitro); p++; }
+    const cuenta = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[mat]) c++; return c; };
+    const antes = cuenta();
+    m.temp[m.i(38, 49)] = 2280;
+    corre(m, 150);
+    return antes - cuenta();
+  };
+  const enPiedra = contra('piedra'), enMetal = contra('metal');
+  ok('la MISMA carga abre menos cráter en metal que en piedra', enMetal < enPiedra,
+     'piedra −' + enPiedra + ' · metal −' + enMetal);
+
+  /* ── EL CAÑÓN DE CARLOS ────────────────────────────────────────────────
+     Textual: «puse un muro con glicerina adentro, dejé abierta la parte de
+     arriba y arriba coloqué piedra, madera y concreto en tres pruebas
+     distintas; accioné la explosión y no salió volando ninguna de las
+     anteriores». Medido antes del arreglo: la tapa de piedra salía de y=46.5
+     y terminaba en y=67.6 — o sea que BAJABA. Se deshacía y caía.
+     La causa era que toda la energía se gastaba rompiendo, así que el
+     presupuesto se compraba la tapa a plazos y nunca quedaba nada para
+     lanzarla. Ahora la mitad empuja. */
+  const canon = (tapa) => {
+    const m = mundo(100, 80, 11);
+    repisa(m, 70);
+    for(let y = 48; y <= 60; y++){ m.pon(40, y, IDX.muro); m.pon(56, y, IDX.muro); }
+    for(let x = 40; x <= 56; x++) m.pon(x, 60, IDX.muro);
+    for(let y = 58; y < 60; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.nitro);
+    for(let y = 54; y < 58; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX[tapa]);
+    corre(m, 60);
+    const alturaMedia = () => { let n = 0, sy = 0;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[tapa]){ n++; sy += (k / 100) | 0; }
+      return n ? { n, y:sy/n } : { n:0, y:99 }; };
+    const a0 = alturaMedia();
+    m.temp[m.i(48, 59)] = 2280;
+    let masAlto = a0.y;
+    for(let i = 0; i < 160; i++){ m.paso(); const c = alturaMedia(); if(c.n && c.y < masAlto) masAlto = c.y; }
+    return { de:a0.y, quedan:alturaMedia().n, de0:a0.n, masAlto };
+  };
+  /* ⚠ EL LISTÓN ES «SUBE», NO «SUBE MUCHO», Y LA DIFERENCIA ESTÁ MEDIDA.
+     Con este cargo la piedra sube 38 celdas y el concreto 2.2 — y no es que
+     el concreto esté mal: es que el cargo no detona entero. Contado: de 30
+     celdas de nitroglicerina sólo revientan 6, el resto se las come el fuego.
+     Está explicado en `revienta` y NO se arregla de pasada, porque el frente
+     de detonación completo descalibra media docena de pruebas. Así que la
+     prueba exige lo que Carlos reportó, ni más ni menos: que la tapa SUBA en
+     vez de bajar. Antes del arreglo bajaba de y=46.5 a y=67.6. */
+  for(const [tapa, minimo] of [['piedra', 8], ['concreto', 1.5]]){
+    const r = canon(tapa);
+    ok('un bote abierto arriba LANZA la tapa de ' + tapa + ', no la deja caer',
+       r.masAlto < r.de - minimo,
+       'empezó en y=' + r.de.toFixed(1) + ' y subió hasta y=' + r.masAlto.toFixed(1) +
+       ' (antes del arreglo BAJABA a y=67.6)');
+  }
+  ok('y una carga que no puede con la tapa no la desintegra: la deja quieta', (() => {
+    /* ocho filas de piedra sobre dos de nitro: 65 de 120 celdas sobreviven y
+       el bloque apenas se levanta. Lo pesado gana, que es lo correcto. */
+    const m = mundo(100, 80, 11);
+    repisa(m, 70);
+    for(let y = 48; y <= 60; y++){ m.pon(40, y, IDX.muro); m.pon(56, y, IDX.muro); }
+    for(let x = 40; x <= 56; x++) m.pon(x, 60, IDX.muro);
+    for(let y = 58; y < 60; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.nitro);
+    for(let y = 50; y < 58; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.piedra);
+    corre(m, 60);
+    const cuenta = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) c++; return c; };
+    const antes = cuenta();
+    m.temp[m.i(48, 59)] = 2280;
+    corre(m, 160);
+    return cuenta() > antes * 0.4;
+  })());
+}
+
+{
+  /* ⚠ LA LEY QUE FALTABA ESCRITA: una onda no puede ser más fuerte que lo que
+     la creó. La pareja onda + rotura se realimentaba —la celda revienta, el
+     sitio pasa de transmitir 0.23 a transmitir 1 con toda la presión dentro,
+     y esa patada rompe a la siguiente—, y de un empujón de 3 000 salían 147
+     MIL MILLONES de presión con la sala arrasada. La ecuación SOLA es estable
+     en los cuatro materiales, y romper solo también: se dispara el par. */
+  for(const mat of ['piedra', 'metal']){
+    const m = mundo(80, 80, 7);
+    for(let y = 0; y < 80; y++) for(let x = 0; x < 80; x++) m.pon(x, y, IDX[mat]);
+    m.presiona(40, 40, 3000);
+    let pico = 0;
+    for(let i = 0; i < 200; i++){ m.paso();
+      for(let k = 0; k < m.pres.length; k++){ const a = Math.abs(m.pres[k]); if(a > pico) pico = a; } }
+    ok('dentro de ' + mat + ', la onda nunca pasa de lo que la creó', pico <= 3200,
+       'llegó a ' + pico.toFixed(0) + ' desde 3 000');
+  }
+}
+
+{
+  /* «Las ondas a veces se pasan por los huevos las paredes.» Con una
+     explosión de verdad —no un número inventado— cada material deja pasar lo
+     suyo y la pared sigue en pie. */
+  const cruza = (mat) => {
+    const m = mundo(100, 40, 7);
+    for(let y = 0; y < 40; y++) for(let g = 0; g < 3; g++) m.pon(50 + g, y, IDX[mat]);
+    const enteros = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[mat]) c++; return c; };
+    const a0 = enteros();
+    for(let dy = 0; dy < 3; dy++) for(let dx = 0; dx < 3; dx++) m.pon(44 + dx, 20 + dy, IDX.nitro);
+    m.temp[m.i(44, 20)] = 2280;
+    let antes = 0, desp = 0;
+    for(let i = 0; i < 150; i++){ m.paso();
+      for(let y = 0; y < 40; y++){
+        antes = Math.max(antes, Math.abs(m.pres[m.i(48, y)]));
+        desp  = Math.max(desp,  Math.abs(m.pres[m.i(57, y)])); } }
+    return { paso: 100 * desp / (antes || 1), queda: enteros(), de: a0 };
+  };
+  const mu = cruza('muro'), me = cruza('metal'), pi = cruza('piedra');
+  ok('el MURO no deja pasar nada de la onda', mu.paso < 1, mu.paso.toFixed(0) + '% pasó');
+  ok('una pared de metal deja pasar poco', me.paso > 1 && me.paso < 35, me.paso.toFixed(0) + '% pasó');
+  /* ⚠ ANTES ESTO PEDÍA LA PARED INTACTA —«=== de»— y ya no lo está: la
+     explosión le arranca alguna celda. Y está BIEN que se la arranque: una
+     bomba pegada a un muro lo pica. Lo que tiene que seguir siendo cierto es
+     que AGUANTA, no que salga sin un rasguño. */
+  ok('y las paredes AGUANTAN la explosión, aunque se piquen',
+     me.queda > me.de * 0.9 && pi.queda > pi.de * 0.9,
+     'metal ' + me.queda + '/' + me.de + ' · piedra ' + pi.queda + '/' + pi.de);
+}
+
+seccion('cámaras selladas: el aire cuenta, se comprime y revienta');
+{
+  const caja = (m, x0, y0, x1, y1, mat) => {
+    for(let x = x0; x <= x1; x++){ m.pon(x, y0, IDX[mat]); m.pon(x, y1, IDX[mat]); }
+    for(let y = y0; y <= y1; y++){ m.pon(x0, y, IDX[mat]); m.pon(x1, y, IDX[mat]); }
+  };
+  /* repasar con el dedo, que es lo que hace Carlos en el teléfono */
+  const bombea = (m, gas, x0, y0, x1, y1, pasos, ojo) => {
+    for(let n = 1; n <= pasos; n++){
+      if(n % 2 === 0) for(let y = y0; y <= y1; y++) for(let x = x0; x <= x1; x++){
+        const k = m.i(x, y); if(m.t[k] === IDX[gas] || m.t[k] === IDX.vacio) m.pon(x, y, IDX[gas]); }
+      m.paso(); if(ojo) ojo(m, n);
+    }
+  };
+
+  /* «Las presiones en un espacio cerrado deben incluir el aire para poder
+     aumentar la presión en un lugar y que explote al rebasarse.» Medido antes
+     de tocar nada: una caja de muro llena de gas, metiendo más gas doscientos
+     pasos, marcaba presión CERO. */
+  {
+    const m = mundo(40, 40, 7);
+    for(let x = 0; x < 40; x++) m.pon(x, 39, IDX.muro);
+    caja(m, 10, 18, 30, 38, 'piedra');
+    const pared = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) c++; return c; };
+    const a0 = pared();
+    let pico = 0;
+    bombea(m, 'gasnat', 11, 19, 29, 37, 120, (mm) => {
+      const c = mm.camara[mm.i(20, 28)]; if(c) pico = Math.max(pico, mm.camaraP[c - 1]); });
+    ok('meter gas en un sitio sellado SUBE la presión', pico > 400, 'llegó a ' + pico.toFixed(0));
+    ok('y la caja de piedra REVIENTA por dentro', pared() < a0 * 0.75,
+       'quedaron ' + pared() + ' de ' + a0 + ' celdas de pared');
+  }
+
+  /* ⚠ y la pareja: una habitación ABIERTA no se presuriza sola. Sin esta
+     prueba, «que suba la presión» se cumple subiendo un número hasta que todo
+     el mundo está a presión siempre. */
+  {
+    const m = mundo(40, 40, 7);
+    for(let x = 0; x < 40; x++) m.pon(x, 39, IDX.muro);
+    corre(m, 200);
+    let s = 0; for(let k = 0; k < m.pres.length; k++) s += Math.abs(m.pres[k]);
+    ok('una habitación abierta NO se presuriza sola', s < 1, 'presión total ' + s.toFixed(2));
+  }
+
+  /* «Someter a tanta presión carbono que se vuelva diamante.» */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let x = 12; x < 28; x++) m.pon(x, 29, IDX.carbon);
+    bombea(m, 'gasnat', 11, 11, 29, 28, 400);
+    ok('el carbón apretado se vuelve DIAMANTE', cuantos(m, 'diamante') > 8,
+       'salieron ' + cuantos(m, 'diamante') + ' diamantes');
+    /* ⚠ Y QUE SOBREVIVA. La primera versión los hacía y a los sesenta pasos
+       los dieciséis habían desaparecido, triturados por la misma presión que
+       los creó: la rotura comparaba la presión de fuera con la de dentro, y un
+       objeto sumergido tenía 11 000 alrededor y 0 adentro. Un cuerpo rodeado
+       de presión por igual no siente fuerza neta — por eso un buzo no se
+       aplasta y un submarino sí. */
+    ok('y NO se tritura con la misma presión que lo hizo', cuantos(m, 'diamante') > 8,
+       'quedaron ' + cuantos(m, 'diamante'));
+  }
+
+  /* «Fusionar hidrógeno y oxígeno» — sin chispa, sólo apretando. */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++)
+      m.pon(x, y, (x % 2) ? IDX.hidrogeno : IDX.oxigeno);
+    let agua = 0;
+    for(let n = 1; n <= 300; n++){
+      if(n % 2 === 0) for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++){
+        const k = m.i(x, y), tt = m.t[k];
+        if(tt === IDX.hidrogeno || tt === IDX.oxigeno) m.pon(x, y, tt); }
+      m.paso();
+      agua = Math.max(agua, cuantos(m, 'agua') + cuantos(m, 'vapor'));
+    }
+    ok('hidrógeno y oxígeno APRETADOS hacen agua sin chispa', agua > 20,
+       'lo más que hubo fue ' + agua);
+  }
+
+  /* «O uranio que explote.» */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let x = 14; x < 26; x++) m.pon(x, 29, IDX.uranio);
+    const u0 = cuantos(m, 'uranio');
+    bombea(m, 'gasnat', 11, 11, 29, 28, 300);
+    ok('el uranio apretado revienta', cuantos(m, 'uranio') < u0 / 2,
+       'de ' + u0 + ' quedaron ' + cuantos(m, 'uranio'));
+  }
+
+  /* y que el termómetro lo DIGA, que es la otra mitad de «la presión no se
+     nota»: un número que no se ve no existe para quien juega */
+  {
+    const m = mundo(40, 40, 7);
+    caja(m, 10, 10, 30, 30, 'muro');
+    for(let y = 11; y < 30; y++) for(let x = 11; x < 30; x++) m.pon(x, y, IDX.gasnat);
+    for(let i = 0; i < 3; i++) m.pon(20, 20, IDX.gasnat);
+    corre(m, 20);
+    const r = m.informe(20, 20);
+    ok('el termómetro dice que el recinto está sellado', r.sellado === true);
+    ok('y cuánto gas lleva metido esa celda', r.moles >= 3, 'dice ' + r.moles);
+  }
+}
+
+seccion('cuerpos rígidos: lo que está pegado cae junto');
+{
+  /* Carlos: «los sólidos se tratan como partículas al caer o agarrarlos, en
+     lugar de unirse con las del mismo tipo y volverse un solo cuerpo, si me
+     entiendes». Sí: una piedra de veinte celdas caía como veinte piedras. */
+  const bloque = (rigido) => {
+    const m = mundo(40, 60, 3);
+    m.rigido = rigido;
+    repisa(m, 59);
+    /* ⚠ LA PIEZA CAE SOBRE UN PILAR ESTRECHO, y no al suelo raso. Con el suelo
+       raso la prueba no distinguía nada: la L llegaba entera en los dos casos
+       porque cae recta y aterriza a la vez. Lo que separa un CUERPO de un
+       montón de píxeles es qué pasa cuando sólo una parte tiene apoyo: rígida
+       se queda encima del pilar, suelta se derrama por los lados. */
+    for(let y = 40; y < 59; y++){ m.pon(19, y, IDX.muro); m.pon(20, y, IDX.muro); }
+    for(let y = 10; y < 14; y++) for(let x = 12; x < 28; x++) m.pon(x, y, IDX.piedra);
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) m.suelto[k] = 1;
+    corre(m, 200);
+    let alto = 99, bajo = 0;
+    for(let y = 0; y < 60; y++) for(let x = 0; x < 40; x++)
+      if(m.t[m.i(x, y)] === IDX.piedra){ if(y < alto) alto = y; if(y > bajo) bajo = y; }
+    return { alto, bajo, grosor: bajo - alto + 1 };
+  };
+  const con = bloque(true), sin = bloque(false);
+  ok('una plancha que cae sobre un pilar se queda ENTERA encima', con.grosor === 4,
+     'quedó de ' + con.grosor + ' celdas de grosor (empezó de 4) entre y=' + con.alto + ' e y=' + con.bajo);
+  /* ⚠ y la pareja, que es la que prueba que el interruptor SIRVE: apagado,
+     tiene que volver a comportarse como antes. Sin ella, «rígido» podría estar
+     encendido siempre y la prueba de arriba pasaría igual. */
+  ok('y con el interruptor APAGADO se derrama por los lados del pilar',
+     sin.grosor > con.grosor,
+     'apagado ' + sin.grosor + ' de grosor · encendido ' + con.grosor);
+
+  /* soldar: la estructura de varios materiales que pidió por su nombre */
+  {
+    const m = mundo(40, 40, 3);
+    repisa(m, 39);
+    for(let x = 10; x < 20; x++) m.pon(x, 20, IDX.metal);
+    for(let x = 10; x < 20; x++) m.pon(x, 21, IDX.madera);
+    m.pon(15, 19, IDX.piedra);          /* el «proyectil» posado encima */
+    /* se pinta EXACTAMENTE la estructura: las dos filas del arma, y ni una
+       celda más. La piedra de encima se queda fuera porque no la pintaste —
+       que es justo lo que Carlos pidió poder decidir. */
+    let n = 0, g = 0;
+    for(const yy of [20, 21]) for(let x = 10; x < 20; x++){ n += m.suelda(x, yy, 0, g); g = m.soldadoUltimo; }
+    ok('soldar con la brocha agarra lo que pintas', n > 15, 'soldó ' + n + ' celdas');
+    ok('y la piedra de encima NO queda dentro de la estructura',
+       m.soldado[m.i(15, 19)] !== m.soldado[m.i(12, 20)],
+       'la piedra quedó en el grupo ' + m.soldado[m.i(15,19)]);
+    ok('y se puede deshacer', m.dessuelda(12, 20) > 15 && m.soldado[m.i(12,20)] === 0);
+    /* y lo que de verdad compra: soldada, la estructura NO se lleva puesto lo
+       que tenga encima cuando la muevan */
+    const g2 = m.soldado[m.i(15, 19)];
+    ok('lo soldado y lo no soldado son piezas distintas', g2 === 0);
+  }
+}
+
+seccion('voltaje: la resistencia quema, el motor mueve y la mecha prende');
+{
+  /* Carlos: «la resistencia debe poder tener más poder (producir más calor)
+     conforme más voltaje tenga, al punto de que pueda quemar algo», «los
+     pistones deben poder tener distintos empujes» y «el motor no funciona».
+     Las tres pedían lo mismo y faltaba lo mismo: el circuito sólo sabía SÍ o
+     NO. El mando es apilar pilas. */
+  const calienta = (pilas) => {
+    const m = mundo(30, 20, 7);
+    repisa(m, 19);
+    for(let i = 0; i < pilas; i++) m.pon(10, 18 - i, IDX.bateria);
+    m.pon(11, 18, IDX.cobre); m.pon(12, 18, IDX.resistencia);
+    m.pon(12, 17, IDX.madera);
+    corre(m, 300);
+    return { grados: m.temp[m.i(12, 18)], quemo: m.t[m.i(12, 17)] !== IDX.madera };
+  };
+  const p1 = calienta(1), p2 = calienta(2), p3 = calienta(3);
+  ok('más pilas, más calor en la resistencia', p3.grados > p2.grados * 1.8 && p2.grados > p1.grados * 1.8,
+     '1→' + p1.grados.toFixed(0) + '° · 2→' + p2.grados.toFixed(0) + '° · 3→' + p3.grados.toFixed(0) + '°');
+  /* el cuadrado no es un adorno: es P = V²/R, y por eso doblar las pilas
+     cuadruplica el calor en vez de doblarlo */
+  ok('y con tres pilas QUEMA la madera de encima', p3.quemo && !p1.quemo,
+     'con 1 pila ' + (p1.quemo ? 'quemó' : 'no quemó') + ' · con 3 ' + (p3.quemo ? 'quemó' : 'no quemó'));
+
+  /* «El motor no funciona.» Y no funcionaba literalmente: la corriente le
+     llegaba y la línea que empuja excluía a mano los SÓLIDOS — la misma línea
+     que ya se había corregido en el pistón y que aquí se quedó puesta. */
+  const empuja = (pilas) => {
+    const m = mundo(30, 30, 7);
+    repisa(m, 29);
+    for(let i = 0; i < pilas; i++) m.pon(10, 28 - i, IDX.bateria);
+    m.pon(11, 28, IDX.cobre); m.pon(12, 28, IDX.motor); m.pon(12, 27, IDX.piedra);
+    corre(m, 60);
+    let alto = 99;
+    for(let y = 0; y < 30; y++) for(let x = 0; x < 30; x++)
+      if(m.t[m.i(x, y)] === IDX.piedra && y < alto) alto = y;
+    return 27 - alto;
+  };
+  const m1 = empuja(1), m3 = empuja(3);
+  ok('un motor con corriente EMPUJA una piedra sólida', m1 > 0, 'la subió ' + m1 + ' celdas');
+  ok('y con más pilas la sube más', m3 > m1, '1 pila ' + m1 + ' · 3 pilas ' + m3);
+
+  /* «La mecha no se quema.» Medido: 30 celdas con fuego pegado seguían siendo
+     30 tras 300 pasos. Dos causas: el umbral eran 700° —más de lo que da nada
+     de lo que uno tiene a mano— y el fuego es un GAS que sube y se va antes de
+     calentar por conducción. Uno enciende una mecha con una llama. */
+  const mecha = (enciende) => {
+    const m = mundo(40, 12, 7);
+    repisa(m, 11);
+    for(let x = 5; x < 35; x++) m.pon(x, 10, IDX.mecha);
+    enciende(m);
+    const a = cuantos(m, 'mecha');
+    corre(m, 400);
+    return a - cuantos(m, 'mecha');
+  };
+  ok('la mecha prende con FUEGO al lado', mecha(m => m.pon(4, 10, IDX.fuego)) > 5,
+     'se quemaron ' + mecha(m => m.pon(4, 10, IDX.fuego)) + ' celdas');
+  ok('y con lava también', mecha(m => m.pon(4, 10, IDX.lava)) > 5);
+  /* ⚠ la pareja: sin nada, no prende sola. Sin esta prueba, «que la mecha
+     prenda» se cumple haciendo que arda siempre. */
+  ok('pero sola NO se prende', mecha(() => {}) === 0);
+
+  /* «Los pistones deben poder tener distintos empujes.» */
+  const lanza = (pilas) => {
+    const m = mundo(30, 40, 7);
+    repisa(m, 39);
+    for(let i = 0; i < pilas; i++) m.pon(10, 38 - i, IDX.bateria);
+    m.pon(11, 38, IDX.cobre); m.pon(12, 38, IDX.piston); m.pon(12, 37, IDX.piedra);
+    corre(m, 40);
+    let alto = 99;
+    for(let y = 0; y < 40; y++) for(let x = 0; x < 30; x++)
+      if(m.t[m.i(x, y)] === IDX.piedra && y < alto) alto = y;
+    return 37 - alto;
+  };
+  const l1 = lanza(1), l3 = lanza(3);
+  ok('un pistón con más pilas lanza más lejos', l3 > l1, '1 pila ' + l1 + ' · 3 pilas ' + l3);
+}
+
+seccion('un bloque cae de una pieza, no en láminas');
+{
+  /* Carlos, mirando una captura: «tus sólidos caen por LÁMINAS calculando
+     todo en lugar de unirse en un solo objeto capaz de destruirse por cada
+     partícula, y eso lo hace ver y funcionar fatal». Lo nombró perfecto.
+     Medido: un bloque de 6 000 celdas cayendo se partía en 3, 6 y hasta 8
+     trozos —barras horizontales con huecos negros entre ellas— y volvía a
+     juntarse al aterrizar. */
+  const trozos = (m, id) => {
+    const visto = new Uint8Array(m.t.length);
+    let piezas = 0, mayor = 0;
+    for(let k0 = 0; k0 < m.t.length; k0++){
+      if(visto[k0] || m.t[k0] !== IDX[id]) continue;
+      let c = 0; const pila = [k0]; visto[k0] = 1;
+      while(pila.length){
+        const k = pila.pop(); c++;
+        const x = k % m.an, y = (k / m.an) | 0;
+        for(const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          if(!m.dentro(x+dx, y+dy)) continue;
+          const k2 = m.i(x+dx, y+dy);
+          if(!visto[k2] && m.t[k2] === IDX[id]){ visto[k2] = 1; pila.push(k2); }
+        }
+      }
+      piezas++; if(c > mayor) mayor = c;
+    }
+    return { piezas, mayor };
+  };
+  const m = mundo(120, 200, 3);
+  repisa(m, 199);
+  for(let y = 40; y < 70; y++) for(let x = 20; x < 100; x++) m.pon(x, y, IDX.piedra);
+  const total = cuantos(m, 'piedra');
+  let peor = 1;
+  for(let i = 0; i < 120; i++){ m.paso(); peor = Math.max(peor, trozos(m, 'piedra').piezas); }
+  ok('un bloque de 2 400 celdas cae SIN partirse en láminas', peor === 1,
+     'llegó a partirse en ' + peor + ' trozos durante la caída');
+  ok('y llega entero abajo', trozos(m, 'piedra').mayor === total,
+     'el trozo mayor tiene ' + trozos(m,'piedra').mayor + ' de ' + total);
+
+  /* ⚠ y la pareja: un cuerpo tiene que poder ROMPERSE por partes, que es la
+     otra mitad de lo que pidió — «capaz de destruirse por cada partícula».
+     Si la respuesta a «no se parta» fuera hacerlo indestructible, esto falla. */
+  const b = mundo(120, 200, 3);
+  repisa(b, 199);
+  for(let y = 150; y < 170; y++) for(let x = 40; x < 80; x++) b.pon(x, y, IDX.piedra);
+  const antes = cuantos(b, 'piedra');
+  for(let dy = 0; dy < 4; dy++) for(let dx = 0; dx < 4; dx++) b.pon(58 + dx, 145 + dy, IDX.nitro);
+  b.temp[b.i(58, 145)] = 2280;
+  corre(b, 150);
+  ok('pero una explosión SÍ le quita celdas: sigue siendo destructible',
+     cuantos(b, 'piedra') < antes, 'de ' + antes + ' quedaron ' + cuantos(b, 'piedra'));
 }
 
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');

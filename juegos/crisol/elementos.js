@@ -30,15 +30,24 @@
 
 const JUEGO = {
   /* ── lo básico ────────────────────────────────────────────────────────── */
-  vacio:   { nom:'Vacío',   col:'#0B0712', estado:'gas',    dens:0,    cond:.02, grupo:'básico' },
-  muro:    { nom:'Muro',    col:'#5A5468', estado:'solido', dens:999,  cond:.15, dureza:1, grupo:'básico' },
+  /* El hueco es AIRE, no vacío, y por eso se llama así: sin un medio no hay
+     resistencia del aire, no hay flotación y no hay globo. No se simula ni una
+     celda —serían 153 600 partículas activas por cuadro para nada—, sólo se
+     comporta como aire con la densidad de DENS_AIRE. Y sigue siendo el borrador. */
+  vacio:   { nom:'Aire · borra', col:'#0B0712', estado:'gas', dens:1.2, cond:.02, grupo:'básico' },
+  /* El muro es lo ÚNICO inamovible, y lo pidió Carlos por su nombre: «deja un
+     muro inamovible por si quiero hacer algo especial». Ahora que los sólidos
+     caen, hace falta algo que NO — o no habría suelo, ni recámara, ni cañón
+     que aguante el disparo. `fijo` es esa marca: no cae, no lo empuja la
+     presión, no lo rompe nada y refleja la onda entera. */
+  muro:    { nom:'Muro',    col:'#5A5468', estado:'solido', dens:999,  cond:.15, dureza:1, fijo:true, grupo:'básico' },
 
   /* ── tierra y piedra ──────────────────────────────────────────────────── */
-  arena:   { nom:'Arena',   col:'#D9B168', estado:'polvo',  dens:16, cond:.12,
+  arena:   { nom:'Arena',   col:'#D9B168', estado:'polvo',  dens:16, cond:.12, friccion:.75,
              fus:[1700,'vidrio'], dureza:.2, grupo:'tierra' },
   tierra:  { nom:'Tierra',  col:'#6B4A2F', estado:'polvo',  dens:15, cond:.10,
              dureza:.2, grupo:'tierra' },
-  piedra:  { nom:'Piedra',  col:'#7C7687', estado:'solido', dens:25, cond:.20,
+  piedra:  { nom:'Piedra',  col:'#7C7687', estado:'solido', dens:25, cond:.20, friccion:.65,
              fus:[1200,'lava'], dureza:.6, grupo:'tierra' },
   grava:   { nom:'Grava',   col:'#8A8496', estado:'polvo',  dens:20, cond:.18,
              fus:[1200,'lava'], dureza:.35, grupo:'tierra' },
@@ -60,21 +69,28 @@ const JUEGO = {
              ebu:[100,'vapor'], congela:[0,'hielo'], elec:.35, grupo:'agua' },
   salada:  { nom:'Agua salada', col:'#2A6FA8', estado:'liquido', dens:11, cond:.60,
              ebu:[105,'vapor'], congela:[-2,'hielo'], elec:1, grupo:'agua' },
-  hielo:   { nom:'Hielo',   col:'#A8DCF0', estado:'solido', dens:9, cond:.45,
+  hielo:   { nom:'Hielo',   col:'#A8DCF0', estado:'solido', dens:9, cond:.45, friccion:.04,
              fus:[0,'agua'], dureza:.2, frio:true, grupo:'agua' },
   nieve:   { nom:'Nieve',   col:'#E8F4FA', estado:'polvo',  dens:5, cond:.20,
              fus:[0,'agua'], frio:true, grupo:'agua' },
-  vapor:   { nom:'Vapor',   col:'#B9C9D6', estado:'gas',    dens:2, cond:.30,
+  /* ── LAS DENSIDADES DE LOS GASES SON RELATIVAS AL AIRE (1.2) ──────────
+     Y salen de la masa molar de verdad dividida entre la del aire (29 g/mol):
+     H₂ 2/29 → 0.08 · CH₄ 16/29 → 0.66 · H₂O 18/29 → 0.75 · O₂ 32/29 → 1.43 ·
+     CO₂ 44/29 → 1.83. Antes eran todas 1, 2 o 3 y todos los gases subían por
+     igual, lo cual es falso y además rompe dos cosas: el CO₂ pesa vez y media
+     lo que el aire —por eso se acumula en el suelo, asfixia en un sótano y
+     apaga fuegos— y un globo es imposible si da lo mismo con qué lo llenes. */
+  vapor:   { nom:'Vapor',   col:'#B9C9D6', estado:'gas',    dens:0.75, cond:.30,
              congela:[99,'agua'], grupo:'agua' },
   hielose: { nom:'Hielo seco', col:'#D6EEF5', estado:'polvo', dens:8, cond:.25,
              fus:[-78,'co2'], frio:true, grupo:'agua' },
-  co2:     { nom:'CO₂',     col:'#7A8A94', estado:'gas',    dens:3, cond:.15,
+  co2:     { nom:'CO₂',     col:'#7A8A94', estado:'gas',    dens:1.83, cond:.15,
              ahoga:true, grupo:'gases' },
 
   /* ── fuego, calor y sus restos ────────────────────────────────────────── */
-  fuego:   { nom:'Fuego',   col:'#FF6A1A', estado:'energia', dens:1, cond:.9,
+  fuego:   { nom:'Fuego',   col:'#FF6A1A', estado:'energia', dens:0.3, cond:.9,
              vida:52, muere:'humo', calor:true, grupo:'fuego' },
-  humo:    { nom:'Humo',    col:'#4A4453', estado:'gas',    dens:1, cond:.10,
+  humo:    { nom:'Humo',    col:'#4A4453', estado:'gas',    dens:0.6, cond:.10,
              vida:220, muere:'vacio', grupo:'fuego' },
   ceniza:  { nom:'Ceniza',  col:'#4F4954', estado:'polvo',  dens:12, cond:.12,
              dureza:.1, grupo:'fuego' },
@@ -86,31 +102,58 @@ const JUEGO = {
              arde:.85, calorArde:2600, dureza:.1, grupo:'fuego' },
 
   /* ── combustibles ─────────────────────────────────────────────────────── */
-  aceite:  { nom:'Aceite',  col:'#5A4520', estado:'liquido', dens:8, cond:.20,
+  aceite:  { nom:'Aceite',  col:'#5A4520', estado:'liquido', dens:8, cond:.20, friccion:.02,
              arde:.7, calorArde:700, ebu:[300,'gasnat'], grupo:'combustible' },
-  gasnat:  { nom:'Gas',     col:'#93A05A', estado:'gas',    dens:2, cond:.10,
+  gasnat:  { nom:'Gas',     col:'#93A05A', estado:'gas',    dens:0.66, cond:.10,
              arde:1, calorArde:900, grupo:'combustible' },
   polvora: { nom:'Pólvora', col:'#3E3A44', estado:'polvo',  dens:13, cond:.15,
-             arde:1, calorArde:1400, explota:9, dureza:.05, grupo:'combustible' },
+             arde:1, calorArde:1400, explota:3.5, dureza:.05, grupo:'combustible' },
   /* ⚠ `inestable:.5` la hacía explotar SOLA a los pocos segundos de ponerla:
      Carlos no alcanzaba ni a construir con ella. La nitroglicerina de verdad
      no detona por existir — detona por GOLPE, y eso ahora se mide con la
      velocidad de impacto. `golpe` es a qué velocidad revienta. */
   nitro:   { nom:'Nitroglicerina', col:'#C8B96A', estado:'liquido', dens:12, cond:.2,
-             arde:1, calorArde:2200, explota:22, golpe:2.2, grupo:'combustible' },
-  madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12,
+             arde:1, calorArde:2200, explota:20, golpe:2.2, grupo:'combustible' },
+  /* Tela de globo: un sólido LIGERO, que es lo que hace falta para que un
+     globo vuele. Con madera no vuela —pesa diecinueve veces el aire— igual
+     que en la vida real: los globos se hacen de película fina justo por eso.
+     Sigue pesando el doble que el aire, así que sola tampoco vuela: hay que
+     llenarla de algo más ligero. Ahí es donde entra el helio. */
+  /* ── CUERDA ─────────────────────────────────────────────────────────────
+     Carlos: «péndulos y cuerdas para amarrar cosas». Una cuerda no es un
+     elemento más y por eso fue lo último: su comportamiento no vive en la
+     celda, vive en la RELACIÓN entre celdas. Todo lo demás de este juego sale
+     de reglas por celda —esta piedra cae, este gas sube—; una cuerda necesita
+     que cada eslabón sepa quién es el anterior y se mantenga pegado a él.
+     Eso es un resolvedor de restricciones, y va aparte en `cuerdaPaso()`. */
+  cuerda:  { nom:'Cuerda', col:'#C2A878', estado:'solido', dens:6, cond:.12,
+             cuerda:true, arde:.5, calorArde:400, dureza:.08,
+             traccion:26, compresion:0.5, corte:1, elastico:0.4,
+             grupo:'básico',
+             ayuda:'Cuélgala de algo fijo y amárrale cosas. Aguanta tirón, no empuje' },
+  globo:   { nom:'Tela de globo', col:'#E85A8A', estado:'solido', dens:2.5, cond:.2,
+             dureza:.02, arde:.6, calorArde:400, grupo:'básico' },
+  madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12, friccion:.55,
              arde:.35, calorArde:600, dureza:.25, grupo:'combustible' },
   carbon:  { nom:'Carbón',  col:'#26222C', estado:'polvo',  dens:14, cond:.16,
-             arde:.5, calorArde:1100, dureza:.15, grupo:'combustible' },
+             arde:.5, calorArde:1100, dureza:.15, aprieta:[2600,'diamante'],
+             grupo:'combustible',
+             ayuda:'Arde. Y si lo aprietas muchísimo dentro de algo sellado, se vuelve diamante' },
+  /* Carlos: «someter a tanta presión carbono que se vuelva diamante». Es la
+     transición de verdad —grafito a diamante pide unas 5 GPa— y aquí es la
+     recompensa de saber sellar una cámara y comprimirla, no un botón. */
+  diamante:{ nom:'Diamante', col:'#BFF3FF', estado:'solido', dens:18, cond:.9,
+             dureza:.98, grupo:'combustible',
+             ayuda:'Lo más duro que hay. Sale de apretar carbón a lo bestia' },
 
   /* ── gases ────────────────────────────────────────────────────────────── */
-  hidrogeno:{nom:'Hidrógeno',col:'#C9D8FF',estado:'gas',   dens:1, cond:.5,
-             arde:1, calorArde:1200, explota:7, sube:2, grupo:'gases' },
-  oxigeno: { nom:'Oxígeno',  col:'#8FD8FF', estado:'gas',   dens:2, cond:.2,
+  hidrogeno:{nom:'Hidrógeno',col:'#C9D8FF',estado:'gas',   dens:0.08, cond:.5,
+             arde:1, calorArde:1200, explota:2.5, sube:2, ardeEn:'vapor', grupo:'gases' },
+  oxigeno: { nom:'Oxígeno',  col:'#8FD8FF', estado:'gas',   dens:1.43, cond:.2,
              aviva:true, grupo:'gases' },
 
   /* ── metales y electricidad ───────────────────────────────────────────── */
-  metal:   { nom:'Metal',   col:'#9AA3B0', estado:'solido', dens:30, cond:.95,
+  metal:   { nom:'Metal',   col:'#9AA3B0', estado:'solido', dens:30, cond:.95, friccion:.25,
              elec:1, fus:[1450,'metfun'], dureza:.8, ferroso:.5, grupo:'eléctrico' },
   metfun:  { nom:'Metal fundido', col:'#FFB03D', estado:'liquido', dens:29, cond:.95,
              elec:1, congela:[1400,'metal'], nace:1500, grupo:'eléctrico' },
@@ -118,7 +161,9 @@ const JUEGO = {
              elec:1, fus:[1085,'metfun'], dureza:.7, grupo:'eléctrico' },
   bateria: { nom:'Batería', col:'#FFC53D', estado:'solido', dens:40, cond:.4,
              elec:1, fuente:true, dureza:.6, grupo:'eléctrico' },
-  lampara: { nom:'Lámpara', col:'#6E6A55', estado:'solido', dens:28, cond:.3,
+  /* `luz` es cuánto alumbra cuando le llega corriente. La luz se reparte de
+     verdad por la habitación y la bloquean los sólidos: ver luzPaso(). */
+  lampara: { nom:'Lámpara', col:'#6E6A55', estado:'solido', dens:28, cond:.3, luz:20,
              elec:1, lampara:true, dureza:.4, grupo:'eléctrico' },
   aislante:{ nom:'Aislante',col:'#3A3446', estado:'solido', dens:20, cond:.05,
              elec:0, dureza:.5, grupo:'eléctrico' },
@@ -141,6 +186,19 @@ const JUEGO = {
   pulsador:{ nom:'Pulsador',  col:'#5A9E9E', estado:'solido', dens:28, cond:.3,
              elec:1, pulso:14, dureza:.5, grupo:'eléctrico',
              ayuda:'Late solo: enciende y apaga cada tanto' },
+  /* ── GENERADOR ──────────────────────────────────────────────────────────
+     Carlos, punto 4: «debe ser posible generar energía, transportarla,
+     almacenarla, convertirla de un tipo a otro… La energía no debe aparecer ni
+     desaparecer arbitrariamente. Debe existir conservación de energía dentro
+     de los límites de la simulación».
+     Hasta ahora el motor CONSUMÍA y nada GENERABA: la corriente sólo salía de
+     pilas que aparecían llenas. Esto cierra el circuito. Un generador toma la
+     energía cinética de lo que se mueve a su lado, la convierte en corriente
+     — y FRENA lo que se la dio, que es la mitad que casi nunca se implementa
+     y sin la cual esto sería una fuente de energía gratis. */
+  generador:{nom:'Generador', col:'#C58A3D', estado:'solido', dens:33, cond:.5,
+             elec:1, genera:.55, dureza:.5, grupo:'eléctrico',
+             ayuda:'Convierte el movimiento de al lado en corriente, y frena lo que lo mueve' },
   motor:   { nom:'Motor',     col:'#9E5A7A', estado:'solido', dens:32, cond:.4,
              elec:1, motor:true, dureza:.5, grupo:'eléctrico',
              ayuda:'Con corriente, empuja lo que tenga encima' },
@@ -177,16 +235,16 @@ const JUEGO = {
      metálicas de verdad: el estroncio da rojo, el bario verde, el cobre azul
      y el sodio dorado. Es la química que hay detrás de un castillo. */
   estRoja: { nom:'Estrella roja', col:'#FF3B4E', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#FF3B4E', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#FF3B4E', explota:1.6, grupo:'pirotecnia',
              ayuda:'Estroncio: arde en rojo' },
   estVerde:{ nom:'Estrella verde', col:'#3BFF6E', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#3BFF6E', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#3BFF6E', explota:1.6, grupo:'pirotecnia',
              ayuda:'Bario: arde en verde' },
   estAzul: { nom:'Estrella azul', col:'#3B8AFF', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#3B8AFF', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#3B8AFF', explota:1.6, grupo:'pirotecnia',
              ayuda:'Cobre: arde en azul' },
   estOro:  { nom:'Estrella dorada', col:'#FFD43B', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#FFD43B', explota:4, grupo:'pirotecnia',
+             arde:.9, calorArde:900, chispa:'#FFD43B', explota:1.6, grupo:'pirotecnia',
              ayuda:'Sodio: arde en dorado' },
   /* ⚠ SIN `arde`, Y ESO ES LO QUE LA HACE MECHA. Con `arde:.5` el bloque
      genérico de combustión —que corre ANTES— la convertía en fuego de golpe y
@@ -214,6 +272,21 @@ const JUEGO = {
              elec:1, ferroso:1, dureza:.1, grupo:'magnetismo',
              ayuda:'Polvo de hierro: lo mueven los imanes' },
 
+  /* ── VÁLVULA ────────────────────────────────────────────────────────────
+     Carlos la pidió por su nombre y con su comportamiento: «cerrada restringe
+     el flujo; abierta permite que el contenido salga dependiendo de la
+     diferencia de presión; la presión debe acumularse si el recipiente está
+     cerrado; una apertura pequeña debe producir un flujo diferente a una
+     grande».
+     Cerrada es un sólido normal y ya está: contiene. Abierta deja de estorbar
+     y el gas sale por la diferencia de presión, que es la que ya calcula el
+     campo — la apertura grande deja pasar más porque son más celdas abiertas,
+     no porque nadie lo haya programado.
+     Se acciona tocándola, o con corriente: por eso lleva `elec`. */
+  valvula: { nom:'Válvula', col:'#5AA3A3', estado:'solido', dens:29, cond:.3,
+             elec:1, valvula:true, dureza:.55, grupo:'automatización',
+             ayuda:'Tócala para abrir y cerrar. Cerrada contiene la presión; abierta la deja salir' },
+
   /* ── compuertas lógicas · con esto se PROGRAMA dentro del juego ───────── */
   gAND:    { nom:'Y (AND)',  col:'#3DFFC5', estado:'solido', dens:40, cond:.2,
              elec:1, puerta:'and', dureza:.5, grupo:'lógica' },
@@ -223,12 +296,31 @@ const JUEGO = {
              elec:1, puerta:'not', dureza:.5, grupo:'lógica' },
   diodo:   { nom:'Diodo',    col:'#AC27FF', estado:'solido', dens:40, cond:.2,
              elec:1, puerta:'diodo', dureza:.5, grupo:'lógica' },
+  /* Las que faltaban. Con `padre` distinguiendo entrada de salida, todas
+     funcionan con el mismo código: cambia una línea del switch. */
+  nand:    { nom:'NO-Y (NAND)', col:'#8A6FD1', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'nand', dureza:.5, grupo:'lógica',
+             ayuda:'Se apaga sólo cuando le llegan las DOS señales' },
+  nor:     { nom:'NO-O (NOR)', col:'#6F8AD1', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'nor',  dureza:.5, grupo:'lógica',
+             ayuda:'Enciende sólo si NO le llega ninguna señal' },
+  xor:     { nom:'O-exclusiva (XOR)', col:'#D18A6F', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'xor',  dureza:.5, grupo:'lógica',
+             ayuda:'Enciende con UNA señal, no con dos. Es el sumador' },
+  xnor:    { nom:'XNOR', col:'#6FD18A', estado:'solido', dens:28, cond:.3,
+             elec:1, puerta:'xnor', dureza:.5, grupo:'lógica',
+             ayuda:'Enciende cuando las dos entradas están IGUALES' },
 
   /* ── química agresiva ─────────────────────────────────────────────────── */
+  /* H₃O⁺ · el ion hidronio. Corrosivo y de vida corta: se recombina. */
+  hidronio:{ nom:'Hidronio H₃O⁺', col:'#B6FF6E', estado:'liquido', dens:10.4, cond:.5,
+             corroe:.16, vida:420, muere:'agua', dureza:0, grupo:'química',
+             ayuda:'El ion que hace ácido a un ácido. Corroe, y con el tiempo vuelve a ser agua' },
   acido:   { nom:'Ácido',   col:'#8FE03D', estado:'liquido', dens:11, cond:.4,
              corroe:.35, grupo:'química' },
   uranio:  { nom:'Uranio',  col:'#5FE04A', estado:'polvo',  dens:38, cond:.4,
-             radia:true, dureza:.5, grupo:'química' },
+             radia:true, dureza:.5, aprieta:[4200,'__revienta 26'], grupo:'química',
+             ayuda:'Radiactivo. Comprimido a lo bestia dentro de algo sellado, revienta' },
 
   /* ── vida, apenas la semilla de lo que viene ──────────────────────────── */
   planta:  { nom:'Planta',  col:'#3FA83F', estado:'solido', dens:18, cond:.15,
@@ -387,7 +479,14 @@ export const TABLA = {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    REACCIONES · qué pasa cuando dos cosas se tocan
-   [A, B, → A pasa a ser, → B pasa a ser, probabilidad, calor que suelta]
+   [A, B, → A pasa a ser, → B pasa a ser, probabilidad, calor que suelta, ENCIENDE]
+
+   El séptimo campo es la temperatura MÍNIMA para que la reacción ocurra, y
+   nació de un reporte de Carlos: «coloqué hidrógeno y oxígeno pero no sé cómo
+   volverlo agua». Y tenía razón — la reacción existía desde el principio con
+   probabilidad CERO y un comentario que decía «sólo con chispa». Esa chispa
+   nunca se implementó: era una regla que no podía dispararse nunca, con una
+   nota explicando por qué. Un `TODO` disfrazado de código.
    `null` quiere decir «se queda igual». Están en una tabla y no en `if`s por
    la misma razón que los elementos: para que crezcan sin tocar el motor.
    ═════════════════════════════════════════════════════════════════════════ */
@@ -397,6 +496,15 @@ export const REACCIONES = [
   ['lava',  'hielo',  'piedra',  'vapor',   .9,   0],
   ['lava',  'nieve',  'piedra',  'vapor',   .9,   0],
   ['agua',  'sal',    'salada',  'vacio',   .35,  0],
+  /* ⚠ Y LA SAL SE REPARTE POR TODA EL AGUA. Carlos: «la sal no se vuelve
+     agua salada, sólo una capita». Medido: diez celdas de sal daban diez
+     celdas de salada exactas, 1 a 1, y las otras 398 seguían dulces — que es
+     lo que pasa cuando la única regla convierte UNA celda por UNA celda y no
+     hay nada que mueva la sal ya disuelta. Lo que falta no es más sal: es que
+     lo salado contagie a lo dulce, que es literalmente lo que hace disolver.
+     Probabilidad baja a propósito: se ve avanzar el frente salado, no aparece
+     de golpe. */
+  ['salada','agua',   'salada',  'salada',  .05,  0],
   ['agua',  'cemento','concreto','concreto',.28,  0],
   ['salada','cemento','concreto','concreto',.28,  0],
   ['acido', 'agua',   'acido',   'vacio',   .06,  12],
@@ -410,13 +518,120 @@ export const REACCIONES = [
   ['fuego', 'oxigeno','fuego',   'fuego',   .8,   200],
   ['fuego', 'planta', 'fuego',   'fuego',   .35,  500],
   ['fuego', 'semilla','fuego',   'ceniza',  .4,   400],
-  ['hidrogeno','oxigeno','agua', 'vacio',   .0,   0],   /* sólo con chispa */
+  /* La de verdad: 2H₂ + O₂ → 2H₂O. Necesita chispa —500°— y suelta MUCHO
+     calor, que es lo que la vuelve peligrosa y lo que hace que se propague
+     sola en cuanto empieza. */
+  /* ⚠ Y TAMBIÉN POR PRESIÓN, SIN CHISPA. Carlos: «no tengo manera de aumentar
+     la presión dentro de un espacio, por ejemplo para poder fusionar hidrógeno
+     y oxígeno». El octavo campo es la presión mínima: con cualquiera de las
+     dos condiciones —caliente O apretado— la reacción corre. */
+  ['hidrogeno','oxigeno','agua',    'vapor',  .85,  2200, 500, 1200],
+  /* Hidronio, H₃O⁺: el ion que hace que un ácido sea ácido. Sale de meterle
+     un protón al agua, y aquí eso es agua + ácido. Corroe. */
+  ['agua',     'acido',  'hidronio','acido',  .12,  30],
+  ['hidronio', 'agua',   'hidronio','hidronio',.05, 10],
   ['vapor', 'hielo',  'agua',    'agua',    .3,   0],
   ['uranio','agua',   'uranio',  'vapor',   .12,  260],
   ['termita','oxigeno','fuego',  'fuego',   .5,   2600],
   ['semilla','agua',  'planta',  'vacio',   .06,  0],
   ['semilla','tierra','semilla', 'tierra',  0,    0],
 ];
+
+/* ── RESISTENCIA ESTRUCTURAL, SEPARADA EN TRES ─────────────────────────
+   Carlos: «no quiero que simplemente se rompa todo al mismo tiempo; la
+   simulación debe comparar resistencia a la compresión, a la tracción, al
+   corte, elasticidad, deformación, masa, geometría…». Y puso el caso exacto:
+   un recipiente de concreto con un tapón de madera y presión dentro.
+
+   Un solo número —`dureza`— no puede contestar eso, porque los materiales NO
+   fallan igual en cada modo, y ahí está justamente la gracia:
+
+     · el CONCRETO aguanta muchísimo a compresión y casi nada a tracción.
+       Por eso el concreto de verdad va armado con varilla: la varilla pone
+       la tracción que al concreto le falta.
+     · la MADERA aguanta bien a tracción a lo largo de la fibra y se raja al
+       CORTE con poco. Un tapón de madera en un tubo falla por corte.
+     · el METAL aguanta parecido en los tres, y por eso sirve de refuerzo.
+     · el VIDRIO es frágil: compresión alta, tracción ridícula.
+
+   Los números están en la misma escala arbitraria, pero las PROPORCIONES
+   entre modos son las de los materiales de verdad — que es lo que decide
+   quién se rompe primero, y es lo único que aquí importa.
+
+   `elastico` es cuánto se deforma antes de romperse: la madera se dobla, el
+   vidrio no. Sirve para que un refuerzo reparta carga en vez de partirse. */
+const RESISTENCIA = {
+  /*                    compresión, tracción, corte, elástico */
+  concreto:  { compresion:30, traccion: 3, corte: 4, elastico:0.05 },
+  piedra:    { compresion:40, traccion: 4, corte: 5, elastico:0.03 },
+  obsidiana: { compresion:45, traccion: 3, corte: 4, elastico:0.02 },
+  vidrio:    { compresion:30, traccion: 3, corte: 3, elastico:0.02 },
+  madera:    { compresion:12, traccion: 9, corte: 2, elastico:0.55 },
+  metal:     { compresion:60, traccion:60, corte:40, elastico:0.35 },
+  cobre:     { compresion:45, traccion:45, corte:30, elastico:0.45 },
+  hielo:     { compresion: 5, traccion: 1, corte: 1, elastico:0.02 },
+  globo:     { compresion: 1, traccion: 6, corte: 1, elastico:0.90 },
+  aislante:  { compresion:10, traccion: 4, corte: 3, elastico:0.30 },
+  ceniza:    { compresion: 2, traccion: 0.4, corte:0.5, elastico:0.10 },
+};
+
+/* ── UN ICONO POR ELEMENTO ──────────────────────────────────────────────
+   Carlos: «ponles iconos más claros a cada cosa por favor, no se entiende
+   bien qué es cada cosa sólo por el nombre». Va por elemento donde importa y
+   por FAMILIA en los 118 —que ahí el símbolo químico ya dice más que
+   cualquier dibujito, y un emoji distinto para cada uno sería ruido—.
+   Es una tabla y no un `if`, por la misma razón que todo lo demás aquí:
+   para que crezca sin tocar el motor. */
+const ICONOS = {
+  diamante:'💎', vacio:'⌫', muro:'🧱', arena:'🏖', tierra:'🟫', piedra:'🪨', grava:'🪨', sal:'🧂',
+  salfun:'🌡', vidrio:'🪟', vidfun:'🫗', cemento:'🪣', concreto:'🧱',
+  agua:'💧', salada:'🌊', hielo:'🧊', nieve:'❄️', vapor:'♨️', hielose:'🌫', co2:'💨',
+  fuego:'🔥', humo:'💨', ceniza:'🌑', lava:'🌋', obsidiana:'⬛', termita:'✨',
+  aceite:'🛢', gasnat:'💨', polvora:'🧨', nitro:'💥', madera:'🪵', carbon:'⚫',
+  globo:'🎈', cuerda:'🪢', hidrogeno:'🎈', oxigeno:'🫧',
+  metal:'🔩', metfun:'🫗', cobre:'🟠', bateria:'🔋', lampara:'💡', aislante:'🚫',
+  mercurio:'🌡', iman:'🧲', electroiman:'🧲', ferroso:'🧲',
+  interruptor:'🎚', resistencia:'🌡', pulsador:'⏱', motor:'⚙️',
+  reloj:'⏳', valvula:'🚰', repetidor:'📶', observador:'👁', piston:'🔨', resorte:'🌀', pila:'🔋',
+  estRoja:'🎆', estVerde:'🎆', estAzul:'🎆', estOro:'🎆', mecha:'🧵', chispa:'✨',
+  gAND:'🔀', gOR:'🔀', gNOT:'🔁', diodo:'➡️', nand:'🔀', nor:'🔀', xor:'⊕', xnor:'⊜',
+  acido:'🧪', hidronio:'⚗️', uranio:'☢️', planta:'🌱', semilla:'🌰',
+};
+const ICONO_FAMILIA = {
+  '⚛ no metal':'🔬', '⚛ noble':'🎈', '⚛ alcalino':'⚡', '⚛ alcalinotérreo':'🧱',
+  '⚛ metaloide':'🔷', '⚛ halógeno':'🧪', '⚛ metal':'🔩', '⚛ transición':'⚙️',
+  '⚛ lantánido':'💠', '⚛ actínido':'☢️', '⚛ post-transición':'🔗',
+};
+
+/* ── LOS GASES DE LA TABLA, POR SU MASA MEDIDA ──────────────────────────
+   Los 118 traen `masa` en g/cm³ de verdad —el helio 0.00018, el nitrógeno
+   0.00125— y su `dens` de juego venía puesta a 1 para todos, o sea inservible
+   para flotar. El aire son 0.0012 g/cm³, así que la densidad de juego sale de
+   una división y no de una tabla escrita a mano: helio 0.15 veces el aire,
+   nitrógeno 1.04, oxígeno 1.19, radón 7.7. Es el mismo dato real que ya
+   estaba, usado para algo. */
+for(const id of Object.keys(TABLA)){
+  const e = TABLA[id];
+  if(e.estado === 'gas' && e.masa) e.dens = Math.round((e.masa / 0.0012) * 1.2 * 100) / 100;
+}
+
+for(const id of Object.keys(JUEGO)) if(ICONOS[id]) JUEGO[id].ico = ICONOS[id];
+/* Donde no hay dato medido, se deriva de la dureza — y se deriva con la forma
+   de un material frágil (mucha compresión, poca tracción), que es lo que son
+   casi todos los sólidos de este juego. Es una aproximación declarada, no un
+   número inventado con cara de medición. */
+for(const id of Object.keys(JUEGO)){
+  const e = JUEGO[id];
+  if(e.estado !== 'solido' || e.fijo) continue;
+  const r = RESISTENCIA[id];
+  if(r){ Object.assign(e, r); continue; }
+  const d = e.dureza != null ? e.dureza : 0.3;
+  e.compresion = 4 + d * 46;
+  e.traccion   = 0.6 + d * 6;
+  e.corte      = 0.8 + d * 7;
+  e.elastico   = 0.1;
+}
+for(const id of Object.keys(TABLA)) TABLA[id].ico = ICONO_FAMILIA[TABLA[id].grupo] || '⚛';
 
 /* Los de juego y los 118 en una sola tabla: el motor no distingue. */
 Object.assign(JUEGO, TABLA);
