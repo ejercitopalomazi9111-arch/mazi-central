@@ -272,6 +272,75 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
     await ctx.close();
   }
 }
+/* ── PASE DEL MANDO · que el buscador BUSQUE de verdad ──────────────────
+   Un buscador roto no se nota mirando: la barra se pinta igual, las chapas se
+   encienden igual, y la rejilla se queda con las 47.
+
+   Se miden DOS cosas distintas, y separarlas no es pedanteria: hoy fallaron
+   las dos por separado y cada una engañaba a la comprobacion de la otra.
+
+   · CAJA — cuantas tarjetas siguen ocupando sitio. Es lo que dice si el
+     filtro oculta de verdad. Contando la propiedad `hidden` esto daba verde
+     con el buscador roto: la logica marcaba las tarjetas como ocultas y
+     `.pieza{display:flex}` le ganaba a `[hidden]` de la hoja del navegador.
+   · VISTA — de esas, cuantas se VEN. Las tarjetas entran con un revelado que
+     arranca en `opacity:.001`; una pieza que nunca estuvo en pantalla subia
+     al primer sitio TRANSPARENTE, asi que el contador decia «2 de 47» con la
+     pantalla vacia. Para la caja esa tarjeta contaba como presente.
+
+   Y no se compara contra 47: en un telefono solo se revela lo que cabe en
+   pantalla, asi que lo que se exige es que TODA coincidencia se vea. */
+{
+  const ctx = await nav.newContext({ viewport: { width: 390, height: 844 } });
+  const pg = await ctx.newPage();
+  const fallos = [];
+  pg.on('pageerror', (e) => fallos.push('pageerror: ' + e.message));
+  await pg.goto(url, { waitUntil: 'load' });
+  await pg.waitForTimeout(1200);
+  await pg.evaluate(() => document.querySelector('#vitrina').scrollIntoView());
+  await pg.waitForTimeout(900);
+  const contar = () => pg.evaluate(() => {
+    const p = [...document.querySelectorAll('.rejilla .pieza')];
+    const caja = p.filter(n => n.getClientRects().length > 0);
+    return { caja: caja.length,
+             vista: caja.filter(n => +getComputedStyle(n).opacity > .5).length };
+  });
+  const hayMando = await pg.evaluate(() => !!document.getElementById('g-q'));
+  let todas = null, ken = null, nada = null, aviso = null, chapa = null;
+  if (hayMando) {
+    todas = await contar();
+    await pg.fill('#g-q', 'kenobi'); await pg.waitForTimeout(1200); ken = await contar();
+    await pg.fill('#g-q', 'qqqzzz'); await pg.waitForTimeout(800);  nada = await contar();
+    aviso = await pg.evaluate(() => !document.getElementById('g-vacio').hidden);
+    await pg.fill('#g-q', '');       await pg.waitForTimeout(800);
+    chapa = await pg.evaluate(async () => {
+      const c = [...document.querySelectorAll('.g-chapa')].find(x => x.dataset.serie);
+      if (!c) return null;
+      c.click();
+      await new Promise(r => setTimeout(r, 1200));
+      const p = [...document.querySelectorAll('.rejilla .pieza')];
+      const caja = p.filter(n => n.getClientRects().length > 0);
+      return { caja: caja.length,
+               vista: caja.filter(n => +getComputedStyle(n).opacity > .5).length };
+    });
+  }
+  const mal = fallos.length > 0 || !hayMando ||
+              !(todas && todas.caja > 10) ||                    // la rejilla esta
+              !(ken && ken.caja > 0 && ken.caja < todas.caja) || // busca y reduce
+              !(ken && ken.vista === ken.caja) ||                // y lo que queda SE VE
+              !(nada && nada.caja === 0) || !aviso ||            // sin resultados, aviso
+              !(chapa && chapa.caja > 0 && chapa.caja < todas.caja) ||
+              !(chapa && chapa.vista === chapa.caja);
+  if (mal) malo++;
+  const d = (o) => o ? o.caja + (o.vista === o.caja ? '' : '/vista ' + o.vista) : '—';
+  console.log(`390px mando           todas ${d(todas)}  «kenobi» ${d(ken)}  `
+    + `sin resultados ${nada && nada.caja === 0 ? 'sí' : 'NO'}  aviso ${aviso ? 'sí' : 'NO'}  `
+    + `chapa ${d(chapa)}  errores ${fallos.length}${mal ? '  ← MAL' : ''}`);
+  fallos.forEach(c => console.log('      ' + c));
+  await ctx.close();
+}
+
+
 /* ── PASE DE «REDUCIR MOVIMIENTO» ────────────────────────────────────────
    Esta era LA VENTANA CIEGA, y ya se cobro una pieza: un `if (quieto) return;`
    a mitad del guion apagaba todo lo que venia detras —incluida la ficha de

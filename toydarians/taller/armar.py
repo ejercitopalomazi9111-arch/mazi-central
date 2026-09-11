@@ -32,6 +32,13 @@ def esc(s):
     return (str(s).replace('&','&amp;').replace('<','&lt;')
                   .replace('>','&gt;').replace('"','&quot;'))
 
+def sin_tildes(s):
+    """Para buscar. «Peridea» y «peridea» tienen que encontrarse igual, y nadie
+    escribe los acentos en un buscador desde el telefono."""
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFD', s.lower())
+                   if unicodedata.category(c) != 'Mn')
+
 def num(vc):
     m = re.match(r'(\d+)([A-Z]?)', vc)
     return int(m.group(1))
@@ -274,6 +281,15 @@ CSS += r"""
   overflow:hidden;text-decoration:none;color:inherit;display:flex;
   flex-direction:column;transition:border-color .25s,transform .3s cubic-bezier(.2,.7,.3,1)}
 .pieza:hover{border-color:var(--amarillo);transform:translate3d(0,-4px,0)}
+/* ⚠ SIN ESTA LINEA EL BUSCADOR NO OCULTABA NADA. El atributo `hidden` vale
+   `display:none`, pero eso lo pone la HOJA DEL NAVEGADOR, y cualquier regla de
+   autor con la misma especificidad la gana: `.pieza{display:flex}` mandaba.
+   Resultado: el filtro decia «2 de 47», el contador era correcto, la logica
+   era correcta… y en la pantalla seguian las 47.
+   Lo peor no fue el fallo: fue que mi comprobacion contaba `!p.hidden` —la
+   PROPIEDAD— y daba verde. Otra vez medir en la capa equivocada. Ahora la
+   compuerta mide si la tarjeta SE PINTA. */
+.pieza[hidden]{display:none}
 /* ══════════════════ S · Sylcred ══════════════════
    ⚠ EN UN TELEFONO NO HAY `:hover`. Todo el trabajo de la ficha estaba en el
    unico estado que el visitante de Carlos —que mira desde el iPhone— nunca va
@@ -436,6 +452,102 @@ CSS += r"""
 /* y el velo negro de las fotos aqui taparia la trama: se aclara */
 .g-cat.sin-foto .velo{background:linear-gradient(180deg,rgba(8,8,10,0) 0%,
   rgba(8,8,10,.35) 55%,rgba(8,8,10,.86) 100%)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   G · EL MANDO DE LA VITRINA · buscador, filtros y orden
+   ──────────────────────────────────────────────────────────────────────────
+   Con 47 piezas —y 321 en la tienda— una rejilla sin buscador obliga a bajar
+   con el dedo hasta encontrar. Esto es lo que convierte el escaparate en algo
+   que se usa.
+
+   Sin JavaScript el mando NO EXISTE: `display:none` fuera de
+   `@media (scripting: enabled)`. Un buscador que no busca miente sobre lo que
+   la pagina puede hacer, y sin JS las 47 piezas ya se ven todas — que es
+   exactamente el resultado de no filtrar nada.
+   ══════════════════════════════════════════════════════════════════════════ */
+.g-mando,.g-vacio{display:none}
+@media (scripting: enabled){
+  .g-mando{display:grid;gap:12px;margin:0 0 clamp(20px,2.6vw,30px)}
+  .g-vacio{display:none}
+  .g-vacio:not([hidden]){display:block}
+}
+.g-linea{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.g-busca{position:relative;display:flex;align-items:center;flex:1 1 260px;
+  background:var(--panel);border:1px solid var(--linea)}
+.g-busca:focus-within{border-color:var(--amarillo)}
+.g-lupa{display:grid;place-items:center;width:42px;flex:0 0 auto;
+  font:400 19px/1 var(--texto);color:var(--amarillo);cursor:text}
+/* ⚠ 16 px NO ES UN CAPRICHO: por debajo de 16, iOS hace zoom al enfocar el
+   campo y la pagina se queda torcida. Es el mismo motivo por el que todos los
+   campos del sitio miden 16. */
+.g-busca input{flex:1 1 auto;min-width:0;background:transparent;border:0;
+  color:var(--hueso);font:400 16px/1 var(--texto);padding:13px 6px 13px 0}
+.g-busca input::placeholder{color:var(--gris-tenue)}
+.g-busca input:focus{outline:none}
+.g-busca input::-webkit-search-cancel-button{display:none}
+.g-borra{flex:0 0 auto;width:40px;align-self:stretch;background:transparent;
+  border:0;border-left:1px solid var(--linea);color:var(--gris);cursor:pointer;
+  font:400 14px/1 var(--texto)}
+.g-borra:hover{color:var(--amarillo)}
+.g-ordena{display:flex;align-items:center;gap:9px;background:var(--panel);
+  border:1px solid var(--linea);padding:0 12px 0 13px;flex:0 1 auto}
+.g-ordena label{font:700 9.5px/1 var(--dato);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gris-tenue);white-space:nowrap}
+.g-ordena select{background:transparent;border:0;color:var(--hueso);cursor:pointer;
+  font:400 13px/1 var(--dato);padding:13px 0;max-width:100%}
+.g-ordena select:focus{outline:none}
+.g-ordena select option{background:var(--panel2);color:var(--hueso)}
+
+.g-chapas{display:flex;gap:7px;flex-wrap:wrap}
+/* En telefono las nueve chapas ocupaban CUATRO renglones y empujaban la
+   primera pieza fuera de la pantalla: el buscador se comia lo que sirve para
+   buscar. En una fila que se desliza caben igual y cuestan un renglon.
+   `scroll-snap` para que no queden a medias, y `-webkit-overflow-scrolling`
+   no hace falta: es el comportamiento por defecto desde hace anios. */
+@media (max-width:640px){
+  .g-chapas{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;
+    padding-bottom:3px;margin-inline:calc(var(--aire) * -1);
+    padding-inline:var(--aire)}
+  .g-chapa{flex:0 0 auto;scroll-snap-align:start}
+}
+.g-chapa{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  background:var(--panel);border:1px solid var(--linea);color:var(--gris);
+  padding:8px 11px;font:700 10px/1 var(--dato);letter-spacing:.13em;
+  text-transform:uppercase;
+  transition:border-color .2s,color .2s,transform .22s cubic-bezier(.2,.9,.28,1)}
+.g-chapa:hover{border-color:var(--amarillo);transform:translate3d(0,-2px,0)}
+.g-chapa i{font-style:normal;font-size:9px;letter-spacing:.06em;
+  color:var(--gris-tenue)}
+/* la chapa activa: fondo amarillo y tinta negra, que es el par de la casa */
+.g-chapa.viva{background:var(--amarillo);border-color:var(--amarillo);color:#0A0A0B}
+.g-chapa.viva i{color:#0A0A0B;opacity:.62}
+.g-cuantas{margin:0;font:700 10px/1 var(--dato);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--gris-tenue)}
+.g-cuantas b{color:var(--amarillo);font-weight:700}
+.g-vacio{margin:0;padding:26px 0 8px;color:var(--gris);
+  font:400 15px/1.5 var(--texto)}
+.g-vacio button{background:transparent;border:0;padding:0;cursor:pointer;
+  color:var(--amarillo);font:inherit;text-decoration:underline;
+  text-underline-offset:3px}
+
+/* Al filtrar, lo que queda entra escalonado. Solo `transform`: la tarjeta no
+   baja de opacidad en ningun momento, asi que su texto siempre cumple
+   contraste — la misma regla de siempre, aplicada al caso nuevo. */
+@media (scripting: enabled){
+  .rejilla.recolocando .pieza:not([hidden]){animation:g-recoloca .34s both
+    cubic-bezier(.2,.9,.28,1);animation-delay:calc(var(--d,0) * 16ms)}
+}
+@keyframes g-recoloca{from{transform:translate3d(0,10px,0) scale(.985)}
+  to{transform:none}}
+/* ⚠ Y EL RESULTADO TIENE QUE APARECER YA. Las tarjetas se encienden con la
+   transicion de opacidad del revelado —con su retardo escalonado—, asi que al
+   buscar «kenobi» pasaba mas de medio segundo con la pantalla en blanco antes
+   de que se vieran las dos. Medio segundo mirando la nada, despues de teclear,
+   se lee como «no encontro».
+   Quien busca ya pidio ver eso: la transicion se apaga durante ese cuadro y el
+   movimiento lo pone `g-recoloca`, que es de transform y entra al instante.
+   La clase se quita al cuadro siguiente para no tocar nada mas. */
+.rejilla.g-ya .pieza{transition:none}
 
 /* ══════════════════════════════════════════════════════════════════════════
    G · EL EXPEDIENTE · la ficha de cada pieza
@@ -1061,6 +1173,14 @@ def g_rejilla():
         slug = 'vc' + ''.join(c for c in pz['vc'] if c.isalnum())
         t.append(
             f'<button class="pieza" data-vc="{esc(pz["vc"])}" type="button" '
+            # Lo que el buscador necesita va EN la tarjeta y no en un objeto
+            # aparte: asi el filtro es leer un atributo, no cruzar dos
+            # estructuras que pueden desincronizarse. `data-b` ya viene
+            # normalizado —sin acentos y en minusculas— desde aqui, que es
+            # donde se sabe, en vez de normalizar 47 veces en el navegador.
+            f'data-b="{esc(sin_tildes(pz["nombre"] + " " + pz["vc"] + " " + (pz["serie"] or "")))}" '
+            f'data-serie="{esc(pz["serie"] or "")}" '
+            f'data-n="{num(pz["vc"])}" data-precio="{int((pr or {}).get("precio") or 0)}" '
             f'aria-haspopup="dialog">'
             f'<span class="foto"><span class="pildora">VC {esc(pz["vc"])}</span>'
             f'<img src="fotos/{fotos[0]}" alt="{esc(pz["nombre"])}" loading="lazy" '
@@ -1072,6 +1192,56 @@ def g_rejilla():
                f'<i>{MONEDA}</i></span>' if pr else '')
             + f'<span class="ir">Ver a detalle</span></span></button>')
     return '<div class="rejilla" id="g-rejilla">' + '\n'.join(t) + '</div>'
+
+def g_controles():
+    """El buscador, los filtros y el orden.
+
+    Lo que NO lleva, y es una decision, no un olvido: un filtro de existencias.
+    Las 47 piezas estan disponibles, asi que ese control tendria un solo valor
+    y no filtraria nada — un control que no cambia lo que se ve es peor que no
+    tenerlo: promete algo que no cumple. Vuelve el dia que haya agotadas.
+
+    Los filtros de serie salen del catalogo REAL, con su cuenta real. 31 de las
+    47 piezas no traen serie en la tienda, asi que no se les inventa una: no
+    aparecen bajo ninguna chapa y solo estan en «Todas». Es la misma regla de
+    siempre — lo que el cliente no ha confirmado no se rellena.
+
+    Va oculto sin JavaScript, a proposito: un buscador que no busca es peor que
+    ninguno, y sin JS las 47 piezas ya se ven todas.
+    """
+    import collections
+    cuenta = collections.Counter(pz['serie'] for pz in cat
+                                 if pz.get('serie') and (FOTOS.get(pz['vc']) or {}).get('fotos'))
+    total = sum(1 for pz in cat if (FOTOS.get(pz['vc']) or {}).get('fotos'))
+    chapas = [f'<button class="g-chapa viva" type="button" data-serie="" '
+              f'aria-pressed="true">Todas<i>{total}</i></button>']
+    for serie, n in sorted(cuenta.items(), key=lambda x: (-x[1], x[0])):
+        chapas.append(f'<button class="g-chapa" type="button" data-serie="{esc(serie)}" '
+                      f'aria-pressed="false">{esc(serie)}<i>{n}</i></button>')
+    ordenes = [('n-asc', 'Nº VC ascendente'), ('n-desc', 'Nº VC descendente'),
+               ('p-asc', 'Precio de menor a mayor'), ('p-desc', 'Precio de mayor a menor'),
+               ('a-z', 'Nombre A → Z')]
+    opc = ''.join(f'<option value="{v}">{esc(txt)}</option>' for v, txt in ordenes)
+    return (
+      '<div class="g-mando" id="g-mando">'
+        '<div class="g-linea">'
+          '<div class="g-busca">'
+            '<label class="g-lupa" for="g-q" aria-label="Buscar">⌕</label>'
+            '<input id="g-q" type="search" autocomplete="off" '
+              'placeholder="Buscar por nombre o número VC…" '
+              'aria-describedby="g-cuantas">'
+            '<button class="g-borra" id="g-borra" type="button" aria-label="Borrar la búsqueda" hidden>✕</button>'
+          '</div>'
+          '<div class="g-ordena">'
+            '<label for="g-orden">Orden</label>'
+            f'<select id="g-orden">{opc}</select>'
+          '</div>'
+        '</div>'
+        f'<div class="g-chapas" role="group" aria-label="Filtrar por serie">{"".join(chapas)}</div>'
+        f'<p class="g-cuantas" id="g-cuantas" aria-live="polite">{total} piezas</p>'
+      '</div>'
+      '<p class="g-vacio" id="g-vacio" hidden>Ninguna pieza coincide. '
+      '<button type="button" id="g-reiniciar">Ver las ' + str(total) + ' piezas</button></p>')
 
 def g_precio(vc):
     d = PRECIOS.get(vc)
@@ -1274,6 +1444,7 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
   <h2 class="revelar" style="max-width:18ch">{len(cat)} piezas,<br>una por una</h2>
   <p style="margin:18px 0 clamp(24px,3vw,36px)">Cada una con sus fotos de la tienda.
     Toca cualquiera para <strong>verla a detalle</strong>.</p>
+  {g_controles()}
   {g_rejilla()}
 </div></section>
 
@@ -2211,6 +2382,140 @@ JS += r"""
       if (b) abrir(b.dataset.vc, b);
     });
     TOY.g.abrir = abrir;
+
+    // ══════════════════════════════════════════════════════════════════════
+    // EL MANDO DE LA VITRINA · buscar, filtrar y ordenar
+    // ══════════════════════════════════════════════════════════════════════
+    // Todo lo que hace falta viaja en atributos de la propia tarjeta
+    // —`data-b` ya normalizado sin acentos, `data-serie`, `data-n`,
+    // `data-precio`—, asi que filtrar es leer atributos y no cruzar la rejilla
+    // con un objeto aparte que se puede desincronizar.
+    //
+    // Para ORDENAR no se mueven nodos: se les pone `order`. Mover 47 botones
+    // del DOM en cada cambio de orden desconectaria los observadores de
+    // revelado y perderia el foco de quien estuviera con el teclado. `order`
+    // es propiedad de la rejilla y no toca el arbol.
+    var mando = document.getElementById('g-mando');
+    if (mando && rej) {
+      var campoQ  = document.getElementById('g-q'),
+          btnBorra= document.getElementById('g-borra'),
+          selOrden= document.getElementById('g-orden'),
+          chapas  = [].slice.call(mando.querySelectorAll('.g-chapa')),
+          cuantas = document.getElementById('g-cuantas'),
+          vacio   = document.getElementById('g-vacio'),
+          piezas  = [].slice.call(rej.querySelectorAll('.pieza')),
+          serieAct= '', plazo = null;
+
+      // se quitan los acentos igual que se los quito el generador: «peridea»
+      // tiene que encontrar «Peridea», y nadie los escribe en el telefono
+      function pelar(s){
+        return (s || '').toLowerCase().normalize
+          ? s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          : (s || '').toLowerCase();
+      }
+
+      function comparar(modo){
+        return function(a, b){
+          var na = +a.dataset.n || 0, nb = +b.dataset.n || 0;
+          var pa = +a.dataset.precio || 0, pb = +b.dataset.precio || 0;
+          if (modo === 'n-desc') return nb - na;
+          if (modo === 'p-asc')  return (pa || 1e9) - (pb || 1e9) || na - nb;
+          if (modo === 'p-desc') return pb - pa || na - nb;
+          if (modo === 'a-z') {
+            var sa = pelar(a.querySelector('.nom').textContent),
+                sb = pelar(b.querySelector('.nom').textContent);
+            return sa < sb ? -1 : sa > sb ? 1 : 0;
+          }
+          return na - nb;                                  // n-asc, el de casa
+        };
+      }
+
+      /* `forzar` distingue dos cosas que parecen una: la llamada de arranque,
+         que solo coloca el orden inicial, y las que vienen de una persona
+         filtrando. Solo en las segundas se enseña de una — si se forzara
+         siempre, las 47 tarjetas apareceran reveladas al cargar y se cargaria
+         el revelado al scrollear de Sylcred, que no es mio. */
+      function aplicar(forzar){
+        var q = pelar(campoQ.value.trim());
+        var vistas = [];
+        for (var i = 0; i < piezas.length; i++) {
+          var pz = piezas[i];
+          var okQ = !q || (pz.dataset.b || '').indexOf(q) >= 0;
+          var okS = !serieAct || pz.dataset.serie === serieAct;
+          var ok = okQ && okS;
+          pz.hidden = !ok;
+          if (ok) vistas.push(pz);
+        }
+        vistas.sort(comparar(selOrden.value));
+        for (var k = 0; k < vistas.length; k++) {
+          vistas[k].style.order = k;
+          vistas[k].style.setProperty('--d', Math.min(k, 14));
+          /* ⚠ SIN ESTO EL BUSCADOR PARECIA NO ENCONTRAR NADA. Las tarjetas
+             entran con el revelado de Sylcred: `.s-rev.s-caja` arranca en
+             `opacity:.001` y solo se enciende cuando el observador las ve
+             entrar. Una pieza que estaba a 20 pantallas de distancia nunca
+             fue vista, asi que al filtrarla quedaba ARRIBA DEL TODO Y
+             TRANSPARENTE: el contador decia «2 de 47» y la pantalla estaba
+             vacia. Buscaste algo y te enseño la nada.
+             Quien filtra ya pidio ver eso: no hay que hacerle esperar a un
+             observador. Se marca con la clase de revelado de Sylcred, que es
+             justamente el contrato que expone su bloque. */
+          if (forzar) vistas[k].classList.add('s-dentro');
+        }
+        cuantas.innerHTML = vistas.length === piezas.length
+          ? piezas.length + ' piezas'
+          : '<b>' + vistas.length + '</b> de ' + piezas.length + ' piezas';
+        vacio.hidden = vistas.length > 0;
+        btnBorra.hidden = !campoQ.value;
+        if (forzar) {
+          // sin transicion durante este cuadro: que el resultado este YA
+          rej.classList.add('g-ya');
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ rej.classList.remove('g-ya'); });
+          });
+        }
+        if (forzar && !quieto && vistas.length) {
+          rej.classList.remove('recolocando');
+          void rej.offsetWidth;                            // reinicia el escalonado
+          rej.classList.add('recolocando');
+        }
+      }
+
+      // se espera a que deje de teclear: filtrar en cada pulsacion con 47
+      // tarjetas se nota en un telefono
+      campoQ.addEventListener('input', function(){
+        btnBorra.hidden = !campoQ.value;
+        clearTimeout(plazo); plazo = setTimeout(function(){ aplicar(true); }, 110);
+      });
+      campoQ.addEventListener('keydown', function(e){
+        if (e.key === 'Escape') { campoQ.value = ''; aplicar(true); }
+      });
+      btnBorra.addEventListener('click', function(){
+        campoQ.value = ''; aplicar(true); campoQ.focus();
+      });
+      selOrden.addEventListener('change', function(){ aplicar(true); });
+      chapas.forEach(function(ch){
+        ch.addEventListener('click', function(){
+          serieAct = ch.dataset.serie || '';
+          chapas.forEach(function(o){
+            var viva = o === ch;
+            o.classList.toggle('viva', viva);
+            o.setAttribute('aria-pressed', String(viva));
+          });
+          aplicar(true);
+        });
+      });
+      document.getElementById('g-reiniciar').addEventListener('click', function(){
+        campoQ.value = ''; serieAct = '';
+        chapas.forEach(function(o, i){
+          o.classList.toggle('viva', i === 0);
+          o.setAttribute('aria-pressed', String(i === 0));
+        });
+        aplicar(true); campoQ.focus();
+      });
+      aplicar();
+      TOY.g.filtrar = aplicar;
+    }
   }
 """
 
