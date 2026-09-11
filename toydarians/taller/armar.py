@@ -1007,6 +1007,20 @@ footer{background:transparent;border-top:1px solid var(--linea);
   font:400 12.5px/1.6 var(--texto);color:var(--gris-tenue)}
 .nota p{margin:0;max-width:none;color:inherit}
 .nota strong{color:var(--gris);font-weight:500}
+/* ⚠ AQUI SE LE ENSEÑABA AL CLIENTE «Fluidez: 60 fps · mínimo 43». Eso es un
+   instrumento nuestro, no informacion para quien compra figuras: en una
+   propuesta, un numero de depuracion a la vista dice que el sitio esta a medio
+   hacer. La medicion se queda —el guion le sigue escribiendo— pero no se ve.
+
+   ⚠ Y LA NOTA DE ABAJO DECIA «No se publican precios porque cambian: viven en
+   la tienda», con el sitio publicandolos dos dedos mas arriba. Un pie que
+   niega lo que la pagina ensena no es un descuido de redaccion: es el sitio
+   afirmando algo falso sobre si mismo, justo donde se promete precision.
+
+   Los dos porques viven aqui y NO en un comentario del HTML: un comentario en
+   el documento viaja al navegador del cliente. Se publicaban 792 caracteres de
+   notas internas contando que el sitio habia ensenado un numero de depuracion
+   y habia dicho algo falso. El porque es para quien toca el codigo. */
 .medidor{display:none}
 #medida{color:var(--amarillo);font-variant-numeric:tabular-nums}
 
@@ -1721,20 +1735,9 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
   <div>
     <img src="{LOGO['ruta']}" width="{LOGO['w']}" height="{LOGO['h']}" alt="Toydarians">
     <div><a href="{TIENDA}" target="_blank" rel="noopener">toydarians.com ↗</a></div>
-    <!-- ⚠ AQUI SE LE ENSEÑABA AL CLIENTE «Fluidez: 60 fps · mínimo 43».
-         Eso es un instrumento nuestro, no información para quien compra
-         figuras: en una propuesta para un cliente, un número de depuración a
-         la vista dice que el sitio está a medio hacer. La medición se queda
-         —es útil y la lee la compuerta—, pero vive fuera de la vista. -->
     <div class="medidor" aria-hidden="true">Fluidez: <span id="medida">midiendo…</span></div>
   </div>
   <div class="nota">
-    <!-- ⚠ ESTA NOTA DECIA «No se publican precios porque cambian: viven en la
-         tienda», Y EL SITIO SI LOS PUBLICA desde que se cablearon los precios
-         reales. Un pie que contradice lo que la pagina enseña dos dedos mas
-         arriba no es un detalle de redaccion: es el sitio afirmando algo
-         falso sobre si mismo, en la parte donde precisamente se promete
-         precision. Ahora dice lo que de verdad pasa. -->
     <p>Propuesta de escaparate. El logotipo, las fotos, las categorías, los precios
       y las existencias salen de <strong>toydarians.com</strong>; pueden cambiar, y
       la tienda manda siempre.</p>
