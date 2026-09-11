@@ -84,10 +84,27 @@ export const MOLES_MAX = 40;
 /* Presión de detonación: lo más fuerte que puede ser el frente de UNA
    explosión, por mucho explosivo que juntes. */
 export const TOPE_DETON = 900;
+/* Cuánta energía trae UNA unidad de `explota`, en la moneda de `costeRomper`.
+   Es el número que convierte «cuánto explosivo pusiste» en «cuántas celdas se
+   lleva», y es el único que hay que mover si los cráteres saben a poco. */
+export const JULIOS = 150;
 /* Cuánta presión del campo `pres` vale UNA atmósfera por encima del ambiente.
    Con 300, una cámara al triple de su gas revienta la piedra (aguanta ~960) y
    el muro no, que es lo que se quiere. */
 export const ATM = 300;
+/* la fuerza que hace UNA celda de mano. Se suma por cada celda que el puño
+   toca y se divide entre la masa de la pieza entera, así que agarrar un
+   objeto que cabe en la mano se siente exactamente igual que antes y agarrar
+   la esquina de un peñasco, no. */
+export const PUÑO = 2.2;
+/* cuánto FRENA el brazo por cuadro lo que ya va moviéndose */
+export const FRENO_MANO = 0.6;
+/* cuánto de la energía sobrante de un rayo de explosión se vuelve velocidad */
+export const EMPUJE_BLAST = 0.55;
+/* qué parte de la energía de una explosión se gasta ROMPIENDO; el resto empuja */
+export const CAVA = 0.5;
+/* a partir de cuántas celdas una pieza es «el suelo» y ya no se lanza */
+export const TOPE_LANZA = 600;
 /* ── EL HUECO ES AIRE, NO VACÍO ─────────────────────────────────────────
    Carlos lo pidió por su nombre: «no tienen peso, resistencia del aire,
    gravedad etc, deberías sumar todo eso». Nada de eso se puede calcular sin
@@ -459,6 +476,48 @@ export class Mundo {
         }
       }
     }
+    /* ── EL CRÁTER SALE DE LA ENERGÍA, NO DE UN RADIO ─────────────────
+       Carlos: «el cráter, en lugar de hacerlo fijo, haz que se calcule según
+       los NEWTONS de la explosión». Tiene razón y lo mío era un parche: yo
+       había puesto un tope a la presión de detonación para matar el
+       desbocamiento, y de rebote el cráter dejaba de crecer pasadas unas 64
+       celdas. O sea que arreglé el síntoma tapando también el efecto bueno.
+
+       Lo correcto es un PRESUPUESTO. Una explosión trae una energía —la de su
+       explosivo, por cuánto pusiste— y romper una celda CUESTA: cuesta según
+       lo duro y lo pesado que sea ese material. Se excava desde el centro
+       hacia afuera y se para cuando el presupuesto se acaba.
+
+       De ahí sale solo todo lo que uno esperaría, sin una tabla que lo diga:
+       · el doble de explosivo hace el doble de cráter, y sin techo
+       · el mismo cargo abre un hoyo grande en madera y uno chico en metal
+       · y NO se puede desbocar, porque la energía es finita: lo que se gasta
+         rompiendo ya no está para romper lo siguiente. Eso es lo que el tope
+         hacía a la fuerza y aquí sale de la contabilidad. */
+    this.excava(x, y, fuerza);
+
+    /* ⚠ HALLAZGO SIN ARREGLAR, Y VA ESCRITO AQUÍ PORQUE ES DONDE SE VE.
+       CONTADO con el motor en la mano, en el bote de Carlos con TREINTA celdas
+       de nitroglicerina dentro: `revienta` se llama SEIS veces. Las otras
+       veinticuatro no detonan — se las come el fuego que deja la primera, que
+       es deflagración y no detonación. O sea que un cargo entrega un QUINTO de
+       la energía que uno puso, y de ahí viene buena parte de lo que Carlos
+       reportó: no es sólo que el empuje fuera flojo, es que había cinco veces
+       menos explosivo del que él creía haber puesto.
+
+       Lo probé: meter un frente de detonación que se lleve la masa entera
+       —encolando los vecinos con `explota` en `_detona`— sube las detonaciones
+       de 6 a 37 y multiplica por cinco el impulso. Y descalibra el motor: se
+       ponen en rojo la pared de metal (deja pasar 42% en vez de poco), las
+       paredes que deben aguantar, y la curva de daño se vuelve no monótona
+       (16→89, 64→59). Bajar JULIOS a 60 o a 40 no lo arregla: cambia de sitio.
+
+       Así que NO se sube a medias. Es un cambio de física que necesita su
+       propia pasada de calibración, no un parche de paso. Lo que sí está
+       arreglado y medido es lo otro: la energía se parte entre romper y
+       empujar, y el impulso se le da a la pieza entera. */
+
+
     /* el corazón sí se convierte en fuego: es la deflagración */
     const rc = Math.max(0, Math.round(Math.sqrt(fuerza) * .35));
     for(let dy = -rc; dy <= rc; dy++) for(let dx = -rc; dx <= rc; dx++){
@@ -591,6 +650,189 @@ export class Mundo {
       if(abierto[k - 1] || abierto[k + 1] || abierto[k - an] || abierto[k + an]) continue;
       const id = this.camara[k - 1] || this.camara[k + 1] || this.camara[k - an] || this.camara[k + an];
       if(id) this.camara[k] = id;
+    }
+  }
+
+  /* Lo que cuesta arrancar UNA celda de su sitio, en la misma moneda que el
+     presupuesto de la explosión. Sale de lo duro que es y de lo que pesa —un
+     material duro y denso cuesta más que uno blando y ligero—, que es la
+     misma tenacidad que ya usa la fractura por impacto. */
+  costeRomper(k){
+    const e = EL[this.t[k]];
+    return 40 + (e.dureza || 0) * 900 + (e.dens || 1) * 6;
+  }
+
+  /* Excava el cráter gastando el presupuesto de la explosión, de dentro hacia
+     afuera. Anillo por anillo: lo que está pegado al centro se lleva la
+     energía primero, que es lo que hace que un cráter sea un cráter y no un
+     colador. */
+  excava(x, y, fuerza){
+    const total = fuerza * JULIOS;
+    if(total <= 0) return;
+    /* ── LA ENERGÍA SE PARTE EN DOS: LA QUE ROMPE Y LA QUE EMPUJA ──────────
+       Carlos, después de probarlo: «puse un muro con glicerina adentro, dejé
+       abierta la parte de arriba y arriba coloqué piedra, madera y concreto en
+       tres pruebas distintas; accioné la explosión y no salió volando ninguna
+       de las anteriores». Medido antes de tocar nada: la tapa de piedra salía
+       de y=46 y acababa en y=67 — o sea que se DESHACÍA y caía, en vez de
+       salir disparada. Un bote con la boca tapada es un cañón, y el mío era
+       una trituradora.
+
+       La causa: TODA la energía se gastaba rompiendo. El presupuesto se
+       compraba la tapa celda por celda hasta que no quedaba tapa, y nunca
+       quedaba nada para lanzarla. Y en un explosivo de verdad la fragmentación
+       es sólo una parte: el resto es gas expandiéndose, que es justo lo que
+       lanza las cosas. Así que el presupuesto se parte, y las dos mitades
+       hacen cosas distintas:
+
+         · CAVA abre el cráter, igual que antes — sigue saliendo de la energía
+           y sigue creciendo con la carga, sin techo
+         · lo demás sale en RAYOS y empuja lo primero que cada rayo no puede
+           romper, con E = ½mv². Eso es lo que lanza la tapa. */
+    const cava = total * CAVA;
+    this.cavaCrater(x, y, cava);
+    this.empujaBlast(x, y, total - cava);
+  }
+
+  /* la mitad que abre el hoyo */
+  cavaCrater(x, y, julios){
+    /* ⚠ SE SIGUE BUSCANDO MIENTRAS QUEDE PRESUPUESTO, y las dos versiones
+       anteriores lo tiraban por la ventana. La primera paraba el cráter entero
+       al toparse con UNA celda que no podía pagar —una veta de metal en medio
+       de la tierra y ahí se acababa la explosión—, y además calculaba de
+       antemano hasta dónde llegar suponiendo que todo era blando, así que en
+       cuanto el centro ya estaba hueco el recorrido se quedaba corto sin haber
+       gastado nada. Ahora lo que no se puede pagar se SALTA, no se abandona. */
+    /* ⚠ EL RADIO MÁXIMO SE DEMUESTRA, NO SE ADIVINA, Y ACOTA EL GROSOR DE LO
+       EXCAVADO — NO LA DISTANCIA AL BLANCO. Romper la celda más barata que
+       existe cuesta 40 julios —es la constante de `costeRomper`—, así que un
+       presupuesto de J no puede romper más de J/40 celdas, y ésas no caben en
+       un disco de radio menor que √(J/40π). Se toma √(J/40), que es ese radio
+       con holgura de sobra, más tres celdas de cortesía.
+
+       Pero el contador NO empieza en el centro: empieza donde empieza el
+       gasto. Puesto a secas rompía la curva de daño, porque una pila de 256
+       celdas mide 16 de alto y las de arriba detonan a 16 celdas de la piedra:
+       se les acababa el radio cruzando aire. El presupuesto limita cuántas
+       celdas se pueden romper, no cuánto hay que viajar para llegar a ellas.
+
+       ⚠⚠ Y AQUÍ DEJO ESCRITO EL ERROR MÁS CARO DE ESTA TANDA, que fue MÍO y
+       no del motor. Lancé un barrido de constantes en segundo plano —un `for`
+       que reescribía `JULIOS` con `sed`— y en paralelo, en primer plano,
+       restauré el valor bueno. El barrido siguió escribiendo DESPUÉS, y el
+       archivo se quedó en `JULIOS = 30` en vez de 150. Con eso medí durante
+       una hora: «cavaCrater rompe CERO celdas», «la curva de daño es no
+       monótona», «revienta cuesta 0.1 ms». Las tres eran falsas y me llevaron
+       a tres arreglos que no hacían falta. Con el valor de verdad: la curva es
+       1→0 4→4 16→34 64→56 144→130 256→182, monótona, y `revienta` cuesta 2.1
+       ms de 57.4. **Dos procesos escribiendo el mismo archivo es una medición
+       inventada, y no avisa: sale un número creíble.** */
+    /* ⚠ Y EL RADIO ACOTA EL GROSOR DE LO EXCAVADO, NO LA DISTANCIA AL BLANCO.
+       Puesto a secas, el tope rompió la curva de daño: 64 celdas de nitro
+       hacían 51 y 256 hacían 48 — MENOS con cuatro veces más explosivo. La
+       razón es que una pila de 256 mide 16 celdas de alto, así que las de
+       arriba detonan a 16 celdas de la piedra y el tope se les acababa
+       cruzando aire. El presupuesto limita cuántas celdas se pueden romper,
+       no cuánto hay que viajar para llegar a ellas. Así que el contador
+       empieza donde empieza el gasto. */
+    const grosor = 3 + Math.ceil(Math.sqrt(julios / 40));
+    let rMax = 60, gasto = false;
+    const BARATO = 46;
+    for(let d = 0; d <= rMax && julios >= BARATO; d++){
+      const antes = julios;
+      for(let dy = -d; dy <= d; dy++){
+        for(let dx = -d; dx <= d; dx++){
+          /* sólo el borde del anillo: lo de dentro ya se visitó */
+          if(Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+          if(dx * dx + dy * dy > d * d + d) continue;
+          if(!this.dentro(x + dx, y + dy)) continue;
+          const k = this.i(x + dx, y + dy);
+          const e = EL[this.t[k]];
+          if(this.t[k] === VACIO || e.fijo) continue;
+          const est = this.estadoDe(k);
+          if(est !== 'solido' && est !== 'polvo') continue;
+          const coste = this.costeRomper(k);
+          if(coste > julios) continue;       /* esta no la puedo pagar: sigo */
+          julios -= coste;
+          /* no se borra sin más: sale despedida, que es la metralla */
+          const dd = Math.hypot(dx, dy) || 1;
+          this.vx[k] += (dx / dd) * 2.2;
+          this.vy[k] += (dy / dd) * 2.2;
+          this.suelto[k] = 1; this.sop[k] = 0;
+          if(this.rnd() < .55){ this.cambia(k, VACIO); this.pres[k] = 0; this.pv[k] = 0; }
+        }
+      }
+      if(!gasto && julios !== antes){ gasto = true; rMax = Math.min(60, d + grosor); }
+    }
+  }
+
+  /* y la mitad que lanza: rayos que empujan lo primero que no pueden romper */
+  empujaBlast(x, y, julios){
+    if(julios <= 0) return;
+    const { t } = this;
+    const RAYOS = 48;
+    const porRayo = julios / RAYOS;
+    const AIRE = 3;                    /* lo que le cuesta al frente cruzar vacío */
+    /* la misma losa la van a golpear muchos rayos: se busca una vez */
+    const cache = new Map();
+    for(let a = 0; a < RAYOS; a++){
+      const ang = (a / RAYOS) * Math.PI * 2;
+      const ux = Math.cos(ang), uy = Math.sin(ang);
+      let e = porRayo, px = -1, py = -1;
+      for(let d = 1; d <= 60 && e > 0; d++){
+        const nx = Math.round(x + ux * d), ny = Math.round(y + uy * d);
+        if(nx === px && ny === py) continue;      /* el redondeo repite celda */
+        px = nx; py = ny;
+        if(!this.dentro(nx, ny)) break;
+        const k = this.i(nx, ny);
+        const el = EL[this.t[k]];
+        if(el.fijo) break;                        /* el muro para el frente */
+        if(this.t[k] === VACIO){ e -= AIRE; continue; }
+        const est = this.estadoDe(k);
+        if(est !== 'solido' && est !== 'polvo'){ e -= AIRE; continue; }
+        /* lo primero sólido que encuentra se lleva TODO lo que le queda al
+           rayo: es la cara que recibe el gas, y detrás de ella hay sombra */
+        /* ⚠ EL IMPULSO SE LE DA A LA LOSA, NO A LA CELDA QUE RECIBIÓ EL GOLPE,
+           y ésta es la MISMA lección que la mano de Carlos con otra cara. Dar
+           la velocidad sólo a la celda golpeada no lanza nada por dos razones
+           que se suman: esa celda es justo la que el cráter se está comiendo,
+           así que el impulso se va con ella; y aunque sobreviva, las otras
+           cincuenta y nueve de la losa siguen ancladas y no la dejan moverse.
+           Medido: la tapa de concreto se quedaba clavada en y=55 con treinta
+           celdas de nitroglicerina debajo, con una velocidad media de −0.196,
+           que no llega ni al mínimo para moverse una celda.
+           Un impulso sobre un cuerpo rígido se reparte entre TODA su masa:
+           Δv = m·v / M. Eso es lo que lanza la losa entera en vez de
+           desconchar la cara de abajo. */
+        const m = el.dens || 1;
+        let v = Math.sqrt(2 * e / m) * EMPUJE_BLAST;
+        if(v > 2.5) v = 2.5;
+        let reg = cache.get(k);
+        if(!reg){
+          const pieza = this.piezaDe([k], TOPE_LANZA);
+          /* si llegó al tope, la pieza es el suelo o un edificio: no se lanza */
+          if(pieza.length >= TOPE_LANZA) reg = { pieza:null };
+          else {
+            let masa = 0;
+            for(const k2 of pieza) masa += EL[t[k2]].dens || 1;
+            reg = { pieza, masa: masa || 1 };
+          }
+          cache.set(k, reg);
+          if(reg.pieza) for(const k2 of reg.pieza) cache.set(k2, reg);
+        }
+        if(!reg.pieza){                       /* anclada: sólo se le pica */
+          this.vx[k] += ux * v; this.vy[k] += uy * v;
+          this.suelto[k] = 1; this.sop[k] = 0;
+          break;
+        }
+        const dv = v * m / reg.masa;
+        for(const k2 of reg.pieza){
+          this.vx[k2] += ux * dv;
+          this.vy[k2] += uy * dv;
+          this.suelto[k2] = 1; this.sop[k2] = 0;
+        }
+        break;
+      }
     }
   }
 
@@ -1872,7 +2114,9 @@ export class Mundo {
 
      Devuelve cuántas celdas agarró, para que la pantalla sepa si enganchó. */
   agarra(cx, cy, fx, fy, r = 4){
-    let n = 0, sx = 0, sy = 0;
+    const { an, t } = this;
+    /* ── 1. LO QUE CAE BAJO LA BROCHA ─────────────────────────────────── */
+    const semilla = [];
     const rr = r * r + r;
     for(let dy = -r; dy <= r; dy++){
       for(let dx = -r; dx <= r; dx++){
@@ -1880,30 +2124,132 @@ export class Mundo {
         const x = Math.round(cx) + dx, y = Math.round(cy) + dy;
         if(!this.dentro(x, y)) continue;
         const k = this.i(x, y);
-        if(this.t[k] === VACIO) continue;
-        const e = EL[this.t[k]];
-        if(e.fijo) continue;                       /* el muro no se arrastra */
+        if(t[k] === VACIO) continue;
+        if(EL[t[k]].fijo) continue;                /* el muro no se arrastra */
         const est = this.estadoDe(k);
         if(est !== 'solido' && est !== 'polvo') continue;
-        n++; sx += x; sy += y;
-        /* la fuerza tira hacia el dedo y la masa se resiste */
-        const m = e.dens || 1;
-        const f = 2.2 / (m > 0.2 ? m : 0.2);
-        let ax = (fx - x) * f, ay = (fy - y) * f;
-        const tope = 1.6;
-        if(ax > tope) ax = tope; else if(ax < -tope) ax = -tope;
-        if(ay > tope) ay = tope; else if(ay < -tope) ay = -tope;
-        /* mientras la mano tira, se compensa la gravedad para poder levantar
-           — que es lo que hace una mano de verdad, no una excepción */
-        this.vx[k] += ax;
-        this.gravedadEn(x, y, k);
-        this.vy[k] += ay - this._gy * 0.9;
-        this.suelto[k] = 1;
-        this.sop[k] = 0;
+        semilla.push(k);
       }
     }
-    if(!n) return { n:0, cx, cy };
-    return { n, cx: sx / n, cy: sy / n };
+    if(!semilla.length) return { n:0, cx, cy };
+    let sx = 0, sy = 0;
+    for(const k of semilla){ sx += k % an; sy += (k / an) | 0; }
+    const gx = sx / semilla.length, gy = sy / semilla.length;
+
+    /* ── 2. Y LA PIEZA ENTERA A LA QUE PERTENECE ──────────────────────────
+       ⚠ AQUÍ ESTABA EL BUG QUE CARLOS REPORTÓ COMO «la manita de agarrar no
+       agarra nada», y no se veía leyendo porque la mano SÍ aplicaba su fuerza:
+       lo hacía sobre un mordisco redondo del objeto. Desde que existen los
+       cuerpos rígidos, esas celdas mordidas formaban un cuerpo aparte — las
+       de fuera del círculo conservaban su sostén y no entraban— y el cuerpo
+       chocaba contra el resto de SU PROPIA PIEDRA. `mueveCuerpo` devolvía
+       falso, la velocidad se ponía a cero, y el bloque no se movía ni una
+       celda por mucho que se tirara de él. Medido en navegador: 104 tirones
+       seguidos, 31 celdas agarradas cada vez, cero movimiento.
+
+       Una mano no agarra un círculo de piedra: agarra LA PIEDRA. Así que se
+       crece desde la brocha por la misma regla con la que `cuerpoPaso` junta
+       un cuerpo —pegadas, sólidas, de la misma estructura soldada— y la
+       fuerza se le aplica a la pieza completa.
+
+       El polvo no crece: la arena no es una pieza, y arrastrar un grano no
+       puede llevarse el montón entero. */
+    const pieza = this.piezaDe(semilla);
+
+    /* ── 3. LA SEGUNDA LEY, UNA VEZ PARA TODA LA PIEZA ────────────────────
+       La fuerza la hacen las celdas que la mano toca; la masa que se resiste
+       es la de la pieza ENTERA. De ahí salen solas las dos cosas que pidió
+       Carlos sin programar ninguna: lo pesado cuesta, y agarrar la punta de
+       una viga larga cuesta más que agarrar una piedrita — porque la fuerza
+       es la del puño y la masa es la del objeto. */
+    let masa = 0;
+    for(const k of pieza) masa += EL[t[k]].dens || 1;
+    if(masa < 0.2) masa = 0.2;
+    let fX = 0, fY = 0;
+    for(const k of semilla){
+      const x = k % an, y = (k / an) | 0;
+      fX += (fx - x) * PUÑO; fY += (fy - y) * PUÑO;
+    }
+    /* ⚠ Y UN MUELLE SIN AMORTIGUAR NO ES UNA MANO, ES UNA CATAPULTA. Con
+       sólo la fuerza de arriba, la primera prueba en navegador mandó el
+       bloque de la celda 134 a la 2 —hasta la pared de enfrente— tirando de
+       él quince celdas: la fuerza se sumaba cada cuadro y la velocidad no
+       tenía con qué bajar. Un brazo de verdad también FRENA lo que arrastra,
+       y ese freno es lo que hace que el objeto persiga al dedo en vez de
+       salir disparado. Es el término que le faltaba al muelle. */
+    let vmx = 0, vmy = 0;
+    for(const k of pieza){ const m = EL[t[k]].dens || 1; vmx += this.vx[k] * m; vmy += this.vy[k] * m; }
+    vmx /= masa; vmy /= masa;
+    let ax = fX / masa - FRENO_MANO * vmx, ay = fY / masa - FRENO_MANO * vmy;
+    const tope = 1.6;
+    if(ax > tope) ax = tope; else if(ax < -tope) ax = -tope;
+    if(ay > tope) ay = tope; else if(ay < -tope) ay = -tope;
+
+    for(const k of pieza){
+      const x = k % an, y = (k / an) | 0;
+      this.vx[k] += ax;
+      /* mientras la mano tira, se compensa la gravedad para poder levantar
+         — que es lo que hace una mano de verdad, no una excepción */
+      this.gravedadEn(x, y, k);
+      this.vy[k] += ay - this._gy * 0.9;
+      this.suelto[k] = 1;
+      this.sop[k] = 0;
+    }
+    /* ⚠ Y EL PUNTO DE AGARRE VIAJA CON LA PIEZA, NO SE QUEDA DONDE ESTABA.
+       Medido: con el punto quieto, la madera y la tela de globo se escapaban
+       de la mano en seis cuadros —`agarró 0`— y salían volando hasta la pared
+       de enfrente, mientras que la piedra y el metal sí se dejaban llevar. No
+       era cosa del material: es que lo ligero acelera más, y en un cuadro se
+       salía del círculo de la brocha, que mide tres celdas. La piedra no se
+       escapaba porque apenas se movía.
+       Así que el agarre se adelanta lo que la pieza va a moverse este paso.
+       Es lo mismo que hace una mano: no se queda en el aire donde estaba el
+       objeto, se va con él. */
+    let nvx = 0, nvy = 0;
+    for(const k of pieza){ const m = EL[t[k]].dens || 1; nvx += this.vx[k] * m; nvy += this.vy[k] * m; }
+    return { n: pieza.length, cx: gx + nvx / masa, cy: gy + nvy / masa };
+  }
+
+  /* ── DE QUÉ PIEZA FORMAN PARTE ESTAS CELDAS ─────────────────────────────
+     Crece desde unas celdas semilla por la misma regla con la que
+     `cuerpoPaso` junta un cuerpo: pegadas, sólidas, de la misma estructura
+     soldada. El polvo no crece — la arena no es una pieza, y mover un grano no
+     puede llevarse el montón entero.
+
+     Vive aparte porque lo necesitan DOS sitios y por la misma razón: la mano,
+     que si no agarra un mordisco redondo del objeto; y el empuje de una
+     explosión, que si no le da el impulso a cuatro celdas de una losa mientras
+     las otras cincuenta y seis siguen ancladas y no la dejan moverse. Es el
+     mismo defecto con dos caras.
+
+     ⚠ Y LLEVA TOPE, que no es un detalle de rendimiento sino de física. Sin
+     él, el empuje de una explosión pedía la pieza de una celda del SUELO — y
+     el suelo de una sala es una sola pieza pegada de 57 600 celdas. Medido:
+     un paso de 1 245 ms, o sea un segundo y cuarto congelado. Y aunque fuera
+     gratis estaría mal: una explosión no lanza el planeta. Pasado el tope, la
+     pieza se considera anclada y el golpe se queda donde cayó, que es lo que
+     hace un explosivo contra el suelo: un hoyo, no un despegue. */
+  piezaDe(semilla, tope = 60000){
+    const { an, t } = this;
+    const visto = this._vistoCuerpo;
+    const pieza = semilla.slice();
+    for(const k of pieza) visto[k] = 1;
+    for(let i = 0; i < pieza.length && pieza.length < tope; i++){
+      const k = pieza[i];
+      if(this.estadoDe(k) !== 'solido') continue;
+      const x = k % an, y = (k / an) | 0;
+      for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+        if(!this.dentro(x+dx, y+dy)) continue;
+        const k2 = this.i(x+dx, y+dy);
+        if(visto[k2]) continue;
+        if(t[k2] === VACIO || EL[t[k2]].fijo) continue;
+        if(this.estadoDe(k2) !== 'solido') continue;
+        if(this.soldado[k] !== this.soldado[k2]) continue;
+        visto[k2] = 1; pieza.push(k2);
+      }
+    }
+    for(const k of pieza) visto[k] = 0;           /* se deja como estaba */
+    return pieza;
   }
 
   /* ── EL TERMÓMETRO ────────────────────────────────────────────────────

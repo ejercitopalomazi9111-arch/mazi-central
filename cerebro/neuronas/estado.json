@@ -565,6 +565,98 @@
       "vecinas": [
         "un-solo-conductor-cuesta-diecisiete-milisegundos"
       ]
+    },
+    {
+      "id": "la-mano-agarraba-un-mordisco-del-objeto",
+      "titulo": "La herramienta que agarra un círculo, no la pieza",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «la manita de agarrar no agarra nada». En el navegador: 104 tirones seguidos, 31 celdas agarradas cada vez, CERO celdas de movimiento.",
+      "causa": "La mano aplicaba su fuerza a las celdas que caían bajo la brocha —un círculo—. Desde que existen los cuerpos rígidos, esas celdas formaban un cuerpo aparte y chocaban contra el resto de su PROPIA piedra: mover el cuerpo devolvía falso y la velocidad se ponía a cero cada paso.",
+      "porque": "La brocha y la pieza son dos cosas distintas y el motor no las distinguía. Una mano no agarra un círculo de piedra, agarra LA PIEDRA.",
+      "arreglo": "Crecer desde la brocha hasta la pieza completa con la misma regla que junta un cuerpo, y aplicar la segunda ley una vez: fuerza de las celdas que toca el puño, masa de la pieza entera. Más un término que FRENA lo que ya se mueve —sin él era una catapulta— y un punto de agarre que viaja con la pieza, porque lo ligero se le escapaba en seis cuadros.",
+      "comoCazarlo": "Las pruebas que ya existían arrastraban UNA celda, y por eso pasaban con la mano rota: con una celda suelta no hay resto contra el que chocar. Hace falta un bloque MÁS GRANDE QUE LA BROCHA. Con 4×4 y radio 3 tampoco sale — la mano lo cubre entero.",
+      "consejo": "Cuando una herramienta trabaje sobre un objeto compuesto, la prueba tiene que usar un objeto más grande que la herramienta.",
+      "salioDe": "CRISOL, 11 de septiembre de 2026",
+      "senales": [
+        "agarrar",
+        "arrastrar",
+        "no se mueve",
+        "cuerpo rígido",
+        "brocha",
+        "mano"
+      ],
+      "vecinas": [
+        "el-impulso-va-a-la-pieza-no-a-la-celda"
+      ]
+    },
+    {
+      "id": "el-impulso-va-a-la-pieza-no-a-la-celda",
+      "titulo": "Un golpe sobre una losa no es un golpe sobre una celda",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «puse un muro con glicerina adentro, dejé abierta la parte de arriba y arriba coloqué piedra, madera y concreto; accioné la explosión y no salió volando ninguna». Medido: la tapa salía de y=46.5 y terminaba en y=67.6 — BAJABA.",
+      "causa": "Dos a la vez. Toda la energía de la explosión se gastaba ROMPIENDO, así que el presupuesto se compraba la tapa celda por celda y nunca quedaba nada para lanzarla. Y la poca velocidad que se repartía iba a la celda golpeada, que es justo la que el cráter se estaba comiendo, mientras las otras 56 de la losa seguían ancladas y no la dejaban moverse.",
+      "porque": "En un explosivo real la fragmentación es sólo una parte; el resto es gas expandiéndose, que es lo que lanza. Y un impulso sobre un cuerpo rígido se reparte entre toda su masa: Δv = m·v/M.",
+      "arreglo": "Partir el presupuesto: una parte cava el cráter, el resto sale en rayos y empuja lo primero que no puede romper, con E=½mv². Y el impulso se le da a la pieza entera, buscada con el mismo crecimiento que usa la mano.",
+      "comoCazarlo": "Si algo recibe fuerza y no se mueve, mirar si la fuerza cae sobre una parte de un cuerpo cuyo resto sigue anclado. Es el mismo defecto que «la manita no agarra nada», con otra cara.",
+      "consejo": "Fuerza sobre una celda de un sólido compuesto casi siempre está mal: va sobre la pieza.",
+      "salioDe": "CRISOL, 11 de septiembre de 2026",
+      "senales": [
+        "explosión",
+        "no sale volando",
+        "tapa",
+        "cañón",
+        "impulso",
+        "losa"
+      ],
+      "vecinas": [
+        "la-mano-agarraba-un-mordisco-del-objeto",
+        "el-cargo-no-detona-entero"
+      ]
+    },
+    {
+      "id": "el-cargo-no-detona-entero",
+      "titulo": "Treinta celdas de explosivo y sólo revientan seis",
+      "gravedad": "media",
+      "sintoma": "Un bote con 30 celdas de nitroglicerina entrega un quinto de su energía: contado con el motor en la mano, `revienta` se llama 6 veces.",
+      "causa": "Las otras 24 se las come el fuego que deja la primera. Eso es deflagración, no detonación: no hay frente que se lleve la masa entera.",
+      "porque": "Un explosivo rompedor de verdad lo atraviesa un frente a miles de metros por segundo. Aquí se propaga por temperatura, y la temperatura consume antes de detonar.",
+      "arreglo": "SIN ARREGLAR A PROPÓSITO. Se probó encolar los vecinos con `explota`: sube de 6 a 37 detonaciones y multiplica por cinco el impulso, pero pone en rojo la pared de metal (deja pasar 42% en vez de poco), las paredes que deben aguantar, y la prueba de que el hidrógeno con chispa hace agua. Es un cambio de física que necesita su propia pasada de calibración.",
+      "comoCazarlo": "Envolver `revienta` y CONTAR las llamadas. Un cargo que no detona entero no se ve: se siente como que el explosivo es flojo.",
+      "consejo": "Un cambio de física que descalibra media docena de pruebas necesita su propia pasada, no un parche de paso. Dejarlo escrito donde se ve vale más que subirlo a medias.",
+      "salioDe": "CRISOL, 11 de septiembre de 2026",
+      "senales": [
+        "explosivo flojo",
+        "detonación",
+        "nitroglicerina",
+        "calibrar"
+      ],
+      "vecinas": [
+        "el-impulso-va-a-la-pieza-no-a-la-celda",
+        "dos-procesos-escribiendo-el-mismo-archivo"
+      ]
+    },
+    {
+      "id": "dos-procesos-escribiendo-el-mismo-archivo",
+      "titulo": "Medí una hora contra un archivo que otro proceso estaba reescribiendo",
+      "gravedad": "alta",
+      "sintoma": "Tres hallazgos seguidos y creíbles, los tres falsos: «cavaCrater rompe CERO celdas con 51 000 julios», «la curva de daño es no monótona: 64→51, 256→48», «revienta cuesta 0.1 ms de 56».",
+      "causa": "Lancé en segundo plano un barrido de constantes que reescribía `JULIOS` con `sed`, y en primer plano restauré el valor bueno. El barrido siguió escribiendo DESPUÉS. El archivo se quedó en JULIOS=30 en vez de 150.",
+      "porque": "Un barrido de fondo y una restauración de frente escriben el mismo archivo sin orden garantizado. El último que escribe gana, y no es el que uno cree.",
+      "arreglo": "Comprobar la constante con grep ANTES de creerse una medición. Con el valor bueno: curva 1→0 4→4 16→34 64→56 144→130 256→182, monótona, y revienta cuesta 2.1 ms de 57.4.",
+      "comoCazarlo": "Si una medición da un número raro y redondo, leer el archivo de constantes en vez de teorizar. Y no dejar corriendo un proceso que escribe el código mientras se mide.",
+      "consejo": "No mide nada un experimento sobre un archivo que otro proceso puede tocar. Esto no avisa: sale un número creíble y se construyen tres arreglos encima.",
+      "salioDe": "CRISOL, 11 de septiembre de 2026",
+      "senales": [
+        "medición rara",
+        "segundo plano",
+        "sed",
+        "constante",
+        "no reproduce",
+        "barrido"
+      ],
+      "vecinas": [
+        "el-cargo-no-detona-entero"
+      ]
     }
   ]
 }

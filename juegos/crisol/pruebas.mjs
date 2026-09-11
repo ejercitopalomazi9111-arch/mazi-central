@@ -984,6 +984,64 @@ seccion('la mano y el termómetro');
     return true;
   })());
 
+  /* ⚠ LAS TRES DE ARRIBA ARRASTRAN **UNA CELDA**, Y POR ESO PASABAN CON LA
+     MANO ROTA. Carlos lo reportó como «la manita de agarrar no agarra nada» y
+     tenía toda la razón: desde que existen los cuerpos rígidos, la brocha
+     mordía un círculo de la piedra, esas celdas formaban un cuerpo aparte, y
+     ese cuerpo chocaba contra el resto de SU PROPIA PIEDRA — `mueveCuerpo`
+     daba falso y la velocidad se ponía a cero. Con una celda suelta no hay
+     resto contra el que chocar, así que las pruebas decían que sí.
+     Medido en navegador antes del arreglo: 104 tirones, 31 celdas agarradas
+     cada vez, CERO celdas de movimiento. Éstas se arrastran un BLOQUE. */
+  const bloque = (id, lado, fx, fy, vueltas = 60) => {
+    const m = mundo(80, 60, 5);
+    repisa(m, 50);
+    for(let y = 0; y < lado; y++) for(let x = 0; x < lado; x++) m.pon(20 + x, 49 - lado + y, IDX[id]);
+    corre(m, 30);
+    const centro = () => { let n = 0, sx = 0, sy = 0;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]){ n++; sx += k % 80; sy += (k / 80) | 0; }
+      return n ? { n, x:sx/n, y:sy/n } : { n:0, x:0, y:0 }; };
+    const a0 = centro();
+    let g = { cx:a0.x, cy:a0.y, n:0 };
+    for(let i = 0; i < vueltas; i++){ g = m.agarra(g.cx, g.cy, fx, fy, 3); m.paso(); }
+    return { de:a0, a:centro(), agarro:g.n };
+  };
+  {
+    /* ⚠ 8×8 Y NO 4×4, Y LA DIFERENCIA NO ES DE TAMAÑO SINO DE SI LA PRUEBA
+       SIRVE. La brocha mide 3 de radio, así que en un bloque de 4×4 LA MANO
+       LO CUBRE ENTERO: mordisco y pieza son la misma cosa y el defecto no
+       aparece. Lo comprobé rompiendo el motor a propósito —quitando el
+       crecimiento de la pieza— y las 213 seguían en verde. Hace falta un
+       bloque MÁS GRANDE QUE LA MANO para que exista un resto contra el que
+       chocar, que es exactamente lo que veía Carlos. */
+    const r = bloque('piedra', 8, 60, 25);
+    ok('la mano arrastra un BLOQUE entero, no un mordisco de él',
+       Math.abs(r.a.x - 60) < 4 && Math.abs(r.a.y - 25) < 5,
+       'de ' + r.de.x + ',' + r.de.y + ' a ' + r.a.x + ',' + r.a.y);
+    ok('y agarra la pieza completa, no sólo lo que cabe en la brocha',
+       r.agarro === 64, 'agarró ' + r.agarro + ' de 64');
+  }
+  ok('y lo ligero no se le escapa de la mano', (() => {
+    /* con el punto de agarre quieto, la madera salía volando hasta la pared:
+       acelera más, y en un cuadro se salía del círculo de tres celdas */
+    const r = bloque('madera', 6, 60, 25);
+    return Math.abs(r.a.x - 60) < 4 && Math.abs(r.a.y - 25) < 4 && r.agarro === 36;
+  })());
+  ok('y un peñasco de 196 celdas se queda atrás: lo pesado CUESTA', (() => {
+    const chico = bloque('piedra', 4, 60, 25), grande = bloque('piedra', 14, 60, 25);
+    return Math.abs(chico.a.x - 60) < 3 && grande.a.x < 58 && grande.a.y > 30;
+  })());
+  ok('y la mano no se lleva el muro pegado', (() => {
+    const m = mundo(60, 50, 5);
+    repisa(m, 40);
+    for(let y = 0; y < 4; y++) for(let x = 0; x < 4; x++) m.pon(20 + x, 36 + y, IDX.piedra);
+    corre(m, 20);
+    let g = { cx:21.5, cy:37.5 };
+    for(let i = 0; i < 40; i++){ g = m.agarra(g.cx, g.cy, 45, 20, 3); m.paso(); }
+    for(let x = 0; x < 60; x++) if(m.t[m.i(x, 40)] !== IDX.muro) return false;
+    return true;
+  })());
+
   /* el termómetro */
   const t = mundo(20, 20, 1);
   t.pon(10, 10, IDX.eFe);
@@ -1662,16 +1720,101 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
      'destruyó ' + d1 + ' piedras (antes del arreglo: 246)');
   ok('más explosivo hace MÁS daño', d64 > d16 && d16 > d1,
      '1→' + d1 + ' · 16→' + d16 + ' · 64→' + d64);
-  /* ⚠ Y AQUÍ EL CRÁTER DEJA DE CRECER A PROPÓSITO, que es una decisión y no
-     un descuido. Un explosivo tiene una presión de detonación propia: juntar
-     más cantidad hace el frente más grande y más largo, no infinitamente más
-     intenso. Sin ese tope la curva iba 4→4, 16→54 y de golpe 64→1304 —media
-     sala— porque el pico se disparaba tanto que todo lo que tocaba reventaba
-     en el acto y cada hueco abría el siguiente.
-     Lo que se exige es lo que importa: que crezca en el rango en que uno
-     juega, y que NUNCA se desboque por mucho que eches. */
-  ok('y con cargas enormes se queda acotado, no arrasa la sala', d256 < 400,
-     '64→' + d64 + ' · 256→' + d256 + ' de 900 piedras');
+  /* ⚠ ESTA PRUEBA PEDÍA QUE EL CRÁTER SE QUEDARA ACOTADO, y Carlos la tiró
+     con una frase: «el cráter, en lugar de hacerlo fijo, haz que se calcule
+     según los NEWTONS de la explosión». Tenía razón y mi tope era un parche —
+     lo puse para matar el desbocamiento y de rebote maté también el efecto
+     bueno, que el cráter creciera.
+     Ahora el cráter sale de un PRESUPUESTO de energía y romper cada celda
+     CUESTA según lo duro y lo pesado que sea. Así que lo que hay que exigir ya
+     no es un techo: es que el daño por unidad de explosivo se quede donde
+     está. Si se desbocara, cada celda de más haría MÁS daño que la anterior —
+     que es exactamente lo que pasaba antes: 16 celdas hacían 3.4 de daño cada
+     una y 64 hacían 20. Medido ahora: 1.37 por celda con 64 y 1.57 con 256. */
+  const porCelda64 = d64 / 64, porCelda256 = d256 / 256;
+  ok('el cráter sigue creciendo con la carga, sin techo', d256 > d64 && d64 > d16,
+     '16→' + d16 + ' · 64→' + d64 + ' · 256→' + d256);
+  ok('y el daño POR CELDA de explosivo no se dispara: no se realimenta',
+     porCelda256 < porCelda64 * 3,
+     'con 64 cada celda hace ' + porCelda64.toFixed(2) + ' · con 256 hace ' + porCelda256.toFixed(2));
+
+  /* y lo que compra el presupuesto además de la proporción: que el MATERIAL
+     decida cuánto se lleva la misma carga. Romper una celda cuesta según lo
+     duro y lo pesado que sea, así que esto sale de la contabilidad y no de una
+     tabla de «cuánto daño hace X contra Y». */
+  const contra = (mat) => {
+    const m = mundo(80, 80, 7);
+    for(let x = 0; x < 80; x++) for(let y = 50; y < 80; y++) m.pon(x, y, IDX[mat]);
+    let p = 0;
+    for(let dy = 0; dy < 8 && p < 64; dy++) for(let dx = 0; dx < 8 && p < 64; dx++){
+      m.pon(38 + dx, 49 - dy, IDX.nitro); p++; }
+    const cuenta = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[mat]) c++; return c; };
+    const antes = cuenta();
+    m.temp[m.i(38, 49)] = 2280;
+    corre(m, 150);
+    return antes - cuenta();
+  };
+  const enPiedra = contra('piedra'), enMetal = contra('metal');
+  ok('la MISMA carga abre menos cráter en metal que en piedra', enMetal < enPiedra,
+     'piedra −' + enPiedra + ' · metal −' + enMetal);
+
+  /* ── EL CAÑÓN DE CARLOS ────────────────────────────────────────────────
+     Textual: «puse un muro con glicerina adentro, dejé abierta la parte de
+     arriba y arriba coloqué piedra, madera y concreto en tres pruebas
+     distintas; accioné la explosión y no salió volando ninguna de las
+     anteriores». Medido antes del arreglo: la tapa de piedra salía de y=46.5
+     y terminaba en y=67.6 — o sea que BAJABA. Se deshacía y caía.
+     La causa era que toda la energía se gastaba rompiendo, así que el
+     presupuesto se compraba la tapa a plazos y nunca quedaba nada para
+     lanzarla. Ahora la mitad empuja. */
+  const canon = (tapa) => {
+    const m = mundo(100, 80, 11);
+    repisa(m, 70);
+    for(let y = 48; y <= 60; y++){ m.pon(40, y, IDX.muro); m.pon(56, y, IDX.muro); }
+    for(let x = 40; x <= 56; x++) m.pon(x, 60, IDX.muro);
+    for(let y = 58; y < 60; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.nitro);
+    for(let y = 54; y < 58; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX[tapa]);
+    corre(m, 60);
+    const alturaMedia = () => { let n = 0, sy = 0;
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[tapa]){ n++; sy += (k / 100) | 0; }
+      return n ? { n, y:sy/n } : { n:0, y:99 }; };
+    const a0 = alturaMedia();
+    m.temp[m.i(48, 59)] = 2280;
+    let masAlto = a0.y;
+    for(let i = 0; i < 160; i++){ m.paso(); const c = alturaMedia(); if(c.n && c.y < masAlto) masAlto = c.y; }
+    return { de:a0.y, quedan:alturaMedia().n, de0:a0.n, masAlto };
+  };
+  /* ⚠ EL LISTÓN ES «SUBE», NO «SUBE MUCHO», Y LA DIFERENCIA ESTÁ MEDIDA.
+     Con este cargo la piedra sube 38 celdas y el concreto 2.2 — y no es que
+     el concreto esté mal: es que el cargo no detona entero. Contado: de 30
+     celdas de nitroglicerina sólo revientan 6, el resto se las come el fuego.
+     Está explicado en `revienta` y NO se arregla de pasada, porque el frente
+     de detonación completo descalibra media docena de pruebas. Así que la
+     prueba exige lo que Carlos reportó, ni más ni menos: que la tapa SUBA en
+     vez de bajar. Antes del arreglo bajaba de y=46.5 a y=67.6. */
+  for(const [tapa, minimo] of [['piedra', 8], ['concreto', 1.5]]){
+    const r = canon(tapa);
+    ok('un bote abierto arriba LANZA la tapa de ' + tapa + ', no la deja caer',
+       r.masAlto < r.de - minimo,
+       'empezó en y=' + r.de.toFixed(1) + ' y subió hasta y=' + r.masAlto.toFixed(1) +
+       ' (antes del arreglo BAJABA a y=67.6)');
+  }
+  ok('y una carga que no puede con la tapa no la desintegra: la deja quieta', (() => {
+    /* ocho filas de piedra sobre dos de nitro: 65 de 120 celdas sobreviven y
+       el bloque apenas se levanta. Lo pesado gana, que es lo correcto. */
+    const m = mundo(100, 80, 11);
+    repisa(m, 70);
+    for(let y = 48; y <= 60; y++){ m.pon(40, y, IDX.muro); m.pon(56, y, IDX.muro); }
+    for(let x = 40; x <= 56; x++) m.pon(x, 60, IDX.muro);
+    for(let y = 58; y < 60; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.nitro);
+    for(let y = 50; y < 58; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.piedra);
+    corre(m, 60);
+    const cuenta = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) c++; return c; };
+    const antes = cuenta();
+    m.temp[m.i(48, 59)] = 2280;
+    corre(m, 160);
+    return cuenta() > antes * 0.4;
+  })());
 }
 
 {
