@@ -241,6 +241,7 @@ export class Mundo {
        sube la presión sin tocar la temperatura, que es Boyle. */
     this.moles = new Float32Array(n);
     this.camara = new Int32Array(n);      /* a qué cámara sellada pertenece */
+    this.camaraCeldas = [];               /* y qué celdas son de cada una */
     this.camaraP = [];                    /* presión de cada cámara */
     this._abierto = new Uint8Array(n);
     this._vistoCuerpo = new Uint8Array(n);
@@ -496,6 +497,37 @@ export class Mundo {
          hacía a la fuerza y aquí sale de la contabilidad. */
     this.excava(x, y, fuerza);
 
+    /* ── EL FRENTE DE DETONACIÓN: EL CARGO ENTERO SE VA ───────────────────
+       Carlos: «lo de la nitro arréglalo porfa».
+       CONTADO antes de tocar nada, en su bote con 30 celdas de nitroglicerina:
+       `revienta` se llamaba SEIS veces. Las otras veinticuatro se las comía el
+       fuego que deja la primera — eso es deflagración, no detonación. O sea
+       que un cargo entregaba un quinto de la energía que uno había puesto, y
+       de ahí venía media queja de que «los explosivos son flojos» a la vez que
+       «destruyen todo»: los pocos que detonaban lo hacían muy fuerte y el
+       resto no hacía nada.
+       Un rompedor de verdad lo atraviesa un frente que se lleva toda la masa.
+       Se encola en `_detona`, que se resuelve al final del paso, así que el
+       frente avanza dos celdas por paso y se ve avanzar en pantalla. La celda
+       se consume EN EL ACTO para que no pueda detonar dos veces —así es como
+       una cola de éstas se convierte en una bomba infinita— y deja su producto
+       si lo tiene, porque el hidrógeno explota Y hace agua. */
+    for(let dy = -2; dy <= 2; dy++) for(let dx = -2; dx <= 2; dx++){
+      if(dx === 0 && dy === 0) continue;   /* ⚠ y NO se encola a sí misma: sin
+         esta línea una celda suelta de nitro detonaba DOS veces —se apuntaba
+         en la cola antes de convertirse en fuego— y con eso todo el motor
+         entregaba el doble de energía de la que uno había puesto. Se vio en
+         la prueba de «una celda suelta no arrasa la sala»: 10 piedras rotas
+         con UNA celda, y `detonaron: 2` con una sola puesta. */
+      const nx = x + dx, ny = y + dy;
+      if(!this.dentro(nx, ny)) continue;
+      const k = this.i(nx, ny);
+      const ve = EL[this.t[k]];
+      if(!ve.explota) continue;
+      this._detona.push([nx, ny, ve.explota]);
+      this.cambia(k, ve.ardeEn ? IDX[ve.ardeEn] : IDX.fuego);
+    }
+
     /* ⚠ HALLAZGO SIN ARREGLAR, Y VA ESCRITO AQUÍ PORQUE ES DONDE SE VE.
        CONTADO con el motor en la mano, en el bote de Carlos con TREINTA celdas
        de nitroglicerina dentro: `revienta` se llama SEIS veces. Las otras
@@ -587,15 +619,24 @@ export class Mundo {
     /* 2 · lo que quedó sin alcanzar son cámaras. Una por componente. */
     this.camara.fill(0);
     this.camaraP.length = 0;
+    /* ⚠ Y SE GUARDA QUÉ CELDAS SON DE CADA CÁMARA. Sin esta lista, el cuerpo
+       que carga con su contenido tenía que barrer las 153 600 celdas del mundo
+       por cada cámara y por cada pieza que se mueve, cada paso: el paso en
+       reposo se fue de 25 a 38 ms. Aquí ya se están recorriendo de todos
+       modos, así que apuntarlas es gratis. */
+    this.camaraCeldas.length = 0;
     const cola2 = this._cola2;
     for(let k0 = 0; k0 < t.length; k0++){
       if(abierto[k0] || this.camara[k0] || !pasable(k0)) continue;
       const id = this.camaraP.length + 1;
       let c2 = 0, f2 = 0;
       cola2[f2++] = k0; this.camara[k0] = id;
+      const celdas = [];
+      this.camaraCeldas.push(celdas);
       let vol = 0, moles = 0, tsum = 0;
       while(c2 < f2){
         const k = cola2[c2++], x = k % an, y = (k / an) | 0;
+        celdas.push(k);
         const tk = t[k];
         if(tk === VACIO){ vol++; moles += 1; tsum += this.temp[k]; }
         else if(EL[tk].estado === 'gas'){ vol++; moles += this.moles[k] || 1; tsum += this.temp[k]; }
@@ -1810,17 +1851,123 @@ export class Mundo {
          mover se convierte en un bicho: la cuerda, el globo y ahora esto. Y
          las tres veces se disfrazó de otra cosa —tieso, hundido, en láminas—
          sin parecerse nunca a «índice viejo». */
+      /* ── LO QUE EL RECIPIENTE LLEVA DENTRO SE VA CON ÉL ──────────────────
+         Carlos: «cuando tengo un recipiente lleno de algo inflamable y el
+         ambiente está en llamas, si este recipiente se mueve el contenido
+         explota siempre por el ambiente».
+
+         Reproducido y CONTADO, que es lo que destapó la causa. Un bote de
+         metal sellado con 25 celdas de nitroglicerina dentro y fuego
+         alrededor: paso 0, dentro hay 25 de nitro; paso 2, hay 5 de METAL;
+         paso 3, hay 4 de FUEGO. O sea que al caer, la pared se hundía en su
+         propio contenido y por el hueco entraba la llama. No era el calor
+         cruzando la pared —el nitro detonaba todavía a 22°—: era que el bote
+         se deshacía en el aire.
+
+         La causa: el cuerpo rígido son las paredes, y el líquido de dentro no
+         es sólido, así que no entraba en el cuerpo. Al moverse, el cuerpo
+         INTERCAMBIABA sus celdas con el fluido que tenía delante… que era su
+         propio contenido. Cada celda que bajaba echaba una gota arriba, y el
+         ambiente ocupaba el sitio.
+
+         Un recipiente cerrado carga con lo que guarda. `camaraPaso` ya sabe
+         qué huecos están sellados, así que lo único que faltaba era subirse
+         el contenido al viaje: si toda la frontera de esa cámara es esta
+         pieza o algo fijo, sus celdas se mueven con ella. Y su masa cuenta,
+         que por eso un bote lleno cae distinto de uno vacío. */
       let lista = cola.slice(0, fin);
+      let cargaDesde = -1, cargaId = 0;
+      if(this.camaraP.length){
+        const camaras = new Set();
+        for(let i = 0; i < fin; i++){
+          const k = cola[i], x = k % an, y = (k / an) | 0;
+          for(const [ddx, ddy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+            if(!this.dentro(x+ddx, y+ddy)) continue;
+            const c = this.camara[this.i(x+ddx, y+ddy)];
+            if(c) camaras.add(c);
+          }
+        }
+        for(const c of camaras){
+          const carga = [];
+          let cerrada = true;
+          const suyas = this.camaraCeldas[c - 1] || [];
+          for(let ii = 0; ii < suyas.length && cerrada; ii++){
+            const k = suyas[ii];
+            if(this.camara[k] !== c) continue;
+            if(t[k] !== VACIO && this.estadoDe(k) === 'solido') continue; /* sumergido */
+            carga.push(k);
+            const x = k % an, y = (k / an) | 0;
+            for(const [ddx, ddy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+              if(!this.dentro(x+ddx, y+ddy)){ cerrada = false; break; }
+              const k2 = this.i(x+ddx, y+ddy);
+              if(this.camara[k2] === c) continue;
+              if(visto[k2]) continue;                    /* es mi propia pared */
+              if(t[k2] !== VACIO && EL[t[k2]].fijo) continue;
+              /* ⚠ Y VALE CUALQUIER PARED SÓLIDA, no sólo la de ESTE cuerpo.
+                 Con `visto` a secas, un bote que cae deprisa dejaba atrás su
+                 contenido a partir de las dos celdas por paso: al acelerar, el
+                 anillo de la pared se parte en varios cuerpos y el que se
+                 procesa primero no reconocía como suyas las paredes del otro,
+                 así que decidía que la cámara «no estaba cerrada» y se movía
+                 solo. Medido con un bote de agua: hasta el paso 8 el agua iba
+                 con él, y del 9 en adelante se quedaba atrás 2.4 celdas y
+                 subiendo. Lo que encierra un hueco es una pared, sea de quien
+                 sea el trozo. */
+              if(t[k2] !== VACIO && this.estadoDe(k2) === 'solido') continue;
+              cerrada = false; break;                    /* la tapa es de otro */
+            }
+            if(carga.length > 4000){ cerrada = false; break; }
+          }
+          if(!cerrada || !carga.length) continue;
+          for(const k of carga){ if(t[k] !== VACIO) masa += EL[t[k]].dens || 1; }
+          /* `cola` es un Int32Array y su `slice` devuelve otro, que no tiene
+             `concat`: se arma uno nuevo del tamaño justo */
+          const unida = new Int32Array(lista.length + carga.length);
+          unida.set(lista, 0); unida.set(carga, lista.length);
+          cargaDesde = lista.length; cargaId = c;
+          lista = unida;
+        }
+      }
+      let saltoTotal = 0;
       const corre = (dx, dy) => {
         if(!this.mueveCuerpo(lista, dx, dy)) return false;
         const salto = dy * an + dx;
         for(let i = 0; i < lista.length; i++) lista[i] += salto;
+        saltoTotal += salto;
         return true;
       };
       let pasos = this.pasosDe(Math.abs(vy)); const dy = vy > 0 ? 1 : -1;
       for(let i = 0; i < pasos; i++) if(!corre(0, dy)){ vy = 0; break; }
       pasos = this.pasosDe(Math.abs(vx)); const dx = vx > 0 ? 1 : -1;
       for(let i = 0; i < pasos; i++) if(!corre(dx, 0)){ vx = 0; break; }
+      /* ⚠ Y LA MARCA DE CÁMARA SE VA CON EL RECIPIENTE. `intercambia` mueve
+         quince campos de la partícula y `camara` no es uno: una cámara es una
+         REGIÓN, no una gota, así que no debe viajar con cada celda suelta.
+         Pero cuando el bote entero se traslada, su hueco se traslada con él —
+         y como `camaraPaso` sólo corre en pasos pares, en los impares la
+         marca se quedaba en las coordenadas viejas, el bote no se reconocía a
+         sí mismo como cerrado y volvía a intercambiarse con su contenido.
+         Medido siguiendo la caja del bote en vez de unas coordenadas fijas
+         —que es como se me escapó la primera vez—: paso 2 con las 25 celdas
+         de nitro dentro, paso 3 con 5 de fuego. Se re-etiqueta a mano y se
+         acabó, sin pagar un recorrido del mundo entero cada paso. */
+      if(cargaDesde >= 0 && saltoTotal){
+        /* ⚠ PRIMERO SE BORRA EL RASTRO Y LUEGO SE MARCA EL SITIO NUEVO, y este
+           orden es todo el arreglo. Marcando sólo el destino, las casillas que
+           el bote dejaba atrás conservaban la marca de cámara; en el paso
+           siguiente el recorrido encontraba esas marcas huérfanas, veía que
+           daban al aire libre y decidía que el bote estaba ABIERTO. Se notaba
+           sólo al acelerar: medido con un bote de agua, hasta las 2 celdas por
+           paso el contenido viajaba bien y a partir de ahí se quedaba atrás
+           2.4 celdas y subiendo. Un rastro de marcas viejas es un agujero que
+           no existe. */
+        for(let i = cargaDesde; i < lista.length; i++) this.camara[lista[i] - saltoTotal] = 0;
+        const nuevas = [];
+        for(let i = cargaDesde; i < lista.length; i++){ this.camara[lista[i]] = cargaId; nuevas.push(lista[i]); }
+        /* y la LISTA de celdas de esa cámara también se muda, que si no queda
+           apuntando a donde el bote ya no está */
+        if(this.camaraCeldas[cargaId - 1]) this.camaraCeldas[cargaId - 1] = nuevas;
+      }
       for(const k of lista){
         this.vy[k] = vy; this.vx[k] = vx;
         this.flotante[k] = 1;          /* ya se movió como pieza: `mueve` no lo toca */
@@ -2719,6 +2866,15 @@ export class Mundo {
     this.sostenPaso();
     this.globoPaso();
     this.cuerdaPaso();
+    /* ⚠ LAS CÁMARAS SE BUSCAN ANTES DE MOVER LOS CUERPOS, Y NO DESPUÉS.
+       Estaban después, y por eso un bote recién puesto se deshacía en sus dos
+       primeros pasos: cuando `cuerpoPaso` iba a mover las paredes, todavía no
+       existía la marca de «esto de dentro es mío», así que la pared se
+       intercambiaba con su propio contenido y el ambiente entraba por el
+       hueco. Contado en el bote de Carlos: paso 2, cinco celdas de metal
+       DENTRO; paso 3, cuatro de fuego. Un recipiente no puede enterarse de lo
+       que lleva dentro después de haberlo tirado. */
+    if((this.paso_ & 1) === 0) this.camaraPaso();
     this.cuerpoPaso();
     this.electricidad();
     this.luzPaso();
@@ -2732,7 +2888,6 @@ export class Mundo {
        unas celdas sí y a otras no. Esa asimetría le da empuje neto a un
        recipiente cerrado — se propulsaba 1.57 celdas él solo. Una foto vieja
        de quién está dentro es peor que ninguna. */
-    if((this.paso_ & 1) === 0) this.camaraPaso();
     this.presionPaso();
     this.esfuerzoPaso();
 
@@ -3047,14 +3202,41 @@ export class Mundo {
     return [x + d[0], y + d[1]];
   }
 
+  /* ── QUÉ HACE FALTA PARA QUE ALGO PRENDA ────────────────────────────────
+     Carlos: «cuando tengo un recipiente lleno de algo inflamable y el
+     ambiente está en llamas, si este recipiente se mueve el contenido explota
+     siempre por el ambiente, pero no debería ser así».
+
+     Reproducido, y el movimiento NO tenía nada que ver — eso era el síntoma
+     que él alcanzó a ver. Un bote de METAL SELLADO con 25 celdas de
+     nitroglicerina dentro y fuego alrededor detonaba en menos de veinte
+     pasos, quieto o moviéndose. El recipiente no protegía absolutamente nada.
+
+     La causa: esta función decía que un vecino a más de 260° ES una llama. Y
+     no lo es. Con esa regla, la PARED DEL BOTE se convertía en el encendedor
+     de lo que guardaba, y además daba igual el material de todo: madera,
+     carbón e hidrógeno prendían los tres al mismo número, cuando en la vida
+     real van de 300° a 580°.
+
+     Lo correcto son dos caminos distintos, y no uno:
+       · LLAMA EN CONTACTO — hay fuego de verdad pegado. Eso prende siempre.
+       · TEMPERATURA PROPIA — la celda misma llegó a SU punto de ignición. No
+         la del vecino: la suya. El calor ya viaja solo por conducción, así
+         que un bote metálico sigue cociendo lo de dentro (el metal conduce
+         0.95) y uno de aislante lo protege mucho más. Eso ya no hay que
+         programarlo: sale del material del recipiente, que es justo lo que
+         Carlos quería.
+
+     `ignicion` va por elemento y donde no está se usan los 260 de siempre,
+     así que nada que no lo declare cambia de comportamiento. */
   vecinoCaliente(x, y, e){
-    const min = 260;
+    const k0 = this.i(x, y);
+    if(this.temp[k0] >= (e.ignicion != null ? e.ignicion : 260)) return true;
     for(const [dx, dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
       if(!this.dentro(x+dx, y+dy)) continue;
       const k = this.i(x+dx, y+dy);
       const v = EL[this.t[k]];
       if(v.id === 'fuego' || v.calor) return true;
-      if(this.temp[k] > min) return true;
     }
     return false;
   }

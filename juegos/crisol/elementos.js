@@ -103,17 +103,17 @@ const JUEGO = {
 
   /* ── combustibles ─────────────────────────────────────────────────────── */
   aceite:  { nom:'Aceite',  col:'#5A4520', estado:'liquido', dens:8, cond:.20, friccion:.02,
-             arde:.7, calorArde:700, ebu:[300,'gasnat'], grupo:'combustible' },
+             arde:.7, ignicion:135, calorArde:700, ebu:[300,'gasnat'], grupo:'combustible' },
   gasnat:  { nom:'Gas',     col:'#93A05A', estado:'gas',    dens:0.66, cond:.10,
-             arde:1, calorArde:900, grupo:'combustible' },
+             arde:1, ignicion:220, calorArde:900, grupo:'combustible' },
   polvora: { nom:'Pólvora', col:'#3E3A44', estado:'polvo',  dens:13, cond:.15,
-             arde:1, calorArde:1400, explota:3.5, dureza:.05, grupo:'combustible' },
+             arde:1, ignicion:90, calorArde:1400, explota:3.5, dureza:.05, grupo:'combustible' },
   /* ⚠ `inestable:.5` la hacía explotar SOLA a los pocos segundos de ponerla:
      Carlos no alcanzaba ni a construir con ella. La nitroglicerina de verdad
      no detona por existir — detona por GOLPE, y eso ahora se mide con la
      velocidad de impacto. `golpe` es a qué velocidad revienta. */
   nitro:   { nom:'Nitroglicerina', col:'#C8B96A', estado:'liquido', dens:12, cond:.2,
-             arde:1, calorArde:2200, explota:20, golpe:2.2, grupo:'combustible' },
+             arde:1, ignicion:95, calorArde:2200, explota:20, golpe:2.2, grupo:'combustible' },
   /* Tela de globo: un sólido LIGERO, que es lo que hace falta para que un
      globo vuele. Con madera no vuela —pesa diecinueve veces el aire— igual
      que en la vida real: los globos se hacen de película fina justo por eso.
@@ -127,16 +127,16 @@ const JUEGO = {
      que cada eslabón sepa quién es el anterior y se mantenga pegado a él.
      Eso es un resolvedor de restricciones, y va aparte en `cuerdaPaso()`. */
   cuerda:  { nom:'Cuerda', col:'#C2A878', estado:'solido', dens:6, cond:.12,
-             cuerda:true, arde:.5, calorArde:400, dureza:.08,
+             cuerda:true, arde:.5, ignicion:110, calorArde:400, dureza:.08,
              traccion:26, compresion:0.5, corte:1, elastico:0.4,
              grupo:'básico',
              ayuda:'Cuélgala de algo fijo y amárrale cosas. Aguanta tirón, no empuje' },
   globo:   { nom:'Tela de globo', col:'#E85A8A', estado:'solido', dens:2.5, cond:.2,
-             dureza:.02, arde:.6, calorArde:400, grupo:'básico' },
+             dureza:.02, arde:.6, ignicion:140, calorArde:400, grupo:'básico' },
   madera:  { nom:'Madera',  col:'#7A5230', estado:'solido', dens:19, cond:.12, friccion:.55,
-             arde:.35, calorArde:600, dureza:.25, grupo:'combustible' },
+             arde:.35, ignicion:120, calorArde:600, dureza:.25, grupo:'combustible' },
   carbon:  { nom:'Carbón',  col:'#26222C', estado:'polvo',  dens:14, cond:.16,
-             arde:.5, calorArde:1100, dureza:.15, aprieta:[2600,'diamante'],
+             arde:.5, ignicion:230, calorArde:1100, dureza:.15, aprieta:[2600,'diamante'],
              grupo:'combustible',
              ayuda:'Arde. Y si lo aprietas muchísimo dentro de algo sellado, se vuelve diamante' },
   /* Carlos: «someter a tanta presión carbono que se vuelva diamante». Es la
@@ -148,7 +148,7 @@ const JUEGO = {
 
   /* ── gases ────────────────────────────────────────────────────────────── */
   hidrogeno:{nom:'Hidrógeno',col:'#C9D8FF',estado:'gas',   dens:0.08, cond:.5,
-             arde:1, calorArde:1200, explota:2.5, sube:2, ardeEn:'vapor', grupo:'gases' },
+             arde:1, ignicion:190, calorArde:1200, explota:2.5, sube:2, ardeEn:'vapor', grupo:'gases' },
   oxigeno: { nom:'Oxígeno',  col:'#8FD8FF', estado:'gas',   dens:1.43, cond:.2,
              aviva:true, grupo:'gases' },
 
@@ -235,16 +235,16 @@ const JUEGO = {
      metálicas de verdad: el estroncio da rojo, el bario verde, el cobre azul
      y el sodio dorado. Es la química que hay detrás de un castillo. */
   estRoja: { nom:'Estrella roja', col:'#FF3B4E', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#FF3B4E', explota:1.6, grupo:'pirotecnia',
+             arde:.9, ignicion:90, calorArde:900, chispa:'#FF3B4E', explota:1.6, grupo:'pirotecnia',
              ayuda:'Estroncio: arde en rojo' },
   estVerde:{ nom:'Estrella verde', col:'#3BFF6E', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#3BFF6E', explota:1.6, grupo:'pirotecnia',
+             arde:.9, ignicion:90, calorArde:900, chispa:'#3BFF6E', explota:1.6, grupo:'pirotecnia',
              ayuda:'Bario: arde en verde' },
   estAzul: { nom:'Estrella azul', col:'#3B8AFF', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#3B8AFF', explota:1.6, grupo:'pirotecnia',
+             arde:.9, ignicion:90, calorArde:900, chispa:'#3B8AFF', explota:1.6, grupo:'pirotecnia',
              ayuda:'Cobre: arde en azul' },
   estOro:  { nom:'Estrella dorada', col:'#FFD43B', estado:'polvo', dens:14, cond:.2,
-             arde:.9, calorArde:900, chispa:'#FFD43B', explota:1.6, grupo:'pirotecnia',
+             arde:.9, ignicion:90, calorArde:900, chispa:'#FFD43B', explota:1.6, grupo:'pirotecnia',
              ayuda:'Sodio: arde en dorado' },
   /* ⚠ SIN `arde`, Y ESO ES LO QUE LA HACE MECHA. Con `arde:.5` el bloque
      genérico de combustión —que corre ANTES— la convertía en fuego de golpe y
@@ -324,9 +324,9 @@ const JUEGO = {
 
   /* ── vida, apenas la semilla de lo que viene ──────────────────────────── */
   planta:  { nom:'Planta',  col:'#3FA83F', estado:'solido', dens:18, cond:.15,
-             arde:.6, calorArde:500, crece:true, dureza:.1, grupo:'vida' },
+             arde:.6, ignicion:105, calorArde:500, crece:true, dureza:.1, grupo:'vida' },
   semilla: { nom:'Semilla', col:'#8FBF4A', estado:'polvo',  dens:13, cond:.15,
-             arde:.5, calorArde:400, germina:true, dureza:.05, grupo:'vida' },
+             arde:.5, ignicion:105, calorArde:400, germina:true, dureza:.05, grupo:'vida' },
 };
 
 

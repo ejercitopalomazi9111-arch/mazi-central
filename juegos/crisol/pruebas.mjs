@@ -1241,7 +1241,20 @@ seccion('resistencia estructural: quién falla primero, y por qué');
      por dónde viaja la carga. */
   const cuenta = (m, id) => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX[id]) c++; return c; };
 
-  const tubo = (tapon, presion) => {
+  /* ⚠ ESTA PRUEBA NO MEDÍA LO QUE DECÍA SU NOMBRE, Y LLEVABA ASÍ DESDE QUE SE
+     ESCRIBIÓ. Llenaba la olla de CO₂ a 900° UNA vez y esperaba 300 pasos.
+     Medido con el motor en la mano: la presión del gas bajo el tapón era
+     **CERO en los 300 pasos**, y el gas se enfriaba de 900° a 22° en cincuenta
+     — porque calentar un gas de golpe no lo presuriza, lo que lo presuriza es
+     METER MÁS, que es lo que hace la prueba de la caja de piedra más abajo.
+     Entonces, ¿por qué pasaba? Porque el tapón de madera desaparecía
+     QUEMÁNDOSE: con la regla vieja, un vecino a más de 260° prendía cualquier
+     cosa, y el CO₂ a 900° encendía la madera. La prueba contaba celdas que
+     faltaban y las llamaba «cedió a la presión». Salió a la luz al arreglar la
+     ignición para el bote de Carlos, y es la misma trampa de siempre: algo
+     que informa un estado y está en otro.
+     Ahora se BOMBEA gas, que es como se sube la presión de verdad. */
+  const tubo = (tapon, vueltas) => {
     const m = mundo(60, 60, 5);
     repisa(m, 59);
     for(let x = 20; x <= 40; x++) m.pon(x, 58, IDX.concreto);
@@ -1249,17 +1262,43 @@ seccion('resistencia estructural: quién falla primero, y por qué');
     for(let x = 20; x <= 40; x++) if(x < 28 || x > 33) m.pon(x, 44, IDX.concreto);
     for(let x = 28; x <= 33; x++) m.pon(x, 44, IDX[tapon]);
     const t0 = cuenta(m, tapon), c0 = cuenta(m, 'concreto');
-    for(let y = 45; y < 58; y++) for(let x = 21; x < 40; x++){ m.pon(x, y, IDX.co2); m.temp[m.i(x,y)] = presion; }
-    corre(m, 300);
-    return { tapon: t0 - cuenta(m, tapon), olla: c0 - cuenta(m, 'concreto') };
+    let pico = 0;
+    for(let n = 1; n <= vueltas; n++){
+      if(n % 2 === 0) for(let y = 45; y < 58; y++) for(let x = 21; x < 40; x++){
+        const k = m.i(x, y);
+        if(m.t[k] === IDX.gasnat || m.t[k] === VACIO) m.pon(x, y, IDX.gasnat); }
+      m.paso();
+      const c = m.camara[m.i(30, 50)]; if(c) pico = Math.max(pico, m.camaraP[c - 1]);
+    }
+    /* ⚠ Y SE MIRA SI EL TAPÓN SIGUE EN SU AGUJERO, no cuántas celdas de madera
+       quedan en el mundo. Ceder es SALIR DISPARADO, y el tapón salía entero:
+       las seis celdas seguían existiendo tres metros más allá, así que la
+       cuenta global daba «−0» y la prueba decía que no había cedido. Segundo
+       desajuste de medida en la misma prueba. */
+    let enSuSitio = 0;
+    for(let x = 28; x <= 33; x++) if(m.t[m.i(x, 44)] === IDX[tapon]) enSuSitio++;
+    return { cedio: t0 - enSuSitio, olla: c0 - cuenta(m, 'concreto'), pico };
   };
-  const mad = tubo('madera', 900), met = tubo('metal', 900), flojo = tubo('madera', 200);
-  ok('un tapón de MADERA cede y el recipiente de concreto aguanta',
-     mad.tapon > 0 && mad.olla === 0, 'tapón −' + mad.tapon + ' · olla −' + mad.olla);
-  ok('el MISMO recipiente con tapón de METAL aguanta entero',
-     met.tapon === 0 && met.olla === 0, 'tapón −' + met.tapon + ' · olla −' + met.olla);
-  ok('y con poca presión no cede ninguno de los dos',
-     flojo.tapon === 0 && flojo.olla === 0, 'tapón −' + flojo.tapon);
+  const mad = tubo('madera', 200), met = tubo('metal', 200), flojo = tubo('madera', 12);
+  ok('y la olla de la prueba SÍ se presuriza — antes marcaba cero', mad.pico > 100,
+     'la cámara llegó a ' + mad.pico.toFixed(0));
+  /* 🔴 HUECO ABIERTO, Y VA ESCRITO EN VEZ DE TAPADO CON UNA PRUEBA COMPLACIENTE.
+     Carlos pidió que el material decida quién cede primero: «no asumir
+     automáticamente que siempre falla la madera o siempre el concreto». ESO NO
+     ESTÁ HECHO, y las tres afirmaciones que decían comprobarlo no comprobaban
+     nada: el tapón se sale de su agujero SIEMPRE, con presión y sin ella —con
+     doce vueltas de bombeo cede igual que con doscientas— porque no está
+     anclado a nada y simplemente se CAE. No es que ceda: es que no se sostenía.
+     Antes esto no se veía porque el tapón desaparecía quemado y la cuenta
+     global de madera daba «−0».
+     Lo que sí se puede afirmar hoy es lo de abajo, que está medido. Comparar
+     materiales necesita que el tapón cuelgue de la olla —empotrado o soldado—
+     y eso es la tarea que Carlos ya tiene apuntada: «meter materiales dentro
+     de otros y que la presión abra el contenedor». */
+  ok('con presión de sobra, la olla de concreto SÍ revienta', mad.olla > 0,
+     'olla −' + mad.olla + ' celdas · la cámara llegó a ' + mad.pico.toFixed(0));
+  ok('y con poca presión la olla aguanta entera', flojo.olla === 0,
+     'olla −' + flojo.olla + ' · la cámara sólo llegó a ' + flojo.pico.toFixed(0));
 
   /* la viga empotrada, que es la pregunta difícil que puso él */
   const viga = ({ material = 'madera', refuerzo = null, presion = 1400 }) => {
@@ -1754,6 +1793,32 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
     corre(m, 150);
     return antes - cuenta();
   };
+  /* ── EL CARGO ENTERO DETONA ────────────────────────────────────────────
+     Carlos: «lo de la nitro arréglalo porfa». Contado antes de tocar nada, en
+     un bote con 30 celdas de nitroglicerina: `revienta` se llamaba SEIS veces.
+     Las otras 24 se las comía el fuego de la primera — deflagración, no
+     detonación. El cargo entregaba un quinto de su energía, y de ahí venía la
+     mitad de la queja de que los explosivos van flojos. */
+  const detonan = (n) => {
+    const m = mundo(80, 80, 7);
+    for(let x = 0; x < 80; x++) for(let y = 50; y < 80; y++) m.pon(x, y, IDX.piedra);
+    const lado = Math.ceil(Math.sqrt(n)); let p = 0;
+    for(let dy = 0; dy < lado && p < n; dy++) for(let dx = 0; dx < lado && p < n; dx++){
+      m.pon(38 + dx, 49 - dy, IDX.nitro); p++; }
+    let cuantas = 0;
+    const orig = m.revienta.bind(m);
+    m.revienta = (x, y, f) => { cuantas++; return orig(x, y, f); };
+    m.temp[m.i(38, 49)] = 2280;
+    corre(m, 150);
+    return cuantas;
+  };
+  const d1c = detonan(1), d4c = detonan(4), d16c = detonan(16);
+  ok('una celda de explosivo detona UNA vez, ni cero ni dos', d1c === 1,
+     'detonó ' + d1c + ' vez/veces');
+  ok('y un cargo de 16 celdas detona las 16, no una sexta parte', d16c >= 16,
+     '4 puestas → ' + d4c + ' detonaciones · 16 puestas → ' + d16c +
+     ' (antes: de 30 celdas detonaban 6)');
+
   const enPiedra = contra('piedra'), enMetal = contra('metal');
   ok('la MISMA carga abre menos cráter en metal que en piedra', enMetal < enPiedra,
      'piedra −' + enPiedra + ' · metal −' + enMetal);
@@ -1800,14 +1865,17 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
        ' (antes del arreglo BAJABA a y=67.6)');
   }
   ok('y una carga que no puede con la tapa no la desintegra: la deja quieta', (() => {
-    /* ocho filas de piedra sobre dos de nitro: 65 de 120 celdas sobreviven y
-       el bloque apenas se levanta. Lo pesado gana, que es lo correcto. */
+    /* ⚠ UNA fila de nitro, no dos. Desde que el cargo detona entero, dos filas
+       —treinta celdas— ya no son «una carga chica»: son cinco veces la bomba
+       que eran antes y sí se llevan la losa. Se baja a una fila para que la
+       prueba siga diciendo lo que quiere decir: que lo pesado gana cuando el
+       explosivo no alcanza. */
     const m = mundo(100, 80, 11);
     repisa(m, 70);
     for(let y = 48; y <= 60; y++){ m.pon(40, y, IDX.muro); m.pon(56, y, IDX.muro); }
     for(let x = 40; x <= 56; x++) m.pon(x, 60, IDX.muro);
-    for(let y = 58; y < 60; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.nitro);
-    for(let y = 50; y < 58; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.piedra);
+    for(let y = 59; y < 60; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.nitro);
+    for(let y = 50; y < 59; y++) for(let x = 41; x < 56; x++) m.pon(x, y, IDX.piedra);
     corre(m, 60);
     const cuenta = () => { let c = 0; for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.piedra) c++; return c; };
     const antes = cuenta();
@@ -1861,8 +1929,15 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
      explosión le arranca alguna celda. Y está BIEN que se la arranque: una
      bomba pegada a un muro lo pica. Lo que tiene que seguir siendo cierto es
      que AGUANTA, no que salga sin un rasguño. */
+  /* ⚠ EL LISTÓN BAJÓ DE 90% A 85% Y NO ES UN AFLOJE: es que ahora el cargo
+     detona ENTERO. Antes, de 30 celdas de nitro reventaban 6 y las otras 24
+     se quemaban, así que la pared aguantaba una quinta parte de la bomba que
+     uno creía haber puesto. Con el frente de detonación la misma carga muerde
+     más: metal 114/120 (95%) y piedra 105/120 (87%). La propiedad que importa
+     sigue en pie —la pared AGUANTA, no se abre— y ahora se mide contra la
+     bomba de verdad. */
   ok('y las paredes AGUANTAN la explosión, aunque se piquen',
-     me.queda > me.de * 0.9 && pi.queda > pi.de * 0.9,
+     me.queda > me.de * 0.85 && pi.queda > pi.de * 0.85,
      'metal ' + me.queda + '/' + me.de + ' · piedra ' + pi.queda + '/' + pi.de);
 }
 
@@ -2026,6 +2101,124 @@ seccion('cuerpos rígidos: lo que está pegado cae junto');
     const g2 = m.soldado[m.i(15, 19)];
     ok('lo soldado y lo no soldado son piezas distintas', g2 === 0);
   }
+}
+
+seccion('el recipiente protege lo que guarda');
+{
+  /* Carlos: «cuando tengo un recipiente lleno de algo inflamable y el ambiente
+     está en llamas, si este recipiente se mueve el contenido explota siempre
+     por el ambiente, pero no debería ser así».
+
+     Reproducido, y la causa NO era el calor cruzando la pared: el nitro
+     detonaba todavía a 22°. Era que el bote se DESHACÍA al caer — el cuerpo
+     rígido son las paredes, el líquido de dentro no es sólido, así que al
+     moverse las paredes se intercambiaban con su propio contenido y el
+     ambiente entraba por el hueco. Contado siguiendo la caja del bote: paso 2
+     con 25 celdas de nitro dentro, paso 3 con 5 de FUEGO. */
+  const bote = (pared, enElAire, conFuego) => {
+    const m = mundo(70, 60, 9);
+    repisa(m, 55);
+    const y0 = enElAire ? 20 : 48;
+    for(let y = y0; y <= y0 + 6; y++) for(let x = 30; x <= 36; x++){
+      const borde = (y === y0 || y === y0 + 6 || x === 30 || x === 36);
+      m.pon(x, y, borde ? IDX[pared] : IDX.nitro);
+    }
+    if(conFuego) for(let y = y0 - 2; y <= y0 + 8; y++) for(let x = 28; x <= 38; x++){
+      if(x >= 30 && x <= 36 && y >= y0 && y <= y0 + 6) continue;
+      if(y > 54) continue;
+      m.pon(x, y, IDX.fuego);
+    }
+    let detonaciones = 0;
+    const orig = m.revienta.bind(m);
+    m.revienta = (x, y, f) => { detonaciones++; return orig(x, y, f); };
+    /* ⚠ EL QUE CAE SE MIRA ANTES DE ESTRELLARSE. A los 40 pasos el bote llega
+       al suelo a toda velocidad y ahí el nitro SÍ detona — por el golpe, que
+       es exactamente lo que debe hacer la nitroglicerina y lo que se comprueba
+       aparte más abajo. Lo que esta prueba mira es lo otro: que no detone por
+       el AMBIENTE mientras cae entre llamas. Medido: a los 15 pasos el bote va
+       por la fila 48 con sus 25 celdas dentro. */
+    corre(m, enElAire ? 12 : 40);
+    let nitro = 0;
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.nitro) nitro++;
+    return { nitro, detonaciones };
+  };
+  /* ── Y AHORA EL MATERIAL DEL BOTE DECIDE, que antes daba exactamente igual.
+     Medido con fuego alrededor durante 60 pasos, con el nitro dentro:
+       aislante (cond .05) → 28° · piedra (.20) → 68° · concreto (.22) → 73°
+       vidrio (.25) → 78°   · metal (.95) → 1 146° y detona en el paso 7
+       madera (.12) → detona en el 2, porque la PARED ARDE y deja de haber bote
+     O sea que un bote de piedra protege, uno de metal cuece lo que guarda —
+     que es lo que hace una lata fina en una hoguera— y uno de madera ni
+     siquiera llega a ser bote. Nada de esto está escrito en ninguna regla:
+     sale de la conductividad de cada material. */
+  const cayendo = bote('piedra', true, true);
+  ok('un bote sellado que CAE entre llamas no detona su contenido',
+     cayendo.detonaciones === 0 && cayendo.nitro === 25,
+     'quedaron ' + cayendo.nitro + ' de 25 · detonaciones ' + cayendo.detonaciones +
+     ' (antes del arreglo: 0 de 25 y 17 detonaciones)');
+  const quieto = bote('piedra', false, true);
+  ok('y quieto entre llamas, tampoco',
+     quieto.detonaciones === 0 && quieto.nitro === 25,
+     'quedaron ' + quieto.nitro + ' de 25');
+  ok('y sin fuego alrededor, evidentemente tampoco',
+     bote('piedra', true, false).detonaciones === 0);
+  ok('pero un bote de METAL sí cuece lo que guarda: la lata fina en la hoguera',
+     bote('metal', false, true).detonaciones > 0,
+     'el metal conduce 0.95 y la piedra 0.20');
+  /* ⚠ ANOTADO Y NO ARREGLADO: un bote de piedra lleno de nitroglicerina que
+     se estrella contra el suelo desde 30 celdas de altura NO detona — medido,
+     cero detonaciones en 60 pasos. El bote amortigua el golpe y el líquido de
+     dentro nunca ve la velocidad relativa que hace falta. Es coherente con
+     que el contenido ahora viaje con el recipiente, pero un bidón de nitro
+     estrellado debería reventar. Va aquí escrito en vez de en una prueba
+     complaciente; toca con la misma tarea del tapón. */
+
+  /* lo que de verdad compra: el contenido VIAJA con el recipiente */
+  ok('el contenido viaja con el recipiente en vez de quedarse atrás', (() => {
+    const m = mundo(70, 60, 9);
+    repisa(m, 55);
+    for(let y = 20; y <= 26; y++) for(let x = 30; x <= 36; x++){
+      const borde = (y === 20 || y === 26 || x === 30 || x === 36);
+      m.pon(x, y, borde ? IDX.metal : IDX.agua);
+    }
+    corre(m, 12);
+    /* se busca la caja del bote y se mira DENTRO de ella: medirlo en
+       coordenadas fijas mientras el bote cae fue como se me escapó la
+       primera vez */
+    let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.metal){
+      const x = k % 70, y = (k / 70) | 0;
+      if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; }
+    if(y0 <= 20) return false;                 /* si no cayó, no prueba nada */
+    let dentro = 0;
+    for(let y = y0 + 1; y < y1; y++) for(let x = x0 + 1; x < x1; x++)
+      if(m.t[m.i(x, y)] === IDX.agua) dentro++;
+    return dentro === 25;
+  })());
+
+  /* y la regla nueva de encender, que es la otra mitad del arreglo */
+  ok('una pared caliente NO enciende lo que toca: hace falta llama o llegar a su punto', (() => {
+    const m = mundo(30, 30, 3);
+    repisa(m, 29);
+    m.pon(10, 28, IDX.madera);
+    m.pon(11, 28, IDX.metal); m.temp[m.i(11, 28)] = 900;   /* vecino al rojo */
+    corre(m, 3);
+    return m.t[m.i(10, 28)] === IDX.madera;    /* tres pasos no bastan */
+  })());
+  ok('pero una LLAMA pegada sí la enciende', (() => {
+    /* ⚠ con UNA celda de fuego no se prueba nada: el fuego es un gas, vive
+       poco y sube — medido, al paso 0 el vecino ya era vacío. Hace falta una
+       hoguera que se mantenga, que es lo que hay en una sala en llamas. */
+    const m = mundo(30, 30, 3);
+    repisa(m, 29);
+    m.pon(10, 28, IDX.madera);
+    for(let n = 0; n < 40; n++){
+      for(let y = 25; y <= 28; y++) m.pon(11, y, IDX.fuego);
+      m.paso();
+      if(m.t[m.i(10, 28)] !== IDX.madera) return true;
+    }
+    return false;
+  })());
 }
 
 seccion('voltaje: la resistencia quema, el motor mueve y la mecha prende');
