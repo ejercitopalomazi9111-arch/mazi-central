@@ -927,7 +927,15 @@ footer{background:transparent;border-top:1px solid var(--linea);
   align-items:flex-start;font:400 11.5px/1.65 var(--dato);color:var(--gris-tenue)}
 .fila-pie a{color:var(--gris)}
 .fila-pie img{height:26px;width:auto;margin-bottom:12px}
-.nota{max-width:52ch;font-size:11px;line-height:1.7}
+/* ⚠ LA NOTA IBA EN MONOESPACIADA, seis renglones a todo lo ancho: eso es lo
+   que se veia «atascado». La monoespaciada es para datos —numeros de pieza,
+   precios, etiquetas—, no para leer parrafos. Va en la letra de leer, en dos
+   parrafos cortos y con medida de linea. */
+.nota{max-width:46ch;display:grid;gap:9px;
+  font:400 12.5px/1.6 var(--texto);color:var(--gris-tenue)}
+.nota p{margin:0;max-width:none;color:inherit}
+.nota strong{color:var(--gris);font-weight:500}
+.medidor{display:none}
 #medida{color:var(--amarillo);font-variant-numeric:tabular-nums}
 
 /* ---- Movimiento ------------------------------------------------------------- */

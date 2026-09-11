@@ -999,7 +999,15 @@ footer{background:transparent;border-top:1px solid var(--linea);
   align-items:flex-start;font:400 11.5px/1.65 var(--dato);color:var(--gris-tenue)}
 .fila-pie a{color:var(--gris)}
 .fila-pie img{height:26px;width:auto;margin-bottom:12px}
-.nota{max-width:52ch;font-size:11px;line-height:1.7}
+/* ⚠ LA NOTA IBA EN MONOESPACIADA, seis renglones a todo lo ancho: eso es lo
+   que se veia «atascado». La monoespaciada es para datos —numeros de pieza,
+   precios, etiquetas—, no para leer parrafos. Va en la letra de leer, en dos
+   parrafos cortos y con medida de linea. */
+.nota{max-width:46ch;display:grid;gap:9px;
+  font:400 12.5px/1.6 var(--texto);color:var(--gris-tenue)}
+.nota p{margin:0;max-width:none;color:inherit}
+.nota strong{color:var(--gris);font-weight:500}
+.medidor{display:none}
 #medida{color:var(--amarillo);font-variant-numeric:tabular-nums}
 
 /* ---- Movimiento ------------------------------------------------------------- */
@@ -1713,14 +1721,26 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
   <div>
     <img src="{LOGO['ruta']}" width="{LOGO['w']}" height="{LOGO['h']}" alt="Toydarians">
     <div><a href="{TIENDA}" target="_blank" rel="noopener">toydarians.com ↗</a></div>
-    <div style="margin-top:12px">Fluidez: <span id="medida">midiendo…</span></div>
+    <!-- ⚠ AQUI SE LE ENSEÑABA AL CLIENTE «Fluidez: 60 fps · mínimo 43».
+         Eso es un instrumento nuestro, no información para quien compra
+         figuras: en una propuesta para un cliente, un número de depuración a
+         la vista dice que el sitio está a medio hacer. La medición se queda
+         —es útil y la lee la compuerta—, pero vive fuera de la vista. -->
+    <div class="medidor" aria-hidden="true">Fluidez: <span id="medida">midiendo…</span></div>
   </div>
-  <p class="nota" style="margin:0">
-    Propuesta de escaparate. El logotipo, las fotos de producto, las categorías y sus
-    conteos salen de toydarians.com. <strong>No se publican precios</strong> porque
-    cambian: viven en la tienda. Star Wars, The Vintage Collection y las marcas
-    nombradas son de sus titulares; este sitio no está afiliado a ellos.
-  </p>
+  <div class="nota">
+    <!-- ⚠ ESTA NOTA DECIA «No se publican precios porque cambian: viven en la
+         tienda», Y EL SITIO SI LOS PUBLICA desde que se cablearon los precios
+         reales. Un pie que contradice lo que la pagina enseña dos dedos mas
+         arriba no es un detalle de redaccion: es el sitio afirmando algo
+         falso sobre si mismo, en la parte donde precisamente se promete
+         precision. Ahora dice lo que de verdad pasa. -->
+    <p>Propuesta de escaparate. El logotipo, las fotos, las categorías, los precios
+      y las existencias salen de <strong>toydarians.com</strong>; pueden cambiar, y
+      la tienda manda siempre.</p>
+    <p>Star Wars, The Vintage Collection y las demás marcas son de sus titulares.
+      Este sitio no está afiliado a ellos.</p>
+  </div>
 </div></footer>
 """
 
