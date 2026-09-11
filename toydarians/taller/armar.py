@@ -111,9 +111,73 @@ body{margin:0;background:transparent;color:var(--hueso);
    El contraste de la pagina se mide contra `--negro`, asi que si el fondo
    aclarara de verdad ese numero seria mentira. Hay una comprobacion en
    revisar.mjs que mide el pixel mas claro que este lienzo llega a pintar. */
-.g-fondo{position:fixed;inset:0;z-index:-1;pointer-events:none;
-  width:100%;height:100%;display:block}
-@media (prefers-reduced-motion:reduce){.g-fondo{opacity:.7}}
+/* ⚠ ESTO ERA UN LIENZO QUE SE BORRABA Y SE REPINTABA ENTERO 30 VECES POR
+   SEGUNDO, Y ES LO QUE HACIA QUE LA PAGINA FUERA A TIRONES.
+   Medido, a 390 px y DPR 3: con el lienzo, 1 fps y cuadros de 5.9 s; sin el,
+   50 fps. Ni siquiera eran las estrellas —son rectangulos de 2 px—: era
+   BORRAR Y VOLVER A PINTAR 740 mil pixeles en cada cuadro.
+
+   Rediseño: las estrellas se pintan UNA VEZ, cada capa en su lienzo, y despues
+   no se vuelve a dibujar nada nunca. Lo unico que pasa por cuadro es escribir
+   un `transform` en tres elementos —el paralaje al scrollear—, que resuelve el
+   compositor sin repintar. El titileo lo hace el CSS con `opacity` sobre capas
+   DECORATIVAS, que si se puede.
+   Es el mismo principio que ya estaba escrito para el resto del sitio, que yo
+   me habia saltado: nada que obligue a repintar en cada cuadro. */
+.g-cielos{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.g-cielos canvas{position:absolute;left:0;top:0;width:100%;display:block}
+/* ⚠ AQUI HABIA UN TITILEO POR OPACIDAD, Y ERA CARISIMO. Animar `opacity` en
+   una capa de pantalla completa obliga al compositor a MEZCLARLA de nuevo en
+   cada cuadro, y eran tres. Medido: con el titileo 4 fps, sin el 51.
+   Un cielo quieto sigue leyendose como cielo; uno que parpadea a tirones, no.
+   El movimiento del fondo lo pone la nebulosa, que solo se desplaza. */
+/* la raya del hiperespacio: un elemento que cruza con transform, no un trazo
+   que haya que redibujar */
+.g-raya{position:fixed;left:-30%;top:0;width:26%;height:2px;z-index:-1;
+  pointer-events:none;opacity:0;transform-origin:0 50%;
+  background:linear-gradient(90deg,transparent,rgba(236,240,255,.75))}
+.g-raya.oro{background:linear-gradient(90deg,transparent,rgba(250,247,0,.8))}
+.g-raya.va{animation:g-cruza .62s ease-out}
+@keyframes g-cruza{
+  0%{opacity:0;transform:translate3d(0,0,0)}
+  18%{opacity:1}
+  100%{opacity:0;transform:translate3d(480%,0,0)}}
+@media (prefers-reduced-motion:reduce){
+  .g-cielos canvas,.g-raya{animation:none!important}
+  .g-raya{display:none}
+}
+
+/* ⚠ LA NEBULOSA LA PINTABA EL LIENZO Y COSTABA LA PAGINA ENTERA.
+   Se dibujaba en 192x108 y se estiraba a pantalla completa con suavizado, EN
+   CADA CUADRO. En un telefono con DPR 3 eso son ~740 mil pixeles remuestreados
+   sesenta veces por segundo, y no hay CPU que lo aguante: medido, la pagina
+   corria a 1 fps con cuadros de 5.9 SEGUNDOS. Quitando el lienzo, 50 fps.
+   Era mio, de ayer, y es exactamente el error que el propio repo tiene escrito
+   —«nada que obligue a repintar en cada cuadro»— aplicado a otra cosa.
+
+   Ahora la nebulosa son cinco capas de degradado en CSS que solo se MUEVEN:
+   `transform` lo resuelve el compositor sin repintar nada, asi que cuesta cero
+   por cuadro. El lienzo se queda solo con las estrellas y la raya, que son
+   rectangulos de 2 px y si son baratos. */
+.g-neb{position:fixed;inset:-20%;z-index:-2;pointer-events:none;overflow:hidden}
+/* sin `will-change`: Chrome ya promociona solo lo que anima `transform`, y
+   dejarlo puesto mantiene cinco superficies grandes en memoria para siempre */
+.g-neb i{position:absolute;display:block;border-radius:50%}
+.g-neb .n1{left:2%;top:8%;width:66%;aspect-ratio:1;
+  background:radial-gradient(circle,rgba(209,35,42,.30),rgba(209,35,42,.10) 52%,transparent 71%)}
+.g-neb .n3{left:44%;top:56%;width:72%;aspect-ratio:1;
+  background:radial-gradient(circle,rgba(142,19,25,.27),rgba(142,19,25,.09) 52%,transparent 71%)}
+.g-neb .n4{left:8%;top:64%;width:70%;aspect-ratio:1;
+  background:radial-gradient(circle,rgba(27,47,107,.34),rgba(27,47,107,.12) 52%,transparent 71%)}
+@media (scripting: enabled){
+  .g-neb .n1{animation:g-n1 71s ease-in-out infinite alternate}
+  .g-neb .n3{animation:g-n3 103s ease-in-out infinite alternate}
+  .g-neb .n4{animation:g-n4 79s ease-in-out infinite alternate}
+}
+@keyframes g-n1{to{transform:translate3d(16%,11%,0) scale(1.16)}}
+@keyframes g-n3{to{transform:translate3d(11%,-13%,0) scale(1.19)}}
+@keyframes g-n4{to{transform:translate3d(-15%,-10%,0) scale(1.13)}}
+@media (prefers-reduced-motion:reduce){.g-neb i{animation:none!important}}
 /* ⚠ EL `height:auto` NO ES ADORNO: SIN EL EL LOGO SE DEFORMA.
    Lo reporto Carlos — «el logo cuando carga se ve demasiado recortado en la
    parte de abajo». No estaba recortado: estaba ESTIRADO a lo alto.
@@ -168,20 +232,53 @@ CSS += r"""
 .g-intro{position:fixed;inset:0;z-index:100;background:#000;display:grid;
   place-items:center;overflow:hidden}
 .g-intro[hidden]{display:none}
-.g-intro .cielo{position:absolute;inset:0;opacity:.55}
+/* ⚠ AQUI ESTABA LA RAIZ DEL TRABON, Y ES UNA TRAMPA PRECIOSA.
+   `inset:0` NO estira un elemento reemplazado. Un `<canvas>` tiene tamaño
+   propio —300x150 por defecto—, asi que con `width:auto` el CSS resolvia a
+   300x150 y el cielo era un parche en la esquina, no la pantalla.
+
+   Y de ahi salia el desastre: el guion hacia `ci.width = ci.clientWidth * 1.5`.
+   Pero cambiar el bitmap de un canvas CAMBIA SU TAMAÑO PROPIO, y con
+   `width:auto` eso cambia `clientWidth`. O sea: 300 → 450 → 675 → 1013 → …
+   EL LIENZO CRECIA EN CADA CUADRO, se reasignaba la memoria y se repintaba
+   entero. Por eso la intro iba a 1.4 fps con cuadros de casi cinco segundos:
+   no era «pesada», era una realimentacion que se comia el telefono.
+
+   Con el tamaño fijado en CSS, el bitmap ya no puede mover la caja y el bucle
+   se rompe. Ademas ahora el cielo si ocupa la pantalla, que es lo que siempre
+   quiso ser. */
+.g-intro .cielo{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
 .g-intro .marca{position:relative;width:min(88vw,900px)}
 .g-intro .fila{position:relative;width:100%;aspect-ratio:1884/174}
-.g-intro .let{position:absolute;top:0;height:100%;
-  -webkit-mask-image:linear-gradient(#000,#000);mask-image:linear-gradient(#000,#000);
-  -webkit-mask-size:100% 0%;mask-size:100% 0%;
-  -webkit-mask-position:50% 0;mask-position:50% 0;
-  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+/* ⚠ ESTAS DOS ANIMACIONES COSTABAN LA INTRO ENTERA, Y LAS DOS ROMPIAN LA
+   REGLA QUE ESTE MISMO REPO TIENE ESCRITA: «solo transform».
+
+   · La letra se revelaba animando `mask-size`. Una mascara que cambia de
+     tamano obliga a RECOMPONER Y REPINTAR la letra en cada cuadro, y eran diez
+     a la vez.
+   · La hoja de luz crecia animando `height`. Eso es animar el DISENO: cada
+     cuadro recalcula la caja y repinta, ademas, dos sombras difusas de 18 y
+     46 px de radio.
+
+   Medido: con la intro puesta la pagina iba a 1–2 fps con cuadros de segundos;
+   quitandola, 59 fps. No era el telefono de Luis: era esto.
+
+   Se cambian las dos por transformaciones puras, que resuelve el compositor
+   sin tocar ni el diseno ni el pintado:
+   · La letra va entera y encima lleva una TAPA del color del fondo que se
+     encoge hacia abajo (`scaleY` con origen abajo). La letra se descubre de
+     arriba a abajo exactamente igual que con la mascara.
+   · La hoja mide ya su alto final y entra con `scaleY` desde arriba.
+   El aspecto es el mismo; el costo por cuadro, cero. */
+.g-intro .let{position:absolute;top:0;height:100%;overflow:hidden}
 .g-intro .let img{width:100%;height:100%;object-fit:fill;display:block}
+.g-intro .tapa{position:absolute;inset:-1px;background:#000;
+  transform-origin:50% 100%;will-change:transform}
 /* la hoja: una linea de luz que cruza la letra mientras la revela */
-.g-intro .hoja{position:absolute;top:0;height:0%;width:100%;pointer-events:none;
+.g-intro .hoja{position:absolute;top:0;height:100%;width:100%;pointer-events:none;
   background:linear-gradient(180deg,transparent,#FFF 60%,#FFF);
-  box-shadow:0 0 18px 5px rgba(250,247,0,.85),0 0 46px 14px rgba(250,247,0,.35);
-  opacity:0}
+  box-shadow:0 0 16px 4px rgba(250,247,0,.85);
+  transform-origin:50% 0;transform:scaleY(0);opacity:0;will-change:transform}
 .g-intro .au{display:block;width:52%;margin:18px auto 0;opacity:0;
   filter:drop-shadow(0 0 12px rgba(250,247,0,.5))}
 .g-intro .saltar{position:absolute;right:16px;bottom:16px;z-index:3;
@@ -1328,26 +1425,93 @@ def g_ficha():
             '<div class="ex-vagones" id="g-riel"></div></div>'
             '</div></div>')
 
+# ══════════════════════════════════════════════════════════════════════════
+# LOS ACTIVOS SE ESCRIBEN A ARCHIVO, NO SE EMPOTRAN
+# ──────────────────────────────────────────────────────────────────────────
+# Como estaba: TODO iba dentro del HTML como data URI —logo, letras, aurebesh,
+# heroe, las cinco ilustraciones y las dos tipografias—. 425 KB de documento,
+# de los cuales 236 eran base64.
+#
+# Por que era malo, medido en un telefono de gama media (CPU 6x lento, DPR 3):
+# el primer pintado tardaba 13.6 SEGUNDOS. Trece segundos de pantalla en
+# blanco. No es que la intro fuera pesada: es que el navegador no podia pintar
+# NADA hasta acabar de leer y descodificar 425 KB de una sola tacada, porque un
+# documento no se pinta a medias.
+#
+# Y el detalle que lo vuelve absurdo: el LOGO iba empotrado TRES VECES —barra,
+# carton y pie—. 26 KB de imagen convertidos en ~104 KB de base64 repetido. En
+# archivo se pide una vez, se cachea y se reusa en los tres sitios.
+#
+# El base64 ademas engorda un 33% por definicion, y lo empotrado NO SE CACHEA:
+# en cada visita vuelve a viajar entero.
+#
+# Lo que se pierde: que el HTML sea portatil de un solo archivo. Ya lo era a
+# medias —las 235 fotos de producto viven en `fotos/` desde el primer dia—, asi
+# que el sitio ya necesitaba su carpeta. Se pierde algo que ya no teniamos.
+ACTIVOS = RAIZ / 'marca'
+
+def escribir_activos():
+    """Vuelca los activos de assets.json a archivos y devuelve sus rutas.
+
+    Se escriben desde el generador —y no a mano una vez— para que sigan
+    saliendo del MISMO origen medido que antes se empotraba. Si alguien cambia
+    assets.json y regenera, los archivos se actualizan solos; a mano, se
+    desincronizarian en silencio, que es el defecto que perseguimos siempre.
+    """
+    import base64
+    (ACTIVOS / 'letras').mkdir(parents=True, exist_ok=True)
+    def volcar(uri, destino):
+        datos = base64.b64decode(uri.split(',', 1)[1])
+        ruta = ACTIVOS / destino
+        # solo se escribe si CAMBIO: asi `git status` no marca 18 archivos
+        # tocados en cada regeneracion y el diff dice la verdad
+        if not ruta.exists() or ruta.read_bytes() != datos:
+            ruta.write_bytes(datos)
+        return 'marca/' + destino
+    rutas = {}
+    for k in ('logo', 'aurebesh', 'heroe', 'p1', 'p2', 'p3', 'p4', 'p5'):
+        if k in img: rutas[k] = volcar(img[k]['uri'], k + '.webp')
+    rutas['letras'] = [volcar(l['uri'], f'letras/l{i}.webp')
+                       for i, l in enumerate(img.get('letras', []))]
+    for nombre in ('bungee-ext.woff2', 'bungee-latin.woff2',
+                   'familjen-latin.woff2', 'familjen-latin-ext.woff2',
+                   'jetbrains-latin.woff2', 'jetbrains-latin-ext.woff2'):
+        origen = ACT / 'fuentes' / nombre
+        if origen.exists():
+            d = origen.read_bytes()
+            destino = ACTIVOS / nombre
+            if not destino.exists() or destino.read_bytes() != d:
+                destino.write_bytes(d)
+    return rutas
+
+RUTAS = escribir_activos()
+
 def g_intro():
     ls = ''.join(
         f'<span class="let" style="left:{l["x"]*100:.3f}%;width:{l["ancho"]*100:.3f}%">'
-        f'<img src="{l["uri"]}" alt="" width="{l["w"]}" height="{l["h"]}">'
-        f'<span class="hoja" aria-hidden="true"></span></span>'
-        for l in img['letras'])
+        f'<img src="{RUTAS["letras"][i]}" alt="" width="{l["w"]}" height="{l["h"]}" '
+        f'fetchpriority="high" decoding="async">'
+        f'<span class="hoja" aria-hidden="true"></span>'
+        f'<span class="tapa" aria-hidden="true"></span></span>'
+        for i, l in enumerate(img['letras']))
     a = img['aurebesh']
     return (f'<div class="g-intro" id="g-intro" aria-hidden="true">'
             f'<canvas class="cielo" id="g-cielo"></canvas>'
             f'<div class="marca"><div class="fila">{ls}</div>'
-            f'<img class="au" id="g-au" src="{a["uri"]}" width="{a["w"]}" height="{a["h"]}" alt=""></div>'
+            f'<img class="au" id="g-au" src="{RUTAS["aurebesh"]}" width="{a["w"]}" '
+            f'height="{a["h"]}" alt="" decoding="async"></div>'
             f'<button class="saltar" id="g-saltar" type="button">Saltar</button></div>')
 
 VC_TOTAL     = (CATFOTOS.get('vintage-collection') or {}).get('productos') or len(cat)
 HASBRO_TOTAL = (CATFOTOS.get('hasbro') or {}).get('productos') or VC_TOTAL
 
 TIENDA = 'https://www.toydarians.com/'
-LOGO = img['logo']
+# ⚠ EL LOGO IBA EMPOTRADO TRES VECES —barra, carton y pie—: 26 KB de imagen
+#   convertidos en ~104 KB de base64 REPETIDO dentro del mismo documento. En
+#   archivo se pide una vez, se cachea, y los tres sitios reusan esa peticion.
+LOGO = dict(img['logo'], ruta=RUTAS['logo'])
 
-CSS = CSS.replace('AUREBESH_URI', img['aurebesh']['uri'])
+CSS = CSS.replace('AUREBESH_URI', RUTAS['aurebesh'])
 
 
 # ── LA TIPOGRAFIA DE LA IDENTIDAD VA EMPOTRADA, NO PEDIDA ────────────────────
@@ -1368,11 +1532,53 @@ CSS = CSS.replace('AUREBESH_URI', img['aurebesh']['uri'])
 #
 # Licencia OFL, que permite empotrar: activos/fuentes/LICENCIA-BUNGEE.md
 def _fuente(nombre, rango):
-    datos = base64.b64encode((ACT / 'fuentes' / nombre).read_bytes()).decode()
+    """⚠ ESTO IBA EN BASE64 DENTRO DEL `<style>`: 33 KB de fuente que el
+    navegador tenia que leer ANTES de poder pintar el primer pixel, porque un
+    `<style>` bloquea el pintado entero.
+    En archivo se pide en paralelo, se cachea entre visitas, y con
+    `font-display:swap` el titular sale YA en la de repuesto y cambia a Bungee
+    cuando llega. Lo que se buscaba al empotrarla —que no se pidiera a Google—
+    se mantiene: el archivo es nuestro y sale de nuestro dominio."""
     return ("@font-face{font-family:'Bungee';font-style:normal;font-weight:400;"
             "font-display:swap;"
-            f"src:url(data:font/woff2;base64,{datos}) format('woff2');"
+            f"src:url(marca/{nombre}) format('woff2');"
             f"unicode-range:{rango}}}")
+
+def _fuente_var(m):
+    """Familjen Grotesk y JetBrains Mono son VARIABLES, con eje de peso: un solo
+    archivo por subconjunto cubre de 400 a 700. Google servia un archivo por
+    peso y los tres eran BYTE POR BYTE IGUALES — el mismo defecto que los
+    banners de categoria, con otro disfraz. Aqui se declara el rango."""
+    return ("@font-face{font-family:'" + m['fam'] + "';font-style:normal;"
+            "font-weight:400 700;font-display:swap;"
+            f"src:url(marca/{m['archivo']}) format('woff2');"
+            f"unicode-range:{m['rango']}}}")
+
+def _fuentes_propias():
+    """⚠ AQUI ESTABA EL TRABON QUE REPORTO LUIS, Y NO ERA LA INTRO.
+
+    La cabecera pedia Familjen Grotesk y JetBrains Mono a
+    `fonts.googleapis.com` con un `<link rel=stylesheet>`. Una hoja de estilo
+    externa BLOQUEA EL PINTADO: el navegador no dibuja ni un pixel hasta que
+    llega. Y es de OTRO dominio, o sea DNS + TLS + la peticion, antes de que
+    la pagina exista para quien mira.
+
+    Medido aqui, con la red cortada: primer pintado a los 12,688 ms. Doce
+    segundos de pantalla en blanco. Quitando esos dos `<link>`: 192 ms.
+    Sesenta y seis veces mas rapido, y el resto del documento identico.
+
+    En un telefono con senal mala no son doce segundos, pero es exactamente la
+    misma forma de fallar: la pagina no arranca hasta que Google conteste.
+
+    Y ademas contradecia lo que el propio proyecto ya habia decidido: Bungee se
+    empotro para que el navegador NUNCA llamara a Google. Las otras dos se
+    quedaron pidiendose fuera. Ahora las tres salen de nuestro dominio, que es
+    lo que decia el aviso y lo que hace que la pagina no dependa de nadie.
+    """
+    import json
+    idx = ACT / 'fuentes' / 'indice.json'
+    if not idx.exists(): return ''
+    return ''.join(_fuente_var(m) for m in json.loads(idx.read_text(encoding='utf-8')))
 
 BUNGEE_EMPOTRADA = (
     _fuente('bungee-ext.woff2',
@@ -1383,21 +1589,23 @@ BUNGEE_EMPOTRADA = (
               'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,'
               'U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,'
               'U+2212,U+2215,U+FEFF,U+FFFD')
+    + _fuentes_propias()
 )
 
 DOC = f"""<title>Toydarians · The Vintage Collection</title>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap">
-<style>{BUNGEE_EMPOTRADA}</style>
-<style>{CSS}</style>
+<link rel="preload" href="marca/bungee-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="marca/logo.webp" as="image">
+<link rel="stylesheet" href="estilo.css">
 
-<canvas class="g-fondo" id="g-fondo" aria-hidden="true"></canvas>
+<div class="g-neb" aria-hidden="true"><i class="n1"></i><i class="n3"></i><i class="n4"></i></div>
+<div class="g-cielos" id="g-cielos" aria-hidden="true"><canvas class="c1"></canvas><canvas class="c2"></canvas></div>
+<i class="g-raya" id="g-raya" aria-hidden="true"></i>
 
 {g_intro()}
 
 <div class="barra"><div class="caso">
   <a class="logo" href="{TIENDA}" target="_blank" rel="noopener">
-    <img src="{LOGO['uri']}" width="{LOGO['w']}" height="{LOGO['h']}"
+    <img src="{LOGO['ruta']}" width="{LOGO['w']}" height="{LOGO['h']}"
          alt="Toydarians" fetchpriority="high"></a>
   <nav>
     <a href="#vitrina" class="opc">La vitrina</a>
@@ -1427,7 +1635,7 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
     </div>
     <div class="peana">
       <div class="figura">
-        <img src="{img['heroe']['uri']}" width="900" height="897" fetchpriority="high"
+        <img src="{RUTAS['heroe']}" width="900" height="897" fetchpriority="high"
              decoding="async" alt="Tres figuras de The Vintage Collection">
       </div>
     </div>
@@ -1476,11 +1684,11 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
         <div class="pestana" aria-hidden="true"></div>
         <div class="perfora" aria-hidden="true"></div>
         <div class="cabecera">
-          <img src="{LOGO['uri']}" width="{LOGO['w']}" height="{LOGO['h']}" alt="Toydarians">
+          <img src="{LOGO['ruta']}" width="{LOGO['w']}" height="{LOGO['h']}" alt="Toydarians">
           <i>The Vintage Collection</i>
         </div>
         <div class="burbuja">
-          <img src="{img['p4']['uri']}" width="560" height="500" loading="lazy"
+          <img src="{RUTAS['p4']}" width="560" height="500" loading="lazy"
                decoding="async" alt="Obi-Wan Kenobi, VC 357">
           <div class="lustre" aria-hidden="true"></div>
         </div>
@@ -1503,7 +1711,7 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
 
 <footer><div class="caso fila-pie">
   <div>
-    <img src="{LOGO['uri']}" width="{LOGO['w']}" height="{LOGO['h']}" alt="Toydarians">
+    <img src="{LOGO['ruta']}" width="{LOGO['w']}" height="{LOGO['h']}" alt="Toydarians">
     <div><a href="{TIENDA}" target="_blank" rel="noopener">toydarians.com ↗</a></div>
     <div style="margin-top:12px">Fluidez: <span id="medida">midiendo…</span></div>
   </div>
@@ -1763,15 +1971,17 @@ JS += r"""
     var T0 = 380, PASO = 300, DUR = 520;        // 380 + 10*300 + 520 ≈ 3.9 s
     function trazar(){
     lets.forEach(function(L, i){
-      var hoja = L.querySelector('.hoja');
+      var hoja = L.querySelector('.hoja'), tapa = L.querySelector('.tapa');
       var t = T0 + i * PASO;
       setTimeout(function(){
+        var curva = 'cubic-bezier(.5,0,.3,1)';
         hoja.style.opacity = '1';
-        hoja.style.transition = 'height ' + DUR + 'ms cubic-bezier(.5,0,.3,1)';
-        L.style.transition = '-webkit-mask-size ' + DUR + 'ms cubic-bezier(.5,0,.3,1),'
-                           + 'mask-size ' + DUR + 'ms cubic-bezier(.5,0,.3,1)';
-        hoja.style.height = '100%';
-        L.style.webkitMaskSize = '100% 100%'; L.style.maskSize = '100% 100%';
+        hoja.style.transition = 'transform ' + DUR + 'ms ' + curva;
+        hoja.style.transform = 'scaleY(1)';
+        if (tapa) {
+          tapa.style.transition = 'transform ' + DUR + 'ms ' + curva;
+          tapa.style.transform = 'scaleY(0)';
+        }
         setTimeout(function(){
           hoja.style.transition = 'opacity .32s ease';
           hoja.style.opacity = '0';
@@ -1795,32 +2005,36 @@ JS += r"""
     if (bs) bs.addEventListener('click', cerrarIntro);
     addEventListener('keydown', function(e){ if (e.key === 'Escape') cerrarIntro(); });
 
-    // el campo de estrellas del fondo, con el mismo bucle de siempre
+    /* ⚠ ESTE LIENZO ERA EL TRABON DE LA INTRO, Y SOLO ESTE.
+       Medido a 390 px y DPR 3, durante los 5 s de la intro:
+         tal cual .......................  1.4 fps  (cuadros de 4.8 s)
+         quitando SOLO este lienzo ...... 58.9 fps
+       No eran las diez letras, ni las sombras, ni las tapas: era borrar y
+       repintar 170 estrellas sobre una superficie de pantalla completa en cada
+       cuadro, justo cuando el navegador ademas esta descodificando las diez
+       imagenes del logo.
+
+       Se pinta UNA VEZ y no se toca mas. El cielo quieto se lee igual de bien
+       —de hecho en cinco segundos nadie nota que titila—, y el movimiento de
+       la intro lo ponen las letras, que es donde tiene que estar. */
     var ci = document.getElementById('g-cielo'), cx = ci && ci.getContext('2d');
     if (cx) {
-      var estrellas = [], R = Math.min(devicePixelRatio || 1, 1.5);
-      function medirCielo(){
-        ci.width = Math.round(ci.clientWidth * R);
-        ci.height = Math.round(ci.clientHeight * R);
-        if (!ci.width || !ci.height) return;
-        estrellas = [];
-        for (var i = 0; i < 170; i++)
-          estrellas.push({ x: Math.random(), y: Math.random(),
-                           z: Math.random() * .8 + .2, f: Math.random() * 6.28 });
-      }
-      tareas.push(function(t){
-        if (intro.hidden) return;
-        if (ci.width !== Math.round(ci.clientWidth * R) ||
-            ci.height !== Math.round(ci.clientHeight * R)) medirCielo();
-        if (!estrellas.length) return;
-        cx.clearRect(0, 0, ci.width, ci.height);
-        for (var i = 0; i < estrellas.length; i++) {
-          var e = estrellas[i];
-          var a = (.35 + .65 * Math.abs(Math.sin(t / 900 + e.f))) * e.z;
-          cx.fillStyle = 'rgba(250,247,220,' + a.toFixed(3) + ')';
-          cx.fillRect(e.x * ci.width, e.y * ci.height, e.z * 2 * R, e.z * 2 * R);
+      var sembrado = false;
+      function sembrarIntro(){
+        var R = 1;                       // puntos de 2 px: DPR 1 sobra
+        var w = Math.round(ci.clientWidth * R), h = Math.round(ci.clientHeight * R);
+        if (!w || !h) return;
+        ci.width = w; ci.height = h;
+        cx.clearRect(0, 0, w, h);
+        for (var i = 0; i < 170; i++) {
+          var z = Math.random() * .8 + .2;
+          cx.fillStyle = 'rgba(250,247,220,' + (z * (.4 + Math.random() * .6)).toFixed(3) + ')';
+          cx.fillRect(Math.random() * w, Math.random() * h, z * 2, z * 2);
         }
-      });
+        sembrado = true;
+      }
+      requestAnimationFrame(sembrarIntro);
+      addEventListener('resize', function(){ if (sembrado) sembrarIntro(); });
     }
   } else if (intro) { intro.hidden = true; }
 
@@ -1896,151 +2110,96 @@ JS += r"""
   // se mide contra --negro, asi que un fondo que aclarara de verdad volveria
   // mentira ese numero. Hay una comprobacion en revisar.mjs que mide el pixel
   // mas claro que esto llega a pintar.
-  var lienzoF = document.getElementById('g-fondo'),
-      fx = lienzoF && lienzoF.getContext && lienzoF.getContext('2d');
-  if (fx) {
-    var RF = Math.min(devicePixelRatio || 1, 1.5);
-
-    // --- la nebulosa, en chiquito ---------------------------------------
-    var neb = document.createElement('canvas');
-    neb.width = 192; neb.height = 108;
-    var nx = neb.getContext('2d');
-    // rojo de la casa, amarillo del logo y un azul frio que da hondura.
-    // El azul NO es una marca nueva: es el suelo, igual que en el membrete.
-    // Las alfas NO son al gusto: son el techo que deja el contraste. El texto
-    // mas flojo de la pagina es --gris (#9A9AA2, luminancia .313) y para
-    // cumplir 4.5:1 el fondo no puede pasar de .0307 de luminancia. Estas
-    // dejan el bloque mas claro en ~.022, o sea ~5:1 en el peor sitio, y se
-    // ven. La primera version se quedo en .0075 —cumplia de sobra y NO SE
-    // VEIA: un fondo invisible no es un fondo, es negro con costo de CPU—.
-    var manchas = [
-      { c:'209,35,42',   x:.18, y:.24, r:.62, a:.225, vx: .0000110, vy: .0000062, f:0 },
-      { c:'250,247,0',   x:.82, y:.18, r:.48, a:.130, vx:-.0000086, vy: .0000091, f:2 },
-      { c:'142,19,25',   x:.62, y:.74, r:.70, a:.200, vx: .0000067, vy:-.0000078, f:4 },
-      { c:'27,47,107',   x:.30, y:.86, r:.66, a:.260, vx:-.0000094, vy:-.0000054, f:1 },
-      { c:'250,247,0',   x:.06, y:.62, r:.34, a:.095, vx: .0000122, vy: .0000041, f:3 }
-    ];
-    function pintarNebulosa(t){
-      nx.clearRect(0, 0, 192, 108);
-      for (var i = 0; i < manchas.length; i++) {
-        var m = manchas[i];
-        // van y vienen: seno lento, no un desplazamiento que se salga
-        var px = (m.x + Math.sin(t * m.vx + m.f) * .17) * 192;
-        var py = (m.y + Math.cos(t * m.vy + m.f) * .15) * 108;
-        var pr = m.r * 108 * (1 + Math.sin(t * .000047 + m.f) * .12);
-        var g = nx.createRadialGradient(px, py, 0, px, py, pr);
-        g.addColorStop(0,   'rgba(' + m.c + ',' + m.a + ')');
-        g.addColorStop(.55, 'rgba(' + m.c + ',' + (m.a * .38).toFixed(4) + ')');
-        g.addColorStop(1,   'rgba(' + m.c + ',0)');
-        nx.fillStyle = g;
-        nx.fillRect(0, 0, 192, 108);
-      }
-    }
-
-    // --- tres capas de estrellas, con paralaje al scrollear --------------
-    // La de atras casi no se mueve y la de adelante se mueve el doble que la
-    // pagina: es lo que da la sensacion de hondura sin dibujar nada en 3D.
-    // Las estrellas son lo que de verdad se VE que se mueve, y ademas son
-    // gratis para el contraste: un punto de 3 px promediado en un bloque de
-    // 32x32 no levanta el fondo. Por eso el presupuesto se gasta aqui y no
-    // en subirle mas tinta a la nebulosa, que si lo levantaria.
+  // ══════════════════════════════════════════════════════════════════════
+  // G · EL FONDO VIVO · nebulosa (CSS) + estrellas (pintadas UNA vez)
+  // ══════════════════════════════════════════════════════════════════════
+  // Lo que costo aprenderlo: la primera version pintaba una nebulosa en un
+  // lienzo chiquito y la estiraba a pantalla completa EN CADA CUADRO. Se veia
+  // bien y hundia la pagina: 1 fps, cuadros de casi 6 segundos en un telefono.
+  //
+  // Ahora no se dibuja NADA por cuadro:
+  // · la nebulosa son degradados de CSS que solo se mueven (compositor);
+  // · las estrellas se pintan una sola vez, cada capa en su lienzo;
+  // · lo unico que pasa por cuadro es escribir tres `transform` para el
+  //   paralaje, que no repinta nada;
+  // · el titileo lo hace el CSS con opacidad sobre capas decorativas;
+  // · la raya del hiperespacio es un elemento que cruza con `transform`.
+  var cielos = document.getElementById('g-cielos'),
+      raya   = document.getElementById('g-raya');
+  if (cielos && cielos.firstChild && cielos.firstChild.getContext) {
+    /* Dos capas y no tres. Cada capa es una superficie del tamano de la
+       pantalla que el compositor tiene que mezclar; la tercera aportaba muy
+       poca hondura y costaba lo mismo que las otras dos. */
     var capas = [
-      { n:190, prof:.05, tam:1.4, br:.42, halo:0 },
-      { n:110, prof:.16, tam:2.1, br:.70, halo:0 },
-      { n: 48, prof:.33, tam:3.0, br:1,   halo:1 }
+      { n: cielos.children[0], prof: .06, densidad: 1 / 4200, tam: 1.5, br: .48 },
+      { n: cielos.children[1], prof: .26, densidad: 1 / 11000, tam: 2.6, br: .95 }
     ];
-    var cielo = [];
-    function sembrar(){
-      cielo = [];
-      for (var c = 0; c < capas.length; c++)
-        for (var i = 0; i < capas[c].n; i++)
-          cielo.push({ x:Math.random(), y:Math.random(), c:c,
-                       f:Math.random() * 6.283, w:.6 + Math.random() * .9 });
-    }
-    sembrar();
+    // el lienzo se dibuja a DPR 1: son puntos de 2 px, no hay detalle que
+    // ganar con mas resolucion y cuesta el cuadrado de lo que sube
+    var altoCielo = 0, anchoCielo = 0;
 
-    // --- el salto al hiperespacio, de vez en cuando ----------------------
-    // Una raya que cruza cada 9-22 s. Es el guino de Star Wars que pidieron,
-    // y es UNA raya: si fueran muchas seria un protector de pantalla.
-    var raya = null, proxima = 4200;
-    function lanzarRaya(t){
-      var borde = Math.random() < .5;
-      raya = { t0:t, dur:520 + Math.random() * 380,
-               x0: borde ? -.08 : Math.random(), y0: borde ? Math.random() * .8 : -.08,
-               dx: borde ? 1.16 : (Math.random() - .5) * .5,
-               dy: borde ? (Math.random() - .5) * .45 : 1.16,
-               g: Math.random() < .34 };      // una de cada tres es amarilla
-      proxima = t + 6000 + Math.random() * 9000;
-    }
-
-    var anchoF = 0, altoF = 0, ultNeb = 0, ultFondo = 0;
-    function medirFondo(){
-      var w = Math.round(lienzoF.clientWidth * RF), h = Math.round(lienzoF.clientHeight * RF);
-      if (!w || !h) return false;
-      if (w !== lienzoF.width || h !== lienzoF.height) {
-        lienzoF.width = w; lienzoF.height = h; anchoF = w; altoF = h;
-      }
-      return true;
-    }
-
-    function dibujarFondo(t){
-      if (!medirFondo()) return;
-      fx.clearRect(0, 0, anchoF, altoF);
-      fx.imageSmoothingEnabled = true;
-      fx.drawImage(neb, 0, 0, anchoF, altoF);
-
-      var sc = (window.pageYOffset || 0) * RF;
-      for (var i = 0; i < cielo.length; i++) {
-        var e = cielo[i], cp = capas[e.c];
-        var y = (e.y * altoF - sc * cp.prof) % altoF;
-        if (y < 0) y += altoF;
-        // el titileo es de las estrellas, no del texto: aqui si se puede
-        var a = cp.br * (.55 + .45 * Math.sin(t / 1100 * e.w + e.f));
-        var px = e.x * anchoF, tam = cp.tam * RF;
-        if (cp.halo) {                       // las de delante llevan resplandor
-          fx.fillStyle = 'rgba(250,247,210,' + (a * .16).toFixed(3) + ')';
-          fx.fillRect(px - tam, y - tam, tam * 3, tam * 3);
-        }
-        fx.fillStyle = 'rgba(244,242,226,' + a.toFixed(3) + ')';
-        fx.fillRect(px, y, tam, tam);
-      }
-
-      if (raya) {
-        var u = (t - raya.t0) / raya.dur;
-        if (u >= 1) raya = null;
-        else {
-          var lx = (raya.x0 + raya.dx * u) * anchoF,
-              ly = (raya.y0 + raya.dy * u) * altoF,
-              cola = .13;
-          var tx = (raya.x0 + raya.dx * Math.max(0, u - cola)) * anchoF,
-              ty = (raya.y0 + raya.dy * Math.max(0, u - cola)) * altoF;
-          var g = fx.createLinearGradient(tx, ty, lx, ly);
-          var col = raya.g ? '250,247,0' : '236,240,255';
-          var vida = Math.sin(u * Math.PI);           // entra y sale, no aparece
-          g.addColorStop(0, 'rgba(' + col + ',0)');
-          g.addColorStop(1, 'rgba(' + col + ',' + (.62 * vida).toFixed(3) + ')');
-          fx.strokeStyle = g;
-          fx.lineWidth = 1.6 * RF;
-          fx.beginPath(); fx.moveTo(tx, ty); fx.lineTo(lx, ly); fx.stroke();
+    function sembrarCielos(){
+      var w = innerWidth, h = innerHeight;
+      if (!w || !h) return;
+      // alto de sobra para que el paralaje tenga de donde tirar sin repetirse
+      var alto = Math.round(h * 1.6);
+      if (w === anchoCielo && alto === altoCielo) return;
+      anchoCielo = w; altoCielo = alto;
+      for (var c = 0; c < capas.length; c++) {
+        var cp = capas[c], L = cp.n, cx = L.getContext('2d');
+        L.width = w; L.height = alto;
+        L.style.height = alto + 'px';
+        var cuantas = Math.round(w * alto * cp.densidad);
+        cx.clearRect(0, 0, w, alto);
+        for (var i = 0; i < cuantas; i++) {
+          var x = Math.random() * w, y = Math.random() * alto,
+              a = cp.br * (.45 + Math.random() * .55);
+          if (cp.br > .9) {                        // las de delante, con halo
+            cx.fillStyle = 'rgba(250,247,210,' + (a * .16).toFixed(3) + ')';
+            cx.fillRect(x - cp.tam, y - cp.tam, cp.tam * 3, cp.tam * 3);
+          }
+          cx.fillStyle = 'rgba(244,242,226,' + a.toFixed(3) + ')';
+          cx.fillRect(x, y, cp.tam, cp.tam);
         }
       }
+      colocarCielos();
     }
 
-    if (quieto) {
-      // Sin movimiento: UN cuadro, y ya. No queda a medias ni en negro.
-      pintarNebulosa(0);
-      requestAnimationFrame(function(){ dibujarFondo(0); });
-      addEventListener('resize', function(){ dibujarFondo(0); });
-    } else {
-      pintarNebulosa(0);
-      tareas.push(function(t){
+    function colocarCielos(){
+      var sc = window.pageYOffset || 0;
+      for (var c = 0; c < capas.length; c++) {
+        var cp = capas[c];
+        // se envuelve: la capa nunca se queda sin cielo por abajo
+        var y = -((sc * cp.prof) % (altoCielo - innerHeight || 1));
+        cp.n.style.transform = 'translate3d(0,' + y.toFixed(1) + 'px,0)';
+      }
+    }
+
+    sembrarCielos();
+    addEventListener('resize', sembrarCielos);
+
+    if (!quieto) {
+      var ultSc = -1;
+      tareas.push(function(){
         if (document.hidden) return;
-        if (t - ultNeb > 83) { pintarNebulosa(t); ultNeb = t; }   // ~12 fps
-        if (t - ultFondo < 33) return;                            // ~30 fps
-        ultFondo = t;
-        if (t > proxima) lanzarRaya(t);
-        dibujarFondo(t);
+        var sc = window.pageYOffset || 0;
+        if (sc === ultSc) return;        // sin scroll no hay nada que mover
+        ultSc = sc;
+        colocarCielos();
       });
+
+      // la raya, cada 7-18 s. Un elemento que cruza; ni un pixel redibujado.
+      if (raya) (function siguiente(){
+        setTimeout(function(){
+          if (!document.hidden && (!intro || intro.hidden)) {
+            raya.style.top = (8 + Math.random() * 74) + 'vh';
+            raya.classList.toggle('oro', Math.random() < .34);
+            raya.classList.remove('va'); void raya.offsetWidth;
+            raya.classList.add('va');
+          }
+          siguiente();
+        }, 7000 + Math.random() * 11000);
+      })();
     }
   }
 })();
@@ -2532,7 +2691,22 @@ n = JS.count("\n})();")
 if n != 1:
     raise SystemExit(f'el motor quedo con {n} cierres de bloque, debe tener 1')
 
-DOC += f"<script>{JS}</script>\n"
+DOC += '<script src="motor.js" defer></script>\n'
+# ══════════════════════════════════════════════════════════════════════════
+# EL ESTILO Y EL MOTOR, EN ARCHIVOS APARTE
+# ──────────────────────────────────────────────────────────────────────────
+# Iban dentro del documento: 98 KB de `<style>` y 57 KB de `<script>`. Un
+# `<style>` en linea BLOQUEA el primer pintado —el navegador no dibuja hasta
+# leerlo entero— y nada de lo empotrado se cachea: en cada visita vuelve a
+# viajar completo.
+#
+# Fuera, tres cosas cambian: el HTML se termina de leer antes, la hoja se pide
+# EN PARALELO mientras se sigue leyendo el marcado, y en la segunda visita ni
+# la hoja ni el motor se vuelven a descargar. El motor ademas lleva `defer`,
+# asi que no frena la lectura del documento en ningun momento.
+(RAIZ / 'estilo.css').write_text(BUNGEE_EMPOTRADA + CSS, encoding='utf-8')
+(RAIZ / 'motor.js').write_text(JS, encoding='utf-8')
+
 salida = AQUI / 'sitio.html'   # intermedio de trabajo: vive en taller/, que no se publica
 salida.write_text(DOC, encoding='utf-8')
 

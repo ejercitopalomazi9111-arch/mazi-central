@@ -30,7 +30,44 @@ const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' 
    en el generador. Se puede pasar otro archivo por argumento. */
 const AQUI = new URL('.', import.meta.url).pathname;
 const archivo = process.argv[2] || AQUI + '../index.html';
-const url = 'file://' + archivo;
+
+/* ⚠ ESTO MEDIA CON `file://` Y ESO NO ES LO QUE SE SIRVE.
+   Lo destapo un fallo de verdad: `<link rel=preload as=font crossorigin>` es
+   OBLIGATORIO en produccion —las tipografias siempre se piden en modo CORS— y
+   bajo `file://` Chrome lo rechaza porque el origen es opaco. La compuerta
+   reprobaba una pagina correcta.
+
+   La respuesta no es perdonar el fallo —eso es lo que hicimos con las fuentes
+   de Google y nos escondio doce segundos de pantalla en blanco—: es medir como
+   se sirve. Un servidor de archivos de veinte lineas, sin dependencias, y a
+   partir de aqui la compuerta ve lo mismo que ve un telefono. */
+const { createServer } = await import('node:http');
+const { readFile, stat } = await import('node:fs/promises');
+const { join, dirname, extname, resolve } = await import('node:path');
+
+const BASE = dirname(resolve(archivo));
+const TIPO = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8',
+  '.js':'text/javascript; charset=utf-8', '.mjs':'text/javascript; charset=utf-8',
+  '.webp':'image/webp', '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml',
+  '.woff2':'font/woff2', '.json':'application/json' };
+
+const servidor = createServer(async (pet, res) => {
+  try {
+    const ruta = decodeURIComponent(new URL(pet.url, 'http://x').pathname);
+    const destino = join(BASE, ruta);
+    // que nadie salga de la carpeta servida
+    if (!resolve(destino).startsWith(BASE)) { res.writeHead(403).end(); return; }
+    const info = await stat(destino);
+    const f = info.isDirectory() ? join(destino, 'index.html') : destino;
+    const datos = await readFile(f);
+    res.writeHead(200, { 'content-type': TIPO[extname(f)] || 'application/octet-stream',
+                         'access-control-allow-origin': '*' });
+    res.end(datos);
+  } catch { res.writeHead(404).end('no está'); }
+});
+await new Promise((ok) => servidor.listen(0, '127.0.0.1', ok));
+const PUERTO = servidor.address().port;
+const url = `http://127.0.0.1:${PUERTO}/${archivo.split('/').pop()}`;
 console.log('midiendo', archivo);
 let malo = 0;
 
@@ -132,34 +169,37 @@ const MEDIR = () => {
       if (c > 2 && c > totalCats * 0.25) repes.push('banner ' + k + ' ×' + c);
 
     /* EL FONDO VIVO PUEDE VOLVER MENTIRA EL CONTRASTE, Y NINGUNA OTRA
-       COMPROBACION LO VE. Todo lo de arriba mide colores de CSS; la nebulosa
-       la pinta un lienzo, asi que para el navegador el suelo sigue siendo
-       --negro por mas que el fondo se aclare. Si alguien le sube la tinta,
-       el numero de contraste seguiria saliendo perfecto y el texto seria
-       ilegible.
-       Se mide el bloque de 32x32 mas claro que el lienzo llega a pintar —un
-       bloque y no un pixel, porque una estrella suelta no levanta el fondo
-       que el ojo ve— y se compara contra el texto MAS FLOJO de la pagina. */
+       COMPROBACION LO VE. Todo lo de arriba mide colores declarados sobre
+       elementos; la nebulosa son degradados en capas fijas detras de todo, asi
+       que para el navegador el suelo del texto sigue siendo --negro por mas que
+       el fondo se aclare. Si alguien le sube la tinta, el contraste seguiria
+       saliendo perfecto y el texto seria ilegible.
+
+       ⚠ ESTA COMPROBACION YA ESTUVO MUERTA. Miraba un lienzo `#g-fondo` que
+       dejo de existir cuando la nebulosa paso a CSS, e imprimia «—» sin
+       comprobar nada. Ahora EXIGE encontrar el fondo: si no esta, reprueba.
+
+       Se componen las alfas declaradas de cada mancha sobre el negro de la
+       pagina —la peor luz que pueden dar juntas— y se compara con el texto mas
+       flojo que se usa. */
     const fondoVivo = (() => {
-      const c = document.getElementById('g-fondo');
-      if (!c || !c.width) return null;
-      const cx = c.getContext('2d', { willReadFrequently: true });
-      let d; try { d = cx.getImageData(0, 0, c.width, c.height).data; } catch (_) { return null; }
-      const B = 32, W = c.width, H = c.height;
-      let peor = 0, px = null;
-      for (let by = 0; by + B <= H; by += B) for (let bx = 0; bx + B <= W; bx += B) {
-        let sr = 0, sg = 0, sb = 0, n = 0;
-        for (let y = by; y < by + B; y += 2) for (let x = bx; x < bx + B; x += 2) {
-          const i = (y * W + x) * 4, a = d[i + 3] / 255;
-          sr += d[i] * a + 10 * (1 - a); sg += d[i+1] * a + 10 * (1 - a);
-          sb += d[i+2] * a + 11 * (1 - a); n++;
-        }
-        const L = lum([sr/n, sg/n, sb/n]);
-        if (L > peor) { peor = L; px = [Math.round(sr/n), Math.round(sg/n), Math.round(sb/n)]; }
+      const capas = [...document.querySelectorAll('.g-neb i')];
+      if (!capas.length) return { falta: true, mal: true };
+      let R = 10, G = 10, B = 11;                 // el negro de la pagina
+      for (const n of capas) {
+        const g = getComputedStyle(n).backgroundImage;
+        // el primer tope del degradado es el centro: lo mas cargado
+        const m = g.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+        if (!m) continue;
+        const a = m[4] === undefined ? 1 : +m[4];
+        R = +m[1] * a + R * (1 - a);
+        G = +m[2] * a + G * (1 - a);
+        B = +m[3] * a + B * (1 - a);
       }
-      const texto = lum([154, 154, 162]);            // --gris, el mas flojo que se usa
-      const ratio = (texto + .05) / (peor + .05);
-      return { ratio: +ratio.toFixed(2), px, mal: ratio < 4.5 };
+      const texto = lum([154, 154, 162]);         // --gris, el mas flojo que se usa
+      const ratio = (texto + .05) / (lum([R, G, B]) + .05);
+      return { ratio: +ratio.toFixed(2), px: [R, G, B].map(Math.round),
+               capas: capas.length, mal: ratio < 4.5 };
     })();
 
     const flojos = [];
@@ -199,11 +239,11 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
     // Este entorno no alcanza los servidores de tipografia de Google, asi que
     // ese fallo de red es del sandbox y no de la pagina. Cualquier OTRO recurso
     // que no cargue si es un defecto y tiene que reprobar.
-    pg.on('requestfailed', (q) => {
-      const u = q.url();
-      if (/fonts\.(googleapis|gstatic)\.com/.test(u)) return;
-      fallos.push('no cargó: ' + u.slice(0, 80));
-    });
+    /* Ya no se le perdona nada a nadie: el sitio no pide un solo recurso
+       fuera de su dominio, asi que CUALQUIER peticion que falle es un defecto.
+       La excepcion que habia aqui para fonts.googleapis.com escondio durante
+       semanas que esa hoja bloqueaba el pintado doce segundos. */
+    pg.on('requestfailed', (q) => fallos.push('no cargó: ' + q.url().slice(0, 90)));
     await pg.goto(url, { waitUntil: 'load' });
     await pg.waitForTimeout(js ? 900 : 300);
 
@@ -211,7 +251,7 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 
     const mal = fallos.length > 0 || r.desborde > 1 || r.h1 !== 1 || r.ocultos > 0 || r.cortados.length > 0 || r.flojos.length > 0 || r.sinSuelo.length > 0 || r.aplastados.length > 0 || r.repes.length > 0 || (r.fondoVivo && r.fondoVivo.mal);
     if (mal) malo++;
-    console.log(`${w}px js=${js ? 'sí' : 'no '}  desborde ${r.desborde}px  h1 ${r.h1}  ocultos ${r.ocultos}  cortados ${r.cortados.length}  contraste ${r.flojos.length}  sin-suelo ${r.sinSuelo.length}  errores ${fallos.length}  aplastados ${r.aplastados.length}  repetidas ${r.repes.length}  fondo ${r.fondoVivo ? r.fondoVivo.ratio : '—'}  alto ${r.alto}px ${mal ? '  ← MAL' : ''}`);
+    console.log(`${w}px js=${js ? 'sí' : 'no '}  desborde ${r.desborde}px  h1 ${r.h1}  ocultos ${r.ocultos}  cortados ${r.cortados.length}  contraste ${r.flojos.length}  sin-suelo ${r.sinSuelo.length}  errores ${fallos.length}  aplastados ${r.aplastados.length}  repetidas ${r.repes.length}  fondo ${r.fondoVivo.falta ? 'NO ESTÁ' : r.fondoVivo.ratio}  alto ${r.alto}px ${mal ? '  ← MAL' : ''}`);
     /* ── SEGUNDO PASE · con el expediente ABIERTO ──────────────────────────
        Solo con JS, claro: sin JS la ficha no se abre y no hay nada que medir.
        Se pulsa una pieza de verdad —no se enciende la clase a mano— porque lo
@@ -253,7 +293,10 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
     r.flojos.forEach(c => console.log('      flojo    ' + c));
     r.aplastados.forEach(c => console.log('      aplastado ' + c));
     r.repes.forEach(c => console.log('      misma imagen en muchas fichas: ' + c));
-    if (r.fondoVivo && r.fondoVivo.mal)
+    if (r.fondoVivo && r.fondoVivo.falta)
+      console.log('      NO ENCUENTRO EL FONDO VIVO (.g-neb i): o se quitó, o se renombró '
+        + 'y esta comprobación se quedó mirando al vacío');
+    else if (r.fondoVivo && r.fondoVivo.mal)
       console.log('      el fondo vivo aclara demasiado: --gris queda en '
         + r.fondoVivo.ratio + ':1 sobre rgb(' + r.fondoVivo.px.join(',') + ') — pide 4.5');
     r.sinSuelo.forEach(c => console.log('      degradado sin color sólido: ' + c));
@@ -272,6 +315,59 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
     await ctx.close();
   }
 }
+/* ── PASE DE FLUIDEZ · que la pagina CORRA, no solo que se vea ──────────
+   Lo que reporto Luis: «la pestaña inicial se traba en mi cell». Y tenia
+   razon: medido a 390 px con DPR 3, la intro iba a 1.4 fps con cuadros de 4.8
+   SEGUNDOS, y el primer pintado tardaba 12.7 s. Nada de lo que media la
+   compuerta podia verlo — desborde, contraste y h1 salen perfectos en una
+   pagina que va a tirones.
+
+   Se miden las dos cosas que se sienten:
+   · cuando aparece algo (primer pintado);
+   · cuantos cuadros por segundo da, durante la intro y despues.
+
+   Y se mide con el CPU FRENADO 4x, que es mas o menos un telefono de gama
+   media. Sin frenar, cualquier maquina de desarrollo da 60 fps y la
+   comprobacion no serviria para nada.
+
+   Los umbrales no son aspiracionales, son lo que ya se cumple con margen:
+   primer pintado por debajo de 2.5 s, y 30 fps de media en las dos fases. Si
+   alguien vuelve a meter algo que repinte la pantalla entera en cada cuadro,
+   esto lo para. */
+{
+  const ctx = await nav.newContext({ viewport: { width: 390, height: 844 },
+                                     deviceScaleFactor: 3 });
+  const pg = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(pg);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  await pg.addInitScript(() => {
+    window.__m = []; let u = 0;
+    const paso = (t) => { if (u) window.__m.push(t - u); u = t; requestAnimationFrame(paso); };
+    requestAnimationFrame(paso);
+  });
+  await pg.goto(url, { waitUntil: 'load' });
+  await pg.waitForTimeout(9000);
+  const r = await pg.evaluate(() => {
+    const m = window.__m;
+    const media = (a) => a.length ? 1000 / (a.reduce((x, y) => x + y, 0) / a.length) : 0;
+    let acum = 0, corte = m.length;
+    for (let i = 0; i < m.length; i++) { acum += m[i]; if (acum > 5200) { corte = i; break; } }
+    const pintado = (performance.getEntriesByType('paint')
+      .find(p => p.name === 'first-contentful-paint') || {}).startTime || 1e9;
+    const peor = m.length ? Math.max(...m) : 0;
+    return { pintado: Math.round(pintado),
+             intro: +media(m.slice(0, corte)).toFixed(1),
+             despues: +media(m.slice(corte)).toFixed(1),
+             peorCuadro: Math.round(peor) };
+  });
+  const mal = r.pintado > 2500 || r.intro < 30 || r.despues < 30 || r.peorCuadro > 1200;
+  if (mal) malo++;
+  console.log(`390px fluidez (CPU 4x)  primer pintado ${r.pintado}ms  intro ${r.intro}fps  `
+    + `despues ${r.despues}fps  peor cuadro ${r.peorCuadro}ms${mal ? '  ← MAL' : ''}`);
+  if (mal) console.log('      pide: pintado <2500ms · 30fps en las dos fases · ningun cuadro >1200ms');
+  await ctx.close();
+}
+
 /* ── PASE DEL MANDO · que el buscador BUSQUE de verdad ──────────────────
    Un buscador roto no se nota mirando: la barra se pinta igual, las chapas se
    encienden igual, y la rejilla se queda con las 47.
@@ -391,5 +487,6 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 }
 
 await nav.close();
+servidor.close();
 console.log(malo ? `\n${malo} combinaciones mal` : '\nlimpio');
 process.exit(malo ? 1 : 0);

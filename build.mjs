@@ -44,8 +44,12 @@ const VA = [
      se le pasa a alguien devuelve 404 — que es exactamente lo que pasó. */
   'guias',
   /* El escaparate de Toydarians, para poder probarlo mientras el cliente
-     aprueba y Carlos le crea su repo propio. Es UN archivo con todo dentro
-     —imágenes y logo incluidos como data URI— así que basta la carpeta. */
+     aprueba y Carlos le crea su repo propio.
+     ⚠ ESTE COMENTARIO DECÍA «es UN archivo con todo dentro, así que basta la
+     carpeta». Ya no: el sitio son `index.html` + `estilo.css` + `motor.js` +
+     `marca/` + `fotos/`. Iba todo empotrado como data URI y eso costaba 12.7
+     SEGUNDOS de pantalla en blanco en un teléfono. La carpeta sigue bastando
+     —se copia entera menos `taller/`—, pero por otra razón. */
   'toydarians',
 ];
 
