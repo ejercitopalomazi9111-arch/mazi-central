@@ -149,6 +149,12 @@ página y de lo que ya dijo en la sala.
 
 ## 14 de septiembre · lo que entró y lo que sigue faltando
 
+> El reparto con Sylcred, el mapa medido de lo que falta categoría por
+> categoría y la receta para añadir una están en **REPARTO.md**.
+
+> El reparto con Sylcred, el mapa medido de lo que falta categoría
+> por categoría y la receta para añadir una están en ****.
+
 **Entró.** El sitio dejó de mandar a toydarians.com y pasó de una página a
 tres. FUNKO y 3D PRINT tienen la suya, con sus productos de verdad —8 y 7,
 traídos del WooCommerce del cliente con foto, precio y existencias—. Total: 62

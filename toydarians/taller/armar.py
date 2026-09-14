@@ -1335,10 +1335,18 @@ except Exception:
 # 47 —la tienda del cliente— pero con otra forma: FUNKO y 3D PRINT no tienen
 # numero VC, asi que no caben en el eje del carton ni en la pildora «VC 357».
 # Por eso viven en su propia pagina y no revueltas en la vitrina.
-try:
-    EXTRA = json.loads((ACT / 'extra.json').read_text(encoding='utf-8'))
-except Exception:
-    EXTRA = {}
+#
+# UN ARCHIVO POR CATEGORIA, y eso es lo importante: estaban las dos en un
+# `extra.json`. Con Sylcred trabajando en las categorias que faltan, dos
+# agentes añadiendo dos categorias distintas tocarian el MISMO archivo y
+# chocarian en cada empuje. Asi, añadir NECA es crear `cat-neca.json` —un
+# archivo que no existia— y nadie pisa a nadie.
+EXTRA = {}
+for _f in sorted(ACT.glob('cat-*.json')):
+    try:
+        EXTRA[_f.stem[4:]] = json.loads(_f.read_text(encoding='utf-8'))
+    except Exception:
+        pass
 
 # ══ PAGO ══════════════════════════════════════════════════════════════════
 # El identificador de PayPal es del CLIENTE y no me lo puedo inventar: sin el

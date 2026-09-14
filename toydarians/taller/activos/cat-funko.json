@@ -1,0 +1,116 @@
+[
+ {
+  "clave": "fk4",
+  "nombre": "Biff Tannen",
+  "serie": "Back to the Future",
+  "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-biff-tannen",
+  "fotos": [
+   "fk4-0.webp",
+   "fk4-1.webp"
+  ],
+  "precio": 380.0,
+  "stock": "disponible",
+  "nota": ""
+ },
+ {
+  "clave": "fk1",
+  "nombre": "Doc with Helmet",
+  "serie": "Back to the Future",
+  "url": "https://www.toydarians.com/?product=funko-back-to-the-future-doc-with-helmet",
+  "fotos": [
+   "fk1-0.webp",
+   "fk1-1.webp",
+   "fk1-2.webp"
+  ],
+  "precio": 680.0,
+  "stock": "disponible",
+  "nota": ""
+ },
+ {
+  "clave": "fk5",
+  "nombre": "Marty",
+  "serie": "Back to the Future",
+  "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty",
+  "fotos": [
+   "fk5-0.webp",
+   "fk5-1.webp",
+   "fk5-2.webp",
+   "fk5-3.webp"
+  ],
+  "precio": 350.0,
+  "stock": "disponible",
+  "nota": ""
+ },
+ {
+  "clave": "fk6",
+  "nombre": "Marty 1955",
+  "serie": "Back to the Future",
+  "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-1955",
+  "fotos": [
+   "fk6-0.webp",
+   "fk6-1.webp",
+   "fk6-2.webp"
+  ],
+  "precio": 350.0,
+  "stock": "disponible",
+  "nota": ""
+ },
+ {
+  "clave": "fk7",
+  "nombre": "Marty in Future Outfit",
+  "serie": "Back to the Future",
+  "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-in-future-outfit",
+  "fotos": [
+   "fk7-0.webp",
+   "fk7-1.webp",
+   "fk7-2.webp"
+  ],
+  "precio": 350.0,
+  "stock": "disponible",
+  "nota": ""
+ },
+ {
+  "clave": "fk2",
+  "nombre": "Marty in Puffy Vest",
+  "serie": "Back to the Future",
+  "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-in-puffy-vest",
+  "fotos": [
+   "fk2-0.webp",
+   "fk2-1.webp",
+   "fk2-2.webp",
+   "fk2-3.webp"
+  ],
+  "precio": 350.0,
+  "stock": "disponible",
+  "nota": ""
+ },
+ {
+  "clave": "fk8",
+  "nombre": "Marty with Glasses",
+  "serie": "Back to the Future",
+  "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-with-glasses",
+  "fotos": [
+   "fk8-0.webp",
+   "fk8-1.webp",
+   "fk8-2.webp"
+  ],
+  "precio": 350.0,
+  "stock": "disponible",
+  "nota": ""
+ },
+ {
+  "clave": "fk3",
+  "nombre": "The Mandalorian & The Child",
+  "serie": "The Mandalorian",
+  "url": "https://www.toydarians.com/?product=funko-pop-the-mandalorian-the-child-the-mandalorian",
+  "fotos": [
+   "fk3-0.webp",
+   "fk3-1.webp",
+   "fk3-2.webp",
+   "fk3-3.webp"
+  ],
+  "precio": 1800.0,
+  "stock": "disponible",
+  "nota": ""
+ }
+]
