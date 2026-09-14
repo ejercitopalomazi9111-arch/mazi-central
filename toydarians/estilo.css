@@ -504,6 +504,11 @@ p strong{color:var(--hueso);font-weight:500}
 .ficha-p .precio.consulta,.g-precio-g.consulta{color:var(--gris-tenue);
   letter-spacing:0}
 .g-precio-g.consulta{font-size:clamp(17px,2.1vw,21px)}
+/* Un botón desactivado tiene que PARECERLO. Con el amarillo de siempre, el
+   de una pieza sin precio se veía idéntico al que sí cobra. */
+.b.comprar:disabled{background:transparent;color:var(--gris-tenue);
+  border:1px solid var(--linea);cursor:not-allowed}
+.b.comprar:disabled span{color:var(--gris-tenue)}
 .g-nota{margin:2px 0 0;font:400 12px/1.55 var(--texto);color:var(--gris-tenue);
   border-left:2px solid var(--linea);padding-left:11px}
 

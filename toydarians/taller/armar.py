@@ -576,6 +576,11 @@ CSS += r"""
 .ficha-p .precio.consulta,.g-precio-g.consulta{color:var(--gris-tenue);
   letter-spacing:0}
 .g-precio-g.consulta{font-size:clamp(17px,2.1vw,21px)}
+/* Un botón desactivado tiene que PARECERLO. Con el amarillo de siempre, el
+   de una pieza sin precio se veía idéntico al que sí cobra. */
+.b.comprar:disabled{background:transparent;color:var(--gris-tenue);
+  border:1px solid var(--linea);cursor:not-allowed}
+.b.comprar:disabled span{color:var(--gris-tenue)}
 .g-nota{margin:2px 0 0;font:400 12px/1.55 var(--texto);color:var(--gris-tenue);
   border-left:2px solid var(--linea);padding-left:11px}
 
@@ -2724,9 +2729,22 @@ JS += r"""
       /* ⚠ AQUI SE DIBUJABA UN BOTON DE PAYPAL POR FIGURA. Eso no es comprar:
          es pagar cuatro veces si te llevas cuatro, cada una con su comisión y
          su envío. El cobro se mudó al carrito, que cobra el pedido completo. */
-      if (bAdd) {
-        bAdd.disabled = !d.p || d.st === 'agotado';
-        var et = bAdd.firstChild;
+      /* ⚠ LA TRAMPA DEL IIFE, OTRA VEZ, Y ESTA COSTO UN BOTON.
+         Aqui decia `if (bAdd)`. `bAdd` se declara con `var` ochocientas lineas
+         mas abajo, en el bloque del carrito, y el motor entero es UNA funcion:
+         `var` es de funcion, asi que aqui el nombre EXISTE pero vale
+         `undefined` hasta que aquel bloque corre. Cuando la ficha se abre por
+         el ancla —toydarians/3d-print.html#vc-3d5— esto se ejecuta ANTES, el
+         `if` es falso y no pasa nada.
+         Se veia asi: una impresion 3D sin precio, con «Precio a consultar»
+         encima y debajo un boton amarillo encendido que decia «Agregar al
+         carrito». El defecto no era el boton apagado sin explicacion: era el
+         boton ENCENDIDO prometiendo cobrar algo que no tiene importe.
+         Se resuelve buscando el nodo aqui, donde se usa. */
+      var elAdd = document.getElementById('g-add');
+      if (elAdd) {
+        elAdd.disabled = !d.p || d.st === 'agotado';
+        var et = elAdd.querySelector('span');
         if (et) et.textContent = d.p ? 'Agregar al carrito'
                                      : 'Toydarians cotiza esta pieza';
       }

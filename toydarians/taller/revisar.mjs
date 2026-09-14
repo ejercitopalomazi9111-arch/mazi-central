@@ -576,6 +576,91 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 }
 
 
+/* ── PASE DEL BOTON DE COMPRA · que no prometa cobrar lo que no cobra ────
+   Lo que fallo: una impresion 3D sin precio abria su ficha con «Precio a
+   consultar» arriba y, debajo, el boton amarillo encendido de siempre
+   diciendo «Agregar al carrito». La causa era la trampa del IIFE —`bAdd` se
+   declara con `var` ochocientas lineas mas abajo, asi que al abrir por el
+   ancla valia `undefined` y el `if` no hacia nada—, pero el sintoma es lo
+   grave: el sitio ofrecia cobrar una pieza que no tiene importe.
+
+   Se abre CADA pieza de la pagina y se cruzan dos cosas que tienen que
+   coincidir: si la tarjeta dice «a consultar», el boton va apagado; si trae
+   precio, va encendido. Cruzarlas es el punto — comprobar solo el boton deja
+   pasar el caso en que todas estan apagadas, que tambien esta roto. */
+{
+  const ctx = await nav.newContext({ viewport: { width: 390, height: 844 } });
+  const pg = await ctx.newPage();
+  const fallos = [];
+  pg.on('pageerror', (e) => fallos.push('pageerror: ' + e.message));
+  await pg.goto(url, { waitUntil: 'load' });
+  await pg.waitForTimeout(1200);
+  const r = await pg.evaluate(async () => {
+    const piezas = [...document.querySelectorAll('.rejilla .pieza')];
+    const malos = [];
+    let conPrecio = 0, aConsultar = 0;
+    for (const pz of piezas) {
+      const cotiza = !!pz.querySelector('.precio.consulta');
+      cotiza ? aConsultar++ : conPrecio++;
+      pz.click();
+      await new Promise(r => setTimeout(r, 450));
+      const b = document.getElementById('g-add');
+      const txt = (b.innerText || '').toLowerCase();
+      const ofrece = !b.disabled && txt.indexOf('agregar') >= 0;
+      if (cotiza === ofrece) malos.push(pz.dataset.vc + (cotiza ? ' cotiza pero OFRECE' : ' con precio y NO ofrece'));
+      const x = document.getElementById('g-cerrar'); if (x) x.click();
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return { total: piezas.length, conPrecio, aConsultar, malos };
+  });
+  /* Y AHORA LA PARTE QUE DE VERDAD SE ROMPIO, que el bucle de arriba NO ve.
+     Pulsando una tarjeta el fallo no aparece: para entonces el motor ya
+     termino de correr y la variable del bloque de abajo ya vale algo. Solo
+     falla al abrir la ficha DESDE LA DIRECCION —#vc-3d5—, que es justo el
+     enlace que se manda por WhatsApp. Asi que se carga de cero una pieza de
+     cada clase y se mira alli. Sin esto la comprobacion daba verde con el
+     defecto puesto: la probe y no salto. */
+  const muestras = await pg.evaluate(() => {
+    const p = [...document.querySelectorAll('.rejilla .pieza')];
+    const con = p.find(x => !x.querySelector('.precio.consulta'));
+    const sin = p.find(x =>  x.querySelector('.precio.consulta'));
+    return [con && { vc: con.dataset.vc, cotiza: false },
+            sin && { vc: sin.dataset.vc, cotiza: true }].filter(Boolean);
+  });
+  const porAncla = [];
+  for (const m of muestras) {
+    /* PESTAÑA NUEVA, y no es ceremonia: `goto` a la MISMA direccion cambiando
+       solo el `#` no recarga nada —es navegacion dentro del documento—, asi
+       que el motor no vuelve a correr y el defecto que buscamos, que ocurre
+       mientras el motor corre, no puede aparecer. Con `goto` a secas esta
+       comprobacion daba verde con el fallo puesto. Lo probe. */
+    const ctx2 = await nav.newContext({ viewport: { width: 390, height: 844 } });
+    const pg2 = await ctx2.newPage();
+    await pg2.goto(url + '#vc-' + m.vc.toLowerCase(), { waitUntil: 'load' });
+    await pg2.waitForTimeout(2500);
+    const ofrece = await pg2.evaluate(() => {
+      const b = document.getElementById('g-add');
+      if (!b) return null;
+      return !b.disabled && (b.innerText || '').toLowerCase().indexOf('agregar') >= 0;
+    });
+    if (ofrece === null || m.cotiza === ofrece)
+      porAncla.push(`#vc-${m.vc} ${m.cotiza ? 'cotiza pero OFRECE' : 'con precio y NO ofrece'}`);
+    await ctx2.close();
+  }
+
+  const mal = fallos.length > 0 || r.total === 0 || r.malos.length > 0
+              || porAncla.length > 0;
+  if (mal) malo++;
+  console.log(`390px compra          piezas ${r.total}  con precio ${r.conPrecio}  `
+    + `a consultar ${r.aConsultar}  desajustadas ${r.malos.length}  `
+    + `por ancla ${porAncla.length ? 'MAL ' + porAncla.length : 'ok'}${mal ? '  ← MAL' : ''}`);
+  porAncla.forEach(x => console.log('      ' + x));
+  r.malos.slice(0, 5).forEach(x => console.log('      ' + x));
+  fallos.forEach(c => console.log('      ' + c));
+  await ctx.close();
+}
+
+
 /* ── PASE DE «REDUCIR MOVIMIENTO» ────────────────────────────────────────
    Esta era LA VENTANA CIEGA, y ya se cobro una pieza: un `if (quieto) return;`
    a mitad del guion apagaba todo lo que venia detras —incluida la ficha de
