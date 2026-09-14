@@ -352,6 +352,8 @@
   // cuando esto se ejecuta el dato ya esta puesto.
   TOY.g.paypal = "";
   TOY.g.moneda = "MXN";
+  // El WhatsApp de la tienda, para cotizar las piezas que no traen precio.
+  TOY.g.wasap = "5215522516663";
 
   // ══════════════════════════════════════════════════════════════════════
   // G · EL FONDO VIVO · nebulosa + estrellas con paralaje + hiperespacio
@@ -562,6 +564,21 @@
       }
       var eN = document.getElementById('g-nota');
       if (eN) { eN.textContent = d.nota || ''; eN.hidden = !d.nota; }
+
+      /* Una pieza sin precio tenia el boton apagado y hasta ahi. Apagado y sin
+         salida es un callejon: el visitante ve «Precio a consultar» y no tiene
+         a quien consultarle. Aqui aparece el enlace a WhatsApp con la pieza ya
+         nombrada en el mensaje, que es la diferencia entre que pregunte y que
+         cierre la pestaña. */
+      var eC = document.getElementById('g-cotiza');
+      if (eC) {
+        if (!d.p && TOY.g.wasap) {
+          eC.href = 'https://wa.me/' + TOY.g.wasap + '?text=' +
+            encodeURIComponent('Hola, quiero el precio de «' + d.n + '» (' +
+                               (d.pil || vc) + ').');
+          eC.hidden = false;
+        } else { eC.hidden = true; }
+      }
 
       fotosAct = d.f;
       armarGaleria(d.f, d.n);

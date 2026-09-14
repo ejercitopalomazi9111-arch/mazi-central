@@ -478,9 +478,13 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 
    Se mide en tres capas porque cada una deja pasar lo que la otra caza:
 
-   · SALIDAS — cuantos anclajes apuntan fuera del origen. Se permite
-     EXACTAMENTE uno, el del pie, que es la atribucion a la tienda y debe
-     seguir ahi. Un enlace nuevo que se escape sube el numero y esto revienta.
+   · SALIDAS — anclajes que apuntan fuera del origen. La regla NO es «cero»
+     ni «uno»: es que salir del sitio sólo vale para HABLAR con la tienda.
+     Se permiten las vías de contacto —WhatsApp, correo, teléfono—, que son
+     justo para lo que existe la sección «¿Buscas algo?», y una sola salida
+     a toydarians.com: la atribución del pie. Un enlace nuevo a una ficha de
+     producto de la tienda —que es el defecto que estamos cazando— no cae en
+     ninguna de las dos y revienta esto.
    · CON PIEZAS — pulsar una categoria que tiene existencias filtra la
      vitrina de verdad (menos tarjetas, y las que quedan SE VEN) y no navega.
    · SIN PIEZAS — pulsar «Funko» o «3D Print», que hoy no tienen nada, no
@@ -501,11 +505,26 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
     if (b) b.click();
   });
   await pg.waitForTimeout(500);
-  const salidas = await pg.evaluate(() => [...document.querySelectorAll('a[href]')]
-    .filter(a => { try { return new URL(a.href, location.href).origin !== location.origin
-                                && !a.href.startsWith('mailto:') && !a.href.startsWith('tel:'); }
-                   catch { return false; } })
-    .map(a => (a.closest('footer') ? 'pie · ' : 'FUERA DEL PIE · ') + a.getAttribute('href')));
+  // Los tres esquemas de contacto se leen del href CRUDO: `a.href` normaliza
+  // y `new URL()` de un `tel:` no tiene origin, asi que filtrarlos por origen
+  // los dejaba pasar como «salida» sin serlo.
+  const salidas = await pg.evaluate(() => {
+    const contacto = (h) => /^(mailto:|tel:|https:\/\/wa\.me\/)/.test(h);
+    return [...document.querySelectorAll('a[href]')]
+      .map(a => ({ a, h: a.getAttribute('href') || '' }))
+      .filter(({ a, h }) => {
+        if (contacto(h)) return false;                 // hablar con la tienda sí vale
+        try { return new URL(a.href, location.href).origin !== location.origin; }
+        catch { return false; }
+      })
+      .map(({ a, h }) => (a.closest('footer') ? 'pie · ' : 'FUERA DEL PIE · ') + h);
+  });
+  // Y las vias de contacto se cuentan aparte: que existan es parte de lo que
+  // se pidio, asi que si un dia desaparecen tambien hay que enterarse.
+  const vias = await pg.evaluate(() =>
+    [...document.querySelectorAll('#contacto a[href]')]
+      .filter(a => /^(mailto:|tel:|https:\/\/wa\.me\/)/.test(a.getAttribute('href') || ''))
+      .length);
   await pg.keyboard.press('Escape');
   await pg.waitForTimeout(400);
 
@@ -556,6 +575,7 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 
   const mal = fallos.length > 0 || rotos.length > 0
             || salidas.length !== 1 || !salidas[0].startsWith('pie · ')
+            || vias < 3                       // WhatsApp, correo y teléfono
             || !(antes && antes.caja >= 5)
             || !(conPiezas && conPiezas.mismo)
             || !(conPiezas && conPiezas.caja > 0 && conPiezas.vista === conPiezas.caja)
@@ -563,6 +583,7 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
             || pronto < 1;
   if (mal) malo++;
   console.log(`390px categorías      salidas ${salidas.length} (se permite 1)  `
+    + `vías de contacto ${vias}${vias < 3 ? ' FALTAN' : ''}  `
     + `enlaces internos ${internos.length}${rotos.length ? ' ROTOS ' + rotos.length : ' ok'}  `
     + `con piezas ${conPiezas ? conPiezas.caja + (conPiezas.vista === conPiezas.caja ? '' : '/vista ' + conPiezas.vista) : '—'}  `
     + `sin piezas ${vacia ? (vacia.caja === antes.caja ? 'no toca' : 'FILTRA ' + vacia.caja) : '—'}  `

@@ -569,6 +569,36 @@ CSS += r"""
 /* sobre la trama el rotulo si se lee, asi que sube de tinta y baja de peso */
 .g-cat.sin-foto .rotulo{color:rgba(255,255,255,.16)}
 /* y el velo negro de las fotos aqui taparia la trama: se aclara */
+/* ── «¿Buscas algo?» · las tres vías de contacto ─────────────────────────
+   Tres tarjetas y no un formulario: un formulario necesita servidor, y este
+   sitio se sube a una carpeta. Un enlace de WhatsApp con el mensaje ya escrito
+   funciona en el teléfono de cualquiera, sin nada detrás, y además llega con
+   contexto. En escritorio se reparten en tres; en teléfono se apilan, que es
+   donde de verdad se va a tocar. */
+.g-busco{display:grid;gap:clamp(26px,4vw,60px);align-items:start}
+@media (min-width:900px){.g-busco{grid-template-columns:1fr 1fr}}
+.g-busco-hora{margin:14px 0 0;font:700 9.5px/1.6 var(--dato);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--gris-tenue)}
+.g-vias{display:grid;gap:10px}
+.g-via{position:relative;display:grid;gap:3px;padding:18px 44px 18px 19px;
+  border:1px solid var(--linea);background:rgba(255,255,255,.015);
+  text-decoration:none;color:inherit;
+  transition:border-color .18s ease,transform .18s ease}
+.g-via:hover,.g-via:focus-visible{border-color:var(--amarillo);
+  transform:translate3d(0,-3px,0)}
+.g-via .via-que{font:700 9.5px/1 var(--dato);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--amarillo)}
+.g-via .via-dato{font:400 clamp(16px,2vw,21px)/1.2 var(--display);
+  letter-spacing:-.02em;overflow-wrap:anywhere}
+.g-via .via-nota{font:400 12px/1.5 var(--texto);color:var(--gris-tenue)}
+.g-via .via-ir{position:absolute;right:17px;top:50%;margin-top:-.6em;
+  font:400 19px/1 var(--display);color:var(--gris-tenue)}
+.g-via:hover .via-ir{color:var(--amarillo)}
+/* el enlace de cotización que sale bajo una pieza sin precio */
+.g-cotiza{display:inline-block;margin-top:9px;font:700 10px/1 var(--dato);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--amarillo);
+  text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:3px}
+
 /* ── Piezas que se cotizan, portadas por marca y la nota de la ficha ──────
    Las impresiones 3D no tienen precio publicado. El renglón se pinta igual
    que el precio para que la retícula no dé un salto de un producto a otro,
@@ -1519,6 +1549,7 @@ def g_menu(actual):
             f'{inicio}'
             f'<button type="button" data-ir="#vitrina">Ver todas las piezas</button>'
             f'<button type="button" data-ir="#categorias">Categorías</button>'
+            f'<button type="button" data-ir="#contacto">¿Buscas algo? Escríbenos</button>'
             + ('<button type="button" data-ir="#carton">El cartón</button>'
                if actual['archivo'] == 'index.html' else '')
             + f'<button type="button" data-carro="1">Tu carrito</button>'
@@ -1675,6 +1706,54 @@ def g_orden_js(piezas):
     return json.dumps([pz['k'] for pz in piezas],
                       ensure_ascii=False, separators=(',', ':'))
 
+def g_contacto(pag):
+    """«¿Buscas algo? Contáctame» — la salida para lo que no está en la vitrina.
+
+    Lo pidio Luis y tapa un hueco real: este escaparate enseña una SELECCION
+    del catalogo, y hasta hoy quien buscaba una figura que no estaba se quedaba
+    sin nada que hacer. Tambien es donde aterrizan las impresiones 3D, que la
+    tienda cotiza pieza por pieza.
+
+    Lo que NO dice, a proposito: ni «conseguimos lo que sea» ni «pedidos
+    especiales». La tienda no ha dicho que haga eso y no se promete en su
+    nombre. Promete lo unico que es seguro: que contestan.
+    """
+    n = len(pag['piezas'])
+    vias = [
+        ('wasap', wa('Hola, vi la tienda en línea y busco una figura que no '
+                     'aparece ahí. ¿Me ayudas?'),
+         'WhatsApp', TEL_HUMANO, 'Lo más rápido. El mensaje ya va escrito.'),
+        ('correo', f'mailto:{CORREO}?subject='
+                   + 'Busco%20una%20figura&body='
+                   + 'Hola%2C%20busco%20esta%20figura%3A%20',
+         'Correo', CORREO, 'Para listas largas o fotos.'),
+        ('tel', f'tel:+{WHATSAPP}', 'Teléfono', TEL_HUMANO, 'Si prefieres hablarlo.'),
+    ]
+    tarjetas = ''.join(
+        f'<a class="g-via {cl}" href="{esc(href)}"'
+        + (' target="_blank" rel="noopener"' if href.startswith('http') else '')
+        + f'><span class="via-que">{esc(que)}</span>'
+        f'<span class="via-dato">{esc(dato)}</span>'
+        f'<span class="via-nota">{esc(nota)}</span>'
+        f'<span class="via-ir" aria-hidden="true">→</span></a>'
+        for cl, href, que, dato, nota in vias)
+    return (
+      '<section id="contacto"><div class="caso">'
+        '<div class="g-busco">'
+          '<div class="g-busco-dicho">'
+            '<p class="ceja">¿Buscas algo?</p>'
+            '<h2 class="revelar" style="max-width:14ch">Si no está aquí,<br>'
+            '<em>pregúntalo</em>.</h2>'
+            f'<p style="margin:18px 0 0">En esta vitrina hay <strong>{n} '
+            'piezas</strong>, y son una selección. Si buscas una figura que no '
+            'ves —o quieres el precio de una impresión 3D— escríbenos y te '
+            'decimos si la tenemos.</p>'
+            '<p class="g-busco-hora">Se contesta en horario de tienda.</p>'
+          '</div>'
+          f'<div class="g-vias">{tarjetas}</div>'
+        '</div>'
+      '</div></section>')
+
 def g_carrito():
     """El cajón del carrito. Vacío: lo llena el guion, como la ficha."""
     return ('<div class="g-carro" id="g-carro" hidden role="dialog" aria-modal="true" '
@@ -1757,6 +1836,8 @@ def g_ficha(pag):
             # solo las impresiones 3D: que se imprimen por encargo y cuanto
             # tardan. Vacio en el resto, y entonces ni se pinta.
             '<p class="g-nota" id="g-nota" hidden></p>'
+            '<a class="g-cotiza" id="g-cotiza" href="#contacto" hidden '
+            'target="_blank" rel="noopener">Pedir precio por WhatsApp</a>'
             '</div>'
 
             '<div class="ex-riel"><p class="ex-ceja chica">Más de la colección</p>'
@@ -1844,6 +1925,30 @@ VC_TOTAL     = (CATFOTOS.get('vintage-collection') or {}).get('productos') or le
 HASBRO_TOTAL = (CATFOTOS.get('hasbro') or {}).get('productos') or VC_TOTAL
 
 TIENDA = 'https://www.toydarians.com/'
+
+# ══ EL CONTACTO DEL CLIENTE, SACADO DE SU PROPIA WEB ══════════════════════
+# Nada de esto se invento: son el WhatsApp y el correo que Toydarians publica
+# en su portada. Se midio el 14 de septiembre pidiendo la pagina y leyendo sus
+# enlaces `tel:` y `mailto:`. Si algun dia cambian, se vuelven a sacar de ahi
+# y no de la memoria de nadie.
+#
+# Por que importa tenerlos: sin un canal de contacto, las piezas que la tienda
+# COTIZA —las siete impresiones 3D— quedaban en un callejon sin salida: la
+# ficha decia «Precio a consultar» y no habia a quien consultarle.
+WHATSAPP = '5215522516663'
+TEL_HUMANO = '+52 1 55 2251 6663'
+CORREO = 'ventas@toydarians.com'
+
+def wa(texto):
+    """Un enlace de WhatsApp con el mensaje YA REDACTADO.
+
+    Que el mensaje venga escrito no es un detalle de cortesia: quien escribe
+    desde el telefono casi nunca sabe decir que pieza estaba viendo, y del otro
+    lado llega un «hola» sin contexto que cuesta tres mensajes desenredar.
+    """
+    from urllib.parse import quote
+    return f'https://wa.me/{WHATSAPP}?text={quote(texto)}'
+
 # ⚠ EL LOGO IBA EMPOTRADO TRES VECES —barra, carton y pie—: 26 KB de imagen
 #   convertidos en ~104 KB de base64 REPETIDO dentro del mismo documento. En
 #   archivo se pide una vez, se cachea, y los tres sitios reusan esa peticion.
@@ -2079,6 +2184,7 @@ def documento(pag):
     <a href="#categorias">Categorías</a>
     {'<a href="#carton" class="opc">El cartón</a>'
      if inicio else '<a href="index.html" class="opc">Vintage Collection</a>'}
+    <a href="#contacto">Contacto</a>
   </nav>
   <button class="g-carro-btn" id="g-carro-btn" type="button" aria-expanded="false"
           aria-controls="g-carro"><span class="txt">Carrito</span><span class="n" id="g-carro-n">0</span></button>
@@ -2132,6 +2238,10 @@ def documento(pag):
   {g_categorias(pag)}
 </div></section>
 {carton}
+{cinta()}
+
+{g_contacto(pag)}
+
 <div class="cierre"><div class="caso">
   <div>
     <h2>Se paga aquí,<br>se envía a tu casa</h2>
@@ -2534,6 +2644,8 @@ JS += """
   // cuando esto se ejecuta el dato ya esta puesto.
   TOY.g.paypal = """ + json.dumps(PAYPAL_ID) + """;
   TOY.g.moneda = """ + json.dumps(MONEDA) + """;
+  // El WhatsApp de la tienda, para cotizar las piezas que no traen precio.
+  TOY.g.wasap = """ + json.dumps(WHATSAPP) + """;
 """
 
 JS += r"""
@@ -2750,6 +2862,21 @@ JS += r"""
       }
       var eN = document.getElementById('g-nota');
       if (eN) { eN.textContent = d.nota || ''; eN.hidden = !d.nota; }
+
+      /* Una pieza sin precio tenia el boton apagado y hasta ahi. Apagado y sin
+         salida es un callejon: el visitante ve «Precio a consultar» y no tiene
+         a quien consultarle. Aqui aparece el enlace a WhatsApp con la pieza ya
+         nombrada en el mensaje, que es la diferencia entre que pregunte y que
+         cierre la pestaña. */
+      var eC = document.getElementById('g-cotiza');
+      if (eC) {
+        if (!d.p && TOY.g.wasap) {
+          eC.href = 'https://wa.me/' + TOY.g.wasap + '?text=' +
+            encodeURIComponent('Hola, quiero el precio de «' + d.n + '» (' +
+                               (d.pil || vc) + ').');
+          eC.hidden = false;
+        } else { eC.hidden = true; }
+      }
 
       fotosAct = d.f;
       armarGaleria(d.f, d.n);

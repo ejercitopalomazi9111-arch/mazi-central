@@ -497,6 +497,36 @@ p strong{color:var(--hueso);font-weight:500}
 /* sobre la trama el rotulo si se lee, asi que sube de tinta y baja de peso */
 .g-cat.sin-foto .rotulo{color:rgba(255,255,255,.16)}
 /* y el velo negro de las fotos aqui taparia la trama: se aclara */
+/* ── «¿Buscas algo?» · las tres vías de contacto ─────────────────────────
+   Tres tarjetas y no un formulario: un formulario necesita servidor, y este
+   sitio se sube a una carpeta. Un enlace de WhatsApp con el mensaje ya escrito
+   funciona en el teléfono de cualquiera, sin nada detrás, y además llega con
+   contexto. En escritorio se reparten en tres; en teléfono se apilan, que es
+   donde de verdad se va a tocar. */
+.g-busco{display:grid;gap:clamp(26px,4vw,60px);align-items:start}
+@media (min-width:900px){.g-busco{grid-template-columns:1fr 1fr}}
+.g-busco-hora{margin:14px 0 0;font:700 9.5px/1.6 var(--dato);letter-spacing:.18em;
+  text-transform:uppercase;color:var(--gris-tenue)}
+.g-vias{display:grid;gap:10px}
+.g-via{position:relative;display:grid;gap:3px;padding:18px 44px 18px 19px;
+  border:1px solid var(--linea);background:rgba(255,255,255,.015);
+  text-decoration:none;color:inherit;
+  transition:border-color .18s ease,transform .18s ease}
+.g-via:hover,.g-via:focus-visible{border-color:var(--amarillo);
+  transform:translate3d(0,-3px,0)}
+.g-via .via-que{font:700 9.5px/1 var(--dato);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--amarillo)}
+.g-via .via-dato{font:400 clamp(16px,2vw,21px)/1.2 var(--display);
+  letter-spacing:-.02em;overflow-wrap:anywhere}
+.g-via .via-nota{font:400 12px/1.5 var(--texto);color:var(--gris-tenue)}
+.g-via .via-ir{position:absolute;right:17px;top:50%;margin-top:-.6em;
+  font:400 19px/1 var(--display);color:var(--gris-tenue)}
+.g-via:hover .via-ir{color:var(--amarillo)}
+/* el enlace de cotización que sale bajo una pieza sin precio */
+.g-cotiza{display:inline-block;margin-top:9px;font:700 10px/1 var(--dato);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--amarillo);
+  text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:3px}
+
 /* ── Piezas que se cotizan, portadas por marca y la nota de la ficha ──────
    Las impresiones 3D no tienen precio publicado. El renglón se pinta igual
    que el precio para que la retícula no dé un salto de un producto a otro,
