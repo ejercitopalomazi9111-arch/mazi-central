@@ -423,12 +423,30 @@ p strong{color:var(--hueso);font-weight:500}
    cambian solos, poco a poco y a destiempo -- cada uno con su propio reloj,
    que es lo que hace que no parezca un carrusel.
    ══════════════════════════════════════════════════════════════════════════ */
+/* el menú pasó de 30 enlaces que se iban a botones que navegan aquí dentro */
+.g-menu .g-marcas button,.g-menu .g-pags button{display:block;width:100%;
+  text-align:left;background:transparent;border:0;padding:0;cursor:pointer;
+  font:inherit;color:inherit}
+.g-menu .raiz i{font-style:normal;margin-left:8px;font:700 9.5px/1 var(--dato);
+  letter-spacing:.12em;color:var(--gris-tenue)}
+.g-menu button:hover{color:var(--amarillo)}
+
 .g-cats{display:grid;gap:clamp(10px,1.4vw,16px);
   grid-template-columns:repeat(auto-fill,minmax(min(100%,268px),1fr))}
 .g-cat{position:relative;display:block;overflow:hidden;text-decoration:none;
   color:inherit;background:var(--panel);border:1px solid var(--linea);
   aspect-ratio:16/10;transition:border-color .25s,transform .4s cubic-bezier(.2,.7,.3,1)}
 .g-cat:hover{border-color:var(--amarillo);transform:translate3d(0,-4px,0)}
+/* ⚠ UNA CATEGORIA VACIA NO SE DISFRAZA DE LLENA. De las 16 del catalogo sólo
+   dos tienen piezas cargadas aquí; las otras 14 decían un número que salía de
+   la tienda ajena y, al tocarlas, mandaban allá. Ahora se marcan y se dicen. */
+.g-cat{font:inherit;text-align:left;width:100%;padding:0;cursor:pointer}
+.g-cat.sin-piezas{cursor:default;opacity:.62}
+.g-cat.sin-piezas:hover{border-color:var(--linea);transform:none}
+.g-cat .pronto{position:absolute;top:11px;right:11px;z-index:2;
+  background:rgba(8,8,10,.82);border:1px solid var(--linea);color:var(--gris);
+  padding:5px 8px;font:700 9px/1 var(--dato);letter-spacing:.16em;
+  text-transform:uppercase}
 .g-cat.ancha{grid-column:span 2;aspect-ratio:16/6}
 @media (max-width:620px){.g-cat.ancha{grid-column:span 1;aspect-ratio:16/9}}
 /* los banners viven apilados y se cruzan por opacidad: es una capa decorativa,

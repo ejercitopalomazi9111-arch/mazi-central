@@ -453,6 +453,95 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 }
 
 
+/* ── PASE DE LAS CATEGORIAS · que NADA de aqui mande a otro sitio ───────
+   Si esta es la pagina oficial, pulsar una categoria filtra la vitrina; no
+   abre toydarians.com. Eran 35 salidas: las 9 fichas de categoria y las ~26
+   del menu. Ninguna se veia rota —un enlace que funciona parece correcto—,
+   asi que la unica forma de que esto no vuelva es contarlas.
+
+   Se mide en tres capas porque cada una deja pasar lo que la otra caza:
+
+   · SALIDAS — cuantos anclajes apuntan fuera del origen. Se permite
+     EXACTAMENTE uno, el del pie, que es la atribucion a la tienda y debe
+     seguir ahi. Un enlace nuevo que se escape sube el numero y esto revienta.
+   · CON PIEZAS — pulsar una categoria que tiene existencias filtra la
+     vitrina de verdad (menos tarjetas, y las que quedan SE VEN) y no navega.
+   · SIN PIEZAS — pulsar «Funko» o «3D Print», que hoy no tienen nada, no
+     navega, no vacia la vitrina y avisa «Proximamente». Fingir un filtro
+     vacio seria peor que el enlace que habia. */
+{
+  const ctx = await nav.newContext({ viewport: { width: 390, height: 844 } });
+  const pg = await ctx.newPage();
+  const fallos = [];
+  pg.on('pageerror', (e) => fallos.push('pageerror: ' + e.message));
+  await pg.goto(url, { waitUntil: 'load' });
+  await pg.waitForTimeout(1200);
+
+  // capa 1 · las salidas, con el menu ABIERTO: cerrado sigue en el DOM, pero
+  // se abre para que tambien cuenten los anclajes que solo existen dentro.
+  await pg.evaluate(() => {
+    const b = document.querySelector('[aria-controls="g-menu"]');
+    if (b) b.click();
+  });
+  await pg.waitForTimeout(500);
+  const salidas = await pg.evaluate(() => [...document.querySelectorAll('a[href]')]
+    .filter(a => { try { return new URL(a.href, location.href).origin !== location.origin
+                                && !a.href.startsWith('mailto:') && !a.href.startsWith('tel:'); }
+                   catch { return false; } })
+    .map(a => (a.closest('footer') ? 'pie · ' : 'FUERA DEL PIE · ') + a.getAttribute('href')));
+  await pg.keyboard.press('Escape');
+  await pg.waitForTimeout(400);
+
+  const contar = () => pg.evaluate(() => {
+    const p = [...document.querySelectorAll('.rejilla .pieza')];
+    const caja = p.filter(n => n.getClientRects().length > 0);
+    return { caja: caja.length,
+             vista: caja.filter(n => +getComputedStyle(n).opacity > .5).length };
+  });
+  const antes = await contar();
+
+  // capa 2 · una categoria CON piezas
+  const pulsar = (sel) => pg.evaluate(async (s) => {
+    const b = document.querySelector(s);
+    if (!b) return null;
+    const donde = location.href;
+    b.click();
+    await new Promise(r => setTimeout(r, 1400));
+    const p = [...document.querySelectorAll('.rejilla .pieza')];
+    const caja = p.filter(n => n.getClientRects().length > 0);
+    return { caja: caja.length,
+             vista: caja.filter(n => +getComputedStyle(n).opacity > .5).length,
+             mismo: location.href.split('#')[0] === donde.split('#')[0] };
+  }, sel);
+
+  const conPiezas = await pulsar('.g-cat[data-cat]:not(.sin-piezas)');
+  await pg.evaluate(() => { const q = document.getElementById('g-q'); if (q) { q.value=''; } });
+  await pg.waitForTimeout(200);
+  const vacia = await pulsar('.g-cat.sin-piezas[data-cat]');
+  const pronto = await pg.evaluate(() =>
+    [...document.querySelectorAll('.g-cat.sin-piezas .pronto')]
+      .filter(n => n.getClientRects().length > 0).length);
+
+  const mal = fallos.length > 0
+            || salidas.length !== 1 || !salidas[0].startsWith('pie · ')
+            || !(antes && antes.caja > 10)
+            || !(conPiezas && conPiezas.mismo)
+            || !(conPiezas && conPiezas.caja > 0 && conPiezas.vista === conPiezas.caja)
+            || !(vacia && vacia.mismo && vacia.caja === antes.caja)
+            || pronto < 1;
+  if (mal) malo++;
+  console.log(`390px categorías      salidas ${salidas.length} (se permite 1)  `
+    + `con piezas ${conPiezas ? conPiezas.caja + (conPiezas.vista === conPiezas.caja ? '' : '/vista ' + conPiezas.vista) : '—'}  `
+    + `sin piezas ${vacia ? (vacia.caja === antes.caja ? 'no toca' : 'FILTRA ' + vacia.caja) : '—'}  `
+    + `«próximamente» ${pronto}  `
+    + `navega ${(conPiezas && conPiezas.mismo && vacia && vacia.mismo) ? 'no' : 'SÍ'}`
+    + `${mal ? '  ← MAL' : ''}`);
+  salidas.filter(x => !x.startsWith('pie · ')).slice(0, 6).forEach(x => console.log('      ' + x));
+  fallos.forEach(c => console.log('      ' + c));
+  await ctx.close();
+}
+
+
 /* ── PASE DE «REDUCIR MOVIMIENTO» ────────────────────────────────────────
    Esta era LA VENTANA CIEGA, y ya se cobro una pieza: un `if (quieto) return;`
    a mitad del guion apagaba todo lo que venia detras —incluida la ficha de

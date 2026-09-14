@@ -995,6 +995,42 @@
       });
     }
 
+    /* ══ NAVEGAR POR CATEGORIA, AQUI DENTRO ══════════════════════════════
+       Antes cada tarjeta y cada renglon del menu era un enlace a
+       toydarians.com. Ahora filtran la vitrina y bajan a ella.
+       La categoria SIN piezas cargadas no hace nada al tocarla y lo dice en la
+       propia tarjeta: mandar a alguien a la tienda ajena desde la pagina que
+       se supone oficial es justo lo que Luis vio y no quiere. */
+    function porCategoria(slug, n){
+      if (!n) return;                       // no hay nada que enseñar: no se finge
+      if (campoQ) campoQ.value = '';
+      serieAct = '';
+      if (typeof chapas !== 'undefined')
+        chapas.forEach(function(o, i){
+          o.classList.toggle('viva', i === 0);
+          o.setAttribute('aria-pressed', String(i === 0));
+        });
+      if (TOY.g.filtrar) TOY.g.filtrar(true);
+      var v = document.getElementById('vitrina');
+      if (v) v.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth' });
+    }
+    document.addEventListener('click', function(e){
+      var c = e.target.closest('[data-cat]');
+      if (c) { porCategoria(c.dataset.cat, +c.dataset.n || 0); cerrarMenu(); return; }
+      var ir = e.target.closest('[data-ir]');
+      if (ir) {
+        var d = document.querySelector(ir.dataset.ir);
+        if (d) d.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth' });
+        cerrarMenu(); return;
+      }
+      if (e.target.closest('[data-carro]')) { cerrarMenu(); abrirCarro(); }
+    });
+    function cerrarMenu(){
+      var m = document.getElementById('g-menu'), b = document.getElementById('g-abrir');
+      if (m) m.hidden = true;
+      if (b) b.setAttribute('aria-expanded', 'false');
+    }
+
     var irCarro = document.getElementById('g-ir-carro');
     if (irCarro) irCarro.addEventListener('click', abrirCarro);
 

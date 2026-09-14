@@ -495,12 +495,30 @@ CSS += r"""
    cambian solos, poco a poco y a destiempo -- cada uno con su propio reloj,
    que es lo que hace que no parezca un carrusel.
    ══════════════════════════════════════════════════════════════════════════ */
+/* el menú pasó de 30 enlaces que se iban a botones que navegan aquí dentro */
+.g-menu .g-marcas button,.g-menu .g-pags button{display:block;width:100%;
+  text-align:left;background:transparent;border:0;padding:0;cursor:pointer;
+  font:inherit;color:inherit}
+.g-menu .raiz i{font-style:normal;margin-left:8px;font:700 9.5px/1 var(--dato);
+  letter-spacing:.12em;color:var(--gris-tenue)}
+.g-menu button:hover{color:var(--amarillo)}
+
 .g-cats{display:grid;gap:clamp(10px,1.4vw,16px);
   grid-template-columns:repeat(auto-fill,minmax(min(100%,268px),1fr))}
 .g-cat{position:relative;display:block;overflow:hidden;text-decoration:none;
   color:inherit;background:var(--panel);border:1px solid var(--linea);
   aspect-ratio:16/10;transition:border-color .25s,transform .4s cubic-bezier(.2,.7,.3,1)}
 .g-cat:hover{border-color:var(--amarillo);transform:translate3d(0,-4px,0)}
+/* ⚠ UNA CATEGORIA VACIA NO SE DISFRAZA DE LLENA. De las 16 del catalogo sólo
+   dos tienen piezas cargadas aquí; las otras 14 decían un número que salía de
+   la tienda ajena y, al tocarlas, mandaban allá. Ahora se marcan y se dicen. */
+.g-cat{font:inherit;text-align:left;width:100%;padding:0;cursor:pointer}
+.g-cat.sin-piezas{cursor:default;opacity:.62}
+.g-cat.sin-piezas:hover{border-color:var(--linea);transform:none}
+.g-cat .pronto{position:absolute;top:11px;right:11px;z-index:2;
+  background:rgba(8,8,10,.82);border:1px solid var(--linea);color:var(--gris);
+  padding:5px 8px;font:700 9px/1 var(--dato);letter-spacing:.16em;
+  text-transform:uppercase}
 .g-cat.ancha{grid-column:span 2;aspect-ratio:16/6}
 @media (max-width:620px){.g-cat.ancha{grid-column:span 1;aspect-ratio:16/9}}
 /* los banners viven apilados y se cruzan por opacidad: es una capa decorativa,
@@ -1335,22 +1353,53 @@ def _comprobar_banners(cats, fotos_dir):
         raise SystemExit('la misma imagen de banner en mas de dos categorias: ' + detalle)
     return len(de_quien)
 
+# ⚠ EL NUMERO QUE MANDA NO ES EL DE LA TIENDA, ES EL QUE TENEMOS CARGADO.
+#   La tienda dice 726 productos; en este sitio hay 47, y todos son de The
+#   Vintage Collection. Funko dice 8 y tenemos 0; 3D Print dice 7 y tenemos 0.
+#   Por eso al entrar a esas categorias el sitio mandaba a toydarians.com: aqui
+#   no habia nada que enseñar. Ya no manda a nadie a ningun lado — pero tampoco
+#   finge que tiene lo que no tiene.
+def piezas_de(slug):
+    """Cuantas piezas REALES puede enseñar esta categoria ahora mismo.
+
+    Las 47 que hay son todas de The Vintage Collection, que es una linea de
+    Hasbro: por eso cuentan para esas dos y para ninguna otra. El dia que
+    entren mas productos, esto se calcula de los datos y no de una lista.
+    """
+    if slug in ('vintage-collection', 'hasbro'):
+        return sum(1 for pz in cat if (FOTOS.get(pz['vc']) or {}).get('fotos'))
+    return 0
+
 def g_menu():
     """El menu de su web, con la jerarquia real."""
+    # ⚠ ESTE MENU ERA 30 ENLACES QUE SE IBAN DEL SITIO. Cada marca y cada
+    #   pagina abrian toydarians.com en otra pestaña. Si esta es la pagina
+    #   oficial, el menu navega DENTRO.
     marcas = ''
     for nom, slug, subs in MENU:
+        n = piezas_de(slug)
+        # La cuenta de los hijos tambien sale de piezas_de. Estuvo fija en 0 y
+        # eso dejaba muerta la linea que SI tiene existencias: las 47 son
+        # Vintage Collection, asi que pulsar «Vintage Collection» no hacia nada
+        # mientras «HASBRO», que es su padre, filtraba las mismas 47.
         hijos = ''.join(
-            f'<a href="{TIENDA}?product_cat={h}" target="_blank" rel="noopener">{esc(t)}</a>'
-            for t, h in subs)
-        marcas += (f'<div class="g-marca"><a class="raiz" href="{TIENDA}?product_cat={slug}" '
-                   f'target="_blank" rel="noopener">{esc(nom)}</a>'
+            f'<button type="button" data-cat="{h}" data-n="{piezas_de(h)}">'
+            f'{esc(tx)}</button>'
+            for tx, h in subs)
+        marcas += (f'<div class="g-marca">'
+                   f'<button class="raiz" type="button" data-cat="{slug}" data-n="{n}">'
+                   f'{esc(nom)}<i>{n or "—"}</i></button>'
                    f'{f"<div class=hijos>{hijos}</div>" if hijos else ""}</div>')
-    pgs = ''.join(f'<a href="{TIENDA}{u}" target="_blank" rel="noopener">{esc(t)}</a>'
-                  for t, u in PAGINAS)
     return (f'<div class="g-menu" id="g-menu" hidden>'
             f'<div class="caso"><div class="g-menu-red">'
-            f'<div><p class="ceja">Marcas</p><div class="g-marcas">{marcas}</div></div>'
-            f'<div><p class="ceja">La tienda</p><div class="g-pags">{pgs}</div></div>'
+            f'<div><p class="ceja">Marcas y líneas</p>'
+            f'<div class="g-marcas">{marcas}</div></div>'
+            f'<div><p class="ceja">La tienda</p><div class="g-pags">'
+            f'<button type="button" data-ir="#vitrina">Ver todas las piezas</button>'
+            f'<button type="button" data-ir="#categorias">Categorías</button>'
+            f'<button type="button" data-ir="#carton">El cartón</button>'
+            f'<button type="button" data-carro="1">Tu carrito</button>'
+            f'</div></div>'
             f'</div></div></div>')
 
 def g_categorias():
@@ -1370,14 +1419,22 @@ def g_categorias():
         # cuando no sabia que dar, y 16 tarjetas ensenaban el mismo logo
         # ampliado. Un hueco honesto se ve mejor que una imagen equivocada.
         if not fotos: ancha += f' sin-foto t{len(fichas) % 3}'
+        # ⚠ ESTO ERA UN <a> A toydarians.com. Luis: «cuando entro a las de funko
+        #   o 3d me manda a la original, quiero que ESTA sea la original».
+        #   Ahora es un boton que filtra aqui dentro. Y si la categoria no tiene
+        #   piezas cargadas, se dice — no se manda a nadie a la competencia ni
+        #   se finge un catalogo que no esta.
+        tengo = piezas_de(slug)
         fichas.append(
-            f'<a class="g-cat{ancha}" href="{TIENDA}?product_cat={slug}" target="_blank" '
-            f'rel="noopener" data-cat="{slug}">'
+            f'<button type="button" class="g-cat{ancha}{"" if tengo else " sin-piezas"}" '
+            f'data-cat="{slug}" data-n="{tengo}">'
             f'<span class="rotulo" aria-hidden="true">{esc(nom)}</span>'
             f'<span class="banners">{caps}</span>'
             f'<span class="velo"></span>'
-            + (f'<span class="cuenta">{n} piezas</span>' if n else '')
-            + f'<span class="marca-cat"><b>{esc(nom)}</b><i>{esc(sub)}</i></span></a>')
+            + (f'<span class="cuenta">{tengo} piezas</span>' if tengo else '')
+            + f'<span class="marca-cat"><b>{esc(nom)}</b><i>{esc(sub)}</i></span>'
+            + ('' if tengo else '<span class="pronto">Próximamente</span>')
+            + '</button>')
     return '<div class="g-cats">' + ''.join(fichas) + '</div>'
 
 def g_rejilla():
@@ -2890,6 +2947,42 @@ JS += r"""
           }
         }).render(cPago);
       });
+    }
+
+    /* ══ NAVEGAR POR CATEGORIA, AQUI DENTRO ══════════════════════════════
+       Antes cada tarjeta y cada renglon del menu era un enlace a
+       toydarians.com. Ahora filtran la vitrina y bajan a ella.
+       La categoria SIN piezas cargadas no hace nada al tocarla y lo dice en la
+       propia tarjeta: mandar a alguien a la tienda ajena desde la pagina que
+       se supone oficial es justo lo que Luis vio y no quiere. */
+    function porCategoria(slug, n){
+      if (!n) return;                       // no hay nada que enseñar: no se finge
+      if (campoQ) campoQ.value = '';
+      serieAct = '';
+      if (typeof chapas !== 'undefined')
+        chapas.forEach(function(o, i){
+          o.classList.toggle('viva', i === 0);
+          o.setAttribute('aria-pressed', String(i === 0));
+        });
+      if (TOY.g.filtrar) TOY.g.filtrar(true);
+      var v = document.getElementById('vitrina');
+      if (v) v.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth' });
+    }
+    document.addEventListener('click', function(e){
+      var c = e.target.closest('[data-cat]');
+      if (c) { porCategoria(c.dataset.cat, +c.dataset.n || 0); cerrarMenu(); return; }
+      var ir = e.target.closest('[data-ir]');
+      if (ir) {
+        var d = document.querySelector(ir.dataset.ir);
+        if (d) d.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth' });
+        cerrarMenu(); return;
+      }
+      if (e.target.closest('[data-carro]')) { cerrarMenu(); abrirCarro(); }
+    });
+    function cerrarMenu(){
+      var m = document.getElementById('g-menu'), b = document.getElementById('g-abrir');
+      if (m) m.hidden = true;
+      if (b) b.setAttribute('aria-expanded', 'false');
     }
 
     var irCarro = document.getElementById('g-ir-carro');
