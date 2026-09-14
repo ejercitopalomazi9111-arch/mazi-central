@@ -383,6 +383,27 @@
         "el proceso murió y no me enteré"
       ],
       "salioDe": "El timbre de La Sala: llevaba horas muerto y cada ronda de la guardia informaba «colgado»."
+    },
+    {
+      "id": "el-repo-que-no-se-puede-anadir-se-abre-en-sesion-nueva",
+      "titulo": "«No puedo tocar ese repo» era falso: se abre una sesión nueva con él de fuente",
+      "gravedad": "alta",
+      "sintoma": "Tres veces le dije a Luis que necesitaba que ÉL abriera una sesión con su repo como fuente. Dos proyectos parados esperando algo que yo podía hacer solo.",
+      "causa": "`add_repo` rebota con «cross-tier adds are not supported: la sesión ya tiene repos de otro dueño». Leí eso como un muro y no como lo que decía literalmente al final: «abre una sesión nueva con el repo pedido como fuente inicial».",
+      "porque": "El mensaje de error nombraba la solución y yo la leí como una instrucción PARA EL USUARIO, cuando `create_session` con `source_url` es una herramienta que tengo yo. Un límite real —no mezclar dueños en una sesión— me hizo dar por imposible la tarea entera, en vez de sólo esa vía.",
+      "arreglo": "`create_session` con `source_url` apuntando al repo, y se conduce con `send_message`. Funciona para cualquier repo del usuario que la sesión actual no pueda añadir.",
+      "comoCazarlo": "Antes de decir «necesito que tú hagas X», pregúntate qué herramienta tuya hace X. Si el error te dice la salida, la salida probablemente es tuya.",
+      "consejo": "Un límite de una herramienta no es un límite de la tarea. Declarar un bloqueo cuesta el tiempo del otro, así que agotar las vías propias es parte de tener derecho a declararlo.",
+      "salioDe": "rodrigo-cabrera y el link de bigtigermx · Luis: «no lo puedes hacer tu?»",
+      "senales": [
+        "necesito que abras una sesión",
+        "no puedo tocar ese repo",
+        "cross-tier",
+        "add_repo rebota"
+      ],
+      "vecinas": [
+        "comprobacion-en-la-capa-equivocada"
+      ]
     }
   ]
 }
