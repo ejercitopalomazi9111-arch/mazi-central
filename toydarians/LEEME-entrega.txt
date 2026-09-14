@@ -1,0 +1,123 @@
+TOYDARIANS · ESCAPARATE WEB
+Cómo ponerlo en línea, cómo dejarlo privado y cómo encender el cobro
+===================================================================
+
+QUÉ ES ESTO
+-----------
+Un sitio web completo y terminado. No necesita servidor especial, ni base de
+datos, ni instalar nada: son archivos sueltos que cualquier hosting sirve tal
+cual.
+
+Lo que hay en esta carpeta:
+
+  index.html    la página
+  estilo.css    los estilos
+  motor.js      el movimiento y el buscador
+  marca/        el logotipo, las tipografías y las ilustraciones
+  fotos/        las 235 fotos de producto y las de categoría
+
+No sobra nada. Todo lo que está aquí, la página lo usa.
+
+
+1 · SUBIRLO
+-----------
+Se sube LA CARPETA ENTERA, con esa misma estructura. `index.html` tiene que
+quedar en la raíz, y `marca/` y `fotos/` como subcarpetas al lado.
+
+Sirve cualquier hosting de sitios estáticos. Tres que funcionan arrastrando la
+carpeta, sin configurar nada:
+
+  · Cloudflare Pages   dash.cloudflare.com → Workers & Pages → Create → Pages
+  · Netlify            app.netlify.com/drop
+  · Vercel             vercel.com/new
+
+También funciona en un hosting normal con FTP (cPanel, Hostinger, GoDaddy…):
+se copia todo dentro de `public_html` y listo.
+
+Para verlo antes de subirlo, también puedes dar doble clic a `index.html` en tu
+computadora: funciona completo —tipografías, fotos, buscador y fichas—. Lo
+comprobamos. Eso sí, el sitio de verdad va subido.
+
+
+2 · DEJARLO PRIVADO
+-------------------
+Esto NO se configura en los archivos: es una opción del hosting. Se busca en el
+panel del proveedor, y el nombre cambia según cuál sea:
+
+  · Cloudflare Pages → el proyecto → Settings → "Access policy"
+  · Netlify          → Site settings → "Password protection"
+  · Vercel           → Project Settings → "Deployment Protection"
+  · Hosting con cPanel → "Directory Privacy" sobre la carpeta
+
+En la mayoría de proveedores la protección con contraseña es una función de
+pago; conviene revisarlo antes de elegir dónde subirlo.
+
+
+3 · ENCENDER EL COBRO CON PAYPAL
+--------------------------------
+El botón de PayPal ya está programado y probado. Sólo le falta UN dato: el
+identificador de la cuenta de negocio de Toydarians. Sin ese dato el sitio no
+finge que cobra: enseña un aviso que dice que falta configurarlo y manda a la
+tienda. Con el dato puesto, cobra.
+
+Dónde se saca el dato:
+
+  1. Entrar a developer.paypal.com con la cuenta de PayPal de Toydarians.
+  2. Apps & Credentials → pestaña LIVE (no Sandbox).
+  3. Crear una app si no hay ninguna, y copiar el "Client ID".
+     Es una cadena larga de letras y números.
+
+Dónde se pone:
+
+  1. Abrir `motor.js` con cualquier editor de texto (Bloc de notas sirve).
+  2. Buscar esta línea, cerca del principio:
+
+         TOY.g.paypal = "";
+
+  3. Pegar el Client ID entre las comillas:
+
+         TOY.g.paypal = "AQUI_VA_EL_CLIENT_ID_LARGO";
+
+  4. Guardar y volver a subir `motor.js`.
+
+La moneda está en la línea de abajo (`TOY.g.moneda = "MXN"`). Si algún día se
+cobra en otra, se cambia ahí.
+
+El Client ID es un dato PÚBLICO —viaja en la página, cualquiera puede verlo— y
+no sirve para sacar dinero de la cuenta. Lo que NUNCA se pone aquí es el
+"Secret": ése no va en una página web nunca.
+
+
+4 · COMPROBAR QUE QUEDÓ BIEN
+----------------------------
+Con el sitio ya subido, abrirlo en el teléfono y revisar estas seis cosas:
+
+  [ ] Al abrir sale una animación de 5 segundos que dibuja el logo letra por
+      letra. Debe verse fluida, no a tirones.
+  [ ] Bajando aparecen las 47 figuras con su foto y su precio.
+  [ ] Escribiendo "kenobi" en el buscador quedan 2 figuras.
+      Escribiendo "357" queda una sola.
+  [ ] Tocando cualquier figura se abre su ficha, con el número grande de fondo.
+      Deslizando la foto de lado se ven las demás fotos de esa figura.
+  [ ] Abajo del todo, el pie dice "toydarians.com" y NO muestra ningún número
+      de velocidad ni texto raro.
+  [ ] Poniendo  #vc-357  al final de la dirección, abre esa figura sola.
+      Sirve para mandar una figura concreta por WhatsApp.
+
+
+5 · LO QUE NO HAY QUE TOCAR
+---------------------------
+· No renombrar ni mover `marca/` ni `fotos/`: la página las busca por su nombre.
+· No editar `index.html` ni `estilo.css` a mano. Se generan desde el proyecto;
+  un cambio a mano se pierde la próxima vez que se regenere.
+· De `motor.js`, sólo las dos líneas del punto 3.
+
+
+DE DÓNDE SALE EL CONTENIDO
+--------------------------
+El logotipo, las fotos, las categorías, los precios y las existencias salen de
+toydarians.com. Los precios y el inventario pueden cambiar: la tienda manda
+siempre, y el sitio lo dice en el pie.
+
+Star Wars, The Vintage Collection y las demás marcas son de sus titulares. Este
+sitio no está afiliado a ellos.
