@@ -805,6 +805,27 @@
         "corriente-que-se-alimenta-de-si-misma",
         "el-orden-del-paso-decide-que-reglas-existen"
       ]
+    },
+    {
+      "id": "el-ancla-no-recarga-y-la-comprobacion-no-ve-el-fallo",
+      "titulo": "Cambiar sólo el # no recarga la página, así que el fallo del arranque no puede aparecer",
+      "gravedad": "alta",
+      "sintoma": "Una comprobación que abría la ficha por su enlace directo daba VERDE con el defecto puesto a mano. Dos versiones seguidas de la comprobación fallaron en pasar.",
+      "causa": "`page.goto(misma URL + otro #)` es navegación DENTRO del documento: no recarga, no vuelve a ejecutar el guion. El defecto ocurría mientras el guion corría, así que en esa pestaña ya no podía ocurrir.",
+      "porque": "Es la misma familia que medir en la capa equivocada: la comprobación tocaba la superficie correcta —la ficha, abierta por el ancla— pero en un estado en el que el fallo ya había pasado de largo.",
+      "arreglo": "Pestaña o contexto NUEVO para cada muestra que se abra por el ancla. Si hay que quedarse en la misma, `reload()` después del goto.",
+      "comoCazarlo": "Reintroduce el defecto y exige que la comprobación REPRUEBE. Si pasa, la comprobación es el defecto. Aquí hicieron falta tres intentos y los dos primeros parecían razonables.",
+      "consejo": "Un fallo que sólo ocurre durante el arranque sólo se ve en un arranque. Toda comprobación que lo persiga tiene que empezar de cero, no continuar donde estaba.",
+      "salioDe": "toydarians · el botón de compra que ofrecía cobrar una pieza sin precio",
+      "senales": [
+        "pasa con el defecto puesto",
+        "no reprueba",
+        "el ancla abre bien",
+        "sólo falla la primera vez"
+      ],
+      "vecinas": [
+        "comprobacion-en-la-capa-equivocada"
+      ]
     }
   ]
 }

@@ -172,6 +172,46 @@
         "el número se ve raro"
       ],
       "salioDe": "Principio de precisión significativa aplicado a la presentación de datos."
+    },
+    {
+      "id": "el-parametro-parecido-que-devuelve-200-y-otra-cosa",
+      "titulo": "?product-category= devuelve 200 y la portada; el bueno es ?product_cat=",
+      "gravedad": "alta",
+      "sintoma": "Una categoría que en la tienda tiene 8 productos parecía tener 8… que eran de OTRA categoría. Nada falló, nada avisó.",
+      "causa": "WordPress ignora el parámetro que no conoce y sirve la portada de la tienda, con su carrusel de productos. HTTP 200, HTML válido, productos reales.",
+      "porque": "Un 404 se caza solo; un 200 con el contenido equivocado no. Las comprobaciones de red miran el código de estado, y aquí el código de estado estaba bien.",
+      "arreglo": "Sacar el parámetro de los enlaces que la propia web imprime, no de la memoria. Y comprobar que lo raspado PERTENECE a lo pedido: si pides Funko y salen figuras de Star Wars, no era Funko.",
+      "comoCazarlo": "Pide una categoría que seguro no existe. Si devuelve productos, el parámetro está mal.",
+      "consejo": "Al raspar, 200 no quiere decir «esto es lo que pedí». Comprueba siempre una propiedad del contenido, no sólo que llegó.",
+      "salioDe": "toydarians · traer Funko y 3D Print del WooCommerce del cliente",
+      "senales": [
+        "la categoría trae productos de otra",
+        "200 pero contenido raro",
+        "raspado que no cuadra"
+      ],
+      "vecinas": [
+        "comprobacion-en-la-capa-equivocada"
+      ]
+    },
+    {
+      "id": "la-categoria-padre-no-lista-lo-de-sus-hijas",
+      "titulo": "La categoría padre da cero y sus 30 productos están en las hijas",
+      "gravedad": "media",
+      "sintoma": "`?product_cat=black-series` devolvía cero productos. El catálogo decía que tiene 30.",
+      "causa": "El listado de una categoría de WooCommerce no incluye lo que cuelga de sus subcategorías si los productos están asignados sólo a la hija.",
+      "porque": "Contar por el padre da cero y la conclusión natural —«esta categoría está vacía»— es falsa y difícil de dudar, porque la página se ve bien.",
+      "arreglo": "Recorrer las hojas del árbol, no las ramas. Y cruzar la cuenta con la que la propia tienda publica en su menú.",
+      "comoCazarlo": "Si una categoría con productos anunciados devuelve cero, mira sus hijas antes de darla por vacía.",
+      "consejo": "Cero es la respuesta que menos hay que creerse. Antes de escribir «vacía», busca por dónde puede estar lleno.",
+      "salioDe": "toydarians · el mapa de lo que falta por traer",
+      "senales": [
+        "categoría vacía",
+        "cero productos",
+        "el conteo no cuadra"
+      ],
+      "vecinas": [
+        "el-parametro-parecido-que-devuelve-200-y-otra-cosa"
+      ]
     }
   ]
 }
