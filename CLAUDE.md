@@ -138,6 +138,36 @@ Salió de una sesión larga donde me corrigió cuatro veces y las cuatro tenía 
   prueba. "Ya está" sin evidencia no vale.
 - Que **guarde el contexto** para que no tenga que repetirlo.
 
+### El link que se entrega NO lleva «palomazi» ni «mazi-central» · 14 de septiembre
+
+Lo pidió así: *«para los siguientes trabajos quiero que el link no tenga nada de
+palomazi ni mazi central, así que cuando te pida el link final lo debes de
+cambiar a mi github a como de lugar y como puedas, te doy permiso de crear y
+mover todo ahí»*.
+
+**Qué significa en la práctica.** `mazi-central.palomazi9111.workers.dev` es el
+taller: sirve para que Luis y Carlos prueben mientras se construye. **No es la
+dirección que se le pasa a un cliente, a un socio ni a nadie de fuera.** Lo que
+sale al mundo va desde SU GitHub.
+
+**Con qué se hace, comprobado el 14 de septiembre:**
+
+- La cuenta de GitHub con la que trabajo **es la suya**: `get_me` devuelve
+  `BigTigerMX`. La otra —`ejercitopalomazi9111-arch`— es la que hay que evitar
+  en los links.
+- Tengo `can_push: true` en **todos** sus repos de `BigTigerMX`.
+- Un sitio estático publicado ahí da
+  `https://bigtigermx.github.io/<repo>/`, que no lleva ninguna de las dos
+  palabras.
+
+**Cuándo se aplica.** En cuanto pida «el link final», o en cuanto algo se vaya a
+mandar fuera. No hay que esperar a que lo repita: ya lo dijo una vez y quedó
+escrito aquí.
+
+**El permiso que dio.** Crear repos y mover cosas dentro de su GitHub. Eso NO
+cambia lo demás: publicar algo hacia fuera sigue siendo una acción que se avisa,
+y lo que el cliente no ha confirmado sigue sin publicarse.
+
 ---
 
 ## 1. Qué es Grupo Mazi
