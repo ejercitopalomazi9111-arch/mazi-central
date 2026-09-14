@@ -495,13 +495,17 @@ CSS += r"""
    cambian solos, poco a poco y a destiempo -- cada uno con su propio reloj,
    que es lo que hace que no parezca un carrusel.
    ══════════════════════════════════════════════════════════════════════════ */
-/* el menú pasó de 30 enlaces que se iban a botones que navegan aquí dentro */
-.g-menu .g-marcas button,.g-menu .g-pags button{display:block;width:100%;
+/* el menú pasó de 30 enlaces que se iban a botones que navegan aquí dentro.
+   Los que siguen siendo <a> son los que llevan a OTRA página de este sitio
+   —funko.html, 3d-print.html—: van juntos en el selector para que un renglón
+   no se vea distinto según a dónde lleve. */
+.g-menu .g-marcas button,.g-menu .g-pags button,
+.g-menu .g-marcas a,.g-menu .g-pags a{display:block;width:100%;
   text-align:left;background:transparent;border:0;padding:0;cursor:pointer;
-  font:inherit;color:inherit}
+  font:inherit;color:inherit;text-decoration:none}
 .g-menu .raiz i{font-style:normal;margin-left:8px;font:700 9.5px/1 var(--dato);
   letter-spacing:.12em;color:var(--gris-tenue)}
-.g-menu button:hover{color:var(--amarillo)}
+.g-menu button:hover,.g-menu .g-marcas a:hover,.g-menu .g-pags a:hover{color:var(--amarillo)}
 
 .g-cats{display:grid;gap:clamp(10px,1.4vw,16px);
   grid-template-columns:repeat(auto-fill,minmax(min(100%,268px),1fr))}
@@ -565,6 +569,22 @@ CSS += r"""
 /* sobre la trama el rotulo si se lee, asi que sube de tinta y baja de peso */
 .g-cat.sin-foto .rotulo{color:rgba(255,255,255,.16)}
 /* y el velo negro de las fotos aqui taparia la trama: se aclara */
+/* ── Piezas que se cotizan, portadas por marca y la nota de la ficha ──────
+   Las impresiones 3D no tienen precio publicado. El renglón se pinta igual
+   que el precio para que la retícula no dé un salto de un producto a otro,
+   pero en gris y sin la moneda: es una promesa distinta, y se nota. */
+.ficha-p .precio.consulta,.g-precio-g.consulta{color:var(--gris-tenue);
+  letter-spacing:0}
+.g-precio-g.consulta{font-size:clamp(17px,2.1vw,21px)}
+.g-nota{margin:2px 0 0;font:400 12px/1.55 var(--texto);color:var(--gris-tenue);
+  border-left:2px solid var(--linea);padding-left:11px}
+
+/* Cada marca entra con su propia luz. No es decoración suelta: el tono sale de
+   las fotos de esa categoría —el naranja de las cajas de Funko, el verde de
+   los renders del taller 3D—, así que la portada y la rejilla que va debajo
+   se ven de la misma familia en vez de dos sitios pegados. */
+.cartel.aire-funko .cuna{filter:hue-rotate(-24deg) saturate(1.15)}
+.cartel.aire-3d .cuna{filter:hue-rotate(96deg) saturate(.9)}
 .g-cat.sin-foto .velo{background:linear-gradient(180deg,rgba(8,8,10,0) 0%,
   rgba(8,8,10,.35) 55%,rgba(8,8,10,.86) 100%)}
 
@@ -1292,10 +1312,6 @@ MENU = [
     ('3D PRINT', '3d-print', []),
     ('MERCH', 'merch', []),
 ]
-PAGINAS = [('¿Quiénes somos?', '?page_id=832'), ('Envíos', '?page_id=840'),
-           ('Tipos de embalaje', '?page_id=979'), ('Garantía', '?page_id=1554'),
-           ('Aviso de privacidad', '?page_id=842')]
-
 # Las subcategorias de Vintage Collection, que es la linea que si conocemos
 VC_SUB = [('Exclusivas', 'exclusivas-vintage-collection'),
           ('Figuras', 'figuras-vintage-collection'),
@@ -1315,18 +1331,101 @@ try:
     PRECIOS = json.loads((ACT / 'precios.json').read_text(encoding='utf-8'))
 except Exception:
     PRECIOS = {}
+# Las categorias que no son Vintage Collection. Vienen del mismo sitio que las
+# 47 —la tienda del cliente— pero con otra forma: FUNKO y 3D PRINT no tienen
+# numero VC, asi que no caben en el eje del carton ni en la pildora «VC 357».
+# Por eso viven en su propia pagina y no revueltas en la vitrina.
+try:
+    EXTRA = json.loads((ACT / 'extra.json').read_text(encoding='utf-8'))
+except Exception:
+    EXTRA = {}
 
 # ══ PAGO ══════════════════════════════════════════════════════════════════
 # El identificador de PayPal es del CLIENTE y no me lo puedo inventar: sin el
 # de verdad, un boton de pago o no cobra o cobra a la cuenta equivocada. Se
-# deja declarado y VACIO a proposito. Con el vacio, el sitio no finge: enseña
-# que falta configurarlo y manda a la tienda, que si cobra.
+# deja declarado y VACIO a proposito. Con el vacio, el sitio no finge: el
+# carrito enseña que falta configurarlo. (Antes decia aqui «y manda a la
+# tienda»: eso dejo de ser cierto el dia que las salidas a toydarians.com se
+# quitaron. Un comentario que describe lo que el codigo hacia ANTES es peor
+# que no tenerlo.)
 #
 # Para encenderlo: pegar aqui el «Client ID» de la cuenta de negocio del
 # cliente (PayPal → Developer → Apps & Credentials → Live). Es un dato
 # publico —viaja en el <script> del navegador—, pero es SUYO.
 PAYPAL_ID = ''
 MONEDA = 'MXN'
+
+# ══ UNA SOLA FORMA DE PIEZA PARA TODAS LAS PAGINAS ════════════════════════
+# Hasta ahora «pieza» era siempre una figura de Vintage Collection y el codigo
+# lo daba por hecho: la clave era el numero VC, la pildora decia «VC 357» y el
+# precio siempre existia. Ninguna de las tres cosas vale para FUNKO ni para
+# 3D PRINT —no llevan numero, y las impresiones 3D no publican precio—, asi
+# que en vez de meter condiciones por todo el generador se normaliza aqui y
+# los pintores reciben SIEMPRE la misma forma.
+#
+# `pil` es lo que va escrito sobre la foto. En Vintage Collection es el numero,
+# que es la gracia de esa coleccion; en las otras es la marca.
+def _pieza(k, nom, serie, url, fotos, precio, stock, pil, n, nota=''):
+    return {'k': k, 'nom': nom, 'serie': serie, 'url': url, 'fotos': fotos,
+            'precio': precio, 'stock': stock or 'disponible', 'pil': pil,
+            'n': n, 'nota': nota}
+
+def _piezas_vc():
+    out = []
+    for pz in cat:
+        f = (FOTOS.get(pz['vc']) or {}).get('fotos') or []
+        if not f: continue
+        pr = PRECIOS.get(pz['vc']) or {}
+        out.append(_pieza(pz['vc'], pz['nombre'],
+                          pz['serie'] or 'The Vintage Collection', pz['url'], f,
+                          pr.get('precio'), pr.get('stock'),
+                          'VC ' + pz['vc'], num(pz['vc'])))
+    return out
+
+def _piezas_extra(slug, pil):
+    return [_pieza(e['clave'], e['nombre'], e['serie'], e['url'], e['fotos'],
+                   e['precio'], e['stock'], pil, i, e.get('nota', ''))
+            for i, e in enumerate(EXTRA.get(slug) or [], 1)]
+
+# ══ LAS PAGINAS DEL SITIO ═════════════════════════════════════════════════
+# Luis: «dales su propia web». Y no es capricho: FUNKO y 3D PRINT no caben en
+# la vitrina de Vintage Collection. Esa vitrina esta construida alrededor del
+# NUMERO —la pildora «VC 357», el eje del carton, el orden por numero—, y una
+# figura sin numero ahi dentro seria una pieza rota en todas esas piezas.
+#
+# `cubre` es lo unico que decide de que categoria es cada pagina, y de ahi
+# salen tres cosas que antes se escribian por separado y se desincronizaban:
+# la cuenta de la ficha, la cuenta del menu y adonde lleva pulsarlas.
+PAGINAS = [
+  {'archivo': 'index.html', 'slug': 'vintage-collection',
+   'cubre': ('hasbro', 'vintage-collection'),
+   'piezas': _piezas_vc(),
+   'serie_generica': 'The Vintage Collection',
+   'orden_asc': 'Nº VC ascendente', 'orden_desc': 'Nº VC descendente',
+   'placeholder': 'Buscar por nombre o número VC…',
+   'titulo': 'Toydarians · The Vintage Collection',
+   'descripcion': 'Toydarians — Star Wars The Vintage Collection. '
+                  'El catalogo por numero VC.'},
+  {'archivo': 'funko.html', 'slug': 'funko',
+   'cubre': ('funko', 'figuras-funko'),
+   'piezas': _piezas_extra('funko', 'FUNKO'),
+   'serie_generica': 'Funko Pop!',
+   'orden_asc': 'Como en la tienda', 'orden_desc': 'Al revés',
+   'placeholder': 'Buscar por nombre o película…',
+   'titulo': 'Toydarians · Funko Pop!',
+   'descripcion': 'Toydarians — Funko Pop! Back to the Future y '
+                  'The Mandalorian, con precio y existencias.'},
+  {'archivo': '3d-print.html', 'slug': '3d-print',
+   'cubre': ('3d-print',),
+   'piezas': _piezas_extra('3d-print', '3D PRINT'),
+   'serie_generica': 'Impresión 3D',
+   'orden_asc': 'Como en la tienda', 'orden_desc': 'Al revés',
+   'placeholder': 'Buscar por nombre o serie…',
+   'titulo': 'Toydarians · 3D Print',
+   'descripcion': 'Toydarians — Impresiones 3D: tronos, bóvedas y bases '
+                  'para figuras de 3.75 pulgadas.'},
+]
+PAGINAS = [pg for pg in PAGINAS if pg['piezas']]
 
 # ══ LOS BANNERS DE CATEGORIA, COMPROBADOS AQUI Y NO EN LA COMPUERTA ═══════
 # Que se rompio: el raspador, cuando no sabia que imagen dar a una categoria,
@@ -1359,57 +1458,67 @@ def _comprobar_banners(cats, fotos_dir):
 #   Por eso al entrar a esas categorias el sitio mandaba a toydarians.com: aqui
 #   no habia nada que enseñar. Ya no manda a nadie a ningun lado — pero tampoco
 #   finge que tiene lo que no tiene.
+def pagina_de(slug):
+    """Que pagina enseña esta categoria, si alguna la enseña."""
+    for pag in PAGINAS:
+        if slug in pag['cubre']: return pag
+    return None
+
 def piezas_de(slug):
     """Cuantas piezas REALES puede enseñar esta categoria ahora mismo.
 
-    Las 47 que hay son todas de The Vintage Collection, que es una linea de
-    Hasbro: por eso cuentan para esas dos y para ninguna otra. El dia que
-    entren mas productos, esto se calcula de los datos y no de una lista.
+    Sale de las paginas que existen, no de una lista escrita a mano: una
+    categoria tiene las piezas de la pagina que la cubre, y cero si todavia no
+    tiene pagina. Asi, el dia que entre otra categoria, el numero de la ficha,
+    el del menu y lo que se ve al pulsarla siguen siendo el mismo dato.
     """
-    if slug in ('vintage-collection', 'hasbro'):
-        return sum(1 for pz in cat if (FOTOS.get(pz['vc']) or {}).get('fotos'))
-    return 0
+    pag = pagina_de(slug)
+    return len(pag['piezas']) if pag else 0
 
-def g_menu():
+def g_menu(actual):
     """El menu de su web, con la jerarquia real."""
     # ⚠ ESTE MENU ERA 30 ENLACES QUE SE IBAN DEL SITIO. Cada marca y cada
     #   pagina abrian toydarians.com en otra pestaña. Si esta es la pagina
-    #   oficial, el menu navega DENTRO.
+    #   oficial, el menu navega DENTRO: a otra pagina de aqui cuando la
+    #   categoria tiene la suya, y filtrando la vitrina cuando es esta misma.
+    def renglon(tx, slug, raiz=False):
+        pag = pagina_de(slug)
+        n   = len(pag['piezas']) if pag else 0
+        cl  = ' class="raiz"' if raiz else ''
+        eti = esc(tx) + (f'<i>{n or "—"}</i>' if raiz else '')
+        if pag and pag is not actual:
+            return f'<a{cl} href="{pag["archivo"]}" data-n="{n}">{eti}</a>'
+        return (f'<button{cl} type="button" data-cat="{slug}" data-n="{n}">'
+                f'{eti}</button>')
+
     marcas = ''
     for nom, slug, subs in MENU:
-        n = piezas_de(slug)
-        # La cuenta de los hijos tambien sale de piezas_de. Estuvo fija en 0 y
-        # eso dejaba muerta la linea que SI tiene existencias: las 47 son
-        # Vintage Collection, asi que pulsar «Vintage Collection» no hacia nada
-        # mientras «HASBRO», que es su padre, filtraba las mismas 47.
-        hijos = ''.join(
-            f'<button type="button" data-cat="{h}" data-n="{piezas_de(h)}">'
-            f'{esc(tx)}</button>'
-            for tx, h in subs)
-        marcas += (f'<div class="g-marca">'
-                   f'<button class="raiz" type="button" data-cat="{slug}" data-n="{n}">'
-                   f'{esc(nom)}<i>{n or "—"}</i></button>'
+        hijos = ''.join(renglon(tx, h) for tx, h in subs)
+        marcas += (f'<div class="g-marca">{renglon(nom, slug, raiz=True)}'
                    f'{f"<div class=hijos>{hijos}</div>" if hijos else ""}</div>')
+    inicio = ('' if actual['archivo'] == 'index.html'
+              else '<a href="index.html">Inicio · Vintage Collection</a>')
     return (f'<div class="g-menu" id="g-menu" hidden>'
             f'<div class="caso"><div class="g-menu-red">'
             f'<div><p class="ceja">Marcas y líneas</p>'
             f'<div class="g-marcas">{marcas}</div></div>'
             f'<div><p class="ceja">La tienda</p><div class="g-pags">'
+            f'{inicio}'
             f'<button type="button" data-ir="#vitrina">Ver todas las piezas</button>'
             f'<button type="button" data-ir="#categorias">Categorías</button>'
-            f'<button type="button" data-ir="#carton">El cartón</button>'
-            f'<button type="button" data-carro="1">Tu carrito</button>'
+            + ('<button type="button" data-ir="#carton">El cartón</button>'
+               if actual['archivo'] == 'index.html' else '')
+            + f'<button type="button" data-carro="1">Tu carrito</button>'
             f'</div></div>'
             f'</div></div></div>')
 
-def g_categorias():
-    """La rejilla que sustituye a la lista de 47 filas."""
+def g_categorias(actual):
+    """La rejilla de categorias. Cada una lleva a donde de verdad hay algo."""
     _comprobar_banners(CATFOTOS, RAIZ / "fotos")
     fichas = []
     for nom, slug, subs in MENU:
         info = CATFOTOS.get(slug, {})
         fotos = info.get('fotos') or []
-        n = info.get('productos')
         # los banners que se cruzan solos; si no hay fotos, manda el rotulo
         caps = ''.join(f'<span data-b="fotos/{f}"></span>' for f in fotos[:3])
         sub = ' · '.join(t for t, _ in subs) if subs else 'Ver la categoría'
@@ -1421,93 +1530,105 @@ def g_categorias():
         if not fotos: ancha += f' sin-foto t{len(fichas) % 3}'
         # ⚠ ESTO ERA UN <a> A toydarians.com. Luis: «cuando entro a las de funko
         #   o 3d me manda a la original, quiero que ESTA sea la original».
-        #   Ahora es un boton que filtra aqui dentro. Y si la categoria no tiene
-        #   piezas cargadas, se dice — no se manda a nadie a la competencia ni
-        #   se finge un catalogo que no esta.
-        tengo = piezas_de(slug)
-        fichas.append(
-            f'<button type="button" class="g-cat{ancha}{"" if tengo else " sin-piezas"}" '
-            f'data-cat="{slug}" data-n="{tengo}">'
-            f'<span class="rotulo" aria-hidden="true">{esc(nom)}</span>'
-            f'<span class="banners">{caps}</span>'
-            f'<span class="velo"></span>'
-            + (f'<span class="cuenta">{tengo} piezas</span>' if tengo else '')
-            + f'<span class="marca-cat"><b>{esc(nom)}</b><i>{esc(sub)}</i></span>'
-            + ('' if tengo else '<span class="pronto">Próximamente</span>')
-            + '</button>')
+        #   Las tres salidas posibles, y ninguna sale del sitio:
+        #     · la categoria vive en OTRA pagina de aqui  → enlace a esa pagina
+        #     · la categoria es la de esta misma pagina   → filtra y baja
+        #     · todavia no tiene piezas                   → «Próximamente», inerte
+        pag   = pagina_de(slug)
+        tengo = len(pag['piezas']) if pag else 0
+        dentro = (f'<span class="rotulo" aria-hidden="true">{esc(nom)}</span>'
+                  f'<span class="banners">{caps}</span>'
+                  f'<span class="velo"></span>'
+                  + (f'<span class="cuenta">{tengo} piezas</span>' if tengo else '')
+                  + f'<span class="marca-cat"><b>{esc(nom)}</b><i>{esc(sub)}</i></span>'
+                  + ('' if tengo else '<span class="pronto">Próximamente</span>'))
+        if pag and pag is not actual:
+            fichas.append(f'<a class="g-cat{ancha}" href="{pag["archivo"]}" '
+                          f'data-n="{tengo}">{dentro}</a>')
+        else:
+            fichas.append(
+                f'<button type="button" class="g-cat{ancha}{"" if tengo else " sin-piezas"}" '
+                f'data-cat="{slug}" data-n="{tengo}">{dentro}</button>')
     return '<div class="g-cats">' + ''.join(fichas) + '</div>'
 
-def g_rejilla():
-    """Las 47 fichas con su foto REAL, no cinco renders de fabrica."""
+def g_rejilla(piezas):
+    """Las fichas con su foto REAL, no cinco renders de fabrica."""
     t = []
-    for pz in cat:
-        f = FOTOS.get(pz['vc'], {})
-        fotos = f.get('fotos') or []
-        if not fotos: continue
-        pr = g_precio(pz['vc'])
-        slug = 'vc' + ''.join(c for c in pz['vc'] if c.isalnum())
+    for pz in piezas:
+        pr = pz['precio']
         t.append(
-            f'<button class="pieza" data-vc="{esc(pz["vc"])}" type="button" '
+            f'<button class="pieza" data-vc="{esc(pz["k"])}" type="button" '
             # Lo que el buscador necesita va EN la tarjeta y no en un objeto
             # aparte: asi el filtro es leer un atributo, no cruzar dos
             # estructuras que pueden desincronizarse. `data-b` ya viene
             # normalizado —sin acentos y en minusculas— desde aqui, que es
             # donde se sabe, en vez de normalizar 47 veces en el navegador.
-            f'data-b="{esc(sin_tildes(pz["nombre"] + " " + pz["vc"] + " " + (pz["serie"] or "")))}" '
-            f'data-serie="{esc(pz["serie"] or "")}" '
-            f'data-n="{num(pz["vc"])}" data-precio="{int((pr or {}).get("precio") or 0)}" '
+            f'data-b="{esc(sin_tildes(pz["nom"] + " " + pz["k"] + " " + pz["pil"] + " " + pz["serie"]))}" '
+            f'data-serie="{esc(pz["serie"])}" '
+            f'data-n="{pz["n"]}" data-precio="{int(pr or 0)}" '
             f'aria-haspopup="dialog">'
-            f'<span class="foto"><span class="pildora">VC {esc(pz["vc"])}</span>'
-            f'<img src="fotos/{fotos[0]}" alt="{esc(pz["nombre"])}" loading="lazy" '
+            f'<span class="foto"><span class="pildora">{esc(pz["pil"])}</span>'
+            f'<img src="fotos/{pz["fotos"][0]}" alt="{esc(pz["nom"])}" loading="lazy" '
             f'decoding="async" width="680" height="680">'
-            + (f'<span class="mas">+{len(fotos)-1}</span>' if len(fotos) > 1 else '')
-            # agregar sin abrir la ficha: en una tienda, la ruta corta importa
-            + (f'<span class="g-mas-carro" data-add="{esc(pz["vc"])}" role="button" '
-               f'tabindex="0" aria-label="Agregar {esc(pz["nombre"])} al carrito">+</span>'
+            + (f'<span class="mas">+{len(pz["fotos"])-1}</span>' if len(pz['fotos']) > 1 else '')
+            # agregar sin abrir la ficha: en una tienda, la ruta corta importa.
+            # Sin precio NO hay boton de agregar: el carrito cobra por PayPal y
+            # un importe que no existe no se puede cobrar. Las impresiones 3D
+            # se cotizan, y eso lo dice la ficha en vez de fingir un boton.
+            + (f'<span class="g-mas-carro" data-add="{esc(pz["k"])}" role="button" '
+               f'tabindex="0" aria-label="Agregar {esc(pz["nom"])} al carrito">+</span>'
                if pr else '')
-            + f'</span><span class="ficha-p"><span class="nom">{esc(pz["nombre"])}</span>'
-            f'<span class="met">{esc(pz["serie"] or "The Vintage Collection")}</span>'
-            + (f'<span class="precio">$ {pr["precio"]:,.0f}'
-               f'<i>{MONEDA}</i></span>' if pr else '')
+            + f'</span><span class="ficha-p"><span class="nom">{esc(pz["nom"])}</span>'
+            f'<span class="met">{esc(pz["serie"])}</span>'
+            + (f'<span class="precio">$ {pr:,.0f}<i>{MONEDA}</i></span>' if pr
+               else '<span class="precio consulta">Precio a consultar</span>')
             + f'<span class="ir">Ver a detalle</span></span></button>')
     return '<div class="rejilla" id="g-rejilla">' + '\n'.join(t) + '</div>'
 
-def g_controles():
+def g_controles(piezas, pag):
     """El buscador, los filtros y el orden.
 
     Lo que NO lleva, y es una decision, no un olvido: un filtro de existencias.
-    Las 47 piezas estan disponibles, asi que ese control tendria un solo valor
-    y no filtraria nada — un control que no cambia lo que se ve es peor que no
-    tenerlo: promete algo que no cumple. Vuelve el dia que haya agotadas.
+    Todas las piezas estan disponibles, asi que ese control tendria un solo
+    valor y no filtraria nada — un control que no cambia lo que se ve es peor
+    que no tenerlo: promete algo que no cumple. Vuelve el dia que haya agotadas.
 
     Los filtros de serie salen del catalogo REAL, con su cuenta real. 31 de las
-    47 piezas no traen serie en la tienda, asi que no se les inventa una: no
-    aparecen bajo ninguna chapa y solo estan en «Todas». Es la misma regla de
-    siempre — lo que el cliente no ha confirmado no se rellena.
+    47 de Vintage Collection no traen serie en la tienda, asi que no se les
+    inventa una: no aparecen bajo ninguna chapa y solo estan en «Todas». Es la
+    misma regla de siempre — lo que el cliente no ha confirmado no se rellena.
+
+    El orden por precio solo se ofrece donde hay precios. En 3D PRINT no los
+    hay —la tienda los cotiza— y una opcion que deja la rejilla igual es una
+    promesa incumplida, asi que ahi no sale.
 
     Va oculto sin JavaScript, a proposito: un buscador que no busca es peor que
-    ninguno, y sin JS las 47 piezas ya se ven todas.
+    ninguno, y sin JS las piezas ya se ven todas.
     """
     import collections
-    cuenta = collections.Counter(pz['serie'] for pz in cat
-                                 if pz.get('serie') and (FOTOS.get(pz['vc']) or {}).get('fotos'))
-    total = sum(1 for pz in cat if (FOTOS.get(pz['vc']) or {}).get('fotos'))
+    total = len(piezas)
+    generica = pag['serie_generica']
+    cuenta = collections.Counter(pz['serie'] for pz in piezas
+                                 if pz['serie'] and pz['serie'] != generica)
     chapas = [f'<button class="g-chapa viva" type="button" data-serie="" '
               f'aria-pressed="true">Todas<i>{total}</i></button>']
     for serie, n in sorted(cuenta.items(), key=lambda x: (-x[1], x[0])):
         chapas.append(f'<button class="g-chapa" type="button" data-serie="{esc(serie)}" '
                       f'aria-pressed="false">{esc(serie)}<i>{n}</i></button>')
-    ordenes = [('n-asc', 'Nº VC ascendente'), ('n-desc', 'Nº VC descendente'),
-               ('p-asc', 'Precio de menor a mayor'), ('p-desc', 'Precio de mayor a menor'),
-               ('a-z', 'Nombre A → Z')]
+    hay_precio = any(pz['precio'] for pz in piezas)
+    ordenes = [('n-asc', pag['orden_asc']), ('n-desc', pag['orden_desc'])]
+    if hay_precio:
+        ordenes += [('p-asc', 'Precio de menor a mayor'),
+                    ('p-desc', 'Precio de mayor a menor')]
+    ordenes.append(('a-z', 'Nombre A → Z'))
     opc = ''.join(f'<option value="{v}">{esc(txt)}</option>' for v, txt in ordenes)
     return (
       '<div class="g-mando" id="g-mando">'
         '<div class="g-linea">'
           '<div class="g-busca">'
             '<label class="g-lupa" for="g-q" aria-label="Buscar">⌕</label>'
-            '<input id="g-q" type="search" autocomplete="off" '
-              'placeholder="Buscar por nombre o número VC…" '
+            f'<input id="g-q" type="search" autocomplete="off" '
+              f'placeholder="{esc(pag["placeholder"])}" '
               'aria-describedby="g-cuantas">'
             '<button class="g-borra" id="g-borra" type="button" aria-label="Borrar la búsqueda" hidden>✕</button>'
           '</div>'
@@ -1516,36 +1637,29 @@ def g_controles():
             f'<select id="g-orden">{opc}</select>'
           '</div>'
         '</div>'
-        f'<div class="g-chapas" role="group" aria-label="Filtrar por serie">{"".join(chapas)}</div>'
-        f'<p class="g-cuantas" id="g-cuantas" aria-live="polite">{total} piezas</p>'
+        + (f'<div class="g-chapas" role="group" aria-label="Filtrar por serie">{"".join(chapas)}</div>'
+           if cuenta else '')
+        + f'<p class="g-cuantas" id="g-cuantas" aria-live="polite">{total} piezas</p>'
       '</div>'
       '<p class="g-vacio" id="g-vacio" hidden>Ninguna pieza coincide. '
       '<button type="button" id="g-reiniciar">Ver las ' + str(total) + ' piezas</button></p>')
 
-def g_precio(vc):
-    d = PRECIOS.get(vc)
-    if not d: return None
-    return d
-
-def g_datos_js():
+def g_datos_js(piezas):
     """Lo que el guion necesita para armar la ficha al vuelo, sin repetir el
     HTML de 47 fichas en el documento."""
     d = {}
-    for pz in cat:
-        f = FOTOS.get(pz['vc'], {})
-        if not f.get('fotos'): continue
-        pr = g_precio(pz['vc']) or {}
-        d[pz['vc']] = {'n': pz['nombre'], 's': pz['serie'] or 'The Vintage Collection',
-                       'u': pz['url'], 'f': f['fotos'],
-                       'p': pr.get('precio'), 'st': pr.get('stock', 'disponible')}
+    for pz in piezas:
+        d[pz['k']] = {'n': pz['nom'], 's': pz['serie'], 'u': pz['url'],
+                      'f': pz['fotos'], 'p': pz['precio'], 'st': pz['stock'],
+                      'pil': pz['pil']}
+        if pz['nota']: d[pz['k']]['nota'] = pz['nota']
     return json.dumps(d, ensure_ascii=False, separators=(',', ':'))
 
-def g_orden_js():
+def g_orden_js(piezas):
     """El orden del catalogo. La ficha lo necesita para la pieza anterior y la
     siguiente y para el riel del final; sin el habria que recorrer un objeto,
     cuyo orden de claves no es contrato."""
-    return json.dumps([pz['vc'] for pz in cat
-                       if (FOTOS.get(pz['vc']) or {}).get('fotos')],
+    return json.dumps([pz['k'] for pz in piezas],
                       ensure_ascii=False, separators=(',', ':'))
 
 def g_carrito():
@@ -1565,7 +1679,7 @@ def g_carrito():
             '<div id="g-carro-pago"></div>'
             '</div></div></div>')
 
-def g_ficha():
+def g_ficha(pag):
     """EL EXPEDIENTE · la ficha de cada pieza.
 
     Carlos lo dijo sin rodeos: «el apartado de cada figura ni se parece en nada
@@ -1581,11 +1695,17 @@ def g_ficha():
     Va vacio a proposito: lo llena el guion. Repetir aqui el marcado de las 47
     fichas serian ~180 KB de HTML que casi nadie llega a abrir.
     """
-    filas = (
-        '<div class="ex-fila"><dt>Línea</dt><dd id="g-serie"></dd></div>'
-        '<div class="ex-fila"><dt>Escala</dt><dd>3.75&Prime; · 9.5 cm</dd></div>'
-        '<div class="ex-fila"><dt>Estado</dt><dd>En su cartón original, sin abrir</dd></div>'
-        '<div class="ex-fila"><dt>Nº de pieza</dt><dd id="g-npieza"></dd></div>')
+    # ⚠ ESTAS DOS FILAS ESTABAN ESCRITAS A MANO Y ERAN DE VINTAGE COLLECTION.
+    #   Al abrir un trono impreso en 3D, su expediente decia «Escala 3.75″» y
+    #   «En su cartón original, sin abrir»: las dos falsas, y falsas con la
+    #   autoridad de una ficha tecnica. No es una errata de estilo — es
+    #   publicar un dato inventado del producto de un cliente. Ahora cada
+    #   pagina trae las suyas y quien añada una pagina tiene que escribirlas.
+    fs = ('<div class="ex-fila"><dt>Línea</dt><dd id="g-serie"></dd></div>'
+          + ''.join(f'<div class="ex-fila"><dt>{esc(k)}</dt><dd>{v}</dd></div>'
+                    for k, v in pag['expediente'])
+          + '<div class="ex-fila"><dt>Nº de pieza</dt><dd id="g-npieza"></dd></div>')
+    filas = fs
     return ('<div class="g-ficha" id="g-ficha" hidden role="dialog" aria-modal="true" '
             'aria-labelledby="g-nom">'
             '<div class="ex-velo" aria-hidden="true"></div>'
@@ -1620,6 +1740,10 @@ def g_ficha():
             #   Si esta es la pagina oficial, la compra empieza y termina aqui.
             '<button class="b comprar" id="g-add" type="button">'
             '<span>Agregar al carrito</span></button></div>'
+            # Lo que la tienda dice de la pieza cuando hay algo que decir. Hoy
+            # solo las impresiones 3D: que se imprimen por encargo y cuanto
+            # tardan. Vacio en el resto, y entonces ni se pinta.
+            '<p class="g-nota" id="g-nota" hidden></p>'
             '</div>'
 
             '<div class="ex-riel"><p class="ex-ceja chica">Más de la colección</p>'
@@ -1714,6 +1838,92 @@ LOGO = dict(img['logo'], ruta=RUTAS['logo'])
 
 CSS = CSS.replace('AUREBESH_URI', RUTAS['aurebesh'])
 
+# ══ LO QUE CADA PAGINA DICE DE SI MISMA ═══════════════════════════════════
+# Va aqui y no en PAGINAS porque necesita RUTAS y VC_TOTAL, que no existen
+# todavia alla arriba. La portada de cada pagina se escribe con lo que esa
+# categoria TIENE, no con una plantilla rellenada: la de Vintage Collection
+# habla del numero, la de Funko de que son de vinilo y caben en la mano, y la
+# de 3D Print dice de entrada que se cotizan, porque la tienda no publica su
+# precio y callarlo seria dejar al cliente descubrirlo al final.
+#
+# El heroe de cada pagina es una FOTO REAL de una de sus piezas. Ni un render
+# inventado ni el logo ampliado: si manana entra otra pieza mejor, se cambia
+# la clave y ya.
+def _heroe(clave, alt):
+    pz = next((x for x in _por_clave if x['k'] == clave), None)
+    return (f'fotos/{pz["fotos"][0]}', 680, 680, alt) if pz else (RUTAS['heroe'], 900, 897, alt)
+
+_por_clave = [x for pg in PAGINAS for x in pg['piezas']]
+
+COPIA = {
+ 'vintage-collection': {
+   'aire': '',
+   'ceja': 'The Vintage Collection · Escala 3.75&Prime;',
+   'h1': 'Cada pieza<br>tiene <em>número</em>',
+   'dicho': f'<p>El número <strong>VC</strong> es la pieza. Toydarians tiene '
+            f'<strong>{VC_TOTAL}</strong> de The Vintage Collection y '
+            f'<strong>{HASBRO_TOTAL}</strong> de Hasbro en total.</p>',
+   'heroe': (RUTAS['heroe'], 900, 897, 'Tres figuras de The Vintage Collection'),
+   'banda': 'Descubre la Vintage Collection',
+   'apunte': f'{VC_TOTAL} piezas · {len(cat)} en esta vitrina',
+   'vitrina_h2': f'{len(cat)} piezas,<br>una por una',
+   'vitrina_p': 'Cada una con sus fotos de la tienda. Toca cualquiera para '
+                '<strong>verla a detalle</strong>.',
+   'expediente': (('Escala', '3.75&Prime; · 9.5 cm'),
+                  ('Estado', 'En su cartón original, sin abrir')),
+ },
+ 'funko': {
+   'aire': 'aire-funko',
+   'ceja': 'Funko Pop! · Vinilo de 10&nbsp;cm',
+   'h1': 'La cabeza<br>grande, <em>en serio</em>',
+   'dicho': '<p>Back to the Future casi entera y el Mandalorian con el Niño. '
+            'Ocho figuras <strong>en caja</strong>, con su ventana y su número '
+            'de serie, listas para el estante.</p>',
+   'heroe': None,     # lo pone _heroe con la foto de fk3
+   'banda': 'Funko Pop! en Toydarians',
+   'apunte': None,    # lo pone el contador real
+   'vitrina_h2': 'Ocho cajas,<br>una repisa',
+   'vitrina_p': 'Fotos de la caja y de la figura suelta. Toca cualquiera para '
+                '<strong>verla a detalle</strong>.',
+   'expediente': (('Formato', 'Vinilo · caja con ventana'),
+                  ('Estado', 'Caja nueva, sin abrir')),
+ },
+ '3d-print': {
+   'aire': 'aire-3d',
+   'ceja': 'Impresión 3D · Hecho por encargo',
+   'h1': 'El escenario<br>que <em>no venden</em>',
+   'dicho': '<p>Tronos, bóvedas y bases para montar la escena que la figura no '
+            'trae. Se imprimen por encargo, así que el <strong>precio lo cotiza '
+            'Toydarians</strong> pieza por pieza.</p>',
+   'heroe': None,     # lo pone _heroe con la foto de 3d3
+   'banda': 'Impresión 3D en Toydarians',
+   'apunte': None,
+   'vitrina_h2': 'Siete piezas<br>para montar escena',
+   'vitrina_p': 'Fotos de las impresiones reales del taller. Toca cualquiera '
+                'para <strong>verla a detalle</strong>.',
+   # Nada de «escala» ni de «cartón»: son escenarios impresos por encargo. La
+   # figura de las fotos es de la escala que acompaña, y no viene incluida —
+   # decirlo aqui evita la reclamacion de quien creyo que si.
+   # «No incluye figura» NO va aqui: la tienda solo lo dice en tres de las
+   # siete. Lo que es cierto de todas es el formato y el plazo; lo que solo
+   # es cierto de algunas va en la nota de cada pieza.
+   'expediente': (('Formato', 'Impresión 3D por encargo'),
+                  ('Entrega', 'En existencia, o 4–5 días si se imprime')),
+ },
+}
+_HEROE_DE = {'funko': ('fk3', 'Funko Pop del Mandalorian con el Niño'),
+             '3d-print': ('3d3', 'Droide Scorpenek impreso en 3D')}
+
+for pg in PAGINAS:
+    c = dict(COPIA[pg['slug']])
+    if c['heroe'] is None:
+        c['heroe'] = _heroe(*_HEROE_DE[pg['slug']])
+    if c['apunte'] is None:
+        c['apunte'] = f'{len(pg["piezas"])} piezas en esta vitrina'
+    ruta, w, h, alt = c.pop('heroe')
+    pg.update(c, heroe=ruta, heroe_w=w, heroe_h=h, heroe_alt=alt)
+
+
 
 # ── LA TIPOGRAFIA DE LA IDENTIDAD VA EMPOTRADA, NO PEDIDA ────────────────────
 # Bungee entraba por `<link>` a fonts.googleapis.com. Se midio en un navegador
@@ -1793,81 +2003,16 @@ BUNGEE_EMPOTRADA = (
     + _fuentes_propias()
 )
 
-DOC = f"""<title>Toydarians · The Vintage Collection</title>
-<link rel="preload" href="marca/bungee-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="marca/logo.webp" as="image">
-<link rel="stylesheet" href="estilo.css">
-
-<div class="g-neb" aria-hidden="true"><i class="n1"></i><i class="n3"></i><i class="n4"></i></div>
-<div class="g-cielos" id="g-cielos" aria-hidden="true"><canvas class="c1"></canvas><canvas class="c2"></canvas></div>
-<i class="g-raya" id="g-raya" aria-hidden="true"></i>
-
-{g_intro()}
-
-<div class="barra"><div class="caso">
-  <a class="logo" href="#" aria-label="Toydarians · inicio">
-    <img src="{LOGO['ruta']}" width="{LOGO['w']}" height="{LOGO['h']}"
-         alt="Toydarians" fetchpriority="high"></a>
-  <nav>
-    <a href="#vitrina" class="opc">La vitrina</a>
-    <a href="#categorias">Categorías</a>
-    <a href="#carton" class="opc">El cartón</a>
-  </nav>
-  <button class="g-carro-btn" id="g-carro-btn" type="button" aria-expanded="false"
-          aria-controls="g-carro"><span class="txt">Carrito</span><span class="n" id="g-carro-n">0</span></button>
-  <button class="g-abrir" id="g-abrir" type="button" aria-expanded="false"
-          aria-controls="g-menu">Menú</button>
-</div></div>
-{g_menu()}
-
-<header class="cartel">
-  <div class="cuna" aria-hidden="true"></div>
-  <div class="trama" aria-hidden="true"></div>
-  <div class="caso cartel-red">
-    <p class="ceja">The Vintage Collection · Escala 3.75&Prime;</p>
-    <h1>Cada pieza<br>tiene <em>número</em></h1>
-    <div class="dicho">
-      <p>El número <strong>VC</strong> es la pieza. Toydarians tiene
-        <strong>{VC_TOTAL}</strong> de The Vintage Collection y
-        <strong>{HASBRO_TOTAL}</strong> de Hasbro en total.</p>
-      <div class="acciones">
-        <a class="b" href="#vitrina"><span>Ver la vitrina</span></a>
-        <a class="b hueco" href="#categorias"><span>Categorías</span></a>
-      </div>
-    </div>
-    <div class="peana">
-      <div class="figura">
-        <img src="{RUTAS['heroe']}" width="900" height="897" fetchpriority="high"
-             decoding="async" alt="Tres figuras de The Vintage Collection">
-      </div>
-    </div>
-  </div>
-</header>
-
-<div class="banda-cat"><div class="caso">
-  <h2>Descubre la Vintage Collection</h2>
-  <span class="apunte">{VC_TOTAL} piezas · {len(cat)} en esta vitrina</span>
-</div></div>
-
-<section id="vitrina"><div class="caso">
-  <p class="ceja">La vitrina</p>
-  <h2 class="revelar" style="max-width:18ch">{len(cat)} piezas,<br>una por una</h2>
-  <p style="margin:18px 0 clamp(24px,3vw,36px)">Cada una con sus fotos de la tienda.
-    Toca cualquiera para <strong>verla a detalle</strong>.</p>
-  {g_controles()}
-  {g_rejilla()}
-</div></section>
-
-{cinta()}
-
-<section id="categorias"><div class="caso">
-  <p class="ceja">Categorías</p>
-  <h2 class="revelar" style="max-width:16ch">Todo lo que<br>hay en la tienda</h2>
-  <p style="margin:18px 0 clamp(24px,3vw,36px)">Las marcas y líneas del catálogo,
-    con el número de piezas que tiene cada una <strong>ahora mismo</strong>.</p>
-  {g_categorias()}
-</div></section>
-
+# ══ EL DOCUMENTO, QUE AHORA SON TRES ══════════════════════════════════════
+# Era una sola cadena con la portada de Vintage Collection escrita dentro.
+# Ahora es una funcion: lo que comparten las tres paginas —el fondo, la barra,
+# el menu, las categorias, la ficha, el carrito y el pie— se escribe UNA vez,
+# y lo que las distingue viene del diccionario de la pagina. Duplicar el
+# armazon habria sido mas rapido hoy y el origen seguro de que manana el pie
+# diga una cosa en una pagina y otra en las demas.
+def documento(pag):
+    inicio  = pag['archivo'] == 'index.html'
+    carton  = f"""
 {cinta()}
 
 <section id="carton"><div class="caso carton-zona">
@@ -1899,7 +2044,81 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
     </div>
   </div>
 </div></section>
+""" if inicio else ''
 
+    return f"""<title>{esc(pag['titulo'])}</title>
+<link rel="preload" href="marca/bungee-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="marca/logo.webp" as="image">
+<link rel="stylesheet" href="estilo.css">
+
+<div class="g-neb" aria-hidden="true"><i class="n1"></i><i class="n3"></i><i class="n4"></i></div>
+<div class="g-cielos" id="g-cielos" aria-hidden="true"><canvas class="c1"></canvas><canvas class="c2"></canvas></div>
+<i class="g-raya" id="g-raya" aria-hidden="true"></i>
+
+{g_intro() if inicio else ''}
+
+<div class="barra"><div class="caso">
+  <a class="logo" href="{'#' if inicio else 'index.html'}" aria-label="Toydarians · inicio">
+    <img src="{LOGO['ruta']}" width="{LOGO['w']}" height="{LOGO['h']}"
+         alt="Toydarians" fetchpriority="high"></a>
+  <nav>
+    <a href="#vitrina" class="opc">La vitrina</a>
+    <a href="#categorias">Categorías</a>
+    {'<a href="#carton" class="opc">El cartón</a>'
+     if inicio else '<a href="index.html" class="opc">Vintage Collection</a>'}
+  </nav>
+  <button class="g-carro-btn" id="g-carro-btn" type="button" aria-expanded="false"
+          aria-controls="g-carro"><span class="txt">Carrito</span><span class="n" id="g-carro-n">0</span></button>
+  <button class="g-abrir" id="g-abrir" type="button" aria-expanded="false"
+          aria-controls="g-menu">Menú</button>
+</div></div>
+{g_menu(pag)}
+
+<header class="cartel {esc(pag['aire'])}">
+  <div class="cuna" aria-hidden="true"></div>
+  <div class="trama" aria-hidden="true"></div>
+  <div class="caso cartel-red">
+    <p class="ceja">{pag['ceja']}</p>
+    <h1>{pag['h1']}</h1>
+    <div class="dicho">
+      {pag['dicho']}
+      <div class="acciones">
+        <a class="b" href="#vitrina"><span>Ver la vitrina</span></a>
+        <a class="b hueco" href="#categorias"><span>Categorías</span></a>
+      </div>
+    </div>
+    <div class="peana">
+      <div class="figura">
+        <img src="{pag['heroe']}" width="{pag['heroe_w']}" height="{pag['heroe_h']}"
+             fetchpriority="high" decoding="async" alt="{esc(pag['heroe_alt'])}">
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="banda-cat"><div class="caso">
+  <h2>{pag['banda']}</h2>
+  <span class="apunte">{pag['apunte']}</span>
+</div></div>
+
+<section id="vitrina"><div class="caso">
+  <p class="ceja">La vitrina</p>
+  <h2 class="revelar" style="max-width:18ch">{pag['vitrina_h2']}</h2>
+  <p style="margin:18px 0 clamp(24px,3vw,36px)">{pag['vitrina_p']}</p>
+  {g_controles(pag['piezas'], pag)}
+  {g_rejilla(pag['piezas'])}
+</div></section>
+
+{cinta()}
+
+<section id="categorias"><div class="caso">
+  <p class="ceja">Categorías</p>
+  <h2 class="revelar" style="max-width:16ch">Todo lo que<br>hay en la tienda</h2>
+  <p style="margin:18px 0 clamp(24px,3vw,36px)">Las marcas y líneas del catálogo,
+    con el número de piezas que se pueden comprar aquí <strong>ahora mismo</strong>.</p>
+  {g_categorias(pag)}
+</div></section>
+{carton}
 <div class="cierre"><div class="caso">
   <div>
     <h2>Se paga aquí,<br>se envía a tu casa</h2>
@@ -1909,7 +2128,7 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
   <button class="b" id="g-ir-carro" type="button"><span>Ver mi carrito</span></button>
 </div></div>
 
-{g_ficha()}
+{g_ficha(pag)}
 {g_carrito()}
 
 <footer><div class="caso fila-pie">
@@ -1927,6 +2146,8 @@ DOC = f"""<title>Toydarians · The Vintage Collection</title>
   </div>
 </div></footer>
 """
+
+DOC = documento(PAGINAS[0])
 
 # --- Motor -------------------------------------------------------------------
 # Un solo requestAnimationFrame para todo, como en lienzo.js: puntero, banda,
@@ -2294,8 +2515,10 @@ JS += """
   // Las 47 fichas no viven en el documento: se arman al vuelo desde este dato.
   // Meter 47 galerias en el HTML lo habria hecho enorme para algo que casi
   // nadie abre entero.
-  TOY.g.piezas = """ + g_datos_js() + """;
-  TOY.g.orden = """ + g_orden_js() + """;
+  // TOY.g.piezas y TOY.g.orden NO viven aqui: cada pagina tiene su catalogo y
+  // este archivo lo comparten las tres. Los pone `datos-<pagina>.js`, que se
+  // carga con defer JUSTO ANTES que este — los defer corren en orden, asi que
+  // cuando esto se ejecuta el dato ya esta puesto.
   TOY.g.paypal = """ + json.dumps(PAYPAL_ID) + """;
   TOY.g.moneda = """ + json.dumps(MONEDA) + """;
 """
@@ -2472,7 +2695,7 @@ JS += r"""
     function pintar(vc, animar){
       var d = TOY.g.piezas[vc]; if (!d) return false;
       vcAct = vc;
-      gVc.textContent = 'VC ' + vc;
+      gVc.textContent = d.pil || vc;
       gNom.textContent = d.n; gSerie.textContent = d.s;
       if (gNPieza) gNPieza.textContent = vc;
       // el numero a tamano de cartel. Se pone ENTERO: el sufijo de las
@@ -2482,14 +2705,25 @@ JS += r"""
 
       var eP = document.getElementById('g-precio'),
           eS = document.getElementById('g-stock');
-      if (d.p) { contarPrecio(eP, d.p, animar); eP.hidden = false; }
-      else { eP.hidden = true; }
+      // Sin precio NO se esconde el renglon: se dice. Escondido, la ficha
+      // quedaba con un boton apagado y ninguna explicacion, y eso parece una
+      // pagina rota, no una pieza que se cotiza.
+      eP.hidden = false;
+      if (d.p) { eP.classList.remove('consulta'); contarPrecio(eP, d.p, animar); }
+      else { eP.classList.add('consulta'); eP.textContent = 'Precio a consultar'; }
       eS.textContent = d.st === 'agotado' ? 'Agotado' : 'Disponible';
       eS.className = 'g-stock' + (d.st === 'agotado' ? ' no' : '');
       /* ⚠ AQUI SE DIBUJABA UN BOTON DE PAYPAL POR FIGURA. Eso no es comprar:
          es pagar cuatro veces si te llevas cuatro, cada una con su comisión y
          su envío. El cobro se mudó al carrito, que cobra el pedido completo. */
-      if (bAdd) bAdd.disabled = !d.p || d.st === 'agotado';
+      if (bAdd) {
+        bAdd.disabled = !d.p || d.st === 'agotado';
+        var et = bAdd.firstChild;
+        if (et) et.textContent = d.p ? 'Agregar al carrito'
+                                     : 'Toydarians cotiza esta pieza';
+      }
+      var eN = document.getElementById('g-nota');
+      if (eN) { eN.textContent = d.nota || ''; eN.hidden = !d.nota; }
 
       fotosAct = d.f;
       armarGaleria(d.f, d.n);
@@ -2547,7 +2781,8 @@ JS += r"""
           b.setAttribute('aria-label', d.n + ', VC ' + otro);
           var im = document.createElement('img');
           im.src = 'fotos/' + d.f[0]; im.alt = ''; im.loading = 'lazy';
-          var et = document.createElement('b'); et.textContent = 'VC ' + otro;
+          var et = document.createElement('b');
+          et.textContent = (TOY.g.piezas[otro] || {}).pil || otro;
           b.appendChild(im); b.appendChild(et);
           b.addEventListener('click', function(){ pintar(otro, true); });
           gRiel.appendChild(b);
@@ -2917,7 +3152,7 @@ JS += r"""
           createOrder: function(_, actions){
             var items = vcs.map(function(v){
               var d = TOY.g.piezas[v];
-              return { name: ('VC ' + v + ' · ' + d.n).slice(0, 127),
+              return { name: ((d.pil ? d.pil + ' · ' : '') + d.n).slice(0, 127),
                        quantity: String(carro[v]),
                        unit_amount: { value: d.p.toFixed(2), currency_code: TOY.g.moneda } };
             });
@@ -3141,7 +3376,6 @@ n = JS.count("\n})();")
 if n != 1:
     raise SystemExit(f'el motor quedo con {n} cierres de bloque, debe tener 1')
 
-DOC += '<script src="motor.js" defer></script>\n'
 # ══════════════════════════════════════════════════════════════════════════
 # EL ESTILO Y EL MOTOR, EN ARCHIVOS APARTE
 # ──────────────────────────────────────────────────────────────────────────
@@ -3154,13 +3388,13 @@ DOC += '<script src="motor.js" defer></script>\n'
 # EN PARALELO mientras se sigue leyendo el marcado, y en la segunda visita ni
 # la hoja ni el motor se vuelven a descargar. El motor ademas lleva `defer`,
 # asi que no frena la lectura del documento en ningun momento.
+#
+# Y ahora que son tres paginas, esto ademas se paga UNA vez: la hoja y el
+# motor son los mismos archivos, asi que al pasar de la vitrina a Funko el
+# navegador no vuelve a bajar 70 KB de estilo ni 55 de motor.
 (RAIZ / 'estilo.css').write_text(BUNGEE_EMPOTRADA + CSS, encoding='utf-8')
 (RAIZ / 'motor.js').write_text(JS, encoding='utf-8')
 
-salida = AQUI / 'sitio.html'   # intermedio de trabajo: vive en taller/, que no se publica
-salida.write_text(DOC, encoding='utf-8')
-
-cabeza, cuerpo = DOC.split('\n<div class="barra">', 1)
 # ⚠ ESTO ESCRIBIA EN `publico/index.html` Y LO QUE SE PUBLICA ES `index.html`.
 # Entre los dos habia un copiado A MANO, y ese es el hueco por el que el
 # generador y el archivo servido se separan: se regenera, sale verde, y la
@@ -3170,13 +3404,33 @@ cabeza, cuerpo = DOC.split('\n<div class="barra">', 1)
 # Se arreglo el 9 de septiembre y volvio el mismo dia con una copia vieja del
 # generador. Si `publico/` reaparece, es la senal de que alguien trabajo sobre
 # una base anterior a este comentario.
-(RAIZ / 'index.html').write_text(
-    '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
-    '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-    '<meta name="description" content="Toydarians — Star Wars The Vintage '
-    'Collection. El catalogo por numero VC.">\n'
-    '<meta name="color-scheme" content="dark">\n' + cabeza +
-    '\n<style>*{box-sizing:border-box}html{background:#0A0A0B}body{margin:0}'
-    'img{display:block;max-width:100%;height:auto}</style>\n</head>\n<body>\n'
-    '<div class="barra">' + cuerpo + '\n</body>\n</html>\n', encoding='utf-8')
-print(f"sitio.html  {len(DOC.encode()):,} bytes")
+def escribir(pag):
+    datos = f'datos-{pag["slug"]}.js'
+    # El catalogo de ESTA pagina, en su propio archivo y con defer ANTES del
+    # motor. Los defer corren en el orden en que aparecen, asi que el motor lo
+    # encuentra puesto sin bloquear el pintado con un <script> en linea.
+    (RAIZ / datos).write_text(
+        'window.TOY=window.TOY||{};TOY.g=TOY.g||{};\n'
+        'TOY.g.piezas=' + g_datos_js(pag['piezas']) + ';\n'
+        'TOY.g.orden=' + g_orden_js(pag['piezas']) + ';\n', encoding='utf-8')
+
+    doc = documento(pag)
+    doc += f'<script src="{datos}" defer></script>\n'
+    doc += '<script src="motor.js" defer></script>\n'
+    if pag['archivo'] == 'index.html':
+        # intermedio de trabajo: vive en taller/, que no se publica
+        (AQUI / 'sitio.html').write_text(doc, encoding='utf-8')
+
+    cabeza, cuerpo = doc.split('\n<div class="barra">', 1)
+    (RAIZ / pag['archivo']).write_text(
+        '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        f'<meta name="description" content="{esc(pag["descripcion"])}">\n'
+        '<meta name="color-scheme" content="dark">\n' + cabeza +
+        '\n<style>*{box-sizing:border-box}html{background:#0A0A0B}body{margin:0}'
+        'img{display:block;max-width:100%;height:auto}</style>\n</head>\n<body>\n'
+        '<div class="barra">' + cuerpo + '\n</body>\n</html>\n', encoding='utf-8')
+    return len((RAIZ / pag['archivo']).read_bytes())
+
+for pag in PAGINAS:
+    print(f'{pag["archivo"]:<14} {len(pag["piezas"]):>3} piezas  {escribir(pag):,} bytes')

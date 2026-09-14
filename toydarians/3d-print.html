@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Toydarians — Impresiones 3D: tronos, bóvedas y bases para figuras de 3.75 pulgadas.">
+<meta name="color-scheme" content="dark">
+<title>Toydarians · 3D Print</title>
+<link rel="preload" href="marca/bungee-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="marca/logo.webp" as="image">
+<link rel="stylesheet" href="estilo.css">
+
+<div class="g-neb" aria-hidden="true"><i class="n1"></i><i class="n3"></i><i class="n4"></i></div>
+<div class="g-cielos" id="g-cielos" aria-hidden="true"><canvas class="c1"></canvas><canvas class="c2"></canvas></div>
+<i class="g-raya" id="g-raya" aria-hidden="true"></i>
+
+
+
+<style>*{box-sizing:border-box}html{background:#0A0A0B}body{margin:0}img{display:block;max-width:100%;height:auto}</style>
+</head>
+<body>
+<div class="barra"><div class="caso">
+  <a class="logo" href="index.html" aria-label="Toydarians · inicio">
+    <img src="marca/logo.webp" width="760" height="128"
+         alt="Toydarians" fetchpriority="high"></a>
+  <nav>
+    <a href="#vitrina" class="opc">La vitrina</a>
+    <a href="#categorias">Categorías</a>
+    <a href="index.html" class="opc">Vintage Collection</a>
+  </nav>
+  <button class="g-carro-btn" id="g-carro-btn" type="button" aria-expanded="false"
+          aria-controls="g-carro"><span class="txt">Carrito</span><span class="n" id="g-carro-n">0</span></button>
+  <button class="g-abrir" id="g-abrir" type="button" aria-expanded="false"
+          aria-controls="g-menu">Menú</button>
+</div></div>
+<div class="g-menu" id="g-menu" hidden><div class="caso"><div class="g-menu-red"><div><p class="ceja">Marcas y líneas</p><div class="g-marcas"><div class="g-marca"><a class="raiz" href="index.html" data-n="47">HASBRO<i>47</i></a><div class=hijos><a href="index.html" data-n="47">Vintage Collection</a><button type="button" data-cat="black-series" data-n="0">Black Series</button><button type="button" data-cat="retro-collection" data-n="0">Retro Collection</button></div></div><div class="g-marca"><button class="raiz" type="button" data-cat="gi-joe" data-n="0">GI JOE<i>—</i></button><div class=hijos><button type="button" data-cat="classified-series" data-n="0">Classified Series</button></div></div><div class="g-marca"><button class="raiz" type="button" data-cat="mattel" data-n="0">MATTEL<i>—</i></button></div><div class="g-marca"><button class="raiz" type="button" data-cat="disney" data-n="0">DISNEY<i>—</i></button><div class=hijos><button type="button" data-cat="droids-factory" data-n="0">Droids Factory</button></div></div><div class="g-marca"><button class="raiz" type="button" data-cat="neca" data-n="0">NECA<i>—</i></button><div class=hijos><button type="button" data-cat="figuras-neca" data-n="0">Figuras</button><button type="button" data-cat="packs-neca" data-n="0">Packs</button></div></div><div class="g-marca"><a class="raiz" href="funko.html" data-n="8">FUNKO<i>8</i></a><div class=hijos><a href="funko.html" data-n="8">Figuras</a></div></div><div class="g-marca"><button class="raiz" type="button" data-cat="super-7" data-n="0">SUPER 7<i>—</i></button><div class=hijos><button type="button" data-cat="reaction" data-n="0">Reaction</button><button type="button" data-cat="ultimates" data-n="0">Ultimates</button></div></div><div class="g-marca"><button class="raiz" type="button" data-cat="3d-print" data-n="7">3D PRINT<i>7</i></button></div><div class="g-marca"><button class="raiz" type="button" data-cat="merch" data-n="0">MERCH<i>—</i></button></div></div></div><div><p class="ceja">La tienda</p><div class="g-pags"><a href="index.html">Inicio · Vintage Collection</a><button type="button" data-ir="#vitrina">Ver todas las piezas</button><button type="button" data-ir="#categorias">Categorías</button><button type="button" data-carro="1">Tu carrito</button></div></div></div></div></div>
+
+<header class="cartel aire-3d">
+  <div class="cuna" aria-hidden="true"></div>
+  <div class="trama" aria-hidden="true"></div>
+  <div class="caso cartel-red">
+    <p class="ceja">Impresión 3D · Hecho por encargo</p>
+    <h1>El escenario<br>que <em>no venden</em></h1>
+    <div class="dicho">
+      <p>Tronos, bóvedas y bases para montar la escena que la figura no trae. Se imprimen por encargo, así que el <strong>precio lo cotiza Toydarians</strong> pieza por pieza.</p>
+      <div class="acciones">
+        <a class="b" href="#vitrina"><span>Ver la vitrina</span></a>
+        <a class="b hueco" href="#categorias"><span>Categorías</span></a>
+      </div>
+    </div>
+    <div class="peana">
+      <div class="figura">
+        <img src="fotos/3d3-0.webp" width="680" height="680"
+             fetchpriority="high" decoding="async" alt="Droide Scorpenek impreso en 3D">
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="banda-cat"><div class="caso">
+  <h2>Impresión 3D en Toydarians</h2>
+  <span class="apunte">7 piezas en esta vitrina</span>
+</div></div>
+
+<section id="vitrina"><div class="caso">
+  <p class="ceja">La vitrina</p>
+  <h2 class="revelar" style="max-width:18ch">Siete piezas<br>para montar escena</h2>
+  <p style="margin:18px 0 clamp(24px,3vw,36px)">Fotos de las impresiones reales del taller. Toca cualquiera para <strong>verla a detalle</strong>.</p>
+  <div class="g-mando" id="g-mando"><div class="g-linea"><div class="g-busca"><label class="g-lupa" for="g-q" aria-label="Buscar">⌕</label><input id="g-q" type="search" autocomplete="off" placeholder="Buscar por nombre o serie…" aria-describedby="g-cuantas"><button class="g-borra" id="g-borra" type="button" aria-label="Borrar la búsqueda" hidden>✕</button></div><div class="g-ordena"><label for="g-orden">Orden</label><select id="g-orden"><option value="n-asc">Como en la tienda</option><option value="n-desc">Al revés</option><option value="a-z">Nombre A → Z</option></select></div></div><div class="g-chapas" role="group" aria-label="Filtrar por serie"><button class="g-chapa viva" type="button" data-serie="" aria-pressed="true">Todas<i>7</i></button><button class="g-chapa" type="button" data-serie="Clone Wars" aria-pressed="false">Clone Wars<i>2</i></button><button class="g-chapa" type="button" data-serie="The Book of Boba Fett" aria-pressed="false">The Book of Boba Fett<i>2</i></button><button class="g-chapa" type="button" data-serie="Obi-Wan Kenobi" aria-pressed="false">Obi-Wan Kenobi<i>1</i></button><button class="g-chapa" type="button" data-serie="The Mandalorian" aria-pressed="false">The Mandalorian<i>1</i></button></div><p class="g-cuantas" id="g-cuantas" aria-live="polite">7 piezas</p></div><p class="g-vacio" id="g-vacio" hidden>Ninguna pieza coincide. <button type="button" id="g-reiniciar">Ver las 7 piezas</button></p>
+  <div class="rejilla" id="g-rejilla"><button class="pieza" data-vc="3d1" type="button" data-b="mandalore throne 3d1 3d print clone wars" data-serie="Clone Wars" data-n="1" data-precio="0" aria-haspopup="dialog"><span class="foto"><span class="pildora">3D PRINT</span><img src="fotos/3d1-0.webp" alt="Mandalore Throne" loading="lazy" decoding="async" width="680" height="680"><span class="mas">+5</span></span><span class="ficha-p"><span class="nom">Mandalore Throne</span><span class="met">Clone Wars</span><span class="precio consulta">Precio a consultar</span><span class="ir">Ver a detalle</span></span></button>
+<button class="pieza" data-vc="3d2" type="button" data-b="mandalorian vault 3d2 3d print clone wars" data-serie="Clone Wars" data-n="2" data-precio="0" aria-haspopup="dialog"><span class="foto"><span class="pildora">3D PRINT</span><img src="fotos/3d2-0.webp" alt="Mandalorian Vault" loading="lazy" decoding="async" width="680" height="680"><span class="mas">+4</span></span><span class="ficha-p"><span class="nom">Mandalorian Vault</span><span class="met">Clone Wars</span><span class="precio consulta">Precio a consultar</span><span class="ir">Ver a detalle</span></span></button>
+<button class="pieza" data-vc="3d4" type="button" data-b="stand para figuras de 3.75&quot; 3d4 3d print impresion 3d" data-serie="Impresión 3D" data-n="3" data-precio="0" aria-haspopup="dialog"><span class="foto"><span class="pildora">3D PRINT</span><img src="fotos/3d4-0.webp" alt="Stand Para Figuras de 3.75&quot;" loading="lazy" decoding="async" width="680" height="680"><span class="mas">+4</span></span><span class="ficha-p"><span class="nom">Stand Para Figuras de 3.75&quot;</span><span class="met">Impresión 3D</span><span class="precio consulta">Precio a consultar</span><span class="ir">Ver a detalle</span></span></button>
+<button class="pieza" data-vc="3d5" type="button" data-b="throne room darth vader 3d5 3d print obi-wan kenobi" data-serie="Obi-Wan Kenobi" data-n="4" data-precio="0" aria-haspopup="dialog"><span class="foto"><span class="pildora">3D PRINT</span><img src="fotos/3d5-0.webp" alt="Throne Room Darth Vader" loading="lazy" decoding="async" width="680" height="680"><span class="mas">+4</span></span><span class="ficha-p"><span class="nom">Throne Room Darth Vader</span><span class="met">Obi-Wan Kenobi</span><span class="precio consulta">Precio a consultar</span><span class="ir">Ver a detalle</span></span></button>
+<button class="pieza" data-vc="3d3" type="button" data-b="scorpenek 3d3 3d print the book of boba fett" data-serie="The Book of Boba Fett" data-n="5" data-precio="0" aria-haspopup="dialog"><span class="foto"><span class="pildora">3D PRINT</span><img src="fotos/3d3-0.webp" alt="Scorpenek" loading="lazy" decoding="async" width="680" height="680"><span class="mas">+5</span></span><span class="ficha-p"><span class="nom">Scorpenek</span><span class="met">The Book of Boba Fett</span><span class="precio consulta">Precio a consultar</span><span class="ir">Ver a detalle</span></span></button>
+<button class="pieza" data-vc="3d6" type="button" data-b="trono de boba fett · jabba's palace 3d6 3d print the book of boba fett" data-serie="The Book of Boba Fett" data-n="6" data-precio="0" aria-haspopup="dialog"><span class="foto"><span class="pildora">3D PRINT</span><img src="fotos/3d6-0.webp" alt="Trono de Boba Fett · Jabba's Palace" loading="lazy" decoding="async" width="680" height="680"><span class="mas">+5</span></span><span class="ficha-p"><span class="nom">Trono de Boba Fett · Jabba's Palace</span><span class="met">The Book of Boba Fett</span><span class="precio consulta">Precio a consultar</span><span class="ir">Ver a detalle</span></span></button>
+<button class="pieza" data-vc="3d7" type="button" data-b="tython the seeing stone 3d7 3d print the mandalorian" data-serie="The Mandalorian" data-n="7" data-precio="0" aria-haspopup="dialog"><span class="foto"><span class="pildora">3D PRINT</span><img src="fotos/3d7-0.webp" alt="Tython The Seeing Stone" loading="lazy" decoding="async" width="680" height="680"><span class="mas">+4</span></span><span class="ficha-p"><span class="nom">Tython The Seeing Stone</span><span class="met">The Mandalorian</span><span class="precio consulta">Precio a consultar</span><span class="ir">Ver a detalle</span></span></button></div>
+</div></section>
+
+<div class="cinta" aria-hidden="true"><div class="rodillo"></div></div>
+
+<section id="categorias"><div class="caso">
+  <p class="ceja">Categorías</p>
+  <h2 class="revelar" style="max-width:16ch">Todo lo que<br>hay en la tienda</h2>
+  <p style="margin:18px 0 clamp(24px,3vw,36px)">Las marcas y líneas del catálogo,
+    con el número de piezas que se pueden comprar aquí <strong>ahora mismo</strong>.</p>
+  <div class="g-cats"><a class="g-cat ancha" href="index.html" data-n="47"><span class="rotulo" aria-hidden="true">HASBRO</span><span class="banners"><span data-b="fotos/vc231-0.webp"></span><span data-b="fotos/vc344-0.webp"></span><span data-b="fotos/vc381-0.webp"></span></span><span class="velo"></span><span class="cuenta">47 piezas</span><span class="marca-cat"><b>HASBRO</b><i>Vintage Collection · Black Series · Retro Collection</i></span></a><button type="button" class="g-cat sin-foto t1 sin-piezas" data-cat="gi-joe" data-n="0"><span class="rotulo" aria-hidden="true">GI JOE</span><span class="banners"></span><span class="velo"></span><span class="marca-cat"><b>GI JOE</b><i>Classified Series</i></span><span class="pronto">Próximamente</span></button><button type="button" class="g-cat sin-piezas" data-cat="mattel" data-n="0"><span class="rotulo" aria-hidden="true">MATTEL</span><span class="banners"><span data-b="fotos/cat/mattel-2.webp"></span></span><span class="velo"></span><span class="marca-cat"><b>MATTEL</b><i>Ver la categoría</i></span><span class="pronto">Próximamente</span></button><button type="button" class="g-cat sin-foto t0 sin-piezas" data-cat="disney" data-n="0"><span class="rotulo" aria-hidden="true">DISNEY</span><span class="banners"></span><span class="velo"></span><span class="marca-cat"><b>DISNEY</b><i>Droids Factory</i></span><span class="pronto">Próximamente</span></button><button type="button" class="g-cat sin-piezas" data-cat="neca" data-n="0"><span class="rotulo" aria-hidden="true">NECA</span><span class="banners"><span data-b="fotos/cat/neca-2.webp"></span></span><span class="velo"></span><span class="marca-cat"><b>NECA</b><i>Figuras · Packs</i></span><span class="pronto">Próximamente</span></button><a class="g-cat" href="funko.html" data-n="8"><span class="rotulo" aria-hidden="true">FUNKO</span><span class="banners"><span data-b="fotos/cat/funko-2.webp"></span></span><span class="velo"></span><span class="cuenta">8 piezas</span><span class="marca-cat"><b>FUNKO</b><i>Figuras</i></span></a><button type="button" class="g-cat sin-foto t0 sin-piezas" data-cat="super-7" data-n="0"><span class="rotulo" aria-hidden="true">SUPER 7</span><span class="banners"></span><span class="velo"></span><span class="marca-cat"><b>SUPER 7</b><i>Reaction · Ultimates</i></span><span class="pronto">Próximamente</span></button><button type="button" class="g-cat" data-cat="3d-print" data-n="7"><span class="rotulo" aria-hidden="true">3D PRINT</span><span class="banners"><span data-b="fotos/cat/3d-print-2.webp"></span></span><span class="velo"></span><span class="cuenta">7 piezas</span><span class="marca-cat"><b>3D PRINT</b><i>Ver la categoría</i></span></button><button type="button" class="g-cat sin-foto t2 sin-piezas" data-cat="merch" data-n="0"><span class="rotulo" aria-hidden="true">MERCH</span><span class="banners"></span><span class="velo"></span><span class="marca-cat"><b>MERCH</b><i>Ver la categoría</i></span><span class="pronto">Próximamente</span></button></div>
+</div></section>
+
+<div class="cierre"><div class="caso">
+  <div>
+    <h2>Se paga aquí,<br>se envía a tu casa</h2>
+    <p>Eliges tus figuras, pagas con tarjeta o con PayPal, y pones tu dirección
+      en el mismo paso. Sin salir de esta página.</p>
+  </div>
+  <button class="b" id="g-ir-carro" type="button"><span>Ver mi carrito</span></button>
+</div></div>
+
+<div class="g-ficha" id="g-ficha" hidden role="dialog" aria-modal="true" aria-labelledby="g-nom"><div class="ex-velo" aria-hidden="true"></div><div class="g-caja" id="g-caja"><div class="ex-marco" aria-hidden="true"><i class="e1"></i><i class="e2"></i><i class="e3"></i><i class="e4"></i></div><button class="g-cerrar" id="g-cerrar" type="button" aria-label="Cerrar">✕</button><div class="ex-escena"><button class="ex-paso ant" id="g-ant" type="button" aria-label="Pieza anterior">‹</button><button class="ex-paso sig" id="g-sig" type="button" aria-label="Pieza siguiente">›</button><div class="grande"><div class="g-tira" id="g-tira"></div><span class="g-cuenta" id="g-cuenta"></span><span class="ex-barrido" id="g-barrido" aria-hidden="true"></span></div><div class="g-tiras" id="g-tiras"></div></div><div class="ex-leer"><span class="ex-slab" id="g-slab" aria-hidden="true"></span><span class="ex-anillo" aria-hidden="true"></span><p class="ex-ceja"><span id="g-vc"></span><i>Expediente</i></p><div class="ex-mask"><h3 id="g-nom"></h3></div><span class="ex-regla" aria-hidden="true"></span><dl class="ex-datos"><div class="ex-fila"><dt>Línea</dt><dd id="g-serie"></dd></div><div class="ex-fila"><dt>Formato</dt><dd>Impresión 3D por encargo</dd></div><div class="ex-fila"><dt>Entrega</dt><dd>En existencia, o 4–5 días si se imprime</dd></div><div class="ex-fila"><dt>Nº de pieza</dt><dd id="g-npieza"></dd></div></dl><div class="g-compra"><span class="g-precio-g" id="g-precio"></span><span class="g-stock" id="g-stock"></span><button class="b comprar" id="g-add" type="button"><span>Agregar al carrito</span></button></div><p class="g-nota" id="g-nota" hidden></p></div><div class="ex-riel"><p class="ex-ceja chica">Más de la colección</p><div class="ex-vagones" id="g-riel"></div></div></div></div>
+<div class="g-carro" id="g-carro" hidden role="dialog" aria-modal="true" aria-label="Tu carrito"><button class="velo" id="g-carro-velo" type="button" aria-label="Cerrar el carrito"></button><div class="hoja"><div class="cabeza"><h3>Tu carrito</h3><button class="cerrar" id="g-carro-x" type="button" aria-label="Cerrar">✕</button></div><div class="lista" id="g-carro-lista"></div><div class="pie"><div class="g-suma"><span>Total</span><b id="g-carro-total">$ 0<i>MXN</i></b></div><p class="g-envio">El envío se calcula al pagar, con la dirección que pongas.</p><div id="g-carro-pago"></div></div></div></div>
+
+<footer><div class="caso fila-pie">
+  <div>
+    <img src="marca/logo.webp" width="760" height="128" alt="Toydarians">
+    <div><a href="https://www.toydarians.com/" target="_blank" rel="noopener">toydarians.com ↗</a></div>
+    <div class="medidor" aria-hidden="true">Fluidez: <span id="medida">midiendo…</span></div>
+  </div>
+  <div class="nota">
+    <p>Precios en pesos mexicanos. Las existencias son las del catálogo y
+      <strong>Toydarians confirma cada pedido</strong> antes de enviarlo; si algo
+      se agotó, se avisa y se devuelve el importe.</p>
+    <p>Star Wars, The Vintage Collection y las demás marcas son de sus titulares.
+      Este sitio no está afiliado a ellos.</p>
+  </div>
+</div></footer>
+<script src="datos-3d-print.js" defer></script>
+<script src="motor.js" defer></script>
+
+</body>
+</html>

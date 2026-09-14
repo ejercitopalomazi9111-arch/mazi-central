@@ -1,0 +1,235 @@
+{
+ "funko": [
+  {
+   "clave": "fk4",
+   "nombre": "Biff Tannen",
+   "serie": "Back to the Future",
+   "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-biff-tannen",
+   "fotos": [
+    "fk4-0.webp",
+    "fk4-1.webp"
+   ],
+   "precio": 380.0,
+   "stock": "disponible",
+   "nota": ""
+  },
+  {
+   "clave": "fk1",
+   "nombre": "Doc with Helmet",
+   "serie": "Back to the Future",
+   "url": "https://www.toydarians.com/?product=funko-back-to-the-future-doc-with-helmet",
+   "fotos": [
+    "fk1-0.webp",
+    "fk1-1.webp",
+    "fk1-2.webp"
+   ],
+   "precio": 680.0,
+   "stock": "disponible",
+   "nota": ""
+  },
+  {
+   "clave": "fk5",
+   "nombre": "Marty",
+   "serie": "Back to the Future",
+   "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty",
+   "fotos": [
+    "fk5-0.webp",
+    "fk5-1.webp",
+    "fk5-2.webp",
+    "fk5-3.webp"
+   ],
+   "precio": 350.0,
+   "stock": "disponible",
+   "nota": ""
+  },
+  {
+   "clave": "fk6",
+   "nombre": "Marty 1955",
+   "serie": "Back to the Future",
+   "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-1955",
+   "fotos": [
+    "fk6-0.webp",
+    "fk6-1.webp",
+    "fk6-2.webp"
+   ],
+   "precio": 350.0,
+   "stock": "disponible",
+   "nota": ""
+  },
+  {
+   "clave": "fk7",
+   "nombre": "Marty in Future Outfit",
+   "serie": "Back to the Future",
+   "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-in-future-outfit",
+   "fotos": [
+    "fk7-0.webp",
+    "fk7-1.webp",
+    "fk7-2.webp"
+   ],
+   "precio": 350.0,
+   "stock": "disponible",
+   "nota": ""
+  },
+  {
+   "clave": "fk2",
+   "nombre": "Marty in Puffy Vest",
+   "serie": "Back to the Future",
+   "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-in-puffy-vest",
+   "fotos": [
+    "fk2-0.webp",
+    "fk2-1.webp",
+    "fk2-2.webp",
+    "fk2-3.webp"
+   ],
+   "precio": 350.0,
+   "stock": "disponible",
+   "nota": ""
+  },
+  {
+   "clave": "fk8",
+   "nombre": "Marty with Glasses",
+   "serie": "Back to the Future",
+   "url": "https://www.toydarians.com/?product=funko-pop-movies-back-to-the-future-marty-with-glasses",
+   "fotos": [
+    "fk8-0.webp",
+    "fk8-1.webp",
+    "fk8-2.webp"
+   ],
+   "precio": 350.0,
+   "stock": "disponible",
+   "nota": ""
+  },
+  {
+   "clave": "fk3",
+   "nombre": "The Mandalorian & The Child",
+   "serie": "The Mandalorian",
+   "url": "https://www.toydarians.com/?product=funko-pop-the-mandalorian-the-child-the-mandalorian",
+   "fotos": [
+    "fk3-0.webp",
+    "fk3-1.webp",
+    "fk3-2.webp",
+    "fk3-3.webp"
+   ],
+   "precio": 1800.0,
+   "stock": "disponible",
+   "nota": ""
+  }
+ ],
+ "3d-print": [
+  {
+   "clave": "3d1",
+   "nombre": "Mandalore Throne",
+   "serie": "Clone Wars",
+   "url": "https://www.toydarians.com/?product=mandalore-throne-clone-wars",
+   "fotos": [
+    "3d1-0.webp",
+    "3d1-1.webp",
+    "3d1-2.webp",
+    "3d1-3.webp",
+    "3d1-4.webp",
+    "3d1-5.webp"
+   ],
+   "precio": null,
+   "stock": "disponible",
+   "nota": "No incluye la figura. Si no hay existencia se reserva: unos 4 días sin pintar, 5 pintado."
+  },
+  {
+   "clave": "3d2",
+   "nombre": "Mandalorian Vault",
+   "serie": "Clone Wars",
+   "url": "https://www.toydarians.com/?product=mandalorian-vault",
+   "fotos": [
+    "3d2-0.webp",
+    "3d2-1.webp",
+    "3d2-2.webp",
+    "3d2-3.webp",
+    "3d2-4.webp"
+   ],
+   "precio": null,
+   "stock": "disponible",
+   "nota": "No incluye la figura. Si no hay existencia se reserva: unos 4 días sin pintar, 5 pintado."
+  },
+  {
+   "clave": "3d4",
+   "nombre": "Stand Para Figuras de 3.75\"",
+   "serie": "Impresión 3D",
+   "url": "https://www.toydarians.com/?product=stand-para-figuras-de-3-75-3d-print",
+   "fotos": [
+    "3d4-0.webp",
+    "3d4-1.webp",
+    "3d4-2.webp",
+    "3d4-3.webp",
+    "3d4-4.webp"
+   ],
+   "precio": null,
+   "stock": "disponible",
+   "nota": "Si no hay existencia se reserva: unos 4 días sin pintar, 5 pintado."
+  },
+  {
+   "clave": "3d5",
+   "nombre": "Throne Room Darth Vader",
+   "serie": "Obi-Wan Kenobi",
+   "url": "https://www.toydarians.com/?product=throne-room-darth-vader-obi-wan-kenobi-3d-print",
+   "fotos": [
+    "3d5-0.webp",
+    "3d5-1.webp",
+    "3d5-2.webp",
+    "3d5-3.webp",
+    "3d5-4.webp"
+   ],
+   "precio": null,
+   "stock": "disponible",
+   "nota": "No incluye la figura. Si no hay existencia se reserva: unos 4 días sin pintar, 5 pintado."
+  },
+  {
+   "clave": "3d3",
+   "nombre": "Scorpenek",
+   "serie": "The Book of Boba Fett",
+   "url": "https://www.toydarians.com/?product=scorpenek-the-book-of-boba-fett-3d-print",
+   "fotos": [
+    "3d3-0.webp",
+    "3d3-1.webp",
+    "3d3-2.webp",
+    "3d3-3.webp",
+    "3d3-4.webp",
+    "3d3-5.webp"
+   ],
+   "precio": null,
+   "stock": "disponible",
+   "nota": "No incluye la figura. Si no hay existencia se reserva: unos 4 días sin pintar, 5 pintado."
+  },
+  {
+   "clave": "3d6",
+   "nombre": "Trono de Boba Fett · Jabba's Palace",
+   "serie": "The Book of Boba Fett",
+   "url": "https://www.toydarians.com/?product=trono-boba-fett-jabbas-palace-the-book-of-boba-fett-3d-print",
+   "fotos": [
+    "3d6-0.webp",
+    "3d6-1.webp",
+    "3d6-2.webp",
+    "3d6-3.webp",
+    "3d6-4.webp",
+    "3d6-5.webp"
+   ],
+   "precio": null,
+   "stock": "disponible",
+   "nota": "Si no hay existencia se reserva: unos 4 días sin pintar, 5 pintado."
+  },
+  {
+   "clave": "3d7",
+   "nombre": "Tython The Seeing Stone",
+   "serie": "The Mandalorian",
+   "url": "https://www.toydarians.com/?product=tython-the-seeing-stone-the-mandalorian-3d-print",
+   "fotos": [
+    "3d7-0.webp",
+    "3d7-1.webp",
+    "3d7-2.webp",
+    "3d7-3.webp",
+    "3d7-4.webp"
+   ],
+   "precio": null,
+   "stock": "disponible",
+   "nota": "No incluye la figura. Si no hay existencia se reserva: unos 4 días sin pintar, 5 pintado."
+  }
+ ]
+}

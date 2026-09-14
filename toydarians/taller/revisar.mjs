@@ -418,10 +418,22 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
              vista: caja.filter(n => +getComputedStyle(n).opacity > .5).length };
   });
   const hayMando = await pg.evaluate(() => !!document.getElementById('g-q'));
+  /* El termino de busqueda SALE DE LA PAGINA, no de una constante. Estuvo fijo
+     en «kenobi», que solo existe en la vitrina de Vintage Collection: en
+     funko.html y en 3d-print.html esa busqueda no devuelve nada y la compuerta
+     habria reprobado dos paginas correctas —o, peor, alguien habria quitado la
+     comprobacion para que pasaran. Se toma una palabra de la PRIMERA pieza y
+     se exige que encuentre esa y menos que todas. */
+  const termino = await pg.evaluate(() => {
+    const n = document.querySelector('.rejilla .pieza .nom');
+    if (!n) return '';
+    return (n.textContent.trim().split(/\s+/).find(w => w.length > 4) || '')
+             .replace(/[^\wáéíóúñ]/gi, '');
+  });
   let todas = null, ken = null, nada = null, aviso = null, chapa = null;
-  if (hayMando) {
+  if (hayMando && termino) {
     todas = await contar();
-    await pg.fill('#g-q', 'kenobi'); await pg.waitForTimeout(1200); ken = await contar();
+    await pg.fill('#g-q', termino); await pg.waitForTimeout(1200); ken = await contar();
     await pg.fill('#g-q', 'qqqzzz'); await pg.waitForTimeout(800);  nada = await contar();
     aviso = await pg.evaluate(() => !document.getElementById('g-vacio').hidden);
     await pg.fill('#g-q', '');       await pg.waitForTimeout(800);
@@ -436,16 +448,21 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
                vista: caja.filter(n => +getComputedStyle(n).opacity > .5).length };
     });
   }
-  const mal = fallos.length > 0 || !hayMando ||
-              !(todas && todas.caja > 10) ||                    // la rejilla esta
-              !(ken && ken.caja > 0 && ken.caja < todas.caja) || // busca y reduce
+  // Las chapas de serie solo existen donde hay mas de una serie: 3d-print
+  // tiene dos y funko tambien, pero una pagina de una sola linea no las
+  // pinta, y entonces no hay nada que exigirles.
+  const hayChapas = await pg.evaluate(() =>
+    !!document.querySelector('.g-chapa[data-serie]:not([data-serie=""])'));
+  const mal = fallos.length > 0 || !hayMando || !termino ||
+              !(todas && todas.caja >= 5) ||                     // la rejilla esta
+              !(ken && ken.caja > 0 && ken.caja <= todas.caja) || // busca y encuentra
               !(ken && ken.vista === ken.caja) ||                // y lo que queda SE VE
               !(nada && nada.caja === 0) || !aviso ||            // sin resultados, aviso
-              !(chapa && chapa.caja > 0 && chapa.caja < todas.caja) ||
-              !(chapa && chapa.vista === chapa.caja);
+              (hayChapas && !(chapa && chapa.caja > 0 && chapa.caja < todas.caja)) ||
+              (hayChapas && !(chapa && chapa.vista === chapa.caja));
   if (mal) malo++;
   const d = (o) => o ? o.caja + (o.vista === o.caja ? '' : '/vista ' + o.vista) : '—';
-  console.log(`390px mando           todas ${d(todas)}  «kenobi» ${d(ken)}  `
+  console.log(`390px mando           todas ${d(todas)}  «${termino}» ${d(ken)}  `
     + `sin resultados ${nada && nada.caja === 0 ? 'sí' : 'NO'}  aviso ${aviso ? 'sí' : 'NO'}  `
     + `chapa ${d(chapa)}  errores ${fallos.length}${mal ? '  ← MAL' : ''}`);
   fallos.forEach(c => console.log('      ' + c));
@@ -514,6 +531,21 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
              mismo: location.href.split('#')[0] === donde.split('#')[0] };
   }, sel);
 
+  /* Los enlaces internos de categoria —los que llevan a funko.html y a
+     3d-print.html— se COMPRUEBAN, no se dan por buenos. Un href a una pagina
+     que no existe es la forma mas facil de que «esta es la pagina oficial» se
+     convierta en un 404: el enlace se ve igual de bien roto que sano. */
+  const internos = await pg.evaluate(() => [...document.querySelectorAll('a.g-cat[href]')]
+    .map(a => a.getAttribute('href')));
+  const rotos = [];
+  for (const h of internos) {
+    const r = await pg.evaluate(async (u) => {
+      try { const x = await fetch(u, { method: 'GET' }); return x.status; }
+      catch (_) { return 0; }
+    }, h);
+    if (r !== 200) rotos.push(`${h} → ${r}`);
+  }
+
   const conPiezas = await pulsar('.g-cat[data-cat]:not(.sin-piezas)');
   await pg.evaluate(() => { const q = document.getElementById('g-q'); if (q) { q.value=''; } });
   await pg.waitForTimeout(200);
@@ -522,21 +554,23 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
     [...document.querySelectorAll('.g-cat.sin-piezas .pronto')]
       .filter(n => n.getClientRects().length > 0).length);
 
-  const mal = fallos.length > 0
+  const mal = fallos.length > 0 || rotos.length > 0
             || salidas.length !== 1 || !salidas[0].startsWith('pie · ')
-            || !(antes && antes.caja > 10)
+            || !(antes && antes.caja >= 5)
             || !(conPiezas && conPiezas.mismo)
             || !(conPiezas && conPiezas.caja > 0 && conPiezas.vista === conPiezas.caja)
             || !(vacia && vacia.mismo && vacia.caja === antes.caja)
             || pronto < 1;
   if (mal) malo++;
   console.log(`390px categorías      salidas ${salidas.length} (se permite 1)  `
+    + `enlaces internos ${internos.length}${rotos.length ? ' ROTOS ' + rotos.length : ' ok'}  `
     + `con piezas ${conPiezas ? conPiezas.caja + (conPiezas.vista === conPiezas.caja ? '' : '/vista ' + conPiezas.vista) : '—'}  `
     + `sin piezas ${vacia ? (vacia.caja === antes.caja ? 'no toca' : 'FILTRA ' + vacia.caja) : '—'}  `
     + `«próximamente» ${pronto}  `
     + `navega ${(conPiezas && conPiezas.mismo && vacia && vacia.mismo) ? 'no' : 'SÍ'}`
     + `${mal ? '  ← MAL' : ''}`);
   salidas.filter(x => !x.startsWith('pie · ')).slice(0, 6).forEach(x => console.log('      ' + x));
+  rotos.forEach(x => console.log('      enlace roto: ' + x));
   fallos.forEach(c => console.log('      ' + c));
   await ctx.close();
 }

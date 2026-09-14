@@ -147,6 +147,32 @@ página y de lo que ya dijo en la sala.
 
 ---
 
+## 14 de septiembre · lo que entró y lo que sigue faltando
+
+**Entró.** El sitio dejó de mandar a toydarians.com y pasó de una página a
+tres. FUNKO y 3D PRINT tienen la suya, con sus productos de verdad —8 y 7,
+traídos del WooCommerce del cliente con foto, precio y existencias—. Total: 62
+piezas repartidas en tres vitrinas que comparten estilo, motor y carrito. De
+las 35 salidas que había queda **una**, la atribución del pie, y la compuerta
+la cuenta en cada corrida.
+
+**Lo que sigue faltando, y ahora se ve mejor que antes:**
+
+- [ ] **21 · Las 3D no tienen precio y el carrito no puede cobrarlas.** No es
+      un fallo del sitio: la tienda tampoco los publica —se cotizan por
+      encargo—. Hoy la ficha lo dice («Precio a consultar») y no deja
+      agregarlas. Se arregla con **un dato del cliente**, no con código: o el
+      precio, o un teléfono de WhatsApp al que mandar la cotización. Hoy no
+      hay ningún canal de contacto en el sitio, y ése es el hueco real.
+- [ ] **22 · Faltan 13 categorías de las 16.** MATTEL, DISNEY, NECA, SUPER 7,
+      GI JOE y MERCH siguen en «Próximamente» porque no se han traído sus
+      productos. El camino ya está hecho: `taller/` tiene el raspador y añadir
+      una categoría es una entrada más en `PAGINAS`.
+- [ ] **23 · Nueve de las 16 fichas de categoría usan el dibujo de la casa.**
+      Faltan los logos de marca del kit del cliente.
+
+---
+
 ## Lo que no es de ninguno de los dos
 
 | Qué | De quién |
