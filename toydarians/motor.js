@@ -275,19 +275,29 @@
        Se pinta UNA VEZ y no se toca mas. El cielo quieto se lee igual de bien
        —de hecho en cinco segundos nadie nota que titila—, y el movimiento de
        la intro lo ponen las letras, que es donde tiene que estar. */
-    var ci = document.getElementById('g-cielo'), cx = ci && ci.getContext('2d');
-    if (cx) {
+    /* ⚠ ESTA VARIABLE SE LLAMABA `cx` Y PISABA LA `cx` DEL PUNTERO.
+       Todo el guion vive en UNA sola funcion auto-invocada, y `var` es de
+       funcion, no de bloque: da igual que esten en `if` distintos. Arriba,
+       `var cx = .5` guarda la posicion horizontal del raton sobre el carton;
+       aqui se le asignaba un contexto de lienzo. Resultado medido:
+       `kx += (cx - kx)` daba NaN y el carton tenia `--cx: NaN` — o sea que
+       llevaba quien sabe cuanto SIN INCLINARSE de lado. Se veia «vivo» porque
+       `--cy` si funcionaba.
+       Nombre propio, y se acabo la clase entera de fallo. */
+    var ci = document.getElementById('g-cielo'),
+        ctxIntro = ci && ci.getContext('2d');
+    if (ctxIntro) {
       var sembrado = false;
       function sembrarIntro(){
         var R = 1;                       // puntos de 2 px: DPR 1 sobra
         var w = Math.round(ci.clientWidth * R), h = Math.round(ci.clientHeight * R);
         if (!w || !h) return;
         ci.width = w; ci.height = h;
-        cx.clearRect(0, 0, w, h);
+        ctxIntro.clearRect(0, 0, w, h);
         for (var i = 0; i < 170; i++) {
           var z = Math.random() * .8 + .2;
-          cx.fillStyle = 'rgba(250,247,220,' + (z * (.4 + Math.random() * .6)).toFixed(3) + ')';
-          cx.fillRect(Math.random() * w, Math.random() * h, z * 2, z * 2);
+          ctxIntro.fillStyle = 'rgba(250,247,220,' + (z * (.4 + Math.random() * .6)).toFixed(3) + ')';
+          ctxIntro.fillRect(Math.random() * w, Math.random() * h, z * 2, z * 2);
         }
         sembrado = true;
       }
@@ -463,7 +473,7 @@
         gTiras  = document.getElementById('g-tiras'),
         gCuenta = document.getElementById('g-cuenta'),
         gVc = document.getElementById('g-vc'), gNom = document.getElementById('g-nom'),
-        gSerie = document.getElementById('g-serie'), gIr = document.getElementById('g-ir'),
+        gSerie = document.getElementById('g-serie'),
         gNPieza = document.getElementById('g-npieza'),
         gSlab = document.getElementById('g-slab'),
         gBarrido = document.getElementById('g-barrido'),
@@ -509,7 +519,7 @@
       var d = TOY.g.piezas[vc]; if (!d) return false;
       vcAct = vc;
       gVc.textContent = 'VC ' + vc;
-      gNom.textContent = d.n; gSerie.textContent = d.s; gIr.href = d.u;
+      gNom.textContent = d.n; gSerie.textContent = d.s;
       if (gNPieza) gNPieza.textContent = vc;
       // el numero a tamano de cartel. Se pone ENTERO: el sufijo de las
       // reediciones —01A, 312A— es parte del nombre de la pieza, y recortarlo
@@ -517,13 +527,15 @@
       if (gSlab) gSlab.textContent = vc;
 
       var eP = document.getElementById('g-precio'),
-          eS = document.getElementById('g-stock'),
-          eB = document.getElementById('g-paypal');
+          eS = document.getElementById('g-stock');
       if (d.p) { contarPrecio(eP, d.p, animar); eP.hidden = false; }
       else { eP.hidden = true; }
       eS.textContent = d.st === 'agotado' ? 'Agotado' : 'Disponible';
       eS.className = 'g-stock' + (d.st === 'agotado' ? ' no' : '');
-      pintarPago(vc, d, eB);
+      /* ⚠ AQUI SE DIBUJABA UN BOTON DE PAYPAL POR FIGURA. Eso no es comprar:
+         es pagar cuatro veces si te llevas cuatro, cada una con su comisión y
+         su envío. El cobro se mudó al carrito, que cobra el pedido completo. */
+      if (bAdd) bAdd.disabled = !d.p || d.st === 'agotado';
 
       fotosAct = d.f;
       armarGaleria(d.f, d.n);
@@ -748,42 +760,12 @@
       sc.onerror = function(){ sdkPedido = false; };
       document.head.appendChild(sc);
     }
-    function pintarPago(vc, d, caja){
-      if (!caja) return;
-      caja.innerHTML = '';
-      if (!d.p || d.st === 'agotado') return;
-      if (!TOY.g.paypal) {
-        var av = document.createElement('div');
-        av.className = 'g-aviso-pago';
-        av.innerHTML = '<b>Pago no configurado</b>El botón de PayPal está cableado y ' +
-          'listo: sólo falta el identificador de la cuenta de Toydarians. ' +
-          'Mientras tanto, la compra se cierra en la tienda.';
-        caja.appendChild(av);
-        return;
-      }
-      cargarSDK(function(){
-        if (!window.paypal || caja.dataset.vc === vc) return;
-        caja.dataset.vc = vc;
-        window.paypal.Buttons({
-          style: { color:'gold', shape:'rect', label:'pay', height:44 },
-          createOrder: function(_, actions){
-            return actions.order.create({ purchase_units: [{
-              description: 'VC ' + vc + ' · ' + d.n,
-              amount: { value: d.p.toFixed(2), currency_code: TOY.g.moneda } }] });
-          },
-          onApprove: function(_, actions){
-            return actions.order.capture().then(function(o){
-              caja.innerHTML = '<div class="g-aviso-pago"><b>Pago recibido</b>' +
-                'Folio ' + (o.id || '') + '. Toydarians se pone en contacto para el envío.</div>';
-            });
-          },
-          onError: function(){
-            caja.innerHTML = '<div class="g-aviso-pago"><b>No se pudo cobrar</b>' +
-              'Intenta de nuevo o termina la compra en la tienda.</div>';
-          }
-        }).render(caja);
-      });
-    }
+    /* ⚠ AQUI VIVIA `pintarPago`, que dibujaba un boton de PayPal POR FIGURA.
+       Se borra entera, no se deja «por si acaso»: con el carrito cobrando el
+       pedido completo, esa funcion ya no la llama nadie. Codigo muerto que
+       parece que hace algo es justo lo que llevo toda la semana sacando de
+       este repo — y esta funcion ya nos costo una vez: se perdio en una
+       fusion, su llamada sobrevivio, y la ficha dejo de abrir en produccion. */
 
     var rej = document.getElementById('g-rejilla');
     if (rej) rej.addEventListener('click', function(e){
@@ -791,6 +773,234 @@
       if (b) abrir(b.dataset.vc, b);
     });
     TOY.g.abrir = abrir;
+
+    // ══════════════════════════════════════════════════════════════════════
+    // EL CARRITO · la compra empieza y termina aquí
+    // ══════════════════════════════════════════════════════════════════════
+    // Luis, al abrir una figura: «si lo quieres comprar te manda a la página
+    // oficial, quiero que ESTA sea la página oficial, que esté todo aquí».
+    //
+    // Lo que eso cambia de fondo: antes se cobraba PIEZA POR PIEZA desde la
+    // ficha —cada figura con su propio botón de PayPal—, que no es comprar:
+    // es pagar cuatro veces si te llevas cuatro. Ahora hay carrito y se cobra
+    // el pedido completo de una.
+    //
+    // El carrito vive en `localStorage` a propósito: si cierras y vuelves,
+    // sigue ahí. Va envuelto en try/catch porque en ventana privada, o con las
+    // cookies bloqueadas, el navegador TIRA al leerlo — y un carrito que
+    // revienta la página es peor que un carrito que se olvida.
+    var CARRO = 'toy.carro.v1';
+    var carro = (function(){
+      try { return JSON.parse(localStorage.getItem(CARRO)) || {}; }
+      catch (_) { return {}; }
+    })();
+    function guardarCarro(){
+      try { localStorage.setItem(CARRO, JSON.stringify(carro)); } catch (_) {}
+    }
+    function piezasCarro(){
+      var n = 0; for (var k in carro) n += carro[k]; return n;
+    }
+    function totalCarro(){
+      var t = 0;
+      for (var k in carro) {
+        var d = TOY.g.piezas[k];
+        if (d && d.p) t += d.p * carro[k];
+      }
+      return t;
+    }
+    function pesos(n){ return '$ ' + Math.round(n).toLocaleString('es-MX'); }
+
+    var cCaja = document.getElementById('g-carro'),
+        cLista = document.getElementById('g-carro-lista'),
+        cTotal = document.getElementById('g-carro-total'),
+        cPago = document.getElementById('g-carro-pago'),
+        cBtn = document.getElementById('g-carro-btn'),
+        cNum = document.getElementById('g-carro-n');
+
+    function agregar(vc, n){
+      var d = TOY.g.piezas[vc];
+      if (!d || !d.p || d.st === 'agotado') return false;
+      carro[vc] = Math.max(1, Math.min(99, (carro[vc] || 0) + (n || 1)));
+      guardarCarro(); pintarCarro();
+      return true;
+    }
+    function fijar(vc, n){
+      if (n <= 0) delete carro[vc];
+      else carro[vc] = Math.min(99, n);
+      guardarCarro(); pintarCarro();
+    }
+
+    function pintarCarro(){
+      if (!cLista) return;
+      var vcs = Object.keys(carro).filter(function(k){ return TOY.g.piezas[k]; });
+      if (cNum) cNum.textContent = piezasCarro();
+      if (cBtn) cBtn.dataset.vacio = vcs.length ? 'no' : 'si';
+      cLista.innerHTML = '';
+      if (!vcs.length) {
+        var v = document.createElement('p');
+        v.className = 'g-vacio-carro';
+        v.textContent = 'Todavía no has puesto nada. Toca cualquier figura y agrégala.';
+        cLista.appendChild(v);
+      }
+      vcs.forEach(function(vc){
+        var d = TOY.g.piezas[vc], n = carro[vc];
+        var r = document.createElement('div'); r.className = 'g-reng';
+        var im = document.createElement('img');
+        im.src = 'fotos/' + d.f[0]; im.alt = ''; im.loading = 'lazy';
+        var qn = document.createElement('div'); qn.className = 'qn';
+        qn.innerHTML = '<span class="vc">VC ' + vc + '</span>' +
+          '<span class="nom"></span><span class="uni">' + pesos(d.p) + ' c/u</span>';
+        qn.querySelector('.nom').textContent = d.n;       // nombre del cliente: nunca como HTML
+        var mando = document.createElement('div'); mando.className = 'mando';
+        var pasos = document.createElement('div'); pasos.className = 'g-pasos';
+        var menos = document.createElement('button'); menos.type = 'button';
+        menos.textContent = '−'; menos.setAttribute('aria-label', 'Quitar uno de ' + d.n);
+        var cant = document.createElement('b'); cant.textContent = n;
+        var mas = document.createElement('button'); mas.type = 'button';
+        mas.textContent = '+'; mas.setAttribute('aria-label', 'Agregar uno de ' + d.n);
+        menos.addEventListener('click', function(){ fijar(vc, n - 1); });
+        mas.addEventListener('click', function(){ fijar(vc, n + 1); });
+        pasos.appendChild(menos); pasos.appendChild(cant); pasos.appendChild(mas);
+        var sub = document.createElement('span'); sub.className = 'sub';
+        sub.textContent = pesos(d.p * n);
+        var fuera = document.createElement('button');
+        fuera.type = 'button'; fuera.className = 'fuera'; fuera.textContent = 'Quitar';
+        fuera.addEventListener('click', function(){ fijar(vc, 0); });
+        mando.appendChild(pasos); mando.appendChild(sub); mando.appendChild(fuera);
+        r.appendChild(im); r.appendChild(qn); r.appendChild(mando);
+        cLista.appendChild(r);
+      });
+      if (cTotal) cTotal.innerHTML = pesos(totalCarro()) + '<i>' + TOY.g.moneda + '</i>';
+      pintarPagoCarro();
+    }
+
+    function abrirCarro(){
+      if (!cCaja) return;
+      pintarCarro();
+      cCaja.hidden = false;
+      document.body.style.overflow = 'hidden';
+      if (cBtn) cBtn.setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ cCaja.classList.add('abierto'); });
+      });
+      var x = document.getElementById('g-carro-x'); if (x) x.focus();
+    }
+    function cerrarCarro(){
+      if (!cCaja) return;
+      cCaja.classList.remove('abierto');
+      if (cBtn) cBtn.setAttribute('aria-expanded', 'false');
+      setTimeout(function(){
+        cCaja.hidden = true;
+        // ⚠ si la ficha sigue abierta, el scroll del fondo NO se devuelve:
+        //   se cierra el carrito encima de la ficha y la página de atrás no
+        //   debe empezar a moverse.
+        if (!cuadro || cuadro.hidden) document.body.style.overflow = '';
+      }, quieto ? 0 : 340);
+    }
+    if (cBtn) cBtn.addEventListener('click', abrirCarro);
+    // `cx` y `cv` a secas es justo lo que acaba de costarnos la inclinacion
+    // del carton: en este guion los nombres cortos ya estan tomados.
+    var gCarroX = document.getElementById('g-carro-x'),
+        gCarroVelo = document.getElementById('g-carro-velo');
+    if (gCarroX) gCarroX.addEventListener('click', cerrarCarro);
+    if (gCarroVelo) gCarroVelo.addEventListener('click', cerrarCarro);
+    addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && cCaja && !cCaja.hidden) cerrarCarro();
+    });
+
+    // agregar desde la ficha
+    var bAdd = document.getElementById('g-add');
+    if (bAdd) bAdd.addEventListener('click', function(){
+      if (!vcAct || !agregar(vcAct, 1)) return;
+      // acuse en el propio botón: se ve que pasó algo sin sacar a nadie de la ficha
+      bAdd.dataset.puesto = 'si';
+      bAdd.querySelector('span').textContent = 'Agregado ✓';
+      setTimeout(function(){
+        bAdd.dataset.puesto = '';
+        bAdd.querySelector('span').textContent = 'Agregar al carrito';
+      }, 1400);
+    });
+
+    // agregar desde la tarjeta, sin abrir la ficha
+    if (rej) {
+      rej.addEventListener('click', function(e){
+        var a = e.target.closest('[data-add]');
+        if (!a) return;
+        e.stopPropagation();                  // que no abra la ficha
+        agregar(a.dataset.add, 1);
+        abrirCarro();
+      }, true);
+      rej.addEventListener('keydown', function(e){
+        var a = e.target.closest && e.target.closest('[data-add]');
+        if (!a || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault(); e.stopPropagation();
+        agregar(a.dataset.add, 1); abrirCarro();
+      }, true);
+    }
+
+    // ---- el cobro del pedido COMPLETO ------------------------------------
+    function pintarPagoCarro(){
+      if (!cPago) return;
+      cPago.innerHTML = ''; cPago.dataset.firma = '';
+      var vcs = Object.keys(carro).filter(function(k){ return TOY.g.piezas[k]; });
+      if (!vcs.length) return;
+      if (!TOY.g.paypal) {
+        var av = document.createElement('div');
+        av.className = 'g-aviso-pago';
+        av.innerHTML = '<b>Falta conectar el cobro</b>El botón de PayPal está ' +
+          'cableado y probado: sólo falta pegar el identificador de la cuenta de ' +
+          'Toydarians. En cuanto esté, este carrito cobra.';
+        cPago.appendChild(av);
+        return;
+      }
+      // la firma evita volver a dibujar los botones en cada cambio de cantidad
+      var firma = vcs.map(function(v){ return v + 'x' + carro[v]; }).join('|');
+      cargarSDK(function(){
+        if (!window.paypal || cPago.dataset.firma === firma) return;
+        cPago.dataset.firma = firma; cPago.innerHTML = '';
+        window.paypal.Buttons({
+          style: { color:'gold', shape:'rect', label:'pay', height:46 },
+          createOrder: function(_, actions){
+            var items = vcs.map(function(v){
+              var d = TOY.g.piezas[v];
+              return { name: ('VC ' + v + ' · ' + d.n).slice(0, 127),
+                       quantity: String(carro[v]),
+                       unit_amount: { value: d.p.toFixed(2), currency_code: TOY.g.moneda } };
+            });
+            var total = totalCarro().toFixed(2);
+            return actions.order.create({ purchase_units: [{
+              description: 'Toydarians · ' + piezasCarro() + ' pieza(s)',
+              amount: { value: total, currency_code: TOY.g.moneda,
+                        breakdown: { item_total: { value: total,
+                                                   currency_code: TOY.g.moneda } } },
+              items: items }] });
+          },
+          onApprove: function(_, actions){
+            return actions.order.capture().then(function(o){
+              carro = {}; guardarCarro();
+              if (cNum) cNum.textContent = '0';
+              if (cBtn) cBtn.dataset.vacio = 'si';
+              cLista.innerHTML = '';
+              cTotal.innerHTML = pesos(0) + '<i>' + TOY.g.moneda + '</i>';
+              cPago.innerHTML = '<div class="g-aviso-pago"><b>Pedido pagado</b>' +
+                'Folio ' + (o.id || '') + '. Te llega el correo de PayPal y ' +
+                'Toydarians se pone en contacto para el envío.</div>';
+            });
+          },
+          onError: function(){
+            cPago.innerHTML = '<div class="g-aviso-pago"><b>No se pudo cobrar</b>' +
+              'Vuelve a intentarlo. No se hizo ningún cargo.</div>';
+          }
+        }).render(cPago);
+      });
+    }
+
+    var irCarro = document.getElementById('g-ir-carro');
+    if (irCarro) irCarro.addEventListener('click', abrirCarro);
+
+    pintarCarro();
+    TOY.g.carro = { agregar: agregar, fijar: fijar, abrir: abrirCarro,
+                    total: totalCarro, piezas: piezasCarro };
 
     // ══════════════════════════════════════════════════════════════════════
     // EL MANDO DE LA VITRINA · buscar, filtrar y ordenar

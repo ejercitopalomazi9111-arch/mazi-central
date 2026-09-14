@@ -575,6 +575,105 @@ p strong{color:var(--hueso);font-weight:500}
 .rejilla.g-ya .pieza{transition:none}
 
 /* ══════════════════════════════════════════════════════════════════════════
+   G · EL CARRITO · esto dejó de ser un escaparate
+   ──────────────────────────────────────────────────────────────────────────
+   Luis, al ver la ficha: «si lo quieres comprar te manda a la página oficial,
+   quiero que ESTA sea la página oficial, que esté todo aquí».
+
+   Así que la compra ya no sale del sitio. Lo que cambia de raíz:
+   · el botón principal de la ficha era «Ver en la tienda ↗» y ahora es
+     «Agregar al carrito»;
+   · hay carrito de verdad, con cantidades, y se cobra el pedido COMPLETO —no
+     pieza por pieza, que era lo que hacía antes—;
+   · los textos que llamaban «la tienda» a otro sitio se reescribieron.
+
+   Lo que NO cambia, y conviene tenerlo escrito: sin el Client ID de PayPal el
+   carrito no cobra. Enseña qué falta y no finge. Un botón de pago que no cobra
+   sigue siendo peor que no tener botón.
+   ══════════════════════════════════════════════════════════════════════════ */
+.g-carro-btn{position:relative;display:inline-flex;align-items:center;gap:8px;
+  background:var(--amarillo);border:1px solid var(--amarillo);color:#0A0A0B;
+  cursor:pointer;padding:10px 13px;font:700 10.5px/1 var(--dato);
+  letter-spacing:.16em;text-transform:uppercase;
+  transition:transform .22s cubic-bezier(.2,.9,.28,1)}
+.g-carro-btn:hover{transform:translate3d(0,-2px,0)}
+.g-carro-btn .n{display:inline-grid;place-items:center;min-width:19px;height:19px;
+  padding:0 5px;background:#0A0A0B;color:var(--amarillo);border-radius:10px;
+  font:700 10px/1 var(--dato);font-variant-numeric:tabular-nums}
+.g-carro-btn[data-vacio="si"] .n{display:none}
+@media (max-width:420px){.g-carro-btn .txt{display:none}.g-carro-btn{padding:10px}}
+
+/* el cajón */
+.g-carro{position:fixed;inset:0;z-index:95;display:grid;
+  grid-template-columns:1fr min(100%,420px)}
+.g-carro[hidden]{display:none}
+.g-carro .velo{background:rgba(4,4,6,.86);border:0;cursor:pointer}
+.g-carro .hoja{background:var(--panel);border-left:1px solid var(--linea);
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;max-height:100%}
+@media (scripting: enabled){
+  .g-carro .velo{opacity:0;transition:opacity .28s ease}
+  .g-carro .hoja{transform:translate3d(100%,0,0);
+    transition:transform .34s cubic-bezier(.2,.9,.28,1)}
+  .g-carro.abierto .velo{opacity:1}
+  .g-carro.abierto .hoja{transform:none}
+}
+.g-carro .cabeza{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:16px 18px;border-bottom:1px solid var(--linea)}
+.g-carro .cabeza h3{font-size:clamp(17px,2.2vw,22px)}
+.g-carro .cerrar{background:var(--panel2);border:1px solid var(--linea);
+  color:var(--hueso);cursor:pointer;width:36px;height:36px;
+  font:400 17px/1 var(--texto)}
+.g-carro .cerrar:hover{border-color:var(--amarillo);color:var(--amarillo)}
+.g-carro .lista{overflow-y:auto;padding:6px 18px;display:grid;
+  align-content:start;gap:0}
+
+.g-reng{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;
+  align-items:center;padding:13px 0;border-bottom:1px solid var(--linea)}
+.g-reng img{width:58px;height:58px;object-fit:contain;background:#0F0F11}
+.g-reng .qn{display:grid;gap:3px;min-width:0}
+.g-reng .nom{font:400 13.5px/1.25 var(--texto);color:var(--hueso)}
+.g-reng .vc{font:700 9.5px/1 var(--dato);letter-spacing:.16em;color:var(--amarillo)}
+.g-reng .uni{font:400 11px/1 var(--dato);color:var(--gris-tenue)}
+.g-reng .mando{display:grid;gap:7px;justify-items:end}
+.g-pasos{display:inline-flex;align-items:center;border:1px solid var(--linea)}
+.g-pasos button{width:30px;height:30px;background:transparent;border:0;
+  color:var(--hueso);cursor:pointer;font:400 15px/1 var(--texto)}
+.g-pasos button:hover{color:var(--amarillo)}
+.g-pasos b{min-width:28px;text-align:center;font:700 12px/1 var(--dato);
+  font-variant-numeric:tabular-nums}
+.g-reng .sub{font:700 12.5px/1 var(--dato);color:var(--hueso);
+  font-variant-numeric:tabular-nums}
+.g-reng .fuera{background:transparent;border:0;padding:0;cursor:pointer;
+  font:700 9px/1 var(--dato);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gris-tenue);text-decoration:underline;text-underline-offset:3px}
+.g-reng .fuera:hover{color:var(--rojo-claro)}
+
+.g-carro .pie{padding:16px 18px;border-top:1px solid var(--linea);
+  display:grid;gap:12px;background:#101012}
+.g-suma{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.g-suma span{font:700 10px/1 var(--dato);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gris-tenue)}
+.g-suma b{font:400 clamp(22px,3vw,30px)/1 var(--display);letter-spacing:-.04em;
+  color:var(--amarillo);font-variant-numeric:tabular-nums}
+.g-suma b i{font:700 10px/1 var(--dato);letter-spacing:.18em;
+  color:var(--gris-tenue);font-style:normal;margin-left:6px}
+.g-vacio-carro{padding:34px 4px;color:var(--gris);font:400 14.5px/1.55 var(--texto)}
+.g-envio{font:400 11.5px/1.5 var(--dato);color:var(--gris-tenue);margin:0}
+
+/* el botón de agregar, en la ficha y en la tarjeta */
+.b.comprar{background:var(--amarillo);border-color:var(--amarillo);color:#0A0A0B}
+.b.comprar:hover{background:var(--hueso);border-color:var(--hueso)}
+.b[data-puesto="si"]{background:var(--verde);border-color:var(--verde);color:#0A0A0B}
+.g-mas-carro{position:absolute;right:9px;bottom:9px;z-index:3;width:38px;height:38px;
+  display:grid;place-items:center;background:var(--amarillo);border:0;
+  color:#0A0A0B;cursor:pointer;font:400 21px/1 var(--texto);opacity:0;
+  transition:opacity .2s,transform .22s cubic-bezier(.2,.9,.28,1)}
+.pieza:hover .g-mas-carro,.pieza:focus-within .g-mas-carro{opacity:1}
+.g-mas-carro:hover{transform:scale(1.08)}
+/* en táctil no hay hover: el botón vive siempre */
+@media (hover:none){.g-mas-carro{opacity:1}}
+
+/* ══════════════════════════════════════════════════════════════════════════
    G · EL EXPEDIENTE · la ficha de cada pieza
    ──────────────────────────────────────────────────────────────────────────
    Carlos lo dijo sin rodeos: «el apartado de cada figura ni se parece en nada

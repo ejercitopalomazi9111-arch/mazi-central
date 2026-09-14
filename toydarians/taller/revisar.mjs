@@ -202,6 +202,21 @@ const MEDIR = () => {
                capas: capas.length, mal: ratio < 4.5 };
     })();
 
+    /* ⚠ UN `NaN` EN UNA VARIABLE DE CSS NO ES UN ERROR, y por eso se coló.
+       El motor escribe `--px`, `--py`, `--cx`, `--cy` y los `transform` de las
+       capas del cielo. Si una cuenta da NaN, el navegador no se queja: la regla
+       simplemente no aplica y el efecto queda muerto, en silencio.
+       Pasó de verdad: dos `var cx` distintas en la misma función —la del
+       puntero y la del lienzo de la intro— se pisaron, y el cartón llevaba
+       quién sabe cuánto con `--cx: NaN`, sin inclinarse de lado. Se veía vivo
+       porque `--cy` sí funcionaba. */
+    const conNaN = [];
+    for (const n of document.querySelectorAll('[style]')) {
+      const s = n.getAttribute('style') || '';
+      if (/NaN|Infinity/.test(s))
+        conNaN.push((n.id || n.className || n.tagName) + ' → ' + s.slice(0, 46));
+    }
+
     const flojos = [];
     /* ⚠ `dd` Y `dt` NO ESTABAN EN ESTA LISTA, y la ficha nueva pone ahi TODOS
          sus datos —linea, escala, estado, numero—. Lo cace probando la propia
@@ -221,7 +236,7 @@ const MEDIR = () => {
       const pide = grande ? 3 : 4.5;
       if (ratio < pide) flojos.push(t.slice(0, 26) + ' ' + ratio.toFixed(2) + '<' + pide);
     }
-    return { fondoVivo, desborde, culpables: culpables.slice(0, 5), cortados, repes: repes.slice(0, 3),
+    return { conNaN: [...new Set(conNaN)].slice(0, 4), fondoVivo, desborde, culpables: culpables.slice(0, 5), cortados, repes: repes.slice(0, 3),
              aplastados: [...new Set(aplastados)].slice(0, 4),
              flojos: flojos.slice(0, 6), sinSuelo: [...new Set(sinSuelo)].slice(0, 4),
              h1: document.querySelectorAll('h1').length, ocultos,
@@ -249,9 +264,9 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 
     const r = await pg.evaluate(MEDIR);
 
-    const mal = fallos.length > 0 || r.desborde > 1 || r.h1 !== 1 || r.ocultos > 0 || r.cortados.length > 0 || r.flojos.length > 0 || r.sinSuelo.length > 0 || r.aplastados.length > 0 || r.repes.length > 0 || (r.fondoVivo && r.fondoVivo.mal);
+    const mal = fallos.length > 0 || r.desborde > 1 || r.h1 !== 1 || r.ocultos > 0 || r.cortados.length > 0 || r.flojos.length > 0 || r.sinSuelo.length > 0 || r.aplastados.length > 0 || r.repes.length > 0 || (r.fondoVivo && r.fondoVivo.mal) || r.conNaN.length > 0;
     if (mal) malo++;
-    console.log(`${w}px js=${js ? 'sí' : 'no '}  desborde ${r.desborde}px  h1 ${r.h1}  ocultos ${r.ocultos}  cortados ${r.cortados.length}  contraste ${r.flojos.length}  sin-suelo ${r.sinSuelo.length}  errores ${fallos.length}  aplastados ${r.aplastados.length}  repetidas ${r.repes.length}  fondo ${r.fondoVivo.falta ? 'NO ESTÁ' : r.fondoVivo.ratio}  alto ${r.alto}px ${mal ? '  ← MAL' : ''}`);
+    console.log(`${w}px js=${js ? 'sí' : 'no '}  desborde ${r.desborde}px  h1 ${r.h1}  ocultos ${r.ocultos}  cortados ${r.cortados.length}  contraste ${r.flojos.length}  sin-suelo ${r.sinSuelo.length}  errores ${fallos.length}  aplastados ${r.aplastados.length}  repetidas ${r.repes.length}  NaN ${r.conNaN.length}  fondo ${r.fondoVivo.falta ? 'NO ESTÁ' : r.fondoVivo.ratio}  alto ${r.alto}px ${mal ? '  ← MAL' : ''}`);
     /* ── SEGUNDO PASE · con el expediente ABIERTO ──────────────────────────
        Solo con JS, claro: sin JS la ficha no se abre y no hay nada que medir.
        Se pulsa una pieza de verdad —no se enciende la clase a mano— porque lo
@@ -288,6 +303,7 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
       }
     }
 
+    r.conNaN.forEach(c => console.log('      NaN en un estilo: ' + c));
     r.culpables.forEach(c => console.log('      desborda ' + c));
     r.cortados.forEach(c => console.log('      corta    ' + c));
     r.flojos.forEach(c => console.log('      flojo    ' + c));
