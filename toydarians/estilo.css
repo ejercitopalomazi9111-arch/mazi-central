@@ -497,6 +497,19 @@ p strong{color:var(--hueso);font-weight:500}
 /* sobre la trama el rotulo si se lee, asi que sube de tinta y baja de peso */
 .g-cat.sin-foto .rotulo{color:rgba(255,255,255,.16)}
 /* y el velo negro de las fotos aqui taparia la trama: se aclara */
+/* ── El conmutador de idioma ─────────────────────────────────────────────
+   Dos letras, no una banderita: una bandera dice «país» y el idioma no es un
+   país —el inglés de un coleccionista de Manchester y el de uno de Texas es
+   el mismo—. Y con `aria-pressed` se anuncia como lo que es: un interruptor
+   que está apagado o encendido, no un enlace a otra página. */
+.g-idioma{margin-left:auto;border:1px solid var(--linea);background:transparent;
+  color:var(--gris-tenue);font:700 10px/1 var(--dato);letter-spacing:.14em;
+  padding:9px 11px;cursor:pointer;transition:color .18s ease,border-color .18s ease}
+.g-idioma:hover,.g-idioma:focus-visible{color:var(--amarillo);border-color:var(--amarillo)}
+.g-idioma[aria-pressed="true"]{color:var(--tinta);background:var(--amarillo);
+  border-color:var(--amarillo)}
+@media (max-width:560px){.g-idioma{padding:8px 9px}}
+
 /* ── «¿Buscas algo?» · las tres vías de contacto ─────────────────────────
    Tres tarjetas y no un formulario: un formulario necesita servidor, y este
    sitio se sube a una carpeta. Un enlace de WhatsApp con el mensaje ya escrito
@@ -674,7 +687,20 @@ p strong{color:var(--hueso);font-weight:500}
   padding:0 5px;background:#0A0A0B;color:var(--amarillo);border-radius:10px;
   font:700 10px/1 var(--dato);font-variant-numeric:tabular-nums}
 .g-carro-btn[data-vacio="si"] .n{display:none}
-@media (max-width:420px){.g-carro-btn .txt{display:none}.g-carro-btn{padding:10px}}
+/* ⚠ EN TELEFONO ESTE BOTON SE QUEDABA VACIO. Debajo de 420 px se esconde la
+   palabra «Carrito», y con el carrito vacío tambien se esconde el contador:
+   quedaba un recuadro amarillo con NADA dentro, que no parece un boton sino un
+   fallo de carga. Se veia solo en telefono y con el carrito vacio —o sea, en
+   la primera visita de todo el mundo—. Ahora, cuando la palabra no cabe, entra
+   una marca de carrito en su lugar, y nunca queda hueco. */
+@media (max-width:420px){
+  .g-carro-btn .txt{display:none}
+  /* y con la palabra fuera, el contador SE QUEDA aunque marque cero: es lo
+     único que le da contenido al botón, y un «0» es información —el carrito
+     está vacío— mientras que un recuadro en blanco es un error. */
+  .g-carro-btn[data-vacio="si"] .n{display:inline-grid;opacity:.55}
+  .g-carro-btn{padding:10px 12px}
+}
 
 /* el cajón */
 .g-carro{position:fixed;inset:0;z-index:95;display:grid;

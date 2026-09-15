@@ -682,6 +682,116 @@ for (const [w, h] of [[390, 844], [768, 1024], [1440, 900]]) {
 }
 
 
+/* ── PASE DEL IDIOMA · que «traducir todo» sea todo ──────────────────────
+   El botón EN cambia el sitio entero a inglés. Lo difícil no es traducir: es
+   que no se quede NADA a medias, porque media página en inglés y media en
+   español se ve peor que la página entera en español.
+
+   La lista contra la que se comprueba NO se escribe aquí: se saca del propio
+   `idioma.js`. Escribirla a mano sería una segunda lista que hay que acordarse
+   de actualizar, y el día que alguien añada una frase al diccionario esta
+   comprobación seguiría en verde sin haberla mirado nunca.
+
+   Tres cosas, y la tercera es la que se rompe sola:
+   · Tras pulsar EN, ninguna cadena visible coincide con una CLAVE del
+     diccionario —si coincide, es que esa frase sigue en español—.
+   · La ficha se arma DESPUÉS de traducir, así que se abre una pieza y se mira
+     dentro. Sin el observador de mutaciones, el expediente salía en español.
+   · De vuelta a español tiene que quedar EXACTO, no «traducido al revés». */
+{
+  /* El diccionario se lee de JUNTO A LA PÁGINA QUE SE MIDE (`BASE`), no de
+     junto a esta compuerta. Lo tuve mal: leía siempre el `idioma.js` del sitio
+     de verdad aunque estuviera midiendo una copia, así que al probar el fallo a
+     mano —quitando una frase del diccionario de la copia— la comprobación
+     reprobaba por el motivo equivocado y el número de frases que imprimía era
+     el del otro archivo. Mismo defecto de siempre: medir en el sitio que no es. */
+  const dicc = await readFile(join(BASE, 'idioma.js'), 'utf8')
+    .then(t => { const m = t.match(/var DIC = (\{.*?\});\n/s); return m ? JSON.parse(m[1]) : null; })
+    .catch(() => null);
+  const ctx = await nav.newContext({ viewport: { width: 390, height: 844 } });
+  const pg = await ctx.newPage();
+  const fallos = [];
+  pg.on('pageerror', (e) => fallos.push('pageerror: ' + e.message));
+  await pg.goto(url, { waitUntil: 'load' });
+  await pg.waitForTimeout(1500);
+
+  const hayBoton = await pg.evaluate(() => !!document.getElementById('g-idioma'));
+  let crudo = null, tras = null, vuelta = null, quedan = [];
+  if (hayBoton && dicc) {
+    crudo = await pg.evaluate(() => document.querySelector('.barra nav a').textContent.trim());
+    // foto del texto ANTES de traducir, para comparar con el de después
+    /* ⚠ SE MIRABAN SOLO LOS ELEMENTOS SIN HIJOS, y eso dejaba ciega la
+       comprobación entera ante los párrafos con `<strong>` dentro — que son
+       casi todos los del sitio. El de la portada («Aquí el número VC es la
+       pieza…») se quedó en español y la compuerta dijo «sin traducir 0».
+       Ahora se recogen los NODOS DE TEXTO directos de cada elemento, que es
+       la unidad que de verdad traduce el conmutador. */
+    const TEXTOS = () => {
+      const out = [];
+      const and = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+      let n;
+      while ((n = and.nextNode())) {
+        const t = (n.nodeValue || '').replace(/\s+/g, ' ').trim();
+        if (!t) continue;
+        const el = n.parentElement;
+        if (!el || !el.getClientRects().length) continue;
+        if (getComputedStyle(el).visibility === 'hidden') continue;
+        out.push(t);
+      }
+      return [...new Set(out)];
+    };
+    const antesES = await pg.evaluate(TEXTOS);
+    await pg.click('#g-idioma'); await pg.waitForTimeout(900);
+    await pg.evaluate(() => { const p = document.querySelector('.rejilla .pieza'); if (p) p.click(); });
+    await pg.waitForTimeout(1200);
+    const visibles = await pg.evaluate(TEXTOS);
+    const claves = new Set(Object.keys(dicc));
+    /* SEGUNDA CAPA, y es la que de verdad importa.
+       La de arriba sólo caza lo que YA está en el diccionario, así que es
+       ciega justo ante el fallo que dice cazar: alguien añade un botón nuevo
+       y no lo mete al diccionario. Lo comprobé quitando una frase y la
+       comprobación pasó en verde.
+       Ésta no depende del diccionario: compara el texto visible ANTES y
+       DESPUÉS de traducir y se queda con lo que NO cambió. De eso, se acusa
+       lo que lleva marcas de español —tildes, eñes, signos de apertura o una
+       palabra vacía castellana— y no es un nombre de pieza ni de serie, que
+       son nombres propios y no se traducen. */
+    const nombres = await pg.evaluate(() => {
+      const d = (window.TOY && TOY.g && TOY.g.piezas) || {};
+      const s = new Set();
+      Object.keys(d).forEach(k => { s.add(d[k].n); s.add(d[k].s); if (d[k].nota) s.add(d[k].nota); });
+      return [...s];
+    });
+    const propios = new Set(nombres);
+    const ES_MARCA = /[áéíóúñü¿¡]|\b(el|la|los|las|de|del|para|con|una|uno|que|se|su|tu|por|sin|como|cada|todas|todos|más|aquí|está|hay|son|pero|y)\b/i;
+    const sinCambiar = visibles.filter(t => antesES.includes(t));
+    const sospechosas = sinCambiar.filter(t =>
+      t.length > 3 && ES_MARCA.test(t) && !propios.has(t) &&
+      ![...propios].some(p => p && t.indexOf(p) >= 0));
+    quedan = [...new Set(visibles.filter(t => claves.has(t)).concat(sospechosas))];
+    tras = await pg.evaluate(() => document.documentElement.lang);
+    // y de vuelta
+    await pg.evaluate(() => { const x = document.getElementById('g-cerrar'); if (x) x.click(); });
+    await pg.waitForTimeout(400);
+    await pg.click('#g-idioma'); await pg.waitForTimeout(900);
+    vuelta = await pg.evaluate(() => document.querySelector('.barra nav a').textContent.trim());
+  }
+  const anchoMal = await pg.evaluate(() =>
+    document.documentElement.scrollWidth > innerWidth + 1);
+  const mal = fallos.length > 0 || !hayBoton || !dicc
+              || tras !== 'en' || quedan.length > 0
+              || vuelta !== crudo || anchoMal;
+  if (mal) malo++;
+  console.log(`390px idioma          diccionario ${dicc ? Object.keys(dicc).length : '—'}  `
+    + `lang ${tras || '—'}  sin traducir ${quedan.length}  `
+    + `vuelve igual ${vuelta === crudo ? 'sí' : 'NO'}  `
+    + `desborde ${anchoMal ? 'SÍ' : 'no'}${mal ? '  ← MAL' : ''}`);
+  quedan.slice(0, 6).forEach(x => console.log('      sigue en español: ' + x.slice(0, 60)));
+  fallos.forEach(c => console.log('      ' + c));
+  await ctx.close();
+}
+
+
 /* ── PASE DE «REDUCIR MOVIMIENTO» ────────────────────────────────────────
    Esta era LA VENTANA CIEGA, y ya se cobro una pieza: un `if (quieto) return;`
    a mitad del guion apagaba todo lo que venia detras —incluida la ficha de
