@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>J5 Data · Propuesta B — Espectro</title>
+<meta name="description" content="Infraestructura de red de misión crítica. Ingenieros CCIE, tecnología Cisco, +20 años. Ciudad de México.">
+<meta name="theme-color" content="#F7F5F1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230B1020'/%3E%3Cg stroke-width='2.4' stroke-linecap='round' fill='none'%3E%3Cpath d='M7 22 Q16 4 25 22' stroke='%231B3BFF'/%3E%3Cpath d='M7 25 Q16 7 25 25' stroke='%23E81E8C'/%3E%3Cpath d='M7 28 Q16 10 25 28' stroke='%23FFB300'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="../fuentes/b.css">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<header class="cabecera" id="cabecera">
+  <div class="caja cabecera__fila">
+    <a class="marca" href="#top" aria-label="J5 Data, inicio">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="#0B1020"/>
+        <g stroke-width="2.4" stroke-linecap="round" fill="none">
+          <path d="M7 22 Q16 4 25 22" stroke="#1B3BFF"/>
+          <path d="M7 25 Q16 7 25 25" stroke="#E81E8C"/>
+          <path d="M7 28 Q16 10 25 28" stroke="#FFB300"/>
+        </g>
+      </svg>
+      <span class="marca__texto">J5<i>.</i>Data</span>
+    </a>
+    <nav class="menu" aria-label="Principal">
+      <a href="#porque">Por qué</a>
+      <a href="#servicios">Servicios</a>
+      <a href="#piso">Infraestructura</a>
+      <a href="#resultados">Resultados</a>
+      <a href="#metodologia">Metodología</a>
+      <a href="#casos">Casos</a>
+    </nav>
+    <a class="btn btn--tinta" href="#contacto" style="padding:.75rem 1.25rem;min-height:42px;font-size:.85rem">Hablemos</a>
+  </div>
+  <div class="cinta-color" aria-hidden="true">
+    <i style="background:#1B3BFF"></i><i style="background:#7A2BFF"></i>
+    <i style="background:#E81E8C"></i><i style="background:#FF5E2B"></i>
+    <i style="background:#FFB300"></i><i style="background:#00A98F"></i>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ══ PORTADA ══ -->
+  <section class="portada">
+    <div class="caja portada__rejilla">
+      <div>
+        <span class="clave">Servicios tecnológicos <b>·</b> Ciudad de México</span>
+        <h1 class="titular">Su red es luz.<em>Que no se apague.</em></h1>
+        <p class="bajada">Somos su equipo de TI. Diseñamos y operamos
+          <b>infraestructura de red de misión crítica</b> con ingenieros
+          <u>CCIE</u>, para el sector público y privado.</p>
+        <div class="acciones">
+          <a class="btn btn--azul" href="#contacto">Agendar diagnóstico
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn" href="#servicios">Ver los seis servicios</a>
+        </div>
+        <dl class="frecuencias">
+          <div><dt>CCIE</dt><dd>Ingenieros certificados</dd></div>
+          <div><dt>Cisco</dt><dd>Tecnología certificada</dd></div>
+          <div><dt>+20 años</dt><dd>De experiencia</dd></div>
+        </dl>
+      </div>
+      <div class="espectro">
+        <canvas id="fibra" aria-label="Modelo tridimensional de un haz de fibra óptica de colores, girable con el ratón"></canvas>
+        <span class="espectro__nota">Haz de 14 fibras · arrastre para girar</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BANDA ══ -->
+  <div class="banda" aria-hidden="true">
+    <div class="banda__pista">
+      <span><i style="background:#1B3BFF"></i>MPLS · L3VPN<i style="background:#7A2BFF"></i>BGP / OSPF / IS-IS<i style="background:#E81E8C"></i>SPINE-LEAF<i style="background:#FF5E2B"></i>CISCO NEXUS<i style="background:#FFB300"></i>VXLAN EVPN<i style="background:#00A98F"></i>WIRELESS WLAN<i style="background:#1B3BFF"></i>HIPERCONVERGENCIA<i style="background:#7A2BFF"></i>ZERO TRUST · ISE<i style="background:#E81E8C"></i>CISCO UMBRELLA<i style="background:#FF5E2B"></i>STEALTHWATCH<i style="background:#FFB300"></i>IoT NETWORK<i style="background:#00A98F"></i>QoS EXTREMO A EXTREMO<i style="background:#1B3BFF"></i>ALTA DISPONIBILIDAD</span>
+      <span><i style="background:#1B3BFF"></i>MPLS · L3VPN<i style="background:#7A2BFF"></i>BGP / OSPF / IS-IS<i style="background:#E81E8C"></i>SPINE-LEAF<i style="background:#FF5E2B"></i>CISCO NEXUS<i style="background:#FFB300"></i>VXLAN EVPN<i style="background:#00A98F"></i>WIRELESS WLAN<i style="background:#1B3BFF"></i>HIPERCONVERGENCIA<i style="background:#7A2BFF"></i>ZERO TRUST · ISE<i style="background:#E81E8C"></i>CISCO UMBRELLA<i style="background:#FF5E2B"></i>STEALTHWATCH<i style="background:#FFB300"></i>IoT NETWORK<i style="background:#00A98F"></i>QoS EXTREMO A EXTREMO<i style="background:#1B3BFF"></i>ALTA DISPONIBILIDAD</span>
+    </div>
+  </div>
+
+  <!-- ══ POR QUÉ ══ -->
+  <section class="seccion" id="porque">
+    <div class="caja">
+      <div class="cabeza revelar">
+        <span class="clave">[ 01 ] <b>Por qué J5 Data</b></span>
+        <h2>Tres razones para confiarnos su red</h2>
+      </div>
+      <div class="razones revelar">
+        <article class="razon"><span class="razon__n">01</span>
+          <h3>Mejor valor</h3>
+          <p>Calidad empresarial que cabe en su presupuesto.</p></article>
+        <article class="razon"><span class="razon__n">02</span>
+          <h3>Ingenieros certificados</h3>
+          <p>Certificación CCIE de nivel experto en tecnologías Cisco.</p></article>
+        <article class="razon"><span class="razon__n">03</span>
+          <h3>Resultados más rápido</h3>
+          <p>Metodología ITIL y PMI que entrega a tiempo.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SERVICIOS ══ -->
+  <section class="seccion" id="servicios" style="padding-top:0">
+    <div class="caja">
+      <div class="cabeza revelar">
+        <span class="clave">[ 02 ] <b>Nuestros servicios</b></span>
+        <h2>Seis capacidades. Una sola red que responde</h2>
+        <p>Agnósticos a la tecnología. Prácticos por diseño. Cada capacidad se
+          entrega documentada, probada y con su equipo capacitado.</p>
+      </div>
+      <div class="servicios revelar">
+
+        <article class="servicio" style="--c:var(--azul)">
+          <span class="servicio__n">01</span>
+          <div><h3>Routing &amp; Switching</h3>
+            <p class="servicio__d">Redes confiables que <b>crecen con su negocio</b>.
+              Transporte MPLS, L3VPN por cliente y enrutamiento dinámico entre sedes.</p></div>
+          <div class="servicio__tags"><span>Enrutamiento</span><span>Conmutación</span><span>Escalabilidad</span></div>
+        </article>
+
+        <article class="servicio" style="--c:var(--violeta)">
+          <span class="servicio__n">02</span>
+          <div><h3>Wireless</h3>
+            <p class="servicio__d">Cobertura empresarial con <b>gestión centralizada</b>
+              y roaming sin cortes entre puntos de acceso.</p></div>
+          <div class="servicio__tags"><span>WLAN</span><span>Roaming</span><span>Seguridad</span></div>
+        </article>
+
+        <article class="servicio" style="--c:var(--magenta)">
+          <span class="servicio__n">03</span>
+          <div><h3>Infraestructura hiperconvergente</h3>
+            <p class="servicio__d">Máxima flexibilidad, <b>mínimo gasto operativo</b>.
+              Cómputo, almacenamiento y red en un solo bloque.</p></div>
+          <div class="servicio__tags"><span>HCI</span><span>All-Flash</span><span>Baja latencia</span></div>
+        </article>
+
+        <article class="servicio" style="--c:var(--coral)">
+          <span class="servicio__n">04</span>
+          <div><h3>Colaboración</h3>
+            <p class="servicio__d">Voz, video y datos en <b>una sola plataforma</b>,
+              con calidad de servicio de extremo a extremo.</p></div>
+          <div class="servicio__tags"><span>Webex</span><span>Meraki</span><span>UC</span></div>
+        </article>
+
+        <article class="servicio" style="--c:var(--ambar)">
+          <span class="servicio__n">05</span>
+          <div><h3>IoT Network</h3>
+            <p class="servicio__d">Redes IoT seguras, <b>a la medida de su operación</b>,
+              con segmentación y auditoría de cada dispositivo.</p></div>
+          <div class="servicio__tags"><span>Sensórica</span><span>Edge</span><span>Auditoría</span></div>
+        </article>
+
+        <article class="servicio" style="--c:var(--turquesa)">
+          <span class="servicio__n">06</span>
+          <div><h3>Seguridad</h3>
+            <p class="servicio__d">Arquitectura <b>Zero Trust</b> con visibilidad total:
+              quién entra, desde dónde y a qué alcanza.</p></div>
+          <div class="servicio__tags"><span>Zero Trust</span><span>NAC · ISE</span><span>Umbrella</span></div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ EL PISO (3D) ══ -->
+  <section class="seccion" id="piso" style="padding-top:0">
+    <div class="caja">
+      <div class="cabeza revelar">
+        <span class="clave">[ 03 ] <b>El centro de datos</b></span>
+        <h2>Una sala, vista desde arriba</h2>
+        <p>Veinticuatro gabinetes en cuatro filas, con su pasillo frío y su
+          canalización aérea. Gírela: así se diseña antes de instalarse.</p>
+      </div>
+      <div class="piso revelar">
+        <span class="piso__tirar">Arrastre para girar</span>
+        <canvas id="sala" aria-label="Maqueta tridimensional de la sala de un centro de datos, girable con el ratón"></canvas>
+        <div class="piso__pie">
+          <span>24 gabinetes · <b>4 filas</b> · pasillo frío/caliente</span>
+          <span>Doble acometida eléctrica · <b>redundancia N+1</b></span>
+          <span id="sala-fps">— fps</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FRANJA ══ -->
+  <section class="seccion" style="padding-top:0">
+    <div class="caja">
+      <div class="franja revelar">
+        <img src="../assets/img/datacenter-hall.webp" alt="Pasillo de un centro de datos con gabinetes iluminados" loading="lazy" decoding="async">
+        <div class="franja__texto">
+          <span class="clave">Infraestructura de misión crítica</span>
+          <h2>Operamos donde nada puede fallar</h2>
+          <p>Hospitales, banca, gobierno y manufactura. Cuando la red se cae, se
+            cae la operación entera — por eso diseñamos con redundancia en cada capa.</p>
+          <dl class="franja__cifras">
+            <div><dt>24/7</dt><dd>Monitoreo</dd></div>
+            <div><dt>+20</dt><dd>Años</dd></div>
+            <div><dt>99.99%</dt><dd>Disponibilidad</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ RESULTADOS ══ -->
+  <section class="seccion" id="resultados" style="padding-top:0">
+    <div class="caja">
+      <div class="cabeza revelar">
+        <span class="clave">[ 04 ] <b>Centro de operaciones</b></span>
+        <h2>Resultados que se miden en tiempo real</h2>
+      </div>
+
+      <dl class="resultados revelar">
+        <div class="cifra" style="--c:var(--turquesa)" data-meta="99.99">
+          <dt><span data-cuenta="99.99" data-dec="2">0</span>%</dt>
+          <div class="cifra__barra"><i></i></div>
+          <dd>Disponibilidad objetivo (SLA) para servicios de misión crítica.</dd></div>
+        <div class="cifra" style="--c:var(--azul)" data-meta="30">
+          <dt>−<span data-cuenta="30">0</span>%</dt>
+          <div class="cifra__barra"><i></i></div>
+          <dd>Reducción del tiempo medio de recuperación (MTTR).</dd></div>
+        <div class="cifra" style="--c:var(--magenta)" data-meta="50">
+          <dt>−<span data-cuenta="50">0</span>%</dt>
+          <div class="cifra__barra"><i></i></div>
+          <dd>Menos incidentes críticos con arquitecturas resilientes.</dd></div>
+        <div class="cifra" style="--c:var(--coral)" data-meta="60">
+          <dt>+<span data-cuenta="60">0</span>%</dt>
+          <div class="cifra__barra"><i></i></div>
+          <dd>Eficiencia en implementación con metodología probada.</dd></div>
+      </dl>
+
+      <div class="consola revelar">
+        <div class="consola__caja">
+          <div class="consola__barra">
+            <span>Latencia de red · ms</span>
+            <b>Todos los sistemas operativos</b>
+          </div>
+          <canvas id="latencia" aria-label="Gráfica de latencia de red simulada, en milisegundos"></canvas>
+          <dl class="consola__lecturas">
+            <div><dt id="lat-act">—</dt><dd>ms actual</dd></div>
+            <div><dt id="lat-prom">—</dt><dd>ms promedio</dd></div>
+            <div><dt id="lat-pico">—</dt><dd>ms pico</dd></div>
+          </dl>
+        </div>
+        <div class="aguja">
+          <canvas id="aguja" aria-label="Indicador circular de disponibilidad, 99.99 por ciento"></canvas>
+          <p>Disponibilidad comprometida</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ METODOLOGÍA ══ -->
+  <section class="seccion" id="metodologia" style="padding-top:0">
+    <div class="caja">
+      <div class="cabeza revelar">
+        <span class="clave">[ 05 ] <b>Metodología</b></span>
+        <h2>Del requerimiento a producción, sin sorpresas</h2>
+        <p>Proceso trazable, alineado a ITIL y PMI. Usted sabe en qué paso está
+          su proyecto y quién responde por él.</p>
+      </div>
+      <div class="escalera revelar" id="escalera">
+        <article class="tramo" style="--c:var(--azul)"><span class="tramo__n">01</span>
+          <h3>Levantamiento</h3><p>Análisis de necesidades técnicas y operativas, con su gente.</p></article>
+        <article class="tramo" style="--c:var(--violeta)"><span class="tramo__n">02</span>
+          <h3>Arquitectura</h3><p>Validada en dos fases: diseño de alto nivel (HLD) y de bajo nivel (LLD).</p></article>
+        <article class="tramo" style="--c:var(--magenta)"><span class="tramo__n">03</span>
+          <h3>Gestión</h3><p>Hitos claros, responsables asignados y reporte de avance.</p></article>
+        <article class="tramo" style="--c:var(--coral)"><span class="tramo__n">04</span>
+          <h3>Implementación</h3><p>Ventanas acordadas y procedimientos de reversión definidos de antemano.</p></article>
+        <article class="tramo" style="--c:var(--ambar)"><span class="tramo__n">05</span>
+          <h3>Validación</h3><p>Verificación contra el diseño y aceptación formal por escrito.</p></article>
+        <article class="tramo" style="--c:var(--turquesa)"><span class="tramo__n">06</span>
+          <h3>Transferencia</h3><p>Documentación entregada y capacitación de su equipo.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CASOS ══ -->
+  <section class="seccion" id="casos" style="padding-top:0">
+    <div class="caja">
+      <div class="cabeza revelar">
+        <span class="clave">[ 06 ] <b>Casos de éxito</b></span>
+        <h2>Proyectos críticos, de punta a punta</h2>
+      </div>
+
+      <a class="caso revelar" style="--c:var(--azul)" href="../casos.html#caso-01">
+        <div class="caso__foto"><img src="../assets/img/network-abstract.webp" alt="Representación abstracta de una red de transporte" loading="lazy" decoding="async"></div>
+        <div>
+          <span class="caso__id">Caso 01 · Service provider</span>
+          <h3>Red nacional en 12 ciudades</h3>
+          <p>Transporte MPLS con una L3VPN por cliente y BGP entre sedes. Doce
+            ciudades en un solo dominio de enrutamiento, sin que un cliente vea
+            el tráfico de otro.</p>
+          <div class="caso__tec"><span>MPLS</span><span>L3VPN</span><span>BGP</span></div>
+          <span class="caso__mas">Ver el caso
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+
+      <a class="caso revelar" style="--c:var(--magenta)" href="../casos.html#caso-02">
+        <div class="caso__foto"><img src="../assets/img/server-racks.webp" alt="Gabinetes de servidores en un centro de datos" loading="lazy" decoding="async"></div>
+        <div>
+          <span class="caso__id">Caso 02 · Data center</span>
+          <h3>Data center de alta disponibilidad</h3>
+          <p>Fábrica spine-leaf con VXLAN EVPN y vPC. Cualquier equipo puede caer
+            —o mantenerse— sin que la sala pierda un solo paquete.</p>
+          <div class="caso__tec"><span>Spine-leaf</span><span>VXLAN</span><span>vPC</span></div>
+          <span class="caso__mas">Ver el caso
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+
+      <a class="caso revelar" style="--c:var(--coral)" href="../casos.html#caso-03">
+        <div class="caso__foto"><img src="../assets/img/fiber-optic.webp" alt="Fibra óptica conectada a un panel de parcheo" loading="lazy" decoding="async"></div>
+        <div>
+          <span class="caso__id">Caso 03 · Corporativo</span>
+          <h3>Red corporativa · 20 sucursales</h3>
+          <p>Túneles IPsec sobre internet, enrutamiento OSPF/BGP y redundancia de
+            puerta de enlace con HSRP en cada sucursal.</p>
+          <div class="caso__tec"><span>IPsec</span><span>OSPF/BGP</span><span>HSRP</span></div>
+          <span class="caso__mas">Ver el caso
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+
+      <div class="revelar" style="margin-top:3.6rem">
+        <span class="clave">La familia J5 Data</span>
+        <h2 style="margin-top:.9rem;font-size:clamp(1.7rem,3.2vw,2.5rem)">Lo que más
+          valoramos es a <em style="color:var(--magenta)">nuestra gente</em></h2>
+        <div class="valores">
+          <span>Excelencia</span><span>Disciplina</span><span>Cliente primero</span>
+          <span>Proactividad</span><span>Pasión por la TI</span><span>Respeto e inclusión</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CONTACTO ══ -->
+  <section class="seccion" id="contacto" style="padding-top:0">
+    <div class="caja">
+      <div class="contacto revelar">
+        <div>
+          <span class="clave">[ 07 ] <b>Hablemos</b></span>
+          <h2 style="margin-top:1rem">Su próxima red empieza con una <em>conversación</em></h2>
+          <p>Cuéntenos su desafío. Un ingeniero senior le responde, sin compromiso.</p>
+          <div class="fichas">
+            <a class="ficha" href="tel:+525544671406"><span>Tel</span><b>55 4467 1406</b></a>
+            <a class="ficha" href="mailto:contacto@j5data.com.mx"><span>Mail</span><b>contacto@j5data.com.mx</b></a>
+            <a class="ficha" href="https://www.j5data.com.mx"><span>Web</span><b>www.j5data.com.mx</b></a>
+            <div class="ficha"><span>Sede</span><b>Ciudad de México, MX</b></div>
+          </div>
+        </div>
+        <form class="forma" id="forma">
+          <div class="campo"><label for="f-nombre">Nombre</label>
+            <input id="f-nombre" name="nombre" type="text" autocomplete="name" required></div>
+          <div class="campo"><label for="f-empresa">Empresa u organismo</label>
+            <input id="f-empresa" name="empresa" type="text" autocomplete="organization"></div>
+          <div class="campo"><label for="f-correo">Correo</label>
+            <input id="f-correo" name="correo" type="email" autocomplete="email" required></div>
+          <div class="campo"><label for="f-reto">¿Qué reto de red quiere resolver?</label>
+            <textarea id="f-reto" name="reto" required></textarea></div>
+          <div class="trampa" aria-hidden="true"><label for="f-web">No llenar</label>
+            <input id="f-web" name="sitio" type="text" tabindex="-1" autocomplete="off"></div>
+          <button class="btn" type="submit">Enviar mensaje
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <p class="nota">Se abrirá su cliente de correo con el mensaje listo para enviar.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pie">
+  <div class="caja">
+    <div class="pie__rejilla">
+      <div class="pie__marca">
+        <span class="marca__texto" style="font-size:1.5rem">J5<i style="color:var(--magenta);font-style:normal">.</i>Data</span>
+        <p>Somos su equipo de TI. Infraestructura de red de misión crítica para el
+          sector público y privado.</p>
+      </div>
+      <div><h4>Servicios</h4><ul>
+        <li><a href="#servicios">Routing &amp; Switching</a></li>
+        <li><a href="#servicios">Wireless</a></li>
+        <li><a href="#servicios">Hiperconvergencia</a></li>
+        <li><a href="#servicios">Seguridad</a></li></ul></div>
+      <div><h4>Empresa</h4><ul>
+        <li><a href="#porque">Por qué J5</a></li>
+        <li><a href="#resultados">Resultados</a></li>
+        <li><a href="#casos">Casos</a></li>
+        <li><a href="#contacto">Contacto</a></li></ul></div>
+      <div><h4>Contacto</h4><ul>
+        <li><a href="tel:+525544671406">55 4467 1406</a></li>
+        <li><a href="mailto:contacto@j5data.com.mx">contacto@j5data.com.mx</a></li>
+        <li>Ciudad de México, MX</li></ul></div>
+    </div>
+    <div class="pie__legal">
+      <span>© 2026 J5 Data Services · CDMX, México</span>
+      <span>Cisco Partner · Ingenieros CCIE</span>
+    </div>
+  </div>
+</footer>
+
+<script src="../vendor/three.min.js"></script>
+<script src="escena.js"></script>
+</body>
+</html>
