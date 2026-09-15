@@ -87,6 +87,31 @@
         "sólo funciona en un tamaño"
       ],
       "salioDe": "Las comprobaciones a cuatro anchos del sitio del Instituto."
+    },
+    {
+      "id": "la-etiqueta-que-cambio-de-contenido-y-no-de-tamano",
+      "titulo": "La etiqueta cambió de contenido y el CSS que la sostenía seguía midiendo el contenido viejo",
+      "gravedad": "media",
+      "sintoma": "Una insignia sobre una foto —una píldora, un badge, una chapa— se sale de su recuadro por la derecha justo después de un cambio que sólo tocaba el TEXTO, no el estilo.",
+      "causa": "La caja no tenía ancho propio: se lo daba el contenido. Mientras dijo «VC 349» —seis caracteres— cualquier hueco le sobraba, así que nadie le puso techo. El día que pasó a decir la saga, el texto más largo fue «THE EMPIRE STRIKES BACK», cuatro veces más, y siguió creciendo hasta salirse.",
+      "porque": "Un cambio de texto no se lee como un cambio de layout, así que no se revisa el CSS. Y el estilo pasaba todas las revisiones anteriores porque con el contenido viejo era correcto: el defecto no estaba en el CSS, estaba en el supuesto que el CSS daba por hecho.",
+      "arreglo": "Ponerle techo a la caja en vez de confiar en el contenido: `max-width` relativo a su contenedor, `overflow:hidden` y `text-overflow:ellipsis` para que degrade en vez de desbordar. Y `box-sizing:border-box` SIEMPRE que haya `padding`: sin él el relleno se suma por fuera del tope y el `max-width` miente por esos píxeles.",
+      "comoCazarlo": "Medir en el navegador, no leer: por cada insignia, comparar su rectángulo con el de su contenedor a varios anchos y contar cuántas se pasan. Y como el techo no se activa con el texto más largo de HOY —aquí la foto más angosta medía 266 px y la etiqueta más ancha 173—, hay que forzarlo: meterle a mano un texto largo con y sin la regla. Sin la regla se pasaba 120 px de la foto; con ella se quedó 9 px adentro y con «…». Un guardián que nunca se vio actuar no está comprobado.",
+      "consejo": "Cuando cambie lo que DICE un elemento, revisa lo que MIDE. El texto es la variable y la caja es el supuesto, y el supuesto casi nunca está escrito.",
+      "senales": [
+        "se sale de la foto",
+        "se desborda la etiqueta",
+        "sólo cambié el texto y se rompió",
+        "en pantalla angosta se sale",
+        "el max-width no lo detiene"
+      ],
+      "salioDe": "toydarians · la etiqueta amarilla de la rejilla pasó del número de catálogo a la saga de la pieza. El cambio era de una línea y arrastró tres reglas de CSS.",
+      "vecinas": [
+        "disenado-con-tres-elementos",
+        "el-espacio-que-se-recorta-primero",
+        "editar-en-dist-y-perderlo",
+        "ver-la-pantalla"
+      ]
     }
   ]
 }
