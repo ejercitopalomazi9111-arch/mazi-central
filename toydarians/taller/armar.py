@@ -417,9 +417,18 @@ CSS += r"""
 .foto img{position:absolute;left:6%;top:4%;width:88%;height:88%;
   object-fit:contain;object-position:bottom;
   filter:drop-shadow(0 12px 14px rgba(0,0,0,.55))}
+/* ⚠ EL TECHO Y EL RECORTE NO SON ADORNO: LA ETIQUETA CAMBIO DE CONTENIDO.
+   Mientras decia el numero de catalogo —«VC 349», seis caracteres— cualquier
+   ancho le sobraba. Desde que dice la SAGA, el texto mas largo es «THE EMPIRE
+   STRIKES BACK»: cuatro veces mas, y en una rejilla angosta se salia de la
+   foto por la derecha. El `max-width` la topa al ancho de la foto menos sus
+   dos margenes de 9px, y `box-sizing` cuenta el `padding` dentro de ese tope;
+   sin el, las 16px de relleno se sumaban por fuera y el tope mentia. */
 .pildora{position:absolute;top:9px;left:9px;z-index:2;
   font:700 9.5px/1 var(--dato);letter-spacing:.14em;text-transform:uppercase;
-  background:var(--amarillo);color:#0A0A0B;padding:6px 8px}
+  background:var(--amarillo);color:#0A0A0B;padding:6px 8px;
+  box-sizing:border-box;max-width:calc(100% - 18px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pildora.serie{background:#0A0A0B;color:var(--amarillo);
   border:1px solid var(--amarillo-hondo);left:auto;right:9px}
 .ficha-p{padding:13px 13px 15px;display:grid;gap:7px;flex:1}
@@ -1595,11 +1604,59 @@ def g_categorias(actual):
                 f'data-cat="{slug}" data-n="{tengo}">{dentro}</button>')
     return '<div class="g-cats">' + ''.join(fichas) + '</div>'
 
+# ══ LA ETIQUETA AMARILLA DICE LA SAGA, NO EL NUMERO ═══════════════════════
+# Luis: en la rejilla, el numero de catalogo sobre la foto no le dice nada a
+# quien esta mirando. «VC 349» es un dato de inventario; lo que hace que
+# alguien pare el dedo es «THE MANDALORIAN». Asi que en la tarjeta se
+# INTERCAMBIAN los dos textos: la etiqueta amarilla lleva la saga y el renglon
+# gris de abajo —que hasta ahora repetia la serie— se queda con el numero.
+#
+# El numero NO desaparece de ningun otro lado, y eso es lo que hace que el
+# cambio sea barato: la ficha de detalle sigue diciendo «VC 231 · EXPEDIENTE»
+# y «Nº DE PIEZA», el buscador lo sigue encontrando por `data-b`, los filtros
+# siguen yendo por `data-serie`, el enlace directo sigue siendo `#vc-231` y el
+# pedido de PayPal se sigue llamando igual. Es un cambio de lo que se PINTA en
+# la rejilla, no del dato.
+#
+# ⚠ Y LA SAGA NO SE ADIVINA POR PERSONAJE. 31 de las 47 piezas traen como
+#   serie «The Vintage Collection», que es el nombre de la LINEA de Hasbro y
+#   no el de una pelicula: la tienda no dice de que titulo sale cada una.
+#   Adivinarlo por el personaje seria inventar dato del cliente, que es
+#   justamente lo que no se hace aqui (la misma regla por la que esas 31 no
+#   aparecen bajo ninguna chapa de serie). Lo que SI se sabe con certeza de
+#   toda esa linea es la franquicia, asi que dicen STAR WARS y ya.
+SAGA_DE_LA_LINEA = {'The Vintage Collection': 'Star Wars'}
+
+# Series que nombran una linea que NO pertenece a una sola saga: ahi no hay
+# saga que poner, y la tarjeta se queda exactamente como estaba —etiqueta con
+# su `pil`, renglon gris con la serie—. Hoy es una sola pieza, el «Stand Para
+# Figuras de 3.75"», que es un accesorio generico. «Funko Pop!» esta por la
+# misma razon y no por una que se haya visto: ninguna pieza la trae hoy, pero
+# es la serie generica de esa pagina, y el dia que llegue una asi vale mas
+# dejarle su FUNKO que pintarle «FUNKO POP!» de saga.
+SIN_SAGA = {'Impresión 3D', 'Funko Pop!'}
+
+def saga_de(pz):
+    """La saga de una pieza para la etiqueta de su tarjeta, o None si no hay.
+
+    None significa «esta tarjeta no se toca», no «falta el dato»: son las dos
+    respuestas distintas que se veian iguales si esto devolviera ''.
+    """
+    serie = pz['serie']
+    if not serie or serie in SIN_SAGA:
+        return None
+    return SAGA_DE_LA_LINEA.get(serie, serie)
+
 def g_rejilla(piezas):
     """Las fichas con su foto REAL, no cinco renders de fabrica."""
     t = []
     for pz in piezas:
         pr = pz['precio']
+        # Los dos textos de la tarjeta salen de aqui y no de dos sitios: si la
+        # pieza tiene saga se intercambian, y si no, se quedan como estaban.
+        saga = saga_de(pz)
+        etiqueta = saga.upper() if saga else pz['pil']
+        renglon  = pz['pil'] if saga else pz['serie']
         t.append(
             f'<button class="pieza" data-vc="{esc(pz["k"])}" type="button" '
             # Lo que el buscador necesita va EN la tarjeta y no en un objeto
@@ -1611,7 +1668,7 @@ def g_rejilla(piezas):
             f'data-serie="{esc(pz["serie"])}" '
             f'data-n="{pz["n"]}" data-precio="{int(pr or 0)}" '
             f'aria-haspopup="dialog">'
-            f'<span class="foto"><span class="pildora">{esc(pz["pil"])}</span>'
+            f'<span class="foto"><span class="pildora">{esc(etiqueta)}</span>'
             f'<img src="fotos/{pz["fotos"][0]}" alt="{esc(pz["nom"])}" loading="lazy" '
             f'decoding="async" width="680" height="680">'
             + (f'<span class="mas">+{len(pz["fotos"])-1}</span>' if len(pz['fotos']) > 1 else '')
@@ -1623,7 +1680,7 @@ def g_rejilla(piezas):
                f'tabindex="0" aria-label="Agregar {esc(pz["nom"])} al carrito">+</span>'
                if pr else '')
             + f'</span><span class="ficha-p"><span class="nom">{esc(pz["nom"])}</span>'
-            f'<span class="met">{esc(pz["serie"])}</span>'
+            f'<span class="met">{esc(renglon)}</span>'
             + (f'<span class="precio">$ {pr:,.0f}<i>{MONEDA}</i></span>' if pr
                else '<span class="precio consulta">Precio a consultar</span>')
             + f'<span class="ir">Ver a detalle</span></span></button>')

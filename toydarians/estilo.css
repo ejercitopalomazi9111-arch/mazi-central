@@ -347,9 +347,18 @@ p strong{color:var(--hueso);font-weight:500}
 .foto img{position:absolute;left:6%;top:4%;width:88%;height:88%;
   object-fit:contain;object-position:bottom;
   filter:drop-shadow(0 12px 14px rgba(0,0,0,.55))}
+/* ⚠ EL TECHO Y EL RECORTE NO SON ADORNO: LA ETIQUETA CAMBIO DE CONTENIDO.
+   Mientras decia el numero de catalogo —«VC 349», seis caracteres— cualquier
+   ancho le sobraba. Desde que dice la SAGA, el texto mas largo es «THE EMPIRE
+   STRIKES BACK»: cuatro veces mas, y en una rejilla angosta se salia de la
+   foto por la derecha. El `max-width` la topa al ancho de la foto menos sus
+   dos margenes de 9px, y `box-sizing` cuenta el `padding` dentro de ese tope;
+   sin el, las 16px de relleno se sumaban por fuera y el tope mentia. */
 .pildora{position:absolute;top:9px;left:9px;z-index:2;
   font:700 9.5px/1 var(--dato);letter-spacing:.14em;text-transform:uppercase;
-  background:var(--amarillo);color:#0A0A0B;padding:6px 8px}
+  background:var(--amarillo);color:#0A0A0B;padding:6px 8px;
+  box-sizing:border-box;max-width:calc(100% - 18px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pildora.serie{background:#0A0A0B;color:var(--amarillo);
   border:1px solid var(--amarillo-hondo);left:auto;right:9px}
 .ficha-p{padding:13px 13px 15px;display:grid;gap:7px;flex:1}
