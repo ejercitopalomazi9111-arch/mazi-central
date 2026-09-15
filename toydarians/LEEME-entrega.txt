@@ -25,9 +25,10 @@ Descomprime el ZIP. Te queda una carpeta con esto dentro:
     index.html       la portada
     funko.html       la página de Funko
     3d-print.html    la página de impresión 3D
-    estilo.css
-    motor.js
-    datos-*.js
+    estilo.css       los estilos
+    motor.js         el movimiento, el buscador y el carrito
+    idioma.js        el botón EN, que traduce el sitio al inglés
+    datos-*.js       el catálogo de cada página
     marca/           logotipo y tipografías
     fotos/           las 306 fotos
 
@@ -134,9 +135,9 @@ LO QUE NO HAY QUE TOCAR
 
   · No cambies de nombre ni muevas `marca/` ni `fotos/`. La página las
     busca por su nombre y se quedaría sin fotos.
-  · No edites los `.html`, ni `estilo.css`, ni los `datos-*.js`. Se
-    generan desde el proyecto: un cambio a mano se pierde la próxima
-    vez que se regenere el sitio.
+  · No edites los `.html`, ni `estilo.css`, ni `idioma.js`, ni los
+    `datos-*.js`. Se generan desde el proyecto: un cambio a mano se
+    pierde la próxima vez que se regenere el sitio.
   · De `motor.js`, sólo las dos líneas del paso 3.
 
 Si hay que cambiar un precio, una foto o un texto, se avisa y se
@@ -156,6 +157,9 @@ Tres páginas, 62 piezas:
 Todo se compra dentro del sitio: buscador, filtros por serie, ficha de
 cada pieza con su galería, y carrito que cobra el pedido completo de una
 vez (no una figura por una).
+
+Arriba a la derecha hay un botón EN: al tocarlo, TODA la página queda en
+inglés, y vuelve a español tocándolo otra vez.
 
 Truco: si le pones  #vc-357  al final de la dirección, abre esa figura
 sola. Sirve para mandar una pieza concreta por WhatsApp.

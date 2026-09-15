@@ -18,12 +18,28 @@ RAIZ = AQUI.parent
 SALE = pathlib.Path('/home/user/entrega')
 CARP = SALE / 'toydarians-sitio'
 
-# Lo que se publica: todo menos el taller, las notas internas y la propia
-# descarga. Si manana se añade otra pagina, entra sola.
+# ⚠ ESTA LISTA ERA A MANO Y YA MINTIO UNA VEZ.
+# Decia `FIJO = ['estilo.css', 'motor.js']`, asi que el dia que el sitio gano
+# `idioma.js` —el conmutador de idioma— el ZIP salio SIN el. Las tres paginas
+# lo pedian y el cliente se habria encontrado un boton EN muerto, con un 404
+# que solo se ve abriendo la consola. El generador estaba bien, el sitio
+# publicado estaba bien, y el paquete que se entrega estaba roto: el defecto
+# vivia justo en el unico sitio que nadie vuelve a mirar.
+#
+# Ahora la lista NO se escribe: se lee de lo que las propias paginas piden en
+# sus `<script src>` y `<link href>`. Un archivo nuevo entra solo en cuanto
+# alguna pagina lo cargue, que es exactamente cuando hace falta.
 PAGS = sorted(RAIZ.glob('*.html'))
-DATS = sorted(RAIZ.glob('datos-*.js'))
-FIJO = ['estilo.css', 'motor.js']
 DIRS = ['marca', 'fotos']
+
+def _pide(pagina):
+    t = pagina.read_text(encoding='utf-8')
+    return re.findall(r'(?:src|href)="([^":]+\.(?:js|css))"', t)
+
+RECURSOS = sorted({r for p in PAGS for r in _pide(p)})
+faltan = [r for r in RECURSOS if not (RAIZ / r).is_file()]
+if faltan:
+    raise SystemExit(f'las paginas piden archivos que no existen: {faltan}')
 
 def piezas_de(dato):
     d = json.loads(re.search(r'TOY\.g\.piezas=(\{.*?\});', dato, re.S).group(1))
@@ -74,9 +90,10 @@ Descomprime el ZIP. Te queda una carpeta con esto dentro:
     index.html       la portada
     funko.html       la página de Funko
     3d-print.html    la página de impresión 3D
-    estilo.css
-    motor.js
-    datos-*.js
+    estilo.css       los estilos
+    motor.js         el movimiento, el buscador y el carrito
+    idioma.js        el botón EN, que traduce el sitio al inglés
+    datos-*.js       el catálogo de cada página
     marca/           logotipo y tipografías
     fotos/           las {len(fotos)} fotos
 
@@ -183,9 +200,9 @@ LO QUE NO HAY QUE TOCAR
 
   · No cambies de nombre ni muevas `marca/` ni `fotos/`. La página las
     busca por su nombre y se quedaría sin fotos.
-  · No edites los `.html`, ni `estilo.css`, ni los `datos-*.js`. Se
-    generan desde el proyecto: un cambio a mano se pierde la próxima
-    vez que se regenere el sitio.
+  · No edites los `.html`, ni `estilo.css`, ni `idioma.js`, ni los
+    `datos-*.js`. Se generan desde el proyecto: un cambio a mano se
+    pierde la próxima vez que se regenere el sitio.
   · De `motor.js`, sólo las dos líneas del paso 3.
 
 Si hay que cambiar un precio, una foto o un texto, se avisa y se
@@ -203,6 +220,9 @@ Tres páginas, {TOTAL} piezas:
 Todo se compra dentro del sitio: buscador, filtros por serie, ficha de
 cada pieza con su galería, y carrito que cobra el pedido completo de una
 vez (no una figura por una).
+
+Arriba a la derecha hay un botón EN: al tocarlo, TODA la página queda en
+inglés, y vuelve a español tocándolo otra vez.
 
 Truco: si le pones  #vc-357  al final de la dirección, abre esa figura
 sola. Sirve para mandar una pieza concreta por WhatsApp.
@@ -229,7 +249,7 @@ titulares. Este sitio no está afiliado a ellos.
 if CARP.exists(): shutil.rmtree(CARP)
 CARP.mkdir(parents=True)
 (CARP / 'LEEME.txt').write_text(LEEME, encoding='utf-8')
-for f in PAGS + DATS + [RAIZ / n for n in FIJO]:
+for f in PAGS + [RAIZ / n for n in RECURSOS]:
     shutil.copy2(f, CARP / f.name)
 for d in DIRS:
     shutil.copytree(RAIZ / d, CARP / d)
@@ -245,6 +265,16 @@ with zipfile.ZipFile(zip_ruta, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
 (RAIZ / 'descarga').mkdir(exist_ok=True)
 shutil.copy2(zip_ruta, RAIZ / 'descarga' / zip_ruta.name)
 
+# La comprobacion que faltaba: se abre el ZIP YA ESCRITO y se exige que todo
+# lo que piden las paginas este dentro. Mirar la lista de copiados no habria
+# servido —la lista era justo la que estaba mal—; hay que mirar el paquete.
+with zipfile.ZipFile(zip_ruta) as z:
+    dentro = {x.split('/', 1)[1] for x in z.namelist() if '/' in x}
+    huecos = [r for r in RECURSOS if r not in dentro]
+    if huecos:
+        raise SystemExit(f'el ZIP sale sin archivos que las paginas piden: {huecos}')
+
 print(f'{zip_ruta}  {zip_ruta.stat().st_size/1e6:.2f} MB  {n} archivos')
+print(f'   recursos     {len(RECURSOS)} ({", ".join(RECURSOS)})')
 for nom, c in cuentas: print(f'   {nom:<16}{c:>3} piezas')
 print(f'   fotos          {len(fotos):>3}')
