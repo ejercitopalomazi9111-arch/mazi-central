@@ -125,6 +125,14 @@ export const EMPUJE_BLAST = 0.55;
 export const CAVA = 0.5;
 /* a partir de cuántas celdas una pieza es «el suelo» y ya no se lanza */
 export const TOPE_LANZA = 600;
+/* ── UNA PIEDRECITA NO PARA UNA BALA ────────────────────────────────────
+   Hasta cuántas celdas lo que estorba es un ESTORBO; pasado eso es el
+   escenario y el que se para es el que venía. */
+export const TOPE_CHOQUE = 64;
+/* y por debajo de esta velocidad un choque no aparta nada: un bloque que se
+   posa despacio se posa, no embiste */
+export const CHOQUE_MIN = 1.2;
+
 /* ── EL HUECO ES AIRE, NO VACÍO ─────────────────────────────────────────
    Carlos lo pidió por su nombre: «no tienen peso, resistencia del aire,
    gravedad etc, deberías sumar todo eso». Nada de eso se puede calcular sin
@@ -265,6 +273,11 @@ export class Mundo {
     this.camaraP = [];                    /* presión de cada cámara */
     this._abierto = new Uint8Array(n);
     this._vistoCuerpo = new Uint8Array(n);
+    /* ⚠ APARTE del de arriba a propósito: `chocaCuerpo` corre DENTRO de
+       `cuerpoPaso`, que está usando `_vistoCuerpo` en ese momento, y `piezaDe`
+       deja el suyo a ceros al terminar. Compartirlo le borraría al recorrido
+       de cuerpos las marcas de por dónde ya pasó, en medio del recorrido. */
+    this._vistoChoque = new Uint8Array(n);
     this._colaCuerpo = new Int32Array(n);
     /* qué celdas soldó el jugador en una estructura: mismo número = misma
        pieza, aunque sean materiales distintos */
@@ -820,6 +833,13 @@ export class Mundo {
           this.vx[k] += (dx / dd) * 2.2;
           this.vy[k] += (dy / dd) * 2.2;
           this.suelto[k] = 1; this.sop[k] = 0;
+          /* ⚠ Y DEJA DE SER PARTE DE LA ESTRUCTURA, que es media pistola. Una
+             esquirla que la explosión le arranca a un cañón soldado conservaba
+             su número de soldadura, así que seguía pegada al cañón para todo
+             lo que pregunta «¿de qué pieza eres?» — y una esquirla del tamaño
+             del arma entera no la aparta nadie. Lo que se arranca ya no es
+             estructura: es escombro. */
+          this.soldado[k] = 0;
           if(this.rnd() < .55){ this.cambia(k, VACIO); this.pres[k] = 0; this.pv[k] = 0; }
         }
       }
@@ -1957,9 +1977,9 @@ export class Mundo {
         return true;
       };
       let pasos = this.pasosDe(Math.abs(vy)); const dy = vy > 0 ? 1 : -1;
-      for(let i = 0; i < pasos; i++) if(!corre(0, dy)){ vy = 0; break; }
+      for(let i = 0; i < pasos; i++) if(!corre(0, dy)){ vy = this.chocaCuerpo(lista, 0, dy, vy); break; }
       pasos = this.pasosDe(Math.abs(vx)); const dx = vx > 0 ? 1 : -1;
-      for(let i = 0; i < pasos; i++) if(!corre(dx, 0)){ vx = 0; break; }
+      for(let i = 0; i < pasos; i++) if(!corre(dx, 0)){ vx = this.chocaCuerpo(lista, dx, 0, vx); break; }
       /* ⚠ Y LA MARCA DE CÁMARA SE VA CON EL RECIPIENTE. `intercambia` mueve
          quince campos de la partícula y `camara` no es uno: una cámara es una
          REGIÓN, no una gota, así que no debe viajar con cada celda suelta.
@@ -2050,6 +2070,64 @@ export class Mundo {
      globo —todos los destinos libres o propios, y si no, no se mueve— pero en
      cualquier dirección y devolviendo si cupo, que es lo que convierte «no
      cabe» en un choque en vez de en una deformación. */
+  /* ── CUANDO NO CABE, CHOCA: NO SE EVAPORA ──────────────────────────────
+     Carlos: «aún no logro crear una pistola y ya probé muchas cosas».
+
+     Lo medí armando una: cañón soldado, pólvora, bala de metal. La bala SALE
+     disparada a 2.4 celdas por paso… y a los tres pasos se para en seco, con
+     el ánima despejada y veinte celdas de cañón por delante. Dibujando el
+     ánima apareció el culpable: UNA esquirla de piedra que la propia explosión
+     le había arrancado a la pared y que había caído delante.
+
+     La causa estaba en un solo renglón de `cuerpoPaso`: `if(!corre(dx,0)){
+     vx = 0; break; }`. O sea que un cuerpo que no cabe pierde TODA su
+     velocidad y lo que tiene delante no recibe NADA. Eso no es un choque, es
+     una desaparición: el momento no se conserva, se borra. Y con esa regla una
+     china de un milímetro para una bala, un grano de arena atasca un pistón y
+     cualquier máquina se traba con su propia basura.
+
+     Aquí se choca de verdad, y es el choque perfectamente inelástico de
+     libro: los dos salen con v·M/(M+m). El momento sale igual antes y después,
+     así que no se puede sacar energía de esto. Lo que pesa mucho —o lo que es
+     una pieza grande, que para el caso es el suelo— sigue parando en seco,
+     porque ahí M/(M+m) da casi cero solo.
+
+     Devuelve con qué velocidad se queda el que venía. */
+  chocaCuerpo(lista, dx, dy, v){
+    if(Math.abs(v) < CHOQUE_MIN) return 0;
+    const { an, t } = this;
+    const mios = new Set(lista);
+    const topa = [];
+    for(const k of lista){
+      const x = k % an, y = (k / an) | 0;
+      const nx = x + dx, ny = y + dy;
+      if(!this.dentro(nx, ny)) return 0;        /* el borde del mundo no se aparta */
+      const kd = ny * an + nx;
+      if(mios.has(kd) || t[kd] === VACIO) continue;
+      if(EL[t[kd]].fijo) return 0;              /* ni el muro */
+      const est = this.estadoDe(kd);
+      if(est === 'solido' || est === 'polvo') topa.push(kd);
+    }
+    if(!topa.length) return 0;
+    /* la pieza a la que pertenece lo que estorba, SIN contarme a mí: si no,
+       crecería por mis propias celdas y cualquier cosa pesaría infinito */
+    const visto = this._vistoChoque;
+    for(const k of lista) visto[k] = 1;
+    const pieza = this.piezaDe(topa, TOPE_CHOQUE, visto);
+    for(const k of lista) visto[k] = 0;
+    if(pieza.length >= TOPE_CHOQUE) return 0;   /* eso ya no estorba: es el mundo */
+    let M = 0; for(const k of lista) M += EL[t[k]].dens || 1;
+    let m = 0; for(const k of pieza) m += EL[t[k]].dens || 1;
+    if(m <= 0 || M <= 0) return 0;
+    const v2 = v * M / (M + m);
+    for(const k of pieza){
+      if(dx) this.vx[k] += v2; else this.vy[k] += v2;
+      this.suelto[k] = 1; this.sop[k] = 0;
+      this.despierta(k % an, (k / an) | 0, 1);
+    }
+    return v2;
+  }
+
   mueveCuerpo(lista, dx, dy){
     const { an, al } = this;
     const mios = new Set(lista);
@@ -2397,9 +2475,9 @@ export class Mundo {
      gratis estaría mal: una explosión no lanza el planeta. Pasado el tope, la
      pieza se considera anclada y el golpe se queda donde cayó, que es lo que
      hace un explosivo contra el suelo: un hoyo, no un despegue. */
-  piezaDe(semilla, tope = 60000){
+  piezaDe(semilla, tope = 60000, memoria = null){
     const { an, t } = this;
-    const visto = this._vistoCuerpo;
+    const visto = memoria || this._vistoCuerpo;
     const pieza = semilla.slice();
     for(const k of pieza) visto[k] = 1;
     for(let i = 0; i < pieza.length && pieza.length < tope; i++){
@@ -3268,6 +3346,25 @@ export class Mundo {
       const k2 = this.i(x+dx, y+dy);
       const r = TABLA.get(clave(tipo, this.t[k2]));
       if(!r) continue;
+      /* ⚠ UNA REACCIÓN NO PUEDE QUEMAR UN EXPLOSIVO. AQUÍ ESTABA LA PISTOLA.
+         Carlos: «aún no logro crear una pistola y ya probé muchas cosas».
+         La tabla traía `fuego + pólvora → fuego + fuego` al 95%: o sea que
+         la pólvora pegada a una llama se convertía en llama, SIN DETONAR,
+         antes de que le llegara su turno de celda —que es donde vive la
+         regla de `explota`—. Y como cada celda nueva de fuego quema a la
+         siguiente en el mismo recorrido, un reguero se consume ENTERO en un
+         solo paso.
+         Por eso el defecto se escondía: en una recámara ancha alguna celda
+         de pólvora alcanza su turno antes de que el fuego la toque y sí
+         detona, así que «los explosivos funcionan». En un cañón de una celda
+         de ancho —que es justo lo que uno dibuja cuando hace una pistola— el
+         frente de fuego va por la fila y NO detona NI UNA. Medido: calibre 1,
+         cero llamadas a `revienta`, bala quieta; calibre 2, seis; calibre 3,
+         catorce.
+         Dos reglas para el mismo suceso y ganaba la callada. Quemar un
+         explosivo ES detonarlo, y de eso sabe la combustión, no la tabla. */
+      if(EL[this.t[k2]].explota && EL[r.b] && EL[r.b].id === 'fuego') continue;
+      if(EL[tipo].explota && EL[r.a] && EL[r.a].id === 'fuego') continue;
       /* hay reacciones que necesitan una CHISPA: no pasan solas por estar
          juntas, hace falta que alguien las encienda */
       /* la condición de encendido: CALOR o PRESIÓN, cualquiera de las dos.

@@ -728,6 +728,120 @@
         "un-vecino-caliente-no-es-una-llama",
         "el-cargo-no-detona-entero"
       ]
+    },
+    {
+      "id": "dos-reglas-para-el-mismo-suceso-gana-la-callada",
+      "titulo": "La pólvora se quemaba sin detonar, y por eso no había pistola",
+      "gravedad": "alta",
+      "sintoma": "Carlos: «aún no logro crear una pistola y ya probé muchas cosas». En un cañón de una celda de ancho la pólvora desaparecía convertida en fuego y la bala no se movía NI UNA celda. En una recámara ancha sí explotaba, así que «los explosivos funcionan».",
+      "causa": "Dos reglas describían el mismo suceso. La tabla de reacciones traía `fuego + pólvora → fuego + fuego` al 95%, y esa corre en el turno del FUEGO; la regla de `explota` corre en el turno de la pólvora, después. El fuego convertía a su vecina antes de que a ella le tocara, y cada celda nueva de fuego quemaba a la siguiente en el MISMO recorrido: un reguero entero se consumía en un paso.",
+      "porque": "El ancho del ánima decidía quién llegaba primero. Con tres filas alguna celda alcanza su turno antes de que la toque el fuego y sí detona; con una fila, ninguna. Medido: calibre 1 → 0 detonaciones; calibre 2 → 6; calibre 3 → 14.",
+      "arreglo": "Que una reacción no pueda convertir en fuego a una celda con `explota` —quemar un explosivo ES detonarlo, y de eso sabe la combustión— y borrar la fila de la tabla, que sobraba: la pólvora ya trae `arde`, `ignicion` y `calorArde`.",
+      "comoCazarlo": "Cuando un material tenga DOS caminos para el mismo suceso, medir cuál corre primero, no cuál está escrito primero. Y probar con la geometría más estrecha posible: es donde el orden de los turnos deja de tener holgura.",
+      "vecinas": [
+        "el-cargo-no-detona-entero",
+        "un-vecino-caliente-no-es-una-llama",
+        "el-cuerpo-que-no-cabe-borraba-su-velocidad"
+      ],
+      "consejo": "Cuando dos reglas describan el mismo suceso, una de las dos sobra. Borrar la que sobra vale más que hacerlas convivir: una regla muerta que se queda escrita es cómo alguien la revive sin saber qué tiraba.",
+      "salioDe": "CRISOL, 16 de septiembre de 2026",
+      "senales": [
+        "no puedo hacer una pistola",
+        "la pólvora no explota",
+        "el cañón no dispara",
+        "se quema en vez de explotar",
+        "reacciones"
+      ]
+    },
+    {
+      "id": "el-cuerpo-que-no-cabe-borraba-su-velocidad",
+      "titulo": "Una piedrecita paraba una bala en seco",
+      "gravedad": "alta",
+      "sintoma": "Con la pólvora ya arreglada, la bala SALE a 2.4 celdas por paso y a los tres pasos se para en seco, con el ánima despejada y veinte celdas de cañón por delante.",
+      "causa": "Un renglón de `cuerpoPaso`: `if(!corre(dx,0)){ vx = 0; break; }`. Un cuerpo que no cabe perdía TODA su velocidad y lo que tenía delante no recibía NADA. Eso no es un choque, es una desaparición: el momento no se conserva, se borra. El culpable era UNA esquirla que la propia explosión le había arrancado a la pared del cañón.",
+      "porque": "Nada en el motor decía «esto está mal»: el cuerpo se paraba, que es lo que uno espera de un choque. Lo que no se ve es que la piedrecita tampoco se movió.",
+      "arreglo": "`chocaCuerpo`: choque perfectamente inelástico, los dos salen con v·M/(M+m). Lo que pesa mucho —o lo que es una pieza de más de `TOPE_CHOQUE` celdas, que para el caso es el suelo— sigue parando en seco, porque ahí M/(M+m) da casi cero solo.",
+      "comoCazarlo": "Dibujar el mapa de celdas cuando algo se para «sin motivo». Leyendo el código el ánima estaba vacía; pintándola apareció la esquirla.",
+      "vecinas": [
+        "dos-reglas-para-el-mismo-suceso-gana-la-callada",
+        "el-impulso-va-a-la-pieza-no-a-la-celda",
+        "la-esquirla-seguia-siendo-estructura"
+      ],
+      "consejo": "Un choque en el que sólo uno de los dos cambia de velocidad no es un choque. Si el momento no cuadra antes y después, falta la mitad del suceso.",
+      "salioDe": "CRISOL, 16 de septiembre de 2026",
+      "senales": [
+        "se traba",
+        "se para solo",
+        "la bala no sale",
+        "se atasca con una piedrita",
+        "choque"
+      ]
+    },
+    {
+      "id": "la-esquirla-seguia-siendo-estructura",
+      "titulo": "Lo que una explosión arranca no es estructura, es escombro",
+      "gravedad": "media",
+      "sintoma": "Una esquirla arrancada a un cañón soldado seguía contando como parte del cañón para todo lo que pregunta «¿de qué pieza eres?».",
+      "causa": "`cavaCrater` le daba velocidad a la celda y la marcaba suelta, pero le dejaba su número de soldadura. `piezaDe` crece por número de soldadura, así que desde la esquirla se llegaba al arma entera.",
+      "porque": "Soldar sirve para SEPARAR piezas, y nadie había pensado qué pasa cuando una pieza se rompe: el número sobrevivía a la rotura.",
+      "arreglo": "`this.soldado[k] = 0` en el mismo sitio donde se le pone la velocidad.",
+      "comoCazarlo": "Si un estorbo del tamaño de una celda pesa como un edificio, imprimir de qué pieza cree el motor que es.",
+      "vecinas": [
+        "el-cuerpo-que-no-cabe-borraba-su-velocidad"
+      ],
+      "consejo": "Todo campo que diga «de qué grupo eres» necesita saber qué pasa cuando el grupo se rompe.",
+      "salioDe": "CRISOL, 16 de septiembre de 2026",
+      "senales": [
+        "soldadura",
+        "escombro",
+        "la pieza pesa de más",
+        "estructura rota"
+      ]
+    },
+    {
+      "id": "una-prueba-verde-por-la-semilla-que-le-toco",
+      "titulo": "«Deja pasar poco» pasaba con UNA semilla de diez",
+      "gravedad": "alta",
+      "sintoma": "Al meter `chocaCuerpo`, «una pared de metal deja pasar poco» se fue de 17.5% a 38% y parecía una regresión limpia.",
+      "causa": "No lo era. Corrida con doce semillas, con el cambio y sin él, siete de diez dan EXACTAMENTE lo mismo: el rango va de 13% a 75% con o sin tocar nada. El listón de 35% sólo lo pasaba la semilla 7.",
+      "porque": "La prueba medía una cantidad caótica y la llamaba propiedad. Y al medirla salió algo peor: SIN pared cruza el 27% y con pared de metal el 44% — poner una pared deja pasar MÁS que no poner nada, porque lo que se mide en el otro lado no es la onda, es el escombro de la propia pared llegando ahí.",
+      "arreglo": "Medir lo estable y verdadero: el muro no deja pasar nada (0% en las doce) y la pared que revienta AGUANTA de pie (metal 93–97% en las doce). El porcentaje no vuelve hasta que haya forma de medir la onda sin contar el escombro.",
+      "comoCazarlo": "Antes de creerse una regresión en una prueba numérica, correrla con diez semillas CON el cambio y SIN él. Si el rango sin tocar nada ya se come el listón, el defecto es de la prueba.",
+      "vecinas": [
+        "dos-reglas-para-el-mismo-suceso-gana-la-callada",
+        "la-prueba-que-medía-lo-quemado-y-decia-presion"
+      ],
+      "consejo": "Una prueba numérica sobre un sistema caótico necesita que le corran diez semillas el día que se escribe, o no es una prueba: es una anécdota.",
+      "salioDe": "CRISOL, 16 de septiembre de 2026",
+      "senales": [
+        "prueba intermitente",
+        "semilla",
+        "regresión que no era",
+        "la onda cruza la pared"
+      ]
+    },
+    {
+      "id": "la-mano-no-cobra-el-peso",
+      "titulo": "Quitarle el esfuerzo a la mano, que era físicamente correcto",
+      "gravedad": "baja",
+      "sintoma": "Carlos: «La mano de agarrar quítale eso del esfuerzo para cargar algo solo incomoda».",
+      "causa": "La mano aplicaba fuerza y la dividía entre la masa de la pieza entera, así que lo pesado costaba trabajo. Salía solo de la segunda ley y estaba bien hecho.",
+      "porque": "En un banco de pruebas la mano es la del que ARMA, no la de un personaje. Pelearse con el peso de una viga para ponerla en su sitio no enseña física: estorba.",
+      "arreglo": "La mano pide VELOCIDAD, no fuerza: la pieza persigue al dedo igual sea de madera o de osmio. Sigue moviéndola el motor, así que choca con los muros. Y hace falta un techo nuevo —`TOPE_MANO_PIEZA`— porque sin la masa en la ecuación la mano arrastraba el suelo de la sala.",
+      "comoCazarlo": "Que una regla sea físicamente correcta no la hace buena para lo que se está construyendo. Las dos pruebas que comprobaban lo contrario cambiaron de signo y llevan escrito el motivo.",
+      "vecinas": [
+        "la-mano-agarraba-un-mordisco-del-objeto",
+        "el-impulso-va-a-la-pieza-no-a-la-celda"
+      ],
+      "consejo": "Lo correcto y lo bueno no son lo mismo. Cuando Carlos dice que algo estorba, estorba, aunque la física esté bien.",
+      "salioDe": "CRISOL, 16 de septiembre de 2026",
+      "senales": [
+        "la mano",
+        "arrastrar",
+        "pesa mucho",
+        "cuesta moverlo",
+        "agarrar"
+      ]
     }
   ]
 }
