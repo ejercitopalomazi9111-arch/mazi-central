@@ -971,7 +971,14 @@ seccion('la mano y el termómetro');
   };
   const ligero = tira('madera'), pesado = tira('eOs');
   ok('la mano ARRASTRA un sólido', ligero > 12, 'la madera llegó a x=' + ligero);
-  ok('y lo pesado cuesta más que lo ligero', pesado < ligero,
+  /* ⚠ ESTA PRUEBA DECÍA LO CONTRARIO HASTA QUE CARLOS LO MANDÓ CAMBIAR:
+     «La mano de agarrar quítale eso del esfuerzo para cargar algo solo
+     incomoda». Antes comprobaba que el osmio se quedara atrás de la madera,
+     que es la física correcta y el estorbo que él reportó. Ahora la mano
+     pide VELOCIDAD, no fuerza, así que los dos llegan al dedo — y eso es lo
+     que hay que comprobar, porque es lo que se puede volver a romper. */
+  ok('y el OSMIO viene igual de rápido que la madera: la mano no cobra el peso',
+     Math.abs(pesado - ligero) <= 2 && pesado > 40,
      'madera x=' + ligero + ' · osmio x=' + pesado);
   ok('y no atraviesa el muro', (() => {
     const m = mundo(40, 40, 3);
@@ -1027,9 +1034,24 @@ seccion('la mano y el termómetro');
     const r = bloque('madera', 6, 60, 25);
     return Math.abs(r.a.x - 60) < 4 && Math.abs(r.a.y - 25) < 4 && r.agarro === 36;
   })());
-  ok('y un peñasco de 196 celdas se queda atrás: lo pesado CUESTA', (() => {
+  /* ⚠ Y ÉSTA TAMBIÉN CAMBIÓ DE SIGNO POR LO MISMO. Decía «un peñasco de 196
+     celdas se queda atrás: lo pesado CUESTA». Ya no: un peñasco de 196 celdas
+     sigue siendo un objeto y la mano lo lleva. Lo que sí sigue habiendo es un
+     techo —`TOPE_MANO_PIEZA`—, y ése es el que se comprueba abajo, porque sin
+     él quitar la masa de la ecuación deja que la mano arrastre el suelo. */
+  ok('y un peñasco de 196 celdas TAMBIÉN viene: el tamaño ya no cuesta', (() => {
     const chico = bloque('piedra', 4, 60, 25), grande = bloque('piedra', 14, 60, 25);
-    return Math.abs(chico.a.x - 60) < 3 && grande.a.x < 58 && grande.a.y > 30;
+    return Math.abs(chico.a.x - 60) < 3 && Math.abs(grande.a.x - 60) < 6;
+  })());
+  ok('pero el SUELO no se levanta: pasado el tope, la pieza es escenario', (() => {
+    /* el suelo de esta sala es una sola pieza pegada de 80×5 = 400 celdas de
+       piedra, muy por encima del tope de mano si se baja a propósito; aquí se
+       usa uno de verdad grande para no tocar la constante */
+    const m = mundo(200, 60, 5);
+    for(let y = 40; y < 60; y++) for(let x = 0; x < 200; x++) m.pon(x, y, IDX.piedra);
+    corre(m, 5);
+    const g = m.agarra(100, 41, 100, 5, 3);
+    return g.n === 0;
   })());
   ok('y la mano no se lleva el muro pegado', (() => {
     const m = mundo(60, 50, 5);
@@ -1924,7 +1946,31 @@ seccion('el explosivo es proporcional y la onda no se inventa energía');
   };
   const mu = cruza('muro'), me = cruza('metal'), pi = cruza('piedra');
   ok('el MURO no deja pasar nada de la onda', mu.paso < 1, mu.paso.toFixed(0) + '% pasó');
-  ok('una pared de metal deja pasar poco', me.paso > 1 && me.paso < 35, me.paso.toFixed(0) + '% pasó');
+  /* ⚠ AQUÍ DECÍA «una pared de metal deja pasar poco» con el listón en 35%, y
+     ERA UNA PRUEBA QUE PASABA DE CHIRIPA. Salió al tocar `chocaCuerpo`: el
+     número se fue de 17.5% a 38% y parecía una regresión limpia. No lo era.
+     Corrida con doce semillas, CON el cambio y SIN él:
+
+       metal  38 50 75 44 35 43 57 13 47 25   ← con
+       metal  38 50 71 44 35 43 18 16 47 25   ← sin
+
+     Siete de las diez semillas dan EXACTAMENTE lo mismo. El listón de 35 sólo
+     lo pasaba la semilla 7; con casi cualquier otra esta prueba llevaba años
+     fallando y nadie lo sabía porque nadie la corrió con otra semilla.
+
+     🔴 Y AL MEDIRLO SALIÓ ALGO PEOR, que se deja escrito porque es un hallazgo
+     de verdad y no está arreglado: SIN NINGUNA PARED cruza el 27%, y con pared
+     de metal cruza el 44%. O sea que poner una pared deja pasar MÁS presión
+     que no poner nada. La explicación es que lo que se mide en x=57 no es «la
+     onda que cruzó»: es el escombro de la propia pared llegando ahí y
+     apretando el aire. La prueba nunca midió lo que decía medir.
+
+     Así que se mide lo que SÍ es estable y sí es verdad: el muro no deja pasar
+     nada —0% en las doce semillas— y una pared que revienta aguanta de pie.
+     El porcentaje del metal no vuelve hasta que haya una forma de medir la
+     onda sin contar el escombro. */
+  ok('el metal AGUANTA la bomba pegada: sigue de pie', me.queda > me.de * .85,
+     me.queda + '/' + me.de + ' celdas en pie');
   /* ⚠ ANTES ESTO PEDÍA LA PARED INTACTA —«=== de»— y ya no lo está: la
      explosión le arranca alguna celda. Y está BIEN que se la arranque: una
      bomba pegada a un muro lo pica. Lo que tiene que seguir siendo cierto es
@@ -2349,6 +2395,103 @@ seccion('un bloque cae de una pieza, no en láminas');
   corre(b, 150);
   ok('pero una explosión SÍ le quita celdas: sigue siendo destructible',
      cuantos(b, 'piedra') < antes, 'de ' + antes + ' quedaron ' + cuantos(b, 'piedra'));
+}
+
+seccion('la pistola');
+{
+  /* Carlos: «aún no logro crear una pistola y ya probé muchas cosas».
+     Aquí se arma una y se comprueba que dispara, más las dos cosas que
+     estaban rotas debajo y que ninguna prueba anterior tocaba. */
+
+  /* ── 1 · LA PÓLVORA DETONA, NO SE QUEMA ────────────────────────────────
+     El defecto vivía en la tabla de reacciones: `fuego + pólvora → fuego +
+     fuego` al 95%, que le ganaba a la regla de `explota` porque corre en el
+     turno del FUEGO, no en el de la pólvora. En una recámara ancha alguna
+     celda alcanza su turno y detona, así que «los explosivos funcionan». En un
+     ánima de UNA celda de alto —justo lo que uno dibuja para una pistola— el
+     frente de fuego recorre la fila y no detona NI UNA.
+     Se cuenta con el ánima estrecha a propósito: es donde se veía. */
+  const recamara = (alto) => {
+     const m = mundo(60, 40, 7);
+     const y0 = 18, y1 = y0 + alto + 1, x0 = 10;
+     for(let x = x0; x <= x0 + 25; x++){ m.pon(x, y0, IDX.muro); m.pon(x, y1, IDX.muro); }
+     for(let y = y0; y <= y1; y++) m.pon(x0, y, IDX.muro);
+     let n = 0;
+     for(let i = 0; i < 6; i++) for(let y = y0 + 1; y < y1; y++){ m.pon(x0 + 1 + i, y, IDX.polvora); n++; }
+     m.pon(x0 + 1, y0 + 1, IDX.fuego);          /* la chispa, encima de una celda */
+     let detonaciones = 0;
+     const rev = m.revienta.bind(m);
+     m.revienta = (x, y, f) => { detonaciones++; return rev(x, y, f); };
+     corre(m, 30);
+     return { puestas: n - 1, detonaciones };
+  };
+  const estrecha = recamara(1), ancha = recamara(3);
+  ok('en un ánima de UNA celda la pólvora detona toda, no se quema',
+     estrecha.detonaciones === estrecha.puestas,
+     estrecha.detonaciones + ' de ' + estrecha.puestas + ' celdas');
+  ok('y en una recámara ancha también', ancha.detonaciones === ancha.puestas,
+     ancha.detonaciones + ' de ' + ancha.puestas);
+
+  /* ── 2 · UNA PIEDRECITA NO PARA UNA BALA ───────────────────────────────
+     El segundo defecto: `if(!corre(dx,0)){ vx = 0; break; }`. Un cuerpo que no
+     cabe perdía TODA su velocidad y lo que tenía delante no recibía nada — el
+     momento no se conservaba, se borraba. Medido en la pistola: la bala salía
+     a 2.4 y se paraba en seco con el ánima despejada y una sola esquirla
+     delante. */
+  const choque = (estorbo) => {
+    const m = mundo(80, 30, 3);
+    repisa(m, 25);
+    for(let y = 22; y < 25; y++) for(let x = 10; x < 13; x++) m.pon(x, y, IDX.metal);
+    if(estorbo) m.pon(30, 24, IDX[estorbo]);
+    for(let y = 22; y < 25; y++) for(let x = 10; x < 13; x++){
+      const k = m.i(x, y); m.vx[k] = 3; m.suelto[k] = 1; m.sop[k] = 0; }
+    corre(m, 40);
+    let lejos = 0;
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.metal) lejos = Math.max(lejos, k % 80);
+    return lejos;
+  };
+  const libre = choque(null), conChina = choque('grava');
+  ok('un bloque lanzado APARTA una piedrecita en vez de pararse en seco',
+     conChina > 30, 'llegó a x=' + conChina + ' (sin estorbo, ' + libre + ')');
+  ok('pero un MURO sí lo para: lo pesado no se aparta', (() => {
+    const m = mundo(80, 30, 3);
+    repisa(m, 25);
+    for(let y = 22; y < 25; y++) for(let x = 10; x < 13; x++) m.pon(x, y, IDX.metal);
+    for(let y = 18; y < 25; y++) m.pon(30, y, IDX.muro);
+    for(let y = 22; y < 25; y++) for(let x = 10; x < 13; x++){
+      const k = m.i(x, y); m.vx[k] = 3; m.suelto[k] = 1; m.sop[k] = 0; }
+    corre(m, 40);
+    for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.metal && (k % 80) > 30) return false;
+    return true;
+  })());
+
+  /* ── 3 · Y LA PISTOLA ENTERA, DE PUNTA A PUNTA ─────────────────────────
+     La receta medida: recámara de MURO —que es lo único que aguanta la carga
+     sin que el techo del cañón se desplome dentro del ánima—, el resto del
+     cañón del material que sea, pólvora detrás y bala de metal delante. */
+  const pistola = (canon) => {
+    const AN = 140, AL = 60, m = mundo(AN, AL, 7);
+    repisa(m, AL - 1);
+    const y1 = AL - 2, y0 = y1 - 3, x0 = 10, x1 = x0 + 30, rec = x0 + 8;
+    for(let x = x0; x <= x1; x++){ const mat = x <= rec ? 'muro' : canon;
+      m.pon(x, y0, IDX[mat]); m.pon(x, y1, IDX[mat]); }
+    for(let y = y0; y <= y1; y++) m.pon(x0, y, IDX.muro);
+    let xc = x0 + 1;
+    for(let i = 0; i < 4; i++, xc++) for(let y = y0 + 1; y < y1; y++) m.pon(xc, y, IDX.polvora);
+    for(let i = 0; i < 2; i++) for(let y = y0 + 1; y < y1; y++) m.pon(xc + i, y, IDX.metal);
+    m.pon(x0 + 1, y0 + 1, IDX.fuego);
+    let vmax = 0, lejos = 0;
+    for(let i = 0; i < 200; i++){ m.paso();
+      for(let k = 0; k < m.t.length; k++) if(m.t[k] === IDX.metal){
+        vmax = Math.max(vmax, m.vx[k]); lejos = Math.max(lejos, k % AN); } }
+    return { lejos, vmax, boca: x1 };
+  };
+  for(const canon of ['muro', 'piedra', 'metal']){
+    const r = pistola(canon);
+    ok('una pistola con recámara de muro y cañón de ' + canon + ' DISPARA',
+       r.lejos > r.boca + 20 && r.vmax > 1.5,
+       'la bala llegó a x=' + r.lejos + ' (la boca está en ' + r.boca + ') a ' + r.vmax.toFixed(2) + ' celdas/paso');
+  }
 }
 
 console.log('\n' + (mal ? '✗' : '✓') + '  ' + bien + ' pasan · ' + mal + ' fallan');

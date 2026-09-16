@@ -92,12 +92,32 @@ export const JULIOS = 150;
    Con 300, una cámara al triple de su gas revienta la piedra (aguanta ~960) y
    el muro no, que es lo que se quiere. */
 export const ATM = 300;
-/* la fuerza que hace UNA celda de mano. Se suma por cada celda que el puño
-   toca y se divide entre la masa de la pieza entera, así que agarrar un
-   objeto que cabe en la mano se siente exactamente igual que antes y agarrar
-   la esquina de un peñasco, no. */
-export const PUÑO = 2.2;
-/* cuánto FRENA el brazo por cuadro lo que ya va moviéndose */
+/* ── LA MANO NO PESA LO QUE CARGA ───────────────────────────────────────
+   Antes aquí vivía `PUÑO`: la fuerza de una celda de mano, que se dividía
+   entre la masa de la pieza entera. De ahí salía solo que lo pesado costara
+   trabajo. Era físicamente correcto y Carlos lo mandó quitar por su nombre:
+   «La mano de agarrar quítale eso del esfuerzo para cargar algo solo
+   incomoda». Tiene razón para lo que es esto: en un banco de pruebas la mano
+   es la del que arma, no la de un personaje, y pelearse con el peso de una
+   viga para ponerla en su sitio no enseña nada — estorba.
+
+   Así que la mano ya no aplica FUERZA, aplica VELOCIDAD: la pieza persigue al
+   dedo a la misma prisa sea de madera o de osmio. Lo que NO cambia es que
+   sigue siendo el motor el que la mueve — choca con los muros, empuja lo que
+   encuentra y al soltarla se va con su propia velocidad. */
+/* qué tan rápido persigue la pieza al dedo: celdas por paso, por cada celda
+   de distancia que le falta */
+export const TIRON = 0.5;
+/* y por rápido que vaya, no pasa de esto (celdas por paso) */
+export const TOPE_MANO = 3;
+/* a partir de cuántas celdas una pieza deja de ser un objeto y es el
+   ESCENARIO. Sin este tope, quitar la masa de la ecuación deja que la mano
+   arrastre el suelo de la sala —una sola pieza pegada de decenas de miles de
+   celdas— a la velocidad del dedo. */
+export const TOPE_MANO_PIEZA = 1200;
+/* cuánta de la diferencia entre la velocidad que pide la mano y la que ya
+   lleva la pieza se corrige por cuadro. Sigue siendo lo que evita que la
+   mano sea una catapulta. */
 export const FRENO_MANO = 0.6;
 /* cuánto de la energía sobrante de un rayo de explosión se vuelve velocidad */
 export const EMPUJE_BLAST = 0.55;
@@ -105,6 +125,14 @@ export const EMPUJE_BLAST = 0.55;
 export const CAVA = 0.5;
 /* a partir de cuántas celdas una pieza es «el suelo» y ya no se lanza */
 export const TOPE_LANZA = 600;
+/* ── UNA PIEDRECITA NO PARA UNA BALA ────────────────────────────────────
+   Hasta cuántas celdas lo que estorba es un ESTORBO; pasado eso es el
+   escenario y el que se para es el que venía. */
+export const TOPE_CHOQUE = 64;
+/* y por debajo de esta velocidad un choque no aparta nada: un bloque que se
+   posa despacio se posa, no embiste */
+export const CHOQUE_MIN = 1.2;
+
 /* ── EL HUECO ES AIRE, NO VACÍO ─────────────────────────────────────────
    Carlos lo pidió por su nombre: «no tienen peso, resistencia del aire,
    gravedad etc, deberías sumar todo eso». Nada de eso se puede calcular sin
@@ -245,6 +273,11 @@ export class Mundo {
     this.camaraP = [];                    /* presión de cada cámara */
     this._abierto = new Uint8Array(n);
     this._vistoCuerpo = new Uint8Array(n);
+    /* ⚠ APARTE del de arriba a propósito: `chocaCuerpo` corre DENTRO de
+       `cuerpoPaso`, que está usando `_vistoCuerpo` en ese momento, y `piezaDe`
+       deja el suyo a ceros al terminar. Compartirlo le borraría al recorrido
+       de cuerpos las marcas de por dónde ya pasó, en medio del recorrido. */
+    this._vistoChoque = new Uint8Array(n);
     this._colaCuerpo = new Int32Array(n);
     /* qué celdas soldó el jugador en una estructura: mismo número = misma
        pieza, aunque sean materiales distintos */
@@ -800,6 +833,13 @@ export class Mundo {
           this.vx[k] += (dx / dd) * 2.2;
           this.vy[k] += (dy / dd) * 2.2;
           this.suelto[k] = 1; this.sop[k] = 0;
+          /* ⚠ Y DEJA DE SER PARTE DE LA ESTRUCTURA, que es media pistola. Una
+             esquirla que la explosión le arranca a un cañón soldado conservaba
+             su número de soldadura, así que seguía pegada al cañón para todo
+             lo que pregunta «¿de qué pieza eres?» — y una esquirla del tamaño
+             del arma entera no la aparta nadie. Lo que se arranca ya no es
+             estructura: es escombro. */
+          this.soldado[k] = 0;
           if(this.rnd() < .55){ this.cambia(k, VACIO); this.pres[k] = 0; this.pv[k] = 0; }
         }
       }
@@ -1937,9 +1977,9 @@ export class Mundo {
         return true;
       };
       let pasos = this.pasosDe(Math.abs(vy)); const dy = vy > 0 ? 1 : -1;
-      for(let i = 0; i < pasos; i++) if(!corre(0, dy)){ vy = 0; break; }
+      for(let i = 0; i < pasos; i++) if(!corre(0, dy)){ vy = this.chocaCuerpo(lista, 0, dy, vy); break; }
       pasos = this.pasosDe(Math.abs(vx)); const dx = vx > 0 ? 1 : -1;
-      for(let i = 0; i < pasos; i++) if(!corre(dx, 0)){ vx = 0; break; }
+      for(let i = 0; i < pasos; i++) if(!corre(dx, 0)){ vx = this.chocaCuerpo(lista, dx, 0, vx); break; }
       /* ⚠ Y LA MARCA DE CÁMARA SE VA CON EL RECIPIENTE. `intercambia` mueve
          quince campos de la partícula y `camara` no es uno: una cámara es una
          REGIÓN, no una gota, así que no debe viajar con cada celda suelta.
@@ -2030,6 +2070,64 @@ export class Mundo {
      globo —todos los destinos libres o propios, y si no, no se mueve— pero en
      cualquier dirección y devolviendo si cupo, que es lo que convierte «no
      cabe» en un choque en vez de en una deformación. */
+  /* ── CUANDO NO CABE, CHOCA: NO SE EVAPORA ──────────────────────────────
+     Carlos: «aún no logro crear una pistola y ya probé muchas cosas».
+
+     Lo medí armando una: cañón soldado, pólvora, bala de metal. La bala SALE
+     disparada a 2.4 celdas por paso… y a los tres pasos se para en seco, con
+     el ánima despejada y veinte celdas de cañón por delante. Dibujando el
+     ánima apareció el culpable: UNA esquirla de piedra que la propia explosión
+     le había arrancado a la pared y que había caído delante.
+
+     La causa estaba en un solo renglón de `cuerpoPaso`: `if(!corre(dx,0)){
+     vx = 0; break; }`. O sea que un cuerpo que no cabe pierde TODA su
+     velocidad y lo que tiene delante no recibe NADA. Eso no es un choque, es
+     una desaparición: el momento no se conserva, se borra. Y con esa regla una
+     china de un milímetro para una bala, un grano de arena atasca un pistón y
+     cualquier máquina se traba con su propia basura.
+
+     Aquí se choca de verdad, y es el choque perfectamente inelástico de
+     libro: los dos salen con v·M/(M+m). El momento sale igual antes y después,
+     así que no se puede sacar energía de esto. Lo que pesa mucho —o lo que es
+     una pieza grande, que para el caso es el suelo— sigue parando en seco,
+     porque ahí M/(M+m) da casi cero solo.
+
+     Devuelve con qué velocidad se queda el que venía. */
+  chocaCuerpo(lista, dx, dy, v){
+    if(Math.abs(v) < CHOQUE_MIN) return 0;
+    const { an, t } = this;
+    const mios = new Set(lista);
+    const topa = [];
+    for(const k of lista){
+      const x = k % an, y = (k / an) | 0;
+      const nx = x + dx, ny = y + dy;
+      if(!this.dentro(nx, ny)) return 0;        /* el borde del mundo no se aparta */
+      const kd = ny * an + nx;
+      if(mios.has(kd) || t[kd] === VACIO) continue;
+      if(EL[t[kd]].fijo) return 0;              /* ni el muro */
+      const est = this.estadoDe(kd);
+      if(est === 'solido' || est === 'polvo') topa.push(kd);
+    }
+    if(!topa.length) return 0;
+    /* la pieza a la que pertenece lo que estorba, SIN contarme a mí: si no,
+       crecería por mis propias celdas y cualquier cosa pesaría infinito */
+    const visto = this._vistoChoque;
+    for(const k of lista) visto[k] = 1;
+    const pieza = this.piezaDe(topa, TOPE_CHOQUE, visto);
+    for(const k of lista) visto[k] = 0;
+    if(pieza.length >= TOPE_CHOQUE) return 0;   /* eso ya no estorba: es el mundo */
+    let M = 0; for(const k of lista) M += EL[t[k]].dens || 1;
+    let m = 0; for(const k of pieza) m += EL[t[k]].dens || 1;
+    if(m <= 0 || M <= 0) return 0;
+    const v2 = v * M / (M + m);
+    for(const k of pieza){
+      if(dx) this.vx[k] += v2; else this.vy[k] += v2;
+      this.suelto[k] = 1; this.sop[k] = 0;
+      this.despierta(k % an, (k / an) | 0, 1);
+    }
+    return v2;
+  }
+
   mueveCuerpo(lista, dx, dy){
     const { an, al } = this;
     const mios = new Set(lista);
@@ -2256,8 +2354,10 @@ export class Mundo {
        · no atraviesa nada, porque no se mueve por su cuenta: pide sitio
        · al soltarlo sigue con su velocidad, porque la velocidad es suya
 
-     El punto de agarre persigue al MATERIAL, no al dedo. Por eso un bloque
-     pesado se queda atrás y se siente el peso en la mano.
+     El punto de agarre persigue al MATERIAL, no al dedo — así lo ligero no se
+     escapa del círculo de la brocha en un cuadro. Lo que NO hace es cobrar el
+     peso: una viga de osmio viene igual de rápido que una tabla, porque Carlos
+     lo pidió así (ver `TIRON`).
 
      Devuelve cuántas celdas agarró, para que la pantalla sepa si enganchó. */
   agarra(cx, cy, fx, fy, r = 4){
@@ -2301,22 +2401,21 @@ export class Mundo {
 
        El polvo no crece: la arena no es una pieza, y arrastrar un grano no
        puede llevarse el montón entero. */
-    const pieza = this.piezaDe(semilla);
+    const pieza = this.piezaDe(semilla, TOPE_MANO_PIEZA);
+    /* lo que pasa del tope no es un objeto, es el suelo: no se levanta */
+    if(pieza.length >= TOPE_MANO_PIEZA) return { n:0, cx:gx, cy:gy };
 
-    /* ── 3. LA SEGUNDA LEY, UNA VEZ PARA TODA LA PIEZA ────────────────────
-       La fuerza la hacen las celdas que la mano toca; la masa que se resiste
-       es la de la pieza ENTERA. De ahí salen solas las dos cosas que pidió
-       Carlos sin programar ninguna: lo pesado cuesta, y agarrar la punta de
-       una viga larga cuesta más que agarrar una piedrita — porque la fuerza
-       es la del puño y la masa es la del objeto. */
+    /* ── 3. LA VELOCIDAD QUE PIDE EL DEDO, SIN COBRAR EL PESO ─────────────
+       La mano decide a qué velocidad quiere que vaya la pieza —proporcional
+       a lo que le falta para llegar al dedo, con tope— y el motor la lleva.
+       La masa se sigue calculando, pero SÓLO para promediar la velocidad que
+       ya lleva la pieza: es una media ponderada, no un cobro. */
     let masa = 0;
     for(const k of pieza) masa += EL[t[k]].dens || 1;
     if(masa < 0.2) masa = 0.2;
-    let fX = 0, fY = 0;
-    for(const k of semilla){
-      const x = k % an, y = (k / an) | 0;
-      fX += (fx - x) * PUÑO; fY += (fy - y) * PUÑO;
-    }
+    let qx = (fx - gx) * TIRON, qy = (fy - gy) * TIRON;
+    const prisa = Math.hypot(qx, qy);
+    if(prisa > TOPE_MANO){ qx = qx / prisa * TOPE_MANO; qy = qy / prisa * TOPE_MANO; }
     /* ⚠ Y UN MUELLE SIN AMORTIGUAR NO ES UNA MANO, ES UNA CATAPULTA. Con
        sólo la fuerza de arriba, la primera prueba en navegador mandó el
        bloque de la celda 134 a la 2 —hasta la pared de enfrente— tirando de
@@ -2327,7 +2426,7 @@ export class Mundo {
     let vmx = 0, vmy = 0;
     for(const k of pieza){ const m = EL[t[k]].dens || 1; vmx += this.vx[k] * m; vmy += this.vy[k] * m; }
     vmx /= masa; vmy /= masa;
-    let ax = fX / masa - FRENO_MANO * vmx, ay = fY / masa - FRENO_MANO * vmy;
+    let ax = (qx - vmx) * FRENO_MANO, ay = (qy - vmy) * FRENO_MANO;
     const tope = 1.6;
     if(ax > tope) ax = tope; else if(ax < -tope) ax = -tope;
     if(ay > tope) ay = tope; else if(ay < -tope) ay = -tope;
@@ -2376,9 +2475,9 @@ export class Mundo {
      gratis estaría mal: una explosión no lanza el planeta. Pasado el tope, la
      pieza se considera anclada y el golpe se queda donde cayó, que es lo que
      hace un explosivo contra el suelo: un hoyo, no un despegue. */
-  piezaDe(semilla, tope = 60000){
+  piezaDe(semilla, tope = 60000, memoria = null){
     const { an, t } = this;
-    const visto = this._vistoCuerpo;
+    const visto = memoria || this._vistoCuerpo;
     const pieza = semilla.slice();
     for(const k of pieza) visto[k] = 1;
     for(let i = 0; i < pieza.length && pieza.length < tope; i++){
@@ -3247,6 +3346,25 @@ export class Mundo {
       const k2 = this.i(x+dx, y+dy);
       const r = TABLA.get(clave(tipo, this.t[k2]));
       if(!r) continue;
+      /* ⚠ UNA REACCIÓN NO PUEDE QUEMAR UN EXPLOSIVO. AQUÍ ESTABA LA PISTOLA.
+         Carlos: «aún no logro crear una pistola y ya probé muchas cosas».
+         La tabla traía `fuego + pólvora → fuego + fuego` al 95%: o sea que
+         la pólvora pegada a una llama se convertía en llama, SIN DETONAR,
+         antes de que le llegara su turno de celda —que es donde vive la
+         regla de `explota`—. Y como cada celda nueva de fuego quema a la
+         siguiente en el mismo recorrido, un reguero se consume ENTERO en un
+         solo paso.
+         Por eso el defecto se escondía: en una recámara ancha alguna celda
+         de pólvora alcanza su turno antes de que el fuego la toque y sí
+         detona, así que «los explosivos funcionan». En un cañón de una celda
+         de ancho —que es justo lo que uno dibuja cuando hace una pistola— el
+         frente de fuego va por la fila y NO detona NI UNA. Medido: calibre 1,
+         cero llamadas a `revienta`, bala quieta; calibre 2, seis; calibre 3,
+         catorce.
+         Dos reglas para el mismo suceso y ganaba la callada. Quemar un
+         explosivo ES detonarlo, y de eso sabe la combustión, no la tabla. */
+      if(EL[this.t[k2]].explota && EL[r.b] && EL[r.b].id === 'fuego') continue;
+      if(EL[tipo].explota && EL[r.a] && EL[r.a].id === 'fuego') continue;
       /* hay reacciones que necesitan una CHISPA: no pasan solas por estar
          juntas, hace falta que alguien las encienda */
       /* la condición de encendido: CALOR o PRESIÓN, cualquiera de las dos.

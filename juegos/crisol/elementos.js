@@ -510,7 +510,14 @@ export const REACCIONES = [
   ['acido', 'agua',   'acido',   'vacio',   .06,  12],
   ['fuego', 'aceite', 'fuego',   'fuego',   .55,  700],
   ['fuego', 'gasnat', 'fuego',   'fuego',   .95,  900],
-  ['fuego', 'polvora','fuego',   'fuego',   .95,  1400],
+  /* ⚠ AQUÍ ESTABA «fuego + pólvora → fuego + fuego» al 95%, y era lo que
+     impedía hacer una pistola: la pólvora se quemaba sin detonar antes de
+     llegar a su propia regla de `explota`. Se quita porque sobraba: la
+     pólvora ya tiene `arde:1`, `ignicion:90` y `calorArde:1400`, así que
+     prender y soltar su calor lo hace la combustión — que además sabe que
+     esto revienta. El motor lo impide ahora por su cuenta (ver `reacciona`),
+     pero la fila se va igual: dejar escrita una regla muerta es cómo alguien
+     la revive sin saber qué tiraba. */
   ['fuego', 'agua',   'humo',    'vapor',   .75,  0],
   ['fuego', 'salada', 'humo',    'vapor',   .75,  0],
   ['fuego', 'hielo',  'vacio',   'agua',    .6,   0],
