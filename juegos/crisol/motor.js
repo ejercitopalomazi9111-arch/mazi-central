@@ -92,12 +92,32 @@ export const JULIOS = 150;
    Con 300, una cámara al triple de su gas revienta la piedra (aguanta ~960) y
    el muro no, que es lo que se quiere. */
 export const ATM = 300;
-/* la fuerza que hace UNA celda de mano. Se suma por cada celda que el puño
-   toca y se divide entre la masa de la pieza entera, así que agarrar un
-   objeto que cabe en la mano se siente exactamente igual que antes y agarrar
-   la esquina de un peñasco, no. */
-export const PUÑO = 2.2;
-/* cuánto FRENA el brazo por cuadro lo que ya va moviéndose */
+/* ── LA MANO NO PESA LO QUE CARGA ───────────────────────────────────────
+   Antes aquí vivía `PUÑO`: la fuerza de una celda de mano, que se dividía
+   entre la masa de la pieza entera. De ahí salía solo que lo pesado costara
+   trabajo. Era físicamente correcto y Carlos lo mandó quitar por su nombre:
+   «La mano de agarrar quítale eso del esfuerzo para cargar algo solo
+   incomoda». Tiene razón para lo que es esto: en un banco de pruebas la mano
+   es la del que arma, no la de un personaje, y pelearse con el peso de una
+   viga para ponerla en su sitio no enseña nada — estorba.
+
+   Así que la mano ya no aplica FUERZA, aplica VELOCIDAD: la pieza persigue al
+   dedo a la misma prisa sea de madera o de osmio. Lo que NO cambia es que
+   sigue siendo el motor el que la mueve — choca con los muros, empuja lo que
+   encuentra y al soltarla se va con su propia velocidad. */
+/* qué tan rápido persigue la pieza al dedo: celdas por paso, por cada celda
+   de distancia que le falta */
+export const TIRON = 0.5;
+/* y por rápido que vaya, no pasa de esto (celdas por paso) */
+export const TOPE_MANO = 3;
+/* a partir de cuántas celdas una pieza deja de ser un objeto y es el
+   ESCENARIO. Sin este tope, quitar la masa de la ecuación deja que la mano
+   arrastre el suelo de la sala —una sola pieza pegada de decenas de miles de
+   celdas— a la velocidad del dedo. */
+export const TOPE_MANO_PIEZA = 1200;
+/* cuánta de la diferencia entre la velocidad que pide la mano y la que ya
+   lleva la pieza se corrige por cuadro. Sigue siendo lo que evita que la
+   mano sea una catapulta. */
 export const FRENO_MANO = 0.6;
 /* cuánto de la energía sobrante de un rayo de explosión se vuelve velocidad */
 export const EMPUJE_BLAST = 0.55;
@@ -2256,8 +2276,10 @@ export class Mundo {
        · no atraviesa nada, porque no se mueve por su cuenta: pide sitio
        · al soltarlo sigue con su velocidad, porque la velocidad es suya
 
-     El punto de agarre persigue al MATERIAL, no al dedo. Por eso un bloque
-     pesado se queda atrás y se siente el peso en la mano.
+     El punto de agarre persigue al MATERIAL, no al dedo — así lo ligero no se
+     escapa del círculo de la brocha en un cuadro. Lo que NO hace es cobrar el
+     peso: una viga de osmio viene igual de rápido que una tabla, porque Carlos
+     lo pidió así (ver `TIRON`).
 
      Devuelve cuántas celdas agarró, para que la pantalla sepa si enganchó. */
   agarra(cx, cy, fx, fy, r = 4){
@@ -2301,22 +2323,21 @@ export class Mundo {
 
        El polvo no crece: la arena no es una pieza, y arrastrar un grano no
        puede llevarse el montón entero. */
-    const pieza = this.piezaDe(semilla);
+    const pieza = this.piezaDe(semilla, TOPE_MANO_PIEZA);
+    /* lo que pasa del tope no es un objeto, es el suelo: no se levanta */
+    if(pieza.length >= TOPE_MANO_PIEZA) return { n:0, cx:gx, cy:gy };
 
-    /* ── 3. LA SEGUNDA LEY, UNA VEZ PARA TODA LA PIEZA ────────────────────
-       La fuerza la hacen las celdas que la mano toca; la masa que se resiste
-       es la de la pieza ENTERA. De ahí salen solas las dos cosas que pidió
-       Carlos sin programar ninguna: lo pesado cuesta, y agarrar la punta de
-       una viga larga cuesta más que agarrar una piedrita — porque la fuerza
-       es la del puño y la masa es la del objeto. */
+    /* ── 3. LA VELOCIDAD QUE PIDE EL DEDO, SIN COBRAR EL PESO ─────────────
+       La mano decide a qué velocidad quiere que vaya la pieza —proporcional
+       a lo que le falta para llegar al dedo, con tope— y el motor la lleva.
+       La masa se sigue calculando, pero SÓLO para promediar la velocidad que
+       ya lleva la pieza: es una media ponderada, no un cobro. */
     let masa = 0;
     for(const k of pieza) masa += EL[t[k]].dens || 1;
     if(masa < 0.2) masa = 0.2;
-    let fX = 0, fY = 0;
-    for(const k of semilla){
-      const x = k % an, y = (k / an) | 0;
-      fX += (fx - x) * PUÑO; fY += (fy - y) * PUÑO;
-    }
+    let qx = (fx - gx) * TIRON, qy = (fy - gy) * TIRON;
+    const prisa = Math.hypot(qx, qy);
+    if(prisa > TOPE_MANO){ qx = qx / prisa * TOPE_MANO; qy = qy / prisa * TOPE_MANO; }
     /* ⚠ Y UN MUELLE SIN AMORTIGUAR NO ES UNA MANO, ES UNA CATAPULTA. Con
        sólo la fuerza de arriba, la primera prueba en navegador mandó el
        bloque de la celda 134 a la 2 —hasta la pared de enfrente— tirando de
@@ -2327,7 +2348,7 @@ export class Mundo {
     let vmx = 0, vmy = 0;
     for(const k of pieza){ const m = EL[t[k]].dens || 1; vmx += this.vx[k] * m; vmy += this.vy[k] * m; }
     vmx /= masa; vmy /= masa;
-    let ax = fX / masa - FRENO_MANO * vmx, ay = fY / masa - FRENO_MANO * vmy;
+    let ax = (qx - vmx) * FRENO_MANO, ay = (qy - vmy) * FRENO_MANO;
     const tope = 1.6;
     if(ax > tope) ax = tope; else if(ax < -tope) ax = -tope;
     if(ay > tope) ay = tope; else if(ay < -tope) ay = -tope;

@@ -971,7 +971,14 @@ seccion('la mano y el termómetro');
   };
   const ligero = tira('madera'), pesado = tira('eOs');
   ok('la mano ARRASTRA un sólido', ligero > 12, 'la madera llegó a x=' + ligero);
-  ok('y lo pesado cuesta más que lo ligero', pesado < ligero,
+  /* ⚠ ESTA PRUEBA DECÍA LO CONTRARIO HASTA QUE CARLOS LO MANDÓ CAMBIAR:
+     «La mano de agarrar quítale eso del esfuerzo para cargar algo solo
+     incomoda». Antes comprobaba que el osmio se quedara atrás de la madera,
+     que es la física correcta y el estorbo que él reportó. Ahora la mano
+     pide VELOCIDAD, no fuerza, así que los dos llegan al dedo — y eso es lo
+     que hay que comprobar, porque es lo que se puede volver a romper. */
+  ok('y el OSMIO viene igual de rápido que la madera: la mano no cobra el peso',
+     Math.abs(pesado - ligero) <= 2 && pesado > 40,
      'madera x=' + ligero + ' · osmio x=' + pesado);
   ok('y no atraviesa el muro', (() => {
     const m = mundo(40, 40, 3);
@@ -1027,9 +1034,24 @@ seccion('la mano y el termómetro');
     const r = bloque('madera', 6, 60, 25);
     return Math.abs(r.a.x - 60) < 4 && Math.abs(r.a.y - 25) < 4 && r.agarro === 36;
   })());
-  ok('y un peñasco de 196 celdas se queda atrás: lo pesado CUESTA', (() => {
+  /* ⚠ Y ÉSTA TAMBIÉN CAMBIÓ DE SIGNO POR LO MISMO. Decía «un peñasco de 196
+     celdas se queda atrás: lo pesado CUESTA». Ya no: un peñasco de 196 celdas
+     sigue siendo un objeto y la mano lo lleva. Lo que sí sigue habiendo es un
+     techo —`TOPE_MANO_PIEZA`—, y ése es el que se comprueba abajo, porque sin
+     él quitar la masa de la ecuación deja que la mano arrastre el suelo. */
+  ok('y un peñasco de 196 celdas TAMBIÉN viene: el tamaño ya no cuesta', (() => {
     const chico = bloque('piedra', 4, 60, 25), grande = bloque('piedra', 14, 60, 25);
-    return Math.abs(chico.a.x - 60) < 3 && grande.a.x < 58 && grande.a.y > 30;
+    return Math.abs(chico.a.x - 60) < 3 && Math.abs(grande.a.x - 60) < 6;
+  })());
+  ok('pero el SUELO no se levanta: pasado el tope, la pieza es escenario', (() => {
+    /* el suelo de esta sala es una sola pieza pegada de 80×5 = 400 celdas de
+       piedra, muy por encima del tope de mano si se baja a propósito; aquí se
+       usa uno de verdad grande para no tocar la constante */
+    const m = mundo(200, 60, 5);
+    for(let y = 40; y < 60; y++) for(let x = 0; x < 200; x++) m.pon(x, y, IDX.piedra);
+    corre(m, 5);
+    const g = m.agarra(100, 41, 100, 5, 3);
+    return g.n === 0;
   })());
   ok('y la mano no se lleva el muro pegado', (() => {
     const m = mundo(60, 50, 5);
