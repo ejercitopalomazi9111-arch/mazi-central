@@ -2855,8 +2855,22 @@ export class Mundo {
         const f = y * an;
         for(let x = fx0; x <= fx1; x++){
           const k = f + x;
-          _lp[k] = p0[k - 1] + p0[k + 1] + p0[k - an] + p0[k + an] - 4 * p0[k];
-          _lv[k] = v0[k - 1] + v0[k + 1] + v0[k - an] + v0[k + an] - 4 * v0[k];
+          /* ⚠ LA PARED ES UN ESPEJO, NO UN CERO. Una celda de muro tiene la
+             presión clavada en 0, así que leerla tal cual convierte la pared
+             en un escalón y el biarmónico convierte el escalón en un empujón.
+             Reflejando —la vecina de muro vale lo mismo que uno— el
+             laplaciano contra la pared da cero y no se inventa nada, que es
+             justo lo que hace una pared rígida con una onda de verdad. */
+          const w = tr[k - 1] === 0 ? p0[k] : p0[k - 1];
+          const e_ = tr[k + 1] === 0 ? p0[k] : p0[k + 1];
+          const n_ = tr[k - an] === 0 ? p0[k] : p0[k - an];
+          const s_ = tr[k + an] === 0 ? p0[k] : p0[k + an];
+          _lp[k] = w + e_ + n_ + s_ - 4 * p0[k];
+          const wv = tr[k - 1] === 0 ? v0[k] : v0[k - 1];
+          const ev = tr[k + 1] === 0 ? v0[k] : v0[k + 1];
+          const nv = tr[k - an] === 0 ? v0[k] : v0[k - an];
+          const sv = tr[k + an] === 0 ? v0[k] : v0[k + an];
+          _lv[k] = wv + ev + nv + sv - 4 * v0[k];
         }
       }
       const gx0 = fx0 + 1, gx1 = fx1 - 1, gy0 = fy0 + 1, gy1 = fy1 - 1;
@@ -2873,16 +2887,19 @@ export class Mundo {
              tapa la desintegraba. Las dos son de paredes, y las dos se
              arreglaron confinando el filtro al aire abierto.
              No se pierde nada: el damero vive en el aire, no en el muro. */
-          if(tr[k] === 0 || tr[k - 1] === 0 || tr[k + 1] === 0
-             || tr[k - an] === 0 || tr[k + an] === 0) continue;
-          const bv = _lv[k - 1] + _lv[k + 1] + _lv[k - an] + _lv[k + an] - 4 * _lv[k];
+          if(tr[k] === 0) continue;                    /* el muro no se filtra */
+          const bv = (tr[k-1]===0?_lv[k]:_lv[k-1]) + (tr[k+1]===0?_lv[k]:_lv[k+1])
+                   + (tr[k-an]===0?_lv[k]:_lv[k-an]) + (tr[k+an]===0?_lv[k]:_lv[k+an])
+                   - 4 * _lv[k];
           /* ⚠ LOS DOS CAMPOS, y probado que tiene que ser así. Filtrar SÓLO
              la velocidad —que parecía lo prudente, porque la presión es la
              que empuja cuerpos— dejó el damero en 144 %, o sea creciendo, y
              empeoró el recipiente de −2 a −6 celdas. La presión y la
              velocidad son las dos mitades del mismo oscilador: atenuar una
              sola las desbalancea y lo que sobra vuelve por la otra. */
-          const bp = _lp[k - 1] + _lp[k + 1] + _lp[k - an] + _lp[k + an] - 4 * _lp[k];
+          const bp = (tr[k-1]===0?_lp[k]:_lp[k-1]) + (tr[k+1]===0?_lp[k]:_lp[k+1])
+                   + (tr[k-an]===0?_lp[k]:_lp[k-an]) + (tr[k+an]===0?_lp[k]:_lp[k+an])
+                   - 4 * _lp[k];
           pres[k] -= VISC * bp;
           pv[k]   -= VISC * bv;
         }

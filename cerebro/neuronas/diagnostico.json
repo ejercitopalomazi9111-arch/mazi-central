@@ -826,6 +826,24 @@
       "vecinas": [
         "comprobacion-en-la-capa-equivocada"
       ]
+    },
+    {
+      "id": "arreglo-que-empata-en-el-marcador",
+      "titulo": "El arreglo que deja el mismo número de pruebas verdes",
+      "gravedad": "alta",
+      "sintoma": "Un arreglo pasa de 241 verdes a 241 verdes. El total dice que da igual, y no da igual: cambiaron CUÁLES.",
+      "causa": "Mirar el total en vez de la LISTA. Dos pruebas que se curan y dos que se rompen se ven idénticas a no haber hecho nada.",
+      "porque": "El resumen de una tanda de pruebas está hecho para decir «pasa o no pasa», no para comparar dos versiones. Y el total es lo único que uno alcanza a leer sin esfuerzo.",
+      "arreglo": "Guardar la lista de rojos de las DOS versiones y sacarles el diff, quitándole los números de cada renglón —que cambian solos— antes de comparar. Ahí aparece el intercambio de verdad y se puede decidir con él.",
+      "comoCazarlo": "`diff <(sed 's/ *→.*//' rojos-antes) <(sed 's/ *→.*//' rojos-despues)`. Si el diff no está vacío, hubo intercambio aunque el total no se haya movido.",
+      "consejo": "Y con el intercambio en la mano la decisión cambia de dueño: no es «cuántas pasan» sino «cuáles le duelen más a quien lo usa». Aquí se cambiaba una molestia por dos defectos en el sistema que él estaba construyendo esa semana, y por eso no se fusionó.",
+      "senales": [
+        "el mismo número de pruebas",
+        "el arreglo no cambió nada",
+        "¿lo subo o no?"
+      ],
+      "salioDe": "CRISOL, el filtro del damero, 17 de septiembre de 2026. Mata la onda infinita en aire y en agua, y a cambio un recipiente cerrado se propulsa 2 celdas y una carga desintegra una tapa que no debía. 241·15 en los dos lados.",
+      "vecinas": []
     }
   ]
 }
