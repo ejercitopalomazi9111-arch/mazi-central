@@ -632,6 +632,91 @@ console.log('\n· El freno, con el valor de verdad');
      r3.tope === null || r3.tope === Infinity || !isFinite(r3.tope), String(r3.tope));
 }
 
+/* ══ 11-quinquies · LOS NOMBRES Y EL TONO QUE PIDIÓ CARLOS ═══════════════ */
+console.log('\n· Negro, Paulina y el tono de la casa');
+{
+  const LLAVES = { GROQ_API_KEY:'x', GEMINI_API_KEY:'x' };
+  const original = globalThis.fetch;
+  let visto = null;
+  globalThis.fetch = async (url, op) => {
+    visto = { url:String(url), cuerpo: JSON.parse(op.body) };
+    return { ok:true, status:200,
+             json: async () => ({ choices:[{ message:{ content:'ándale pues' } }],
+                                  candidates:[{ content:{ parts:[{ text:'ándale pues' }] } }] }),
+             text: async () => '' };
+  };
+
+  /* ── se les habla por su NOMBRE ───────────────────────────────────────── */
+  for(const [comoLoEscribe, quienContesta] of
+      [['negro','Negro'], ['Negro','Negro'], ['paulina','Paulina'],
+       ['PAULINA','Paulina'], ['pau','Paulina'], ['groq','Negro']]){
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:comoLoEscribe, texto:'¿qué onda?' }));
+    await asentar();
+    const [, h] = await leer(await pedir(s, 'GET', 'hilo'));
+    const suya = h.hilo.find(e => e.de && e.de.nombre === quienContesta && e.de.id !== 'carlos');
+    ok(`«${comoLoEscribe}» le llega a ${quienContesta}`, c === 200 && !!suya,
+       'código ' + c + ' · ' + JSON.stringify(suya && suya.de));
+  }
+  {
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'gonzalo', texto:'hola' }));
+    ok('y un nombre que no es de nadie sigue rebotando', c === 400, String(c));
+  }
+
+  /* ── el tono va en el encargo ─────────────────────────────────────────── */
+  {
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'negro', texto:'hola' }));
+    await asentar();
+    const papel = visto.cuerpo.messages[0].content;
+    ok('a la silla se le pide el tono cínico que pidió Carlos',
+       /c[ií]nico/i.test(papel) && /sarc[aá]stico/i.test(papel), papel.slice(0,70));
+    ok('y se le dice su nombre nuevo, no el del proveedor',
+       /Eres Negro/.test(papel), papel.slice(0,40));
+    /* ⚠ LO QUE MÁS IMPORTA DE ESTE BLOQUE. El tono es lo divertido; esto es lo
+       que hace que la sala siga sirviendo. Una silla grosera que además
+       inventa suena segurísima y te manda al carajo por el camino equivocado
+       — es peor que una aburrida y honesta. */
+    ok('PERO se le prohíbe inventar, por encima del tono',
+       /NO INVENTES/.test(papel));
+    ok('y se le prohíbe autorizar lo que autoriza una persona',
+       /nunca orden/i.test(papel) && /autoriza una persona/i.test(papel));
+  }
+
+  /* ── el numerito con Paulina ──────────────────────────────────────────── */
+  {
+    const s = nueva(LLAVES);
+    await entrar(s, 'carlos', 'humano');
+    await leer(await pedir(s, 'POST', 'decir',
+      { de:'carlos', tipo:'mensaje', a:'paulina', texto:'hola' }));
+    await asentar();
+    const papel = visto.cuerpo.systemInstruction.parts[0].text;
+    ok('a Paulina se le avisa que Sylcred y Godines le tiran la línea',
+       /Sylcred y Godines/.test(papel) && /bateas/.test(papel), papel.slice(-90));
+    ok('y que nunca les sigue el juego', /Nunca les sigues el juego/.test(papel));
+  }
+  {
+    const [, r] = await leer(await pedir(nueva(LLAVES), 'GET', 'tono'));
+    ok('/tono se lo sirve a los que no son sillas (Sylcred, Godines)',
+       r.bien && /frases de señor/.test(r.ligue) && r.objeto === 'paulina');
+    ok('y dice a quién le toca el numerito',
+       r.ligan.includes('sylcred') && r.ligan.includes('godines'));
+    /* El chiste tiene forma fija a propósito: uno que se repite igual cansa a
+       la tercera, y uno sin freno en una mesa de trabajo deja de ser chiste. */
+    ok('el remate es que quedan mal ELLOS, no ella',
+       /quedas mal .?TÚ/.test(r.ligue) || /quedas mal TÚ/.test(r.ligue), r.ligue.slice(-80));
+  }
+
+  globalThis.fetch = original;
+}
+
 /* ══ 11-quater · LO PROGRAMADO ═══════════════════════════════════════════ */
 console.log('\n· Mensajes programados');
 {

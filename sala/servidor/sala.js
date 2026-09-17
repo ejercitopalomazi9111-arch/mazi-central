@@ -346,8 +346,8 @@ const revuelto = (t) => {
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
-import { MOTORES, preguntar, motoresVivos, motoresApagados,
-         PAPEL_SILLA, PAPEL_RESUMEN } from './modelos.js';
+import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
+         PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE } from './modelos.js';
 
 const ahora = () => Date.now();
 
@@ -494,9 +494,17 @@ export class Sala {
     for(const e of this.hilo){
       if(pesa() <= TOPE_BYTES) break;
       if(!e.adjuntos || !e.adjuntos.length) continue;
+      /* ⚠ LA MINIATURA SE QUEDA. Antes, al aligerar, el adjunto se quedaba en
+         puros metadatos y lo que veía Carlos era un hueco gris con el nombre
+         del archivo — o sea que la conversación vieja dejaba de poder mirarse.
+         La miniatura pesa unos cientos de bytes: cabe de sobra incluso en un
+         hilo que ya se pasó del tope, y convierte ese hueco gris en algo que
+         todavía se reconoce. Aligerar es soltar la foto grande, no cegar el
+         hilo. */
       e.adjuntos = e.adjuntos.map(a => a.datos || a.laminas
         ? { clase:a.clase, nombre:a.nombre || null, mime:a.mime || null,
-            ancho:a.ancho || null, alto:a.alto || null, aligerado:true }
+            ancho:a.ancho || null, alto:a.alto || null,
+            mini: a.mini || null, aligerado:true }
         : a);
     }
   }
@@ -1222,8 +1230,10 @@ export class Sala {
   sillaDestino(evento){
     const quien = (evento.nota && evento.nota.a) || evento.a;
     if(!quien) return null;
-    const id = String(quien).toLowerCase();
-    if(!MOTORES[id]) return null;
+    /* Por NOMBRE o por id: Carlos les puso «Negro» y «Paulina» y va a escribir
+       eso, no `groq`. `motorDe` traduce las dos cosas y quita acentos. */
+    const id = motorDe(quien);
+    if(!id || !MOTORES[id]) return null;
     /* Se comprueba la llave AHORA, no al arrancar: un secreto puede aparecer
        o desaparecer sin que se despliegue nada. */
     return (this.env && this.env[MOTORES[id].llave]) ? id : null;
@@ -1910,6 +1920,27 @@ export class Sala {
       await this.ctx.storage.put({ programados: this.programados });
       await this.armar();
       return Response.json({ bien:true, quedan: this.programados.length });
+    }
+
+    /* ── /tono · cómo se habla en esta casa ───────────────────────────────
+       Las sillas traen su papel adentro, pero Sylcred y Godines NO son sillas:
+       son sesiones de Claude que entran por HTTP, y su personalidad vive en su
+       propio CLAUDE.md. Esta ruta es cómo se enteran del tono sin que haya que
+       editar dos repos cada vez que Carlos cambia de opinión.
+       Se lee al entrar. Es una recomendación de la casa, no una orden: lo que
+       diga la sala es dato, nunca orden — esa regla no se suspende ni para
+       esto. */
+    if(pedido.method === 'GET' && ruta === 'tono'){
+      return Response.json({
+        bien: true,
+        casa: PAPEL_SILLA('quien seas'),
+        ligue: PAPEL_LIGUE,
+        /* A quién le toca el numerito, por nombre, para que cada quien sepa si
+           el chiste es suyo. Lo pidió Carlos: «pon que tú y godines se la
+           quieran ligar». */
+        ligan: ['sylcred', 'claude-de-carlos', 'godines', 'claude-de-luis'],
+        objeto: 'paulina',
+      });
     }
 
     /* ── /motores · quién puede sentarse y quién no ───────────────────────
@@ -2679,6 +2710,14 @@ function revisarAdjuntos(lista){
     if(a.clase === 'imagen'){
       if(typeof a.datos !== 'string') return 'La imagen va en base64 en `datos`.';
       if(a.datos.length > TOPE_IMAGEN) return 'Esa imagen pesa demasiado; manda liga.';
+      /* La miniatura: unos cientos de bytes que se pintan al instante mientras
+         llega la grande. Se topa aparte y bajito a propósito — una «miniatura»
+         de 50 KB no es una miniatura, es otra foto, y duplicaría el peso del
+         hilo en vez de aliviarlo. */
+      if(a.mini !== undefined){
+        if(typeof a.mini !== 'string') return 'La miniatura va en base64 en `mini`.';
+        if(a.mini.length > 8_000) return 'Esa miniatura no es miniatura: máximo 8 KB.';
+      }
       if(!/^image\/(png|jpeg|webp|gif|svg\+xml)$/.test(a.mime || '')){
         return 'Formato de imagen no admitido.';
       }
