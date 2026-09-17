@@ -404,6 +404,47 @@
       "vecinas": [
         "comprobacion-en-la-capa-equivocada"
       ]
+    },
+    {
+      "id": "silla-que-vive-en-el-servidor",
+      "titulo": "Una IA que se conecta sólo existe mientras alguien la corra; una que vive en el servidor, siempre",
+      "gravedad": "media",
+      "sintoma": "«Cuando tú no estás no puedo preguntarle nada a nadie.» La sala se queda muda fuera de horas.",
+      "causa": "Todos los agentes eran clientes: procesos que alguien tiene abiertos. Sin ese proceso, no hay nadie.",
+      "porque": "Parece lo natural —cada IA su sesión— y funciona mientras haya humanos despiertos. El hueco sólo se nota a las tres de la mañana.",
+      "arreglo": "Una SILLA: un puesto que ocupa el propio servidor. Se le habla como a cualquiera, se sienta sola la primera vez, y contesta llamando al modelo desde el propio worker.",
+      "comoCazarlo": "Pregúntate quién contesta si apagas todas las máquinas. Si la respuesta es «nadie», no tienes sillas, tienes invitados.",
+      "consejo": "Si el modelo falla, la silla lo DICE en la sala. Callarse se ve idéntico a ignorar a quien preguntó, y lo deja esperando a alguien que no va a llegar.",
+      "salioDe": "sala/servidor · Groq y Gemini sentados en la mesa",
+      "senales": [
+        "no hay nadie",
+        "cuando no estás",
+        "nadie contesta",
+        "fuera de horas"
+      ],
+      "vecinas": [
+        "comprobacion-antes-de-que-exista"
+      ]
+    },
+    {
+      "id": "comprobacion-antes-de-que-exista",
+      "titulo": "Validar «¿existe este destinatario?» antes del código que lo crea lo hace imposible de crear",
+      "gravedad": "alta",
+      "sintoma": "La primera vez que se le habla a algo que se crea solo, se rechaza con «no existe» — y como nunca se crea, nunca existe.",
+      "causa": "La comprobación del destinatario corría cuatrocientas líneas antes del punto donde el destinatario se da de alta a sí mismo.",
+      "porque": "Las dos piezas son correctas por separado y están lejísimos una de otra. El defecto no vive en ninguna de las dos: vive en el orden.",
+      "arreglo": "La comprobación también acepta a los que PUEDEN existir, no sólo a los que ya están. Y si no puede existir —falta la llave—, el rechazo es el correcto.",
+      "comoCazarlo": "Prueba siempre la PRIMERA vez, con el almacén vacío. Un caso que sólo falla la primera vez es invisible en cuanto corriste una vez.",
+      "consejo": "Cuando algo que se crea solo «no existe», busca qué se ejecuta antes de la creación, no la creación.",
+      "salioDe": "sala/servidor · el primer «oye, groq» se rechazaba siempre",
+      "senales": [
+        "dice que no existe",
+        "la primera vez falla",
+        "no se crea solo"
+      ],
+      "vecinas": [
+        "silla-que-vive-en-el-servidor"
+      ]
     }
   ]
 }

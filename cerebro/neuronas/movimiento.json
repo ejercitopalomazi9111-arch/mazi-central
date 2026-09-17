@@ -209,6 +209,47 @@
         "se traba al picar"
       ],
       "salioDe": "El abanico de Guerra de Puercos. Rompiendo el encime a propósito, las pruebas no reportaban ninguna falla: se moría el proceso."
+    },
+    {
+      "id": "observador-llega-tarde-al-fling",
+      "titulo": "IntersectionObserver no entrega en el cuadro: bajando rápido avisa cuando la pieza ya pasó",
+      "gravedad": "alta",
+      "sintoma": "«Si bajo rápido no carga en el momento en el que bajo.» Las tarjetas cruzan la pantalla en blanco y aparecen cuando ya nadie las ve.",
+      "causa": "Dos latencias que se suman: el aviso del observador llega varios cuadros tarde durante un fling, y encima la entrada tarda (fundido más escalón, hasta 960 ms). A 7 000 px/s, en 960 ms te moviste 6 700 px.",
+      "porque": "El umbral parece lo sospechoso y está bien. Lo que falla es CUÁNDO se entera y CUÁNTO tarda en verse, y ninguna de las dos se lee en el CSS.",
+      "arreglo": "Revelar por POSICIÓN dentro del mismo rAF que mide la velocidad, contra una línea al ~90 % de la pantalla. Y publicar la velocidad como variable CSS (`--ritmo`) por la que se multiplican duraciones Y escalones: a toda prisa no se aceleran, se quitan.",
+      "comoCazarlo": "Compara el MISMO punto del scroll a dos velocidades y cuenta piezas invisibles estando completas en pantalla. Nunca con `scrollTo` (ver `scrollto-anima-con-smooth`): con ruedazos de verdad.",
+      "consejo": "Sella el ritmo EN cada pieza al entrar. Si lee la variable global, frenar el dedo a media transición le cambia la duración en vuelo y el navegador reinicia el tiempo: se ve un tirón.",
+      "salioDe": "toydarians · 100 % de las fichas en blanco bajando rápido; 0 % después",
+      "senales": [
+        "no carga cuando bajo",
+        "aparece tarde",
+        "se ve en blanco",
+        "bajando rápido se ve feo"
+      ],
+      "vecinas": [
+        "scrollto-anima-con-smooth"
+      ]
+    },
+    {
+      "id": "scrollto-anima-con-smooth",
+      "titulo": "Con `scroll-behavior: smooth`, `scrollTo` ANIMA: mides a media animación",
+      "gravedad": "alta",
+      "sintoma": "La medición dice que hay un defecto enorme en un punto concreto de la página, y mirando ahí no hay nada raro.",
+      "causa": "El guion pedía `scrollTo(0, 5600)` y medía 110 ms después. Con `scroll-behavior: smooth` eso no salta: se desliza. La medición cayó en scrollY=822.",
+      "porque": "`scrollTo` se siente instantáneo porque lo es en casi todos lados. La propiedad que lo cambia está en una línea de CSS a mil líneas de distancia y no se llama nada parecido.",
+      "arreglo": "Simular el dedo de verdad: ruedazos (`mouse.wheel`) o eventos táctiles. El scroll del usuario no lo toca `scroll-behavior`.",
+      "comoCazarlo": "Imprime `scrollY` JUNTO a lo que estás midiendo. Si no coincide con lo que pediste, no estás midiendo donde crees.",
+      "consejo": "Antes de creerle a una medición rara, comprueba que el instrumento llegó a donde dijo que iba.",
+      "salioDe": "sitio/ · pedía scroll a 5600 y medía en 822",
+      "senales": [
+        "la medición no cuadra",
+        "falla sólo en un punto",
+        "no reproduce a mano"
+      ],
+      "vecinas": [
+        "observador-llega-tarde-al-fling"
+      ]
     }
   ]
 }

@@ -123,6 +123,24 @@
         "la traducción está puesta y no sale"
       ],
       "salioDe": "El barrido del 3 de septiembre en La Sala: 21 frases de interfaz sin traducir, y varias de ellas ya estaban en el diccionario — lo que fallaba era la comparación."
+    },
+    {
+      "id": "borde-de-palabra-no-entiende-acentos",
+      "titulo": "`\\b` en JavaScript se calcula sobre [A-Za-z0-9_]: con acentos cae donde no va",
+      "gravedad": "media",
+      "sintoma": "Una expresión regular en español no reconoce palabras evidentes. «resúmeme» no casa con un patrón que dice `res[uú]me`.",
+      "causa": "El borde de palabra sólo conoce letras ASCII. Una vocal acentuada no cuenta como letra, así que el motor ve un borde donde no lo hay. Y de paso el pronombre pegado («resúme-me») rompe cualquier `\\b` al final.",
+      "porque": "Meter [uú] en la clase de caracteres parece el arreglo y no toca el problema: lo que falla son los BORDES, no la vocal.",
+      "arreglo": "Normalizar a NFD y quitar los diacríticos (`.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')`), y buscar pedazos con `includes` en vez de bordes.",
+      "comoCazarlo": "Prueba el patrón con la palabra ACENTUADA y con el pronombre pegado, que es como se escribe de verdad en español mexicano.",
+      "consejo": "En español, casi siempre es mejor tosco y que acierte que fino y que falle. Quita acentos y busca trozos.",
+      "salioDe": "sala/servidor · el detector de «resúmeme» no disparaba nunca",
+      "senales": [
+        "no reconoce la palabra",
+        "la expresión regular no casa",
+        "funciona sin acentos"
+      ],
+      "vecinas": []
     }
   ]
 }

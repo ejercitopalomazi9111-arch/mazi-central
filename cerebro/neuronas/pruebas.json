@@ -706,6 +706,67 @@
         "pruebas-que-no-prueban-nada",
         "el-comentario-no-es-el-codigo"
       ]
+    },
+    {
+      "id": "prueba-que-nace-muerta",
+      "titulo": "Un `ok(...)` cuyo segundo argumento no es un booleano ya calculado siempre pasa",
+      "gravedad": "alta",
+      "sintoma": "La prueba está verde con el código roto a propósito, y de paso infla el marcador.",
+      "causa": "El segundo argumento no era un booleano: era `(a, b, true) && true` —que evalúa true— o una PROMESA, que siempre es verdadera.",
+      "porque": "Al escribir una prueba con `await` dentro se cuela un operador coma o un `.then()`, y el resultado se ve razonable. Nadie mira lo que VALE la expresión, sólo lo que dice el texto de al lado.",
+      "arreglo": "El booleano se calcula ANTES, en su propia línea, y se le pasa ya hecho. Si hace falta await, se hace fuera del `ok(...)`.",
+      "comoCazarlo": "Rompe el código a propósito. Y revisa cada `ok(` cuyo segundo argumento tenga una coma, un `&&` sospechoso, un `.then(` o una función que se invoca a sí misma.",
+      "consejo": "Cuando el marcador suba y no sepas qué prueba se agregó, desconfía. Dos pruebas que no prueban nada valen menos que ninguna: dan permiso para no mirar.",
+      "salioDe": "sala/servidor/pruebas-modelos.mjs · dos de 32 pasaban con el adaptador destruido",
+      "senales": [
+        "pasa siempre",
+        "la prueba no falla nunca",
+        "verde con todo roto"
+      ],
+      "vecinas": [
+        "prueba-que-revienta-en-vez-de-fallar",
+        "pruebas-que-no-prueban-nada"
+      ]
+    },
+    {
+      "id": "prueba-que-revienta-en-vez-de-fallar",
+      "titulo": "Una prueba que truena no informa: hay que dejarla llegar a decir ✗",
+      "gravedad": "alta",
+      "sintoma": "Al meter el bug a propósito, la suite no imprime una prueba roja: no imprime NADA. Leyendo por encima se ve igual que «todo bien».",
+      "causa": "La condición leía una cadena de propiedades (`x.y.parts[0].text`) y al faltar una, el TypeError mató el proceso antes del marcador.",
+      "porque": "Uno escribe la condición pensando en el caso bueno, donde la cadena existe. El caso malo es justo aquel en el que no existe — o sea que la prueba se rompe exactamente cuando tenía que hablar.",
+      "arreglo": "Encadenamiento opcional en toda la condición, y en el `extra` se enseña lo que sí venía para saber qué faltó.",
+      "comoCazarlo": "Corre la mutación y mira la SALIDA COMPLETA, no sólo el grep de ✗. Si no hay marcador final, la suite murió y no te enteraste.",
+      "consejo": "Un `grep ✗` sobre una suite que reventó devuelve vacío, igual que una suite verde. Comprueba siempre que salga el renglón del marcador.",
+      "salioDe": "sala/servidor/pruebas-modelos.mjs · quitarle `systemInstruction` a Gemini mataba la suite en vez de ponerla roja",
+      "senales": [
+        "no imprime nada",
+        "la suite se muere",
+        "salida vacía"
+      ],
+      "vecinas": [
+        "prueba-que-nace-muerta"
+      ]
+    },
+    {
+      "id": "decorado-sin-waituntil",
+      "titulo": "Sin `waitUntil` en el decorado, todo el segundo plano es invisible para las pruebas",
+      "gravedad": "alta",
+      "sintoma": "La funcionalidad corre bien a mano y ninguna prueba la ve. El hilo sale vacío aunque el código sí publica.",
+      "causa": "El envoltorio usa `ctx.waitUntil` si existe y si no deja la promesa al aire. El doble de pruebas no lo traía, así que lo diferido ocurría DESPUÉS de que la prueba terminó de mirar.",
+      "porque": "En producción está bien: la plataforma lo espera. En un doble, «al aire» significa «fuera del alcance del `await` de la prueba», y eso no se ve en ninguna línea del código de producción.",
+      "arreglo": "El doble recoge las promesas en una lista y se expone un `asentar()` que las espera. Entonces sí se puede probar lo diferido.",
+      "comoCazarlo": "Si una prueba de algo que corre en segundo plano falla «por poquito», mira si tu doble tiene `waitUntil`. Sin él NUNCA va a pasar.",
+      "consejo": "Un doble que no implementa lo que el código usa no es un doble incompleto: es un doble que aprueba lo que no probó.",
+      "salioDe": "sala/servidor/pruebas.mjs · las sillas enteras eran invisibles para la suite",
+      "senales": [
+        "no se ve el efecto",
+        "el hilo sale vacío",
+        "funciona a mano y no en la prueba"
+      ],
+      "vecinas": [
+        "prueba-que-nace-muerta"
+      ]
     }
   ]
 }

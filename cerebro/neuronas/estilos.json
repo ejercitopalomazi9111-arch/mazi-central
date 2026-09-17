@@ -13,7 +13,11 @@
       "arreglo": "Antes de copiar, escribir qué está PROHIBIDO en ese estilo. El estilo suizo prohíbe centrar; el brutalismo prohíbe suavizar; el editorial prohíbe la retícula uniforme.",
       "comoCazarlo": "Pedir la lista de prohibiciones. Si nadie la sabe, no se está usando el estilo: se está imitando su superficie.",
       "consejo": "La restricción es lo que hace que las decisiones siguientes se tomen solas. Sin ella, cada pantalla vuelve a empezar de cero.",
-      "senales": ["tiene todo y se ve mal", "copiamos el estilo de X", "no sé por qué no funciona"],
+      "senales": [
+        "tiene todo y se ve mal",
+        "copiamos el estilo de X",
+        "no sé por qué no funciona"
+      ],
       "salioDe": "A List Apart y Smashing sobre sistemas de diseño; el patrón se repite en la cosecha entera."
     },
     {
@@ -26,7 +30,11 @@
       "arreglo": "O se pone detrás una imagen, un degradado con varias manchas de color o contenido que pasa; o se usa un panel sólido, que además va más rápido.",
       "comoCazarlo": "Quitar el desenfoque y mirar si algo cambia. Si no cambia nada, el efecto no estaba aportando.",
       "consejo": "El vidrio funciona sobre movimiento: cuando algo pasa por debajo, se entiende que hay una capa. Sobre un fondo quieto, no.",
-      "senales": ["glassmorphism", "efecto vidrio turbio", "se ve gris y opaco"],
+      "senales": [
+        "glassmorphism",
+        "efecto vidrio turbio",
+        "se ve gris y opaco"
+      ],
       "salioDe": "Análisis de la corriente en la cosecha, contrastado con el costo de backdrop-filter medido en el sitio del Rembrandt."
     },
     {
@@ -39,7 +47,11 @@
       "arreglo": "Si se quiere el aire del estilo, reservarlo para superficies y darle a los controles un contraste real: color de relleno, borde o cambio de tono.",
       "comoCazarlo": "Enseñar la pantalla a alguien y pedirle que señale dónde tocaría. Si duda, el estilo se comió la información.",
       "consejo": "Casi ningún neomorfismo pasa la revisión de contraste: los bordes son diferencias de 1 o 2 puntos de luminancia.",
-      "senales": ["neumorphism", "no encuentro el botón", "se ve elegante y no se usa"],
+      "senales": [
+        "neumorphism",
+        "no encuentro el botón",
+        "se ve elegante y no se usa"
+      ],
       "salioDe": "Nielsen Norman Group sobre affordances y señales de clicabilidad."
     },
     {
@@ -52,7 +64,11 @@
       "arreglo": "Retícula estricta y visible, tipografía de un solo peso muy grande, cero sombras suaves, bordes de 2 px o más, colores planos. El orden es lo que hace que lo áspero se lea como decisión.",
       "comoCazarlo": "Poner la retícula encima. Si nada se alinea, no es brutalismo: es descuido.",
       "consejo": "Funciona muy bien para portafolios y muy mal para un formulario de seguro.",
-      "senales": ["brutalismo", "se ve a medio hacer", "querían algo crudo"],
+      "senales": [
+        "brutalismo",
+        "se ve a medio hacer",
+        "querían algo crudo"
+      ],
       "salioDe": "Revisión de la corriente en la cosecha de Smashing y A List Apart."
     },
     {
@@ -65,7 +81,11 @@
       "arreglo": "Alineación a la izquierda, retícula de columnas visible en la composición, jerarquía por tamaño y no por color, y bloques de vacío que ocupan tanto como el contenido.",
       "comoCazarlo": "Medir qué porcentaje del lienzo está vacío. Por debajo del 40 % no es suizo.",
       "consejo": "Centrar todo es la señal más rápida de que se abandonó el estilo. Ahí se pierde la tensión.",
-      "senales": ["se ve soso", "estilo suizo", "hay que llenar ese hueco"],
+      "senales": [
+        "se ve soso",
+        "estilo suizo",
+        "hay que llenar ese hueco"
+      ],
       "salioDe": "Practical Typography y la tradición tipográfica suiza, presente en la cosecha."
     },
     {
@@ -78,7 +98,11 @@
       "arreglo": "Diseñar con el texto real, y con el más largo y el más corto que vayan a existir. Si el titular puede tener 20 palabras, la composición tiene que sobrevivir a 20.",
       "comoCazarlo": "Duplicar la longitud de cada texto y volver a mirar. Después reducirla a una palabra.",
       "consejo": "Es la misma prueba que salva las traducciones: el alemán mide un 30 % más que el español.",
-      "senales": ["se rompe con el texto real", "quedaba bonito con el ejemplo", "el titular no cabe"],
+      "senales": [
+        "se rompe con el texto real",
+        "quedaba bonito con el ejemplo",
+        "el titular no cabe"
+      ],
       "salioDe": "Smashing y A List Apart sobre diseño con contenido real; y la práctica de probar con los extremos."
     },
     {
@@ -91,7 +115,11 @@
       "arreglo": "Que la identidad descanse en la tipografía, la retícula y el ritmo del espacio, que envejecen mucho más despacio. El color de moda, si va, que sea un acento reemplazable en una variable.",
       "comoCazarlo": "Poner el sitio en blanco y negro. Si sin color no queda nada reconocible, la identidad estaba prestada.",
       "consejo": "Es la prueba más barata que existe para saber si un diseño tiene esqueleto.",
-      "senales": ["se ve del año pasado", "envejeció mal", "sólo cambia el color"],
+      "senales": [
+        "se ve del año pasado",
+        "envejeció mal",
+        "sólo cambia el color"
+      ],
       "salioDe": "Práctica de revisión del departamento: la prueba de blanco y negro."
     },
     {
@@ -104,7 +132,11 @@
       "arreglo": "Bajar la saturación de los acentos en oscuro, usar un blanco roto en vez de #FFF y un negro que no sea #000. Y redefinir sólo los tokens que cambian.",
       "comoCazarlo": "Comparar los dos temas lado a lado a brillo bajo, que es como se usa el modo oscuro de verdad.",
       "consejo": "El negro puro con blanco puro es el par que más fatiga produce, y es exactamente el que sale de invertir.",
-      "senales": ["fluorescente en oscuro", "cansa la vista de noche", "invertimos los colores"],
+      "senales": [
+        "fluorescente en oscuro",
+        "cansa la vista de noche",
+        "invertimos los colores"
+      ],
       "salioDe": "Guías de tema oscuro de los sistemas de diseño y la práctica del laboratorio de mazi-central."
     },
     {
@@ -117,7 +149,11 @@
       "arreglo": "Una variable con eje de peso y de ancho cubre titular, cuerpo y etiqueta. Una monoespaciada para datos y código. Con dos ya está.",
       "comoCazarlo": "Contar familias cargadas. Más de dos en un producto es casi siempre indecisión, no diseño.",
       "consejo": "Menos familias además significa menos peso y menos saltos de fuente al cargar.",
-      "senales": ["se ve inconsistente", "muchas fuentes", "qué tipografía uso para esto"],
+      "senales": [
+        "se ve inconsistente",
+        "muchas fuentes",
+        "qué tipografía uso para esto"
+      ],
       "salioDe": "Practical Typography, y el sistema del sitio del Rembrandt: Archivo variable más JetBrains Mono."
     },
     {
@@ -130,7 +166,11 @@
       "arreglo": "Dos o tres valores en el sistema y una regla de cuál va dónde. Si el estilo pide esquinas duras, se topa el máximo en el propio sistema para que nadie lo suba sin darse cuenta.",
       "comoCazarlo": "Contar los valores de `border-radius` distintos en la hoja de estilo.",
       "consejo": "Un radio máximo bajo —3 o 4 px— es una decisión de estilo muy fuerte: hace que todo se vea técnico y deliberado.",
-      "senales": ["no se ve de una pieza", "cada cosa con su redondez", "border-radius"],
+      "senales": [
+        "no se ve de una pieza",
+        "cada cosa con su redondez",
+        "border-radius"
+      ],
       "salioDe": "Sistema «Geometría tecnológica» del Instituto Rembrandt, donde el radio está topado a 3 px en todo el espacio de nombres."
     },
     {
@@ -143,7 +183,11 @@
       "arreglo": "Traer referencias de fuera: señalética, portadas de disco, packaging, publicaciones científicas, planos técnicos. De ahí sale lo que no se parece a nada del sector.",
       "comoCazarlo": "Mirar la carpeta de referencias. Si todas son del mismo rubro, el resultado ya está decidido.",
       "consejo": "Una fuente de fuera, traducida con rigor, es lo que hace que un diseño se vea único sin ser raro.",
-      "senales": ["se ve como todos", "genérico", "qué le cambio"],
+      "senales": [
+        "se ve como todos",
+        "genérico",
+        "qué le cambio"
+      ],
       "salioDe": "Método del departamento de diseño: la papelería y la señalética como fuente, en vez del sector."
     },
     {
@@ -156,7 +200,11 @@
       "arreglo": "Definir dos o tres curvas propias y asignarlas por tipo de movimiento: entrada rápida y salida lenta para lo que aparece; lo contrario para lo que se va.",
       "comoCazarlo": "Contar cuántas curvas distintas hay. Una sola para toda la interfaz es señal de que no se decidió.",
       "consejo": "El detalle que más cambia la sensación es la duración: 150 ms se siente instantáneo, 300 ms se siente cuidado, 500 ms se siente lento.",
-      "senales": ["se siente prestado", "ease por defecto", "se mueve bien y no convence"],
+      "senales": [
+        "se siente prestado",
+        "ease por defecto",
+        "se mueve bien y no convence"
+      ],
       "salioDe": "Revisión del sistema de movimiento del laboratorio."
     },
     {
@@ -169,7 +217,11 @@
       "arreglo": "Que cada control tenga un borde o un contorno real, no sólo relleno. Comprobar con `@media (forced-colors: active)` y ajustar lo mínimo con `forced-color-adjust`.",
       "comoCazarlo": "Activar el modo de contraste forzado y recorrer los controles principales.",
       "consejo": "La regla que sobrevive: la información nunca vive sólo en el fondo. Un borde o un texto la sostienen.",
-      "senales": ["alto contraste", "desaparecen los botones", "forced-colors"],
+      "senales": [
+        "alto contraste",
+        "desaparecen los botones",
+        "forced-colors"
+      ],
       "salioDe": "MDN sobre forced-colors y las pautas de contraste forzado."
     },
     {
@@ -182,7 +234,11 @@
       "arreglo": "Una sola fuente de verdad. Si los tokens viven en el bloque de tema de la hoja de estilo, el archivo de configuración no debe existir.",
       "comoCazarlo": "Buscar el mismo token definido en dos sitios. Con uno que aparezca, ya hay ambigüedad.",
       "consejo": "El síntoma antes del defecto es la pregunta «¿dónde se cambia el color primario?». Si no tiene una sola respuesta, ya está partido.",
-      "senales": ["dónde cambio el color", "tokens en dos sitios", "tailwind.config"],
+      "senales": [
+        "dónde cambio el color",
+        "tokens en dos sitios",
+        "tailwind.config"
+      ],
       "salioDe": "Decisión cerrada del sitio del Rembrandt: los tokens viven en el bloque @theme y no hay archivo de configuración."
     },
     {
@@ -195,8 +251,50 @@
       "arreglo": "Elegir un eje y llevarlo hasta el final: un solo ángulo repetido, una sola familia de iconos dibujada por uno mismo, un ritmo vertical estricto, una sola forma de mostrar datos.",
       "comoCazarlo": "Preguntar qué regla se repite en todas las pantallas. Si no hay una, no hay identidad.",
       "consejo": "Lo que hace que un diseño se vea caro es que las decisiones se repitan sin excepción, no que sean llamativas.",
-      "senales": ["se ve amateur", "quisimos ser diferentes", "formas raras"],
+      "senales": [
+        "se ve amateur",
+        "quisimos ser diferentes",
+        "formas raras"
+      ],
       "salioDe": "Método del departamento: la identidad se construye desde una restricción sostenida, como la cuña diagonal del Rembrandt."
+    },
+    {
+      "id": "dos-cosas-con-la-misma-clase",
+      "titulo": "Dos componentes distintos con el mismo nombre de clase: el genérico se come al específico",
+      "gravedad": "alta",
+      "sintoma": "Un botón enseña su texto cortado («Categorí»), con espacio de sobra alrededor y sin ninguna regla que lo explique.",
+      "causa": "`.hueco` era la variante fantasma de un botón Y un renglón de rejilla de tres columnas. La regla de rejilla le caía encima al botón con una primera columna de 58 px fijos.",
+      "porque": "Las dos reglas son correctas por separado y están a mil líneas una de otra. Ninguna se ve mal leyéndola; el defecto vive en que comparten palabra.",
+      "arreglo": "Comprobar en el DOM YA MONTADO quién usa esa clase de verdad. Si el genérico no lo usa nadie, prohibirle tocar al específico (`:not(.b)`), y si lo usa alguien, renombrar.",
+      "comoCazarlo": "Compara `scrollWidth` contra `clientWidth` de los nodos de texto. Un texto más ancho que su caja es siempre un defecto, y sale sin saber qué buscar.",
+      "consejo": "Antes de inventar una clase con nombre común —hueco, caja, fila, panel— búscala en la hoja. El CSS no tiene espacios de nombres.",
+      "salioDe": "toydarians/estilo.css · la única cosa con clase `hueco` en las tres páginas era el botón que rompía",
+      "senales": [
+        "texto cortado",
+        "se lee a medias",
+        "no cabe y hay espacio"
+      ],
+      "vecinas": []
+    },
+    {
+      "id": "area-de-toque-que-mide-bien-y-no-sirve",
+      "titulo": "Un área táctil de 44 px puede medir 44 y no recibir un solo toque",
+      "gravedad": "alta",
+      "sintoma": "El medidor dice que el control ya cumple el mínimo y el dedo se sigue perdiendo.",
+      "causa": "El pseudo-elemento que agranda el área existía y medía bien, pero otro elemento posicionado que va DESPUÉS en el documento se pintaba encima justo en el pedazo nuevo.",
+      "porque": "Medir una caja y recibir un toque son dos preguntas distintas. `getBoundingClientRect` contesta la primera; quién gana el punto lo decide el orden de pintado.",
+      "arreglo": "`z-index` al pseudo-elemento, y comprobarlo TOCANDO: `elementFromPoint` en un punto dentro del área nueva, a ver quién lo recibe.",
+      "comoCazarlo": "Nunca des por bueno un área de toque por su tamaño. Pica justo fuera del dibujo y dentro del área, y pregunta quién recibió.",
+      "consejo": "Y salta la intro antes de medir: si hay una capa de bienvenida encima, estás midiendo la intro, no la página.",
+      "salioDe": "toydarians · el canvas del cielo de la intro se comía los toques",
+      "senales": [
+        "no me toma el toque",
+        "le pico y no pasa nada",
+        "el botón no responde"
+      ],
+      "vecinas": [
+        "dos-cosas-con-la-misma-clase"
+      ]
     }
   ]
 }
