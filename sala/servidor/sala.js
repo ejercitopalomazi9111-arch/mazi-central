@@ -132,8 +132,30 @@ const TOPE_HILO = 400;
    lo que se dijo, y es lo único que no se puede volver a generar. */
 const TOPE_BYTES = 1_400_000;
 
-/* Vueltas SEGUIDAS de agente antes de exigir que hable un humano. */
-const TOPE_VUELTAS = 12;
+/* ⚠ EL FRENO DE VUELTAS QUEDA APAGADO. Lo pidió Carlos, textual:
+   «no le pongas porfa el límite de 12 mensajes entre ellas porque eso pues nos
+   detiene mucho el avance.»
+
+   Tiene razón en lo que le duele: el freno se hizo para que dos agentes no se
+   quedaran discutiendo solos, pero en la práctica cortaba conversaciones que
+   SÍ estaban avanzando, y desatorarlas pedía que apareciera una persona.
+
+   LO QUE SÍ QUEDA, Y HAY QUE DECIR POR QUÉ: un tope altísimo, de 500. No es
+   desobedecer a medias — es que el freno tenía DOS trabajos y sólo uno era el
+   que estorbaba:
+
+     · «obligar a que opine un humano cada doce mensajes» — ése era el que
+       molestaba y ése se va.
+     · «que un bucle entre dos agentes no queme la cuenta» — ése se queda, y
+       hoy más que nunca: este mismo día se acabó el límite de gasto MENSUAL de
+       la cuenta y se murieron dos equipos a media chamba. Dos sillas
+       contestándose sin parar a 3 000 mensajes no son una discusión, son una
+       factura.
+
+   500 no se alcanza conversando. Se alcanza sólo en bucle, que es justo lo
+   único que sigue queriendo cortar. Si Carlos lo quiere de plano sin techo, se
+   pone `SIN_FRENO=1` en el entorno del proyecto `sala` y desaparece. */
+const TOPE_VUELTAS_DEFECTO = 500;
 
 /* `/esperar` nunca cuelga para siempre: 50 s y regresa vacía. Cloudflare
    corta la conexión mucho después, pero un agente colgado un minuto entero
@@ -339,6 +361,16 @@ export class Sala {
   constructor(ctx, env){
     this.ctx = ctx;
     this.env = env;
+    /* El tope de vueltas se lee del ENTORNO, no de una constante: Carlos pidió
+       quitar el freno de 12 y lo que queda es un techo anti-bucle de 500, que
+       se puede subir, bajar o apagar sin volver a desplegar código.
+         SIN_FRENO=1   → sin techo
+         TOPE_VUELTAS=n → el que quieras
+       `Infinity` es a propósito y no un truco: todas las comparaciones de
+       abajo son `>=`, y nada es `>= Infinity`. */
+    this.topeVueltas = (env && env.SIN_FRENO)
+      ? Infinity
+      : Number(env && env.TOPE_VUELTAS) || TOPE_VUELTAS_DEFECTO;
     this.vivos = new Set();        /* sockets abiertos */
     this.esperando = [];           /* resolvers de /esperar */
     this.listo = ctx.blockConcurrencyWhile(async () => {
@@ -1161,7 +1193,7 @@ export class Sala {
     else if(cuenta && evento.de?.tipo !== 'humano') this.vueltas++;
 
     await this.guardar();
-    this.difundir({ que:'evento', evento, vueltas:this.vueltas, tope:TOPE_VUELTAS });
+    this.difundir({ que:'evento', evento, vueltas:this.vueltas, tope:this.topeVueltas });
     this.despertar(evento);
 
     /* Los avisos al teléfono son SÓLO para lo que escribió una persona o un
@@ -1404,7 +1436,7 @@ export class Sala {
         hilo: this.hilo, gente: this.gente, proyectos: this.proyectos,
         retratos: this.retratos, fusiones: this.fusiones, vistos: this.vistos,
         conectados: this.conectados(),
-        vueltas: this.vueltas, tope: TOPE_VUELTAS,
+        vueltas: this.vueltas, tope: this.topeVueltas,
         /* Para que la mesa sepa qué botón enseñar sin adivinar. */
         cerrada: !!this.dueno, dueno: this.dueno, yoSoy: cuenta,
         cuentas: [...new Set(Object.values(this.llaves))],
@@ -1467,7 +1499,7 @@ export class Sala {
 
       if(this.tocarAgente(id)) this.luego(this.cerrarVigilia(id));
       await this.publicar({ de: this.tarjeta(this.gente[id]), tipo:'sistema', accion:'entra', texto:'' });
-      return Response.json({ bien:true, yo:this.gente[id], tope:TOPE_VUELTAS });
+      return Response.json({ bien:true, yo:this.gente[id], tope:this.topeVueltas });
     }
 
     if(pedido.method === 'POST' && ruta === 'decir'){
@@ -1509,7 +1541,7 @@ export class Sala {
          —el contador ya está por encima del tope y ahí se queda—. Con más de
          uno el freno no frena nada: dos agentes «resumiendo» son dos agentes
          hablando. */
-      if(quien.tipo !== 'humano' && this.vueltas >= TOPE_VUELTAS){
+      if(quien.tipo !== 'humano' && this.vueltas >= this.topeVueltas){
         const esResumen = tipo === 'bloqueo' && !this.resumido;
         if(!esResumen){
           return Response.json({
@@ -1520,7 +1552,7 @@ export class Sala {
                        'compañero decidan.'
                      : 'Resume dónde va la discusión, dilo en la sala como tipo "bloqueo" ' +
                        '(ése SÍ pasa, una vez), y espera a que Carlos o su compañero decidan.'),
-            freno: true, vueltas: this.vueltas, tope: TOPE_VUELTAS,
+            freno: true, vueltas: this.vueltas, tope: this.topeVueltas,
             /* Se dice el tipo exacto para que un agente no tenga que adivinarlo
                del texto en español. */
             salida: this.resumido ? null : { tipo:'bloqueo' },
@@ -2296,7 +2328,7 @@ export class Sala {
     servidor.send(JSON.stringify({
       que:'hola', hilo:this.hilo, gente:this.gente, proyectos:this.proyectos,
       retratos:this.retratos, fusiones:this.fusiones, vistos:this.vistos,
-      vueltas:this.vueltas, tope:TOPE_VUELTAS, conectados:this.conectados(),
+      vueltas:this.vueltas, tope:this.topeVueltas, conectados:this.conectados(),
       escribiendo:this.escribiendo(),
     }));
     /* Cerrar el socket SÍ es indicación directa: cerró la pestaña, se le fue

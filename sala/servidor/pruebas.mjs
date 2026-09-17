@@ -113,7 +113,20 @@ console.log('\n· Hablar');
 /* ══ 3 · el freno · lo que evita que esto se coma el saldo ════════════════ */
 console.log('\n· El freno de vueltas');
 {
-  const s = nueva();
+  /* ⚠ EL TOPE SE PONE A MANO EN ESTE BLOQUE, y no es para hacer pasar la
+     prueba: es para que siga probando algo.
+
+     Carlos pidió quitar el freno de 12 («nos detiene mucho el avance») y el
+     valor por omisión subió a 500, que es un techo anti-bucle, no un freno de
+     conversación. Con 500, hacer que este bloque llegue al freno pediría
+     quinientas vueltas por corrida — una suite que tarda es una suite que se
+     deja de correr.
+
+     Pero el MECANISMO sigue vivo y sigue teniendo que funcionar, así que se
+     prueba con el tope puesto en 12: exactamente el mismo camino, sólo que
+     alcanzable. Lo que cambió es el número por omisión, y ése se comprueba
+     aparte, abajo. */
+  const s = nueva({ TOPE_VUELTAS: 12 });
   await entrar(s, 'cl-1'); await entrar(s, 'cl-2');
   await entrar(s, 'carlos', 'humano');
 
@@ -563,10 +576,50 @@ console.log('\n· Presentaciones');
 
 
 
+/* ══ 11-bis · el freno APAGADO, que es lo que pidió Carlos ════════════════ */
+console.log('\n· El freno, con el valor de verdad');
+{
+  /* ⚠ SIN ESTE BLOQUE NO SE ESTARÍA PROBANDO EL CAMBIO. Arriba, el freno se
+     prueba con `TOPE_VUELTAS: 12` puesto a mano — o sea que se prueba el
+     MECANISMO, que no cambió. Lo que Carlos pidió fue otra cosa: que el freno
+     deje de cortar la conversación. Eso vive en el valor por omisión, y un
+     valor por omisión que nadie comprueba es un valor que cualquiera baja de
+     nuevo sin enterarse. */
+  const s = nueva();                       // sin tocar nada: como en producción
+  await entrar(s, 'a-1'); await entrar(s, 'a-2');
+  let frenado = null;
+  for(let i = 0; i < 60 && frenado === null; i++){
+    const [c] = await leer(await pedir(s, 'POST', 'decir',
+      { de: i % 2 ? 'a-2' : 'a-1', tipo:'desacuerdo', texto:'sigo' }));
+    if(c === 429) frenado = i;
+  }
+  ok('sesenta mensajes seguidos entre agentes YA NO se frenan (antes: a los 12)',
+     frenado === null, 'se frenó en la vuelta ' + frenado);
+
+  const s2 = nueva();
+  await entrar(s2, 'b-1');
+  const [, r2] = await leer(await pedir(s2, 'POST', 'entrar',
+    { id:'b-2', nombre:'otro', tipo:'agente' }));
+  ok('y el techo anti-bucle que queda es 500, no 12',
+     r2.tope === 500, String(r2.tope));
+
+  /* SIN_FRENO es la salida de emergencia por si Carlos lo quiere de plano sin
+     techo: se pone en el entorno y no hay que volver a desplegar código. */
+  const s3 = nueva({ SIN_FRENO: '1' });
+  await entrar(s3, 'c-1');
+  const [, r3] = await leer(await pedir(s3, 'POST', 'entrar',
+    { id:'c-2', nombre:'otro', tipo:'agente' }));
+  ok('con SIN_FRENO no hay techo de ninguna clase',
+     r3.tope === null || r3.tope === Infinity || !isFinite(r3.tope), String(r3.tope));
+}
+
 /* ══ 12 · cualquier IA, no sólo Claude ════════════════════════════════════ */
 console.log('\n· Agentes de cualquier marca');
 {
-  const s = nueva();
+  /* Con el tope a mano por lo mismo que el bloque del freno: lo que se prueba
+     aquí es QUE UN AGENTE DE OTRA MARCA TAMBIÉN SE FRENA, no cuál es el
+     número. Con el 500 de omisión harían falta quinientas vueltas. */
+  const s = nueva({ TOPE_VUELTAS: 12 });
   const [c1, r1] = await leer(await pedir(s, 'POST', 'entrar',
     { id:'g-1', nombre:'GPT de Beto', tipo:'agente', motor:'gpt-5' }));
   ok('entra un agente que no es Claude', c1 === 200 && r1.yo.tipo === 'agente');
@@ -691,7 +744,7 @@ console.log('\n· Quién es quién: figura, color y matiz');
   /* Sin COLORES configurados tiene que salir algo estable de todos modos: si
      hiciera falta configurar para que se vea bien, no funcionaría el primer
      día — que es cuando se decide si se usa o se abandona. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   const [, x1] = await leer(await entrar(s2, 'quien'));
   const s3 = nueva();
   const [, x2] = await leer(await entrar(s3, 'quien'));
@@ -865,7 +918,7 @@ console.log('\n· Fundar e invitar');
   ok('y a cada quien le dice SU cuenta', hiloL.yoSoy === 'luis');
 
   /* Dos salas distintas no pueden compartir llave por casualidad. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   const [, g] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos' }));
   ok('cada sala acuña su propia llave', g.llave !== f.llave);
   const [c9] = await leer(await pedir(s2, 'POST', 'entrar', { id:'x' }, f.llave));
@@ -1069,7 +1122,7 @@ async function vigilia(){
   ok('y su regreso queda anunciado',              /volvió/.test(limites(s).at(-1).texto));
 
   /* ⚠ LO QUE EL AGENTE DECLARA MANDA SOBRE LO QUE LA SALA DEDUCE. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await pedir(s2, 'POST', 'entrar', { id:'ia', nombre:'Syl', tipo:'agente' });
   await pedir(s2, 'POST', 'estado', { de:'ia', estado:'ocupado', nota:'en otra cosa' });
   const dichos = s2.hilo.filter(e => e.tipo === 'limite').length;
@@ -1130,7 +1183,7 @@ async function olvido(){
      (await s.ctx.storage.getAlarm()) - Date.now() > 20 * 24 * 60 * 60 * 1000);
 
   /* Y lo más caro: una sala FUNDADA no puede perder su cerradura. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await pedir(s2, 'POST', 'entrar', { id:'d', nombre:'Dueño', tipo:'humano' });
   const [, f] = await leer(await pedir(s2, 'POST', 'fundar', { cuenta:'carlos', nombre:'Carlos' }));
   /* Se vuelve a entrar CON la llave: al fundar, la sala pasa a tener cuentas y
@@ -1427,7 +1480,7 @@ async function presenciaPorSocket(){
 
   /* Un socket anónimo no marca presencia de nadie: si marcara, cualquiera que
      abriera la dirección dejaría «conectado» a un tercero. */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await pedir(s2, 'POST', 'entrar', { id:'otro', nombre:'Otro', tipo:'agente', motor:'claude' });
   try{ s2.conectar(new Request('https://s.test/api/sala/ABCDEF/ws',
     { headers:{ Upgrade:'websocket' } })); }catch(e){}
@@ -1501,7 +1554,7 @@ console.log('\n· Echar fantasmas');
 
   /* Regla 2 · quien está conectado NO se va. Se finge el socket abierto, que
      es lo único que distingue «está aquí» de «entró alguna vez». */
-  const s2 = nueva();
+  const s2 = nueva({ TOPE_VUELTAS: 12 });
   await entrar(s2, 'carlos', 'humano');
   await entrar(s2, 'vivo', 'humano');
   s2.vivos.add({ __quien:'vivo', send(){}, close(){},
