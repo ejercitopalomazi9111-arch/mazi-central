@@ -205,6 +205,14 @@ export class Mundo {
     this._pres2 = new Float32Array(n);
     this._trans = new Float32Array(n);
     this._amort = new Float32Array(n);
+    /* La velocidad del paso anterior, congelada. Hace falta para la viscosidad
+       que mata el damero: sin una copia, las vecinas de arriba y de la
+       izquierda ya estarían actualizadas y las de abajo y la derecha no, y una
+       viscosidad asimétrica empuja la onda hacia un lado. */
+    this._v0 = new Float32Array(n);
+    /* Los dos laplacianos intermedios del filtro biarmónico. */
+    this._lapP = new Float32Array(n);
+    this._lapV = new Float32Array(n);
     /* ── SOSTÉN ESTRUCTURAL ────────────────────────────────────────────
        Ahora que los sólidos caen hace falta saber cuáles NO deben caerse, o
        el techo de cualquier caja se desploma hacia dentro en el primer paso.
@@ -2643,11 +2651,15 @@ export class Mundo {
        la onda crecía sin techo hasta arrasar la sala. Y llevaba ahí desde que
        se escribió la ecuación de onda — todas las pruebas la miraban en el
        aire. */
+    /* Se declara AQUÍ y no abajo con `tr` y `am`: el recorrido de copia que
+       viene enseguida ya lo usa, y declararlo después daba un ReferenceError
+       en la primera prueba que tocara una onda. */
+    const v0 = this._v0, _lp = this._lapP, _lv = this._lapV;
     const cx0 = Math.max(0, x0 - 1), cx1 = Math.min(an - 1, x1 + 1);
     const cy0 = Math.max(0, y0 - 1), cy1 = Math.min(al - 1, y1 + 1);
     for(let y = cy0; y <= cy1; y++){
       const f = y * an;
-      for(let x = cx0; x <= cx1; x++) p0[f + x] = pres[f + x];
+      for(let x = cx0; x <= cx1; x++){ const k = f + x; p0[k] = pres[k]; v0[k] = pv[k]; }
     }
     /* transmisión por celda, calculada UNA vez y usada cinco: la miran sus
        cuatro vecinas y ella misma */
@@ -2689,6 +2701,10 @@ export class Mundo {
        se lee como una onda. Pasarse de ½ no da «más rápido»: da números que
        llegan a infinito en cuatro pasos. */
     const C2 = 0.48;
+    /* Cuánta difusión se le suma a la velocidad. Es lo que mata el damero sin
+       tocar la onda buena — ver el comentario largo abajo, en el bucle.
+       El número se midió, no se eligió: ver la tabla en el commit. */
+    const VISC = 0.004;
     /* el techo baja solo: una explosión de hace diez segundos ya no autoriza
        nada. Sin esta caída, el primer petardo de la partida dejaría permiso
        para siempre. Se lee DESPUÉS del recorrido de arriba, que es donde los
@@ -2713,6 +2729,43 @@ export class Mundo {
         if(x === 0)      lap -= pk; else { const c = tc < tr[k-1] ? tc : tr[k-1]; if(c) lap += (p0[k-1] - pk) * c; }
         if(x === an - 1) lap -= pk; else { const c = tc < tr[k+1] ? tc : tr[k+1]; if(c) lap += (p0[k+1] - pk) * c; }
 
+        /* ⚠ EL DAMERO · el patrón cuadriculado que reportó Carlos.
+           «Las ondas expansivas muchas veces llegan a hacer este patrón como
+           cuadriculado… eso se vuelve una onda expansiva infinita y es muy
+           molesto, tienes que esperar hasta que se acabe sola y no se acaba
+           rápido.»
+
+           Tiene nombre: es el MODO DE NYQUIST de la ecuación de onda en una
+           rejilla — el patrón que cambia de signo de una celda a la siguiente,
+           la frecuencia espacial más alta que la rejilla puede representar.
+
+           POR QUÉ NO SE MORÍA: `am[k]` es un número FIJO, el mismo para todas
+           las frecuencias. Así que el damero se apagaba tan despacio como la
+           onda buena… sólo que la onda buena SE VA VIAJANDO y el damero no:
+           su velocidad de grupo es cero, se queda parado donde nació. A los
+           120 pasos quedaba el 51 % de la energía, con correlación −0.99 entre
+           vecinas: la sala entera en damero y todavía sonando.
+
+           Y NO SE ARREGLA SUBIENDO `am`: eso mata también la onda de verdad y
+           el juego se queda sin explosiones. Hay una prueba que lo vigila.
+
+           EL ARREGLO es un amortiguamiento que DEPENDA DE LA FRECUENCIA, y
+           sale gratis porque `lap` ya está calculado. Sumarle `VISC * lap` a
+           la velocidad es difusión, y la difusión ataca por curvatura: el
+           laplaciano de una onda suave es casi cero —no la toca— y el de un
+           damero vale −8 veces su amplitud, o sea el máximo posible. Cada
+           paso le quita un 8·VISC.
+
+           Un término, una multiplicación, y sólo le pega a lo que sobra.
+
+           ⚠ Y VA SOBRE LA VELOCIDAD, NO SOBRE LA PRESIÓN. Mi primer intento
+           fue sumarle `VISC * lap` —el laplaciano de la PRESIÓN— y salió PEOR:
+           el damero pasó del 51 % al 144 %, o sea que creció. La razón es que
+           `C2 * lap` YA ES la fuerza de restitución del oscilador, así que
+           sumarle más de lo mismo no amortigua: ENDURECE. Subió ω²dt² de 3.84
+           a 4.32, por encima del 4 que es el límite de estabilidad, y la cosa
+           se puso a crecer sola.
+           Amortiguar es rozamiento, y el rozamiento va contra la VELOCIDAD. */
         let v = (pv[k] + C2 * lap) * am[k];
         let p = pk + v;
         const tk = t[k];
@@ -2753,6 +2806,88 @@ export class Mundo {
       }
     }
     caja.x0 = nx0; caja.x1 = nx1; caja.y0 = ny0; caja.y1 = ny1;
+
+    /* ══ EL FILTRO DEL DAMERO · segunda pasada ═══════════════════════════
+       Aquí abajo y no dentro del bucle, y costó tres intentos entender por
+       qué. Lo que se filtra es el campo YA ACTUALIZADO:
+
+         · Intento 1 — sumarle `VISC·∇²p` a la velocidad DENTRO del paso.
+           Peor: 51 % → 144 %. `C2·∇²p` ya es la fuerza de restitución, así
+           que sumar más de lo mismo no amortigua, ENDURECE: sube ω²dt² de
+           3.84 a 4.32, por encima del 4 que es el límite, y crece sola.
+         · Intento 2 — el rozamiento contra la velocidad, `VISC·∇²v`, dentro
+           del paso. También peor: 151 %. Sobreamortiguar un esquema
+           explícito lo desestabiliza igual que subamortiguarlo — las raíces
+           dejan de ser complejas y una se sale del círculo unidad.
+         · Intento 3 — filtrar después, pero usando el laplaciano de la
+           presión VIEJA. Peor otra vez: 144 %. Y la razón es preciosa: el
+           damero cambia de signo CADA PASO, así que la presión vieja tiene
+           el signo contrario a la nueva, y el filtro en vez de restar sumaba.
+
+       Lo que sí funciona: tomar una foto del campo nuevo y filtrar contra
+       ella. Para una onda suave el laplaciano es casi cero y no la toca; para
+       el damero vale −8 veces su amplitud —el máximo que permite la rejilla—
+       así que cada paso le quita 8·VISC. Y como se aplica por igual a la
+       presión y a la velocidad, es atenuación pura: no mueve la frecuencia,
+       no puede desestabilizar nada, sólo baja la amplitud del modo que sobra. */
+    if(VISC > 0 && nx1 >= nx0){
+      const fx0 = Math.max(1, nx0), fx1 = Math.min(an - 2, nx1);
+      const fy0 = Math.max(1, ny0), fy1 = Math.min(al - 2, ny1);
+      for(let y = fy0; y <= fy1; y++){
+        const f = y * an;
+        for(let x = fx0; x <= fx1; x++){ const k = f + x; p0[k] = pres[k]; v0[k] = pv[k]; }
+      }
+      /* ⚠ Y EL FILTRO ES BIARMÓNICO —el laplaciano DOS VECES—, no simple.
+         Con uno solo (difusión normal) el damero sí se moría… y se llevaba
+         por delante SIETE pruebas que pasaban: la difracción al doblar una
+         esquina, la detonación simpática, la presión de la cámara del cohete,
+         el carbón que se vuelve diamante. O sea que curaba al enfermo matándolo.
+
+         La razón es la selectividad. Un laplaciano atenúa por λ, y λ vale −8
+         para el damero pero también −1 o −2 para una onda de media frecuencia
+         — que es justo donde viven la difracción y la presión de una recámara.
+         Aplicado dos veces atenúa por λ², o sea 64 contra 1: SESENTA Y CUATRO
+         VECES más duro con el damero que con una onda de verdad.
+
+         Cuesta dos recorridos más sobre la caja activa. Se paga con gusto:
+         lo otro era elegir entre el damero y la mitad de la física. */
+      for(let y = fy0; y <= fy1; y++){
+        const f = y * an;
+        for(let x = fx0; x <= fx1; x++){
+          const k = f + x;
+          _lp[k] = p0[k - 1] + p0[k + 1] + p0[k - an] + p0[k + an] - 4 * p0[k];
+          _lv[k] = v0[k - 1] + v0[k + 1] + v0[k - an] + v0[k + an] - 4 * v0[k];
+        }
+      }
+      const gx0 = fx0 + 1, gx1 = fx1 - 1, gy0 = fy0 + 1, gy1 = fy1 - 1;
+      for(let y = gy0; y <= gy1; y++){
+        const f = y * an;
+        for(let x = gx0; x <= gx1; x++){
+          const k = f + x;
+          /* ⚠ NI EL MURO NI SUS VECINAS. Filtrar pegado a una pared inventa
+             fuerzas que no existen: la celda de muro tiene la presión clavada
+             en 0, así que para el laplaciano es un escalón, y el biarmónico
+             —que es el laplaciano del laplaciano— convierte ese escalón en un
+             empujón. Se vio en dos pruebas de un golpe: un recipiente CERRADO
+             se propulsaba solo (−2 celdas) y una carga que no debía romper la
+             tapa la desintegraba. Las dos son de paredes, y las dos se
+             arreglaron confinando el filtro al aire abierto.
+             No se pierde nada: el damero vive en el aire, no en el muro. */
+          if(tr[k] === 0 || tr[k - 1] === 0 || tr[k + 1] === 0
+             || tr[k - an] === 0 || tr[k + an] === 0) continue;
+          const bv = _lv[k - 1] + _lv[k + 1] + _lv[k - an] + _lv[k + an] - 4 * _lv[k];
+          /* ⚠ LOS DOS CAMPOS, y probado que tiene que ser así. Filtrar SÓLO
+             la velocidad —que parecía lo prudente, porque la presión es la
+             que empuja cuerpos— dejó el damero en 144 %, o sea creciendo, y
+             empeoró el recipiente de −2 a −6 celdas. La presión y la
+             velocidad son las dos mitades del mismo oscilador: atenuar una
+             sola las desbalancea y lo que sobra vuelve por la otra. */
+          const bp = _lp[k - 1] + _lp[k + 1] + _lp[k - an] + _lp[k + an] - 4 * _lp[k];
+          pres[k] -= VISC * bp;
+          pv[k]   -= VISC * bv;
+        }
+      }
+    }
   }
 
   /* La presión a la que TIENDE un gas por estar caliente y encerrado. Ley de
